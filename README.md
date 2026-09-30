@@ -52,8 +52,9 @@ The app runs on the server `cromatic-wp-prod-new` (Node 16, pm2), deployed from 
 
 - **Pre-symlink step** (builds the release): `npm ci --omit=dev` and `node build/build.mjs`.
 - **Post-symlink step**: pm2 (re)starts `app.js` under the application's name. `app.js` listens on **8081**, the port the Bunnyshell proxy forwards to, and reads a `.env` file (next to it, or `../../shared/.env`, or the path in `ENV_FILE`).
-- **Secrets**: put `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` (and optionally `MAIL_FROM`, `MAIL_TO`) in that `.env`; see `.env.example`.
-- **Domain**: `drive.cromaticstudios.com`, with an A record to the server's public IP, then the certificate from the Domains tab.
+- **Secrets**: add `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` (and optionally `MAIL_FROM`, `MAIL_TO`) under **Deploy → Secrets**, then redeploy. They reach the deploy steps as environment variables, and pm2 passes them on to the app. A `.env` on the server works too; see `.env.example`.
+- **Domain**: `drive.cromaticstudios.com` (added in the Domains tab). DNS: a CNAME to `cromaticdrive6abd2eab8b05b.cloud.bunnyroute.com` (or an A record to the server's IP), then **Connect** and the certificate.
+- **Temporary URL**: https://cromaticdrive6abd2eab8b05b.cloud.bunnyroute.com
 - **Auto-deploy**: the application's deployment webhook, added to the GitHub repository.
 
 `Dockerfile` and `bunnyshell.yaml` are kept for container hosting (Bunnyshell Environments or anything that runs Docker).
