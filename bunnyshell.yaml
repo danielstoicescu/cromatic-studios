@@ -7,7 +7,7 @@ type: primary
 components:
   - kind: Application
     name: drive
-    gitRepo: 'https://github.com/CHANGE-ME/cromatic-drive.git'
+    gitRepo: 'https://github.com/danielstoicescu/cromatic-studios.git'
     gitBranch: main
     gitApplicationPath: /
     dockerCompose:
