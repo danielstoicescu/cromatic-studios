@@ -17,4 +17,6 @@ for (const file of [process.env.ENV_FILE, join(here, ".env"), join(here, "..", "
   break;
 }
 if (!process.env.PORT) process.env.PORT = "8081";
+// the webroot certbot writes to (the deploy path, a symlink to the current release)
+if (!process.env.ACME_ROOT) process.env.ACME_ROOT = "/var/www/cromatic_drive/app";
 await import("./server.js");

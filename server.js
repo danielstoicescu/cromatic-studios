@@ -10,7 +10,10 @@ import zlib from "node:zlib";
 import nodemailer from "nodemailer";
 import { passHtml, passText } from "./mail-template.js";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "public");
+const APP_DIR = dirname(fileURLToPath(import.meta.url));
+const ROOT = join(APP_DIR, "public");
+// Let's Encrypt (certbot --webroot) drops its challenge files under <webroot>/.well-known/acme-challenge/
+const ACME_DIRS = [...new Set([process.env.ACME_ROOT, APP_DIR].filter(Boolean))].map((d) => join(d, ".well-known", "acme-challenge"));
 const PORT = Number(process.env.PORT || 8080);
 const MAIL_TO = process.env.MAIL_TO || "hi@cromaticstudios.com";
 const MAIL_FROM = process.env.MAIL_FROM || "Cromatic Air <hi@cromaticstudios.com>";
@@ -139,8 +142,24 @@ function serve(req, res) {
   res.end(req.method === "HEAD" ? undefined : buf);
 }
 
+function acme(req, res) {
+  const token = req.url.slice("/.well-known/acme-challenge/".length).split("?")[0];
+  if (/^[A-Za-z0-9_-]+$/.test(token)) {
+    for (const dir of ACME_DIRS) {
+      try {
+        const body = readFileSync(join(dir, token));
+        res.writeHead(200, { "Content-Type": "text/plain", "Cache-Control": "no-store" });
+        return res.end(body);
+      } catch {}
+    }
+  }
+  res.writeHead(404, { "Content-Type": "text/plain" });
+  res.end("Not found");
+}
+
 http.createServer((req, res) => {
   if (req.url === "/healthz") return send(res, 200, { ok: true });
+  if (req.url.startsWith("/.well-known/acme-challenge/")) return acme(req, res);
   if (req.url === "/api/boarding" && req.method === "POST") return void boarding(req, res).catch(() => send(res, 500, { ok: false }));
   if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405); return res.end(); }
   serve(req, res);
