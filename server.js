@@ -160,6 +160,11 @@ function acme(req, res) {
 http.createServer((req, res) => {
   if (req.url === "/healthz") return send(res, 200, { ok: true });
   if (req.url.startsWith("/.well-known/acme-challenge/")) return acme(req, res);
+  // behind Cloudflare: visitors who came in over plain http get sent to https
+  if (/"scheme":"http"/.test(String(req.headers["cf-visitor"] || "")) && req.headers.host) {
+    res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
+    return res.end();
+  }
   if (req.url === "/api/boarding" && req.method === "POST") return void boarding(req, res).catch(() => send(res, 500, { ok: false }));
   if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405); return res.end(); }
   serve(req, res);
