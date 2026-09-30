@@ -8,8 +8,10 @@ The 3D drive through Bucharest: a scroll-driven route through the Cromatic story
 |---|---|
 | `src/app.js` | the whole experience (Three.js bundle, UI, worlds, kinetic intro) |
 | `src/styles.css`, `src/head.html` | styles and the document head (SEO and social cards) |
-| `src/og.jpg` | the social preview image |
-| `build/build.mjs` | the build: splits the inlined images and video into `public/assets/`, hashes JS/CSS, precompresses (brotli + gzip) |
+| `src/og.jpg`, `src/icon*.svg/png`, `src/favicon-32.png` | the social preview image and the icons |
+| `src/content.html` | the text version of the site: what search engines, AI assistants, screen readers and no-JS visitors read. Keep it in sync with the copy in `app.js` |
+| `build/seo.mjs` | schema.org JSON-LD, `/llms.txt`, `robots.txt` (AI crawlers welcome), sitemap, web manifest |
+| `build/build.mjs` | the build: splits the inlined images and video into `public/assets/`, makes images in modals and galleries lazy, minifies JS/CSS (esbuild), hashes, precompresses (brotli + gzip), adds the instant boot screen |
 | `server.js` | a small Node server: static files with long-lived caching and byte ranges for video, plus `POST /api/boarding` |
 | `mail-template.js` | the boarding pass as an email (tables and inline styles, safe for Gmail/Outlook/Apple Mail) |
 | `app.js` | the entry pm2 starts on the server: loads `.env`, defaults to port 8081, runs `server.js` |

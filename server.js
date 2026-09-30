@@ -7,6 +7,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, extname, dirname, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import zlib from "node:zlib";
+import { createHash } from "node:crypto";
 import nodemailer from "nodemailer";
 import { passHtml, passText } from "./mail-template.js";
 
@@ -22,9 +23,9 @@ const TYPES = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
   ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp",
   ".gif": "image/gif", ".svg": "image/svg+xml", ".mp4": "video/mp4", ".webm": "video/webm", ".txt": "text/plain; charset=utf-8",
-  ".xml": "application/xml; charset=utf-8", ".ico": "image/x-icon"
+  ".xml": "application/xml; charset=utf-8", ".ico": "image/x-icon", ".webmanifest": "application/manifest+json"
 };
-const COMPRESS = new Set([".html", ".js", ".css", ".svg", ".json", ".txt", ".xml"]);
+const COMPRESS = new Set([".html", ".js", ".css", ".svg", ".json", ".txt", ".xml", ".webmanifest", ".ico"]);
 
 // everything is small enough to hold in memory, compressed once at start
 const files = new Map();
@@ -35,7 +36,7 @@ const files = new Map();
     if (p.endsWith(".br") || p.endsWith(".gz")) continue;
     const ext = extname(p).toLowerCase(), buf = readFileSync(p);
     const url = "/" + p.slice(ROOT.length + 1).split("\\").join("/");
-    const f = { buf, type: TYPES[ext] || "application/octet-stream", immutable: url.startsWith("/assets/") };
+    const f = { buf, type: TYPES[ext] || "application/octet-stream", immutable: url.startsWith("/assets/"), etag: `"${createHash("sha1").update(buf).digest("base64url").slice(0, 16)}"` };
     if (COMPRESS.has(ext)) {
       // precompressed by the build; fall back to compressing here if a variant is missing
       try { f.br = readFileSync(p + ".br"); } catch { f.br = zlib.brotliCompressSync(buf); }
@@ -115,21 +116,26 @@ function serve(req, res) {
   let path = decodeURIComponent(new URL(req.url, "http://x").pathname);
   path = normalize(path).replace(/\\/g, "/");
   if (path.endsWith("/")) path += "index.html";
-  const f = files.get(path) || (extname(path) ? null : files.get("/index.html"));
+  // one page: "/" is the site, anything else unknown is a real 404 (no soft 404s for search engines)
+  let f = files.get(path), status = 200;
+  if (!f) { f = files.get("/404.html"); status = 404; }
   if (!f) { res.writeHead(404, { "Content-Type": "text/plain" }); return res.end("Not found"); }
   const headers = {
     "Content-Type": f.type,
     "Cache-Control": f.immutable ? "public, max-age=31536000, immutable" : "public, max-age=0, must-revalidate",
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Vary": "Accept-Encoding"
+    "Vary": "Accept-Encoding",
+    "ETag": f.etag
   };
+  if (status === 404) headers["Cache-Control"] = "no-store";
+  else if (req.headers["if-none-match"] === f.etag) { res.writeHead(304, headers); return res.end(); }
   const ae = String(req.headers["accept-encoding"] || "");
   let buf = f.buf;
   if (f.br && /\bbr\b/.test(ae)) { buf = f.br; headers["Content-Encoding"] = "br"; }
   else if (f.gz && /\bgzip\b/.test(ae)) { buf = f.gz; headers["Content-Encoding"] = "gzip"; }
   // video wants byte ranges (Safari will not play without them)
-  const range = !headers["Content-Encoding"] && req.headers.range && /^bytes=(\d*)-(\d*)$/.exec(req.headers.range);
+  const range = status === 200 && !headers["Content-Encoding"] && req.headers.range && /^bytes=(\d*)-(\d*)$/.exec(req.headers.range);
   if (range) {
     const total = buf.length, start = range[1] ? Number(range[1]) : total - Number(range[2]), end = range[1] && range[2] ? Math.min(Number(range[2]), total - 1) : total - 1;
     if (start >= total || start < 0 || start > end) { res.writeHead(416, { "Content-Range": `bytes */${total}` }); return res.end(); }
@@ -138,7 +144,7 @@ function serve(req, res) {
   }
   headers["Accept-Ranges"] = "bytes";
   headers["Content-Length"] = buf.length;
-  res.writeHead(200, headers);
+  res.writeHead(status, headers);
   res.end(req.method === "HEAD" ? undefined : buf);
 }
 
