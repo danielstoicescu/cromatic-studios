@@ -12,7 +12,8 @@ The 3D drive through Bucharest: a scroll-driven route through the Cromatic story
 | `build/build.mjs` | the build: splits the inlined images and video into `public/assets/`, hashes JS/CSS, precompresses (brotli + gzip) |
 | `server.js` | a small Node server: static files with long-lived caching and byte ranges for video, plus `POST /api/boarding` |
 | `mail-template.js` | the boarding pass as an email (tables and inline styles, safe for Gmail/Outlook/Apple Mail) |
-| `Dockerfile`, `bunnyshell.yaml` | the container and the Bunnyshell environment |
+| `app.js` | the entry pm2 starts on the server: loads `.env`, defaults to port 8081, runs `server.js` |
+| `Dockerfile`, `bunnyshell.yaml` | a container build, for Docker-based hosting |
 
 ## Run it locally
 
@@ -45,16 +46,18 @@ Environment variables (see `.env.example`):
 
 For good deliverability, the sending domain (cromaticstudios.com) should have SPF and DKIM set up for the SMTP provider.
 
-## Deploy with Bunnyshell (from GitHub)
+## Deploy with Bunnyshell Cloud (from GitHub)
 
-1. Push this repository to GitHub (private is fine).
-2. In `bunnyshell.yaml`, set `gitRepo` to the repository URL.
-3. In Bunnyshell: **Environments → Create environment → from bunnyshell.yaml**, paste or point to the file.
-4. Set the secrets in the environment's variables: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`.
-5. Deploy. Bunnyshell builds the Dockerfile and serves the container on port 8080 at the host in `hosts`.
-6. DNS: point `drive.cromaticstudios.com` at the Bunnyshell ingress (CNAME or A record, as Bunnyshell shows it).
-7. With auto-deploy on `main`, every push redeploys.
+The app runs on the server `cromatic-wp-prod-new` (Node 16, pm2), deployed from `main` into `/var/www/cromatic_drive/app`.
 
-Moving to the main domain later is only a change of `hosts` and `SITE_URL` (and a rebuild).
+- **Pre-symlink step** (builds the release): `npm ci --omit=dev` and `node build/build.mjs`.
+- **Post-symlink step**: pm2 (re)starts `app.js` under the application's name. `app.js` listens on **8081**, the port the Bunnyshell proxy forwards to, and reads a `.env` file (next to it, or `../../shared/.env`, or the path in `ENV_FILE`).
+- **Secrets**: put `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` (and optionally `MAIL_FROM`, `MAIL_TO`) in that `.env`; see `.env.example`.
+- **Domain**: `drive.cromaticstudios.com`, with an A record to the server's public IP, then the certificate from the Domains tab.
+- **Auto-deploy**: the application's deployment webhook, added to the GitHub repository.
+
+`Dockerfile` and `bunnyshell.yaml` are kept for container hosting (Bunnyshell Environments or anything that runs Docker).
+
+Moving to the main domain later is only a change of `SITE_URL` (and a rebuild).
 
 Health check: `GET /healthz`.
