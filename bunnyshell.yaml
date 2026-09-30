@@ -1,0 +1,38 @@
+# Bunnyshell environment for Cromatic Studios — Navigation Mode.
+# Import it in Bunnyshell (Environments → Create → from a bunnyshell.yaml) and point the
+# gitRepo below at this repository. Secrets are set in the Bunnyshell UI, not committed here.
+kind: Environment
+name: cromatic-navigation-mode
+type: primary
+components:
+  - kind: Application
+    name: drive
+    gitRepo: 'https://github.com/CHANGE-ME/cromatic-drive.git'
+    gitBranch: main
+    gitApplicationPath: /
+    dockerCompose:
+      build:
+        context: .
+        dockerfile: Dockerfile
+        args:
+          SITE_URL: 'https://drive.cromaticstudios.com'
+      environment:
+        PORT: '8080'
+        SITE_URL: 'https://drive.cromaticstudios.com'
+        MAIL_TO: 'hi@cromaticstudios.com'
+        MAIL_FROM: 'Cromatic Air <hi@cromaticstudios.com>'
+        SMTP_HOST: '{{ env.vars.SMTP_HOST }}'
+        SMTP_PORT: '{{ env.vars.SMTP_PORT }}'
+        SMTP_USER: '{{ env.vars.SMTP_USER }}'
+        SMTP_PASS: '{{ env.vars.SMTP_PASS }}'
+      ports:
+        - '8080:8080'
+    hosts:
+      - hostname: 'drive.cromaticstudios.com'
+        path: /
+        servicePort: 8080
+environmentVariables:
+  SMTP_HOST: ''
+  SMTP_PORT: '587'
+  SMTP_USER: ''
+  SMTP_PASS: bns_secret()

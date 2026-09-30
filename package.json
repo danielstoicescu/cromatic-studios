@@ -1,0 +1,17 @@
+{
+  "name": "cromatic-navigation-mode",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cromatic Studios — Navigation Mode: the 3D drive through Bucharest, with a boarding-pass contact form.",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "node build/build.mjs",
+    "build:single": "node build/build.mjs --single dist/cromatic-studios-3d.html",
+    "start": "node server.js",
+    "dev": "node build/build.mjs && node server.js"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.14"
+  }
+}
