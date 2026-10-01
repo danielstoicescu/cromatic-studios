@@ -8,7 +8,7 @@ const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 const strip = (h) => String(h).replace(/<[^>]+>/g, "");
 const STAR = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0 L14.6 7.2 L21.5 4.2 L17.4 10.5 L24 12 L17.4 13.5 L21.5 19.8 L14.6 16.8 L12 24 L9.4 16.8 L2.5 19.8 L6.6 13.5 L0 12 L6.6 10.5 L2.5 4.2 L9.4 7.2 Z"/></svg>`;
 
-export function makeRender({ SITE, A, cssHref, jsHref, fonts }) {
+export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz }) {
   const img = (name, alt = "", cls = "", eager = false) => {
     const a = A(name);
     if (!a) return "";
@@ -49,8 +49,9 @@ export function makeRender({ SITE, A, cssHref, jsHref, fonts }) {
 <noscript><link rel="stylesheet" href="${fonts}"></noscript>
 <link rel="stylesheet" href="${cssHref}">
 <script src="${jsHref}" defer></script>
+${kz ? `<script>try{if(location.pathname==="/site/"&&!location.hash&&scrollY<40&&!matchMedia("(prefers-reduced-motion: reduce)").matches&&!sessionStorage.getItem("kzSeen")){document.documentElement.classList.add("kz-wait");window.__kzT=setTimeout(function(){document.documentElement.classList.remove("kz-wait")},4000)}}catch(e){}</script>` : ""}
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>` : ""}
-</head><body>`;
+</head><body${kz ? ` data-kz-js="${kz.js}" data-kz-css="${kz.css}"` : ""}>`;
 
   const logo = A("logoLandscape");
   const header = (home) => `<a class="skip" href="#main">Skip to content</a>
@@ -140,9 +141,8 @@ ${header(true)}
     <div class="wrap hero-in">
       <div class="hero-txt">
         <p class="eyebrow mono">Cromatic Studios · Bucharest · Since 2014</p>
-        <h1 class="ptitle">${pill("We're indie,", "#FED012", -2)}${pill("just like you.", "#119BFE", 1.5)}</h1>
-        <p class="lead">We know the sleepless nights, the stubborn dreams and the budgets with personality. That's why helping you win was never just another job for us. It's personal.</p>
-        <p class="manif">Killer <mark>strategy</mark>. Outstanding <mark>design</mark>. Striking <mark>visuals</mark>. Powerful <mark>storytelling</mark>. And a coffee. There is always a coffee.</p>
+        <h1 class="h-manif">Killer <mark>strategy</mark>. Outstanding <mark>design</mark>. Striking <mark>visuals</mark>. Powerful <mark>storytelling</mark>.</h1>
+        <p class="lead">Genuine passion and real empathy for your customer. And a coffee. There is always a coffee. An independent studio for brand strategy, identity, websites, film and content.</p>
         <div class="btns"><a class="btn btn-y" href="#contact">${STAR}<span>Start a project</span></a><a class="btn" href="#work">See the work</a></div>
       </div>
       <div class="hero-art" aria-hidden="true">

@@ -27,6 +27,35 @@
     rv.forEach((el, i) => { el.classList.add("rv"); el.style.transitionDelay = `${(i % 3) * 70}ms`; io2.observe(el); });
   } else vids.forEach((v) => { v.src = v.dataset.src; });
 
+  // the hero: the drive's kinetic intro plays over the first fold, once per visit; when the
+  // screen is full of coffee the page jumps to the next fold, so the cups lift off onto it
+  const kjs = d.body.dataset.kzJs;
+  if (kjs && root.classList.contains("kz-wait")) {
+    const link = d.createElement("link"); link.rel = "stylesheet"; link.href = d.body.dataset.kzCss; d.head.appendChild(link);
+    const sc = d.createElement("script"); sc.src = kjs; sc.async = true;
+    const release = () => root.classList.remove("kz-wait");
+    sc.onerror = release;
+    sc.onload = () => {
+      clearTimeout(window.__kzT);
+      if (!window.cromaticKinetic) return release();
+      const next = d.getElementById("clients") || d.querySelector(".clients");
+      let over = false;
+      const k = window.cromaticKinetic(() => {
+        over = true; release();
+        try { sessionStorage.setItem("kzSeen", "1"); } catch {}
+        removeEventListener("wheel", skip); removeEventListener("touchmove", skip); removeEventListener("keydown", skip);
+      }, async () => {
+        release();
+        if (next) scrollTo({ top: next.getBoundingClientRect().top + scrollY - 72, behavior: "instant" });
+      });
+      const skip = () => { if (!over && !k.busy) k.finish(); };
+      addEventListener("wheel", skip, { passive: true }); addEventListener("touchmove", skip, { passive: true }); addEventListener("keydown", skip);
+      link.sheet ? k.resume() : link.addEventListener("load", () => k.resume(), { once: true });
+      setTimeout(() => { if (!over) release(); }, 30000);
+    };
+    d.body.appendChild(sc);
+  }
+
   // YouTube: a poster until clicked, then the privacy-friendly embed
   d.querySelectorAll(".yt").forEach((y) => y.querySelector(".yt-play")?.addEventListener("click", () => {
     y.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${y.dataset.id}?autoplay=1&rel=0&modestbranding=1&playsinline=1" title="Two Minutes film" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;

@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "esbuild": "0.19.12",
-    "nodemailer": "^6.9.14"
+    "nodemailer": "^6.9.14",
+    "three": "0.169.0"
   }
 }

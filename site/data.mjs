@@ -35,7 +35,7 @@ export const PROJECTS = [
   { name: "OMA Coffee", cat: "Brand · Coffee · Brașov", c: "#4a7c4e", t: "#F5F0C8", poster: "We're brewing something", desc: "A specialty coffee shop at the foot of the mountains. Passionate baristas who love the craft of coffee as much as the peaks around them, and a brand as warm as the cup." },
   { name: "Kómpus", cat: "Brand", c: "#B098C8", t: "#14120c", poster: "Founder vision, bottled", badge: "bKompus", desc: "Differentiating a coffee shop in the market by enabling the founder's vision." },
   { name: "Sip Coffee & Wine", cat: "Branding · Communication", c: "#C9A227", t: "#14120c", poster: "Design in a cup", desc: "Complementing one of the best designed coffee shops in town with a branding that fits." },
-  { name: "Yoshi Izakaya", cat: "Communication · Content", c: "#F65342", t: "#fff", poster: "The best sushi in town", badge: "bYoshi", desc: "Delivering top content for the best sushi in town." },
+  { name: "Yoshi Izakaya", cat: "Communication · Content", c: "#F4876F", t: "#2a0f0b", poster: "The best sushi in town", badge: "bYoshi", desc: "Delivering top content for the best sushi in town." },
   { name: "Assetto", cat: "Product · Brand", c: "#1f8a3a", t: "#fff", poster: "Tech in fintech", badge: "bAssetto", desc: "Putting the tech in fintech. Product and brand for a data-driven platform." },
   { name: "Cargus", cat: "Website · 2023", c: "#FED012", t: "#14120c", poster: "Delivered", badge: "bCargus", desc: "A national courier, shipped a website that moves as fast as the parcels." },
   { name: "Help4Brain", cat: "Product · Marketing", c: "#B098C8", t: "#14120c", poster: "Challenger to leader", desc: "Enabling a pharma challenger to become a leader." },

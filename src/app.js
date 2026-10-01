@@ -23712,7 +23712,7 @@ void main() {
         { id: "dream", x: 1000, y: 560, label: "CH.01 The Dream" },
         { id: "voice", x: 655, y: 960, label: "CH.02 The Voice" },
         { id: "world", x: 1010, y: 1460, label: "CH.03 The World" },
-        { id: "crowd", x: 1300, y: 3040, label: "CH.04 The Crowd" },
+        { id: "crowd", x: 770, y: 2390, label: "CH.04 The Crowd" },
         { id: "team", x: 1500, y: 3740, label: "CH.05 The Crew" },
         { id: "fork", x: 1500, y: 4260, label: "CH.06 Two routes" },
         { id: "merge", x: 1424, y: 6750, label: "CH.06 Routes merge" },
@@ -23751,7 +23751,7 @@ void main() {
       PROJECTS_A1 = [
         { name: "Slow Coffee Festival", cat: "Brand \xB7 Product \xB7 Ongoing", poster: "Year after year", accent: "#28C840", desc: "The biggest coffee lovers community in the country. We upgrade its brand universe year after year, so every edition feels familiar and brand new at the same time.", x: 210, y: 4520 },
         { name: "Two Minutes", cat: "Brand \xB7 Coffee \xB7 Retail", poster: "Two minutes, forever", accent: "#119BFE", desc: "A specialty coffee shop brand made to be loved fast and remembered long. Two minutes to fall for it, a lifetime as a regular.", x: 210, y: 4800 },
-        { name: "Yoshi Izakaya", cat: "Communication \xB7 Content", poster: "The best sushi in town", accent: "#F65342", desc: "Delivering top content for the best sushi in town.", x: 210, y: 5080 }
+        { name: "Yoshi Izakaya", cat: "Communication \xB7 Content", poster: "The best sushi in town", accent: "#F4876F", desc: "Delivering top content for the best sushi in town.", x: 210, y: 5080 }
       ];
       PROJECTS_A2 = [
         { name: "K\xF3mpus", cat: "Brand", poster: "Founder vision, bottled", accent: "#B098C8", desc: "Differentiating a coffee shop in the market by enabling the founder\u2019s vision.", x: 554, y: 4520 },
@@ -25599,6 +25599,138 @@ void main() {
     g.traverse((m2) => { if (m2.isMesh) { m2.castShadow = true; m2.receiveShadow = true; } });
     parent.add(g);
   }
+
+  // Yoshi Izakaya: a small pink Japanese tavern. Plaster walls in salmon-coral, a dark timber
+  // front with a lattice, a tiled awning, an indigo noren over the door and red paper lanterns
+  // that glow after dark. Front faces local +z (turned towards the road on the west kerb).
+  function buildIzakaya(parent, x, z) {
+    const g = new Group();
+    const W = 64, H = 40, D = 46, CORAL = "#F4876F";
+    const wall = new Mesh(new BoxGeometry(W, H, D), new MeshStandardMaterial({ color: "#F4A6B2", roughness: 0.9 }));
+    wall.position.y = H / 2;
+    const plinth = new Mesh(new BoxGeometry(W + 2, 3, D + 2), new MeshStandardMaterial({ color: "#5a4a40", roughness: 0.95 }));
+    plinth.position.y = 1.5;
+    g.add(wall, plinth);
+    // the timber front: posts, a lattice and warm light behind the paper screens
+    const frontTex = canvasTexture(512, 256, (ctx) => {
+      ctx.fillStyle = "#3a2a20"; ctx.fillRect(0, 0, 512, 256);
+      ctx.fillStyle = "#f6e3c4"; ctx.fillRect(28, 40, 150, 186); ctx.fillRect(334, 40, 150, 186);
+      ctx.strokeStyle = "#3a2a20"; ctx.lineWidth = 6;
+      for (const ox of [28, 334]) {
+        for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(ox + i * 37.5, 40); ctx.lineTo(ox + i * 37.5, 226); ctx.stroke(); }
+        for (let j = 1; j < 6; j++) { ctx.beginPath(); ctx.moveTo(ox, 40 + j * 31); ctx.lineTo(ox + 150, 40 + j * 31); ctx.stroke(); }
+      }
+      // the door, half hidden by the noren
+      ctx.fillStyle = "#1b1410"; ctx.fillRect(206, 30, 100, 226);
+      ctx.fillStyle = "#24356b"; ctx.fillRect(200, 30, 112, 92);
+      ctx.fillStyle = "#f4f1ea"; ctx.fillRect(254, 30, 4, 92);
+      ctx.beginPath(); ctx.arc(228, 74, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#24356b"; ctx.beginPath(); ctx.arc(228, 74, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#f4f1ea"; ctx.font = "800 22px Montserrat, sans-serif"; ctx.textAlign = "center"; ctx.fillText("YOSHI", 284, 82);
+    });
+    mats.yoshiGlow = new MeshStandardMaterial({ map: frontTex, emissiveMap: frontTex, emissive: new Color("#ffcf8a"), emissiveIntensity: 0, roughness: 0.6 });
+    const front = new Mesh(new PlaneGeometry(W - 6, 26), mats.yoshiGlow);
+    front.position.set(0, 14, D / 2 + 0.6);
+    g.add(front);
+    // tiled awning over the ground floor, and the main roof: a gable in dark grey tile
+    const tileM = new MeshStandardMaterial({ color: "#3b3f46", roughness: 0.8 });
+    const awn = new Mesh(new BoxGeometry(W + 6, 1.6, 12), tileM);
+    awn.position.set(0, 29, D / 2 + 4.5); awn.rotation.x = 0.32;
+    const beam = new Mesh(new BoxGeometry(W + 2, 2.4, 2), new MeshStandardMaterial({ color: "#3a2a20", roughness: 0.8 }));
+    beam.position.set(0, 27.6, D / 2 + 1.5);
+    g.add(awn, beam);
+    const roofShape = new Shape();
+    roofShape.moveTo(-D / 2 - 5, 0); roofShape.lineTo(D / 2 + 5, 0); roofShape.lineTo(0, 15); roofShape.lineTo(-D / 2 - 5, 0);
+    const roof = new Mesh(new ExtrudeGeometry(roofShape, { depth: W + 6, bevelEnabled: false }), tileM);
+    roof.rotation.y = Math.PI / 2; roof.position.set(-(W + 6) / 2, H, 0);
+    const ridge = new Mesh(new BoxGeometry(W + 10, 2.4, 3), new MeshStandardMaterial({ color: "#2a2d33", roughness: 0.8 }));
+    ridge.position.set(0, H + 15, 0);
+    g.add(roof, ridge);
+    // a vertical sign board and red paper lanterns (chōchin) along the eave
+    const signTex = canvasTexture(96, 384, (ctx) => {
+      ctx.fillStyle = "#fbf6ee"; ctx.fillRect(0, 0, 96, 384);
+      ctx.strokeStyle = CORAL; ctx.lineWidth = 8; ctx.strokeRect(4, 4, 88, 376);
+      ctx.fillStyle = "#1b1410"; ctx.font = "900 64px Montserrat, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      "YOSHI".split("").forEach((ch, i) => ctx.fillText(ch, 48, 52 + i * 70));
+    });
+    const sign = new Mesh(new BoxGeometry(8, 30, 1.4), new MeshStandardMaterial({ map: signTex, roughness: 0.7 }));
+    sign.position.set(W / 2 - 3, 25, D / 2 + 6);
+    g.add(sign);
+    mats.yoshiLantern = new MeshStandardMaterial({ color: "#d9352b", emissive: new Color("#ff6a3a"), emissiveIntensity: 0.15, roughness: 0.55 });
+    const lanGeo = new SphereGeometry(3, 12, 10); lanGeo.scale(1, 1.35, 1);
+    for (const lx of [-W / 2 + 8, -12, 12]) {
+      const lan = new Mesh(lanGeo, mats.yoshiLantern); lan.position.set(lx, 22.5, D / 2 + 6);
+      const cap = new Mesh(new CylinderGeometry(1.6, 1.6, 1, 8), new MeshStandardMaterial({ color: "#1b1410" })); cap.position.set(lx, 27, D / 2 + 6);
+      g.add(lan, cap);
+    }
+    g.rotation.y = x < 820 ? Math.PI / 2 : -Math.PI / 2;
+    g.position.set(x, 0, z);
+    g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+    parent.add(g);
+  }
+  // Casa Berero: an old Bucharest house, one storey on a stone plinth, cream plaster gone a
+  // little grey, tall shuttered windows, an arched door up three steps and a terracotta hip roof
+  function buildCasaBerero(parent, x, z) {
+    const g = new Group();
+    const W = 70, H = 30, D = 50;
+    const wallTex = canvasTexture(512, 256, (ctx) => {
+      ctx.fillStyle = "#e9dcc2"; ctx.fillRect(0, 0, 512, 256);
+      // weathered plaster
+      for (let i = 0; i < 60; i++) { ctx.fillStyle = `rgba(120,100,70,${0.03 + (i % 5) * 0.012})`; ctx.beginPath(); ctx.ellipse((i * 97) % 512, (i * 53) % 256, 20 + (i % 7) * 9, 8 + (i % 4) * 5, 0, 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillStyle = "#d8c8a8"; ctx.fillRect(0, 0, 512, 16); ctx.fillRect(0, 236, 512, 20);
+    });
+    const wall = new Mesh(new BoxGeometry(W, H, D), new MeshStandardMaterial({ map: wallTex, roughness: 0.95 }));
+    wall.position.y = H / 2 + 4;
+    const plinth = new Mesh(new BoxGeometry(W + 2, 4, D + 2), new MeshStandardMaterial({ color: "#8e8579", roughness: 1 }));
+    plinth.position.y = 2;
+    const cornice = new Mesh(new BoxGeometry(W + 4, 2.6, D + 4), new MeshStandardMaterial({ color: "#f3ead8", roughness: 0.9 }));
+    cornice.position.y = H + 4 + 1.3;
+    g.add(wall, plinth, cornice);
+    // the street facade: shuttered windows either side of the door, warm light at night
+    const faceTex = canvasTexture(512, 224, (ctx) => {
+      ctx.clearRect(0, 0, 512, 224);
+      const win = (wx) => {
+        ctx.fillStyle = "#f3ead8"; ctx.fillRect(wx - 6, 30, 84, 160);
+        ctx.fillStyle = "#2c2a26"; ctx.fillRect(wx, 38, 72, 144);
+        ctx.fillStyle = "#ffe2a8"; ctx.fillRect(wx + 6, 44, 28, 64); ctx.fillRect(wx + 38, 44, 28, 64); ctx.fillRect(wx + 6, 114, 28, 62); ctx.fillRect(wx + 38, 114, 28, 62);
+        ctx.fillStyle = "#5f7466"; ctx.fillRect(wx - 30, 36, 22, 148); ctx.fillRect(wx + 80, 36, 22, 148);
+        ctx.strokeStyle = "rgba(0,0,0,.25)"; ctx.lineWidth = 2; for (let k = 0; k < 9; k++) { ctx.beginPath(); ctx.moveTo(wx - 30, 46 + k * 16); ctx.lineTo(wx - 8, 46 + k * 16); ctx.moveTo(wx + 80, 46 + k * 16); ctx.lineTo(wx + 102, 46 + k * 16); ctx.stroke(); }
+      };
+      win(48); win(392);
+      // arched door
+      ctx.fillStyle = "#f3ead8"; ctx.beginPath(); ctx.moveTo(206, 224); ctx.lineTo(206, 70); ctx.arc(256, 70, 50, Math.PI, 0); ctx.lineTo(306, 224); ctx.fill();
+      ctx.fillStyle = "#4a3426"; ctx.beginPath(); ctx.moveTo(216, 224); ctx.lineTo(216, 72); ctx.arc(256, 72, 40, Math.PI, 0); ctx.lineTo(296, 224); ctx.fill();
+      ctx.fillStyle = "#ffe2a8"; ctx.beginPath(); ctx.arc(256, 72, 30, Math.PI, 0); ctx.fill();
+      ctx.strokeStyle = "#4a3426"; ctx.lineWidth = 4; for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(256, 72); ctx.lineTo(256 + Math.cos(Math.PI + (k + 2.5) * Math.PI / 5) * 30, 72 + Math.sin(Math.PI + (k + 2.5) * Math.PI / 5) * 30); ctx.stroke(); }
+    });
+    mats.bereroGlow = new MeshStandardMaterial({ map: faceTex, emissiveMap: faceTex, emissive: new Color("#ffd28a"), emissiveIntensity: 0, transparent: true, roughness: 0.8 });
+    const face = new Mesh(new PlaneGeometry(W - 4, 28), mats.bereroGlow);
+    face.position.set(0, 4 + 14.5, D / 2 + 0.5);
+    g.add(face);
+    // three stone steps up to the door
+    for (let k = 0; k < 3; k++) { const st = new Mesh(new BoxGeometry(16 - k * 2, 1.4, 4), new MeshStandardMaterial({ color: "#9a9184", roughness: 1 })); st.position.set(0, 0.7 + k * 1.4, D / 2 + 2 + (2 - k) * 2); g.add(st); }
+    // terracotta hip roof and a chimney
+    const roofGeo = new ConeGeometry(1, 1, 4, 1); roofGeo.rotateY(Math.PI / 4);
+    const roof = new Mesh(roofGeo, new MeshStandardMaterial({ color: "#b4552f", roughness: 0.85, flatShading: true }));
+    roof.scale.set((W + 8) * 0.71, 20, (D + 8) * 0.71); roof.position.y = H + 4 + 2.6 + 10;
+    const chim = new Mesh(new BoxGeometry(5, 12, 5), new MeshStandardMaterial({ color: "#d9c9ab", roughness: 1 }));
+    chim.position.set(-W / 4, H + 18, -D / 6);
+    g.add(roof, chim);
+    // a black enamel plaque with the name, over the door
+    const plaqueTex = canvasTexture(512, 128, (ctx) => {
+      ctx.fillStyle = "#111111"; ctx.fillRect(0, 0, 512, 128);
+      ctx.strokeStyle = "#f2f2ee"; ctx.lineWidth = 6; ctx.strokeRect(10, 10, 492, 108);
+      ctx.fillStyle = "#f2f2ee"; ctx.font = "800 58px Montserrat, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("CASA BERERO", 256, 66);
+    });
+    const plaque = new Mesh(new BoxGeometry(26, 6.5, 1), new MeshStandardMaterial({ map: plaqueTex, roughness: 0.4 }));
+    plaque.position.set(0, H + 0.5, D / 2 + 0.9);
+    g.add(plaque);
+    g.rotation.y = x < 820 ? Math.PI / 2 : -Math.PI / 2;
+    g.position.set(x, 0, z);
+    g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+    parent.add(g);
+  }
   // Tâmpa, the mountain over Brașov's old town: a long NE–SW limestone ridge (~400 m above
   // the city), rounded crest, steep rocky face on the city side, covered in beech and fir
   // forest, no snow; the white BRASOV letters stand on the city-facing slope near the top.
@@ -25715,10 +25847,6 @@ void main() {
       w: 72, h: 58, d: 48, wall: "#797c69", trim: "#efe9dc", glass: "#2a2c24", ink: "#efe9dc", boardInk: "#2a2c24" });
     buildStreetShop(parent, { key: "pastiziaGlow", name: "PASTIZIA", label: "pastizzeria", x: 930, z: 5900,
       w: 66, h: 54, d: 46, wall: "#c62a22", trim: "#fff1de", glass: "#3a0c09", ink: "#fff1de", boardInk: "#c62a22" });
-    buildStreetShop(parent, { key: "blankAGlow", name: "YOUR BRAND", label: "coming soon", x: 930, z: 4800,
-      w: 62, h: 50, d: 44, wall: "#e9e4d6", trim: "#0a0a0a", glass: "#cfc8b6", ink: "#0a0a0a", boardInk: "#f2f2f2" });
-    buildStreetShop(parent, { key: "blankBGlow", name: "YOUR BRAND", label: "coming soon", x: 706, z: 4420,
-      w: 62, h: 50, d: 44, wall: "#e9e4d6", trim: "#0a0a0a", glass: "#cfc8b6", ink: "#0a0a0a", boardInk: "#f2f2f2" });
     // Romexpo avenue: a straight road off Coffee Street, lined with hedges and round trees
     const g = new Group();
     const x0 = 850, x1 = 975, zc = 5140, len = x1 - x0, W = 40;
@@ -25745,6 +25873,49 @@ void main() {
         g.add(tr, cr);
       }
     }
+    // r77: a proper approach to Romexpo: lamp posts with warm globes, garlands of bulbs strung
+    // across the road between them, and flower planters along both kerbs
+    const postM = new MeshStandardMaterial({ color: "#26292e", roughness: 0.6, metalness: 0.3 });
+    const globeM = mats.festoon || new MeshStandardMaterial({ color: "#fff0c4", emissive: "#ffca6a", emissiveIntensity: 0.1 });
+    globeM.userData.outlineParameters = { visible: false };
+    const lampXs = [];
+    for (let x = x0 + 30; x < x1 - 4; x += 30) lampXs.push(x);
+    for (const side of [-1, 1]) {
+      const zl = zc + side * (W / 2 + 3);
+      for (const x of lampXs) {
+        const post = new Mesh(new CylinderGeometry(0.7, 1.1, 30, 8), postM); post.position.set(x, 15, zl);
+        const arm = new Mesh(new BoxGeometry(1, 1, 6), postM); arm.position.set(x, 29.5, zl - side * 2.5);
+        const globe = new Mesh(new SphereGeometry(2.6, 12, 10), globeM); globe.position.set(x, 31.5, zl - side * 5);
+        g.add(post, arm, globe);
+      }
+      // planters: stone boxes overflowing with pink, yellow and white flowers
+      const potM = new MeshStandardMaterial({ color: "#d9cfbe", roughness: 1 });
+      const leafM = new MeshStandardMaterial({ color: "#3f8f46", roughness: 0.9, flatShading: true });
+      const flowerCols = ["#ff7eb6", "#FED012", "#ffffff", "#F4876F", "#B098C8"];
+      for (let x = x0 + 15; x < x1 - 4; x += 30) {
+        const pot = new Mesh(new BoxGeometry(12, 4.5, 6), potM); pot.position.set(x, 2.25, zc + side * (W / 2 + 6));
+        const bush = new Mesh(new IcosahedronGeometry(4.2, 0), leafM); bush.scale.set(1.5, 0.7, 0.8); bush.position.set(x, 6, zc + side * (W / 2 + 6));
+        g.add(pot, bush);
+        for (let k = 0; k < 7; k++) {
+          const flM = new MeshStandardMaterial({ color: flowerCols[(k + Math.round(x)) % flowerCols.length], roughness: 0.7 });
+          flM.userData.outlineParameters = { visible: false };
+          const fl = new Mesh(new SphereGeometry(1.1, 6, 5), flM);
+          fl.position.set(x - 5 + k * 1.7, 7.4 + (k % 2) * 0.9, zc + side * (W / 2 + 6) + ((k % 3) - 1) * 1.6);
+          g.add(fl);
+        }
+      }
+    }
+    // garlands: one sagging string of bulbs across the road at every lamp pair
+    const bulbGeoA = new SphereGeometry(0.95, 8, 6);
+    const nB = 9, garlands = new InstancedMesh(bulbGeoA, globeM, lampXs.length * nB), gm = new Matrix4();
+    lampXs.forEach((x, i) => {
+      const za = zc - (W / 2 - 2), zb = zc + (W / 2 - 2);
+      const pts = [];
+      for (let k = 0; k <= 16; k++) { const t = k / 16; pts.push(new Vector3(x, 30 - Math.sin(t * Math.PI) * 7, za + (zb - za) * t)); }
+      g.add(new Line(new BufferGeometry().setFromPoints(pts), new LineBasicMaterial({ color: "#2a2620" })));
+      for (let k = 0; k < nB; k++) { const t = (k + 0.5) / nB; gm.makeTranslation(x, 28.6 - Math.sin(t * Math.PI) * 7, za + (zb - za) * t); garlands.setMatrixAt(i * nB + k, gm); }
+    });
+    g.add(garlands);
     g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     parent.add(g);
   }
@@ -26748,8 +26919,8 @@ void main() {
       lp.position.set(imgSrc ? x2 + h2 * 0.45 : x2, y2, Dd / 2 + 2.1);
       g.add(lp);
     };
-    signBoard(46, 17, "#ffffff", -28, H0 + 16, null, ["STEAM", "coffee shop"], "#111111");
-    signBoard(46, 17, "#119BFE", 30, H0 + 16, null, ["CRAFT", "coffee equipment"], "#ffffff");
+    // (r77: the big STEAM / CRAFT boards are gone; the names on the fascia carry the brands)
+    void signBoard;
     const fasciaTex = canvasTexture(1024, 64, (ctx) => {
       ctx.fillStyle = "#55595e"; ctx.fillRect(0, 0, 1024, 64);
       ctx.fillStyle = "#ffffff"; ctx.textBaseline = "middle";
@@ -27699,12 +27870,10 @@ void main() {
     buildSteamShop(world);
     buildStreetShop(world, { key: "sipGlow", name: "SIP", label: "coffee & wine", x: 706, z: 5000,
       w: 66, h: 54, d: 46, wall: "#2b2620", trim: "#C9A227", glass: "#1a1712", ink: "#C9A227", boardInk: "#14120c" });
-    buildStreetShop(world, { key: "yoshiGlow", name: "YOSHI", label: "izakaya", x: 706, z: 5360,
-      w: 62, h: 50, d: 44, wall: "#7a2018", trim: "#F65342", glass: "#2a0f0b", ink: "#ffd9c4", boardInk: "#fff2ec" });
+    buildIzakaya(world, 706, 5360);
     buildStreetShop(world, { key: "omaGlow", name: "oma", label: "coffee \u00B7 Bra\u0219ov", x: 706, z: 4640,
       w: 70, h: 56, d: 48, wall: "#F3EEC3", trim: "#4a7c4e", glass: "#274a2c", ink: "#F5F0C8", boardInk: "#F5F0C8" });
-    buildStreetShop(world, { key: "bereroGlow", name: "BERERO", label: "BERERO", x: 706, z: 5720,
-      w: 64, h: 60, d: 46, wall: "#151515", trim: "#f2f2ee", glass: "#0b0b0b", ink: "#f2f2ee", boardInk: "#111111" });
+    buildCasaBerero(world, 706, 5720);
     buildBrasov(world);
     buildCoffeeStreetAdds(world);
     buildPeople(world);
@@ -28708,6 +28877,8 @@ void main() {
     });
     return acc;
   }
+  // round portraits for the crew card: drop a URL (or an asset variable) per name to show a face
+  var CREW_FACES = {};
   function crewPhoto(i, cls) {
     const ph = CREW_PHOTOS[i % CREW_PHOTOS.length];
     const img = el("img", cls);
@@ -28924,7 +29095,7 @@ void main() {
     "Craft Coffee": { c: "#119BFE", t: "#ffffff" },
     "Artisan Coffee Gear": { c: "#797c69", t: "#ffffff" },
     "Sip": { c: "#C9A227", t: "#14120c" },
-    "Yoshi Izakaya": { c: "#F65342", t: "#ffffff" },
+    "Yoshi Izakaya": { c: "#F4876F", t: "#2a0f0b" },
     "OMA Coffee": { c: "#4a7c4e", t: "#F5F0C8" },
     "Berero": { c: "#f4f4f0", t: "#111111" },
     "Investimental": { c: "#119BFE", t: "#ffffff" },
@@ -29068,14 +29239,18 @@ void main() {
       box.appendChild(pills);
     }
     if (stopId === "team") {
-      const badges = el("div", "ms-badges");
+      // the crew as faces: a round portrait per human with a name tag; until a portrait is in
+      // CREW_FACES (name -> image URL) the circle shows their initial in their colour
+      const grid = el("div", "crew-faces");
       CREW.forEach((n, i) => {
-        const b = el("button", "team-mini", n);
-        b.style.background = CREW_COLORS[i % CREW_COLORS.length];
+        const col = CREW_COLORS[i % CREW_COLORS.length], src = CREW_FACES[n];
+        const b = el("button", "crew-face", `<span class="cf-ring" style="--cc:${col}">${src ? `<img src="${src}" alt="" loading="lazy">` : `<b>${n.replace(/[^A-Za-zĂÂÎȘȚăâîșț]/g, "").slice(0, 1)}</b>`}</span><span class="cf-tag" style="--cc:${col}">${n}</span>`);
+        b.setAttribute("aria-label", `Meet ${n}`);
+        b.style.setProperty("--d", `${i * 45}ms`);
         b.onclick = () => api.openHuman(i);
-        badges.appendChild(b);
+        grid.appendChild(b);
       });
-      box.appendChild(badges);
+      box.appendChild(grid);
     }
     if (stopId === "services") box.appendChild(servicesAccordion());
     if (stopId === "end") {
@@ -29507,7 +29682,9 @@ void main() {
       closeMenus();
       chapterMenu.classList.toggle("open", !o);
     };
-    hud.append(modeBtn, vehBtn, themeBtn, wxBtn, vehMenu, themeMenu);
+    // the website link sits up top, next to YOU + YOUR BRAND; the weather leads the control row
+    header.appendChild(modeBtn);
+    hud.append(wxBtn, vehBtn, themeBtn, vehMenu, themeMenu);
     wxBtn.classList.add("gone");
     hud.appendChild(chapterMenu);
     chapterMenu.style.display = "none";
@@ -30987,6 +31164,7 @@ void main() {
         if (mats.carLamp) mats.carLamp.emissiveIntensity = dark ? 1.5 : 0;
         if (mats.carTail) mats.carTail.emissiveIntensity = dark ? 1.8 : 0;
         if (mats.yoshiGlow) mats.yoshiGlow.emissiveIntensity = dark ? 1 : 0;
+        if (mats.yoshiLantern) mats.yoshiLantern.emissiveIntensity = dark ? 2.2 : 0.15;
         if (mats.omaGlow) mats.omaGlow.emissiveIntensity = dark ? 1 : 0;
         if (mats.bereroGlow) mats.bereroGlow.emissiveIntensity = dark ? 1 : 0;
         for (const k of ["artisanGlow", "pastiziaGlow", "blankAGlow", "blankBGlow"]) if (mats[k]) mats[k].emissiveIntensity = dark ? 1 : 0;
@@ -31219,6 +31397,7 @@ void main() {
           }
           ui.card.classList.remove("hidden");
           ui.card.classList.toggle("contact", id === "contact");
+          ui.card.classList.toggle("crew-card", id === "team");
           ui.card.classList.toggle("manifesto", id === "manifesto");
           ui.resetSheet();
           if (!isMobile()) {
@@ -31265,6 +31444,12 @@ void main() {
           const minTop = 0.243 * H + 10, maxBottom = H - (zk === "r" ? 160 : 24);
           top = clamp2(zy + (zh - ch) / 2, minTop, Math.max(minTop, maxBottom - ch));
         } else top = zy + fy * (zh - ch);
+        // the crew card is wide: it docks bottom-right, beside the dial and under the two route
+        // buttons that float over the fork at this point of the road
+        if (id === "team") {
+          left = W - cw - 150;
+          top = Math.max(0.24 * H, H - ch - 24);
+        }
         c.style.left = `${Math.round(left)}px`;
         c.style.top = `${Math.round(top)}px`;
         c.style.right = "auto";
@@ -32668,10 +32853,10 @@ void main() {
           povYawT = clamp2(povYawT, -1.75, 1.75);
           if (!povKeys.l && !povKeys.r && now - povLastKey > 4000) povYawT *= Math.exp(-dt * 0.8);
           // the head turns towards Steam on its own as you pass it, unless you are steering
-          // a gentle glance at the landmarks as you pass: OMA on the right, then Steam on the left
+          // a gentle glance at Steam on the left as you pass (no turn towards OMA: the street stays ahead)
           let auto = 0;
           if (now - povLastKey > 2500) {
-            for (const [lx, lz, key] of [[706, 4640, "omalook"], [985, 5640, "steamcam"]]) {
+            for (const [lx, lz, key] of [[985, 5640, "steamcam"]]) {
               let ns = clamp2(1 - Math.abs(state.L - routeLAt(key, lx, lz)) / 340, 0, 1);
               if (ns <= 0) continue;
               ns = ns * ns * (3 - 2 * ns);
@@ -32683,11 +32868,12 @@ void main() {
           povYaw = smooth(povYaw, povYawT + auto, dt, 2.2);
           if (povK > 1e-3) {
             const hd = Math.atan2(carTan.x, carTan.z) + povYaw;
-            const eye = new Vector3(carPos.x + carTan.x * 6, carPos.y + 17, carPos.z + carTan.z * 6);
+            // a wide street-level lens: higher and a little behind, so both kerbs fit in frame
+            const eye = new Vector3(carPos.x - carTan.x * 8, carPos.y + 21, carPos.z - carTan.z * 8);
             const look = new Vector3(eye.x + Math.sin(hd) * 240, eye.y + 6, eye.z + Math.cos(hd) * 240);
             camPos.lerp(eye, povK);
             camTarget.lerp(look, povK);
-            const fov = camera.fov + (64 - camera.fov) * povK;
+            const fov = camera.fov + (78 - camera.fov) * povK;
             if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
           }
           ui.setPovHint(povK > 0.6);

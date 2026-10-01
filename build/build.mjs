@@ -9,6 +9,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { jsonLd, llmsTxt, robotsTxt, sitemapXml, manifest, icoFromPng } from "./seo.mjs";
 import { makeRender } from "../site/render.mjs";
+import { kineticBundle } from "./kinetic.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = (f) => join(root, "src", f);
@@ -133,8 +134,19 @@ try {
 const siteCssName = `assets/site.${hash(siteCss)}.css`, siteJsName = `assets/site.${hash(siteJs)}.js`;
 writeFileSync(join(pub, siteCssName), siteCss);
 writeFileSync(join(pub, siteJsName), siteJs);
-const FONTS = "https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=JetBrains+Mono:wght@700&display=swap";
-const R = makeRender({ SITE: SITE_URL, A, cssHref: "/" + siteCssName, jsHref: "/" + siteJsName, fonts: FONTS });
+const FONTS = "https://fonts.googleapis.com/css2?family=Montserrat:wght@800&family=Poppins:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=JetBrains+Mono:wght@700&display=swap";
+// the drive's kinetic intro, as the website's hero (loaded after the page has painted)
+let kz = null;
+try {
+  const K = kineticBundle(js, css);
+  const kjs = `assets/kinetic.${hash(K.js)}.js`, kcss = `assets/kinetic.${hash(K.css)}.css`;
+  writeFileSync(join(pub, kjs), K.js);
+  let kc = K.css;
+  try { const { transformSync } = await import("esbuild"); kc = transformSync(kc, { loader: "css", minify: true }).code; } catch {}
+  writeFileSync(join(pub, kcss), kc);
+  kz = { js: "/" + kjs, css: "/" + kcss };
+} catch (e) { console.warn("[build] kinetic hero skipped:", e.message.split("\n")[0]); }
+const R = makeRender({ SITE: SITE_URL, A, cssHref: "/" + siteCssName, jsHref: "/" + siteJsName, fonts: FONTS, kz });
 const page = (path, html) => { mkdirSync(join(pub, path), { recursive: true }); writeFileSync(join(pub, path, "index.html"), html); };
 page("site", R.home());
 for (const slug of R.slugs) page(`work/${slug}`, R.casePage(slug));

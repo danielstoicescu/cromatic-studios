@@ -284,3 +284,11 @@ a.pcard:hover .pc-cta i { transform: translateX(5px); }
 .js .rv.in { opacity: 1; transform: none; }
 .cb-media.n1 video { max-height: 78vh; width: auto; max-width: 100%; }
 .cb-media.n1:has(video) { justify-items: start; }
+
+/* hero headline: the manifesto the intro animates */
+.h-manif { font-size: clamp(34px, 4.4vw, 60px); font-weight: 900; line-height: 1.08; letter-spacing: -.03em; margin: 0 0 26px; max-width: 15em; }
+.h-manif mark { font-style: normal; padding: 0 .18em; border-radius: .2em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.h-manif mark:nth-of-type(2) { background: var(--b); } .h-manif mark:nth-of-type(3) { background: var(--r); } .h-manif mark:nth-of-type(4) { background: var(--g); }
+/* while the intro is about to play, the first fold waits behind it */
+html.kz-wait .hero, html.kz-wait .hdr { visibility: hidden; }
+html.kz-wait body { background: #FED012; }
