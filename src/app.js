@@ -26351,18 +26351,18 @@ void main() {
               if (j === 0 && Math.abs(Math.abs(x) - 2.8) < 0.5) continue;
               const inner = Math.abs(x) < hw0 + 4 && Math.abs(y) < hh0 + 4;
               const d = Math.hypot(x, y - y0);
-              const delay = inner ? d * 30 : 950 + d * 13;
+              const delay = inner ? d * 22 : 600 + d * 9;
               const from = new Vector3(x * 0.35 + (Math.random() - 0.5) * 10, y * 0.35 + (Math.random() - 0.5) * 10, -80 - Math.random() * 40);
               const c = make(2 + n, from, new Vector3(x, y, 0), { k: 4.2, s0: 0.4, s: 1, spin: 12 + Math.random() * 5, spinT: 3, delay });
               setTimeout(() => { c.sync = true; }, delay + 900);
               n++;
             }
           }
-          await sleep(1300);
+          await sleep(700);
           // pull way back: five times more cups on screen
-          await new Promise((res) => { camAnim = { t0: performance.now(), dur: 1500, from: cam.position.z, to: CAMOUT, cb: res }; });
+          await new Promise((res) => { camAnim = { t0: performance.now(), dur: 1100, from: cam.position.z, to: CAMOUT, cb: res }; });
           await new Promise((res) => hold(res));
-          await sleep(750);
+          await sleep(250);
         },
         leave() {
           return new Promise((res) => {
@@ -26372,9 +26372,9 @@ void main() {
               const [, hhO] = half(CAMOUT);
               const dl = (1 - (c.pos.y + hhO) / (2 * hhO)) * 0 + ((c.pos.y + hhO) / (2 * hhO)) * 0;
               const rowT = Math.max(0, Math.min(1, (c.pos.y + hhO) / (2 * hhO)));
-              setTimeout(() => { c.k = 2.2; c.tgt.y += hhO * 2.8; c.tgt.z += (Math.random() - 0.5) * 18; c.tgt.x += (Math.random() - 0.5) * 4; c.sT = 0.9; }, rowT * 520 + Math.random() * 120 + dl);
+              setTimeout(() => { c.k = 2.8; c.tgt.y += hhO * 2.8; c.tgt.z += (Math.random() - 0.5) * 18; c.tgt.x += (Math.random() - 0.5) * 4; c.sT = 0.9; }, rowT * 380 + Math.random() * 90 + dl);
             }
-            leaving = { t0: performance.now(), dur: 1500, cb: () => { clear(); res(); } };
+            leaving = { t0: performance.now(), dur: 1100, cb: () => { clear(); res(); } };
           });
         }
       };
@@ -26860,7 +26860,7 @@ void main() {
       ctx.fillText("Muni\u021Biei 5", 174, 566);
       ctx.font = '600 19px "JetBrains Mono", monospace';
       ctx.fillStyle = "rgba(0,0,0,0.72)";
-      ctx.fillText("CROMATIC STUDIOS \xB7 2012", 174, 588);
+      ctx.fillText("CROMATIC STUDIOS \xB7 2014", 174, 588);
     });
     const face = new Mesh(new PlaneGeometry(72, 150), new MeshBasicMaterial({ map: tex }));
     face.rotation.y = Math.PI;
@@ -29104,7 +29104,7 @@ void main() {
   // ---------- Classic Site: the same story, read as a page ----------
   var VEH_GLYPH = { groovy: "\u{1F690}", f1: "\u{1F3CE}\uFE0F", monopoly: "\u{1F697}", plane: "\u2708\uFE0F", scooter: "\u{1F6F4}", foodvan: "\u{1F69A}", cop: "\u{1F693}", lava: "\u{1F3CE}\uFE0F", sub: "\u{1F420}" };
   var OFFICES = [
-    { addr: "Strada Muniției 5", year: "2012", c: "#FED012", note: "One table, two people and a company name written on a napkin." },
+    { addr: "Strada Muniției 5", year: "2014", c: "#FED012", note: "One table, two people and a company name written on a napkin." },
     { addr: "Strada Trifești 5", year: "", c: "#119BFE", note: "The second desk. Still small, already stubborn." },
     { addr: "Strada George Călinescu 54", year: "2016", c: "#28C840", note: "The villa with the red mansard, across the street from Two Minutes." },
     { addr: "Strada Mircea Eliade 18", year: "2019", c: "#F65342", note: "More room, more people, the first proper studio floor." },
@@ -29428,9 +29428,14 @@ void main() {
       vehMenu.classList.toggle("open", !o);
       document.body.classList.toggle("menu-open", !o);
     };
-    const modeBtn = el("button", "round-btn mode", "\u2637");
-    modeBtn.title = "Read it as a website";
-    modeBtn.onclick = () => { closeMenus(); api.toggleSite(); };
+    // the content-first website lives at /site/ (built by build/build.mjs); a local single-file copy
+    // or a preview with no server falls back to the in-page reading mode
+    const hasSitePage = /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname);
+    const modeBtn = el(hasSitePage ? "a" : "button", "site-btn", `<span class="sb-ic" aria-hidden="true"><i></i><i></i><i></i></span><span class="sb-txt"><i class="mono">LO-FI \xB7 CONTENT FIRST</i><b>Normal website</b></span><span class="sb-short">Site</span>`);
+    modeBtn.title = "The same story as a normal, fast website: no driving";
+    modeBtn.setAttribute("aria-label", "Open the normal website, content first");
+    if (hasSitePage) modeBtn.href = "/site/";
+    else modeBtn.onclick = () => { closeMenus(); api.toggleSite(); };
     const orb = `<svg viewBox="0 0 40 40" aria-hidden="true"><g class="mb-spin">
       <circle cx="20" cy="13" r="9" fill="#FED012"/><circle cx="13.5" cy="24.5" r="9" fill="#119BFE"/><circle cx="26.5" cy="24.5" r="9" fill="#F65342"/>
       <circle cx="20" cy="13" r="9" fill="none" stroke="#0a0a0a" stroke-width="1.6"/><circle cx="13.5" cy="24.5" r="9" fill="none" stroke="#0a0a0a" stroke-width="1.6"/><circle cx="26.5" cy="24.5" r="9" fill="none" stroke="#0a0a0a" stroke-width="1.6"/></g>
@@ -29731,7 +29736,7 @@ void main() {
       if (!d) return;
       casePage.className = `scf-modal case-page ${d.cls}`;
       casePage.innerHTML = `
-      <button class="scf-back mono">\u2190 BACK TO THE MAP</button>
+      <button class="scf-back cf-close" aria-label="Close">\u00D7</button>
       <div class="scf-scroll">
         <section class="cp-hero">
           <span class="eyebrow">${d.eyebrow}</span>
@@ -29805,7 +29810,7 @@ void main() {
     let scfSeen = false;
     const scfModal = el("div", "scf-modal hidden");
     scfModal.innerHTML = `
-    <button class="scf-back mono">\u2190 BACK TO THE MAP</button>
+    <button class="scf-back cf-close" aria-label="Close">\u00D7</button>
     <div class="scf-load"><span class="scf-spin"></span><span class="mono">LOADING THE FULL CASE STUDY\u2026</span></div>
     <iframe class="scf-frame" title="Slow Coffee Festival History \u00B7 Cromatic Studios" allow="autoplay; fullscreen" loading="lazy"></iframe>
     <div class="scf-scroll">
@@ -30168,6 +30173,16 @@ void main() {
     const poiRail = el("div", "poi-rail");
     const poiRailL = el("div", "poi-rail left");
     root.append(poiRail, poiRailL);
+    // phones: both rails share one column under the controls, one card per row, stacking
+    // downwards when several brands are in view (desktop keeps the two side rails)
+    const poiCol = el("div", "poi-col");
+    root.appendChild(poiCol);
+    {
+      const mq = window.matchMedia("(max-width: 760px)");
+      const dock = () => { if (mq.matches) poiCol.append(poiRail, poiRailL); else root.insertBefore(poiRailL, poiCol), root.insertBefore(poiRail, poiRailL); };
+      dock();
+      mq.addEventListener?.("change", dock);
+    }
     const asLeftCard = (btn, brand, name, line, cta) => {
       const b = BRANDC[brand] || { c: "#111111", t: "#ffffff" };
       btn.classList.add("poi-card", "out");
@@ -30267,8 +30282,7 @@ void main() {
       yoshiTag,
       setSiteBtn(on) {
         modeBtn.classList.toggle("on", on);
-        modeBtn.textContent = on ? "\u2637" : "\u2637";
-        modeBtn.title = on ? "Back to driving" : "Read it as a website";
+        modeBtn.title = on ? "Back to driving" : "The same story as a normal, fast website: no driving";
       },
       bannerBottom() {
         const r = toastCol.getBoundingClientRect();
@@ -32705,7 +32719,7 @@ void main() {
         if (schemeId === "nightlife" && state.weatherOn) wx = "rain";
         {
           const rawWx = schemeId === "nightlife" ? "rain" : weatherState(prog);
-          ui.setRainBtn(rawWx === "rain" && schemeId !== "monument" && schemeId !== "underwater" && !siteMode);
+          ui.setRainBtn(schemeId !== "monument" && schemeId !== "underwater" && !siteMode);
         }
         if (coffee.sunny > 0) wx = "sun";
         // Monument Valley never rains: the weather only moves the sun between noon and dusk

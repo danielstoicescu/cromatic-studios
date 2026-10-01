@@ -117,6 +117,10 @@ function serve(req, res) {
   path = normalize(path).replace(/\\/g, "/");
   if (path.endsWith("/")) path += "index.html";
   // one page: "/" is the site, anything else unknown is a real 404 (no soft 404s for search engines)
+  if (!path.endsWith("/") && !extname(path) && files.has(path + "/index.html")) {
+    res.writeHead(301, { Location: path + "/" + (req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "") });
+    return res.end();
+  }
   let f = files.get(path), status = 200;
   if (!f) { f = files.get("/404.html"); status = 404; }
   if (!f) { res.writeHead(404, { "Content-Type": "text/plain" }); return res.end("Not found"); }

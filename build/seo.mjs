@@ -9,7 +9,7 @@ export const STUDIO = {
   street: "Strada Olari 9",
   city: "București",
   country: "RO",
-  founded: "2012",
+  founded: "2014",
   description: "Independent creative studio in Bucharest, Romania: brand strategy, identity design, websites and apps, video production and content for growth."
 };
 
@@ -132,7 +132,13 @@ ${FAQ.map(([q, a]) => `### ${q}\n\n${a}`).join("\n\n")}
 
 ## Links
 
-- [The drive (this site)](${SITE}/)
+- [The drive (this site, 3D)](${SITE}/)
+- [The website, content first](${SITE}/site/)
+- [Case study: Slow Coffee Festival](${SITE}/work/slow-coffee-festival/)
+- [Case study: Two Minutes and Two Min Lab](${SITE}/work/two-minutes/)
+- [Case study: Steam Coffee Shop](${SITE}/work/steam/)
+- [Case study: Artisan Coffee Gear](${SITE}/work/artisan-coffee-gear/)
+- [Case study: Craft Coffee](${SITE}/work/craft-coffee/)
 - [Cromatic Studios main website](${STUDIO.legalUrl})
 - [Directions to Strada Olari 9](https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti)
 `;
@@ -152,7 +158,7 @@ Sitemap: ${SITE}/sitemap.xml
 `;
 }
 
-export function sitemapXml(SITE, lastmod) {
+export function sitemapXml(SITE, lastmod, more = []) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
@@ -160,6 +166,7 @@ export function sitemapXml(SITE, lastmod) {
     <lastmod>${lastmod}</lastmod>
     <image:image><image:loc>${SITE}/og.jpg</image:loc></image:image>
   </url>
+${more.map((p) => `  <url><loc>${SITE}${p}</loc><lastmod>${lastmod}</lastmod></url>`).join("\n")}
 </urlset>
 `;
 }
