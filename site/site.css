@@ -292,3 +292,52 @@ a.pcard:hover .pc-cta i { transform: translateX(5px); }
 /* while the intro is about to play, the first fold waits behind it */
 html.kz-wait .hero, html.kz-wait .hdr { visibility: hidden; }
 html.kz-wait body { background: #FED012; }
+
+/* crew: round faces with name tags */
+.crew { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px 10px; }
+.crew li { all: unset; display: flex; flex-direction: column; align-items: center; transform: none !important; }
+.cr-face { width: 84px; height: 84px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--cc); overflow: hidden; box-shadow: 0 4px 0 var(--ink); transition: transform .3s var(--eoq); }
+.cr-face img { width: 100%; height: 100%; object-fit: cover; }
+.crew li:hover .cr-face { transform: translateY(-4px) rotate(-4deg); }
+.cr-name { margin-top: -10px; position: relative; padding: 4px 10px; border-radius: 999px; border: 2px solid var(--ink); background: var(--cc); font-weight: 800; font-size: 13px; }
+@media (max-width: 600px) { .crew { grid-template-columns: repeat(3, 1fr); } .cr-face { width: 72px; height: 72px; } }
+
+/* ---- brand canvas: a horizontal page ---- */
+.cv-hero { padding-bottom: 10px; }
+.cv-hero h1 { max-width: 14em; }
+.cv { position: relative; background: var(--paper); }
+.cv-sticky { position: sticky; top: 72px; height: calc(100vh - 72px); height: calc(100svh - 72px); overflow: hidden; display: flex; flex-direction: column; justify-content: center; outline: none; }
+.cv-track { will-change: transform; padding: 0 5vw; width: max-content; }
+.cv-stage { position: relative; height: calc(100vh - 72px - 110px); height: calc(100svh - 72px - 110px); aspect-ratio: var(--ar); }
+.cv-bg, .cv-el { position: absolute; display: block; max-width: none; }
+.cv-bg { inset: 0; width: 100%; height: 100%; }
+.cv-el { height: auto; opacity: 0; transform: translateY(26px) scale(.94); transition: opacity .6s var(--eoq), transform .9s cubic-bezier(.34, 1.4, .64, 1); }
+.cv-el.k-txt { transform: translateX(-18px); }
+.cv-el.k-img { transform: translateY(18px) scale(.96); transition-duration: .8s, 1.1s; }
+.cv-el.k-mas { transform: translateY(40px) rotate(-6deg) scale(.8); }
+.cv-el.in { opacity: 1; transform: none; }
+.cv-el.k-mas.in { animation: cvFloat 5.5s ease-in-out calc(var(--k) * -0.37s) infinite; }
+@keyframes cvFloat { 0%, 100% { translate: 0 0; rotate: 0deg; } 50% { translate: 0 -1.2%; rotate: 1.4deg; } }
+.cv-el.k-mas:hover { scale: 1.06; transition: scale .3s var(--eoq); }
+.cv-hint { position: absolute; left: 50%; bottom: 46px; translate: -50% 0; margin: 0; padding: 8px 14px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 10.5px; transition: opacity .4s; }
+.cv-hint i { font-style: normal; display: inline-block; animation: cvNudge 1.2s ease-in-out infinite; }
+@keyframes cvNudge { 50% { transform: translateX(5px); } }
+.cv.moved .cv-hint { opacity: 0; }
+.cv-mob { display: none; }
+.cv-bar { position: absolute; left: 5vw; right: 5vw; bottom: 22px; height: 4px; border-radius: 4px; background: rgba(13,12,9,.1); overflow: hidden; }
+.cv-bar i { display: block; height: 100%; width: 100%; background: var(--bc); transform-origin: left; transform: scaleX(var(--p, 0)); }
+@media (max-width: 760px), (pointer: coarse) {
+  .cv-sticky { position: relative; top: 0; height: auto; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; padding: 10px 0 64px; scrollbar-width: none; cursor: grab; }
+  .cv-sticky::-webkit-scrollbar { display: none; }
+  .cv-track { transform: none !important; padding: 0 16px; }
+  .cv-stage { height: min(72svh, 520px); }
+  .cv-hint { position: sticky; left: 50%; bottom: auto; margin: 10px 0 0; width: max-content; translate: -50% 0; }
+  .cv-desk { display: none; } .cv-mob { display: inline; }
+  .cv-bar { position: sticky; left: 16px; right: auto; width: calc(100vw - 32px); bottom: auto; margin-top: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .cv-el { opacity: 1; transform: none; transition: none; animation: none !important; } }
+/* inside the drive (opened full screen from the map): only the canvas */
+html.embed .hdr, html.embed .cv-hero, html.embed .c-end, html.embed .ftr, html.embed .skip { display: none; }
+html.embed .cv-sticky { top: 0; height: 100vh; height: 100svh; }
+html.embed .cv-stage { height: calc(100vh - 90px); height: calc(100svh - 90px); }
+@media (max-width: 760px), (pointer: coarse) { html.embed .cv-stage { height: calc(100svh - 120px); } html.embed body { overflow: hidden; } }

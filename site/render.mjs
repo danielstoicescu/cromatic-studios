@@ -1,14 +1,14 @@
 // Renders the lo-fi website: /site/ (home) and /work/<slug>/ (case pages). Plain HTML, a small
 // stylesheet and a few lines of script; no WebGL. `A(name)` resolves an asset variable from
 // src/app.js to { src, w, h } (src is root-relative, e.g. /assets/abc.png).
-import { NAV, CHAPTERS, SERVICES, PROJECTS, CLIENT_BADGES, FRIENDS, CREW, CREW_COLORS, CREW_PHOTOS, OFFICES, FORM, CASES } from "./data.mjs";
+import { NAV, CHAPTERS, SERVICES, PROJECTS, CLIENT_BADGES, FRIENDS, CREW, CREW_COLORS, CREW_PHOTOS, CREW_FACE_VARS, FORM, CASES, CANVASES } from "./data.mjs";
 import { STUDIO, FAQ } from "../build/seo.mjs";
 
 const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const strip = (h) => String(h).replace(/<[^>]+>/g, "");
 const STAR = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0 L14.6 7.2 L21.5 4.2 L17.4 10.5 L24 12 L17.4 13.5 L21.5 19.8 L14.6 16.8 L12 24 L9.4 16.8 L2.5 19.8 L6.6 13.5 L0 12 L6.6 10.5 L2.5 4.2 L9.4 7.2 Z"/></svg>`;
 
-export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz }) {
+export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz, canvases = {} }) {
   const img = (name, alt = "", cls = "", eager = false) => {
     const a = A(name);
     if (!a) return "";
@@ -204,14 +204,10 @@ ${header(true)}
       <div>
         <p class="eyebrow mono">The crew</p>
         <h2 class="ptitle">${pill("Brilliant", "#28C840", -2)}${pill("humans", "#B098C8", 1.5)}</h2>
-        <p class="sec-lead">We discover AI every day, but we are strong believers in the collective power of brilliant humans. Twelve of them, in a house at Strada Olari 9.</p>
-        <ul class="crew">${CREW.map((n, i) => `<li style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}">${esc(n)}</li>`).join("")}</ul>
+        <p class="sec-lead">We discover AI every day, but we are strong believers in the collective power of brilliant humans. Ten of them, in a house at Strada Olari 9.</p>
+        <ul class="crew">${CREW.map((n, i) => { const f = A(CREW_FACE_VARS[n]); return `<li style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}"><span class="cr-face">${f ? `<img src="${f.src}" width="${f.w}" height="${f.h}" alt="" loading="lazy" decoding="async">` : ""}</span><span class="cr-name">${esc(n)}</span></li>`; }).join("")}</ul>
       </div>
       <div class="photos">${CREW_PHOTOS.map((p) => `<figure><img src="${p.src}" alt="${esc(p.cap)}" loading="lazy" decoding="async" width="600" height="450"><figcaption class="mono">${esc(p.cap)}</figcaption></figure>`).join("")}</div>
-    </div>
-    <div class="wrap">
-      <h3 class="tl-h">Six addresses, one studio</h3>
-      <ol class="tl">${OFFICES.map((o) => `<li style="--oc:${o.c}"><b>${esc(o.addr)}</b><span class="mono">${esc(o.year || "·")}</span><p>${esc(o.note)}</p></li>`).join("")}</ol>
     </div>
   </section>
 
@@ -302,5 +298,59 @@ ${header(false)}
 ${footer}`;
   }
 
-  return { home, casePage, slugs: Object.keys(CASES) };
+
+  // a brand canvas as a horizontal page: the artboard's elements, each positioned exactly where
+  // it sits on the board, revealed as the board slides past
+  function canvasPage(slug) {
+    const d = CANVASES[slug], cv = canvases[slug];
+    const p = PROJECTS.find((x) => x.page === slug);
+    const others = PROJECTS.filter((x) => x.page && x.page !== slug);
+    const { w: W, h: H, base, items, bg } = cv;
+    const pos = (b) => `left:${(b[0] / W * 100).toFixed(3)}%;top:${((H - b[3]) / H * 100).toFixed(3)}%;width:${((b[2] - b[0]) / W * 100).toFixed(3)}%`;
+    const ld = { "@context": "https://schema.org", "@graph": [
+      { "@type": "CreativeWork", "@id": `${SITE}/work/${slug}/#work`, name: `${d.name} · brand canvas`, headline: d.title, description: d.lead, genre: p?.cat, creator: { "@id": `${SITE}/#studio` }, url: `${SITE}/work/${slug}/`, image: `${SITE}${base}/${bg ? bg.file : items[0].file}`, inLanguage: "en" },
+      { "@type": "BreadcrumbList", itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Cromatic Studios", item: `${SITE}/site/` },
+        { "@type": "ListItem", position: 2, name: "Work", item: `${SITE}/site/#work` },
+        { "@type": "ListItem", position: 3, name: d.name, item: `${SITE}/work/${slug}/` }
+      ] }
+    ] };
+    const kindOf = (it) => it.kind === "img" ? "k-img" : it.box[0] < W * 0.145 ? "k-txt" : (it.box[2] - it.box[0]) < 230 && (it.box[3] - it.box[1]) < 260 ? "k-mas" : "k-vec";
+    return `${head({ title: `${d.name} · Brand canvas · Cromatic Studios`, desc: d.lead.slice(0, 158), path: `/work/${slug}/`, image: `${base}/${bg ? bg.file : items[0].file}`, ld })}
+${header(false)}
+<main id="main" class="case cv-page" style="--bc:${d.c};--bt:${d.t}">
+  <section class="c-hero cv-hero">
+    <div class="wrap">
+      <nav class="crumbs mono" aria-label="Breadcrumb"><a href="/site/">Cromatic Studios</a> / <a href="/site/#work">Work</a> / <span>${esc(d.name)}</span></nav>
+      <p class="eyebrow mono">${esc(d.eyebrow)}</p>
+      <h1>${esc(d.title)}</h1>
+      <p class="lead">${esc(d.lead)}</p>
+      <div class="c-meta">${d.meta.map((m) => `<span class="mono">${esc(m)}</span>`).join("")}</div>
+      <div class="swatches" aria-hidden="true">${d.swatches.map((c) => `<span style="background:${c}"></span>`).join("")}</div>
+    </div>
+  </section>
+  <section class="cv" aria-label="${esc(d.name)} brand canvas" style="--ar:${(W / H).toFixed(4)}">
+    <div class="cv-sticky" tabindex="0">
+      <div class="cv-track">
+        <div class="cv-stage">
+          ${bg ? `<img class="cv-bg" src="${base}/${bg.file}" alt="" decoding="async">` : ""}
+          ${items.map((it, k) => `<img class="cv-el ${kindOf(it)}" src="${base}/${it.file}" alt="" loading="${k < 18 ? "eager" : "lazy"}" decoding="async" style="${pos(it.box)};--k:${k}">`).join("\n          ")}
+        </div>
+      </div>
+      <p class="cv-hint mono" aria-hidden="true"><span class="cv-desk">Scroll to slide the canvas</span><span class="cv-mob">Drag the canvas</span> <i>→</i></p>
+      <div class="cv-bar" aria-hidden="true"><i></i></div>
+    </div>
+  </section>
+  <section class="c-end">
+    <div class="wrap">
+      <h2 class="ptitle">${pill("Your brand", "#FED012", -1.5)}${pill("next?", "#28C840", 1)}</h2>
+      <p><a class="btn btn-y" href="/site/#contact">${STAR}<span>Start a project</span></a></p>
+      <p class="eyebrow mono">More work</p>
+      <div class="more">${others.map((o) => `<a href="/work/${o.page}/" style="--bc:${o.c};--bt:${o.t}">${esc(o.name)} <i>→</i></a>`).join("")}</div>
+    </div>
+  </section>
+</main>
+${footer}`;
+  }
+  return { home, casePage, canvasPage, slugs: Object.keys(CASES), canvasSlugs: Object.keys(CANVASES).filter((k) => canvases[k]) };
 }

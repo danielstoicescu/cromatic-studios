@@ -2571,7 +2571,7 @@ body.site-mode .topbar .site-btn { position: static; }
 .mapcard.crew-card { width: min(600px, 44vw) !important; padding: 22px 24px !important; }
 .mapcard.crew-card .pill-title { margin-bottom: 8px; }
 .mapcard.crew-card p { margin-bottom: 4px; }
-.crew-faces { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px 10px; margin-top: 14px; }
+.crew-faces { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px 10px; margin-top: 14px; }
 .crew-face { all: unset; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0;
   animation: cfIn .55s var(--eoq, cubic-bezier(.22,1,.36,1)) var(--d, 0ms) both; }
 @keyframes cfIn { from { opacity: 0; transform: translateY(10px) scale(.9); } }
@@ -2590,3 +2590,6 @@ body.site-mode .topbar .site-btn { position: static; }
   .cf-ring { width: 60px; height: 60px; } .cf-ring b { font-size: 24px; }
   .cf-tag { font-size: 10.5px; padding: 3px 7px; }
 }
+
+/* r78: no progress dots under the kinetic intro */
+.kz-dots { display: none !important; }

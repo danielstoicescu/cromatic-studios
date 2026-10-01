@@ -32,7 +32,7 @@ export const PROJECTS = [
   { name: "Craft Coffee", cat: "Branding · Website", c: "#119BFE", t: "#fff", poster: "The coffee equipment", img: "craftBox", page: "craft-coffee", desc: "The official distributor of La Marzocco, Mazzer, PuQPress and Fellow in Romania. A brand and a shop built to equip the passion for coffee." },
   { name: "Routine Paris", cat: "Brand · Identity", c: "#28C840", t: "#0e0e0e", poster: "Make it a ritual", img: "routineCoverImg", vid: "routineCoverVid", badge: "bRoutine", desc: "A daily ritual brand with a Parisian address and an indie heart. Built to be part of somebody's morning, every morning." },
   { name: "Investimental", cat: "UX · UI · Product", c: "#119BFE", t: "#fff", poster: "Win in digital", badge: "bInvestimental", desc: "The newest retail broker in the market, helped to win in digital. Information architecture, high quality mockups and a product experience built for first-time investors." },
-  { name: "OMA Coffee", cat: "Brand · Coffee · Brașov", c: "#4a7c4e", t: "#F5F0C8", poster: "We're brewing something", desc: "A specialty coffee shop at the foot of the mountains. Passionate baristas who love the craft of coffee as much as the peaks around them, and a brand as warm as the cup." },
+  { name: "OMA Coffee", cat: "Brand · Coffee · Brașov", c: "#437743", t: "#fcfad4", poster: "We're brewing something", page: "oma-coffee", desc: "A specialty coffee shop at the foot of the mountains. Passionate baristas who love the craft of coffee as much as the peaks around them, and a brand as warm as the cup." },
   { name: "Kómpus", cat: "Brand", c: "#B098C8", t: "#14120c", poster: "Founder vision, bottled", badge: "bKompus", desc: "Differentiating a coffee shop in the market by enabling the founder's vision." },
   { name: "Sip Coffee & Wine", cat: "Branding · Communication", c: "#C9A227", t: "#14120c", poster: "Design in a cup", desc: "Complementing one of the best designed coffee shops in town with a branding that fits." },
   { name: "Yoshi Izakaya", cat: "Communication · Content", c: "#F4876F", t: "#2a0f0b", poster: "The best sushi in town", badge: "bYoshi", desc: "Delivering top content for the best sushi in town." },
@@ -46,7 +46,9 @@ export const PROJECTS = [
 export const CLIENT_BADGES = ["bScf", "bTm", "bSteam", "bRoutine", "bInvestimental", "bKompus", "bYoshi", "bAssetto", "bCargus"];
 export const FRIENDS = ["Cargus", "Global Records", "Erste", "Microsoft", "Echo School", "Unchain Festival", "+ 30 more"];
 
-export const CREW = ["Cristian", "Daniel", "Ana", "Coz", "Iulian", "Alexandra", "Stefan", "Adina", "Anne", "Iulică", "Ana M.", "Melissa"];
+export const CREW = ["Cristian", "Daniel", "Ana", "Coz", "Alexandra", "Stefan", "Adina", "Anne", "Iulică", "Melissa"];
+// face crops, by the variable that holds them in src/app.js
+export const CREW_FACE_VARS = { "Cristian": "crewFaceCristian", "Daniel": "crewFaceDaniel", "Ana": "crewFaceAnaMare", "Coz": "crewFaceCoz", "Alexandra": "crewFaceAlexandra", "Stefan": "crewFaceStefan", "Adina": "crewFaceAdina", "Anne": "crewFaceAnne", "Iulică": "crewFaceIulica", "Melissa": "crewFaceMelissa" };
 export const CREW_COLORS = ["#28C840", "#FED012", "#B098C8", "#119BFE", "#F65342"];
 export const CREW_PHOTOS = [
   { src: "https://cromaticstudios.com/wp-content/uploads/2025/06/Noal.jpg", cap: "Photo production · Noal" },
@@ -142,5 +144,18 @@ export const CASES = {
       { h: "Cards in two tempers", p: "The stationery runs in red and blue, the two halves of a company that both sells and services.", imgs: ["craftCardRed", "craftCardBlue"] }
     ],
     link: { href: "https://craftcoffee.ro", label: "Visit craftcoffee.ro ↗" }
+  }
+};
+
+// brand canvases: one wide artboard, split into its elements by site/canvas/split-canvas.py,
+// shown as a horizontal page (vertical scroll on desktop, drag on phones)
+export const CANVASES = {
+  "oma-coffee": {
+    name: "OMA Coffee", dir: "oma", c: "#437743", t: "#fcfad4",
+    eyebrow: "OMA Coffee · Brașov · Brand canvas · By Cromatic Studios",
+    title: "We're brewing something.",
+    lead: "A specialty coffee shop at the foot of the mountains. Passionate baristas who love the craft of coffee as much as the peaks around them, and a brand as warm as the cup: a rounded wordmark, a family of hand-drawn explorers, and a palette of Roast, Forest, Summit and Parchment.",
+    meta: ["Brand identity · Packaging · Merch · Menus · Social", "Block W1G · Necto Mono"],
+    swatches: ["#5b3535", "#437743", "#a9d8e8", "#fcfad4"]
   }
 };

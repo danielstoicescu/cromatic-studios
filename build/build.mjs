@@ -146,10 +146,27 @@ try {
   writeFileSync(join(pub, kcss), kc);
   kz = { js: "/" + kjs, css: "/" + kcss };
 } catch (e) { console.warn("[build] kinetic hero skipped:", e.message.split("\n")[0]); }
-const R = makeRender({ SITE: SITE_URL, A, cssHref: "/" + siteCssName, jsHref: "/" + siteJsName, fonts: FONTS, kz });
+// brand canvases (site/canvas/<dir>/manifest.json + element images): copied under a hashed folder
+const canvases = {};
+{
+  const { CANVASES } = await import("../site/data.mjs");
+  for (const [slug, c] of Object.entries(CANVASES)) {
+    const dir = join(root, "site", "canvas", c.dir);
+    let man;
+    try { man = JSON.parse(readFileSync(join(dir, "manifest.json"), "utf8")); } catch { continue; }
+    const files = [man.bg?.file, ...man.items.map((i) => i.file)].filter(Boolean);
+    const h = hash(Buffer.concat(files.map((f) => readFileSync(join(dir, f)))));
+    const outDir = join(pub, "assets", `canvas-${c.dir}-${h}`);
+    mkdirSync(outDir, { recursive: true });
+    for (const f of files) copyFileSync(join(dir, f), join(outDir, f));
+    canvases[slug] = { ...man, base: `/assets/canvas-${c.dir}-${h}` };
+  }
+}
+const R = makeRender({ SITE: SITE_URL, A, cssHref: "/" + siteCssName, jsHref: "/" + siteJsName, fonts: FONTS, kz, canvases });
 const page = (path, html) => { mkdirSync(join(pub, path), { recursive: true }); writeFileSync(join(pub, path, "index.html"), html); };
 page("site", R.home());
 for (const slug of R.slugs) page(`work/${slug}`, R.casePage(slug));
+for (const slug of R.canvasSlugs) page(`work/${slug}`, R.canvasPage(slug));
 // Steam keeps its own designed case study page, given a canonical URL and a way back
 {
   const lit = /var steamCaseHtml = ("(?:[^"\\]|\\.)*");/.exec(js);
@@ -160,7 +177,7 @@ for (const slug of R.slugs) page(`work/${slug}`, R.casePage(slug));
     page("work/steam", steam);
   }
 }
-writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, new Date().toISOString().slice(0, 10), ["/site/", ...R.slugs.map((s) => `/work/${s}/`), "/work/steam/"]));
+writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, new Date().toISOString().slice(0, 10), ["/site/", ...[...R.slugs, ...R.canvasSlugs].map((s) => `/work/${s}/`), "/work/steam/"]));
 
 // precompress text files once, at build time (the server just picks the right variant)
 const COMP = /\.(html|js|css|svg|txt|xml|json|webmanifest|ico)$/;

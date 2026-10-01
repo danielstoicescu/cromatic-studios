@@ -56,6 +56,62 @@
     d.body.appendChild(sc);
   }
 
+  // brand canvas: on desktop the page scrolls down while the board slides left; on phones the
+  // board is dragged sideways. Elements appear as they enter the screen.
+  if (/[?&]embed\b/.test(location.search)) root.classList.add("embed");
+  const cv = d.querySelector(".cv");
+  if (cv) {
+    const sticky = cv.querySelector(".cv-sticky"), track = cv.querySelector(".cv-track"), bar = cv.querySelector(".cv-bar");
+    const els = [...cv.querySelectorAll(".cv-el")];
+    const mq = matchMedia("(max-width: 760px), (pointer: coarse)");
+    let travel = 0, raf = 0, batch = 0;
+    const reveal = () => {
+      const R = innerWidth * 0.94;
+      let n = 0;
+      for (const e of els) {
+        if (e.classList.contains("in")) continue;
+        const r = e.getBoundingClientRect();
+        if (r.left < R && r.right > -40) { e.style.transitionDelay = `${Math.min(n++, 10) * 55}ms`; e.classList.add("in"); }
+      }
+    };
+    const tick = () => {
+      raf = 0;
+      let p;
+      if (mq.matches) {
+        const max = sticky.scrollWidth - sticky.clientWidth;
+        p = max > 0 ? sticky.scrollLeft / max : 0;
+      } else {
+        const top = cv.getBoundingClientRect().top - (root.classList.contains("embed") ? 0 : 72);
+        p = travel > 0 ? Math.min(1, Math.max(0, -top / travel)) : 0;
+        track.style.transform = `translate3d(${(-p * travel).toFixed(1)}px,0,0)`;
+      }
+      bar?.style.setProperty("--p", p.toFixed(4));
+      if (p > 0.01) cv.classList.add("moved");
+      reveal();
+    };
+    const queue = () => { if (!raf) raf = requestAnimationFrame(tick); };
+    const layout = () => {
+      if (mq.matches) { cv.style.height = ""; track.style.transform = ""; }
+      else { travel = Math.max(0, track.scrollWidth - innerWidth); cv.style.height = `${travel + sticky.offsetHeight}px`; }
+      queue();
+    };
+    addEventListener("scroll", queue, { passive: true });
+    sticky.addEventListener("scroll", queue, { passive: true });
+    addEventListener("resize", layout);
+    mq.addEventListener?.("change", layout);
+    // mouse drag works too (and on a touch laptop the board follows the finger natively)
+    let drag = null;
+    sticky.addEventListener("pointerdown", (e) => { if (!mq.matches || e.pointerType === "touch") return; drag = { x: e.clientX, s: sticky.scrollLeft }; sticky.setPointerCapture(e.pointerId); });
+    sticky.addEventListener("pointermove", (e) => { if (drag) sticky.scrollLeft = drag.s - (e.clientX - drag.x); });
+    sticky.addEventListener("pointerup", () => { drag = null; });
+    // arrow keys move along the board on desktop
+    sticky.addEventListener("keydown", (e) => { if (mq.matches) return; const k = { ArrowRight: 1, ArrowLeft: -1 }[e.key]; if (k) { e.preventDefault(); scrollBy({ top: k * innerWidth * 0.4, behavior: "smooth" }); } });
+    // the board's images are wide: wait for the stage to have its size before measuring
+    const st = cv.querySelector(".cv-stage");
+    if ("ResizeObserver" in window) new ResizeObserver(layout).observe(st); else layout();
+    layout();
+  }
+
   // YouTube: a poster until clicked, then the privacy-friendly embed
   d.querySelectorAll(".yt").forEach((y) => y.querySelector(".yt-play")?.addEventListener("click", () => {
     y.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${y.dataset.id}?autoplay=1&rel=0&modestbranding=1&playsinline=1" title="Two Minutes film" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;

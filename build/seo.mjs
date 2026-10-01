@@ -111,9 +111,9 @@ export function llmsTxt(SITE) {
 - Address: ${STUDIO.street}, Bucharest, Romania
 - Email: ${STUDIO.email}
 - Phone: ${STUDIO.phone}
-- Founded: ${STUDIO.founded} (Strada Muniției 5), today at ${STUDIO.street}
+- Founded: ${STUDIO.founded}. The studio: ${STUDIO.street}, Bucharest
 - Main website: ${STUDIO.legalUrl}
-- Team: 12 people (Cristian, Daniel, Ana, Coz, Iulian, Alexandra, Stefan, Adina, Anne, Iulică, Ana M., Melissa)
+- Team: 10 people (Cristian, Daniel, Ana, Coz, Alexandra, Stefan, Adina, Anne, Iulică, Melissa)
 - Positioning: indie, for indie founders; strategy first, then design, visuals and storytelling. "There is always a coffee."
 
 ## Services
