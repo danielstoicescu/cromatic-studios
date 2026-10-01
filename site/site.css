@@ -341,3 +341,5 @@ html.embed .hdr, html.embed .cv-hero, html.embed .c-end, html.embed .ftr, html.e
 html.embed .cv-sticky { top: 0; height: 100vh; height: 100svh; }
 html.embed .cv-stage { height: calc(100vh - 90px); height: calc(100svh - 90px); }
 @media (max-width: 760px), (pointer: coarse) { html.embed .cv-stage { height: calc(100svh - 120px); } html.embed body { overflow: hidden; } }
+
+html.embed, html.embed body { overscroll-behavior: none; }

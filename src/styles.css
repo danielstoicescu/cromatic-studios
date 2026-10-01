@@ -2593,3 +2593,43 @@ body.site-mode .topbar .site-btn { position: static; }
 
 /* r78: no progress dots under the kinetic intro */
 .kz-dots { display: none !important; }
+/* ---- r79: four streets at the fork ---- */
+.jx-btn.c { background: #F28BA8; color: #2a0f17; }
+.jx-btn.c .jx-in { border-color: rgba(42,15,23,.7); }
+.jx-btn.d { background: #1f8a6a; }
+.jx-btn.c b, .jx-btn.d b { font-size: 19px; }
+@media (max-width: 760px) { .jx-btn.c b, .jx-btn.d b { font-size: 12px; } }
+.jx-row { position: fixed; z-index: 24; left: 50%; top: calc(96px + env(safe-area-inset-top, 0px)); transform: translateX(-50%);
+  display: grid; grid-template-columns: repeat(4, auto); gap: 12px; pointer-events: auto; transition: opacity .4s var(--eoq), transform .5s var(--eoq); }
+.jx-row.hidden { opacity: 0; pointer-events: none; transform: translate(-50%, -14px); }
+.jx-row .jx-btn { position: relative !important; left: auto !important; top: auto !important; transform: none !important; animation: none; margin: 0; }
+.jx-row .jx-btn:hover { transform: translateY(-3px) scale(1.04) !important; }
+.jx-row .jx-btn.leaving { opacity: .35; transform: scale(.94) !important; }
+.jx-row .jx-btn.on { opacity: 1; }
+@media (max-width: 1180px) { .jx-row { grid-template-columns: repeat(2, auto); } }
+@media (max-width: 760px) {
+  .jx-row { top: calc(132px + env(safe-area-inset-top, 0px)); left: 12px; right: 12px; transform: none; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .jx-row.hidden { transform: translateY(-10px); }
+  .jx-row .jx-btn { width: 100%; }
+}
+.jx-row { width: max-content; max-width: calc(100vw - 32px); }
+.jx-row .jx-btn b { white-space: nowrap; }
+@media (max-width: 760px) { .jx-row { width: auto; max-width: none; } }
+/* ---- r79: phones, the espresso story lives at the bottom, clear of the Two Minutes cards ---- */
+@media (max-width: 760px) {
+  .toast-col { transform: none; left: 12px; right: 12px; width: auto; }
+  .toast-col .coffee-card { position: fixed; left: 12px; right: 12px; width: auto; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); top: auto; z-index: 33; }
+  .toast-col .rush-pill { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); top: auto; z-index: 34; }
+  body:has(.coffee-card:not(.hidden)) .toast-col .rush-pill { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+  /* no second police signal on the dial: the pulled-over pill says it */
+  .dash[data-cop="chase"] .dash-dial { animation: none !important; }
+}
+/* desktop: the police shield next to the dial only for the cop car's beacon, not for a chase */
+.dash[data-cop="chase"] .dash-cop { display: none !important; }
+/* the Zdrovit courtyard panel */
+.court-modal .court-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 14px 0 6px; }
+.court-b { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 16px; border: 2.5px solid var(--st-ink); background: var(--cc); color: var(--ct); transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
+.court-b b { font: 900 16px/1.1 Montserrat, Poppins, sans-serif; }
+.court-b .mono { font-size: 9px; letter-spacing: .1em; opacity: .85; }
+.court-b:hover, .court-b:focus-visible { transform: translateY(-3px) rotate(-1deg); }
+@media (max-width: 760px) { .court-modal .court-grid { grid-template-columns: 1fr 1fr; } .court-b b { font-size: 14px; } }
