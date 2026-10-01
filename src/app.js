@@ -29079,6 +29079,13 @@ void main() {
     }
     if (stopId === "services") box.appendChild(servicesAccordion());
     if (stopId === "end") {
+      // on phones the floating address card is folded into this sheet (CSS shows it only there)
+      if (opts.map) box.insertAdjacentHTML("beforeend", `<div class="end-addr">
+        <b class="ea-addr">Str. Olari nr. 9</b>
+        <span class="ea-city mono">CROMATIC STUDIOS \xB7 BUCHAREST \xB7 TODAY</span>
+        <a class="ea-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener">Navigheaz\u0103 \u2192</a>
+        <span class="ea-contact"><a href="mailto:hello@cromaticstudios.com">hello@cromaticstudios.com</a><a href="tel:+40728978068">+40 728 978 068</a></span>
+      </div>`);
       const btn = el("button", "coffee-btn cta-big", `${starSVG(22, "var(--st-ink)")} <span>Go even further</span> <em class="cta-arr">\u2191</em>`);
       btn.onclick = () => api.openSecret();
       box.appendChild(btn);
@@ -32434,7 +32441,11 @@ void main() {
         state.speed = smooth(state.speed, Math.abs(dL / Math.max(dt, 1e-3)) * 0.09, dt, 4);
         {
           const vs = VEH_SPEED[state.vehicleId] || VEH_SPEED.groovy;
-          const f = clamp2(state.speed / 55.8, 0, 1);
+          // the calm ground cap (620 u/s = 55.8) tops out just under the red zone (80% of the dial);
+          // only scrolling far ahead of what the car can follow pushes the needle into the red
+          const lagAhead = Math.max(0, state.targetL - state.L - 1800);
+          const f = clamp2(state.speed / 69.75 + (siteMode || police.active ? 0 : lagAhead / 5000), 0, 1);
+          window.__spd = { f, lag: Math.round(state.targetL - state.L) };
           const red = f >= 200 / 240 && state.vehicleId !== "cop";
           ui.dash.speed(f, vs.max, vs.unit, red);
           redHold = red && !siteMode ? redHold + dt : 0;
@@ -32497,7 +32508,7 @@ void main() {
           c.rotation.x = wheelSpin;
         });
         if (veh.prop) veh.prop.rotation.z += dt * (18 + state.speed * 0.4);
-        if (state.started && !siteMode && !flying && !police.active && state.vehicleId !== "cop" && (redHold > 1.2 || state.targetL - state.L > 2600) && now > police.next && now > jumpGuard) {
+        if (state.started && !siteMode && !flying && !police.active && state.vehicleId !== "cop" && (redHold > 2.5 || state.targetL - state.L > 9000) && now > police.next && now > jumpGuard) {
           police.active = true;
           police.until = now + 1e4;
           copCar.group.visible = true;
