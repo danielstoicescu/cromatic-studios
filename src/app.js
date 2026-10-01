@@ -23935,7 +23935,7 @@ void main() {
           pills: ["What do you", "dream of?"],
           pillSize: "md",
           seed: 3,
-          body: `<p class="end-contact mono">CROMATIC STUDIOS \xB7 STR. OLARI 9, BUCHAREST<br>HELLO@CROMATICSTUDIOS.COM</p>`
+          body: `<p class="end-contact mono">CROMATIC STUDIOS \xB7 STR. OLARI 9, BUCHAREST<br>HI@CROMATICSTUDIOS.COM</p>`
         },
         contact: {
           eyebrow: "ABOVE THE CLOUDS / FINAL CALL",
@@ -29084,7 +29084,7 @@ void main() {
         <b class="ea-addr">Str. Olari nr. 9</b>
         <span class="ea-city mono">CROMATIC STUDIOS \xB7 BUCHAREST \xB7 TODAY</span>
         <a class="ea-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener">Navigheaz\u0103 \u2192</a>
-        <span class="ea-contact"><a href="mailto:hello@cromaticstudios.com">hello@cromaticstudios.com</a><a href="tel:+40728978068">+40 728 978 068</a></span>
+        <span class="ea-contact"><a href="mailto:hi@cromaticstudios.com">hi@cromaticstudios.com</a><a href="tel:+40728978068">+40 728 978 068</a></span>
       </div>`);
       const btn = el("button", "coffee-btn cta-big", `${starSVG(22, "var(--st-ink)")} <span>Go even further</span> <em class="cta-arr">\u2191</em>`);
       btn.onclick = () => api.openSecret();
@@ -29305,7 +29305,7 @@ void main() {
 
     inner.appendChild(el("footer", "site-foot", `
       <span class="mono">CROMATIC STUDIOS · STR. OLARI 9, BUCHAREST</span>
-      <span class="mono">HELLO@CROMATICSTUDIOS.COM · +40 728 978 068</span>`));
+      <span class="mono">HI@CROMATICSTUDIOS.COM · +40 728 978 068</span>`));
 
     document.body.appendChild(site);
 
@@ -30256,7 +30256,7 @@ void main() {
     <b class="ac-addr">Str. Olari nr. 9</b>
     <span class="ac-city mono">CROMATIC STUDIOS \xB7 TODAY</span>
     <a class="ac-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener">Navigheaz\u0103 pe harta ta \u2192</a>
-    <span class="ac-contact"><a href="mailto:hello@cromaticstudios.com">hello@cromaticstudios.com</a><a href="tel:+40728978068">+40 728 978 068</a></span>`);
+    <span class="ac-contact"><a href="mailto:hi@cromaticstudios.com">hi@cromaticstudios.com</a><a href="tel:+40728978068">+40 728 978 068</a></span>`);
     asLeftCard(labTag, "Two Min Lab", "TWO MIN LAB", "PRODUCTS \u00B7 TONIC IONIC \u00B7 LABELS", "See the lab \u2192");
     asLeftCard(tmMedia, "Two Minutes", "TWO MINUTES", "MEDIA & BRANDING \u00B7 FILM", "Watch \u2192");
     asLeftCard(boxPop, "Two Minutes", "TWO MIN BOXES", "COFFEE PACKAGING \u00B7 FRESH DROP", "Take a look \u2192");
