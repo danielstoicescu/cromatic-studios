@@ -30,6 +30,10 @@ export const PROJECTS = [
   { name: "Steam Coffee Shop", cat: "Branding · Growth · Product", c: "#2f9e4f", t: "#fff", poster: "Pioneers stay fresh", img: "steamCoverImg", vid: "steamCoverVid", badge: "bSteam", page: "steam", desc: "A pioneer brand refreshed for its community. New energy for the people who were there from the start, and a clear invitation for the ones just arriving." },
   { name: "Artisan Coffee Gear", cat: "Brand universe · Web", c: "#797c69", t: "#fff", poster: "Get to the core of your craft", img: "art09", page: "artisan-coffee-gear", desc: "Coffee gear for passionate customers, in a tailor made environment with a personal voice. A whole brand world, from the letterform pattern to the webshop." },
   { name: "Craft Coffee", cat: "Branding · Website", c: "#119BFE", t: "#fff", poster: "The coffee equipment", img: "craftBox", page: "craft-coffee", desc: "The official distributor of La Marzocco, Mazzer, PuQPress and Fellow in Romania. A brand and a shop built to equip the passion for coffee." },
+  { name: "The Aesthetic Court", cat: "Website · UX · UI", c: "#1a0909", t: "#c89b3c", poster: "Toxin on trial", img: "m:tac/d-hero", page: "the-aesthetic-court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and a website built as the trial itself." },
+  { name: "ARCA Resort", cat: "Packaging · Caviar · Livery", c: "#7a1f2b", t: "#f6f2ea", poster: "ARCA", img: "m:arca/caviar-photo", page: "arca-resort", desc: "Caviar tins, a van and smoked-fish trays for a resort-destination with its own ponds and production." },
+  { name: "Antila", cat: "Brand · Illustration · Packaging", c: "#F2C200", t: "#1a1405", poster: "Super delicios", img: "m:antila/crenv-purple", page: "antila", desc: "A charcuterie brand with a bold wordmark, a cast of disruptive characters and packaging you spot from the end of the aisle." },
+  { name: "UNDÉ", cat: "Brand · Signage · Merch", c: "#2b6fd6", t: "#ffffff", poster: "Băcănie & delicii", img: "m:unde/basket", page: "unde", desc: "ARCA's grocery stores: a hand-drawn basket and three formats, each in its own colour." },
   { name: "Routine Paris", cat: "Brand · Identity", c: "#28C840", t: "#0e0e0e", poster: "Make it a ritual", img: "routineCoverImg", vid: "routineCoverVid", badge: "bRoutine", desc: "A daily ritual brand with a Parisian address and an indie heart. Built to be part of somebody's morning, every morning." },
   { name: "Investimental", cat: "UX · UI · Product", c: "#119BFE", t: "#fff", poster: "Win in digital", badge: "bInvestimental", desc: "The newest retail broker in the market, helped to win in digital. Information architecture, high quality mockups and a product experience built for first-time investors." },
   { name: "OMA Coffee", cat: "Brand · Coffee · Brașov", c: "#437743", t: "#fcfad4", poster: "We're brewing something", page: "oma-coffee", desc: "A specialty coffee shop at the foot of the mountains. Passionate baristas who love the craft of coffee as much as the peaks around them, and a brand as warm as the cup." },
@@ -109,6 +113,78 @@ export const CASES = {
       { h: "The boxes", p: "Green, pink, blue: coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 52.", vids: ["boxesvideo_default"] },
       { h: "Two Min Lab", p: "Two Minutes's flavour laboratory, micro-roastery and kitchen: the space where signature flavours like the <i>Tonic Ionic</i> are perfected before they reach your cup. Bottled by hand, in small batches, in Bucharest.", imgs: ["labTonic", "labSpread", "labChinotto", "labAmaro"], caps: ["Tonic Ionic · 6 plante", "Tonic Ionic · specimen index", "Chinotto · Citrus myrtifolia", "Amaro · bitter formula"] },
       { h: "Made by hand", p: "From the first sketches on grid paper to the acrylic signs, fresh from the maker.", imgs: ["labSketch", "labSigns", "labEditorial"], vids: ["labBox", "labMaking"] }
+    ]
+  },
+  "the-aesthetic-court": {
+    name: "The Aesthetic Court",
+    c: "#1a0909", t: "#c89b3c", theme: "tac",
+    eyebrow: "The Aesthetics Court · Website · By Cromatic Studios",
+    title: "Toxin on trial. Experts debate. The jury decides.",
+    lead: "A one-day aesthetic medicine congress staged as a courtroom, at the Palace of the Parliament in Bucharest. We built its website as the trial itself: the charge, the bench of experts, the order of proceedings, the jury's live vote and the verdict.",
+    meta: ["Website · UX · UI · Art direction", "Palace of the Parliament · Bucharest", "One trial. Many perspectives. One verdict."],
+    swatches: ["#120707", "#3a0d18", "#c89b3c", "#f4f0ea"],
+    hero: "m:tac/d-hero", heroFrame: true,
+    blocks: [
+      { h: "The charge", p: "The case file opens the site: botulinum toxin, accused of being the most used and least questioned molecule in aesthetic medicine. Paper, a court stamp and a date set the tone before anyone speaks.", imgs: ["m:tac/d-charge"], frame: true },
+      { h: "The bench", p: "Eight experts take the stand, each with a portrait card and a file to open: the speakers presented as witnesses for the defence and the prosecution.", imgs: ["m:tac/d-bench"], frame: true, phones: ["m:tac/m-bench"] },
+      { h: "Order of proceedings", p: "The programme reads like a docket: registration, the opening of the court, three trials (upper face, mid face, lower face & neck), breaks, and the final jury vote.", imgs: ["m:tac/d-proceedings"], frame: true, tall: true },
+      { h: "Where science faces judgment", p: "The venue: the Palace of the Parliament, at night. Over a hundred international experts in the room, eight speakers on the stand, one verdict decided live by the jury.", imgs: ["m:tac/d-venue"], frame: true, phones: ["m:tac/m-venue"] },
+      { h: "Jury deliberation", p: "How the room works on the day: a motion is read, both sides argue, and every seat votes. The scales of justice, in the court's gold.", imgs: ["m:tac/d-jury"], frame: true, phones: ["m:tac/m-jury"] },
+      { h: "The verdict", p: "After the first edition, the site turns: the verdict is delivered, and the next date will be announced here.", imgs: ["m:tac/d-date", "m:tac/d-verdict"], frame: true }
+    ],
+    link: { href: "https://theaestheticscourt.com/", label: "Visit theaestheticscourt.com ↗" }
+  },
+  "arca-resort": {
+    name: "ARCA Resort",
+    c: "#7a1f2b", t: "#f6f2ea",
+    eyebrow: "ARCA · Resort, restaurant, events · Blăgești, Bacău · By Cromatic Studios",
+    title: "A resort-destination, with nature as an accomplice.",
+    lead: "At ARCA, quiet and adventure, food with real taste and slow relaxation come together: Lotca, a fishermen's restaurant on a pontoon, Tiny Houses and Lotca Rooms, Foliage for events, and an ecosystem that grows its own fish and ingredients. We designed the products that carry its name.",
+    meta: ["Packaging · Caviar · Livery · Trays", "Blăgești, Bacău"],
+    swatches: ["#7a1f2b", "#2a2357", "#c9b27a", "#f6f2ea"],
+    hero: "m:arca/dusk",
+    blocks: [
+      { h: "The place", p: "Ponds, a pontoon, the restaurant and the halls of Foliage, where weddings and private events happen against the landscape.", imgs: ["m:arca/lake", "m:arca/hall", "m:arca/table2", "m:arca/dish"] },
+      { h: "ARCA Caviar", p: "Gold Imperial and Imperial, in tins dressed in deep navy and burgundy, with the thin ARCA lettering at the centre: a premium product that still feels like the resort.", imgs: ["m:arca/caviar-pair", "m:arca/caviar-photo", "m:arca/caviar-set", "m:arca/caviar-photo3"] },
+      { h: "A palette for every edition", p: "The same tin, explored across colours and finishes before the final line-up.", imgs: ["m:arca/caviar-colors", "m:arca/caviar-set2", "m:arca/caviar-photo2", "m:arca/caviar-photo4"] },
+      { h: "The van", p: "The delivery van as a moving shelf: ARCA's jars, life-size, along the side.", imgs: ["m:arca/van-side", "m:arca/van-back", "m:arca/van-side2"] },
+      { h: "Skin trays", p: "Kraft trays for the smoked fish, with an illustrated pattern and a green ARCA band.", imgs: ["m:arca/tray", "m:arca/tray2"] }
+    ],
+    link: { href: "https://arca-resort.ro/", label: "Visit arca-resort.ro ↗" }
+  },
+  "antila": {
+    name: "Antila",
+    c: "#F2C200", t: "#1a1405",
+    eyebrow: "Antila · Super delicios · Since 2025 · By Cromatic Studios",
+    title: "Antila. Super delicios.",
+    lead: "A charcuterie brand from a farm where animals are raised with care, 100% Romanian. A bold black oval wordmark, two type families, a cast of funny, disruptive illustrations, and packaging in purple, yellow and coral that you spot from the end of the aisle.",
+    meta: ["Brand identity · Illustration · Packaging", "Premio · Archivo Expanded"],
+    swatches: ["#111111", "#F2C200", "#7b5bb5", "#e8735a"],
+    hero: "m:antila/hero",
+    blocks: [
+      { h: "The mark", p: "A heavy, friendly wordmark in a black oval, with “din 2025” and “super delicios” around it. It works stamped, printed on paper, or on a farm sign.", imgs: ["m:antila/logo", "m:antila/logo-paper"] },
+      { h: "Type and illustrations", p: "Premio for the headlines, Archivo Expanded for everything that needs to be read. Then the characters: fun, a little disruptive, drawn to hold the products in their hands.", imgs: ["m:antila/fonts", "m:antila/ilustratii"] },
+      { h: "Products from meat", p: "Mezeluri for the whole family: the brand on paper, wraps and labels.", imgs: ["m:antila/mezeluri", "m:antila/yellow", "m:antila/paper", "m:antila/wrap"] },
+      { h: "Packaging", p: "Frankfurters, pastă de mici, carnați moldovenești, salam de vară: each product with its own colour and its own character.", imgs: ["m:antila/crenv-purple", "m:antila/carnati", "m:antila/mici", "m:antila/crenv-yellow"] },
+      { h: "Labels, flat", p: "The full labels, ready for print.", imgs: ["m:antila/label-crenv", "m:antila/label-mici", "m:antila/label-carnati", "m:antila/label-salam"] },
+      { imgs: ["m:antila/salam", "m:antila/pastrama"] }
+    ]
+  },
+  "unde": {
+    name: "UNDÉ",
+    c: "#2b6fd6", t: "#ffffff",
+    eyebrow: "Undé · Băcănie & delicii · ARCA's grocery stores · By Cromatic Studios",
+    title: "Undé. Băcănie & delicii.",
+    lead: "ARCA's grocery stores. A hand-drawn basket and a warm, handwritten wordmark, then three formats (Market, Store and Concept), each with its own colour, so every shop feels local and part of the same family.",
+    meta: ["Brand identity · Signage · Merch", "Market · Store · Concept"],
+    swatches: ["#c45c2a", "#2b6fd6", "#3f8a4a", "#f4ead6"],
+    hero: "m:unde/basket",
+    blocks: [
+      { h: "From sketch to mark", p: "The search started with the shelf: bottles, jars, a basket. The basket won, drawn by hand with the wordmark underneath.", imgs: ["m:unde/marks", "m:unde/logo", "m:unde/logo-line", "m:unde/badge"] },
+      { h: "Three formats, three colours", p: "Undé Market, Undé Store, Undé Concept: one system, recognisable at a glance, each with its own colour.", imgs: ["m:unde/market", "m:unde/store", "m:unde/concept", "m:unde/formats"] },
+      { h: "Colour and shape", p: "Terracotta, blue and green, and a set of cut-paper shapes for everything around the logo.", imgs: ["m:unde/shapes", "m:unde/blue", "m:unde/orange", "m:unde/green"] },
+      { h: "In the hand", p: "Tote bags, aprons, paper bags, and a pattern of everything you can find on the shelves.", imgs: ["m:unde/tote", "m:unde/apron", "m:unde/bag", "m:unde/pattern"] },
+      { h: "On the street", p: "Light boxes and facade signs, designed down to the last fixing.", imgs: ["m:unde/lightbox", "m:unde/sign-concept", "m:unde/sign-lit", "m:unde/facade"] }
     ]
   },
   "artisan-coffee-gear": {

@@ -2633,3 +2633,5 @@ body.site-mode .topbar .site-btn { position: static; }
 .court-b .mono { font-size: 9px; letter-spacing: .1em; opacity: .85; }
 .court-b:hover, .court-b:focus-visible { transform: translateY(-3px) rotate(-1deg); }
 @media (max-width: 760px) { .court-modal .court-grid { grid-template-columns: 1fr 1fr; } .court-b b { font-size: 14px; } }
+
+.case-frame .cf-close { box-shadow: 0 0 0 2.5px #ffffff, 0 14px 34px -12px rgba(0,0,0,.55); }

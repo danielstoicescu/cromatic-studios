@@ -243,13 +243,21 @@ ${header(true)}
 ${footer}`;
   }
 
+  // a screenshot inside a browser window, and one inside a phone
+  const browser = (m) => `<figure class="bw"><span class="bw-bar" aria-hidden="true"><i></i><i></i><i></i></span>${img(m, "")}</figure>`;
+  const phone = (m) => `<figure class="ph">${img(m, "")}</figure>`;
   function caseBlock(b) {
-    const n = (b.imgs?.length || 0) + (b.vids?.length || 0) + (b.vid ? 1 : 0);
+    const n = (b.imgs?.length || 0) + (b.vids?.length || 0) + (b.vid ? 1 : 0) + (b.phones?.length || 0);
     const media = [
       ...(b.vid ? [vid(b.vid)] : []),
-      ...(b.imgs || []).map((m, i) => `<figure>${img(m, b.caps?.[i] || "")}${b.caps?.[i] ? `<figcaption class="mono">${esc(b.caps[i])}</figcaption>` : ""}</figure>`),
+      ...(b.imgs || []).map((m, i) => b.frame ? browser(m) : `<figure>${img(m, b.caps?.[i] || "")}${b.caps?.[i] ? `<figcaption class="mono">${esc(b.caps[i])}</figcaption>` : ""}</figure>`),
+      ...(b.phones || []).map(phone),
       ...(b.vids || []).map((v) => `<figure>${vid(v)}</figure>`)
     ].join("");
+    if (b.frame) return `<section class="cblock framed${b.tall ? " tall" : ""}${b.phones ? " with-phone" : ""}">
+      <div class="cb-txt">${b.h ? `<h2>${esc(b.h)}</h2>` : ""}${b.p ? `<p>${b.p}</p>` : ""}</div>
+      <div class="cb-media fr">${media}</div>
+    </section>`;
     return `<section class="cblock${b.poster ? " posters" : ""}${b.small ? " small" : ""}">
       ${b.h || b.p ? `<div class="cb-txt">${b.yr ? img(b.yr, b.h, "cb-yr") : b.h ? `<h2>${esc(b.h)}</h2>` : ""}${b.p ? `<p>${b.p}</p>` : ""}</div>` : ""}
       ${n ? `<div class="cb-media n${Math.min(n, 4)}">${media}</div>` : ""}
@@ -271,7 +279,7 @@ ${footer}`;
     ] };
     return `${head({ title: `${d.name} · Case study · Cromatic Studios`, desc: strip(d.lead).slice(0, 158), path: `/work/${slug}/`, image: cover?.src, ld })}
 ${header(false)}
-<main id="main" class="case" style="--bc:${d.c};--bt:${d.t}">
+<main id="main" class="case${d.theme ? " theme-" + d.theme : ""}" style="--bc:${d.c};--bt:${d.t}">
   <section class="c-hero">
     <div class="wrap">
       <nav class="crumbs mono" aria-label="Breadcrumb"><a href="/site/">Cromatic Studios</a> / <a href="/site/#work">Work</a> / <span>${esc(d.name)}</span></nav>
@@ -280,7 +288,7 @@ ${header(false)}
       <p class="lead">${d.lead}</p>
       <div class="c-meta">${d.meta.map((m) => `<span class="mono">${esc(m)}</span>`).join("")}</div>
       ${d.swatches ? `<div class="swatches" aria-hidden="true">${d.swatches.map((c) => `<span style="background:${c}"></span>`).join("")}</div>` : ""}
-      ${d.hero ? `<div class="c-heroimg">${img(d.hero, d.name, "", true)}</div>` : ""}
+      ${d.hero ? (d.heroFrame ? `<div class="c-heroimg wide">${browser(d.hero)}</div>` : `<div class="c-heroimg">${img(d.hero, d.name, "", true)}</div>`) : ""}
       ${d.youtube ? `<div class="yt" data-id="${d.youtube}"><button class="yt-play" aria-label="Play the Two Minutes film">${img("tmPoster", "Two Minutes film", "", true)}<span class="yt-btn">▶ Play the film</span></button></div>` : ""}
     </div>
   </section>

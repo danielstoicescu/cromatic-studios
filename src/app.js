@@ -25968,11 +25968,11 @@ void main() {
   var COFFEE_ADDS = [
     { br: "A", name: "Coffeenativ", logo: "logoCoffeenativ", x: 930, z: 4800, line: "COFFEE", c: "#3b2a20", t: "#ffffff" },
     { br: "A", name: "Brewzeus", logo: "logoBrewzeus", x: 706, z: 4420, line: "COLD BREW", c: "#111111", t: "#ffffff" },
-    { br: "A", name: "ARCA Resort", logo: "logoArca", x: 560, z: 5930, line: "RESORT · TENNIS · POND", c: "#7a1f2b", t: "#ffffff" },
-    { br: "A", name: "Antila", x: 440, z: 6040, line: "CHARCUTERIE FARM", c: "#F2C200", t: "#1a1405" },
-    { br: "A", name: "UNDE", x: 708, z: 6036, line: "GROCERY", c: "#2b6fd6", t: "#ffffff" }
+    { br: "A", name: "ARCA Resort", logo: "logoArca", x: 560, z: 5930, line: "RESORT · TENNIS · POND", c: "#7a1f2b", t: "#ffffff", page: "arca-resort" },
+    { br: "A", name: "Antila", x: 440, z: 6040, line: "CHARCUTERIE FARM", c: "#F2C200", t: "#1a1405", page: "antila" },
+    { br: "A", name: "UNDE", x: 708, z: 6036, line: "GROCERY", c: "#2b6fd6", t: "#ffffff", page: "unde" }
   ];
-  var TAC = { br: "C", name: "The Aesthetic Court", x: 1790, z: 5790, line: "CASA POPORULUI · BUCHAREST", c: "#1a0909", t: "#c89b3c" };
+  var TAC = { br: "C", name: "The Aesthetic Court", x: 1790, z: 5790, line: "CASA POPORULUI · BUCHAREST", c: "#1a0909", t: "#c89b3c", page: "the-aesthetic-court" };
   function buildFourStreets(parent) {
     const L = (n) => (n ? { logoAssetto, logoBepco, logoESD, logoUnchain, logoTechventures, logoAltius, logoClinicaSante, logoInvestimental, logoInfinity, logoLongshield, logoFlask, logoDrK, logoRoutine, logoCoffeenativ, logoBrewzeus, logoArca }[n] : null);
     for (const o of STREET_BRANDS) buildBrandBuilding(parent, { ...o, logo: L(o.logo), keep: 90 });
@@ -30953,7 +30953,9 @@ void main() {
     const COURT_TAG = { br: "C", name: "Zdrovit Court", x: COURT.x - 150, z: COURT.z, line: "8 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff" };
     const workTags = [...STREET_BRANDS, COURT_TAG, TAC, ...COFFEE_ADDS].map((b) => {
       BRANDC[b.name] = BRANDC[b.name] || { c: b.c, t: b.t };
-      const t = mkTag(b.name, b.name.toUpperCase(), b.line, b === COURT_TAG ? "See the eight \u2192" : "Open the case \u2192", () => (b === COURT_TAG ? openCourt() : openProjectHook?.(projOf(b))), "work-tag");
+      // brands with a case page on the website open it full screen (offline copies fall back to the card)
+      const onlinePage = b.page && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname);
+      const t = mkTag(b.name, b.name.toUpperCase(), b.line, b === COURT_TAG ? "See the eight \u2192" : "Open the case \u2192", () => (b === COURT_TAG ? openCourt() : onlinePage && openFrameHook ? openFrameHook(`/work/${b.page}/?embed=1`, b.name) : openProjectHook?.(projOf(b))), "work-tag");
       t._st = b;
       return t;
     });

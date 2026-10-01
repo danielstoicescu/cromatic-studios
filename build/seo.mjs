@@ -32,6 +32,10 @@ export const WORK = [
   ["Yoshi Izakaya", "Communication, content", "Top content for the best sushi in town."],
   ["7 Oale", "Brand", "A comfort soup brand with a mission against big fast food."],
   ["Berero", "Brand", "Brand identity."],
+  ["The Aesthetic Court", "Website, UX, UI", "A medical congress staged as a courtroom at the Palace of the Parliament in Bucharest, and its website built as the trial itself."],
+  ["ARCA Resort", "Packaging, caviar, livery", "Caviar tins, a delivery van and smoked-fish trays for a resort in Blăgești with its own ponds and production."],
+  ["Antila", "Brand identity, illustration, packaging", "A charcuterie brand, 100% Romanian, with a bold wordmark, disruptive characters and colour-coded packaging."],
+  ["UNDÉ", "Brand identity, signage", "ARCA's grocery stores: a hand-drawn basket and three formats, Market, Store and Concept."],
   ["Investimental", "UX, UI, product", "A retail broker helped to win in digital, with a product experience built for first-time investors."],
   ["Routine Paris", "Brand, identity", "A daily ritual brand with a Parisian address and an indie heart."],
   ["Assetto", "Product, brand", "Product and brand for a data-driven fintech platform."],
@@ -139,6 +143,11 @@ ${FAQ.map(([q, a]) => `### ${q}\n\n${a}`).join("\n\n")}
 - [Case study: Steam Coffee Shop](${SITE}/work/steam/)
 - [Case study: Artisan Coffee Gear](${SITE}/work/artisan-coffee-gear/)
 - [Case study: Craft Coffee](${SITE}/work/craft-coffee/)
+- [Case study: OMA Coffee brand canvas](${SITE}/work/oma-coffee/)
+- [Case study: The Aesthetic Court](${SITE}/work/the-aesthetic-court/)
+- [Case study: ARCA Resort](${SITE}/work/arca-resort/)
+- [Case study: Antila](${SITE}/work/antila/)
+- [Case study: UNDÉ](${SITE}/work/unde/)
 - [Cromatic Studios main website](${STUDIO.legalUrl})
 - [Directions to Strada Olari 9](https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti)
 `;

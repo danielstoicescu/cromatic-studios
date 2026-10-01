@@ -104,9 +104,30 @@ const dims = (buf) => {
 // SVGs embedded url-encoded (not base64) never pass through extract(): write them out on demand
 const svgNamed = new Map();
 for (const m of js.matchAll(/([A-Za-z_$][\w$]*)\s*=\s*"data:image\/svg\+xml,([^"]+)"/g)) svgNamed.set(m[1], m[2]);
+// project photography for the website's case pages: site/media/<project>/<name>.jpg, referenced
+// as "m:<project>/<name>"; copied once under content-hashed names (long cache)
+const mediaMap = new Map();
+{
+  const mroot = join(root, "site", "media");
+  let dirs = [];
+  try { dirs = readdirSync(mroot); } catch {}
+  for (const d of dirs) {
+    if (!statSync(join(mroot, d)).isDirectory()) continue;
+    mkdirSync(join(pub, "assets", "m"), { recursive: true });
+    for (const f of readdirSync(join(mroot, d))) {
+      if (!/\.(jpe?g|png|webp)$/i.test(f)) continue;
+      const buf = readFileSync(join(mroot, d, f));
+      const rel = `assets/m/${d}-${f.replace(/\.[^.]+$/, "")}-${hash(buf).slice(0, 8)}${f.slice(f.lastIndexOf("."))}`;
+      writeFileSync(join(pub, rel), buf);
+      const [w, h] = dims(buf);
+      mediaMap.set(`m:${d}/${f.replace(/\.[^.]+$/, "")}`, { src: "/" + rel, w, h });
+    }
+  }
+}
 const assetCache = new Map();
 const A = (name) => {
   if (!name) return null;
+  if (name.startsWith("m:")) return mediaMap.get(name) || null;
   if (assetCache.has(name)) return assetCache.get(name);
   if (!named.has(name) && svgNamed.has(name)) {
     const svg = Buffer.from(decodeURIComponent(svgNamed.get(name)));
@@ -134,7 +155,7 @@ try {
 const siteCssName = `assets/site.${hash(siteCss)}.css`, siteJsName = `assets/site.${hash(siteJs)}.js`;
 writeFileSync(join(pub, siteCssName), siteCss);
 writeFileSync(join(pub, siteJsName), siteJs);
-const FONTS = "https://fonts.googleapis.com/css2?family=Montserrat:wght@800&family=Poppins:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=JetBrains+Mono:wght@700&display=swap";
+const FONTS = "https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Montserrat:wght@800&family=Poppins:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=JetBrains+Mono:wght@700&display=swap";
 // the drive's kinetic intro, as the website's hero (loaded after the page has painted)
 let kz = null;
 try {
