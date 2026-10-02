@@ -23742,7 +23742,7 @@ void main() {
         { id: "world", x: 1010, y: 1460, label: "CH.03 The World" },
         { id: "crowd", x: 770, y: 2390, label: "CH.04 The Crowd" },
         { id: "team", x: 1500, y: 3740, label: "CH.05 The Crew" },
-        { id: "fork", x: 1500, y: 4260, label: "CH.06 Four routes" },
+        { id: "fork", x: 1500, y: 4260, label: "CH.06 Three routes" },
         { id: "merge", x: 1424, y: 6750, label: "CH.06 Routes merge" },
         { id: "services", x: 1060, y: 8130, label: "CH.07 Services" },
         { id: "end", x: 1140, y: 9260, label: "Strada Olari 9" },
@@ -23755,7 +23755,7 @@ void main() {
         voice: { title: "The Voice", learn: "Hear how a brand starts talking", pts: 20, stat: "CHARACTER" },
         world: { title: "The World", learn: "See the places brands live in", pts: 20, stat: "CRAFT" },
         crowd: { title: "The Crowd", learn: "Watch a community gather", pts: 20, stat: "REACH" },
-        fork: { title: "Four Routes", learn: "Choose your street: coffee, digital, medical or financial", pts: 10, stat: "CURIOSITY" },
+        fork: { title: "Three Routes", learn: "Choose your street: coffee, fintech or medical", pts: 10, stat: "CURIOSITY" },
         merge: { title: "Routes Merge", learn: "Meet 40+ friends we made", pts: 15, stat: "TRUST" },
         team: { title: "The Crew", learn: "Meet 10 brilliant wild brains", pts: 20, stat: "EMPATHY" },
         services: { title: "Full Tank", learn: "Load every service we carry", pts: 20, stat: "POWER" },
@@ -23936,10 +23936,10 @@ void main() {
           includes: { tint: "#F65342", items: ["Content strategy", "Social design", "Ad campaigns", "Instagram growth", "Community"] }
         },
         fork: {
-          eyebrow: "CH.06 / FOUR ROUTES AVAILABLE",
+          eyebrow: "CH.06 / THREE ROUTES AVAILABLE",
           pills: ["Pick your", "route"],
           seed: 2,
-          body: `<p>Similar arrival time. Different scenery. Four streets ahead: coffee, digital, medical, financial. Pick one and drive.</p>`
+          body: `<p>Similar arrival time. Different scenery. Three streets ahead: coffee, fintech, medical. Pick one and drive.</p>`
         },
         merge: {
           eyebrow: "CH.06 / ROUTES MERGE",
@@ -24050,7 +24050,7 @@ void main() {
   }
   // the four streets out of the fork: A Coffee Street, B Digital Avenue, C Medical Avenue,
   // D Financial Boulevard
-  var BRANCHES = ["A", "B", "C", "D"];
+  var BRANCHES = ["A", "B", "C"];
   // places that must stay clear of the generic city blocks (filled by the street builders)
   var EXTRA_KEEPOUT = [];
   function branchRoute(b) { return b === "B" ? ROUTE_B : b === "C" ? ROUTE_C : b === "D" ? ROUTE_D : ROUTE_A; }
@@ -24492,7 +24492,6 @@ void main() {
       ...roundedPolyline([...ROUTE_MAIN, ...ROUTE_A.slice(1)]),
       ...roundedPolyline(ROUTE_B),
       ...roundedPolyline(ROUTE_C),
-      ...roundedPolyline(ROUTE_D),
       ...roundedPolyline([...ROUTE_MERGE, ...ROUTE_SECRET.slice(1)])
     ];
     for (const z of EXTRA_KEEPOUT) zones.push(z);
@@ -24532,7 +24531,7 @@ void main() {
   }
   function buildBuildings(parent) {
     const zones = buildKeepOut();
-    const corridor = [...roundedPolyline([...ROUTE_MAIN, ...ROUTE_A.slice(1), ...ROUTE_MERGE.slice(1), ...ROUTE_SECRET.slice(1)]), ...roundedPolyline(ROUTE_C), ...roundedPolyline(ROUTE_D)].filter((_, i) => i % 3 === 0);
+    const corridor = [...roundedPolyline([...ROUTE_MAIN, ...ROUTE_A.slice(1), ...ROUTE_MERGE.slice(1), ...ROUTE_SECRET.slice(1)]), ...roundedPolyline(ROUTE_C)].filter((_, i) => i % 3 === 0);
     const distToRoute = (x, y) => {
       let d = Infinity;
       for (const [rx, ry] of corridor) {
@@ -25648,6 +25647,8 @@ void main() {
   // ===================== r79: four streets — brand buildings =====================
   // emissive materials that light up after dark (switched with the other shop glows)
   var STREET_GLOW = [];
+  // the palace: hidden in the Underwater world, where the pineapple house takes its place
+  var casaPoporului = null;
   // a sign: a client logo (black on transparent, recoloured to `ink`) or lettering on a board
   function logoTexture(src, { w = 512, h = 160, bg = "#ffffff", ink = "#111111", pad = 22, text = null, font = "800 64px Montserrat, Poppins, sans-serif" } = {}) {
     const c = document.createElement("canvas");
@@ -25934,35 +25935,34 @@ void main() {
   // all the new street furniture: brands on Digital, Medical and Financial, the courtyard,
   // the palace, ARCA, and two more coffee shops on Coffee Street
   var STREET_BRANDS = [
-    // Digital Avenue (B), east kerb
-    { br: "B", name: "Assetto", logo: "logoAssetto", x: 2205, z: 4500, face: "-x", kind: "office", w: 70, h: 52, accent: "#1f8a3a", c: "#1f8a3a", t: "#ffffff", line: "PRODUCT · BRAND" },
-    { br: "B", name: "Bepco", logo: "logoBepco", x: 2205, z: 4760, face: "-x", kind: "office", w: 66, h: 44, accent: "#2a2a2a", c: "#2a2a2a", t: "#ffffff", line: "BRAND · DIGITAL" },
-    { br: "B", name: "ESD", logo: "logoESD", x: 2205, z: 5020, face: "-x", kind: "office", w: 64, h: 58, accent: "#119BFE", c: "#119BFE", t: "#ffffff", line: "DIGITAL" },
-    { br: "B", name: "Witanalitica", x: 2205, z: 5280, face: "-x", kind: "office", w: 66, h: 48, accent: "#6b4fd8", c: "#6b4fd8", t: "#ffffff", line: "DATA · DIGITAL" },
-    { br: "B", name: "Unchain Festival", logo: "logoUnchain", x: 2215, z: 5560, face: "-x", kind: "festival", w: 84, d: 54, h: 44, accent: "#111111", c: "#111111", t: "#ffffff", line: "FESTIVAL · BRAND" },
+    // Fintech Boulevard (B): Investimental first; east kerb, then the west kerb
+    { br: "B", name: "Investimental", logo: "logoInvestimental", x: 2205, z: 4500, face: "-x", kind: "tower", w: 66, d: 56, h: 150, accent: "#119BFE", glass: "#1d2c3c", c: "#119BFE", t: "#ffffff", line: "UX · UI · PRODUCT" },
+    { br: "B", name: "Infinity Capital", logo: "logoInfinity", x: 1988, z: 4600, face: "+x", kind: "tower", w: 64, d: 56, h: 180, accent: "#b08d3c", glass: "#262a30", c: "#b08d3c", t: "#ffffff", line: "INVESTMENTS" },
+    { br: "B", name: "Assetto", logo: "logoAssetto", x: 2205, z: 4760, face: "-x", kind: "office", w: 70, h: 52, accent: "#1f8a3a", c: "#1f8a3a", t: "#ffffff", line: "PRODUCT · BRAND" },
+    { br: "B", name: "Longshield", logo: "logoLongshield", x: 1988, z: 4880, face: "+x", kind: "tower", w: 62, d: 54, h: 160, accent: "#2b2b2b", glass: "#22303d", c: "#2b2b2b", t: "#ffffff", line: "INVESTMENT GROUP" },
+    { br: "B", name: "Bepco", logo: "logoBepco", x: 2205, z: 5020, face: "-x", kind: "office", w: 66, h: 44, accent: "#2a2a2a", c: "#2a2a2a", t: "#ffffff", line: "BRAND · DIGITAL" },
+    { br: "B", name: "Flask", logo: "logoFlask", x: 1988, z: 5160, face: "+x", kind: "tower", w: 60, d: 54, h: 130, accent: "#1f8a6a", glass: "#20352e", c: "#1f8a6a", t: "#ffffff", line: "FINTECH" },
+    { br: "B", name: "ESD", logo: "logoESD", x: 2205, z: 5280, face: "-x", kind: "office", w: 64, h: 58, accent: "#119BFE", c: "#119BFE", t: "#ffffff", line: "DIGITAL" },
+    { br: "B", name: "Unchain Festival", logo: "logoUnchain", x: 1990, z: 5440, face: "+x", kind: "festival", w: 84, d: 54, h: 44, accent: "#111111", c: "#111111", t: "#ffffff", line: "FESTIVAL · BRAND" },
+    { br: "B", name: "Witanalitica", x: 2205, z: 5540, face: "-x", kind: "office", w: 66, h: 48, accent: "#6b4fd8", c: "#6b4fd8", t: "#ffffff", line: "DATA · DIGITAL" },
     { br: "B", name: "Techventures Bank", logo: "logoTechventures", x: 2210, z: 5850, face: "-x", kind: "tower", w: 70, d: 56, h: 120, accent: "#0d3b66", c: "#0d3b66", t: "#ffffff", line: "BANKING · DIGITAL" },
-    // Medical Avenue (C): the courtyard, then the avenue, then the palace
-    { br: "C", name: "Zoetis", x: 1610, z: 4960, face: "-x", kind: "clinic", w: 70, h: 40, accent: "#f2763b", c: "#f2763b", t: "#2a1205", line: "ANIMAL HEALTH" },
-    { br: "C", name: "Altius", logo: "logoAltius", x: 1610, z: 5130, face: "-x", kind: "clinic", w: 66, h: 46, accent: "#2a5d8f", c: "#2a5d8f", t: "#ffffff", line: "MEDICAL" },
-    { br: "C", name: "Alithia", x: 1610, z: 5300, face: "-x", kind: "clinic", w: 64, h: 38, accent: "#7cc4a8", c: "#7cc4a8", t: "#0c2a20", line: "MEDICAL" },
-    { br: "C", name: "Clinica Sante", logo: "logoClinicaSante", x: 1610, z: 5470, face: "-x", kind: "clinic", w: 70, h: 44, accent: "#2f9e4f", c: "#2f9e4f", t: "#ffffff", line: "CLINIC · BRAND · FILM" },
-    // Financial Boulevard (D): Investimental first, glass towers
-    { br: "D", name: "Investimental", logo: "logoInvestimental", x: 2500, z: 4520, face: "+x", kind: "tower", w: 66, d: 56, h: 150, accent: "#119BFE", glass: "#1d2c3c", c: "#119BFE", t: "#ffffff", line: "UX · UI · PRODUCT" },
-    { br: "D", name: "Infinity Capital", logo: "logoInfinity", x: 2740, z: 4800, face: "-x", kind: "tower", w: 70, d: 60, h: 190, accent: "#b08d3c", glass: "#262a30", c: "#b08d3c", t: "#ffffff", line: "INVESTMENTS" },
-    { br: "D", name: "Longshield", logo: "logoLongshield", x: 2500, z: 5080, face: "+x", kind: "tower", w: 64, d: 56, h: 170, accent: "#2b2b2b", glass: "#22303d", c: "#2b2b2b", t: "#ffffff", line: "INVESTMENT GROUP" },
-    { br: "D", name: "Flask", logo: "logoFlask", x: 2740, z: 5360, face: "-x", kind: "tower", w: 62, d: 54, h: 130, accent: "#1f8a6a", glass: "#20352e", c: "#1f8a6a", t: "#ffffff", line: "FINTECH" }
+    // Medical Avenue (C): after the palace and the courtyard, the clinics
+    { br: "C", name: "Zoetis", x: 1610, z: 5380, face: "-x", kind: "clinic", w: 70, h: 40, accent: "#f2763b", c: "#f2763b", t: "#2a1205", line: "ANIMAL HEALTH" },
+    { br: "C", name: "Altius", logo: "logoAltius", x: 1610, z: 5540, face: "-x", kind: "clinic", w: 66, h: 46, accent: "#2a5d8f", c: "#2a5d8f", t: "#ffffff", line: "MEDICAL" },
+    { br: "C", name: "Alithia", x: 1610, z: 5700, face: "-x", kind: "clinic", w: 64, h: 38, accent: "#7cc4a8", c: "#7cc4a8", t: "#0c2a20", line: "MEDICAL" },
+    { br: "C", name: "Clinica Sante", logo: "logoClinicaSante", x: 1610, z: 5860, face: "-x", kind: "clinic", w: 70, h: 44, accent: "#2f9e4f", c: "#2f9e4f", t: "#ffffff", line: "CLINIC · BRAND · FILM" }
   ];
   // the Zdrovit courtyard (Medical Avenue, east side): eight small buildings around a yard
-  var COURT = { x: 1720, z: 4605 };
+  var COURT = { x: 1720, z: 5070 };
   var COURT_BRANDS = [
-    { br: "C", name: "Sofmedica", x: 1620, z: 4470, face: "+z", kind: "house", w: 58, d: 44, h: 32, wall: "#f4f4f0", accent: "#2b6fd6", c: "#2b6fd6", t: "#ffffff", line: "MEDICAL" },
-    { br: "C", name: "Medcity", x: 1720, z: 4462, face: "+z", kind: "house", w: 58, d: 44, h: 36, wall: "#eef6f4", accent: "#18a39b", c: "#18a39b", t: "#ffffff", line: "CLINICS" },
-    { br: "C", name: "Clinica Dr. K", logo: "logoDrK", x: 1820, z: 4470, face: "+z", kind: "house", w: 58, d: 44, h: 32, wall: "#f6efe9", accent: "#b88a6e", c: "#b88a6e", t: "#ffffff", line: "AESTHETICS MEDICAL CENTER" },
-    { br: "C", name: "Zdrovit", x: 1860, z: 4605, face: "-x", kind: "house", w: 70, d: 48, h: 40, wall: "#f2f7f1", accent: "#e30613", c: "#e30613", t: "#ffffff", line: "HEALTH" },
-    { br: "C", name: "Tskani", x: 1620, z: 4740, face: "-z", kind: "barcelona", w: 58, d: 44, h: 34, wall: "#f3e6cf", accent: "#e8a33d", c: "#e8a33d", t: "#2a1a05", line: "BARCELONA" },
-    { br: "C", name: "Darya Hope", x: 1720, z: 4750, face: "-z", kind: "la", w: 56, d: 42, h: 28, wall: "#f8d7df", accent: "#f08fb0", c: "#f08fb0", t: "#2a0f17", line: "BEAUTY · LOS ANGELES" },
-    { br: "C", name: "Jesse J", x: 1820, z: 4740, face: "-z", kind: "la", w: 56, d: 42, h: 28, wall: "#d8efe6", accent: "#62c6a6", c: "#62c6a6", t: "#0c2a20", line: "BEAUTY · LOS ANGELES" },
-    { br: "C", name: "Routine Paris", logo: "logoRoutine", x: 1880, z: 4700, face: "-x", kind: "paris", w: 46, d: 40, h: 34, wall: "#efe7d8", accent: "#28C840", c: "#28C840", t: "#0e0e0e", line: "PERFUMES · PARIS" }
+    { br: "C", name: "Sofmedica", x: 1620, z: 4935, face: "+z", kind: "house", w: 58, d: 44, h: 32, wall: "#f4f4f0", accent: "#2b6fd6", c: "#2b6fd6", t: "#ffffff", line: "MEDICAL" },
+    { br: "C", name: "Medcity", x: 1720, z: 4927, face: "+z", kind: "house", w: 58, d: 44, h: 36, wall: "#eef6f4", accent: "#18a39b", c: "#18a39b", t: "#ffffff", line: "CLINICS" },
+    { br: "C", name: "Clinica Dr. K", logo: "logoDrK", x: 1820, z: 4935, face: "+z", kind: "house", w: 58, d: 44, h: 32, wall: "#f6efe9", accent: "#b88a6e", c: "#b88a6e", t: "#ffffff", line: "AESTHETICS MEDICAL CENTER" },
+    { br: "C", name: "Zdrovit", x: 1860, z: 5070, face: "-x", kind: "house", w: 70, d: 48, h: 40, wall: "#f2f7f1", accent: "#e30613", c: "#e30613", t: "#ffffff", line: "HEALTH" },
+    { br: "C", name: "Tskani", x: 1620, z: 5205, face: "-z", kind: "barcelona", w: 58, d: 44, h: 34, wall: "#f3e6cf", accent: "#e8a33d", c: "#e8a33d", t: "#2a1a05", line: "BARCELONA" },
+    { br: "C", name: "Darya Hope", x: 1720, z: 5215, face: "-z", kind: "la", w: 56, d: 42, h: 28, wall: "#f8d7df", accent: "#f08fb0", c: "#f08fb0", t: "#2a0f17", line: "BEAUTY · LOS ANGELES" },
+    { br: "C", name: "Jesse J", x: 1820, z: 5205, face: "-z", kind: "la", w: 56, d: 42, h: 28, wall: "#d8efe6", accent: "#62c6a6", c: "#62c6a6", t: "#0c2a20", line: "BEAUTY · LOS ANGELES" },
+    { br: "C", name: "Routine Paris", logo: "logoRoutine", x: 1880, z: 5165, face: "-x", kind: "paris", w: 46, d: 40, h: 34, wall: "#efe7d8", accent: "#28C840", c: "#28C840", t: "#0e0e0e", line: "PERFUMES · PARIS" }
   ];
   // Coffee Street additions
   var COFFEE_ADDS = [
@@ -25972,12 +25972,12 @@ void main() {
     { br: "A", name: "Antila", x: 440, z: 6040, line: "CHARCUTERIE FARM", c: "#F2C200", t: "#1a1405", page: "antila" },
     { br: "A", name: "UNDE", x: 708, z: 6036, line: "GROCERY", c: "#2b6fd6", t: "#ffffff", page: "unde" }
   ];
-  var TAC = { br: "C", name: "The Aesthetic Court", x: 1790, z: 5790, line: "CASA POPORULUI · BUCHAREST", c: "#1a0909", t: "#c89b3c", page: "the-aesthetic-court" };
+  var TAC = { br: "C", name: "The Aesthetic Court", x: 1772, z: 4570, line: "CASA POPORULUI · BUCHAREST", c: "#1a0909", t: "#c89b3c", page: "the-aesthetic-court" };
   function buildFourStreets(parent) {
     const L = (n) => (n ? { logoAssetto, logoBepco, logoESD, logoUnchain, logoTechventures, logoAltius, logoClinicaSante, logoInvestimental, logoInfinity, logoLongshield, logoFlask, logoDrK, logoRoutine, logoCoffeenativ, logoBrewzeus, logoArca }[n] : null);
     for (const o of STREET_BRANDS) buildBrandBuilding(parent, { ...o, logo: L(o.logo), keep: 90 });
     buildCourtyard(parent, COURT.x, COURT.z, COURT_BRANDS.map((o) => ({ ...o, logo: L(o.logo) })));
-    buildCasaPoporului(parent, TAC.x, TAC.z);
+    casaPoporului = buildCasaPoporului(parent, TAC.x, TAC.z);
     buildArcaResort(parent);
     // two more coffee shops on Coffee Street, where the blank lots were
     buildStreetShop(parent, { key: "coffeenativGlow", name: "COFFEENATIV", label: "specialty coffee", x: 930, z: 4800,
@@ -25986,7 +25986,7 @@ void main() {
       w: 62, h: 50, d: 44, wall: "#1b1b1b", trim: "#f2c230", glass: "#0d0d0d", ink: "#f2c230", boardInk: "#111111" });
     // a skyline for the financial district: unbranded glass towers further down the boulevard
     const rnd = rng(4242);
-    for (const [tx, tz, f] of [[2500, 5640, "+x"], [2740, 5660, "-x"], [2500, 5900, "+x"], [2740, 5930, "-x"], [2860, 4600, "-x"], [2870, 5100, "-x"]]) {
+    for (const [tx, tz, f] of [[2420, 4700, "-x"], [2470, 5100, "-x"], [2420, 5500, "-x"], [2480, 5900, "-x"], [2600, 4900, "-x"], [2620, 5350, "-x"]]) {
       buildBrandBuilding(parent, { x: tx, z: tz, face: f, kind: "tower", name: "", w: 56 + rnd() * 20, d: 50, h: 110 + rnd() * 90, accent: ["#33414f", "#1f8a6a", "#b08d3c"][Math.floor(rnd() * 3)], glass: "#24323f", signBg: "#24323f", signInk: "#24323f", keep: 80 });
     }
   }
@@ -30829,10 +30829,13 @@ void main() {
     toastCol.prepend(copPill);
     const anchors = el("div", "anchors");
     root.appendChild(anchors);
-    const forkA = el("button", "jx-btn a hidden", `<span class="jx-in"><b>COFFEE STREET \u2192</b><span class="jx-sub">Continue story</span></span>`);
-    const forkB = el("button", "jx-btn b hidden", `<span class="jx-in"><b>\u2190 DIGITAL AVENUE</b><span class="jx-sub">Check our work</span></span>`);
-    const forkC = el("button", "jx-btn c hidden", `<span class="jx-in"><b>MEDICAL AVENUE \u2191</b><span class="jx-sub">Clinics, care & beauty</span></span>`);
-    const forkD = el("button", "jx-btn d hidden", `<span class="jx-in"><b>\u2190 FINANCIAL BLVD</b><span class="jx-sub">Fintech & investment</span></span>`);
+    // the choices look like motorway signs: white panels, black lettering, one stripe in the
+    // street's colour, the arrow pointing the way the street leaves the fork
+    const hwSign = (cls, dir, name, sub) => el("button", `jx-btn hw ${cls} hidden`, `<span class="hw-stripe" aria-hidden="true"></span><span class="hw-body">${dir === "l" ? '<span class="hw-arrow" aria-hidden="true">\u2190</span>' : ""}${dir === "u" ? '<span class="hw-arrow" aria-hidden="true">\u2191</span>' : ""}<span class="hw-txt"><b>${name}</b><i>${sub}</i></span>${dir === "r" ? '<span class="hw-arrow" aria-hidden="true">\u2192</span>' : ""}</span>`);
+    const forkA = hwSign("a", "r", "Coffee Street", "Continue the story");
+    const forkB = hwSign("b", "l", "Fintech Boulevard", "Digital & finance");
+    const forkC = hwSign("c", "u", "Medical Avenue", "Clinics, care & beauty");
+    const forkD = el("button", "jx-btn d hidden");
     forkA.onclick = () => api.pickBranch("A");
     forkB.onclick = () => api.pickBranch("B");
     forkC.onclick = () => api.pickBranch("C");
@@ -30974,7 +30977,7 @@ void main() {
     const jxRow = el("div", "jx-row hidden");
     jxRow.setAttribute("role", "group");
     jxRow.setAttribute("aria-label", "Choose your street");
-    for (const b2 of [forkD, forkB, forkC, forkA]) { b2.classList.remove("hidden"); jxRow.appendChild(b2); }
+    for (const b2 of [forkB, forkC, forkA]) { b2.classList.remove("hidden"); jxRow.appendChild(b2); }
     root.appendChild(jxRow);
     anchors.append(rbBtn, addrCard, poiStack);
     return {
@@ -31366,7 +31369,7 @@ void main() {
         pickBranch(b) {
           if (!xpCollected.has("fork") && !(xpPending && xpPending.stopId === "fork")) {
             const m = STOP_META.fork;
-            xpAnnounce(m.pts, m.title, { A: "Coffee Street, the story road", B: "Digital Avenue, the work road", C: "Medical Avenue, care and beauty", D: "Financial Boulevard, fintech and investment" }[b], "msg", "fork");
+            xpAnnounce(m.pts, m.title, { A: "Coffee Street, the story road", B: "Fintech Boulevard, digital and finance", C: "Medical Avenue, care and beauty" }[b], "msg", "fork");
           }
           state.branch = b;
           state.branchChosen = true;
@@ -31652,6 +31655,7 @@ void main() {
           farClouds.visible = mv;
           if (mvFx) mvFx.group.visible = mv;
           if (typeof uwFx !== "undefined" && uwFx) uwFx.group.visible = s.id === "underwater";
+          if (casaPoporului) casaPoporului.visible = s.id !== "underwater";
           if (typeof worldFx !== "undefined" && worldFx) worldFx.set(s.id);
           const skyWorld = s.id === "ghibli" || s.id === "orchid";
           if (skyWorld) {
@@ -32507,10 +32511,10 @@ void main() {
           path.position.y = 0.8;
           ph.add(path);
           ph.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-          // south of the fork, its door turned towards the junction you arrive at
-          ph.position.set(FORK_POS.x, 0, FORK_POS.y + 230);
-          ph.rotation.y = Math.PI;
-          ph.scale.setScalar(2);
+          // where the palace stands on Medical Avenue, its door towards the avenue
+          ph.position.set(TAC.x - 10, 0, TAC.z);
+          ph.rotation.y = -Math.PI / 2;
+          ph.scale.setScalar(2.7);
           g.add(ph);
         }
         const center = new Vector3(1250, 0, 400);
@@ -33676,7 +33680,7 @@ void main() {
         // the row shows the choice, then gets out of the way once a street is picked
         if (state.branchChosen) { if (!ui.jxRow._chosenAt) ui.jxRow._chosenAt = now; } else ui.jxRow._chosenAt = 0;
         ui.jxRow.classList.toggle("hidden", !nearFork || siteMode || flying || (state.branchChosen && now - ui.jxRow._chosenAt > 700));
-        for (const [bk, btn] of [["A", ui.forkA], ["B", ui.forkB], ["C", ui.forkC], ["D", ui.forkD]]) {
+        for (const [bk, btn] of [["A", ui.forkA], ["B", ui.forkB], ["C", ui.forkC]]) {
           btn.classList.toggle("leaving", state.branchChosen);
           btn.classList.toggle("on", state.branchChosen && state.branch === bk);
         }

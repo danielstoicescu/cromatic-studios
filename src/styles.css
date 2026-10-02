@@ -2635,3 +2635,30 @@ body.site-mode .topbar .site-btn { position: static; }
 @media (max-width: 760px) { .court-modal .court-grid { grid-template-columns: 1fr 1fr; } .court-b b { font-size: 14px; } }
 
 .case-frame .cf-close { box-shadow: 0 0 0 2.5px #ffffff, 0 14px 34px -12px rgba(0,0,0,.55); }
+/* ---- r81: the street choice as motorway signs ---- */
+.jx-row .jx-btn.hw { all: unset; box-sizing: border-box; cursor: pointer; position: relative; display: flex; flex-direction: column; min-width: 230px;
+  background: #ffffff; color: #0d0c09; border-radius: 10px; overflow: hidden; box-shadow: 0 0 0 3px #ffffff, 0 0 0 5.5px #0d0c09, 0 16px 36px -14px rgba(0,0,0,.55);
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s; }
+.jx-row .jx-btn.hw:hover, .jx-row .jx-btn.hw:focus-visible { transform: translateY(-3px); }
+.hw-stripe { display: block; height: 12px; background: var(--hwc); }
+.jx-btn.hw.a { --hwc: #28C840; } .jx-btn.hw.b { --hwc: #119BFE; } .jx-btn.hw.c { --hwc: #F28BA8; }
+.hw-body { display: flex; align-items: center; gap: 14px; padding: 14px 20px 16px; }
+.hw-arrow { font: 900 34px/1 "Montserrat", Poppins, sans-serif; }
+.hw-txt { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.hw-txt b { font: 800 21px/1.05 "Montserrat", Poppins, sans-serif; letter-spacing: -.01em; white-space: nowrap; }
+.hw-txt i { font: 600 10.5px/1 "JetBrains Mono", monospace; font-style: normal; letter-spacing: .1em; text-transform: uppercase; opacity: .6; }
+.jx-row .jx-btn.hw.on { box-shadow: 0 0 0 3px #ffffff, 0 0 0 5.5px var(--hwc), 0 16px 36px -14px rgba(0,0,0,.55); }
+.jx-row .jx-btn.hw.leaving { opacity: .35; }
+.jx-row { grid-template-columns: repeat(3, auto) !important; gap: 18px; }
+@media (max-width: 760px) {
+  .jx-row { grid-template-columns: 1fr !important; gap: 10px; left: 16px; right: 16px; }
+  .jx-row .jx-btn.hw { min-width: 0; width: 100%; }
+  .hw-stripe { height: 8px; }
+  .hw-body { padding: 9px 14px 11px; gap: 10px; }
+  .hw-arrow { font-size: 24px; }
+  .hw-txt b { font-size: 16px; }
+  .hw-txt i { font-size: 9px; }
+}
+
+.jx-row .jx-btn.hw .hw-txt b { font-size: 21px; }
+@media (max-width: 760px) { .jx-row .jx-btn.hw .hw-txt b { font-size: 16px; } }
