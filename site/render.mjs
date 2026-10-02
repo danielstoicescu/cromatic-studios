@@ -49,7 +49,7 @@ export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz, canvases = {} 
 <noscript><link rel="stylesheet" href="${fonts}"></noscript>
 <link rel="stylesheet" href="${cssHref}">
 <script src="${jsHref}" defer></script>
-${kz ? `<script>try{if(location.pathname==="/site/"&&!location.hash&&scrollY<40&&!matchMedia("(prefers-reduced-motion: reduce)").matches&&!sessionStorage.getItem("kzSeen")){document.documentElement.classList.add("kz-wait");window.__kzT=setTimeout(function(){document.documentElement.classList.remove("kz-wait")},4000)}}catch(e){}</script>` : ""}
+${kz ? `<script>try{if(location.pathname==="/site/"&&!matchMedia("(prefers-reduced-motion: reduce)").matches){document.documentElement.classList.add("kz-play");window.__kzT=setTimeout(function(){document.documentElement.classList.remove("kz-play")},5000)}}catch(e){}</script>` : ""}
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>` : ""}
 </head><body${kz ? ` data-kz-js="${kz.js}" data-kz-css="${kz.css}"` : ""}>`;
 
@@ -137,7 +137,11 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     return `${head({ title: "Cromatic Studios · Branding, web & film studio in Bucharest", desc: STUDIO.description + " Strategy, identity, websites, video and content for indie brands, startups and established companies.", path: "/site/", ld })}
 ${header(true)}
 <main id="main">
-  <section class="hero">
+  <section class="hero hero-kz">
+   <div class="hk-card">
+    <div class="hk-stage" aria-hidden="true"></div>
+    <button class="hk-skip mono" type="button">Skip intro ↓</button>
+    <button class="hk-replay mono" type="button" aria-label="Replay the intro">↺ Replay the intro</button>
     <div class="wrap hero-in">
       <div class="hero-txt">
         <p class="eyebrow mono">Cromatic Studios · Bucharest · Since 2014</p>
@@ -150,12 +154,36 @@ ${header(true)}
         <span class="ha-star">${STAR}</span>
       </div>
     </div>
+   </div>
   </section>
 
   <section class="clients" aria-label="Clients">
     <div class="wrap">
       <p class="eyebrow mono">Brands we grew with</p>
       <div class="logos">${CLIENT_BADGES.map((b) => `<span class="logo">${img(b, "")}</span>`).join("")}</div>
+    </div>
+  </section>
+
+  <section class="road" aria-label="The coffee stop on the drive">
+    <div class="wrap road-head">
+      <p class="eyebrow mono">A piece of the drive · Strada Aricescu 52</p>
+      <h2 class="ptitle">${pill("The coffee", "#FED012", -1.5)}${pill("stop", "#F2A9C4", 1)}</h2>
+      <p class="sec-lead">Two Minutes has been our client and our neighbour for a decade. Scroll and the van rolls up; tap the counter and pour.</p>
+    </div>
+    <div class="road-scene">
+      <div class="rs-sky"></div>
+      <div class="rs-shop"><span class="rs-awn"></span><span class="rs-sign">TWO<br>MIN</span><span class="rs-door"></span><span class="rs-win"></span></div>
+      <div class="rs-mansard"><span></span><b>CROMATIC</b></div>
+      <div class="rs-lights" aria-hidden="true">${Array.from({ length: 13 }, (_, i) => `<i style="--i:${i}"></i>`).join("")}</div>
+      <div class="rs-road"><span class="rs-dash"></span></div>
+      <div class="rs-van" aria-hidden="true"><span class="rs-body"></span><span class="rs-glass"></span><span class="rs-w w1"></span><span class="rs-w w2"></span></div>
+      <div class="rs-boxes" aria-hidden="true"></div>
+      <div class="rs-counter">
+        <button class="rs-pour" type="button">☕ Pour a double espresso</button>
+        <p class="rs-msg mono" aria-live="polite">The counter is open.</p>
+        <div class="rs-cups" aria-hidden="true"></div>
+      </div>
+      <a class="rs-cta" href="/work/two-minutes/">Two Minutes, the case →</a>
     </div>
   </section>
 
@@ -246,22 +274,27 @@ ${footer}`;
   // a screenshot inside a browser window, and one inside a phone
   const browser = (m) => `<figure class="bw"><span class="bw-bar" aria-hidden="true"><i></i><i></i><i></i></span>${img(m, "")}</figure>`;
   const phone = (m) => `<figure class="ph">${img(m, "")}</figure>`;
-  function caseBlock(b) {
-    const n = (b.imgs?.length || 0) + (b.vids?.length || 0) + (b.vid ? 1 : 0) + (b.phones?.length || 0);
-    const media = [
-      ...(b.vid ? [vid(b.vid)] : []),
-      ...(b.imgs || []).map((m, i) => b.frame ? browser(m) : `<figure>${img(m, b.caps?.[i] || "")}${b.caps?.[i] ? `<figcaption class="mono">${esc(b.caps[i])}</figcaption>` : ""}</figure>`),
-      ...(b.phones || []).map(phone),
-      ...(b.vids || []).map((v) => `<figure>${vid(v)}</figure>`)
-    ].join("");
-    if (b.frame) return `<section class="cblock framed${b.tall ? " tall" : ""}${b.phones ? " with-phone" : ""}">
-      <div class="cb-txt">${b.h ? `<h2>${esc(b.h)}</h2>` : ""}${b.p ? `<p>${b.p}</p>` : ""}</div>
-      <div class="cb-media fr">${media}</div>
-    </section>`;
-    return `<section class="cblock${b.poster ? " posters" : ""}${b.small ? " small" : ""}">
-      ${b.h || b.p ? `<div class="cb-txt">${b.yr ? img(b.yr, b.h, "cb-yr") : b.h ? `<h2>${esc(b.h)}</h2>` : ""}${b.p ? `<p>${b.p}</p>` : ""}</div>` : ""}
-      ${n ? `<div class="cb-media n${Math.min(n, 4)}">${media}</div>` : ""}
-    </section>`;
+  // case pages, v2 (after the Steam case study): chapters with big type, then the images at
+  // their natural shape (never cropped): one full width, two side by side, three or more in a
+  // horizontal rail you can drag or step through. Every image opens in a lightbox.
+  const lbImg = (m, alt = "") => { const a = A(m); if (!a) return ""; return `<img src="${a.src}"${a.w ? ` width="${a.w}" height="${a.h}"` : ""} alt="${esc(alt)}" loading="lazy" decoding="async" data-lb="${a.src}">`; };
+  function caseBlock(b, i) {
+    const num = String(i + 1).padStart(2, "0");
+    const head = b.h || b.p ? `<div class="wrap c2-head c2-reveal">${b.yr ? img(b.yr, b.h, "cb-yr") : ""}${b.h && !b.yr ? `<span class="c2-num mono">${num}</span><h2>${esc(b.h)}</h2>` : ""}${b.p ? `<p>${b.p}</p>` : ""}</div>` : "";
+    if (b.frame) return `<section class="c2-ch"><div class="wrap"><div class="cblock framed${b.tall ? " tall" : ""}${b.phones ? " with-phone" : ""}">
+      <div class="cb-txt">${b.h ? `<span class="c2-num mono">${num}</span><h2>${esc(b.h)}</h2>` : ""}${b.p ? `<p>${b.p}</p>` : ""}</div>
+      <div class="cb-media fr">${(b.imgs || []).map(browser).join("")}${(b.phones || []).map(phone).join("")}</div>
+    </div></div></section>`;
+    const imgs = b.imgs || [], vids = [...(b.vid ? [b.vid] : []), ...(b.vids || [])];
+    const items = [...vids.map((v) => `<figure class="c2-fig vid">${vid(v)}</figure>`), ...imgs.map((m, k) => `<figure class="c2-fig">${lbImg(m, b.caps?.[k] || b.h || "")}${b.caps?.[k] ? `<figcaption class="mono">${esc(b.caps[k])}</figcaption>` : ""}</figure>`)];
+    const n = items.length;
+    const layout = b.layout || (n === 1 ? "full" : n === 2 ? "duo" : "rail");
+    let media = "";
+    if (layout === "full") media = `<div class="wrap-wide c2-full c2-reveal">${items.join("")}</div>`;
+    else if (layout === "duo") media = `<div class="wrap-wide c2-duo c2-reveal">${items.join("")}</div>`;
+    else if (n) media = `<div class="c2-rail c2-reveal${b.poster ? " posters" : ""}"><div class="c2-track" tabindex="0" aria-label="${esc(b.h || "Gallery")}, scroll sideways">${items.join("")}</div>
+      <div class="wrap c2-rail-ui"><button class="c2-rb prev" aria-label="Previous">←</button><button class="c2-rb next" aria-label="Next">→</button><span class="c2-count mono">${n} images · drag</span></div></div>`;
+    return `<section class="c2-ch${b.small ? " small" : ""}">${head}${media}</section>`;
   }
 
   function casePage(slug) {
@@ -280,19 +313,21 @@ ${footer}`;
     return `${head({ title: `${d.name} · Case study · Cromatic Studios`, desc: strip(d.lead).slice(0, 158), path: `/work/${slug}/`, image: cover?.src, ld })}
 ${header(false)}
 <main id="main" class="case${d.theme ? " theme-" + d.theme : ""}" style="--bc:${d.c};--bt:${d.t}">
-  <section class="c-hero">
+  <section class="c-hero c2-hero">
     <div class="wrap">
       <nav class="crumbs mono" aria-label="Breadcrumb"><a href="/site/">Cromatic Studios</a> / <a href="/site/#work">Work</a> / <span>${esc(d.name)}</span></nav>
       <p class="eyebrow mono">${esc(d.eyebrow)}</p>
-      <h1>${esc(d.title)}</h1>
-      <p class="lead">${d.lead}</p>
-      <div class="c-meta">${d.meta.map((m) => `<span class="mono">${esc(m)}</span>`).join("")}</div>
-      ${d.swatches ? `<div class="swatches" aria-hidden="true">${d.swatches.map((c) => `<span style="background:${c}"></span>`).join("")}</div>` : ""}
-      ${d.hero ? (d.heroFrame ? `<div class="c-heroimg wide">${browser(d.hero)}</div>` : `<div class="c-heroimg">${img(d.hero, d.name, "", true)}</div>`) : ""}
-      ${d.youtube ? `<div class="yt" data-id="${d.youtube}"><button class="yt-play" aria-label="Play the Two Minutes film">${img("tmPoster", "Two Minutes film", "", true)}<span class="yt-btn">▶ Play the film</span></button></div>` : ""}
+      <h1 class="c2-title">${esc(d.title).split(" ").map((w, k) => `<span class="w" style="--k:${k}">${w}</span>`).join(" ")}</h1>
+      <div class="c2-row">
+        <div class="c-meta">${d.meta.map((m) => `<span class="mono">${esc(m)}</span>`).join("")}</div>
+        ${d.swatches ? `<div class="swatches" aria-label="Palette">${d.swatches.map((c) => `<button class="sw" style="background:${c}" data-hex="${c}" title="Copy ${c}"></button>`).join("")}</div>` : ""}
+      </div>
     </div>
+    ${d.hero ? (d.heroFrame ? `<div class="wrap-wide c-heroimg wide">${browser(d.hero)}</div>` : `<div class="wrap-wide c2-heromedia">${lbImg(d.hero, d.name)}</div>`) : ""}
+    ${d.youtube ? `<div class="wrap-wide"><div class="yt" data-id="${d.youtube}"><button class="yt-play" aria-label="Play the Two Minutes film">${img("tmPoster", "Two Minutes film", "", true)}<span class="yt-btn">▶ Play the film</span></button></div></div>` : ""}
   </section>
-  <div class="wrap">${d.blocks.map(caseBlock).join("")}</div>
+  <section class="wrap c2-lead c2-reveal"><p>${d.lead}</p></section>
+  ${d.blocks.map(caseBlock).join("")}
   <section class="c-end">
     <div class="wrap">
       ${d.link ? `<p><a class="btn" href="${d.link.href}" target="_blank" rel="noopener">${esc(d.link.label)}</a></p>` : ""}
@@ -302,6 +337,7 @@ ${header(false)}
       <div class="more">${others.map((o) => `<a href="/work/${o.page}/" style="--bc:${o.c};--bt:${o.t}">${esc(o.name)} <i>→</i></a>`).join("")}</div>
     </div>
   </section>
+  ${(() => { const all = PROJECTS.filter((x) => x.page); const k = all.findIndex((x) => x.page === slug); const nx = all[(k + 1) % all.length]; const im = A(nx.img || ""); return `<a class="c2-next" href="/work/${nx.page}/" style="--bc:${nx.c};--bt:${nx.t}"><span class="mono">Next case</span><b>${esc(nx.name)}</b>${im ? `<img src="${im.src}" alt="" loading="lazy">` : ""}<i aria-hidden="true">→</i></a>`; })()}
 </main>
 ${footer}`;
   }

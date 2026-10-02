@@ -27,33 +27,36 @@
     rv.forEach((el, i) => { el.classList.add("rv"); el.style.transitionDelay = `${(i % 3) * 70}ms`; io2.observe(el); });
   } else vids.forEach((v) => { v.src = v.dataset.src; });
 
-  // the hero: the drive's kinetic intro plays over the first fold, once per visit; when the
-  // screen is full of coffee the page jumps to the next fold, so the cups lift off onto it
-  const kjs = d.body.dataset.kzJs;
-  if (kjs && root.classList.contains("kz-wait")) {
-    const link = d.createElement("link"); link.rel = "stylesheet"; link.href = d.body.dataset.kzCss; d.head.appendChild(link);
-    const sc = d.createElement("script"); sc.src = kjs; sc.async = true;
-    const release = () => root.classList.remove("kz-wait");
-    sc.onerror = release;
-    sc.onload = () => {
-      clearTimeout(window.__kzT);
-      if (!window.cromaticKinetic) return release();
-      const next = d.getElementById("clients") || d.querySelector(".clients");
-      let over = false;
-      const k = window.cromaticKinetic(() => {
-        over = true; release();
-        try { sessionStorage.setItem("kzSeen", "1"); } catch {}
-        removeEventListener("wheel", skip); removeEventListener("touchmove", skip); removeEventListener("keydown", skip);
-      }, async () => {
-        release();
-        if (next) scrollTo({ top: next.getBoundingClientRect().top + scrollY - 72, behavior: "instant" });
-      });
-      const skip = () => { if (!over && !k.busy) k.finish(); };
-      addEventListener("wheel", skip, { passive: true }); addEventListener("touchmove", skip, { passive: true }); addEventListener("keydown", skip);
-      link.sheet ? k.resume() : link.addEventListener("load", () => k.resume(), { once: true });
-      setTimeout(() => { if (!over) release(); }, 30000);
+  // the hero: the drive's kinetic intro plays inside the first fold, in its own card (not over
+  // the page); when the cups lift off, the hero's own content takes the card. Skip / replay.
+  const kjs = d.body.dataset.kzJs, hk = d.querySelector(".hero-kz");
+  if (kjs && hk) {
+    const stageBox = hk.querySelector(".hk-stage");
+    let k = null, over = false;
+    const done = () => { over = true; root.classList.remove("kz-play"); hk.classList.add("kz-done"); };
+    const start = () => {
+      if (!k) return done();
+      over = false; hk.classList.remove("kz-done"); root.classList.add("kz-play");
+      k.resume();
     };
-    d.body.appendChild(sc);
+    hk.querySelector(".hk-skip").addEventListener("click", () => { if (k && !over && !k.busy) k.finish(); else done(); });
+    hk.querySelector(".hk-replay").addEventListener("click", start);
+    if (root.classList.contains("kz-play")) {
+      const link = d.createElement("link"); link.rel = "stylesheet"; link.href = d.body.dataset.kzCss; d.head.appendChild(link);
+      const sc = d.createElement("script"); sc.src = kjs; sc.async = true;
+      sc.onerror = done;
+      sc.onload = () => {
+        clearTimeout(window.__kzT);
+        if (!window.cromaticKinetic) return done();
+        k = window.cromaticKinetic(done, async () => {});
+        // createKinetic puts its stage on <body>; it lives in the hero card instead
+        const st = d.body.querySelector(":scope > .kz");
+        if (st) stageBox.appendChild(st);
+        const go = () => k.resume();
+        link.sheet ? go() : link.addEventListener("load", go, { once: true });
+      };
+      d.body.appendChild(sc);
+    } else hk.classList.add("kz-done");
   }
 
   // brand canvas: on desktop the page scrolls down while the board slides left; on phones the
@@ -111,6 +114,87 @@
     if ("ResizeObserver" in window) new ResizeObserver(layout).observe(st); else layout();
     layout();
   }
+
+  // ---- case pages v2: reveals, rails, lightbox, swatches, hero parallax ----
+  const reveals = [...d.querySelectorAll(".c2-reveal")];
+  if (reveals.length && "IntersectionObserver" in window) {
+    const ro = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); ro.unobserve(e.target); } }), { rootMargin: "0px 0px -10% 0px" });
+    reveals.forEach((el) => ro.observe(el));
+  } else reveals.forEach((el) => el.classList.add("in"));
+  d.querySelectorAll(".c2-rail").forEach((rail) => {
+    const tr = rail.querySelector(".c2-track");
+    const step = () => Math.max(260, tr.clientWidth * 0.7);
+    rail.querySelector(".prev")?.addEventListener("click", () => tr.scrollBy({ left: -step(), behavior: "smooth" }));
+    rail.querySelector(".next")?.addEventListener("click", () => tr.scrollBy({ left: step(), behavior: "smooth" }));
+    let drag = null, moved = 0;
+    tr.addEventListener("pointerdown", (e) => { if (e.pointerType !== "mouse") return; drag = { x: e.clientX, s: tr.scrollLeft }; moved = 0; });
+    addEventListener("pointermove", (e) => { if (!drag) return; const dx = e.clientX - drag.x; moved = Math.max(moved, Math.abs(dx)); if (moved > 4) tr.classList.add("drag"); tr.scrollLeft = drag.s - dx; });
+    addEventListener("pointerup", () => { if (!drag) return; drag = null; setTimeout(() => tr.classList.remove("drag"), 0); });
+    tr.addEventListener("click", (e) => { if (moved > 6) { e.stopPropagation(); e.preventDefault(); moved = 0; } }, true);
+    tr.addEventListener("keydown", (e) => { if (e.key === "ArrowRight") tr.scrollBy({ left: step(), behavior: "smooth" }); if (e.key === "ArrowLeft") tr.scrollBy({ left: -step(), behavior: "smooth" }); });
+  });
+  const lbList = [...d.querySelectorAll("img[data-lb]")];
+  if (lbList.length) {
+    const box = d.createElement("div"); box.className = "lbx"; box.setAttribute("role", "dialog"); box.setAttribute("aria-label", "Image viewer");
+    box.innerHTML = '<img alt=""><button class="lx-close" aria-label="Close">×</button><button class="lx-prev" aria-label="Previous">←</button><button class="lx-next" aria-label="Next">→</button><span class="lx-n"></span>';
+    d.body.appendChild(box);
+    const im = box.querySelector("img"), nEl = box.querySelector(".lx-n");
+    let k = 0;
+    const show = (i) => { k = (i + lbList.length) % lbList.length; im.src = lbList[k].dataset.lb; im.alt = lbList[k].alt; nEl.textContent = `${k + 1} / ${lbList.length}`; };
+    const open = (i) => { show(i); box.classList.add("on"); root.style.overflow = "hidden"; box.querySelector(".lx-close").focus(); };
+    const close = () => { box.classList.remove("on"); root.style.overflow = ""; };
+    lbList.forEach((el, i) => el.addEventListener("click", () => open(i)));
+    box.querySelector(".lx-close").onclick = close;
+    box.querySelector(".lx-prev").onclick = (e) => { e.stopPropagation(); show(k - 1); };
+    box.querySelector(".lx-next").onclick = (e) => { e.stopPropagation(); show(k + 1); };
+    box.addEventListener("click", (e) => { if (e.target === box) close(); });
+    addEventListener("keydown", (e) => { if (!box.classList.contains("on")) return; if (e.key === "Escape") close(); if (e.key === "ArrowRight") show(k + 1); if (e.key === "ArrowLeft") show(k - 1); });
+    let sx = null;
+    box.addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; }, { passive: true });
+    box.addEventListener("touchend", (e) => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx; if (Math.abs(dx) > 50) show(k + (dx < 0 ? 1 : -1)); sx = null; });
+  }
+  d.querySelectorAll(".swatches .sw").forEach((b) => b.addEventListener("click", () => {
+    navigator.clipboard?.writeText(b.dataset.hex).catch(() => {});
+    b.classList.add("copied"); setTimeout(() => b.classList.remove("copied"), 1200);
+  }));
+  const heroImg = d.querySelector(".c2-heromedia img");
+  if (heroImg && !reduced) {
+    const par = () => { const r = heroImg.parentElement.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return; heroImg.style.transform = `translateY(${(-r.top * 0.08).toFixed(1)}px) scale(${(1 + Math.max(0, -r.top) * 0.00012).toFixed(4)})`; };
+    addEventListener("scroll", () => requestAnimationFrame(par), { passive: true }); par();
+  }
+
+  // ---- the coffee stop: the van rolls with the scroll; the counter pours ----
+  const road = d.querySelector(".road-scene");
+  if (road) {
+    const tick = () => { const r = road.getBoundingClientRect(); const p = Math.min(1, Math.max(0, (innerHeight - r.top) / (innerHeight + r.height * 0.6))); road.style.setProperty("--p", p.toFixed(3)); };
+    addEventListener("scroll", () => requestAnimationFrame(tick), { passive: true }); tick();
+    let shots = 0, dropped = false;
+    const msg = road.querySelector(".rs-msg"), cups = road.querySelector(".rs-cups"), pour = road.querySelector(".rs-pour"), boxes = road.querySelector(".rs-boxes");
+    const LINES = ["One double espresso. Good start.", "Two. Now we're talking.", "Three. The ideas are flowing.", "Four. COFFEE RUSH ⚡", ""];
+    pour.addEventListener("click", () => {
+      if (shots >= 4) { shots = 0; cups.innerHTML = ""; road.classList.remove("rush"); msg.textContent = "Next time, I'll stop at three doubles."; pour.textContent = "☕ Pour a double espresso"; return; }
+      shots++;
+      cups.insertAdjacentHTML("beforeend", "<i></i>");
+      msg.textContent = LINES[shots - 1];
+      if (shots === 4) { road.classList.add("rush"); pour.textContent = "⚡ Sober up"; }
+      if (!dropped && shots === 2) {
+        dropped = true;
+        const C = ["#2f9e4f", "#F2A9C4", "#119BFE"];
+        boxes.innerHTML = Array.from({ length: 9 }, (_, i) => `<i style="left:${30 + (i % 3) * 2.9}%;bottom:${34 + Math.floor(i / 3) * 3.8}%;background:${C[i % 3]};animation-delay:${i * 90}ms"></i>`).join("");
+      }
+    });
+  }
+  // a thin reading progress bar
+  if (d.querySelector(".hero-kz")) {
+    const bar = d.createElement("div"); bar.className = "scroll-prog"; d.body.appendChild(bar);
+    const sp = () => bar.style.setProperty("--sp", (scrollY / Math.max(1, d.documentElement.scrollHeight - innerHeight)).toFixed(4));
+    addEventListener("scroll", sp, { passive: true }); sp();
+  }
+  // cards tilt a little towards the pointer
+  if (matchMedia("(hover: hover)").matches && !reduced) d.querySelectorAll(".chap, .svc").forEach((c) => {
+    c.addEventListener("pointermove", (e) => { const r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; c.style.transform = `perspective(700px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translateY(-4px)`; });
+    c.addEventListener("pointerleave", () => { c.style.transform = ""; });
+  });
 
   // YouTube: a poster until clicked, then the privacy-friendly embed
   d.querySelectorAll(".yt").forEach((y) => y.querySelector(".yt-play")?.addEventListener("click", () => {
