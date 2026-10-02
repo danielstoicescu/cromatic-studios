@@ -25966,8 +25966,7 @@ void main() {
   ];
   // Coffee Street additions
   var COFFEE_ADDS = [
-    { br: "A", name: "Coffeenativ", logo: "logoCoffeenativ", x: 930, z: 4800, line: "COFFEE", c: "#3b2a20", t: "#ffffff" },
-    { br: "A", name: "Brewzeus", logo: "logoBrewzeus", x: 706, z: 4420, line: "COLD BREW", c: "#111111", t: "#ffffff" },
+    { br: "A", name: "Coffeenativ", logo: "logoCoffeenativ", x: 930, z: 5900, line: "SPECIALTY COFFEE", c: "#151515", t: "#ffffff" },
     { br: "A", name: "ARCA Resort", logo: "logoArca", x: 560, z: 5930, line: "RESORT · TENNIS · POND", c: "#7a1f2b", t: "#ffffff", page: "arca-resort" },
     { br: "A", name: "Antila", x: 440, z: 6040, line: "CHARCUTERIE FARM", c: "#F2C200", t: "#1a1405", page: "antila" },
     { br: "A", name: "UNDE", x: 708, z: 6036, line: "GROCERY", c: "#2b6fd6", t: "#ffffff", page: "unde" }
@@ -25979,11 +25978,8 @@ void main() {
     buildCourtyard(parent, COURT.x, COURT.z, COURT_BRANDS.map((o) => ({ ...o, logo: L(o.logo) })));
     casaPoporului = buildCasaPoporului(parent, TAC.x, TAC.z);
     buildArcaResort(parent);
-    // two more coffee shops on Coffee Street, where the blank lots were
-    buildStreetShop(parent, { key: "coffeenativGlow", name: "COFFEENATIV", label: "specialty coffee", x: 930, z: 4800,
-      w: 64, h: 52, d: 46, wall: "#efe4d2", trim: "#3b2a20", glass: "#2a1d15", ink: "#efe4d2", boardInk: "#efe4d2" });
-    buildStreetShop(parent, { key: "brewzeusGlow", name: "BREWZEUS", label: "cold brew", x: 706, z: 4420,
-      w: 62, h: 50, d: 44, wall: "#1b1b1b", trim: "#f2c230", glass: "#0d0d0d", ink: "#f2c230", boardInk: "#111111" });
+    // Coffeenativ: a small black house on the left kerb, where Pastizia used to be
+    buildBrandBuilding(parent, { x: 930, z: 5900, face: "-x", kind: "house", name: "COFFEENATIV", logo: logoCoffeenativ, w: 58, d: 44, h: 30, wall: "#151515", accent: "#151515", signBg: "#151515", signInk: "#ffffff" });
     // a skyline for the financial district: unbranded glass towers further down the boulevard
     const rnd = rng(4242);
     for (const [tx, tz, f] of [[2420, 4700, "-x"], [2470, 5100, "-x"], [2420, 5500, "-x"], [2480, 5900, "-x"], [2600, 4900, "-x"], [2620, 5350, "-x"]]) {
@@ -26308,8 +26304,6 @@ void main() {
   function buildCoffeeStreetAdds(parent) {
     buildStreetShop(parent, { key: "artisanGlow", name: "ARTISAN", label: "coffee gear", x: 930, z: 4560,
       w: 72, h: 58, d: 48, wall: "#797c69", trim: "#efe9dc", glass: "#2a2c24", ink: "#efe9dc", boardInk: "#2a2c24" });
-    buildStreetShop(parent, { key: "pastiziaGlow", name: "PASTIZIA", label: "pastizzeria", x: 930, z: 5900,
-      w: 66, h: 54, d: 46, wall: "#c62a22", trim: "#fff1de", glass: "#3a0c09", ink: "#fff1de", boardInk: "#c62a22" });
     // Romexpo avenue: a straight road off Coffee Street, lined with hedges and round trees
     const g = new Group();
     const x0 = 850, x1 = 975, zc = 5140, len = x1 - x0, W = 40;
@@ -28069,6 +28063,8 @@ void main() {
       if (cx > 700 && cx < 1160 && cz > 4040 && cz < 4470) continue;
       if (cx > 1000 && cz > 5980 && cz < 6620) continue;
       if (cx > 800 && cx < 1000 && cz > 4940 && cz < 5340) continue;
+      // no cars on the kerb in front of OMA and the mountain
+      if (cx > 640 && cx < 800 && cz > 4300 && cz < 4900) continue;
       if (cz > 8700) continue;
       let ok = true;
       for (const q of STOPS) if ((cx - q.x) ** 2 + (cz - q.y) ** 2 < 190 ** 2) { ok = false; break; }
@@ -28078,7 +28074,6 @@ void main() {
       ...genSpots,
       { x: 905, z: 4212, ry: Math.PI / 2, c: "#c8524a" },
       // Călinescu, by the HQ
-      { x: 700, z: 4360, ry: 0, c: "#5a7d9c" },
       // Aricescu, past Two Minutes
       { x: 1224, z: 6260, ry: 0, c: "#dfd8c8" },
       // by the Dacia 99 palace
@@ -28335,7 +28330,8 @@ void main() {
     buildStreetShop(world, { key: "sipGlow", name: "SIP", label: "coffee & wine", x: 706, z: 5000,
       w: 66, h: 54, d: 46, wall: "#2b2620", trim: "#C9A227", glass: "#1a1712", ink: "#C9A227", boardInk: "#14120c" });
     buildIzakaya(world, 706, 5360);
-    buildOmaShop(world, 706, 4640);
+    // OMA sits north of Tâmpa, so the mountain and its BRASOV letters stay in view
+    buildOmaShop(world, 706, 4440);
     buildCasaBerero(world, 706, 5720);
     buildBrasov(world);
     buildCoffeeStreetAdds(world);
@@ -31710,7 +31706,6 @@ void main() {
         if (mats.yoshiGlow) mats.yoshiGlow.emissiveIntensity = dark ? 1 : 0;
         if (mats.yoshiLantern) mats.yoshiLantern.emissiveIntensity = dark ? 2.2 : 0.15;
         for (const [m, k] of STREET_GLOW) m.emissiveIntensity = dark ? k : 0;
-        for (const k of ["coffeenativGlow", "brewzeusGlow"]) if (mats[k]) mats[k].emissiveIntensity = dark ? 1 : 0;
         if (mats.omaGlow) mats.omaGlow.emissiveIntensity = dark ? 1 : 0;
         if (mats.bereroGlow) mats.bereroGlow.emissiveIntensity = dark ? 1 : 0;
         for (const k of ["artisanGlow", "pastiziaGlow", "blankAGlow", "blankBGlow"]) if (mats[k]) mats[k].emissiveIntensity = dark ? 1 : 0;
@@ -33183,7 +33178,9 @@ void main() {
           }
           if (!siteMode && state.branch === "A" && cLnow > 700 && cLnow < 2560 && now > jumpGuard) {
             const nearSteam = Math.abs(prevL - routeLAt("steamcam", 985, 5640)) < 540;
-            const maxStep = (nearSteam ? 260 : 430) * dt;
+            // a speed limiter at ARCA: the resort rolls past slowly, like a 30 zone
+            const nearArca = Math.abs(prevL - routeLAt("arcalook", 560, 5930)) < 420;
+            const maxStep = (nearArca ? 180 : nearSteam ? 260 : 430) * dt;
             state.L = clamp2(state.L, prevL - maxStep, prevL + maxStep);
           }
         }
@@ -33419,7 +33416,7 @@ void main() {
           // a gentle glance at Steam on the left as you pass (no turn towards OMA: the street stays ahead)
           let auto = 0;
           if (now - povLastKey > 2500) {
-            for (const [lx, lz, key] of [[985, 5640, "steamcam"]]) {
+            for (const [lx, lz, key] of [[985, 5640, "steamcam"], [560, 5930, "arcalook"]]) {
               let ns = clamp2(1 - Math.abs(state.L - routeLAt(key, lx, lz)) / 340, 0, 1);
               if (ns <= 0) continue;
               ns = ns * ns * (3 - 2 * ns);
@@ -33699,16 +33696,16 @@ void main() {
         const onA = state.branch === "A" && !siteMode;
         const Lh = (k, x, z) => routeLAt(k, x, z);
         const Lrom = Lh("rom", 1150, 5140), Lsteam = Lh("steam", 985, 5640);
-        const Loma = Lh("oma", 706, 4640), Lsip = Lh("sip", 706, 5000), Lyo = Lh("yoshi", 706, 5360), Lbe = Lh("berero", 706, 5720);
+        const Loma = Lh("oma2", 706, 4440), Lsip = Lh("sip", 706, 5000), Lyo = Lh("yoshi", 706, 5360), Lbe = Lh("berero", 706, 5720);
         const inW = (a2, b2) => onA && state.L > a2 && state.L < b2;
         showPoi(ui.scfTag, inW(Lrom - 330, Lrom + 230));
         showPoi(ui.artisanTag, inW(Lrom - 330, Lrom + 230));
-        showPoi(ui.steamTag, inW(Lsteam - 300, Lsteam + 260));
-        showPoi(ui.craftTag, inW(Lsteam - 300, Lsteam + 260));
+        showPoi(ui.steamTag, inW(Lsteam - 300, Lsteam + 120));
+        showPoi(ui.craftTag, inW(Lsteam - 300, Lsteam + 120));
         showPoi(ui.omaTag, inW(Loma - 260, (Loma + Lsip) / 2 - 20));
         showPoi(ui.sipTag, inW((Loma + Lsip) / 2 + 20, (Lsip + Lyo) / 2 - 20));
         showPoi(ui.yoshiTag, inW((Lsip + Lyo) / 2 + 20, (Lyo + Lbe) / 2 - 20));
-        showPoi(ui.bereroTag, inW((Lyo + Lbe) / 2 + 20, Lbe + 240));
+        showPoi(ui.bereroTag, inW((Lyo + Lbe) / 2 + 20, Lbe + 70));
         // one service card at a time, evenly spaced from the merge to Olari 9, alternating sides
         const svcA = route.stopL.merge + 900, svcB = route.stopL.end - 80;
         const svcF = (state.L - svcA) / (svcB - svcA);
@@ -33724,7 +33721,11 @@ void main() {
           let on = false;
           if (state.branchChosen && state.branch === b.br && !siteMode && !flying) {
             const Lb = routeLAt(`st-${b.br}-${b.name}`, b.x, b.z);
-            on = state.L > Lb - 260 && state.L < Lb + 150;
+            // the end of Coffee Street is dense (Berero, Coffeenativ, ARCA, Antila, UNDE): shorter windows there
+            if (b.br === "A") {
+              const La = routeLAt("arcalook", 560, 5930), slot = { "ARCA Resort": [-300, -120], "Antila": [-120, 40], "UNDE": [40, 200] }[b.name];
+              on = slot ? state.L > La + slot[0] && state.L < La + slot[1] : state.L > Lb - 130 && state.L < Lb + 70;
+            } else on = state.L > Lb - 260 && state.L < Lb + 150;
           }
           showPoi(t, on);
         }

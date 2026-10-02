@@ -2662,3 +2662,9 @@ body.site-mode .topbar .site-btn { position: static; }
 
 .jx-row .jx-btn.hw .hw-txt b { font-size: 21px; }
 @media (max-width: 760px) { .jx-row .jx-btn.hw .hw-txt b { font-size: 16px; } }
+
+/* the Two Minutes card: the old .tm-media span rule shrank its title */
+.poi-card.tm-media .poi-name { font-size: 19px; font-weight: 800; letter-spacing: -.01em; opacity: 1; }
+.poi-card.tm-media .poi-line { font-size: 9.5px; }
+@media (max-width: 1200px) { .poi-card.tm-media .poi-name { font-size: 15px; } }
+@media (max-width: 760px) { .poi-card.tm-media .poi-name { font-size: 13.5px !important; } }
