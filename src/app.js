@@ -28552,101 +28552,110 @@ void main() {
     g.add(tire, rim, hub);
     return g;
   }
+  // Mystery Machine, remodelled: a split-screen bus body with rounded edges, wheel arches cut
+  // into the panels, recessed windows, chrome trim and proper wheels
+  function vanWheel(r = 9.6) {
+    const g = new Group(), spin = new Group();
+    const rubber = new MeshStandardMaterial({ color: "#191919", roughness: 0.92 });
+    const core = new Mesh(new CylinderGeometry(r - 1.6, r - 1.6, 6.4, 28), rubber); core.rotation.z = Math.PI / 2;
+    for (const sx of [-1, 1]) { const wall = new Mesh(new TorusGeometry(r - 2.4, 2.4, 12, 32), rubber); wall.rotation.y = Math.PI / 2; wall.position.x = sx * 1.6; spin.add(wall); }
+    const rim = new Mesh(new CylinderGeometry(r * 0.6, r * 0.6, 6.8, 28), M("#f4f2ea", { roughness: 0.35 })); rim.rotation.z = Math.PI / 2;
+    const ring = new Mesh(new TorusGeometry(r * 0.5, 0.55, 8, 28), M(LIME)); ring.rotation.y = Math.PI / 2; ring.position.x = 3.5;
+    const ring2 = ring.clone(); ring2.position.x = -3.5;
+    const cap = new Mesh(new SphereGeometry(r * 0.36, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), chromeM()); cap.rotation.z = -Math.PI / 2; cap.scale.set(1, 0.42, 1); cap.position.x = 3.4;
+    const cap2 = cap.clone(); cap2.rotation.z = Math.PI / 2; cap2.position.x = -3.4;
+    for (let i = 0; i < 5; i++) { const nut = new Mesh(new CylinderGeometry(0.45, 0.45, 7.2, 6), chromeM()); const a = i / 5 * Math.PI * 2; nut.rotation.z = Math.PI / 2; nut.position.set(0, Math.cos(a) * r * 0.42, Math.sin(a) * r * 0.42); spin.add(nut); }
+    spin.add(core, rim, ring, ring2, cap, cap2);
+    g.add(spin);
+    return g;
+  }
   function buildGroovy() {
     const g = new Group();
-    const W = 46, L = 90;
-    const hull = new Mesh(new BoxGeometry(W, 16, L), M(TEAL));
-    hull.position.y = 13;
-    const waist = new Mesh(new BoxGeometry(W + 1.2, 6, L), M(LIME));
-    waist.position.y = 24;
-    const cabin = new Mesh(new BoxGeometry(W - 2, 15, L - 4), M(TEAL));
-    cabin.position.y = 34.5;
-    const roofCap = new Mesh(new BoxGeometry(W - 4, 2.6, L - 10), M("#2FA4B5"));
-    roofCap.position.y = 43.3;
-    g.add(hull, waist, cabin, roofCap);
+    const W = 46, BV = 2.6, DEP = W - 2 * BV;
+    const paint = M(TEAL), trim = M("#1c1c1c", { roughness: 0.7 });
+    // side profile in (z, y): nose, split windscreen, roof, rounded tail, arches cut into the sill
+    const sh = new Shape();
+    const arch = (cz) => { sh.lineTo(cz - 13.6, 6); sh.lineTo(cz - 13.6, 9.5); sh.absarc(cz, 9.5, 13.6, Math.PI, 0, true); sh.lineTo(cz + 13.6, 6); };
+    sh.moveTo(-40, 6);
+    arch(-28); arch(28);
+    sh.lineTo(40, 6);
+    sh.quadraticCurveTo(44.6, 6, 44.6, 11);
+    sh.lineTo(44.6, 23);
+    sh.quadraticCurveTo(44.2, 39, 36.5, 44.5);
+    sh.lineTo(-37, 45.5);
+    sh.quadraticCurveTo(-44.6, 45.5, -44.6, 38);
+    sh.lineTo(-44.6, 11);
+    sh.quadraticCurveTo(-44.6, 6, -40, 6);
+    const bodyGeo = new ExtrudeGeometry(sh, { depth: DEP, bevelEnabled: true, bevelThickness: BV, bevelSize: BV, bevelSegments: 5, curveSegments: 20 });
+    bodyGeo.rotateY(-Math.PI / 2); bodyGeo.translate(DEP / 2, 0, 0);
+    const body = new Mesh(bodyGeo, paint);
+    g.add(body);
+    const SX = W / 2 + 0.05, FZ = 47.1;
+    // the lime belt line all round, and the lower sill
+    const belt = new Mesh(new BoxGeometry(W + 0.9, 4.6, 88), M(LIME)); belt.position.set(0, 27.5, -0.6); g.add(belt);
+    const beltF = new Mesh(new BoxGeometry(W - 2, 4.6, 1.2), M(LIME)); beltF.position.set(0, 27.5, FZ - 0.1); g.add(beltF);
+    // the VW "V" on the nose
+    const vTex = canvasTexture(256, 256, (ctx) => { ctx.clearRect(0, 0, 256, 256); ctx.fillStyle = LIME; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(256, 0); ctx.lineTo(128, 220); ctx.closePath(); ctx.fill(); ctx.strokeStyle = "#1c1c1c"; ctx.lineWidth = 8; ctx.stroke(); });
+    const vee = decal(vTex, 30, 22); vee.position.set(0, 24, FZ + 0.15); g.add(vee);
+    // flower livery on both flanks (below the windows)
+    const sideL = decal(mysterySideTexture(false), 84, 19); sideL.rotation.y = -Math.PI / 2; sideL.position.set(-SX - 0.1, 17, -1); g.add(sideL);
+    const sideR = decal(mysterySideTexture(true), 84, 19); sideR.rotation.y = Math.PI / 2; sideR.position.set(SX + 0.1, 17, -1); g.add(sideR);
+    // windows: rounded panes in black rubber surrounds
+    const rr = (w, h, r) => { const q = new Shape(); q.moveTo(-w / 2 + r, -h / 2); q.lineTo(w / 2 - r, -h / 2); q.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r); q.lineTo(w / 2, h / 2 - r); q.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2); q.lineTo(-w / 2 + r, h / 2); q.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r); q.lineTo(-w / 2, -h / 2 + r); q.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2); return q; };
+    const glass = glassM();
+    const pane = (w, h) => { const grp = new Group(); const f = new Mesh(new ShapeGeometry(rr(w + 1.6, h + 1.6, 2.6), 6), trim); const gl = new Mesh(new ShapeGeometry(rr(w, h, 2), 6), glass); gl.position.z = 0.12; grp.add(f, gl); return grp; };
+    for (const sx of [-1, 1]) for (const [z, w] of [[30, 10.5], [14, 15], [-4, 15], [-22, 15], [-37.5, 8]]) {
+      const p = pane(w, 10); p.rotation.y = sx * Math.PI / 2; p.position.set(sx * (SX + 0.08), 37, z); g.add(p);
+    }
+    // split windscreen, leaning back with the nose
+    for (const sx of [-1, 1]) { const p = pane(18.5, 11.5); p.rotation.x = -0.36; p.position.set(sx * 10, 35.6, 45.6); g.add(p); }
+    const mullion = new Mesh(new BoxGeometry(1.6, 12.5, 1.2), M(TEAL)); mullion.rotation.x = -0.36; mullion.position.set(0, 35.6, 45.7); g.add(mullion);
+    for (const sx of [-1, 1]) { const wiper = new Mesh(new BoxGeometry(12, 0.5, 0.6), trim); wiper.position.set(sx * 9, 30.4, 47.3); wiper.rotation.z = sx * 0.25; g.add(wiper); }
+    const rearWin = pane(30, 9); rearWin.rotation.y = Math.PI; rearWin.position.set(0, 37, -47.2); g.add(rearWin);
+    // rain gutters along the roof, sliding-door seam and handles
+    for (const sx of [-1, 1]) { const gut = new Mesh(new BoxGeometry(0.9, 0.9, 80), trim); gut.position.set(sx * (SX + 0.3), 44.2, -1); g.add(gut); }
+    const seamM = new MeshStandardMaterial({ color: "#0f3a40", roughness: 0.8 });
+    for (const [z, h, y] of [[22, 34, 25], [-8, 34, 25]]) { const s2 = new Mesh(new BoxGeometry(0.5, h, 0.6), seamM); s2.position.set(SX + 0.15, y, z); g.add(s2); }
+    for (const [sx, z] of [[1, 20], [-1, 25], [1, -11]]) { const h = new Mesh(new BoxGeometry(0.9, 1.2, 4), chromeM()); h.position.set(sx * (SX + 0.45), 30.5, z); g.add(h); }
+    // front: spare wheel with the flower cover, round lamps in chrome bezels, indicators
+    const spare = new Mesh(new CylinderGeometry(8.4, 8.4, 4, 28), new MeshStandardMaterial({ color: "#191919", roughness: 0.9 })); spare.rotation.x = Math.PI / 2; spare.position.set(0, 15.5, FZ + 2); g.add(spare);
+    const cover = new Mesh(new CircleGeometry(7.9, 32), new MeshBasicMaterial({ map: flowerCoverTexture() })); cover.position.set(0, 15.5, FZ + 4.05); g.add(cover);
+    const coverRing = new Mesh(new TorusGeometry(7.9, 0.5, 8, 32), chromeM()); coverRing.position.set(0, 15.5, FZ + 4.05); g.add(coverRing);
+    const lensM = new MeshPhysicalMaterial({ color: "#fff6dc", emissive: new Color("#ffe39a"), emissiveIntensity: 0.55, roughness: 0.06, clearcoat: 1, envMap: getEnvMap(), envMapIntensity: 0.6 });
+    for (const sx of [-1, 1]) {
+      const bez = new Mesh(new TorusGeometry(3.4, 0.9, 10, 24), chromeM()); bez.position.set(sx * 15.5, 22, FZ + 0.4);
+      const lens = new Mesh(new SphereGeometry(3.2, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), lensM); lens.rotation.x = Math.PI / 2; lens.scale.set(1, 1, 0.5); lens.position.set(sx * 15.5, 22, FZ + 0.2);
+      const ind = new Mesh(new SphereGeometry(1.5, 12, 8), M(ORANGE, { emissive: "#ff7a1a", emissiveIntensity: 0.3 })); ind.scale.set(1.3, 0.8, 0.6); ind.position.set(sx * 15.5, 12.5, FZ + 0.4);
+      g.add(bez, lens, ind);
+    }
+    // chrome bumpers with overriders, front and back
+    for (const bz of [FZ + 2.4, -FZ - 2.4]) {
+      const bar = new Mesh(new CylinderGeometry(2.2, 2.2, W + 3, 18), chromeM()); bar.rotation.z = Math.PI / 2; bar.position.set(0, 7.6, bz); g.add(bar);
+      for (const ox of [-11, 11]) { const ov = new Mesh(new CylinderGeometry(1.2, 1.2, 9, 12), chromeM()); ov.position.set(ox, 9.5, bz + Math.sign(bz) * 0.6); g.add(ov); }
+    }
+    // tail: tall lamps, plate, exhaust
+    const tailM = new MeshPhysicalMaterial({ color: "#a3121a", emissive: new Color("#ff2a2a"), emissiveIntensity: 0.4, roughness: 0.1, clearcoat: 1 });
+    for (const sx of [-1, 1]) { const t = new Mesh(new BoxGeometry(3.6, 8, 1.2), tailM); t.position.set(sx * 19.5, 20, -FZ - 0.2); g.add(t); }
+    const plateTex = canvasTexture(256, 64, (ctx) => { ctx.fillStyle = "#f7f7f2"; ctx.fillRect(0, 0, 256, 64); ctx.fillStyle = "#1b3d9c"; ctx.fillRect(0, 0, 30, 64); ctx.fillStyle = "#111"; ctx.font = "800 36px Montserrat, sans-serif"; ctx.fillText("B 99 CRS", 40, 46); ctx.strokeStyle = "#111"; ctx.lineWidth = 4; ctx.strokeRect(2, 2, 252, 60); });
+    const plateB = new Mesh(new PlaneGeometry(13, 3.3), new MeshStandardMaterial({ map: plateTex })); plateB.rotation.y = Math.PI; plateB.position.set(0, 13, -FZ - 0.3); g.add(plateB);
+    const plateF = new Mesh(new PlaneGeometry(11, 2.8), new MeshStandardMaterial({ map: plateTex })); plateF.position.set(0, 7.6, FZ + 4.7); g.add(plateF);
+    const exh = new Mesh(new CylinderGeometry(1.1, 1.1, 6, 12), chromeM()); exh.rotation.x = Math.PI / 2; exh.position.set(-13, 6.5, -FZ - 1.5); g.add(exh);
+    // mirrors on chrome stalks
+    for (const sx of [-1, 1]) {
+      const arm = new Mesh(new CylinderGeometry(0.6, 0.6, 6, 8), chromeM()); arm.rotation.z = Math.PI / 2; arm.position.set(sx * (SX + 3), 33, 38);
+      const head = new Mesh(new SphereGeometry(2.6, 14, 10), trim); head.scale.set(0.45, 1, 0.75); head.position.set(sx * (SX + 6), 33, 38);
+      g.add(arm, head);
+    }
+    // roof rack
     for (const sx of [-11, 11]) {
-      const rail = new Mesh(new CylinderGeometry(1.3, 1.3, L - 26, 8), chromeM());
-      rail.rotation.x = Math.PI / 2;
-      rail.position.set(sx, 46, -2);
-      for (const rz of [-(L - 30) / 2, (L - 30) / 2]) {
-        const foot = new Mesh(new BoxGeometry(2.2, 3, 2.2), chromeM());
-        foot.position.set(sx, 44.6, rz - 2);
-        g.add(foot);
-      }
-      g.add(rail);
+      const rail = new Mesh(new CylinderGeometry(1, 1, 64, 10), chromeM()); rail.rotation.x = Math.PI / 2; rail.position.set(sx, 50.4, -4); g.add(rail);
+      for (const rz of [-32, -4, 24]) { const foot = new Mesh(new CylinderGeometry(0.8, 1, 4.6, 8), chromeM()); foot.position.set(sx, 48, rz); g.add(foot); }
     }
-    const shieldFrame = new Mesh(new BoxGeometry(W - 6, 13.5, 2.2), M("#1c1c1c"));
-    shieldFrame.rotation.x = -0.13;
-    shieldFrame.position.set(0, 34.5, L / 2 - 0.4);
-    const shield = new Mesh(new PlaneGeometry(W - 11, 10.5), glassM());
-    shield.rotation.x = -0.13;
-    shield.position.set(0, 34.7, L / 2 + 0.85);
-    g.add(shieldFrame, shield);
-    const noseBand = new Mesh(new BoxGeometry(W - 2, 9, 2), M(LIME));
-    noseBand.position.set(0, 19.5, L / 2 + 0.4);
-    const spare = new Mesh(new CylinderGeometry(8.6, 8.6, 4.6, 20), M("#1c1c1c"));
-    spare.rotation.x = Math.PI / 2;
-    spare.position.set(0, 18.5, L / 2 + 3.4);
-    const cover = new Mesh(new CircleGeometry(8.1, 24), new MeshBasicMaterial({ map: flowerCoverTexture() }));
-    cover.position.set(0, 18.5, L / 2 + 5.9);
-    g.add(noseBand, spare, cover);
-    for (const sx of [-16.5, 16.5]) {
-      const light = new Mesh(new CylinderGeometry(2.8, 2.8, 2, 14), M("#FFF3C4", { emissive: "#FED012", emissiveIntensity: 0.35 }));
-      light.rotation.x = Math.PI / 2;
-      light.position.set(sx, 24.5, L / 2 + 1);
-      const blinker = new Mesh(new CylinderGeometry(1.5, 1.5, 1.8, 10), M(ORANGE));
-      blinker.rotation.x = Math.PI / 2;
-      blinker.position.set(sx, 13.5, L / 2 + 1);
-      g.add(light, blinker);
-    }
-    const bumpF = new Mesh(new BoxGeometry(W + 4, 4.6, 3.4), chromeM());
-    bumpF.position.set(0, 7.2, L / 2 + 1.4);
-    const bumpB = bumpF.clone();
-    bumpB.position.z = -L / 2 - 1.4;
-    g.add(bumpF, bumpB);
-    for (const sx of [-1, 1]) {
-      const arm = new Mesh(new CylinderGeometry(0.9, 0.9, 7, 8), chromeM());
-      arm.rotation.z = Math.PI / 2;
-      arm.position.set(sx * (W / 2 + 3.2), 36, L / 2 - 4);
-      const mir = new Mesh(new BoxGeometry(1.6, 6, 4.4), M("#1c1c1c"));
-      mir.position.set(sx * (W / 2 + 6.6), 36, L / 2 - 4);
-      g.add(arm, mir);
-    }
-    const sideL = decal(mysterySideTexture(false), L - 8, 22);
-    sideL.rotation.y = -Math.PI / 2;
-    sideL.position.set(-W / 2 - 0.75, 16.5, 0);
-    const sideR = decal(mysterySideTexture(true), L - 8, 22);
-    sideR.rotation.y = Math.PI / 2;
-    sideR.position.set(W / 2 + 0.75, 16.5, 0);
-    g.add(sideL, sideR);
-    for (const sx of [-1, 1]) {
-      const doorWin = new Mesh(new PlaneGeometry(15, 9.5), glassM());
-      doorWin.rotation.y = sx * Math.PI / 2;
-      doorWin.position.set(sx * (W / 2 - 0.35), 35, 29);
-      const rearWin2 = new Mesh(new PlaneGeometry(20, 9.5), glassM());
-      rearWin2.rotation.y = sx * Math.PI / 2;
-      rearWin2.position.set(sx * (W / 2 - 0.35), 35, -14);
-      g.add(doorWin, rearWin2);
-    }
-    const rearWin = new Mesh(new PlaneGeometry(W - 14, 9), glassM());
-    rearWin.rotation.y = Math.PI;
-    rearWin.position.set(0, 35, -L / 2 - 0.3);
-    const seam = new Mesh(new BoxGeometry(1.2, 24, 1), M("#1c1c1c"));
-    seam.position.set(0, 20, -L / 2 - 0.4);
-    g.add(rearWin, seam);
-    for (const [x, z] of [[-19.5, 28], [19.5, 28], [-19.5, -28], [19.5, -28]]) {
-      const arch = new Mesh(new TorusGeometry(11.5, 2, 10, 16, Math.PI), M("#2FA4B5"));
-      arch.rotation.y = Math.PI / 2;
-      arch.position.set(x, 10, z);
-      g.add(arch);
-    }
+    for (const rz of [-34, 26]) { const cross = new Mesh(new CylinderGeometry(0.8, 0.8, 22, 8), chromeM()); cross.rotation.z = Math.PI / 2; cross.position.set(0, 50.4, rz); g.add(cross); }
+    // dark chassis between the wheels
+    const chassis = new Mesh(new BoxGeometry(W - 6, 3, 74), new MeshStandardMaterial({ color: "#121212", roughness: 0.9 })); chassis.position.set(0, 5, 0); g.add(chassis);
     const wheels = [];
-    for (const [x, z] of [[-19.5, 28], [19.5, 28], [-19.5, -28], [19.5, -28]]) {
-      const w = groovyWheel(9.5, 7);
-      w.position.set(x, 9.5, z);
-      wheels.push(w);
-      g.add(w);
-    }
+    for (const [x, z] of [[-19.8, 28], [19.8, 28], [-19.8, -28], [19.8, -28]]) { const w = vanWheel(9.6); w.position.set(x, 9.6, z); wheels.push(w); g.add(w); }
     shadowAll(g);
     return { group: g, wheels, kind: "car" };
   }
@@ -29108,7 +29117,7 @@ void main() {
   }
   // hyper-detail pass for the road cars: chrome-ringed headlights, tail lights, mirrors, plates
   function addVehicleDetail(v, id) {
-    if (!["groovy", "cop", "foodvan", "monopoly"].includes(id)) return v;
+    if (!["cop", "foodvan", "monopoly"].includes(id)) return v;
     const g = v.group, bb = new Box3().setFromObject(g);
     const W2 = (bb.max.x - bb.min.x) / 2, H = bb.max.y - bb.min.y, y0 = bb.min.y, zf = bb.max.z, zr = bb.min.z, L = zf - zr;
     const chrome = chromeM();
@@ -29136,7 +29145,7 @@ void main() {
   function buildVehicle(id) {
     const v = buildVehicleBase(id);
     // the Classic Formula is a slim single-seater: a good deal smaller than the road cars
-    if (id === "f1") v.group.scale.setScalar(0.66);
+    if (id === "f1") v.group.scale.setScalar(0.5);
     return addVehicleDetail(v, id);
   }
   function buildVehicleBase(id) {
@@ -29411,7 +29420,7 @@ void main() {
       // paint: a clearcoat over the base colour, reflecting the city (rubber and matte parts stay plain)
       M = (color, opts = {}) => (opts.roughness ?? 0.5) >= 0.8
         ? new MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.08, ...opts })
-        : new MeshPhysicalMaterial({ color, roughness: 0.32, metalness: 0.12, clearcoat: 1, clearcoatRoughness: 0.08, envMap: getEnvMap(), envMapIntensity: 0.95, ...opts });
+        : new MeshPhysicalMaterial({ color, roughness: 0.5, metalness: 0.02, clearcoat: 0.45, clearcoatRoughness: 0.32, envMap: getEnvMap(), envMapIntensity: 0.32, ...opts });
       glassM = () => new MeshPhysicalMaterial({ color: "#1f3442", roughness: 0.04, metalness: 0.3, clearcoat: 1, clearcoatRoughness: 0.02, envMap: getEnvMap(), envMapIntensity: 1.7, reflectivity: 0.9 });
       chromeM = () => new MeshStandardMaterial({
         color: "#f4f5f7",
@@ -32338,8 +32347,16 @@ void main() {
       var anchorTmp = new Vector3();
       // hidden cards are display:none so they never push visible ones off-screen
       // ("out" = gone, "pre" = displayed but parked off the edge, for the slide)
+      // cards linger: once shown, a card stays a few seconds after you pass its building (longer
+      // on phones), until a newer card takes the stage
+      var poiNewAt = 0, poiShown = new Set();
       function showPoi(t, on) {
-        if (!t || t._on === on) return;
+        if (!t) return;
+        const tnow = performance.now();
+        if (on) t._seen = tnow;
+        else if (t._seen && t._on && tnow - t._seen < (isMobile() ? 5500 : 4500) && (poiNewAt <= t._seen + 150 || poiShown.size <= 4)) on = true;
+        if (t._on === on) return;
+        if (on) { poiNewAt = tnow; poiShown.add(t); } else poiShown.delete(t);
         t._on = on;
         clearTimeout(t._gt);
         if (on) {
@@ -32434,7 +32451,8 @@ void main() {
       var police = { active: false, until: 0, next: 0 };
       var redHold = 0;
       // the plane's take-off: air eases towards airT (0 on the road, 1 high over the city)
-      var air = 0, airT = 0, AIR_H = 260;
+      var air = 0, airT = 0, AIR_H = 150, airBank = 0;
+      const _tA = new Vector3();
       var beaconOn = false, beaconBlinkUntil = 0, copMode = "";
       var ENV_VEH = { default: "groovy", monument: "plane", ghibli: "groovy", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "lava", orchid: "scooter", underwater: "sub" };
       var camYaw = null, camDir = new Vector3(0, 0, 1), chA = new Vector3(), chB = new Vector3(), planeRev = 0;
@@ -33542,7 +33560,15 @@ void main() {
         {
           // cars roll a little outwards; the plane leans INTO the turn, like an aircraft does
           // (a left turn raises the right wing), and harder
-          if (veh.kind === "plane") bank = smooth(bank, clamp2(-dh * 46, -0.72, 0.72) * clamp2(state.speed / 20, 0, 1), dt, 3.2);
+          if (veh.kind === "plane") {
+            // bank from the road's curve ahead (steady), not from the frame-to-frame steering
+            route.tangentAt(Math.min(route.total, state.L + 140), _tA);
+            let dA = Math.atan2(_tA.x, _tA.z) - Math.atan2(carTan.x, carTan.z);
+            while (dA > Math.PI) dA -= Math.PI * 2; while (dA < -Math.PI) dA += Math.PI * 2;
+            if (planeRev > 0.5) dA = -dA;
+            airBank = smooth(airBank, clamp2(-dA * 1.1, -0.5, 0.5) * clamp2(state.speed / 15, 0.35, 1), dt, 1.6);
+            bank = airBank;
+          }
           else {
             const bankSign = state.vehicleId === "f1" ? 0 : -1;
             bank = smooth(bank, clamp2(bankSign * dh * 14, -0.32, 0.32) * clamp2(state.speed / 30, 0, 1), dt, 5);
@@ -34031,7 +34057,7 @@ void main() {
             if (b.br === "A") {
               const La = routeLAt("arcalook", 560, 5930), slot = { "ARCA Resort": [-300, -120], "Antila": [-120, 40], "UNDE": [40, 200] }[b.name];
               on = slot ? state.L > La + slot[0] && state.L < La + slot[1] : state.L > Lb - 130 && state.L < Lb + 70;
-            } else on = state.L > Lb - 260 && state.L < Lb + 150;
+            } else on = state.L > Lb - 380 && state.L < Lb + 240;
           }
           showPoi(t, on);
         }
