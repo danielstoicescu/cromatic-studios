@@ -23737,11 +23737,11 @@ void main() {
       STOPS = [
         { id: "start", x: 1250, y: 260, label: "Str. Muni\u021Biei \xB7 Start" },
         { id: "manifesto", x: 1250, y: 330, label: "CH.00 The Table" },
-        { id: "dream", x: 1000, y: 560, label: "CH.01 The Dream" },
-        { id: "voice", x: 655, y: 960, label: "CH.02 The Voice" },
-        { id: "world", x: 1010, y: 1460, label: "CH.03 The World" },
-        { id: "crowd", x: 770, y: 2390, label: "CH.04 The Crowd" },
-        { id: "team", x: 1500, y: 3740, label: "CH.05 The Crew" },
+        { id: "dream", x: 1007, y: 549, label: "CH.01 The Dream" },
+        { id: "voice", x: 698, y: 744, label: "CH.02 The Voice" },
+        { id: "world", x: 674, y: 1104, label: "CH.03 The World" },
+        { id: "crowd", x: 983, y: 1441, label: "CH.04 The Crowd" },
+        { id: "team", x: 1044, y: 2074, label: "CH.05 The Crew" },
         { id: "fork", x: 1500, y: 4260, label: "CH.06 Three routes" },
         { id: "merge", x: 1424, y: 6750, label: "CH.06 Routes merge" },
         { id: "services", x: 1060, y: 8130, label: "CH.07 Services" },
@@ -29156,7 +29156,8 @@ void main() {
   function buildVehicle(id) {
     const v = buildVehicleBase(id);
     // the Classic Formula is a slim single-seater: a good deal smaller than the road cars
-    if (id === "f1") v.group.scale.setScalar(0.5);
+    // (the scale sits on an inner group: the spawn animation resets the outer one to 1)
+    if (id === "f1") { const outer = new Group(); v.group.scale.setScalar(0.5); outer.add(v.group); v.group = outer; }
     return addVehicleDetail(v, id);
   }
   function buildVehicleBase(id) {
