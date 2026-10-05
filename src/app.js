@@ -29106,7 +29106,40 @@ void main() {
     shadowAll(g);
     return { group: g, wheels, kind: "car" };
   }
+  // hyper-detail pass for the road cars: chrome-ringed headlights, tail lights, mirrors, plates
+  function addVehicleDetail(v, id) {
+    if (!["groovy", "cop", "foodvan", "monopoly"].includes(id)) return v;
+    const g = v.group, bb = new Box3().setFromObject(g);
+    const W2 = (bb.max.x - bb.min.x) / 2, H = bb.max.y - bb.min.y, y0 = bb.min.y, zf = bb.max.z, zr = bb.min.z, L = zf - zr;
+    const chrome = chromeM();
+    const lensM = new MeshPhysicalMaterial({ color: "#fff8e6", emissive: new Color("#ffe7b0"), emissiveIntensity: 0.7, roughness: 0.05, clearcoat: 1, envMap: getEnvMap() });
+    const tailM = new MeshPhysicalMaterial({ color: "#b3121b", emissive: new Color("#ff2a2a"), emissiveIntensity: 0.55, roughness: 0.1, clearcoat: 1 });
+    const plateM = new MeshStandardMaterial({ map: canvasTexture(256, 64, (ctx) => { ctx.fillStyle = "#f7f7f2"; ctx.fillRect(0, 0, 256, 64); ctx.fillStyle = "#1b3d9c"; ctx.fillRect(0, 0, 30, 64); ctx.fillStyle = "#fff"; ctx.font = "700 16px Montserrat"; ctx.fillText("RO", 3, 50); ctx.fillStyle = "#111"; ctx.font = "800 36px Montserrat, sans-serif"; ctx.fillText("B 99 CRS", 40, 46); ctx.strokeStyle = "#111"; ctx.lineWidth = 4; ctx.strokeRect(2, 2, 252, 60); }), roughness: 0.4 });
+    const yl = y0 + H * 0.3;
+    for (const sx of [-1, 1]) {
+      const ring = new Mesh(new TorusGeometry(2.6, 0.7, 10, 20), chrome); ring.position.set(sx * W2 * 0.68, yl, zf + 0.2);
+      const lens = new Mesh(new SphereGeometry(2.4, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2), lensM); lens.rotation.x = Math.PI / 2; lens.scale.set(1, 1, 0.45); lens.position.set(sx * W2 * 0.68, yl, zf);
+      const tail = new Mesh(new BoxGeometry(5, 3, 0.8), tailM); tail.position.set(sx * W2 * 0.74, yl + 1, zr - 0.3);
+      const arm = new Mesh(new BoxGeometry(3, 0.8, 0.8), chrome); arm.position.set(sx * (W2 + 1.2), y0 + H * 0.6, zf - L * 0.36);
+      const mir = new Mesh(new BoxGeometry(1.4, 2.6, 3.6), M(INK)); mir.position.set(sx * (W2 + 2.8), y0 + H * 0.62, zf - L * 0.36);
+      const mirGlass = new Mesh(new PlaneGeometry(3, 2.1), glassM()); mirGlass.position.set(sx * (W2 + 2.8), y0 + H * 0.62, zf - L * 0.36 - 1.85); mirGlass.rotation.y = Math.PI;
+      // the van, the cruiser and the truck have their own lamps: only the chrome racer gets these
+      if (id === "monopoly") g.add(ring, lens);
+      g.add(tail, arm, mir, mirGlass);
+    }
+    const pf = new Mesh(new PlaneGeometry(13, 3.3), plateM); pf.position.set(0, y0 + H * 0.2, zf + 0.25);
+    const pr = new Mesh(new PlaneGeometry(13, 3.3), plateM); pr.position.set(0, y0 + H * 0.2, zr - 0.25); pr.rotation.y = Math.PI;
+    g.add(pf, pr);
+    g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    return v;
+  }
   function buildVehicle(id) {
+    const v = buildVehicleBase(id);
+    // the Classic Formula is a slim single-seater: a good deal smaller than the road cars
+    if (id === "f1") v.group.scale.setScalar(0.66);
+    return addVehicleDetail(v, id);
+  }
+  function buildVehicleBase(id) {
     switch (id) {
       case "f1":
         return buildF1();
@@ -29128,16 +29161,258 @@ void main() {
         return buildGroovy();
     }
   }
+  var MeshPhysicalMaterial;
   var INK, GREY, WHITE, M, glassM, chromeM, TEAL, LIME, ORANGE, KOMPUS_BG, KOMPUS_ORANGE, KOMPUS_COLS;
   var init_vehicles = __esm({
     "src/vehicles.js"() {
       init_three_module();
       init_util();
+      // MeshPhysicalMaterial (three r169), restored: the bundle had tree-shaken it out
+      MeshPhysicalMaterial = class extends MeshStandardMaterial {
+      
+      	constructor( parameters ) {
+      
+      		super();
+      
+      		this.isMeshPhysicalMaterial = true;
+      
+      		this.defines = {
+      
+      			'STANDARD': '',
+      			'PHYSICAL': ''
+      
+      		};
+      
+      		this.type = 'MeshPhysicalMaterial';
+      
+      		this.anisotropyRotation = 0;
+      		this.anisotropyMap = null;
+      
+      		this.clearcoatMap = null;
+      		this.clearcoatRoughness = 0.0;
+      		this.clearcoatRoughnessMap = null;
+      		this.clearcoatNormalScale = new Vector2( 1, 1 );
+      		this.clearcoatNormalMap = null;
+      
+      		this.ior = 1.5;
+      
+      		Object.defineProperty( this, 'reflectivity', {
+      			get: function () {
+      
+      				return ( Math.min(1, Math.max(0, 2.5 * ( this.ior - 1 ) / ( this.ior + 1 ))) );
+      
+      			},
+      			set: function ( reflectivity ) {
+      
+      				this.ior = ( 1 + 0.4 * reflectivity ) / ( 1 - 0.4 * reflectivity );
+      
+      			}
+      		} );
+      
+      		this.iridescenceMap = null;
+      		this.iridescenceIOR = 1.3;
+      		this.iridescenceThicknessRange = [ 100, 400 ];
+      		this.iridescenceThicknessMap = null;
+      
+      		this.sheenColor = new Color( 0x000000 );
+      		this.sheenColorMap = null;
+      		this.sheenRoughness = 1.0;
+      		this.sheenRoughnessMap = null;
+      
+      		this.transmissionMap = null;
+      
+      		this.thickness = 0;
+      		this.thicknessMap = null;
+      		this.attenuationDistance = Infinity;
+      		this.attenuationColor = new Color( 1, 1, 1 );
+      
+      		this.specularIntensity = 1.0;
+      		this.specularIntensityMap = null;
+      		this.specularColor = new Color( 1, 1, 1 );
+      		this.specularColorMap = null;
+      
+      		this._anisotropy = 0;
+      		this._clearcoat = 0;
+      		this._dispersion = 0;
+      		this._iridescence = 0;
+      		this._sheen = 0.0;
+      		this._transmission = 0;
+      
+      		this.setValues( parameters );
+      
+      	}
+      
+      	get anisotropy() {
+      
+      		return this._anisotropy;
+      
+      	}
+      
+      	set anisotropy( value ) {
+      
+      		if ( this._anisotropy > 0 !== value > 0 ) {
+      
+      			this.version ++;
+      
+      		}
+      
+      		this._anisotropy = value;
+      
+      	}
+      
+      	get clearcoat() {
+      
+      		return this._clearcoat;
+      
+      	}
+      
+      	set clearcoat( value ) {
+      
+      		if ( this._clearcoat > 0 !== value > 0 ) {
+      
+      			this.version ++;
+      
+      		}
+      
+      		this._clearcoat = value;
+      
+      	}
+      
+      	get iridescence() {
+      
+      		return this._iridescence;
+      
+      	}
+      
+      	set iridescence( value ) {
+      
+      		if ( this._iridescence > 0 !== value > 0 ) {
+      
+      			this.version ++;
+      
+      		}
+      
+      		this._iridescence = value;
+      
+      	}
+      
+      	get dispersion() {
+      
+      		return this._dispersion;
+      
+      	}
+      
+      	set dispersion( value ) {
+      
+      		if ( this._dispersion > 0 !== value > 0 ) {
+      
+      			this.version ++;
+      
+      		}
+      
+      		this._dispersion = value;
+      
+      	}
+      
+      	get sheen() {
+      
+      		return this._sheen;
+      
+      	}
+      
+      	set sheen( value ) {
+      
+      		if ( this._sheen > 0 !== value > 0 ) {
+      
+      			this.version ++;
+      
+      		}
+      
+      		this._sheen = value;
+      
+      	}
+      
+      	get transmission() {
+      
+      		return this._transmission;
+      
+      	}
+      
+      	set transmission( value ) {
+      
+      		if ( this._transmission > 0 !== value > 0 ) {
+      
+      			this.version ++;
+      
+      		}
+      
+      		this._transmission = value;
+      
+      	}
+      
+      	copy( source ) {
+      
+      		super.copy( source );
+      
+      		this.defines = {
+      
+      			'STANDARD': '',
+      			'PHYSICAL': ''
+      
+      		};
+      
+      		this.anisotropy = source.anisotropy;
+      		this.anisotropyRotation = source.anisotropyRotation;
+      		this.anisotropyMap = source.anisotropyMap;
+      
+      		this.clearcoat = source.clearcoat;
+      		this.clearcoatMap = source.clearcoatMap;
+      		this.clearcoatRoughness = source.clearcoatRoughness;
+      		this.clearcoatRoughnessMap = source.clearcoatRoughnessMap;
+      		this.clearcoatNormalMap = source.clearcoatNormalMap;
+      		this.clearcoatNormalScale.copy( source.clearcoatNormalScale );
+      
+      		this.dispersion = source.dispersion;
+      		this.ior = source.ior;
+      
+      		this.iridescence = source.iridescence;
+      		this.iridescenceMap = source.iridescenceMap;
+      		this.iridescenceIOR = source.iridescenceIOR;
+      		this.iridescenceThicknessRange = [ ...source.iridescenceThicknessRange ];
+      		this.iridescenceThicknessMap = source.iridescenceThicknessMap;
+      
+      		this.sheen = source.sheen;
+      		this.sheenColor.copy( source.sheenColor );
+      		this.sheenColorMap = source.sheenColorMap;
+      		this.sheenRoughness = source.sheenRoughness;
+      		this.sheenRoughnessMap = source.sheenRoughnessMap;
+      
+      		this.transmission = source.transmission;
+      		this.transmissionMap = source.transmissionMap;
+      
+      		this.thickness = source.thickness;
+      		this.thicknessMap = source.thicknessMap;
+      		this.attenuationDistance = source.attenuationDistance;
+      		this.attenuationColor.copy( source.attenuationColor );
+      
+      		this.specularIntensity = source.specularIntensity;
+      		this.specularIntensityMap = source.specularIntensityMap;
+      		this.specularColor.copy( source.specularColor );
+      		this.specularColorMap = source.specularColorMap;
+      
+      		return this;
+      
+      	}
+      
+      };
       INK = "#141414";
       GREY = "#E7E7E7";
       WHITE = "#ffffff";
-      M = (color, opts = {}) => new MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.08, ...opts });
-      glassM = () => new MeshStandardMaterial({ color: "#a9d8f2", roughness: 0.12, metalness: 0.45 });
+      // paint: a clearcoat over the base colour, reflecting the city (rubber and matte parts stay plain)
+      M = (color, opts = {}) => (opts.roughness ?? 0.5) >= 0.8
+        ? new MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.08, ...opts })
+        : new MeshPhysicalMaterial({ color, roughness: 0.32, metalness: 0.12, clearcoat: 1, clearcoatRoughness: 0.08, envMap: getEnvMap(), envMapIntensity: 0.95, ...opts });
+      glassM = () => new MeshPhysicalMaterial({ color: "#1f3442", roughness: 0.04, metalness: 0.3, clearcoat: 1, clearcoatRoughness: 0.02, envMap: getEnvMap(), envMapIntensity: 1.7, reflectivity: 0.9 });
       chromeM = () => new MeshStandardMaterial({
         color: "#f4f5f7",
         roughness: 0.14,
@@ -30172,7 +30447,10 @@ void main() {
     };
     // the website link sits up top, next to YOU + YOUR BRAND; the weather leads the control row
     header.appendChild(modeBtn);
-    hud.append(wxBtn, vehBtn, themeBtn, vehMenu, themeMenu);
+    const takeoffBtn = el("button", "round-btn takeoff gone", `<span class="to-ic" aria-hidden="true">\u2708</span><span class="to-txt">Take off</span>`);
+    takeoffBtn.title = "Take off: fly high over the city";
+    takeoffBtn.onclick = () => api.toggleTakeoff?.();
+    hud.append(wxBtn, vehBtn, takeoffBtn, themeBtn, vehMenu, themeMenu);
     wxBtn.classList.add("gone");
     hud.appendChild(chapterMenu);
     chapterMenu.style.display = "none";
@@ -31063,6 +31341,15 @@ void main() {
       flyStar,
       logChanged() { if (!xpLogPanel.classList.contains("hidden")) renderLog(); },
       setRainBtn(on) { wxBtn.classList.toggle("gone", !on); },
+      setTakeoff(show, up) {
+        const key = `${show}|${up}`;
+        if (takeoffBtn._k === key) return;
+        takeoffBtn._k = key;
+        takeoffBtn.classList.toggle("gone", !show);
+        takeoffBtn.classList.toggle("up", !!up);
+        takeoffBtn.querySelector(".to-txt").textContent = up ? "Land" : "Take off";
+        takeoffBtn.title = up ? "Land back on the road" : "Take off: fly high over the city";
+      },
       coffeeServe(n) {
         coffeeCard.className = "coffee-card serve";
         const msg = n < 4 ? `<p>Somebody here understands <mark>good</mark> coffee. Every single time.</p>` : `<p>One more for the road. <mark>Famous</mark> last words.</p>`;
@@ -31362,6 +31649,7 @@ void main() {
         siteXP(pts, title, desc) { xpLand({ pts, title, desc }); },
         vehicleId: () => state.vehicleId,
         getBranch: () => state.branch,
+        toggleTakeoff() { if (veh?.kind === "plane") { airT = airT > 0.5 ? 0 : 1; ui.setTakeoff(true, airT > 0.5); } },
         pickBranch(b) {
           if (!xpCollected.has("fork") && !(xpPending && xpPending.stopId === "fork")) {
             const m = STOP_META.fork;
@@ -32145,6 +32433,8 @@ void main() {
       var topK = 0;
       var police = { active: false, until: 0, next: 0 };
       var redHold = 0;
+      // the plane's take-off: air eases towards airT (0 on the road, 1 high over the city)
+      var air = 0, airT = 0, AIR_H = 260;
       var beaconOn = false, beaconBlinkUntil = 0, copMode = "";
       var ENV_VEH = { default: "groovy", monument: "plane", ghibli: "groovy", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "lava", orchid: "scooter", underwater: "sub" };
       var camYaw = null, camDir = new Vector3(0, 0, 1), chA = new Vector3(), chB = new Vector3(), planeRev = 0;
@@ -33211,6 +33501,9 @@ void main() {
           if (xpPending && xpPending.kind === "msg" && now - xpPending.t > 4000) xpCommit(true);
         }
         route.posAt(state.L, carPos);
+        // airborne: the plane (and the chase camera with it) rises over the route
+        air = smooth(air, airT, dt, 0.9);
+        if (air > 1e-3) carPos.y += AIR_H * air * air * (3 - 2 * air);
         route.tangentAt(state.L, carTan);
         const flying = carPos.z > RAMP_LIP + 30 && carPos.y > 30;
         const isPlane = veh.kind === "plane";
@@ -33247,15 +33540,26 @@ void main() {
         while (dh < -Math.PI) dh += Math.PI * 2;
         heading += dh * Math.min(1, dt * 8);
         {
-          const bankSign = state.vehicleId === "f1" ? 0 : veh.kind === "plane" ? 1 : -1;
-          bank = smooth(bank, clamp2(bankSign * dh * 14, -0.32, 0.32) * clamp2(state.speed / 30, 0, 1), dt, 5);
+          // cars roll a little outwards; the plane leans INTO the turn, like an aircraft does
+          // (a left turn raises the right wing), and harder
+          if (veh.kind === "plane") bank = smooth(bank, clamp2(-dh * 46, -0.72, 0.72) * clamp2(state.speed / 20, 0, 1), dt, 3.2);
+          else {
+            const bankSign = state.vehicleId === "f1" ? 0 : -1;
+            bank = smooth(bank, clamp2(bankSign * dh * 14, -0.32, 0.32) * clamp2(state.speed / 30, 0, 1), dt, 5);
+          }
         }
         const pitch = Math.atan2(carTan.y, Math.hypot(carTan.x, carTan.z));
+        // the sway is added on top of the bank at render time (adding it to `bank` itself made it
+        // pile up frame after frame)
+        let sway = 0;
+        if (air > 0.3 && !flying) { veh.group.position.y += Math.sin(now * 13e-4) * 5 * air; sway = Math.sin(now * 9e-4) * 0.06 * air; }
         if (flying) {
           veh.group.position.y += Math.sin(now * 16e-4) * 7;
-          bank += Math.sin(now * 11e-4) * 0.05;
+          sway = Math.sin(now * 11e-4) * 0.05;
         }
-        veh.group.rotation.set(-pitch + (flying ? -0.09 : 0), heading, bank, "YXZ");
+        // take-off: climbing noses up, descending noses down
+        const climb = (airT - air) * (veh.kind === "plane" ? 1 : 0);
+        veh.group.rotation.set(-pitch + (flying ? -0.09 : 0) - clamp2(climb * 0.9, -0.35, 0.45), heading, bank + sway, "YXZ");
         if (coffee.phase === "rush") {
           veh.group.position.x += (Math.random() - 0.5) * 3;
           veh.group.position.z += (Math.random() - 0.5) * 3;
@@ -33267,7 +33571,7 @@ void main() {
           c.rotation.x = wheelSpin;
         });
         if (veh.prop) veh.prop.rotation.z += dt * (18 + state.speed * 0.4);
-        if (state.started && !siteMode && !flying && !police.active && state.vehicleId !== "cop" && (redHold > 2.5 || state.targetL - state.L > 9000) && now > police.next && now > jumpGuard) {
+        if (state.started && !siteMode && !flying && air < 0.05 && !police.active && state.vehicleId !== "cop" && (redHold > 2.5 || state.targetL - state.L > 9000) && now > police.next && now > jumpGuard) {
           police.active = true;
           police.until = now + 1e4;
           copCar.group.visible = true;
@@ -33321,13 +33625,13 @@ void main() {
         }
         camTarget.set(
           carPos.x + camDir.x * lookAhead * (1 - launchK),
-          carPos.y * (flying ? 1 : 0.4) + 30 - (isMobile() ? 195 : 0),
+          carPos.y * (flying ? 1 : 0.4 + 0.6 * air) + 30 - (isMobile() ? 195 * (1 - air) : 0),
           carPos.z + camDir.z * lookAhead * (1 - launchK)
         );
         camPos.set(
-          carPos.x - camDir.x * back + mouse.x * 40,
-          carPos.y + height + mouse.y * -20,
-          carPos.z - camDir.z * back
+          carPos.x - camDir.x * back * (1 - 0.35 * air) + mouse.x * 40,
+          carPos.y + height * (1 - 0.7 * air) + mouse.y * -20,
+          carPos.z - camDir.z * back * (1 - 0.35 * air)
         );
         if (launchK > 1e-3) {
           const sideX = carPos.x - 730;
@@ -33466,6 +33770,8 @@ void main() {
         {
           const rawWx = schemeId === "nightlife" ? "rain" : weatherState(prog);
           ui.setRainBtn(schemeId !== "monument" && schemeId !== "underwater" && !siteMode);
+          if (veh?.kind !== "plane" || siteMode) airT = 0;
+          ui.setTakeoff(veh?.kind === "plane" && !siteMode, airT > 0.5);
         }
         if (coffee.sunny > 0) wx = "sun";
         // Monument Valley never rains: the weather only moves the sun between noon and dusk
@@ -33788,6 +34094,8 @@ void main() {
         pnext: Math.round(police.next - performance.now()),
         car: veh.group.position.toArray().map((v) => Math.round(v)),
         rotY: +veh.group.rotation.y.toFixed(3),
+        rotZ: +veh.group.rotation.z.toFixed(3),
+        air: +air.toFixed(2),
         cam: camera.position.toArray().map((v) => Math.round(v))
       });
       var pct = 0;

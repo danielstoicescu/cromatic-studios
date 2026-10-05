@@ -2668,3 +2668,12 @@ body.site-mode .topbar .site-btn { position: static; }
 .poi-card.tm-media .poi-line { font-size: 9.5px; }
 @media (max-width: 1200px) { .poi-card.tm-media .poi-name { font-size: 15px; } }
 @media (max-width: 760px) { .poi-card.tm-media .poi-name { font-size: 13.5px !important; } }
+/* ---- r82: take-off (plane only) ---- */
+.hud .round-btn.takeoff { width: auto !important; padding: 0 16px 0 12px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; font: 800 14px/1 Poppins, sans-serif; }
+.hud .round-btn.takeoff.gone { display: none; }
+.to-ic { font-size: 20px; display: inline-block; transition: transform .6s cubic-bezier(.34,1.56,.64,1); }
+.hud .round-btn.takeoff.up .to-ic { transform: rotate(-35deg) translateY(-2px); }
+.hud .round-btn.takeoff.up { background: #119BFE; color: #fff; }
+@media (max-width: 760px) { .hud .round-btn.takeoff { padding: 0 12px 0 10px; } .to-txt { font-size: 12px; } }
+
+@media (max-width: 400px) { .hud .round-btn.takeoff { width: 54px !important; padding: 0; justify-content: center; } .hud .round-btn.takeoff .to-txt { display: none; } }
