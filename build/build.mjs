@@ -115,7 +115,7 @@ const mediaMap = new Map();
     if (!statSync(join(mroot, d)).isDirectory()) continue;
     mkdirSync(join(pub, "assets", "m"), { recursive: true });
     for (const f of readdirSync(join(mroot, d))) {
-      if (!/\.(jpe?g|png|webp)$/i.test(f)) continue;
+      if (!/\.(jpe?g|png|webp|mp4|webm)$/i.test(f)) continue;
       const buf = readFileSync(join(mroot, d, f));
       const rel = `assets/m/${d}-${f.replace(/\.[^.]+$/, "")}-${hash(buf).slice(0, 8)}${f.slice(f.lastIndexOf("."))}`;
       writeFileSync(join(pub, rel), buf);

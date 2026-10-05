@@ -165,7 +165,7 @@
 
   // ---- the coffee stop: the van rolls with the scroll; the counter pours ----
   const road = d.querySelector(".road-scene");
-  if (road) {
+  if (road && road.querySelector(".rs-pour")) {
     const tick = () => { const r = road.getBoundingClientRect(); const p = Math.min(1, Math.max(0, (innerHeight - r.top) / (innerHeight + r.height * 0.6))); road.style.setProperty("--p", p.toFixed(3)); };
     addEventListener("scroll", () => requestAnimationFrame(tick), { passive: true }); tick();
     let shots = 0, dropped = false;

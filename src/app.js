@@ -25644,6 +25644,85 @@ void main() {
 
 
 
+
+  // ===================== r86: Race Day — the pit lane at Two Minutes =====================
+  // south kerb of Strada George Călinescu, opposite the Two Minutes corner: pit lane, garages,
+  // pit wall with timing screens, tyre stacks, the crew. Visible in the Race Day world only.
+  var pitLane = null;
+  function buildPitLane(parent) {
+    const g = new Group();
+    const Z0 = 4302, X0 = 960, X1 = 1420;
+    const lane = new Mesh(new BoxGeometry(X1 - X0, 0.6, 34), new MeshStandardMaterial({ color: "#3a3d42", roughness: 0.85 })); lane.position.set((X0 + X1) / 2, 0.3, Z0 + 17); g.add(lane);
+    const lineM = new MeshStandardMaterial({ color: "#ffffff", roughness: 0.6 });
+    for (const dz of [1, 33]) { const l = new Mesh(new BoxGeometry(X1 - X0, 0.4, 1.2), lineM); l.position.set((X0 + X1) / 2, 0.7, Z0 + dz); g.add(l); }
+    // pit wall with timing screens, on the road side
+    const wall = new Mesh(new BoxGeometry(X1 - X0 - 40, 6, 2.4), new MeshStandardMaterial({ color: "#e9edf1", roughness: 0.7 })); wall.position.set((X0 + X1) / 2, 3, Z0 - 1.5); g.add(wall);
+    const redStripe = new Mesh(new BoxGeometry(X1 - X0 - 40, 1.2, 2.6), new MeshStandardMaterial({ color: "#e10600" })); redStripe.position.set((X0 + X1) / 2, 5.4, Z0 - 1.5); g.add(redStripe);
+    const timing = canvasTexture(256, 128, (ctx) => {
+      ctx.fillStyle = "#0e0f11"; ctx.fillRect(0, 0, 256, 128);
+      ctx.fillStyle = "#e10600"; ctx.fillRect(0, 0, 256, 18); ctx.fillStyle = "#fff"; ctx.font = "800 13px Montserrat, sans-serif"; ctx.fillText("CROMATIC RACING  ·  LAP 14/58", 8, 13);
+      const rows = [["1", "CRM", "1:21.304"], ["2", "TMN", "+0.412"], ["3", "STM", "+1.208"], ["4", "OMA", "+2.950"]];
+      ctx.font = "700 16px 'JetBrains Mono', monospace";
+      rows.forEach(([p2, n, t], i) => { ctx.fillStyle = i ? "#d6d9de" : "#FED012"; ctx.fillText(`${p2}  ${n}   ${t}`, 12, 42 + i * 24); });
+    });
+    const scrM = new MeshStandardMaterial({ map: timing, emissiveMap: timing, emissive: new Color("#ffffff"), emissiveIntensity: 0.6, roughness: 0.3 });
+    for (let x = X0 + 60; x < X1 - 40; x += 120) {
+      const post = new Mesh(new BoxGeometry(1.4, 12, 1.4), new MeshStandardMaterial({ color: "#2a2c30" })); post.position.set(x, 9, Z0 - 2); g.add(post);
+      const scr = new Mesh(new BoxGeometry(18, 9, 1), [scrM, scrM, scrM, scrM, scrM, scrM]); scr.position.set(x, 18, Z0 - 2); g.add(scr);
+    }
+    // garages: team colours, the second one is the Two Minutes box
+    const teams = [["#e10600", "CROMATIC"], ["#111111", "TWO MIN"], ["#119BFE", "STEAM"], ["#2f9e4f", "OMA"]];
+    teams.forEach(([col, name], i) => {
+      const x = X0 + 60 + i * 105, gz = Z0 + 34;
+      const box = new Mesh(new BoxGeometry(84, 30, 40), new MeshStandardMaterial({ color: "#f3f4f6", roughness: 0.8 })); box.position.set(x, 15, gz + 20); g.add(box);
+      const door = new Mesh(new PlaneGeometry(70, 22), new MeshStandardMaterial({ color: "#1a1c20", roughness: 0.6 })); door.rotation.y = Math.PI; door.position.set(x, 11, gz - 0.2); g.add(door);
+      const fascia = new Mesh(new BoxGeometry(86, 6, 2), new MeshStandardMaterial({ color: col, roughness: 0.6 })); fascia.position.set(x, 26, gz - 0.6); g.add(fascia);
+      const nameT = canvasTexture(512, 64, (ctx) => { ctx.clearRect(0, 0, 512, 64); ctx.fillStyle = "#fff"; ctx.font = "italic 900 44px Montserrat, sans-serif"; ctx.textAlign = "center"; ctx.fillText(name, 256, 48); });
+      const nameM = new MeshBasicMaterial({ map: nameT, transparent: true }); nameM.userData.outlineParameters = { visible: false };
+      const np = new Mesh(new PlaneGeometry(60, 7.5), nameM); np.rotation.y = Math.PI; np.position.set(x, 26, gz - 1.8); g.add(np);
+      // the box marks on the lane and a tyre stack beside each garage
+      const box2 = new Mesh(new BoxGeometry(30, 0.3, 14), new MeshStandardMaterial({ color: col, roughness: 0.7, transparent: true, opacity: 0.55 })); box2.position.set(x, 0.75, Z0 + 18); g.add(box2);
+      for (let k = 0; k < 4; k++) {
+        const tyre = new Mesh(new TorusGeometry(3.4, 1.8, 10, 20), new MeshStandardMaterial({ color: "#151515", roughness: 0.9 })); tyre.rotation.x = Math.PI / 2; tyre.position.set(x + 38, 1.8 + k * 3.4, gz - 4); g.add(tyre);
+        const band = new Mesh(new TorusGeometry(3.4, 0.35, 6, 20), new MeshStandardMaterial({ color: ["#e10600", "#FED012", "#ffffff"][i % 3] })); band.rotation.x = Math.PI / 2; band.position.set(x + 38, 1.8 + k * 3.4 + 1.8, gz - 4); g.add(band);
+      }
+    });
+    // the Two Minutes crew: overalls in black, a lollipop, and coffee on the pit wall
+    const crewM = new MeshStandardMaterial({ color: "#151515", roughness: 0.7 }), skin = new MeshStandardMaterial({ color: "#e0b48f" }), helm = new MeshStandardMaterial({ color: "#F2A9C4", roughness: 0.4 });
+    const bx = X0 + 165;
+    [[-14, 10], [-14, 24], [14, 10], [14, 24], [0, 4], [-24, 17]].forEach(([dx, dz], k) => {
+      const body = new Mesh(new CapsuleGeometry(2.4, 6, 4, 10), crewM); body.position.set(bx + dx, 6, Z0 + dz);
+      const head = new Mesh(new SphereGeometry(2.3, 12, 10), k % 2 ? helm : skin); head.position.set(bx + dx, 12.4, Z0 + dz);
+      g.add(body, head);
+    });
+    const lolli = new Mesh(new CylinderGeometry(0.4, 0.4, 16, 6), new MeshStandardMaterial({ color: "#d6d9de" })); lolli.position.set(bx, 10, Z0 + 1); g.add(lolli);
+    const disc = new Mesh(new CylinderGeometry(4, 4, 0.6, 20), new MeshStandardMaterial({ color: "#e10600" })); disc.rotation.x = Math.PI / 2; disc.position.set(bx, 18, Z0 + 1); g.add(disc);
+    for (let k = 0; k < 3; k++) { const cup = new Mesh(new CylinderGeometry(1.4, 1.1, 2.8, 12), new MeshStandardMaterial({ color: "#ffffff" })); cup.position.set(bx - 30 + k * 4, 7.4, Z0 - 1.5); g.add(cup); }
+    g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+    g.visible = false;
+    parent.add(g);
+    pitLane = g;
+    return g;
+  }
+  // rival F1 cars that share the road in the Race Day world: they hold a lane, then swing out
+  // to pass you, or drop back as you pass them
+  var rivals = [];
+  function buildRivals(parent) {
+    const liveries = [["#119BFE", "#ffffff"], ["#111111", "#FED012"], ["#2f9e4f", "#ffffff"]];
+    rivals = liveries.map(([main, second], i) => {
+      const v = buildVehicleBase("f1");
+      v.group.traverse((o) => {
+        if (!o.isMesh || !o.material || !o.material.color) return;
+        const hx = "#" + o.material.color.getHexString();
+        if (hx === "#f65342") { o.material = o.material.clone(); o.material.color.set(main); }
+        else if (hx === "#ffffff") { o.material = o.material.clone(); o.material.color.set(second); }
+      });
+      v.group.scale.setScalar(0.5);
+      const holder = new Group(); holder.add(v.group); holder.visible = false;
+      parent.add(holder);
+      return { holder, wheels: v.wheels, base: [-420, 260, 640][i], amp: [520, 480, 600][i], w: [0.11, 0.083, 0.067][i], ph: i * 2.1, side: i % 2 ? 1 : -1, spin: 0, lat: 0 };
+    });
+  }
   // ===================== r79: four streets — brand buildings =====================
   // emissive materials that light up after dark (switched with the other shop glows)
   var STREET_GLOW = [];
@@ -28319,6 +28398,8 @@ void main() {
     buildStart(world);
     // the four streets' landmarks go first, so the generic city blocks leave room for them
     buildFourStreets(world);
+    buildPitLane(world);
+    buildRivals(world);
     buildBuildings(world);
     buildTrees(world);
     buildStreetlights(world);
@@ -31961,6 +32042,7 @@ void main() {
           if (mvFx) mvFx.group.visible = mv;
           if (typeof uwFx !== "undefined" && uwFx) uwFx.group.visible = s.id === "underwater";
           if (casaPoporului) casaPoporului.visible = s.id !== "underwater";
+          if (pitLane) pitLane.visible = s.id === "circuit";
           if (typeof worldFx !== "undefined" && worldFx) worldFx.set(s.id);
           const skyWorld = s.id === "ghibli" || s.id === "orchid";
           if (skyWorld) {
@@ -32464,6 +32546,7 @@ void main() {
       var redHold = 0;
       // the plane's take-off: air eases towards airT (0 on the road, 1 high over the city)
       var air = 0, airT = 0, AIR_H = 150, airBank = 0;
+      const _rP = new Vector3(), _rT = new Vector3();
       const _tA = new Vector3();
       var beaconOn = false, beaconBlinkUntil = 0, copMode = "";
       var ENV_VEH = { default: "groovy", monument: "plane", ghibli: "groovy", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "lava", orchid: "scooter", underwater: "sub" };
@@ -32949,7 +33032,8 @@ void main() {
         const standM = new MeshStandardMaterial({ color: "#c9d0d8", roughness: 0.8 });
         const roofM = new MeshStandardMaterial({ color: "#e10600", roughness: 0.6 });
         const SPONS = [["CROMATIC", "#0a0a0a", "#FED012"], ["TWO MINUTES", "#111111", "#ffffff"], ["OLARI 9", "#e10600", "#ffffff"], ["SLOW COFFEE", "#5B4B9E", "#ffffff"], ["STEAM", "#2f9e4f", "#ffffff"], ["BRAND FUEL", "#119BFE", "#ffffff"]];
-        const sponsM = SPONS.map(([t2, bg, ink]) => noOutline(new MeshBasicMaterial({ map: labelTex(t2, bg, ink), side: DoubleSide })));
+        // front-sided, with a second face on the back, so the lettering never reads mirrored
+        const sponsM = SPONS.map(([t2, bg, ink]) => noOutline(new MeshBasicMaterial({ map: labelTex(t2, bg, ink) })));
         let stands = 0;
         along(520, (L, p, t) => {
           if (p.y > 5) return;
@@ -32975,6 +33059,7 @@ void main() {
           const board = new Mesh(new PlaneGeometry(64, 12), sponsM[Math.floor(L / 520) % sponsM.length]);
           board.position.set(bp.x, 7, bp.z);
           board.rotation.y = a + Math.PI / 2;
+          const back = new Mesh(board.geometry, board.material); back.rotation.y = Math.PI; back.position.z = -0.05; board.add(back);
           f1.add(board);
           const mp = side(p, t, ROUTE_W / 2 + 30, s2);
           posts.push({ x: mp.x, z: mp.z, ry: a });
@@ -33594,6 +33679,28 @@ void main() {
         if (flying) {
           veh.group.position.y += Math.sin(now * 16e-4) * 7;
           sway = Math.sin(now * 11e-4) * 0.05;
+        }
+        // Race Day rivals
+        {
+          const on = SCHEMES[state.schemeIdx].id === "circuit" && !siteMode && !flying && air < 0.05 && state.started;
+          const ts = now * 0.001;
+          for (const r of rivals) {
+            if (!on) { r.holder.visible = false; continue; }
+            const rel = r.base + r.amp * Math.sin(r.w * ts + r.ph);
+            const Lr = state.L + rel;
+            if (Lr < 300 || Lr > route.stopL.end - 200) { r.holder.visible = false; continue; }
+            route.posAt(Lr, _rP); route.tangentAt(Lr, _rT);
+            // swing out of your lane when close, back in when clear
+            const near = clamp2(1 - (Math.abs(rel) - 30) / 130, 0, 1);
+            r.lat = smooth(r.lat, r.side * 15 * near, dt, 3);
+            const nx = _rT.z, nz = -_rT.x, nl = Math.hypot(nx, nz) || 1;
+            r.holder.position.set(_rP.x + nx / nl * r.lat, _rP.y, _rP.z + nz / nl * r.lat);
+            r.holder.rotation.set(0, Math.atan2(_rT.x, _rT.z), 0);
+            const v = r.amp * r.w * Math.cos(r.w * ts + r.ph);
+            r.spin += (state.speed * 0.6 + v * 0.09) * dt * 0.4;
+            for (const w of r.wheels) w.children.forEach((c) => { c.rotation.x = r.spin; });
+            r.holder.visible = true;
+          }
         }
         // take-off: climbing noses up, descending noses down
         const climb = (airT - air) * (veh.kind === "plane" ? 1 : 0);

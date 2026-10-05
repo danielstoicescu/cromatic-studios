@@ -168,22 +168,13 @@ ${header(true)}
     <div class="wrap road-head">
       <p class="eyebrow mono">A piece of the drive · Strada Aricescu 52</p>
       <h2 class="ptitle">${pill("The coffee", "#FED012", -1.5)}${pill("stop", "#F2A9C4", 1)}</h2>
-      <p class="sec-lead">Two Minutes has been our client and our neighbour for a decade. Scroll and the van rolls up; tap the counter and pour.</p>
+      <p class="sec-lead">Two Minutes has been our client and our neighbour for a decade. On the drive we always stop here: four double espressos, and the coffee boxes fly down from the Cromatic mansard to the shelf.</p>
     </div>
-    <div class="road-scene">
-      <div class="rs-sky"></div>
-      <div class="rs-shop"><span class="rs-awn"></span><span class="rs-sign">TWO<br>MIN</span><span class="rs-door"></span><span class="rs-win"></span></div>
-      <div class="rs-mansard"><span></span><b>CROMATIC</b></div>
-      <div class="rs-lights" aria-hidden="true">${Array.from({ length: 13 }, (_, i) => `<i style="--i:${i}"></i>`).join("")}</div>
-      <div class="rs-road"><span class="rs-dash"></span></div>
-      <div class="rs-van" aria-hidden="true"><span class="rs-body"></span><span class="rs-glass"></span><span class="rs-w w1"></span><span class="rs-w w2"></span></div>
-      <div class="rs-boxes" aria-hidden="true"></div>
-      <div class="rs-counter">
-        <button class="rs-pour" type="button">☕ Pour a double espresso</button>
-        <p class="rs-msg mono" aria-live="polite">The counter is open.</p>
-        <div class="rs-cups" aria-hidden="true"></div>
-      </div>
+    <div class="road-scene road-video">
+      ${vid("m:tm/coffee-stop", "m:tm/coffee-stop-poster")}
+      <span class="rv-tag mono">Filmed in the 3D drive · Strada Aricescu 52</span>
       <a class="rs-cta" href="/work/two-minutes/">Two Minutes, the case →</a>
+      <a class="rs-drive" href="/">Drive it yourself →</a>
     </div>
   </section>
 
