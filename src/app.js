@@ -28659,331 +28659,9 @@ void main() {
     shadowAll(g);
     return { group: g, wheels, kind: "car" };
   }
-  function buildF1() {
-    const g = new Group();
-    const RED = "#F65342";
-    const nose = new Mesh(new CylinderGeometry(4.2, 7.6, 30, 12), M(RED));
-    nose.rotation.x = Math.PI / 2;
-    nose.position.set(0, 10.5, 30);
-    const tip = new Mesh(new CylinderGeometry(2.2, 4.2, 10, 12), M(WHITE));
-    tip.rotation.x = Math.PI / 2;
-    tip.position.set(0, 10.5, 50);
-    const tub = new Mesh(new BoxGeometry(15, 10, 34), M(RED));
-    tub.position.set(0, 11, 0);
-    const cockpitRim = new Mesh(new TorusGeometry(6.2, 1.5, 8, 18), M(RED));
-    cockpitRim.rotation.x = -Math.PI / 2;
-    cockpitRim.position.set(0, 16.4, -1);
-    const screen = new Mesh(new CylinderGeometry(6.4, 6.4, 4, 14, 1, true, Math.PI * 0.15, Math.PI * 0.7), M(INK, { side: DoubleSide }));
-    screen.position.set(0, 17.5, 4);
-    const helmet = new Mesh(new SphereGeometry(4.6, 14, 12), M(RED));
-    helmet.position.set(0, 18.5, -3);
-    const visor = new Mesh(new SphereGeometry(4.7, 14, 10, Math.PI * 0.25, Math.PI * 0.5, Math.PI * 0.35, Math.PI * 0.3), M(INK));
-    visor.position.copy(helmet.position);
-    const spine = new Mesh(new BoxGeometry(9, 7, 30), M(WHITE));
-    spine.position.set(0, 14, -21);
-    const airbox = new Mesh(new BoxGeometry(7, 6, 10), M(WHITE));
-    airbox.position.set(0, 20, -12);
-    const engineTail = new Mesh(new BoxGeometry(11, 8, 14), M(RED));
-    engineTail.position.set(0, 11, -30);
-    const podL = new Mesh(new BoxGeometry(9, 8, 26), M(RED));
-    podL.position.set(-12, 10, -8);
-    const podR = podL.clone();
-    podR.position.x = 12;
-    const wingF = new Mesh(new BoxGeometry(42, 1.8, 11), M(WHITE));
-    wingF.position.set(0, 5.4, 51);
-    const wfL = new Mesh(new BoxGeometry(2, 6.5, 11.4), M(RED));
-    wfL.position.set(-21, 7.4, 51);
-    const wfR = wfL.clone();
-    wfR.position.x = 21;
-    const wingR = new Mesh(new BoxGeometry(34, 2, 11), M(WHITE));
-    wingR.position.set(0, 25, -40);
-    const wingR2 = new Mesh(new BoxGeometry(34, 2, 8), M(RED));
-    wingR2.position.set(0, 20.5, -42.5);
-    const wrL = new Mesh(new BoxGeometry(2, 10, 12.5), M(RED));
-    wrL.position.set(-17, 22, -40);
-    const wrR = wrL.clone();
-    wrR.position.x = 17;
-    g.add(nose, tip, tub, cockpitRim, screen, helmet, visor, spine, airbox, engineTail, podL, podR, wingF, wfL, wfR, wingR, wingR2, wrL, wrR);
-    const wheels = [];
-    for (const [x, z, r, w] of [[-20, 34, 8.5, 8], [20, 34, 8.5, 8], [-20, -26, 10.5, 11], [20, -26, 10.5, 11]]) {
-      const wh = wheel(r, w, "#f2c230");
-      wh.position.set(x, r, z);
-      wheels.push(wh);
-      g.add(wh);
-    }
-    shadowAll(g);
-    return { group: g, wheels, kind: "car" };
-  }
-  function buildMonopoly() {
-    const g = new Group();
-    const c = chromeM();
-    const hull = new Mesh(new CapsuleGeometry(9.5, 52, 6, 14), c);
-    hull.rotation.x = Math.PI / 2;
-    hull.scale.set(1.15, 0.72, 1);
-    hull.position.set(0, 14.5, 0);
-    const grille = new Mesh(new CylinderGeometry(7.6, 7.6, 2.6, 18), c);
-    grille.rotation.x = Math.PI / 2;
-    grille.position.set(0, 13.5, 33);
-    const screen = new Mesh(new BoxGeometry(14, 8, 1.4), c);
-    screen.rotation.x = -0.28;
-    screen.position.set(0, 22.5, 6);
-    const seat = new Mesh(new SphereGeometry(6.2, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), c);
-    seat.position.set(0, 17, -10);
-    const pit = new Mesh(new CylinderGeometry(5, 5, 1.4, 12), M("#3c4046", { metalness: 0.6, roughness: 0.4 }));
-    pit.position.set(0, 19.6, -2);
-    const fenders = [];
-    for (const [x, z] of [[-13.5, 24], [13.5, 24], [-13.5, -20], [13.5, -20]]) {
-      const f = new Mesh(new TorusGeometry(11, 2.3, 10, 18, Math.PI), c);
-      f.rotation.y = Math.PI / 2;
-      f.position.set(x, 9, z);
-      fenders.push(f);
-    }
-    const boardL = new Mesh(new BoxGeometry(4, 2, 26), c);
-    boardL.position.set(-13.5, 8, 2);
-    const boardR = boardL.clone();
-    boardR.position.x = 13.5;
-    for (let i = 0; i < 3; i++) {
-      const pipe = new Mesh(new CylinderGeometry(1.1, 1.1, 12, 8), c);
-      pipe.rotation.z = Math.PI / 2;
-      pipe.rotation.y = 0.35;
-      pipe.position.set(-11, 15.5, 16 - i * 5);
-      g.add(pipe);
-    }
-    const spare = new Mesh(new CylinderGeometry(8, 8, 3.4, 16), c);
-    spare.rotation.x = Math.PI / 2;
-    spare.rotation.z = 0.1;
-    spare.position.set(0, 15, -32);
-    g.add(hull, grille, screen, seat, pit, ...fenders, boardL, boardR, spare);
-    const wheels = [];
-    for (const [x, z] of [[-13.5, 24], [13.5, 24], [-13.5, -20], [13.5, -20]]) {
-      const w = wheel(9, 5.6, "chrome");
-      w.position.set(x, 9, z);
-      wheels.push(w);
-      g.add(w);
-    }
-    shadowAll(g);
-    return { group: g, wheels, kind: "car" };
-  }
-  function buildPlane() {
-    const g = new Group();
-    const YEL = "#FED012";
-    const fus = new Mesh(new CylinderGeometry(7, 9, 74, 12), M(YEL));
-    fus.rotation.x = Math.PI / 2;
-    fus.position.y = 18;
-    const noseCone = new Mesh(new CylinderGeometry(9, 5, 12, 12), M(INK));
-    noseCone.rotation.x = Math.PI / 2;
-    noseCone.position.set(0, 18, 43);
-    const cockpit = new Mesh(new SphereGeometry(6.5, 12, 10), glassM());
-    cockpit.position.set(0, 25.5, 2);
-    cockpit.scale.set(1, 0.8, 1.4);
-    const wingTop = new Mesh(new BoxGeometry(92, 3.4, 20), M(YEL));
-    wingTop.position.set(0, 31, 8);
-    const wingLow = new Mesh(new BoxGeometry(76, 3.2, 17), M(YEL));
-    wingLow.position.set(0, 10.5, 8);
-    const strutL = new Mesh(new BoxGeometry(2.4, 18, 2.4), M(GREY));
-    strutL.position.set(-28, 21, 8);
-    const strutR = strutL.clone();
-    strutR.position.x = 28;
-    const tail = new Mesh(new BoxGeometry(26, 3, 12), M(YEL));
-    tail.position.set(0, 21, -39);
-    const fin = new Mesh(new BoxGeometry(3, 15, 12), M("#F65342"));
-    fin.position.set(0, 29, -39);
-    const tipL = new Mesh(new BoxGeometry(3.4, 3.4, 20.4), M("#F65342"));
-    tipL.position.set(-45.5, 31, 8);
-    const tipR = new Mesh(new BoxGeometry(3.4, 3.4, 20.4), M("#28C840"));
-    tipR.position.set(45.5, 31, 8);
-    const prop = new Group();
-    const blade1 = new Mesh(new BoxGeometry(2.6, 30, 1.6), M(INK));
-    const blade2 = blade1.clone();
-    blade2.rotation.z = Math.PI / 2;
-    prop.add(blade1, blade2);
-    prop.position.set(0, 18, 49.8);
-    g.add(fus, noseCone, cockpit, wingTop, wingLow, strutL, strutR, tail, fin, tipL, tipR, prop);
-    const wheels = [];
-    for (const [x, z] of [[-12, 16], [12, 16]]) {
-      const w = wheel(6, 4);
-      w.position.set(x, 6, z);
-      wheels.push(w);
-      g.add(w);
-    }
-    shadowAll(g);
-    return { group: g, wheels, kind: "plane", prop };
-  }
   // Cop cruiser: white body, navy cabin and stripe, a red/blue light bar that lights the street
-  function buildCop() {
-    const g = new Group();
-    const NAVY = "#1b2a52";
-    const body = new Mesh(new BoxGeometry(40, 14, 88), M(WHITE));
-    body.position.y = 13;
-    const stripe = new Mesh(new BoxGeometry(40.8, 4.2, 70), M(NAVY));
-    stripe.position.set(0, 14, -4);
-    const cabin = new Mesh(new BoxGeometry(35, 13, 44), M(NAVY));
-    cabin.position.set(0, 26.5, -6);
-    const glassL = new Mesh(new BoxGeometry(35.6, 7, 34), glassM());
-    glassL.position.set(0, 27.5, -6);
-    const hood = new Mesh(new BoxGeometry(38, 3, 26), M(WHITE));
-    hood.position.set(0, 21, 30);
-    const bumperF = new Mesh(new BoxGeometry(42, 5, 4), M(INK));
-    bumperF.position.set(0, 9, 45);
-    const bumperR = bumperF.clone();
-    bumperR.position.z = -45;
-    const bar = new Mesh(new BoxGeometry(28, 3, 7), M(INK));
-    bar.position.set(0, 34.5, -6);
-    const redM = M("#ff2a2a", { emissive: "#ff2a2a", emissiveIntensity: 0.2 });
-    const blueM = M("#2a6bff", { emissive: "#2a6bff", emissiveIntensity: 0.2 });
-    const red = new Mesh(new BoxGeometry(12, 4, 6), redM);
-    red.position.set(-7, 37, -6);
-    const blue = new Mesh(new BoxGeometry(12, 4, 6), blueM);
-    blue.position.set(7, 37, -6);
-    const lamps = [];
-    for (const x of [-12, 12]) {
-      const l = new Mesh(new BoxGeometry(7, 3.5, 1.2), M("#fff6d8", { emissive: "#fff6d8", emissiveIntensity: 0.5 }));
-      l.position.set(x, 15, 44.4);
-      lamps.push(l);
-    }
-    const lr = new PointLight("#ff2a2a", 0, 220, 1.6);
-    lr.position.set(-10, 44, -6);
-    const lb = new PointLight("#2a6bff", 0, 220, 1.6);
-    lb.position.set(10, 44, -6);
-    g.add(body, stripe, cabin, glassL, hood, bumperF, bumperR, bar, red, blue, ...lamps, lr, lb);
-    const wheels = [];
-    for (const [x, z] of [[-20, 28], [20, 28], [-20, -28], [20, -28]]) {
-      const w = wheel(9, 6);
-      w.position.set(x, 9, z);
-      wheels.push(w);
-      g.add(w);
-    }
-    shadowAll(g);
-    return { group: g, wheels, kind: "car", beacon: { redM, blueM, lr, lb } };
-  }
   // Lava buggy: dark chassis, red hood, a glowing yellow stripe, a rear wing
-  function buildLava() {
-    const g = new Group();
-    const DARK = "#1e1a18", RED = "#d7261e";
-    const chassis = new Mesh(new BoxGeometry(36, 8, 80), M(DARK, { roughness: 0.7 }));
-    chassis.position.y = 11;
-    const hood = new Mesh(new BoxGeometry(32, 7, 36), M(RED));
-    hood.position.set(0, 18, 18);
-    hood.rotation.x = -0.12;
-    const tub = new Mesh(new BoxGeometry(30, 9, 30), M(RED));
-    tub.position.set(0, 19, -16);
-    const stripe = new Mesh(new BoxGeometry(7, 0.8, 72), M("#FED012", { emissive: "#FED012", emissiveIntensity: 1.2 }));
-    stripe.position.set(0, 22.2, 4);
-    const seat = new Mesh(new BoxGeometry(16, 10, 12), M(INK));
-    seat.position.set(0, 26, -6);
-    const cage = [];
-    for (const x of [-12, 12]) {
-      const bar = new Mesh(new CylinderGeometry(1.2, 1.2, 22, 8), M(INK));
-      bar.position.set(x, 32, -10);
-      cage.push(bar);
-    }
-    const top = new Mesh(new CylinderGeometry(1.2, 1.2, 24, 8), M(INK));
-    top.rotation.z = Math.PI / 2;
-    top.position.set(0, 43, -10);
-    const wing = new Mesh(new BoxGeometry(42, 2, 11), M(RED));
-    wing.position.set(0, 33, -38);
-    const posts = [-12, 12].map((x) => { const p2 = new Mesh(new BoxGeometry(2, 12, 4), M(DARK)); p2.position.set(x, 26, -36); return p2; });
-    const engine = new Mesh(new BoxGeometry(18, 8, 14), M("#4a4440", { metalness: 0.5, roughness: 0.4 }));
-    engine.position.set(0, 19, -32);
-    g.add(chassis, hood, tub, stripe, seat, ...cage, top, wing, ...posts, engine);
-    const wheels = [];
-    for (const [x, z, r, w2] of [[-21, 26, 9, 7], [21, 26, 9, 7], [-22, -26, 11.5, 9.5], [22, -26, 11.5, 9.5]]) {
-      const w = wheel(r, w2, "#F65342");
-      w.position.set(x, r, z);
-      wheels.push(w);
-      g.add(w);
-    }
-    shadowAll(g);
-    return { group: g, wheels, kind: "car" };
-  }
   // Yellow submarine: capsule hull, conning tower, periscope, portholes, a spinning screw
-  function buildSub() {
-    const g = new Group();
-    const YEL = "#FED012", NAVY = "#1b2a52";
-    const hull = new Mesh(new CapsuleGeometry(13, 56, 8, 20), M(YEL));
-    hull.rotation.x = Math.PI / 2;
-    hull.position.y = 20;
-    const band = new Mesh(new TorusGeometry(13.1, 1.3, 8, 28), M("#F65342"));
-    band.position.set(0, 20, 12);
-    const tower = new Mesh(new CylinderGeometry(7, 8.5, 13, 16), M(YEL));
-    tower.scale.z = 1.6;
-    tower.position.set(0, 36, -4);
-    const towerCap = new Mesh(new CylinderGeometry(7.2, 7.2, 1.6, 16), M(NAVY));
-    towerCap.scale.z = 1.6;
-    towerCap.position.set(0, 43, -4);
-    const periV = new Mesh(new CylinderGeometry(1.3, 1.3, 12, 8), M(INK));
-    periV.position.set(0, 49, 0);
-    const periH = new Mesh(new CylinderGeometry(1.3, 1.3, 7, 8), M(INK));
-    periH.rotation.x = Math.PI / 2;
-    periH.position.set(0, 55, 3);
-    g.add(hull, band, tower, towerCap, periV, periH);
-    for (const sx of [-1, 1]) for (const z of [-14, 0, 14]) {
-      const rim = new Mesh(new TorusGeometry(3.4, 0.9, 8, 18), chromeM());
-      rim.rotation.y = Math.PI / 2;
-      rim.position.set(sx * 12.6, 22, z);
-      const glass = new Mesh(new CircleGeometry(3.2, 18), M("#a9e8ff", { emissive: "#7fe0ff", emissiveIntensity: 0.5, roughness: 0.1 }));
-      glass.rotation.y = sx * Math.PI / 2;
-      glass.position.set(sx * 12.9, 22, z);
-      g.add(rim, glass);
-    }
-    const nose = new Mesh(new SphereGeometry(6, 16, 12), glassM());
-    nose.position.set(0, 21, 40);
-    const finV = new Mesh(new BoxGeometry(1.6, 16, 10), M(NAVY));
-    finV.position.set(0, 28, -38);
-    const finH = new Mesh(new BoxGeometry(24, 1.6, 9), M(NAVY));
-    finH.position.set(0, 20, -38);
-    const bow = new Mesh(new BoxGeometry(34, 1.4, 6), M(NAVY));
-    bow.position.set(0, 24, 22);
-    const lamp = new Mesh(new SphereGeometry(2.2, 10, 8), M("#fff6d8", { emissive: "#fff6d8", emissiveIntensity: 1.2 }));
-    lamp.position.set(0, 13, 40);
-    const prop = new Group();
-    prop.position.set(0, 20, -47);
-    for (let k = 0; k < 3; k++) {
-      const blade = new Mesh(new BoxGeometry(2.4, 11, 1), M(INK));
-      blade.position.y = 5;
-      const arm = new Group();
-      arm.rotation.z = (k * Math.PI * 2) / 3;
-      arm.add(blade);
-      prop.add(arm);
-    }
-    const hubM = new Mesh(new SphereGeometry(2.4, 10, 8), M(INK));
-    prop.add(hubM);
-    g.add(nose, finV, finH, bow, lamp, prop);
-    shadowAll(g);
-    return { group: g, wheels: [], kind: "sub", prop };
-  }
-  function buildScooter() {
-    const g = new Group();
-    const deck = new Mesh(new BoxGeometry(12, 3.4, 46), M(INK));
-    deck.position.y = 8;
-    const deckTop = new Mesh(new BoxGeometry(10, 1.2, 42), M(GREY));
-    deckTop.position.y = 10.3;
-    const stem = new Mesh(new CylinderGeometry(1.8, 1.8, 34, 8), M(INK));
-    stem.position.set(0, 26, 20);
-    stem.rotation.x = -0.16;
-    const bar = new Mesh(new CylinderGeometry(1.6, 1.6, 26, 8), M(INK));
-    bar.rotation.z = Math.PI / 2;
-    bar.position.set(0, 42.5, 17.4);
-    const gripL = new Mesh(new CylinderGeometry(2.2, 2.2, 6, 8), M("#F65342"));
-    gripL.rotation.z = Math.PI / 2;
-    gripL.position.set(-15.8, 42.5, 17.4);
-    const gripR = gripL.clone();
-    gripR.position.x = 15.8;
-    const light = new Mesh(new SphereGeometry(2.4, 8, 8), M("#FED012", { emissive: "#FED012", emissiveIntensity: 0.6 }));
-    light.position.set(0, 38.6, 21.6);
-    const batt = new Mesh(new BoxGeometry(8, 2.4, 12), M("#FED012"));
-    batt.position.set(0, 5.9, -6);
-    g.add(deck, deckTop, stem, bar, gripL, gripR, light, batt);
-    const wheels = [];
-    for (const z of [24.5, -20]) {
-      const w = wheel(6, 4.6);
-      w.position.set(0, 6, z);
-      wheels.push(w);
-      g.add(w);
-    }
-    shadowAll(g);
-    return { group: g, wheels, kind: "car" };
-  }
   function kompusPattern(ctx, w, h, seed) {
     ctx.fillStyle = KOMPUS_BG;
     ctx.fillRect(0, 0, w, h);
@@ -29059,65 +28737,398 @@ void main() {
       if (withLogo) kompusLogo(ctx, w / 2, h / 2, 82);
     });
   }
-  function buildFoodvan() {
-    const g = new Group();
-    const OR = KOMPUS_ORANGE;
-    const body = new Mesh(new BoxGeometry(48, 38, 88), M(KOMPUS_BG, { roughness: 0.65 }));
-    body.position.y = 29;
-    const roof = new Mesh(new BoxGeometry(50, 3.6, 90), M("#141110"));
-    roof.position.y = 49.8;
-    const cab = new Mesh(new BoxGeometry(44, 12, 2), glassM());
-    cab.position.set(0, 38, 45.1);
-    g.add(body, roof, cab);
-    const kL = decal(kompusWrapTexture(7, true), 87.4, 37.4);
-    kL.rotation.y = -Math.PI / 2;
-    kL.position.set(-24.35, 29, 0);
-    const kR = decal(kompusWrapTexture(23, true), 87.4, 37.4);
-    kR.rotation.y = Math.PI / 2;
-    kR.position.set(24.35, 29, 0);
-    const kB = decal(kompusWrapTexture(41, false, 256, 200), 47.4, 37.4);
-    kB.rotation.y = Math.PI;
-    kB.position.set(0, 29, -44.35);
-    const kT = decal(kompusWrapTexture(59, false, 512, 288), 49.4, 89.4);
-    kT.rotation.x = -Math.PI / 2;
-    kT.position.set(0, 51.75, 0);
-    g.add(kL, kR, kB, kT);
-    const awnG = new Group();
-    for (let i = 0; i < 7; i++) {
-      const seg = new Mesh(new BoxGeometry(16, 2, 56 / 7), M(i % 2 ? WHITE : OR));
-      seg.position.z = i * 8 - 24;
-      awnG.add(seg);
+  // ===================== r84: remodelled vehicles — shared parts =====================
+  // a body drawn as a side profile (z forward, y up) and extruded across the width with rounded edges
+  function sideBody(draw, width, mat, bevel = 2.4, seg = 18) {
+    const sh = typeof draw === "function" ? (() => { const s0 = new Shape(); draw(s0); return s0; })() : draw;
+    const dep = Math.max(0.5, width - 2 * bevel);
+    const geo = new ExtrudeGeometry(sh, { depth: dep, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 5, curveSegments: seg });
+    geo.rotateY(-Math.PI / 2); geo.translate(dep / 2, 0, 0);
+    return new Mesh(geo, mat);
+  }
+  // a body drawn from above (x across, y = forward) and extruded upwards from y0
+  function topBody(draw, height, mat, y0 = 0, bevel = 2, seg = 18) {
+    const sh = typeof draw === "function" ? (() => { const s0 = new Shape(); draw(s0); return s0; })() : draw;
+    const dep = Math.max(0.3, height - 2 * bevel);
+    const geo = new ExtrudeGeometry(sh, { depth: dep, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 4, curveSegments: seg });
+    geo.rotateX(Math.PI / 2); geo.translate(0, y0 + dep + bevel, 0);
+    return new Mesh(geo, mat);
+  }
+  function rrShape(w, h, r) {
+    const q = new Shape(); r = Math.min(r, w / 2, h / 2);
+    q.moveTo(-w / 2 + r, -h / 2); q.lineTo(w / 2 - r, -h / 2); q.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r);
+    q.lineTo(w / 2, h / 2 - r); q.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2); q.lineTo(-w / 2 + r, h / 2);
+    q.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r); q.lineTo(-w / 2, -h / 2 + r); q.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
+    return q;
+  }
+  const rrDraw = (w, h, r) => rrShape(w, h, r);
+  // a window: rounded glass in a black rubber surround (faces +z before rotation)
+  function glassPane(w, h, r = 2, frame = "#141414") {
+    const grp = new Group();
+    const f = new Mesh(new ShapeGeometry(rrShape(w + 1.5, h + 1.5, r + 0.7), 6), new MeshStandardMaterial({ color: frame, roughness: 0.6 }));
+    const gl = new Mesh(new ShapeGeometry(rrShape(w, h, r), 6), glassM()); gl.position.z = 0.12;
+    grp.add(f, gl);
+    return grp;
+  }
+  // a rod between two points (roll cages, struts, push bars)
+  function rod(a, b, r, mat, seg = 10) {
+    const A = new Vector3(...a), B = new Vector3(...b), d = B.clone().sub(A);
+    const m = new Mesh(new CylinderGeometry(r, r, d.length(), seg), mat);
+    m.position.copy(A).addScaledVector(d, 0.5);
+    m.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), d.normalize());
+    return m;
+  }
+  // a wheel that spins as one piece: rounded tyre, rim, cap, nuts
+  function carWheel({ r = 9, w = 6.4, rim = "#d9dadc", rimR = 0.6, cap = "chrome", tyre = "#191919", spokes = 0, whitewall = false, slick = false } = {}) {
+    const g = new Group(), spin = new Group();
+    const rubber = new MeshStandardMaterial({ color: tyre, roughness: slick ? 0.55 : 0.92 });
+    const core = new Mesh(new CylinderGeometry(r - 1.4, r - 1.4, w, 28), rubber); core.rotation.z = Math.PI / 2; spin.add(core);
+    const tr = Math.min(2.6, w / 2.4);
+    for (const sx of [-1, 1]) { const wall = new Mesh(new TorusGeometry(r - tr, tr, 12, 32), rubber); wall.rotation.y = Math.PI / 2; wall.position.x = sx * (w / 2 - tr); spin.add(wall); }
+    if (whitewall) for (const sx of [-1, 1]) { const ww = new Mesh(new TorusGeometry(r * 0.72, r * 0.09, 8, 28), M("#f6f4ee", { roughness: 0.6 })); ww.rotation.y = Math.PI / 2; ww.position.x = sx * (w / 2 + 0.05); spin.add(ww); }
+    const rimM = rim === "chrome" ? chromeM() : M(rim, { roughness: 0.35, metalness: 0.4 });
+    const rimMesh = new Mesh(new CylinderGeometry(r * rimR, r * rimR, w + 0.4, 28), rimM); rimMesh.rotation.z = Math.PI / 2; spin.add(rimMesh);
+    for (const sx of [-1, 1]) {
+      const lip = new Mesh(new TorusGeometry(r * rimR, 0.5, 8, 28), chromeM()); lip.rotation.y = Math.PI / 2; lip.position.x = sx * (w / 2 + 0.2); spin.add(lip);
+      const capM = cap === "chrome" ? chromeM() : M(cap);
+      const c = new Mesh(new SphereGeometry(r * rimR * 0.5, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), capM); c.rotation.z = -sx * Math.PI / 2; c.scale.set(1, 0.4, 1); c.position.x = sx * (w / 2 + 0.2); spin.add(c);
     }
-    awnG.position.set(-30, 46, -2);
-    awnG.rotation.z = 0.32;
-    const counter = new Mesh(new BoxGeometry(6, 2.6, 50), M(GREY));
-    counter.position.set(-26.4, 22, -2);
-    g.add(awnG, counter);
-    const cup = new Group();
-    const cupBody = new Mesh(new CylinderGeometry(6, 4.6, 12, 14), M(WHITE));
-    const cupLid = new Mesh(new CylinderGeometry(6.4, 6.4, 2.4, 14), M(OR));
-    cupLid.position.y = 7;
-    cup.add(cupBody, cupLid);
-    cup.position.set(0, 58, 10);
-    g.add(cup);
-    const bumpF = new Mesh(new BoxGeometry(48.6, 4.4, 3), M("#141110"));
-    bumpF.position.set(0, 8, 45);
-    const bumpB = bumpF.clone();
-    bumpB.position.z = -45;
-    g.add(bumpF, bumpB);
+    for (let i = 0; i < spokes; i++) { const a = i / spokes * Math.PI * 2; const sp = new Mesh(new BoxGeometry(w + 0.6, 0.5, r * rimR * 1.7), chromeM()); sp.rotation.x = a; spin.add(sp); }
+    for (let i = 0; i < 5; i++) { const nut = new Mesh(new CylinderGeometry(0.4, 0.4, w + 0.9, 6), chromeM()); const a = i / 5 * Math.PI * 2; nut.rotation.z = Math.PI / 2; nut.position.set(0, Math.cos(a) * r * rimR * 0.55, Math.sin(a) * r * rimR * 0.55); spin.add(nut); }
+    g.add(spin);
+    return g;
+  }
+  function roundLamp(r, color = "#fff6dc", glow = "#ffe39a", k = 0.5) {
+    const g = new Group();
+    const bez = new Mesh(new TorusGeometry(r, r * 0.26, 10, 24), chromeM());
+    const lens = new Mesh(new SphereGeometry(r * 0.95, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), new MeshPhysicalMaterial({ color, emissive: new Color(glow), emissiveIntensity: k, roughness: 0.06, clearcoat: 1, envMap: getEnvMap(), envMapIntensity: 0.6 }));
+    lens.rotation.x = Math.PI / 2; lens.scale.set(1, 1, 0.5);
+    g.add(bez, lens);
+    return g;
+  }
+  function plateMesh(w = 12, h = 3) {
+    const t = canvasTexture(256, 64, (ctx) => { ctx.fillStyle = "#f7f7f2"; ctx.fillRect(0, 0, 256, 64); ctx.fillStyle = "#1b3d9c"; ctx.fillRect(0, 0, 30, 64); ctx.fillStyle = "#111"; ctx.font = "800 36px Montserrat, sans-serif"; ctx.fillText("B 99 CRS", 40, 46); ctx.strokeStyle = "#111"; ctx.lineWidth = 4; ctx.strokeRect(2, 2, 252, 60); });
+    return new Mesh(new PlaneGeometry(w, h), new MeshStandardMaterial({ map: t, roughness: 0.4 }));
+  }
+  function archCut(sh, cz, r, sill = 7, cy = 9) { sh.lineTo(cz - r, sill); sh.lineTo(cz - r, cy); sh.absarc(cz, cy, r, Math.PI, 0, true); sh.lineTo(cz + r, sill); }
+
+  // ---------- Cop cruiser: a full-size police sedan, black & white ----------
+  function buildCop() {
+    const g = new Group();
+    const NAVY = "#14213d", W = 40;
+    const body = sideBody((s) => {
+      s.moveTo(-42, 7); archCut(s, -28, 12.2, 7, 9.2); archCut(s, 28, 12.2, 7, 9.2); s.lineTo(42, 7);
+      s.quadraticCurveTo(46, 7, 46, 11); s.lineTo(46, 17); s.quadraticCurveTo(46, 21.5, 41, 22); s.lineTo(22, 23.5);
+      s.quadraticCurveTo(14, 31, 8, 35); s.lineTo(-13, 35.5); s.quadraticCurveTo(-22, 32, -30, 25.5); s.lineTo(-42, 25);
+      s.quadraticCurveTo(-46, 24.5, -46, 20); s.lineTo(-46, 11); s.quadraticCurveTo(-46, 7, -42, 7);
+    }, W, M(WHITE), 2.4);
+    g.add(body);
+    const SX = W / 2 + 0.05;
+    // navy doors with POLICE and a gold star
+    const doorTex = canvasTexture(512, 160, (ctx) => {
+      ctx.fillStyle = NAVY; ctx.fillRect(0, 0, 512, 160);
+      ctx.fillStyle = "#ffffff"; ctx.font = "900 70px Montserrat, sans-serif"; ctx.textAlign = "center"; ctx.fillText("POLICE", 300, 105);
+      ctx.fillStyle = "#d8b24a"; ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr2 = i % 2 ? 18 : 40; ctx.lineTo(80 + Math.cos(a) * rr2, 80 + Math.sin(a) * rr2); } ctx.fill();
+    });
+    for (const sx of [-1, 1]) {
+      const d = decal(doorTex, 38, 12); d.rotation.y = sx * Math.PI / 2; d.position.set(sx * (SX + 0.08), 16, 2); g.add(d);
+      for (const [z, w] of [[12, 12.5], [-2.5, 13], [-15, 7]]) { const p = glassPane(w, 7.5, 2); p.rotation.y = sx * Math.PI / 2; p.position.set(sx * (SX + 0.06), 29.5, z); g.add(p); }
+      const h = new Mesh(new BoxGeometry(0.9, 1, 3.4), chromeM()); h.position.set(sx * (SX + 0.4), 22.5, 5); g.add(h);
+      const h2 = h.clone(); h2.position.z = -9; g.add(h2);
+      const mir = new Mesh(new BoxGeometry(1.6, 3.6, 4.6), M(NAVY)); mir.position.set(sx * (SX + 2.4), 26, 19); g.add(mir);
+    }
+    const ws = glassPane(31, 13.5, 2.5); ws.rotation.x = -0.88; ws.position.set(0, 31.2, 16.8); g.add(ws);
+    const rw = glassPane(29, 11, 2.5); rw.rotation.set(0.99, Math.PI, 0); rw.position.set(0, 32.2, -23.4); g.add(rw);
+    // light bar: black base, red and blue lenses, the two lights that sweep the street
+    const barBase = topBody(rrDraw(30, 8, 3), 2.6, M("#121212"), 37.2, 0.8);
+    const redM = M("#ff2a2a", { emissive: "#ff2a2a", emissiveIntensity: 0.2, roughness: 0.15 });
+    const blueM = M("#2a6bff", { emissive: "#2a6bff", emissiveIntensity: 0.2, roughness: 0.15 });
+    const red = topBody(rrDraw(12.5, 6.4, 2.6), 3.6, redM, 39.6, 1); red.position.x = -7;
+    const blue = topBody(rrDraw(12.5, 6.4, 2.6), 3.6, blueM, 39.6, 1); blue.position.x = 7;
+    for (const sx of [-6, 6]) g.add(rod([sx, 35.5, -1], [sx, 37.4, -1], 0.6, M("#121212")));
+    g.add(barBase, red, blue);
+    // push bar, lamps, grille, bumpers, plates, aerial
+    const blk = M("#121212", { roughness: 0.6 });
+    for (const x of [-9, 9]) { g.add(rod([x, 6, 49], [x, 21, 49], 1, blk)); }
+    g.add(rod([-12, 19, 49], [12, 19, 49], 1, blk), rod([-12, 9, 49], [12, 9, 49], 1, blk));
+    const grille = new Mesh(new ShapeGeometry(rrShape(16, 5, 1.2), 4), M("#1a1a1a")); grille.position.set(0, 16.5, 48.45); g.add(grille);
+    for (const sx of [-1, 1]) {
+      const hl = new Mesh(new ShapeGeometry(rrShape(8.5, 4.6, 1.4), 4), new MeshPhysicalMaterial({ color: "#fff8e6", emissive: new Color("#ffe7b0"), emissiveIntensity: 0.6, roughness: 0.05, clearcoat: 1 }));
+      hl.position.set(sx * 13.5, 16.5, 48.45); g.add(hl);
+      const tl = new Mesh(new ShapeGeometry(rrShape(8, 4, 1.2), 4), new MeshPhysicalMaterial({ color: "#a3121a", emissive: new Color("#ff2a2a"), emissiveIntensity: 0.45, roughness: 0.1, clearcoat: 1 }));
+      tl.position.set(sx * 14, 20, -48.45); tl.rotation.y = Math.PI; g.add(tl);
+    }
+    for (const bz of [48.6, -48.6]) { const b = topBody(rrDraw(W + 2, 3.6, 1.6), 4.4, M("#1a1a1a", { roughness: 0.6 }), 6.4, 1); b.position.z = bz; g.add(b); }
+    const pf = plateMesh(11, 2.8); pf.position.set(0, 8.6, 50.6); g.add(pf);
+    const pb = plateMesh(11, 2.8); pb.position.set(0, 13, -48.6); pb.rotation.y = Math.PI; g.add(pb);
+    g.add(rod([-14, 25, -36], [-14, 46, -38], 0.3, blk, 6));
+    const lr = new PointLight("#ff2a2a", 0, 220, 1.6); lr.position.set(-10, 46, 0);
+    const lb = new PointLight("#2a6bff", 0, 220, 1.6); lb.position.set(10, 46, 0);
+    g.add(lr, lb);
     const wheels = [];
-    for (const [x, z] of [[-22.5, 30], [22.5, 30], [-22.5, -30], [22.5, -30]]) {
-      const w = wheel(11, 7.6, OR);
-      w.position.set(x, 11, z);
-      wheels.push(w);
-      g.add(w);
+    for (const [x, z] of [[-20, 28], [20, 28], [-20, -28], [20, -28]]) { const w = carWheel({ r: 9.2, w: 6.4, rim: "#222428", rimR: 0.58, cap: "chrome" }); w.position.set(x, 9.2, z); wheels.push(w); g.add(w); }
+    shadowAll(g);
+    return { group: g, wheels, kind: "car", beacon: { redM, blueM, lr, lb } };
+  }
+
+  // ---------- Chrome racer: a 1930s Monopoly roadster in polished chrome ----------
+  function buildMonopoly() {
+    const g = new Group();
+    const c = chromeM(), W = 22;
+    const body = sideBody((s) => {
+      s.moveTo(-36, 10); s.lineTo(30, 10); s.quadraticCurveTo(35, 10, 35, 14); s.lineTo(35, 21); s.quadraticCurveTo(35, 23, 32, 23);
+      s.lineTo(4, 23.5); s.lineTo(2, 20.5); s.lineTo(-15, 20.5); s.lineTo(-17, 23.5); s.quadraticCurveTo(-32, 23.5, -40, 15); s.quadraticCurveTo(-41, 10, -36, 10);
+    }, W, c, 3.2);
+    g.add(body);
+    // flowing mudguards (extruded ring sectors) and running boards
+    const guard = (cz, front) => {
+      const sh = new Shape(); const R = 12.6, r = 11; const a0 = front ? 0.05 : 0.2, a1 = front ? Math.PI - 0.2 : Math.PI - 0.05;
+      sh.absarc(cz, 9, R, a0, a1, false); sh.absarc(cz, 9, r, a1, a0, true);
+      const geo = new ExtrudeGeometry(sh, { depth: 6, bevelEnabled: true, bevelThickness: 1, bevelSize: 0.8, bevelSegments: 3, curveSegments: 22 });
+      geo.rotateY(-Math.PI / 2); geo.translate(3, 0, 0);
+      return geo;
+    };
+    for (const sx of [-1, 1]) for (const [cz, f] of [[24, true], [-20, false]]) { const m = new Mesh(guard(cz, f), c); m.position.x = sx * 13.5; g.add(m); }
+    for (const sx of [-1, 1]) { const rb = topBody(rrDraw(5.5, 22, 1.5), 2, c, 6.8, 0.7); rb.position.set(sx * 13.5, 0, 2); g.add(rb); }
+    // radiator grille with vertical bars, big bowl lamps on stalks
+    const gr = topBody(rrDraw(12, 2, 1), 13, c, 9, 0.8); gr.position.z = 36; g.add(gr);
+    for (let i = -5; i <= 5; i++) { const bar = new Mesh(new BoxGeometry(0.5, 10, 0.6), M("#2a2c30")); bar.position.set(i * 1.05, 16, 37.4); g.add(bar); }
+    for (const sx of [-1, 1]) { const l = roundLamp(3.6); l.position.set(sx * 9.5, 19, 37.5); g.add(l, rod([sx * 9.5, 12.5, 36], [sx * 9.5, 16, 36.8], 0.6, c)); }
+    // windscreen, seat, wheel, pipes, spare
+    const frame = topBody(rrDraw(15, 1, 0.4), 7, c, 23, 0.4); frame.position.z = 5; frame.rotation.x = -0.25; g.add(frame);
+    const scr = new Mesh(new ShapeGeometry(rrShape(13, 5.5, 1), 4), glassM()); scr.position.set(0, 26.8, 5.6); scr.rotation.x = -0.25; g.add(scr);
+    const seat = sideBody((s) => { s.moveTo(-15, 20); s.lineTo(-6, 20); s.lineTo(-6, 22); s.lineTo(-13, 22); s.lineTo(-15, 29); s.lineTo(-17, 29); s.lineTo(-17, 20); }, 16, M("#5a2b1c", { roughness: 0.6 }), 1.2);
+    g.add(seat);
+    const st = new Mesh(new TorusGeometry(3.3, 0.45, 8, 22), M("#1c1c1c")); st.position.set(-3.5, 24.5, -1.5); st.rotation.x = -0.9; g.add(st, rod([-3.5, 22, 1], [-3.5, 24.5, -1.5], 0.4, c));
+    for (let i = 0; i < 3; i++) { const p = rod([-11.5, 15, 18 - i * 5], [-15.5, 12, 13 - i * 5], 1, c); g.add(p); }
+    g.add(rod([-15.5, 12, 3], [-15.5, 12, -24], 1.1, c));
+    const sp = carWheel({ r: 8, w: 4, rim: "chrome", rimR: 0.62, whitewall: true, spokes: 8 }); sp.rotation.y = Math.PI / 2; sp.position.set(0, 16, -40); g.add(sp);
+    const wheels = [];
+    for (const [x, z] of [[-13.5, 24], [13.5, 24], [-13.5, -20], [13.5, -20]]) { const w = carWheel({ r: 9, w: 5.2, rim: "chrome", rimR: 0.62, whitewall: true, spokes: 10 }); w.position.set(x, 9, z); wheels.push(w); g.add(w); }
+    shadowAll(g);
+    return { group: g, wheels, kind: "car" };
+  }
+
+  // ---------- Classic Formula: a 1990s single-seater in red and white ----------
+  function buildF1() {
+    const g = new Group();
+    const RED = "#F65342", red = M(RED), white = M(WHITE), carbon = M("#1b1b1d", { roughness: 0.45 });
+    // monocoque and nose, from above: a needle that widens into the cockpit
+    const tub = topBody((s) => {
+      s.moveTo(-2.4, 56); s.quadraticCurveTo(0, 59, 2.4, 56); s.lineTo(5, 30); s.lineTo(8, 12); s.lineTo(8, -14); s.lineTo(6.5, -40);
+      s.lineTo(-6.5, -40); s.lineTo(-8, -14); s.lineTo(-8, 12); s.lineTo(-5, 30); s.lineTo(-2.4, 56);
+    }, 9, red, 6.5, 2.4);
+    g.add(tub);
+    const noseTip = new Mesh(new SphereGeometry(3, 16, 10), white); noseTip.scale.set(1, 0.85, 1.6); noseTip.position.set(0, 10.5, 56); g.add(noseTip);
+    // engine cover rising behind the driver into the airbox
+    const cover = sideBody((s) => { s.moveTo(-40, 15); s.lineTo(-40, 17); s.quadraticCurveTo(-20, 20, -6, 27); s.quadraticCurveTo(-1, 28.5, 0, 25); s.lineTo(-2, 15); }, 11, white, 2);
+    g.add(cover);
+    const intake = new Mesh(new ShapeGeometry(rrShape(6, 4.6, 1.6), 4), M("#111")); intake.position.set(0, 24.8, 0.7); g.add(intake);
+    // sidepods with intakes
+    for (const sx of [-1, 1]) {
+      const pod = sideBody((s) => { s.moveTo(-30, 6.5); s.lineTo(14, 6.5); s.lineTo(14, 15.5); s.quadraticCurveTo(4, 17, -30, 13); }, 9, red, 2);
+      pod.position.x = sx * 12; g.add(pod);
+      const mouth = new Mesh(new ShapeGeometry(rrShape(7, 6.5, 2), 4), M("#111")); mouth.position.set(sx * 12, 11, 16.3); g.add(mouth);
+      const mir = new Mesh(new SphereGeometry(1.5, 10, 8), red); mir.scale.set(1.4, 0.8, 0.6); mir.position.set(sx * 8.5, 19, 9); g.add(mir, rod([sx * 6.5, 15.5, 9], [sx * 8, 18.5, 9], 0.3, carbon));
+    }
+    // cockpit opening, driver, steering
+    const pit = new Mesh(new ShapeGeometry(rrShape(10, 16, 4), 8), M("#0b0b0b")); pit.rotation.x = -Math.PI / 2; pit.position.set(0, 15.7, 4); g.add(pit);
+    const helmet = new Mesh(new SphereGeometry(4.6, 20, 14), red); helmet.position.set(0, 19.5, 2); helmet.scale.set(1, 1, 1.12); g.add(helmet);
+    const visor = new Mesh(new SphereGeometry(4.75, 20, 10, -Math.PI * 0.3, Math.PI * 0.6, Math.PI * 0.32, Math.PI * 0.26), glassM()); visor.position.copy(helmet.position); visor.scale.copy(helmet.scale); g.add(visor);
+    const stripe = new Mesh(new BoxGeometry(9.4, 0.4, 1.4), white); stripe.position.set(0, 23.9, 2); g.add(stripe);
+    // front wing with endplates, rear wing on its pillar
+    const fw = topBody(rrDraw(46, 9, 2), 1.8, white, 5.2, 0.7); fw.position.z = 51; g.add(fw);
+    const fw2 = topBody(rrDraw(40, 5, 1.6), 1.4, red, 7.2, 0.6); fw2.position.z = 49; g.add(fw2);
+    for (const sx of [-1, 1]) { const ep = sideBody((s) => { s.moveTo(46, 4.5); s.lineTo(56, 4.5); s.lineTo(56, 9); s.quadraticCurveTo(51, 11, 46, 9); }, 1.4, red, 0.5); ep.position.x = sx * 23; g.add(ep); }
+    const rw = topBody(rrDraw(34, 9, 2), 2, white, 29, 0.8); rw.position.z = -40; g.add(rw);
+    const rw2 = topBody(rrDraw(34, 5, 1.6), 1.6, red, 25.5, 0.6); rw2.position.z = -36.5; g.add(rw2);
+    for (const sx of [-1, 1]) { const ep = sideBody((s) => { s.moveTo(-46, 14); s.lineTo(-33, 14); s.lineTo(-33, 33); s.lineTo(-46, 33); }, 1.4, red, 0.5); ep.position.x = sx * 17.5; g.add(ep); }
+    g.add(rod([0, 15, -36], [0, 29, -40], 1.1, carbon));
+    // suspension wishbones to each wheel
+    const wheels = [];
+    for (const [x, z, r, w] of [[-21, 36, 8.6, 9], [21, 36, 8.6, 9], [-21, -30, 10, 13], [21, -30, 10, 13]]) {
+      const wl = carWheel({ r, w, rim: "#1c1c1c", rimR: 0.62, cap: "#FED012", slick: true }); wl.position.set(x, r, z); wheels.push(wl); g.add(wl);
+      const sx = Math.sign(x);
+      g.add(rod([sx * 6, 9, z + 4], [x - sx * (w / 2), r, z], 0.5, carbon), rod([sx * 6, 13, z - 4], [x - sx * (w / 2), r + 1.5, z], 0.5, carbon));
     }
     shadowAll(g);
     return { group: g, wheels, kind: "car" };
   }
+
+  // ---------- Cropduster: a yellow biplane with a radial engine ----------
+  function buildPlane() {
+    const g = new Group();
+    const YEL = "#FED012", yel = M(YEL), red = M("#F65342"), ink = M(INK);
+    // fuselage: a lathe profile, nose forward (+z)
+    const prof = [[0.2, -42], [3, -40], [4.6, -30], [6.6, -14], [8.4, 2], [9, 14], [9.2, 26], [8.6, 34]].map(([r, y]) => new Vector2(r, y));
+    const fusGeo = new LatheGeometry(prof, 28); fusGeo.rotateX(Math.PI / 2);
+    const fus = new Mesh(fusGeo, yel); fus.position.y = 18; g.add(fus);
+    // cowling, radial engine cylinders, spinner
+    const cowl = new Mesh(new CylinderGeometry(9.6, 9.2, 8, 28, 1, true), ink); cowl.rotation.x = Math.PI / 2; cowl.position.set(0, 18, 37.5); cowl.material.side = DoubleSide; g.add(cowl);
+    const lip = new Mesh(new TorusGeometry(9.6, 0.8, 10, 28), chromeM()); lip.position.set(0, 18, 41.5); g.add(lip);
+    for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2; const cyl = new Mesh(new CylinderGeometry(1.5, 1.5, 6, 10), M("#9aa0a6", { metalness: 0.6, roughness: 0.4 })); cyl.position.set(Math.cos(a) * 5.4, 18 + Math.sin(a) * 5.4, 39); cyl.rotation.z = a - Math.PI / 2; g.add(cyl); }
+    const prop = new Group();
+    const spinner = new Mesh(new SphereGeometry(3.4, 18, 12), red); spinner.scale.set(1, 1, 1.6); prop.add(spinner);
+    for (const a of [0, Math.PI]) {
+      const blade = topBody((s) => { s.moveTo(-1.6, 0); s.quadraticCurveTo(-2.8, 9, -1.8, 16); s.quadraticCurveTo(0, 18, 1.8, 16); s.quadraticCurveTo(2.8, 9, 1.6, 0); }, 1, M("#3a2a1e", { roughness: 0.55 }), -0.5, 0.35);
+      blade.rotation.x = -Math.PI / 2; blade.rotation.y = 0.25;
+      const arm = new Group(); arm.add(blade); arm.rotation.z = a;
+      prop.add(arm);
+    }
+    prop.position.set(0, 18, 44); g.add(prop);
+    // wings: airfoils extruded across the span, rounded tips
+    const foil = (chord) => (s) => { s.moveTo(chord / 2, 0); s.quadraticCurveTo(chord / 2, 1.9, chord * 0.2, 2.1); s.quadraticCurveTo(-chord / 4, 1.6, -chord / 2, 0.15); s.lineTo(-chord / 2, -0.15); s.quadraticCurveTo(0, -0.7, chord / 2, 0); };
+    const top = sideBody(foil(21), 98, yel, 1.1, 16); top.position.set(0, 30.5, 8); g.add(top);
+    const low = sideBody(foil(18), 82, yel, 1, 16); low.position.set(0, 10.5, 9); g.add(low);
+    for (const sx of [-1, 1]) {
+      const tip = sideBody(foil(21.5), 3, red, 1, 12); tip.position.set(sx * 48.5, 30.5, 8); g.add(tip);
+      for (const dz of [-4, 7]) g.add(rod([sx * 31, 12.5, 9 + dz], [sx * 31, 30.5, 8 + dz], 0.9, M(GREY)));
+      g.add(rod([sx * 31, 12.5, 15], [sx * 31, 30.5, 4], 0.25, chromeM(), 6), rod([sx * 31, 12.5, 4], [sx * 31, 30.5, 15], 0.25, chromeM(), 6));
+      g.add(rod([sx * 4, 26, 12], [sx * 6, 30.5, 10], 0.7, M(GREY)), rod([sx * 4, 26, 4], [sx * 6, 30.5, 6], 0.7, M(GREY)));
+    }
+    // tail: stabiliser and a rounded rudder in red
+    const stab = sideBody(foil(13), 30, yel, 0.8, 12); stab.position.set(0, 21, -36); g.add(stab);
+    const rud = new Mesh(new ExtrudeGeometry((() => { const s = new Shape(); s.moveTo(-44, 0); s.lineTo(-33, 0); s.lineTo(-37, 14); s.quadraticCurveTo(-42, 18, -46, 12); s.lineTo(-44, 0); return s; })(), { depth: 1.2, bevelEnabled: true, bevelThickness: 0.5, bevelSize: 0.5, bevelSegments: 3 }), red);
+    rud.geometry.rotateY(-Math.PI / 2); rud.position.set(0.6, 21, 0); g.add(rud);
+    // open cockpit, windscreen, pilot in a leather cap and goggles
+    const ring = new Mesh(new TorusGeometry(5.6, 1, 10, 24), M("#3a2a1e")); ring.rotation.x = Math.PI / 2; ring.position.set(0, 26.6, 0); g.add(ring);
+    const head = new Mesh(new SphereGeometry(3.4, 16, 12), M("#6b4a2e", { roughness: 0.7 })); head.position.set(0, 29.5, -0.5); g.add(head);
+    for (const sx of [-1, 1]) { const gog = new Mesh(new TorusGeometry(1, 0.35, 8, 14), chromeM()); gog.position.set(sx * 1.3, 30, 2.6); g.add(gog); }
+    const scr = new Mesh(new ShapeGeometry(rrShape(8, 4, 1), 4), glassM()); scr.position.set(0, 29, 5.5); scr.rotation.x = -0.4; g.add(scr);
+    // landing gear in V struts, tail skid
+    const wheels = [];
+    for (const sx of [-1, 1]) {
+      g.add(rod([sx * 3, 10, 16], [sx * 12, 6, 16], 0.7, ink), rod([sx * 3, 10, 8], [sx * 12, 6, 16], 0.7, ink));
+      const w = carWheel({ r: 6, w: 3.4, rim: "#F65342", rimR: 0.58, cap: "chrome" }); w.position.set(sx * 13.5, 6, 16); wheels.push(w); g.add(w);
+    }
+    g.add(rod([0, 13, -36], [0, 4, -40], 0.5, ink));
+    shadowAll(g);
+    return { group: g, wheels, kind: "plane", prop };
+  }
+
+  // ---------- Lava buggy: a dune buggy with a roll cage and a glowing stripe ----------
+  function buildLava() {
+    const g = new Group();
+    const RED = "#d93a2b", DARK = "#2a2523", red = M(RED), cage = M("#1a1a1a", { roughness: 0.4, metalness: 0.4 });
+    const tub = sideBody((s) => {
+      s.moveTo(-34, 9); archCut(s, -26, 12.5, 9, 11); archCut(s, 26, 11.5, 9, 9.5); s.lineTo(36, 9);
+      s.quadraticCurveTo(42, 9, 42, 14); s.quadraticCurveTo(40, 21, 30, 21.5); s.lineTo(4, 22); s.lineTo(0, 17); s.lineTo(-14, 17); s.lineTo(-16, 22);
+      s.lineTo(-36, 22); s.quadraticCurveTo(-41, 21, -41, 15); s.quadraticCurveTo(-41, 9, -34, 9);
+    }, 34, red, 3);
+    g.add(tub);
+    const glow = M("#FED012", { emissive: "#FED012", emissiveIntensity: 1.1 });
+    const stripe = topBody(rrDraw(6, 70, 2), 0.6, glow, 22.6, 0.25); stripe.position.z = 2; g.add(stripe);
+    // roll cage
+    for (const sx of [-1, 1]) { g.add(rod([sx * 13, 22, 4], [sx * 11, 40, -4], 1.1, cage), rod([sx * 13, 22, -16], [sx * 11, 40, -6], 1.1, cage), rod([sx * 11, 40, -6], [sx * 11, 40, -4], 1.1, cage)); }
+    g.add(rod([-11, 40, -5], [11, 40, -5], 1.1, cage), rod([-13, 22, -16], [13, 40, -5], 0.9, cage));
+    const seat = sideBody((s) => { s.moveTo(-12, 17); s.lineTo(-3, 17); s.lineTo(-3, 19.5); s.lineTo(-10, 19.5); s.lineTo(-13, 31); s.lineTo(-15, 31); s.lineTo(-15, 17); }, 15, M("#141414", { roughness: 0.7 }), 1.4);
+    g.add(seat);
+    // exposed engine with chrome pipes, rear wing
+    const engine = topBody(rrDraw(16, 12, 3), 9, M("#4a4440", { metalness: 0.5, roughness: 0.4 }), 20, 1.6); engine.position.z = -30; g.add(engine);
+    for (const sx of [-1, 1]) { g.add(rod([sx * 5, 25, -36], [sx * 7, 33, -45], 1, chromeM())); }
+    const wing = topBody(rrDraw(40, 10, 2.4), 2, red, 36, 0.8); wing.position.z = -40; g.add(wing);
+    for (const sx of [-1, 1]) g.add(rod([sx * 9, 29, -38], [sx * 9, 36, -40], 0.8, cage));
+    for (const sx of [-1, 1]) { const l = roundLamp(2.6); l.position.set(sx * 10, 18, 42.5); g.add(l); }
+    const wheels = [];
+    for (const [x, z, r, w] of [[-19, 26, 9.5, 8], [19, 26, 9.5, 8], [-19, -26, 11, 11], [19, -26, 11, 11]]) { const wl = carWheel({ r, w, rim: "#FED012", rimR: 0.55, cap: "#141414" }); wl.position.set(x, r, z); wheels.push(wl); g.add(wl); }
+    shadowAll(g);
+    return { group: g, wheels, kind: "car" };
+  }
+
+  // ---------- Yellow submarine: a lathe hull, a conning tower, portholes, a shrouded prop ----------
+  function buildSub() {
+    const g = new Group();
+    const YEL = "#FED012", NAVY = "#1b2a52", yel = M(YEL), navy = M(NAVY);
+    const prof = [[0.3, -46], [5, -42], [9, -32], [12.5, -14], [13.5, 4], [13, 22], [10.5, 34], [6, 42], [0.3, 45]].map(([r, y]) => new Vector2(r, y));
+    const hg = new LatheGeometry(prof, 36); hg.rotateX(Math.PI / 2);
+    const hull = new Mesh(hg, yel); hull.position.y = 20; g.add(hull);
+    const band = new Mesh(new TorusGeometry(13.6, 1.2, 10, 36), M("#F65342")); band.position.set(0, 20, 6); g.add(band);
+    const tower = sideBody((s) => { s.moveTo(-12, 30); s.lineTo(12, 30); s.lineTo(9, 43); s.quadraticCurveTo(0, 46, -9, 43); s.lineTo(-12, 30); }, 12, yel, 2.4);
+    g.add(tower);
+    const towerCap = topBody(rrDraw(10, 18, 4.5), 1.6, navy, 44.4, 0.6); g.add(towerCap);
+    g.add(rod([2, 44, -4], [2, 56, -4], 1.1, M(INK)), rod([2, 56, -4], [2, 56, 2], 1.1, M(INK)));
+    const pglass = M("#a9e8ff", { emissive: "#7fe0ff", emissiveIntensity: 0.5, roughness: 0.1 });
+    for (const sx of [-1, 1]) for (const z of [-14, -2, 10, 22]) {
+      const rr2 = 12.9;
+      const rim = new Mesh(new TorusGeometry(3, 0.8, 10, 22), chromeM()); rim.rotation.y = sx * Math.PI / 2; rim.position.set(sx * rr2, 22, z);
+      const gl = new Mesh(new CircleGeometry(2.8, 22), pglass); gl.rotation.y = sx * Math.PI / 2; gl.position.set(sx * (rr2 + 0.2), 22, z);
+      g.add(rim, gl);
+    }
+    // fins and the shrouded propeller
+    const finV = sideBody((s) => { s.moveTo(-44, 20); s.lineTo(-34, 20); s.lineTo(-40, 36); s.quadraticCurveTo(-44, 36, -46, 30); }, 1.8, navy, 0.6); g.add(finV);
+    const finH = topBody(rrDraw(30, 8, 3), 1.6, navy, 19.2, 0.6); finH.position.z = -40; g.add(finH);
+    const bow = topBody(rrDraw(32, 6, 2.6), 1.4, navy, 19.3, 0.5); bow.position.z = 26; g.add(bow);
+    const shroud = new Mesh(new TorusGeometry(8.5, 1.4, 10, 28), navy); shroud.position.set(0, 20, -50); g.add(shroud);
+    const prop = new Group();
+    for (let i = 0; i < 4; i++) { const b = new Mesh(new BoxGeometry(1.6, 7.5, 0.7), chromeM()); b.position.y = 3.6; const arm = new Group(); arm.add(b); arm.rotation.z = i * Math.PI / 2; arm.rotation.y = 0.3; prop.add(arm); }
+    const hub = new Mesh(new SphereGeometry(1.8, 12, 8), chromeM()); prop.add(hub);
+    prop.position.set(0, 20, -50); g.add(prop);
+    const lamp = roundLamp(2.6, "#fff6d8", "#fff6d8", 1.2); lamp.position.set(0, 20, 45.6); g.add(lamp);
+    shadowAll(g);
+    return { group: g, wheels: [], kind: "sub", prop };
+  }
+
+  // ---------- E-scooter: aluminium deck, folding stem, hub motor ----------
+  function buildScooter() {
+    const g = new Group();
+    const alu = M("#c9ccd1", { metalness: 0.6, roughness: 0.35 }), ink = M(INK);
+    const deck = topBody(rrDraw(12, 44, 4), 3.6, ink, 6.5, 1.2); g.add(deck);
+    const grip = topBody(rrDraw(10, 36, 3.5), 0.6, M("#2b2b2b", { roughness: 0.95 }), 10.2, 0.2); grip.position.z = -2; g.add(grip);
+    const batt = topBody(rrDraw(8, 26, 2.5), 2.6, M("#FED012"), 3.8, 0.8); g.add(batt);
+    g.add(rod([0, 10, 21], [0, 46, 25], 1.8, alu), rod([0, 10, 21], [0, 6, 26], 1.6, alu));
+    g.add(rod([-13, 46, 25], [13, 46, 25], 1.4, ink));
+    for (const sx of [-1, 1]) { const gp = new Mesh(new CylinderGeometry(1.9, 1.9, 6, 12), M("#F65342", { roughness: 0.8 })); gp.rotation.z = Math.PI / 2; gp.position.set(sx * 11, 46, 25); g.add(gp); }
+    const disp = topBody(rrDraw(5, 3, 1), 1, M("#111"), 46.4, 0.3); disp.position.z = 24; g.add(disp);
+    const light = roundLamp(2.2, "#fff3c4", "#FED012", 0.7); light.position.set(0, 38, 24.6); g.add(light);
+    for (const z of [26, -22]) { const f = new Mesh(new TorusGeometry(7.4, 1.1, 8, 20, Math.PI), ink); f.rotation.y = Math.PI / 2; f.position.set(0, 6.5, z); g.add(f); }
+    const tail = roundLamp(1.4, "#a3121a", "#ff2a2a", 0.5); tail.position.set(0, 9, -24.5); tail.rotation.y = Math.PI; g.add(tail);
+    g.add(rod([-5, 7, -10], [-9, 1, -14], 0.6, alu));
+    const wheels = [];
+    for (const z of [26, -22]) { const w = carWheel({ r: 6, w: 3.6, rim: "#2b2b2b", rimR: 0.62, cap: "#FED012" }); w.position.set(0, 6, z); wheels.push(w); g.add(w); }
+    shadowAll(g);
+    return { group: g, wheels, kind: "car" };
+  }
+
+  // ---------- Kompus truck: a step van in the Kompus wrap, serving hatch and awning ----------
+  function buildFoodvan() {
+    const g = new Group();
+    const OR = KOMPUS_ORANGE, W = 48;
+    const body = sideBody((s) => {
+      s.moveTo(-41, 7); archCut(s, -30, 13.6, 7, 11); archCut(s, 30, 13.6, 7, 11); s.lineTo(41, 7);
+      s.quadraticCurveTo(45, 7, 45, 12); s.lineTo(45, 26); s.lineTo(42, 47); s.quadraticCurveTo(41.5, 50, 38, 50);
+      s.lineTo(-41, 50); s.quadraticCurveTo(-45, 50, -45, 46); s.lineTo(-45, 12); s.quadraticCurveTo(-45, 7, -41, 7);
+    }, W, M(KOMPUS_BG, { roughness: 0.6 }), 2.6);
+    g.add(body);
+    const SX = W / 2 + 0.05;
+    const kL = decal(kompusWrapTexture(7, true), 80, 30); kL.rotation.y = -Math.PI / 2; kL.position.set(-SX - 0.1, 26, -3); g.add(kL);
+    const kR = decal(kompusWrapTexture(23, true), 80, 30); kR.rotation.y = Math.PI / 2; kR.position.set(SX + 0.1, 26, -3); g.add(kR);
+    const kB = decal(kompusWrapTexture(41, false, 256, 200), 40, 34); kB.rotation.y = Math.PI; kB.position.set(0, 28, -47.75); g.add(kB);
+    const kT = decal(kompusWrapTexture(59, false, 512, 288), 44, 82); kT.rotation.x = -Math.PI / 2; kT.position.set(0, 52.75, -1); g.add(kT);
+    // cab glass, lamps, grille, bumpers
+    const ws = glassPane(38, 17, 2.5); ws.rotation.x = -0.14; ws.position.set(0, 36.5, 46.2); g.add(ws);
+    for (const sx of [-1, 1]) { const p = glassPane(10, 11, 2); p.rotation.y = sx * Math.PI / 2; p.position.set(sx * (SX + 0.06), 37, 38); g.add(p); const l = roundLamp(3); l.position.set(sx * 15, 17, 47.7); g.add(l); }
+    const grille = new Mesh(new ShapeGeometry(rrShape(18, 6, 1.5), 4), M("#141110")); grille.position.set(0, 17, 47.65); g.add(grille);
+    for (const bz of [48.3, -48.3]) { const b = topBody(rrDraw(W + 1, 3.4, 1.4), 4.4, M("#141110", { roughness: 0.6 }), 6, 1); b.position.z = bz; g.add(b); }
+    const pb = plateMesh(12, 3); pb.position.set(0, 11.5, -48.2); pb.rotation.y = Math.PI; g.add(pb);
+    // serving hatch on the left with a striped awning and a steel counter
+    const hatch = new Mesh(new ShapeGeometry(rrShape(46, 17, 2), 4), M("#0d0b0a")); hatch.rotation.y = -Math.PI / 2; hatch.position.set(-SX - 0.15, 33, -4); g.add(hatch);
+    const awnG = new Group();
+    for (let i = 0; i < 8; i++) { const seg = topBody(rrDraw(15, 6.4, 1), 1.6, M(i % 2 ? WHITE : OR), 0, 0.4); seg.position.z = i * 6.6 - 23; awnG.add(seg); }
+    awnG.position.set(-31, 45, -4); awnG.rotation.z = 0.32; g.add(awnG);
+    const counter = topBody(rrDraw(7, 48, 1.2), 1.6, M("#c9ccd1", { metalness: 0.6, roughness: 0.35 }), 23.5, 0.5); counter.position.set(-27.5, 0, -4); g.add(counter);
+    const cup = new Group();
+    const cupBody = new Mesh(new CylinderGeometry(6, 4.6, 12, 18), M(WHITE)); const cupLid = new Mesh(new CylinderGeometry(6.4, 6.4, 2.4, 18), M(OR)); cupLid.position.y = 7; cup.add(cupBody, cupLid);
+    cup.position.set(0, 60, 8); g.add(cup);
+    const wheels = [];
+    for (const [x, z] of [[-22, 30], [22, 30], [-22, -30], [22, -30]]) { const w = carWheel({ r: 11, w: 7.4, rim: OR, rimR: 0.55, cap: "#141110" }); w.position.set(x, 11, z); wheels.push(w); g.add(w); }
+    shadowAll(g);
+    return { group: g, wheels, kind: "car" };
+  }
+
   // hyper-detail pass for the road cars: chrome-ringed headlights, tail lights, mirrors, plates
   function addVehicleDetail(v, id) {
-    if (!["cop", "foodvan", "monopoly"].includes(id)) return v;
+    // every vehicle now carries its own lamps, mirrors and plates (r84): nothing to add
+    if (![].includes(id)) return v;
     const g = v.group, bb = new Box3().setFromObject(g);
     const W2 = (bb.max.x - bb.min.x) / 2, H = bb.max.y - bb.min.y, y0 = bb.min.y, zf = bb.max.z, zr = bb.min.z, L = zf - zr;
     const chrome = chromeM();
