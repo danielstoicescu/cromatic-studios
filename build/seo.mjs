@@ -188,6 +188,7 @@ export function manifest() {
     start_url: "/",
     scope: "/",
     display: "standalone",
+    orientation: "portrait",
     background_color: "#0d0c09",
     theme_color: "#FED012",
     icons: [

@@ -31485,6 +31485,15 @@ void main() {
       b2.addEventListener("pointerup", on(false));
       b2.addEventListener("pointerleave", on(false));
     });
+    // r88: phones are portrait only. A web page can't lock rotation (iOS never allows it), so a
+    // turned phone gets a card asking to turn it back; touches and wheel on it are swallowed so
+    // the car stays where it was. Tablets and laptops are left alone (see .rotate-lock in CSS).
+    const rotLock = el("div", "rotate-lock", `<div class="rl-card"><span class="rl-phone" aria-hidden="true"><svg viewBox="0 0 48 48" width="64" height="64"><rect x="15" y="5" width="18" height="38" rx="4" fill="none" stroke="currentColor" stroke-width="3.4"/><circle cx="24" cy="37.5" r="1.8" fill="currentColor"/></svg></span>
+      <b>Turn your phone upright</b><span class="mono">THE DRIVE IS BUILT FOR PORTRAIT</span></div>`);
+    rotLock.setAttribute("role", "alert");
+    for (const ev of ["touchmove", "wheel"]) rotLock.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
+    root.appendChild(rotLock);
+    try { screen.orientation?.lock?.("portrait").catch(() => {}); } catch {}
     const poiRail = el("div", "poi-rail");
     const poiRailL = el("div", "poi-rail left");
     root.append(poiRail, poiRailL);

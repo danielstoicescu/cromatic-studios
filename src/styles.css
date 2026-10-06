@@ -2722,3 +2722,18 @@ body.scheme-circuit .poi-card .poi-cta { background: var(--tagc) !important; col
 @keyframes povGyro { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
 @keyframes povGyroHint { 0%, 70%, 100% { transform: none; } 78% { transform: rotate(-14deg); } 86% { transform: rotate(14deg); } 94% { transform: rotate(-6deg); } }
 @media (prefers-reduced-motion: reduce) { .pov-gyro, .pov-gyro.on { animation: none; } }
+
+/* r88: phones are portrait only; a turned phone is asked to turn back */
+.rotate-lock { display: none; }
+@media (orientation: landscape) and (pointer: coarse) and (max-height: 520px) {
+  .rotate-lock { display: grid; place-items: center; position: fixed; inset: 0; z-index: 9999; touch-action: none;
+    background: color-mix(in srgb, var(--card-bg, #f6f3ea) 94%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  body.site-mode .rotate-lock { display: none; }
+  .rl-card { display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--fg, #111); text-align: center; padding: 0 24px; }
+  .rl-card b { font: 800 22px/1.15 Montserrat, sans-serif; }
+  .rl-card .mono { font-size: 10px; letter-spacing: .16em; opacity: .65; }
+  .rl-phone { width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 6px;
+    background: var(--accent, #FED012); border: 3px solid var(--st-ink, #111); color: var(--st-ink, #111); animation: rlTurn 2.2s cubic-bezier(.65,0,.35,1) infinite; }
+  @keyframes rlTurn { 0%, 20% { transform: rotate(90deg); } 55%, 100% { transform: rotate(0deg); } }
+  @media (prefers-reduced-motion: reduce) { .rl-phone { animation: none; } }
+}
