@@ -2114,8 +2114,20 @@ body.site-mode .dash, body.site-mode .fly-star { display: none !important; }
 .kz-eyebrow { display: none !important; }
 /* mobile bottom sheet: peek with transform, not max-height */
 @media (max-width: 719px) {
-  .mapcard { transition: transform .5s var(--eoq), opacity .3s var(--eoq) !important; transform: translate(calc(-50% + var(--sx, 0px)), calc(var(--sy, 0px) + var(--pk, 0px))); }
-  .mapcard.peek { max-height: 52vh; --pk: calc(100% - 88px); }
+  /* r87: the sheet is as tall as its content (up to 88vh); snaps are offsets set from JS */
+  .mapcard { max-height: 88vh; touch-action: none; transition: transform .46s cubic-bezier(.22,1.12,.36,1), opacity .3s var(--eoq) !important; transform: translate(calc(-50% + var(--sx, 0px)), var(--pk, 0px)); }
+  .mapcard.peek { max-height: 88vh; }
+  .mapcard.dragging { transition: none !important; }
+  .mapcard .mc-content { overflow: hidden; }
+  .mapcard.full .mc-content { overflow-y: auto; touch-action: pan-y; }
+  .mapcard.peek .mc-content { opacity: .55; }
+  .mapcard.hidden { transform: translate(-50%, 105%); }
+  /* a bigger, friendlier handle: a wide pill with a generous invisible hit area */
+  .ms-grab { width: 54px; height: 6px; margin: -12px auto 14px; background: color-mix(in srgb, var(--fg) 34%, transparent); }
+  .ms-grab::after { inset: -20px -120px -14px; }
+  .mapcard.peek .ms-grab { background: var(--accent); box-shadow: 0 0 0 2px var(--st-ink); }
+  .mapcard.contact { touch-action: auto; }
+  .mapcard.contact .mc-content { overflow-y: auto; touch-action: auto; }
 }
 /* humans: one card, arrows outside */
 .hmodal.human { position: relative; }
@@ -2700,3 +2712,13 @@ body.scheme-circuit .poi-card .poi-name { font-style: italic; font-weight: 900; 
 body.scheme-circuit .poi-card .poi-line { color: #8b9098 !important; }
 body.scheme-circuit .poi-card .poi-cta { background: var(--tagc) !important; color: #fff !important; border-radius: 4px !important; }
 @media (max-width: 760px) { body.scheme-circuit .poi-card:not(.svc-slide)::before { display: none; } body.scheme-circuit .mapcard::after { right: 18px; } }
+
+/* r87: look around Coffee Street with the phone's gyro */
+.pov-gyro { flex: 0 0 38px; width: 38px; height: 38px; border-radius: 50% !important; padding: 0; display: grid; place-items: center;
+  border: 2px solid var(--st-ink) !important; background: var(--card-bg) !important; color: var(--fg) !important; touch-action: manipulation; }
+.pov-gyro[hidden] { display: none; }
+.pov-gyro.on { background: var(--st-ink) !important; color: var(--accent) !important; animation: povGyro 2.4s ease-in-out infinite; }
+.pov-gyro:not(.on) { animation: povGyroHint 2.8s ease-in-out infinite; }
+@keyframes povGyro { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+@keyframes povGyroHint { 0%, 70%, 100% { transform: none; } 78% { transform: rotate(-14deg); } 86% { transform: rotate(14deg); } 94% { transform: rotate(-6deg); } }
+@media (prefers-reduced-motion: reduce) { .pov-gyro, .pov-gyro.on { animation: none; } }

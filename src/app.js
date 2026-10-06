@@ -23815,9 +23815,8 @@ void main() {
         { t: "UX & UI Design", c: "#B098C8", items: ["Rapid prototyping", "Information architecture", "High quality mockups", "Websites & apps", "Design systems"] },
         { t: "Growth & Content", c: "#F65342", items: ["Content strategy", "Instagram growth", "Social post design", "Ad campaigns"] }
       ];
-      HERITAGE = [
-        { x: 1450, y: 5320, addr: "Mircea Eliade 18", year: "2019", c: "#F65342" }
-      ];
+      // r87: the Mircea Eliade 18 plate stood in the middle of Medical Avenue; retired
+      HERITAGE = [];
       PARKS = [
         { x: 380, y: 820, rx: 190, ry: 120, name: "Parcul Ioanid" },
         { x: 1730, y: 1560, rx: 220, ry: 140, name: "Gr\u0103dina Icoanei" },
@@ -24509,10 +24508,10 @@ void main() {
     zones.push({ x: 602, y: 4142, r: 150 });
     zones.push({ x: 1150, y: 5140, r: 265 });
     zones.push({ x: 985, y: 5640, r: 195 });
-    zones.push({ x: 706, y: 5000, r: 110 });
-    zones.push({ x: 706, y: 5360, r: 110 });
+    zones.push({ x: 706, y: 4985, r: 110 });
+    zones.push({ x: 706, y: 5175, r: 110 });
     zones.push({ x: 706, y: 4640, r: 120 });
-    zones.push({ x: 706, y: 5720, r: 115 });
+    zones.push({ x: 706, y: 5480, r: 115 });
     for (let tz = 4380; tz <= 6060; tz += 70) zones.push({ x: 820, y: tz, r: 250 });
     zones.push({ x: 930, y: 4560, r: 110 }, { x: 930, y: 4800, r: 110 }, { x: 930, y: 5900, r: 110 }, { x: 706, y: 4420, r: 110 });
     for (let tz = 4500; tz <= 4820; tz += 80) zones.push({ x: 510, y: tz, r: 130 });
@@ -25464,8 +25463,7 @@ void main() {
     { n: "ARTISAN", c: "#797c69", t: "#f2f0e8", sub: "COFFEE GEAR" },
     { n: "SLOW", c: "#5B4B9E", t: "#ffffff", sub: "COFFEE FESTIVAL" },
     { n: "K\u00D3MPUS", c: "#B098C8", t: "#1a1420", sub: "COFFEE" },
-    { n: "SIP", c: "#C9A227", t: "#14120c", sub: "COFFEE & WINE" },
-    { n: "7 OALE", c: "#28C840", t: "#0d2410", sub: "SOUP" }
+    { n: "SIP", c: "#C9A227", t: "#14120c", sub: "COFFEE & WINE" }
   ];
   function carDoorTexture(l) {
     return canvasTexture(512, 256, (ctx) => {
@@ -25726,6 +25724,41 @@ void main() {
   // ===================== r79: four streets — brand buildings =====================
   // emissive materials that light up after dark (switched with the other shop glows)
   var STREET_GLOW = [];
+  // r87: look around Coffee Street by turning the phone. The heading of the phone's back
+  // (works in portrait and landscape) is compared with where it pointed when the street view
+  // began; turning left looks left. iOS asks for permission on the first tap of the button.
+  var POV_GYRO = { on: false, ok: typeof window !== "undefined" && "DeviceOrientationEvent" in window, heading: null, base: null, yaw: 0, seen: false };
+  function povGyroHeading(e) {
+    if (e.alpha == null || e.beta == null || e.gamma == null) return null;
+    const d = Math.PI / 180, a = e.alpha * d, b = e.beta * d, g = e.gamma * d;
+    const cA = Math.cos(a), sA = Math.sin(a), cB = Math.cos(b), sB = Math.sin(b), cG = Math.cos(g), sG = Math.sin(g);
+    // out of the back of the phone, in east / north / up
+    let vx = -cA * sG - sA * sB * cG, vy = -sA * sG + cA * sB * cG;
+    // lying flat the back points at the floor: use the top edge instead
+    if (Math.hypot(vx, vy) < 0.35) { vx = -sA * cB; vy = cA * cB; }
+    return Math.atan2(vx, vy);
+  }
+  if (typeof window !== "undefined") window.addEventListener("deviceorientation", (e) => {
+    const h = povGyroHeading(e);
+    if (h == null) return;
+    POV_GYRO.seen = true;
+    POV_GYRO.heading = h;
+    if (!POV_GYRO.on) return;
+    if (POV_GYRO.base == null) POV_GYRO.base = h;
+    let dA = POV_GYRO.base - h;
+    while (dA > Math.PI) dA -= 2 * Math.PI;
+    while (dA < -Math.PI) dA += 2 * Math.PI;
+    POV_GYRO.yaw = Math.max(-1.75, Math.min(1.75, dA * 1.15));
+  });
+  async function povGyroToggle() {
+    if (!POV_GYRO.on && typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+      try { if ((await DeviceOrientationEvent.requestPermission()) !== "granted") return false; } catch { return false; }
+    }
+    POV_GYRO.on = !POV_GYRO.on;
+    POV_GYRO.base = POV_GYRO.heading;
+    POV_GYRO.yaw = 0;
+    return POV_GYRO.on;
+  }
   // the palace: hidden in the Underwater world, where the pineapple house takes its place
   var casaPoporului = null;
   // a sign: a client logo (black on transparent, recoloured to `ink`) or lettering on a board
@@ -25880,45 +25913,209 @@ void main() {
     return finish(g, parent, o.x, o.z);
   }
 
-  // The Aesthetic Court at Casa Poporului: the Palace of the Parliament as a stepped
-  // neoclassical mass, its long colonnaded front towards Medical Avenue, with the court's
-  // burgundy and gold banners
+  // The Aesthetic Court at Casa Poporului (r87, rebuilt): the Palace of the Parliament as it
+  // stands, a symmetric cream travertine mass in five stepped tiers. Arched windows between
+  // pilasters, colonnaded loggias on the upper tiers, corner pavilions, a columned portico over
+  // a grand stair, balustrades on every terrace, the tricolour on top, and an esplanade with
+  // lawns and fountains towards Medical Avenue. The court's burgundy banners hang on the front.
+  // Local axes: the front faces -x (the avenue), the long side runs along z.
+  var PALACE_TEX = null;
+  function palaceTextures() {
+    if (PALACE_TEX) return PALACE_TEX;
+    const rnd = rng(1989);
+    const lit = [];
+    for (let i = 0; i < 64; i++) lit.push(rnd() < 0.3);
+    // window bays: 4 bays x 2 floors per tile, arched upper windows, pedimented lower ones
+    const winDraw = (glow) => (ctx) => {
+      ctx.fillStyle = glow ? "#000000" : "#ebe3cf"; ctx.fillRect(0, 0, 256, 256);
+      for (let f = 0; f < 2; f++) for (let bI = 0; bI < 4; bI++) {
+        const x = bI * 64, y = f * 128, on = lit[f * 4 + bI + 8 * (bI % 2)];
+        if (!glow) {
+          ctx.fillStyle = "#f6f0e2"; ctx.fillRect(x, y, 9, 128);
+          ctx.fillStyle = "#cbbfa4"; ctx.fillRect(x + 9, y, 2, 128);
+          ctx.fillStyle = "#d8cdb4"; ctx.fillRect(0, y + 120, 256, 8);
+          ctx.fillStyle = "#f2ebdc"; ctx.fillRect(0, y + 117, 256, 3);
+        }
+        const gx = x + 20, gw = 30;
+        ctx.fillStyle = glow ? (on ? "#ffcf8a" : "#000000") : on ? "#f4d394" : "#3a434f";
+        if (f === 0) {
+          ctx.beginPath(); ctx.moveTo(gx, y + 104); ctx.lineTo(gx, y + 40); ctx.arc(gx + gw / 2, y + 40, gw / 2, Math.PI, 0); ctx.lineTo(gx + gw, y + 104); ctx.closePath(); ctx.fill();
+        } else ctx.fillRect(gx + 1, y + 30, gw - 2, 74);
+        if (glow) continue;
+        // frames, mullions, sills, the arch keystone and the little pediments
+        ctx.strokeStyle = "#f7f2e6"; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(gx + gw / 2, y + (f === 0 ? 26 : 30)); ctx.lineTo(gx + gw / 2, y + 104); ctx.moveTo(gx, y + 70); ctx.lineTo(gx + gw, y + 70); ctx.stroke();
+        ctx.fillStyle = "#d6cab0"; ctx.fillRect(gx - 5, y + 104, gw + 10, 6);
+        if (f === 0) { ctx.strokeStyle = "#d2c6ab"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(gx + gw / 2, y + 40, gw / 2 + 4, Math.PI, 0); ctx.stroke(); ctx.fillStyle = "#f4eddd"; ctx.fillRect(gx + gw / 2 - 4, y + 18, 8, 9); }
+        else { ctx.fillStyle = "#d6cab0"; ctx.beginPath(); ctx.moveTo(gx - 6, y + 26); ctx.lineTo(gx + gw / 2, y + 12); ctx.lineTo(gx + gw + 6, y + 26); ctx.closePath(); ctx.fill(); }
+      }
+    };
+    // a colonnaded loggia: columns in front of a shaded recess, a balustrade along the bottom
+    const colDraw = (glow) => (ctx) => {
+      ctx.fillStyle = glow ? "#2a1a08" : "#4a443c"; ctx.fillRect(0, 0, 256, 256);
+      if (glow) { ctx.fillStyle = "#000000"; for (let i = 0; i < 8; i++) ctx.fillRect(i * 32 + 9, 0, 14, 256); ctx.fillRect(0, 0, 256, 30); ctx.fillRect(0, 214, 256, 42); return; }
+      ctx.fillStyle = "#5c554b"; ctx.fillRect(0, 30, 256, 40);
+      for (let i = 0; i < 8; i++) {
+        const x = i * 32 + 9;
+        ctx.fillStyle = "#f3ecdc"; ctx.fillRect(x, 26, 14, 200);
+        ctx.fillStyle = "#d3c8ae"; ctx.fillRect(x, 26, 4, 200);
+        ctx.fillStyle = "#e8dfcb"; ctx.fillRect(x - 4, 26, 22, 8); ctx.fillRect(x - 4, 206, 22, 8);
+      }
+      ctx.fillStyle = "#e6dcc6"; ctx.fillRect(0, 0, 256, 26);
+      ctx.fillStyle = "#d4c9af"; ctx.fillRect(0, 22, 256, 4);
+      ctx.fillStyle = "#e6dcc6"; ctx.fillRect(0, 214, 256, 42);
+      ctx.fillStyle = "#9d9381"; for (let x = 4; x < 256; x += 12) ctx.fillRect(x, 222, 5, 26);
+    };
+    // the rusticated base: deep horizontal joints, small square windows
+    const baseDraw = (ctx) => {
+      ctx.fillStyle = "#ded4be"; ctx.fillRect(0, 0, 256, 128);
+      ctx.fillStyle = "#bfb398"; for (let y = 0; y < 128; y += 32) ctx.fillRect(0, y, 256, 4);
+      ctx.fillStyle = "#3d4550"; for (let x = 20; x < 256; x += 64) ctx.fillRect(x, 50, 24, 30);
+    };
+    const balDraw = (ctx) => {
+      ctx.fillStyle = "#8f8574"; ctx.fillRect(0, 0, 256, 32);
+      ctx.fillStyle = "#f1eadb"; ctx.fillRect(0, 0, 256, 6); ctx.fillRect(0, 27, 256, 5);
+      for (let x = 3; x < 256; x += 16) { ctx.beginPath(); ctx.ellipse(x + 5, 17, 4.5, 9, 0, 0, Math.PI * 2); ctx.fill(); }
+    };
+    PALACE_TEX = {
+      win: [canvasTexture(256, 256, winDraw(false)), canvasTexture(256, 256, winDraw(true))],
+      col: [canvasTexture(256, 256, colDraw(false)), canvasTexture(256, 256, colDraw(true))],
+      base: [canvasTexture(256, 128, baseDraw), null],
+      bal: [canvasTexture(256, 32, balDraw), null]
+    };
+    return PALACE_TEX;
+  }
   function buildCasaPoporului(parent, x, z) {
     const g = new Group();
-    const stone = new MeshStandardMaterial({ color: "#e7dfcc", roughness: 0.9 });
-    const colTex = canvasTexture(256, 128, (ctx) => {
-      ctx.fillStyle = "#e7dfcc"; ctx.fillRect(0, 0, 256, 128);
-      for (let i = 0; i < 16; i++) { ctx.fillStyle = "#b9b09a"; ctx.fillRect(i * 16 + 2, 18, 5, 100); ctx.fillStyle = "#3d3a33"; ctx.fillRect(i * 16 + 8, 34, 6, 70); }
-      ctx.fillStyle = "#cfc6b0"; ctx.fillRect(0, 0, 256, 14); ctx.fillRect(0, 118, 256, 10);
-    }, { repeat: [3, 1] });
-    const colM = new MeshStandardMaterial({ map: colTex, emissiveMap: colTex, emissive: new Color("#ffd38a"), emissiveIntensity: 0, roughness: 0.85 });
-    STREET_GLOW.push([colM, 0.5]);
-    // terrace, then four tiers stepping back, then the central block
-    const tiers = [[340, 12, 300], [300, 44, 250], [240, 30, 196], [176, 26, 140], [110, 22, 90]];
-    let y = 0;
-    tiers.forEach(([w, h, d], i) => {
-      const m = new Mesh(new BoxGeometry(d, h, w), i === 0 ? stone : [colM, colM, stone, stone, colM, colM]);
-      m.position.y = y + h / 2; g.add(m);
-      const cor = new Mesh(new BoxGeometry(d + 3, 2.4, w + 3), new MeshStandardMaterial({ color: "#d6ccb4", roughness: 0.9 }));
-      cor.position.y = y + h + 1.2; g.add(cor);
+    const T = palaceTextures();
+    const cache = {};
+    // one material per texture kind and repeat, so every bay keeps its proportions
+    const fac = (kind, rx, ry) => {
+      const k = `${kind}:${rx}:${ry}`;
+      if (cache[k]) return cache[k];
+      const [map0, glow0] = T[kind];
+      const map = map0.clone(); map.wrapS = map.wrapT = RepeatWrapping; map.repeat.set(rx, ry); map.needsUpdate = true;
+      const o = { map, roughness: 0.88, color: "#ffffff" };
+      if (glow0) { const em = glow0.clone(); em.wrapS = em.wrapT = RepeatWrapping; em.repeat.set(rx, ry); em.needsUpdate = true; o.emissiveMap = em; o.emissive = new Color("#ffffff"); o.emissiveIntensity = 0; }
+      const m = new MeshStandardMaterial(o);
+      if (glow0) STREET_GLOW.push([m, kind === "col" ? 0.6 : 0.9]);
+      return (cache[k] = m);
+    };
+    const roofM = new MeshStandardMaterial({ color: "#d9d0bc", roughness: 0.95 });
+    const stone = new MeshStandardMaterial({ color: "#efe8d8", roughness: 0.85 });
+    const stoneDk = new MeshStandardMaterial({ color: "#d3c8ae", roughness: 0.9 });
+    // a block with facades on all four sides; tile = [width, height] of one texture tile in world units
+    const block = (dx, h, dz, cx, y0, cz, kind, tile) => {
+      const rz = Math.max(1, Math.round(dz / tile[0])), rxx = Math.max(1, Math.round(dx / tile[0])), ry = Math.max(1, Math.round(h / tile[1]));
+      const side = fac(kind, rz, ry), end = fac(kind, rxx, ry);
+      const m = new Mesh(new BoxGeometry(dx, h, dz), [side, side, roofM, roofM, end, end]);
+      m.position.set(cx, y0 + h / 2, cz);
+      g.add(m);
+      return m;
+    };
+    const slab = (dx, h, dz, cx, y0, cz, mat = stoneDk) => { const m = new Mesh(new BoxGeometry(dx, h, dz), mat); m.position.set(cx, y0 + h / 2, cz); g.add(m); return m; };
+    // a balustrade around the edge of a terrace
+    const balustrade = (dx, dz, cx, y0, cz) => {
+      const h = 4.2, t = 1.4;
+      const along = fac("bal", Math.max(1, Math.round(dz / 24)), 1), across = fac("bal", Math.max(1, Math.round(dx / 24)), 1);
+      for (const s of [-1, 1]) {
+        const a = new Mesh(new BoxGeometry(t, h, dz), along); a.position.set(cx + s * (dx / 2 - t / 2), y0 + h / 2, cz); g.add(a);
+        const b = new Mesh(new BoxGeometry(dx, h, t), across); b.position.set(cx, y0 + h / 2, cz + s * (dz / 2 - t / 2)); g.add(b);
+      }
+    };
+    const WIN = [36, 22], COL = [36, 24], BASE = [72, 12];
+    // the podium
+    block(292, 11, 352, 0, 0, 0, "base", BASE);
+    slab(298, 1.6, 358, 0, 11, 0);
+    let y = 12.6;
+    // tier 1: the main body, with four corner pavilions standing proud of it
+    block(250, 48, 318, 0, y, 0, "win", WIN);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      block(58, 56, 60, sx * 104, y, sz * 140, "win", WIN);
+      slab(62, 2.4, 64, sx * 104, y + 56, sz * 140);
+      balustrade(60, 62, sx * 104, y + 58.4, sz * 140);
+    }
+    // the side pavilions in the middle of each short end
+    for (const sz of [-1, 1]) { block(90, 54, 14, 0, y, sz * 162, "win", WIN); slab(94, 2.2, 17, 0, y + 54, sz * 162); }
+    slab(256, 2.6, 324, 0, y + 48, 0);
+    balustrade(254, 322, 0, y + 50.6, 0);
+    y += 50.6;
+    // the upper tiers step back: windows, loggia, windows, loggia
+    const tiers = [[200, 26, 262, "win", WIN], [156, 24, 206, "col", COL], [112, 22, 150, "win", WIN], [70, 24, 96, "col", COL]];
+    for (const [dx, h, dz, kind, tile] of tiers) {
+      block(dx, h, dz, 0, y, 0, kind, tile);
+      slab(dx + 6, 2.4, dz + 6, 0, y + h, 0);
+      balustrade(dx + 4, dz + 4, 0, y + h + 2.4, 0);
       y += h + 2.4;
+    }
+    // the crown: a small attic block and the flag
+    block(40, 10, 50, 0, y, 0, "win", [25, 10]);
+    slab(44, 2, 54, 0, y + 10, 0);
+    y += 12;
+    const mast = new Mesh(new CylinderGeometry(0.55, 0.7, 30, 8), new MeshStandardMaterial({ color: "#6b6b6b", metalness: 0.6, roughness: 0.4 }));
+    mast.position.y = y + 15; g.add(mast);
+    const flagTex = canvasTexture(96, 64, (ctx) => { ["#002B7F", "#FCD116", "#CE1126"].forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(i * 32, 0, 32, 64); }); });
+    const flag = new Mesh(new BoxGeometry(0.3, 9, 14), new MeshStandardMaterial({ map: flagTex, roughness: 0.7 }));
+    flag.position.set(0, y + 24.5, 7.4); g.add(flag);
+    // the central portico on the front: stylobate, twelve columns, entablature and a balcony
+    const PX = -125;
+    slab(26, 3.4, 104, PX - 12, 12.6, 0, stone);
+    const colGeos = [];
+    for (let i = 0; i < 12; i++) {
+      const cz2 = -46 + i * (92 / 11);
+      for (const [r0, r1, h, yy] of [[2.5, 2.5, 2.2, 16], [2.1, 2.35, 33, 18.2], [3.1, 2.4, 2.6, 51.2]]) {
+        const c = new CylinderGeometry(r0, r1, h, 14); c.translate(PX - 18, yy + h / 2, cz2); colGeos.push(c);
+      }
+    }
+    const cols = new Mesh(mergeGeometries(colGeos), stone); g.add(cols);
+    slab(30, 6, 104, PX - 13, 53.8, 0, stone);
+    slab(32, 1.8, 108, PX - 13, 59.8, 0);
+    balustrade(30, 104, PX - 13, 61.6, 0);
+    // a shaded recess with three tall doors behind the columns
+    const doorTex = canvasTexture(256, 128, (ctx) => {
+      ctx.fillStyle = "#4a443c"; ctx.fillRect(0, 0, 256, 128);
+      for (const dx2 of [40, 128, 216]) { ctx.fillStyle = "#2a2622"; ctx.beginPath(); ctx.moveTo(dx2 - 18, 128); ctx.lineTo(dx2 - 18, 50); ctx.arc(dx2, 50, 18, Math.PI, 0); ctx.lineTo(dx2 + 18, 128); ctx.fill(); ctx.fillStyle = "#c79a4c"; ctx.fillRect(dx2 - 1, 70, 2, 58); }
     });
-    // the flag on top
-    const mast = new Mesh(new CylinderGeometry(0.5, 0.5, 26, 6), new MeshStandardMaterial({ color: "#555" })); mast.position.y = y + 13; g.add(mast);
-    const flag = new Mesh(new BoxGeometry(0.3, 8, 13), new MeshStandardMaterial({ color: "#c89b3c", roughness: 0.6 })); flag.position.set(0, y + 22, 6.8); g.add(flag);
-    // the grand stair and the court's banners, front = -x (towards the avenue)
-    for (let k = 0; k < 6; k++) { const st = new Mesh(new BoxGeometry(10, 2, 90 - k * 8), stone); st.position.set(-170 - 20 + k * 3.4, 1 + k * 2, 0); g.add(st); }
+    const recess = new Mesh(new PlaneGeometry(100, 36), new MeshStandardMaterial({ map: doorTex, roughness: 0.9 }));
+    recess.position.set(PX - 0.3, 16 + 18, 0); recess.rotation.y = -Math.PI / 2; g.add(recess);
+    // the grand stair down to the esplanade
+    const stairGeos = [];
+    for (let k = 0; k < 7; k++) { const st = new BoxGeometry(5, 12.6 - k * 1.8, 132 + k * 10); st.translate(PX - 25 - 5 - k * 5, (12.6 - k * 1.8) / 2, 0); stairGeos.push(st); }
+    g.add(new Mesh(mergeGeometries(stairGeos), stone));
+    // the court's banners between the portico and the corner pavilions
     const banTex = canvasTexture(128, 384, (ctx) => {
       ctx.fillStyle = "#1a0909"; ctx.fillRect(0, 0, 128, 384);
       ctx.strokeStyle = "#c89b3c"; ctx.lineWidth = 4; ctx.strokeRect(8, 8, 112, 368);
-      ctx.fillStyle = "#f4f0ea"; ctx.textAlign = "center"; ctx.font = "600 22px 'Cinzel', Georgia, serif";
+      ctx.fillStyle = "#f4f0ea"; ctx.textAlign = "center";
       ["THE", "AESTHETICS", "COURT"].forEach((w2, i) => { ctx.font = `600 ${i === 1 ? 17 : 24}px 'Cinzel', Georgia, serif`; ctx.fillText(w2, 64, 120 + i * 44); });
       ctx.fillStyle = "#c89b3c"; ctx.font = "700 11px Montserrat, sans-serif"; ctx.fillText("ONE TRIAL", 64, 286); ctx.fillText("ONE VERDICT", 64, 304);
     });
     const banM = new MeshStandardMaterial({ map: banTex, emissiveMap: banTex, emissive: new Color("#ffffff"), emissiveIntensity: 0, roughness: 0.7 });
     STREET_GLOW.push([banM, 0.45]);
-    for (const bz of [-96, -48, 48, 96]) { const b = new Mesh(new PlaneGeometry(16, 48), banM); b.position.set(-151.5, 30, bz); b.rotation.y = -Math.PI / 2; g.add(b); }
-    EXTRA_KEEPOUT.push({ x, y: z, r: 230 });
+    for (const bz of [-92, -66, 66, 92]) { const b2 = new Mesh(new PlaneGeometry(13, 40), banM); b2.position.set(-125.6, 36, bz); b2.rotation.y = -Math.PI / 2; g.add(b2); }
+    // the esplanade: paving, two lawns with fountains, and lamps along the walk
+    const pave = new Mesh(new BoxGeometry(92, 0.8, 300), new MeshStandardMaterial({ color: "#e4ddce", roughness: 1 }));
+    pave.position.set(-210, 0.4, 0); g.add(pave);
+    const lawnM = new MeshStandardMaterial({ color: "#78c46c", roughness: 1 });
+    const basinM = new MeshStandardMaterial({ color: "#d9d2c3", roughness: 0.9 }), waterM = new MeshStandardMaterial({ color: "#7fc8e8", roughness: 0.12, metalness: 0.25 });
+    const jetM = new MeshStandardMaterial({ color: "#e4f6ff", transparent: true, opacity: 0.75 });
+    for (const sz of [-1, 1]) {
+      const lawn = new Mesh(new BoxGeometry(62, 1.4, 100), lawnM); lawn.position.set(-212, 1, sz * 92); g.add(lawn);
+      const basin = new Mesh(new CylinderGeometry(13, 14, 3, 28), basinM); basin.position.set(-212, 2, sz * 92);
+      const water = new Mesh(new CylinderGeometry(11.5, 11.5, 0.6, 28), waterM); water.position.set(-212, 3.4, sz * 92);
+      const jet = new Mesh(new CylinderGeometry(0.7, 1.8, 13, 10), jetM); jet.position.set(-212, 9, sz * 92);
+      g.add(basin, water, jet);
+    }
+    const lampGeos = [], globeGeos = [];
+    for (const sz of [-1, 1]) for (let i = 0; i < 5; i++) {
+      const lx = -176 - i * 18, lz = sz * 34;
+      const p2 = new CylinderGeometry(0.6, 0.9, 16, 8); p2.translate(lx, 8, lz); lampGeos.push(p2);
+      const gl = new SphereGeometry(1.9, 10, 8); gl.translate(lx, 17.4, lz); globeGeos.push(gl);
+    }
+    g.add(new Mesh(mergeGeometries(lampGeos), new MeshStandardMaterial({ color: "#2b2d31", roughness: 0.5, metalness: 0.4 })));
+    mats.festoon = mats.festoon || new MeshStandardMaterial({ color: "#fff0c4", emissive: "#ffca6a", emissiveIntensity: 0.1 });
+    g.add(new Mesh(mergeGeometries(globeGeos), mats.festoon));
+    EXTRA_KEEPOUT.push({ x, y: z, r: 240 });
     return finish(g, parent, x, z);
   }
 
@@ -26026,10 +26223,11 @@ void main() {
     { br: "B", name: "Witanalitica", x: 2205, z: 5540, face: "-x", kind: "office", w: 66, h: 48, accent: "#6b4fd8", c: "#6b4fd8", t: "#ffffff", line: "DATA · DIGITAL" },
     { br: "B", name: "Techventures Bank", logo: "logoTechventures", x: 2210, z: 5850, face: "-x", kind: "tower", w: 70, d: 56, h: 120, accent: "#0d3b66", c: "#0d3b66", t: "#ffffff", line: "BANKING · DIGITAL" },
     // Medical Avenue (C): after the palace and the courtyard, the clinics
-    { br: "C", name: "Zoetis", x: 1610, z: 5380, face: "-x", kind: "clinic", w: 70, h: 40, accent: "#f2763b", c: "#f2763b", t: "#2a1205", line: "ANIMAL HEALTH" },
-    { br: "C", name: "Altius", logo: "logoAltius", x: 1610, z: 5540, face: "-x", kind: "clinic", w: 66, h: 46, accent: "#2a5d8f", c: "#2a5d8f", t: "#ffffff", line: "MEDICAL" },
-    { br: "C", name: "Alithia", x: 1610, z: 5700, face: "-x", kind: "clinic", w: 64, h: 38, accent: "#7cc4a8", c: "#7cc4a8", t: "#0c2a20", line: "MEDICAL" },
-    { br: "C", name: "Clinica Sante", logo: "logoClinicaSante", x: 1610, z: 5860, face: "-x", kind: "clinic", w: 70, h: 44, accent: "#2f9e4f", c: "#2f9e4f", t: "#ffffff", line: "CLINIC · BRAND · FILM" }
+    // r87: after the palace and the courtyard the clinics alternate kerbs, so the avenue has two sides
+    { br: "C", name: "Altius", logo: "logoAltius", x: 1610, z: 5390, face: "-x", kind: "clinic", w: 66, h: 52, accent: "#2a5d8f", c: "#2a5d8f", t: "#ffffff", line: "MEDICAL" },
+    { br: "C", name: "Elithia", x: 1390, z: 5530, face: "+x", kind: "clinic", w: 64, h: 40, accent: "#7cc4a8", c: "#7cc4a8", t: "#0c2a20", line: "MEDICAL" },
+    { br: "C", name: "Clinica Sante", logo: "logoClinicaSante", x: 1610, z: 5670, face: "-x", kind: "clinic", w: 70, h: 46, accent: "#2f9e4f", c: "#2f9e4f", t: "#ffffff", line: "CLINIC · BRAND · FILM" },
+    { br: "C", name: "Zoetis", x: 1390, z: 5810, face: "+x", kind: "clinic", w: 70, h: 38, accent: "#f2763b", c: "#f2763b", t: "#2a1205", line: "ANIMAL HEALTH" },
   ];
   // the Zdrovit courtyard (Medical Avenue, east side): eight small buildings around a yard
   var COURT = { x: 1720, z: 5070 };
@@ -26050,7 +26248,7 @@ void main() {
     { br: "A", name: "Antila", x: 440, z: 6040, line: "CHARCUTERIE FARM", c: "#F2C200", t: "#1a1405", page: "antila" },
     { br: "A", name: "UNDE", x: 708, z: 6036, line: "GROCERY", c: "#2b6fd6", t: "#ffffff", page: "unde" }
   ];
-  var TAC = { br: "C", name: "The Aesthetic Court", x: 1772, z: 4570, line: "CASA POPORULUI · BUCHAREST", c: "#1a0909", t: "#c89b3c", page: "the-aesthetic-court" };
+  var TAC = { br: "C", name: "The Aesthetic Court", x: 1790, z: 4570, line: "CASA POPORULUI · BUCHAREST", c: "#1a0909", t: "#c89b3c", page: "the-aesthetic-court" };
   function buildFourStreets(parent) {
     const L = (n) => (n ? { logoAssetto, logoBepco, logoESD, logoUnchain, logoTechventures, logoAltius, logoClinicaSante, logoInvestimental, logoInfinity, logoLongshield, logoFlask, logoDrK, logoRoutine, logoCoffeenativ, logoBrewzeus, logoArca }[n] : null);
     for (const o of STREET_BRANDS) buildBrandBuilding(parent, { ...o, logo: L(o.logo), keep: 90 });
@@ -28408,12 +28606,13 @@ void main() {
     const streetSigns = buildCoffeeEntrance(world);
     buildRomexpo(world);
     buildSteamShop(world);
-    buildStreetShop(world, { key: "sipGlow", name: "SIP", label: "coffee & wine", x: 706, z: 5000,
+    buildStreetShop(world, { key: "sipGlow", name: "SIP", label: "coffee & wine", x: 706, z: 4440,
       w: 66, h: 54, d: 46, wall: "#2b2620", trim: "#C9A227", glass: "#1a1712", ink: "#C9A227", boardInk: "#14120c" });
-    buildIzakaya(world, 706, 5360);
-    // OMA sits north of Tâmpa, so the mountain and its BRASOV letters stay in view
-    buildOmaShop(world, 706, 4440);
-    buildCasaBerero(world, 706, 5720);
+    // r87, west kerb in the order you pass it: Sip, Tâmpa, then OMA at the foot of the
+    // mountain right next to Yoshi Izakaya, Casa Berero, and ARCA at the end
+    buildOmaShop(world, 706, 4985);
+    buildIzakaya(world, 706, 5175);
+    buildCasaBerero(world, 706, 5480);
     buildBrasov(world);
     buildCoffeeStreetAdds(world);
     buildPeople(world);
@@ -30619,49 +30818,89 @@ void main() {
     card.appendChild(grab);
     root.appendChild(card);
     const phone = () => window.matchMedia("(max-width: 719px)").matches;
+    // r87: an app-grade bottom sheet on phones. Three snaps (peek, open, full); the sheet
+    // follows the finger 1:1 anywhere on it, and a flick carries it to the next snap. Content
+    // scrolls only when the sheet is fully up; dragging down from the top of it lowers the sheet.
     let sheetState = "open";
+    const snapOf = (s) => {
+      const H = card.offsetHeight, vh = window.innerHeight;
+      if (s === "peek") return Math.max(0, H - 92);
+      if (s === "open") return Math.max(0, H - Math.round(vh * 0.5));
+      return 0;
+    };
     const setSheet = (s) => {
+      if (s === "full" && snapOf("open") === 0) s = "open";
       sheetState = s;
       card.classList.toggle("peek", s === "peek");
+      card.classList.toggle("full", s === "full");
+      if (phone()) card.style.setProperty("--pk", `${snapOf(s)}px`);
+      else card.style.removeProperty("--pk");
     };
-    grab.onclick = () => setSheet(sheetState === "open" ? "peek" : "open");
+    // the card's height changes with every new stop: keep the current snap honest
+    try { new ResizeObserver(() => { if (!drag) setSheet(sheetState); }).observe(card); } catch {}
+    window.addEventListener("resize", () => setSheet(sheetState));
+    grab.onclick = (e) => { e.stopPropagation(); setSheet(sheetState === "peek" ? "open" : sheetState === "open" && snapOf("open") > 0 ? "full" : "peek"); };
     let drag = null;
-    card.addEventListener("pointerdown", (e) => {
-      if (!phone()) return;
-      const onGrab = e.target === grab || e.target.closest(".ms-grab");
+    card.addEventListener("touchstart", (e) => {
+      if (!phone() || e.touches.length > 1 || card.classList.contains("contact")) return;
+      const t0 = e.touches[0];
       const body = card.querySelector(".mc-content");
-      const atTop = !body || body.scrollTop <= 0;
-      if (!onGrab && !atTop) return;
-      if (e.target.closest("button, a, input, textarea")) return;
-      drag = { x: e.clientX, y: e.clientY, t: performance.now(), moved: false };
-      card.classList.add("dragging");
-    });
-    card.addEventListener("pointermove", (e) => {
+      drag = { x: t0.clientX, y: t0.clientY, t: performance.now(), mode: null, base: snapOf(sheetState), last: [[t0.clientY, performance.now()]],
+        atTop: !body || body.scrollTop <= 0, onHead: t0.clientY - card.getBoundingClientRect().top < 64, onCtl: !!e.target.closest("button, a, input, textarea, select, label") };
+    }, { passive: true });
+    card.addEventListener("touchmove", (e) => {
       if (!drag) return;
-      const dy = e.clientY - drag.y, dx = e.clientX - drag.x;
-      if (!drag.moved && Math.hypot(dx, dy) > 6) drag.moved = true;
-      if (Math.abs(dx) > Math.abs(dy)) {
-        card.style.setProperty("--sx", `${dx * 0.35}px`);
-      } else {
-        const base = sheetState === "peek" ? 0 : 0;
-        card.style.setProperty("--sy", `${Math.max(-24, dy + base) * 0.9}px`);
+      const t0 = e.touches[0], dy = t0.clientY - drag.y, dx = t0.clientX - drag.x;
+      if (!drag.mode) {
+        if (Math.hypot(dx, dy) < 7) return;
+        if (Math.abs(dx) > Math.abs(dy) * 1.3) drag.mode = "x";
+        // fully up, the content scrolls natively unless you pull down from its top (or grab the head)
+        else if (sheetState === "full" && !drag.onHead && !(dy > 0 && drag.atTop)) drag.mode = "scroll";
+        else drag.mode = "y";
+        if (drag.mode === "y") card.classList.add("dragging");
       }
-    });
+      if (drag.mode === "scroll") return;
+      if (e.cancelable) e.preventDefault();
+      if (drag.mode === "x") { card.style.setProperty("--sx", `${dx * 0.35}px`); return; }
+      const max = snapOf("peek");
+      let off = drag.base + dy;
+      // rubber band past the ends
+      if (off < 0) off = -Math.pow(-off, 0.7);
+      if (off > max) off = max + Math.pow(off - max, 0.7);
+      card.style.setProperty("--pk", `${off}px`);
+      drag.last.push([t0.clientY, performance.now()]);
+      if (drag.last.length > 6) drag.last.shift();
+    }, { passive: false });
     const endDrag = (e) => {
       if (!drag) return;
-      const dy = (e.clientY ?? drag.y) - drag.y, dx = (e.clientX ?? drag.x) - drag.x;
-      const quick = performance.now() - drag.t < 320;
+      const d = drag; drag = null;
       card.classList.remove("dragging");
-      card.style.removeProperty("--sy");
       card.style.removeProperty("--sx");
-      if (Math.abs(dx) > 64 && Math.abs(dx) > Math.abs(dy)) {
-        api.stepChapter(dx < 0 ? 1 : -1);
-      } else if (dy > 54 || quick && dy > 24) setSheet("peek");
-      else if (dy < -40 || quick && dy < -18) setSheet("open");
-      drag = null;
+      const pt = e.changedTouches && e.changedTouches[0];
+      const dy = (pt ? pt.clientY : d.y) - d.y, dx = (pt ? pt.clientX : d.x) - d.x;
+      if (d.mode === "x") {
+        if (Math.abs(dx) > 64) api.stepChapter(dx < 0 ? 1 : -1);
+        return;
+      }
+      if (d.mode !== "y") {
+        // a tap on a lowered sheet raises it (buttons and links keep their own taps)
+        if (!d.mode && sheetState === "peek" && !d.onCtl && e.type === "touchend") setSheet("open");
+        return;
+      }
+      const [y0, t0] = d.last[0], v = d.last.length > 1 ? (d.last[d.last.length - 1][0] - y0) / Math.max(16, performance.now() - t0) : 0;
+      const order = ["full", "open", "peek"].filter((s) => s !== "full" || snapOf("open") > 0);
+      const off = d.base + dy;
+      let pick;
+      if (Math.abs(v) > 0.45) {
+        // a flick: one snap in that direction from where the finger started
+        const i = order.indexOf(sheetState);
+        pick = order[Math.max(0, Math.min(order.length - 1, i + (v > 0 ? 1 : -1)))];
+        if (pick === sheetState) pick = v > 0 ? order[order.length - 1] : order[0];
+      } else pick = order.reduce((a2, s) => (Math.abs(snapOf(s) - off) < Math.abs(snapOf(a2) - off) ? s : a2), order[0]);
+      setSheet(pick);
     };
-    card.addEventListener("pointerup", endDrag);
-    card.addEventListener("pointercancel", endDrag);
+    card.addEventListener("touchend", endDrag);
+    card.addEventListener("touchcancel", endDrag);
     const hint = el("div", "scroll-hint mono", `<span class="sh-top">NAVIGATION MODE</span><span class="sh-main">SCROLL LIKE YOU NORMALLY DO \u2193</span>`);
     root.appendChild(hint);
     const modalBack = el("div", "hmodal-backdrop hidden");
@@ -31222,9 +31461,23 @@ void main() {
     rbBtn.onclick = () => api.goAround();
     const povHint = el("div", "pov-hint", `
       <button class="pov-btn" data-d="l" aria-label="Look left">\u2190</button>
+      <button class="pov-gyro" aria-pressed="false" aria-label="Look around by turning your phone"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M2.5 9.5c-1 1.6-1 3.4 0 5M21.5 9.5c1 1.6 1 3.4 0 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
       <span class="pov-txt"><b>You're on Coffee Street</b><span class="mono">USE \u2190 \u2192 TO LOOK AROUND</span></span>
       <button class="pov-btn" data-d="r" aria-label="Look right">\u2192</button>`);
     root.appendChild(povHint);
+    {
+      // phones: the gyro button, and the hint says how to use it
+      const gb = povHint.querySelector(".pov-gyro"), sub = povHint.querySelector(".pov-txt .mono");
+      const touch = window.matchMedia("(pointer: coarse)").matches && POV_GYRO.ok;
+      gb.hidden = !touch;
+      const paint = () => {
+        gb.classList.toggle("on", POV_GYRO.on);
+        gb.setAttribute("aria-pressed", String(POV_GYRO.on));
+        sub.textContent = !touch ? "USE \u2190 \u2192 TO LOOK AROUND" : POV_GYRO.on ? "TURN YOUR PHONE TO LOOK AROUND" : "TAP THE PHONE TO LOOK AROUND";
+      };
+      paint();
+      gb.addEventListener("click", async (e) => { e.preventDefault(); await povGyroToggle(); paint(); });
+    }
     povHint.querySelectorAll(".pov-btn").forEach((b2) => {
       const d = b2.dataset.d;
       const on = (v) => (e) => { e.preventDefault(); window.dispatchEvent(new KeyboardEvent(v ? "keydown" : "keyup", { key: d === "l" ? "ArrowLeft" : "ArrowRight" })); };
@@ -31319,7 +31572,7 @@ void main() {
       modalBack.innerHTML = "";
       const m = el("div", "hmodal court-modal");
       m.setAttribute("role", "dialog");
-      m.innerHTML = `<div class="hm-info wide"><span class="eyebrow">MEDICAL AVENUE \u00B7 THE COURTYARD</span><span class="hm-name drop1" style="background:#e30613;color:#fff">Zdrovit Court</span>
+      m.innerHTML = `<div class="hm-info wide"><span class="eyebrow">MEDICAL AVENUE \u00B7 THE COURTYARD</span><span class="hm-name drop1" style="background:#e30613;color:#fff">Zdrovit</span>
         <p>Eight brands around one yard: health, clinics, beauty and perfume, from Bucharest to Barcelona, Los Angeles and Paris.</p>
         <div class="court-grid">${COURT_BRANDS.map((b, i) => `<button class="court-b" data-i="${i}" style="--cc:${b.c};--ct:${b.t}"><b>${b.name}</b><span class="mono">${b.line}</span></button>`).join("")}</div></div>`;
       m.querySelectorAll(".court-b").forEach((btn) => { btn.onclick = () => openProjectHook?.(projOf(COURT_BRANDS[+btn.dataset.i])); });
@@ -31329,7 +31582,7 @@ void main() {
       modalBack.appendChild(m);
       openModal();
     };
-    const COURT_TAG = { br: "C", name: "Zdrovit Court", x: COURT.x - 150, z: COURT.z, line: "8 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff" };
+    const COURT_TAG = { br: "C", name: "Zdrovit", x: COURT.x - 150, z: COURT.z, line: "8 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff" };
     const workTags = [...STREET_BRANDS, COURT_TAG, TAC, ...COFFEE_ADDS].map((b) => {
       BRANDC[b.name] = BRANDC[b.name] || { c: b.c, t: b.t };
       // brands with a case page on the website open it full screen (offline copies fall back to the card)
@@ -31723,7 +31976,7 @@ void main() {
       var startRevealAt = Infinity;
       var kinetic = null, kineticArmedAt = Infinity;
       var mvK = 0;
-      var povK = 0, povYaw = 0, povYawT = 0, povLastKey = 0;
+      var povK = 0, povYaw = 0, povYawT = 0, povLastKey = 0, povGyroWas = false;
       var povKeys = { l: false, r: false }, povHidCar = false;
       window.addEventListener("keyup", (e) => { if (e.key === "ArrowLeft") povKeys.l = false; if (e.key === "ArrowRight") povKeys.r = false; });
       scene.add(spawnRing);
@@ -33859,6 +34112,11 @@ void main() {
           povK = smooth(povK, pk, dt, 3);
           if (povKeys.l) povYawT += dt * 1.6;
           if (povKeys.r) povYawT -= dt * 1.6;
+          // the phone's gyro drives the look while the street view is on; it re-centres every time you arrive
+          const gyroOn = POV_GYRO.on && pk > 0.3;
+          if (gyroOn && !povGyroWas) { POV_GYRO.base = POV_GYRO.heading; POV_GYRO.yaw = 0; }
+          povGyroWas = gyroOn;
+          if (gyroOn && !povKeys.l && !povKeys.r) { povYawT = POV_GYRO.yaw; povLastKey = now; }
           povYawT = clamp2(povYawT, -1.75, 1.75);
           if (!povKeys.l && !povKeys.r && now - povLastKey > 4000) povYawT *= Math.exp(-dt * 0.8);
           // the head turns towards Steam on its own as you pass it, unless you are steering
@@ -34147,16 +34405,17 @@ void main() {
         const onA = state.branch === "A" && !siteMode;
         const Lh = (k, x, z) => routeLAt(k, x, z);
         const Lrom = Lh("rom", 1150, 5140), Lsteam = Lh("steam", 985, 5640);
-        const Loma = Lh("oma2", 706, 4440), Lsip = Lh("sip", 706, 5000), Lyo = Lh("yoshi", 706, 5360), Lbe = Lh("berero", 706, 5720);
+        const Lsip = Lh("sip87", 706, 4440), Loma = Lh("oma87", 706, 4985), Lyo = Lh("yoshi87", 706, 5175), Lbe = Lh("berero87", 706, 5480);
         const inW = (a2, b2) => onA && state.L > a2 && state.L < b2;
         showPoi(ui.scfTag, inW(Lrom - 330, Lrom + 230));
         showPoi(ui.artisanTag, inW(Lrom - 330, Lrom + 230));
         showPoi(ui.steamTag, inW(Lsteam - 300, Lsteam + 120));
         showPoi(ui.craftTag, inW(Lsteam - 300, Lsteam + 120));
-        showPoi(ui.omaTag, inW(Loma - 260, (Loma + Lsip) / 2 - 20));
-        showPoi(ui.sipTag, inW((Loma + Lsip) / 2 + 20, (Lsip + Lyo) / 2 - 20));
-        showPoi(ui.yoshiTag, inW((Lsip + Lyo) / 2 + 20, (Lyo + Lbe) / 2 - 20));
-        showPoi(ui.bereroTag, inW((Lyo + Lbe) / 2 + 20, Lbe + 70));
+        // Sip comes after the Two Minutes cards have gone, while the mountain opens up behind it
+        showPoi(ui.sipTag, inW(Lsip + 60, Loma - 300));
+        showPoi(ui.omaTag, inW(Loma - 300, (Loma + Lyo) / 2 - 10));
+        showPoi(ui.yoshiTag, inW((Loma + Lyo) / 2 + 10, (Lyo + Lbe) / 2 - 20));
+        showPoi(ui.bereroTag, inW((Lyo + Lbe) / 2 + 20, Lbe + 110));
         // one service card at a time, evenly spaced from the merge to Olari 9, alternating sides
         const svcA = route.stopL.merge + 900, svcB = route.stopL.end - 80;
         const svcF = (state.L - svcA) / (svcB - svcA);
@@ -34176,7 +34435,8 @@ void main() {
             if (b.br === "A") {
               const La = routeLAt("arcalook", 560, 5930), slot = { "ARCA Resort": [-300, -120], "Antila": [-120, 40], "UNDE": [40, 200] }[b.name];
               on = slot ? state.L > La + slot[0] && state.L < La + slot[1] : state.L > Lb - 130 && state.L < Lb + 70;
-            } else on = state.L > Lb - 380 && state.L < Lb + 240;
+            } else if (b.br === "C" && b.kind === "clinic") on = state.L > Lb - 200 && state.L < Lb + 50;
+            else on = state.L > Lb - 380 && state.L < Lb + 240;
           }
           showPoi(t, on);
         }
