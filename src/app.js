@@ -30751,7 +30751,12 @@ void main() {
     const takeoffBtn = el("button", "round-btn takeoff gone", `<span class="to-ic" aria-hidden="true">\u2708</span><span class="to-txt">Take off</span>`);
     takeoffBtn.title = "Take off: fly high over the city";
     takeoffBtn.onclick = () => api.toggleTakeoff?.();
-    hud.append(wxBtn, vehBtn, takeoffBtn, themeBtn, vehMenu, themeMenu);
+    // r89: the map: a second way through the same world
+    const mapBtn = el("button", "round-btn map-btn", `<svg class="mp-ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M9 4v13.5M15 6.5V20" fill="none" stroke="currentColor" stroke-width="2.2"/></svg><span class="to-txt">Map</span>`);
+    mapBtn.title = "The map: pick a place and the van drives you there";
+    mapBtn.setAttribute("aria-label", "Open the map");
+    mapBtn.onclick = () => { closeMenus(); api.toggleMap?.(); };
+    hud.append(wxBtn, vehBtn, takeoffBtn, mapBtn, themeBtn, vehMenu, themeMenu);
     wxBtn.classList.add("gone");
     hud.appendChild(chapterMenu);
     chapterMenu.style.display = "none";
@@ -32010,6 +32015,7 @@ void main() {
       }
       var api = {
         toggleSite() { setSiteMode(!siteMode); },
+        toggleMap() { setMapMode(!mapMode); },
         siteXP(pts, title, desc) { xpLand({ pts, title, desc }); },
         vehicleId: () => state.vehicleId,
         getBranch: () => state.branch,
@@ -33817,13 +33823,14 @@ void main() {
         const rawDt = Math.min(0.25, (now - prevT) / 1e3);
         prevT = now;
         // held arrow keys drive continuously, like a pedal
-        if (kbHold && !siteMode && maxScroll() > 0) {
+        if (kbHold && !siteMode && !mapMode && maxScroll() > 0) {
           window.scrollBy({ top: kbHold * 560 * rawDt * maxScroll() / effectiveTotal(), behavior: "instant" });
           lastUserInput = now; userBurst = true;
         }
         if (siteMode) siteProg = smooth(siteProg, siteScroll(), dt, 4), siteT += dt;
         const sc = siteMode ? 0.5 : maxScroll() > 0 ? clamp2(window.scrollY / maxScroll(), 0, 1) : 0;
         state.targetL = sc * effectiveTotal();
+        if (mapMode) state.targetL = mapNav.targetL;
         const nearDacia = state.L > route.stopL.merge - 1500 && state.L < route.stopL.merge - 250;
         const crawl = coffee.near && !coffee.done || nearDacia;
         if (siteMode) { state.targetL = state.L; state.speed = 0; }
@@ -33834,16 +33841,16 @@ void main() {
         }
         // a calm city speed everywhere on the ground (chapter jumps and the flight excepted)
         if (!siteMode && now > jumpGuard && prevL < route.stopL.end + 400) {
-          const maxStep = 620 * dt;
+          const maxStep = (mapMode ? 1150 : 620) * dt;
           state.L = clamp2(state.L, prevL - maxStep, prevL + maxStep);
         }
         {
           const cLnow = prevL - route.stopL.fork;
-          if (!siteMode && state.branch !== "A" && state.branchChosen && cLnow > 150 && prevL < routeLAt(`join-${state.branch}`, 1250, 6100) && now > jumpGuard) {
+          if (!siteMode && !mapMode && state.branch !== "A" && state.branchChosen && cLnow > 150 && prevL < routeLAt(`join-${state.branch}`, 1250, 6100) && now > jumpGuard) {
             const maxStep = 430 * dt;
             state.L = clamp2(state.L, prevL - maxStep, prevL + maxStep);
           }
-          if (!siteMode && state.branch === "A" && cLnow > 700 && cLnow < 2560 && now > jumpGuard) {
+          if (!siteMode && !mapMode && state.branch === "A" && cLnow > 700 && cLnow < 2560 && now > jumpGuard) {
             const nearSteam = Math.abs(prevL - routeLAt("steamcam", 985, 5640)) < 540;
             // a speed limiter at ARCA: the resort rolls past slowly, like a 30 zone
             const nearArca = Math.abs(prevL - routeLAt("arcalook", 560, 5930)) < 420;
@@ -33853,7 +33860,7 @@ void main() {
         }
         // when the wheel/trackpad/keys go quiet, the car stops close to where it is instead of
         // coasting on to catch up with a scroll position far ahead
-        if (userBurst && now - lastUserInput > 170 && now > jumpGuard && !siteMode && !police.active && state.L < route.stopL.end + 400) {
+        if (userBurst && now - lastUserInput > 170 && now > jumpGuard && !siteMode && !mapMode && !police.active && state.L < route.stopL.end + 400) {
           userBurst = false;
           const lag = state.targetL - state.L;
           if (Math.abs(lag) > 45) {
@@ -33910,7 +33917,8 @@ void main() {
           }
         }
         // the plane turns round when you scroll back
-        planeRev = smooth(planeRev, veh.kind === "plane" && dL < -0.4 ? 1 : dL > 0.4 ? 0 : planeRev, dt, 3);
+        // on the map every vehicle turns round when it has to go back
+        planeRev = smooth(planeRev, (veh.kind === "plane" || mapMode) && dL < -0.4 ? 1 : dL > 0.4 ? 0 : planeRev, dt, 3);
         const targetHeading = Math.atan2(carTan.x, carTan.z) + (planeRev > 0.5 ? Math.PI : 0);
         let dh = targetHeading - heading;
         while (dh > Math.PI) dh -= Math.PI * 2;
@@ -33978,7 +33986,7 @@ void main() {
           c.rotation.x = wheelSpin;
         });
         if (veh.prop) veh.prop.rotation.z += dt * (18 + state.speed * 0.4);
-        if (state.started && !siteMode && !flying && air < 0.05 && !police.active && state.vehicleId !== "cop" && (redHold > 2.5 || state.targetL - state.L > 9000) && now > police.next && now > jumpGuard) {
+        if (state.started && !siteMode && !mapMode && !flying && air < 0.05 && !police.active && state.vehicleId !== "cop" && (redHold > 2.5 || state.targetL - state.L > 9000) && now > police.next && now > jumpGuard) {
           police.active = true;
           police.until = now + 1e4;
           copCar.group.visible = true;
@@ -34116,7 +34124,7 @@ void main() {
         {
           const cLp = state.L - route.stopL.fork;
           const Lc = routeLAt("tmexit", 820, 4330) - route.stopL.fork;
-          let pk = state.branch === "A" && !siteMode && !(carPos.y > 30) && !window.__camO && SCHEMES[state.schemeIdx].id !== "gta2" && !(coffee.near && !coffee.done && coffee.phase !== "idle") ? clamp2(Math.min((cLp - (Lc - 90)) / 150, (2640 - cLp) / 160), 0, 1) : 0;
+          let pk = state.branch === "A" && !siteMode && !mapMode && !(carPos.y > 30) && !window.__camO && SCHEMES[state.schemeIdx].id !== "gta2" && !(coffee.near && !coffee.done && coffee.phase !== "idle") ? clamp2(Math.min((cLp - (Lc - 90)) / 150, (2640 - cLp) / 160), 0, 1) : 0;
           pk = pk * pk * (3 - 2 * pk);
           povK = smooth(povK, pk, dt, 3);
           if (povKeys.l) povYawT += dt * 1.6;
@@ -34160,12 +34168,13 @@ void main() {
         }
         // dev hook: window.__cam([x,y,z],[tx,ty,tz]) parks the camera for inspection
         if (window.__camO) { camPos.fromArray(window.__camO[0]); camTarget.fromArray(window.__camO[1]); }
+        else if (mapMode && mapUI) { mapUI.update(dt, now); camPos.copy(mapView.pos); camTarget.copy(mapView.tgt); }
         // exponential damping, frame-rate independent; the look target is damped too, so
         // set-piece cameras (fork, coffee, Dacia, spiral) blend in instead of cutting
         if (!window.__lookSm) window.__lookSm = camTarget.clone();
         // in the street POV the camera rides with you: damping tightens as the POV takes over
-        const kp = 1 - Math.exp(-dt * (window.__camO ? 12 : 2.8 + 26 * povK * povK));
-        const kt = 1 - Math.exp(-dt * (window.__camO ? 12 : 6 + 12 * povK * povK));
+        const kp = 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 : 2.8 + 26 * povK * povK));
+        const kt = 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 : 6 + 12 * povK * povK));
         camera.position.lerp(camPos, kp);
         window.__lookSm.lerp(camTarget, kt);
         camera.lookAt(window.__lookSm);
@@ -34201,12 +34210,14 @@ void main() {
         if (SCHEMES[state.schemeIdx].id === "monument") { sun.color.set("#ffe0c2"); sun.intensity = 2.4 * curSun.int; }
         if (SCHEMES[state.schemeIdx].id === "underwater") { sun.color.set("#b5f3ff"); sun.intensity = 1.5; }
         const sr = 1500;
+        // on the map the shadows follow what you look at, not the van
+        const sunC = mapMode ? mapView.tgt : carPos;
         sun.position.set(
-          carPos.x + Math.cos(curSun.az) * sr * Math.cos(curSun.el),
+          sunC.x + Math.cos(curSun.az) * sr * Math.cos(curSun.el),
           Math.max(300, sr * Math.sin(curSun.el)),
-          carPos.z + Math.sin(curSun.az) * sr * Math.cos(curSun.el) - 400
+          sunC.z + Math.sin(curSun.az) * sr * Math.cos(curSun.el) - 400
         );
-        sun.target.position.set(carPos.x, 0, carPos.z);
+        sun.target.position.set(sunC.x, 0, sunC.z);
         const wantRain = wx === "rain" && state.weatherOn && !flying;
         if (wantRain) {
           boltTimer -= dt;
@@ -34307,7 +34318,7 @@ void main() {
         }
         const nearTM = state.branch === "A" && carPos.z > 4090 && carPos.z < 4430 && carPos.x > 830 && carPos.x < 1150;
         coffee.near = nearTM;
-        if (!coffee.done && coffee.phase === "idle" && nearTM) {
+        if (!coffee.done && coffee.phase === "idle" && nearTM && !mapMode) {
           coffee.phase = "sip1";
           coffee.t = 0;
         }
@@ -34459,7 +34470,7 @@ void main() {
         } else placeAnchor(ui.addrCard, 1068, 205, 9260, nearEnd, isMobile() ? window.innerHeight * 0.34 : void 0);
         if (state.L > 200) ui.hint.classList.add("gone");
         // the manifesto lives at the spawn point: on while you are there, paused when you leave
-        if (kinetic && now > kineticArmedAt) {
+        if (kinetic && now > kineticArmedAt && !mapMode) {
           if (siteMode) {
             const st = siteEl ? siteEl.scrollTop : 1e9;
             if (st < innerHeight * 0.25 && now - siteKzAt > 900) kinetic.resume();
@@ -34469,6 +34480,281 @@ void main() {
         }
         if (mvK > 0.5) tiltShiftRender(now); else outline.render(scene, camera);
         requestAnimationFrame(frame);
+      }
+      // ===================== r89: Map Mode =====================
+      // A second way through the same world: the Monument diorama seen from above, pins on the
+      // places that matter, and the van driving itself there along the real roads. Pick a place,
+      // the van goes; when it arrives the place opens. Drag to move, wheel or pinch to zoom.
+      var mapMode = false, mapBoot = /[?&]map\b/.test(location.search), mapUI = null, mapPrev = null;
+      var mapView = { tgt: new Vector3(1250, 0, 2200), pos: new Vector3(), dist: 6400, yaw: 0.3, pitch: 0.95, vx: 0, vz: 0, follow: true };
+      var mapNav = { targetL: 0, legs: [], place: null, moving: false };
+      var MAP_STREET = { A: "COFFEE STREET", B: "FINTECH BOULEVARD", C: "MEDICAL AVENUE" };
+      var MAP_PLACES = [
+        { id: "dream", stop: "dream", name: "The Dream", line: "CH.01 \xB7 STRATEGY", c: "#B098C8", t: "#1a1420" },
+        { id: "voice", stop: "voice", name: "The Voice", line: "CH.02 \xB7 BRAND VOICE", c: "#F65342", t: "#ffffff" },
+        { id: "world", stop: "world", name: "The World", line: "CH.03 \xB7 PLACES", c: "#119BFE", t: "#ffffff" },
+        { id: "crowd", stop: "crowd", name: "The Crowd", line: "CH.04 \xB7 COMMUNITY", c: "#28C840", t: "#0d2410" },
+        { id: "team", stop: "team", name: "The Crew", line: "CH.05 \xB7 10 WILD BRAINS", c: "#FED012", t: "#111111" },
+        { id: "tm", br: "A", x: 1060, z: 4262, px: 1010, pz: 4130, h: 70, name: "Two Minutes", line: "COFFEE \xB7 BRAND \xB7 FILM", c: "#111111", t: "#ffffff", act: "tmMedia", desc: "A specialty coffee shop brand made to be loved fast and remembered long, with Two Min Lab bottled drinks and coffee boxes." },
+        { id: "oma", br: "A", x: 706, z: 4985, h: 80, name: "OMA Coffee", line: "BRAȘOV \xB7 AT THE FOOT OF T\xC2MPA", c: "#4a7c4e", t: "#ffffff", act: "omaTag" },
+        { id: "yoshi", br: "A", x: 706, z: 5175, h: 60, name: "Yoshi Izakaya", line: "COMMUNICATION \xB7 CONTENT", c: "#F4876F", t: "#2a0f08", act: "yoshiTag" },
+        { id: "scf", br: "A", x: 1150, z: 5140, h: 110, name: "Slow Coffee Festival", line: "ROMEXPO \xB7 2021–2025", c: "#5B4B9E", t: "#ffffff", act: "scfTag" },
+        { id: "steam", br: "A", x: 985, z: 5640, h: 150, name: "Steam Coffee Shop", line: "BRANDING \xB7 GROWTH \xB7 PRODUCT", c: "#2f9e4f", t: "#ffffff", act: "steamTag", desc: "A pioneer coffee brand refreshed for its community: new energy for the people who were there from the start." },
+        { id: "arca", br: "A", x: 560, z: 5930, h: 70, name: "ARCA Resort", line: "CAVIAR \xB7 PACKAGING \xB7 LIVERY", c: "#7a1f2b", t: "#ffffff", work: "ARCA Resort", desc: "Caviar tins, a delivery van and smoked-fish trays for a resort in Blăgești with its own ponds, plus Antila and UND\xC9 next door." },
+        { id: "invest", br: "B", x: 2205, z: 4500, h: 170, name: "Investimental", line: "FINTECH \xB7 UX \xB7 UI", c: "#119BFE", t: "#ffffff", work: "Investimental" },
+        { id: "tac", br: "C", x: 1790, z: 4570, px: 1700, h: 190, name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
+        { id: "zdrovit", br: "C", x: 1720, z: 5070, h: 70, name: "Zdrovit", line: "8 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health, clinic, beauty and perfume brands, from Bucharest to Barcelona, Los Angeles and Paris." },
+        { id: "services", stop: "services", name: "Full Tank", line: "CH.07 \xB7 EVERYTHING WE DO", c: "#28C840", t: "#0d2410" },
+        { id: "end", stop: "end", name: "Strada Olari 9", line: "THE STUDIO \xB7 COME BY", c: "#FED012", t: "#111111", beacon: true }
+      ];
+      function mapPlaceL(pl) {
+        if (pl.stop) return route.stopL[pl.stop];
+        let best = 0, bd = Infinity;
+        for (let i = 0; i < route.points.length; i++) {
+          const p = route.points[i], d = (p.x - pl.x) ** 2 + (p.z - pl.z) ** 2;
+          if (d < bd) { bd = d; best = i; }
+        }
+        return route.cum[best];
+      }
+      function mapSwitchBranch(b) {
+        if (state.branchChosen && state.branch === b && route.branch === b) return;
+        state.branch = b;
+        state.branchChosen = true;
+        route.setBranch(b);
+        rebuildGolden();
+      }
+      // plan the drive: back to the fork when the place is on another street, then on to it
+      function mapGo(pl) {
+        const forkL = route.stopL.fork;
+        const legs = [];
+        // the route itself is the truth: the drive drops branchChosen whenever you are back before the fork
+        const onStreet = state.L > forkL + 10;
+        const after = pl.stop === "services" || pl.stop === "end";
+        if (pl.br) {
+          if (onStreet && route.branch !== pl.br) legs.push({ L: forkL - 60, then: pl.br });
+          else legs.push({ then: pl.br });
+        } else if (after && !onStreet) legs.push({ then: "C" });
+        legs.push({ place: pl });
+        mapNav.legs = legs;
+        mapNav.place = pl;
+        mapNav.moving = true;
+        mapView.follow = true;
+        document.body.classList.add("map-moving");
+        mapUI.hideCard();
+        mapUI.mark();
+        mapNextLeg();
+      }
+      function mapNextLeg() {
+        const leg = mapNav.legs[0];
+        if (!leg) return;
+        if (leg.L == null && leg.then) { mapSwitchBranch(leg.then); mapNav.legs.shift(); return mapNextLeg(); }
+        mapNav.targetL = leg.place ? mapPlaceL(leg.place) : leg.L;
+      }
+      function mapStep() {
+        if (!mapNav.moving) return;
+        if (Math.abs(state.L - mapNav.targetL) > 4) return;
+        const leg = mapNav.legs.shift();
+        if (leg && leg.then && leg.L != null) mapSwitchBranch(leg.then);
+        if (mapNav.legs.length) return mapNextLeg();
+        mapNav.moving = false;
+        document.body.classList.remove("map-moving");
+        mapUI.arrive(mapNav.place);
+      }
+      function buildMapUI() {
+        const box = el("div", "map-ui");
+        const pinsEl = el("div", "map-pins");
+        const visited = new Set();
+        try { JSON.parse(localStorage.getItem("cz-map-visited") || "[]").forEach((v) => visited.add(v)); } catch {}
+        const top = el("div", "map-top", `<span class="map-title"><i class="mono">CROMATIC WORLD</i><b>The map</b></span><span class="map-count mono"></span><button class="map-exit"><span>←</span> Back to the drive</button>`);
+        const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="van" aria-label="Find the van" title="Find the van">◎</button>`);
+        const dock = el("div", "map-dock", `<span class="map-dock-h mono">WHERE TO?</span><div class="map-chips"></div>`);
+        const card = el("div", "map-card hidden");
+        box.append(pinsEl, top, zoom, dock, card);
+        ui.root.appendChild(box);
+        top.querySelector(".map-exit").onclick = () => setMapMode(false);
+        const chips = dock.querySelector(".map-chips");
+        const pins = MAP_PLACES.map((pl) => {
+          const s0 = pl.stop ? STOPS.find((s) => s.id === pl.stop) : null;
+          pl.wx = pl.px ?? (s0 ? s0.x : pl.x);
+          pl.wz = pl.pz ?? (s0 ? s0.y : pl.z);
+          pl.wy = pl.h ?? 55;
+          const b = el("button", `map-pin${pl.beacon ? " beacon" : ""}`, `<span class="mp-label"><b>${pl.name}</b><i class="mono">${pl.line}</i></span><span class="mp-stem"></span><span class="mp-dot"></span>`);
+          b.style.setProperty("--pc", pl.c); b.style.setProperty("--pt", pl.t);
+          b.onclick = (e) => { e.stopPropagation(); mapGo(pl); };
+          pinsEl.appendChild(b);
+          const ch = el("button", "map-chip", `<span class="mc-dot"></span>${pl.name}`);
+          ch.style.setProperty("--pc", pl.c); ch.style.setProperty("--pt", pl.t);
+          ch.onclick = () => mapGo(pl);
+          chips.appendChild(ch);
+          return { pl, b, ch };
+        });
+        const mark = () => {
+          for (const p of pins) {
+            const v = visited.has(p.pl.id), on = mapNav.place === p.pl;
+            p.b.classList.toggle("visited", v); p.ch.classList.toggle("visited", v);
+            p.b.classList.toggle("on", on); p.ch.classList.toggle("on", on);
+          }
+          top.querySelector(".map-count").textContent = `${visited.size} / ${MAP_PLACES.length} VISITED`;
+        };
+        mark();
+        // arrival: chapters and Olari 9 use the drive's own cards; brands get a map card
+        const hideCard = () => { card.classList.add("hidden"); document.body.classList.remove("map-at-stop"); };
+        const projectOf = (n) => [...PROJECTS_A1, ...PROJECTS_A2, ...PROJECTS_B1, ...PROJECTS_B2].find((p) => p.name === n || (n === "Steam Coffee Shop" && p.name === "Steam"));
+        const arrive = (pl) => {
+          if (!visited.has(pl.id)) {
+            visited.add(pl.id);
+            try { localStorage.setItem("cz-map-visited", JSON.stringify([...visited])); } catch {}
+            gainXP(5, pl.name, "Found on the map");
+          }
+          mark();
+          if (pl.stop && pl.stop !== "services") { document.body.classList.add("map-at-stop"); refreshCard(true); return; }
+          const pr = projectOf(pl.name);
+          const desc = pl.stop === "services" ? SERVICES.map((sv) => `<span class="mcd-svc" style="--sc:${sv.c}"><b>${sv.t}</b>${sv.items.slice(0, 4).join(" \xB7 ")}</span>`).join("") : `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`;
+          const street = pl.br ? MAP_STREET[pl.br] : pl.line.split(" \xB7 ")[0];
+          card.innerHTML = `<span class="mcd-eyebrow mono">${street}</span><b class="mcd-title" style="--pc:${pl.c};--pt:${pl.t}">${pl.name}</b>${desc}
+            <div class="mcd-actions">${pl.stop === "services" ? "" : `<button class="mcd-open">Open the case →</button>`}<button class="mcd-close" aria-label="Close">×</button></div>`;
+          card.querySelector(".mcd-close").onclick = hideCard;
+          const open = card.querySelector(".mcd-open");
+          if (open) open.onclick = () => {
+            const tag = pl.work ? ui.workTags.find((t) => t._st && t._st.name === pl.work) : ui[pl.act];
+            tag?.click();
+          };
+          card.classList.remove("hidden");
+        };
+        zoom.onclick = (e) => {
+          const z = e.target.closest("button")?.dataset.z;
+          if (z === "in") mapView.dist = Math.max(1900, mapView.dist / 1.35);
+          if (z === "out") mapView.dist = Math.min(13000, mapView.dist * 1.35);
+          if (z === "van") mapView.follow = true;
+        };
+        // drag to move, wheel or pinch to zoom, a flick keeps gliding
+        const ptrs = new Map();
+        let pinch0 = 0, dist0 = 0, last = 0;
+        const canvas = renderer.domElement;
+        const pxScale = () => (2 * mapView.dist * Math.tan(camera.fov * Math.PI / 360)) / innerHeight;
+        const pan = (dx, dy) => {
+          const k = pxScale(), sy = Math.sin(mapView.yaw), cy = Math.cos(mapView.yaw), fp = 1 / Math.sin(mapView.pitch);
+          // screen right = (cos yaw, -sin yaw); screen up on the ground = (-sin yaw, -cos yaw)
+          const wx = -dx * k * cy + dy * k * fp * -sy, wz = dx * k * sy + dy * k * fp * -cy;
+          mapView.tgt.x += wx; mapView.tgt.z += wz;
+          return [wx, wz];
+        };
+        canvas.addEventListener("pointerdown", (e) => {
+          if (!mapMode) return;
+          canvas.setPointerCapture?.(e.pointerId);
+          ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          mapView.vx = mapView.vz = 0;
+          if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); dist0 = mapView.dist; }
+        });
+        canvas.addEventListener("pointermove", (e) => {
+          if (!mapMode || !ptrs.has(e.pointerId)) return;
+          const p = ptrs.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y;
+          p.x = e.clientX; p.y = e.clientY;
+          if (ptrs.size === 2) {
+            const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+            if (pinch0 > 0) mapView.dist = Math.min(13000, Math.max(1900, dist0 * pinch0 / Math.max(d, 1)));
+            pan(dx / 2, dy / 2);
+            return;
+          }
+          mapView.follow = false;
+          const [wx, wz] = pan(dx, dy);
+          const now2 = performance.now(), dtp = Math.max(8, now2 - last) / 1000; last = now2;
+          mapView.vx = wx / dtp; mapView.vz = wz / dtp;
+        });
+        const up = (e) => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = 0; if (performance.now() - last > 90) mapView.vx = mapView.vz = 0; };
+        canvas.addEventListener("pointerup", up);
+        canvas.addEventListener("pointercancel", up);
+        window.addEventListener("wheel", (e) => {
+          if (!mapMode || e.target.closest?.(".map-dock, .mapcard, .hmodal-backdrop, .case-frame, .scf-modal, .map-card")) return;
+          e.preventDefault();
+          mapView.dist = Math.min(13000, Math.max(1900, mapView.dist * Math.exp(e.deltaY * 0.0012)));
+        }, { passive: false });
+        const proj = new Vector3();
+        return {
+          box, mark, arrive, hideCard,
+          update(dt) {
+            mapStep();
+            if (mapView.follow && (mapNav.moving || mapNav.legs.length)) {
+              const k = 1 - Math.exp(-dt * 2.4);
+              mapView.tgt.x += (carPos.x - mapView.tgt.x) * k;
+              mapView.tgt.z += (carPos.z - mapView.tgt.z) * k;
+            } else if (mapView.follow && !mapNav.place) {
+              const k = 1 - Math.exp(-dt * 2.4);
+              mapView.tgt.x += (carPos.x - mapView.tgt.x) * k; mapView.tgt.z += (carPos.z - mapView.tgt.z) * k;
+            }
+            if (!ptrs.size && (mapView.vx || mapView.vz)) {
+              mapView.tgt.x += mapView.vx * dt; mapView.tgt.z += mapView.vz * dt;
+              const f = Math.exp(-dt * 4.2); mapView.vx *= f; mapView.vz *= f;
+              if (Math.hypot(mapView.vx, mapView.vz) < 4) mapView.vx = mapView.vz = 0;
+            }
+            mapView.tgt.x = clamp2(mapView.tgt.x, -300, 2900);
+            mapView.tgt.z = clamp2(mapView.tgt.z, -100, 9900);
+            mapView.tgt.y = 0;
+            const cp = Math.cos(mapView.pitch);
+            mapView.pos.set(mapView.tgt.x + Math.sin(mapView.yaw) * cp * mapView.dist, Math.sin(mapView.pitch) * mapView.dist, mapView.tgt.z + Math.cos(mapView.yaw) * cp * mapView.dist);
+            // pins: projected every frame; labels give way to their neighbours when crowded
+            const W = innerWidth, H = innerHeight, placed = [];
+            const compact = mapView.dist > 8200;
+            const order = pins.map((p) => {
+              proj.set(p.pl.wx, p.pl.wy, p.pl.wz).project(camera);
+              return { p, x: (proj.x * 0.5 + 0.5) * W, y: (-proj.y * 0.5 + 0.5) * H, z: proj.z };
+            }).sort((a, b) => (b.p.pl === mapNav.place) - (a.p.pl === mapNav.place) || a.y - b.y);
+            for (const o of order) {
+              // pins never slide under the top bar (phones: under the map bar either)
+              const off = o.z > 1 || o.x < -80 || o.x > W + 80 || o.y < (W < 720 ? 190 : 110) || o.y > H + 80;
+              o.p.b.classList.toggle("off", off);
+              if (off) continue;
+              const crowd = placed.some((q) => Math.abs(q.x - o.x) < 150 && Math.abs(q.y - o.y) < 46);
+              o.p.b.classList.toggle("mini", compact || crowd);
+              if (!crowd) placed.push(o);
+              o.p.b.style.transform = `translate3d(${o.x.toFixed(1)}px, ${o.y.toFixed(1)}px, 0)`;
+            }
+          }
+        };
+      }
+      function setMapMode(on) {
+        if (on === mapMode) return;
+        if (on && siteMode) setSiteMode(false);
+        mapMode = on;
+        if (on) {
+          if (!mapUI) mapUI = buildMapUI();
+          mapPrev = { scheme: state.schemeIdx, veh: state.vehicleId };
+          kinetic?.pause?.();
+          if (police.active) { police.active = false; copCar.group.visible = false; }
+          if (coffee.phase !== "idle") { coffee.phase = "idle"; ui.coffeeEnd(); }
+          coffee.done = true;
+          airT = 0;
+          // the flight and the secret road are not on the map: land at Olari 9
+          if (state.L > route.stopL.end + 150) { state.L = prevL = route.stopL.end; }
+          state.started = true;
+          const mi = SCHEMES.findIndex((x) => x.id === "monument");
+          if (mi >= 0 && state.schemeIdx !== mi) applyScheme(mi);
+          if (state.vehicleId !== "groovy") api.setVehicle("groovy");
+          veh.group.visible = true;
+          mapNav.targetL = state.L; mapNav.legs = []; mapNav.moving = false; mapNav.place = null;
+          mapView.tgt.set(carPos.x, 0, carPos.z); mapView.follow = true;
+          mapView.dist = innerWidth < 720 ? 7800 : 6400;
+          sun.shadow.camera.left = sun.shadow.camera.bottom = -3000; sun.shadow.camera.right = sun.shadow.camera.top = 3000; sun.shadow.camera.updateProjectionMatrix();
+          scrollSpace.style.display = "none";
+          document.body.classList.add("map-mode");
+          mapUI.box.classList.remove("hidden");
+          mapUI.mark();
+          try { const u = new URL(location.href); u.searchParams.set("map", ""); history.replaceState(null, "", u.pathname + "?map" + u.hash); } catch {}
+        } else {
+          document.body.classList.remove("map-mode", "map-moving", "map-at-stop");
+          mapUI?.box.classList.add("hidden");
+          mapUI?.hideCard();
+          mapNav.legs = []; mapNav.moving = false;
+          sun.shadow.camera.left = sun.shadow.camera.bottom = -SH; sun.shadow.camera.right = sun.shadow.camera.top = SH; sun.shadow.camera.updateProjectionMatrix();
+          if (mapPrev) { if (state.schemeIdx !== mapPrev.scheme) api.setScheme(mapPrev.scheme); else if (state.vehicleId !== mapPrev.veh) api.setVehicle(mapPrev.veh); }
+          // the drive holds you at the fork until a street is chosen: past it, the map's street counts as chosen
+          if (state.L > route.stopL.fork + 10) { state.branch = route.branch; state.branchChosen = true; rebuildGolden(); }
+          if (mvFx) mvFx.group.visible = SCHEMES[state.schemeIdx].id === "monument";
+          scrollSpace.style.display = "";
+          updateScrollSpace();
+          scrollToL(state.L, false);
+          try { history.replaceState(null, "", location.pathname + location.hash); } catch {}
+        }
       }
       window.__cam = (p2, t2) => { window.__camO = p2 ? [p2, t2] : null; };
       window.__goL = (L, br) => { if (br) { const ch = !state.branchChosen || state.branch !== br; state.branch = br; state.branchChosen = true; if (ch) { route.setBranch(br); rebuildGolden(); } } jumpGuard = performance.now() + 2600; window.scrollTo({ top: clamp2(L / effectiveTotal(), 0, 1) * maxScroll(), behavior: "instant" }); state.L = prevL = L; };
@@ -34486,6 +34772,8 @@ void main() {
       };
       window.__camInfo = () => ({ near: camera.near, far: camera.far, fov: camera.fov, bg: scene.background?.getHexString?.(), fog: scene.fog && [scene.fog.color.getHexString(), scene.fog.near, scene.fog.far] });
       window.__site = (on) => setSiteMode(on);
+      window.__map = (on = true) => setMapMode(on);
+      window.__mapGo = (id) => mapGo(MAP_PLACES.find((p) => p.id === id));
       window.__api = api;
       window.__xp = () => ({ pts: state.points, log: xpLog.map((e) => e.title + " +" + e.pts), pending: xpPending && xpPending.title, collected: [...xpCollected], chosen: state.branchChosen, branch: state.branch, card: currentCardStop, veh: state.vehicleId });
       window.__scheme = (id) => api.setScheme(SCHEMES.findIndex((x) => x.id === id));
@@ -34531,6 +34819,8 @@ void main() {
           state.visited.add("start");
           spawnStart = performance.now() + 700;
           startRevealAt = Infinity;
+          // r89: /?map opens straight on the map, no kinetic intro
+          if (mapBoot) { setMapMode(true); return; }
           // the first card is told as kinetic type first; the card itself follows
           kinetic = createKinetic(() => {
             if (siteMode) return;
