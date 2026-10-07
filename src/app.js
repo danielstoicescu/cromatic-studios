@@ -23635,12 +23635,8 @@ void main() {
       // r90: the story road is short now, about as long as Coffee Street: from Strada Muniției
       // you reach the fork between the portfolios in a couple of minutes
       ROUTE_MAIN = [
-        [1040, 2080],
-        [960, 2200],
-        [770, 2390],
-        [720, 2620],
-        [850, 2840],
-        [1130, 2960],
+        // r91: shorter still: you start where The Crowd used to be, a short run from the fork
+        [1345, 3071],
         [1400, 3100],
         [1500, 3320],
         [1500, 4180],
@@ -23728,13 +23724,14 @@ void main() {
       FORK_POS = { x: 1500, y: 4260 };
       RAMP_Y = 10130;
       STOPS = [
-        { id: "start", x: 1040, y: 2080, label: "Str. Muni\u021Biei \xB7 Start" },
-        { id: "manifesto", x: 1000, y: 2140, label: "CH.00 The Table" },
-        // r90: the chapters sit closer together; The Crew left the road and became a button
-        { id: "dream", x: 800, y: 2360, label: "CH.01 The Dream" },
-        { id: "voice", x: 777, y: 2717, label: "CH.02 The Voice" },
-        { id: "world", x: 1031, y: 2918, label: "CH.03 The World" },
-        { id: "crowd", x: 1345, y: 3071, label: "CH.04 The Crowd" },
+        { id: "start", x: 1345, y: 3071, label: "Str. Muni\u021Biei \xB7 Start" },
+        { id: "manifesto", x: 1440, y: 3188, label: "CH.00 The Table" },
+        // r91: the chapters are off the road now, placards scattered around the blocks before
+        // the fork; on the map you find them (and get the points), the drive passes near them
+        { id: "dream", x: 1180, y: 3330, label: "CH.01 The Dream" },
+        { id: "voice", x: 1760, y: 3420, label: "CH.02 The Voice" },
+        { id: "world", x: 1230, y: 3880, label: "CH.03 The World" },
+        { id: "crowd", x: 1780, y: 3960, label: "CH.04 The Crowd" },
         { id: "fork", x: 1500, y: 4260, label: "CH.06 Three routes" },
         { id: "merge", x: 1424, y: 6750, label: "CH.06 Routes merge" },
         { id: "services", x: 1060, y: 8130, label: "CH.07 Services" },
@@ -23828,7 +23825,7 @@ void main() {
         { x: 1900, y: 9700, t: "CARTIERUL OLARI" }
       ];
       STREET_LABELS = [
-        { x: 1105, y: 2040, t: "Strada Muni\u021Biei", a: -56 },
+        { x: 1330, y: 2985, t: "Strada Muni\u021Biei", a: 0 },
         { x: 930, y: 556, t: "Strada Trife\u0219ti", a: -17 },
         { x: 1040, y: 1540, t: "Strada Icoanei", a: 56 },
         { x: 950, y: 2880, t: "Strada Maria Rosetti", a: 24 },
@@ -24510,7 +24507,7 @@ void main() {
     for (let tz = 4500; tz <= 4820; tz += 80) zones.push({ x: 510, y: tz, r: 130 });
     zones.push({ x: 1010, y: 4120, r: 210 });
     zones.push({ x: 1070, y: 6320, r: 250 });
-    zones.push({ x: 1215, y: 2150, r: 150 });
+    zones.push({ x: 1205, y: 3010, r: 150 });
     return zones;
   }
   function isFree(x, y, w, d, zones) {
@@ -27767,7 +27764,7 @@ void main() {
     const parapet = new Mesh(new BoxGeometry(76, 5, 100), new MeshStandardMaterial({ color: "#dcdcd8", roughness: 0.9 }));
     parapet.position.y = 152.5;
     g.add(parapet);
-    g.position.set(1215, 0, 2150);
+    g.position.set(1205, 0, 3010);
     g.traverse((o) => {
       if (o.isMesh) {
         o.castShadow = true;
@@ -28515,7 +28512,7 @@ void main() {
   }
   function buildStart(parent) {
     const g = new Group();
-    g.position.set(1040, 0, 2080);
+    g.position.set(1345, 0, 3071);
     const plaza = new Mesh(new CylinderGeometry(110, 110, 1.4, 48), mats.roadMajor);
     plaza.position.y = 0.7;
     plaza.receiveShadow = true;
@@ -28753,6 +28750,32 @@ void main() {
     return { group: g, stair, carpet: [carpet, edge], glows, glowM, strobe };
   }
   var JET_HOME = { x: 1560, z: 9720 };
+  // r91: the chapters as grey placards on posts, scattered off the road before the fork
+  var CHAPTER_SIGNS = { dream: ["CH.01", "The Dream", "#B098C8"], voice: ["CH.02", "The Voice", "#F65342"], world: ["CH.03", "The World", "#119BFE"], crowd: ["CH.04", "The Crowd", "#28C840"] };
+  function buildChapterSigns(parent) {
+    const postM = new MeshStandardMaterial({ color: "#6f6d68", roughness: 0.7 });
+    for (const [id, [ch, name, col]] of Object.entries(CHAPTER_SIGNS)) {
+      const st = STOPS.find((s) => s.id === id);
+      if (!st) continue;
+      const g = new Group();
+      const tex = canvasTexture(512, 256, (ctx) => {
+        ctx.fillStyle = col; ctx.fillRect(0, 0, 512, 256);
+        ctx.fillStyle = "#ecebe7"; ctx.fillRect(14, 14, 484, 228);
+        ctx.fillStyle = "#8b8984"; ctx.font = '700 34px "JetBrains Mono", monospace'; ctx.fillText(ch, 44, 84);
+        ctx.fillStyle = "#3d3c39"; ctx.font = "800 74px Poppins, Montserrat, sans-serif"; ctx.fillText(name, 40, 178);
+      });
+      const board = new Mesh(new BoxGeometry(46, 23, 1.6), [new MeshStandardMaterial({ color: col }), new MeshStandardMaterial({ color: col }), new MeshStandardMaterial({ color: col }), new MeshStandardMaterial({ color: col }), new MeshStandardMaterial({ map: tex, roughness: 0.8 }), new MeshStandardMaterial({ map: tex, roughness: 0.8 })]);
+      board.position.y = 34;
+      for (const dx of [-15, 15]) { const p = new Mesh(new BoxGeometry(1.6, 26, 1.6), postM); p.position.set(dx, 13, -1); g.add(p); }
+      const shade = new Mesh(new BoxGeometry(46, 23, 0.4), new MeshStandardMaterial({ color: col, transparent: true, opacity: 0.5 }));
+      shade.position.set(2.5, 31.5, -1.4);
+      g.add(board, shade);
+      g.position.set(st.x, 0, st.y);
+      g.rotation.y = 0.3;
+      g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+      parent.add(g);
+    }
+  }
   function buildAirfield(parent) {
     const g = new Group();
     const z0 = 9600, z1 = 11450, X = JET_HOME.x, W = 64;
@@ -28806,6 +28829,7 @@ void main() {
     // the four streets' landmarks go first, so the generic city blocks leave room for them
     buildFourStreets(world);
     const jet = buildAirfield(world);
+    buildChapterSigns(world);
     buildPitLane(world);
     buildRivals(world);
     buildBuildings(world);
@@ -32795,7 +32819,7 @@ void main() {
         }
       }
       function refreshCard(force = false) {
-        if (mapMode && mapBoarding) return;
+        if (mapMode) return;
         const id = state.stopId;
         if (id === "fork" || id === "services" || id === "start" || id === "manifesto") {
           hideCardNow();
@@ -34715,11 +34739,14 @@ void main() {
       var jetFx = { phase: "idle", t: 0, baam: false };
       var MAP_STREET = { A: "COFFEE STREET", B: "FINTECH BOULEVARD", C: "MEDICAL AVENUE" };
       var MAP_PLACES = [
-        { id: "dream", stop: "dream", chapter: true, name: "The Dream", line: "CH.01", c: "#B098C8" },
-        { id: "voice", stop: "voice", chapter: true, name: "The Voice", line: "CH.02", c: "#F65342" },
-        { id: "world", stop: "world", chapter: true, name: "The World", line: "CH.03", c: "#119BFE" },
-        { id: "crowd", stop: "crowd", chapter: true, name: "The Crowd", line: "CH.04", c: "#28C840" },
-        { id: "tm", br: "A", x: 1060, z: 4262, px: 1010, pz: 4130, h: 70, name: "Two Minutes", line: "COFFEE \xB7 BRAND \xB7 FILM", c: "#111111", t: "#ffffff", act: "tmMedia", desc: "A specialty coffee shop brand made to be loved fast and remembered long, with Two Min Lab bottled drinks and coffee boxes." },
+        // finds: placards off the road; you click them where they are, the van stays put
+        { id: "dream", stop: "dream", chapter: true, find: true, h: 44, name: "The Dream", line: "CH.01", c: "#B098C8" },
+        { id: "voice", stop: "voice", chapter: true, find: true, h: 44, name: "The Voice", line: "CH.02", c: "#F65342" },
+        { id: "world", stop: "world", chapter: true, find: true, h: 44, name: "The World", line: "CH.03", c: "#119BFE" },
+        { id: "crowd", stop: "crowd", chapter: true, find: true, h: 44, name: "The Crowd", line: "CH.04", c: "#28C840" },
+        { id: "hq", chapter: true, find: true, px: 1010, pz: 4120, h: 280, name: "C\u0103linescu 54", line: "OUR STUDIO \xB7 2016", c: "#c0392b", pts: 5,
+          desc: "Strada George C\u0103linescu 54: the villa with the red mansard, our studio from 2016, right across the street from Two Minutes. The string of lights still runs from our balcony to their corner." },
+        { id: "tm", br: "A", x: 900, z: 4262, px: 640, pz: 4260, h: 80, name: "Two Minutes", line: "COFFEE \xB7 BRAND \xB7 FILM", c: "#111111", t: "#ffffff", act: "tmMedia", tm: true, desc: "A specialty coffee shop brand made to be loved fast and remembered long. Three double espressos are on us." },
         { id: "oma", br: "A", x: 706, z: 4985, h: 80, name: "OMA Coffee", line: "BRAȘOV \xB7 AT THE FOOT OF T\xC2MPA", c: "#4a7c4e", t: "#ffffff", act: "omaTag" },
         { id: "yoshi", br: "A", x: 706, z: 5175, h: 60, name: "Yoshi Izakaya", line: "COMMUNICATION \xB7 CONTENT", c: "#F4876F", t: "#2a0f08", act: "yoshiTag" },
         { id: "scf", br: "A", x: 1150, z: 5140, h: 110, name: "Slow Coffee Festival", line: "ROMEXPO \xB7 2021–2025", c: "#5B4B9E", t: "#ffffff", act: "scfTag" },
@@ -34729,7 +34756,7 @@ void main() {
         { id: "tac", br: "C", x: 1790, z: 4570, px: 1700, h: 190, name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
         { id: "zdrovit", br: "C", x: 1720, z: 5070, h: 70, name: "Zdrovit", line: "8 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health, clinic, beauty and perfume brands, from Bucharest to Barcelona, Los Angeles and Paris." },
         { id: "services", stop: "services", name: "Full Tank", line: "EVERYTHING WE DO", c: "#28C840", t: "#0d2410" },
-        { id: "end", stop: "end", name: "Strada Olari 9", line: "THE STUDIO \xB7 COME BY", c: "#ffffff", t: "#111111" },
+        { id: "end", stop: "end", name: "Strada Olari 9", line: "THE STUDIO \xB7 COME BY", c: "#ffffff", t: "#111111", pin: "#111111" },
         { id: "jet", x: 1250, z: 9705, px: JET_HOME.x, pz: JET_HOME.z, h: 46, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", beacon: true, board: true }
       ];
       function mapPlaceL(pl) {
@@ -34752,6 +34779,7 @@ void main() {
       // The route itself is the truth: the drive drops branchChosen whenever you are back before the fork
       function mapGo(pl) {
         if (!pl || jetFx.phase !== "idle") return;
+        if (pl.find) return mapUI.find(pl);
         mapCloseBoarding();
         const forkL = route.stopL.fork;
         const legs = [];
@@ -34765,8 +34793,9 @@ void main() {
         mapNav.legs = legs;
         mapNav.place = pl;
         mapNav.moving = true;
-        mapView.follow = true;
+        mapView.follow = true; mapView.focus = null;
         mapView.vx = mapView.vz = 0;
+        if (coffee.phase !== "idle") { coffee.phase = "idle"; coffee.done = true; ui.coffeeEnd(); }
         if (mapView.dist > 7000) mapView.distGoal = innerWidth < 720 ? 6800 : 5600;
         document.body.classList.add("map-moving");
         mapUI.hideCard();
@@ -34876,95 +34905,175 @@ void main() {
           document.body.classList.remove("map-takeoff");
         }
       }
+      function mapShowChapter(id) {
+        ui.clearCard();
+        currentCardStop = null;
+        const content = buildCardContent(id, api, { map: true });
+        ui.card.appendChild(content);
+        const x = el("button", "map-x", "\xD7"); x.setAttribute("aria-label", "Close");
+        x.onclick = () => { document.body.classList.remove("map-at-stop"); ui.card.classList.add("hidden"); };
+        ui.card.appendChild(x);
+        ui.card.classList.remove("hidden", "peek", "contact", "crew-card");
+        document.body.classList.add("map-at-stop");
+      }
+      var vehPreviews = {};
+      // r91: what you collect is a pin in the place's colour, not a tick
+      const pinSVG = (col, cls = "pin-ic") => `<svg class="${cls}" viewBox="0 0 20 26" aria-hidden="true"><path d="M10 1.2C5.2 1.2 1.6 4.8 1.6 9.5c0 6.1 8.4 15.3 8.4 15.3s8.4-9.2 8.4-15.3C18.4 4.8 14.8 1.2 10 1.2z" fill="${col}" stroke="#111" stroke-width="2"/><circle cx="10" cy="9.6" r="3.1" fill="#fff" stroke="#111" stroke-width="1.4"/></svg>`;
       function buildMapUI() {
         const box = el("div", "map-ui");
         const pinsEl = el("div", "map-pins");
         const visited = new Set();
         try { JSON.parse(localStorage.getItem("cz-map-visited") || "[]").forEach((v) => visited.add(v)); } catch {}
         const faces = CREW.slice(0, 4).map((n, i) => `<i style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}">${CREW_FACES[n] ? `<img src="${CREW_FACES[n]}" alt="">` : n.slice(0, 1)}</i>`).join("");
-        const top = el("div", "map-top", `<span class="map-title"><i class="mono">CROMATIC WORLD</i><b>Pick a place</b></span><span class="map-count mono"></span>
+        const top = el("div", "map-top", `<span class="map-title"><i class="mono">CROMATIC WORLD</i><b>Pick a place</b></span><span class="map-count mono"></span><span class="map-found mono"></span>
+          <button class="map-ride" title="Choose your ride"><span class="mr-ic">\u{1F690}</span><b>Ride</b></button>
           <button class="map-crew" title="The crew you travel with"><span class="mcw-faces">${faces}</span><b>Crew</b></button>
           <button class="map-exit" title="The same world as a scroll-driven drive"><span class="me-ic">\u{1F697}</span><span class="me-l">Drive mode</span></button>`);
+        const rides = el("div", "map-rides hidden", `<span class="mono">YOUR RIDE</span><div class="mrs-list">${VEHICLES.map((v) => `<button class="mrs-v" data-v="${v.id}"><span class="mrs-th"></span><b>${v.label}</b></button>`).join("")}</div>`);
         const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="van" aria-label="Find the van" title="Find the van">◎</button>`);
         const dock = el("div", "map-dock", `<span class="map-dock-h mono">WHERE TO?</span><div class="map-chips"></div>`);
         const card = el("div", "map-card hidden");
         const skip = el("button", "kz-skip hidden", `Skip intro <span>→</span>`);
         const baamEl = el("div", "jet-baam hidden", `<b>Wheels up!</b><span>Your boarding pass is on board. We write back within one working day.</span>`);
-        box.append(pinsEl, top, zoom, dock, card, skip, baamEl);
+        box.append(pinsEl, top, rides, zoom, dock, card, skip, baamEl);
         ui.root.appendChild(box);
         top.querySelector(".map-exit").onclick = () => setMapMode(false);
         top.querySelector(".map-crew").onclick = () => openCrew();
+        const paintRides = () => rides.querySelectorAll(".mrs-v").forEach((b) => {
+          b.classList.toggle("on", b.dataset.v === state.vehicleId);
+          const u = vehPreviews[b.dataset.v]; if (u) b.querySelector(".mrs-th").style.backgroundImage = `url(${u})`;
+        });
+        top.querySelector(".map-ride").onclick = (e) => { e.stopPropagation(); paintRides(); rides.classList.toggle("hidden"); };
+        rides.onclick = (e) => {
+          const b = e.target.closest(".mrs-v"); if (!b) return;
+          api.setVehicle(b.dataset.v); veh.group.visible = true; paintRides();
+          setTimeout(() => rides.classList.add("hidden"), 220);
+        };
+        document.addEventListener("pointerdown", (e) => { if (!rides.classList.contains("hidden") && !e.target.closest(".map-rides, .map-ride")) rides.classList.add("hidden"); });
         skip.onclick = () => { kinetic?.finish?.(); mapEndIntro(); };
         const chips = dock.querySelector(".map-chips");
         const pins = MAP_PLACES.map((pl) => {
           const s0 = pl.stop ? STOPS.find((s) => s.id === pl.stop) : null;
           pl.wx = pl.px ?? (s0 ? s0.x : pl.x);
           pl.wz = pl.pz ?? (s0 ? s0.y : pl.z);
-          pl.wy = pl.h ?? (pl.chapter ? 30 : 55);
-          const b = el("button", `map-pin${pl.beacon ? " beacon" : ""}${pl.chapter ? " chapter" : ""}`, pl.chapter
-            ? `<span class="mp-label"><i class="mono">${pl.line}</i><b>${pl.name}</b></span><span class="mp-stem"></span>`
-            : `<span class="mp-label"><b>${pl.name}</b><i class="mono">${pl.line}</i></span><span class="mp-stem"></span><span class="mp-dot"></span>`);
+          pl.wy = pl.h ?? 55;
+          const got = `<span class="mp-got">${pinSVG(pl.pin || pl.c)}</span>`;
+          const b = el("button", `map-pin${pl.beacon ? " beacon" : ""}${pl.chapter ? " chapter" : ""}${pl.find ? " find" : ""}`, pl.chapter
+            ? `<span class="mp-label"><i class="mono">${pl.line}</i><b>${pl.name}</b>${got}</span><span class="mp-stem"></span>`
+            : `<span class="mp-label"><b>${pl.name}</b><i class="mono">${pl.line}</i>${got}</span><span class="mp-stem"></span><span class="mp-dot"></span>`);
           b.style.setProperty("--pc", pl.c); if (pl.t) b.style.setProperty("--pt", pl.t);
           b.onclick = (e) => { e.stopPropagation(); mapGo(pl); };
           pinsEl.appendChild(b);
           let ch = null;
-          if (!pl.chapter) {
-            ch = el("button", `map-chip${pl.beacon ? " beacon" : ""}`, `<span class="mc-dot"></span>${pl.name}`);
+          if (!pl.find) {
+            ch = el("button", `map-chip${pl.beacon ? " beacon" : ""}`, `<span class="mc-dot"></span>${pinSVG(pl.pin || pl.c, "pin-ic mc-pin")}${pl.name}`);
             ch.style.setProperty("--pc", pl.c); ch.style.setProperty("--pt", pl.t);
             ch.onclick = () => mapGo(pl);
             chips.appendChild(ch);
           }
           return { pl, b, ch };
         });
-        const total = MAP_PLACES.filter((p) => !p.chapter).length;
+        const total = MAP_PLACES.filter((p) => !p.find).length, totalF = MAP_PLACES.filter((p) => p.find).length;
         const mark = () => {
-          let n = 0;
+          let n = 0, f = 0;
           for (const p of pins) {
             const v = visited.has(p.pl.id), on = mapNav.place === p.pl;
-            if (v && !p.pl.chapter) n++;
+            if (v) p.pl.find ? f++ : n++;
             p.b.classList.toggle("visited", v); p.b.classList.toggle("on", on);
             if (p.ch) { p.ch.classList.toggle("visited", v); p.ch.classList.toggle("on", on); }
           }
-          top.querySelector(".map-count").textContent = `${n} / ${total} VISITED`;
+          top.querySelector(".map-count").innerHTML = `<b>${n}/${total}</b><i> PLACES</i>`;
+          top.querySelector(".map-found").innerHTML = `<b>${f}/${totalF}</b><i> FOUND</i>`;
+          // the collection: every pin you picked up, in its colour, next to the XP
+          const bar = document.querySelector(".topbar");
+          if (bar) {
+            let row = bar.querySelector(".you-pins");
+            if (!row) { row = el("span", "you-pins"); row.title = "Pins you collected"; bar.appendChild(row); }
+            row.innerHTML = [...visited].map((id) => MAP_PLACES.find((q) => q.id === id)).filter(Boolean).map((q) => pinSVG(q.pin || q.c)).join("");
+            row.classList.toggle("empty", !visited.size);
+          }
+        };
+        // a pin flies from the place to the collection
+        const flyPin = (pl) => {
+          const from = pins.find((q) => q.pl === pl)?.b.getBoundingClientRect(), to = document.querySelector(".topbar .you")?.getBoundingClientRect();
+          if (!from || !to || !from.width) return;
+          const f = el("span", "pin-fly", pinSVG(pl.pin || pl.c));
+          document.body.appendChild(f);
+          const x0 = from.left + from.width / 2, y0 = from.top + 8, x1 = to.right - 24, y1 = to.bottom + 10;
+          const a = f.animate([
+            { transform: `translate(${x0}px, ${y0}px) scale(1)` },
+            { transform: `translate(${(x0 + x1) / 2}px, ${Math.min(y0, y1) - 80}px) scale(1.9)`, offset: 0.45 },
+            { transform: `translate(${x1}px, ${y1}px) scale(.7)` }
+          ], { duration: 950, easing: "cubic-bezier(.45,0,.25,1)" });
+          a.finished.then(() => f.remove(), () => f.remove());
         };
         mark();
-        // arrival: chapters and Olari 9 use the drive's own cards; brands get a map card; the jet boards
         const hideCard = () => {
           card.classList.add("hidden");
-          if (document.body.classList.contains("map-at-stop")) { document.body.classList.remove("map-at-stop"); }
+          if (document.body.classList.contains("map-at-stop")) { document.body.classList.remove("map-at-stop"); ui.card.classList.add("hidden"); }
         };
         const projectOf = (n) => [...PROJECTS_A1, ...PROJECTS_A2, ...PROJECTS_B1, ...PROJECTS_B2].find((p) => p.name === n || (n === "Steam Coffee Shop" && p.name === "Steam"));
-        const arrive = (pl) => {
-          if (!visited.has(pl.id)) {
-            visited.add(pl.id);
-            try { localStorage.setItem("cz-map-visited", JSON.stringify([...visited])); } catch {}
-            if (!pl.chapter) gainXP(5, pl.name, "Found on the map");
+        const visit = (pl) => {
+          if (visited.has(pl.id)) return false;
+          flyPin(pl);
+          visited.add(pl.id);
+          try { localStorage.setItem("cz-map-visited", JSON.stringify([...visited])); } catch {}
+          return true;
+        };
+        // a card on the map: eyebrow, title pill, body, a main action, extra actions
+        const showCard = (pl, eyebrow, body, actions) => {
+          card.innerHTML = `<span class="mcd-eyebrow mono">${eyebrow}</span><b class="mcd-title" style="--pc:${pl.c};--pt:${pl.t || "#fff"}">${pl.name}</b>${body}
+            <div class="mcd-actions">${actions}<button class="mcd-close" aria-label="Close">×</button></div>`;
+          card.querySelector(".mcd-close").onclick = hideCard;
+          card.classList.remove("hidden");
+        };
+        const tagOf = (pl) => (pl.work ? ui.workTags.find((t) => t._st && t._st.name === pl.work) : ui[pl.act]);
+        // finds: the chapters and the old address, clicked where they are
+        const find = (pl) => {
+          mapCloseBoarding();
+          hideCard();
+          mapNav.place = null;
+          mapView.follow = false; mapView.focus = { x: pl.wx, z: pl.wz };
+          if (mapView.dist > 6500) mapView.distGoal = innerWidth < 720 ? 6200 : 5200;
+          if (visit(pl)) {
+            const meta = pl.stop ? STOP_META[pl.stop] : null, pts = pl.pts || meta?.pts || 5;
+            if (pl.stop) xpCollected.add(pl.stop);
+            gainXP(pts, pl.name, pl.stop ? meta.learn : "An old address, found");
           }
           mark();
+          if (pl.stop) return mapShowChapter(pl.stop);
+          showCard(pl, "A FORMER ADDRESS", `<p>${pl.desc}</p>`, "");
+        };
+        const arrive = (pl) => {
+          if (visit(pl)) gainXP(5, pl.name, "Found on the map");
+          mark();
           if (pl.board) { mapOpenBoarding(); return; }
-          if (pl.stop && pl.stop !== "services") {
-            document.body.classList.add("map-at-stop");
-            refreshCard(true);
-            if (!ui.card.querySelector(".map-x")) {
-              const x = el("button", "map-x", "\xD7"); x.setAttribute("aria-label", "Close");
-              x.onclick = () => document.body.classList.remove("map-at-stop");
-              ui.card.appendChild(x);
-            }
+          if (pl.stop === "end") {
+            showCard(pl, "THE STUDIO \xB7 BUCHAREST", `<p>Strada Olari 9, Bucharest. Come by for a coffee: there is always one.</p>
+              <p class="mcd-contact"><a href="mailto:hi@cromaticstudios.com">hi@cromaticstudios.com</a><a href="tel:+40728978068">+40 728 978 068</a></p>`,
+              `<a class="mcd-open mcd-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" fill="currentColor"/></svg>Open in Google Maps</a><button class="mcd-ghost mcd-jet">Board the jet ✈</button>`);
+            card.querySelector(".mcd-jet").onclick = () => mapGo(MAP_PLACES.find((p) => p.id === "jet"));
+            return;
+          }
+          if (pl.stop === "services") {
+            showCard(pl, "EVERYTHING WE DO", SERVICES.map((sv) => `<span class="mcd-svc" style="--sc:${sv.c}"><b>${sv.t}</b>${sv.items.slice(0, 4).join(" \xB7 ")}</span>`).join(""), `<button class="mcd-open mcd-jet">Board the Cromatic Jet ✈</button>`);
+            card.querySelector(".mcd-jet").onclick = () => mapGo(MAP_PLACES.find((p) => p.id === "jet"));
+            return;
+          }
+          if (pl.tm) {
+            // Two Minutes: three double espressos, the boxes come down from our old balcony, a fourth, and the rush
+            coffee.done = false; coffee.phase = "sip1"; coffee.t = 0; coffee.served = 0;
+            mapView.distGoal = innerWidth < 720 ? 3000 : 2500;
+            showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52", `<p>${pl.desc}</p>
+              <button class="mcd-lab"><span><b>Two Min Lab</b><i class="mono">PRODUCTS \xB7 TONIC IONIC \xB7 LABELS</i></span><em>See the lab →</em></button>`,
+              `<button class="mcd-open">Watch the film →</button>`);
+            card.querySelector(".mcd-open").onclick = () => ui.tmMedia?.click();
+            card.querySelector(".mcd-lab").onclick = () => ui.labTag?.click();
             return;
           }
           const pr = projectOf(pl.name);
-          const desc = pl.stop === "services" ? SERVICES.map((sv) => `<span class="mcd-svc" style="--sc:${sv.c}"><b>${sv.t}</b>${sv.items.slice(0, 4).join(" \xB7 ")}</span>`).join("") : `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`;
-          const street = pl.br ? MAP_STREET[pl.br] : pl.line.split(" \xB7 ")[0];
-          card.innerHTML = `<span class="mcd-eyebrow mono">${street}</span><b class="mcd-title" style="--pc:${pl.c};--pt:${pl.t}">${pl.name}</b>${desc}
-            <div class="mcd-actions">${pl.stop === "services" ? `<button class="mcd-open mcd-jet">Board the Cromatic Jet ✈</button>` : `<button class="mcd-open">Open the case →</button>`}<button class="mcd-close" aria-label="Close">×</button></div>`;
-          card.querySelector(".mcd-close").onclick = hideCard;
-          const open = card.querySelector(".mcd-open");
-          if (open) open.onclick = () => {
-            if (open.classList.contains("mcd-jet")) return mapGo(MAP_PLACES.find((p) => p.id === "jet"));
-            const tag = pl.work ? ui.workTags.find((t) => t._st && t._st.name === pl.work) : ui[pl.act];
-            tag?.click();
-          };
-          card.classList.remove("hidden");
+          showCard(pl, pl.br ? MAP_STREET[pl.br] : pl.line.split(" \xB7 ")[0], `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`, `<button class="mcd-open">Open the case →</button>`);
+          card.querySelector(".mcd-open").onclick = () => tagOf(pl)?.click();
         };
         const baam = () => {
           baamEl.classList.remove("hidden");
@@ -34978,7 +35087,7 @@ void main() {
           mapView.distGoal = null;
           if (z === "in") mapView.distGoal = Math.max(1900, mapView.dist / 1.4);
           if (z === "out") mapView.distGoal = Math.min(13000, mapView.dist * 1.4);
-          if (z === "van") mapView.follow = true;
+          if (z === "van") { mapView.follow = true; mapView.focus = null; }
         };
         // drag to move, wheel or pinch to zoom, a flick keeps gliding
         const ptrs = new Map();
@@ -35007,7 +35116,7 @@ void main() {
             const [wx, wz] = panVec(dx / 2, dy / 2); mapView.tgt.x += wx; mapView.tgt.z += wz;
             return;
           }
-          if (Math.abs(dx) + Math.abs(dy) > 1) mapView.follow = false;
+          if (Math.abs(dx) + Math.abs(dy) > 1) { mapView.follow = false; mapView.focus = null; }
           const [wx, wz] = panVec(dx, dy);
           mapView.tgt.x += wx; mapView.tgt.z += wz;
           const now2 = performance.now(), dtp = Math.max(8, now2 - last) / 1000; last = now2;
@@ -35017,7 +35126,7 @@ void main() {
         canvas.addEventListener("pointerup", up);
         canvas.addEventListener("pointercancel", up);
         window.addEventListener("wheel", (e) => {
-          if (!mapMode || mapIntro || e.target.closest?.(".map-dock, .mapcard, .hmodal-backdrop, .case-frame, .scf-modal, .map-card, .crew-panel")) return;
+          if (!mapMode || mapIntro || e.target.closest?.(".map-dock, .mapcard, .hmodal-backdrop, .case-frame, .scf-modal, .map-card, .crew-panel, .map-rides")) return;
           e.preventDefault();
           mapView.distGoal = null;
           mapView.dist = Math.min(13000, Math.max(1900, mapView.dist * Math.exp(e.deltaY * 0.0012)));
@@ -35037,7 +35146,7 @@ void main() {
           return [0, (topY + botY) / 2 - H / 2];
         };
         return {
-          box, mark, arrive, hideCard, baam, skip,
+          box, mark, arrive, find, hideCard, baam, skip, paintRides,
           update(dt, now) {
             mapStep();
             jetUpdate(dt, now);
@@ -35049,20 +35158,27 @@ void main() {
               mapView.dist += (mapView.distGoal - mapView.dist) * (1 - Math.exp(-dt * 2.2));
               if (Math.abs(mapView.dist - mapView.distGoal) < 6) mapView.distGoal = null;
             }
+            // depth precision: from this far up a near plane of 10 made the road layers flicker
+            const nNear = Math.max(10, mapView.dist * 0.32), nFar = mapView.dist * 3 + 6000;
+            if (Math.abs(camera.near - nNear) > 1 || Math.abs(camera.far - nFar) > 10) { camera.near = nNear; camera.far = nFar; camera.updateProjectionMatrix(); }
             const [fx, fy] = frameOffset();
             const ks = 1 - Math.exp(-dt * 3);
             mapView.sx += (fx - mapView.sx) * ks; mapView.sy += (fy - mapView.sy) * ks;
+            const [ox, oz] = panVec(mapView.sx, mapView.sy);
             if (mapView.follow) {
               const jet = worldRefs.jet, flyingJet = jetFx.phase === "roll" || jetFx.phase === "climb";
               // a climbing jet is followed where it shows on screen, not the ground under it
-            const jp = jet.group.position, lift = flyingJet ? jp.y / Math.tan(mapView.pitch) : 0;
-            const atJet = !flyingJet && mapNav.place?.board && !mapNav.moving;
-            const fxp = flyingJet ? jp.x - Math.sin(mapView.yaw) * lift : atJet ? (carPos.x + JET_HOME.x) / 2 : carPos.x;
-            const fzp = flyingJet ? jp.z - Math.cos(mapView.yaw) * lift : atJet ? (carPos.z + JET_HOME.z) / 2 : carPos.z;
-              const [ox, oz] = panVec(mapView.sx, mapView.sy);
+              const jp = jet.group.position, lift = flyingJet ? jp.y / Math.tan(mapView.pitch) : 0;
+              const atJet = !flyingJet && mapNav.place?.board && !mapNav.moving;
+              const fxp = flyingJet ? jp.x - Math.sin(mapView.yaw) * lift : atJet ? (carPos.x + JET_HOME.x) / 2 : carPos.x;
+              const fzp = flyingJet ? jp.z - Math.cos(mapView.yaw) * lift : atJet ? (carPos.z + JET_HOME.z) / 2 : carPos.z;
               const k = 1 - Math.exp(-dt * (flyingJet ? 11 : 2.6));
               mapView.tgt.x += (fxp + ox - mapView.tgt.x) * k;
               mapView.tgt.z += (fzp + oz - mapView.tgt.z) * k;
+            } else if (mapView.focus) {
+              const k = 1 - Math.exp(-dt * 2.6);
+              mapView.tgt.x += (mapView.focus.x + ox - mapView.tgt.x) * k;
+              mapView.tgt.z += (mapView.focus.z + oz - mapView.tgt.z) * k;
             }
             if (!ptrs.size && (mapView.vx || mapView.vz)) {
               mapView.tgt.x += mapView.vx * dt; mapView.tgt.z += mapView.vz * dt;
@@ -35070,7 +35186,7 @@ void main() {
               if (Math.hypot(mapView.vx, mapView.vz) < 4) mapView.vx = mapView.vz = 0;
             }
             mapView.tgt.x = clamp2(mapView.tgt.x, -300, 2900);
-            mapView.tgt.z = clamp2(mapView.tgt.z, 1300, 11600);
+            mapView.tgt.z = clamp2(mapView.tgt.z, 2300, 11600);
             mapView.tgt.y = 0;
             const cp = Math.cos(mapView.pitch);
             mapView.pos.set(mapView.tgt.x + Math.sin(mapView.yaw) * cp * mapView.dist, Math.sin(mapView.pitch) * mapView.dist, mapView.tgt.z + Math.cos(mapView.yaw) * cp * mapView.dist);
@@ -35120,7 +35236,8 @@ void main() {
           if (state.vehicleId !== "groovy") api.setVehicle("groovy");
           veh.group.visible = true;
           mapNav.targetL = state.L; mapNav.legs = []; mapNav.moving = false; mapNav.place = null;
-          if (intro || state.L < route.stopL.fork) { mapView.tgt.set(1270, 0, 3170); mapView.follow = false; mapView.dist = innerWidth < 720 ? 9800 : 8200; }
+          mapView.focus = null;
+          if (intro || state.L < route.stopL.fork) { mapView.tgt.set(1450, 0, 3640); mapView.follow = false; mapView.dist = innerWidth < 720 ? 7600 : 6000; }
           else { mapView.tgt.set(carPos.x, 0, carPos.z); mapView.follow = true; mapView.dist = innerWidth < 720 ? 7800 : 6400; }
           mapView.distGoal = null;
           sun.shadow.camera.left = sun.shadow.camera.bottom = -3000; sun.shadow.camera.right = sun.shadow.camera.top = 3000; sun.shadow.camera.updateProjectionMatrix();
@@ -35138,6 +35255,8 @@ void main() {
           mapUI?.hideCard();
           mapNav.legs = []; mapNav.moving = false;
           sun.shadow.camera.left = sun.shadow.camera.bottom = -SH; sun.shadow.camera.right = sun.shadow.camera.top = SH; sun.shadow.camera.updateProjectionMatrix();
+          camera.near = 10; camera.far = 45e3; camera.updateProjectionMatrix();
+          if (coffee.phase !== "idle") { coffee.phase = "idle"; ui.coffeeEnd(); }
           if (mapPrev && state.schemeIdx !== mapPrev.scheme) api.setScheme(mapPrev.scheme);
           else applyScheme(state.schemeIdx);
           if (mapPrev && state.vehicleId !== mapPrev.veh && SCHEMES[state.schemeIdx].id !== "monument") api.setVehicle(mapPrev.veh);
@@ -35168,6 +35287,7 @@ void main() {
       window.__map = (on = true) => setMapMode(on);
       window.__mapGo = (id) => mapGo(MAP_PLACES.find((p) => p.id === id));
       window.__takeoff = () => mapTakeoff();
+      window.__mapSet = (d, x, z) => { mapView.dist = d; mapView.distGoal = null; mapView.follow = false; mapView.tgt.set(x, 0, z); };
       window.__api = api;
       window.__xp = () => ({ pts: state.points, log: xpLog.map((e) => e.title + " +" + e.pts), pending: xpPending && xpPending.title, collected: [...xpCollected], chosen: state.branchChosen, branch: state.branch, card: currentCardStop, veh: state.vehicleId });
       window.__scheme = (id) => api.setScheme(SCHEMES.findIndex((x) => x.id === id));
@@ -35203,7 +35323,8 @@ void main() {
         renderer.compile(scene, camera);
         clearInterval(bootT);
         try {
-          ui.setVehiclePreviews(makeVehiclePreviews());
+          vehPreviews = makeVehiclePreviews();
+          ui.setVehiclePreviews(vehPreviews);
         } catch (e) {
         }
         ui.setLoaderPct(100);
@@ -35237,7 +35358,7 @@ void main() {
           });
           kineticArmedAt = performance.now() + 900;
         }, 350);
-        camera.position.set(1040, 860, 670);
+        camera.position.set(1345, 860, 1660);
         requestAnimationFrame((t) => {
           prevT = t;
           frame(t);
