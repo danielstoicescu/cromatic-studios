@@ -2748,9 +2748,9 @@ body.map-mode canvas.gl { touch-action: none; cursor: grab; }
 body.map-mode canvas.gl:active { cursor: grabbing; }
 /* the drive's own furniture steps aside on the map */
 body.map-mode .ui-root > :is(.hud, .dash, .anchors, .pov-hint, .poi-rail, .poi-col, .svc-slide, .jx-row, .next-zone, .scroll-hint, .rush-vignette, .menu-scrim) { display: none !important; }
-body.map-mode .kz, body.map-mode .kz-lens-layer { display: none !important; }
+body.map-mode:not(.kz-intro) .kz, body.map-mode:not(.kz-intro) .kz-lens-layer { display: none !important; }
 body.map-mode .mapcard { display: none !important; }
-body.map-mode.map-at-stop:not(.map-moving) .mapcard { display: flex !important; }
+body.map-mode.map-at-stop:not(.map-moving) .mapcard:not(.contact), body.map-mode.map-boarding .mapcard.contact { display: flex !important; }
 body.map-mode .topbar .site-btn { display: none; }
 
 .map-pins { position: fixed; inset: 0; pointer-events: none; z-index: 12; overflow: hidden; }
@@ -2839,8 +2839,94 @@ body.map-mode .topbar .site-btn { display: none; }
 /* phones: a chapter card on the map floats above the dock instead of covering it */
 @media (max-width: 719px) {
   body.map-mode.map-at-stop .map-zoom { display: none; }
-  body.map-mode .mapcard { bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; left: 12px !important; right: 12px !important; width: auto !important;
+  body.map-mode .mapcard:not(.contact) { bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; left: 12px !important; right: 12px !important; width: auto !important;
     transform: none !important; max-height: 58vh !important; border-radius: 24px !important; border-width: 2.5px !important; z-index: 21; }
   body.map-mode .mapcard .ms-grab { display: none; }
   body.map-mode .mapcard .mc-content { overflow-y: auto !important; touch-action: pan-y !important; }
 }
+
+/* ================= r90: the map is the front door ================= */
+/* the intro plays over the map: only the skip button shows through */
+body.kz-intro .map-ui > :not(.kz-skip) { display: none !important; }
+body.kz-intro .topbar { opacity: 0; pointer-events: none; }
+.kz-skip { position: fixed; z-index: 120; right: 22px; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); height: 48px; padding: 0 20px;
+  border-radius: 999px; border: 2.5px solid #111 !important; background: #fff; color: #111; font: 800 15px/1 Poppins, sans-serif; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 12px 26px -12px rgba(0,0,0,.5); transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
+.kz-skip:hover { transform: translateY(-2px) scale(1.04); background: #FED012; }
+.kz-skip.hidden { display: none; }
+@media (max-width: 719px) { .kz-skip { right: 14px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); height: 44px; font-size: 14px; } }
+
+/* chapters: quiet grey placards with a colour edge, there if you want them */
+.map-pin.chapter .mp-label { background: #ecebe7; color: #5b5a57; border: 2px solid var(--pc); box-shadow: 3px 3px 0 color-mix(in srgb, var(--pc) 55%, transparent); padding: 4px 10px 5px; border-radius: 6px; gap: 0; }
+.map-pin.chapter .mp-label b { font: 700 12px/1.1 Poppins, sans-serif; letter-spacing: 0; }
+.map-pin.chapter .mp-label i { font-size: 7.5px; opacity: .7; display: block !important; }
+.map-pin.chapter .mp-stem { width: 2px; height: 10px; background: #8d8b86; }
+.map-pin.chapter:hover .mp-label { background: #fff; color: #111; }
+.map-pin.chapter.visited .mp-label { opacity: .7; }
+.map-pin.chapter.mini .mp-label i { display: none !important; }
+.map-pin.chapter.mini .mp-label b { font-size: 10.5px; }
+
+/* the crew button: little faces, on the map and in the drive */
+.mcw-faces { display: inline-flex; }
+.mcw-faces i { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #111; background: var(--cc); display: grid; place-items: center;
+  font: 900 10px/1 Montserrat, Poppins, sans-serif; font-style: normal; color: #111; margin-left: -7px; }
+.mcw-faces i:first-child { margin-left: 0; }
+.map-crew { height: 40px; padding: 0 14px 0 8px; border-radius: 999px; border: 2px solid var(--st-ink, #111) !important; background: #fff; color: #111;
+  display: inline-flex; align-items: center; gap: 8px; font: 800 13px/1 Poppins, sans-serif; cursor: pointer; }
+.map-crew:hover { background: var(--accent); }
+.hud .round-btn.crew-btn { width: auto !important; padding: 0 16px 0 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; font: 800 14px/1 Poppins, sans-serif; background: #fff; color: #0d0c09; }
+@media (max-width: 400px) { .hud .round-btn.crew-btn .to-txt { display: none; } .hud .round-btn.crew-btn { padding: 0 10px; } }
+.map-exit .me-ic { font-size: 15px; }
+.crew-panel { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(20,14,24,.35); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); padding: 16px; }
+.crew-panel.hidden { display: none; }
+.crew-box { position: relative; width: min(640px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; padding: 24px 26px 26px; border-radius: 26px;
+  background: var(--card-bg, #faf7f0); color: var(--fg); border: 2.5px solid var(--st-ink, #111); box-shadow: 0 30px 60px -24px rgba(0,0,0,.55); animation: crewIn .45s cubic-bezier(.34,1.4,.64,1); }
+.crew-box p { font-size: 14.5px; line-height: 1.55; margin: 0 0 8px; }
+.crew-box .pill-title { margin-bottom: 10px; }
+@keyframes crewIn { from { opacity: 0; transform: translateY(16px) scale(.97); } }
+.map-x { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--st-ink, #111) !important;
+  background: #fff; color: #111; font: 700 22px/1 Poppins, sans-serif; cursor: pointer; display: grid; place-items: center; z-index: 3; }
+.map-x:hover { background: var(--accent); }
+
+/* chapter cards on the map dock bottom-left (phones: above the dock), clear of the van */
+@media (min-width: 720px) {
+  body.map-mode .mapcard:not(.contact) { left: 22px !important; top: auto !important; bottom: 100px !important; right: auto !important; transform: none !important;
+    width: min(440px, calc(100vw - 44px)) !important; max-height: calc(100vh - 220px) !important; overflow-y: auto !important; }
+  body.map-mode .mapcard.crew-card { width: min(440px, calc(100vw - 44px)) !important; }
+}
+/* boarding: the boarding pass, centred, the map quiet behind it */
+body.map-boarding .map-top, body.map-boarding .map-dock, body.map-boarding .map-zoom, body.map-boarding .map-pins { display: none !important; }
+@media (min-width: 720px) {
+  body.map-mode .mapcard.contact { left: 50% !important; top: 50% !important; right: auto !important; bottom: auto !important; transform: translate(-50%, -50%) !important; position: fixed !important; }
+}
+body.map-mode .mapcard.contact .map-x { top: 14px; right: 14px; }
+body.map-takeoff .map-dock, body.map-takeoff .map-zoom, body.map-takeoff .map-card { opacity: 0; pointer-events: none; transition: opacity .4s; }
+.map-chip.beacon { background: #FED012; }
+.map-chip.beacon .mc-dot { background: #111; }
+
+/* wheels up */
+.jet-baam { position: fixed; z-index: 60; left: 50%; top: 30%; translate: -50% -50%; display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; text-align: center; width: min(640px, calc(100vw - 32px)); }
+.jet-baam.hidden { display: none; }
+.jet-baam b { font: 900 clamp(54px, 11vw, 132px)/.9 Montserrat, Poppins, sans-serif; letter-spacing: -.04em; color: #FED012;
+  -webkit-text-stroke: 3px #111; paint-order: stroke fill; text-shadow: 6px 6px 0 #111; transform: rotate(-4deg); }
+.jet-baam span { font: 700 15px/1.4 Poppins, sans-serif; background: #111; color: #fff; padding: 10px 16px; border-radius: 14px; }
+.jet-baam.go b { animation: baamIn .7s cubic-bezier(.2,1.6,.4,1) both; }
+.jet-baam.go span { animation: baamIn .6s .25s cubic-bezier(.2,1.4,.4,1) both; }
+@keyframes baamIn { from { opacity: 0; transform: scale(.3) rotate(-14deg); } }
+body.map-mode .mapcard .mc-xp { right: 62px; }
+body.map-mode .mapcard .map-x { top: 12px; right: 12px; }
+.mcw-faces i { overflow: hidden; }
+.mcw-faces i img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.me-l { white-space: nowrap; }
+@media (max-width: 719px) {
+  .map-top { padding: 5px; gap: 6px; }
+  .map-title { display: none; }
+  .map-count { margin-left: 4px; white-space: nowrap; }
+  .map-crew { height: 36px; padding: 0 10px 0 6px; font-size: 12px; gap: 6px; }
+  .map-crew .mcw-faces i { width: 20px; height: 20px; }
+  .map-exit { height: 36px; padding: 0 12px; font-size: 12px; gap: 5px; }
+  .map-exit .me-ic { display: inline; font-size: 13px; }
+  body.map-mode .mapcard.contact { top: calc(70px + env(safe-area-inset-top, 0px)) !important; bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important; }
+}
+@media (max-width: 370px) { .map-crew b { display: none; } }
+@media (max-width: 719px) { .map-exit .me-l { display: inline !important; } .map-exit .me-ic { display: none !important; } }
