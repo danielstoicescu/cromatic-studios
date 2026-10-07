@@ -28594,15 +28594,15 @@ void main() {
   function buildCromaticJet() {
     const g = new Group();
     const env = typeof getEnvMap === "function" ? getEnvMap() : null;
-    const yellow = new MeshPhysicalMaterial({ color: "#FED012", roughness: 0.32, metalness: 0.05, clearcoat: 0.8, clearcoatRoughness: 0.18, envMap: env, envMapIntensity: 0.55 });
+    const yellow = new MeshPhysicalMaterial({ color: "#FFCC00", roughness: 0.26, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.12, envMap: env, envMapIntensity: 0.6 });
     const black = new MeshPhysicalMaterial({ color: "#121212", roughness: 0.35, clearcoat: 0.6, clearcoatRoughness: 0.25, envMap: env, envMapIntensity: 0.4 });
     const metal = new MeshStandardMaterial({ color: "#cfd3d8", roughness: 0.25, metalness: 0.9, envMap: env, envMapIntensity: 0.9 });
     const dark = new MeshStandardMaterial({ color: "#1b1d20", roughness: 0.6 });
     const rubber = new MeshStandardMaterial({ color: "#151515", roughness: 0.95 });
     // fuselage: a lathe along z, the tail cone lifted
     const pts = [];
-    for (let i = 0; i <= 60; i++) { const z = -59 + (i / 60) * JET_LEN; pts.push(new Vector2(Math.max(0.001, jetRadius(z)), z + 59)); }
-    const fg = new LatheGeometry(pts, 40);
+    for (let i = 0; i <= 140; i++) { const z = -59 + (i / 140) * JET_LEN; pts.push(new Vector2(Math.max(0.001, jetRadius(z)), z + 59)); }
+    const fg = new LatheGeometry(pts, 72);
     fg.rotateX(Math.PI / 2); fg.translate(0, 0, -59);
     const pa = fg.attributes.position;
     for (let i = 0; i < pa.count; i++) { const z = pa.getZ(i); pa.setY(i, pa.getY(i) + jetLift(z)); }
@@ -28632,13 +28632,6 @@ void main() {
         // the cheatline
         ctx.fillStyle = "#121212"; ctx.fillRect(X(-34), Y(7), X(43) - X(-34), 12);
         ctx.restore();
-        // the wordmark (never mirrored): big, bold, lowercase, under the windows
-        ctx.fillStyle = "#121212"; ctx.textBaseline = "middle"; ctx.textAlign = "center";
-        ctx.font = "900 210px Montserrat, Poppins, sans-serif";
-        const cx = side > 0 ? 2048 - X(6) : X(6);
-        let size = 210;
-        while (ctx.measureText("cromatic studios").width > X(40) - X(-30) && size > 80) { size -= 6; ctx.font = `900 ${size}px Montserrat, Poppins, sans-serif`; }
-        ctx.fillText("cromatic studios", cx, Y(-17));
         tex.needsUpdate = true;
       };
       draw();
@@ -28664,6 +28657,56 @@ void main() {
       return mesh;
     };
     g.add(decal(1), decal(-1));
+    // r92: the wordmark, oversized: "cromatic" down the left side, "studios" down the right,
+    // taller than the fuselage itself so it stands out of the jet's silhouette. Black letters in a
+    // thick white outline, so they read on the yellow and against the sky alike.
+    const word = (txt, side) => {
+      const c = document.createElement("canvas"); c.width = 2048; c.height = 640;
+      const tex = new CanvasTexture(c); tex.colorSpace = SRGBColorSpace; tex.anisotropy = 8;
+      const draw = () => {
+        const ctx = c.getContext("2d");
+        ctx.clearRect(0, 0, 2048, 640);
+        let size = 600;
+        ctx.font = `900 ${size}px Montserrat, Poppins, sans-serif`;
+        while (ctx.measureText(txt).width > 1880 && size > 120) { size -= 10; ctx.font = `900 ${size}px Montserrat, Poppins, sans-serif`; }
+        ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.lineJoin = "round";
+        const y = 470;
+        ctx.lineWidth = 46; ctx.strokeStyle = "#ffffff"; ctx.strokeText(txt, 1024, y);
+        ctx.fillStyle = "#121212"; ctx.fillText(txt, 1024, y);
+        tex.needsUpdate = true;
+      };
+      draw(); document.fonts?.ready?.then(draw);
+      const m = new MeshStandardMaterial({ map: tex, transparent: true, alphaTest: 0.35, roughness: 0.45 });
+      m.userData.outlineParameters = { visible: false };
+      const W = 68, H = W * 640 / 2048;
+      const pl = new Mesh(new PlaneGeometry(W, H), m);
+      pl.rotation.y = side * Math.PI / 2;
+      pl.position.set(side * 8.1, JET_CY + 6.2, 12);
+      return pl;
+    };
+    g.add(word("cromatic", -1), word("studios", 1));
+    // detail: wing-root fairings, leading-edge strips, landing lights, beacons, antennas, APU
+    const wingY = JET_CY - 5.2;
+    for (const s2 of [1, -1]) {
+      const fair = new Mesh(new SphereGeometry(1, 28, 16), yellow); fair.scale.set(5, 3, 21); fair.position.set(5 * s2, JET_CY - 5.4, 7); g.add(fair);
+      g.add(rod(new Vector3(7 * s2, wingY + 0.9, 20.6), new Vector3(49.6 * s2, wingY + 0.9 + 43 * 0.07, 2.6), 0.55, metal, 8));
+      const ll = new Mesh(new SphereGeometry(0.8, 10, 8), new MeshStandardMaterial({ color: "#ffffff", emissive: new Color("#fff4d0"), emissiveIntensity: 1.4 }));
+      ll.position.set(9 * s2, wingY + 0.4, 20); g.add(ll);
+      const door = new Mesh(new BoxGeometry(0.4, 4.5, 6), yellow); door.position.set(5.8 * s2, 4.2, -8); door.rotation.z = 0.25 * s2; g.add(door);
+    }
+    const beaconM = new MeshStandardMaterial({ color: "#ff3b30", emissive: new Color("#ff2a1f"), emissiveIntensity: 0 });
+    for (const [y2, z2] of [[JET_CY + 7.7, 2], [JET_CY - 7.7, 4]]) { const bc = new Mesh(new SphereGeometry(0.75, 10, 8), beaconM); bc.position.set(0, y2, z2); g.add(bc); }
+    for (const [y2, z2, h2] of [[JET_CY + 7.5, 20, 2.4], [JET_CY - 7.4, -14, -2]]) { const an = new Mesh(new BoxGeometry(0.3, Math.abs(h2), 1.6), dark); an.position.set(0, y2 + h2 / 2, z2); an.rotation.x = -0.35 * Math.sign(h2); g.add(an); }
+    const apu = new Mesh(new TorusGeometry(0.55, 0.22, 8, 16), dark); apu.position.set(0, JET_CY + jetLift(-58.6), -58.6); g.add(apu);
+    // engines: a ring of fan blades and an exhaust cone inside each nacelle
+    for (const s2 of [1, -1]) {
+      for (let k = 0; k < 18; k++) {
+        const bl = new Mesh(new BoxGeometry(0.28, 2.7, 0.7), metal);
+        const a2 = (k / 18) * Math.PI * 2; bl.position.set(11.6 * s2 + Math.cos(a2) * 1.5, JET_CY + 5.5 + Math.sin(a2) * 1.5, -25.9); bl.rotation.z = a2 - Math.PI / 2; bl.rotation.y = 0.5;
+        g.add(bl);
+      }
+      const ex = new Mesh(new ConeGeometry(1.6, 3.6, 18), dark); ex.rotation.x = -Math.PI / 2; ex.position.set(11.6 * s2, JET_CY + 5.5, -48.6); g.add(ex);
+    }
     // a flat-ish extruded panel from (x, z) outline points, thickness t, lying in the xz plane
     const panel = (outline, t, mat, bevel = 0.5) => {
       const sh = new Shape(); outline.forEach(([x, z], i) => (i ? sh.lineTo(x, -z) : sh.moveTo(x, -z)));
@@ -28747,7 +28790,7 @@ void main() {
     edge.position.set(-34, 0.2, 38.5);
     g.add(edge, carpet);
     g.traverse((o) => { if (o.isMesh && o.material !== glowM && o.material !== orbM) { o.castShadow = true; } });
-    return { group: g, stair, carpet: [carpet, edge], glows, glowM, strobe };
+    return { group: g, stair, carpet: [carpet, edge], glows, glowM, strobe, beaconM };
   }
   var JET_HOME = { x: 1560, z: 9720 };
   // r91: the chapters as grey placards on posts, scattered off the road before the fork
@@ -28815,6 +28858,18 @@ void main() {
     const jet = buildCromaticJet();
     jet.group.position.set(X, 0, JET_HOME.z);
     parent.add(jet.group);
+    const cm = new MeshLambertMaterial({ color: "#ffffff", emissive: new Color("#fff3f6"), emissiveIntensity: 0.35, flatShading: true });
+    cm.userData.outlineParameters = { visible: false };
+    const cg = [], rc = rng(909);
+    for (let i = 0; i < 26; i++) {
+      const r = 60 + rc() * 70, sp = new IcosahedronGeometry(r, 1);
+      sp.scale(1.5, 0.6, 1.2);
+      sp.translate(X + (rc() - 0.5) * 520, 600 + rc() * 170, 11000 + rc() * 1900);
+      cg.push(sp);
+    }
+    jet.clouds = new Mesh(mergeGeometries(cg), cm);
+    jet.clouds.visible = false;
+    parent.add(jet.clouds);
     for (let z = z0 - 40; z <= z1 + 60; z += 110) EXTRA_KEEPOUT.push({ x: X, y: z, r: 120 });
     EXTRA_KEEPOUT.push({ x: X + 86, y: 9640, r: 90 }, { x: 1420, y: 9705, r: 120 });
     return jet;
@@ -31468,7 +31523,7 @@ void main() {
     root.appendChild(xpLogPanel);
     let xpLogProvider = () => [];
     let logT = null, logHover = false;
-    const logRow = (e) => `<div class="xl-row"><b>${e.title}</b><i>${e.desc}</i></div>`;
+    const logRow = (e) => `<div class="xl-row">${window.__czPinFor?.(e.title) || ""}<b>${e.title}</b><i>${e.desc}</i></div>`;
     const renderLog = () => {
       const log = xpLogProvider();
       xpLogPanel.innerHTML = `
@@ -32001,7 +32056,10 @@ void main() {
         <p class="cc-lesson">Next time, I'll stop at <mark>three</mark> doubles.</p>`;
       },
       coffeeEnd() {
+        // leaving mid-rush used to leave the COFFEE RUSH pill and the vignette on for good
         coffeeCard.classList.add("hidden");
+        rushPill.classList.add("hidden");
+        rushVig.classList.remove("on");
       },
       lightning() {
         bolt.classList.remove("on");
@@ -34858,51 +34916,74 @@ void main() {
         ui.card.classList.add("hidden");
         ui.card.classList.remove("contact");
         ui.clearCard();
-        document.body.classList.remove("map-boarding");
+        document.body.classList.remove("map-boarding", "boarding-aside");
       }
+      // r92: the take-off as a film. The boarding pass slides aside (right on desktop, down on a
+      // phone) and stays; the camera swings low to the jet's side and closes in while it rolls,
+      // speed lines and a shake build with the speed, then it lifts, climbs into a cloud deck and
+      // is gone. Wheels up. The camera comes back, a fresh jet waits on the stand.
       function mapTakeoff() {
         const jet = worldRefs.jet;
         if (!jet || jetFx.phase !== "idle") return;
-        mapCloseBoarding();
-        jetFx.phase = "board"; jetFx.t = 0; jetFx.baam = false;
-        mapView.follow = true; mapView.distGoal = innerWidth < 720 ? 3600 : 2900;
+        jetFx.phase = "board"; jetFx.t = 0; jetFx.baam = false; jetFx.speed = 0;
         document.body.classList.add("map-takeoff");
+        if (mapBoarding) document.body.classList.add("boarding-aside");
+        mapView.follow = true; mapView.focus = null;
+        mapView.distGoal = innerWidth < 720 ? 760 : 620; mapView.distRate = 1.3;
+        mapView.yawGoal = -1.15; mapView.pitchGoal = 0.36;
+        jet.clouds.visible = true;
       }
       function jetUpdate(dt, now) {
         const jet = worldRefs.jet;
         if (!jet) return;
         jet.strobe.emissiveIntensity = Math.sin(now * 0.006) > 0.92 ? 3 : 0;
+        jet.beaconM.emissiveIntensity = Math.sin(now * 0.0045) > 0.6 ? 2.6 : 0.1;
+        jetFx.speed = 0;
         if (jetFx.phase === "idle") return;
         jetFx.t += dt;
         const t = jetFx.t, g = jet.group;
         if (jetFx.phase === "board") {
-          // the stair folds away, the engines spool up
           const k = Math.min(1, t / 1.2);
-          jet.stair.scale.setScalar(1 - k * 0.999); jet.stair.position.set(-7.4 * k * 0.0, 0, 0);
-          jet.glowM.opacity = 0.25 * k;
-          if (t > 1.4) { jetFx.phase = "roll"; jetFx.t = 0; jet.carpet.forEach((c) => (c.visible = false)); }
+          jet.stair.scale.setScalar(1 - k * 0.999);
+          jet.glowM.opacity = 0.3 * k;
+          if (t > 1.8) { jetFx.phase = "roll"; jetFx.t = 0; jet.carpet.forEach((c) => (c.visible = false)); }
         } else if (jetFx.phase === "roll" || jetFx.phase === "climb") {
           const T = t;
-          const zRoll = 0.5 * 70 * Math.min(T, 5) ** 2 + (T > 5 ? 350 * (T - 5) + 0.5 * 40 * (T - 5) ** 2 : 0);
+          // the roll: hard acceleration down the runway
+          const v = T < 5 ? 78 * T : 390 + 40 * (T - 5);
+          const zRoll = T < 5 ? 0.5 * 78 * T * T : 975 + 390 * (T - 5) + 20 * (T - 5) ** 2;
           g.position.z = JET_HOME.z + zRoll;
-          jet.glowM.opacity = Math.min(0.85, 0.25 + T * 0.15);
-          for (const gl of jet.glows) gl.scale.set(1, 1 + Math.sin(now * 0.05) * 0.12, 1);
+          jetFx.speed = Math.min(1, v / 390);
+          jet.glowM.opacity = Math.min(0.9, 0.3 + T * 0.16);
+          for (const gl of jet.glows) gl.scale.set(1, 1 + Math.sin(now * 0.05) * 0.15 + jetFx.speed * 0.6, 1);
           if (T > 5) {
+            // rotate, lift, climb; the camera pulls back to watch it go
             const c = T - 5;
-            g.position.y = c * c * 22;
-            g.rotation.x = -Math.min(0.24, c * 0.16);
-            g.rotation.z = Math.sin(Math.min(1, c / 4) * Math.PI) * 0.12;
-            if (!jetFx.baam) { jetFx.baam = true; mapUI.baam(); }
+            if (jetFx.phase === "roll") { jetFx.phase = "climb"; mapView.distGoal = innerWidth < 720 ? 2600 : 2100; mapView.distRate = 0.8; mapView.pitchGoal = 0.62; mapView.yawGoal = -0.75; }
+            g.position.y = c * c * 30;
+            g.rotation.x = -Math.min(0.26, c * 0.17);
+            g.rotation.z = Math.sin(Math.min(1, c / 4) * Math.PI) * 0.1;
+            jetFx.speed = Math.max(0, 1 - c / 3);
+            // into the clouds
+            if (g.position.y > 690) {
+              g.visible = false; jet.glowM.opacity = 0;
+              jetFx.phase = "gone"; jetFx.t = 0;
+              mapUI.baam();
+            }
           }
-          if (jetFx.phase === "roll" && t > 5) jetFx.phase = "climb";
-          if (T > 6) mapView.distGoal = innerWidth < 720 ? 6200 : 5200;
-          if (T > 11.5) { jetFx.phase = "gone"; jetFx.t = 0; g.visible = false; mapView.follow = false; mapView.distGoal = innerWidth < 720 ? 6800 : 5600; }
-        } else if (jetFx.phase === "gone" && t > 4) {
-          // a fresh jet rolls back onto the stand, stair down, carpet out
-          g.visible = true; g.position.set(JET_HOME.x, 0, JET_HOME.z); g.rotation.set(0, 0, 0);
-          jet.stair.scale.setScalar(1); jet.carpet.forEach((c) => (c.visible = true)); jet.glowM.opacity = 0;
-          jetFx.phase = "idle";
-          document.body.classList.remove("map-takeoff");
+        } else if (jetFx.phase === "gone") {
+          if (t > 2.6 && mapView.yawGoal == null && Math.abs(mapView.yaw - 0.3) > 0.01) {
+            mapView.follow = false; mapView.focus = { x: JET_HOME.x - 120, z: JET_HOME.z + 120 };
+            mapView.yawGoal = 0.3; mapView.pitchGoal = 0.98; mapView.distGoal = innerWidth < 720 ? 5200 : 4200; mapView.distRate = 1;
+          }
+          if (t > 6) {
+            // a fresh jet waits on the stand, stair down, carpet out
+            g.visible = true; g.position.set(JET_HOME.x, 0, JET_HOME.z); g.rotation.set(0, 0, 0);
+            jet.stair.scale.setScalar(1); jet.carpet.forEach((c) => (c.visible = true)); jet.glowM.opacity = 0;
+            jet.clouds.visible = false;
+            jetFx.phase = "idle";
+            document.body.classList.remove("map-takeoff");
+          }
         }
       }
       function mapShowChapter(id) {
@@ -34918,7 +34999,16 @@ void main() {
       }
       var vehPreviews = {};
       // r91: what you collect is a pin in the place's colour, not a tick
-      const pinSVG = (col, cls = "pin-ic") => `<svg class="${cls}" viewBox="0 0 20 26" aria-hidden="true"><path d="M10 1.2C5.2 1.2 1.6 4.8 1.6 9.5c0 6.1 8.4 15.3 8.4 15.3s8.4-9.2 8.4-15.3C18.4 4.8 14.8 1.2 10 1.2z" fill="${col}" stroke="#111" stroke-width="2"/><circle cx="10" cy="9.6" r="3.1" fill="#fff" stroke="#111" stroke-width="1.4"/></svg>`;
+      // a thumbtack: a pale head in the place's colour, a white outline, a fine steel needle
+      const pale = (c) => "#" + new Color(c).lerp(new Color("#ffffff"), 0.42).getHexString();
+      const pinSVG = (col, cls = "pin-ic") => { const p = pale(col), d = "#" + new Color(col).lerp(new Color("#ffffff"), 0.12).getHexString(); return `<svg class="${cls}" viewBox="0 0 24 34" aria-hidden="true"><g transform="rotate(-16 12 14)">
+        <path d="M12 20.5V33" stroke="#9aa0a6" stroke-width="1.5" stroke-linecap="round"/><path d="M12 21v6" stroke="#ffffff" stroke-width=".5" opacity=".7"/>
+        <path d="M8.4 15.6h7.2l-1.3 4.6H9.7z" fill="${d}" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/>
+        <ellipse cx="12" cy="10.2" rx="8.6" ry="6.4" fill="${p}" stroke="#fff" stroke-width="1.7"/>
+        <ellipse cx="12" cy="11.6" rx="7.2" ry="3.6" fill="${d}" opacity=".45"/>
+        <ellipse cx="12" cy="8.9" rx="5.4" ry="3.1" fill="#fff" opacity=".22"/>
+        <ellipse cx="8.8" cy="7.6" rx="1.9" ry="1.05" fill="#fff" opacity=".9"/></g></svg>`; };
+      window.__czPinFor = (title) => { const q = MAP_PLACES.find((p) => p.name === title); return q ? pinSVG(q.pin || q.c, "pin-ic xl-pin") : ""; };
       function buildMapUI() {
         const box = el("div", "map-ui");
         const pinsEl = el("div", "map-pins");
@@ -34935,7 +35025,8 @@ void main() {
         const card = el("div", "map-card hidden");
         const skip = el("button", "kz-skip hidden", `Skip intro <span>→</span>`);
         const baamEl = el("div", "jet-baam hidden", `<b>Wheels up!</b><span>Your boarding pass is on board. We write back within one working day.</span>`);
-        box.append(pinsEl, top, rides, zoom, dock, card, skip, baamEl);
+        const speedEl = el("div", "speed-lines");
+        box.append(speedEl, pinsEl, top, rides, zoom, dock, card, skip, baamEl);
         ui.root.appendChild(box);
         top.querySelector(".map-exit").onclick = () => setMapMode(false);
         top.querySelector(".map-crew").onclick = () => openCrew();
@@ -34984,14 +35075,6 @@ void main() {
           }
           top.querySelector(".map-count").innerHTML = `<b>${n}/${total}</b><i> PLACES</i>`;
           top.querySelector(".map-found").innerHTML = `<b>${f}/${totalF}</b><i> FOUND</i>`;
-          // the collection: every pin you picked up, in its colour, next to the XP
-          const bar = document.querySelector(".topbar");
-          if (bar) {
-            let row = bar.querySelector(".you-pins");
-            if (!row) { row = el("span", "you-pins"); row.title = "Pins you collected"; bar.appendChild(row); }
-            row.innerHTML = [...visited].map((id) => MAP_PLACES.find((q) => q.id === id)).filter(Boolean).map((q) => pinSVG(q.pin || q.c)).join("");
-            row.classList.toggle("empty", !visited.size);
-          }
         };
         // a pin flies from the place to the collection
         const flyPin = (pl) => {
@@ -34999,7 +35082,7 @@ void main() {
           if (!from || !to || !from.width) return;
           const f = el("span", "pin-fly", pinSVG(pl.pin || pl.c));
           document.body.appendChild(f);
-          const x0 = from.left + from.width / 2, y0 = from.top + 8, x1 = to.right - 24, y1 = to.bottom + 10;
+          const x0 = from.left + from.width / 2, y0 = from.top + 8, x1 = to.right - 40, y1 = to.top + to.height / 2;
           const a = f.animate([
             { transform: `translate(${x0}px, ${y0}px) scale(1)` },
             { transform: `translate(${(x0 + x1) / 2}px, ${Math.min(y0, y1) - 80}px) scale(1.9)`, offset: 0.45 },
@@ -35136,11 +35219,13 @@ void main() {
         const frameOffset = () => {
           const W = innerWidth, H = innerHeight, phone = W < 720;
           const vis = (n) => n && !n.classList.contains("hidden") && getComputedStyle(n).display !== "none";
-          const c = vis(card) ? card : document.body.classList.contains("map-at-stop") && vis(ui.card) ? ui.card : null;
-          const topY = phone ? 170 : 100, botY = phone ? H - 74 : H - 96;
+          const aside = document.body.classList.contains("boarding-aside");
+          const c = aside ? ui.card : vis(card) ? card : document.body.classList.contains("map-at-stop") && vis(ui.card) ? ui.card : null;
+          const topY = phone ? (aside ? 60 : 170) : 100, botY = phone ? H - 74 : H - 96;
           if (c) {
             const r = c.getBoundingClientRect();
             if (phone) return [0, (topY + Math.min(botY, r.top)) / 2 - H / 2];
+            if (r.left > W * 0.45) return [Math.max(0, r.left) / 2 - W / 2, 0];
             return [(Math.max(0, r.right) + W) / 2 - W / 2, (topY + botY) / 2 - H / 2];
           }
           return [0, (topY + botY) / 2 - H / 2];
@@ -35155,9 +35240,13 @@ void main() {
             farClouds.visible = false;
             mvFx.group.visible = false;
             if (mapView.distGoal != null) {
-              mapView.dist += (mapView.distGoal - mapView.dist) * (1 - Math.exp(-dt * 2.2));
-              if (Math.abs(mapView.dist - mapView.distGoal) < 6) mapView.distGoal = null;
+              mapView.dist += (mapView.distGoal - mapView.dist) * (1 - Math.exp(-dt * (mapView.distRate || 2.2)));
+              if (Math.abs(mapView.dist - mapView.distGoal) < 6) { mapView.distGoal = null; mapView.distRate = 0; }
             }
+            // the take-off swings the camera round to the side of the jet; it comes back after
+            const ka = 1 - Math.exp(-dt * 1.4);
+            if (mapView.yawGoal != null) { mapView.yaw += (mapView.yawGoal - mapView.yaw) * ka; if (Math.abs(mapView.yawGoal - mapView.yaw) < 1e-3) mapView.yawGoal = null; }
+            if (mapView.pitchGoal != null) { mapView.pitch += (mapView.pitchGoal - mapView.pitch) * ka; if (Math.abs(mapView.pitchGoal - mapView.pitch) < 1e-3) mapView.pitchGoal = null; }
             // depth precision: from this far up a near plane of 10 made the road layers flicker
             const nNear = Math.max(10, mapView.dist * 0.32), nFar = mapView.dist * 3 + 6000;
             if (Math.abs(camera.near - nNear) > 1 || Math.abs(camera.far - nFar) > 10) { camera.near = nNear; camera.far = nFar; camera.updateProjectionMatrix(); }
@@ -35190,6 +35279,10 @@ void main() {
             mapView.tgt.y = 0;
             const cp = Math.cos(mapView.pitch);
             mapView.pos.set(mapView.tgt.x + Math.sin(mapView.yaw) * cp * mapView.dist, Math.sin(mapView.pitch) * mapView.dist, mapView.tgt.z + Math.cos(mapView.yaw) * cp * mapView.dist);
+            // speed: streaks at the edges and a shake that grow with the jet's speed
+            const sp = jetFx.speed || 0;
+            speedEl.style.opacity = (sp * sp).toFixed(3);
+            if (sp > 0.05) { const a2 = sp * sp * 2.2; mapView.pos.x += (Math.random() - 0.5) * a2; mapView.pos.y += (Math.random() - 0.5) * a2; }
             // pins: projected every frame; labels give way to their neighbours when crowded
             const W = innerWidth, H = innerHeight, placed = [];
             const compact = mapView.dist > 8600;
@@ -35213,6 +35306,7 @@ void main() {
       function mapEndIntro() {
         if (!mapIntro) return;
         mapIntro = false;
+        setTimeout(() => { mapView.distGoal = innerWidth < 720 ? 6600 : 5400; }, 250);
         document.body.classList.remove("kz-intro");
         mapUI?.skip.classList.add("hidden");
       }
@@ -35237,7 +35331,11 @@ void main() {
           veh.group.visible = true;
           mapNav.targetL = state.L; mapNav.legs = []; mapNav.moving = false; mapNav.place = null;
           mapView.focus = null;
-          if (intro || state.L < route.stopL.fork) { mapView.tgt.set(1450, 0, 3640); mapView.follow = false; mapView.dist = innerWidth < 720 ? 7600 : 6000; }
+          // the van is the first thing you see: centred, close, then the camera pulls out to the map
+          if (intro || state.L < route.stopL.fork) {
+            mapView.tgt.set(carPos.x, 0, carPos.z); mapView.follow = true; mapView.dist = 1300; mapView.distRate = 0.9;
+            if (!intro) setTimeout(() => { mapView.distGoal = innerWidth < 720 ? 6600 : 5400; }, 700);
+          }
           else { mapView.tgt.set(carPos.x, 0, carPos.z); mapView.follow = true; mapView.dist = innerWidth < 720 ? 7800 : 6400; }
           mapView.distGoal = null;
           sun.shadow.camera.left = sun.shadow.camera.bottom = -3000; sun.shadow.camera.right = sun.shadow.camera.top = 3000; sun.shadow.camera.updateProjectionMatrix();

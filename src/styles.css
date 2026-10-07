@@ -2978,40 +2978,46 @@ body.map-mode .mapcard .map-x { top: 12px; right: 12px; }
 body.map-mode .toast-col { top: calc(96px + env(safe-area-inset-top, 0px)) !important; }
 @media (max-width: 719px) { body.map-mode .toast-col { top: calc(118px + env(safe-area-inset-top, 0px)) !important; } }
 
-/* r91: collected pins instead of ticks */
+/* r92: collected pins are thumbtacks pressed into the card */
 .map-pin.visited .mp-label b::after, .map-pin.find.visited .mp-label b::after { content: none !important; }
-.mp-got { display: none; }
-.map-pin.visited .mp-got { display: grid; place-items: center; position: absolute; top: -12px; right: -10px; width: 26px; height: 26px; border-radius: 50%;
-  background: #fff; border: 2px solid #111; box-shadow: 0 4px 10px -4px rgba(0,0,0,.5); animation: gotPop .5s cubic-bezier(.2,1.6,.4,1); }
 .mp-label { position: relative; }
-.mp-got .pin-ic { width: 13px; height: 17px; }
-@keyframes gotPop { from { transform: scale(0) rotate(-30deg); } }
-.map-chip .mc-pin { display: none; width: 13px; height: 17px; }
+.mp-got { display: none; }
+.map-pin.visited .mp-got { display: block; position: absolute; top: -17px; right: -7px; width: 19px; height: 27px; pointer-events: none;
+  filter: drop-shadow(1px 3px 2px rgba(30,20,30,.4)); animation: tackIn .55s cubic-bezier(.2,1.5,.4,1) both; }
+.mp-got .pin-ic { width: 100%; height: 100%; display: block; }
+@keyframes tackIn { 0% { transform: translate(10px, -26px) rotate(25deg) scale(1.6); opacity: 0; } 60% { opacity: 1; } 100% { transform: none; } }
+.map-chip .mc-pin { display: none; width: 15px; height: 21px; margin: -4px -2px -2px -4px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.3)); }
 .map-chip.visited .mc-pin { display: block; }
 .map-chip.visited .mc-dot { display: none; }
-.map-chip.visited .mc-dot::after { content: none; }
-.pin-fly { position: fixed; left: 0; top: 0; z-index: 200; pointer-events: none; width: 20px; height: 26px; margin: -13px 0 0 -10px; }
-.pin-fly .pin-ic { width: 20px; height: 26px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.35)); }
-/* the collection hangs under the XP pill */
-.topbar .you { position: relative; }
-.you-pins { position: absolute; right: 8px; top: calc(100% + 6px); display: flex; flex-direction: row-reverse; flex-wrap: wrap-reverse; justify-content: flex-start;
-  max-width: 260px; gap: 0; pointer-events: none; }
-.you-pins.empty { display: none; }
-.you-pins .pin-ic { width: 16px; height: 21px; margin-left: -3px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); animation: gotPop .5s cubic-bezier(.2,1.6,.4,1) both; }
+.pin-fly { position: fixed; left: 0; top: 0; z-index: 200; pointer-events: none; width: 22px; height: 31px; margin: -15px 0 0 -11px; }
+.pin-fly .pin-ic { width: 22px; height: 31px; filter: drop-shadow(1px 4px 3px rgba(0,0,0,.35)); }
+.you-pins { display: none !important; }
+/* the XP log: every row shows the pin of the place it came from */
+.xl-row { position: relative; }
+.xl-row .xl-pin { position: absolute; left: -4px; top: 2px; width: 15px; height: 21px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.3)); }
+.xl-row:has(.xl-pin) { padding-left: 16px; }
 @media (max-width: 719px) {
-  .you-pins { right: 4px; max-width: 150px; }
-  .you-pins .pin-ic { width: 13px; height: 17px; }
   .map-count i, .map-found i { display: none; }
-  .map-count b, .map-found b { font-weight: 800; }
   .map-crew .mcw-faces i:nth-child(n+3) { display: none; }
   .map-top { gap: 5px; }
   .map-exit { padding: 0 10px; }
 }
 .map-count b, .map-found b { font-weight: 800; }
 .map-count i, .map-found i { font-style: normal; }
-.topbar .you-pins { position: fixed; z-index: 24; right: 30px; top: calc(82px + env(safe-area-inset-top, 0px)); left: auto; max-width: 300px; padding: 4px 8px 4px 11px;
-  border-radius: 999px; background: color-mix(in srgb, var(--card-bg) 85%, transparent); border: 2px solid var(--st-ink, #111); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
-@media (max-width: 719px) {
-  .topbar .you-pins { right: 14px; top: calc(64px + env(safe-area-inset-top, 0px)); max-width: 200px; padding: 3px 6px 3px 9px; }
-  body.map-mode .topbar .you-pins { top: calc(122px + env(safe-area-inset-top, 0px)); }
+
+/* r92: take-off */
+.speed-lines { position: fixed; inset: -10%; z-index: 11; pointer-events: none; opacity: 0;
+  background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,0) 0deg, rgba(255,255,255,0) 2.6deg, rgba(255,255,255,.75) 2.9deg, rgba(255,255,255,0) 3.3deg);
+  -webkit-mask: radial-gradient(ellipse 46% 42% at 50% 50%, transparent 55%, #000 100%); mask: radial-gradient(ellipse 46% 42% at 50% 50%, transparent 55%, #000 100%);
+  animation: speedSpin .18s steps(3) infinite; }
+@keyframes speedSpin { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(1.3deg) scale(1.03); } 100% { transform: rotate(-.9deg) scale(1.01); } }
+@media (prefers-reduced-motion: reduce) { .speed-lines { display: none; } }
+/* the boarding pass slides aside and stays while the jet goes */
+body.map-mode .mapcard.contact { transition: transform .9s cubic-bezier(.65,0,.35,1), opacity .4s !important; }
+@media (min-width: 720px) {
+  body.map-mode.boarding-aside .mapcard.contact { transform: translate(calc(-50% + 30vw), -50%) scale(.52) !important; transform-origin: 50% 50%; }
 }
+@media (max-width: 719px) {
+  body.map-mode.boarding-aside .mapcard.contact { transform: translateY(66%) !important; }
+}
+body.boarding-aside .map-pins { display: none !important; }
