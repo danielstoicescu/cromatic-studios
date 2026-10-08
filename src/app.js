@@ -34968,9 +34968,9 @@ void main() {
               // the camera lets go behind the jet and watches it climb away into the cloud deck
               jetFx.watch = true;
               const cz = jet.clouds.position.z;
-              mapView.follow = false; mapView.focus = { x: JET_HOME.x, z: g.position.z + (cz - g.position.z) * 0.55 };
-              mapView.lookYGoal = 300;
-              mapView.distGoal = innerWidth < 720 ? 2300 : 1900; mapView.distRate = 0.9; mapView.pitchGoal = 0.3; mapView.yawGoal = -(Math.PI - 0.5);
+              mapView.follow = false; mapView.focus = { x: JET_HOME.x, z: g.position.z + (cz - g.position.z) * 0.72 };
+              mapView.lookYGoal = 470;
+              mapView.distGoal = innerWidth < 720 ? 2300 : 1900; mapView.distRate = 0.9; mapView.pitchGoal = 0.2; mapView.yawGoal = -(Math.PI - 0.5);
             }
             g.position.y = c * c * 30;
             g.rotation.x = -Math.min(0.26, c * 0.17);
