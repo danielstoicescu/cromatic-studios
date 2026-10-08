@@ -30960,7 +30960,8 @@ void main() {
       </div>`);
       // r93: the end of the road boards the Cromatic Jet on the map
       const btn = el("button", "coffee-btn cta-big", `${starSVG(22, "var(--st-ink)")} <span>Go even further</span> <em class="cta-arr">\u2191</em>`);
-      btn.onclick = () => (api.boardJet ? api.boardJet() : api.openSecret());
+      // the drive keeps its ramp and flight; the jet boarding belongs to the map
+      btn.onclick = () => api.openSecret();
       box.appendChild(btn);
       if (!opts.map) box.appendChild(el("p", "hint mono cta-hint", "THE STORY HAS ONE MORE CHAPTER \xB7 PRESS IT"));
     }
@@ -32724,8 +32725,6 @@ void main() {
           scrollToL(route.stopL[id]);
         },
         openSecret() {
-          // r114: there is no ramp any more: going further means boarding the Cromatic Jet
-          return api.boardJet();
           if (!xpCollected.has("end") && !(xpPending && xpPending.stopId === "end")) {
             const m = STOP_META.end;
             xpAnnounce(m.pts, m.title, m.learn, "msg", "end");
