@@ -23732,13 +23732,12 @@ void main() {
         [1170, 6180],
         [1170, 6515]
       ];
+      // r112: Olari 9 sits a short run past Dacia 99
       ROUTE_MERGE = [
         [1170, 6515],
-        [1170, 7400],
-        [1170, 8130],
-        [1210, 8900],
-        [1250, 9160],
-        [1250, 9340],
+        [1170, 7150],
+        [1210, 7350],
+        [1250, 7520],
         [1250, 9630]
       ];
       ROUTE_SECRET = [
@@ -23760,8 +23759,8 @@ void main() {
         { id: "crowd", x: 1690, y: 4065, label: "CH.04 The Crowd" },
         { id: "fork", x: 1500, y: 4260, label: "CH.06 Three routes" },
         { id: "merge", x: 1424, y: 6750, label: "CH.06 Routes merge" },
-        { id: "services", x: 1170, y: 8130, label: "CH.07 Services" },
-        { id: "end", x: 1140, y: 9260, label: "Strada Olari 9" },
+        { id: "services", x: 1170, y: 6950, label: "CH.07 Services" },
+        { id: "end", x: 1140, y: 7350, label: "Strada Olari 9" },
         { id: "contact", x: 1250, y: 11100, label: "Above the clouds" }
       ];
       STOP_META = {
@@ -23862,7 +23861,7 @@ void main() {
         { x: 2080, y: 2400, t: "Calea Mo\u0219ilor", a: -84 },
         { x: 900, y: 7976, t: "Strada Bati\u0219tei", a: 0 },
         { x: 1300, y: 6076, t: "Bulevardul Dacia", a: 0 },
-        { x: 1256, y: 9080, t: "Strada Olari", a: -76 },
+        { x: 1256, y: 7200, t: "Strada Olari", a: -76 },
         { x: 1660, y: 9300, t: "Strada Popa Soare", a: -90 }
       ];
       CITY_ZONES = [
@@ -24518,7 +24517,7 @@ void main() {
     for (const p of [...PROJECTS_A1, ...PROJECTS_A2, ...PROJECTS_B1, ...PROJECTS_B2]) zones.push({ x: p.x, y: p.y, r: 150 });
     zones.push({ x: ROUNDABOUT.x, y: ROUNDABOUT.y, r: 300 });
     zones.push({ x: 1250, y: 11100, r: 400 });
-    zones.push({ x: 1075, y: 9260, r: 240 });
+    zones.push({ x: 1050, y: 7350, r: 260 });
     zones.push({ x: FORK_POS.x - 240, y: FORK_POS.y, r: 140 });
     zones.push({ x: FORK_POS.x + 240, y: FORK_POS.y, r: 140 });
     zones.push({ x: 640, y: 4260, r: 210 });
@@ -24808,7 +24807,7 @@ void main() {
     }
     for (let i = 0; i < 230; i++) {
       const x = 40 + rnd() * (CITY_W - 80), z = 40 + rnd() * (CITY_H - 300);
-      if ((x - 1075) ** 2 + (z - 9260) ** 2 < 240 ** 2) continue;
+      if ((x - 1050) ** 2 + (z - 7350) ** 2 < 260 ** 2) continue;
       if (inTampa(x, z, 6)) continue;
       if ((x - ROUNDABOUT.x) ** 2 + (z - ROUNDABOUT.y) ** 2 < 300 ** 2) continue;
       if (Math.abs(x - 1250) < 90 && z > 9700 && z < 10250) continue;
@@ -26643,11 +26642,105 @@ void main() {
   }
   // Coffee Street, seen from the saddle: a row of Western false-front facades on both
   // kerbs, with porches, posts, hand-painted signs, in Cromatic pastels and warm timber
+  // r113: Artisan Coffee Gear's two cars, parked on the Romexpo kerb of Coffee Street:
+  // a Tesla Model Y in Artisan olive, and a classic Porsche 911 in cream wearing La Marzocco
+  function sideDecal(text, w, h, { ink = "#111", font = "800 120px Montserrat, Poppins, sans-serif", sub = null, subInk = ink } = {}) {
+    const tex = canvasTexture(1024, 256, (ctx) => {
+      ctx.clearRect(0, 0, 1024, 256);
+      ctx.fillStyle = ink; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      let size = parseInt(/(\d+)px/.exec(font)[1], 10); ctx.font = font;
+      while (ctx.measureText(text).width > 960 && size > 20) { size -= 4; ctx.font = font.replace(/\d+px/, `${size}px`); }
+      ctx.fillText(text, 512, sub ? 104 : 128);
+      if (sub) { ctx.fillStyle = subInk; ctx.font = '700 46px "JetBrains Mono", monospace'; ctx.fillText(sub, 512, 196); }
+    });
+    const m = new MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.5, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+    m.userData.outlineParameters = { visible: false };
+    return new Mesh(new PlaneGeometry(w, h), m);
+  }
+  function mountWheels(g, wheels, halfW, r, ww) { for (const [z, opts] of wheels) for (const sx of [-1, 1]) { const w = carWheel({ r, w: ww, ...opts }); w.position.set(sx * (halfW - ww / 2 + 0.4), r, z); g.add(w); } }
+  function buildTeslaY() {
+    const g = new Group();
+    const W = 20.5, paint = M("#6f7360", { roughness: 0.32, clearcoat: 0.9, clearcoatRoughness: 0.08, envMapIntensity: 0.7 });
+    const black = M("#151617", { roughness: 0.4 });
+    const body = sideBody((sh) => {
+      sh.moveTo(-23.5, 3.2);
+      archCut(sh, -14.6, 5.5, 3.2, 4.8);
+      archCut(sh, 14.6, 5.5, 3.2, 4.8);
+      sh.lineTo(23.2, 3.6); sh.quadraticCurveTo(24.2, 6, 23.4, 8.4);
+      sh.quadraticCurveTo(21.5, 10.2, 17, 10.7); sh.lineTo(10.5, 11.6);
+      sh.lineTo(-18.5, 12.2); sh.quadraticCurveTo(-22.4, 11.6, -23.2, 10);
+      sh.quadraticCurveTo(-23.9, 8, -23.5, 3.2);
+    }, W, paint, 1.3, 24);
+    g.add(body);
+    // the glass house sits narrower on the body: windows all round and the full glass roof
+    const glass = sideBody((sh) => {
+      sh.moveTo(-19.5, 12); sh.quadraticCurveTo(-16.5, 15.4, -9, 16.6); sh.quadraticCurveTo(-1, 17.3, 2.6, 16.5);
+      sh.quadraticCurveTo(6.6, 15.1, 10.8, 11.6); sh.lineTo(-19.5, 11.6);
+    }, W - 3.2, glassM(), 0.9, 18);
+    g.add(glass);
+    for (const z of [-3.2, -13.6]) for (const sx of [-1, 1]) { const pil = new Mesh(new BoxGeometry(0.5, 4.6, 1.4), black); pil.position.set(sx * (W / 2 - 1.55), 14.2, z); pil.rotation.z = sx * 0.12; g.add(pil); }
+    // black lower cladding, mirrors, door handles flush, light bars
+    for (const sx of [-1, 1]) {
+      const clad = new Mesh(new BoxGeometry(0.5, 1.6, 36), black); clad.position.set(sx * (W / 2 + 0.05), 3.8, 0); g.add(clad);
+      const mir = new Mesh(new BoxGeometry(2.6, 1.3, 1.6), paint); mir.position.set(sx * (W / 2 + 1.2), 12.2, 9.6); g.add(mir);
+      for (const z of [-2, 6.5]) { const h = new Mesh(new BoxGeometry(0.2, 0.5, 2.6), black); h.position.set(sx * (W / 2 + 0.12), 10.2, z); g.add(h); }
+      const d = sideDecal("ARTISAN", 20, 5, { ink: "#f2f0e8", sub: "COFFEE GEAR", subInk: "#e3dfcf" });
+      d.rotation.y = sx * Math.PI / 2; d.position.set(sx * (W / 2 + 0.08), 7.6, 1); g.add(d);
+    }
+    const headM = new MeshStandardMaterial({ color: "#ffffff", emissive: new Color("#e8f4ff"), emissiveIntensity: 0.9 });
+    const tailM = new MeshStandardMaterial({ color: "#a5121b", emissive: new Color("#ff1e2a"), emissiveIntensity: 0.6 });
+    for (const sx of [-1, 1]) { const hl = new Mesh(new BoxGeometry(5.6, 0.9, 1), headM); hl.position.set(sx * 6.4, 9.2, 23.4); hl.rotation.y = -sx * 0.25; g.add(hl); }
+    const tl = new Mesh(new BoxGeometry(W - 3, 0.8, 1), tailM); tl.position.set(0, 10.8, -22.9); g.add(tl);
+    const plateF = plateMesh(8, 2); plateF.position.set(0, 5.6, 24.2); g.add(plateF);
+    const plateR = plateMesh(8, 2); plateR.position.set(0, 6.6, -24.1); plateR.rotation.y = Math.PI; g.add(plateR);
+    mountWheels(g, [[-14.6, { rim: "#2a2c2f", rimR: 0.66, cap: "#2a2c2f", spokes: 5 }], [14.6, { rim: "#2a2c2f", rimR: 0.66, cap: "#2a2c2f", spokes: 5 }]], W, 4.8, 3.4);
+    g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    return g;
+  }
+  function buildPorsche911() {
+    const g = new Group();
+    const W = 18.6, paint = M("#efe6d2", { roughness: 0.3, clearcoat: 0.9, clearcoatRoughness: 0.1, envMapIntensity: 0.7 });
+    const body = sideBody((sh) => {
+      sh.moveTo(-21, 3);
+      archCut(sh, -13.2, 5.2, 3, 4.3);
+      archCut(sh, 12.6, 5, 3, 4.3);
+      sh.lineTo(20.6, 3.2); sh.quadraticCurveTo(21.8, 5.4, 21, 7.2);
+      sh.quadraticCurveTo(19.6, 8.9, 15, 9.3); sh.lineTo(5.5, 9.9);
+      sh.lineTo(-14.5, 9.9); sh.quadraticCurveTo(-19.2, 9, -20.4, 7.4); sh.quadraticCurveTo(-21.4, 6, -21, 3);
+    }, W, paint, 1.4, 24);
+    g.add(body);
+    // the greenhouse: glass all round, the painted roof sweeping down into the fastback
+    const glass = sideBody((sh) => {
+      sh.moveTo(-15.6, 9.7); sh.quadraticCurveTo(-11, 13, -7.3, 13.6); sh.lineTo(-2.6, 13.6); sh.quadraticCurveTo(0.8, 12.6, 5, 9.7);
+    }, W - 3.6, glassM(), 0.6, 16);
+    g.add(glass);
+    const roof = sideBody((sh) => {
+      sh.moveTo(-20.2, 8.6); sh.quadraticCurveTo(-13, 12.6, -7.3, 14.2); sh.lineTo(-2.4, 14.2); sh.quadraticCurveTo(0.6, 13.6, 1.6, 13.2);
+      sh.lineTo(-2.6, 13.5); sh.lineTo(-7.3, 13.5); sh.quadraticCurveTo(-12.6, 12.1, -16.6, 9.6); sh.lineTo(-20.2, 8.6);
+    }, W - 3.2, paint, 0.5, 18);
+    g.add(roof);
+    // round headlights up on the front wings, chrome bumpers, the La Marzocco livery
+    for (const sx of [-1, 1]) {
+      const hl = roundLamp(1.7); hl.position.set(sx * 6.2, 9.2, 18.8); hl.rotation.x = -0.35; g.add(hl);
+      const mir = new Mesh(new SphereGeometry(0.9, 10, 8), chromeM()); mir.position.set(sx * (W / 2 + 0.7), 11, 4.4); g.add(mir);
+      const d = sideDecal("La Marzocco", 16, 4, { ink: "#c8102e", font: "italic 700 140px Georgia, 'Times New Roman', serif", sub: "ARTISAN COFFEE GEAR", subInk: "#3a3a33" });
+      d.rotation.y = sx * Math.PI / 2; d.position.set(sx * (W / 2 + 0.08), 6.6, -1); g.add(d);
+    }
+    const hood = sideDecal("La Marzocco", 9, 2.4, { ink: "#c8102e", font: "italic 700 160px Georgia, 'Times New Roman', serif" });
+    hood.rotation.x = -Math.PI / 2 + 0.08; hood.position.set(0, 9.85, 13); g.add(hood);
+    for (const z of [21.2, -21.3]) { const bump = new Mesh(new BoxGeometry(W - 1, 1.2, 1.4), chromeM()); bump.position.set(0, 4.6, z); g.add(bump); }
+    const tailM = new MeshStandardMaterial({ color: "#9a1219", emissive: new Color("#ff1e2a"), emissiveIntensity: 0.5 });
+    for (const sx of [-1, 1]) { const t = new Mesh(new BoxGeometry(3.4, 1.1, 0.8), tailM); t.position.set(sx * 6.2, 7.2, -21.1); g.add(t); }
+    const grille = new Mesh(new BoxGeometry(8, 0.4, 5), M("#2a2a2a", { roughness: 0.8 })); grille.position.set(0, 11.3, -15.5); grille.rotation.x = 0.35; g.add(grille);
+    const plateR = plateMesh(7, 1.8); plateR.position.set(0, 5.8, -21.9); plateR.rotation.y = Math.PI; g.add(plateR);
+    mountWheels(g, [[-13.2, { rim: "#cfd1d4", rimR: 0.62, spokes: 5 }], [12.6, { rim: "#cfd1d4", rimR: 0.62, spokes: 5 }]], W, 4.3, 3.2);
+    g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    return g;
+  }
   function buildArtisanCar(parent) {
-    const car = buildParkedCar({ n: "ARTISAN", c: "#797c69", t: "#f2f0e8", sub: "COFFEE GEAR" }, "#ecebe7");
-    car.rotation.y = Math.PI / 2;
-    car.position.set(1000, 0, 5182);
-    parent.add(car);
+    // the kerb on the Romexpo side of Coffee Street, just south of the Romexpo avenue
+    const t = buildTeslaY(); t.position.set(862, 0, 5232); parent.add(t);
+    const p = buildPorsche911(); p.position.set(862, 0, 5292); parent.add(p);
   }
   function buildCoffeeStreetAdds(parent) {
     buildArtisanCar(parent);
@@ -28110,7 +28203,7 @@ void main() {
       for (let row = 0; row < 4; row++) for (let x = (row % 2) * 32; x < 256; x += 64) { ctx.beginPath(); ctx.moveTo(x, row * 32); ctx.lineTo(x, row * 32 + 32); ctx.stroke(); }
     }, { repeat: [3, 1] });
     mats.endGlow = new MeshStandardMaterial({ map: plaster, color: "#ffffff", roughness: 0.95, emissive: "#ffcf8a", emissiveIntensity: 0 });
-    mats.endRoofGlow = new MeshStandardMaterial({ color: "#4a3326", roughness: 0.8, emissive: "#2a1a10", emissiveIntensity: 0 });
+    mats.endRoofGlow = new MeshStandardMaterial({ color: "#28C840", roughness: 0.6, emissive: "#12b93f", emissiveIntensity: 0 });
     const plasterM = mats.endGlow, roofM = mats.endRoofGlow;
     const stoneM = new MeshStandardMaterial({ map: stoneTex, roughness: 0.95 });
     const whiteM = new MeshStandardMaterial({ color: "#eeece6", roughness: 0.7 });
@@ -28187,13 +28280,13 @@ void main() {
     // a "CROMATIC STUDIOS" plate by the door
     { const pl = signBoard({ name: "Cromatic Studios", signBg: "#ffffff", signInk: "#111111" }, 16, 3.4); pl.position.set(-22, 20.5, F + 1.4); g.add(pl); }
     g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-    const pad = new Mesh(new CylinderGeometry(86, 92, 6, 36), new MeshStandardMaterial({ color: "#e4e0d6", roughness: 1 }));
+    const pad = new Mesh(new CylinderGeometry(62, 66, 6, 36), new MeshStandardMaterial({ color: "#e4e0d6", roughness: 1 }));
     pad.position.y = -3;
     pad.receiveShadow = true;
     g.add(pad);
-    g.scale.set(1.3, 1.3, 1.3);
+    g.scale.set(1.9, 1.9, 1.9);
     g.rotation.y = Math.PI / 2;
-    g.position.set(1068, 3, 9260);
+    g.position.set(1040, 3, 7350);
     parent.add(g);
     return g;
   }
@@ -28823,7 +28916,7 @@ void main() {
         if (side > 0) { ctx.translate(2048, 0); ctx.scale(-1, 1); }
         // windows: oval portholes along the cabin
         ctx.fillStyle = "#16181c";
-        for (let z = -22; z <= 30; z += 6.2) { ctx.beginPath(); ctx.ellipse(X(z), Y(40), 22, 24, 0, 0, Math.PI * 2); ctx.fill(); }
+        for (let z = -22; z <= 30; z += 6.2) { ctx.beginPath(); ctx.ellipse(X(z), Y(58), 20, 20, 0, 0, Math.PI * 2); ctx.fill(); }
         // the door on the left, just behind the cockpit
         if (side < 0) { ctx.strokeStyle = "#16181c"; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(X(37), Y(50), X(42) - X(37), Y(-30) - Y(50), 14); ctx.stroke(); }
         // cockpit windscreen
@@ -28831,14 +28924,14 @@ void main() {
         ctx.beginPath(); ctx.moveTo(X(43.5), Y(30)); ctx.lineTo(X(49.5), Y(30)); ctx.lineTo(X(51.5), Y(18)); ctx.lineTo(X(44), Y(14)); ctx.closePath(); ctx.fill();
         ctx.beginPath(); ctx.moveTo(X(50.2), Y(31)); ctx.lineTo(X(52.6), Y(34)); ctx.lineTo(X(53.6), Y(22)); ctx.lineTo(X(52.2), Y(19)); ctx.closePath(); ctx.fill();
         // the cheatline
-        ctx.fillStyle = "#121212"; ctx.fillRect(X(-34), Y(29), X(43) - X(-34), 6);
+        ctx.fillStyle = "#121212"; ctx.fillRect(X(-34), Y(50), X(43) - X(-34), 5);
         ctx.restore();
         // r93: the wordmark from the logo itself, black, no outline, painted on the skin:
         // "Cromatic" down the left side, "Studios" down the right, as tall as the lower cabin
         const part = JET_WORDS && JET_WORDS[side < 0 ? 0 : 1];
         if (part) {
           // r109: much bigger, filling the body under the windows
-          const zA = -33, zB = 36, top = Y(26), bot = Y(-30);
+          const zA = -34, zB = 38, top = Y(46), bot = Y(-74);
           const boxW = X(zB) - X(zA), boxH = bot - top, k = Math.min(boxW / part.width, boxH / part.height);
           const w = part.width * k, h = part.height * k;
           const cx = side > 0 ? 2048 - (X(zA) + X(zB)) / 2 : (X(zA) + X(zB)) / 2;
@@ -29012,7 +29105,7 @@ void main() {
     g.traverse((o) => { if (o.isMesh && o.material !== glowM && o.material !== orbM) { o.castShadow = true; } });
     return { group: g, stair, carpet: [carpet, edge], glows, glowM, strobe, beaconM };
   }
-  var JET_HOME = { x: 1560, z: 9720 };
+  var JET_HOME = { x: 1560, z: 7820 };
   // r91: the chapters as grey placards on posts, scattered off the road before the fork
   var CHAPTER_SIGNS = { dream: ["CH.01", "The Dream", "#B098C8"], voice: ["CH.02", "The Voice", "#F65342"], world: ["CH.03", "The World", "#119BFE"], };
   function buildChapterSigns(parent) {
@@ -29046,7 +29139,7 @@ void main() {
   }
   function buildAirfield(parent) {
     const g = new Group();
-    const z0 = 9600, z1 = 11450, X = JET_HOME.x, W = 64;
+    const z0 = JET_HOME.z - 120, z1 = z0 + 1850, X = JET_HOME.x, W = 64, TZ = JET_HOME.z - 15;
     const asphalt = new MeshStandardMaterial({ color: "#3a3b40", roughness: 0.95 });
     const run = new Mesh(new BoxGeometry(W, 1.2, z1 - z0), asphalt); run.position.set(X, 0.6, (z0 + z1) / 2); run.receiveShadow = true; g.add(run);
     const paint = new MeshBasicMaterial({ color: "#f5f3ea" }); paint.userData.outlineParameters = { visible: false };
@@ -29058,8 +29151,8 @@ void main() {
     g.add(new Mesh(mergeGeometries(marks), paint));
     // the yellow lead-in line from the stand, and a taxiway to the secret road
     const lead = new Mesh(new BoxGeometry(1.4, 0.2, 90), yel); lead.position.set(X, 1.35, z0 + 50); g.add(lead);
-    const taxi = new Mesh(new BoxGeometry(X - 1250 - 40, 1.1, 44), asphalt); taxi.position.set((1290 + X - W / 2) / 2, 0.55, 9705); taxi.receiveShadow = true; g.add(taxi);
-    const tl = new Mesh(new BoxGeometry(X - 1250 - 50, 0.2, 1.2), yel); tl.position.set((1290 + X - W / 2) / 2, 1.2, 9705); g.add(tl);
+    const taxi = new Mesh(new BoxGeometry(X - 1250 - 40, 1.1, 44), asphalt); taxi.position.set((1290 + X - W / 2) / 2, 0.55, TZ); taxi.receiveShadow = true; g.add(taxi);
+    const tl = new Mesh(new BoxGeometry(X - 1250 - 50, 0.2, 1.2), yel); tl.position.set((1290 + X - W / 2) / 2, 1.2, TZ); g.add(tl);
     // edge lights
     const lightM = new MeshStandardMaterial({ color: "#fff2c4", emissive: new Color("#ffcf6a"), emissiveIntensity: 0.25 });
     STREET_GLOW.push([lightM, 2.4]);
@@ -29074,30 +29167,30 @@ void main() {
     const glass = new Mesh(new BoxGeometry(40, 10, 0.6), new MeshStandardMaterial({ color: "#ffe2a8", emissive: new Color("#ffcf8a"), emissiveIntensity: 0.3, roughness: 0.2 }));
     glass.position.set(0, 7, 17.2); lounge.add(glass);
     const sign = signBoard({ name: "CROMATIC JET", signBg: "#FED012", signInk: "#111111" }, 40, 9); sign.position.set(0, 23, 0); lounge.add(sign);
-    lounge.rotation.y = -Math.PI / 2; lounge.position.set(X + 86, 0, 9640); g.add(lounge);
+    lounge.rotation.y = -Math.PI / 2; lounge.position.set(X + 86, 0, JET_HOME.z - 80); g.add(lounge);
     // a windsock in Cromatic yellow and black
-    const pole = new Mesh(new CylinderGeometry(0.4, 0.5, 20, 8), new MeshStandardMaterial({ color: "#d9d9d9" })); pole.position.set(X - 52, 10, 9900); g.add(pole);
-    const sock = new Mesh(new ConeGeometry(2.4, 12, 12, 1, true), new MeshStandardMaterial({ color: "#FED012", side: DoubleSide })); sock.rotation.z = Math.PI / 2 - 0.15; sock.position.set(X - 46, 19, 9900); g.add(sock);
+    const pole = new Mesh(new CylinderGeometry(0.4, 0.5, 20, 8), new MeshStandardMaterial({ color: "#d9d9d9" })); pole.position.set(X - 52, 10, JET_HOME.z + 180); g.add(pole);
+    const sock = new Mesh(new ConeGeometry(2.4, 12, 12, 1, true), new MeshStandardMaterial({ color: "#FED012", side: DoubleSide })); sock.rotation.z = Math.PI / 2 - 0.15; sock.position.set(X - 46, 19, JET_HOME.z + 180); g.add(sock);
     g.traverse((o) => { if (o.isMesh && o.position.y > 2) o.castShadow = true; });
     parent.add(g);
     const jet = buildCromaticJet();
     jet.group.position.set(X, 0, JET_HOME.z);
     parent.add(jet.group);
-    const cm = new MeshLambertMaterial({ color: "#ffffff", emissive: new Color("#ffffff"), emissiveIntensity: 0.55, flatShading: true, fog: false });
+    const cm = new MeshLambertMaterial({ color: "#ffffff", emissive: new Color("#ffffff"), emissiveIntensity: 0.55, flatShading: true, fog: false, transparent: true, opacity: 0.82, depthWrite: false });
     cm.userData.outlineParameters = { visible: false };
     const cg = [], rc = rng(909);
     for (let i = 0; i < 26; i++) {
       const r = 110 + rc() * 120, sp = new IcosahedronGeometry(r, 1);
       sp.scale(1.5, 0.6, 1.2);
       // a deck around the origin; the take-off parks it where the jet will punch through
-      sp.translate((rc() - 0.5) * 900, 470 + rc() * 160, (rc() - 0.5) * 1100);
+      sp.translate((rc() - 0.5) * 900, 250 + rc() * 120, (rc() - 0.5) * 1100);
       cg.push(sp);
     }
     jet.clouds = new Mesh(mergeGeometries(cg), cm);
     jet.clouds.visible = false;
     parent.add(jet.clouds);
     for (let z = z0 - 40; z <= z1 + 60; z += 110) EXTRA_KEEPOUT.push({ x: X, y: z, r: 120 });
-    EXTRA_KEEPOUT.push({ x: X + 86, y: 9640, r: 90 }, { x: 1420, y: 9705, r: 120 });
+    EXTRA_KEEPOUT.push({ x: X + 86, y: JET_HOME.z - 80, r: 90 }, { x: 1420, y: TZ, r: 120 });
     return jet;
   }
   function buildWorld(scene, accent) {
@@ -32673,7 +32766,7 @@ void main() {
         boardJet() { if (!mapMode) setMapMode(true); document.body.classList.remove("map-at-stop"); ui.card.classList.add("hidden"); setTimeout(() => mapGo(MAP_PLACES.find((p) => p.id === "jet")), mapMode ? 50 : 400); },
         formSent() {
           // on the map, the pass goes in and the jet takes off
-          if (mapMode && mapBoarding) setTimeout(mapTakeoff, 2600);
+          if (mapMode && mapBoarding) setTimeout(() => { mapCloseBoarding(true); mapTakeoff(); }, 900);
           if (xpCollected.has("contact")) return;
           const m = STOP_META.contact;
           xpAnnounce(m.pts, m.title, m.learn, "msg", "contact");
@@ -33390,7 +33483,7 @@ void main() {
       var carTan = new Vector3();
       var camTarget = new Vector3();
       var camPos = new Vector3();
-      var prevL = 0;
+      var prevL = 0, _laneT = new Vector3();
       var prevT = performance.now();
       var heading = 0;
       var bank = 0;
@@ -34430,8 +34523,8 @@ void main() {
         }
         // a calm city speed everywhere on the ground (chapter jumps and the flight excepted)
         if (!siteMode && now > jumpGuard && prevL < route.stopL.end + 400) {
-          const toEnd = mapMode && mapNav.place?.stop === "end" && state.L > route.stopL.end - 1350;
-          const maxStep = (mapMode ? (toEnd ? 560 : Math.abs(state.targetL - state.L) > 1400 ? 3200 : 1400) : 620) * dt;
+          const toEnd = mapMode && mapNav.place?.stop === "end" && state.L > route.stopL.end - 800;
+          const maxStep = (mapMode ? (toEnd ? 260 : Math.abs(state.targetL - state.L) > 1400 ? 3200 : 1400) : 620) * dt;
           state.L = clamp2(state.L, prevL - maxStep, prevL + maxStep);
         }
         {
@@ -34475,6 +34568,11 @@ void main() {
           if (xpPending && xpPending.kind === "msg" && now - xpPending.t > 4000) xpCommit(true);
         }
         route.posAt(state.L, carPos);
+        if (mapMode) {
+          route.tangentAt(state.L, _laneT);
+          const ls = (1 - 2 * planeRev) * 11;
+          carPos.x += -_laneT.z * ls; carPos.z += _laneT.x * ls;
+        }
         // airborne: the plane (and the chase camera with it) rises over the route
         air = smooth(air, airT, dt, 0.9);
         if (air > 1e-3) carPos.y += AIR_H * air * air * (3 - 2 * air);
@@ -34508,7 +34606,9 @@ void main() {
         }
         // the plane turns round when you scroll back
         // on the map every vehicle turns round when it has to go back
-        planeRev = smooth(planeRev, (veh.kind === "plane" || mapMode) && dL < -0.4 ? 1 : dL > 0.4 ? 0 : planeRev, dt, 3);
+        if (mapMode) {
+          if (mapNav.moving) planeRev = smooth(planeRev, mapNav.targetL < state.L - 20 ? 1 : mapNav.targetL > state.L + 20 ? 0 : planeRev, dt, 3);
+        } else planeRev = smooth(planeRev, veh.kind === "plane" && dL < -0.4 ? 1 : dL > 0.4 ? 0 : planeRev, dt, 3);
         const targetHeading = Math.atan2(carTan.x, carTan.z) + (planeRev > 0.5 ? Math.PI : 0);
         let dh = targetHeading - heading;
         while (dh > Math.PI) dh -= Math.PI * 2;
@@ -35031,7 +35131,7 @@ void main() {
         showPoi(ui.yoshiTag, inW((Lsip + Lyo) / 2 + 10, (Lyo + Lbe) / 2 - 20));
         showPoi(ui.bereroTag, inW((Lyo + Lbe) / 2 + 20, Lbe + 110));
         // one service card at a time, evenly spaced from the merge to Olari 9, alternating sides
-        const svcA = route.stopL.merge + 900, svcB = route.stopL.end - 80;
+        const svcA = Math.min(route.stopL.merge + 200, route.stopL.end - 900), svcB = route.stopL.end - 80;
         const svcF = (state.L - svcA) / (svcB - svcA);
         ui.svcSlides.forEach((c, i) => {
           const on = !flying && !siteMode && svcF >= i / 4 + 0.02 && svcF < (i + 1) / 4 - 0.02;
@@ -35061,7 +35161,7 @@ void main() {
           ui.addrCard._ast = null;
           ui.addrCard.style.left = `${Math.round(innerWidth * 0.71)}px`;
           ui.addrCard.style.top = `${Math.round(innerHeight * 0.45)}px`;
-        } else placeAnchor(ui.addrCard, 1068, 205, 9260, nearEnd, isMobile() ? window.innerHeight * 0.34 : void 0);
+        } else placeAnchor(ui.addrCard, 1040, 260, 7350, nearEnd, isMobile() ? window.innerHeight * 0.34 : void 0);
         if (state.L > 200) ui.hint.classList.add("gone");
         // the manifesto lives at the spawn point: on while you are there, paused when you leave
         if (kinetic && now > kineticArmedAt && !mapMode) {
@@ -35100,8 +35200,9 @@ void main() {
         { id: "lab", br: "A", x: 820, z: 4260, px: 602, pz: 4142, h: 70, name: "Two Min Lab", line: "PRODUCTS \xB7 TONIC IONIC \xB7 LABELS", c: "#C6402E", t: "#ffffff", act: "labTag", desc: "The Two Minutes lab: bottled drinks, Tonic Ionic and the labels that sell them, in the yard behind the coffee shop." },
         { id: "tm", br: "A", x: 900, z: 4262, px: 640, pz: 4260, h: 80, name: "Two Minutes", line: "COFFEE \xB7 BRAND \xB7 FILM", c: "#111111", t: "#ffffff", act: "tmMedia", tm: true, desc: "A specialty coffee shop brand made to be loved fast and remembered long. Three double espressos are on us." },
         { id: "oma", br: "A", x: 706, z: 4560, h: 80, name: "OMA Coffee", line: "BRAȘOV \xB7 AT THE FOOT OF T\xC2MPA", c: "#4a7c4e", t: "#ffffff", act: "omaTag" },
+        { id: "sip", br: "A", x: 706, z: 4985, h: 70, name: "Sip Coffee & Wine", line: "BRANDING \xB7 COMMUNICATION", c: "#C9A227", t: "#14120c", act: "sipTag" },
         { id: "yoshi", br: "A", x: 706, z: 5175, h: 60, name: "Yoshi Izakaya", line: "COMMUNICATION \xB7 CONTENT", c: "#F4876F", t: "#2a0f08", act: "yoshiTag" },
-        { id: "artisan", br: "A", x: 912, z: 5180, px: 1000, pz: 5182, h: 40, name: "Artisan Coffee Gear", line: "PARKED BY ROMEXPO", c: "#797c69", t: "#f2f0e8", act: "artisanTag" },
+        { id: "artisan", br: "A", x: 830, z: 5260, px: 862, pz: 5262, h: 36, name: "Artisan Coffee Gear", line: "PARKED BY ROMEXPO", c: "#797c69", t: "#f2f0e8", act: "artisanTag" },
         { id: "scf", br: "A", x: 1150, z: 5140, h: 110, name: "Slow Coffee Festival", line: "ROMEXPO \xB7 2021–2025", c: "#5B4B9E", t: "#ffffff", act: "scfTag" },
         { id: "steam", br: "A", x: 985, z: 5640, h: 150, name: "Steam Coffee Shop", line: "BRANDING \xB7 GROWTH \xB7 PRODUCT", c: "#2f9e4f", t: "#ffffff", act: "steamTag", desc: "A pioneer coffee brand refreshed for its community: new energy for the people who were there from the start." },
         { id: "craft", br: "A", x: 985, z: 5640, px: 1020, pz: 5620, h: 40, name: "Craft Coffee", line: "IN THE STEAM BUILDING", c: "#119BFE", t: "#ffffff", act: "craftTag" },
@@ -35112,7 +35213,7 @@ void main() {
         { id: "tac", br: "C", x: 1790, z: 4570, px: 1700, h: 190, name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
         { id: "zdrovit", br: "C", x: 1720, z: 5070, h: 70, name: "Zdrovit", line: "8 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health, clinic, beauty and perfume brands, from Bucharest to Barcelona, Los Angeles and Paris." },
         { id: "end", stop: "end", name: "Strada Olari 9", line: "THE STUDIO \xB7 COME BY", c: "#ffffff", t: "#111111", pin: "#111111" },
-        { id: "jet", x: 1250, z: 9705, px: JET_HOME.x, pz: JET_HOME.z, h: 46, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", beacon: true, board: true }
+        { id: "jet", x: 1250, z: JET_HOME.z - 15, px: JET_HOME.x, pz: JET_HOME.z, h: 46, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", beacon: true, board: true }
       ];
       function mapPlaceL(pl) {
         if (pl.stop) return route.stopL[pl.stop];
@@ -35167,7 +35268,7 @@ void main() {
       }
       function mapStep() {
         if (!mapNav.moving) return;
-        if (mapNav.place?.stop === "end" && mapNav.legs.length === 1 && olari.t < 0 && Math.abs(state.L - mapNav.targetL) < 520) { olari.early = true; olariOpen(); }
+        if (mapNav.place?.stop === "end" && mapNav.legs.length === 1 && olari.t < 0 && Math.abs(state.L - mapNav.targetL) < 140) { olari.early = true; olariOpen(); }
         if (Math.abs(state.L - mapNav.targetL) > 4) return;
         const leg = mapNav.legs.shift();
         if (leg && leg.then && leg.L != null) mapSwitchBranch(leg.then);
@@ -35237,8 +35338,8 @@ void main() {
         document.body.classList.add("flight-done");
         let end = document.querySelector(".flight-end");
         if (!end) {
-          end = el("div", "flight-end", `<b>See you on board.</b><span>Your boarding pass is with us. We write back within one working day.</span><button class="fe-replay">\u21BB Repeat the experience</button><button class="fe-drive">\u{1F697} Now take it for a drive</button><button class="fe-map">Back to the map</button>`);
-          end.querySelector(".fe-drive").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?drive"; };
+          end = el("div", "flight-end", `<b>See you on board.</b><span>Your boarding pass is with us. We write back within one working day.</span><button class="fe-drive">\u{1F697} Repeat the experience in Drive mode</button><button class="fe-replay">\u21BB Start over on the map</button><button class="fe-map">Back to the map</button>`);
+          end.querySelector(".fe-drive").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?drive&nointro"; };
           end.querySelector(".fe-replay").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?r=" + Date.now().toString(36); };
           end.querySelector(".fe-map").onclick = () => {
             end.remove(); document.body.classList.remove("flight-done");
@@ -35253,12 +35354,12 @@ void main() {
         if (!jet || jetFx.phase !== "idle") return;
         jetFx.phase = "board"; jetFx.t = 0; jetFx.baam = false; jetFx.speed = 0; jetFx.watch = false; jetFx.passBack = false;
         document.body.classList.add("map-takeoff");
-        if (mapBoarding) document.body.classList.add("boarding-aside");
+        if (mapBoarding) mapCloseBoarding(true);
         mapView.follow = true; mapView.focus = null;
         mapView.distGoal = innerWidth < 720 ? 1000 : 860; mapView.distRate = 0.9;
         mapView.yawGoal = -1.15; mapView.pitchGoal = 0.36;
         // the jet reaches the deck (y 690) about 4.8 s after rotation: the clouds wait right there
-        const c0 = Math.sqrt(520 / 30);
+        const c0 = Math.sqrt(300 / 30);
         jet.clouds.position.set(JET_HOME.x, 0, JET_HOME.z + 975 + 390 * c0 + 20 * c0 * c0);
         jet.clouds.visible = true;
       }
@@ -35299,12 +35400,12 @@ void main() {
             }
             g.position.y = c * c * 30;
             // the look follows the jet's height up to the deck, so it never drops out of the picture
-            if (jetFx.watch) mapView.lookYGoal = Math.min(470, Math.max(140, g.position.y + (innerWidth < 720 ? 120 : 40)));
+            if (jetFx.watch) mapView.lookYGoal = Math.min(320, Math.max(120, g.position.y + (innerWidth < 720 ? 120 : 40)));
             g.rotation.x = -Math.min(0.26, c * 0.17);
             g.rotation.z = Math.sin(Math.min(1, c / 4) * Math.PI) * 0.1;
             jetFx.speed = Math.max(0, 1 - c / 3);
             // into the clouds
-            if (g.position.y > 560) {
+            if (g.position.y > 430) {
               g.visible = false; jet.glowM.opacity = 0;
               jetFx.phase = "gone"; jetFx.t = 0;
               mapUI.baam();
@@ -35372,15 +35473,16 @@ void main() {
           roadSvc = SERVICES.map((sv, i) => {
             const c = el("div", "road-svc", `<span class="svcx-art" aria-hidden="true">${SVC_ART[i % SVC_ART.length]}</span><span class="oc-n mono">SERVICE ${i + 1} / ${SERVICES.length}</span><b>${sv.t}</b><span class="oc-pills">${sv.items.map((x) => `<i>${x}</i>`).join("")}</span>`);
             c.style.setProperty("--sc", sv.c);
-            c.classList.add(i % 2 ? "r" : "l");
+            c.classList.add(i % 2 ? "r" : "l", i < 2 ? "hi" : "lo");
             ui.root.appendChild(c);
             return c;
           });
         }
-        const endL = route.stopL.end, A = endL - 1300, B = endL - 150;
-        const on = mapMode && mapNav.moving && mapNav.place?.stop === "end" && mapNav.legs.length === 1 && state.L > A && state.L < B;
-        const f = (state.L - A) / (B - A);
-        roadSvc.forEach((c, i) => c.classList.toggle("on", on && f >= i / 4 && f < (i + 1) / 4));
+        const endL = route.stopL.end, A = endL - 760, B = endL - 220;
+        const on = mapMode && mapNav.moving && mapNav.place?.stop === "end" && mapNav.legs.length === 1 && state.L > A - 400 && olari.t < 0;
+        const f = Math.max(0, (state.L - A) / (B - A));
+        // they gather one by one as you drive past and stay until the house opens
+        roadSvc.forEach((c, i) => c.classList.toggle("on", on && f >= i / 4));
       }
       function olariUpdate(dt) {
         roadServices();
@@ -35932,6 +36034,8 @@ void main() {
             kinetic.resume();
             return;
           }
+          // ?drive&nointro: straight onto the road, no kinetic type
+          if (/[?&]nointro\b/.test(location.search)) { window.scrollTo({ top: clamp2((route.stopL.dream + 60) / effectiveTotal(), 0, 1) * maxScroll(), behavior: "instant" }); return; }
           // the first card is told as kinetic type first; the card itself follows
           kinetic = createKinetic(() => {
             if (siteMode) return;
