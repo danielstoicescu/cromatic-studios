@@ -32724,6 +32724,8 @@ void main() {
           scrollToL(route.stopL[id]);
         },
         openSecret() {
+          // r114: there is no ramp any more: going further means boarding the Cromatic Jet
+          return api.boardJet();
           if (!xpCollected.has("end") && !(xpPending && xpPending.stopId === "end")) {
             const m = STOP_META.end;
             xpAnnounce(m.pts, m.title, m.learn, "msg", "end");
