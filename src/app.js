@@ -28023,38 +28023,110 @@ void main() {
     parent.add(g);
     return g;
   }
+  // r110: Strada Olari 9 as it stands: a grey neo-Romanian villa. Rusticated stone ground floor
+  // with round-arched doors, a pebble-dash first floor with two big arched windows in white
+  // mouldings (brown roller shutters, little white columns), a narrower top floor with a trefoil
+  // arched loggia over a lattice balcony, deep tiled hip roofs with wide eaves, and ivy on the
+  // right. children[1] is the top roof: it lifts off when the services come out.
   function buildEndHouse(parent) {
     const g = new Group();
-    const green = "#28C840";
-    mats.endGlow = new MeshStandardMaterial({ color: green, emissive: "#1fe256", emissiveIntensity: 0, roughness: 0.45, metalness: 0.05 });
-    mats.endRoofGlow = new MeshStandardMaterial({ color: new Color(green).multiplyScalar(0.72), emissive: "#12b93f", emissiveIntensity: 0, roughness: 0.5 });
-    const bodyM = mats.endGlow;
-    const roofM = mats.endRoofGlow;
-    const base = new Mesh(new BoxGeometry(96, 64, 78), bodyM);
-    base.position.y = 32;
-    const gable = new Shape();
-    gable.moveTo(-48, 0);
-    gable.lineTo(48, 0);
-    gable.lineTo(0, 46);
-    gable.lineTo(-48, 0);
-    const roofGeo = new ExtrudeGeometry(gable, { depth: 78, bevelEnabled: false });
-    roofGeo.translate(0, 64, -39);
-    const roof = new Mesh(roofGeo, roofM);
-    const door = new Mesh(new BoxGeometry(20, 30, 3), new MeshStandardMaterial({ color: new Color(green).multiplyScalar(0.5), roughness: 0.7 }));
-    door.position.set(0, 15, 40);
-    g.add(base, roof, door);
-    g.traverse((o) => {
-      if (o.isMesh) {
-        o.castShadow = true;
-        o.receiveShadow = true;
-      }
-    });
-    const pad = new Mesh(new CylinderGeometry(86, 92, 6, 36), new MeshStandardMaterial({ color: "#dcedd2", roughness: 1 }));
-    pad.position.y = 3;
+    const W = 70, D = 54;
+    const plaster = canvasTexture(256, 256, (ctx) => {
+      ctx.fillStyle = "#8d8f8c"; ctx.fillRect(0, 0, 256, 256);
+      const r = rng(99);
+      for (let i = 0; i < 2600; i++) { const v = 110 + r() * 60; ctx.fillStyle = `rgba(${v},${v + 2},${v},.55)`; ctx.fillRect(r() * 256, r() * 256, 2, 2); }
+    }, { repeat: [3, 3] });
+    const stoneTex = canvasTexture(256, 128, (ctx) => {
+      ctx.fillStyle = "#a3a29c"; ctx.fillRect(0, 0, 256, 128);
+      ctx.strokeStyle = "#7d7c77"; ctx.lineWidth = 4;
+      for (let y = 0; y <= 128; y += 32) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(256, y); ctx.stroke(); }
+      for (let row = 0; row < 4; row++) for (let x = (row % 2) * 32; x < 256; x += 64) { ctx.beginPath(); ctx.moveTo(x, row * 32); ctx.lineTo(x, row * 32 + 32); ctx.stroke(); }
+    }, { repeat: [3, 1] });
+    mats.endGlow = new MeshStandardMaterial({ map: plaster, color: "#ffffff", roughness: 0.95, emissive: "#ffcf8a", emissiveIntensity: 0 });
+    mats.endRoofGlow = new MeshStandardMaterial({ color: "#4a3326", roughness: 0.8, emissive: "#2a1a10", emissiveIntensity: 0 });
+    const plasterM = mats.endGlow, roofM = mats.endRoofGlow;
+    const stoneM = new MeshStandardMaterial({ map: stoneTex, roughness: 0.95 });
+    const whiteM = new MeshStandardMaterial({ color: "#eeece6", roughness: 0.7 });
+    const woodM = new MeshStandardMaterial({ color: "#6b3f26", roughness: 0.75 });
+    const shutterTex = canvasTexture(64, 128, (ctx) => { ctx.fillStyle = "#5e3b27"; ctx.fillRect(0, 0, 64, 128); ctx.fillStyle = "#47291a"; for (let y = 0; y < 128; y += 6) ctx.fillRect(0, y, 64, 2); });
+    const shutterM = new MeshStandardMaterial({ map: shutterTex, roughness: 0.8 });
+    const glassM = new MeshStandardMaterial({ color: "#2a2f35", roughness: 0.2, metalness: 0.3, emissive: "#ffcf8a", emissiveIntensity: 0 });
+    STREET_GLOW.push([glassM, 0.9]);
+    const box = (w, h, d, m, x, y, z) => { const o = new Mesh(new BoxGeometry(w, h, d), m); o.position.set(x, y, z); g.add(o); return o; };
+    const arch = (w, h, m, depth = 1.2) => {
+      const sh = new Shape(), r = w / 2;
+      sh.moveTo(-r, 0); sh.lineTo(r, 0); sh.lineTo(r, h - r); sh.absarc(0, h - r, r, 0, Math.PI, false); sh.closePath();
+      return new Mesh(new ExtrudeGeometry(sh, { depth, bevelEnabled: false, curveSegments: 16 }), m);
+    };
+    const archRing = (w, h, t, m) => {
+      const sh = new Shape(), r = w / 2 + t;
+      sh.moveTo(-r, 0); sh.lineTo(r, 0); sh.lineTo(r, h - w / 2); sh.absarc(0, h - w / 2, r, 0, Math.PI, false); sh.closePath();
+      const hole = new Path(), r2 = w / 2; hole.moveTo(-r2, 0); hole.lineTo(r2, 0); hole.lineTo(r2, h - r2); hole.absarc(0, h - r2, r2, 0, Math.PI, false); hole.closePath();
+      sh.holes.push(hole);
+      return new Mesh(new ExtrudeGeometry(sh, { depth: 1.6, bevelEnabled: false, curveSegments: 16 }), m);
+    };
+    const col = (x, y0, h, z) => { const c = new Mesh(new CylinderGeometry(0.9, 0.9, h, 10), whiteM); c.position.set(x, y0 + h / 2, z); g.add(c); const cap = new Mesh(new BoxGeometry(2.6, 1.2, 2.6), whiteM); cap.position.set(x, y0 + h, z); g.add(cap); };
+    const F = D / 2;
+    // body: ground (stone), first (plaster); the top floor is narrower
+    box(W, 20, D, stoneM, 0, 10, 0);
+    box(W, 26, D, plasterM, 0, 33, 0);
+    // [1] the top-floor roof comes second among the children: it is the one that lifts
+    const topRoof = new Group();
+    {
+      const hip = new Mesh(new ConeGeometry(30, 12, 4, 1), roofM); hip.rotation.y = Math.PI / 4; hip.scale.set(1.25, 1, 1.05); hip.position.y = 6; topRoof.add(hip);
+      const eave = new Mesh(new BoxGeometry(48, 1.4, 40), roofM); eave.position.y = 0.2; topRoof.add(eave);
+      topRoof.position.y = 66;
+    }
+    g.add(topRoof);
+    // move topRoof to index 1
+    g.children.splice(g.children.indexOf(topRoof), 1); g.children.splice(1, 0, topRoof);
+    box(36, 20, 32, plasterM, 0, 56, -4);
+    // first-floor hip roofs left and right of the tower, deep eaves
+    {
+      // one deep hipped skirt around the tower
+      const skirt = new Mesh(new CylinderGeometry(36, 58, 5, 4, 1, true), roofM);
+      skirt.rotation.y = Math.PI / 4; skirt.scale.set(1.0, 1, 0.82); skirt.position.y = 48.6; g.add(skirt);
+      box(W + 2, 1, D + 2, roofM, 0, 46.3, 0);
+    }
+    // ground floor: arched wooden door on the left, two stone arches on the right
+    { const d = arch(12, 17, woodM); d.position.set(-22, 0, F + 0.1); g.add(d); const r = archRing(12, 17, 2.2, stoneM); r.position.set(-22, 0, F); g.add(r); }
+    for (const x of [6, 24]) { const a = arch(13, 17, new MeshStandardMaterial({ color: "#2c2a28", roughness: 0.8 })); a.position.set(x, 0, F + 0.1); g.add(a); const r = archRing(13, 17, 2.4, stoneM); r.position.set(x, 0, F); g.add(r); }
+    box(W + 1, 1.2, 1.4, whiteM, 0, 20.4, F + 0.6);
+    // first floor: two big arched windows, white mouldings, shutters half down, little columns
+    for (const x of [-15, 15]) {
+      const gl = arch(20, 19, glassM); gl.position.set(x, 23, F + 0.05); g.add(gl);
+      const ring = archRing(20, 19, 2.6, whiteM); ring.position.set(x, 23, F + 0.1); g.add(ring);
+      const sh = new Mesh(new BoxGeometry(19, 9, 0.6), shutterM); sh.position.set(x, 33.5, F + 1.7); g.add(sh);
+      col(x - 11.5, 23, 13, F + 1.2); col(x + 11.5, 23, 13, F + 1.2);
+    }
+    // top floor: trefoil-ish arched loggia with columns, projecting lattice balcony
+    {
+      const fz = -4 + 16;
+      const lg = arch(18, 15, new MeshStandardMaterial({ color: "#3a3430", roughness: 0.8 })); lg.position.set(0, 53, fz + 0.05); g.add(lg);
+      const ring = archRing(18, 15, 2.4, whiteM); ring.position.set(0, 53, fz + 0.1); g.add(ring);
+      const win = arch(12, 11, glassM); win.position.set(0, 53, fz - 0.6); g.add(win);
+      col(-10.5, 52, 12, fz + 1.4); col(10.5, 52, 12, fz + 1.4);
+      const latTex = canvasTexture(128, 32, (ctx) => { ctx.fillStyle = "#e8e6df"; ctx.fillRect(0, 0, 128, 32); ctx.strokeStyle = "#8d8f8c"; ctx.lineWidth = 3; for (let x = -32; x < 160; x += 12) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + 32, 32); ctx.moveTo(x + 32, 0); ctx.lineTo(x, 32); ctx.stroke(); } });
+      const bal = new Mesh(new BoxGeometry(26, 6, 7), [whiteM, whiteM, whiteM, whiteM, new MeshStandardMaterial({ map: latTex }), whiteM]);
+      bal.position.set(0, 54.5, fz + 4); g.add(bal);
+      box(28, 1.6, 9, whiteM, 0, 51.5, fz + 4);
+    }
+    // ivy climbing the right corner
+    {
+      const ivyM = new MeshStandardMaterial({ color: "#3f8a3a", roughness: 0.9, flatShading: true });
+      const r = rng(9);
+      for (let i = 0; i < 26; i++) { const b2 = new Mesh(new IcosahedronGeometry(2.6 + r() * 2.2, 0), ivyM); b2.position.set(31 + r() * 6, 2 + r() * 40, F - 2 + r() * 4); g.add(b2); }
+    }
+    // a "CROMATIC STUDIOS" plate by the door
+    { const pl = signBoard({ name: "Cromatic Studios", signBg: "#ffffff", signInk: "#111111" }, 16, 3.4); pl.position.set(-22, 20.5, F + 1.4); g.add(pl); }
+    g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    const pad = new Mesh(new CylinderGeometry(86, 92, 6, 36), new MeshStandardMaterial({ color: "#e4e0d6", roughness: 1 }));
+    pad.position.y = -3;
     pad.receiveShadow = true;
     g.add(pad);
     g.scale.set(1.3, 1.3, 1.3);
-    g.position.set(1068, 0, 9260);
+    g.rotation.y = Math.PI / 2;
+    g.position.set(1068, 3, 9260);
     parent.add(g);
     return g;
   }
@@ -28815,17 +28887,29 @@ void main() {
       const draw = () => {
         const ctx = c.getContext("2d"); ctx.clearRect(0, 0, 1024, 512);
         ctx.fillStyle = "#FED012"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-        ctx.font = "800 250px Montserrat, Poppins, sans-serif"; ctx.fillText("CSs", 40, 270);
-        ctx.font = "700 112px Montserrat, Poppins, sans-serif"; ctx.fillText("airlines", 48, 410);
+        // "CSs" cut letter by letter out of the Cromatic Studios logo itself
+        const runs = (cv) => { const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data, out = []; let st = -1;
+          for (let x = 0; x <= cv.width; x++) { let ink = false; if (x < cv.width) for (let y = 0; y < cv.height; y++) if (d[(y * cv.width + x) * 4 + 3] > 40) { ink = true; break; }
+            if (ink && st < 0) st = x; if (!ink && st >= 0) { out.push([st, x]); st = -1; } } return out; };
+        if (JET_WORDS) {
+          const [cw, sw] = JET_WORDS, rc = runs(cw), rs = runs(sw);
+          const parts = [[cw, rc[0]], [sw, rs[0]], [sw, rs[rs.length - 1]]];
+          const H2 = 250, k = H2 / cw.height;
+          const tmp = document.createElement("canvas"); tmp.width = 1024; tmp.height = 300; const tx = tmp.getContext("2d");
+          let x = 40;
+          for (const [cv, [a, b2]] of parts) { tx.drawImage(cv, a, 0, b2 - a, cv.height, x, 20, (b2 - a) * k, H2); x += (b2 - a) * k + 14; }
+          tx.globalCompositeOperation = "source-in"; tx.fillStyle = "#FED012"; tx.fillRect(0, 0, 1024, 300);
+          ctx.drawImage(tmp, 0, 0);
+        } else { ctx.font = "800 250px Montserrat, Poppins, sans-serif"; ctx.fillText("CSs", 40, 270); }
+        ctx.font = "800 96px Montserrat, Poppins, sans-serif"; ctx.letterSpacing = "18px"; ctx.fillText("AIRLINES", 48, 410);
         tex.needsUpdate = true;
       };
-      draw(); document.fonts?.ready?.then(draw);
+      draw(); document.fonts?.ready?.then(draw); jetWordsReady().then(draw);
       const m = new MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
       m.userData.outlineParameters = { visible: false };
-      const pl = new Mesh(new PlaneGeometry(22, 11), m);
+      const pl = new Mesh(new PlaneGeometry(17, 8.5), m);
       pl.rotation.y = (Math.PI / 2) * side;
-      if (side < 0) pl.scale.x = 1;
-      pl.position.set(1.15 * side, 9.5, -51 - 0 * side);
+      pl.position.set(1.75 * side, 8, -49.5);
       // the fin leans back: follow its slope
       pl.rotation.z = 0;
       return pl;
@@ -35233,14 +35317,16 @@ void main() {
         roadServices();
         const house = worldRefs.endHouse, roof = house?.children[1];
         if (!roof) return;
+        if (roof.userData.y0 == null) roof.userData.y0 = roof.position.y;
+        const y0 = roof.userData.y0;
         if (olari.t < 0) {
-          roof.position.y += (0 - roof.position.y) * Math.min(1, dt * 3); roof.rotation.y *= 1 - Math.min(1, dt * 3);
+          roof.position.y += (y0 - roof.position.y) * Math.min(1, dt * 3); roof.rotation.y *= 1 - Math.min(1, dt * 3);
           if (olari.beam) olari.beam.material.opacity *= 1 - Math.min(1, dt * 3);
           return;
         }
         olari.t += dt;
         const k = Math.min(1, olari.t / 1.1), e = 1 - Math.pow(1 - k, 3);
-        roof.position.y = e * 44 + Math.sin(olari.t * 2) * 2 * e;
+        roof.position.y = y0 + e * 34 + Math.sin(olari.t * 2) * 2 * e;
         roof.rotation.y = e * 0.35;
         olari.beam.material.opacity = 0.32 * e * (0.85 + Math.sin(olari.t * 5) * 0.15);
         olari.beam.scale.set(1, 0.4 + 0.6 * e, 1);
