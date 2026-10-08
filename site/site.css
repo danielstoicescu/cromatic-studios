@@ -528,3 +528,11 @@ a.pcard:hover .pc-media { transform: none; }
 .rs-drive { position: absolute; right: 3%; top: 5%; z-index: 2; background: var(--y); color: var(--ink); text-decoration: none; padding: 11px 16px; border-radius: 999px; border: 2.5px solid var(--ink); font: 800 14px/1 var(--f); transition: transform .25s var(--eoq); }
 .rs-drive:hover { transform: translateY(-2px); }
 @media (max-width: 700px) { .rs-drive { font-size: 12px; padding: 9px 12px; } .rv-tag { display: none; } .rs-cta { top: auto; bottom: 4%; } }
+
+/* r102: every human with a role, a line and their profiles */
+.crew { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important; gap: 26px 18px !important; align-items: start; }
+.crew li { text-align: center; }
+.cr-role { margin-top: 8px; font-size: 10px; letter-spacing: .12em; opacity: .7; font-weight: 700; text-transform: uppercase; }
+.cr-bio { margin-top: 6px; font-size: 13.5px; line-height: 1.45; max-width: 230px; }
+.cr-link { margin-top: 8px; font: 800 12px/1 Poppins, sans-serif; padding: 7px 12px; border-radius: 999px; border: 2px solid var(--ink); background: var(--cc); color: #111; text-decoration: none; }
+@media (max-width: 600px) { .crew { grid-template-columns: repeat(2, 1fr) !important; } }
