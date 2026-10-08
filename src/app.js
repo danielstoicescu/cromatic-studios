@@ -30615,8 +30615,9 @@ void main() {
         <a class="ea-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener">Navigheaz\u0103 \u2192</a>
         <span class="ea-contact"><a href="mailto:hi@cromaticstudios.com">hi@cromaticstudios.com</a><a href="tel:+40728978068">+40 728 978 068</a></span>
       </div>`);
-      const btn = el("button", "coffee-btn cta-big", `${starSVG(22, "var(--st-ink)")} <span>Go even further</span> <em class="cta-arr">\u2191</em>`);
-      btn.onclick = () => api.openSecret();
+      // r93: the end of the road boards the Cromatic Jet on the map
+      const btn = el("button", "coffee-btn cta-big", `${starSVG(22, "var(--st-ink)")} <span>Board the Cromatic Jet</span> <em class="cta-arr">\u2708</em>`);
+      btn.onclick = () => (api.boardJet ? api.boardJet() : api.openSecret());
       box.appendChild(btn);
       if (!opts.map) box.appendChild(el("p", "hint mono cta-hint", "THE STORY HAS ONE MORE CHAPTER \xB7 PRESS IT"));
     }
@@ -32385,6 +32386,7 @@ void main() {
           }
         },
         openCrew() { openCrew(); },
+        boardJet() { setMapMode(true); setTimeout(() => mapGo(MAP_PLACES.find((p) => p.id === "jet")), 400); },
         formSent() {
           // on the map, the pass goes in and the jet takes off
           if (mapMode && mapBoarding) setTimeout(mapTakeoff, 2600);
@@ -35062,7 +35064,7 @@ void main() {
           pl.wx = pl.px ?? (s0 ? s0.x : pl.x);
           pl.wz = pl.pz ?? (s0 ? s0.y : pl.z);
           pl.wy = pl.h ?? 55;
-          const got = `<span class="mp-got">${pinSVG(pl.pin || pl.c)}</span>`;
+          const got = "";
           const b = el("button", `map-pin${pl.beacon ? " beacon" : ""}${pl.chapter ? " chapter" : ""}${pl.find ? " find" : ""}`, pl.chapter
             ? `<span class="mp-label"><i class="mono">${pl.line}</i><b>${pl.name}</b>${got}</span><span class="mp-stem"></span>`
             : `<span class="mp-label"><b>${pl.name}</b><i class="mono">${pl.line}</i>${got}</span><span class="mp-stem"></span><span class="mp-dot"></span>`);
@@ -35091,17 +35093,18 @@ void main() {
           top.querySelector(".map-found").innerHTML = `<b>${f}/${totalF}</b><i> FOUND</i>`;
         };
         // a pin flies from the place to the collection
-        const flyPin = (pl) => {
+        const flyPin = (pl, pts) => {
           const from = pins.find((q) => q.pl === pl)?.b.getBoundingClientRect(), to = document.querySelector(".topbar .you")?.getBoundingClientRect();
           if (!from || !to || !from.width) return;
-          const f = el("span", "pin-fly", pinSVG(pl.pin || pl.c));
+          const f = el("span", "xp-fly", `+${pts} XP`);
+          f.style.setProperty("--pc", pl.pin || pl.c); f.style.setProperty("--pt", pl.t || "#fff");
           document.body.appendChild(f);
           const x0 = from.left + from.width / 2, y0 = from.top + 8, x1 = to.right - 40, y1 = to.top + to.height / 2;
           const a = f.animate([
             { transform: `translate(${x0}px, ${y0}px) scale(1)` },
-            { transform: `translate(${(x0 + x1) / 2}px, ${Math.min(y0, y1) - 80}px) scale(1.9)`, offset: 0.45 },
-            { transform: `translate(${x1}px, ${y1}px) scale(.7)` }
-          ], { duration: 950, easing: "cubic-bezier(.45,0,.25,1)" });
+            { transform: `translate(${x0}px, ${y0 - 46}px) scale(1.35)`, offset: 0.28 },
+            { transform: `translate(${x1}px, ${y1}px) scale(.6)`, opacity: 0.9 }
+          ], { duration: 1150, easing: "cubic-bezier(.5,0,.3,1)" });
           a.finished.then(() => f.remove(), () => f.remove());
         };
         mark();
@@ -35110,9 +35113,9 @@ void main() {
           if (document.body.classList.contains("map-at-stop")) { document.body.classList.remove("map-at-stop"); ui.card.classList.add("hidden"); }
         };
         const projectOf = (n) => [...PROJECTS_A1, ...PROJECTS_A2, ...PROJECTS_B1, ...PROJECTS_B2].find((p) => p.name === n || (n === "Steam Coffee Shop" && p.name === "Steam"));
-        const visit = (pl) => {
+        const visit = (pl, pts = 5) => {
           if (visited.has(pl.id)) return false;
-          flyPin(pl);
+          flyPin(pl, pts);
           visited.add(pl.id);
           try { localStorage.setItem("cz-map-visited", JSON.stringify([...visited])); } catch {}
           return true;
@@ -35132,8 +35135,8 @@ void main() {
           mapNav.place = null;
           mapView.follow = false; mapView.focus = { x: pl.wx, z: pl.wz };
           if (mapView.dist > 6500) mapView.distGoal = innerWidth < 720 ? 6200 : 5200;
-          if (visit(pl)) {
-            const meta = pl.stop ? STOP_META[pl.stop] : null, pts = pl.pts || meta?.pts || 5;
+          const meta = pl.stop ? STOP_META[pl.stop] : null, pts = pl.pts || meta?.pts || 5;
+          if (visit(pl, pts)) {
             if (pl.stop) xpCollected.add(pl.stop);
             gainXP(pts, pl.name, pl.stop ? meta.learn : "An old address, found");
           }

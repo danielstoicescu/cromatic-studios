@@ -3021,3 +3021,6 @@ body.map-mode .mapcard.contact { transition: transform .9s cubic-bezier(.65,0,.3
   body.map-mode.boarding-aside .mapcard.contact { transform: translateY(66%) !important; }
 }
 body.boarding-aside .map-pins { display: none !important; }
+/* r93: points rise from the place to the XP corner, in the place's colour */
+.xp-fly { position: fixed; left: 0; top: 0; z-index: 200; pointer-events: none; margin: -14px 0 0 -30px; padding: 5px 11px 6px; border-radius: 999px;
+  background: var(--pc); color: var(--pt); border: 2px solid #fff; box-shadow: 0 6px 16px -6px rgba(0,0,0,.5); font: 900 14px/1 Montserrat, Poppins, sans-serif; white-space: nowrap; }
