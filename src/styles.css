@@ -3058,9 +3058,33 @@ body.map-mode .ea-nav { grid-column: 2; grid-row: 1 / span 2; padding: 8px 12px;
 body.map-mode .ea-contact { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 6px; font-size: 12px; font-weight: 600; }
 body.map-mode .ea-contact a { color: var(--fg); text-decoration: none; }
 
-.map-world { height: 40px; padding: 0 14px 0 6px; border-radius: 999px; border: 2px solid var(--st-ink, #111) !important; background: #fff; color: #111;
-  display: inline-flex; align-items: center; gap: 6px; font: 800 13px/1 Poppins, sans-serif; cursor: pointer; }
-.map-world:hover { background: var(--accent); }
-.map-world .mb-orb svg { width: 28px; height: 28px; display: block; }
-@media (max-width: 719px) { .map-world { height: 36px; padding: 0 7px; } .map-world b { display: none; } .map-world .mb-orb svg { width: 24px; height: 24px; } }
 body.map-mode.scheme-underwater .uw-veil { opacity: .45; }
+
+/* r97: the map bar: every control the same height, centred on one line */
+.map-top { align-items: center; gap: 8px; padding: 6px; }
+.map-top > * { flex: 0 0 auto; }
+.map-top .map-count, .map-top .map-found { height: 30px; display: inline-flex; align-items: center; padding: 0 11px; box-sizing: border-box; }
+.map-top .map-count { margin-left: 4px; }
+.map-top :is(.map-ride, .map-world, .map-crew, .map-exit) { height: 42px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 7px; padding: 0 15px 0 8px; border-radius: 999px; font: 800 13px/1 Poppins, sans-serif; }
+.map-top .map-exit { padding: 0 16px; }
+.map-top .map-ride .mr-ic { width: 26px; text-align: center; font-size: 17px; line-height: 1; }
+.map-top .mcw-faces i { width: 24px; height: 24px; }
+/* World: exactly the drive's multiverse button, at the bar's height */
+.map-world { position: relative; isolation: isolate; border: 0 !important; background: transparent; color: var(--fg); cursor: pointer; }
+.map-world::before { content: ''; position: absolute; inset: 0; border-radius: inherit; z-index: -2;
+  background: conic-gradient(from var(--mbA), #FED012, #28C840, #119BFE, #B098C8, #F65342, #FED012); animation: mbSpin 3.2s linear infinite; }
+.map-world::after { content: ''; position: absolute; inset: 2.5px; border-radius: inherit; z-index: -1; background: #fff; }
+.map-world:hover::after { background: var(--accent); }
+.map-world .mb-orb { width: 30px; height: 30px; background: transparent; }
+.map-world .mb-orb svg { width: 30px; height: 30px; overflow: visible; display: block; }
+@media (prefers-reduced-motion: reduce) { .map-world::before { animation: none; } }
+@media (max-width: 719px) {
+  .map-top { gap: 5px; padding: 5px; }
+  .map-top :is(.map-ride, .map-world, .map-crew) { height: 38px; padding: 0 8px; }
+  .map-top .map-exit { height: 38px; padding: 0 11px; font-size: 12px; }
+  .map-top .map-count, .map-top .map-found { height: 26px; padding: 0 8px; }
+  .map-world b { display: none; }
+  .map-world .mb-orb, .map-world .mb-orb svg { width: 26px; height: 26px; }
+  .map-top .mcw-faces i { width: 21px; height: 21px; }
+}
+.map-top .map-count, .map-top .map-found { gap: 5px; }

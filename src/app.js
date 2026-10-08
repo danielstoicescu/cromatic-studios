@@ -35054,6 +35054,11 @@ void main() {
         ui.card.classList.remove("hidden", "peek", "contact", "crew-card");
         document.body.classList.add("map-at-stop");
       }
+      // the drive's spinning multiverse orb, reused on the map's World button
+      const MB_ORB = `<svg viewBox="0 0 40 40" aria-hidden="true"><g class="mb-spin">
+      <circle cx="20" cy="13" r="9" fill="#FED012"/><circle cx="13.5" cy="24.5" r="9" fill="#119BFE"/><circle cx="26.5" cy="24.5" r="9" fill="#F65342"/>
+      <circle cx="20" cy="13" r="9" fill="none" stroke="#0a0a0a" stroke-width="1.6"/><circle cx="13.5" cy="24.5" r="9" fill="none" stroke="#0a0a0a" stroke-width="1.6"/><circle cx="26.5" cy="24.5" r="9" fill="none" stroke="#0a0a0a" stroke-width="1.6"/></g>
+      <ellipse class="mb-ring" cx="20" cy="20" rx="19" ry="6.5" fill="none" stroke="#0a0a0a" stroke-width="1.6"/></svg>`;
       var vehPreviews = {};
       // r91: what you collect is a pin in the place's colour, not a tick
       // a thumbtack: a pale head in the place's colour, a white outline, a fine steel needle
@@ -35074,7 +35079,7 @@ void main() {
         const faces = CREW.slice(0, 4).map((n, i) => `<i style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}">${CREW_FACES[n] ? `<img src="${CREW_FACES[n]}" alt="">` : n.slice(0, 1)}</i>`).join("");
         const top = el("div", "map-top", `<span class="map-title"><i class="mono">CROMATIC WORLD</i><b>Pick a place</b></span><span class="map-count mono"></span><span class="map-found mono"></span>
           <button class="map-ride" title="Choose your ride"><span class="mr-ic">\u{1F690}</span><b>Ride</b></button>
-          <button class="map-world" title="Choose your world"><span class="mb-orb">${'<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="13" r="9" fill="#FED012" stroke="#0a0a0a" stroke-width="1.6"/><circle cx="13.5" cy="24.5" r="9" fill="#119BFE" stroke="#0a0a0a" stroke-width="1.6"/><circle cx="26.5" cy="24.5" r="9" fill="#F65342" stroke="#0a0a0a" stroke-width="1.6"/></svg>'}</span><b>World</b></button>
+          <button class="map-world" title="Choose your world"><span class="mb-orb">${MB_ORB}</span><b>World</b></button>
           <button class="map-crew" title="The crew you travel with"><span class="mcw-faces">${faces}</span><b>Crew</b></button>
           <button class="map-exit" title="The same world as a scroll-driven drive"><span class="me-ic">\u{1F697}</span><span class="me-l">Drive mode</span></button>`);
         const rides = el("div", "map-rides hidden", `<span class="mono">YOUR RIDE</span><div class="mrs-list">${VEHICLES.map((v) => `<button class="mrs-v" data-v="${v.id}"><span class="mrs-th"></span><b>${v.label}</b></button>`).join("")}</div>`);
