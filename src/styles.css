@@ -3024,3 +3024,8 @@ body.boarding-aside .map-pins { display: none !important; }
 /* r93: points rise from the place to the XP corner, in the place's colour */
 .xp-fly { position: fixed; left: 0; top: 0; z-index: 200; pointer-events: none; margin: -14px 0 0 -30px; padding: 5px 11px 6px; border-radius: 999px;
   background: var(--pc); color: var(--pt); border: 2px solid #fff; box-shadow: 0 6px 16px -6px rgba(0,0,0,.5); font: 900 14px/1 Montserrat, Poppins, sans-serif; white-space: nowrap; }
+/* r93: after the flight the boarding pass is the hero, with a replay */
+body.boarding-done .map-top, body.boarding-done .map-dock, body.boarding-done .map-zoom { display: none !important; }
+.bp-replay { display: inline-flex; align-items: center; gap: 10px; margin: 18px auto 0; padding: 14px 26px; font-size: 16px; background: var(--accent); }
+body.boarding-done .mapcard.contact .bp-replay { display: flex; width: max-content; }
+body.boarding-done .mapcard.contact { overflow-y: auto !important; }

@@ -28583,6 +28583,34 @@ void main() {
   // side). It waits at the head of a runway east of the secret road, airstair down on a black
   // carpet. Local frame: nose towards +z, wheels on y = 0.
   var JET_LEN = 118, JET_CY = 14;
+  // the two words of the logo, cut apart at the widest empty gap between them
+  var JET_WORDS = null;
+  var jetWordsP = null;
+  var jetWordsReady = () => jetWordsP || (jetWordsP = new Promise((res) => {
+    const im = new Image();
+    im.onload = () => {
+      const c = document.createElement("canvas"); c.width = im.width; c.height = im.height;
+      const x = c.getContext("2d"); x.drawImage(im, 0, 0);
+      const d = x.getImageData(0, 0, im.width, im.height).data;
+      const used = [];
+      for (let i = 0; i < im.width; i++) { let u = false; for (let j = 0; j < im.height; j++) if (d[(j * im.width + i) * 4 + 3] > 20) { u = true; break; } used.push(u); }
+      const first = used.indexOf(true), last = used.lastIndexOf(true);
+      let best = [0, 0], run = 0;
+      for (let i = first; i <= last; i++) { if (!used[i]) { run++; if (run > best[1]) best = [i - run + 1, run]; } else run = 0; }
+      const cut = (a, b) => {
+        let t = im.height, bo = 0;
+        for (let j = 0; j < im.height; j++) for (let i = a; i < b; i++) if (d[(j * im.width + i) * 4 + 3] > 20) { if (j < t) t = j; if (j > bo) bo = j; }
+        const o = document.createElement("canvas"); o.width = b - a; o.height = bo - t + 1;
+        const ox = o.getContext("2d"); ox.drawImage(im, a, t, b - a, o.height, 0, 0, b - a, o.height);
+        ox.globalCompositeOperation = "source-in"; ox.fillStyle = "#111111"; ox.fillRect(0, 0, o.width, o.height);
+        return o;
+      };
+      JET_WORDS = [cut(first, best[0]), cut(best[0] + best[1], last + 1)];
+      res();
+    };
+    im.onerror = () => res();
+    im.src = logoLandscape;
+  }));
   function jetRadius(z) {
     // z from -59 (tail tip) to +59 (nose tip)
     const s = z + 59;
@@ -28632,10 +28660,21 @@ void main() {
         // the cheatline
         ctx.fillStyle = "#121212"; ctx.fillRect(X(-34), Y(7), X(43) - X(-34), 12);
         ctx.restore();
+        // r93: the wordmark from the logo itself, black, no outline, painted on the skin:
+        // "Cromatic" down the left side, "Studios" down the right, as tall as the lower cabin
+        const part = JET_WORDS && JET_WORDS[side < 0 ? 0 : 1];
+        if (part) {
+          const zA = -26, zB = 36, top = Y(3), bot = Y(-31);
+          const boxW = X(zB) - X(zA), boxH = bot - top, k = Math.min(boxW / part.width, boxH / part.height);
+          const w = part.width * k, h = part.height * k;
+          const cx = side > 0 ? 2048 - (X(zA) + X(zB)) / 2 : (X(zA) + X(zB)) / 2;
+          ctx.drawImage(part, cx - w / 2, top + (boxH - h) / 2, w, h);
+        }
         tex.needsUpdate = true;
       };
       draw();
       document.fonts?.ready?.then(draw);
+      jetWordsReady().then(draw);
       // the decal surface hugs the fuselage (radius and tail lift follow the body)
       const n = 80, m = 24, pos = [], uv = [], idx = [];
       for (let i = 0; i <= n; i++) {
@@ -28657,34 +28696,6 @@ void main() {
       return mesh;
     };
     g.add(decal(1), decal(-1));
-    // r92: the wordmark, oversized: "cromatic" down the left side, "studios" down the right,
-    // taller than the fuselage itself so it stands out of the jet's silhouette. Black letters in a
-    // thick white outline, so they read on the yellow and against the sky alike.
-    const word = (txt, side) => {
-      const c = document.createElement("canvas"); c.width = 2048; c.height = 640;
-      const tex = new CanvasTexture(c); tex.colorSpace = SRGBColorSpace; tex.anisotropy = 8;
-      const draw = () => {
-        const ctx = c.getContext("2d");
-        ctx.clearRect(0, 0, 2048, 640);
-        let size = 600;
-        ctx.font = `900 ${size}px Montserrat, Poppins, sans-serif`;
-        while (ctx.measureText(txt).width > 1880 && size > 120) { size -= 10; ctx.font = `900 ${size}px Montserrat, Poppins, sans-serif`; }
-        ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.lineJoin = "round";
-        const y = 470;
-        ctx.lineWidth = 46; ctx.strokeStyle = "#ffffff"; ctx.strokeText(txt, 1024, y);
-        ctx.fillStyle = "#121212"; ctx.fillText(txt, 1024, y);
-        tex.needsUpdate = true;
-      };
-      draw(); document.fonts?.ready?.then(draw);
-      const m = new MeshStandardMaterial({ map: tex, transparent: true, alphaTest: 0.35, roughness: 0.45 });
-      m.userData.outlineParameters = { visible: false };
-      const W = 68, H = W * 640 / 2048;
-      const pl = new Mesh(new PlaneGeometry(W, H), m);
-      pl.rotation.y = side * Math.PI / 2;
-      pl.position.set(side * 8.1, JET_CY + 6.2, 12);
-      return pl;
-    };
-    g.add(word("cromatic", -1), word("studios", 1));
     // detail: wing-root fairings, leading-edge strips, landing lights, beacons, antennas, APU
     const wingY = JET_CY - 5.2;
     for (const s2 of [1, -1]) {
@@ -34919,12 +34930,23 @@ void main() {
         ui.card.classList.add("hidden");
         ui.card.classList.remove("contact");
         ui.clearCard();
-        document.body.classList.remove("map-boarding", "boarding-aside");
+        document.body.classList.remove("map-boarding", "boarding-aside", "boarding-done");
       }
       // r92: the take-off as a film. The boarding pass slides aside (right on desktop, down on a
       // phone) and stays; the camera swings low to the jet's side and closes in while it rolls,
       // speed lines and a shake build with the speed, then it lifts, climbs into a cloud deck and
       // is gone. Wheels up. The camera comes back, a fresh jet waits on the stand.
+      // after the flight the boarding pass comes back to the middle, big, with a way to start over
+      function mapBoardingDone() {
+        document.body.classList.remove("boarding-aside");
+        if (!mapBoarding) return;
+        document.body.classList.add("boarding-done");
+        if (!ui.card.querySelector(".bp-replay")) {
+          const r = el("button", "coffee-btn bp-replay", `\u21BB <span>Repeat the experience</span>`);
+          r.onclick = () => { try { localStorage.removeItem("cz-map-visited"); } catch {} location.href = "/"; };
+          (ui.card.querySelector(".mc-content") || ui.card).appendChild(r);
+        }
+      }
       function mapTakeoff() {
         const jet = worldRefs.jet;
         if (!jet || jetFx.phase !== "idle") return;
@@ -34999,6 +35021,7 @@ void main() {
             jet.clouds.visible = false;
             jetFx.phase = "idle";
             document.body.classList.remove("map-takeoff");
+            mapBoardingDone();
           }
         }
       }
