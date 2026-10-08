@@ -34970,9 +34970,11 @@ void main() {
               const cz = jet.clouds.position.z;
               mapView.follow = false; mapView.focus = { x: JET_HOME.x, z: g.position.z + (cz - g.position.z) * 0.72 };
               mapView.lookYGoal = 470;
-              mapView.distGoal = innerWidth < 720 ? 2300 : 1900; mapView.distRate = 0.9; mapView.pitchGoal = 0.2; mapView.yawGoal = -(Math.PI - 0.5);
+              mapView.distGoal = innerWidth < 720 ? 2300 : 1900; mapView.distRate = 0.9; mapView.pitchGoal = 0.2; mapView.yawGoal = -(Math.PI - (innerWidth < 720 ? 0.12 : 0.3));
             }
             g.position.y = c * c * 30;
+            // the look follows the jet's height up to the deck, so it never drops out of the picture
+            if (jetFx.watch) mapView.lookYGoal = Math.min(470, Math.max(140, g.position.y + (innerWidth < 720 ? 120 : 40)));
             g.rotation.x = -Math.min(0.26, c * 0.17);
             g.rotation.z = Math.sin(Math.min(1, c / 4) * Math.PI) * 0.1;
             jetFx.speed = Math.max(0, 1 - c / 3);
