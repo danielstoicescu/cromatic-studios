@@ -3141,3 +3141,6 @@ body.map-mode .topbar .mode-links { display: none; }
 /* r105: the crew overlay takes the clicks (its face buttons are all:unset, so they inherit the root's none) */
 .crew-panel, .crew-panel *, .human-panel, .human-panel * { pointer-events: auto; }
 .crew-panel.hidden, .human-panel.hidden, .human-panel.hidden * { pointer-events: none; }
+/* r106: on the map the espresso counter sits up top, the Two Minutes card keeps the bottom */
+body.map-mode .coffee-card { top: calc(132px + env(safe-area-inset-top, 0px)) !important; bottom: auto !important; }
+@media (max-width: 719px) { body.map-mode .coffee-card { top: calc(124px + env(safe-area-inset-top, 0px)) !important; left: 12px !important; right: 12px !important; transform: none !important; } }
