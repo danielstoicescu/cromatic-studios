@@ -34963,6 +34963,19 @@ void main() {
         const box = el("div", "crew-box");
         box.appendChild(el("span", "eyebrow mono", "YOUR CREW ON THIS TRIP"));
         box.appendChild(buildCardContent("team", api, { map: true }));
+        // r103: every human with their role and line right in the list, no click needed to read it
+        const grid = box.querySelector(".crew-faces");
+        if (grid) {
+          const list = el("div", "crew-list");
+          CREW.forEach((n, i) => {
+            const ci = CREW_INFO[n] || {}, col = CREW_COLORS[i % CREW_COLORS.length], src = CREW_FACES[n];
+            const r = el("button", "cl-row", `<span class="cl-face" style="--cc:${col}">${src ? `<img src="${src}" alt="" loading="lazy">` : ""}</span>
+              <span class="cl-txt"><b>${n}</b>${ci.role ? `<i class="mono">${ci.role}</i>` : ""}<span>${ci.bio || ""}</span></span><em>\u203A</em>`);
+            r.onclick = () => api.openHuman(i);
+            list.appendChild(r);
+          });
+          grid.replaceWith(list);
+        }
         const x = el("button", "map-x", "\xD7"); x.setAttribute("aria-label", "Close");
         x.onclick = () => { crewPanel.classList.add("hidden"); document.querySelector(".human-panel")?.classList.add("hidden"); document.body.classList.remove("human-open"); };
         box.appendChild(x);
