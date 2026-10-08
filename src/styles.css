@@ -3206,3 +3206,30 @@ body.olari-open .map-dock, body.olari-open .map-zoom { opacity: 0; pointer-event
 }
 @media (max-width: 719px) { .olari-fan .olari-x { position: absolute; top: auto; bottom: auto; right: 14px; margin-top: -54px; grid-column: 2; justify-self: end; order: -1; } }
 .olari-fan .olari-x { grid-column: 1 / -1; justify-self: end; position: static; margin-bottom: -6px; }
+
+/* r108: cups drift behind the services; two clear actions under them */
+.olari-cups { position: fixed; inset: 0; z-index: -1; pointer-events: none !important; overflow: hidden; }
+.olari-cup { position: absolute; left: var(--x); top: var(--y); width: var(--w); aspect-ratio: 132 / 112; opacity: 0; filter: drop-shadow(0 12px 16px rgba(0,0,0,.18)); }
+.olari-cup svg { width: 100%; height: 100%; overflow: visible; display: block; }
+.olari-fan.go .olari-cup { animation: cupIn .8s var(--d) both, cupFloat var(--t) var(--d) ease-in-out infinite alternate; }
+@keyframes cupIn { from { opacity: 0; transform: scale(.2) rotate(0deg); } to { opacity: .95; } }
+@keyframes cupFloat { from { transform: translateY(0) rotate(calc(var(--r) * -1)); } to { transform: translateY(-34px) rotate(var(--r)); } }
+.olari-next { flex-direction: column; align-items: center; gap: 12px; margin-top: 18px; }
+.olari-next button { height: auto; display: inline-flex; align-items: center; gap: 14px; text-align: left; }
+.olari-next .oc-jet { min-width: min(520px, 92vw); padding: 16px 26px 16px 18px; border-radius: 999px; background: #FED012; border-width: 3px !important; box-shadow: 0 18px 36px -14px rgba(0,0,0,.5); animation: jetPulse 1.8s ease-out infinite; }
+.olari-next .oc-jet b { display: block; font: 900 26px/1 Montserrat, Poppins, sans-serif; letter-spacing: -.01em; }
+.olari-next .oc-jet i, .olari-next .oc-addr i { display: block; font-style: normal; font-size: 9.5px; letter-spacing: .14em; opacity: .7; margin-top: 5px; font-weight: 700; }
+.olari-next .oc-jet em { font-style: normal; margin-left: auto; width: 46px; height: 46px; border-radius: 50%; background: #111; color: #FED012; display: grid; place-items: center; font: 900 24px/1 Poppins, sans-serif; }
+.ocj-star { font-size: 30px; line-height: 1; }
+.olari-next .oc-jet:hover { transform: translateY(-2px) scale(1.02); }
+.olari-next .oc-addr { padding: 12px 22px; border-radius: 999px; background: #fff; flex-direction: column; align-items: center; text-align: center; gap: 0; }
+.olari-next .oc-addr b { font: 800 16px/1 Poppins, sans-serif; }
+@media (max-width: 719px) {
+  .olari-next .oc-jet { min-width: 0; width: 100%; padding: 13px 14px 13px 14px; gap: 10px; }
+  .olari-next .oc-jet b { font-size: 20px; }
+  .olari-next .oc-jet i { font-size: 7.5px; }
+  .olari-next .oc-jet em { width: 38px; height: 38px; font-size: 20px; }
+  .olari-next .oc-addr { width: 100%; padding: 10px 14px; }
+  .olari-next .oc-addr b { font-size: 14px; }
+  .olari-cup { width: calc(var(--w) * .6); }
+}

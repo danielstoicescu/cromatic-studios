@@ -26780,6 +26780,18 @@ void main() {
   // beat; outlined marquees drift behind the words; keyword pills drop, stamp, glitch, decode,
   // wave and rain; Cromatic shapes burst on the big hits. It lives at the spawn point (resume /
   // pause) and ends with a real-looking coffee pour that fills the screen and bursts open.
+  var CZ_CUP = `<svg viewBox="0 0 132 112" aria-hidden="true">
+      <ellipse class="kc-shadow" cx="62" cy="103" rx="52" ry="6"/>
+      <path class="kc-saucer" d="M8 94 Q62 110 116 94 Q116 86 62 86 Q8 86 8 94 Z"/>
+      <path class="kc-handle" d="M96 44 C118 44 120 72 96 74"/>
+      <path class="kc-body" d="M22 34 H102 V58 C102 80 84 92 62 92 C40 92 22 80 22 58 Z"/>
+      <ellipse class="kc-rim" cx="62" cy="34" rx="40" ry="8"/>
+      <path class="kc-shine" d="M32 44 C31 60 36 72 46 80"/>
+      <path class="kc-star" d="M62 56 l2.4 5.2 5.6 .7 -4.1 3.9 1 5.6 -4.9-2.7 -4.9 2.7 1-5.6 -4.1-3.9 5.6-.7 z"/>
+      <path class="kc-steam s1" d="M50 26 C44 18 56 12 50 4"/>
+      <path class="kc-steam s2" d="M66 24 C60 16 72 10 66 0"/>
+      <path class="kc-steam s3" d="M80 26 C74 18 86 12 80 4"/>
+    </svg>`;
   function createKinetic(onFinale, preBurst) {
     const C = { y: "#FED012", b: "#119BFE", g: "#28C840", r: "#F65342", l: "#B098C8" };
     const BEATS = [
@@ -27048,18 +27060,8 @@ void main() {
     const cupsL = document.createElement("div");
     cupsL.className = "kz-cups";
     stage.insertBefore(cupsL, block);
-    const CUP = `<svg viewBox="0 0 132 112" aria-hidden="true">
-      <ellipse class="kc-shadow" cx="62" cy="103" rx="52" ry="6"/>
-      <path class="kc-saucer" d="M8 94 Q62 110 116 94 Q116 86 62 86 Q8 86 8 94 Z"/>
-      <path class="kc-handle" d="M96 44 C118 44 120 72 96 74"/>
-      <path class="kc-body" d="M22 34 H102 V58 C102 80 84 92 62 92 C40 92 22 80 22 58 Z"/>
-      <ellipse class="kc-rim" cx="62" cy="34" rx="40" ry="8"/>
-      <path class="kc-shine" d="M32 44 C31 60 36 72 46 80"/>
-      <path class="kc-star" d="M62 56 l2.4 5.2 5.6 .7 -4.1 3.9 1 5.6 -4.9-2.7 -4.9 2.7 1-5.6 -4.1-3.9 5.6-.7 z"/>
-      <path class="kc-steam s1" d="M50 26 C44 18 56 12 50 4"/>
-      <path class="kc-steam s2" d="M66 24 C60 16 72 10 66 0"/>
-      <path class="kc-steam s3" d="M80 26 C74 18 86 12 80 4"/>
-    </svg>`;
+    const CUP = CZ_CUP;
+    window.__czCup = CUP;
     const mkCup = (cls, x, y, w) => {
       const c = document.createElement("i");
       c.className = `kz-cup ${cls}`;
@@ -34942,7 +34944,7 @@ void main() {
         mapView.follow = true; mapView.focus = null;
         mapView.vx = mapView.vz = 0;
         if (coffee.phase !== "idle") { coffee.phase = "idle"; coffee.done = true; ui.coffeeEnd(); }
-        olari.cards?.classList.add("gone");
+        if (pl.stop !== "end") olari.cards?.classList.add("gone");
         if (mapView.dist > 7000) mapView.distGoal = innerWidth < 720 ? 6800 : 5600;
         document.body.classList.add("map-moving");
         mapUI.hideCard();
@@ -34957,6 +34959,7 @@ void main() {
       }
       function mapStep() {
         if (!mapNav.moving) return;
+        if (mapNav.place?.stop === "end" && mapNav.legs.length === 1 && olari.t < 0 && Math.abs(state.L - mapNav.targetL) < 520) { olari.early = true; olariOpen(); }
         if (Math.abs(state.L - mapNav.targetL) > 4) return;
         const leg = mapNav.legs.shift();
         if (leg && leg.then && leg.L != null) mapSwitchBranch(leg.then);
@@ -35110,6 +35113,7 @@ void main() {
       function olariOpen() {
         const house = worldRefs.endHouse;
         mapView.follow = false; mapView.focus = { x: house.position.x, z: house.position.z };
+        olari.cards?.remove();
         mapView.distGoal = innerWidth < 720 ? 2600 : 2100; mapView.distRate = 1.4;
         if (!olari.beam) {
           const bm = new MeshBasicMaterial({ color: "#FED012", transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false, side: DoubleSide });
@@ -35120,6 +35124,14 @@ void main() {
         }
         olari.cards?.remove();
         const wrap = el("div", "olari-fan");
+        // the white cups from the intro drift and turn behind the cards
+        const cups = el("div", "olari-cups");
+        for (let k = 0; k < 9; k++) {
+          const c = el("i", "olari-cup", CZ_CUP);
+          c.style.cssText = `--x:${(6 + (k * 37) % 88)}vw;--y:${(14 + (k * 53) % 70)}vh;--w:${70 + (k * 29) % 70}px;--d:${(k * 0.7).toFixed(1)}s;--t:${(9 + (k * 3) % 7)}s;--r:${(k % 2 ? 1 : -1) * (18 + k * 6)}deg`;
+          cups.appendChild(c);
+        }
+        wrap.appendChild(cups);
         SERVICES.forEach((sv, i) => {
           const c = el("div", "olari-card", `<span class="svcx-art" aria-hidden="true">${SVC_ART[i % SVC_ART.length]}</span>
             <span class="oc-n mono">SERVICE ${i + 1} / ${SERVICES.length}</span><b>${sv.t}</b>
@@ -35127,7 +35139,7 @@ void main() {
           c.style.setProperty("--sc", sv.c); c.style.setProperty("--i", i);
           wrap.appendChild(c);
         });
-        const next = el("div", "olari-next", `<button class="oc-addr">Olari 9 \u00B7 come by \u2192</button><button class="oc-jet">Go even further \u2191</button>`);
+        const next = el("div", "olari-next", `<button class="oc-jet"><span class="ocj-star">\u2738</span><span><b>Go even further</b><i class="mono">BOARD THE CROMATIC JET \u00B7 SAY HI</i></span><em>\u2191</em></button><button class="oc-addr"><b>Olari 9 \u00B7 come by</b><i class="mono">ADDRESS \u00B7 MAPS \u00B7 CONTACT</i></button>`);
         wrap.appendChild(next);
         next.querySelector(".oc-addr").onclick = () => { wrap.classList.add("gone"); mapShowChapter("end"); };
         next.querySelector(".oc-jet").onclick = () => { wrap.classList.add("gone"); api.boardJet(); };
@@ -35320,7 +35332,7 @@ void main() {
           if (visit(pl)) gainXP(5, pl.name, "Found on the map");
           mark();
           if (pl.board) { mapOpenBoarding(); return; }
-          if (pl.stop === "end") { olariOpen(); return; }
+          if (pl.stop === "end") { if (!olari.early) olariOpen(); olari.early = false; return; }
           if (pl.id === "hq") { showCard(pl, "A FORMER ADDRESS", `<p>${pl.desc}</p>`, ""); return; }
           if (pl.stop === "services") {
             showCard(pl, "EVERYTHING WE DO", SERVICES.map((sv) => `<span class="mcd-svc" style="--sc:${sv.c}"><b>${sv.t}</b>${sv.items.slice(0, 4).join(" \xB7 ")}</span>`).join(""), `<button class="mcd-open mcd-jet">Board the Cromatic Jet ✈</button>`);
