@@ -28858,13 +28858,14 @@ void main() {
     const jet = buildCromaticJet();
     jet.group.position.set(X, 0, JET_HOME.z);
     parent.add(jet.group);
-    const cm = new MeshLambertMaterial({ color: "#ffffff", emissive: new Color("#fff3f6"), emissiveIntensity: 0.35, flatShading: true });
+    const cm = new MeshLambertMaterial({ color: "#ffffff", emissive: new Color("#ffffff"), emissiveIntensity: 0.55, flatShading: true, fog: false });
     cm.userData.outlineParameters = { visible: false };
     const cg = [], rc = rng(909);
     for (let i = 0; i < 26; i++) {
-      const r = 60 + rc() * 70, sp = new IcosahedronGeometry(r, 1);
+      const r = 110 + rc() * 120, sp = new IcosahedronGeometry(r, 1);
       sp.scale(1.5, 0.6, 1.2);
-      sp.translate(X + (rc() - 0.5) * 520, 600 + rc() * 170, 11000 + rc() * 1900);
+      // a deck around the origin; the take-off parks it where the jet will punch through
+      sp.translate((rc() - 0.5) * 900, 470 + rc() * 160, (rc() - 0.5) * 1100);
       cg.push(sp);
     }
     jet.clouds = new Mesh(mergeGeometries(cg), cm);
@@ -34925,12 +34926,15 @@ void main() {
       function mapTakeoff() {
         const jet = worldRefs.jet;
         if (!jet || jetFx.phase !== "idle") return;
-        jetFx.phase = "board"; jetFx.t = 0; jetFx.baam = false; jetFx.speed = 0;
+        jetFx.phase = "board"; jetFx.t = 0; jetFx.baam = false; jetFx.speed = 0; jetFx.watch = false;
         document.body.classList.add("map-takeoff");
         if (mapBoarding) document.body.classList.add("boarding-aside");
         mapView.follow = true; mapView.focus = null;
         mapView.distGoal = innerWidth < 720 ? 760 : 620; mapView.distRate = 1.3;
         mapView.yawGoal = -1.15; mapView.pitchGoal = 0.36;
+        // the jet reaches the deck (y 690) about 4.8 s after rotation: the clouds wait right there
+        const c0 = Math.sqrt(520 / 30);
+        jet.clouds.position.set(JET_HOME.x, 0, JET_HOME.z + 975 + 390 * c0 + 20 * c0 * c0);
         jet.clouds.visible = true;
       }
       function jetUpdate(dt, now) {
@@ -34959,13 +34963,21 @@ void main() {
           if (T > 5) {
             // rotate, lift, climb; the camera pulls back to watch it go
             const c = T - 5;
-            if (jetFx.phase === "roll") { jetFx.phase = "climb"; mapView.distGoal = innerWidth < 720 ? 2600 : 2100; mapView.distRate = 0.8; mapView.pitchGoal = 0.62; mapView.yawGoal = -0.75; }
+            if (jetFx.phase === "roll") jetFx.phase = "climb";
+            if (c > 1.3 && !jetFx.watch) {
+              // the camera lets go behind the jet and watches it climb away into the cloud deck
+              jetFx.watch = true;
+              const cz = jet.clouds.position.z;
+              mapView.follow = false; mapView.focus = { x: JET_HOME.x, z: g.position.z + (cz - g.position.z) * 0.55 };
+              mapView.lookYGoal = 300;
+              mapView.distGoal = innerWidth < 720 ? 2300 : 1900; mapView.distRate = 0.9; mapView.pitchGoal = 0.3; mapView.yawGoal = -(Math.PI - 0.5);
+            }
             g.position.y = c * c * 30;
             g.rotation.x = -Math.min(0.26, c * 0.17);
             g.rotation.z = Math.sin(Math.min(1, c / 4) * Math.PI) * 0.1;
             jetFx.speed = Math.max(0, 1 - c / 3);
             // into the clouds
-            if (g.position.y > 690) {
+            if (g.position.y > 560) {
               g.visible = false; jet.glowM.opacity = 0;
               jetFx.phase = "gone"; jetFx.t = 0;
               mapUI.baam();
@@ -34974,7 +34986,7 @@ void main() {
         } else if (jetFx.phase === "gone") {
           if (t > 2.6 && mapView.yawGoal == null && Math.abs(mapView.yaw - 0.3) > 0.01) {
             mapView.follow = false; mapView.focus = { x: JET_HOME.x - 120, z: JET_HOME.z + 120 };
-            mapView.yawGoal = 0.3; mapView.pitchGoal = 0.98; mapView.distGoal = innerWidth < 720 ? 5200 : 4200; mapView.distRate = 1;
+            mapView.yawGoal = 0.3; mapView.pitchGoal = 0.98; mapView.distGoal = innerWidth < 720 ? 5200 : 4200; mapView.distRate = 1; mapView.lookYGoal = 0;
           }
           if (t > 6) {
             // a fresh jet waits on the stand, stair down, carpet out
@@ -35257,7 +35269,8 @@ void main() {
             if (mapView.follow) {
               const jet = worldRefs.jet, flyingJet = jetFx.phase === "roll" || jetFx.phase === "climb";
               // a climbing jet is followed where it shows on screen, not the ground under it
-              const jp = jet.group.position, lift = flyingJet ? jp.y / Math.tan(mapView.pitch) : 0;
+              const jp = jet.group.position, lift = 0;
+              mapView.lookY = (mapView.lookY || 0) + ((flyingJet && jet.group.visible ? jp.y : 0) - (mapView.lookY || 0)) * (1 - Math.exp(-dt * 8));
               const atJet = !flyingJet && mapNav.place?.board && !mapNav.moving;
               const fxp = flyingJet ? jp.x - Math.sin(mapView.yaw) * lift : atJet ? (carPos.x + JET_HOME.x) / 2 : carPos.x;
               const fzp = flyingJet ? jp.z - Math.cos(mapView.yaw) * lift : atJet ? (carPos.z + JET_HOME.z) / 2 : carPos.z;
@@ -35276,9 +35289,10 @@ void main() {
             }
             mapView.tgt.x = clamp2(mapView.tgt.x, -300, 2900);
             mapView.tgt.z = clamp2(mapView.tgt.z, 2300, 11600);
-            mapView.tgt.y = 0;
+            if (!mapView.follow) mapView.lookY = (mapView.lookY || 0) + ((mapView.lookYGoal || 0) - (mapView.lookY || 0)) * (1 - Math.exp(-dt * 2));
+            mapView.tgt.y = mapView.lookY || 0;
             const cp = Math.cos(mapView.pitch);
-            mapView.pos.set(mapView.tgt.x + Math.sin(mapView.yaw) * cp * mapView.dist, Math.sin(mapView.pitch) * mapView.dist, mapView.tgt.z + Math.cos(mapView.yaw) * cp * mapView.dist);
+            mapView.pos.set(mapView.tgt.x + Math.sin(mapView.yaw) * cp * mapView.dist, mapView.tgt.y + Math.sin(mapView.pitch) * mapView.dist, mapView.tgt.z + Math.cos(mapView.yaw) * cp * mapView.dist);
             // speed: streaks at the edges and a shake that grow with the jet's speed
             const sp = jetFx.speed || 0;
             speedEl.style.opacity = (sp * sp).toFixed(3);
