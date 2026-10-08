@@ -34228,7 +34228,7 @@ void main() {
         }
         // a calm city speed everywhere on the ground (chapter jumps and the flight excepted)
         if (!siteMode && now > jumpGuard && prevL < route.stopL.end + 400) {
-          const maxStep = (mapMode ? 1150 : 620) * dt;
+          const maxStep = (mapMode ? (Math.abs(state.targetL - state.L) > 1400 ? 2100 : 1150) : 620) * dt;
           state.L = clamp2(state.L, prevL - maxStep, prevL + maxStep);
         }
         {
@@ -34902,7 +34902,6 @@ void main() {
         { id: "invest", br: "B", x: 2205, z: 4500, h: 170, name: "Investimental", line: "FINTECH \xB7 UX \xB7 UI", c: "#119BFE", t: "#ffffff", work: "Investimental" },
         { id: "tac", br: "C", x: 1790, z: 4570, px: 1700, h: 190, name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
         { id: "zdrovit", br: "C", x: 1720, z: 5070, h: 70, name: "Zdrovit", line: "8 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health, clinic, beauty and perfume brands, from Bucharest to Barcelona, Los Angeles and Paris." },
-        { id: "services", stop: "services", name: "Full Tank", line: "EVERYTHING WE DO", c: "#28C840", t: "#0d2410" },
         { id: "end", stop: "end", name: "Strada Olari 9", line: "THE STUDIO \xB7 COME BY", c: "#ffffff", t: "#111111", pin: "#111111" },
         { id: "jet", x: 1250, z: 9705, px: JET_HOME.x, pz: JET_HOME.z, h: 46, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", beacon: true, board: true }
       ];
@@ -34943,6 +34942,7 @@ void main() {
         mapView.follow = true; mapView.focus = null;
         mapView.vx = mapView.vz = 0;
         if (coffee.phase !== "idle") { coffee.phase = "idle"; coffee.done = true; ui.coffeeEnd(); }
+        olari.cards?.classList.add("gone");
         if (mapView.dist > 7000) mapView.distGoal = innerWidth < 720 ? 6800 : 5600;
         document.body.classList.add("map-moving");
         mapUI.hideCard();
@@ -35104,6 +35104,63 @@ void main() {
           }
         }
       }
+      // r107: Olari 9 opens up. The roof lifts off and hovers, a beam of light rises, and the four
+      // services fly out of the house one after another and settle in a fan. Then the address card.
+      var olari = { t: -1, cards: null, beam: null };
+      function olariOpen() {
+        const house = worldRefs.endHouse;
+        mapView.follow = false; mapView.focus = { x: house.position.x, z: house.position.z };
+        mapView.distGoal = innerWidth < 720 ? 2600 : 2100; mapView.distRate = 1.4;
+        if (!olari.beam) {
+          const bm = new MeshBasicMaterial({ color: "#FED012", transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false, side: DoubleSide });
+          bm.userData.outlineParameters = { visible: false };
+          olari.beam = new Mesh(new CylinderGeometry(30, 60, 520, 24, 1, true), bm);
+          olari.beam.position.set(house.position.x, 260, house.position.z);
+          scene.add(olari.beam);
+        }
+        olari.cards?.remove();
+        const wrap = el("div", "olari-fan");
+        SERVICES.forEach((sv, i) => {
+          const c = el("div", "olari-card", `<span class="svcx-art" aria-hidden="true">${SVC_ART[i % SVC_ART.length]}</span>
+            <span class="oc-n mono">SERVICE ${i + 1} / ${SERVICES.length}</span><b>${sv.t}</b>
+            <span class="oc-pills">${sv.items.map((x) => `<i>${x}</i>`).join("")}</span>`);
+          c.style.setProperty("--sc", sv.c); c.style.setProperty("--i", i);
+          wrap.appendChild(c);
+        });
+        const next = el("div", "olari-next", `<button class="oc-addr">Olari 9 \u00B7 come by \u2192</button><button class="oc-jet">Go even further \u2191</button>`);
+        wrap.appendChild(next);
+        next.querySelector(".oc-addr").onclick = () => { wrap.classList.add("gone"); mapShowChapter("end"); };
+        next.querySelector(".oc-jet").onclick = () => { wrap.classList.add("gone"); api.boardJet(); };
+        const x = el("button", "map-x olari-x", "\u00D7"); x.setAttribute("aria-label", "Close"); x.onclick = () => wrap.classList.add("gone");
+        wrap.prepend(x);
+        ui.root.appendChild(wrap);
+        olari.cards = wrap;
+        olari.t = 0;
+        document.body.classList.add("olari-open");
+      }
+      function olariUpdate(dt) {
+        const house = worldRefs.endHouse, roof = house?.children[1];
+        if (!roof) return;
+        if (olari.t < 0) {
+          roof.position.y += (0 - roof.position.y) * Math.min(1, dt * 3); roof.rotation.y *= 1 - Math.min(1, dt * 3);
+          if (olari.beam) olari.beam.material.opacity *= 1 - Math.min(1, dt * 3);
+          return;
+        }
+        olari.t += dt;
+        const k = Math.min(1, olari.t / 1.1), e = 1 - Math.pow(1 - k, 3);
+        roof.position.y = e * 44 + Math.sin(olari.t * 2) * 2 * e;
+        roof.rotation.y = e * 0.35;
+        olari.beam.material.opacity = 0.32 * e * (0.85 + Math.sin(olari.t * 5) * 0.15);
+        olari.beam.scale.set(1, 0.4 + 0.6 * e, 1);
+        // the cards start at the house on screen
+        if (olari.cards && !olari.cards._placed) {
+          const p = new Vector3(house.position.x, 120, house.position.z).project(camera);
+          olari.cards.style.setProperty("--hx", `${((p.x * 0.5 + 0.5) * innerWidth).toFixed(0)}px`);
+          olari.cards.style.setProperty("--hy", `${((-p.y * 0.5 + 0.5) * innerHeight).toFixed(0)}px`);
+          if (olari.t > 0.9) { olari.cards._placed = true; olari.cards.classList.add("go"); }
+        }
+        if (olari.cards && olari.cards.classList.contains("gone")) { olari.t = -1; document.body.classList.remove("olari-open"); setTimeout(() => olari.cards?.remove(), 600); }
+      }
       function mapShowChapter(id) {
         ui.clearCard();
         currentCardStop = null;
@@ -35263,7 +35320,7 @@ void main() {
           if (visit(pl)) gainXP(5, pl.name, "Found on the map");
           mark();
           if (pl.board) { mapOpenBoarding(); return; }
-          if (pl.stop === "end") { mapShowChapter("end"); return; }
+          if (pl.stop === "end") { olariOpen(); return; }
           if (pl.id === "hq") { showCard(pl, "A FORMER ADDRESS", `<p>${pl.desc}</p>`, ""); return; }
           if (pl.stop === "services") {
             showCard(pl, "EVERYTHING WE DO", SERVICES.map((sv) => `<span class="mcd-svc" style="--sc:${sv.c}"><b>${sv.t}</b>${sv.items.slice(0, 4).join(" \xB7 ")}</span>`).join(""), `<button class="mcd-open mcd-jet">Board the Cromatic Jet ✈</button>`);
@@ -35362,6 +35419,7 @@ void main() {
           update(dt, now) {
             mapStep();
             jetUpdate(dt, now);
+            olariUpdate(dt);
             // the diorama is cleaner from above without the far mesas, the cloud ring and the islands
             for (const m of farRings) m.userData.mesh.visible = false;
             farClouds.visible = false;
