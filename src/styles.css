@@ -3233,3 +3233,53 @@ body.olari-open .map-dock, body.olari-open .map-zoom { opacity: 0; pointer-event
   .olari-next .oc-addr b { font-size: 14px; }
   .olari-cup { width: calc(var(--w) * .6); }
 }
+
+/* r109: tap anywhere: a marker pulses where the van is going */
+.tap-mark { position: absolute; left: 0; top: 0; width: 0; height: 0; pointer-events: none; opacity: 0; }
+.tap-mark.on { opacity: 1; }
+.tap-mark b { position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; border-radius: 50%; background: #FED012; border: 3px solid #111; box-shadow: 0 4px 10px rgba(0,0,0,.35); }
+.tap-mark.on b { animation: tapDot .5s cubic-bezier(.2,1.6,.4,1); }
+.tap-mark i { position: absolute; left: -30px; top: -30px; width: 60px; height: 60px; border-radius: 50%; border: 3px solid #FED012; opacity: 0; }
+.tap-mark.on i { animation: tapRing 1.2s ease-out infinite; }
+.tap-mark.on i + i { animation-delay: .4s; }
+@keyframes tapRing { from { transform: scale(.2); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
+@keyframes tapDot { from { transform: scale(0) translateY(-30px); } }
+/* the services, one at a time on the way to Olari 9 */
+.road-svc { position: fixed; z-index: 22; top: 50%; width: min(330px, 42vw); padding: 18px 18px 20px; border-radius: 24px; background: var(--sc); color: #111; border: 2.5px solid #111;
+  box-shadow: 0 24px 40px -18px rgba(0,0,0,.55); display: flex; flex-direction: column; gap: 6px; opacity: 0; pointer-events: none;
+  transition: opacity .45s, transform .6s cubic-bezier(.2,1.25,.35,1); }
+.road-svc.l { left: 5vw; transform: translate(-40px, -50%) rotate(-4deg) scale(.9); }
+.road-svc.r { right: 5vw; transform: translate(40px, -50%) rotate(4deg) scale(.9); }
+.road-svc.on { opacity: 1; }
+.road-svc.l.on { transform: translate(0, -50%) rotate(-2deg); }
+.road-svc.r.on { transform: translate(0, -50%) rotate(2deg); }
+.road-svc .svcx-art { width: 74px; height: 56px; display: block; }
+.road-svc .svcx-art svg { width: 100%; height: 100%; }
+.road-svc b { font: 900 23px/1.05 Montserrat, Poppins, sans-serif; }
+.road-svc .oc-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.road-svc .oc-pills i { font-style: normal; font: 700 11.5px/1 Poppins, sans-serif; padding: 6px 9px; border-radius: 999px; background: rgba(255,255,255,.75); border: 1.5px solid #111; }
+body:not(.map-mode) .road-svc { display: none; }
+@media (max-width: 719px) {
+  .road-svc { top: auto; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); left: 12px !important; right: 12px !important; width: auto; padding: 12px 14px; }
+  .road-svc.l, .road-svc.r { transform: translateY(30px); } .road-svc.on { transform: none !important; }
+  .road-svc .svcx-art { width: 44px; height: 34px; } .road-svc b { font-size: 17px; }
+  .road-svc .oc-pills i { font-size: 10px; padding: 4px 7px; }
+}
+/* inside Olari 9: polaroids of the studio */
+.olari-photo { margin: 0; padding: 10px 10px 12px; background: #fff; border-radius: 6px; gap: 8px; }
+.olari-photo img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: block; border-radius: 3px; background: var(--sc); }
+.olari-photo figcaption { font-size: 10px; letter-spacing: .1em; color: #333; text-align: center; font-weight: 700; }
+.olari-fan { grid-template-columns: repeat(5, minmax(0, 200px)); }
+@media (max-width: 1100px) { .olari-fan { grid-template-columns: repeat(3, minmax(0, 200px)); } }
+@media (max-width: 719px) { .olari-fan { grid-template-columns: repeat(3, 1fr); } .olari-photo { padding: 5px 5px 7px; } .olari-photo figcaption { font-size: 7.5px; } .olari-photo:nth-child(n+7) { display: none; } }
+/* mugs: the intro's patterned ones */
+.olari-cup { aspect-ratio: 120 / 110; }
+/* GTA2 has no place on the map */
+body.map-mode .wt[data-scheme="gta2"] { display: none; }
+/* after the flight */
+body.flight-done .map-top, body.flight-done .map-dock, body.flight-done .map-zoom, body.flight-done .map-pins { display: none !important; }
+.flight-end { position: fixed; z-index: 61; left: 50%; bottom: calc(60px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; width: min(560px, calc(100vw - 32px)); animation: fadeUp .6s .2s both; }
+.flight-end b { font: 900 clamp(30px, 5vw, 52px)/1 Montserrat, Poppins, sans-serif; color: #111; background: #fff; padding: 8px 18px 10px; border-radius: 16px; border: 3px solid #111; transform: rotate(-2deg); }
+.flight-end span { font: 600 14.5px/1.4 Poppins, sans-serif; background: #111; color: #fff; padding: 9px 14px; border-radius: 12px; }
+.fe-replay { height: 56px; padding: 0 28px; border-radius: 999px; border: 3px solid #111 !important; background: #FED012; color: #111; font: 900 18px/1 Poppins, sans-serif; cursor: pointer; box-shadow: 0 18px 30px -14px rgba(0,0,0,.5); }
+.fe-map { height: 42px; padding: 0 18px; border-radius: 999px; border: 2.5px solid #111 !important; background: #fff; color: #111; font: 800 14px/1 Poppins, sans-serif; cursor: pointer; }

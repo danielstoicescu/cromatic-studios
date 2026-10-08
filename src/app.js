@@ -26576,7 +26576,14 @@ void main() {
   }
   // Coffee Street, seen from the saddle: a row of Western false-front facades on both
   // kerbs, with porches, posts, hand-painted signs, in Cromatic pastels and warm timber
+  function buildArtisanCar(parent) {
+    const car = buildParkedCar({ n: "ARTISAN", c: "#797c69", t: "#f2f0e8", sub: "COFFEE GEAR" }, "#ecebe7");
+    car.rotation.y = Math.PI / 2;
+    car.position.set(1000, 0, 5182);
+    parent.add(car);
+  }
   function buildCoffeeStreetAdds(parent) {
+    buildArtisanCar(parent);
     buildStreetShop(parent, { key: "artisanGlow", name: "ARTISAN", label: "coffee gear", x: 930, z: 4560,
       w: 72, h: 58, d: 48, wall: "#797c69", trim: "#efe9dc", glass: "#2a2c24", ink: "#efe9dc", boardInk: "#2a2c24" });
     // Romexpo avenue: a straight road off Coffee Street, lined with hedges and round trees
@@ -26792,6 +26799,23 @@ void main() {
       <path class="kc-steam s2" d="M66 24 C60 16 72 10 66 0"/>
       <path class="kc-steam s3" d="M80 26 C74 18 86 12 80 4"/>
     </svg>`;
+  // the intro finale's mugs, flat: yellow, white with a blue inside, yellow zigzag, blue stripes, pink
+  var CZ_MUG = (k) => {
+    const d = k % 5, id = `mg${k}`;
+    const body = ["#f5c518", "#f8f6f1", `url(#${id}z)`, `url(#${id}s)`, "#f4a3c4"][d];
+    const inside = ["#f8f6f1", "#2f7fd8", "#f8f6f1", "#f8f6f1", "#f8f6f1"][d];
+    const handle = ["#e0a90a", "#2f7fd8", "#b8bdc3", "#8ec1ea", "#e0679a"][d];
+    return `<svg viewBox="0 0 120 110" aria-hidden="true"><defs>
+      <pattern id="${id}z" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="16" height="16" fill="#f8f6f1"/><path d="M0 11 L8 5 L16 11" fill="none" stroke="#f2c200" stroke-width="3.4"/></pattern>
+      <pattern id="${id}s" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="#f8f6f1"/><rect x="3" width="7" height="14" fill="#8ec1ea"/></pattern></defs>
+      <ellipse cx="54" cy="102" rx="40" ry="5" fill="rgba(10,10,10,.14)"/>
+      <path d="M86 38 C112 36 112 76 84 76" fill="none" stroke="#0a0a0a" stroke-width="13" stroke-linecap="round"/>
+      <path d="M86 38 C112 36 112 76 84 76" fill="none" stroke="${handle}" stroke-width="7" stroke-linecap="round"/>
+      <path d="M18 24 L22 92 Q24 100 34 100 L76 100 Q86 100 88 92 L92 24 Z" fill="${body}" stroke="#0a0a0a" stroke-width="3.2" stroke-linejoin="round"/>
+      <ellipse cx="55" cy="24" rx="37" ry="9" fill="${inside}" stroke="#0a0a0a" stroke-width="3.2"/>
+      <ellipse cx="55" cy="26" rx="29" ry="5.5" fill="#3a1c0a"/>
+      <path d="M28 36 C28 58 30 76 36 90" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity=".55"/></svg>`;
+  };
   function createKinetic(onFinale, preBurst) {
     const C = { y: "#FED012", b: "#119BFE", g: "#28C840", r: "#F65342", l: "#B098C8" };
     const BEATS = [
@@ -28650,9 +28674,9 @@ void main() {
     const decal = (side) => {
       const c = document.createElement("canvas"); c.width = 2048; c.height = 512;
       const tex = new CanvasTexture(c); tex.colorSpace = SRGBColorSpace; tex.anisotropy = 8;
-      const z0 = -34, z1 = 54, A = 55 * Math.PI / 180;
+      const z0 = -34, z1 = 54, A = 78 * Math.PI / 180;
       const X = (z) => ((z - z0) / (z1 - z0)) * 2048; // canvas x for a fuselage z (the left side reads tail to nose)
-      const Y = (deg) => (1 - (deg + 55) / 110) * 512;
+      const Y = (deg) => (1 - (deg + 78) / 156) * 512;
       const draw = () => {
         const ctx = c.getContext("2d");
         ctx.clearRect(0, 0, 2048, 512);
@@ -28660,21 +28684,22 @@ void main() {
         if (side > 0) { ctx.translate(2048, 0); ctx.scale(-1, 1); }
         // windows: oval portholes along the cabin
         ctx.fillStyle = "#16181c";
-        for (let z = -22; z <= 30; z += 6.2) { ctx.beginPath(); ctx.ellipse(X(z), Y(19), 26, 34, 0, 0, Math.PI * 2); ctx.fill(); }
+        for (let z = -22; z <= 30; z += 6.2) { ctx.beginPath(); ctx.ellipse(X(z), Y(40), 22, 24, 0, 0, Math.PI * 2); ctx.fill(); }
         // the door on the left, just behind the cockpit
-        if (side < 0) { ctx.strokeStyle = "#16181c"; ctx.lineWidth = 5; ctx.beginPath(); ctx.roundRect(X(35.5), Y(32), X(41.5) - X(35.5), Y(-40) - Y(32), 18); ctx.stroke(); }
+        if (side < 0) { ctx.strokeStyle = "#16181c"; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(X(37), Y(50), X(42) - X(37), Y(-30) - Y(50), 14); ctx.stroke(); }
         // cockpit windscreen
         ctx.fillStyle = "#14161a";
         ctx.beginPath(); ctx.moveTo(X(43.5), Y(30)); ctx.lineTo(X(49.5), Y(30)); ctx.lineTo(X(51.5), Y(18)); ctx.lineTo(X(44), Y(14)); ctx.closePath(); ctx.fill();
         ctx.beginPath(); ctx.moveTo(X(50.2), Y(31)); ctx.lineTo(X(52.6), Y(34)); ctx.lineTo(X(53.6), Y(22)); ctx.lineTo(X(52.2), Y(19)); ctx.closePath(); ctx.fill();
         // the cheatline
-        ctx.fillStyle = "#121212"; ctx.fillRect(X(-34), Y(7), X(43) - X(-34), 12);
+        ctx.fillStyle = "#121212"; ctx.fillRect(X(-34), Y(29), X(43) - X(-34), 6);
         ctx.restore();
         // r93: the wordmark from the logo itself, black, no outline, painted on the skin:
         // "Cromatic" down the left side, "Studios" down the right, as tall as the lower cabin
         const part = JET_WORDS && JET_WORDS[side < 0 ? 0 : 1];
         if (part) {
-          const zA = -26, zB = 36, top = Y(3), bot = Y(-31);
+          // r109: much bigger, filling the body under the windows
+          const zA = -33, zB = 36, top = Y(26), bot = Y(-30);
           const boxW = X(zB) - X(zA), boxH = bot - top, k = Math.min(boxW / part.width, boxH / part.height);
           const w = part.width * k, h = part.height * k;
           const cx = side > 0 ? 2048 - (X(zA) + X(zB)) / 2 : (X(zA) + X(zB)) / 2;
@@ -28782,7 +28807,30 @@ void main() {
     });
     const orbM = new MeshBasicMaterial({ map: orbTex, transparent: true, depthWrite: false });
     orbM.userData.outlineParameters = { visible: false };
-    for (const s of [1, -1]) { const o = new Mesh(new PlaneGeometry(14, 14), orbM); o.position.set(1.5 * s, 13.5, -55.5); o.rotation.y = (Math.PI / 2) * s; finG.add(o); }
+    for (const s of [1, -1]) { const o = new Mesh(new PlaneGeometry(9, 9), orbM); o.position.set(1.5 * s, 20.5, -60.5); o.rotation.y = (Math.PI / 2) * s; finG.add(o); }
+    // the tail says CSs airlines, in the logo's lettering style
+    const tailTex = (side) => {
+      const c = document.createElement("canvas"); c.width = 1024; c.height = 512;
+      const tex = new CanvasTexture(c); tex.colorSpace = SRGBColorSpace; tex.anisotropy = 8;
+      const draw = () => {
+        const ctx = c.getContext("2d"); ctx.clearRect(0, 0, 1024, 512);
+        ctx.fillStyle = "#FED012"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+        ctx.font = "800 250px Montserrat, Poppins, sans-serif"; ctx.fillText("CSs", 40, 270);
+        ctx.font = "700 112px Montserrat, Poppins, sans-serif"; ctx.fillText("airlines", 48, 410);
+        tex.needsUpdate = true;
+      };
+      draw(); document.fonts?.ready?.then(draw);
+      const m = new MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
+      m.userData.outlineParameters = { visible: false };
+      const pl = new Mesh(new PlaneGeometry(22, 11), m);
+      pl.rotation.y = (Math.PI / 2) * side;
+      if (side < 0) pl.scale.x = 1;
+      pl.position.set(1.15 * side, 9.5, -51 - 0 * side);
+      // the fin leans back: follow its slope
+      pl.rotation.z = 0;
+      return pl;
+    };
+    finG.add(tailTex(1), tailTex(-1));
     const st = new Mesh(new SphereGeometry(0.8, 10, 8), strobe); st.position.set(0, 27.6, -66); finG.add(st);
     finG.position.y = JET_CY + 3.6; g.add(finG);
     // landing gear
@@ -31044,6 +31092,7 @@ void main() {
       <span class="wt-check" aria-hidden="true">\u2713</span>
       <span class="wt-meta"><b>${s.n}</b><small>${WORLD_SUB[s.id] || ""}</small></span>`);
       b.dataset.idx = i;
+      b.dataset.scheme = s.id;
       b.style.setProperty("--i", i);
       b.setAttribute("aria-label", `${s.n}: ${WORLD_SUB[s.id] || ""}`);
       b.onclick = () => {
@@ -34230,7 +34279,8 @@ void main() {
         }
         // a calm city speed everywhere on the ground (chapter jumps and the flight excepted)
         if (!siteMode && now > jumpGuard && prevL < route.stopL.end + 400) {
-          const maxStep = (mapMode ? (Math.abs(state.targetL - state.L) > 1400 ? 2100 : 1150) : 620) * dt;
+          const toEnd = mapMode && mapNav.place?.stop === "end" && state.L > route.stopL.end - 2700;
+          const maxStep = (mapMode ? (toEnd ? 520 : Math.abs(state.targetL - state.L) > 1400 ? 2100 : 1150) : 620) * dt;
           state.L = clamp2(state.L, prevL - maxStep, prevL + maxStep);
         }
         {
@@ -34891,13 +34941,18 @@ void main() {
         { id: "dream", stop: "dream", chapter: true, find: true, h: 70, name: "The Dream", line: "CH.01", c: "#B098C8" },
         { id: "voice", stop: "voice", chapter: true, find: true, h: 70, name: "The Voice", line: "CH.02", c: "#F65342" },
         { id: "world", stop: "world", chapter: true, find: true, h: 70, name: "The World", line: "CH.03", c: "#119BFE" },
-        { id: "hq", chapter: true, br: "A", x: 1010, z: 4262, px: 1010, pz: 4120, h: 280, name: "C\u0103linescu 54", line: "OUR STUDIO \xB7 2016", c: "#c0392b", pts: 5,
-          desc: "Strada George C\u0103linescu 54: the villa with the red mansard, our studio from 2016, right across the street from Two Minutes. The string of lights still runs from our balcony to their corner." },
+        { id: "hq", chapter: true, br: "A", x: 1010, z: 4262, px: 1010, pz: 4120, h: 280, name: "C\u0103linescu 54", line: "THE ATTIC \xB7 2017", c: "#c0392b", pts: 5, past: true,
+          desc: "Congrats, you found a blast from the past (2017): the Cromatic Studios attic. The villa with the red mansard, right across the street from Two Minutes; the string of lights still runs from our balcony to their corner." },
+        { id: "dacia", chapter: true, x: 1170, z: 6320, px: 1070, pz: 6320, h: 230, name: "Dacia 99", line: "OUR STUDIO \xB7 2024", c: "#B098C8", pts: 5, past: true,
+          desc: "Congrats, you found a blast from the past (2024): Bulevardul Dacia 99, the Cromatic Studios home right before Olari 9. Above Club 99, under BISM: the loudest address we ever had." },
+        { id: "lab", br: "A", x: 820, z: 4260, px: 602, pz: 4142, h: 70, name: "Two Min Lab", line: "PRODUCTS \xB7 TONIC IONIC \xB7 LABELS", c: "#C6402E", t: "#ffffff", act: "labTag", desc: "The Two Minutes lab: bottled drinks, Tonic Ionic and the labels that sell them, in the yard behind the coffee shop." },
         { id: "tm", br: "A", x: 900, z: 4262, px: 640, pz: 4260, h: 80, name: "Two Minutes", line: "COFFEE \xB7 BRAND \xB7 FILM", c: "#111111", t: "#ffffff", act: "tmMedia", tm: true, desc: "A specialty coffee shop brand made to be loved fast and remembered long. Three double espressos are on us." },
         { id: "oma", br: "A", x: 706, z: 4560, h: 80, name: "OMA Coffee", line: "BRAȘOV \xB7 AT THE FOOT OF T\xC2MPA", c: "#4a7c4e", t: "#ffffff", act: "omaTag" },
         { id: "yoshi", br: "A", x: 706, z: 5175, h: 60, name: "Yoshi Izakaya", line: "COMMUNICATION \xB7 CONTENT", c: "#F4876F", t: "#2a0f08", act: "yoshiTag" },
+        { id: "artisan", br: "A", x: 912, z: 5180, px: 1000, pz: 5182, h: 40, name: "Artisan Coffee Gear", line: "PARKED BY ROMEXPO", c: "#797c69", t: "#f2f0e8", act: "artisanTag" },
         { id: "scf", br: "A", x: 1150, z: 5140, h: 110, name: "Slow Coffee Festival", line: "ROMEXPO \xB7 2021–2025", c: "#5B4B9E", t: "#ffffff", act: "scfTag" },
         { id: "steam", br: "A", x: 985, z: 5640, h: 150, name: "Steam Coffee Shop", line: "BRANDING \xB7 GROWTH \xB7 PRODUCT", c: "#2f9e4f", t: "#ffffff", act: "steamTag", desc: "A pioneer coffee brand refreshed for its community: new energy for the people who were there from the start." },
+        { id: "craft", br: "A", x: 985, z: 5640, px: 1020, pz: 5620, h: 40, name: "Craft Coffee", line: "IN THE STEAM BUILDING", c: "#119BFE", t: "#ffffff", act: "craftTag" },
         { id: "arca", br: "A", x: 560, z: 5930, px: 420, pz: 5916, h: 70, name: "ARCA Resort", line: "CAVIAR \xB7 PACKAGING \xB7 LIVERY", c: "#7a1f2b", t: "#ffffff", work: "ARCA Resort", desc: "Caviar tins, a delivery van and smoked-fish trays for a resort in Blăgești with its own ponds, plus Antila and UND\xC9 next door." },
         { id: "antila", br: "A", x: 560, z: 6040, px: 440, pz: 6040, h: 50, name: "Antila", line: "CHARCUTERIE \xB7 BRAND", c: "#F2C200", t: "#1a1405", work: "Antila", desc: "A charcuterie brand, 100% Romanian, with a bold wordmark, disruptive characters and colour-coded packaging." },
         { id: "unde", br: "A", x: 708, z: 6036, h: 50, name: "UND\xC9", line: "GROCERY \xB7 SIGNAGE", c: "#2b6fd6", t: "#ffffff", work: "UNDE", desc: "ARCA's grocery stores: a hand-drawn basket and three formats, Market, Store and Concept." },
@@ -34941,6 +34996,7 @@ void main() {
         mapNav.legs = legs;
         mapNav.place = pl;
         mapNav.moving = true;
+        if (!pl.tap) { const m = document.querySelector(".tap-mark"); m?.classList.remove("on"); }
         mapView.follow = true; mapView.focus = null;
         mapView.vx = mapView.vz = 0;
         if (coffee.phase !== "idle") { coffee.phase = "idle"; coffee.done = true; ui.coffeeEnd(); }
@@ -35003,7 +35059,7 @@ void main() {
         ui.card.classList.remove("hidden", "peek");
         document.body.classList.add("map-boarding");
       }
-      function mapCloseBoarding() {
+      function mapCloseBoarding(keepView = false) {
         if (!mapBoarding) return;
         mapBoarding = false;
         ui.card.classList.add("hidden");
@@ -35011,7 +35067,7 @@ void main() {
         ui.clearCard();
         document.body.classList.remove("map-boarding", "boarding-aside", "boarding-done");
         // after a flight the camera is still low in the clouds: fly it back over the map
-        if (mapView.pitch < 0.9) {
+        if (mapView.pitch < 0.9 && !keepView) {
           mapView.follow = false; mapView.focus = { x: JET_HOME.x - 120, z: JET_HOME.z };
           mapView.yawGoal = 0.3; mapView.pitchGoal = 0.98; mapView.lookYGoal = 0;
           mapView.distGoal = innerWidth < 720 ? 5600 : 4600; mapView.distRate = 1;
@@ -35022,14 +35078,21 @@ void main() {
       // speed lines and a shake build with the speed, then it lifts, climbs into a cloud deck and
       // is gone. Wheels up. The camera comes back, a fresh jet waits on the stand.
       // after the flight the boarding pass comes back to the middle, big, with a way to start over
+      // after the flight: the pass is on board, so it goes; the sky stays with a way to start over
       function mapBoardingDone() {
         document.body.classList.remove("boarding-aside");
-        if (!mapBoarding) return;
-        document.body.classList.add("boarding-done");
-        if (!ui.card.querySelector(".bp-replay")) {
-          const r = el("button", "coffee-btn bp-replay", `\u21BB <span>Repeat the experience</span>`);
-          r.onclick = () => { try { localStorage.removeItem("cz-map-visited"); } catch {} location.href = "/"; };
-          (ui.card.querySelector(".mc-content") || ui.card).appendChild(r);
+        mapCloseBoarding(true);
+        document.body.classList.add("flight-done");
+        let end = document.querySelector(".flight-end");
+        if (!end) {
+          end = el("div", "flight-end", `<b>See you on board.</b><span>Your boarding pass is with us. We write back within one working day.</span><button class="fe-replay">\u21BB Repeat the experience</button><button class="fe-map">Back to the map</button>`);
+          end.querySelector(".fe-replay").onclick = () => { location.href = "/"; };
+          end.querySelector(".fe-map").onclick = () => {
+            end.remove(); document.body.classList.remove("flight-done");
+            mapView.follow = false; mapView.focus = { x: JET_HOME.x - 120, z: JET_HOME.z };
+            mapView.yawGoal = 0.3; mapView.pitchGoal = 0.98; mapView.lookYGoal = 0; mapView.distGoal = innerWidth < 720 ? 5600 : 4600; mapView.distRate = 1;
+          };
+          ui.root.appendChild(end);
         }
       }
       function mapTakeoff() {
@@ -35039,7 +35102,7 @@ void main() {
         document.body.classList.add("map-takeoff");
         if (mapBoarding) document.body.classList.add("boarding-aside");
         mapView.follow = true; mapView.focus = null;
-        mapView.distGoal = innerWidth < 720 ? 760 : 620; mapView.distRate = 1.3;
+        mapView.distGoal = innerWidth < 720 ? 1000 : 860; mapView.distRate = 0.9;
         mapView.yawGoal = -1.15; mapView.pitchGoal = 0.36;
         // the jet reaches the deck (y 690) about 4.8 s after rotation: the clouds wait right there
         const c0 = Math.sqrt(520 / 30);
@@ -35110,6 +35173,7 @@ void main() {
       // r107: Olari 9 opens up. The roof lifts off and hovers, a beam of light rises, and the four
       // services fly out of the house one after another and settle in a fan. Then the address card.
       var olari = { t: -1, cards: null, beam: null };
+      var OLARI_PHOTOS = [["Lolz.jpg", "Olari 9, the studio"], ["Get-words-shit-best-done-boss.jpg", "Get shit done"], ["infinite-coffee.jpg", "There is always a coffee"], ["poze.jpg", "On set"], ["Doggo.jpg", "Head of morale"]];
       function olariOpen() {
         const house = worldRefs.endHouse;
         mapView.follow = false; mapView.focus = { x: house.position.x, z: house.position.z };
@@ -35127,16 +35191,15 @@ void main() {
         // the white cups from the intro drift and turn behind the cards
         const cups = el("div", "olari-cups");
         for (let k = 0; k < 9; k++) {
-          const c = el("i", "olari-cup", CZ_CUP);
+          const c = el("i", "olari-cup", CZ_MUG(k));
           c.style.cssText = `--x:${(6 + (k * 37) % 88)}vw;--y:${(14 + (k * 53) % 70)}vh;--w:${70 + (k * 29) % 70}px;--d:${(k * 0.7).toFixed(1)}s;--t:${(9 + (k * 3) % 7)}s;--r:${(k % 2 ? 1 : -1) * (18 + k * 6)}deg`;
           cups.appendChild(c);
         }
         wrap.appendChild(cups);
-        SERVICES.forEach((sv, i) => {
-          const c = el("div", "olari-card", `<span class="svcx-art" aria-hidden="true">${SVC_ART[i % SVC_ART.length]}</span>
-            <span class="oc-n mono">SERVICE ${i + 1} / ${SERVICES.length}</span><b>${sv.t}</b>
-            <span class="oc-pills">${sv.items.map((x) => `<i>${x}</i>`).join("")}</span>`);
-          c.style.setProperty("--sc", sv.c); c.style.setProperty("--i", i);
+        // inside the house: the studio, as on cromaticstudios.com
+        OLARI_PHOTOS.forEach(([src, cap], i) => {
+          const c = el("figure", "olari-card olari-photo", `<img src="https://cromaticstudios.com/wp-content/uploads/2025/10/${src}" alt="${cap}" loading="eager"><figcaption class="mono">${cap}</figcaption>`);
+          c.style.setProperty("--i", i); c.style.setProperty("--sc", ["#FED012", "#28C840", "#119BFE", "#F65342", "#B098C8"][i % 5]);
           wrap.appendChild(c);
         });
         const next = el("div", "olari-next", `<button class="oc-jet"><span class="ocj-star">\u2738</span><span><b>Go even further</b><i class="mono">BOARD THE CROMATIC JET \u00B7 SAY HI</i></span><em>\u2191</em></button><button class="oc-addr"><b>Olari 9 \u00B7 come by</b><i class="mono">ADDRESS \u00B7 MAPS \u00B7 CONTACT</i></button>`);
@@ -35150,7 +35213,24 @@ void main() {
         olari.t = 0;
         document.body.classList.add("olari-open");
       }
+      var roadSvc = null;
+      function roadServices() {
+        if (!roadSvc) {
+          roadSvc = SERVICES.map((sv, i) => {
+            const c = el("div", "road-svc", `<span class="svcx-art" aria-hidden="true">${SVC_ART[i % SVC_ART.length]}</span><span class="oc-n mono">SERVICE ${i + 1} / ${SERVICES.length}</span><b>${sv.t}</b><span class="oc-pills">${sv.items.map((x) => `<i>${x}</i>`).join("")}</span>`);
+            c.style.setProperty("--sc", sv.c);
+            c.classList.add(i % 2 ? "r" : "l");
+            ui.root.appendChild(c);
+            return c;
+          });
+        }
+        const endL = route.stopL.end, A = endL - 2600, B = endL - 300;
+        const on = mapMode && mapNav.moving && mapNav.place?.stop === "end" && mapNav.legs.length === 1 && state.L > A && state.L < B;
+        const f = (state.L - A) / (B - A);
+        roadSvc.forEach((c, i) => c.classList.toggle("on", on && f >= i / 4 && f < (i + 1) / 4));
+      }
       function olariUpdate(dt) {
+        roadServices();
         const house = worldRefs.endHouse, roof = house?.children[1];
         if (!roof) return;
         if (olari.t < 0) {
@@ -35329,11 +35409,12 @@ void main() {
           showCard(pl, "A FORMER ADDRESS", `<p>${pl.desc}</p>`, "");
         };
         const arrive = (pl) => {
+          if (pl.tap) { markEl.classList.remove("on"); markAt = null; return; }
           if (visit(pl)) gainXP(5, pl.name, "Found on the map");
           mark();
           if (pl.board) { mapOpenBoarding(); return; }
           if (pl.stop === "end") { if (!olari.early) olariOpen(); olari.early = false; return; }
-          if (pl.id === "hq") { showCard(pl, "A FORMER ADDRESS", `<p>${pl.desc}</p>`, ""); return; }
+          if (pl.past) { showCard(pl, "A BLAST FROM THE PAST", `<p>${pl.desc}</p>`, ""); return; }
           if (pl.stop === "services") {
             showCard(pl, "EVERYTHING WE DO", SERVICES.map((sv) => `<span class="mcd-svc" style="--sc:${sv.c}"><b>${sv.t}</b>${sv.items.slice(0, 4).join(" \xB7 ")}</span>`).join(""), `<button class="mcd-open mcd-jet">Board the Cromatic Jet ✈</button>`);
             card.querySelector(".mcd-jet").onclick = () => mapGo(MAP_PLACES.find((p) => p.id === "jet"));
@@ -35343,11 +35424,8 @@ void main() {
             // Two Minutes: three double espressos, the boxes come down from our old balcony, a fourth, and the rush
             coffee.done = false; coffee.phase = "sip1"; coffee.t = 0; coffee.served = 0;
             mapView.distGoal = innerWidth < 720 ? 3000 : 2500;
-            showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52", `<p>${pl.desc}</p>
-              <button class="mcd-lab"><span><b>Two Min Lab</b><i class="mono">PRODUCTS \xB7 TONIC IONIC \xB7 LABELS</i></span><em>See the lab →</em></button>`,
-              `<button class="mcd-open">Watch the film →</button>`);
+            showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52", `<p>${pl.desc}</p>`, `<button class="mcd-open">Watch the film \u2192</button>`);
             card.querySelector(".mcd-open").onclick = () => ui.tmMedia?.click();
-            card.querySelector(".mcd-lab").onclick = () => ui.labTag?.click();
             return;
           }
           const pr = projectOf(pl.name);
@@ -35401,7 +35479,38 @@ void main() {
           const now2 = performance.now(), dtp = Math.max(8, now2 - last) / 1000; last = now2;
           mapView.vx = wx / dtp; mapView.vz = wz / dtp;
         });
-        const up = (e) => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = 0; if (performance.now() - last > 90) mapView.vx = mapView.vz = 0; };
+        let downAt = null;
+        canvas.addEventListener("pointerdown", (e) => { if (mapMode) downAt = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+        const hit = new Vector3(), dir = new Vector3();
+        const tapGo = (cx, cy) => {
+          // the ground point under the tap: unproject and run the ray down to y = 0
+          dir.set((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1, 0.5).unproject(camera).sub(camera.position).normalize();
+          if (dir.y > -1e-3) return;
+          hit.copy(camera.position).addScaledVector(dir, -camera.position.y / dir.y);
+          // the nearest point on any of the three streets (and the shared roads)
+          let best = null;
+          for (const b2 of BRANCHES) for (const [x, z] of tapRoads[b2]) {
+            const d = (x - hit.x) ** 2 + (z - hit.z) ** 2;
+            if (!best || d < best.d) best = { d, x, z, br: b2 };
+          }
+          if (!best || best.d > 520 * 520) return;
+          const shared = tapShared.some(([x, z]) => Math.abs(x - best.x) < 1 && Math.abs(z - best.z) < 1);
+          const pl = { id: "tap", tap: true, x: best.x, z: best.z, br: shared ? null : best.br, name: "", c: "#FED012" };
+          tapMark(best.x, best.z);
+          setTimeout(() => mapGo(pl), 380);
+        };
+        const tapRoads = {}, tapShared = [];
+        for (const b2 of BRANCHES) tapRoads[b2] = roundedPolyline(branchPoints(b2)).filter(([, z]) => z < RAMP_BASE).filter((_, i) => i % 2 === 0);
+        for (const p2 of tapRoads.A) if (tapRoads.C.some((q) => Math.abs(q[0] - p2[0]) < 1 && Math.abs(q[1] - p2[1]) < 1)) tapShared.push(p2);
+        const markEl = el("div", "tap-mark", `<i></i><i></i><b></b>`);
+        pinsEl.appendChild(markEl);
+        let markAt = null;
+        const tapMark = (x, z) => { markAt = new Vector3(x, 0, z); markEl.classList.remove("on"); void markEl.offsetWidth; markEl.classList.add("on"); };
+        const up = (e) => {
+          if (downAt && mapMode && !mapIntro && ptrs.size <= 1 && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 6 && performance.now() - downAt.t < 500 && jetFx.phase === "idle") tapGo(e.clientX, e.clientY);
+          downAt = null;
+          ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = 0; if (performance.now() - last > 90) mapView.vx = mapView.vz = 0;
+        };
         canvas.addEventListener("pointerup", up);
         canvas.addEventListener("pointercancel", up);
         window.addEventListener("wheel", (e) => {
@@ -35459,7 +35568,7 @@ void main() {
               const atJet = !flyingJet && mapNav.place?.board && !mapNav.moving;
               const fxp = flyingJet ? jp.x - Math.sin(mapView.yaw) * lift : atJet ? (carPos.x + JET_HOME.x) / 2 : carPos.x;
               const fzp = flyingJet ? jp.z - Math.cos(mapView.yaw) * lift : atJet ? (carPos.z + JET_HOME.z) / 2 : carPos.z;
-              const k = 1 - Math.exp(-dt * (flyingJet ? 11 : 2.6));
+              const k = 1 - Math.exp(-dt * (flyingJet ? 6 : 2.6));
               mapView.tgt.x += (fxp + ox - mapView.tgt.x) * k;
               mapView.tgt.z += (fzp + oz - mapView.tgt.z) * k;
             } else if (mapView.focus) {
@@ -35481,7 +35590,7 @@ void main() {
             // speed: streaks at the edges and a shake that grow with the jet's speed
             const sp = jetFx.speed || 0;
             speedEl.style.opacity = (sp * sp).toFixed(3);
-            if (sp > 0.05) { const a2 = sp * sp * 2.2; mapView.pos.x += (Math.random() - 0.5) * a2; mapView.pos.y += (Math.random() - 0.5) * a2; }
+            if (sp > 0.05) { const a2 = sp * sp * 0.7; mapView.pos.x += (Math.random() - 0.5) * a2; mapView.pos.y += (Math.random() - 0.5) * a2; }
             // pins: projected every frame; labels give way to their neighbours when crowded
             const W = innerWidth, H = innerHeight, placed = [];
             const compact = mapView.dist > 8600;
@@ -35493,6 +35602,11 @@ void main() {
               if (!off2) e.style.transform = `translate3d(${sx2.toFixed(1)}px, ${sy2.toFixed(1)}px, 0)`;
             }
             const pinBoxes = [];
+            if (markAt) {
+              proj.copy(markAt).project(camera);
+              markEl.style.transform = `translate3d(${((proj.x * 0.5 + 0.5) * W).toFixed(1)}px, ${((-proj.y * 0.5 + 0.5) * H).toFixed(1)}px, 0)`;
+              if (!mapNav.moving && mapNav.place?.tap && !markEl.classList.contains("on")) markAt = null;
+            }
             const order = pins.map((p) => {
               proj.set(p.pl.wx, p.pl.wy, p.pl.wz).project(camera);
               return { p, x: (proj.x * 0.5 + 0.5) * W, y: (-proj.y * 0.5 + 0.5) * H, z: proj.z };
