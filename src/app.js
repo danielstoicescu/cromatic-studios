@@ -26693,7 +26693,7 @@ void main() {
     const tl = new Mesh(new BoxGeometry(W - 3, 0.8, 1), tailM); tl.position.set(0, 10.8, -22.9); g.add(tl);
     const plateF = plateMesh(8, 2); plateF.position.set(0, 5.6, 24.2); g.add(plateF);
     const plateR = plateMesh(8, 2); plateR.position.set(0, 6.6, -24.1); plateR.rotation.y = Math.PI; g.add(plateR);
-    mountWheels(g, [[-14.6, { rim: "#2a2c2f", rimR: 0.66, cap: "#2a2c2f", spokes: 5 }], [14.6, { rim: "#2a2c2f", rimR: 0.66, cap: "#2a2c2f", spokes: 5 }]], W, 4.8, 3.4);
+    mountWheels(g, [[-14.6, { rim: "#2a2c2f", rimR: 0.66, cap: "#2a2c2f", spokes: 5 }], [14.6, { rim: "#2a2c2f", rimR: 0.66, cap: "#2a2c2f", spokes: 5 }]], W / 2, 4.8, 3.4);
     g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     return g;
   }
@@ -26733,14 +26733,15 @@ void main() {
     for (const sx of [-1, 1]) { const t = new Mesh(new BoxGeometry(3.4, 1.1, 0.8), tailM); t.position.set(sx * 6.2, 7.2, -21.1); g.add(t); }
     const grille = new Mesh(new BoxGeometry(8, 0.4, 5), M("#2a2a2a", { roughness: 0.8 })); grille.position.set(0, 11.3, -15.5); grille.rotation.x = 0.35; g.add(grille);
     const plateR = plateMesh(7, 1.8); plateR.position.set(0, 5.8, -21.9); plateR.rotation.y = Math.PI; g.add(plateR);
-    mountWheels(g, [[-13.2, { rim: "#cfd1d4", rimR: 0.62, spokes: 5 }], [12.6, { rim: "#cfd1d4", rimR: 0.62, spokes: 5 }]], W, 4.3, 3.2);
+    mountWheels(g, [[-13.2, { rim: "#cfd1d4", rimR: 0.62, spokes: 5 }], [12.6, { rim: "#cfd1d4", rimR: 0.62, spokes: 5 }]], W / 2, 4.3, 3.2);
     g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     return g;
   }
   function buildArtisanCar(parent) {
     // the kerb on the Romexpo side of Coffee Street, just south of the Romexpo avenue
-    const t = buildTeslaY(); t.position.set(862, 0, 5232); parent.add(t);
-    const p = buildPorsche911(); p.position.set(862, 0, 5292); parent.add(p);
+    // halfway between Coffee Street and Romexpo, parked along the Romexpo avenue kerb
+    const t = buildTeslaY(); t.scale.setScalar(0.72); t.rotation.y = Math.PI / 2; t.position.set(900, 0, 5178); parent.add(t);
+    const p = buildPorsche911(); p.scale.setScalar(0.72); p.rotation.y = Math.PI / 2; p.position.set(940, 0, 5178); parent.add(p);
   }
   function buildCoffeeStreetAdds(parent) {
     buildArtisanCar(parent);
@@ -35203,7 +35204,7 @@ void main() {
         { id: "oma", br: "A", x: 706, z: 4560, h: 80, name: "OMA Coffee", line: "BRAȘOV \xB7 AT THE FOOT OF T\xC2MPA", c: "#4a7c4e", t: "#ffffff", act: "omaTag" },
         { id: "sip", br: "A", x: 706, z: 4985, h: 70, name: "Sip Coffee & Wine", line: "BRANDING \xB7 COMMUNICATION", c: "#C9A227", t: "#14120c", act: "sipTag" },
         { id: "yoshi", br: "A", x: 706, z: 5175, h: 60, name: "Yoshi Izakaya", line: "COMMUNICATION \xB7 CONTENT", c: "#F4876F", t: "#2a0f08", act: "yoshiTag" },
-        { id: "artisan", br: "A", x: 830, z: 5260, px: 862, pz: 5262, h: 36, name: "Artisan Coffee Gear", line: "PARKED BY ROMEXPO", c: "#797c69", t: "#f2f0e8", act: "artisanTag" },
+        { id: "artisan", br: "A", x: 830, z: 5170, px: 920, pz: 5178, h: 30, name: "Artisan Coffee Gear", line: "PARKED BY ROMEXPO", c: "#797c69", t: "#f2f0e8", act: "artisanTag" },
         { id: "scf", br: "A", x: 1150, z: 5140, h: 110, name: "Slow Coffee Festival", line: "ROMEXPO \xB7 2021–2025", c: "#5B4B9E", t: "#ffffff", act: "scfTag" },
         { id: "steam", br: "A", x: 985, z: 5640, h: 150, name: "Steam Coffee Shop", line: "BRANDING \xB7 GROWTH \xB7 PRODUCT", c: "#2f9e4f", t: "#ffffff", act: "steamTag", desc: "A pioneer coffee brand refreshed for its community: new energy for the people who were there from the start." },
         { id: "craft", br: "A", x: 985, z: 5640, px: 1020, pz: 5620, h: 40, name: "Craft Coffee", line: "IN THE STEAM BUILDING", c: "#119BFE", t: "#ffffff", act: "craftTag" },
