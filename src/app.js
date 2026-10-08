@@ -35237,7 +35237,8 @@ void main() {
         document.body.classList.add("flight-done");
         let end = document.querySelector(".flight-end");
         if (!end) {
-          end = el("div", "flight-end", `<b>See you on board.</b><span>Your boarding pass is with us. We write back within one working day.</span><button class="fe-replay">\u21BB Repeat the experience</button><button class="fe-map">Back to the map</button>`);
+          end = el("div", "flight-end", `<b>See you on board.</b><span>Your boarding pass is with us. We write back within one working day.</span><button class="fe-replay">\u21BB Repeat the experience</button><button class="fe-drive">\u{1F697} Now take it for a drive</button><button class="fe-map">Back to the map</button>`);
+          end.querySelector(".fe-drive").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?drive"; };
           end.querySelector(".fe-replay").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?r=" + Date.now().toString(36); };
           end.querySelector(".fe-map").onclick = () => {
             end.remove(); document.body.classList.remove("flight-done");
