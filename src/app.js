@@ -24559,8 +24559,18 @@ void main() {
     };
     const tmpColor = new Color();
     let count = 0;
-    for (let bi = 0; bi < BLOCK_ANCHORS.length; bi++) {
-      const [ax, ay] = BLOCK_ANCHORS[bi];
+    // r95: fill every empty block between the landmarks, so the city reads full from above
+    const anchors = [...BLOCK_ANCHORS];
+    {
+      const rf = rng(777);
+      for (let gy = 2280; gy < 11000; gy += 205) for (let gx = 110; gx < 2520; gx += 215) {
+        const x = gx + (rf() - 0.5) * 70, y = gy + (rf() - 0.5) * 70;
+        if (anchors.some(([ax, ay]) => (ax - x) ** 2 + (ay - y) ** 2 < 190 * 190)) continue;
+        anchors.push([x, y]);
+      }
+    }
+    for (let bi = 0; bi < anchors.length; bi++) {
+      const [ax, ay] = anchors[bi];
       const rnd = rng(100 + 17 * bi);
       const setbacks = [];
       const n = 5 + Math.floor(4 * rnd());
@@ -35068,8 +35078,12 @@ void main() {
         const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="van" aria-label="Find the van" title="Find the van">◎</button>`);
         const dock = el("div", "map-dock", `<span class="map-dock-h mono">WHERE TO?</span><div class="map-chips"></div>`);
         const card = el("div", "map-card hidden");
-        const STREETS = [["COFFEE STREET", 820, 4980, "#C9A227"], ["FINTECH BOULEVARD", 2080, 5000, "#119BFE"], ["MEDICAL AVENUE", 1500, 5560, "#e30613"]];
-        const streetEls = STREETS.map(([t, x, z, c]) => { const e = el("div", "map-street", `<b>${t}</b>`); e.style.setProperty("--sc", c); e._p = [x, z]; pinsEl.appendChild(e); return e; });
+        // the street names float high over the head of each street, as the drive's motorway signs
+        const STREETS = [["Coffee Street", "The story road", 820, 4800, "#28C840"], ["Fintech Boulevard", "Digital & finance", 2075, 5300, "#119BFE"], ["Medical Avenue", "Clinics, care & beauty", 1500, 5780, "#F28BA8"]];
+        const streetEls = STREETS.map(([t, sub, x, z, c]) => {
+          const e = el("div", "map-street", `<span class="hw-stripe"></span><span class="hw-body"><span class="hw-txt"><b>${t}</b><i>${sub}</i></span></span><span class="ms-pole"></span>`);
+          e.style.setProperty("--hwc", c); e._p = [x, z]; pinsEl.prepend(e); return e;
+        });
         const skip = el("button", "kz-skip hidden", `Skip intro <span>→</span>`);
         const baamEl = el("div", "jet-baam hidden", `<b>Wheels up!</b><span>Your boarding pass is on board. We write back within one working day.</span>`);
         const speedEl = el("div", "speed-lines");
@@ -35212,7 +35226,7 @@ void main() {
           const z = e.target.closest("button")?.dataset.z;
           mapView.distGoal = null;
           if (z === "in") mapView.distGoal = Math.max(1900, mapView.dist / 1.4);
-          if (z === "out") mapView.distGoal = Math.min(13000, mapView.dist * 1.4);
+          if (z === "out") mapView.distGoal = Math.min(10000, mapView.dist * 1.4);
           if (z === "van") { mapView.follow = true; mapView.focus = null; }
         };
         // drag to move, wheel or pinch to zoom, a flick keeps gliding
@@ -35238,7 +35252,7 @@ void main() {
           p.x = e.clientX; p.y = e.clientY;
           if (ptrs.size === 2) {
             const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
-            if (pinch0 > 0) { mapView.distGoal = null; mapView.dist = Math.min(13000, Math.max(1900, dist0 * pinch0 / Math.max(d, 1))); }
+            if (pinch0 > 0) { mapView.distGoal = null; mapView.dist = Math.min(10000, Math.max(1900, dist0 * pinch0 / Math.max(d, 1))); }
             const [wx, wz] = panVec(dx / 2, dy / 2); mapView.tgt.x += wx; mapView.tgt.z += wz;
             return;
           }
@@ -35255,7 +35269,7 @@ void main() {
           if (!mapMode || mapIntro || e.target.closest?.(".map-dock, .mapcard, .hmodal-backdrop, .case-frame, .scf-modal, .map-card, .crew-panel, .map-rides")) return;
           e.preventDefault();
           mapView.distGoal = null;
-          mapView.dist = Math.min(13000, Math.max(1900, mapView.dist * Math.exp(e.deltaY * 0.0012)));
+          mapView.dist = Math.min(10000, Math.max(1900, mapView.dist * Math.exp(e.deltaY * 0.0012)));
         }, { passive: false });
         const proj = new Vector3();
         // where the picture should put the van: the middle of the space no card covers
@@ -35332,12 +35346,13 @@ void main() {
             const W = innerWidth, H = innerHeight, placed = [];
             const compact = mapView.dist > 8600;
             for (const e of streetEls) {
-              proj.set(e._p[0], 20, e._p[1]).project(camera);
+              proj.set(e._p[0], 300, e._p[1]).project(camera);
               const sx2 = (proj.x * 0.5 + 0.5) * W, sy2 = (-proj.y * 0.5 + 0.5) * H;
-              const off2 = mapIntro || proj.z > 1 || sx2 < -200 || sx2 > W + 200 || sy2 < 90 || sy2 > H + 40 || mapView.dist < 2600;
-              e.classList.toggle("off", off2);
+              const off2 = mapIntro || proj.z > 1 || sx2 < -200 || sx2 > W + 200 || sy2 < 110 || sy2 > H - 90 || mapView.dist < 2200;
+              e._xy = off2 ? null : [sx2, sy2];
               if (!off2) e.style.transform = `translate3d(${sx2.toFixed(1)}px, ${sy2.toFixed(1)}px, 0)`;
             }
+            const pinBoxes = [];
             const order = pins.map((p) => {
               proj.set(p.pl.wx, p.pl.wy, p.pl.wz).project(camera);
               return { p, x: (proj.x * 0.5 + 0.5) * W, y: (-proj.y * 0.5 + 0.5) * H, z: proj.z };
@@ -35351,6 +35366,12 @@ void main() {
               o.p.b.classList.toggle("mini", compact || crowd);
               if (!crowd) placed.push(o);
               o.p.b.style.transform = `translate3d(${o.x.toFixed(1)}px, ${o.y.toFixed(1)}px, 0)`;
+              pinBoxes.push([o.x, o.y]);
+            }
+            // a street sign gives way to any place pin it would cover
+            for (const e of streetEls) {
+              const hit = !e._xy || pinBoxes.some(([px2, py2]) => Math.abs(px2 - e._xy[0]) < 150 && py2 - e._xy[1] > -40 && py2 - e._xy[1] < 105);
+              e.classList.toggle("off", hit);
             }
           }
         };
