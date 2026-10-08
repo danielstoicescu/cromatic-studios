@@ -34410,7 +34410,7 @@ void main() {
           }
         }
         {
-          const mvOn = SCHEMES[state.schemeIdx].id === "monument" && !window.__camO && !siteMode;
+          const mvOn = (SCHEMES[state.schemeIdx].id === "monument" || mapMode) && !window.__camO && !siteMode;
           mvK = smooth(mvK, mvOn ? 1 : 0, dt, 2.2);
           if (mvK > 1e-3) {
             // telephoto push, capped so overview shots never climb into the cloud layer
@@ -34587,6 +34587,8 @@ void main() {
         if (schemeId === "monument") { fogNear = 9000; fogFar = 34000; }
         if (schemeId === "underwater") { fogNear = 380; fogFar = 3400; }
         if (schemeId === "ghibli" || schemeId === "orchid") { fogNear = 1400; fogFar = 9000; }
+        // the map looks from far above: fog starts past the ground, in every world (underwater keeps a little haze)
+        if (mapMode) { const k = schemeId === "underwater" ? 0.75 : 1.15; fogNear = Math.max(fogNear, mapView.dist * k); fogFar = Math.max(fogFar, mapView.dist * (schemeId === "underwater" ? 2.2 : 3.2)); }
         scene.fog.near = smooth(scene.fog.near, flying && schemeId !== "monument" ? 1400 : fogNear, dt, 1.5);
         scene.fog.far = smooth(scene.fog.far, flying && schemeId !== "monument" ? 6600 : fogFar, dt, 1.5);
         if (copCar.group.visible) {
@@ -35068,10 +35070,11 @@ void main() {
         const box = el("div", "map-ui");
         const pinsEl = el("div", "map-pins");
         const visited = new Set();
-        try { JSON.parse(localStorage.getItem("cz-map-visited") || "[]").forEach((v) => visited.add(v)); } catch {}
+        try { localStorage.removeItem("cz-map-visited"); } catch {}
         const faces = CREW.slice(0, 4).map((n, i) => `<i style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}">${CREW_FACES[n] ? `<img src="${CREW_FACES[n]}" alt="">` : n.slice(0, 1)}</i>`).join("");
         const top = el("div", "map-top", `<span class="map-title"><i class="mono">CROMATIC WORLD</i><b>Pick a place</b></span><span class="map-count mono"></span><span class="map-found mono"></span>
           <button class="map-ride" title="Choose your ride"><span class="mr-ic">\u{1F690}</span><b>Ride</b></button>
+          <button class="map-world" title="Choose your world"><span class="mb-orb">${'<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="13" r="9" fill="#FED012" stroke="#0a0a0a" stroke-width="1.6"/><circle cx="13.5" cy="24.5" r="9" fill="#119BFE" stroke="#0a0a0a" stroke-width="1.6"/><circle cx="26.5" cy="24.5" r="9" fill="#F65342" stroke="#0a0a0a" stroke-width="1.6"/></svg>'}</span><b>World</b></button>
           <button class="map-crew" title="The crew you travel with"><span class="mcw-faces">${faces}</span><b>Crew</b></button>
           <button class="map-exit" title="The same world as a scroll-driven drive"><span class="me-ic">\u{1F697}</span><span class="me-l">Drive mode</span></button>`);
         const rides = el("div", "map-rides hidden", `<span class="mono">YOUR RIDE</span><div class="mrs-list">${VEHICLES.map((v) => `<button class="mrs-v" data-v="${v.id}"><span class="mrs-th"></span><b>${v.label}</b></button>`).join("")}</div>`);
@@ -35091,6 +35094,7 @@ void main() {
         ui.root.appendChild(box);
         top.querySelector(".map-exit").onclick = () => setMapMode(false);
         top.querySelector(".map-crew").onclick = () => openCrew();
+        top.querySelector(".map-world").onclick = (e) => { e.stopPropagation(); ui.themeBtn.click(); };
         const paintRides = () => rides.querySelectorAll(".mrs-v").forEach((b) => {
           b.classList.toggle("on", b.dataset.v === state.vehicleId);
           const u = vehPreviews[b.dataset.v]; if (u) b.querySelector(".mrs-th").style.backgroundImage = `url(${u})`;
@@ -35162,7 +35166,7 @@ void main() {
           if (visited.has(pl.id)) return false;
           flyPin(pl, pts);
           visited.add(pl.id);
-          try { localStorage.setItem("cz-map-visited", JSON.stringify([...visited])); } catch {}
+
           return true;
         };
         // a card on the map: eyebrow, title pill, body, a main action, extra actions

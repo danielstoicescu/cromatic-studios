@@ -2747,7 +2747,10 @@ body.map-mode .map-ui { display: block; }
 body.map-mode canvas.gl { touch-action: none; cursor: grab; }
 body.map-mode canvas.gl:active { cursor: grabbing; }
 /* the drive's own furniture steps aside on the map */
-body.map-mode .ui-root > :is(.hud, .dash, .anchors, .pov-hint, .poi-rail, .poi-col, .svc-slide, .jx-row, .next-zone, .scroll-hint, .menu-scrim) { display: none !important; }
+body.map-mode .ui-root > :is(.dash, .anchors, .pov-hint, .poi-rail, .poi-col, .svc-slide, .jx-row, .next-zone, .scroll-hint) { display: none !important; }
+/* the map keeps only the world menu out of the drive's control row */
+body.map-mode .hud > :not(.theme-menu) { display: none !important; }
+body.map-mode .theme-menu { z-index: 60; }
 body.map-mode:not(.kz-intro) .kz, body.map-mode:not(.kz-intro) .kz-lens-layer { display: none !important; }
 body.map-mode .mapcard { display: none !important; }
 body.map-mode.map-at-stop:not(.map-moving) .mapcard:not(.contact), body.map-mode.map-boarding .mapcard.contact { display: flex !important; }
@@ -3054,3 +3057,10 @@ body.map-mode .ea-city { grid-column: 1; font-size: 8.5px; letter-spacing: .12em
 body.map-mode .ea-nav { grid-column: 2; grid-row: 1 / span 2; padding: 8px 12px; border-radius: 999px; border: 2px solid var(--st-ink); background: var(--accent); color: #000; font-weight: 800; font-size: 12px; text-decoration: none; white-space: nowrap; }
 body.map-mode .ea-contact { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 6px; font-size: 12px; font-weight: 600; }
 body.map-mode .ea-contact a { color: var(--fg); text-decoration: none; }
+
+.map-world { height: 40px; padding: 0 14px 0 6px; border-radius: 999px; border: 2px solid var(--st-ink, #111) !important; background: #fff; color: #111;
+  display: inline-flex; align-items: center; gap: 6px; font: 800 13px/1 Poppins, sans-serif; cursor: pointer; }
+.map-world:hover { background: var(--accent); }
+.map-world .mb-orb svg { width: 28px; height: 28px; display: block; }
+@media (max-width: 719px) { .map-world { height: 36px; padding: 0 7px; } .map-world b { display: none; } .map-world .mb-orb svg { width: 24px; height: 24px; } }
+body.map-mode.scheme-underwater .uw-veil { opacity: .45; }
