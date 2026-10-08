@@ -31059,12 +31059,12 @@ void main() {
       chapterMenu.classList.toggle("open", !o);
     };
     // the website link sits up top, next to YOU + YOUR BRAND; the weather leads the control row
-    header.appendChild(modeBtn);
     const takeoffBtn = el("button", "round-btn takeoff gone", `<span class="to-ic" aria-hidden="true">\u2708</span><span class="to-txt">Take off</span>`);
     takeoffBtn.title = "Take off: fly high over the city";
     takeoffBtn.onclick = () => api.toggleTakeoff?.();
     // r89: the map: a second way through the same world
-    const mapBtn = el("button", "round-btn map-btn", `<svg class="mp-ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M9 4v13.5M15 6.5V20" fill="none" stroke="currentColor" stroke-width="2.2"/></svg><span class="to-txt">Map</span>`);
+    // r98: the map sits next to the website link, built the same way: icon, small label, name
+    const mapBtn = el("button", "site-btn map-link", `<span class="sb-ic sb-map" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z" fill="none" stroke="#0d0c09" stroke-width="2.2" stroke-linejoin="round"/><path d="M9 4v13.5M15 6.5V20" fill="none" stroke="#0d0c09" stroke-width="2.2"/></svg></span><span class="sb-txt"><i class="mono">PICK A PLACE \xB7 NO SCROLL</i><b>The map</b></span><span class="sb-short">Map</span>`);
     mapBtn.title = "The map: pick a place and the van drives you there";
     mapBtn.setAttribute("aria-label", "Open the map");
     mapBtn.onclick = () => { closeMenus(); api.toggleMap?.(); };
@@ -31073,7 +31073,10 @@ void main() {
     crewBtn.title = "The crew you travel with";
     crewBtn.setAttribute("aria-label", "Meet the crew");
     crewBtn.onclick = () => { closeMenus(); api.openCrew?.(); };
-    hud.append(wxBtn, vehBtn, takeoffBtn, mapBtn, crewBtn, themeBtn, vehMenu, themeMenu);
+    const modeLinks = el("div", "mode-links");
+    modeLinks.append(mapBtn, modeBtn);
+    header.appendChild(modeLinks);
+    hud.append(wxBtn, vehBtn, takeoffBtn, crewBtn, themeBtn, vehMenu, themeMenu);
     wxBtn.classList.add("gone");
     hud.appendChild(chapterMenu);
     chapterMenu.style.display = "none";
