@@ -23639,12 +23639,19 @@ void main() {
         [1345, 3071],
         [1400, 3100],
         [1500, 3320],
-        [1500, 4180],
-        [1500, 4260]
+        [1500, 4120],
+        [1500, 4190]
       ];
+      // r111: the three portfolio streets leave an étoile roundabout (fountain in the middle)
       ROUTE_A = [
-        [1500, 4260],
-        [1420, 4260],
+        [1500, 4190],
+        [1481.9, 4192.4],
+        [1465.0, 4199.4],
+        [1450.5, 4210.5],
+        [1439.4, 4225.0],
+        [1432.4, 4241.9],
+        [1430.0, 4260.0],
+        [1400, 4260],
         [900, 4260],
         [820, 4260],
         [820, 4340],
@@ -23656,8 +23663,26 @@ void main() {
         [1170, 6515]
       ];
       ROUTE_B = [
-        [1500, 4260],
-        [1580, 4260],
+        [1500, 4190],
+        [1481.9, 4192.4],
+        [1465.0, 4199.4],
+        [1450.5, 4210.5],
+        [1439.4, 4225.0],
+        [1432.4, 4241.9],
+        [1430.0, 4260.0],
+        [1432.4, 4278.1],
+        [1439.4, 4295.0],
+        [1450.5, 4309.5],
+        [1465.0, 4320.6],
+        [1481.9, 4327.6],
+        [1500.0, 4330.0],
+        [1518.1, 4327.6],
+        [1535.0, 4320.6],
+        [1549.5, 4309.5],
+        [1560.6, 4295.0],
+        [1567.6, 4278.1],
+        [1570.0, 4260.0],
+        [1600, 4260],
         [2080, 4260],
         [2062, 4900],
         [2098, 5500],
@@ -23669,8 +23694,20 @@ void main() {
       ];
       // Medical Avenue: straight on from the fork, south to the Dacia row
       ROUTE_C = [
-        [1500, 4260],
-        [1500, 4340],
+        [1500, 4190],
+        [1481.9, 4192.4],
+        [1465.0, 4199.4],
+        [1450.5, 4210.5],
+        [1439.4, 4225.0],
+        [1432.4, 4241.9],
+        [1430.0, 4260.0],
+        [1432.4, 4278.1],
+        [1439.4, 4295.0],
+        [1450.5, 4309.5],
+        [1465.0, 4320.6],
+        [1481.9, 4327.6],
+        [1500.0, 4330.0],
+        [1500, 4360],
         [1500, 5200],
         [1500, 6020],
         [1500, 6100],
@@ -23681,8 +23718,8 @@ void main() {
       ];
       // Financial Boulevard: east like Digital Avenue, then on past it to its own boulevard
       ROUTE_D = [
-        [1500, 4260],
-        [1580, 4260],
+        [1500, 4190],
+        [1570, 4260],
         [2080, 4260],
         [2620, 4260],
         [2620, 4340],
@@ -24679,6 +24716,29 @@ void main() {
         }
         roof.setAttribute("color", new BufferAttribute(rc, 3));
         roofGeos.push(roof);
+        // r111: Calea Victoriei: zinc mansards, a corner cupola now and then, a cornice over the shops
+        {
+          const rb = rng(5000 + bi * 31 + k);
+          const paint = (geo, col) => { const a2 = new Float32Array(geo.attributes.position.count * 3); for (let i = 0; i < a2.length; i += 3) { a2[i] = col.r; a2[i + 1] = col.g; a2[i + 2] = col.b; } geo.setAttribute("color", new BufferAttribute(a2, 3)); return geo; };
+          const zinc = new Color("#56616c"), stoneC = tmpColor.clone().multiplyScalar(0.78);
+          const band = new BoxGeometry(w + 2.4, 3, d + 2.4); band.translate(x + w / 2, Math.min(22, h * 0.3), y + d / 2); roofGeos.push(paint(band, stoneC));
+          const mr = rb();
+          if (h < 190 && mr < 0.55) {
+            const mh = 14 + rb() * 10;
+            const man = new CylinderGeometry(0.62, 1, mh, 4, 1); man.rotateY(Math.PI / 4); man.scale((w + 4) / Math.SQRT2, 1, (d + 4) / Math.SQRT2); man.translate(x + w / 2, h + 5 + mh / 2, y + d / 2);
+            roofGeos.push(paint(man, zinc));
+            for (let q = 0; q < Math.max(1, Math.round(w / 26)); q++) {
+              const dm = new BoxGeometry(5, 6, 4); dm.translate(x + 8 + q * ((w - 16) / Math.max(1, Math.round(w / 26) - 1 || 1)), h + 5 + mh * 0.45, y + d + 1);
+              roofGeos.push(paint(dm, new Color("#e9e4d8")));
+            }
+          }
+          if (h > 90 && mr > 0.86) {
+            const cx = x + (rb() < 0.5 ? 0 : w), cz = y + (rb() < 0.5 ? 0 : d), cr = 9;
+            const drum = new CylinderGeometry(cr, cr, 14, 16); drum.translate(cx, h + 12, cz); roofGeos.push(paint(drum, tmpColor));
+            const dome = new SphereGeometry(cr + 1.5, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2); dome.scale(1, 1.5, 1); dome.translate(cx, h + 19, cz); roofGeos.push(paint(dome, zinc));
+            const sp = new ConeGeometry(1.5, 10, 8); sp.translate(cx, h + 19 + cr * 1.5 + 4, cz); roofGeos.push(paint(sp, zinc));
+          }
+        }
         count++;
         zones.push({ x: x + w / 2 - w / 2, y: y + d / 2 - d / 2, r: Math.hypot(w, d) / 2 * 0.7 });
       }
@@ -25008,28 +25068,35 @@ void main() {
     beamCore.position.copy(beam.position);
     parent.add(beam, beamCore);
   }
+  // r111: the fork is an étoile roundabout with a Piața Unirii fountain in the middle: a round
+  // stone basin, rings of jets around a tall central plume, lamp posts and a ring of lawn
   function buildFork(parent) {
     const g = new Group();
     g.position.set(FORK_POS.x, 0, FORK_POS.y);
-    const plaza = new Mesh(new CylinderGeometry(80, 80, 1.2, 10), mats.roadMajor);
-    plaza.position.y = 1;
-    plaza.receiveShadow = true;
-    g.add(plaza);
-    const stripeMat = new MeshBasicMaterial({ color: "#fbfaf5" });
-    const mkStripes = (dx, dz, rot) => {
-      for (let i = 0; i < 5; i++) {
-        const s = new Mesh(new PlaneGeometry(9, 26), stripeMat);
-        s.rotation.x = -Math.PI / 2;
-        s.rotation.z = rot;
-        const off = (i - 2) * 16;
-        s.position.set(dx + (rot === 0 ? off : 0), 2, dz + (rot === 0 ? 0 : off));
-        g.add(s);
-      }
-    };
-    mkStripes(0, -94, 0);
-    mkStripes(-94, 0, Math.PI / 2);
-    mkStripes(94, 0, Math.PI / 2);
+    const ring = new Mesh(new CylinderGeometry(98, 98, 1.2, 64), mats.roadMajor); ring.position.y = 0.9; ring.receiveShadow = true; g.add(ring);
+    const kerb = new Mesh(new CylinderGeometry(48, 48, 3, 48), new MeshStandardMaterial({ color: "#d9d3c4", roughness: 0.9 })); kerb.position.y = 1.5; g.add(kerb);
+    const lawn = new Mesh(new CylinderGeometry(45, 45, 3.6, 48), new MeshStandardMaterial({ color: "#7cc472", roughness: 1 })); lawn.position.y = 1.8; g.add(lawn);
+    const basin = new Mesh(new CylinderGeometry(32, 33, 4, 48), new MeshStandardMaterial({ color: "#e6e0d2", roughness: 0.8 })); basin.position.y = 4; g.add(basin);
+    const water = new Mesh(new CylinderGeometry(30, 30, 0.8, 48), new MeshStandardMaterial({ color: "#7fc8e8", roughness: 0.1, metalness: 0.25 })); water.position.y = 5.8; g.add(water);
+    const jetM = new MeshStandardMaterial({ color: "#eaf8ff", transparent: true, opacity: 0.8, roughness: 0.2, emissive: new Color("#bfe9ff"), emissiveIntensity: 0.2 });
+    jetM.userData.outlineParameters = { visible: false };
+    const jets = [];
+    const plume = new Mesh(new CylinderGeometry(0.8, 3.4, 46, 12, 1, true), jetM); plume.position.y = 29; g.add(plume); jets.push([plume, 46]);
+    for (const [r, n, h] of [[12, 10, 18], [22, 16, 11]]) for (let i = 0; i < n; i++) {
+      const a2 = (i / n) * Math.PI * 2, j = new Mesh(new CylinderGeometry(0.4, 1.4, h, 8, 1, true), jetM);
+      j.position.set(Math.cos(a2) * r, 6 + h / 2, Math.sin(a2) * r); j.rotation.z = Math.cos(a2) * 0.18; j.rotation.x = -Math.sin(a2) * 0.18; g.add(j); jets.push([j, h]);
+    }
+    const postM = new MeshStandardMaterial({ color: "#26292e", roughness: 0.5, metalness: 0.3 });
+    mats.festoon = mats.festoon || new MeshStandardMaterial({ color: "#fff0c4", emissive: "#ffca6a", emissiveIntensity: 0.1 });
+    for (let i = 0; i < 8; i++) {
+      const a2 = (i / 8) * Math.PI * 2 + 0.2;
+      const p2 = new Mesh(new CylinderGeometry(0.6, 0.9, 18, 8), postM); p2.position.set(Math.cos(a2) * 42, 9, Math.sin(a2) * 42); g.add(p2);
+      const gl = new Mesh(new SphereGeometry(2, 10, 8), mats.festoon); gl.position.set(Math.cos(a2) * 42, 19, Math.sin(a2) * 42); g.add(gl);
+    }
+    g.traverse((o) => { if (o.isMesh && o.material !== jetM) { o.castShadow = true; o.receiveShadow = true; } });
+    g.userData.jets = jets;
     parent.add(g);
+    EXTRA_KEEPOUT.push({ x: FORK_POS.x, y: FORK_POS.y, r: 120 });
   }
   function enamelStreetSign(text) {
     const g = new Group();
@@ -34363,8 +34430,8 @@ void main() {
         }
         // a calm city speed everywhere on the ground (chapter jumps and the flight excepted)
         if (!siteMode && now > jumpGuard && prevL < route.stopL.end + 400) {
-          const toEnd = mapMode && mapNav.place?.stop === "end" && state.L > route.stopL.end - 2700;
-          const maxStep = (mapMode ? (toEnd ? 520 : Math.abs(state.targetL - state.L) > 1400 ? 2100 : 1150) : 620) * dt;
+          const toEnd = mapMode && mapNav.place?.stop === "end" && state.L > route.stopL.end - 1350;
+          const maxStep = (mapMode ? (toEnd ? 560 : Math.abs(state.targetL - state.L) > 1400 ? 3200 : 1400) : 620) * dt;
           state.L = clamp2(state.L, prevL - maxStep, prevL + maxStep);
         }
         {
@@ -35014,6 +35081,7 @@ void main() {
       // the place opens. Chapters are quiet grey placards you can ignore; the crew is a button;
       // Olari 9 has a jet at the end of the runway where you board by filling the boarding pass.
       // The drive is the optional mode (?drive, or the Drive mode button).
+      try { history.scrollRestoration = "manual"; } catch {}
       var BOOT_MODE = /[?&]drive\b/.test(location.search) ? "drive" : /[?&]map\b/.test(location.search) ? "map" : "intro";
       var mapMode = false, mapBoot = BOOT_MODE !== "drive", mapUI = null, mapPrev = null, mapBoarding = false, mapIntro = false;
       var mapView = { tgt: new Vector3(1270, 0, 3170), pos: new Vector3(), dist: 8200, distGoal: null, yaw: 0.3, pitch: 0.98, vx: 0, vz: 0, follow: false, sx: 0, sy: 0 };
@@ -35170,7 +35238,7 @@ void main() {
         let end = document.querySelector(".flight-end");
         if (!end) {
           end = el("div", "flight-end", `<b>See you on board.</b><span>Your boarding pass is with us. We write back within one working day.</span><button class="fe-replay">\u21BB Repeat the experience</button><button class="fe-map">Back to the map</button>`);
-          end.querySelector(".fe-replay").onclick = () => { location.href = "/"; };
+          end.querySelector(".fe-replay").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?r=" + Date.now().toString(36); };
           end.querySelector(".fe-map").onclick = () => {
             end.remove(); document.body.classList.remove("flight-done");
             mapView.follow = false; mapView.focus = { x: JET_HOME.x - 120, z: JET_HOME.z };
@@ -35308,7 +35376,7 @@ void main() {
             return c;
           });
         }
-        const endL = route.stopL.end, A = endL - 2600, B = endL - 300;
+        const endL = route.stopL.end, A = endL - 1300, B = endL - 150;
         const on = mapMode && mapNav.moving && mapNav.place?.stop === "end" && mapNav.legs.length === 1 && state.L > A && state.L < B;
         const f = (state.L - A) / (B - A);
         roadSvc.forEach((c, i) => c.classList.toggle("on", on && f >= i / 4 && f < (i + 1) / 4));
@@ -35579,7 +35647,13 @@ void main() {
             const d = (x - hit.x) ** 2 + (z - hit.z) ** 2;
             if (!best || d < best.d) best = { d, x, z, br: b2 };
           }
-          if (!best || best.d > 520 * 520) return;
+          // a tap on a place's building goes there
+          let near = null;
+          for (const q of pins) { if (q.pl.chapter && !q.pl.past) continue; const d2 = (q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2; if (d2 < 75 * 75 && (!near || d2 < near.d)) near = { d: d2, pl: q.pl }; }
+          if (near) return mapGo(near.pl);
+          for (const q of pins) if (q.pl.chapter && !q.pl.past && (q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2 < 70 * 70) return mapGo(q.pl);
+          // otherwise only the street itself
+          if (!best || best.d > 60 * 60) return;
           const shared = tapShared.some(([x, z]) => Math.abs(x - best.x) < 1 && Math.abs(z - best.z) < 1);
           const pl = { id: "tap", tap: true, x: best.x, z: best.z, br: shared ? null : best.br, name: "", c: "#FED012" };
           tapMark(best.x, best.z);
@@ -35702,10 +35776,11 @@ void main() {
               const off = mapIntro || o.z > 1 || o.x < -80 || o.x > W + 80 || o.y < (W < 720 ? 190 : 110) || o.y > H + 80;
               o.p.b.classList.toggle("off", off);
               if (off) continue;
-              const crowd = placed.some((q) => Math.abs(q.x - o.x) < 150 && Math.abs(q.y - o.y) < 46);
+              const wasMini = o.p.b.classList.contains("mini");
+              const crowd = placed.some((q) => Math.abs(q.x - o.x) < (wasMini ? 170 : 140) && Math.abs(q.y - o.y) < (wasMini ? 56 : 42));
               o.p.b.classList.toggle("mini", compact || crowd);
               if (!crowd) placed.push(o);
-              o.p.b.style.transform = `translate3d(${o.x.toFixed(1)}px, ${o.y.toFixed(1)}px, 0)`;
+              o.p.b.style.transform = `translate3d(${Math.round(o.x)}px, ${Math.round(o.y)}px, 0)`;
               pinBoxes.push([o.x, o.y]);
             }
             // a street sign gives way to any place pin it would cover
