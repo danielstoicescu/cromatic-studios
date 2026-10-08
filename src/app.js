@@ -30265,7 +30265,7 @@ void main() {
     "Stefan": { bio: "Makes things work, on screen and behind it. If it can be built, he is already building it." },
     "Adina": { bio: "Listens first, writes second. Finds the words a brand would say if it could talk, and the tone it should say them in." },
     "Anne": { bio: "An eye for the small things that make a big impression: the crop, the colour, the pause between two frames." },
-    "Iuli\u0103": { bio: "Brings the energy into the room and the frame. Equally at home behind a camera and in front of a moodboard." },
+    "Iulic\u0103": { bio: "Brings the energy into the room and the frame. Equally at home behind a camera and in front of a moodboard." },
     "Melissa": { bio: "Curious about everything, careful with everything. The fresh pair of eyes that spots what the rest of us got used to." }
   };
   function crewPhoto(i, cls) {
