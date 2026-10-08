@@ -23728,10 +23728,10 @@ void main() {
         { id: "manifesto", x: 1440, y: 3188, label: "CH.00 The Table" },
         // r91: the chapters are off the road now, placards scattered around the blocks before
         // the fork; on the map you find them (and get the points), the drive passes near them
-        { id: "dream", x: 1180, y: 3330, label: "CH.01 The Dream" },
-        { id: "voice", x: 1760, y: 3420, label: "CH.02 The Voice" },
-        { id: "world", x: 1230, y: 3880, label: "CH.03 The World" },
-        { id: "crowd", x: 1780, y: 3960, label: "CH.04 The Crowd" },
+        { id: "dream", x: 1035, y: 3255, label: "CH.01 The Dream" },
+        { id: "voice", x: 1880, y: 3540, label: "CH.02 The Voice" },
+        { id: "world", x: 1265, y: 3735, label: "CH.03 The World" },
+        { id: "crowd", x: 1690, y: 4065, label: "CH.04 The Crowd" },
         { id: "fork", x: 1500, y: 4260, label: "CH.06 Three routes" },
         { id: "merge", x: 1424, y: 6750, label: "CH.06 Routes merge" },
         { id: "services", x: 1060, y: 8130, label: "CH.07 Services" },
@@ -28813,19 +28813,19 @@ void main() {
       if (!st) continue;
       const g = new Group();
       const tex = canvasTexture(512, 256, (ctx) => {
-        ctx.fillStyle = col; ctx.fillRect(0, 0, 512, 256);
-        ctx.fillStyle = "#ecebe7"; ctx.fillRect(14, 14, 484, 228);
+        ctx.fillStyle = "#b9b6af"; ctx.fillRect(0, 0, 512, 256);
+        ctx.fillStyle = "#ecebe7"; ctx.fillRect(6, 6, 500, 244);
+        ctx.fillStyle = col; ctx.fillRect(6, 6, 22, 244);
         ctx.fillStyle = "#8b8984"; ctx.font = '700 34px "JetBrains Mono", monospace'; ctx.fillText(ch, 44, 84);
         ctx.fillStyle = "#3d3c39"; ctx.font = "800 74px Poppins, Montserrat, sans-serif"; ctx.fillText(name, 40, 178);
       });
-      const board = new Mesh(new BoxGeometry(46, 23, 1.6), [new MeshStandardMaterial({ color: col }), new MeshStandardMaterial({ color: col }), new MeshStandardMaterial({ color: col }), new MeshStandardMaterial({ color: col }), new MeshStandardMaterial({ map: tex, roughness: 0.8 }), new MeshStandardMaterial({ map: tex, roughness: 0.8 })]);
+      const edgeM = new MeshStandardMaterial({ color: "#c9c6bf", roughness: 0.8 });
+      const board = new Mesh(new BoxGeometry(46, 23, 1.6), [edgeM, edgeM, edgeM, edgeM, new MeshStandardMaterial({ map: tex, roughness: 0.8 }), new MeshStandardMaterial({ map: tex, roughness: 0.8 })]);
       board.position.y = 34;
       for (const dx of [-15, 15]) { const p = new Mesh(new BoxGeometry(1.6, 26, 1.6), postM); p.position.set(dx, 13, -1); g.add(p); }
-      const shade = new Mesh(new BoxGeometry(46, 23, 0.4), new MeshStandardMaterial({ color: col, transparent: true, opacity: 0.5 }));
-      shade.position.set(2.5, 31.5, -1.4);
-      g.add(board, shade);
+      g.add(board);
       g.position.set(st.x, 0, st.y);
-      g.rotation.y = 0.3;
+      g.rotation.y = { dream: -0.5, voice: 0.9, world: 0.15, crowd: -1.1 }[id] || 0.3;
       g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
       parent.add(g);
     }
@@ -28907,11 +28907,11 @@ void main() {
     const streetSigns = buildCoffeeEntrance(world);
     buildRomexpo(world);
     buildSteamShop(world);
-    buildStreetShop(world, { key: "sipGlow", name: "SIP", label: "coffee & wine", x: 706, z: 4440,
+    buildStreetShop(world, { key: "sipGlow", name: "SIP", label: "coffee & wine", x: 706, z: 4985,
       w: 66, h: 54, d: 46, wall: "#2b2620", trim: "#C9A227", glass: "#1a1712", ink: "#C9A227", boardInk: "#14120c" });
     // r87, west kerb in the order you pass it: Sip, Tâmpa, then OMA at the foot of the
     // mountain right next to Yoshi Izakaya, Casa Berero, and ARCA at the end
-    buildOmaShop(world, 706, 4985);
+    buildOmaShop(world, 706, 4560);
     buildIzakaya(world, 706, 5175);
     buildCasaBerero(world, 706, 5480);
     buildBrasov(world);
@@ -30627,7 +30627,7 @@ void main() {
         <span class="ea-contact"><a href="mailto:hi@cromaticstudios.com">hi@cromaticstudios.com</a><a href="tel:+40728978068">+40 728 978 068</a></span>
       </div>`);
       // r93: the end of the road boards the Cromatic Jet on the map
-      const btn = el("button", "coffee-btn cta-big", `${starSVG(22, "var(--st-ink)")} <span>Board the Cromatic Jet</span> <em class="cta-arr">\u2708</em>`);
+      const btn = el("button", "coffee-btn cta-big", `${starSVG(22, "var(--st-ink)")} <span>Go even further</span> <em class="cta-arr">\u2191</em>`);
       btn.onclick = () => (api.boardJet ? api.boardJet() : api.openSecret());
       box.appendChild(btn);
       if (!opts.map) box.appendChild(el("p", "hint mono cta-hint", "THE STORY HAS ONE MORE CHAPTER \xB7 PRESS IT"));
@@ -32397,7 +32397,7 @@ void main() {
           }
         },
         openCrew() { openCrew(); },
-        boardJet() { setMapMode(true); setTimeout(() => mapGo(MAP_PLACES.find((p) => p.id === "jet")), 400); },
+        boardJet() { if (!mapMode) setMapMode(true); document.body.classList.remove("map-at-stop"); ui.card.classList.add("hidden"); setTimeout(() => mapGo(MAP_PLACES.find((p) => p.id === "jet")), mapMode ? 50 : 400); },
         formSent() {
           // on the map, the pass goes in and the jet takes off
           if (mapMode && mapBoarding) setTimeout(mapTakeoff, 2600);
@@ -32534,6 +32534,7 @@ void main() {
       function xpAnnounce(pts, title, desc, kind, stopId = null) {
         if (xpPending) xpCommit(false);
         if (siteMode) { xpLand({ pts, title, desc, stopId }); return; }
+        if (mapMode) { setTimeout(() => xpLand({ pts, title, desc, stopId }), 1100); return; }
         xpPending = { pts, title, desc, kind, stopId, t: performance.now() };
         ui.dash.band(title, desc, pts);
       }
@@ -34742,16 +34743,16 @@ void main() {
         const onA = state.branch === "A" && !siteMode;
         const Lh = (k, x, z) => routeLAt(k, x, z);
         const Lrom = Lh("rom", 1150, 5140), Lsteam = Lh("steam", 985, 5640);
-        const Lsip = Lh("sip87", 706, 4440), Loma = Lh("oma87", 706, 4985), Lyo = Lh("yoshi87", 706, 5175), Lbe = Lh("berero87", 706, 5480);
+        const Loma = Lh("oma94", 706, 4560), Lsip = Lh("sip94", 706, 4985), Lyo = Lh("yoshi87", 706, 5175), Lbe = Lh("berero87", 706, 5480);
         const inW = (a2, b2) => onA && state.L > a2 && state.L < b2;
         showPoi(ui.scfTag, inW(Lrom - 330, Lrom + 230));
         showPoi(ui.artisanTag, inW(Lrom - 330, Lrom + 230));
         showPoi(ui.steamTag, inW(Lsteam - 300, Lsteam + 120));
         showPoi(ui.craftTag, inW(Lsteam - 300, Lsteam + 120));
-        // Sip comes after the Two Minutes cards have gone, while the mountain opens up behind it
-        showPoi(ui.sipTag, inW(Lsip + 60, Loma - 300));
-        showPoi(ui.omaTag, inW(Loma - 300, (Loma + Lyo) / 2 - 10));
-        showPoi(ui.yoshiTag, inW((Loma + Lyo) / 2 + 10, (Lyo + Lbe) / 2 - 20));
+        // OMA right after Two Minutes, in front of the mountain; then Sip, Yoshi, Berero
+        showPoi(ui.omaTag, inW(Loma - 160, (Loma + Lsip) / 2 - 10));
+        showPoi(ui.sipTag, inW((Loma + Lsip) / 2 + 10, (Lsip + Lyo) / 2 - 10));
+        showPoi(ui.yoshiTag, inW((Lsip + Lyo) / 2 + 10, (Lyo + Lbe) / 2 - 20));
         showPoi(ui.bereroTag, inW((Lyo + Lbe) / 2 + 20, Lbe + 110));
         // one service card at a time, evenly spaced from the merge to Olari 9, alternating sides
         const svcA = route.stopL.merge + 900, svcB = route.stopL.end - 80;
@@ -34816,14 +34817,16 @@ void main() {
         { id: "voice", stop: "voice", chapter: true, find: true, h: 44, name: "The Voice", line: "CH.02", c: "#F65342" },
         { id: "world", stop: "world", chapter: true, find: true, h: 44, name: "The World", line: "CH.03", c: "#119BFE" },
         { id: "crowd", stop: "crowd", chapter: true, find: true, h: 44, name: "The Crowd", line: "CH.04", c: "#28C840" },
-        { id: "hq", chapter: true, find: true, px: 1010, pz: 4120, h: 280, name: "C\u0103linescu 54", line: "OUR STUDIO \xB7 2016", c: "#c0392b", pts: 5,
+        { id: "hq", chapter: true, br: "A", x: 1010, z: 4262, px: 1010, pz: 4120, h: 280, name: "C\u0103linescu 54", line: "OUR STUDIO \xB7 2016", c: "#c0392b", pts: 5,
           desc: "Strada George C\u0103linescu 54: the villa with the red mansard, our studio from 2016, right across the street from Two Minutes. The string of lights still runs from our balcony to their corner." },
         { id: "tm", br: "A", x: 900, z: 4262, px: 640, pz: 4260, h: 80, name: "Two Minutes", line: "COFFEE \xB7 BRAND \xB7 FILM", c: "#111111", t: "#ffffff", act: "tmMedia", tm: true, desc: "A specialty coffee shop brand made to be loved fast and remembered long. Three double espressos are on us." },
-        { id: "oma", br: "A", x: 706, z: 4985, h: 80, name: "OMA Coffee", line: "BRAȘOV \xB7 AT THE FOOT OF T\xC2MPA", c: "#4a7c4e", t: "#ffffff", act: "omaTag" },
+        { id: "oma", br: "A", x: 706, z: 4560, h: 80, name: "OMA Coffee", line: "BRAȘOV \xB7 AT THE FOOT OF T\xC2MPA", c: "#4a7c4e", t: "#ffffff", act: "omaTag" },
         { id: "yoshi", br: "A", x: 706, z: 5175, h: 60, name: "Yoshi Izakaya", line: "COMMUNICATION \xB7 CONTENT", c: "#F4876F", t: "#2a0f08", act: "yoshiTag" },
         { id: "scf", br: "A", x: 1150, z: 5140, h: 110, name: "Slow Coffee Festival", line: "ROMEXPO \xB7 2021–2025", c: "#5B4B9E", t: "#ffffff", act: "scfTag" },
         { id: "steam", br: "A", x: 985, z: 5640, h: 150, name: "Steam Coffee Shop", line: "BRANDING \xB7 GROWTH \xB7 PRODUCT", c: "#2f9e4f", t: "#ffffff", act: "steamTag", desc: "A pioneer coffee brand refreshed for its community: new energy for the people who were there from the start." },
-        { id: "arca", br: "A", x: 560, z: 5930, h: 70, name: "ARCA Resort", line: "CAVIAR \xB7 PACKAGING \xB7 LIVERY", c: "#7a1f2b", t: "#ffffff", work: "ARCA Resort", desc: "Caviar tins, a delivery van and smoked-fish trays for a resort in Blăgești with its own ponds, plus Antila and UND\xC9 next door." },
+        { id: "arca", br: "A", x: 560, z: 5930, px: 420, pz: 5916, h: 70, name: "ARCA Resort", line: "CAVIAR \xB7 PACKAGING \xB7 LIVERY", c: "#7a1f2b", t: "#ffffff", work: "ARCA Resort", desc: "Caviar tins, a delivery van and smoked-fish trays for a resort in Blăgești with its own ponds, plus Antila and UND\xC9 next door." },
+        { id: "antila", br: "A", x: 560, z: 6040, px: 440, pz: 6040, h: 50, name: "Antila", line: "CHARCUTERIE \xB7 BRAND", c: "#F2C200", t: "#1a1405", work: "Antila", desc: "A charcuterie brand, 100% Romanian, with a bold wordmark, disruptive characters and colour-coded packaging." },
+        { id: "unde", br: "A", x: 708, z: 6036, h: 50, name: "UND\xC9", line: "GROCERY \xB7 SIGNAGE", c: "#2b6fd6", t: "#ffffff", work: "UNDE", desc: "ARCA's grocery stores: a hand-drawn basket and three formats, Market, Store and Concept." },
         { id: "invest", br: "B", x: 2205, z: 4500, h: 170, name: "Investimental", line: "FINTECH \xB7 UX \xB7 UI", c: "#119BFE", t: "#ffffff", work: "Investimental" },
         { id: "tac", br: "C", x: 1790, z: 4570, px: 1700, h: 190, name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
         { id: "zdrovit", br: "C", x: 1720, z: 5070, h: 70, name: "Zdrovit", line: "8 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health, clinic, beauty and perfume brands, from Bucharest to Barcelona, Los Angeles and Paris." },
@@ -34931,6 +34934,12 @@ void main() {
         ui.card.classList.remove("contact");
         ui.clearCard();
         document.body.classList.remove("map-boarding", "boarding-aside", "boarding-done");
+        // after a flight the camera is still low in the clouds: fly it back over the map
+        if (mapView.pitch < 0.9) {
+          mapView.follow = false; mapView.focus = { x: JET_HOME.x - 120, z: JET_HOME.z };
+          mapView.yawGoal = 0.3; mapView.pitchGoal = 0.98; mapView.lookYGoal = 0;
+          mapView.distGoal = innerWidth < 720 ? 5600 : 4600; mapView.distRate = 1;
+        }
       }
       // r92: the take-off as a film. The boarding pass slides aside (right on desktop, down on a
       // phone) and stays; the camera swings low to the jet's side and closes in while it rolls,
@@ -34950,7 +34959,7 @@ void main() {
       function mapTakeoff() {
         const jet = worldRefs.jet;
         if (!jet || jetFx.phase !== "idle") return;
-        jetFx.phase = "board"; jetFx.t = 0; jetFx.baam = false; jetFx.speed = 0; jetFx.watch = false;
+        jetFx.phase = "board"; jetFx.t = 0; jetFx.baam = false; jetFx.speed = 0; jetFx.watch = false; jetFx.passBack = false;
         document.body.classList.add("map-takeoff");
         if (mapBoarding) document.body.classList.add("boarding-aside");
         mapView.follow = true; mapView.focus = null;
@@ -35010,18 +35019,15 @@ void main() {
             }
           }
         } else if (jetFx.phase === "gone") {
-          if (t > 2.6 && mapView.yawGoal == null && Math.abs(mapView.yaw - 0.3) > 0.01) {
-            mapView.follow = false; mapView.focus = { x: JET_HOME.x - 120, z: JET_HOME.z + 120 };
-            mapView.yawGoal = 0.3; mapView.pitchGoal = 0.98; mapView.distGoal = innerWidth < 720 ? 5200 : 4200; mapView.distRate = 1; mapView.lookYGoal = 0;
-          }
+          // the camera stays with the clouds the jet went into; the pass takes the stage
+          if (t > 1.6 && !jetFx.passBack) { jetFx.passBack = true; mapBoardingDone(); }
           if (t > 6) {
             // a fresh jet waits on the stand, stair down, carpet out
-            g.visible = true; g.position.set(JET_HOME.x, 0, JET_HOME.z); g.rotation.set(0, 0, 0);
+            g.position.set(JET_HOME.x, 0, JET_HOME.z); g.rotation.set(0, 0, 0); g.visible = true;
             jet.stair.scale.setScalar(1); jet.carpet.forEach((c) => (c.visible = true)); jet.glowM.opacity = 0;
             jet.clouds.visible = false;
             jetFx.phase = "idle";
             document.body.classList.remove("map-takeoff");
-            mapBoardingDone();
           }
         }
       }
@@ -35062,6 +35068,8 @@ void main() {
         const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="van" aria-label="Find the van" title="Find the van">◎</button>`);
         const dock = el("div", "map-dock", `<span class="map-dock-h mono">WHERE TO?</span><div class="map-chips"></div>`);
         const card = el("div", "map-card hidden");
+        const STREETS = [["COFFEE STREET", 820, 4980, "#C9A227"], ["FINTECH BOULEVARD", 2080, 5000, "#119BFE"], ["MEDICAL AVENUE", 1500, 5560, "#e30613"]];
+        const streetEls = STREETS.map(([t, x, z, c]) => { const e = el("div", "map-street", `<b>${t}</b>`); e.style.setProperty("--sc", c); e._p = [x, z]; pinsEl.appendChild(e); return e; });
         const skip = el("button", "kz-skip hidden", `Skip intro <span>→</span>`);
         const baamEl = el("div", "jet-baam hidden", `<b>Wheels up!</b><span>Your boarding pass is on board. We write back within one working day.</span>`);
         const speedEl = el("div", "speed-lines");
@@ -35095,7 +35103,7 @@ void main() {
           b.onclick = (e) => { e.stopPropagation(); mapGo(pl); };
           pinsEl.appendChild(b);
           let ch = null;
-          if (!pl.find) {
+          if (!pl.chapter) {
             ch = el("button", `map-chip${pl.beacon ? " beacon" : ""}`, `<span class="mc-dot"></span>${pinSVG(pl.pin || pl.c, "pin-ic mc-pin")}${pl.name}`);
             ch.style.setProperty("--pc", pl.c); ch.style.setProperty("--pt", pl.t);
             ch.onclick = () => mapGo(pl);
@@ -35103,12 +35111,12 @@ void main() {
           }
           return { pl, b, ch };
         });
-        const total = MAP_PLACES.filter((p) => !p.find).length, totalF = MAP_PLACES.filter((p) => p.find).length;
+        const total = MAP_PLACES.filter((p) => !p.chapter).length, totalF = MAP_PLACES.filter((p) => p.chapter).length;
         const mark = () => {
           let n = 0, f = 0;
           for (const p of pins) {
             const v = visited.has(p.pl.id), on = mapNav.place === p.pl;
-            if (v) p.pl.find ? f++ : n++;
+            if (v) p.pl.chapter ? f++ : n++;
             p.b.classList.toggle("visited", v); p.b.classList.toggle("on", on);
             if (p.ch) { p.ch.classList.toggle("visited", v); p.ch.classList.toggle("on", on); }
           }
@@ -35171,13 +35179,8 @@ void main() {
           if (visit(pl)) gainXP(5, pl.name, "Found on the map");
           mark();
           if (pl.board) { mapOpenBoarding(); return; }
-          if (pl.stop === "end") {
-            showCard(pl, "THE STUDIO \xB7 BUCHAREST", `<p>Strada Olari 9, Bucharest. Come by for a coffee: there is always one.</p>
-              <p class="mcd-contact"><a href="mailto:hi@cromaticstudios.com">hi@cromaticstudios.com</a><a href="tel:+40728978068">+40 728 978 068</a></p>`,
-              `<a class="mcd-open mcd-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" fill="currentColor"/></svg>Open in Google Maps</a><button class="mcd-ghost mcd-jet">Board the jet ✈</button>`);
-            card.querySelector(".mcd-jet").onclick = () => mapGo(MAP_PLACES.find((p) => p.id === "jet"));
-            return;
-          }
+          if (pl.stop === "end") { mapShowChapter("end"); return; }
+          if (pl.id === "hq") { showCard(pl, "A FORMER ADDRESS", `<p>${pl.desc}</p>`, ""); return; }
           if (pl.stop === "services") {
             showCard(pl, "EVERYTHING WE DO", SERVICES.map((sv) => `<span class="mcd-svc" style="--sc:${sv.c}"><b>${sv.t}</b>${sv.items.slice(0, 4).join(" \xB7 ")}</span>`).join(""), `<button class="mcd-open mcd-jet">Board the Cromatic Jet ✈</button>`);
             card.querySelector(".mcd-jet").onclick = () => mapGo(MAP_PLACES.find((p) => p.id === "jet"));
@@ -35328,6 +35331,13 @@ void main() {
             // pins: projected every frame; labels give way to their neighbours when crowded
             const W = innerWidth, H = innerHeight, placed = [];
             const compact = mapView.dist > 8600;
+            for (const e of streetEls) {
+              proj.set(e._p[0], 20, e._p[1]).project(camera);
+              const sx2 = (proj.x * 0.5 + 0.5) * W, sy2 = (-proj.y * 0.5 + 0.5) * H;
+              const off2 = mapIntro || proj.z > 1 || sx2 < -200 || sx2 > W + 200 || sy2 < 90 || sy2 > H + 40 || mapView.dist < 2600;
+              e.classList.toggle("off", off2);
+              if (!off2) e.style.transform = `translate3d(${sx2.toFixed(1)}px, ${sy2.toFixed(1)}px, 0)`;
+            }
             const order = pins.map((p) => {
               proj.set(p.pl.wx, p.pl.wy, p.pl.wz).project(camera);
               return { p, x: (proj.x * 0.5 + 0.5) * W, y: (-proj.y * 0.5 + 0.5) * H, z: proj.z };
