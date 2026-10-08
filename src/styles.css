@@ -3138,3 +3138,6 @@ body.map-mode .topbar .mode-links { display: none; }
 .hp-photo .hp-img { object-fit: contain; object-position: 50% 100%; }
 .human-panel { bottom: auto; max-height: calc(100vh - 32px); overflow-y: auto; }
 @media (max-width: 719px) { .human-panel { height: auto; max-height: 88vh; top: auto; bottom: 10px; } }
+/* r105: the crew overlay takes the clicks (its face buttons are all:unset, so they inherit the root's none) */
+.crew-panel, .crew-panel *, .human-panel, .human-panel * { pointer-events: auto; }
+.crew-panel.hidden, .human-panel.hidden, .human-panel.hidden * { pointer-events: none; }
