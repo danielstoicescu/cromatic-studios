@@ -23697,21 +23697,9 @@ void main() {
       ];
       ROUTE_MERGE = [
         [1170, 6515],
-        [1170, 7040, 96],
-        [1170, 7160, 62],
-        [1170, 7290, 28],
-        [1170, 7420, 7],
-        [1170, 7510, 0],
-        [1000, 7550],
-        [800, 7660],
-        [760, 7850],
-        [820, 8060],
-        [1060, 8130],
-        [1380, 8130],
-        [1560, 8270],
-        [1560, 8650],
-        [1470, 8860],
-        [1290, 9010],
+        [1170, 7400],
+        [1170, 8130],
+        [1210, 8900],
         [1250, 9160],
         [1250, 9340],
         [1250, 9630]
@@ -23720,7 +23708,8 @@ void main() {
         [1250, 9630],
         [1250, 11200]
       ];
-      ROUNDABOUT = { x: 1250, y: 6750, r: 174, island: 120 };
+      // r101: the roundabout is gone; its keep-out zones are parked off the map
+      ROUNDABOUT = { x: -9000, y: -9000, r: 174, island: 120 };
       FORK_POS = { x: 1500, y: 4260 };
       RAMP_Y = 10130;
       STOPS = [
@@ -23734,7 +23723,7 @@ void main() {
         { id: "crowd", x: 1690, y: 4065, label: "CH.04 The Crowd" },
         { id: "fork", x: 1500, y: 4260, label: "CH.06 Three routes" },
         { id: "merge", x: 1424, y: 6750, label: "CH.06 Routes merge" },
-        { id: "services", x: 1060, y: 8130, label: "CH.07 Services" },
+        { id: "services", x: 1170, y: 8130, label: "CH.07 Services" },
         { id: "end", x: 1140, y: 9260, label: "Strada Olari 9" },
         { id: "contact", x: 1250, y: 11100, label: "Above the clouds" }
       ];
@@ -24072,10 +24061,10 @@ void main() {
       const t = a * Math.PI / 180, k = (260 - a) / 80;
       spiral.push([s1[0] + FR * Math.cos(t), s1[1] + FR + FR * Math.sin(t), s1[2] + (100 - s1[2]) * k]);
     }
+    // r101: no turnaround: the streets join and run straight on to Olari 9
+    void spiral;
     return [
       ...pts,
-      // ends at (1250, 5810), ground
-      ...spiral,
       // north → 1.5 loops up → exits south at height
       ...ROUTE_MERGE.slice(1),
       // descent knots carry y back to ground, then on to (1250, 8930)
@@ -24885,7 +24874,7 @@ void main() {
     group.add(casingMesh, majorMesh);
     parent.add(group);
   }
-  function buildGoldenRoute(parent, branch, accent, chosen = true) {
+  function buildGoldenRoute(parent, branch, accent, chosen = true, all = false) {
     const group = new Group();
     group.name = "goldenRoute";
     mats.routeCasing = mats.routeCasing || new MeshStandardMaterial({ color: "#2a2620", roughness: 0.9 });
@@ -24893,7 +24882,7 @@ void main() {
     mats.routeDash = mats.routeDash || new MeshBasicMaterial({ color: "#fffdf2" });
     mats.routeAlt = mats.routeAlt || new MeshStandardMaterial({ color: "#c9c5b8", roughness: 1 });
     for (const b2 of BRANCHES) {
-      if (b2 === branch && chosen) continue;
+      if ((b2 === branch && chosen) || all) continue;
       group.add(roadRibbonFromMap(roundedPolyline(branchRoute(b2)), chosen ? ROUTE_W * 0.8 : ROUTE_W, b2 === branch ? 0.72 : 0.7, mats.routeAlt));
     }
     const flat = branchPoints(branch);
@@ -24908,6 +24897,14 @@ void main() {
       if (jI < all3.length - 2) runs.push(all3.slice(jI));
     }
     for (const p3 of runs) addGold(p3);
+    // r101: on the map every street is open: all three are gold, no choosing
+    if (all) for (const b2 of BRANCHES) {
+      if (b2 === branch && chosen) continue;
+      const d2 = roundedPolyline(branchPoints(b2)).filter(([, z]) => z <= RAMP_LIP + 1);
+      const p2 = d2.map(([x, z, y]) => new Vector3(x, z > RAMP_BASE - 1 ? elevationAt(z) : y, z));
+      const [f2, j2] = branchSpan(d2);
+      addGold(p2.slice(Math.max(0, f2 - 1), j2 + 2));
+    }
     parent.add(group);
     return group;
     function addGold(p3) {
@@ -28906,7 +28903,7 @@ void main() {
     const world = new Group();
     buildGround(world);
     buildRoads(world);
-    buildRoundabout(world);
+    // r101: the roundabout (the turnaround) is gone
     buildFork(world);
     buildStart(world);
     // the four streets' landmarks go first, so the generic city blocks leave room for them
@@ -32535,7 +32532,7 @@ void main() {
       function rebuildGolden() {
         scene.remove(golden);
         disposeObject(golden);
-        golden = buildGoldenRoute(scene, state.branch, SCHEMES[state.schemeIdx].ac, state.branchChosen);
+        golden = buildGoldenRoute(scene, state.branch, SCHEMES[state.schemeIdx].ac, state.branchChosen, mapMode);
         applyScheme(state.schemeIdx);
       }
       function resetBranch() {
@@ -34788,7 +34785,7 @@ void main() {
           btn.classList.toggle("leaving", state.branchChosen);
           btn.classList.toggle("on", state.branchChosen && state.branch === bk);
         }
-        const nearRB = Math.abs(state.L - route.stopL.merge) < 900 && !flying;
+        const nearRB = false;
         placeAnchor(ui.rbBtn, ROUNDABOUT.x, 300, ROUNDABOUT.y, nearRB);
         const showBoxes = (coffee.done || coffee.phase === "unload" || coffee.phase === "sip2" || coffee.phase === "rush" || coffee.phase === "calm") && nearTM;
         ui.setPoiTabs(showBoxes);
@@ -35134,9 +35131,9 @@ void main() {
         const dock = el("div", "map-dock", `<span class="map-dock-h mono">WHERE TO?</span><div class="map-chips"></div>`);
         const card = el("div", "map-card hidden");
         // the street names float high over the head of each street, as the drive's motorway signs
-        const STREETS = [["Coffee Street", "The story road", 820, 4800, "#28C840"], ["Fintech Boulevard", "Digital & finance", 2075, 5300, "#119BFE"], ["Medical Avenue", "Clinics, care & beauty", 1500, 5780, "#F28BA8"]];
+        const STREETS = [["Coffee Street", "The story road", 815, 5150, "#28C840"], ["Fintech Boulevard", "Digital & finance", 2085, 5700, "#119BFE"], ["Medical Avenue", "Clinics, care & beauty", 1500, 5700, "#F28BA8"]];
         const streetEls = STREETS.map(([t, sub, x, z, c]) => {
-          const e = el("div", "map-street", `<span class="hw-stripe"></span><span class="hw-body"><span class="hw-txt"><b>${t}</b><i>${sub}</i></span></span><span class="ms-pole"></span>`);
+          const e = el("div", "map-street", `<span class="hw-stripe"></span><span class="hw-body"><span class="hw-txt"><b>${t}</b><i>${sub}</i></span></span>`);
           e.style.setProperty("--hwc", c); e._p = [x, z]; pinsEl.prepend(e); return e;
         });
         const skip = el("button", "kz-skip hidden", `Skip intro <span>→</span>`);
@@ -35402,7 +35399,7 @@ void main() {
             const W = innerWidth, H = innerHeight, placed = [];
             const compact = mapView.dist > 8600;
             for (const e of streetEls) {
-              proj.set(e._p[0], 300, e._p[1]).project(camera);
+              proj.set(e._p[0], 620, e._p[1]).project(camera);
               const sx2 = (proj.x * 0.5 + 0.5) * W, sy2 = (-proj.y * 0.5 + 0.5) * H;
               const off2 = mapIntro || proj.z > 1 || sx2 < -200 || sx2 > W + 200 || sy2 < 110 || sy2 > H - 90 || mapView.dist < 2200;
               e._xy = off2 ? null : [sx2, sy2];
@@ -35426,7 +35423,7 @@ void main() {
             }
             // a street sign gives way to any place pin it would cover
             for (const e of streetEls) {
-              const hit = !e._xy || pinBoxes.some(([px2, py2]) => Math.abs(px2 - e._xy[0]) < 150 && py2 - e._xy[1] > -40 && py2 - e._xy[1] < 105);
+              const hit = !e._xy;
               e.classList.toggle("off", hit);
             }
           }
@@ -35470,6 +35467,7 @@ void main() {
           sun.shadow.camera.left = sun.shadow.camera.bottom = -3000; sun.shadow.camera.right = sun.shadow.camera.top = 3000; sun.shadow.camera.updateProjectionMatrix();
           scrollSpace.style.display = "none";
           document.body.classList.add("map-mode");
+          rebuildGolden();
           mapUI.mark();
           if (intro) { mapIntro = true; document.body.classList.add("kz-intro"); mapUI.skip.classList.remove("hidden"); }
           try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" ? "" : "?map") + location.hash); } catch {}
@@ -35489,6 +35487,7 @@ void main() {
           if (mapPrev && state.vehicleId !== mapPrev.veh && SCHEMES[state.schemeIdx].id !== "monument") api.setVehicle(mapPrev.veh);
           // the drive holds you at the fork until a street is chosen: past it, the map's street counts as chosen
           if (state.L > route.stopL.fork + 10) { state.branch = route.branch; state.branchChosen = true; rebuildGolden(); }
+          rebuildGolden();
           scrollSpace.style.display = "";
           updateScrollSpace();
           scrollToL(state.L, false);

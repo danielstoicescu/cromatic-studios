@@ -3128,3 +3128,8 @@ body.map-mode .topbar .mode-links { display: none; }
   .hp-name { font-size: 24px; }
 }
 @media (min-width: 720px) { body.human-open .crew-panel { place-items: center start; padding-left: max(16px, calc(50vw - 640px)); padding-right: 460px; } }
+/* r101: the street signs hang in the air over their street, no post */
+.map-street { translate: -50% -50%; animation: streetFloat 4.5s ease-in-out infinite; box-shadow: 0 0 0 2.5px #fff, 0 0 0 4.5px #0d0c09, 0 26px 30px -18px rgba(0,0,0,.45); }
+.map-street:nth-child(2) { animation-delay: -1.5s; } .map-street:nth-child(3) { animation-delay: -3s; }
+@keyframes streetFloat { 50% { margin-top: -6px; } }
+@media (prefers-reduced-motion: reduce) { .map-street { animation: none; } }
