@@ -8,23 +8,20 @@ export const PAGES = [
   {
     slug: "artisan-coffee-gear",
     name: "Artisan Coffee Gear",
-    tagline: "A whole brand world, from the letterform pattern to the webshop.",
-    desc: "Artisan Coffee Gear: a brand universe for specialty coffee equipment, from strategy and identity to illustration, packaging and the webshop. By Cromatic Studios, Bucharest.",
-    title: "Getting to the core of the craft.",
-    accent: { bg: "#B4B79F", ink: "#5c5f4b" },
-    info: ["Coffee equipment, Retail", "2019", "Brand strategy, brand universe, visual identity, illustration, packaging, website"],
+    tagline: "Branding for a coffee gear shop: a whole brand universe, from the letterform pattern to the webshop.",
+    desc: "Artisan Coffee Gear, a branding project: brand strategy, archetype, visual identity, letterform pattern, technical illustration, packaging and webshop for a specialty coffee equipment brand. By Cromatic Studios, Bucharest.",
+    title: "Branding coffee gear for people who take coffee seriously.",
+    accent: { bg: "#797c69", fg: "#ffffff", ink: "#5c5f4b" },
+    info: ["Branding project · Coffee equipment, retail", "2019", "Brand strategy, brand universe, visual identity, illustration, packaging, website"],
     cover: { img: "m:artisan-coffee-gear/art09" },
-    hero: [
-      { img: "m:artisan-coffee-gear/art01", alt: "Artisan Coffee Gear wordmark on white" },
-      { img: "m:artisan-coffee-gear/art09", alt: "Line drawings of brewers, grinders and kettles" }
-    ],
+    hero: { img: "m:artisan-coffee-gear/art09", alt: "Line drawings of brewers, grinders, scales and kettles", r: 1.778 },
     problem: {
       h: "Gear for people who take coffee seriously",
       p: [
         "Artisan sells coffee equipment to <strong>passionate customers</strong>: people who weigh their doses, time their pours and read up on every grinder before they buy it.",
         "A catalogue alone does not speak to them. Artisan wanted a <strong>tailor-made environment with a personal voice</strong>, one that helps customers <strong>join the specialty coffee community</strong> and feel understood."
       ],
-      media: [{ row: [{ img: "m:artisan-coffee-gear/art02", alt: "The Artisan value proposition" }, { img: "m:artisan-coffee-gear/art05", alt: "The Artisan wordmark with the line coffee gear" }], cap: "The value proposition, and the wordmark it led to." }]
+      media: [{ field: "#797c69", items: [{ img: "m:artisan-coffee-gear/art02", alt: "The Artisan value proposition" }], cap: "The value proposition the whole brand was built on" }]
     },
     solution: {
       h: "The One Who Knocks",
@@ -38,18 +35,25 @@ export const PAGES = [
         text: "Ailerons for the mark, Gruppo and Gotham for everything else, and an olive, ink and paper palette that lets the equipment be the hero. The A of Artisan folds into a repeating chevron, and every machine is drawn as a technical illustration.",
         deliverables: ["Brand strategy", "Brand archetype", "Logo", "Typography system", "Colour palette", "Letterform pattern", "Technical illustration", "Stationery", "Merch"],
         media: [
-          { row: [{ img: "m:artisan-coffee-gear/art07", alt: "Ailerons, Gruppo and Gotham with the olive, ink and paper palette" }, { img: "m:artisan-coffee-gear/art08", alt: "The A of Artisan turning into a chevron pattern, with botanical drawings" }], cap: "Type and colour, and the pattern that grows out of the letter A" },
-          { row: [{ img: "m:artisan-coffee-gear/art10", alt: "Olive posters with blueprint drawings of coffee machines" }, { img: "m:artisan-coffee-gear/art15", alt: "Posters for barista tools and home brewing" }], cap: "The gear, drawn as blueprints, so the catalogue reads like a manual" },
-          { row: [{ img: "m:artisan-coffee-gear/art12", alt: "Business card and branded tape with an olive branch" }, { img: "m:artisan-coffee-gear/art13", alt: "Olive polo shirt with the Artisan mark" }], cap: "Business cards, washi tape and polo shirts: the system built to be touched" }
+          { field: "#e4e1d8", fg: "#5c5f4b", items: [{ img: "m:artisan-coffee-gear/art05", alt: "The Artisan wordmark with the line coffee gear" }], cap: "The wordmark: Ailerons, spaced wide, with coffee gear set quietly underneath" },
+          { field: "#1e1d1d", fg: "#c9cbb8", items: [{ img: "m:artisan-coffee-gear/art07", alt: "Ailerons, Gruppo and Gotham with the olive, ink and paper palette" }], cap: "Three typefaces and four colours: olive, ink, paper and white" },
+          { statement: "The A of Artisan folds into a chevron.", sub: "A texture that runs across tape, packaging and posters without ever repeating itself the same way twice.", bg: "#797c69", fg: "#ffffff" },
+          { img: "m:artisan-coffee-gear/art08", alt: "The A of Artisan turning into a chevron pattern, with botanical drawings", r: 1.778, cap: "From letter to pattern, with the botanical drawings that go with it" },
+          { field: "#797c69", items: [{ img: "m:artisan-coffee-gear/art10", alt: "Olive posters with blueprint drawings of coffee machines" }], cap: "The gear, drawn as blueprints, so the catalogue reads like a manual" },
+          { img: "m:artisan-coffee-gear/art15", alt: "Posters for barista tools and home brewing", r: 1.778, cap: "Posters for barista tools and home brewing" },
+          { field: "#e4e1d8", fg: "#5c5f4b", items: [{ img: "m:artisan-coffee-gear/art12", alt: "Business card and branded tape with an olive branch" }, { img: "m:artisan-coffee-gear/art13", alt: "Olive polo shirt with the Artisan mark" }], cap: "Business cards, washi tape and polo shirts: the system built to be touched" }
         ]
       },
       {
         pillar: "product",
-        text: "A webshop that reads like an atelier: botanical line art, generous space and the machines centre stage, under one line, “Get to the core of your craft.” The same system dresses the green coffee side of the business.",
+        text: "The branding carried into a webshop that reads like an atelier: botanical line art, generous space and the machines centre stage, under one line, “Get to the core of your craft.” The same system dresses the green coffee side of the business.",
         deliverables: ["Website", "E-commerce UI", "Packaging", "Campaign visuals"],
         media: [
-          { row: [{ img: "m:artisan-coffee-gear/art17", alt: "The Artisan website on a desktop screen" }, { img: "m:artisan-coffee-gear/art18", alt: "Website section presenting espresso machines" }, { img: "m:artisan-coffee-gear/art19", alt: "Mobile pages and a shop counter with Artisan stickers" }], cap: "The webshop on desktop and phone, and the brand on the counter" },
-          { row: [{ img: "m:artisan-coffee-gear/art22", alt: "Green coffee packaging and jute sacks with the Artisan mark" }, { img: "m:artisan-coffee-gear/art23", alt: "Bottle and tablet visuals for raw beans from the source" }], cap: "Packaging and campaign for green beans, brought in directly from Colombia" }
+          { statement: "“Get to the core of your craft.”", sub: "The line that opens the webshop.", bg: "#1e1d1d", fg: "#e4e1d8" },
+          { img: "m:artisan-coffee-gear/art17", alt: "The Artisan website on a desktop screen", r: 1.778, cap: "The webshop on desktop" },
+          { field: "#797c69", items: [{ img: "m:artisan-coffee-gear/art18", alt: "Website section presenting espresso machines" }, { img: "m:artisan-coffee-gear/art19", alt: "Mobile pages and a shop counter with Artisan stickers" }], cap: "The world's finest coffee machines, as the page puts it, and the brand on the phone and the counter" },
+          { img: "m:artisan-coffee-gear/art22", alt: "Green coffee packaging and jute sacks with the Artisan mark", r: 1.778, cap: "Packaging for green beans, brought in directly from Colombia" },
+          { field: "#e4e1d8", fg: "#5c5f4b", items: [{ img: "m:artisan-coffee-gear/art23", alt: "Bottle and tablet visuals for raw beans from the source" }], cap: "Campaign visuals: raw beans, from the source" }
         ]
       }
     ],

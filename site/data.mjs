@@ -26,7 +26,7 @@ export const SERVICES = [
 // route: which road it sits on in the drive; page: slug of its own case page
 // r122: 1:1 with the map: every place on the map, street by street (A Coffee Street, B Fintech
 // Boulevard, C Medical Avenue with the Zdrovit yard, D The Smallest Shortcut)
-export const STREETS = { A: ["Coffee Street", "#28C840"], B: ["Fintech Boulevard", "#119BFE"], C: ["Medical Avenue", "#F28BA8"], D: ["The Smallest Shortcut", "#FED012"] };
+export const STREETS = { A: ["Coffee Street", "#28C840"], B: ["Fintech Boulevard", "#119BFE"], C: ["Medical Avenue", "#F28BA8"], D: ["The Smallest Shortcut", "#FED012"], E: ["Bulevardul Dacia 99", "#B098C8"] };
 export const PROJECTS = [
   { name: "Two Minutes", cat: "Brand · Coffee · Retail", c: "#111111", t: "#fff", poster: "Two minutes, forever", img: "tmCover", badge: "bTm", page: "two-minutes", desc: "A specialty coffee shop brand made to be loved fast and remembered long. Two minutes to fall for it, a lifetime as a regular.", street: "A" },
   { name: "Two Min Lab", cat: "Products · Tonic Ionic · Labels", c: "#C6402E", t: "#ffffff", poster: "Bottled in the yard", street: "A", desc: "The Two Minutes lab: bottled drinks, Tonic Ionic and the labels that sell them, in the yard behind the coffee shop." },
@@ -75,12 +75,14 @@ export const PROJECTS = [
   { name: "Altius", cat: "Medical", c: "#16a89b", t: "#ffffff", poster: "Altius", img: "m:cs/Cromatic-Studios-Altius-8", page: "altius", street: "C", desc: "Medical brand and digital work by Cromatic Studios." },
   { name: "Zoetis", cat: "Animal health", c: "#f2763b", t: "#2a1205", poster: "Zoetis", street: "C", desc: "Animal health communication by Cromatic Studios." },
   { name: "Elithia", cat: "Medical", c: "#f08a70", t: "#2a0f08", poster: "Joyful motherhood", img: "m:cs/Elithia-Cromaticstudios-homepage", page: "elithia", street: "C", desc: "Making motherhood a soothing, joyful experience: brand, website and content for a women's health clinic." },
+  { name: "BISM", cat: "Upstairs at Dacia 99", c: "#1f4fd6", t: "#ffffff", poster: "BISM", street: "E", desc: "BISM, under the same roof as our Dacia 99 studio: neighbours, then clients." },
+  { name: "Echo School", cat: "Technology · Digital arts · Videogames", c: "#7b4fd6", t: "#ffffff", poster: "Echo School", street: "E", wip: true, desc: "Echo School of Technology, Digital Arts & Videogames. The case page is on its way." },
   { name: "Sticker Republic", cat: "Stickers · Print", c: "#FFD21F", t: "#111111", poster: "Stick it", street: "D", desc: "Stickers for everything and everyone: the little yellow house on the lane, plastered with its own work." },
   { name: "Printoteca", cat: "Print on demand", c: "#ffffff", t: "#111111", poster: "Printed one by one", street: "D", desc: "Print on demand with no minimum orders: tees and hoodies printed one by one, for anyone who wants to sell their own." }
 ];
 
 export const CLIENT_BADGES = ["bScf", "bTm", "bSteam", "bRoutine", "bInvestimental", "bKompus", "bYoshi", "bAssetto", "bCargus"];
-export const FRIENDS = ["Erste Bank", "Microsoft", "Global Records", "Cargus", "Digi", "AWS", "Echo School", "Kastel Group", "Rațiu & Rațiu", "Catapult", "Robofun", "Open Bar", "BISM", "Chef Sosin", "Direct Booking", "Noal Dental Clinic", "Skin Aesthetics", "Brewzeus", "7 Oale"];
+export const FRIENDS = ["Erste Bank", "Microsoft", "Global Records", "Cargus", "Digi", "AWS", "Kastel Group", "Rațiu & Rațiu", "Catapult", "Robofun", "Open Bar", "Chef Sosin", "Direct Booking", "Noal Dental Clinic", "Skin Aesthetics", "Brewzeus", "7 Oale"];
 
 export const CREW = ["Cristian", "Daniel", "Ana", "Coz", "Alexandra", "Stefan", "Adina", "Anne", "Iulică", "Melissa"];
 // face crops, by the variable that holds them in src/app.js

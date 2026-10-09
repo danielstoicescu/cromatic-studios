@@ -24759,7 +24759,8 @@ void main() {
       m.setPosition(s.x, 0, s.z);
       trunks.setMatrixAt(i, m);
     }
-    trunks.castShadow = canopies.castShadow = canopies2.castShadow = cones.castShadow = cones2.castShadow = !window.matchMedia("(max-width: 719px)").matches;
+    trunks.castShadow = canopies2.castShadow = cones2.castShadow = false;
+    canopies.castShadow = cones.castShadow = !window.matchMedia("(max-width: 719px)").matches;
     canopies.receiveShadow = true;
     parent.add(trunks, canopies, canopies2, cones, cones2);
   }
@@ -27013,9 +27014,11 @@ void main() {
     // the gate sign
     const sign = signBoard({ logo: o.logo, name: "Unchain Festival", signBg: "#111111", signInk: "#ffffff" }, 26, 7); sign.position.set(0, 20, 45.6); g.add(sign);
     g.traverse((m) => { if (m.isMesh) { m.castShadow = m.position.y > 1 || m === walls; m.receiveShadow = true; } });
-    g.scale.setScalar(1.3);
+    g.scale.setScalar(1.6);
     facing(g, o.face);
-    EXTRA_KEEPOUT.push({ x: o.x, y: o.z, r: 118 });
+    EXTRA_KEEPOUT.push({ x: o.x, y: o.z, r: 145 });
+    // an open forecourt between the fortress and Fintech Boulevard
+    for (let dz = -120; dz <= 120; dz += 60) EXTRA_KEEPOUT.push({ x: o.x + 165, y: o.z + dz, r: 52 });
     return finish(g, parent, o.x, o.z);
   }
   // Assetto: a bigger tower in brushed black metal, neon green fins and crown. Front is +z.
@@ -27057,6 +27060,7 @@ void main() {
     const white = new MeshStandardMaterial({ color: "#f2f4f5", roughness: 0.7 }), dark = new MeshStandardMaterial({ color: "#2a2a2a", roughness: 0.6 });
     const green = new MeshStandardMaterial({ color: "#2fae5a", roughness: 0.5 });
     const W = 108, D = 56, H = 26;
+    g.scale.setScalar(1.55);
     const hall = new Mesh(new BoxGeometry(W, H, D), white); hall.position.y = H / 2; g.add(hall);
     const band = new Mesh(new BoxGeometry(W + 1, 3, D + 1), green); band.position.y = H - 1.5; g.add(band);
     const solarTex = canvasTexture(128, 64, (ctx) => { ctx.fillStyle = "#1c2b4a"; ctx.fillRect(0, 0, 128, 64); ctx.strokeStyle = "#8ea3c4"; ctx.lineWidth = 1; for (let x = 0; x <= 128; x += 16) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 64); ctx.stroke(); } for (let y = 0; y <= 64; y += 16) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(128, y); ctx.stroke(); } });
@@ -27087,50 +27091,44 @@ void main() {
     py.position.set(yx, 0, -32); g.add(py);
     g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
     facing(g, o.face);
-    EXTRA_KEEPOUT.push({ x: o.x, y: o.z, r: 100 });
+    EXTRA_KEEPOUT.push({ x: o.x, y: o.z, r: 150 });
     return finish(g, parent, o.x, o.z);
   }
   // "+50 other clients": a run of tall housing blocks opposite Dacia 99, the front one carrying a
   // big rooftop billboard. Fronts face -x (the Olari road).
-  var FRIENDS_AT = { x: 1305, z: 6330 };
+  var FRIENDS_AT = { x: 1360, z: 6400 };
+  // r123: "+50 other clients" is a whole quarter opposite Dacia 99: a grid of housing blocks of
+  // every height and colour round a small square with trees, no billboard
   function buildFriendsBlocks(parent) {
     const g = new Group();
-    const blockTex = canvasTexture(256, 512, (ctx) => {
-      ctx.fillStyle = "#e9dcc7"; ctx.fillRect(0, 0, 256, 512);
-      for (let r2 = 0; r2 < 12; r2++) for (let c = 0; c < 6; c++) {
-        const x = 8 + c * 41, y = 10 + r2 * 41;
-        ctx.fillStyle = "#c9b79c"; ctx.fillRect(x - 3, y + 22, 38, 12);
-        ctx.fillStyle = (r2 * 3 + c * 5) % 7 === 0 ? "#f3d7a0" : "#3c4650"; ctx.fillRect(x + 4, y, 26, 22);
+    const tints = ["#e9dcc7", "#f2d7c4", "#dfe6ea", "#e8e0f2", "#f1e6b8", "#d9e8d4", "#f3cfc8", "#e6d3bd"];
+    const roofM = new MeshStandardMaterial({ color: "#b9ad9a", roughness: 0.95 });
+    const winTex = (tint) => canvasTexture(128, 256, (ctx) => {
+      ctx.fillStyle = tint; ctx.fillRect(0, 0, 128, 256);
+      for (let r2 = 0; r2 < 12; r2++) for (let c = 0; c < 4; c++) {
+        const x = 6 + c * 31, y = 6 + r2 * 21;
+        ctx.fillStyle = "rgba(0,0,0,.12)"; ctx.fillRect(x - 2, y + 13, 26, 5);
+        ctx.fillStyle = (r2 * 3 + c * 5) % 7 === 0 ? "#f3d7a0" : "#3c4650"; ctx.fillRect(x + 3, y, 18, 13);
       }
-    }, { repeat: [1, 1] });
-    const bm = new MeshStandardMaterial({ map: blockTex, roughness: 0.9 }), plain = new MeshStandardMaterial({ color: "#e2d4bd", roughness: 0.9 }), roofM = new MeshStandardMaterial({ color: "#b9ad9a", roughness: 0.95 });
-    const slab = (w, h, d, x, z) => {
-      const m = new Mesh(new BoxGeometry(w, h, d), [bm, bm, roofM, roofM, bm, bm]); m.position.set(x, h / 2, z); g.add(m);
-      const rf = new Mesh(new BoxGeometry(w + 2, 3, d + 2), roofM); rf.position.set(x, h + 1.5, z); g.add(rf);
-      const sh = new Mesh(new BoxGeometry(10, 8, 12), plain); sh.position.set(x, h + 7, z + d / 4); g.add(sh);
-      return m;
-    };
-    slab(26, 128, 120, 0, 0);
-    slab(26, 104, 100, 70, -105);
-    slab(26, 116, 100, 70, 110);
-    slab(26, 92, 90, 140, 0);
-    // the billboard on the front block's roof, facing the road
-    const bb = canvasTexture(1024, 512, (ctx) => {
-      ctx.fillStyle = "#111111"; ctx.fillRect(0, 0, 1024, 512);
-      ctx.fillStyle = "#B098C8"; ctx.fillRect(0, 0, 1024, 18); ctx.fillRect(0, 494, 1024, 18);
-      ctx.fillStyle = "#ffffff"; ctx.textAlign = "center";
-      ctx.font = "900 150px Poppins, sans-serif"; ctx.fillText("+50", 512, 190);
-      ctx.font = "800 64px Poppins, sans-serif"; ctx.fillText("OTHER CLIENTS", 512, 270);
-      ctx.fillStyle = "#FED012"; ctx.font = "700 38px Poppins, sans-serif"; ctx.fillText("HUNDREDS OF PROJECTS · THOUSANDS OF DELIVERABLES", 512, 350);
-      ctx.fillStyle = "#cfcfcf"; ctx.font = "600 26px Poppins, sans-serif";
-      ctx.fillText("ERSTE · MICROSOFT · GLOBAL RECORDS · CARGUS · DIGI · AWS · ECHO SCHOOL", 512, 420);
-      ctx.fillText("KASTEL GROUP · RAȚIU & RAȚIU · CATAPULT · ROBOFUN · OPEN BAR · BISM", 512, 458);
     });
-    const bbM = new MeshStandardMaterial({ map: bb, emissiveMap: bb, emissive: new Color("#ffffff"), emissiveIntensity: 0.35, roughness: 0.6 });
-    const board = new Mesh(new BoxGeometry(2, 56, 112), [plain, bbM, plain, plain, plain, plain]); board.position.set(-14, 128 + 3 + 34, 0); g.add(board);
-    for (const z2 of [-40, 40]) { const leg = new Mesh(new BoxGeometry(2, 10, 2), new MeshStandardMaterial({ color: "#2a2a2a" })); leg.position.set(-10, 128 + 3 + 5, z2); g.add(leg); }
+    const mats2 = tints.map((t) => new MeshStandardMaterial({ map: winTex(t), roughness: 0.9 }));
+    const r = rng(5050);
+    const X0 = 1255, X1 = 1475, Z0 = 6165, Z1 = 6640;
+    let i = 0;
+    for (let z = Z0 + 40; z < Z1 - 20; z += 92) for (let x = X0 + 30; x < X1 - 10; x += 74) {
+      if (Math.abs(x - 1365) < 45 && Math.abs(z - 6400) < 50) continue; // the square
+      const w = 34 + r() * 18, d = 48 + r() * 26, h = 46 + Math.pow(r(), 1.3) * 110, m = mats2[i++ % mats2.length];
+      m.map.repeat.set(Math.max(1, Math.round(d / 32)), Math.max(1, Math.round(h / 60)));
+      m.map.wrapS = m.map.wrapT = RepeatWrapping;
+      const blk = new Mesh(new BoxGeometry(w, h, d), [m, m, roofM, roofM, m, m]); blk.position.set(x - FRIENDS_AT.x, h / 2, z - FRIENDS_AT.z); g.add(blk);
+      const rf = new Mesh(new BoxGeometry(w + 2, 2.6, d + 2), roofM); rf.position.set(x - FRIENDS_AT.x, h + 1.3, z - FRIENDS_AT.z); g.add(rf);
+      if (r() < 0.6) { const sh = new Mesh(new BoxGeometry(9, 7, 10), roofM); sh.position.set(x - FRIENDS_AT.x + (r() - 0.5) * 12, h + 6, z - FRIENDS_AT.z); g.add(sh); }
+    }
+    const sq = new Mesh(new CylinderGeometry(42, 42, 1, 28), new MeshStandardMaterial({ color: "#e4ddce", roughness: 1 })); sq.position.set(1365 - FRIENDS_AT.x, 0.5, 0); g.add(sq);
+    const crownM = new MeshStandardMaterial({ color: "#5aa356", roughness: 0.9, flatShading: true }), trunkM = new MeshStandardMaterial({ color: "#6b4a2e" });
+    for (let k = 0; k < 6; k++) { const a2 = k / 6 * Math.PI * 2; const tr = new Mesh(new CylinderGeometry(1.2, 1.5, 10, 6), trunkM); tr.position.set(1365 - FRIENDS_AT.x + Math.cos(a2) * 30, 5, Math.sin(a2) * 30); g.add(tr); const cr = new Mesh(new IcosahedronGeometry(7, 1), crownM); cr.position.set(tr.position.x, 15, tr.position.z); g.add(cr); }
     g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
-    for (const [dx, dz, r] of [[0, 0, 80], [70, -105, 70], [70, 110, 70], [140, 0, 60]]) EXTRA_KEEPOUT.push({ x: FRIENDS_AT.x + dx, y: FRIENDS_AT.z + dz, r });
+    for (let z = Z0; z <= Z1; z += 60) for (let x = X0; x <= X1; x += 60) EXTRA_KEEPOUT.push({ x, y: z, r: 44 });
     return finish(g, parent, FRIENDS_AT.x, FRIENDS_AT.z);
   }
   var STREET_BRANDS = [
@@ -27139,7 +27137,7 @@ void main() {
     { br: "B", name: "Infinity Capital", logo: "logoInfinity", x: 1988, z: 4600, face: "+x", kind: "tower", w: 64, d: 56, h: 180, accent: "#b08d3c", glass: "#262a30", c: "#b08d3c", t: "#ffffff", line: "INVESTMENTS" },
     { br: "B", name: "Assetto", logo: "logoAssetto", x: 2215, z: 4760, face: "-x", kind: "assetto", w: 92, h: 132, accent: "#39ff6a", c: "#111111", t: "#39ff6a", line: "PRODUCT \xB7 BRAND" },
     { br: "B", name: "Longshield", logo: "logoLongshield", x: 1988, z: 4880, face: "+x", kind: "tower", w: 62, d: 54, h: 160, accent: "#2b2b2b", glass: "#22303d", c: "#2b2b2b", t: "#ffffff", line: "INVESTMENT GROUP" },
-    { br: "B", name: "Bepco", logo: "logoBepco", x: 1935, z: 4140, face: "+z", kind: "energy", w: 108, h: 26, accent: "#2fae5a", c: "#2fae5a", t: "#ffffff", line: "ENERGY \xB7 BRAND \xB7 DIGITAL" },
+    { br: "B", name: "Bepco", logo: "logoBepco", x: 1890, z: 4135, face: "+z", kind: "energy", w: 108, h: 26, accent: "#2fae5a", c: "#2fae5a", t: "#ffffff", line: "ENERGY \xB7 BRAND \xB7 DIGITAL" },
     { br: "B", name: "Flask", logo: "logoFlask", x: 1988, z: 5160, face: "+x", kind: "tower", w: 60, d: 54, h: 130, accent: "#1f8a6a", glass: "#20352e", c: "#1f8a6a", t: "#ffffff", line: "FINTECH" },
     { br: "B", name: "ESD", logo: "logoESD", x: 2205, z: 5280, face: "-x", kind: "office", w: 64, h: 58, accent: "#119BFE", c: "#119BFE", t: "#ffffff", line: "DIGITAL" },
     { br: "B", name: "Unchain Festival", logo: "logoUnchain", x: 1872, z: 5450, face: "+x", kind: "festival", w: 84, d: 54, h: 44, accent: "#111111", c: "#111111", t: "#ffffff", line: "FESTIVAL · BRAND" },
@@ -27167,10 +27165,10 @@ void main() {
   ];
   // Coffee Street additions
   var COFFEE_ADDS = [
-    { br: "A", name: "Pain Plaisir", x: 900, z: 4815, line: "VIDEO \xB7 PHOTO \xB7 PRODUCT DESIGN", c: "#ffffff", t: "#111111", desc: "A French-style bakery with a real oven at its heart. We made their video production, the photo shootings and the product design." },
-    { br: "A", name: "Lapterra", x: 760, z: 5650, line: "PATISSERIE \xB7 WORK IN PROGRESS", c: "#6e1633", t: "#d9b45a", wip: true, desc: "A cosy patisserie, in the making. Work in progress: more soon." },
+    { br: "A", name: "Pain Plaisir", x: 900, z: 4815, px: 968, pz: 4815, line: "VIDEO \xB7 PHOTO \xB7 PRODUCT DESIGN", c: "#ffffff", t: "#111111", desc: "A French-style bakery with a real oven at its heart. We made their video production, the photo shootings and the product design." },
+    { br: "A", name: "Lapterra", x: 760, z: 5650, px: 706, pz: 5650, line: "PATISSERIE \xB7 WORK IN PROGRESS", c: "#6e1633", t: "#d9b45a", wip: true, desc: "A cosy patisserie, in the making. Work in progress: more soon." },
     { br: "A", name: "Patiline", x: 1030, z: 6030, line: "DISTRIBUTION WEB \xB7 PHOTO \xB7 REBRANDING", c: "#d71920", t: "#ffffff", desc: "Industrial bread and croissants, made by machines you can watch. We built their distribution website and website, shot their own-production bakery range, and rebranded Patiline Bakery." },
-    { br: "A", name: "K\xF3mpus", x: 760, z: 5737, line: "COFFEE SHOP \xB7 BRAND", c: "#B098C8", t: "#1a1420", desc: "Differentiating a coffee shop in the market by enabling the founder\u2019s vision: a brand built around Kómpus\u2019 own patterns and voice." },
+    { br: "A", name: "K\xF3mpus", x: 760, z: 5737, px: 706, pz: 5737, line: "COFFEE SHOP \xB7 BRAND", c: "#B098C8", t: "#1a1420", desc: "Differentiating a coffee shop in the market by enabling the founder\u2019s vision: a brand built around Kómpus\u2019 own patterns and voice." },
     { br: "A", name: "Coffeenativ", logo: "logoCoffeenativ", x: 930, z: 5900, line: "SPECIALTY COFFEE", c: "#151515", t: "#ffffff" },
     { br: "A", name: "ARCA Resort", logo: "logoArca", x: 560, z: 5930, line: "RESORT · TENNIS · POND", c: "#7a1f2b", t: "#ffffff", page: "arca-resort" },
     { br: "A", name: "Antila", x: 440, z: 6040, line: "CHARCUTERIE FARM", c: "#F2C200", t: "#1a1405", page: "antila" },
@@ -29031,8 +29029,9 @@ void main() {
       }
       arch(48, 474, 158, 230);
       arch(276, 474, 158, 230);
-      club99Logo(ctx, 127, 580, 52);
-      club99Logo(ctx, 355, 590, 34);
+      // r123: the same Club 99 sign in both arched windows, same size, same height
+      club99Logo(ctx, 127, 585, 44);
+      club99Logo(ctx, 355, 585, 44);
       ctx.fillStyle = "#fbfaf5";
       ctx.beginPath();
       ctx.roundRect(112, 424, 256, 32, 6);
@@ -31397,7 +31396,10 @@ void main() {
       btn.querySelector("span").textContent = open ? "Less" : "What this includes";
       btn.querySelector(".cm-plus").textContent = open ? "\u2212" : "+";
     };
-    wrap.append(btn, grid);
+    // r123: always open, under a small heading: nothing to tap to see what's inside
+    wrap.classList.add("open", "always");
+    wrap.append(el("span", "cm-label mono", "WHAT THIS INCLUDES"), grid);
+    void btn;
     return wrap;
   }
   var SVC_ART = [
@@ -31668,7 +31670,37 @@ void main() {
       </div>
       <p class="bp-ok ${status}"><span class="bp-check">${status === "sent" ? "✓" : "✉"}</span>
         <span>${status === "sent" ? `Sent. A copy of your boarding pass is on its way to <b>${esc(t.email)}</b>. We answer within one working day.` : status === "sending" ? "Boarding…" : "Your email app will open with everything on this pass. Hit send and the coffee is on."}</span></p>
-      <a class="coffee-btn bp-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener">\u{1F9ED} Navigate to Cromatic Studios \xB7 Str. Olari 9</a>`;
+      <div class="bp-actions"><button class="coffee-btn bp-save">\u2B07 Save my boarding pass</button>${api.isMap?.() ? `<button class="coffee-btn bp-go">\u2708 Take off now</button>` : `<a class="coffee-btn bp-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener">\u{1F9ED} Navigate to Olari 9</a>`}</div>`;
+    };
+    // the pass as a picture you keep: drawn on a canvas, downloaded as a PNG
+    const savePass = (t) => {
+      const W = 1600, H = 640, c = document.createElement("canvas"); c.width = W; c.height = H;
+      const x = c.getContext("2d");
+      x.fillStyle = "#fffdf7"; x.beginPath(); x.roundRect(8, 8, W - 16, H - 16, 40); x.fill();
+      x.lineWidth = 6; x.strokeStyle = "#0a0a0a"; x.stroke();
+      const S = 1200;
+      x.setLineDash([14, 12]); x.lineWidth = 4; x.beginPath(); x.moveTo(S, 40); x.lineTo(S, H - 40); x.stroke(); x.setLineDash([]);
+      x.fillStyle = "#FED012"; x.fillRect(14, 14, S - 14, 86);
+      x.fillStyle = "#0a0a0a"; x.font = "900 34px Montserrat, Poppins, sans-serif"; x.fillText("\u2733 CROMATIC AIR", 50, 70);
+      x.font = "900 30px Montserrat, Poppins, sans-serif"; x.fillText("BOARDING PASS", 520, 70);
+      x.font = "700 22px 'JetBrains Mono', monospace"; x.fillText("BOOKING " + t.ref, 900, 68);
+      x.font = "600 30px Poppins, sans-serif"; x.fillText(`Welcome aboard, ${t.first}. Next stop: a coffee at Olari 9.`, 50, 160);
+      x.font = "900 96px Montserrat, Poppins, sans-serif"; x.fillText("DRM", 50, 290); x.fillText("OLR", S - 300, 290);
+      x.font = "700 40px Poppins, sans-serif"; x.fillText("\u2708", S / 2 - 40, 270);
+      x.setLineDash([10, 10]); x.lineWidth = 4; x.beginPath(); x.moveTo(290, 255); x.lineTo(S / 2 - 60, 255); x.moveTo(S / 2 + 20, 255); x.lineTo(S - 320, 255); x.stroke(); x.setLineDash([]);
+      const cell = (k, v, cx, cy, big = false) => { x.font = "700 18px 'JetBrains Mono', monospace"; x.globalAlpha = 0.55; x.fillText(k, cx, cy); x.globalAlpha = 1; x.font = `800 ${big ? 60 : 30}px Montserrat, Poppins, sans-serif`; x.fillText(String(v).slice(0, 40), cx, cy + (big ? 64 : 40)); };
+      cell("PASSENGER", t.name, 50, 370); cell("FLIGHT", t.flight, 560, 370); cell("DATE", t.date, 840, 370);
+      cell("CLASS", t.klass, 50, 470); cell("BOARDING", t.boarding, 420, 470); cell("GATE", t.gate, 860, 470); cell("SEAT", t.seat, 1010, 470);
+      cell("ON BOARD", t.dreams.join(" \u00B7 ") || "-", 50, 570);
+      cell("PASSENGER", t.name, S + 40, 120); cell("TO", "Str. Olari 9", S + 40, 230);
+      cell("GATE", t.gate, S + 40, 340, true); cell("SEAT", t.seat, S + 200, 340, true);
+      let bx = S + 40; for (let i = 0; i < 70 && bx < W - 50; i++) { const cc = t.ref.charCodeAt(i % t.ref.length) * (i + 3), w = 2 + (cc % 4); x.fillRect(bx, 480, w, 90); bx += w + 2 + ((cc >> 2) % 3); }
+      x.font = "700 20px 'JetBrains Mono', monospace"; x.fillText(t.ref, S + 40, 600);
+      c.toBlob((b) => { if (!b) return; const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `cromatic-boarding-pass-${t.ref}.png`; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }, "image/png");
+    };
+    const wireActions = (root, t) => {
+      root.querySelector(".bp-save")?.addEventListener("click", () => savePass(t));
+      root.querySelector(".bp-go")?.addEventListener("click", () => api.boardNow?.());
     };
     submit.onclick = async () => {
       if (submit.disabled) return;
@@ -31677,6 +31709,7 @@ void main() {
       f.classList.add("done");
       const done = el("div", "bp-wrap", renderPass(t, "sending"));
       f.appendChild(done);
+      wireActions(done, t);
       api.formSent?.();
       let ok = false;
       if (location.protocol.startsWith("http")) {
@@ -31689,6 +31722,7 @@ void main() {
         } catch (e) { ok = false; }
       }
       done.innerHTML = renderPass(t, ok ? "sent" : "fallback");
+      wireActions(done, t);
       if (!ok) {
         const body = [`Hi, I'm ${t.name}.`, "", `Booking: ${t.ref} \xB7 ${t.flight} \xB7 ${t.date}`, `Dreaming about: ${t.dreams.join(", ") || "-"}`, `Business: ${t.biz || "-"} (${t.klass})`, `Timeline: ${t.when || "-"}`, `Email: ${t.email}`, `Phone: ${t.phone || "-"}`, "", t.msg].join("\n");
         setTimeout(() => {
@@ -32328,7 +32362,9 @@ void main() {
     crewBtn.setAttribute("aria-label", "Meet the crew");
     crewBtn.onclick = () => { closeMenus(); api.openCrew?.(); };
     const modeLinks = el("div", "mode-links");
-    modeLinks.append(mapBtn, modeBtn);
+    const hiBtn = el("button", "site-btn hi-link", `<span class="sb-ic sb-hi" aria-hidden="true">\u2709</span><span class="sb-txt"><i class="mono">SAY HI \u00B7 BOARDING PASS</i><b>Contact</b></span><span class="sb-short">Contact</span>`);
+    hiBtn.onclick = () => { closeMenus(); api.sayHi?.(); };
+    modeLinks.append(mapBtn, hiBtn, modeBtn);
     header.appendChild(modeLinks);
     hud.append(wxBtn, vehBtn, takeoffBtn, crewBtn, themeBtn, vehMenu, themeMenu);
     wxBtn.classList.add("gone");
@@ -32491,6 +32527,22 @@ void main() {
       modalBack.classList.add("hidden");
       document.body.classList.remove("modal-open");
     };
+    // r123: every full-screen overlay is one step in the browser's history: Back closes it
+    {
+      const ovOpen = () => document.body.classList.contains("modal-open") || document.body.classList.contains("scf-open");
+      let pushed = false, popping = false;
+      new MutationObserver(() => {
+        const on = ovOpen();
+        if (on && !pushed) { pushed = true; try { history.pushState({ czOverlay: 1 }, ""); } catch {} }
+        else if (!on && pushed) { pushed = false; if (!popping) { try { if (history.state?.czOverlay) history.back(); } catch {} } popping = false; }
+      }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+      window.addEventListener("popstate", () => {
+        if (!pushed) return;
+        popping = true;
+        for (const q of document.querySelectorAll(".case-frame, .scf-modal, .hmodal-backdrop")) q.classList.add("hidden");
+        document.body.classList.remove("modal-open", "scf-open");
+      });
+    }
     // overflow:hidden on html/body would reset window.scrollY (and send the car back to
     // the start), so the world behind a modal is frozen by swallowing the event instead.
     const scrollableUnder = (node) => {
@@ -32636,9 +32688,14 @@ void main() {
     let steamSeen = false;
     // any page of the website, full screen over the map (OMA's brand canvas, …)
     openFrameHook = (url, title) => {
-      const fr = caseFrame.querySelector(".cf-iframe");
-      fr.removeAttribute("srcdoc");
-      if (fr.getAttribute("src") !== url) fr.src = url;
+      let fr = caseFrame.querySelector(".cf-iframe");
+      if (fr.getAttribute("src") !== url) {
+        // a fresh frame each time: navigating a loaded one adds a step to the browser's history,
+        // and Back must close the overlay instead of stepping inside it
+        const nf = document.createElement("iframe");
+        nf.className = "cf-iframe"; nf.src = url;
+        fr.replaceWith(nf); fr = nf;
+      }
       fr.title = `${title} \u2014 Cromatic Studios`;
       caseFrame.classList.remove("hidden");
       document.body.classList.add("scf-open");
@@ -32995,7 +33052,7 @@ void main() {
     const tmMedia = el("button", "tm-media", "Media &amp; branding");
     tmMedia.onclick = () => {
       modalBack.innerHTML = "";
-      const mEl = el("div", "hmodal media");
+      const mEl = el("div", "hmodal media tm-wide");
       mEl.setAttribute("role", "dialog");
       mEl.innerHTML = `
       <div class="md-film">
@@ -33014,9 +33071,11 @@ void main() {
         { img: boxesvideo_default && null, cap: "" }
       ].filter((x) => x.img)));
       const line = el("p", "mono hm-line", "BRAND \xB7 PACKAGING \xB7 EDITORIAL \xB7 FILM \xB7 BY CROMATIC STUDIOS");
+      const more = el("button", "coffee-btn tm-more", "See more \u2192 the whole Two Minutes case");
+      more.onclick = () => { closeModal(); if (openFrameHook && /^https?:$/.test(location.protocol)) openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); };
       const close = el("button", "hm-close mono", "CLOSE \xD7");
       close.onclick = closeModal;
-      mEl.querySelector(".hm-info").append(line, close);
+      mEl.querySelector(".hm-info").append(line, more, close);
       modalBack.appendChild(mEl);
       openModal();
     };
@@ -33639,6 +33698,9 @@ void main() {
       var api = {
         toggleSite() { setSiteMode(!siteMode); },
         toggleMap() { setMapMode(!mapMode); },
+        isMap() { return mapMode; },
+        boardNow() { clearTimeout(boardTimer); clearInterval(boardTick); if (mapMode && mapBoarding && jetFx.phase === "idle") { mapCloseBoarding(true); mapTakeoff(); } },
+        sayHi() { if (!mapMode) setMapMode(true); setTimeout(() => { mapUI?.welcome(false); mapOpenBoarding(); }, 350); },
         siteXP(pts, title, desc) { xpLand({ pts, title, desc }); },
         vehicleId: () => state.vehicleId,
         getBranch: () => state.branch,
@@ -33713,7 +33775,17 @@ void main() {
         boardJet() { if (!mapMode) setMapMode(true); document.body.classList.remove("map-at-stop"); ui.card.classList.add("hidden"); setTimeout(() => mapGo(MAP_PLACES.find((p) => p.id === "jet")), mapMode ? 50 : 400); },
         formSent() {
           // on the map, the pass goes in and the jet takes off
-          if (mapMode && mapBoarding) setTimeout(() => { mapCloseBoarding(true); mapTakeoff(); }, 900);
+          if (mapMode && mapBoarding) {
+            clearTimeout(boardTimer); clearInterval(boardTick);
+            let left = 10;
+            const paint = () => {
+              const b = document.querySelector(".mapcard.contact .bp-go");
+              if (b) b.innerHTML = `\u2708 Take-off in <b class="bp-count">${left}</b> s \u00B7 go now`;
+              document.body.style.setProperty("--board-left", left);
+            };
+            paint();
+            boardTick = setInterval(() => { left--; paint(); if (left <= 0) { clearInterval(boardTick); api.boardNow(); } }, 1000);
+          }
           if (xpCollected.has("contact")) return;
           const m = STOP_META.contact;
           xpAnnounce(m.pts, m.title, m.learn, "msg", "contact");
@@ -35497,7 +35569,7 @@ void main() {
         state.targetL = sc * effectiveTotal();
         if (mapMode) state.targetL = mapNav.targetL;
         const nearDacia = state.L > route.stopL.merge - 1500 && state.L < route.stopL.merge - 250;
-        const crawl = coffee.near && !coffee.done || nearDacia;
+        const crawl = (coffee.near && !coffee.done && (!mapMode || mapNav.place?.tm)) || (nearDacia && !mapMode);
         if (siteMode) { state.targetL = state.L; state.speed = 0; }
         state.L = smooth(state.L, state.targetL, dt, crawl ? 1.6 : 5.5);
         if (police.active) {
@@ -35506,8 +35578,8 @@ void main() {
         }
         // a calm city speed everywhere on the ground (chapter jumps and the flight excepted)
         if (!siteMode && now > jumpGuard && (mapMode || prevL < route.stopL.end + 400)) {
-          const toEnd = mapMode && mapNav.place?.stop === "end" && state.L > route.total - 800;
-          const maxStep = (mapMode ? (toEnd ? 260 : Math.abs(state.targetL - state.L) > 1400 ? 3200 : 1400) : 620) * dt;
+          const toEnd = mapMode && mapNav.place?.stop === "end" && state.L > route.total - 1050;
+          const maxStep = (mapMode ? (toEnd ? 300 : Math.abs(state.targetL - state.L) > 1400 ? 3200 : 1400) : 620) * dt;
           state.L = clamp2(state.L, prevL - maxStep, prevL + maxStep);
         }
         {
@@ -35882,11 +35954,26 @@ void main() {
         const baseInt = dark ? 0.85 : 2.1;
         sun.intensity = baseInt * curSun.int;
         if (!dark) sun.color.copy(curSun.col);
-        if (SCHEMES[state.schemeIdx].id === "monument") { sun.color.set("#ffe0c2"); sun.intensity = 2.4 * curSun.int; }
+        if (SCHEMES[state.schemeIdx].id === "monument") { sun.color.set("#ffe0c2"); sun.intensity = (mapMode ? 1.85 : 2.4) * curSun.int; }
+        if (SCHEMES[state.schemeIdx].id === "monument") hemi.intensity = mapMode ? 0.86 : 0.62;
         if (SCHEMES[state.schemeIdx].id === "underwater") { sun.color.set("#b5f3ff"); sun.intensity = 1.5; }
         const sr = 1500;
         // on the map the shadows follow what you look at, not the van
         const sunC = warpV((mapMode ? mapView.tgt : carPos).clone());
+        // r123: on the map the shadow box fits the view (in a few fixed steps), and its centre moves
+        // in whole shadow texels along the light's own axes: no more shimmering edges as you move
+        if (mapMode) {
+          const ext = mapView.dist < 2600 ? 1400 : mapView.dist < 4200 ? 2100 : 3000;
+          if (sun.shadow.camera.right !== ext) { sun.shadow.camera.left = sun.shadow.camera.bottom = -ext; sun.shadow.camera.right = sun.shadow.camera.top = ext; sun.shadow.camera.updateProjectionMatrix(); }
+        }
+        {
+          const ext = sun.shadow.camera.right, texel = (2 * ext) / sun.shadow.mapSize.x;
+          const dx = Math.cos(curSun.az) * Math.cos(curSun.el), dz = Math.sin(curSun.az) * Math.cos(curSun.el);
+          const hl = Math.hypot(dx, dz) || 1, ax = dx / hl, az = dz / hl;
+          const u = sunC.x * ax + sunC.z * az, v = -sunC.x * az + sunC.z * ax;
+          const us = Math.round(u / texel) * texel, vs = Math.round(v / texel) * texel;
+          sunC.x = us * ax - vs * az; sunC.z = us * az + vs * ax;
+        }
         sun.position.set(
           sunC.x + Math.cos(curSun.az) * sr * Math.cos(curSun.el),
           Math.max(300, sr * Math.sin(curSun.el)),
@@ -36171,9 +36258,11 @@ void main() {
       try { history.scrollRestoration = "manual"; } catch {}
       var BOOT_MODE = /[?&]drive\b/.test(location.search) ? "drive" : /[?&]map\b/.test(location.search) ? "map" : "intro";
       var mapMode = false, mapBoot = BOOT_MODE !== "drive", mapUI = null, mapPrev = null, mapBoarding = false, mapIntro = false;
+      var MAP_MAXD = 7600;
       var mapView = { tgt: new Vector3(1270, 0, 3170), pos: new Vector3(), dist: 8200, distGoal: null, yaw: 0.3, pitch: 0.98, vx: 0, vz: 0, follow: false, sx: 0, sy: 0 };
       var mapNav = { targetL: 0, legs: [], place: null, moving: false };
       var jetFx = { phase: "idle", t: 0, baam: false };
+      var boardTimer = 0, boardTick = 0;
       var MAP_STREET = { A: "COFFEE STREET", B: "FINTECH BOULEVARD", C: "MEDICAL AVENUE" };
       var MAP_PLACES = [
         // finds: placards off the road; you click them where they are, the van stays put
@@ -36189,7 +36278,7 @@ void main() {
         { id: "oma", br: "A", x: 706, z: 4560, h: 80, name: "OMA Coffee", line: "BRAȘOV \xB7 AT THE FOOT OF T\xC2MPA", c: "#4a7c4e", t: "#ffffff", act: "omaTag" },
         { id: "sip", br: "A", x: 706, z: 4985, h: 70, name: "Sip Coffee & Wine", line: "BRANDING \xB7 COMMUNICATION", c: "#C9A227", t: "#14120c", act: "sipTag" },
         { id: "yoshi", br: "A", x: 706, z: 5175, h: 60, name: "Yoshi Izakaya", line: "COMMUNICATION \xB7 CONTENT", c: "#F4876F", t: "#2a0f08", act: "yoshiTag" },
-        { id: "artisan", br: "A", x: 830, z: 5140, px: 912, pz: 5129, h: 30, name: "Artisan Coffee Gear", line: "PARKED BY ROMEXPO", c: "#797c69", t: "#f2f0e8", act: "artisanTag" },
+        { id: "artisan", br: "A", x: 830, z: 5140, px: 912, pz: 5129, h: 30, name: "Artisan Coffee Gear", line: "BRANDING PROJECT", desc: "A branding project for specialty coffee gear: a whole brand universe, from strategy and the letterform pattern to packaging and the webshop. Parked by Romexpo.", c: "#797c69", t: "#f2f0e8", act: "artisanTag" },
         { id: "scf", br: "A", x: 1150, z: 5140, h: 110, name: "Slow Coffee Festival", line: "ROMEXPO \xB7 2021–2025", c: "#5B4B9E", t: "#ffffff", act: "scfTag" },
         { id: "steam", br: "A", x: 985, z: 5640, h: 150, name: "Steam Coffee Shop", line: "BRANDING \xB7 GROWTH \xB7 PRODUCT", c: "#2f9e4f", t: "#ffffff", act: "steamTag", desc: "A pioneer coffee brand refreshed for its community: new energy for the people who were there from the start." },
         { id: "craft", br: "A", x: 985, z: 5640, px: 1020, pz: 5620, h: 40, name: "Craft Coffee", line: "IN THE STEAM BUILDING", c: "#119BFE", t: "#ffffff", act: "craftTag" },
@@ -36197,20 +36286,22 @@ void main() {
         { id: "antila", br: "A", x: 560, z: 6040, px: 440, pz: 6040, h: 50, name: "Antila", line: "CHARCUTERIE \xB7 BRAND", c: "#F2C200", t: "#1a1405", work: "Antila", desc: "A charcuterie brand, 100% Romanian, with a bold wordmark, disruptive characters and colour-coded packaging." },
         { id: "unde", br: "A", x: 708, z: 6036, h: 50, name: "UND\xC9", line: "GROCERY \xB7 SIGNAGE", c: "#2b6fd6", t: "#ffffff", work: "UNDE", desc: "ARCA's grocery stores: a hand-drawn basket and three formats, Market, Store and Concept." },
         { id: "invest", br: "B", x: 2205, z: 4500, h: 170, name: "Investimental", line: "FINTECH \xB7 UX \xB7 UI", c: "#119BFE", t: "#ffffff", work: "Investimental" },
-        { id: "tac", br: "C", x: 1790, z: 4570, px: 1720, h: 130, name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
+        { id: "tac", br: "C", x: 1500, z: 4570, px: 1775, pz: 4570, h: 150, name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
         { id: "zdrovit", br: "C", x: 1720, z: 5070, h: 70, name: "Zdrovit", line: "8 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health, clinic, beauty and perfume brands, from Bucharest to Barcelona, Los Angeles and Paris." },
-        { id: "end", stop: "end", name: "Strada Olari 9", line: "THE STUDIO \xB7 COME BY", c: "#ffffff", t: "#111111", pin: "#111111" },
+        { id: "end", stop: "end", name: "Cromatic Studios House", line: "STR. OLARI 9 \xB7 COME BY", c: "#ffffff", t: "#111111", pin: "#111111" },
         { id: "jet", x: 1250, z: JET_HOME.z - 15, px: JET_HOME.x, pz: JET_HOME.z, h: 46, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", beacon: true, board: true }
       ];
       // r115: every brand the drive shows also stands on the map
       (() => {
         const have = new Set(MAP_PLACES.map((p) => (p.work || p.name).toLowerCase()));
         const add = (o) => { if (have.has(o.name.toLowerCase())) return; have.add(o.name.toLowerCase()); MAP_PLACES.splice(MAP_PLACES.length - 2, 0, o); };
-        for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, x: b.x, z: b.z, h: b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
+        for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
         ZDROVIT_YARD.forEach((n, i) => { const [x, z] = yardSpot(yardSlotOf(i)); add({ id: "y-" + i, br: "C", x: 1500, z, px: x, pz: z, h: 22, name: n, line: "IN THE ZDROVIT YARD", c: "#cfcdc8", t: "#3d3c39", small: true, desc: `${n}, one of the brands in the Zdrovit yard. By Cromatic Studios.` }); });
         add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Casa Berero", line: "BRAND \xB7 BY CROMATIC STUDIOS", c: "#111111", t: "#ffffff", act: "bereroTag" });
+        add({ id: "bism", x: 1170, z: 6300, px: 1078, pz: 6290, h: 150, name: "BISM", line: "UPSTAIRS AT DACIA 99", c: "#1f4fd6", t: "#ffffff", t2: "#F65342", noopen: true, desc: "BISM, under the same roof as our Dacia 99 studio: neighbours, then clients." });
+        add({ id: "echo", x: 1170, z: 6340, px: 1078, pz: 6350, h: 110, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", soon: true, desc: "Echo School of Technology, Digital Arts & Videogames. The case page is on its way." });
         add({ id: "boxes", br: "A", x: 900, z: 4262, px: 706, pz: 4198, h: 40, name: "The Product", line: "TWO MIN BOXES \xB7 COFFEE PACKAGING", c: "#cfcdc8", t: "#2a2926", act: "boxPop" });
-        add({ id: "friends", stop: "merge", px: FRIENDS_AT.x - 14, pz: FRIENDS_AT.z, h: 200, name: "+50 Other Clients", line: "HUNDREDS OF PROJECTS \xB7 THOUSANDS OF DELIVERABLES", c: "#B098C8", t: "#1a1420" });
+        add({ id: "friends", stop: "merge", px: 1365, pz: 6400, h: 190, name: "+50 Other Clients", line: "HUNDREDS OF PROJECTS \xB7 THOUSANDS OF DELIVERABLES", c: "#B098C8", t: "#1a1420" });
       })();
       // r117: how close you must be for a place to show its card (a coloured dot otherwise)
       const TIER1 = new Set(["tm", "oma", "scf", "steam", "arca", "tac", "zdrovit", "invest", "end", "jet"]);
@@ -36263,6 +36354,7 @@ void main() {
         if (mapView.dist > 7000) mapView.distGoal = innerWidth < 720 ? 6800 : 5600;
         document.body.classList.add("map-moving");
         mapUI.hideCard();
+        mapUI.welcome?.(false);
         mapUI.mark();
       }
       function mapNextLeg() {
@@ -36271,8 +36363,13 @@ void main() {
         if (leg.L == null && leg.then) { mapSwitchBranch(leg.then); mapNav.legs.shift(); return mapNextLeg(); }
         mapNav.targetL = leg.place ? mapPlaceL(leg.place) : leg.L;
       }
+      var navStall = { L: 0, t: 0 };
       function mapStep() {
         if (!mapNav.moving) return;
+        // r123: a watchdog: if the van has not moved for two seconds, it arrives
+        const tnow = performance.now();
+        if (Math.abs(state.L - navStall.L) > 2) { navStall.L = state.L; navStall.t = tnow; }
+        else if (tnow - navStall.t > 2000 && Math.abs(state.L - mapNav.targetL) > 4) { state.L = prevL = mapNav.targetL; navStall.t = tnow; }
         if (mapNav.place?.stop === "end" && mapNav.legs.length === 1 && olari.t < 0 && Math.abs(state.L - mapNav.targetL) < 140) { olari.early = true; olariOpen(); }
         if (Math.abs(state.L - mapNav.targetL) > 4) return;
         const leg = mapNav.legs.shift();
@@ -36476,7 +36573,7 @@ void main() {
           c.style.setProperty("--i", i); c.style.setProperty("--sc", ["#FED012", "#28C840", "#119BFE", "#F65342", "#B098C8"][i % 5]);
           wrap.appendChild(c);
         });
-        const next = el("div", "olari-next", `<button class="oc-jet"><span class="ocj-star">\u2738</span><span><b>Go even further</b><i class="mono">BOARD THE CROMATIC JET \u00B7 SAY HI</i></span><em>\u2191</em></button><button class="oc-addr"><b>Olari 9 \u00B7 come by</b><i class="mono">ADDRESS \u00B7 MAPS \u00B7 CONTACT</i></button>`);
+        const next = el("div", "olari-next", `<button class="oc-jet"><span class="ocj-star">\u2738</span><span><b>Go even further</b><i class="mono">BOARD THE CROMATIC JET \u00B7 SAY HI</i></span><em>\u2191</em></button><button class="oc-addr"><b>Olari 9 \u00B7 come by</b><i class="mono">ADDRESS \u00B7 MAPS \u00B7 CONTACT</i></button><div class="oc-contact"><b>Cromatic Studios House \u00B7 Str. Olari 9, Bucharest</b><span><a href="tel:+40728978068">\u260E +40 728 978 068</a><a href="mailto:hi@cromaticstudios.com">\u2709 hi@cromaticstudios.com</a><a href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener">\u{1F9ED} Open in Google Maps</a></span></div>`);
         wrap.appendChild(next);
         next.querySelector(".oc-addr").onclick = () => { wrap.classList.add("gone"); mapShowChapter("end"); };
         next.querySelector(".oc-jet").onclick = () => { wrap.classList.add("gone"); api.boardJet(); };
@@ -36498,7 +36595,10 @@ void main() {
             return c;
           });
         }
-        const endL = route.stopL.end, A = endL - 760, B = endL - 220;
+        const endL = route.isPath ? route.total : route.stopL.end;
+        let A = endL - 760;
+        if (route.isPath) { let bd = Infinity; for (let i = 0; i < route.points.length; i++) { const q = route.points[i], d = (q.x - 1170) ** 2 + (q.z - 6300) ** 2; if (d < bd) { bd = d; A = route.cum[i]; } } if (bd > 200 * 200) A = endL - 900; }
+        const B = endL - 150;
         const on = mapMode && mapNav.moving && mapNav.place?.stop === "end" && mapNav.legs.length === 1 && state.L > A - 400 && olari.t < 0;
         const f = Math.max(0, (state.L - A) / (B - A));
         // they gather one by one as you drive past and stay until the house opens
@@ -36565,17 +36665,40 @@ void main() {
         const visited = new Set();
         try { localStorage.removeItem("cz-map-visited"); } catch {}
         const faces = CREW.slice(0, 4).map((n, i) => `<i style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}">${CREW_FACES[n] ? `<img src="${CREW_FACES[n]}" alt="">` : n.slice(0, 1)}</i>`).join("");
-        const top = el("div", "map-top", `<span class="map-title"><i class="mono">CROMATIC WORLD</i><b>Pick a place</b></span><span class="map-count mono"></span><span class="map-found mono"></span>
+        const top = el("div", "map-top", `<span class="map-title"><i class="mono">CROMATIC WORLD</i><b>Pick a place</b></span>
           <button class="map-ride" title="Choose your ride"><span class="mr-ic">\u{1F690}</span><b>Ride</b></button>
           <button class="map-world" title="Choose your world"><span class="mb-orb">${MB_ORB}</span><b>World</b></button>
           <button class="map-crew" title="The crew you travel with"><span class="mcw-faces">${faces}</span><b>Crew</b></button>
+          <button class="map-home" title="Cromatic Studios House, Str. Olari 9"><span class="mh-ic">\u{1F3E0}</span><b>Our house</b></button>
+          <a class="map-site" href="/site/" title="The same story as a normal, fast website"><span class="ms-ic" aria-hidden="true"><i></i><i></i><i></i></span><b>Normal website</b></a>
           <button class="map-exit" title="The same world as a scroll-driven drive"><span class="me-ic">\u{1F697}</span><span class="me-l">Drive mode</span></button>`);
         const rides = el("div", "map-rides hidden", `<span class="mono">YOUR RIDE</span><div class="mrs-list">${VEHICLES.map((v) => `<button class="mrs-v" data-v="${v.id}"><span class="mrs-th"></span><b>${v.label}</b></button>`).join("")}</div>`);
         const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="van" aria-label="Find the van" title="Find the van">◎</button><button data-z="wx" class="mz-wx" aria-label="Weather off" title="Turn weather off">\u2602</button>`);
         const dock = el("div", "map-dock", `<span class="map-dock-h mono">WHERE TO?</span><div class="map-chips"></div>`);
         const card = el("div", "map-card hidden");
+        // r123: the first thing on the map: where do you want to go?
+        const welcomeEl = el("div", "map-welcome hidden", `<button class="mw-x" aria-label="Close">\u00D7</button><span class="mono mw-k">WELCOME TO CROMATIC CITY</span>
+          <div class="mw-how">
+            <span><i>\u{1F449}</i><b>Tap a place</b></span><em>\u2192</em>
+            <span><i>\u{1F690}</i><b>We drive you</b></span><em>\u2192</em>
+            <span><i>\u{1F4D6}</i><b>See the work</b></span><em>\u2192</em>
+            <span><i>\u2708\uFE0F</i><b>Board & say hi</b></span>
+          </div>
+          <b class="mw-q">Where do you want to start?</b>
+          <div class="mw-opts">
+            <button data-go="tm" style="--wc:#28C840"><b>Coffee Street</b><i>Two Minutes, Steam, ARCA & co.</i></button>
+            <button data-go="invest" style="--wc:#119BFE"><b>Fintech Boulevard</b><i>Investimental, Assetto, Bepco</i></button>
+            <button data-go="tac" style="--wc:#F28BA8"><b>Medical Avenue</b><i>The Aesthetic Court, Zdrovit, Elithia</i></button>
+            <button data-go="end" style="--wc:#FED012"><b>Olari 9 \u00B7 the studio</b><i>Come by, then board the jet</i></button>
+          </div><button class="mw-free">Just let me explore \u2192</button>`);
+        const welcome = (on) => welcomeEl.classList.toggle("hidden", !on);
+        welcomeEl.onclick = (e) => {
+          const b = e.target.closest("button"); if (!b) return;
+          welcome(false);
+          if (b.dataset.go) mapGo(MAP_PLACES.find((p) => p.id === b.dataset.go));
+        };
         // the street names float high over the head of each street, as the drive's motorway signs
-        const STREETS = [["Coffee Street", "The story road", 815, 5150, "#28C840"], ["Fintech Boulevard", "Digital & finance", 2085, 5700, "#119BFE"], ["Medical Avenue", "Clinics, care & beauty", 1500, 5350, "#F28BA8"], ["The Smallest Shortcut", "Stickers & print", 1395, 5960, "#FED012"]];
+        const STREETS = [["Coffee Street", "The story road", 822, 4700, "#28C840"], ["Fintech Boulevard", "Digital & finance", 2080, 5300, "#119BFE"], ["Medical Avenue", "Clinics, care & beauty", 1500, 4900, "#F28BA8"], ["The Smallest Shortcut", "Stickers & print", 1412, 5945, "#FED012"]];
         const streetEls = STREETS.map(([t, sub, x, z, c]) => {
           const e = el("div", "map-street", `<span class="hw-stripe"></span><span class="hw-body"><span class="hw-txt"><b>${t}</b><i>${sub}</i></span></span>`);
           e.style.setProperty("--hwc", c); e._p = [x, z]; pinsEl.prepend(e); return e;
@@ -36583,10 +36706,12 @@ void main() {
         const skip = el("button", "kz-skip hidden", `Skip intro <span>→</span>`);
         const baamEl = el("div", "jet-baam hidden", `<b>Wheels up!</b><span>Your boarding pass is on board. We write back within one working day.</span>`);
         const speedEl = el("div", "speed-lines");
-        box.append(speedEl, pinsEl, top, rides, zoom, dock, card, skip, baamEl);
+        box.append(speedEl, pinsEl, top, rides, zoom, dock, card, skip, baamEl, welcomeEl);
         ui.root.appendChild(box);
         top.querySelector(".map-exit").onclick = () => setMapMode(false);
         top.querySelector(".map-crew").onclick = () => openCrew();
+        top.querySelector(".map-home").onclick = () => { welcome(false); mapGo(MAP_PLACES.find((p) => p.id === "end")); };
+
         top.querySelector(".map-world").onclick = (e) => { e.stopPropagation(); ui.themeBtn.click(); };
         const paintRides = () => rides.querySelectorAll(".mrs-v").forEach((b) => {
           b.classList.toggle("on", b.dataset.v === state.vehicleId);
@@ -36611,6 +36736,7 @@ void main() {
             ? `<span class="mp-label"><i class="mono">${pl.line}</i><b>${pl.name}</b>${got}</span><span class="mp-stem"></span>`
             : `<span class="mp-label"><b>${pl.name}</b><i class="mono">${pl.line}</i>${got}</span><span class="mp-stem"></span><span class="mp-dot"></span>`);
           b.style.setProperty("--pc", pl.c); if (pl.t) b.style.setProperty("--pt", pl.t);
+          b.dataset.id = pl.id;
           b.onclick = (e) => { e.stopPropagation(); mapGo(pl); };
           pinsEl.appendChild(b);
           let ch = null;
@@ -36631,8 +36757,10 @@ void main() {
             p.b.classList.toggle("visited", v); p.b.classList.toggle("on", on);
             if (p.ch) { p.ch.classList.toggle("visited", v); p.ch.classList.toggle("on", on); }
           }
-          top.querySelector(".map-count").innerHTML = `<b>${n}/${total}</b><i> PLACES</i>`;
-          top.querySelector(".map-found").innerHTML = `<b>${f}/${totalF}</b><i> FOUND</i>`;
+          // r123: only the places still to discover, at the head of the bar below
+          const cnt = dock.querySelector(".map-dock-h");
+          if (cnt) cnt.innerHTML = `<b>${Math.max(0, total - n)}</b> TO DISCOVER`;
+          void f; void totalF;
         };
         // a pin flies from the place to the collection
         const flyPin = (pl, pts) => {
@@ -36709,6 +36837,10 @@ void main() {
           }
           const pr = projectOf(pl.name);
           const pg = window.__casePage?.(pl.name);
+          if (pl.noopen || pl.soon) {
+            showCard(pl, "BULEVARDUL DACIA 99", `<p>${pl.desc}</p>`, pl.soon ? `<span class="mcd-wip mono" style="--pc:${pl.c};--pt:#fff">CASE PAGE COMING SOON</span>` : "");
+            return;
+          }
           showCard(pl, pl.br ? MAP_STREET[pl.br] : pl.line.split(" \xB7 ")[0], `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`, pl.wip ? `<span class="mcd-wip mono">WORK IN PROGRESS</span>` : pl.small && !pg ? "" : `<button class="mcd-open">Open the case →</button>`);
           if (pl.wip || (pl.small && !pg)) return;
           card.querySelector(".mcd-open").onclick = () => (pg && openFrameHook ? openFrameHook(`/work/${pg}/?embed=1`, pl.name) : tagOf(pl)?.click());
@@ -36732,7 +36864,7 @@ void main() {
           boxes: { t: [740, 40, 4210], yaw: 1.25, pitch: 0.3, dist: 1450 },
           lab: { t: [640, 40, 4180], yaw: 1.15, pitch: 0.32, dist: 1350 },
           hq: { t: [1010, 60, 4160], yaw: 0.35, pitch: 0.4, dist: 1700 },
-          friends: { t: [1290, 110, 6330], yaw: -1.2, pitch: 0.3, dist: 2100 }
+          friends: { t: [1365, 60, 6400], yaw: 1.95, pitch: 0.42, dist: 2400 }
         };
         const cineIn = (pl) => {
           const sh = SHOTS[pl.id];
@@ -36811,7 +36943,7 @@ void main() {
           mapView.distGoal = null;
           if (cine && cine.t < cine.dur) cine = null;
           if (z === "in") mapView.distGoal = Math.max(1900, mapView.dist / 1.4);
-          if (z === "out") mapView.distGoal = Math.min(10000, mapView.dist * 1.4);
+          if (z === "out") mapView.distGoal = Math.min(MAP_MAXD, mapView.dist * 1.4);
           if (z === "van") { mapView.follow = true; mapView.focus = null; }
         };
         // drag to move, wheel or pinch to zoom, a flick keeps gliding
@@ -36837,11 +36969,28 @@ void main() {
           return unwarpV(zCam.position.clone().addScaledVector(zDir, -zCam.position.y / zDir.y));
         };
         const zoomAt = (sx, sy, d0, d1) => {
-          const g0 = mapView.follow ? null : groundAt(sx, sy);
+          if (!isFinite(d1)) return;
+          let g0 = mapView.follow ? null : groundAt(sx, sy);
+          // a point near the horizon is no anchor
+          if (g0 && Math.hypot(g0.x - mapView.tgt.x, g0.z - mapView.tgt.z) > mapView.dist * 1.6) g0 = null;
           mapView.dist = d1;
           if (!g0) return;
-          for (let k = 0; k < 2; k++) { const g1 = groundAt(sx, sy); if (!g1) break; mapView.tgt.x += g0.x - g1.x; mapView.tgt.z += g0.z - g1.z; }
+          for (let k = 0; k < 2; k++) {
+            const g1 = groundAt(sx, sy); if (!g1) break;
+            const dx = clamp2(g0.x - g1.x, -900, 900), dz = clamp2(g0.z - g1.z, -900, 900);
+            mapView.tgt.x += dx; mapView.tgt.z += dz;
+          }
         };
+        // Safari: a trackpad pinch arrives as gesture events, not as a ctrl-wheel
+        let gScale0 = 1, gDist0 = 0;
+        window.addEventListener("gesturestart", (e) => { if (!mapMode || mapIntro) return; gScale0 = e.scale || 1; gDist0 = mapView.dist; });
+        window.addEventListener("gesturechange", (e) => {
+          if (!mapMode || mapIntro || !gDist0 || !(e.scale > 0)) return;
+          if (cine && cine.t < cine.dur) cine = null;
+          mapView.distGoal = null;
+          zoomAt(e.clientX || innerWidth / 2, e.clientY || innerHeight / 2, mapView.dist, Math.min(MAP_MAXD, Math.max(1900, gDist0 * gScale0 / e.scale)));
+        });
+        window.addEventListener("gestureend", () => { gDist0 = 0; });
         canvas.addEventListener("pointerdown", (e) => {
           if (!mapMode || mapIntro) return;
           canvas.setPointerCapture?.(e.pointerId);
@@ -36857,7 +37006,7 @@ void main() {
             const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
             if (pinch0 > 0) {
               cine = null; mapView.distGoal = null;
-              const d0 = mapView.dist, d1 = Math.min(10000, Math.max(1900, dist0 * pinch0 / Math.max(d, 1)));
+              const d0 = mapView.dist, d1 = Math.min(MAP_MAXD, Math.max(1900, dist0 * pinch0 / Math.max(d, 1)));
               zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, d0, d1);
             }
             const [wx, wz] = panVec(dx / 2, dy / 2); mapView.tgt.x += wx; mapView.tgt.z += wz;
@@ -36915,7 +37064,7 @@ void main() {
           e.preventDefault();
           mapView.distGoal = null;
           if (cine && cine.t < cine.dur) cine = null;
-          zoomAt(e.clientX, e.clientY, mapView.dist, Math.min(10000, Math.max(1900, mapView.dist * Math.exp(e.deltaY * 0.0012))));
+          zoomAt(e.clientX, e.clientY, mapView.dist, Math.min(MAP_MAXD, Math.max(1900, mapView.dist * Math.exp(clamp2(e.deltaY, -120, 120) * (e.ctrlKey ? 0.006 : 0.0012)))));
         }, { passive: false });
         const proj = new Vector3();
         // where the picture should put the van: the middle of the space no card covers
@@ -36941,7 +37090,7 @@ void main() {
           return [0, (topY + botY) / 2 - H / 2];
         };
         return {
-          box, mark, arrive, find, hideCard, baam, skip, paintRides, cineOut, cineStop,
+          box, mark, arrive, find, hideCard, baam, skip, paintRides, cineOut, cineStop, welcome,
           update(dt, now) {
             mapStep();
             cineStep(dt);
@@ -36960,6 +37109,9 @@ void main() {
             if (mapView.yawGoal != null) { mapView.yaw += (mapView.yawGoal - mapView.yaw) * ka; if (Math.abs(mapView.yawGoal - mapView.yaw) < 1e-3) mapView.yawGoal = null; }
             if (mapView.pitchGoal != null) { mapView.pitch += (mapView.pitchGoal - mapView.pitch) * ka; if (Math.abs(mapView.pitchGoal - mapView.pitch) < 1e-3) mapView.pitchGoal = null; }
             // depth precision: from this far up a near plane of 10 made the road layers flicker
+            if (!(mapView.dist > 0) || !isFinite(mapView.dist)) mapView.dist = 4600;
+            if (jetFx.phase === "idle") mapView.dist = clamp2(mapView.dist, 700, MAP_MAXD + 400);
+            if (!isFinite(mapView.tgt.x) || !isFinite(mapView.tgt.z)) mapView.tgt.set(1300, 0, 5000);
             const nNear = Math.max(10, mapView.dist * 0.32), nFar = mapView.dist * 3 + 6000;
             if (Math.abs(camera.near - nNear) > 1 || Math.abs(camera.far - nFar) > 10) { camera.near = nNear; camera.far = nFar; camera.updateProjectionMatrix(); }
             const [fx, fy] = frameOffset();
@@ -37004,7 +37156,7 @@ void main() {
             const zl = mapView.dist > (mapView._zl === 1 ? 5800 : 6200) ? 1 : mapView.dist > (mapView._zl === 3 ? 3300 : 3000) ? 2 : 3;
             mapView._zl = zl;
             for (const e of streetEls) {
-              warpV(proj.set(e._p[0], 620, e._p[1])).project(camera);
+              warpV(proj.set(e._p[0], 2, e._p[1])).project(camera);
               const sx2 = (proj.x * 0.5 + 0.5) * W, sy2 = (-proj.y * 0.5 + 0.5) * H;
               const off2 = mapIntro || proj.z > 1 || sx2 < -200 || sx2 > W + 200 || sy2 < 110 || sy2 > H - 90 || mapView.dist < 3300;
               e._xy = off2 ? null : [sx2, sy2];
@@ -37051,6 +37203,7 @@ void main() {
         setTimeout(() => { mapView.distGoal = innerWidth < 720 ? 6600 : 5400; }, 250);
         document.body.classList.remove("kz-intro");
         mapUI?.skip.classList.add("hidden");
+        setTimeout(() => { if (mapMode && !mapNav.moving && !mapNav.place) mapUI?.welcome(true); }, 1400);
       }
       function setMapMode(on, { intro = false } = {}) {
         if (on === mapMode) return;
@@ -37086,6 +37239,7 @@ void main() {
           rebuildGolden();
           mapUI.mark();
           if (intro) { mapIntro = true; document.body.classList.add("kz-intro"); mapUI.skip.classList.remove("hidden"); }
+          else setTimeout(() => { if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place) mapUI.welcome(true); }, 1600);
           try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" ? "" : "?map") + location.hash); } catch {}
         } else {
           mapEndIntro();

@@ -3065,7 +3065,7 @@ body.map-mode.scheme-underwater .uw-veil { opacity: .45; }
 .map-top > * { flex: 0 0 auto; }
 .map-top .map-count, .map-top .map-found { height: 30px; display: inline-flex; align-items: center; padding: 0 11px; box-sizing: border-box; }
 .map-top .map-count { margin-left: 4px; }
-.map-top :is(.map-ride, .map-world, .map-crew, .map-exit) { height: 42px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 7px; padding: 0 15px 0 8px; border-radius: 999px; font: 800 13px/1 Poppins, sans-serif; }
+.map-top :is(.map-ride, .map-world, .map-crew, .map-hi, .map-home, .map-site, .map-exit) { height: 42px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 7px; padding: 0 15px 0 8px; border-radius: 999px; font: 800 13px/1 Poppins, sans-serif; }
 .map-top .map-exit { padding: 0 16px; }
 .map-top .map-ride .mr-ic { width: 26px; text-align: center; font-size: 17px; line-height: 1; }
 .map-top .mcw-faces i { width: 24px; height: 24px; }
@@ -3347,3 +3347,100 @@ body.map-boarding .map-zoom, body.kb-open .map-zoom { display: none !important; 
 .wide-card .friend-pills { display: flex; flex-wrap: wrap; gap: 6px; max-height: 42vh; overflow: auto; }
 .wide-card .friend-pills span { font-size: 12px; padding: 5px 10px; }
 .friends-stats { font-size: 17px; line-height: 1.4; }
+
+/* r123: welcome on the map: where do you want to go? */
+.map-welcome { position: fixed; z-index: 30; left: 50%; top: 50%; translate: -50% -50%; width: min(560px, calc(100vw - 32px)); box-sizing: border-box;
+  background: #fbf7f2; color: #141414; border: 2.5px solid #141414; border-radius: 26px; padding: 26px 24px 20px; box-shadow: 0 10px 0 #141414, 0 30px 60px -20px rgba(40,20,40,.5);
+  pointer-events: auto; animation: mwIn .5s cubic-bezier(.2,.9,.3,1.2) both; }
+.map-welcome.hidden { display: none; }
+@keyframes mwIn { from { opacity: 0; transform: translateY(18px) scale(.96); } }
+.map-welcome .mw-k { display: block; font-size: 10px; letter-spacing: .18em; opacity: .6; }
+.map-welcome .mw-t { display: block; font: 900 clamp(26px, 4vw, 34px)/1.05 Poppins, sans-serif; margin: 6px 0 16px; }
+.map-welcome .mw-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.map-welcome .mw-opts button { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 4px; padding: 13px 14px; border: 2.5px solid #141414; border-radius: 16px;
+  background: #fff; box-shadow: inset 8px 0 0 var(--wc); padding-left: 22px; transition: transform .15s, background .15s; }
+.map-welcome .mw-opts button:hover { transform: translateY(-2px); background: color-mix(in srgb, var(--wc) 22%, #fff); }
+.map-welcome .mw-opts b { font: 800 16px/1.1 Poppins, sans-serif; }
+.map-welcome .mw-opts i { font: 500 12px/1.3 Poppins, sans-serif; font-style: normal; opacity: .7; }
+.map-welcome .mw-or { display: block; margin-top: 14px; font: 500 13px/1.3 Poppins, sans-serif; opacity: .75; }
+.map-welcome .mw-x { all: unset; cursor: pointer; position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border-radius: 50%; border: 2.5px solid #141414; display: grid; place-items: center; font: 800 18px/1 Poppins, sans-serif; background: #fff; }
+@media (max-width: 520px) { .map-welcome .mw-opts { grid-template-columns: 1fr; } .map-welcome { top: auto; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; } }
+body.kz-intro .map-welcome { display: none; }
+
+.map-welcome { max-height: calc(100vh - 140px); overflow: auto; }
+.map-welcome .mw-steps { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 9px; }
+.map-welcome .mw-steps li { display: flex; gap: 12px; align-items: flex-start; font: 500 14px/1.35 Poppins, sans-serif; }
+.map-welcome .mw-steps i { flex: 0 0 28px; height: 28px; border-radius: 50%; background: #FED012; border: 2px solid #141414; display: grid; place-items: center; font: 900 13px/1 Poppins, sans-serif; font-style: normal; }
+.map-welcome .mw-steps b { font-weight: 800; }
+.map-welcome .mw-q { display: block; font: 800 17px/1.2 Poppins, sans-serif; margin: 4px 0 10px; }
+.map-welcome .mw-free { all: unset; cursor: pointer; display: block; margin: 14px auto 0; font: 700 13px/1 Poppins, sans-serif; text-decoration: underline; text-underline-offset: 4px; opacity: .8; }
+body.kz-intro .map-welcome, body.map-boarding .map-welcome { display: none; }
+@media (max-width: 520px) { .map-welcome { top: 50%; bottom: auto; translate: -50% -50%; padding: 20px 16px 16px; } .map-welcome .mw-t { font-size: 24px; margin-bottom: 10px; } .map-welcome .mw-steps li { font-size: 12.5px; } }
+
+/* r123: contact always one tap away */
+.map-top .map-hi { border: 2.5px solid #141414 !important; background: #FED012; color: #141414; cursor: pointer; padding: 0 15px 0 12px; }
+.map-top .map-hi .mh-ic { font-size: 18px; line-height: 1; }
+.map-top .map-hi:hover { background: #ffe25c; }
+@media (max-width: 719px) { .map-top .map-hi { height: 38px; padding: 0 9px; } .map-top .map-hi b { display: none; } }
+.site-btn.hi-link .sb-hi { background: #FED012; color: #141414; display: grid; place-items: center; font-size: 15px; }
+@media (max-width: 520px) { .map-welcome { top: calc(150px + env(safe-area-inset-top, 0px)); translate: -50% 0; max-height: calc(100dvh - 250px); } }
+
+/* r123: the pass after sending: full width, with save and take-off */
+.mapcard.contact .cform.done { display: block !important; }
+.mapcard.contact .cform.done .bp-wrap { width: 100%; }
+.bp-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 10px 18px 16px; }
+.bp-actions .coffee-btn { text-decoration: none; justify-content: center; font-size: 15px; padding: 14px 22px; }
+.bp-actions .bp-go { background: #FED012; color: #111; }
+@media (max-width: 719px) { .map-top .map-exit .me-l { display: none; } .map-top .map-exit { padding: 0 10px !important; } }
+.mapcard.contact .cform.done::before, .mapcard.contact .cform.done::after { display: none !important; }
+
+.card-more.always .cm-label { display: block; font-size: 10px; letter-spacing: .16em; opacity: .6; margin: 10px 0 6px; }
+.card-more.always .cm-grid { grid-template-rows: 1fr !important; }
+.bp-actions .bp-go .bp-count { display: inline-block; min-width: 1.2em; font-size: 1.2em; }
+
+/* r123: street signs stand on their street: anchored at the road, a small pole down to it */
+.map-street { translate: -50% calc(-100% - 26px) !important; animation: none !important; }
+.map-street::after { content: ""; position: absolute; left: 50%; top: 100%; width: 3px; height: 26px; margin-left: -1.5px; background: #0d0c09; }
+.map-pin[data-id="bism"] .mp-label b { color: #fff; } .map-pin[data-id="bism"] .mp-label i { color: #ff7a6e; opacity: 1; }
+
+.map-top .map-home { border: 2.5px solid #141414 !important; background: #28C840; color: #141414; cursor: pointer; padding: 0 14px 0 10px; }
+.map-top .map-home .mh-ic { font-size: 17px; line-height: 1; }
+@media (max-width: 719px) { .map-top .map-home { height: 38px; padding: 0 9px; } .map-top .map-home b { display: none; } }
+.map-welcome .mw-how { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin: 14px 0 20px; }
+.map-welcome .mw-how span { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.map-welcome .mw-how span i { width: 64px; height: 64px; border-radius: 50%; border: 2.5px solid #141414; background: #FED012; display: grid; place-items: center; font-size: 30px; font-style: normal; box-shadow: 0 5px 0 #141414; }
+.map-welcome .mw-how span:nth-of-type(2) i { background: #119BFE; } .map-welcome .mw-how span:nth-of-type(3) i { background: #F28BA8; } .map-welcome .mw-how span:nth-of-type(4) i { background: #28C840; }
+.map-welcome .mw-how b { font: 800 13px/1.15 Poppins, sans-serif; }
+.map-welcome .mw-how em { font-style: normal; font-weight: 900; opacity: .35; margin-top: -26px; }
+@media (max-width: 520px) { .map-welcome .mw-how span i { width: 48px; height: 48px; font-size: 22px; } .map-welcome .mw-how b { font-size: 11px; } .map-welcome .mw-how em { display: none; } }
+.olari-next .oc-contact { flex-basis: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 4px; padding: 12px 16px; background: #fffdf7; border: 2.5px solid #141414; border-radius: 18px; font: 600 13px/1.3 Poppins, sans-serif; color: #141414; pointer-events: auto; }
+.olari-next .oc-contact span { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: center; }
+.olari-next .oc-contact a { color: #141414; font-weight: 800; text-decoration: none; border-bottom: 2px solid #FED012; }
+/* r123: the bar grew (house, contact): on laptops it sits after the logo, clear of the XP pill;
+   on phones the counters go and the row scrolls if it must */
+
+@media (min-width: 720px) and (max-width: 1180px) { .map-top :is(.map-ride, .map-crew) b { display: none; } .map-top :is(.map-ride, .map-crew) { padding: 0 8px !important; } }
+@media (max-width: 719px) { .map-top .map-found, .map-top .map-count { display: none !important; } .map-top { overflow-x: auto; scrollbar-width: none; justify-content: flex-start !important; } .map-top::-webkit-scrollbar { display: none; } .map-top > * { flex-shrink: 0; } }
+
+/* r123: the Two Minutes film opens wide, the film almost full screen, with a way into the case */
+.hmodal.media.tm-wide { width: min(1400px, 96vw) !important; max-width: none !important; }
+.hmodal.media.tm-wide .md-film { aspect-ratio: 16 / 9; width: 100%; max-height: 80vh; }
+.hmodal.media.tm-wide .md-film iframe { width: 100%; height: 100%; }
+.hmodal.media.tm-wide .tm-more { margin: 14px 0 4px; font-size: 16px; padding: 15px 24px; background: #F2A9C4; color: #111; }
+
+/* r123: Normal website in the map bar, its icon in colour; the count of places left heads the dock */
+.map-top .map-site { border: 2.5px solid #141414 !important; background: #fff; color: #141414; text-decoration: none; padding: 0 14px 0 8px; }
+.map-top .map-site .ms-ic { width: 28px; height: 28px; border-radius: 50%; background: #FED012; border: 2px solid #141414; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2.5px; box-sizing: border-box; }
+.map-top .map-site .ms-ic i { display: block; height: 2.5px; border-radius: 2px; background: #141414; width: 12px; }
+.map-top .map-site .ms-ic i:nth-child(2) { width: 9px; background: #F65342; } .map-top .map-site .ms-ic i:nth-child(3) { width: 11px; background: #119BFE; }
+.map-top .map-site:hover { background: #FED012; }
+@media (max-width: 719px) { .map-top .map-site { height: 38px; padding: 0 6px; } .map-top .map-site b { display: none; } }
+.map-dock .map-dock-h b { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px; background: #F65342; color: #fff; font: 900 13px/1 Poppins, sans-serif; margin-right: 6px; letter-spacing: 0; }
+.map-dock .map-dock-h { display: inline-flex; align-items: center; white-space: nowrap; }
+
+/* r123: on the map the XP pill sits under the logo, as wide as it: the top bar has the middle */
+@media (min-width: 720px) {
+  body.map-mode:not(.site-mode) .topbar .you { top: calc(84px + env(safe-area-inset-top, 0px)); left: 18px; right: auto; width: 150px; height: 44px; padding: 0 6px 0 12px; font-size: 12px; }
+  body.map-mode:not(.site-mode) .topbar .you .you-label { display: none; } body.map-mode:not(.site-mode) .topbar .you { justify-content: center; gap: 10px; }
+}
+@media (min-width: 720px) { .map-top { width: max-content; } }

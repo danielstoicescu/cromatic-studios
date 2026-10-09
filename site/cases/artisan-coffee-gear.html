@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Artisan Coffee Gear — Cromatic Studios</title>
-<meta name="description" content="Artisan Coffee Gear: a brand universe for specialty coffee equipment, from strategy and identity to illustration, packaging and the webshop. By Cromatic Studios, Bucharest.">
+<meta name="description" content="Artisan Coffee Gear, a branding project: brand strategy, archetype, visual identity, letterform pattern, technical illustration, packaging and webshop for a specialty coffee equipment brand. By Cromatic Studios, Bucharest.">
 <link rel="canonical" href="%%SITE_URL%%/work/artisan-coffee-gear/">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Artisan Coffee Gear — Cromatic Studios">
-<meta property="og:description" content="Artisan Coffee Gear: a brand universe for specialty coffee equipment, from strategy and identity to illustration, packaging and the webshop. By Cromatic Studios, Bucharest.">
+<meta property="og:description" content="Artisan Coffee Gear, a branding project: brand strategy, archetype, visual identity, letterform pattern, technical illustration, packaging and webshop for a specialty coffee equipment brand. By Cromatic Studios, Bucharest.">
 <meta property="og:url" content="%%SITE_URL%%/work/artisan-coffee-gear/">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <script>(function(){try{if(/[?&]embed\b/.test(location.search)||window.self!==window.top)document.documentElement.classList.add("embed")}catch(e){document.documentElement.classList.add("embed")}})();</script>
@@ -317,7 +317,7 @@ figcaption{margin-top:var(--caption-gap);font-size:var(--fs-small);font-weight:6
 }
 
 /* ---- case pages built on the Steam system: brand accent, embed mode, extras ---- */
-:root{--accent:#B4B79F;--accent-fg:var(--ink);--accent-ink:#5c5f4b;--frame-bg:#d9d9d9}
+:root{--accent:#797c69;--accent-fg:#ffffff;--accent-ink:#5c5f4b;--frame-bg:#d9d9d9}
 .solution-intro{background:var(--accent);color:var(--accent-fg)}
 .quote blockquote p{color:var(--accent-ink)}
 .frame{background:var(--frame-bg)}
@@ -349,7 +349,28 @@ html:not(.embed) .page{padding-top:64px}
   .hero-row{flex-wrap:wrap}
   .hero-row>figure{flex-basis:100%}
 }
-@media (prefers-reduced-motion:reduce){.screen--scroll img{animation:none}}
+/* colour fields and statements */
+.field{border-radius:var(--radius-m);background:var(--field);padding:clamp(22px,5vw,80px) clamp(16px,5vw,80px)}
+.field figcaption{color:var(--field-fg,rgba(255,255,255,.85));margin-top:clamp(16px,2vw,28px)}
+.field-inner{display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(14px,2.4vw,36px)}
+.field-card{width:min(100%,860px);aspect-ratio:var(--r);border-radius:14px;overflow:hidden;box-shadow:0 30px 60px -24px rgba(0,0,0,.45),0 0 0 1px rgba(0,0,0,.06)}
+.field-inner--multi .field-card{width:auto;flex:var(--r) 1 0;min-width:0;max-width:640px}
+.field-card img,.field-card video{width:100%;height:100%;object-fit:cover}
+.statement{border-radius:var(--radius-m);background:var(--field);color:var(--field-fg);padding:clamp(28px,6vw,96px) clamp(22px,5vw,80px);display:grid;gap:18px}
+.statement p{font-size:var(--fs-h2);line-height:var(--lh-h2);font-weight:900;letter-spacing:-.01em;max-width:14em}
+.statement span{font-size:var(--fs-lead);line-height:var(--lh-lead);font-weight:700;max-width:28em;opacity:.85}
+@media (max-width:640px){.field-inner--multi{flex-direction:column;align-items:center}.field-inner--multi .field-card{flex:none;width:100%}}
+/* the first image: a mask that opens from the bottom, the picture settling from a slow zoom, then a light parallax */
+.hero-media{animation:none}
+.hero-media .frame,.film-frame{clip-path:inset(0 0 0 0 round 24px);animation:hero-wipe 1.1s cubic-bezier(.16,1,.3,1) .12s both}
+.hero-row>figure:nth-child(2) .frame{animation-delay:.24s}
+.hero-media .frame>img,.hero-media .frame>video{scale:1.04;translate:0 var(--py,0px);will-change:scale,translate,filter;animation:hero-settle 1.6s cubic-bezier(.16,1,.3,1) .12s both}
+@keyframes hero-wipe{from{clip-path:inset(100% 0 0 0 round 24px)}to{clip-path:inset(0 0 0 0 round 24px)}}
+@keyframes hero-settle{from{scale:1.12;filter:blur(10px) brightness(1.25)}to{scale:1.04;filter:none}}
+@media (prefers-reduced-motion:reduce){
+  .screen--scroll img{animation:none}
+  .hero-media .frame,.film-frame,.hero-media .frame>img,.hero-media .frame>video{animation:none;clip-path:none;scale:1;translate:none}
+}
 </style>
 </head>
 <body>
@@ -360,7 +381,7 @@ html:not(.embed) .page{padding-top:64px}
       <div class="hero-top">
         <div class="hero-title">
           <p class="client-name">Artisan Coffee Gear</p>
-          <h1>Getting to the core of the craft.</h1>
+          <h1>Branding coffee gear for people who take coffee seriously.</h1>
         </div>
         <div class="hero-info">
           <div class="client-row">
@@ -370,18 +391,16 @@ html:not(.embed) .page{padding-top:64px}
             </ul>
           </div>
           <ul class="info">
-            <li>Coffee equipment, Retail</li>
+            <li>Branding project · Coffee equipment, retail</li>
             <li>2019</li>
             <li>Brand strategy, brand universe, visual identity, illustration, packaging, website</li>
           </ul>
         </div>
       </div>
       <div class="hero-media">
-        <div class="hero-row"><figure style="--r:1.778">
-  <div class="frame"><img src="m:artisan-coffee-gear/art01" alt="Artisan Coffee Gear wordmark on white" width="560" height="315" fetchpriority="high" decoding="async"></div>
-</figure><figure style="--r:1.778">
-  <div class="frame"><img src="m:artisan-coffee-gear/art09" alt="Line drawings of brewers, grinders and kettles" width="560" height="315" fetchpriority="high" decoding="async"></div>
-</figure></div>
+        <figure style="--r:1.778" data-fixed-ratio>
+  <div class="frame"><img src="m:artisan-coffee-gear/art09" alt="Line drawings of brewers, grinders, scales and kettles" width="560" height="315" fetchpriority="high" decoding="async"></div>
+</figure>
       </div>
     </div>
   </header>
@@ -395,17 +414,12 @@ html:not(.embed) .page{padding-top:64px}
         </div>
       </div>
       <div class="problem-media stack">
-<div class="stack">
-<div class="row row--wrap-sm">
-<figure class="full-sm" style="--r:1.778">
-  <div class="frame"><img src="m:artisan-coffee-gear/art02" alt="The Artisan value proposition" width="560" height="315" loading="lazy" decoding="async"></div>
+<figure class="field" style="--field:#797c69">
+  <div class="field-inner">
+    <div class="field-card" style="--r:1.778"><img src="m:artisan-coffee-gear/art02" alt="The Artisan value proposition" width="560" height="315" loading="lazy" decoding="async"></div>
+  </div>
+  <figcaption>The value proposition the whole brand was built on</figcaption>
 </figure>
-<figure class="full-sm" style="--r:1.778">
-  <div class="frame"><img src="m:artisan-coffee-gear/art05" alt="The Artisan wordmark with the line coffee gear" width="560" height="315" loading="lazy" decoding="async"></div>
-</figure>
-</div>
-<figcaption>The value proposition, and the wordmark it led to.</figcaption>
-</div>
       </div>
       <div class="handoff">
         <div class="solution-intro" id="solution">
@@ -439,46 +453,47 @@ html:not(.embed) .page{padding-top:64px}
       </div>
     </div>
     <div class="chapter-media">
-<div class="stack">
-<div class="row row--wrap-sm">
-<figure class="full-sm" style="--r:1.778">
-  <div class="frame"><img src="m:artisan-coffee-gear/art07" alt="Ailerons, Gruppo and Gotham with the olive, ink and paper palette" width="560" height="315" loading="lazy" decoding="async"></div>
+<figure class="field" style="--field:#e4e1d8;--field-fg:#5c5f4b">
+  <div class="field-inner">
+    <div class="field-card" style="--r:1.778"><img src="m:artisan-coffee-gear/art05" alt="The Artisan wordmark with the line coffee gear" width="560" height="315" loading="lazy" decoding="async"></div>
+  </div>
+  <figcaption>The wordmark: Ailerons, spaced wide, with coffee gear set quietly underneath</figcaption>
 </figure>
-<figure class="full-sm" style="--r:1.778">
+<figure class="field" style="--field:#1e1d1d;--field-fg:#c9cbb8">
+  <div class="field-inner">
+    <div class="field-card" style="--r:1.778"><img src="m:artisan-coffee-gear/art07" alt="Ailerons, Gruppo and Gotham with the olive, ink and paper palette" width="560" height="315" loading="lazy" decoding="async"></div>
+  </div>
+  <figcaption>Three typefaces and four colours: olive, ink, paper and white</figcaption>
+</figure>
+<div class="statement" style="--field:#797c69;--field-fg:#ffffff"><p>The A of Artisan folds into a chevron.</p><span>A texture that runs across tape, packaging and posters without ever repeating itself the same way twice.</span></div>
+<figure style="--r:1.778">
   <div class="frame"><img src="m:artisan-coffee-gear/art08" alt="The A of Artisan turning into a chevron pattern, with botanical drawings" width="560" height="315" loading="lazy" decoding="async"></div>
+  <figcaption>From letter to pattern, with the botanical drawings that go with it</figcaption>
 </figure>
-</div>
-<figcaption>Type and colour, and the pattern that grows out of the letter A</figcaption>
-</div>
-<div class="stack">
-<div class="row row--wrap-sm">
-<figure class="full-sm" style="--r:1.778">
-  <div class="frame"><img src="m:artisan-coffee-gear/art10" alt="Olive posters with blueprint drawings of coffee machines" width="560" height="315" loading="lazy" decoding="async"></div>
+<figure class="field" style="--field:#797c69">
+  <div class="field-inner">
+    <div class="field-card" style="--r:1.778"><img src="m:artisan-coffee-gear/art10" alt="Olive posters with blueprint drawings of coffee machines" width="560" height="315" loading="lazy" decoding="async"></div>
+  </div>
+  <figcaption>The gear, drawn as blueprints, so the catalogue reads like a manual</figcaption>
 </figure>
-<figure class="full-sm" style="--r:1.778">
+<figure style="--r:1.778">
   <div class="frame"><img src="m:artisan-coffee-gear/art15" alt="Posters for barista tools and home brewing" width="560" height="315" loading="lazy" decoding="async"></div>
+  <figcaption>Posters for barista tools and home brewing</figcaption>
 </figure>
-</div>
-<figcaption>The gear, drawn as blueprints, so the catalogue reads like a manual</figcaption>
-</div>
-<div class="stack">
-<div class="row row--wrap-sm">
-<figure class="full-sm" style="--r:1.778">
-  <div class="frame"><img src="m:artisan-coffee-gear/art12" alt="Business card and branded tape with an olive branch" width="560" height="315" loading="lazy" decoding="async"></div>
+<figure class="field" style="--field:#e4e1d8;--field-fg:#5c5f4b">
+  <div class="field-inner field-inner--multi">
+    <div class="field-card" style="--r:1.778"><img src="m:artisan-coffee-gear/art12" alt="Business card and branded tape with an olive branch" width="560" height="315" loading="lazy" decoding="async"></div>
+    <div class="field-card" style="--r:1.778"><img src="m:artisan-coffee-gear/art13" alt="Olive polo shirt with the Artisan mark" width="560" height="315" loading="lazy" decoding="async"></div>
+  </div>
+  <figcaption>Business cards, washi tape and polo shirts: the system built to be touched</figcaption>
 </figure>
-<figure class="full-sm" style="--r:1.778">
-  <div class="frame"><img src="m:artisan-coffee-gear/art13" alt="Olive polo shirt with the Artisan mark" width="560" height="315" loading="lazy" decoding="async"></div>
-</figure>
-</div>
-<figcaption>Business cards, washi tape and polo shirts: the system built to be touched</figcaption>
-</div>
     </div>
   </section>
   <section class="card chapter chapter--product" id="product-design" aria-label="Product Design">
     <div class="chapter-side">
       <div>
         <span class="pill-title"><span class="pill pill--product">Product</span><span class="pill pill--accent">Design</span></span>
-        <p class="chapter-text">A webshop that reads like an atelier: botanical line art, generous space and the machines centre stage, under one line, “Get to the core of your craft.” The same system dresses the green coffee side of the business.</p>
+        <p class="chapter-text">The branding carried into a webshop that reads like an atelier: botanical line art, generous space and the machines centre stage, under one line, “Get to the core of your craft.” The same system dresses the green coffee side of the business.</p>
         <ul class="deliverables">
           <li>Website</li>
           <li>E-commerce UI</li>
@@ -488,31 +503,28 @@ html:not(.embed) .page{padding-top:64px}
       </div>
     </div>
     <div class="chapter-media">
-<div class="stack">
-<div class="row row--wrap-sm">
-<figure class="full-sm" style="--r:1.778">
+<div class="statement" style="--field:#1e1d1d;--field-fg:#e4e1d8"><p>“Get to the core of your craft.”</p><span>The line that opens the webshop.</span></div>
+<figure style="--r:1.778">
   <div class="frame"><img src="m:artisan-coffee-gear/art17" alt="The Artisan website on a desktop screen" width="560" height="315" loading="lazy" decoding="async"></div>
+  <figcaption>The webshop on desktop</figcaption>
 </figure>
-<figure class="full-sm" style="--r:1.778">
-  <div class="frame"><img src="m:artisan-coffee-gear/art18" alt="Website section presenting espresso machines" width="560" height="315" loading="lazy" decoding="async"></div>
+<figure class="field" style="--field:#797c69">
+  <div class="field-inner field-inner--multi">
+    <div class="field-card" style="--r:1.778"><img src="m:artisan-coffee-gear/art18" alt="Website section presenting espresso machines" width="560" height="315" loading="lazy" decoding="async"></div>
+    <div class="field-card" style="--r:1.778"><img src="m:artisan-coffee-gear/art19" alt="Mobile pages and a shop counter with Artisan stickers" width="560" height="315" loading="lazy" decoding="async"></div>
+  </div>
+  <figcaption>The world's finest coffee machines, as the page puts it, and the brand on the phone and the counter</figcaption>
 </figure>
-<figure class="full-sm" style="--r:1.778">
-  <div class="frame"><img src="m:artisan-coffee-gear/art19" alt="Mobile pages and a shop counter with Artisan stickers" width="560" height="315" loading="lazy" decoding="async"></div>
-</figure>
-</div>
-<figcaption>The webshop on desktop and phone, and the brand on the counter</figcaption>
-</div>
-<div class="stack">
-<div class="row row--wrap-sm">
-<figure class="full-sm" style="--r:1.778">
+<figure style="--r:1.778">
   <div class="frame"><img src="m:artisan-coffee-gear/art22" alt="Green coffee packaging and jute sacks with the Artisan mark" width="560" height="315" loading="lazy" decoding="async"></div>
+  <figcaption>Packaging for green beans, brought in directly from Colombia</figcaption>
 </figure>
-<figure class="full-sm" style="--r:1.778">
-  <div class="frame"><img src="m:artisan-coffee-gear/art23" alt="Bottle and tablet visuals for raw beans from the source" width="560" height="315" loading="lazy" decoding="async"></div>
+<figure class="field" style="--field:#e4e1d8;--field-fg:#5c5f4b">
+  <div class="field-inner">
+    <div class="field-card" style="--r:1.778"><img src="m:artisan-coffee-gear/art23" alt="Bottle and tablet visuals for raw beans from the source" width="560" height="315" loading="lazy" decoding="async"></div>
+  </div>
+  <figcaption>Campaign visuals: raw beans, from the source</figcaption>
 </figure>
-</div>
-<figcaption>Packaging and campaign for green beans, brought in directly from Colombia</figcaption>
-</div>
     </div>
   </section>
   <section class="card result" id="result">
@@ -697,6 +709,29 @@ tablet.addEventListener('change',applyPad);
 addEventListener('load',applyPad);
 applyPad();
 
+// hero parallax: the first image drifts a little slower than the page
+(function(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const media=[...document.querySelectorAll('.hero-media .frame>img,.hero-media .frame>video')];
+  if(!media.length)return;
+  let raf=0;
+  const run=()=>{raf=0;media.forEach(m=>{const f=m.parentElement.getBoundingClientRect();if(f.bottom<0||f.top>innerHeight)return;const k=(f.top+f.height/2-innerHeight/2)/innerHeight;m.style.setProperty('--py',(Math.max(-1,Math.min(1,k))*-f.height*.035).toFixed(1)+'px')})};
+  addEventListener('scroll',()=>{if(!raf)raf=requestAnimationFrame(run)},{passive:true});
+  addEventListener('resize',run);run();
+})();
+// rails: a vertical wheel or trackpad gesture over a rail scrolls it sideways until it reaches an end
+document.querySelectorAll('.track').forEach(t=>{
+  t.addEventListener('wheel',e=>{
+    if(e.ctrlKey||Math.abs(e.deltaX)>=Math.abs(e.deltaY))return;
+    const max=t.scrollWidth-t.clientWidth;
+    if(max<=1)return;
+    const d=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?t.clientWidth:1);
+    if((d>0&&t.scrollLeft>=max-1)||(d<0&&t.scrollLeft<=1))return;
+    e.preventDefault();
+    t.style.scrollSnapType='none';clearTimeout(t._ws);t._ws=setTimeout(()=>{t.style.scrollSnapType=''},220);
+    t.scrollLeft=Math.max(0,Math.min(max,t.scrollLeft+d));
+  },{passive:false});
+});
 // embedded in the drive: keep links between case studies inside the frame
 if(document.documentElement.classList.contains('embed'))document.querySelectorAll('a[href^="/work/"]').forEach(a=>{a.href=a.getAttribute('href')+'?embed=1'});
 </script>

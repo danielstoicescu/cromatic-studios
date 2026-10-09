@@ -98,6 +98,15 @@ ${b.head ? `<div class="rail-head">${titlePills(b.head)}</div>\n` : ""}${b.stack
 </div>`;
   }
   if (b.site) return site(b);
+  if (b.field) {
+    // low-resolution artwork presented as cards on a brand colour field
+    return `<figure class="field" style="--field:${b.field}${b.fg ? `;--field-fg:${b.fg}` : ""}">
+  <div class="field-inner${b.items.length > 1 ? " field-inner--multi" : ""}">
+${b.items.map((it) => `    <div class="field-card" style="--r:${r4(ratio(it))}">${inner(it)}</div>`).join("\n")}
+  </div>${b.cap ? `\n  <figcaption>${b.cap}</figcaption>` : ""}
+</figure>`;
+  }
+  if (b.statement) return `<div class="statement" style="--field:${b.bg || "var(--accent)"};--field-fg:${b.fg || "var(--ink)"}"><p>${b.statement}</p>${b.sub ? `<span>${b.sub}</span>` : ""}</div>`;
   if (b.btn) return `<a class="btn site-link" href="${b.btn.href}" target="_blank" rel="noopener">${b.btn.label} <span aria-hidden="true">↗</span></a>`;
   throw new Error("unknown block " + JSON.stringify(b).slice(0, 80));
 }
@@ -197,7 +206,28 @@ html:not(.embed) .page{padding-top:64px}
   .hero-row{flex-wrap:wrap}
   .hero-row>figure{flex-basis:100%}
 }
-@media (prefers-reduced-motion:reduce){.screen--scroll img{animation:none}}
+/* colour fields and statements */
+.field{border-radius:var(--radius-m);background:var(--field);padding:clamp(22px,5vw,80px) clamp(16px,5vw,80px)}
+.field figcaption{color:var(--field-fg,rgba(255,255,255,.85));margin-top:clamp(16px,2vw,28px)}
+.field-inner{display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(14px,2.4vw,36px)}
+.field-card{width:min(100%,860px);aspect-ratio:var(--r);border-radius:14px;overflow:hidden;box-shadow:0 30px 60px -24px rgba(0,0,0,.45),0 0 0 1px rgba(0,0,0,.06)}
+.field-inner--multi .field-card{width:auto;flex:var(--r) 1 0;min-width:0;max-width:640px}
+.field-card img,.field-card video{width:100%;height:100%;object-fit:cover}
+.statement{border-radius:var(--radius-m);background:var(--field);color:var(--field-fg);padding:clamp(28px,6vw,96px) clamp(22px,5vw,80px);display:grid;gap:18px}
+.statement p{font-size:var(--fs-h2);line-height:var(--lh-h2);font-weight:900;letter-spacing:-.01em;max-width:14em}
+.statement span{font-size:var(--fs-lead);line-height:var(--lh-lead);font-weight:700;max-width:28em;opacity:.85}
+@media (max-width:640px){.field-inner--multi{flex-direction:column;align-items:center}.field-inner--multi .field-card{flex:none;width:100%}}
+/* the first image: a mask that opens from the bottom, the picture settling from a slow zoom, then a light parallax */
+.hero-media{animation:none}
+.hero-media .frame,.film-frame{clip-path:inset(0 0 0 0 round 24px);animation:hero-wipe 1.1s cubic-bezier(.16,1,.3,1) .12s both}
+.hero-row>figure:nth-child(2) .frame{animation-delay:.24s}
+.hero-media .frame>img,.hero-media .frame>video{scale:1.04;translate:0 var(--py,0px);will-change:scale,translate,filter;animation:hero-settle 1.6s cubic-bezier(.16,1,.3,1) .12s both}
+@keyframes hero-wipe{from{clip-path:inset(100% 0 0 0 round 24px)}to{clip-path:inset(0 0 0 0 round 24px)}}
+@keyframes hero-settle{from{scale:1.12;filter:blur(10px) brightness(1.25)}to{scale:1.04;filter:none}}
+@media (prefers-reduced-motion:reduce){
+  .screen--scroll img{animation:none}
+  .hero-media .frame,.film-frame,.hero-media .frame>img,.hero-media .frame>video{animation:none;clip-path:none;scale:1;translate:none}
+}
 </style>
 </head>
 <body>
@@ -334,6 +364,29 @@ ${rel.map((q) => `          <article class="proj">
 </main>
 
 <script>${STEAM_JS}
+// hero parallax: the first image drifts a little slower than the page
+(function(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const media=[...document.querySelectorAll('.hero-media .frame>img,.hero-media .frame>video')];
+  if(!media.length)return;
+  let raf=0;
+  const run=()=>{raf=0;media.forEach(m=>{const f=m.parentElement.getBoundingClientRect();if(f.bottom<0||f.top>innerHeight)return;const k=(f.top+f.height/2-innerHeight/2)/innerHeight;m.style.setProperty('--py',(Math.max(-1,Math.min(1,k))*-f.height*.035).toFixed(1)+'px')})};
+  addEventListener('scroll',()=>{if(!raf)raf=requestAnimationFrame(run)},{passive:true});
+  addEventListener('resize',run);run();
+})();
+// rails: a vertical wheel or trackpad gesture over a rail scrolls it sideways until it reaches an end
+document.querySelectorAll('.track').forEach(t=>{
+  t.addEventListener('wheel',e=>{
+    if(e.ctrlKey||Math.abs(e.deltaX)>=Math.abs(e.deltaY))return;
+    const max=t.scrollWidth-t.clientWidth;
+    if(max<=1)return;
+    const d=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?t.clientWidth:1);
+    if((d>0&&t.scrollLeft>=max-1)||(d<0&&t.scrollLeft<=1))return;
+    e.preventDefault();
+    t.style.scrollSnapType='none';clearTimeout(t._ws);t._ws=setTimeout(()=>{t.style.scrollSnapType=''},220);
+    t.scrollLeft=Math.max(0,Math.min(max,t.scrollLeft+d));
+  },{passive:false});
+});
 // embedded in the drive: keep links between case studies inside the frame
 if(document.documentElement.classList.contains('embed'))document.querySelectorAll('a[href^="/work/"]').forEach(a=>{a.href=a.getAttribute('href')+'?embed=1'});
 <\/script>
