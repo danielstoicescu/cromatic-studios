@@ -23714,8 +23714,9 @@ void main() {
         [1500.0, 4330.0],
         [1500, 4360],
         [1500, 5200],
-        // r118: a little lane cuts the corner down to the Dacia row: Sticker Republic, Printoteca
-        ...LANE_PTS,
+        [1500, 6020],
+        [1500, 6100],
+        [1250, 6100],
         [1170, 6100],
         [1170, 6180],
         [1170, 6515]
@@ -24027,9 +24028,12 @@ void main() {
       rp(ROUTE_MAIN),
       arc(-Math.PI / 2, -Math.PI), arc(Math.PI, Math.PI / 2), arc(Math.PI / 2, 0), arc(0, -Math.PI / 2),
       rp([[1430, 4260], [1400, 4260], [900, 4260], [820, 4260], [820, 4340], [802, 4900], [838, 5500], [820, 6100], [1170, 6100]]),
-      rp([[1570, 4260], [1600, 4260], [2080, 4260], [2062, 4900], [2098, 5500], [2080, 6100], [1250, 6100], [1230, 6100]]),
+      rp([[1570, 4260], [1600, 4260], [2080, 4260], [2062, 4900], [2098, 5500], [2080, 6100], [1500, 6100]]),
+      [[1500, 6100], [1400, 6100], [1300, 6100], [1230, 6100]],
       [[1230, 6100], [1200, 6100], [1170, 6100]],
-      rp([[1500, 4330], [1500, 4360], [1500, 5200], ...LANE_PTS]),
+      rp([[1500, 4330], [1500, 4360], [1500, 5200], [1500, 5700]]),
+      rp([[1500, 5700], [1500, 5900], [1500, 6100]]),
+      roundedPolyline(LANE_PTS, 120).map(([x, z]) => [x, z]),
       rp([[1170, 6100], [1170, 6180], ...ROUTE_MERGE.slice(1)]).filter(([, z]) => z < RAMP_BASE - 60)
     ];
     const key = (x, z) => Math.round(x * 2) + "," + Math.round(z * 2);
@@ -24818,6 +24822,7 @@ void main() {
       roundedPolyline([...ROUTE_MAIN, ...ROUTE_A.slice(1)]),
       roundedPolyline(ROUTE_B),
       roundedPolyline(ROUTE_C),
+      roundedPolyline(LANE_PTS, 120),
       cut(roundedPolyline([...ROUTE_MERGE, ...ROUTE_SECRET.slice(1)]))
     ].map((pts) => pts.map(([x, z]) => [x, z]));
   }
@@ -25273,7 +25278,7 @@ void main() {
     for (const b2 of BRANCHES) {
       if ((b2 === branch && chosen) || all) continue;
       const w0 = chosen ? ROUTE_W * 0.8 : ROUTE_W;
-      group.add(roadRibbonFromMap(roundedPolyline(branchRoute(b2)), (p) => w0 * (1 - 0.36 * laneK(p.x, p.z)), b2 === branch ? 0.72 : 0.7, mats.routeAlt));
+      group.add(roadRibbonFromMap(roundedPolyline(branchRoute(b2)), w0, b2 === branch ? 0.72 : 0.7, mats.routeAlt));
     }
     const flat = branchPoints(branch);
     const dense = roundedPolyline(flat).filter(([, z]) => z <= RAMP_LIP + 1);
@@ -25287,6 +25292,14 @@ void main() {
       if (jI < all3.length - 2) runs.push(all3.slice(jI));
     }
     for (const p3 of runs) addGold(p3);
+    // r120: the Printoteca lane, a narrower side street between Medical Avenue and the Dacia row
+    {
+      const lp = roundedPolyline(LANE_PTS, 120).map(([x, z]) => new Vector3(x, 0, z));
+      const lc = new Mesh(ribbonGeometry(lp, 40, 0.78), mats.routeCasing);
+      const lb = new Mesh(ribbonGeometry(lp, 35, 1.25), all ? mats.route : mats.routeAlt);
+      lc.receiveShadow = lb.receiveShadow = true;
+      group.add(lc, lb);
+    }
     // r101: on the map every street is open: all three are gold, no choosing
     if (all) for (const b2 of BRANCHES) {
       if (b2 === branch && chosen) continue;
@@ -25298,8 +25311,8 @@ void main() {
     parent.add(group);
     return group;
     function addGold(p3) {
-    const casing = new Mesh(ribbonGeometry(p3, (p) => ROUTE_W * (1 - 0.36 * laneK(p.x, p.z)) + 4.5, 0.8), mats.routeCasing);
-    const body = new Mesh(ribbonGeometry(p3, (p) => ROUTE_W * (1 - 0.36 * laneK(p.x, p.z)), 1.3), mats.route);
+    const casing = new Mesh(ribbonGeometry(p3, ROUTE_W + 4.5, 0.8), mats.routeCasing);
+    const body = new Mesh(ribbonGeometry(p3, ROUTE_W, 1.3), mats.route);
     casing.receiveShadow = body.receiveShadow = true;
     group.add(casing, body);
     const dashGeo = new PlaneGeometry(3.6, 20);
@@ -35060,10 +35073,10 @@ void main() {
         if (!tilt) {
           const rt = new WebGLRenderTarget(w, h, { samples: 2, type: HalfFloatType });
           const mat = new ShaderMaterial({
-            uniforms: { tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, amt: { value: 7 }, focus: { value: 0.46 }, band: { value: 0.1 }, t: { value: 0 } },
+            uniforms: { tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, amt: { value: 7 }, focus: { value: 0.46 }, band: { value: 0.1 }, t: { value: 0 }, zb: { value: 0 } },
             vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
             fragmentShader: `
-              uniform sampler2D tD; uniform vec2 res; uniform float amt, focus, band, t; varying vec2 vUv;
+              uniform sampler2D tD; uniform vec2 res; uniform float amt, focus, band, t, zb; varying vec2 vUv;
               void main(){
                 float dy = abs(vUv.y - focus);
                 float r = amt * smoothstep(band, band + 0.42, dy);
@@ -35079,6 +35092,13 @@ void main() {
                   c /= 12.0;
                 }
                 vec2 q = vUv - 0.5;
+                // speed: a soft radial blur that leaves the middle (the jet) sharp and feathers out
+                if (zb > 0.002) {
+                  float m = smoothstep(0.08, 0.55, length(q * vec2(res.x / res.y, 1.0)));
+                  vec3 acc = c;
+                  for (int i = 1; i < 10; i++) acc += texture2D(tD, vUv - q * zb * 0.075 * float(i) / 9.0).rgb;
+                  c = mix(c, acc / 10.0, m);
+                }
                 // a little lateral colour towards the edges, like an old lens
                 vec2 ca = q * dot(q, q) * 5.0 / res * res.y * 0.0035;
                 c.r = mix(c.r, texture2D(tD, vUv + ca).r, 0.85);
@@ -35090,9 +35110,12 @@ void main() {
                 c += vec3(0.018, 0.012, -0.004) * smoothstep(0.35, 1.0, l) - vec3(0.004, 0.0, -0.01) * (1.0 - smoothstep(0.0, 0.35, l));
                 c = c * 0.95 + 0.018;
                 // grain: per frame, strongest in the mid-tones
-                float n = fract(sin(dot(floor(vUv * res / 1.5) + t * 61.0, vec2(12.9898, 78.233))) * 43758.5453);
-                float n2 = fract(sin(dot(floor(vUv * res / 1.5) + t * 37.0, vec2(39.346, 11.135))) * 24634.6345);
-                c += ((n + n2) - 1.0) * 0.05 * (0.45 + 0.55 * (1.0 - abs(l - 0.5) * 2.0));
+                // grain at 24 frames a second, like film (every display frame was a flicker)
+                float tf = floor(t * 24.0);
+                vec2 gp = floor(vUv * res / 1.6);
+                float n = fract(sin(dot(gp + vec2(tf * 7.13, tf * 3.71), vec2(12.9898, 78.233))) * 43758.5453);
+                float n2 = fract(sin(dot(gp + vec2(tf * 1.97, tf * 5.29), vec2(39.346, 11.135))) * 24634.6345);
+                c += ((n + n2) - 1.0) * 0.034 * (0.45 + 0.55 * (1.0 - abs(l - 0.5) * 2.0));
                 gl_FragColor = vec4(c, 1.0);
                 #include <tonemapping_fragment>
                 #include <colorspace_fragment>
@@ -35108,6 +35131,7 @@ void main() {
         tilt.mat.uniforms.amt.value = 4.2 * renderer.getPixelRatio();
         tilt.mat.uniforms.band.value = 0.16;
         tilt.mat.uniforms.t.value = (now * 0.001) % 100;
+        tilt.mat.uniforms.zb.value = mapMode ? mapView.zoomBlur || 0 : 0;
         renderer.setRenderTarget(tilt.rt);
         renderer.render(scene, camera);
         renderer.setRenderTarget(null);
@@ -35851,7 +35875,7 @@ void main() {
         for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, x: b.x, z: b.z, h: b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
         ZDROVIT_YARD.forEach((n, i) => { const [x, z] = yardSpot(yardSlotOf(i)); add({ id: "y-" + i, br: "C", x: 1500, z, px: x, pz: z, h: 22, name: n, line: "IN THE ZDROVIT YARD", c: "#cfcdc8", t: "#3d3c39", small: true, desc: `${n}, one of the brands in the Zdrovit yard. By Cromatic Studios.` }); });
         add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Casa Berero", line: "BRAND \xB7 BY CROMATIC STUDIOS", c: "#111111", t: "#ffffff", act: "bereroTag" });
-        add({ id: "boxes", br: "A", x: 900, z: 4262, px: 706, pz: 4198, h: 40, name: "Two Min Boxes", line: "COFFEE PACKAGING \xB7 FRESH DROP", c: "#2f2f2f", t: "#ffffff", act: "boxPop" });
+        add({ id: "boxes", br: "A", x: 900, z: 4262, px: 706, pz: 4198, h: 40, name: "The Product", line: "TWO MIN BOXES \xB7 COFFEE PACKAGING", c: "#cfcdc8", t: "#2a2926", act: "boxPop" });
         add({ id: "friends", stop: "merge", name: "40+ Friends", line: "ERSTE \xB7 MICROSOFT \xB7 GLOBAL RECORDS", c: "#B098C8", t: "#1a1420" });
       })();
       // r117: how close you must be for a place to show its card (a coloured dot otherwise)
@@ -36002,13 +36026,37 @@ void main() {
         jetFx.phase = "board"; jetFx.t = 0; jetFx.baam = false; jetFx.speed = 0; jetFx.watch = false; jetFx.passBack = false;
         document.body.classList.add("map-takeoff");
         if (mapBoarding) mapCloseBoarding(true);
-        mapView.follow = true; mapView.focus = null;
-        mapView.distGoal = innerWidth < 720 ? 1000 : 860; mapView.distRate = 0.9;
-        mapView.yawGoal = -1.15; mapView.pitchGoal = 0.36;
+        mapUI.cineStop?.();
+        // r120: the camera rides one smooth rig from here (see jetCam): where it is now is where it starts
+        mapView.follow = false; mapView.focus = null;
+        mapView.yawGoal = mapView.pitchGoal = mapView.distGoal = null;
+        jetFx.tt = 0;
+        jetFx.cam0 = { yaw: mapView.yaw, pitch: mapView.pitch, dist: mapView.dist, x: mapView.tgt.x, z: mapView.tgt.z, y: mapView.lookY || 0 };
         // the jet reaches the deck (y 690) about 4.8 s after rotation: the clouds wait right there
         const c0 = Math.sqrt(300 / 30);
         jet.clouds.position.set(JET_HOME.x, 0, JET_HOME.z + 975 + 390 * c0 + 20 * c0 * c0);
         jet.clouds.visible = true;
+      }
+      // r120: the take-off camera. Always aimed at the jet (it stays in the middle), and every value
+      // eases on one clock: a low three-quarters view while it rolls, slowly swinging behind and
+      // pulling back as it lifts, so it climbs away from you into the clouds
+      const jss = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * x * (x * (x * 6 - 15) + 10); };
+      function jetCam(dt) {
+        const g = worldRefs.jet.group, c0 = jetFx.cam0;
+        if (!c0 || !g.visible) return;
+        jetFx.tt += dt;
+        const T = jetFx.tt, ph = innerWidth < 720 ? 1.35 : 1;
+        let yaw = -1.0 - 1.35 * jss((T - 1.5) / 9);
+        const pitch = 0.3 - 0.1 * jss((T - 6) / 5);
+        const dist = (950 + 1250 * jss((T - 1.5) / 8)) * ph;
+        const w = jss(T / 2.6);
+        let dy = yaw - c0.yaw; while (dy > Math.PI) { dy -= Math.PI * 2; yaw -= Math.PI * 2; } while (dy < -Math.PI) { dy += Math.PI * 2; yaw += Math.PI * 2; }
+        mapView.yaw = c0.yaw + (yaw - c0.yaw) * w;
+        mapView.pitch = c0.pitch + (pitch - c0.pitch) * w;
+        mapView.dist = c0.dist + (dist - c0.dist) * w;
+        mapView.tgt.x = c0.x + (g.position.x - c0.x) * w;
+        mapView.tgt.z = c0.z + (g.position.z - c0.z) * w;
+        mapView.lookY = mapView.lookYGoal = c0.y + (g.position.y + 14 - c0.y) * w;
       }
       function jetUpdate(dt, now) {
         const jet = worldRefs.jet;
@@ -36019,6 +36067,7 @@ void main() {
         if (jetFx.phase === "idle") return;
         jetFx.t += dt;
         const t = jetFx.t, g = jet.group;
+        if (jetFx.phase !== "gone") jetCam(dt);
         if (jetFx.phase === "board") {
           const k = Math.min(1, t / 1.2);
           jet.stair.scale.setScalar(1 - k * 0.999);
@@ -36037,17 +36086,7 @@ void main() {
             // rotate, lift, climb; the camera pulls back to watch it go
             const c = T - 5;
             if (jetFx.phase === "roll") jetFx.phase = "climb";
-            if (c > 1.3 && !jetFx.watch) {
-              // the camera lets go behind the jet and watches it climb away into the cloud deck
-              jetFx.watch = true;
-              const cz = jet.clouds.position.z;
-              mapView.follow = false; mapView.focus = { x: JET_HOME.x, z: g.position.z + (cz - g.position.z) * 0.72 };
-              mapView.lookYGoal = 470;
-              mapView.distGoal = innerWidth < 720 ? 2300 : 1900; mapView.distRate = 0.9; mapView.pitchGoal = 0.2; mapView.yawGoal = -(Math.PI - (innerWidth < 720 ? 0.12 : 0.3));
-            }
             g.position.y = c * c * 30;
-            // the look follows the jet's height up to the deck, so it never drops out of the picture
-            if (jetFx.watch) mapView.lookYGoal = Math.min(320, Math.max(120, g.position.y + (innerWidth < 720 ? 120 : 40)));
             g.rotation.x = -Math.min(0.26, c * 0.17);
             g.rotation.z = Math.sin(Math.min(1, c / 4) * Math.PI) * 0.1;
             jetFx.speed = Math.max(0, 1 - c / 3);
@@ -36329,7 +36368,6 @@ void main() {
           if (pl.tm) {
             // Two Minutes: three double espressos, the boxes come down from our old balcony, a fourth, and the rush
             coffee.done = false; coffee.phase = "sip1"; coffee.t = 0; coffee.served = 0;
-            mapView.distGoal = innerWidth < 720 ? 3000 : 2500;
             showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52", `<p>${pl.desc}</p>`, `<button class="mcd-open">Watch the film \u2192</button>`);
             card.querySelector(".mcd-open").onclick = () => ui.tmMedia?.click();
             return;
@@ -36352,7 +36390,21 @@ void main() {
           mapView.yawGoal = mapView.pitchGoal = mapView.distGoal = null;
           cine = { t: 0, dur, f, to, dt: 0 };
         };
+        // hand-placed shots where the street layout hides the front (Coffee Street's corner)
+        const SHOTS = {
+          tm: { t: [690, 95, 4236], yaw: 1.22, pitch: 0.3, dist: 1380 },
+          boxes: { t: [740, 40, 4210], yaw: 1.25, pitch: 0.3, dist: 1450 },
+          lab: { t: [640, 40, 4180], yaw: 1.15, pitch: 0.32, dist: 1350 },
+          hq: { t: [1010, 60, 4160], yaw: 0.35, pitch: 0.4, dist: 1700 }
+        };
         const cineIn = (pl) => {
+          const sh = SHOTS[pl.id];
+          if (sh && jetFx.phase === "idle") {
+            mapView.follow = false;
+            mapView.focus = { x: carPos.x, z: carPos.z };
+            cineTo({ yaw: sh.yaw, pitch: sh.pitch, dist: sh.dist * (innerWidth < 720 ? 1.35 : 1), lookY: sh.t[1], fx: sh.t[0], fz: sh.t[2], drift: true }, 3.2);
+            return;
+          }
           if (pl.tap || pl.board || pl.stop === "end" || pl.tm || (pl.stop && !pl.past) || jetFx.phase !== "idle") { cine = null; return; }
           const bx = pl.px ?? pl.x, bz = pl.pz ?? pl.z, phone = innerWidth < 720;
           // split van minus building into along-the-street (s) and across (the facade normal)
@@ -36601,8 +36653,8 @@ void main() {
             mapView.pos.set(mapView.tgt.x + Math.sin(mapView.yaw) * cp * mapView.dist, mapView.tgt.y + Math.sin(mapView.pitch) * mapView.dist, mapView.tgt.z + Math.cos(mapView.yaw) * cp * mapView.dist);
             // speed: streaks at the edges and a shake that grow with the jet's speed
             const sp = jetFx.speed || 0;
-            speedEl.style.opacity = (sp * sp).toFixed(3);
-            if (sp > 0.05) { const a2 = sp * sp * 0.7; mapView.pos.x += (Math.random() - 0.5) * a2; mapView.pos.y += (Math.random() - 0.5) * a2; }
+            speedEl.style.opacity = "0";
+            mapView.zoomBlur = sp * sp;
             // pins: projected every frame; labels give way to their neighbours when crowded
             const W = innerWidth, H = innerHeight, placed = [];
             const compact = mapView.dist > 8600;
@@ -36748,6 +36800,7 @@ void main() {
       window.__takeoff = () => mapTakeoff();
       window.__cityDbg = () => ({ zones: buildKeepOut().map((z) => [z.x, z.y, z.r]), extra: EXTRA_KEEPOUT.map((z) => [z.x, z.y, z.r]), routes: Object.fromEntries(["A", "B", "C"].map((b) => [b, roundedPolyline(branchPoints(b)).map(([x, z]) => [Math.round(x), Math.round(z)])])), parks: PARKS, stops: STOPS, places: MAP_PLACES.map((p) => [p.name, p.px ?? p.x, p.pz ?? p.z, p.id, !!p.find]) });
       window.__path = () => route.points.filter((_, i) => i % 3 === 0).map((p) => [Math.round(p.x), Math.round(p.z)]);
+      window.__mv = (o) => { mapView.follow = false; mapView.focus = null; mapView.yawGoal = mapView.pitchGoal = mapView.distGoal = null; Object.assign(mapView, o.v || {}); if (o.t) mapView.tgt.set(o.t[0], o.t[1] || 0, o.t[2]); mapView.lookY = mapView.lookYGoal = o.t ? o.t[1] || 0 : mapView.lookY; };
       window.__mapSet = (d, x, z) => { mapView.dist = d; mapView.distGoal = null; mapView.follow = false; mapView.tgt.set(x, 0, z); };
       window.__api = api;
       window.__xp = () => ({ pts: state.points, log: xpLog.map((e) => e.title + " +" + e.pts), pending: xpPending && xpPending.title, collected: [...xpCollected], chosen: state.branchChosen, branch: state.branch, card: currentCardStop, veh: state.vehicleId });
