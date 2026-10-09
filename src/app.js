@@ -24705,6 +24705,7 @@ void main() {
     }
     for (const t of CITY_TREES) spots.push(t);
     for (let i = spots.length - 1; i >= 0; i--) { const sp = spots[i], v = CITY_NET?.at?.(sp.x, sp.z); if (v === 1 || (v === 2 && !sp.med) || (!sp.med && CITY_NET?.roadDist && CITY_NET.roadDist(sp.x, sp.z) < 8)) spots.splice(i, 1); }
+    for (const t of spots) TREE_BLOBS.push({ x: t.x, z: t.z, w: 22 * t.s, d: 22 * t.s, h: 30 * t.s });
     const round = spots.filter((_, i) => i % 4 !== 3);
     const conif = spots.filter((_, i) => i % 4 === 3);
     const trunkGeo = new CylinderGeometry(2.4, 3.2, 16, 6);
@@ -25174,6 +25175,7 @@ void main() {
           // r119: thinner: every few lots stays a garden (the street keeps its line)
           if (rnd() < (cls === "minor" ? (core(cx, cz) ? 0.4 : 0.5) : cls === "route" ? 0.3 : 0.22)) { s += bw + 4 + rnd() * 8; continue; }
           claim(cx, cz, ux, uz, bw, d);
+          const fpI = FOOTPRINTS.length;
           // heights: boulevards carry the interwar blocks, lanes the houses, the drive's own roads
           // stay low so the street cameras see over them
           let h;
@@ -25183,6 +25185,7 @@ void main() {
           h = Math.round(h);
           // local frame: x along the street, +z away from it (the front faces the street, at -z)
           frame(cx, cz, Math.atan2(nx, nz));
+          FOOTPRINTS.push({ x: cx, z: cz, w: bw, d, ang: Math.atan2(nx, nz), h });
           const hw = bw / 2, hd = d / 2;
           const floors = Math.max(2, Math.round(h / 13));
           const tint = tmpC.copy(tints[Math.floor(rnd() * tints.length)]).offsetHSL(0, 0, (rnd() - 0.5) * 0.04);
@@ -26240,11 +26243,56 @@ void main() {
   function facing(g, face) {
     g.rotation.y = face === "+x" ? Math.PI / 2 : face === "-x" ? -Math.PI / 2 : face === "-z" ? Math.PI : 0;
   }
+  // r127: no shadow maps any more; every building leaves a soft contact shadow on the ground instead
+  var FOOTPRINTS = [], TREE_BLOBS = [];
+  function footprintOf(obj) {
+    obj.updateMatrixWorld(true);
+    const bb = new Box3().setFromObject(obj);
+    if (!isFinite(bb.min.x)) return;
+    const w = bb.max.x - bb.min.x, d = bb.max.z - bb.min.z, h = bb.max.y - Math.max(0, bb.min.y);
+    if (h < 6 || w > 260 || d > 260 || w * d > 30000) return;
+    FOOTPRINTS.push({ x: (bb.min.x + bb.max.x) / 2, z: (bb.min.z + bb.max.z) / 2, w, d, ang: 0, h });
+  }
   function finish(g, parent, x, z) {
     g.position.set(x, 0, z);
     g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
     parent.add(g);
     return g;
+  }
+  function buildContactShadows(parent) {
+    // every landmark group standing in the world (the city's own blocks already pushed theirs)
+    for (const c of parent.children) if (c.isGroup && c.visible !== false && c.name !== "goldenRoute") footprintOf(c);
+    const dirX = -Math.cos(0.55), dirZ = -Math.sin(0.55);
+    const soft = (round) => canvasTexture(128, 128, (ctx) => {
+      if (round) { const g2 = ctx.createRadialGradient(64, 64, 6, 64, 64, 64); g2.addColorStop(0, "rgba(0,0,0,1)"); g2.addColorStop(0.55, "rgba(0,0,0,.55)"); g2.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = g2; ctx.fillRect(0, 0, 128, 128); return; }
+      for (let k = 0; k < 14; k++) { const m2 = 4 + k * 2.2; ctx.fillStyle = "rgba(0,0,0,0.11)"; ctx.beginPath(); ctx.roundRect(m2, m2, 128 - 2 * m2, 128 - 2 * m2, 26 - k); ctx.fill(); }
+    });
+    const mk = (tex, list, op) => {
+      if (!list.length) return;
+      const m = new MeshBasicMaterial({ map: tex, color: "#1c1026", transparent: true, opacity: op, depthWrite: false, fog: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+      m.userData.outlineParameters = { visible: false };
+      const pos = new Float32Array(list.length * 12), uv = new Float32Array(list.length * 8), idx = [];
+      list.forEach((f, i) => {
+        const off = Math.min(80, f.h * 0.28);
+        const cx = f.x + dirX * off * 0.5, cz = f.z + dirZ * off * 0.5, hw = (f.w * 1.3 + off) / 2, hd = (f.d * 1.3 + off) / 2;
+        const c = Math.cos(f.ang || 0), sn = Math.sin(f.ang || 0);
+        [[-hw, -hd, 0, 0], [hw, -hd, 1, 0], [hw, hd, 1, 1], [-hw, hd, 0, 1]].forEach(([lx, lz, u, v], k) => {
+          pos[i * 12 + k * 3] = cx + lx * c + lz * sn; pos[i * 12 + k * 3 + 1] = 2.2; pos[i * 12 + k * 3 + 2] = cz - lx * sn + lz * c;
+          uv[i * 8 + k * 2] = u; uv[i * 8 + k * 2 + 1] = v;
+        });
+        const v0 = i * 4; idx.push(v0, v0 + 2, v0 + 1, v0, v0 + 3, v0 + 2);
+      });
+      const geo = new BufferGeometry();
+      geo.setAttribute("position", new BufferAttribute(pos, 3)); geo.setAttribute("uv", new BufferAttribute(uv, 2));
+      geo.setIndex(list.length * 4 > 65535 ? new Uint32BufferAttribute(idx, 1) : new Uint16BufferAttribute(idx, 1));
+      geo.computeBoundingSphere();
+      const mesh = new Mesh(geo, m);
+      mesh.frustumCulled = false; mesh.renderOrder = -1;
+      parent.add(mesh);
+    };
+    mk(soft(false), FOOTPRINTS, 0.7);
+    mk(soft(true), TREE_BLOBS, 0.5);
+    window.__fp = [FOOTPRINTS.length, TREE_BLOBS.length];
   }
   // one building per brand, in a few architectural kinds; the front is local +z
   function buildBrandBuilding(parent, o) {
@@ -26940,7 +26988,7 @@ void main() {
     });
     // the lane itself: small houses in pastel plaster and red tiles, trees, two lamps
     const rnd = rng(1188), tints = ["#f1d8c4", "#e6dcc8", "#d9e3d4", "#f2e2b8", "#e8cfd4", "#d6dde6"];
-    for (const [t, sd] of [[0.14, 1], [0.2, -1], [0.5, 1], [0.38, -1], [0.82, -1], [0.66, 1], [0.86, 1]]) {
+    for (const [t, sd] of [[0.14, 1], [0.2, -1], [0.5, 1], [0.38, -1], [0.66, 1]]) {
       const sp = laneSpot(t, sd, 50), W = 34 + rnd() * 14, D = 30 + rnd() * 8, H = 20 + rnd() * 14;
       const g = new Group(), wall = new MeshStandardMaterial({ color: tints[Math.floor(rnd() * tints.length)], roughness: 0.9 });
       const body = new Mesh(new BoxGeometry(W, H, D), wall); body.position.y = H / 2; g.add(body);
@@ -27143,9 +27191,9 @@ void main() {
   // r125: the services live in three houses on the way from Dacia 99 to Olari 9: two on the
   // left kerb, one on the right; each carries its card (DOM, projected) and opens on a tap
   var SERVICE_HOUSES = [
-    { x: 1092, z: 6690, face: "+x", svc: [0] },
-    { x: 1092, z: 6960, face: "+x", svc: [1] },
-    { x: 1252, z: 6880, face: "-x", svc: [2, 3] }
+    { x: 1080, z: 6640, face: "+x", svc: [0], cx: -170 },
+    { x: 1080, z: 7010, face: "+x", svc: [1], cx: -170 },
+    { x: 1262, z: 6830, face: "-x", svc: [2, 3], cx: 190 }
   ];
   function buildServiceHouses(parent) {
     const cols = ["#28C840", "#FED012", "#B098C8"];
@@ -30194,7 +30242,7 @@ void main() {
     // r118: the city fabric goes last, so it knows every landmark it has to leave room for.
     // r125: and it is built a moment later, once the intro is already playing (see boot)
     let fabricDone = false;
-    world.userData.buildFabric = () => { if (fabricDone) return; fabricDone = true; buildRoads(world); buildBuildings(world); buildTrees(world); };
+    world.userData.buildFabric = () => { if (fabricDone) return; fabricDone = true; buildRoads(world); buildBuildings(world); buildTrees(world); buildContactShadows(world); };
     const ramp = buildRamp(world, accent);
     const clouds = buildClouds(world);
     scene.add(world);
@@ -33562,7 +33610,7 @@ void main() {
       var renderer = new WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile() ? 1.8 : 2));
       renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.enabled = false; // r127: contact shadows instead (see buildContactShadows)
       renderer.shadowMap.type = PCFSoftShadowMap;
       renderer.toneMapping = ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.05;
@@ -33707,6 +33755,14 @@ void main() {
           window.__vehSize = [id, Math.round(sz.x), Math.round(sz.y), Math.round(sz.z), +VEH_S.toFixed(2)];
         }
         veh.group.scale.setScalar(VEH_S);
+        {
+          const sz = bb.getSize(new Vector3()), c = bb.getCenter(new Vector3());
+          const bt = canvasTexture(64, 64, (ctx) => { const g2 = ctx.createRadialGradient(32, 32, 4, 32, 32, 32); g2.addColorStop(0, "rgba(0,0,0,.55)"); g2.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = g2; ctx.fillRect(0, 0, 64, 64); });
+          const blob = new Mesh(new PlaneGeometry(sz.x * 1.5, sz.z * 1.25).rotateX(-Math.PI / 2), new MeshBasicMaterial({ map: bt, transparent: true, depthWrite: false, fog: false }));
+          blob.material.userData.outlineParameters = { visible: false };
+          blob.position.set(c.x, 2.4 / VEH_S, c.z); blob.renderOrder = -1;
+          veh.group.add(blob);
+        }
         spawnStart = performance.now();
       }
       setVehicle("groovy");
@@ -35529,19 +35585,20 @@ void main() {
             vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
             fragmentShader: `
               uniform sampler2D tD; uniform vec2 res; uniform float amt, focus, band, t, zb; varying vec2 vUv;
+              ${isMobile() ? "#define TAPS 6\n#define LITE 1" : "#define TAPS 12"}
               void main(){
                 float dy = abs(vUv.y - focus);
                 float r = amt * smoothstep(band, band + 0.42, dy);
                 vec3 c = vec3(0.0);
                 if (r < 0.35) c = texture2D(tD, vUv).rgb;
                 else {
-                  for (int i = 0; i < 12; i++) {
+                  for (int i = 0; i < TAPS; i++) {
                     float fi = float(i);
                     float a = fi * 2.39996;
-                    float rr = sqrt((fi + 0.5) / 12.0);
+                    float rr = sqrt((fi + 0.5) / float(TAPS));
                     c += texture2D(tD, vUv + vec2(cos(a), sin(a)) * rr * r / res).rgb;
                   }
-                  c /= 12.0;
+                  c /= float(TAPS);
                 }
                 vec2 q = vUv - 0.5;
                 // speed: a soft radial blur that leaves the middle (the jet) sharp and feathers out
@@ -35552,9 +35609,11 @@ void main() {
                   c = mix(c, acc / 10.0, m);
                 }
                 // a little lateral colour towards the edges, like an old lens
+                #ifndef LITE
                 vec2 ca = q * dot(q, q) * 5.0 / res * res.y * 0.0035;
                 c.r = mix(c.r, texture2D(tD, vUv + ca).r, 0.85);
                 c.b = mix(c.b, texture2D(tD, vUv - ca).b, 0.85);
+                #endif
                 c *= 1.0 - dot(q, q) * 0.42;
                 // print film: lifted blacks, warm highlights, cool shadows, a touch less saturation
                 float l = dot(c, vec3(0.299, 0.587, 0.114));
@@ -35589,11 +35648,11 @@ void main() {
         renderer.setRenderTarget(null);
         renderer.render(tilt.sc, tilt.cam);
       }
-      var perf = { avg: 16, t: 0, dpr: Math.min(window.devicePixelRatio, isMobile() ? 1.8 : 2) };
+      var perf = { avg: 16, t: 0, dpr: Math.min(window.devicePixelRatio, isMobile() ? 1.5 : 2) };
       function adaptResolution(rawMs, now) {
         perf.avg += (Math.min(rawMs, 60) - perf.avg) * 0.05;
         if (now - perf.t < 1500 || document.hidden || perf.lock) return;
-        const max = Math.min(window.devicePixelRatio, isMobile() ? 1.8 : 2);
+        const max = Math.min(window.devicePixelRatio, isMobile() ? 1.5 : 2);
         let next = perf.dpr;
         if (perf.avg > 20 && perf.dpr > 1) next = Math.max(1, perf.dpr - 0.25);
         else if (perf.avg < 13 && perf.dpr < max) next = Math.min(max, perf.dpr + 0.25);
@@ -35625,7 +35684,7 @@ void main() {
         // a calm city speed everywhere on the ground (chapter jumps and the flight excepted)
         if (!siteMode && now > jumpGuard && (mapMode || prevL < route.stopL.end + 400)) {
           const toEnd = mapMode && mapNav.place?.stop === "end" && state.L > route.total - 1050;
-          const maxStep = (mapMode ? (toEnd ? 300 : Math.abs(state.targetL - state.L) > 1400 ? 3200 : 1400) : 620) * dt;
+          const maxStep = (mapMode ? (toEnd ? 300 : Math.abs(state.targetL - state.L) > 1400 ? 2300 : 1300) : 620) * dt;
           state.L = clamp2(state.L, prevL - maxStep, prevL + maxStep);
         }
         {
@@ -36668,7 +36727,7 @@ void main() {
         const show = mapMode && !mapIntro && olari.t < 0 && jetFx.phase === "idle" && !mapBoarding && mapView.dist < 5200;
         for (const box of roadSvc) {
           if (!show) { if (!box._off) { box._off = true; box.classList.add("off"); } continue; }
-          warpV(svcProj.set(box._h.x, 52, box._h.z)).project(camera);
+          warpV(svcProj.set(box._h.x + (box._h.cx || 0), 70, box._h.z)).project(camera);
           const x = (svcProj.x * 0.5 + 0.5) * innerWidth, y = (-svcProj.y * 0.5 + 0.5) * innerHeight;
           const off = svcProj.z > 1 || x < -160 || x > innerWidth + 160 || y < 80 || y > innerHeight + 40;
           if (box._off !== off) { box._off = off; box.classList.toggle("off", off); }
@@ -36761,11 +36820,25 @@ void main() {
             <button data-go="invest" style="--wc:#119BFE"><b>Fintech Boulevard</b><i>Investimental, Assetto, Bepco</i></button>
             <button data-go="tac" style="--wc:#F28BA8"><b>Medical Avenue</b><i>The Aesthetic Court, Zdrovit, Elithia</i></button>
             <button data-go="end" style="--wc:#FED012"><b>Olari 9 \u00B7 the studio</b><i>Come by, then board the jet</i></button>
-          </div><button class="mw-free">Just let me explore \u2192</button>`);
+          </div><button class="mw-free">Help me set my first direction \u2192</button>`);
         const welcome = (on) => welcomeEl.classList.toggle("hidden", !on);
+        // a hand over the street in front of the van: tap here, the van drives there
+        const hintEl = el("div", "tap-hint hidden", `<span class="th-ring"></span><span class="th-hand">\u{1F446}</span><b>Tap the street to drive</b>`);
+        let hintAt = null;
+        const showTapHint = () => {
+          route.posAt(Math.min(route.total, state.L + 150), _hintV = _hintV || new Vector3());
+          hintAt = _hintV.clone();
+          mapView.follow = true; mapView.distGoal = innerWidth < 720 ? 2200 : 1900;
+          hintEl.classList.remove("hidden");
+          const off = () => { hintEl.classList.add("hidden"); hintAt = null; canvas.removeEventListener("pointerdown", off); };
+          canvas.addEventListener("pointerdown", off);
+          setTimeout(off, 12000);
+        };
+        let _hintV = null;
         welcomeEl.onclick = (e) => {
           const b = e.target.closest("button"); if (!b) return;
           welcome(false);
+          if (b.classList.contains("mw-free")) { showTapHint(); return; }
           if (b.dataset.go) mapGo(MAP_PLACES.find((p) => p.id === b.dataset.go));
         };
         // the street names float high over the head of each street, as the drive's motorway signs
@@ -36777,7 +36850,7 @@ void main() {
         const skip = el("button", "kz-skip hidden", `Skip intro <span>→</span>`);
         const baamEl = el("div", "jet-baam hidden", `<b>Wheels up!</b><span>Your boarding pass is on board. We write back within one working day.</span>`);
         const speedEl = el("div", "speed-lines");
-        box.append(speedEl, pinsEl, top, rides, zoom, dock, card, skip, baamEl, welcomeEl);
+        box.append(speedEl, pinsEl, top, rides, zoom, dock, card, skip, baamEl, welcomeEl, hintEl);
         ui.root.appendChild(box);
         top.querySelector(".map-exit").onclick = () => setMapMode(false);
         top.querySelector(".map-crew").onclick = () => { welcome(false); openCrew(); };
@@ -37269,6 +37342,7 @@ void main() {
               if (o.p.b._tf !== tf) { o.p.b._tf = tf; o.p.b.style.transform = tf; }
               pinBoxes.push([o.x, o.y]);
             }
+            if (hintAt) { warpV(proj.copy(hintAt)).project(camera); hintEl.style.transform = `translate3d(${((proj.x * 0.5 + 0.5) * W).toFixed(1)}px, ${((-proj.y * 0.5 + 0.5) * H).toFixed(1)}px, 0)`; }
             // a street sign gives way to any place pin it would cover
             for (const e of streetEls) {
               const hit = !e._xy;
@@ -37449,7 +37523,12 @@ void main() {
         if (kzLoader) setTimeout(() => requestAnimationFrame(() => setTimeout(go, 0)), 250); else { go(); }
       });
       Promise.all([fabricReady, Promise.race([document.fonts?.ready ?? Promise.resolve(), new Promise((r) => setTimeout(r, 1600))])]).then(() => {
-        renderer.compile(scene, camera);
+        // r127: every shader in the scene is prepared while the intro plays (hidden ones too), so
+        // nothing compiles mid-journey; compileAsync uses the parallel compile extension when present
+        const hiddenNow = [];
+        scene.traverse((o) => { if (!o.visible && (o.isMesh || o.isGroup)) { hiddenNow.push(o); o.visible = true; } });
+        try { renderer.compile(scene, camera); } catch {}
+        hiddenNow.forEach((o) => (o.visible = false));
         clearInterval(bootT);
         try {
           vehPreviews = makeVehiclePreviews();
