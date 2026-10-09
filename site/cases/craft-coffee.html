@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Craft Coffee — Cromatic Studios</title>
+<meta name="description" content="Craft Coffee: brand identity, packaging, uniforms, merch and the craftcoffee.ro online shop for the official La Marzocco distributor in Romania. By Cromatic Studios, Bucharest.">
+<link rel="canonical" href="%%SITE_URL%%/work/craft-coffee/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Craft Coffee — Cromatic Studios">
+<meta property="og:description" content="Craft Coffee: brand identity, packaging, uniforms, merch and the craftcoffee.ro online shop for the official La Marzocco distributor in Romania. By Cromatic Studios, Bucharest.">
+<meta property="og:url" content="%%SITE_URL%%/work/craft-coffee/">
+<meta property="og:image" content="m:craft-coffee/site-desktop">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<script>(function(){try{if(/[?&]embed\b/.test(location.search)||window.self!==window.top)document.documentElement.classList.add("embed")}catch(e){document.documentElement.classList.add("embed")}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Darker+Grotesque:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#121212;
+  --paper:#F1F1F1;
+  --white:#FFFFFF;
+  --yellow:#FFD147;
+  --cream:#FFEDB5;
+  --blue:#519EF5;
+  --blue-soft:#DCEBFD;
+  --green:#2ECB42;
+  --green-soft:#D8F5DC;
+  --purple:#B49BE0;
+  --purple-soft:#EAE2F8;
+  --red:#F0544C;
+  --red-soft:#FCDEDC;
+  --orange:#F58D42;
+  --orange-soft:#FCE3CF;
+  --muted:#5a5a5a;
+
+  --radius-l:36px;
+  --radius-m:18px;
+  --line:2px solid var(--ink);
+  --gutter:clamp(10px,1.2vw,16px);
+  --pad:clamp(22px,4vw,64px);
+  --media-pad:var(--gutter);
+  --font:"Darker Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+
+  /* type scale (~1.333), 375px -> 1440px */
+  --fs-display:clamp(3rem,1.591rem + 6.01vw,7rem);
+  --fs-hero:clamp(2.86rem,1.761rem + 4.687vw,5.98rem);
+  --fs-h2:clamp(2.5rem,1.708rem + 3.38vw,4.75rem);
+  --fs-h3:clamp(1.875rem,1.479rem + 1.69vw,3rem);
+  --fs-lead:clamp(1.375rem,1.199rem + .751vw,1.875rem);
+  --fs-body:clamp(1.125rem,1.059rem + .282vw,1.3125rem);
+  --fs-ui:clamp(1.0625rem,1.041rem + .094vw,1.125rem);
+  --fs-small:clamp(.9375rem,.916rem + .094vw,1rem);
+  /* line heights: standard values reduced by 15% */
+  --lh-display:.89;
+  --lh-hero:.9;
+  --lh-h2:.92;
+  --lh-h3:.95;
+  --lh-lead:1.1;
+  --lh-body:1.2;
+  --lh-ui:1.1;
+  --lh-small:1.15;
+  --rail-h:clamp(300px,34vw,520px);
+  --caption-gap:8px;
+  --max-h:min(78svh,760px);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:var(--fs-body);font-weight:600;line-height:var(--lh-body);-webkit-font-smoothing:antialiased}
+img,video,iframe{display:block;max-width:100%}
+a{color:inherit}
+h1,h2,h3,p,figure,ul,blockquote{margin:0}
+h1,h2,h3{font-weight:900;letter-spacing:-.01em}
+:focus-visible{outline:3px solid var(--blue);outline-offset:3px;border-radius:6px}
+.page{padding:var(--gutter);display:grid;grid-template-columns:minmax(0,1fr);gap:var(--gutter)}
+.card{min-width:0;border:var(--line);border-radius:var(--radius-l);overflow:hidden}
+.inner{padding:var(--pad)}
+.prose{max-width:34em}
+.prose p+p{margin-top:.8em}
+.prose strong{font-weight:900}
+
+/* pills */
+.pills{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0}
+.pill{display:inline-block;padding:6px 20px 8px;border:var(--line);border-radius:999px;font-weight:700;font-size:var(--fs-ui);line-height:var(--lh-ui);text-decoration:none;transition:background .2s}
+.pill--brand{background:var(--green)}
+.pill--marketing{background:var(--red)}
+.pill--product{background:var(--purple)}
+.pill--accent{background:var(--yellow)}
+.pill--video{background:var(--orange)}
+a.pill:hover{background:var(--white)}
+
+/* media: every frame keeps the file's own ratio (--r) */
+.frame{position:relative;width:100%;aspect-ratio:var(--r,1.5);max-height:var(--max-h);border-radius:var(--radius-m);overflow:hidden;background:#d9d9d9}
+.frame img,.frame video{width:100%;height:100%;object-fit:cover}
+figcaption{margin-top:var(--caption-gap);font-size:var(--fs-small);font-weight:600;color:var(--muted);line-height:var(--lh-small)}
+.stack{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--gutter)}
+.stack>figcaption{margin-top:calc(var(--caption-gap) - var(--gutter))}
+.chapter-media>figcaption{margin-top:calc(var(--caption-gap) - clamp(28px,3vw,48px))}
+/* justified rows: widths follow each ratio, so heights match with zero cropping */
+.row{display:flex;flex-wrap:wrap;gap:var(--gutter)}
+.row>figure{flex:var(--r) 1 0;min-width:0}
+
+/* carousels: fixed height, width from ratio */
+.rail-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:12px}
+.rail-head h4{margin:0;display:flex;flex-wrap:wrap;gap:0;padding-top:5%}
+.rail-head h4 .pill{background:var(--white);font-size:var(--fs-ui);line-height:var(--lh-ui);font-weight:800;position:relative;transform:rotate(var(--rot,-9deg))}
+.rail-head h4 .pill:nth-child(even){margin-left:-14px;z-index:1;transform:rotate(var(--rot,7deg))}
+@media (min-width:1025px){
+  .chapter-media>:first-child .rail-head h4,.chapter-media>.rail-head:first-child h4{padding-top:2%}
+}
+.rail-btns{display:flex;gap:6px}
+.rail-btns button{width:46px;height:46px;border-radius:50%;border:var(--line);background:var(--white);font:inherit;font-size:calc(var(--fs-ui) * 1.63);line-height:1;cursor:pointer;display:grid;place-items:center;padding:0 0 2px}
+.rail-btns button:hover{background:var(--yellow)}
+.rail-btns button:disabled{opacity:.3;cursor:default;background:var(--white)}
+.track{display:flex;gap:var(--gutter);overflow-x:auto;scroll-behavior:auto;scroll-snap-type:x proximity;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.track::-webkit-scrollbar{display:none}
+.track>*{flex:0 0 auto;scroll-snap-align:start}
+.track>figure{width:calc(var(--rail-h) * var(--r))}
+.track>figure .frame{width:100%;height:var(--rail-h);max-height:none}
+.track img{-webkit-user-drag:none;user-select:none}
+.track.is-dragging{scroll-snap-type:none;cursor:grabbing;user-select:none}
+.track.is-dragging *{pointer-events:none}
+@media (hover:hover) and (pointer:fine){.track{cursor:grab}}
+
+/* hero */
+.hero{background:var(--white)}
+.hero-top{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(300px,1fr);gap:clamp(24px,4vw,72px);align-items:start}
+.hero h1{font-size:var(--fs-hero);line-height:var(--lh-hero)}
+.hero-info{display:grid;gap:clamp(18px,2vw,28px);padding-top:15px}
+.hero-title{display:grid;gap:clamp(10px,1vw,16px)}
+.client-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px}
+.client-row .pill{font-weight:800;opacity:0;animation:pill-drop .95s cubic-bezier(.45,0,.9,.5) both}
+.client-row li:nth-child(1) .pill{animation-delay:1.1s}
+.client-row li:nth-child(2) .pill{animation-delay:1.28s}
+.client-row li:nth-child(3) .pill{animation-delay:1.46s}
+@keyframes pill-drop{
+  0%{opacity:0;transform:translateY(-190px)}
+  10%{opacity:1}
+  52%{transform:translateY(0);animation-timing-function:cubic-bezier(.2,.6,.4,1)}
+  70%{transform:translateY(-22px);animation-timing-function:cubic-bezier(.5,0,.9,.5)}
+  85%{transform:translateY(0);animation-timing-function:cubic-bezier(.2,.6,.4,1)}
+  93%{transform:translateY(-7px)}
+  100%{opacity:1;transform:translateY(0)}
+}
+.client-name{font-size:var(--fs-lead);font-weight:900;line-height:var(--lh-lead)}
+.info{list-style:none;padding:0;display:grid;gap:14px}
+.info li:first-child{font-weight:800}
+.hero-media{margin-top:clamp(28px,4vw,56px);animation:hero-in .85s ease-in .2s both}
+@keyframes hero-in{0%{opacity:0;transform:scale(.5)}28%{opacity:1;transform:scale(.5)}100%{opacity:1;transform:scale(1)}}
+.hero-media .frame{border:var(--line);border-radius:24px}
+
+/* section heads */
+.sec-head>.prose{padding-top:15px}
+.sec-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,4vw,72px);align-items:start}
+.sec-head h2{font-size:var(--fs-h2);line-height:var(--lh-h2)}
+
+/* problem */
+.problem{background:var(--white)}
+.problem-media{margin-top:clamp(32px,5vw,72px)}
+.quote{margin-top:clamp(32px,5vw,72px);padding:6.53% 19%;display:block}
+.quote blockquote p{font-size:var(--fs-h3);font-weight:800;line-height:var(--lh-h3);color:var(--blue)}
+.quote cite,.result-quote cite{display:block;margin-top:16px;font-size:var(--fs-small);line-height:var(--lh-small);font-weight:800;color:var(--ink);font-style:normal;opacity:0;transition:opacity .7s ease .1s}
+.line{display:block;overflow:hidden;padding-bottom:.22em;margin-bottom:-.22em}
+.line>span{display:block;transform:translateY(110%);opacity:0}
+.is-in .line>span{transform:none;opacity:1;transition:transform var(--line-dur,.85s) cubic-bezier(.2,.75,.2,1),opacity var(--line-dur,.85s) ease;transition-delay:calc(var(--i) * var(--line-step,.09s))}
+.is-in cite{opacity:1;transition-delay:calc(var(--lines,1) * var(--line-step,.09s) + .35s)}
+
+.handoff{margin-top:clamp(40px,6vw,96px);display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--gutter)}
+.solution-intro{background:var(--blue);border:var(--line);border-radius:var(--radius-m);padding:clamp(24px,3.5vw,56px);display:grid;gap:clamp(18px,2vw,28px);align-content:start}
+.solution-intro h2{font-size:var(--fs-h2);line-height:var(--lh-h2)}
+.solution-intro p{max-width:none}
+.to-result{display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:clamp(24px,3vw,40px);background:var(--ink);color:var(--white);border-radius:var(--radius-m);text-decoration:none;transition:transform .2s}
+.to-result b{font-size:calc(var(--fs-lead) * 1.1);font-weight:900;line-height:var(--lh-lead);color:var(--yellow)}
+.go-icon{font-size:1.63em;line-height:1;display:block;transform:translateY(-.02em)}
+.to-result-go{align-self:flex-start;display:inline-flex;align-items:center;gap:10px;margin-top:24px;padding:11px 24px 12px;border-radius:999px;border:1px solid var(--yellow);background:var(--yellow);color:var(--ink);font-weight:800;font-size:var(--fs-ui);line-height:var(--lh-ui)}
+.to-result:hover .to-result-go{background:var(--white);border-color:var(--white)}
+.to-result .to-result-go:hover,.to-result:hover .to-result-go:hover{background:var(--green);border-color:var(--green)}
+.to-result:hover{transform:translateY(-3px)}
+
+/* chapters */
+.chapter{background:var(--white);display:grid;grid-template-columns:minmax(200px,3.2fr) minmax(0,8.8fr)}
+.chapter-side{padding:clamp(22px,2.6vw,44px);border-right:var(--line)}
+.chapter-side>div{display:grid;gap:clamp(18px,2vw,28px)}
+.pill-title{display:flex;flex-direction:column;align-items:flex-start}
+.pill-title{padding-block:6px}
+.pill-title .pill{font-size:var(--fs-lead);line-height:var(--lh-lead);font-weight:900;-webkit-text-stroke:.7px var(--ink);padding:10px 22px 13px;position:relative;transform:rotate(-2.5deg);transform-origin:left center}
+.pill-title .pill:last-child{margin-left:16px;margin-top:-6px;z-index:1;transform:rotate(1.5deg)}
+/* the two title pills drop into place when the chapter first appears */
+.pill-title.drop-ready .pill{opacity:0}
+.pill-title.is-dropped .pill:first-child{animation:drop-a .95s cubic-bezier(.45,0,.9,.5) both}
+.pill-title.is-dropped .pill:last-child{animation:drop-b .95s cubic-bezier(.45,0,.9,.5) .18s both}
+@keyframes drop-a{
+  0%{opacity:0;transform:translateY(-190px) rotate(0deg)}
+  10%{opacity:1}
+  52%{transform:translateY(0) rotate(-2.5deg);animation-timing-function:cubic-bezier(.2,.6,.4,1)}
+  70%{transform:translateY(-22px) rotate(-1deg);animation-timing-function:cubic-bezier(.5,0,.9,.5)}
+  85%{transform:translateY(0) rotate(-2.5deg);animation-timing-function:cubic-bezier(.2,.6,.4,1)}
+  93%{transform:translateY(-7px) rotate(-2deg)}
+  100%{opacity:1;transform:translateY(0) rotate(-2.5deg)}
+}
+@keyframes drop-b{
+  0%{opacity:0;transform:translateY(-190px) rotate(0deg)}
+  10%{opacity:1}
+  52%{transform:translateY(0) rotate(1.5deg);animation-timing-function:cubic-bezier(.2,.6,.4,1)}
+  70%{transform:translateY(-20px) rotate(3deg);animation-timing-function:cubic-bezier(.5,0,.9,.5)}
+  85%{transform:translateY(0) rotate(1.5deg);animation-timing-function:cubic-bezier(.2,.6,.4,1)}
+  93%{transform:translateY(-6px) rotate(2deg)}
+  100%{opacity:1;transform:translateY(0) rotate(1.5deg)}
+}
+.chapter-text{font-size:var(--fs-body);font-weight:700;line-height:var(--lh-body)}
+.chapter--brand .chapter-side{background:var(--green-soft)}
+.chapter--marketing .chapter-side{background:var(--red-soft)}
+.chapter--product .chapter-side{background:var(--purple-soft)}
+.chapter--video .chapter-side{background:var(--orange-soft)}
+.deliverables{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.deliverables li{padding:5px 16px 7px;border:var(--line);border-radius:999px;background:var(--white);font-size:var(--fs-ui);line-height:var(--lh-ui);font-weight:700}
+.chapter-media{padding:var(--media-pad);display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(28px,3vw,48px);--stack-gap:clamp(28px,3vw,48px);align-content:start;min-width:0}
+.bleed{margin-inline:calc(-1 * var(--media-pad))}
+.bleed .rail-head{padding-inline:var(--media-pad)}
+.bleed .track{padding-inline:var(--media-pad);scroll-padding-inline:var(--media-pad)}
+
+/* website mockups */
+.site-row{align-items:flex-start}
+.device{border:var(--line);border-radius:var(--radius-m);overflow:hidden;background:var(--white);box-shadow:0 0 0 rgba(18,18,18,0);transition:border-color .45s ease,transform .35s ease,box-shadow .35s ease}
+.device:hover{border-color:var(--yellow);transform:translateY(-10px);box-shadow:0 24px 48px rgba(18,18,18,.25)}
+/* the levitation is reserved for the live site: a screenshot or recording stays still */
+.device:not(:has(iframe)):hover{border-color:var(--ink);transform:none;box-shadow:none}
+.device-bar{display:flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-bottom:var(--line);background:var(--paper);font-size:var(--fs-small);line-height:var(--lh-small);font-weight:700}
+.device-bar i{width:10px;height:10px;border-radius:50%;border:var(--line);display:block}
+.device-bar span{margin-left:10px}
+.screen{position:relative;overflow:hidden;width:100%;aspect-ratio:var(--sr);max-height:calc(var(--max-h) - 34px)}
+.screen iframe{position:absolute;top:0;left:0;border:0;max-width:none;transform-origin:0 0}
+.device--phone .device-bar{justify-content:center}
+.device--phone .device-bar span{margin-left:6px}
+.site-link{justify-self:start}
+
+/* result */
+.result{background:var(--ink);color:var(--white);border-color:var(--ink)}
+.result-text{font-size:var(--fs-h3);font-weight:800;line-height:var(--lh-h3)}
+.stats{margin-top:clamp(36px,5vw,80px);display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gutter);list-style:none;padding:0}
+.stats li{border-top:2px solid #555;padding-top:14px}
+.stats b{display:block;font-size:var(--fs-h2);font-weight:900;line-height:var(--lh-h2);color:var(--yellow)}
+.stats span{display:block;margin-top:10px;max-width:16em}
+.result-quote{margin-top:clamp(36px,5vw,80px);align-items:stretch}
+.result-quote blockquote{flex:1.1 1 0;min-width:0;background:var(--yellow);color:var(--ink);border-radius:var(--radius-m);padding:clamp(24px,3vw,44px);display:flex;flex-direction:column;justify-content:space-between;gap:24px}
+.result-quote blockquote p{font-size:var(--fs-h3);font-weight:800;line-height:var(--lh-h3)}
+.result-quote blockquote.is-in cite{opacity:1;transition-delay:calc(var(--lines,1) * var(--line-step,.09s) + .35s)}
+.result-showcase{margin-top:var(--gutter)}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:10px 26px 13px;border-radius:999px;border:var(--line);background:var(--yellow);color:var(--ink);font-weight:800;font-size:var(--fs-ui);line-height:var(--lh-ui);text-decoration:none}
+.btn:hover{background:var(--white)}
+
+/* related */
+.related{background:var(--white)}
+.related .inner{--media-pad:var(--pad)}
+.related .rail-head h2{font-size:var(--fs-h2);line-height:var(--lh-h2)}
+.related .rail-head{justify-content:flex-start;gap:24px;margin-bottom:clamp(24px,3vw,48px)}
+.related .rail-head h2{text-align:left}
+.related .track .proj{width:clamp(280px,30vw,460px)}
+.related .track .frame{height:auto;width:100%}
+.proj{position:relative;display:grid;gap:14px;align-content:start}
+.proj .frame{border:var(--line)}
+.proj h3{font-size:var(--fs-lead);line-height:var(--lh-lead)}
+.proj p{max-width:20em}
+.proj a.cover{position:absolute;inset:0;border-radius:var(--radius-m)}
+.proj .pills{position:relative;z-index:1}
+.proj .pill{padding:4px 16px 6px}
+
+@media (min-width:1025px){
+  .related .bleed{margin-inline:0}
+  .related .track{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;padding-inline:0;cursor:auto}
+  .related .track .proj{width:auto}
+  .related .rail-btns{display:none}
+}
+.proj .frame{transition:border-color .45s ease}
+.proj:hover .frame{border-color:var(--yellow)}
+
+/* cta */
+.cta{background:var(--yellow);text-align:left}
+.cta .inner{min-height:clamp(252px,37vh,456px);display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:clamp(48px,8vw,120px)}
+.cta h2{font-size:var(--fs-display);line-height:var(--lh-display);max-width:10em}
+.cta .btn{background:var(--ink);color:var(--white);font-size:var(--fs-lead);line-height:var(--lh-lead);padding:18px 44px 22px}
+.cta .btn:hover{background:var(--blue);color:var(--ink)}
+
+@media (min-width:1025px){
+  .related .bleed .rail-head{padding-inline:0}
+}
+
+/* tablet */
+@media (min-width:641px) and (max-width:1024px){
+  .stats span{max-width:none}
+}
+@media (max-width:1024px){
+  .hero-top,.sec-head,.handoff{grid-template-columns:1fr}
+  .to-result{min-height:220px}
+  .chapter{grid-template-columns:1fr}
+  .chapter-side{border-right:0;border-bottom:var(--line)}
+  .stats{grid-template-columns:1fr}
+}
+/* mobile */
+@media (max-width:640px){
+  :root{--radius-l:26px;--radius-m:14px;--media-pad:10px;--rail-h:420px}
+  .full-sm{flex-basis:100% !important}
+  .hide-sm{display:none !important}
+  .rail-btns{display:none}
+  .result-quote{flex-direction:column}
+  .result-quote blockquote{flex:none}
+  .related .track .proj{width:82vw}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .to-result,.pill,.device,.proj .frame{transition:none}
+  .hero-media,.device:hover{animation:none}
+  .client-row .pill{animation:none;opacity:1}
+  .device,.device:hover{transition:none;transform:none}
+  .line>span,.quote cite,.result-quote cite{transform:none;opacity:1;transition:none}
+  .to-result:hover{transform:none}
+}
+
+/* ---- case pages built on the Steam system: brand accent, embed mode, extras ---- */
+:root{--accent:#5AA9F0;--accent-fg:var(--ink);--accent-ink:#1f64a8;--frame-bg:#d9d9d9}
+.solution-intro{background:var(--accent);color:var(--accent-fg)}
+.quote blockquote p{color:var(--accent-ink)}
+.frame{background:var(--frame-bg)}
+.frame--contain img{object-fit:contain}
+.frame::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1.5px rgba(18,18,18,.1);pointer-events:none}
+.to-result b.is-text{font-size:var(--fs-lead)}
+.cs-back{position:fixed;left:14px;top:14px;z-index:9999;padding:10px 16px;border-radius:999px;background:#FED012;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none}
+html.embed .cs-back{display:none}
+html:not(.embed) .page{padding-top:64px}
+.rail-cap{margin-top:var(--caption-gap);padding-inline:var(--media-pad)}
+.hero-media figure:only-child .frame{max-height:min(78svh,820px)}
+.hero-row{display:flex;gap:var(--gutter)}
+.hero-row>figure{flex:var(--r) 1 0;min-width:0}
+/* a full-page capture, scrolled slowly inside the device frame */
+.screen--scroll img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 0;animation:shot-scroll var(--dur,30s) ease-in-out 1s infinite alternate}
+.device:hover .screen--scroll img{animation-play-state:paused}
+@keyframes shot-scroll{0%,6%{object-position:50% 0}94%,100%{object-position:50% 100%}}
+.screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.result .btn{margin-top:clamp(28px,3vw,44px)}
+.result .result-media{margin-top:clamp(36px,5vw,72px)}
+.result figcaption{color:#b9b9b9}
+/* a film that opens the page */
+.film{background:#0d0c09;border-color:#0d0c09}
+.film-frame{position:relative;width:min(100%,calc((100svh - 2 * var(--gutter) - 4px) * 16 / 9));aspect-ratio:16/9;margin-inline:auto}
+.film-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+@media (max-width:640px){
+  .row--wrap-sm>figure{flex-basis:calc(50% - var(--gutter) / 2)}
+  .row--wrap-sm>figure.full-sm{flex-basis:100%}
+  .hero-row{flex-wrap:wrap}
+  .hero-row>figure{flex-basis:100%}
+}
+@media (prefers-reduced-motion:reduce){.screen--scroll img{animation:none}}
+</style>
+</head>
+<body>
+<a class="cs-back" href="/site/#work">← Cromatic Studios</a>
+<main class="page">
+  <header class="card hero">
+    <div class="inner">
+      <div class="hero-top">
+        <div class="hero-title">
+          <p class="client-name">Craft Coffee</p>
+          <h1>Equipping the passion for coffee.</h1>
+        </div>
+        <div class="hero-info">
+          <div class="client-row">
+            <ul class="pills" aria-label="Jump to a pillar">
+              <li><a class="pill pill--brand" href="#branding-design">Branding &amp; Design</a></li>
+              <li><a class="pill pill--product" href="#product-design">Product Design</a></li>
+            </ul>
+          </div>
+          <ul class="info">
+            <li>Coffee equipment, distribution and service</li>
+            <li>Str. Brațului 7, Bucharest</li>
+            <li>Brand identity, badge system, packaging, uniforms, merch, e-commerce website</li>
+          </ul>
+        </div>
+      </div>
+      <div class="hero-media">
+        <figure style="--r:1.6" data-fixed-ratio>
+  <div class="frame"><img src="m:craft-coffee/site-desktop" alt="The craftcoffee.ro homepage: The finest coffee equipment" width="1800" height="1125" fetchpriority="high" decoding="async"></div>
+</figure>
+      </div>
+    </div>
+  </header>
+  <section class="card problem" id="problem">
+    <div class="inner">
+      <div class="sec-head">
+        <h2>Professional machines, sold by phone</h2>
+        <div class="prose">
+          <p>Craft Coffee distributes and services <strong>professional espresso and brew equipment</strong>, chosen only from the most respected brands in the world. It is the <strong>official La Marzocco distributor in Romania</strong> and works with Mazzer, Mahlkönig, Anfim, PuqPress, Fellow and BWT.</p>
+          <p>Born in 2023 out of a passion for La Marzocco machines, and run by the team behind Steam Coffee Shop, it sold <strong>through phone calls and visits alone</strong>, with <strong>no shop of its own online</strong>.</p>
+        </div>
+      </div>
+      <div class="problem-media stack">
+<div class="stack">
+<div class="row">
+<figure style="--r:0.634">
+  <div class="frame"><img src="m:craft-coffee/linea" alt="A La Marzocco machine on a café counter" width="900" height="1419" loading="lazy" decoding="async"></div>
+</figure>
+<figure style="--r:0.75">
+  <div class="frame"><img src="m:craft-coffee/bar" alt="A bright specialty coffee bar" width="1200" height="1600" loading="lazy" decoding="async"></div>
+</figure>
+</div>
+<figcaption>The equipment Craft Coffee sells, installs and maintains, at home behind the bar.</figcaption>
+</div>
+      </div>
+      <div class="quote">
+        <blockquote>
+          <p data-lines>“At Craft Coffee, we equip the passion for coffee.”</p>
+          <cite>Craft Coffee, on its website</cite>
+        </blockquote>
+      </div>
+      <div class="handoff">
+        <div class="solution-intro" id="solution">
+          <h2>The finest equipment, stamped</h2>
+          <p>A badge built like a seal of approval, a red and blue system for a company that both sells and services, and an online shop that puts the whole catalogue in front of buyers.</p>
+        </div>
+        <a class="to-result" href="#branding-design">
+          <b>20+</b>
+          <span>venues equipped by Craft Coffee in recent years</span>
+          <span class="to-result-go">Drop for more <span class="go-icon" aria-hidden="true">↓</span></span>
+        </a>
+      </div>
+    </div>
+  </section>
+  <section class="card chapter chapter--brand" id="branding-design" aria-label="Branding and Design">
+    <div class="chapter-side">
+      <div>
+        <span class="pill-title"><span class="pill pill--brand">Branding</span><span class="pill pill--accent">&amp; Design</span></span>
+        <p class="chapter-text">A circular badge with the wordmark cut across the middle and “The finest equipment” around it: it reads as a seal on a box, embroidered on a patch or pressed onto a pin. Red and blue split the system into two tempers.</p>
+        <ul class="deliverables">
+          <li>Logo</li>
+          <li>Badge system</li>
+          <li>Colour system</li>
+          <li>Stationery</li>
+          <li>Packaging</li>
+          <li>Uniforms</li>
+          <li>Merch</li>
+        </ul>
+      </div>
+    </div>
+    <div class="chapter-media">
+<div class="stack">
+<div class="row">
+<figure style="--r:1">
+  <div class="frame"><img src="m:craft-coffee/patch" alt="Embroidered Craft Coffee patch: The finest equipment" width="340" height="340" loading="lazy" decoding="async"></div>
+</figure>
+<figure style="--r:1.596">
+  <div class="frame frame--contain" style="--frame-bg:#f8f5f0"><img src="m:craft-coffee/logo" alt="The Craft Coffee wordmark in blue" width="514" height="322" loading="lazy" decoding="async"></div>
+</figure>
+</div>
+<figcaption>The badge and the wordmark</figcaption>
+</div>
+<div class="stack">
+<div class="row row--wrap-sm">
+<figure class="full-sm" style="--r:1.394">
+  <div class="frame frame--contain" style="--frame-bg:#ffffff"><img src="m:craft-coffee/box" alt="Shipping box: Your coffee equipment is here" width="460" height="330" loading="lazy" decoding="async"></div>
+</figure>
+<figure class="full-sm" style="--r:1.282">
+  <div class="frame frame--contain" style="--frame-bg:#f8f5f0"><img src="m:craft-coffee/tag" alt="Craft Coffee service tag" width="200" height="156" loading="lazy" decoding="async"></div>
+</figure>
+</div>
+<figcaption>“Your coffee equipment is here.” Before the machine is unpacked, the box already sounds like the brand.</figcaption>
+</div>
+<div class="stack">
+<div class="row">
+<figure style="--r:0.455">
+  <div class="frame frame--contain" style="--frame-bg:#ffffff"><img src="m:craft-coffee/uniform" alt="Grey technician overalls with the Craft Coffee badge" width="300" height="660" loading="lazy" decoding="async"></div>
+</figure>
+<figure style="--r:0.723">
+  <div class="frame frame--contain" style="--frame-bg:#ffffff"><img src="m:craft-coffee/bag" alt="Backpack with the Craft Coffee patch" width="340" height="470" loading="lazy" decoding="async"></div>
+</figure>
+</div>
+<figcaption>Uniforms and bags for the technicians: the part of the brand that actually shows up at your bar</figcaption>
+</div>
+    </div>
+  </section>
+  <section class="card chapter chapter--product" id="product-design" aria-label="Product Design">
+    <div class="chapter-side">
+      <div>
+        <span class="pill-title"><span class="pill pill--product">Product</span><span class="pill pill--accent">Design</span></span>
+        <p class="chapter-text">craftcoffee.ro: an online shop for professional espresso machines, grinders and brew gear, with a page for every partner brand, services, and a way to book a meeting with the team.</p>
+        <ul class="deliverables">
+          <li>E-commerce website</li>
+          <li>UI design</li>
+          <li>Brand pages</li>
+          <li>Product catalogue</li>
+          <li>Booking requests</li>
+        </ul>
+      </div>
+    </div>
+    <div class="chapter-media">
+<div class="stack">
+<div class="rail-head"><h4><span class="pill" style="--rot:-10deg">Online</span><span class="pill" style="--rot:8deg">shop</span></h4></div>
+<div class="row site-row">
+<figure class="hide-sm" style="--r:1.6">
+  <div class="device">
+    <div class="device-bar" aria-hidden="true"><i></i><i></i><i></i><span>craftcoffee.ro</span></div>
+    <div class="screen screen--scroll" style="--sr:1.6;--dur:25s"><img src="m:craft-coffee/site-scroll" alt="The craftcoffee.ro homepage, scrolling" loading="lazy" decoding="async"></div>
+  </div>
+</figure>
+<figure class="full-sm" style="--r:0.462">
+  <div class="device device--phone">
+    <div class="device-bar" aria-hidden="true"><i></i><span>craftcoffee.ro</span></div>
+    <div class="screen screen--scroll" style="--sr:0.462;--dur:37s"><img src="m:craft-coffee/site-scroll-phone" alt="The craftcoffee.ro homepage on a phone, scrolling" loading="lazy" decoding="async"></div>
+  </div>
+</figure>
+</div>
+<figcaption>The homepage: the finest coffee equipment, the best sellers and the partner brands.</figcaption>
+<a class="btn site-link" href="https://craftcoffee.ro/" target="_blank" rel="noopener">Visit craftcoffee.ro <span aria-hidden="true">↗</span></a>
+</div>
+<div class="stack">
+<div class="row row--wrap-sm">
+<figure class="full-sm" style="--r:1.6">
+  <div class="frame"><img src="m:craft-coffee/about-desktop" alt="The About page: equipment carefully selected, tested with passion" width="1800" height="1125" loading="lazy" decoding="async"></div>
+</figure>
+<figure class="full-sm" style="--r:1.6">
+  <div class="frame"><img src="m:craft-coffee/shop-desktop" alt="The shop page with Fellow and La Marzocco products" width="1800" height="1125" loading="lazy" decoding="async"></div>
+</figure>
+</div>
+<figcaption>The About page and the shop</figcaption>
+</div>
+    </div>
+  </section>
+  <section class="card result" id="result">
+    <div class="inner">
+      <p class="result-text">Craft Coffee now takes orders for professional equipment through a shop of its own, with a brand that shows up the same way on a box, a uniform and a product page.</p>
+      <a class="btn" href="https://craftcoffee.ro/" target="_blank" rel="noopener">Visit craftcoffee.ro <span aria-hidden="true">↗</span></a>
+    </div>
+  </section>
+  <section class="card related" aria-labelledby="related-title">
+    <div class="inner">
+      <div class="rail bleed" data-rail>
+        <div class="rail-head">
+          <h2 id="related-title">Related projects</h2>
+          <div class="rail-btns"><button type="button" data-prev aria-label="Previous projects">←</button><button type="button" data-next aria-label="Next projects">→</button></div>
+        </div>
+        <div class="track" tabindex="0" aria-label="Related projects, scroll horizontally">
+          <article class="proj">
+            <figure style="--r:1.778" data-fixed-ratio><div class="frame"><img src="m:cs/Steam-Cromaticstudios-1" alt="" width="704" height="600" loading="lazy" decoding="async"></div></figure>
+            <h3>Steam</h3>
+            <p>Refreshing a pioneer brand for its community.</p>
+            <ul class="pills"><li><span class="pill pill--brand">Branding &amp; Design</span></li><li><span class="pill pill--marketing">Growth &amp; Content</span></li><li><span class="pill pill--product">Product Design</span></li></ul>
+            <a class="cover" href="/work/steam/" aria-label="Steam case study"></a>
+          </article>
+          <article class="proj">
+            <figure style="--r:1.778" data-fixed-ratio><div class="frame"><img src="m:artisan-coffee-gear/art09" alt="" width="560" height="315" loading="lazy" decoding="async"></div></figure>
+            <h3>Artisan Coffee Gear</h3>
+            <p>A whole brand world, from the letterform pattern to the webshop.</p>
+            <ul class="pills"><li><span class="pill pill--brand">Branding &amp; Design</span></li><li><span class="pill pill--product">Product Design</span></li></ul>
+            <a class="cover" href="/work/artisan-coffee-gear/" aria-label="Artisan Coffee Gear case study"></a>
+          </article>
+          <article class="proj">
+            <figure style="--r:1.778" data-fixed-ratio><div class="frame"><img src="m:cs/Sip_portfolio-Cromaticstudios" alt="" width="756" height="721" loading="lazy" decoding="async"></div></figure>
+            <h3>Sip Coffee &amp; Wine</h3>
+            <p>Complementing one of the best designed coffee shops in town with a branding that fits.</p>
+            <ul class="pills"><li><span class="pill pill--brand">Branding &amp; Design</span></li><li><span class="pill pill--marketing">Growth &amp; Content</span></li></ul>
+            <a class="cover" href="/work/sip-coffee-wine/" aria-label="Sip Coffee &amp;amp; Wine case study"></a>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card cta">
+    <div class="inner">
+      <h2>What is your winning soundtrack?</h2>
+      <a class="btn" href="https://cromaticstudios.com/contact/" target="_blank" rel="noopener">We can bring the mixtape</a>
+    </div>
+  </section>
+
+</main>
+
+<script>
+// carousels: prev/next buttons
+document.querySelectorAll('[data-rail]').forEach(rail=>{
+  const track=rail.querySelector('.track');
+  const prev=rail.querySelector('[data-prev]');
+  const next=rail.querySelector('[data-next]');
+  if(!track||!prev||!next) return;
+  const step=()=>{const item=track.firstElementChild;const gap=parseFloat(getComputedStyle(track).columnGap)||0;return item?item.getBoundingClientRect().width+gap:track.clientWidth};
+  const update=()=>{
+    const max=track.scrollWidth-track.clientWidth-2;
+    prev.disabled=track.scrollLeft<=2;
+    next.disabled=track.scrollLeft>=max;
+    rail.querySelector('.rail-btns').style.visibility=max<=0?'hidden':'visible';
+  };
+  let down=false,startX=0,startLeft=0,moved=false,target=0,raf=0;
+  const follow=()=>{raf=0;track.scrollLeft=target;};
+  track.addEventListener('pointerdown',e=>{
+    if(e.pointerType!=='mouse'||e.button!==0||track.scrollWidth<=track.clientWidth+2)return;
+    down=true;moved=false;startX=e.clientX;startLeft=track.scrollLeft;target=startLeft;
+    track.classList.add('is-dragging');
+    track.setPointerCapture(e.pointerId);
+  });
+  track.addEventListener('pointermove',e=>{
+    if(!down)return;
+    e.preventDefault();
+    const dx=e.clientX-startX;
+    if(Math.abs(dx)>3)moved=true;
+    target=startLeft-dx;
+    if(!raf)raf=requestAnimationFrame(follow);
+  });
+  const endDrag=e=>{
+    if(!down)return;
+    down=false;
+    if(raf){cancelAnimationFrame(raf);raf=0;track.scrollLeft=target;}
+    try{track.releasePointerCapture(e.pointerId)}catch(err){}
+    const x=track.scrollLeft;
+    track.classList.remove('is-dragging');
+    track.scrollLeft=x;
+  };
+  track.addEventListener('pointerup',endDrag);
+  track.addEventListener('pointercancel',endDrag);
+  track.addEventListener('dragstart',e=>e.preventDefault());
+  track.addEventListener('click',e=>{if(moved){e.preventDefault();e.stopPropagation();moved=false;}},true);
+  prev.addEventListener('click',()=>track.scrollBy({left:-step(),behavior:'smooth'}));
+  next.addEventListener('click',()=>track.scrollBy({left:step(),behavior:'smooth'}));
+  track.addEventListener('scroll',update,{passive:true});
+  addEventListener('resize',update);
+  addEventListener('load',update);
+  update();
+});
+
+// videos: use the file's real ratio (no cropping), play only when visible, respect reduced motion
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const vids=document.querySelectorAll('video:not([data-manual])');
+vids.forEach(v=>{
+  const fit=()=>{if(v.videoWidth&&v.videoHeight){const fig=v.closest('figure');if(fig&&!fig.hasAttribute('data-fixed-ratio'))fig.style.setProperty('--r',(v.videoWidth/v.videoHeight).toFixed(4));}};
+  if(v.readyState>=1)fit();else v.addEventListener('loadedmetadata',fit,{once:true});
+});
+if(reduce){
+  vids.forEach(v=>{v.removeAttribute('autoplay');v.pause();v.controls=true;});
+}else if('IntersectionObserver' in window){
+  const io=new IntersectionObserver(entries=>entries.forEach(e=>{
+    if(e.isIntersecting){e.target.play().catch(()=>{});}else{e.target.pause();}
+  }),{threshold:.15});
+  vids.forEach(v=>io.observe(v));
+}
+
+// website mockups: scale the live site to the device width
+const screens=document.querySelectorAll('[data-screen]');
+const scale=s=>{
+  const f=s.querySelector('iframe');
+  const k=s.clientWidth/Number(s.dataset.screen);
+  if(!k) return;
+  f.style.width=s.dataset.screen+'px';
+  f.style.height=Math.ceil(s.clientHeight/k)+'px';
+  f.style.transform=`scale(${k})`;
+};
+if('ResizeObserver' in window){const ro=new ResizeObserver(es=>es.forEach(e=>scale(e.target)));screens.forEach(s=>ro.observe(s));}
+else{screens.forEach(scale);addEventListener('resize',()=>screens.forEach(scale));}
+
+// pillar titles: the two pills drop in once, when the chapter first shows
+if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+  const titles=[...document.querySelectorAll('.chapter-side .pill-title')];
+  titles.forEach(t=>t.classList.add('drop-ready'));
+  const dropIo=new IntersectionObserver(es=>es.forEach(e=>{
+    if(e.isIntersecting){e.target.classList.add('is-dropped');dropIo.unobserve(e.target);}
+  }),{threshold:.6});
+  titles.forEach(t=>dropIo.observe(t));
+}
+
+// quote: reveal one line at a time
+document.querySelectorAll('[data-lines]').forEach(el=>{
+  const text=el.textContent.trim();
+  const build=()=>{
+    el.innerHTML=text.split(/\s+/).map(w=>`<span class="w">${w}</span>`).join(' ');
+    const words=[...el.querySelectorAll('.w')];
+    const lines=[];let top=null;
+    words.forEach(w=>{const t=Math.round(w.offsetTop);if(top===null||t!==top){lines.push([]);top=t;}lines[lines.length-1].push(w.textContent);});
+    el.innerHTML=lines.map((l,i)=>`<span class="line" style="--i:${i}"><span>${l.join(' ')}</span></span>`).join('');
+    const holder=el.closest('blockquote')||el;
+    holder.style.setProperty('--lines',lines.length);
+  };
+  build();
+  let t;addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(()=>{(el.closest('blockquote')||el).classList.remove('is-in');build();io2.observe(el);},200);});
+});
+const io2=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting){(e.target.closest('blockquote')||e.target).classList.add('is-in');io2.unobserve(e.target);}
+}),{threshold:.4});
+document.querySelectorAll('[data-lines]').forEach(el=>io2.observe(el));
+
+// mobile: sections that end with text get double bottom padding
+const small=matchMedia('(max-width: 640px)');
+const tablet=matchMedia('(min-width: 641px) and (max-width: 1024px)');
+const TEXT=new Set(['P','FIGCAPTION','LI','CITE','BLOCKQUOTE','H1','H2','H3','H4','SPAN']);
+const isHidden=el=>getComputedStyle(el).display==='none';
+const lastVisible=el=>{let c=el.lastElementChild;while(c&&isHidden(c))c=c.previousElementSibling;return c;};
+const endsWithText=box=>{
+  let el=lastVisible(box);
+  while(el&&lastVisible(el)&&!el.matches('.btn,.pill,.frame,.to-result,.solution-intro'))el=lastVisible(el);
+  return !!el&&TEXT.has(el.tagName)&&!el.closest('.btn,.pill,.frame,.to-result,.solution-intro');
+};
+const pads=[...document.querySelectorAll('.card')].map(c=>c.lastElementChild).filter(Boolean);
+const applyPad=()=>pads.forEach(b=>{
+  b.style.paddingBottom='';
+  if(!endsWithText(b))return;
+  const pb=parseFloat(getComputedStyle(b).paddingBottom);
+  if(small.matches)b.style.paddingBottom=(pb*2)+'px';
+  else if(tablet.matches)b.style.paddingBottom=(pb+45)+'px';
+});
+small.addEventListener('change',applyPad);
+tablet.addEventListener('change',applyPad);
+addEventListener('load',applyPad);
+applyPad();
+
+// embedded in the drive: keep links between case studies inside the frame
+if(document.documentElement.classList.contains('embed'))document.querySelectorAll('a[href^="/work/"]').forEach(a=>{a.href=a.getAttribute('href')+'?embed=1'});
+</script>
+</body>
+</html>

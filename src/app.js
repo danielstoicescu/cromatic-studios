@@ -33140,7 +33140,14 @@ void main() {
       return c;
     });
 
-    const mkTag = (brand, name, line, cta, onClick, extra = "") => {
+    // r122: the brands with their own case page open it full screen, from any card
+    const WORK_PAGES = { "Artisan Coffee Gear": "artisan-coffee-gear", "Craft Coffee": "craft-coffee", "Elithia": "elithia", "Yoshi Izakaya": "yoshi-izakaya", "ARCA Resort": "arca-resort",
+      "Routine Paris": "routine-paris", "Altius": "altius", "Help 4 Brain": "help-4-brain", "Investimental": "investimental", "Sip": "sip-coffee-wine", "Sip Coffee & Wine": "sip-coffee-wine",
+      "Bepco": "bepco", "K\xF3mpus": "kompus", "Assetto": "assetto", "Clinica Sante": "clinica-sante" };
+    window.__casePage = (brand) => (WORK_PAGES[brand] && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname) ? WORK_PAGES[brand] : null);
+    const withPage = (brand, onClick) => () => { const pg = window.__casePage(brand); if (pg && openFrameHook) return openFrameHook(`/work/${pg}/?embed=1`, brand); return onClick?.(); };
+    const mkTag = (brand, name, line, cta, onClick0, extra = "") => {
+      const onClick = withPage(brand, onClick0);
       const b = BRANDC[brand] || { c: "#2f9e4f", t: "#ffffff" };
       const t = el("button", `poi-card ${extra} out`, `
       <span class="poi-name">${name}</span>
@@ -33193,7 +33200,7 @@ void main() {
       m.innerHTML = `<div class="hm-info wide"><span class="eyebrow">MEDICAL AVENUE \u00B7 THE COURTYARD</span><span class="hm-name drop1" style="background:#e30613;color:#fff">Zdrovit</span>
         <p>Eight brands around one yard: health, clinics, beauty and perfume, from Bucharest to Barcelona, Los Angeles and Paris.</p>
         <div class="court-grid">${COURT_BRANDS.map((b, i) => `<button class="court-b" data-i="${i}" style="--cc:${b.c};--ct:${b.t}"><b>${b.name}</b><span class="mono">${b.line}</span></button>`).join("")}</div></div>`;
-      m.querySelectorAll(".court-b").forEach((btn) => { btn.onclick = () => openProjectHook?.(projOf(COURT_BRANDS[+btn.dataset.i])); });
+      m.querySelectorAll(".court-b").forEach((btn) => { btn.onclick = () => { const b0 = COURT_BRANDS[+btn.dataset.i], pg = window.__casePage(b0.name); if (pg && openFrameHook) { closeModal(); openFrameHook(`/work/${pg}/?embed=1`, b0.name); } else openProjectHook?.(projOf(b0)); }; });
       const close = el("button", "hm-close mono", "CLOSE \u00D7");
       close.onclick = closeModal;
       m.querySelector(".hm-info").appendChild(close);
@@ -33204,6 +33211,7 @@ void main() {
     const workTags = [...STREET_BRANDS, COURT_TAG, TAC, ...COFFEE_ADDS, ...LANE_BRANDS].map((b) => {
       BRANDC[b.name] = BRANDC[b.name] || { c: b.c, t: b.t };
       // brands with a case page on the website open it full screen (offline copies fall back to the card)
+      if (!b.page && window.__casePage(b.name)) b.page = window.__casePage(b.name);
       const onlinePage = b.page && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname);
       const t = mkTag(b.name, b.name.toUpperCase(), b.line, b === COURT_TAG ? "See the yard \u2192" : b.wip ? "Work in progress" : "Open the case \u2192", () => (b.wip ? null : b === COURT_TAG ? openCourt() : onlinePage && openFrameHook ? openFrameHook(`/work/${b.page}/?embed=1`, b.name) : openProjectHook?.(projOf(b))), "work-tag");
       t._st = b;
@@ -36700,9 +36708,10 @@ void main() {
             return;
           }
           const pr = projectOf(pl.name);
-          showCard(pl, pl.br ? MAP_STREET[pl.br] : pl.line.split(" \xB7 ")[0], `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`, pl.wip ? `<span class="mcd-wip mono">WORK IN PROGRESS</span>` : pl.small ? "" : `<button class="mcd-open">Open the case →</button>`);
-          if (pl.wip || pl.small) return;
-          card.querySelector(".mcd-open").onclick = () => tagOf(pl)?.click();
+          const pg = window.__casePage?.(pl.name);
+          showCard(pl, pl.br ? MAP_STREET[pl.br] : pl.line.split(" \xB7 ")[0], `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`, pl.wip ? `<span class="mcd-wip mono">WORK IN PROGRESS</span>` : pl.small && !pg ? "" : `<button class="mcd-open">Open the case →</button>`);
+          if (pl.wip || (pl.small && !pg)) return;
+          card.querySelector(".mcd-open").onclick = () => (pg && openFrameHook ? openFrameHook(`/work/${pg}/?embed=1`, pl.name) : tagOf(pl)?.click());
         };
         // r118: arriving somewhere, the camera swings slowly round onto the building's front, lower
         // and in three-quarters, with the van parked in the foreground. No jolt: every value runs on
