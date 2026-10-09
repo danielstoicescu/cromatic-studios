@@ -35582,7 +35582,7 @@ void main() {
       var perf = { avg: 16, t: 0, dpr: Math.min(window.devicePixelRatio, isMobile() ? 1.8 : 2) };
       function adaptResolution(rawMs, now) {
         perf.avg += (Math.min(rawMs, 60) - perf.avg) * 0.05;
-        if (now - perf.t < 1500 || document.hidden) return;
+        if (now - perf.t < 1500 || document.hidden || perf.lock) return;
         const max = Math.min(window.devicePixelRatio, isMobile() ? 1.8 : 2);
         let next = perf.dpr;
         if (perf.avg > 20 && perf.dpr > 1) next = Math.max(1, perf.dpr - 0.25);
@@ -35996,10 +35996,11 @@ void main() {
         const sr = 1500;
         // on the map the shadows follow what you look at, not the van
         const sunC = warpV((mapMode ? mapView.tgt : carPos).clone());
+        if (window.__staticShadow) sunC.set(-1e9, 0, 0);
         // r123: on the map the shadow box fits the view (in a few fixed steps), and its centre moves
         // in whole shadow texels along the light's own axes: no more shimmering edges as you move
-        if (mapMode) {
-          const ext = mapView.dist < 2600 ? 1400 : mapView.dist < 4200 ? 2100 : 3000;
+        if (window.__staticShadow) {} else if (mapMode) {
+          const ext = window.__shadowCache ? (mapView.dist < 2600 ? 2000 : mapView.dist < 4200 ? 2900 : 4000) : mapView.dist < 2600 ? 1400 : mapView.dist < 4200 ? 2100 : 3000;
           if (sun.shadow.camera.right !== ext) { sun.shadow.camera.left = sun.shadow.camera.bottom = -ext; sun.shadow.camera.right = sun.shadow.camera.top = ext; sun.shadow.camera.updateProjectionMatrix(); }
         }
         {
@@ -36007,15 +36008,24 @@ void main() {
           const dx = Math.cos(curSun.az) * Math.cos(curSun.el), dz = Math.sin(curSun.az) * Math.cos(curSun.el);
           const hl = Math.hypot(dx, dz) || 1, ax = dx / hl, az = dz / hl;
           const u = sunC.x * ax + sunC.z * az, v = -sunC.x * az + sunC.z * ax;
-          const us = Math.round(u / texel) * texel, vs = Math.round(v / texel) * texel;
+          // r125: on the map the shadows are cached: the box only moves in big steps (a third of its
+          // size) and is re-drawn then, or when the light or the box size changes. Between steps the
+          // shadow pass costs nothing. The ride carries a soft blob shadow of its own instead
+          const step = window.__shadowCache ? ext * 0.34 : texel;
+          const us = Math.round(u / step) * step, vs = Math.round(v / step) * step;
           sunC.x = us * ax - vs * az; sunC.z = us * az + vs * ax;
+          if (window.__shadowCache) {
+            const key = `${us}|${vs}|${ext}|${curSun.az.toFixed(2)}|${curSun.el.toFixed(2)}`;
+            sun.shadow.autoUpdate = false;
+            if (key !== window.__shKey) { window.__shKey = key; sun.shadow.needsUpdate = true; }
+          } else sun.shadow.autoUpdate = true;
         }
-        sun.position.set(
+        if (!window.__staticShadow) sun.position.set(
           sunC.x + Math.cos(curSun.az) * sr * Math.cos(curSun.el),
           Math.max(300, sr * Math.sin(curSun.el)),
           sunC.z + Math.sin(curSun.az) * sr * Math.cos(curSun.el) - 400
         );
-        sun.target.position.set(sunC.x, 0, sunC.z);
+        if (!window.__staticShadow) sun.target.position.set(sunC.x, 0, sunC.z);
         const wantRain = wx === "rain" && state.weatherOn && !flying;
         if (wantRain) {
           boltTimer -= dt;
@@ -36282,7 +36292,7 @@ void main() {
           } else if (!flying && state.L < 190) kinetic.resume();
           else if (state.L > 235) kinetic.pause();
         }
-        if (mvK > 0.5) tiltShiftRender(now); else outline.render(scene, camera);
+        if (mvK > 0.5 && !window.__noPost) tiltShiftRender(now); else if (window.__noPost) renderer.render(scene, camera); else outline.render(scene, camera);
         requestAnimationFrame(frame);
       }
       // ===================== r89/r90: Map Mode =====================
@@ -37048,6 +37058,8 @@ void main() {
         });
         canvas.addEventListener("pointermove", (e) => {
           if (!mapMode || !ptrs.has(e.pointerId)) return;
+          // r125: a mouse with no button held is not dragging (a release outside the window was lost)
+          if (e.pointerType === "mouse" && e.buttons === 0) { ptrs.delete(e.pointerId); mapView.vx = mapView.vz = 0; return; }
           const p = ptrs.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y;
           p.x = e.clientX; p.y = e.clientY;
           if (ptrs.size === 2) {
@@ -37107,6 +37119,9 @@ void main() {
         };
         canvas.addEventListener("pointerup", up);
         canvas.addEventListener("pointercancel", up);
+        window.addEventListener("pointerup", (e) => { if (ptrs.has(e.pointerId)) up(e); });
+        window.addEventListener("blur", () => { ptrs.clear(); pinch0 = 0; mapView.vx = mapView.vz = 0; });
+        canvas.addEventListener("lostpointercapture", (e) => { ptrs.delete(e.pointerId); });
         window.addEventListener("wheel", (e) => {
           if (!mapMode || mapIntro || e.target.closest?.(".map-dock, .mapcard, .hmodal-backdrop, .case-frame, .scf-modal, .map-card, .crew-panel, .map-rides")) return;
           e.preventDefault();
@@ -37349,6 +37364,24 @@ void main() {
       window.__cityDbg = () => ({ zones: buildKeepOut().map((z) => [z.x, z.y, z.r]), extra: EXTRA_KEEPOUT.map((z) => [z.x, z.y, z.r]), routes: Object.fromEntries(["A", "B", "C"].map((b) => [b, roundedPolyline(branchPoints(b)).map(([x, z]) => [Math.round(x), Math.round(z)])])), parks: PARKS, stops: STOPS, places: MAP_PLACES.map((p) => [p.name, p.px ?? p.x, p.pz ?? p.z, p.id, !!p.find]) });
       window.__path = () => route.points.filter((_, i) => i % 3 === 0).map((p) => [Math.round(p.x), Math.round(p.z)]);
       window.__mv = (o) => { mapView.follow = false; mapView.focus = null; mapView.yawGoal = mapView.pitchGoal = mapView.distGoal = null; Object.assign(mapView, o.v || {}); if (o.t) mapView.tgt.set(o.t[0], o.t[1] || 0, o.t[2]); mapView.lookY = mapView.lookYGoal = o.t ? o.t[1] || 0 : mapView.lookY; };
+      window.__perfLab = {
+        shadows(on) { renderer.shadowMap.enabled = on; renderer.shadowMap.needsUpdate = true; scene.traverse((o) => { if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => (m.needsUpdate = true)); } }); },
+        post(on) { window.__noPost = !on; },
+        dpr(v) { perf.lock = v; renderer.setPixelRatio(v); },
+        fabric(on) { (mats.cityTiles || []).forEach((m) => (m.visible = on)); },
+        trees(on) { scene.traverse((o) => { if (o.isInstancedMesh) o.visible = on; }); },
+        lite(on) { (mats.cityTiles || []).forEach((m) => (m.castShadow = !on)); scene.traverse((o) => { if (o.isInstancedMesh) o.castShadow = !on; }); const sz = on ? 1024 : 2048; sun.shadow.mapSize.set(sz, sz); sun.shadow.map?.dispose(); sun.shadow.map = null; },
+        cache(on) { window.__shadowCache = on; window.__shKey = null; },
+        info() { return { ...renderer.info.render, dpr: renderer.getPixelRatio(), sh: [sun.shadow.autoUpdate, sun.shadow.needsUpdate, window.__shKey, sun.shadow.camera.right] }; },
+        staticShadows(size = 4096) {
+          window.__staticShadow = true;
+          const c = sun.shadow.camera;
+          sun.shadow.mapSize.set(size, size); sun.shadow.map?.dispose(); sun.shadow.map = null;
+          sun.position.set(1300 + 900, 2600, 6000 + 500); sun.target.position.set(1300, 0, 6000); sun.target.updateMatrixWorld();
+          c.left = -6400; c.right = 6400; c.top = 6400; c.bottom = -6400; c.near = 10; c.far = 9000; c.updateProjectionMatrix();
+          renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
+        }
+      };
       window.__mapSet = (d, x, z) => { mapView.dist = d; mapView.distGoal = null; mapView.follow = false; mapView.tgt.set(x, 0, z); };
       window.__api = api;
       window.__xp = () => ({ pts: state.points, log: xpLog.map((e) => e.title + " +" + e.pts), pending: xpPending && xpPending.title, collected: [...xpCollected], chosen: state.branchChosen, branch: state.branch, card: currentCardStop, veh: state.vehicleId });
