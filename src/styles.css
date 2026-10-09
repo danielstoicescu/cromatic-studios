@@ -3302,10 +3302,10 @@ body.flight-done .map-top, body.flight-done .map-dock, body.flight-done .map-zoo
 .flight-end .fe-replay { height: 44px; padding: 0 20px; font-size: 14px; background: #fff; box-shadow: none; }
 
 /* r115: film grain over the picture (under the interface), and a soft cinematic vignette */
-body::after { content: ""; position: fixed; inset: -60px; z-index: 9; pointer-events: none; opacity: .19; mix-blend-mode: overlay;
+body::after { content: ""; position: fixed; inset: -60px; z-index: 9; pointer-events: none; opacity: .3; mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1.6 -.3'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
   animation: grain .9s steps(6) infinite; will-change: transform; }
-body::before { content: ""; position: fixed; inset: 0; z-index: 9; pointer-events: none; background: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 62%, rgba(20,12,24,.22) 100%); }
+body::before { content: ""; position: fixed; inset: 0; z-index: 9; pointer-events: none; background: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 62%, rgba(20,12,24,.3) 100%); }
 @keyframes grain { 0% { transform: translate(0, 0); } 17% { transform: translate(-22px, 14px); } 33% { transform: translate(18px, -26px); } 50% { transform: translate(-12px, -8px); } 67% { transform: translate(26px, 20px); } 83% { transform: translate(-30px, 4px); } 100% { transform: translate(0, 0); } }
 @media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
 body.site-mode::after, body.site-mode::before { display: none; }
@@ -3325,3 +3325,10 @@ body.site-mode::after, body.site-mode::before { display: none; }
 .map-pin.dot { padding: 6px; margin: -6px; }
 .map-pin.dot.chapter .mp-dot, .map-pin.dot.small .mp-dot { display: block; width: 8px; height: 8px; background: #cfcdc8; border-width: 1.5px; }
 .map-pin.chapter .mp-dot { display: none; }
+
+/* r119: phones: the interface never zooms (inputs at 16px so iOS does not zoom into them); only
+   the map zooms. While the boarding pass, the take-off or the keyboard is up, the dock steps away */
+html, body { touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+@media (max-width: 760px) { input, textarea, select { font-size: 16px !important; } }
+body.map-boarding .map-dock, body.map-takeoff .map-dock, body.flight-done .map-dock, body.kb-open .map-dock,
+body.map-boarding .map-zoom, body.kb-open .map-zoom { display: none !important; }

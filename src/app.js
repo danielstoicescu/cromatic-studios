@@ -15032,8 +15032,11 @@
         }
         intersectsSphere(sphere) {
           const planes = this.planes;
-          const center = sphere.center;
-          const negRadius = -sphere.radius - 230;
+          // r119: test the sphere where the city warp draws it (centre moved, a little slack for the bend)
+          const center = (_warpC || (_warpC = sphere.center.clone())).copy(sphere.center);
+          const [wdx, wdz] = cityWarpD(center.x, center.z);
+          center.x += wdx; center.z += wdz;
+          const negRadius = -sphere.radius * 1.25 - 12;
           for (let i = 0; i < 6; i++) {
             const distance = planes[i].distanceToPoint(center);
             if (distance < negRadius) {
@@ -15147,7 +15150,7 @@
       color_pars_fragment = "#if defined( USE_COLOR_ALPHA )\n	varying vec4 vColor;\n#elif defined( USE_COLOR )\n	varying vec3 vColor;\n#endif";
       color_pars_vertex = "#if defined( USE_COLOR_ALPHA )\n	varying vec4 vColor;\n#elif defined( USE_COLOR ) || defined( USE_INSTANCING_COLOR ) || defined( USE_BATCHING_COLOR )\n	varying vec3 vColor;\n#endif";
       color_vertex = "#if defined( USE_COLOR_ALPHA )\n	vColor = vec4( 1.0 );\n#elif defined( USE_COLOR ) || defined( USE_INSTANCING_COLOR ) || defined( USE_BATCHING_COLOR )\n	vColor = vec3( 1.0 );\n#endif\n#ifdef USE_COLOR\n	vColor *= color;\n#endif\n#ifdef USE_INSTANCING_COLOR\n	vColor.xyz *= instanceColor.xyz;\n#endif\n#ifdef USE_BATCHING_COLOR\n	vec3 batchingColor = getBatchingColor( getIndirectIndex( gl_DrawID ) );\n	vColor.xyz *= batchingColor.xyz;\n#endif";
-      common = "#define PI 3.141592653589793\n#define PI2 6.283185307179586\n#define PI_HALF 1.5707963267948966\n#define RECIPROCAL_PI 0.3183098861837907\n#define RECIPROCAL_PI2 0.15915494309189535\n#define EPSILON 1e-6\n#ifndef saturate\n#define saturate( a ) clamp( a, 0.0, 1.0 )\n#endif\n#define whiteComplement( a ) ( 1.0 - saturate( a ) )\nfloat pow2( const in float x ) { return x*x; }\nvec3 pow2( const in vec3 x ) { return x*x; }\nfloat pow3( const in float x ) { return x*x*x; }\nfloat pow4( const in float x ) { float x2 = x*x; return x2*x2; }\nfloat max3( const in vec3 v ) { return max( max( v.x, v.y ), v.z ); }\nfloat average( const in vec3 v ) { return dot( v, vec3( 0.3333333 ) ); }\nhighp float rand( const in vec2 uv ) {\n	const highp float a = 12.9898, b = 78.233, c = 43758.5453;\n	highp float dt = dot( uv.xy, vec2( a,b ) ), sn = mod( dt, PI );\n	return fract( sin( sn ) * c );\n}\n#ifdef HIGH_PRECISION\n	float precisionSafeLength( vec3 v ) { return length( v ); }\n#else\n	float precisionSafeLength( vec3 v ) {\n		float maxComponent = max3( abs( v ) );\n		return length( v / maxComponent ) * maxComponent;\n	}\n#endif\nstruct IncidentLight {\n	vec3 color;\n	vec3 direction;\n	bool visible;\n};\nstruct ReflectedLight {\n	vec3 directDiffuse;\n	vec3 directSpecular;\n	vec3 indirectDiffuse;\n	vec3 indirectSpecular;\n};\n#ifdef USE_ALPHAHASH\n	varying vec3 vPosition;\n#endif\nvec3 transformDirection( in vec3 dir, in mat4 matrix ) {\n	return normalize( ( matrix * vec4( dir, 0.0 ) ).xyz );\n}\nvec3 inverseTransformDirection( in vec3 dir, in mat4 matrix ) {\n	return normalize( ( vec4( dir, 0.0 ) * matrix ).xyz );\n}\nmat3 transposeMat3( const in mat3 m ) {\n	mat3 tmp;\n	tmp[ 0 ] = vec3( m[ 0 ].x, m[ 1 ].x, m[ 2 ].x );\n	tmp[ 1 ] = vec3( m[ 0 ].y, m[ 1 ].y, m[ 2 ].y );\n	tmp[ 2 ] = vec3( m[ 0 ].z, m[ 1 ].z, m[ 2 ].z );\n	return tmp;\n}\nbool isPerspectiveMatrix( mat4 m ) {\n	return m[ 2 ][ 3 ] == - 1.0;\n}\nvec2 equirectUv( in vec3 dir ) {\n	float u = atan( dir.z, dir.x ) * RECIPROCAL_PI2 + 0.5;\n	float v = asin( clamp( dir.y, - 1.0, 1.0 ) ) * RECIPROCAL_PI + 0.5;\n	return vec2( u, v );\n}\nvec3 BRDF_Lambert( const in vec3 diffuseColor ) {\n	return RECIPROCAL_PI * diffuseColor;\n}\nvec3 F_Schlick( const in vec3 f0, const in float f90, const in float dotVH ) {\n	float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );\n	return f0 * ( 1.0 - fresnel ) + ( f90 * fresnel );\n}\nfloat F_Schlick( const in float f0, const in float f90, const in float dotVH ) {\n	float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );\n	return f0 * ( 1.0 - fresnel ) + ( f90 * fresnel );\n} // validated\n// r118: the city warp: the whole world is bent by one smooth field, so straight streets curve\n// like Bucharest's while everything on them (kerbs, buildings, the van) bends along\nvec2 cityWarpD( vec2 p ) {\n\tfloat u = p.x - 1500.0, v = p.y - 4260.0;\n\tfloat dx = 90.0 * cos( v / 620.0 ) * cos( u / 900.0 ) + 38.0 * cos( v / 380.0 + u / 1100.0 ) + 45.0 * sin( u / 400.0 ) * sin( v / 700.0 );\n\tfloat dz = 70.0 * cos( u / 560.0 ) * cos( v / 1200.0 ) + 30.0 * cos( u / 330.0 - v / 900.0 );\n\tfloat m = 1.0 - smoothstep( 7500.0, 8500.0, p.y );\n\treturn vec2( dx, dz ) * m;\n}\nvec2 cityWarp( vec2 p ) { return p + cityWarpD( p ); }\n";
+      common = "#define PI 3.141592653589793\n#define PI2 6.283185307179586\n#define PI_HALF 1.5707963267948966\n#define RECIPROCAL_PI 0.3183098861837907\n#define RECIPROCAL_PI2 0.15915494309189535\n#define EPSILON 1e-6\n#ifndef saturate\n#define saturate( a ) clamp( a, 0.0, 1.0 )\n#endif\n#define whiteComplement( a ) ( 1.0 - saturate( a ) )\nfloat pow2( const in float x ) { return x*x; }\nvec3 pow2( const in vec3 x ) { return x*x; }\nfloat pow3( const in float x ) { return x*x*x; }\nfloat pow4( const in float x ) { float x2 = x*x; return x2*x2; }\nfloat max3( const in vec3 v ) { return max( max( v.x, v.y ), v.z ); }\nfloat average( const in vec3 v ) { return dot( v, vec3( 0.3333333 ) ); }\nhighp float rand( const in vec2 uv ) {\n	const highp float a = 12.9898, b = 78.233, c = 43758.5453;\n	highp float dt = dot( uv.xy, vec2( a,b ) ), sn = mod( dt, PI );\n	return fract( sin( sn ) * c );\n}\n#ifdef HIGH_PRECISION\n	float precisionSafeLength( vec3 v ) { return length( v ); }\n#else\n	float precisionSafeLength( vec3 v ) {\n		float maxComponent = max3( abs( v ) );\n		return length( v / maxComponent ) * maxComponent;\n	}\n#endif\nstruct IncidentLight {\n	vec3 color;\n	vec3 direction;\n	bool visible;\n};\nstruct ReflectedLight {\n	vec3 directDiffuse;\n	vec3 directSpecular;\n	vec3 indirectDiffuse;\n	vec3 indirectSpecular;\n};\n#ifdef USE_ALPHAHASH\n	varying vec3 vPosition;\n#endif\nvec3 transformDirection( in vec3 dir, in mat4 matrix ) {\n	return normalize( ( matrix * vec4( dir, 0.0 ) ).xyz );\n}\nvec3 inverseTransformDirection( in vec3 dir, in mat4 matrix ) {\n	return normalize( ( vec4( dir, 0.0 ) * matrix ).xyz );\n}\nmat3 transposeMat3( const in mat3 m ) {\n	mat3 tmp;\n	tmp[ 0 ] = vec3( m[ 0 ].x, m[ 1 ].x, m[ 2 ].x );\n	tmp[ 1 ] = vec3( m[ 0 ].y, m[ 1 ].y, m[ 2 ].y );\n	tmp[ 2 ] = vec3( m[ 0 ].z, m[ 1 ].z, m[ 2 ].z );\n	return tmp;\n}\nbool isPerspectiveMatrix( mat4 m ) {\n	return m[ 2 ][ 3 ] == - 1.0;\n}\nvec2 equirectUv( in vec3 dir ) {\n	float u = atan( dir.z, dir.x ) * RECIPROCAL_PI2 + 0.5;\n	float v = asin( clamp( dir.y, - 1.0, 1.0 ) ) * RECIPROCAL_PI + 0.5;\n	return vec2( u, v );\n}\nvec3 BRDF_Lambert( const in vec3 diffuseColor ) {\n	return RECIPROCAL_PI * diffuseColor;\n}\nvec3 F_Schlick( const in vec3 f0, const in float f90, const in float dotVH ) {\n	float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );\n	return f0 * ( 1.0 - fresnel ) + ( f90 * fresnel );\n}\nfloat F_Schlick( const in float f0, const in float f90, const in float dotVH ) {\n	float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );\n	return f0 * ( 1.0 - fresnel ) + ( f90 * fresnel );\n} // validated\n// r118: the city warp: the whole world is bent by one smooth field, so straight streets curve\n// like Bucharest's while everything on them (kerbs, buildings, the van) bends along\nvec2 cityWarpD( vec2 p ) {\n\tfloat x = ( p.x - 1500.0 ) / 1100.0, z = ( p.y - 4260.0 ) / 1100.0;\n\tvec2 d = 132.0 * vec2( sin( z ) * cosh( x ), - cos( z ) * sinh( x ) );\n\tfloat x2 = ( p.x - 1500.0 ) / 800.0, z2 = ( p.y - 4260.0 ) / 800.0 + 1.0;\n\td += 24.0 * vec2( sin( z2 ) * cosh( x2 ), - cos( z2 ) * sinh( x2 ) );\n\tfloat m = 1.0 - smoothstep( 7500.0, 8500.0, p.y );\n\treturn d * m;\n}\nvec2 cityWarp( vec2 p ) { return p + cityWarpD( p ); }\n";
       cube_uv_reflection_fragment = "#ifdef ENVMAP_TYPE_CUBE_UV\n	#define cubeUV_minMipLevel 4.0\n	#define cubeUV_minTileSize 16.0\n	float getFace( vec3 direction ) {\n		vec3 absDirection = abs( direction );\n		float face = - 1.0;\n		if ( absDirection.x > absDirection.z ) {\n			if ( absDirection.x > absDirection.y )\n				face = direction.x > 0.0 ? 0.0 : 3.0;\n			else\n				face = direction.y > 0.0 ? 1.0 : 4.0;\n		} else {\n			if ( absDirection.z > absDirection.y )\n				face = direction.z > 0.0 ? 2.0 : 5.0;\n			else\n				face = direction.y > 0.0 ? 1.0 : 4.0;\n		}\n		return face;\n	}\n	vec2 getUV( vec3 direction, float face ) {\n		vec2 uv;\n		if ( face == 0.0 ) {\n			uv = vec2( direction.z, direction.y ) / abs( direction.x );\n		} else if ( face == 1.0 ) {\n			uv = vec2( - direction.x, - direction.z ) / abs( direction.y );\n		} else if ( face == 2.0 ) {\n			uv = vec2( - direction.x, direction.y ) / abs( direction.z );\n		} else if ( face == 3.0 ) {\n			uv = vec2( - direction.z, direction.y ) / abs( direction.x );\n		} else if ( face == 4.0 ) {\n			uv = vec2( - direction.x, direction.z ) / abs( direction.y );\n		} else {\n			uv = vec2( direction.x, direction.y ) / abs( direction.z );\n		}\n		return 0.5 * ( uv + 1.0 );\n	}\n	vec3 bilinearCubeUV( sampler2D envMap, vec3 direction, float mipInt ) {\n		float face = getFace( direction );\n		float filterInt = max( cubeUV_minMipLevel - mipInt, 0.0 );\n		mipInt = max( mipInt, cubeUV_minMipLevel );\n		float faceSize = exp2( mipInt );\n		highp vec2 uv = getUV( direction, face ) * ( faceSize - 2.0 ) + 1.0;\n		if ( face > 2.0 ) {\n			uv.y += faceSize;\n			face -= 3.0;\n		}\n		uv.x += face * faceSize;\n		uv.x += filterInt * 3.0 * cubeUV_minTileSize;\n		uv.y += 4.0 * ( exp2( CUBEUV_MAX_MIP ) - faceSize );\n		uv.x *= CUBEUV_TEXEL_WIDTH;\n		uv.y *= CUBEUV_TEXEL_HEIGHT;\n		#ifdef texture2DGradEXT\n			return texture2DGradEXT( envMap, uv, vec2( 0.0 ), vec2( 0.0 ) ).rgb;\n		#else\n			return texture2D( envMap, uv ).rgb;\n		#endif\n	}\n	#define cubeUV_r0 1.0\n	#define cubeUV_m0 - 2.0\n	#define cubeUV_r1 0.8\n	#define cubeUV_m1 - 1.0\n	#define cubeUV_r4 0.4\n	#define cubeUV_m4 2.0\n	#define cubeUV_r5 0.305\n	#define cubeUV_m5 3.0\n	#define cubeUV_r6 0.21\n	#define cubeUV_m6 4.0\n	float roughnessToMip( float roughness ) {\n		float mip = 0.0;\n		if ( roughness >= cubeUV_r1 ) {\n			mip = ( cubeUV_r0 - roughness ) * ( cubeUV_m1 - cubeUV_m0 ) / ( cubeUV_r0 - cubeUV_r1 ) + cubeUV_m0;\n		} else if ( roughness >= cubeUV_r4 ) {\n			mip = ( cubeUV_r1 - roughness ) * ( cubeUV_m4 - cubeUV_m1 ) / ( cubeUV_r1 - cubeUV_r4 ) + cubeUV_m1;\n		} else if ( roughness >= cubeUV_r5 ) {\n			mip = ( cubeUV_r4 - roughness ) * ( cubeUV_m5 - cubeUV_m4 ) / ( cubeUV_r4 - cubeUV_r5 ) + cubeUV_m4;\n		} else if ( roughness >= cubeUV_r6 ) {\n			mip = ( cubeUV_r5 - roughness ) * ( cubeUV_m6 - cubeUV_m5 ) / ( cubeUV_r5 - cubeUV_r6 ) + cubeUV_m5;\n		} else {\n			mip = - 2.0 * log2( 1.16 * roughness );		}\n		return mip;\n	}\n	vec4 textureCubeUV( sampler2D envMap, vec3 sampleDir, float roughness ) {\n		float mip = clamp( roughnessToMip( roughness ), cubeUV_m0, CUBEUV_MAX_MIP );\n		float mipF = fract( mip );\n		float mipInt = floor( mip );\n		vec3 color0 = bilinearCubeUV( envMap, sampleDir, mipInt );\n		if ( mipF == 0.0 ) {\n			return vec4( color0, 1.0 );\n		} else {\n			vec3 color1 = bilinearCubeUV( envMap, sampleDir, mipInt + 1.0 );\n			return vec4( mix( color0, color1, mipF ), 1.0 );\n		}\n	}\n#endif";
       defaultnormal_vertex = "vec3 transformedNormal = objectNormal;\n#ifdef USE_TANGENT\n	vec3 transformedTangent = objectTangent;\n#endif\n#ifdef USE_BATCHING\n	mat3 bm = mat3( batchingMatrix );\n	transformedNormal /= vec3( dot( bm[ 0 ], bm[ 0 ] ), dot( bm[ 1 ], bm[ 1 ] ), dot( bm[ 2 ], bm[ 2 ] ) );\n	transformedNormal = bm * transformedNormal;\n	#ifdef USE_TANGENT\n		transformedTangent = bm * transformedTangent;\n	#endif\n#endif\n#ifdef USE_INSTANCING\n	mat3 im = mat3( instanceMatrix );\n	transformedNormal /= vec3( dot( im[ 0 ], im[ 0 ] ), dot( im[ 1 ], im[ 1 ] ), dot( im[ 2 ], im[ 2 ] ) );\n	transformedNormal = im * transformedNormal;\n	#ifdef USE_TANGENT\n		transformedTangent = im * transformedTangent;\n	#endif\n#endif\ntransformedNormal = normalMatrix * transformedNormal;\n#ifdef FLIP_SIDED\n	transformedNormal = - transformedNormal;\n#endif\n#ifdef USE_TANGENT\n	transformedTangent = ( modelViewMatrix * vec4( transformedTangent, 0.0 ) ).xyz;\n	#ifdef FLIP_SIDED\n		transformedTangent = - transformedTangent;\n	#endif\n#endif";
       displacementmap_pars_vertex = "#ifdef USE_DISPLACEMENTMAP\n	uniform sampler2D displacementMap;\n	uniform float displacementScale;\n	uniform float displacementBias;\n#endif";
@@ -23995,12 +23998,14 @@ void main() {
   // r118: the same city warp on the CPU (see cityWarpD in the shader chunk): the camera, the
   // labels over places and taps on the ground go through it
   function cityWarpD(x, z) {
-    const u = x - 1500, v = z - 4260;
-    const dx = 90 * Math.cos(v / 620) * Math.cos(u / 900) + 38 * Math.cos(v / 380 + u / 1100) + 45 * Math.sin(u / 400) * Math.sin(v / 700);
-    const dz = 70 * Math.cos(u / 560) * Math.cos(v / 1200) + 30 * Math.cos(u / 330 - v / 900);
+    // conformal (z + 132·sin(-i(z-z0)/1100) + ...): streets bend, right angles stay right angles
+    const a = (x - 1500) / 1100, b = (z - 4260) / 1100, a2 = (x - 1500) / 800, b2 = (z - 4260) / 800 + 1;
+    const dx = 132 * Math.sin(b) * Math.cosh(a) + 24 * Math.sin(b2) * Math.cosh(a2);
+    const dz = -132 * Math.cos(b) * Math.sinh(a) - 24 * Math.cos(b2) * Math.sinh(a2);
     const t = Math.min(1, Math.max(0, (z - 7500) / 1000)), m = 1 - t * t * (3 - 2 * t);
     return [dx * m, dz * m];
   }
+  var _warpC = null;
   function warpV(v) { const [dx, dz] = cityWarpD(v.x, v.z); v.x += dx; v.z += dz; return v; }
   // from the bent world back to the plan: fixed-point, the field is gentle enough to converge
   function unwarpV(v) {
@@ -24009,6 +24014,74 @@ void main() {
     for (let i = 0; i < 10; i++) { const [dx, dz] = cityWarpD(x, z); x = qx - dx; z = qz - dz; }
     v.x = x; v.z = z;
     return v;
+  }
+  // r119: the map drives on a real network: every road both ways, junctions joined, the shortest
+  // path to wherever you are going (no more going back to the fork)
+  var NAV = null;
+  function navNet() {
+    if (NAV) return NAV;
+    const C = [FORK_POS.x, FORK_POS.y], R = 70;
+    const arc = (a0, a1) => { const o = []; for (let k = 0; k <= 10; k++) { const a = a0 + (a1 - a0) * k / 10; o.push([C[0] + Math.cos(a) * R, C[1] + Math.sin(a) * R]); } return o; };
+    const rp = (pts) => roundedPolyline(pts).map(([x, z]) => [x, z]);
+    const segs = [
+      rp(ROUTE_MAIN),
+      arc(-Math.PI / 2, -Math.PI), arc(Math.PI, Math.PI / 2), arc(Math.PI / 2, 0), arc(0, -Math.PI / 2),
+      rp([[1430, 4260], [1400, 4260], [900, 4260], [820, 4260], [820, 4340], [802, 4900], [838, 5500], [820, 6100], [1170, 6100]]),
+      rp([[1570, 4260], [1600, 4260], [2080, 4260], [2062, 4900], [2098, 5500], [2080, 6100], [1250, 6100], [1230, 6100]]),
+      [[1230, 6100], [1200, 6100], [1170, 6100]],
+      rp([[1500, 4330], [1500, 4360], [1500, 5200], ...LANE_PTS]),
+      rp([[1170, 6100], [1170, 6180], ...ROUTE_MERGE.slice(1)]).filter(([, z]) => z < RAMP_BASE - 60)
+    ];
+    const key = (x, z) => Math.round(x * 2) + "," + Math.round(z * 2);
+    const ids = new Map(), P = [], adj = [];
+    const node = (x, z) => { const k = key(x, z); if (!ids.has(k)) { ids.set(k, P.length); P.push([x, z]); adj.push([]); } return ids.get(k); };
+    for (const sg of segs) for (let i = 1; i < sg.length; i++) {
+      const a = node(...sg[i - 1]), b = node(...sg[i]);
+      if (a === b) continue;
+      const w = Math.hypot(P[a][0] - P[b][0], P[a][1] - P[b][1]);
+      adj[a].push([b, w]); adj[b].push([a, w]);
+    }
+    NAV = { P, adj };
+    return NAV;
+  }
+  function navNearest(x, z) {
+    const { P } = navNet();
+    let bi = 0, bd = Infinity;
+    for (let i = 0; i < P.length; i++) { const d = (P[i][0] - x) ** 2 + (P[i][1] - z) ** 2; if (d < bd) { bd = d; bi = i; } }
+    return [bi, Math.sqrt(bd)];
+  }
+  // the shortest way along the roads, as a smooth polyline; back = metres to stop short of the end
+  function navPath(x0, z0, x1, z1, back = 0) {
+    const { P, adj } = navNet();
+    const [s0] = navNearest(x0, z0), [t0] = navNearest(x1, z1);
+    const dist = new Float64Array(P.length).fill(Infinity), prev = new Int32Array(P.length).fill(-1), done = new Uint8Array(P.length);
+    dist[s0] = 0;
+    for (;;) {
+      let u = -1, best = Infinity;
+      for (let i = 0; i < P.length; i++) if (!done[i] && dist[i] < best) { best = dist[i]; u = i; }
+      if (u < 0 || u === t0) break;
+      done[u] = 1;
+      for (const [v, w] of adj[u]) if (dist[u] + w < dist[v]) { dist[v] = dist[u] + w; prev[v] = u; }
+    }
+    const ids = [];
+    for (let v = t0; v >= 0; v = prev[v]) { ids.push(v); if (v === s0) break; }
+    ids.reverse();
+    let pts = [[x0, z0, 0], ...ids.map((i) => [P[i][0], P[i][1], 0])];
+    pts = smoothDense(pts, 4, 0.5).map(([x, z]) => [x, z]);
+    if (back > 0) {
+      let tot = 0;
+      for (let i = 1; i < pts.length; i++) tot += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+      if (tot > back + 40) {
+        let keep = tot - back, acc = 0;
+        for (let i = 1; i < pts.length; i++) {
+          const l = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+          if (acc + l >= keep) { const f = (keep - acc) / l; pts = [...pts.slice(0, i), [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * f, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * f]]; break; }
+          acc += l;
+        }
+      }
+    }
+    if (pts.length < 2) pts.push([pts[0][0] + 0.01, pts[0][1] + 0.01]);
+    return pts;
   }
   // src/route.js
   // relax a dense polyline: neighbours pull each point in, so small-radius joins (guard
@@ -24160,7 +24233,22 @@ void main() {
           this.branch = branch;
           this.rebuild();
         }
+        // r119: on the map the van drives a path found on the network
+        setPath(pts) {
+          this.isPath = true;
+          this.points = pts.map(([x, z]) => new Vector3(x, 0, z));
+          this.cum = [0];
+          for (let i = 1; i < this.points.length; i++) this.cum.push(this.cum[i - 1] + this.points[i].distanceTo(this.points[i - 1]));
+          this.total = this.cum[this.cum.length - 1];
+          this.stopL = {};
+          for (const s of STOPS) {
+            let best = 0, bd = Infinity;
+            for (let i = 0; i < this.points.length; i++) { const p = this.points[i], d = (p.x - s.x) ** 2 + (p.z - s.y) ** 2; if (d < bd) { bd = d; best = i; } }
+            this.stopL[s.id] = bd < 80 * 80 ? this.cum[best] : -1e9;
+          }
+        }
         rebuild() {
+          this.isPath = false;
           const flat = roundedPolyline(branchPoints(this.branch));
           this.points = flat.map(([x, z, y]) => new Vector3(x, z > RAMP_BASE - 1 ? elevationAt(z) : y, z));
           this.cum = [0];
@@ -24589,8 +24677,8 @@ void main() {
       const nx = -dz / l, nz = dx / l;
       for (const side of [-1, 1]) {
         if (rnd() > 0.44) continue;
-        const tx = x + nx * side * (ROUTE_W / 2 + 4 + rnd() * 4);
-        const tz = z + nz * side * (ROUTE_W / 2 + 4 + rnd() * 4);
+        const tx = x + nx * side * (ROUTE_W / 2 + 16 + rnd() * 5);
+        const tz = z + nz * side * (ROUTE_W / 2 + 16 + rnd() * 5);
         let ok = true;
         for (const s of STOPS) if ((tx - s.x) ** 2 + (tz - s.y) ** 2 < 150 ** 2) {
           ok = false;
@@ -24609,9 +24697,10 @@ void main() {
     trunkGeo.translate(0, 8, 0);
     mats.trunk = new MeshStandardMaterial({ color: "#7a4a22", roughness: 1 });
     const canopyGeo = new IcosahedronGeometry(15, 1);
+    // r119: the small top tuft is plain low-poly: thousands of trees, half the triangles
     canopyGeo.translate(0, 26, 0);
     mats.canopy = new MeshStandardMaterial({ roughness: 0.9, color: "#28C840" });
-    const canopy2Geo = new IcosahedronGeometry(9, 1);
+    const canopy2Geo = new IcosahedronGeometry(9, 0);
     canopy2Geo.translate(-7, 36, 3);
     const trunks = new InstancedMesh(trunkGeo, mats.trunk, spots.length);
     const canopies = new InstancedMesh(canopyGeo, mats.canopy, round.length);
@@ -24666,7 +24755,7 @@ void main() {
       m.setPosition(s.x, 0, s.z);
       trunks.setMatrixAt(i, m);
     }
-    trunks.castShadow = canopies.castShadow = canopies2.castShadow = cones.castShadow = cones2.castShadow = true;
+    trunks.castShadow = canopies.castShadow = canopies2.castShadow = cones.castShadow = cones2.castShadow = !window.matchMedia("(max-width: 719px)").matches;
     canopies.receiveShadow = true;
     parent.add(trunks, canopies, canopies2, cones, cones2);
   }
@@ -24945,11 +25034,19 @@ void main() {
     }
     // geometry goes straight into flat buffers: thousands of little BoxGeometries were the slow part
     const batch = () => ({ p: [], n: [], uv: [], c: [], m: [], idx: [], v: 0 });
-    const WB = batch(), RB = batch(), MB = batch();
+    // r119: one set of batches per 700-unit tile, so whatever is off screen (or out of the shadow
+    // box) is skipped whole instead of the whole city drawing every frame
+    const TILE = 700, tileMap = new Map();
+    let WB, RB, MB;
+    const useTile = (x, z) => {
+      const k = Math.floor((x - CITY_X0) / TILE) + "," + Math.floor((z - CITY_Z0) / TILE);
+      if (!tileMap.has(k)) tileMap.set(k, { W: batch(), R: batch(), M: batch() });
+      const t = tileMap.get(k); WB = t.W; RB = t.R; MB = t.M;
+    };
     // a quad in the building's frame (x along the street, z towards it, y up), turned by ang and
     // set at (cx, cz); corners counter-clockwise seen from outside
     let cA = 1, sA = 0, oX = 0, oZ = 0;
-    const frame = (cx, cz, ang) => { cA = Math.cos(ang); sA = Math.sin(ang); oX = cx; oZ = cz; };
+    const frame = (cx, cz, ang) => { cA = Math.cos(ang); sA = Math.sin(ang); oX = cx; oZ = cz; useTile(cx, cz); };
     const quad = (B, q, nrm, col, colMV, uvs, ao) => {
       // flat normal from the corners if none is given
       let nx, ny, nz;
@@ -25053,6 +25150,8 @@ void main() {
           let ok = fits(cx, cz, ux, uz, bw, d);
           if (!ok) { d *= 0.6; cx = px + nx * (sb + d / 2); cz = pz + nz * (sb + d / 2); ok = d > 18 && fits(cx, cz, ux, uz, bw, d); }
           if (!ok) { s += 7; continue; }
+          // r119: thinner: every few lots stays a garden (the street keeps its line)
+          if (rnd() < (cls === "minor" ? (core(cx, cz) ? 0.4 : 0.5) : cls === "route" ? 0.3 : 0.22)) { s += bw + 4 + rnd() * 8; continue; }
           claim(cx, cz, ux, uz, bw, d);
           // heights: boulevards carry the interwar blocks, lanes the houses, the drive's own roads
           // stay low so the street cameras see over them
@@ -25105,7 +25204,7 @@ void main() {
             }
           }
           count++;
-          s += bw + (rnd() < 0.12 ? 10 + rnd() * 14 : 1 + rnd() * 3);
+          s += bw + (rnd() < 0.2 ? 10 + rnd() * 16 : 2 + rnd() * 4);
         }
       }
     };
@@ -25123,7 +25222,7 @@ void main() {
         // inside a block: no street within reach on any side
         let open = true;
         for (const [ox, oz] of [[24, 0], [-24, 0], [0, 24], [0, -24]]) if (G.at(tx + ox, tz + oz) === 2) { open = false; break; }
-        if (!open || rnd() > (core(tx, tz) ? 0.42 : 0.26)) continue;
+        if (!open || rnd() > (core(tx, tz) ? 0.2 : 0.09)) continue;
         CITY_TREES.push({ x: tx, z: tz, s: 0.55 + rnd() * 0.6 });
       }
     }
@@ -25144,20 +25243,23 @@ void main() {
     emissiveTex.wrapS = emissiveTex.wrapT = RepeatWrapping;
     mats.buildings = new MeshStandardMaterial({ map: windowTex, vertexColors: true, roughness: 0.92, metalness: 0, emissiveMap: emissiveTex, emissive: new Color("#000000"), emissiveIntensity: 1 });
     mats.roofs = new MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
-    const walls = new Mesh(toGeo(WB), mats.buildings);
-    walls.castShadow = walls.receiveShadow = true;
-    const roofs = new Mesh(toGeo(RB), mats.roofs);
-    roofs.castShadow = roofs.receiveShadow = true;
-    parent.add(walls, roofs);
-    const mvProps = new Mesh(toGeo(MB), new MeshStandardMaterial({ vertexColors: true, roughness: 0.8 }));
-    mvProps.castShadow = true;
+    const propM = new MeshStandardMaterial({ vertexColors: true, roughness: 0.8 });
+    mats.cityTiles = [];
+    const mvProps = new Group();
     mvProps.visible = false;
+    for (const t of tileMap.values()) {
+      for (const [B, mat, list] of [[t.W, mats.buildings, true], [t.R, mats.roofs, true], [t.M, propM, false]]) {
+        if (!B.v) continue;
+        const m = new Mesh(toGeo(B), mat);
+        // phones: the city's own blocks skip the shadow pass (the landmarks keep theirs)
+        m.castShadow = !window.matchMedia("(max-width: 719px)").matches; m.receiveShadow = list;
+        if (list) { m.userData.def = m.geometry.attributes.color.array.slice(0); mats.cityTiles.push(m); parent.add(m); }
+        else mvProps.add(m);
+      }
+    }
     parent.add(mvProps);
-    mats.mvWalls = walls;
-    mats.mvRoofs = roofs;
+    mats.mvWalls = mats.cityTiles[0];
     mats.mvProps = mvProps;
-    mats.wallColorDefault = walls.geometry.attributes.color.array.slice(0);
-    mats.roofColorDefault = roofs.geometry.attributes.color.array.slice(0);
     net.at = G.at;
     return count;
   }
@@ -29590,6 +29692,8 @@ void main() {
     return { group: g, stair, carpet: [carpet, edge], glows, glowM, strobe, beaconM };
   }
   var JET_HOME = { x: 1560, z: 7820 };
+  // r119: every ride a size smaller next to the street and the buildings
+  var VEH_S = 0.74;
   // r91: the chapters as grey placards on posts, scattered off the road before the fork
   var CHAPTER_SIGNS = { dream: ["CH.01", "The Dream", "#B098C8"], voice: ["CH.02", "The Voice", "#F65342"], world: ["CH.03", "The World", "#119BFE"], };
   function buildChapterSigns(parent) {
@@ -32989,6 +33093,13 @@ void main() {
       init_data();
       init_util();
       var isMobile = () => window.matchMedia("(max-width: 719px)").matches;
+      // r119: phones: no page zoom (pinch, double tap, iOS gestures); only the map's canvas zooms.
+      // The keyboard flags the body so the map's dock steps out of the way of the form
+      document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
+      document.addEventListener("gesturechange", (e) => e.preventDefault(), { passive: false });
+      document.addEventListener("touchmove", (e) => { if (e.touches.length > 1 && !e.target.closest?.("canvas")) e.preventDefault(); }, { passive: false });
+      document.addEventListener("focusin", (e) => { if (e.target.matches?.("input, textarea, select")) document.body.classList.add("kb-open"); });
+      document.addEventListener("focusout", () => setTimeout(() => { if (!document.activeElement?.matches?.("input, textarea, select")) document.body.classList.remove("kb-open"); }, 250));
       var state = {
         branch: "A",
         branchChosen: false,
@@ -33146,6 +33257,7 @@ void main() {
         veh.beams = beams;
         veh.group.add(beams);
         scene.add(veh.group);
+        veh.group.scale.setScalar(VEH_S);
         spawnStart = performance.now();
       }
       setVehicle("groovy");
@@ -33492,10 +33604,7 @@ void main() {
           scene.fog.near = mv ? 9000 : s.id === "nightlife" ? 1100 : 900;
           scene.fog.far = mv ? 34000 : s.id === "nightlife" ? 5200 : 4200;
           if (mats.mvWalls) {
-            const attr = mats.mvWalls.geometry.attributes;
-            attr.color.array.set(mv ? attr.colorMV.array : mats.wallColorDefault);
-            if (mats.mvRoofs) { const ra = mats.mvRoofs.geometry.attributes; ra.color.array.set(mv ? ra.colorMV.array : mats.roofColorDefault); ra.color.needsUpdate = true; }
-            attr.color.needsUpdate = true;
+            for (const m of mats.cityTiles) { const a = m.geometry.attributes; a.color.array.set(mv ? a.colorMV.array : m.userData.def); a.color.needsUpdate = true; }
             mats.mvProps.visible = mv;
             if (!mats.winMV) { mats.winDef = mats.buildings.map; mats.winMV = makeWindowTextureMV(); mats.winMV.wrapS = mats.winMV.wrapT = RepeatWrapping; }
             mats.buildings.map = mv ? mats.winMV : mats.winDef;
@@ -34970,9 +35079,20 @@ void main() {
                   c /= 12.0;
                 }
                 vec2 q = vUv - 0.5;
-                c *= 1.0 - dot(q, q) * 0.32;
-                float n = fract(sin(dot(vUv * res + t, vec2(12.9898, 78.233))) * 43758.5453);
-                c += (n - 0.5) * 0.01;
+                // a little lateral colour towards the edges, like an old lens
+                vec2 ca = q * dot(q, q) * 5.0 / res * res.y * 0.0035;
+                c.r = mix(c.r, texture2D(tD, vUv + ca).r, 0.85);
+                c.b = mix(c.b, texture2D(tD, vUv - ca).b, 0.85);
+                c *= 1.0 - dot(q, q) * 0.42;
+                // print film: lifted blacks, warm highlights, cool shadows, a touch less saturation
+                float l = dot(c, vec3(0.299, 0.587, 0.114));
+                c = mix(vec3(l), c, 0.9);
+                c += vec3(0.018, 0.012, -0.004) * smoothstep(0.35, 1.0, l) - vec3(0.004, 0.0, -0.01) * (1.0 - smoothstep(0.0, 0.35, l));
+                c = c * 0.95 + 0.018;
+                // grain: per frame, strongest in the mid-tones
+                float n = fract(sin(dot(floor(vUv * res / 1.5) + t * 61.0, vec2(12.9898, 78.233))) * 43758.5453);
+                float n2 = fract(sin(dot(floor(vUv * res / 1.5) + t * 37.0, vec2(39.346, 11.135))) * 24634.6345);
+                c += ((n + n2) - 1.0) * 0.05 * (0.45 + 0.55 * (1.0 - abs(l - 0.5) * 2.0));
                 gl_FragColor = vec4(c, 1.0);
                 #include <tonemapping_fragment>
                 #include <colorspace_fragment>
@@ -35014,7 +35134,8 @@ void main() {
           lastUserInput = now; userBurst = true;
         }
         if (siteMode) siteProg = smooth(siteProg, siteScroll(), dt, 4), siteT += dt;
-        const sc = siteMode ? 0.5 : maxScroll() > 0 ? clamp2(window.scrollY / maxScroll(), 0, 1) : 0;
+        // (the map never scrolls: no layout read there, it forced a reflow every frame)
+        const sc = siteMode ? 0.5 : mapMode ? 0 : maxScroll() > 0 ? clamp2(window.scrollY / maxScroll(), 0, 1) : 0;
         state.targetL = sc * effectiveTotal();
         if (mapMode) state.targetL = mapNav.targetL;
         const nearDacia = state.L > route.stopL.merge - 1500 && state.L < route.stopL.merge - 250;
@@ -35026,8 +35147,8 @@ void main() {
           state.L = clamp2(state.L, prevL - maxStep, prevL + maxStep);
         }
         // a calm city speed everywhere on the ground (chapter jumps and the flight excepted)
-        if (!siteMode && now > jumpGuard && prevL < route.stopL.end + 400) {
-          const toEnd = mapMode && mapNav.place?.stop === "end" && state.L > route.stopL.end - 800;
+        if (!siteMode && now > jumpGuard && (mapMode || prevL < route.stopL.end + 400)) {
+          const toEnd = mapMode && mapNav.place?.stop === "end" && state.L > route.total - 800;
           const maxStep = (mapMode ? (toEnd ? 260 : Math.abs(state.targetL - state.L) > 1400 ? 3200 : 1400) : 620) * dt;
           state.L = clamp2(state.L, prevL - maxStep, prevL + maxStep);
         }
@@ -35093,18 +35214,18 @@ void main() {
           const fall = clamp2(sp2 / 0.55, 0, 1);
           veh.group.position.y += (1 - fall) * (1 - fall) * 320;
           if (sp2 < 0.55) {
-            veh.group.scale.set(0.85 + fall * 0.15, 1.15 - fall * 0.15, 0.85 + fall * 0.15);
+            veh.group.scale.set((0.85 + fall * 0.15) * VEH_S, (1.15 - fall * 0.15) * VEH_S, (0.85 + fall * 0.15) * VEH_S);
           } else {
             const k = (sp2 - 0.55) / 0.45;
             const squash = Math.sin(k * Math.PI) * 0.18;
-            veh.group.scale.set(1 + squash, 1 - squash, 1 + squash);
+            veh.group.scale.set((1 + squash) * VEH_S, (1 - squash) * VEH_S, (1 + squash) * VEH_S);
             spawnRing.position.set(carPos.x, carPos.y + 2.2, carPos.z);
             spawnRing.scale.setScalar(0.4 + k * 3.2);
             spawnRing.material.opacity = 0.85 * (1 - k);
           }
           if (sp2 >= 1) {
             spawnStart = -1;
-            veh.group.scale.setScalar(1);
+            veh.group.scale.setScalar(VEH_S);
             spawnRing.material.opacity = 0;
           }
         }
@@ -35517,7 +35638,7 @@ void main() {
           b.getWorldPosition(wp);
           b.rotation.y = Math.atan2(camera.position.x - wp.x, camera.position.z - wp.z);
         }
-        const nearTM = state.branch === "A" && carPos.z > 4090 && carPos.z < 4430 && carPos.x > 830 && carPos.x < 1150;
+        const nearTM = (state.branch === "A" || mapMode) && carPos.z > 4090 && carPos.z < 4430 && carPos.x > 830 && carPos.x < 1150;
         coffee.near = nearTM;
         if (!coffee.done && coffee.phase === "idle" && nearTM && !mapMode) {
           coffee.phase = "sip1";
@@ -35762,18 +35883,19 @@ void main() {
         if (!pl || jetFx.phase !== "idle") return;
         if (pl.find) return mapUI.find(pl);
         mapCloseBoarding();
-        const forkL = route.stopL.fork;
-        const legs = [];
-        const onStreet = state.L > forkL + 10;
-        const after = pl.stop === "services" || pl.stop === "end" || pl.board;
-        if (pl.br) {
-          if (onStreet && route.branch !== pl.br) legs.push({ L: forkL - 60, then: pl.br });
-          else legs.push({ then: pl.br });
-        } else if (after && !onStreet) legs.push({ then: "C" });
-        legs.push({ place: pl });
-        mapNav.legs = legs;
+        // where to: a stop, a road point, or a building beside the road (park just short of it)
+        const st = pl.stop ? STOPS.find((q) => q.id === pl.stop) : null;
+        const tx = st ? st.x : pl.x, tz = st ? st.y : pl.z;
+        const [, off] = navNearest(tx, tz);
+        const back = !st && !pl.tap && !pl.board && off > 20 ? 58 : 0;
+        const here = route.posAt(state.L, new Vector3());
+        route.setPath(navPath(here.x, here.z, tx, tz, back));
+        state.L = prevL = state.targetL = 0;
+        jumpGuard = performance.now() + 300;
+        mapNav.legs = [{ place: pl }];
         mapNav.place = pl;
         mapNav.moving = true;
+        mapNav.targetL = route.total;
         if (!pl.tap) { const m = document.querySelector(".tap-mark"); m?.classList.remove("on"); }
         mapView.follow = true; mapView.focus = null;
         mapView.vx = mapView.vz = 0;
@@ -35784,7 +35906,6 @@ void main() {
         document.body.classList.add("map-moving");
         mapUI.hideCard();
         mapUI.mark();
-        mapNextLeg();
       }
       function mapNextLeg() {
         const leg = mapNav.legs[0];
@@ -36309,6 +36430,24 @@ void main() {
           const k = pxScale(), sy = Math.sin(mapView.yaw), cy = Math.cos(mapView.yaw), fp = 1 / Math.sin(mapView.pitch);
           return [-dx * k * cy - dy * k * fp * sy, dx * k * sy - dy * k * fp * cy];
         };
+        // zoom about a point on screen: the ground under it stays under it (pins stay put)
+        const zCam = new PerspectiveCamera(), zDir = new Vector3(), zC = new Vector3(), zT = new Vector3();
+        // the plan point under a screen pixel, for the camera the map is heading to
+        const groundAt = (sx, sy) => {
+          const cp = Math.cos(mapView.pitch);
+          zC.set(mapView.tgt.x + Math.sin(mapView.yaw) * cp * mapView.dist, (mapView.tgt.y || 0) + Math.sin(mapView.pitch) * mapView.dist, mapView.tgt.z + Math.cos(mapView.yaw) * cp * mapView.dist);
+          zCam.fov = camera.fov; zCam.aspect = camera.aspect; zCam.near = camera.near; zCam.far = camera.far; zCam.updateProjectionMatrix();
+          zCam.position.copy(warpV(zC)); zCam.up.set(0, 1, 0); zCam.lookAt(warpV(zT.copy(mapView.tgt))); zCam.updateMatrixWorld();
+          zDir.set((sx / innerWidth) * 2 - 1, -(sy / innerHeight) * 2 + 1, 0.5).unproject(zCam).sub(zCam.position).normalize();
+          if (zDir.y > -1e-3) return null;
+          return unwarpV(zCam.position.clone().addScaledVector(zDir, -zCam.position.y / zDir.y));
+        };
+        const zoomAt = (sx, sy, d0, d1) => {
+          const g0 = mapView.follow ? null : groundAt(sx, sy);
+          mapView.dist = d1;
+          if (!g0) return;
+          for (let k = 0; k < 2; k++) { const g1 = groundAt(sx, sy); if (!g1) break; mapView.tgt.x += g0.x - g1.x; mapView.tgt.z += g0.z - g1.z; }
+        };
         canvas.addEventListener("pointerdown", (e) => {
           if (!mapMode || mapIntro) return;
           canvas.setPointerCapture?.(e.pointerId);
@@ -36322,7 +36461,11 @@ void main() {
           p.x = e.clientX; p.y = e.clientY;
           if (ptrs.size === 2) {
             const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
-            if (pinch0 > 0) { cine = null; mapView.distGoal = null; mapView.dist = Math.min(10000, Math.max(1900, dist0 * pinch0 / Math.max(d, 1))); }
+            if (pinch0 > 0) {
+              cine = null; mapView.distGoal = null;
+              const d0 = mapView.dist, d1 = Math.min(10000, Math.max(1900, dist0 * pinch0 / Math.max(d, 1)));
+              zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, d0, d1);
+            }
             const [wx, wz] = panVec(dx / 2, dy / 2); mapView.tgt.x += wx; mapView.tgt.z += wz;
             return;
           }
@@ -36360,7 +36503,7 @@ void main() {
           setTimeout(() => mapGo(pl), 380);
         };
         const tapRoads = {}, tapShared = [];
-        for (const b2 of BRANCHES) tapRoads[b2] = roundedPolyline(branchPoints(b2)).filter(([, z]) => z < RAMP_BASE).filter((_, i) => i % 2 === 0);
+        for (const b2 of BRANCHES) tapRoads[b2] = b2 === "A" ? navNet().P.slice() : [];
         for (const p2 of tapRoads.A) if (tapRoads.C.some((q) => Math.abs(q[0] - p2[0]) < 1 && Math.abs(q[1] - p2[1]) < 1)) tapShared.push(p2);
         const markEl = el("div", "tap-mark", `<i></i><i></i><b></b>`);
         pinsEl.appendChild(markEl);
@@ -36378,7 +36521,7 @@ void main() {
           e.preventDefault();
           mapView.distGoal = null;
           if (cine && cine.t < cine.dur) cine = null;
-          mapView.dist = Math.min(10000, Math.max(1900, mapView.dist * Math.exp(e.deltaY * 0.0012)));
+          zoomAt(e.clientX, e.clientY, mapView.dist, Math.min(10000, Math.max(1900, mapView.dist * Math.exp(e.deltaY * 0.0012))));
         }, { passive: false });
         const proj = new Vector3();
         // where the picture should put the van: the middle of the space no card covers
@@ -36564,6 +36707,17 @@ void main() {
           if (mapPrev && state.schemeIdx !== mapPrev.scheme) api.setScheme(mapPrev.scheme);
           else applyScheme(state.schemeIdx);
           if (mapPrev && state.vehicleId !== mapPrev.veh && SCHEMES[state.schemeIdx].id !== "monument") api.setVehicle(mapPrev.veh);
+          if (route.isPath) {
+            // from the map's path back onto the nearest of the drive's streets
+            const here = route.posAt(state.L, new Vector3());
+            let bb = "A", bL = 0, bd = Infinity;
+            for (const b2 of BRANCHES) {
+              const r2 = new Route(b2);
+              for (let i = 0; i < r2.points.length; i++) { const q = r2.points[i], d = (q.x - here.x) ** 2 + (q.z - here.z) ** 2; if (d < bd) { bd = d; bb = b2; bL = r2.cum[i]; } }
+            }
+            route.branch = bb; route.rebuild();
+            state.branch = bb; state.L = prevL = bL;
+          }
           // the drive holds you at the fork until a street is chosen: past it, the map's street counts as chosen
           if (state.L > route.stopL.fork + 10) { state.branch = route.branch; state.branchChosen = true; rebuildGolden(); }
           rebuildGolden();
@@ -36592,7 +36746,8 @@ void main() {
       window.__map = (on = true) => setMapMode(on);
       window.__mapGo = (id) => mapGo(MAP_PLACES.find((p) => p.id === id));
       window.__takeoff = () => mapTakeoff();
-      window.__cityDbg = () => ({ zones: buildKeepOut().map((z) => [z.x, z.y, z.r]), extra: EXTRA_KEEPOUT.map((z) => [z.x, z.y, z.r]), routes: Object.fromEntries(["A", "B", "C"].map((b) => [b, roundedPolyline(branchPoints(b)).map(([x, z]) => [Math.round(x), Math.round(z)])])), parks: PARKS, stops: STOPS, places: MAP_PLACES.map((p) => [p.name, p.px ?? p.x, p.pz ?? p.z]) });
+      window.__cityDbg = () => ({ zones: buildKeepOut().map((z) => [z.x, z.y, z.r]), extra: EXTRA_KEEPOUT.map((z) => [z.x, z.y, z.r]), routes: Object.fromEntries(["A", "B", "C"].map((b) => [b, roundedPolyline(branchPoints(b)).map(([x, z]) => [Math.round(x), Math.round(z)])])), parks: PARKS, stops: STOPS, places: MAP_PLACES.map((p) => [p.name, p.px ?? p.x, p.pz ?? p.z, p.id, !!p.find]) });
+      window.__path = () => route.points.filter((_, i) => i % 3 === 0).map((p) => [Math.round(p.x), Math.round(p.z)]);
       window.__mapSet = (d, x, z) => { mapView.dist = d; mapView.distGoal = null; mapView.follow = false; mapView.tgt.set(x, 0, z); };
       window.__api = api;
       window.__xp = () => ({ pts: state.points, log: xpLog.map((e) => e.title + " +" + e.pts), pending: xpPending && xpPending.title, collected: [...xpCollected], chosen: state.branchChosen, branch: state.branch, card: currentCardStop, veh: state.vehicleId });
