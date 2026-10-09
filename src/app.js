@@ -27072,10 +27072,10 @@ void main() {
     const W = 108, D = 56, H = 26;
     g.scale.setScalar(1.55);
     const hall = new Mesh(new BoxGeometry(W, H, D), white); hall.position.y = H / 2; g.add(hall);
-    const band = new Mesh(new BoxGeometry(W + 1, 3, D + 1), green); band.position.y = H - 1.5; g.add(band);
+    const band = new Mesh(new BoxGeometry(W + 1, 2.6, D + 1), green); band.position.y = H - 2.2; g.add(band);
     const solarTex = canvasTexture(128, 64, (ctx) => { ctx.fillStyle = "#1c2b4a"; ctx.fillRect(0, 0, 128, 64); ctx.strokeStyle = "#8ea3c4"; ctx.lineWidth = 1; for (let x = 0; x <= 128; x += 16) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 64); ctx.stroke(); } for (let y = 0; y <= 64; y += 16) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(128, y); ctx.stroke(); } });
-    const solar = new MeshStandardMaterial({ map: solarTex, roughness: 0.25, metalness: 0.4 });
-    for (let i = 0; i < 6; i++) { const p = new Mesh(new BoxGeometry(W / 6 - 3, 0.8, D - 8), solar); p.position.set(-W / 2 + (i + 0.5) * W / 6, H + 3, 0); p.rotation.z = 0.22; g.add(p); }
+    const solar = new MeshStandardMaterial({ map: solarTex, roughness: 0.6, metalness: 0 });
+    for (let i = 0; i < 6; i++) { const p = new Mesh(new BoxGeometry(W / 6 - 3, 0.8, D - 8), solar); p.position.set(-W / 2 + (i + 0.5) * W / 6, H + 4.5, 0); p.rotation.z = 0.22; p.receiveShadow = false; p.userData.noRecv = true; g.add(p); }
     const door = new Mesh(new BoxGeometry(22, 16, 0.6), dark); door.position.set(-24, 8, D / 2 + 0.4); g.add(door);
     const glass = new Mesh(new BoxGeometry(46, 8, 0.6), new MeshStandardMaterial({ color: "#2b3a48", roughness: 0.2, metalness: 0.4 })); glass.position.set(22, 15, D / 2 + 0.4); g.add(glass);
     const sign = signBoard({ logo: o.logo, name: "Bepco", signBg: "#ffffff", signInk: "#1a1a1a" }, 40, 10); sign.position.set(20, H - 7, D / 2 + 1); g.add(sign);
@@ -27099,7 +27099,7 @@ void main() {
     for (const [sx, sz] of [[-4, -4], [4, -4], [-4, 4], [4, 4]]) { const leg = new Mesh(new BoxGeometry(0.8, 60, 0.8), dark); leg.position.set(sx * 0.6, 30, sz * 0.6); leg.rotation.z = -sx * 0.035; leg.rotation.x = sz * 0.035; py.add(leg); }
     for (const y of [42, 52]) { const arm = new Mesh(new BoxGeometry(26, 0.8, 0.8), dark); arm.position.y = y; py.add(arm); }
     py.position.set(yx, 0, -32); g.add(py);
-    g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+    g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = !m.userData.noRecv; } });
     facing(g, o.face);
     EXTRA_KEEPOUT.push({ x: o.x, y: o.z, r: 150 });
     return finish(g, parent, o.x, o.z);
@@ -27107,39 +27107,62 @@ void main() {
   // "+50 other clients": a run of tall housing blocks opposite Dacia 99, the front one carrying a
   // big rooftop billboard. Fronts face -x (the Olari road).
   var FRIENDS_AT = { x: 1360, z: 6400 };
-  // r123: "+50 other clients" is a whole quarter opposite Dacia 99: a grid of housing blocks of
-  // every height and colour round a small square with trees, no billboard
+  // r125: "+50 other clients" is a small blessed quarter: houses like the ones around, but each
+  // one glows softly from inside, with a warm halo on the ground. Lit, not loud
+  var GLOW_HOUSES = [];
   function buildFriendsBlocks(parent) {
     const g = new Group();
-    const tints = ["#e9dcc7", "#f2d7c4", "#dfe6ea", "#e8e0f2", "#f1e6b8", "#d9e8d4", "#f3cfc8", "#e6d3bd"];
-    const roofM = new MeshStandardMaterial({ color: "#b9ad9a", roughness: 0.95 });
-    const winTex = (tint) => canvasTexture(128, 256, (ctx) => {
-      ctx.fillStyle = tint; ctx.fillRect(0, 0, 128, 256);
-      for (let r2 = 0; r2 < 12; r2++) for (let c = 0; c < 4; c++) {
-        const x = 6 + c * 31, y = 6 + r2 * 21;
-        ctx.fillStyle = "rgba(0,0,0,.12)"; ctx.fillRect(x - 2, y + 13, 26, 5);
-        ctx.fillStyle = (r2 * 3 + c * 5) % 7 === 0 ? "#f3d7a0" : "#3c4650"; ctx.fillRect(x + 3, y, 18, 13);
-      }
-    });
-    const mats2 = tints.map((t) => new MeshStandardMaterial({ map: winTex(t), roughness: 0.9 }));
     const r = rng(5050);
-    const X0 = 1255, X1 = 1475, Z0 = 6165, Z1 = 6640;
-    let i = 0;
-    for (let z = Z0 + 40; z < Z1 - 20; z += 92) for (let x = X0 + 30; x < X1 - 10; x += 74) {
-      if (Math.abs(x - 1365) < 45 && Math.abs(z - 6400) < 50) continue; // the square
-      const w = 34 + r() * 18, d = 48 + r() * 26, h = 46 + Math.pow(r(), 1.3) * 110, m = mats2[i++ % mats2.length];
-      m.map.repeat.set(Math.max(1, Math.round(d / 32)), Math.max(1, Math.round(h / 60)));
-      m.map.wrapS = m.map.wrapT = RepeatWrapping;
-      const blk = new Mesh(new BoxGeometry(w, h, d), [m, m, roofM, roofM, m, m]); blk.position.set(x - FRIENDS_AT.x, h / 2, z - FRIENDS_AT.z); g.add(blk);
-      const rf = new Mesh(new BoxGeometry(w + 2, 2.6, d + 2), roofM); rf.position.set(x - FRIENDS_AT.x, h + 1.3, z - FRIENDS_AT.z); g.add(rf);
-      if (r() < 0.6) { const sh = new Mesh(new BoxGeometry(9, 7, 10), roofM); sh.position.set(x - FRIENDS_AT.x + (r() - 0.5) * 12, h + 6, z - FRIENDS_AT.z); g.add(sh); }
+    const tints = ["#f7b98a", "#f49bb4", "#9cc6f2", "#c3a6f0", "#f5d36a", "#a8dc8e"];
+    const tile = new MeshStandardMaterial({ color: "#c46b4a", roughness: 0.8 });
+    const glowM = new MeshStandardMaterial({ color: "#ffe9b8", emissive: new Color("#ffcf7a"), emissiveIntensity: 0.9, roughness: 0.6 });
+    glowM.userData.outlineParameters = { visible: false };
+    const haloTex = canvasTexture(128, 128, (ctx) => { const gr = ctx.createRadialGradient(64, 64, 4, 64, 64, 64); gr.addColorStop(0, "rgba(255,170,70,.7)"); gr.addColorStop(.5, "rgba(255,190,90,.3)"); gr.addColorStop(1, "rgba(255,200,110,0)"); ctx.fillStyle = gr; ctx.fillRect(0, 0, 128, 128); });
+    const haloM = new MeshBasicMaterial({ map: haloTex, transparent: true, depthWrite: false });
+    haloM.userData.outlineParameters = { visible: false };
+    const X0 = 1260, X1 = 1470, Z0 = 6170, Z1 = 6630;
+    for (let z = Z0 + 34; z < Z1 - 20; z += 72) for (let x = X0 + 30; x < X1 - 10; x += 66) {
+      if (Math.abs(x - 1365) < 40 && Math.abs(z - 6400) < 44) continue;
+      const W = 30 + r() * 12, D = 26 + r() * 10, H = 18 + r() * 12, ox = x - FRIENDS_AT.x + (r() - 0.5) * 8, oz = z - FRIENDS_AT.z + (r() - 0.5) * 8;
+      const wall = new MeshStandardMaterial({ color: tints[Math.floor(r() * tints.length)], roughness: 0.85, emissive: new Color("#ffb860"), emissiveIntensity: 0.14 });
+      const body = new Mesh(new BoxGeometry(W, H, D), wall); body.position.set(ox, H / 2, oz); g.add(body);
+      const hip = new Mesh(new CylinderGeometry(0.45, 1, 11, 4, 1), tile); hip.rotation.y = Math.PI / 4; hip.scale.set((W + 4) / Math.SQRT2, 1, (D + 4) / Math.SQRT2); hip.position.set(ox, H + 5.5, oz); g.add(hip);
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const w = new Mesh(new BoxGeometry(5, 6, 0.6), glowM); w.position.set(ox + sx * W * 0.24, H * 0.55, oz + sz * (D / 2 + 0.3)); g.add(w); }
+      // a soft sparkle over each roof
+      const sp = new Mesh(new PlaneGeometry(18, 18), haloM); sp.position.set(ox, H + 16, oz); sp.rotation.x = -Math.PI / 2; g.add(sp);
+      const halo = new Mesh(new PlaneGeometry(W * 2.8, D * 2.8), haloM); halo.rotation.x = -Math.PI / 2; halo.position.set(ox, 0.9, oz); g.add(halo);
     }
-    const sq = new Mesh(new CylinderGeometry(42, 42, 1, 28), new MeshStandardMaterial({ color: "#e4ddce", roughness: 1 })); sq.position.set(1365 - FRIENDS_AT.x, 0.5, 0); g.add(sq);
-    const crownM = new MeshStandardMaterial({ color: "#5aa356", roughness: 0.9, flatShading: true }), trunkM = new MeshStandardMaterial({ color: "#6b4a2e" });
-    for (let k = 0; k < 6; k++) { const a2 = k / 6 * Math.PI * 2; const tr = new Mesh(new CylinderGeometry(1.2, 1.5, 10, 6), trunkM); tr.position.set(1365 - FRIENDS_AT.x + Math.cos(a2) * 30, 5, Math.sin(a2) * 30); g.add(tr); const cr = new Mesh(new IcosahedronGeometry(7, 1), crownM); cr.position.set(tr.position.x, 15, tr.position.z); g.add(cr); }
-    g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+    const sq = new Mesh(new CylinderGeometry(38, 38, 1, 28), new MeshStandardMaterial({ color: "#efe4cf", roughness: 1 })); sq.position.set(1365 - FRIENDS_AT.x, 0.5, 0); g.add(sq);
+    const crownM = new MeshStandardMaterial({ color: "#6ab563", roughness: 0.9, flatShading: true }), trunkM = new MeshStandardMaterial({ color: "#6b4a2e" });
+    for (let k = 0; k < 6; k++) { const a2 = k / 6 * Math.PI * 2; const tr = new Mesh(new CylinderGeometry(1.2, 1.5, 10, 6), trunkM); tr.position.set(1365 - FRIENDS_AT.x + Math.cos(a2) * 28, 5, Math.sin(a2) * 28); g.add(tr); const cr = new Mesh(new IcosahedronGeometry(7, 1), crownM); cr.position.set(tr.position.x, 15, tr.position.z); g.add(cr); }
+    GLOW_HOUSES.push(glowM);
+    g.traverse((m) => { if (m.isMesh && m.material !== haloM) { m.castShadow = m.position.y > 2; m.receiveShadow = true; } });
     for (let z = Z0; z <= Z1; z += 60) for (let x = X0; x <= X1; x += 60) EXTRA_KEEPOUT.push({ x, y: z, r: 44 });
     return finish(g, parent, FRIENDS_AT.x, FRIENDS_AT.z);
+  }
+  // r125: the services live in three houses on the way from Dacia 99 to Olari 9: two on the
+  // left kerb, one on the right; each carries its card (DOM, projected) and opens on a tap
+  var SERVICE_HOUSES = [
+    { x: 1092, z: 6690, face: "+x", svc: [0] },
+    { x: 1092, z: 6960, face: "+x", svc: [1] },
+    { x: 1252, z: 6880, face: "-x", svc: [2, 3] }
+  ];
+  function buildServiceHouses(parent) {
+    const cols = ["#28C840", "#FED012", "#B098C8"];
+    SERVICE_HOUSES.forEach((h, i) => {
+      const g = new Group();
+      const wall = new MeshStandardMaterial({ color: "#fbf6ec", roughness: 0.85 });
+      const acc = new MeshStandardMaterial({ color: cols[i], roughness: 0.6 });
+      const W = 50, D = 40, H = 30;
+      const body = new Mesh(new BoxGeometry(W, H, D), wall); body.position.y = H / 2; g.add(body);
+      const hip = new Mesh(new CylinderGeometry(0.45, 1, 14, 4, 1), new MeshStandardMaterial({ color: "#b9532f", roughness: 0.8 })); hip.rotation.y = Math.PI / 4; hip.scale.set((W + 5) / Math.SQRT2, 1, (D + 5) / Math.SQRT2); hip.position.y = H + 7; g.add(hip);
+      const band = new Mesh(new BoxGeometry(W + 1, 3, D + 1), acc); band.position.y = 13; g.add(band);
+      const door = new Mesh(new BoxGeometry(10, 12, 0.6), acc); door.position.set(0, 6, D / 2 + 0.3); g.add(door);
+      for (const sx of [-1, 1]) { const w = new Mesh(new BoxGeometry(9, 8, 0.6), new MeshStandardMaterial({ color: "#36414c", roughness: 0.3 })); w.position.set(sx * 15, 21, D / 2 + 0.3); g.add(w); }
+      facing(g, h.face);
+      EXTRA_KEEPOUT.push({ x: h.x, y: h.z, r: 46 });
+      finish(g, parent, h.x, h.z);
+    });
   }
   var STREET_BRANDS = [
     // Fintech Boulevard (B): Investimental first; east kerb, then the west kerb
@@ -27195,6 +27218,7 @@ void main() {
       else buildBrandBuilding(parent, o2);
     }
     buildFriendsBlocks(parent);
+    buildServiceHouses(parent);
     // r121: Kómpus, a lilac coffee shop right after Lapterra
     buildBrandBuilding(parent, { x: 706, z: 5737, face: "+x", kind: "house", name: "K\xD3MPUS", w: 46, d: 34, h: 28, wall: "#cdb8e6", accent: "#B098C8", signBg: "#B098C8", signInk: "#1a1420", keep: 46 });
     buildCourtyard(parent, COURT.x, COURT.z, COURT_BRANDS.map((o) => ({ ...o, logo: L(o.logo) })));
@@ -30167,10 +30191,10 @@ void main() {
     const heritage = buildHeritage(world);
     const plots = buildPlots(world);
     const pois = buildPOIs(world);
-    // r118: the city fabric goes last, so it knows every landmark it has to leave room for
-    buildRoads(world);
-    buildBuildings(world);
-    buildTrees(world);
+    // r118: the city fabric goes last, so it knows every landmark it has to leave room for.
+    // r125: and it is built a moment later, once the intro is already playing (see boot)
+    let fabricDone = false;
+    world.userData.buildFabric = () => { if (fabricDone) return; fabricDone = true; buildRoads(world); buildBuildings(world); buildTrees(world); };
     const ramp = buildRamp(world, accent);
     const clouds = buildClouds(world);
     scene.add(world);
@@ -31683,7 +31707,7 @@ void main() {
       </div>
       <p class="bp-ok ${status}"><span class="bp-check">${status === "sent" ? "✓" : "✉"}</span>
         <span>${status === "sent" ? `Sent. A copy of your boarding pass is on its way to <b>${esc(t.email)}</b>. We answer within one working day.` : status === "sending" ? "Boarding…" : "Your email app will open with everything on this pass. Hit send and the coffee is on."}</span></p>
-      <div class="bp-actions"><button class="coffee-btn bp-save">\u2B07 Save my boarding pass</button>${api.isMap?.() ? `<button class="coffee-btn bp-go">\u2708 Take off now</button>` : `<a class="coffee-btn bp-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener">\u{1F9ED} Navigate to Olari 9</a>`}</div>`;
+      <div class="bp-actions"><button class="coffee-btn bp-save">\u2B07 Save my boarding pass</button>${api.isMap?.() ? `<button class="coffee-btn bp-go">\u2708 Board now</button>` : `<a class="coffee-btn bp-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener">\u{1F9ED} Navigate to Olari 9</a>`}</div>`;
     };
     // the pass as a picture you keep: drawn on a canvas, downloaded as a PNG
     const savePass = (t) => {
@@ -31905,11 +31929,8 @@ void main() {
     }
     if (stopId === "merge") {
       const pills = el("div", "friend-pills");
-      FRIEND_PILLS.forEach((f, t) => {
-        const s = el("span", "", f);
-        s.style.background = t % 3 === 2 ? "var(--bg)" : CREW_COLORS[t % CREW_COLORS.length];
-        pills.appendChild(s);
-      });
+      const onMap = new Set([...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS, ...COURT_BRANDS].map((b) => b.name.toLowerCase()).concat(["two minutes", "slow coffee festival", "steam", "craft coffee", "artisan coffee gear", "yoshi izakaya", "arca resort", "antila", "unde", "oma coffee", "sip", "zdrovit", "the aesthetic court", "berero", "casa berero", "k\xF3mpus", "bism", "echo school", "help 4 brain", "elithia"]));
+      FRIEND_PILLS.filter((f) => !onMap.has(f.toLowerCase()) && !onMap.has(f.toLowerCase().replace(/ bank$/, ""))).forEach((f) => pills.appendChild(el("span", "fp-grey", f)));
       box.appendChild(pills);
     }
     if (stopId === "team") {
@@ -33789,10 +33810,10 @@ void main() {
           // on the map, the pass goes in and the jet takes off
           if (mapMode && mapBoarding) {
             clearTimeout(boardTimer); clearInterval(boardTick);
-            let left = 10;
+            let left = 6;
             const paint = () => {
               const b = document.querySelector(".mapcard.contact .bp-go");
-              if (b) b.innerHTML = `\u2708 Take-off in <b class="bp-count">${left}</b> s \u00B7 go now`;
+              if (b) b.innerHTML = `\u2708 Board now <i class="bp-count">${left}</i>`;
               document.body.style.setProperty("--board-left", left);
             };
             paint();
@@ -36578,7 +36599,9 @@ void main() {
         const cups = el("div", "olari-cups");
         for (let k = 0; k < 9; k++) {
           const c = el("i", "olari-cup", CZ_MUG(k));
-          c.style.cssText = `--x:${(6 + (k * 37) % 88)}vw;--y:${(14 + (k * 53) % 70)}vh;--w:${70 + (k * 29) % 70}px;--d:${(k * 0.7).toFixed(1)}s;--t:${(9 + (k * 3) % 7)}s;--r:${(k % 2 ? 1 : -1) * (18 + k * 6)}deg`;
+          // r125: only in the side margins, outside the column of cards and buttons
+          const side = k % 2 ? 1 : 0, mx = side ? 86 + (k * 7) % 9 : 2 + (k * 5) % 8;
+          c.style.cssText = `--x:${mx}vw;--y:${(12 + (k * 53) % 70)}vh;--w:${60 + (k * 29) % 50}px;--d:${(k * 0.7).toFixed(1)}s;--t:${(9 + (k * 3) % 7)}s;--r:${(k % 2 ? 1 : -1) * (18 + k * 6)}deg`;
           cups.appendChild(c);
         }
         wrap.appendChild(cups);
@@ -36600,24 +36623,34 @@ void main() {
         document.body.classList.add("olari-open");
       }
       var roadSvc = null;
+      // r125: the service cards stand on their three houses between Dacia 99 and Olari 9; a tap opens one
+      const svcProj = new Vector3();
       function roadServices() {
         if (!roadSvc) {
-          roadSvc = SERVICES.map((sv, i) => {
-            const c = el("div", "road-svc", `<span class="svcx-art" aria-hidden="true">${SVC_ART[i % SVC_ART.length]}</span><span class="oc-n mono">SERVICE ${i + 1} / ${SERVICES.length}</span><b>${sv.t}</b><span class="oc-pills">${sv.items.map((x) => `<i>${x}</i>`).join("")}</span>`);
-            c.style.setProperty("--sc", sv.c);
-            c.classList.add(i % 2 ? "r" : "l", i < 2 ? "hi" : "lo");
-            ui.root.appendChild(c);
-            return c;
+          roadSvc = [];
+          SERVICE_HOUSES.forEach((h) => {
+            const box = el("div", "svc-house");
+            h.svc.forEach((i) => {
+              const sv = SERVICES[i];
+              const c = el("button", "svc-hc", `<span class="svcx-art" aria-hidden="true">${SVC_ART[i % SVC_ART.length]}</span><span class="oc-n mono">SERVICE ${i + 1} / ${SERVICES.length}</span><b>${sv.t}</b><span class="oc-pills">${sv.items.map((x) => `<i>${x}</i>`).join("")}</span>`);
+              c.style.setProperty("--sc", sv.c);
+              c.onclick = (e) => { e.stopPropagation(); const was = c.classList.contains("open"); document.querySelectorAll(".svc-hc.open").forEach((q) => q.classList.remove("open")); c.classList.toggle("open", !was); };
+              box.appendChild(c);
+            });
+            box._h = h;
+            ui.root.appendChild(box);
+            roadSvc.push(box);
           });
         }
-        const endL = route.isPath ? route.total : route.stopL.end;
-        let A = endL - 760;
-        if (route.isPath) { let bd = Infinity; for (let i = 0; i < route.points.length; i++) { const q = route.points[i], d = (q.x - 1170) ** 2 + (q.z - 6300) ** 2; if (d < bd) { bd = d; A = route.cum[i]; } } if (bd > 200 * 200) A = endL - 900; }
-        const B = endL - 150;
-        const on = mapMode && mapNav.moving && mapNav.place?.stop === "end" && mapNav.legs.length === 1 && state.L > A - 400 && olari.t < 0;
-        const f = Math.max(0, (state.L - A) / (B - A));
-        // they gather one by one as you drive past and stay until the house opens
-        roadSvc.forEach((c, i) => c.classList.toggle("on", on && f >= i / 4));
+        const show = mapMode && !mapIntro && olari.t < 0 && jetFx.phase === "idle" && !mapBoarding && mapView.dist < 5200;
+        for (const box of roadSvc) {
+          if (!show) { if (!box._off) { box._off = true; box.classList.add("off"); } continue; }
+          warpV(svcProj.set(box._h.x, 52, box._h.z)).project(camera);
+          const x = (svcProj.x * 0.5 + 0.5) * innerWidth, y = (-svcProj.y * 0.5 + 0.5) * innerHeight;
+          const off = svcProj.z > 1 || x < -160 || x > innerWidth + 160 || y < 80 || y > innerHeight + 40;
+          if (box._off !== off) { box._off = off; box.classList.toggle("off", off); }
+          if (!off) box.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`;
+        }
       }
       function olariUpdate(dt) {
         roadServices();
@@ -36686,7 +36719,7 @@ void main() {
           <button class="map-crew" title="The crew you travel with"><span class="mcw-faces">${faces}</span><b>Crew</b></button>
           <button class="map-home" title="Cromatic Studios House, Str. Olari 9"><span class="mh-ic">\u{1F3E0}</span><b>Our house</b></button>
           <a class="map-site" href="/site/" title="The same story as a normal, fast website"><span class="ms-ic" aria-hidden="true"><i></i><i></i><i></i></span><b>Normal website</b></a>
-          <button class="map-exit" title="The same world as a scroll-driven drive"><span class="me-ic">\u{1F697}</span><span class="me-l">Drive mode</span></button>`);
+          <button class="map-exit" title="The same world as a scroll-driven drive"><span class="me-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M8 2 L6 22 M16 2 L18 22" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M12 4v3M12 10v3M12 16v3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span><span class="me-l">Drive mode</span></button>`);
         const rides = el("div", "map-rides hidden", `<span class="mono">YOUR RIDE</span><div class="mrs-list">${VEHICLES.map((v) => `<button class="mrs-v" data-v="${v.id}"><span class="mrs-th"></span><b>${v.label}</b></button>`).join("")}</div>`);
         const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="van" aria-label="Find the van" title="Find the van">◎</button><button data-z="wx" class="mz-wx" aria-label="Weather off" title="Turn weather off">\u2602</button>`);
         const dock = el("div", "map-dock", `<span class="map-dock-h mono">WHERE TO?</span><div class="map-chips"></div>`);
@@ -37192,7 +37225,10 @@ void main() {
               const off = mapIntro || o.z > 1 || o.x < -80 || o.x > W + 80 || o.y < (W < 720 ? 190 : 110) || o.y > H + 80;
               if (o.p.b._off !== off) { o.p.b._off = off; o.p.b.classList.toggle("off", off); }
               if (off) continue;
-              const dot = o.p.pl.tier > zl && o.p.pl !== mapNav.place;
+              // r125: the place you are at keeps the stage: whatever would sit on its label turns into a dot
+              const cur = order[0] && order[0].p.pl === mapNav.place ? order[0] : null;
+              const onCur = cur && cur !== o && Math.abs(cur.x - o.x) < 190 && Math.abs(cur.y - o.y) < 70;
+              const dot = (o.p.pl.tier > zl || onCur) && o.p.pl !== mapNav.place;
               if (o.p.b._dot !== dot) { o.p.b._dot = dot; o.p.b.classList.toggle("dot", dot); }
               const tf0 = `translate3d(${Math.round(o.x)}px, ${Math.round(o.y)}px, 0)`;
               if (dot) { if (o.p.b._tf !== tf0) { o.p.b._tf = tf0; o.p.b.style.transform = tf0; } continue; }
@@ -37213,6 +37249,7 @@ void main() {
         };
       }
       function mapEndIntro() {
+        document.body.classList.remove("kz-boot");
         if (!mapIntro) return;
         mapIntro = false;
         setTimeout(() => { mapView.distGoal = innerWidth < 720 ? 6600 : 5400; }, 250);
@@ -37357,7 +37394,14 @@ void main() {
         if (BOOT_MODE === "map") setTimeout(() => kinetic.finish(), 60);
         ui.hideLoader();
       }
-      Promise.race([document.fonts?.ready ?? Promise.resolve(), new Promise((r) => setTimeout(r, 1600))]).then(() => {
+      // r125: the city's streets, blocks and trees are built behind the intro (it plays on an opaque
+      // ground meanwhile), so the first frame is the type, not a blank screen
+      if (kzLoader) document.body.classList.add("kz-boot");
+      const fabricReady = new Promise((res) => {
+        const go = () => { worldRefs.world.userData.buildFabric(); applyScheme(state.schemeIdx); res(); };
+        if (kzLoader) setTimeout(() => requestAnimationFrame(() => setTimeout(go, 0)), 250); else { go(); }
+      });
+      Promise.all([fabricReady, Promise.race([document.fonts?.ready ?? Promise.resolve(), new Promise((r) => setTimeout(r, 1600))])]).then(() => {
         renderer.compile(scene, camera);
         clearInterval(bootT);
         try {

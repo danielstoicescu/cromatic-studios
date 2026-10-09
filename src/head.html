@@ -33,8 +33,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800&family=Poppins:ital,wght@0,400;0,500;0,600;0,800;0,900;1,400;1,800&family=JetBrains+Mono:wght@400;600;700&display=swap">
 <style>
-/* first paint: the same dark calibrating screen the app shows, before the script arrives */
-.boot { position: fixed; inset: 0; z-index: 99; display: flex; align-items: center; justify-content: center; background: #0d0c09; transition: opacity .4s ease; }
+/* first paint: the intro's cream ground with the star, before the script arrives */
+.boot { position: fixed; inset: 0; z-index: 99; display: flex; align-items: center; justify-content: center; background: #f7f1e6; transition: opacity .4s ease; }
+.boot .r, .boot .p { display: none; }
 .boot.gone { opacity: 0; pointer-events: none; }
 .boot svg { width: 128px; height: 128px; overflow: visible; }
 .boot .r { fill: none; stroke: rgba(251,250,245,.14); stroke-width: 3; }

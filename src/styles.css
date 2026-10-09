@@ -3449,3 +3449,32 @@ body.map-boarding .map-pins, body.map-boarding .map-pins * { pointer-events: non
 body:not(.site-mode) .topbar .brand img { filter: invert(1); mix-blend-mode: difference; }
 /* r124: XP back on the right, level with the logo; on laptop widths it keeps to its number */
 @media (min-width: 720px) and (max-width: 1560px) { body.map-mode:not(.site-mode) .topbar .you { width: 150px; padding: 0 6px 0 12px; } body.map-mode:not(.site-mode) .topbar .you .you-label { display: none; } }
+
+/* r125 */
+body.olari-open .map-card, body.olari-open .mapcard:not(.contact), body.olari-open .map-pins { visibility: hidden; }
+.bp-actions .bp-go .bp-count { font-style: normal; display: inline-grid; place-items: center; min-width: 24px; height: 24px; margin-left: 6px; border-radius: 50%; background: #141414; color: #FED012; font-size: 13px; }
+.map-top .map-exit { background: linear-gradient(110deg, #FED012 0%, #F28BA8 45%, #119BFE 100%) !important; color: #141414 !important; border: 2.5px solid #141414 !important; font-weight: 900; }
+.map-top .map-exit:hover { filter: saturate(1.2) brightness(1.05); }
+.map-top .map-exit .me-ic { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #141414; color: #fff; }
+.friend-pills .fp-grey { background: #ecebe7 !important; color: #141414 !important; border: 1.5px solid #c9c6bf !important; box-shadow: none !important; transform: none !important; }
+
+/* r125: service cards on their houses */
+.svc-house { position: fixed; left: 0; top: 0; z-index: 19; display: flex; flex-direction: column; gap: 6px; translate: -50% -100%; pointer-events: none; transition: opacity .3s; }
+.svc-house.off { opacity: 0; }
+.svc-house:not(.off) .svc-hc { pointer-events: auto; }
+.svc-hc { all: unset; cursor: pointer; box-sizing: border-box; width: 200px; padding: 9px 12px 10px; border-radius: 16px; border: 2.5px solid #141414; background: #fffdf7; color: #141414; box-shadow: inset 0 6px 0 var(--sc), 0 10px 22px -12px rgba(0,0,0,.45); display: flex; flex-direction: column; gap: 3px; transition: width .3s cubic-bezier(.2,.9,.3,1.1); }
+.svc-hc .svcx-art { display: none; }
+.svc-hc .oc-n { font-size: 8.5px; letter-spacing: .14em; opacity: .55; margin-top: 4px; }
+.svc-hc b { font: 900 15px/1.1 Poppins, sans-serif; }
+.svc-hc .oc-pills { display: none; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.svc-hc .oc-pills i { font-style: normal; font: 600 11px/1 Poppins, sans-serif; padding: 5px 8px; border-radius: 999px; background: color-mix(in srgb, var(--sc) 28%, #fff); border: 1.5px solid #141414; }
+.svc-hc.open { width: 300px; }
+.svc-hc.open .oc-pills { display: flex; }
+.svc-hc::after { content: "+ tap to open"; font: 700 9.5px/1 Poppins, sans-serif; opacity: .5; margin-top: 3px; }
+.svc-hc.open::after { content: "\2212 close"; }
+@media (max-width: 719px) { .svc-hc { width: 150px; padding: 7px 10px; } .svc-hc b { font-size: 12.5px; } .svc-hc.open { width: 230px; } }
+
+/* r125: while the city builds, the intro plays on an opaque ground; it melts away under the cups */
+.kz { background-color: transparent; transition: opacity .5s ease, background-color .9s ease .2s; }
+body.kz-boot .kz { background-color: #f7f1e6; opacity: 1 !important; }
+.map-pin.on { z-index: 6; }
