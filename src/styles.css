@@ -3332,3 +3332,18 @@ html, body { touch-action: manipulation; -webkit-text-size-adjust: 100%; }
 @media (max-width: 760px) { input, textarea, select { font-size: 16px !important; } }
 body.map-boarding .map-dock, body.map-takeoff .map-dock, body.flight-done .map-dock, body.kb-open .map-dock,
 body.map-boarding .map-zoom, body.kb-open .map-zoom { display: none !important; }
+
+/* r121: the boarding pass fields keep their contrast in every world (dark worlds turned the text light
+   on the light card); the World button reads on any world; the weather switch on the map */
+.mapcard .cf-field input, .mapcard .cf-field textarea, .mapcard .cf-field input:focus, .mapcard .cf-field textarea:focus {
+  color: #151515 !important; -webkit-text-fill-color: #151515; caret-color: #151515; background: #ffffff !important; }
+.mapcard .cf-field input::placeholder, .mapcard .cf-field textarea::placeholder { color: #6b6670 !important; -webkit-text-fill-color: #6b6670; }
+.map-top .map-world { color: #141414 !important; }
+.map-top .map-world:hover { color: #141414 !important; }
+.map-zoom .mz-wx { font-size: 20px; }
+.map-zoom .mz-wx.off { opacity: .5; text-decoration: line-through; }
+/* r121: the +50 clients card is wider, its names in a loose cloud */
+.wide-card { width: min(640px, calc(100vw - 32px)) !important; max-width: none !important; }
+.wide-card .friend-pills { display: flex; flex-wrap: wrap; gap: 6px; max-height: 42vh; overflow: auto; }
+.wide-card .friend-pills span { font-size: 12px; padding: 5px 10px; }
+.friends-stats { font-size: 17px; line-height: 1.4; }
