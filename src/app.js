@@ -26183,19 +26183,99 @@ void main() {
     return finish(g, parent, x, z);
   }
 
+  // r116: Pain Plaisir, a French bakery works: white walls, black trim, a sawtooth roof, a
+  // striped black-and-white awning over the shop, a brick oven chimney and baguettes in the window
+  var BAKERY_ANIM = [];
+  function buildPainPlaisir(parent, x, z) {
+    const g = new Group();
+    const white = new MeshStandardMaterial({ color: "#f6f4ef", roughness: 0.85 }), black = new MeshStandardMaterial({ color: "#151515", roughness: 0.6 });
+    const W = 96, D = 64, H = 30;
+    const body = new Mesh(new BoxGeometry(W, H, D), white); body.position.y = H / 2; g.add(body);
+    for (let i = 0; i < 4; i++) { const sh = new Shape(); sh.moveTo(-D / 2, 0); sh.lineTo(D / 2, 0); sh.lineTo(D / 2, 14); sh.lineTo(-D / 2, 0);
+      const t = new Mesh(new ExtrudeGeometry(sh, { depth: W / 4 - 2, bevelEnabled: false }), i % 2 ? white : white); t.rotation.y = -Math.PI / 2; t.position.set(-W / 2 + i * (W / 4) + W / 4 - 1, H, 0); g.add(t);
+      const gl = new Mesh(new BoxGeometry(W / 4 - 4, 12, 0.6), new MeshStandardMaterial({ color: "#2b3138", roughness: 0.2, metalness: 0.4 })); gl.position.set(-W / 2 + i * (W / 4) + W / 8, H + 6.5, D / 2 - 0.5); gl.rotation.x = -0.42; g.add(gl); }
+    const band = new Mesh(new BoxGeometry(W + 1, 2.4, D + 1), black); band.position.y = H - 1; g.add(band);
+    const plinth = new Mesh(new BoxGeometry(W + 1, 3, D + 1), black); plinth.position.y = 1.5; g.add(plinth);
+    const awnTex = canvasTexture(256, 32, (ctx) => { for (let i = 0; i < 16; i++) { ctx.fillStyle = i % 2 ? "#151515" : "#f6f4ef"; ctx.fillRect(i * 16, 0, 16, 32); } });
+    const awn = new Mesh(new BoxGeometry(56, 1, 10), new MeshStandardMaterial({ map: awnTex })); awn.position.set(-12, 15, D / 2 + 5); awn.rotation.x = 0.35; g.add(awn);
+    const win = new Mesh(new BoxGeometry(50, 10, 0.6), new MeshStandardMaterial({ color: "#ffe2a8", emissive: new Color("#ffcf8a"), emissiveIntensity: 0.4 })); win.position.set(-12, 7.5, D / 2 + 0.4); g.add(win);
+    const breadM = new MeshStandardMaterial({ color: "#d39a52", roughness: 0.7 });
+    for (let i = 0; i < 7; i++) { const b = new Mesh(new CapsuleGeometry(0.9, 9, 4, 8), breadM); b.rotation.z = Math.PI / 2 - 0.2; b.position.set(-32 + i * 6.6, 6 + (i % 2) * 1.6, D / 2 + 1.2); g.add(b); }
+    const door = new Mesh(new BoxGeometry(12, 16, 0.6), black); door.position.set(28, 8, D / 2 + 0.4); g.add(door);
+    const chim = new Mesh(new BoxGeometry(8, 26, 8), new MeshStandardMaterial({ color: "#b5563a", roughness: 0.9 })); chim.position.set(W / 2 - 10, H + 13, -D / 2 + 12); g.add(chim);
+    const sign = signBoard({ name: "Pain Plaisir", signBg: "#ffffff", signInk: "#111111", signFont: "italic 700 72px Georgia, serif" }, 46, 9); sign.position.set(-12, 22, D / 2 + 1); g.add(sign);
+    g.rotation.y = -Math.PI / 2;
+    EXTRA_KEEPOUT.push({ x, y: z, r: 70 });
+    return finish(g, parent, x, z);
+  }
+  // r116: Patiline, an industrial bakery: corrugated silver sheds with red trim, and a long glass
+  // front where you watch the line: dough in, croissants and loaves riding the belt into the oven
+  function buildPatiline(parent, x, z) {
+    const g = new Group();
+    const corr = canvasTexture(128, 64, (ctx) => { ctx.fillStyle = "#c9ced3"; ctx.fillRect(0, 0, 128, 64); for (let i = 0; i < 128; i += 8) { ctx.fillStyle = "#aeb4ba"; ctx.fillRect(i, 0, 3, 64); } }, { repeat: [8, 2] });
+    const silver = new MeshStandardMaterial({ map: corr, roughness: 0.45, metalness: 0.55, envMap: typeof getEnvMap === "function" ? getEnvMap() : null, envMapIntensity: 0.5 });
+    const red = new MeshStandardMaterial({ color: "#d71920", roughness: 0.5 });
+    const W = 120, D = 66, H = 32;
+    const shed = new Mesh(new BoxGeometry(W, H, D), silver); shed.position.y = H / 2; g.add(shed);
+    const arch = new Mesh(new CylinderGeometry(D / 2, D / 2, W, 24, 1, false, 0, Math.PI), silver); arch.rotation.z = Math.PI / 2; arch.rotation.x = Math.PI / 2; arch.scale.set(1, 1, 0.35); arch.position.y = H; g.add(arch);
+    for (const y of [1.5, H - 1]) { const b = new Mesh(new BoxGeometry(W + 1, 3, D + 1), red); b.position.y = y; g.add(b); }
+    for (const sx of [-1, 1]) { const st = new Mesh(new CylinderGeometry(3, 3, 30, 12), silver); st.position.set(sx * 40, H + 20, -16); g.add(st); const rim = new Mesh(new CylinderGeometry(3.4, 3.4, 2, 12), red); rim.position.set(sx * 40, H + 34, -16); g.add(rim); }
+    const glass = new Mesh(new BoxGeometry(84, 18, 0.5), new MeshStandardMaterial({ color: "#bfe3ff", transparent: true, opacity: 0.35, roughness: 0.05 })); glass.position.set(-10, 13, D / 2 + 0.3); g.add(glass);
+    const inner = new Mesh(new BoxGeometry(84, 18, 1), new MeshStandardMaterial({ color: "#f3f1ec", emissive: new Color("#fff3d6"), emissiveIntensity: 0.25 })); inner.position.set(-10, 13, D / 2 - 6); g.add(inner);
+    const belt = new Mesh(new BoxGeometry(80, 1.2, 6), new MeshStandardMaterial({ color: "#2b2b2b", roughness: 0.6 })); belt.position.set(-10, 7, D / 2 - 3); g.add(belt);
+    const oven = new Mesh(new BoxGeometry(16, 13, 10), red); oven.position.set(26, 10, D / 2 - 3); g.add(oven);
+    const glow = new Mesh(new BoxGeometry(10, 5, 0.4), new MeshStandardMaterial({ color: "#ff9a3c", emissive: new Color("#ff7a1a"), emissiveIntensity: 1.2 })); glow.position.set(26, 8.5, D / 2 + 2.1); g.add(glow);
+    const arm = new Group(); const armM = new MeshStandardMaterial({ color: "#d71920", roughness: 0.4 });
+    const a1 = new Mesh(new BoxGeometry(1.4, 10, 1.4), armM); a1.position.y = 5; arm.add(a1); const a2 = new Mesh(new BoxGeometry(8, 1.4, 1.4), armM); a2.position.set(4, 10, 0); arm.add(a2);
+    arm.position.set(-34, 7.6, D / 2 - 3); g.add(arm);
+    const crois = new MeshStandardMaterial({ color: "#d99a45", roughness: 0.6 }), loaf = new MeshStandardMaterial({ color: "#b8763a", roughness: 0.7 });
+    const items = [];
+    for (let i = 0; i < 9; i++) { const m = i % 2 ? new Mesh(new TorusGeometry(1.8, 0.9, 6, 10, Math.PI * 1.3), crois) : new Mesh(new CapsuleGeometry(1.2, 3.6, 4, 8), loaf); if (i % 2) m.rotation.x = Math.PI / 2; else m.rotation.z = Math.PI / 2; g.add(m); items.push(m); }
+    BAKERY_ANIM.push((t) => {
+      items.forEach((m, i) => { const u = ((t * 0.12 + i / items.length) % 1); m.position.set(-50 + u * 70, 8.6, D / 2 - 3); m.visible = u < 0.95; });
+      arm.rotation.z = Math.sin(t * 2.2) * 0.5;
+    });
+    const sign = signBoard({ name: "PATILINE", signBg: "#d71920", signInk: "#ffffff" }, 46, 10); sign.position.set(-10, 27, D / 2 + 0.8); g.add(sign);
+    g.rotation.y = Math.PI;
+    EXTRA_KEEPOUT.push({ x, y: z, r: 80 });
+    return finish(g, parent, x, z);
+  }
   // the Zdrovit courtyard: a paved yard with a fountain and trees, small buildings around it
+  // the small brands of the Zdrovit yard: one kiosk each round the fountain, room for more
+  var ZDROVIT_YARD = ["Lacalut", "Periferisan", "Help 4 Brain", "Parusan", "Bonylash", "Litorsal"];
+  var YARD_SLOTS = 12;
+  // the first brands take every other kiosk, so they spread round the yard; new ones fill the gaps
+  const yardSlotOf = (k) => (k < YARD_SLOTS / 2 ? k * 2 : (k - YARD_SLOTS / 2) * 2 + 1);
+  function yardSpot(i) { const a = (i / YARD_SLOTS) * Math.PI * 2 - Math.PI / 2; return [1720 + Math.cos(a) * 78, 5070 + Math.sin(a) * 84]; }
   function buildCourtyard(parent, cx, cz, list) {
     const g = new Group();
-    const pave = new Mesh(new BoxGeometry(300, 0.8, 330), new MeshStandardMaterial({ color: "#e7e0d2", roughness: 1 }));
+    // the gate on the avenue side, white pillars and a red ZDROVIT lintel
+    { const gm = new MeshStandardMaterial({ color: "#f4f2ec", roughness: 0.8 });
+      for (const dz of [-28, 28]) { const pl = new Mesh(new BoxGeometry(6, 26, 6), gm); pl.position.set(cx - 168, 13, cz + dz); g.add(pl); }
+      const lint = signBoard({ name: "ZDROVIT", signBg: "#e30613", signInk: "#ffffff" }, 62, 9); lint.position.set(cx - 168, 27, cz); lint.rotation.y = -Math.PI / 2; g.add(lint);
+      const path = new Mesh(new BoxGeometry(60, 0.9, 46), new MeshStandardMaterial({ color: "#d8cfbd", roughness: 1 })); path.position.set(cx - 150, 0.45, cz); g.add(path); }
+    { const kM = [new MeshStandardMaterial({ color: "#f4f2ec", roughness: 0.8 }), new MeshStandardMaterial({ color: "#d9d6cf", roughness: 0.8 })];
+      for (let i = 0; i < YARD_SLOTS; i++) {
+        const [kx, kz] = yardSpot(i), k0 = [...Array(ZDROVIT_YARD.length).keys()].find((q) => yardSlotOf(q) === i), used = k0 != null;
+        const k = new Group();
+        const base = new Mesh(new BoxGeometry(16, used ? 11 : 2, 12), kM[used ? 0 : 1]); base.position.y = used ? 5.5 : 1; k.add(base);
+        if (used) {
+          const roof = new Mesh(new BoxGeometry(19, 1.4, 15), new MeshStandardMaterial({ color: "#e30613", roughness: 0.6 })); roof.position.y = 11.7; k.add(roof);
+          const sg = signBoard({ name: ZDROVIT_YARD[k0], signBg: "#ecebe7", signInk: "#3d3c39" }, 15, 3.2); sg.position.set(0, 8.4, 6.2); k.add(sg);
+        }
+        k.position.set(kx, 0, kz); k.rotation.y = Math.atan2(cx - kx, cz - kz); g.add(k);
+      }
+    }
+    const pave = new Mesh(new BoxGeometry(340, 0.8, 370), new MeshStandardMaterial({ color: "#e7e0d2", roughness: 1 }));
     pave.position.set(cx, 0.4, cz); pave.receiveShadow = true; g.add(pave);
-    const grass = new Mesh(new CylinderGeometry(54, 54, 1.2, 32), new MeshStandardMaterial({ color: "#7cc472", roughness: 1 }));
+    const grass = new Mesh(new CylinderGeometry(50, 50, 1.2, 32), new MeshStandardMaterial({ color: "#7cc472", roughness: 1 }));
     grass.position.set(cx, 0.8, cz); g.add(grass);
     const basin = new Mesh(new CylinderGeometry(14, 15, 3, 24), new MeshStandardMaterial({ color: "#d9d2c3", roughness: 0.9 })); basin.position.set(cx, 1.5, cz);
     const water = new Mesh(new CylinderGeometry(12, 12, 0.6, 24), new MeshStandardMaterial({ color: "#7fc8e8", roughness: 0.15, metalness: 0.2 })); water.position.set(cx, 3, cz);
     const jet = new Mesh(new CylinderGeometry(0.8, 1.6, 9, 8), new MeshStandardMaterial({ color: "#d8f1ff", transparent: true, opacity: 0.8 })); jet.position.set(cx, 7, cz);
     g.add(basin, water, jet);
     const crownM = new MeshStandardMaterial({ color: "#4fae5c", roughness: 0.9, flatShading: true }), trunkM = new MeshStandardMaterial({ color: "#7a5a3a" });
-    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; const tx = cx + Math.cos(a) * 80, tz = cz + Math.sin(a) * 92; const tr = new Mesh(new CylinderGeometry(1.2, 1.6, 10, 6), trunkM); tr.position.set(tx, 5, tz); const cr = new Mesh(new IcosahedronGeometry(7.5, 1), crownM); cr.position.set(tx, 15, tz); g.add(tr, cr); }
+    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; const tx = cx + Math.cos(a + 0.26) * 112, tz = cz + Math.sin(a + 0.26) * 118; const tr = new Mesh(new CylinderGeometry(1.2, 1.6, 10, 6), trunkM); tr.position.set(tx, 5, tz); const cr = new Mesh(new IcosahedronGeometry(7.5, 1), crownM); cr.position.set(tx, 15, tz); g.add(tr, cr); }
     g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
     parent.add(g);
     for (const o of list) buildBrandBuilding(parent, o);
@@ -26287,11 +26367,12 @@ void main() {
     { br: "B", name: "Witanalitica", x: 2205, z: 5540, face: "-x", kind: "office", w: 66, h: 48, accent: "#6b4fd8", c: "#6b4fd8", t: "#ffffff", line: "DATA · DIGITAL" },
     { br: "B", name: "Techventures Bank", logo: "logoTechventures", x: 2210, z: 5850, face: "-x", kind: "tower", w: 70, d: 56, h: 120, accent: "#0d3b66", c: "#0d3b66", t: "#ffffff", line: "BANKING · DIGITAL" },
     // Medical Avenue (C): after the palace and the courtyard, the clinics
-    // r87: after the palace and the courtyard the clinics alternate kerbs, so the avenue has two sides
-    { br: "C", name: "Altius", logo: "logoAltius", x: 1610, z: 5390, face: "-x", kind: "clinic", w: 66, h: 52, accent: "#2a5d8f", c: "#2a5d8f", t: "#ffffff", line: "MEDICAL" },
-    { br: "C", name: "Elithia", x: 1390, z: 5530, face: "+x", kind: "clinic", w: 64, h: 40, accent: "#7cc4a8", c: "#7cc4a8", t: "#0c2a20", line: "MEDICAL" },
-    { br: "C", name: "Clinica Sante", logo: "logoClinicaSante", x: 1610, z: 5670, face: "-x", kind: "clinic", w: 70, h: 46, accent: "#2f9e4f", c: "#2f9e4f", t: "#ffffff", line: "CLINIC · BRAND · FILM" },
-    { br: "C", name: "Zoetis", x: 1390, z: 5810, face: "+x", kind: "clinic", w: 70, h: 38, accent: "#f2763b", c: "#f2763b", t: "#2a1205", line: "ANIMAL HEALTH" },
+    // r116: Clinica Sante faces the palace across the avenue; Altius is a glass tower with a
+    // turquoise accent (Petronas style) with Zoetis beside it; Elithia is two salmon interwar villas
+    { br: "C", name: "Clinica Sante", logo: "logoClinicaSante", x: 1428, z: 4575, face: "+x", kind: "clinic", w: 96, d: 52, h: 58, accent: "#2f9e4f", c: "#2f9e4f", t: "#ffffff", line: "CLINIC \xB7 BRAND \xB7 FILM" },
+    { br: "C", name: "Altius", logo: "logoAltius", x: 1612, z: 5400, face: "-x", kind: "tower", w: 72, d: 62, h: 230, accent: "#22c7b8", glass: "#33515c", frame: "#c8d1d8", c: "#16a89b", t: "#ffffff", line: "MEDICAL" },
+    { br: "C", name: "Zoetis", x: 1610, z: 5545, face: "-x", kind: "clinic", w: 70, h: 40, accent: "#f2763b", c: "#f2763b", t: "#2a1205", line: "ANIMAL HEALTH" },
+    { br: "C", name: "Elithia", x: 1412, z: 5470, face: "+x", kind: "house", w: 50, d: 40, h: 30, wall: "#f7b29c", accent: "#e47f66", c: "#f08a70", t: "#2a0f08", line: "MEDICAL", signBg: "#e47f66", signInk: "#ffffff" },
   ];
   // the Zdrovit courtyard (Medical Avenue, east side): eight small buildings around a yard
   var COURT = { x: 1720, z: 5070 };
@@ -26307,6 +26388,9 @@ void main() {
   ];
   // Coffee Street additions
   var COFFEE_ADDS = [
+    { br: "A", name: "Pain Plaisir", x: 900, z: 4815, line: "VIDEO \xB7 PHOTO \xB7 PRODUCT DESIGN", c: "#ffffff", t: "#111111", desc: "A French-style bakery with a real oven at its heart. We made their video production, the photo shootings and the product design." },
+    { br: "A", name: "Lapterra", x: 760, z: 5650, line: "PATISSERIE \xB7 WORK IN PROGRESS", c: "#6e1633", t: "#d9b45a", wip: true, desc: "A cosy patisserie, in the making. Work in progress: more soon." },
+    { br: "A", name: "Patiline", x: 935, z: 6110, line: "DISTRIBUTION WEB \xB7 PHOTO \xB7 REBRANDING", c: "#d71920", t: "#ffffff", desc: "Industrial bread and croissants, made by machines you can watch. We built their distribution website and website, shot their own-production bakery range, and rebranded Patiline Bakery." },
     { br: "A", name: "Coffeenativ", logo: "logoCoffeenativ", x: 930, z: 5900, line: "SPECIALTY COFFEE", c: "#151515", t: "#ffffff" },
     { br: "A", name: "ARCA Resort", logo: "logoArca", x: 560, z: 5930, line: "RESORT · TENNIS · POND", c: "#7a1f2b", t: "#ffffff", page: "arca-resort" },
     { br: "A", name: "Antila", x: 440, z: 6040, line: "CHARCUTERIE FARM", c: "#F2C200", t: "#1a1405", page: "antila" },
@@ -26319,6 +26403,10 @@ void main() {
     buildCourtyard(parent, COURT.x, COURT.z, COURT_BRANDS.map((o) => ({ ...o, logo: L(o.logo) })));
     casaPoporului = buildCasaPoporului(parent, TAC.x, TAC.z);
     buildArcaResort(parent);
+    buildBrandBuilding(parent, { x: 1412, z: 5536, face: "+x", kind: "house", name: "ELITHIA", w: 46, d: 38, h: 28, wall: "#f4a58e", accent: "#d9715a", signBg: "#d9715a", signInk: "#ffffff", keep: 50 });
+    buildPainPlaisir(parent, 968, 4815);
+    buildPatiline(parent, 935, 6215);
+    buildBrandBuilding(parent, { x: 706, z: 5650, face: "+x", kind: "paris", name: "LAPTERRA", w: 50, d: 40, h: 30, wall: "#7a1f3d", accent: "#c9a227", signBg: "#5c1530", signInk: "#d9b45a", keep: 70 });
     // Coffeenativ: a small black house on the left kerb, where Pastizia used to be
     buildBrandBuilding(parent, { x: 930, z: 5900, face: "-x", kind: "house", name: "COFFEENATIV", logo: logoCoffeenativ, w: 58, d: 44, h: 30, wall: "#151515", accent: "#151515", signBg: "#151515", signInk: "#ffffff" });
     // a skyline for the financial district: unbranded glass towers further down the boulevard
@@ -32255,7 +32343,7 @@ void main() {
       }, "yoshi-tag");
     // r79: a card for every brand on the four streets, shown while you pass its building
     const knownProject = (n) => [...PROJECTS_A1, ...PROJECTS_A2, ...PROJECTS_B1, ...PROJECTS_B2].find((p) => p.name === n || (n === "Routine Paris" && p.name === "Routine Paris"));
-    const projOf = (b) => knownProject(b.name) || { name: b.name, cat: b.line.replace(/ · /g, " \u00B7 "), poster: b.name, accent: b.c, desc: "By Cromatic Studios. The full case study is coming soon." };
+    const projOf = (b) => knownProject(b.name) || { name: b.name, cat: b.line.replace(/ · /g, " \u00B7 "), poster: b.name, accent: b.c, desc: b.desc || "By Cromatic Studios. The full case study is coming soon." };
     // the courtyard's eight brands share one card, which opens a panel with all of them
     const openCourt = () => {
       modalBack.innerHTML = "";
@@ -32276,7 +32364,7 @@ void main() {
       BRANDC[b.name] = BRANDC[b.name] || { c: b.c, t: b.t };
       // brands with a case page on the website open it full screen (offline copies fall back to the card)
       const onlinePage = b.page && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname);
-      const t = mkTag(b.name, b.name.toUpperCase(), b.line, b === COURT_TAG ? "See the eight \u2192" : "Open the case \u2192", () => (b === COURT_TAG ? openCourt() : onlinePage && openFrameHook ? openFrameHook(`/work/${b.page}/?embed=1`, b.name) : openProjectHook?.(projOf(b))), "work-tag");
+      const t = mkTag(b.name, b.name.toUpperCase(), b.line, b === COURT_TAG ? "See the yard \u2192" : b.wip ? "Work in progress" : "Open the case \u2192", () => (b.wip ? null : b === COURT_TAG ? openCourt() : onlinePage && openFrameHook ? openFrameHook(`/work/${b.page}/?embed=1`, b.name) : openProjectHook?.(projOf(b))), "work-tag");
       t._st = b;
       return t;
     });
@@ -34498,7 +34586,8 @@ void main() {
           tilt = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
         }
         if (tilt.rt.width !== w || tilt.rt.height !== h) { tilt.rt.setSize(w, h); tilt.mat.uniforms.res.value.set(w, h); }
-        tilt.mat.uniforms.amt.value = 7 * renderer.getPixelRatio();
+        tilt.mat.uniforms.amt.value = 4.2 * renderer.getPixelRatio();
+        tilt.mat.uniforms.band.value = 0.16;
         tilt.mat.uniforms.t.value = (now * 0.001) % 100;
         renderer.setRenderTarget(tilt.rt);
         renderer.render(scene, camera);
@@ -34983,6 +35072,7 @@ void main() {
         }
         // the low clouds of the drive's flight would sit right over the airfield on the map
         worldRefs.clouds.visible = !mapMode;
+        for (const f of BAKERY_ANIM) f(now * 0.001);
         for (const c of worldRefs.clouds.children) {
           c.position.x += Math.sin(now * 18e-5 * c.userData.drift) * 0.12;
         }
@@ -35235,11 +35325,15 @@ void main() {
       (() => {
         const have = new Set(MAP_PLACES.map((p) => (p.work || p.name).toLowerCase()));
         const add = (o) => { if (have.has(o.name.toLowerCase())) return; have.add(o.name.toLowerCase()); MAP_PLACES.splice(MAP_PLACES.length - 2, 0, o); };
-        for (const b of [...STREET_BRANDS, ...COFFEE_ADDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, x: b.x, z: b.z, h: b.kind === "tower" ? Math.min(160, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name });
+        for (const b of [...STREET_BRANDS, ...COFFEE_ADDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, x: b.x, z: b.z, h: b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
+        ZDROVIT_YARD.forEach((n, i) => { const [x, z] = yardSpot(yardSlotOf(i)); add({ id: "y-" + i, br: "C", x: 1500, z, px: x, pz: z, h: 22, name: n, line: "IN THE ZDROVIT YARD", c: "#cfcdc8", t: "#3d3c39", small: true, desc: `${n}, one of the brands in the Zdrovit yard. By Cromatic Studios.` }); });
         add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Casa Berero", line: "BRAND \xB7 BY CROMATIC STUDIOS", c: "#111111", t: "#ffffff", act: "bereroTag" });
         add({ id: "boxes", br: "A", x: 900, z: 4262, px: 706, pz: 4198, h: 40, name: "Two Min Boxes", line: "COFFEE PACKAGING \xB7 FRESH DROP", c: "#2f2f2f", t: "#ffffff", act: "boxPop" });
         add({ id: "friends", stop: "merge", name: "40+ Friends", line: "ERSTE \xB7 MICROSOFT \xB7 GLOBAL RECORDS", c: "#B098C8", t: "#1a1420" });
       })();
+      // r117: how close you must be for a place to show its card (a coloured dot otherwise)
+      const TIER1 = new Set(["tm", "oma", "scf", "steam", "arca", "tac", "zdrovit", "invest", "end", "jet"]);
+      for (const p of MAP_PLACES) p.tier = TIER1.has(p.id) ? 1 : p.small ? 3 : p.chapter || p.past ? 2 : p.id.startsWith("w-") ? 3 : 2;
       function mapPlaceL(pl) {
         if (pl.stop) return route.stopL[pl.stop];
         let best = 0, bd = Infinity;
@@ -35611,14 +35705,14 @@ void main() {
           pl.wz = pl.pz ?? (s0 ? s0.y : pl.z);
           pl.wy = pl.h ?? 55;
           const got = "";
-          const b = el("button", `map-pin${pl.beacon ? " beacon" : ""}${pl.chapter ? " chapter" : ""}${pl.find ? " find" : ""}`, pl.chapter
+          const b = el("button", `map-pin${pl.beacon ? " beacon" : ""}${pl.chapter ? " chapter" : ""}${pl.find ? " find" : ""}${pl.small ? " small" : ""}`, pl.chapter
             ? `<span class="mp-label"><i class="mono">${pl.line}</i><b>${pl.name}</b>${got}</span><span class="mp-stem"></span>`
             : `<span class="mp-label"><b>${pl.name}</b><i class="mono">${pl.line}</i>${got}</span><span class="mp-stem"></span><span class="mp-dot"></span>`);
           b.style.setProperty("--pc", pl.c); if (pl.t) b.style.setProperty("--pt", pl.t);
           b.onclick = (e) => { e.stopPropagation(); mapGo(pl); };
           pinsEl.appendChild(b);
           let ch = null;
-          if (!pl.chapter) {
+          if (!pl.chapter && !pl.small) {
             ch = el("button", `map-chip${pl.beacon ? " beacon" : ""}`, `<span class="mc-dot"></span>${pinSVG(pl.pin || pl.c, "pin-ic mc-pin")}${pl.name}`);
             ch.style.setProperty("--pc", pl.c); ch.style.setProperty("--pt", pl.t);
             ch.onclick = () => mapGo(pl);
@@ -35626,12 +35720,12 @@ void main() {
           }
           return { pl, b, ch };
         });
-        const total = MAP_PLACES.filter((p) => !p.chapter).length, totalF = MAP_PLACES.filter((p) => p.chapter).length;
+        const total = MAP_PLACES.filter((p) => !p.chapter && !p.small).length, totalF = MAP_PLACES.filter((p) => p.chapter).length;
         const mark = () => {
           let n = 0, f = 0;
           for (const p of pins) {
             const v = visited.has(p.pl.id), on = mapNav.place === p.pl;
-            if (v) p.pl.chapter ? f++ : n++;
+            if (v && !p.pl.small) p.pl.chapter ? f++ : n++;
             p.b.classList.toggle("visited", v); p.b.classList.toggle("on", on);
             if (p.ch) { p.ch.classList.toggle("visited", v); p.ch.classList.toggle("on", on); }
           }
@@ -35712,7 +35806,8 @@ void main() {
             return;
           }
           const pr = projectOf(pl.name);
-          showCard(pl, pl.br ? MAP_STREET[pl.br] : pl.line.split(" \xB7 ")[0], `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`, `<button class="mcd-open">Open the case →</button>`);
+          showCard(pl, pl.br ? MAP_STREET[pl.br] : pl.line.split(" \xB7 ")[0], `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`, pl.wip ? `<span class="mcd-wip mono">WORK IN PROGRESS</span>` : pl.small ? "" : `<button class="mcd-open">Open the case →</button>`);
+          if (pl.wip || pl.small) return;
           card.querySelector(".mcd-open").onclick = () => tagOf(pl)?.click();
         };
         const baam = () => {
@@ -35890,10 +35985,13 @@ void main() {
             // pins: projected every frame; labels give way to their neighbours when crowded
             const W = innerWidth, H = innerHeight, placed = [];
             const compact = mapView.dist > 8600;
+            // the zoom level, with a little hysteresis so cards don't flicker at the threshold
+            const zl = mapView.dist > (mapView._zl === 1 ? 5800 : 6200) ? 1 : mapView.dist > (mapView._zl === 3 ? 3300 : 3000) ? 2 : 3;
+            mapView._zl = zl;
             for (const e of streetEls) {
               proj.set(e._p[0], 620, e._p[1]).project(camera);
               const sx2 = (proj.x * 0.5 + 0.5) * W, sy2 = (-proj.y * 0.5 + 0.5) * H;
-              const off2 = mapIntro || proj.z > 1 || sx2 < -200 || sx2 > W + 200 || sy2 < 110 || sy2 > H - 90 || mapView.dist < 2200;
+              const off2 = mapIntro || proj.z > 1 || sx2 < -200 || sx2 > W + 200 || sy2 < 110 || sy2 > H - 90 || mapView.dist < 3300;
               e._xy = off2 ? null : [sx2, sy2];
               if (!off2) e.style.transform = `translate3d(${sx2.toFixed(1)}px, ${sy2.toFixed(1)}px, 0)`;
             }
@@ -35912,6 +36010,10 @@ void main() {
               const off = mapIntro || o.z > 1 || o.x < -80 || o.x > W + 80 || o.y < (W < 720 ? 190 : 110) || o.y > H + 80;
               if (o.p.b._off !== off) { o.p.b._off = off; o.p.b.classList.toggle("off", off); }
               if (off) continue;
+              const dot = o.p.pl.tier > zl && o.p.pl !== mapNav.place;
+              if (o.p.b._dot !== dot) { o.p.b._dot = dot; o.p.b.classList.toggle("dot", dot); }
+              const tf0 = `translate3d(${Math.round(o.x)}px, ${Math.round(o.y)}px, 0)`;
+              if (dot) { if (o.p.b._tf !== tf0) { o.p.b._tf = tf0; o.p.b.style.transform = tf0; } continue; }
               const wasMini = o.p.b.classList.contains("mini");
               const crowd = placed.some((q) => Math.abs(q.x - o.x) < (wasMini ? 170 : 140) && Math.abs(q.y - o.y) < (wasMini ? 56 : 42));
               o.p.b.classList.toggle("mini", compact || crowd);
