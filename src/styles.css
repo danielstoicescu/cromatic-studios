@@ -3300,3 +3300,12 @@ body.flight-done .map-top, body.flight-done .map-dock, body.flight-done .map-zoo
 }
 .flight-end .fe-drive { height: 64px; padding: 0 32px; font-size: 19px; font-weight: 900; background: #FED012; color: #111; box-shadow: 0 18px 30px -14px rgba(0,0,0,.5); animation: jetPulse 1.8s ease-out infinite; }
 .flight-end .fe-replay { height: 44px; padding: 0 20px; font-size: 14px; background: #fff; box-shadow: none; }
+
+/* r115: film grain over the picture (under the interface), and a soft cinematic vignette */
+body::after { content: ""; position: fixed; inset: -60px; z-index: 9; pointer-events: none; opacity: .11; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1.6 -.3'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain .9s steps(6) infinite; will-change: transform; }
+body::before { content: ""; position: fixed; inset: 0; z-index: 9; pointer-events: none; background: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 62%, rgba(20,12,24,.22) 100%); }
+@keyframes grain { 0% { transform: translate(0, 0); } 17% { transform: translate(-22px, 14px); } 33% { transform: translate(18px, -26px); } 50% { transform: translate(-12px, -8px); } 67% { transform: translate(26px, 20px); } 83% { transform: translate(-30px, 4px); } 100% { transform: translate(0, 0); } }
+@media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
+body.site-mode::after, body.site-mode::before { display: none; }

@@ -34462,7 +34462,7 @@ void main() {
       function tiltShiftRender(now) {
         const w = renderer.domElement.width, h = renderer.domElement.height;
         if (!tilt) {
-          const rt = new WebGLRenderTarget(w, h, { samples: 4, type: HalfFloatType });
+          const rt = new WebGLRenderTarget(w, h, { samples: 2, type: HalfFloatType });
           const mat = new ShaderMaterial({
             uniforms: { tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, amt: { value: 7 }, focus: { value: 0.46 }, band: { value: 0.1 }, t: { value: 0 } },
             vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
@@ -34472,13 +34472,16 @@ void main() {
                 float dy = abs(vUv.y - focus);
                 float r = amt * smoothstep(band, band + 0.42, dy);
                 vec3 c = vec3(0.0);
-                for (int i = 0; i < 20; i++) {
-                  float fi = float(i);
-                  float a = fi * 2.39996;
-                  float rr = sqrt((fi + 0.5) / 20.0);
-                  c += texture2D(tD, vUv + vec2(cos(a), sin(a)) * rr * r / res).rgb;
+                if (r < 0.35) c = texture2D(tD, vUv).rgb;
+                else {
+                  for (int i = 0; i < 12; i++) {
+                    float fi = float(i);
+                    float a = fi * 2.39996;
+                    float rr = sqrt((fi + 0.5) / 12.0);
+                    c += texture2D(tD, vUv + vec2(cos(a), sin(a)) * rr * r / res).rgb;
+                  }
+                  c /= 12.0;
                 }
-                c /= 20.0;
                 vec2 q = vUv - 0.5;
                 c *= 1.0 - dot(q, q) * 0.32;
                 float n = fract(sin(dot(vUv * res + t, vec2(12.9898, 78.233))) * 43758.5453);
@@ -34502,7 +34505,18 @@ void main() {
         renderer.setRenderTarget(null);
         renderer.render(tilt.sc, tilt.cam);
       }
+      var perf = { avg: 16, t: 0, dpr: Math.min(window.devicePixelRatio, isMobile() ? 1.8 : 2) };
+      function adaptResolution(rawMs, now) {
+        perf.avg += (Math.min(rawMs, 60) - perf.avg) * 0.05;
+        if (now - perf.t < 1500 || document.hidden) return;
+        const max = Math.min(window.devicePixelRatio, isMobile() ? 1.8 : 2);
+        let next = perf.dpr;
+        if (perf.avg > 20 && perf.dpr > 1) next = Math.max(1, perf.dpr - 0.25);
+        else if (perf.avg < 13 && perf.dpr < max) next = Math.min(max, perf.dpr + 0.25);
+        if (next !== perf.dpr) { perf.dpr = next; renderer.setPixelRatio(next); renderer.setSize(window.innerWidth, window.innerHeight); perf.t = now; }
+      }
       function frame(now) {
+        adaptResolution(now - prevT, now);
         const dt = Math.min(0.05, (now - prevT) / 1e3);
         const rawDt = Math.min(0.25, (now - prevT) / 1e3);
         prevT = now;
@@ -35217,6 +35231,15 @@ void main() {
         { id: "end", stop: "end", name: "Strada Olari 9", line: "THE STUDIO \xB7 COME BY", c: "#ffffff", t: "#111111", pin: "#111111" },
         { id: "jet", x: 1250, z: JET_HOME.z - 15, px: JET_HOME.x, pz: JET_HOME.z, h: 46, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", beacon: true, board: true }
       ];
+      // r115: every brand the drive shows also stands on the map
+      (() => {
+        const have = new Set(MAP_PLACES.map((p) => (p.work || p.name).toLowerCase()));
+        const add = (o) => { if (have.has(o.name.toLowerCase())) return; have.add(o.name.toLowerCase()); MAP_PLACES.splice(MAP_PLACES.length - 2, 0, o); };
+        for (const b of [...STREET_BRANDS, ...COFFEE_ADDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, x: b.x, z: b.z, h: b.kind === "tower" ? Math.min(160, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name });
+        add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Casa Berero", line: "BRAND \xB7 BY CROMATIC STUDIOS", c: "#111111", t: "#ffffff", act: "bereroTag" });
+        add({ id: "boxes", br: "A", x: 900, z: 4262, px: 706, pz: 4198, h: 40, name: "Two Min Boxes", line: "COFFEE PACKAGING \xB7 FRESH DROP", c: "#2f2f2f", t: "#ffffff", act: "boxPop" });
+        add({ id: "friends", stop: "merge", name: "40+ Friends", line: "ERSTE \xB7 MICROSOFT \xB7 GLOBAL RECORDS", c: "#B098C8", t: "#1a1420" });
+      })();
       function mapPlaceL(pl) {
         if (pl.stop) return route.stopL[pl.stop];
         let best = 0, bd = Infinity;
@@ -35674,6 +35697,7 @@ void main() {
           if (pl.board) { mapOpenBoarding(); return; }
           if (pl.stop === "end") { if (!olari.early) olariOpen(); olari.early = false; return; }
           if (pl.past) { showCard(pl, "A BLAST FROM THE PAST", `<p>${pl.desc}</p>`, ""); return; }
+          if (pl.stop && pl.stop !== "services") { mapShowChapter(pl.stop); return; }
           if (pl.stop === "services") {
             showCard(pl, "EVERYTHING WE DO", SERVICES.map((sv) => `<span class="mcd-svc" style="--sc:${sv.c}"><b>${sv.t}</b>${sv.items.slice(0, 4).join(" \xB7 ")}</span>`).join(""), `<button class="mcd-open mcd-jet">Board the Cromatic Jet ✈</button>`);
             card.querySelector(".mcd-jet").onclick = () => mapGo(MAP_PLACES.find((p) => p.id === "jet"));
@@ -35786,7 +35810,14 @@ void main() {
         }, { passive: false });
         const proj = new Vector3();
         // where the picture should put the van: the middle of the space no card covers
+        let foCache = [0, 0], foT = 0;
         const frameOffset = () => {
+          const nowF = performance.now();
+          if (nowF - foT < 160) return foCache;
+          foT = nowF;
+          return (foCache = frameOffsetNow());
+        };
+        const frameOffsetNow = () => {
           const W = innerWidth, H = innerHeight, phone = W < 720;
           const vis = (n) => n && !n.classList.contains("hidden") && getComputedStyle(n).display !== "none";
           const aside = document.body.classList.contains("boarding-aside");
@@ -35879,13 +35910,14 @@ void main() {
             for (const o of order) {
               // pins never slide under the top bar (phones: under the map bar either)
               const off = mapIntro || o.z > 1 || o.x < -80 || o.x > W + 80 || o.y < (W < 720 ? 190 : 110) || o.y > H + 80;
-              o.p.b.classList.toggle("off", off);
+              if (o.p.b._off !== off) { o.p.b._off = off; o.p.b.classList.toggle("off", off); }
               if (off) continue;
               const wasMini = o.p.b.classList.contains("mini");
               const crowd = placed.some((q) => Math.abs(q.x - o.x) < (wasMini ? 170 : 140) && Math.abs(q.y - o.y) < (wasMini ? 56 : 42));
               o.p.b.classList.toggle("mini", compact || crowd);
               if (!crowd) placed.push(o);
-              o.p.b.style.transform = `translate3d(${Math.round(o.x)}px, ${Math.round(o.y)}px, 0)`;
+              const tf = `translate3d(${Math.round(o.x)}px, ${Math.round(o.y)}px, 0)`;
+              if (o.p.b._tf !== tf) { o.p.b._tf = tf; o.p.b.style.transform = tf; }
               pinBoxes.push([o.x, o.y]);
             }
             // a street sign gives way to any place pin it would cover
