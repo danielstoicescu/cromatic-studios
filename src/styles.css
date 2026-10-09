@@ -3399,8 +3399,7 @@ body.kz-intro .map-welcome, body.map-boarding .map-welcome { display: none; }
 .bp-actions .bp-go .bp-count { display: inline-block; min-width: 1.2em; font-size: 1.2em; }
 
 /* r123: street signs stand on their street: anchored at the road, a small pole down to it */
-.map-street { translate: -50% calc(-100% - 26px) !important; animation: none !important; }
-.map-street::after { content: ""; position: absolute; left: 50%; top: 100%; width: 3px; height: 26px; margin-left: -1.5px; background: #0d0c09; }
+.map-street { translate: -50% -100% !important; }
 .map-pin[data-id="bism"] .mp-label b { color: #fff; } .map-pin[data-id="bism"] .mp-label i { color: #ff7a6e; opacity: 1; }
 
 .map-top .map-home { border: 2.5px solid #141414 !important; background: #28C840; color: #141414; cursor: pointer; padding: 0 14px 0 10px; }
@@ -3439,8 +3438,14 @@ body.kz-intro .map-welcome, body.map-boarding .map-welcome { display: none; }
 .map-dock .map-dock-h { display: inline-flex; align-items: center; white-space: nowrap; }
 
 /* r123: on the map the XP pill sits under the logo, as wide as it: the top bar has the middle */
-@media (min-width: 720px) {
-  body.map-mode:not(.site-mode) .topbar .you { top: calc(84px + env(safe-area-inset-top, 0px)); left: 18px; right: auto; width: 150px; height: 44px; padding: 0 6px 0 12px; font-size: 12px; }
-  body.map-mode:not(.site-mode) .topbar .you .you-label { display: none; } body.map-mode:not(.site-mode) .topbar .you { justify-content: center; gap: 10px; }
-}
 @media (min-width: 720px) { .map-top { width: max-content; } }
+/* r124: while the boarding pass is up nothing on the map takes a tap (Android shifts the page when the keyboard closes) */
+body.map-boarding .map-pins, body.map-boarding .map-pins * { pointer-events: none !important; }
+
+/* r124: plain loader (only while the script downloads), the colour of the intro's first veil */
+.plain-loader { background: #f3ead9 !important; }
+.plain-loader .ld-logo { filter: none !important; width: min(220px, 50vw); }
+/* the logo reads on any ground: white over dark, black over light */
+body:not(.site-mode) .topbar .brand img { filter: invert(1); mix-blend-mode: difference; }
+/* r124: XP back on the right, level with the logo; on laptop widths it keeps to its number */
+@media (min-width: 720px) and (max-width: 1560px) { body.map-mode:not(.site-mode) .topbar .you { width: 150px; padding: 0 6px 0 12px; } body.map-mode:not(.site-mode) .topbar .you .you-label { display: none; } }

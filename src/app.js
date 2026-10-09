@@ -15034,9 +15034,12 @@
           const planes = this.planes;
           // r119: test the sphere where the city warp draws it (centre moved, a little slack for the bend)
           const center = (_warpC || (_warpC = sphere.center.clone())).copy(sphere.center);
-          const [wdx, wdz] = cityWarpD(center.x, center.z);
-          center.x += wdx; center.z += wdz;
-          const negRadius = -sphere.radius * 1.25 - 12;
+          let negRadius = -sphere.radius;
+          if (!window.__noCityCull) {
+            const [wdx, wdz] = cityWarpD(center.x, center.z);
+            center.x += wdx; center.z += wdz;
+            negRadius = -sphere.radius * 1.25 - 12;
+          }
           for (let i = 0; i < 6; i++) {
             const distance = planes[i].distanceToPoint(center);
             if (distance < negRadius) {
@@ -15150,7 +15153,7 @@
       color_pars_fragment = "#if defined( USE_COLOR_ALPHA )\n	varying vec4 vColor;\n#elif defined( USE_COLOR )\n	varying vec3 vColor;\n#endif";
       color_pars_vertex = "#if defined( USE_COLOR_ALPHA )\n	varying vec4 vColor;\n#elif defined( USE_COLOR ) || defined( USE_INSTANCING_COLOR ) || defined( USE_BATCHING_COLOR )\n	varying vec3 vColor;\n#endif";
       color_vertex = "#if defined( USE_COLOR_ALPHA )\n	vColor = vec4( 1.0 );\n#elif defined( USE_COLOR ) || defined( USE_INSTANCING_COLOR ) || defined( USE_BATCHING_COLOR )\n	vColor = vec3( 1.0 );\n#endif\n#ifdef USE_COLOR\n	vColor *= color;\n#endif\n#ifdef USE_INSTANCING_COLOR\n	vColor.xyz *= instanceColor.xyz;\n#endif\n#ifdef USE_BATCHING_COLOR\n	vec3 batchingColor = getBatchingColor( getIndirectIndex( gl_DrawID ) );\n	vColor.xyz *= batchingColor.xyz;\n#endif";
-      common = "#define PI 3.141592653589793\n#define PI2 6.283185307179586\n#define PI_HALF 1.5707963267948966\n#define RECIPROCAL_PI 0.3183098861837907\n#define RECIPROCAL_PI2 0.15915494309189535\n#define EPSILON 1e-6\n#ifndef saturate\n#define saturate( a ) clamp( a, 0.0, 1.0 )\n#endif\n#define whiteComplement( a ) ( 1.0 - saturate( a ) )\nfloat pow2( const in float x ) { return x*x; }\nvec3 pow2( const in vec3 x ) { return x*x; }\nfloat pow3( const in float x ) { return x*x*x; }\nfloat pow4( const in float x ) { float x2 = x*x; return x2*x2; }\nfloat max3( const in vec3 v ) { return max( max( v.x, v.y ), v.z ); }\nfloat average( const in vec3 v ) { return dot( v, vec3( 0.3333333 ) ); }\nhighp float rand( const in vec2 uv ) {\n	const highp float a = 12.9898, b = 78.233, c = 43758.5453;\n	highp float dt = dot( uv.xy, vec2( a,b ) ), sn = mod( dt, PI );\n	return fract( sin( sn ) * c );\n}\n#ifdef HIGH_PRECISION\n	float precisionSafeLength( vec3 v ) { return length( v ); }\n#else\n	float precisionSafeLength( vec3 v ) {\n		float maxComponent = max3( abs( v ) );\n		return length( v / maxComponent ) * maxComponent;\n	}\n#endif\nstruct IncidentLight {\n	vec3 color;\n	vec3 direction;\n	bool visible;\n};\nstruct ReflectedLight {\n	vec3 directDiffuse;\n	vec3 directSpecular;\n	vec3 indirectDiffuse;\n	vec3 indirectSpecular;\n};\n#ifdef USE_ALPHAHASH\n	varying vec3 vPosition;\n#endif\nvec3 transformDirection( in vec3 dir, in mat4 matrix ) {\n	return normalize( ( matrix * vec4( dir, 0.0 ) ).xyz );\n}\nvec3 inverseTransformDirection( in vec3 dir, in mat4 matrix ) {\n	return normalize( ( vec4( dir, 0.0 ) * matrix ).xyz );\n}\nmat3 transposeMat3( const in mat3 m ) {\n	mat3 tmp;\n	tmp[ 0 ] = vec3( m[ 0 ].x, m[ 1 ].x, m[ 2 ].x );\n	tmp[ 1 ] = vec3( m[ 0 ].y, m[ 1 ].y, m[ 2 ].y );\n	tmp[ 2 ] = vec3( m[ 0 ].z, m[ 1 ].z, m[ 2 ].z );\n	return tmp;\n}\nbool isPerspectiveMatrix( mat4 m ) {\n	return m[ 2 ][ 3 ] == - 1.0;\n}\nvec2 equirectUv( in vec3 dir ) {\n	float u = atan( dir.z, dir.x ) * RECIPROCAL_PI2 + 0.5;\n	float v = asin( clamp( dir.y, - 1.0, 1.0 ) ) * RECIPROCAL_PI + 0.5;\n	return vec2( u, v );\n}\nvec3 BRDF_Lambert( const in vec3 diffuseColor ) {\n	return RECIPROCAL_PI * diffuseColor;\n}\nvec3 F_Schlick( const in vec3 f0, const in float f90, const in float dotVH ) {\n	float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );\n	return f0 * ( 1.0 - fresnel ) + ( f90 * fresnel );\n}\nfloat F_Schlick( const in float f0, const in float f90, const in float dotVH ) {\n	float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );\n	return f0 * ( 1.0 - fresnel ) + ( f90 * fresnel );\n} // validated\n// r118: the city warp: the whole world is bent by one smooth field, so straight streets curve\n// like Bucharest's while everything on them (kerbs, buildings, the van) bends along\nvec2 cityWarpD( vec2 p ) {\n\tfloat x = ( p.x - 1500.0 ) / 1100.0, z = ( p.y - 4260.0 ) / 1100.0;\n\tvec2 d = 132.0 * vec2( sin( z ) * cosh( x ), - cos( z ) * sinh( x ) );\n\tfloat x2 = ( p.x - 1500.0 ) / 800.0, z2 = ( p.y - 4260.0 ) / 800.0 + 1.0;\n\td += 24.0 * vec2( sin( z2 ) * cosh( x2 ), - cos( z2 ) * sinh( x2 ) );\n\tfloat m = 1.0 - smoothstep( 7500.0, 8500.0, p.y );\n\treturn d * m;\n}\nvec2 cityWarp( vec2 p ) { return p + cityWarpD( p ); }\n";
+      common = "#define PI 3.141592653589793\n#define PI2 6.283185307179586\n#define PI_HALF 1.5707963267948966\n#define RECIPROCAL_PI 0.3183098861837907\n#define RECIPROCAL_PI2 0.15915494309189535\n#define EPSILON 1e-6\n#ifndef saturate\n#define saturate( a ) clamp( a, 0.0, 1.0 )\n#endif\n#define whiteComplement( a ) ( 1.0 - saturate( a ) )\nfloat pow2( const in float x ) { return x*x; }\nvec3 pow2( const in vec3 x ) { return x*x; }\nfloat pow3( const in float x ) { return x*x*x; }\nfloat pow4( const in float x ) { float x2 = x*x; return x2*x2; }\nfloat max3( const in vec3 v ) { return max( max( v.x, v.y ), v.z ); }\nfloat average( const in vec3 v ) { return dot( v, vec3( 0.3333333 ) ); }\nhighp float rand( const in vec2 uv ) {\n	const highp float a = 12.9898, b = 78.233, c = 43758.5453;\n	highp float dt = dot( uv.xy, vec2( a,b ) ), sn = mod( dt, PI );\n	return fract( sin( sn ) * c );\n}\n#ifdef HIGH_PRECISION\n	float precisionSafeLength( vec3 v ) { return length( v ); }\n#else\n	float precisionSafeLength( vec3 v ) {\n		float maxComponent = max3( abs( v ) );\n		return length( v / maxComponent ) * maxComponent;\n	}\n#endif\nstruct IncidentLight {\n	vec3 color;\n	vec3 direction;\n	bool visible;\n};\nstruct ReflectedLight {\n	vec3 directDiffuse;\n	vec3 directSpecular;\n	vec3 indirectDiffuse;\n	vec3 indirectSpecular;\n};\n#ifdef USE_ALPHAHASH\n	varying vec3 vPosition;\n#endif\nvec3 transformDirection( in vec3 dir, in mat4 matrix ) {\n	return normalize( ( matrix * vec4( dir, 0.0 ) ).xyz );\n}\nvec3 inverseTransformDirection( in vec3 dir, in mat4 matrix ) {\n	return normalize( ( vec4( dir, 0.0 ) * matrix ).xyz );\n}\nmat3 transposeMat3( const in mat3 m ) {\n	mat3 tmp;\n	tmp[ 0 ] = vec3( m[ 0 ].x, m[ 1 ].x, m[ 2 ].x );\n	tmp[ 1 ] = vec3( m[ 0 ].y, m[ 1 ].y, m[ 2 ].y );\n	tmp[ 2 ] = vec3( m[ 0 ].z, m[ 1 ].z, m[ 2 ].z );\n	return tmp;\n}\nbool isPerspectiveMatrix( mat4 m ) {\n	return m[ 2 ][ 3 ] == - 1.0;\n}\nvec2 equirectUv( in vec3 dir ) {\n	float u = atan( dir.z, dir.x ) * RECIPROCAL_PI2 + 0.5;\n	float v = asin( clamp( dir.y, - 1.0, 1.0 ) ) * RECIPROCAL_PI + 0.5;\n	return vec2( u, v );\n}\nvec3 BRDF_Lambert( const in vec3 diffuseColor ) {\n	return RECIPROCAL_PI * diffuseColor;\n}\nvec3 F_Schlick( const in vec3 f0, const in float f90, const in float dotVH ) {\n	float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );\n	return f0 * ( 1.0 - fresnel ) + ( f90 * fresnel );\n}\nfloat F_Schlick( const in float f0, const in float f90, const in float dotVH ) {\n	float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );\n	return f0 * ( 1.0 - fresnel ) + ( f90 * fresnel );\n} // validated\n// r118: the city warp: the whole world is bent by one smooth field, so straight streets curve\n// like Bucharest's while everything on them (kerbs, buildings, the van) bends along\nvec2 cityWarpD( vec2 p ) {\n\tfloat x = ( p.x - 1500.0 ) / 1100.0, z = ( p.y - 4260.0 ) / 1100.0;\n\tvec2 d = 132.0 * vec2( sin( z ) * cosh( x ), - cos( z ) * sinh( x ) );\n\tfloat x2 = ( p.x - 1500.0 ) / 800.0, z2 = ( p.y - 4260.0 ) / 800.0 + 1.0;\n\td += 24.0 * vec2( sin( z2 ) * cosh( x2 ), - cos( z2 ) * sinh( x2 ) );\n\tfloat m = 1.0 - smoothstep( 7500.0, 8500.0, p.y );\n\treturn d * m;\n}\nvec2 cityWarp( vec2 p ) {\n#ifdef NO_CITY_WARP\n\treturn p;\n#else\n\treturn p + cityWarpD( p );\n#endif\n}\n";
       cube_uv_reflection_fragment = "#ifdef ENVMAP_TYPE_CUBE_UV\n	#define cubeUV_minMipLevel 4.0\n	#define cubeUV_minTileSize 16.0\n	float getFace( vec3 direction ) {\n		vec3 absDirection = abs( direction );\n		float face = - 1.0;\n		if ( absDirection.x > absDirection.z ) {\n			if ( absDirection.x > absDirection.y )\n				face = direction.x > 0.0 ? 0.0 : 3.0;\n			else\n				face = direction.y > 0.0 ? 1.0 : 4.0;\n		} else {\n			if ( absDirection.z > absDirection.y )\n				face = direction.z > 0.0 ? 2.0 : 5.0;\n			else\n				face = direction.y > 0.0 ? 1.0 : 4.0;\n		}\n		return face;\n	}\n	vec2 getUV( vec3 direction, float face ) {\n		vec2 uv;\n		if ( face == 0.0 ) {\n			uv = vec2( direction.z, direction.y ) / abs( direction.x );\n		} else if ( face == 1.0 ) {\n			uv = vec2( - direction.x, - direction.z ) / abs( direction.y );\n		} else if ( face == 2.0 ) {\n			uv = vec2( - direction.x, direction.y ) / abs( direction.z );\n		} else if ( face == 3.0 ) {\n			uv = vec2( - direction.z, direction.y ) / abs( direction.x );\n		} else if ( face == 4.0 ) {\n			uv = vec2( - direction.x, direction.z ) / abs( direction.y );\n		} else {\n			uv = vec2( direction.x, direction.y ) / abs( direction.z );\n		}\n		return 0.5 * ( uv + 1.0 );\n	}\n	vec3 bilinearCubeUV( sampler2D envMap, vec3 direction, float mipInt ) {\n		float face = getFace( direction );\n		float filterInt = max( cubeUV_minMipLevel - mipInt, 0.0 );\n		mipInt = max( mipInt, cubeUV_minMipLevel );\n		float faceSize = exp2( mipInt );\n		highp vec2 uv = getUV( direction, face ) * ( faceSize - 2.0 ) + 1.0;\n		if ( face > 2.0 ) {\n			uv.y += faceSize;\n			face -= 3.0;\n		}\n		uv.x += face * faceSize;\n		uv.x += filterInt * 3.0 * cubeUV_minTileSize;\n		uv.y += 4.0 * ( exp2( CUBEUV_MAX_MIP ) - faceSize );\n		uv.x *= CUBEUV_TEXEL_WIDTH;\n		uv.y *= CUBEUV_TEXEL_HEIGHT;\n		#ifdef texture2DGradEXT\n			return texture2DGradEXT( envMap, uv, vec2( 0.0 ), vec2( 0.0 ) ).rgb;\n		#else\n			return texture2D( envMap, uv ).rgb;\n		#endif\n	}\n	#define cubeUV_r0 1.0\n	#define cubeUV_m0 - 2.0\n	#define cubeUV_r1 0.8\n	#define cubeUV_m1 - 1.0\n	#define cubeUV_r4 0.4\n	#define cubeUV_m4 2.0\n	#define cubeUV_r5 0.305\n	#define cubeUV_m5 3.0\n	#define cubeUV_r6 0.21\n	#define cubeUV_m6 4.0\n	float roughnessToMip( float roughness ) {\n		float mip = 0.0;\n		if ( roughness >= cubeUV_r1 ) {\n			mip = ( cubeUV_r0 - roughness ) * ( cubeUV_m1 - cubeUV_m0 ) / ( cubeUV_r0 - cubeUV_r1 ) + cubeUV_m0;\n		} else if ( roughness >= cubeUV_r4 ) {\n			mip = ( cubeUV_r1 - roughness ) * ( cubeUV_m4 - cubeUV_m1 ) / ( cubeUV_r1 - cubeUV_r4 ) + cubeUV_m1;\n		} else if ( roughness >= cubeUV_r5 ) {\n			mip = ( cubeUV_r4 - roughness ) * ( cubeUV_m5 - cubeUV_m4 ) / ( cubeUV_r4 - cubeUV_r5 ) + cubeUV_m4;\n		} else if ( roughness >= cubeUV_r6 ) {\n			mip = ( cubeUV_r5 - roughness ) * ( cubeUV_m6 - cubeUV_m5 ) / ( cubeUV_r5 - cubeUV_r6 ) + cubeUV_m5;\n		} else {\n			mip = - 2.0 * log2( 1.16 * roughness );		}\n		return mip;\n	}\n	vec4 textureCubeUV( sampler2D envMap, vec3 sampleDir, float roughness ) {\n		float mip = clamp( roughnessToMip( roughness ), cubeUV_m0, CUBEUV_MAX_MIP );\n		float mipF = fract( mip );\n		float mipInt = floor( mip );\n		vec3 color0 = bilinearCubeUV( envMap, sampleDir, mipInt );\n		if ( mipF == 0.0 ) {\n			return vec4( color0, 1.0 );\n		} else {\n			vec3 color1 = bilinearCubeUV( envMap, sampleDir, mipInt + 1.0 );\n			return vec4( mix( color0, color1, mipF ), 1.0 );\n		}\n	}\n#endif";
       defaultnormal_vertex = "vec3 transformedNormal = objectNormal;\n#ifdef USE_TANGENT\n	vec3 transformedTangent = objectTangent;\n#endif\n#ifdef USE_BATCHING\n	mat3 bm = mat3( batchingMatrix );\n	transformedNormal /= vec3( dot( bm[ 0 ], bm[ 0 ] ), dot( bm[ 1 ], bm[ 1 ] ), dot( bm[ 2 ], bm[ 2 ] ) );\n	transformedNormal = bm * transformedNormal;\n	#ifdef USE_TANGENT\n		transformedTangent = bm * transformedTangent;\n	#endif\n#endif\n#ifdef USE_INSTANCING\n	mat3 im = mat3( instanceMatrix );\n	transformedNormal /= vec3( dot( im[ 0 ], im[ 0 ] ), dot( im[ 1 ], im[ 1 ] ), dot( im[ 2 ], im[ 2 ] ) );\n	transformedNormal = im * transformedNormal;\n	#ifdef USE_TANGENT\n		transformedTangent = im * transformedTangent;\n	#endif\n#endif\ntransformedNormal = normalMatrix * transformedNormal;\n#ifdef FLIP_SIDED\n	transformedNormal = - transformedNormal;\n#endif\n#ifdef USE_TANGENT\n	transformedTangent = ( modelViewMatrix * vec4( transformedTangent, 0.0 ) ).xyz;\n	#ifdef FLIP_SIDED\n		transformedTangent = - transformedTangent;\n	#endif\n#endif";
       displacementmap_pars_vertex = "#ifdef USE_DISPLACEMENTMAP\n	uniform sampler2D displacementMap;\n	uniform float displacementScale;\n	uniform float displacementBias;\n#endif";
@@ -24007,6 +24010,13 @@ void main() {
     return [dx * m, dz * m];
   }
   var _warpC = null;
+  // r124: scenes that are not the city (the intro's cups, the ride previews) opt out of the bend
+  function noWarp(root) {
+    root.traverse?.((o) => {
+      const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+      for (const m of ms) if (!m.defines || !("NO_CITY_WARP" in m.defines)) { m.defines = { ...(m.defines || {}), NO_CITY_WARP: "" }; m.needsUpdate = true; }
+    });
+  }
   function warpV(v) { const [dx, dz] = cityWarpD(v.x, v.z); v.x += dx; v.z += dz; return v; }
   // from the bent world back to the plan: fixed-point, the field is gentle enough to converge
   function unwarpV(v) {
@@ -27167,7 +27177,7 @@ void main() {
   var COFFEE_ADDS = [
     { br: "A", name: "Pain Plaisir", x: 900, z: 4815, px: 968, pz: 4815, line: "VIDEO \xB7 PHOTO \xB7 PRODUCT DESIGN", c: "#ffffff", t: "#111111", desc: "A French-style bakery with a real oven at its heart. We made their video production, the photo shootings and the product design." },
     { br: "A", name: "Lapterra", x: 760, z: 5650, px: 706, pz: 5650, line: "PATISSERIE \xB7 WORK IN PROGRESS", c: "#6e1633", t: "#d9b45a", wip: true, desc: "A cosy patisserie, in the making. Work in progress: more soon." },
-    { br: "A", name: "Patiline", x: 1030, z: 6030, line: "DISTRIBUTION WEB \xB7 PHOTO \xB7 REBRANDING", c: "#d71920", t: "#ffffff", desc: "Industrial bread and croissants, made by machines you can watch. We built their distribution website and website, shot their own-production bakery range, and rebranded Patiline Bakery." },
+    { br: "A", name: "Patiline", x: 1030, z: 6030, px: 1030, pz: 5985, line: "DISTRIBUTION WEB \xB7 PHOTO \xB7 REBRANDING", c: "#d71920", t: "#ffffff", desc: "Industrial bread and croissants, made by machines you can watch. We built their distribution website and website, shot their own-production bakery range, and rebranded Patiline Bakery." },
     { br: "A", name: "K\xF3mpus", x: 760, z: 5737, px: 706, pz: 5737, line: "COFFEE SHOP \xB7 BRAND", c: "#B098C8", t: "#1a1420", desc: "Differentiating a coffee shop in the market by enabling the founder\u2019s vision: a brand built around Kómpus\u2019 own patterns and voice." },
     { br: "A", name: "Coffeenativ", logo: "logoCoffeenativ", x: 930, z: 5900, line: "SPECIALTY COFFEE", c: "#151515", t: "#ffffff" },
     { br: "A", name: "ARCA Resort", logo: "logoArca", x: 560, z: 5930, line: "RESORT · TENNIS · POND", c: "#7a1f2b", t: "#ffffff", page: "arca-resort" },
@@ -28272,7 +28282,10 @@ void main() {
           canvas.style.opacity = String(k > 0.35 ? Math.max(0, 1 - (k - 0.35) / 0.65) : 1);
           if (k >= 1) { const cb = leaving.cb; leaving = null; cb(); }
         }
+        if (typeof noWarp === "function") noWarp(sc);
+        window.__noCityCull = true;
         R3.render(sc, cam);
+        window.__noCityCull = false;
         requestAnimationFrame(loop);
       };
       const start = () => {
@@ -32186,15 +32199,8 @@ void main() {
     document.body.appendChild(el("div", "sk-petals", Array.from({ length: 22 }, (_, i) => `<i style="--x:${(i * 47) % 100}vw;--d:${9 + (i * 7) % 11}s;--dl:${-((i * 13) % 17)}s;--s:${0.6 + ((i * 29) % 10) / 12};--r:${(i * 77) % 360}deg"></i>`).join("")));
     const root = el("div", "ui-root");
     document.body.appendChild(root);
-    const loader = el("div", "loader", `
-    <div class="ld-mark">
-      <svg viewBox="0 0 120 120" aria-hidden="true">
-        <circle class="ld-ring" cx="60" cy="60" r="52"/>
-        <circle class="ld-ring prog" cx="60" cy="60" r="52"/>
-      </svg>
-      <span class="ld-in"><b class="mono">CALIBRATING</b><i>Navigation Mode</i></span>
-    </div>
-    <div class="wordmark stacked"><img class="ld-logo" src="${logoPortrait}" alt="Cromatic Studios"></div>`);
+    // r124: the loader is the intro itself: this plain screen only covers the script's download
+    const loader = el("div", "loader plain-loader", `<div class="wordmark stacked"><img class="ld-logo" src="${logoPortrait}" alt="Cromatic Studios"></div>`);
     root.appendChild(loader);
     const header = el("header", "topbar", `
     <a class="brand" href="#"><img class="brand-desk" src="${logoPortrait}" alt="Cromatic Studios"><img class="brand-mob" src="${logoLandscape}" alt="Cromatic Studios"></a>
@@ -33663,6 +33669,12 @@ void main() {
         veh.beams = beams;
         veh.group.add(beams);
         scene.add(veh.group);
+        // r124: every ride the same size on the road: about 40 long, about 26 wide at most
+        {
+          const sz = bb.getSize(new Vector3()), len = Math.max(sz.z, 1), wid = Math.max(sz.x, 1);
+          VEH_S = Math.min(0.74, 46 / len, 30 / wid);
+          window.__vehSize = [id, Math.round(sz.x), Math.round(sz.y), Math.round(sz.z), +VEH_S.toFixed(2)];
+        }
         veh.group.scale.setScalar(VEH_S);
         spawnStart = performance.now();
       }
@@ -33894,7 +33906,10 @@ void main() {
           const d = radius / Math.sin(cam.fov * Math.PI / 180 / 2) * 0.92;
           cam.position.set(c.x + d * 0.52, c.y + d * 0.5, c.z + d * 0.72);
           cam.lookAt(c);
+          noWarp(s);
+          window.__noCityCull = true;
           r.render(s, cam);
+          window.__noCityCull = false;
           out[v.id] = r.domElement.toDataURL("image/png");
           s.remove(built.group);
           disposeObject(built.group);
@@ -36737,7 +36752,7 @@ void main() {
             : `<span class="mp-label"><b>${pl.name}</b><i class="mono">${pl.line}</i>${got}</span><span class="mp-stem"></span><span class="mp-dot"></span>`);
           b.style.setProperty("--pc", pl.c); if (pl.t) b.style.setProperty("--pt", pl.t);
           b.dataset.id = pl.id;
-          b.onclick = (e) => { e.stopPropagation(); mapGo(pl); };
+          b.onclick = (e) => { e.stopPropagation(); if (mapBoarding) return; mapGo(pl); };
           pinsEl.appendChild(b);
           let ch = null;
           if (!pl.chapter && !pl.small) {
@@ -37053,7 +37068,7 @@ void main() {
         let markAt = null;
         const tapMark = (x, z) => { markAt = new Vector3(x, 0, z); markEl.classList.remove("on"); void markEl.offsetWidth; markEl.classList.add("on"); };
         const up = (e) => {
-          if (downAt && mapMode && !mapIntro && ptrs.size <= 1 && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 6 && performance.now() - downAt.t < 500 && jetFx.phase === "idle") tapGo(e.clientX, e.clientY);
+          if (downAt && mapMode && !mapIntro && !mapBoarding && ptrs.size <= 1 && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 6 && performance.now() - downAt.t < 500 && jetFx.phase === "idle") tapGo(e.clientX, e.clientY);
           downAt = null;
           ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = 0; if (performance.now() - last > 90) mapView.vx = mapView.vz = 0;
         };
@@ -37156,7 +37171,7 @@ void main() {
             const zl = mapView.dist > (mapView._zl === 1 ? 5800 : 6200) ? 1 : mapView.dist > (mapView._zl === 3 ? 3300 : 3000) ? 2 : 3;
             mapView._zl = zl;
             for (const e of streetEls) {
-              warpV(proj.set(e._p[0], 2, e._p[1])).project(camera);
+              warpV(proj.set(e._p[0], 95, e._p[1])).project(camera);
               const sx2 = (proj.x * 0.5 + 0.5) * W, sy2 = (-proj.y * 0.5 + 0.5) * H;
               const off2 = mapIntro || proj.z > 1 || sx2 < -200 || sx2 > W + 200 || sy2 < 110 || sy2 > H - 90 || mapView.dist < 3300;
               e._xy = off2 ? null : [sx2, sy2];
@@ -37329,6 +37344,19 @@ void main() {
         pct = Math.min(96, pct + 5 + Math.random() * 9);
         ui.setLoaderPct(pct);
       }, 60);
+      // r124: the intro is the loader. On "/" the kinetic type plays at once; on ?map the cups rush
+      // straight in. Either way the wall of cups holds until the world is ready, then lifts off it
+      const kzLoader = BOOT_MODE !== "drive";
+      if (kzLoader) {
+        window.__cupsHold = true;
+        state.started = true;
+        state.visited.add("start");
+        setMapMode(true, { intro: true });
+        kinetic = createKinetic(() => mapEndIntro(), null);
+        kinetic.resume();
+        if (BOOT_MODE === "map") setTimeout(() => kinetic.finish(), 60);
+        ui.hideLoader();
+      }
       Promise.race([document.fonts?.ready ?? Promise.resolve(), new Promise((r) => setTimeout(r, 1600))]).then(() => {
         renderer.compile(scene, camera);
         clearInterval(bootT);
@@ -37338,7 +37366,8 @@ void main() {
         } catch (e) {
         }
         ui.setLoaderPct(100);
-        setTimeout(() => {
+        if (kzLoader) { window.__cupsHold = false; spawnStart = performance.now() + 700; startRevealAt = Infinity; }
+        else setTimeout(() => {
           ui.hideLoader();
           state.started = true;
           state.visited.add("start");
