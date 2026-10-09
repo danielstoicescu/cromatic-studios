@@ -3478,3 +3478,22 @@ body.olari-open .map-card, body.olari-open .mapcard:not(.contact), body.olari-op
 .kz { background-color: transparent; transition: opacity .5s ease, background-color .9s ease .2s; }
 body.kz-boot .kz { background-color: #f7f1e6; opacity: 1 !important; }
 .map-pin.on { z-index: 6; }
+
+/* r126 audit fixes */
+.map-top .map-site { pointer-events: auto; cursor: pointer; }
+.map-welcome .mw-x { z-index: 3; }
+.map-welcome .mw-k { padding-right: 46px; }
+.map-welcome { z-index: 21; }
+@media (max-width: 520px) {
+  .map-welcome .mw-opts { grid-template-columns: 1fr 1fr; gap: 7px; }
+  .map-welcome .mw-opts button { padding: 9px 9px 9px 15px; }
+  .map-welcome .mw-opts b { font-size: 13px; } .map-welcome .mw-opts i { font-size: 10.5px; }
+  .map-welcome .mw-how { margin: 8px 0 12px; } .map-welcome .mw-q { font-size: 15px; margin-bottom: 8px; }
+  .map-welcome .mw-free { margin-top: 10px; }
+}
+@media (max-width: 719px) {
+  body:not(.map-mode) .topbar .brand img.brand-mob { max-width: calc(100vw - 250px); height: auto; }
+  .map-top { gap: 4px !important; padding: 4px !important; }
+  .map-zoom { bottom: 50%; }
+}
+.flight-end .fe-save { background: #FED012; color: #111; }

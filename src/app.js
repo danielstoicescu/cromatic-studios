@@ -31760,6 +31760,7 @@ void main() {
       }
       done.innerHTML = renderPass(t, ok ? "sent" : "fallback");
       wireActions(done, t);
+      window.__savePass = () => savePass(t);
       if (!ok) {
         const body = [`Hi, I'm ${t.name}.`, "", `Booking: ${t.ref} \xB7 ${t.flight} \xB7 ${t.date}`, `Dreaming about: ${t.dreams.join(", ") || "-"}`, `Business: ${t.biz || "-"} (${t.klass})`, `Timeline: ${t.when || "-"}`, `Email: ${t.email}`, `Phone: ${t.phone || "-"}`, "", t.msg].join("\n");
         setTimeout(() => {
@@ -31953,7 +31954,7 @@ void main() {
       if (opts.map) box.insertAdjacentHTML("beforeend", `<div class="end-addr">
         <b class="ea-addr">Str. Olari nr. 9</b>
         <span class="ea-city mono">CROMATIC STUDIOS \xB7 BUCHAREST \xB7 TODAY</span>
-        <a class="ea-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener">Navigheaz\u0103 \u2192</a>
+        <a class="ea-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener">Navigate \u2192</a>
         <span class="ea-contact"><a href="mailto:hi@cromaticstudios.com">hi@cromaticstudios.com</a><a href="tel:+40728978068">+40 728 978 068</a></span>
       </div>`);
       // r93: the end of the road boards the Cromatic Jet on the map
@@ -32558,17 +32559,26 @@ void main() {
     {
       const ovOpen = () => document.body.classList.contains("modal-open") || document.body.classList.contains("scf-open");
       let pushed = false, popping = false;
-      new MutationObserver(() => {
-        const on = ovOpen();
+      // r126: every panel counts: crew, human, rides, world menu, map card, boarding pass
+      const panelsOpen = () => ovOpen() || !!document.querySelector(".crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:not(.hidden), .map-card:not(.hidden)") || document.body.classList.contains("map-boarding") || document.body.classList.contains("hud-world-open");
+      const closeAll = () => {
+        for (const q of document.querySelectorAll(".case-frame, .scf-modal, .hmodal-backdrop, .crew-panel, .human-panel, .map-rides")) q.classList.add("hidden");
+        document.body.classList.remove("modal-open", "scf-open", "human-open", "hud-world-open");
+        document.querySelector(".map-card:not(.hidden) .map-x")?.click();
+        if (document.body.classList.contains("map-boarding")) document.querySelector(".mapcard.contact .map-x")?.click();
+      };
+      window.__closeAllOverlays = closeAll;
+      setInterval(() => {
+        const on = panelsOpen();
         if (on && !pushed) { pushed = true; try { history.pushState({ czOverlay: 1 }, ""); } catch {} }
         else if (!on && pushed) { pushed = false; if (!popping) { try { if (history.state?.czOverlay) history.back(); } catch {} } popping = false; }
-      }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+      }, 250);
       window.addEventListener("popstate", () => {
         if (!pushed) return;
-        popping = true;
-        for (const q of document.querySelectorAll(".case-frame, .scf-modal, .hmodal-backdrop")) q.classList.add("hidden");
-        document.body.classList.remove("modal-open", "scf-open");
+        popping = true; pushed = false;
+        closeAll();
       });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape" && panelsOpen()) closeAll(); });
     }
     // overflow:hidden on html/body would reset window.scrollY (and send the car back to
     // the start), so the world behind a modal is frozen by swallowing the event instead.
@@ -33227,7 +33237,7 @@ void main() {
     });
 
     // r122: the brands with their own case page open it full screen, from any card
-    const WORK_PAGES = { "Artisan Coffee Gear": "artisan-coffee-gear", "Craft Coffee": "craft-coffee", "Elithia": "elithia", "Yoshi Izakaya": "yoshi-izakaya", "ARCA Resort": "arca-resort",
+    const WORK_PAGES = { "Slow Coffee Festival": "slow-coffee-festival", "Artisan Coffee Gear": "artisan-coffee-gear", "Craft Coffee": "craft-coffee", "Elithia": "elithia", "Yoshi Izakaya": "yoshi-izakaya", "ARCA Resort": "arca-resort",
       "Routine Paris": "routine-paris", "Altius": "altius", "Help 4 Brain": "help-4-brain", "Investimental": "investimental", "Sip": "sip-coffee-wine", "Sip Coffee & Wine": "sip-coffee-wine",
       "Bepco": "bepco", "K\xF3mpus": "kompus", "Assetto": "assetto", "Clinica Sante": "clinica-sante" };
     window.__casePage = (brand) => (WORK_PAGES[brand] && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname) ? WORK_PAGES[brand] : null);
@@ -33307,7 +33317,7 @@ void main() {
     <span class="ac-band"></span>
     <b class="ac-addr">Str. Olari nr. 9</b>
     <span class="ac-city mono">CROMATIC STUDIOS \xB7 TODAY</span>
-    <a class="ac-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener">Navigheaz\u0103 pe harta ta \u2192</a>
+    <a class="ac-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener">Navigate on your map \u2192</a>
     <span class="ac-contact"><a href="mailto:hi@cromaticstudios.com">hi@cromaticstudios.com</a><a href="tel:+40728978068">+40 728 978 068</a></span>`);
     asLeftCard(labTag, "Two Min Lab", "TWO MIN LAB", "PRODUCTS \u00B7 TONIC IONIC \u00B7 LABELS", "See the lab \u2192");
     asLeftCard(tmMedia, "Two Minutes", "TWO MINUTES", "MEDIA & BRANDING \u00B7 FILM", "Watch \u2192");
@@ -33381,7 +33391,7 @@ void main() {
         <span class="cop-txt"><b>PULLED OVER</b><span class="mono">UNDER SURVEILLANCE \xB7 MAX 50 KM/H</span></span>
         <em class="mono">0:10</em>`;
         try {
-          navigator.vibrate?.([80, 60, 80, 60, 120]);
+          if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.([80, 60, 80, 60, 120]);
         } catch {
         }
       },
@@ -34429,7 +34439,7 @@ void main() {
             const meta = STOP_META[best];
             if (best === "services" && !xpCollected.has("services")) xpAnnounce(meta.pts, meta.title, meta.learn, "msg", "services");
             try {
-              navigator.vibrate?.(40);
+              if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.(40);
             } catch {
             }
           }
@@ -36150,7 +36160,7 @@ void main() {
               gainXP(5, `Double espresso \xD7${n}`, "Two Minutes knows good coffee");
               spawnCup();
               try {
-                navigator.vibrate?.(25);
+                if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.(25);
               } catch {
               }
             }
@@ -36309,7 +36319,7 @@ void main() {
       var mapNav = { targetL: 0, legs: [], place: null, moving: false };
       var jetFx = { phase: "idle", t: 0, baam: false };
       var boardTimer = 0, boardTick = 0;
-      var MAP_STREET = { A: "COFFEE STREET", B: "FINTECH BOULEVARD", C: "MEDICAL AVENUE" };
+      var MAP_STREET = { A: "COFFEE STREET", B: "FINTECH BOULEVARD", C: "MEDICAL AVENUE", D: "THE SMALLEST SHORTCUT" };
       var MAP_PLACES = [
         // finds: placards off the road; you click them where they are, the van stays put
         { id: "dream", stop: "dream", chapter: true, find: true, h: 70, name: "The Dream", line: "CH.01", c: "#B098C8" },
@@ -36341,7 +36351,7 @@ void main() {
       (() => {
         const have = new Set(MAP_PLACES.map((p) => (p.work || p.name).toLowerCase()));
         const add = (o) => { if (have.has(o.name.toLowerCase())) return; have.add(o.name.toLowerCase()); MAP_PLACES.splice(MAP_PLACES.length - 2, 0, o); };
-        for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
+        for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, street: b.lane ? "D" : b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
         ZDROVIT_YARD.forEach((n, i) => { const [x, z] = yardSpot(yardSlotOf(i)); add({ id: "y-" + i, br: "C", x: 1500, z, px: x, pz: z, h: 22, name: n, line: "IN THE ZDROVIT YARD", c: "#cfcdc8", t: "#3d3c39", small: true, desc: `${n}, one of the brands in the Zdrovit yard. By Cromatic Studios.` }); });
         add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Casa Berero", line: "BRAND \xB7 BY CROMATIC STUDIOS", c: "#111111", t: "#ffffff", act: "bereroTag" });
         add({ id: "bism", x: 1170, z: 6300, px: 1078, pz: 6290, h: 150, name: "BISM", line: "UPSTAIRS AT DACIA 99", c: "#1f4fd6", t: "#ffffff", t2: "#F65342", noopen: true, desc: "BISM, under the same roof as our Dacia 99 studio: neighbours, then clients." });
@@ -36486,7 +36496,10 @@ void main() {
         document.body.classList.add("flight-done");
         let end = document.querySelector(".flight-end");
         if (!end) {
-          end = el("div", "flight-end", `<b>See you on board.</b><span>Your boarding pass is with us. We write back within one working day.</span><button class="fe-drive">\u{1F697} Repeat the experience in Drive mode</button><button class="fe-replay">\u21BB Start over on the map</button><button class="fe-map">Back to the map</button>`);
+          end = el("div", "flight-end", `<b>See you on board.</b><span>Your boarding pass is with us. We write back within one working day.</span><button class="fe-save">\u2B07 Save my boarding pass</button><button class="fe-drive">\u{1F697} Repeat the experience in Drive mode</button><button class="fe-replay">\u21BB Start over on the map</button><button class="fe-map">Back to the map</button>`);
+          end.querySelector(".fe-save").onclick = () => window.__savePass?.();
+          if (!window.__savePass) end.querySelector(".fe-save").remove();
+          baamEl.classList.add("hidden");
           end.querySelector(".fe-drive").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?drive&nointro"; };
           end.querySelector(".fe-replay").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?r=" + Date.now().toString(36); };
           end.querySelector(".fe-map").onclick = () => {
@@ -36767,7 +36780,7 @@ void main() {
         box.append(speedEl, pinsEl, top, rides, zoom, dock, card, skip, baamEl, welcomeEl);
         ui.root.appendChild(box);
         top.querySelector(".map-exit").onclick = () => setMapMode(false);
-        top.querySelector(".map-crew").onclick = () => openCrew();
+        top.querySelector(".map-crew").onclick = () => { welcome(false); openCrew(); };
         top.querySelector(".map-home").onclick = () => { welcome(false); mapGo(MAP_PLACES.find((p) => p.id === "end")); };
 
         top.querySelector(".map-world").onclick = (e) => { e.stopPropagation(); ui.themeBtn.click(); };
@@ -36775,7 +36788,7 @@ void main() {
           b.classList.toggle("on", b.dataset.v === state.vehicleId);
           const u = vehPreviews[b.dataset.v]; if (u) b.querySelector(".mrs-th").style.backgroundImage = `url(${u})`;
         });
-        top.querySelector(".map-ride").onclick = (e) => { e.stopPropagation(); paintRides(); rides.classList.toggle("hidden"); };
+        top.querySelector(".map-ride").onclick = (e) => { e.stopPropagation(); welcome(false); paintRides(); rides.classList.toggle("hidden"); };
         rides.onclick = (e) => {
           const b = e.target.closest(".mrs-v"); if (!b) return;
           api.setVehicle(b.dataset.v); veh.group.visible = true; paintRides();
@@ -36889,8 +36902,9 @@ void main() {
           if (pl.tm) {
             // Two Minutes: three double espressos, the boxes come down from our old balcony, a fourth, and the rush
             coffee.done = false; coffee.phase = "sip1"; coffee.t = 0; coffee.served = 0;
-            showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52", `<p>${pl.desc}</p>`, `<button class="mcd-open">Watch the film \u2192</button>`);
+            showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52", `<p>${pl.desc}</p>`, `<button class="mcd-open">Watch the film \u2192</button><button class="mcd-open mcd-2">Read the case \u2192</button>`);
             card.querySelector(".mcd-open").onclick = () => ui.tmMedia?.click();
+            card.querySelector(".mcd-2").onclick = () => { if (openFrameHook && /^https?:$/.test(location.protocol)) openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); };
             return;
           }
           const pr = projectOf(pl.name);
@@ -36899,7 +36913,7 @@ void main() {
             showCard(pl, "BULEVARDUL DACIA 99", `<p>${pl.desc}</p>`, pl.soon ? `<span class="mcd-wip mono" style="--pc:${pl.c};--pt:#fff">CASE PAGE COMING SOON</span>` : "");
             return;
           }
-          showCard(pl, pl.br ? MAP_STREET[pl.br] : pl.line.split(" \xB7 ")[0], `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`, pl.wip ? `<span class="mcd-wip mono">WORK IN PROGRESS</span>` : pl.small && !pg ? "" : `<button class="mcd-open">Open the case →</button>`);
+          showCard(pl, pl.br ? MAP_STREET[pl.street || pl.br] : pl.line.split(" \xB7 ")[0], `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`, pl.wip ? `<span class="mcd-wip mono">WORK IN PROGRESS</span>` : pl.small && !pg ? "" : `<button class="mcd-open">Open the case →</button>`);
           if (pl.wip || (pl.small && !pg)) return;
           card.querySelector(".mcd-open").onclick = () => (pg && openFrameHook ? openFrameHook(`/work/${pg}/?embed=1`, pl.name) : tagOf(pl)?.click());
         };
@@ -36988,7 +37002,7 @@ void main() {
           baamEl.classList.remove("hidden");
           baamEl.classList.remove("go"); void baamEl.offsetWidth; baamEl.classList.add("go");
           ui.confetti?.(50, 45); setTimeout(() => ui.confetti?.(35, 55), 280); setTimeout(() => ui.confetti?.(65, 55), 520);
-          try { navigator.vibrate?.([60, 40, 120]); } catch {}
+          try { if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.([60, 40, 120]); } catch {}
           setTimeout(() => baamEl.classList.add("hidden"), 4600);
         };
         zoom.onclick = (e) => {
@@ -37237,7 +37251,7 @@ void main() {
             }).sort((a, b) => (b.p.pl === mapNav.place) - (a.p.pl === mapNav.place) || (a.p.pl.chapter ? 1 : 0) - (b.p.pl.chapter ? 1 : 0) || a.y - b.y);
             for (const o of order) {
               // pins never slide under the top bar (phones: under the map bar either)
-              const off = mapIntro || o.z > 1 || o.x < -80 || o.x > W + 80 || o.y < (W < 720 ? 190 : 110) || o.y > H + 80;
+              const off = mapIntro || o.z > 1 || o.x < -80 || o.x > W + 80 || o.y < (o.p.pl === mapNav.place ? 70 : W < 720 ? 190 : 110) || o.y > H + 80;
               if (o.p.b._off !== off) { o.p.b._off = off; o.p.b.classList.toggle("off", off); }
               if (off) continue;
               // r125: the place you are at keeps the stage: whatever would sit on its label turns into a dot
