@@ -1191,7 +1191,7 @@ body.dark-ui .brand img { filter: invert(1); }
 .poi-cta {
   align-self: flex-start; margin-top: 7px;
   font: 700 9.5px/1 Poppins, sans-serif; letter-spacing: .05em;
-  background: #ffffff; color: var(--tagc, #14532a); border-radius: 999px; padding: 6px 12px;
+  background: var(--tagt, #ffffff); color: var(--tagc, #14532a); border-radius: 999px; padding: 6px 12px;
 }
 @media (max-width: 760px) {
   /* phones: a single horizontal strip of compact pills under the controls, scrolls sideways */

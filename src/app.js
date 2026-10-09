@@ -15033,7 +15033,7 @@
         intersectsSphere(sphere) {
           const planes = this.planes;
           const center = sphere.center;
-          const negRadius = -sphere.radius;
+          const negRadius = -sphere.radius - 230;
           for (let i = 0; i < 6; i++) {
             const distance = planes[i].distanceToPoint(center);
             if (distance < negRadius) {
@@ -15147,7 +15147,7 @@
       color_pars_fragment = "#if defined( USE_COLOR_ALPHA )\n	varying vec4 vColor;\n#elif defined( USE_COLOR )\n	varying vec3 vColor;\n#endif";
       color_pars_vertex = "#if defined( USE_COLOR_ALPHA )\n	varying vec4 vColor;\n#elif defined( USE_COLOR ) || defined( USE_INSTANCING_COLOR ) || defined( USE_BATCHING_COLOR )\n	varying vec3 vColor;\n#endif";
       color_vertex = "#if defined( USE_COLOR_ALPHA )\n	vColor = vec4( 1.0 );\n#elif defined( USE_COLOR ) || defined( USE_INSTANCING_COLOR ) || defined( USE_BATCHING_COLOR )\n	vColor = vec3( 1.0 );\n#endif\n#ifdef USE_COLOR\n	vColor *= color;\n#endif\n#ifdef USE_INSTANCING_COLOR\n	vColor.xyz *= instanceColor.xyz;\n#endif\n#ifdef USE_BATCHING_COLOR\n	vec3 batchingColor = getBatchingColor( getIndirectIndex( gl_DrawID ) );\n	vColor.xyz *= batchingColor.xyz;\n#endif";
-      common = "#define PI 3.141592653589793\n#define PI2 6.283185307179586\n#define PI_HALF 1.5707963267948966\n#define RECIPROCAL_PI 0.3183098861837907\n#define RECIPROCAL_PI2 0.15915494309189535\n#define EPSILON 1e-6\n#ifndef saturate\n#define saturate( a ) clamp( a, 0.0, 1.0 )\n#endif\n#define whiteComplement( a ) ( 1.0 - saturate( a ) )\nfloat pow2( const in float x ) { return x*x; }\nvec3 pow2( const in vec3 x ) { return x*x; }\nfloat pow3( const in float x ) { return x*x*x; }\nfloat pow4( const in float x ) { float x2 = x*x; return x2*x2; }\nfloat max3( const in vec3 v ) { return max( max( v.x, v.y ), v.z ); }\nfloat average( const in vec3 v ) { return dot( v, vec3( 0.3333333 ) ); }\nhighp float rand( const in vec2 uv ) {\n	const highp float a = 12.9898, b = 78.233, c = 43758.5453;\n	highp float dt = dot( uv.xy, vec2( a,b ) ), sn = mod( dt, PI );\n	return fract( sin( sn ) * c );\n}\n#ifdef HIGH_PRECISION\n	float precisionSafeLength( vec3 v ) { return length( v ); }\n#else\n	float precisionSafeLength( vec3 v ) {\n		float maxComponent = max3( abs( v ) );\n		return length( v / maxComponent ) * maxComponent;\n	}\n#endif\nstruct IncidentLight {\n	vec3 color;\n	vec3 direction;\n	bool visible;\n};\nstruct ReflectedLight {\n	vec3 directDiffuse;\n	vec3 directSpecular;\n	vec3 indirectDiffuse;\n	vec3 indirectSpecular;\n};\n#ifdef USE_ALPHAHASH\n	varying vec3 vPosition;\n#endif\nvec3 transformDirection( in vec3 dir, in mat4 matrix ) {\n	return normalize( ( matrix * vec4( dir, 0.0 ) ).xyz );\n}\nvec3 inverseTransformDirection( in vec3 dir, in mat4 matrix ) {\n	return normalize( ( vec4( dir, 0.0 ) * matrix ).xyz );\n}\nmat3 transposeMat3( const in mat3 m ) {\n	mat3 tmp;\n	tmp[ 0 ] = vec3( m[ 0 ].x, m[ 1 ].x, m[ 2 ].x );\n	tmp[ 1 ] = vec3( m[ 0 ].y, m[ 1 ].y, m[ 2 ].y );\n	tmp[ 2 ] = vec3( m[ 0 ].z, m[ 1 ].z, m[ 2 ].z );\n	return tmp;\n}\nbool isPerspectiveMatrix( mat4 m ) {\n	return m[ 2 ][ 3 ] == - 1.0;\n}\nvec2 equirectUv( in vec3 dir ) {\n	float u = atan( dir.z, dir.x ) * RECIPROCAL_PI2 + 0.5;\n	float v = asin( clamp( dir.y, - 1.0, 1.0 ) ) * RECIPROCAL_PI + 0.5;\n	return vec2( u, v );\n}\nvec3 BRDF_Lambert( const in vec3 diffuseColor ) {\n	return RECIPROCAL_PI * diffuseColor;\n}\nvec3 F_Schlick( const in vec3 f0, const in float f90, const in float dotVH ) {\n	float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );\n	return f0 * ( 1.0 - fresnel ) + ( f90 * fresnel );\n}\nfloat F_Schlick( const in float f0, const in float f90, const in float dotVH ) {\n	float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );\n	return f0 * ( 1.0 - fresnel ) + ( f90 * fresnel );\n} // validated";
+      common = "#define PI 3.141592653589793\n#define PI2 6.283185307179586\n#define PI_HALF 1.5707963267948966\n#define RECIPROCAL_PI 0.3183098861837907\n#define RECIPROCAL_PI2 0.15915494309189535\n#define EPSILON 1e-6\n#ifndef saturate\n#define saturate( a ) clamp( a, 0.0, 1.0 )\n#endif\n#define whiteComplement( a ) ( 1.0 - saturate( a ) )\nfloat pow2( const in float x ) { return x*x; }\nvec3 pow2( const in vec3 x ) { return x*x; }\nfloat pow3( const in float x ) { return x*x*x; }\nfloat pow4( const in float x ) { float x2 = x*x; return x2*x2; }\nfloat max3( const in vec3 v ) { return max( max( v.x, v.y ), v.z ); }\nfloat average( const in vec3 v ) { return dot( v, vec3( 0.3333333 ) ); }\nhighp float rand( const in vec2 uv ) {\n	const highp float a = 12.9898, b = 78.233, c = 43758.5453;\n	highp float dt = dot( uv.xy, vec2( a,b ) ), sn = mod( dt, PI );\n	return fract( sin( sn ) * c );\n}\n#ifdef HIGH_PRECISION\n	float precisionSafeLength( vec3 v ) { return length( v ); }\n#else\n	float precisionSafeLength( vec3 v ) {\n		float maxComponent = max3( abs( v ) );\n		return length( v / maxComponent ) * maxComponent;\n	}\n#endif\nstruct IncidentLight {\n	vec3 color;\n	vec3 direction;\n	bool visible;\n};\nstruct ReflectedLight {\n	vec3 directDiffuse;\n	vec3 directSpecular;\n	vec3 indirectDiffuse;\n	vec3 indirectSpecular;\n};\n#ifdef USE_ALPHAHASH\n	varying vec3 vPosition;\n#endif\nvec3 transformDirection( in vec3 dir, in mat4 matrix ) {\n	return normalize( ( matrix * vec4( dir, 0.0 ) ).xyz );\n}\nvec3 inverseTransformDirection( in vec3 dir, in mat4 matrix ) {\n	return normalize( ( vec4( dir, 0.0 ) * matrix ).xyz );\n}\nmat3 transposeMat3( const in mat3 m ) {\n	mat3 tmp;\n	tmp[ 0 ] = vec3( m[ 0 ].x, m[ 1 ].x, m[ 2 ].x );\n	tmp[ 1 ] = vec3( m[ 0 ].y, m[ 1 ].y, m[ 2 ].y );\n	tmp[ 2 ] = vec3( m[ 0 ].z, m[ 1 ].z, m[ 2 ].z );\n	return tmp;\n}\nbool isPerspectiveMatrix( mat4 m ) {\n	return m[ 2 ][ 3 ] == - 1.0;\n}\nvec2 equirectUv( in vec3 dir ) {\n	float u = atan( dir.z, dir.x ) * RECIPROCAL_PI2 + 0.5;\n	float v = asin( clamp( dir.y, - 1.0, 1.0 ) ) * RECIPROCAL_PI + 0.5;\n	return vec2( u, v );\n}\nvec3 BRDF_Lambert( const in vec3 diffuseColor ) {\n	return RECIPROCAL_PI * diffuseColor;\n}\nvec3 F_Schlick( const in vec3 f0, const in float f90, const in float dotVH ) {\n	float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );\n	return f0 * ( 1.0 - fresnel ) + ( f90 * fresnel );\n}\nfloat F_Schlick( const in float f0, const in float f90, const in float dotVH ) {\n	float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );\n	return f0 * ( 1.0 - fresnel ) + ( f90 * fresnel );\n} // validated\n// r118: the city warp: the whole world is bent by one smooth field, so straight streets curve\n// like Bucharest's while everything on them (kerbs, buildings, the van) bends along\nvec2 cityWarpD( vec2 p ) {\n\tfloat u = p.x - 1500.0, v = p.y - 4260.0;\n\tfloat dx = 90.0 * cos( v / 620.0 ) * cos( u / 900.0 ) + 38.0 * cos( v / 380.0 + u / 1100.0 ) + 45.0 * sin( u / 400.0 ) * sin( v / 700.0 );\n\tfloat dz = 70.0 * cos( u / 560.0 ) * cos( v / 1200.0 ) + 30.0 * cos( u / 330.0 - v / 900.0 );\n\tfloat m = 1.0 - smoothstep( 7500.0, 8500.0, p.y );\n\treturn vec2( dx, dz ) * m;\n}\nvec2 cityWarp( vec2 p ) { return p + cityWarpD( p ); }\n";
       cube_uv_reflection_fragment = "#ifdef ENVMAP_TYPE_CUBE_UV\n	#define cubeUV_minMipLevel 4.0\n	#define cubeUV_minTileSize 16.0\n	float getFace( vec3 direction ) {\n		vec3 absDirection = abs( direction );\n		float face = - 1.0;\n		if ( absDirection.x > absDirection.z ) {\n			if ( absDirection.x > absDirection.y )\n				face = direction.x > 0.0 ? 0.0 : 3.0;\n			else\n				face = direction.y > 0.0 ? 1.0 : 4.0;\n		} else {\n			if ( absDirection.z > absDirection.y )\n				face = direction.z > 0.0 ? 2.0 : 5.0;\n			else\n				face = direction.y > 0.0 ? 1.0 : 4.0;\n		}\n		return face;\n	}\n	vec2 getUV( vec3 direction, float face ) {\n		vec2 uv;\n		if ( face == 0.0 ) {\n			uv = vec2( direction.z, direction.y ) / abs( direction.x );\n		} else if ( face == 1.0 ) {\n			uv = vec2( - direction.x, - direction.z ) / abs( direction.y );\n		} else if ( face == 2.0 ) {\n			uv = vec2( - direction.x, direction.y ) / abs( direction.z );\n		} else if ( face == 3.0 ) {\n			uv = vec2( - direction.z, direction.y ) / abs( direction.x );\n		} else if ( face == 4.0 ) {\n			uv = vec2( - direction.x, direction.z ) / abs( direction.y );\n		} else {\n			uv = vec2( direction.x, direction.y ) / abs( direction.z );\n		}\n		return 0.5 * ( uv + 1.0 );\n	}\n	vec3 bilinearCubeUV( sampler2D envMap, vec3 direction, float mipInt ) {\n		float face = getFace( direction );\n		float filterInt = max( cubeUV_minMipLevel - mipInt, 0.0 );\n		mipInt = max( mipInt, cubeUV_minMipLevel );\n		float faceSize = exp2( mipInt );\n		highp vec2 uv = getUV( direction, face ) * ( faceSize - 2.0 ) + 1.0;\n		if ( face > 2.0 ) {\n			uv.y += faceSize;\n			face -= 3.0;\n		}\n		uv.x += face * faceSize;\n		uv.x += filterInt * 3.0 * cubeUV_minTileSize;\n		uv.y += 4.0 * ( exp2( CUBEUV_MAX_MIP ) - faceSize );\n		uv.x *= CUBEUV_TEXEL_WIDTH;\n		uv.y *= CUBEUV_TEXEL_HEIGHT;\n		#ifdef texture2DGradEXT\n			return texture2DGradEXT( envMap, uv, vec2( 0.0 ), vec2( 0.0 ) ).rgb;\n		#else\n			return texture2D( envMap, uv ).rgb;\n		#endif\n	}\n	#define cubeUV_r0 1.0\n	#define cubeUV_m0 - 2.0\n	#define cubeUV_r1 0.8\n	#define cubeUV_m1 - 1.0\n	#define cubeUV_r4 0.4\n	#define cubeUV_m4 2.0\n	#define cubeUV_r5 0.305\n	#define cubeUV_m5 3.0\n	#define cubeUV_r6 0.21\n	#define cubeUV_m6 4.0\n	float roughnessToMip( float roughness ) {\n		float mip = 0.0;\n		if ( roughness >= cubeUV_r1 ) {\n			mip = ( cubeUV_r0 - roughness ) * ( cubeUV_m1 - cubeUV_m0 ) / ( cubeUV_r0 - cubeUV_r1 ) + cubeUV_m0;\n		} else if ( roughness >= cubeUV_r4 ) {\n			mip = ( cubeUV_r1 - roughness ) * ( cubeUV_m4 - cubeUV_m1 ) / ( cubeUV_r1 - cubeUV_r4 ) + cubeUV_m1;\n		} else if ( roughness >= cubeUV_r5 ) {\n			mip = ( cubeUV_r4 - roughness ) * ( cubeUV_m5 - cubeUV_m4 ) / ( cubeUV_r4 - cubeUV_r5 ) + cubeUV_m4;\n		} else if ( roughness >= cubeUV_r6 ) {\n			mip = ( cubeUV_r5 - roughness ) * ( cubeUV_m6 - cubeUV_m5 ) / ( cubeUV_r5 - cubeUV_r6 ) + cubeUV_m5;\n		} else {\n			mip = - 2.0 * log2( 1.16 * roughness );		}\n		return mip;\n	}\n	vec4 textureCubeUV( sampler2D envMap, vec3 sampleDir, float roughness ) {\n		float mip = clamp( roughnessToMip( roughness ), cubeUV_m0, CUBEUV_MAX_MIP );\n		float mipF = fract( mip );\n		float mipInt = floor( mip );\n		vec3 color0 = bilinearCubeUV( envMap, sampleDir, mipInt );\n		if ( mipF == 0.0 ) {\n			return vec4( color0, 1.0 );\n		} else {\n			vec3 color1 = bilinearCubeUV( envMap, sampleDir, mipInt + 1.0 );\n			return vec4( mix( color0, color1, mipF ), 1.0 );\n		}\n	}\n#endif";
       defaultnormal_vertex = "vec3 transformedNormal = objectNormal;\n#ifdef USE_TANGENT\n	vec3 transformedTangent = objectTangent;\n#endif\n#ifdef USE_BATCHING\n	mat3 bm = mat3( batchingMatrix );\n	transformedNormal /= vec3( dot( bm[ 0 ], bm[ 0 ] ), dot( bm[ 1 ], bm[ 1 ] ), dot( bm[ 2 ], bm[ 2 ] ) );\n	transformedNormal = bm * transformedNormal;\n	#ifdef USE_TANGENT\n		transformedTangent = bm * transformedTangent;\n	#endif\n#endif\n#ifdef USE_INSTANCING\n	mat3 im = mat3( instanceMatrix );\n	transformedNormal /= vec3( dot( im[ 0 ], im[ 0 ] ), dot( im[ 1 ], im[ 1 ] ), dot( im[ 2 ], im[ 2 ] ) );\n	transformedNormal = im * transformedNormal;\n	#ifdef USE_TANGENT\n		transformedTangent = im * transformedTangent;\n	#endif\n#endif\ntransformedNormal = normalMatrix * transformedNormal;\n#ifdef FLIP_SIDED\n	transformedNormal = - transformedNormal;\n#endif\n#ifdef USE_TANGENT\n	transformedTangent = ( modelViewMatrix * vec4( transformedTangent, 0.0 ) ).xyz;\n	#ifdef FLIP_SIDED\n		transformedTangent = - transformedTangent;\n	#endif\n#endif";
       displacementmap_pars_vertex = "#ifdef USE_DISPLACEMENTMAP\n	uniform sampler2D displacementMap;\n	uniform float displacementScale;\n	uniform float displacementBias;\n#endif";
@@ -15208,7 +15208,7 @@
       opaque_fragment = "#ifdef OPAQUE\ndiffuseColor.a = 1.0;\n#endif\n#ifdef USE_TRANSMISSION\ndiffuseColor.a *= material.transmissionAlpha;\n#endif\ngl_FragColor = vec4( outgoingLight, diffuseColor.a );";
       packing = "vec3 packNormalToRGB( const in vec3 normal ) {\n	return normalize( normal ) * 0.5 + 0.5;\n}\nvec3 unpackRGBToNormal( const in vec3 rgb ) {\n	return 2.0 * rgb.xyz - 1.0;\n}\nconst float PackUpscale = 256. / 255.;const float UnpackDownscale = 255. / 256.;const float ShiftRight8 = 1. / 256.;\nconst float Inv255 = 1. / 255.;\nconst vec4 PackFactors = vec4( 1.0, 256.0, 256.0 * 256.0, 256.0 * 256.0 * 256.0 );\nconst vec2 UnpackFactors2 = vec2( UnpackDownscale, 1.0 / PackFactors.g );\nconst vec3 UnpackFactors3 = vec3( UnpackDownscale / PackFactors.rg, 1.0 / PackFactors.b );\nconst vec4 UnpackFactors4 = vec4( UnpackDownscale / PackFactors.rgb, 1.0 / PackFactors.a );\nvec4 packDepthToRGBA( const in float v ) {\n	if( v <= 0.0 )\n		return vec4( 0., 0., 0., 0. );\n	if( v >= 1.0 )\n		return vec4( 1., 1., 1., 1. );\n	float vuf;\n	float af = modf( v * PackFactors.a, vuf );\n	float bf = modf( vuf * ShiftRight8, vuf );\n	float gf = modf( vuf * ShiftRight8, vuf );\n	return vec4( vuf * Inv255, gf * PackUpscale, bf * PackUpscale, af );\n}\nvec3 packDepthToRGB( const in float v ) {\n	if( v <= 0.0 )\n		return vec3( 0., 0., 0. );\n	if( v >= 1.0 )\n		return vec3( 1., 1., 1. );\n	float vuf;\n	float bf = modf( v * PackFactors.b, vuf );\n	float gf = modf( vuf * ShiftRight8, vuf );\n	return vec3( vuf * Inv255, gf * PackUpscale, bf );\n}\nvec2 packDepthToRG( const in float v ) {\n	if( v <= 0.0 )\n		return vec2( 0., 0. );\n	if( v >= 1.0 )\n		return vec2( 1., 1. );\n	float vuf;\n	float gf = modf( v * 256., vuf );\n	return vec2( vuf * Inv255, gf );\n}\nfloat unpackRGBAToDepth( const in vec4 v ) {\n	return dot( v, UnpackFactors4 );\n}\nfloat unpackRGBToDepth( const in vec3 v ) {\n	return dot( v, UnpackFactors3 );\n}\nfloat unpackRGToDepth( const in vec2 v ) {\n	return v.r * UnpackFactors2.r + v.g * UnpackFactors2.g;\n}\nvec4 pack2HalfToRGBA( const in vec2 v ) {\n	vec4 r = vec4( v.x, fract( v.x * 255.0 ), v.y, fract( v.y * 255.0 ) );\n	return vec4( r.x - r.y / 255.0, r.y, r.z - r.w / 255.0, r.w );\n}\nvec2 unpackRGBATo2Half( const in vec4 v ) {\n	return vec2( v.x + ( v.y / 255.0 ), v.z + ( v.w / 255.0 ) );\n}\nfloat viewZToOrthographicDepth( const in float viewZ, const in float near, const in float far ) {\n	return ( viewZ + near ) / ( near - far );\n}\nfloat orthographicDepthToViewZ( const in float depth, const in float near, const in float far ) {\n	return depth * ( near - far ) - near;\n}\nfloat viewZToPerspectiveDepth( const in float viewZ, const in float near, const in float far ) {\n	return ( ( near + viewZ ) * far ) / ( ( far - near ) * viewZ );\n}\nfloat perspectiveDepthToViewZ( const in float depth, const in float near, const in float far ) {\n	return ( near * far ) / ( ( far - near ) * depth - far );\n}";
       premultiplied_alpha_fragment = "#ifdef PREMULTIPLIED_ALPHA\n	gl_FragColor.rgb *= gl_FragColor.a;\n#endif";
-      project_vertex = "vec4 mvPosition = vec4( transformed, 1.0 );\n#ifdef USE_BATCHING\n	mvPosition = batchingMatrix * mvPosition;\n#endif\n#ifdef USE_INSTANCING\n	mvPosition = instanceMatrix * mvPosition;\n#endif\nmvPosition = modelViewMatrix * mvPosition;\ngl_Position = projectionMatrix * mvPosition;";
+      project_vertex = "vec4 mvPosition = vec4( transformed, 1.0 );\n#ifdef USE_BATCHING\n	mvPosition = batchingMatrix * mvPosition;\n#endif\n#ifdef USE_INSTANCING\n	mvPosition = instanceMatrix * mvPosition;\n#endif\nmvPosition = modelMatrix * mvPosition;\nmvPosition.xz = cityWarp( mvPosition.xz );\nmvPosition = viewMatrix * mvPosition;\ngl_Position = projectionMatrix * mvPosition;";
       dithering_fragment = "#ifdef DITHERING\n	gl_FragColor.rgb = dithering( gl_FragColor.rgb );\n#endif";
       dithering_pars_fragment = "#ifdef DITHERING\n	vec3 dithering( vec3 color ) {\n		float grid_position = rand( gl_FragCoord.xy );\n		vec3 dither_shift_RGB = vec3( 0.25 / 255.0, -0.25 / 255.0, 0.25 / 255.0 );\n		dither_shift_RGB = mix( 2.0 * dither_shift_RGB, -2.0 * dither_shift_RGB, grid_position );\n		return color + dither_shift_RGB;\n	}\n#endif";
       roughnessmap_fragment = "float roughnessFactor = roughness;\n#ifdef USE_ROUGHNESSMAP\n	vec4 texelRoughness = texture2D( roughnessMap, vRoughnessMapUv );\n	roughnessFactor *= texelRoughness.g;\n#endif";
@@ -15230,7 +15230,7 @@
       uv_pars_fragment = "#if defined( USE_UV ) || defined( USE_ANISOTROPY )\n	varying vec2 vUv;\n#endif\n#ifdef USE_MAP\n	varying vec2 vMapUv;\n#endif\n#ifdef USE_ALPHAMAP\n	varying vec2 vAlphaMapUv;\n#endif\n#ifdef USE_LIGHTMAP\n	varying vec2 vLightMapUv;\n#endif\n#ifdef USE_AOMAP\n	varying vec2 vAoMapUv;\n#endif\n#ifdef USE_BUMPMAP\n	varying vec2 vBumpMapUv;\n#endif\n#ifdef USE_NORMALMAP\n	varying vec2 vNormalMapUv;\n#endif\n#ifdef USE_EMISSIVEMAP\n	varying vec2 vEmissiveMapUv;\n#endif\n#ifdef USE_METALNESSMAP\n	varying vec2 vMetalnessMapUv;\n#endif\n#ifdef USE_ROUGHNESSMAP\n	varying vec2 vRoughnessMapUv;\n#endif\n#ifdef USE_ANISOTROPYMAP\n	varying vec2 vAnisotropyMapUv;\n#endif\n#ifdef USE_CLEARCOATMAP\n	varying vec2 vClearcoatMapUv;\n#endif\n#ifdef USE_CLEARCOAT_NORMALMAP\n	varying vec2 vClearcoatNormalMapUv;\n#endif\n#ifdef USE_CLEARCOAT_ROUGHNESSMAP\n	varying vec2 vClearcoatRoughnessMapUv;\n#endif\n#ifdef USE_IRIDESCENCEMAP\n	varying vec2 vIridescenceMapUv;\n#endif\n#ifdef USE_IRIDESCENCE_THICKNESSMAP\n	varying vec2 vIridescenceThicknessMapUv;\n#endif\n#ifdef USE_SHEEN_COLORMAP\n	varying vec2 vSheenColorMapUv;\n#endif\n#ifdef USE_SHEEN_ROUGHNESSMAP\n	varying vec2 vSheenRoughnessMapUv;\n#endif\n#ifdef USE_SPECULARMAP\n	varying vec2 vSpecularMapUv;\n#endif\n#ifdef USE_SPECULAR_COLORMAP\n	varying vec2 vSpecularColorMapUv;\n#endif\n#ifdef USE_SPECULAR_INTENSITYMAP\n	varying vec2 vSpecularIntensityMapUv;\n#endif\n#ifdef USE_TRANSMISSIONMAP\n	uniform mat3 transmissionMapTransform;\n	varying vec2 vTransmissionMapUv;\n#endif\n#ifdef USE_THICKNESSMAP\n	uniform mat3 thicknessMapTransform;\n	varying vec2 vThicknessMapUv;\n#endif";
       uv_pars_vertex = "#if defined( USE_UV ) || defined( USE_ANISOTROPY )\n	varying vec2 vUv;\n#endif\n#ifdef USE_MAP\n	uniform mat3 mapTransform;\n	varying vec2 vMapUv;\n#endif\n#ifdef USE_ALPHAMAP\n	uniform mat3 alphaMapTransform;\n	varying vec2 vAlphaMapUv;\n#endif\n#ifdef USE_LIGHTMAP\n	uniform mat3 lightMapTransform;\n	varying vec2 vLightMapUv;\n#endif\n#ifdef USE_AOMAP\n	uniform mat3 aoMapTransform;\n	varying vec2 vAoMapUv;\n#endif\n#ifdef USE_BUMPMAP\n	uniform mat3 bumpMapTransform;\n	varying vec2 vBumpMapUv;\n#endif\n#ifdef USE_NORMALMAP\n	uniform mat3 normalMapTransform;\n	varying vec2 vNormalMapUv;\n#endif\n#ifdef USE_DISPLACEMENTMAP\n	uniform mat3 displacementMapTransform;\n	varying vec2 vDisplacementMapUv;\n#endif\n#ifdef USE_EMISSIVEMAP\n	uniform mat3 emissiveMapTransform;\n	varying vec2 vEmissiveMapUv;\n#endif\n#ifdef USE_METALNESSMAP\n	uniform mat3 metalnessMapTransform;\n	varying vec2 vMetalnessMapUv;\n#endif\n#ifdef USE_ROUGHNESSMAP\n	uniform mat3 roughnessMapTransform;\n	varying vec2 vRoughnessMapUv;\n#endif\n#ifdef USE_ANISOTROPYMAP\n	uniform mat3 anisotropyMapTransform;\n	varying vec2 vAnisotropyMapUv;\n#endif\n#ifdef USE_CLEARCOATMAP\n	uniform mat3 clearcoatMapTransform;\n	varying vec2 vClearcoatMapUv;\n#endif\n#ifdef USE_CLEARCOAT_NORMALMAP\n	uniform mat3 clearcoatNormalMapTransform;\n	varying vec2 vClearcoatNormalMapUv;\n#endif\n#ifdef USE_CLEARCOAT_ROUGHNESSMAP\n	uniform mat3 clearcoatRoughnessMapTransform;\n	varying vec2 vClearcoatRoughnessMapUv;\n#endif\n#ifdef USE_SHEEN_COLORMAP\n	uniform mat3 sheenColorMapTransform;\n	varying vec2 vSheenColorMapUv;\n#endif\n#ifdef USE_SHEEN_ROUGHNESSMAP\n	uniform mat3 sheenRoughnessMapTransform;\n	varying vec2 vSheenRoughnessMapUv;\n#endif\n#ifdef USE_IRIDESCENCEMAP\n	uniform mat3 iridescenceMapTransform;\n	varying vec2 vIridescenceMapUv;\n#endif\n#ifdef USE_IRIDESCENCE_THICKNESSMAP\n	uniform mat3 iridescenceThicknessMapTransform;\n	varying vec2 vIridescenceThicknessMapUv;\n#endif\n#ifdef USE_SPECULARMAP\n	uniform mat3 specularMapTransform;\n	varying vec2 vSpecularMapUv;\n#endif\n#ifdef USE_SPECULAR_COLORMAP\n	uniform mat3 specularColorMapTransform;\n	varying vec2 vSpecularColorMapUv;\n#endif\n#ifdef USE_SPECULAR_INTENSITYMAP\n	uniform mat3 specularIntensityMapTransform;\n	varying vec2 vSpecularIntensityMapUv;\n#endif\n#ifdef USE_TRANSMISSIONMAP\n	uniform mat3 transmissionMapTransform;\n	varying vec2 vTransmissionMapUv;\n#endif\n#ifdef USE_THICKNESSMAP\n	uniform mat3 thicknessMapTransform;\n	varying vec2 vThicknessMapUv;\n#endif";
       uv_vertex = "#if defined( USE_UV ) || defined( USE_ANISOTROPY )\n	vUv = vec3( uv, 1 ).xy;\n#endif\n#ifdef USE_MAP\n	vMapUv = ( mapTransform * vec3( MAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_ALPHAMAP\n	vAlphaMapUv = ( alphaMapTransform * vec3( ALPHAMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_LIGHTMAP\n	vLightMapUv = ( lightMapTransform * vec3( LIGHTMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_AOMAP\n	vAoMapUv = ( aoMapTransform * vec3( AOMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_BUMPMAP\n	vBumpMapUv = ( bumpMapTransform * vec3( BUMPMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_NORMALMAP\n	vNormalMapUv = ( normalMapTransform * vec3( NORMALMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_DISPLACEMENTMAP\n	vDisplacementMapUv = ( displacementMapTransform * vec3( DISPLACEMENTMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_EMISSIVEMAP\n	vEmissiveMapUv = ( emissiveMapTransform * vec3( EMISSIVEMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_METALNESSMAP\n	vMetalnessMapUv = ( metalnessMapTransform * vec3( METALNESSMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_ROUGHNESSMAP\n	vRoughnessMapUv = ( roughnessMapTransform * vec3( ROUGHNESSMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_ANISOTROPYMAP\n	vAnisotropyMapUv = ( anisotropyMapTransform * vec3( ANISOTROPYMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_CLEARCOATMAP\n	vClearcoatMapUv = ( clearcoatMapTransform * vec3( CLEARCOATMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_CLEARCOAT_NORMALMAP\n	vClearcoatNormalMapUv = ( clearcoatNormalMapTransform * vec3( CLEARCOAT_NORMALMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_CLEARCOAT_ROUGHNESSMAP\n	vClearcoatRoughnessMapUv = ( clearcoatRoughnessMapTransform * vec3( CLEARCOAT_ROUGHNESSMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_IRIDESCENCEMAP\n	vIridescenceMapUv = ( iridescenceMapTransform * vec3( IRIDESCENCEMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_IRIDESCENCE_THICKNESSMAP\n	vIridescenceThicknessMapUv = ( iridescenceThicknessMapTransform * vec3( IRIDESCENCE_THICKNESSMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_SHEEN_COLORMAP\n	vSheenColorMapUv = ( sheenColorMapTransform * vec3( SHEEN_COLORMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_SHEEN_ROUGHNESSMAP\n	vSheenRoughnessMapUv = ( sheenRoughnessMapTransform * vec3( SHEEN_ROUGHNESSMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_SPECULARMAP\n	vSpecularMapUv = ( specularMapTransform * vec3( SPECULARMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_SPECULAR_COLORMAP\n	vSpecularColorMapUv = ( specularColorMapTransform * vec3( SPECULAR_COLORMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_SPECULAR_INTENSITYMAP\n	vSpecularIntensityMapUv = ( specularIntensityMapTransform * vec3( SPECULAR_INTENSITYMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_TRANSMISSIONMAP\n	vTransmissionMapUv = ( transmissionMapTransform * vec3( TRANSMISSIONMAP_UV, 1 ) ).xy;\n#endif\n#ifdef USE_THICKNESSMAP\n	vThicknessMapUv = ( thicknessMapTransform * vec3( THICKNESSMAP_UV, 1 ) ).xy;\n#endif";
-      worldpos_vertex = "#if defined( USE_ENVMAP ) || defined( DISTANCE ) || defined ( USE_SHADOWMAP ) || defined ( USE_TRANSMISSION ) || NUM_SPOT_LIGHT_COORDS > 0\n	vec4 worldPosition = vec4( transformed, 1.0 );\n	#ifdef USE_BATCHING\n		worldPosition = batchingMatrix * worldPosition;\n	#endif\n	#ifdef USE_INSTANCING\n		worldPosition = instanceMatrix * worldPosition;\n	#endif\n	worldPosition = modelMatrix * worldPosition;\n#endif";
+      worldpos_vertex = "#if defined( USE_ENVMAP ) || defined( DISTANCE ) || defined ( USE_SHADOWMAP ) || defined ( USE_TRANSMISSION ) || NUM_SPOT_LIGHT_COORDS > 0\n	vec4 worldPosition = vec4( transformed, 1.0 );\n	#ifdef USE_BATCHING\n		worldPosition = batchingMatrix * worldPosition;\n	#endif\n	#ifdef USE_INSTANCING\n		worldPosition = instanceMatrix * worldPosition;\n	#endif\n	worldPosition = modelMatrix * worldPosition;\n	worldPosition.xz = cityWarp( worldPosition.xz );\n#endif";
       vertex$h = "varying vec2 vUv;\nuniform mat3 uvTransform;\nvoid main() {\n	vUv = ( uvTransform * vec3( uv, 1 ) ).xy;\n	gl_Position = vec4( position.xy, 1.0, 1.0 );\n}";
       fragment$h = "uniform sampler2D t2D;\nuniform float backgroundIntensity;\nvarying vec2 vUv;\nvoid main() {\n	vec4 texColor = texture2D( t2D, vUv );\n	#ifdef DECODE_VIDEO_TEXTURE\n		texColor = vec4( mix( pow( texColor.rgb * 0.9478672986 + vec3( 0.0521327014 ), vec3( 2.4 ) ), texColor.rgb * 0.0773993808, vec3( lessThanEqual( texColor.rgb, vec3( 0.04045 ) ) ) ), texColor.w );\n	#endif\n	texColor.rgb *= backgroundIntensity;\n	gl_FragColor = texColor;\n	#include <tonemapping_fragment>\n	#include <colorspace_fragment>\n}";
       vertex$g = "varying vec3 vWorldDirection;\n#include <common>\nvoid main() {\n	vWorldDirection = transformDirection( position, modelMatrix );\n	#include <begin_vertex>\n	#include <project_vertex>\n	gl_Position.z = gl_Position.w;\n}";
@@ -15263,7 +15263,7 @@
       fragment$3 = "uniform vec3 diffuse;\nuniform float opacity;\n#include <common>\n#include <color_pars_fragment>\n#include <map_particle_pars_fragment>\n#include <alphatest_pars_fragment>\n#include <alphahash_pars_fragment>\n#include <fog_pars_fragment>\n#include <logdepthbuf_pars_fragment>\n#include <clipping_planes_pars_fragment>\nvoid main() {\n	vec4 diffuseColor = vec4( diffuse, opacity );\n	#include <clipping_planes_fragment>\n	vec3 outgoingLight = vec3( 0.0 );\n	#include <logdepthbuf_fragment>\n	#include <map_particle_fragment>\n	#include <color_fragment>\n	#include <alphatest_fragment>\n	#include <alphahash_fragment>\n	outgoingLight = diffuseColor.rgb;\n	#include <opaque_fragment>\n	#include <tonemapping_fragment>\n	#include <colorspace_fragment>\n	#include <fog_fragment>\n	#include <premultiplied_alpha_fragment>\n}";
       vertex$2 = "#include <common>\n#include <batching_pars_vertex>\n#include <fog_pars_vertex>\n#include <morphtarget_pars_vertex>\n#include <skinning_pars_vertex>\n#include <logdepthbuf_pars_vertex>\n#include <shadowmap_pars_vertex>\nvoid main() {\n	#include <batching_vertex>\n	#include <beginnormal_vertex>\n	#include <morphinstance_vertex>\n	#include <morphnormal_vertex>\n	#include <skinbase_vertex>\n	#include <skinnormal_vertex>\n	#include <defaultnormal_vertex>\n	#include <begin_vertex>\n	#include <morphtarget_vertex>\n	#include <skinning_vertex>\n	#include <project_vertex>\n	#include <logdepthbuf_vertex>\n	#include <worldpos_vertex>\n	#include <shadowmap_vertex>\n	#include <fog_vertex>\n}";
       fragment$2 = "uniform vec3 color;\nuniform float opacity;\n#include <common>\n#include <packing>\n#include <fog_pars_fragment>\n#include <bsdfs>\n#include <lights_pars_begin>\n#include <logdepthbuf_pars_fragment>\n#include <shadowmap_pars_fragment>\n#include <shadowmask_pars_fragment>\nvoid main() {\n	#include <logdepthbuf_fragment>\n	gl_FragColor = vec4( color, opacity * ( 1.0 - getShadowMask() ) );\n	#include <tonemapping_fragment>\n	#include <colorspace_fragment>\n	#include <fog_fragment>\n}";
-      vertex$1 = "uniform float rotation;\nuniform vec2 center;\n#include <common>\n#include <uv_pars_vertex>\n#include <fog_pars_vertex>\n#include <logdepthbuf_pars_vertex>\n#include <clipping_planes_pars_vertex>\nvoid main() {\n	#include <uv_vertex>\n	vec4 mvPosition = modelViewMatrix[ 3 ];\n	vec2 scale = vec2( length( modelMatrix[ 0 ].xyz ), length( modelMatrix[ 1 ].xyz ) );\n	#ifndef USE_SIZEATTENUATION\n		bool isPerspective = isPerspectiveMatrix( projectionMatrix );\n		if ( isPerspective ) scale *= - mvPosition.z;\n	#endif\n	vec2 alignedPosition = ( position.xy - ( center - vec2( 0.5 ) ) ) * scale;\n	vec2 rotatedPosition;\n	rotatedPosition.x = cos( rotation ) * alignedPosition.x - sin( rotation ) * alignedPosition.y;\n	rotatedPosition.y = sin( rotation ) * alignedPosition.x + cos( rotation ) * alignedPosition.y;\n	mvPosition.xy += rotatedPosition;\n	gl_Position = projectionMatrix * mvPosition;\n	#include <logdepthbuf_vertex>\n	#include <clipping_planes_vertex>\n	#include <fog_vertex>\n}";
+      vertex$1 = "uniform float rotation;\nuniform vec2 center;\n#include <common>\n#include <uv_pars_vertex>\n#include <fog_pars_vertex>\n#include <logdepthbuf_pars_vertex>\n#include <clipping_planes_pars_vertex>\nvoid main() {\n	#include <uv_vertex>\n	vec4 cwPos = modelMatrix[ 3 ];\n	cwPos.xz = cityWarp( cwPos.xz );\n	vec4 mvPosition = viewMatrix * cwPos;\n	vec2 scale = vec2( length( modelMatrix[ 0 ].xyz ), length( modelMatrix[ 1 ].xyz ) );\n	#ifndef USE_SIZEATTENUATION\n		bool isPerspective = isPerspectiveMatrix( projectionMatrix );\n		if ( isPerspective ) scale *= - mvPosition.z;\n	#endif\n	vec2 alignedPosition = ( position.xy - ( center - vec2( 0.5 ) ) ) * scale;\n	vec2 rotatedPosition;\n	rotatedPosition.x = cos( rotation ) * alignedPosition.x - sin( rotation ) * alignedPosition.y;\n	rotatedPosition.y = sin( rotation ) * alignedPosition.x + cos( rotation ) * alignedPosition.y;\n	mvPosition.xy += rotatedPosition;\n	gl_Position = projectionMatrix * mvPosition;\n	#include <logdepthbuf_vertex>\n	#include <clipping_planes_vertex>\n	#include <fog_vertex>\n}";
       fragment$1 = "uniform vec3 diffuse;\nuniform float opacity;\n#include <common>\n#include <uv_pars_fragment>\n#include <map_pars_fragment>\n#include <alphamap_pars_fragment>\n#include <alphatest_pars_fragment>\n#include <alphahash_pars_fragment>\n#include <fog_pars_fragment>\n#include <logdepthbuf_pars_fragment>\n#include <clipping_planes_pars_fragment>\nvoid main() {\n	vec4 diffuseColor = vec4( diffuse, opacity );\n	#include <clipping_planes_fragment>\n	vec3 outgoingLight = vec3( 0.0 );\n	#include <logdepthbuf_fragment>\n	#include <map_fragment>\n	#include <alphamap_fragment>\n	#include <alphatest_fragment>\n	#include <alphahash_fragment>\n	outgoingLight = diffuseColor.rgb;\n	#include <opaque_fragment>\n	#include <tonemapping_fragment>\n	#include <colorspace_fragment>\n	#include <fog_fragment>\n}";
       ShaderChunk = {
         alphahash_fragment,
@@ -23391,7 +23391,9 @@ void main() {
             "	float thickness = outlineThickness;",
             "	const float ratio = 1.0;",
             // TODO: support outline thickness ratio for each vertex
-            "	vec4 pos2 = projectionMatrix * modelViewMatrix * vec4( skinned.xyz + normal, 1.0 );",
+            "	vec4 w2 = modelMatrix * vec4( skinned.xyz + normal, 1.0 );",
+            "	w2.xz = cityWarp( w2.xz );",
+            "	vec4 pos2 = projectionMatrix * viewMatrix * w2;",
             // NOTE: subtract pos2 from pos because BackSide objectNormal is negative
             "	vec4 norm = normalize( pos - pos2 );",
             "	return pos + norm * thickness * pos.w * ratio;",
@@ -23709,9 +23711,8 @@ void main() {
         [1500.0, 4330.0],
         [1500, 4360],
         [1500, 5200],
-        [1500, 6020],
-        [1500, 6100],
-        [1250, 6100],
+        // r118: a little lane cuts the corner down to the Dacia row: Sticker Republic, Printoteca
+        ...LANE_PTS,
         [1170, 6100],
         [1170, 6180],
         [1170, 6515]
@@ -23991,6 +23992,24 @@ void main() {
     }
   });
 
+  // r118: the same city warp on the CPU (see cityWarpD in the shader chunk): the camera, the
+  // labels over places and taps on the ground go through it
+  function cityWarpD(x, z) {
+    const u = x - 1500, v = z - 4260;
+    const dx = 90 * Math.cos(v / 620) * Math.cos(u / 900) + 38 * Math.cos(v / 380 + u / 1100) + 45 * Math.sin(u / 400) * Math.sin(v / 700);
+    const dz = 70 * Math.cos(u / 560) * Math.cos(v / 1200) + 30 * Math.cos(u / 330 - v / 900);
+    const t = Math.min(1, Math.max(0, (z - 7500) / 1000)), m = 1 - t * t * (3 - 2 * t);
+    return [dx * m, dz * m];
+  }
+  function warpV(v) { const [dx, dz] = cityWarpD(v.x, v.z); v.x += dx; v.z += dz; return v; }
+  // from the bent world back to the plan: fixed-point, the field is gentle enough to converge
+  function unwarpV(v) {
+    const qx = v.x, qz = v.z;
+    let x = qx, z = qz;
+    for (let i = 0; i < 10; i++) { const [dx, dz] = cityWarpD(x, z); x = qx - dx; z = qz - dz; }
+    v.x = x; v.z = z;
+    return v;
+  }
   // src/route.js
   // relax a dense polyline: neighbours pull each point in, so small-radius joins (guard
   // points, fillet seams) become continuous curves; ends are pinned
@@ -24356,7 +24375,9 @@ void main() {
     return () => (t = 16807 * t % 2147483647) / 2147483647;
   }
   function ribbonGeometry(points, width, yLift = 0) {
-    const hw = width / 2;
+    const wAt = typeof width === "function" ? width : null;
+    if (wAt) width = wAt(points[0]);
+    let hw = width / 2;
     const pos = [], uv = [], idx = [];
     const up = new Vector3(0, 1, 0);
     const tmp2 = new Vector3(), side = new Vector3();
@@ -24369,6 +24390,7 @@ void main() {
       if (tmp2.lengthSq() < 1e-6) tmp2.set(0, 0, 1);
       tmp2.normalize();
       side.crossVectors(up, tmp2).normalize();
+      if (wAt) hw = wAt(p) / 2;
       if (i > 0) dist += p.distanceTo(points[i - 1]);
       pos.push(p.x + side.x * hw, p.y + yLift, p.z + side.z * hw);
       pos.push(p.x - side.x * hw, p.y + yLift, p.z - side.z * hw);
@@ -24528,7 +24550,7 @@ void main() {
     zones.push({ x: 706, y: 5175, r: 110 });
     zones.push({ x: 706, y: 4640, r: 120 });
     zones.push({ x: 706, y: 5480, r: 115 });
-    for (let tz = 4380; tz <= 6060; tz += 70) zones.push({ x: 820, y: tz, r: 250 });
+    for (let tz = 4380; tz <= 6060; tz += 70) zones.push({ x: 820, y: tz, r: 165 });
     zones.push({ x: 930, y: 4560, r: 110 }, { x: 930, y: 4800, r: 110 }, { x: 930, y: 5900, r: 110 }, { x: 706, y: 4420, r: 110 });
     for (let tz = 4500; tz <= 4820; tz += 80) zones.push({ x: 510, y: tz, r: 130 });
     zones.push({ x: 1010, y: 4120, r: 210 });
@@ -24543,232 +24565,6 @@ void main() {
       if ((cx - z.x) ** 2 + (cy - z.y) ** 2 < (z.r + rad) ** 2) return false;
     }
     return true;
-  }
-  function buildBuildings(parent) {
-    const zones = buildKeepOut();
-    const corridor = [...roundedPolyline([...ROUTE_MAIN, ...ROUTE_A.slice(1), ...ROUTE_MERGE.slice(1), ...ROUTE_SECRET.slice(1)]), ...roundedPolyline(ROUTE_C)].filter((_, i) => i % 3 === 0);
-    const distToRoute = (x, y) => {
-      let d = Infinity;
-      for (const [rx, ry] of corridor) {
-        const dd = (x - rx) ** 2 + (y - ry) ** 2;
-        if (dd < d) d = dd;
-      }
-      return Math.sqrt(d);
-    };
-    const wallGeos = [], roofGeos = [];
-    const tints = [
-      new Color("#efebe1"),
-      new Color("#eaeae6"),
-      new Color("#e7ddd0"),
-      new Color("#dfe3e6"),
-      new Color("#f0e4d4"),
-      new Color("#e2e6da")
-    ];
-    // Monument view: saturated pastel blocks (only swapped in when that view is on)
-    const tintsMV = [
-      new Color("#f6c9b0"), new Color("#f2b8cc"), new Color("#b9d6ef"), new Color("#c9e2b6"),
-      new Color("#f5dc9c"), new Color("#d6c6f2"), new Color("#f7d9c4"), new Color("#a9dcd2"),
-      new Color("#f3a99a"), new Color("#e8e0f5")
-    ];
-    const mvGeos = [];
-    const propCol = [new Color("#d88c6a"), new Color("#8fb3c9"), new Color("#c9a0c4"), new Color("#9cc18f"), new Color("#e0b85e")];
-    const colorize = (g2, c2, ao = false) => {
-      const n = g2.attributes.position.count, arr = new Float32Array(n * 3);
-      let y0 = Infinity, y1 = -Infinity;
-      if (ao) for (let i = 0; i < n; i++) { const yy = g2.attributes.position.getY(i); y0 = Math.min(y0, yy); y1 = Math.max(y1, yy); }
-      for (let i = 0; i < n; i++) {
-        const k = ao ? 0.74 + 0.26 * Math.pow((g2.attributes.position.getY(i) - y0) / Math.max(1, y1 - y0), 0.55) : 1;
-        arr[i * 3] = c2.r * k; arr[i * 3 + 1] = c2.g * k; arr[i * 3 + 2] = c2.b * k;
-      }
-      g2.setAttribute("color", new BufferAttribute(arr, 3));
-      return g2;
-    };
-    const tmpColor = new Color();
-    let count = 0;
-    // r95: fill every empty block between the landmarks, so the city reads full from above
-    const anchors = [...BLOCK_ANCHORS];
-    {
-      const rf = rng(777);
-      for (let gy = 2280; gy < 11000; gy += 205) for (let gx = 110; gx < 2520; gx += 215) {
-        const x = gx + (rf() - 0.5) * 70, y = gy + (rf() - 0.5) * 70;
-        if (anchors.some(([ax, ay]) => (ax - x) ** 2 + (ay - y) ** 2 < 190 * 190)) continue;
-        anchors.push([x, y]);
-      }
-    }
-    for (let bi = 0; bi < anchors.length; bi++) {
-      const [ax, ay] = anchors[bi];
-      const rnd = rng(100 + 17 * bi);
-      const setbacks = [];
-      const n = 5 + Math.floor(4 * rnd());
-      for (let k = 0; k < n; k++) {
-        const w = 52 + 72 * rnd();
-        const d = 48 + 64 * rnd();
-        const x = ax + 240 * rnd() - 60;
-        const y = ay + 220 * rnd() - 40;
-        if (x < 30 || x + w > CITY_W - 30 || y < 30 || y + d > CITY_H - 30) continue;
-        if (!isFree(x, y, w, d, zones)) continue;
-        const hScale = clamp2(distToRoute(x + w / 2, y + d / 2) / 520, 0.32, 1);
-        const h = (60 + Math.pow(rnd(), 1.6) * 230) * hScale + 26;
-        const floors = Math.max(2, Math.round(h / 34));
-        const geo = new BoxGeometry(w, h, d);
-        const uvAttr = geo.attributes.uv;
-        for (let i = 0; i < uvAttr.count; i++) {
-          const nrm = geo.attributes.normal;
-          const isTop = Math.abs(nrm.getY(i)) > 0.5;
-          if (isTop) {
-            uvAttr.setXY(i, 0.02, 0.02);
-            continue;
-          }
-          const horiz = Math.abs(nrm.getX(i)) > 0.5 ? d : w;
-          uvAttr.setXY(i, uvAttr.getX(i) * Math.max(1, Math.round(horiz / 46)), uvAttr.getY(i) * Math.max(1, Math.round(floors / 4)));
-        }
-        geo.translate(x + w / 2, h / 2, y + d / 2);
-        if (rnd() > 0.5) {
-          const bw = 9 + rnd() * 9, bh = 6 + rnd() * 9, bd = 8 + rnd() * 8;
-          const box = new BoxGeometry(bw, bh, bd);
-          box.translate(x + w / 2 + (rnd() - 0.5) * (w - bw - 10), h + 5 + bh / 2, y + d / 2 + (rnd() - 0.5) * (d - bd - 10));
-          const bc = new Float32Array(box.attributes.position.count * 3);
-          const bcol = new Color("#c9c4b6").offsetHSL(0, 0, (rnd() - 0.5) * 0.08);
-          for (let i = 0; i < box.attributes.position.count; i++) {
-            bc[i * 3] = bcol.r;
-            bc[i * 3 + 1] = bcol.g;
-            bc[i * 3 + 2] = bcol.b;
-          }
-          box.setAttribute("color", new BufferAttribute(bc, 3));
-          roofGeos.push(box);
-        }
-        if (rnd() > 0.82) {
-          const ah = 18 + rnd() * 18;
-          const ant = new BoxGeometry(1.6, ah, 1.6);
-          ant.translate(x + w / 2 + (rnd() - 0.5) * (w - 14), h + 5 + ah / 2, y + d / 2 + (rnd() - 0.5) * (d - 14));
-          const ac = new Float32Array(ant.attributes.position.count * 3);
-          for (let i = 0; i < ant.attributes.position.count; i++) {
-            ac[i * 3] = 0.25;
-            ac[i * 3 + 1] = 0.24;
-            ac[i * 3 + 2] = 0.22;
-          }
-          ant.setAttribute("color", new BufferAttribute(ac, 3));
-          roofGeos.push(ant);
-        }
-        const tint = tints[Math.floor(rnd() * tints.length)];
-        tmpColor.copy(tint).offsetHSL(0, 0, (rnd() - 0.5) * 0.05);
-        colorize(geo, tmpColor, false);
-        {
-          // second colour set for Monument: pastel with a soft ground-contact darkening
-          const mvC = tintsMV[(bi * 7 + k * 3) % tintsMV.length];
-          const tmp2 = geo.attributes.color.array.slice(0);
-          colorize(geo, mvC, true);
-          geo.setAttribute("colorMV", new BufferAttribute(geo.attributes.color.array.slice(0), 3));
-          geo.attributes.color.array.set(tmp2);
-        }
-        wallGeos.push(geo);
-        const rndMV = rng(9000 + bi * 17 + k);
-        const mvC2 = tintsMV[(bi * 7 + k * 3) % tintsMV.length];
-        // string-course ledges on taller blocks (Monument only)
-        if (h > 90 && rndMV() > 0.45) {
-          const ledgeC = mvC2.clone().multiplyScalar(0.84);
-          for (const f of [0.34, 0.68]) {
-            const ledge = new BoxGeometry(w + 3, 2.4, d + 3);
-            ledge.translate(x + w / 2, h * f, y + d / 2);
-            mvGeos.push(colorize(ledge, ledgeC));
-          }
-        }
-        // rooftop objects: water tanks, little domes, stair houses (Monument only)
-        const rr = rndMV(), pc = propCol[Math.floor(rndMV() * propCol.length)];
-        const rx = x + w / 2 + (rndMV() - 0.5) * (w - 22), rz = y + d / 2 + (rndMV() - 0.5) * (d - 22);
-        if (rr < 0.3) {
-          const tank = new CylinderGeometry(5.5, 5.5, 11, 12); tank.translate(rx, h + 5 + 5.5 + 4, rz);
-          const legs = new BoxGeometry(9, 4, 9); legs.translate(rx, h + 5 + 2, rz);
-          const cap = new ConeGeometry(6.4, 4.5, 12); cap.translate(rx, h + 5 + 11 + 4 + 2.2, rz);
-          mvGeos.push(colorize(tank, pc), colorize(legs, pc.clone().multiplyScalar(0.7)), colorize(cap, pc.clone().multiplyScalar(0.82)));
-        } else if (rr < 0.44) {
-          const dr = Math.min(w, d) * 0.2;
-          const drum = new CylinderGeometry(dr, dr, 6, 16); drum.translate(x + w / 2, h + 5 + 3, y + d / 2);
-          const dome = new SphereGeometry(dr, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2); dome.translate(x + w / 2, h + 5 + 6, y + d / 2);
-          mvGeos.push(colorize(drum, mvC2.clone().multiplyScalar(0.9)), colorize(dome, pc));
-        } else if (rr < 0.62) {
-          const sh = new BoxGeometry(12, 10, 10); sh.translate(rx, h + 5 + 5, rz);
-          const shRoof = new BoxGeometry(14, 2, 12); shRoof.translate(rx, h + 5 + 11, rz);
-          mvGeos.push(colorize(sh, mvC2.clone().multiplyScalar(0.92)), colorize(shRoof, pc));
-        }
-        if (h > 130 && rnd() > 0.55) {
-          const tw = w * (0.5 + rnd() * 0.2), td = d * (0.5 + rnd() * 0.2), th = 26 + rnd() * 30;
-          const tier = new BoxGeometry(tw, th, td);
-          tier.translate(x + w / 2 + (rnd() - 0.5) * (w - tw) * 0.6, h + th / 2, y + d / 2 + (rnd() - 0.5) * (d - td) * 0.6);
-          const tc = new Float32Array(tier.attributes.position.count * 3);
-          for (let i = 0; i < tier.attributes.position.count; i++) {
-            tc[i * 3] = tmpColor.r;
-            tc[i * 3 + 1] = tmpColor.g;
-            tc[i * 3 + 2] = tmpColor.b;
-          }
-          tier.setAttribute("color", new BufferAttribute(tc, 3));
-          roofGeos.push(tier);
-        }
-        const roof = new BoxGeometry(w + 5, 5, d + 5);
-        roof.translate(x + w / 2, h + 2.5, y + d / 2);
-        const rc = new Float32Array(roof.attributes.position.count * 3);
-        const rcol = tmpColor.clone().multiplyScalar(0.82);
-        for (let i = 0; i < roof.attributes.position.count; i++) {
-          rc[i * 3] = rcol.r;
-          rc[i * 3 + 1] = rcol.g;
-          rc[i * 3 + 2] = rcol.b;
-        }
-        roof.setAttribute("color", new BufferAttribute(rc, 3));
-        roofGeos.push(roof);
-        // r111: Calea Victoriei: zinc mansards, a corner cupola now and then, a cornice over the shops
-        {
-          const rb = rng(5000 + bi * 31 + k);
-          const paint = (geo, col) => { const a2 = new Float32Array(geo.attributes.position.count * 3); for (let i = 0; i < a2.length; i += 3) { a2[i] = col.r; a2[i + 1] = col.g; a2[i + 2] = col.b; } geo.setAttribute("color", new BufferAttribute(a2, 3)); return geo; };
-          const zinc = new Color("#56616c"), stoneC = tmpColor.clone().multiplyScalar(0.78);
-          const band = new BoxGeometry(w + 2.4, 3, d + 2.4); band.translate(x + w / 2, Math.min(22, h * 0.3), y + d / 2); roofGeos.push(paint(band, stoneC));
-          const mr = rb();
-          if (h < 190 && mr < 0.55) {
-            const mh = 14 + rb() * 10;
-            const man = new CylinderGeometry(0.62, 1, mh, 4, 1); man.rotateY(Math.PI / 4); man.scale((w + 4) / Math.SQRT2, 1, (d + 4) / Math.SQRT2); man.translate(x + w / 2, h + 5 + mh / 2, y + d / 2);
-            roofGeos.push(paint(man, zinc));
-            for (let q = 0; q < Math.max(1, Math.round(w / 26)); q++) {
-              const dm = new BoxGeometry(5, 6, 4); dm.translate(x + 8 + q * ((w - 16) / Math.max(1, Math.round(w / 26) - 1 || 1)), h + 5 + mh * 0.45, y + d + 1);
-              roofGeos.push(paint(dm, new Color("#e9e4d8")));
-            }
-          }
-          if (h > 90 && mr > 0.86) {
-            const cx = x + (rb() < 0.5 ? 0 : w), cz = y + (rb() < 0.5 ? 0 : d), cr = 9;
-            const drum = new CylinderGeometry(cr, cr, 14, 16); drum.translate(cx, h + 12, cz); roofGeos.push(paint(drum, tmpColor));
-            const dome = new SphereGeometry(cr + 1.5, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2); dome.scale(1, 1.5, 1); dome.translate(cx, h + 19, cz); roofGeos.push(paint(dome, zinc));
-            const sp = new ConeGeometry(1.5, 10, 8); sp.translate(cx, h + 19 + cr * 1.5 + 4, cz); roofGeos.push(paint(sp, zinc));
-          }
-        }
-        count++;
-        zones.push({ x: x + w / 2 - w / 2, y: y + d / 2 - d / 2, r: Math.hypot(w, d) / 2 * 0.7 });
-      }
-    }
-    const windowTex = makeWindowTexture();
-    const emissiveTex = makeWindowEmissive();
-    mats.buildings = new MeshStandardMaterial({
-      map: windowTex,
-      vertexColors: true,
-      roughness: 0.92,
-      metalness: 0,
-      emissiveMap: emissiveTex,
-      emissive: new Color("#000000"),
-      emissiveIntensity: 1
-    });
-    mats.roofs = new MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
-    const walls = new Mesh(mergeGeometries(wallGeos), mats.buildings);
-    walls.castShadow = true;
-    walls.receiveShadow = true;
-    const roofs = new Mesh(mergeGeometries(roofGeos), mats.roofs);
-    roofs.castShadow = true;
-    roofs.receiveShadow = true;
-    parent.add(walls, roofs);
-    const mvProps = new Mesh(mergeGeometries(mvGeos.map((g2) => { g2.deleteAttribute("uv"); return g2; })), new MeshStandardMaterial({ vertexColors: true, roughness: 0.8 }));
-    mvProps.castShadow = true;
-    mvProps.visible = false;
-    parent.add(mvProps);
-    mats.mvWalls = walls;
-    mats.mvProps = mvProps;
-    mats.wallColorDefault = walls.geometry.attributes.color.array.slice(0);
-    return count;
   }
   function buildTrees(parent) {
     const spots = [];
@@ -24793,8 +24589,8 @@ void main() {
       const nx = -dz / l, nz = dx / l;
       for (const side of [-1, 1]) {
         if (rnd() > 0.44) continue;
-        const tx = x + nx * side * (ROAD_W / 2 + 26 + rnd() * 14);
-        const tz = z + nz * side * (ROAD_W / 2 + 26 + rnd() * 14);
+        const tx = x + nx * side * (ROUTE_W / 2 + 4 + rnd() * 4);
+        const tz = z + nz * side * (ROUTE_W / 2 + 4 + rnd() * 4);
         let ok = true;
         for (const s of STOPS) if ((tx - s.x) ** 2 + (tz - s.y) ** 2 < 150 ** 2) {
           ok = false;
@@ -24805,14 +24601,8 @@ void main() {
         if (ok) spots.push({ x: tx, z: tz, s: 0.6 + rnd() * 0.6 });
       }
     }
-    for (let i = 0; i < 230; i++) {
-      const x = 40 + rnd() * (CITY_W - 80), z = 40 + rnd() * (CITY_H - 300);
-      if ((x - 1050) ** 2 + (z - 7350) ** 2 < 260 ** 2) continue;
-      if (inTampa(x, z, 6)) continue;
-      if ((x - ROUNDABOUT.x) ** 2 + (z - ROUNDABOUT.y) ** 2 < 300 ** 2) continue;
-      if (Math.abs(x - 1250) < 90 && z > 9700 && z < 10250) continue;
-      spots.push({ x, z, s: 0.6 + rnd() * 0.8 });
-    }
+    for (const t of CITY_TREES) spots.push(t);
+    for (let i = spots.length - 1; i >= 0; i--) if (CITY_NET?.at?.(spots[i].x, spots[i].z) === 1) spots.splice(i, 1);
     const round = spots.filter((_, i) => i % 4 !== 3);
     const conif = spots.filter((_, i) => i % 4 === 3);
     const trunkGeo = new CylinderGeometry(2.4, 3.2, 16, 6);
@@ -24901,37 +24691,475 @@ void main() {
     }
     return pts;
   }
-  function buildRoads(parent) {
-    mats.roadMinor = new MeshStandardMaterial({ color: "#d9d5c9", roughness: 1 });
-    mats.roadMajor = new MeshStandardMaterial({ color: "#cfccc0", roughness: 1 });
-    mats.roadCasing = new MeshStandardMaterial({ color: "#b9b5a8", roughness: 1 });
-    const group = new Group();
-    const rnd = rng(42);
-    const minors = [];
-    for (let x = 130; x < CITY_W; x += 180 + Math.floor(95 * rnd())) minors.push([[x + 40 * rnd(), 0], [x + 120 * rnd() - 60, CITY_H]]);
-    for (let z = 150; z < CITY_H; z += 200 + Math.floor(110 * rnd())) minors.push([[0, z + 40 * rnd()], [CITY_W, z + 140 * rnd() - 70]]);
-    minors.push([[200, 1500], [2600, 3300]], [[0, 5900], [2400, 8100]], [[900, 0], [2600, 1500]], [[0, 8900], [2600, 10500]], [[1400, 6900], [2600, 7700]]);
-    minors.push([[0, 4260], [772, 4260]], [[820, 3950], [820, 4212]]);
-    const minorGeos = [];
-    for (const [[x1, z1], [x2, z2]] of minors) {
-      const short = Math.hypot(x2 - x1, z2 - z1) < 420;
-      const pts = short ? [new Vector3(x1, 0, z1), new Vector3(x2, 0, z2)] : bowedLine(x1, z1, x2, z2, rnd, 0.05);
-      minorGeos.push(ribbonGeometry(pts, MINOR_W, 0.35));
+  // ===================== r118: the city fabric, Bucharest style =====================
+  // The old fabric was boxes dropped at random around a grid. Now the streets come first, the way
+  // the centre of Bucharest grew: an organic net of short streets meeting at odd angles (a Voronoi
+  // net), a few long streets drawn by hand (two diagonals out of the étoile like Piața Romană,
+  // boulevards with a green median), and the real roads of the drive. Then every street is lined
+  // with buildings turned to face it (interwar blocks on the boulevards, small houses with tiled hip
+  // roofs on the lanes), which leaves the middle of each block open: courtyards full of trees.
+  var CITY_X0 = -520, CITY_X1 = 3120, CITY_Z0 = 140, CITY_Z1 = 11760;
+  var CITY_TREES = [];
+  var CITY_NET = null;
+  var LONG_STREETS = [
+    // the northern boulevard, a green median down the middle
+    { w: 46, med: true, pts: [[-520, 3600], [200, 3545], [800, 3612], [1200, 3560], [1500, 3598], [1950, 3700], [2500, 3622], [3120, 3700]] },
+    // the étoile's diagonals, north-west and north-east
+    { w: 32, pts: [[1431, 4191], [1250, 4012], [980, 3762], [640, 3452], [200, 3128], [-520, 2760]] },
+    { w: 32, pts: [[1569, 4191], [1760, 3992], [2080, 3762], [2500, 3478], [3120, 3150]] },
+    // the southern boulevard, past Dacia and on to the east
+    { w: 46, med: true, pts: [[-520, 6935], [300, 6880], [800, 6795], [1170, 6762], [1530, 6995], [2050, 7012], [2600, 6905], [3120, 6965]] },
+    // two long spines at the edges, east and west
+    { w: 34, pts: [[2900, 140], [2760, 2500], [2805, 4300], [2860, 6000], [2700, 8000], [2860, 11760]] },
+    { w: 34, pts: [[-150, 140], [-230, 2500], [-160, 4600], [-240, 7000], [-130, 9000], [-230, 11760]] },
+    // a boulevard across the north end, and Hristo Botev on the diagonal in the south
+    { w: 46, med: true, pts: [[-520, 1300], [600, 1220], [1350, 1330], [2100, 1240], [3120, 1310]] },
+    { w: 40, med: true, pts: [[-520, 10650], [300, 10200], [1100, 9640], [1900, 8980], [2600, 8320], [3120, 8000]] },
+    // Calea-like streets running north to south between the blocks
+    { w: 30, pts: [[620, 140], [580, 1300], [660, 2400], [560, 3100]] },
+    { w: 30, pts: [[2140, 140], [2240, 1240], [2160, 2400], [2300, 3150]] },
+    { w: 30, pts: [[560, 7100], [660, 8200], [520, 9300], [640, 10600], [560, 11760]] },
+    { w: 30, pts: [[2000, 7150], [2120, 8000]] },
+    { w: 30, pts: [[2050, 9200], [1980, 10300], [2100, 11760]] }
+  ];
+  // the roads the van drives on, as polylines (the gold roads draw themselves)
+  function cityRoutes() {
+    const cut = (pts) => pts.filter(([, z]) => z < RAMP_BASE - 40);
+    return [
+      roundedPolyline([...ROUTE_MAIN, ...ROUTE_A.slice(1)]),
+      roundedPolyline(ROUTE_B),
+      roundedPolyline(ROUTE_C),
+      cut(roundedPolyline([...ROUTE_MERGE, ...ROUTE_SECRET.slice(1)]))
+    ].map((pts) => pts.map(([x, z]) => [x, z]));
+  }
+  // Delaunay (Bowyer-Watson), then Voronoi edges between neighbouring circumcentres
+  function voronoiEdges(P) {
+    const big = 1e5;
+    const pts = [...P, [-big, -big], [big * 2, -big], [-big, big * 2]];
+    const n = P.length;
+    const circ = (a, b, c) => {
+      const [ax, ay] = pts[a], [bx, by] = pts[b], [cx, cy] = pts[c];
+      const d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
+      if (Math.abs(d) < 1e-9) return { x: 0, y: 0, r2: Infinity };
+      const ux = ((ax * ax + ay * ay) * (by - cy) + (bx * bx + by * by) * (cy - ay) + (cx * cx + cy * cy) * (ay - by)) / d;
+      const uy = ((ax * ax + ay * ay) * (cx - bx) + (bx * bx + by * by) * (ax - cx) + (cx * cx + cy * cy) * (bx - ax)) / d;
+      return { x: ux, y: uy, r2: (ax - ux) ** 2 + (ay - uy) ** 2 };
+    };
+    let tris = [{ v: [n, n + 1, n + 2], ...circ(n, n + 1, n + 2) }];
+    for (let i = 0; i < n; i++) {
+      const [px, py] = pts[i];
+      const bad = [], keep = [];
+      for (const t of tris) ((px - t.x) ** 2 + (py - t.y) ** 2 < t.r2 ? bad : keep).push(t);
+      const edges = new Map();
+      for (const t of bad) for (let k = 0; k < 3; k++) {
+        const a = t.v[k], b = t.v[(k + 1) % 3], key = a < b ? a * 65536 + b : b * 65536 + a;
+        edges.set(key, edges.has(key) ? null : [a, b]);
+      }
+      tris = keep;
+      for (const e of edges.values()) if (e) tris.push({ v: [e[0], e[1], i], ...circ(e[0], e[1], i) });
     }
+    tris = tris.filter((t) => t.v[0] < n && t.v[1] < n && t.v[2] < n);
+    const byEdge = new Map(), out = [];
+    for (const t of tris) for (let k = 0; k < 3; k++) {
+      const a = t.v[k], b = t.v[(k + 1) % 3], key = a < b ? a * 65536 + b : b * 65536 + a;
+      const o = byEdge.get(key);
+      if (o) out.push([[o.x, o.y], [t.x, t.y]]); else byEdge.set(key, t);
+    }
+    return out;
+  }
+  // a fine raster of the city: 0 free, 1 building, 2 street, 3 kept clear for a landmark
+  function cityGrid() {
+    const C = 6, W = Math.ceil((CITY_X1 - CITY_X0) / C), H = Math.ceil((CITY_Z1 - CITY_Z0) / C);
+    const g = new Uint8Array(W * H);
+    const idx = (x, z) => { const i = Math.floor((x - CITY_X0) / C), j = Math.floor((z - CITY_Z0) / C); return i < 0 || j < 0 || i >= W || j >= H ? -1 : j * W + i; };
+    const disk = (x, z, r, v, over = false) => {
+      const i0 = Math.max(0, Math.floor((x - r - CITY_X0) / C)), i1 = Math.min(W - 1, Math.floor((x + r - CITY_X0) / C));
+      const j0 = Math.max(0, Math.floor((z - r - CITY_Z0) / C)), j1 = Math.min(H - 1, Math.floor((z + r - CITY_Z0) / C));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const cx = CITY_X0 + (i + 0.5) * C, cz = CITY_Z0 + (j + 0.5) * C;
+        if ((cx - x) ** 2 + (cz - z) ** 2 <= r * r && (over || !g[j * W + i])) g[j * W + i] = v;
+      }
+    };
+    const line = (pts, r, v) => {
+      for (let k = 1; k < pts.length; k++) {
+        const [ax, az] = pts[k - 1], [bx, bz] = pts[k], L = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(L / 4));
+        for (let s = 0; s <= n; s++) disk(ax + (bx - ax) * s / n, az + (bz - az) * s / n, r, v, true);
+      }
+    };
+    return { C, W, H, g, idx, disk, line, at: (x, z) => { const i = idx(x, z); return i < 0 ? 3 : g[i]; } };
+  }
+  function cityNet() {
+    if (CITY_NET) return CITY_NET;
+    const rnd = rng(1918);
+    const routes = cityRoutes();
+    // the landmarks keep their room (the old corridor along the roads is not needed any more)
+    const zones = buildKeepOut().filter((z) => !(z.r === 130));
+    for (const z of EXTRA_KEEPOUT) zones.push(z);
+    // the Cromatic Jet's runway and taxiway
+    const runway = [];
+    for (let z = JET_HOME.z - 160; z <= JET_HOME.z + 1800; z += 50) runway.push({ x: JET_HOME.x, y: z, r: 92 });
+    for (let x = 1290; x < JET_HOME.x; x += 50) runway.push({ x, y: JET_HOME.z - 15, r: 50 });
+    zones.push(...runway);
+    // zones hashed on a coarse grid
+    const ZS = 160, zhash = new Map();
+    zones.forEach((q) => {
+      for (let i = Math.floor((q.x - q.r) / ZS); i <= Math.floor((q.x + q.r) / ZS); i++)
+        for (let j = Math.floor((q.y - q.r) / ZS); j <= Math.floor((q.y + q.r) / ZS); j++) { const k = i + "," + j; if (!zhash.has(k)) zhash.set(k, []); zhash.get(k).push(q); }
+    });
+    const inZone = (x, z, pad = 0) => {
+      if (inTampa(x, z, 3)) return true;
+      for (const q of zhash.get(Math.floor(x / ZS) + "," + Math.floor(z / ZS)) || []) if ((x - q.x) ** 2 + (z - q.y) ** 2 < (q.r + pad) ** 2) return true;
+      return false;
+    };
+    // segments of every real road, hashed, for distance queries
+    const segs = [];
+    for (const pts of routes) for (let k = 1; k < pts.length; k++) segs.push([pts[k - 1], pts[k], ROUTE_W]);
+    for (const s of LONG_STREETS) for (let k = 1; k < s.pts.length; k++) segs.push([s.pts[k - 1], s.pts[k], s.w]);
+    const HS = 120, hash = new Map();
+    segs.forEach((sg, si) => {
+      const [[ax, az], [bx, bz]] = sg;
+      for (let i = Math.floor(Math.min(ax, bx) / HS) - 1; i <= Math.floor(Math.max(ax, bx) / HS) + 1; i++)
+        for (let j = Math.floor(Math.min(az, bz) / HS) - 1; j <= Math.floor(Math.max(az, bz) / HS) + 1; j++) {
+          const k = i + "," + j; if (!hash.has(k)) hash.set(k, []); hash.get(k).push(si);
+        }
+    });
+    const roadDist = (x, z) => {
+      let best = Infinity;
+      for (const si of hash.get(Math.floor(x / HS) + "," + Math.floor(z / HS)) || []) {
+        const [[ax, az], [bx, bz], w] = segs[si], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+        const f = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
+        const d = Math.hypot(ax + dx * f - x, az + dz * f - z) - w / 2;
+        if (d < best) best = d;
+      }
+      return best;
+    };
+    // seeds: a Poisson disk, a little tighter in the middle of the city
+    const seeds = [], SG = 110, GW = Math.ceil((CITY_X1 - CITY_X0) / SG) + 1, GH = Math.ceil((CITY_Z1 - CITY_Z0) / SG) + 1;
+    const sgrid = Array.from({ length: GW * GH }, () => []);
+    const rAt = (x, z) => (x > -100 && x < 2700 && z > 2200 && z < 8300 ? 175 : 215);
+    for (let tries = 0; tries < 26000; tries++) {
+      const x = CITY_X0 + 40 + rnd() * (CITY_X1 - CITY_X0 - 80), z = CITY_Z0 + 40 + rnd() * (CITY_Z1 - CITY_Z0 - 80), r = rAt(x, z), r2 = r * r;
+      let ok = true;
+      const gi = Math.floor((x - CITY_X0) / SG), gj = Math.floor((z - CITY_Z0) / SG), rr = Math.ceil(r / SG);
+      for (let j = Math.max(0, gj - rr); j <= Math.min(GH - 1, gj + rr) && ok; j++) for (let i = Math.max(0, gi - rr); i <= Math.min(GW - 1, gi + rr) && ok; i++) {
+        const cell = sgrid[j * GW + i];
+        for (let q = 0; q < cell.length; q += 2) if ((cell[q] - x) ** 2 + (cell[q + 1] - z) ** 2 < r2) { ok = false; break; }
+      }
+      if (!ok) continue;
+      seeds.push([x, z]);
+      sgrid[gj * GW + gi].push(x, z);
+    }
+    const minor = [];
+    for (const [[ax, az], [bx, bz]] of voronoiEdges(seeds)) {
+      const L = Math.hypot(bx - ax, bz - az);
+      if (L < 46 || L > 700) continue;
+      if (ax < CITY_X0 || bx < CITY_X0 || ax > CITY_X1 || bx > CITY_X1 || az < CITY_Z0 || bz < CITY_Z0 || az > CITY_Z1 || bz > CITY_Z1) continue;
+      if (rnd() < 0.1) continue;
+      const n = Math.max(3, Math.ceil(L / 14));
+      let bad = false, near = 0;
+      for (let s = 0; s <= n && !bad; s++) {
+        const x = ax + (bx - ax) * s / n, z = az + (bz - az) * s / n;
+        if (inZone(x, z, -8)) bad = true;
+        else if (roadDist(x, z) < 34) near++;
+      }
+      // a side street may meet a road, never run along it
+      if (bad || near / (n + 1) > 0.34) continue;
+      // a slight bow, so no street is ruler-straight
+      const nx = -(bz - az) / L, nz = (bx - ax) / L, bow = (rnd() - 0.5) * L * 0.09;
+      const pts = [];
+      for (let s = 0; s <= 6; s++) { const t = s / 6, o = Math.sin(t * Math.PI) * bow; pts.push([ax + (bx - ax) * t + nx * o, az + (bz - az) * t + nz * o]); }
+      minor.push({ w: L > 260 ? 28 : 22, pts });
+    }
+    // the long streets stop short of the landmarks they would cross
+    const longs = [];
+    for (const s of LONG_STREETS) {
+      let run = [];
+      const flush = () => { if (run.length > 1) longs.push({ w: s.w, med: s.med, pts: run }); run = []; };
+      for (let k = 1; k < s.pts.length; k++) {
+        const [ax, az] = s.pts[k - 1], [bx, bz] = s.pts[k], L = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(L / 12));
+        for (let q = k === 1 ? 0 : 1; q <= n; q++) {
+          const x = ax + (bx - ax) * q / n, z = az + (bz - az) * q / n;
+          const nearFork = (x - FORK_POS.x) ** 2 + (z - FORK_POS.y) ** 2 < 230 * 230;
+          if (!nearFork && (inTampa(x, z, 3) || runway.some((e) => (x - e.x) ** 2 + (z - e.y) ** 2 < e.r * e.r) || EXTRA_KEEPOUT.some((e) => (x - e.x) ** 2 + (z - e.y) ** 2 < e.r * e.r) || PARKS.some((p) => ((x - p.x) / (p.rx + 30)) ** 2 + ((z - p.y) / (p.ry + 30)) ** 2 < 1))) flush();
+          else run.push([x, z]);
+        }
+      }
+      flush();
+    }
+    CITY_NET = { minor, longs, routes, zones, inZone, roadDist };
+    return CITY_NET;
+  }
+  function initRoadMats() {
+    mats.roadMinor = mats.roadMinor || new MeshStandardMaterial({ color: "#d9d5c9", roughness: 1 });
+    mats.roadMajor = mats.roadMajor || new MeshStandardMaterial({ color: "#cfccc0", roughness: 1 });
+    mats.roadCasing = mats.roadCasing || new MeshStandardMaterial({ color: "#b9b5a8", roughness: 1 });
+  }
+  function buildRoads(parent) {
+    initRoadMats();
+    const net = cityNet();
+    const group = new Group();
+    const v3 = (pts) => pts.map(([x, z]) => new Vector3(x, 0, z));
+    const minorGeos = net.minor.map((s) => ribbonGeometry(v3(s.pts), s.w, 0.35));
     const minorMesh = new Mesh(mergeGeometries(minorGeos), mats.roadMinor);
     minorMesh.receiveShadow = true;
     group.add(minorMesh);
-    const majorGeos = [], casingGeos = [];
-    for (const [x1, z1, x2, z2] of MAJOR_STREETS) {
-      const pts = bowedLine(x1, z1, x2, z2, rnd, 0.022);
-      casingGeos.push(ribbonGeometry(pts, MAJOR_W + 5, 0.4));
-      majorGeos.push(ribbonGeometry(pts, MAJOR_W, 0.55));
+    // kerbs: a darker edge under every street, so the blocks read from above
+    const casingGeos = net.minor.map((s) => ribbonGeometry(v3(s.pts), s.w + 5, 0.22));
+    const majorGeos = [], medGeos = [];
+    for (const s of net.longs) {
+      // densify so curves stay smooth
+      const dense = roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]);
+      casingGeos.push(ribbonGeometry(v3(dense), s.w + 5, 0.4));
+      majorGeos.push(ribbonGeometry(v3(dense), s.w, 0.55));
+      if (s.med) {
+        medGeos.push(ribbonGeometry(v3(dense), 9, 0.75));
+        for (let k = 3; k < dense.length - 3; k += 3) CITY_TREES.push({ x: dense[k][0], z: dense[k][1], s: 0.55 + ((k * 37) % 10) / 30 });
+      }
     }
     const casingMesh = new Mesh(mergeGeometries(casingGeos), mats.roadCasing);
     const majorMesh = new Mesh(mergeGeometries(majorGeos), mats.roadMajor);
     casingMesh.receiveShadow = majorMesh.receiveShadow = true;
     group.add(casingMesh, majorMesh);
+    if (medGeos.length) {
+      mats.parkMat = mats.parkMat || new MeshStandardMaterial({ color: "#8fdc9d", roughness: 1 });
+      const med = new Mesh(mergeGeometries(medGeos), mats.parkMat);
+      med.receiveShadow = true;
+      group.add(med);
+    }
     parent.add(group);
+  }
+  function buildBuildings(parent) {
+    const net = cityNet();
+    const G = cityGrid();
+    // streets first (with their pavements), then the landmarks' room
+    for (const s of net.minor) G.line(s.pts, s.w / 2 + 5, 2);
+    for (const s of net.longs) G.line(roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]), s.w / 2 + 6, 2);
+    for (const pts of net.routes) G.line(pts, ROUTE_W / 2 + 8, 2);
+    // past Olari 9 the drive takes off: the airfield and the ramp keep a wide corridor
+    for (const pts of net.routes) G.line(pts.filter(([, z]) => z > 7480), 130, 3);
+    for (const z of net.zones) G.disk(z.x, z.y, z.r, 3);
+    for (let i = 0; i < G.W; i += 1) for (let j = 0; j < G.H; j += 1) {
+      const x = CITY_X0 + (i + 0.5) * G.C, z = CITY_Z0 + (j + 0.5) * G.C;
+      if (x < 250 || x > 780 || z < 4300 || z > 5050) continue;
+      if (!G.g[j * G.W + i] && inTampa(x, z, 3.5)) G.g[j * G.W + i] = 3;
+    }
+    // geometry goes straight into flat buffers: thousands of little BoxGeometries were the slow part
+    const batch = () => ({ p: [], n: [], uv: [], c: [], m: [], idx: [], v: 0 });
+    const WB = batch(), RB = batch(), MB = batch();
+    // a quad in the building's frame (x along the street, z towards it, y up), turned by ang and
+    // set at (cx, cz); corners counter-clockwise seen from outside
+    let cA = 1, sA = 0, oX = 0, oZ = 0;
+    const frame = (cx, cz, ang) => { cA = Math.cos(ang); sA = Math.sin(ang); oX = cx; oZ = cz; };
+    const quad = (B, q, nrm, col, colMV, uvs, ao) => {
+      // flat normal from the corners if none is given
+      let nx, ny, nz;
+      if (nrm) [nx, ny, nz] = nrm;
+      else {
+        const ux = q[1][0] - q[0][0], uy = q[1][1] - q[0][1], uz = q[1][2] - q[0][2];
+        const vx = q[3][0] - q[0][0], vy = q[3][1] - q[0][1], vz = q[3][2] - q[0][2];
+        nx = uy * vz - uz * vy; ny = uz * vx - ux * vz; nz = ux * vy - uy * vx;
+        const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
+      }
+      const wnx = nx * cA + nz * sA, wnz = -nx * sA + nz * cA;
+      for (let k = 0; k < 4; k++) {
+        const [x, y, z] = q[k];
+        B.p.push(oX + x * cA + z * sA, y, oZ - x * sA + z * cA);
+        B.n.push(wnx, ny, wnz);
+        if (uvs) B.uv.push(uvs[k * 2], uvs[k * 2 + 1]); else B.uv.push(0.02, 0.02);
+        B.c.push(col.r, col.g, col.b);
+        const kk = ao ? 0.74 + 0.26 * Math.pow(Math.max(0, Math.min(1, (y - ao[0]) / ao[1])), 0.55) : 1;
+        B.m.push(colMV.r * kk, colMV.g * kk, colMV.b * kk);
+      }
+      const v = B.v;
+      B.idx.push(v, v + 1, v + 2, v, v + 2, v + 3);
+      B.v += 4;
+    };
+    // a box: x in [x0, x1], y in [y0, y1], z in [z0, z1] (local frame); wall uvs if asked
+    const box = (B, x0, x1, y0, y1, z0, z1, col, colMV, wallUV, ao, top = true) => {
+      const w = x1 - x0, d = z1 - z0;
+      const uvF = (len) => (wallUV ? [0, 0, Math.max(1, Math.round(len / 13)) / 4, 0, Math.max(1, Math.round(len / 13)) / 4, wallUV, 0, wallUV] : null);
+      quad(B, [[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]], [0, 0, 1], col, colMV, uvF(w), ao);
+      quad(B, [[x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0]], [0, 0, -1], col, colMV, uvF(w), ao);
+      quad(B, [[x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1]], [1, 0, 0], col, colMV, uvF(d), ao);
+      quad(B, [[x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0]], [-1, 0, 0], col, colMV, uvF(d), ao);
+      if (top) quad(B, [[x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0]], [0, 1, 0], col, colMV, null, ao);
+    };
+    // a hip roof (or a mansard, with a wide top): base half-sizes hx, hz at y0, top half-sizes tx, tz
+    const hip = (B, hx, hz, tx, tz, y0, h, col, colMV) => {
+      const y1 = y0 + h;
+      const b = [[-hx, y0, hz], [hx, y0, hz], [hx, y0, -hz], [-hx, y0, -hz]], t = [[-tx, y1, tz], [tx, y1, tz], [tx, y1, -tz], [-tx, y1, -tz]];
+      for (let k = 0; k < 4; k++) { const k2 = (k + 1) % 4; quad(B, [b[k], b[k2], t[k2], t[k]], null, col, colMV, null, null); }
+      if (tx > 0.5 && tz > 0.5) quad(B, [t[0], t[1], t[2], t[3]], [0, 1, 0], col, colMV, null, null);
+    };
+    // the odd round piece (domes, tanks): any BufferGeometry, already in the local frame
+    const geo = (B, g2, col, colMV) => {
+      const ng = g2.index ? g2.toNonIndexed() : g2;
+      const P = ng.attributes.position, N = ng.attributes.normal, v0 = B.v;
+      for (let i = 0; i < P.count; i++) {
+        const x = P.getX(i), y = P.getY(i), z = P.getZ(i), nx = N.getX(i), nz = N.getZ(i);
+        B.p.push(oX + x * cA + z * sA, y, oZ - x * sA + z * cA);
+        B.n.push(nx * cA + nz * sA, N.getY(i), -nx * sA + nz * cA);
+        B.uv.push(0.02, 0.02); B.c.push(col.r, col.g, col.b); B.m.push(colMV.r, colMV.g, colMV.b);
+        B.idx.push(v0 + i);
+      }
+      B.v += P.count;
+    };
+    const tints = ["#efe6d6", "#e9dcc5", "#f1e4cf", "#e4e2dc", "#eadfcf", "#f3ead9", "#e6d3bd", "#dcd7cc", "#f0dcc8", "#e8e0d0", "#ece4c8", "#e3d9d0"].map((c) => new Color(c));
+    const tintsMV = ["#f6c9b0", "#f2b8cc", "#b9d6ef", "#c9e2b6", "#f5dc9c", "#d6c6f2", "#f7d9c4", "#a9dcd2", "#f3a99a", "#e8e0f5"].map((c) => new Color(c));
+    const tiles = ["#b5603f", "#c26a45", "#a85a3c", "#c97b52", "#b8583a", "#9c5238"].map((c) => new Color(c));
+    const tilesMV = ["#f09a80", "#e8876e", "#f2a98f", "#ec9277", "#f4b39a"].map((c) => new Color(c));
+    const zinc = new Color("#737c84"), zincMV = new Color("#9b93b8"), flat = new Color("#d6d0c2"), flatMV = new Color("#e9d6cf");
+    const chimC = new Color("#9a5a40"), chimMV = new Color("#c98a7a"), dormC = new Color("#ece6d9"), dormMV = new Color("#fff3ea");
+    const propCol = [new Color("#d88c6a"), new Color("#8fb3c9"), new Color("#c9a0c4"), new Color("#9cc18f"), new Color("#e0b85e")];
+    const tmpC = new Color(), tmpM = new Color();
+    // is the footprint free? (an oriented rectangle, sampled on the raster)
+    const fits = (cx, cz, ux, uz, w, d) => {
+      for (let a = -w / 2; a <= w / 2 + 0.01; a += 5) for (let b = -d / 2; b <= d / 2 + 0.01; b += 5) {
+        if (G.at(cx + ux * a - uz * b, cz + uz * a + ux * b)) return false;
+      }
+      return true;
+    };
+    const claim = (cx, cz, ux, uz, w, d) => {
+      for (let a = -w / 2 - 3; a <= w / 2 + 3.01; a += 3) for (let b = -d / 2 - 3; b <= d / 2 + 3.01; b += 3) {
+        const i = G.idx(cx + ux * a - uz * b, cz + uz * a + ux * b); if (i >= 0 && !G.g[i]) G.g[i] = 1;
+      }
+    };
+    let count = 0;
+    const core = (x, z) => x > -100 && x < 2700 && z > 2200 && z < 8300;
+    const fintech = (x, z) => x > 1880 && x < 2700 && z > 4300 && z < 6150;
+    const line = (pts, w, cls, seed) => {
+      const rnd = rng(seed);
+      // arc length along the polyline
+      const cum = [0];
+      for (let k = 1; k < pts.length; k++) cum.push(cum[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]));
+      const total = cum[cum.length - 1];
+      const at = (s) => {
+        let k = 1; while (k < cum.length - 1 && cum[k] < s) k++;
+        const f = (s - cum[k - 1]) / Math.max(1e-6, cum[k] - cum[k - 1]), [ax, az] = pts[k - 1], [bx, bz] = pts[k];
+        const L = Math.hypot(bx - ax, bz - az) || 1;
+        return [ax + (bx - ax) * f, az + (bz - az) * f, (bx - ax) / L, (bz - az) / L];
+      };
+      for (const side of [-1, 1]) {
+        let s = 6 + rnd() * 10;
+        while (s < total - 6) {
+          const bw = cls === "long" ? 34 + rnd() * 40 : cls === "route" ? 30 + rnd() * 30 : 24 + rnd() * 30;
+          const sm = s + bw / 2;
+          if (sm > total - 4) break;
+          const [px, pz, ux, uz] = at(sm);
+          const nx = -uz * side, nz = ux * side;
+          const sb = w / 2 + 7 + rnd() * 3;
+          let d = cls === "long" ? 40 + rnd() * 34 : 30 + rnd() * 30;
+          let cx = px + nx * (sb + d / 2), cz = pz + nz * (sb + d / 2);
+          let ok = fits(cx, cz, ux, uz, bw, d);
+          if (!ok) { d *= 0.6; cx = px + nx * (sb + d / 2); cz = pz + nz * (sb + d / 2); ok = d > 18 && fits(cx, cz, ux, uz, bw, d); }
+          if (!ok) { s += 7; continue; }
+          claim(cx, cz, ux, uz, bw, d);
+          // heights: boulevards carry the interwar blocks, lanes the houses, the drive's own roads
+          // stay low so the street cameras see over them
+          let h;
+          if (cls === "route") h = fintech(cx, cz) ? 70 + rnd() * 90 : 26 + Math.pow(rnd(), 1.4) * 44;
+          else if (cls === "long") h = 54 + Math.pow(rnd(), 1.3) * (core(cx, cz) ? 110 : 90);
+          else h = fintech(cx, cz) ? 50 + rnd() * 110 : 24 + Math.pow(rnd(), 1.6) * (core(cx, cz) ? 70 : 90);
+          h = Math.round(h);
+          // local frame: x along the street, +z away from it (the front faces the street, at -z)
+          frame(cx, cz, Math.atan2(nx, nz));
+          const hw = bw / 2, hd = d / 2;
+          const floors = Math.max(2, Math.round(h / 13));
+          const tint = tmpC.copy(tints[Math.floor(rnd() * tints.length)]).offsetHSL(0, 0, (rnd() - 0.5) * 0.04);
+          const tMV = tintsMV[(count * 7 + Math.floor(rnd() * 3)) % tintsMV.length];
+          box(WB, -hw, hw, 0, h, -hd, hd, tint, tMV, floors / 4, [0, h], false);
+          // a plinth band over the shop floor
+          const by = Math.min(13, h * 0.32);
+          box(RB, -hw - 0.8, hw + 0.8, by - 1.2, by + 1.2, -hd - 0.8, hd + 0.8, tmpM.copy(tint).multiplyScalar(0.8), tMV.clone().multiplyScalar(0.86), 0, null, false);
+          const rr = rnd();
+          if (h < 52 && rr < 0.86) {
+            // a hip roof in clay tiles, with a ridge
+            const rh = Math.min(15, 6 + Math.min(bw, d) * 0.22), ex = hw + 2, ez = hd + 2;
+            const ti = Math.floor(rnd() * tiles.length);
+            hip(RB, ex, ez, Math.max(ex - ez * 0.92, ex * 0.1), ez * 0.08, h, rh, tiles[ti], tilesMV[ti % tilesMV.length]);
+            if (rnd() < 0.45) { const qx = (rnd() - 0.5) * bw * 0.5, qz = (rnd() - 0.5) * d * 0.4; box(RB, qx - 1.8, qx + 1.8, h + rh * 0.3, h + rh * 0.3 + 7, qz - 1.8, qz + 1.8, chimC, chimMV, 0, null); }
+          } else if (h < 120 && rr < 0.5) {
+            // a zinc mansard with dormers, Calea Victoriei style
+            const mh = 12 + rnd() * 8, ex = hw + 1.5, ez = hd + 1.5;
+            hip(RB, ex, ez, ex * 0.66, ez * 0.66, h, mh, zinc, zincMV);
+            const nd = Math.max(1, Math.round(bw / 16));
+            for (let q = 0; q < nd; q++) {
+              const qx = -hw + (q + 0.5) * bw / nd;
+              box(RB, qx - 2.2, qx + 2.2, h + mh * 0.42 - 2.75, h + mh * 0.42 + 2.75, -hd + 0.2 - 1.6, -hd + 0.2 + 1.6, dormC, dormMV, 0, null);
+            }
+          } else {
+            // a flat roof with a parapet, now and then a stair house or a corner dome
+            box(RB, -hw - 1.2, hw + 1.2, h, h + 3, -hd - 1.2, hd + 1.2, flat, flatMV, 0, null);
+            if (rnd() < 0.5) { const qx = (rnd() - 0.5) * (bw - 14), qz = (rnd() - 0.5) * (d - 14); box(RB, qx - 5, qx + 5, h + 3, h + 11, qz - 4.5, qz + 4.5, tmpM.copy(tint).multiplyScalar(0.9), tMV.clone().multiplyScalar(0.92), 0, null); }
+            if (h > 70 && rnd() < 0.16) {
+              const cr = 7.5, dr = new CylinderGeometry(cr, cr, 12, 10, 1, true); dr.translate(-hw + 4, h + 8, -hd + 4);
+              geo(RB, dr, tint, tMV);
+              const dome = new SphereGeometry(cr + 1.2, 10, 4, 0, Math.PI * 2, 0, Math.PI / 2); dome.scale(1, 1.5, 1); dome.translate(-hw + 4, h + 14, -hd + 4);
+              geo(RB, dome, zinc, zincMV);
+            }
+            // Monument only: water tanks on the flat roofs
+            const pr = rnd(), pc = propCol[Math.floor(rnd() * propCol.length)];
+            if (pr < 0.32) {
+              const qx = (rnd() - 0.5) * (bw - 16), qz = (rnd() - 0.5) * (d - 16);
+              box(MB, qx - 4.5, qx + 4.5, h + 7, h + 17, qz - 4.5, qz + 4.5, pc, pc, 0, null);
+            }
+          }
+          count++;
+          s += bw + (rnd() < 0.12 ? 10 + rnd() * 14 : 1 + rnd() * 3);
+        }
+      }
+    };
+    let seed = 1;
+    // the drive's own roads first, so their kerbs are the ones lined most closely
+    for (const pts of net.routes) line(pts.filter(([, z]) => z < 7480), ROUTE_W, "route", seed++ * 97);
+    for (const s of net.longs) line(roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]), s.w, "long", seed++ * 97);
+    for (const s of net.minor) line(s.pts, s.w, "minor", seed++ * 97);
+    // courtyards: trees in the open middle of the blocks
+    {
+      const rnd = rng(5150);
+      for (let z = CITY_Z0 + 20; z < CITY_Z1 - 20; z += 21) for (let x = CITY_X0 + 20; x < CITY_X1 - 20; x += 21) {
+        const tx = x + (rnd() - 0.5) * 14, tz = z + (rnd() - 0.5) * 14;
+        if (G.at(tx, tz)) continue;
+        // inside a block: no street within reach on any side
+        let open = true;
+        for (const [ox, oz] of [[24, 0], [-24, 0], [0, 24], [0, -24]]) if (G.at(tx + ox, tz + oz) === 2) { open = false; break; }
+        if (!open || rnd() > (core(tx, tz) ? 0.42 : 0.26)) continue;
+        CITY_TREES.push({ x: tx, z: tz, s: 0.55 + rnd() * 0.6 });
+      }
+    }
+    const toGeo = (B) => {
+      const g2 = new BufferGeometry();
+      g2.setAttribute("position", new Float32BufferAttribute(B.p, 3));
+      g2.setAttribute("normal", new Float32BufferAttribute(B.n, 3));
+      g2.setAttribute("uv", new Float32BufferAttribute(B.uv, 2));
+      g2.setAttribute("color", new Float32BufferAttribute(B.c, 3));
+      g2.setAttribute("colorMV", new Float32BufferAttribute(B.m, 3));
+      g2.setIndex(B.v > 65535 ? new Uint32BufferAttribute(B.idx, 1) : new Uint16BufferAttribute(B.idx, 1));
+      g2.computeBoundingSphere();
+      return g2;
+    };
+    const windowTex = makeWindowTexture();
+    windowTex.wrapS = windowTex.wrapT = RepeatWrapping;
+    const emissiveTex = makeWindowEmissive();
+    emissiveTex.wrapS = emissiveTex.wrapT = RepeatWrapping;
+    mats.buildings = new MeshStandardMaterial({ map: windowTex, vertexColors: true, roughness: 0.92, metalness: 0, emissiveMap: emissiveTex, emissive: new Color("#000000"), emissiveIntensity: 1 });
+    mats.roofs = new MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
+    const walls = new Mesh(toGeo(WB), mats.buildings);
+    walls.castShadow = walls.receiveShadow = true;
+    const roofs = new Mesh(toGeo(RB), mats.roofs);
+    roofs.castShadow = roofs.receiveShadow = true;
+    parent.add(walls, roofs);
+    const mvProps = new Mesh(toGeo(MB), new MeshStandardMaterial({ vertexColors: true, roughness: 0.8 }));
+    mvProps.castShadow = true;
+    mvProps.visible = false;
+    parent.add(mvProps);
+    mats.mvWalls = walls;
+    mats.mvRoofs = roofs;
+    mats.mvProps = mvProps;
+    mats.wallColorDefault = walls.geometry.attributes.color.array.slice(0);
+    mats.roofColorDefault = roofs.geometry.attributes.color.array.slice(0);
+    net.at = G.at;
+    return count;
   }
   function buildGoldenRoute(parent, branch, accent, chosen = true, all = false) {
     const group = new Group();
@@ -24942,7 +25170,8 @@ void main() {
     mats.routeAlt = mats.routeAlt || new MeshStandardMaterial({ color: "#c9c5b8", roughness: 1 });
     for (const b2 of BRANCHES) {
       if ((b2 === branch && chosen) || all) continue;
-      group.add(roadRibbonFromMap(roundedPolyline(branchRoute(b2)), chosen ? ROUTE_W * 0.8 : ROUTE_W, b2 === branch ? 0.72 : 0.7, mats.routeAlt));
+      const w0 = chosen ? ROUTE_W * 0.8 : ROUTE_W;
+      group.add(roadRibbonFromMap(roundedPolyline(branchRoute(b2)), (p) => w0 * (1 - 0.36 * laneK(p.x, p.z)), b2 === branch ? 0.72 : 0.7, mats.routeAlt));
     }
     const flat = branchPoints(branch);
     const dense = roundedPolyline(flat).filter(([, z]) => z <= RAMP_LIP + 1);
@@ -24967,8 +25196,8 @@ void main() {
     parent.add(group);
     return group;
     function addGold(p3) {
-    const casing = new Mesh(ribbonGeometry(p3, ROUTE_W + 4.5, 0.8), mats.routeCasing);
-    const body = new Mesh(ribbonGeometry(p3, ROUTE_W, 1.3), mats.route);
+    const casing = new Mesh(ribbonGeometry(p3, (p) => ROUTE_W * (1 - 0.36 * laneK(p.x, p.z)) + 4.5, 0.8), mats.routeCasing);
+    const body = new Mesh(ribbonGeometry(p3, (p) => ROUTE_W * (1 - 0.36 * laneK(p.x, p.z)), 1.3), mats.route);
     casing.receiveShadow = body.receiveShadow = true;
     group.add(casing, body);
     const dashGeo = new PlaneGeometry(3.6, 20);
@@ -26354,6 +26583,170 @@ void main() {
 
   // all the new street furniture: brands on Digital, Medical and Financial, the courtyard,
   // the palace, ARCA, and two more coffee shops on Coffee Street
+  // r118: a small lane off Medical Avenue, curving down to the Dacia row (no dead end): two
+  // pretty little houses on it, Sticker Republic and Printoteca
+  var LANE_PTS = [[1500, 5700], [1494, 5800], [1462, 5880], [1405, 5950], [1335, 6022], [1280, 6080], [1230, 6100]];
+  var LANE_LEN = (() => { let t = 0; for (let i = 1; i < LANE_PTS.length; i++) t += Math.hypot(LANE_PTS[i][0] - LANE_PTS[i - 1][0], LANE_PTS[i][1] - LANE_PTS[i - 1][1]); return t; })();
+  // a point on the lane at fraction t, with its heading (tx, tz)
+  function laneAt(t) {
+    let L = Math.max(0, Math.min(1, t)) * LANE_LEN;
+    for (let i = 1; i < LANE_PTS.length; i++) {
+      const [ax, az] = LANE_PTS[i - 1], [bx, bz] = LANE_PTS[i], l = Math.hypot(bx - ax, bz - az);
+      if (L <= l || i === LANE_PTS.length - 1) { const f = Math.min(1, L / l); return { x: ax + (bx - ax) * f, z: az + (bz - az) * f, tx: (bx - ax) / l, tz: (bz - az) / l }; }
+      L -= l;
+    }
+  }
+  // a spot beside the lane: side +1 is the right kerb going down, -1 the left
+  function laneSpot(t, side, off) { const p = laneAt(t); return { x: p.x - p.tz * side * off, z: p.z + p.tx * side * off, fx: p.tz * side, fz: -p.tx * side }; }
+  // 0 off the lane, 1 along its middle: the asphalt narrows there
+  function laneK(x, z) {
+    let best = Infinity, bt = 0, acc = 0;
+    for (let i = 1; i < LANE_PTS.length; i++) {
+      const [ax, az] = LANE_PTS[i - 1], [bx, bz] = LANE_PTS[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz, l = Math.sqrt(l2);
+      const f = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), d = Math.hypot(ax + dx * f - x, az + dz * f - z);
+      if (d < best) { best = d; bt = (acc + f * l) / LANE_LEN; }
+      acc += l;
+    }
+    if (best > 40) return 0;
+    const e = Math.max(0, Math.min(1, Math.min(bt - 0.06, 0.92 - bt) / 0.12));
+    return e * e * (3 - 2 * e) * Math.max(0, 1 - best / 40);
+  }
+  var LANE_SR = laneSpot(0.34, 1, 60), LANE_PR = laneSpot(0.62, -1, 60);
+  var LANE_BRANDS = [
+    { br: "C", name: "Sticker Republic", x: Math.round(LANE_SR.x), z: Math.round(LANE_SR.z), lane: true, line: "STICKERS \xB7 PRINT", c: "#FFD21F", t: "#111111", desc: "Stickers for everything and everyone: the little yellow house on the lane, plastered with its own work." },
+    { br: "C", name: "Printoteca", x: Math.round(LANE_PR.x), z: Math.round(LANE_PR.z), lane: true, line: "PRINT ON DEMAND", c: "#ffffff", t: "#111111", desc: "Print on demand with no minimum orders: tees and hoodies printed one by one, for anyone who wants to sell their own." }
+  ];
+  function buildLaneHouse(parent, sp, o) {
+    const g = new Group();
+    const W = o.w, D = o.d, H = o.h;
+    const wallM = new MeshStandardMaterial({ color: o.wall, roughness: 0.88 });
+    const trimM = new MeshStandardMaterial({ color: o.trim, roughness: 0.6 });
+    const roofM = new MeshStandardMaterial({ color: o.roof, roughness: 0.8 });
+    const front = canvasTexture(256, 256, (ctx) => {
+      ctx.fillStyle = o.wall; ctx.fillRect(0, 0, 256, 256);
+      o.paint?.(ctx);
+      const win = (x, y, w2, h2) => {
+        ctx.fillStyle = o.trim; ctx.fillRect(x - 5, y - 5, w2 + 10, h2 + 10);
+        ctx.fillStyle = "#36414c"; ctx.fillRect(x, y, w2, h2);
+        ctx.fillStyle = "#ffe2a8"; ctx.fillRect(x + 4, y + 4, w2 - 8, h2 * 0.36);
+        ctx.fillStyle = o.trim; ctx.fillRect(x + w2 / 2 - 2, y, 4, h2); ctx.fillRect(x, y + h2 * 0.45, w2, 4);
+      };
+      win(30, 30, 46, 62); win(180, 30, 46, 62);
+      ctx.fillStyle = o.trim; ctx.fillRect(0, 118, 256, 8);
+      ctx.fillStyle = o.shop || "#2a2a2a"; ctx.fillRect(22, 150, 130, 106);
+      ctx.fillStyle = "#ffe8b8"; ctx.fillRect(32, 160, 110, 70);
+      ctx.fillStyle = o.shop || "#2a2a2a"; ctx.fillRect(176, 146, 56, 110);
+      ctx.fillStyle = "#c8a76a"; ctx.fillRect(220, 200, 5, 5);
+    });
+    const fm = new MeshStandardMaterial({ map: front, emissiveMap: front, emissive: new Color("#ffcf8a"), emissiveIntensity: 0, roughness: 0.85 });
+    STREET_GLOW.push([fm, 0.7]);
+    const side = o.sideTex ? new MeshStandardMaterial({ map: o.sideTex, roughness: 0.85 }) : wallM;
+    const body = new Mesh(new BoxGeometry(W, H, D), [side, side, wallM, wallM, fm, wallM]);
+    body.position.y = H / 2; g.add(body);
+    const plinth = new Mesh(new BoxGeometry(W + 1.2, 3.2, D + 1.2), trimM); plinth.position.y = 1.6; g.add(plinth);
+    const corn = new Mesh(new BoxGeometry(W + 3, 2, D + 3), trimM); corn.position.y = H + 0.6; g.add(corn);
+    // a hip roof in tiles (or zinc), with a chimney and a little dormer on the front
+    const hip = new Mesh(new CylinderGeometry(0.5, 1, 15, 4, 1), roofM); hip.rotation.y = Math.PI / 4; hip.scale.set((W + 6) / Math.SQRT2, 1, (D + 6) / Math.SQRT2); hip.position.y = H + 1.6 + 7.5; g.add(hip);
+    const ridge = new Mesh(new BoxGeometry(W * 0.5, 1.4, 1.4), roofM); ridge.position.y = H + 1.6 + 15; g.add(ridge);
+    const dor = new Mesh(new BoxGeometry(9, 8, 5), wallM); dor.position.set(0, H + 6, D / 2 - 4); g.add(dor);
+    const dorR = new Mesh(new ConeGeometry(7.2, 5, 4), roofM); dorR.rotation.y = Math.PI / 4; dorR.position.set(0, H + 12.5, D / 2 - 4); g.add(dorR);
+    const dorW = new Mesh(new BoxGeometry(4.4, 4.4, 0.4), new MeshStandardMaterial({ color: "#36414c" })); dorW.position.set(0, H + 6, D / 2 - 1.3); g.add(dorW);
+    const chim = new Mesh(new BoxGeometry(4.5, 12, 4.5), new MeshStandardMaterial({ color: "#a65a3e", roughness: 0.9 })); chim.position.set(W * 0.28, H + 12, -D * 0.18); g.add(chim);
+    // steps, an awning over the shop window and the sign
+    const step = new Mesh(new BoxGeometry(14, 2, 5), new MeshStandardMaterial({ color: "#cfc8ba", roughness: 0.9 })); step.position.set(W * 0.27, 1, D / 2 + 2.5); g.add(step);
+    if (o.awning) { const aw = new Mesh(new BoxGeometry(W * 0.56, 0.8, 8), new MeshStandardMaterial({ map: o.awning, roughness: 0.8 })); aw.position.set(-W * 0.14, 13.4, D / 2 + 3.6); aw.rotation.x = 0.38; g.add(aw); }
+    const sb = signBoard({ name: o.sign, signBg: o.signBg, signInk: o.signInk, signFont: o.signFont }, W * 0.62, W * 0.62 * 0.24);
+    sb.position.set(-W * 0.04, H * 0.53, D / 2 + 1.2); g.add(sb);
+    // a front garden: low fence, two shrubs
+    const fenceM = new MeshStandardMaterial({ color: o.fence || "#2b2b2b", roughness: 0.6 });
+    for (const sx of [-1, 1]) { const f = new Mesh(new BoxGeometry(W * 0.32, 4, 0.8), fenceM); f.position.set(sx * W * 0.36, 2, D / 2 + 9); g.add(f); }
+    const shrubM = new MeshStandardMaterial({ color: "#3f8a45", roughness: 0.9 });
+    for (const sx of [-1, 1]) { const b = new Mesh(new IcosahedronGeometry(4.2, 1), shrubM); b.position.set(sx * W * 0.4, 4, D / 2 + 5); g.add(b); }
+    o.extra?.(g, W, D, H);
+    g.rotation.y = Math.atan2(sp.fx, sp.fz);
+    EXTRA_KEEPOUT.push({ x: sp.x, y: sp.z, r: 46 });
+    return finish(g, parent, sp.x, sp.z);
+  }
+  function buildPrintLane(parent) {
+    // Sticker Republic: a little yellow house, its front and side plastered with stickers
+    const stickers = (ctx, n, seed) => {
+      const r = rng(seed), cols = ["#F65342", "#119BFE", "#28C840", "#B098C8", "#ffffff", "#111111", "#ff8ac2", "#ff9a1f"];
+      const words = ["HI!", "WOW", "★", "SR", "YAY", "☺", "POP", "❤"];
+      for (let i = 0; i < n; i++) {
+        const x = r() * 256, y = r() * 256, s = 12 + r() * 20;
+        ctx.save(); ctx.translate(x, y); ctx.rotate((r() - 0.5) * 1.2);
+        ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.roundRect(-s / 2 - 2, -s / 2 - 2, s + 4, s * (r() < 0.5 ? 1 : 0.6) + 4, r() < 0.5 ? s : 4); ctx.fill();
+        ctx.fillStyle = cols[i % cols.length]; ctx.beginPath(); ctx.roundRect(-s / 2, -s / 2, s, s * 0.6 + (i % 3) * s * 0.2, i % 2 ? s : 3); ctx.fill();
+        ctx.fillStyle = i % cols.length === 4 ? "#111" : "#fff"; ctx.font = `800 ${Math.round(s * 0.36)}px Poppins, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(words[i % words.length], 0, s * 0.08);
+        ctx.restore();
+      }
+    };
+    const srSide = canvasTexture(256, 256, (ctx) => {
+      ctx.fillStyle = "#FFD21F"; ctx.fillRect(0, 0, 256, 256); stickers(ctx, 46, 31);
+      // one giant sticker with a peeling corner
+      ctx.save(); ctx.translate(128, 120); ctx.rotate(-0.12);
+      ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(0, 0, 66, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#111111"; ctx.beginPath(); ctx.arc(0, 0, 60, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#FFD21F"; ctx.font = "900 30px Poppins, sans-serif"; ctx.textAlign = "center"; ctx.fillText("STICKER", 0, -4); ctx.font = "900 22px Poppins, sans-serif"; ctx.fillText("REPUBLIC", 0, 22);
+      ctx.fillStyle = "#e9e6de"; ctx.beginPath(); ctx.moveTo(38, 46); ctx.lineTo(60, 26); ctx.lineTo(56, 52); ctx.fill();
+      ctx.restore();
+    });
+    const srAwn = canvasTexture(256, 32, (ctx) => { for (let i = 0; i < 16; i++) { ctx.fillStyle = i % 2 ? "#111111" : "#FFD21F"; ctx.fillRect(i * 16, 0, 16, 32); } });
+    buildLaneHouse(parent, LANE_SR, {
+      w: 58, d: 44, h: 33, wall: "#FFD21F", trim: "#ffffff", roof: "#b9532f", shop: "#111111", fence: "#111111",
+      sign: "STICKER REPUBLIC", signBg: "#111111", signInk: "#FFD21F", awning: srAwn, sideTex: srSide,
+      paint: (ctx) => stickers(ctx, 26, 7),
+      extra: (g, W, D, H) => {
+        // a sticker roll the size of a barrel by the door
+        const roll = new Mesh(new CylinderGeometry(4.4, 4.4, 7, 18), new MeshStandardMaterial({ color: "#F65342", roughness: 0.5 })); roll.rotation.z = Math.PI / 2; roll.position.set(-W * 0.36, 4.4, D / 2 + 13); g.add(roll);
+        const core = new Mesh(new CylinderGeometry(1.6, 1.6, 7.2, 12), new MeshStandardMaterial({ color: "#d9c7a3" })); core.rotation.z = Math.PI / 2; core.position.copy(roll.position); g.add(core);
+      }
+    });
+    // Printoteca: white and black, tees on a rail out front in CMYK
+    const prAwn = canvasTexture(256, 32, (ctx) => { for (let i = 0; i < 16; i++) { ctx.fillStyle = i % 2 ? "#111111" : "#ffffff"; ctx.fillRect(i * 16, 0, 16, 32); } });
+    const prSide = canvasTexture(256, 256, (ctx) => {
+      ctx.fillStyle = "#f7f6f2"; ctx.fillRect(0, 0, 256, 256);
+      const cm = ["#00aeef", "#ec008c", "#fff200", "#111111"];
+      for (let i = 0; i < 4; i++) { ctx.globalAlpha = 0.9; ctx.fillStyle = cm[i]; ctx.beginPath(); ctx.arc(70 + i * 40, 128, 34, 0, Math.PI * 2); ctx.fill(); }
+      ctx.globalAlpha = 1; ctx.fillStyle = "#111"; ctx.font = "900 26px Poppins, sans-serif"; ctx.textAlign = "center"; ctx.fillText("PRINTOTECA", 128, 206);
+    });
+    buildLaneHouse(parent, LANE_PR, {
+      w: 60, d: 46, h: 35, wall: "#f7f6f2", trim: "#151515", roof: "#2a2a2c", shop: "#151515", fence: "#151515",
+      sign: "PRINTOTECA", signBg: "#ffffff", signInk: "#111111", awning: prAwn, sideTex: prSide,
+      extra: (g, W, D) => {
+        const railM = new MeshStandardMaterial({ color: "#151515", roughness: 0.5, metalness: 0.4 });
+        const rail = new Mesh(new BoxGeometry(24, 0.8, 0.8), railM); rail.position.set(-W * 0.2, 13, D / 2 + 13); g.add(rail);
+        for (const sx of [-12, 12]) { const leg = new Mesh(new BoxGeometry(0.8, 13, 0.8), railM); leg.position.set(-W * 0.2 + sx, 6.5, D / 2 + 13); g.add(leg); }
+        const tee = new Shape(); tee.moveTo(-2, 0); tee.lineTo(2, 0); tee.lineTo(2, 4.6); tee.lineTo(3.8, 3.6); tee.lineTo(4.6, 5.2); tee.lineTo(2.2, 7); tee.lineTo(-2.2, 7); tee.lineTo(-4.6, 5.2); tee.lineTo(-3.8, 3.6); tee.lineTo(-2, 4.6); tee.lineTo(-2, 0);
+        const teeG = new ShapeGeometry(tee);
+        ["#00aeef", "#ec008c", "#fff200", "#111111", "#ffffff"].forEach((c, i) => {
+          const m = new Mesh(teeG, new MeshStandardMaterial({ color: c, roughness: 0.9, side: DoubleSide }));
+          m.position.set(-W * 0.2 - 9.6 + i * 4.8, 5.4, D / 2 + 13); m.rotation.y = 0.9; g.add(m);
+        });
+      }
+    });
+    // the lane itself: small houses in pastel plaster and red tiles, trees, two lamps
+    const rnd = rng(1188), tints = ["#f1d8c4", "#e6dcc8", "#d9e3d4", "#f2e2b8", "#e8cfd4", "#d6dde6"];
+    for (const [t, sd] of [[0.14, 1], [0.2, -1], [0.5, 1], [0.38, -1], [0.82, -1], [0.66, 1], [0.86, 1]]) {
+      const sp = laneSpot(t, sd, 50), W = 34 + rnd() * 14, D = 30 + rnd() * 8, H = 20 + rnd() * 14;
+      const g = new Group(), wall = new MeshStandardMaterial({ color: tints[Math.floor(rnd() * tints.length)], roughness: 0.9 });
+      const body = new Mesh(new BoxGeometry(W, H, D), wall); body.position.y = H / 2; g.add(body);
+      const ft = facadeTexture({}, 2, 3, { glass: "#3a4550", frame: wall.color.getStyle(), lit: "#ffe2a8" });
+      const face = new Mesh(new PlaneGeometry(W * 0.9, H * 0.8), new MeshStandardMaterial({ map: ft, roughness: 0.9 })); face.position.set(0, H * 0.48, D / 2 + 0.15); g.add(face);
+      const hip = new Mesh(new CylinderGeometry(0.45, 1, 12, 4, 1), new MeshStandardMaterial({ color: rnd() < 0.7 ? "#b9532f" : "#5f6a74", roughness: 0.85 })); hip.rotation.y = Math.PI / 4; hip.scale.set((W + 5) / Math.SQRT2, 1, (D + 5) / Math.SQRT2); hip.position.y = H + 6; g.add(hip);
+      g.rotation.y = Math.atan2(sp.fx, sp.fz);
+      EXTRA_KEEPOUT.push({ x: sp.x, y: sp.z, r: 36 });
+      finish(g, parent, sp.x, sp.z);
+    }
+    const trunkM = new MeshStandardMaterial({ color: "#7a4a22", roughness: 1 }), leafM = new MeshStandardMaterial({ color: "#4f9a4a", roughness: 0.9 });
+    for (let i = 0; i < 12; i++) {
+      const sp = laneSpot(0.06 + i * 0.075, i % 2 ? 1 : -1, 26), tr = new Group();
+      const trunk = new Mesh(new CylinderGeometry(1.4, 1.8, 12, 6), trunkM); trunk.position.y = 6; tr.add(trunk);
+      const crown = new Mesh(new IcosahedronGeometry(8 + (i % 3) * 1.5, 1), leafM); crown.position.y = 17; tr.add(crown);
+      finish(tr, parent, sp.x, sp.z);
+    }
+  }
   var STREET_BRANDS = [
     // Fintech Boulevard (B): Investimental first; east kerb, then the west kerb
     { br: "B", name: "Investimental", logo: "logoInvestimental", x: 2205, z: 4500, face: "-x", kind: "tower", w: 66, d: 56, h: 150, accent: "#119BFE", glass: "#1d2c3c", c: "#119BFE", t: "#ffffff", line: "UX · UI · PRODUCT" },
@@ -26633,7 +27026,7 @@ void main() {
     const ripple = 1 + 0.07 * Math.sin(u * 9.3 + v * 2.1) + 0.05 * Math.sin(u * 23 - v * 5) + 0.035 * Math.sin(u * 41 + v * 13) + 0.02 * Math.sin(u * 67 - v * 29);
     return crest * across * ripple;
   }
-  function inTampa(x, z, pad = 0) { return tampaH(x, z) > 5 - pad; }
+  function inTampa(x, z, pad = 0) { if (pad < 4.5 && (x < 250 || x > 780 || z < 4300 || z > 5050)) return false; return tampaH(x, z) > 5 - pad; }
   function buildBrasov(parent) {
     const T = TAMPA, g = new Group();
     const W = 380, D = 500, NX = 90, NZ = 116;
@@ -28887,7 +29280,7 @@ void main() {
     parent.add(ground);
     mats.zonePatch = new MeshStandardMaterial({ color: "#ded8c6", roughness: 1, side: DoubleSide });
     const zoneGeos = [];
-    for (const z of CITY_ZONES) {
+    for (const z of []) {
       const r = 26;
       const shape = new Shape();
       shape.moveTo(z.x + r, z.y);
@@ -28901,13 +29294,15 @@ void main() {
       shape.quadraticCurveTo(z.x, z.y, z.x + r, z.y);
       zoneGeos.push(new ShapeGeometry(shape, 4));
     }
-    const zoneGeo = mergeGeometries(zoneGeos);
-    zoneGeo.rotateX(Math.PI / 2);
-    const zones = new Mesh(zoneGeo, mats.zonePatch);
-    zones.position.y = 0.18;
-    zones.receiveShadow = true;
-    zones.material.userData.outlineParameters = { visible: false };
-    parent.add(zones);
+    if (zoneGeos.length) {
+      const zoneGeo = mergeGeometries(zoneGeos);
+      zoneGeo.rotateX(Math.PI / 2);
+      const zones = new Mesh(zoneGeo, mats.zonePatch);
+      zones.position.y = 0.18;
+      zones.receiveShadow = true;
+      zones.material.userData.outlineParameters = { visible: false };
+      parent.add(zones);
+    }
     mats.parkMat = new MeshStandardMaterial({ color: "#8fdc9d", roughness: 1 });
     for (const p of PARKS) {
       const park = new Mesh(new CylinderGeometry(1, 1, 1.6, 36), mats.parkMat);
@@ -29285,7 +29680,7 @@ void main() {
   function buildWorld(scene, accent) {
     const world = new Group();
     buildGround(world);
-    buildRoads(world);
+    initRoadMats();
     // r101: the roundabout (the turnaround) is gone
     buildFork(world);
     buildStart(world);
@@ -29295,8 +29690,6 @@ void main() {
     buildChapterSigns(world);
     buildPitLane(world);
     buildRivals(world);
-    buildBuildings(world);
-    buildTrees(world);
     buildStreetlights(world);
     buildStreetProps(world);
     const endHouse = buildEndHouse(world);
@@ -29312,12 +29705,17 @@ void main() {
     buildCasaBerero(world, 706, 5480);
     buildBrasov(world);
     buildCoffeeStreetAdds(world);
+    buildPrintLane(world);
     buildPeople(world);
     buildDacia99(world);
     buildMunitiei5(world);
     const heritage = buildHeritage(world);
     const plots = buildPlots(world);
     const pois = buildPOIs(world);
+    // r118: the city fabric goes last, so it knows every landmark it has to leave room for
+    buildRoads(world);
+    buildBuildings(world);
+    buildTrees(world);
     const ramp = buildRamp(world, accent);
     const clouds = buildClouds(world);
     scene.add(world);
@@ -32360,7 +32758,7 @@ void main() {
       openModal();
     };
     const COURT_TAG = { br: "C", name: "Zdrovit", x: COURT.x - 150, z: COURT.z, line: "8 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff" };
-    const workTags = [...STREET_BRANDS, COURT_TAG, TAC, ...COFFEE_ADDS].map((b) => {
+    const workTags = [...STREET_BRANDS, COURT_TAG, TAC, ...COFFEE_ADDS, ...LANE_BRANDS].map((b) => {
       BRANDC[b.name] = BRANDC[b.name] || { c: b.c, t: b.t };
       // brands with a case page on the website open it full screen (offline copies fall back to the card)
       const onlinePage = b.page && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname);
@@ -33096,6 +33494,7 @@ void main() {
           if (mats.mvWalls) {
             const attr = mats.mvWalls.geometry.attributes;
             attr.color.array.set(mv ? attr.colorMV.array : mats.wallColorDefault);
+            if (mats.mvRoofs) { const ra = mats.mvRoofs.geometry.attributes; ra.color.array.set(mv ? ra.colorMV.array : mats.roofColorDefault); ra.color.needsUpdate = true; }
             attr.color.needsUpdate = true;
             mats.mvProps.visible = mv;
             if (!mats.winMV) { mats.winDef = mats.buildings.map; mats.winMV = makeWindowTextureMV(); mats.winMV.wrapS = mats.winMV.wrapT = RepeatWrapping; }
@@ -33104,9 +33503,9 @@ void main() {
           }
         }
         mats.ground?.color.copy(mixC(s.bg, s.fg, dark ? 0.1 : 0.07));
-        mats.roadMinor?.color.copy(mixC(s.bg, s.fg, dark ? 0.22 : 0.13));
-        mats.roadMajor?.color.copy(mixC(s.bg, s.fg, dark ? 0.3 : 0.18));
-        mats.roadCasing?.color.copy(mixC(s.bg, s.fg, dark ? 0.42 : 0.3));
+        mats.roadMinor?.color.copy(mixC(s.bg, s.fg, dark ? 0.24 : 0.16));
+        mats.roadMajor?.color.copy(mixC(s.bg, s.fg, dark ? 0.3 : 0.2));
+        mats.roadCasing?.color.copy(mixC(s.bg, s.fg, dark ? 0.42 : 0.32));
         mats.route?.color.set(s.ac);
         mats.routeCasing?.color.copy(mixC(s.fg, "#000000", 0.25));
         mats.routeAlt?.color.copy(dark ? mixC(s.bg, s.fg, 0.28) : new Color("#3a382f"));
@@ -33162,7 +33561,7 @@ void main() {
           fillLight.color.set("#9d86ff"); fillLight.intensity = 0.7;
           mats.canopy?.color.set("#e6fff0");
           mats.ground?.color.set("#f8eee6");
-          mats.roadMinor?.color.set("#f4e6de"); mats.roadMajor?.color.set("#f0dfd6"); mats.roadCasing?.color.set("#ead4ca");
+          mats.roadMinor?.color.set("#ead6cd"); mats.roadMajor?.color.set("#e6cfc5"); mats.roadCasing?.color.set("#d6bcb1");
           mats.roofs?.color.set("#ffffff");
           renderer.toneMappingExposure = 1.02;
         }
@@ -33523,7 +33922,7 @@ void main() {
           }
           return;
         }
-        anchorTmp.set(x, y, z).project(camera);
+        warpV(anchorTmp.set(x, y, z)).project(camera);
         if (anchorTmp.z > 1) {
           elBtn.classList.add("hidden");
           elBtn._ast = null;
@@ -34966,6 +35365,8 @@ void main() {
         else if (mapMode && mapUI) { mapUI.update(dt, now); camPos.copy(mapView.pos); camTarget.copy(mapView.tgt); }
         // exponential damping, frame-rate independent; the look target is damped too, so
         // set-piece cameras (fork, coffee, Dacia, spiral) blend in instead of cutting
+        // r118: the camera lives in the bent world
+        warpV(camPos); warpV(camTarget);
         if (!window.__lookSm) window.__lookSm = camTarget.clone();
         // in the street POV the camera rides with you: damping tightens as the POV takes over
         const kp = 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 : 2.8 + 26 * povK * povK));
@@ -35006,7 +35407,7 @@ void main() {
         if (SCHEMES[state.schemeIdx].id === "underwater") { sun.color.set("#b5f3ff"); sun.intensity = 1.5; }
         const sr = 1500;
         // on the map the shadows follow what you look at, not the van
-        const sunC = mapMode ? mapView.tgt : carPos;
+        const sunC = warpV((mapMode ? mapView.tgt : carPos).clone());
         sun.position.set(
           sunC.x + Math.cos(curSun.az) * sr * Math.cos(curSun.el),
           Math.max(300, sr * Math.sin(curSun.el)),
@@ -35256,6 +35657,7 @@ void main() {
               const La = routeLAt("arcalook", 560, 5930), slot = { "ARCA Resort": [-300, -120], "Antila": [-120, 40], "UNDE": [40, 200] }[b.name];
               on = slot ? state.L > La + slot[0] && state.L < La + slot[1] : state.L > Lb - 130 && state.L < Lb + 70;
             } else if (b.br === "C" && b.kind === "clinic") on = state.L > Lb - 200 && state.L < Lb + 50;
+            else if (b.lane) on = state.L > Lb - 170 && state.L < Lb + 50;
             else on = state.L > Lb - 380 && state.L < Lb + 240;
           }
           showPoi(t, on);
@@ -35325,7 +35727,7 @@ void main() {
       (() => {
         const have = new Set(MAP_PLACES.map((p) => (p.work || p.name).toLowerCase()));
         const add = (o) => { if (have.has(o.name.toLowerCase())) return; have.add(o.name.toLowerCase()); MAP_PLACES.splice(MAP_PLACES.length - 2, 0, o); };
-        for (const b of [...STREET_BRANDS, ...COFFEE_ADDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, x: b.x, z: b.z, h: b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
+        for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, x: b.x, z: b.z, h: b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
         ZDROVIT_YARD.forEach((n, i) => { const [x, z] = yardSpot(yardSlotOf(i)); add({ id: "y-" + i, br: "C", x: 1500, z, px: x, pz: z, h: 22, name: n, line: "IN THE ZDROVIT YARD", c: "#cfcdc8", t: "#3d3c39", small: true, desc: `${n}, one of the brands in the Zdrovit yard. By Cromatic Studios.` }); });
         add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Casa Berero", line: "BRAND \xB7 BY CROMATIC STUDIOS", c: "#111111", t: "#ffffff", act: "bereroTag" });
         add({ id: "boxes", br: "A", x: 900, z: 4262, px: 706, pz: 4198, h: 40, name: "Two Min Boxes", line: "COFFEE PACKAGING \xB7 FRESH DROP", c: "#2f2f2f", t: "#ffffff", act: "boxPop" });
@@ -35341,7 +35743,11 @@ void main() {
           const p = route.points[i], d = (p.x - pl.x) ** 2 + (p.z - pl.z) ** 2;
           if (d < bd) { bd = d; best = i; }
         }
-        return route.cum[best];
+        // r118: a building beside the road: park just short of it, on the side you come from,
+        // so its front stays clear for the camera
+        const Lb = route.cum[best];
+        if (pl.tap || pl.board || bd < 20 * 20) return Lb;
+        return Lb + (state.L > Lb ? 1 : -1) * 58;
       }
       function mapSwitchBranch(b) {
         if (state.branchChosen && state.branch === b && route.branch === b) return;
@@ -35371,6 +35777,7 @@ void main() {
         if (!pl.tap) { const m = document.querySelector(".tap-mark"); m?.classList.remove("on"); }
         mapView.follow = true; mapView.focus = null;
         mapView.vx = mapView.vz = 0;
+        mapUI.cineOut?.();
         if (coffee.phase !== "idle") { coffee.phase = "idle"; coffee.done = true; ui.coffeeEnd(); }
         if (pl.stop !== "end") olari.cards?.classList.add("gone");
         if (mapView.dist > 7000) mapView.distGoal = innerWidth < 720 ? 6800 : 5600;
@@ -35622,7 +36029,7 @@ void main() {
         olari.beam.scale.set(1, 0.4 + 0.6 * e, 1);
         // the cards start at the house on screen
         if (olari.cards && !olari.cards._placed) {
-          const p = new Vector3(house.position.x, 120, house.position.z).project(camera);
+          const p = warpV(new Vector3(house.position.x, 120, house.position.z)).project(camera);
           olari.cards.style.setProperty("--hx", `${((p.x * 0.5 + 0.5) * innerWidth).toFixed(0)}px`);
           olari.cards.style.setProperty("--hy", `${((-p.y * 0.5 + 0.5) * innerHeight).toFixed(0)}px`);
           if (olari.t > 0.9) { olari.cards._placed = true; olari.cards.classList.add("go"); }
@@ -35786,6 +36193,7 @@ void main() {
         };
         const arrive = (pl) => {
           if (pl.tap) { markEl.classList.remove("on"); markAt = null; return; }
+          cineIn(pl);
           if (visit(pl)) gainXP(5, pl.name, "Found on the map");
           mark();
           if (pl.board) { mapOpenBoarding(); return; }
@@ -35810,6 +36218,72 @@ void main() {
           if (pl.wip || pl.small) return;
           card.querySelector(".mcd-open").onclick = () => tagOf(pl)?.click();
         };
+        // r118: arriving somewhere, the camera swings slowly round onto the building's front, lower
+        // and in three-quarters, with the van parked in the foreground. No jolt: every value runs on
+        // one smootherstep curve that starts and ends at rest, then a slow breathing drift
+        let cine = null;
+        const cineTo = (to, dur) => {
+          const f = { yaw: mapView.yaw, pitch: mapView.pitch, dist: mapView.dist, lookY: mapView.lookY || 0 };
+          if (to.fx != null) { f.fx = mapView.focus ? mapView.focus.x : mapView.tgt.x; f.fz = mapView.focus ? mapView.focus.z : mapView.tgt.z; }
+          // take the short way round
+          while (to.yaw - f.yaw > Math.PI) to.yaw -= Math.PI * 2;
+          while (to.yaw - f.yaw < -Math.PI) to.yaw += Math.PI * 2;
+          mapView.yawGoal = mapView.pitchGoal = mapView.distGoal = null;
+          cine = { t: 0, dur, f, to, dt: 0 };
+        };
+        const cineIn = (pl) => {
+          if (pl.tap || pl.board || pl.stop === "end" || pl.tm || (pl.stop && !pl.past) || jetFx.phase !== "idle") { cine = null; return; }
+          const bx = pl.px ?? pl.x, bz = pl.pz ?? pl.z, phone = innerWidth < 720;
+          // split van minus building into along-the-street (s) and across (the facade normal)
+          const tl = Math.hypot(carTan.x, carTan.z) || 1, tx = carTan.x / tl, tz = carTan.z / tl;
+          const wx = carPos.x - bx, wz = carPos.z - bz, sAlong = wx * tx + wz * tz;
+          let nx = wx - tx * sAlong, nz = wz - tz * sAlong, nl = Math.hypot(nx, nz);
+          const onRoad = nl < 15;
+          if (onRoad) {
+            // the pin stands on the road itself: look across from the side the camera is on
+            nx = -tz; nz = tx; nl = 1;
+            if (nx * Math.sin(mapView.yaw) + nz * Math.cos(mapView.yaw) < 0) { nx = -nx; nz = -nz; }
+          }
+          nx /= nl; nz /= nl;
+          // three-quarters, from the end of the frontage away from the van: the van parks in the
+          // foreground beside the building, never in front of its door
+          const sg = onRoad ? (Math.sin(mapView.yaw) * tx + Math.cos(mapView.yaw) * tz > 0 ? 1 : -1) : -Math.sign(sAlong || 1), a = 0.7;
+          const dx = nx * Math.cos(a) + sg * tx * Math.sin(a), dz = nz * Math.cos(a) + sg * tz * Math.sin(a);
+          const yaw = Math.atan2(dx, dz);
+          const h = Math.min(230, pl.h || 60);
+          const dist = Math.min(2500, Math.max(1300, 1150 + h * 4.4)) * (phone ? 1.25 : 1);
+          const across = onRoad ? 0 : Math.min(nl, 120) * 0.55;
+          mapView.follow = false;
+          mapView.focus = { x: carPos.x, z: carPos.z };
+          const fx = onRoad ? carPos.x : bx + nx * across + tx * sAlong * 0.3, fz = onRoad ? carPos.z : bz + nz * across + tz * sAlong * 0.3;
+          cineTo({ yaw, pitch: phone ? 0.64 : 0.55, dist, lookY: Math.min(70, h * 0.32), fx, fz, drift: true }, 3.2);
+        };
+        // leaving: back up to the map's usual angle, just as gently
+        const cineOut = () => {
+          if (!cine && mapView.pitch > 0.9) return;
+          cineTo({ yaw: mapView.yaw, pitch: 0.98, dist: Math.max(mapView.dist, innerWidth < 720 ? 3000 : 2600), lookY: 0 }, 2.4);
+        };
+        const cineStep = (dt) => {
+          if (!cine) return;
+          const c = cine, f = c.f, g = c.to;
+          c.t += dt;
+          if (c.settled) {
+            // parked: the lens breathes round the building, very slowly (zoom stays yours)
+            c.dt += dt;
+            const a = Math.min(1, c.dt / 5);
+            mapView.yaw = g.yaw + Math.sin(c.dt * 0.16) * 0.085 * a * a;
+            return;
+          }
+          const u = Math.min(1, c.t / c.dur), e = u * u * u * (u * (u * 6 - 15) + 10);
+          mapView.yaw = f.yaw + (g.yaw - f.yaw) * e;
+          mapView.pitch = f.pitch + (g.pitch - f.pitch) * e;
+          mapView.dist = f.dist + (g.dist - f.dist) * e;
+          mapView.lookY = mapView.lookYGoal = f.lookY + (g.lookY - f.lookY) * e;
+          if (g.fx != null && mapView.focus) { mapView.focus.x = f.fx + (g.fx - f.fx) * e; mapView.focus.z = f.fz + (g.fz - f.fz) * e; }
+          if (u < 1) return;
+          if (!g.drift) cine = null; else c.settled = true;
+        };
+        const cineStop = () => { cine = null; };
         const baam = () => {
           baamEl.classList.remove("hidden");
           baamEl.classList.remove("go"); void baamEl.offsetWidth; baamEl.classList.add("go");
@@ -35820,6 +36294,7 @@ void main() {
         zoom.onclick = (e) => {
           const z = e.target.closest("button")?.dataset.z;
           mapView.distGoal = null;
+          if (cine && cine.t < cine.dur) cine = null;
           if (z === "in") mapView.distGoal = Math.max(1900, mapView.dist / 1.4);
           if (z === "out") mapView.distGoal = Math.min(10000, mapView.dist * 1.4);
           if (z === "van") { mapView.follow = true; mapView.focus = null; }
@@ -35847,11 +36322,11 @@ void main() {
           p.x = e.clientX; p.y = e.clientY;
           if (ptrs.size === 2) {
             const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
-            if (pinch0 > 0) { mapView.distGoal = null; mapView.dist = Math.min(10000, Math.max(1900, dist0 * pinch0 / Math.max(d, 1))); }
+            if (pinch0 > 0) { cine = null; mapView.distGoal = null; mapView.dist = Math.min(10000, Math.max(1900, dist0 * pinch0 / Math.max(d, 1))); }
             const [wx, wz] = panVec(dx / 2, dy / 2); mapView.tgt.x += wx; mapView.tgt.z += wz;
             return;
           }
-          if (Math.abs(dx) + Math.abs(dy) > 1) { mapView.follow = false; mapView.focus = null; }
+          if (Math.abs(dx) + Math.abs(dy) > 1) { mapView.follow = false; mapView.focus = null; cine = null; }
           const [wx, wz] = panVec(dx, dy);
           mapView.tgt.x += wx; mapView.tgt.z += wz;
           const now2 = performance.now(), dtp = Math.max(8, now2 - last) / 1000; last = now2;
@@ -35865,6 +36340,7 @@ void main() {
           dir.set((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1, 0.5).unproject(camera).sub(camera.position).normalize();
           if (dir.y > -1e-3) return;
           hit.copy(camera.position).addScaledVector(dir, -camera.position.y / dir.y);
+          unwarpV(hit);
           // the nearest point on any of the three streets (and the shared roads)
           let best = null;
           for (const b2 of BRANCHES) for (const [x, z] of tapRoads[b2]) {
@@ -35901,6 +36377,7 @@ void main() {
           if (!mapMode || mapIntro || e.target.closest?.(".map-dock, .mapcard, .hmodal-backdrop, .case-frame, .scf-modal, .map-card, .crew-panel, .map-rides")) return;
           e.preventDefault();
           mapView.distGoal = null;
+          if (cine && cine.t < cine.dur) cine = null;
           mapView.dist = Math.min(10000, Math.max(1900, mapView.dist * Math.exp(e.deltaY * 0.0012)));
         }, { passive: false });
         const proj = new Vector3();
@@ -35927,9 +36404,10 @@ void main() {
           return [0, (topY + botY) / 2 - H / 2];
         };
         return {
-          box, mark, arrive, find, hideCard, baam, skip, paintRides,
+          box, mark, arrive, find, hideCard, baam, skip, paintRides, cineOut, cineStop,
           update(dt, now) {
             mapStep();
+            cineStep(dt);
             jetUpdate(dt, now);
             olariUpdate(dt);
             // the diorama is cleaner from above without the far mesas, the cloud ring and the islands
@@ -35989,7 +36467,7 @@ void main() {
             const zl = mapView.dist > (mapView._zl === 1 ? 5800 : 6200) ? 1 : mapView.dist > (mapView._zl === 3 ? 3300 : 3000) ? 2 : 3;
             mapView._zl = zl;
             for (const e of streetEls) {
-              proj.set(e._p[0], 620, e._p[1]).project(camera);
+              warpV(proj.set(e._p[0], 620, e._p[1])).project(camera);
               const sx2 = (proj.x * 0.5 + 0.5) * W, sy2 = (-proj.y * 0.5 + 0.5) * H;
               const off2 = mapIntro || proj.z > 1 || sx2 < -200 || sx2 > W + 200 || sy2 < 110 || sy2 > H - 90 || mapView.dist < 3300;
               e._xy = off2 ? null : [sx2, sy2];
@@ -35997,12 +36475,12 @@ void main() {
             }
             const pinBoxes = [];
             if (markAt) {
-              proj.copy(markAt).project(camera);
+              warpV(proj.copy(markAt)).project(camera);
               markEl.style.transform = `translate3d(${((proj.x * 0.5 + 0.5) * W).toFixed(1)}px, ${((-proj.y * 0.5 + 0.5) * H).toFixed(1)}px, 0)`;
               if (!mapNav.moving && mapNav.place?.tap && !markEl.classList.contains("on")) markAt = null;
             }
             const order = pins.map((p) => {
-              proj.set(p.pl.wx, p.pl.wy, p.pl.wz).project(camera);
+              warpV(proj.set(p.pl.wx, p.pl.wy, p.pl.wz)).project(camera);
               return { p, x: (proj.x * 0.5 + 0.5) * W, y: (-proj.y * 0.5 + 0.5) * H, z: proj.z };
             }).sort((a, b) => (b.p.pl === mapNav.place) - (a.p.pl === mapNav.place) || (a.p.pl.chapter ? 1 : 0) - (b.p.pl.chapter ? 1 : 0) || a.y - b.y);
             for (const o of order) {
@@ -36114,6 +36592,7 @@ void main() {
       window.__map = (on = true) => setMapMode(on);
       window.__mapGo = (id) => mapGo(MAP_PLACES.find((p) => p.id === id));
       window.__takeoff = () => mapTakeoff();
+      window.__cityDbg = () => ({ zones: buildKeepOut().map((z) => [z.x, z.y, z.r]), extra: EXTRA_KEEPOUT.map((z) => [z.x, z.y, z.r]), routes: Object.fromEntries(["A", "B", "C"].map((b) => [b, roundedPolyline(branchPoints(b)).map(([x, z]) => [Math.round(x), Math.round(z)])])), parks: PARKS, stops: STOPS, places: MAP_PLACES.map((p) => [p.name, p.px ?? p.x, p.pz ?? p.z]) });
       window.__mapSet = (d, x, z) => { mapView.dist = d; mapView.distGoal = null; mapView.follow = false; mapView.tgt.set(x, 0, z); };
       window.__api = api;
       window.__xp = () => ({ pts: state.points, log: xpLog.map((e) => e.title + " +" + e.pts), pending: xpPending && xpPending.title, collected: [...xpCollected], chosen: state.branchChosen, branch: state.branch, card: currentCardStop, veh: state.vehicleId });
