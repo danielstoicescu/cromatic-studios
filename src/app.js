@@ -33199,8 +33199,8 @@ void main() {
       m.setAttribute("role", "dialog");
       m.innerHTML = `<div class="hm-info wide"><span class="eyebrow">MEDICAL AVENUE \u00B7 THE COURTYARD</span><span class="hm-name drop1" style="background:#e30613;color:#fff">Zdrovit</span>
         <p>Eight brands around one yard: health, clinics, beauty and perfume, from Bucharest to Barcelona, Los Angeles and Paris.</p>
-        <div class="court-grid">${COURT_BRANDS.map((b, i) => `<button class="court-b" data-i="${i}" style="--cc:${b.c};--ct:${b.t}"><b>${b.name}</b><span class="mono">${b.line}</span></button>`).join("")}</div></div>`;
-      m.querySelectorAll(".court-b").forEach((btn) => { btn.onclick = () => { const b0 = COURT_BRANDS[+btn.dataset.i], pg = window.__casePage(b0.name); if (pg && openFrameHook) { closeModal(); openFrameHook(`/work/${pg}/?embed=1`, b0.name); } else openProjectHook?.(projOf(b0)); }; });
+        <div class="court-grid">${COURT_BRANDS.map((b, i) => `<button class="court-b" data-i="${i}" style="--cc:${b.c};--ct:${b.t}"><b>${b.name}</b><span class="mono">${b.line}</span></button>`).join("")}${ZDROVIT_YARD.map((n) => `<button class="court-b yard-b" data-n="${n}" style="--cc:#cfcdc8;--ct:#3d3c39"><b>${n}</b><span class="mono">IN THE YARD</span></button>`).join("")}</div></div>`;
+      m.querySelectorAll(".court-b").forEach((btn) => { if (btn.dataset.n) { btn.onclick = () => { const pg = window.__casePage(btn.dataset.n); if (pg && openFrameHook) { closeModal(); openFrameHook(`/work/${pg}/?embed=1`, btn.dataset.n); } }; return; } btn.onclick = () => { const b0 = COURT_BRANDS[+btn.dataset.i], pg = window.__casePage(b0.name); if (pg && openFrameHook) { closeModal(); openFrameHook(`/work/${pg}/?embed=1`, b0.name); } else openProjectHook?.(projOf(b0)); }; });
       const close = el("button", "hm-close mono", "CLOSE \u00D7");
       close.onclick = closeModal;
       m.querySelector(".hm-info").appendChild(close);

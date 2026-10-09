@@ -1,7 +1,7 @@
 // Renders the lo-fi website: /site/ (home) and /work/<slug>/ (case pages). Plain HTML, a small
 // stylesheet and a few lines of script; no WebGL. `A(name)` resolves an asset variable from
 // src/app.js to { src, w, h } (src is root-relative, e.g. /assets/abc.png).
-import { NAV, CHAPTERS, SERVICES, PROJECTS, CLIENT_BADGES, FRIENDS, CREW, CREW_INFO, CREW_COLORS, CREW_PHOTOS, CREW_FACE_VARS, FORM, CASES, CANVASES } from "./data.mjs";
+import { NAV, CHAPTERS, SERVICES, PROJECTS, STREETS, CLIENT_BADGES, FRIENDS, CREW, CREW_INFO, CREW_COLORS, CREW_PHOTOS, CREW_FACE_VARS, FORM, CASES, CANVASES } from "./data.mjs";
 import { STUDIO, FAQ } from "../build/seo.mjs";
 
 const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -102,7 +102,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
         <span class="pc-cat mono">${esc(p.cat)}</span>
         <span class="pc-name">${esc(p.name)}</span>
         <span class="pc-desc">${esc(p.desc)}</span>
-        ${p.page ? `<span class="pc-cta">Read the case <i>→</i></span>` : ""}
+        ${p.page ? `<span class="pc-cta">Read the case <i>→</i></span>` : p.wip ? `<span class="pc-cta mono">Work in progress</span>` : ""}
       </span>`;
     return p.page
       ? `<a class="pcard${i < 2 ? " big" : ""}" href="/work/${p.page}/">${inner}</a>`
@@ -197,9 +197,15 @@ ${header(true)}
   <section id="work" class="sec sec-alt">
     <div class="wrap">
       <p class="eyebrow mono">Selected work</p>
-      <h2 class="ptitle">${pill("Coffee Street", "#FED012", -1.5)}${pill("& Digital Avenue", "#B098C8", 1)}</h2>
-      <p class="sec-lead">The coffee brands we grew up with, and the products, fintech and platforms we helped win in digital.</p>
-      <div class="pgrid">${PROJECTS.map(projectCard).join("")}</div>
+      <h2 class="ptitle">${pill("Every place", "#FED012", -1.5)}${pill("on the map", "#B098C8", 1)}</h2>
+      <p class="sec-lead">The same work as the 3D map, street by street: the coffee brands we grew up with, fintech, clinics and the little shops on the shortcut.</p>
+      ${Object.entries(STREETS).map(([k, [sn, sc]]) => {
+        const list = PROJECTS.filter((p) => p.street === k);
+        const big = list.filter((p) => !p.small), small = list.filter((p) => p.small);
+        return `<h3 class="street-h" style="--sc:${sc}"><span></span>${esc(sn)}<i class="mono">${list.length} places</i></h3>
+      <div class="pgrid">${big.map(projectCard).join("")}</div>
+      ${small.length ? `<div class="psmall">${small.map((p) => `<span class="ps" style="--bc:${p.c};--bt:${p.t}"><b>${esc(p.name)}</b><i class="mono">${esc(p.cat)}</i></span>`).join("")}</div>` : ""}`;
+      }).join("")}
       <p class="friends"><span class="mono">Friends we made along the way</span> ${FRIENDS.map((f) => `<span class="fpill">${esc(f)}</span>`).join("")}</p>
     </div>
   </section>

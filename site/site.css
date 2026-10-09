@@ -531,3 +531,12 @@ a.pcard:hover .pc-media { transform: none; }
 
 /* r104: the crew stays simple: face and name (lines live in the drive's side panel) */
 .cr-role, .cr-bio, .cr-link { display: none; }
+
+/* r122: the work grid follows the map, street by street */
+.street-h { display: flex; align-items: center; gap: 12px; margin: 46px 0 18px; font-size: clamp(22px, 2.6vw, 32px); }
+.street-h span { width: 14px; height: 34px; border-radius: 6px; background: var(--sc); border: var(--line); }
+.street-h i { margin-left: auto; font-size: 11px; font-style: normal; opacity: .6; letter-spacing: .12em; text-transform: uppercase; }
+.psmall { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.psmall .ps { display: inline-flex; flex-direction: column; gap: 2px; padding: 9px 14px; border: var(--line); border-radius: 14px; background: var(--bc); color: var(--bt); }
+.psmall .ps b { font-size: 15px; }
+.psmall .ps i { font-style: normal; font-size: 10px; opacity: .75; letter-spacing: .08em; text-transform: uppercase; }

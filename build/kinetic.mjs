@@ -15,11 +15,15 @@ export function kineticBundle(appJs, stylesCss) {
   const fn = appJs.slice(start, end);
   const texStart = appJs.indexOf("\n  function canvasTexture(");
   const texFn = appJs.slice(texStart, appJs.indexOf("\n  function ", texStart + 10));
+  // the intro's coffee cup svg lives in a global next to it
+  const cupM = /\n  var CZ_CUP = `[\s\S]*?`;/.exec(appJs);
+  const cupVar = cupM ? cupM[0] : "";
   const entry = `
 import { WebGLRenderer, Scene, PMREMGenerator, HemisphereLight, DirectionalLight, PerspectiveCamera, Vector2, Vector3,
   LatheGeometry, TorusGeometry, CircleGeometry, PlaneGeometry, MeshStandardMaterial, MeshBasicMaterial, Group, Mesh,
   CanvasTexture, SRGBColorSpace, ACESFilmicToneMapping, RepeatWrapping, Color, DoubleSide } from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+${cupVar}
 ${texFn}
 ${fn}
 window.cromaticKinetic = createKinetic;
