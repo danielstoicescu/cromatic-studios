@@ -23811,7 +23811,7 @@ void main() {
         { name: "Craft Coffee", cat: "Branding \xB7 Website", poster: "The coffee equipment", accent: "#119BFE", desc: "The official distributor of La Marzocco, Mazzer, PuQPress and Fellow in Romania. A brand and a shop built to equip the passion for coffee.", x: 554, y: 5330 },
         { name: "Artisan Coffee Gear", cat: "Brand universe \xB7 Web", poster: "Get to the core of your craft", accent: "#797c69", desc: "Coffee gear for passionate customers, in a tailor made environment with a personal voice. A whole brand world, from the letterform pattern to the webshop.", x: 554, y: 5600 },
         { name: "OMA Coffee", cat: "Brand \xB7 Coffee \xB7 Bra\u0219ov", poster: "We're brewing something", accent: "#4a7c4e", desc: "A specialty coffee shop at the foot of the mountains. Passionate baristas who love the craft of coffee as much as the peaks around them \u2014 and a brand as warm as the cup.", x: 210, y: 5700 },
-        { name: "Berero", cat: "Brand", poster: "BERERO", accent: "#111111", desc: "Brand identity by Cromatic Studios.", x: 210, y: 5760 }
+        { name: "Berero", cat: "Brand \xB7 Labels \xB7 Merch", poster: "BERERO", accent: "#111111", desc: "Craft beer with your people. COMM and UNITY, two cans that spell one word, merch and posters for Casa Berero.", x: 210, y: 5760 }
       ];
       PROJECTS_B1 = [
         { name: "Investimental", cat: "UX \xB7 UI \xB7 Product", poster: "Win in digital", accent: "#119BFE", desc: "The newest retail broker in the market, helped to win in digital. Information architecture, high quality mockups and a product experience built for first-time investors.", x: 1900, y: 4520 },
@@ -27215,15 +27215,15 @@ void main() {
   var STREET_BRANDS = [
     // Fintech Boulevard (B): Investimental first; east kerb, then the west kerb
     { br: "B", name: "Investimental", logo: "logoInvestimental", x: 2205, z: 4500, face: "-x", kind: "tower", w: 66, d: 56, h: 150, accent: "#119BFE", glass: "#1d2c3c", c: "#119BFE", t: "#ffffff", line: "UX · UI · PRODUCT" },
-    { br: "B", name: "Infinity Capital", logo: "logoInfinity", x: 1988, z: 4600, face: "+x", kind: "tower", w: 64, d: 56, h: 180, accent: "#b08d3c", glass: "#262a30", c: "#b08d3c", t: "#ffffff", line: "INVESTMENTS" },
+    { br: "B", name: "Infinity Capital", logo: "logoInfinity", x: 1988, z: 4600, face: "+x", kind: "tower", w: 64, d: 56, h: 180, accent: "#FFC20E", glass: "#262a30", c: "#FFC20E", t: "#111111", line: "IDENTITY \xB7 DIGITAL", desc: "Financial investments for visionary clients, from Craiova. A fi monogram, greys with a yellow that climbs like a chart, an app and a website." },
     { br: "B", name: "Assetto", logo: "logoAssetto", x: 2215, z: 4760, face: "-x", kind: "assetto", w: 92, h: 132, accent: "#39ff6a", c: "#111111", t: "#39ff6a", line: "PRODUCT \xB7 BRAND" },
-    { br: "B", name: "Longshield", logo: "logoLongshield", x: 1988, z: 4880, face: "+x", kind: "tower", w: 62, d: 54, h: 160, accent: "#2b2b2b", glass: "#22303d", c: "#2b2b2b", t: "#ffffff", line: "INVESTMENT GROUP" },
+    { br: "B", name: "Longshield", logo: "logoLongshield", x: 1988, z: 4880, face: "+x", kind: "tower", w: 62, d: 54, h: 160, accent: "#253322", glass: "#22303d", c: "#253322", t: "#E7B43C", line: "BRAND \xB7 WEB", desc: "Long-term investments, under a shield drawn on the golden ratio. Strategy, logo, brandbook, stationery and website for an investment group." },
     { br: "B", name: "Bepco", logo: "logoBepco", x: 1890, z: 4135, face: "+z", kind: "energy", w: 108, h: 26, accent: "#2fae5a", c: "#2fae5a", t: "#ffffff", line: "ENERGY \xB7 BRAND \xB7 DIGITAL" },
     { br: "B", name: "Flask", logo: "logoFlask", x: 1988, z: 5160, face: "+x", kind: "tower", w: 60, d: 54, h: 130, accent: "#1f8a6a", glass: "#20352e", c: "#1f8a6a", t: "#ffffff", line: "FINTECH" },
-    { br: "B", name: "ESD", logo: "logoESD", x: 2205, z: 5280, face: "-x", kind: "office", w: 64, h: 58, accent: "#119BFE", c: "#119BFE", t: "#ffffff", line: "DIGITAL" },
-    { br: "B", name: "Unchain Festival", logo: "logoUnchain", x: 1872, z: 5450, face: "+x", kind: "festival", w: 84, d: 54, h: 44, accent: "#111111", c: "#111111", t: "#ffffff", line: "FESTIVAL · BRAND" },
+    { br: "B", name: "ESD", logo: "logoESD", x: 2205, z: 5280, face: "-x", kind: "office", w: 64, h: 58, accent: "#E30613", c: "#E30613", t: "#ffffff", line: "REBRANDING \xB7 WEBSITE", desc: "The largest electronics service network in Romania, speaking for itself at last. Positioning, rebranding, fleet and esdrom.ro." },
+    { br: "B", name: "Unchain Festival", logo: "logoUnchain", x: 1872, z: 5450, face: "+x", kind: "festival", w: 84, d: 54, h: 44, accent: "#111111", c: "#111111", t: "#ffffff", line: "FESTIVAL · BRAND", desc: "The Davos of CEE fintech, inside Oradea Fortress. Strategy, identity and a website where one red thread builds the fortress." },
     { br: "B", name: "Witanalitica", x: 2205, z: 5540, face: "-x", kind: "office", w: 66, h: 48, accent: "#6b4fd8", c: "#6b4fd8", t: "#ffffff", line: "DATA · DIGITAL" },
-    { br: "B", name: "Techventures Bank", logo: "logoTechventures", x: 2210, z: 5850, face: "-x", kind: "tower", w: 70, d: 56, h: 120, accent: "#0d3b66", c: "#0d3b66", t: "#ffffff", line: "BANKING · DIGITAL" },
+    { br: "B", name: "Techventures Bank", logo: "logoTechventures", x: 2210, z: 5850, face: "-x", kind: "tower", w: 70, d: 56, h: 120, accent: "#1D2A42", c: "#1D2A42", t: "#ffffff", line: "REBRANDING \xB7 WEBSITE", desc: "The first entrepreneurial bank in Romania, refreshed: silver wings, landscapes in navy and a website with a human approach to banking." },
     // Medical Avenue (C): after the palace and the courtyard, the clinics
     // r116: Clinica Sante faces the palace across the avenue; Altius is a glass tower with a
     // turquoise accent (Petronas style) with Zoetis beside it; Elithia is two salmon interwar villas
@@ -33287,7 +33287,8 @@ void main() {
     // r122: the brands with their own case page open it full screen, from any card
     const WORK_PAGES = { "Slow Coffee Festival": "slow-coffee-festival", "Artisan Coffee Gear": "artisan-coffee-gear", "Craft Coffee": "craft-coffee", "Elithia": "elithia", "Yoshi Izakaya": "yoshi-izakaya", "ARCA Resort": "arca-resort",
       "Routine Paris": "routine-paris", "Altius": "altius", "Help 4 Brain": "help-4-brain", "Investimental": "investimental", "Sip": "sip-coffee-wine", "Sip Coffee & Wine": "sip-coffee-wine",
-      "Bepco": "bepco", "K\xF3mpus": "kompus", "Assetto": "assetto", "Clinica Sante": "clinica-sante" };
+      "Bepco": "bepco", "K\xF3mpus": "kompus", "Assetto": "assetto", "Clinica Sante": "clinica-sante",
+      "ESD": "esd", "Techventures Bank": "techventures-bank", "Longshield": "longshield", "Infinity Capital": "infinity-capital", "Unchain Festival": "unchain-festival", "Patiline": "patiline", "Pain Plaisir": "pain-plaisir", "Berero": "casa-berero", "Casa Berero": "casa-berero" };
     window.__casePage = (brand) => (WORK_PAGES[brand] && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname) ? WORK_PAGES[brand] : null);
     const withPage = (brand, onClick) => () => { const pg = window.__casePage(brand); if (pg && openFrameHook) return openFrameHook(`/work/${pg}/?embed=1`, brand); return onClick?.(); };
     const mkTag = (brand, name, line, cta, onClick0, extra = "") => {
@@ -33317,7 +33318,7 @@ void main() {
         if (p) openProjectHook?.(p);
       }, "oma-tag");
     const bereroTag = mkTag("Berero", "BERERO",
-      "BRAND \u00B7 BY CROMATIC STUDIOS", "Open the case \u2192", () => {
+      "BRAND \u00B7 LABELS \u00B7 MERCH", "Open the case \u2192", () => {
         const p = PROJECTS_A2.find((q) => q.name === "Berero");
         if (p) openProjectHook?.(p);
       }, "berero-tag");
@@ -36412,7 +36413,7 @@ void main() {
         const add = (o) => { if (have.has(o.name.toLowerCase())) return; have.add(o.name.toLowerCase()); MAP_PLACES.splice(MAP_PLACES.length - 2, 0, o); };
         for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, street: b.lane ? "D" : b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
         ZDROVIT_YARD.forEach((n, i) => { const [x, z] = yardSpot(yardSlotOf(i)); add({ id: "y-" + i, br: "C", x: 1500, z, px: x, pz: z, h: 22, name: n, line: "IN THE ZDROVIT YARD", c: "#cfcdc8", t: "#3d3c39", small: true, desc: `${n}, one of the brands in the Zdrovit yard. By Cromatic Studios.` }); });
-        add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Casa Berero", line: "BRAND \xB7 BY CROMATIC STUDIOS", c: "#111111", t: "#ffffff", act: "bereroTag" });
+        add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Casa Berero", line: "BRAND \xB7 LABELS \xB7 MERCH", c: "#111111", t: "#ffffff", act: "bereroTag" });
         add({ id: "bism", x: 1170, z: 6300, px: 1078, pz: 6290, h: 150, name: "BISM", line: "UPSTAIRS AT DACIA 99", c: "#1f4fd6", t: "#ffffff", t2: "#F65342", noopen: true, desc: "BISM, under the same roof as our Dacia 99 studio: neighbours, then clients." });
         add({ id: "echo", x: 1170, z: 6340, px: 1078, pz: 6350, h: 110, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", soon: true, desc: "Echo School of Technology, Digital Arts & Videogames. The case page is on its way." });
         add({ id: "boxes", br: "A", x: 900, z: 4262, px: 706, pz: 4198, h: 40, name: "The Product", line: "TWO MIN BOXES \xB7 COFFEE PACKAGING", c: "#cfcdc8", t: "#2a2926", act: "boxPop" });

@@ -419,7 +419,7 @@
 900,
 501671
 ],
-"cs:2025/07/Alert-popup-\u2013-1-1.jpg": [
+"cs:2025/07/Alert-popup-–-1-1.jpg": [
 1920,
 1080,
 89450
@@ -449,7 +449,7 @@
 759,
 40815
 ],
-"cs:2025/07/Create-watchlist-popup-\u2013-1-1.jpg": [
+"cs:2025/07/Create-watchlist-popup-–-1-1.jpg": [
 1920,
 1080,
 79191
@@ -494,7 +494,7 @@
 1080,
 400683
 ],
-"cs:2025/07/Market-lists-\u2013-card-options-\u2013-1.jpg": [
+"cs:2025/07/Market-lists-–-card-options-–-1.jpg": [
 780,
 1688,
 234832
@@ -504,7 +504,7 @@
 844,
 60557
 ],
-"cs:2025/07/Market-orders-\u2013-list-\u2013-3.jpg": [
+"cs:2025/07/Market-orders-–-list-–-3.jpg": [
 780,
 1688,
 323465
@@ -524,32 +524,32 @@
 619,
 287054
 ],
-"cs:2025/07/Order-details-\u2013-buy-1.jpg": [
+"cs:2025/07/Order-details-–-buy-1.jpg": [
 1920,
 1080,
 156622
 ],
-"cs:2025/07/Order-details-\u2013-sell-1.jpg": [
+"cs:2025/07/Order-details-–-sell-1.jpg": [
 1920,
 1080,
 156103
 ],
-"cs:2025/07/Portofolio-charts-\u2013-v2.png": [
+"cs:2025/07/Portofolio-charts-–-v2.png": [
 390,
 1393,
 178608
 ],
-"cs:2025/07/Portofolio-portofolio-\u2013-EUR-\u2013-1-scaled.jpg": [
+"cs:2025/07/Portofolio-portofolio-–-EUR-–-1-scaled.jpg": [
 721,
 2560,
 126598
 ],
-"cs:2025/07/Portofolio-portofolio-\u2013-RON-\u2013-1-scaled.jpg": [
+"cs:2025/07/Portofolio-portofolio-–-RON-–-1-scaled.jpg": [
 721,
 2560,
 127495
 ],
-"cs:2025/07/Portofolio-portofolio-\u2013-USD-\u2013-1-scaled.jpg": [
+"cs:2025/07/Portofolio-portofolio-–-USD-–-1-scaled.jpg": [
 721,
 2560,
 124041
@@ -609,17 +609,17 @@
 771,
 628503
 ],
-"cs:2025/07/Transactions-buy-\u2013-1.jpg": [
+"cs:2025/07/Transactions-buy-–-1.jpg": [
 1920,
 1080,
 429257
 ],
-"cs:2025/07/Web-1920-\u2013-portofoliu-\u2013-bars-Order.jpg": [
+"cs:2025/07/Web-1920-–-portofoliu-–-bars-Order.jpg": [
 1920,
 1080,
 397878
 ],
-"cs:2025/07/Web-1920-\u2013-portofoliu-\u2013-default.jpg": [
+"cs:2025/07/Web-1920-–-portofoliu-–-default.jpg": [
 1920,
 1080,
 402657
@@ -2073,5 +2073,645 @@
 1600,
 900,
 41891
+],
+"m:esd/book-colour": [
+1300,
+920,
+76861
+],
+"m:esd/book-cover": [
+1300,
+920,
+35840
+],
+"m:esd/book-graphics": [
+1300,
+920,
+98059
+],
+"m:esd/book-logo": [
+1300,
+920,
+72478
+],
+"m:esd/book-logo2": [
+1300,
+920,
+97411
+],
+"m:esd/book-strategy": [
+1300,
+920,
+83381
+],
+"m:esd/book-type": [
+1300,
+920,
+80142
+],
+"m:esd/lanyard": [
+1600,
+1052,
+54461
+],
+"m:esd/logo": [
+1600,
+577,
+30336
+],
+"m:esd/phone": [
+1600,
+1067,
+119236
+],
+"m:esd/polo": [
+1600,
+1071,
+53398
+],
+"m:esd/site-scroll-phone": [
+585,
+9000,
+443917
+],
+"m:esd/site-scroll": [
+1200,
+5640,
+597656
+],
+"m:esd/van-back": [
+1600,
+1067,
+66300
+],
+"m:esd/van-top": [
+1600,
+1067,
+61956
+],
+"m:techventures-bank/book-cover": [
+1000,
+1414,
+31322
+],
+"m:techventures-bank/book-logo": [
+1000,
+1403,
+103671
+],
+"m:techventures-bank/brandbook": [
+693,
+558,
+21742
+],
+"m:techventures-bank/building": [
+1600,
+1386,
+279828
+],
+"m:techventures-bank/car-city": [
+840,
+560,
+59265
+],
+"m:techventures-bank/car-night": [
+1600,
+1067,
+309392
+],
+"m:techventures-bank/car-statue": [
+617,
+411,
+35252
+],
+"m:techventures-bank/car-tail": [
+618,
+412,
+21905
+],
+"m:techventures-bank/hero": [
+1142,
+1600,
+228918
+],
+"m:techventures-bank/img-arch": [
+560,
+685,
+50826
+],
+"m:techventures-bank/img-ocean": [
+1067,
+1600,
+200869
+],
+"m:techventures-bank/img-snow": [
+1275,
+850,
+107542
+],
+"m:techventures-bank/mountain": [
+1280,
+1152,
+177535
+],
+"m:techventures-bank/polo": [
+1400,
+1225,
+53051
+],
+"m:techventures-bank/poster": [
+1400,
+1400,
+216920
+],
+"m:techventures-bank/rollup": [
+555,
+868,
+23935
+],
+"m:techventures-bank/sign": [
+1600,
+1067,
+280010
+],
+"m:techventures-bank/storefront": [
+1600,
+1088,
+190751
+],
+"m:techventures-bank/web-accounts": [
+692,
+391,
+21270
+],
+"m:techventures-bank/web-dream": [
+1105,
+620,
+56858
+],
+"m:techventures-bank/web-hero": [
+1003,
+565,
+50642
+],
+"m:techventures-bank/web-home": [
+1005,
+564,
+55275
+],
+"m:techventures-bank/web-savings": [
+693,
+391,
+20643
+],
+"m:longshield/book-colour": [
+1076,
+1500,
+84925
+],
+"m:longshield/book-cover": [
+1076,
+1500,
+35013
+],
+"m:longshield/book-images": [
+1076,
+1500,
+82888
+],
+"m:longshield/book-language": [
+1076,
+1500,
+99220
+],
+"m:longshield/book-logo": [
+1076,
+1500,
+138230
+],
+"m:longshield/cards": [
+1076,
+1500,
+69493
+],
+"m:longshield/desktop": [
+1400,
+1293,
+88220
+],
+"m:longshield/folder": [
+1600,
+1070,
+86841
+],
+"m:longshield/letterhead": [
+1293,
+877,
+90122
+],
+"m:longshield/phoenix": [
+1076,
+1500,
+32561
+],
+"m:longshield/phone": [
+1263,
+842,
+51509
+],
+"m:longshield/rollup-gold": [
+896,
+1400,
+51395
+],
+"m:longshield/rollup-photo": [
+896,
+1400,
+55565
+],
+"m:longshield/stamp": [
+1204,
+903,
+56335
+],
+"m:longshield/tablet": [
+702,
+911,
+67293
+],
+"m:longshield/web": [
+1076,
+1500,
+99404
+],
+"m:unchain-festival/arches": [
+1600,
+869,
+119429
+],
+"m:unchain-festival/archetype": [
+1600,
+900,
+121487
+],
+"m:unchain-festival/become": [
+1600,
+865,
+57210
+],
+"m:unchain-festival/blocks": [
+1600,
+900,
+35908
+],
+"m:unchain-festival/core": [
+1600,
+900,
+97189
+],
+"m:unchain-festival/fortress": [
+1600,
+868,
+66618
+],
+"m:unchain-festival/logo": [
+1600,
+866,
+31479
+],
+"m:unchain-festival/site-hero": [
+1600,
+866,
+43916
+],
+"m:unchain-festival/speakers": [
+1600,
+868,
+78703
+],
+"m:unchain-festival/sponsors": [
+1229,
+1400,
+71994
+],
+"m:unchain-festival/statement": [
+1600,
+868,
+56141
+],
+"m:patiline/banners": [
+1600,
+900,
+106873
+],
+"m:patiline/billboard": [
+1600,
+900,
+111991
+],
+"m:patiline/box": [
+1600,
+900,
+66899
+],
+"m:patiline/catalogue": [
+1600,
+900,
+93256
+],
+"m:patiline/manifesto": [
+1600,
+900,
+154753
+],
+"m:patiline/poster": [
+1600,
+900,
+90684
+],
+"m:patiline/seal": [
+1600,
+900,
+33918
+],
+"m:patiline/stand-iso": [
+1600,
+900,
+97644
+],
+"m:patiline/stand": [
+1600,
+893,
+174932
+],
+"m:patiline/sub-brands": [
+1600,
+900,
+42473
+],
+"m:patiline/uvp": [
+1600,
+900,
+132772
+],
+"m:patiline/van": [
+1600,
+900,
+88488
+],
+"m:patiline/website": [
+1600,
+900,
+99999
+],
+"m:patiline/wordmark": [
+1600,
+900,
+25689
+],
+"m:pain-plaisir/anemone": [
+1600,
+1131,
+144464
+],
+"m:pain-plaisir/baker": [
+1008,
+1056,
+157575
+],
+"m:pain-plaisir/bites": [
+1600,
+965,
+134133
+],
+"m:pain-plaisir/box": [
+1600,
+1131,
+141859
+],
+"m:pain-plaisir/cups": [
+1241,
+1300,
+84250
+],
+"m:pain-plaisir/logo": [
+1600,
+1131,
+99281
+],
+"m:pain-plaisir/mark": [
+1600,
+1131,
+122979
+],
+"m:pain-plaisir/pattern": [
+1600,
+1131,
+129638
+],
+"m:pain-plaisir/photo-16": [
+844,
+1500,
+118727
+],
+"m:pain-plaisir/photo-25": [
+844,
+1500,
+125946
+],
+"m:pain-plaisir/photo-3": [
+1126,
+1500,
+85667
+],
+"m:pain-plaisir/photo-31": [
+844,
+1500,
+136448
+],
+"m:pain-plaisir/photo-35": [
+1400,
+788,
+92018
+],
+"m:pain-plaisir/photo-39": [
+844,
+1500,
+133601
+],
+"m:pain-plaisir/photo-40": [
+844,
+1500,
+100944
+],
+"m:pain-plaisir/photo-46": [
+1400,
+788,
+137928
+],
+"m:pain-plaisir/photo-49": [
+1400,
+788,
+110880
+],
+"m:pain-plaisir/photo-5": [
+1126,
+1500,
+110383
+],
+"m:pain-plaisir/photo-52": [
+1400,
+788,
+159573
+],
+"m:pain-plaisir/photo-9": [
+1126,
+1500,
+98906
+],
+"m:pain-plaisir/photo-treatment": [
+1600,
+1131,
+242687
+],
+"m:pain-plaisir/shelf": [
+965,
+1400,
+225388
+],
+"m:pain-plaisir/shop-poster": [
+1232,
+1400,
+312919
+],
+"m:pain-plaisir/shop": [
+1600,
+900,
+288952
+],
+"m:pain-plaisir/sticker-1": [
+700,
+728,
+44955
+],
+"m:pain-plaisir/sticker-2": [
+700,
+728,
+47256
+],
+"m:pain-plaisir/sticker-3": [
+700,
+728,
+35570
+],
+"m:pain-plaisir/sticker-4": [
+382,
+383,
+24422
+],
+"m:pain-plaisir/storefront": [
+1128,
+1400,
+285675
+],
+"m:pain-plaisir/window-2": [
+1203,
+1300,
+245784
+],
+"m:pain-plaisir/window": [
+999,
+1280,
+250623
+],
+"m:pain-plaisir/xmas-table": [
+1600,
+903,
+217287
+],
+"m:infinity-capital/canvas": [
+2400,
+562,
+159119
+],
+"m:infinity-capital/digital": [
+1600,
+1440,
+159999
+],
+"m:infinity-capital/identity": [
+1519,
+1600,
+121267
+],
+"m:infinity-capital/portrait": [
+1113,
+1400,
+175026
+],
+"m:infinity-capital/rollups": [
+880,
+1400,
+104492
+],
+"m:infinity-capital/stationery": [
+1539,
+1600,
+170059
+],
+"m:infinity-capital/web": [
+1600,
+1420,
+204163
+],
+"m:casa-berero/comm-can": [
+672,
+900,
+68723
+],
+"m:casa-berero/label-comm": [
+2000,
+1013,
+205309
+],
+"m:casa-berero/label-unity": [
+2000,
+1013,
+164646
+],
+"m:casa-berero/logo": [
+720,
+900,
+13271
+],
+"m:casa-berero/merch-tees": [
+844,
+1400,
+74817
+],
+"m:casa-berero/party": [
+880,
+900,
+113958
+],
+"m:casa-berero/poster-backyard": [
+1302,
+1400,
+260624
+],
+"m:casa-berero/poster-garden": [
+1302,
+1400,
+166967
+],
+"m:casa-berero/tap": [
+1600,
+900,
+327217
+],
+"m:casa-berero/unity-can": [
+672,
+900,
+70035
 ]
 }

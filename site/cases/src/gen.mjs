@@ -8,7 +8,9 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { PAGES } from "./specs.mjs";
+import { PAGES as PAGES0 } from "./specs.mjs";
+import { PAGES128 } from "./specs128.mjs";
+const PAGES = [...PAGES0, ...PAGES128];
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..", "..", "..");
@@ -151,7 +153,7 @@ function site(b) {
 // ---- page ----
 function page(P, all) {
   railN = 0;
-  const pills = (P.chapters || []).map((c) => PILLARS[c.pillar]);
+  const pills = [...new Set((P.chapters || []).map((c) => c.pillar))].map((k) => PILLARS[k]);
   const firstId = pills.length ? "#" + pills[0].id : "#result";
   const accent = P.accent;
   const h = [];
@@ -301,10 +303,13 @@ ${pr.media.map(block).join("\n")}
     </div>
   </section>
 `);
+  const seen = {};
   for (const c of P.chapters || []) {
     const pl = PILLARS[c.pillar];
+    seen[c.pillar] = (seen[c.pillar] || 0) + 1;
+    const cid = seen[c.pillar] > 1 ? `${pl.id}-${seen[c.pillar]}` : pl.id;
     const words = c.pills || pl.pills;
-    h.push(`  <section class="card chapter chapter--${pl.cls}" id="${pl.id}" aria-label="${pl.aria}">
+    h.push(`  <section class="card chapter chapter--${pl.cls}" id="${cid}" aria-label="${pl.aria}">
     <div class="chapter-side">
       <div>
         <span class="pill-title"><span class="pill pill--${pl.cls}">${words[0]}</span><span class="pill pill--accent">${words[1]}</span></span>
@@ -346,7 +351,7 @@ ${rel.map((q) => `          <article class="proj">
             ${fig({ ...q.cover, r: 1.778, fixed: true, alt: "" }).replace("<figure", "<figure").replace(/\n\s*/g, "")}
             <h3>${q.name}</h3>
             <p>${q.tagline}</p>
-            <ul class="pills">${(q.chapters || []).map((c) => `<li><span class="pill pill--${PILLARS[c.pillar].cls}">${PILLARS[c.pillar].label}</span></li>`).join("")}</ul>
+            <ul class="pills">${[...new Set((q.chapters || []).map((c) => c.pillar))].map((k) => `<li><span class="pill pill--${PILLARS[k].cls}">${PILLARS[k].label}</span></li>`).join("")}</ul>
             <a class="cover" href="/work/${q.slug}/" aria-label="${esc(q.name.replace(/<[^>]+>/g, ""))} case study"></a>
           </article>`).join("\n")}
         </div>
