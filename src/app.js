@@ -25313,6 +25313,23 @@ void main() {
       if (jI < all3.length - 2) runs.push(all3.slice(jI));
     }
     for (const p3 of runs) addGold(p3);
+    // r129: the road runs on behind the van like any street (casing, colour, dashes), then fades out smoothly
+    {
+      const [x0, z0] = ROUTE_MAIN[0], [x1, z1] = ROUTE_MAIN[1];
+      const L = Math.hypot(x1 - x0, z1 - z0), dx = (x1 - x0) / L, dz = (z1 - z0) / L;
+      const back = [];
+      for (let d = 340; d >= 0; d -= 20) back.push(new Vector3(x0 - dx * d, 0, z0 - dz * d));
+      addGold(back);
+      const fadeTex = canvasTexture(8, 256, (ctx) => { const gr = ctx.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(1, "rgba(255,255,255,1)"); ctx.fillStyle = gr; ctx.fillRect(0, 0, 8, 256); });
+      const fm = new MeshStandardMaterial({ color: mats.route.color, roughness: 0.65, transparent: true, alphaMap: fadeTex, depthWrite: false });
+      fm.userData.outlineParameters = { visible: false };
+      fm.color = mats.route.color; // the same Color object: it follows every world change
+      const FL = 320, fade = new Mesh(new PlaneGeometry(ROUTE_W + 4.5, FL), fm);
+      fade.rotation.x = -Math.PI / 2; fade.rotation.z = Math.atan2(dx, dz);
+      fade.position.set(x0 - dx * (340 + FL / 2), 1.3, z0 - dz * (340 + FL / 2));
+      fade.receiveShadow = true;
+      group.add(fade);
+    }
     // r120: the Printoteca lane, a narrower side street between Medical Avenue and the Dacia row
     {
       const lp = roundedPolyline(LANE_PTS, 120).map(([x, z]) => new Vector3(x, 0, z));
@@ -25754,7 +25771,7 @@ void main() {
       }
     });
     g.add(lab);
-    const signTM = enamelStreetSign("Str. Aricescu 52");
+    const signTM = enamelStreetSign("Str. Aricescu 52A");
     signTM.position.set(752, 0, 4180);
     g.add(signTM);
     mats.festoon = new MeshStandardMaterial({
@@ -29846,26 +29863,11 @@ void main() {
     return g;
   }
   function buildStart(parent) {
-    // r129: no plaza and no circle: the road the van starts on runs on behind it and fades into the map
-    const g = new Group();
+    // r129: the start road itself is drawn with the route (buildGoldenRoute); here only its room in the city
     const [x0, z0] = ROUTE_MAIN[0], [x1, z1] = ROUTE_MAIN[1];
     const L = Math.hypot(x1 - x0, z1 - z0), dx = (x1 - x0) / L, dz = (z1 - z0) / L;
-    const W = 40, N = 10, seg = 70;
-    const col = new Color("#e48572"); // the colour the route is drawn in
-    for (let i = 0; i < N; i++) {
-      const m = new MeshStandardMaterial({ color: col, roughness: 0.9, transparent: true, opacity: 1 - (i + 0.5) / N, depthWrite: false });
-      m.userData.outlineParameters = { visible: false };
-      const r = new Mesh(new BoxGeometry(W, 1.2, seg + 1), m);
-      const d = -(i + 0.5) * seg;
-      r.position.set(x0 + dx * d, 0.6, z0 + dz * d);
-      r.rotation.y = Math.atan2(dx, dz);
-      r.receiveShadow = true;
-      g.add(r);
-      EXTRA_KEEPOUT.push({ x: x0 + dx * d, y: z0 + dz * d, r: 46 });
-    }
-    // and room for Muniției 5 beside it
+    for (let d = 0; d <= 700; d += 60) EXTRA_KEEPOUT.push({ x: x0 - dx * d, y: z0 - dz * d, r: 46 });
     EXTRA_KEEPOUT.push({ x: x0 + dz * 84 - dx * 30, y: z0 - dx * 84 - dz * 30, r: 62 });
-    parent.add(g);
   }
   function buildGround(parent) {
     mats.ground = new MeshStandardMaterial({ color: "#e9e4d6", roughness: 1 });
@@ -32184,7 +32186,7 @@ void main() {
     // ---- the coffee stop, playable in place ----
     const coffee = section("coffee", "sec-coffee sec-alt");
     coffee.innerHTML = `
-      <span class="eyebrow">COFFEE STREET · ARICESCU 52</span>
+      <span class="eyebrow">COFFEE STREET · ARICESCU 52A</span>
       <h2 class="site-h2 pill-title drop"><span class="pill" style="background:#F65342;--rot:-2.5deg">The coffee</span><span class="pill" style="background:#FED012;--rot:1.5deg">stop</span></h2>
       <p class="site-lead">Two Minutes has been our client and our neighbour for a decade.
       On the drive we always stop here. On the page, you can still order.</p>`;
@@ -33171,7 +33173,7 @@ void main() {
       <div class="hm-info">
         <span class="eyebrow">TWO MINUTES \xB7 THE SHELF</span>
         <span class="hm-name drop1" style="background:#F2A9C4">TWO MIN boxes</span>
-        <p>Green, pink, blue \u2014 coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 52.</p>
+        <p>Green, pink, blue \u2014 coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 52A.</p>
         <p class="mono hm-line">BRAND \xB7 PACKAGING \xB7 BY CROMATIC STUDIOS</p>
       </div>`;
       const close = el("button", "hm-close mono", "CLOSE \xD7");
@@ -33221,7 +33223,7 @@ void main() {
       <div class="hm-info wide">
         <span class="eyebrow">TWO MINUTES \xB7 BRAND DEVELOPMENT & MEDIA</span>
         <span class="hm-name drop1" style="background:#F2A9C4">Two Minutes</span>
-        <p>Identity, packaging, editorial and film for a coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 52.</p>
+        <p>Identity, packaging, editorial and film for a coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 52A.</p>
       </div>`;
       mEl.querySelector(".hm-info").appendChild(gallery([
         { img: tmCover, cap: "TWO MIN \xB7 cover" },
@@ -33442,7 +33444,7 @@ void main() {
     <span class="ac-city mono">CROMATIC STUDIOS \xB7 TODAY</span>
     <a class="ac-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener">Navigate on your map \u2192</a>
     <span class="ac-contact"><a href="mailto:hi@cromaticstudios.com">hi@cromaticstudios.com</a><a href="tel:+40728978068">+40 728 978 068</a></span>`);
-    asLeftCard(labTag, "Two Min Lab", "TWO MIN LAB", "PRODUCTS \u00B7 TONIC IONIC \u00B7 LABELS", "See the lab \u2192");
+    asLeftCard(labTag, "Two Min Lab", "TWO MIN LAB", "DRINKS \u00B7 TONIC IONIC", "See the drinks \u2192");
     asLeftCard(tmMedia, "Two Minutes", "TWO MINUTES", "MEDIA & BRANDING \u00B7 FILM", "Watch \u2192");
     asLeftCard(boxPop, "Two Minutes", "TWO MIN BOXES", "COFFEE PACKAGING \u00B7 FRESH DROP", "Take a look \u2192");
     // east kerb (screen-left while driving): Romexpo pair, then the Steam tower pair
@@ -36375,9 +36377,9 @@ void main() {
         const showBoxes = (coffee.done || coffee.phase === "unload" || coffee.phase === "sip2" || coffee.phase === "rush" || coffee.phase === "calm") && nearTM;
         ui.setPoiTabs(showBoxes);
         const tmCards = state.branch === "A" && !flying && carPos.z > 4060 && carPos.z < 4520 && carPos.x > 700 && carPos.x < 1200;
-        showPoi(ui.labTag, false); // r129: the lab lives on the Two Minutes card and page now
+        showPoi(ui.labTag, tmCards);
         showPoi(ui.tmMedia, tmCards);
-        showPoi(ui.boxPop, tmCards && showBoxes);
+        showPoi(ui.boxPop, false); // r129: "The Product" card is gone
         // landmark cards are a screen overlay now: no projection, no jitter
         // Coffee Street cards, driven by route length at each building:
         // screen-left = east kerb (Romexpo pair, Steam pair); screen-right = west kerb,
@@ -36470,7 +36472,8 @@ void main() {
           desc: "During Romanian Design Week 2023 our Eliade 18 floor became a pop-up space, and we talked about using AI in design, early, in 2023." },
         { id: "dacia", chapter: true, x: 1170, z: 6320, px: 1070, pz: 6320, h: 230, name: "Dacia 99", line: "OUR STUDIO \xB7 2024", c: "#B098C8", pts: 5, past: true,
           desc: "Congrats, you found a blast from the past (2024): Bulevardul Dacia 99, the Cromatic Studios home right before Olari 9. Above Club 99, under BISM: the loudest address we ever had." },
-        { id: "tm", br: "A", x: 900, z: 4262, px: 640, pz: 4260, h: 80, name: "Two Minutes", line: "BRAND \xB7 BOXES \xB7 LAB \xB7 FILM", c: "#111111", t: "#ffffff", act: "tmMedia", tm: true, desc: "A specialty coffee shop brand made to be loved fast and remembered long. Three double espressos are on us." },
+        { id: "lab", br: "A", x: 820, z: 4260, px: 602, pz: 4142, h: 70, name: "Two Min Lab", line: "DRINKS \xB7 TONIC IONIC", c: "#C6402E", t: "#ffffff", act: "labTag", desc: "The Two Minutes lab: Tonic Ionic and the drinks bottled by hand, in small batches, in Bucharest. The bottles are on the Two Minutes page too." },
+        { id: "tm", br: "A", x: 900, z: 4262, px: 640, pz: 4260, h: 80, name: "Two Minutes", line: "BRAND \xB7 BOXES \xB7 FILM", c: "#111111", t: "#ffffff", act: "tmMedia", tm: true, desc: "A specialty coffee shop brand made to be loved fast and remembered long. Three double espressos are on us." },
         { id: "oma", br: "A", x: 706, z: 4560, h: 80, name: "OMA Coffee", line: "BRAȘOV \xB7 AT THE FOOT OF T\xC2MPA", c: "#4a7c4e", t: "#ffffff", act: "omaTag" },
         { id: "sip", br: "A", x: 706, z: 4985, h: 70, name: "Sip Coffee & Wine", line: "BRANDING \xB7 COMMUNICATION", c: "#C9A227", t: "#14120c", act: "sipTag" },
         { id: "yoshi", br: "A", x: 706, z: 5175, h: 60, name: "Yoshi Izakaya", line: "COMMUNICATION \xB7 CONTENT", c: "#F4876F", t: "#2a0f08", act: "yoshiTag" },
@@ -36496,7 +36499,6 @@ void main() {
         add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Casa Berero", line: "BRAND \xB7 LABELS \xB7 MERCH", c: "#111111", t: "#ffffff", act: "bereroTag" });
         add({ id: "bism", x: 1170, z: 6300, px: 1078, pz: 6290, h: 150, name: "BISM", line: "UPSTAIRS AT DACIA 99", c: "#1f4fd6", t: "#ffffff", t2: "#F65342", noopen: true, desc: "BISM, under the same roof as our Dacia 99 studio: neighbours, then clients." });
         add({ id: "echo", x: 1170, z: 6340, px: 1078, pz: 6350, h: 110, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", soon: true, desc: "Echo School of Technology, Digital Arts & Videogames. The case page is on its way." });
-        add({ id: "boxes", br: "A", x: 900, z: 4262, px: 706, pz: 4198, h: 40, name: "The Product", line: "TWO MIN BOXES \xB7 COFFEE PACKAGING", c: "#cfcdc8", t: "#2a2926", act: "boxPop" });
         add({ id: "friends", stop: "merge", px: 1365, pz: 6400, h: 150, float: true, name: "+50 Other Clients", line: "HUNDREDS OF PROJECTS \xB7 THOUSANDS OF DELIVERABLES", c: "#d9d7d2", t: "#1a1a1a" });
       })();
       // r117: how close you must be for a place to show its card (a coloured dot otherwise)
@@ -37021,9 +37023,22 @@ void main() {
           return true;
         };
         // a card on the map: eyebrow, title pill, body, a main action, extra actions
+        // r129: the card leads with the project's best photo (covers.json, built from each work page) and
+        // keeps a tint of the project's colour; it sits on the left, clear of the van parked in the middle
+        let COVERS = null;
+        if (/^https?:$/.test(location.protocol)) fetch("/covers.json").then((r) => r.ok ? r.json() : {}).then((j) => { COVERS = j; }).catch(() => {});
+        const coverOf = (pl) => {
+          if (!COVERS) return null;
+          const slug = pl.tm ? "two-minutes" : (pl.work && window.__casePage?.(pl.work)) || window.__casePage?.(pl.name) || (pl.name === "Steam Coffee Shop" ? "steam" : null);
+          return slug && COVERS[slug] || null;
+        };
         const showCard = (pl, eyebrow, body, actions) => {
-          card.innerHTML = `<span class="mcd-eyebrow mono">${eyebrow}</span><b class="mcd-title" style="--pc:${pl.c};--pt:${pl.t || "#fff"}">${pl.name}</b>${body}
-            <div class="mcd-actions">${actions}<button class="mcd-close" aria-label="Close">×</button></div>`;
+          const cov = coverOf(pl);
+          card.style.setProperty("--pc", pl.c); card.style.setProperty("--pt", pl.t || "#fff");
+          card.classList.toggle("has-img", !!cov);
+          card.innerHTML = `${cov ? `<figure class="mcd-img"><img src="${cov}" alt="" decoding="async"></figure>` : ""}<div class="mcd-body"><span class="mcd-eyebrow mono">${eyebrow}</span><b class="mcd-title" style="--pc:${pl.c};--pt:${pl.t || "#fff"}">${pl.name}</b>${body}
+            <div class="mcd-actions">${actions}<button class="mcd-close" aria-label="Close">×</button></div></div>`;
+          card.classList.remove("in"); void card.offsetWidth; card.classList.add("in");
           card.querySelector(".mcd-close").onclick = hideCard;
           card.classList.remove("hidden");
         };
@@ -37066,7 +37081,7 @@ void main() {
           if (pl.tm) {
             // Two Minutes: three double espressos, the boxes come down from our old balcony, a fourth, and the rush
             coffee.done = false; coffee.phase = "sip1"; coffee.t = 0; coffee.served = 0;
-            showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52", `<p>${pl.desc}</p>`, `<button class="mcd-open">Watch the film \u2192</button><button class="mcd-open mcd-2">Read the case \u2192</button>`);
+            showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52A", `<p>${pl.desc}</p>`, `<button class="mcd-open">Watch the film \u2192</button><button class="mcd-open mcd-2">Read the case \u2192</button>`);
             card.querySelector(".mcd-open").onclick = () => ui.tmMedia?.click();
             card.querySelector(".mcd-2").onclick = () => { if (openFrameHook && /^https?:$/.test(location.protocol)) openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); };
             return;

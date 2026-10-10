@@ -28,7 +28,8 @@ export const SERVICES = [
 // Boulevard, C Medical Avenue with the Zdrovit yard, D The Smallest Shortcut)
 export const STREETS = { A: ["Coffee Street", "#28C840"], B: ["Fintech Boulevard", "#119BFE"], C: ["Medical Avenue", "#F28BA8"], D: ["The Smallest Shortcut", "#FED012"], E: ["Bulevardul Dacia 99", "#B098C8"] };
 export const PROJECTS = [
-  { name: "Two Minutes", cat: "Brand · Boxes · Lab · Film", c: "#111111", t: "#fff", poster: "Two minutes, forever", img: "tmCover", badge: "bTm", page: "two-minutes", desc: "A specialty coffee shop brand made to be loved fast and remembered long. Two minutes to fall for it, a lifetime as a regular.", street: "A" },
+  { name: "Two Minutes", cat: "Brand · Boxes · Film", c: "#111111", t: "#fff", poster: "Two minutes, forever", img: "tmCover", badge: "bTm", page: "two-minutes", desc: "A specialty coffee shop brand made to be loved fast and remembered long. Two minutes to fall for it, a lifetime as a regular.", street: "A" },
+  { name: "Two Min Lab", cat: "Drinks · Tonic Ionic", c: "#C6402E", t: "#ffffff", poster: "Bottled in the yard", street: "A", page: "two-minutes", desc: "The Two Minutes lab: Tonic Ionic and the drinks bottled by hand, in small batches, in Bucharest." },
   { name: "OMA Coffee", cat: "Brand · Coffee · Brașov", c: "#437743", t: "#fcfad4", poster: "We're brewing something", page: "oma-coffee", desc: "A specialty coffee shop at the foot of the mountains. Passionate baristas who love the craft of coffee as much as the peaks around them, and a brand as warm as the cup.", street: "A" },
   { name: "Sip Coffee & Wine", cat: "Branding · Communication", c: "#C9A227", t: "#14120c", poster: "Design in a cup", img: "m:cs/Sip_portfolio-Cromaticstudios", desc: "Complementing one of the best designed coffee shops in town with a branding that fits.", street: "A", page: "sip-coffee-wine" },
   { name: "Pain Plaisir", cat: "Video · Photo · Product design", c: "#ffffff", t: "#111111", poster: "Le bon pain", street: "A", page: "pain-plaisir", desc: "A French-style bakery with a real oven at its heart. We made their video production, the photo shootings and the product design." },
@@ -150,13 +151,13 @@ export const CASES = {
     c: "#111111", t: "#fff",
     eyebrow: "Two Minutes · Brand development & media · By Cromatic Studios",
     title: "Two minutes to fall for it. A lifetime as a regular.",
-    lead: "Identity, packaging, editorial and film for a specialty coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 52. Two Minutes has been our client and our neighbour for a decade.",
-    meta: ["Brand · Packaging · Editorial · Film", "Two Min Lab · Boxes · Labels · Merch"],
+    lead: "Identity, packaging, editorial and film for a specialty coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 52A. Two Minutes has been our client and our neighbour for a decade.",
+    meta: ["Brand · Packaging · Editorial · Film", "Two Min Lab drinks · Boxes · Merch"],
     youtube: "m4-5T3i3wN0",
     swatches: ["#111111", "#F2A9C4", "#28C840", "#119BFE"],
     blocks: [
       { h: "The brand", p: "A stacked TWO MIN mark that works on a cup, a tote and a shop front, with a decade of taste and moments behind it.", imgs: ["tmCover", "tmPoster", "tmTote"] },
-      { h: "The boxes", p: "Green, pink, blue: coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 52.", vids: ["boxesvideo_default"] },
+      { h: "The boxes", p: "Green, pink, blue: coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 52A.", vids: ["boxesvideo_default"] },
       { h: "Two Min Lab", p: "Two Minutes's flavour laboratory, micro-roastery and kitchen: the space where signature flavours like the <i>Tonic Ionic</i> are perfected before they reach your cup. Bottled by hand, in small batches, in Bucharest.", imgs: ["labTonic", "labSpread", "labChinotto", "labAmaro"], caps: ["Tonic Ionic · 6 plante", "Tonic Ionic · specimen index", "Chinotto · Citrus myrtifolia", "Amaro · bitter formula"] },
       { h: "Made by hand", p: "From the first sketches on grid paper to the acrylic signs, fresh from the maker.", imgs: ["labSketch", "labSigns", "labEditorial"], vids: ["labBox", "labMaking"] },
       { h: "Inside the boxes", p: "Every box carries a card with the coffee's story: The Blueprint, Silent Punch, Mosto, set in a typewriter voice, with the recipe on the back. And cubes for the Roastery and the Lab.", imgs: ["m:tm/card-blueprint", "m:tm/card-silent", "m:tm/card-mosto", "m:tm/card-silent-photo", "m:tm/cube-roastery", "m:tm/cubes-lab"] },

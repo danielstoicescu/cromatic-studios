@@ -184,7 +184,18 @@ const canvases = {};
   }
 }
 const R = makeRender({ SITE: SITE_URL, A, cssHref: "/" + siteCssName, jsHref: "/" + siteJsName, fonts: FONTS, kz, canvases });
-const page = (path, html) => { mkdirSync(join(pub, path), { recursive: true }); writeFileSync(join(pub, path, "index.html"), html); };
+// r129: every work page's cover (its og:image, else its first image) goes into covers.json, for the map cards
+const COVERS = {};
+const page = (path, html) => {
+  mkdirSync(join(pub, path), { recursive: true }); writeFileSync(join(pub, path, "index.html"), html);
+  const m = path.match(/^work\/([\w-]+)$/);
+  if (m) {
+    const og = /<meta property="og:image" content="([^"]+)"/.exec(html)?.[1];
+    const img = /<img[^>]+src="(\/assets\/[^"]+)"/.exec(html)?.[1];
+    const u = (og && og.replace(SITE_URL, "")) || img;
+    if (u && !/\/og\.jpg$/.test(u)) COVERS[m[1]] = u;
+  }
+};
 page("site", R.home());
 for (const slug of R.slugs) page(`work/${slug}`, R.casePage(slug));
 for (const slug of R.canvasSlugs) page(`work/${slug}`, R.canvasPage(slug));
@@ -218,6 +229,7 @@ const caseSlugs = [];
     caseSlugs.push(slug);
   }
 }
+writeFileSync(join(pub, "covers.json"), JSON.stringify(COVERS));
 const workPaths = [...new Set([...R.slugs, ...R.canvasSlugs, ...caseSlugs, "steam"])].map((s) => `/work/${s}/`);
 writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, new Date().toISOString().slice(0, 10), ["/site/", ...workPaths]));
 

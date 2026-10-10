@@ -3595,3 +3595,29 @@ body.map-mode .wt[data-scheme="gta2"] { display: none; }
 @keyframes kbFill { to { transform: translateY(18%); } }
 @keyframes kbBob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-6px) rotate(2deg); } }
 @keyframes kbSteam { 0% { opacity: 0; transform: translateY(8px); } 40% { opacity: .55; } 100% { opacity: 0; transform: translateY(-10px); } }
+/* r129: the place card: on the left, tall, the project's best photo on top, a tint of its colour */
+.map-card { background: color-mix(in srgb, var(--pc, #fbf7f2) 12%, #fbf7f2) !important; border: 1px solid #141414 !important; box-shadow: 0 4px 0 #141414, 0 30px 60px -30px rgba(40,20,40,.45) !important; padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; }
+.map-card .mcd-body { padding: 18px 20px 18px; overflow-y: auto; min-height: 0; }
+.map-card .mcd-img { margin: 0; flex: 0 0 auto; aspect-ratio: 4 / 3; overflow: hidden; border-bottom: 1px solid #141414; background: var(--pc, #ddd); }
+.map-card .mcd-img img { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.06); transition: transform 1.2s cubic-bezier(.2,.7,.2,1); }
+.map-card.in .mcd-img img { transform: scale(1); }
+.map-card.in:not(.hidden) { animation: mcdIn .55s cubic-bezier(.2,.9,.25,1.05) both; }
+@keyframes mcdIn { from { opacity: 0; transform: translateX(-24px) scale(.98); } to { opacity: 1; transform: none; } }
+.map-card .mcd-title { font: 600 26px/1.05 CromaticSans, sans-serif !important; }
+.map-card p { font-size: 17px !important; line-height: 1.3 !important; }
+@media (min-width: 721px) {
+  .map-card { left: 22px !important; top: 104px !important; bottom: auto !important; width: 360px !important; max-height: calc(100vh - 220px); }
+  .map-card.has-img .mcd-img { aspect-ratio: 16 / 11; }
+}
+@media (max-width: 720px) {
+  .map-card.has-img { flex-direction: row; }
+  .map-card .mcd-img { aspect-ratio: auto; width: 34%; border-bottom: 0; border-right: 1px solid #141414; }
+  .map-card .mcd-body { padding: 14px 14px 12px; }
+  .map-card .mcd-title { font-size: 20px !important; }
+  .map-card p { font-size: 15px !important; }
+  @keyframes mcdIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+}
+@media (max-width: 720px) {
+  .map-card.has-img { flex-direction: column !important; }
+  .map-card .mcd-img { width: auto !important; height: 116px !important; border-right: 0 !important; border-bottom: 1px solid #141414 !important; }
+}

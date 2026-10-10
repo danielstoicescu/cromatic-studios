@@ -13,7 +13,7 @@ export const PAGES128 = [
     accent: { bg: "#E30613", fg: "#ffffff", ink: "#b3000f" },
     info: ["Electronics service, repairs, B2B", "Bucharest", "Positioning strategy, rebranding, brandbook, website UI and UX, social media"],
     cover: { img: m("esd/van-top") },
-    og: m("esd/book-cover"),
+    og: m("esd/van-top"),
     hero: { img: m("esd/book-cover"), alt: "The ESD logo at the end of three long red stripes, on black" },
     problem: {
       h: "A big network that spoke through other brands",
@@ -79,7 +79,7 @@ export const PAGES128 = [
     accent: { bg: "#1D2A42", fg: "#ffffff", ink: "#1D2A42" },
     info: ["Banking, entrepreneurs", "2020", "Positioning strategy, rebranding, brandbook, website UI and UX"],
     cover: { img: m("techventures-bank/storefront") },
-    og: m("techventures-bank/mountain"),
+    og: m("techventures-bank/storefront"),
     hero: { img: m("techventures-bank/mountain"), alt: "The TechVentures Bank wings above a snow-capped volcano" },
     problem: {
       h: "A bold bank in need of a refresh",
@@ -150,7 +150,7 @@ export const PAGES128 = [
     accent: { bg: "#253322", fg: "#E7B43C", ink: "#253322" },
     info: ["Investments, financial services", "2023", "Brand strategy, logo, brandbook, stationery, print, website UI"],
     cover: { img: m("longshield/desktop") },
-    og: m("longshield/phoenix"),
+    og: m("longshield/desktop"),
     hero: { img: m("longshield/phoenix"), alt: "A golden bird in flight, cut from gold leaf" },
     problem: {
       h: "Confidence, for decisions that take years",
@@ -375,7 +375,7 @@ export const PAGES128 = [
     accent: { bg: "#F6C944", fg: "#111111", ink: "#9a6b00" },
     info: ["Bakery, retail", "Bucharest, 2025", "Product branding, packaging, stickers, in-store, photo, campaign"],
     cover: { img: m("pain-plaisir/photo-25") },
-    og: m("pain-plaisir/anemone"),
+    og: m("pain-plaisir/photo-25"),
     film: { id: "8KtUdarL1oI", title: "Anemone, by Pain Plaisir" },
     hero: { img: m("pain-plaisir/xmas-table"), alt: "A Christmas table set with Pain Plaisir breads, pastries and the Anemone box" },
     problem: {
@@ -459,7 +459,7 @@ export const PAGES128 = [
     accent: { bg: "#111111", fg: "#ffffff", ink: "#111111" },
     info: ["Craft beer, hospitality", "2024", "Brand identity, can labels, merch, posters, presentations"],
     cover: { img: m("casa-berero/beers-017") },
-    og: m("casa-berero/label-unity"),
+    og: m("casa-berero/beers-011"),
     hero: { img: m("casa-berero/beers-011"), alt: "A COMM and a UNITY can lit in yellow and green" },
     problem: {
       h: "Not just beer",
