@@ -3562,3 +3562,36 @@ body.kz-boot .kz { background-color: #f7f1e6; opacity: 1 !important; }
 body.map-mode .poi-rail { display: none !important; }
 /* r129: GTA 2 is a drive-mode bonus world */
 body.map-mode .wt[data-scheme="gta2"] { display: none; }
+/* r129: "+50 other clients" floats over its glowing quarter: grey, no stem, no dot, a slow bob */
+.map-pin.float .mp-stem, .map-pin.float .mp-dot { display: none !important; }
+.map-pin.float .mp-label { background: #ecebe7 !important; color: #1a1a1a !important; animation: pinFloat 3.2s ease-in-out infinite; }
+@keyframes pinFloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+/* r129: the service cards on the road read like the drive's: fully coloured, a big icon, SERVICE n OF 4,
+   a proper title; they pop in when their house comes into view and float a little */
+.svc-hc { width: 236px !important; padding: 14px 16px 14px !important; background: var(--sc) !important; box-shadow: 0 4px 0 #141414 !important; border-radius: 20px !important; gap: 2px !important; }
+.svc-hc .svcx-art { display: block !important; width: 46px; height: 46px; margin-bottom: 6px; }
+.svc-hc .svcx-art svg { width: 100%; height: 100%; }
+.svc-hc .oc-n { font-size: 9.5px !important; opacity: .75 !important; }
+.svc-hc b { font: 700 21px/1.05 CromaticSans, sans-serif !important; }
+.svc-hc.open { width: 320px !important; }
+.svc-hc .oc-pills i { background: rgba(255,255,255,.7) !important; }
+.svc-hc::after { font-size: 11px !important; opacity: .7 !important; margin-top: 6px !important; }
+.svc-house:not(.off) .svc-hc { animation: svcIn .55s cubic-bezier(.34,1.56,.64,1) both, svcFloat 4s ease-in-out .6s infinite; }
+@keyframes svcIn { from { opacity: 0; transform: translateY(18px) scale(.86) rotate(-2deg); } to { opacity: 1; transform: none; } }
+@keyframes svcFloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -5px; } }
+.svc-hc:hover { filter: brightness(1.04); }
+/* r129: the brew before the intro: a Cromatic mug fills up while the city is built. Only transforms and
+   opacity animate, so it runs on the compositor and stays smooth while the main thread is busy */
+.kz-brew { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; align-content: center; gap: 22px; background: #f7f1e6; transition: opacity .45s ease; pointer-events: none; }
+.kz-brew.done { opacity: 0; }
+.kz-brew .kb-cup { position: relative; width: 120px; height: 104px; animation: kbBob 1.4s ease-in-out infinite; will-change: transform; }
+.kz-brew .kb-mug { position: absolute; left: 10px; top: 16px; width: 84px; height: 84px; box-sizing: border-box; border: 2px solid #141414; border-radius: 8px 8px 30px 30px; background: #f5c518; overflow: hidden; }
+.kz-brew .kb-fill { position: absolute; left: 0; right: 0; bottom: 0; height: 100%; background: #6b3a1f; transform: translateY(96%); animation: kbFill 1.15s cubic-bezier(.45,0,.2,1) forwards; will-change: transform; }
+.kz-brew .kb-star { position: absolute; inset: 0; display: grid; place-items: center; font: 600 26px/1 CromaticSans, sans-serif; color: #f7f1e6; mix-blend-mode: normal; }
+.kz-brew .kb-handle { position: absolute; left: 86px; top: 34px; width: 26px; height: 38px; border: 2px solid #141414; border-left: 0; border-radius: 0 20px 20px 0; background: transparent; }
+.kz-brew .kb-steam { position: absolute; top: 0; width: 4px; height: 14px; border-radius: 4px; background: #141414; opacity: 0; animation: kbSteam 1.2s ease-out infinite; }
+.kz-brew .kb-steam:nth-child(1) { left: 36px; } .kz-brew .kb-steam:nth-child(2) { left: 52px; animation-delay: .25s; } .kz-brew .kb-steam:nth-child(3) { left: 68px; animation-delay: .5s; }
+.kz-brew .kb-t { font: 600 11px/1 "JetBrains Mono", monospace; letter-spacing: .22em; text-transform: uppercase; color: #3b2b44; opacity: .7; }
+@keyframes kbFill { to { transform: translateY(18%); } }
+@keyframes kbBob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-6px) rotate(2deg); } }
+@keyframes kbSteam { 0% { opacity: 0; transform: translateY(8px); } 40% { opacity: .55; } 100% { opacity: 0; transform: translateY(-10px); } }

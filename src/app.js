@@ -25608,29 +25608,21 @@ void main() {
     const hqWall = new MeshStandardMaterial({ color: "#E9DFC0", roughness: 0.92 });
     const hqBody = new Mesh(new BoxGeometry(96, 208, 78), hqWall);
     hqBody.position.y = 104;
-    const hqRoofShape = new Shape();
-    hqRoofShape.moveTo(-52, 0);
-    hqRoofShape.lineTo(52, 0);
-    hqRoofShape.lineTo(0, 52);
-    hqRoofShape.lineTo(-52, 0);
-    const hqRoofGeo = new ExtrudeGeometry(hqRoofShape, { depth: 84, bevelEnabled: false });
-    hqRoofGeo.translate(0, 208, -42);
-    const hqRoof = new Mesh(hqRoofGeo, new MeshStandardMaterial({ color: "#C6402E", roughness: 0.85 }));
-    const ridgeM = new MeshStandardMaterial({ color: "#A03222", roughness: 0.7 });
-    for (const s of [-1, 1]) {
-      for (const e of [-1, 1]) {
-        const trim = new Mesh(new BoxGeometry(78, 4.5, 4.5), ridgeM);
-        trim.position.set(s * 26.5, 234.5, e * 43);
-        trim.rotation.z = s * -Math.PI / 4;
-        hq.add(trim);
-      }
-      const eave = new Mesh(new BoxGeometry(5, 5, 92), ridgeM);
-      eave.position.set(s * 53, 209, 0);
-      hq.add(eave);
+    // r129: Călinescu 54 as it stands: a cream block with salmon, rounded balconies stacked on the right,
+    // red window frames, and a low hipped roof over the attic floor, with a terrace rail in front
+    const hqRoof = new Mesh(new CylinderGeometry(0.62, 1, 34, 4, 1), new MeshStandardMaterial({ color: "#a8462f", roughness: 0.85 }));
+    hqRoof.rotation.y = Math.PI / 4; hqRoof.scale.set(108 / Math.SQRT2, 1, 90 / Math.SQRT2); hqRoof.position.y = 208 + 17;
+    const ridge = new Mesh(new BoxGeometry(100, 3, 4), new MeshStandardMaterial({ color: "#efe7d2", roughness: 0.6 })); ridge.position.set(0, 206.5, -40.5);
+    const railM2 = new MeshStandardMaterial({ color: "#e4e6e8", roughness: 0.35, metalness: 0.6 });
+    for (let k = 0; k < 13; k++) { const post = new Mesh(new CylinderGeometry(0.6, 0.6, 9, 6), railM2); post.position.set(-48 + k * 8, 212.5, -42); hq.add(post); }
+    const topRail = new Mesh(new CylinderGeometry(0.8, 0.8, 98, 6), railM2); topRail.rotation.z = Math.PI / 2; topRail.position.set(0, 217, -42); hq.add(topRail);
+    const balcM = new MeshStandardMaterial({ color: "#c9786f", roughness: 0.8 });
+    for (const y of [52, 88, 124, 160]) {
+      const slab = new Mesh(new BoxGeometry(36, 10, 12), balcM); slab.position.set(22, y, -45); hq.add(slab);
+      for (const sx of [-1, 1]) { const end = new Mesh(new CylinderGeometry(6, 6, 10, 16), balcM); end.position.set(22 + sx * 18, y, -45); hq.add(end); }
+      const door = new Mesh(new PlaneGeometry(26, 22), new MeshStandardMaterial({ color: "#c9d6d2", roughness: 0.25 })); door.rotation.y = Math.PI; door.position.set(22, y + 14, -39.6); hq.add(door);
     }
-    const ridge = new Mesh(new BoxGeometry(6, 5, 92), ridgeM);
-    ridge.position.set(0, 261, 0);
-    const frameM = new MeshStandardMaterial({ color: "#5a4638", roughness: 0.5 });
+    const frameM = new MeshStandardMaterial({ color: "#9e2b2b", roughness: 0.5 });
     const paneM = new MeshStandardMaterial({ color: "#c9d6d2", roughness: 0.25 });
     const addWin = (x, y, w, h) => {
       const f = new Mesh(new BoxGeometry(w, h, 2), frameM);
@@ -25640,11 +25632,8 @@ void main() {
       p.rotation.y = Math.PI;
       hq.add(f, p);
     };
-    for (const x of [-30, 30]) {
-      addWin(x, 138, 24, 26);
-      addWin(x, 74, 24, 26);
-    }
-    addWin(0, 60, 20, 24);
+    for (const y of [64, 100, 136, 172]) addWin(-28, y, 26, 22);
+    for (const x of [-30, 0, 30]) addWin(x, 22, 22, 18);
     mats.mansardGlow = mats.mansardGlow || new MeshStandardMaterial({
       color: "#f4e2c0",
       emissive: "#ffca6a",
@@ -25686,15 +25675,11 @@ void main() {
     const balc = new Mesh(new BoxGeometry(40, 4, 14), hqWall);
     balc.position.set(0, 118, -46);
     const railM = new MeshStandardMaterial({ color: "#e8e8ea", roughness: 0.35, metalness: 0.6 });
-    for (let i = 0; i < 7; i++) {
-      const post = new Mesh(new CylinderGeometry(0.8, 0.8, 12, 6), railM);
-      post.position.set(-18 + i * 6, 126, -52);
-      hq.add(post);
-    }
+
     const rail = new Mesh(new CylinderGeometry(1.1, 1.1, 40, 8), railM);
     rail.rotation.z = Math.PI / 2;
     rail.position.set(0, 132, -52);
-    hq.add(hqBody, hqRoof, ridge, balc, rail);
+    hq.add(hqBody, hqRoof, ridge);
     const hqTex = canvasTexture(512, 176, (ctx) => {
       ctx.fillStyle = "#fbfaf5";
       ctx.beginPath();
@@ -27173,24 +27158,16 @@ void main() {
     const haloTex = canvasTexture(128, 128, (ctx) => { const gr = ctx.createRadialGradient(64, 64, 4, 64, 64, 64); gr.addColorStop(0, "rgba(255,170,70,.7)"); gr.addColorStop(.5, "rgba(255,190,90,.3)"); gr.addColorStop(1, "rgba(255,200,110,0)"); ctx.fillStyle = gr; ctx.fillRect(0, 0, 128, 128); });
     const haloM = new MeshBasicMaterial({ map: haloTex, transparent: true, depthWrite: false });
     haloM.userData.outlineParameters = { visible: false };
-    const X0 = 1260, X1 = 1470, Z0 = 6170, Z1 = 6630;
-    for (let z = Z0 + 34; z < Z1 - 20; z += 72) for (let x = X0 + 30; x < X1 - 10; x += 66) {
-      if (Math.abs(x - 1365) < 40 && Math.abs(z - 6400) < 44) continue;
-      const W = 30 + r() * 12, D = 26 + r() * 10, H = 18 + r() * 12, ox = x - FRIENDS_AT.x + (r() - 0.5) * 8, oz = z - FRIENDS_AT.z + (r() - 0.5) * 8;
-      const wall = new MeshStandardMaterial({ color: tints[Math.floor(r() * tints.length)], roughness: 0.85, emissive: new Color("#ffb860"), emissiveIntensity: 0.14 });
-      const body = new Mesh(new BoxGeometry(W, H, D), wall); body.position.set(ox, H / 2, oz); g.add(body);
-      const hip = new Mesh(new CylinderGeometry(0.45, 1, 11, 4, 1), tile); hip.rotation.y = Math.PI / 4; hip.scale.set((W + 4) / Math.SQRT2, 1, (D + 4) / Math.SQRT2); hip.position.set(ox, H + 5.5, oz); g.add(hip);
-      for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const w = new Mesh(new BoxGeometry(5, 6, 0.6), glowM); w.position.set(ox + sx * W * 0.24, H * 0.55, oz + sz * (D / 2 + 0.3)); g.add(w); }
-      // a soft sparkle over each roof
-      const sp = new Mesh(new PlaneGeometry(18, 18), haloM); sp.position.set(ox, H + 16, oz); sp.rotation.x = -Math.PI / 2; g.add(sp);
-      const halo = new Mesh(new PlaneGeometry(W * 2.8, D * 2.8), haloM); halo.rotation.x = -Math.PI / 2; halo.position.set(ox, 0.9, oz); g.add(halo);
-    }
-    const sq = new Mesh(new CylinderGeometry(38, 38, 1, 28), new MeshStandardMaterial({ color: "#efe4cf", roughness: 1 })); sq.position.set(1365 - FRIENDS_AT.x, 0.5, 0); g.add(sq);
-    const crownM = new MeshStandardMaterial({ color: "#6ab563", roughness: 0.9, flatShading: true }), trunkM = new MeshStandardMaterial({ color: "#6b4a2e" });
-    for (let k = 0; k < 6; k++) { const a2 = k / 6 * Math.PI * 2; const tr = new Mesh(new CylinderGeometry(1.2, 1.5, 10, 6), trunkM); tr.position.set(1365 - FRIENDS_AT.x + Math.cos(a2) * 28, 5, Math.sin(a2) * 28); g.add(tr); const cr = new Mesh(new IcosahedronGeometry(7, 1), crownM); cr.position.set(tr.position.x, 15, tr.position.z); g.add(cr); }
+    // r129: the houses are the city's own now (colour, arches, varied sizes, like the ones around);
+    // the quarter keeps one soft glow that sits over all of them
+    const glowTex = canvasTexture(256, 256, (ctx) => { const gr = ctx.createRadialGradient(128, 128, 8, 128, 128, 128); gr.addColorStop(0, "rgba(255,196,110,.55)"); gr.addColorStop(.45, "rgba(255,206,130,.28)"); gr.addColorStop(1, "rgba(255,214,150,0)"); ctx.fillStyle = gr; ctx.fillRect(0, 0, 256, 256); });
+    const glowGround = new MeshBasicMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: AdditiveBlending });
+    glowGround.userData.outlineParameters = { visible: false };
+    const g1 = new Mesh(new PlaneGeometry(520, 620), glowGround); g1.rotation.x = -Math.PI / 2; g1.position.set(0, 1.2, 0); g.add(g1);
+    const glowAir = new MeshBasicMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: AdditiveBlending, opacity: 0.55 });
+    glowAir.userData.outlineParameters = { visible: false };
+    const g2 = new Mesh(new PlaneGeometry(460, 540), glowAir); g2.rotation.x = -Math.PI / 2; g2.position.set(0, 46, 0); g.add(g2);
     GLOW_HOUSES.push(glowM);
-    g.traverse((m) => { if (m.isMesh && m.material !== haloM) { m.castShadow = m.position.y > 2; m.receiveShadow = true; } });
-    for (let z = Z0; z <= Z1; z += 60) for (let x = X0; x <= X1; x += 60) EXTRA_KEEPOUT.push({ x, y: z, r: 44 });
     return finish(g, parent, FRIENDS_AT.x, FRIENDS_AT.z);
   }
   // r125: the services live in three houses on the way from Dacia 99 to Olari 9: two on the
@@ -27198,10 +27175,12 @@ void main() {
   var SERVICE_HOUSES = [
     { x: 1080, z: 6640, face: "+x", svc: [0], cx: -170 },
     { x: 1080, z: 7010, face: "+x", svc: [1], cx: -170 },
-    { x: 1262, z: 6830, face: "-x", svc: [2, 3], cx: 190 }
+    // r129: one service per house, alternating kerbs, so no two cards touch
+    { x: 1262, z: 6830, face: "-x", svc: [2], cx: 190 },
+    { x: 1290, z: 7180, face: "-x", svc: [3], cx: 190 }
   ];
   function buildServiceHouses(parent) {
-    const cols = ["#28C840", "#FED012", "#B098C8"];
+    const cols = ["#28C840", "#FED012", "#B098C8", "#F65342"];
     SERVICE_HOUSES.forEach((h, i) => {
       const g = new Group();
       const wall = new MeshStandardMaterial({ color: "#fbf6ec", roughness: 0.85 });
@@ -36396,7 +36375,7 @@ void main() {
         const showBoxes = (coffee.done || coffee.phase === "unload" || coffee.phase === "sip2" || coffee.phase === "rush" || coffee.phase === "calm") && nearTM;
         ui.setPoiTabs(showBoxes);
         const tmCards = state.branch === "A" && !flying && carPos.z > 4060 && carPos.z < 4520 && carPos.x > 700 && carPos.x < 1200;
-        showPoi(ui.labTag, tmCards);
+        showPoi(ui.labTag, false); // r129: the lab lives on the Two Minutes card and page now
         showPoi(ui.tmMedia, tmCards);
         showPoi(ui.boxPop, tmCards && showBoxes);
         // landmark cards are a screen overlay now: no projection, no jitter
@@ -36491,8 +36470,7 @@ void main() {
           desc: "During Romanian Design Week 2023 our Eliade 18 floor became a pop-up space, and we talked about using AI in design, early, in 2023." },
         { id: "dacia", chapter: true, x: 1170, z: 6320, px: 1070, pz: 6320, h: 230, name: "Dacia 99", line: "OUR STUDIO \xB7 2024", c: "#B098C8", pts: 5, past: true,
           desc: "Congrats, you found a blast from the past (2024): Bulevardul Dacia 99, the Cromatic Studios home right before Olari 9. Above Club 99, under BISM: the loudest address we ever had." },
-        { id: "lab", br: "A", x: 820, z: 4260, px: 602, pz: 4142, h: 70, name: "Two Min Lab", line: "PRODUCTS \xB7 TONIC IONIC \xB7 LABELS", c: "#C6402E", t: "#ffffff", act: "labTag", desc: "The Two Minutes lab: bottled drinks, Tonic Ionic and the labels that sell them, in the yard behind the coffee shop." },
-        { id: "tm", br: "A", x: 900, z: 4262, px: 640, pz: 4260, h: 80, name: "Two Minutes", line: "COFFEE \xB7 BRAND \xB7 FILM", c: "#111111", t: "#ffffff", act: "tmMedia", tm: true, desc: "A specialty coffee shop brand made to be loved fast and remembered long. Three double espressos are on us." },
+        { id: "tm", br: "A", x: 900, z: 4262, px: 640, pz: 4260, h: 80, name: "Two Minutes", line: "BRAND \xB7 BOXES \xB7 LAB \xB7 FILM", c: "#111111", t: "#ffffff", act: "tmMedia", tm: true, desc: "A specialty coffee shop brand made to be loved fast and remembered long. Three double espressos are on us." },
         { id: "oma", br: "A", x: 706, z: 4560, h: 80, name: "OMA Coffee", line: "BRAȘOV \xB7 AT THE FOOT OF T\xC2MPA", c: "#4a7c4e", t: "#ffffff", act: "omaTag" },
         { id: "sip", br: "A", x: 706, z: 4985, h: 70, name: "Sip Coffee & Wine", line: "BRANDING \xB7 COMMUNICATION", c: "#C9A227", t: "#14120c", act: "sipTag" },
         { id: "yoshi", br: "A", x: 706, z: 5175, h: 60, name: "Yoshi Izakaya", line: "COMMUNICATION \xB7 CONTENT", c: "#F4876F", t: "#2a0f08", act: "yoshiTag" },
@@ -36519,7 +36497,7 @@ void main() {
         add({ id: "bism", x: 1170, z: 6300, px: 1078, pz: 6290, h: 150, name: "BISM", line: "UPSTAIRS AT DACIA 99", c: "#1f4fd6", t: "#ffffff", t2: "#F65342", noopen: true, desc: "BISM, under the same roof as our Dacia 99 studio: neighbours, then clients." });
         add({ id: "echo", x: 1170, z: 6340, px: 1078, pz: 6350, h: 110, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", soon: true, desc: "Echo School of Technology, Digital Arts & Videogames. The case page is on its way." });
         add({ id: "boxes", br: "A", x: 900, z: 4262, px: 706, pz: 4198, h: 40, name: "The Product", line: "TWO MIN BOXES \xB7 COFFEE PACKAGING", c: "#cfcdc8", t: "#2a2926", act: "boxPop" });
-        add({ id: "friends", stop: "merge", px: 1365, pz: 6400, h: 190, name: "+50 Other Clients", line: "HUNDREDS OF PROJECTS \xB7 THOUSANDS OF DELIVERABLES", c: "#B098C8", t: "#1a1420" });
+        add({ id: "friends", stop: "merge", px: 1365, pz: 6400, h: 150, float: true, name: "+50 Other Clients", line: "HUNDREDS OF PROJECTS \xB7 THOUSANDS OF DELIVERABLES", c: "#d9d7d2", t: "#1a1a1a" });
       })();
       // r117: how close you must be for a place to show its card (a coloured dot otherwise)
       const TIER1 = new Set(["tm", "oma", "scf", "steam", "arca", "tac", "zdrovit", "invest", "end", "jet"]);
@@ -36984,7 +36962,7 @@ void main() {
           pl.wz = pl.pz ?? (s0 ? s0.y : pl.z);
           pl.wy = pl.h ?? 55;
           const got = "";
-          const b = el("button", `map-pin${pl.beacon ? " beacon" : ""}${pl.chapter ? " chapter" : ""}${pl.find ? " find" : ""}${pl.small ? " small" : ""}`, pl.chapter
+          const b = el("button", `map-pin${pl.float ? " float" : ""}${pl.beacon ? " beacon" : ""}${pl.chapter ? " chapter" : ""}${pl.find ? " find" : ""}${pl.small ? " small" : ""}`, pl.chapter
             ? `<span class="mp-label"><i class="mono">${pl.line}</i><b>${pl.name}</b>${got}</span><span class="mp-stem"></span>`
             : `<span class="mp-label"><b>${pl.name}</b><i class="mono">${pl.line}</i>${got}</span><span class="mp-stem"></span><span class="mp-dot"></span>`);
           b.style.setProperty("--pc", pl.c); if (pl.t) b.style.setProperty("--pt", pl.t);
@@ -37618,22 +37596,37 @@ void main() {
       // r124: the intro is the loader. On "/" the kinetic type plays at once; on ?map the cups rush
       // straight in. Either way the wall of cups holds until the world is ready, then lifts off it
       const kzLoader = BOOT_MODE !== "drive";
+      var brewEl = null;
       if (kzLoader) {
         window.__cupsHold = true;
         state.started = true;
         state.visited.add("start");
         setMapMode(true, { intro: true });
+        ui.hideLoader();
+        // r129: a short brew first. One cup (the intro's own) fills up while the city is built and the
+        // shaders compile; the fill is a compositor animation, so it stays smooth while the main thread
+        // works. Then the kinetic type starts on a free thread and never stutters.
+        brewEl = document.createElement("div");
+        brewEl.className = "kz-brew";
+        brewEl.innerHTML = `<div class="kb-cup"><i class="kb-steam"></i><i class="kb-steam"></i><i class="kb-steam"></i><i class="kb-handle"></i><div class="kb-mug"><i class="kb-fill"></i><i class="kb-star">\u2733</i></div></div><span class="kb-t">Brewing the city</span>`;
+        document.body.appendChild(brewEl);
+      }
+      const brewT0 = performance.now();
+      const startKinetic = () => {
+        if (!kzLoader || kinetic) return;
+        const wait = 800 - (performance.now() - brewT0);
+        if (wait > 0 && brewEl) { setTimeout(startKinetic, wait); return; }
         kinetic = createKinetic(() => mapEndIntro(), null);
         kinetic.resume();
         if (BOOT_MODE === "map") setTimeout(() => kinetic.finish(), 60);
-        ui.hideLoader();
-      }
+        if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; }
+      };
       // r125: the city's streets, blocks and trees are built behind the intro (it plays on an opaque
       // ground meanwhile), so the first frame is the type, not a blank screen
       if (kzLoader) document.body.classList.add("kz-boot");
       const fabricReady = new Promise((res) => {
         const go = () => { worldRefs.world.userData.buildFabric(); applyScheme(state.schemeIdx); res(); };
-        if (kzLoader) setTimeout(() => requestAnimationFrame(() => setTimeout(go, 0)), 250); else { go(); }
+        if (kzLoader) requestAnimationFrame(() => setTimeout(go, 30)); else { go(); }
       });
       Promise.all([fabricReady, Promise.race([Promise.all([document.fonts?.load?.("500 16px CromaticSans"), document.fonts?.load?.("800 16px CromaticSans")]).then(() => document.fonts?.ready), new Promise((r) => setTimeout(r, 1600))])]).then(() => {
         // r127: every shader in the scene is prepared while the intro plays (hidden ones too), so
@@ -37643,11 +37636,10 @@ void main() {
         try { renderer.compile(scene, camera); } catch {}
         hiddenNow.forEach((o) => (o.visible = false));
         clearInterval(bootT);
-        try {
-          vehPreviews = makeVehiclePreviews();
-          ui.setVehiclePreviews(vehPreviews);
-        } catch (e) {
-        }
+        // r129: the vehicle thumbnails render off-screen: not while the intro plays, later, when idle
+        const vehPrev = () => { try { vehPreviews = makeVehiclePreviews(); ui.setVehiclePreviews(vehPreviews); } catch (e) {} };
+        if (kzLoader) { const wait = () => (document.body.classList.contains("kz-intro") ? setTimeout(wait, 800) : setTimeout(() => (window.requestIdleCallback || setTimeout)(vehPrev, { timeout: 3000 }), 4500)); setTimeout(wait, 3000); } else vehPrev();
+        startKinetic();
         ui.setLoaderPct(100);
         if (kzLoader) { window.__cupsHold = false; spawnStart = performance.now() + 700; startRevealAt = Infinity; }
         else setTimeout(() => {
