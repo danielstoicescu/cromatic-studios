@@ -35752,15 +35752,18 @@ void main() {
       })();
       // ---- tilt-shift: renders the Monument world as a miniature diorama ----
       var tilt = null;
+      // r130 (after jenamdvacetpet.cz): the opened place in a pool of light; the map drifts round when left alone
+      var mapSpot = { x: 0.5, y: 0.5, r: 0.16, k: 0 }, mapIdleAt = 0;
+      for (const ev of ["pointerdown", "wheel", "keydown", "touchstart"]) window.addEventListener(ev, () => { mapIdleAt = performance.now(); }, { passive: true });
       function tiltShiftRender(now) {
         const w = renderer.domElement.width, h = renderer.domElement.height;
         if (!tilt) {
           const rt = new WebGLRenderTarget(w, h, { samples: 2, type: HalfFloatType });
           const mat = new ShaderMaterial({
-            uniforms: { tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, amt: { value: 7 }, focus: { value: 0.46 }, band: { value: 0.1 }, t: { value: 0 }, zb: { value: 0 } },
+            uniforms: { tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, amt: { value: 7 }, focus: { value: 0.46 }, band: { value: 0.1 }, t: { value: 0 }, zb: { value: 0 }, spot: { value: new Vector4(0.5, 0.5, 0.2, 0) } },
             vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
             fragmentShader: `
-              uniform sampler2D tD; uniform vec2 res; uniform float amt, focus, band, t, zb; varying vec2 vUv;
+              uniform sampler2D tD; uniform vec2 res; uniform float amt, focus, band, t, zb; uniform vec4 spot; varying vec2 vUv;
               ${isMobile() ? "#define TAPS 6\n#define LITE 1" : "#define TAPS 12"}
               void main(){
                 float dy = abs(vUv.y - focus);
@@ -35791,6 +35794,13 @@ void main() {
                 c.b = mix(c.b, texture2D(tD, vUv - ca).b, 0.85);
                 #endif
                 c *= 1.0 - dot(q, q) * 0.42;
+                // r130: the place you opened keeps its light; the rest of the city steps back (paler, a little darker)
+                if (spot.w > 0.001) {
+                  float sd = length((vUv - spot.xy) * vec2(res.x / res.y, 1.0));
+                  float sm = smoothstep(spot.z, spot.z * 2.6, sd) * spot.w;
+                  float sl = dot(c, vec3(0.299, 0.587, 0.114));
+                  c = mix(c, mix(vec3(sl), c, 0.3) * 0.8 + 0.035, sm * 0.6);
+                }
                 // print film: lifted blacks, warm highlights, cool shadows, a touch less saturation
                 float l = dot(c, vec3(0.299, 0.587, 0.114));
                 c = mix(vec3(l), c, 0.9);
@@ -35819,6 +35829,7 @@ void main() {
         tilt.mat.uniforms.band.value = 0.16;
         tilt.mat.uniforms.t.value = (now * 0.001) % 100;
         tilt.mat.uniforms.zb.value = mapMode ? mapView.zoomBlur || 0 : 0;
+        tilt.mat.uniforms.spot.value.set(mapSpot.x, mapSpot.y, mapSpot.r, mapMode ? mapSpot.k : 0);
         renderer.setRenderTarget(tilt.rt);
         renderer.render(scene, camera);
         renderer.setRenderTarget(null);
@@ -37303,6 +37314,9 @@ void main() {
           const b = el("button", `map-pin${pl.float ? " float" : ""}${pl.beacon ? " beacon" : ""}${pl.chapter ? " chapter" : ""}${pl.find ? " find" : ""}${pl.small ? " small" : ""}`, pl.chapter
             ? `<span class="mp-label"><i class="mono">${pl.line}</i><b>${pl.name}</b>${got}</span><span class="mp-stem"></span>`
             : `<span class="mp-label"><b>${pl.name}</b><i class="mono">${pl.line}</i>${got}</span><span class="mp-stem"></span><span class="mp-dot"></span>`);
+          // r130: the footprint on the ground, in the brand's colour
+          if (!pl.float) b.insertAdjacentHTML("beforeend", '<span class="mp-foot"></span>');
+          b.style.setProperty("--i", String(MAP_PLACES.indexOf(pl) % 24));
           b.style.setProperty("--pc", pl.c); if (pl.t) b.style.setProperty("--pt", pl.t);
           b.dataset.id = pl.id;
           b.onclick = (e) => { e.stopPropagation(); if (mapBoarding) return; mapGo(pl); };
@@ -37687,7 +37701,7 @@ void main() {
             if (phone) return [0, (topY + Math.min(botY, r.top)) / 2 - H / 2];
             if (r.left > W * 0.45) return [Math.max(0, r.left) / 2 - W / 2, 0];
             // r130: the card sits at the bottom, in the middle: the place goes in the space above it
-            if (r.left > W * 0.12 && r.right < W * 0.88) return [0, (topY + r.top) / 2 - H / 2];
+            if (r.left > W * 0.12 && r.right < W * 0.88) return [0, topY + (r.top - topY) * 0.6 - H / 2];
             return [(Math.max(0, r.right) + W) / 2 - W / 2, (topY + botY) / 2 - H / 2];
           }
           return [0, (topY + botY) / 2 - H / 2];
@@ -37772,8 +37786,17 @@ void main() {
               if (!mapNav.moving && mapNav.place?.tap && !markEl.classList.contains("on")) markAt = null;
             }
             const order = pins.map((p) => {
+              warpV(proj.set(p.pl.wx, 0, p.pl.wz)).project(camera);
+              const gx = (proj.x * 0.5 + 0.5) * W, gy = (-proj.y * 0.5 + 0.5) * H;
+              warpV(proj.set(p.pl.wx + 34, 0, p.pl.wz)).project(camera);
+              const gw = Math.hypot((proj.x * 0.5 + 0.5) * W - gx, (-proj.y * 0.5 + 0.5) * H - gy) * 2;
               warpV(proj.set(p.pl.wx, p.pl.wy, p.pl.wz)).project(camera);
-              return { p, x: (proj.x * 0.5 + 0.5) * W, y: (-proj.y * 0.5 + 0.5) * H, z: proj.z };
+              const o = { p, x: (proj.x * 0.5 + 0.5) * W, y: (-proj.y * 0.5 + 0.5) * H, z: proj.z };
+              // r130: how far down the ground is, and how wide the footprint, for the pin's stem and tint
+              const gyv = Math.round(Math.max(0, gy - o.y)), gwv = Math.round(Math.min(220, Math.max(26, gw)));
+              if (p.b._gy !== gyv) { p.b._gy = gyv; p.b.style.setProperty("--gy", gyv + "px"); }
+              if (p.b._gw !== gwv) { p.b._gw = gwv; p.b.style.setProperty("--gw", gwv + "px"); }
+              return o;
             }).sort((a, b) => (b.p.pl === mapNav.place) - (a.p.pl === mapNav.place) || (a.p.pl.chapter ? 1 : 0) - (b.p.pl.chapter ? 1 : 0) || a.y - b.y);
             for (const o of order) {
               // pins never slide under the top bar (phones: under the map bar either)
@@ -37794,6 +37817,14 @@ void main() {
               const tf = `translate3d(${Math.round(o.x)}px, ${Math.round(o.y)}px, 0)`;
               if (o.p.b._tf !== tf) { o.p.b._tf = tf; o.p.b.style.transform = tf; }
               pinBoxes.push([o.x, o.y]);
+            }
+            {
+              const open = !card.classList.contains("hidden") && mapNav.place && !mapNav.moving;
+              if (open) { warpV(proj.set(mapNav.place.wx, (mapNav.place.wy || 55) * 0.5, mapNav.place.wz)).project(camera); mapSpot.x += ((proj.x * 0.5 + 0.5) - mapSpot.x) * 0.2; mapSpot.y += ((proj.y * 0.5 + 0.5) - mapSpot.y) * 0.2; }
+              mapSpot.r = 0.07 + 900 / Math.max(900, mapView.dist) * 0.1;
+              mapSpot.k += ((open ? 1 : 0) - mapSpot.k) * (1 - Math.exp(-dt * 3));
+              // idle drift: after 9 s with no hand on the map and nothing open, the city turns slowly
+              if (!open && !mapIntro && !mapBoarding && !mapNav.moving && jetFx.phase === "idle" && now - mapIdleAt > 9000 && mapView.yawGoal == null) mapView.yaw += dt * 0.022 * Math.min(1, (now - mapIdleAt - 9000) / 3000);
             }
             if (hintAt) { warpV(proj.copy(hintAt)).project(camera); hintEl.style.transform = `translate3d(${((proj.x * 0.5 + 0.5) * W).toFixed(1)}px, ${((-proj.y * 0.5 + 0.5) * H).toFixed(1)}px, 0)`; }
             // a street sign gives way to any place pin it would cover
