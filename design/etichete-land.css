@@ -1,0 +1,451 @@
+/* =====================================================================
+   ETICHETE PE HARTĂ — în spiritul THE LÄND. r130 propunere.
+   Se lipește la finalul lui src/styles.css: întâi blocul BASE, apoi UNA
+   dintre direcțiile A / B / C (celelalte două se șterg sau se comentează).
+   Markup nou cerut: <span class="mp-foot"></span> ca ultim copil al .map-pin.
+   Variabile din JS (opționale): --sl, --gy, --gw, --i (vezi BASE).
+   ===================================================================== */
+
+/* ===================== BASE ===================== */
+/* =====================================================================
+   BASE — comun celor trei direcții. Se adaugă o singură dată, înaintea
+   direcției alese. Anatomie: amprentă pe sol (.mp-foot, element nou),
+   punct pe ancoră (.mp-dot), picior de 1px (.mp-stem), etichetă (.mp-label).
+   Variabile per pin, setabile din JS pe cadru:
+     --sl  lungimea piciorului în px (22 implicit)
+     --gy  distanța în px de la ancoră (acoperiș) în jos până la sol
+     --gw  lățimea amprentei în px
+     --i   indexul pinului, pentru decalajul intrării (0, 1, 2…)
+   ===================================================================== */
+.map-pins { container: pins / inline-size; }
+
+.map-pins .map-pin {
+  --ink: #17161a;
+  --paper: rgba(255, 255, 255, .94);
+  --sand: rgba(243, 240, 235, .94);
+  --sl: 22px; --gy: 0px; --gw: 72px;
+  display: flex; flex-direction: column; align-items: center;
+  translate: -50% -100%;
+  padding: 0; border: 0; background: none; font: inherit; color: var(--ink);
+  transition: opacity .3s ease; z-index: 1; will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+.map-pins .map-pin:hover { z-index: 7; }
+.map-pins .map-pin.on { z-index: 8; }
+.map-pins .map-pin.off { opacity: 0; pointer-events: none; }
+.map-pins .map-pin .mp-got { display: none !important; }
+.map-pins .map-pin:focus-visible { outline: 0; }
+.map-pins .map-pin:focus-visible .mp-label { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink) !important; }
+
+/* piciorul: o linie de 1px care pleacă din ancoră în sus */
+.map-pins .map-pin .mp-stem {
+  width: 1px; height: var(--sl); margin: 0;
+  background: var(--ink); opacity: .5;
+  transform-origin: 50% 100%;
+  transition: opacity .25s, background-color .25s, transform .3s cubic-bezier(.2, .8, .2, 1);
+}
+.map-pins .map-pin:hover .mp-stem { opacity: .9; }
+.map-pins .map-pin.on .mp-stem { opacity: 1; transform: scaleX(1.5); }
+
+/* punctul: mic, de brand, cu un inel alb ca să se vadă pe orice acoperiș */
+.map-pins .map-pin .mp-dot {
+  width: 7px; height: 7px; border-radius: 50%; margin: 0 0 -3.5px; border: 0;
+  background: var(--pc);
+  box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px rgba(23, 22, 26, .3);
+  transition: transform .3s cubic-bezier(.2, .8, .2, 1);
+  animation: none;
+}
+.map-pins .map-pin:hover .mp-dot { transform: scale(1.25); }
+.map-pins .map-pin.on .mp-dot { transform: scale(1.45); animation: none; }
+
+/* amprenta: elipsă de brand pe sol, sub clădire */
+.map-pins .map-pin .mp-foot {
+  position: absolute; left: 50%; top: 100%; z-index: -1;
+  width: var(--gw); height: calc(var(--gw) * .46);
+  margin-top: var(--gy); translate: -50% -50%;
+  border-radius: 50%; background: var(--pc); opacity: .28;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  transition: opacity .35s, scale .45s cubic-bezier(.2, .8, .2, 1);
+}
+.map-pins .map-pin .mp-foot::after {
+  content: ""; position: absolute; inset: -2px; border-radius: 50%;
+  border: 1.5px solid var(--pc); opacity: 0;
+}
+.map-pins .map-pin:hover .mp-foot { opacity: .42; scale: 1.06; }
+.map-pins .map-pin.on .mp-foot { opacity: .5; scale: 1.1; }
+.map-pins .map-pin.visited .mp-foot { opacity: .18; }
+.map-pins .map-pin.dot .mp-foot { opacity: .16; }
+
+/* nivelul „punct”: la zoom mare rămâne doar punctul */
+.map-pins .map-pin.dot { padding: 6px; margin: -6px; }
+.map-pins .map-pin.dot .mp-label { opacity: 0; transform: translateY(6px) scale(.72); pointer-events: none; }
+.map-pins .map-pin.dot .mp-stem { opacity: 0; transform: scaleY(0); }
+.map-pins .map-pin.dot .mp-dot { transform: scale(1.5); }
+.map-pins .map-pin.dot.on .mp-dot { transform: scale(1.9); }
+
+/* capitole și placardele vechi: picior punctat, amprentă abia vizibilă */
+.map-pins .map-pin.chapter .mp-stem { background: repeating-linear-gradient(to bottom, var(--ink) 0 2px, transparent 2px 5px); opacity: .45; }
+.map-pins .map-pin.chapter .mp-dot { display: none; }
+.map-pins .map-pin.chapter .mp-foot { opacity: .12; }
+.map-pins .map-pin.dot.chapter .mp-dot, .map-pins .map-pin.dot.small .mp-dot { display: block; background: #c9c5bd; transform: scale(1.1); }
+
+/* plutitoare („+50 alți clienți”): fără picior, fără punct, fără amprentă */
+.map-pins .map-pin.float .mp-stem, .map-pins .map-pin.float .mp-dot, .map-pins .map-pin.float .mp-foot { display: none !important; }
+
+/* mici (sub-locuri): picior scurt, fără amprentă */
+.map-pins .map-pin.small .mp-stem { height: calc(var(--sl) * .55); }
+.map-pins .map-pin.small .mp-dot { width: 5px; height: 5px; margin-bottom: -2.5px; }
+.map-pins .map-pin.small .mp-foot { display: none; }
+
+/* far (Casa Cromatic): amprenta pulsează mereu */
+.map-pins .map-pin.on .mp-foot::after, .map-pins .map-pin.beacon .mp-foot::after { animation: lpRing 2s cubic-bezier(.2, .6, .3, 1) infinite; }
+
+/* intrarea: piciorul se trage în sus, eticheta se așază pe el, amprenta se deschide */
+@media (prefers-reduced-motion: no-preference) {
+  .map-pins .map-pin .mp-stem { animation: lpStem .55s cubic-bezier(.2, .8, .2, 1) backwards; animation-delay: calc(var(--i, 0) * 28ms); }
+  .map-pins .map-pin .mp-label { animation: lpLabel .5s cubic-bezier(.2, .8, .2, 1) backwards; animation-delay: calc(.16s + var(--i, 0) * 28ms); }
+  .map-pins .map-pin .mp-foot { animation: lpFoot .7s cubic-bezier(.2, .8, .2, 1) backwards; animation-delay: calc(var(--i, 0) * 28ms); }
+  .map-pins .map-pin.float .mp-label { animation: lpFloat 3.2s ease-in-out infinite; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-pins .map-pin .mp-foot::after { animation: none !important; opacity: .6; }
+}
+@keyframes lpStem { from { transform: scaleY(0); } }
+@keyframes lpLabel { from { opacity: 0; transform: translateY(5px); } }
+@keyframes lpFoot { from { opacity: 0; scale: .5; } }
+@keyframes lpRing { 0% { transform: scale(.75); opacity: .8; } 100% { transform: scale(1.9); opacity: 0; } }
+@keyframes lpFloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -5px; } }
+
+/* telefon: picior mai scurt, amprentă mai mică */
+@container pins (max-width: 640px) {
+  .map-pins .map-pin { --sl: 16px; }
+  .map-pins .map-pin .mp-foot { width: calc(var(--gw) * .8); height: calc(var(--gw) * .36); }
+}
+
+
+/* ===================== DIRECTION A ===================== */
+/* =====================================================================
+   DIRECTION A — „Pastila”
+   Pastilă albă cu o bulină de brand, ca la THE LÄND, dar cu semnătura
+   Cromatic: culoarea stă în bulină, în punct și pe sol. La hover coboară
+   un sertar mono cu ce am făcut; activ = pastila se umple cu brandul.
+   ===================================================================== */
+.map-pins .map-pin .mp-label {
+  position: relative; display: flex; flex-direction: row; align-items: center; gap: 7px;
+  padding: 6px 12px 6px 8px; border-radius: 999px;
+  background: var(--paper); color: var(--ink); border: 0;
+  box-shadow: 0 1px 0 rgba(23, 22, 26, .05), 0 8px 20px -12px rgba(23, 22, 26, .5);
+  white-space: nowrap; transform-origin: 50% 100%;
+  transition: transform .32s cubic-bezier(.2, .8, .2, 1), background-color .22s, color .22s, box-shadow .32s;
+}
+.map-pins .map-pin .mp-label::before {
+  content: ""; width: 8px; height: 8px; border-radius: 50%; flex: none;
+  background: var(--pc); box-shadow: inset 0 0 0 1px rgba(23, 22, 26, .14);
+  transition: transform .3s cubic-bezier(.2, .8, .2, 1), background-color .2s, box-shadow .2s;
+}
+.map-pins .map-pin .mp-label b { font: 800 13px/1 CromaticSans, sans-serif; letter-spacing: -.01em; }
+.map-pins .map-pin .mp-label b::after, .map-pins .map-pin .mp-label b::before { content: none !important; }
+.map-pins .map-pin .mp-label i {
+  position: absolute; left: 50%; top: 100%; translate: -50% 0; margin-top: 4px;
+  display: block; padding: 4px 8px; border-radius: 999px;
+  font: 600 7.5px/1 'JetBrains Mono', monospace; font-style: normal; letter-spacing: .14em; text-transform: uppercase;
+  background: var(--paper); color: var(--ink); box-shadow: 0 4px 12px -8px rgba(23, 22, 26, .55);
+  opacity: 0; transform: translateY(-5px); pointer-events: none;
+  transition: opacity .18s, transform .3s cubic-bezier(.2, .8, .2, 1), background-color .2s, color .2s;
+}
+
+/* hover: pastila se ridică, sertarul coboară */
+.map-pins .map-pin:hover .mp-label { transform: translateY(-2px); box-shadow: 0 1px 0 rgba(23, 22, 26, .05), 0 12px 24px -12px rgba(23, 22, 26, .6); }
+.map-pins .map-pin:hover .mp-label::before { transform: scale(1.2); }
+.map-pins .map-pin:hover .mp-label i, .map-pins .map-pin.on .mp-label i { opacity: 1; transform: none; transition-delay: .04s; }
+
+/* activ: pastila se umple cu brandul */
+.map-pins .map-pin.on .mp-label {
+  background: var(--pc); color: var(--pt); transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px rgba(23, 22, 26, .22), 0 14px 28px -12px rgba(23, 22, 26, .55);
+}
+.map-pins .map-pin.on .mp-label::before { background: var(--pt); box-shadow: none; transform: scale(1.15); }
+.map-pins .map-pin.on .mp-label i { background: var(--ink); color: #fff; }
+
+/* vizitat: bulina devine bifă de brand, numele se liniștește */
+.map-pins .map-pin.visited .mp-label { background: var(--sand); color: #6a6863; }
+.map-pins .map-pin.visited .mp-label::before {
+  width: 10px; height: 10px; box-shadow: none;
+  background: var(--pc) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.4 5.2l2 2 3.4-4' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/8px no-repeat;
+}
+.map-pins .map-pin.visited.on .mp-label { background: var(--pc); color: var(--pt); }
+.map-pins .map-pin.visited.on .mp-label::before { background-color: var(--pt); }
+
+/* de găsit (.find): „?” în loc de bulină până e descoperit */
+.map-pins .map-pin.find:not(.visited) .mp-label::before { content: "?"; width: auto; height: auto; background: none; box-shadow: none; font: 900 12px/1 CromaticSans, sans-serif; color: var(--pc); -webkit-text-stroke: .5px rgba(23, 22, 26, .35); }
+
+/* mini (aglomerat / zoom mediu): doar numele, mai mic */
+.map-pins .map-pin.mini .mp-label { padding: 4px 8px 4px 6px; gap: 5px; }
+.map-pins .map-pin.mini .mp-label b { font-size: 11px; }
+.map-pins .map-pin.mini .mp-label::before { width: 6px; height: 6px; }
+.map-pins .map-pin.mini .mp-label i { display: none; }
+
+/* far: puțin mai mare */
+.map-pins .map-pin.beacon .mp-label { padding: 7px 14px 7px 9px; }
+.map-pins .map-pin.beacon .mp-label b { font-size: 15px; }
+.map-pins .map-pin.beacon .mp-label::before { width: 10px; height: 10px; }
+
+/* sub-locuri (.small): pastilă de nisip, discretă */
+.map-pins .map-pin.small .mp-label { padding: 3px 7px 3px 5px; gap: 4px; background: var(--sand); color: #4a4945; box-shadow: none; }
+.map-pins .map-pin.small .mp-label b { font-size: 10.5px; font-weight: 700; }
+.map-pins .map-pin.small .mp-label::before { width: 5px; height: 5px; }
+.map-pins .map-pin.small .mp-label i { display: none; }
+
+/* capitol / adresă veche: placardă de nisip cu linie mono deasupra */
+.map-pins .map-pin.chapter .mp-label {
+  flex-direction: column; align-items: flex-start; gap: 2px; padding: 5px 10px 6px 9px; border-radius: 6px;
+  background: var(--sand) !important; color: #5c5a55 !important;
+  border: 1px solid rgba(23, 22, 26, .16) !important; border-left: 3px solid var(--pc) !important; box-shadow: none;
+}
+.map-pins .map-pin.chapter .mp-label::before { display: none; }
+.map-pins .map-pin.chapter .mp-label b { font: 700 11.5px/1.05 CromaticSans, sans-serif; letter-spacing: 0; }
+.map-pins .map-pin.chapter .mp-label i {
+  position: static; translate: none; margin: 0; padding: 0; background: none; box-shadow: none;
+  opacity: .72 !important; transform: none; font-size: 7px; color: inherit !important; display: block !important;
+}
+.map-pins .map-pin.chapter:hover .mp-label { background: var(--paper) !important; color: var(--ink) !important; }
+.map-pins .map-pin.chapter.mini .mp-label i { display: none !important; }
+.map-pins .map-pin.chapter.on .mp-label { background: var(--ink) !important; color: #fff !important; border-color: var(--ink) !important; }
+
+/* plutitoare */
+.map-pins .map-pin.float .mp-label { background: var(--sand) !important; color: var(--ink) !important; padding: 6px 12px; }
+.map-pins .map-pin.float .mp-label::before { display: none; }
+.map-pins .map-pin.float .mp-label i { display: none; }
+
+/* telefon */
+@container pins (max-width: 640px) {
+  .map-pins .map-pin .mp-label { padding: 5px 10px 5px 7px; gap: 6px; }
+  .map-pins .map-pin .mp-label b { font-size: 12px; }
+  .map-pins .map-pin .mp-label i { display: none; }
+  .map-pins .map-pin.mini .mp-label b { font-size: 10.5px; }
+}
+
+
+/* ===================== DIRECTION B ===================== */
+/* =====================================================================
+   DIRECTION B — „Eticheta”
+   Card alb cu contur de 1px și un cotor de brand pe stânga, ca o etichetă
+   de specimen sau o mostră de culoare. Colțuri aproape drepte, umbră
+   dură de 2px. La hover coboară un talon cu linia mono; activ = cardul
+   se umple cu brandul și umbra devine de tuș. Punctul este un romb.
+   ===================================================================== */
+.map-pins .map-pin .mp-label {
+  position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 0;
+  padding: 6px 10px 6px 14px; border-radius: 3px;
+  background: var(--paper); color: var(--ink);
+  border: 1px solid rgba(23, 22, 26, .82); box-shadow: 2px 2px 0 rgba(23, 22, 26, .12);
+  white-space: nowrap; transform-origin: 50% 100%;
+  transition: transform .32s cubic-bezier(.2, .8, .2, 1), background-color .22s, color .22s, box-shadow .32s, border-color .22s;
+}
+.map-pins .map-pin .mp-label::before {
+  content: ""; position: absolute; left: -1px; top: -1px; bottom: -1px; width: 5px;
+  border-radius: 3px 0 0 3px; background: var(--pc);
+  transition: background-color .2s, width .25s cubic-bezier(.2, .8, .2, 1);
+}
+.map-pins .map-pin .mp-label b { font: 800 13px/1 CromaticSans, sans-serif; letter-spacing: -.01em; }
+.map-pins .map-pin .mp-label b::after, .map-pins .map-pin .mp-label b::before { content: none !important; }
+.map-pins .map-pin .mp-label i {
+  position: absolute; left: -1px; top: 100%; min-width: calc(100% + 2px); width: max-content; box-sizing: border-box;
+  margin-top: -1px; padding: 4px 10px 4px 14px; display: block;
+  font: 600 7.5px/1 'JetBrains Mono', monospace; font-style: normal; letter-spacing: .14em; text-transform: uppercase;
+  background: var(--paper); color: #514f4a;
+  border: 1px solid rgba(23, 22, 26, .82); border-top: 1px dashed rgba(23, 22, 26, .3); border-radius: 0 0 3px 3px;
+  box-shadow: 2px 2px 0 rgba(23, 22, 26, .12);
+  opacity: 0; transform: translateY(-6px); transform-origin: 50% 0; pointer-events: none;
+  transition: opacity .18s, transform .3s cubic-bezier(.2, .8, .2, 1), background-color .2s, color .2s;
+}
+
+/* hover: cardul se ridică un pas, talonul se desface */
+.map-pins .map-pin:hover .mp-label { transform: translate(-1px, -3px); box-shadow: 3px 4px 0 rgba(23, 22, 26, .16); }
+.map-pins .map-pin:hover .mp-label::before { width: 7px; }
+.map-pins .map-pin:hover .mp-label i, .map-pins .map-pin.on .mp-label i { opacity: 1; transform: none; transition-delay: .04s; }
+.map-pins .map-pin:hover .mp-label i { box-shadow: 3px 4px 0 rgba(23, 22, 26, .16); }
+
+/* activ: ștampilat cu brandul */
+.map-pins .map-pin.on .mp-label {
+  background: var(--pc); color: var(--pt); border-color: var(--ink);
+  transform: translate(-1px, -3px) scale(1.03); box-shadow: 3px 3px 0 var(--ink);
+}
+.map-pins .map-pin.on .mp-label::before { background: var(--pt); opacity: .85; }
+.map-pins .map-pin.on .mp-label i { background: var(--ink); color: #fff; border-color: var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+
+/* vizitat: contur punctat, bifă de brand în dreapta */
+.map-pins .map-pin.visited .mp-label { background: var(--sand); color: #6a6863; border-style: dashed; border-color: rgba(23, 22, 26, .4); padding-right: 24px; box-shadow: none; }
+.map-pins .map-pin.visited .mp-label::after {
+  content: ""; position: absolute; right: 7px; top: 50%; translate: 0 -50%; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--pc) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.4 5.2l2 2 3.4-4' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/9px no-repeat;
+}
+.map-pins .map-pin.visited.on .mp-label { background: var(--pc); color: var(--pt); border-style: solid; border-color: var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+.map-pins .map-pin.visited.on .mp-label::after { background-color: var(--pt); }
+
+/* de găsit: „?” în fața numelui */
+.map-pins .map-pin.find:not(.visited) .mp-label b::before { content: "? " !important; color: var(--pc); font-weight: 900; -webkit-text-stroke: .4px rgba(23, 22, 26, .4); }
+
+/* punctul: romb mic */
+.map-pins .map-pin .mp-dot { border-radius: 1px; transform: rotate(45deg); width: 6px; height: 6px; margin-bottom: -3px; }
+.map-pins .map-pin:hover .mp-dot { transform: rotate(45deg) scale(1.25); }
+.map-pins .map-pin.on .mp-dot { transform: rotate(45deg) scale(1.45); }
+.map-pins .map-pin.dot .mp-dot { transform: rotate(45deg) scale(1.5); }
+.map-pins .map-pin.dot.on .mp-dot { transform: rotate(45deg) scale(1.9); }
+
+/* mini */
+.map-pins .map-pin.mini .mp-label { padding: 4px 7px 4px 10px; }
+.map-pins .map-pin.mini .mp-label b { font-size: 11px; }
+.map-pins .map-pin.mini .mp-label::before { width: 4px; }
+.map-pins .map-pin.mini .mp-label i { display: none; }
+.map-pins .map-pin.mini.visited .mp-label { padding-right: 20px; }
+.map-pins .map-pin.mini.visited .mp-label::after { width: 10px; height: 10px; right: 5px; background-size: 7px; }
+
+/* far */
+.map-pins .map-pin.beacon .mp-label { padding: 7px 12px 7px 16px; }
+.map-pins .map-pin.beacon .mp-label b { font-size: 15px; }
+
+/* sub-locuri */
+.map-pins .map-pin.small .mp-label { padding: 3px 6px 3px 9px; background: var(--sand); color: #4a4945; border-color: rgba(23, 22, 26, .45); box-shadow: none; }
+.map-pins .map-pin.small .mp-label b { font-size: 10.5px; font-weight: 700; }
+.map-pins .map-pin.small .mp-label::before { width: 3px; }
+.map-pins .map-pin.small .mp-label i { display: none; }
+
+/* capitol / adresă veche: card de nisip, contur punctat, linia mono deasupra */
+.map-pins .map-pin.chapter .mp-label {
+  gap: 2px; padding: 5px 10px 6px 12px;
+  background: var(--sand) !important; color: #5c5a55 !important;
+  border: 1px dashed rgba(23, 22, 26, .4) !important; box-shadow: none;
+}
+.map-pins .map-pin.chapter .mp-label::before { width: 4px; left: -1px; top: -1px; bottom: -1px; }
+.map-pins .map-pin.chapter .mp-label b { font: 700 11.5px/1.05 CromaticSans, sans-serif; letter-spacing: 0; }
+.map-pins .map-pin.chapter .mp-label i {
+  position: static; min-width: 0; width: auto; margin: 0; padding: 0; border: 0; background: none; box-shadow: none;
+  opacity: .72 !important; transform: none; font-size: 7px; color: inherit !important; display: block !important;
+}
+.map-pins .map-pin.chapter:hover .mp-label { background: var(--paper) !important; color: var(--ink) !important; border-style: solid !important; }
+.map-pins .map-pin.chapter.mini .mp-label i { display: none !important; }
+.map-pins .map-pin.chapter.on .mp-label { background: var(--ink) !important; color: #fff !important; border: 1px solid var(--ink) !important; }
+
+/* plutitoare */
+.map-pins .map-pin.float .mp-label { background: var(--sand) !important; color: var(--ink) !important; padding: 6px 12px; border-color: rgba(23, 22, 26, .5); }
+.map-pins .map-pin.float .mp-label::before, .map-pins .map-pin.float .mp-label i { display: none; }
+
+/* telefon */
+@container pins (max-width: 640px) {
+  .map-pins .map-pin .mp-label { padding: 5px 8px 5px 12px; }
+  .map-pins .map-pin .mp-label b { font-size: 12px; }
+  .map-pins .map-pin .mp-label i { display: none; }
+  .map-pins .map-pin.mini .mp-label b { font-size: 10.5px; }
+}
+
+
+/* ===================== DIRECTION C ===================== */
+/* =====================================================================
+   DIRECTION C — „Tipografic”
+   Fără card în repaus: doar numele, cu un halou de hârtie, așezat pe o
+   linie de brand în care intră piciorul (ca o literă T). Cea mai liniștită
+   dintre cele trei. La hover apare linia mono pe un mic bilet; activ =
+   numele e tras cu marker de brand. Vizitat = linie punctată și bifă.
+   ===================================================================== */
+.map-pins .map-pin .mp-label {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 0;
+  padding: 3px 7px 0; border-radius: 4px;
+  background: none; color: var(--ink); border: 0; box-shadow: none;
+  white-space: nowrap; transform-origin: 50% 100%;
+  transition: transform .32s cubic-bezier(.2, .8, .2, 1), background-color .22s, color .22s, box-shadow .32s, padding .22s;
+}
+.map-pins .map-pin .mp-label b {
+  font: 800 14px/1.05 CromaticSans, sans-serif; letter-spacing: -.012em;
+  text-shadow: 0 0 1px #fff, 1px 1px 0 rgba(255, 255, 255, .95), -1px -1px 0 rgba(255, 255, 255, .95), 1px -1px 0 rgba(255, 255, 255, .95), -1px 1px 0 rgba(255, 255, 255, .95), 0 0 6px rgba(255, 255, 255, .95), 0 0 12px rgba(255, 255, 255, .8);
+  transition: color .2s, text-shadow .2s;
+}
+.map-pins .map-pin .mp-label b::before { content: none !important; }
+/* linia de brand pe care stă numele — piciorul intră în ea */
+.map-pins .map-pin .mp-label::after {
+  content: ""; display: block; width: 100%; height: 2px; margin-top: 3px; border-radius: 2px;
+  background: var(--pc); box-shadow: 0 1px 0 rgba(23, 22, 26, .22);
+  transform-origin: 50% 100%;
+  transition: transform .3s cubic-bezier(.2, .8, .2, 1), background-color .2s;
+}
+.map-pins .map-pin .mp-label i {
+  position: absolute; left: 50%; top: 100%; translate: -50% 0; margin-top: 5px;
+  display: block; padding: 3px 7px; border-radius: 4px;
+  font: 600 7.5px/1 'JetBrains Mono', monospace; font-style: normal; letter-spacing: .14em; text-transform: uppercase;
+  background: var(--paper); color: #4f4d48; box-shadow: 0 1px 0 rgba(23, 22, 26, .08), 0 4px 10px -6px rgba(23, 22, 26, .5);
+  opacity: 0; transform: translateY(-4px); pointer-events: none;
+  transition: opacity .18s, transform .3s cubic-bezier(.2, .8, .2, 1), background-color .2s, color .2s;
+}
+
+/* hover: numele se ridică, linia se îngroașă, biletul coboară */
+.map-pins .map-pin:hover .mp-label { transform: translateY(-2px); }
+.map-pins .map-pin:hover .mp-label::after { transform: scaleY(1.6); }
+.map-pins .map-pin:hover .mp-label i, .map-pins .map-pin.on .mp-label i { opacity: 1; transform: none; transition-delay: .04s; }
+
+/* activ: tras cu marker */
+.map-pins .map-pin.on .mp-label {
+  background: var(--pc); color: var(--pt); padding: 5px 9px 0; transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px rgba(23, 22, 26, .22), 0 12px 24px -12px rgba(23, 22, 26, .55);
+}
+.map-pins .map-pin.on .mp-label b { text-shadow: none; }
+.map-pins .map-pin.on .mp-label::after { background: var(--pt); opacity: .9; box-shadow: none; margin-top: 4px; width: calc(100% + 18px); margin-left: -9px; margin-right: -9px; border-radius: 0 0 4px 4px; }
+.map-pins .map-pin.on .mp-label i { background: var(--ink); color: #fff; }
+
+/* vizitat: nume mai liniștit, linie punctată, bifă de brand după nume */
+.map-pins .map-pin.visited .mp-label b { color: #76746f; }
+.map-pins .map-pin.visited .mp-label b::after {
+  content: "" !important; display: inline-block; width: 10px; height: 10px; margin: 0 0 -1px 5px; border-radius: 50%; vertical-align: baseline;
+  background: var(--pc) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.4 5.2l2 2 3.4-4' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/8px no-repeat;
+}
+.map-pins .map-pin.visited .mp-label::after { background: repeating-linear-gradient(to right, var(--pc) 0 4px, transparent 4px 7px); box-shadow: none; }
+.map-pins .map-pin.visited.on .mp-label b { color: var(--pt); }
+.map-pins .map-pin.visited.on .mp-label b::after { background-color: var(--pt); }
+.map-pins .map-pin.visited.on .mp-label::after { background: var(--pt); }
+
+/* de găsit: „?” de brand în fața numelui */
+.map-pins .map-pin.find:not(.visited) .mp-label b::before { content: "? " !important; color: var(--pc); font-weight: 900; -webkit-text-stroke: .4px rgba(23, 22, 26, .4); }
+
+/* mini */
+.map-pins .map-pin.mini .mp-label { padding: 2px 5px 0; }
+.map-pins .map-pin.mini .mp-label b { font-size: 11.5px; }
+.map-pins .map-pin.mini .mp-label::after { height: 1.5px; margin-top: 2px; }
+.map-pins .map-pin.mini .mp-label i { display: none; }
+.map-pins .map-pin.mini .mp-label b::after { width: 8px; height: 8px; background-size: 6px; margin-left: 4px; }
+
+/* far */
+.map-pins .map-pin.beacon .mp-label b { font-size: 16px; }
+.map-pins .map-pin.beacon .mp-label::after { height: 3px; }
+
+/* sub-locuri */
+.map-pins .map-pin.small .mp-label { padding: 2px 4px 0; }
+.map-pins .map-pin.small .mp-label b { font-size: 10.5px; font-weight: 700; color: #4a4945; }
+.map-pins .map-pin.small .mp-label::after { height: 1px; margin-top: 2px; background: rgba(23, 22, 26, .35); box-shadow: none; }
+.map-pins .map-pin.small .mp-label i { display: none; }
+
+/* capitol / adresă veche: mono deasupra, nume gri, linie punctată de brand */
+.map-pins .map-pin.chapter .mp-label { background: none !important; color: #5c5a55 !important; border: 0 !important; gap: 1px; padding: 2px 6px 0; box-shadow: none !important; }
+.map-pins .map-pin.chapter .mp-label b { font: 700 11.5px/1.05 CromaticSans, sans-serif; letter-spacing: 0; color: #5c5a55; }
+.map-pins .map-pin.chapter .mp-label i {
+  position: static; translate: none; margin: 0; padding: 0; background: none; box-shadow: none;
+  opacity: 1; transform: none; font-size: 7px; color: #7a7872 !important; display: block !important;
+  text-shadow: 0 0 1px #fff, 1px 1px 0 rgba(255, 255, 255, .95), -1px -1px 0 rgba(255, 255, 255, .95), 0 0 5px rgba(255, 255, 255, .9);
+}
+.map-pins .map-pin.chapter .mp-label::after { background: repeating-linear-gradient(to right, var(--pc) 0 3px, transparent 3px 6px); box-shadow: none; height: 1.5px; }
+.map-pins .map-pin.chapter:hover .mp-label b { color: var(--ink); }
+.map-pins .map-pin.chapter.mini .mp-label i { display: none !important; }
+.map-pins .map-pin.chapter.on .mp-label { background: var(--ink) !important; color: #fff !important; padding: 4px 8px 0; }
+.map-pins .map-pin.chapter.on .mp-label b, .map-pins .map-pin.chapter.on .mp-label i { color: #fff !important; text-shadow: none; }
+.map-pins .map-pin.chapter.on .mp-label::after { background: var(--pc); height: 2px; }
+
+/* plutitoare: doar numele, cu halou, plutind */
+.map-pins .map-pin.float .mp-label { background: none !important; color: var(--ink) !important; padding: 2px 6px 0; }
+.map-pins .map-pin.float .mp-label::after, .map-pins .map-pin.float .mp-label i { display: none; }
+.map-pins .map-pin.float .mp-label b { font-size: 13px; color: #4a4945; }
+
+/* telefon */
+@container pins (max-width: 640px) {
+  .map-pins .map-pin .mp-label b { font-size: 12.5px; }
+  .map-pins .map-pin .mp-label i { display: none; }
+  .map-pins .map-pin.mini .mp-label b { font-size: 11px; }
+}

@@ -229,6 +229,11 @@ const caseSlugs = [];
     caseSlugs.push(slug);
   }
 }
+// r130: map places with a real photo of their own (no case page cover, or a better one)
+for (const [id, k] of Object.entries({ steam: "m:cs/Steam-Cromaticstudios-1", lab: "m:tm/cubes-lab" })) {
+  const a = mediaMap.get(k);
+  if (a) COVERS["place:" + id] = a.src; else console.warn(`[build] covers: missing ${k}`);
+}
 writeFileSync(join(pub, "covers.json"), JSON.stringify(COVERS));
 const workPaths = [...new Set([...R.slugs, ...R.canvasSlugs, ...caseSlugs, "steam"])].map((s) => `/work/${s}/`);
 writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, new Date().toISOString().slice(0, 10), ["/site/", ...workPaths]));

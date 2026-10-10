@@ -3621,3 +3621,36 @@ body.map-mode .wt[data-scheme="gta2"] { display: none; }
   .map-card.has-img { flex-direction: column !important; }
   .map-card .mcd-img { width: auto !important; height: 116px !important; border-right: 0 !important; border-bottom: 1px solid #141414 !important; }
 }
+/* r130: the place card is the stage: bottom-centre, wide, a big picture on the left (on phones, a sheet with the
+   picture on top). Every card has a picture: a photo, or a postcard of the place rendered in the current world */
+@media (min-width: 721px) {
+  .map-card { left: calc(50% - min(340px, 50vw - 24px)) !important; right: auto !important; top: auto !important; bottom: 112px !important;
+    width: min(680px, calc(100vw - 48px)) !important; max-height: min(330px, calc(100vh - 230px)); border-radius: 26px !important; }
+  .map-card.has-img { flex-direction: row !important; }
+  .map-card.has-img .mcd-img { aspect-ratio: auto !important; width: 46%; flex: 0 0 46%; border-bottom: 0 !important; border-right: 1px solid #141414; min-height: 280px; }
+  .map-card .mcd-body { padding: 22px 24px 20px; display: flex; flex-direction: column; }
+  .map-card .mcd-actions { margin-top: auto; padding-top: 10px; }
+  .map-card .mcd-title { font-size: 30px !important; }
+  @keyframes mcdIn { from { opacity: 0; transform: translateY(30px) scale(.97); } to { opacity: 1; transform: none; } }
+}
+@media (max-width: 720px) {
+  .map-card .mcd-img { height: 168px !important; }
+  .map-card { max-height: calc(100vh - 210px) !important; }
+}
+.map-card .mcd-img { position: relative; }
+.map-card .mcd-shot { opacity: 0; transition: opacity .6s ease, transform 1.4s cubic-bezier(.2,.7,.2,1) !important; }
+.map-card .mcd-shot.on { opacity: 1; }
+.map-card.shot .mcd-img::after { content: "LIVE FROM THE MAP"; position: absolute; left: 12px; bottom: 10px; padding: 5px 8px 4px; border-radius: 6px;
+  background: rgba(255,255,255,.88); color: #141414; font: 500 9px/1 "JetBrains Mono", monospace; letter-spacing: .14em; }
+/* r130: Sketchbook: the labels are drawn too, graphite on paper */
+body.scheme-sketch .map-pin .mp-label { background: #fbfaf6 !important; color: #232326 !important; border: 1px solid #232326 !important; box-shadow: 2px 2px 0 rgba(35,35,38,.18) !important; }
+body.scheme-sketch .map-pin .mp-label i { color: #6b6a66 !important; }
+body.scheme-sketch .map-pin .mp-stem { background: #232326 !important; width: 1px !important; }
+body.scheme-sketch .map-pin .mp-dot { background: #fbfaf6 !important; border-color: #232326 !important; }
+/* r130: eleven worlds: four across on wide screens, and the panel scrolls rather than run off the top */
+@media (min-width: 761px) {
+  .hud-menu.theme-menu { --tw: min(142px, calc((100vh - 280px) / 3.75)); width: auto !important; max-height: calc(100vh - 120px); overflow-y: auto; }
+  .wt-grid { grid-template-columns: repeat(4, var(--tw)) !important; }
+  .wt-lead { max-width: calc(var(--tw) * 4 - 30px); }
+}
+@media (max-width: 760px) { .hud-menu.theme-menu { max-height: calc(100vh - 140px); overflow-y: auto; } }

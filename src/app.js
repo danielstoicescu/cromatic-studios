@@ -23901,6 +23901,12 @@ void main() {
         { id: "orchid", n: "Sakura", bg: "#fbeef3", fg: "#3a1e2c", ac: "#f08bb4" },
         { id: "magma", n: "Magma", bg: "#171210", fg: "#fbede4", ac: "#ff4d1c" },
         { id: "underwater", n: "Underwater", bg: "#0b3b5c", fg: "#e8fbff", ac: "#3de0d0" },
+        // r130: Sin City: shot in colour, printed in hard black and white, one red kept (see sinCityRender)
+        { id: "sincity", n: "Sin City", bg: "#070707", fg: "#f4f1ea", ac: "#d4061a" },
+        // r130: Sketchbook: graphite on white paper; the city draws itself where you look (see sketchRender)
+        { id: "sketch", n: "Sketchbook", bg: "#f6f3ec", fg: "#232326", ac: "#232326" },
+        // r130: Risograph: the city printed in two inks, fluorescent pink and medium blue, halftone, a little off-register
+        { id: "riso", n: "Risograph", bg: "#f3eee3", fg: "#1d3f8f", ac: "#ff48b0" },
         { id: "gta2", n: "GTA 2", bonus: true, bg: "#1a1e22", fg: "#e8e6df", ac: "#e8c020" }
       ];
       ARCHIVED_SCHEMES = [{ id: "default", n: "Cromatic Mode (classic)", bg: "#f2f2f2", fg: "#0a0a0a", ac: "#FED012" }];
@@ -32444,10 +32450,10 @@ void main() {
         <button class="wt-close" aria-label="Close">\u00D7</button>
       </div>`);
     themeMenu.querySelector(".wt-close").onclick = () => closeMenus();
-    const WORLD_VEH = { underwater: "sub", default: "groovy", monument: "groovy", ghibli: "groovy", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "lava", orchid: "scooter" };
+    const WORLD_VEH = { underwater: "sub", default: "groovy", monument: "groovy", ghibli: "groovy", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "lava", orchid: "scooter", sincity: "cop", sketch: "groovy", riso: "scooter" };
     const wtGrid = el("div", "wt-grid");
     themeMenu.appendChild(wtGrid);
-    const WORLD_SUB = { underwater: "Submarine, fish, floating things", default: "The city, as it is", monument: "Our city, as a pastel diorama", ghibli: "Hand-painted countryside", nightlife: "Orange & blue, a light drizzle", gta2: "Bonus \u00B7 drive mode \u00B7 top-down, retro", circuit: "Race day on the circuit", magma: "Lava tones", orchid: "Petals everywhere" };
+    const WORLD_SUB = { underwater: "Submarine, fish, floating things", default: "The city, as it is", monument: "Our city, as a pastel diorama", ghibli: "Hand-painted countryside", nightlife: "Orange & blue, a light drizzle", gta2: "Bonus \u00B7 drive mode \u00B7 top-down, retro", circuit: "Race day on the circuit", magma: "Lava tones", orchid: "Petals everywhere", sincity: "Black, white and one red", sketch: "Pencil on paper, drawn as you explore", riso: "Two inks, slightly off-register" };
     const themeRows = {};
     SCHEMES.forEach((s, i) => {
       const b = el("button", "wt", `
@@ -33980,6 +33986,42 @@ void main() {
           if (next && next.id !== state.stopId) api.jumpTo(next.id);
         }
       };
+      // r130: a postcard of a map place, for the cards of places with no photo: a three-quarter view from the map's own
+      // side, rendered in the current world, on the main canvas between two frames (like the world previews)
+      var placeShotCache = {};
+      function placeShot(pl) {
+        const key = pl.id + "|" + state.schemeIdx;
+        if (placeShotCache[key]) return placeShotCache[key];
+        const cw = renderer.domElement.width, ch = renderer.domElement.height;
+        const pw = Math.min(560, cw, Math.floor(ch * 4 / 3)), ph = Math.round(pw * 0.75), sch = SCHEMES[state.schemeIdx];
+        const pcam = new PerspectiveCamera(34, pw / ph, 5, 20000);
+        const h = pl.wy || 55;
+        const tgt = warpV(new Vector3(pl.wx, Math.min(90, h * 0.4), pl.wz));
+        const d = 300 + h * 2.1, yaw = mapView.yaw + 0.35, el = 0.62;
+        pcam.position.set(tgt.x + Math.sin(yaw) * Math.cos(el) * d, tgt.y + Math.sin(el) * d, tgt.z + Math.cos(yaw) * Math.cos(el) * d);
+        pcam.lookAt(tgt); pcam.updateProjectionMatrix();
+        const out = document.createElement("canvas"); out.width = pw; out.height = ph;
+        const pr = renderer.getPixelRatio(), fogN = scene.fog?.near, fogF = scene.fog?.far;
+        try {
+          if (scene.fog) { scene.fog.near = 2000; scene.fog.far = 9000; }
+          sky.position.copy(pcam.position);
+          renderer.setScissorTest(true);
+          renderer.setViewport(0, 0, pw / pr, ph / pr);
+          renderer.setScissor(0, 0, pw / pr, ph / pr);
+          if (sch.id === "monument") renderer.render(scene, pcam); else if (sch.id === "sincity") sinCityRender(performance.now(), pcam); else if (sch.id === "sketch") sketchRender(performance.now(), pcam, true); else if (sch.id === "riso") risoRender(performance.now(), pcam); else outline.render(scene, pcam);
+          const H = renderer.domElement.height;
+          out.getContext("2d").drawImage(renderer.domElement, 0, H - ph, pw, ph, 0, 0, pw, ph);
+          placeShotCache[key] = out.toDataURL("image/jpeg", 0.86);
+        } catch (e) {
+        } finally {
+          if (scene.fog) { scene.fog.near = fogN; scene.fog.far = fogF; }
+          renderer.setScissorTest(false);
+          renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
+          sky.position.copy(camera.position);
+          if (sch.id === "sincity") sinCityRender(performance.now(), camera); else if (sch.id === "sketch") sketchRender(performance.now(), camera); else if (sch.id === "riso") risoRender(performance.now(), camera); else if (mvK > 0.5) tiltShiftRender(performance.now()); else outline.render(scene, camera);
+        }
+        return placeShotCache[key];
+      }
       var worldPrevCache = { key: null, urls: [] }, worldPrevBusy = false;
       function makeWorldPreviews(onEach) {
         const key = Math.round(state.L / 600) + (state.branchChosen ? state.branch : "-");
@@ -34020,7 +34062,7 @@ void main() {
             renderer.setScissorTest(true);
             renderer.setViewport(0, 0, pw, ph);
             renderer.setScissor(0, 0, pw, ph);
-            if (sch.id === "monument") renderer.render(scene, pcam); else outline.render(scene, pcam);
+            if (sch.id === "monument") renderer.render(scene, pcam); else if (sch.id === "sincity") sinCityRender(performance.now(), pcam); else if (sch.id === "sketch") sketchRender(performance.now(), pcam, true); else if (sch.id === "riso") risoRender(performance.now(), pcam); else outline.render(scene, pcam);
             const H = renderer.domElement.height;
             octx.drawImage(renderer.domElement, 0, H - ph * pr, pw * pr, ph * pr, 0, 0, out.width, out.height);
             veh.group.visible = vis;
@@ -34207,10 +34249,11 @@ void main() {
           scene.fog.near = mv ? 9000 : s.id === "nightlife" ? 1100 : 900;
           scene.fog.far = mv ? 34000 : s.id === "nightlife" ? 5200 : 4200;
           if (mats.mvWalls) {
-            for (const m of mats.cityTiles) { const a = m.geometry.attributes; a.color.array.set(mv ? a.colorMV.array : m.userData.def); a.color.needsUpdate = true; }
+            const pastel = mv || s.id === "sincity" || s.id === "riso";
+            for (const m of mats.cityTiles) { const a = m.geometry.attributes; a.color.array.set(pastel ? a.colorMV.array : m.userData.def); a.color.needsUpdate = true; }
             mats.mvProps.visible = mv;
             if (!mats.winMV) { mats.winDef = mats.buildings.map; mats.winMV = makeWindowTextureMV(); mats.winMV.wrapS = mats.winMV.wrapT = RepeatWrapping; }
-            mats.buildings.map = mv ? mats.winMV : mats.winDef;
+            mats.buildings.map = pastel ? mats.winMV : mats.winDef;
             mats.buildings.needsUpdate = true;
           }
         }
@@ -34297,6 +34340,50 @@ void main() {
           hemi.color.set("#ffe8f1"); hemi.groundColor.set("#e7b8c9");
           mats.ground?.color.set("#f6e6ec");
           mats.parkMat?.color.set("#a8d99a");
+        }
+        // r130: Sin City: hard white key light, almost no fill, windows burn white, rain is white ink
+        const sin = s.id === "sincity";
+        if (rainMat) rainMat.color.set(sin ? "#ffffff" : "#9db6d0");
+        if (sin) {
+          scene.fog.color.set("#050505"); scene.fog.near = 1800; scene.fog.far = 7000;
+          hemi.color.set("#ffffff"); hemi.groundColor.set("#000000"); hemi.intensity = 0.2;
+          sun.color.set("#ffffff"); sun.intensity = 3.2;
+          fillLight.color.set("#ffffff"); fillLight.intensity = 0.05;
+          mats.buildings?.color.set("#ffffff");
+          if (mats.buildings) { mats.buildings.emissive.set("#ffffff"); mats.buildings.emissiveIntensity = 0.5; }
+          mats.roofs?.color.set("#d8d8d8");
+          mats.ground?.color.set("#0d0d0d");
+          mats.roadMinor?.color.set("#1c1c1c"); mats.roadMajor?.color.set("#222222"); mats.roadCasing?.color.set("#5a5a5a");
+          mats.route?.color.set("#d4061a"); mats.routeCasing?.color.set("#f2f2f2"); mats.routeDash?.color.set("#ffffff");
+          mats.canopy?.color.set("#262626"); mats.bush?.color.set("#1e1e1e"); mats.parkMat?.color.set("#141414");
+          renderer.toneMappingExposure = 1.1;
+        }
+        // Sketchbook draws with light only: the city's own colours go (a shader recompile, once per switch)
+        for (const m of [mats.buildings, mats.roofs]) if (m && m.vertexColors === (s.id === "sketch")) { m.vertexColors = s.id !== "sketch"; m.needsUpdate = true; }
+        if (s.id === "riso") {
+          scene.fog.color.set("#f3eee3"); scene.fog.near = 6000; scene.fog.far = 30000;
+          hemi.color.set("#ffffff"); hemi.groundColor.set("#c9c2d8"); hemi.intensity = 0.95;
+          sun.color.set("#fff6e8"); sun.intensity = 2.1; fillLight.color.set("#b8c8ff"); fillLight.intensity = 0.45;
+          mats.buildings?.color.set("#ffffff"); if (mats.buildings) mats.buildings.emissiveIntensity = 0;
+          mats.roofs?.color.set("#ffffff");
+          mats.ground?.color.set("#fbf8f1");
+          mats.roadMinor?.color.set("#d9dcef"); mats.roadMajor?.color.set("#cdd2ec"); mats.roadCasing?.color.set("#7f8cc4");
+          mats.route?.color.set("#ff6fc0"); mats.routeCasing?.color.set("#1d3f8f"); mats.routeDash?.color.set("#ffffff");
+          mats.canopy?.color.set("#9fb8ff"); mats.parkMat?.color.set("#c5d3ff");
+          renderer.toneMappingExposure = 1.0;
+        }
+        if (s.id === "sketch") {
+          scene.background = new Color("#f6f3ec");
+          scene.fog.color.set("#f6f3ec"); scene.fog.near = 6000; scene.fog.far = 30000;
+          hemi.color.set("#ffffff"); hemi.groundColor.set("#bdbdbd"); hemi.intensity = 1.1;
+          sun.color.set("#ffffff"); sun.intensity = 1.9; fillLight.color.set("#ffffff"); fillLight.intensity = 0.3;
+          mats.buildings?.color.set("#ffffff"); if (mats.buildings) mats.buildings.emissiveIntensity = 0;
+          mats.roofs?.color.set("#e9e9e9");
+          mats.ground?.color.set("#ffffff");
+          mats.roadMinor?.color.set("#f1f1f1"); mats.roadMajor?.color.set("#eeeeee"); mats.roadCasing?.color.set("#9a9a9a");
+          mats.route?.color.set("#cfcfcf"); mats.routeCasing?.color.set("#2a2a2a"); mats.routeDash?.color.set("#ffffff");
+          mats.canopy?.color.set("#f4f4f4"); mats.bush?.color.set("#e2e2e2"); mats.parkMat?.color.set("#f3f3f3");
+          renderer.toneMappingExposure = 1.05;
         }
         if (s.id === "underwater") {
           scene.fog.color.set("#0d4a6e");
@@ -34700,7 +34787,7 @@ void main() {
       const _rP = new Vector3(), _rT = new Vector3();
       const _tA = new Vector3();
       var beaconOn = false, beaconBlinkUntil = 0, copMode = "";
-      var ENV_VEH = { default: "groovy", monument: "groovy", ghibli: "groovy", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "lava", orchid: "scooter", underwater: "sub" };
+      var ENV_VEH = { default: "groovy", monument: "groovy", ghibli: "groovy", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "lava", orchid: "scooter", underwater: "sub", sincity: "cop", sketch: "groovy", riso: "scooter" };
       var camYaw = null, camDir = new Vector3(0, 0, 1), chA = new Vector3(), chB = new Vector3(), planeRev = 0;
       var VEH_SPEED = {
         groovy: { max: 130, unit: "KM/H" }, f1: { max: 340, unit: "KM/H" }, monopoly: { max: 260, unit: "KM/H" },
@@ -35737,6 +35824,236 @@ void main() {
         renderer.setRenderTarget(null);
         renderer.render(tilt.sc, tilt.cam);
       }
+      // ---- r130: Sin City ----
+      // Like the film (Rodriguez/Miller, 2005): everything is shot in colour, then crushed in post to a hard two-tone
+      // print, jagged ink shadows, and only a few things keep their colour: here, the reds (the route, the cop's
+      // beacon, a red neon). Paper-white highlights, a heavy vignette, film grain.
+      var sinFx = null;
+      function sinCityRender(now, cam) {
+        const w = renderer.domElement.width, h = renderer.domElement.height;
+        if (!sinFx) {
+          const rt = new WebGLRenderTarget(w, h, { samples: 2, type: HalfFloatType });
+          const mat = new ShaderMaterial({
+            uniforms: { tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, t: { value: 0 } },
+            vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
+            fragmentShader: `
+              uniform sampler2D tD; uniform vec2 res; uniform float t; varying vec2 vUv;
+              void main(){
+                vec3 lin = texture2D(tD, vUv).rgb;
+                gl_FragColor = vec4(lin, 1.0);
+                #include <tonemapping_fragment>
+                #include <colorspace_fragment>
+                vec3 c = gl_FragColor.rgb;
+                float l = dot(c, vec3(0.299, 0.587, 0.114));
+                // the selective colour: strong reds survive
+                float red = smoothstep(0.42, 0.58, c.r - max(c.g, c.b)) * smoothstep(0.35, 0.55, c.r);
+                // the two-tone print, a hair of grey kept in the threshold so edges don't fizz
+                float v = smoothstep(0.34, 0.44, l);
+                vec3 ink = vec3(0.028, 0.027, 0.03), paper = vec3(0.955, 0.945, 0.915);
+                vec3 o = mix(ink, paper, v);
+                o = mix(o, vec3(0.86, 0.02, 0.07) * (0.75 + 0.35 * l), red);
+                vec2 q = vUv - 0.5;
+                o *= 1.0 - smoothstep(0.18, 0.62, dot(q, q) * 1.9) * 0.85;
+                float tf = floor(t * 24.0);
+                vec2 gp = floor(vUv * res / 1.5);
+                float n = fract(sin(dot(gp + vec2(tf * 7.13, tf * 3.71), vec2(12.9898, 78.233))) * 43758.5453);
+                o += (n - 0.5) * (0.025 + 0.05 * v);
+                gl_FragColor = vec4(o, 1.0);
+              }`,
+            depthTest: false, depthWrite: false
+          });
+          const quad = new Mesh(new PlaneGeometry(2, 2), mat);
+          quad.frustumCulled = false;
+          const sc = new Scene(); sc.add(quad);
+          sinFx = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
+        }
+        if (sinFx.rt.width !== w || sinFx.rt.height !== h) { sinFx.rt.setSize(w, h); sinFx.mat.uniforms.res.value.set(w, h); }
+        sinFx.mat.uniforms.t.value = (now * 0.001) % 100;
+        renderer.setRenderTarget(sinFx.rt);
+        outline.render(scene, cam);
+        renderer.setRenderTarget(null);
+        renderer.render(sinFx.sc, sinFx.cam);
+      }
+      // ---- r130: Sketchbook ----
+      // Graphite on white paper. The colour render is only a guide: its silhouettes (the ink outlines) and its creases
+      // (a Sobel on depth) become pencil lines, its shadows become hatching, the rest is paper. The lines "boil" at
+      // 8 fps like a hand-drawn animation, and the city is drawn only where you have looked: a reveal map in world
+      // space (painted around the map's focus, the van and the places you visit), sampled through the depth buffer.
+      var sketchFx = null;
+      var sketchReveal = { cv: null, ctx: null, tex: null, last: 0, x0: CITY_X0 - 600, z0: CITY_Z0 - 600, w: CITY_X1 - CITY_X0 + 1200, h: CITY_Z1 - CITY_Z0 + 1200 };
+      function sketchPaint(x, z, r, a = 1) {
+        const R = sketchReveal;
+        if (!R.ctx) return;
+        const S = R.cv.width, px = (x - R.x0) / R.w * S, pz = (z - R.z0) / R.h * S, pr = r / R.w * S;
+        const g = R.ctx.createRadialGradient(px, pz, pr * 0.15, px, pz, pr);
+        g.addColorStop(0, `rgba(255,255,255,${a})`); g.addColorStop(1, "rgba(255,255,255,0)");
+        R.ctx.globalCompositeOperation = "lighten";
+        R.ctx.fillStyle = g; R.ctx.beginPath(); R.ctx.arc(px, pz, pr, 0, Math.PI * 2); R.ctx.fill();
+        R.tex.needsUpdate = true;
+      }
+      function sketchExplore(now) {
+        const R = sketchReveal;
+        if (!R.ctx || now - R.last < 90) return;
+        const dt = Math.min(0.5, (now - R.last) / 1000); R.last = now;
+        // what you look at gets drawn, a little more every moment you stay
+        if (mapMode) { const v = warpV(new Vector3(mapView.tgt.x, 0, mapView.tgt.z)); sketchPaint(v.x, v.z, Math.max(420, mapView.dist * 0.24), 0.16 * dt * 4); }
+        else sketchPaint(carPos.x, carPos.z, 560, 0.3 * dt * 4);
+      }
+      function sketchRender(now, cam, full) {
+        const w = renderer.domElement.width, h = renderer.domElement.height;
+        if (!sketchFx) {
+          const R = sketchReveal;
+          R.cv = document.createElement("canvas"); R.cv.width = R.cv.height = 512;
+          R.ctx = R.cv.getContext("2d"); R.ctx.fillStyle = "#000"; R.ctx.fillRect(0, 0, 512, 512);
+          R.tex = new CanvasTexture(R.cv); R.tex.flipY = false;
+          const rt = new WebGLRenderTarget(w, h, { samples: 0, type: HalfFloatType });
+          rt.depthTexture = new DepthTexture(w, h);
+          const mat = new ShaderMaterial({
+            uniforms: { tD: { value: rt.texture }, tZ: { value: rt.depthTexture }, tR: { value: R.tex }, res: { value: new Vector2(w, h) }, t: { value: 0 },
+              pInv: { value: new Matrix4() }, cW: { value: new Matrix4() }, box: { value: new Vector4(R.x0, R.z0, R.w, R.h) }, full: { value: 0 }, near: { value: 1 }, far: { value: 1000 } },
+            vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
+            fragmentShader: `
+              uniform sampler2D tD, tZ, tR; uniform vec2 res; uniform float t, full, near, far; uniform mat4 pInv, cW; uniform vec4 box; varying vec2 vUv;
+              float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+              float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+                return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
+              float lum(vec2 uv){ vec3 c = pow(clamp(texture2D(tD, uv).rgb, 0.0, 1.0), vec3(0.4545)); return dot(c, vec3(0.299, 0.587, 0.114)); }
+              float dep(vec2 uv){ float z = texture2D(tZ, uv).x; float ndc = z * 2.0 - 1.0; return (2.0 * near * far) / (far + near - ndc * (far - near)); }
+              void main(){
+                float tf = floor(t * 8.0);
+                vec2 px = 1.0 / res;
+                // the line boils: a small hand-drawn wobble that changes 8 times a second
+                vec2 wob = (vec2(vn(vUv * 9.0 + tf * 3.1), vn(vUv * 9.0 + 7.7 + tf * 1.7)) - 0.5) * 2.2 * px;
+                vec2 uv = vUv + wob;
+                float l = lum(uv);
+                // silhouettes: the ink hulls come out near black
+                float ink = 1.0 - smoothstep(0.06, 0.22, l);
+                // creases: a Sobel on log depth
+                float d00 = log(dep(uv + vec2(-px.x, -px.y))), d10 = log(dep(uv + vec2(0.0, -px.y))), d20 = log(dep(uv + vec2(px.x, -px.y)));
+                float d01 = log(dep(uv + vec2(-px.x, 0.0))), d21 = log(dep(uv + vec2(px.x, 0.0)));
+                float d02 = log(dep(uv + vec2(-px.x, px.y))), d12 = log(dep(uv + vec2(0.0, px.y))), d22 = log(dep(uv + vec2(px.x, px.y)));
+                float gx = (d20 + 2.0 * d21 + d22) - (d00 + 2.0 * d01 + d02), gy = (d02 + 2.0 * d12 + d22) - (d00 + 2.0 * d10 + d20);
+                float crease = smoothstep(0.035, 0.09, length(vec2(gx, gy)));
+                // tone edges: colour changes (windows, doors, road paint) drawn lighter
+                float l1 = lum(uv + vec2(px.x, 0.0)), l2 = lum(uv + vec2(0.0, px.y));
+                float tone = smoothstep(0.06, 0.16, abs(l1 - l) + abs(l2 - l)) * 0.4;
+                float line = max(ink, max(crease * 0.9, tone));
+                // hatching in the shade: one direction, then a cross, both a little irregular
+                vec2 p = vUv * res;
+                float sh = 1.0 - smoothstep(0.4, 0.74, l);
+                float hn = vn(p * 0.05) * 3.0;
+                float h1 = smoothstep(0.62, 0.92, abs(fract((p.x + p.y + hn) / 7.0) - 0.5) * 2.0) * smoothstep(0.3, 0.5, sh);
+                float h2 = smoothstep(0.66, 0.95, abs(fract((p.x - p.y + hn) / 6.0) - 0.5) * 2.0) * smoothstep(0.5, 0.75, sh);
+                float hatch = max(h1, h2) * 0.55;
+                // graphite grain: the stroke is never solid
+                float grain = 0.62 + 0.38 * vn(p * 0.9 + tf * 13.0);
+                float g = max(line, hatch) * grain;
+                // where has the city been drawn yet? world position from depth, then the reveal map
+                float zr = texture2D(tZ, vUv).x;
+                vec4 ndc = vec4(vUv * 2.0 - 1.0, zr * 2.0 - 1.0, 1.0);
+                vec4 vp = pInv * ndc; vp /= vp.w;
+                vec3 wp = (cW * vp).xyz;
+                vec2 ruv = (wp.xz - box.xy) / box.zw;
+                float rv = texture2D(tR, ruv).r;
+                float edge = vn(wp.xz * 0.02 + tf * 0.37) * 0.35;
+                float shown = full > 0.5 || zr >= 0.9999 ? 1.0 : smoothstep(0.25, 0.55, rv + edge - 0.15);
+                g *= mix(0.07, 1.0, shown);
+                if (zr >= 0.9999) g = 0.0;
+                // paper: warm white with a slow fibre
+                vec3 paper = vec3(0.968, 0.958, 0.93) - (vn(p * 0.35) * 0.025 + vn(p * 0.06) * 0.02);
+                vec3 graphite = vec3(0.14, 0.14, 0.16);
+                vec3 o = mix(paper, graphite, clamp(g, 0.0, 1.0));
+                vec2 q = vUv - 0.5;
+                o *= 1.0 - dot(q, q) * 0.22;
+                gl_FragColor = vec4(o, 1.0);
+              }`,
+            depthTest: false, depthWrite: false
+          });
+          const quad = new Mesh(new PlaneGeometry(2, 2), mat);
+          quad.frustumCulled = false;
+          const sc = new Scene(); sc.add(quad);
+          sketchFx = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
+          // the first page: a little of the city is already drawn where you are
+          if (mapMode) { const v = warpV(new Vector3(mapView.tgt.x, 0, mapView.tgt.z)); sketchPaint(v.x, v.z, 900, 1); } else sketchPaint(carPos.x, carPos.z, 700, 1);
+        }
+        if (sketchFx.rt.width !== w || sketchFx.rt.height !== h) { sketchFx.rt.setSize(w, h); sketchFx.mat.uniforms.res.value.set(w, h); }
+        if (!full) sketchExplore(now);
+        const u = sketchFx.mat.uniforms;
+        u.t.value = (now * 0.001) % 100; u.full.value = full ? 1 : 0;
+        cam.updateMatrixWorld();
+        u.pInv.value.copy(cam.projectionMatrixInverse); u.cW.value.copy(cam.matrixWorld); u.near.value = cam.near; u.far.value = cam.far;
+        renderer.setRenderTarget(sketchFx.rt);
+        outline.render(scene, cam);
+        renderer.setRenderTarget(null);
+        renderer.render(sketchFx.sc, sketchFx.cam);
+      }
+      // ---- r130: Risograph ----
+      // A two-drum riso print: the render is split into a fluorescent pink and a medium blue (pink takes what green
+      // would reflect, blue what red would), each screened as round halftone dots at its own angle, each drum a couple
+      // of pixels off-register, inked unevenly, multiplied on cream paper. Overlaps go purple, like the real thing.
+      var risoFx = null;
+      function risoRender(now, cam) {
+        const w = renderer.domElement.width, h = renderer.domElement.height;
+        if (!risoFx) {
+          const rt = new WebGLRenderTarget(w, h, { samples: 2, type: HalfFloatType });
+          const mat = new ShaderMaterial({
+            uniforms: { tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, t: { value: 0 }, dpr: { value: 1 } },
+            vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
+            fragmentShader: `
+              uniform sampler2D tD; uniform vec2 res; uniform float t, dpr; varying vec2 vUv;
+              float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+              float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+                return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
+              vec3 col(vec2 uv){ vec3 c = clamp(texture2D(tD, uv).rgb, 0.0, 1.0); return pow(c, vec3(0.4545)); }
+              // a halftone dot for a density d, screen angle a, cell size s
+              float dots(vec2 p, float d, float a, float s){
+                float cs = cos(a), sn = sin(a);
+                vec2 r = mat2(cs, -sn, sn, cs) * p / s;
+                vec2 f = fract(r) - 0.5;
+                float rad = sqrt(clamp(d, 0.0, 1.0)) * 0.72;
+                float aa = 1.2 / s;
+                return 1.0 - smoothstep(rad - aa, rad + aa, length(f));
+              }
+              void main(){
+                vec2 p = vUv * res;
+                float cell = 4.2 * dpr;
+                // each drum lands a little off; the offset breathes very slowly, as if the paper were fed again
+                vec2 offP = vec2(1.6, -1.1) * dpr / res, offB = vec2(-1.3, 0.9) * dpr / res;
+                vec3 cP = col(vUv + offP), cB = col(vUv + offB);
+                float lP = dot(cP, vec3(0.299, 0.587, 0.114)), lB = dot(cB, vec3(0.299, 0.587, 0.114));
+                // pink takes what green would reflect, blue what red would; the darks take both
+                float dP = clamp((1.0 - cP.g) * 1.15 - 0.2, 0.0, 1.0);
+                float dB = clamp((1.0 - cB.r) * 1.2 - 0.26, 0.0, 1.0);
+                float darkP = 1.0 - smoothstep(0.05, 0.18, lP), darkB = 1.0 - smoothstep(0.05, 0.18, lB);
+                dP = max(dP, darkP); dB = max(dB, darkB);
+                // uneven ink: a drum is never perfectly loaded
+                float inkP = 0.8 + 0.28 * vn(p * 0.012 + 3.0) - 0.1 * vn(vec2(p.y * 0.004, 1.0));
+                float inkB = 0.82 + 0.26 * vn(p * 0.011 + 11.0);
+                float hP = dots(p, dP * inkP, 0.2618, cell), hB = dots(p, dB * inkB, 1.309, cell);
+                // the outlines print solid, not screened
+                hP = max(hP, darkP * 0.9); hB = max(hB, darkB);
+                vec3 paper = vec3(0.953, 0.933, 0.89) - vn(p * 0.4) * 0.025;
+                vec3 pink = vec3(1.0, 0.282, 0.69), blue = vec3(0.0, 0.47, 0.75);
+                vec3 o = paper * mix(vec3(1.0), pink, hP * 0.92) * mix(vec3(1.0), blue, hB * 0.9);
+                // grain: tiny voids in the ink
+                o += (h21(floor(p / (1.3 * dpr))) - 0.5) * 0.05;
+                gl_FragColor = vec4(o, 1.0);
+              }`,
+            depthTest: false, depthWrite: false
+          });
+          const quad = new Mesh(new PlaneGeometry(2, 2), mat);
+          quad.frustumCulled = false;
+          const sc = new Scene(); sc.add(quad);
+          risoFx = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
+        }
+        if (risoFx.rt.width !== w || risoFx.rt.height !== h) { risoFx.rt.setSize(w, h); risoFx.mat.uniforms.res.value.set(w, h); }
+        risoFx.mat.uniforms.t.value = (now * 0.001) % 100;
+        risoFx.mat.uniforms.dpr.value = renderer.getPixelRatio();
+        renderer.setRenderTarget(risoFx.rt);
+        outline.render(scene, cam);
+        renderer.setRenderTarget(null);
+        renderer.render(risoFx.sc, risoFx.cam);
+      }
       var perf = { avg: 16, t: 0, dpr: Math.min(window.devicePixelRatio, isMobile() ? 1.5 : 2) };
       function adaptResolution(rawMs, now) {
         perf.avg += (Math.min(rawMs, 60) - perf.avg) * 0.05;
@@ -36131,9 +36448,9 @@ void main() {
         const prog = state.L / route.total;
         let wx = state.weatherOn ? weatherState(prog) : "sun";
         const schemeId = SCHEMES[state.schemeIdx].id;
-        if (schemeId === "nightlife" && state.weatherOn) wx = "rain";
+        if ((schemeId === "nightlife" || schemeId === "sincity") && state.weatherOn) wx = "rain";
         {
-          const rawWx = schemeId === "nightlife" ? "rain" : weatherState(prog);
+          const rawWx = schemeId === "nightlife" || schemeId === "sincity" ? "rain" : weatherState(prog);
           ui.setRainBtn(schemeId !== "monument" && schemeId !== "underwater" && !siteMode);
           if (veh?.kind !== "plane" || siteMode) airT = 0;
           ui.setTakeoff(veh?.kind === "plane" && !siteMode, airT > 0.5);
@@ -36154,6 +36471,8 @@ void main() {
         if (SCHEMES[state.schemeIdx].id === "monument") { sun.color.set("#ffe0c2"); sun.intensity = (mapMode ? 1.85 : 2.4) * curSun.int; }
         if (SCHEMES[state.schemeIdx].id === "monument") hemi.intensity = mapMode ? 0.86 : 0.62;
         if (SCHEMES[state.schemeIdx].id === "underwater") { sun.color.set("#b5f3ff"); sun.intensity = 1.5; }
+        // Sin City: one hard white key light even in the rain; the print does the rest
+        if (schemeId === "sincity") { sun.color.set("#ffffff"); sun.intensity = 3.4; hemi.intensity = 0.2; }
         const sr = 1500;
         // on the map the shadows follow what you look at, not the van
         const sunC = warpV((mapMode ? mapView.tgt : carPos).clone());
@@ -36209,7 +36528,7 @@ void main() {
           // r129: Night Mode keeps a light drizzle, not a downpour
           const rainN = SCHEMES[state.schemeIdx].id === "nightlife" ? 150 : RAIN_N;
           rain.count = rainN;
-          rainMat.opacity = (rainN < RAIN_N ? 0.32 : 0.5) * rainAlpha;
+          rainMat.opacity = (rainN < RAIN_N ? 0.32 : SCHEMES[state.schemeIdx].id === "sincity" ? 0.75 : 0.5) * rainAlpha;
           for (let i = 0; i < rainN; i++) {
             const d = rainDrops[i];
             d.y -= d.v * dt;
@@ -36232,6 +36551,8 @@ void main() {
         }
         if (schemeId === "monument") { fogNear = 9000; fogFar = 34000; }
         if (schemeId === "underwater") { fogNear = 380; fogFar = 3400; }
+        if (schemeId === "sincity") { fogNear = 1800; fogFar = 7000; }
+        if (schemeId === "sketch" || schemeId === "riso") { fogNear = 6000; fogFar = 30000; }
         if (schemeId === "ghibli" || schemeId === "orchid") { fogNear = 1400; fogFar = 9000; }
         // the map looks from far above: fog starts past the ground, in every world (underwater keeps a little haze)
         if (mapMode) { const k = schemeId === "underwater" ? 0.75 : 1.15; fogNear = Math.max(fogNear, mapView.dist * k); fogFar = Math.max(fogFar, mapView.dist * (schemeId === "underwater" ? 2.2 : 3.2)); }
@@ -36456,7 +36777,7 @@ void main() {
           } else if (!flying && state.L < 190) kinetic.resume();
           else if (state.L > 235) kinetic.pause();
         }
-        if (mvK > 0.5 && !window.__noPost) tiltShiftRender(now); else if (window.__noPost) renderer.render(scene, camera); else outline.render(scene, camera);
+        if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sincity") sinCityRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sketch") sketchRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "riso") risoRender(now, camera); else if (mvK > 0.5 && !window.__noPost) tiltShiftRender(now); else if (window.__noPost) renderer.render(scene, camera); else outline.render(scene, camera);
         requestAnimationFrame(frame);
       }
       // ===================== r89/r90: Map Mode =====================
@@ -37044,16 +37365,26 @@ void main() {
         if (/^https?:$/.test(location.protocol)) fetch("/covers.json").then((r) => r.ok ? r.json() : {}).then((j) => { COVERS = j; }).catch(() => {});
         const coverOf = (pl) => {
           if (!COVERS) return null;
+          // r130: a real photo first (a place's own, then its case page's cover)
+          if (COVERS["place:" + pl.id]) return COVERS["place:" + pl.id];
           const slug = pl.tm ? "two-minutes" : (pl.work && window.__casePage?.(pl.work)) || window.__casePage?.(pl.name) || (pl.name === "Steam Coffee Shop" ? "steam" : null);
           return slug && COVERS[slug] || null;
         };
         const showCard = (pl, eyebrow, body, actions) => {
+          // r130: every card has a picture: no photo, then a postcard of the place itself, rendered in the world you're in
           const cov = coverOf(pl);
+          const shot = !cov;
           card.style.setProperty("--pc", pl.c); card.style.setProperty("--pt", pl.t || "#fff");
-          card.classList.toggle("has-img", !!cov);
-          card.innerHTML = `${cov ? `<figure class="mcd-img"><img src="${cov}" alt="" decoding="async"></figure>` : ""}<div class="mcd-body"><span class="mcd-eyebrow mono">${eyebrow}</span><b class="mcd-title" style="--pc:${pl.c};--pt:${pl.t || "#fff"}">${pl.name}</b>${body}
+          card.classList.add("has-img"); card.classList.toggle("shot", shot);
+          card.innerHTML = `<figure class="mcd-img">${cov ? `<img src="${cov}" alt="" decoding="async">` : `<img alt="" class="mcd-shot">`}</figure><div class="mcd-body"><span class="mcd-eyebrow mono">${eyebrow}</span><b class="mcd-title" style="--pc:${pl.c};--pt:${pl.t || "#fff"}">${pl.name}</b>${body}
             <div class="mcd-actions">${actions}<button class="mcd-close" aria-label="Close">×</button></div></div>`;
           card.classList.remove("in"); void card.offsetWidth; card.classList.add("in");
+          // Sketchbook: a place you visit gets drawn all at once
+          { const v = warpV(new Vector3(pl.wx, 0, pl.wz)); sketchPaint(v.x, v.z, 900, 1); }
+          if (shot) {
+            const im = card.querySelector(".mcd-shot");
+            requestAnimationFrame(() => { const u = placeShot(pl); if (u && im) { im.onload = () => im.classList.add("on"); im.src = u; } });
+          }
           card.querySelector(".mcd-close").onclick = hideCard;
           card.classList.remove("hidden");
         };
@@ -37355,6 +37686,8 @@ void main() {
             const r = c.getBoundingClientRect();
             if (phone) return [0, (topY + Math.min(botY, r.top)) / 2 - H / 2];
             if (r.left > W * 0.45) return [Math.max(0, r.left) / 2 - W / 2, 0];
+            // r130: the card sits at the bottom, in the middle: the place goes in the space above it
+            if (r.left > W * 0.12 && r.right < W * 0.88) return [0, (topY + r.top) / 2 - H / 2];
             return [(Math.max(0, r.right) + W) / 2 - W / 2, (topY + botY) / 2 - H / 2];
           }
           return [0, (topY + botY) / 2 - H / 2];
