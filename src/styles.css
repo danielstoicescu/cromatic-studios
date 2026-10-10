@@ -3533,3 +3533,11 @@ body.kz-boot .kz { background-color: #f7f1e6; opacity: 1 !important; }
 .map-welcome .mw-x:active { transform: rotate(90deg) scale(.94); box-shadow: 0 0 0 #141414; }
 /* r128: on phones the zoom buttons sat on top of the welcome card */
 @media (max-width: 520px) { body:has(.map-welcome:not(.hidden)) .map-zoom { opacity: 0; pointer-events: none; } }
+/* r128: phones, the COFFEE RUSH pill sits centred under the top buttons; it is centred with `translate`,
+   so the blink animation (transform) no longer pushes it off to the right over the cards */
+@media (max-width: 760px) {
+  .toast-col .rush-pill, body:has(.coffee-card:not(.hidden)) .toast-col .rush-pill {
+    position: fixed; left: 50%; right: auto; transform: none; translate: -50% 0; z-index: 34;
+    top: calc(132px + env(safe-area-inset-top, 0px)); bottom: auto; font-size: 13px; padding: 8px 16px;
+  }
+}
