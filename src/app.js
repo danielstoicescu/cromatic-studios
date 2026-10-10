@@ -31926,6 +31926,9 @@ void main() {
     "Cargus": { c: "#FED012", t: "#14120c" },
     "Help4Brain": { c: "#B098C8", t: "#14120c" }
   };
+  // r129: the way into a case reads differently on every place (stable per name)
+  var CTA_WORDS = ["Go deeper", "Check out this rabbit hole", "Peek behind the curtain", "Take the full tour", "See how it was made", "Unpack the story", "Lift the lid", "Step inside"];
+  var ctaFor = (name) => { let h = 0; for (const ch of String(name)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return CTA_WORDS[h % CTA_WORDS.length] + " \u2192"; };
   var openCaseHook = null;
   var openProjectHook = null;
   var openScfHook = null;
@@ -33385,28 +33388,28 @@ void main() {
     const steamTag = mkTag("Steam", "STEAM COFFEE SHOP",
       "BRANDING \u00B7 GROWTH \u00B7 PRODUCT", "Open the case study \u2192", () => openSteamHook?.(), "steam-tag");
     const artisanTag = mkTag("Artisan Coffee Gear", "ARTISAN COFFEE GEAR",
-      "BRAND UNIVERSE \u00B7 WEB \u00B7 PACKAGING", "Open the case \u2192", () => openCaseHook?.("artisan"), "artisan-tag");
+      "BRAND UNIVERSE \u00B7 WEB \u00B7 PACKAGING", ctaFor("Artisan Coffee Gear"), () => openCaseHook?.("artisan"), "artisan-tag");
     const omaTag = mkTag("OMA Coffee", "OMA COFFEE \u00B7 BRA\u0218OV",
-      "BRAND \u00B7 COFFEE \u00B7 MOUNTAINS", "Open the case \u2192", () => {
+      "BRAND \u00B7 COFFEE \u00B7 MOUNTAINS", ctaFor("OMA Coffee"), () => {
         // the brand canvas page, full screen; offline copies fall back to the project card
         if (/^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname) && openFrameHook) return openFrameHook("/work/oma-coffee/?embed=1", "OMA Coffee");
         const p = PROJECTS_A2.find((q) => q.name === "OMA Coffee");
         if (p) openProjectHook?.(p);
       }, "oma-tag");
     const bereroTag = mkTag("Berero", "BERERO",
-      "BRAND \u00B7 LABELS \u00B7 MERCH", "Open the case \u2192", () => {
+      "BRAND \u00B7 LABELS \u00B7 MERCH", ctaFor("Berero"), () => {
         const p = PROJECTS_A2.find((q) => q.name === "Berero");
         if (p) openProjectHook?.(p);
       }, "berero-tag");
     const craftTag = mkTag("Craft Coffee", "CRAFT COFFEE",
-      "BRANDING \u00B7 WEBSITE", "Open the case \u2192", () => openCaseHook?.("craft"), "craft-tag");
+      "BRANDING \u00B7 WEBSITE", ctaFor("Craft Coffee"), () => openCaseHook?.("craft"), "craft-tag");
     const sipTag = mkTag("Sip", "SIP COFFEE & WINE",
-      "BRANDING \u00B7 COMMUNICATION", "Open the case \u2192", () => {
+      "BRANDING \u00B7 COMMUNICATION", ctaFor("Sip"), () => {
         const p = [...PROJECTS_A1, ...PROJECTS_A2].find((q) => q.name === "Sip");
         if (p) openProjectHook?.(p);
       }, "sip-tag");
     const yoshiTag = mkTag("Yoshi Izakaya", "YOSHI IZAKAYA",
-      "COMMUNICATION \u00B7 CONTENT", "Open the case \u2192", () => {
+      "COMMUNICATION \u00B7 CONTENT", ctaFor("Yoshi Izakaya"), () => {
         const p = [...PROJECTS_A1, ...PROJECTS_A2].find((q) => q.name === "Yoshi Izakaya");
         if (p) openProjectHook?.(p);
       }, "yoshi-tag");
@@ -33434,7 +33437,7 @@ void main() {
       // brands with a case page on the website open it full screen (offline copies fall back to the card)
       if (!b.page && window.__casePage(b.name)) b.page = window.__casePage(b.name);
       const onlinePage = b.page && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname);
-      const t = mkTag(b.name, b.name.toUpperCase(), b.line, b === COURT_TAG ? "See the yard \u2192" : b.wip ? "Work in progress" : "Open the case \u2192", () => (b.wip ? null : b === COURT_TAG ? openCourt() : onlinePage && openFrameHook ? openFrameHook(`/work/${b.page}/?embed=1`, b.name) : openProjectHook?.(projOf(b))), "work-tag");
+      const t = mkTag(b.name, b.name.toUpperCase(), b.line, b === COURT_TAG ? "See the yard \u2192" : b.wip ? "Work in progress" : ctaFor(b.name), () => (b.wip ? null : b === COURT_TAG ? openCourt() : onlinePage && openFrameHook ? openFrameHook(`/work/${b.page}/?embed=1`, b.name) : openProjectHook?.(projOf(b))), "work-tag");
       t._st = b;
       return t;
     });
@@ -33445,7 +33448,9 @@ void main() {
     <a class="ac-nav" href="https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti" target="_blank" rel="noopener">Navigate on your map \u2192</a>
     <span class="ac-contact"><a href="mailto:hi@cromaticstudios.com">hi@cromaticstudios.com</a><a href="tel:+40728978068">+40 728 978 068</a></span>`);
     asLeftCard(labTag, "Two Min Lab", "TWO MIN LAB", "DRINKS \u00B7 TONIC IONIC", "See the drinks \u2192");
-    asLeftCard(tmMedia, "Two Minutes", "TWO MINUTES", "MEDIA & BRANDING \u00B7 FILM", "Watch \u2192");
+    asLeftCard(tmMedia, "Two Minutes", "TWO MINUTES", "BRAND \u00B7 BOXES \u00B7 FILM", "Dig deeper \u2192");
+    // r129: one way in, to the portfolio page (the film is on it)
+    tmMedia.onclick = () => { if (openFrameHook && /^https?:$/.test(location.protocol)) openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); };
     asLeftCard(boxPop, "Two Minutes", "TWO MIN BOXES", "COFFEE PACKAGING \u00B7 FRESH DROP", "Take a look \u2192");
     // east kerb (screen-left while driving): Romexpo pair, then the Steam tower pair
     poiRailL.append(scfTag, artisanTag, steamTag, craftTag);
@@ -34816,14 +34821,21 @@ void main() {
           g.add(b2); birds.push(b2);
         }
         const center = new Vector3(1250, 0, 400);
+        var mvFx_tmp = new Vector3();
         return {
           group: g,
           update(t, target) {
             center.lerp(target, 0.02);
+            // r129: an island between the camera and what it looks at hides (the telephoto drive camera
+            // used to frame a whole island: a screen of pink rock between Coffee Street and Dacia 99)
+            const islTmp = mvFx_tmp; const cp = camera.position, ax = target.x - cp.x, ay = target.y - cp.y, az = target.z - cp.z, aa = ax * ax + ay * ay + az * az || 1;
             for (const isl of islands) {
               const u = isl.userData;
               isl.position.y = u.y0 + Math.sin(t * u.sp + u.ph) * 12;
               isl.rotation.y = Math.sin(t * 0.05 + u.ph) * 0.2;
+              const q = warpV(islTmp.copy(isl.position)), k = ((q.x - cp.x) * ax + (q.y - cp.y) * ay + (q.z - cp.z) * az) / aa;
+              const kk = Math.max(0, Math.min(1, k)), dx = cp.x + ax * kk - q.x, dy = cp.y + ay * kk - q.y, dz = cp.z + az * kk - q.z;
+              isl.visible = false && !(k > -0.05 && k < 1.05 && dx * dx + dy * dy + dz * dz < 260 * 260);
             }
             rip.offset.set((t * 0.01) % 1, (t * 0.006) % 1);
             for (const b2 of birds) {
@@ -36109,6 +36121,9 @@ void main() {
         camera.lookAt(window.__lookSm);
         sky.position.copy(camera.position);
         if (farClouds.visible) farClouds.position.set(camera.position.x, 0, camera.position.z);
+        // r129: in drive mode the Cromatic world keeps its city, ponds and birds, but not the far mesas,
+        // the cloud ring or the floating islands: with the telephoto camera they filled the screen
+        if (!mapMode && SCHEMES[state.schemeIdx].id === "monument") { for (const m of farRings) if (m.userData.mesh) m.userData.mesh.visible = false; farClouds.visible = false; }
         if (mvFx.group.visible) mvFx.update(now * 0.001, window.__lookSm);
         if (uwFx.group.visible) uwFx.update(now * 0.001, dt, window.__lookSm);
         worldFx.update(now * 0.001, dt, window.__lookSm);
@@ -37081,9 +37096,8 @@ void main() {
           if (pl.tm) {
             // Two Minutes: three double espressos, the boxes come down from our old balcony, a fourth, and the rush
             coffee.done = false; coffee.phase = "sip1"; coffee.t = 0; coffee.served = 0;
-            showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52A", `<p>${pl.desc}</p>`, `<button class="mcd-open">Watch the film \u2192</button><button class="mcd-open mcd-2">Read the case \u2192</button>`);
-            card.querySelector(".mcd-open").onclick = () => ui.tmMedia?.click();
-            card.querySelector(".mcd-2").onclick = () => { if (openFrameHook && /^https?:$/.test(location.protocol)) openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); };
+            showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52A", `<p>${pl.desc}</p>`, `<button class="mcd-open">Dig deeper \u2192</button>`);
+            card.querySelector(".mcd-open").onclick = () => { if (openFrameHook && /^https?:$/.test(location.protocol)) openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); };
             return;
           }
           const pr = projectOf(pl.name);
@@ -37092,7 +37106,7 @@ void main() {
             showCard(pl, "BULEVARDUL DACIA 99", `<p>${pl.desc}</p>`, pl.soon ? `<span class="mcd-wip mono" style="--pc:${pl.c};--pt:#fff">CASE PAGE COMING SOON</span>` : "");
             return;
           }
-          showCard(pl, pl.br ? MAP_STREET[pl.street || pl.br] : pl.line.split(" \xB7 ")[0], `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`, pl.wip ? `<span class="mcd-wip mono">WORK IN PROGRESS</span>` : pl.small && !pg ? "" : `<button class="mcd-open">Open the case →</button>`);
+          showCard(pl, pl.br ? MAP_STREET[pl.street || pl.br] : pl.line.split(" \xB7 ")[0], `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`, pl.wip ? `<span class="mcd-wip mono">WORK IN PROGRESS</span>` : pl.small && !pg ? "" : `<button class="mcd-open">${ctaFor(pl.name)}</button>`);
           if (pl.wip || (pl.small && !pg)) return;
           card.querySelector(".mcd-open").onclick = () => (pg && openFrameHook ? openFrameHook(`/work/${pg}/?embed=1`, pl.name) : tagOf(pl)?.click());
         };
