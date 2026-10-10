@@ -155,7 +155,7 @@ try {
 const siteCssName = `assets/site.${hash(siteCss)}.css`, siteJsName = `assets/site.${hash(siteJs)}.js`;
 writeFileSync(join(pub, siteCssName), siteCss);
 writeFileSync(join(pub, siteJsName), siteJs);
-const FONTS = "https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Montserrat:wght@800&family=Poppins:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=JetBrains+Mono:wght@700&display=swap";
+const FONTS = "https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Montserrat:wght@800;900&family=JetBrains+Mono:wght@700&display=swap";
 // the drive's kinetic intro, as the website's hero (loaded after the page has painted)
 let kz = null;
 try {

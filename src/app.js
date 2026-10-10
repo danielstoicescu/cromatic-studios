@@ -23637,7 +23637,7 @@ void main() {
   });
 
   // src/data.js
-  var ROUTE_MAIN, ROUTE_A, ROUTE_B, ROUTE_C, ROUTE_D, ROUTE_MERGE, ROUTE_SECRET, ROUNDABOUT, FORK_POS, RAMP_Y, STOPS, STOP_META, CARD_SIDE, PROJECTS_A1, PROJECTS_A2, PROJECTS_B1, PROJECTS_B2, FRIEND_PILLS, CREW, CREW_PHOTOS, SERVICES, HERITAGE, PARKS, POIS, AREA_LABELS, STREET_LABELS, CITY_ZONES, MAJOR_STREETS, SCHEMES, VEHICLES, FORM_DREAMS, FORM_BIZ, FORM_TIMES, CARD_COPY, PILL_COLORS, CREW_COLORS;
+  var ARCHIVED_SCHEMES, ROUTE_MAIN, ROUTE_A, ROUTE_B, ROUTE_C, ROUTE_D, ROUTE_MERGE, ROUTE_SECRET, ROUNDABOUT, FORK_POS, RAMP_Y, STOPS, STOP_META, CARD_SIDE, PROJECTS_A1, PROJECTS_A2, PROJECTS_B1, PROJECTS_B2, FRIEND_PILLS, CREW, CREW_PHOTOS, SERVICES, HERITAGE, PARKS, POIS, AREA_LABELS, STREET_LABELS, CITY_ZONES, MAJOR_STREETS, SCHEMES, VEHICLES, FORM_DREAMS, FORM_BIZ, FORM_TIMES, CARD_COPY, PILL_COLORS, CREW_COLORS;
   var init_data = __esm({
     "src/data.js"() {
       // r90: the story road is short now, about as long as Coffee Street: from Strada Muniției
@@ -23892,16 +23892,18 @@ void main() {
         [1900, 0, 2350, 11600]
       ];
       SCHEMES = [
-        { id: "default", n: "Cromatic Mode", bg: "#f2f2f2", fg: "#0a0a0a", ac: "#FED012" },
-        { id: "monument", n: "Monument", bg: "#f6e2d8", fg: "#3b2b44", ac: "#ff8a6a" },
-        { id: "underwater", n: "Underwater", bg: "#0b3b5c", fg: "#e8fbff", ac: "#3de0d0" },
+        // r129: the pastel diorama (ex "Monument") is now the Cromatic world, first and the default everywhere.
+        // The old flat "Cromatic Mode" world is archived in ARCHIVED_SCHEMES; GTA 2 is a drive-mode bonus.
+        { id: "monument", n: "Cromatic", bg: "#f6e2d8", fg: "#3b2b44", ac: "#ff8a6a" },
+        { id: "nightlife", n: "Night Mode", bg: "#121d3a", fg: "#F7EEDF", ac: "#FF9E3D" },
         { id: "ghibli", n: "Ghib.ly", bg: "#e4f1f4", fg: "#243322", ac: "#e0b25a" },
-        { id: "nightlife", n: "Night Life", bg: "#121d3a", fg: "#F7EEDF", ac: "#FF9E3D" },
-        { id: "gta2", n: "GTA2", bg: "#1a1e22", fg: "#e8e6df", ac: "#e8c020" },
         { id: "circuit", n: "Race Day", bg: "#e9edf1", fg: "#111418", ac: "#e10600" },
+        { id: "orchid", n: "Sakura", bg: "#fbeef3", fg: "#3a1e2c", ac: "#f08bb4" },
         { id: "magma", n: "Magma", bg: "#171210", fg: "#fbede4", ac: "#ff4d1c" },
-        { id: "orchid", n: "Sakura", bg: "#fbeef3", fg: "#3a1e2c", ac: "#f08bb4" }
+        { id: "underwater", n: "Underwater", bg: "#0b3b5c", fg: "#e8fbff", ac: "#3de0d0" },
+        { id: "gta2", n: "GTA 2", bonus: true, bg: "#1a1e22", fg: "#e8e6df", ac: "#e8c020" }
       ];
+      ARCHIVED_SCHEMES = [{ id: "default", n: "Cromatic Mode (classic)", bg: "#f2f2f2", fg: "#0a0a0a", ac: "#FED012" }];
       VEHICLES = [
         { id: "groovy", label: "Mystery van" },
         { id: "f1", label: "Classic Formula" },
@@ -24523,7 +24525,7 @@ void main() {
     }
     return t;
   }
-  function groundLabel(text, { size = 90, color = "#8a8577", font = "600 64px Poppins, sans-serif", mono = false } = {}) {
+  function groundLabel(text, { size = 90, color = "#8a8577", font = "600 64px CromaticSans, sans-serif", mono = false } = {}) {
     const pad = 30;
     const meas = document.createElement("canvas").getContext("2d");
     meas.font = font;
@@ -25477,7 +25479,7 @@ void main() {
       ctx.stroke();
       ctx.fillStyle = "#fbfaf5";
       ctx.textAlign = "center";
-      ctx.font = "700 46px Poppins, sans-serif";
+      ctx.font = "700 46px CromaticSans, sans-serif";
       ctx.fillText(text, 256, 80, 460);
     });
     const plate = new Mesh(new BoxGeometry(58, 15, 1.6), new MeshStandardMaterial({ color: "#1E6B43", roughness: 0.5 }));
@@ -25699,26 +25701,29 @@ void main() {
       ctx.roundRect(4, 4, 504, 168, 18);
       ctx.fill();
       ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 7;
+      ctx.lineWidth = 3;
       ctx.stroke();
       ctx.fillStyle = "#119BFE";
       ctx.beginPath();
       ctx.roundRect(4, 4, 504, 52, [18, 18, 0, 0]);
       ctx.fill();
       ctx.fillStyle = "#000000";
-      ctx.fillRect(4, 54, 504, 7);
+      ctx.fillRect(4, 54, 504, 3);
       ctx.textAlign = "center";
       ctx.fillStyle = "#000000";
-      ctx.font = "800 48px Poppins, sans-serif";
+      ctx.font = "800 48px CromaticSans, sans-serif";
       ctx.fillText("George C\u0103linescu 54", 256, 122);
       ctx.font = '600 26px "JetBrains Mono", monospace';
       ctx.fillStyle = "rgba(0,0,0,0.72)";
       ctx.fillText("CROMATIC STUDIOS \xB7 2016", 256, 156);
     });
-    const hqPlate = new Mesh(new PlaneGeometry(66, 23), new MeshBasicMaterial({ map: hqTex }));
+    // r129: a wall plaque that sits inside the facade (it used to hang past the corner), on a thin backing
+    const hqPlate = new Mesh(new PlaneGeometry(42, 14.6), new MeshBasicMaterial({ map: hqTex }));
     hqPlate.rotation.y = Math.PI;
-    hqPlate.position.set(-32, 30, -41.5);
-    hq.add(hqPlate);
+    hqPlate.position.set(-22, 34, -40.4);
+    const hqPlateBack = new Mesh(new BoxGeometry(44, 16.6, 1.2), new MeshStandardMaterial({ color: "#1a1a1a", roughness: 0.6 }));
+    hqPlateBack.position.set(-22, 34, -39.7);
+    hq.add(hqPlateBack, hqPlate);
     hq.rotation.y = Math.PI;
     hq.position.set(1010, 0, 4120);
     hq.traverse((o) => {
@@ -25865,7 +25870,7 @@ void main() {
     crown.position.y = 71 + (R + 4) * 0.3 + 3;
     const signTex = canvasTexture(512, 96, (ctx) => {
       ctx.clearRect(0, 0, 512, 96);
-      ctx.font = "700 62px Poppins, sans-serif";
+      ctx.font = "700 62px CromaticSans, sans-serif";
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillStyle = "#f6f9ff";
       ctx.fillText("ROMEXPO", 256, 48);
@@ -25899,9 +25904,9 @@ void main() {
       ctx.fillStyle = l.t;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.font = "800 78px Montserrat, sans-serif";
+      ctx.font = "800 78px CromaticSans, sans-serif";
       ctx.fillText(l.n, 256, 108);
-      ctx.font = "700 27px Poppins, sans-serif";
+      ctx.font = "700 27px CromaticSans, sans-serif";
       ctx.globalAlpha = 0.75;
       ctx.fillText(l.sub, 256, 162);
       ctx.globalAlpha = 1;
@@ -26032,7 +26037,7 @@ void main() {
       for (let i = 0; i < 4; i++) ctx.fillRect(20 + i * 128, 18, 96, 220);
       ctx.fillStyle = o.trim;
       ctx.fillRect(0, 0, 512, 14); ctx.fillRect(0, 242, 512, 14);
-      ctx.font = "700 46px Montserrat, sans-serif";
+      ctx.font = "700 46px CromaticSans, sans-serif";
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillStyle = o.ink;
       ctx.fillText(o.label, 256, 128);
@@ -26044,7 +26049,7 @@ void main() {
     board.position.set(0, o.h * 0.78, o.d / 2 + 1.2);
     const nameTex = canvasTexture(512, 96, (ctx) => {
       ctx.clearRect(0, 0, 512, 96);
-      ctx.font = "800 44px Montserrat, sans-serif";
+      ctx.font = "800 44px CromaticSans, sans-serif";
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillStyle = o.boardInk;
       ctx.fillText(o.name, 256, 50);
@@ -26085,7 +26090,7 @@ void main() {
     const redStripe = new Mesh(new BoxGeometry(X1 - X0 - 40, 1.2, 2.6), new MeshStandardMaterial({ color: "#e10600" })); redStripe.position.set((X0 + X1) / 2, 5.4, Z0 - 1.5); g.add(redStripe);
     const timing = canvasTexture(256, 128, (ctx) => {
       ctx.fillStyle = "#0e0f11"; ctx.fillRect(0, 0, 256, 128);
-      ctx.fillStyle = "#e10600"; ctx.fillRect(0, 0, 256, 18); ctx.fillStyle = "#fff"; ctx.font = "800 13px Montserrat, sans-serif"; ctx.fillText("CROMATIC RACING  ·  LAP 14/58", 8, 13);
+      ctx.fillStyle = "#e10600"; ctx.fillRect(0, 0, 256, 18); ctx.fillStyle = "#fff"; ctx.font = "800 13px CromaticSans, sans-serif"; ctx.fillText("CROMATIC RACING  ·  LAP 14/58", 8, 13);
       const rows = [["1", "CRM", "1:21.304"], ["2", "TMN", "+0.412"], ["3", "STM", "+1.208"], ["4", "OMA", "+2.950"]];
       ctx.font = "700 16px 'JetBrains Mono', monospace";
       rows.forEach(([p2, n, t], i) => { ctx.fillStyle = i ? "#d6d9de" : "#FED012"; ctx.fillText(`${p2}  ${n}   ${t}`, 12, 42 + i * 24); });
@@ -26102,7 +26107,7 @@ void main() {
       const box = new Mesh(new BoxGeometry(84, 30, 40), new MeshStandardMaterial({ color: "#f3f4f6", roughness: 0.8 })); box.position.set(x, 15, gz + 20); g.add(box);
       const door = new Mesh(new PlaneGeometry(70, 22), new MeshStandardMaterial({ color: "#1a1c20", roughness: 0.6 })); door.rotation.y = Math.PI; door.position.set(x, 11, gz - 0.2); g.add(door);
       const fascia = new Mesh(new BoxGeometry(86, 6, 2), new MeshStandardMaterial({ color: col, roughness: 0.6 })); fascia.position.set(x, 26, gz - 0.6); g.add(fascia);
-      const nameT = canvasTexture(512, 64, (ctx) => { ctx.clearRect(0, 0, 512, 64); ctx.fillStyle = "#fff"; ctx.font = "italic 900 44px Montserrat, sans-serif"; ctx.textAlign = "center"; ctx.fillText(name, 256, 48); });
+      const nameT = canvasTexture(512, 64, (ctx) => { ctx.clearRect(0, 0, 512, 64); ctx.fillStyle = "#fff"; ctx.font = "italic 900 44px CromaticSans, sans-serif"; ctx.textAlign = "center"; ctx.fillText(name, 256, 48); });
       const nameM = new MeshBasicMaterial({ map: nameT, transparent: true }); nameM.userData.outlineParameters = { visible: false };
       const np = new Mesh(new PlaneGeometry(60, 7.5), nameM); np.rotation.y = Math.PI; np.position.set(x, 26, gz - 1.8); g.add(np);
       // the box marks on the lane and a tyre stack beside each garage
@@ -26189,7 +26194,7 @@ void main() {
   // the palace: hidden in the Underwater world, where the pineapple house takes its place
   var casaPoporului = null;
   // a sign: a client logo (black on transparent, recoloured to `ink`) or lettering on a board
-  function logoTexture(src, { w = 512, h = 160, bg = "#ffffff", ink = "#111111", pad = 22, text = null, font = "800 64px Montserrat, Poppins, sans-serif" } = {}) {
+  function logoTexture(src, { w = 512, h = 160, bg = "#ffffff", ink = "#111111", pad = 22, text = null, font = "800 64px CromaticSans, CromaticSans, sans-serif" } = {}) {
     const c = document.createElement("canvas");
     c.width = w; c.height = h;
     const ctx = c.getContext("2d");
@@ -26560,7 +26565,7 @@ void main() {
       ctx.strokeStyle = "#c89b3c"; ctx.lineWidth = 4; ctx.strokeRect(8, 8, 112, 368);
       ctx.fillStyle = "#f4f0ea"; ctx.textAlign = "center";
       ["THE", "AESTHETICS", "COURT"].forEach((w2, i) => { ctx.font = `600 ${i === 1 ? 17 : 24}px 'Cinzel', Georgia, serif`; ctx.fillText(w2, 64, 120 + i * 44); });
-      ctx.fillStyle = "#c89b3c"; ctx.font = "700 11px Montserrat, sans-serif"; ctx.fillText("ONE TRIAL", 64, 286); ctx.fillText("ONE VERDICT", 64, 304);
+      ctx.fillStyle = "#c89b3c"; ctx.font = "700 11px CromaticSans, sans-serif"; ctx.fillText("ONE TRIAL", 64, 286); ctx.fillText("ONE VERDICT", 64, 304);
     });
     const banM = new MeshStandardMaterial({ map: banTex, emissiveMap: banTex, emissive: new Color("#ffffff"), emissiveIntensity: 0, roughness: 0.7 });
     STREET_GLOW.push([banM, 0.45]);
@@ -26601,7 +26606,7 @@ void main() {
       const lintelTex = canvasTexture(512, 128, (ctx) => {
         ctx.fillStyle = "#1a0909"; ctx.fillRect(0, 0, 512, 128); ctx.strokeStyle = "#c89b3c"; ctx.lineWidth = 6; ctx.strokeRect(8, 8, 496, 112);
         ctx.fillStyle = "#f4f0ea"; ctx.textAlign = "center"; ctx.font = "600 44px 'Cinzel', Georgia, serif"; ctx.fillText("THE AESTHETIC COURT", 256, 66);
-        ctx.fillStyle = "#c89b3c"; ctx.font = "700 20px Montserrat, sans-serif"; ctx.fillText("ENTRANCE \u00B7 ONE TRIAL, ONE VERDICT", 256, 100);
+        ctx.fillStyle = "#c89b3c"; ctx.font = "700 20px CromaticSans, sans-serif"; ctx.fillText("ENTRANCE \u00B7 ONE TRIAL, ONE VERDICT", 256, 100);
       });
       const lintM = new MeshStandardMaterial({ map: lintelTex, emissiveMap: lintelTex, emissive: new Color("#ffffff"), emissiveIntensity: 0, roughness: 0.6 });
       STREET_GLOW.push([lintM, 0.5]);
@@ -26937,7 +26942,7 @@ void main() {
         ctx.save(); ctx.translate(x, y); ctx.rotate((r() - 0.5) * 1.2);
         ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.roundRect(-s / 2 - 2, -s / 2 - 2, s + 4, s * (r() < 0.5 ? 1 : 0.6) + 4, r() < 0.5 ? s : 4); ctx.fill();
         ctx.fillStyle = cols[i % cols.length]; ctx.beginPath(); ctx.roundRect(-s / 2, -s / 2, s, s * 0.6 + (i % 3) * s * 0.2, i % 2 ? s : 3); ctx.fill();
-        ctx.fillStyle = i % cols.length === 4 ? "#111" : "#fff"; ctx.font = `800 ${Math.round(s * 0.36)}px Poppins, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillStyle = i % cols.length === 4 ? "#111" : "#fff"; ctx.font = `800 ${Math.round(s * 0.36)}px CromaticSans, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(words[i % words.length], 0, s * 0.08);
         ctx.restore();
       }
@@ -26948,7 +26953,7 @@ void main() {
       ctx.save(); ctx.translate(128, 120); ctx.rotate(-0.12);
       ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(0, 0, 66, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#111111"; ctx.beginPath(); ctx.arc(0, 0, 60, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#FFD21F"; ctx.font = "900 30px Poppins, sans-serif"; ctx.textAlign = "center"; ctx.fillText("STICKER", 0, -4); ctx.font = "900 22px Poppins, sans-serif"; ctx.fillText("REPUBLIC", 0, 22);
+      ctx.fillStyle = "#FFD21F"; ctx.font = "900 30px CromaticSans, sans-serif"; ctx.textAlign = "center"; ctx.fillText("STICKER", 0, -4); ctx.font = "900 22px CromaticSans, sans-serif"; ctx.fillText("REPUBLIC", 0, 22);
       ctx.fillStyle = "#e9e6de"; ctx.beginPath(); ctx.moveTo(38, 46); ctx.lineTo(60, 26); ctx.lineTo(56, 52); ctx.fill();
       ctx.restore();
     });
@@ -26969,7 +26974,7 @@ void main() {
       ctx.fillStyle = "#f7f6f2"; ctx.fillRect(0, 0, 256, 256);
       const cm = ["#00aeef", "#ec008c", "#fff200", "#111111"];
       for (let i = 0; i < 4; i++) { ctx.globalAlpha = 0.9; ctx.fillStyle = cm[i]; ctx.beginPath(); ctx.arc(70 + i * 40, 128, 34, 0, Math.PI * 2); ctx.fill(); }
-      ctx.globalAlpha = 1; ctx.fillStyle = "#111"; ctx.font = "900 26px Poppins, sans-serif"; ctx.textAlign = "center"; ctx.fillText("PRINTOTECA", 128, 206);
+      ctx.globalAlpha = 1; ctx.fillStyle = "#111"; ctx.font = "900 26px CromaticSans, sans-serif"; ctx.textAlign = "center"; ctx.fillText("PRINTOTECA", 128, 206);
     });
     buildLaneHouse(parent, LANE_PR, {
       w: 60, d: 46, h: 35, wall: "#f7f6f2", trim: "#151515", roof: "#2a2a2c", shop: "#151515", fence: "#151515",
@@ -27334,7 +27339,7 @@ void main() {
     const cap = new Mesh(new BoxGeometry(9, 2.4, 3.4), creamM); cap.position.set(0, 5 + 40.5, D / 2 + 1.4);
     const plaqueTex = canvasTexture(256, 128, (ctx) => {
       ctx.fillStyle = "#f3e9c9"; ctx.fillRect(0, 0, 256, 128);
-      ctx.fillStyle = "#5b3335"; ctx.font = "900 84px Montserrat, Poppins, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = "#5b3335"; ctx.font = "900 84px CromaticSans, CromaticSans, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("oma", 128, 66);
     });
     const plaque = new Mesh(new BoxGeometry(7.4, 3.7, 0.6), new MeshStandardMaterial({ map: plaqueTex, roughness: 0.5 }));
@@ -27384,7 +27389,7 @@ void main() {
       ctx.fillStyle = "#f4f1ea"; ctx.fillRect(254, 30, 4, 92);
       ctx.beginPath(); ctx.arc(228, 74, 14, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#24356b"; ctx.beginPath(); ctx.arc(228, 74, 8, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#f4f1ea"; ctx.font = "800 22px Montserrat, sans-serif"; ctx.textAlign = "center"; ctx.fillText("YOSHI", 284, 82);
+      ctx.fillStyle = "#f4f1ea"; ctx.font = "800 22px CromaticSans, sans-serif"; ctx.textAlign = "center"; ctx.fillText("YOSHI", 284, 82);
     });
     mats.yoshiGlow = new MeshStandardMaterial({ map: frontTex, emissiveMap: frontTex, emissive: new Color("#ffcf8a"), emissiveIntensity: 0, roughness: 0.6 });
     const front = new Mesh(new PlaneGeometry(W - 6, 26), mats.yoshiGlow);
@@ -27408,7 +27413,7 @@ void main() {
     const signTex = canvasTexture(96, 384, (ctx) => {
       ctx.fillStyle = "#fbf6ee"; ctx.fillRect(0, 0, 96, 384);
       ctx.strokeStyle = CORAL; ctx.lineWidth = 8; ctx.strokeRect(4, 4, 88, 376);
-      ctx.fillStyle = "#1b1410"; ctx.font = "900 64px Montserrat, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = "#1b1410"; ctx.font = "900 64px CromaticSans, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       "YOSHI".split("").forEach((ch, i) => ctx.fillText(ch, 48, 52 + i * 70));
     });
     const sign = new Mesh(new BoxGeometry(8, 30, 1.4), new MeshStandardMaterial({ map: signTex, roughness: 0.7 }));
@@ -27478,7 +27483,7 @@ void main() {
     const plaqueTex = canvasTexture(512, 128, (ctx) => {
       ctx.fillStyle = "#111111"; ctx.fillRect(0, 0, 512, 128);
       ctx.strokeStyle = "#f2f2ee"; ctx.lineWidth = 6; ctx.strokeRect(10, 10, 492, 108);
-      ctx.fillStyle = "#f2f2ee"; ctx.font = "800 58px Montserrat, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = "#f2f2ee"; ctx.font = "800 58px CromaticSans, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("CASA BERERO", 256, 66);
     });
     const plaque = new Mesh(new BoxGeometry(26, 6.5, 1), new MeshStandardMaterial({ map: plaqueTex, roughness: 0.4 }));
@@ -27579,7 +27584,7 @@ void main() {
       const ground = tampaH(x, z) - 5 + (i % 2 ? -1.5 : 2.5);
       const tex = canvasTexture(128, 160, (ctx) => {
         ctx.clearRect(0, 0, 128, 160);
-        ctx.font = "900 150px Montserrat, Poppins, sans-serif";
+        ctx.font = "900 150px CromaticSans, CromaticSans, sans-serif";
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.lineWidth = 12; ctx.lineJoin = "round"; ctx.strokeStyle = "rgba(20,24,20,.55)"; ctx.strokeText(ch, 64, 88);
         ctx.fillStyle = "#ffffff"; ctx.fillText(ch, 64, 88);
@@ -27602,7 +27607,7 @@ void main() {
   // kerbs, with porches, posts, hand-painted signs, in Cromatic pastels and warm timber
   // r113: Artisan Coffee Gear's two cars, parked on the Romexpo kerb of Coffee Street:
   // a Tesla Model Y in Artisan olive, and a classic Porsche 911 in cream wearing La Marzocco
-  function sideDecal(text, w, h, { ink = "#111", font = "800 120px Montserrat, Poppins, sans-serif", sub = null, subInk = ink } = {}) {
+  function sideDecal(text, w, h, { ink = "#111", font = "800 120px CromaticSans, CromaticSans, sans-serif", sub = null, subInk = ink } = {}) {
     const tex = canvasTexture(1024, 256, (ctx) => {
       ctx.clearRect(0, 0, 1024, 256);
       ctx.fillStyle = ink; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -27698,8 +27703,10 @@ void main() {
   function buildArtisanCar(parent) {
     // the kerb on the Romexpo side of Coffee Street, just south of the Romexpo avenue
     // halfway between Coffee Street and Romexpo, parked along the Romexpo avenue kerb
-    const t = buildTeslaY(); t.scale.setScalar(0.72); t.rotation.y = Math.PI / 2; t.position.set(893, 0, 5129); parent.add(t);
-    const p = buildPorsche911(); p.scale.setScalar(0.72); p.rotation.y = Math.PI / 2; p.position.set(931, 0, 5129); parent.add(p);
+    // r129: off the alley to Romexpo, on a small parking bay on its right-hand side (the +z kerb, past the hedge)
+    const bay = new Mesh(new BoxGeometry(84, 0.9, 30), mats.roadMajor); bay.position.set(928, 0.45, 5212); bay.receiveShadow = true; parent.add(bay);
+    const t = buildTeslaY(); t.scale.setScalar(0.72); t.rotation.y = Math.PI / 2; t.position.set(909, 0, 5212); parent.add(t);
+    const p = buildPorsche911(); p.scale.setScalar(0.72); p.rotation.y = Math.PI / 2; p.position.set(947, 0, 5212); parent.add(p);
   }
   function buildCoffeeStreetAdds(parent) {
     buildArtisanCar(parent);
@@ -27817,7 +27824,7 @@ void main() {
         ctx.fillStyle = "#fbf4e6"; ctx.fillRect(0, 0, 512, 112);
         ctx.strokeStyle = "#2a1c12"; ctx.lineWidth = 8; ctx.strokeRect(6, 6, 500, 100);
         ctx.fillStyle = "#2a1c12"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.font = "900 52px Montserrat, sans-serif"; ctx.fillText(nm, 256, 60);
+        ctx.font = "900 52px CromaticSans, sans-serif"; ctx.fillText(nm, 256, 60);
       });
       const sign = new Mesh(new PlaneGeometry(W * 0.8, W * 0.8 * 112 / 512), new MeshBasicMaterial({ map: sgTex }));
       sign.material.userData.outlineParameters = { visible: false };
@@ -28788,8 +28795,8 @@ void main() {
         ctx.clearRect(0, 0, 512, 160);
         ctx.fillStyle = ink; ctx.textBaseline = "middle"; ctx.textAlign = imgSrc ? "left" : "center";
         const lx = imgSrc ? 8 : 256;
-        ctx.font = "800 70px Montserrat, sans-serif"; ctx.fillText(label[0], lx, 62);
-        ctx.font = "600 30px Poppins, sans-serif"; ctx.fillText(label[1], lx, 124);
+        ctx.font = "800 70px CromaticSans, sans-serif"; ctx.fillText(label[0], lx, 62);
+        ctx.font = "600 30px CromaticSans, sans-serif"; ctx.fillText(label[1], lx, 124);
       });
       const lm = new MeshBasicMaterial({ map: lt, transparent: true, depthWrite: false });
       lm.userData.outlineParameters = { visible: false };
@@ -28804,7 +28811,7 @@ void main() {
     const fasciaTex = canvasTexture(1024, 64, (ctx) => {
       ctx.fillStyle = "#55595e"; ctx.fillRect(0, 0, 1024, 64);
       ctx.fillStyle = "#ffffff"; ctx.textBaseline = "middle";
-      ctx.font = "800 34px Montserrat, sans-serif";
+      ctx.font = "800 34px CromaticSans, sans-serif";
       ctx.fillText("STEAM COFFEE SHOP", 90, 34);
       ctx.fillStyle = "#7fc4ff"; ctx.fillText("CRAFT COFFEE", 640, 34);
     });
@@ -28858,6 +28865,74 @@ void main() {
     g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     parent.add(g);
   }
+  // r129: Eliade 18 (Eliade Tower): the long, narrow 1970s office slab where Cromatic Studios had a floor,
+  // and where the studio opened as a pop-up space for Romanian Design Week 2023. Grey metal panels, a dense
+  // grid of windows, pilotis under the slab and a canopy over the entrance; a small plaque by the door.
+  var ELIADE_AT = { x: 1600, z: 6158 };
+  function buildEliade18(parent) {
+    const g = new Group();
+    const LEN = 150, DEP = 30, FL = 10, FH = 11.5, BASE = 0, H = FL * FH; // r129: on the ground, lower
+    const panel = new MeshStandardMaterial({ color: "#d6dade", roughness: 0.7, metalness: 0.05 });
+    const dark = new MeshStandardMaterial({ color: "#7d858b", roughness: 0.7 });
+    const facade = (cols) => canvasTexture(1024, 1024, (ctx) => {
+      ctx.fillStyle = "#d3d7da"; ctx.fillRect(0, 0, 1024, 1024);
+      const cw = 1024 / cols, rh = 1024 / FL;
+      for (let r = 0; r < FL; r++) for (let c = 0; c < cols; c++) {
+        const x = c * cw + cw * 0.14, y = r * rh + rh * 0.16, w = cw * 0.72, h = rh * 0.64;
+        ctx.fillStyle = "#e9e3c8"; ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
+        const k = ((r * 7 + c * 13) % 9) / 9;
+        ctx.fillStyle = k > 0.66 ? "#a9c3da" : "#8aa7c2"; ctx.fillRect(x, y, w, h);
+        ctx.fillStyle = "rgba(255,255,255,.22)"; ctx.fillRect(x, y, w * 0.45, h);
+        ctx.fillStyle = "#e9e3c8"; ctx.fillRect(x + w / 2 - 1.5, y, 3, h); ctx.fillRect(x, y + h * 0.42, w, 3);
+      }
+      ctx.strokeStyle = "rgba(60,66,71,.45)"; ctx.lineWidth = 2;
+      for (let r = 0; r <= FL; r++) { ctx.beginPath(); ctx.moveTo(0, r * rh); ctx.lineTo(1024, r * rh); ctx.stroke(); }
+    });
+    const longTex = facade(26);
+    const longM = new MeshStandardMaterial({ map: longTex, roughness: 0.75, metalness: 0, emissive: new Color("#ffffff"), emissiveMap: longTex, emissiveIntensity: 0.18 });
+    const endTex = canvasTexture(256, 1024, (ctx) => {
+      ctx.fillStyle = "#cdd1d4"; ctx.fillRect(0, 0, 256, 1024);
+      ctx.strokeStyle = "rgba(60,66,71,.5)"; ctx.lineWidth = 2;
+      for (let y = 0; y < 1024; y += 73) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(256, y); ctx.stroke(); }
+      for (const x of [64, 192]) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 1024); ctx.stroke(); }
+      ctx.fillStyle = "#3c4247"; ctx.fillRect(150, 0, 22, 1024);
+      for (let y = 30; y < 1024; y += 73) { ctx.fillStyle = "#6f8aa3"; ctx.fillRect(153, y, 16, 34); }
+    });
+    const endM = new MeshStandardMaterial({ map: endTex, roughness: 0.75, metalness: 0, emissive: new Color("#ffffff"), emissiveMap: endTex, emissiveIntensity: 0.15 });
+    // the slab: long faces get the window grid, the ends the panelled walls
+    const slab = new Mesh(new BoxGeometry(LEN, H, DEP), [endM, endM, panel, panel, longM, longM]);
+    slab.position.y = BASE + H / 2;
+    g.add(slab);
+    const roof = new Mesh(new BoxGeometry(LEN + 2, 3, DEP + 2), dark); roof.position.y = BASE + H + 1.5; g.add(roof);
+    const plant = new Mesh(new BoxGeometry(26, 9, 14), panel); plant.position.set(-40, BASE + H + 7, 0); g.add(plant);
+    // the canopy over the entrance, facing the road (-z), with the building's name
+    const can = new Mesh(new BoxGeometry(30, 2.4, 14), dark); can.position.set(34, 11, -DEP / 2 - 6); g.add(can);
+    for (const x of [22, 46]) { const p2 = new Mesh(new BoxGeometry(1.6, 10, 1.6), dark); p2.position.set(x, 5, -DEP / 2 - 12); g.add(p2); }
+    const signTex = canvasTexture(512, 64, (ctx) => {
+      ctx.fillStyle = "#2b3035"; ctx.fillRect(0, 0, 512, 64);
+      ctx.fillStyle = "#e8e8e4"; ctx.font = "600 30px CromaticSans, sans-serif"; ctx.textBaseline = "middle";
+      ctx.fillText("Eliade Tower", 16, 33);
+      ctx.font = '600 16px "JetBrains Mono", monospace'; ctx.fillText("Mircea Eliade nr. 18", 300, 33);
+    });
+    const sign = new Mesh(new PlaneGeometry(30, 3.75), new MeshBasicMaterial({ map: signTex }));
+    sign.rotation.y = Math.PI; sign.position.set(34, 11, -DEP / 2 - 13.25); g.add(sign);
+    // the studio's plaque by the door, as on Călinescu 54
+    const plTex = canvasTexture(512, 176, (ctx) => {
+      ctx.fillStyle = "#fbfaf5"; ctx.beginPath(); ctx.roundRect(4, 4, 504, 168, 18); ctx.fill();
+      ctx.strokeStyle = "#000"; ctx.lineWidth = 3; ctx.stroke();
+      ctx.fillStyle = "#F65342"; ctx.beginPath(); ctx.roundRect(4, 4, 504, 52, [18, 18, 0, 0]); ctx.fill();
+      ctx.fillStyle = "#000"; ctx.fillRect(4, 54, 504, 3);
+      ctx.textAlign = "center"; ctx.font = "800 48px CromaticSans, sans-serif"; ctx.fillText("Mircea Eliade 18", 256, 122);
+      ctx.font = '600 24px "JetBrains Mono", monospace'; ctx.fillStyle = "rgba(0,0,0,.72)"; ctx.fillText("CROMATIC STUDIOS \xB7 2019", 256, 156);
+    });
+    const plaque = new Mesh(new PlaneGeometry(18, 6.2), new MeshBasicMaterial({ map: plTex }));
+    plaque.rotation.y = Math.PI; plaque.position.set(10, 7, -DEP / 2 - 0.3); g.add(plaque);
+    g.position.set(ELIADE_AT.x, 0, ELIADE_AT.z);
+    g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    EXTRA_KEEPOUT.push({ x: ELIADE_AT.x - 50, y: ELIADE_AT.z, r: 52 }, { x: ELIADE_AT.x, y: ELIADE_AT.z, r: 52 }, { x: ELIADE_AT.x + 50, y: ELIADE_AT.z, r: 52 });
+    parent.add(g);
+    return g;
+  }
   function buildMunitiei5(parent) {
     const g = new Group();
     const body = new Mesh(new BoxGeometry(72, 150, 96), new MeshStandardMaterial({ color: "#EDEDEA", roughness: 0.8 }));
@@ -28907,7 +28982,7 @@ void main() {
       ctx.fillStyle = "#28C840";
       ctx.fillRect(24, 520, 300, 20);
       ctx.fillStyle = "#000000";
-      ctx.font = "800 34px Poppins, sans-serif";
+      ctx.font = "800 34px CromaticSans, sans-serif";
       ctx.fillText("Muni\u021Biei 5", 174, 566);
       ctx.font = '600 19px "JetBrains Mono", monospace';
       ctx.fillStyle = "rgba(0,0,0,0.72)";
@@ -28920,7 +28995,15 @@ void main() {
     const parapet = new Mesh(new BoxGeometry(76, 5, 100), new MeshStandardMaterial({ color: "#dcdcd8", roughness: 0.9 }));
     parapet.position.y = 152.5;
     g.add(parapet);
-    g.position.set(1205, 0, 3010);
+    // r129: 60% of its old size, beside the start of the road, its facade (and plaque) facing the van
+    {
+      const [x0, z0] = ROUTE_MAIN[0], [x1, z1] = ROUTE_MAIN[1];
+      const L = Math.hypot(x1 - x0, z1 - z0), dx = (x1 - x0) / L, dz = (z1 - z0) / L;
+      const px = dz, pz = -dx; // the kerb on the left of the van's first metres
+      g.scale.setScalar(0.6);
+      g.position.set(x0 + px * 84 - dx * 30, 0, z0 + pz * 84 - dz * 30);
+      g.rotation.y = Math.atan2(px, pz);
+    }
     g.traverse((o) => {
       if (o.isMesh) {
         o.castShadow = true;
@@ -28948,9 +29031,9 @@ void main() {
     ctx.stroke();
     ctx.fillStyle = "#D42B1E";
     ctx.textAlign = "center";
-    ctx.font = `italic 900 ${Math.round(r * 0.62)}px Poppins, sans-serif`;
+    ctx.font = `italic 900 ${Math.round(r * 0.62)}px CromaticSans, sans-serif`;
     ctx.fillText("Club", cx - r * 0.08, cy - r * 0.05);
-    ctx.font = `italic 900 ${Math.round(r * 0.56)}px Poppins, sans-serif`;
+    ctx.font = `italic 900 ${Math.round(r * 0.56)}px CromaticSans, sans-serif`;
     ctx.fillText("99", cx + r * 0.3, cy + r * 0.48);
     ctx.restore();
   }
@@ -28968,7 +29051,7 @@ void main() {
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    ctx.font = `800 ${Math.round(size)}px Poppins, sans-serif`;
+    ctx.font = `800 ${Math.round(size)}px CromaticSans, sans-serif`;
     const bx = cx - w / 2 + size * 0.45;
     const by = cy + size * 0.42;
     ctx.fillText("BiSM", bx, by);
@@ -28983,7 +29066,7 @@ void main() {
     for (let i = 0; i < 6; i++) {
       ctx.fillRect(dx, cy - size * 0.64 + i * size * 0.22, size * 0.05, size * 0.1);
     }
-    ctx.font = `700 ${Math.round(size * 0.22)}px Poppins, sans-serif`;
+    ctx.font = `700 ${Math.round(size * 0.22)}px CromaticSans, sans-serif`;
     const lines = ["BUCHAREST", "INTERNATIONAL", "SCHOOL OF", "MANAGEMENT"];
     lines.forEach((l, i) => ctx.fillText(l, dx + size * 0.32, cy - size * 0.42 + i * size * 0.32));
     ctx.restore();
@@ -29128,7 +29211,7 @@ void main() {
       ctx.fillRect(112, 424, 256, 7);
       ctx.fillStyle = "#000000";
       ctx.textAlign = "center";
-      ctx.font = "800 17px Poppins, sans-serif";
+      ctx.font = "800 17px CromaticSans, sans-serif";
       ctx.fillText("Dacia 99 \xB7 CROMATIC STUDIOS \xB7 2024", 240, 448);
       bismLogo(ctx, 240, 26, 24);
     });
@@ -29336,7 +29419,7 @@ void main() {
       ctx.fillRect(4, 54, 504, 7);
       ctx.fillStyle = "#000000";
       ctx.textAlign = "center";
-      ctx.font = "800 52px Poppins, sans-serif";
+      ctx.font = "800 52px CromaticSans, sans-serif";
       ctx.fillText(h.addr, 256, 122);
       ctx.font = '600 26px "JetBrains Mono", monospace';
       ctx.fillStyle = "rgba(0,0,0,0.72)";
@@ -29386,7 +29469,7 @@ void main() {
           ctx.fill();
           ctx.fillStyle = "#000000";
           ctx.textAlign = "center";
-          ctx.font = "800 54px Poppins, sans-serif";
+          ctx.font = "800 54px CromaticSans, sans-serif";
           ctx.fillText(p.name, 256, 130, 440);
           ctx.font = '600 26px "JetBrains Mono", monospace';
           ctx.fillStyle = "rgba(0,0,0,0.6)";
@@ -29421,7 +29504,7 @@ void main() {
       head.castShadow = tip.castShadow = true;
       const pad = 26;
       const meas = document.createElement("canvas").getContext("2d");
-      meas.font = "700 34px Poppins, sans-serif";
+      meas.font = "700 34px CromaticSans, sans-serif";
       const tw = Math.ceil(meas.measureText(poi.t).width) + pad * 2;
       const tex = canvasTexture(tw, 64, (ctx) => {
         ctx.fillStyle = "rgba(251,250,245,0.95)";
@@ -29432,7 +29515,7 @@ void main() {
         ctx.lineWidth = 3;
         ctx.stroke();
         ctx.fillStyle = "#000000";
-        ctx.font = "700 34px Poppins, sans-serif";
+        ctx.font = "700 34px CromaticSans, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(poi.t, tw / 2, 34);
@@ -29683,7 +29766,7 @@ void main() {
       ctx.strokeRect(12, 12, 488, 232);
       ctx.fillStyle = accent;
       ctx.textAlign = "center";
-      ctx.font = "900 92px Poppins, sans-serif";
+      ctx.font = "900 92px CromaticSans, sans-serif";
       ctx.fillText("LIFTOFF", 256, 140);
       ctx.font = '600 30px "JetBrains Mono", monospace';
       ctx.fillStyle = "#fbfaf5";
@@ -29784,16 +29867,25 @@ void main() {
     return g;
   }
   function buildStart(parent) {
+    // r129: no plaza and no circle: the road the van starts on runs on behind it and fades into the map
     const g = new Group();
-    g.position.set(1345, 0, 3071);
-    const plaza = new Mesh(new CylinderGeometry(110, 110, 1.4, 48), mats.roadMajor);
-    plaza.position.y = 0.7;
-    plaza.receiveShadow = true;
-    const ring = new Mesh(new RingGeometry(98, 104, 48), new MeshBasicMaterial({ color: "#fbfaf5" }));
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = 1.6;
-    ring.material.userData.outlineParameters = { visible: false };
-    g.add(plaza, ring);
+    const [x0, z0] = ROUTE_MAIN[0], [x1, z1] = ROUTE_MAIN[1];
+    const L = Math.hypot(x1 - x0, z1 - z0), dx = (x1 - x0) / L, dz = (z1 - z0) / L;
+    const W = 40, N = 10, seg = 70;
+    const col = new Color("#e48572"); // the colour the route is drawn in
+    for (let i = 0; i < N; i++) {
+      const m = new MeshStandardMaterial({ color: col, roughness: 0.9, transparent: true, opacity: 1 - (i + 0.5) / N, depthWrite: false });
+      m.userData.outlineParameters = { visible: false };
+      const r = new Mesh(new BoxGeometry(W, 1.2, seg + 1), m);
+      const d = -(i + 0.5) * seg;
+      r.position.set(x0 + dx * d, 0.6, z0 + dz * d);
+      r.rotation.y = Math.atan2(dx, dz);
+      r.receiveShadow = true;
+      g.add(r);
+      EXTRA_KEEPOUT.push({ x: x0 + dx * d, y: z0 + dz * d, r: 46 });
+    }
+    // and room for Muniției 5 beside it
+    EXTRA_KEEPOUT.push({ x: x0 + dz * 84 - dx * 30, y: z0 - dx * 84 - dz * 30, r: 62 });
     parent.add(g);
   }
   function buildGround(parent) {
@@ -29835,17 +29927,17 @@ void main() {
       park.position.set(p.x, 0.4, p.y);
       park.receiveShadow = true;
       parent.add(park);
-      const lbl = groundLabel(p.name, { size: 46, color: "#5c7a49", font: "italic 600 52px Poppins, sans-serif" });
+      const lbl = groundLabel(p.name, { size: 46, color: "#5c7a49", font: "italic 600 52px CromaticSans, sans-serif" });
       lbl.position.set(p.x, 2.6, p.y + p.ry + 46);
       parent.add(lbl);
     }
     for (const a of AREA_LABELS) {
-      const lbl = groundLabel(a.t, { size: 74, color: "rgba(120,114,100,0.55)", font: "800 66px Poppins, sans-serif" });
+      const lbl = groundLabel(a.t, { size: 74, color: "rgba(120,114,100,0.55)", font: "800 66px CromaticSans, sans-serif" });
       lbl.position.set(a.x, 1.2, a.y);
       parent.add(lbl);
     }
     for (const s of STREET_LABELS) {
-      const lbl = groundLabel(s.t, { size: 34, color: "rgba(110,104,92,0.85)", font: "600 44px Poppins, sans-serif" });
+      const lbl = groundLabel(s.t, { size: 34, color: "rgba(110,104,92,0.85)", font: "600 44px CromaticSans, sans-serif" });
       lbl.position.set(s.x, 1.6, s.y);
       lbl.rotation.z = Math.PI + (s.a || 0) * Math.PI / 180;
       parent.add(lbl);
@@ -30069,8 +30161,8 @@ void main() {
           for (const [cv, [a, b2]] of parts) { tx.drawImage(cv, a, 0, b2 - a, cv.height, x, 20, (b2 - a) * k, H2); x += (b2 - a) * k + 14; }
           tx.globalCompositeOperation = "source-in"; tx.fillStyle = "#FED012"; tx.fillRect(0, 0, 1024, 300);
           ctx.drawImage(tmp, 0, 0);
-        } else { ctx.font = "800 250px Montserrat, Poppins, sans-serif"; ctx.fillText("CSs", 40, 270); }
-        ctx.font = "800 96px Montserrat, Poppins, sans-serif"; ctx.letterSpacing = "18px"; ctx.fillText("AIRLINES", 48, 410);
+        } else { ctx.font = "800 250px CromaticSans, CromaticSans, sans-serif"; ctx.fillText("CSs", 40, 270); }
+        ctx.font = "800 96px CromaticSans, CromaticSans, sans-serif"; ctx.letterSpacing = "18px"; ctx.fillText("AIRLINES", 48, 410);
         tex.needsUpdate = true;
       };
       draw(); document.fonts?.ready?.then(draw); jetWordsReady().then(draw);
@@ -30130,7 +30222,7 @@ void main() {
         ctx.fillStyle = "#ecebe7"; ctx.fillRect(6, 6, 500, 244);
         ctx.fillStyle = col; ctx.fillRect(6, 6, 22, 244);
         ctx.fillStyle = "#8b8984"; ctx.font = '700 34px "JetBrains Mono", monospace'; ctx.fillText(ch, 44, 84);
-        ctx.fillStyle = "#3d3c39"; ctx.font = "800 74px Poppins, Montserrat, sans-serif"; ctx.fillText(name, 40, 178);
+        ctx.fillStyle = "#3d3c39"; ctx.font = "800 74px CromaticSans, CromaticSans, sans-serif"; ctx.fillText(name, 40, 178);
       });
       const edgeM = new MeshStandardMaterial({ color: "#c9c6bf", roughness: 0.8 });
       const board = new Mesh(new BoxGeometry(46, 23, 1.6), [edgeM, edgeM, edgeM, edgeM, new MeshStandardMaterial({ map: tex, roughness: 0.8 }), new MeshStandardMaterial({ map: tex, roughness: 0.8 })]);
@@ -30236,6 +30328,7 @@ void main() {
     buildPeople(world);
     buildDacia99(world);
     buildMunitiei5(world);
+    buildEliade18(world);
     const heritage = buildHeritage(world);
     const plots = buildPlots(world);
     const pois = buildPOIs(world);
@@ -30538,7 +30631,7 @@ void main() {
     // tail: tall lamps, plate, exhaust
     const tailM = new MeshPhysicalMaterial({ color: "#a3121a", emissive: new Color("#ff2a2a"), emissiveIntensity: 0.4, roughness: 0.1, clearcoat: 1 });
     for (const sx of [-1, 1]) { const t = new Mesh(new BoxGeometry(3.6, 8, 1.2), tailM); t.position.set(sx * 19.5, 20, -FZ - 0.2); g.add(t); }
-    const plateTex = canvasTexture(256, 64, (ctx) => { ctx.fillStyle = "#f7f7f2"; ctx.fillRect(0, 0, 256, 64); ctx.fillStyle = "#1b3d9c"; ctx.fillRect(0, 0, 30, 64); ctx.fillStyle = "#111"; ctx.font = "800 36px Montserrat, sans-serif"; ctx.fillText("B 99 CRS", 40, 46); ctx.strokeStyle = "#111"; ctx.lineWidth = 4; ctx.strokeRect(2, 2, 252, 60); });
+    const plateTex = canvasTexture(256, 64, (ctx) => { ctx.fillStyle = "#f7f7f2"; ctx.fillRect(0, 0, 256, 64); ctx.fillStyle = "#1b3d9c"; ctx.fillRect(0, 0, 30, 64); ctx.fillStyle = "#111"; ctx.font = "800 36px CromaticSans, sans-serif"; ctx.fillText("B 99 CRS", 40, 46); ctx.strokeStyle = "#111"; ctx.lineWidth = 4; ctx.strokeRect(2, 2, 252, 60); });
     const plateB = new Mesh(new PlaneGeometry(13, 3.3), new MeshStandardMaterial({ map: plateTex })); plateB.rotation.y = Math.PI; plateB.position.set(0, 13, -FZ - 0.3); g.add(plateB);
     const plateF = new Mesh(new PlaneGeometry(11, 2.8), new MeshStandardMaterial({ map: plateTex })); plateF.position.set(0, 7.6, FZ + 4.7); g.add(plateF);
     const exh = new Mesh(new CylinderGeometry(1.1, 1.1, 6, 12), chromeM()); exh.rotation.x = Math.PI / 2; exh.position.set(-13, 6.5, -FZ - 1.5); g.add(exh);
@@ -30597,7 +30690,7 @@ void main() {
         ctx.arc(0, 0, sz * 0.8, 0.4, Math.PI + 0.4);
         ctx.stroke();
       } else if (kind === 3) {
-        ctx.font = `900 ${Math.round(sz * 2.2)}px Poppins, sans-serif`;
+        ctx.font = `900 ${Math.round(sz * 2.2)}px CromaticSans, sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(rnd() > 0.5 ? "z" : "k", 0, 0);
@@ -30618,7 +30711,7 @@ void main() {
     ctx.fillStyle = KOMPUS_ORANGE;
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
-    ctx.font = `900 ${Math.round(size)}px Poppins, sans-serif`;
+    ctx.font = `900 ${Math.round(size)}px CromaticSans, sans-serif`;
     ctx.fillText("kompus", cx, cy + size * 0.36);
     const full = ctx.measureText("kompus").width;
     const upToO = ctx.measureText("k").width;
@@ -30709,7 +30802,7 @@ void main() {
     return g;
   }
   function plateMesh(w = 12, h = 3) {
-    const t = canvasTexture(256, 64, (ctx) => { ctx.fillStyle = "#f7f7f2"; ctx.fillRect(0, 0, 256, 64); ctx.fillStyle = "#1b3d9c"; ctx.fillRect(0, 0, 30, 64); ctx.fillStyle = "#111"; ctx.font = "800 36px Montserrat, sans-serif"; ctx.fillText("B 99 CRS", 40, 46); ctx.strokeStyle = "#111"; ctx.lineWidth = 4; ctx.strokeRect(2, 2, 252, 60); });
+    const t = canvasTexture(256, 64, (ctx) => { ctx.fillStyle = "#f7f7f2"; ctx.fillRect(0, 0, 256, 64); ctx.fillStyle = "#1b3d9c"; ctx.fillRect(0, 0, 30, 64); ctx.fillStyle = "#111"; ctx.font = "800 36px CromaticSans, sans-serif"; ctx.fillText("B 99 CRS", 40, 46); ctx.strokeStyle = "#111"; ctx.lineWidth = 4; ctx.strokeRect(2, 2, 252, 60); });
     return new Mesh(new PlaneGeometry(w, h), new MeshStandardMaterial({ map: t, roughness: 0.4 }));
   }
   function archCut(sh, cz, r, sill = 7, cy = 9) { sh.lineTo(cz - r, sill); sh.lineTo(cz - r, cy); sh.absarc(cz, cy, r, Math.PI, 0, true); sh.lineTo(cz + r, sill); }
@@ -30729,7 +30822,7 @@ void main() {
     // navy doors with POLICE and a gold star
     const doorTex = canvasTexture(512, 160, (ctx) => {
       ctx.fillStyle = NAVY; ctx.fillRect(0, 0, 512, 160);
-      ctx.fillStyle = "#ffffff"; ctx.font = "900 70px Montserrat, sans-serif"; ctx.textAlign = "center"; ctx.fillText("POLICE", 300, 105);
+      ctx.fillStyle = "#ffffff"; ctx.font = "900 70px CromaticSans, sans-serif"; ctx.textAlign = "center"; ctx.fillText("POLICE", 300, 105);
       ctx.fillStyle = "#d8b24a"; ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr2 = i % 2 ? 18 : 40; ctx.lineTo(80 + Math.cos(a) * rr2, 80 + Math.sin(a) * rr2); } ctx.fill();
     });
     for (const sx of [-1, 1]) {
@@ -30799,7 +30892,7 @@ void main() {
     // windscreen, seat, wheel, pipes, spare
     const frame = topBody(rrDraw(15, 1, 0.4), 7, c, 23, 0.4); frame.position.z = 5; frame.rotation.x = -0.25; g.add(frame);
     const scr = new Mesh(new ShapeGeometry(rrShape(13, 5.5, 1), 4), glassM()); scr.position.set(0, 26.8, 5.6); scr.rotation.x = -0.25; g.add(scr);
-    const seat = sideBody((s) => { s.moveTo(-15, 20); s.lineTo(-6, 20); s.lineTo(-6, 22); s.lineTo(-13, 22); s.lineTo(-15, 29); s.lineTo(-17, 29); s.lineTo(-17, 20); }, 16, M("#5a2b1c", { roughness: 0.6 }), 1.2);
+    const seat = sideBody((s) => { s.moveTo(-15, 20); s.lineTo(-6, 20); s.lineTo(-6, 22); s.lineTo(-13, 22); s.lineTo(-15, 29); s.lineTo(-17, 29); s.lineTo(-17, 20); }, 16, c, 1.2);
     g.add(seat);
     const st = new Mesh(new TorusGeometry(3.3, 0.45, 8, 22), M("#1c1c1c")); st.position.set(-3.5, 24.5, -1.5); st.rotation.x = -0.9; g.add(st, rod([-3.5, 22, 1], [-3.5, 24.5, -1.5], 0.4, c));
     for (let i = 0; i < 3; i++) { const p = rod([-11.5, 15, 18 - i * 5], [-15.5, 12, 13 - i * 5], 1, c); g.add(p); }
@@ -30808,6 +30901,8 @@ void main() {
     const wheels = [];
     for (const [x, z] of [[-13.5, 24], [13.5, 24], [-13.5, -20], [13.5, -20]]) { const w = carWheel({ r: 9, w: 5.2, rim: "chrome", rimR: 0.62, whitewall: true, spokes: 10 }); w.position.set(x, 9, z); wheels.push(w); g.add(w); }
     shadowAll(g);
+    // r129: all chrome, like the Monopoly token: tyres, seat and all
+    g.traverse((o) => { if (o.isMesh && o.material && !o.material.transmission && o.material.metalness < 0.9 && o.material.clearcoat !== 1) o.material = c; });
     return { group: g, wheels, kind: "car" };
   }
 
@@ -31036,7 +31131,7 @@ void main() {
     const chrome = chromeM();
     const lensM = new MeshPhysicalMaterial({ color: "#fff8e6", emissive: new Color("#ffe7b0"), emissiveIntensity: 0.7, roughness: 0.05, clearcoat: 1, envMap: getEnvMap() });
     const tailM = new MeshPhysicalMaterial({ color: "#b3121b", emissive: new Color("#ff2a2a"), emissiveIntensity: 0.55, roughness: 0.1, clearcoat: 1 });
-    const plateM = new MeshStandardMaterial({ map: canvasTexture(256, 64, (ctx) => { ctx.fillStyle = "#f7f7f2"; ctx.fillRect(0, 0, 256, 64); ctx.fillStyle = "#1b3d9c"; ctx.fillRect(0, 0, 30, 64); ctx.fillStyle = "#fff"; ctx.font = "700 16px Montserrat"; ctx.fillText("RO", 3, 50); ctx.fillStyle = "#111"; ctx.font = "800 36px Montserrat, sans-serif"; ctx.fillText("B 99 CRS", 40, 46); ctx.strokeStyle = "#111"; ctx.lineWidth = 4; ctx.strokeRect(2, 2, 252, 60); }), roughness: 0.4 });
+    const plateM = new MeshStandardMaterial({ map: canvasTexture(256, 64, (ctx) => { ctx.fillStyle = "#f7f7f2"; ctx.fillRect(0, 0, 256, 64); ctx.fillStyle = "#1b3d9c"; ctx.fillRect(0, 0, 30, 64); ctx.fillStyle = "#fff"; ctx.font = "700 16px CromaticSans"; ctx.fillText("RO", 3, 50); ctx.fillStyle = "#111"; ctx.font = "800 36px CromaticSans, sans-serif"; ctx.fillText("B 99 CRS", 40, 46); ctx.strokeStyle = "#111"; ctx.lineWidth = 4; ctx.strokeRect(2, 2, 252, 60); }), roughness: 0.4 });
     const yl = y0 + H * 0.3;
     for (const sx of [-1, 1]) {
       const ring = new Mesh(new TorusGeometry(2.6, 0.7, 10, 20), chrome); ring.position.set(sx * W2 * 0.68, yl, zf + 0.2);
@@ -31766,14 +31861,14 @@ void main() {
       const S = 1200;
       x.setLineDash([14, 12]); x.lineWidth = 4; x.beginPath(); x.moveTo(S, 40); x.lineTo(S, H - 40); x.stroke(); x.setLineDash([]);
       x.fillStyle = "#FED012"; x.fillRect(14, 14, S - 14, 86);
-      x.fillStyle = "#0a0a0a"; x.font = "900 34px Montserrat, Poppins, sans-serif"; x.fillText("\u2733 CROMATIC AIR", 50, 70);
-      x.font = "900 30px Montserrat, Poppins, sans-serif"; x.fillText("BOARDING PASS", 520, 70);
+      x.fillStyle = "#0a0a0a"; x.font = "900 34px CromaticSans, CromaticSans, sans-serif"; x.fillText("\u2733 CROMATIC AIR", 50, 70);
+      x.font = "900 30px CromaticSans, CromaticSans, sans-serif"; x.fillText("BOARDING PASS", 520, 70);
       x.font = "700 22px 'JetBrains Mono', monospace"; x.fillText("BOOKING " + t.ref, 900, 68);
-      x.font = "600 30px Poppins, sans-serif"; x.fillText(`Welcome aboard, ${t.first}. Next stop: a coffee at Olari 9.`, 50, 160);
-      x.font = "900 96px Montserrat, Poppins, sans-serif"; x.fillText("DRM", 50, 290); x.fillText("OLR", S - 300, 290);
-      x.font = "700 40px Poppins, sans-serif"; x.fillText("\u2708", S / 2 - 40, 270);
+      x.font = "600 30px CromaticSans, sans-serif"; x.fillText(`Welcome aboard, ${t.first}. Next stop: a coffee at Olari 9.`, 50, 160);
+      x.font = "900 96px CromaticSans, CromaticSans, sans-serif"; x.fillText("DRM", 50, 290); x.fillText("OLR", S - 300, 290);
+      x.font = "700 40px CromaticSans, sans-serif"; x.fillText("\u2708", S / 2 - 40, 270);
       x.setLineDash([10, 10]); x.lineWidth = 4; x.beginPath(); x.moveTo(290, 255); x.lineTo(S / 2 - 60, 255); x.moveTo(S / 2 + 20, 255); x.lineTo(S - 320, 255); x.stroke(); x.setLineDash([]);
-      const cell = (k, v, cx, cy, big = false) => { x.font = "700 18px 'JetBrains Mono', monospace"; x.globalAlpha = 0.55; x.fillText(k, cx, cy); x.globalAlpha = 1; x.font = `800 ${big ? 60 : 30}px Montserrat, Poppins, sans-serif`; x.fillText(String(v).slice(0, 40), cx, cy + (big ? 64 : 40)); };
+      const cell = (k, v, cx, cy, big = false) => { x.font = "700 18px 'JetBrains Mono', monospace"; x.globalAlpha = 0.55; x.fillText(k, cx, cy); x.globalAlpha = 1; x.font = `800 ${big ? 60 : 30}px CromaticSans, CromaticSans, sans-serif`; x.fillText(String(v).slice(0, 40), cx, cy + (big ? 64 : 40)); };
       cell("PASSENGER", t.name, 50, 370); cell("FLIGHT", t.flight, 560, 370); cell("DATE", t.date, 840, 370);
       cell("CLASS", t.klass, 50, 470); cell("BOARDING", t.boarding, 420, 470); cell("GATE", t.gate, 860, 470); cell("SEAT", t.seat, 1010, 470);
       cell("ON BOARD", t.dreams.join(" \u00B7 ") || "-", 50, 570);
@@ -32365,10 +32460,10 @@ void main() {
         <button class="wt-close" aria-label="Close">\u00D7</button>
       </div>`);
     themeMenu.querySelector(".wt-close").onclick = () => closeMenus();
-    const WORLD_VEH = { underwater: "sub", default: "groovy", monument: "plane", ghibli: "groovy", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "lava", orchid: "scooter" };
+    const WORLD_VEH = { underwater: "sub", default: "groovy", monument: "groovy", ghibli: "groovy", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "lava", orchid: "scooter" };
     const wtGrid = el("div", "wt-grid");
     themeMenu.appendChild(wtGrid);
-    const WORLD_SUB = { underwater: "Submarine, fish, floating things", default: "The city, as it is", monument: "Pastel diorama, floating islands", ghibli: "Hand-painted countryside", nightlife: "Orange & blue, after dark", gta2: "Top-down, retro", circuit: "Race day on the circuit", magma: "Lava tones", orchid: "Petals everywhere" };
+    const WORLD_SUB = { underwater: "Submarine, fish, floating things", default: "The city, as it is", monument: "Our city, as a pastel diorama", ghibli: "Hand-painted countryside", nightlife: "Orange & blue, a light drizzle", gta2: "Bonus \u00B7 drive mode \u00B7 top-down, retro", circuit: "Race day on the circuit", magma: "Lava tones", orchid: "Petals everywhere" };
     const themeRows = {};
     SCHEMES.forEach((s, i) => {
       const b = el("button", "wt", `
@@ -33288,7 +33383,7 @@ void main() {
     const WORK_PAGES = { "Slow Coffee Festival": "slow-coffee-festival", "Artisan Coffee Gear": "artisan-coffee-gear", "Craft Coffee": "craft-coffee", "Elithia": "elithia", "Yoshi Izakaya": "yoshi-izakaya", "ARCA Resort": "arca-resort",
       "Routine Paris": "routine-paris", "Altius": "altius", "Help 4 Brain": "help-4-brain", "Investimental": "investimental", "Sip": "sip-coffee-wine", "Sip Coffee & Wine": "sip-coffee-wine",
       "Bepco": "bepco", "K\xF3mpus": "kompus", "Assetto": "assetto", "Clinica Sante": "clinica-sante",
-      "ESD": "esd", "Techventures Bank": "techventures-bank", "Longshield": "longshield", "Infinity Capital": "infinity-capital", "Unchain Festival": "unchain-festival", "Patiline": "patiline", "Pain Plaisir": "pain-plaisir", "Berero": "casa-berero", "Casa Berero": "casa-berero" };
+      "ESD": "esd", "Techventures Bank": "techventures-bank", "Longshield": "longshield", "Infinity Capital": "infinity-capital", "Unchain Festival": "unchain-festival", "Patiline": "patiline", "Pain Plaisir": "pain-plaisir", "Berero": "casa-berero", "Casa Berero": "casa-berero", "Eliade 18": "eliade-18", "RDW 2023": "rdw-2023", "RDW 2023 \xB7 AI pop-up": "rdw-2023" };
     window.__casePage = (brand) => (WORK_PAGES[brand] && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname) ? WORK_PAGES[brand] : null);
     const withPage = (brand, onClick) => () => { const pg = window.__casePage(brand); if (pg && openFrameHook) return openFrameHook(`/work/${pg}/?embed=1`, brand); return onClick?.(); };
     const mkTag = (brand, name, line, cta, onClick0, extra = "") => {
@@ -33752,7 +33847,7 @@ void main() {
         // r124: every ride the same size on the road: about 40 long, about 26 wide at most
         {
           const sz = bb.getSize(new Vector3()), len = Math.max(sz.z, 1), wid = Math.max(sz.x, 1);
-          VEH_S = Math.min(0.74, 46 / len, 30 / wid);
+          VEH_S = 1.25 * Math.min(0.74, 46 / len, 30 / wid); // r129: every vehicle 25% bigger
           window.__vehSize = [id, Math.round(sz.x), Math.round(sz.y), Math.round(sz.z), +VEH_S.toFixed(2)];
         }
         veh.group.scale.setScalar(VEH_S);
@@ -34253,7 +34348,7 @@ void main() {
         ctx.save();
         ctx.translate(64, 0);
         ctx.scale(0.6, 1.12);
-        ctx.font = "900 40px Poppins, sans-serif";
+        ctx.font = "900 40px CromaticSans, sans-serif";
         ctx.fillText("TWO", 0, 42);
         ctx.fillText("MIN", 0, 80);
         ctx.restore();
@@ -34619,7 +34714,7 @@ void main() {
       const _rP = new Vector3(), _rT = new Vector3();
       const _tA = new Vector3();
       var beaconOn = false, beaconBlinkUntil = 0, copMode = "";
-      var ENV_VEH = { default: "groovy", monument: "plane", ghibli: "groovy", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "lava", orchid: "scooter", underwater: "sub" };
+      var ENV_VEH = { default: "groovy", monument: "groovy", ghibli: "groovy", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "lava", orchid: "scooter", underwater: "sub" };
       var camYaw = null, camDir = new Vector3(0, 0, 1), chA = new Vector3(), chB = new Vector3(), planeRev = 0;
       var VEH_SPEED = {
         groovy: { max: 130, unit: "KM/H" }, f1: { max: 340, unit: "KM/H" }, monopoly: { max: 260, unit: "KM/H" },
@@ -35051,7 +35146,7 @@ void main() {
           im.frustumCulled = false;
           return im;
         };
-        const labelTex = (txt, bg, ink, w = 512, h = 128, font = "900 70px Montserrat, sans-serif") => canvasTexture(w, h, (ctx) => {
+        const labelTex = (txt, bg, ink, w = 512, h = 128, font = "900 70px CromaticSans, sans-serif") => canvasTexture(w, h, (ctx) => {
           ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
           ctx.fillStyle = ink; ctx.font = font; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(txt, w / 2, h / 2 + 4);
         });
@@ -35165,7 +35260,7 @@ void main() {
         {
           route.posAt(Math.min(route.total, route.stopL.crowd + 200), P); route.tangentAt(Math.min(route.total, route.stopL.crowd + 200), T);
           const dp = side(P, T, ROUTE_W / 2 + 14, 1);
-          const drs = new Mesh(new PlaneGeometry(26, 12), noOutline(new MeshBasicMaterial({ map: labelTex("DRS", "#ffffff", "#0a0a0a", 256, 128, "900 84px Montserrat, sans-serif"), side: DoubleSide })));
+          const drs = new Mesh(new PlaneGeometry(26, 12), noOutline(new MeshBasicMaterial({ map: labelTex("DRS", "#ffffff", "#0a0a0a", 256, 128, "900 84px CromaticSans, sans-serif"), side: DoubleSide })));
           drs.position.set(dp.x, 16, dp.z); drs.rotation.y = Math.atan2(T.x, T.z) + Math.PI;
           const dpole = new Mesh(new CylinderGeometry(0.6, 0.6, 12, 6), new MeshStandardMaterial({ color: "#cccccc" }));
           dpole.position.set(dp.x, 6, dp.z);
@@ -36115,8 +36210,11 @@ void main() {
         rainAlpha = smooth(rainAlpha, wantRain ? 1 : 0, dt, 2.5);
         rain.visible = rainAlpha > 0.02;
         if (rain.visible) {
-          rainMat.opacity = 0.5 * rainAlpha;
-          for (let i = 0; i < RAIN_N; i++) {
+          // r129: Night Mode keeps a light drizzle, not a downpour
+          const rainN = SCHEMES[state.schemeIdx].id === "nightlife" ? 150 : RAIN_N;
+          rain.count = rainN;
+          rainMat.opacity = (rainN < RAIN_N ? 0.32 : 0.5) * rainAlpha;
+          for (let i = 0; i < rainN; i++) {
             const d = rainDrops[i];
             d.y -= d.v * dt;
             if (d.y < 0) {
@@ -36387,6 +36485,10 @@ void main() {
         { id: "world", stop: "world", chapter: true, find: true, h: 70, name: "The World", line: "CH.03", c: "#119BFE" },
         { id: "hq", chapter: true, br: "A", x: 1010, z: 4262, px: 1010, pz: 4120, h: 280, name: "C\u0103linescu 54", line: "THE ATTIC \xB7 2017", c: "#c0392b", pts: 5, past: true,
           desc: "Congrats, you found a blast from the past (2017): the Cromatic Studios attic. The villa with the red mansard, right across the street from Two Minutes; the string of lights still runs from our balcony to their corner." },
+        { id: "eliade", chapter: true, x: 1600, z: 6100, px: 1640, pz: 6158, h: 150, name: "Eliade 18", line: "OUR STUDIO \xB7 2019", c: "#F65342", pts: 5, past: true, work: "Eliade 18",
+          desc: "Congrats, you found a blast from the past (2019): Eliade Tower, the long grey office slab where Cromatic Studios had a floor. More room, more people, the first proper studio." },
+        { id: "rdw", chapter: true, x: 1560, z: 6100, px: 1548, pz: 6158, h: 120, name: "RDW 2023 \xB7 AI pop-up", line: "ROMANIAN DESIGN WEEK \xB7 2023", c: "#7B4FD6", pts: 5, past: true, work: "RDW 2023",
+          desc: "During Romanian Design Week 2023 our Eliade 18 floor became a pop-up space, and we talked about using AI in design, early, in 2023." },
         { id: "dacia", chapter: true, x: 1170, z: 6320, px: 1070, pz: 6320, h: 230, name: "Dacia 99", line: "OUR STUDIO \xB7 2024", c: "#B098C8", pts: 5, past: true,
           desc: "Congrats, you found a blast from the past (2024): Bulevardul Dacia 99, the Cromatic Studios home right before Olari 9. Above Club 99, under BISM: the loudest address we ever had." },
         { id: "lab", br: "A", x: 820, z: 4260, px: 602, pz: 4142, h: 70, name: "Two Min Lab", line: "PRODUCTS \xB7 TONIC IONIC \xB7 LABELS", c: "#C6402E", t: "#ffffff", act: "labTag", desc: "The Two Minutes lab: bottled drinks, Tonic Ionic and the labels that sell them, in the yard behind the coffee shop." },
@@ -36394,7 +36496,7 @@ void main() {
         { id: "oma", br: "A", x: 706, z: 4560, h: 80, name: "OMA Coffee", line: "BRAȘOV \xB7 AT THE FOOT OF T\xC2MPA", c: "#4a7c4e", t: "#ffffff", act: "omaTag" },
         { id: "sip", br: "A", x: 706, z: 4985, h: 70, name: "Sip Coffee & Wine", line: "BRANDING \xB7 COMMUNICATION", c: "#C9A227", t: "#14120c", act: "sipTag" },
         { id: "yoshi", br: "A", x: 706, z: 5175, h: 60, name: "Yoshi Izakaya", line: "COMMUNICATION \xB7 CONTENT", c: "#F4876F", t: "#2a0f08", act: "yoshiTag" },
-        { id: "artisan", br: "A", x: 830, z: 5140, px: 912, pz: 5129, h: 30, name: "Artisan Coffee Gear", line: "BRANDING PROJECT", desc: "A branding project for specialty coffee gear: a whole brand universe, from strategy and the letterform pattern to packaging and the webshop. Parked by Romexpo.", c: "#797c69", t: "#f2f0e8", act: "artisanTag" },
+        { id: "artisan", br: "A", x: 830, z: 5140, px: 928, pz: 5212, h: 30, name: "Artisan Coffee Gear", line: "BRANDING PROJECT", desc: "A branding project for specialty coffee gear: a whole brand universe, from strategy and the letterform pattern to packaging and the webshop. Parked by Romexpo.", c: "#797c69", t: "#f2f0e8", act: "artisanTag" },
         { id: "scf", br: "A", x: 1150, z: 5140, h: 110, name: "Slow Coffee Festival", line: "ROMEXPO \xB7 2021–2025", c: "#5B4B9E", t: "#ffffff", act: "scfTag" },
         { id: "steam", br: "A", x: 985, z: 5640, h: 150, name: "Steam Coffee Shop", line: "BRANDING \xB7 GROWTH \xB7 PRODUCT", c: "#2f9e4f", t: "#ffffff", act: "steamTag", desc: "A pioneer coffee brand refreshed for its community: new energy for the people who were there from the start." },
         { id: "craft", br: "A", x: 985, z: 5640, px: 1020, pz: 5620, h: 40, name: "Craft Coffee", line: "IN THE STEAM BUILDING", c: "#119BFE", t: "#ffffff", act: "craftTag" },
@@ -36556,14 +36658,15 @@ void main() {
         document.body.classList.add("flight-done");
         let end = document.querySelector(".flight-end");
         if (!end) {
-          end = el("div", "flight-end", `<b>See you on board.</b><span>Your boarding pass is with us. We write back within one working day.</span><button class="fe-save">\u2B07 Save my boarding pass</button><button class="fe-drive">\u{1F697} Repeat the experience in Drive mode</button><button class="fe-replay">\u21BB Start over on the map</button><button class="fe-map">Back to the map</button>`);
+          end = el("div", "flight-end", `<b>See you on board.</b><span>Your boarding pass is with us. We write back within one working day.</span><button class="fe-save">\u2B07 Save my boarding pass</button><button class="fe-drive">\u{1F697} Restart in Drive mode</button><button class="fe-replay">\u21BB Start over on the map</button><button class="fe-map">Back to the map</button>`);
           end.querySelector(".fe-save").onclick = () => window.__savePass?.();
           if (!window.__savePass) end.querySelector(".fe-save").remove();
-          baamEl.classList.add("hidden");
+          document.querySelector(".jet-baam")?.classList.add("hidden");
           end.querySelector(".fe-drive").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?drive&nointro"; };
           end.querySelector(".fe-replay").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?r=" + Date.now().toString(36); };
           end.querySelector(".fe-map").onclick = () => {
             end.remove(); document.body.classList.remove("flight-done");
+            if (worldRefs.jet && jetFx.phase === "idle") worldRefs.jet.group.visible = true;
             mapView.follow = false; mapView.focus = { x: JET_HOME.x - 120, z: JET_HOME.z };
             mapView.yawGoal = 0.3; mapView.pitchGoal = 0.98; mapView.lookYGoal = 0; mapView.distGoal = innerWidth < 720 ? 5600 : 4600; mapView.distRate = 1;
           };
@@ -36652,7 +36755,8 @@ void main() {
           if (t > 1.6 && !jetFx.passBack) { jetFx.passBack = true; mapBoardingDone(); }
           if (t > 6) {
             // a fresh jet waits on the stand, stair down, carpet out
-            g.position.set(JET_HOME.x, 0, JET_HOME.z); g.rotation.set(0, 0, 0); g.visible = true;
+            // r129: it stays hidden while the end screen is up (its tail, CROMATIC on it, poked out of the clouds)
+            g.position.set(JET_HOME.x, 0, JET_HOME.z); g.rotation.set(0, 0, 0); g.visible = !document.body.classList.contains("flight-done");
             jet.stair.scale.setScalar(1); jet.carpet.forEach((c) => (c.visible = true)); jet.glowM.opacity = 0;
             jet.clouds.visible = false;
             jetFx.phase = "idle";
@@ -36829,9 +36933,10 @@ void main() {
         const hintEl = el("div", "tap-hint hidden", `<span class="th-ring"></span><span class="th-hand">\u{1F446}</span><b>Tap the street to drive</b>`);
         let hintAt = null;
         const showTapHint = () => {
-          route.posAt(Math.min(route.total, state.L + 150), _hintV = _hintV || new Vector3());
+          // r129: further down the road, and the camera only comes in a little (it used to dive in to 1900)
+          route.posAt(Math.min(route.total, state.L + 520), _hintV = _hintV || new Vector3());
           hintAt = _hintV.clone();
-          mapView.follow = true; mapView.distGoal = innerWidth < 720 ? 2200 : 1900;
+          mapView.follow = true; mapView.distGoal = Math.max(mapView.dist * 0.82, innerWidth < 720 ? 3600 : 3200);
           hintEl.classList.remove("hidden");
           const off = () => { hintEl.classList.add("hidden"); hintAt = null; canvas.removeEventListener("pointerdown", off); };
           canvas.addEventListener("pointerdown", off);
@@ -36968,7 +37073,12 @@ void main() {
           mark();
           if (pl.board) { mapOpenBoarding(); return; }
           if (pl.stop === "end") { if (!olari.early) olariOpen(); olari.early = false; return; }
-          if (pl.past) { showCard(pl, "A BLAST FROM THE PAST", `<p>${pl.desc}</p>`, ""); return; }
+          if (pl.past) {
+            const pgP = pl.work && window.__casePage?.(pl.work);
+            showCard(pl, "A BLAST FROM THE PAST", `<p>${pl.desc}</p>`, pgP ? `<button class="mcd-open">See the photos \u2192</button>` : "");
+            if (pgP) card.querySelector(".mcd-open").onclick = () => openFrameHook?.(`/work/${pgP}/?embed=1`, pl.name);
+            return;
+          }
           if (pl.stop && pl.stop !== "services") { mapShowChapter(pl.stop); return; }
           if (pl.stop === "services") {
             showCard(pl, "EVERYTHING WE DO", SERVICES.map((sv) => `<span class="mcd-svc" style="--sc:${sv.c}"><b>${sv.t}</b>${sv.items.slice(0, 4).join(" \xB7 ")}</span>`).join(""), `<button class="mcd-open mcd-jet">Board the Cromatic Jet ✈</button>`);
@@ -37525,7 +37635,7 @@ void main() {
         const go = () => { worldRefs.world.userData.buildFabric(); applyScheme(state.schemeIdx); res(); };
         if (kzLoader) setTimeout(() => requestAnimationFrame(() => setTimeout(go, 0)), 250); else { go(); }
       });
-      Promise.all([fabricReady, Promise.race([document.fonts?.ready ?? Promise.resolve(), new Promise((r) => setTimeout(r, 1600))])]).then(() => {
+      Promise.all([fabricReady, Promise.race([Promise.all([document.fonts?.load?.("500 16px CromaticSans"), document.fonts?.load?.("800 16px CromaticSans")]).then(() => document.fonts?.ready), new Promise((r) => setTimeout(r, 1600))])]).then(() => {
         // r127: every shader in the scene is prepared while the intro plays (hidden ones too), so
         // nothing compiles mid-journey; compileAsync uses the parallel compile extension when present
         const hiddenNow = [];

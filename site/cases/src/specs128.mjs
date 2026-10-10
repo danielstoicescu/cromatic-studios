@@ -376,14 +376,27 @@ export const PAGES128 = [
     info: ["Bakery, retail", "Bucharest, 2025", "Product branding, packaging, stickers, in-store, photo, campaign"],
     cover: { img: m("pain-plaisir/photo-25") },
     og: m("pain-plaisir/anemone"),
-    hero: { img: m("pain-plaisir/anemone"), alt: "The Anemone pastry from above, the quatrefoil mark drawn over it" },
+    film: { id: "8KtUdarL1oI", title: "Anemone, by Pain Plaisir" },
+    hero: { img: m("pain-plaisir/xmas-table"), alt: "A Christmas table set with Pain Plaisir breads, pastries and the Anemone box" },
     problem: {
       h: "A pastry that deserved its own name",
       p: [
         "The Anemone is <strong>croissant dough with sugar and vanilla</strong>, Pain Plaisir's take on the kouign-amann, folded at four points.",
         "Pain Plaisir wanted it to stand out as <strong>a product of its own</strong>: on the shelf, in a gift box and on Instagram."
       ],
-      media: [{ img: m("pain-plaisir/photo-35"), alt: "Close-up of the Anemone's caramelised layers", cap: "The product, up close" }]
+      media: [
+        { row: [{ img: m("pain-plaisir/photo-46"), alt: "Anemones on a cake stand at the Christmas table" }, { img: m("pain-plaisir/photo-49"), alt: "The Christmas table, wine and breads" }], cap: "Christmas at Pain Plaisir: the table the campaign was built around" },
+        { rail: ["The", "Anemone"], items: [
+          { img: m("pain-plaisir/photo-1"), alt: "Macro of the caramelised top" },
+          { img: m("pain-plaisir/photo-2"), alt: "The candied orange on top" },
+          { img: m("pain-plaisir/photo-7"), alt: "An Anemone on a ceramic bowl" },
+          { img: m("pain-plaisir/photo-8"), alt: "An Anemone in the light" },
+          { img: m("pain-plaisir/photo-35"), alt: "Close-up of the caramelised layers" },
+          { img: m("pain-plaisir/photo-36"), alt: "The layers, macro" },
+          { img: m("pain-plaisir/photo-41"), alt: "Torn open, the inside" },
+          { img: m("pain-plaisir/photo-42"), alt: "Anemones stacked" }
+        ], cap: "The product, up close" }
+      ]
     },
     solution: {
       h: "The shape is the logo",
@@ -414,7 +427,7 @@ export const PAGES128 = [
       },
       {
         pillar: "video",
-        text: "We shot the Anemone the way it should be eaten: torn, bitten, held up to the eyes. Then a Christmas table full of Pain Plaisir.",
+        text: "We filmed and shot the Anemone the way it should be eaten: torn, bitten, held up to the eyes. Then a Christmas table full of Pain Plaisir.",
         deliverables: ["Photo shoot", "Art direction", "Campaign", "Video production"],
         media: [
           { rail: ["The", "shoot"], items: [
@@ -426,8 +439,7 @@ export const PAGES128 = [
             { img: m("pain-plaisir/photo-39"), alt: "The flaky inside" },
             { img: m("pain-plaisir/photo-40"), alt: "Layers of croissant dough" }
           ], cap: "The Anemone photo shoot" },
-          { img: m("pain-plaisir/xmas-table"), alt: "A Christmas table set with Pain Plaisir breads and pastries", cap: "Christmas at Pain Plaisir" },
-          { row: [{ img: m("pain-plaisir/photo-46"), alt: "Anemones on a cake stand at the Christmas table" }, { img: m("pain-plaisir/photo-52"), alt: "Sourdough loaf and cheese at the Christmas table" }] }
+          { row: [{ img: m("pain-plaisir/photo-44"), alt: "Pastries and cookies at the Christmas table" }, { img: m("pain-plaisir/photo-52"), alt: "Sourdough loaf and cheese at the Christmas table" }], cap: "The Christmas table" }
         ]
       }
     ],
@@ -446,9 +458,9 @@ export const PAGES128 = [
     title: "Craft beer with your people.",
     accent: { bg: "#111111", fg: "#ffffff", ink: "#111111" },
     info: ["Craft beer, hospitality", "2024", "Brand identity, can labels, merch, posters, presentations"],
-    cover: { img: m("casa-berero/label-comm") },
+    cover: { img: m("casa-berero/beers-017") },
     og: m("casa-berero/label-unity"),
-    hero: { img: m("casa-berero/label-comm"), alt: "The Berero COMM can label: black and yellow shapes, LAGER" },
+    hero: { img: m("casa-berero/beers-011"), alt: "A COMM and a UNITY can lit in yellow and green" },
     problem: {
       h: "Not just beer",
       p: [
@@ -473,6 +485,29 @@ export const PAGES128 = [
           { img: m("casa-berero/label-unity"), alt: "The Berero UNITY can label: black and green shapes, IPA", cap: "UNITY, the IPA" },
           { row: [{ img: m("casa-berero/comm-can"), alt: "A COMM can on yellow" }, { img: m("casa-berero/unity-can"), alt: "A UNITY can on green" }] },
           { img: m("casa-berero/tap"), alt: "Tap beer, available in your location or at Casa Berero, kegs against a yellow wall" }
+        ]
+      },
+      {
+        pillar: "video",
+        text: "Product photography for both cans, and for the craft beers Berero brings in from the best breweries: on grass, on a rusted car, in a red crate, in the sun.",
+        deliverables: ["Product photography", "Art direction", "Social content"],
+        media: [
+          { rail: ["COMM", "+ UNITY"], items: [
+            { img: m("casa-berero/beers-012"), alt: "COMM and UNITY under yellow and green light" },
+            { img: m("casa-berero/beers-013"), alt: "A diagonal of COMM and UNITY cans" },
+            { img: m("casa-berero/beers-017"), alt: "Cans scattered on green" },
+            { img: m("casa-berero/beers-018"), alt: "A tower of COMM and UNITY cans" }
+          ], cap: "The two cans, shot in their own colours" },
+          { rail: ["The", "core range"], items: [
+            { img: m("casa-berero/beers-078"), alt: "Hands lining up cans on the grass" },
+            { img: m("casa-berero/beers-044"), alt: "Craft cans on the roof of a rusted car" },
+            { img: m("casa-berero/beers-138"), alt: "Cans in a red wooden crate" },
+            { img: m("casa-berero/beers-143"), alt: "Carrying the red crate" },
+            { img: m("casa-berero/beers-096"), alt: "A can held up against the sky" },
+            { img: m("casa-berero/beers-024"), alt: "A pyramid of cans on the grass" }
+          ], cap: "Craft beers from other breweries, in Berero's crate" },
+          { row: [{ img: m("casa-berero/seb-003"), alt: "A stack of colourful craft cans" }, { img: m("casa-berero/seb-042"), alt: "A can opened against a blue sky" }, { img: m("casa-berero/seb-054"), alt: "Drinking a can in the sun" }] },
+          { row: [{ img: m("casa-berero/seb-018"), alt: "Two cans on coloured plinths" }, { img: m("casa-berero/seb-028"), alt: "Walking with the red crate across the street" }], cap: "A city shoot in blue and red" }
         ]
       },
       {
