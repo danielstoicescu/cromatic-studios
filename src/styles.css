@@ -3966,3 +3966,6 @@ body.map-boarding .topbar .you { visibility: hidden; }
 .map-zoom .mz-snd { display: grid; place-items: center; }
 .flight-end .fe-save { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 999px; border: 1px solid #111 !important; background: #fff !important; color: #111; font: 700 14px/1 CromaticSans, sans-serif; cursor: pointer; }
 .flight-end .fe-save:hover { background: #FED012 !important; }
+/* r130d: the mono line opens ABOVE the pill (below it, it sat across the stem that holds the label) */
+.map-pins .map-pin .mp-label i { top: auto !important; bottom: 100% !important; margin: 0 0 5px !important; transform: translateY(5px); }
+.map-pins .map-pin:hover .mp-label i, .map-pins .map-pin.on .mp-label i { transform: none; }

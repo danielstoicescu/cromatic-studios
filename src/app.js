@@ -25384,7 +25384,8 @@ void main() {
       dir.y = 0;
       dir.normalize();
       q.setFromUnitVectors(new Vector3(0, 0, 1), dir);
-      m.compose(new Vector3(p.x, p.y + 1.8, p.z), q, new Vector3(1, 1, 1));
+      const inRing = Math.hypot(p.x - FORK_POS.x, p.z - FORK_POS.y) < 106;
+      m.compose(new Vector3(p.x, p.y + 1.8, p.z), q, inRing ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1));
       dashes.setMatrixAt(i, m);
     }
     group.add(dashes);
@@ -25461,7 +25462,22 @@ void main() {
   function buildFork(parent) {
     const g = new Group();
     g.position.set(FORK_POS.x, 0, FORK_POS.y);
-    const ring = new Mesh(new CylinderGeometry(98, 98, 1.2, 64), mats.roadMajor); ring.position.y = 0.9; ring.receiveShadow = true; g.add(ring);
+    // r130d: the ring is a flat disc of road (no ink hull: it drew a dark crescent), with its own lane line going round; the streets' own dashes stop at the ring (they crossed it in every direction)
+    const ringM = new MeshStandardMaterial({ roughness: 0.9 }); ringM.color = mats.roadMajor.color; ringM.userData.outlineParameters = { visible: false };
+    const ring = new Mesh(new CylinderGeometry(98, 98, 0.6, 96), ringM); ring.position.y = 1.55; ring.receiveShadow = true; g.add(ring);
+        {
+      const n = 22, dg = new PlaneGeometry(3.2, 16); dg.rotateX(-Math.PI / 2);
+      const lane = new InstancedMesh(dg, mats.routeDash || new MeshBasicMaterial({ color: "#fffdf2" }), n);
+      const m4 = new Matrix4(), q4 = new Quaternion(), up = new Vector3(0, 1, 0);
+      for (let i = 0; i < n; i++) {
+        const a2 = (i / n) * Math.PI * 2;
+        q4.setFromAxisAngle(up, -a2);
+        m4.compose(new Vector3(Math.cos(a2) * 73, 1.95, Math.sin(a2) * 73), q4, new Vector3(1, 1, 1));
+        lane.setMatrixAt(i, m4);
+      }
+      lane.userData.noOutline = true;
+      g.add(lane);
+    }
     const kerb = new Mesh(new CylinderGeometry(48, 48, 3, 48), new MeshStandardMaterial({ color: "#d9d3c4", roughness: 0.9 })); kerb.position.y = 1.5; g.add(kerb);
     const lawn = new Mesh(new CylinderGeometry(45, 45, 3.6, 48), new MeshStandardMaterial({ color: "#7cc472", roughness: 1 })); lawn.position.y = 1.8; g.add(lawn);
     const basin = new Mesh(new CylinderGeometry(32, 33, 4, 48), new MeshStandardMaterial({ color: "#e6e0d2", roughness: 0.8 })); basin.position.y = 4; g.add(basin);
