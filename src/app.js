@@ -23397,7 +23397,12 @@ void main() {
             "	float thickness = outlineThickness;",
             "	const float ratio = 1.0;",
             // TODO: support outline thickness ratio for each vertex
-            "	vec4 w2 = modelMatrix * vec4( skinned.xyz + normal, 1.0 );",
+            // r130f: instanced meshes (trees, kerbs, lamps) bend their outline with the instance too
+            "	vec4 lp = vec4( skinned.xyz + normal, 1.0 );",
+            "	#ifdef USE_INSTANCING",
+            "	lp = instanceMatrix * lp;",
+            "	#endif",
+            "	vec4 w2 = modelMatrix * lp;",
             "	w2.xz = cityWarp( w2.xz );",
             "	vec4 pos2 = projectionMatrix * viewMatrix * w2;",
             // NOTE: subtract pos2 from pos because BackSide objectNormal is negative
@@ -24783,6 +24788,14 @@ void main() {
     canopies.castShadow = cones.castShadow = !window.matchMedia("(max-width: 719px)").matches;
     canopies.receiveShadow = true;
     parent.add(trunks, canopies, canopies2, cones, cones2);
+    // r130f: Sketchbook draws every tree as one soft round stroke: smooth canopies, no top tuft
+    const smoothCanopy = new SphereGeometry(15.5, 20, 14); smoothCanopy.translate(0, 26, 0);
+    const smoothCone = new ConeGeometry(11, 26, 28); smoothCone.translate(0, 22, 0);
+    mats.treeSketch = (on) => {
+      canopies.geometry = on ? smoothCanopy : canopyGeo;
+      cones.geometry = on ? smoothCone : coneGeo;
+      canopies2.visible = cones2.visible = !on;
+    };
   }
   function roadRibbonFromMap(pts2d, width, y, mat) {
     const p3 = pts2d.map(([x, z]) => new Vector3(x, 0, z));
@@ -34536,6 +34549,24 @@ void main() {
           mats.canopy?.color.set("#262626"); mats.bush?.color.set("#1e1e1e"); mats.parkMat?.color.set("#141414");
           renderer.toneMappingExposure = 1.1;
         }
+        mats.treeSketch?.(s.id === "sketch");
+        // r130f: Sketchbook draws a heavier pencil: the ink hull round everything is thicker (the default 18e-4 is
+        // under a pixel from the map's height and antialiases away); the parameters are read every render
+        {
+          const want = s.id === "sketch" ? 21e-4 : void 0;
+          if (scene.userData.sketchHull !== want) {
+            scene.userData.sketchHull = want;
+            scene.traverse((o) => {
+              if (!o.material) return;
+              for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+                const op = m.userData.outlineParameters;
+                if (op && op.visible === false) continue;
+                if (want === void 0) { if (op) delete op.thickness; }
+                else m.userData.outlineParameters = { ...(op || {}), thickness: want };
+              }
+            });
+          }
+        }
         // Sketchbook draws with light only: the city's own colours go (a shader recompile, once per switch)
         for (const m of [mats.buildings, mats.roofs]) if (m && m.vertexColors === (s.id === "sketch")) { m.vertexColors = s.id !== "sketch"; m.needsUpdate = true; }
         if (s.id === "riso") {
@@ -36099,10 +36130,10 @@ void main() {
           rt.depthTexture = new DepthTexture(w, h);
           const mat = new ShaderMaterial({
             uniforms: { tD: { value: rt.texture }, tZ: { value: rt.depthTexture }, tR: { value: R.tex }, res: { value: new Vector2(w, h) }, t: { value: 0 },
-              pInv: { value: new Matrix4() }, cW: { value: new Matrix4() }, box: { value: new Vector4(R.x0, R.z0, R.w, R.h) }, full: { value: 0 }, near: { value: 1 }, far: { value: 1000 } },
+              pInv: { value: new Matrix4() }, cW: { value: new Matrix4() }, box: { value: new Vector4(R.x0, R.z0, R.w, R.h) }, full: { value: 0 }, near: { value: 1 }, far: { value: 1000 }, dz: { value: 900 } },
             vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
             fragmentShader: `
-              uniform sampler2D tD, tZ, tR; uniform vec2 res; uniform float t, full, near, far; uniform mat4 pInv, cW; uniform vec4 box; varying vec2 vUv;
+              uniform sampler2D tD, tZ, tR; uniform vec2 res; uniform float t, full, near, far, dz; uniform mat4 pInv, cW; uniform vec4 box; varying vec2 vUv;
               float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
               float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
                 return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
@@ -36115,18 +36146,33 @@ void main() {
                 vec2 wob = (vec2(vn(vUv * 7.0), vn(vUv * 7.0 + 7.7)) - 0.5) * 1.2 * px;
                 vec2 uv = vUv + wob;
                 float l = lum(uv);
-                // silhouettes: the ink hulls come out near black
-                float ink = 1.0 - smoothstep(0.06, 0.22, l);
+                // silhouettes: the ink hulls come out near black. r130f: the mask is softened over a small cross
+                // first, so corners round off like a pencil turning rather than snapping
+                float lmin = min(l, min(min(lum(uv + vec2(px.x, 0.0)), lum(uv - vec2(px.x, 0.0))), min(lum(uv + vec2(0.0, px.y)), lum(uv - vec2(0.0, px.y)))));
+                float ink0 = 1.0 - smoothstep(0.08, 0.3, lmin);
+                float inkN = (1.0 - smoothstep(0.06, 0.22, lum(uv + vec2(1.4, 0.0) * px))) + (1.0 - smoothstep(0.06, 0.22, lum(uv - vec2(1.4, 0.0) * px)))
+                           + (1.0 - smoothstep(0.06, 0.22, lum(uv + vec2(0.0, 1.4) * px))) + (1.0 - smoothstep(0.06, 0.22, lum(uv - vec2(0.0, 1.4) * px)));
+                float ink = smoothstep(0.16, 0.62, (ink0 * 2.0 + inkN) / 6.0);
                 // creases: a Sobel on log depth
                 float d00 = log(dep(uv + vec2(-px.x, -px.y))), d10 = log(dep(uv + vec2(0.0, -px.y))), d20 = log(dep(uv + vec2(px.x, -px.y)));
                 float d01 = log(dep(uv + vec2(-px.x, 0.0))), d21 = log(dep(uv + vec2(px.x, 0.0)));
                 float d02 = log(dep(uv + vec2(-px.x, px.y))), d12 = log(dep(uv + vec2(0.0, px.y))), d22 = log(dep(uv + vec2(px.x, px.y)));
                 float gx = (d20 + 2.0 * d21 + d22) - (d00 + 2.0 * d01 + d02), gy = (d02 + 2.0 * d12 + d22) - (d00 + 2.0 * d10 + d20);
-                float crease = smoothstep(0.035, 0.09, length(vec2(gx, gy)));
+                // the step a building makes in log depth shrinks with the camera's distance: the threshold follows it
+                float ca = clamp(22.0 / dz, 0.004, 0.035);
+                float crease = smoothstep(ca, ca * 2.6, length(vec2(gx, gy)));
                 // tone edges: colour changes (windows, doors, road paint) drawn lighter
                 float l1 = lum(uv + vec2(px.x, 0.0)), l2 = lum(uv + vec2(0.0, px.y));
                 float tone = smoothstep(0.1, 0.2, abs(l1 - l) + abs(l2 - l)) * 0.12;
-                float line = max(ink * 0.88, max(crease * 0.72, tone));
+                float line = max(ink * 0.7, max(crease * 0.58, tone));
+                // pencil pressure: the stroke swells and thins along its length; a faint second pass beside it
+                float press = 0.68 + 0.32 * vn(vUv * res * 0.045 + 3.0);
+                line *= press;
+                float ghost = (1.0 - smoothstep(0.06, 0.22, lum(uv + vec2(2.2, -1.6) * px))) * 0.18 * vn(vUv * res * 0.09);
+                line = max(line, ghost);
+                // the far city is only suggested: lines thin out with distance
+                float dd = dep(vUv);
+                line *= 1.0 - 0.5 * smoothstep(dz * 1.35, dz * 2.8, dd);
                 // hatching in the shade: one direction, then a cross, both a little irregular
                 vec2 p = vUv * res;
                 float sh = 1.0 - smoothstep(0.4, 0.74, l);
@@ -36163,6 +36209,7 @@ void main() {
           quad.frustumCulled = false;
           const sc = new Scene(); sc.add(quad);
           sketchFx = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
+          window.__sketchFx = sketchFx;
           // the first page: a little of the city is already drawn where you are
           if (mapMode) { const v = warpV(new Vector3(mapView.tgt.x, 0, mapView.tgt.z)); sketchPaint(v.x, v.z, 900, 1); } else sketchPaint(carPos.x, carPos.z, 700, 1);
         }
@@ -36172,6 +36219,7 @@ void main() {
         u.t.value = (now * 0.001) % 100; u.full.value = full ? 1 : 0;
         cam.updateMatrixWorld();
         u.pInv.value.copy(cam.projectionMatrixInverse); u.cW.value.copy(cam.matrixWorld); u.near.value = cam.near; u.far.value = cam.far;
+        u.dz.value = full ? 900 : mapMode ? mapView.dist : 900;
         renderer.setRenderTarget(sketchFx.rt);
         outline.render(scene, cam);
         renderer.setRenderTarget(null);
@@ -36212,21 +36260,21 @@ void main() {
                 vec3 cP = col(vUv + offP), cB = col(vUv + offB);
                 float lP = dot(cP, vec3(0.299, 0.587, 0.114)), lB = dot(cB, vec3(0.299, 0.587, 0.114));
                 // pink takes what green would reflect, blue what red would; the darks take both
-                float dP = clamp((1.0 - cP.g) * 1.15 - 0.2, 0.0, 1.0);
-                float dB = clamp((1.0 - cB.r) * 1.2 - 0.26, 0.0, 1.0);
+                float dP = clamp((1.0 - cP.g) * 1.05 - 0.46, 0.0, 1.0);
+                float dB = clamp((1.0 - cB.r) * 1.1 - 0.52, 0.0, 1.0);
                 float darkP = 1.0 - smoothstep(0.05, 0.18, lP), darkB = 1.0 - smoothstep(0.05, 0.18, lB);
                 dP = max(dP, darkP); dB = max(dB, darkB);
                 // uneven ink: a drum is never perfectly loaded
-                float inkP = 0.8 + 0.28 * vn(p * 0.012 + 3.0) - 0.1 * vn(vec2(p.y * 0.004, 1.0));
-                float inkB = 0.82 + 0.26 * vn(p * 0.011 + 11.0);
+                float inkP = 0.86 + 0.16 * vn(p * 0.012 + 3.0) - 0.06 * vn(vec2(p.y * 0.004, 1.0));
+                float inkB = 0.88 + 0.14 * vn(p * 0.011 + 11.0);
                 float hP = dots(p, dP * inkP, 0.2618, cell), hB = dots(p, dB * inkB, 1.309, cell);
                 // the outlines print solid, not screened
                 hP = max(hP, darkP * 0.9); hB = max(hB, darkB);
                 vec3 paper = vec3(0.953, 0.933, 0.89) - vn(p * 0.4) * 0.025;
                 vec3 pink = vec3(1.0, 0.282, 0.69), blue = vec3(0.0, 0.47, 0.75);
-                vec3 o = paper * mix(vec3(1.0), pink, hP * 0.92) * mix(vec3(1.0), blue, hB * 0.9);
+                vec3 o = paper * mix(vec3(1.0), pink, hP * 0.74) * mix(vec3(1.0), blue, hB * 0.72);
                 // grain: tiny voids in the ink
-                o += (h21(floor(p)) - 0.5) * 0.03;
+                o += (h21(floor(p)) - 0.5) * 0.018;
                 gl_FragColor = vec4(o, 1.0);
               }`,
             depthTest: false, depthWrite: false

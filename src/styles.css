@@ -3970,8 +3970,15 @@ body.map-boarding .topbar .you { visibility: hidden; }
 .map-pins .map-pin .mp-label i { top: auto !important; bottom: 100% !important; margin: 0 0 5px !important; transform: translateY(5px); }
 .map-pins .map-pin:hover .mp-label i, .map-pins .map-pin.on .mp-label i { transform: none; }
 /* r130e: Sketchbook is quiet everywhere: the interface goes graphite too (photos in the cards keep their colour) */
-body.scheme-sketch .map-top, body.scheme-sketch .map-dock, body.scheme-sketch .map-zoom, body.scheme-sketch .map-pins,
-body.scheme-sketch .hud, body.scheme-sketch .topbar, body.scheme-sketch .dash, body.scheme-sketch .poi-rail, body.scheme-sketch .map-street,
-body.scheme-sketch .work-tag, body.scheme-sketch .jx-row { filter: grayscale(1) contrast(.96); }
+body.scheme-sketch .map-top, body.scheme-sketch .map-zoom,
+body.scheme-sketch .hud, body.scheme-sketch .topbar, body.scheme-sketch .dash, body.scheme-sketch .map-street,
+body.scheme-sketch .jx-row, body.scheme-sketch .svc-hc, body.scheme-sketch .crew-panel img { filter: grayscale(1) contrast(.96); }
+/* r130f: in Sketchbook the brands keep a drop of colour: watercolour dots, pale and soft-edged */
+body.scheme-sketch .map-pins .map-pin .mp-label::before, body.scheme-sketch .map-chip .mc-dot {
+  background: color-mix(in srgb, var(--pc) 48%, #fff) !important; box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--pc) 18%, transparent), inset 0 0 0 1px rgba(23, 22, 26, .1) !important; }
+body.scheme-sketch .map-pins .map-pin .mp-dot { background: color-mix(in srgb, var(--pc) 42%, #fff) !important; border-color: #232326 !important; }
+body.scheme-sketch .map-pins .map-pin.dot .mp-dot { box-shadow: 0 0 0 3px color-mix(in srgb, var(--pc) 16%, transparent) !important; }
+body.scheme-sketch .map-chip .mc-pin, body.scheme-sketch .work-tag, body.scheme-sketch .poi-rail { filter: saturate(.5) brightness(1.08) contrast(.92); }
+body.scheme-sketch .map-pins .map-pin .mp-foot { opacity: .22 !important; }
 body.scheme-sketch .topbar .brand, body.scheme-riso .topbar .brand { mix-blend-mode: normal !important; }
 body.scheme-sketch .topbar .brand img, body.scheme-riso .topbar .brand img { filter: invert(1) brightness(.22) !important; }
