@@ -3982,3 +3982,26 @@ body.scheme-sketch .map-chip .mc-pin, body.scheme-sketch .work-tag, body.scheme-
 body.scheme-sketch .map-pins .map-pin .mp-foot { opacity: .22 !important; }
 body.scheme-sketch .topbar .brand, body.scheme-riso .topbar .brand { mix-blend-mode: normal !important; }
 body.scheme-sketch .topbar .brand img, body.scheme-riso .topbar .brand img { filter: invert(1) brightness(.22) !important; }
+/* r130g: Sketchbook: the colour comes back on the interface, and every coloured thing is drawn in wax crayon:
+   a waxy grain (an SVG noise, blended over the colour), a thicker pencil edge, dots that are not quite round */
+:root { --crayon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1.9 0 0 0 -.45 1.9 0 0 0 -.45 1.9 0 0 0 -.45 0 0 0 0 .75'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+body.scheme-sketch .map-top, body.scheme-sketch .map-zoom, body.scheme-sketch .hud, body.scheme-sketch .topbar, body.scheme-sketch .dash,
+body.scheme-sketch .map-street, body.scheme-sketch .jx-row, body.scheme-sketch .svc-hc, body.scheme-sketch .map-chip .mc-pin,
+body.scheme-sketch .work-tag, body.scheme-sketch .poi-rail { filter: none; }
+body.scheme-sketch .map-top img, body.scheme-sketch .hud img, body.scheme-sketch .crew-panel img, body.scheme-sketch .topbar img:not(.brand img) { filter: grayscale(1); }
+body.scheme-sketch .map-top .map-home, body.scheme-sketch .map-top .map-drive, body.scheme-sketch .hud .round-btn, body.scheme-sketch .map-zoom button,
+body.scheme-sketch .svc-hc, body.scheme-sketch .work-tag, body.scheme-sketch .map-card .mcd-title, body.scheme-sketch .mcd-open, body.scheme-sketch .mcd-ghost,
+body.scheme-sketch .coffee-btn, body.scheme-sketch .jx-btn, body.scheme-sketch .fe-drive, body.scheme-sketch .fe-save, body.scheme-sketch .you,
+body.scheme-sketch .map-chip, body.scheme-sketch .mw-opts button, body.scheme-sketch .cf-chip.on, body.scheme-sketch .tap-hint, body.scheme-sketch .map-ride, body.scheme-sketch .map-world {
+  background-image: var(--crayon) !important; background-blend-mode: overlay; background-size: 180px 180px !important; background-repeat: repeat !important;
+  border-width: 2px !important; border-color: #232326 !important; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.18), 0 2px 0 rgba(35,35,38,.55) !important; }
+body.scheme-sketch .map-pins .map-pin .mp-label::before, body.scheme-sketch .map-chip .mc-dot {
+  background: var(--pc) var(--crayon) !important; background-blend-mode: overlay; background-size: 60px 60px; width: 10px; height: 10px;
+  border-radius: 47% 53% 50% 50% / 54% 46% 54% 46%; box-shadow: inset 0 0 0 1px rgba(35,35,38,.35) !important; }
+body.scheme-sketch .map-pins .map-pin .mp-dot { background: var(--pc) var(--crayon) !important; background-blend-mode: overlay; background-size: 60px 60px; border: 1.5px solid #232326 !important; border-radius: 52% 48% 50% 50% / 48% 52% 48% 52%; }
+body.scheme-sketch .map-pins .map-pin.dot .mp-dot { box-shadow: 0 0 0 2px rgba(255,255,255,.7) !important; }
+body.scheme-sketch .map-pins .map-pin .mp-foot { background: var(--pc) var(--crayon) !important; background-blend-mode: overlay; background-size: 90px 90px; mix-blend-mode: multiply !important;
+  border-radius: 46% 54% 58% 42% / 52% 44% 56% 48%; opacity: .34 !important; }
+body.scheme-sketch .map-pins .map-pin.on .mp-foot, body.scheme-sketch .map-pins .map-pin:hover .mp-foot { opacity: .55 !important; }
+body.scheme-sketch .map-pins .map-pin.on .mp-label { box-shadow: 0 0 0 2px var(--pc), 0 0 0 5px color-mix(in srgb, var(--pc) 22%, transparent) !important; }
+body.scheme-sketch .map-pins .map-pin .mp-label, body.scheme-sketch .map-street, body.scheme-sketch .map-card, body.scheme-sketch .map-dock { border-color: #232326 !important; }
