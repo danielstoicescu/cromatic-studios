@@ -25459,6 +25459,7 @@ void main() {
   }
   // r111: the fork is an étoile roundabout with a Piața Unirii fountain in the middle: a round
   // stone basin, rings of jets around a tall central plume, lamp posts and a ring of lawn
+  var FOUNTAIN = null;
   function buildFork(parent) {
     const g = new Group();
     g.position.set(FORK_POS.x, 0, FORK_POS.y);
@@ -25481,15 +25482,74 @@ void main() {
     const kerb = new Mesh(new CylinderGeometry(48, 48, 3, 48), new MeshStandardMaterial({ color: "#d9d3c4", roughness: 0.9 })); kerb.position.y = 1.5; g.add(kerb);
     const lawn = new Mesh(new CylinderGeometry(45, 45, 3.6, 48), new MeshStandardMaterial({ color: "#7cc472", roughness: 1 })); lawn.position.y = 1.8; g.add(lawn);
     const basin = new Mesh(new CylinderGeometry(32, 33, 4, 48), new MeshStandardMaterial({ color: "#e6e0d2", roughness: 0.8 })); basin.position.y = 4; g.add(basin);
-    const water = new Mesh(new CylinderGeometry(30, 30, 0.8, 48), new MeshStandardMaterial({ color: "#7fc8e8", roughness: 0.1, metalness: 0.25 })); water.position.y = 5.8; g.add(water);
-    const jetM = new MeshStandardMaterial({ color: "#eaf8ff", transparent: true, opacity: 0.8, roughness: 0.2, emissive: new Color("#bfe9ff"), emissiveIntensity: 0.2 });
-    jetM.userData.outlineParameters = { visible: false };
+    // r130e: living water. The basin's surface is a shader (two drifting wave layers, rings spreading from where
+    // the jets fall, a fresnel sky tint and sun glints); the jets are streams of droplets on real ballistic arcs
+    // (a tall central plume, an inner ring shooting up, an outer ring arcing in towards the middle), each drop a short
+    // streak along its velocity so together they read as a stream. Animated in FOUNTAIN.update().
+    const wMat = new ShaderMaterial({
+      uniforms: { t: { value: 0 }, deep: { value: new Color("#1f6f9e") }, shallow: { value: new Color("#6cc0e4") }, sky: { value: new Color("#eaf6ff") } },
+      vertexShader: "#include <common>\nvarying vec2 vP; varying vec3 vW; void main(){ vP = position.xy; vec4 w = modelMatrix * vec4(position, 1.0); w.xz = cityWarp(w.xz); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }",
+      fragmentShader: `
+        uniform float t; uniform vec3 deep, shallow, sky; varying vec2 vP; varying vec3 vW;
+        float h(vec2 p){ return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5); }
+        float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y); }
+        void main(){
+          float r = length(vP);
+          // two wave layers drifting against each other
+          float w = n(vP * 0.22 + vec2(t * 0.35, t * 0.21)) * 0.6 + n(vP * 0.5 - vec2(t * 0.42, -t * 0.3)) * 0.4;
+          // rings spreading from the outer jets' landing circle and from the plume in the middle
+          float ring = sin(r * 1.25 - t * 6.0) * exp(-abs(r - 13.0) * 0.18) * 0.5 + sin(r * 1.6 - t * 7.5) * exp(-r * 0.22) * 0.5;
+          float s = w * 0.7 + ring * 0.35;
+          vec3 c = mix(deep, shallow, smoothstep(30.0, 6.0, r) * 0.45 + s * 0.55);
+          vec3 V = normalize(cameraPosition - vW);
+          float fr = pow(1.0 - max(V.y, 0.0), 3.0);
+          c = mix(c, sky, 0.08 + fr * 0.4);
+          // sun glints on the crests
+          c += vec3(1.0) * smoothstep(0.78, 0.95, s) * 0.55;
+          // foam where the jets come down
+          float foam = smoothstep(0.55, 0.9, n(vP * 1.4 + t * 2.0)) * (exp(-abs(r - 13.0) * 0.6) + exp(-r * 0.5));
+          c = mix(c, vec3(0.97), clamp(foam, 0.0, 0.8));
+          gl_FragColor = vec4(c, 1.0);
+          #include <colorspace_fragment>
+        }`
+    });
+    wMat.userData.outlineParameters = { visible: false };
+    const water = new Mesh(new CircleGeometry(30.5, 64), wMat); water.rotation.x = -Math.PI / 2; water.position.y = 6.3; g.add(water);
+    const dropM = new MeshStandardMaterial({ color: "#ffffff", transparent: true, opacity: 0.78, roughness: 0.1, metalness: 0, emissive: new Color("#d8f2ff"), emissiveIntensity: 0.55 });
+    dropM.userData.outlineParameters = { visible: false };
     const jets = [];
-    const plume = new Mesh(new CylinderGeometry(0.8, 3.4, 46, 12, 1, true), jetM); plume.position.y = 29; g.add(plume); jets.push([plume, 46]);
-    for (const [r, n, h] of [[12, 10, 18], [22, 16, 11]]) for (let i = 0; i < n; i++) {
-      const a2 = (i / n) * Math.PI * 2, j = new Mesh(new CylinderGeometry(0.4, 1.4, h, 8, 1, true), jetM);
-      j.position.set(Math.cos(a2) * r, 6 + h / 2, Math.sin(a2) * r); j.rotation.z = Math.cos(a2) * 0.18; j.rotation.x = -Math.sin(a2) * 0.18; g.add(j); jets.push([j, h]);
-    }
+    // emitters: [x, z, vx, vy, vz, size] ; gravity 60 u/s²
+    const EM = [[0, 0, 0, 52, 0, 1.25]];
+    for (let i = 0; i < 10; i++) { const a2 = (i / 10) * Math.PI * 2; EM.push([Math.cos(a2) * 12, Math.sin(a2) * 12, Math.cos(a2) * 2.2, 30, Math.sin(a2) * 2.2, 0.8]); }
+    for (let i = 0; i < 16; i++) { const a2 = (i / 16) * Math.PI * 2 + 0.1; EM.push([Math.cos(a2) * 26, Math.sin(a2) * 26, -Math.cos(a2) * 9.5, 22, -Math.sin(a2) * 9.5, 0.7]); }
+    const PER = 24, NDROP = EM.length * PER, G = 60, Y0 = 6.2;
+    const drops = new InstancedMesh(new IcosahedronGeometry(1, 0), dropM, NDROP);
+    drops.frustumCulled = false; g.add(drops);
+    const m4f = new Matrix4(), qf = new Quaternion(), sf = new Vector3(), pf = new Vector3(), vf = new Vector3(), upf = new Vector3(0, 1, 0);
+    FOUNTAIN = {
+      g, wMat, drops,
+      update(t) {
+        if (!g.visible) return;
+        wMat.uniforms.t.value = t;
+        let k = 0;
+        for (let e = 0; e < EM.length; e++) {
+          const E = EM[e], T = (2 * E[3]) / G;
+          for (let j = 0; j < PER; j++, k++) {
+            const ph = ((t * (0.55 + (e % 3) * 0.04) + j / PER + e * 0.137) % 1), tt = ph * T;
+            const wob = Math.sin(j * 12.9898 + e * 78.233) * 0.6;
+            pf.set(E[0] + E[2] * tt + wob * ph, Y0 + E[3] * tt - 0.5 * G * tt * tt, E[1] + E[4] * tt + wob * (1 - ph));
+            const sc = E[5] * (0.55 + 0.45 * Math.sin(ph * Math.PI)) * (j % 3 === 0 ? 1.25 : 1);
+            // each drop is drawn as a short streak along its velocity: together they read as a stream
+            vf.set(E[2], E[3] - G * tt, E[4]); const sp = vf.length(); vf.divideScalar(sp || 1);
+            qf.setFromUnitVectors(upf, vf);
+            sf.set(sc, sc * (1.4 + sp * 0.07), sc);
+            m4f.compose(pf, qf, sf);
+            drops.setMatrixAt(k, m4f);
+          }
+        }
+        drops.instanceMatrix.needsUpdate = true;
+      }
+    };
     const postM = new MeshStandardMaterial({ color: "#26292e", roughness: 0.5, metalness: 0.3 });
     mats.festoon = mats.festoon || new MeshStandardMaterial({ color: "#fff0c4", emissive: "#ffca6a", emissiveIntensity: 0.1 });
     for (let i = 0; i < 8; i++) {
@@ -25497,7 +25557,7 @@ void main() {
       const p2 = new Mesh(new CylinderGeometry(0.6, 0.9, 18, 8), postM); p2.position.set(Math.cos(a2) * 42, 9, Math.sin(a2) * 42); g.add(p2);
       const gl = new Mesh(new SphereGeometry(2, 10, 8), mats.festoon); gl.position.set(Math.cos(a2) * 42, 19, Math.sin(a2) * 42); g.add(gl);
     }
-    g.traverse((o) => { if (o.isMesh && o.material !== jetM) { o.castShadow = true; o.receiveShadow = true; } });
+    g.traverse((o) => { if (o.isMesh && o.material !== dropM && o.material !== wMat) { o.castShadow = true; o.receiveShadow = true; } });
     g.userData.jets = jets;
     parent.add(g);
     EXTRA_KEEPOUT.push({ x: FORK_POS.x, y: FORK_POS.y, r: 120 });
@@ -36065,17 +36125,17 @@ void main() {
                 float crease = smoothstep(0.035, 0.09, length(vec2(gx, gy)));
                 // tone edges: colour changes (windows, doors, road paint) drawn lighter
                 float l1 = lum(uv + vec2(px.x, 0.0)), l2 = lum(uv + vec2(0.0, px.y));
-                float tone = smoothstep(0.06, 0.16, abs(l1 - l) + abs(l2 - l)) * 0.4;
-                float line = max(ink, max(crease * 0.9, tone));
+                float tone = smoothstep(0.1, 0.2, abs(l1 - l) + abs(l2 - l)) * 0.12;
+                float line = max(ink * 0.88, max(crease * 0.72, tone));
                 // hatching in the shade: one direction, then a cross, both a little irregular
                 vec2 p = vUv * res;
                 float sh = 1.0 - smoothstep(0.4, 0.74, l);
                 float hn = vn(p * 0.05) * 3.0;
                 float h1 = smoothstep(0.62, 0.92, abs(fract((p.x + p.y + hn) / 7.0) - 0.5) * 2.0) * smoothstep(0.3, 0.5, sh);
                 float h2 = smoothstep(0.66, 0.95, abs(fract((p.x - p.y + hn) / 6.0) - 0.5) * 2.0) * smoothstep(0.5, 0.75, sh);
-                float hatch = max(h1 * smoothstep(0.55, 0.8, sh), h2 * smoothstep(0.85, 1.0, sh)) * 0.4;
+                float hatch = h1 * smoothstep(0.78, 0.95, sh) * 0.22;
                 // graphite grain: the stroke is never solid
-                float grain = 0.62 + 0.38 * vn(p * 0.9 + tf * 13.0);
+                float grain = 0.72 + 0.28 * vn(p * 0.9);
                 float g = max(line, hatch) * grain;
                 // where has the city been drawn yet? world position from depth, then the reveal map
                 float zr = texture2D(tZ, vUv).x;
@@ -36086,14 +36146,15 @@ void main() {
                 float rv = texture2D(tR, ruv).r;
                 float edge = vn(wp.xz * 0.02 + tf * 0.37) * 0.35;
                 float shown = full > 0.5 || zr >= 0.9999 ? 1.0 : smoothstep(0.25, 0.55, rv + edge - 0.15);
-                g *= mix(0.07, 1.0, shown);
+                g *= mix(0.035, 1.0, shown);
                 if (zr >= 0.9999) g = 0.0;
                 // paper: warm white with a slow fibre
-                vec3 paper = vec3(0.968, 0.958, 0.93) - (vn(p * 0.35) * 0.025 + vn(p * 0.06) * 0.02);
-                vec3 graphite = vec3(0.14, 0.14, 0.16);
-                vec3 o = mix(paper, graphite, clamp(g, 0.0, 1.0));
+                // r130e: moodier: a warm sheet that falls into cool grey at the edges, soft graphite, a lot of air
                 vec2 q = vUv - 0.5;
-                o *= 1.0 - dot(q, q) * 0.22;
+                float vig = smoothstep(0.12, 0.75, length(q * vec2(res.x / res.y, 1.0)));
+                vec3 paper = mix(vec3(0.958, 0.947, 0.918), vec3(0.83, 0.835, 0.84), vig * 0.85) - (vn(p * 0.35) * 0.018 + vn(p * 0.05) * 0.022);
+                vec3 graphite = vec3(0.2, 0.205, 0.22);
+                vec3 o = mix(paper, graphite, clamp(g, 0.0, 1.0) * 0.92);
                 gl_FragColor = vec4(o, 1.0);
               }`,
             depthTest: false, depthWrite: false
@@ -36582,6 +36643,7 @@ void main() {
         if (mvFx.group.visible) mvFx.update(now * 0.001, window.__lookSm);
         if (uwFx.group.visible) uwFx.update(now * 0.001, dt, window.__lookSm);
         worldFx.update(now * 0.001, dt, window.__lookSm);
+        if (FOUNTAIN && !siteMode) FOUNTAIN.update(now * 0.001);
         farClouds.rotation.y += dt * 0.006;
         const prog = state.L / route.total;
         let wx = state.weatherOn ? weatherState(prog) : "sun";

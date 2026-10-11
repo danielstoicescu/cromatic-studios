@@ -3969,3 +3969,9 @@ body.map-boarding .topbar .you { visibility: hidden; }
 /* r130d: the mono line opens ABOVE the pill (below it, it sat across the stem that holds the label) */
 .map-pins .map-pin .mp-label i { top: auto !important; bottom: 100% !important; margin: 0 0 5px !important; transform: translateY(5px); }
 .map-pins .map-pin:hover .mp-label i, .map-pins .map-pin.on .mp-label i { transform: none; }
+/* r130e: Sketchbook is quiet everywhere: the interface goes graphite too (photos in the cards keep their colour) */
+body.scheme-sketch .map-top, body.scheme-sketch .map-dock, body.scheme-sketch .map-zoom, body.scheme-sketch .map-pins,
+body.scheme-sketch .hud, body.scheme-sketch .topbar, body.scheme-sketch .dash, body.scheme-sketch .poi-rail, body.scheme-sketch .map-street,
+body.scheme-sketch .work-tag, body.scheme-sketch .jx-row { filter: grayscale(1) contrast(.96); }
+body.scheme-sketch .topbar .brand, body.scheme-riso .topbar .brand { mix-blend-mode: normal !important; }
+body.scheme-sketch .topbar .brand img, body.scheme-riso .topbar .brand img { filter: invert(1) brightness(.22) !important; }
