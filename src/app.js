@@ -23894,22 +23894,23 @@ void main() {
       SCHEMES = [
         // r129: the pastel diorama (ex "Monument") is now the Cromatic world, first and the default everywhere.
         // The old flat "Cromatic Mode" world is archived in ARCHIVED_SCHEMES; GTA 2 is a drive-mode bonus.
+        // r130b: Sketchbook after Ghib.ly, Risograph last; Sin City shelved (archived, its render path stays)
         { id: "monument", n: "Cromatic", bg: "#f6e2d8", fg: "#3b2b44", ac: "#ff8a6a" },
         { id: "nightlife", n: "Night Mode", bg: "#121d3a", fg: "#F7EEDF", ac: "#FF9E3D" },
         { id: "ghibli", n: "Ghib.ly", bg: "#e4f1f4", fg: "#243322", ac: "#e0b25a" },
+        // r130: Sketchbook: graphite on white paper; the city draws itself as you go (see sketchRender)
+        { id: "sketch", n: "Sketchbook", bg: "#f6f3ec", fg: "#232326", ac: "#ffd84a" },
         { id: "circuit", n: "Race Day", bg: "#e9edf1", fg: "#111418", ac: "#e10600" },
         { id: "orchid", n: "Sakura", bg: "#fbeef3", fg: "#3a1e2c", ac: "#f08bb4" },
         { id: "magma", n: "Magma", bg: "#171210", fg: "#fbede4", ac: "#ff4d1c" },
         { id: "underwater", n: "Underwater", bg: "#0b3b5c", fg: "#e8fbff", ac: "#3de0d0" },
-        // r130: Sin City: shot in colour, printed in hard black and white, one red kept (see sinCityRender)
-        { id: "sincity", n: "Sin City", bg: "#070707", fg: "#f4f1ea", ac: "#d4061a" },
-        // r130: Sketchbook: graphite on white paper; the city draws itself where you look (see sketchRender)
-        { id: "sketch", n: "Sketchbook", bg: "#f6f3ec", fg: "#232326", ac: "#232326" },
+        { id: "gta2", n: "GTA 2", bonus: true, bg: "#1a1e22", fg: "#e8e6df", ac: "#e8c020" },
         // r130: Risograph: the city printed in two inks, fluorescent pink and medium blue, halftone, a little off-register
-        { id: "riso", n: "Risograph", bg: "#f3eee3", fg: "#1d3f8f", ac: "#ff48b0" },
-        { id: "gta2", n: "GTA 2", bonus: true, bg: "#1a1e22", fg: "#e8e6df", ac: "#e8c020" }
+        { id: "riso", n: "Risograph", bg: "#f3eee3", fg: "#1d3f8f", ac: "#ff48b0" }
       ];
-      ARCHIVED_SCHEMES = [{ id: "default", n: "Cromatic Mode (classic)", bg: "#f2f2f2", fg: "#0a0a0a", ac: "#FED012" }];
+      ARCHIVED_SCHEMES = [{ id: "default", n: "Cromatic Mode (classic)", bg: "#f2f2f2", fg: "#0a0a0a", ac: "#FED012" },
+        // r130: Sin City: shot in colour, printed in hard black and white, one red kept (see sinCityRender)
+        { id: "sincity", n: "Sin City", bg: "#070707", fg: "#f4f1ea", ac: "#d4061a" }];
       VEHICLES = [
         { id: "groovy", label: "Mystery van" },
         { id: "f1", label: "Classic Formula" },
@@ -32396,6 +32397,104 @@ void main() {
       menus.push(m);
       return m;
     };
+    // ---- r130b: ambient sound ----
+    // A quiet, generated soundscape (no files): a soft pad on a chord that changes with the world, a breath of city
+    // air, and now and then a single bell note into a short echo. It starts with your first touch (browsers ask for
+    // one), sits far back in the mix, follows the tab (silent when hidden) and one button mutes it, remembered.
+    const czAmb = window.__czAmb || (window.__czAmb = (() => {
+      const MOODS = {
+        monument: { f: [130.81, 164.81, 196, 246.94, 293.66], lp: 760, v: 1 },
+        default: { f: [130.81, 164.81, 196, 246.94, 293.66], lp: 760, v: 1 },
+        nightlife: { f: [110, 130.81, 164.81, 196, 246.94], lp: 560, v: 1 },
+        ghibli: { f: [174.61, 220, 261.63, 329.63, 392], lp: 900, v: .9 },
+        sketch: { f: [130.81, 196, 246.94, 293.66, 392], lp: 520, v: .75, sparse: 1 },
+        circuit: { f: [146.83, 185, 220, 277.18, 329.63], lp: 820, v: .9 },
+        orchid: { f: [164.81, 207.65, 246.94, 311.13, 369.99], lp: 980, v: .85 },
+        magma: { f: [73.42, 110, 146.83, 174.61, 220], lp: 440, v: 1.1 },
+        underwater: { f: [77.78, 116.54, 155.56, 196, 233.08], lp: 360, v: 1.2, air: 2 },
+        gta2: { f: [110, 146.83, 164.81, 220, 246.94], lp: 700, v: .9 },
+        riso: { f: [196, 246.94, 293.66, 369.99, 440], lp: 900, v: .8 },
+        sincity: { f: [98, 116.54, 146.83, 174.61, 233.08], lp: 480, v: 1 }
+      };
+      const PENTA = [523.25, 587.33, 659.25, 783.99, 880, 1046.5];
+      let ctx = null, master = null, lp = null, voices = [], air = null, timer = 0, bellT = 0, mood = "monument";
+      let on = true; try { on = localStorage.getItem("cz-sound") !== "off"; } catch {}
+      const btns = new Set();
+      const sync = () => { for (const b of btns) { b.classList.toggle("on", on); b.title = on ? "Sound off" : "Sound on"; b.setAttribute("aria-label", b.title); b.setAttribute("aria-pressed", String(on)); } };
+      const build = () => {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        ctx = new AC();
+        master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+        lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 760; lp.Q.value = .4; lp.connect(master);
+        const lfo = ctx.createOscillator(), lfoG = ctx.createGain(); lfo.frequency.value = .045; lfoG.gain.value = 180; lfo.connect(lfoG); lfoG.connect(lp.frequency); lfo.start();
+        for (let i = 0; i < 5; i++) {
+          const g = ctx.createGain(); g.gain.value = 0; g.connect(lp);
+          const a = ctx.createOscillator(), b = ctx.createOscillator();
+          a.type = "sine"; b.type = "triangle"; b.detune.value = 6 + i * 2;
+          const bg = ctx.createGain(); bg.gain.value = .35;
+          a.connect(g); b.connect(bg); bg.connect(g); a.start(); b.start();
+          voices.push({ g, a, b });
+        }
+        // the air: brown noise through a wide band
+        const n = ctx.createBuffer(1, ctx.sampleRate * 4, ctx.sampleRate), d = n.getChannelData(0);
+        let last = 0; for (let i = 0; i < d.length; i++) { last = (last + (Math.random() * 2 - 1) * .02) / 1.02; d[i] = last * 3.2; }
+        const src = ctx.createBufferSource(); src.buffer = n; src.loop = true;
+        const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 420; bp.Q.value = .35;
+        air = ctx.createGain(); air.gain.value = .22; src.connect(bp); bp.connect(air); air.connect(master); src.start();
+        // the bells' echo
+        const dl = ctx.createDelay(1.5), fb = ctx.createGain(), dlp = ctx.createBiquadFilter();
+        dl.delayTime.value = .42; fb.gain.value = .34; dlp.type = "lowpass"; dlp.frequency.value = 1900;
+        dl.connect(dlp); dlp.connect(fb); fb.connect(dl); dlp.connect(master);
+        ctx._echo = dl;
+        setMood(mood, true);
+        timer = setInterval(tick, 3000); tick();
+        return true;
+      };
+      const setMood = (id, now) => {
+        mood = MOODS[id] ? id : "monument";
+        if (!ctx) return;
+        const m = MOODS[mood], t = ctx.currentTime, k = now ? .05 : 1.6;
+        voices.forEach((v, i) => { v.a.frequency.setTargetAtTime(m.f[i], t, k); v.b.frequency.setTargetAtTime(m.f[i] * (i % 2 ? 2 : 1), t, k); });
+        lp.frequency.setTargetAtTime(m.lp, t, k);
+        air.gain.setTargetAtTime(.22 * (m.air || 1), t, k);
+        if (on) master.gain.setTargetAtTime(.05 * m.v, t, 1.2);
+      };
+      const tick = () => {
+        if (!ctx || ctx.state !== "running") return;
+        const t = ctx.currentTime, m = MOODS[mood];
+        // each voice breathes on its own slow curve
+        voices.forEach((v) => v.g.gain.setTargetAtTime((.08 + Math.random() * .16) * (m.sparse ? .7 : 1), t, 2.6));
+        if (t > bellT) {
+          bellT = t + (m.sparse ? 14 : 8) + Math.random() * 9;
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = "sine"; o.frequency.value = PENTA[Math.floor(Math.random() * PENTA.length)] * (mood === "magma" || mood === "underwater" ? .5 : 1);
+          g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.09, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + 2.8);
+          o.connect(g); g.connect(lp); g.connect(ctx._echo); o.start(t); o.stop(t + 3);
+        }
+      };
+      const start = () => {
+        if (!on) return;
+        if (!ctx && !build()) return;
+        ctx.resume?.();
+        master.gain.setTargetAtTime(.05 * MOODS[mood].v, ctx.currentTime, 1.4);
+      };
+      const first = () => { start(); for (const ev of ["pointerdown", "keydown", "touchend"]) window.removeEventListener(ev, first, true); };
+      for (const ev of ["pointerdown", "keydown", "touchend"]) window.addEventListener(ev, first, true);
+      document.addEventListener("visibilitychange", () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else if (on) ctx.resume(); });
+      return {
+        world(id) { setMood(id); },
+        toggle() {
+          on = !on; try { localStorage.setItem("cz-sound", on ? "on" : "off"); } catch {}
+          if (on) start(); else if (ctx) { master.gain.setTargetAtTime(0, ctx.currentTime, .25); setTimeout(() => { if (!on) ctx.suspend(); }, 900); }
+          sync();
+        },
+        bind(b) { btns.add(b); b.addEventListener("click", (e) => { e.stopPropagation(); czAmb.toggle(); }); sync(); },
+        icon: `<span class="snd-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>`
+      };
+    })());
+    const sndBtn = el("button", "round-btn snd", czAmb.icon);
+    czAmb.bind(sndBtn);
     const wxBtn = el("button", "round-btn wx", "\u2602");
     wxBtn.title = "Turn weather off";
     wxBtn.onclick = () => {
@@ -32527,7 +32626,7 @@ void main() {
     hiBtn.onclick = () => { closeMenus(); api.sayHi?.(); };
     modeLinks.append(mapBtn, hiBtn, modeBtn);
     header.appendChild(modeLinks);
-    hud.append(wxBtn, vehBtn, takeoffBtn, crewBtn, themeBtn, vehMenu, themeMenu);
+    hud.append(wxBtn, vehBtn, takeoffBtn, crewBtn, themeBtn, sndBtn, vehMenu, themeMenu);
     wxBtn.classList.add("gone");
     hud.appendChild(chapterMenu);
     chapterMenu.style.display = "none";
@@ -33912,6 +34011,8 @@ void main() {
         },
         jumpTo(id) {
           if (id === "contact" && !state.secretOpen) return api.openSecret();
+          // an explicit jump (the chapter list) may still go back: it lifts the floor
+          if (route.stopL[id] != null && state.floorL && route.stopL[id] < state.floorL) state.floorL = 0;
           if (!state.branchChosen && route.stopL[id] > route.stopL.fork + 10) {
             state.branch = state.branch || "A";
             state.branchChosen = true;
@@ -34207,6 +34308,7 @@ void main() {
       function applyScheme(idx) {
         state.schemeIdx = idx;
         const s = SCHEMES[idx];
+        window.__czAmb?.world(s.id);
         const dark = lum(s.bg) < 0.45;
         isDarkScheme = dark;
         document.body.classList.toggle("dark-ui", dark);
@@ -35931,10 +36033,10 @@ void main() {
               float lum(vec2 uv){ vec3 c = pow(clamp(texture2D(tD, uv).rgb, 0.0, 1.0), vec3(0.4545)); return dot(c, vec3(0.299, 0.587, 0.114)); }
               float dep(vec2 uv){ float z = texture2D(tZ, uv).x; float ndc = z * 2.0 - 1.0; return (2.0 * near * far) / (far + near - ndc * (far - near)); }
               void main(){
-                float tf = floor(t * 8.0);
+                float tf = 0.0;
                 vec2 px = 1.0 / res;
-                // the line boils: a small hand-drawn wobble that changes 8 times a second
-                vec2 wob = (vec2(vn(vUv * 9.0 + tf * 3.1), vn(vUv * 9.0 + 7.7 + tf * 1.7)) - 0.5) * 2.2 * px;
+                // r130b: a calm line: a fixed, hand-drawn waver (no boiling)
+                vec2 wob = (vec2(vn(vUv * 7.0), vn(vUv * 7.0 + 7.7)) - 0.5) * 1.2 * px;
                 vec2 uv = vUv + wob;
                 float l = lum(uv);
                 // silhouettes: the ink hulls come out near black
@@ -35955,7 +36057,7 @@ void main() {
                 float hn = vn(p * 0.05) * 3.0;
                 float h1 = smoothstep(0.62, 0.92, abs(fract((p.x + p.y + hn) / 7.0) - 0.5) * 2.0) * smoothstep(0.3, 0.5, sh);
                 float h2 = smoothstep(0.66, 0.95, abs(fract((p.x - p.y + hn) / 6.0) - 0.5) * 2.0) * smoothstep(0.5, 0.75, sh);
-                float hatch = max(h1, h2) * 0.55;
+                float hatch = max(h1 * smoothstep(0.55, 0.8, sh), h2 * smoothstep(0.85, 1.0, sh)) * 0.4;
                 // graphite grain: the stroke is never solid
                 float grain = 0.62 + 0.38 * vn(p * 0.9 + tf * 13.0);
                 float g = max(line, hatch) * grain;
@@ -36027,7 +36129,7 @@ void main() {
               }
               void main(){
                 vec2 p = vUv * res;
-                float cell = 4.2 * dpr;
+                float cell = 3.1 * dpr;
                 // each drum lands a little off; the offset breathes very slowly, as if the paper were fed again
                 vec2 offP = vec2(1.6, -1.1) * dpr / res, offB = vec2(-1.3, 0.9) * dpr / res;
                 vec3 cP = col(vUv + offP), cB = col(vUv + offB);
@@ -36047,7 +36149,7 @@ void main() {
                 vec3 pink = vec3(1.0, 0.282, 0.69), blue = vec3(0.0, 0.47, 0.75);
                 vec3 o = paper * mix(vec3(1.0), pink, hP * 0.92) * mix(vec3(1.0), blue, hB * 0.9);
                 // grain: tiny voids in the ink
-                o += (h21(floor(p / (1.3 * dpr))) - 0.5) * 0.05;
+                o += (h21(floor(p)) - 0.5) * 0.03;
                 gl_FragColor = vec4(o, 1.0);
               }`,
             depthTest: false, depthWrite: false
@@ -36089,6 +36191,15 @@ void main() {
         // (the map never scrolls: no layout read there, it forced a reflow every frame)
         const sc = siteMode ? 0.5 : mapMode ? 0 : maxScroll() > 0 ? clamp2(window.scrollY / maxScroll(), 0, 1) : 0;
         state.targetL = sc * effectiveTotal();
+        // r130b: once the portfolio is behind you (past the merge), the road back to the fork is closed:
+        // scrolling up stops at the merge instead of reversing all the way to the junction
+        if (!mapMode && !siteMode && state.branchChosen && route.stopL.merge) {
+          if (state.L > route.stopL.merge + 40) state.floorL = Math.max(state.floorL || 0, route.stopL.merge - 60);
+          if (state.floorL && state.targetL < state.floorL && now > jumpGuard) {
+            state.targetL = state.floorL;
+            if (now - (state.floorFix || 0) > 120) { state.floorFix = now; window.scrollTo({ top: clamp2(state.floorL / effectiveTotal(), 0, 1) * maxScroll(), behavior: "instant" }); }
+          }
+        }
         if (mapMode) state.targetL = mapNav.targetL;
         const nearDacia = state.L > route.stopL.merge - 1500 && state.L < route.stopL.merge - 250;
         const crawl = (coffee.near && !coffee.done && (!mapMode || mapNav.place?.tm)) || (nearDacia && !mapMode);
@@ -36788,6 +36899,7 @@ void main() {
           } else if (!flying && state.L < 190) kinetic.resume();
           else if (state.L > 235) kinetic.pause();
         }
+        if (!routeRing) routeRingInit(); else routeRing.update(now);
         if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sincity") sinCityRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sketch") sketchRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "riso") risoRender(now, camera); else if (mvK > 0.5 && !window.__noPost) tiltShiftRender(now); else if (window.__noPost) renderer.render(scene, camera); else outline.render(scene, camera);
         requestAnimationFrame(frame);
       }
@@ -36884,7 +36996,7 @@ void main() {
         const back = !st && !pl.tap && !pl.board && off > 20 ? 58 : 0;
         const here = route.posAt(state.L, new Vector3());
         route.setPath(navPath(here.x, here.z, tx, tz, back));
-        state.L = prevL = state.targetL = 0;
+        state.L = prevL = state.targetL = 0; state.floorL = 0;
         jumpGuard = performance.now() + 300;
         mapNav.legs = [{ place: pl }];
         mapNav.place = pl;
@@ -37221,6 +37333,13 @@ void main() {
         <ellipse cx="12" cy="8.9" rx="5.4" ry="3.1" fill="#fff" opacity=".22"/>
         <ellipse cx="8.8" cy="7.6" rx="1.9" ry="1.05" fill="#fff" opacity=".9"/></g></svg>`; };
       window.__czPinFor = (title) => { const q = MAP_PLACES.find((p) => p.name === title); return q ? pinSVG(q.pin || q.c, "pin-ic xl-pin") : ""; };
+      var _pno = null;
+      function placeNumbers() {
+        if (_pno) return _pno;
+        _pno = {};
+        MAP_PLACES.filter((p) => !p.chapter && !p.small).forEach((p, i) => { _pno[p.id] = String(i + 1).padStart(2, "0"); });
+        return _pno;
+      }
       function buildMapUI() {
         const box = el("div", "map-ui");
         const pinsEl = el("div", "map-pins");
@@ -37235,7 +37354,8 @@ void main() {
           <a class="map-site" href="/site/" title="The same story as a normal, fast website"><span class="ms-ic" aria-hidden="true"><i></i><i></i><i></i></span><b>Normal website</b></a>
           <button class="map-exit" title="The same world as a scroll-driven drive"><span class="me-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M8 2 L6 22 M16 2 L18 22" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M12 4v3M12 10v3M12 16v3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span><span class="me-l">Drive mode</span></button>`);
         const rides = el("div", "map-rides hidden", `<span class="mono">YOUR RIDE</span><div class="mrs-list">${VEHICLES.map((v) => `<button class="mrs-v" data-v="${v.id}"><span class="mrs-th"></span><b>${v.label}</b></button>`).join("")}</div>`);
-        const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="van" aria-label="Find the van" title="Find the van">◎</button><button data-z="wx" class="mz-wx" aria-label="Weather off" title="Turn weather off">\u2602</button>`);
+        const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="van" aria-label="Find the van" title="Find the van">◎</button><button data-z="wx" class="mz-wx" aria-label="Weather off" title="Turn weather off">\u2602</button><button data-z="snd" class="mz-snd">${window.__czAmb?.icon || ""}</button>`);
+        if (window.__czAmb) window.__czAmb.bind(zoom.querySelector(".mz-snd"));
         const dock = el("div", "map-dock", `<span class="map-dock-h mono">WHERE TO?</span><div class="map-chips"></div>`);
         const card = el("div", "map-card hidden");
         // r123: the first thing on the map: where do you want to go?
@@ -37305,6 +37425,8 @@ void main() {
         document.addEventListener("pointerdown", (e) => { if (!rides.classList.contains("hidden") && !e.target.closest(".map-rides, .map-ride")) rides.classList.add("hidden"); });
         skip.onclick = () => { kinetic?.finish?.(); mapEndIntro(); };
         const chips = dock.querySelector(".map-chips");
+        // r130b: the places to discover are numbered 01..N, on the pin, in the bar and on the route ring
+        const PNO = placeNumbers();
         const pins = MAP_PLACES.map((pl) => {
           const s0 = pl.stop ? STOPS.find((s) => s.id === pl.stop) : null;
           pl.wx = pl.px ?? (s0 ? s0.x : pl.x);
@@ -37313,7 +37435,7 @@ void main() {
           const got = "";
           const b = el("button", `map-pin${pl.float ? " float" : ""}${pl.beacon ? " beacon" : ""}${pl.chapter ? " chapter" : ""}${pl.find ? " find" : ""}${pl.small ? " small" : ""}`, pl.chapter
             ? `<span class="mp-label"><i class="mono">${pl.line}</i><b>${pl.name}</b>${got}</span><span class="mp-stem"></span>`
-            : `<span class="mp-label"><b>${pl.name}</b><i class="mono">${pl.line}</i>${got}</span><span class="mp-stem"></span><span class="mp-dot"></span>`);
+            : `<span class="mp-label">${PNO[pl.id] ? `<em class="mp-n">${PNO[pl.id]}</em>` : ""}<b>${pl.name}</b><i class="mono">${pl.line}</i>${got}</span><span class="mp-stem"></span><span class="mp-dot"></span>`);
           // r130: the footprint on the ground, in the brand's colour
           if (!pl.float) b.insertAdjacentHTML("beforeend", '<span class="mp-foot"></span>');
           b.style.setProperty("--i", String(MAP_PLACES.indexOf(pl) % 24));
@@ -37323,7 +37445,7 @@ void main() {
           pinsEl.appendChild(b);
           let ch = null;
           if (!pl.chapter && !pl.small) {
-            ch = el("button", `map-chip${pl.beacon ? " beacon" : ""}`, `<span class="mc-dot"></span>${pinSVG(pl.pin || pl.c, "pin-ic mc-pin")}${pl.name}`);
+            ch = el("button", `map-chip${pl.beacon ? " beacon" : ""}`, `<span class="mc-dot"></span>${pinSVG(pl.pin || pl.c, "pin-ic mc-pin")}${PNO[pl.id] ? `<em class="mc-n">${PNO[pl.id]}</em>` : ""}${pl.name}`);
             ch.style.setProperty("--pc", pl.c); ch.style.setProperty("--pt", pl.t);
             ch.onclick = () => mapGo(pl);
             chips.appendChild(ch);
@@ -37545,6 +37667,7 @@ void main() {
         };
         zoom.onclick = (e) => {
           const z = e.target.closest("button")?.dataset.z;
+          if (z === "snd") return;
           if (z === "wx") {
             const on = api.toggleWeather(), b = e.target.closest("button");
             b.classList.toggle("off", !on); b.title = on ? "Turn weather off" : "Turn weather on"; b.setAttribute("aria-label", b.title);
@@ -37915,6 +38038,96 @@ void main() {
         }
       }
       window.__cam = (p2, t2) => { window.__camO = p2 ? [p2, t2] : null; };
+      // ---- r130b: the route ring ----
+      // A fine ring round the speedometer: the whole road, start at the top, clockwise. Each place on your street is
+      // a tick (numbered like on the map), the chapters a longer one. Drag the handle and the van drives there; the
+      // ticks you pass light up one by one and the tip names them.
+      var routeRing = null;
+      function routeRingInit() {
+        const dial = document.querySelector(".dash-dial");
+        if (!dial || routeRing) return;
+        const ns = "http://www.w3.org/2000/svg";
+        const box = el("div", "rr");
+        box.innerHTML = `<svg viewBox="0 0 160 160" aria-hidden="true"><circle class="rr-track" cx="80" cy="80" r="72"/><circle class="rr-prog" cx="80" cy="80" r="72"/><g class="rr-ticks"></g><circle class="rr-hit" cx="80" cy="80" r="72"/><g class="rr-h"><circle r="7.5"/><circle class="rr-hc" r="2.6"/></g></svg><span class="rr-tip"><em class="mono"></em><b></b></span>`;
+        box.setAttribute("role", "slider"); box.setAttribute("aria-label", "Drive along the route"); box.tabIndex = 0;
+        dial.appendChild(box);
+        const svg = box.querySelector("svg"), prog = box.querySelector(".rr-prog"), ticksG = box.querySelector(".rr-ticks"), hnd = box.querySelector(".rr-h");
+        const tip = box.querySelector(".rr-tip"), tipK = tip.querySelector("em"), tipB = tip.querySelector("b");
+        const C = 2 * Math.PI * 72;
+        prog.style.strokeDasharray = `${C}`;
+        let key = "", ticks = [], frac = 0, drag = false, lastTip = null, tipUntil = 0;
+        const near = (x, z) => { let bd = Infinity, bi = 0; for (let i = 0; i < route.points.length; i += 2) { const q = route.points[i], d = (q.x - x) ** 2 + (q.z - z) ** 2; if (d < bd) { bd = d; bi = i; } } return [route.cum[bi], Math.sqrt(bd)]; };
+        const build = () => {
+          const T = effectiveTotal(), no = placeNumbers();
+          ticks = [];
+          for (const st of STOPS) {
+            const L = route.stopL[st.id];
+            if (L == null || L > T || st.id === "start" || st.id === "contact" || st.id === "dream" || st.id === "voice" || st.id === "world") continue;
+            ticks.push({ L, big: true, k: (st.label.match(/^CH\.\d+/) || ["\u2022"])[0], n: STOP_META[st.id]?.title || st.label.replace(/^CH\.\d+\s*/, "") });
+          }
+          for (const pl of MAP_PLACES) {
+            if (pl.chapter || pl.small || pl.float || !no[pl.id]) continue;
+            const [L, d] = near(pl.px ?? pl.x ?? 0, pl.pz ?? pl.z ?? 0);
+            if (d < 230 && L < T) ticks.push({ L, k: no[pl.id], n: pl.name, c: pl.c });
+          }
+          ticks.sort((a, b) => a.L - b.L);
+          ticksG.innerHTML = "";
+          for (const t of ticks) {
+            const a = t.L / T * Math.PI * 2 - Math.PI / 2, r0 = t.big ? 66 : 69, r1 = t.big ? 78 : 75;
+            const ln = document.createElementNS(ns, "line");
+            ln.setAttribute("x1", 80 + Math.cos(a) * r0); ln.setAttribute("y1", 80 + Math.sin(a) * r0);
+            ln.setAttribute("x2", 80 + Math.cos(a) * r1); ln.setAttribute("y2", 80 + Math.sin(a) * r1);
+            ln.setAttribute("class", t.big ? "rr-t big" : "rr-t");
+            if (t.c) ln.style.setProperty("--tc", t.c);
+            ticksG.appendChild(ln); t.el = ln;
+          }
+        };
+        const setFromPointer = (e) => {
+          const r = svg.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+          let f = (Math.atan2(e.clientY - cy, e.clientX - cx) + Math.PI / 2) / (Math.PI * 2);
+          f = ((f % 1) + 1) % 1;
+          // no wrapping across the top: from the end you can't jump to the start by going one pixel further
+          if (Math.abs(f - frac) > 0.5) f = frac > 0.5 ? 0.999 : 0;
+          const T = effectiveTotal();
+          let L = f * T;
+          if (state.floorL) L = Math.max(L, state.floorL);
+          frac = L / T;
+          window.scrollTo({ top: clamp2(frac, 0, 1) * maxScroll(), behavior: "instant" });
+          lastUserInput = performance.now(); userBurst = false;
+        };
+        box.addEventListener("pointerdown", (e) => {
+          if (!e.target.closest(".rr-hit, .rr-h")) return;
+          e.preventDefault(); e.stopPropagation(); drag = true; box.classList.add("drag"); box.setPointerCapture?.(e.pointerId); setFromPointer(e);
+        });
+        box.addEventListener("pointermove", (e) => { if (drag) setFromPointer(e); });
+        const up = () => { drag = false; box.classList.remove("drag"); tipUntil = performance.now() + 1600; };
+        box.addEventListener("pointerup", up); box.addEventListener("pointercancel", up);
+        box.addEventListener("keydown", (e) => {
+          if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+          const T = effectiveTotal(), i = ticks.findIndex((t) => t.L > state.L + 20);
+          const t = e.key === "ArrowRight" ? ticks[i < 0 ? ticks.length - 1 : i] : ticks.filter((q) => q.L < state.L - 20).pop();
+          if (t) { e.preventDefault(); e.stopPropagation(); scrollToL(Math.max(t.L, state.floorL || 0)); }
+        });
+        routeRing = {
+          update(now) {
+            const on = !mapMode && !siteMode && !document.body.classList.contains("kz-intro");
+            box.classList.toggle("off", !on);
+            if (!on) return;
+            const T = effectiveTotal(), k2 = `${state.branch}|${state.branchChosen}|${state.secretOpen}|${Math.round(route.total)}`;
+            if (k2 !== key) { key = k2; build(); }
+            const f = clamp2(state.L / T, 0, 1);
+            if (!drag) frac = f;
+            prog.style.strokeDashoffset = `${C * (1 - f)}`;
+            const a = f * Math.PI * 2 - Math.PI / 2;
+            hnd.setAttribute("transform", `translate(${(80 + Math.cos(a) * 72).toFixed(2)} ${(80 + Math.sin(a) * 72).toFixed(2)})`);
+            let cur = null;
+            for (const t of ticks) { const p = state.L >= t.L - 6; if (t._p !== p) { t._p = p; t.el.classList.toggle("on", p); if (p && t._seen) { t.el.classList.remove("pop"); void t.el.getBBox?.(); t.el.classList.add("pop"); } t._seen = true; } if (p) cur = t; }
+            // the tip names the last tick you passed, while you drag and for a moment after you pass one
+            if (cur !== lastTip) { lastTip = cur; if (cur) { tipK.textContent = cur.k; tipB.textContent = cur.n; tip.style.setProperty("--tc", cur.c || "var(--accent)"); tipUntil = Math.max(tipUntil, now + 2200); } }
+            box.classList.toggle("tip", !!cur && (drag || now < tipUntil || box.matches(":hover")));
+          }
+        };
+      }
       window.__goL = (L, br) => { if (br) { const ch = !state.branchChosen || state.branch !== br; state.branch = br; state.branchChosen = true; if (ch) { route.setBranch(br); rebuildGolden(); } } jumpGuard = performance.now() + 2600; window.scrollTo({ top: clamp2(L / effectiveTotal(), 0, 1) * maxScroll(), behavior: "instant" }); state.L = prevL = L; };
       window.__pick = (R = 90) => {
         const out = [], bb = new Box3(), cp = camera.position;
