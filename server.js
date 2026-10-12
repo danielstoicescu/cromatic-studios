@@ -92,6 +92,7 @@ function keepLead(t, ip) {
   console.error("[lead] could not be saved anywhere:", line.trim());
   return null;
 }
+let lastMail = null; // the last send, for /healthz (no addresses, no secrets)
 const SUBJECT_TAG = process.env.MAIL_SUBJECT_TAG || "[mesaj de pe site!!]";
 
 async function boarding(req, res) {
@@ -116,9 +117,11 @@ async function boarding(req, res) {
       subject: `Your boarding pass to Olari 9 \u00B7 ${t.ref}`,
       html: passHtml(t, "passenger"), text: passText(t, "passenger")
     });
+    lastMail = { at: new Date().toISOString(), error: null };
     return send(res, 200, { ok: true, ref: t.ref });
   } catch (e) {
     console.error("[mail]", e.message);
+    lastMail = { at: new Date().toISOString(), error: String(e.response || e.message || e).replace(/[\w.+-]+@[\w.-]+/g, "<email>").slice(0, 300), code: e.responseCode || e.code || null };
     // the message is safe on the server: the visitor gets their confirmation, the studio reads it from the file
     return kept ? send(res, 200, { ok: true, ref: t.ref, mail: false }) : send(res, 502, { ok: false });
   }
@@ -229,7 +232,7 @@ function legacy(req, res) {
 }
 
 http.createServer((req, res) => {
-  if (req.url === "/healthz") return send(res, 200, { ok: true, mail: process.env.SMTP_HOST ? "smtp" : "log", leads: !!process.env.LEADS_KEY });
+  if (req.url === "/healthz") return send(res, 200, { ok: true, mail: process.env.SMTP_HOST ? "smtp" : "log", leads: !!process.env.LEADS_KEY, host: process.env.SMTP_HOST || null, port: process.env.SMTP_PORT || null, lastMail });
   if (req.url.startsWith("/.well-known/acme-challenge/")) return acme(req, res);
   // behind Cloudflare: visitors who came in over plain http get sent to https
   if (/"scheme":"http"/.test(String(req.headers["cf-visitor"] || "")) && req.headers.host) {
