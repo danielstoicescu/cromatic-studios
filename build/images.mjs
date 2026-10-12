@@ -1,18 +1,18 @@
 // r131: responsive WebP for every photo the pages show. After all pages are written, each <img> that points at a
-// JPEG/PNG of ours gets WebP copies at a few widths (cached in .cache/img by content hash) and a srcset, so a phone
-// downloads a phone-sized picture. The original stays as the lightbox / og:image file.
+// JPEG/PNG of ours gets WebP copies at a few widths and a srcset, so a phone downloads a phone-sized picture. The
+// original stays as the lightbox / og:image file. The WebP files are made on the studio's machine (sharp is a dev
+// dependency) and committed in site/.img-cache by content hash: the server only copies them, it never encodes.
 import { readFileSync, writeFileSync, readdirSync, statSync, mkdirSync, existsSync, copyFileSync } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 
-const WIDTHS = [480, 960, 1600, 2400];
+const WIDTHS = [480, 960, 1600];
 const MIN_BYTES = 24 * 1024; // small pictures are not worth it
 
 export async function optimizeImages(pub, root, log = console.log) {
-  let sharp;
-  try { sharp = (await import("sharp")).default; } catch { log("[images] sharp not installed: skipped"); return; }
-  sharp.concurrency(0);
-  const cacheDir = join(root, ".cache", "img");
+  let sharp = null;
+  try { sharp = (await import("sharp")).default; sharp.concurrency(0); } catch { log("[images] sharp not installed: using the committed WebP cache only"); }
+  const cacheDir = join(root, "site", ".img-cache");
   mkdirSync(cacheDir, { recursive: true });
   mkdirSync(join(pub, "assets", "w"), { recursive: true });
   const htmls = [];
@@ -29,15 +29,16 @@ export async function optimizeImages(pub, root, log = console.log) {
     const buf = readFileSync(file);
     if (buf.length < MIN_BYTES) return;
     const h = createHash("sha1").update(buf).digest("hex").slice(0, 12);
-    let meta;
-    try { meta = await sharp(buf).metadata(); } catch { return; }
+    const dims = (() => { if (buf[0] === 0x89 && buf[1] === 0x50) return [buf.readUInt32BE(16), buf.readUInt32BE(20)]; for (let i = 2; i < buf.length - 9;) { if (buf[i] !== 0xff) { i++; continue; } const mk = buf[i + 1], len = buf.readUInt16BE(i + 2); if (mk >= 0xc0 && mk <= 0xcf && mk !== 0xc4 && mk !== 0xc8 && mk !== 0xcc) return [buf.readUInt16BE(i + 7), buf.readUInt16BE(i + 5)]; i += 2 + len; } return [0, 0]; })();
+    const meta = { width: dims[0], height: dims[1] };
     const W = meta.width || 0;
     if (!W) return;
-    const widths = [...new Set([...WIDTHS.filter((w) => w < W * 0.95), Math.min(W, 2400)])].sort((a, b) => a - b);
+    const widths = [...new Set([...WIDTHS.filter((w) => w < W * 0.95), Math.min(W, 1600)])].sort((a, b) => a - b);
     const set = [];
     for (const w of widths) {
       const name = `${h}-${w}.webp`, cached = join(cacheDir, name), dest = join(pub, "assets", "w", name);
       if (!existsSync(cached)) {
+        if (!sharp) return; // not in the cache and no encoder here: this picture keeps its original
         await sharp(buf).resize({ width: w, withoutEnlargement: true }).webp({ quality: w <= 960 ? 76 : 80, effort: 4 }).toFile(cached);
         made++;
       }
