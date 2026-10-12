@@ -322,7 +322,62 @@ const wpLocal = (u) => mediaMap.get("m:wp/" + u.replace(/^.*\/uploads\/(\d{4})\/
 // related rail on Bepco), the street and service pages, and a "Ready for boarding" call that opens the boarding pass
 // (inside the map it asks the map to open it; on its own it goes to /?map&boarding). Covers are filled in at the end
 // (%%COVER:slug%%), once every page has its cover.
-const STREET_CSS = `<style>.cz-street{box-sizing:border-box;max-width:1180px;margin:64px auto 48px;padding:0 20px;font:500 16px/1.45 CromaticSans,"Darker Grotesque",system-ui,sans-serif;color:#0d0c09}.cz-street .czs-eb{font:700 11px/1.2 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin:0 0 10px}.cz-street h2{font:900 clamp(30px,4.4vw,52px)/1.02 CromaticSans,system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 24px}.cz-street h2 span{display:inline-block;padding:.02em .22em .08em;border-radius:.22em;background:var(--czs,#FED012);transform:rotate(-1.2deg)}.czs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.czs-card{display:flex;flex-direction:column;border:2px solid #0d0c09;border-radius:22px;overflow:hidden;background:#fff;color:#0d0c09;text-decoration:none;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s}.czs-card:hover{transform:translateY(-4px) rotate(-.4deg);box-shadow:0 14px 30px rgba(13,12,9,.14)}.czs-card img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;background:#eee}.czs-card b{font:800 20px/1.15 CromaticSans,system-ui,sans-serif;padding:14px 16px 2px}.czs-card span{font-size:14px;opacity:.72;padding:0 16px 16px}.czs-links{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 0}.czs-links a{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border:2px solid #0d0c09;border-radius:999px;background:#fff;color:#0d0c09;text-decoration:none;font:800 14px/1 CromaticSans,system-ui,sans-serif}.czs-board{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin-top:28px;padding:26px 28px;border:2px solid #0d0c09;border-radius:26px;background:#FED012}.czs-board p{margin:0;font:900 clamp(24px,3.2vw,36px)/1.05 CromaticSans,system-ui,sans-serif;letter-spacing:-.015em}.czs-board small{display:block;margin-top:6px;font:500 15px/1.35 CromaticSans,system-ui,sans-serif;opacity:.8}.czs-board a{display:inline-flex;align-items:center;gap:10px;padding:16px 24px;border-radius:999px;background:#0d0c09;color:#fff;text-decoration:none;font:800 17px/1 CromaticSans,system-ui,sans-serif;white-space:nowrap}.czs-board a:hover{transform:translateY(-2px)}@media (max-width:760px){.czs-grid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-left:20px;gap:12px;margin:0 -20px;padding:0 20px 8px;scrollbar-width:none}.czs-grid::-webkit-scrollbar{display:none}.czs-card{flex:0 0 76%;scroll-snap-align:start}.czs-card:hover{transform:none}.czs-board{padding:22px}.czs-board a{width:100%;justify-content:center}}@media (prefers-reduced-motion:reduce){.czs-card,.czs-board a{transition:none}}</style>`;
+// r137b (Daniel): five projects (the same street first, then the next streets over), on a rail wider than the page
+// that rides to the right as the page scrolls down through it; still a plain horizontal scroller by hand, by keys,
+// and for prefers-reduced-motion (then it does not move on its own)
+const STREET_CSS = `<style>.cz-street{box-sizing:border-box;margin:64px 0 48px;padding:0 20px;font:500 16px/1.45 CromaticSans,"Darker Grotesque",system-ui,sans-serif;color:#0d0c09}.cz-street>*{max-width:1140px;margin-left:auto;margin-right:auto}.cz-street .czs-eb{font:700 11px/1.2 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin-top:0;margin-bottom:10px}.cz-street h2{font:900 clamp(30px,4.4vw,52px)/1.02 CromaticSans,system-ui,sans-serif;letter-spacing:-.02em;margin-top:0;margin-bottom:18px}.cz-street h2 span{display:inline-block;padding:.02em .22em .08em;border-radius:.22em;background:var(--czs,#FED012);transform:rotate(-1.2deg)}.cz-street>.czs-rail{box-sizing:border-box;max-width:none;display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;margin:0 -20px;padding:8px max(20px,calc((100% - 1140px) / 2 + 20px)) 20px;scroll-snap-type:x proximity;scroll-padding-inline:max(20px,calc((100% - 1140px) / 2 + 20px));scrollbar-width:thin;scrollbar-color:rgba(13,12,9,.3) transparent;overscroll-behavior-x:contain;outline:0}.czs-rail.czs-live{scroll-snap-type:none}.czs-rail:focus-visible{box-shadow:inset 0 0 0 3px #119BFE;border-radius:14px}.czs-card{flex:0 0 clamp(250px,28vw,400px);scroll-snap-align:start;display:flex;flex-direction:column;border:2px solid #0d0c09;border-radius:22px;overflow:hidden;background:#fff;color:#0d0c09;text-decoration:none;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s}.czs-card:hover{transform:translateY(-4px) rotate(-.4deg);box-shadow:0 10px 18px rgba(13,12,9,.12)}.czs-card:focus-visible{outline:3px solid #119BFE;outline-offset:2px}.czs-card img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;background:#eee}.czs-card b{font:800 20px/1.15 CromaticSans,system-ui,sans-serif;padding:14px 16px 2px}.czs-card span{font-size:14px;opacity:.72;padding:0 16px 16px}.czs-card .czs-st{display:flex;align-items:center;gap:7px;padding:14px 16px 0;font:700 10.5px/1.2 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;font-style:normal;opacity:.7}.czs-st::before{content:"";flex:0 0 8px;height:8px;border-radius:50%;background:var(--c,#FED012)}.czs-st+b{padding-top:6px}.czs-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.czs-links a{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border:2px solid #0d0c09;border-radius:999px;background:#fff;color:#0d0c09;text-decoration:none;font:800 14px/1 CromaticSans,system-ui,sans-serif}@media (max-width:760px){.cz-street>.czs-rail{gap:12px;scrollbar-width:none}.czs-rail::-webkit-scrollbar{display:none}.czs-card{flex-basis:min(76vw,340px)}.czs-card:hover{transform:none}}@media (prefers-reduced-motion:reduce){.czs-card{transition:none}}</style>`;
+// the ride: the rail's scroll position follows the page's (rail top from 85% to 15% of the viewport = first card to
+// last), eased every frame; a swipe, a wheel, a key or a focused card takes over and the ride carries on from there
+function czsClient() {
+  var rail = document.querySelector("[data-czs]");
+  if (!rail || !window.requestAnimationFrame) return;
+  var mq = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : null;
+  var live = false, cur = 0, off = 0, lastSet = -1, userT = 0, raf = 0, last = 0;
+  var de = document.documentElement;
+  function max() { return Math.max(0, rail.scrollWidth - rail.clientWidth); }
+  function vh() { return window.innerHeight || de.clientHeight; }
+  function base() {
+    var r = rail.getBoundingClientRect(), h = vh();
+    var b = h * 0.15, rem = Math.max(0, de.scrollHeight - (window.scrollY + h));
+    var end = Math.max(b, r.top - rem), a = Math.max(h * 0.85, end + 160);
+    return Math.max(0, Math.min(1, (a - r.top) / (a - end))) * max();
+  }
+  function set(x) { rail.scrollLeft = x; lastSet = rail.scrollLeft; }
+  function frame(now) {
+    raf = 0;
+    if (!live || now < userT) { last = 0; return; }
+    var dt = Math.min(0.05, (now - (last || now)) / 1000); last = now;
+    var want = Math.max(0, Math.min(max(), base() + off));
+    cur += (want - cur) * (1 - Math.exp(-dt * 9));
+    if (Math.abs(want - cur) < 0.5) cur = want;
+    set(cur);
+    if (cur !== want) raf = requestAnimationFrame(frame); else last = 0;
+  }
+  function kick() { if (live && !raf) raf = requestAnimationFrame(frame); }
+  function onScroll() {
+    if (!live) return;
+    var r = rail.getBoundingClientRect();
+    // out of sight: back on the ride, no glide when it comes into view again
+    if (r.bottom < -40 || r.top > vh() + 40) { off = 0; if (performance.now() >= userT) { cur = Math.max(0, Math.min(max(), base())); set(cur); } return; }
+    kick();
+  }
+  rail.addEventListener("scroll", function () {
+    if (!live || Math.abs(rail.scrollLeft - lastSet) <= 1.5) return;
+    // by hand (a swipe, a wheel, the keys, a card taking focus): it stays where the hand left it
+    userT = performance.now() + 450; cur = rail.scrollLeft; off = cur - base(); lastSet = -1;
+    setTimeout(kick, 470);
+  }, { passive: true });
+  function setLive() {
+    live = !(mq && mq.matches);
+    rail.classList.toggle("czs-live", live);
+    if (live) { off = 0; cur = Math.max(0, Math.min(max(), base())); set(cur); }
+  }
+  if (mq) { if (mq.addEventListener) mq.addEventListener("change", setLive); else if (mq.addListener) mq.addListener(setLive); }
+  addEventListener("scroll", onScroll, { passive: true });
+  addEventListener("resize", function () { if (live) { cur = Math.max(0, Math.min(max(), base() + off)); set(cur); } });
+  setLive();
+}
+const STREET_JS = `<script>(${czsClient.toString()})();</script>`;
 const HUBS_DATA = await import("../site/hubs.mjs").catch(() => ({}));
 const escH = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
 const hubLinks = (slug, hasRelated) => {
@@ -330,16 +385,22 @@ const hubLinks = (slug, hasRelated) => {
   const ind = proj && (HUBS_DATA.INDUSTRIES || []).find((x) => x.street === proj.street);
   const svcs = (HUBS_DATA.SERVICE_PAGES || []).filter((x) => (x.cases || []).includes(slug));
   const street = proj && DATA.STREETS?.[proj.street];
-  // three neighbours on the same street, starting after this one (each page shows different ones)
+  // r137b: five neighbours: the same street first, starting after this one (each page shows different ones), then
+  // the streets next door; never this page, never the small ones or those without a page
   const seen = new Set([slug]), same = [];
   const list = DATA.PROJECTS.filter((x) => x.page && !x.small && proj && x.street === proj.street);
   const at = list.findIndex((x) => x.page === slug);
-  for (let k = 1; k <= list.length && same.length < 3; k++) { const x = list[(Math.max(at, 0) + k) % list.length]; if (!seen.has(x.page)) { seen.add(x.page); same.push(x); } }
-  const cards = !hasRelated && same.length ? `<div class="czs-grid">${same.map((x) => `<a class="czs-card" href="/work/${x.page}/"><img src="%%COVER:${x.page}%%" alt="${escH(x.name)}" loading="lazy" decoding="async" width="800" height="500"><b>${escH(x.name)}</b><span>${escH(x.cat || "")}</span></a>`).join("")}</div>` : "";
+  for (let k = 1; k <= list.length && same.length < 5; k++) { const x = list[(Math.max(at, 0) + k) % list.length]; if (!seen.has(x.page)) { seen.add(x.page); same.push(x); } }
+  if (proj && same.length < 5) {
+    const all = DATA.PROJECTS, at2 = Math.max(0, all.findIndex((x) => x.page === slug));
+    for (let k = 1; k <= all.length && same.length < 5; k++) { const x = all[(at2 + k) % all.length]; if (x.page && !x.small && x.street !== proj.street && !seen.has(x.page)) { seen.add(x.page); same.push(x); } }
+  }
+  const stTag = (x) => { const st = x.street !== proj.street && DATA.STREETS?.[x.street]; return st ? `<i class="czs-st" style="--c:${st[1]}">${escH(st[0])}</i>` : ""; };
+  const cards = !hasRelated && same.length ? `<div class="czs-rail" data-czs tabindex="0" role="region" aria-labelledby="czs-h">${same.map((x) => `<a class="czs-card" href="/work/${x.page}/"><img src="%%COVER:${x.page}%%" alt="${escH(x.name)}" loading="lazy" decoding="async" width="800" height="500">${stTag(x)}<b>${escH(x.name)}</b><span>${escH(x.cat || "")}</span></a>`).join("")}</div>` : "";
   const links = [ind ? `<a href="/industries/${ind.slug}/">${escH(ind.title.replace(/ in Bucharest$/, ""))} <span aria-hidden="true">→</span></a>` : "", ...svcs.map((x) => `<a href="/services/${x.slug}/">${escH(x.name)} <span aria-hidden="true">→</span></a>`)].join("");
   const board = hasRelated ? "" : BOARD_HTML;
   if (!cards && !links && !board) return "";
-  return `${STREET_CSS}<section class="cz-street" aria-label="More from the studio" style="--czs:${street ? street[1] : "#FED012"}">${cards ? `<p class="czs-eb">${escH(street ? street[0] : "")}</p><h2><span>On the same street</span></h2>${cards}` : ""}${links ? `<div class="czs-links">${links}</div>` : ""}${board}</section>${board ? BOARD_CSS + BOARD_JS : ""}`;
+  return `${STREET_CSS}<section class="cz-street" aria-label="More from the studio" style="--czs:${street ? street[1] : "#FED012"}">${cards ? `<p class="czs-eb">${escH(street ? street[0] : "")}</p><h2 id="czs-h"><span>On the same street</span></h2>${cards}` : ""}${links ? `<div class="czs-links">${links}</div>` : ""}${board}</section>${cards ? STREET_JS : ""}${board ? BOARD_CSS + BOARD_JS : ""}`;
 };
 // r136 (N25): YouTube films become a click-to-play facade on a local poster (a still of the film when we have one)
 const YT_POSTERS = { "vGNSZ_aUd8w": "m:cs/Clinica-Sante", "8KtUdarL1oI": "m:pain-plaisir/anemone" };

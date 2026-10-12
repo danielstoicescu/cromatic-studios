@@ -436,7 +436,9 @@ ${rel.map((q) => `          <article class="proj">
   addEventListener('resize',run);run();
 })();
 // rails: a vertical wheel or trackpad gesture over a rail scrolls it sideways until it reaches an end
+// (r137c: Steam's own script now does this for its [data-rail] tracks and marks them _wheel; not twice)
 document.querySelectorAll('.track').forEach(t=>{
+  if(t._wheel)return;
   t.addEventListener('wheel',e=>{
     if(e.ctrlKey||Math.abs(e.deltaX)>=Math.abs(e.deltaY))return;
     const max=t.scrollWidth-t.clientWidth;

@@ -4275,3 +4275,144 @@ body.menu-open .drive-pins { opacity: 0 !important; pointer-events: none !import
   .olari-next .oc-tel, .olari-next .oc-mail { min-height: 44px; padding: 8px 14px; }
   .olari-fan .olari-photo { margin-bottom: var(--ph-lift, 0px); }
 }
+
+/* ================= r137a (Daniel): map UI polish ================= */
+/* r137a: the World button reads "Multiverse" on laptops (the orb alone on phones). The worlds' colours run round its
+   outline, as thin as its neighbours' outlines, and turn; inside only a faint wash of them moves, so it stops shouting */
+.map-top .map-world { border: 0 !important; overflow: hidden; background: transparent; }
+.map-top .map-world::before { inset: 0; border-radius: inherit; filter: none;
+  background: conic-gradient(from var(--mbA), #FED012, #28C840, #119BFE, #B098C8, #F65342, #FED012); animation: mbSpin 6s linear infinite; }
+.map-top .map-world::after { inset: 1.5px; border-radius: inherit; background: rgba(255,255,255,.91); transition: background-color .3s; }
+.map-top .map-world:hover::after { background: rgba(255,255,255,.8); }
+.map-top .map-world:hover::before { animation-duration: 3s; }
+.map-top .map-world:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
+
+/* r137a: one popover for the worlds card and the ride card: same container, header, tiles, selected state;
+   anchored right under the button that opened it, with a small arrow to it (popAnchor in app.js) */
+.hud-menu.theme-menu, .map-rides { background: var(--card-bg); color: var(--fg); border: 1px solid var(--st-ink, #141414); border-radius: 22px;
+  box-shadow: 0 2px 0 var(--st-ink, #141414), 0 28px 60px -24px rgba(16,10,24,.55); box-sizing: border-box; }
+.hud-menu.theme-menu { width: 572px !important; max-width: calc(100vw - 24px); padding: 16px 14px 12px; gap: 0; overflow: visible !important; max-height: min(640px, calc(100dvh - 120px)); }
+.map-rides { width: 440px; max-width: calc(100vw - 24px); padding: 16px 14px 14px; display: flex; flex-direction: column; }
+.map-rides:not(.hidden) { animation: r137Pop .28s cubic-bezier(.2,.9,.3,1.12) both; }
+@keyframes r137Pop { from { opacity: 0; transform: translateY(-8px) scale(.97); } }
+.hud-menu.theme-menu.pop-at, .map-rides.pop-at { position: fixed !important; top: var(--pop-top) !important; left: var(--pop-left) !important; right: auto !important; bottom: auto !important;
+  translate: none !important; margin: 0 !important; max-height: calc(100dvh - var(--pop-top) - 16px) !important; transform-origin: var(--pop-arrow) 0 !important; }
+.hud-menu.theme-menu.pop-at:not(.open) { transform: translateY(-8px) scale(.97) !important; }
+.hud-menu.theme-menu.pop-at.open { transform: none !important; }
+.hud-menu.theme-menu.pop-at::before, .map-rides.pop-at::before { content: ''; position: absolute; top: -7px; left: calc(var(--pop-arrow) - 6px); width: 12px; height: 12px; box-sizing: border-box;
+  background: var(--card-bg); border-left: 1px solid var(--st-ink, #141414); border-top: 1px solid var(--st-ink, #141414); border-top-left-radius: 3px; transform: rotate(45deg); }
+:is(.theme-menu, .map-rides) .wt-head { align-items: center; gap: 12px; padding: 0 0 12px 6px; margin: 0 0 8px; border-bottom: 1px solid color-mix(in srgb, var(--fg) 12%, transparent); }
+:is(.theme-menu, .map-rides) .wt-titles { gap: 4px; }
+:is(.theme-menu, .map-rides) .wt-head .hm-title { padding: 0; font-size: 9.5px; font-weight: 700; letter-spacing: .18em; opacity: .6; }
+:is(.theme-menu, .map-rides) .wt-lead { padding: 0; max-width: none; font: 800 18px/1.15 CromaticSans, sans-serif; letter-spacing: -.01em; color: var(--fg); }
+:is(.theme-menu, .map-rides) .wt-close { width: 32px; height: 32px; margin: 0; font-size: 18px; }
+/* worlds: a two-column list; thumbnail, name, line, the world's three colours; the pick gets a tint, an outline and a tick */
+.theme-menu .wt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 4px 6px; overflow-y: auto; min-height: 0; flex: 1 1 auto; margin: 0 -4px; padding: 2px 4px 4px; scrollbar-width: thin; }
+.theme-menu .wt { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; grid-template-areas: "img meta sw"; align-items: center; column-gap: 12px;
+  aspect-ratio: auto; padding: 8px 12px 8px 8px; border-radius: 14px; overflow: visible; isolation: auto; color: var(--fg); text-align: left;
+  background: transparent; border: 1px solid transparent !important; box-shadow: none; transform: none; transition: background-color .2s, border-color .2s; }
+.theme-menu .wt:hover { background: color-mix(in srgb, var(--fg) 6%, transparent); transform: none; box-shadow: none; }
+.theme-menu .wt.on, .theme-menu .wt.on:hover { background: color-mix(in srgb, var(--accent) 16%, var(--card-bg)); border-color: var(--st-ink, #141414) !important; box-shadow: none; }
+.theme-menu .wt:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
+.theme-menu .wt-img { grid-area: img; position: relative; inset: auto; width: 52px; height: 52px; border-radius: 12px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--fg) 18%, transparent); box-sizing: border-box; }
+.theme-menu .wt-img img { transform: none; }
+.theme-menu .wt:hover .wt-img img { transform: scale(1.08); }
+.theme-menu .wt-veh { display: none; }
+.theme-menu .wt-meta { grid-area: meta; position: static; padding: 0; background: none; gap: 3px; min-width: 0; z-index: auto; }
+.theme-menu .wt-meta b { font: 800 14.5px/1.15 CromaticSans, sans-serif; color: var(--fg); }
+.theme-menu .wt-meta small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font: 600 12.5px/1.15 CromaticSans, sans-serif; color: var(--fg); opacity: .66; }
+.theme-menu .wt-sw { grid-area: sw; display: flex; }
+.theme-menu .wt-sw i { width: 14px; height: 14px; border-radius: 50%; box-sizing: border-box; border: 1px solid color-mix(in srgb, var(--fg) 35%, transparent); margin-left: -5px; }
+.theme-menu .wt-sw i:first-child { margin-left: 0; }
+.theme-menu .wt-check, .map-rides .wt-check { width: 20px; height: 20px; font-size: 11px; border: 1px solid var(--st-ink, #141414); background: var(--accent); color: #0a0a0a; }
+.theme-menu .wt-check { left: 48px; right: auto; top: 3px; }
+.theme-menu .wt-foot { padding: 10px 0 2px; font-size: 8.5px; }
+/* rides: the same tiles, three across; each vehicle sits on a soft light disc so dark cars read on dark worlds */
+.map-rides .mrs-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; overflow-y: auto; min-height: 0; margin: 0 -4px; padding: 2px 4px; scrollbar-width: thin; }
+.map-rides .mrs-v { position: relative; gap: 6px; padding: 10px 6px 11px; border-radius: 14px; background: color-mix(in srgb, var(--fg) 4%, transparent);
+  border: 1px solid transparent !important; color: var(--fg); transition: background-color .2s, border-color .2s; }
+.map-rides .mrs-v:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); border-color: transparent !important; }
+.map-rides .mrs-v.on, .map-rides .mrs-v.on:hover { background: color-mix(in srgb, var(--accent) 16%, var(--card-bg)); border-color: var(--st-ink, #141414) !important; }
+.map-rides .mrs-v:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
+.map-rides .mrs-th { width: 60px; height: 60px; border-radius: 50%; background-color: color-mix(in srgb, #fff 82%, var(--card-bg)); background-size: 84% auto; transition: transform .3s cubic-bezier(.34,1.56,.64,1); }
+.map-rides .mrs-v:hover .mrs-th { transform: translateY(-2px) scale(1.05); }
+.map-rides .mrs-v b { font: 700 13px/1.15 CromaticSans, sans-serif; color: var(--fg); }
+.map-rides .wt-check { right: 6px; top: 6px; }
+.map-rides .mrs-v.on .wt-check { opacity: 1; transform: none; }
+/* while the worlds card is open the map dims only a little, and the bar stays above it so the button is still there */
+body.menu-open:has(.theme-menu.pop-at.open) .menu-scrim { background: rgba(10,8,4,.18); -webkit-backdrop-filter: none; backdrop-filter: none; }
+body.menu-open:has(.theme-menu.pop-at.open) .map-top { z-index: 49; }
+/* Sketchbook greys the whole HUD with a filter, which would also make it the frame of the fixed popover */
+body.scheme-sketch .hud:has(> .theme-menu.pop-at) { filter: none; }
+body.scheme-sketch .hud:has(> .theme-menu.pop-at) > :not(.theme-menu) { filter: grayscale(1) contrast(.96); }
+@media (max-width: 719px) {
+  .hud-menu.theme-menu, .map-rides { width: calc(100vw - 24px) !important; padding: 14px 10px 10px; border-radius: 20px; }
+  :is(.theme-menu, .map-rides) .wt-lead { font-size: 16px; }
+  :is(.theme-menu, .map-rides) .wt-head { padding-bottom: 10px; }
+  .theme-menu .wt-grid { gap: 4px; }
+  .theme-menu .wt { grid-template-columns: 40px minmax(0, 1fr); grid-template-areas: "img meta" "img sw"; grid-template-rows: auto auto; row-gap: 5px; column-gap: 10px; padding: 7px; }
+  .theme-menu .wt-img { width: 40px; height: 40px; border-radius: 10px; }
+  .theme-menu .wt-meta { align-self: end; }
+  .theme-menu .wt-meta b { font-size: 13.5px; }
+  .theme-menu .wt-meta small { display: none; }
+  .theme-menu .wt-sw { align-self: start; }
+  .theme-menu .wt-sw i { width: 10px; height: 10px; margin-left: -3px; }
+  .theme-menu .wt-check { left: 34px; top: 2px; width: 18px; height: 18px; font-size: 10px; }
+  .map-rides .mrs-th { width: 52px; height: 52px; }
+  .map-rides .mrs-v b { font-size: 12px; }
+  body.menu-open:has(.theme-menu.pop-at.open) .menu-scrim { background: rgba(10,8,4,.3); }
+}
+@media (prefers-reduced-motion: reduce) { .map-rides:not(.hidden) { animation: none; } .map-top .map-world::before { animation: none; } }
+
+/* r137a: the welcome card. A real title in the "Wheels up" lettering (a little smaller); the four steps in grey
+   circles with line icons; even breathing from the X to the title and from the title to the steps */
+.map-welcome { padding: 34px 28px 24px; }
+.map-welcome .mw-in { padding-top: 8px; }
+.map-welcome .mw-t { display: block; margin: 0 auto 26px; max-width: 470px; text-align: center; text-wrap: balance;
+  font: 900 clamp(34px, min(4.4vw, 6.2vh), 58px)/.95 CromaticSans, CromaticSans, sans-serif; letter-spacing: -.04em; color: #FED012;
+  -webkit-text-stroke: 2.5px #141414; paint-order: stroke fill; text-shadow: 4px 4px 0 #141414; transform: rotate(-3deg); }
+.map-welcome .mw-how { margin: 0 0 24px; }
+.map-welcome .mw-how span:nth-of-type(n) i { width: 58px; height: 58px; background: #ECE9E4; border: 1px solid #141414; box-shadow: none; color: #141414; font-size: 0; }
+.map-welcome .mw-how span i svg { display: block; width: 26px; height: 26px; }
+.map-welcome .mw-how b { font: 800 13.5px/1.15 CromaticSans, sans-serif; }
+.map-welcome .mw-how em { margin-top: -24px; opacity: .3; }
+@media (max-width: 520px) {
+  .map-welcome { padding: 30px 16px 16px; }
+  .map-welcome .mw-t { font-size: 32px; -webkit-text-stroke-width: 2px; text-shadow: 3px 3px 0 #141414; margin-bottom: 18px; }
+  .map-welcome .mw-how { margin: 0 0 16px; }
+  .map-welcome .mw-how span:nth-of-type(n) i { width: 46px; height: 46px; }
+  .map-welcome .mw-how span i svg { width: 22px; height: 22px; }
+  .map-welcome .mw-how b { font-size: 11.5px; }
+}
+.map-welcome .mw-in { padding-bottom: 6px; } /* r137a: the last button's 2px shadow is no longer shaved off by the scroller */
+:is(.theme-menu, .map-rides) .wt-lead { text-wrap: balance; }
+@media (max-width: 520px) { .map-welcome .mw-t { -webkit-text-stroke-width: 1.6px; text-shadow: 2.5px 2.5px 0 #141414; } }
+
+/* r137a (Daniel): the place card's call to action. Pointing at it previews what is about to happen: the card turns to
+   frosted glass (the map shows through), grows a touch and a thin frame breathes out round it, as the page that is
+   about to open; the arrow slides on. A press then grows the case page out of the card (openFrameHook). Mouse only:
+   touch keeps just the press transition. */
+.map-card .mcd-arr { display: inline-block; transition: transform .45s cubic-bezier(.34,1.56,.64,1); }
+.map-card .mcd-open { box-sizing: border-box; flex-shrink: 0; }
+.map-card .mcd-actions { padding-bottom: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .map-card .mcd-open:not(.mcd-jet):is(:hover, :focus-visible) .mcd-arr { transform: translateX(6px); }
+  .map-card .mcd-open:not(.mcd-jet) { transition: background-color .25s, color .25s, box-shadow .45s cubic-bezier(.2,.8,.2,1); }
+  .map-card .mcd-open:not(.mcd-jet):is(:hover, :focus-visible) { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent) !important; }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  body:not(.scheme-sketch) .map-card { transform-origin: 50% 100%; outline: 1px solid transparent; outline-offset: 0;
+    transition: opacity .35s, transform .45s cubic-bezier(.34,1.4,.64,1), scale .6s cubic-bezier(.2,.8,.2,1), background-color .45s ease,
+      -webkit-backdrop-filter .45s ease, backdrop-filter .45s ease, outline-offset .6s cubic-bezier(.2,.8,.2,1), outline-color .45s ease; }
+  body:not(.scheme-sketch) .map-card .mcd-img { transition: opacity .45s ease; }
+  body:not(.scheme-sketch) .map-card:not(.hidden):has(.mcd-open:not(.mcd-jet):is(:hover, :focus-visible)) {
+    scale: 1.018; outline-color: color-mix(in srgb, #141414 45%, transparent); outline-offset: 9px;
+    background-color: color-mix(in srgb, color-mix(in srgb, var(--pc, #fbf7f2) 12%, #fbf7f2) 52%, transparent) !important;
+    -webkit-backdrop-filter: blur(14px) saturate(1.25); backdrop-filter: blur(14px) saturate(1.25); }
+  body:not(.scheme-sketch) .map-card:has(.mcd-open:not(.mcd-jet):is(:hover, :focus-visible)) .mcd-img { opacity: .78; }
+}
+body.scheme-sketch .theme-menu .wt-img img { filter: none; } /* r137a: the previews of the other worlds keep their colours */
+/* r137a: the place card is always light (r129), so its words stay ink in every world (Night Mode, Underwater wrote
+   them in the world's light text colour, nearly invisible) */
+body:not(.scheme-sketch) .map-card .mcd-body { color: #141414; }
+body:not(.scheme-sketch) .map-card .mcd-body :is(p, .mcd-eyebrow, .mcd-svc) { color: #141414; }
