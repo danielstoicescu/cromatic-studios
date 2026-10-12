@@ -26218,7 +26218,7 @@ void main() {
         if (hx === "#f65342") { o.material = o.material.clone(); o.material.color.set(main); }
         else if (hx === "#ffffff") { o.material = o.material.clone(); o.material.color.set(second); }
       });
-      v.group.scale.setScalar(0.5);
+      v.group.scale.setScalar(0.6);
       const holder = new Group(); holder.add(v.group); holder.visible = false;
       parent.add(holder);
       return { holder, wheels: v.wheels, base: [-420, 260, 640][i], amp: [520, 480, 600][i], w: [0.11, 0.083, 0.067][i], ph: i * 2.1, side: i % 2 ? 1 : -1, spin: 0, lat: 0 };
@@ -34074,7 +34074,7 @@ void main() {
         // r124: every ride the same size on the road: about 40 long, about 26 wide at most
         {
           const sz = bb.getSize(new Vector3()), len = Math.max(sz.z, 1), wid = Math.max(sz.x, 1);
-          VEH_S = 1.25 * Math.min(0.74, 46 / len, 30 / wid); // r129: every vehicle 25% bigger
+          VEH_S = 1.5 * Math.min(0.74, 46 / len, 30 / wid); // r129: every vehicle 25% bigger; r133: and 20% more (Daniel)
           window.__vehSize = [id, Math.round(sz.x), Math.round(sz.y), Math.round(sz.z), +VEH_S.toFixed(2)];
         }
         veh.group.scale.setScalar(VEH_S);
@@ -35195,6 +35195,7 @@ void main() {
           if (o.isMesh) o.castShadow = true;
         });
         g.visible = false;
+        g.scale.setScalar(1.2); // r133: every vehicle 20% bigger
         scene.add(g);
         return { group: g, beacons };
       })();
@@ -36672,8 +36673,14 @@ void main() {
             bank = airBank;
           }
           else {
-            const bankSign = state.vehicleId === "f1" ? 0 : -1;
-            bank = smooth(bank, clamp2(bankSign * dh * 14, -0.32, 0.32) * clamp2(state.speed / 30, 0, 1), dt, 5);
+            // r133: cars lean INTO the bend (Daniel: the outward body roll read as the wrong way), from the road's
+            // curve a little ahead, so the lean starts as the bend comes and eases out after it, never twitchy
+            route.tangentAt(Math.min(route.total, state.L + 70), _tA);
+            let dA = Math.atan2(_tA.x, _tA.z) - Math.atan2(carTan.x, carTan.z);
+            while (dA > Math.PI) dA -= Math.PI * 2; while (dA < -Math.PI) dA += Math.PI * 2;
+            if (planeRev > 0.5) dA = -dA;
+            const k = state.vehicleId === "f1" ? 0.35 : 0.75;
+            bank = smooth(bank, clamp2(-dA * k, -0.16, 0.16) * clamp2(state.speed / 25, 0, 1), dt, 3.2);
           }
         }
         const pitch = Math.atan2(carTan.y, Math.hypot(carTan.x, carTan.z));

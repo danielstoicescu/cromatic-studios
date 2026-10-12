@@ -35,7 +35,7 @@ export const PROJECTS = [
   { name: "Pain Plaisir", cat: "Video · Photo · Product design", c: "#ffffff", t: "#111111", poster: "Le bon pain", street: "A", page: "pain-plaisir", desc: "A French-style bakery with a real oven at its heart. We made their video production, the photo shootings and the product design." },
   { name: "Yoshi Izakaya", cat: "Communication · Content", c: "#F4876F", t: "#2a0f0b", poster: "The best sushi in town", img: "m:cs/Yoshy-Izacaya-cover-2", badge: "bYoshi", desc: "Delivering top content for the best sushi in town.", street: "A", page: "yoshi-izakaya" },
   { name: "Artisan Coffee Gear", cat: "Brand universe · Web", c: "#797c69", t: "#fff", poster: "Get to the core of your craft", img: "art09", page: "artisan-coffee-gear", desc: "Coffee gear for passionate customers, in a tailor made environment with a personal voice. A whole brand world, from the letterform pattern to the webshop.", street: "A" },
-  { name: "Slow Coffee Festival", cat: "Brand · Product · Since 2021", c: "#5B4B9E", t: "#fff", poster: "Year after year", img: "sP25b", badge: "bScf", page: "slow-coffee-festival", desc: "The biggest coffee lovers community in the country. We upgrade its brand universe year after year, so every edition feels familiar and brand new at the same time.", street: "A" },
+  { name: "Slow Coffee Festival", cat: "Brand · Product · Since 2021", c: "#5B4B9E", t: "#fff", poster: "Year after year", img: "m:places/scf-poster", badge: "bScf", page: "slow-coffee-festival", desc: "The biggest coffee lovers community in the country. We upgrade its brand universe year after year, so every edition feels familiar and brand new at the same time.", street: "A" },
   { name: "Casa Berero", cat: "Brand · Labels · Merch", c: "#f4f4f0", t: "#111111", poster: "BERERO", badge: "bBerero", page: "casa-berero", desc: "Craft beer with your people. COMM and UNITY, two cans that spell one word, merch and posters for Casa Berero.", street: "A" },
   { name: "Steam Coffee Shop", cat: "Branding · Growth · Product", c: "#2f9e4f", t: "#fff", poster: "Pioneers stay fresh", img: "steamCoverImg", vid: "steamCoverVid", badge: "bSteam", page: "steam", desc: "A pioneer brand refreshed for its community. New energy for the people who were there from the start, and a clear invitation for the ones just arriving.", street: "A" },
   { name: "Craft Coffee", cat: "Branding · Website", c: "#119BFE", t: "#fff", poster: "The coffee equipment", img: "craftBox", page: "craft-coffee", desc: "The official distributor of La Marzocco, Mazzer, PuQPress and Fellow in Romania. A brand and a shop built to equip the passion for coffee.", street: "A" },
@@ -101,11 +101,16 @@ export const CREW_INFO = {
   "Melissa": { bio: "Curious about everything, careful with everything. The fresh pair of eyes that spots what the rest of us got used to." }
 };
 export const CREW_COLORS = ["#28C840", "#FED012", "#B098C8", "#119BFE", "#F65342"];
+// r133: the vibe of the studio (Daniel's pick): the house at Olari 9 and the people in it
 export const CREW_PHOTOS = [
-  { src: "https://cromaticstudios.com/wp-content/uploads/2025/06/Noal.jpg", cap: "Photo production · Noal" },
-  { src: "https://cromaticstudios.com/wp-content/uploads/2025/06/Dialog-Meducativ.jpg", cap: "Podcast day · Dialog Meducativ" },
-  { src: "https://cromaticstudios.com/wp-content/uploads/2025/06/Clinica-Sante.jpg", cap: "On set · TV ads" },
-  { src: "https://cromaticstudios.com/wp-content/uploads/2025/06/Unchain-Festival.jpg", cap: "Unchain Festival" }
+  { src: "m:vibe/from-the-stairs", cap: "The studio, from the stairs", big: true },
+  { src: "m:vibe/balcony", cap: "Lunch on the balcony" },
+  { src: "m:vibe/get-words-shit-best-done-boss", cap: "Get shit done" },
+  { src: "m:vibe/infinite-coffee", cap: "There is always a coffee" },
+  { src: "m:vibe/window-seat", cap: "The window seat" },
+  { src: "m:vibe/lolz", cap: "Olari 9, the studio" },
+  { src: "m:vibe/poze", cap: "On set" },
+  { src: "m:vibe/doggo", cap: "Head of morale" }
 ];
 
 export const OFFICES = [

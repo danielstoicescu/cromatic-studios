@@ -8,7 +8,8 @@ const INDUSTRIES = HUBS.INDUSTRIES || [], SERVICE_PAGES = HUBS.SERVICE_PAGES || 
 
 const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const strip = (h) => String(h).replace(/<[^>]+>/g, "");
-const STAR = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0 L14.6 7.2 L21.5 4.2 L17.4 10.5 L24 12 L17.4 13.5 L21.5 19.8 L14.6 16.8 L12 24 L9.4 16.8 L2.5 19.8 L6.6 13.5 L0 12 L6.6 10.5 L2.5 4.2 L9.4 7.2 Z"/></svg>`;
+// r133: the star left the visual language: buttons carry the spinning yellow cup instead
+const STAR = `<span class="cupspin cup-btn" aria-hidden="true"></span>`;
 
 export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz, canvases = {} }) {
   const img = (name, alt = "", cls = "", eager = false) => {
@@ -89,7 +90,8 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       <a href="/">The 3D drive</a><a href="${STUDIO.legalUrl}">cromaticstudios.com</a>
     </div>
   </div>
-  <p class="wrap ftr-note mono">© ${new Date().getFullYear()} Cromatic Studios · There is always a coffee.</p>
+  <div class="wrap ftr-motto"><span class="cupspin" aria-hidden="true"></span><p>There is always a coffee.</p></div>
+  <p class="wrap ftr-note mono">© ${new Date().getFullYear()} Cromatic Studios · Strada Olari 9, Bucharest · since 2014</p>
 </footer>
 </body></html>`;
 
@@ -190,13 +192,15 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     const small = PROJECTS.filter((p) => p.small && p.street === k);
     const ind = industryOf(k), info = STREET_INFO[k] || { t: "", lead: "" };
     const n = new Set(list.filter((p) => p.page).map((p) => p.page)).size;
-    return `<div class="dom" id="street-${k.toLowerCase()}" style="--dc:${col}">
-      <h3 class="dom-h"><span class="dom-sw"></span>${esc(street)} <small class="dom-ind">${esc(info.t)}</small> <i class="mono">${n} case ${n === 1 ? "study" : "studies"}</i></h3>
+    return `<div class="dom dom-street" id="street-${k.toLowerCase()}" style="--dc:${col};--dt:${STREET_INK[k] || "#fff"}">
+      <h3 class="dom-h street-sign"><span class="ss-name">${esc(street)}</span> <small class="dom-ind">${esc(info.t)}</small> <i class="mono">${n} case ${n === 1 ? "study" : "studies"}</i></h3>
       <p class="dom-lead">${esc(info.lead)}${ind ? ` <a class="dom-more" href="/industries/${ind.slug}/">${esc(info.t)}: the whole street →</a>` : ""}</p>
       <div class="bento">${list.map((p, i) => bentoCard(p, i, covers)).join("")}</div>
       ${small.length ? `<div class="psmall"><span class="mono ps-h">In the Zdrovit yard</span>${small.map((p) => `<span class="ps" style="--bc:${p.c};--bt:${p.t}"><b>${esc(p.name)}</b><i class="mono">${esc(p.cat)}</i></span>`).join("")}</div>` : ""}
     </div>`;
   }).join("");
+  const SVC_LINKS = { "Branding & Design": ["brand-strategy", "brand-identity"], "Video Production": ["video-production"], "UX & UI Design": ["websites-apps"], "Growth & Content": ["social-media-content"] };
+  const STREET_INK = { A: "#fff", B: "#fff", C: "#0d0c09", D: "#0d0c09", E: "#0d0c09" };
   const SITE_TITLE = "Cromatic Studios: brand strategy, identity, web & film in Bucharest";
   function home(covers = {}) {
     const ld = { "@context": "https://schema.org", "@graph": [
@@ -225,16 +229,26 @@ ${header(true)}
       </div>
       <div class="hero-art" aria-hidden="true">
         ${hero.map((n, i) => `<span class="ha ha${i}">${img(n, "", "", i === 0)}</span>`).join("")}
-        <span class="ha-star">${STAR}</span>
+        <span class="ha-star"><span class="cupspin" aria-hidden="true"></span></span>
       </div>
     </div>
    </div>
   </section>
 
   <section class="clients" aria-label="Clients">
-    <div class="wrap">
-      <p class="eyebrow mono">Brands we grew with</p>
-      <div class="logos">${CLIENT_BADGES.map((b) => `<span class="logo">${img(b, "")}</span>`).join("")}</div>
+    <div class="wrap cl-head"><span class="cupspin" aria-hidden="true"></span><p class="eyebrow mono">Brands we grew with</p></div>
+    <div class="marquee" tabindex="-1">
+      <div class="mq-track">${[0, 1].map((r) => `<div class="mq-set"${r ? ' aria-hidden="true"' : ""}>${CLIENT_BADGES.map((b, i) => `<span class="logo-card" style="--d:${((i * 0.53) % 3).toFixed(2)}s;--r:${[-2.5, 1.8, -1.2, 2.4, -1.8, 1.2, -2.2, 2.6, -1.4][i % 9]}deg">${img(b, r ? "" : (PROJECTS.find((p) => p.badge === b)?.name || "Client"))}</span>`).join("")}</div>`).join("")}</div>
+    </div>
+  </section>
+
+  <section class="stats" aria-label="The studio in numbers">
+    <div class="wrap stats-in">
+      <p><b>2014</b><span>The year it started, at Strada Muniției 5</span></p>
+      <p><b>10</b><span>Brilliant humans at Strada Olari 9</span></p>
+      <p><b>${new Set(PROJECTS.filter((x) => x.page).map((x) => x.page)).size + 2}</b><span>Case studies, every one on the map</span></p>
+      <p><b>5</b><span>Streets, one for every industry</span></p>
+      <p><b>&infin;</b><span>Coffees. There is always a coffee.</span></p>
     </div>
   </section>
 
@@ -255,7 +269,7 @@ ${header(true)}
   <section id="what" class="sec">
     <div class="wrap">
       <p class="eyebrow mono">What we bring to the table</p>
-      <h2 class="ptitle">${pill("From a dream", "#28C840", -1.5)} ${pill("to a crowd", "#F65342", 1)}</h2>
+      <h2 class="ptitle">${pill("From a dream", "#28C840", -1.5)} ${pill("to a crowd", "#F65342", 1)}</h2><span class="cupspin cup-title" aria-hidden="true"></span>
       <div class="chapters">
         ${CHAPTERS.map((c) => `<article class="chap" style="--cc:${c.c}">
           <span class="chap-k mono">${c.k}</span>
@@ -279,6 +293,7 @@ ${header(true)}
     </div>
   </section>
 
+  <div class="road-div" aria-hidden="true"><span class="cupspin road-cup"></span></div>
   <section id="services" class="sec">
     <div class="wrap">
       <p class="eyebrow mono">Full tank of services</p>
@@ -288,6 +303,7 @@ ${header(true)}
           <h3>${esc(s.t)}</h3>
           <p class="mono">${s.items.length} skills on board</p>
           <ul>${s.items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+          ${(SVC_LINKS[s.t] || []).filter((k) => SERVICE_PAGES.some((x) => x.slug === k)).map((k) => `<a class="svc-more" href="/services/${k}/">${esc(SERVICE_PAGES.find((x) => x.slug === k).name)} <i>→</i></a>`).join("")}
         </article>`).join("")}
       </div>
       ${SERVICE_PAGES.length ? `<p class="svc-pages"><span class="mono">In depth</span> ${SERVICE_PAGES.map((x) => `<a href="/services/${x.slug}/">${esc(x.name)} →</a>`).join("")}</p>` : ""}
@@ -302,7 +318,7 @@ ${header(true)}
         <p class="sec-lead">We discover AI every day, but we are strong believers in the collective power of brilliant humans. Ten of them, in a house at Strada Olari 9. <a class="dom-more" href="/team/">Meet the team →</a></p>
         <ul class="crew">${CREW.map((n, i) => { const f = A(CREW_FACE_VARS[n]); return `<li style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}"><span class="cr-face">${f ? `<img src="${f.src}" width="${f.w}" height="${f.h}" alt="" loading="lazy" decoding="async">` : ""}</span><span class="cr-name">${esc(n)}</span>${(() => { const ci = CREW_INFO[n] || {}; const links = [["Instagram", ci.instagram], ["Behance", ci.behance]].filter(([, u]) => u).map(([k, u]) => `<a class="cr-link" href="${u}" target="_blank" rel="noopener">${k} \u2197</a>`).join(""); return `${ci.role ? `<span class="cr-role mono">${esc(ci.role)}</span>` : ""}${ci.bio ? `<span class="cr-bio">${esc(ci.bio)}</span>` : ""}${links}`; })()}</li>`; }).join("")}</ul>
       </div>
-      <div class="photos">${CREW_PHOTOS.map((p) => `<figure><img src="${p.src}" alt="${esc(p.cap)}" loading="lazy" decoding="async" width="600" height="450"><figcaption class="mono">${esc(p.cap)}</figcaption></figure>`).join("")}</div>
+      <div class="photos">${CREW_PHOTOS.map((p) => `<figure${p.big ? ' class="ph-big"' : ""}>${img(p.src, p.cap)}<figcaption class="mono">${esc(p.cap)}</figcaption></figure>`).join("")}</div>
     </div>
   </section>
 
@@ -317,6 +333,7 @@ ${header(true)}
   </section>
 
   <section id="contact" class="sec sec-ink">
+    <span class="cupspin cup-contact" aria-hidden="true"></span>
     <div class="wrap contact">
       <div class="c-txt">
         <p class="eyebrow mono">Final call · Strada Olari 9</p>
@@ -568,7 +585,7 @@ ${header(false)}
   <section class="sec"><div class="wrap"><p class="eyebrow mono">Six addresses, one studio</p>
     <ol class="offices">${OFFICES.map((o) => `<li style="--oc:${o.c}"><b>${esc(o.addr)}</b><span class="mono">${esc(o.year || "")}</span><p>${esc(o.note)}</p></li>`).join("")}</ol>
   </div></section>
-  <section class="sec sec-alt"><div class="wrap"><div class="photos">${CREW_PHOTOS.map((p) => `<figure><img src="${p.src}" alt="${esc(p.cap)}" loading="lazy" decoding="async" width="600" height="450"><figcaption class="mono">${esc(p.cap)}</figcaption></figure>`).join("")}</div></div></section>
+  <section class="sec sec-alt"><div class="wrap"><div class="photos">${CREW_PHOTOS.map((p) => `<figure${p.big ? ' class="ph-big"' : ""}>${img(p.src, p.cap)}<figcaption class="mono">${esc(p.cap)}</figcaption></figure>`).join("")}</div></div></section>
   ${hubEnd}
 </main>
 ${footer}`;

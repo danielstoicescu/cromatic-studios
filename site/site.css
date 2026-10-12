@@ -637,3 +637,104 @@ a.bcard:hover .bc-cta i { transform: translateX(5px); }
 .lang-sw { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; height: 40px; padding: 0 12px; margin-right: 10px; border: var(--line); border-radius: 999px; background: #fff; font: 800 14px/1 var(--f); text-decoration: none; letter-spacing: .04em; }
 .lang-sw:hover { background: var(--y); }
 @media (max-width: 860px) { .hdr .lang-sw { margin-left: auto; margin-right: 8px; } }
+
+/* ===== r133: the plain website, louder and more Cromatic ===== */
+/* the spinning yellow cup from the intro (24 frames of the 3D cup), used here and there */
+.cupspin { display: inline-block; width: var(--cs, 64px); aspect-ratio: 1; background: url(/cup-spin.png) 0 0 / 2400% 100% no-repeat; animation: cupspin 2.25s steps(24, jump-none) infinite; vertical-align: middle; flex: 0 0 auto; }
+@keyframes cupspin { to { background-position: 100% 0; } }
+@media (prefers-reduced-motion: reduce) { .cupspin { animation: none; } }
+.cup-btn { --cs: 30px; margin: -8px -4px -8px -8px; }
+.btn .cup-btn { --cs: 32px; }
+.drive-btn .cup-btn { --cs: 28px; margin: -6px -2px -6px -6px; }
+.ha-star { width: 26%; left: 40%; top: 38%; animation: none; }
+.ha-star .cupspin { --cs: 100%; width: 100%; filter: drop-shadow(0 6px 0 rgba(13,12,9,.15)); }
+
+/* clients: big logo stickers floating along one endless band */
+.clients { padding: 26px 0 34px; background: var(--y); border-block: var(--line); overflow: hidden; }
+.cl-head { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 10px; }
+.cl-head .cupspin { --cs: 58px; margin: -12px 0 -14px; }
+.clients .eyebrow { margin: 0; color: var(--ink); font-size: 13px; }
+.marquee { position: relative; overflow: hidden; padding: 16px 0 20px; -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); }
+.mq-track { display: flex; width: max-content; animation: mq 46s linear infinite; }
+.marquee:hover .mq-track { animation-play-state: paused; }
+.mq-set { display: flex; gap: 26px; padding-right: 26px; }
+@keyframes mq { to { transform: translateX(-50%); } }
+.logo-card { width: 210px; height: 118px; display: grid; place-items: center; padding: 18px 26px; background: #fff; border: var(--line); border-radius: 26px; box-shadow: 0 4px 0 var(--ink); rotate: var(--r); animation: lfloat 3.8s ease-in-out infinite; animation-delay: calc(var(--d) * -1); transition: rotate .3s var(--eoq), scale .3s var(--eoq); }
+.logo-card:hover { rotate: 0deg; scale: 1.06; }
+.logo-card img { max-width: 100%; max-height: 72px; width: auto; height: auto; object-fit: contain; }
+@keyframes lfloat { 0%, 100% { translate: 0 -5px; } 50% { translate: 0 6px; } }
+@media (max-width: 700px) { .logo-card { width: 160px; height: 92px; border-radius: 20px; } .logo-card img { max-height: 54px; } .mq-track { animation-duration: 34s; } }
+@media (prefers-reduced-motion: reduce) { .mq-track { animation: none; flex-wrap: wrap; width: auto; justify-content: center; } .mq-set[aria-hidden] { display: none; } .mq-set { flex-wrap: wrap; justify-content: center; } .logo-card { animation: none; } }
+
+/* the studio in numbers */
+.stats { background: var(--ink); color: #fff; padding: 46px 0 50px; }
+.stats-in { display: grid; grid-template-columns: repeat(5, 1fr); gap: 22px; }
+.stats p { margin: 0; display: grid; gap: 8px; border-left: 2px solid rgba(255,255,255,.18); padding-left: 18px; }
+.stats b { font: 900 clamp(46px, 6vw, 84px)/.9 var(--f); letter-spacing: -.04em; color: var(--y); }
+.stats p:nth-child(2) b { color: var(--g); } .stats p:nth-child(3) b { color: #6cc4ff; } .stats p:nth-child(4) b { color: #ff8a78; } .stats p:nth-child(5) b { color: var(--l); }
+.stats span { font-size: 15px; line-height: 1.35; color: rgba(255,255,255,.78); }
+@media (max-width: 900px) { .stats-in { grid-template-columns: repeat(2, 1fr); } .stats p:last-child { grid-column: 1 / -1; } }
+
+/* the four chapters as coloured cards */
+#what .wrap { position: relative; }
+.cup-title { --cs: 92px; position: absolute; right: 2%; top: -10px; }
+.chap { background: color-mix(in srgb, var(--cc) 82%, #fff); box-shadow: 0 5px 0 var(--ink); padding: 24px 22px 22px; }
+.chap:nth-child(odd) { rotate: -.6deg; } .chap:nth-child(even) { rotate: .6deg; }
+.chap:hover { transform: translateY(-6px) rotate(0deg); box-shadow: 0 9px 0 var(--ink); }
+.chap-k { width: auto; height: auto; padding: 4px 12px; border-radius: 999px; background: #fff; font-size: 13px; }
+.chap h3 { font-size: clamp(28px, 2.6vw, 36px); letter-spacing: -.03em; }
+.chap-sub { color: rgba(13,12,9,.72); }
+.chap .tags li { background: #fff; border-color: var(--ink); }
+
+/* the portfolio streets: green road signs, like on the map */
+.dom-street { margin-top: 72px; }
+.street-sign { display: inline-flex !important; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 14px 22px 15px; border-radius: 16px; background: var(--dc); color: var(--dt); border: 2px solid var(--ink); outline: 3px solid var(--dt); outline-offset: -8px; box-shadow: 0 5px 0 var(--ink); }
+.street-sign .ss-name { font-weight: 900; font-size: clamp(26px, 3vw, 40px); letter-spacing: -.02em; }
+.street-sign .dom-ind { color: inherit; opacity: .9; font-size: 16px; }
+.street-sign i { margin-left: 0 !important; color: inherit; opacity: .85 !important; }
+.street-sign .dom-sw { display: none; }
+.dom-street .dom-lead { margin-top: 16px; font-size: 17px; }
+.streets-nav a { box-shadow: 0 3px 0 var(--ink); }
+
+/* the road between two sections */
+.road-div { position: relative; height: 64px; background: #3b3a3f; border-block: 3px solid var(--ink); overflow: hidden; }
+.road-div::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 6px; margin-top: -3px; background: repeating-linear-gradient(90deg, #fff 0 46px, transparent 46px 92px); animation: road 3.2s linear infinite; }
+@keyframes road { to { background-position: -92px 0; } }
+.road-cup { --cs: 74px; position: absolute; top: -6px; left: -80px; animation: cupspin 2.25s steps(24, jump-none) infinite, drive 16s linear infinite; }
+@keyframes drive { to { left: calc(100% + 10px); } }
+@media (prefers-reduced-motion: reduce) { .road-div::before, .road-cup { animation: none; } .road-cup { left: 40%; } }
+
+/* services: louder cards, each with its way in */
+.svc { box-shadow: 0 5px 0 var(--ink); display: flex; flex-direction: column; }
+.svc:nth-child(odd) { rotate: .5deg; } .svc:nth-child(even) { rotate: -.5deg; }
+.svc h3 { font-size: clamp(26px, 2.4vw, 32px); letter-spacing: -.03em; }
+.svc ul { margin-bottom: 14px; }
+.svc-more { margin-top: auto; align-self: flex-start; display: inline-flex; gap: 8px; align-items: center; padding: 9px 14px; margin-bottom: 6px; border-radius: 999px; background: var(--ink); color: #fff; font-weight: 800; font-size: 14px; text-decoration: none; }
+.svc-more + .svc-more { margin-top: 0; }
+.svc-more i { font-style: normal; }
+.svc-more:hover { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+
+/* the crew: bigger faces, gently afloat */
+.crew .cr-face { width: 104px; height: 104px; animation: lfloat 4.2s ease-in-out infinite; }
+.crew li:nth-child(3n+1) .cr-face { animation-delay: -1.2s; } .crew li:nth-child(3n+2) .cr-face { animation-delay: -2.6s; }
+@media (max-width: 600px) { .crew .cr-face { width: 80px; height: 80px; } }
+@media (prefers-reduced-motion: reduce) { .crew .cr-face { animation: none; } }
+/* the studio's vibe: a wall of pictures */
+.photos { grid-template-columns: repeat(3, 1fr); }
+.photos figure.ph-big { grid-column: span 2; grid-row: span 2; }
+.photos figure.ph-big img { aspect-ratio: auto; height: 100%; }
+.photos img { aspect-ratio: 4 / 5; }
+.photos figure { box-shadow: 0 4px 0 var(--ink); }
+
+/* the contact section and the footer */
+#contact { position: relative; }
+.cup-contact { --cs: 110px; position: absolute; right: 4%; top: -48px; z-index: 2; }
+.ftr-motto { display: flex; align-items: center; gap: 4px; margin-top: 30px; }
+.ftr-motto .cupspin { --cs: 84px; margin: -16px -6px -16px -12px; }
+.ftr-motto p { margin: 0; font: 900 clamp(30px, 4.4vw, 58px)/1 var(--f); letter-spacing: -.03em; color: var(--ink); max-width: none; }
+.ftr .ftr-note { margin-top: 18px; }
+.logo-card img { width: 100%; max-width: 170px; max-height: 78px; }
+@media (max-width: 700px) { .logo-card img { max-width: 124px; max-height: 58px; } }
+.dom-more { white-space: normal; display: inline-block; }
+@media (max-width: 700px) { .cup-title { --cs: 64px; top: -6px; right: 0; } .cup-contact { --cs: 76px; top: -34px; } .street-sign { padding: 12px 16px; } .stats { padding: 34px 0; } }
+.photos figcaption { display: none; }

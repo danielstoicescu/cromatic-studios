@@ -105,7 +105,7 @@ writeFileSync(join(pub, "index.html"), html);
 copyFileSync(src("og.jpg"), join(pub, "og.jpg"));
 writeFileSync(join(pub, "robots.txt"), robotsTxt(SITE_URL));
 writeFileSync(join(pub, "site.webmanifest"), manifest());
-for (const f of ["icon.svg", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "favicon-spin.png"]) copyFileSync(src(f), join(pub, f));
+for (const f of ["icon.svg", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "favicon-spin.png", "cup-spin.png"]) copyFileSync(src(f), join(pub, f));
 writeFileSync(join(pub, "favicon.ico"), icoFromPng(readFileSync(src("favicon-32.png"))));
 writeFileSync(join(pub, "404.html"), `${head.split("\n").filter((l) => !l.includes("%%SITE_URL%%")).join("\n").replace(/<title>[^<]*<\/title>/, "<title>Off the map · Cromatic Studios</title>").replace(/<meta name="robots"[^>]*>/, '<meta name="robots" content="noindex">')}
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0d0c09;color:#fbfaf5;font:16px/1.5 Poppins,system-ui,sans-serif;text-align:center}h1{font-size:clamp(32px,6vw,56px);margin:.2em 0}a{display:inline-block;margin-top:18px;padding:12px 22px;border-radius:999px;background:#FED012;color:#0d0c09;font-weight:800;text-decoration:none}</style>
@@ -278,7 +278,7 @@ const caseSlugs = [];
   }
 }
 // r130: map places with a real photo of their own (no case page cover, or a better one)
-for (const [id, k] of Object.entries({ steam: "m:cs/Steam-Cromaticstudios-1", lab: "m:tm/cubes-lab", "w-lapterra": "m:places/lapterra", "y-5": "m:places/litorsal", "y-0": "m:places/lacalut", zdrovit: "m:places/zdrovit", "w-printoteca": "m:places/printoteca", "w-zoetis": "m:places/zoetis", "w-clinicadrk": "m:places/drk", "w-sofmedica": "m:places/sofmedica", "w-medcity": "m:places/medcity", "w-stickerrepublic": "m:places/sticker", echo: "m:places/echo", end: "m:eliade-18/studio-024", friends: "m:rdw-2023/rdw-004" })) {
+for (const [id, k] of Object.entries({ steam: "m:cs/Steam-Cromaticstudios-1", lab: "m:tm/cubes-lab", "w-lapterra": "m:places/lapterra", "y-5": "m:places/litorsal", "y-0": "m:places/lacalut", zdrovit: "m:places/zdrovit", "w-printoteca": "m:places/printoteca", "w-zoetis": "m:places/zoetis", "w-clinicadrk": "m:places/drk", "w-sofmedica": "m:places/sofmedica", "w-medcity": "m:places/medcity", "w-stickerrepublic": "m:places/sticker", echo: "m:places/echo", end: "m:vibe/from-the-stairs", scf: "m:places/scf-poster", friends: "m:rdw-2023/rdw-004" })) {
   const a = mediaMap.get(k);
   if (a) COVERS["place:" + id] = a.src; else console.warn(`[build] covers: missing ${k}`);
 }
