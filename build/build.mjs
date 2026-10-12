@@ -18,8 +18,7 @@ import { makeI18n, roPath } from "./i18n.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = (f) => join(root, "src", f);
-// r135: live on the main domain (Daniel, 2026-10-12): drive.cromaticstudios.com and www. answer with a 301 to it
-const SITE_URL = (process.env.SITE_URL || "https://cromaticstudios.com").replace(/\/$/, "");
+const SITE_URL = (process.env.SITE_URL || "https://drive.cromaticstudios.com").replace(/\/$/, "");
 const head = readFileSync(src("head.html"), "utf8");
 const css = readFileSync(src("styles.css"), "utf8");
 const js = readFileSync(src("app.js"), "utf8");

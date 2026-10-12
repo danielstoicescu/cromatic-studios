@@ -6,7 +6,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY . .
 # SITE_URL is the public address (for social cards, canonical and the sitemap)
-ARG SITE_URL=https://cromaticstudios.com
+ARG SITE_URL=https://drive.cromaticstudios.com
 ENV SITE_URL=${SITE_URL}
 RUN node build/build.mjs
 EXPOSE 8080

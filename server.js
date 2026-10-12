@@ -210,7 +210,7 @@ function acme(req, res) {
 // points here: every other host of ours (drive., www.) answers with a permanent redirect to it. The old WordPress
 // addresses keep working: each project page goes to its case study, contact and services to their sections, and
 // test pages, author archives and the feed are gone for good (410).
-const PRIMARY_HOST = process.env.PRIMARY_HOST ?? "cromaticstudios.com";
+const PRIMARY_HOST = process.env.PRIMARY_HOST || "";
 const OLD = {
   "/proiecte/": "/ro/#work", "/servicii/": "/ro/#services", "/contact/": "/ro/#contact", "/avi-garden/": "/ro/#work", "/proiecte/7-oale/": "/ro/#work",
   "/proiecte/help4brain/": "/ro/proiecte/help-4-brain/", "/proiecte/sip/": "/ro/proiecte/sip-coffee-wine/",

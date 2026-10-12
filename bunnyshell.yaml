@@ -15,10 +15,10 @@ components:
         context: .
         dockerfile: Dockerfile
         args:
-          SITE_URL: 'https://cromaticstudios.com'
+          SITE_URL: 'https://drive.cromaticstudios.com'
       environment:
         PORT: '8080'
-        SITE_URL: 'https://cromaticstudios.com'
+        SITE_URL: 'https://drive.cromaticstudios.com'
         MAIL_TO: 'hi@cromaticstudios.com'
         MAIL_FROM: 'Cromatic Air <hi@cromaticstudios.com>'
         SMTP_HOST: '{{ env.vars.SMTP_HOST }}'
@@ -28,7 +28,7 @@ components:
       ports:
         - '8080:8080'
     hosts:
-      - hostname: 'cromaticstudios.com'
+      - hostname: 'drive.cromaticstudios.com'
         path: /
         servicePort: 8080
 environmentVariables:
