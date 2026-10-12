@@ -78,7 +78,6 @@ export function jsonLd(SITE, PROJECTS = [], SAME_AS = [STUDIO.legalUrl]) {
       foundingLocation: { "@type": "Place", name: "Strada Muniției 5, Bucharest" },
       founder: { "@type": "Person", "@id": `${SITE}/#daniel`, name: STUDIO.founder.name, jobTitle: STUDIO.founder.jobTitle, sameAs: STUDIO.founder.sameAs, worksFor: { "@id": studio } },
       employee: [{ "@id": `${SITE}/#daniel` }, { "@type": "Person", "@id": `${SITE}/#cristian`, name: STUDIO.ceo.name, jobTitle: STUDIO.ceo.jobTitle, worksFor: { "@id": studio } }],
-      numberOfEmployees: { "@type": "QuantitativeValue", value: STUDIO.size },
       address: { "@type": "PostalAddress", streetAddress: STUDIO.street, postalCode: STUDIO.postalCode, addressLocality: "Bucharest", addressRegion: STUDIO.city, addressCountry: STUDIO.country },
       geo: { "@type": "GeoCoordinates", latitude: STUDIO.geo.lat, longitude: STUDIO.geo.lng },
       hasMap: "https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti",
@@ -182,10 +181,6 @@ ${studioPages.map((u) => `- [${pages[u].title.replace(/ · Cromatic Studios$/, "
 ## Also on the map
 
 Brands we worked with that have no case study page yet: ${noPage.join(", ")}. Friends along the way: ${FRIENDS.join(", ")}.
-
-## The studio's addresses
-
-${OFFICES.map((o) => `- ${o.addr}${o.year ? ` (${o.year})` : ""}: ${o.note}`).join("\n")}
 
 ## FAQ
 

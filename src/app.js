@@ -32103,7 +32103,7 @@ void main() {
     "Help4Brain": { c: "#B098C8", t: "#14120c" }
   };
   // r129: the way into a case reads differently on every place (stable per name)
-  var CTA_WORDS = ["Go deeper", "Check out this rabbit hole", "Peek behind the curtain", "Take the full tour", "See how it was made", "Unpack the story", "Lift the lid", "Step inside"];
+  var CTA_WORDS = ["Go deeper", "Go through this rabbit hole", "Peek behind the curtain", "Take the full tour", "See how it was made", "Unpack the story", "Lift the lid", "Step inside"];
   var ctaFor = (name) => { let h = 0; for (const ch of String(name)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return CTA_WORDS[h % CTA_WORDS.length] + " \u2192"; };
   var openCaseHook = null;
   var openProjectHook = null;

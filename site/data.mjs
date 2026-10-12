@@ -26,7 +26,7 @@ export const SERVICES = [
 // route: which road it sits on in the drive; page: slug of its own case page
 // r122: 1:1 with the map: every place on the map, street by street (A Coffee Street, B Fintech
 // Boulevard, C Medical Avenue with the Zdrovit yard, D The Smallest Shortcut)
-export const STREETS = { A: ["Coffee Street", "#28C840"], B: ["Fintech Boulevard", "#119BFE"], C: ["Medical Avenue", "#F28BA8"], D: ["The Smallest Shortcut", "#FED012"], E: ["Bulevardul Dacia 99", "#B098C8"] };
+export const STREETS = { A: ["Coffee Street", "#28C840"], B: ["Fintech Boulevard", "#119BFE"], C: ["Medical Avenue", "#F28BA8"], D: ["The Smallest Shortcut", "#FED012"] };
 export const PROJECTS = [
   { name: "Two Minutes", cat: "Brand · Boxes · Film", c: "#111111", t: "#fff", poster: "Two minutes, forever", img: "tmCover", badge: "bTm", page: "two-minutes", desc: "A specialty coffee shop brand made to be loved fast and remembered long. Two minutes to fall for it, a lifetime as a regular.", street: "A" },
   { name: "Two Min Lab", cat: "Drinks · Tonic Ionic", c: "#C6402E", t: "#ffffff", poster: "Bottled in the yard", street: "A", page: "two-minutes", desc: "The Two Minutes lab: Tonic Ionic and the drinks bottled by hand, in small batches, in Bucharest." },
@@ -75,7 +75,7 @@ export const PROJECTS = [
   { name: "Altius", cat: "Medical", c: "#16a89b", t: "#ffffff", poster: "Altius", img: "m:cs/Cromatic-Studios-Altius-8", page: "altius", street: "C", desc: "Medical brand and digital work by Cromatic Studios." },
   { name: "Zoetis", cat: "Animal health", c: "#f2763b", t: "#2a1205", poster: "Zoetis", street: "C", desc: "Animal health communication by Cromatic Studios." },
   { name: "Elithia", cat: "Medical", c: "#f08a70", t: "#2a0f08", poster: "Joyful motherhood", img: "m:cs/Elithia-Cromaticstudios-homepage", page: "elithia", street: "C", desc: "Making motherhood a soothing, joyful experience: brand, website and content for a women's health clinic." },
-  { name: "Echo School", cat: "Technology · Digital arts · Videogames", c: "#7b4fd6", t: "#ffffff", poster: "Echo School", street: "E", wip: true, desc: "Echo School of Technology, Digital Arts & Videogames. The case page is on its way." },
+  { name: "Echo School", cat: "Technology · Digital arts · Videogames", c: "#7b4fd6", t: "#ffffff", poster: "Echo School", street: "B", wip: true, desc: "Echo School of Technology, Digital Arts & Videogames. The case page is on its way." },
   { name: "Sticker Republic", cat: "Stickers · Print", c: "#FFD21F", t: "#111111", poster: "Stick it", street: "D", desc: "Stickers for everything and everyone: the little yellow house on the lane, plastered with its own work.", page: "sticker-republic" },
   { name: "Printoteca", cat: "Print on demand", c: "#ffffff", t: "#111111", poster: "Printed one by one", street: "D", desc: "Print on demand with no minimum orders: tees and hoodies printed one by one, for anyone who wants to sell their own.", page: "printoteca" }
 ];
@@ -117,7 +117,6 @@ export const OFFICES = [
   { addr: "Strada Trifești 5", year: "", c: "#B098C8", note: "The second desk. Still small, already stubborn." },
   { addr: "Strada George Călinescu 54", year: "2016", c: "#F65342", note: "The villa with the red mansard, across the street from Two Minutes." },
   { addr: "Strada Mircea Eliade 18", year: "2019", c: "#119BFE", note: "More room, more people, the first proper studio floor." },
-  { addr: "Bulevardul Dacia 99", year: "2024", c: "#28C840", note: "Above Club 99, under BISM. The loudest address we ever had." },
   { addr: "Strada Olari 9", year: "Today", c: "#FED012", note: "Where it all happens now. The door is open, the coffee is on." }
 ];
 

@@ -178,10 +178,9 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   // r131: the portfolio by industry, the way the map lays it out in streets; each street opens its own page
   const STREET_INFO = {
     A: { t: "Specialty coffee, food & drink", lead: "Where we grew up: coffee shops, roasters, a festival, bakeries, a craft beer, a charcuterie and a caviar farm." },
-    B: { t: "Banks, investments, fintech & energy", lead: "Banks, brokers, investment groups, a fintech festival and an energy company, made clear and human." },
+    B: { t: "Banks, investments, fintech, energy & tech", lead: "Banks, brokers, investment groups, a fintech festival, an energy company and a school of technology and digital arts, made clear and human." },
     C: { t: "Clinics, pharma & aesthetic medicine", lead: "Clinics, labs, pharma and aesthetic medicine, from Bucharest to Barcelona." },
-    D: { t: "Print on demand & stickers", lead: "Two print shops with a voice: one sings, one sticks." },
-    E: { t: "Education & culture", lead: "Upstairs at our old address on Bulevardul Dacia: a faculty and a school of digital arts." }
+    D: { t: "Print on demand & stickers", lead: "Two print shops with a voice: one sings, one sticks." }
   };
   const industryOf = (k) => INDUSTRIES.find((x) => x.street === k);
   const workByStreet = (covers) => Object.entries(STREETS).map(([k, [street, col]]) => {
@@ -244,10 +243,9 @@ ${header(true)}
 
   <section class="stats" aria-label="The studio in numbers">
     <div class="wrap stats-in">
-      <p><b>2014</b><span>The year it started, at Strada Muniției 5</span></p>
-      <p><b>10</b><span>Brilliant humans at Strada Olari 9</span></p>
       <p><b>${new Set(PROJECTS.filter((x) => x.page).map((x) => x.page)).size + 2}</b><span>Case studies, every one on the map</span></p>
-      <p><b>5</b><span>Streets, one for every industry</span></p>
+      <p><b>${Object.keys(STREETS).length}</b><span>Streets, one for every industry</span></p>
+      <p><b>4</b><span>Chapters: The Dream, The Voice, The World, The Crowd</span></p>
       <p><b>&infin;</b><span>Coffees. There is always a coffee.</span></p>
     </div>
   </section>
@@ -315,7 +313,7 @@ ${header(true)}
       <div>
         <p class="eyebrow mono">The crew</p>
         <h2 class="ptitle">${pill("Brilliant", "#28C840", -2)} ${pill("humans", "#B098C8", 1.5)}</h2>
-        <p class="sec-lead">We discover AI every day, but we are strong believers in the collective power of brilliant humans. Ten of them, in a house at Strada Olari 9. <a class="dom-more" href="/team/">Meet the team →</a></p>
+        <p class="sec-lead">We discover AI every day, but we are strong believers in the collective power of brilliant humans. <a class="dom-more" href="/team/">Meet the team →</a></p>
         <ul class="crew">${CREW.map((n, i) => { const f = A(CREW_FACE_VARS[n]); return `<li style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}"><span class="cr-face">${f ? `<img src="${f.src}" width="${f.w}" height="${f.h}" alt="" loading="lazy" decoding="async">` : ""}</span><span class="cr-name">${esc(n)}</span>${(() => { const ci = CREW_INFO[n] || {}; const links = [["Instagram", ci.instagram], ["Behance", ci.behance]].filter(([, u]) => u).map(([k, u]) => `<a class="cr-link" href="${u}" target="_blank" rel="noopener">${k} \u2197</a>`).join(""); return `${ci.role ? `<span class="cr-role mono">${esc(ci.role)}</span>` : ""}${ci.bio ? `<span class="cr-bio">${esc(ci.bio)}</span>` : ""}${links}`; })()}</li>`; }).join("")}</ul>
       </div>
       <div class="photos">${CREW_PHOTOS.map((p) => `<figure${p.big ? ' class="ph-big"' : ""}>${img(p.src, p.cap)}<figcaption class="mono">${esc(p.cap)}</figcaption></figure>`).join("")}</div>
@@ -567,24 +565,21 @@ ${footer}`;
 
   function teamPage() {
     const path = "/team/", title = "The people behind the studio, Bucharest · Cromatic Studios";
-    const desc = "Meet the ten people of Cromatic Studios, an independent creative studio in Bucharest founded in 2014 by Daniel Stoicescu and led today by Daniel and Cristian Stoicescu.";
+    const desc = "Meet the people of Cromatic Studios, an independent creative studio in Bucharest founded in 2014 by Daniel Stoicescu and led today by Daniel and Cristian Stoicescu.";
     const FULL = { Daniel: "Daniel Stoicescu", Cristian: "Cristian Stoicescu" };
     const person = (n) => ({ "@type": "Person", "@id": n === "Daniel" ? `${SITE}/#daniel` : n === "Cristian" ? `${SITE}/#cristian` : `${SITE}/team/#${n.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "")}`, name: FULL[n] || n, ...(CREW_INFO[n]?.role ? { jobTitle: CREW_INFO[n].role } : {}), ...(CREW_INFO[n]?.bio ? { description: CREW_INFO[n].bio } : {}), ...(CREW_INFO[n]?.instagram ? { sameAs: [CREW_INFO[n].instagram] } : {}), worksFor: { "@id": `${SITE}/#studio` } });
     const ld = hubLd(path, title, desc, [["Team", path]], [{ "@type": "AboutPage", "@id": `${SITE}${path}#about`, url: `${SITE}${path}`, about: { "@id": `${SITE}/#studio` } }, ...CREW.map(person)]);
     return `${head({ title, desc, path, ld })}
 ${header(false)}
 <main id="main" class="case hub" style="--bc:#B098C8;--bt:#111">
-  ${hubHero(hubCrumbs(`<a href="/site/#studio">Studio</a>`, "Team"), "The crew · Strada Olari 9 · since 2014", "Brilliant humans, one coffee at a time", "An independent creative studio of ten people in Bucharest. We discover AI every day, and we still believe in the collective power of brilliant humans.", "#B098C8")}
+  ${hubHero(hubCrumbs(`<a href="/site/#studio">Studio</a>`, "Team"), "The crew · Bucharest · since 2014", "Brilliant humans, one coffee at a time", "An independent creative studio in Bucharest. We discover AI every day, and we still believe in the collective power of brilliant humans.", "#B098C8")}
   <section class="wrap c2-lead hub-intro">
-    <p>Cromatic Studios started in <strong>2014</strong> at Strada Muniției 5: one table, two people and a company name written on a napkin. It was founded by <strong>Daniel Stoicescu</strong>, who is still the studio's creative architect. Today the studio is led by two partners, who are also brothers: <strong>Daniel Stoicescu</strong>, the founder, and <strong>Cristian Stoicescu</strong>, the CEO.</p>
-    <p>Ten people, one house at Strada Olari 9 and a long table where the work gets laid out. Strategy, identity, websites, film and content are made here, under one roof, for indie founders, startups and established companies.</p>
+    <p>Cromatic Studios started in <strong>2014</strong> with two people and a company name written on a napkin. It was founded by <strong>Daniel Stoicescu</strong>, who is still the studio's creative architect. Today the studio is led by two partners, who are also brothers: <strong>Daniel Stoicescu</strong>, the founder, and <strong>Cristian Stoicescu</strong>, the CEO.</p>
+    <p>Strategy, identity, websites, film and content are made here, under one roof, for indie founders, startups and established companies.</p>
   </section>
   <section class="sec sec-alt" id="crew"><div class="wrap">
     <h2 class="ptitle">${pill("The", "#28C840", -2)} ${pill("crew", "#B098C8", 1.5)}</h2>
     <ul class="crew team-crew">${CREW.map((n, i) => { const f = A(CREW_FACE_VARS[n]); const ci = CREW_INFO[n] || {}; return `<li id="${n.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "")}" style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}"><span class="cr-face">${f ? `<img src="${f.src}" width="${f.w}" height="${f.h}" alt="${esc(FULL[n] || n)}" loading="lazy" decoding="async">` : ""}</span><span class="cr-name">${esc(FULL[n] || n)}</span>${ci.role ? `<span class="cr-role mono">${esc(ci.role)}</span>` : ""}${ci.bio ? `<span class="cr-bio">${esc(ci.bio)}</span>` : ""}${ci.instagram ? `<a class="cr-link" href="${ci.instagram}" target="_blank" rel="noopener">Instagram ↗</a>` : ""}</li>`; }).join("")}</ul>
-  </div></section>
-  <section class="sec"><div class="wrap"><p class="eyebrow mono">Six addresses, one studio</p>
-    <ol class="offices">${OFFICES.map((o) => `<li style="--oc:${o.c}"><b>${esc(o.addr)}</b><span class="mono">${esc(o.year || "")}</span><p>${esc(o.note)}</p></li>`).join("")}</ol>
   </div></section>
   <section class="sec sec-alt"><div class="wrap"><div class="photos">${CREW_PHOTOS.map((p) => `<figure${p.big ? ' class="ph-big"' : ""}>${img(p.src, p.cap)}<figcaption class="mono">${esc(p.cap)}</figcaption></figure>`).join("")}</div></div></section>
   ${hubEnd}

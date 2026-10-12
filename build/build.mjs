@@ -38,6 +38,16 @@ const homeWork = () => {
 };
 const hash = (buf) => createHash("sha1").update(buf).digest("hex").slice(0, 10);
 
+// r134: Montserrat, JetBrains Mono and Cinzel served from our own domain (site/fonts/gf), latin + latin-ext
+let GF_CSS = "";
+const gfAssets = [];
+try {
+  GF_CSS = readFileSync(join(root, "site", "fonts", "gf", "fonts.css"), "utf8").replace(/%%([\w.-]+)%%/g, (m, f) => {
+    const buf = readFileSync(join(root, "site", "fonts", "gf", f)), rel = `assets/fonts/gf-${f.replace(/\.woff2$/, "")}-${hash(buf).slice(0, 8)}.woff2`;
+    gfAssets.push([rel, buf]);
+    return "/" + rel;
+  }).replace(/\n/g, "");
+} catch {}
 const args = process.argv.slice(2);
 const single = args.indexOf("--single");
 if (single >= 0) {
@@ -54,6 +64,8 @@ if (single >= 0) {
 const pub = join(root, "public");
 rmSync(pub, { recursive: true, force: true });
 mkdirSync(join(pub, "assets"), { recursive: true });
+mkdirSync(join(pub, "assets", "fonts"), { recursive: true });
+for (const [rel, buf] of gfAssets) writeFileSync(join(pub, rel), buf);
 const EXT = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif", "image/svg+xml": "svg", "video/mp4": "mp4", "video/webm": "webm" };
 let n = 0, bytes = 0;
 const seen = new Map();
@@ -98,7 +110,7 @@ jsOut = wpMirror(jsOut);
 const jsName = `assets/app.${hash(jsOut)}.js`, cssName = `assets/styles.${hash(cssOut)}.css`;
 writeFileSync(join(pub, jsName), jsOut);
 writeFileSync(join(pub, cssName), cssOut);
-const html = `${head.replaceAll("%%SITE_URL%%", SITE_URL)}<link rel="stylesheet" href="${cssName}">
+const html = `${head.replaceAll("%%SITE_URL%%", SITE_URL).replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\n?/, "").replace(/<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*">/, GF_CSS ? `<style>${GF_CSS}</style>` : "$&")}<link rel="stylesheet" href="${cssName}">
 <link rel="preload" href="${jsName}" as="script">
 ${jsonLd(SITE_URL, DATA.PROJECTS, SAME_AS)}
 </head><body><!--email_off-->
@@ -231,13 +243,21 @@ const DG = {};
 for (const k of ["latin", "latin-ext"]) {
   try { const buf = readFileSync(join(root, "site", "fonts", `darker-grotesque-${k}.woff2`)); const rel = `assets/fonts/darker-grotesque-${k}-${hash(buf).slice(0, 8)}.woff2`; mkdirSync(join(pub, "assets", "fonts"), { recursive: true }); writeFileSync(join(pub, rel), buf); DG[k] = "/" + rel; } catch {}
 }
+// r134: one type system everywhere (Daniel): CromaticSans (Google Sans for the bold weights, Darker Grotesque, served
+// from here, for the rest) + JetBrains Mono + Montserrat for display; the same rules for the drive, the map, the website,
+// every case page and /onboarding (which links /fonts.css)
+const DG_URLS = { "https://fonts.gstatic.com/s/darkergrotesque/v10/U9MH6cuh-mLQlC4BKCtayOfARkSVq7HUJEUJQOM.woff2": DG.latin, "https://fonts.gstatic.com/s/darkergrotesque/v10/U9MH6cuh-mLQlC4BKCtayOfARkSVq7_UJEUJQOMuqA.woff2": DG["latin-ext"] };
+const localDG = (t) => t.replace(/https:\/\/fonts\.gstatic\.com\/s\/darkergrotesque\/v10\/[\w-]+\.woff2/g, (u) => DG_URLS[u] || u);
+const CS_CSS = localDG((readFileSync(siteSrc("site.css"), "utf8").match(/@font-face\{font-family:'CromaticSans'[^}]*\}/g) || []).join(""));
+writeFileSync(join(pub, "fonts.css"), `/* Cromatic Studios type: CromaticSans, Montserrat, JetBrains Mono, Cinzel */\n${CS_CSS}\n${GF_CSS}\n`);
 const wpLocal = (u) => mediaMap.get("m:wp/" + u.replace(/^.*\/uploads\/(\d{4})\/(\d{2})\/(.+)\.[a-z]+$/i, "$1-$2-$3"))?.src;
 const page = (path, raw) => {
   const p = `/${path}/`, slug = path.replace(/^work\//, "");
+  if (GF_CSS) raw = raw.replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\n?/, "").replace(/<link rel="preload" as="style" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"[^>]*>\n?<noscript><link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"><\/noscript>/, `<style>${GF_CSS}</style>`);
   const text = pageText(raw);
   const lastmod = LASTMOD.get(p, text);
   const project = DATA.PROJECTS.find((x) => x.page === slug);
-  const r = seoPage(raw, { path: p, SITE: SITE_URL, project, media: mediaDims, lastmod, wp: wpLocal, dg: DG });
+  const r = seoPage(raw, { path: p, SITE: SITE_URL, project, media: mediaDims, lastmod, wp: wpLocal, dg: { ...DG, cs: CS_CSS } });
   const html = wpMirror(r.html);
   PAGES[p] = { path: p, title: r.title, desc: r.desc, fullDesc: r.fullDesc, images: r.images, lastmod, text: pageText(html) };
   mkdirSync(join(pub, path), { recursive: true }); writeFileSync(join(pub, path, "index.html"), html);
@@ -337,6 +357,7 @@ const roPaths = [];
 }
 
 await optimizeImages(pub, root);
+(function walkDG(d) { for (const f of readdirSync(d)) { const p2 = join(d, f); if (statSync(p2).isDirectory()) { walkDG(p2); continue; } if (!/\.(css|html|js)$/.test(f)) continue; const t = readFileSync(p2, "utf8"); const n2 = localDG(t); if (n2 !== t) writeFileSync(p2, n2); } })(pub);
 // precompress text files once, at build time (the server just picks the right variant)
 const COMP = /\.(html|js|css|svg|txt|xml|json|webmanifest|ico)$/;
 (function walk(d) {
