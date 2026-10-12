@@ -77,8 +77,8 @@ export const PROJECTS = [
   { name: "Elithia", cat: "Medical", c: "#f08a70", t: "#2a0f08", poster: "Joyful motherhood", img: "m:cs/Elithia-Cromaticstudios-homepage", page: "elithia", street: "C", desc: "Making motherhood a soothing, joyful experience: brand, website and content for a women's health clinic." },
   { name: "BISM", cat: "Upstairs at Dacia 99", c: "#1f4fd6", t: "#ffffff", poster: "BISM", street: "E", desc: "BISM, under the same roof as our Dacia 99 studio: neighbours, then clients." },
   { name: "Echo School", cat: "Technology · Digital arts · Videogames", c: "#7b4fd6", t: "#ffffff", poster: "Echo School", street: "E", wip: true, desc: "Echo School of Technology, Digital Arts & Videogames. The case page is on its way." },
-  { name: "Sticker Republic", cat: "Stickers · Print", c: "#FFD21F", t: "#111111", poster: "Stick it", street: "D", desc: "Stickers for everything and everyone: the little yellow house on the lane, plastered with its own work." },
-  { name: "Printoteca", cat: "Print on demand", c: "#ffffff", t: "#111111", poster: "Printed one by one", street: "D", desc: "Print on demand with no minimum orders: tees and hoodies printed one by one, for anyone who wants to sell their own." }
+  { name: "Sticker Republic", cat: "Stickers · Print", c: "#FFD21F", t: "#111111", poster: "Stick it", street: "D", desc: "Stickers for everything and everyone: the little yellow house on the lane, plastered with its own work.", page: "sticker-republic" },
+  { name: "Printoteca", cat: "Print on demand", c: "#ffffff", t: "#111111", poster: "Printed one by one", street: "D", desc: "Print on demand with no minimum orders: tees and hoodies printed one by one, for anyone who wants to sell their own.", page: "printoteca" }
 ];
 
 export const CLIENT_BADGES = ["bScf", "bTm", "bSteam", "bRoutine", "bInvestimental", "bKompus", "bYoshi", "bAssetto", "bCargus"];

@@ -3388,5 +3388,50 @@
 1800,
 1012,
 84273
+],
+"m:printoteca/carousel-layering": [
+1080,
+1350,
+217649
+],
+"m:printoteca/deck-cover": [
+1800,
+1013,
+147154
+],
+"m:printoteca/reel-print-graphics-poster": [
+720,
+1280,
+150171
+],
+"m:printoteca/reel-stop-production-poster": [
+720,
+1280,
+145407
+],
+"m:sticker-republic/phone": [
+1024,
+1536,
+213537
+],
+"m:sticker-republic/wall": [
+1350,
+1800,
+729769
+],
+"m:sticker-republic/zodiac-1-poster": [
+360,
+640,
+48354
+],
+"m:sticker-republic/zodiac-2-poster": [
+360,
+640,
+47890
+],
+"m:sticker-republic/zodiac-3-poster": [
+360,
+640,
+47323
 ]
 }

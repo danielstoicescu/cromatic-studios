@@ -33599,7 +33599,7 @@ void main() {
     });
 
     // r122: the brands with their own case page open it full screen, from any card
-    const WORK_PAGES = { "Slow Coffee Festival": "slow-coffee-festival", "Artisan Coffee Gear": "artisan-coffee-gear", "Craft Coffee": "craft-coffee", "Elithia": "elithia", "Yoshi Izakaya": "yoshi-izakaya", "ARCA Resort": "arca-resort",
+    const WORK_PAGES = { "Printoteca": "printoteca", "Sticker Republic": "sticker-republic", "Toskani MED": "toskani-med", "The Aesthetic Court": "the-aesthetic-court", "Slow Coffee Festival": "slow-coffee-festival", "Artisan Coffee Gear": "artisan-coffee-gear", "Craft Coffee": "craft-coffee", "Elithia": "elithia", "Yoshi Izakaya": "yoshi-izakaya", "ARCA Resort": "arca-resort",
       "Routine Paris": "routine-paris", "Altius": "altius", "Help 4 Brain": "help-4-brain", "Investimental": "investimental", "Sip": "sip-coffee-wine", "Sip Coffee & Wine": "sip-coffee-wine",
       "Bepco": "bepco", "K\xF3mpus": "kompus", "Assetto": "assetto", "Clinica Sante": "clinica-sante",
       "ESD": "esd", "Techventures Bank": "techventures-bank", "Longshield": "longshield", "Infinity Capital": "infinity-capital", "Unchain Festival": "unchain-festival", "Patiline": "patiline", "Pain Plaisir": "pain-plaisir", "Berero": "casa-berero", "Casa Berero": "casa-berero", "Eliade 18": "eliade-18", "RDW 2023": "rdw-2023", "RDW 2023 \xB7 AI pop-up": "rdw-2023" };

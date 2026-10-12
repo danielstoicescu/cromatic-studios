@@ -13,11 +13,12 @@ import { PAGES128 } from "./specs128.mjs";
 import { UNCHAIN } from "./specs129-unchain.mjs";
 import { STUDIO_PAGES } from "./specs129-studio.mjs";
 import { TOSKANI } from "./specs130-toskani.mjs";
+import { PRINTOTECA, STICKER } from "./specs130-social.mjs";
 import { existsSync } from "node:fs";
 // r129: rebuilt pages replace the older spec with the same slug
 const OVERRIDES = [UNCHAIN];
 try { const p = new URL("./specs129-craft.mjs", import.meta.url); if (existsSync(p)) OVERRIDES.push((await import(p)).CRAFT); } catch (e) { console.warn("craft spec", e.message); }
-const PAGES = [...PAGES0, ...PAGES128, ...STUDIO_PAGES, TOSKANI].map((p) => OVERRIDES.find((o) => o && o.slug === p.slug) || p);
+const PAGES = [...PAGES0, ...PAGES128, ...STUDIO_PAGES, TOSKANI, PRINTOTECA, STICKER].map((p) => OVERRIDES.find((o) => o && o.slug === p.slug) || p);
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..", "..", "..");
