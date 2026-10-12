@@ -89,11 +89,32 @@ function row(items, cap) {
   const body = `<div class="row${crowded ? " row--wrap-sm" : ""}">\n${figs.join("\n")}\n</div>`;
   return cap ? `<div class="stack">\n${body}\n<figcaption>${cap}</figcaption>\n</div>` : body;
 }
+// r137: an editorial spread, people and products in one grid. On wide screens each item takes a cell of a
+// 12-column grid of square-ish units (at: [col start, col end, row start, row end]; b.rows rows, 8 by default):
+// photos fill their cell (pos: object-position), products sit whole on a colour card (contain, bg), tilted a little
+// (tilt; white backgrounds melt into the card), with an optional pill label (tag); a piece with its own background
+// lies on the card as a printed card (card: true); a text tile (text) can take a cell too. On phones the items flow two
+// by two in source order (sm: 1 or 2 columns, smr: the frame's ratio there).
+function mix(b) {
+  const rows = b.rows || 8;
+  const cells = b.mix.map((it) => {
+    const [c1, c2, r1, r2] = it.at;
+    const st = `--c:${c1}/${c2};--rw:${r1}/${r2};--sm:${it.sm || 2};--smr:${r4(it.smr || (it.text ? 0 : ratio(it)))}`;
+    if (it.text) return `  <div class="mix-cell mix-text" style="${st};--field:${it.bg || "var(--accent)"};--field-fg:${it.fg || "var(--ink)"}"><p>${it.text}</p></div>`;
+    const v = [st, it.bg ? `--frame-bg:${it.bg}` : "", it.tilt ? `--tilt:${it.tilt}deg` : "", it.pos ? `--op:${it.pos}` : ""].filter(Boolean).join(";");
+    return `  <figure class="mix-cell${it.contain ? " mix-prod" : ""}${it.card ? " mix-card" : ""}" style="${v}">
+    <div class="frame">${inner(it)}</div>${it.tag ? `<span class="mix-tag">${it.tag}</span>` : ""}
+  </figure>`;
+  });
+  const body = `<div class="mix" style="--rows:${rows}">\n${cells.join("\n")}\n</div>`;
+  return b.cap ? `<div class="stack">\n${body}\n<figcaption>${b.cap}</figcaption>\n</div>` : body;
+}
 function block(b) {
   // r135: a page's own markup (animated illustration blocks), with an optional caption
   if (b.raw) return b.cap ? `<div class="stack">\n${b.raw}\n<figcaption>${b.cap}</figcaption>\n</div>` : b.raw;
   if (b.img || b.video) return fig(b);
   if (b.row) return row(b.row, b.cap);
+  if (b.mix) return mix(b);
   if (b.rail) {
     railN++;
     const label = b.rail.join(" ").replace(/&amp;/g, "and");
@@ -232,6 +253,28 @@ html:not(.embed) .page{padding-top:64px}
 .statement p{font-size:var(--fs-h2);line-height:var(--lh-h2);font-weight:900;letter-spacing:-.01em;max-width:14em}
 .statement span{font-size:var(--fs-lead);line-height:var(--lh-lead);font-weight:700;max-width:28em;opacity:.85}
 @media (max-width:640px){.field-inner--multi{flex-direction:column;align-items:center}.field-inner--multi .field-card{flex:none;width:100%}}
+/* editorial spreads: people and products in one grid (r137) */
+.mix{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:repeat(var(--rows),minmax(0,1fr));gap:var(--gutter);aspect-ratio:12/var(--rows)}
+.mix-cell{grid-column:var(--c);grid-row:var(--rw);position:relative;min-width:0;min-height:0;margin:0}
+.mix-cell .frame{height:100%;aspect-ratio:auto}
+.mix-cell .frame>img{object-position:var(--op,50% 50%);transition:transform .6s cubic-bezier(.2,.75,.2,1)}
+.mix-prod .frame>img{object-fit:contain;padding:clamp(14px,9%,56px);transform:rotate(var(--tilt,0deg));mix-blend-mode:multiply}
+.mix-prod:hover .frame>img{transform:rotate(0deg) scale(1.04)}
+.mix-card .frame{display:grid;place-items:center}
+.mix-card .frame>img{width:auto;height:auto;max-width:76%;max-height:72%;padding:0;object-fit:fill;mix-blend-mode:normal;border-radius:8px;box-shadow:0 18px 34px -16px rgba(0,0,0,.45),0 0 0 1px rgba(0,0,0,.06)}
+.mix-cell:not(.mix-prod):hover .frame>img{transform:scale(1.03)}
+.mix-tag{position:absolute;left:12px;top:12px;padding:3px 12px 5px;border:var(--line);border-radius:999px;background:var(--white);font-size:var(--fs-small);line-height:var(--lh-small);font-weight:800;transform:rotate(-4deg);pointer-events:none}
+.mix-text{border-radius:var(--radius-m);background:var(--field);color:var(--field-fg);padding:clamp(18px,2.2vw,34px);display:flex;align-items:flex-end}
+.mix-text p{font-size:clamp(1.0625rem,.55rem + .95vw,1.5rem);line-height:1.18;font-weight:900;max-width:22em}
+@media (max-width:640px){
+  .mix{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:none;aspect-ratio:auto}
+  .mix-cell{grid-column:span var(--sm);grid-row:auto}
+  .mix-cell .frame{height:auto;aspect-ratio:var(--smr)}
+  .mix-text{min-height:0}
+  .mix-text p{font-size:var(--fs-body);line-height:var(--lh-body)}
+  .mix-tag{left:8px;top:8px;padding:2px 10px 4px}
+}
+@media (prefers-reduced-motion:reduce){.mix-cell .frame>img{transition:none}}
 /* the first image: a mask that opens from the bottom, the picture settling from a slow zoom, then a light parallax */
 .hero-media{animation:none}
 .hero-media .frame,.film-frame{clip-path:inset(0 0 0 0 round 24px);animation:hero-wipe 1.1s cubic-bezier(.16,1,.3,1) .12s both}

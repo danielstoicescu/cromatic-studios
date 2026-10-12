@@ -1,6 +1,11 @@
 // Everything machines read about the studio: schema.org JSON-LD, /llms.txt, robots.txt,
 // the sitemap and the web manifest. The facts live here once; src/content.html is the prose.
 
+import { CREW_INFO } from "../site/data.mjs";
+
+// r136 (N28): one wording for the two partners' roles everywhere (schema, team page, drive): the crew list is the source
+const role = (n, fallback) => (CREW_INFO[n] && CREW_INFO[n].role) || fallback;
+
 export const STUDIO = {
   name: "Cromatic Studios",
   legalUrl: "https://cromaticstudios.com/",
@@ -12,8 +17,8 @@ export const STUDIO = {
   geo: { lat: 44.43886, lng: 26.11626 }, // OpenStreetMap, Strada Olari 9 (Sector 2)
   country: "RO",
   founded: "2014",
-  founder: { name: "Daniel Stoicescu", jobTitle: "Founder, partner and creative architect", sameAs: ["https://www.instagram.com/daniel.stoic/"] },
-  ceo: { name: "Cristian Stoicescu", jobTitle: "CEO and partner" },
+  founder: { name: "Daniel Stoicescu", jobTitle: role("Daniel", "Founder · Partner · Creative Architect"), sameAs: ["https://www.instagram.com/daniel.stoic/"] },
+  ceo: { name: "Cristian Stoicescu", jobTitle: role("Cristian", "Partner · CEO & Strategy Master") },
   size: 10,
   description: "Independent creative studio in Bucharest, Romania: brand strategy, identity design, websites and apps, video production and content for growth."
 };
@@ -92,12 +97,37 @@ export function studioNode(SITE, SAME_AS = [STUDIO.legalUrl]) {
   };
 }
 
+// r136 (N28): the website node, the same on every page and in both languages (the site is one, in English and Romanian)
+export function websiteNode(SITE) {
+  return { "@type": "WebSite", "@id": `${SITE}/#website`, url: `${SITE}/`, name: "Cromatic Studios", alternateName: "Cromatic Studios · Navigation Mode", inLanguage: ["en", "ro"], publisher: { "@id": `${SITE}/#studio` } };
+}
+
+// r136 (N28): Google does not follow an @id from one page to another, so every page that points at the studio
+// (#studio, as provider, creator, publisher, about...) carries the full studio and website nodes itself. Existing
+// partial copies are replaced by the full ones; a graph that only references them gets them added in front.
+export function withStudio(ld, SITE, SAME_AS, have = new Set()) {
+  const studio = `${SITE}/#studio`, website = `${SITE}/#website`;
+  const text = JSON.stringify(ld);
+  if (!text.includes(`"${studio}"`) && !text.includes(`"${website}"`)) return ld;
+  const graph = Array.isArray(ld["@graph"]) ? ld["@graph"] : [Object.fromEntries(Object.entries(ld).filter(([k]) => k !== "@context"))];
+  let hasS = false, hasW = false;
+  const out = graph.map((n) => {
+    if (n && n["@id"] === studio && n["@type"]) { hasS = true; return studioNode(SITE, SAME_AS); }
+    if (n && n["@id"] === website && n["@type"]) { hasW = true; return websiteNode(SITE); }
+    return n;
+  });
+  // (have: what an earlier script of the same page already carries)
+  const add = [...(hasS || have.has(studio) ? [] : [studioNode(SITE, SAME_AS)]), ...(hasW || have.has(website) ? [] : [websiteNode(SITE)])];
+  have.add(studio); have.add(website);
+  return { "@context": "https://schema.org", "@graph": [...add, ...out] };
+}
+
 export function jsonLd(SITE, PROJECTS = [], SAME_AS = [STUDIO.legalUrl]) {
   const studio = `${SITE}/#studio`;
   const work = PROJECTS.length ? PROJECTS.filter((p) => p.page && !p.small).filter((p, i, a) => a.findIndex((q) => q.page === p.page) === i).map((p) => [p.name, p.cat, p.desc, `${SITE}/work/${p.page}/`]) : WORK;
   const graph = [
     studioNode(SITE, SAME_AS),
-    { "@type": "WebSite", "@id": `${SITE}/#website`, url: `${SITE}/`, name: "Cromatic Studios", alternateName: "Cromatic Studios · Navigation Mode", inLanguage: ["en", "ro"], publisher: { "@id": studio } },
+    websiteNode(SITE),
     {
       "@type": "WebPage",
       "@id": `${SITE}/#page`,

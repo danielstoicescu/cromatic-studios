@@ -9,6 +9,7 @@ import { parse } from "node-html-parser";
 export const RO_SLUGS = {
   "/site/": "/ro/",
   "/team/": "/ro/echipa/",
+  "/privacy/": "/ro/confidentialitate/", // r136
   "/industries/coffee-food-drink/": "/ro/industrii/cafea-mancare-bauturi/",
   "/industries/finance-fintech/": "/ro/industrii/finante-fintech/",
   "/industries/healthcare/": "/ro/industrii/sanatate/",
@@ -121,7 +122,8 @@ export function makeI18n(root) {
           if (Array.isArray(o)) return o.map(fix);
           if (o && typeof o === "object") {
             for (const k of Object.keys(o)) {
-              if (k === "inLanguage") o[k] = "ro";
+              // r136 (N28): the page is Romanian; the website (inLanguage ["en", "ro"]) stays the same everywhere
+              if (k === "inLanguage") { if (!Array.isArray(o[k])) o[k] = "ro"; }
               else if (typeof o[k] === "string" && ["name", "headline", "description", "text"].includes(k)) { const v = D.get(norm(o[k])); if (v) o[k] = v.replace(/<[^>]+>/g, ""); }
               else if (typeof o[k] === "string" && (k === "url" || k === "item" || k === "@id" || k === "mainEntityOfPage") && o[k].startsWith(SITE)) {
                 const u = o[k].slice(SITE.length), hash = u.includes("#") ? u.slice(u.indexOf("#")) : "", p = u.replace(/#.*$/, "");

@@ -1,14 +1,14 @@
 {
  "/work/slow-coffee-festival/": {
-  "h": "e4d61445e3b2",
+  "h": "bb0b7e86adec",
   "d": "2026-10-12"
  },
  "/work/two-minutes/": {
-  "h": "231ed4668797",
+  "h": "3ea1b4aa0068",
   "d": "2026-10-12"
  },
  "/work/the-aesthetic-court/": {
-  "h": "7897cee75509",
+  "h": "21d55f758859",
   "d": "2026-10-12"
  },
  "/work/arca-resort/": {
@@ -16,11 +16,11 @@
   "d": "2026-10-12"
  },
  "/work/antila/": {
-  "h": "ebe3d23998a9",
+  "h": "b70113a8d728",
   "d": "2026-10-12"
  },
  "/work/unde/": {
-  "h": "05025acd2ee5",
+  "h": "2bb19c7bd860",
   "d": "2026-10-12"
  },
  "/work/artisan-coffee-gear/": {
@@ -28,19 +28,19 @@
   "d": "2026-10-12"
  },
  "/work/craft-coffee/": {
-  "h": "fbb074fa1e62",
+  "h": "a37dd2690f4d",
   "d": "2026-10-12"
  },
  "/work/witanalitica/": {
-  "h": "2f5ddbcb9af6",
+  "h": "e844090230c2",
   "d": "2026-10-12"
  },
  "/work/oma-coffee/": {
-  "h": "95ee4aa5dcb3",
+  "h": "152d5228a5ce",
   "d": "2026-10-12"
  },
  "/work/steam/": {
-  "h": "1c34af1add16",
+  "h": "9fd22054c208",
   "d": "2026-10-12"
  },
  "/work/altius/": {
@@ -148,47 +148,55 @@
   "d": "2026-10-12"
  },
  "/industries/coffee-food-drink/": {
-  "h": "84d05922be1b",
+  "h": "cb3596b1de0a",
   "d": "2026-10-12"
  },
  "/industries/finance-fintech/": {
-  "h": "74281af697fa",
+  "h": "6eedbc1f694c",
   "d": "2026-10-12"
  },
  "/industries/healthcare/": {
-  "h": "153d9ee04536",
+  "h": "4a2a0e3b029a",
   "d": "2026-10-12"
  },
  "/industries/print-merch/": {
-  "h": "2246fffaabdb",
+  "h": "9dfd61ec2834",
   "d": "2026-10-12"
  },
  "/services/brand-strategy/": {
-  "h": "995efc2e06dc",
+  "h": "549dc27a61a5",
   "d": "2026-10-12"
  },
  "/services/brand-identity/": {
-  "h": "7976ad5e4bf3",
+  "h": "1786f9ce7faa",
   "d": "2026-10-12"
  },
  "/services/websites-apps/": {
-  "h": "992bd9eb271f",
+  "h": "5fb818fb3285",
   "d": "2026-10-12"
  },
  "/services/video-production/": {
-  "h": "9205b04c1e67",
+  "h": "fe4f3b90441b",
   "d": "2026-10-12"
  },
  "/services/social-media-content/": {
-  "h": "07549455c463",
+  "h": "dfe66db3f288",
   "d": "2026-10-12"
  },
  "/team/": {
   "h": "674314cc3d1d",
   "d": "2026-10-12"
  },
+ "/privacy/": {
+  "h": "ce7f872345fd",
+  "d": "2026-10-12"
+ },
  "/": {
-  "h": "46fe175bdec3",
+  "h": "238b8557d4ff",
+  "d": "2026-10-12"
+ },
+ "/onboarding/": {
+  "h": "9e2b3410bcd5",
   "d": "2026-10-12"
  }
 }

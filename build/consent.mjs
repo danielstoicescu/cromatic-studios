@@ -6,6 +6,7 @@
 // stop_view {place, mode}, video_sound_on {page},
 // open_drive_mode, case_study_click. Google Tag Manager (GTM_ID) loads after the same yes, for future tags (pixels,
 // ads); GA4 stays here, so it must not be added again as a GA4 tag inside GTM (it would count every visit twice).
+// r136: the card links the privacy policy (/privacy/, /ro/confidentialitate/).
 export function consentSnippet(GA_ID, GTM_ID = "") {
   if (!GA_ID) return "";
   const css = `#cz-ck{position:fixed;left:50%;bottom:16px;z-index:2147483000;box-sizing:border-box;width:min(460px,calc(100vw - 24px));display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:18px 22px 20px;border-radius:24px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;box-shadow:0 14px 40px rgba(13,12,9,.2);font:500 15px/1.4 CromaticSans,"Darker Grotesque",system-ui,sans-serif;transform:translate(-50%,16px);opacity:0;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .45s}
@@ -13,6 +14,7 @@ export function consentSnippet(GA_ID, GTM_ID = "") {
 #cz-ck .ck-cup{width:46px;height:46px;margin-bottom:2px;background:url(/cup-spin.png) 0 0/2400% 100%;animation:czck 2.25s steps(24,jump-none) infinite}
 #cz-ck b{display:block;font:800 19px/1.2 CromaticSans,system-ui,sans-serif;letter-spacing:-.01em;margin:0}
 #cz-ck p{margin:2px 0 0;max-width:34ch;color:#3d3a34;font-size:15px;line-height:1.4;text-wrap:balance}
+#cz-ck p a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 #cz-ck .ck-row{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:14px;width:100%}
 #cz-ck button{all:unset;box-sizing:border-box;cursor:pointer;min-width:132px;text-align:center;padding:12px 20px;border-radius:999px;border:2px solid #0d0c09;font:800 15px/1 CromaticSans,system-ui,sans-serif;white-space:nowrap;transition:transform .2s}
 #cz-ck button:hover{transform:translateY(-1px)}
@@ -35,7 +37,7 @@ if(GTM){dataLayer.push({"gtm.start":new Date().getTime(),event:"gtm.js"});var g=
 try{fetch("/api/ctx",{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.internal)gtag("set",{traffic_type:"internal"});go()}).catch(go);setTimeout(go,1200)}catch(e){go()}}
 function ask(){if(document.getElementById("cz-ck"))return;var ro=(document.documentElement.lang||"").slice(0,2)==="ro";
 var d=document.createElement("div");d.id="cz-ck";d.setAttribute("role","dialog");d.setAttribute("aria-label",ro?"Cookie-uri":"Cookies");
-d.innerHTML='<span class="ck-cup" aria-hidden="true"></span><b>'+(ro?"Un cookie la cafea?":"A cookie with your coffee?")+'</b><p>'+(ro?"Doar statistici anonime (Google Analytics), ca să știm ce merge.":"Only anonymous stats (Google Analytics), so we know what works.")+'</p><div class="ck-row"><button type="button" class="ck-yes">'+(ro?"Da, sigur":"Sure")+'</button><button type="button" class="ck-no">'+(ro?"Nu, mersi":"No, thanks")+"</button></div>";
+d.innerHTML='<span class="ck-cup" aria-hidden="true"></span><b>'+(ro?"Un cookie la cafea?":"A cookie with your coffee?")+'</b><p>'+(ro?"Doar statistici anonime (Google Analytics), ca să știm ce merge. ":"Only anonymous stats (Google Analytics), so we know what works. ")+'<a href="'+(ro?"/ro/confidentialitate/":"/privacy/")+'">'+(ro?"Confidențialitate":"Privacy")+'</a></p><div class="ck-row"><button type="button" class="ck-yes">'+(ro?"Da, sigur":"Sure")+'</button><button type="button" class="ck-no">'+(ro?"Nu, mersi":"No, thanks")+"</button></div>";
 document.body.appendChild(d);requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add("on")})});
 d.querySelector(".ck-yes").onclick=function(){set("yes");d.remove();ga()};d.querySelector(".ck-no").onclick=function(){set("no");d.remove()}}
 document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("[data-cookies]");if(a){e.preventDefault();ask()}});

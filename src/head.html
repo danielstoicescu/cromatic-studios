@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <!-- Cromatic Studios — Navigation Mode -->
 <title>Cromatic Studios · Branding, web &amp; film studio in Bucharest</title>
-<meta name="description" content="Independent creative studio in Bucharest: brand strategy, identity, websites and apps, video and content. Take a 3D drive through our work, and end it with a coffee at Strada Olari 9.">
+<meta name="description" content="Independent creative studio in Bucharest: brand strategy, identity, websites, film and content. Take a 3D drive through our work, then stop by for coffee.">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <meta name="author" content="Cromatic Studios">
 <meta name="theme-color" content="#FED012">
@@ -35,17 +35,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=JetBrains+Mono:wght@400;600;700&display=swap">
 <style>
-/* first paint: the intro's cream ground with the star, before the script arrives */
-.boot { position: fixed; inset: 0; z-index: 99; display: flex; align-items: center; justify-content: center; background: #f7f1e6; transition: opacity .4s ease; }
-.boot .r, .boot .p { display: none; }
+/* r136c: first paint = the brewing cup, turning (markup + inlined strip from build.mjs, the rest from .kz-brew);
+   app.js adopts this element as its loader. Never the star. */
+.boot { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; align-content: center; gap: 22px; background: #f7f1e6; transition: opacity .4s ease; }
 .boot.gone { opacity: 0; pointer-events: none; }
-.boot svg { width: 128px; height: 128px; overflow: visible; }
-.boot .r { fill: none; stroke: rgba(251,250,245,.14); stroke-width: 3; }
-.boot .p { fill: none; stroke: #FED012; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 327; stroke-dashoffset: 327; transform: rotate(-90deg); transform-origin: 60px 60px; animation: bootring 1.9s cubic-bezier(.5,0,.2,1) infinite; }
-.boot .s { transform-box: fill-box; transform-origin: center; animation: bootstar 2.6s cubic-bezier(.34,1.3,.5,1) infinite; }
-@keyframes bootring { 0% { stroke-dashoffset: 327; } 55% { stroke-dashoffset: 62; } 100% { stroke-dashoffset: 327; transform: rotate(270deg); } }
-@keyframes bootstar { 0%, 100% { transform: rotate(0deg) scale(.9); } 50% { transform: rotate(180deg) scale(1.06); } }
-@media (prefers-reduced-motion: reduce) { .boot .p, .boot .s { animation: none; } }
 /* the text version: read by crawlers, AI assistants and screen readers; shown when scripts are off */
 .seo-doc { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 </style>

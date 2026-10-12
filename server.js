@@ -12,7 +12,7 @@ import nodemailer from "nodemailer";
 import { passHtml, passText } from "./mail-template.js";
 
 const APP_DIR = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(APP_DIR, "public");
+const ROOT = process.env.PUBLIC_DIR || join(APP_DIR, "public");
 // Let's Encrypt (certbot --webroot) drops its challenge files under <webroot>/.well-known/acme-challenge/
 const ACME_DIRS = [...new Set([process.env.ACME_ROOT, APP_DIR].filter(Boolean))].map((d) => join(d, ".well-known", "acme-challenge"));
 const PORT = Number(process.env.PORT || 8080);
@@ -243,27 +243,61 @@ const OLD = {
   "/proiecte/yoshy-izakaya/": "/ro/proiecte/yoshi-izakaya/", "/proiecte/arca/": "/ro/proiecte/arca-resort/"
 };
 const GONE = /^\/(?:testestes|online-core-beta|author\/[^/]+|feed|comments\/feed|wp-sitemap[^/]*\.xml|sitemap_index\.xml|xmlrpc\.php)\/?$/;
-function legacy(req, res) {
-  let p = new URL(req.url, "http://x").pathname;
+// the new address of an old WordPress page (or null)
+function oldTarget(pathname) {
+  let p = pathname;
   if (!p.endsWith("/") && !/\.[a-z0-9]+$/i.test(p)) p += "/";
   let to = OLD[p];
   if (!to) { const m = /^\/proiecte\/([\w-]+)\/$/.exec(p); if (m && files.has(`/ro/proiecte/${m[1]}/index.html`)) to = `/ro/proiecte/${m[1]}/`; }
+  return to || null;
+}
+// r136 (N39): where a request ends up after every rule (old WordPress address, /index.html, the trailing slash), so a
+// redirect from another host or from http goes there in ONE 301 instead of two or three
+function finalUrl(url) {
+  const u = new URL(url, "http://x");
+  let p = u.pathname;
+  try { p = normalize(decodeURIComponent(p)).replace(/\\/g, "/"); } catch { return url; }
+  const old = oldTarget(p);
+  if (old) return old;
+  if (/\/index\.html$/.test(p)) p = p.slice(0, -10);
+  else if (!p.endsWith("/") && !extname(p) && files.has(p + "/index.html")) p += "/";
+  return encodeURI(p) + u.search;
+}
+function legacy(req, res) {
+  const p0 = new URL(req.url, "http://x").pathname;
+  const p = !p0.endsWith("/") && !/\.[a-z0-9]+$/i.test(p0) ? p0 + "/" : p0;
+  const to = oldTarget(p0);
   if (to) { res.writeHead(301, { Location: to, "Cache-Control": "public, max-age=86400" }); res.end(); return true; }
   if (GONE.test(p)) { res.writeHead(410, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=86400" }); res.end("Gone"); return true; }
   return false;
 }
 
+// r136 (N45): how to report a security problem (RFC 9116); valid for a year from the server's start
+const SECURITY_TXT = `Contact: mailto:hi@cromaticstudios.com
+Expires: ${new Date(Date.now() + 365 * 864e5).toISOString().replace(/\.\d{3}Z$/, ".000Z")}
+Preferred-Languages: en, ro
+Canonical: https://${PRIMARY_HOST || "cromaticstudios.com"}/.well-known/security.txt
+`;
+
 http.createServer((req, res) => {
-  if (req.url === "/healthz") return send(res, 200, { ok: true, mail: process.env.SMTP_HOST ? "smtp" : "log", leads: !!process.env.LEADS_KEY, host: process.env.SMTP_HOST || null, port: process.env.SMTP_PORT || null, lastMail });
+  // r136 (N45): the public health check says only that the site is up; the mail details need the leads key
+  if (req.url === "/healthz" || req.url.startsWith("/healthz?")) {
+    const key = new URL(req.url, "http://x").searchParams.get("key") || "";
+    const full = !!process.env.LEADS_KEY && key.length >= 16 && key === process.env.LEADS_KEY;
+    return send(res, 200, full ? { ok: true, mail: process.env.SMTP_HOST ? "smtp" : "log", leads: true, host: process.env.SMTP_HOST || null, port: process.env.SMTP_PORT || null, lastMail } : { ok: true });
+  }
   if (req.url.startsWith("/.well-known/acme-challenge/")) return acme(req, res);
-  // behind Cloudflare: visitors who came in over plain http get sent to https
-  if (/"scheme":"http"/.test(String(req.headers["cf-visitor"] || "")) && req.headers.host) {
-    res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
-    return res.end();
+  if (req.url === "/.well-known/security.txt" || req.url === "/security.txt") {
+    res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=86400", "X-Content-Type-Options": "nosniff" });
+    return res.end(req.method === "HEAD" ? undefined : SECURITY_TXT);
   }
   const host = String(req.headers.host || "").toLowerCase().split(":")[0];
-  if (PRIMARY_HOST && host !== PRIMARY_HOST && /(^|\.)cromaticstudios\.com$/.test(host)) {
-    res.writeHead(301, { Location: `https://${PRIMARY_HOST}${req.url}` });
+  const otherHost = PRIMARY_HOST && host !== PRIMARY_HOST && /(^|\.)cromaticstudios\.com$/.test(host);
+  // behind Cloudflare: visitors who came in over plain http get sent to https; another host of ours (drive., www.)
+  // to the main one. r136 (N39): both straight to the final address (old WordPress page, slash), in one 301
+  if ((/"scheme":"http"/.test(String(req.headers["cf-visitor"] || "")) && req.headers.host) || otherHost) {
+    const to = (req.method === "GET" || req.method === "HEAD") ? finalUrl(req.url) : req.url;
+    res.writeHead(301, { Location: `https://${otherHost ? PRIMARY_HOST : req.headers.host}${to}` });
     return res.end();
   }
   if ((req.method === "GET" || req.method === "HEAD") && legacy(req, res)) return;

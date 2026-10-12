@@ -739,7 +739,7 @@ export const PAGES = [
     info: ["Healthcare, medical laboratories", "TV ads"],
     film: { id: "vGNSZ_aUd8w", title: "Clinica Sante: Recomandată de medici, parafată de pacienți" },
     cover: { img: "cs:2025/06/Clinica-Sante.jpg" },
-    og: "https://i.ytimg.com/vi/vGNSZ_aUd8w/maxresdefault.jpg",
+    og: "m:cs/Clinica-Sante", // r136: a local still (no i.ytimg.com); cut to 1200×630 at build
     problem: {
       h: "Who tests the people who run the tests?",
       p: [

@@ -2914,6 +2914,8 @@ body.map-boarding .map-top, body.map-boarding .map-dock, body.map-boarding .map-
 }
 body.map-mode .mapcard.contact .map-x { top: 14px; right: 14px; }
 body.map-takeoff .map-dock, body.map-takeoff .map-zoom, body.map-takeoff .map-card { opacity: 0; pointer-events: none; transition: opacity .4s; }
+/* r136: in the clouds the map's pins, street signs and service tags step aside (they drew over the clouds) */
+body.map-takeoff .map-pins, body.jet-cloud .map-pins, body.jet-cloud .svc-house { opacity: 0 !important; pointer-events: none !important; transition: opacity .35s; }
 .map-chip.beacon { background: #FED012; }
 .map-chip.beacon .mc-dot { background: #111; }
 
@@ -3221,6 +3223,14 @@ body.olari-open .map-dock, body.olari-open .map-zoom { opacity: 0; pointer-event
 .olari-cups { position: fixed; inset: 0; z-index: -1; pointer-events: none !important; overflow: hidden; }
 .olari-cup { position: absolute; left: var(--x); top: var(--y); width: var(--w); aspect-ratio: 132 / 112; opacity: 0; filter: drop-shadow(0 12px 16px rgba(0,0,0,.18)); }
 .olari-cup svg { width: 100%; height: 100%; overflow: visible; display: block; }
+/* r136c: the 3D cups around the house: placed by olariCups() in the free space only; they pop in and bob a
+   little (the 12px the layout keeps clear above each), the turn itself is the sprite, run from JS */
+.olari-cup3 { position: absolute; display: block; opacity: 0; will-change: transform; }
+.olari-cup3 b { display: block; width: 100%; height: 100%; background-repeat: no-repeat; background-position: 0 0; }
+.olari-cup3.on { animation: oc3In .7s var(--d) cubic-bezier(.34,1.4,.5,1) both, oc3Bob var(--t) var(--d) ease-in-out infinite alternate; }
+@keyframes oc3In { from { opacity: 0; scale: .3; } to { opacity: 1; scale: 1; } }
+@keyframes oc3Bob { from { translate: 0 0; } to { translate: 0 -12px; } }
+@media (prefers-reduced-motion: reduce) { .olari-cup3.on { animation: oc3In .01s both; } }
 .olari-fan.go .olari-cup { animation: cupIn .8s var(--d) both, cupFloat var(--t) var(--d) ease-in-out infinite alternate; }
 @keyframes cupIn { from { opacity: 0; transform: scale(.2) rotate(0deg); } to { opacity: .95; } }
 @keyframes cupFloat { from { transform: translateY(0) rotate(calc(var(--r) * -1)); } to { transform: translateY(-34px) rotate(var(--r)); } }
@@ -3445,6 +3455,10 @@ body.kz-intro .map-welcome, body.map-boarding .map-welcome { display: none; }
 .map-top .map-site .ms-ic i:nth-child(2) { width: 9px; background: #F65342; } .map-top .map-site .ms-ic i:nth-child(3) { width: 11px; background: #119BFE; }
 .map-top .map-site:hover { background: #FED012; }
 @media (max-width: 719px) { .map-top .map-site { height: 38px; padding: 0 6px; } .map-top .map-site b { display: none; } }
+/* r136 (N38): the Romanian website, one tap from the map's first screen (a small pill next to the normal website) */
+.map-top .map-ro { height: 42px; min-width: 42px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; padding: 0 12px; border-radius: 999px; border: 1px solid #141414 !important; background: #fff; color: #141414; font: 800 13px/1 CromaticSans, sans-serif; letter-spacing: .04em; text-decoration: none; pointer-events: auto; cursor: pointer; }
+.map-top .map-ro:hover { background: #FED012; }
+@media (max-width: 719px) { .map-top .map-ro { height: 38px; min-width: 32px; padding: 0 7px; font-size: 11.5px; } }
 .map-dock .map-dock-h b { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px; background: #F65342; color: #fff; font: 900 13px/1 CromaticSans, sans-serif; margin-right: 6px; letter-spacing: 0; }
 .map-dock .map-dock-h { display: inline-flex; align-items: center; white-space: nowrap; }
 
@@ -4046,6 +4060,12 @@ body.scheme-sketch .map-street .hw-stripe { height: 8px !important; border-radiu
 .kz-brew .kb-cup.kb-3d { width: 200px; height: 200px; animation: none; }
 .kz-brew .kb-sprite { display: block; width: 200px; height: 200px; background-repeat: no-repeat; background-size: 4800% 100%; animation: kbSpin 2.244s steps(48) infinite; }
 @keyframes kbSpin { to { background-position: -9600px 0; } }
+/* r136c: the brewing cup is the first paint (no star, ever): the 3D cup's own 24-frame strip, inlined into the
+   HTML by build.mjs so it paints before any request; app.js adopts that element as the loader (no swap). Same
+   200px box as before, so "Brewing the city" stays put. */
+.kz-brew .kb-sprite.kb-cs { width: 176px; height: 176px; margin: 12px; background-image: url(/cup-spin.png); background-size: 2400% 100%; animation: kbSpin24 2.244s steps(24) infinite; }
+@keyframes kbSpin24 { to { background-position: -4224px 0; } }
+@media (prefers-reduced-motion: reduce) { .kz-brew .kb-sprite.kb-cs { animation: none; } }
 /* r130k: Sketchbook: the DOM footprint goes (it was drawn over the houses); the crayon rings are on the ground now.
    Crayon swatches are scribbled in when they appear, left to right, and once more when you point at them. The
    pointer is a pencil. */
@@ -4141,3 +4161,117 @@ body:not(.map-mode).menus-top .hud-menu:not(.open) { transform: scale(.94) trans
 }
 /* r134: the chips lift on hover: room above and below them inside the scrolling bar, so their outline never clips */
 .map-chips { padding-top: 6px; padding-bottom: 6px; margin-top: -6px; margin-bottom: -6px; }
+
+/* r136: drive mode place labels = the map's place labels (THE LÄND pill, hairline stem, brand dot),
+   positioned over each building by JS (drivePinsFrame); they drop in from the top, five at most */
+.drive-pins { z-index: 13; }
+.drive-pins .map-pin { transition: opacity .38s ease; will-change: transform, opacity; }
+.drive-pins .map-pin.dp-hide { display: none !important; }
+.drive-pins .map-pin.dp-out, .drive-pins .map-pin.dp-offs { opacity: 0 !important; pointer-events: none !important; }
+.drive-pins .map-pin .mp-label { padding: 8px 15px 8px 10px; gap: 8px; }
+.drive-pins .map-pin .mp-label b { font-size: 14px; }
+.drive-pins .map-pin .mp-label::before { width: 9px; height: 9px; }
+.drive-pins .map-pin .mp-stem { opacity: .62; }
+.drive-pins .map-pin:hover .mp-label { background: var(--pc); color: var(--pt); }
+.drive-pins .map-pin:hover .mp-label::before { background: var(--pt); }
+@media (max-width: 760px) {
+  .drive-pins .map-pin .mp-label { padding: 7px 12px 7px 8px; gap: 6px; }
+  .drive-pins .map-pin .mp-label b { font-size: 12.5px; }
+  body:has(.mapcard:not(.hidden)) .drive-pins { opacity: 0; visibility: hidden; }
+}
+body.map-mode .drive-pins, body.site-mode .drive-pins { display: none !important; }
+body.menu-open .drive-pins { opacity: 0 !important; pointer-events: none !important; }
+
+/* r136b (Daniel): on phones the top buttons fill the whole bar (no empty end on the right) and the house says "Home" */
+@media (max-width: 719px) {
+  body.map-mode .map-top > * { flex: 1 0 auto; justify-content: center; }
+  body.map-mode .map-top { gap: 3px; padding: 4px; }
+  body.map-mode .map-top .map-crew { padding: 0 6px; }
+  body.map-mode .map-top .map-home { padding: 0 10px 0 8px; gap: 4px; }
+  body.map-mode .map-top .map-exit { padding: 0 7px !important; }
+  body.map-mode .map-top .map-home b { display: inline; font-size: 0; }
+  body.map-mode .map-top .map-home b::after { content: "Home"; font-size: 12.5px; }
+  body.map-mode .map-top .map-ro { display: none; }
+}
+/* r136b (Daniel): on phones the RO link sits up top, next to the score */
+.top-ro { display: none; }
+@media (max-width: 719px) {
+  body.map-mode:not(.site-mode) .topbar .top-ro { display: inline-flex; position: fixed; z-index: 30; top: calc(12px + env(safe-area-inset-top, 0px)); right: 112px; width: 34px; height: 34px;
+    box-sizing: border-box; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid #141414; background: #fff; color: #141414;
+    font: 800 11.5px/1 CromaticSans, sans-serif; letter-spacing: .04em; text-decoration: none; pointer-events: auto; }
+  body.map-mode:not(.site-mode) .topbar .top-ro:active { background: #FED012; }
+  body.map-boarding .topbar .top-ro, body.kz-intro .topbar .top-ro, body.flight-done .topbar .top-ro { display: none !important; }
+}
+
+/* r136b (Daniel): the World button gets the same thin outline as its neighbours; inside, rays in the worlds' colours
+   turn slowly around the orb */
+.map-top .map-world { border: 1px solid #141414 !important; overflow: hidden; background: #fff; }
+.map-top .map-world::before { inset: -40%; border-radius: 0; filter: saturate(1.15);
+  background: repeating-conic-gradient(from var(--mbA) at 50% 50%, #FED012 0deg 9deg, transparent 9deg 22.5deg, #119BFE 22.5deg 31.5deg, transparent 31.5deg 45deg,
+    #F65342 45deg 54deg, transparent 54deg 67.5deg, #28C840 67.5deg 76.5deg, transparent 76.5deg 90deg);
+  animation: mbSpin 9s linear infinite; }
+.map-top .map-world::after { inset: 0; background: radial-gradient(closest-side, #fff 0 46%, rgba(255,255,255,.72) 72%, rgba(255,255,255,.35) 100%); transition: opacity .3s; }
+.map-top .map-world:hover::after { background: radial-gradient(closest-side, #fff 0 40%, rgba(255,255,255,.5) 75%, rgba(255,255,255,.15) 100%); }
+.map-top .map-world:hover::before { animation-duration: 3s; }
+.map-top .map-world .mb-orb { position: relative; z-index: 1; }
+
+/* r136: the street choices, bigger and surer to hit. The crossroads arms grow (desktop 380px wide, 66px tall;
+   phones full width, 60px), a press sinks the arm, the pick fills it with its street's colour and a tick,
+   the other arms fade. touch-action:none on the buttons: a press that starts on them never scrolls the page */
+.xr-arm, .jx-row .jx-btn, .jx-row .jx-btn.hw { touch-action: none; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.xr-arms { gap: 10px; }
+.xr-arm { min-width: 380px; min-height: 66px; padding: 12px 26px 12px 16px; gap: 14px; }
+.xr-arm:nth-child(even) { padding: 12px 16px 12px 26px; }
+.xr-arm b { font-size: 20px; }
+.xr-arm i { font-size: 10.5px; }
+.xr-arm .xr-arrow { font-size: 26px; }
+.xr-k { font-size: 10.5px; padding: 7px 12px 6px; }
+.xr-arm .xr-ok { display: none; width: 26px; height: 26px; border-radius: 50%; place-items: center; flex: none;
+  background: #141414; color: #fff; font: 900 15px/1 CromaticSans, sans-serif; }
+.xr-arm.pressing { transform: translateY(2px) scale(.985) !important; box-shadow: 0 1px 0 #141414, 0 8px 18px -12px rgba(0,0,0,.5); }
+.xr-arm:focus-visible { outline: 3px solid #141414; outline-offset: 3px; }
+.xr-post.decided .xr-arm:not(.picked) { opacity: .28; transform: scale(.97); pointer-events: none; }
+.xr-post.decided .xr-arm.picked { background: var(--xc); color: #141414; transform: scale(1.04) rotate(0deg) !important;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #141414, 0 18px 34px -14px rgba(0,0,0,.6); }
+.xr-post.decided .xr-arm.picked .xr-ok { display: grid; }
+.xr-post.decided .xr-arm.picked i { opacity: .85; }
+@media (hover: none) { .xr-arm:hover { transform: rotate(calc((var(--i) - 1) * -1.6deg)); box-shadow: 0 3px 0 #141414, 0 16px 30px -16px rgba(0,0,0,.5); } }
+@media (max-width: 720px) {
+  .xr-post { left: 12px; right: 12px; transform: none; top: calc(140px + env(safe-area-inset-top, 0px)); }
+  .xr-post.hidden { transform: translateY(-14px); }
+  .xr-arms { align-self: stretch; gap: 9px; }
+  .xr-arm { min-width: 0; width: 100%; min-height: 60px; padding: 10px 18px 10px 14px; transform: none; }
+  .xr-arm:nth-child(even) { padding: 10px 14px 10px 18px; }
+  .xr-arm b { font-size: 17px; }
+  .xr-pole { display: none; }
+  @keyframes xrIn { from { opacity: 0; transform: translateY(-8px) scale(.96); } }
+}
+/* the fork row: a press sinks the sign too */
+.jx-row .jx-btn.hw.pressing { transform: translateY(2px) scale(.985) !important; }
+.jx-row .jx-btn.hw { min-height: 64px; }
+@media (max-width: 760px) { .jx-row .jx-btn.hw { min-height: 58px; } }
+
+/* r136: Olari 9, the end. "Olari 9 · come by" is the Google Maps link now, with a phone and an email button
+   under it in the same style (they replace the contact box); on phones the photos lift above the windows */
+.olari-next a.oc-link { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; box-sizing: border-box;
+  padding: 12px 22px; border-radius: 999px; background: #fff; color: #111; border: 1px solid #111; text-decoration: none; text-align: center;
+  font: 800 15px/1 CromaticSans, sans-serif; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: transform .2s var(--eoq, ease), box-shadow .2s var(--eoq, ease); }
+.olari-next a.oc-link b { font: 800 16px/1 CromaticSans, sans-serif; }
+.olari-next a.oc-link:hover { transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgba(0,0,0,.45); }
+.olari-next a.oc-link:active { transform: translateY(1px) scale(.99); }
+.olari-next a.oc-link:focus-visible { outline: 3px solid #111; outline-offset: 3px; }
+.olari-next .oc-contact { display: none !important; }
+@media (min-width: 720px) {
+  .olari-next { flex-flow: row wrap; justify-content: center; }
+  .olari-next .oc-jet { flex-basis: 100%; max-width: 520px; margin: 0 calc(50% - 260px); }
+  .olari-next a.oc-link { min-width: 200px; }
+}
+@media (max-width: 719px) {
+  .olari-next { gap: 10px; }
+  .olari-next a.oc-link { width: 100%; padding: 10px 14px; min-height: 46px; }
+  .olari-next a.oc-link b { font-size: 14px; }
+  .olari-next a.oc-link i { font-size: 7.5px; margin-top: 4px; }
+  .olari-next .oc-tel, .olari-next .oc-mail { min-height: 44px; padding: 8px 14px; }
+  .olari-fan .olari-photo { margin-bottom: var(--ph-lift, 0px); }
+}

@@ -184,12 +184,14 @@ export const CASES = {
     swatches: ["#111111", "#F2A9C4", "#28C840", "#119BFE"],
     blocks: [
       { h: "The brand", p: "A stacked TWO MIN mark that works on a cup, a tote and a shop front, with a decade of taste and moments behind it.", imgs: ["tmCover", "tmPoster", "tmTote"] },
+      // r137: the Ghica Popa drop moves up, in big portrait frames; the whole crew closes it, full width
+      { h: "Two Minutes × Ghica Popa", p: "A T-shirt drop with Ghica Popa, shot in the studio with friends, a guitar and a pile of tees.", layout: "tall", imgs: ["m:tm/tee-033", "m:tm/tee-081", "m:tm/tee-014", "m:tm/tee-045", "m:tm/tee-022", "m:tm/tee-041", "m:tm/tee-071"], pos: [null, "47% 50%", null, null, null, "38% 50%"] },
+      { imgs: ["m:tm/tee-048"], caps: ["Friends, a guitar and the tees, in the studio."] },
       { h: "The boxes", p: "Green, pink, blue: coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 52A.", vids: ["boxesvideo_default"], layout: "side" },
       { h: "Two Min Lab", p: "Two Minutes's flavour laboratory, micro-roastery and kitchen: the space where signature flavours like the <i>Tonic Ionic</i> are perfected before they reach your cup. Bottled by hand, in small batches, in Bucharest.", imgs: ["labTonic", "labSpread", "labChinotto", "labAmaro"], caps: ["Tonic Ionic · 6 plante", "Tonic Ionic · specimen index", "Chinotto · Citrus myrtifolia", "Amaro · bitter formula"] },
       { h: "Made by hand", p: "From the first sketches on grid paper to the acrylic signs, fresh from the maker.", imgs: ["labSketch", "labSigns", "labEditorial"], vids: ["labBox", "labMaking"] },
       { h: "Inside the boxes", p: "Every box carries a card with the coffee's story: The Blueprint, Silent Punch, Mosto, set in a typewriter voice, with the recipe on the back. And cubes for the Roastery and the Lab.", imgs: ["m:tm/card-blueprint", "m:tm/card-silent", "m:tm/card-mosto", "m:tm/card-silent-photo", "m:tm/cube-roastery", "m:tm/cubes-lab"] },
-      { h: "Ten years", p: "Two Minutes turned ten: 10 YRS, 10 ANI, in the brand's red and green.", imgs: ["m:tm/ten-years", "m:tm/ten-ani", "m:tm/ten-green"] },
-      { h: "Two Minutes × Ghica Popa", p: "A T-shirt drop with Ghica Popa, shot in the studio with friends, a guitar and a pile of tees.", imgs: ["m:tm/tee-022", "m:tm/tee-081", "m:tm/tee-014", "m:tm/tee-033", "m:tm/tee-045", "m:tm/tee-048", "m:tm/tee-071", "m:tm/tee-041"] }
+      { h: "Ten years", p: "Two Minutes turned ten: 10 YRS, 10 ANI, in the brand's red and green.", imgs: ["m:tm/ten-years", "m:tm/ten-ani", "m:tm/ten-green"] }
     ]
   },
   "the-aesthetic-court": {

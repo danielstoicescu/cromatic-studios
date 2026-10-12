@@ -66,3 +66,59 @@ export async function optimizeImages(pub, root, log = console.log) {
   }
   log(`[images] ${out.size} pictures, ${made} new WebP files, ~${(saved / 1048576).toFixed(1)} MB lighter at full size, ${((Date.now() - t0) / 1000).toFixed(1)} s`);
 }
+
+// r136 (N40): one social picture per page, 1200×630 JPEG (what LinkedIn, Facebook and WhatsApp crop to), cut at build
+// from the page's own cover with sharp (attention crop) and committed in site/.img-cache/og-*.jpg like the WebP copies:
+// the server, without sharp, only copies them. pick(path) = the local picture for a page whose og:image is the
+// generic /og.jpg (the home pages keep the designed one: skip(path) is true for them).
+const OG_W = 1200, OG_H = 630, OG_MAX = 300 * 1024;
+export async function socialCards(pub, root, SITE, pick, skip, log = console.log) {
+  let sharp = null;
+  try { sharp = (await import("sharp")).default; } catch {}
+  const cacheDir = join(root, "site", ".img-cache");
+  mkdirSync(join(pub, "assets", "og"), { recursive: true });
+  const htmls = [];
+  (function walk(d) { for (const f of readdirSync(d)) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p); else if (f === "index.html") htmls.push(p); } })(pub);
+  const done = new Map();
+  let made = 0, pages = 0, missing = 0;
+  const card = async (src) => {
+    if (done.has(src)) return done.get(src);
+    let out = null;
+    const file = join(pub, src);
+    if (existsSync(file)) {
+      const buf = readFileSync(file);
+      const h = createHash("sha1").update(buf).update("og1200").digest("hex").slice(0, 12);
+      const cached = join(cacheDir, `og-${h}.jpg`);
+      if (!existsSync(cached) && sharp) {
+        let q = 82, jpg;
+        do { jpg = await sharp(buf).resize(OG_W, OG_H, { fit: "cover", position: sharp.strategy.attention }).flatten({ background: "#ffffff" }).jpeg({ quality: q, mozjpeg: true }).toBuffer(); q -= 8; } while (jpg.length > OG_MAX && q > 50);
+        writeFileSync(cached, jpg);
+        made++;
+      }
+      if (existsSync(cached)) { copyFileSync(cached, join(pub, "assets", "og", `${h}.jpg`)); out = `/assets/og/${h}.jpg`; }
+      else missing++;
+    }
+    done.set(src, out);
+    return out;
+  };
+  for (const f of htmls) {
+    const path = "/" + f.slice(pub.length + 1).replace(/index\.html$/, "").split("\\").join("/");
+    if (skip(path)) continue;
+    let html = readFileSync(f, "utf8");
+    const og = /<meta property="og:image" content="([^"]+)"/.exec(html)?.[1];
+    if (!og) continue;
+    let src = og.startsWith(SITE) ? og.slice(SITE.length) : og.startsWith("/") ? og : null;
+    if (!src || src === "/og.jpg") src = pick(path) || null;
+    if (!src || !/^\/assets\/[^?#]+\.(?:jpe?g|png|webp)$/i.test(src)) continue;
+    const c = await card(src);
+    if (!c) continue;
+    html = html.replace(/(<meta property="og:image" content=")[^"]+(")/, `$1${SITE}${c}$2`)
+      .replace(/<meta property="og:image:width" content="\d+">/, `<meta property="og:image:width" content="${OG_W}">`)
+      .replace(/<meta property="og:image:height" content="\d+">/, `<meta property="og:image:height" content="${OG_H}">`)
+      .replace(/(<meta name="twitter:image" content=")[^"]+(")/, `$1${SITE}${c}$2`);
+    if (!/og:image:width/.test(html)) html = html.replace(/(<meta property="og:image" content="[^"]+">)/, `$1\n<meta property="og:image:width" content="${OG_W}">\n<meta property="og:image:height" content="${OG_H}">`);
+    writeFileSync(f, html);
+    pages++;
+  }
+  log(`[og] ${pages} pages with their own 1200×630 card, ${made} new${missing ? `, ${missing} not in the cache (install sharp and build once)` : ""}`);
+}

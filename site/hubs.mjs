@@ -8,7 +8,7 @@ export const INDUSTRIES = [
     street: "A",
     streetName: "Coffee Street",
     title: "Specialty coffee, food & drink branding in Bucharest",
-    desc: "Branding, packaging, webshops and content for coffee shops, bakeries and food brands. Two Minutes, Steam, Craft Coffee and Slow Coffee Festival, in Bucharest.",
+    desc: "Branding, packaging, webshops and content for coffee shops, bakeries and food brands. Two Minutes, Steam, Craft Coffee and Slow Coffee Festival.", // r136: under 155 characters
     eyebrow: "Coffee Street · 15 case studies",
     h1: "Coffee, food and drink brands, made by regulars.",
     lead: "Cromatic Studios is a Bucharest branding studio for specialty coffee, food and drink. We design the brand, the box, the shop and the feed for the places people come back to.",
@@ -75,7 +75,7 @@ export const INDUSTRIES = [
     street: "C",
     streetName: "Medical Avenue",
     title: "Healthcare, clinic & pharma branding in Bucharest",
-    desc: "Brand strategy, websites, TV ads and content for clinics, pharma and aesthetic medicine. Elithia, Clinica Sante, Toskani MED and Help4Brain, from Bucharest.",
+    desc: "Brand strategy, websites, TV ads and content for clinics, pharma and aesthetic medicine. Elithia, Clinica Sante, Toskani MED and Help4Brain.", // r136: under 155 characters
     eyebrow: "Medical Avenue · 7 case studies",
     h1: "Healthcare brands that feel like care.",
     lead: "Cromatic Studios builds brands, websites, films and content for clinics, laboratories, pharma and aesthetic medicine, in Romania and abroad. Precise for the doctor. Calm for the patient.",
@@ -222,7 +222,7 @@ export const SERVICE_PAGES = [
     name: "Websites & apps",
     chapter: "The World",
     title: "Website, webshop & app design studio in Bucharest",
-    desc: "UX, UI, design systems and development for websites, webshops and apps. Investimental, craftcoffee.ro and unchainfestival.com, by Cromatic Studios, Bucharest.",
+    desc: "UX, UI, design systems and development for websites, webshops and apps. Investimental, craftcoffee.ro and unchainfestival.com, by Cromatic Studios.", // r136: under 155 characters
     eyebrow: "The World · Websites & apps",
     h1: "Places your customers can walk into.",
     lead: "Cromatic Studios designs and builds websites, webshops and mobile apps in Bucharest, from research and information architecture to design systems, interfaces and development.",

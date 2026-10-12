@@ -44,11 +44,31 @@ export const CRAFT = {
       pillar: "brand",
       text: "A circular badge with the wordmark cut across the middle and “The finest equipment” around it: it reads as a seal on a box, embroidered on a patch or pressed onto a pin. Red and blue split the system into two tempers.",
       deliverables: ["Logo", "Badge system", "Colour system", "Stationery", "Packaging", "Uniforms", "Merch"],
+      // r137: the people and the pieces in the same spreads: the team at the bar between the patch, the box,
+      // the uniform and the bag (the event photos moved here from the Coffeeast chapter)
       media: [
-        { row: [{ img: m("patch"), alt: "Embroidered Craft Coffee patch: The finest equipment" }, { img: m("logo"), alt: "The Craft Coffee wordmark in blue", contain: true, bg: "#f8f5f0" }], cap: "The badge and the wordmark" },
+        {
+          mix: [
+            { img: m("event-54"), alt: "Two team members brewing coffee", at: [1, 6, 1, 9], pos: "50% 40%", sm: 2, smr: 0.8 },
+            { img: m("patch"), alt: "Embroidered Craft Coffee patch: The finest equipment", contain: true, bg: "#dcebfa", tilt: -5, tag: "Badge system", at: [6, 10, 1, 5], sm: 1, smr: 1 },
+            { img: m("event-12"), alt: "A team member at the brew bar", at: [10, 13, 1, 6], pos: "50% 30%", sm: 1, smr: 1 },
+            { img: m("logo"), alt: "The Craft Coffee wordmark in blue", contain: true, card: true, bg: "#e63445", tilt: -3, tag: "Logo", at: [6, 10, 5, 9], sm: 1, smr: 1 },
+            { img: m("tag"), alt: "Craft Coffee service tag", contain: true, card: true, bg: "#dcebfa", tilt: 5, at: [10, 13, 6, 9], sm: 1, smr: 1 }
+          ],
+          cap: "The badge and the wordmark, with the team behind the bar"
+        },
         { statement: "The finest equipment.", sub: "Written around the badge, on every box, uniform and plinth.", bg: "#1f64a8", fg: "#ffffff" },
-        { row: [{ img: m("box"), alt: "Shipping box: Your coffee equipment is here", contain: true, bg: "#ffffff" }, { img: m("tag"), alt: "Craft Coffee service tag", contain: true, bg: "#f8f5f0" }], cap: "“Your coffee equipment is here.” Before the machine is unpacked, the box already sounds like the brand." },
-        { row: [{ img: m("uniform"), alt: "Grey technician overalls with the Craft Coffee badge", contain: true, bg: "#ffffff" }, { img: m("bag"), alt: "Backpack with the Craft Coffee patch", contain: true, bg: "#ffffff" }], cap: "Uniforms and bags for the technicians: the part of the brand that actually shows up at your bar" }
+        {
+          mix: [
+            { img: m("box"), alt: "Shipping box: Your coffee equipment is here", contain: true, bg: "#dcebfa", tilt: -3, tag: "Packaging", at: [1, 6, 1, 5], sm: 2, smr: 1.4 },
+            { img: m("event-97"), alt: "The team with visitors, under the Craft Coffee badge", at: [6, 10, 1, 6], pos: "50% 35%", sm: 1, smr: 0.75 },
+            { img: m("uniform"), alt: "Grey technician overalls with the Craft Coffee badge", contain: true, bg: "#f8f5f0", tag: "Uniforms", at: [10, 13, 1, 9], sm: 1, smr: 0.75 },
+            { img: m("event-92"), alt: "A visitor and a team member in front of the Craft Coffee badge", at: [1, 4, 5, 9], sm: 1, smr: 0.75 },
+            { img: m("bag"), alt: "Backpack with the Craft Coffee patch", contain: true, bg: "#fbe2e4", tilt: 4, tag: "Merch", at: [4, 6, 5, 9], sm: 1, smr: 0.75 },
+            { text: "Uniforms and bags for the technicians: the part of the brand that actually shows up at your bar", bg: "#1f64a8", fg: "#ffffff", at: [6, 10, 6, 9], sm: 2 }
+          ],
+          cap: "“Your coffee equipment is here.” Before the machine is unpacked, the box already sounds like the brand."
+        }
       ]
     },
 
@@ -147,9 +167,7 @@ export const CRAFT = {
       media: [
         { row: [p("event-84", "A La Marzocco machine and grinder on a dark plinth with the red Craft Coffee badge"), p("event-81", "A La Marzocco machine and grinder at the stand"), p("event-09", "A team member next to a La Marzocco machine")], cap: "La Marzocco machines on Craft Coffee plinths" },
         { row: [p("event-27", "An espresso shot running into a cup"), p("event-31", "A cup set on the drip tray")], cap: "Shots for visitors, all day" },
-        { row: [p("event-12", "A team member at the brew bar"), p("event-54", "Two team members brewing coffee")], cap: "The team behind the bar" },
-        { row: [p("event-62", "A glass carafe of filter coffee on a Fellow scale"), p("event-72", "A hand setting a Fellow scale"), p("event-74", "A Fellow grinder under the Craft Coffee badge")], cap: "The Fellow brew bar" },
-        { row: [p("event-97", "The team with visitors, under the Craft Coffee badge"), p("event-92", "A visitor and a team member in front of the Craft Coffee badge")], cap: "Visitors at the stand, under the badge" }
+        { row: [p("event-62", "A glass carafe of filter coffee on a Fellow scale"), p("event-72", "A hand setting a Fellow scale"), p("event-74", "A Fellow grinder under the Craft Coffee badge")], cap: "The Fellow brew bar" }
       ]
     }
   ],

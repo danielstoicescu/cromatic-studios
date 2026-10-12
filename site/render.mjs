@@ -3,7 +3,7 @@
 // src/app.js to { src, w, h } (src is root-relative, e.g. /assets/abc.png).
 import { NAV, CHAPTERS, SERVICES, PROJECTS, STREETS, CLIENT_BADGES, FRIENDS, CREW, CREW_INFO, CREW_COLORS, CREW_PHOTOS, CREW_FACE_VARS, FORM, CASES, CANVASES, OFFICES } from "./data.mjs";
 import { STUDIO, FAQ, studioNode } from "../build/seo.mjs";
-import { SAME_AS } from "../build/seo-pages.mjs";
+import { SAME_AS, clip } from "../build/seo-pages.mjs";
 const HUBS = await import("./hubs.mjs").catch(() => ({}));
 const INDUSTRIES = HUBS.INDUSTRIES || [], SERVICE_PAGES = HUBS.SERVICE_PAGES || [];
 
@@ -92,7 +92,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     </div>
   </div>
   <div class="wrap ftr-motto"><span class="cupspin" aria-hidden="true"></span><p>There is always a coffee.</p></div>
-  <p class="wrap ftr-note mono">© ${new Date().getFullYear()} Cromatic Studios · Strada Olari 9, Bucharest · since 2014 · <a href="#cookies" data-cookies>Cookies</a></p>
+  <p class="wrap ftr-note mono">© ${new Date().getFullYear()} Cromatic Studios · Strada Olari 9, Bucharest · since 2014 · <a href="#cookies" data-cookies>Cookies</a> · <a href="/privacy/">Privacy</a></p>
 </footer>
 </body></html>`;
 
@@ -212,7 +212,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Cromatic Studios", item: `${SITE}/site/` }] }
     ] };
     const hero = ["sP25b", "tmCover", "steamCoverImg"];
-    return `${head({ title: SITE_TITLE, desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, film and content for indie brands, startups and established companies.", path: "/site/", ld })}
+    return `${head({ title: SITE_TITLE, desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, film and content for indie brands, startups and established firms.", path: "/site/", ld })}
 ${header(true)}
 <main id="main">
   <section class="hero hero-kz">
@@ -382,7 +382,10 @@ ${footer}`;
       <div class="cb-media fr">${(b.imgs || []).map(browser).join("")}${(b.phones || []).map(phone).join("")}</div>
     </div></div></section>`;
     const imgs = b.imgs || [], vids = [...(b.vid ? [b.vid] : []), ...(b.vids || [])];
-    const items = [...vids.map((v) => `<figure class="c2-fig vid">${vid(v)}</figure>`), ...imgs.map((m, k) => `<figure class="c2-fig">${lbImg(m, b.caps?.[k] || b.h || "")}${b.caps?.[k] ? `<figcaption class="mono">${esc(b.caps[k])}</figcaption>` : ""}</figure>`)];
+    // "tall": a rail of big portrait frames; a landscape photo is cropped to portrait, around b.pos[k] (an object-position)
+    const tall = b.layout === "tall";
+    const figAttr = (m, k) => { if (!tall) return ""; const a = A(m); return a && a.w > a.h ? ` class="c2-fig crop"${b.pos?.[k] ? ` style="--op:${b.pos[k]}"` : ""}` : ""; };
+    const items = [...vids.map((v) => `<figure class="c2-fig vid">${vid(v)}</figure>`), ...imgs.map((m, k) => `<figure${figAttr(m, k) || ' class="c2-fig"'}>${lbImg(m, b.caps?.[k] || b.h || "")}${b.caps?.[k] ? `<figcaption class="mono">${esc(b.caps[k])}</figcaption>` : ""}</figure>`)];
     const n = items.length;
     const layout = b.layout || (n === 1 ? "full" : n === 2 ? "duo" : "rail");
     let media = "";
@@ -390,7 +393,7 @@ ${footer}`;
     if (layout === "side") return `<section class="c2-ch c2-side${b.small ? " small" : ""}"><div class="wrap c2-side-in c2-reveal"><div class="c2-side-m">${items.join("")}</div><div class="c2-side-t">${b.h ? `<span class="c2-num mono">${num}</span><h2>${esc(b.h)}</h2>` : ""}${b.p ? `<p>${b.p}</p>` : ""}</div></div></section>`;
     if (layout === "full") media = `<div class="wrap-wide c2-full c2-reveal">${items.join("")}</div>`;
     else if (layout === "duo") media = `<div class="wrap-wide c2-duo c2-reveal">${items.join("")}</div>`;
-    else if (n) media = `<div class="c2-rail c2-reveal${b.poster ? " posters" : ""}"><div class="c2-track" tabindex="0" aria-label="${esc(b.h || "Gallery")}, scroll sideways">${items.join("")}</div>
+    else if (n) media = `<div class="c2-rail c2-reveal${b.poster ? " posters" : ""}${tall ? " tall" : ""}"><div class="c2-track" tabindex="0" aria-label="${esc(b.h || "Gallery")}, scroll sideways">${items.join("")}</div>
       <div class="wrap c2-rail-ui"><button class="c2-rb prev" aria-label="Previous">←</button><button class="c2-rb next" aria-label="Next">→</button><span class="c2-count mono">${n} images · drag</span></div></div>`;
     return `<section class="c2-ch${b.small ? " small" : ""}${b.say && !b.h ? " c2-ch-say" : ""}">${head}${extra}${media}</section>`;
   }
@@ -445,7 +448,8 @@ ${footer}`;
   // a brand canvas as a horizontal page: the artboard's elements, each positioned exactly where
   // it sits on the board, revealed as the board slides past
   // r134h: a meta description ends on a whole sentence (or a whole word), never mid-word
-  const shortDesc = (t, max = 158) => { t = String(t).replace(/\s+/g, " ").trim(); if (t.length <= max) return t; const cut = t.slice(0, max); const dot = cut.lastIndexOf(". "); return dot > 80 ? cut.slice(0, dot + 1) : cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:·-]$/, "") + "…"; };
+  // r136 (N33): the same rule as every other page (build/seo-pages.mjs clip: whole sentences, 155 characters)
+  const shortDesc = (t, max = 155) => clip(t, max, null);
   function canvasPage(slug) {
     const d = CANVASES[slug], cv = canvases[slug];
     const p = PROJECTS.find((x) => x.page === slug);
@@ -539,7 +543,7 @@ ${header(false)}
 <main id="main" class="case hub" style="--bc:${col};--bt:#111">
   ${hubHero(hubCrumbs(`<a href="/site/#work">Industries</a>`, street), d.eyebrow, d.h1, d.lead, col)}
   <section class="wrap c2-lead hub-intro">${d.intro.map((x) => `<p>${x}</p>`).join("")}</section>
-  <section class="sec"><div class="wrap"><p class="eyebrow mono">What we do on ${esc(street)}</p>${cards(d.offer, col)}</div></section>
+  <section class="sec"><div class="wrap"><h2 class="eyebrow mono">What we do on ${esc(street)}</h2>${cards(d.offer, col)}</div></section>
   <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono">${esc(street)} · ${d.cases.length} case studies</p>
     <h2 class="ptitle">${pill("The work", col, -1.5)}</h2>${hubCases(d.cases, covers)}
     ${(() => { const more = PROJECTS.filter((p) => p.street === d.street && !p.page); return more.length ? `<p class="friends"><span class="mono">Also on ${esc(street)}</span> ${more.map((p) => `<span class="fpill">${esc(p.name)}</span>`).join("")}</p>` : ""; })()}
@@ -566,8 +570,8 @@ ${header(false)}
 <main id="main" class="case hub" style="--bc:${col};--bt:#111">
   ${hubHero(hubCrumbs(`<a href="/site/#services">Services</a>`, d.name), d.eyebrow, d.h1, d.lead, col)}
   <section class="wrap c2-lead hub-intro">${d.intro.map((x) => `<p>${x}</p>`).join("")}</section>
-  <section class="sec"><div class="wrap"><p class="eyebrow mono">What it includes</p>${cards(d.includes, col)}</div></section>
-  <section class="sec sec-alt"><div class="wrap"><p class="eyebrow mono">How we work</p>
+  <section class="sec"><div class="wrap"><h2 class="eyebrow mono">What it includes</h2>${cards(d.includes, col)}</div></section>
+  <section class="sec sec-alt"><div class="wrap"><h2 class="eyebrow mono">How we work</h2>
     <div class="chapters">${d.process.map((x, i) => `<article class="chap" style="--cc:${["#28C840", "#B098C8", "#119BFE", "#F65342"][i % 4]}"><span class="chap-k mono">${String(i + 1).padStart(2, "0")}</span><h3>${esc(x.t)}</h3><p>${x.p}</p></article>`).join("")}</div>
   </div></section>
   <section class="sec" id="work"><div class="wrap"><p class="eyebrow mono">${esc(d.name)} · ${d.cases.length} case studies</p>
@@ -582,7 +586,7 @@ ${footer}`;
 
   function teamPage() {
     const path = "/team/", title = "The people behind the studio, Bucharest · Cromatic Studios";
-    const desc = "Meet the people of Cromatic Studios, an independent creative studio in Bucharest founded in 2014 by Daniel Stoicescu and led today by Daniel and Cristian Stoicescu.";
+    const desc = "Meet the people of Cromatic Studios, an independent creative studio in Bucharest founded in 2014 and led by two brothers, Daniel and Cristian Stoicescu."; // r136: under 155 characters, a whole sentence
     const FULL = { Daniel: "Daniel Stoicescu", Cristian: "Cristian Stoicescu" };
     const person = (n) => ({ "@type": "Person", "@id": n === "Daniel" ? `${SITE}/#daniel` : n === "Cristian" ? `${SITE}/#cristian` : `${SITE}/team/#${n.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "")}`, name: FULL[n] || n, ...(CREW_INFO[n]?.role ? { jobTitle: CREW_INFO[n].role } : {}), ...(CREW_INFO[n]?.bio ? { description: CREW_INFO[n].bio } : {}), ...(CREW_INFO[n]?.instagram ? { sameAs: [CREW_INFO[n].instagram] } : {}), worksFor: { "@id": `${SITE}/#studio` } });
     const ld = hubLd(path, title, desc, [["Team", path]], [{ "@type": "AboutPage", "@id": `${SITE}${path}#about`, url: `${SITE}${path}`, about: { "@id": `${SITE}/#studio` } }, ...CREW.map(person)]);
@@ -604,5 +608,47 @@ ${header(false)}
 ${footer}`;
   }
 
-  return { home, casePage, canvasPage, industryPage, servicePage, teamPage, industrySlugs: INDUSTRIES.map((x) => x.slug), serviceSlugs: SERVICE_PAGES.map((x) => x.slug), slugs: Object.keys(CASES), canvasSlugs: Object.keys(CANVASES).filter((k) => canvases[k]) };
+  // r136 (Daniel): the privacy policy, /privacy/ (and /ro/confidentialitate/ through the dictionary). DRAFT: the wording
+  // still has to be checked by a lawyer before it is final (say so here only, never on the page). The company data
+  // lives on this page, not in the footer (Daniel).
+  const PRIVACY = [
+    ["Who we are", [`This website belongs to Cromatic Studios, an independent creative studio in Bucharest. The company responsible for your data (the controller) is <strong>Radio Intelligence SRL</strong>, VAT number RO29014197, Bucharest, Romania.`, `For anything about your data, write to <a href="mailto:${STUDIO.email}">${STUDIO.email}</a>. A person from the studio reads it, not a bot.`]],
+    ["What we collect when you write to us", [`The boarding pass on the map is how you tell us about your project. It asks for:`,
+      { ul: ["your name", "your email address", "your phone number, if you want to give it", "your message", "the choices you tick: what you dream of, your industry, when you want to start"] },
+      `The server also notes when the boarding pass was sent and the IP address it came from, so we can stop spam.`]],
+    ["Why we use it", [`For one thing: to answer your enquiry and, if you want one, to prepare an offer. We do not sell your data, we do not add you to a newsletter and we do not use it for ads.`,
+      `The legal basis is the steps you ask us to take before a possible contract (GDPR, Article 6(1)(b)) and your consent, which you give when you send the boarding pass (Article 6(1)(a)).`]],
+    ["Who else handles it", [`A few services help us run the website. They process data only on our behalf:`,
+      { ul: ["<strong>Google Workspace</strong> delivers the emails: your message to our inbox, and your copy of the boarding pass to you.", "<strong>Bunnyshell</strong> and <strong>DigitalOcean</strong> host the website and its server, where a backup copy of each message is kept.", "<strong>Cloudflare</strong> sits in front of the website, keeps it safe and fast, and sees technical data such as your IP address."] },
+      `Some of these companies may process data outside the European Union. When they do, they rely on the European Commission's standard contractual clauses or adequacy decisions.`]],
+    ["How long we keep it", [`Enquiries are kept for up to 24 months, then deleted. If your enquiry turns into a project, we keep what the contract and the law ask us to keep (accounting rules, for example) for as long as they ask.`]],
+    ["Cookies, statistics and films", [`Nothing from Google Analytics or Google Tag Manager loads until you say yes on the cookie card. If you do, Google Analytics 4 counts visits and clicks, so we know what works. If you say no, your browser only remembers that answer, so we don't ask again. You can change your mind at any time with the Cookies link at the bottom of the page.`,
+      `Films hosted on YouTube load only when you press play. Until then you see a picture from our own server, and nothing is sent to YouTube.`]],
+    ["Your rights", [`You can ask us what data we hold about you and get a copy of it. You can have it corrected or deleted, limit how we use it or object to it, and take it with you. You can withdraw your consent at any time; what we did before stays lawful.`,
+      `Write to <a href="mailto:${STUDIO.email}">${STUDIO.email}</a>. We answer within a month, usually much sooner.`]],
+    ["If something is wrong", [`Tell us first, we'd like to fix it. You also have the right to complain to the Romanian data protection authority, ANSPDCP (Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal), B-dul G-ral. Gheorghe Magheru 28-30, Sector 1, Bucharest, <a href="https://www.dataprotection.ro/" target="_blank" rel="noopener">dataprotection.ro</a>.`]],
+    ["Changes", [`If this page changes, the date at the top changes too.`]]
+  ];
+  function privacyPage() {
+    const path = "/privacy/", title = "Privacy policy · Cromatic Studios";
+    const desc = "How Cromatic Studios handles your data: what the boarding pass collects, why, who helps us, how long we keep it, cookies, and your rights.";
+    const ld = hubLd(path, title, desc, [["Privacy", path]]);
+    return `${head({ title, desc, path, ld })}
+${header(false)}
+<main id="main" class="case hub legal-page" style="--bc:#FED012;--bt:#111">
+  <section class="c-hero c2-hero hub-hero">
+    <div class="wrap">${hubCrumbs(`<a href="/site/#contact">Studio</a>`, "Privacy")}
+      <p class="eyebrow mono">Privacy policy · updated 12 October 2026</p>
+      <h1 class="c2-title">${"Your data, plainly".split(" ").map((w, k) => `<span class="w" style="--k:${k}">${w}</span>`).join(" ")}</h1>
+      <p class="lead hub-lead">What happens to what you tell us, in plain words. Short version: we use it to answer you, and nothing else.</p>
+    </div></section>
+  <section class="sec"><div class="wrap legal">
+    ${PRIVACY.map(([h, body]) => `<h2>${h}</h2>\n    ${body.map((b) => (typeof b === "string" ? `<p>${b}</p>` : `<ul>${b.ul.map((li) => `<li>${li}</li>`).join("")}</ul>`)).join("\n    ")}`).join("\n    ")}
+  </div></section>
+  ${hubEnd}
+</main>
+${footer}`;
+  }
+
+  return { home, casePage, canvasPage, industryPage, servicePage, teamPage, privacyPage, industrySlugs: INDUSTRIES.map((x) => x.slug), serviceSlugs: SERVICE_PAGES.map((x) => x.slug), slugs: Object.keys(CASES), canvasSlugs: Object.keys(CANVASES).filter((k) => canvases[k]) };
 }

@@ -593,3 +593,14 @@ mark { background: var(--y); color: var(--ink); border-radius: 6px; padding: 0 .
 .intro .h2, .studio .h2, .xp .h2 { font-size: clamp(34px, 4.6vw, 68px); }
 @media (max-width: 600px) { .intro .h2, .studio .h2, .xp .h2 { font-size: 8vw; } }
 @media (max-width: 700px) { .worlds-pin .wipe-edge { top: 170px; bottom: 200px; } }
+/* phones: the opening screen is the headline, big and in the middle (desktop is unchanged) */
+@media (max-width: 600px) {
+  .hero-pin { padding: 84px 0 58px; }
+  .hero-copy { align-self: center; margin-bottom: 0; }
+  .hero-h { font-size: min(19.5vw, 10.8svh); line-height: .9; letter-spacing: -.05em; }
+  .hero-h .hl { white-space: nowrap; }
+  .hero-h .pill { display: table; margin: .12em 0 0 -.02em; }
+  .hero-sub { font-size: 17px; line-height: 1.45; margin-top: 22px; max-width: 30em; }
+  .hero-btns { margin-top: 24px; }
+  .hero-shade { background: radial-gradient(130% 70% at 35% 50%, rgba(13,12,9,.66), rgba(13,12,9,.14) 70%), linear-gradient(0deg, rgba(13,12,9,.45), transparent 40%); }
+}

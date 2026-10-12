@@ -7,14 +7,15 @@ import zlib from "node:zlib";
 import { readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { jsonLd, llmsTxt, llmsFull, robotsTxt, sitemapXml, manifest, icoFromPng } from "./seo.mjs";
-import { seoPage, pageText, lastmodStore, SAME_AS } from "./seo-pages.mjs";
+import { jsonLd, llmsTxt, llmsFull, robotsTxt, sitemapXml, manifest, icoFromPng, studioNode, websiteNode } from "./seo.mjs";
+import { seoPage, pageText, lastmodStore, SAME_AS, CLIPPED } from "./seo-pages.mjs";
 import { consentSnippet } from "./consent.mjs";
-import { FILM_AUTO } from "./film.mjs";
+import { BOARD_HTML, BOARD_CSS, BOARD_JS } from "./board.mjs";
+import { FILM_AUTO, ytFacade } from "./film.mjs";
 import * as DATA from "../site/data.mjs";
 import { makeRender } from "../site/render.mjs";
 import { kineticBundle } from "./kinetic.mjs";
-import { optimizeImages } from "./images.mjs";
+import { optimizeImages, socialCards } from "./images.mjs";
 import { makeI18n, roPath } from "./i18n.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -25,10 +26,12 @@ const head = readFileSync(src("head.html"), "utf8");
 const css = readFileSync(src("styles.css"), "utf8");
 const js = readFileSync(src("app.js"), "utf8");
 const content = readFileSync(src("content.html"), "utf8").replace(/<!--[\s\S]*?-->\s*/, "");
-// the dark calibrating screen, painted before the script arrives; it steps aside as soon as the
-// app has drawn its own loader on top
-const boot = `<div class="boot" aria-hidden="true"><svg viewBox="0 0 120 120"><circle class="r" cx="60" cy="60" r="52"/><circle class="p" cx="60" cy="60" r="52"/><g transform="translate(44 44) scale(1.333)"><path class="s" d="M12 0 L14.6 7.2 L21.5 4.2 L17.4 10.5 L24 12 L17.4 13.5 L21.5 19.8 L14.6 16.8 L12 24 L9.4 16.8 L2.5 19.8 L6.6 13.5 L0 12 L6.6 10.5 L2.5 4.2 L9.4 7.2 Z" fill="#FED012"/></g></svg></div>
-<script>(function(){var t0=Date.now();(function w(){var b=document.querySelector(".boot");if(!b)return;if(document.querySelector(".loader")||Date.now()-t0>30000){b.classList.add("gone");setTimeout(function(){b.remove()},450)}else requestAnimationFrame(w)})()})();<\/script>`;
+// r136c: the first paint is the brewing cup, turning: the 3D cup's own 24-frame strip (src/cup-spin.png) is inlined,
+// so it paints with the HTML before any request, never a star. On "/" and ?map app.js adopts this element as its
+// "Brewing the city" loader (no swap); on ?drive it steps aside as soon as the app has drawn its own loader
+const CUP_STRIP = `data:image/png;base64,${readFileSync(src("cup-spin.png")).toString("base64")}`;
+const boot = `<style>.kz-brew .kb-cup .kb-sprite.kb-cs{background-image:url(${CUP_STRIP})}</style><div class="boot kz-brew" aria-hidden="true"><div class="kb-cup kb-3d"><i class="kb-sprite kb-cs"></i></div><span class="kb-t">Brewing the city</span></div>
+<script>(function(){var t0=Date.now(),drive=/[?&]drive\\b/.test(location.search);(function w(){var b=document.querySelector(".boot");if(!b)return;if((drive&&document.querySelector(".loader"))||Date.now()-t0>30000){b.classList.add("gone");setTimeout(function(){b.remove()},450)}else requestAnimationFrame(w)})()})();<\/script>`;
 // the text version's portfolio, from site/data.mjs (every case study linked, grouped by street)
 const homeWork = () => {
   const e = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
@@ -64,7 +67,7 @@ if (single >= 0) {
   process.exit(0);
 }
 
-const pub = join(root, "public");
+const pub = process.env.PUBLIC_DIR || join(root, "public"); // r136: PUBLIC_DIR lets parallel work build elsewhere
 rmSync(pub, { recursive: true, force: true });
 mkdirSync(join(pub, "assets"), { recursive: true });
 mkdirSync(join(pub, "assets", "fonts"), { recursive: true });
@@ -108,6 +111,28 @@ const WP_MIRROR = new Set();
   const base = join(root, "site", "onboarding");
   (function walk(d, rel) { let fs = []; try { fs = readdirSync(d); } catch { return; } for (const f of fs) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p, rel + f + "/"); else { mkdirSync(join(pub, "onboarding", rel), { recursive: true }); copyFileSync(p, join(pub, "onboarding", rel, f)); } } })(base, "");
 }
+// r136 (N34): /onboarding stays indexable, as a page of the site: a description under 155 characters, robots, the
+// page and the studio in JSON-LD, its email address kept away from Cloudflare's obfuscation (email_off), and a place
+// in the sitemap and llms-full.txt (ONB, used at the end)
+let ONB = null;
+{
+  const file = join(pub, "onboarding", "index.html");
+  try {
+    let h = readFileSync(file, "utf8");
+    const url = `${SITE_URL}/onboarding/`, title = (/<title>([^<]*)<\/title>/.exec(h) || [])[1] || "Cromatic Studios · The new website";
+    const desc = "The new Cromatic Studios website: a 3D city of Bucharest where every client is a building and every industry is a street. Map it, drive it or read it.";
+    const og = (/<meta property="og:image" content="([^"]+)"/.exec(h) || [])[1] || `${SITE_URL}/og.jpg`;
+    h = h.replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${desc}">`);
+    if (!/<link rel="canonical"/.test(h)) h = h.replace("</title>", `</title>\n<link rel="canonical" href="${url}">`);
+    if (!/<meta name="robots"/.test(h)) h = h.replace(/(<link rel="canonical"[^>]*>)/, `$1\n<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">`);
+    const ld = { "@context": "https://schema.org", "@graph": [studioNode(SITE_URL, SAME_AS), websiteNode(SITE_URL),
+      { "@type": "WebPage", "@id": url, url, name: title, description: desc, isPartOf: { "@id": `${SITE_URL}/#website` }, about: { "@id": `${SITE_URL}/#studio` }, primaryImageOfPage: og, inLanguage: "en" }] };
+    if (!h.includes("application/ld+json")) h = h.replace("</head>", `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>\n</head>`);
+    if (!h.includes("<!--email_off-->")) h = h.replace(/(<body\b[^>]*>)/, "$1<!--email_off-->").replace(/<\/body>(?![\s\S]*<\/body>)/, "<!--/email_off--></body>");
+    writeFileSync(file, h);
+    ONB = { path: "/onboarding/", title, desc, fullDesc: desc, images: [og], html: h };
+  } catch (e) { console.warn("[build] onboarding:", e.message); }
+}
 const wpMirror = (text) => text.replace(/https:(\\?\/)\\?\/cromaticstudios\.com\\?\/wp-content\\?\/uploads\\?\/(\d{4})\\?\/(\d{2})\\?\/(?=([\w.-]+)|\$\{)/g, (m, sl, y, mo, f) => (!f || WP_MIRROR.has(`${y}/${mo}/${f}`)) ? `/wp-content/uploads/${y}/${mo}/` : m);
 jsOut = wpMirror(jsOut);
 const jsName = `assets/app.${hash(jsOut)}.js`, cssName = `assets/styles.${hash(cssOut)}.css`;
@@ -139,6 +164,35 @@ const dims = (buf) => {
       const mk = buf[i + 1], len = buf.readUInt16BE(i + 2);
       if (mk >= 0xc0 && mk <= 0xcf && mk !== 0xc4 && mk !== 0xc8 && mk !== 0xcc) return [buf.readUInt16BE(i + 7), buf.readUInt16BE(i + 5)];
       i += 2 + len;
+    }
+  }
+  // r136 (N30): films too, so a <video> can hold its place before its first frame (a lazy film that grew from 150 px
+  // to its real height pushed the next chapter down: CLS 0.52 on Two Minutes)
+  // mp4/mov: the first track header (tkhd) with a picture size (16.16 fixed point, in the box's last 8 bytes)
+  if (buf.length > 12 && buf.toString("latin1", 4, 8) === "ftyp") {
+    for (let i = buf.indexOf("tkhd"); i > 3; i = buf.indexOf("tkhd", i + 4)) {
+      const end = i - 4 + buf.readUInt32BE(i - 4);
+      if (end > buf.length || end - i < 80) continue;
+      const w = buf.readUInt32BE(end - 8) >>> 16, h = buf.readUInt32BE(end - 4) >>> 16;
+      if (w && h) return [w, h];
+    }
+  }
+  // webm (EBML): PixelWidth (0xB0) and PixelHeight (0xBA) inside the first Video element (0xE0)
+  if (buf[0] === 0x1a && buf[1] === 0x45 && buf[2] === 0xdf && buf[3] === 0xa3) {
+    const vint = (i) => { let len = 1, m = 0x80; while (len <= 8 && !(buf[i] & m)) { len++; m >>= 1; } let v = buf[i] & (m - 1); for (let k = 1; k < len; k++) v = v * 256 + buf[i + k]; return [v, len]; };
+    for (let i = 0, lim = Math.min(buf.length, 1 << 20) - 8; i < lim; i++) {
+      if (buf[i] !== 0xe0) continue;
+      const [vs, vl] = vint(i + 1);
+      if (!vs || vs > 200) continue;
+      let j = i + 1 + vl, w = 0, h = 0;
+      while (j < i + 1 + vl + vs) {
+        const [s, l] = vint(j + 1);
+        if (s > 16) break;
+        let v = 0; for (let k = 0; k < s; k++) v = v * 256 + buf[j + 1 + l + k];
+        if (buf[j] === 0xb0) w = v; else if (buf[j] === 0xba) h = v;
+        j += 1 + l + s;
+      }
+      if (w && h) return [w, h];
     }
   }
   return [0, 0];
@@ -269,7 +323,6 @@ const wpLocal = (u) => mediaMap.get("m:wp/" + u.replace(/^.*\/uploads\/(\d{4})\/
 // (inside the map it asks the map to open it; on its own it goes to /?map&boarding). Covers are filled in at the end
 // (%%COVER:slug%%), once every page has its cover.
 const STREET_CSS = `<style>.cz-street{box-sizing:border-box;max-width:1180px;margin:64px auto 48px;padding:0 20px;font:500 16px/1.45 CromaticSans,"Darker Grotesque",system-ui,sans-serif;color:#0d0c09}.cz-street .czs-eb{font:700 11px/1.2 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin:0 0 10px}.cz-street h2{font:900 clamp(30px,4.4vw,52px)/1.02 CromaticSans,system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 24px}.cz-street h2 span{display:inline-block;padding:.02em .22em .08em;border-radius:.22em;background:var(--czs,#FED012);transform:rotate(-1.2deg)}.czs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.czs-card{display:flex;flex-direction:column;border:2px solid #0d0c09;border-radius:22px;overflow:hidden;background:#fff;color:#0d0c09;text-decoration:none;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s}.czs-card:hover{transform:translateY(-4px) rotate(-.4deg);box-shadow:0 14px 30px rgba(13,12,9,.14)}.czs-card img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;background:#eee}.czs-card b{font:800 20px/1.15 CromaticSans,system-ui,sans-serif;padding:14px 16px 2px}.czs-card span{font-size:14px;opacity:.72;padding:0 16px 16px}.czs-links{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 0}.czs-links a{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border:2px solid #0d0c09;border-radius:999px;background:#fff;color:#0d0c09;text-decoration:none;font:800 14px/1 CromaticSans,system-ui,sans-serif}.czs-board{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin-top:28px;padding:26px 28px;border:2px solid #0d0c09;border-radius:26px;background:#FED012}.czs-board p{margin:0;font:900 clamp(24px,3.2vw,36px)/1.05 CromaticSans,system-ui,sans-serif;letter-spacing:-.015em}.czs-board small{display:block;margin-top:6px;font:500 15px/1.35 CromaticSans,system-ui,sans-serif;opacity:.8}.czs-board a{display:inline-flex;align-items:center;gap:10px;padding:16px 24px;border-radius:999px;background:#0d0c09;color:#fff;text-decoration:none;font:800 17px/1 CromaticSans,system-ui,sans-serif;white-space:nowrap}.czs-board a:hover{transform:translateY(-2px)}@media (max-width:760px){.czs-grid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-left:20px;gap:12px;margin:0 -20px;padding:0 20px 8px;scrollbar-width:none}.czs-grid::-webkit-scrollbar{display:none}.czs-card{flex:0 0 76%;scroll-snap-align:start}.czs-card:hover{transform:none}.czs-board{padding:22px}.czs-board a{width:100%;justify-content:center}}@media (prefers-reduced-motion:reduce){.czs-card,.czs-board a{transition:none}}</style>`;
-const BOARD_JS = `<script>document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[data-board]");if(!a)return;var emb=/[?&]embed=1/.test(location.search)||document.documentElement.classList.contains("embed");if(emb&&window.parent!==window){e.preventDefault();window.parent.postMessage({cz:"boarding"},location.origin)}});</script>`;
 const HUBS_DATA = await import("../site/hubs.mjs").catch(() => ({}));
 const escH = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
 const hubLinks = (slug, hasRelated) => {
@@ -284,11 +337,15 @@ const hubLinks = (slug, hasRelated) => {
   for (let k = 1; k <= list.length && same.length < 3; k++) { const x = list[(Math.max(at, 0) + k) % list.length]; if (!seen.has(x.page)) { seen.add(x.page); same.push(x); } }
   const cards = !hasRelated && same.length ? `<div class="czs-grid">${same.map((x) => `<a class="czs-card" href="/work/${x.page}/"><img src="%%COVER:${x.page}%%" alt="${escH(x.name)}" loading="lazy" decoding="async" width="800" height="500"><b>${escH(x.name)}</b><span>${escH(x.cat || "")}</span></a>`).join("")}</div>` : "";
   const links = [ind ? `<a href="/industries/${ind.slug}/">${escH(ind.title.replace(/ in Bucharest$/, ""))} <span aria-hidden="true">→</span></a>` : "", ...svcs.map((x) => `<a href="/services/${x.slug}/">${escH(x.name)} <span aria-hidden="true">→</span></a>`)].join("");
-  const board = hasRelated ? "" : `<div class="czs-board"><p>Ready for boarding?<small>Seat 1A is free. Tell us about your brand and we'll be in touch within a day.</small></p><a href="/?map&amp;boarding" data-board>Ready for boarding <span aria-hidden="true">→</span></a></div>`;
+  const board = hasRelated ? "" : BOARD_HTML;
   if (!cards && !links && !board) return "";
-  return `${STREET_CSS}<section class="cz-street" aria-label="More from the studio" style="--czs:${street ? street[1] : "#FED012"}">${cards ? `<p class="czs-eb">${escH(street ? street[0] : "")}</p><h2><span>On the same street</span></h2>${cards}` : ""}${links ? `<div class="czs-links">${links}</div>` : ""}${board}</section>${board ? BOARD_JS : ""}`;
+  return `${STREET_CSS}<section class="cz-street" aria-label="More from the studio" style="--czs:${street ? street[1] : "#FED012"}">${cards ? `<p class="czs-eb">${escH(street ? street[0] : "")}</p><h2><span>On the same street</span></h2>${cards}` : ""}${links ? `<div class="czs-links">${links}</div>` : ""}${board}</section>${board ? BOARD_CSS + BOARD_JS : ""}`;
 };
+// r136 (N25): YouTube films become a click-to-play facade on a local poster (a still of the film when we have one)
+const YT_POSTERS = { "vGNSZ_aUd8w": "m:cs/Clinica-Sante", "8KtUdarL1oI": "m:pain-plaisir/anemone" };
+const ytPoster = (id) => mediaMap.get(YT_POSTERS[id]) || null;
 const page = (path, raw) => {
+  raw = ytFacade(raw, ytPoster);
   if (path.startsWith("work/")) { const block = hubLinks(path.slice(5), /class="card related"/.test(raw)); if (block && raw.includes("</main>")) { const e = raw.indexOf('<section class="c-end"'); const i = e > -1 ? e : raw.lastIndexOf("</main>"); raw = raw.slice(0, i) + block + raw.slice(i); } }
   const p = `/${path}/`, slug = path.replace(/^work\//, "");
   if (GF_CSS) raw = raw.replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\n?/, "").replace(/<link rel="preload" as="style" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"[^>]*>\n?<noscript><link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"><\/noscript>/, `<style>${GF_CSS}</style>`);
@@ -315,8 +372,12 @@ for (const slug of R.canvasSlugs) page(`work/${slug}`, R.canvasPage(slug));
   if (lit) {
     let steam = new Function(`return ${lit[1]}`)();
     // r134h: the bundle escapes its closing tags as <\/script> (a string inside a script); as a page it must close for real
-    steam = steam.replaceAll("<\\/script>", "</script>").replace(/<!--\s*<meta name="robots"[^>]*>\s*-->/g, "");
-    steam = steam.replace("<head>", `<head>\n<link rel="canonical" href="${SITE_URL}/work/steam/">\n<meta name="description" content="Steam Coffee Shop: a pioneer specialty coffee brand refreshed for its community. Branding, growth and product by Cromatic Studios, Bucharest.">\n<link rel="icon" href="/favicon.ico" sizes="32x32">`)
+    // r136: the commented-out robots tag ("<!-- <meta name="robots" ...> uncomment for preview copies -->") goes, words
+    // after the tag included: while it stood there, seoPage saw a robots tag and never added the real one
+    steam = steam.replaceAll("<\\/script>", "</script>").replace(/<!--\s*<meta name="robots"[^>]*>[\s\S]*?-->\n?/g, "");
+    // r136: Steam's own social picture (the hero film's poster), cut to 1200×630 with the other covers at the end
+    const steamOg = mediaMap.get("m:wp/2025-07-Steam-Cromaticstudios-001");
+    steam = steam.replace("<head>", `<head>\n<link rel="canonical" href="${SITE_URL}/work/steam/">\n<meta name="description" content="Steam Coffee Shop: a pioneer specialty coffee brand refreshed for its community. Branding, growth and product by Cromatic Studios, Bucharest.">\n${steamOg ? `<meta property="og:image" content="${SITE_URL}${steamOg.src}">\n` : ""}<link rel="icon" href="/favicon.ico" sizes="32x32">`)
       .replace("</head>", `<style>body>main.page{padding-top:64px}</style>\n</head>`)
       .replace(/<body([^>]*)>/, `<body$1>\n<a href="/site/#work" style="position:fixed;left:14px;top:14px;z-index:9999;padding:10px 16px;border-radius:999px;background:#FED012;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none">← Cromatic Studios</a>`);
     page("work/steam", steam);
@@ -365,7 +426,9 @@ page("site", R.home(COVERS));
 for (const sl of R.industrySlugs) page(`industries/${sl}`, R.industryPage(sl, COVERS));
 for (const sl of R.serviceSlugs) page(`services/${sl}`, R.servicePage(sl, COVERS));
 page("team", R.teamPage());
-const hubPaths = [...R.industrySlugs.map((x) => `/industries/${x}/`), ...R.serviceSlugs.map((x) => `/services/${x}/`), "/team/"];
+// r136: the privacy policy (EN here, RO through the dictionary)
+page("privacy", R.privacyPage());
+const hubPaths = [...R.industrySlugs.map((x) => `/industries/${x}/`), ...R.serviceSlugs.map((x) => `/services/${x}/`), "/team/", "/privacy/"];
 const workPaths = [...new Set([...R.slugs, ...R.canvasSlugs, ...caseSlugs, "steam"])].map((s) => `/work/${s}/`).sort();
 // r133: the Romanian website, from the English pages and site/i18n/ro.json
 const roPaths = [];
@@ -389,7 +452,9 @@ const roPaths = [];
 {
   const homeText = pageText(html);
   const home = { path: "/", title: "Cromatic Studios · Branding, web & film studio in Bucharest", desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, video and content.", images: [`${SITE_URL}/og.jpg`], lastmod: LASTMOD.get("/", homeText), text: homeText };
-  const order = [home, PAGES["/site/"], ...hubPaths.map((p) => PAGES[p]), ...workPaths.map((p) => PAGES[p]).filter(Boolean), ...roPaths.map((p) => PAGES[p])];
+  // r136: /onboarding, after the website's home
+  const onb = ONB ? (() => { const text = pageText(ONB.html); return { ...ONB, html: undefined, text, lastmod: LASTMOD.get(ONB.path, text) }; })() : null;
+  const order = [home, PAGES["/site/"], ...(onb ? [onb] : []), ...hubPaths.map((p) => PAGES[p]), ...workPaths.map((p) => PAGES[p]).filter(Boolean), ...roPaths.map((p) => PAGES[p])];
   // r135d: each language pair also in the sitemap (Bing reads hreflang there more reliably than in the page head)
   const roSet = new Set(roPaths), pairs = new Map();
   for (const p of ["/site/", ...hubPaths, ...workPaths]) { const rp = roPath(p); if (rp && roSet.has(rp)) { const alt = [["en", p], ["ro", rp], ["x-default", p]]; pairs.set(p, alt); pairs.set(rp, alt); } }
@@ -399,10 +464,28 @@ const roPaths = [];
   LASTMOD.save();
 }
 
+// r136 (N33): pages whose description had to be cut inside its first sentence want a hand-written one
+if (CLIPPED.length) console.warn(`[seo] description cut mid-sentence on ${CLIPPED.length} page(s), write one for: ${CLIPPED.join(", ")}`);
+// r136 (N40): a 1200×630 social picture for every page from its own cover (case pages: their og:image or first
+// picture; hubs and services: their first case; the team: the studio photo). The home pages keep the designed og.jpg.
+{
+  const FIRST = (slugs) => (slugs || []).map((sl) => COVERS[sl]).find((u) => u && /^\/assets\/[^?#]+\.(?:jpe?g|png|webp)$/.test(u));
+  const enOf = new Map(Object.keys(PAGES).map((p) => [roPath(p), p]).filter(([r]) => r));
+  const PICK = { "/team/": mediaMap.get(DATA.CREW_PHOTOS?.[0]?.src)?.src };
+  for (const d of HUBS_DATA.INDUSTRIES || []) PICK[`/industries/${d.slug}/`] = FIRST(d.cases);
+  for (const d of HUBS_DATA.SERVICE_PAGES || []) PICK[`/services/${d.slug}/`] = FIRST(d.cases);
+  const pick = (p) => { const en = enOf.get(p) || p, w = /^\/work\/([\w-]+)\/$/.exec(en); return w ? COVERS[w[1]] : PICK[en]; };
+  const skip = (p) => ["/", "/site/", "/ro/", "/privacy/", "/ro/confidentialitate/"].includes(p) || p.startsWith("/onboarding/");
+  await socialCards(pub, root, SITE_URL, pick, skip);
+}
 await optimizeImages(pub, root);
 (function walkDG(d) { for (const f of readdirSync(d)) { const p2 = join(d, f); if (statSync(p2).isDirectory()) { walkDG(p2); continue; } if (!/\.(css|html|js)$/.test(f)) continue; const t = readFileSync(p2, "utf8"); let n2 = localDG(t);
   // the bold weights land before the first paint: no swap, no layout shift
   if (/\.html$/.test(f) && GS.latin && n2.includes(GS.latin) && !n2.includes(`rel="preload" href="${GS.latin}"`)) n2 = n2.replace(/<head>|<head [^>]*>/, (h) => `${h}\n<link rel="preload" href="${GS.latin}" as="font" type="font/woff2" crossorigin>`);
+  // r136 (N30): the regular weights too (Darker Grotesque), and on the hubs, services and team the mono eyebrow above
+  // the fold (JetBrains Mono): their late swap moved the intro (CLS 0.11-0.15 on a slow phone)
+  if (/\.html$/.test(f) && p2 !== join(pub, "index.html") && DG.latin && /<link rel="preload" href="\/assets\/fonts\/google-sans-latin/.test(n2) && !n2.includes(`rel="preload" href="${DG.latin}"`) && (n2.includes(DG.latin) || n2.includes("/assets/site."))) n2 = n2.replace(/(<link rel="preload" href="\/assets\/fonts\/google-sans-latin[^>]*>)/, `$1\n<link rel="preload" href="${DG.latin}" as="font" type="font/woff2" crossorigin>`);
+  if (/\.html$/.test(f) && n2.includes('class="c-hero c2-hero hub-hero"')) { const jb = gfAssets.find(([rel]) => /gf-jetbrains-mono-latin-[0-9a-f]+\.woff2$/.test(rel)); if (jb && !n2.includes(`rel="preload" href="/${jb[0]}"`)) n2 = n2.replace(/(<link rel="preload" href="\/assets\/fonts\/google-sans-latin[^>]*>)/, `$1\n<link rel="preload" href="/${jb[0]}" as="font" type="font/woff2" crossorigin>`); }
   // nothing is fetched from Google Fonts any more: no early connection to it either
   if (/\.html$/.test(f)) n2 = n2.replace(/<link rel="preconnect" href="https:\/\/fonts\.(?:gstatic|googleapis)\.com"[^>]*>\n?/g, "");
   if (/\.html$/.test(f) && n2.includes("%%COVER:")) n2 = n2.replace(/%%COVER:([\w-]+)%%/g, (m, sl) => COVERS[sl] || COVERS["name:" + ((DATA.PROJECTS.find((x) => x.page === sl) || {}).name || "").toLowerCase()] || "/og.jpg");

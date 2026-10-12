@@ -3,12 +3,13 @@
 // (site/render.mjs, site/cases/src/gen.mjs, or the Steam page lifted from src/app.js).
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
-import { STUDIO } from "./seo.mjs";
+import { STUDIO, studioNode, websiteNode, withStudio } from "./seo.mjs";
 
 // search titles: what the page is about, in the words people search with (the H1 stays creative)
 export const FAVICON_SPIN = `<script>/* the favicon: the yellow Cromatic cup, spinning as in the intro (24 frames; still when motion is reduced) */(function(){try{if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;var go=function(){var im=new Image();im.onload=function(){var c=document.createElement("canvas");c.width=c.height=64;var x=c.getContext("2d"),f=[];for(var k=0;k<24;k++){x.clearRect(0,0,64,64);x.drawImage(im,k*64,0,64,64,0,0,64,64);f.push(c.toDataURL("image/png"))}var ls=[].slice.call(document.querySelectorAll('link[rel~="icon"]'));ls.forEach(function(l,j){if(j)l.remove()});var l=ls[0]||document.head.appendChild(document.createElement("link"));l.rel="icon";l.type="image/png";l.removeAttribute("sizes");var i=0;setInterval(function(){l.href=f[i=(i+1)%24]},94)};im.src="/favicon-spin.png"};if(document.readyState==="complete")setTimeout(go,800);else addEventListener("load",function(){setTimeout(go,800)})}catch(e){}})();</script>`;
 
-export const VIDEO_SOUND = `<style>.vs-btn{position:absolute;right:10px;bottom:10px;z-index:5;display:inline-flex;align-items:center;gap:6px;padding:8px 12px 8px 10px;border:1.5px solid #0d0c09;border-radius:999px;background:#fff;color:#0d0c09;font:800 13px/1 system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 0 #0d0c09;opacity:.92}.vs-btn:hover{opacity:1;background:#FED012}.vs-btn[aria-pressed="true"]{background:#FED012}.vs-btn svg{width:16px;height:16px}</style>
+// r136 (N30): the box a sound button lands in is positioned from the first paint (CSS), not when the script adds it
+export const VIDEO_SOUND = `<style>:where(figure,div):has(> video[muted]:not([controls])){position:relative}.vs-btn{position:absolute;right:10px;bottom:10px;z-index:5;display:inline-flex;align-items:center;gap:6px;padding:8px 12px 8px 10px;border:1.5px solid #0d0c09;border-radius:999px;background:#fff;color:#0d0c09;font:800 13px/1 system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 0 #0d0c09;opacity:.92}.vs-btn:hover{opacity:1;background:#FED012}.vs-btn[aria-pressed="true"]{background:#FED012}.vs-btn svg{width:16px;height:16px}</style>
 <script>/* films and reels play silently until you ask: a sound button on every film that has a soundtrack */(function(){var ON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>',OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="m17 9 5 6M22 9l-5 6"/></svg>';var all=[];function hasAudio(v){return v.mozHasAudio||(v.webkitAudioDecodedByteCount||0)>0||(v.audioTracks&&v.audioTracks.length>0)}function add(v){if(v.dataset.vs||v.controls)return;var host=v.parentElement;if(!host)return;v.dataset.vs="1";var b=document.createElement("button");b.type="button";b.className="vs-btn";b.setAttribute("aria-pressed","false");b.innerHTML=OFF+"<span>Sound</span>";b.hidden=true;if(getComputedStyle(host).position==="static")host.style.position="relative";host.appendChild(b);all.push([v,b]);var check=function(){if(hasAudio(v))b.hidden=false};v.addEventListener("playing",function(){setTimeout(check,900);setTimeout(check,2500)});b.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();var on=v.muted;all.forEach(function(p){if(p[0]!==v){p[0].muted=true;p[1].setAttribute("aria-pressed","false");p[1].innerHTML=OFF+"<span>Sound</span>"}});v.muted=!on;if(on){v.volume=1;v.play().catch(function(){})}b.setAttribute("aria-pressed",String(on));b.innerHTML=(on?ON:OFF)+"<span>Sound</span>"})}function scan(){document.querySelectorAll("video[muted],video").forEach(function(v){if(v.muted||v.hasAttribute("muted"))add(v)})}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",scan);else scan();new MutationObserver(scan).observe(document.documentElement,{childList:true,subtree:true})})();</script>`;
 
 export const WORK_TITLES = {
@@ -53,7 +54,21 @@ export const WORK_TITLES = {
 // meta descriptions where the page's own lead is too thin for a search result
 export const WORK_DESCS = {
   "slow-coffee-festival": "Slow Coffee Festival: the brand universe of Romania's biggest coffee community, upgraded every edition since 2021. Posters, merch and digital by Cromatic Studios.",
-  "clinica-sante": "Clinica Sante: TV ads and brand work for a Romanian network of medical laboratories. Recommended by doctors, signed off by patients. By Cromatic Studios."
+  "clinica-sante": "Clinica Sante: TV ads and brand work for a Romanian network of medical laboratories. Recommended by doctors, signed off by patients. By Cromatic Studios.",
+  // r136 (N33): written for the result page (whole sentences, under 155 characters), where the lead ran longer
+  "antila": "Antila: a 100% Romanian charcuterie brand with a bold black oval wordmark, funny characters and colour-coded packaging. By Cromatic Studios, Bucharest.",
+  "artisan-coffee-gear": "Artisan Coffee Gear: brand strategy, identity, letterform pattern, technical illustration, packaging and webshop for coffee gear. By Cromatic Studios.",
+  "craft-coffee": "Craft Coffee: identity, packaging, uniforms, merch and webshop for Romania's La Marzocco, Mazzer, PuQPress and Fellow distributor. By Cromatic Studios.",
+  "eliade-18": "Eliade 18: the Cromatic Studios floor in Eliade Tower, Bucharest, from 2019. The open studio, the walls we drew on and the long table where work happens.",
+  "oma-coffee": "OMA Coffee: a specialty coffee shop in Brașov, at the foot of the mountains, with passionate baristas and a brand as warm as a cup. By Cromatic Studios.",
+  "pain-plaisir": "Pain Plaisir: product branding for the Anemone pastry, packaging, stickers, in-store visuals, photos and a Christmas campaign for a Bucharest bakery.",
+  "unde": "UNDÉ, ARCA's grocery stores: a hand-drawn basket, a warm handwritten wordmark and three formats, Market, Store and Concept, each in its own colour.",
+  "arca-resort": "ARCA Resort: brand architecture, identity, packaging, signage and website for a resort in Blăgești, Bacău, built around its own ponds and products.",
+  "casa-berero": "Berero: brand identity, can labels for COMM lager and UNITY IPA, merch, posters and B2B presentations for a craft beer brand and its house, Casa Berero.",
+  "elithia": "Elithia: brand strategy, identity, website and social content for a Bucharest women's health clinic founded by internationally experienced gynaecologists.",
+  "routine-paris": "Routine Paris: brand strategy, the first perfume campaign, social launch and e-shop for a perfume and cosmetics boutique going from Bucharest to Paris.",
+  "investimental": "Investimental: UX research, design systems, a web trading platform and a native mobile app for a retail broker, in twelve weeks. By Cromatic Studios.",
+  "venevo": "Venevo: brand positioning, a dynamic logo with fourteen letter alternatives, brand guidelines, website and key visuals for a fractional investing platform."
 };
 
 export const SAME_AS = [
@@ -68,14 +83,20 @@ const decode = (t) => String(t).replace(/&nbsp;|&#160;/g, " ").replace(/&amp;/g,
 const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const ld = (o) => `<script type="application/ld+json">${JSON.stringify(o).replace(/</g, "\\u003c")}</script>`;
 
-// a description that ends where a sentence (or at least a word) ends, never mid-word
-export function clip(t, max = 160) {
+// r136 (N33): a description ends where a sentence ends, within 155 characters (what Google shows): the longest run
+// of whole sentences that fits. When not even the first sentence fits (or what fits is too thin to describe the
+// page), it is cut at its last clause and closed with a full stop, and the build names the page, so it gets a
+// hand-written one (WORK_DESCS, or a shorter lead at the source). Never "…".
+export const CLIPPED = [];
+export function clip(t, max = 155, where = "") {
   t = decode(t).replace(/\s+/g, " ").trim();
   if (t.length <= max) return t;
-  const cut = t.slice(0, max);
-  const dot = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("! "), cut.lastIndexOf("? "));
-  if (dot > max * 0.55) return cut.slice(0, dot + 1);
-  return cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:·—-]+$/, "") + "…";
+  const ends = [...t.matchAll(/[.!?](?=\s|$)/g)].map((m) => m.index + 1).filter((i) => i <= max);
+  if (ends.length && ends[ends.length - 1] >= 70) return t.slice(0, ends[ends.length - 1]);
+  const cut = t.slice(0, max - 1);
+  const k = Math.max(cut.lastIndexOf(", "), cut.lastIndexOf(": "), cut.lastIndexOf("; "), cut.lastIndexOf(" — "));
+  if (where !== null) CLIPPED.push(where || t.slice(0, 40)); // (null: a draft the page pass checks again)
+  return (k > max * 0.5 ? cut.slice(0, k) : cut.slice(0, cut.lastIndexOf(" "))).replace(/[,;:·—-]+$/, "") + ".";
 }
 
 // readable text of a page (markdown-ish): headings, paragraphs, list items, captions, quotes.
@@ -110,13 +131,6 @@ export function lastmodStore(file, today) {
   };
 }
 
-const orgRef = (SITE) => ({
-  "@type": ["Organization", "ProfessionalService"], "@id": `${SITE}/#studio`, name: STUDIO.name, url: `${SITE}/`,
-  logo: `${SITE}/icon-512.png`, email: STUDIO.email, telephone: STUDIO.phone, sameAs: SAME_AS, foundingDate: STUDIO.founded,
-  founder: { "@type": "Person", "@id": `${SITE}/#daniel`, name: STUDIO.founder.name, jobTitle: STUDIO.founder.jobTitle },
-  address: { "@type": "PostalAddress", streetAddress: STUDIO.street, postalCode: STUDIO.postalCode, addressLocality: "Bucharest", addressRegion: "București", addressCountry: STUDIO.country }
-});
-const websiteRef = (SITE) => ({ "@type": "WebSite", "@id": `${SITE}/#website`, url: `${SITE}/`, name: "Cromatic Studios", publisher: { "@id": `${SITE}/#studio` }, inLanguage: "en" });
 
 /**
  * Normalise one page. `info` = { path, SITE, project, media (url -> {w,h}), lastmod, wp (url -> local) }.
@@ -131,6 +145,18 @@ export function seoPage(html, { path, SITE, project, media, lastmod, wp, dg }) {
   html = html.replace(/<img\b(?![^>]*\bwidth=)([^>]*?)\bsrc="(\/assets\/[^"]+)"([^>]*)>/g, (m, a, src, b) => {
     const d = media(src);
     return d && d.w ? `<img${a}src="${src}" width="${d.w}" height="${d.h}"${b}>` : m;
+  });
+  // r136 (N41): the gallery titles of the case pages (pills in a .rail-head) sat as H4 under an H2: they become H3,
+  // with the same look (their rules follow the tag; the H3 keeps the H4's size, weight and letter spacing)
+  if (/<div class="rail-head">\s*<h4>/.test(html)) {
+    html = html.replace(/(<div class="rail-head">\s*)<h4>([\s\S]*?)<\/h4>/g, "$1<h3>$2</h3>")
+      .replace(/(\.rail-head(?::first-child)?) h4\b/g, "$1 h3")
+      .replace("</head>", "<style>.rail-head>h3{font-size:1em;font-weight:700;letter-spacing:normal}</style>\n</head>");
+  }
+  // r136 (N30): every film of ours gets its intrinsic size too (width/height set its aspect ratio before it loads)
+  html = html.replace(/<video\b(?![^>]*\bwidth=)([^>]*?)\b(data-src|src)="(\/assets\/[^"]+\.(?:mp4|webm))"([^>]*)>/g, (m, a, at, src, b) => {
+    const d = media(src);
+    return d && d.w ? `<video${a}${at}="${src}" width="${d.w}" height="${d.h}"${b}>` : m;
   });
   // 3. films below the first one start loading only when they scroll into view (the page's own
   //    IntersectionObserver plays them); before, every autoplay film downloaded on page load
@@ -160,7 +186,7 @@ export function seoPage(html, { path, SITE, project, media, lastmod, wp, dg }) {
   title = title.replace(/\s+—\s+Cromatic Studios$/, " · Cromatic Studios");
   head = head.replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`);
   const fullDesc = decode((work && WORK_DESCS[work]) || get(/<meta name="description" content="([^"]*)"/) || project?.desc || STUDIO.description).replace(/\s+/g, " ").trim();
-  let desc = clip(fullDesc);
+  let desc = clip(fullDesc, 155, path);
   head = head.replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(desc)}">`);
   if (!has(/name="description"/)) head += `\n<meta name="description" content="${esc(desc)}">`;
   let image = get(/<meta property="og:image" content="([^"]*)"/) || `${SITE}/og.jpg`;
@@ -207,7 +233,7 @@ export function seoPage(html, { path, SITE, project, media, lastmod, wp, dg }) {
       about: project ? { "@type": "Organization", name: project.name } : undefined
     };
     head += "\n" + ld({ "@context": "https://schema.org", "@graph": [
-      orgRef(SITE), websiteRef(SITE),
+      studioNode(SITE, SAME_AS), websiteNode(SITE),
       { "@type": "WebPage", "@id": url, url, name: title, description: desc, isPartOf: { "@id": `${SITE}/#website` }, primaryImageOfPage: image, mainEntity: { "@id": `${url}#work` }, breadcrumb: { "@id": `${url}#breadcrumb` }, dateModified: lastmod, inLanguage: "en" },
       cw,
       { "@type": "BreadcrumbList", "@id": `${url}#breadcrumb`, itemListElement: [
@@ -217,6 +243,11 @@ export function seoPage(html, { path, SITE, project, media, lastmod, wp, dg }) {
       ] }
     ] });
   }
+  // r136 (N28): whatever generator wrote the page, the studio and the website are described in full on it
+  const haveLd = new Set();
+  head = head.replace(/(<script type="application\/ld\+json">)([\s\S]*?)(<\/script>)/g, (m, a, j, b) => {
+    try { return a + JSON.stringify(withStudio(JSON.parse(j), SITE, SAME_AS, haveLd)).replace(/</g, "\\u003c") + b; } catch { return m; }
+  });
   if (!head.includes("favicon-spin.png")) add.push(FAVICON_SPIN);
   head = head.replace(/\n?$/, "\n" + add.join("\n") + "\n");
   // Cloudflare's email obfuscation turns the address into "[email protected]" for every reader that
