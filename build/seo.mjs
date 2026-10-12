@@ -12,6 +12,9 @@ export const STUDIO = {
   geo: { lat: 44.43886, lng: 26.11626 }, // OpenStreetMap, Strada Olari 9 (Sector 2)
   country: "RO",
   founded: "2014",
+  founder: { name: "Daniel Stoicescu", jobTitle: "Founder, partner and creative architect", sameAs: ["https://www.instagram.com/daniel.stoic/"] },
+  ceo: { name: "Cristian Stoicescu", jobTitle: "CEO and partner" },
+  size: 10,
   description: "Independent creative studio in Bucharest, Romania: brand strategy, identity design, websites and apps, video production and content for growth."
 };
 
@@ -48,6 +51,7 @@ export const WORK = [
 export const FAQ = [
   ["What does Cromatic Studios do?", "Cromatic Studios is an independent creative studio in Bucharest, Romania. We do brand strategy, identity design, websites and apps (UX and UI), video production and photography, and content and growth for social media."],
   ["Who do you work with?", "Indie and local businesses, startups, scale-ups and established companies. Many of our clients are specialty coffee brands (Slow Coffee Festival, Two Minutes, Steam, Craft Coffee, Artisan Coffee Gear, OMA Coffee), alongside fintech and digital products such as Investimental, Assetto, Cargus and Help4Brain."],
+  ["Who runs Cromatic Studios?", "Cromatic Studios was founded in 2014 by Daniel Stoicescu, who is still its creative architect. Today the studio is led by two partners, who are also brothers: Daniel Stoicescu, the founder, and Cristian Stoicescu, the CEO."],
   ["Where is the studio?", "Strada Olari 9, Bucharest, Romania. Come by for a coffee."],
   ["How do I start a project?", "Complete the boarding pass at the end of the drive, or write to hi@cromaticstudios.com. We answer within one working day."]
 ];
@@ -71,6 +75,10 @@ export function jsonLd(SITE, PROJECTS = [], SAME_AS = [STUDIO.legalUrl]) {
       email: STUDIO.email,
       telephone: STUDIO.phone,
       foundingDate: STUDIO.founded,
+      foundingLocation: { "@type": "Place", name: "Strada Muniției 5, Bucharest" },
+      founder: { "@type": "Person", "@id": `${SITE}/#daniel`, name: STUDIO.founder.name, jobTitle: STUDIO.founder.jobTitle, sameAs: STUDIO.founder.sameAs, worksFor: { "@id": studio } },
+      employee: [{ "@id": `${SITE}/#daniel` }, { "@type": "Person", "@id": `${SITE}/#cristian`, name: STUDIO.ceo.name, jobTitle: STUDIO.ceo.jobTitle, worksFor: { "@id": studio } }],
+      numberOfEmployees: { "@type": "QuantitativeValue", value: STUDIO.size },
       address: { "@type": "PostalAddress", streetAddress: STUDIO.street, postalCode: STUDIO.postalCode, addressLocality: "Bucharest", addressRegion: STUDIO.city, addressCountry: STUDIO.country },
       geo: { "@type": "GeoCoordinates", latitude: STUDIO.geo.lat, longitude: STUDIO.geo.lng },
       hasMap: "https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti",
@@ -139,7 +147,8 @@ This site (${SITE}/) tells the studio's story twice: as an interactive 3D drive 
 - Address: ${STUDIO.street}, ${STUDIO.postalCode} Bucharest (Sector 2), Romania
 - Email: ${STUDIO.email}
 - Phone: ${STUDIO.phone}
-- Founded: ${STUDIO.founded}
+- Founded: ${STUDIO.founded}, by ${STUDIO.founder.name}, at Strada Muniției 5, Bucharest
+- Leadership: two partners and brothers, ${STUDIO.founder.name} (founder, creative architect) and ${STUDIO.ceo.name} (CEO)
 - Languages: English, Romanian
 - Works with: indie and local businesses, startups, scale-ups and established companies, in Romania and abroad (Paris, Barcelona, Los Angeles)
 - Known for: specialty coffee brands (Slow Coffee Festival, Two Minutes, Steam, Craft Coffee, Artisan Coffee Gear, OMA Coffee), fintech and banking (Investimental, Assetto, Techventures Bank, Unchain Festival), medical and aesthetic medicine (Toskani MED, The Aesthetic Court, Elithia, Clinica Sante)
@@ -152,6 +161,15 @@ This site (${SITE}/) tells the studio's story twice: as an interactive 3D drive 
 ${CHAPTERS.map((c) => `- ${c.t}, ${c.sub.toLowerCase()}: ${c.p} Includes: ${c.items.join(", ")}.`).join("\n")}
 
 ${SERVICES.map(([n, d]) => `- ${n}: ${d}`).join("\n")}
+
+## Industries (the streets of the map)
+
+${Object.keys(pages).filter((u) => u.startsWith("/industries/")).map((u) => `- [${pages[u].title.replace(/ · Cromatic Studios$/, "")}](${SITE}${u}): ${pages[u].fullDesc}`).join("\n")}
+
+## Services in depth
+
+${Object.keys(pages).filter((u) => u.startsWith("/services/")).map((u) => `- [${pages[u].title.replace(/ · Cromatic Studios$/, "")}](${SITE}${u}): ${pages[u].fullDesc}`).join("\n")}
+${pages["/team/"] ? `- [The team](${SITE}/team/): ${pages["/team/"].fullDesc}` : ""}
 
 ## Case studies
 
@@ -233,7 +251,7 @@ export function manifest() {
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
-      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml" }
     ]
   }, null, 2);

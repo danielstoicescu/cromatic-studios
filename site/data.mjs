@@ -5,7 +5,7 @@
 export const NAV = [
   ["#work", "Work"],
   ["#services", "Services"],
-  ["#studio", "Studio"],
+  ["/team/", "Team"],
   ["#contact", "Contact"]
 ];
 
@@ -89,8 +89,8 @@ export const CREW = ["Cristian", "Daniel", "Ana", "Coz", "Alexandra", "Stefan", 
 export const CREW_FACE_VARS = { "Cristian": "crewFaceCristian", "Daniel": "crewFaceDaniel", "Ana": "crewFaceAnaMare", "Coz": "crewFaceCoz", "Alexandra": "crewFaceAlexandra", "Stefan": "crewFaceStefan", "Adina": "crewFaceAdina", "Anne": "crewFaceAnne", "Iulică": "crewFaceIulica", "Melissa": "crewFaceMelissa" };
 // one line per human, shared with the drive (src/app.js CREW_INFO)
 export const CREW_INFO = {
-  "Cristian": { role: "CEO & Strategy Master", bio: "Asks the question nobody asked yet, then builds the plan around the answer. Keeps the studio pointed at what matters for your business, and the coffee pointed at the table." },
-  "Daniel": { role: "Creative Architect", bio: "Draws the blueprint of a brand before anyone picks a colour: the idea, the system, the world it lives in. Then stays on site until it is built the way it was drawn.", instagram: "https://www.instagram.com/daniel.stoic/" },
+  "Cristian": { role: "Partner · CEO & Strategy Master", bio: "Asks the question nobody asked yet, then builds the plan around the answer. Keeps the studio pointed at what matters for your business, and the coffee pointed at the table." },
+  "Daniel": { role: "Founder · Partner · Creative Architect", bio: "Draws the blueprint of a brand before anyone picks a colour: the idea, the system, the world it lives in. Then stays on site until it is built the way it was drawn.", instagram: "https://www.instagram.com/daniel.stoic/" },
   "Ana": { bio: "Turns a brief into something you want to look at twice. Patient with the details, impatient with the obvious." },
   "Coz": { bio: "The one who finds the shot, the angle or the joke that makes the whole thing click. Calm on set, loud in the good ideas." },
   "Alexandra": { bio: "Keeps the many moving parts moving in the same direction. Knows where every file, deadline and promise lives." },

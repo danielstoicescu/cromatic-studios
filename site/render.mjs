@@ -1,8 +1,10 @@
 // Renders the lo-fi website: /site/ (home) and /work/<slug>/ (case pages). Plain HTML, a small
 // stylesheet and a few lines of script; no WebGL. `A(name)` resolves an asset variable from
 // src/app.js to { src, w, h } (src is root-relative, e.g. /assets/abc.png).
-import { NAV, CHAPTERS, SERVICES, PROJECTS, STREETS, CLIENT_BADGES, FRIENDS, CREW, CREW_INFO, CREW_COLORS, CREW_PHOTOS, CREW_FACE_VARS, FORM, CASES, CANVASES } from "./data.mjs";
+import { NAV, CHAPTERS, SERVICES, PROJECTS, STREETS, CLIENT_BADGES, FRIENDS, CREW, CREW_INFO, CREW_COLORS, CREW_PHOTOS, CREW_FACE_VARS, FORM, CASES, CANVASES, OFFICES } from "./data.mjs";
 import { STUDIO, FAQ } from "../build/seo.mjs";
+const HUBS = await import("./hubs.mjs").catch(() => ({}));
+const INDUSTRIES = HUBS.INDUSTRIES || [], SERVICE_PAGES = HUBS.SERVICE_PAGES || [];
 
 const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const strip = (h) => String(h).replace(/<[^>]+>/g, "");
@@ -59,13 +61,13 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   <div class="wrap hdr-in">
     <a class="brand" href="/site/" aria-label="Cromatic Studios, home">${logo ? `<img src="${logo.src}" alt="Cromatic Studios" width="${logo.w}" height="${logo.h}">` : "Cromatic Studios"}</a>
     <nav class="nav" aria-label="Main">
-      ${NAV.map(([h, l]) => `<a href="${home ? h : "/site/" + h}">${l}</a>`).join("")}
+      ${NAV.map(([h, l]) => `<a href="${h.startsWith("/") || home ? h : "/site/" + h}">${l}</a>`).join("")}
     </nav>
     <a class="drive-btn" href="/" title="The full 3D experience: drive through Bucharest">${STAR}<span>Take the 3D drive</span></a>
     <button class="menu-btn" aria-label="Menu" aria-expanded="false" aria-controls="mnav"><span></span><span></span></button>
   </div>
   <nav id="mnav" class="mnav" aria-label="Mobile">
-    ${NAV.map(([h, l]) => `<a href="${home ? h : "/site/" + h}">${l}</a>`).join("")}
+    ${NAV.map(([h, l]) => `<a href="${h.startsWith("/") || home ? h : "/site/" + h}">${l}</a>`).join("")}
     <a class="drive-btn" href="/">${STAR}<span>Take the 3D drive</span></a>
   </nav>
 </header>`;
@@ -171,6 +173,30 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       ${small.length ? `<div class="psmall"><span class="mono ps-h">In the Zdrovit yard</span>${small.map((p) => `<span class="ps" style="--bc:${p.c};--bt:${p.t}"><b>${esc(p.name)}</b><i class="mono">${esc(p.cat)}</i></span>`).join("")}</div>` : ""}
     </div>`;
   }).join("");
+  // r131: the portfolio by industry, the way the map lays it out in streets; each street opens its own page
+  const STREET_INFO = {
+    A: { t: "Specialty coffee, food & drink", lead: "Where we grew up: coffee shops, roasters, a festival, bakeries, a craft beer, a charcuterie and a caviar farm." },
+    B: { t: "Banks, investments, fintech & energy", lead: "Banks, brokers, investment groups, a fintech festival and an energy company, made clear and human." },
+    C: { t: "Clinics, pharma & aesthetic medicine", lead: "Clinics, labs, pharma and aesthetic medicine, from Bucharest to Barcelona." },
+    D: { t: "Print on demand & stickers", lead: "Two print shops with a voice: one sings, one sticks." },
+    E: { t: "Education & culture", lead: "Upstairs at our old address on Bulevardul Dacia: a faculty and a school of digital arts." }
+  };
+  const industryOf = (k) => INDUSTRIES.find((x) => x.street === k);
+  const workByStreet = (covers) => Object.entries(STREETS).map(([k, [street, col]]) => {
+    const list = PROJECTS.filter((p) => p.street === k && !p.small)
+      .map((p) => ({ p, w: (p.page ? 2 : 0) + (p.img || p.vid || coverFor(p, covers) ? 1 : 0) }))
+      .sort((a, b) => b.w - a.w).map((x) => x.p);
+    if (!list.length) return "";
+    const small = PROJECTS.filter((p) => p.small && p.street === k);
+    const ind = industryOf(k), info = STREET_INFO[k] || { t: "", lead: "" };
+    const n = new Set(list.filter((p) => p.page).map((p) => p.page)).size;
+    return `<div class="dom" id="street-${k.toLowerCase()}" style="--dc:${col}">
+      <h3 class="dom-h"><span class="dom-sw"></span>${esc(street)} <small class="dom-ind">${esc(info.t)}</small> <i class="mono">${n} case ${n === 1 ? "study" : "studies"}</i></h3>
+      <p class="dom-lead">${esc(info.lead)}${ind ? ` <a class="dom-more" href="/industries/${ind.slug}/">${esc(info.t)}: the whole street →</a>` : ""}</p>
+      <div class="bento">${list.map((p, i) => bentoCard(p, i, covers)).join("")}</div>
+      ${small.length ? `<div class="psmall"><span class="mono ps-h">In the Zdrovit yard</span>${small.map((p) => `<span class="ps" style="--bc:${p.c};--bt:${p.t}"><b>${esc(p.name)}</b><i class="mono">${esc(p.cat)}</i></span>`).join("")}</div>` : ""}
+    </div>`;
+  }).join("");
   const SITE_TITLE = "Cromatic Studios: brand strategy, identity, web & film in Bucharest";
   function home(covers = {}) {
     const ld = { "@context": "https://schema.org", "@graph": [
@@ -246,8 +272,9 @@ ${header(true)}
     <div class="wrap">
       <p class="eyebrow mono">Selected work</p>
       <h2 class="ptitle">${pill("Every place", "#FED012", -1.5)} ${pill("on the map", "#B098C8", 1)}</h2>
-      <p class="sec-lead">The same work as the 3D map, by what we did for it: three things we do every day, and one more.</p>
-      ${workByDomain(covers)}
+      <p class="sec-lead">The same work as the 3D map, street by street: every street is an industry we know from the inside.</p>
+      <nav class="streets-nav" aria-label="Industries">${Object.entries(STREETS).map(([k, [street, col]]) => PROJECTS.some((p) => p.street === k && !p.small) ? `<a href="#street-${k.toLowerCase()}" style="--dc:${col}"><span class="dom-sw"></span>${esc(street)}</a>` : "").join("")}</nav>
+      ${workByStreet(covers)}
       <p class="friends"><span class="mono">Friends we made along the way</span> ${FRIENDS.map((f) => `<span class="fpill">${esc(f)}</span>`).join("")}</p>
     </div>
   </section>
@@ -263,6 +290,7 @@ ${header(true)}
           <ul>${s.items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
         </article>`).join("")}
       </div>
+      ${SERVICE_PAGES.length ? `<p class="svc-pages"><span class="mono">In depth</span> ${SERVICE_PAGES.map((x) => `<a href="/services/${x.slug}/">${esc(x.name)} →</a>`).join("")}</p>` : ""}
     </div>
   </section>
 
@@ -271,7 +299,7 @@ ${header(true)}
       <div>
         <p class="eyebrow mono">The crew</p>
         <h2 class="ptitle">${pill("Brilliant", "#28C840", -2)} ${pill("humans", "#B098C8", 1.5)}</h2>
-        <p class="sec-lead">We discover AI every day, but we are strong believers in the collective power of brilliant humans. Ten of them, in a house at Strada Olari 9.</p>
+        <p class="sec-lead">We discover AI every day, but we are strong believers in the collective power of brilliant humans. Ten of them, in a house at Strada Olari 9. <a class="dom-more" href="/team/">Meet the team →</a></p>
         <ul class="crew">${CREW.map((n, i) => { const f = A(CREW_FACE_VARS[n]); return `<li style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}"><span class="cr-face">${f ? `<img src="${f.src}" width="${f.w}" height="${f.h}" alt="" loading="lazy" decoding="async">` : ""}</span><span class="cr-name">${esc(n)}</span>${(() => { const ci = CREW_INFO[n] || {}; const links = [["Instagram", ci.instagram], ["Behance", ci.behance]].filter(([, u]) => u).map(([k, u]) => `<a class="cr-link" href="${u}" target="_blank" rel="noopener">${k} \u2197</a>`).join(""); return `${ci.role ? `<span class="cr-role mono">${esc(ci.role)}</span>` : ""}${ci.bio ? `<span class="cr-bio">${esc(ci.bio)}</span>` : ""}${links}`; })()}</li>`; }).join("")}</ul>
       </div>
       <div class="photos">${CREW_PHOTOS.map((p) => `<figure><img src="${p.src}" alt="${esc(p.cap)}" loading="lazy" decoding="async" width="600" height="450"><figcaption class="mono">${esc(p.cap)}</figcaption></figure>`).join("")}</div>
@@ -437,5 +465,114 @@ ${header(false)}
 </main>
 ${footer}`;
   }
-  return { home, casePage, canvasPage, slugs: Object.keys(CASES), canvasSlugs: Object.keys(CANVASES).filter((k) => canvases[k]) };
+  // ---- r131: industry hubs (one per street), service pages, the team ----
+  const byPage = (slug) => PROJECTS.find((p) => p.page === slug);
+  const hubCrumbs = (mid, name) => `<nav class="crumbs mono" aria-label="Breadcrumb"><a href="/site/">Cromatic Studios</a> / ${mid} / <span>${esc(name)}</span></nav>`;
+  const hubLd = (path, title, desc, crumbs, extra = []) => ({ "@context": "https://schema.org", "@graph": [
+    { "@type": "WebPage", "@id": `${SITE}${path}`, url: `${SITE}${path}`, name: title, description: desc, isPartOf: { "@id": `${SITE}/#website` }, about: { "@id": `${SITE}/#studio` }, inLanguage: "en" },
+    ...extra,
+    { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Cromatic Studios", item: `${SITE}/site/` }, ...crumbs.map(([n, u], i) => ({ "@type": "ListItem", position: i + 2, name: n, item: SITE + u }))] }
+  ] });
+  const faqLd = (path, faq) => ({ "@type": "FAQPage", "@id": `${SITE}${path}#faq`, mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: strip(q), acceptedAnswer: { "@type": "Answer", text: strip(a) } })) });
+  const listLd = (path, slugs, name) => ({ "@type": "ItemList", "@id": `${SITE}${path}#work`, name, itemListElement: slugs.map((sl, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}/work/${sl}/`, name: byPage(sl)?.name || sl })) });
+  const hubCases = (slugs, covers) => `<div class="bento">${slugs.map(byPage).filter(Boolean).map((p, i) => bentoCard(p, i, covers)).join("")}</div>`;
+  const hubFaq = (faq) => `<section class="sec" id="faq"><div class="wrap faq"><div><p class="eyebrow mono">Good questions</p><h2 class="ptitle">${pill("Before", "#FED012", -1.5)} ${pill("the coffee", "#F65342", 1)}</h2></div>
+      <div class="qa">${faq.map(([q, a], i) => `<details${i === 0 ? " open" : ""}><summary>${q}</summary><p>${a}</p></details>`).join("")}</div></div></section>`;
+  const hubEnd = `<section class="c-end"><div class="wrap">
+      <h2 class="ptitle">${pill("Your brand", "#FED012", -1.5)} ${pill("next?", "#28C840", 1)}</h2>
+      <p><a class="btn btn-y" href="/site/#contact">${STAR}<span>Start a project</span></a></p>
+      <p class="c-direct"><a href="mailto:${STUDIO.email}">${STUDIO.email}</a> · <a href="tel:+40728978068">${STUDIO.phone}</a> · Strada Olari 9, Bucharest</p>
+    </div></section>`;
+  const hubHero = (crumbs, eyebrow, h1, lead, col) => `<section class="c-hero c2-hero hub-hero">
+    <div class="wrap">${crumbs}
+      <p class="eyebrow mono">${esc(eyebrow)}</p>
+      <h1 class="c2-title">${esc(h1).split(" ").map((w, k) => `<span class="w" style="--k:${k}">${w}</span>`).join(" ")}</h1>
+      <p class="lead hub-lead">${lead}</p>
+      <div class="btns"><a class="btn btn-y" href="/site/#contact">${STAR}<span>Start a project</span></a><a class="btn" href="#work">See the work</a></div>
+    </div></section>`;
+  const cards = (items, col) => `<div class="hub-cards">${items.map((x, i) => `<article class="hub-card" style="--sc:${col}"><span class="mono">${String(i + 1).padStart(2, "0")}</span><h3>${esc(x.t)}</h3><p>${x.p}</p></article>`).join("")}</div>`;
+
+  function industryPage(slug, covers = {}) {
+    const d = INDUSTRIES.find((x) => x.slug === slug);
+    const [street, col] = STREETS[d.street];
+    const path = `/industries/${slug}/`, title = `${d.title} · Cromatic Studios`;
+    const svc = (d.services || []).map((k) => SERVICE_PAGES.find((x) => x.slug === k)).filter(Boolean);
+    const others = INDUSTRIES.filter((x) => x.slug !== slug);
+    const ld = hubLd(path, title, d.desc, [["Industries", "/site/#work"], [street, path]], [
+      { "@type": "Service", "@id": `${SITE}${path}#service`, name: d.title, serviceType: "Branding and design", provider: { "@id": `${SITE}/#studio` }, areaServed: { "@type": "Country", name: "Romania" }, audience: { "@type": "BusinessAudience", name: STREET_INFO[d.street]?.t || street } },
+      listLd(path, d.cases, `${street}: case studies`), faqLd(path, d.faq)]);
+    return `${head({ title, desc: d.desc, path, ld })}
+${header(false)}
+<main id="main" class="case hub" style="--bc:${col};--bt:#111">
+  ${hubHero(hubCrumbs(`<a href="/site/#work">Industries</a>`, street), d.eyebrow, d.h1, d.lead, col)}
+  <section class="wrap c2-lead hub-intro">${d.intro.map((x) => `<p>${x}</p>`).join("")}</section>
+  <section class="sec"><div class="wrap"><p class="eyebrow mono">What we do on ${esc(street)}</p>${cards(d.offer, col)}</div></section>
+  <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono">${esc(street)} · ${d.cases.length} case studies</p>
+    <h2 class="ptitle">${pill("The work", col, -1.5)}</h2>${hubCases(d.cases, covers)}
+    ${(() => { const more = PROJECTS.filter((p) => p.street === d.street && !p.page); return more.length ? `<p class="friends"><span class="mono">Also on ${esc(street)}</span> ${more.map((p) => `<span class="fpill">${esc(p.name)}</span>`).join("")}</p>` : ""; })()}
+  </div></section>
+  ${svc.length ? `<section class="sec"><div class="wrap"><p class="eyebrow mono">How we can help</p><div class="hub-links">${svc.map((x) => `<a href="/services/${x.slug}/"><b>${esc(x.name)}</b><span>${esc(x.lead)}</span><i>→</i></a>`).join("")}</div></div></section>` : ""}
+  ${hubFaq(d.faq)}
+  <section class="sec"><div class="wrap"><p class="eyebrow mono">Other streets</p><div class="more">${others.map((o) => `<a href="/industries/${o.slug}/" style="--bc:${STREETS[o.street][1]};--bt:#111">${esc(o.streetName)} <i>→</i></a>`).join("")}</div></div></section>
+  ${hubEnd}
+</main>
+${footer}`;
+  }
+
+  function servicePage(slug, covers = {}) {
+    const d = SERVICE_PAGES.find((x) => x.slug === slug);
+    const col = ({ "The Dream": "#28C840", "The Voice": "#B098C8", "The World": "#119BFE", "The Crowd": "#F65342" })[d.chapter] || "#FED012";
+    const path = `/services/${slug}/`, title = `${d.title} · Cromatic Studios`;
+    const inds = (d.industries || []).map((k) => INDUSTRIES.find((x) => x.slug === k)).filter(Boolean);
+    const ld = hubLd(path, title, d.desc, [["Services", "/site/#services"], [d.name, path]], [
+      { "@type": "Service", "@id": `${SITE}${path}#service`, name: d.name, serviceType: d.name, description: d.desc, provider: { "@id": `${SITE}/#studio` }, areaServed: [{ "@type": "Country", name: "Romania" }, { "@type": "Place", name: "European Union" }],
+        hasOfferCatalog: { "@type": "OfferCatalog", name: d.name, itemListElement: d.includes.map((x) => ({ "@type": "Offer", itemOffered: { "@type": "Service", name: x.t, description: strip(x.p) } })) } },
+      listLd(path, d.cases, `${d.name}: case studies`), faqLd(path, d.faq)]);
+    return `${head({ title, desc: d.desc, path, ld })}
+${header(false)}
+<main id="main" class="case hub" style="--bc:${col};--bt:#111">
+  ${hubHero(hubCrumbs(`<a href="/site/#services">Services</a>`, d.name), d.eyebrow, d.h1, d.lead, col)}
+  <section class="wrap c2-lead hub-intro">${d.intro.map((x) => `<p>${x}</p>`).join("")}</section>
+  <section class="sec"><div class="wrap"><p class="eyebrow mono">What it includes</p>${cards(d.includes, col)}</div></section>
+  <section class="sec sec-alt"><div class="wrap"><p class="eyebrow mono">How we work</p>
+    <div class="chapters">${d.process.map((x, i) => `<article class="chap" style="--cc:${["#28C840", "#B098C8", "#119BFE", "#F65342"][i % 4]}"><span class="chap-k mono">${String(i + 1).padStart(2, "0")}</span><h3>${esc(x.t)}</h3><p>${x.p}</p></article>`).join("")}</div>
+  </div></section>
+  <section class="sec" id="work"><div class="wrap"><p class="eyebrow mono">${esc(d.name)} · ${d.cases.length} case studies</p>
+    <h2 class="ptitle">${pill("The work", col, -1.5)}</h2>${hubCases(d.cases, covers)}</div></section>
+  ${inds.length ? `<section class="sec sec-alt"><div class="wrap"><p class="eyebrow mono">Industries we know from the inside</p><div class="hub-links">${inds.map((x) => `<a href="/industries/${x.slug}/"><b>${esc(x.streetName)}</b><span>${esc(x.lead)}</span><i>→</i></a>`).join("")}</div></div></section>` : ""}
+  ${hubFaq(d.faq)}
+  <section class="sec"><div class="wrap"><p class="eyebrow mono">Other services</p><div class="more">${SERVICE_PAGES.filter((x) => x.slug !== slug).map((o) => `<a href="/services/${o.slug}/" style="--bc:#FED012;--bt:#111">${esc(o.name)} <i>→</i></a>`).join("")}</div></div></section>
+  ${hubEnd}
+</main>
+${footer}`;
+  }
+
+  function teamPage() {
+    const path = "/team/", title = "The people behind the studio, Bucharest · Cromatic Studios";
+    const desc = "Meet the ten people of Cromatic Studios, an independent creative studio in Bucharest founded in 2014 by Daniel Stoicescu and led today by Daniel and Cristian Stoicescu.";
+    const FULL = { Daniel: "Daniel Stoicescu", Cristian: "Cristian Stoicescu" };
+    const person = (n) => ({ "@type": "Person", "@id": n === "Daniel" ? `${SITE}/#daniel` : n === "Cristian" ? `${SITE}/#cristian` : `${SITE}/team/#${n.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "")}`, name: FULL[n] || n, ...(CREW_INFO[n]?.role ? { jobTitle: CREW_INFO[n].role } : {}), ...(CREW_INFO[n]?.bio ? { description: CREW_INFO[n].bio } : {}), ...(CREW_INFO[n]?.instagram ? { sameAs: [CREW_INFO[n].instagram] } : {}), worksFor: { "@id": `${SITE}/#studio` } });
+    const ld = hubLd(path, title, desc, [["Team", path]], [{ "@type": "AboutPage", "@id": `${SITE}${path}#about`, url: `${SITE}${path}`, about: { "@id": `${SITE}/#studio` } }, ...CREW.map(person)]);
+    return `${head({ title, desc, path, ld })}
+${header(false)}
+<main id="main" class="case hub" style="--bc:#B098C8;--bt:#111">
+  ${hubHero(hubCrumbs(`<a href="/site/#studio">Studio</a>`, "Team"), "The crew · Strada Olari 9 · since 2014", "Brilliant humans, one coffee at a time", "An independent creative studio of ten people in Bucharest. We discover AI every day, and we still believe in the collective power of brilliant humans.", "#B098C8")}
+  <section class="wrap c2-lead hub-intro">
+    <p>Cromatic Studios started in <strong>2014</strong> at Strada Muniției 5: one table, two people and a company name written on a napkin. It was founded by <strong>Daniel Stoicescu</strong>, who is still the studio's creative architect. Today the studio is led by two partners, who are also brothers: <strong>Daniel Stoicescu</strong>, the founder, and <strong>Cristian Stoicescu</strong>, the CEO.</p>
+    <p>Ten people, one house at Strada Olari 9 and a long table where the work gets laid out. Strategy, identity, websites, film and content are made here, under one roof, for indie founders, startups and established companies.</p>
+  </section>
+  <section class="sec sec-alt" id="crew"><div class="wrap">
+    <h2 class="ptitle">${pill("The", "#28C840", -2)} ${pill("crew", "#B098C8", 1.5)}</h2>
+    <ul class="crew team-crew">${CREW.map((n, i) => { const f = A(CREW_FACE_VARS[n]); const ci = CREW_INFO[n] || {}; return `<li id="${n.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "")}" style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}"><span class="cr-face">${f ? `<img src="${f.src}" width="${f.w}" height="${f.h}" alt="${esc(FULL[n] || n)}" loading="lazy" decoding="async">` : ""}</span><span class="cr-name">${esc(FULL[n] || n)}</span>${ci.role ? `<span class="cr-role mono">${esc(ci.role)}</span>` : ""}${ci.bio ? `<span class="cr-bio">${esc(ci.bio)}</span>` : ""}${ci.instagram ? `<a class="cr-link" href="${ci.instagram}" target="_blank" rel="noopener">Instagram ↗</a>` : ""}</li>`; }).join("")}</ul>
+  </div></section>
+  <section class="sec"><div class="wrap"><p class="eyebrow mono">Six addresses, one studio</p>
+    <ol class="offices">${OFFICES.map((o) => `<li style="--oc:${o.c}"><b>${esc(o.addr)}</b><span class="mono">${esc(o.year || "")}</span><p>${esc(o.note)}</p></li>`).join("")}</ol>
+  </div></section>
+  <section class="sec sec-alt"><div class="wrap"><div class="photos">${CREW_PHOTOS.map((p) => `<figure><img src="${p.src}" alt="${esc(p.cap)}" loading="lazy" decoding="async" width="600" height="450"><figcaption class="mono">${esc(p.cap)}</figcaption></figure>`).join("")}</div></div></section>
+  ${hubEnd}
+</main>
+${footer}`;
+  }
+
+  return { home, casePage, canvasPage, industryPage, servicePage, teamPage, industrySlugs: INDUSTRIES.map((x) => x.slug), serviceSlugs: SERVICE_PAGES.map((x) => x.slug), slugs: Object.keys(CASES), canvasSlugs: Object.keys(CANVASES).filter((k) => canvases[k]) };
 }

@@ -6,6 +6,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { STUDIO } from "./seo.mjs";
 
 // search titles: what the page is about, in the words people search with (the H1 stays creative)
+export const FAVICON_SPIN = `<script>/* the favicon: the yellow Cromatic cup, spinning as in the intro (24 frames; still when motion is reduced) */(function(){try{if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;var go=function(){var im=new Image();im.onload=function(){var c=document.createElement("canvas");c.width=c.height=64;var x=c.getContext("2d"),f=[];for(var k=0;k<24;k++){x.clearRect(0,0,64,64);x.drawImage(im,k*64,0,64,64,0,0,64,64);f.push(c.toDataURL("image/png"))}var ls=[].slice.call(document.querySelectorAll('link[rel~="icon"]'));ls.forEach(function(l,j){if(j)l.remove()});var l=ls[0]||document.head.appendChild(document.createElement("link"));l.rel="icon";l.type="image/png";l.removeAttribute("sizes");var i=0;setInterval(function(){l.href=f[i=(i+1)%24]},94)};im.src="/favicon-spin.png"};if(document.readyState==="complete")setTimeout(go,800);else addEventListener("load",function(){setTimeout(go,800)})}catch(e){}})();</script>`;
+
 export const WORK_TITLES = {
   "two-minutes": "Two Minutes: coffee brand, packaging & film",
   "oma-coffee": "OMA Coffee Brașov: specialty coffee branding",
@@ -106,7 +108,8 @@ export function lastmodStore(file, today) {
 
 const orgRef = (SITE) => ({
   "@type": ["Organization", "ProfessionalService"], "@id": `${SITE}/#studio`, name: STUDIO.name, url: `${SITE}/`,
-  logo: `${SITE}/icon-512.png`, email: STUDIO.email, telephone: STUDIO.phone, sameAs: SAME_AS,
+  logo: `${SITE}/icon-512.png`, email: STUDIO.email, telephone: STUDIO.phone, sameAs: SAME_AS, foundingDate: STUDIO.founded,
+  founder: { "@type": "Person", "@id": `${SITE}/#daniel`, name: STUDIO.founder.name, jobTitle: STUDIO.founder.jobTitle },
   address: { "@type": "PostalAddress", streetAddress: STUDIO.street, postalCode: STUDIO.postalCode, addressLocality: "Bucharest", addressRegion: "București", addressCountry: STUDIO.country }
 });
 const websiteRef = (SITE) => ({ "@type": "WebSite", "@id": `${SITE}/#website`, url: `${SITE}/`, name: "Cromatic Studios", publisher: { "@id": `${SITE}/#studio` }, inLanguage: "en" });
@@ -209,6 +212,7 @@ export function seoPage(html, { path, SITE, project, media, lastmod, wp, dg }) {
       ] }
     ] });
   }
+  if (!head.includes("favicon-spin.png")) add.push(FAVICON_SPIN);
   head = head.replace(/\n?$/, "\n" + add.join("\n") + "\n");
   // Cloudflare's email obfuscation turns the address into "[email protected]" for every reader that
   // runs no script (AI assistants, many crawlers) and adds a render-blocking script: opt the page out

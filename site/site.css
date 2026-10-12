@@ -590,3 +590,46 @@ a.bcard:hover .bc-cta i { transform: translateX(5px); }
 .c2-side-t h2 { font-size: clamp(28px, 3.4vw, 52px); font-weight: 900; margin: 8px 0 14px; }
 .c2-side-t p { font-size: clamp(17px, 1.4vw, 21px); max-width: 32em; }
 @media (max-width: 760px) { .c2-side-in { grid-template-columns: 1fr; } .c2-side-m video, .c2-side-m img { max-height: 70vh; } }
+
+/* ---- r131: portfolio by street, industry and service hubs, the team ---- */
+.streets-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 8px; }
+.streets-nav a { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: var(--line); border-radius: 999px; background: #fff; text-decoration: none; font-weight: 800; font-size: 15px; }
+.streets-nav a:hover { background: color-mix(in srgb, var(--dc) 22%, #fff); }
+.streets-nav .dom-sw { width: 10px; height: 18px; border-radius: 4px; background: var(--dc); border: var(--line); }
+.dom-h .dom-ind { font-size: .5em; font-weight: 700; color: var(--muted); letter-spacing: 0; }
+.dom-more { font-weight: 800; text-decoration-thickness: 2px; text-underline-offset: 3px; white-space: nowrap; }
+.dom-more:hover { background: var(--y); }
+.svc-pages { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 28px; }
+.svc-pages .mono { color: var(--muted); }
+.svc-pages a { font-weight: 800; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.hub .c2-hero .c2-title { max-width: 18ch; }
+.hub-lead { font-size: clamp(19px, 2vw, 23px); max-width: 46ch; margin-top: 18px; }
+.hub-intro { display: grid; gap: 0; font-size: 18px; max-width: 760px; }
+.hub-intro p { margin: 0 0 1em; }
+.hub-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; margin-top: 18px; }
+.hub-card { border: var(--line); border-radius: var(--rad); padding: 22px 22px 18px; background: #fff; position: relative; min-width: 0; }
+.hub-card::before { content: ""; position: absolute; left: 22px; top: 0; width: 46px; height: 6px; border-radius: 0 0 6px 6px; background: var(--sc); border: var(--line); border-top: 0; }
+.hub-card .mono { color: var(--muted); }
+.hub-card h3 { font-size: 22px; font-weight: 900; margin: 8px 0 8px; }
+.hub-card p { font-size: 15.5px; margin: 0; }
+.hub-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 12px; margin-top: 16px; }
+.hub-links a { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 18px 20px; border: var(--line); border-radius: 18px; background: #fff; text-decoration: none; box-shadow: 0 2px 0 var(--ink); transition: transform .25s var(--eoq); }
+.hub-links a:hover { transform: translateY(-2px); background: color-mix(in srgb, var(--y) 30%, #fff); }
+.hub-links b { font-size: 20px; font-weight: 900; }
+.hub-links span { grid-column: 1; font-size: 15px; color: var(--muted); }
+.hub-links i { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-style: normal; font-size: 22px; font-weight: 900; }
+.hub .c-direct { margin-top: 18px; font-weight: 700; }
+.offices { list-style: none; padding: 0; margin: 18px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; }
+.offices li { border: var(--line); border-radius: 18px; padding: 16px 18px; background: #fff; border-top: 8px solid var(--oc); }
+.offices b { display: block; font-size: 18px; font-weight: 900; }
+.offices .mono { color: var(--muted); }
+.offices p { margin: 8px 0 0; font-size: 15px; }
+.team-crew { margin-top: 26px; }
+/* the team page: every person with their role and a line about them */
+.team-crew { grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)) !important; gap: 34px 22px !important; }
+.team-crew li { align-items: center; text-align: center; }
+.team-crew .cr-face { width: 132px; height: 132px; }
+.team-crew .cr-name { font-size: 15px; }
+.team-crew .cr-role { display: block; margin-top: 10px; color: var(--muted); font-size: 11px; }
+.team-crew .cr-bio { display: block; margin-top: 8px; font-size: 15px; line-height: 1.45; max-width: 30ch; }
+.team-crew .cr-link { display: inline-block; margin-top: 8px; font-weight: 800; font-size: 14px; }

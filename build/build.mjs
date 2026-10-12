@@ -12,6 +12,7 @@ import { seoPage, pageText, lastmodStore, SAME_AS } from "./seo-pages.mjs";
 import * as DATA from "../site/data.mjs";
 import { makeRender } from "../site/render.mjs";
 import { kineticBundle } from "./kinetic.mjs";
+import { optimizeImages } from "./images.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = (f) => join(root, "src", f);
@@ -79,6 +80,15 @@ try {
 } catch (e) {
   console.warn("[build] not minified:", e.message.split("\n")[0]);
 }
+// r131: the studio's WordPress uploads the site still uses are mirrored at the same paths (site/wp-uploads), so
+// nothing depends on the old site and its image URLs keep working once cromaticstudios.com points here
+const WP_MIRROR = new Set();
+{
+  const base = join(root, "site", "wp-uploads");
+  (function walk(d, rel) { let fs = []; try { fs = readdirSync(d); } catch { return; } for (const f of fs) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p, rel + f + "/"); else { mkdirSync(join(pub, "wp-content", "uploads", rel), { recursive: true }); copyFileSync(p, join(pub, "wp-content", "uploads", rel, f)); WP_MIRROR.add(rel + f); } } })(base, "");
+}
+const wpMirror = (text) => text.replace(/https:(\\?\/)\\?\/cromaticstudios\.com\\?\/wp-content\\?\/uploads\\?\/(\d{4})\\?\/(\d{2})\\?\/(?=([\w.-]+)|\$\{)/g, (m, sl, y, mo, f) => (!f || WP_MIRROR.has(`${y}/${mo}/${f}`)) ? `/wp-content/uploads/${y}/${mo}/` : m);
+jsOut = wpMirror(jsOut);
 const jsName = `assets/app.${hash(jsOut)}.js`, cssName = `assets/styles.${hash(cssOut)}.css`;
 writeFileSync(join(pub, jsName), jsOut);
 writeFileSync(join(pub, cssName), cssOut);
@@ -94,7 +104,7 @@ writeFileSync(join(pub, "index.html"), html);
 copyFileSync(src("og.jpg"), join(pub, "og.jpg"));
 writeFileSync(join(pub, "robots.txt"), robotsTxt(SITE_URL));
 writeFileSync(join(pub, "site.webmanifest"), manifest());
-for (const f of ["icon.svg", "apple-touch-icon.png", "icon-192.png", "icon-512.png"]) copyFileSync(src(f), join(pub, f));
+for (const f of ["icon.svg", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "favicon-spin.png"]) copyFileSync(src(f), join(pub, f));
 writeFileSync(join(pub, "favicon.ico"), icoFromPng(readFileSync(src("favicon-32.png"))));
 writeFileSync(join(pub, "404.html"), `${head.split("\n").filter((l) => !l.includes("%%SITE_URL%%")).join("\n").replace(/<title>[^<]*<\/title>/, "<title>Off the map · Cromatic Studios</title>").replace(/<meta name="robots"[^>]*>/, '<meta name="robots" content="noindex">')}
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0d0c09;color:#fbfaf5;font:16px/1.5 Poppins,system-ui,sans-serif;text-align:center}h1{font-size:clamp(32px,6vw,56px);margin:.2em 0}a{display:inline-block;margin-top:18px;padding:12px 22px;border-radius:999px;background:#FED012;color:#0d0c09;font-weight:800;text-decoration:none}</style>
@@ -222,7 +232,7 @@ const page = (path, raw) => {
   const lastmod = LASTMOD.get(p, text);
   const project = DATA.PROJECTS.find((x) => x.page === slug);
   const r = seoPage(raw, { path: p, SITE: SITE_URL, project, media: mediaDims, lastmod, wp: wpLocal, dg: DG });
-  const html = r.html;
+  const html = wpMirror(r.html);
   PAGES[p] = { path: p, title: r.title, desc: r.desc, fullDesc: r.fullDesc, images: r.images, lastmod, text: pageText(html) };
   mkdirSync(join(pub, path), { recursive: true }); writeFileSync(join(pub, path, "index.html"), html);
   const m = path.match(/^work\/([\w-]+)$/);
@@ -285,17 +295,23 @@ writeFileSync(join(pub, "covers.json"), JSON.stringify(COVERS));
 writeFileSync(join(pub, "covers.json"), JSON.stringify(COVERS));
 // r130j: the home page last, so its portfolio can use the covers of every case page and place
 page("site", R.home(COVERS));
+// r131: industry hubs (the map's streets), service pages and the team
+for (const sl of R.industrySlugs) page(`industries/${sl}`, R.industryPage(sl, COVERS));
+for (const sl of R.serviceSlugs) page(`services/${sl}`, R.servicePage(sl, COVERS));
+page("team", R.teamPage());
+const hubPaths = [...R.industrySlugs.map((x) => `/industries/${x}/`), ...R.serviceSlugs.map((x) => `/services/${x}/`), "/team/"];
 const workPaths = [...new Set([...R.slugs, ...R.canvasSlugs, ...caseSlugs, "steam"])].map((s) => `/work/${s}/`).sort();
 {
   const homeText = pageText(html);
   const home = { path: "/", title: "Cromatic Studios · Branding, web & film studio in Bucharest", desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, video and content.", images: [`${SITE_URL}/og.jpg`], lastmod: LASTMOD.get("/", homeText), text: homeText };
-  const order = [home, PAGES["/site/"], ...workPaths.map((p) => PAGES[p]).filter(Boolean)];
+  const order = [home, PAGES["/site/"], ...hubPaths.map((p) => PAGES[p]), ...workPaths.map((p) => PAGES[p]).filter(Boolean)];
   writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, order));
   writeFileSync(join(pub, "llms.txt"), llmsTxt(SITE_URL, { ...DATA, SAME_AS }, PAGES));
   writeFileSync(join(pub, "llms-full.txt"), llmsFull(SITE_URL, order));
   LASTMOD.save();
 }
 
+await optimizeImages(pub, root);
 // precompress text files once, at build time (the server just picks the right variant)
 const COMP = /\.(html|js|css|svg|txt|xml|json|webmanifest|ico)$/;
 (function walk(d) {
