@@ -229,7 +229,7 @@ function legacy(req, res) {
 }
 
 http.createServer((req, res) => {
-  if (req.url === "/healthz") return send(res, 200, { ok: true });
+  if (req.url === "/healthz") return send(res, 200, { ok: true, mail: process.env.SMTP_HOST ? "smtp" : "log", leads: !!process.env.LEADS_KEY });
   if (req.url.startsWith("/.well-known/acme-challenge/")) return acme(req, res);
   // behind Cloudflare: visitors who came in over plain http get sent to https
   if (/"scheme":"http"/.test(String(req.headers["cf-visitor"] || "")) && req.headers.host) {
