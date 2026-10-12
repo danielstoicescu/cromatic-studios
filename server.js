@@ -161,6 +161,8 @@ function serve(req, res) {
     "Vary": "Accept-Encoding",
     "ETag": f.etag
   };
+  // r135e: the old media-library pages (offers, brand hubs) stay reachable by their links but out of search results
+  if (/^\/wp-content\/uploads\/.+\.html?$/i.test(path)) headers["X-Robots-Tag"] = "noindex, nofollow";
   if (status === 404) headers["Cache-Control"] = "no-store";
   else if (req.headers["if-none-match"] === f.etag) { res.writeHead(304, headers); return res.end(); }
   if (f.disk) {

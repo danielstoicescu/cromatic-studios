@@ -1,7 +1,7 @@
 // Builds the site from src/.
 //   node build/build.mjs            -> public/  (production: assets split out, hashed, cache-friendly)
 //   node build/build.mjs --single F -> F       (one self-contained HTML file, for local viewing)
-import { readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import zlib from "node:zlib";
 import { readdirSync, statSync } from "node:fs";
@@ -411,3 +411,34 @@ const COMP = /\.(html|js|css|svg|txt|xml|json|webmanifest|ico)$/;
   }
 })(pub);
 console.log(`public/ -> ${n} assets (${(bytes / 1048576).toFixed(2)} MB), app ${(jsOut.length / 1048576).toFixed(2)} MB, styles ${(cssOut.length / 1024).toFixed(0)} KB, site ${SITE_URL}`);
+// r135e: the HTML pages uploaded to the old WordPress media library (offers, brand hubs, …) keep their addresses.
+// The WordPress files are still on this server; on every deploy their .html/.htm uploads (and the local files they
+// point to) are copied as they are, untouched by the passes above. server.js serves them with "noindex".
+{
+  const OLD = process.env.OLD_WP_UPLOADS || "/var/www/cromatics_26/app/wp-content/uploads";
+  if (existsSync(OLD)) {
+    const found = [];
+    (function walk(d, rel) {
+      let fs = []; try { fs = readdirSync(d); } catch { return; }
+      for (const f of fs) {
+        const p = join(d, f); let st; try { st = statSync(p); } catch { continue; }
+        if (st.isDirectory()) { if (/^\d{4}$|^\d{2}$/.test(f) || rel) walk(p, rel + f + "/"); continue; }
+        if (/\.html?$/i.test(f)) found.push([p, rel + f]);
+      }
+    })(OLD, "");
+    for (const [src, rel] of found) {
+      try {
+        const html = readFileSync(src, "utf8");
+        const out = join(pub, "wp-content", "uploads", rel);
+        mkdirSync(dirname(out), { recursive: true });
+        writeFileSync(out, html);
+        // relative pictures, styles and scripts next to the page come along
+        for (const m of html.matchAll(/(?:src|href)=["']([^"'#?:]+?\.(?:png|jpe?g|gif|webp|svg|css|js|mp4|webm|pdf|woff2?))["']/gi)) {
+          const a = join(dirname(src), m[1]), b = join(dirname(out), m[1]);
+          if (a.startsWith(OLD) && existsSync(a) && !existsSync(b)) { mkdirSync(dirname(b), { recursive: true }); copyFileSync(a, b); }
+        }
+      } catch (e) { console.warn(`[wp-html] ${rel}: ${e.message}`); }
+    }
+    console.log(`[wp-html] ${found.length} HTML pages from the old media library: ${found.map((x) => x[1]).join(", ")}`);
+  }
+}
