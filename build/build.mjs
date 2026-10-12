@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import { jsonLd, llmsTxt, llmsFull, robotsTxt, sitemapXml, manifest, icoFromPng } from "./seo.mjs";
 import { seoPage, pageText, lastmodStore, SAME_AS } from "./seo-pages.mjs";
 import { consentSnippet } from "./consent.mjs";
+import { FILM_AUTO } from "./film.mjs";
 import * as DATA from "../site/data.mjs";
 import { makeRender } from "../site/render.mjs";
 import { kineticBundle } from "./kinetic.mjs";
@@ -375,6 +376,8 @@ await optimizeImages(pub, root);
   if (/\.html$/.test(f) && GS.latin && n2.includes(GS.latin) && !n2.includes(`rel="preload" href="${GS.latin}"`)) n2 = n2.replace(/<head>|<head [^>]*>/, (h) => `${h}\n<link rel="preload" href="${GS.latin}" as="font" type="font/woff2" crossorigin>`);
   // nothing is fetched from Google Fonts any more: no early connection to it either
   if (/\.html$/.test(f)) n2 = n2.replace(/<link rel="preconnect" href="https:\/\/fonts\.(?:gstatic|googleapis)\.com"[^>]*>\n?/g, "");
+  // r135c: case pages start their big film when opened from the map, and stop everything when closed
+  if (/\.html$/.test(f) && /[\\/](work|proiecte)[\\/]/.test(p2) && !n2.includes("r135c-film") && n2.includes("</body>")) n2 = n2.replace(/<\/body>(?![\s\S]*<\/body>)/, `<!--r135c-film-->${FILM_AUTO}\n</body>`);
   // r134h: GA4 behind the cookie card, on every page (Daniel: G-BRW5QJTJ77, stream "Cromatic Studios COM - GA4")
   if (/\.html$/.test(f) && CONSENT && !n2.includes('id="cz-ck-css"') && n2.includes("</body>")) n2 = n2.replace(/<\/body>(?![\s\S]*<\/body>)/, `${CONSENT}\n</body>`);
   // long titles lose the studio suffix first in Google (~60 characters show); the brand stays in og:site_name and the schema

@@ -32984,6 +32984,7 @@ void main() {
       const closeAll = () => {
         for (const q of document.querySelectorAll(".case-frame, .scf-modal, .hmodal-backdrop, .crew-panel, .human-panel, .map-rides")) q.classList.add("hidden");
         document.body.classList.remove("modal-open", "scf-open", "human-open", "hud-world-open");
+        window.__stopFrames?.();
         document.querySelector(".map-card:not(.hidden) .map-x")?.click();
         if (document.body.classList.contains("map-boarding")) document.querySelector(".mapcard.contact .map-x")?.click();
       };
@@ -33138,7 +33139,19 @@ void main() {
     const caseFrame = el("div", "case-frame hidden");
     caseFrame.innerHTML = `<button class="cf-close" aria-label="Close">\u00D7</button><iframe class="cf-iframe" title="Steam \u2014 Cromatic Studios"></iframe>`;
     root.appendChild(caseFrame);
-    const closeFrame = () => { caseFrame.classList.add("hidden"); document.body.classList.remove("scf-open"); };
+    // r135c: closing a page really closes it: the frame is swapped for an empty one, so no film keeps playing behind the map
+    const blankFrame = () => {
+      const fr = caseFrame.querySelector(".cf-iframe");
+      try { fr.contentDocument?.querySelectorAll("video, audio").forEach((v) => v.pause()); } catch {}
+      const nf = document.createElement("iframe");
+      nf.className = "cf-iframe"; nf.setAttribute("allow", "autoplay; fullscreen; picture-in-picture"); nf.title = fr.title;
+      fr.replaceWith(nf);
+    };
+    window.__stopFrames = () => {
+      if (caseFrame.classList.contains("hidden")) blankFrame();
+      document.querySelectorAll(".scf-modal.hidden iframe").forEach((f) => { try { f.contentDocument?.querySelectorAll("video, audio").forEach((v) => v.pause()); } catch {} });
+    };
+    const closeFrame = () => { caseFrame.classList.add("hidden"); document.body.classList.remove("scf-open"); blankFrame(); };
     caseFrame.querySelector(".cf-close").onclick = closeFrame;
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !caseFrame.classList.contains("hidden")) closeFrame(); });
     let steamSeen = false;
@@ -33149,7 +33162,7 @@ void main() {
         // a fresh frame each time: navigating a loaded one adds a step to the browser's history,
         // and Back must close the overlay instead of stepping inside it
         const nf = document.createElement("iframe");
-        nf.className = "cf-iframe"; nf.src = url;
+        nf.className = "cf-iframe"; nf.setAttribute("allow", "autoplay; fullscreen; picture-in-picture"); nf.src = url;
         fr.replaceWith(nf); fr = nf;
       }
       fr.title = `${title} \u2014 Cromatic Studios`;
@@ -33250,6 +33263,7 @@ void main() {
     root.appendChild(scfModal);
     const closeScf = () => {
       scfModal.classList.add("hidden");
+      scfModal.querySelectorAll("iframe").forEach((f) => { try { f.contentDocument?.querySelectorAll("video, audio").forEach((v) => v.pause()); } catch {} });
       document.body.classList.remove("scf-open");
     };
     scfModal.querySelector(".scf-back").onclick = closeScf;
