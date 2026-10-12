@@ -4139,3 +4139,5 @@ body:not(.map-mode).menus-top .hud-menu:not(.open) { transform: scale(.94) trans
   body:not(.map-mode):not(.site-mode) .dash { top: auto; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
   .rr { display: none !important; }
 }
+/* r134: the chips lift on hover: room above and below them inside the scrolling bar, so their outline never clips */
+.map-chips { padding-top: 6px; padding-bottom: 6px; margin-top: -6px; margin-bottom: -6px; }
