@@ -463,8 +463,9 @@ ${header(false)}
     <div class="cv-sticky" tabindex="0">
       <div class="cv-track">
         <div class="cv-stage">
+          ${items.filter((it) => it.under).map((it, k) => `<img class="cv-el cv-under ${kindOf(it)}" src="${base}/${it.file}" alt="" decoding="async" style="${pos(it.box)};--k:${k}">`).join("")}
           ${bg ? `<img class="cv-bg" src="${base}/${bg.file}" alt="" decoding="async">` : ""}
-          ${items.map((it, k) => `<img class="cv-el ${kindOf(it)}" src="${base}/${it.file}" alt="" loading="${k < 18 ? "eager" : "lazy"}" decoding="async" style="${pos(it.box)};--k:${k}">`).join("\n          ")}
+          ${items.filter((it) => !it.under).map((it, k) => `<img class="cv-el ${kindOf(it)}" src="${base}/${it.file}" alt="" loading="${k < 18 ? "eager" : "lazy"}" decoding="async" style="${pos(it.box)};--k:${k}">`).join("\n          ")}
         </div>
       </div>
       <p class="cv-hint mono" aria-hidden="true"><span class="cv-desk">Scroll to slide the canvas</span><span class="cv-mob">Drag the canvas</span> <i>→</i></p>
