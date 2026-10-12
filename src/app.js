@@ -1,4 +1,6 @@
 (() => {
+  // r135g: analytics events (sent only after the cookie yes, see build/consent.mjs)
+  var czEv = (n, p) => { try { window.czEvent && window.czEvent(n, p || {}); } catch (e) {} };
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __esm = (fn, res) => function __init() {
     return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
@@ -32172,6 +32174,7 @@ void main() {
     return wrap;
   }
   function buildCardContent(stopId, api, opts = {}) {
+    czEv("stop_view", { place: stopId, mode: opts.map ? "map" : "drive", once: "stop:" + stopId });
     const c = CARD_COPY[stopId];
     const box = el("div", "mc-content");
     if (!c) return box;
@@ -34120,6 +34123,7 @@ void main() {
       spawnRing.material.userData.outlineParameters = { visible: false };
       var isDarkScheme = false;
       function setVehicle(id) {
+        if (state.vehicleId && state.vehicleId !== id) czEv("vehicle_select", { vehicle: id });
         state.vehicleId = id;
         if (veh) {
           scene.remove(veh.group);
@@ -34630,6 +34634,7 @@ void main() {
         return crayonTex;
       }
       function applyScheme(idx) {
+        if (state.schemeIdx != null && state.schemeIdx !== idx) czEv("world_change", { world: SCHEMES[idx]?.id });
         state.schemeIdx = idx;
         const s = SCHEMES[idx];
         window.__czAmb?.world(s.id);
@@ -37530,6 +37535,7 @@ void main() {
         ui.card.classList.add("contact");
         ui.card.classList.remove("hidden", "peek");
         document.body.classList.add("map-boarding");
+        czEv("boarding_open", { mode: "map" });
       }
       function mapCloseBoarding(keepView = false) {
         if (!mapBoarding) return;
@@ -37980,6 +37986,7 @@ void main() {
           return slug && COVERS[slug] || null;
         };
         const showCard = (pl, eyebrow, body, actions) => {
+          czEv("map_place_open", { place: pl.name || pl.id });
           // r130: every card has a picture: no photo, then a postcard of the place itself, rendered in the world you're in
           const cov = coverOf(pl);
           const shot = !cov;
@@ -38444,6 +38451,7 @@ void main() {
       }
       function setMapMode(on, { intro = false } = {}) {
         if (on === mapMode) return;
+        if (!intro) czEv("mode_switch", { to: on ? "map" : "drive" });
         if (on && siteMode) setSiteMode(false);
         mapMode = on;
         if (on) {
