@@ -133,19 +133,44 @@ export const CASES = {
     c: "#5B4B9E", t: "#fff",
     eyebrow: "Slow Coffee Festival · Brand universe · By Cromatic Studios",
     title: "For five years, we've been shaping the face of Slow Coffee Festival.",
-    lead: "Not just a logo and a poster, but a positioning and a visual language that connects with people. For us, branding is more than design: it's <b>meaning</b>, a <b>voice</b> and a <b>vibe made visible</b>. A way to turn values into graphics, and graphics into something you actually feel.",
+    lead: "Not just a logo and a poster, but a <b>positioning</b> and a <b>visual language</b> that connects with people, not slides.",
     meta: ["2021 · 2022 · 2023 · 2024 · 2025", "Brand · Posters · Merch · Digital · Spatial"],
-    hero: "sAsset20",
-    swatches: ["#9DB18C", "#B9A8CD", "#E9C878"],
+    // r136: the whole story from the old site (cromaticstudios.com/proiecte/slow-coffee-festival-history/), in its
+    // order: each edition's posters with the old page's stickers, the statements between them, then SLOW (2025):
+    // the brand platform, the hands, the palette, the applications. Pictures: site/media/scf (the WP originals).
+    heroArt: ["m:scf/vh-1", "m:scf/vh-2", "m:scf/vh-3"], heroArtLabel: "Slow Coffee Festival: a visual history",
+    swatches: ["#9DB18C", "#D6A9CE", "#E9C878"],
     blocks: [
-      { imgs: ["sVH2", "sVH3"] },
-      { h: "2021", yr: "sY21", p: "The first face of the festival: hand-drawn, warm, a little rebellious. The festival grew bigger and more ambitious every year. And so did its looks.", imgs: ["sP21a", "sP21b", "sP21c"], poster: true },
-      { h: "2022", yr: "sY22", p: "Bolder type, brighter colour: a poster system that could shout from any wall in Bucharest.", imgs: ["sP22a", "sP22b", "sP22c"], poster: true },
-      { h: "2023", yr: "sY23", p: "The system matures: layouts breathe, illustration and photography start talking to each other.", imgs: ["sP23a", "s23f", "s23d"], poster: true },
-      { h: "2024", yr: "s24A", p: "Four editions in, the brand could stretch across posters, merch, digital and the venue itself.", imgs: ["sP24a", "sP24b"], poster: true },
-      { h: "A new chapter: SLOW", p: "After four years of building and learning, we returned to the essence: <b>slow</b>. The visual manifesto speaks with hands, and a palette of Sage Bean, Lavender Roast and Golden Crema tells of slow mornings, shared conversations and the ritual of brewing.", vid: "scfVideo", imgs: ["sHand"] },
-      { h: "2025", p: "The new chapter, on every wall.", imgs: ["sP25a", "sP25b", "sP25c"], poster: true },
-      { imgs: ["sIc1", "sIc2", "sIc3"], small: true }
+      { h: "2021", yr: "m:scf/yr-2021", p: "The first face of the festival: hand-drawn, warm, a little rebellious.", art: ["m:scf/st-5th-edition", "m:scf/st-hand"], artCls: "mid", imgs: ["m:scf/p21-slow", "m:scf/p21-aeropress"], poster: true, layout: "rail" },
+      { say: "For us, branding is more than design: it's <b>meaning</b>, a <b>voice</b> and a <b>vibe made visible</b>." },
+      { h: "2022", yr: "m:scf/yr-2022", p: "Bolder type, brighter colour: a poster system that could shout from any wall in Bucharest.", art: ["m:scf/st-arrow"], imgs: ["m:scf/p22-slow", "m:scf/p22-sloth", "m:scf/p22-aeropress", "m:scf/p22-story-1", "m:scf/p22-story-2", "m:scf/p22-story-3"], poster: true },
+      { say: "A way to turn <b>values</b> into graphics, and graphics into something you actually <b>feel</b>." },
+      { h: "2023", yr: "m:scf/yr-2023", p: "The system matures: layouts breathe, illustration and photography start talking to each other.", art: ["m:scf/st-seven", "m:scf/st-blob"], imgs: ["m:scf/p23-sloth", "m:scf/p23-aeropress", "m:scf/p23-seven"], poster: true },
+      { say: "The festival grew bigger and more ambitious every year. <b>And so did its looks.</b>" },
+      { h: "2024", yr: "m:scf/yr-2024", p: "Four editions in, the brand could stretch across posters, merch, digital and the venue itself.", imgs: ["m:scf/p24-spiral", "m:scf/p24-slow", "m:scf/p24-aeropress"], poster: true },
+      { say: "After four years of building and learning, we're entering a new chapter. At the heart of it all, we've returned to the essence:", big: "SLOW" },
+      { h: "Brewing a Visual Language", p: "For over eight years, Slow Coffee Festival has grown from a passionate gathering of specialty coffee lovers into Romania's landmark coffee celebration. Cromatic Studios has shaped the visual language and brand universe that reflects the festival: a place where coffee is culture, people are central and every gesture matters.", art: ["m:scf/hand-phone"], artCls: "solo",
+        pillars: [
+          { k: "Culture", h: "Slow Living", c: "#9DB18C", p: "At its heart, Slow Coffee Festival celebrates intentional living. In a world obsessed with speed and instant gratification, the festival invites visitors to pause, savour and immerse themselves not only in their coffee, but also in the moments, conversations and shared experiences around it." },
+          { k: "Impact", h: "Coffee Community", c: "#D6A9CE", p: "Specialty coffee is more than what's in the cup: it's about story, craft, ethics and ecosystem. The festival is the heartbeat of this community, connecting roasters, baristas, producers and passionate coffee lovers. It shifts the conversation: from “what coffee do you like?” to “why do you like it?”, and from “what's your favourite café?” to “who's behind your favourite cup?”" },
+          { k: "Voice & Feelings", h: "Life as a Festival", c: "#E9C878", p: "The festival's voice celebrates joy, curiosity and presence. It encourages people to treat life like a festival: intentional, mindful and memorable. Every interaction, every visual element, should reflect that energy." }
+        ] },
+      { art: ["m:scf/icon-1", "m:scf/icon-2", "m:scf/icon-4", "m:scf/icon-5", "m:scf/icon-3"], artCls: "icons", small: true },
+      { h: "The Visual Manifesto: Hands as a Language", p: [
+        "From this positioning, we distilled the visual identity down to its essence: <b>hands</b>. Illustrated in simple outlines, hands become the metaphor for craft, connection and ritual. They press an Aeropress, pass a cup, roast coffee, or perform gestures that celebrate skill and attention.",
+        "Hands are versatile: they can tell stories, demonstrate craft and convey emotion, all while keeping the festival's slow and intentional energy at the centre.",
+        "Hands are universal, human and instantly recognisable, forming the heart of the festival's visual identity."
+      ] },
+      { say: "A palette that speaks of <b>slow mornings</b>, <b>shared conversations</b> and <b>the ritual of brewing</b>. These colours reflect the sensory world of coffee, community and slowness.",
+        palette: [
+          { n: "Sage Bean", c: "#9DB18C", p: "Calm, grounding, balance" },
+          { n: "Lavender Roast", c: "#D6A9CE", p: "Subtlety, craftsmanship, human touch" },
+          { n: "Golden Crema", c: "#E9C878", p: "Warmth, optimism, approachability" }
+        ],
+        note: "These colours are flexible, allowing for consistency across posters, digital content, merch and spatial design, while remaining warm and inviting." },
+      { say: "Bringing the brand to life gently animates atmosphere and memory with <b>warm, welcoming colour, tone and movement</b>.", vid: "scfVideo",
+        list: ["Posters and banners that feel alive and intentional.", "Merch that people want to wear beyond the festival.", "Digital platforms that echo the slow, human energy.", "Stage and venue design that immerses visitors in craft and ritual."] },
+      { say: "The system is <b>sustainable</b>: designed to grow with the festival and remain relevant for years, with only minor adjustments as the festival evolves." }
     ]
   },
   "two-minutes": {

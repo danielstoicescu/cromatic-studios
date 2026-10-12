@@ -361,9 +361,22 @@ ${footer}`;
   // their natural shape (never cropped): one full width, two side by side, three or more in a
   // horizontal rail you can drag or step through. Every image opens in a lightbox.
   const lbImg = (m, alt = "") => { const a = A(m); if (!a) return ""; return `<img src="${a.src}"${a.w ? ` width="${a.w}" height="${a.h}"` : ""} alt="${esc(alt)}" loading="lazy" decoding="async" data-lb="${a.src}">`; };
-  function caseBlock(b, i) {
-    const num = String(i + 1).padStart(2, "0");
-    const head = b.h || b.p ? `<div class="wrap c2-head c2-reveal">${b.yr ? img(b.yr, b.h, "cb-yr") : ""}${b.h && !b.yr ? `<span class="c2-num mono">${num}</span><h2>${esc(b.h)}</h2>` : ""}${b.p ? `<p>${b.p}</p>` : ""}</div>` : "";
+  // r136: the long-form story blocks (Slow Coffee Festival, the whole story from the old site). Any block may add:
+  // say (a big statement, with an optional giant word, big), art (stickers: small transparent graphics at their
+  // own size, tilted, never in the lightbox), pillars (cards {k, h, p, c}), palette (swatches {n, c, p} + note)
+  // and list (a numbered list next to the block's video). p may be an array of paragraphs.
+  const paras = (p) => Array.isArray(p) ? `<div class="c2-ps">${p.map((x) => `<p>${x}</p>`).join("")}</div>` : `<p>${p}</p>`;
+  const TILT = [-4, 3, -2, 5, -3, 2];
+  const art = (list, cls = "", label = "") => list?.length ? `<div class="wrap c2-art c2-reveal${cls ? " " + cls : ""}"${label ? ` role="img" aria-label="${esc(label)}"` : ""}>${list.map((m, k) => { const a = A(m); return a ? `<img class="stk" src="${a.src}"${a.w ? ` width="${a.w}" height="${a.h}"` : ""} alt="" loading="lazy" decoding="async" style="--i:${k};--r:${TILT[k % TILT.length]}deg">` : ""; }).join("")}</div>` : "";
+  const storyParts = (b) => (b.say ? `<div class="wrap c2-say c2-reveal"><p>${b.say}</p>${b.big ? `<p class="c2-big"><span class="sr">${esc(b.big)}</span>${[...b.big].map((ch, k) => `<span aria-hidden="true" style="--k:${k}">${esc(ch)}</span>`).join("")}</p>` : ""}</div>` : "")
+    + art(b.art, b.artCls, b.artLabel)
+    + (b.pillars ? `<div class="wrap c2-pillars">${b.pillars.map((x, k) => `<article class="c2-pc c2-reveal" style="--pc:${x.c};--i:${k}"><span class="mono">${esc(x.k)}</span><h3>${esc(x.h)}</h3><p>${x.p}</p></article>`).join("")}</div>` : "")
+    + (b.palette ? `<div class="wrap c2-pal c2-reveal">${b.palette.map((x, k) => `<div class="c2-sw" style="--sc:${x.c};--i:${k}"><button class="sw" data-hex="${x.c}" title="Copy ${x.c}"></button><h3>${esc(x.n)}</h3><p>${esc(x.p)}</p><span class="mono">${x.c}</span></div>`).join("")}</div>${b.note ? `<div class="wrap c2-note c2-reveal"><p>${b.note}</p></div>` : ""}` : "");
+  function caseBlock(b, i, hn) {
+    const num = String(hn ?? i + 1).padStart(2, "0");
+    const head = b.h || b.p ? `<div class="wrap c2-head c2-reveal">${b.yr ? img(b.yr, b.h, "cb-yr") : ""}${b.h && !b.yr ? `<span class="c2-num mono">${num}</span><h2>${esc(b.h)}</h2>` : ""}${b.p ? paras(b.p) : ""}</div>` : "";
+    const extra = storyParts(b);
+    if (b.list) return `<section class="c2-ch${b.small ? " small" : ""}">${head}${extra}<div class="wrap c2-apps c2-reveal">${[...(b.vid ? [b.vid] : []), ...(b.vids || [])].map((v) => `<figure class="c2-fig vid">${vid(v)}</figure>`).join("")}<ol class="c2-list">${b.list.map((x, k) => `<li style="--i:${k}"><span class="mono">${String(k + 1).padStart(2, "0")}</span><span>${x}</span></li>`).join("")}</ol></div></section>`;
     if (b.frame) return `<section class="c2-ch"><div class="wrap"><div class="cblock framed${b.tall ? " tall" : ""}${b.phones ? " with-phone" : ""}">
       <div class="cb-txt">${b.h ? `<span class="c2-num mono">${num}</span><h2>${esc(b.h)}</h2>` : ""}${b.p ? `<p>${b.p}</p>` : ""}</div>
       <div class="cb-media fr">${(b.imgs || []).map(browser).join("")}${(b.phones || []).map(phone).join("")}</div>
@@ -379,7 +392,7 @@ ${footer}`;
     else if (layout === "duo") media = `<div class="wrap-wide c2-duo c2-reveal">${items.join("")}</div>`;
     else if (n) media = `<div class="c2-rail c2-reveal${b.poster ? " posters" : ""}"><div class="c2-track" tabindex="0" aria-label="${esc(b.h || "Gallery")}, scroll sideways">${items.join("")}</div>
       <div class="wrap c2-rail-ui"><button class="c2-rb prev" aria-label="Previous">←</button><button class="c2-rb next" aria-label="Next">→</button><span class="c2-count mono">${n} images · drag</span></div></div>`;
-    return `<section class="c2-ch${b.small ? " small" : ""}">${head}${media}</section>`;
+    return `<section class="c2-ch${b.small ? " small" : ""}${b.say && !b.h ? " c2-ch-say" : ""}">${head}${extra}${media}</section>`;
   }
 
   function casePage(slug) {
@@ -408,11 +421,12 @@ ${header(false)}
         ${d.swatches ? `<div class="swatches" aria-label="Palette">${d.swatches.map((c) => `<button class="sw" style="background:${c}" data-hex="${c}" title="Copy ${c}"></button>`).join("")}</div>` : ""}
       </div>
     </div>
+    ${d.heroArt ? art(d.heroArt, "strip", d.heroArtLabel) : ""}
     ${d.hero ? (d.heroFrame ? `<div class="wrap-wide c-heroimg wide">${browser(d.hero)}</div>` : `<div class="wrap-wide c2-heromedia">${lbImg(d.hero, d.name)}</div>`) : ""}
     ${d.youtube ? `<div class="wrap-wide"><div class="yt" data-id="${d.youtube}"><button class="yt-play" aria-label="Play the Two Minutes film">${img("tmPoster", "Two Minutes film", "", true)}<span class="yt-btn">▶ Play the film</span></button></div></div>` : ""}
   </section>
   <section class="wrap c2-lead c2-reveal"><p>${d.lead}</p></section>
-  ${d.blocks.map(caseBlock).join("")}
+  ${(() => { let n = 0; return d.blocks.map((b, i) => caseBlock(b, i, b.h ? ++n : n)).join(""); })()}
   <section class="c-end">
     <div class="wrap">
       ${d.link ? `<p><a class="btn" href="${d.link.href}" target="_blank" rel="noopener">${esc(d.link.label)}</a></p>` : ""}

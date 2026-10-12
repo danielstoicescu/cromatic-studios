@@ -289,7 +289,7 @@ const hubLinks = (slug, hasRelated) => {
   return `${STREET_CSS}<section class="cz-street" aria-label="More from the studio" style="--czs:${street ? street[1] : "#FED012"}">${cards ? `<p class="czs-eb">${escH(street ? street[0] : "")}</p><h2><span>On the same street</span></h2>${cards}` : ""}${links ? `<div class="czs-links">${links}</div>` : ""}${board}</section>${board ? BOARD_JS : ""}`;
 };
 const page = (path, raw) => {
-  if (path.startsWith("work/")) { const block = hubLinks(path.slice(5), /class="card related"/.test(raw)); if (block && raw.includes("</main>")) { const i = raw.lastIndexOf("</main>"); raw = raw.slice(0, i) + block + raw.slice(i); } }
+  if (path.startsWith("work/")) { const block = hubLinks(path.slice(5), /class="card related"/.test(raw)); if (block && raw.includes("</main>")) { const e = raw.indexOf('<section class="c-end"'); const i = e > -1 ? e : raw.lastIndexOf("</main>"); raw = raw.slice(0, i) + block + raw.slice(i); } }
   const p = `/${path}/`, slug = path.replace(/^work\//, "");
   if (GF_CSS) raw = raw.replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\n?/, "").replace(/<link rel="preload" as="style" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"[^>]*>\n?<noscript><link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"><\/noscript>/, `<style>${GF_CSS}</style>`);
   const text = pageText(raw);

@@ -180,7 +180,7 @@
     box.addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; }, { passive: true });
     box.addEventListener("touchend", (e) => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx; if (Math.abs(dx) > 50) show(k + (dx < 0 ? 1 : -1)); sx = null; });
   }
-  d.querySelectorAll(".swatches .sw").forEach((b) => b.addEventListener("click", () => {
+  d.querySelectorAll(".swatches .sw, .c2-pal .sw").forEach((b) => b.addEventListener("click", () => {
     navigator.clipboard?.writeText(b.dataset.hex).catch(() => {});
     b.classList.add("copied"); setTimeout(() => b.classList.remove("copied"), 1200);
   }));
