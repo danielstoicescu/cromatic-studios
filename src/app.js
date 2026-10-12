@@ -28479,13 +28479,13 @@ void main() {
         clear,
         // r130h: the loading cup is this stage's own yellow cup, spinning on its axis: rendered once into a
         // sprite strip before the city is built, so the boot animation stays on the compositor
-        sprite(frames = 36, px = 160) {
+        sprite(frames = 48, px = 200) {
           init();
           const dpr = R3.getPixelRatio();
           R3.setSize(px, px, false); cam.aspect = 1; cam.updateProjectionMatrix();
-          const z0 = cam.position.z; cam.position.z = 9.2;
-          const c = make(0, new Vector3(0, -1.15, 0), new Vector3(0, -1.15, 0), { k: 5, s0: 1.15, s: 1.15 });
-          c.g.visible = true; c.g.scale.setScalar(1.15);
+          const z0 = cam.position.z; cam.position.z = 14;
+          const c = make(0, new Vector3(0, -0.9, 0), new Vector3(0, -0.9, 0), { k: 5, s0: 1.15, s: 1.15 });
+          c.g.visible = true; c.g.scale.setScalar(1.15); c.g.position.set(0, -0.9, 0);
           const out = document.createElement("canvas"); out.width = px * frames; out.height = px;
           const ctx = out.getContext("2d");
           for (let i = 0; i < frames; i++) {
@@ -34423,10 +34423,89 @@ void main() {
           scrollToL(state.L, false);
         }
       }
+      // ---- r130i: wax crayon, procedural ----
+      // Real crayon on paper: the wax only catches on the tooth of the sheet, so a stroke is never solid; it is laid
+      // in horizontal passes, each with its own pressure, lifting off at ragged ends. A paper-tooth field (grain
+      // drawn out along the stroke), strokes stamped with a round brush into a per-stroke coverage buffer, then the
+      // pigment deposited where coverage beats the tooth. Alpha-only PNGs, used as CSS masks over any colour.
+      var crayonTex = null;
+      function crayonTextures() {
+        if (crayonTex) return crayonTex;
+        const R = rng(20261012);
+        const make = (W, H, paint) => {
+          const N = W * H, T = new Float32Array(N), A = new Float32Array(N), S = new Float32Array(N);
+          const grid = (sx, sy) => { const gw = Math.ceil(W / sx) + 2, gh = Math.ceil(H / sy) + 2, v = new Float32Array(gw * gh); for (let i = 0; i < v.length; i++) v[i] = R();
+            return (x, y) => { const fx = x / sx, fy = y / sy, ix = fx | 0, iy = fy | 0, ax = fx - ix, ay = fy - iy, ux = ax * ax * (3 - 2 * ax), uy = ay * ay * (3 - 2 * ay), o = iy * gw + ix;
+              return (v[o] * (1 - ux) + v[o + 1] * ux) * (1 - uy) + (v[o + gw] * (1 - ux) + v[o + gw + 1] * ux) * uy; }; };
+          const g1 = grid(2.3, 0.85), g2 = grid(6.5, 2.2), g3 = grid(40, 18);
+          for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) T[y * W + x] = g1(x, y) * 0.5 + g2(x, y) * 0.24 + g3(x, y) * 0.08 + R() * 0.18;
+          const pres = grid(26, 26);
+          // one stroke along a polyline of [x, y], brush radius w, base pressure p0, lifting at both ends
+          const stroke = (pts, w, p0) => {
+            S.fill(0);
+            let len = 0; const L = [0]; for (let i = 1; i < pts.length; i++) { len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); L.push(len); }
+            const lift = Math.min(len * 0.22, 46);
+            for (let i = 1, d = 0; i < pts.length; i++) {
+              const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], sl = L[i] - L[i - 1];
+              for (let s2 = 0; s2 < sl; s2 += 1.2) {
+                const k = s2 / (sl || 1), cx = x0 + (x1 - x0) * k, cy = y0 + (y1 - y0) * k, at = L[i - 1] + s2;
+                const end = Math.min(1, at / lift, (len - at) / lift);
+                const p = p0 * (0.72 + 0.4 * pres(cx, cy)) * (0.35 + 0.65 * Math.sqrt(Math.max(0, end)));
+                const ww = w * (0.8 + 0.2 * Math.sqrt(Math.max(0, end)));
+                for (let yy = Math.max(0, Math.floor(cy - ww)); yy <= Math.min(H - 1, Math.ceil(cy + ww)); yy++)
+                  for (let xx = Math.max(0, Math.floor(cx - ww)); xx <= Math.min(W - 1, Math.ceil(cx + ww)); xx++) {
+                    const dd = ((xx - cx) ** 2 + (yy - cy) ** 2) / (ww * ww);
+                    if (dd >= 1) continue;
+                    const c = p * (1 - dd * dd), o = yy * W + xx;
+                    if (c > S[o]) S[o] = c;
+                  }
+              }
+            }
+            for (let o = 0; o < N; o++) { const c = S[o]; if (!c) continue; let dep = (c * 0.92 - T[o] + 0.1) / 0.17; if (dep <= 0) continue; if (dep > 1) dep = 1; dep *= 0.5 + 0.5 * c; A[o] = 1 - (1 - A[o]) * (1 - dep); }
+          };
+          paint(stroke, W, H);
+          const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+          const ctx = cv.getContext("2d"), id = ctx.createImageData(W, H);
+          for (let o = 0; o < N; o++) { id.data[o * 4] = id.data[o * 4 + 1] = id.data[o * 4 + 2] = 255; id.data[o * 4 + 3] = Math.min(255, A[o] * 268); }
+          ctx.putImageData(id, 0, 0);
+          return `url(${cv.toDataURL("image/png")})`;
+        };
+        // a swatch: back-and-forth horizontal passes, each a little tilted and wavy, ends uneven
+        const swatch = (W, H, rows, w) => (stroke) => {
+          for (let k = 0; k < rows; k++) {
+            const y0 = H * 0.2 + (k / (rows - 1)) * H * 0.6 + (R() - 0.5) * 6, a = (R() - 0.5) * 0.05, ph = R() * 6;
+            const x0 = 10 + R() * 34, x1 = W - 10 - R() * 34, pts = [];
+            for (let x = x0; x <= x1; x += 8) pts.push([x, y0 + (x - x0) * a + Math.sin(x / 47 + ph) * 2.4]);
+            stroke(k % 2 ? pts.reverse() : pts, w * (0.85 + R() * 0.3), 0.8 + R() * 0.18);
+          }
+        };
+        crayonTex = {
+          pill: make(640, 200, swatch(640, 200, 11, 15)),
+          card: make(560, 360, swatch(560, 360, 16, 17)),
+          // a ring: two passes round an ellipse, not quite closed, the radius wandering a little
+          ring: make(512, 256, (stroke) => {
+            for (let pass = 0; pass < 2; pass++) {
+              const a0 = R() * 6.28, span = Math.PI * 2 + 0.25 + R() * 0.3, pts = [], ph = R() * 6;
+              for (let t = 0; t <= span; t += 0.02) { const j = 1 + Math.sin(t * 3 + ph) * 0.012 + pass * 0.015; pts.push([256 + Math.cos(a0 + t) * 228 * j, 128 + Math.sin(a0 + t) * 106 * j]); }
+              stroke(pts, 7.5, 0.95);
+            }
+          }),
+          // a dot: a tight spiral scribble
+          dot: make(72, 72, (stroke) => {
+            const pts = [], ph = R() * 6;
+            for (let t = 0; t <= Math.PI * 2 * 3.2; t += 0.08) { const r = 6 + (t / (Math.PI * 2 * 3.2)) * 20; pts.push([36 + Math.cos(t + ph) * r, 36 + Math.sin(t + ph) * r * 0.94]); }
+            stroke(pts, 9, 1);
+          })
+        };
+        const st = document.documentElement.style;
+        st.setProperty("--cr-pill", crayonTex.pill); st.setProperty("--cr-card", crayonTex.card); st.setProperty("--cr-ring", crayonTex.ring); st.setProperty("--cr-dot", crayonTex.dot);
+        return crayonTex;
+      }
       function applyScheme(idx) {
         state.schemeIdx = idx;
         const s = SCHEMES[idx];
         window.__czAmb?.world(s.id);
+        if (s.id === "sketch") try { crayonTextures(); } catch (e) {}
         const dark = lum(s.bg) < 0.45;
         isDarkScheme = dark;
         document.body.classList.toggle("dark-ui", dark);
@@ -38372,7 +38451,7 @@ void main() {
         brewEl = document.createElement("div");
         brewEl.className = "kz-brew";
         let strip = null;
-        try { kinetic = createKinetic(() => mapEndIntro(), null); strip = kinetic.cupSprite(36, 160); } catch (e) { strip = null; }
+        try { kinetic = createKinetic(() => mapEndIntro(), null); strip = kinetic.cupSprite(48, 200); } catch (e) { strip = null; }
         brewEl.innerHTML = strip
           ? `<div class="kb-cup kb-3d"><i class="kb-sprite" style="background-image:url(${strip})"></i></div><span class="kb-t">Brewing the city</span>`
           : `<div class="kb-cup"><i class="kb-steam"></i><i class="kb-steam"></i><i class="kb-steam"></i><i class="kb-handle"></i><div class="kb-mug"><i class="kb-fill"></i><i class="kb-star">\u2733</i></div></div><span class="kb-t">Brewing the city</span>`;
