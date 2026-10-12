@@ -210,13 +210,18 @@ const mediaDims = (src) => {
   dimCache.set(src, d);
   return d;
 };
+// r131: the case pages' typeface, served from here (preloaded: no late swap, no layout shift)
+const DG = {};
+for (const k of ["latin", "latin-ext"]) {
+  try { const buf = readFileSync(join(root, "site", "fonts", `darker-grotesque-${k}.woff2`)); const rel = `assets/fonts/darker-grotesque-${k}-${hash(buf).slice(0, 8)}.woff2`; mkdirSync(join(pub, "assets", "fonts"), { recursive: true }); writeFileSync(join(pub, rel), buf); DG[k] = "/" + rel; } catch {}
+}
 const wpLocal = (u) => mediaMap.get("m:wp/" + u.replace(/^.*\/uploads\/(\d{4})\/(\d{2})\/(.+)\.[a-z]+$/i, "$1-$2-$3"))?.src;
 const page = (path, raw) => {
   const p = `/${path}/`, slug = path.replace(/^work\//, "");
   const text = pageText(raw);
   const lastmod = LASTMOD.get(p, text);
   const project = DATA.PROJECTS.find((x) => x.page === slug);
-  const r = seoPage(raw, { path: p, SITE: SITE_URL, project, media: mediaDims, lastmod, wp: wpLocal });
+  const r = seoPage(raw, { path: p, SITE: SITE_URL, project, media: mediaDims, lastmod, wp: wpLocal, dg: DG });
   const html = r.html;
   PAGES[p] = { path: p, title: r.title, desc: r.desc, fullDesc: r.fullDesc, images: r.images, lastmod, text: pageText(html) };
   mkdirSync(join(pub, path), { recursive: true }); writeFileSync(join(pub, path, "index.html"), html);
@@ -236,6 +241,7 @@ for (const slug of R.canvasSlugs) page(`work/${slug}`, R.canvasPage(slug));
   if (lit) {
     let steam = new Function(`return ${lit[1]}`)();
     steam = steam.replace("<head>", `<head>\n<link rel="canonical" href="${SITE_URL}/work/steam/">\n<meta name="description" content="Steam Coffee Shop: a pioneer specialty coffee brand refreshed for its community. Branding, growth and product by Cromatic Studios, Bucharest.">\n<link rel="icon" href="/favicon.ico" sizes="32x32">`)
+      .replace("</head>", `<style>body>main.page{padding-top:64px}</style>\n</head>`)
       .replace(/<body([^>]*)>/, `<body$1>\n<a href="/site/#work" style="position:fixed;left:14px;top:14px;z-index:9999;padding:10px 16px;border-radius:999px;background:#FED012;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none">← Cromatic Studios</a>`);
     page("work/steam", steam);
   }

@@ -115,7 +115,7 @@ const websiteRef = (SITE) => ({ "@type": "WebSite", "@id": `${SITE}/#website`, u
  * Normalise one page. `info` = { path, SITE, project, media (url -> {w,h}), lastmod, wp (url -> local) }.
  * Returns { html, text, title, desc, image, images }.
  */
-export function seoPage(html, { path, SITE, project, media, lastmod, wp }) {
+export function seoPage(html, { path, SITE, project, media, lastmod, wp, dg }) {
   const url = `${SITE}${path}`;
   const work = /^\/work\/([\w-]+)\/$/.exec(path)?.[1];
   // 1. images of the studio's own WordPress, served from here (compressed copies in site/media/wp)
@@ -127,7 +127,7 @@ export function seoPage(html, { path, SITE, project, media, lastmod, wp }) {
   });
   // 3. films below the first one start loading only when they scroll into view (the page's own
   //    IntersectionObserver plays them); before, every autoplay film downloaded on page load
-  if (/IntersectionObserver/.test(html) && /querySelectorAll\('video:not\(\[data-manual\]\)'\)/.test(html)) {
+  if (/IntersectionObserver/.test(html) && /querySelectorAll\('video(?::not\(\[data-manual\]\))?'\)/.test(html)) {
     let k = 0;
     html = html.replace(/<video\b([^>]*)>/g, (m, a) => {
       if (!/\bautoplay\b/.test(a) || k++ === 0) return m;
@@ -135,6 +135,10 @@ export function seoPage(html, { path, SITE, project, media, lastmod, wp }) {
     });
   }
 
+  // 4. Darker Grotesque from our own domain, the Latin file preloaded (Google's late swap moved the hero: CLS)
+  if (dg && dg.latin) html = html.replace(/<link href="https:\/\/fonts\.googleapis\.com\/css2\?family=Darker\+Grotesque[^"]*" rel="stylesheet">/, () =>
+    `<link rel="preload" href="${dg.latin}" as="font" type="font/woff2" crossorigin>\n<style>@font-face{font-family:"Darker Grotesque";font-style:normal;font-weight:300 900;font-display:swap;src:url(${dg.latin}) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}${dg["latin-ext"] ? `@font-face{font-family:"Darker Grotesque";font-style:normal;font-weight:300 900;font-display:swap;src:url(${dg["latin-ext"]}) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}` : ""}</style>`)
+      .replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\n?<link rel="preconnect" href="https:\/\/fonts\.gstatic\.com" crossorigin>\n?(?![\s\S]*fonts\.googleapis\.com\/css)/, "");
   const headEnd = html.indexOf("</head>");
   let head = html.slice(0, headEnd), body = html.slice(headEnd);
   const has = (re) => re.test(head);
