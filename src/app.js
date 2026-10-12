@@ -38520,6 +38520,7 @@ void main() {
       window.__site = (on) => setSiteMode(on);
       window.__map = (on = true) => setMapMode(on);
       window.__mapGo = (id) => mapGo(MAP_PLACES.find((p) => p.id === id));
+      window.__mapIds = () => MAP_PLACES.filter((p) => !p.unmarked).map((p) => p.id);
       window.__takeoff = () => mapTakeoff();
       window.__cityDbg = () => ({ zones: buildKeepOut().map((z) => [z.x, z.y, z.r]), extra: EXTRA_KEEPOUT.map((z) => [z.x, z.y, z.r]), routes: Object.fromEntries(["A", "B", "C"].map((b) => [b, roundedPolyline(branchPoints(b)).map(([x, z]) => [Math.round(x), Math.round(z)])])), parks: PARKS, stops: STOPS, places: MAP_PLACES.map((p) => [p.name, p.px ?? p.x, p.pz ?? p.z, p.id, !!p.find]) });
       window.__path = () => route.points.filter((_, i) => i % 3 === 0).map((p) => [Math.round(p.x), Math.round(p.z)]);

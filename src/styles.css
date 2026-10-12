@@ -4111,3 +4111,13 @@ body.scheme-sketch .map-card .mcd-close:hover { background: rgba(35,35,38,.06) !
 .map-card .mcd-poster { display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; padding: 18px !important; background: var(--pc) !important; color: var(--pt); }
 .map-card .mcd-pt { font: 800 clamp(26px, 3vw, 38px)/.95 CromaticSans, sans-serif; letter-spacing: -.02em; }
 .map-card .mcd-pl { font-size: 9.5px; font-style: normal; letter-spacing: .14em; opacity: .75; }
+/* r131: a place card is as long as its words, its picture and its buttons need: never a scrollbar, never a cut line.
+   The body is never narrower than its call to action (min-content), the picture gives way instead; the card grows in
+   height rather than clipping (it sits in a bottom corner and grows upwards). */
+.map-card { max-height: none !important; overflow: hidden; }
+.map-card .mcd-body { overflow: visible !important; min-height: auto; }
+.map-card .mcd-title, .map-card p, .map-card .mcd-eyebrow { overflow-wrap: anywhere; }
+@media (min-width: 721px) {
+  .map-card.has-img .mcd-body { flex: 1 1 0; min-width: min-content; }
+  .map-card.has-img .mcd-img { flex: 0 1 42% !important; width: auto !important; min-width: 28%; }
+}
