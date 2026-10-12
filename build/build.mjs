@@ -135,6 +135,17 @@ let ONB = null;
 }
 const wpMirror = (text) => text.replace(/https:(\\?\/)\\?\/cromaticstudios\.com\\?\/wp-content\\?\/uploads\\?\/(\d{4})\\?\/(\d{2})\\?\/(?=([\w.-]+)|\$\{)/g, (m, sl, y, mo, f) => (!f || WP_MIRROR.has(`${y}/${mo}/${f}`)) ? `/wp-content/uploads/${y}/${mo}/` : m);
 jsOut = wpMirror(jsOut);
+// r138h: Steam's own photos (site/media/steam) are named "m:steam/<name>" in steamCaseHtml; the bundle (the map opens
+// the page as srcdoc) and /work/steam point at the hashed copies the media loop below writes (same content, same name)
+const steamM = new Map();
+{
+  const d = join(root, "site", "media", "steam");
+  let fs = [];
+  try { fs = readdirSync(d); } catch {}
+  for (const f of fs) if (/\.(jpe?g|png|webp)$/i.test(f)) { const k = f.replace(/\.[^.]+$/, ""); steamM.set(k, `/assets/m/steam-${k}-${hash(readFileSync(join(d, f))).slice(0, 8)}${f.slice(f.lastIndexOf("."))}`); }
+}
+const steamMedia = (t) => t.replace(/m:steam\/([\w-]+)/g, (x, k) => steamM.get(k) || (console.warn(`[build] steam: missing media m:steam/${k}`), x));
+jsOut = steamMedia(jsOut);
 const jsName = `assets/app.${hash(jsOut)}.js`, cssName = `assets/styles.${hash(cssOut)}.css`;
 writeFileSync(join(pub, jsName), jsOut);
 writeFileSync(join(pub, cssName), cssOut);
@@ -455,7 +466,7 @@ for (const slug of R.canvasSlugs) page(`work/${slug}`, R.canvasPage(slug));
 {
   const lit = /var steamCaseHtml = ("(?:[^"\\]|\\.)*");/.exec(js);
   if (lit) {
-    let steam = new Function(`return ${lit[1]}`)();
+    let steam = steamMedia(new Function(`return ${lit[1]}`)()); // r138h: its own photos (m:steam/...)
     // r134h: the bundle escapes its closing tags as <\/script> (a string inside a script); as a page it must close for real
     // r136: the commented-out robots tag ("<!-- <meta name="robots" ...> uncomment for preview copies -->") goes, words
     // after the tag included: while it stood there, seoPage saw a robots tag and never added the real one
