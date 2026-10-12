@@ -22,7 +22,7 @@ export function consentSnippet(GA_ID, GTM_ID = "") {
 @keyframes czck{to{background-position:100% 0}}
 @media (prefers-reduced-motion:reduce){#cz-ck{transition:none}#cz-ck .ck-cup{animation:none}}
 @media (max-width:600px){#cz-ck{bottom:12px;width:calc(100vw - 24px);padding:16px 16px 18px}#cz-ck .ck-row{flex-wrap:nowrap}#cz-ck button{flex:1;min-width:0}}
-html.embed #cz-ck{display:none}`;
+html.embed #cz-ck,body.map-boarding #cz-ck,body.modal-open #cz-ck,body.scf-open #cz-ck{display:none}`;
   const js = `(function(){var ID=${JSON.stringify(GA_ID)},GTM=${JSON.stringify(GTM_ID)},K="cz-consent";
 var EMB=/[?&]embed=1/.test(location.search)||document.documentElement.classList.contains("embed");
 function get(){try{return localStorage.getItem(K)}catch(e){var m=document.cookie.match(/(?:^|; )cz-consent=(\\w+)/);return m&&m[1]}}
