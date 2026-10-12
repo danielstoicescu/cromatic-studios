@@ -4107,3 +4107,7 @@ body.scheme-sketch .map-card .mcd-open::before { opacity: 0; animation: none !im
 body.scheme-sketch .map-card .mcd-open:hover::before { opacity: 1; animation: crIn2 .45s cubic-bezier(.55,.05,.35,1) both !important; }
 body.scheme-sketch .map-card .mcd-close { background: transparent !important; border: 1.5px solid #232326 !important; box-shadow: none !important; color: #232326 !important; border-radius: 47% 53% 50% 50% / 52% 48% 52% 48% !important; transform: rotate(-4deg); }
 body.scheme-sketch .map-card .mcd-close:hover { background: rgba(35,35,38,.06) !important; }
+/* r130n: no map snapshots: a place with no photo yet shows a poster in its own colours */
+.map-card .mcd-poster { display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; padding: 18px !important; background: var(--pc) !important; color: var(--pt); }
+.map-card .mcd-pt { font: 800 clamp(26px, 3vw, 38px)/.95 CromaticSans, sans-serif; letter-spacing: -.02em; }
+.map-card .mcd-pl { font-size: 9.5px; font-style: normal; letter-spacing: .14em; opacity: .75; }

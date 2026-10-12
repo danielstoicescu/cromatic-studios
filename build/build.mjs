@@ -229,9 +229,20 @@ const caseSlugs = [];
   }
 }
 // r130: map places with a real photo of their own (no case page cover, or a better one)
-for (const [id, k] of Object.entries({ steam: "m:cs/Steam-Cromaticstudios-1", lab: "m:tm/cubes-lab", "w-lapterra": "m:places/lapterra", "y-5": "m:places/litorsal", "y-0": "m:places/lacalut", zdrovit: "m:places/zdrovit", "w-printoteca": "m:places/printoteca", "w-zoetis": "m:places/zoetis" })) {
+for (const [id, k] of Object.entries({ steam: "m:cs/Steam-Cromaticstudios-1", lab: "m:tm/cubes-lab", "w-lapterra": "m:places/lapterra", "y-5": "m:places/litorsal", "y-0": "m:places/lacalut", zdrovit: "m:places/zdrovit", "w-printoteca": "m:places/printoteca", "w-zoetis": "m:places/zoetis", "w-clinicadrk": "m:places/drk", "w-sofmedica": "m:places/sofmedica", "w-medcity": "m:places/medcity", "w-stickerrepublic": "m:places/sticker", echo: "m:places/echo", end: "m:eliade-18/studio-024", friends: "m:rdw-2023/rdw-004" })) {
   const a = mediaMap.get(k);
   if (a) COVERS["place:" + id] = a.src; else console.warn(`[build] covers: missing ${k}`);
+}
+writeFileSync(join(pub, "covers.json"), JSON.stringify(COVERS));
+// r130n: covers by name too (map places carry names, not slugs): every project with a case page, plus its own media
+{
+  const { PROJECTS } = await import("../site/data.mjs");
+  for (const p of PROJECTS) {
+    const own = p.img && A(p.img);
+    const u = (p.page && COVERS[p.page]) || (own && own.src) || null;
+    if (u) COVERS["name:" + p.name.toLowerCase()] = u;
+  }
+  for (const [n, slug] of Object.entries({ "unde": "unde", "berero": "casa-berero", "rdw 2023": "rdw-2023", "eliade 18": "eliade-18", "steam": "steam" })) if (COVERS[slug] && !COVERS["name:" + n]) COVERS["name:" + n] = COVERS[slug];
 }
 writeFileSync(join(pub, "covers.json"), JSON.stringify(COVERS));
 // r130j: the home page last, so its portfolio can use the covers of every case page and place

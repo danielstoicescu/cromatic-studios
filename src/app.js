@@ -23828,7 +23828,7 @@ void main() {
         { name: "Cargus", cat: "Website \xB7 2023", poster: "Delivered", accent: "#FED012", desc: "A national courier, shipped a website that moves as fast as the parcels.", x: 2244, y: 4790 },
         { name: "Help4Brain", cat: "Product \xB7 Marketing", poster: "Challenger to leader", accent: "#B098C8", desc: "Enabling a pharma challenger to become a leader.", x: 2244, y: 5060 }
       ];
-      FRIEND_PILLS = ["Erste Bank", "Microsoft", "Global Records", "Cargus", "Digi", "AWS", "Echo School", "Kastel Group", "Ra\u021Biu & Ra\u021Biu", "Catapult", "Robofun", "Open Bar", "BISM", "Chef Sosin", "Direct Booking", "Noal Dental Clinic", "Skin Aesthetics", "Brewzeus", "K\xF3mpus", "Berero", "Coffeenativ", "Slow Coffee Festival", "Two Minutes", "Yoshi Izakaya", "Artisan Coffee Gear", "ARCA Resort", "Routine Paris", "Clinica Sante", "Clinica Dr. K", "Zdrovit", "Zoetis", "Elithia", "Altius", "Unchain Festival", "Investimental", "Infinity Capital", "Techventures Bank", "Longshield", "Flask", "ESD", "Witanalitica", "Assetto", "Bepco"];
+      FRIEND_PILLS = ["Erste Bank", "Microsoft", "Global Records", "Cargus", "Digi", "AWS", "Echo School", "Kastel Group", "Ra\u021Biu & Ra\u021Biu", "Catapult", "Robofun", "Open Bar", "BISM", "Chef Sosin", "Direct Booking", "Noal Dental Clinic", "Skin Aesthetics", "Brewzeus", "K\xF3mpus", "Berero", "Coffeenativ", "Slow Coffee Festival", "Two Minutes", "Yoshi Izakaya", "Artisan Coffee Gear", "ARCA Resort", "Routine Paris", "Clinica Sante", "Clinica Dr. K", "Toskani MED", "Sofmedica", "Zdrovit", "Zoetis", "Elithia", "Altius", "Unchain Festival", "Investimental", "Infinity Capital", "Techventures Bank", "Longshield", "Flask", "ESD", "Witanalitica", "Assetto", "Bepco"];
       CREW = ["Cristian", "Daniel", "Ana", "Coz", "Alexandra", "Stefan", "Adina", "Anne", "Iulic\u0103", "Melissa"];
       CREW_PHOTOS = [
         { src: "https://cromaticstudios.com/wp-content/uploads/2025/06/Noal.jpg", cap: "Photo production \xB7 Noal" },
@@ -26818,6 +26818,27 @@ void main() {
     EXTRA_KEEPOUT.push({ x: cx, y: cz, r: 200 });
   }
 
+  // r130m: Sofmedica's own small yard, north of Zdrovit's: its own paving, a clipped hedge between the two yards,
+  // a little gate with its name on the avenue side; Medcity, the clinic, stands inside at the back
+  function buildSofmedicaYard(parent) {
+    const g = new Group(), x0 = 1585, x1 = 1870, z0 = 4855, z1 = 4978;
+    const pave = new Mesh(new BoxGeometry(x1 - x0, 1, z1 - z0), new MeshStandardMaterial({ color: "#ece7dc", roughness: 1 }));
+    pave.position.set((x0 + x1) / 2, 0.95, (z0 + z1) / 2); pave.receiveShadow = true; g.add(pave);
+    const hedgeM = new MeshStandardMaterial({ color: "#4f9e57", roughness: 1, flatShading: true });
+    const hedge = (ax, az, bx, bz) => { const L = Math.hypot(bx - ax, bz - az), h = new Mesh(new BoxGeometry(L, 7, 6), hedgeM); h.position.set((ax + bx) / 2, 3.5, (az + bz) / 2); h.rotation.y = -Math.atan2(bz - az, bx - ax); h.castShadow = true; g.add(h); };
+    hedge(x0, z1 + 4, x1, z1 + 4);
+    hedge(x1 + 4, z0, x1 + 4, z1 + 4);
+    hedge(x0 + 70, z0 - 4, x1 + 4, z0 - 4);
+    const gm = new MeshStandardMaterial({ color: "#f4f2ec", roughness: 0.8 });
+    for (const dz of [-24, 24]) { const pl = new Mesh(new BoxGeometry(5, 20, 5), gm); pl.position.set(x0 - 4, 10, (z0 + z1) / 2 + 30 + dz); g.add(pl); }
+    const lint = signBoard({ name: "SOFMEDICA", signBg: "#2b6fd6", signInk: "#ffffff" }, 52, 8); lint.position.set(x0 - 4, 21, (z0 + z1) / 2 + 30); lint.rotation.y = -Math.PI / 2; g.add(lint);
+    // a bench and two small trees inside
+    const crownM = new MeshStandardMaterial({ color: "#4fae5c", roughness: 0.9, flatShading: true }), trunkM = new MeshStandardMaterial({ color: "#7a5a3a" });
+    for (const [tx, tz] of [[1700, 4950], [1840, 4955]]) { const tr = new Mesh(new CylinderGeometry(1.2, 1.6, 9, 6), trunkM); tr.position.set(tx, 4.5, tz); const cr = new Mesh(new IcosahedronGeometry(8, 0), crownM); cr.position.set(tx, 13, tz); g.add(tr, cr); }
+    g.traverse((m) => { if (m.isMesh) { m.receiveShadow = true; } });
+    parent.add(g);
+    EXTRA_KEEPOUT.push({ x: (x0 + x1) / 2, y: (z0 + z1) / 2, r: 150 });
+  }
   // a low-poly deer
   function buildDeer(parent, x, z, rot, s = 1) {
     const g = new Group();
@@ -27328,15 +27349,17 @@ void main() {
     { br: "C", name: "Altius", logo: "logoAltius", x: 1612, z: 5400, face: "-x", kind: "tower", w: 72, d: 62, h: 230, accent: "#22c7b8", glass: "#33515c", frame: "#c8d1d8", c: "#16a89b", t: "#ffffff", line: "MEDICAL" },
     { br: "C", name: "Zoetis", x: 1610, z: 5545, face: "-x", kind: "clinic", w: 70, h: 40, accent: "#f2763b", c: "#f2763b", t: "#2a1205", line: "ANIMAL HEALTH" },
     { br: "C", name: "Elithia", x: 1412, z: 5470, face: "+x", kind: "house", w: 50, d: 40, h: 30, wall: "#f7b29c", accent: "#e47f66", c: "#f08a70", t: "#2a0f08", line: "MEDICAL", signBg: "#e47f66", signInk: "#ffffff" },
+    // r130m: out of the Zdrovit yard, on their own: Clinica Dr. K and Toskani MED across the avenue, Sofmedica with
+    // a small yard of its own and Medcity, the clinic, inside it (buildSofmedicaYard)
+    { br: "C", name: "Clinica Dr. K", logo: "logoDrK", x: 1420, z: 4935, face: "+x", kind: "house", w: 58, d: 44, h: 32, wall: "#f6efe9", accent: "#b88a6e", c: "#b88a6e", t: "#ffffff", line: "AESTHETICS MEDICAL CENTER" },
+    { br: "C", name: "Toskani MED", x: 1420, z: 5170, face: "+x", kind: "barcelona", w: 60, d: 46, h: 36, wall: "#f3e6cf", accent: "#e8a33d", c: "#E8A33D", t: "#2a1a05", line: "AESTHETIC MEDICINE \xB7 BARCELONA", desc: "Aesthetic non-invasive solutions for caring doctors, from Barcelona. We found their core, their archetype and two visual concepts, then the packaging for new ranges and a conference booth." },
+    { br: "C", name: "Sofmedica", x: 1630, z: 4905, face: "-x", kind: "house", w: 58, d: 44, h: 34, wall: "#f4f4f0", accent: "#2b6fd6", c: "#2b6fd6", t: "#ffffff", line: "MEDICAL \xB7 A YARD WITH A CLINIC" },
+    { br: "C", name: "Medcity", x: 1780, z: 4900, face: "-x", kind: "house", w: 52, d: 40, h: 30, wall: "#eef6f4", accent: "#18a39b", c: "#18a39b", t: "#ffffff", line: "CLINIC \xB7 IN THE SOFMEDICA YARD" },
   ];
   // the Zdrovit courtyard (Medical Avenue, east side): eight small buildings around a yard
   var COURT = { x: 1720, z: 5070 };
   var COURT_BRANDS = [
-    { br: "C", name: "Sofmedica", x: 1620, z: 4935, face: "+z", kind: "house", w: 58, d: 44, h: 32, wall: "#f4f4f0", accent: "#2b6fd6", c: "#2b6fd6", t: "#ffffff", line: "MEDICAL" },
-    { br: "C", name: "Medcity", x: 1720, z: 4927, face: "+z", kind: "house", w: 58, d: 44, h: 36, wall: "#eef6f4", accent: "#18a39b", c: "#18a39b", t: "#ffffff", line: "CLINICS" },
-    { br: "C", name: "Clinica Dr. K", logo: "logoDrK", x: 1820, z: 4935, face: "+z", kind: "house", w: 58, d: 44, h: 32, wall: "#f6efe9", accent: "#b88a6e", c: "#b88a6e", t: "#ffffff", line: "AESTHETICS MEDICAL CENTER" },
     { br: "C", name: "Zdrovit", x: 1860, z: 5070, face: "-x", kind: "house", w: 70, d: 48, h: 40, wall: "#f2f7f1", accent: "#e30613", c: "#e30613", t: "#ffffff", line: "HEALTH" },
-    { br: "C", name: "Tskani", x: 1620, z: 5205, face: "-z", kind: "barcelona", w: 58, d: 44, h: 34, wall: "#f3e6cf", accent: "#e8a33d", c: "#e8a33d", t: "#2a1a05", line: "BARCELONA" },
     { br: "C", name: "Darya Hope", x: 1720, z: 5215, face: "-z", kind: "la", w: 56, d: 42, h: 28, wall: "#f8d7df", accent: "#f08fb0", c: "#f08fb0", t: "#2a0f17", line: "BEAUTY · LOS ANGELES" },
     { br: "C", name: "Jesse J", x: 1820, z: 5205, face: "-z", kind: "la", w: 56, d: 42, h: 28, wall: "#d8efe6", accent: "#62c6a6", c: "#62c6a6", t: "#0c2a20", line: "BEAUTY · LOS ANGELES" },
     { br: "C", name: "Routine Paris", logo: "logoRoutine", x: 1880, z: 5165, face: "-x", kind: "paris", w: 46, d: 40, h: 34, wall: "#efe7d8", accent: "#28C840", c: "#28C840", t: "#0e0e0e", line: "PERFUMES · PARIS" }
@@ -27367,6 +27390,7 @@ void main() {
     // r121: Kómpus, a lilac coffee shop right after Lapterra
     buildBrandBuilding(parent, { x: 706, z: 5737, face: "+x", kind: "house", name: "K\xD3MPUS", w: 46, d: 34, h: 28, wall: "#cdb8e6", accent: "#B098C8", signBg: "#B098C8", signInk: "#1a1420", keep: 46 });
     buildCourtyard(parent, COURT.x, COURT.z, COURT_BRANDS.map((o) => ({ ...o, logo: L(o.logo) })));
+    buildSofmedicaYard(parent);
     casaPoporului = buildCasaPoporului(parent, TAC.x, TAC.z);
     buildArcaResort(parent);
     buildBrandBuilding(parent, { x: 1412, z: 5536, face: "+x", kind: "house", name: "ELITHIA", w: 46, d: 38, h: 28, wall: "#f4a58e", accent: "#d9715a", signBg: "#d9715a", signInk: "#ffffff", keep: 50 });
@@ -33521,7 +33545,7 @@ void main() {
       const mk = (cls, name, sub, col, dir, fn, i) => { const b = el("button", `xr-arm ${cls}`, `<span class="xr-arrow" aria-hidden="true">${dir}</span><span class="xr-t"><b>${name}</b><i>${sub}</i></span>`); b.style.setProperty("--xc", col); b.style.setProperty("--i", i); b.onclick = fn; arms.appendChild(b); };
       let i = 0;
       for (const k of ["A", "B", "C"]) if (k !== cur) mk(done.has(k) ? "seen" : "", XR[k][0], done.has(k) ? "Again, from the top" : XR[k][1], XR[k][2], "\u21A9", () => api.crossTo(k), i++);
-      mk("home", "Olari 9 \u00B7 home", "The studio, then the jet", "#FED012", "\u2192", () => api.crossTo("home"), i++);
+      mk("home", "Olari 9 \u00B7 home", "The studio. Say hi", "#FED012", "\u2192", () => api.crossTo("home"), i++);
     };
     const rbBtn = el("button", "rb-btn hidden", `
     <span class="rb-badge"><span class="rb-loop">\u21A9</span><b>GO BACK</b></span>
@@ -36278,7 +36302,7 @@ void main() {
         const g = new Group(); g.name = "sketchRings"; g.visible = false;
         const list = [];
         for (const pl of MAP_PLACES) {
-          if (pl.chapter || pl.small || pl.float || pl.wx == null) continue;
+          if (pl.chapter || pl.small || pl.float || pl.unmarked || pl.wx == null) continue;
           const mat = new ShaderMaterial({
             uniforms: { map: { value: tex }, col: { value: (() => { const c = new Color(pl.c); return c.r + c.g + c.b > 2.4 ? new Color("#3a3a3e") : c; })() }, prog: { value: 0 }, a0: { value: Math.random() * 6.283 } },
             vertexShader: "#include <common>\nvarying vec2 vUv; void main(){ vUv = uv; vec4 w = modelMatrix * vec4(position, 1.0); w.xz = cityWarp(w.xz); gl_Position = projectionMatrix * viewMatrix * w; }",
@@ -37305,9 +37329,9 @@ void main() {
         { id: "unde", br: "A", x: 708, z: 6036, h: 50, name: "UND\xC9", line: "GROCERY \xB7 SIGNAGE", c: "#2b6fd6", t: "#ffffff", work: "UNDE", desc: "ARCA's grocery stores: a hand-drawn basket and three formats, Market, Store and Concept." },
         { id: "invest", br: "B", x: 2205, z: 4500, h: 170, name: "Investimental", line: "FINTECH \xB7 UX \xB7 UI", c: "#119BFE", t: "#ffffff", work: "Investimental" },
         { id: "tac", br: "C", x: 1500, z: 4570, px: 1775, pz: 4570, h: 150, name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
-        { id: "zdrovit", br: "C", x: 1720, z: 5070, h: 70, name: "Zdrovit", line: "8 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health, clinic, beauty and perfume brands, from Bucharest to Barcelona, Los Angeles and Paris." },
+        { id: "zdrovit", br: "C", x: 1720, z: 5070, h: 70, name: "Zdrovit", line: "A YARD OF BRANDS", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health, clinic, beauty and perfume brands, from Bucharest to Barcelona, Los Angeles and Paris." },
         { id: "end", stop: "end", name: "Cromatic Studios House", line: "STR. OLARI 9 \xB7 COME BY", c: "#ffffff", t: "#111111", pin: "#111111" },
-        { id: "jet", x: 1250, z: JET_HOME.z - 15, px: JET_HOME.x, pz: JET_HOME.z, h: 46, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", beacon: true, board: true }
+        { id: "jet", x: 1250, z: JET_HOME.z - 15, px: JET_HOME.x, pz: JET_HOME.z, h: 46, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", board: true, unmarked: true }
       ];
       // r115: every brand the drive shows also stands on the map
       (() => {
@@ -37697,7 +37721,7 @@ void main() {
       function placeNumbers() {
         if (_pno) return _pno;
         _pno = {};
-        MAP_PLACES.filter((p) => !p.chapter && !p.small).forEach((p, i) => { _pno[p.id] = String(i + 1).padStart(2, "0"); });
+        MAP_PLACES.filter((p) => !p.chapter && !p.small && !p.unmarked).forEach((p, i) => { _pno[p.id] = String(i + 1).padStart(2, "0"); });
         return _pno;
       }
       function buildMapUI() {
@@ -37724,14 +37748,14 @@ void main() {
             <span><i>\u{1F449}</i><b>Tap a place</b></span><em>\u2192</em>
             <span><i>\u{1F690}</i><b>We drive you</b></span><em>\u2192</em>
             <span><i>\u{1F4D6}</i><b>See the work</b></span><em>\u2192</em>
-            <span><i>\u2708\uFE0F</i><b>Board & say hi</b></span>
+            <span><i>\u2615</i><b>Say hi</b></span>
           </div>
           <b class="mw-q">Where do you want to start?</b>
           <div class="mw-opts">
             <button data-go="tm" style="--wc:#28C840"><b>Coffee Street</b><i>Two Minutes, Steam, ARCA & co.</i></button>
             <button data-go="invest" style="--wc:#119BFE"><b>Fintech Boulevard</b><i>Investimental, Assetto, Bepco</i></button>
             <button data-go="tac" style="--wc:#F28BA8"><b>Medical Avenue</b><i>The Aesthetic Court, Zdrovit, Elithia</i></button>
-            <button data-go="end" style="--wc:#FED012"><b>Olari 9 \u00B7 the studio</b><i>Come by, then board the jet</i></button>
+            <button data-go="end" style="--wc:#FED012"><b>Olari 9 \u00B7 the studio</b><i>Come by, say hi</i></button>
           </div><button class="mw-free">Help me set my first direction \u2192</button>`);
         // r128: the content scrolls inside .mw-in, so the X can sit half outside the card without being clipped
         { const mwIn = document.createElement("div"); mwIn.className = "mw-in"; for (const n of [...welcomeEl.childNodes]) if (!n.classList?.contains("mw-x")) mwIn.append(n); welcomeEl.append(mwIn); }
@@ -37804,7 +37828,9 @@ void main() {
           b.onclick = (e) => { e.stopPropagation(); if (mapBoarding) return; mapGo(pl); };
           pinsEl.appendChild(b);
           let ch = null;
-          if (!pl.chapter && !pl.small) {
+          // r130n: the jet is not marked on the map (no pin, no chip, no ring); you board it from Olari 9 or the form
+          if (pl.unmarked) b.style.display = "none";
+          if (!pl.chapter && !pl.small && !pl.unmarked) {
             ch = el("button", `map-chip${pl.beacon ? " beacon" : ""}`, `<span class="mc-dot"></span>${pinSVG(pl.pin || pl.c, "pin-ic mc-pin")}${PNO[pl.id] ? `<em class="mc-n">${PNO[pl.id]}</em>` : ""}${pl.name}`);
             ch.style.setProperty("--pc", pl.c); ch.style.setProperty("--pt", pl.t);
             ch.onclick = () => mapGo(pl);
@@ -37812,12 +37838,12 @@ void main() {
           }
           return { pl, b, ch };
         });
-        const total = MAP_PLACES.filter((p) => !p.chapter && !p.small).length, totalF = MAP_PLACES.filter((p) => p.chapter).length;
+        const total = MAP_PLACES.filter((p) => !p.chapter && !p.small && !p.unmarked).length, totalF = MAP_PLACES.filter((p) => p.chapter).length;
         const mark = () => {
           let n = 0, f = 0;
           for (const p of pins) {
             const v = visited.has(p.pl.id), on = mapNav.place === p.pl;
-            if (v && !p.pl.small) p.pl.chapter ? f++ : n++;
+            if (v && !p.pl.small && !p.pl.unmarked) p.pl.chapter ? f++ : n++;
             p.b.classList.toggle("visited", v); p.b.classList.toggle("on", on);
             if (p.ch) { p.ch.classList.toggle("visited", v); p.ch.classList.toggle("on", on); }
           }
@@ -37859,10 +37885,12 @@ void main() {
         // keeps a tint of the project's colour; it sits on the left, clear of the van parked in the middle
         let COVERS = null;
         if (/^https?:$/.test(location.protocol)) fetch("/covers.json").then((r) => r.ok ? r.json() : {}).then((j) => { COVERS = j; }).catch(() => {});
+        window.__coverOf = (id) => { const pl = MAP_PLACES.find((q) => q.id === id); return pl ? coverOf(pl) : null; };
         const coverOf = (pl) => {
           if (!COVERS) return null;
           // r130: a real photo first (a place's own, then its case page's cover)
           if (COVERS["place:" + pl.id]) return COVERS["place:" + pl.id];
+          for (const n of [pl.work, pl.name]) if (n && COVERS["name:" + n.toLowerCase()]) return COVERS["name:" + n.toLowerCase()];
           const slug = pl.tm ? "two-minutes" : (pl.work && window.__casePage?.(pl.work)) || window.__casePage?.(pl.name) || (pl.name === "Steam Coffee Shop" ? "steam" : null);
           return slug && COVERS[slug] || null;
         };
@@ -37874,15 +37902,11 @@ void main() {
           card.classList.add("has-img"); card.classList.toggle("shot", shot);
           // r130h: the card sits in a bottom corner, on the side away from the place, so the scene stays clear
           { const pv = warpV(new Vector3(pl.wx, 0, pl.wz)).project(camera); const right = pv.x < 0; card.classList.toggle("cr", right); card.classList.toggle("cl", !right); }
-          card.innerHTML = `<figure class="mcd-img">${cov ? `<img src="${cov}" alt="" decoding="async">` : `<img alt="" class="mcd-shot">`}</figure><div class="mcd-body"><span class="mcd-eyebrow mono">${eyebrow}</span><b class="mcd-title" style="--pc:${pl.c};--pt:${pl.t || "#fff"}">${pl.name}</b>${body}
+          card.innerHTML = `<figure class="mcd-img${cov ? "" : " mcd-poster"}">${cov ? `<img src="${cov}" alt="" decoding="async">` : `<span class="mcd-pt">${pl.name}</span><i class="mcd-pl mono">${pl.line || ""}</i>`}</figure><div class="mcd-body"><span class="mcd-eyebrow mono">${eyebrow}</span><b class="mcd-title" style="--pc:${pl.c};--pt:${pl.t || "#fff"}">${pl.name}</b>${body}
             <div class="mcd-actions">${actions}<button class="mcd-close" aria-label="Close">×</button></div></div>`;
           card.classList.remove("in"); void card.offsetWidth; card.classList.add("in");
           // Sketchbook: a place you visit gets drawn all at once
           { const v = warpV(new Vector3(pl.wx, 0, pl.wz)); sketchPaint(v.x, v.z, 900, 1); }
-          if (shot) {
-            const im = card.querySelector(".mcd-shot");
-            requestAnimationFrame(() => { const u = placeShot(pl); if (u && im) { im.onload = () => im.classList.add("on"); im.src = u; } });
-          }
           card.querySelector(".mcd-close").onclick = hideCard;
           card.classList.remove("hidden");
         };
@@ -38529,6 +38553,7 @@ void main() {
           renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
         }
       };
+      window.__proj = (x, z, y = 0) => { const v = warpV(new Vector3(x, y, z)).project(camera); return [(v.x * 0.5 + 0.5) * innerWidth, (-v.y * 0.5 + 0.5) * innerHeight]; };
       window.__mapSet = (d, x, z) => { mapView.dist = d; mapView.distGoal = null; mapView.follow = false; mapView.tgt.set(x, 0, z); };
       window.__api = api;
       window.__xp = () => ({ pts: state.points, log: xpLog.map((e) => e.title + " +" + e.pts), pending: xpPending && xpPending.title, collected: [...xpCollected], chosen: state.branchChosen, branch: state.branch, card: currentCardStop, veh: state.vehicleId });
