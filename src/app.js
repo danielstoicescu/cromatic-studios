@@ -33510,6 +33510,19 @@ void main() {
     forkB.onclick = () => api.pickBranch("B");
     forkC.onclick = () => api.pickBranch("C");
     forkD.onclick = () => api.pickBranch("D");
+    // r130l: the crossroads at the end of a street: a signpost in the middle of the junction, one arm for each
+    // street you have not driven yet (back you go, to its start) and one for home, Olari 9
+    const xrPost = el("div", "xr-post hidden", `<span class="xr-k mono">END OF THE STREET \u00B7 WHERE TO NEXT?</span><div class="xr-arms"></div><span class="xr-pole" aria-hidden="true"></span>`);
+    xrPost.setAttribute("role", "group"); xrPost.setAttribute("aria-label", "Choose where to go next");
+    root.appendChild(xrPost);
+    const XR = { A: ["Coffee Street", "The story road", "#28C840"], B: ["Fintech Boulevard", "Digital & finance", "#119BFE"], C: ["Medical Avenue", "Clinics, care & beauty", "#F28BA8"] };
+    const xrPaint = (cur, done) => {
+      const arms = xrPost.querySelector(".xr-arms"); arms.innerHTML = "";
+      const mk = (cls, name, sub, col, dir, fn, i) => { const b = el("button", `xr-arm ${cls}`, `<span class="xr-arrow" aria-hidden="true">${dir}</span><span class="xr-t"><b>${name}</b><i>${sub}</i></span>`); b.style.setProperty("--xc", col); b.style.setProperty("--i", i); b.onclick = fn; arms.appendChild(b); };
+      let i = 0;
+      for (const k of ["A", "B", "C"]) if (k !== cur) mk(done.has(k) ? "seen" : "", XR[k][0], done.has(k) ? "Again, from the top" : XR[k][1], XR[k][2], "\u21A9", () => api.crossTo(k), i++);
+      mk("home", "Olari 9 \u00B7 home", "The studio, then the jet", "#FED012", "\u2192", () => api.crossTo("home"), i++);
+    };
     const rbBtn = el("button", "rb-btn hidden", `
     <span class="rb-badge"><span class="rb-loop">\u21A9</span><b>GO BACK</b></span>
     <span class="rb-stem"></span>`);
@@ -33721,7 +33734,7 @@ void main() {
       forkB,
       forkC,
       forkD,
-      jxRow,
+      jxRow, xrPost, xrPaint,
       rbBtn,
       addrCard,
       poiStack,
@@ -34123,6 +34136,21 @@ void main() {
           const target = b === "A" ? routeLAt("tmland", 1060, 4260) - 30 : route.stopL.fork + 260;
           setTimeout(() => scrollToL(target), 120);
         },
+        // r130l: from the crossroads: another street from its start, or on home
+        crossTo(k) {
+          state.xrDone = state.xrDone || new Set();
+          state.xrDone.add(state.branch);
+          state.xrAway = true;
+          ui.xrPost.classList.add("hidden");
+          if (k === "home") { scrollToL(route.stopL.merge + 320); return; }
+          state.floorL = 0;
+          state.branch = k; state.branchChosen = true;
+          route.setBranch(k); rebuildGolden(); refreshCard(true);
+          const target = k === "A" ? routeLAt("tmland", 1060, 4260) - 30 : route.stopL.fork + 260;
+          jumpGuard = performance.now() + 2600;
+          scrollToL(target, false);
+          state.L = prevL = state.targetL = target;
+        },
         goAround() {
           resetBranch();
           scrollToL(route.stopL.fork - 175);
@@ -34497,7 +34525,23 @@ void main() {
             stroke(pts, 9, 1);
           })
         };
+        // a torn sheet: a rectangle whose edges were ripped by hand (a ragged walk, deeper on the left where it
+        // came off the pad, small fibres along every edge)
+        {
+          const W = 720, H = 440, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+          const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff";
+          const edge = (n, amp, deep) => { const o = []; let v = 0; for (let i = 0; i <= n; i++) { v += (R() - 0.5) * amp; v *= 0.86; o.push(v + (R() < 0.08 ? R() * deep : 0)); } return o; };
+          const top = edge(90, 5, 3), right = edge(60, 4, 3), bot = edge(90, 6, 4), left = edge(60, 9, 9);
+          ctx.beginPath();
+          for (let i = 0; i <= 90; i++) ctx.lineTo(14 + (i / 90) * (W - 28), 12 + top[i]);
+          for (let i = 0; i <= 60; i++) ctx.lineTo(W - 12 + right[i], 12 + (i / 60) * (H - 24));
+          for (let i = 90; i >= 0; i--) ctx.lineTo(14 + (i / 90) * (W - 28), H - 12 + bot[i]);
+          for (let i = 60; i >= 0; i--) ctx.lineTo(16 + Math.abs(left[i]) + (i % 3 === 0 ? R() * 5 : 0), 12 + (i / 60) * (H - 24));
+          ctx.closePath(); ctx.fill();
+          crayonTex.torn = `url(${cv.toDataURL("image/png")})`;
+        }
         const st = document.documentElement.style;
+        st.setProperty("--cr-torn", crayonTex.torn);
         st.setProperty("--cr-pill", crayonTex.pill); st.setProperty("--cr-card", crayonTex.card); st.setProperty("--cr-ring", crayonTex.ring); st.setProperty("--cr-dot", crayonTex.dot);
         return crayonTex;
       }
@@ -37132,6 +37176,13 @@ void main() {
         // the choice buttons leave once you pick, and come back if you reverse 250 before the fork
         if (state.branchChosen && state.L < route.stopL.fork - 250 && now > jumpGuard) resetBranch();
         const nearFork = Math.abs(state.L - route.stopL.fork) < 700;
+        // r130l: the signpost stands at the end of the street (the merge), until you pick or drive on
+        {
+          const m = route.stopL.merge, atXr = !mapMode && !siteMode && !flying && state.branchChosen && m && state.L > m - 380 && state.L < m + 240;
+          if (state.L < (m || 0) - 700) state.xrAway = false;
+          if (atXr && !state.xrAway && ui.xrPost.classList.contains("hidden")) { ui.xrPaint(state.branch, state.xrDone || new Set()); ui.xrPost.classList.remove("hidden"); }
+          if ((!atXr || state.xrAway) && !ui.xrPost.classList.contains("hidden")) ui.xrPost.classList.add("hidden");
+        }
         // the row shows the choice, then gets out of the way once a street is picked
         if (state.branchChosen) { if (!ui.jxRow._chosenAt) ui.jxRow._chosenAt = now; } else ui.jxRow._chosenAt = 0;
         ui.jxRow.classList.toggle("hidden", !nearFork || siteMode || flying || (state.branchChosen && now - ui.jxRow._chosenAt > 700));
