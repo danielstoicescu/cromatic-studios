@@ -34658,6 +34658,7 @@ void main() {
           renderer.toneMappingExposure = 1.1;
         }
         mats.treeSketch?.(s.id === "sketch");
+        if (typeof sketchRings !== "undefined" && sketchRings) sketchRings.g.visible = s.id === "sketch";
         // r130f: Sketchbook draws a heavier pencil: the ink hull round everything is thicker (the default 18e-4 is
         // under a pixel from the map's height and antialiases away); the parameters are read every render
         {
@@ -36219,9 +36220,70 @@ void main() {
         R.ctx.fillStyle = g; R.ctx.beginPath(); R.ctx.arc(px, pz, pr, 0, Math.PI * 2); R.ctx.fill();
         R.tex.needsUpdate = true;
       }
+      // r130k: your hand draws too: where the pointer passes over the map, the pencil fills the city in
+      var sketchPtr = { x: 0, y: 0, moved: 0 }, _spDir = new Vector3(), _spHit = new Vector3();
+      window.addEventListener("pointermove", (e) => { sketchPtr.x = e.clientX; sketchPtr.y = e.clientY; sketchPtr.moved = performance.now(); }, { passive: true });
+      // r130k: crayon rings on the ground round the places you visit (or point at): real decals under the houses,
+      // so the buildings stand in front of them; each one is scribbled in round its centre when it appears.
+      // They write a marker alpha (0.25) that the Sketchbook pass reads as "crayon", keeping their colour.
+      var sketchRings = null;
+      function sketchRingsBuild() {
+        if (sketchRings || !crayonTex || typeof MAP_PLACES === "undefined") return;
+        const img = new Image(); img.src = crayonTex.ring.slice(4, -1);
+        const tex = new Texture(img); img.onload = () => { tex.needsUpdate = true; };
+        const g = new Group(); g.name = "sketchRings"; g.visible = false;
+        const list = [];
+        for (const pl of MAP_PLACES) {
+          if (pl.chapter || pl.small || pl.float || pl.wx == null) continue;
+          const mat = new ShaderMaterial({
+            uniforms: { map: { value: tex }, col: { value: (() => { const c = new Color(pl.c); return c.r + c.g + c.b > 2.4 ? new Color("#3a3a3e") : c; })() }, prog: { value: 0 }, a0: { value: Math.random() * 6.283 } },
+            vertexShader: "#include <common>\nvarying vec2 vUv; void main(){ vUv = uv; vec4 w = modelMatrix * vec4(position, 1.0); w.xz = cityWarp(w.xz); gl_Position = projectionMatrix * viewMatrix * w; }",
+            fragmentShader: `uniform sampler2D map; uniform vec3 col; uniform float prog, a0; varying vec2 vUv;
+              void main(){
+                vec2 q = vUv - 0.5; float ang = fract((atan(q.y, q.x) - a0) / 6.28318 + 1.0);
+                if (ang > prog * 1.04) discard;
+                float a = texture2D(map, vUv).a;
+                if (a < 0.38) discard;
+                gl_FragColor = vec4(col, 0.25);
+              }`,
+            depthWrite: false
+          });
+          mat.userData.outlineParameters = { visible: false };
+          const r = 52 + Math.min(40, (pl.wy || 55) * 0.12);
+          const m = new Mesh(new PlaneGeometry(r * 2.3, r * 1.9), mat);
+          m.rotation.x = -Math.PI / 2; m.rotation.z = (Math.random() - 0.5) * 0.5;
+          m.position.set(pl.wx, 6.5, pl.wz); m.renderOrder = 2; m.frustumCulled = false;
+          g.add(m);
+          list.push({ pl, m, mat, prog: 0, pin: null });
+        }
+        scene.add(g);
+        sketchRings = { g, list };
+      }
+      function sketchRingsUpdate(dt) {
+        if (!sketchRings) return;
+        const on = SCHEMES[state.schemeIdx].id === "sketch";
+        sketchRings.g.visible = on;
+        if (!on) return;
+        for (const r of sketchRings.list) {
+          if (!r.pin) r.pin = document.querySelector(`.map-pin[data-id="${r.pl.id}"]`) || 0;
+          const want = !!r.pin && (r.pin.classList.contains("visited") || r.pin.classList.contains("on") || r.pin.matches(":hover"));
+          // drawn in like a hand going round, fast at first; rubbed out quicker
+          r.prog += want ? (1.08 - r.prog) * Math.min(1, dt * 2.6) : -dt * 3;
+          r.prog = Math.max(0, Math.min(1.08, r.prog));
+          r.m.visible = r.prog > 0.01;
+          r.mat.uniforms.prog.value = r.prog;
+        }
+      }
       function sketchExplore(now) {
         const R = sketchReveal;
-        if (!R.ctx || now - R.last < 90) return;
+        if (!R.ctx) return;
+        // the pointer draws where it passes (map only; small, soft, a few times a second)
+        if (mapMode && now - sketchPtr.moved < 120 && now - (R.ptrT || 0) > 45) {
+          R.ptrT = now;
+          _spDir.set((sketchPtr.x / innerWidth) * 2 - 1, -(sketchPtr.y / innerHeight) * 2 + 1, 0.5).unproject(camera).sub(camera.position).normalize();
+          if (_spDir.y < -1e-3) { _spHit.copy(camera.position).addScaledVector(_spDir, -camera.position.y / _spDir.y); sketchPaint(_spHit.x, _spHit.z, Math.max(150, mapView.dist * 0.07), 0.22); }
+        }
+        if (now - R.last < 90) return;
         const dt = Math.min(0.5, (now - R.last) / 1000); R.last = now;
         // what you look at gets drawn, a little more every moment you stay
         if (mapMode) { const v = warpV(new Vector3(mapView.tgt.x, 0, mapView.tgt.z)); sketchPaint(v.x, v.z, Math.max(420, mapView.dist * 0.24), 0.16 * dt * 4); }
@@ -36245,7 +36307,8 @@ void main() {
               float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
               float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
                 return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
-              float lum(vec2 uv){ vec3 c = pow(clamp(texture2D(tD, uv).rgb, 0.0, 1.0), vec3(0.4545)); return dot(c, vec3(0.299, 0.587, 0.114)); }
+              // crayon decals carry a marker alpha: to the pencil they are paper
+              float lum(vec2 uv){ vec4 t = texture2D(tD, uv); if (abs(t.a - 0.25) < 0.03) return 1.0; vec3 c = pow(clamp(t.rgb, 0.0, 1.0), vec3(0.4545)); return dot(c, vec3(0.299, 0.587, 0.114)); }
               float dep(vec2 uv){ float z = texture2D(tZ, uv).x; float ndc = z * 2.0 - 1.0; return (2.0 * near * far) / (far + near - ndc * (far - near)); }
               void main(){
                 float tf = 0.0;
@@ -36300,7 +36363,16 @@ void main() {
                 float rv = texture2D(tR, ruv).r;
                 float edge = vn(wp.xz * 0.02 + tf * 0.37) * 0.35;
                 float shown = full > 0.5 || zr >= 0.9999 ? 1.0 : smoothstep(0.25, 0.55, rv + edge - 0.15);
+                // r130k: the drawing front is a sketch in progress: construction lines on the ground (a loose
+                // perspective grid), the edges laid in twice and overshooting, before the clean line settles
+                float band = full > 0.5 ? 0.0 : smoothstep(0.02, 0.4, rv + edge - 0.15) * (1.0 - shown);
+                vec2 gq = wp.xz / 140.0 + vec2(vn(wp.zx * 0.004) * 0.18, 0.0);
+                vec2 gd = abs(fract(gq - 0.5) - 0.5) / max(fwidth(gq), vec2(1e-4));
+                float grid = (1.0 - smoothstep(0.0, 1.3, min(gd.x, gd.y))) * step(wp.y, 4.0) * step(zr, 0.9999);
+                float ghost2 = max(1.0 - smoothstep(0.08, 0.3, lum(uv + vec2(5.0, 1.5) * px)), 1.0 - smoothstep(0.08, 0.3, lum(uv - vec2(1.5, 5.0) * px)));
+                float wip = max(grid * 0.32, max(ghost2 * 0.4, line * 0.55)) * band * (0.7 + 0.3 * vn(p * 0.6));
                 g *= mix(0.035, 1.0, shown);
+                g = max(g, wip);
                 if (zr >= 0.9999) g = 0.0;
                 // paper: warm white with a slow fibre
                 // r130e: moodier: a warm sheet that falls into cool grey at the edges, soft graphite, a lot of air
@@ -36309,6 +36381,9 @@ void main() {
                 vec3 paper = mix(vec3(0.965, 0.955, 0.93), vec3(0.87, 0.872, 0.875), vig * 0.8) - (vn(p * 0.35) * 0.016 + vn(p * 0.05) * 0.02);
                 vec3 graphite = vec3(0.09, 0.09, 0.11);
                 vec3 o = mix(paper, graphite, clamp(g, 0.0, 1.0) * 0.96);
+                // crayon decals keep their colour, laid over the paper like wax (multiply), grain from their mask
+                vec4 tc = texture2D(tD, vUv);
+                if (abs(tc.a - 0.25) < 0.03) { vec3 cc = pow(clamp(tc.rgb, 0.0, 1.0), vec3(0.4545)); o = mix(o, o * mix(vec3(1.0), cc, 0.92), 0.95 * (0.82 + 0.18 * vn(p * 0.9))); }
                 gl_FragColor = vec4(o, 1.0);
               }`,
             depthTest: false, depthWrite: false
@@ -36322,7 +36397,7 @@ void main() {
           if (mapMode) { const v = warpV(new Vector3(mapView.tgt.x, 0, mapView.tgt.z)); sketchPaint(v.x, v.z, 900, 1); } else sketchPaint(carPos.x, carPos.z, 700, 1);
         }
         if (sketchFx.rt.width !== w || sketchFx.rt.height !== h) { sketchFx.rt.setSize(w, h); sketchFx.mat.uniforms.res.value.set(w, h); }
-        if (!full) sketchExplore(now);
+        if (!full) { sketchExplore(now); sketchRingsBuild(); sketchRingsUpdate(Math.min(0.05, (now - (sketchFx.lastT || now)) / 1000)); sketchFx.lastT = now; }
         const u = sketchFx.mat.uniforms;
         u.t.value = (now * 0.001) % 100; u.full.value = full ? 1 : 0;
         cam.updateMatrixWorld();
