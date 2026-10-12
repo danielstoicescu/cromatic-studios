@@ -34844,6 +34844,8 @@ void main() {
       }));
       var rainM4 = new Matrix4();
       var rainAlpha = 0;
+      // r134: Sketchbook rains once per visit, on Medical Avenue, while you drive along it (Daniel), never elsewhere
+      var sketchRain = { state: 0, t: 0 };
       var coffee = { phase: "idle", t: 0, served: 0, done: false, sunny: 0 };
       var coffeeGroup = new Group();
       scene.add(coffeeGroup);
@@ -37003,6 +37005,12 @@ void main() {
         let wx = state.weatherOn ? weatherState(prog) : "sun";
         const schemeId = SCHEMES[state.schemeIdx].id;
         if ((schemeId === "nightlife" || schemeId === "sincity") && state.weatherOn) wx = "rain";
+        if (schemeId === "sketch") {
+          const onMed = Math.abs(carPos.x - 1500) < 70 && carPos.z > 4450 && carPos.z < 5700;
+          if (onMed && sketchRain.state === 0 && state.weatherOn && !flying) { sketchRain.state = 1; sketchRain.t = now; }
+          if (sketchRain.state === 1 && (!onMed || now - sketchRain.t > 22000)) sketchRain.state = 2;
+          wx = sketchRain.state === 1 ? "rain" : "sun";
+        }
         {
           const rawWx = schemeId === "nightlife" || schemeId === "sincity" ? "rain" : weatherState(prog);
           ui.setRainBtn(schemeId !== "monument" && schemeId !== "underwater" && !siteMode);

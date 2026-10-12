@@ -148,7 +148,7 @@ export function makeI18n(root) {
     const other = lang === "ro" ? enPath : ro, label = lang === "ro" ? "EN" : "RO", name = lang === "ro" ? "English" : "Română";
     const sw = `<a class="lang-sw" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}">${label}</a>`;
     if (/<a class="drive-btn"/.test(html)) html = html.replace(/<a class="drive-btn"/, `${sw}<a class="drive-btn"`);
-    else html = html.replace(/(<body[^>]*>)/, `$1\n<a class="lang-sw lang-fixed" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}" style="position:fixed;right:14px;top:14px;z-index:9999;padding:10px 14px;border-radius:999px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none">${label}</a>`);
+    else html = html.replace(/(<body[^>]*>)/, `$1\n<style>html.embed .lang-fixed{display:none}</style><a class="lang-sw lang-fixed" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}" style="position:fixed;right:14px;top:14px;z-index:9999;padding:10px 14px;border-radius:999px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none">${label}</a>`);
     return html;
   }
 
