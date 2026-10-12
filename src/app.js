@@ -37277,7 +37277,9 @@ void main() {
       try { history.scrollRestoration = "manual"; } catch {}
       var BOOT_MODE = /[?&]drive\b/.test(location.search) ? "drive" : /[?&]map\b/.test(location.search) ? "map" : "intro";
       var mapMode = false, mapBoot = BOOT_MODE !== "drive", mapUI = null, mapPrev = null, mapBoarding = false, mapIntro = false;
-      var MAP_MAXD = 7600;
+      // r132: Daniel: the city shouldn't pull back further than the roundabout view, and should let you come much closer
+      var MAP_MIND = 900;
+      var mapMaxD = () => innerWidth < 720 ? 7000 : 6200; // a phone in portrait needs a little more height to see as much
       var mapView = { tgt: new Vector3(1270, 0, 3170), pos: new Vector3(), dist: 8200, distGoal: null, yaw: 0.3, pitch: 0.98, vx: 0, vz: 0, follow: false, sx: 0, sy: 0 };
       var mapNav = { targetL: 0, legs: [], place: null, moving: false };
       var jetFx = { phase: "idle", t: 0, baam: false };
@@ -37576,7 +37578,8 @@ void main() {
         const house = worldRefs.endHouse;
         mapView.follow = false; mapView.focus = { x: house.position.x, z: house.position.z };
         olari.cards?.remove();
-        mapView.distGoal = innerWidth < 720 ? 2600 : 2100; mapView.distRate = 1.4;
+        const cineOn = !!olari.cine && jetFx.phase === "idle";
+        if (cineOn) olari.cine(); else { mapView.distGoal = innerWidth < 720 ? 2600 : 2100; mapView.distRate = 1.4; }
         if (!olari.beam) {
           const bm = new MeshBasicMaterial({ color: "#FED012", transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false, side: DoubleSide });
           bm.userData.outlineParameters = { visible: false };
@@ -37608,10 +37611,11 @@ void main() {
         next.querySelector(".oc-jet").onclick = () => { wrap.classList.add("gone"); api.boardJet(); };
         const x = el("button", "map-x olari-x", "\u00D7"); x.setAttribute("aria-label", "Close"); x.onclick = () => wrap.classList.add("gone");
         wrap.prepend(x);
-        ui.root.appendChild(wrap);
         olari.cards = wrap;
         olari.t = 0;
-        document.body.classList.add("olari-open");
+        // r132: the cards wait for the camera to come down in front of the house
+        const show = () => { if (olari.cards !== wrap || wrap.classList.contains("gone")) return; ui.root.appendChild(wrap); document.body.classList.add("olari-open"); };
+        if (cineOn) setTimeout(show, 3600); else show();
       }
       var roadSvc = null;
       // r125: the service cards stand on their three houses between Dacia 99 and Olari 9; a tap opens one
@@ -37971,14 +37975,17 @@ void main() {
           boxes: { t: [740, 40, 4210], yaw: 1.25, pitch: 0.3, dist: 1450 },
           lab: { t: [640, 40, 4180], yaw: 1.15, pitch: 0.32, dist: 1350 },
           hq: { t: [1010, 60, 4160], yaw: 0.35, pitch: 0.4, dist: 1700 },
-          friends: { t: [1365, 60, 6400], yaw: 1.95, pitch: 0.42, dist: 2400 }
+          friends: { t: [1365, 60, 6400], yaw: 1.95, pitch: 0.42, dist: 2400 },
+          // r132: Olari 9, the arrival: low, from the street in front of the house (its facade faces +x), the lens
+          // comes down slowly and settles a little off-axis, with the parked van in the foreground
+          end: { t: [1005, 26, 7350], yaw: 1.36, pitch: 0.24, dist: 1120, dur: 5.6 }
         };
         const cineIn = (pl) => {
           const sh = SHOTS[pl.id];
           if (sh && jetFx.phase === "idle") {
             mapView.follow = false;
             mapView.focus = { x: carPos.x, z: carPos.z };
-            cineTo({ yaw: sh.yaw, pitch: sh.pitch, dist: sh.dist * (innerWidth < 720 ? 1.35 : 1), lookY: sh.t[1], fx: sh.t[0], fz: sh.t[2], drift: true }, 3.2);
+            cineTo({ yaw: sh.yaw, pitch: sh.pitch, dist: sh.dist * (innerWidth < 720 ? 1.35 : 1), lookY: sh.t[1], fx: sh.t[0], fz: sh.t[2], drift: true }, sh.dur || 3.2);
             return;
           }
           if (pl.tap || pl.board || pl.stop === "end" || pl.tm || (pl.stop && !pl.past) || jetFx.phase !== "idle") { cine = null; return; }
@@ -38007,6 +38014,7 @@ void main() {
           const fx = onRoad ? carPos.x : bx + nx * across + tx * sAlong * 0.3, fz = onRoad ? carPos.z : bz + nz * across + tz * sAlong * 0.3;
           cineTo({ yaw, pitch: phone ? 0.64 : 0.55, dist, lookY: Math.min(70, h * 0.32), fx, fz, drift: true }, 3.2);
         };
+        olari.cine = () => cineIn({ id: "end" });
         // leaving: back up to the map's usual angle, just as gently
         const cineOut = () => {
           if (!cine && mapView.pitch > 0.9) return;
@@ -38050,8 +38058,8 @@ void main() {
           }
           mapView.distGoal = null;
           if (cine && cine.t < cine.dur) cine = null;
-          if (z === "in") mapView.distGoal = Math.max(1900, mapView.dist / 1.4);
-          if (z === "out") mapView.distGoal = Math.min(MAP_MAXD, mapView.dist * 1.4);
+          if (z === "in") mapView.distGoal = Math.max(MAP_MIND, mapView.dist / 1.4);
+          if (z === "out") mapView.distGoal = Math.min(mapMaxD(), mapView.dist * 1.4);
           if (z === "van") { mapView.follow = true; mapView.focus = null; }
         };
         // drag to move, wheel or pinch to zoom, a flick keeps gliding
@@ -38096,7 +38104,7 @@ void main() {
           if (!mapMode || mapIntro || !gDist0 || !(e.scale > 0)) return;
           if (cine && cine.t < cine.dur) cine = null;
           mapView.distGoal = null;
-          zoomAt(e.clientX || innerWidth / 2, e.clientY || innerHeight / 2, mapView.dist, Math.min(MAP_MAXD, Math.max(1900, gDist0 * gScale0 / e.scale)));
+          zoomAt(e.clientX || innerWidth / 2, e.clientY || innerHeight / 2, mapView.dist, Math.min(mapMaxD(), Math.max(MAP_MIND, gDist0 * gScale0 / e.scale)));
         });
         window.addEventListener("gestureend", () => { gDist0 = 0; });
         canvas.addEventListener("pointerdown", (e) => {
@@ -38116,7 +38124,7 @@ void main() {
             const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
             if (pinch0 > 0) {
               cine = null; mapView.distGoal = null;
-              const d0 = mapView.dist, d1 = Math.min(MAP_MAXD, Math.max(1900, dist0 * pinch0 / Math.max(d, 1)));
+              const d0 = mapView.dist, d1 = Math.min(mapMaxD(), Math.max(MAP_MIND, dist0 * pinch0 / Math.max(d, 1)));
               zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, d0, d1);
             }
             const [wx, wz] = panVec(dx / 2, dy / 2); mapView.tgt.x += wx; mapView.tgt.z += wz;
@@ -38177,7 +38185,7 @@ void main() {
           e.preventDefault();
           mapView.distGoal = null;
           if (cine && cine.t < cine.dur) cine = null;
-          zoomAt(e.clientX, e.clientY, mapView.dist, Math.min(MAP_MAXD, Math.max(1900, mapView.dist * Math.exp(clamp2(e.deltaY, -120, 120) * (e.ctrlKey ? 0.006 : 0.0012)))));
+          zoomAt(e.clientX, e.clientY, mapView.dist, Math.min(mapMaxD(), Math.max(MAP_MIND, mapView.dist * Math.exp(clamp2(e.deltaY, -120, 120) * (e.ctrlKey ? 0.006 : 0.0012)))));
         }, { passive: false });
         const proj = new Vector3();
         // where the picture should put the van: the middle of the space no card covers
@@ -38225,7 +38233,7 @@ void main() {
             if (mapView.pitchGoal != null) { mapView.pitch += (mapView.pitchGoal - mapView.pitch) * ka; if (Math.abs(mapView.pitchGoal - mapView.pitch) < 1e-3) mapView.pitchGoal = null; }
             // depth precision: from this far up a near plane of 10 made the road layers flicker
             if (!(mapView.dist > 0) || !isFinite(mapView.dist)) mapView.dist = 4600;
-            if (jetFx.phase === "idle") mapView.dist = clamp2(mapView.dist, 700, MAP_MAXD + 400);
+            if (jetFx.phase === "idle") mapView.dist = clamp2(mapView.dist, 700, mapMaxD() + 400);
             if (!isFinite(mapView.tgt.x) || !isFinite(mapView.tgt.z)) mapView.tgt.set(1300, 0, 5000);
             const nNear = Math.max(10, mapView.dist * 0.32), nFar = mapView.dist * 3 + 6000;
             if (Math.abs(camera.near - nNear) > 1 || Math.abs(camera.far - nFar) > 10) { camera.near = nNear; camera.far = nFar; camera.updateProjectionMatrix(); }
@@ -38544,6 +38552,7 @@ void main() {
         }
       };
       window.__proj = (x, z, y = 0) => { const v = warpV(new Vector3(x, y, z)).project(camera); return [(v.x * 0.5 + 0.5) * innerWidth, (-v.y * 0.5 + 0.5) * innerHeight]; };
+      window.__mapView = () => ({ dist: mapView.dist, yaw: mapView.yaw, pitch: mapView.pitch, tgt: [mapView.tgt.x, mapView.tgt.z], fork: [FORK_POS.x, FORK_POS.z] });
       window.__mapSet = (d, x, z) => { mapView.dist = d; mapView.distGoal = null; mapView.follow = false; mapView.tgt.set(x, 0, z); };
       window.__api = api;
       window.__xp = () => ({ pts: state.points, log: xpLog.map((e) => e.title + " +" + e.pts), pending: xpPending && xpPending.title, collected: [...xpCollected], chosen: state.branchChosen, branch: state.branch, card: currentCardStop, veh: state.vehicleId });
