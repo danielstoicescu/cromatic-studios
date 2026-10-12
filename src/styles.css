@@ -4122,3 +4122,20 @@ body.scheme-sketch .map-card .mcd-close:hover { background: rgba(35,35,38,.06) !
   .map-card.has-img .mcd-body { flex: 1 1 0; min-width: min-content; }
   .map-card.has-img .mcd-img { flex: 0 1 42% !important; width: auto !important; min-width: 28%; }
 }
+/* r134: the drive wears the map's top bar; the old pills and corner buttons step back */
+.drive-top { display: none; }
+body:not(.map-mode):not(.site-mode):not(.kz-intro):not(.kz-boot):not(.flight-done) .drive-top { display: flex; }
+body:not(.map-mode):not(.site-mode) .mode-links { display: none !important; }
+body:not(.map-mode):not(.site-mode) .hud > .round-btn.veh, body:not(.map-mode):not(.site-mode) .hud > .round-btn.crew-btn, body:not(.map-mode):not(.site-mode) .hud > .multi-btn { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; overflow: hidden; opacity: 0; pointer-events: none; }
+body:not(.map-mode).menus-top .hud-menu { position: fixed; top: calc(84px + env(safe-area-inset-top, 0px)); bottom: auto; left: 50%; translate: -50% 0; transform-origin: top center; }
+body:not(.map-mode).menus-top .hud-menu:not(.open) { transform: scale(.94) translateY(-10px); }
+@media (max-width: 719px) {
+  body:not(.map-mode).menus-top .hud-menu { top: calc(116px + env(safe-area-inset-top, 0px)); }
+  .drive-top .map-site b, .drive-top .map-home b { display: none; }
+}
+@media (max-width: 719px) {
+  /* r134: on a phone the drive's own controls go to the bottom (the top belongs to the bar); no ring round the speedometer */
+  body:not(.map-mode):not(.site-mode) .hud { top: auto; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+  body:not(.map-mode):not(.site-mode) .dash { top: auto; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .rr { display: none !important; }
+}
