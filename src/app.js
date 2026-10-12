@@ -23907,7 +23907,6 @@ void main() {
         { id: "sketch", n: "Sketchbook", bg: "#f6f3ec", fg: "#232326", ac: "#ffd84a" },
         { id: "circuit", n: "Race Day", bg: "#e9edf1", fg: "#111418", ac: "#e10600" },
         { id: "orchid", n: "Sakura", bg: "#fbeef3", fg: "#3a1e2c", ac: "#f08bb4" },
-        { id: "magma", n: "Magma", bg: "#171210", fg: "#fbede4", ac: "#ff4d1c" },
         { id: "underwater", n: "Underwater", bg: "#0b3b5c", fg: "#e8fbff", ac: "#3de0d0" },
         { id: "gta2", n: "GTA 2", bonus: true, bg: "#1a1e22", fg: "#e8e6df", ac: "#e8c020" },
         // r130: Risograph: the city printed in two inks, fluorescent pink and medium blue, halftone, a little off-register
@@ -23915,7 +23914,11 @@ void main() {
       ];
       ARCHIVED_SCHEMES = [{ id: "default", n: "Cromatic Mode (classic)", bg: "#f2f2f2", fg: "#0a0a0a", ac: "#FED012" },
         // r130: Sin City: shot in colour, printed in hard black and white, one red kept (see sinCityRender)
-        { id: "sincity", n: "Sin City", bg: "#070707", fg: "#f4f1ea", ac: "#d4061a" }];
+        { id: "sincity", n: "Sin City", bg: "#070707", fg: "#f4f1ea", ac: "#d4061a" },
+        // r134: Magma shelved too (Daniel): out of the menu, its look stays in the code
+        { id: "magma", n: "Magma", bg: "#171210", fg: "#fbede4", ac: "#ff4d1c" }];
+      // an archived world comes back on demand: ?world=magma (or sincity, default) adds it to the menu
+      try { const w = new URLSearchParams(location.search).get("world"), a = ARCHIVED_SCHEMES.find((x) => x.id === w); if (a && !SCHEMES.some((x) => x.id === w)) SCHEMES.push(a); } catch {}
       VEHICLES = [
         { id: "groovy", label: "Mystery van" },
         { id: "f1", label: "Classic Formula" },
@@ -26790,10 +26793,12 @@ void main() {
   // the Zdrovit courtyard: a paved yard with a fountain and trees, small buildings around it
   // the small brands of the Zdrovit yard: one kiosk each round the fountain, room for more
   var ZDROVIT_YARD = ["Lacalut", "Periferisan", "Help 4 Brain", "Parusan", "Bonylash", "Litorsal"];
-  var YARD_SLOTS = 12;
-  // the first brands take every other kiosk, so they spread round the yard; new ones fill the gaps
-  const yardSlotOf = (k) => (k < YARD_SLOTS / 2 ? k * 2 : (k - YARD_SLOTS / 2) * 2 + 1);
-  function yardSpot(i) { const a = (i / YARD_SLOTS) * Math.PI * 2 - Math.PI / 2; return [1720 + Math.cos(a) * 78, 5070 + Math.sin(a) * 84]; }
+  // r134: Daniel: the small buildings stand along the edges of the yard, not round the fountain: four along the
+  // hedge side (towards Sofmedica), one each side of the gate
+  var YARD_EDGE = [[1630, 5006], [1690, 5006], [1750, 5006], [1810, 5006], [1590, 5012], [1590, 5150]];
+  var YARD_SLOTS = YARD_EDGE.length;
+  const yardSlotOf = (k) => k;
+  function yardSpot(i) { return YARD_EDGE[i % YARD_EDGE.length]; }
   function buildCourtyard(parent, cx, cz, list) {
     const g = new Group();
     // the gate on the avenue side, white pillars and a red ZDROVIT lintel
@@ -26804,13 +26809,14 @@ void main() {
     { const kM = [new MeshStandardMaterial({ color: "#f4f2ec", roughness: 0.8 }), new MeshStandardMaterial({ color: "#d9d6cf", roughness: 0.8 })];
       for (let i = 0; i < YARD_SLOTS; i++) {
         const [kx, kz] = yardSpot(i), k0 = [...Array(ZDROVIT_YARD.length).keys()].find((q) => yardSlotOf(q) === i), used = k0 != null;
+        if (!used) continue;
         const k = new Group();
         const base = new Mesh(new BoxGeometry(16, used ? 11 : 2, 12), kM[used ? 0 : 1]); base.position.y = used ? 5.5 : 1; k.add(base);
         if (used) {
           const roof = new Mesh(new BoxGeometry(19, 1.4, 15), new MeshStandardMaterial({ color: "#e30613", roughness: 0.6 })); roof.position.y = 11.7; k.add(roof);
           const sg = signBoard({ name: ZDROVIT_YARD[k0], signBg: "#ecebe7", signInk: "#3d3c39" }, 15, 3.2); sg.position.set(0, 8.4, 6.2); k.add(sg);
         }
-        k.position.set(kx, 0, kz); k.rotation.y = Math.atan2(cx - kx, cz - kz); g.add(k);
+        k.position.set(kx, 0, kz); k.rotation.y = kx < 1600 ? Math.PI / 2 : 0; g.add(k);
       }
     }
     const pave = new Mesh(new BoxGeometry(340, 0.8, 370), new MeshStandardMaterial({ color: "#e7e0d2", roughness: 1 }));
@@ -27372,10 +27378,10 @@ void main() {
   // the Zdrovit courtyard (Medical Avenue, east side): eight small buildings around a yard
   var COURT = { x: 1720, z: 5070 };
   var COURT_BRANDS = [
-    { br: "C", name: "Zdrovit", x: 1860, z: 5070, face: "-x", kind: "house", w: 70, d: 48, h: 40, wall: "#f2f7f1", accent: "#e30613", c: "#e30613", t: "#ffffff", line: "HEALTH" },
+    { br: "C", name: "Zdrovit", x: 1860, z: 5070, face: "-x", kind: "house", w: 70, d: 48, h: 84, wall: "#f2f7f1", accent: "#e30613", c: "#e30613", t: "#ffffff", line: "HEALTH" },
     { br: "C", name: "Darya Hope", x: 1720, z: 5215, face: "-z", kind: "la", w: 56, d: 42, h: 28, wall: "#f8d7df", accent: "#f08fb0", c: "#f08fb0", t: "#2a0f17", line: "BEAUTY · LOS ANGELES" },
     { br: "C", name: "Jesse J", x: 1820, z: 5205, face: "-z", kind: "la", w: 56, d: 42, h: 28, wall: "#d8efe6", accent: "#62c6a6", c: "#62c6a6", t: "#0c2a20", line: "BEAUTY · LOS ANGELES" },
-    { br: "C", name: "Routine Paris", logo: "logoRoutine", x: 1880, z: 5165, face: "-x", kind: "paris", w: 46, d: 40, h: 34, wall: "#efe7d8", accent: "#28C840", c: "#28C840", t: "#0e0e0e", line: "PERFUMES · PARIS" }
+    { br: "C", name: "Routine Paris", logo: "logoRoutine", x: 1560, z: 5226, face: "-x", kind: "paris", w: 46, d: 40, h: 34, wall: "#efe7d8", accent: "#28C840", c: "#28C840", t: "#0e0e0e", line: "PERFUMES · PARIS" }
   ];
   // Coffee Street additions
   var COFFEE_ADDS = [
@@ -37380,7 +37386,7 @@ void main() {
         { id: "unde", br: "A", x: 708, z: 6036, h: 50, name: "UND\xC9", line: "GROCERY \xB7 SIGNAGE", c: "#2b6fd6", t: "#ffffff", work: "UNDE", desc: "ARCA's grocery stores: a hand-drawn basket and three formats, Market, Store and Concept." },
         { id: "invest", br: "B", x: 2205, z: 4500, h: 170, name: "Investimental", line: "FINTECH \xB7 UX \xB7 UI", c: "#119BFE", t: "#ffffff", work: "Investimental" },
         { id: "tac", br: "C", x: 1500, z: 4570, px: 1775, pz: 4570, h: 150, name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
-        { id: "zdrovit", br: "C", x: 1720, z: 5070, h: 70, name: "Zdrovit", line: "A YARD OF BRANDS", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health, clinic, beauty and perfume brands, from Bucharest to Barcelona, Los Angeles and Paris." },
+        { id: "zdrovit", br: "C", x: 1860, z: 5070, h: 96, name: "Zdrovit", line: "A YARD OF BRANDS", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health, clinic, beauty and perfume brands, from Bucharest to Barcelona, Los Angeles and Paris." },
         { id: "end", stop: "end", name: "Cromatic Studios House", line: "STR. OLARI 9 \xB7 COME BY", c: "#ffffff", t: "#111111", pin: "#111111" },
         { id: "jet", x: 1250, z: JET_HOME.z - 15, px: JET_HOME.x, pz: JET_HOME.z, h: 46, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", board: true, unmarked: true }
       ];
@@ -37391,7 +37397,6 @@ void main() {
         for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, street: b.lane ? "D" : b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
         ZDROVIT_YARD.forEach((n, i) => { const [x, z] = yardSpot(yardSlotOf(i)); add({ id: "y-" + i, br: "C", x: 1500, z, px: x, pz: z, h: 22, name: n, line: "IN THE ZDROVIT YARD", c: "#cfcdc8", t: "#3d3c39", small: true, desc: `${n}, one of the brands in the Zdrovit yard. By Cromatic Studios.` }); });
         add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Casa Berero", line: "BRAND \xB7 LABELS \xB7 MERCH", c: "#111111", t: "#ffffff", act: "bereroTag" });
-        add({ id: "bism", x: 1170, z: 6300, px: 1078, pz: 6290, h: 150, name: "BISM", line: "UPSTAIRS AT DACIA 99", c: "#1f4fd6", t: "#ffffff", t2: "#F65342", noopen: true, desc: "BISM, under the same roof as our Dacia 99 studio: neighbours, then clients." });
         add({ id: "echo", x: 1170, z: 6340, px: 1078, pz: 6350, h: 110, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", soon: true, desc: "Echo School of Technology, Digital Arts & Videogames. The case page is on its way." });
         add({ id: "friends", stop: "merge", px: 1365, pz: 6400, h: 150, float: true, name: "+50 Other Clients", line: "HUNDREDS OF PROJECTS \xB7 THOUSANDS OF DELIVERABLES", c: "#d9d7d2", t: "#1a1a1a" });
       })();

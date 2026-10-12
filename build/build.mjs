@@ -88,6 +88,11 @@ const WP_MIRROR = new Set();
   const base = join(root, "site", "wp-uploads");
   (function walk(d, rel) { let fs = []; try { fs = readdirSync(d); } catch { return; } for (const f of fs) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p, rel + f + "/"); else { mkdirSync(join(pub, "wp-content", "uploads", rel), { recursive: true }); copyFileSync(p, join(pub, "wp-content", "uploads", rel, f)); WP_MIRROR.add(rel + f); } } })(base, "");
 }
+// r134: /onboarding, the launch page of the product (site/onboarding/**, static, copied as is)
+{
+  const base = join(root, "site", "onboarding");
+  (function walk(d, rel) { let fs = []; try { fs = readdirSync(d); } catch { return; } for (const f of fs) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p, rel + f + "/"); else { mkdirSync(join(pub, "onboarding", rel), { recursive: true }); copyFileSync(p, join(pub, "onboarding", rel, f)); } } })(base, "");
+}
 const wpMirror = (text) => text.replace(/https:(\\?\/)\\?\/cromaticstudios\.com\\?\/wp-content\\?\/uploads\\?\/(\d{4})\\?\/(\d{2})\\?\/(?=([\w.-]+)|\$\{)/g, (m, sl, y, mo, f) => (!f || WP_MIRROR.has(`${y}/${mo}/${f}`)) ? `/wp-content/uploads/${y}/${mo}/` : m);
 jsOut = wpMirror(jsOut);
 const jsName = `assets/app.${hash(jsOut)}.js`, cssName = `assets/styles.${hash(cssOut)}.css`;
