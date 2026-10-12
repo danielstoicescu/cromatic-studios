@@ -29,8 +29,10 @@ function get(){try{return localStorage.getItem(K)}catch(e){var m=document.cookie
 function set(v){try{localStorage.setItem(K,v)}catch(e){}document.cookie="cz-consent="+v+";path=/;max-age=15552000;SameSite=Lax"}
 function ga(){if(window.__czGA)return;window.__czGA=1;window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};
 gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"granted"});
-gtag("js",new Date());gtag("config",ID,{anonymize_ip:true});var s=document.createElement("script");s.async=1;s.src="https://www.googletagmanager.com/gtag/js?id="+ID;document.head.appendChild(s);
-if(GTM){dataLayer.push({"gtm.start":new Date().getTime(),event:"gtm.js"});var g=document.createElement("script");g.async=1;g.src="https://www.googletagmanager.com/gtm.js?id="+GTM;document.head.appendChild(g)}}
+gtag("js",new Date());var go=function(){if(go.d)return;go.d=1;gtag("config",ID,{anonymize_ip:true});var s=document.createElement("script");s.async=1;s.src="https://www.googletagmanager.com/gtag/js?id="+ID;document.head.appendChild(s);
+if(GTM){dataLayer.push({"gtm.start":new Date().getTime(),event:"gtm.js"});var g=document.createElement("script");g.async=1;g.src="https://www.googletagmanager.com/gtm.js?id="+GTM;document.head.appendChild(g)}};
+/* visits from the studio's own network are marked internal (GA4 data filter) */
+try{fetch("/api/ctx",{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.internal)gtag("set",{traffic_type:"internal"});go()}).catch(go);setTimeout(go,1200)}catch(e){go()}}
 function ask(){if(document.getElementById("cz-ck"))return;var ro=(document.documentElement.lang||"").slice(0,2)==="ro";
 var d=document.createElement("div");d.id="cz-ck";d.setAttribute("role","dialog");d.setAttribute("aria-label",ro?"Cookie-uri":"Cookies");
 d.innerHTML='<span class="ck-cup" aria-hidden="true"></span><b>'+(ro?"Un cookie la cafea?":"A cookie with your coffee?")+'</b><p>'+(ro?"Doar statistici anonime (Google Analytics), ca să știm ce merge.":"Only anonymous stats (Google Analytics), so we know what works.")+'</p><div class="ck-row"><button type="button" class="ck-yes">'+(ro?"Da, sigur":"Sure")+'</button><button type="button" class="ck-no">'+(ro?"Nu, mersi":"No, thanks")+"</button></div>";

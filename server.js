@@ -93,6 +93,7 @@ function keepLead(t, ip) {
   console.error("[lead] could not be saved anywhere:", line.trim());
   return null;
 }
+const INTERNAL_IPS = (process.env.INTERNAL_IPS || "188.26.55.18").split(",").map((x) => x.trim()).filter(Boolean);
 let lastMail = null; // the last send, for /healthz (no addresses, no secrets)
 const SUBJECT_TAG = process.env.MAIL_SUBJECT_TAG || "[mesaj de pe site!!]";
 
@@ -267,6 +268,11 @@ http.createServer((req, res) => {
   }
   if ((req.method === "GET" || req.method === "HEAD") && legacy(req, res)) return;
   // the saved messages, for the studio only: GET /api/leads?key=<LEADS_KEY> (off unless LEADS_KEY is set)
+  // r135h: is this visit from the studio itself (Olari 9)? GA4 then tags it traffic_type=internal and filters it out
+  if (req.url === "/api/ctx") {
+    const ip = String(req.headers["cf-connecting-ip"] || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
+    return send(res, 200, { internal: INTERNAL_IPS.includes(ip) });
+  }
   if (req.url.startsWith("/api/leads") && process.env.LEADS_KEY) {
     const key = new URL(req.url, "http://x").searchParams.get("key") || "";
     if (key.length < 16 || key !== process.env.LEADS_KEY) { res.writeHead(404); return res.end(); }
