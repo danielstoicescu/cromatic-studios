@@ -28339,9 +28339,11 @@ void main() {
         sc = new Scene();
         const pm = new PMREMGenerator(R3);
         sc.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
-        sc.add(new HemisphereLight("#ffffff", "#d8d0c4", 0.55));
-        const key = new DirectionalLight("#fff5e6", 1.7); key.position.set(-6, 11, 12); sc.add(key);
-        const rim = new DirectionalLight("#dfe9ff", 0.6); rim.position.set(8, 4, -6); sc.add(rim);
+        // r130h: brighter porcelain: more fill from the sky, a stronger key, a touch more exposure
+        R3.toneMappingExposure = 1.22;
+        sc.add(new HemisphereLight("#ffffff", "#e6dfd4", 0.95));
+        const key = new DirectionalLight("#fff8ec", 2.1); key.position.set(-6, 11, 12); sc.add(key);
+        const rim = new DirectionalLight("#e6eeff", 0.8); rim.position.set(8, 4, -6); sc.add(rim);
         cam = new PerspectiveCamera(30, 1, 0.1, 600);
         cam.position.set(0, 0, CAM0);
         const V = (a2) => a2.map(([x, y]) => new Vector2(x, y));
@@ -28450,7 +28452,7 @@ void main() {
         }
         if (leaving) {
           const k = Math.min(1, (now - leaving.t0) / leaving.dur);
-          canvas.style.opacity = String(k > 0.35 ? Math.max(0, 1 - (k - 0.35) / 0.65) : 1);
+          canvas.style.opacity = String(k > 0.72 ? Math.max(0, 1 - (k - 0.72) / 0.28) : 1);
           if (k >= 1) { const cb = leaving.cb; leaving = null; cb(); }
         }
         if (typeof noWarp === "function") noWarp(sc);
@@ -28475,6 +28477,27 @@ void main() {
       const hold = (fn) => { if (!window.__cupsHold) fn(); else { const iv = setInterval(() => { if (!window.__cupsHold) { clearInterval(iv); fn(); } }, 100); } };
       return {
         clear,
+        // r130h: the loading cup is this stage's own yellow cup, spinning on its axis: rendered once into a
+        // sprite strip before the city is built, so the boot animation stays on the compositor
+        sprite(frames = 36, px = 160) {
+          init();
+          const dpr = R3.getPixelRatio();
+          R3.setSize(px, px, false); cam.aspect = 1; cam.updateProjectionMatrix();
+          const z0 = cam.position.z; cam.position.z = 9.2;
+          const c = make(0, new Vector3(0, -1.15, 0), new Vector3(0, -1.15, 0), { k: 5, s0: 1.15, s: 1.15 });
+          c.g.visible = true; c.g.scale.setScalar(1.15);
+          const out = document.createElement("canvas"); out.width = px * frames; out.height = px;
+          const ctx = out.getContext("2d");
+          for (let i = 0; i < frames; i++) {
+            c.spinner.rotation.y = (i / frames) * Math.PI * 2;
+            if (typeof noWarp === "function") noWarp(sc);
+            window.__noCityCull = true; R3.render(sc, cam); window.__noCityCull = false;
+            ctx.drawImage(R3.domElement, 0, 0, px * dpr, px * dpr, i * px, 0, px, px);
+          }
+          sc.remove(c.g); cups = cups.filter((q) => q !== c);
+          cam.position.z = z0; R3.clear(); size();
+          return out.toDataURL("image/png");
+        },
         one() {
           start();
           if (cups.some((c) => c.hero)) return;
@@ -28522,9 +28545,10 @@ void main() {
               const [, hhO] = half(CAMOUT);
               const dl = (1 - (c.pos.y + hhO) / (2 * hhO)) * 0 + ((c.pos.y + hhO) / (2 * hhO)) * 0;
               const rowT = Math.max(0, Math.min(1, (c.pos.y + hhO) / (2 * hhO)));
-              setTimeout(() => { c.k = 2.8; c.tgt.y += hhO * 2.8; c.tgt.z += (Math.random() - 0.5) * 18; c.tgt.x += (Math.random() - 0.5) * 4; c.sT = 0.9; }, rowT * 380 + Math.random() * 90 + dl);
+              // r130h: the cups drop out of the bottom of the frame and the map is there behind them
+              setTimeout(() => { c.k = 3.2; c.tgt.y -= hhO * 3.2; c.tgt.z += (Math.random() - 0.5) * 14; c.tgt.x += (Math.random() - 0.5) * 3; c.sT = 0.92; }, (1 - rowT) * 420 + Math.random() * 90 + dl);
             }
-            leaving = { t0: performance.now(), dur: 1100, cb: () => { clear(); res(); } };
+            leaving = { t0: performance.now(), dur: 1250, cb: () => { clear(); res(); } };
           });
         }
       };
@@ -28533,10 +28557,14 @@ void main() {
     const cupsFinale = async () => {
       anim(block, [{ opacity: 1 }, { opacity: 0 }], { duration: 320, delay: 380 });
       await cups3.fill();
+      // r130h: the wall of cups stands and the world is ready: the ground goes clear, the map waits behind
+      document.body.classList.remove("kz-boot");
       await preBurst?.();
       for (const n of [veils, stage.querySelector(".kz-scrim"), dots, marq, fx]) if (n) anim(n, [{ opacity: 1 }, { opacity: 0 }], { duration: 320, easing: "cubic-bezier(.22,1,.36,1)" });
-      if (!finaleFired) { finaleFired = true; onFinale?.(); }
+      // r130h: the cups drop first, over the map; only then does the map take over (ending the intro hides
+      // this stage at once, so it must come after the drop)
       await cups3.leave();
+      if (!finaleFired) { finaleFired = true; onFinale?.(); }
     };
     const cupsFinale2D = async () => {
       const W = innerWidth, H = innerHeight, cell = W < 760 ? 88 : 122;
@@ -28730,6 +28758,7 @@ void main() {
         })();
       },
       get busy() { return finishing; },
+      cupSprite(frames, px) { return cups3.sprite(frames, px); },
       pause() {
         if (finishing) return;
         doneHere = false;
@@ -36164,7 +36193,7 @@ void main() {
                 // tone edges: colour changes (windows, doors, road paint) drawn lighter
                 float l1 = lum(uv + vec2(px.x, 0.0)), l2 = lum(uv + vec2(0.0, px.y));
                 float tone = smoothstep(0.1, 0.2, abs(l1 - l) + abs(l2 - l)) * 0.12;
-                float line = max(ink * 0.7, max(crease * 0.58, tone));
+                float line = max(ink * 0.82, max(crease * 0.7, tone));
                 // pencil pressure: the stroke swells and thins along its length; a faint second pass beside it
                 float press = 0.68 + 0.32 * vn(vUv * res * 0.045 + 3.0);
                 line *= press;
@@ -36198,9 +36227,9 @@ void main() {
                 // r130e: moodier: a warm sheet that falls into cool grey at the edges, soft graphite, a lot of air
                 vec2 q = vUv - 0.5;
                 float vig = smoothstep(0.12, 0.75, length(q * vec2(res.x / res.y, 1.0)));
-                vec3 paper = mix(vec3(0.958, 0.947, 0.918), vec3(0.83, 0.835, 0.84), vig * 0.85) - (vn(p * 0.35) * 0.018 + vn(p * 0.05) * 0.022);
-                vec3 graphite = vec3(0.2, 0.205, 0.22);
-                vec3 o = mix(paper, graphite, clamp(g, 0.0, 1.0) * 0.92);
+                vec3 paper = mix(vec3(0.965, 0.955, 0.93), vec3(0.87, 0.872, 0.875), vig * 0.8) - (vn(p * 0.35) * 0.016 + vn(p * 0.05) * 0.02);
+                vec3 graphite = vec3(0.09, 0.09, 0.11);
+                vec3 o = mix(paper, graphite, clamp(g, 0.0, 1.0) * 0.96);
                 gl_FragColor = vec4(o, 1.0);
               }`,
             depthTest: false, depthWrite: false
@@ -37638,6 +37667,8 @@ void main() {
           const shot = !cov;
           card.style.setProperty("--pc", pl.c); card.style.setProperty("--pt", pl.t || "#fff");
           card.classList.add("has-img"); card.classList.toggle("shot", shot);
+          // r130h: the card sits in a bottom corner, on the side away from the place, so the scene stays clear
+          { const pv = warpV(new Vector3(pl.wx, 0, pl.wz)).project(camera); const right = pv.x < 0; card.classList.toggle("cr", right); card.classList.toggle("cl", !right); }
           card.innerHTML = `<figure class="mcd-img">${cov ? `<img src="${cov}" alt="" decoding="async">` : `<img alt="" class="mcd-shot">`}</figure><div class="mcd-body"><span class="mcd-eyebrow mono">${eyebrow}</span><b class="mcd-title" style="--pc:${pl.c};--pt:${pl.t || "#fff"}">${pl.name}</b>${body}
             <div class="mcd-actions">${actions}<button class="mcd-close" aria-label="Close">×</button></div></div>`;
           card.classList.remove("in"); void card.offsetWidth; card.classList.add("in");
@@ -38340,15 +38371,21 @@ void main() {
         // works. Then the kinetic type starts on a free thread and never stutters.
         brewEl = document.createElement("div");
         brewEl.className = "kz-brew";
-        brewEl.innerHTML = `<div class="kb-cup"><i class="kb-steam"></i><i class="kb-steam"></i><i class="kb-steam"></i><i class="kb-handle"></i><div class="kb-mug"><i class="kb-fill"></i><i class="kb-star">\u2733</i></div></div><span class="kb-t">Brewing the city</span>`;
+        let strip = null;
+        try { kinetic = createKinetic(() => mapEndIntro(), null); strip = kinetic.cupSprite(36, 160); } catch (e) { strip = null; }
+        brewEl.innerHTML = strip
+          ? `<div class="kb-cup kb-3d"><i class="kb-sprite" style="background-image:url(${strip})"></i></div><span class="kb-t">Brewing the city</span>`
+          : `<div class="kb-cup"><i class="kb-steam"></i><i class="kb-steam"></i><i class="kb-steam"></i><i class="kb-handle"></i><div class="kb-mug"><i class="kb-fill"></i><i class="kb-star">\u2733</i></div></div><span class="kb-t">Brewing the city</span>`;
         document.body.appendChild(brewEl);
       }
       const brewT0 = performance.now();
+      let kineticStarted = false;
       const startKinetic = () => {
-        if (!kzLoader || kinetic) return;
+        if (!kzLoader || kineticStarted) return;
         const wait = 800 - (performance.now() - brewT0);
         if (wait > 0 && brewEl) { setTimeout(startKinetic, wait); return; }
-        kinetic = createKinetic(() => mapEndIntro(), null);
+        kineticStarted = true;
+        if (!kinetic) kinetic = createKinetic(() => mapEndIntro(), null);
         kinetic.resume();
         if (BOOT_MODE === "map") setTimeout(() => kinetic.finish(), 60);
         if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; }

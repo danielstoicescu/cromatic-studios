@@ -4005,3 +4005,43 @@ body.scheme-sketch .map-pins .map-pin .mp-foot { background: var(--pc) var(--cra
 body.scheme-sketch .map-pins .map-pin.on .mp-foot, body.scheme-sketch .map-pins .map-pin:hover .mp-foot { opacity: .55 !important; }
 body.scheme-sketch .map-pins .map-pin.on .mp-label { box-shadow: 0 0 0 2px var(--pc), 0 0 0 5px color-mix(in srgb, var(--pc) 22%, transparent) !important; }
 body.scheme-sketch .map-pins .map-pin .mp-label, body.scheme-sketch .map-street, body.scheme-sketch .map-card, body.scheme-sketch .map-dock { border-color: #232326 !important; }
+/* r130h: the place card lives in a bottom corner (the side away from the place), not over the scene */
+@media (min-width: 721px) {
+  .map-card { left: 22px !important; right: auto !important; width: min(560px, calc(100vw - 140px)) !important; max-height: min(300px, calc(100vh - 230px)); bottom: 112px !important; }
+  .map-card.cr { left: auto !important; right: 92px !important; }
+  .map-card.has-img .mcd-img { width: 42%; flex: 0 0 42%; min-height: 240px; }
+  .map-card .mcd-title { font-size: 26px !important; }
+  .map-card .mcd-body { padding: 18px 20px 16px; }
+  .map-card.cr.in:not(.hidden) { animation-name: mcdInR; }
+  @keyframes mcdInR { from { opacity: 0; transform: translateX(24px) scale(.98); } to { opacity: 1; transform: none; } }
+}
+/* r130h: Sketchbook keeps its bones in graphite: bars, round buttons, zoom, speedo, XP are pencil; only the
+   brands and the calls to action are coloured, and those are crayon swatches: a scribbled patch that spills
+   past a shaky black crayon outline, the text sitting on top */
+:root { --crayon-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='100' preserveAspectRatio='none'%3E%3Cfilter id='r' x='-10%25' y='-20%25' width='120%25' height='140%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.02 .09' numOctaves='3' seed='7' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='22' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Crect x='10' y='12' width='280' height='76' rx='6' fill='white' filter='url(%23r)'/%3E%3C/svg%3E"); }
+body.scheme-sketch .map-top, body.scheme-sketch .hud .round-btn, body.scheme-sketch .map-zoom, body.scheme-sketch .dash, body.scheme-sketch .you,
+body.scheme-sketch .map-dock-h, body.scheme-sketch .jx-row, body.scheme-sketch .map-street, body.scheme-sketch .multi-btn { filter: grayscale(1) contrast(.96); }
+body.scheme-sketch .map-top .map-home, body.scheme-sketch .map-top .map-drive, body.scheme-sketch .hud .round-btn, body.scheme-sketch .map-zoom button,
+body.scheme-sketch .you, body.scheme-sketch .map-ride, body.scheme-sketch .map-world, body.scheme-sketch .mw-opts button, body.scheme-sketch .map-chip {
+  background-image: none !important; background-blend-mode: normal; border-width: 1.5px !important; box-shadow: 0 2px 0 rgba(35,35,38,.35) !important; }
+body.scheme-sketch .svc-hc, body.scheme-sketch .work-tag, body.scheme-sketch .map-card .mcd-title, body.scheme-sketch .mcd-open, body.scheme-sketch .mcd-ghost,
+body.scheme-sketch .coffee-btn, body.scheme-sketch .jx-btn, body.scheme-sketch .fe-drive, body.scheme-sketch .fe-save, body.scheme-sketch .cf-chip.on, body.scheme-sketch .tap-hint {
+  position: relative; isolation: isolate; border-color: transparent !important; box-shadow: none !important; border-radius: 10px !important; overflow: visible;
+  background-image: var(--crayon), repeating-linear-gradient(178deg, rgba(255,255,255,0) 0 3px, rgba(255,255,255,.28) 3px 4px, rgba(255,255,255,0) 4px 7px) !important;
+  background-blend-mode: overlay, normal; background-size: 180px 180px, auto !important;
+  -webkit-mask: var(--crayon-mask) center / 100% 100% no-repeat; mask: var(--crayon-mask) center / 100% 100% no-repeat; }
+body.scheme-sketch .svc-hc::before, body.scheme-sketch .work-tag::before, body.scheme-sketch .map-card .mcd-title::before, body.scheme-sketch .mcd-open::before, body.scheme-sketch .mcd-ghost::before,
+body.scheme-sketch .coffee-btn::before, body.scheme-sketch .jx-btn::before, body.scheme-sketch .fe-drive::before, body.scheme-sketch .fe-save::before, body.scheme-sketch .cf-chip.on::before {
+  content: ""; position: absolute; inset: 3px 5px 2px 4px; border: 2.5px solid #232326; border-radius: 48% 52% 50% 50% / 55% 45% 58% 42%; transform: rotate(-.6deg);
+  pointer-events: none; opacity: .9; z-index: 1; }
+body.scheme-sketch .svc-hc, body.scheme-sketch .work-tag { -webkit-mask: none; mask: none; background-image: var(--crayon) !important; background-blend-mode: overlay; border: 0 !important; }
+body.scheme-sketch .svc-hc::before, body.scheme-sketch .work-tag::before { inset: 4px 6px 3px 5px; border-radius: 14px 12px 16px 11px / 12px 15px 11px 16px; }
+body.scheme-sketch .map-pins .map-pin .mp-label { border: 1.5px solid #232326 !important; }
+/* annotations: a yellow crayon highlight behind the count, a scribbled stripe on the street signs */
+body.scheme-sketch .map-dock-h b { position: relative; z-index: 0; }
+body.scheme-sketch .map-dock-h b::before { content: ""; position: absolute; inset: -4px -6px -3px -5px; background: #ffd84a var(--crayon); background-blend-mode: overlay; border-radius: 40% 60% 45% 55% / 60% 40% 60% 40%; transform: rotate(-2deg); z-index: -1; opacity: .85; }
+body.scheme-sketch .map-street .hw-stripe { background-image: var(--crayon) !important; background-blend-mode: overlay; height: 6px !important; border-radius: 40% 60% 45% 55% / 60% 40% 60% 40%; transform: rotate(-.8deg) scaleX(1.04); }
+/* r130h: the loading cup is the stage's own yellow cup, turning (a sprite strip of 36 frames) */
+.kz-brew .kb-cup.kb-3d { width: 160px; height: 160px; animation: kbBob 1.4s ease-in-out infinite; }
+.kz-brew .kb-sprite { display: block; width: 160px; height: 160px; background-repeat: no-repeat; background-size: 3600% 100%; animation: kbSpin 1.5s steps(36) infinite; }
+@keyframes kbSpin { to { background-position: -5760px 0; } }
