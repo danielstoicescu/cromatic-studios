@@ -1,14 +1,14 @@
 {
  "/work/slow-coffee-festival/": {
-  "h": "f76f701fc0f3",
+  "h": "910636dcc059",
   "d": "2026-10-12"
  },
  "/work/two-minutes/": {
-  "h": "ed63caf0d008",
+  "h": "aa4ba901e4f8",
   "d": "2026-10-12"
  },
  "/work/the-aesthetic-court/": {
-  "h": "8d3b8e3e2ecc",
+  "h": "7e194defa9d8",
   "d": "2026-10-12"
  },
  "/work/arca-resort/": {
@@ -16,11 +16,11 @@
   "d": "2026-10-12"
  },
  "/work/antila/": {
-  "h": "a27266a3ad5c",
+  "h": "d2c6cd12f6b2",
   "d": "2026-10-12"
  },
  "/work/unde/": {
-  "h": "de65fd3826fd",
+  "h": "49a6728644b4",
   "d": "2026-10-12"
  },
  "/work/artisan-coffee-gear/": {
@@ -31,12 +31,16 @@
   "h": "84971ebafe6f",
   "d": "2026-10-12"
  },
+ "/work/witanalitica/": {
+  "h": "4c9f8e8a9f2f",
+  "d": "2026-10-12"
+ },
  "/work/oma-coffee/": {
-  "h": "55b3e9c50860",
+  "h": "451ccf82bdce",
   "d": "2026-10-12"
  },
  "/work/steam/": {
-  "h": "8548a63296e6",
+  "h": "b50c8f2bb753",
   "d": "2026-10-12"
  },
  "/work/altius/": {
@@ -76,7 +80,7 @@
   "d": "2026-10-12"
  },
  "/work/infinity-capital/": {
-  "h": "45bd34b60b93",
+  "h": "832ba73cb9f7",
   "d": "2026-10-12"
  },
  "/work/investimental/": {
@@ -88,7 +92,7 @@
   "d": "2026-10-12"
  },
  "/work/longshield/": {
-  "h": "e1d54cb3505a",
+  "h": "cea03e6a9201",
   "d": "2026-10-12"
  },
  "/work/pain-plaisir/": {
@@ -131,12 +135,16 @@
   "h": "b87d1627f0e6",
   "d": "2026-10-12"
  },
+ "/work/venevo/": {
+  "h": "43d7682e4177",
+  "d": "2026-10-12"
+ },
  "/work/yoshi-izakaya/": {
   "h": "e3b9d3ad75a5",
   "d": "2026-10-12"
  },
  "/site/": {
-  "h": "5909c8e27643",
+  "h": "a26c90c76217",
   "d": "2026-10-12"
  },
  "/industries/coffee-food-drink/": {
@@ -144,7 +152,7 @@
   "d": "2026-10-12"
  },
  "/industries/finance-fintech/": {
-  "h": "38d105b593cb",
+  "h": "74281af697fa",
   "d": "2026-10-12"
  },
  "/industries/healthcare/": {
@@ -160,11 +168,11 @@
   "d": "2026-10-12"
  },
  "/services/brand-identity/": {
-  "h": "a77f8df68270",
+  "h": "7976ad5e4bf3",
   "d": "2026-10-12"
  },
  "/services/websites-apps/": {
-  "h": "a2f538d4b951",
+  "h": "992bd9eb271f",
   "d": "2026-10-12"
  },
  "/services/video-production/": {
@@ -180,7 +188,7 @@
   "d": "2026-10-12"
  },
  "/": {
-  "h": "ae826bcd7883",
+  "h": "46fe175bdec3",
   "d": "2026-10-12"
  }
 }

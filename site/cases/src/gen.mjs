@@ -13,12 +13,15 @@ import { PAGES128 } from "./specs128.mjs";
 import { UNCHAIN } from "./specs129-unchain.mjs";
 import { STUDIO_PAGES } from "./specs129-studio.mjs";
 import { TOSKANI } from "./specs130-toskani.mjs";
+import { VENEVO } from "./specs134-venevo.mjs";
 import { PRINTOTECA, STICKER } from "./specs130-social.mjs";
 import { existsSync } from "node:fs";
 // r129: rebuilt pages replace the older spec with the same slug
 const OVERRIDES = [UNCHAIN];
 try { const p = new URL("./specs129-craft.mjs", import.meta.url); if (existsSync(p)) OVERRIDES.push((await import(p)).CRAFT); } catch (e) { console.warn("craft spec", e.message); }
-const PAGES = [...PAGES0, ...PAGES128, ...STUDIO_PAGES, TOSKANI, PRINTOTECA, STICKER].map((p) => OVERRIDES.find((o) => o && o.slug === p.slug) || p);
+// r135: Infinity Capital, rebuilt from the deck's Direction 2 (slides 30-46), with its own animated blocks
+try { const p = new URL("./specs135-infinity.mjs", import.meta.url); if (existsSync(p)) OVERRIDES.push((await import(p)).INFINITY); } catch (e) { console.warn("infinity spec", e.message); }
+const PAGES = [...PAGES0, ...PAGES128, ...STUDIO_PAGES, TOSKANI, VENEVO, PRINTOTECA, STICKER].map((p) => OVERRIDES.find((o) => o && o.slug === p.slug) || p);
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..", "..", "..");
@@ -87,6 +90,8 @@ function row(items, cap) {
   return cap ? `<div class="stack">\n${body}\n<figcaption>${cap}</figcaption>\n</div>` : body;
 }
 function block(b) {
+  // r135: a page's own markup (animated illustration blocks), with an optional caption
+  if (b.raw) return b.cap ? `<div class="stack">\n${b.raw}\n<figcaption>${b.cap}</figcaption>\n</div>` : b.raw;
   if (b.img || b.video) return fig(b);
   if (b.row) return row(b.row, b.cap);
   if (b.rail) {
@@ -237,7 +242,7 @@ html:not(.embed) .page{padding-top:64px}
 @media (prefers-reduced-motion:reduce){
   .screen--scroll img{animation:none}
   .hero-media .frame,.film-frame,.hero-media .frame>img,.hero-media .frame>video{animation:none;clip-path:none;scale:1;translate:none}
-}
+}${P.css ? `\n/* ---- this page's own blocks ---- */\n${P.css}` : ""}
 </style>
 </head>
 <body>
@@ -251,7 +256,7 @@ html:not(.embed) .page{padding-top:64px}
 `);
   }
   // hero
-  const heroMedia = P.hero ? (Array.isArray(P.hero)
+  const heroMedia = P.heroHtml ? P.heroHtml : P.hero ? (Array.isArray(P.hero)
     ? `<div class="hero-row">${P.hero.map((it) => fig(it, { eager: true })).join("")}</div>`
     : fig({ fixed: P.hero.fixed !== false, ...P.hero, r: P.hero.r || (P.hero.fixed === false ? undefined : 1.778) }, { eager: true })) : "";
   h.push(`  <header class="card hero">
@@ -370,7 +375,7 @@ ${rel.map((q) => `          <article class="proj">
   <section class="card cta">
     <div class="inner">
       <h2>What is your winning soundtrack?</h2>
-      <a class="btn" href="https://cromaticstudios.com/contact/" target="_blank" rel="noopener">We can bring the mixtape</a>
+      <a class="btn" href="/site/#contact">We can bring the mixtape</a>
     </div>
   </section>
 
@@ -401,7 +406,7 @@ document.querySelectorAll('.track').forEach(t=>{
   },{passive:false});
 });
 // embedded in the drive: keep links between case studies inside the frame
-if(document.documentElement.classList.contains('embed'))document.querySelectorAll('a[href^="/work/"]').forEach(a=>{a.href=a.getAttribute('href')+'?embed=1'});
+if(document.documentElement.classList.contains('embed'))document.querySelectorAll('a[href^="/work/"]').forEach(a=>{a.href=a.getAttribute('href')+'?embed=1'});${P.js ? `\n// ---- this page's own blocks ----\n${P.js}` : ""}
 <\/script>
 </body>
 </html>

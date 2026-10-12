@@ -9,6 +9,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { jsonLd, llmsTxt, llmsFull, robotsTxt, sitemapXml, manifest, icoFromPng } from "./seo.mjs";
 import { seoPage, pageText, lastmodStore, SAME_AS } from "./seo-pages.mjs";
+import { consentSnippet } from "./consent.mjs";
 import * as DATA from "../site/data.mjs";
 import { makeRender } from "../site/render.mjs";
 import { kineticBundle } from "./kinetic.mjs";
@@ -240,14 +241,23 @@ const mediaDims = (src) => {
 };
 // r131: the case pages' typeface, served from here (preloaded: no late swap, no layout shift)
 const DG = {};
-for (const k of ["latin", "latin-ext"]) {
+for (const k of ["latin", "latin-ext", "vietnamese"]) {
   try { const buf = readFileSync(join(root, "site", "fonts", `darker-grotesque-${k}.woff2`)); const rel = `assets/fonts/darker-grotesque-${k}-${hash(buf).slice(0, 8)}.woff2`; mkdirSync(join(pub, "assets", "fonts"), { recursive: true }); writeFileSync(join(pub, rel), buf); DG[k] = "/" + rel; } catch {}
 }
 // r134: one type system everywhere (Daniel): CromaticSans (Google Sans for the bold weights, Darker Grotesque, served
 // from here, for the rest) + JetBrains Mono + Montserrat for display; the same rules for the drive, the map, the website,
 // every case page and /onboarding (which links /fonts.css)
-const DG_URLS = { "https://fonts.gstatic.com/s/darkergrotesque/v10/U9MH6cuh-mLQlC4BKCtayOfARkSVq7HUJEUJQOM.woff2": DG.latin, "https://fonts.gstatic.com/s/darkergrotesque/v10/U9MH6cuh-mLQlC4BKCtayOfARkSVq7_UJEUJQOMuqA.woff2": DG["latin-ext"] };
-const localDG = (t) => t.replace(/https:\/\/fonts\.gstatic\.com\/s\/darkergrotesque\/v10\/[\w-]+\.woff2/g, (u) => DG_URLS[u] || u);
+// r134h: Google Sans (OFL, on Google Fonts since 2025) is CromaticSans 700–900: served from here too, Latin preloaded
+const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
+const CONSENT = consentSnippet(GA_ID);
+const GS = {};
+for (const k of ["latin", "latin-ext", "vietnamese"]) {
+  try { const buf = readFileSync(join(root, "site", "fonts", `google-sans-${k}.woff2`)); const rel = `assets/fonts/google-sans-${k}-${hash(buf).slice(0, 8)}.woff2`; writeFileSync(join(pub, rel), buf); GS[k] = "/" + rel; } catch {}
+}
+const GS_ID = { "4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrzaJ5llpynAFyo4R4o": "latin", "4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrzaJ5lrpynAFyo4R4r0Mw": "latin-ext", "4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrzaJ5lqpynAFyo4R4r0Mw": "vietnamese" };
+const DG_URLS = { "https://fonts.gstatic.com/s/darkergrotesque/v10/U9MH6cuh-mLQlC4BKCtayOfARkSVq7HUJEUJQOM.woff2": DG.latin, "https://fonts.gstatic.com/s/darkergrotesque/v10/U9MH6cuh-mLQlC4BKCtayOfARkSVq7_UJEUJQOMuqA.woff2": DG["latin-ext"], "https://fonts.gstatic.com/s/darkergrotesque/v10/U9MH6cuh-mLQlC4BKCtayOfARkSVq77UJEUJQOMuqA.woff2": DG.vietnamese };
+const localDG = (t) => t.replace(/https:\/\/fonts\.gstatic\.com\/s\/darkergrotesque\/v10\/[\w-]+\.woff2/g, (u) => DG_URLS[u] || u)
+  .replace(/https:\/\/fonts\.gstatic\.com\/s\/googlesans\/v\d+\/([\w-]+)\.woff2/g, (u, id) => GS[GS_ID[id]] || u);
 const CS_CSS = localDG((readFileSync(siteSrc("site.css"), "utf8").match(/@font-face\{font-family:'CromaticSans'[^}]*\}/g) || []).join(""));
 writeFileSync(join(pub, "fonts.css"), `/* Cromatic Studios type: CromaticSans, Montserrat, JetBrains Mono, Cinzel */\n${CS_CSS}\n${GF_CSS}\n`);
 const wpLocal = (u) => mediaMap.get("m:wp/" + u.replace(/^.*\/uploads\/(\d{4})\/(\d{2})\/(.+)\.[a-z]+$/i, "$1-$2-$3"))?.src;
@@ -276,6 +286,8 @@ for (const slug of R.canvasSlugs) page(`work/${slug}`, R.canvasPage(slug));
   const lit = /var steamCaseHtml = ("(?:[^"\\]|\\.)*");/.exec(js);
   if (lit) {
     let steam = new Function(`return ${lit[1]}`)();
+    // r134h: the bundle escapes its closing tags as <\/script> (a string inside a script); as a page it must close for real
+    steam = steam.replaceAll("<\\/script>", "</script>").replace(/<!--\s*<meta name="robots"[^>]*>\s*-->/g, "");
     steam = steam.replace("<head>", `<head>\n<link rel="canonical" href="${SITE_URL}/work/steam/">\n<meta name="description" content="Steam Coffee Shop: a pioneer specialty coffee brand refreshed for its community. Branding, growth and product by Cromatic Studios, Bucharest.">\n<link rel="icon" href="/favicon.ico" sizes="32x32">`)
       .replace("</head>", `<style>body>main.page{padding-top:64px}</style>\n</head>`)
       .replace(/<body([^>]*)>/, `<body$1>\n<a href="/site/#work" style="position:fixed;left:14px;top:14px;z-index:9999;padding:10px 16px;border-radius:999px;background:#FED012;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none">← Cromatic Studios</a>`);
@@ -303,7 +315,7 @@ const caseSlugs = [];
   }
 }
 // r130: map places with a real photo of their own (no case page cover, or a better one)
-for (const [id, k] of Object.entries({ steam: "m:cs/Steam-Cromaticstudios-1", lab: "m:tm/cubes-lab", "w-lapterra": "m:places/lapterra", "y-5": "m:places/litorsal", "y-0": "m:places/lacalut", zdrovit: "m:places/zdrovit", "w-printoteca": "m:places/printoteca", "w-zoetis": "m:places/zoetis", "w-clinicadrk": "m:places/drk", "w-sofmedica": "m:places/sofmedica", "w-medcity": "m:places/medcity", "w-stickerrepublic": "m:places/sticker", echo: "m:places/echo", end: "m:vibe/from-the-stairs", scf: "m:places/scf-poster", oma: "m:places/oma", friends: "m:rdw-2023/rdw-004" })) {
+for (const [id, k] of Object.entries({ steam: "m:cs/Steam-Cromaticstudios-1", lab: "m:tm/cubes-lab", "w-lapterra": "m:places/lapterra", "y-5": "m:places/litorsal", "y-0": "m:places/lacalut", zdrovit: "m:places/zdrovit", "w-printoteca": "m:places/printoteca", "w-zoetis": "m:places/zoetis", "w-clinicadrk": "m:places/drk", "w-sofmedica": "m:places/sofmedica", "w-medcity": "m:places/medcity", "w-stickerrepublic": "m:places/sticker", echo: "m:places/echo", end: "m:vibe/from-the-stairs", scf: "m:places/scf-poster", oma: "m:places/oma", "w-venevo": "m:places/venevo", "w-witanalytica": "m:places/witanalitica", friends: "m:rdw-2023/rdw-004" })) {
   const a = mediaMap.get(k);
   if (a) COVERS["place:" + id] = a.src; else console.warn(`[build] covers: missing ${k}`);
 }
@@ -357,7 +369,16 @@ const roPaths = [];
 }
 
 await optimizeImages(pub, root);
-(function walkDG(d) { for (const f of readdirSync(d)) { const p2 = join(d, f); if (statSync(p2).isDirectory()) { walkDG(p2); continue; } if (!/\.(css|html|js)$/.test(f)) continue; const t = readFileSync(p2, "utf8"); const n2 = localDG(t); if (n2 !== t) writeFileSync(p2, n2); } })(pub);
+(function walkDG(d) { for (const f of readdirSync(d)) { const p2 = join(d, f); if (statSync(p2).isDirectory()) { walkDG(p2); continue; } if (!/\.(css|html|js)$/.test(f)) continue; const t = readFileSync(p2, "utf8"); let n2 = localDG(t);
+  // the bold weights land before the first paint: no swap, no layout shift
+  if (/\.html$/.test(f) && GS.latin && n2.includes(GS.latin) && !n2.includes(`rel="preload" href="${GS.latin}"`)) n2 = n2.replace(/<head>|<head [^>]*>/, (h) => `${h}\n<link rel="preload" href="${GS.latin}" as="font" type="font/woff2" crossorigin>`);
+  // nothing is fetched from Google Fonts any more: no early connection to it either
+  if (/\.html$/.test(f)) n2 = n2.replace(/<link rel="preconnect" href="https:\/\/fonts\.(?:gstatic|googleapis)\.com"[^>]*>\n?/g, "");
+  // r134h: GA4 behind the cookie card, on every page (Daniel: G-BRW5QJTJ77, stream "Cromatic Studios COM - GA4")
+  if (/\.html$/.test(f) && CONSENT && !n2.includes('id="cz-ck-css"') && n2.includes("</body>")) n2 = n2.replace(/<\/body>(?![\s\S]*<\/body>)/, `${CONSENT}\n</body>`);
+  // long titles lose the studio suffix first in Google (~60 characters show); the brand stays in og:site_name and the schema
+  if (/\.html$/.test(f)) n2 = n2.replace(/<title>([^<]*?) · Cromatic Studios<\/title>/, (m, t0) => (t0.length + 19 > 66 ? `<title>${t0}</title>` : m));
+  if (n2 !== t) writeFileSync(p2, n2); } })(pub);
 // precompress text files once, at build time (the server just picks the right variant)
 const COMP = /\.(html|js|css|svg|txt|xml|json|webmanifest|ico)$/;
 (function walk(d) {

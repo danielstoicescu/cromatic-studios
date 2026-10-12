@@ -41,7 +41,7 @@
     };
     hk.querySelector(".hk-skip").addEventListener("click", () => { if (k && !over && !k.busy) k.finish(); else done(); });
     hk.querySelector(".hk-replay").addEventListener("click", start);
-    if (root.classList.contains("kz-play")) {
+    const boot = () => {
       const link = d.createElement("link"); link.rel = "stylesheet"; link.href = d.body.dataset.kzCss; d.head.appendChild(link);
       const sc = d.createElement("script"); sc.src = kjs; sc.async = true;
       sc.onerror = done;
@@ -56,6 +56,22 @@
         link.sheet ? go() : link.addEventListener("load", go, { once: true });
       };
       d.body.appendChild(sc);
+    };
+    if (root.classList.contains("kz-play")) boot();
+    else if (root.classList.contains("kz-late")) {
+      // r134h, phones: the words come first (fast first screen, nothing blocking); the cups play once the page has
+      // loaded and gone quiet, if the visitor is still at the top. The card keeps its height, so nothing below moves.
+      hk.classList.add("kz-done");
+      const card = hk.querySelector(".hk-card") || hk;
+      const later = () => {
+        if (scrollY > 60 || d.visibilityState !== "visible") return;
+        card.style.height = card.offsetHeight + "px";
+        hk.classList.remove("kz-done"); root.classList.add("kz-play");
+        window.__kzT = setTimeout(() => { if (!k) done(); }, 8000);
+        boot();
+      };
+      const idle = () => (window.requestIdleCallback ? requestIdleCallback(later, { timeout: 2500 }) : setTimeout(later, 1200));
+      d.readyState === "complete" ? setTimeout(idle, 600) : addEventListener("load", () => setTimeout(idle, 600), { once: true });
     } else hk.classList.add("kz-done");
   }
 

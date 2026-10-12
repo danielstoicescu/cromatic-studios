@@ -48,13 +48,13 @@ export const PROJECTS = [
   { name: "Patiline", cat: "Distribution web · Photo · Rebranding", c: "#d71920", t: "#ffffff", poster: "Fresh off the line", street: "A", page: "patiline", desc: "Industrial bread and croissants, made by machines you can watch. We built their distribution website and website, shot their own-production bakery range, and rebranded Patiline Bakery." },
   { name: "Bepco", cat: "Energy · Brand · Digital", c: "#2fae5a", t: "#ffffff", poster: "Energy, built", img: "m:cs/Bepco-1", page: "bepco", street: "B", desc: "An energy company with a brand and a digital presence to match the power it builds." },
   { name: "Investimental", cat: "UX · UI · Product", c: "#119BFE", t: "#fff", poster: "Win in digital", img: "m:cs/Investimental-Cromaticstudios-1-e1759417114960", badge: "bInvestimental", desc: "The newest retail broker in the market, helped to win in digital. Information architecture, high quality mockups and a product experience built for first-time investors.", street: "B", page: "investimental" },
-  { name: "Infinity Capital", cat: "Identity · Digital", c: "#FFC20E", t: "#111111", poster: "Infinity", street: "B", page: "infinity-capital", desc: "Financial investments for visionary clients, from Craiova. A fi monogram, greys with a yellow that climbs like a chart, an app and a website." },
+  { name: "Infinity Capital", cat: "Identity · Digital", c: "#DCA54A", t: "#202631", poster: "Infinity", street: "B", page: "infinity-capital", desc: "Financial investments for visionary clients, from Craiova. Brâncuși's Endless Column closed into a ring, slate, ink and gold, stationery and a website." },
   { name: "Assetto", cat: "Product · Brand", c: "#1f8a3a", t: "#fff", poster: "Tech in fintech", img: "m:cs/Assetto-Cromaticstudios-5", badge: "bAssetto", desc: "Putting the tech in fintech. Product and brand for a data-driven platform.", street: "B", page: "assetto" },
   { name: "Longshield", cat: "Brand · Web", c: "#253322", t: "#E7B43C", poster: "Longshield", street: "B", page: "longshield", desc: "Long-term investments, under a shield drawn on the golden ratio. Strategy, logo, brandbook, stationery and website for an investment group." },
-  { name: "Flask", cat: "Fintech", c: "#1f8a6a", t: "#ffffff", poster: "Flask", street: "B", desc: "Fintech, made clear. By Cromatic Studios." },
+  { name: "Venevo", cat: "Brand · Website · Fintech", c: "#7A5EAC", t: "#ffffff", poster: "Venture opportunity", img: "m:places/venevo", street: "B", page: "venevo", desc: "Fractional startup investing, for everyone. A dynamic V✳ logo, purple and yellow, and a website that opens the door to venture opportunities." },
   { name: "ESD", cat: "Rebranding · Website", c: "#E30613", t: "#ffffff", poster: "ESD", street: "B", page: "esd", desc: "The largest electronics service network in Romania, speaking for itself at last. Positioning, rebranding, fleet and esdrom.ro." },
   { name: "Unchain Festival", cat: "Festival · Brand", c: "#111111", t: "#ffffff", poster: "Unchained", street: "B", page: "unchain-festival", desc: "The Davos of CEE fintech, inside Oradea Fortress. Strategy, identity and a website where one red thread builds the fortress." },
-  { name: "Witanalitica", cat: "Data · Digital", c: "#6b4fd8", t: "#ffffff", poster: "Witanalitica", street: "B", desc: "Data and digital, by Cromatic Studios." },
+  { name: "Witanalytica", cat: "Business intelligence · Brand", c: "#275c5c", t: "#ffffff", poster: "Data made easy", img: "m:places/witanalitica", street: "B", page: "witanalitica", desc: "Business intelligence in a calm, consultative voice. Deep teal, a line of orange and a mark built from a pie chart, a keyhole and an open circle." },
   { name: "Techventures Bank", cat: "Rebranding · Website", c: "#1D2A42", t: "#ffffff", poster: "Techventures", street: "B", page: "techventures-bank", desc: "The first entrepreneurial bank in Romania, refreshed: silver wings, landscapes in navy and a website with a human approach to banking." },
   { name: "Clinica Sante", cat: "Clinic · Brand · Film", c: "#2f9e4f", t: "#ffffff", poster: "Health is not an option", img: "m:cs/Clinica-Sante", page: "clinica-sante", street: "C", desc: "Recommended by doctors, signed off by patients: the Clinica Sante TV film and brand work." },
   { name: "The Aesthetic Court", cat: "Website · UX · UI", c: "#1a0909", t: "#c89b3c", poster: "Toxin on trial", img: "m:tac/d-hero", page: "the-aesthetic-court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and a website built as the trial itself.", street: "C" },
@@ -146,8 +146,7 @@ export const CASES = {
       { h: "A new chapter: SLOW", p: "After four years of building and learning, we returned to the essence: <b>slow</b>. The visual manifesto speaks with hands, and a palette of Sage Bean, Lavender Roast and Golden Crema tells of slow mornings, shared conversations and the ritual of brewing.", vid: "scfVideo", imgs: ["sHand"] },
       { h: "2025", p: "The new chapter, on every wall.", imgs: ["sP25a", "sP25b", "sP25c"], poster: true },
       { imgs: ["sIc1", "sIc2", "sIc3"], small: true }
-    ],
-    link: { href: "https://cromaticstudios.com/proiecte/slow-coffee-festival-history/", label: "The full story on cromaticstudios.com ↗" }
+    ]
   },
   "two-minutes": {
     name: "Two Minutes",
@@ -279,6 +278,14 @@ export const CASES = {
 // brand canvases: one wide artboard, split into its elements by site/canvas/split-canvas.py,
 // shown as a horizontal page (vertical scroll on desktop, drag on phones)
 export const CANVASES = {
+  "witanalitica": {
+    name: "Witanalytica", dir: "witanalitica", c: "#275c5c", t: "#ffffff",
+    eyebrow: "Witanalytica · Business intelligence · Brand canvas · By Cromatic Studios",
+    title: "Data made easy.",
+    lead: "Business intelligence for companies that want results, said in a calm, consultative voice. The mark grew from three shapes, a pie chart, a keyhole and an open circle. Around it: deep teal, a line of orange, plenty of light grey, and an approach in seven steps, from the problem statement to improvements that last.",
+    meta: ["Brand identity · Stationery · Presentations · Social · Website", "Campton · Fahkwang"],
+    swatches: ["#275c5c", "#f58531", "#a2a5a5", "#109781"]
+  },
   "oma-coffee": {
     name: "OMA Coffee", dir: "oma", c: "#437743", t: "#fcfad4",
     eyebrow: "OMA Coffee · Brașov · Brand canvas · By Cromatic Studios",

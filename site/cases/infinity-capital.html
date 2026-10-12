@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Infinity Capital — Cromatic Studios</title>
-<meta name="description" content="Infinity Capital Investments: visual identity, brand canvas, stationery, roll-ups, app and website for an investment company from Craiova. By Cromatic Studios.">
+<meta name="description" content="Infinity Capital Investments, Craiova: an identity built on Brâncuși's Endless Column, with stationery, key visuals and a website. By Cromatic Studios.">
 <link rel="canonical" href="%%SITE_URL%%/work/infinity-capital/">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Infinity Capital — Cromatic Studios">
-<meta property="og:description" content="Infinity Capital Investments: visual identity, brand canvas, stationery, roll-ups, app and website for an investment company from Craiova. By Cromatic Studios.">
+<meta property="og:description" content="Infinity Capital Investments, Craiova: an identity built on Brâncuși's Endless Column, with stationery, key visuals and a website. By Cromatic Studios.">
 <meta property="og:url" content="%%SITE_URL%%/work/infinity-capital/">
 <meta property="og:image" content="m:infinity-capital/web">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
@@ -318,7 +318,7 @@ figcaption{margin-top:var(--caption-gap);font-size:var(--fs-small);font-weight:6
 }
 
 /* ---- case pages built on the Steam system: brand accent, embed mode, extras ---- */
-:root{--accent:#FFC20E;--accent-fg:#111111;--accent-ink:#8a6a00;--frame-bg:#d9d9d9}
+:root{--accent:#505C6F;--accent-fg:#E7EAE9;--accent-ink:#3c475a;--frame-bg:#d9d9d9}
 .solution-intro{background:var(--accent);color:var(--accent-fg)}
 .quote blockquote p{color:var(--accent-ink)}
 .frame{background:var(--frame-bg)}
@@ -372,6 +372,183 @@ html:not(.embed) .page{padding-top:64px}
   .screen--scroll img{animation:none}
   .hero-media .frame,.film-frame,.hero-media .frame>img,.hero-media .frame>video{animation:none;clip-path:none;scale:1;translate:none}
 }
+/* ---- this page's own blocks ---- */
+
+:root{--ic-slate:#505C6F;--ic-mist:#E7EAE9;--ic-ink:#202631;--ic-gold:#DCA54A;--ic-ease:cubic-bezier(.16,1,.3,1)}
+@property --a{syntax:"<angle>";inherits:false;initial-value:0deg}
+.card.chapter .chapter-side{background:var(--ic-mist)}
+.pill--accent{background:var(--ic-gold)}
+.to-result b{color:var(--ic-gold)}
+.to-result-go{background:var(--ic-gold);border-color:var(--ic-gold)}
+.solution-intro{background:var(--ic-slate);color:var(--ic-mist)}
+.quote blockquote p{color:var(--ic-slate)}
+@media (max-width:640px){.quote{padding-inline:4%}}
+.ic-kicker{font-size:var(--fs-small);line-height:var(--lh-small);font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
+.ic-panel,.ic-arch,.ic-story,.ic-pal,.ic-flights,.ic-cards,.ic-web,.ic-end{position:relative;border-radius:var(--radius-m);overflow:hidden;box-shadow:inset 0 0 0 1.5px rgba(18,18,18,.1)}
+
+/* the ring: the deck's line art as a mask, drawn around the circle, then turning slowly */
+.ic-ring{position:relative;aspect-ratio:988/974;color:var(--ic-mist);rotate:calc(var(--k,0) * -24deg)}
+.ic-ring-art{position:absolute;inset:0;background:currentColor;--a:361deg;
+  -webkit-mask-image:url(m:infinity-capital/ring),conic-gradient(from 200deg,#000 var(--a),#0000 calc(var(--a) + .5deg));-webkit-mask-size:contain,100% 100%;-webkit-mask-repeat:no-repeat;-webkit-mask-position:center;-webkit-mask-composite:source-in;
+  mask-image:url(m:infinity-capital/ring),conic-gradient(from 200deg,#000 var(--a),#0000 calc(var(--a) + .5deg));mask-size:contain,100% 100%;mask-repeat:no-repeat;mask-position:center;mask-composite:intersect}
+@keyframes ic-draw{from{--a:0deg}to{--a:361deg}}
+@keyframes ic-spin{to{rotate:360deg}}
+/* the wordmark, letter by letter */
+.ic-wm{position:relative;aspect-ratio:3.2447;color:var(--ic-mist)}
+.ic-l{position:absolute;background:currentColor;-webkit-mask:var(--m) center/100% 100% no-repeat;mask:var(--m) center/100% 100% no-repeat}
+/* the flights */
+.ic-fl{display:block;overflow:visible}
+.ic-fl path{fill:none;stroke:currentColor;stroke-width:var(--sw,2.4);stroke-linejoin:round;stroke-linecap:round}
+/* outline frames, drawn edge by edge */
+.ic-of{position:absolute;inset:0;pointer-events:none;color:inherit}
+.ic-of b{position:absolute;background:currentColor}
+.ic-of b:nth-child(1){left:0;top:0;width:100%;height:1px;transform-origin:left}
+.ic-of b:nth-child(2){right:0;top:0;width:1px;height:100%;transform-origin:top}
+.ic-of b:nth-child(3){right:0;bottom:0;width:100%;height:1px;transform-origin:right}
+.ic-of b:nth-child(4){left:0;bottom:0;width:1px;height:100%;transform-origin:bottom}
+
+/* hero stage */
+.hero-media{animation:none}
+.ic-stage{position:relative;width:100%;aspect-ratio:16/9;max-height:min(78svh,820px);min-height:320px;border:var(--line);border-radius:24px;overflow:hidden;isolation:isolate;color:var(--ic-mist);background:radial-gradient(110% 95% at 80% 20%,#5f6c80 0,var(--ic-slate) 46%,#465264 100%)}
+.ic-of--stage{inset:4.5%;opacity:.38}
+.ic-ring--hero{position:absolute;height:74%;top:13%;right:8%;translate:0 calc(var(--k,0) * -36px)}
+.ic-wm--hero{position:absolute;width:41%;left:8%;top:41%}
+.ic-fl--hero{position:absolute;left:8.6%;bottom:calc(4.5% + 1px);height:24%;width:auto;opacity:.55;--sw:3.4;translate:0 calc(var(--k,0) * -30px)}
+@media (max-width:640px){
+  .ic-stage{aspect-ratio:4/5;max-height:none}
+  .ic-ring--hero{height:auto;width:62%;top:8%;right:19%}
+  .ic-wm--hero{width:76%;left:12%;top:auto;bottom:11%}
+  .ic-fl--hero{display:none}
+  .ic-of--stage{inset:4%}
+}
+
+/* archetype */
+.ic-arch{background:var(--white);padding:clamp(22px,3.4vw,52px);display:grid;gap:clamp(18px,2.2vw,30px)}
+.ic-arch-bar{display:flex;height:clamp(18px,2.2vw,28px);gap:4px}
+.ic-arch-bar span{width:var(--w);background:var(--c);border-radius:999px;transform-origin:left}
+.ic-arch-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:2fr 1fr 1fr;gap:clamp(14px,2vw,28px)}
+.ic-arch-list li{border-top:3px solid var(--c);padding-top:12px;display:grid;gap:2px}
+.ic-arch-list b{font-size:var(--fs-lead);line-height:var(--lh-lead);font-weight:900}
+.ic-arch-list em{font-style:normal;font-weight:900;color:var(--muted)}
+.ic-arch-list span{font-weight:700}
+@media (max-width:640px){.ic-arch-list{grid-template-columns:1fr}}
+
+/* the ring, with the presentation's own words */
+.ic-story{background:var(--ic-slate);color:var(--ic-mist);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);align-items:center;gap:clamp(24px,4vw,64px);padding:clamp(28px,5vw,80px)}
+.ic-story-ring .ic-ring{width:100%}
+.ic-story-text{margin:0}
+.ic-story-text p{font-size:var(--fs-lead);line-height:var(--lh-lead);font-weight:700}
+.ic-story-text cite{display:block;margin-top:18px;font-size:var(--fs-small);font-style:normal;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ic-gold)}
+@media (max-width:760px){.ic-story{grid-template-columns:1fr}.ic-story-ring{width:min(78%,420px);margin-inline:auto}}
+
+/* palette: four bars that climb */
+.ic-pal{background:var(--white);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:end;gap:clamp(8px,1.4vw,18px);height:clamp(300px,34vw,480px);padding:clamp(16px,3vw,44px) clamp(16px,3vw,44px) 0}
+.ic-sw{height:var(--h);background:var(--c);color:var(--fg);border-radius:14px 14px 0 0;display:flex;align-items:flex-start;padding:clamp(10px,1.4vw,18px);transform-origin:bottom;font-weight:800;font-size:var(--fs-ui);line-height:1}
+.ic-sw--line{box-shadow:inset 0 0 0 1px rgba(32,38,49,.25)}
+@media (max-width:640px){.ic-sw{font-size:12px;padding:10px 6px;justify-content:center}}
+
+/* the flights */
+.ic-flights{background:var(--ic-mist);color:var(--ic-ink);aspect-ratio:16/9;display:flex;align-items:flex-end;justify-content:center;gap:8%;padding:7% 8% 0}
+.ic-fl--big{height:86%;width:auto;--sw:2.2}
+.ic-fl--big .ic-f{translate:0 calc(var(--k,0) * var(--sp,40) * -1px)}
+.ic-fl--big .ic-f:nth-child(1){--sp:30}.ic-fl--big .ic-f:nth-child(2){--sp:70}.ic-fl--big .ic-f:nth-child(3){--sp:110}.ic-fl--big .ic-f:nth-child(4){--sp:50}
+.ic-flights-frame{position:relative;align-self:center;height:72%;aspect-ratio:918/1394;color:var(--ic-ink)}
+@media (max-width:640px){.ic-flights{aspect-ratio:4/5;flex-direction:column;align-items:center;gap:6%;padding:10% 8% 0}.ic-fl--big{height:auto;width:100%;max-height:72%}.ic-flights-frame{display:none}}
+
+/* imagery, each picture in its outline frame */
+.ic-imagery{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(18px,2.6vw,40px);padding:18px 18px 0 0}
+.ic-ph{position:relative;margin:0;aspect-ratio:2/3;color:var(--ic-slate)}
+.ic-ph .ic-of{inset:-14px -14px 14px 14px}
+.ic-ph-in{position:relative;height:100%;overflow:hidden;border-radius:6px;background:#cfd6dc}
+.ic-ph-in img{width:100%;height:100%;object-fit:cover;scale:1.12;translate:0 calc(var(--k,0) * -5%)}
+@media (max-width:640px){.ic-imagery{grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 22px;padding:12px 12px 0 0}.ic-ph .ic-of{inset:-10px -10px 10px 10px}}
+
+/* business cards, fanned out */
+.ic-cards{background:var(--ic-mist);aspect-ratio:16/8;display:grid;place-items:center}
+.ic-card{position:absolute;width:30%;height:auto;left:35%;top:33%;border-radius:4px;box-shadow:0 26px 50px -22px rgba(32,38,49,.55),0 2px 6px rgba(32,38,49,.12);transition:transform 1.3s var(--ic-ease),box-shadow .4s ease;transition-delay:calc(var(--i) * .12s)}
+.ic-card:nth-child(1){z-index:3}.ic-card:nth-child(2){z-index:2}
+.ic-cards.is-on .ic-card:nth-child(1){transform:translate(-108%,-10%) rotate(-6deg)}
+.ic-cards.is-on .ic-card:nth-child(2){transform:translate(0,12%) rotate(1.5deg)}
+.ic-cards.is-on .ic-card:nth-child(3){transform:translate(108%,-6%) rotate(6deg)}
+@media (hover:hover){.ic-cards.is-on .ic-card:hover{box-shadow:0 40px 70px -24px rgba(32,38,49,.6),0 2px 6px rgba(32,38,49,.12);transition-delay:0s}
+  .ic-cards.is-on .ic-card:nth-child(1):hover{transform:translate(-108%,-16%) rotate(-4deg)}
+  .ic-cards.is-on .ic-card:nth-child(2):hover{transform:translate(0,6%) rotate(0deg)}
+  .ic-cards.is-on .ic-card:nth-child(3):hover{transform:translate(108%,-12%) rotate(4deg)}}
+@media (max-width:640px){
+  .ic-cards{aspect-ratio:3/4}
+  .ic-card{width:64%;left:18%;top:36%}
+  .ic-cards.is-on .ic-card:nth-child(1){transform:translate(-5%,-116%) rotate(-5deg)}
+  .ic-cards.is-on .ic-card:nth-child(2){transform:translate(4%,0) rotate(2.5deg)}
+  .ic-cards.is-on .ic-card:nth-child(3){transform:translate(-3%,116%) rotate(-2deg)}
+}
+
+/* the pin: the second picture closes in on the lapel as you scroll */
+.ic-zoom img{transform-origin:64% 69%;scale:calc(1.06 + (1 - var(--k,0)) * .14)}
+
+/* the website: the desktop page, with the phone in front */
+.ic-web{background:var(--white);aspect-ratio:16/10.4}
+.ic-web figure{position:absolute;margin:0}
+.ic-web img{display:block;width:100%;height:auto}
+.ic-web-d{right:2%;top:4%;width:80%;translate:0 calc(var(--k,0) * -18px)}
+.ic-web-m{left:3%;bottom:3%;width:23%;translate:0 calc(var(--k,0) * -70px);filter:drop-shadow(0 30px 40px rgba(32,38,49,.18))}
+@media (max-width:640px){.ic-web{aspect-ratio:auto;display:grid;gap:6px;padding:12px 10px 0}.ic-web figure{position:relative;inset:auto;width:100%}.ic-web-d{translate:none}.ic-web .ic-web-m{width:50%;margin-inline:auto!important;translate:0 calc(var(--k,0) * -24px)}}
+
+/* thank you */
+.ic-end{background:var(--ic-ink);color:var(--ic-mist);display:grid;justify-items:center;text-align:center;gap:clamp(14px,2vw,22px);padding:clamp(40px,7vw,110px) 20px;box-shadow:none}
+.ic-ring--end{width:min(52%,320px);color:var(--ic-gold)}
+.ic-end-t{font-size:var(--fs-h2);line-height:var(--lh-h2);font-weight:900;letter-spacing:-.01em}
+.ic-end-s{color:#aeb6c2;font-size:var(--fs-small);font-weight:700}
+
+/* ---- motion: everything starts hidden only when scripts run and motion is welcome ---- */
+@media (scripting:enabled) and (prefers-reduced-motion:no-preference){
+  [data-ic] .ic-ring-art{--a:0deg}
+  [data-ic].is-on .ic-ring-art{animation:ic-draw 2.6s cubic-bezier(.55,.05,.25,1) .15s both,ic-spin 140s linear 2.8s infinite}
+  .ic-stage.is-on .ic-ring-art{animation-delay:.35s,3s}
+  [data-ic] .ic-l{opacity:0;transform:translateY(38%);filter:blur(6px)}
+  [data-ic].is-on .ic-l{opacity:1;transform:none;filter:none;transition:transform 1.2s var(--ic-ease),opacity .9s ease,filter .9s ease;transition-delay:calc(.9s + var(--i) * .075s)}
+  [data-ic].is-on .ic-l--sub{transition-delay:1.75s}
+  [data-ic] .ic-fl path{stroke-dasharray:1 1;stroke-dashoffset:1}
+  [data-ic].is-on .ic-fl path{stroke-dashoffset:0;transition:stroke-dashoffset 2.4s cubic-bezier(.65,0,.35,1);transition-delay:calc(.4s + var(--i) * .28s)}
+  .ic-stage.is-on .ic-fl path{transition-delay:calc(1.6s + var(--i) * .22s)}
+  [data-ic].is-on .ic-f path{animation:ic-float 7s ease-in-out infinite alternate;animation-delay:calc(2.6s + var(--i) * -1.9s)}
+  @keyframes ic-float{from{transform:translateY(-10px)}to{transform:translateY(12px)}}
+  [data-ic] .ic-of b{transform:scale(0)}
+  [data-ic].is-on .ic-of b{transform:none;transition:transform .7s cubic-bezier(.65,0,.35,1)}
+  [data-ic].is-on .ic-of b:nth-child(2){transition-delay:.55s}
+  [data-ic].is-on .ic-of b:nth-child(3){transition-delay:1.1s}
+  [data-ic].is-on .ic-of b:nth-child(4){transition-delay:1.65s}
+  .ic-stage.is-on .ic-of b{transition-duration:1s}
+  .ic-stage.is-on .ic-of b:nth-child(1){transition-delay:.2s}.ic-stage.is-on .ic-of b:nth-child(2){transition-delay:1s}.ic-stage.is-on .ic-of b:nth-child(3){transition-delay:1.8s}.ic-stage.is-on .ic-of b:nth-child(4){transition-delay:2.6s}
+  .ic-imagery.is-on .ic-of b{transition-delay:calc(.5s + var(--i,0) * .18s)}
+  .ic-ph .ic-of b:nth-child(1){--i:0}.ic-ph .ic-of b:nth-child(2){--i:1}.ic-ph .ic-of b:nth-child(3){--i:2}.ic-ph .ic-of b:nth-child(4){--i:3}
+  .ic-ph:nth-child(2){--d:.15s}.ic-ph:nth-child(3){--d:.3s}.ic-ph:nth-child(4){--d:.45s}
+  .ic-imagery.is-on .ic-ph .ic-of b{transition-delay:calc(.6s + var(--d,0s) + var(--i) * .2s)}
+  [data-ic] .ic-ph-in{opacity:0;transform:translateY(60px)}
+  [data-ic].is-on .ic-ph-in{opacity:1;transform:none;transition:transform 1.2s var(--ic-ease),opacity .9s ease;transition-delay:var(--d,0s)}
+  [data-ic] .ic-arch-bar span{transform:scaleX(0)}
+  [data-ic].is-on .ic-arch-bar span{transform:none;transition:transform 1.1s var(--ic-ease);transition-delay:calc(.2s + var(--i) * .35s)}
+  [data-ic] .ic-arch-list li{opacity:0;transform:translateY(16px)}
+  [data-ic].is-on .ic-arch-list li{opacity:1;transform:none;transition:opacity .7s ease,transform .9s var(--ic-ease);transition-delay:calc(.5s + var(--i) * .35s)}
+  [data-ic] .ic-story-text p,[data-ic] .ic-story-text cite{opacity:0;transform:translateY(24px)}
+  [data-ic].is-on .ic-story-text p,[data-ic].is-on .ic-story-text cite{opacity:1;transform:none;transition:opacity 1s ease .9s,transform 1.2s var(--ic-ease) .9s}
+  [data-ic].is-on .ic-story-text cite{transition-delay:1.5s}
+  [data-ic] .ic-sw{transform:scaleY(0)}
+  [data-ic] .ic-sw span{opacity:0}
+  [data-ic].is-on .ic-sw{transform:none;transition:transform 1.2s var(--ic-ease);transition-delay:calc(var(--i) * .16s)}
+  [data-ic].is-on .ic-sw span{opacity:1;transition:opacity .6s ease;transition-delay:calc(.7s + var(--i) * .16s)}
+  [data-ic] .ic-web-d,[data-ic] .ic-web-m{opacity:0}
+  [data-ic].is-on .ic-web-d,[data-ic].is-on .ic-web-m{opacity:1;transition:opacity 1s ease}
+  [data-ic].is-on .ic-web-m{transition-delay:.4s}
+  [data-ic] .ic-end-t,[data-ic] .ic-end-s{opacity:0;transform:translateY(18px)}
+  [data-ic].is-on .ic-end-t,[data-ic].is-on .ic-end-s{opacity:1;transform:none;transition:opacity 1s ease 1.6s,transform 1.2s var(--ic-ease) 1.6s}
+  [data-ic].is-on .ic-end-s{transition-delay:2s}
+}
+@media (prefers-reduced-motion:reduce){
+  .ic-ring,.ic-ring--hero,.ic-fl--hero,.ic-fl--big .ic-f,.ic-ph-in img,.ic-web-d,.ic-web-m{rotate:none;translate:none}
+  .ic-zoom img{scale:1.06}
+  .ic-card{transition:none}
+}
+
 </style>
 </head>
 <body>
@@ -382,7 +559,7 @@ html:not(.embed) .page{padding-top:64px}
       <div class="hero-top">
         <div class="hero-title">
           <p class="client-name">Infinity Capital</p>
-          <h1>Investing in your vision.</h1>
+          <h1>Be at the forefront of finance.</h1>
         </div>
         <div class="hero-info">
           <div class="client-row">
@@ -393,15 +570,18 @@ html:not(.embed) .page{padding-top:64px}
           </div>
           <ul class="info">
             <li>Investments, financial services</li>
-            <li>Craiova, 2023</li>
-            <li>Visual identity, brand canvas, stationery, print, app UI, website UI</li>
+            <li>Craiova, formerly SIF Oltenia</li>
+            <li>Brand identity, symbol, illustration, stationery, key visuals, website UI</li>
           </ul>
         </div>
       </div>
       <div class="hero-media">
-        <figure style="--r:1.778" data-fixed-ratio>
-  <div class="frame"><img src="m:infinity-capital/web" alt="The Infinity Capital website on a laptop, with the fi mark behind" width="1600" height="1420" fetchpriority="high" decoding="async"></div>
-</figure>
+        <div class="ic-stage" data-ic data-par>
+          <i class="ic-of ic-of--stage" aria-hidden="true"><b></b><b></b><b></b><b></b></i>
+          <svg class="ic-fl ic-fl--hero" viewBox="0 0 822 775" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false"><g class="ic-f" style="--i:0"><path pathLength="1" d="M213.0 29.0 L6.0 540.0 L6.0 543.0 L88.0 544.0 L130.0 748.0 L132.0 748.0 L181.0 485.0 L181.0 477.0 L166.0 411.0 L196.0 364.0 L180.0 327.0 L204.0 281.0 L188.0 242.0 L213.0 198.0 L200.0 163.0 L200.0 157.0 L214.0 29.0 Z"/></g><g class="ic-f" style="--i:1"><path pathLength="1" d="M387.5 12.0 L341.0 99.0 L387.5 164.0 L341.0 250.0 L387.5 315.0 L341.0 400.0 L387.5 465.0 L341.0 551.0 L387.5 615.0 L341.0 701.0 L387.5 769.0"/></g><g class="ic-f" style="--i:2"><path pathLength="1" d="M522.0 6.0 L506.0 146.0 L497.0 268.0 L498.0 353.0 L502.0 433.0 L511.0 556.0 L517.0 606.0 L510.0 738.0 L503.0 766.0 L543.0 766.0 L536.0 729.0 L534.0 665.0 L530.0 633.0 L530.0 603.0 L535.0 564.0 L546.0 411.0 L549.0 344.0 L549.0 250.0 L540.0 138.0 L525.0 6.0 Z"/></g><g class="ic-f" style="--i:3"><path pathLength="1" d="M655.0 23.0 L663.0 36.0 L673.0 67.0 L679.0 105.0 L682.0 154.0 L681.0 655.0 L673.0 718.0 L666.0 742.0 L655.0 763.0 L816.0 763.0 L807.0 747.0 L798.0 718.0 L792.0 680.0 L789.0 630.0 L790.0 130.0 L793.0 97.0 L799.0 63.0 L808.0 36.0 L816.0 23.0 Z"/></g></svg>
+          <div class="ic-ring ic-ring--hero" role="img" aria-label="Brâncuși's Endless Column, closed into a ring"><i class="ic-ring-art"></i></div>
+          <div class="ic-wm ic-wm--hero" role="img" aria-label="INFINITY Capital Investment"><i class="ic-l" style="--m:url(m:infinity-capital/wm-0);left:0.13%;top:0.42%;width:4.55%;height:59.92%;--i:0"></i><i class="ic-l" style="--m:url(m:infinity-capital/wm-1);left:7.15%;top:0.42%;width:16.25%;height:59.92%;--i:1"></i><i class="ic-l" style="--m:url(m:infinity-capital/wm-2);left:25.62%;top:0.42%;width:10.66%;height:59.92%;--i:2"></i><i class="ic-l" style="--m:url(m:infinity-capital/wm-3);left:38.62%;top:0.42%;width:4.55%;height:59.92%;--i:3"></i><i class="ic-l" style="--m:url(m:infinity-capital/wm-4);left:45.51%;top:0.42%;width:16.38%;height:59.92%;--i:4"></i><i class="ic-l" style="--m:url(m:infinity-capital/wm-5);left:64.37%;top:0.42%;width:4.55%;height:59.92%;--i:5"></i><i class="ic-l" style="--m:url(m:infinity-capital/wm-6);left:70.48%;top:0.42%;width:15.08%;height:59.92%;--i:6"></i><i class="ic-l" style="--m:url(m:infinity-capital/wm-7);left:85.05%;top:0.42%;width:14.82%;height:59.92%;--i:7"></i><i class="ic-l ic-l--sub" style="--m:url(m:infinity-capital/wm-sub);left:18.6%;top:81.86%;width:62.55%;height:17.3%;--i:8"></i></div>
+        </div>
       </div>
     </div>
   </header>
@@ -410,24 +590,35 @@ html:not(.embed) .page{padding-top:64px}
       <div class="sec-head">
         <h2>Investments with a long view</h2>
         <div class="prose">
-          <p>Infinity Capital Investments offers <strong>financial investments to visionary clients</strong>, with the best team at their disposal and a voice in the avant-garde.</p>
-          <p>The brand had to help them reach <strong>long-term financial growth</strong>, and make them feel strong doing it.</p>
+          <p>Infinity Capital Investments, the former SIF Oltenia, offers <strong>financial investments to visionary clients</strong>, with the best team at their disposal and a voice at the forefront. It helps them reach <strong>long-term financial growth</strong>, and feel empowered doing it.</p>
+          <p>The brief was short: something new in approach, a simple website with a touch of the new, no pink or loud colours, and <strong>not the usual blue</strong>. And something that says the company believes in Romania, without saying it through colours.</p>
         </div>
       </div>
       <div class="problem-media stack">
-<figure style="--r:4.27">
-  <div class="frame"><img src="m:infinity-capital/canvas" alt="The full Infinity Capital brand canvas" width="2400" height="562" loading="lazy" decoding="async"></div>
-  <figcaption>The brand canvas: 130 by 30 cm, the whole system on one board</figcaption>
-</figure>
+<div class="ic-arch" data-ic>
+  <p class="ic-kicker">The archetype</p>
+  <div class="ic-arch-bar" aria-hidden="true"><span style="--w:50%;--c:#202631;--i:0"></span><span style="--w:25%;--c:#505C6F;--i:1"></span><span style="--w:25%;--c:#DCA54A;--i:2"></span></div>
+  <ul class="ic-arch-list">
+    <li style="--c:#202631;--i:0"><b>Hero</b> <em>50%</em> <span>Determination and achievement.</span></li>
+    <li style="--c:#505C6F;--i:1"><b>Ruler</b> <em>25%</em> <span>Power, control, prosperity.</span></li>
+    <li style="--c:#DCA54A;--i:2"><b>Creator</b> <em>25%</em> <span>Think different, give form to a vision.</span></li>
+  </ul>
+</div>
+      </div>
+      <div class="quote">
+        <blockquote>
+          <p data-lines>“Something that shows we are a company that believes in Romania. Not through colours.”</p>
+          <cite>From the brief, in the client's own words</cite>
+        </blockquote>
       </div>
       <div class="handoff">
         <div class="solution-intro" id="solution">
-          <h2>The f and the i</h2>
-          <p>A monogram that ties the f and i of Infinity into one square mark, the Sora typeface, and a palette of greys with a yellow-to-orange accent that climbs like a chart.</p>
+          <h2>An endless column, closed into a circle</h2>
+          <p>A Romanian symbol instead of Romanian colours: Constantin Brâncuși's <strong>Endless Column</strong>, stylised and set in a circle, as the sign of infinity and the brand's identifier. Around it, a serif wordmark, slate, ink and gold, and illustrations that climb.</p>
         </div>
         <a class="to-result" href="#branding-design">
-          <b>130 × 30</b>
-          <span>centimetres: the brand canvas the identity was presented on</span>
+          <b>∞</b>
+          <span>No beginning, no end: the column, closed into a ring</span>
           <span class="to-result-go">Drop for more <span class="go-icon" aria-hidden="true">↓</span></span>
         </a>
       </div>
@@ -436,64 +627,185 @@ html:not(.embed) .page{padding-top:64px}
   <section class="card chapter chapter--brand" id="branding-design" aria-label="Branding and Design">
     <div class="chapter-side">
       <div>
-        <span class="pill-title"><span class="pill pill--brand">Branding</span><span class="pill pill--accent">&amp; Design</span></span>
-        <p class="chapter-text">The wordmark, the fi monogram in grey and yellow, metal pins, letterheads and business cards with a blind-embossed logo.</p>
+        <span class="pill-title"><span class="pill pill--brand">Logo</span><span class="pill pill--accent">&amp; symbol</span></span>
+        <p class="chapter-text">A serif wordmark with flared strokes, INFINITY over CAPITAL INVESTMENT, in ink on mist or in mist on slate. Next to it, the symbol: the Endless Column's rhomboid modules, drawn in outline and closed into a ring.</p>
         <ul class="deliverables">
-          <li>Logo</li>
-          <li>Monogram</li>
-          <li>Typography</li>
+          <li>Wordmark</li>
+          <li>Symbol</li>
+          <li>Light and dark versions</li>
+        </ul>
+      </div>
+    </div>
+    <div class="chapter-media">
+<div class="ic-story" data-ic data-par>
+  <div class="ic-story-ring"><div class="ic-ring ic-ring--story" role="img" aria-label="The Infinity symbol: the Endless Column as a ring of rhomboid modules"><i class="ic-ring-art"></i></div></div>
+  <blockquote class="ic-story-text">
+    <p>“We will use a stylisation of the Endless Column by Brâncuși as a symbolic element of infinity and the identifier of the brand. It has no end: the column is set in a circle. An endless cycle of investments, a perfectly contoured process, for those who have vision and dare to be at the forefront of financial investment.”</p>
+    <cite>From the identity presentation</cite>
+  </blockquote>
+</div>
+<div class="stack">
+<div class="row row--wrap-sm">
+<figure class="full-sm" style="--r:2.446">
+  <div class="frame"><img src="m:infinity-capital/logo-mist" alt="The INFINITY Capital Investment logo in ink on mist" width="1316" height="538" loading="lazy" decoding="async"></div>
+</figure>
+<figure class="full-sm" style="--r:3.597">
+  <div class="frame"><img src="m:infinity-capital/logo-slate" alt="The INFINITY Capital Investment logo in mist on slate" width="1712" height="476" loading="lazy" decoding="async"></div>
+</figure>
+</div>
+<figcaption>The logo on mist and on slate</figcaption>
+</div>
+    </div>
+  </section>
+  <section class="card chapter chapter--brand" id="branding-design-2" aria-label="Branding and Design">
+    <div class="chapter-side">
+      <div>
+        <span class="pill-title"><span class="pill pill--brand">Colour</span><span class="pill pill--accent">&amp; type</span></span>
+        <p class="chapter-text">Four colours: slate, mist, ink and a warm gold, which keeps the greys from going cold. Baker for titles, Gotham for body text.</p>
+        <ul class="deliverables">
           <li>Colour palette</li>
-          <li>Iconography</li>
-          <li>Stationery</li>
+          <li>Typography</li>
+        </ul>
+      </div>
+    </div>
+    <div class="chapter-media">
+<div class="stack">
+<div class="ic-pal" data-ic role="img" aria-label="The palette: slate #505C6F, mist #E7EAE9, ink #202631 and gold #DCA54A">
+  <div class="ic-sw" style="--c:#505C6F;--fg:#E7EAE9;--h:52%;--i:0"><span>#505C6F</span></div>
+  <div class="ic-sw ic-sw--line" style="--c:#E7EAE9;--fg:#202631;--h:68%;--i:1"><span>#E7EAE9</span></div>
+  <div class="ic-sw" style="--c:#202631;--fg:#E7EAE9;--h:84%;--i:2"><span>#202631</span></div>
+  <div class="ic-sw" style="--c:#DCA54A;--fg:#202631;--h:100%;--i:3"><span>#DCA54A</span></div>
+</div>
+<figcaption>Slate, mist, ink and gold</figcaption>
+</div>
+<figure style="--r:4.598">
+  <div class="frame"><img src="m:infinity-capital/fonts" alt="The type: Baker for titles and subtitles, Gotham for body text" width="1600" height="348" loading="lazy" decoding="async"></div>
+  <figcaption>Baker for titles, Gotham for body text</figcaption>
+</figure>
+    </div>
+  </section>
+  <section class="card chapter chapter--brand" id="branding-design-3" aria-label="Branding and Design">
+    <div class="chapter-side">
+      <div>
+        <span class="pill-title"><span class="pill pill--brand">Visual</span><span class="pill pill--accent">universe</span></span>
+        <p class="chapter-text">Ascending illustrations derived from Brâncuși's flights and from the I of Infinity, thin outline frames, and imagery in blues: futuristic, minimal, every vector pointing up, towards growth.</p>
+        <ul class="deliverables">
+          <li>Illustration</li>
+          <li>Outline frames</li>
+          <li>Imagery direction</li>
+        </ul>
+      </div>
+    </div>
+    <div class="chapter-media">
+<div class="stack">
+<div class="ic-flights" data-ic data-par>
+  <svg class="ic-fl ic-fl--big" viewBox="0 0 822 775" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false"><g class="ic-f" style="--i:0"><path pathLength="1" d="M213.0 29.0 L6.0 540.0 L6.0 543.0 L88.0 544.0 L130.0 748.0 L132.0 748.0 L181.0 485.0 L181.0 477.0 L166.0 411.0 L196.0 364.0 L180.0 327.0 L204.0 281.0 L188.0 242.0 L213.0 198.0 L200.0 163.0 L200.0 157.0 L214.0 29.0 Z"/></g><g class="ic-f" style="--i:1"><path pathLength="1" d="M387.5 12.0 L341.0 99.0 L387.5 164.0 L341.0 250.0 L387.5 315.0 L341.0 400.0 L387.5 465.0 L341.0 551.0 L387.5 615.0 L341.0 701.0 L387.5 769.0"/></g><g class="ic-f" style="--i:2"><path pathLength="1" d="M522.0 6.0 L506.0 146.0 L497.0 268.0 L498.0 353.0 L502.0 433.0 L511.0 556.0 L517.0 606.0 L510.0 738.0 L503.0 766.0 L543.0 766.0 L536.0 729.0 L534.0 665.0 L530.0 633.0 L530.0 603.0 L535.0 564.0 L546.0 411.0 L549.0 344.0 L549.0 250.0 L540.0 138.0 L525.0 6.0 Z"/></g><g class="ic-f" style="--i:3"><path pathLength="1" d="M655.0 23.0 L663.0 36.0 L673.0 67.0 L679.0 105.0 L682.0 154.0 L681.0 655.0 L673.0 718.0 L666.0 742.0 L655.0 763.0 L816.0 763.0 L807.0 747.0 L798.0 718.0 L792.0 680.0 L789.0 630.0 L790.0 130.0 L793.0 97.0 L799.0 63.0 L808.0 36.0 L816.0 23.0 Z"/></g></svg>
+  <div class="ic-flights-frame"><i class="ic-of" aria-hidden="true"><b></b><b></b><b></b><b></b></i></div>
+</div>
+<figcaption>Ascending illustrations, from Brâncuși's flights and the initial of Infinity, and an outline frame</figcaption>
+</div>
+<div class="stack">
+<div class="ic-imagery" data-ic data-par>
+  <figure class="ic-ph" style="--i:0"><i class="ic-of" aria-hidden="true"><b></b><b></b><b></b><b></b></i><div class="ic-ph-in"><img src="m:infinity-capital/img-portrait" alt="A man in a dark suit and glasses, in front of a glass office facade" width="1000" height="1500" loading="lazy" decoding="async"></div></figure>
+  <figure class="ic-ph" style="--i:1"><i class="ic-of" aria-hidden="true"><b></b><b></b><b></b><b></b></i><div class="ic-ph-in"><img src="m:infinity-capital/img-towers" alt="Two tall towers against a pale blue sky" width="1000" height="1500" loading="lazy" decoding="async"></div></figure>
+  <figure class="ic-ph" style="--i:2"><i class="ic-of" aria-hidden="true"><b></b><b></b><b></b><b></b></i><div class="ic-ph-in"><img src="m:infinity-capital/img-dark" alt="The tip of a glass building, rising into a dark sky" width="1000" height="1497" loading="lazy" decoding="async"></div></figure>
+  <figure class="ic-ph" style="--i:3"><i class="ic-of" aria-hidden="true"><b></b><b></b><b></b><b></b></i><div class="ic-ph-in"><img src="m:infinity-capital/img-light" alt="The tip of a glass building, rising into a light blue sky" width="1000" height="1498" loading="lazy" decoding="async"></div></figure>
+</div>
+<figcaption>Imagery: blues, futuristic, minimal, vectors pointing up</figcaption>
+</div>
+    </div>
+  </section>
+  <section class="card chapter chapter--brand" id="branding-design-4" aria-label="Branding and Design">
+    <div class="chapter-side">
+      <div>
+        <span class="pill-title"><span class="pill pill--brand">Stationery</span><span class="pill pill--accent">&amp; co</span></span>
+        <p class="chapter-text">Documents with charts in slate, mist and gold, business cards in gold and ink with the column's outline, key visuals for investors with vision, and the ring as a pin for the lapel.</p>
+        <ul class="deliverables">
+          <li>Documents</li>
           <li>Business cards</li>
+          <li>Key visuals</li>
+          <li>Pin</li>
         </ul>
       </div>
     </div>
     <div class="chapter-media">
 <div class="stack">
 <div class="row">
-<figure style="--r:0.949">
-  <div class="frame"><img src="m:infinity-capital/identity" alt="Wordmark, Sora typeface, palette and monograms" width="1519" height="1600" loading="lazy" decoding="async"></div>
+<figure style="--r:1.336">
+  <div class="frame frame--contain" style="--frame-bg:#E7EAE9"><img src="m:infinity-capital/doc-mock" alt="A letter with a table and a bar chart, on a white surface" width="1600" height="1198" loading="lazy" decoding="async"></div>
 </figure>
-<figure style="--r:0.962">
-  <div class="frame"><img src="m:infinity-capital/stationery" alt="Letterhead, pins and business cards" width="1539" height="1600" loading="lazy" decoding="async"></div>
+<figure style="--r:0.646">
+  <div class="frame frame--contain" style="--frame-bg:#ffffff"><img src="m:infinity-capital/doc" alt="The letter template: recipient fields, a table, a bar chart in slate, mist and gold, and the ring at the bottom" width="1000" height="1549" loading="lazy" decoding="async"></div>
 </figure>
 </div>
-<figcaption>Identity and stationery</figcaption>
+<figcaption>Documents</figcaption>
+</div>
+<div class="stack">
+<div class="ic-cards" data-ic>
+  <img src="m:infinity-capital/card-1" alt="The gold business card, with the INFINITY wordmark" width="612" height="356" loading="lazy" decoding="async" class="ic-card" style="--i:0">
+  <img src="m:infinity-capital/card-2" alt="An ink business card, with the outline of the column on the left" width="613" height="356" loading="lazy" decoding="async" class="ic-card" style="--i:1">
+  <img src="m:infinity-capital/card-3" alt="A second ink business card, with the column's outline" width="613" height="356" loading="lazy" decoding="async" class="ic-card" style="--i:2">
+</div>
+<figcaption>Business cards</figcaption>
+</div>
+<div class="stack">
+<div class="row">
+<figure style="--r:0.655">
+  <div class="frame"><img src="m:infinity-capital/kv-1" alt="Key visual on a stand: CREȘTERE CONSTANTĂ, pentru investitori cu viziune, with the gold ring above a building" width="1000" height="1527" loading="lazy" decoding="async"></div>
+</figure>
+<figure style="--r:0.57">
+  <div class="frame"><img src="m:infinity-capital/kv-2" alt="Key visual on a stand: FII ÎN AVANGARDA FINANCIARĂ, with two towers and the ring" width="1000" height="1754" loading="lazy" decoding="async"></div>
+</figure>
+</div>
+<figcaption>Key visuals: “Constant growth, for investors with vision” and “Be at the forefront of finance”</figcaption>
+</div>
+<div class="stack">
+<div class="row ic-pin" data-ic data-par>
+  <figure style="--r:0.611"><div class="frame"><img src="m:infinity-capital/pin-1" alt="A portrait on a stand: a man in a dark suit, the ring pin on his lapel" width="766" height="1254" loading="lazy" decoding="async"></div></figure>
+  <figure style="--r:0.679"><div class="frame ic-zoom"><img src="m:infinity-capital/pin-2" alt="Close-up of the ring pin on the lapel of a navy jacket" width="998" height="1470" loading="lazy" decoding="async"></div></figure>
+</div>
+<figcaption>The ring, as a pin</figcaption>
 </div>
     </div>
   </section>
   <section class="card chapter chapter--product" id="product-design" aria-label="Product Design">
     <div class="chapter-side">
       <div>
-        <span class="pill-title"><span class="pill pill--product">Product</span><span class="pill pill--accent">Design</span></span>
-        <p class="chapter-text">Report covers by category, an app that shows attractive long-term investments, roll-ups that say “Oferim investiții financiare pentru viziunea ta”, and a website for news and analysis.</p>
+        <span class="pill-title"><span class="pill pill--product">Website</span><span class="pill pill--accent">UI</span></span>
+        <p class="chapter-text">A website led by news and analysis: a home page with financial news and featured articles, article pages that open next to a gold panel with the zigzag flight, and an about page that reads well on a phone.</p>
         <ul class="deliverables">
-          <li>App UI</li>
           <li>Website UI</li>
-          <li>Roll-ups</li>
-          <li>Report templates</li>
+          <li>Home page</li>
+          <li>Article page</li>
+          <li>About page</li>
+          <li>Mobile</li>
         </ul>
       </div>
     </div>
     <div class="chapter-media">
-<figure style="--r:1.111">
-  <div class="frame"><img src="m:infinity-capital/digital" alt="Report covers and the Infinity app on a phone" width="1600" height="1440" loading="lazy" decoding="async"></div>
-  <figcaption>Reports and the app</figcaption>
-</figure>
-<div class="row">
-<figure style="--r:0.629">
-  <div class="frame"><img src="m:infinity-capital/rollups" alt="Infinity roll-ups" width="880" height="1400" loading="lazy" decoding="async"></div>
-</figure>
-<figure style="--r:0.795">
-  <div class="frame"><img src="m:infinity-capital/portrait" alt="Portrait with the fi pin and a QR code" width="1113" height="1400" loading="lazy" decoding="async"></div>
-</figure>
+<div class="stack">
+<div class="ic-web" data-ic data-par>
+  <figure class="ic-web-d"><img src="m:infinity-capital/web-home" alt="The Infinity home page on a desktop screen: the wordmark, the menu, financial news and featured articles" width="1600" height="1187" loading="lazy" decoding="async"></figure>
+  <figure class="ic-web-m"><img src="m:infinity-capital/web-about" alt="The about page on a phone, with the history of the company and a glass building rising" width="900" height="1519" loading="lazy" decoding="async"></figure>
 </div>
+<figcaption>The home page, and the about page on a phone</figcaption>
+</div>
+<figure style="--r:2.005">
+  <div class="frame"><img src="m:infinity-capital/web-article" alt="An article page: The financial scene, a headline about the construction sector, the author and date, and a gold panel with a zigzag line" width="1600" height="798" loading="lazy" decoding="async"></div>
+  <figcaption>An article page</figcaption>
+</figure>
     </div>
   </section>
   <section class="card result" id="result">
     <div class="inner">
-      <p class="result-text">An identity that makes a serious investment company feel modern and bright, built and presented as one system, from a lapel pin to a website.</p>
+      <p class="result-text">An investment brand that carries Romania in its symbol, not in its colours: Brâncuși's Endless Column, closed into a ring, from a business card and a lapel pin to the website.</p>
+      <div class="stack result-media">
+<div class="ic-end" data-ic data-par>
+  <div class="ic-ring ic-ring--end" aria-hidden="true"><i class="ic-ring-art"></i></div>
+  <p class="ic-end-t">Mulțumim infinit!</p>
+  <p class="ic-end-s">Thank you, infinitely: the last slide of the presentation.</p>
+</div>
+      </div>
     </div>
   </section>
   <section class="card related" aria-labelledby="related-title">
@@ -533,7 +845,7 @@ html:not(.embed) .page{padding-top:64px}
   <section class="card cta">
     <div class="inner">
       <h2>What is your winning soundtrack?</h2>
-      <a class="btn" href="https://cromaticstudios.com/contact/" target="_blank" rel="noopener">We can bring the mixtape</a>
+      <a class="btn" href="/site/#contact">We can bring the mixtape</a>
     </div>
   </section>
 
@@ -698,6 +1010,23 @@ document.querySelectorAll('.track').forEach(t=>{
 });
 // embedded in the drive: keep links between case studies inside the frame
 if(document.documentElement.classList.contains('embed'))document.querySelectorAll('a[href^="/work/"]').forEach(a=>{a.href=a.getAttribute('href')+'?embed=1'});
+// ---- this page's own blocks ----
+(function(){
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var els=[].slice.call(document.querySelectorAll('[data-ic]'));
+  if(reduce||!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('is-on')});if(reduce)return;}
+  else{
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('is-on');io.unobserve(e.target)}})},{threshold:.2,rootMargin:'0px 0px -8% 0px'});
+    els.forEach(function(e){io.observe(e)});
+  }
+  // --k: where a block sits in the viewport, from 1 (just below) through 0 (centred) to -1 (just above)
+  var par=[].slice.call(document.querySelectorAll('[data-par]')),raf=0;
+  var run=function(){raf=0;var vh=innerHeight||1;par.forEach(function(el){var r=el.getBoundingClientRect();if(r.bottom<-vh*.5||r.top>vh*1.5)return;var k=(r.top+r.height/2-vh/2)/vh;k=Math.max(-1.25,Math.min(1.25,k));el.style.setProperty('--k',k.toFixed(4))})};
+  addEventListener('scroll',function(){if(!raf)raf=requestAnimationFrame(run)},{passive:true});
+  addEventListener('resize',run);run();
+})();
+// the quote is split into lines before the webfont arrives: split it again once the type is in
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){if(document.fonts.status==='loaded')dispatchEvent(new Event('resize'))});
 </script>
 </body>
 </html>

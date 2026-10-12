@@ -3,7 +3,7 @@
 // for video) plus one endpoint: POST /api/boarding, which emails the boarding pass to the studio
 // and a copy to the passenger.
 import http from "node:http";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync, appendFileSync, mkdirSync, createReadStream } from "node:fs";
 import { join, extname, dirname, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import zlib from "node:zlib";
@@ -34,8 +34,11 @@ const files = new Map();
     const p = join(dir, name);
     if (statSync(p).isDirectory()) { load(p); continue; }
     if (p.endsWith(".br") || p.endsWith(".gz")) continue;
-    const ext = extname(p).toLowerCase(), buf = readFileSync(p);
-    const url = "/" + p.slice(ROOT.length + 1).split("\\").join("/");
+    const ext = extname(p).toLowerCase(), url = "/" + p.slice(ROOT.length + 1).split("\\").join("/");
+    // r134h: big files (the old site's case-study PDF, long films) stay on disk and stream; the rest lives in memory
+    const st = statSync(p);
+    if (st.size > 8e6 && !COMPRESS.has(ext)) { files.set(url, { disk: p, size: st.size, type: TYPES[ext] || "application/octet-stream", immutable: url.startsWith("/assets/"), etag: `"${st.size.toString(36)}-${Math.round(st.mtimeMs).toString(36)}"` }); continue; }
+    const buf = readFileSync(p);
     const f = { buf, type: TYPES[ext] || "application/octet-stream", immutable: url.startsWith("/assets/"), etag: `"${createHash("sha1").update(buf).digest("base64url").slice(0, 16)}"` };
     if (COMPRESS.has(ext)) {
       // precompressed by the build; fall back to compressing here if a variant is missing
@@ -78,6 +81,19 @@ function clean(b) {
   };
 }
 
+// r134h: every message is also kept on the server (one JSON line per message), outside the release folder so a deploy
+// never wipes it: LEADS_DIR, else the app's shared folder, else the pm2 home. Email stays the main channel.
+const LEADS_DIRS = [process.env.LEADS_DIR, join(APP_DIR, "..", "..", "shared"), process.env.HOME, APP_DIR].filter(Boolean);
+function keepLead(t, ip) {
+  const line = JSON.stringify({ at: new Date().toISOString(), ip, ...t }) + "\n";
+  for (const d of LEADS_DIRS) {
+    try { mkdirSync(d, { recursive: true }); appendFileSync(join(d, "cromatic-leads.jsonl"), line, { mode: 0o600 }); return join(d, "cromatic-leads.jsonl"); } catch {}
+  }
+  console.error("[lead] could not be saved anywhere:", line.trim());
+  return null;
+}
+const SUBJECT_TAG = process.env.MAIL_SUBJECT_TAG || "[mesaj de pe site!!]";
+
 async function boarding(req, res) {
   let body = "";
   for await (const chunk of req) { body += chunk; if (body.length > 32e3) return send(res, 413, { ok: false }); }
@@ -88,10 +104,11 @@ async function boarding(req, res) {
   if (limited(ip)) return send(res, 429, { ok: false });
   const t = clean(b);
   if (!t.name || !EMAIL_RE.test(t.email)) return send(res, 422, { ok: false });
+  const kept = keepLead(t, ip);
   try {
     await transport.sendMail({
       from: MAIL_FROM, to: MAIL_TO, replyTo: `${t.name} <${t.email}>`,
-      subject: `\u2708 Boarding pass ${t.ref} \u00B7 ${t.name}${t.biz ? " \u00B7 " + t.biz : ""}`,
+      subject: `${SUBJECT_TAG} \u2708 Boarding pass ${t.ref} \u00B7 ${t.name}${t.biz ? " \u00B7 " + t.biz : ""}`,
       html: passHtml(t, "studio"), text: passText(t, "studio")
     });
     await transport.sendMail({
@@ -102,7 +119,8 @@ async function boarding(req, res) {
     return send(res, 200, { ok: true, ref: t.ref });
   } catch (e) {
     console.error("[mail]", e.message);
-    return send(res, 502, { ok: false });
+    // the message is safe on the server: the visitor gets their confirmation, the studio reads it from the file
+    return kept ? send(res, 200, { ok: true, ref: t.ref, mail: false }) : send(res, 502, { ok: false });
   }
 }
 
@@ -142,6 +160,19 @@ function serve(req, res) {
   };
   if (status === 404) headers["Cache-Control"] = "no-store";
   else if (req.headers["if-none-match"] === f.etag) { res.writeHead(304, headers); return res.end(); }
+  if (f.disk) {
+    const total = f.size, rg = status === 200 && req.headers.range && /^bytes=(\d*)-(\d*)$/.exec(req.headers.range);
+    let start = 0, end = total - 1, code = status;
+    if (rg) {
+      start = rg[1] ? Number(rg[1]) : total - Number(rg[2]); end = rg[1] && rg[2] ? Math.min(Number(rg[2]), total - 1) : total - 1;
+      if (start >= total || start < 0 || start > end) { res.writeHead(416, { "Content-Range": `bytes */${total}` }); return res.end(); }
+      code = 206; headers["Content-Range"] = `bytes ${start}-${end}/${total}`;
+    }
+    headers["Accept-Ranges"] = "bytes"; headers["Content-Length"] = end - start + 1;
+    res.writeHead(code, headers);
+    if (req.method === "HEAD") return res.end();
+    return void createReadStream(f.disk, { start, end }).on("error", () => res.destroy()).pipe(res);
+  }
   const ae = String(req.headers["accept-encoding"] || "");
   let buf = f.buf;
   if (f.br && /\bbr\b/.test(ae)) { buf = f.br; headers["Content-Encoding"] = "br"; }
@@ -211,6 +242,15 @@ http.createServer((req, res) => {
     return res.end();
   }
   if ((req.method === "GET" || req.method === "HEAD") && legacy(req, res)) return;
+  // the saved messages, for the studio only: GET /api/leads?key=<LEADS_KEY> (off unless LEADS_KEY is set)
+  if (req.url.startsWith("/api/leads") && process.env.LEADS_KEY) {
+    const key = new URL(req.url, "http://x").searchParams.get("key") || "";
+    if (key.length < 16 || key !== process.env.LEADS_KEY) { res.writeHead(404); return res.end(); }
+    let out = "";
+    for (const d of LEADS_DIRS) { try { out = readFileSync(join(d, "cromatic-leads.jsonl"), "utf8"); break; } catch {} }
+    res.writeHead(200, { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex" });
+    return res.end(out);
+  }
   if (req.url === "/api/boarding" && req.method === "POST") return void boarding(req, res).catch(() => send(res, 500, { ok: false }));
   if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405); return res.end(); }
   serve(req, res);

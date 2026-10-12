@@ -2629,41 +2629,6 @@
 903,
 217287
 ],
-"m:infinity-capital/canvas": [
-2400,
-562,
-159119
-],
-"m:infinity-capital/digital": [
-1600,
-1440,
-159999
-],
-"m:infinity-capital/identity": [
-1519,
-1600,
-121267
-],
-"m:infinity-capital/portrait": [
-1113,
-1400,
-175026
-],
-"m:infinity-capital/rollups": [
-880,
-1400,
-104492
-],
-"m:infinity-capital/stationery": [
-1539,
-1600,
-170059
-],
-"m:infinity-capital/web": [
-1600,
-1420,
-204163
-],
 "m:casa-berero/comm-can": [
 672,
 900,
@@ -3433,5 +3398,325 @@
 360,
 640,
 47323
+],
+"m:venevo/d1-app": [
+2000,
+1125,
+114838
+],
+"m:venevo/d1-blur": [
+2000,
+1125,
+33777
+],
+"m:venevo/d1-logo-orbit": [
+2000,
+1125,
+20273
+],
+"m:venevo/d1-logo-stack": [
+2000,
+1125,
+20201
+],
+"m:venevo/d1-site-hero": [
+2000,
+1125,
+65124
+],
+"m:venevo/d1-site-invest": [
+2000,
+1125,
+141795
+],
+"m:venevo/d1-site-story": [
+2000,
+1125,
+96488
+],
+"m:venevo/d1-stationery": [
+2000,
+1125,
+95352
+],
+"m:venevo/d1-type-colours": [
+2000,
+1125,
+69954
+],
+"m:venevo/d2-brand-sheet": [
+2000,
+1125,
+126533
+],
+"m:venevo/d2-devices-anim": [
+1600,
+900,
+1522050
+],
+"m:venevo/d2-laptop": [
+1274,
+1081,
+234551
+],
+"m:venevo/d2-logo-anim": [
+1600,
+900,
+88662
+],
+"m:venevo/d2-site-anim": [
+1600,
+900,
+2204814
+],
+"m:venevo/d2-universe": [
+2000,
+1125,
+203571
+],
+"m:venevo/d2-v-anim": [
+1600,
+900,
+238794
+],
+"m:venevo/gl-clear-space": [
+1414,
+2000,
+148164
+],
+"m:venevo/gl-colours": [
+1414,
+2000,
+124625
+],
+"m:venevo/gl-concept": [
+1414,
+2000,
+104110
+],
+"m:venevo/gl-cover": [
+1414,
+2000,
+99845
+],
+"m:venevo/gl-elements": [
+1414,
+2000,
+104216
+],
+"m:venevo/gl-fonts": [
+1414,
+2000,
+132435
+],
+"m:venevo/gl-key-visuals": [
+1414,
+2000,
+205980
+],
+"m:venevo/gl-logo-alternatives": [
+1414,
+2000,
+139290
+],
+"m:venevo/gl-logo-variations": [
+1414,
+2000,
+134952
+],
+"m:venevo/gl-logo": [
+1414,
+2000,
+104728
+],
+"m:venevo/gl-now-you-can": [
+2000,
+1415,
+86186
+],
+"m:venevo/gl-positioning": [
+1414,
+2000,
+110266
+],
+"m:venevo/gl-star": [
+2000,
+1415,
+52802
+],
+"m:venevo/gl-text": [
+1414,
+2000,
+133076
+],
+"m:venevo/gl-visuals": [
+1414,
+2000,
+210531
+],
+"m:venevo/landing-scroll": [
+1200,
+5189,
+437018
+],
+"m:venevo/macbook": [
+1920,
+1280,
+146215
+],
+"m:venevo/social-grid": [
+1158,
+1551,
+175792
+],
+"m:infinity-capital/card-1": [
+612,
+356,
+9627
+],
+"m:infinity-capital/card-2": [
+613,
+356,
+15144
+],
+"m:infinity-capital/card-3": [
+613,
+356,
+14350
+],
+"m:infinity-capital/doc-mock": [
+1600,
+1198,
+339770
+],
+"m:infinity-capital/doc": [
+1000,
+1549,
+72091
+],
+"m:infinity-capital/fonts": [
+1600,
+348,
+22747
+],
+"m:infinity-capital/img-dark": [
+1000,
+1497,
+63340
+],
+"m:infinity-capital/img-light": [
+1000,
+1498,
+128402
+],
+"m:infinity-capital/img-portrait": [
+1000,
+1500,
+93888
+],
+"m:infinity-capital/img-towers": [
+1000,
+1500,
+93932
+],
+"m:infinity-capital/kv-1": [
+1000,
+1527,
+107180
+],
+"m:infinity-capital/kv-2": [
+1000,
+1754,
+130499
+],
+"m:infinity-capital/logo-mist": [
+1316,
+538,
+19564
+],
+"m:infinity-capital/logo-slate": [
+1712,
+476,
+17776
+],
+"m:infinity-capital/pin-1": [
+766,
+1254,
+49206
+],
+"m:infinity-capital/pin-2": [
+998,
+1470,
+43260
+],
+"m:infinity-capital/ring": [
+988,
+974,
+39354
+],
+"m:infinity-capital/web-about": [
+900,
+1519,
+92440
+],
+"m:infinity-capital/web-article": [
+1600,
+798,
+67275
+],
+"m:infinity-capital/web-home": [
+1600,
+1187,
+154645
+],
+"m:infinity-capital/web": [
+1600,
+900,
+34742
+],
+"m:infinity-capital/wm-0": [
+52,
+213,
+620
+],
+"m:infinity-capital/wm-1": [
+188,
+213,
+2276
+],
+"m:infinity-capital/wm-2": [
+123,
+213,
+954
+],
+"m:infinity-capital/wm-3": [
+52,
+213,
+586
+],
+"m:infinity-capital/wm-4": [
+189,
+213,
+2236
+],
+"m:infinity-capital/wm-5": [
+52,
+213,
+640
+],
+"m:infinity-capital/wm-6": [
+174,
+213,
+746
+],
+"m:infinity-capital/wm-7": [
+171,
+213,
+1948
+],
+"m:infinity-capital/wm-sub": [
+722,
+62,
+6626
 ]
 }

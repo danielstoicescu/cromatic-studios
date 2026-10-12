@@ -2,7 +2,8 @@
 // stylesheet and a few lines of script; no WebGL. `A(name)` resolves an asset variable from
 // src/app.js to { src, w, h } (src is root-relative, e.g. /assets/abc.png).
 import { NAV, CHAPTERS, SERVICES, PROJECTS, STREETS, CLIENT_BADGES, FRIENDS, CREW, CREW_INFO, CREW_COLORS, CREW_PHOTOS, CREW_FACE_VARS, FORM, CASES, CANVASES, OFFICES } from "./data.mjs";
-import { STUDIO, FAQ } from "../build/seo.mjs";
+import { STUDIO, FAQ, studioNode } from "../build/seo.mjs";
+import { SAME_AS } from "../build/seo-pages.mjs";
 const HUBS = await import("./hubs.mjs").catch(() => ({}));
 const INDUSTRIES = HUBS.INDUSTRIES || [], SERVICE_PAGES = HUBS.SERVICE_PAGES || [];
 
@@ -52,7 +53,7 @@ export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz, canvases = {} 
 <noscript><link rel="stylesheet" href="${fonts}"></noscript>
 <link rel="stylesheet" href="${cssHref}">
 <script src="${jsHref}" defer></script>
-${kz ? `<script>try{if(location.pathname==="/site/"&&!matchMedia("(prefers-reduced-motion: reduce)").matches){document.documentElement.classList.add("kz-play");window.__kzT=setTimeout(function(){document.documentElement.classList.remove("kz-play")},5000)}}catch(e){}</script>` : ""}
+${kz ? `<script>try{if(location.pathname==="/site/"&&!matchMedia("(prefers-reduced-motion: reduce)").matches){if(matchMedia("(max-width: 860px), (pointer: coarse)").matches){document.documentElement.classList.add("kz-late")}else{document.documentElement.classList.add("kz-play");window.__kzT=setTimeout(function(){document.documentElement.classList.remove("kz-play")},5000)}}}catch(e){}</script>` : ""}
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>` : ""}
 </head><body${kz ? ` data-kz-js="${kz.js}" data-kz-css="${kz.css}"` : ""}>`;
 
@@ -91,7 +92,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     </div>
   </div>
   <div class="wrap ftr-motto"><span class="cupspin" aria-hidden="true"></span><p>There is always a coffee.</p></div>
-  <p class="wrap ftr-note mono">© ${new Date().getFullYear()} Cromatic Studios · Strada Olari 9, Bucharest · since 2014</p>
+  <p class="wrap ftr-note mono">© ${new Date().getFullYear()} Cromatic Studios · Strada Olari 9, Bucharest · since 2014 · <a href="#cookies" data-cookies>Cookies</a></p>
 </footer>
 </body></html>`;
 
@@ -143,7 +144,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   ];
   const DOMAIN_OF = {
     "Investimental": "ux", "Assetto": "ux", "The Aesthetic Court": "ux", "Craft Coffee": "ux", "ESD": "ux", "Techventures Bank": "ux", "Elithia": "ux",
-    "Flask": "ux", "Witanalitica": "ux", "Printoteca": "ux", "Artisan Coffee Gear": "ux", "Altius": "ux",
+    "Venevo": "ux", "Witanalytica": "ux", "Printoteca": "ux", "Artisan Coffee Gear": "ux", "Altius": "ux",
     "Yoshi Izakaya": "growth", "Help 4 Brain": "growth", "Zoetis": "growth", "Echo School": "growth", "Coffeenativ": "growth", "Sticker Republic": "growth",
     "Pain Plaisir": "video", "Clinica Sante": "video", "Patiline": "video"
   };
@@ -203,8 +204,8 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   const SITE_TITLE = "Cromatic Studios: brand strategy, identity, web & film in Bucharest";
   function home(covers = {}) {
     const ld = { "@context": "https://schema.org", "@graph": [
-      { "@type": ["Organization", "ProfessionalService"], "@id": `${SITE}/#studio`, name: STUDIO.name, url: `${SITE}/`, logo: `${SITE}/icon-512.png`, email: STUDIO.email, telephone: STUDIO.phone, foundingDate: STUDIO.founded, address: { "@type": "PostalAddress", streetAddress: STUDIO.street, postalCode: STUDIO.postalCode, addressLocality: "Bucharest", addressCountry: STUDIO.country } },
-      { "@type": "WebSite", "@id": `${SITE}/#website`, url: `${SITE}/`, name: "Cromatic Studios", publisher: { "@id": `${SITE}/#studio` }, inLanguage: "en" },
+      studioNode(SITE, SAME_AS),
+      { "@type": "WebSite", "@id": `${SITE}/#website`, url: `${SITE}/`, name: "Cromatic Studios", publisher: { "@id": `${SITE}/#studio` }, inLanguage: ["en", "ro"] },
       { "@type": "WebPage", "@id": `${SITE}/site/#page`, url: `${SITE}/site/`, name: SITE_TITLE, isPartOf: { "@id": `${SITE}/#website` }, about: { "@id": `${SITE}/#studio` }, mainEntity: { "@id": `${SITE}/site/#faq` }, inLanguage: "en" },
       { "@type": "FAQPage", "@id": `${SITE}/site/#faq`, mainEntity: FAQ.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) },
       { "@type": "ItemList", "@id": `${SITE}/site/#work`, name: "Case studies by Cromatic Studios", itemListElement: PROJECTS.filter((p) => p.page).filter((p, i, a) => a.findIndex((q) => q.page === p.page) === i).map((p, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}/work/${p.page}/`, name: p.name })) },
@@ -429,6 +430,8 @@ ${footer}`;
 
   // a brand canvas as a horizontal page: the artboard's elements, each positioned exactly where
   // it sits on the board, revealed as the board slides past
+  // r134h: a meta description ends on a whole sentence (or a whole word), never mid-word
+  const shortDesc = (t, max = 158) => { t = String(t).replace(/\s+/g, " ").trim(); if (t.length <= max) return t; const cut = t.slice(0, max); const dot = cut.lastIndexOf(". "); return dot > 80 ? cut.slice(0, dot + 1) : cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:·-]$/, "") + "…"; };
   function canvasPage(slug) {
     const d = CANVASES[slug], cv = canvases[slug];
     const p = PROJECTS.find((x) => x.page === slug);
@@ -444,7 +447,7 @@ ${footer}`;
       ] }
     ] };
     const kindOf = (it) => it.kind === "img" ? "k-img" : it.box[0] < W * 0.145 ? "k-txt" : (it.box[2] - it.box[0]) < 230 && (it.box[3] - it.box[1]) < 260 ? "k-mas" : "k-vec";
-    return `${head({ title: `${d.name} · Brand canvas · Cromatic Studios`, desc: d.lead.slice(0, 158), path: `/work/${slug}/`, image: `${base}/${bg ? bg.file : items[0].file}`, ld })}
+    return `${head({ title: `${d.name} · Brand canvas · Cromatic Studios`, desc: shortDesc(d.lead), path: `/work/${slug}/`, image: (p?.img && A(p.img)?.src) || `${base}/${bg ? bg.file : items[0].file}`, ld })}
 ${header(false)}
 <main id="main" class="case cv-page" style="--bc:${d.c};--bt:${d.t}">
   <section class="c-hero cv-hero">

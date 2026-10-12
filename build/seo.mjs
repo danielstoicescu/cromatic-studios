@@ -59,39 +59,45 @@ export const FAQ = [
 // AI crawlers that do not run JavaScript still get the full story from the text version
 const BOTS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "Claude-User", "PerplexityBot", "Perplexity-User", "Google-Extended", "Applebot-Extended", "CCBot", "Meta-ExternalAgent", "Bingbot", "Googlebot"];
 
+// r134h: the one description of the studio, on every page that names it
+export function studioNode(SITE, SAME_AS = [STUDIO.legalUrl]) {
+  const studio = `${SITE}/#studio`;
+  return {
+    "@type": ["Organization", "ProfessionalService"],
+    "@id": studio,
+    name: STUDIO.name,
+    url: `${SITE}/`,
+    sameAs: SAME_AS,
+    logo: { "@type": "ImageObject", url: `${SITE}/icon-512.png`, width: 512, height: 512 },
+    image: `${SITE}/og.jpg`,
+    description: STUDIO.description,
+    email: STUDIO.email,
+    telephone: STUDIO.phone,
+    foundingDate: STUDIO.founded,
+    foundingLocation: { "@type": "Place", name: "Strada Muniției 5, Bucharest" },
+    founder: { "@type": "Person", "@id": `${SITE}/#daniel`, name: STUDIO.founder.name, jobTitle: STUDIO.founder.jobTitle, sameAs: STUDIO.founder.sameAs, worksFor: { "@id": studio } },
+    employee: [{ "@id": `${SITE}/#daniel` }, { "@type": "Person", "@id": `${SITE}/#cristian`, name: STUDIO.ceo.name, jobTitle: STUDIO.ceo.jobTitle, worksFor: { "@id": studio } }],
+    address: { "@type": "PostalAddress", streetAddress: STUDIO.street, postalCode: STUDIO.postalCode, addressLocality: "Bucharest", addressRegion: STUDIO.city, addressCountry: STUDIO.country },
+    geo: { "@type": "GeoCoordinates", latitude: STUDIO.geo.lat, longitude: STUDIO.geo.lng },
+    hasMap: "https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti",
+    slogan: "Killer strategy. Outstanding design. Striking visuals. Powerful storytelling.",
+    contactPoint: { "@type": "ContactPoint", contactType: "new projects", email: STUDIO.email, telephone: STUDIO.phone, availableLanguage: ["English", "Romanian"] },
+    areaServed: [{ "@type": "Country", name: "Romania" }, { "@type": "Place", name: "European Union" }],
+    knowsAbout: ["Brand strategy", "Brand identity", "Visual identity design", "UX design", "UI design", "Web design", "Video production", "Photography", "Content strategy", "Social media growth", "Specialty coffee branding"],
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "Services",
+      itemListElement: SERVICES.map(([name, description]) => ({ "@type": "Offer", itemOffered: { "@type": "Service", name, description, provider: { "@id": studio } } }))
+    }
+  };
+}
+
 export function jsonLd(SITE, PROJECTS = [], SAME_AS = [STUDIO.legalUrl]) {
   const studio = `${SITE}/#studio`;
   const work = PROJECTS.length ? PROJECTS.filter((p) => p.page && !p.small).filter((p, i, a) => a.findIndex((q) => q.page === p.page) === i).map((p) => [p.name, p.cat, p.desc, `${SITE}/work/${p.page}/`]) : WORK;
   const graph = [
-    {
-      "@type": ["Organization", "ProfessionalService"],
-      "@id": studio,
-      name: STUDIO.name,
-      url: `${SITE}/`,
-      sameAs: SAME_AS,
-      logo: { "@type": "ImageObject", url: `${SITE}/icon-512.png`, width: 512, height: 512 },
-      image: `${SITE}/og.jpg`,
-      description: STUDIO.description,
-      email: STUDIO.email,
-      telephone: STUDIO.phone,
-      foundingDate: STUDIO.founded,
-      foundingLocation: { "@type": "Place", name: "Strada Muniției 5, Bucharest" },
-      founder: { "@type": "Person", "@id": `${SITE}/#daniel`, name: STUDIO.founder.name, jobTitle: STUDIO.founder.jobTitle, sameAs: STUDIO.founder.sameAs, worksFor: { "@id": studio } },
-      employee: [{ "@id": `${SITE}/#daniel` }, { "@type": "Person", "@id": `${SITE}/#cristian`, name: STUDIO.ceo.name, jobTitle: STUDIO.ceo.jobTitle, worksFor: { "@id": studio } }],
-      address: { "@type": "PostalAddress", streetAddress: STUDIO.street, postalCode: STUDIO.postalCode, addressLocality: "Bucharest", addressRegion: STUDIO.city, addressCountry: STUDIO.country },
-      geo: { "@type": "GeoCoordinates", latitude: STUDIO.geo.lat, longitude: STUDIO.geo.lng },
-      hasMap: "https://www.google.com/maps/search/?api=1&query=Cromatic+Studios+Strada+Olari+9+Bucuresti",
-      slogan: "Killer strategy. Outstanding design. Striking visuals. Powerful storytelling.",
-      contactPoint: { "@type": "ContactPoint", contactType: "new projects", email: STUDIO.email, telephone: STUDIO.phone, availableLanguage: ["English", "Romanian"] },
-      areaServed: [{ "@type": "Country", name: "Romania" }, { "@type": "Place", name: "European Union" }],
-      knowsAbout: ["Brand strategy", "Brand identity", "Visual identity design", "UX design", "UI design", "Web design", "Video production", "Photography", "Content strategy", "Social media growth", "Specialty coffee branding"],
-      hasOfferCatalog: {
-        "@type": "OfferCatalog",
-        name: "Services",
-        itemListElement: SERVICES.map(([name, description]) => ({ "@type": "Offer", itemOffered: { "@type": "Service", name, description, provider: { "@id": studio } } }))
-      }
-    },
-    { "@type": "WebSite", "@id": `${SITE}/#website`, url: `${SITE}/`, name: "Cromatic Studios", alternateName: "Cromatic Studios · Navigation Mode", inLanguage: "en", publisher: { "@id": studio } },
+    studioNode(SITE, SAME_AS),
+    { "@type": "WebSite", "@id": `${SITE}/#website`, url: `${SITE}/`, name: "Cromatic Studios", alternateName: "Cromatic Studios · Navigation Mode", inLanguage: ["en", "ro"], publisher: { "@id": studio } },
     {
       "@type": "WebPage",
       "@id": `${SITE}/#page`,
@@ -152,7 +158,7 @@ This site (${SITE}/) tells the studio's story twice: as an interactive 3D drive 
 - Works with: indie and local businesses, startups, scale-ups and established companies, in Romania and abroad (Paris, Barcelona, Los Angeles)
 - Known for: specialty coffee brands (Slow Coffee Festival, Two Minutes, Steam, Craft Coffee, Artisan Coffee Gear, OMA Coffee), fintech and banking (Investimental, Assetto, Techventures Bank, Unchain Festival), medical and aesthetic medicine (Toskani MED, The Aesthetic Court, Elithia, Clinica Sante)
 - Team (${CREW.length}): ${CREW.map((n) => CREW_INFO[n]?.role ? `${n} (${CREW_INFO[n].role})` : n).join(", ")}
-- Main website: ${STUDIO.legalUrl}
+- Main website: ${SITE}/ (the plain website: ${SITE}/site/, in Romanian: ${SITE}/ro/)
 - Profiles: ${(D.SAME_AS || []).filter((u) => u !== STUDIO.legalUrl).join(", ")}
 
 ## Services

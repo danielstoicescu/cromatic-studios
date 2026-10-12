@@ -37,7 +37,7 @@ function walk(node, out) {
     const kids = el.childNodes.filter((c) => c.nodeType === 1);
     // a title made of pills (<h2 class="ptitle">, <span class="pill-title">): translated as one phrase, the pills
     // separated by " | " ("The | crew" -> "Iată | echipa"), so Romanian word order can move across the pills
-    if (/\b(?:ptitle|pill-title)\b/.test(el.getAttribute("class") || "") && kids.length > 1 && kids.every((c) => /\bpill\b/.test(c.getAttribute("class") || ""))) {
+    if ((/\b(?:ptitle|pill-title)\b/.test(el.getAttribute("class") || "") || /^h[1-6]$/.test(tag)) && kids.length > 1 && kids.every((c) => /\bpill\b/.test(c.getAttribute("class") || "")) && !el.childNodes.some((c) => c.nodeType === 3 && hasWords(c.rawText))) {
       out.push({ el, pills: kids, key: kids.map((c) => norm(c.innerHTML)).join(" | ") }); continue;
     }
     // a title set word by word (<span class="w">): one block, rebuilt word by word

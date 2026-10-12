@@ -14,6 +14,8 @@ export const VIDEO_SOUND = `<style>.vs-btn{position:absolute;right:10px;bottom:1
 export const WORK_TITLES = {
   "two-minutes": "Two Minutes: coffee brand, packaging & film",
   "oma-coffee": "OMA Coffee Brașov: specialty coffee branding",
+  "venevo": "Venevo: fintech brand identity & website",
+  "witanalitica": "Witanalytica: business intelligence brand identity",
   "sip-coffee-wine": "Sip Coffee & Wine: café identity & social launch",
   "pain-plaisir": "Pain Plaisir: bakery film, photo & product design",
   "yoshi-izakaya": "Yoshi Izakaya: restaurant content & social",
@@ -29,7 +31,7 @@ export const WORK_TITLES = {
   "patiline": "Patiline: bakery rebrand, website & photography",
   "bepco": "Bepco: energy company brand & digital",
   "investimental": "Investimental: retail broker UX & UI design",
-  "infinity-capital": "Infinity Capital: investment brand & app",
+  "infinity-capital": "Infinity Capital: investment brand & website",
   "assetto": "Assetto: fintech product & brand design",
   "longshield": "Longshield: investment group brand & website",
   "esd": "ESD: electronics service rebranding & website",
@@ -55,7 +57,6 @@ export const WORK_DESCS = {
 };
 
 export const SAME_AS = [
-  "https://cromaticstudios.com/",
   "https://www.instagram.com/cromatic.studios/",
   "https://www.facebook.com/CromaticStudios",
   "https://www.behance.net/cromaticstudios",
