@@ -22,7 +22,7 @@
     }), { rootMargin: "200px 0px" });
     vids.forEach((v) => io.observe(v));
     // gentle reveal
-    const rv = [...d.querySelectorAll(".chap, .pcard, .svc, .tl li, .qa details, .cblock, .photos figure")];
+    const rv = [...d.querySelectorAll(".chap, .pcard, .bcard, .svc, .tl li, .qa details, .cblock, .photos figure")];
     const io2 = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io2.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });
     rv.forEach((el, i) => { el.classList.add("rv"); el.style.transitionDelay = `${(i % 3) * 70}ms`; io2.observe(el); });
   } else vids.forEach((v) => { v.src = v.dataset.src; });

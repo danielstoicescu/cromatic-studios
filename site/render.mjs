@@ -128,7 +128,50 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     </div>
   </form>`;
 
-  function home() {
+  // r130j: the portfolio on the lo-fi site is the map's, organised by what we do (3 + 1 domains), in a bento grid
+  // of mixed sizes. Every card has a picture: its own media, else the map card's cover (case page og image or the
+  // place's own photo, from covers.json), else its poster in the brand's colours.
+  const DOMAINS = [
+    { k: "brand", t: "Branding & Design", c: "#28C840", lead: "Strategy, names, identities, packaging: brands people repeat when you are not in the room." },
+    { k: "ux", t: "UX & UI Design", c: "#B098C8", lead: "Websites, apps and products, from the first flow to the last pixel." },
+    { k: "growth", t: "Growth & Content", c: "#F65342", lead: "Content, social and campaigns with taste, not tricks." },
+    { k: "video", t: "Video Production", c: "#FED012", lead: "And one more: film, photo and sound, made in house.", plus: true }
+  ];
+  const DOMAIN_OF = {
+    "Investimental": "ux", "Assetto": "ux", "The Aesthetic Court": "ux", "Craft Coffee": "ux", "ESD": "ux", "Techventures Bank": "ux", "Elithia": "ux",
+    "Flask": "ux", "Witanalitica": "ux", "Printoteca": "ux", "Artisan Coffee Gear": "ux", "Altius": "ux",
+    "Yoshi Izakaya": "growth", "Help 4 Brain": "growth", "Zoetis": "growth", "Echo School": "growth", "Coffeenativ": "growth", "Sticker Republic": "growth",
+    "Pain Plaisir": "video", "Clinica Sante": "video", "Patiline": "video"
+  };
+  // sizes that tile six columns: a big square with two wides beside it, a tall one with two longs, a row of
+  // three small, a long and a small, two halves; then again
+  const SIZES = ["xl", "m", "m", "t", "w", "w", "s", "s", "s", "w", "s", "m", "m"];
+  const MAP_ID = { "Two Min Lab": "lab", "Steam Coffee Shop": "steam", "Zdrovit": "zdrovit", "Lacalut": "y-0", "Litorsal": "y-5" };
+  const placeId = (name) => "w-" + name.replace(/\W+/g, "").toLowerCase();
+  const coverFor = (p, covers) => (MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]]) || covers["place:" + placeId(p.name)] || (p.page && covers[p.page]) || null;
+  const bentoCard = (p, i, covers) => {
+    const own = MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]];
+    const media = own ? `<img src="${own}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : p.vid ? vid(p.vid, p.img) : p.img ? img(p.img, p.name) : (() => { const u = coverFor(p, covers); return u ? `<img src="${u}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : ""; })();
+    const size = SIZES[i % SIZES.length];
+    const inner = `${media ? `<span class="bc-media">${media}</span>` : `<span class="bc-poster">${esc(p.poster)}</span>`}
+      <span class="bc-body"><span class="bc-cat mono">${esc(p.cat)}</span><span class="bc-name">${esc(p.name)}</span><span class="bc-desc">${esc(p.desc)}</span>
+      ${p.page ? `<span class="bc-cta">Read the case <i>→</i></span>` : p.wip ? `<span class="bc-cta mono">Work in progress</span>` : ""}</span>`;
+    const cls = `bcard b-${size}${media ? " has-media" : ""}`;
+    return p.page ? `<a class="${cls}" href="/work/${p.page}/" style="--bc:${p.c};--bt:${p.t}">${inner}</a>` : `<article class="${cls}" style="--bc:${p.c};--bt:${p.t}">${inner}</article>`;
+  };
+  const workByDomain = (covers) => DOMAINS.map((d) => {
+    const list = PROJECTS.filter((p) => !p.small && (DOMAIN_OF[p.name] || "brand") === d.k)
+      .map((p) => ({ p, w: (p.page ? 2 : 0) + (p.img || p.vid || coverFor(p, covers) ? 1 : 0) }))
+      .sort((a, b) => b.w - a.w).map((x) => x.p);
+    const small = d.k === "brand" ? PROJECTS.filter((p) => p.small) : [];
+    return `<div class="dom" style="--dc:${d.c}">
+      <h3 class="dom-h">${d.plus ? `<b class="dom-plus mono">+1</b>` : ""}<span class="dom-sw"></span>${esc(d.t)}<i class="mono">${list.length} projects</i></h3>
+      <p class="dom-lead">${esc(d.lead)}</p>
+      <div class="bento">${list.map((p, i) => bentoCard(p, i, covers)).join("")}</div>
+      ${small.length ? `<div class="psmall"><span class="mono ps-h">In the Zdrovit yard</span>${small.map((p) => `<span class="ps" style="--bc:${p.c};--bt:${p.t}"><b>${esc(p.name)}</b><i class="mono">${esc(p.cat)}</i></span>`).join("")}</div>` : ""}
+    </div>`;
+  }).join("");
+  function home(covers = {}) {
     const ld = { "@context": "https://schema.org", "@graph": [
       { "@type": "WebPage", "@id": `${SITE}/site/#page`, url: `${SITE}/site/`, name: "Cromatic Studios · Branding, web & film studio in Bucharest", isPartOf: { "@id": `${SITE}/#website` }, about: { "@id": `${SITE}/#studio` }, inLanguage: "en" },
       { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Cromatic Studios", item: `${SITE}/site/` }] }
@@ -198,14 +241,8 @@ ${header(true)}
     <div class="wrap">
       <p class="eyebrow mono">Selected work</p>
       <h2 class="ptitle">${pill("Every place", "#FED012", -1.5)}${pill("on the map", "#B098C8", 1)}</h2>
-      <p class="sec-lead">The same work as the 3D map, street by street: the coffee brands we grew up with, fintech, clinics and the little shops on the shortcut.</p>
-      ${Object.entries(STREETS).map(([k, [sn, sc]]) => {
-        const list = PROJECTS.filter((p) => p.street === k);
-        const big = list.filter((p) => !p.small), small = list.filter((p) => p.small);
-        return `<h3 class="street-h" style="--sc:${sc}"><span></span>${esc(sn)}<i class="mono">${list.length} places</i></h3>
-      <div class="pgrid">${big.map(projectCard).join("")}</div>
-      ${small.length ? `<div class="psmall">${small.map((p) => `<span class="ps" style="--bc:${p.c};--bt:${p.t}"><b>${esc(p.name)}</b><i class="mono">${esc(p.cat)}</i></span>`).join("")}</div>` : ""}`;
-      }).join("")}
+      <p class="sec-lead">The same work as the 3D map, by what we did for it: three things we do every day, and one more.</p>
+      ${workByDomain(covers)}
       <p class="friends"><span class="mono">Friends we made along the way</span> ${FRIENDS.map((f) => `<span class="fpill">${esc(f)}</span>`).join("")}</p>
     </div>
   </section>

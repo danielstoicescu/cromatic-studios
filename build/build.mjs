@@ -196,7 +196,6 @@ const page = (path, html) => {
     if (u && !/\/og\.jpg$/.test(u)) COVERS[m[1]] = u;
   }
 };
-page("site", R.home());
 for (const slug of R.slugs) page(`work/${slug}`, R.casePage(slug));
 for (const slug of R.canvasSlugs) page(`work/${slug}`, R.canvasPage(slug));
 // Steam keeps its own designed case study page, given a canonical URL and a way back
@@ -235,6 +234,8 @@ for (const [id, k] of Object.entries({ steam: "m:cs/Steam-Cromaticstudios-1", la
   if (a) COVERS["place:" + id] = a.src; else console.warn(`[build] covers: missing ${k}`);
 }
 writeFileSync(join(pub, "covers.json"), JSON.stringify(COVERS));
+// r130j: the home page last, so its portfolio can use the covers of every case page and place
+page("site", R.home(COVERS));
 const workPaths = [...new Set([...R.slugs, ...R.canvasSlugs, ...caseSlugs, "steam"])].map((s) => `/work/${s}/`);
 writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, new Date().toISOString().slice(0, 10), ["/site/", ...workPaths]));
 
