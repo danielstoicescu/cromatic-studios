@@ -27327,7 +27327,7 @@ void main() {
     // r130m: out of the Zdrovit yard, on their own: Clinica Dr. K and Toskani MED across the avenue, Sofmedica with
     // a small yard of its own and Medcity, the clinic, inside it (buildSofmedicaYard)
     { br: "C", name: "Clinica Dr. K", logo: "logoDrK", x: 1420, z: 4935, face: "+x", kind: "house", w: 58, d: 44, h: 32, wall: "#f6efe9", accent: "#b88a6e", c: "#b88a6e", t: "#ffffff", line: "AESTHETICS MEDICAL CENTER" },
-    { br: "C", name: "Toskani MED", x: 1420, z: 5170, face: "+x", kind: "barcelona", w: 60, d: 46, h: 36, wall: "#f3e6cf", accent: "#e8a33d", c: "#E8A33D", t: "#2a1a05", line: "AESTHETIC MEDICINE \xB7 BARCELONA", desc: "Aesthetic non-invasive solutions for caring doctors, from Barcelona. We found their core, their archetype and two visual concepts, then the packaging for new ranges and a conference booth." },
+    { br: "C", name: "Toskani MED", x: 1420, z: 5170, face: "+x", kind: "barcelona", w: 60, d: 46, h: 36, wall: "#f3e6cf", accent: "#e8a33d", c: "#E8A33D", t: "#2a1a05", line: "AESTHETIC MEDICINE \xB7 BARCELONA", desc: "Aesthetic non-invasive solutions for caring doctors, from Barcelona. We found their core, their archetype and two visual concepts, then the packaging for new ranges." },
     { br: "C", name: "Sofmedica", x: 1630, z: 4905, face: "-x", kind: "house", w: 58, d: 44, h: 34, wall: "#f4f4f0", accent: "#2b6fd6", c: "#2b6fd6", t: "#ffffff", line: "MEDICAL \xB7 A YARD WITH A CLINIC" },
     { br: "C", name: "Medcity", x: 1780, z: 4900, face: "-x", kind: "house", w: 52, d: 40, h: 30, wall: "#eef6f4", accent: "#18a39b", c: "#18a39b", t: "#ffffff", line: "CLINIC \xB7 IN THE SOFMEDICA YARD" },
   ];
@@ -28181,9 +28181,14 @@ void main() {
         const ls = [...inner.children], pool = "ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&*@!?/0123456789";
         ls.forEach((l) => { l.dataset.c = l.textContent; });
         const t0 = performance.now() + d, dur = 600;
+        // r131: each letter keeps the width of its final glyph while it scrambles, so the word never
+        // reflows (on phones the pill used to jump between one and two lines: layout shift, jitter)
+        let locked = false;
+        const lock = (on) => ls.forEach((l) => { if (on) { const w = parseFloat(getComputedStyle(l).width) || l.offsetWidth; l.style.display = "inline-block"; l.style.width = `${w}px`; l.style.textAlign = "center"; l.style.whiteSpace = "pre"; } else { l.style.width = l.style.display = l.style.textAlign = l.style.whiteSpace = ""; } });
         const tick = () => { if (t !== token) return; const k2 = (performance.now() - t0) / dur; if (k2 < 0) { requestAnimationFrame(tick); return; }
+          if (!locked) { lock(true); locked = true; }
           ls.forEach((l, j) => { const done2 = k2 > (j + 1) / ls.length; l.textContent = done2 ? l.dataset.c : pool[(Math.random() * pool.length) | 0]; l.style.opacity = done2 ? 1 : 0.55; });
-          if (k2 < 1) requestAnimationFrame(tick); };
+          if (k2 < 1) requestAnimationFrame(tick); else lock(false); };
         requestAnimationFrame(tick);
         return pillDrop(inner, d);
       }
@@ -33206,8 +33211,9 @@ void main() {
       if (e.key === "Escape") closeModal();
     });
     // r99: a human opens in a side panel: the whole portrait, a few lines, their profiles if they have them
-    const humanPanel = el("aside", "human-panel hidden");
+    const humanPanel = el("div", "human-panel hidden");
     humanPanel.setAttribute("role", "dialog");
+    humanPanel.setAttribute("aria-label", "Crew member");
     root.appendChild(humanPanel);
     const openHumanPanel = (i) => {
       const n = CREW.length, name = CREW[i], info = CREW_INFO[name] || {}, col = CREW_COLORS[i % CREW_COLORS.length];

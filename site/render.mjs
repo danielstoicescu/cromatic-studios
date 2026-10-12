@@ -165,19 +165,24 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       .sort((a, b) => b.w - a.w).map((x) => x.p);
     const small = d.k === "brand" ? PROJECTS.filter((p) => p.small) : [];
     return `<div class="dom" style="--dc:${d.c}">
-      <h3 class="dom-h">${d.plus ? `<b class="dom-plus mono">+1</b>` : ""}<span class="dom-sw"></span>${esc(d.t)}<i class="mono">${list.length} projects</i></h3>
+      <h3 class="dom-h">${d.plus ? `<b class="dom-plus mono">+1</b> ` : ""}<span class="dom-sw"></span>${esc(d.t)} <i class="mono">${list.length} projects</i></h3>
       <p class="dom-lead">${esc(d.lead)}</p>
       <div class="bento">${list.map((p, i) => bentoCard(p, i, covers)).join("")}</div>
       ${small.length ? `<div class="psmall"><span class="mono ps-h">In the Zdrovit yard</span>${small.map((p) => `<span class="ps" style="--bc:${p.c};--bt:${p.t}"><b>${esc(p.name)}</b><i class="mono">${esc(p.cat)}</i></span>`).join("")}</div>` : ""}
     </div>`;
   }).join("");
+  const SITE_TITLE = "Cromatic Studios: brand strategy, identity, web & film in Bucharest";
   function home(covers = {}) {
     const ld = { "@context": "https://schema.org", "@graph": [
-      { "@type": "WebPage", "@id": `${SITE}/site/#page`, url: `${SITE}/site/`, name: "Cromatic Studios · Branding, web & film studio in Bucharest", isPartOf: { "@id": `${SITE}/#website` }, about: { "@id": `${SITE}/#studio` }, inLanguage: "en" },
+      { "@type": ["Organization", "ProfessionalService"], "@id": `${SITE}/#studio`, name: STUDIO.name, url: `${SITE}/`, logo: `${SITE}/icon-512.png`, email: STUDIO.email, telephone: STUDIO.phone, foundingDate: STUDIO.founded, address: { "@type": "PostalAddress", streetAddress: STUDIO.street, postalCode: STUDIO.postalCode, addressLocality: "Bucharest", addressCountry: STUDIO.country } },
+      { "@type": "WebSite", "@id": `${SITE}/#website`, url: `${SITE}/`, name: "Cromatic Studios", publisher: { "@id": `${SITE}/#studio` }, inLanguage: "en" },
+      { "@type": "WebPage", "@id": `${SITE}/site/#page`, url: `${SITE}/site/`, name: SITE_TITLE, isPartOf: { "@id": `${SITE}/#website` }, about: { "@id": `${SITE}/#studio` }, mainEntity: { "@id": `${SITE}/site/#faq` }, inLanguage: "en" },
+      { "@type": "FAQPage", "@id": `${SITE}/site/#faq`, mainEntity: FAQ.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) },
+      { "@type": "ItemList", "@id": `${SITE}/site/#work`, name: "Case studies by Cromatic Studios", itemListElement: PROJECTS.filter((p) => p.page).filter((p, i, a) => a.findIndex((q) => q.page === p.page) === i).map((p, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}/work/${p.page}/`, name: p.name })) },
       { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Cromatic Studios", item: `${SITE}/site/` }] }
     ] };
     const hero = ["sP25b", "tmCover", "steamCoverImg"];
-    return `${head({ title: "Cromatic Studios · Branding, web & film studio in Bucharest", desc: STUDIO.description + " Strategy, identity, websites, video and content for indie brands, startups and established companies.", path: "/site/", ld })}
+    return `${head({ title: SITE_TITLE, desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, film and content for indie brands, startups and established companies.", path: "/site/", ld })}
 ${header(true)}
 <main id="main">
   <section class="hero hero-kz">
@@ -210,7 +215,7 @@ ${header(true)}
   <section class="road" aria-label="The coffee stop on the drive">
     <div class="wrap road-head">
       <p class="eyebrow mono">A piece of the drive · Strada Aricescu 52A</p>
-      <h2 class="ptitle">${pill("The coffee", "#FED012", -1.5)}${pill("stop", "#F2A9C4", 1)}</h2>
+      <h2 class="ptitle">${pill("The coffee", "#FED012", -1.5)} ${pill("stop", "#F2A9C4", 1)}</h2>
       <p class="sec-lead">Two Minutes has been our client and our neighbour for a decade. On the drive we always stop here: four double espressos, and the coffee boxes fly down from the Cromatic mansard to the shelf.</p>
     </div>
     <div class="road-scene road-video">
@@ -224,7 +229,7 @@ ${header(true)}
   <section id="what" class="sec">
     <div class="wrap">
       <p class="eyebrow mono">What we bring to the table</p>
-      <h2 class="ptitle">${pill("From a dream", "#28C840", -1.5)}${pill("to a crowd", "#F65342", 1)}</h2>
+      <h2 class="ptitle">${pill("From a dream", "#28C840", -1.5)} ${pill("to a crowd", "#F65342", 1)}</h2>
       <div class="chapters">
         ${CHAPTERS.map((c) => `<article class="chap" style="--cc:${c.c}">
           <span class="chap-k mono">${c.k}</span>
@@ -240,7 +245,7 @@ ${header(true)}
   <section id="work" class="sec sec-alt">
     <div class="wrap">
       <p class="eyebrow mono">Selected work</p>
-      <h2 class="ptitle">${pill("Every place", "#FED012", -1.5)}${pill("on the map", "#B098C8", 1)}</h2>
+      <h2 class="ptitle">${pill("Every place", "#FED012", -1.5)} ${pill("on the map", "#B098C8", 1)}</h2>
       <p class="sec-lead">The same work as the 3D map, by what we did for it: three things we do every day, and one more.</p>
       ${workByDomain(covers)}
       <p class="friends"><span class="mono">Friends we made along the way</span> ${FRIENDS.map((f) => `<span class="fpill">${esc(f)}</span>`).join("")}</p>
@@ -265,7 +270,7 @@ ${header(true)}
     <div class="wrap studio">
       <div>
         <p class="eyebrow mono">The crew</p>
-        <h2 class="ptitle">${pill("Brilliant", "#28C840", -2)}${pill("humans", "#B098C8", 1.5)}</h2>
+        <h2 class="ptitle">${pill("Brilliant", "#28C840", -2)} ${pill("humans", "#B098C8", 1.5)}</h2>
         <p class="sec-lead">We discover AI every day, but we are strong believers in the collective power of brilliant humans. Ten of them, in a house at Strada Olari 9.</p>
         <ul class="crew">${CREW.map((n, i) => { const f = A(CREW_FACE_VARS[n]); return `<li style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}"><span class="cr-face">${f ? `<img src="${f.src}" width="${f.w}" height="${f.h}" alt="" loading="lazy" decoding="async">` : ""}</span><span class="cr-name">${esc(n)}</span>${(() => { const ci = CREW_INFO[n] || {}; const links = [["Instagram", ci.instagram], ["Behance", ci.behance]].filter(([, u]) => u).map(([k, u]) => `<a class="cr-link" href="${u}" target="_blank" rel="noopener">${k} \u2197</a>`).join(""); return `${ci.role ? `<span class="cr-role mono">${esc(ci.role)}</span>` : ""}${ci.bio ? `<span class="cr-bio">${esc(ci.bio)}</span>` : ""}${links}`; })()}</li>`; }).join("")}</ul>
       </div>
@@ -277,7 +282,7 @@ ${header(true)}
     <div class="wrap faq">
       <div>
         <p class="eyebrow mono">Good questions</p>
-        <h2 class="ptitle">${pill("Before", "#FED012", -1.5)}${pill("the coffee", "#F65342", 1)}</h2>
+        <h2 class="ptitle">${pill("Before", "#FED012", -1.5)} ${pill("the coffee", "#F65342", 1)}</h2>
       </div>
       <div class="qa">${FAQ.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join("")}</div>
     </div>
@@ -287,7 +292,7 @@ ${header(true)}
     <div class="wrap contact">
       <div class="c-txt">
         <p class="eyebrow mono">Final call · Strada Olari 9</p>
-        <h2 class="ptitle">${pill("What do you", "#119BFE", -2)}${pill("dream of?", "#F65342", 1.5)}</h2>
+        <h2 class="ptitle">${pill("What do you", "#119BFE", -2)} ${pill("dream of?", "#F65342", 1.5)}</h2>
         <p class="sec-lead">Complete your boarding pass and we'll answer within one working day. You get a copy too. Or just come by: the door is open, the coffee is on.</p>
         <p class="c-direct"><a href="mailto:${STUDIO.email}">${STUDIO.email}</a><br><a href="tel:+40728978068">${STUDIO.phone}</a></p>
       </div>
@@ -346,7 +351,7 @@ ${footer}`;
         { "@type": "ListItem", position: 3, name: d.name, item: `${SITE}/work/${slug}/` }
       ] }
     ] };
-    return `${head({ title: `${d.name} · Case study · Cromatic Studios`, desc: strip(d.lead).slice(0, 158), path: `/work/${slug}/`, image: cover?.src, ld })}
+    return `${head({ title: `${d.name} · Case study · Cromatic Studios`, desc: strip(d.lead), path: `/work/${slug}/`, image: cover?.src, ld })}
 ${header(false)}
 <main id="main" class="case${d.theme ? " theme-" + d.theme : ""}" style="--bc:${d.c};--bt:${d.t}">
   <section class="c-hero c2-hero">
@@ -367,7 +372,7 @@ ${header(false)}
   <section class="c-end">
     <div class="wrap">
       ${d.link ? `<p><a class="btn" href="${d.link.href}" target="_blank" rel="noopener">${esc(d.link.label)}</a></p>` : ""}
-      <h2 class="ptitle">${pill("Your brand", "#FED012", -1.5)}${pill("next?", "#28C840", 1)}</h2>
+      <h2 class="ptitle">${pill("Your brand", "#FED012", -1.5)} ${pill("next?", "#28C840", 1)}</h2>
       <p><a class="btn btn-y" href="/site/#contact">${STAR}<span>Start a project</span></a></p>
       <p class="eyebrow mono">More work</p>
       <div class="more">${others.map((o) => `<a href="/work/${o.page}/" style="--bc:${o.c};--bt:${o.t}">${esc(o.name)} <i>→</i></a>`).join("")}</div>
@@ -423,7 +428,7 @@ ${header(false)}
   </section>
   <section class="c-end">
     <div class="wrap">
-      <h2 class="ptitle">${pill("Your brand", "#FED012", -1.5)}${pill("next?", "#28C840", 1)}</h2>
+      <h2 class="ptitle">${pill("Your brand", "#FED012", -1.5)} ${pill("next?", "#28C840", 1)}</h2>
       <p><a class="btn btn-y" href="/site/#contact">${STAR}<span>Start a project</span></a></p>
       <p class="eyebrow mono">More work</p>
       <div class="more">${others.map((o) => `<a href="/work/${o.page}/" style="--bc:${o.c};--bt:${o.t}">${esc(o.name)} <i>→</i></a>`).join("")}</div>

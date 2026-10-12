@@ -7,7 +7,9 @@ import zlib from "node:zlib";
 import { readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { jsonLd, llmsTxt, robotsTxt, sitemapXml, manifest, icoFromPng } from "./seo.mjs";
+import { jsonLd, llmsTxt, llmsFull, robotsTxt, sitemapXml, manifest, icoFromPng } from "./seo.mjs";
+import { seoPage, pageText, lastmodStore, SAME_AS } from "./seo-pages.mjs";
+import * as DATA from "../site/data.mjs";
 import { makeRender } from "../site/render.mjs";
 import { kineticBundle } from "./kinetic.mjs";
 
@@ -22,6 +24,16 @@ const content = readFileSync(src("content.html"), "utf8").replace(/<!--[\s\S]*?-
 // app has drawn its own loader on top
 const boot = `<div class="boot" aria-hidden="true"><svg viewBox="0 0 120 120"><circle class="r" cx="60" cy="60" r="52"/><circle class="p" cx="60" cy="60" r="52"/><g transform="translate(44 44) scale(1.333)"><path class="s" d="M12 0 L14.6 7.2 L21.5 4.2 L17.4 10.5 L24 12 L17.4 13.5 L21.5 19.8 L14.6 16.8 L12 24 L9.4 16.8 L2.5 19.8 L6.6 13.5 L0 12 L6.6 10.5 L2.5 4.2 L9.4 7.2 Z" fill="#FED012"/></g></svg></div>
 <script>(function(){var t0=Date.now();(function w(){var b=document.querySelector(".boot");if(!b)return;if(document.querySelector(".loader")||Date.now()-t0>30000){b.classList.add("gone");setTimeout(function(){b.remove()},450)}else requestAnimationFrame(w)})()})();<\/script>`;
+// the text version's portfolio, from site/data.mjs (every case study linked, grouped by street)
+const homeWork = () => {
+  const e = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const seen = new Set();
+  return Object.entries(DATA.STREETS).map(([k, [street]]) => {
+    const list = DATA.PROJECTS.filter((p) => p.street === k && !p.small && !p.wip && !(p.page && seen.has(p.page)) && (p.page ? seen.add(p.page) : true));
+    if (!list.length) return "";
+    return `    <h3>${e(street)}</h3>\n    <ul>\n${list.map((p) => `      <li>${p.page ? `<a href="/work/${p.page}/"><strong>${e(p.name)}</strong></a>` : `<strong>${e(p.name)}</strong>`} (${e(p.cat.toLowerCase())}): ${e(p.desc)}</li>`).join("\n")}\n    </ul>`;
+  }).filter(Boolean).join("\n");
+};
 const hash = (buf) => createHash("sha1").update(buf).digest("hex").slice(0, 10);
 
 const args = process.argv.slice(2);
@@ -72,16 +84,15 @@ writeFileSync(join(pub, jsName), jsOut);
 writeFileSync(join(pub, cssName), cssOut);
 const html = `${head.replaceAll("%%SITE_URL%%", SITE_URL)}<link rel="stylesheet" href="${cssName}">
 <link rel="preload" href="${jsName}" as="script">
-${jsonLd(SITE_URL)}
-</head><body>
+${jsonLd(SITE_URL, DATA.PROJECTS, SAME_AS)}
+</head><body><!--email_off-->
 ${boot}
-${content}
+${content.replace("<!--WORK-->", homeWork())}
 <script src="${jsName}"></script>
-</body></html>`;
+<!--/email_off--></body></html>`;
 writeFileSync(join(pub, "index.html"), html);
 copyFileSync(src("og.jpg"), join(pub, "og.jpg"));
 writeFileSync(join(pub, "robots.txt"), robotsTxt(SITE_URL));
-writeFileSync(join(pub, "llms.txt"), llmsTxt(SITE_URL));
 writeFileSync(join(pub, "site.webmanifest"), manifest());
 for (const f of ["icon.svg", "apple-touch-icon.png", "icon-192.png", "icon-512.png"]) copyFileSync(src(f), join(pub, f));
 writeFileSync(join(pub, "favicon.ico"), icoFromPng(readFileSync(src("favicon-32.png"))));
@@ -186,7 +197,28 @@ const canvases = {};
 const R = makeRender({ SITE: SITE_URL, A, cssHref: "/" + siteCssName, jsHref: "/" + siteJsName, fonts: FONTS, kz, canvases });
 // r129: every work page's cover (its og:image, else its first image) goes into covers.json, for the map cards
 const COVERS = {};
-const page = (path, html) => {
+// r131: every page goes through the same SEO pass (head, schema.org, sizes, lazy films, lastmod)
+const today = new Date().toISOString().slice(0, 10);
+const LASTMOD = lastmodStore(join(root, "build", "lastmod.json"), today);
+const PAGES = {};
+const dimCache = new Map();
+const mediaDims = (src) => {
+  if (!src || !src.startsWith("/assets/")) return null;
+  if (dimCache.has(src)) return dimCache.get(src);
+  let d = null;
+  try { const [w, h] = dims(readFileSync(join(pub, src))); if (w) d = { w, h }; } catch {}
+  dimCache.set(src, d);
+  return d;
+};
+const wpLocal = (u) => mediaMap.get("m:wp/" + u.replace(/^.*\/uploads\/(\d{4})\/(\d{2})\/(.+)\.[a-z]+$/i, "$1-$2-$3"))?.src;
+const page = (path, raw) => {
+  const p = `/${path}/`, slug = path.replace(/^work\//, "");
+  const text = pageText(raw);
+  const lastmod = LASTMOD.get(p, text);
+  const project = DATA.PROJECTS.find((x) => x.page === slug);
+  const r = seoPage(raw, { path: p, SITE: SITE_URL, project, media: mediaDims, lastmod, wp: wpLocal });
+  const html = r.html;
+  PAGES[p] = { path: p, title: r.title, desc: r.desc, fullDesc: r.fullDesc, images: r.images, lastmod, text: pageText(html) };
   mkdirSync(join(pub, path), { recursive: true }); writeFileSync(join(pub, path, "index.html"), html);
   const m = path.match(/^work\/([\w-]+)$/);
   if (m) {
@@ -247,8 +279,16 @@ writeFileSync(join(pub, "covers.json"), JSON.stringify(COVERS));
 writeFileSync(join(pub, "covers.json"), JSON.stringify(COVERS));
 // r130j: the home page last, so its portfolio can use the covers of every case page and place
 page("site", R.home(COVERS));
-const workPaths = [...new Set([...R.slugs, ...R.canvasSlugs, ...caseSlugs, "steam"])].map((s) => `/work/${s}/`);
-writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, new Date().toISOString().slice(0, 10), ["/site/", ...workPaths]));
+const workPaths = [...new Set([...R.slugs, ...R.canvasSlugs, ...caseSlugs, "steam"])].map((s) => `/work/${s}/`).sort();
+{
+  const homeText = pageText(html);
+  const home = { path: "/", title: "Cromatic Studios · Branding, web & film studio in Bucharest", desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, video and content.", images: [`${SITE_URL}/og.jpg`], lastmod: LASTMOD.get("/", homeText), text: homeText };
+  const order = [home, PAGES["/site/"], ...workPaths.map((p) => PAGES[p]).filter(Boolean)];
+  writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, order));
+  writeFileSync(join(pub, "llms.txt"), llmsTxt(SITE_URL, { ...DATA, SAME_AS }, PAGES));
+  writeFileSync(join(pub, "llms-full.txt"), llmsFull(SITE_URL, order));
+  LASTMOD.save();
+}
 
 // precompress text files once, at build time (the server just picks the right variant)
 const COMP = /\.(html|js|css|svg|txt|xml|json|webmanifest|ico)$/;

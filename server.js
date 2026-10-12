@@ -115,6 +115,11 @@ function send(res, code, obj) {
 function serve(req, res) {
   let path = decodeURIComponent(new URL(req.url, "http://x").pathname);
   path = normalize(path).replace(/\\/g, "/");
+  // r131: /index.html and /site/index.html are the same pages as / and /site/: one address each
+  if (/\/index\.html$/.test(path)) {
+    res.writeHead(301, { Location: path.slice(0, -10) + (req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "") });
+    return res.end();
+  }
   if (path.endsWith("/")) path += "index.html";
   // one page: "/" is the site, anything else unknown is a real 404 (no soft 404s for search engines)
   if (!path.endsWith("/") && !extname(path) && files.has(path + "/index.html")) {
@@ -129,6 +134,9 @@ function serve(req, res) {
     "Cache-Control": f.immutable ? "public, max-age=31536000, immutable" : "public, max-age=0, must-revalidate",
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Strict-Transport-Security": "max-age=31536000",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Permissions-Policy": "camera=(), microphone=(), payment=(), usb=()",
     "Vary": "Accept-Encoding",
     "ETag": f.etag
   };
