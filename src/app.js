@@ -25721,77 +25721,50 @@ void main() {
     const hqWall = new MeshStandardMaterial({ color: "#E9DFC0", roughness: 0.92 });
     const hqBody = new Mesh(new BoxGeometry(96, 208, 78), hqWall);
     hqBody.position.y = 104;
-    // r129: Călinescu 54 as it stands: a cream block with salmon, rounded balconies stacked on the right,
-    // red window frames, and a low hipped roof over the attic floor, with a terrace rail in front
-    const hqRoof = new Mesh(new CylinderGeometry(0.62, 1, 34, 4, 1), new MeshStandardMaterial({ color: "#a8462f", roughness: 0.85 }));
-    hqRoof.rotation.y = Math.PI / 4; hqRoof.scale.set(108 / Math.SQRT2, 1, 90 / Math.SQRT2); hqRoof.position.y = 208 + 17;
-    const ridge = new Mesh(new BoxGeometry(100, 3, 4), new MeshStandardMaterial({ color: "#efe7d2", roughness: 0.6 })); ridge.position.set(0, 206.5, -40.5);
-    const railM2 = new MeshStandardMaterial({ color: "#e4e6e8", roughness: 0.35, metalness: 0.6 });
-    for (let k = 0; k < 13; k++) { const post = new Mesh(new CylinderGeometry(0.6, 0.6, 9, 6), railM2); post.position.set(-48 + k * 8, 212.5, -42); hq.add(post); }
-    const topRail = new Mesh(new CylinderGeometry(0.8, 0.8, 98, 6), railM2); topRail.rotation.z = Math.PI / 2; topRail.position.set(0, 217, -42); hq.add(topRail);
-    const balcM = new MeshStandardMaterial({ color: "#c9786f", roughness: 0.8 });
-    for (const y of [52, 88, 124, 160]) {
-      const slab = new Mesh(new BoxGeometry(36, 10, 12), balcM); slab.position.set(22, y, -45); hq.add(slab);
-      for (const sx of [-1, 1]) { const end = new Mesh(new CylinderGeometry(6, 6, 10, 16), balcM); end.position.set(22 + sx * 18, y, -45); hq.add(end); }
-      const door = new Mesh(new PlaneGeometry(26, 22), new MeshStandardMaterial({ color: "#c9d6d2", roughness: 0.25 })); door.rotation.y = Math.PI; door.position.set(22, y + 14, -39.6); hq.add(door);
-    }
+    // r130o: Călinescu 54, redrawn on one grid: four storeys of 36 over a 40 ground floor and a 24 attic. The left bay
+    // has two windows a floor, the right bay a balcony door behind a salmon rounded balcony, the sides two windows a
+    // floor at the same heights; string courses run round the block at every floor, so nothing breaks off
+    const RM = new MeshStandardMaterial({ color: "#a8462f", roughness: 0.85 });
+    const roofG = new CylinderGeometry(0.62, 1, 34, 4, 1); roofG.rotateY(Math.PI / 4);
+    const hqRoof = new Mesh(roofG, RM); hqRoof.scale.set(108 / Math.SQRT2, 1, 90 / Math.SQRT2); hqRoof.position.y = 208 + 17;
+    const ridge = new Mesh(new BoxGeometry(100, 3, 82), new MeshStandardMaterial({ color: "#efe7d2", roughness: 0.6 })); ridge.position.set(0, 206.5, 0);
     const frameM = new MeshStandardMaterial({ color: "#9e2b2b", roughness: 0.5 });
     const paneM = new MeshStandardMaterial({ color: "#c9d6d2", roughness: 0.25 });
-    const addWin = (x, y, w, h) => {
-      const f = new Mesh(new BoxGeometry(w, h, 2), frameM);
-      f.position.set(x, y, -40.2);
-      const p = new Mesh(new PlaneGeometry(w - 4, h - 4), paneM);
-      p.position.set(x, y, -41.4);
-      p.rotation.y = Math.PI;
-      hq.add(f, p);
+    const courseM = new MeshStandardMaterial({ color: "#f3ead0", roughness: 0.8 });
+    const balcM = new MeshStandardMaterial({ color: "#c9786f", roughness: 0.8 });
+    mats.mansardGlow = mats.mansardGlow || new MeshStandardMaterial({ color: "#f4e2c0", emissive: "#ffca6a", emissiveIntensity: 0, roughness: 0.4 });
+    // a window on a face: front (z = -39) or a side (x = ±48), frame proud of the wall, pane just inside it
+    const hqWin = (face, u, y, w, h, glass = paneM) => {
+      const f = new Mesh(new BoxGeometry(face ? 2 : w, h, face ? w : 2), frameM);
+      const pn = new Mesh(new PlaneGeometry(w - 4, h - 4), glass);
+      if (face) { f.position.set(face * 48.6, y, u); pn.position.set(face * 49.7, y, u); pn.rotation.y = face * Math.PI / 2; }
+      else { f.position.set(u, y, -39.6); pn.position.set(u, y, -40.7); pn.rotation.y = Math.PI; }
+      const sill = new Mesh(new BoxGeometry(face ? 3 : w + 4, 1.6, face ? w + 4 : 3), courseM);
+      if (face) sill.position.set(face * 49.2, y - h / 2 - 0.8, u); else sill.position.set(u, y - h / 2 - 0.8, -40.4);
+      hq.add(f, pn, sill);
     };
-    for (const y of [64, 100, 136, 172]) addWin(-28, y, 26, 22);
-    for (const x of [-30, 0, 30]) addWin(x, 22, 22, 18);
-    mats.mansardGlow = mats.mansardGlow || new MeshStandardMaterial({
-      color: "#f4e2c0",
-      emissive: "#ffca6a",
-      emissiveIntensity: 0,
-      roughness: 0.4
-    });
-    for (const x of [-32, 0, 32]) {
-      const f = new Mesh(new BoxGeometry(26, 30, 2), frameM);
-      f.position.set(x, 186, -40.2);
-      const p = new Mesh(new PlaneGeometry(22, 26), mats.mansardGlow);
-      p.position.set(x, 186, -41.4);
-      p.rotation.y = Math.PI;
-      hq.add(f, p);
+    // string courses all the way round, at the ground floor top and at every storey
+    for (const y of [40, 76, 112, 148, 184]) {
+      const band = new Mesh(new BoxGeometry(98, 1.8, 80), courseM); band.position.y = y; hq.add(band);
     }
-    for (const side of [-1, 1]) {
-      for (const z of [-20, 20]) {
-        const f = new Mesh(new BoxGeometry(2, 28, 24), frameM);
-        f.position.set(side * 48.2, 186, z);
-        const p = new Mesh(new PlaneGeometry(20, 24), mats.mansardGlow);
-        p.rotation.y = side * Math.PI / 2;
-        p.position.set(side * 49.4, 186, z);
-        hq.add(f, p);
+    // ground floor: two shop windows, the door under the balconies
+    hqWin(0, -34, 14, 18, 16); hqWin(0, -10, 14, 18, 16);
+    { const door = new Mesh(new BoxGeometry(18, 30, 2), frameM); door.position.set(26, 15, -39.6); const dp = new Mesh(new PlaneGeometry(14, 27), paneM); dp.position.set(26, 15.5, -40.7); dp.rotation.y = Math.PI; hq.add(door, dp); }
+    for (let k = 0; k < 4; k++) {
+      const yb = 40 + k * 36, yc = yb + 19;
+      hqWin(0, -34, yc, 18, 22); hqWin(0, -10, yc, 18, 22);
+      for (const side of [-1, 1]) for (const z of [-18, 18]) hqWin(side, z, yc, 18, 22);
+      // the balcony: a door on the floor line, a slab and a rounded salmon parapet in front of it
+      { const d = new Mesh(new BoxGeometry(22, 28, 2), frameM); d.position.set(26, yb + 15, -39.6); const dp = new Mesh(new PlaneGeometry(18, 25), paneM); dp.position.set(26, yb + 15.5, -40.7); dp.rotation.y = Math.PI; hq.add(d, dp); }
+      const slab = new Mesh(new BoxGeometry(40, 2, 13), courseM); slab.position.set(26, yb + 1, -45.5); hq.add(slab);
+      const par = new Mesh(new BoxGeometry(28, 10, 2.4), balcM); par.position.set(26, yb + 7, -51.2); hq.add(par);
+      for (const sx of [-1, 1]) {
+        const end = new Mesh(new CylinderGeometry(6.6, 6.6, 10, 20), balcM); end.position.set(26 + sx * 14, yb + 7, -45.8); hq.add(end);
       }
     }
-    const addSideWin = (side, y, z) => {
-      const f = new Mesh(new BoxGeometry(2, 26, 22), frameM);
-      f.position.set(side * 48.2, y, z);
-      const pn = new Mesh(new PlaneGeometry(18, 22), paneM);
-      pn.rotation.y = side * Math.PI / 2;
-      pn.position.set(side * 49.4, y, z);
-      hq.add(f, pn);
-    };
-    for (const z of [-20, 20]) {
-      addSideWin(-1, 138, z);
-      addSideWin(-1, 74, z);
-      addSideWin(1, 138, z);
-      addSideWin(1, 74, z);
-    }
-    const balc = new Mesh(new BoxGeometry(40, 4, 14), hqWall);
-    balc.position.set(0, 118, -46);
-    const railM = new MeshStandardMaterial({ color: "#e8e8ea", roughness: 0.35, metalness: 0.6 });
-
-    const rail = new Mesh(new CylinderGeometry(1.1, 1.1, 40, 8), railM);
-    rail.rotation.z = Math.PI / 2;
-    rail.position.set(0, 132, -52);
+    // the attic: three glowing windows on the same columns, two on each side
+    for (const x of [-34, -10, 26]) hqWin(0, x, 196, 16, 16, mats.mansardGlow);
+    for (const side of [-1, 1]) for (const z of [-18, 18]) hqWin(side, z, 196, 16, 16, mats.mansardGlow);
     hq.add(hqBody, hqRoof, ridge);
     const hqTex = canvasTexture(512, 176, (ctx) => {
       ctx.fillStyle = "#fbfaf5";
@@ -26870,7 +26843,8 @@ void main() {
       const dHotel = Math.max(Math.abs(x - (X0 + 40)) - 40, Math.abs(z - (cz - 20)) - 100, 0);
       const dCourt = Math.max(Math.abs(x - 560) - 46, Math.abs(z - 5865) - 74, 0);
       const dPond = Math.hypot((x - 560) / 1.5, z - 6010) - 50;
-      k = Math.min(k, dHotel / 26, dCourt / 20, Math.max(0, dPond) / 22);
+      const dPath = x > X0 + 60 ? Math.max(0, Math.abs(z - 5948) - 7) : 99;
+      k = Math.min(k, dHotel / 26, dCourt / 20, Math.max(0, dPond) / 22, dPath / 14);
       const edge = Math.min(x - X0, X1 - x, z - Z0, Z1 - z) / 30;
       return Math.max(0, Math.min(1, k)) * Math.max(0, Math.min(1, edge));
     };
@@ -26915,7 +26889,8 @@ void main() {
       add(reedG, new MeshStandardMaterial({ color: "#8a9a4a", roughness: 1 }));
       add(flowerG, new MeshStandardMaterial({ color: "#e76f8f", roughness: 0.8 }));
       // a gravel path from the street to the hotel, and a timber jetty into the pond
-      const path = new Mesh(new BoxGeometry(X1 - (X0 + 70), 0.6, 10), new MeshStandardMaterial({ color: "#d8cdb8", roughness: 1 })); path.position.set((X1 + X0 + 70) / 2, 1.8, cz - 20); g.add(path);
+      // r130o: the path runs between the court and the pond (it used to cut through the court)
+      const path = new Mesh(new BoxGeometry(X1 - (X0 + 70), 0.6, 10), new MeshStandardMaterial({ color: "#d8cdb8", roughness: 1 })); path.position.set((X1 + X0 + 70) / 2, 1.8, 5948); g.add(path);
       const jetty = new Mesh(new BoxGeometry(8, 1.2, 34), new MeshStandardMaterial({ color: "#8a6440", roughness: 0.9 })); jetty.position.set(600, 2.4, 6030); g.add(jetty);
     }
     // a low wall in ARCA's burgundy, open on the street side
@@ -26932,7 +26907,7 @@ void main() {
     hotel.position.set(X0 + 40, 23, cz - 20); g.add(hotel);
     const roof = new Mesh(new BoxGeometry(60, 3, 174), wallM); roof.position.set(X0 + 40, 47.5, cz - 20); g.add(roof);
     // r121: a burgundy hip roof over the hotel, balconies along the garden front
-    const hipR = new Mesh(new CylinderGeometry(0.42, 1, 16, 4, 1), new MeshStandardMaterial({ color: "#6b1a25", roughness: 0.7 })); hipR.rotation.y = Math.PI / 4; hipR.scale.set(64 / Math.SQRT2, 1, 178 / Math.SQRT2); hipR.position.set(X0 + 40, 57, cz - 20); g.add(hipR);
+    const hipG = new CylinderGeometry(0.42, 1, 16, 4, 1); hipG.rotateY(Math.PI / 4); const hipR = new Mesh(hipG, new MeshStandardMaterial({ color: "#6b1a25", roughness: 0.7 })); hipR.scale.set(64 / Math.SQRT2, 1, 178 / Math.SQRT2); hipR.position.set(X0 + 40, 57, cz - 20); g.add(hipR);
     for (const y of [16, 30]) { const bal = new Mesh(new BoxGeometry(6, 1.2, 166), new MeshStandardMaterial({ color: "#f6f2ea", roughness: 0.8 })); bal.position.set(X0 + 71, y, cz - 20); g.add(bal); const rail = new Mesh(new BoxGeometry(0.6, 4, 166), new MeshStandardMaterial({ color: "#7a1f2b", roughness: 0.6 })); rail.position.set(X0 + 74, y + 2.6, cz - 20); g.add(rail); }
     const arcaSign = signBoard({ logo: logoArca, signBg: "#7a1f2b", signInk: "#f6f2ea" }, 44, 14); arcaSign.position.set(X0 + 69, 38, cz - 20); arcaSign.rotation.y = Math.PI / 2; g.add(arcaSign);
     // the pink tennis court, with white lines and a net
@@ -37809,6 +37784,14 @@ void main() {
         document.addEventListener("pointerdown", (e) => { if (!rides.classList.contains("hidden") && !e.target.closest(".map-rides, .map-ride")) rides.classList.add("hidden"); });
         skip.onclick = () => { kinetic?.finish?.(); mapEndIntro(); };
         const chips = dock.querySelector(".map-chips");
+        // r130o: the bar scrolls sideways with a normal vertical wheel or trackpad gesture too
+        chips.addEventListener("wheel", (e) => {
+          if (e.ctrlKey || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+          const max = chips.scrollWidth - chips.clientWidth;
+          if (max <= 1) return;
+          e.preventDefault(); e.stopPropagation();
+          chips.scrollLeft = Math.max(0, Math.min(max, chips.scrollLeft + e.deltaY * (e.deltaMode === 1 ? 16 : 1)));
+        }, { passive: false });
         // r130b: the places to discover are numbered 01..N, on the pin, in the bar and on the route ring
         const PNO = placeNumbers();
         const pins = MAP_PLACES.map((pl) => {

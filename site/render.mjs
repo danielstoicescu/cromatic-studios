@@ -324,6 +324,8 @@ ${footer}`;
     const n = items.length;
     const layout = b.layout || (n === 1 ? "full" : n === 2 ? "duo" : "rail");
     let media = "";
+    // r130o: "side": a single tall piece on the left, its words on the right (not full width)
+    if (layout === "side") return `<section class="c2-ch c2-side${b.small ? " small" : ""}"><div class="wrap c2-side-in c2-reveal"><div class="c2-side-m">${items.join("")}</div><div class="c2-side-t">${b.h ? `<span class="c2-num mono">${num}</span><h2>${esc(b.h)}</h2>` : ""}${b.p ? `<p>${b.p}</p>` : ""}</div></div></section>`;
     if (layout === "full") media = `<div class="wrap-wide c2-full c2-reveal">${items.join("")}</div>`;
     else if (layout === "duo") media = `<div class="wrap-wide c2-duo c2-reveal">${items.join("")}</div>`;
     else if (n) media = `<div class="c2-rail c2-reveal${b.poster ? " posters" : ""}"><div class="c2-track" tabindex="0" aria-label="${esc(b.h || "Gallery")}, scroll sideways">${items.join("")}</div>

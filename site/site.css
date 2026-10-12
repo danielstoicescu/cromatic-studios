@@ -583,3 +583,10 @@ a.bcard:hover .bc-cta i { transform: translateX(5px); }
 .ps-h { display: block; width: 100%; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .6; margin-bottom: 4px; }
 @media (max-width: 1000px) { .bento { grid-template-columns: repeat(4, 1fr); grid-auto-rows: 160px; } .bcard.b-xl, .bcard.b-w { grid-column: span 4; } .bcard.b-m, .bcard.b-s, .bcard.b-t { grid-column: span 2; } }
 @media (max-width: 600px) { .bento { grid-template-columns: 1fr 1fr; grid-auto-rows: 150px; gap: 10px; } .bcard, .bcard.b-m, .bcard.b-s { grid-column: span 1; } .bcard.b-xl, .bcard.b-w { grid-column: span 2; } .bcard.b-t { grid-column: span 1; grid-row: span 2; } .bc-body { padding: 12px 13px; } .bc-desc { display: none; } }
+/* r130o: a tall piece on the left, its words on the right */
+.c2-side-in { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(24px, 5vw, 80px); align-items: center; }
+.c2-side-m figure { margin: 0; }
+.c2-side-m video, .c2-side-m img { width: 100%; max-height: 78vh; object-fit: cover; border-radius: 22px; border: 1px solid var(--ink); display: block; }
+.c2-side-t h2 { font-size: clamp(28px, 3.4vw, 52px); font-weight: 900; margin: 8px 0 14px; }
+.c2-side-t p { font-size: clamp(17px, 1.4vw, 21px); max-width: 32em; }
+@media (max-width: 760px) { .c2-side-in { grid-template-columns: 1fr; } .c2-side-m video, .c2-side-m img { max-height: 70vh; } }
