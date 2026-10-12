@@ -37601,7 +37601,7 @@ void main() {
         wrap.appendChild(cups);
         // inside the house: the studio, as on cromaticstudios.com
         OLARI_PHOTOS.forEach(([src, cap], i) => {
-          const c = el("figure", "olari-card olari-photo", `<img src="https://cromaticstudios.com/wp-content/uploads/2025/10/${src}" alt="${cap}" loading="eager"><figcaption class="mono">${cap}</figcaption>`);
+          const c = el("figure", `olari-card olari-photo op${i}`, `<img src="https://cromaticstudios.com/wp-content/uploads/2025/10/${src}" alt="${cap}" loading="eager"><figcaption class="mono">${cap}</figcaption>`);
           c.style.setProperty("--i", i); c.style.setProperty("--sc", ["#FED012", "#28C840", "#119BFE", "#F65342", "#B098C8"][i % 5]);
           wrap.appendChild(c);
         });

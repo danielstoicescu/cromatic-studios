@@ -3281,7 +3281,8 @@ body:not(.map-mode) .road-svc { display: none; }
 .olari-photo figcaption { font-size: 10px; letter-spacing: .1em; color: #333; text-align: center; font-weight: 700; }
 .olari-fan { grid-template-columns: repeat(5, minmax(0, 200px)); }
 @media (max-width: 1100px) { .olari-fan { grid-template-columns: repeat(3, minmax(0, 200px)); } }
-@media (max-width: 719px) { .olari-fan { grid-template-columns: repeat(3, 1fr); } .olari-photo { padding: 5px 5px 7px; } .olari-photo figcaption { font-size: 7.5px; } .olari-photo:nth-child(n+7) { display: none; } }
+@media (max-width: 719px) { .olari-fan { grid-template-columns: repeat(3, 1fr); } .olari-photo { padding: 5px 5px 7px; } .olari-photo figcaption { font-size: 7.5px; } .olari-photo.op0, .olari-photo.op3 { display: none; } }
+/* r132: on a phone, three pictures in one row: Get shit done, the coffee, and the head of morale */
 /* mugs: the intro's patterned ones */
 .olari-cup { aspect-ratio: 120 / 110; }
 /* GTA2 has no place on the map */
