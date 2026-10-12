@@ -33155,6 +33155,12 @@ void main() {
       document.querySelectorAll(".scf-modal.hidden iframe").forEach((f) => { try { f.contentDocument?.querySelectorAll("video, audio").forEach((v) => v.pause()); } catch {} });
     };
     const closeFrame = () => { caseFrame.classList.add("hidden"); document.body.classList.remove("scf-open"); blankFrame(); };
+    // a case page inside the map asks for the boarding pass ("Ready for boarding")
+    window.addEventListener("message", (e) => {
+      if (e.origin !== location.origin || !e.data || e.data.cz !== "boarding") return;
+      closeFrame();
+      if (window.__openBoarding) window.__openBoarding(); else location.href = "/?map&boarding";
+    });
     caseFrame.querySelector(".cf-close").onclick = closeFrame;
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !caseFrame.classList.contains("hidden")) closeFrame(); });
     let steamSeen = false;
@@ -37537,6 +37543,18 @@ void main() {
         document.body.classList.add("map-boarding");
         czEv("boarding_open", { mode: "map" });
       }
+      // r135i: "Ready for boarding" on a case page (or /?map&boarding) opens the boarding pass on the map
+      window.__openBoarding = () => {
+        const go = (n = 0) => {
+          if (!mapMode) setMapMode(true);
+          if ((mapIntro || !ui || !ui.card) && n < 40) return setTimeout(() => go(n + 1), 250);
+          window.__closeAllOverlays?.();
+          document.querySelector(".map-card.in .mcd-close")?.click();
+          mapOpenBoarding();
+        };
+        go();
+      };
+      if (/[?&]boarding\b/.test(location.search)) setTimeout(() => window.__openBoarding(), 1800);
       function mapCloseBoarding(keepView = false) {
         if (!mapBoarding) return;
         mapBoarding = false;
