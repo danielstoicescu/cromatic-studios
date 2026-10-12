@@ -133,6 +133,23 @@ function send(res, code, obj) {
   res.end(s);
 }
 
+const OLD_WP = process.env.OLD_WP_UPLOADS || "/var/www/cromatics_26/app/wp-content/uploads";
+const OLD_OK = /\.(html?|png|jpe?g|gif|webp|svg|css|js|pdf|mp4|webm|woff2?|ico)$/i;
+function oldWp(req, res, path) {
+  const rel = path.slice("/wp-content/uploads/".length), ext = extname(path).toLowerCase();
+  if (!OLD_OK.test(path) || rel.includes("..")) return false;
+  const full = join(OLD_WP, rel);
+  if (!full.startsWith(OLD_WP + "/")) return false;
+  let st; try { st = statSync(full); } catch { return false; }
+  if (!st.isFile()) return false;
+  const headers = { "Content-Type": TYPES[ext] || (ext === ".htm" ? TYPES[".html"] : ext === ".pdf" ? "application/pdf" : ext === ".woff" ? "font/woff" : "application/octet-stream"), "Content-Length": st.size, "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff" };
+  if (/\.html?$/.test(ext)) headers["X-Robots-Tag"] = "noindex, nofollow";
+  res.writeHead(200, headers);
+  if (req.method === "HEAD") { res.end(); return true; }
+  createReadStream(full).on("error", () => res.destroy()).pipe(res);
+  return true;
+}
+
 function serve(req, res) {
   let path = decodeURIComponent(new URL(req.url, "http://x").pathname);
   path = normalize(path).replace(/\\/g, "/");
@@ -148,6 +165,9 @@ function serve(req, res) {
     return res.end();
   }
   let f = files.get(path), status = 200;
+  // r135f: files from the old WordPress media library (offers, brand hubs as .html, and what they use) are read on
+  // request from the WordPress folder still on this server; never loaded at start, never crashing the site
+  if (!f && path.startsWith("/wp-content/uploads/")) { try { if (oldWp(req, res, path)) return; } catch (e) { console.error("[old-wp]", e.message); } }
   if (!f) { f = files.get("/404.html"); status = 404; }
   if (!f) { res.writeHead(404, { "Content-Type": "text/plain" }); return res.end("Not found"); }
   const headers = {
