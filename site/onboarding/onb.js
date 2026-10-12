@@ -81,7 +81,7 @@
     ["steam", "Steam Coffee Shop", "c"], ["bepco", "Bepco", "f"], ["clinica-sante", "Clinica Sante", "m"], ["printoteca", "Printoteca", "p"],
     ["artisan-coffee-gear", "Artisan Coffee Gear", "c"], ["infinity-capital", "Infinity Capital", "f"], ["routine-paris", "Routine Paris", "m"], ["craft-coffee", "Craft Coffee", "c"],
     ["longshield", "Longshield", "f"], ["help-4-brain", "Help 4 Brain", "m"], ["sip-coffee-wine", "Sip Coffee & Wine", "c"], ["esd", "ESD", "f"],
-    ["altius", "Altius", "m"], ["casa-berero", "Casa Berero", "c"], ["assetto", "Assetto", "f"], ["pain-plaisir", "Pain Plaisir", "c"],
+    ["altius", "Altius", "m"], ["casa-berero", "Berero", "c"], ["assetto", "Assetto", "f"], ["pain-plaisir", "Pain Plaisir", "c"],
     ["witanalitica", "Witanalytica", "f"], ["kompus", "Kómpus", "c"], ["venevo", "Venevo", "f"], ["yoshi-izakaya", "Yoshi Izakaya", "c"],
     ["unde", "UNDÉ", "c"], ["patiline", "Patiline", "c"],
   ];

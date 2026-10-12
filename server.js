@@ -239,7 +239,9 @@ const PRIMARY_HOST = process.env.PRIMARY_HOST ?? "cromaticstudios.com";
 const OLD = {
   "/proiecte/": "/ro/#work", "/servicii/": "/ro/#services", "/contact/": "/ro/#contact", "/avi-garden/": "/ro/#work", "/proiecte/7-oale/": "/ro/#work",
   "/proiecte/help4brain/": "/ro/proiecte/help-4-brain/", "/proiecte/sip/": "/ro/proiecte/sip-coffee-wine/",
-  "/proiecte/slow-coffee-festival-history/": "/ro/proiecte/slow-coffee-festival/", "/proiecte/slow/": "/ro/proiecte/slow-coffee-festival/",
+  // r138a (Daniel): the old Slow Coffee page (written in English) and its short address go to the rebuilt English page
+  "/proiecte/slow-coffee-festival-history/": "/work/slow-coffee-festival/", "/scf/": "/work/slow-coffee-festival/",
+  "/proiecte/slow/": "/ro/proiecte/slow-coffee-festival/",
   "/proiecte/yoshy-izakaya/": "/ro/proiecte/yoshi-izakaya/", "/proiecte/arca/": "/ro/proiecte/arca-resort/"
 };
 const GONE = /^\/(?:testestes|online-core-beta|author\/[^/]+|feed|comments\/feed|wp-sitemap[^/]*\.xml|sitemap_index\.xml|xmlrpc\.php)\/?$/;

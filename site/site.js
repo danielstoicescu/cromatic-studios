@@ -225,6 +225,7 @@
 
   // YouTube: a poster until clicked, then the privacy-friendly embed
   d.querySelectorAll(".yt").forEach((y) => y.querySelector(".yt-play")?.addEventListener("click", () => {
+    if (window.__ytPlay && y.hasAttribute("data-yt")) return; // r138d: the build's chromeless player takes it (build/film.mjs)
     y.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${y.dataset.id}?autoplay=1&rel=0&modestbranding=1&playsinline=1" title="Two Minutes film" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
   }));
 

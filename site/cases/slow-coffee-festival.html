@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Slow Coffee Festival: a visual history — Cromatic Studios</title>
+<meta name="description" content="Slow Coffee Festival: a visual history. Five years of posters, merch, stages and digital for Romania's biggest coffee community, by Cromatic Studios.">
+<link rel="canonical" href="%%SITE_URL%%/work/slow-coffee-festival/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Slow Coffee Festival: a visual history — Cromatic Studios">
+<meta property="og:description" content="Slow Coffee Festival: a visual history. Five years of posters, merch, stages and digital for Romania's biggest coffee community, by Cromatic Studios.">
+<meta property="og:url" content="%%SITE_URL%%/work/slow-coffee-festival/">
+<meta property="og:image" content="m:scf/ph-25-posters">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<script>(function(){try{if(/[?&]embed\b/.test(location.search)||window.self!==window.top)document.documentElement.classList.add("embed")}catch(e){document.documentElement.classList.add("embed")}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Darker+Grotesque:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<!--
+  r138a (Daniel): the Slow Coffee Festival page as it was on the old WordPress site
+  (cromaticstudios.com/proiecte/slow-coffee-festival-history/, Wayback snapshot 2026-04-22 + its Elementor CSS from the
+  old uploads folder), rebuilt by hand: same layout, type, colours, pictures and words, none of WordPress or Elementor.
+  The Elementor numbers are kept as they were (em = the body size, 18px on desktop, 2.3vw on tablets, 4.7vw on phones;
+  heights in vh; the same three breakpoints, 1024 and 767). Small additions: pictures rise in as they arrive, photos
+  lean in under the pointer, stickers drift with the scroll, the merch slideshows and films only run while in view.
+-->
+<style>
+:root{
+  --ink:#121212;--cream:#FFEDB5;--yel:#FFD147;--blue:#519EF5;--org:#F58D42;
+  --c21:#4E5AA5;--c22:#F8981D;--c23:#57DFDF;--c24:#E91280;--lav:#D6A9CF;
+  --sage:#5BBE88;--sage-l:#B1E0C7;--lav-l:#ECDBEA;--gold:#FAE387;--gold-l:#FFF7D5;
+  --fs:1.125rem;--h1:2.5vw;--h1lh:1.1;--h3:1.5rem;--slow:3.4vw;--nav:1rem
+}
+@media (max-width:1024px){:root{--fs:2.3vw;--h1:3rem;--h3:2rem;--slow:3rem;--nav:1.2rem}}
+@media (max-width:767px){:root{--fs:4.7vw;--h1:2rem;--h1lh:1.15;--h3:1.6rem;--slow:2rem;--nav:1rem}}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--cream);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:"Darker Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:var(--fs);font-weight:600;line-height:1.3;overflow-x:clip}
+img,video{display:block;max-width:100%;height:auto}
+h1,h2,h3,p{margin:0}
+a{color:inherit}
+b{font-weight:inherit}
+.hp b,.hs b{font-weight:600}
+.sc .vs-btn[hidden]{display:none}
+:focus-visible{outline:3px solid var(--blue);outline-offset:3px;border-radius:6px}
+.hp{font-size:var(--h1);line-height:var(--h1lh);font-weight:700}
+.hs{font-size:var(--h3);line-height:1.1;font-weight:700}
+.tx p+p{margin-top:1.3em}
+
+/* the menu pill: sticky, 20px down once the page moves (as the old sticky header) */
+.nav{position:sticky;top:0;z-index:30;display:flex;justify-content:center;align-items:center;pointer-events:none;transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.nav.stuck{transform:translateY(20px)}
+.nav ul{pointer-events:auto;display:flex;gap:4px;margin:0;padding:2px;list-style:none;background:var(--yel);border:1px solid var(--ink);border-radius:3em}
+.nav li{flex:1 1 auto;display:flex}
+.nav li.lng{display:none}
+.nav a{flex:1;display:flex;justify-content:center;padding:6px 18px;border-radius:3em;font-size:var(--nav);font-weight:600;line-height:calc(var(--fs) * 1.3);text-decoration:none;color:var(--ink);background:var(--yel);transition:background-color .7s}
+.nav a:hover,.nav a:focus-visible{background:var(--blue)}
+.nav a.on{background:var(--blue);transition:background-color .3s ease}
+.nav a.on:hover{background:var(--org)}
+html.embed .nav{display:none}
+/* r138a: on phones the language switch joins the menu pill (the corner button would sit on top of it) */
+@media (max-width:767px){.nav li.lng.on{display:flex}body.sc-lng .lang-fixed{display:none!important}}
+
+/* hero: Slow Coffee Festival / A visual / History */
+.hero{padding:40px 10px 10px;overflow-x:clip}
+.hero-w{border-radius:1em}
+.hero-in{min-height:40vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:5em 5em 1em;border-radius:2em}
+.vh{align-self:stretch;display:flex;flex-direction:column;align-items:center;font-size:inherit;line-height:1}
+.v{display:block}
+.v1{width:40%}.v2,.v3{width:20%}
+.vi{display:block}.vi img{width:100%;height:auto}
+.v2 .vi{margin:-1% 75% 0 -75%}.v3 .vi{margin:-1% 35% 0 -35%}
+@keyframes sc-fir{from{opacity:0;transform:translate3d(100%,0,0)}to{opacity:1;transform:none}}
+@keyframes sc-fil{from{opacity:0;transform:translate3d(-100%,0,0)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:no-preference){.v1{animation:sc-fir 1.25s both}.v2{animation:sc-fil 1.25s .3s both}.v3{animation:sc-fir 1.25s .6s both}}
+
+/* the big sentences between the chapters */
+.st{padding:2em}
+.st-box{max-width:1320px;margin:0 auto;padding:10px;border-radius:1em}
+.st-in{padding:7em 12em;display:flex;flex-direction:column;gap:20px}
+.st-in>*{text-align:center}
+.st-intro .st-in{padding:0 7em 5em}
+.slow{font-size:var(--slow);line-height:1.1;font-weight:700}
+.blur-in{opacity:0;filter:blur(10px);transform:translateY(20px);transition:opacity .6s ease .9s,filter .6s ease .9s,transform .6s ease .9s}
+.blur-in.visible{opacity:1;filter:none;transform:none}
+
+/* the year cards */
+.ys{padding:15px 10px 10px}
+.ys-in{max-width:1920px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.ys-21{padding-top:60px}
+.ys-21,.ys-23{overflow:hidden}
+.cw{position:relative;display:flex;justify-content:center;border-radius:1em}
+.card{position:relative;display:flex;flex-direction:row;justify-content:center;align-items:flex-start;flex-wrap:wrap;gap:10px;width:100%;min-width:0;padding:5em;border-radius:2em;background:var(--cbg)}
+.card.pc{align-items:center;flex-wrap:nowrap;gap:20px;min-height:22vh}
+.card.c21a{padding:7em 5em 5em}
+.pw{width:600px;max-width:600px;min-width:0;flex:0 1 auto}
+.pw img{width:100%;height:auto}
+.t{position:relative;display:flex;min-width:0;flex:0 1 auto;width:100%;min-height:var(--mh,0);border-radius:2em}
+.ti{position:absolute;inset:0;border-radius:inherit;overflow:hidden;background:var(--tbg,transparent)}
+.ti>img,.ti>video{width:100%;height:100%;max-width:none;object-fit:cover;object-position:var(--op,50% 50%)}
+.pt{position:relative;display:flex;flex-direction:row;justify-content:center;align-items:center;min-width:0;flex:0 1 auto;width:100%;min-height:var(--mh,0);border-radius:2em;background:var(--tbg,transparent)}
+.pt img{width:100%;max-width:var(--mw,100%);height:auto;border-radius:2em}
+.pt.end{justify-content:flex-end}
+@media (min-width:768px){.t,.pt{width:var(--wt,100%)}}
+@media (min-width:1025px){.t,.pt{width:var(--w,100%)}}
+@media (max-width:1024px){.t,.pt{min-height:var(--mht,var(--mh,0))}}
+@media (max-width:767px){.t,.pt{min-height:var(--mhm,var(--mht,var(--mh,0)))}}
+.stk{position:absolute;z-index:1;pointer-events:none}
+.stk img{width:100%;height:auto;margin:0 auto}
+.stk.r10 img{rotate:10deg}
+.s-5th{width:200px;top:-3%;right:99px}
+.s-y21{width:196px;top:-2%;left:9%}
+.s-hand{width:196px;top:23%;right:0}
+.s-hand img{rotate:-97deg}
+.s-y22{width:196px;top:-2%;left:9%}
+.s-arrow{width:79px;bottom:22%;left:79%}
+.s-y23{width:196px;top:.777%;left:64.593%}
+.s-blob{width:103px;bottom:23%;left:2%}
+.s-blob img{max-width:67px}
+.s-seven{width:140px;bottom:3%;right:2%}
+.s-y24{width:183px;top:-3%;left:26%}
+.s-ok{width:80px;top:0;left:-4%}
+.s-tap{width:119px;bottom:26px;right:-9%;z-index:6}
+.s-pot{width:90px;top:9%;right:10%;z-index:6}
+.t-23 .ti img,.t-crowd .ti img{object-position:50% 0}
+
+/* the lavender chapters of 2025 */
+.lav{padding:10px}
+.lav-in{max-width:1920px;margin:0 auto;display:flex;flex-direction:column;gap:10px;padding:10px;background:var(--lav);border:1px solid var(--ink);border-radius:1em}
+.lr{display:flex;flex-direction:row;gap:20px;min-width:0}
+.cap{position:relative;display:flex;flex-direction:column;flex:0 0 auto;width:var(--cw,20vw);max-width:100%;padding:3em 2em 2em;border-radius:1em;background:var(--cbg)}
+@media (min-width:768px) and (max-width:1024px){.cap{width:var(--cwt,100%)}}
+@media (max-width:767px){.cap{width:100%}}
+
+/* 2025, brewing a visual language */
+.r-brew{flex-direction:column;padding:5em 5em 0}
+.brew{flex-direction:row;justify-content:flex-start;align-items:flex-start;padding:4em;border-radius:3em}
+.brew .ti img{object-position:100% 50%}
+.brew .ti .mb{display:none}
+.brew .cap{width:45%;padding:6em 4em 3em 2em;gap:20px;background:var(--lav)}
+.r-pill{padding:2em 5em}
+.r-pill.p1{padding:8em 5em 2em}
+.r-pill.p3{padding:2em 5em 5em}
+.ic{position:relative;display:flex;flex-direction:row;justify-content:center;align-items:center;width:100%;min-width:0;flex:0 1 auto;padding:5em;border-radius:3em}
+.ic-in{display:flex;flex-direction:column;width:100%;border-radius:1em}
+@media (min-width:768px){.ic-in{width:60%}}
+.ic-in img{width:150px;max-width:100%;height:auto}
+.pl{display:flex;flex-direction:column;justify-content:center;gap:10px;width:100%;min-width:0;flex:0 1 auto;padding:3em}
+.r-man{overflow:hidden;padding:5em 3em 5em 5em}
+.man-ph{border-radius:3em}
+.man-tx{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:40px;width:100%;min-width:0;flex:0 1 auto;padding:3em 4em 3em 3em;position:relative}
+
+/* the palette */
+.sw-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:5em 5em 0}
+.sw{display:flex;flex-direction:row;justify-content:flex-start;align-items:flex-end;min-height:40vh;padding:1em;border-radius:1em;background:var(--cbg)}
+.sw.lv{border:1px solid #9E7D99}
+.sw-l{display:flex;flex-direction:column;gap:5px;width:100%;padding:18px 10px 10px 20px;border-radius:1em;background:var(--lbg)}
+.r-pal{gap:10px;padding:0 5em 5em}
+.pal{justify-content:flex-end;align-items:flex-end;padding:3em 4em;border-radius:3em}
+.pal .ti img{object-position:0 23%}
+
+/* bringing the brand to life */
+.r-a1{gap:10px;padding:5em 5em 0}
+.r-a2,.r-a3{gap:10px;padding:0 5em}
+.r-a4{gap:10px;padding:0 5em 5em}
+.a{border-radius:3em;padding:3em 4em}
+.a-post{justify-content:flex-start;align-items:flex-end}
+.a-post .ti img{object-position:100% 50%}
+.a-hands{justify-content:space-evenly;padding:20em 4em 3em}
+.a-merch{flex-direction:column;justify-content:flex-end;padding:20em 3em 3em}
+.a-ss{align-items:flex-end}
+.a-dig{justify-content:flex-end;align-items:flex-end;padding:3em}
+.a-rom{justify-content:flex-end;align-items:flex-start}
+.a-sys{width:100%;border-radius:3em;justify-content:flex-end;align-items:flex-end;background:var(--lav)}
+.a-sys .vb{position:relative;width:100%;border-radius:3em;overflow:hidden;aspect-ratio:16/9}
+.a-sys .vb video{width:100%;height:100%;object-fit:cover}
+.a-sys .cap{position:absolute;left:3em;bottom:3em;width:28vw;padding:3em 3em 2em 2em}
+.ss{position:absolute;inset:0;border-radius:inherit;overflow:hidden}
+.ss img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;object-position:50% 0;z-index:0}
+.ss img.on{z-index:2}
+
+@media (max-width:1024px){
+  .hero-in{min-height:30vh}
+  .v1{width:340px}.v2,.v3{width:170px}
+  .st-in,.st-intro .st-in{padding:0}
+  .card.pc{min-height:60vh;flex-wrap:wrap}
+  .lav-in{padding:0}
+  .r-brew{padding:3em 3em 0}
+  .brew{min-height:120vh;flex-direction:column;justify-content:flex-end;padding:2em}
+  .brew .cap{width:90%;padding:4em 2em 2em}
+  .r-pill,.r-pill.p1,.r-pill.p3{flex-direction:column}
+  .r-pill .ic.first{order:-99999}
+  .pl{padding:1em 0 0}
+  .r-man{flex-direction:column;padding:3em}
+  .man-tx{padding:2em 0}
+  .sw-grid{padding:3em 3em 0}
+  .r-pal{flex-direction:column;padding:0 3em 3em}
+  .r-a1{flex-direction:column;padding:3em 3em 0}
+  .r-a2,.r-a3{flex-direction:column;padding:0 3em}
+  .r-a4{flex-direction:column;padding:0 3em 20em}
+  .a-rom{flex-direction:column;justify-content:flex-end}
+  .a-sys .cap{left:0;bottom:-13em;width:100%}
+  .brew .ti img{object-position:100% 0}
+  .pal .ti img{object-position:50% 50%}
+  .s-5th{right:49px}
+  .s-y21{left:17%;top:-3%}
+  .s-hand{width:154px;top:6.106%;right:-17px}
+  .s-y22{left:37.802%;top:6.106%}
+  .s-arrow{left:37.802%}
+  .s-y23{left:28%;top:0}
+  .s-blob{left:4%}
+  .s-y24{left:28%;top:0}
+  .s-ok{left:2%}
+  .s-tap{right:6%;bottom:99px}
+  .s-pot{top:8%}
+  /* hidden on tablets and phones on the old page too */
+  .s-seven,.s-pot,.a-ss.ss-b{display:none}
+}
+@media (max-width:767px){
+  .lr,.card,.ic{flex-wrap:wrap}
+  .hero{padding:0}
+  .hero-w{padding:10px;border-radius:2em}
+  .hero-in{padding:1em;border-radius:1em}
+  .v1{width:260px}.v1 .vi{margin:0 -10% 0 4%}
+  .v2,.v3{width:130px}.v2 .vi{margin:-1% 60% 0 -60%}.v3 .vi{margin:-1% 19% 0 -16%}
+  .st{padding:8em 1em}
+  .st.sb6{padding-bottom:6em}
+  .st-intro{padding:2em 1em}
+  .st-box{padding:0;max-width:90%}
+  .ys{padding:0}
+  .ys-in{gap:0}
+  .ys-21{padding-top:66px}
+  .ys-23{padding-top:67px}
+  .cw{border-radius:2em;padding:0 10px 10px}
+  .cw.c21a-w,.cw.c22a-w{padding:10px}
+  .card{padding:1em;border-radius:1em}
+  .card.c21a{padding:4em 1em 1em}
+  .card.c22a{padding:2em 1em 1em}
+  .card.c24{padding:3em 1em 1em}
+  .lav{padding:10px 5px}
+  .lav-in{padding:50px 15px 15px}
+  .lav-in.pal-in{padding:50px 15px}
+  .r-brew,.r-pill,.r-pill.p1,.r-pill.p3,.sw-grid,.r-pal,.r-a1,.r-a2,.r-a3,.r-a4{padding:0}
+  .r-pill.p1{padding-top:3em}
+  .brew{justify-content:flex-end;padding:3em 1em 1em;border-radius:2em}
+  .brew .cap{width:100%;padding:3em 2em 2em}
+  .ic{border-radius:2em}
+  .pl{padding:0 1em 3em}
+  .r-man{padding:50px 0 0}
+  .man-ph{border-radius:2em}
+  .man-tx{padding:4em 1em}
+  .sw-grid{grid-template-columns:1fr}
+  .sw{min-height:35vh;border-radius:2em}
+  .pal{min-height:100vh;padding:1em;border-radius:2em}
+  .a{border-radius:2em;padding:1em}
+  .a-post{min-height:80vh}
+  .a-hands{padding:15em 0 0}
+  .a-merch{min-height:85vh;padding:1em}
+  .a-ss{padding:2em}
+  .a-rom{flex-direction:row;justify-content:flex-end;align-items:flex-end}
+  .a-sys{border-radius:2em;margin-bottom:16em}
+  .a-sys .vb{border-radius:2em}
+  .a-sys .cap{bottom:-16em;justify-content:center;padding:2em}
+  .cap{padding:2em}
+  .nav{padding:15px 10px;margin-bottom:11px}
+  .nav ul{border-radius:10em;gap:1px}
+  .nav a{padding:6px 12px}
+  .brew .ti .dk{display:none}
+  .brew .ti .mb{display:block;object-position:70% 0}
+  .t-23 .ti img,.t-crowd .ti img{object-position:-120px 0}
+  .man-ph .ti img{object-position:-90px 0}
+  .a-post .ti img{object-position:-409px 0}
+  .s-5th{width:111px;top:-5%;right:13px}
+  .s-y21{width:146px;left:6%}
+  .s-hand{width:103px;top:41%}
+  .s-y22{width:146px;top:-3%;left:26%}
+  .s-arrow{left:1%}
+  .s-y23{width:171px;top:-4%;left:11%}
+  .s-blob{width:73px;bottom:47%;left:2%}
+  .s-seven{width:171px}
+  .s-y24{width:154px;top:-1%;left:12%}
+  .s-ok{left:46%;top:-30px}
+  .s-tap{width:80px;bottom:-46px;right:16%}
+  .s-pot{width:56px;top:85%;right:63%}
+}
+
+/* r138a: the small motions (none of them when the visitor asks for less motion) */
+.ti>img,.pw img,.pt img{transition:scale .9s cubic-bezier(.2,.7,.2,1),translate .5s cubic-bezier(.2,.7,.2,1),rotate .5s cubic-bezier(.2,.7,.2,1)}
+@media (hover:hover){
+  .t:hover .ti>img,.t:hover .ti>video{scale:1.04}
+  .pw:hover img,.pt:hover img{translate:0 -6px;rotate:-.6deg}
+}
+.ss img{transition:none}
+.ss img.go{transition:translate .5s ease}
+@media (prefers-reduced-motion:no-preference){
+  .js .rv{opacity:0;translate:0 28px;transition:opacity .8s cubic-bezier(.2,.7,.2,1),translate .8s cubic-bezier(.2,.7,.2,1)}
+  .js .rv.in{opacity:1;translate:none}
+  .stk{translate:0 var(--py,0px)}
+  .ic-in img{scale:var(--sc,1)}
+  [data-fx]{opacity:var(--o,1);filter:blur(var(--b,0px))}
+}
+@media (prefers-reduced-motion:reduce){
+  .blur-in{opacity:1;filter:none;transform:none;transition:none}
+  .nav,.ti>img,.pw img,.pt img{transition:none}
+}
+</style>
+</head>
+<body>
+<nav class="nav" id="sc-nav">
+  <ul>
+    <li><a href="/site/">Studio</a></li>
+    <li><a class="on" href="/site/#work">Projects</a></li>
+    <li><a href="/site/#services">Services</a></li>
+    <li><a href="/site/#contact">Contact</a></li>
+    <li class="lng" hidden><a></a></li>
+  </ul>
+</nav>
+<main class="sc">
+
+<header class="hero">
+  <div class="hero-w"><div class="hero-in">
+    <h1 class="vh">
+      <span class="v v1"><span class="vi"><img src="m:scf/vh-1" alt="Slow Coffee Festival" width="1851" height="235" fetchpriority="high"></span></span>
+      <span class="v v2"><span class="vi"><img src="m:scf/vh-2" alt="A visual" width="926" height="239"></span></span>
+      <span class="v v3"><span class="vi"><img src="m:scf/vh-3" alt="History" width="939" height="253"></span></span>
+    </h1>
+  </div></div>
+</header>
+
+<section class="st st-intro">
+  <div class="st-box"><div class="st-in">
+    <h2 class="hp blur-in">For five years, we've been shaping the face of <b><i>Slow Coffee Festival</i></b>. Not just a <b><i>logo</i></b> and a poster, but a <b><i>positioning</i></b> and a <b><i>visual language</i></b> that connects with people, not slides them.</h2>
+  </div></div>
+</section>
+
+<!-- 2021 -->
+<section class="ys ys-21" aria-label="2021">
+  <div class="ys-in">
+    <div class="cw c21a-w">
+      <div class="card pc c21a" style="--cbg:var(--c21)">
+        <div class="pw rv"><img src="m:scf/p21-slow" alt="Slow Coffee Festival poster, 2021" width="808" height="1138" loading="lazy"></div>
+        <div class="pw rv"><img src="m:scf/p21-aeropress" alt="Aeropress Competition poster, 2021" width="808" height="1138" loading="lazy"></div>
+        <div class="stk s-5th" data-fx="B65-100-6" data-par="-14"><img src="m:scf/st-5th-edition" alt="5th edition" width="337" height="285" loading="lazy"></div>
+        <div class="stk r10 s-y21" data-fx="B77-100-6" data-par="10"><img src="m:scf/yr-2021" alt="2021" width="255" height="121" loading="lazy"></div>
+      </div>
+    </div>
+    <div class="cw c21b-w">
+      <div class="stk s-hand" aria-hidden="true" data-par="-18"><img src="m:scf/st-hand" alt="" width="274" height="441" loading="lazy"></div>
+      <div class="card" style="--cbg:var(--c21)">
+        <div class="t rv" style="--w:33%;--mh:60vh;--mht:50vh;--mhm:50vh;--op:50% 0;--tbg:var(--c21)"><span class="ti"><img src="m:scf/ph-2021-work" alt="The Aeropress Competition on stage, 2021" width="1200" height="800" loading="lazy"></span></div>
+        <div class="t rv" style="--w:38%;--mh:60vh;--mht:50vh;--mhm:50vh;--tbg:var(--c21)"><span class="ti"><img src="m:scf/ph-2021-3" alt="An Aeropress in a Slow Coffee Festival box" width="768" height="1024" loading="lazy"></span></div>
+        <div class="t rv" style="--w:26%;--mh:60vh;--mht:65vh;--mhm:50vh;--op:50% 0;--tbg:var(--c21)"><span class="ti"><img src="m:scf/ph-2022-1" alt="A Slow Coffee Festival pin on a denim jacket" width="797" height="1195" loading="lazy"></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="st">
+  <div class="st-box"><div class="st-in">
+    <h2 class="hp" data-fx="o8-26-10 b0-26-15">For us, branding is more than design, it's <b><i>meaning</i></b>, a <b><i>voice</i></b> and a <b><i>vibe</i></b> made visible.</h2>
+  </div></div>
+</section>
+
+<!-- 2022 -->
+<section class="ys ys-22" aria-label="2022">
+  <div class="ys-in">
+    <div class="cw c22a-w">
+      <div class="card pc c22a" style="--cbg:var(--c22)">
+        <div class="pw rv"><img src="m:scf/p22-slow" alt="Slow Coffee Festival poster, 2022" width="803" height="1131" loading="lazy"></div>
+        <div class="pw rv"><img src="m:scf/p22-sloth" alt="Slow Coffee Festival poster with the sloth, 2022" width="806" height="1131" loading="lazy"></div>
+        <div class="pw rv"><img src="m:scf/p22-aeropress" alt="Aeropress Competition poster, 2022" width="804" height="1127" loading="lazy"></div>
+        <div class="stk r10 s-y22" data-par="10"><img src="m:scf/yr-2022" alt="2022" width="261" height="106" loading="lazy"></div>
+      </div>
+    </div>
+    <div class="cw">
+      <div class="card" style="--cbg:var(--c22)">
+        <div class="t rv" style="--w:60%;--mh:60vh;--mht:65vh;--mhm:50vh;--tbg:var(--yel)"><span class="ti"><img src="m:scf/ph-2022-coffee" alt="The Welcome banner at the festival entrance" width="704" height="600" loading="lazy"></span>
+          <div class="stk r10 s-arrow" aria-hidden="true" data-par="-8"><img src="m:scf/st-arrow" alt="" width="146" height="156" loading="lazy"></div>
+        </div>
+        <div class="t rv" style="--w:38%;--mh:60vh;--mht:65vh;--mhm:50vh;--tbg:var(--yel)"><span class="ti"><img src="m:scf/ph-2022-3" alt="A Slow Coffee Festival T-shirt under the Welcome banner" width="614" height="815" loading="lazy"></span></div>
+        <div class="t rv" style="--w:34%;--mh:54vh;--mht:65vh;--mhm:50vh;--tbg:var(--yel)"><span class="ti"><img src="m:scf/ph-2022-merch" alt="The 2022 festival T-shirt" width="800" height="800" loading="lazy"></span></div>
+        <div class="t rv" style="--w:64%;--mh:54vh;--mht:50vh;--mhm:40vh;--op:50% 0;--tbg:var(--yel)"><span class="ti"><img src="m:scf/ph-2022-4" alt="The Workshops banner on The Institute" width="908" height="518" loading="lazy"></span></div>
+        <div class="pt end rv" style="--w:32.3%;--mht:65vh;--mhm:0;--mw:575px"><img src="m:scf/p22-story-1" alt="Instagram story for the 2022 edition" width="899" height="1600" loading="lazy"></div>
+        <div class="pt end rv" style="--w:32.3%;--mht:65vh;--mhm:0;--mw:576px"><img src="m:scf/p22-story-2" alt="Instagram story for the Aeropress Competition, 2022" width="900" height="1600" loading="lazy"></div>
+        <div class="pt end rv" style="--w:32.3%;--mh:30vh;--mht:65vh;--mhm:0;--mw:576px"><img src="m:scf/p22-story-3" alt="Instagram story: what do you call a sad cup of coffee? A Depresso" width="900" height="1600" loading="lazy"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="st sb6">
+  <div class="st-box"><div class="st-in">
+    <h2 class="hp" data-fx="o8-26-10 b0-26-15">A way to turn <b><i>values</i></b> into graphics and graphics into something you actually <b><i>feel</i></b>.</h2>
+  </div></div>
+</section>
+
+<!-- 2023 -->
+<section class="ys ys-23" aria-label="2023">
+  <div class="ys-in">
+    <div class="cw">
+      <div class="card" style="--cbg:var(--c23)">
+        <div class="pt rv" style="--w:32.33%;--mh:70vh;--mht:65vh;--mhm:0;--tbg:var(--c23);--mw:609px"><img src="m:scf/p23-sloth" alt="Slow Coffee Festival poster, 2023" width="609" height="861" loading="lazy"></div>
+        <div class="pt rv" style="--w:32.33%;--mh:70vh;--mht:65vh;--mhm:0;--tbg:var(--c23);--mw:727px"><img src="m:scf/p23-aeropress" alt="Aeropress Championship poster, 2023" width="807" height="1137" loading="lazy"></div>
+        <div class="pt rv" style="--w:32.33%;--mh:70vh;--mht:65vh;--mhm:0;--tbg:var(--c23);--mw:610px"><img src="m:scf/p23-seven" alt="Slow Coffee Festival poster with the seven, 2023" width="610" height="862" loading="lazy"></div>
+        <div class="t rv t-23" style="--w:99%;--mh:100vh;--mht:46vh;--mhm:50vh;--op:50% 0;--tbg:#E9F3F4"><span class="ti"><img src="m:scf/ph-2023" alt="Badges for the team and the Slow Coffee Fast Growth B2B Day, 2023" width="1201" height="862" loading="lazy"></span></div>
+        <div class="stk r10 s-y23" data-par="10"><img src="m:scf/yr-2023" alt="2023" width="209" height="115" loading="lazy"></div>
+        <div class="stk r10 s-blob" aria-hidden="true" data-par="-12"><img src="m:scf/st-blob" alt="" width="67" height="66" loading="lazy"></div>
+        <div class="stk r10 s-seven" aria-hidden="true" data-par="14"><img src="m:scf/st-seven" alt="" width="172" height="232" loading="lazy"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="st">
+  <div class="st-box"><div class="st-in">
+    <h2 class="hp" data-fx="o8-26-10 b0-26-15">The festival grew <b><i>bigger</i></b> and more <b><i>ambitious</i></b> every year. And so did its looks.</h2>
+  </div></div>
+</section>
+
+<!-- 2024 -->
+<section class="ys ys-24" aria-label="2024">
+  <div class="ys-in">
+    <div class="cw">
+      <div class="card c24" style="--cbg:var(--c24)">
+        <div class="pt rv" style="--w:32.3%;--mh:70vh;--mht:65vh;--mhm:0;--mw:725px"><img src="m:scf/p24-spiral" alt="Aeropress Competition poster, 2024" width="750" height="1060" loading="lazy"></div>
+        <div class="pt rv" style="--w:32.3%;--mh:70vh;--mht:65vh;--mhm:0;--mw:725px"><img src="m:scf/p24-slow" alt="Slow Coffee Festival poster, 2024" width="750" height="1060" loading="lazy"></div>
+        <div class="pt rv" style="--w:32.3%;--mh:70vh;--mht:65vh;--mhm:0;--mw:725px"><img src="m:scf/p24-aeropress" alt="Aeropress Competition type poster, 2024" width="750" height="1060" loading="lazy"></div>
+        <div class="t rv" style="--w:38%;--mh:70vh;--mht:50vh;--mhm:50vh;--op:50% 0;--tbg:var(--c21)"><span class="ti"><img src="m:scf/ph-2024-4" alt="Festival flags over the street at sunset" width="1200" height="1600" loading="lazy"></span></div>
+        <div class="t rv" style="--w:60%;--mh:70vh;--mht:50vh;--mhm:50vh;--tbg:var(--c21)"><span class="ti"><img src="m:scf/ph-2024-3" alt="The Hello Slow Coffee Festival banner at Combinatul Fondului Plastic" width="1600" height="1067" loading="lazy"></span></div>
+        <div class="t rv t-crowd" style="--w:99%;--mh:70vh;--mht:50vh;--mhm:50vh;--op:50% 0;--tbg:var(--c21)"><span class="ti"><img src="m:scf/ph-2024-crowd" alt="The crowd inside the festival hall" width="1920" height="1280" loading="lazy"></span></div>
+        <div class="stk r10 s-y24" data-par="10"><img src="m:scf/yr-2024" alt="2024" width="244" height="106" loading="lazy"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="st">
+  <div class="st-box"><div class="st-in">
+    <h2 class="hp" data-fx="o8-26-10 b0-26-15">After four years of building and learning, we’re entering a <b><i>new chapter</i></b>. At the heart of it all, we’ve returned to the essence:</h2>
+    <p class="slow" data-fx="o8-26-10 b0-26-15">SLOW</p>
+  </div></div>
+</section>
+
+<!-- 2025: the positioning, the pillars, the hands -->
+<section class="lav">
+  <div class="lav-in">
+    <div class="lr r-brew">
+      <div class="t brew" style="--mh:80vh;--mht:120vh"><span class="ti"><img class="dk" src="m:scf/ph-25-a1" alt="A 2025 Slow Coffee Festival poster at a tram stop" width="1600" height="875" loading="lazy"><img class="mb" src="m:scf/ph-25-a1-m" alt="A 2025 Slow Coffee Festival poster at a tram stop" width="900" height="1011" loading="lazy"></span>
+        <div class="cap" data-fx="o0-26-5 b12-28-15">
+          <h2 class="hp">Brewing a Visual Language</h2>
+          <div class="tx">
+            <p>For over eight years, Slow Coffee Festival has grown from a passionate gathering of specialty coffee lovers into Romania’s landmark coffee celebration.</p>
+            <p>Cromatic Studios has shaped the visual language and brand universe that reflects the festival: a place where coffee is culture, people are central, and every gesture matters.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="lr r-pill p1">
+      <div class="ic"><div class="ic-in"><img src="m:scf/hand-phone" alt="" width="197" height="201" loading="lazy" data-sc="5"></div></div>
+      <div class="pl">
+        <h3 class="hs">Culture</h3>
+        <h3 class="hp">Slow Living</h3>
+        <div class="tx"><p>At its heart, Slow Coffee Festival celebrates intentional living. In a world obsessed with speed and instant gratification, the festival invites visitors to pause, savor, and immerse themselves not only in their coffee, but also in the moments, conversations, and shared experiences around it.</p></div>
+      </div>
+    </div>
+    <div class="lr r-pill">
+      <div class="pl">
+        <h3 class="hs">Impact</h3>
+        <h3 class="hp">Coffee Community</h3>
+        <div class="tx">
+          <p>Specialty coffee is more than what’s in the cup, it’s about story, craft, ethics, and ecosystem.</p>
+          <p>The festival is the heartbeat of this community, connecting roasters, baristas, producers, and passionate coffee lovers.</p>
+          <p>It shifts the conversation: from “what coffee do you like?” to <i>“why do you like it?”</i> and from “what’s your favorite café?” to <i>“who’s behind your favorite cup?”.</i></p>
+        </div>
+      </div>
+      <div class="ic first"><div class="ic-in"><img src="m:scf/icon-1" alt="" width="229" height="167" loading="lazy" data-sc="7"></div></div>
+    </div>
+    <div class="lr r-pill p3">
+      <div class="ic"><div class="ic-in"><img src="m:scf/icon-2" alt="" width="237" height="195" loading="lazy" data-sc="5"></div></div>
+      <div class="pl">
+        <h3 class="hs">Voice &amp; Feelings</h3>
+        <h3 class="hp">Life as a Festival</h3>
+        <div class="tx"><p>The festival’s voice celebrates joy, curiosity, and presence. It encourages people to treat life like a festival — intentional, mindful, and memorable. Every interaction, every visual element, should reflect that energy.</p></div>
+      </div>
+    </div>
+    <div class="lr r-man">
+      <div class="t man-ph rv" style="--mh:64vh"><span class="ti"><img src="m:scf/ph-25-colors" alt="A visitor in front of the 2025 posters" width="920" height="613" loading="lazy"></span>
+        <div class="stk s-ok" aria-hidden="true" data-par="-10"><img src="m:scf/icon-4" alt="" width="185" height="237" loading="lazy"></div>
+        <div class="stk s-tap" aria-hidden="true" data-par="12"><img src="m:scf/icon-5" alt="" width="206" height="190" loading="lazy"></div>
+      </div>
+      <div class="man-tx">
+        <div class="stk s-pot" aria-hidden="true" data-par="-10"><img src="m:scf/icon-3" alt="" width="177" height="206" loading="lazy"></div>
+        <h2 class="hp">The Visual Manifesto:<br><b><i>Hands as a Language</i></b></h2>
+        <div class="tx">
+          <p>From this positioning, we distilled the visual identity down to its essence: hands. Illustrated in simple outlines, hands become the metaphor for craft, connection, and ritual. They press an Aeropress, pass a cup, roast coffee, or perform gestures that celebrate skill and attention.</p>
+          <p>Hands are versatile, they can tell stories, demonstrate craft, and convey emotion, all while keeping the festival’s slow and intentional energy at the center.</p>
+          <p>Hands are universal, human, and instantly recognizable, forming the heart of the festival’s visual identity.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="st">
+  <div class="st-box"><div class="st-in">
+    <h2 class="hp" data-fx="o8-26-10 b0-26-15">Form a <b><i>palette</i></b> that speaks of slow mornings, shared conversations, and the ritual of brewing, these colors reflect the sensory world of <b><i>coffee, community,</i></b> and <b><i>slowness.</i></b></h2>
+  </div></div>
+</section>
+
+<!-- 2025: the palette -->
+<section class="lav">
+  <div class="lav-in pal-in">
+    <div class="sw-grid">
+      <div class="sw rv" style="--cbg:var(--sage);--lbg:var(--sage-l)"><div class="sw-l"><h3 class="hs">Sage Bean</h3><p>Calm, grounding, balance</p></div></div>
+      <div class="sw lv rv" style="--cbg:var(--lav);--lbg:var(--lav-l)"><div class="sw-l"><h3 class="hs">Lavender Roast</h3><p>Subtlety, craftsmanship, human touch</p></div></div>
+      <div class="sw rv" style="--cbg:var(--gold);--lbg:var(--gold-l)"><div class="sw-l"><h3 class="hs">Golden Crema</h3><p>Warmth, optimism, approachability</p></div></div>
+    </div>
+    <div class="lr r-pal">
+      <div class="t pal" style="--mh:90vh;--mhm:100vh"><span class="ti"><img src="m:scf/ph-25-manifesto" alt="Three 2025 posters on a brick wall" width="920" height="657" loading="lazy"></span>
+        <div class="cap" style="--cw:42vw;--cbg:var(--gold)" data-fx="o14-37-5 b21-44-15"><h3 class="hs">These colors are flexible, allowing for consistency across posters, digital content, merch, and spatial design, while remaining warm and inviting.</h3></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="st">
+  <div class="st-box"><div class="st-in">
+    <h2 class="hp" data-fx="o8-26-10 b0-26-15">Bringing the <b><i>brand</i></b> to life gently animates atmosphere and memory with warm, welcoming color, tone, and movement.</h2>
+  </div></div>
+</section>
+
+<!-- 2025: the brand, alive -->
+<section class="lav">
+  <div class="lav-in">
+    <div class="lr r-a1">
+      <div class="t a a-post" style="--mh:60vh;--mhm:80vh"><span class="ti"><img src="m:scf/ph-25-posters" alt="2025 posters pasted on a wall" width="1600" height="1067" loading="lazy"></span>
+        <div class="cap" style="--cwt:80%;--cbg:var(--sage)" data-fx="o15-31-5 b13-43-15"><h3 class="hs">Posters and banners that feel <b><i>alive</i></b> and <b><i>intentional.</i></b></h3></div>
+      </div>
+      <div class="t a a-hands rv" style="--w:72%"><span class="ti"><img src="m:scf/ph-25-hands" alt="The 2025 Aeropress Championship poster in the sun" width="920" height="807" loading="lazy"></span></div>
+    </div>
+    <div class="lr r-a2">
+      <div class="t a a-merch" style="--w:50%;--mhm:85vh"><span class="ti"><img src="m:scf/ph-25-merch-10" alt="The Slow Coffee Festival sweatshirt" width="600" height="730" loading="lazy"></span>
+        <div class="cap" style="--cwt:79%;--cbg:var(--gold)" data-fx="o15-31-5 b13-43-15"><h3 class="hs">Merch that people want to wear <b><i>beyond</i></b> the festival.</h3></div>
+      </div>
+      <div class="t a a-ss rv" style="--w:50%;--mh:67vh" data-slides>
+        <span class="ss">
+          <img class="on" src="m:scf/ms-1" alt="Slow Coffee Festival merch" width="582" height="732" loading="lazy">
+          <img src="m:scf/ms-4" alt="Slow Coffee Festival merch" width="579" height="732" loading="lazy">
+          <img src="m:scf/ms-13" alt="Slow Coffee Festival merch" width="563" height="732" loading="lazy">
+          <img src="m:scf/ms-11" alt="Slow Coffee Festival merch" width="580" height="732" loading="lazy">
+          <img src="m:scf/ms-6" alt="Slow Coffee Festival merch" width="582" height="732" loading="lazy">
+          <img src="m:scf/ms-9" alt="Slow Coffee Festival merch" width="573" height="732" loading="lazy">
+          <img src="m:scf/ms-3" alt="Slow Coffee Festival merch" width="600" height="719" loading="lazy">
+          <img src="m:scf/ms-8" alt="Slow Coffee Festival merch" width="600" height="719" loading="lazy">
+        </span>
+      </div>
+      <div class="t a a-ss ss-b rv" style="--w:50%;--wt:50%;--mh:67vh" data-slides>
+        <span class="ss">
+          <img class="on" src="m:scf/ms-14" alt="Slow Coffee Festival merch" width="565" height="732" loading="lazy">
+          <img src="m:scf/ms-7" alt="Slow Coffee Festival merch" width="582" height="732" loading="lazy">
+          <img src="m:scf/ms-12" alt="Slow Coffee Festival merch" width="578" height="732" loading="lazy">
+          <img src="m:scf/ms-3" alt="Slow Coffee Festival merch" width="600" height="719" loading="lazy">
+        </span>
+      </div>
+    </div>
+    <div class="lr r-a3">
+      <div class="t a a-dig" style="--w:75%;--mh:70vh"><span class="ti" role="img" aria-label="The “Slow is the way to go” T-shirt on a street at night"><video src="m:scf/v-digital" poster="m:scf/v-digital-poster" muted loop playsinline preload="none" aria-hidden="true" style="--op:100% 50%;object-position:100% 50%"></video></span>
+        <div class="cap" style="--cwt:80%;--cbg:var(--sage)" data-fx="o14-37-5 b21-44-15"><h3 class="hs">Digital platforms that echo the slow, human <b><i>energy.</i></b></h3></div>
+      </div>
+      <div class="t a a-rom" style="--mh:70vh"><span class="ti"><img src="m:scf/ph-25-romexpo" alt="The festival stage at Romexpo" width="1600" height="1037" loading="lazy"></span>
+        <div class="cap" style="--cwt:70%;--cbg:var(--lav)" data-fx="o0-12-5 b5-19-15"><h3 class="hs">Stage and venue design that immerses visitors in <b><i>craft</i></b> and <b><i>ritual.</i></b></h3></div>
+      </div>
+    </div>
+    <div class="lr r-a4">
+      <div class="t a-sys">
+        <span class="vb" role="img" aria-label="Slow Coffee Festival billboards on a city street at night"><video src="m:scf/v-system" poster="m:scf/v-system-poster" muted loop playsinline preload="none" aria-hidden="true"></video></span>
+        <div class="cap" style="--cbg:var(--gold)" data-fx="o14-37-5 b21-44-15"><h3 class="hs">The system is <b><i>sustainable</i></b>, designed to grow with the festival and remain relevant for years, with only minor adjustments as the festival evolves.</h3></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<script>
+// r138a: the old page's motion, without Elementor. Statements and captions clear up as they rise into view (the
+// old "motion effects": opacity and blur by scroll position), the 2021 stickers blur as they leave, the hand icons
+// breathe around the middle of the screen; plus a light parallax on the stickers, pictures that rise in once, the two
+// merch slideshows (a new picture every 3 s, sliding right) and the films, which only play while they are in view.
+(function(){
+  var de=document.documentElement;
+  de.classList.add("js");
+  if(de.classList.contains("embed"))document.querySelectorAll('a[href^="/work/"]').forEach(function(a){a.href=a.getAttribute("href")+"?embed=1"});
+  var RM=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var nav=document.getElementById("sc-nav");
+  var sw=document.querySelector(".lang-fixed"),li=nav&&nav.querySelector(".lng");
+  if(sw&&li){var a=li.firstChild;a.href=sw.getAttribute("href");a.textContent=sw.textContent;a.setAttribute("hreflang",sw.getAttribute("hreflang")||"");a.setAttribute("lang",sw.getAttribute("lang")||"");a.title=sw.title;li.hidden=false;li.classList.add("on");document.body.classList.add("sc-lng")}
+  function onLoad(){document.querySelectorAll(".blur-in").forEach(function(e){e.classList.add("visible")})}
+  if(document.readyState==="complete")onLoad();else addEventListener("load",onLoad);
+  // films: play while on screen
+  var vids=[].slice.call(document.querySelectorAll(".sc video"));
+  if("IntersectionObserver" in window){
+    var vio=new IntersectionObserver(function(es){es.forEach(function(e){var v=e.target;if(e.isIntersecting&&!RM){if(v.preload==="none")v.preload="auto";var p=v.play();if(p&&p.catch)p.catch(function(){})}else{try{v.pause()}catch(x){}}})},{rootMargin:"200px 0px"});
+    vids.forEach(function(v){vio.observe(v)});
+  }
+  // merch slideshows: every 3 s the next picture slides in from the left (Elementor's "slide right", 500 ms)
+  document.querySelectorAll("[data-slides]").forEach(function(box){
+    var imgs=[].slice.call(box.querySelectorAll(".ss img")),i=0,vis=false,t=0;
+    if(imgs.length<2||RM)return;
+    function step(){
+      if(!vis||document.hidden)return;
+      var cur=imgs[i],nx=imgs[(i+1)%imgs.length];
+      nx.classList.remove("go");nx.style.translate="-100% 0";nx.style.zIndex=3;
+      void nx.offsetWidth;
+      nx.classList.add("go");cur.classList.add("go");
+      nx.style.translate="0 0";cur.style.translate="100% 0";
+      setTimeout(function(){cur.classList.remove("on","go");cur.style.translate="";cur.style.zIndex="";nx.classList.add("on");nx.classList.remove("go");nx.style.zIndex=""},520);
+      i=(i+1)%imgs.length;
+    }
+    if("IntersectionObserver" in window)new IntersectionObserver(function(es){vis=es[0].isIntersecting;clearInterval(t);if(vis)t=setInterval(step,3000)}).observe(box);
+  });
+  if(RM||!("IntersectionObserver" in window)){document.querySelectorAll(".rv").forEach(function(e){e.classList.add("in")});return}
+  // pictures rise in once
+  var rio=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");rio.unobserve(e.target)}})},{rootMargin:"0px 0px -6% 0px",threshold:0.06});
+  document.querySelectorAll(".rv").forEach(function(e){rio.observe(e)});
+  // scroll-linked: p = how far the element has travelled through the viewport, 0 (enters at the bottom) to 100 (gone at the top)
+  var FX=[].slice.call(document.querySelectorAll("[data-fx]")).map(function(el){
+    var o=null,b=null,B=null;
+    el.getAttribute("data-fx").split(" ").forEach(function(s){var m=/^([obB])(\d+)-(\d+)-(\d+)$/.exec(s);if(!m)return;var v=[+m[2],+m[3],+m[4]];if(m[1]==="o")o=v;else if(m[1]==="b")b=v;else B=v});
+    return {el:el,o:o,b:b,B:B};
+  });
+  var PAR=[].slice.call(document.querySelectorAll("[data-par]")).map(function(el){return {el:el,a:+el.getAttribute("data-par")}});
+  var SC=[].slice.call(document.querySelectorAll("[data-sc]")).map(function(el){return {el:el,k:+el.getAttribute("data-sc")*0.04}});
+  function cl(x){return x<0?0:x>1?1:x}
+  function prog(r,vh){return (vh-r.top)/(vh+r.height)*100}
+  var raf=0;
+  function run(){
+    raf=0;
+    var vh=innerHeight;
+    if(nav)nav.classList.toggle("stuck",scrollY>2);
+    FX.forEach(function(f){
+      var r=f.el.getBoundingClientRect();if(r.bottom<-vh||r.top>2*vh)return;
+      var p=prog(r,vh),op=1,bl=0;
+      if(f.o)op=1-(f.o[2]/10)*(1-cl((p-f.o[0])/Math.max(1,f.o[1]-f.o[0])));
+      if(f.b)bl=f.b[2]*(1-cl((p-f.b[0])/Math.max(1,f.b[1]-f.b[0])));
+      if(f.B)bl=f.B[2]*cl((p-f.B[0])/Math.max(1,f.B[1]-f.B[0]));
+      f.el.style.setProperty("--o",op.toFixed(3));f.el.style.setProperty("--b",bl.toFixed(2)+"px");
+    });
+    PAR.forEach(function(s){
+      var r=s.el.getBoundingClientRect();if(r.bottom<-200||r.top>vh+200)return;
+      var k=((r.top+r.height/2)-vh/2)/vh;k=k<-1?-1:k>1?1:k;
+      s.el.style.setProperty("--py",(k*s.a).toFixed(1)+"px");
+    });
+    SC.forEach(function(s){
+      var r=s.el.getBoundingClientRect();if(r.bottom<0||r.top>vh)return;
+      var p=prog(r,vh),d=p<49?(49-p)/49:p>53?(p-53)/47:0;
+      s.el.style.setProperty("--sc",(1-s.k*d).toFixed(3));
+    });
+  }
+  function kick(){if(!raf)raf=requestAnimationFrame(run)}
+  addEventListener("scroll",kick,{passive:true});addEventListener("resize",kick);run();
+})();
+</script>
+</body>
+</html>

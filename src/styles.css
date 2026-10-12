@@ -3459,6 +3459,25 @@ body.kz-intro .map-welcome, body.map-boarding .map-welcome { display: none; }
 .map-top .map-ro { height: 42px; min-width: 42px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; padding: 0 12px; border-radius: 999px; border: 1px solid #141414 !important; background: #fff; color: #141414; font: 800 13px/1 CromaticSans, sans-serif; letter-spacing: .04em; text-decoration: none; pointer-events: auto; cursor: pointer; }
 .map-top .map-ro:hover { background: #FED012; }
 @media (max-width: 719px) { .map-top .map-ro { height: 38px; min-width: 32px; padding: 0 7px; font-size: 11.5px; } }
+/* r138e (Daniel): on a laptop RO waits tucked behind "Normal website", only a sliver of its edge showing (it changes
+   the whole site anyway). Pointing at either of them, or tabbing to them, slides it out; it slips back a beat after
+   the pointer leaves. Touch screens and phones keep it as it was (phones: next to the score, r136b). */
+@media (min-width: 720px) and (hover: hover) and (pointer: fine) {
+  .map-top .map-site { position: relative; z-index: 2; }
+  .map-top .map-ro { position: relative; z-index: 1; width: 42px; min-width: 0; padding: 0; margin-left: -41px;
+    transition: margin-left .62s cubic-bezier(.32,.72,0,1) .22s, background-color .2s ease, color .3s ease .22s; color: transparent; }
+  /* the gap between the two stays "inside" RO, so the pointer can cross it without RO slipping back */
+  .map-top .map-ro::before { content: ""; position: absolute; top: -6px; bottom: -6px; right: 100%; width: 14px; }
+  /* the focus ring hugs the pill only (an outline would wrap the bridge above too) */
+  .map-top .map-ro:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1565d8; }
+  .map-top .map-site:is(:hover, :focus-visible) + .map-ro, .map-top .map-ro:is(:hover, :focus-visible) {
+    margin-left: 0; color: #141414; transition: margin-left .55s cubic-bezier(.32,.72,0,1), background-color .2s ease, color .25s ease .08s; }
+  .map-top:has(.map-site:hover, .map-site:focus-visible, .map-ro:hover, .map-ro:focus-visible) .map-ro {
+    margin-left: 0; color: #141414; transition: margin-left .55s cubic-bezier(.32,.72,0,1), background-color .2s ease, color .25s ease .08s; }
+}
+@media (min-width: 720px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: reduce) {
+  .map-top .map-ro, .map-top .map-ro:is(:hover, :focus-visible) { transition: color .2s ease, background-color .2s ease !important; }
+}
 .map-dock .map-dock-h b { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px; background: #F65342; color: #fff; font: 900 13px/1 CromaticSans, sans-serif; margin-right: 6px; letter-spacing: 0; }
 .map-dock .map-dock-h { display: inline-flex; align-items: center; white-space: nowrap; }
 

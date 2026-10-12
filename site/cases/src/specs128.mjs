@@ -452,7 +452,7 @@ export const PAGES128 = [
   // ------------------------------------------------------------------ Casa Berero
   {
     slug: "casa-berero",
-    name: "Casa Berero",
+    name: "Berero", // r138e (Daniel): not "Casa Berero"
     tagline: "Craft beer with your people: COMM and UNITY, cans, merch and a house to drink them in.",
     desc: "Berero: brand identity, can labels for COMM lager and UNITY IPA, merch, event posters and B2B presentations for a craft beer brand and its house, Casa Berero. By Cromatic Studios.",
     title: "Craft beer with your people.",

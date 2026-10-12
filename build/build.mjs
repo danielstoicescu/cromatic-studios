@@ -325,11 +325,17 @@ const wpLocal = (u) => mediaMap.get("m:wp/" + u.replace(/^.*\/uploads\/(\d{4})\/
 // r137b (Daniel): five projects (the same street first, then the next streets over), on a rail wider than the page
 // that rides to the right as the page scrolls down through it; still a plain horizontal scroller by hand, by keys,
 // and for prefers-reduced-motion (then it does not move on its own)
-const STREET_CSS = `<style>.cz-street{box-sizing:border-box;margin:64px 0 48px;padding:0 20px;font:500 16px/1.45 CromaticSans,"Darker Grotesque",system-ui,sans-serif;color:#0d0c09}.cz-street>*{max-width:1140px;margin-left:auto;margin-right:auto}.cz-street .czs-eb{font:700 11px/1.2 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin-top:0;margin-bottom:10px}.cz-street h2{font:900 clamp(30px,4.4vw,52px)/1.02 CromaticSans,system-ui,sans-serif;letter-spacing:-.02em;margin-top:0;margin-bottom:18px}.cz-street h2 span{display:inline-block;padding:.02em .22em .08em;border-radius:.22em;background:var(--czs,#FED012);transform:rotate(-1.2deg)}.cz-street>.czs-rail{box-sizing:border-box;max-width:none;display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;margin:0 -20px;padding:8px max(20px,calc((100% - 1140px) / 2 + 20px)) 20px;scroll-snap-type:x proximity;scroll-padding-inline:max(20px,calc((100% - 1140px) / 2 + 20px));scrollbar-width:thin;scrollbar-color:rgba(13,12,9,.3) transparent;overscroll-behavior-x:contain;outline:0}.czs-rail.czs-live{scroll-snap-type:none}.czs-rail:focus-visible{box-shadow:inset 0 0 0 3px #119BFE;border-radius:14px}.czs-card{flex:0 0 clamp(250px,28vw,400px);scroll-snap-align:start;display:flex;flex-direction:column;border:2px solid #0d0c09;border-radius:22px;overflow:hidden;background:#fff;color:#0d0c09;text-decoration:none;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s}.czs-card:hover{transform:translateY(-4px) rotate(-.4deg);box-shadow:0 10px 18px rgba(13,12,9,.12)}.czs-card:focus-visible{outline:3px solid #119BFE;outline-offset:2px}.czs-card img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;background:#eee}.czs-card b{font:800 20px/1.15 CromaticSans,system-ui,sans-serif;padding:14px 16px 2px}.czs-card span{font-size:14px;opacity:.72;padding:0 16px 16px}.czs-card .czs-st{display:flex;align-items:center;gap:7px;padding:14px 16px 0;font:700 10.5px/1.2 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;font-style:normal;opacity:.7}.czs-st::before{content:"";flex:0 0 8px;height:8px;border-radius:50%;background:var(--c,#FED012)}.czs-st+b{padding-top:6px}.czs-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.czs-links a{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border:2px solid #0d0c09;border-radius:999px;background:#fff;color:#0d0c09;text-decoration:none;font:800 14px/1 CromaticSans,system-ui,sans-serif}@media (max-width:760px){.cz-street>.czs-rail{gap:12px;scrollbar-width:none}.czs-rail::-webkit-scrollbar{display:none}.czs-card{flex-basis:min(76vw,340px)}.czs-card:hover{transform:none}}@media (prefers-reduced-motion:reduce){.czs-card{transition:none}}</style>`;
+const STREET_CSS = `<style>.cz-street{box-sizing:border-box;margin:64px 0 48px;padding:0 20px;font:500 16px/1.45 CromaticSans,"Darker Grotesque",system-ui,sans-serif;color:#0d0c09}.cz-street>*{max-width:1140px;margin-left:auto;margin-right:auto}.cz-street .czs-eb{font:700 11px/1.2 'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin-top:0;margin-bottom:10px}.cz-street h2{font:900 clamp(30px,4.4vw,52px)/1.02 CromaticSans,system-ui,sans-serif;letter-spacing:-.02em;margin-top:0;margin-bottom:18px}.cz-street h2 span{display:inline-block;padding:.02em .22em .08em;border-radius:.22em;background:var(--czs,#FED012);transform:rotate(-1.2deg)}.cz-street>.czs-rail{box-sizing:border-box;max-width:none;display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;margin:0 -20px;padding:8px max(20px,calc((100% - 1140px) / 2 + 20px)) 20px;scroll-snap-type:x proximity;scroll-padding-inline:max(20px,calc((100% - 1140px) / 2 + 20px));scrollbar-width:thin;scrollbar-color:rgba(13,12,9,.3) transparent;overscroll-behavior-x:contain;outline:0}.czs-rail.czs-live{scroll-snap-type:none}.czs-rail:focus-visible{box-shadow:inset 0 0 0 3px #119BFE;border-radius:14px}.czs-card{flex:0 0 clamp(250px,28vw,400px);scroll-snap-align:start;display:flex;flex-direction:column;border:2px solid #0d0c09;border-radius:22px;overflow:hidden;background:#fff;color:#0d0c09;text-decoration:none;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s}.czs-card:hover{transform:translateY(-4px) rotate(-.4deg);box-shadow:0 10px 18px rgba(13,12,9,.12)}.czs-card:focus-visible{outline:3px solid #119BFE;outline-offset:2px}.czs-card img{display:block;width:100%;height:auto;max-width:none;aspect-ratio:16/10;object-fit:cover;background:#eee}.czs-card b{font:800 20px/1.15 CromaticSans,system-ui,sans-serif;padding:14px 16px 2px}.czs-card span{font-size:14px;opacity:.72;padding:0 16px 16px}.czs-card .czs-st{display:flex;align-items:center;gap:7px;padding:14px 16px 0;font:700 10.5px/1.2 'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase;font-style:normal;opacity:.7}.czs-st::before{content:"";flex:0 0 8px;height:8px;border-radius:50%;background:var(--c,#FED012)}.czs-st+b{padding-top:6px}.czs-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.czs-links a{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border:2px solid #0d0c09;border-radius:999px;background:#fff;color:#0d0c09;text-decoration:none;font:800 14px/1 CromaticSans,system-ui,sans-serif}@media (max-width:760px){.cz-street>.czs-rail{gap:12px;scrollbar-width:none}.czs-rail::-webkit-scrollbar{display:none}.czs-card{flex-basis:min(76vw,340px)}.czs-card:hover{transform:none}}@media (prefers-reduced-motion:reduce){.czs-card{transition:none}}.c-visit{padding-top:clamp(32px,5vw,64px)}</style>`;
 // the ride: the rail's scroll position follows the page's (rail top from 85% to 15% of the viewport = first card to
 // last), eased every frame; a swipe, a wheel, a key or a focused card takes over and the ride carries on from there
 function czsClient() {
   var rail = document.querySelector("[data-czs]");
+  // r138d: inside the map (?embed=1) the cards and links keep the page in its frame
+  if (/[?&]embed=1/.test(location.search) && rail) rail.parentNode.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("a[href]");
+    if (!a || a.closest("[data-czb]") || a.target || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || a.origin !== location.origin || /[?&]embed=1/.test(a.search)) return;
+    e.preventDefault(); location.href = a.pathname + (a.search ? a.search + "&" : "?") + "embed=1" + a.hash;
+  });
   if (!rail || !window.requestAnimationFrame) return;
   var mq = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : null;
   var live = false, cur = 0, off = 0, lastSet = -1, userT = 0, raf = 0, last = 0;
@@ -380,34 +386,52 @@ function czsClient() {
 const STREET_JS = `<script>(${czsClient.toString()})();</script>`;
 const HUBS_DATA = await import("../site/hubs.mjs").catch(() => ({}));
 const escH = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+// r138d (Daniel: "on ALL portfolio pages, absolutely all"): every case page ends the same way, whatever made it:
+// the five projects, the industry and service links, the boarding ticket last. A page that is not on a street of
+// the map (Eliade 18, RDW 2023) takes the street of the industry page that writes about it, and the cards and
+// industry links of the whole map when none does. hasRelated is no longer used: those blocks are taken out (caseEnd).
 const hubLinks = (slug, hasRelated) => {
-  const proj = DATA.PROJECTS.find((x) => x.page === slug);
-  const ind = proj && (HUBS_DATA.INDUSTRIES || []).find((x) => x.street === proj.street);
+  const proj0 = DATA.PROJECTS.find((x) => x.page === slug);
+  const ind = proj0 ? (HUBS_DATA.INDUSTRIES || []).find((x) => x.street === proj0.street) : (HUBS_DATA.INDUSTRIES || []).find((x) => (x.cases || []).includes(slug) || JSON.stringify(x).includes(`/work/${slug}/`));
+  const proj = proj0 || { page: slug, street: ind ? ind.street : null };
   const svcs = (HUBS_DATA.SERVICE_PAGES || []).filter((x) => (x.cases || []).includes(slug));
-  const street = proj && DATA.STREETS?.[proj.street];
+  const street = proj.street && DATA.STREETS?.[proj.street];
   // r137b: five neighbours: the same street first, starting after this one (each page shows different ones), then
   // the streets next door; never this page, never the small ones or those without a page
   const seen = new Set([slug]), same = [];
-  const list = DATA.PROJECTS.filter((x) => x.page && !x.small && proj && x.street === proj.street);
+  const list = DATA.PROJECTS.filter((x) => x.page && !x.small && x.street === proj.street);
   const at = list.findIndex((x) => x.page === slug);
   for (let k = 1; k <= list.length && same.length < 5; k++) { const x = list[(Math.max(at, 0) + k) % list.length]; if (!seen.has(x.page)) { seen.add(x.page); same.push(x); } }
-  if (proj && same.length < 5) {
-    const all = DATA.PROJECTS, at2 = Math.max(0, all.findIndex((x) => x.page === slug));
+  if (same.length < 5) {
+    const all = DATA.PROJECTS, at2 = Math.max(0, all.findIndex((x) => x.page === slug), proj0 ? 0 : [...slug].reduce((a, c) => a + c.charCodeAt(0), 0) % all.length);
     for (let k = 1; k <= all.length && same.length < 5; k++) { const x = all[(at2 + k) % all.length]; if (x.page && !x.small && x.street !== proj.street && !seen.has(x.page)) { seen.add(x.page); same.push(x); } }
   }
   const stTag = (x) => { const st = x.street !== proj.street && DATA.STREETS?.[x.street]; return st ? `<i class="czs-st" style="--c:${st[1]}">${escH(st[0])}</i>` : ""; };
-  const cards = !hasRelated && same.length ? `<div class="czs-rail" data-czs tabindex="0" role="region" aria-labelledby="czs-h">${same.map((x) => `<a class="czs-card" href="/work/${x.page}/"><img src="%%COVER:${x.page}%%" alt="${escH(x.name)}" loading="lazy" decoding="async" width="800" height="500">${stTag(x)}<b>${escH(x.name)}</b><span>${escH(x.cat || "")}</span></a>`).join("")}</div>` : "";
-  const links = [ind ? `<a href="/industries/${ind.slug}/">${escH(ind.title.replace(/ in Bucharest$/, ""))} <span aria-hidden="true">→</span></a>` : "", ...svcs.map((x) => `<a href="/services/${x.slug}/">${escH(x.name)} <span aria-hidden="true">→</span></a>`)].join("");
-  const board = hasRelated ? "" : BOARD_HTML;
+  const cards = same.length ? `<div class="czs-rail" data-czs tabindex="0" role="region" aria-labelledby="czs-h">${same.map((x) => `<a class="czs-card" href="/work/${x.page}/"><img src="%%COVER:${x.page}%%" alt="${escH(x.name)}" loading="lazy" decoding="async" width="800" height="500">${stTag(x)}<b>${escH(x.name)}</b><span>${escH(x.cat || "")}</span></a>`).join("")}</div>` : "";
+  const indL = (d) => `<a href="/industries/${d.slug}/">${escH(d.title.replace(/ in Bucharest$/, ""))} <span aria-hidden="true">→</span></a>`;
+  const links = [...(ind ? [ind] : svcs.length ? [] : HUBS_DATA.INDUSTRIES || []).map(indL), ...svcs.map((x) => `<a href="/services/${x.slug}/">${escH(x.name)} <span aria-hidden="true">→</span></a>`)].join("");
+  const board = BOARD_HTML;
   if (!cards && !links && !board) return "";
   return `${STREET_CSS}<section class="cz-street" aria-label="More from the studio" style="--czs:${street ? street[1] : "#FED012"}">${cards ? `<p class="czs-eb">${escH(street ? street[0] : "")}</p><h2 id="czs-h"><span>On the same street</span></h2>${cards}` : ""}${links ? `<div class="czs-links">${links}</div>` : ""}${board}</section>${cards ? STREET_JS : ""}${board ? BOARD_CSS + BOARD_JS : ""}`;
 };
 // r136 (N25): YouTube films become a click-to-play facade on a local poster (a still of the film when we have one)
 const YT_POSTERS = { "vGNSZ_aUd8w": "m:cs/Clinica-Sante", "8KtUdarL1oI": "m:pain-plaisir/anemone" };
 const ytPoster = (id) => mediaMap.get(YT_POSTERS[id]) || null;
+// r138d (Daniel: "remove other calls to action"): a case page's own ending goes, whichever generator made it: the
+// Steam-style related rail and "What is your winning soundtrack?" card (site/cases, Steam), the "Your brand next? /
+// Start a project / More work" block and the "Next case" banner (site/render.mjs). The client's own link ("Visit
+// the website") in that block is content: it stays, on its own, just before the shared ending.
+const caseEnd = (raw, slug) => {
+  raw = raw.replace(/(?:[ \t]*<!--(?:(?!-->)[\s\S])*?-->\s*)?<section class="card (?:related|cta)"[^>]*>[\s\S]*?<\/section>\s*/g, "");
+  raw = raw.replace(/<section class="c-end">[\s\S]*?<\/section>\s*/g, (m) => { const own = /<p><a class="btn" href="[^"]*" target="_blank"[^>]*>[\s\S]*?<\/a><\/p>/.exec(m); return own ? `<section class="wrap c-visit">${own[0]}</section>\n` : ""; });
+  raw = raw.replace(/<a class="c2-next"[\s\S]*?<\/a>\s*/g, "");
+  if (/class="card (?:related|cta)"|<section class="c-end"|class="c2-next"/.test(raw)) console.warn(`[build] work/${slug}: an own ending is still there`);
+  return raw;
+};
 const page = (path, raw) => {
   raw = ytFacade(raw, ytPoster);
-  if (path.startsWith("work/")) { const block = hubLinks(path.slice(5), /class="card related"/.test(raw)); if (block && raw.includes("</main>")) { const e = raw.indexOf('<section class="c-end"'); const i = e > -1 ? e : raw.lastIndexOf("</main>"); raw = raw.slice(0, i) + block + raw.slice(i); } }
+  // r138d: the shared ending is the last thing in <main>, after the page's own ending is taken out (caseEnd)
+  if (path.startsWith("work/")) { raw = caseEnd(raw, path.slice(5)); const block = hubLinks(path.slice(5)); if (block && raw.includes("</main>")) { const i = raw.lastIndexOf("</main>"); raw = raw.slice(0, i) + block + "\n" + raw.slice(i); } else console.warn(`[build] ${path}: no </main>, no shared ending`); }
   const p = `/${path}/`, slug = path.replace(/^work\//, "");
   if (GF_CSS) raw = raw.replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\n?/, "").replace(/<link rel="preload" as="style" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"[^>]*>\n?<noscript><link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"><\/noscript>/, `<style>${GF_CSS}</style>`);
   const text = pageText(raw);
@@ -441,6 +465,15 @@ for (const slug of R.canvasSlugs) page(`work/${slug}`, R.canvasPage(slug));
     steam = steam.replace("<head>", `<head>\n<link rel="canonical" href="${SITE_URL}/work/steam/">\n<meta name="description" content="Steam Coffee Shop: a pioneer specialty coffee brand refreshed for its community. Branding, growth and product by Cromatic Studios, Bucharest.">\n${steamOg ? `<meta property="og:image" content="${SITE_URL}${steamOg.src}">\n` : ""}<link rel="icon" href="/favicon.ico" sizes="32x32">`)
       .replace("</head>", `<style>body>main.page{padding-top:64px}</style>\n</head>`)
       .replace(/<body([^>]*)>/, `<body$1>\n<a href="/site/#work" style="position:fixed;left:14px;top:14px;z-index:9999;padding:10px 16px;border-radius:999px;background:#FED012;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none">← Cromatic Studios</a>`);
+    // r138d: "Ne știm de la Steam" in a serif close to Steam's T-shirts: DM Serif Display (SIL OFL 1.1, site/fonts,
+    // licence next to it), roman latin + latin-ext (ș) and the italic for "de la", from our own domain as 'Steam Serif'
+    {
+      const ff = [];
+      for (const [k, style, range] of [["latin", "normal", "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD"], ["latin-ext", "normal", "U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF"], ["italic-latin", "italic", "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD"]]) {
+        try { const buf = readFileSync(join(root, "site", "fonts", `dm-serif-display-${k}.woff2`)); const rel = `assets/fonts/dm-serif-display-${k}-${hash(buf).slice(0, 8)}.woff2`; mkdirSync(join(pub, "assets", "fonts"), { recursive: true }); writeFileSync(join(pub, rel), buf); ff.push(`@font-face{font-family:'Steam Serif';font-style:${style};font-weight:400;font-display:swap;src:url(/${rel}) format('woff2');unicode-range:${range}}`); } catch (e) { console.warn("[build] steam serif:", e.message); }
+      }
+      if (ff.length) steam = steam.replace("</head>", `<style>${ff.join("")}</style>\n</head>`);
+    }
     page("work/steam", steam);
   }
 }
