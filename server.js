@@ -175,6 +175,28 @@ function acme(req, res) {
   res.end("Not found");
 }
 
+// r133: moving to cromaticstudios.com. Set PRIMARY_HOST=cromaticstudios.com (and SITE_URL) on the day the domain
+// points here: every other host of ours (drive., www.) answers with a permanent redirect to it. The old WordPress
+// addresses keep working: each project page goes to its case study, contact and services to their sections, and
+// test pages, author archives and the feed are gone for good (410).
+const PRIMARY_HOST = process.env.PRIMARY_HOST || "";
+const OLD = {
+  "/proiecte/": "/ro/#work", "/servicii/": "/ro/#services", "/contact/": "/ro/#contact", "/avi-garden/": "/ro/#work", "/proiecte/7-oale/": "/ro/#work",
+  "/proiecte/help4brain/": "/ro/proiecte/help-4-brain/", "/proiecte/sip/": "/ro/proiecte/sip-coffee-wine/",
+  "/proiecte/slow-coffee-festival-history/": "/ro/proiecte/slow-coffee-festival/", "/proiecte/slow/": "/ro/proiecte/slow-coffee-festival/",
+  "/proiecte/yoshy-izakaya/": "/ro/proiecte/yoshi-izakaya/", "/proiecte/arca/": "/ro/proiecte/arca-resort/"
+};
+const GONE = /^\/(?:testestes|online-core-beta|author\/[^/]+|feed|comments\/feed|wp-sitemap[^/]*\.xml|sitemap_index\.xml|xmlrpc\.php)\/?$/;
+function legacy(req, res) {
+  let p = new URL(req.url, "http://x").pathname;
+  if (!p.endsWith("/") && !/\.[a-z0-9]+$/i.test(p)) p += "/";
+  let to = OLD[p];
+  if (!to) { const m = /^\/proiecte\/([\w-]+)\/$/.exec(p); if (m && files.has(`/ro/proiecte/${m[1]}/index.html`)) to = `/ro/proiecte/${m[1]}/`; }
+  if (to) { res.writeHead(301, { Location: to, "Cache-Control": "public, max-age=86400" }); res.end(); return true; }
+  if (GONE.test(p)) { res.writeHead(410, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=86400" }); res.end("Gone"); return true; }
+  return false;
+}
+
 http.createServer((req, res) => {
   if (req.url === "/healthz") return send(res, 200, { ok: true });
   if (req.url.startsWith("/.well-known/acme-challenge/")) return acme(req, res);
@@ -183,6 +205,12 @@ http.createServer((req, res) => {
     res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
     return res.end();
   }
+  const host = String(req.headers.host || "").toLowerCase().split(":")[0];
+  if (PRIMARY_HOST && host !== PRIMARY_HOST && /(^|\.)cromaticstudios\.com$/.test(host)) {
+    res.writeHead(301, { Location: `https://${PRIMARY_HOST}${req.url}` });
+    return res.end();
+  }
+  if ((req.method === "GET" || req.method === "HEAD") && legacy(req, res)) return;
   if (req.url === "/api/boarding" && req.method === "POST") return void boarding(req, res).catch(() => send(res, 500, { ok: false }));
   if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405); return res.end(); }
   serve(req, res);

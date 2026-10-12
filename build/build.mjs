@@ -13,6 +13,7 @@ import * as DATA from "../site/data.mjs";
 import { makeRender } from "../site/render.mjs";
 import { kineticBundle } from "./kinetic.mjs";
 import { optimizeImages } from "./images.mjs";
+import { makeI18n, roPath } from "./i18n.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = (f) => join(root, "src", f);
@@ -301,10 +302,29 @@ for (const sl of R.serviceSlugs) page(`services/${sl}`, R.servicePage(sl, COVERS
 page("team", R.teamPage());
 const hubPaths = [...R.industrySlugs.map((x) => `/industries/${x}/`), ...R.serviceSlugs.map((x) => `/services/${x}/`), "/team/"];
 const workPaths = [...new Set([...R.slugs, ...R.canvasSlugs, ...caseSlugs, "steam"])].map((s) => `/work/${s}/`).sort();
+// r133: the Romanian website, from the English pages and site/i18n/ro.json
+const roPaths = [];
+{
+  const I18N = makeI18n(root);
+  const enPaths = new Set(["/site/", ...hubPaths, ...workPaths].filter((p) => PAGES[p]));
+  for (const p of enPaths) {
+    const file = join(pub, p, "index.html");
+    const en = readFileSync(file, "utf8");
+    const ro = I18N.alternates(I18N.translate(en, p, SITE_URL, enPaths), p, SITE_URL, "ro");
+    const rp = roPath(p);
+    mkdirSync(join(pub, rp), { recursive: true });
+    writeFileSync(join(pub, rp, "index.html"), ro);
+    writeFileSync(file, I18N.alternates(en, p, SITE_URL, "en"));
+    const t = /<title>([^<]*)<\/title>/.exec(ro)?.[1] || "", d = /<meta name="description" content="([^"]*)"/.exec(ro)?.[1] || "";
+    PAGES[rp] = { path: rp, title: t, desc: d, fullDesc: d, images: PAGES[p].images, lastmod: PAGES[p].lastmod, text: pageText(ro) };
+    roPaths.push(rp);
+  }
+  console.log(`[i18n] ${roPaths.length} Romanian pages, ${I18N.size} translations, ${I18N.saveMissing()} blocks still in English (site/i18n/ro.missing.json)`);
+}
 {
   const homeText = pageText(html);
   const home = { path: "/", title: "Cromatic Studios · Branding, web & film studio in Bucharest", desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, video and content.", images: [`${SITE_URL}/og.jpg`], lastmod: LASTMOD.get("/", homeText), text: homeText };
-  const order = [home, PAGES["/site/"], ...hubPaths.map((p) => PAGES[p]), ...workPaths.map((p) => PAGES[p]).filter(Boolean)];
+  const order = [home, PAGES["/site/"], ...hubPaths.map((p) => PAGES[p]), ...workPaths.map((p) => PAGES[p]).filter(Boolean), ...roPaths.map((p) => PAGES[p])];
   writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, order));
   writeFileSync(join(pub, "llms.txt"), llmsTxt(SITE_URL, { ...DATA, SAME_AS }, PAGES));
   writeFileSync(join(pub, "llms-full.txt"), llmsFull(SITE_URL, order));

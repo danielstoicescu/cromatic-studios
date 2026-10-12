@@ -633,3 +633,7 @@ a.bcard:hover .bc-cta i { transform: translateX(5px); }
 .team-crew .cr-role { display: block; margin-top: 10px; color: var(--muted); font-size: 11px; }
 .team-crew .cr-bio { display: block; margin-top: 8px; font-size: 15px; line-height: 1.45; max-width: 30ch; }
 .team-crew .cr-link { display: inline-block; margin-top: 8px; font-weight: 800; font-size: 14px; }
+/* r133: language switch */
+.lang-sw { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; height: 40px; padding: 0 12px; margin-right: 10px; border: var(--line); border-radius: 999px; background: #fff; font: 800 14px/1 var(--f); text-decoration: none; letter-spacing: .04em; }
+.lang-sw:hover { background: var(--y); }
+@media (max-width: 860px) { .hdr .lang-sw { margin-left: auto; margin-right: 8px; } }
