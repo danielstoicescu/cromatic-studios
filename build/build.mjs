@@ -263,7 +263,19 @@ const localDG = (t) => t.replace(/https:\/\/fonts\.gstatic\.com\/s\/darkergrotes
 const CS_CSS = localDG((readFileSync(siteSrc("site.css"), "utf8").match(/@font-face\{font-family:'CromaticSans'[^}]*\}/g) || []).join(""));
 writeFileSync(join(pub, "fonts.css"), `/* Cromatic Studios type: CromaticSans, Montserrat, JetBrains Mono, Cinzel */\n${CS_CSS}\n${GF_CSS}\n`);
 const wpLocal = (u) => mediaMap.get("m:wp/" + u.replace(/^.*\/uploads\/(\d{4})\/(\d{2})\/(.+)\.[a-z]+$/i, "$1-$2-$3"))?.src;
+// r135d: every case page links to its street (industry page) and to the services it shows, so the hubs gather
+// authority from the work (audit N6); same words on every page, translated with the rest for /ro/
+const HUBS_DATA = await import("../site/hubs.mjs").catch(() => ({}));
+const hubLinks = (slug) => {
+  const proj = DATA.PROJECTS.find((x) => x.page === slug);
+  const ind = proj && (HUBS_DATA.INDUSTRIES || []).find((x) => x.street === proj.street);
+  const svcs = (HUBS_DATA.SERVICE_PAGES || []).filter((x) => (x.cases || []).includes(slug));
+  if (!ind && !svcs.length) return "";
+  const pill = (href, label) => `<a href="${href}" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border:2px solid #0d0c09;border-radius:999px;background:#fff;color:#0d0c09;text-decoration:none;font:800 15px/1 CromaticSans,system-ui,sans-serif">${label}<span aria-hidden="true">→</span></a>`;
+  return `<nav class="cz-hubs" aria-label="More from the studio" style="box-sizing:border-box;max-width:1180px;margin:56px auto 40px;padding:22px 20px;display:flex;flex-wrap:wrap;gap:18px 34px;border-top:2px solid #0d0c09;font:500 15px/1.4 CromaticSans,system-ui,sans-serif;color:#0d0c09">${ind ? `<div style="display:flex;flex-direction:column;gap:10px"><span style="font:700 11px/1.2 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;opacity:.7">More on ${ind.streetName}</span>${pill(`/industries/${ind.slug}/`, ind.title.replace(/ in Bucharest$/, "").replace(/&/g, "&amp;"))}</div>` : ""}${svcs.length ? `<div style="display:flex;flex-direction:column;gap:10px"><span style="font:700 11px/1.2 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;opacity:.7">Services in this project</span><div style="display:flex;flex-wrap:wrap;gap:8px">${svcs.map((x) => pill(`/services/${x.slug}/`, x.name.replace(/&/g, "&amp;"))).join("")}</div></div>` : ""}</nav>`;
+};
 const page = (path, raw) => {
+  if (path.startsWith("work/")) { const block = hubLinks(path.slice(5)); if (block && raw.includes("</main>")) { const i = raw.lastIndexOf("</main>"); raw = raw.slice(0, i) + block + raw.slice(i); } }
   const p = `/${path}/`, slug = path.replace(/^work\//, "");
   if (GF_CSS) raw = raw.replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\n?/, "").replace(/<link rel="preload" as="style" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"[^>]*>\n?<noscript><link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"><\/noscript>/, `<style>${GF_CSS}</style>`);
   const text = pageText(raw);
@@ -364,7 +376,10 @@ const roPaths = [];
   const homeText = pageText(html);
   const home = { path: "/", title: "Cromatic Studios · Branding, web & film studio in Bucharest", desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, video and content.", images: [`${SITE_URL}/og.jpg`], lastmod: LASTMOD.get("/", homeText), text: homeText };
   const order = [home, PAGES["/site/"], ...hubPaths.map((p) => PAGES[p]), ...workPaths.map((p) => PAGES[p]).filter(Boolean), ...roPaths.map((p) => PAGES[p])];
-  writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, order));
+  // r135d: each language pair also in the sitemap (Bing reads hreflang there more reliably than in the page head)
+  const roSet = new Set(roPaths), pairs = new Map();
+  for (const p of ["/site/", ...hubPaths, ...workPaths]) { const rp = roPath(p); if (rp && roSet.has(rp)) { const alt = [["en", p], ["ro", rp], ["x-default", p]]; pairs.set(p, alt); pairs.set(rp, alt); } }
+  writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, order.map((e) => ({ ...e, alt: pairs.get(e.path) }))));
   writeFileSync(join(pub, "llms.txt"), llmsTxt(SITE_URL, { ...DATA, SAME_AS }, PAGES));
   writeFileSync(join(pub, "llms-full.txt"), llmsFull(SITE_URL, order));
   LASTMOD.save();

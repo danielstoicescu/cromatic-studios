@@ -228,11 +228,11 @@ Sitemap: ${SITE}/sitemap.xml
 export function sitemapXml(SITE, entries) {
   const x = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
   return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${entries.map((e) => `  <url>
     <loc>${x(SITE + e.path)}</loc>
     <lastmod>${e.lastmod}</lastmod>
-${(e.images || []).map((i) => `    <image:image><image:loc>${x(i)}</image:loc></image:image>`).join("\n")}
+${(e.alt || []).map(([l, p]) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${x(SITE + p)}"/>`).join("\n")}${e.alt ? "\n" : ""}${(e.images || []).map((i) => `    <image:image><image:loc>${x(i)}</image:loc></image:image>`).join("\n")}
   </url>`).join("\n")}
 </urlset>
 `;

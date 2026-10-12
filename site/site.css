@@ -46,7 +46,7 @@ p { margin: 0 0 1em; }
 /* ---- header ---- */
 .hdr { position: sticky; top: 0; z-index: 50; background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(13,12,9,.08); }
 .hdr-in { display: flex; align-items: center; gap: 28px; height: 72px; }
-.brand img { height: 30px; width: auto; }
+.brand img { height: auto; max-height: 30px; width: auto; max-width: 100%; }
 .nav { display: flex; gap: 26px; margin-left: auto; }
 .nav a { text-decoration: none; font-weight: 600; font-size: 15px; padding: 6px 0; background: linear-gradient(var(--y), var(--y)) 0 100% / 0 3px no-repeat; transition: background-size .3s var(--eoq); }
 .nav a:hover { background-size: 100% 3px; }
@@ -63,7 +63,7 @@ p { margin: 0 0 1em; }
   .nav, .hdr-in > .drive-btn { display: none; }
   .menu-btn { display: block; }
   .hdr-in { height: 64px; }
-  .brand img { height: 26px; }
+  .brand img { max-height: 26px; }
   .mnav { display: grid; gap: 4px; padding: 0 20px; max-height: 0; overflow: hidden; transition: max-height .4s var(--eoq), padding .4s var(--eoq); }
   .mnav.open { max-height: 420px; padding: 8px 20px 22px; }
   .mnav a:not(.drive-btn) { font-size: 22px; font-weight: 800; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(13,12,9,.08); }
