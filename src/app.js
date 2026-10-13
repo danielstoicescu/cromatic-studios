@@ -39359,7 +39359,11 @@ void main() {
           </div><button class="mw-free">Help me set my first direction \u2192</button>`);
         // r128: the content scrolls inside .mw-in, so the X can sit half outside the card without being clipped
         { const mwIn = document.createElement("div"); mwIn.className = "mw-in"; for (const n of [...welcomeEl.childNodes]) if (!n.classList?.contains("mw-x")) mwIn.append(n); welcomeEl.append(mwIn); }
-        const welcome = (on) => welcomeEl.classList.toggle("hidden", !on);
+        // r139s (Daniel: "the onboarding window should not show more than once in a session"): once per visit
+        const welcome = (on) => {
+          if (on) { try { if (Date.now() - (+localStorage.getItem("cz-welcome-at") || 0) < 6 * 3600e3) return; localStorage.setItem("cz-welcome-at", String(Date.now())); } catch {} } // a visit = 6 h, like the intro, across tabs
+          welcomeEl.classList.toggle("hidden", !on);
+        };
         // a hand over the street in front of the van: tap here, the van drives there
         const hintEl = el("div", "tap-hint hidden", `<span class="th-ring"></span><span class="th-hand">\u{1F446}</span><b>Tap the street to drive</b>`);
         let hintAt = null;
