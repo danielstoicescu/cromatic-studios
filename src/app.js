@@ -39286,11 +39286,10 @@ void main() {
         const guideAfterHint = () => {
           const t0 = performance.now();
           const tick = () => {
-            if (guide.phase || guide.done) return;
-            if (!mapMode) return;
+            if (guide.phase || !mapMode) return;
             // r139l: no time limit: a drive to a place and its card can take minutes; the guide waits until the map is free
             if (guideBusy() || ptrs.size || mapView.vx || mapView.vz || performance.now() - t0 < 700) { setTimeout(tick, 400); return; }
-            guideStart();
+            guideStart(true);
           };
           setTimeout(tick, 900);
         };
@@ -39360,9 +39359,10 @@ void main() {
           guide.phase = "wait"; guide.t0 = performance.now(); clearTimeout(guide.timer);
           guide.timer = setTimeout(guideStartHere, action === "done" ? 550 : 250);
         };
-        function guideStart() {
-          if (guide.phase || guide.done || guideDeep || guideBusy()) return;
-          try { if (localStorage.getItem("cz-map-guide")) return; localStorage.setItem("cz-map-guide", "1"); } catch {}
+        // r139m: force = asked for ("Help me set my first direction"): the whole guide runs every time, whatever was seen before
+        function guideStart(force) {
+          if (guide.phase || guideBusy() || (!force && (guide.done || guideDeep))) return;
+          try { if (!force && localStorage.getItem("cz-map-guide")) return; localStorage.setItem("cz-map-guide", "1"); } catch {}
           guide.done = true;
           const g = guideEls();
           guide.phase = "drag"; guide.t0 = guide.last = performance.now();
