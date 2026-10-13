@@ -731,6 +731,9 @@ await optimizeImages(pub, root);
   if (/\.html$/.test(f)) n2 = withFooter(n2, relative(pub, p2), SITE_URL);
   // r134h: GA4 behind the cookie card, on every page (Daniel: G-BRW5QJTJ77, stream "Cromatic Studios COM - GA4")
   if (/\.html$/.test(f) && CONSENT && !n2.includes('id="cz-ck-css"') && n2.includes("</body>")) n2 = n2.replace(/<\/body>(?![\s\S]*<\/body>)/, `${CONSENT}\n</body>`);
+  // r139q (Daniel: "avoid swipe-to-refresh on mobile as much as possible"): no pull-to-refresh and no scroll chaining
+  // past the page's ends, on every page (Chrome/Android and Safari 16+ honour it; elsewhere it is ignored)
+  if (/\.html$/.test(f) && !n2.includes('id="cz-ob"') && n2.includes("</head>")) n2 = n2.replace("</head>", `<style id="cz-ob">html,body{overscroll-behavior-y:none}</style>\n</head>`);
   // long titles lose the studio suffix first in Google (~60 characters show); the brand stays in og:site_name and the schema
   if (/\.html$/.test(f)) n2 = n2.replace(/<title>([^<]*?) · Cromatic Studios<\/title>/, (m, t0) => (t0.length + 19 > 66 ? `<title>${t0}</title>` : m));
   if (n2 !== t) writeFileSync(p2, n2); } })(pub);
