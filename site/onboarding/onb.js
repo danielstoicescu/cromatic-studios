@@ -141,7 +141,14 @@
     el, kind: el.dataset.zone, top: 0, h: 0,
     steps: $$(".zstep, .zseg", el).map((s) => ({ el: s, top: 0, h: 0, c: 0, d: s.dataset })),
   }));
-  let seamed = false;
+  // r141: the map's cards count their stops (five dots, the current one filled)
+  for (const z of ZONES) if (z.kind === "map") z.steps.forEach((s, i) => {
+    const cd = s.el.querySelector(".zcard"); if (!cd) return;
+    const p = document.createElement("p"); p.className = "zdots"; p.setAttribute("aria-hidden", "true");
+    p.innerHTML = z.steps.map((_, j) => `<i${j === i ? ' class="on"' : ""}></i>`).join("");
+    cd.appendChild(p);
+  });
+  let seamed = false, docH = 0;
   const offTop = (el) => { let y = 0, e = el; while (e) { y += e.offsetTop; e = e.offsetParent; } return y; };
   const measure = () => {
     vw = innerWidth; vh = innerHeight;
@@ -153,6 +160,7 @@
       if (cd) { const r = cd.getBoundingClientRect(); s.card = { l: r.left, r: r.right, t: r.top + scrollY - s.c, b: r.bottom + scrollY - s.c }; } else s.card = null;
     } }
     if (read) { read._top = offTop(read); read._h = read.offsetHeight; }
+    docH = document.documentElement.scrollHeight;
     if (!seamed) { seamed = true; seams(); }
     req();
   };
@@ -186,6 +194,9 @@
       win3d = frame3d.contentWindow;
       applied = {}; // everything is sent again
       settleUntil = performance.now() + 900;
+      // r141: a phone starts at every other frame (the page's own scroll keeps the rest); the governor climbs back
+      // when the frames prove easy, instead of waiting a second of dropped ones to come down
+      if (phone()) { gov.lvl = 1; gov.since = performance.now(); send({ op: "rate", half: true }); }
       req();
       // the first frames go to the right view, then the city fades in over the still
       setTimeout(() => { live = true; stage.classList.add("live"); req(); }, 650);
@@ -266,7 +277,7 @@
     return null;
   };
   // what the city has been told, so only changes go across
-  let applied = {}, settleUntil = 0, zoneNow = null, stageOn = false, pausedAt = 0, veilT = 0, stageBg = "";
+  let applied = {}, settleUntil = 0, zoneNow = null, stageOn = false, pausedAt = 0, veilT = 0, stageBg = "", warmAt = 0;
   const struct = (w) => `${w.map}|${w.show ? 1 : 0}|${w.veil ? w.scheme : ""}`;
   const applyWant = (w, visible, now) => {
     const k = struct(w);
@@ -341,9 +352,10 @@
       const d = a > 0 ? 0 : Math.min(Math.abs(z.top - y1), Math.abs(y0 - (z.top + z.h)));
       if (d < nearD) { nearD = d; near = z; }
     }
-    // the city boots on this page's thread (same origin): it is asked for while the reader pauses, a few screens
-    // before the first zone, so its start-up never lands in the middle of a scroll (or at the latest one screen before)
-    if (!asked && near && document.readyState === "complete" && now - loadedAt > 1500 && (nearD < vh * 0.9 || (nearD < vh * 4 && now - lastScrollAt > 450))) ask3D();
+    // the city boots on this page's thread (same origin): it is asked for while the reader pauses (r141: the first
+    // pause after the page has loaded, wherever they are: the start-up then lands on the opening screens, read rather
+    // than scrolled), or at the latest one screen before the first zone
+    if (!asked && near && document.readyState === "complete" && now - loadedAt > 1500 && (nearD < vh * 0.9 || now - lastScrollAt > 700)) ask3D();
     const visible = bestA > 0;
     if (visible !== stageOn) { stageOn = visible; stage.classList.toggle("on", visible); }
     const z = best || near;
@@ -363,6 +375,9 @@
       if (run && applied.paused !== false) { send({ op: "pause", on: false }); applied.paused = false; }
       if (!run && applied.paused !== true && now - pausedAt > 400) { send({ op: "pause", on: true }); applied.paused = true; }
       if (run) pausedAt = now;
+      // r141: while it waits out of sight and the reader is still, the city compiles every world and every ride, so
+      // their first switch on screen is a cut, not a stall (it stops on its own the moment a zone is seen again)
+      if (!run && live && applied.paused === true && now - lastScrollAt > 300 && now - warmAt > 2500) { warmAt = now; send({ op: "warm" }); }
       applyWant(w, visible, now);
     }
   };
@@ -448,17 +463,34 @@
 
   /* nav: hide on the way down, back on the way up; mark the section */
   let navY = scrollY;
-  const navLinks = $$(".nav nav a");
+  const navLinks = $$(".nav nav a, .ch-sheet a[href^='#']"); // r141: and the sheet's list
   const navIO = new IntersectionObserver((es) => {
     for (const e of es) if (e.isIntersecting) navLinks.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id));
   }, { rootMargin: "-50% 0px -50% 0px" });
-  ["map", "drive", "worlds", "rides", "website"].forEach((id) => { const s = document.getElementById(id); s && navIO.observe(s); });
+  ["idea", "map", "drive", "worlds", "rides", "website", "work", "studio", "go"].forEach((id) => { const s = document.getElementById(id); s && navIO.observe(s); });
 
+  // r141: the sheet of sections (a phone's menu); the line along the bar is how far down the page you are
+  const menuBtn = $(".nav-menu"), chapters = $("#chapters");
+  const setMenu = (on) => {
+    if (!menuBtn || !chapters) return;
+    root.classList.toggle("menu-on", on);
+    menuBtn.setAttribute("aria-expanded", on ? "true" : "false");
+    if (on) { chapters.hidden = false; requestAnimationFrame(() => chapters.classList.add("in")); }
+    else { chapters.classList.remove("in"); setTimeout(() => { if (!root.classList.contains("menu-on")) chapters.hidden = true; }, 320); }
+  };
+  if (menuBtn && chapters) {
+    menuBtn.addEventListener("click", () => setMenu(!root.classList.contains("menu-on")));
+    chapters.addEventListener("click", (e) => { if (e.target === chapters || e.target.closest("a")) setMenu(false); });
+    addEventListener("keydown", (e) => { if (e.key === "Escape" && root.classList.contains("menu-on")) { setMenu(false); menuBtn.focus(); } });
+  }
+  let progShown = -1;
   let ticking = false;
   const frame = (now) => {
     ticking = false;
     const y = scrollY;
-    if (Math.abs(y - navY) > 8) { nav.classList.toggle("hide", y > navY && y > vh * 0.6); navY = y; }
+    if (Math.abs(y - navY) > 8) { nav.classList.toggle("hide", y > navY && y > vh * 0.6 && !root.classList.contains("menu-on")); navY = y; }
+    const prog = Math.round(clamp(y / Math.max(1, docH - vh)) * 200) / 200;
+    if (prog !== progShown) { progShown = prog; nav.style.setProperty("--prog", prog); }
     // the theme under the nav (the deepest themed block there): the bar and the browser chrome follow it
     const top = y + 34;
     let th = null, thD = -1;
@@ -501,7 +533,7 @@
   const loop = (now) => {
     governor(now);
     if (stageOn || now < settleUntil || veilT || applied.paused === false) req();
-    else if (!asked && can3D && now - idleCheck > 500) { idleCheck = now; req(); }
+    else if (((!asked && can3D) || (live && applied.paused === true)) && now - idleCheck > 500) { idleCheck = now; req(); } // r141: and a look now and then while the city waits, for the warm-up
     requestAnimationFrame(loop);
   };
   measure();

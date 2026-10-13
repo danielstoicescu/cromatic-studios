@@ -28355,7 +28355,10 @@ void main() {
   function createKinetic(onFinale, preBurst, opts) {
     opts = opts || {};
     const C = { y: "#FED012", b: "#119BFE", g: "#28C840", r: "#F65342", l: "#B098C8" };
-    const BEATS = [
+    // r141: opts.beats (only /onboarding/intro-lab/ passes it): other words, same stage. A beat with veil "none" lifts
+    // the glass instead of laying a new one, so what is behind the stage shows through; opts.onBeat(i, beat) is told
+    // as each beat starts
+    const BEATS = opts.beats || [
       { veil: C.y, tr: "iris", marq: "STRATEGY ✳ DESIGN", lines: [[{ w: "Killer", fx: "stamp" }, { w: "strategy.", p: C.y, fx: "stamp", burst: 1 }], [{ w: "Outstanding" }, { w: "design.", p: C.b, fx: "wave" }]] },
       { veil: C.r, tr: "blinds", marq: "VISUALS ✳ STORYTELLING", lines: [[{ w: "Striking" }, { w: "visuals.", p: C.r, fx: "glitch" }], [{ w: "Powerful" }, { w: "storytelling.", p: C.g, fx: "decode" }]] },
       { veil: C.l, tr: "diag", marq: "PASSION ✳ EMPATHY", lines: [[{ w: "Genuine" }, { w: "passion", fx: "mark" }], [{ w: "and" }, { w: "real" }, { w: "empathy", fx: "echo" }], [{ w: "for" }, { w: "your" }, { w: "customer.", p: C.l, fx: "rain", burst: 1 }]] },
@@ -28526,6 +28529,30 @@ void main() {
           anim(l, [{ opacity: 0, transform: `translateY(-90vh) rotate(${R(120) - 60}deg)` }, { opacity: 1, transform: `translateY(0) rotate(${(j % 2 ? 1 : -1) * (3 + R(7))}deg)`, offset: 0.6 }, { transform: `translateY(-16%) rotate(${(j % 2 ? 1 : -1) * 4}deg)`, offset: 0.78 }, { opacity: 1, transform: `translateY(0) rotate(${(j % 2 ? 1 : -1) * (2 + R(5))}deg)` }], { duration: 600, delay: d + j * 30 + R(60), easing: "cubic-bezier(.45,0,.55,1)" }); });
         if (tk.burst) setTimeout(() => { if (t === token) burst(18); }, d + 900);
         return anim(inner, [{ opacity: 1 }, { opacity: 1 }], { duration: 600 + inner.children.length * 30 + d });
+      }
+      // r141: a pill whose word changes while it stays (tk.alt: the words that follow, one every 800 ms): the old word
+      // blurs out, the pill eases to the new width, the new word blurs in (opts.beats only)
+      if (tk.fx === "cycle") {
+        const a2 = pillDrop(inner, d);
+        (tk.alt || []).forEach((w, k) => setTimeout(() => {
+          if (t !== token) return;
+          const w0 = inner.offsetWidth;
+          anim(inner, [{ opacity: 1, filter: BL(0) }, { opacity: 0.08, filter: BL(6) }], { duration: 170, easing: "ease-in" }).finished.then(() => {
+            if (t !== token) return;
+            inner.textContent = w;
+            const w1 = inner.offsetWidth;
+            inner.style.display = "inline-block"; inner.style.width = `${w0}px`; inner.style.whiteSpace = "nowrap";
+            anim(inner, [{ width: `${w0}px` }, { width: `${w1}px` }], { duration: 360, easing: "cubic-bezier(.2,.8,.2,1)" }).finished.then(() => { inner.style.width = ""; }, () => {});
+            anim(inner, [{ opacity: 0.08, filter: BL(6) }, { opacity: 1, filter: BL(0) }], { duration: 300, easing: "ease-out" });
+          }, () => {});
+        }, d + 1000 + k * 800));
+        return a2;
+      }
+      // r141: a word that comes in like the others, then fades to a trace (the thumbnail nobody remembers)
+      if (tk.fx === "fade") {
+        const a2 = anim(inner, [{ transform: "translateY(110%)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 400, delay: d, easing: EASE });
+        anim(inner, [{ opacity: 1, filter: BL(0) }, { opacity: 0.16, filter: BL(3) }], { duration: 650, delay: d + 620, easing: "ease" });
+        return a2;
       }
       if (tk.fx === "mark") {
         const bg = inner.querySelector(".kz-mk");
@@ -29114,8 +29141,10 @@ void main() {
       while (t === token) {
         const beat = BEATS[idx];
         [...dots.children].forEach((d, i) => d.classList.toggle("on", i === idx));
-        veil(beat.veil, beat.tr);
-        if (!reduce) {
+        try { opts.onBeat?.(idx, beat); } catch (e) {} // r141
+        if (beat.veil === "none") [...veils.children].forEach((v) => anim(v, [{ clipPath: "circle(150% at 50% 50%)" }, { clipPath: "circle(0% at 50% 50%)" }], { duration: 500, easing: "cubic-bezier(.76,0,.24,1)" }).finished.then(() => v.remove(), () => {})); // r141
+        else veil(beat.veil, beat.tr);
+        if (!reduce && beat.veil !== "none") {
           anim(block, [{ scale: "1.16", opacity: 0.4 }, { scale: "1", opacity: 1 }], { duration: 600, easing: "cubic-bezier(.16,1,.3,1)" });
           const sw = document.createElement("i");
           sw.className = "kz-swipe";
@@ -29145,7 +29174,7 @@ void main() {
           if (!finaleFired) onFinale?.();
           return;
         }
-        if (!(await wait(340 + items.length * 60, t))) return;
+        if (!(await wait(340 + items.length * 60 + (beat.hold || 0), t))) return; // r141: beat.hold, a longer stay (opts.beats only)
         // exits alternate: a zoom-through towards the viewer, or the letters scatter
         const outs = items.map((it, i) => {
           const ls = it.inner.querySelectorAll(".kz-l");

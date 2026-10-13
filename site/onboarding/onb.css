@@ -813,3 +813,98 @@ html:not(.js) .wcap, html:not(.js) .rcap { visibility: visible; margin-bottom: 1
 .phone { padding: 1.05%; border-radius: 15% / 7%; box-shadow: inset 0 0 0 1px #4a4a50, 0 30px 60px -30px rgba(0,0,0,.5); }
 .phone .scr { border-radius: 14% / 6.5%; }
 .phone .island { top: 2.2%; width: 25%; height: 2.6%; }
+
+/* =====================================================================================================================
+   r141 (Daniel, round three): the sections at hand on a phone, the ways in as an index of what follows, the map's
+   cards count their stops, the website's screens on a phone, the numbers in four
+   ===================================================================================================================== */
+html { scroll-behavior: smooth; }
+.rm html, html.rm { scroll-behavior: auto; }
+/* the bar: a line along its bottom edge grows with the page */
+.nav { overflow: hidden; }
+.nav-prog { position: absolute; left: 22px; right: 22px; bottom: 0; height: 2px; border-radius: 2px; background: currentColor; opacity: .3; transform-origin: left; transform: scaleX(var(--prog, 0)); pointer-events: none; }
+.nav-menu { display: none; }
+/* the sections sheet (a phone): a card up from the bottom, the page dimmed behind it */
+.chapters[hidden] { display: none; }
+.chapters { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end; justify-content: center; background: rgba(13,12,9,0); transition: background-color .3s ease; }
+.chapters.in { background: rgba(13,12,9,.42); }
+.ch-sheet { width: 100%; max-width: 560px; max-height: calc(100vh - 24px); max-height: calc(100svh - 24px); overflow: auto; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-bottom: 0; border-radius: 28px 28px 0 0; padding: 22px 18px calc(18px + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform .4s var(--eoq); }
+.chapters.in .ch-sheet { transform: none; }
+.ch-sheet .eyebrow { margin-bottom: 10px; }
+.ch-sheet ol { display: grid; }
+.ch-sheet li a { display: flex; align-items: center; gap: 14px; padding: 13px 6px; text-decoration: none; font: 800 21px/1 var(--sans); letter-spacing: -.01em; border-top: 1px solid var(--line); }
+.ch-sheet li:first-child a { border-top: 0; }
+.ch-sheet li a .mono { font-size: 11px; opacity: .5; min-width: 2.2em; }
+.ch-sheet li a b { font-weight: inherit; }
+.ch-sheet li a.on { color: var(--ink); }
+.ch-sheet li a.on::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--y); border: 1.5px solid var(--ink); margin-left: auto; }
+.ch-cta { margin-top: 14px; width: 100%; justify-content: center; }
+.rm .chapters, .rm .ch-sheet { transition: none; }
+@media (max-width: 900px) {
+  .nav-menu { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; flex-direction: column; justify-content: center; gap: 5px; width: 40px; height: 36px; padding: 0 10px; border: 2px solid currentColor; border-radius: 999px; flex: 0 0 auto; -webkit-tap-highlight-color: transparent; }
+  .nav-menu i { display: block; height: 2px; border-radius: 2px; background: currentColor; transition: transform .3s var(--eoq); }
+  .menu-on .nav-menu i:first-child { transform: translateY(3.5px) rotate(45deg); }
+  .menu-on .nav-menu i:last-child { transform: translateY(-3.5px) rotate(-45deg); }
+  .nav-menu:focus-visible { outline: 3px solid var(--b); outline-offset: 2px; }
+  .nav { gap: 8px; }
+  .nav .onb-lang { margin-right: 0 !important; }
+  .menu-on .nav { transform: translateX(-50%); }
+  .menu-on body { overflow: hidden; }
+}
+@media (max-width: 440px) { .brand b { font-size: 14px; } .brand { gap: 6px; } .nav { gap: 6px; padding: 0 7px 0 10px; } .nav .onb-lang { min-width: 32px !important; padding: 0 6px !important; } .nav-cta { padding: 10px 10px; font-size: 14px; } .nav-menu { width: 36px; padding: 0 9px; } }
+/* the idea: four numbers, four columns */
+.numbers { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 900px) { .numbers { grid-template-columns: repeat(2, 1fr); } }
+/* three ways in: each way is a chapter of this page too (see it below), then the real thing (open it) */
+.ways-list .num { display: inline-block; font-size: 12px; padding: 5px 10px 6px; border-radius: 999px; border: 1.5px solid var(--ink); color: var(--ink); }
+.ways-list li:nth-child(1) .num { background: var(--g); } .ways-list li:nth-child(2) .num { background: var(--r); } .ways-list li:nth-child(3) .num { background: var(--p); }
+.ways-list li { border-top: 0; background: var(--card); border: 1.5px solid color-mix(in srgb, var(--fg) 22%, transparent); border-radius: 24px; padding: 22px 22px 24px; }
+.ways-list h3 { margin-top: 12px; }
+.way-links { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 4px; }
+.link.alt { border-bottom-color: color-mix(in srgb, var(--fg) 30%, transparent); opacity: .78; }
+.link.alt:hover { opacity: 1; border-bottom-color: currentColor; }
+@media (max-width: 760px) { .ways-list { gap: 12px; } .ways-list li { padding: 18px 18px 20px; } }
+/* the map's cards: five stops, the current one filled */
+.zdots { display: flex; gap: 7px; margin-top: 20px; }
+.zcard.street .zdots { padding: 0 26px 24px; margin-top: 16px; }
+.zdots i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--fg); opacity: .35; }
+.zdots i.on { background: var(--fg); opacity: 1; }
+@media (max-width: 760px) { .zcard.street .zdots { padding: 0 20px 20px; } .zdots { margin-top: 16px; } }
+/* the website on a phone: one phone, large, scrolling through the site; the feature under it, one at a time */
+@media (max-width: 900px) {
+  .site-devs .tablet.big { display: none; }
+  .site-devs .phone.ph-small { position: relative; width: min(60%, 250px); right: auto; bottom: auto; margin: 0 auto; }
+  .site-pin { padding-top: 84px; gap: 22px; align-content: center; }
+  .site-feats { height: auto; min-height: 5.2em; }
+  .site-feats li { text-align: center; padding: 16px 18px 18px; background: var(--card); border: 1.5px solid color-mix(in srgb, var(--fg) 22%, transparent); border-radius: 18px; font-size: 18px; }
+  .site-feats li::before { position: static; display: block; width: max-content; margin: 0 auto 8px; }
+  .site-scroll { height: 240vh; }
+}
+/* worlds: a counter over the name, like the rides' */
+.wcap .mono { display: flex; align-items: center; gap: 12px; font-size: 11px; letter-spacing: .26em; opacity: .7; margin-bottom: 10px; }
+.wcap .mono::before { content: ""; width: 40px; height: 1.5px; background: currentColor; }
+.wcap .mono em { font-style: normal; }
+/* the XP journal on a desktop: the words fill their column (a bigger title, a wider lead, the note right under), the
+   journal sits close beside them, the pair narrower than the page */
+@media (min-width: 901px) {
+  .xp-grid { max-width: 1140px; grid-template-columns: minmax(0, 6fr) minmax(0, 6fr); gap: clamp(40px, 6vw, 90px); align-items: center; }
+  .xp .h2 { font-size: clamp(36px, 4.1vw, 62px); }
+  .xp-copy .lead { font-size: clamp(19px, 1.7vw, 24px); max-width: 560px; }
+  .xp-note { font-size: 12px; margin-top: 22px; }
+  .xp-ui { align-items: flex-start; }
+  .you, .xp-log { width: min(500px, 100%); }
+}
+/* why a city: four theses under the idea, two by two */
+.why-eb { margin-top: clamp(50px, 7vw, 100px); }
+.why { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.why li { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; align-items: start; background: var(--card); border: 1.5px solid color-mix(in srgb, var(--fg) 22%, transparent); border-radius: 22px; padding: 20px 22px 22px; }
+.why .num { grid-row: span 2; font-size: 12px; padding: 5px 10px 6px; border-radius: 999px; border: 1.5px solid var(--ink); color: var(--ink); margin-top: 3px; }
+.why li:nth-child(1) .num { background: var(--y); } .why li:nth-child(2) .num { background: var(--g); } .why li:nth-child(3) .num { background: var(--b); } .why li:nth-child(4) .num { background: var(--p); }
+.why b { font: 900 clamp(22px, 2vw, 30px)/1.1 var(--sans); letter-spacing: -.02em; }
+.why li > span:last-child { font-size: 16.5px; line-height: 1.45; color: color-mix(in srgb, var(--fg) 80%, transparent); }
+.why li:nth-child(2) { transition-delay: .08s; } .why li:nth-child(3) { transition-delay: .16s; } .why li:nth-child(4) { transition-delay: .24s; }
+@media (max-width: 760px) { .why { grid-template-columns: 1fr; gap: 10px; } .why li { padding: 16px 18px 18px; } .why b { font-size: 21px; } .why li > span:last-child { font-size: 15.5px; } }
+/* worlds: the thesis under the lead */
+.zp-why { margin-top: 12px; font: 800 clamp(16px, 1.5vw, 21px)/1.3 var(--sans); letter-spacing: -.01em; max-width: 520px; }
+@media (max-width: 760px) { .zp-why { font-size: 15px; margin-top: 8px; } }
+.why b em { font-style: italic; }

@@ -607,6 +607,8 @@ const roPaths = [];
     // r140: its last section plays the intro's wall of cups: it gets the kinetic bundle the website uses
     let en = readFileSync(file, "utf8");
     if (kz && !en.includes("data-kz=")) en = en.replace('<section class="go" id="go"', `<section class="go" id="go" data-kz="${kz.js}|${kz.css}"`);
+    // r141: the intro lab (site/onboarding/intro-lab/, not indexed, English only) plays the same cups
+    try { const lf = join(pub, "onboarding", "intro-lab", "index.html"); let lh = readFileSync(lf, "utf8"); if (kz) lh = lh.replace('<div class="lab" data-kz=""', `<div class="lab" data-kz="${kz.js}|${kz.css}"`); writeFileSync(lf, lh); } catch (e) {}
     const alt = `<link rel="alternate" hreflang="en" href="${SITE_URL}/onboarding/">\n<link rel="alternate" hreflang="ro" href="${SITE_URL}${rp}">\n<link rel="alternate" hreflang="x-default" href="${SITE_URL}/onboarding/">`;
     const sw = (href, l, name) => `<a class="onb-lang" href="${href}" hreflang="${l}" lang="${l}" title="${name}" style="display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:36px;margin-left:auto;margin-right:8px;padding:0 10px;border:2px solid currentColor;border-radius:999px;color:inherit;font:800 13px/1 CromaticSans,system-ui,sans-serif;letter-spacing:.04em;text-decoration:none">${l.toUpperCase()}</a>`;
     const head2 = (h, href, l, name) => h.replace("</head>", `${alt}\n</head>`).replace(/(<a class="nav-cta see-map")/, `${sw(href, l, name)}$1`);

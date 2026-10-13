@@ -34,10 +34,30 @@
 <header class="nav" id="top">
   <a class="brand" href="/" aria-label="Cromatic Studios, take the 3D drive"><i class="cup" aria-hidden="true"></i><b>Cromatic Studios</b></a>
   <nav aria-label="Sections">
-    <a href="#map">The Map</a><a href="#drive">The Drive</a><a href="#worlds">Worlds</a><a href="#rides">Rides</a><a href="#website">The Website</a>
+    <a href="#map">The Map</a><a href="#drive">The Drive</a><a href="#worlds">Worlds</a><a href="#rides">Rides</a><a href="#website">The Website</a><a href="#studio">Studio</a>
   </nav>
   <a class="nav-cta see-map" href="/"><span class="long">Take the </span>3D drive <span aria-hidden="true">→</span></a>
+  <!-- r141: on a phone the sections live in a sheet; a thin line along the bar shows how far down the page you are -->
+  <button type="button" class="nav-menu" aria-label="Sections" aria-expanded="false" aria-controls="chapters"><i></i><i></i></button>
+  <i class="nav-prog" aria-hidden="true"></i>
 </header>
+<div class="chapters" id="chapters" hidden>
+  <div class="ch-sheet" role="dialog" aria-label="Sections">
+    <p class="eyebrow mono">Sections</p>
+    <ol>
+      <li><a href="#idea"><span class="mono">01</span><b>The idea</b></a></li>
+      <li><a href="#map"><span class="mono">02</span><b>The Map</b></a></li>
+      <li><a href="#drive"><span class="mono">03</span><b>The Drive</b></a></li>
+      <li><a href="#worlds"><span class="mono">04</span><b>Worlds</b></a></li>
+      <li><a href="#rides"><span class="mono">05</span><b>Rides</b></a></li>
+      <li><a href="#website"><span class="mono">06</span><b>The Website</b></a></li>
+      <li><a href="#work"><span class="mono">07</span><b>Selected work</b></a></li>
+      <li><a href="#studio"><span class="mono">08</span><b>The studio</b></a></li>
+      <li><a href="#go"><span class="mono">09</span><b>Say hi</b></a></li>
+    </ol>
+    <a class="btn btn-y see-map ch-cta" href="/">Take the 3D drive</a>
+  </div>
+</div>
 
 <!-- r140: the stage. One live copy of the city (the real app, /?drive&nointro&onb, in a frame) sits behind the page and
      shows through the "zones" (the map, the drive, the worlds, the rides); the page tells it where to be. It loads only
@@ -78,6 +98,14 @@
   <div class="wrap">
     <p class="eyebrow mono">The idea</p>
     <p class="big-read" data-words>Most studio portfolios are a grid of thumbnails. You scroll, you nod, you forget. We built a city instead. You drive in, you find the work by exploring, and you leave knowing what a brand is made of. And it still loads fast, reads well and shows up in search.</p>
+    <!-- r141: why a city, in four theses -->
+    <p class="eyebrow mono why-eb">Why a city</p>
+    <ol class="why" aria-label="Why a city">
+      <li class="reveal"><span class="num mono">01</span><b>Nobody remembers a thumbnail. Everyone remembers an <em>address</em>.</b><span>Every client is a building, numbered and labelled, somewhere you can go back to.</span></li>
+      <li class="reveal"><span class="num mono">02</span><b>Each industry has a street. On Coffee Street, every door is a brand we <em>made</em>.</b><span>Specialty coffee, food and drink: fifteen case studies on one street.</span></li>
+      <li class="reveal"><span class="num mono">03</span><b>The studio is a house in this city, on the <em>same</em> street as its clients.</b><span>Two Minutes is across the road from where we started, a client and a neighbour for a decade.</span></li>
+      <li class="reveal"><span class="num mono">04</span><b>Nine worlds over the same streets. One will feel like <em>yours</em>. That is what the right brand feels like.</b><span>You will switch them yourself, a little further down.</span></li>
+    </ol>
     <ul class="numbers" aria-label="The studio in numbers">
       <li><b data-count="34" data-suffix="+">34+</b><span>Case studies, every one on the map</span></li>
       <li><b data-count="5">5</b><span>Streets, one for every industry</span></li>
@@ -137,17 +165,17 @@
       <li class="reveal">
         <span class="num mono">01</span><h3>The Map</h3>
         <p>Tap a place on the 3D map. The car drives you there, the camera swings round to the front door and a card opens with the project.</p>
-        <a href="/?map" class="link">Open the map →</a>
+        <div class="way-links"><a href="#map" class="link">See it below ↓</a><a href="/?map" class="link alt">Open the map →</a></div>
       </li>
       <li class="reveal">
         <span class="num mono">02</span><h3>The Drive</h3>
         <p>Scroll like you normally do and you drive the route. Chapters, a coffee stop, a crossroads, a speedometer, and a boarding pass at the end.</p>
-        <a href="/?drive" class="link">Start the drive →</a>
+        <div class="way-links"><a href="#drive" class="link">See it below ↓</a><a href="/?drive" class="link alt">Start the drive →</a></div>
       </li>
       <li class="reveal">
         <span class="num mono">03</span><h3>The Website</h3>
         <p>The same story as a fast, classic website. Content first, every case study on its own page, in English and Romanian.</p>
-        <a href="/site/" class="link">Read the website →</a>
+        <div class="way-links"><a href="#website" class="link">See it below ↓</a><a href="/site/" class="link alt">Read the website →</a></div>
       </li>
     </ol>
     <p class="live-note mono reveal"><i class="dot" aria-hidden="true"></i>From here on, the city behind the words is the real one. Live, not a video.</p>
@@ -240,17 +268,18 @@
       <p class="eyebrow mono">Choose your brand multiverse</p>
       <h2 class="h2">Nine worlds. Same city.</h2>
       <p class="zp-lead">Tap a world, or keep scrolling and the city changes under you. Each one has its own light, and some bring their own ride.</p>
+      <p class="zp-why">One of these will feel like yours. That is what the right brand feels like.</p>
     </div>
     <div class="zp-bottom">
       <div class="wcaps" aria-live="polite">
-        <p class="wcap" data-w="nightlife"><b style="--wc:#FF9E3D">Night Mode</b><span>Lit windows, a drizzle on the roads and an all-chrome car.</span></p>
-        <p class="wcap" data-w="underwater"><b style="--wc:#3de0d0">Underwater</b><span>Fish, kelp and a pineapple house. Bring a submarine.</span></p>
-        <p class="wcap" data-w="monument"><b style="--wc:#ff8a6a">Cromatic</b><span>The pastel diorama. Soft light, real shadows, the default everywhere.</span></p>
-        <p class="wcap" data-w="ghibli"><b style="--wc:#e0b25a">Ghib.ly</b><span>Green fields, sandy roads, an afternoon that never ends.</span></p>
-        <p class="wcap" data-w="sketch"><b style="--wc:#ffd84a">Sketchbook</b><span>The city in pencil. It draws itself as you go, coloured in wax crayon.</span></p>
-        <p class="wcap" data-w="circuit"><b style="--wc:#e10600">Race Day</b><span>Asphalt roads, kerbs and a pit stop with a red roof.</span></p>
-        <p class="wcap" data-w="orchid"><b style="--wc:#f08bb4">Sakura</b><span>Pink roads under cherry trees. Petals included.</span></p>
-        <p class="wcap" data-w="riso"><b style="--wc:#ff48b0">Risograph</b><span>Printed in two inks, fluorescent pink and blue, a little off-register.</span></p>
+        <p class="wcap" data-w="nightlife"><span class="mono"><span>Worlds</span> · <em>01</em>/08</span><b style="--wc:#FF9E3D">Night Mode</b><span>Lit windows, a drizzle on the roads and an all-chrome car.</span></p>
+        <p class="wcap" data-w="underwater"><span class="mono"><span>Worlds</span> · <em>02</em>/08</span><b style="--wc:#3de0d0">Underwater</b><span>Fish, kelp and a pineapple house. Bring a submarine.</span></p>
+        <p class="wcap" data-w="monument"><span class="mono"><span>Worlds</span> · <em>03</em>/08</span><b style="--wc:#ff8a6a">Cromatic</b><span>The pastel diorama. Soft light, real shadows, the default everywhere.</span></p>
+        <p class="wcap" data-w="ghibli"><span class="mono"><span>Worlds</span> · <em>04</em>/08</span><b style="--wc:#e0b25a">Ghib.ly</b><span>Green fields, sandy roads, an afternoon that never ends.</span></p>
+        <p class="wcap" data-w="sketch"><span class="mono"><span>Worlds</span> · <em>05</em>/08</span><b style="--wc:#ffd84a">Sketchbook</b><span>The city in pencil. It draws itself as you go, coloured in wax crayon.</span></p>
+        <p class="wcap" data-w="circuit"><span class="mono"><span>Worlds</span> · <em>06</em>/08</span><b style="--wc:#e10600">Race Day</b><span>Asphalt roads, kerbs and a pit stop with a red roof.</span></p>
+        <p class="wcap" data-w="orchid"><span class="mono"><span>Worlds</span> · <em>07</em>/08</span><b style="--wc:#f08bb4">Sakura</b><span>Pink roads under cherry trees. Petals included.</span></p>
+        <p class="wcap" data-w="riso"><span class="mono"><span>Worlds</span> · <em>08</em>/08</span><b style="--wc:#ff48b0">Risograph</b><span>Printed in two inks, fluorescent pink and blue, a little off-register.</span></p>
       </div>
       <div class="chips" role="group" aria-label="Pick a world">
         <button type="button" class="chip" data-w="nightlife" style="--wc:#FF9E3D" aria-pressed="false">Night Mode</button>
