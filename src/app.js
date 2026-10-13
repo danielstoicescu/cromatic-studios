@@ -33757,6 +33757,8 @@ void main() {
       caseFrame._anim.onfinish = caseFrame._anim.oncancel = () => { caseFrame._anim = null; };
     };
     openSteamHook = () => {
+      // r139a: on the website Steam opens its built page, /work/steam/?embed=1, like every other case page (the shared ending with the ticket)
+      if (openFrameHook && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname)) { openFrameHook("/work/steam/?embed=1", "Steam Coffee Shop"); steamSeen = true; return; }
       const fr = caseFrame.querySelector(".cf-iframe");
       fr.removeAttribute("src");
       // r137c: the string closes its script as <\/script> (it lives inside a script); as a document it must close for

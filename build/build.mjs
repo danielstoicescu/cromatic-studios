@@ -474,8 +474,10 @@ for (const slug of R.canvasSlugs) page(`work/${slug}`, R.canvasPage(slug));
     // r136: Steam's own social picture (the hero film's poster), cut to 1200×630 with the other covers at the end
     const steamOg = mediaMap.get("m:wp/2025-07-Steam-Cromaticstudios-001");
     steam = steam.replace("<head>", `<head>\n<link rel="canonical" href="${SITE_URL}/work/steam/">\n<meta name="description" content="Steam Coffee Shop: a pioneer specialty coffee brand refreshed for its community. Branding, growth and product by Cromatic Studios, Bucharest.">\n${steamOg ? `<meta property="og:image" content="${SITE_URL}${steamOg.src}">\n` : ""}<link rel="icon" href="/favicon.ico" sizes="32x32">`)
-      .replace("</head>", `<style>body>main.page{padding-top:64px}</style>\n</head>`)
-      .replace(/<body([^>]*)>/, `<body$1>\n<a href="/site/#work" style="position:fixed;left:14px;top:14px;z-index:9999;padding:10px 16px;border-radius:999px;background:#FED012;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none">← Cromatic Studios</a>`);
+      .replace("<head>", `<head>\n<script>(function(){try{if(/[?&]embed\\b/.test(location.search)||window.self!==window.top)document.documentElement.classList.add("embed")}catch(e){document.documentElement.classList.add("embed")}})();</script>`)
+      .replace("</head>", `<style>.cs-back{position:fixed;left:14px;top:14px;z-index:9999;padding:10px 16px;border-radius:999px;background:#FED012;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none}html.embed .cs-back{display:none}html:not(.embed) body>main.page{padding-top:64px}</style>\n</head>`)
+      .replace(/<body([^>]*)>/, `<body$1>\n<a class="cs-back" href="/site/#work">← Cromatic Studios</a>`)
+      .replace(/<\/body>(?![\s\S]*<\/body>)/, `<script>if(document.documentElement.classList.contains('embed'))document.querySelectorAll('a[href^="/work/"]').forEach(function(a){a.href=a.getAttribute('href')+'?embed=1'});</script>\n</body>`);
     // r138d: "Ne știm de la Steam" in a serif close to Steam's T-shirts: DM Serif Display (SIL OFL 1.1, site/fonts,
     // licence next to it), roman latin + latin-ext (ș) and the italic for "de la", from our own domain as 'Steam Serif'
     {
