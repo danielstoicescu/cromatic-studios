@@ -88,6 +88,7 @@ code{font-family:var(--f-mono);font-size:.84em;background:var(--white);border:1.
 .node.atk{background:var(--coral);color:var(--white)}
 .node.atk .step{color:var(--white);opacity:.85}
 .node.atk .fix{border-top-color:var(--white)}
+.chain.flow4{grid-template-columns:repeat(4,minmax(0,1fr))}
 .node:not(:last-child)::after{content:"";position:absolute;right:-13px;top:34px;width:12px;height:0;border-top:var(--stroke)}
 
 /* timeline */
@@ -142,6 +143,17 @@ code{font-family:var(--f-mono);font-size:.84em;background:var(--white);border:1.
 .st{background:var(--white);border:var(--stroke);border-radius:24px;padding:18px 20px;display:grid;gap:8px;align-content:start;min-width:0}
 .st .top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .st p{font-size:.9rem;margin:0}
+
+/* checklist */
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.cgroup{background:var(--white);border:var(--stroke);border-radius:24px;padding:18px 20px;display:grid;gap:12px;align-content:start;min-width:0}
+.cgroup h3{margin:0 0 4px}
+.ck{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px;align-items:start;border-top:1.5px dashed var(--ink);padding-top:12px}
+.ck .pill{justify-self:start;white-space:normal;text-align:center;line-height:1.15}
+.ck p{margin:0;font-size:.88rem}
+.pill.gray{background:var(--bar)}
+@media (max-width:900px){.checks{grid-template-columns:1fr}}
+@media (max-width:440px){.ck{grid-template-columns:1fr;gap:6px}}
 
 /* data */
 .data{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:16px}
@@ -333,12 +345,49 @@ a{color:var(--ink)}
     <div class="st"><div class="top"><h3>2FA și limită de login</h3><span class="pill bad">De făcut</span></div><p>Administratorii nu au încă autentificare în doi pași și nu există limită de încercări la pagina de login.</p></div>
     <div class="st"><div class="top"><h3>Parole de server</h3><span class="pill bad">De făcut</span></div><p>Contul de administrator cu parola neschimbată de peste un an a fost șters, așa că au rămas trei administratori. Parola de cPanel a fost schimbată pe 13 octombrie. Rămân de schimbat parolele bazei de date și FTP, pentru că atacatorul le putea citi prin File Manager.</p></div>
     <div class="st"><div class="top"><h3>Versiunea de PHP</h3><span class="pill ok">Rezolvat</span></div><p>Site-ul a trecut de la PHP 7.2, fără actualizări de securitate din 2020, la PHP 8.3, o versiune susținută activ.</p></div>
-    <div class="st"><div class="top"><h3>Listarea folderelor</h3><span class="pill bad">De făcut</span></div><p>Folderul <code>uploads</code> își listează încă public conținutul. Nu expune fișiere private, dar arată structura site-ului.</p></div>
+    <div class="st"><div class="top"><h3>Listarea folderelor</h3><span class="pill ok">Rezolvat</span></div><p>Folderele site-ului, de exemplu <code>uploads</code>, nu își mai afișează conținutul. Fișierele folosite în pagini se încarcă normal.</p></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-lista">
+  <div class="sec-h"><span class="num">06</span><h2 id="h-lista">Lista completă de măsuri</h2></div>
+  <p style="margin-bottom:18px">Fiecare pas recomandat după un incident de acest tip, cu starea lui pe 13 octombrie seara.</p>
+  <div class="checks">
+    <div class="cgroup"><h3>Izolare și curățare</h3>
+      <div class="ck"><span class="pill gray">Nu a fost necesar</span><p><strong>Mod mentenanță.</strong> Codul injectat dispăruse deja la restaurarea de la 14:22. Accesul atacatorului a fost închis până la 16:00.</p></div>
+      <div class="ck"><span class="pill ok">Făcut</span><p><strong>Dovezi păstrate.</strong> Fișierul infectat, pluginul File Manager și copia completă a site-ului de dinainte de restaurare sunt într-un folder privat al contului de hosting.</p></div>
+      <div class="ck"><span class="pill ok">Făcut</span><p><strong><code>functions.php</code> curat.</strong> Versiunea de acum e identică, caracter cu caracter, cu cea infectată, fără blocul adăugat. Tema e personalizată, așa că o descărcare nouă din WordPress ar fi șters personalizările.</p></div>
+      <div class="ck"><span class="pill ok">Făcut</span><p><strong>WP File Manager și <code>plugin-autoupdate</code></strong> scoase de pe site.</p></div>
+      <div class="ck"><span class="pill ok">Făcut</span><p><strong>Fișiere PHP modificate din 31 august.</strong> Niciunul în <code>uploads</code>. Celelalte sunt actualizări de WordPress (17 sep, 6 oct), Elementor (1 și 5 oct), Polylang (13 oct), traduceri și cele două fișiere de securitate adăugate de noi. Nimic necunoscut.</p></div>
+      <div class="ck"><span class="pill yel">Parțial</span><p><strong>Postări de test și conturi.</strong> Articolele spam sunt la coș, care trebuie golit din wp-admin. Pagina de test a atacatorului fusese ștearsă chiar de el. Nu există administratori necunoscuți, iar contul nefolosit a fost șters.</p></div>
+    </div>
+    <div class="cgroup"><h3>Închiderea accesului</h3>
+      <div class="ck"><span class="pill yel">Parțial</span><p><strong>Parole noi pentru toți utilizatorii WordPress.</strong> Contul compromis are parolă nouă. Ceilalți doi administratori și editorul trebuie să și-o schimbe.</p></div>
+      <div class="ck"><span class="pill ok">Făcut</span><p><strong>Application Passwords.</strong> Nu exista niciuna, am verificat în baza de date.</p></div>
+      <div class="ck"><span class="pill ok">Făcut</span><p><strong>Chei de securitate noi</strong> în <code>wp-config.php</code>. Toate sesiunile au fost închise.</p></div>
+      <div class="ck"><span class="pill bad">De făcut</span><p><strong>Aceeași parolă folosită în altă parte.</strong> Persoana care folosea contul compromis trebuie să schimbe parola oriunde a refolosit-o, inclusiv în Microsoft 365 și pe email.</p></div>
+      <div class="ck"><span class="pill yel">Parțial</span><p><strong>Parole de hosting.</strong> cPanel schimbat. Rămân baza de date și FTP.</p></div>
+    </div>
+    <div class="cgroup"><h3>Întărire</h3>
+      <div class="ck"><span class="pill ok">Făcut</span><p><strong><code>DISALLOW_FILE_EDIT</code></strong> activ.</p></div>
+      <div class="ck"><span class="pill gray">De decis</span><p><strong><code>DISALLOW_FILE_MODS</code>.</strong> Ar bloca instalarea și actualizarea pluginurilor din wp-admin. Are sens doar dacă actualizările se fac de echipa tehnică, din afara WordPress.</p></div>
+      <div class="ck"><span class="pill ok">Făcut</span><p><strong>XML-RPC și lista de conturi</strong> blocate pentru vizitatorii nelogați.</p></div>
+      <div class="ck"><span class="pill bad">De făcut</span><p><strong>2FA și limită de încercări</strong> la login pentru toți administratorii.</p></div>
+      <div class="ck"><span class="pill ok">Făcut</span><p><strong>Listarea folderelor</strong> oprită (<code>Options -Indexes</code>).</p></div>
+      <div class="ck"><span class="pill ok">Făcut</span><p><strong>PHP 8.3</strong> în loc de PHP 7.2.</p></div>
+      <div class="ck"><span class="pill gray">De decis</span><p><strong>CV-urile.</strong> Sunt protejate față de vizitatori, dar stau în folderul site-ului. Recomandăm o perioadă de păstrare, de exemplu 12 luni, după care intrările și fișierele se șterg.</p></div>
+    </div>
+    <div class="cgroup"><h3>Dovezi</h3>
+      <div class="ck"><span class="pill ok">Făcut</span><p><strong>Codul injectat, decodat.</strong> Rula doar în browserul vizitatorului și încărca un script extern. Nu citea baza de date sau fișierele de pe server, deci prin el nu au putut ieși date de pe site.</p></div>
+      <div class="ck"><span class="pill ok">Făcut</span><p><strong>Inventar cu date și ore</strong> pentru toate cele 21.830 de fișiere, inclusiv CV-urile. Lista utilizatorilor cu datele de înregistrare și ultimele login-uri.</p></div>
+      <div class="ck"><span class="pill gray">De cerut hostingului</span><p><strong>Log-urile de acces din august și cele de pe 13 octombrie după ora 06:00.</strong> Nu sunt disponibile din cPanel.</p></div>
+      <div class="ck"><span class="pill yel">Parțial</span><p><strong>Log de erori PHP și log de mail.</strong> Log-urile de erori PHP de pe site sunt goale. Log-ul de mail nu e accesibil din cPanel și trebuie cerut hostingului: un mail trimis cu atașamente ar arăta o scurgere de date.</p></div>
+    </div>
   </div>
 </section>
 
 <section aria-labelledby="h-cum">
-  <div class="sec-h"><span class="num">06</span><h2 id="h-cum">Cum am închis problemele-cheie</h2></div>
+  <div class="sec-h"><span class="num">07</span><h2 id="h-cum">Cum am închis problemele-cheie</h2></div>
   <div class="explain">
     <div class="card">
       <span class="pill ok">Backup</span>
@@ -365,8 +414,49 @@ a{color:var(--ink)}
   </div>
 </section>
 
+<section aria-labelledby="h-cod">
+  <div class="sec-h"><span class="num">08</span><h2 id="h-cod">Ce făcea codul injectat</h2></div>
+  <p style="margin-bottom:20px">Am recuperat fișierul infectat din copia făcută de hosting înainte de restaurare. La finalul lui <code>functions.php</code> erau lipite 2.257 de caractere, salvate pe 13 octombrie la 01:36. Codul era criptat de două ori, ca să nu apară la o căutare simplă. Decriptat, face patru lucruri, la fiecare deschidere de pagină.</p>
+  <div class="chain flow4">
+    <div class="node">
+      <span class="step">01 · ASCUNDE</span>
+      <h3>Pagina dispare</h3>
+      <p>Conținutul site-ului devine invizibil. Vizitatorul vede un ecran alb, sau negru pe telefoanele cu temă întunecată.</p>
+    </div>
+    <div class="node atk">
+      <span class="step">02 · ÎNCARCĂ</span>
+      <h3>Script străin</h3>
+      <p>Încearcă pe rând trei adrese ale atacatorului, până răspunde una: <code>js-static[.]digital</code>, <code>js-static[.]global</code>, <code>js-static[.]icu</code>.</p>
+    </div>
+    <div class="node">
+      <span class="step">03 · IMITĂ</span>
+      <h3>„Verificare Cloudflare”</h3>
+      <p>Numele interne imită protecția Cloudflare. E tiparul cunoscut al falsului CAPTCHA, care cere vizitatorului să „confirme că e om” rulând o comandă pe calculator.</p>
+    </div>
+    <div class="node">
+      <span class="step">04 · SE ASCUNDE</span>
+      <h3>Invizibil pentru admin</h3>
+      <p>Nu rulează în wp-admin, deci echipa nu observa nimic. Dacă scriptul nu se încarcă în 12 secunde, pagina reapare normal.</p>
+    </div>
+  </div>
+  <div class="explain" style="margin-top:16px">
+    <div class="card">
+      <span class="pill bad">Impact</span>
+      <h3 style="margin-top:12px">Cine a fost expus</h3>
+      <p>Vizitatorii site-ului între 13 octombrie, 01:36, și restaurarea de la 14:22. Infrastructura de securitate a băncii a recunoscut una dintre adresele de mai sus, de aici alerta. Nu am rulat scriptul extern: conținutul lui se schimbă de la o zi la alta și ar fi însemnat să-l descărcăm.</p>
+    </div>
+    <div class="card">
+      <span class="pill">Indicatori</span>
+      <h3 style="margin-top:12px">Pentru echipa IT a Bepco și pentru bancă</h3>
+      <p>Domenii de blocat în firewall sau DNS:</p>
+      <div class="codeblk">js-static[.]digital<br>js-static[.]global<br>js-static[.]icu</div>
+      <p>Urme în cod: marcajul <code>__wpa_hb__</code>, cheia <code>wpa7k</code>, stilul <code>cf-hs</code>. Niciunul nu mai există pe site.</p>
+    </div>
+  </div>
+</section>
+
 <section aria-labelledby="h-curat">
-  <div class="sec-h"><span class="num">07</span><h2 id="h-curat">Verificat și curat</h2></div>
+  <div class="sec-h"><span class="num">09</span><h2 id="h-curat">Verificat și curat</h2></div>
   <ul class="clean">
     <li>Tema și <code>functions.php</code></li>
     <li><code>.htaccess</code>, fără redirecționări ascunse</li>
@@ -382,7 +472,7 @@ a{color:var(--ink)}
 </section>
 
 <section aria-labelledby="h-next">
-  <div class="sec-h"><span class="num">08</span><h2 id="h-next">Ce urmează</h2></div>
+  <div class="sec-h"><span class="num">10</span><h2 id="h-next">Ce urmează</h2></div>
   <div class="next">
     <div class="card">
       <span class="pill yel">Cromatic</span>
@@ -390,8 +480,9 @@ a{color:var(--ink)}
         <li class="done"><span>Blocăm <code>xmlrpc.php</code> și ascundem lista utilizatorilor din API.</span></li>
         <li><span>Activăm 2FA pentru administratori și limităm încercările de login.</span></li>
         <li class="done"><span>Trecem site-ul pe PHP 8.2 sau mai nou.</span></li>
-        <li><span>Oprim listarea publică a folderelor.</span></li>
-        <li><span>Analizăm copia site-ului făcută de hosting înainte de restaurare, ca să documentăm exact codul injectat.</span></li>
+        <li class="done"><span>Oprim listarea publică a folderelor.</span></li>
+        <li class="done"><span>Analizăm copia site-ului făcută de hosting înainte de restaurare, ca să documentăm exact codul injectat.</span></li>
+        <li><span>Cerem hostingului log-ul de mail și log-urile de acces care lipsesc din cPanel.</span></li>
       </ol>
     </div>
     <div class="card">
@@ -410,7 +501,7 @@ a{color:var(--ink)}
   <div class="cards">
     <div class="card"><span class="pill yel" style="justify-self:start">Ce s-a întâmplat</span><p>Un cont de administrator cu parola furată a fost folosit ca să insereze cod în site.</p></div>
     <div class="card"><span class="pill ok" style="justify-self:start">Unde suntem</span><p>Accesul atacatorului e închis, iar site-ul e curat. Datele candidaților nu apar accesate.</p></div>
-    <div class="card"><span class="pill blue" style="justify-self:start">Ce urmează</span><p>Trei pași de întărire de partea noastră, trei de partea voastră.</p></div>
+    <div class="card"><span class="pill blue" style="justify-self:start">Ce urmează</span><p>Doi pași de partea noastră: 2FA cu limită de login și log-urile cerute hostingului. Trei de partea voastră.</p></div>
   </div>
 </section>
 
