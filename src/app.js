@@ -12014,10 +12014,23 @@
         }
         updateMatrix() {
           this.matrix.compose(this.position, this.quaternion, this.scale);
+          // r139b: remember what the matrix was composed from (and under which parent), see _r139stale
+          const p = this.position, q = this.quaternion, s = this.scale;
+          let c = this._r139m;
+          if (c === void 0) c = this._r139m = new Float64Array(10);
+          c[0] = p.x; c[1] = p.y; c[2] = p.z; c[3] = q._x; c[4] = q._y; c[5] = q._z; c[6] = q._w; c[7] = s.x; c[8] = s.y; c[9] = s.z;
+          this._r139p = this.parent;
           this.matrixWorldNeedsUpdate = true;
         }
+        // r139b: the local matrix is recomposed only when position / rotation / scale (or the parent) changed since it
+        // was last composed. The city is ~5000 static nodes: every render() recomposed and re-multiplied all of them,
+        // and any getWorldPosition() flagged the scene itself, which forced the whole tree again (2-4 ms a frame)
+        _r139stale() {
+          const c = this._r139m, p = this.position, q = this.quaternion, s = this.scale;
+          return c === void 0 || this._r139p !== this.parent || c[0] !== p.x || c[1] !== p.y || c[2] !== p.z || c[3] !== q._x || c[4] !== q._y || c[5] !== q._z || c[6] !== q._w || c[7] !== s.x || c[8] !== s.y || c[9] !== s.z;
+        }
         updateMatrixWorld(force) {
-          if (this.matrixAutoUpdate) this.updateMatrix();
+          if (this.matrixAutoUpdate && this._r139stale()) this.updateMatrix();
           if (this.matrixWorldNeedsUpdate || force) {
             if (this.matrixWorldAutoUpdate === true) {
               if (this.parent === null) {
@@ -12040,7 +12053,7 @@
           if (updateParents === true && parent !== null) {
             parent.updateWorldMatrix(true, false);
           }
-          if (this.matrixAutoUpdate) this.updateMatrix();
+          if (this.matrixAutoUpdate && this._r139stale()) this.updateMatrix(); // r139b
           if (this.matrixWorldAutoUpdate === true) {
             if (this.parent === null) {
               this.matrixWorld.copy(this.matrix);
@@ -23376,10 +23389,14 @@ void main() {
           const defaultColor = new Color().fromArray(parameters.defaultColor !== void 0 ? parameters.defaultColor : [0, 0, 0]);
           const defaultAlpha = parameters.defaultAlpha !== void 0 ? parameters.defaultAlpha : 1;
           const defaultKeepAlive = parameters.defaultKeepAlive !== void 0 ? parameters.defaultKeepAlive : false;
-          const cache = {};
+          // r139b: the bookkeeping is Maps and two arrays instead of uuid-keyed objects (they grew one key per mesh and
+          // material, forever, and were swept with Object.keys every frame), and only the visible tree is swapped:
+          // the hull pass draws exactly what it drew before, for ~1/5 of the CPU (Sketchbook spent ~8 ms here)
+          const cache = /* @__PURE__ */ new Map();
           const removeThresholdCount = 60;
-          const originalMaterials = {};
-          const originalOnBeforeRenders = {};
+          const originalMaterials = /* @__PURE__ */ new Map();
+          const swapped = [], swappedOBR = [];
+          let passId = 0;
           const uniformsOutline = {
             outlineThickness: { value: defaultThickness },
             outlineColor: { value: defaultColor },
@@ -23461,23 +23478,29 @@ void main() {
             });
           }
           function getOutlineMaterialFromCache(originalMaterial) {
-            let data = cache[originalMaterial.uuid];
+            let data = cache.get(originalMaterial);
             if (data === void 0) {
               data = {
                 material: createMaterial(),
                 used: true,
                 keepAlive: defaultKeepAlive,
-                count: 0
+                count: 0,
+                pass: -1
               };
-              cache[originalMaterial.uuid] = data;
+              cache.set(originalMaterial, data);
             }
             data.used = true;
-            return data.material;
+            return data;
           }
           function getOutlineMaterial(originalMaterial) {
-            const outlineMaterial = getOutlineMaterialFromCache(originalMaterial);
-            originalMaterials[outlineMaterial.uuid] = originalMaterial;
-            updateOutlineMaterial(outlineMaterial, originalMaterial);
+            const data = getOutlineMaterialFromCache(originalMaterial);
+            const outlineMaterial = data.material;
+            // r139b: a material shared by many meshes is mirrored once per pass, not once per mesh
+            if (data.pass !== passId) {
+              data.pass = passId;
+              originalMaterials.set(outlineMaterial, originalMaterial);
+              updateOutlineMaterial(outlineMaterial, originalMaterial);
+            }
             return outlineMaterial;
           }
           function isCompatible(object) {
@@ -23494,22 +23517,21 @@ void main() {
             } else {
               object.material = getOutlineMaterial(object.material);
             }
-            originalOnBeforeRenders[object.uuid] = object.onBeforeRender;
+            swapped.push(object); swappedOBR.push(object.onBeforeRender);
             object.onBeforeRender = onBeforeRender;
           }
-          function restoreOriginalMaterial(object) {
-            if (isCompatible(object) === false) return;
+          function restoreOriginalMaterial(object, obr) {
             if (Array.isArray(object.material)) {
               for (let i = 0, il = object.material.length; i < il; i++) {
-                object.material[i] = originalMaterials[object.material[i].uuid];
+                object.material[i] = originalMaterials.get(object.material[i]);
               }
             } else {
-              object.material = originalMaterials[object.material.uuid];
+              object.material = originalMaterials.get(object.material);
             }
-            object.onBeforeRender = originalOnBeforeRenders[object.uuid];
+            object.onBeforeRender = obr;
           }
           function onBeforeRender(renderer2, scene, camera, geometry, material) {
-            const originalMaterial = originalMaterials[material.uuid];
+            const originalMaterial = originalMaterials.get(material);
             if (originalMaterial === void 0) return;
             updateUniforms(material, originalMaterial);
           }
@@ -23541,7 +23563,7 @@ void main() {
                 material.visible = outlineParameters.visible !== void 0 ? outlineParameters.visible : true;
               }
               material.transparent = outlineParameters.alpha !== void 0 && outlineParameters.alpha < 1 ? true : originalMaterial.transparent;
-              if (outlineParameters.keepAlive !== void 0) cache[originalMaterial.uuid].keepAlive = outlineParameters.keepAlive;
+              if (outlineParameters.keepAlive !== void 0) cache.get(originalMaterial).keepAlive = outlineParameters.keepAlive;
             } else {
               material.transparent = originalMaterial.transparent;
               material.visible = originalMaterial.visible;
@@ -23556,26 +23578,17 @@ void main() {
             material.version = originalMaterial.version;
           }
           function cleanupCache() {
-            let keys;
-            keys = Object.keys(originalMaterials);
-            for (let i = 0, il = keys.length; i < il; i++) {
-              originalMaterials[keys[i]] = void 0;
-            }
-            keys = Object.keys(originalOnBeforeRenders);
-            for (let i = 0, il = keys.length; i < il; i++) {
-              originalOnBeforeRenders[keys[i]] = void 0;
-            }
-            keys = Object.keys(cache);
-            for (let i = 0, il = keys.length; i < il; i++) {
-              const key = keys[i];
-              if (cache[key].used === false) {
-                cache[key].count++;
-                if (cache[key].keepAlive === false && cache[key].count > removeThresholdCount) {
-                  delete cache[key];
+            originalMaterials.clear();
+            swapped.length = 0; swappedOBR.length = 0;
+            for (const [key, data] of cache) {
+              if (data.used === false) {
+                data.count++;
+                if (data.keepAlive === false && data.count > removeThresholdCount) {
+                  cache.delete(key);
                 }
               } else {
-                cache[key].used = false;
-                cache[key].count = 0;
+                data.used = false;
+                data.count = 0;
               }
             }
           }
@@ -23599,10 +23612,33 @@ void main() {
             scene.background = null;
             renderer.autoClear = false;
             renderer.shadowMap.enabled = false;
-            scene.traverse(setOutlineMaterial);
+            passId++;
+            scene.traverseVisible(setOutlineMaterial); // r139b: hidden subtrees are never drawn, so never swapped
             renderer.render(scene, camera);
-            scene.traverse(restoreOriginalMaterial);
+            for (let i = 0, il = swapped.length; i < il; i++) restoreOriginalMaterial(swapped[i], swappedOBR[i]);
             cleanupCache();
+            scene.matrixWorldAutoUpdate = currentSceneAutoUpdate;
+            scene.background = currentSceneBackground;
+            renderer.autoClear = currentAutoClear;
+            renderer.shadowMap.enabled = currentShadowMapEnabled;
+          };
+          // r139b: prepare the hull shaders without drawing (renderer.compile with the hull materials swapped in), so a
+          // world drawn with outlines does not compile them one by one as its buildings first come into view
+          this.compileOutline = function(scene, camera) {
+            const currentAutoClear = renderer.autoClear;
+            const currentSceneAutoUpdate = scene.matrixWorldAutoUpdate;
+            const currentSceneBackground = scene.background;
+            const currentShadowMapEnabled = renderer.shadowMap.enabled;
+            scene.matrixWorldAutoUpdate = false;
+            scene.background = null;
+            renderer.autoClear = false;
+            renderer.shadowMap.enabled = false;
+            passId++;
+            scene.traverseVisible(setOutlineMaterial);
+            try { renderer.compile(scene, camera); } finally {
+              for (let i = 0, il = swapped.length; i < il; i++) restoreOriginalMaterial(swapped[i], swappedOBR[i]);
+              cleanupCache();
+            }
             scene.matrixWorldAutoUpdate = currentSceneAutoUpdate;
             scene.background = currentSceneBackground;
             renderer.autoClear = currentAutoClear;
@@ -23930,7 +23966,7 @@ void main() {
         { id: "plane", label: "Cropduster" },
         { id: "scooter", label: "E-scooter" },
         { id: "foodvan", label: "Kompus truck" },
-        { id: "cop", label: "Cop cruiser" },
+        { id: "cop", label: "Poliția" }, // r139e: the Romanian Police 1310 (id kept for analytics)
         { id: "sub", label: "Yellow submarine" }
       ];
       FORM_DREAMS = ["Branding", "Website / App", "Video", "Growth & Social", "Not sure yet"];
@@ -24608,7 +24644,7 @@ void main() {
   // empty one: no reflections but the chrome's, the r138l look). CITY_ENV_K tones every city reflection at once;
   // cityTone dims it in the dark worlds like chromeTone
   // off by default until Daniel approves it: preview with ?reflect; off, every line below is a no-op (today's look)
-  var CITY_REFLECT = /[?&]reflect\b/.test(location.search);
+  var CITY_REFLECT = !/[?&]noreflect\b/.test(location.search); // r139i: on by default (r139b measured no cost to boot or frame time); ?noreflect puts back the old bake
   var CITY_ENV_K = 0.35;
   var CITY_ROOM_GREY = 0.12;
   var _cityK = 1;
@@ -26533,35 +26569,66 @@ void main() {
   // a grand stair, balustrades on every terrace, the tricolour on top, and an esplanade with
   // lawns and fountains towards Medical Avenue. The court's burgundy banners hang on the front.
   // Local axes: the front faces -x (the avenue), the long side runs along z.
+  // r139e (Daniel's sketches: the white 3D-printed model and the ink elevation): re-massed as the real thing. A long
+  // low front of tall arched windows with risalits at the centre and at the H's legs, its ends swinging forward on
+  // diagonal wings to the corner pavilions; the stepped central tower behind it (square-windowed floors, two
+  // storeys of arches, a colonnaded attic, corner piers standing proud); two taller wings running back with the
+  // courtyards between them and the lower side ranges, closed at the back. One merged mesh per material.
   var PALACE_TEX = null;
   function palaceTextures() {
     if (PALACE_TEX) return PALACE_TEX;
     const rnd = rng(1989);
     const lit = [];
     for (let i = 0; i < 64; i++) lit.push(rnd() < 0.3);
-    // window bays: 4 bays x 2 floors per tile, arched upper windows, pedimented lower ones
-    const winDraw = (glow) => (ctx) => {
-      ctx.fillStyle = glow ? "#000000" : "#ebe3cf"; ctx.fillRect(0, 0, 256, 256);
-      for (let f = 0; f < 2; f++) for (let bI = 0; bI < 4; bI++) {
-        const x = bI * 64, y = f * 128, on = lit[f * 4 + bI + 8 * (bI % 2)];
-        if (!glow) {
-          ctx.fillStyle = "#f6f0e2"; ctx.fillRect(x, y, 9, 128);
-          ctx.fillStyle = "#cbbfa4"; ctx.fillRect(x + 9, y, 2, 128);
-          ctx.fillStyle = "#d8cdb4"; ctx.fillRect(0, y + 120, 256, 8);
-          ctx.fillStyle = "#f2ebdc"; ctx.fillRect(0, y + 117, 256, 3);
+    const pane = (glow, on) => glow ? (on ? "#ffcf8a" : "#000000") : on ? "#f4d394" : "#3a434f";
+    // r139e (Daniel's model and drawing): the main facades. Two bays per tile between pilasters: a tall arched
+    // window through the two lower floors (transoms, a keystone), a string course, two rows of square windows
+    const frontDraw = (glow) => (ctx) => {
+      ctx.fillStyle = glow ? "#000000" : "#ece4d0"; ctx.fillRect(0, 0, 256, 256);
+      if (!glow) { ctx.fillStyle = "#d8ceb6"; ctx.fillRect(0, 0, 256, 7); ctx.fillStyle = "#f6f0e2"; ctx.fillRect(0, 7, 256, 3); ctx.fillStyle = "#d6cbb1"; ctx.fillRect(0, 98, 256, 7); ctx.fillStyle = "#f4eddd"; ctx.fillRect(0, 105, 256, 2); ctx.fillStyle = "#d3c8ae"; ctx.fillRect(0, 243, 256, 13); }
+      for (let bI = 0; bI < 2; bI++) {
+        const x = bI * 128;
+        if (!glow) { ctx.fillStyle = "#f6f0e2"; ctx.fillRect(x, 10, 15, 233); ctx.fillStyle = "#cbbfa4"; ctx.fillRect(x + 15, 10, 3, 233); }
+        for (let r = 0; r < 2; r++) {
+          const wx = x + 46, wy = 20 + r * 40;
+          ctx.fillStyle = pane(glow, lit[bI * 5 + r * 3]); ctx.fillRect(wx, wy, 38, 27);
+          if (!glow) { ctx.fillStyle = "#d6cab0"; ctx.fillRect(wx - 4, wy + 27, 46, 4); ctx.fillStyle = "#f7f2e6"; ctx.fillRect(wx + 18, wy, 2, 27); }
         }
-        const gx = x + 20, gw = 30;
-        ctx.fillStyle = glow ? (on ? "#ffcf8a" : "#000000") : on ? "#f4d394" : "#3a434f";
-        if (f === 0) {
-          ctx.beginPath(); ctx.moveTo(gx, y + 104); ctx.lineTo(gx, y + 40); ctx.arc(gx + gw / 2, y + 40, gw / 2, Math.PI, 0); ctx.lineTo(gx + gw, y + 104); ctx.closePath(); ctx.fill();
-        } else ctx.fillRect(gx + 1, y + 30, gw - 2, 74);
+        const ax = x + 37, aw = 56, top = 146, bot = 236;
+        ctx.fillStyle = pane(glow, lit[20 + bI * 7]);
+        ctx.beginPath(); ctx.moveTo(ax, bot); ctx.lineTo(ax, top); ctx.arc(ax + aw / 2, top, aw / 2, Math.PI, 0); ctx.lineTo(ax + aw, bot); ctx.closePath(); ctx.fill();
         if (glow) continue;
-        // frames, mullions, sills, the arch keystone and the little pediments
         ctx.strokeStyle = "#f7f2e6"; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(gx + gw / 2, y + (f === 0 ? 26 : 30)); ctx.lineTo(gx + gw / 2, y + 104); ctx.moveTo(gx, y + 70); ctx.lineTo(gx + gw, y + 70); ctx.stroke();
-        ctx.fillStyle = "#d6cab0"; ctx.fillRect(gx - 5, y + 104, gw + 10, 6);
-        if (f === 0) { ctx.strokeStyle = "#d2c6ab"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(gx + gw / 2, y + 40, gw / 2 + 4, Math.PI, 0); ctx.stroke(); ctx.fillStyle = "#f4eddd"; ctx.fillRect(gx + gw / 2 - 4, y + 18, 8, 9); }
-        else { ctx.fillStyle = "#d6cab0"; ctx.beginPath(); ctx.moveTo(gx - 6, y + 26); ctx.lineTo(gx + gw / 2, y + 12); ctx.lineTo(gx + gw + 6, y + 26); ctx.closePath(); ctx.fill(); }
+        ctx.beginPath(); ctx.moveTo(ax + aw / 2, top - aw / 2); ctx.lineTo(ax + aw / 2, bot); ctx.moveTo(ax, 178); ctx.lineTo(ax + aw, 178); ctx.moveTo(ax, 210); ctx.lineTo(ax + aw, 210); ctx.stroke();
+        ctx.strokeStyle = "#d2c6ab"; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(ax + aw / 2, top, aw / 2 + 5, Math.PI, 0); ctx.stroke();
+        ctx.fillStyle = "#f4eddd"; ctx.fillRect(ax + aw / 2 - 5, top - aw / 2 - 9, 10, 11);
+        ctx.fillStyle = "#d6cab0"; ctx.fillRect(ax - 5, bot, aw + 10, 5);
+      }
+    };
+    // the wings and the tower's lower floors: a grid of square windows, 4 bays x 3 floors, a course every floor
+    const gridDraw = (glow) => (ctx) => {
+      ctx.fillStyle = glow ? "#000000" : "#e9e1cc"; ctx.fillRect(0, 0, 256, 256);
+      for (let f = 0; f < 3; f++) for (let bI = 0; bI < 4; bI++) {
+        const x = bI * 64, y = f * 85;
+        if (!glow) { if (bI === 0) { ctx.fillStyle = "#d5cab0"; ctx.fillRect(0, y + 79, 256, 6); } ctx.fillStyle = "#f4eedf"; ctx.fillRect(x, y, 8, 79); }
+        ctx.fillStyle = pane(glow, lit[(f * 4 + bI * 5 + 3) % 64]); ctx.fillRect(x + 19, y + 16, 28, 48);
+        if (glow) continue;
+        ctx.fillStyle = "#f7f2e6"; ctx.fillRect(x + 32, y + 16, 2, 48); ctx.fillRect(x + 19, y + 36, 28, 2);
+        ctx.fillStyle = "#d6cab0"; ctx.fillRect(x + 15, y + 64, 36, 4); ctx.fillRect(x + 15, y + 10, 36, 4);
+      }
+    };
+    // the tower's middle floors: tall arched windows, 4 bays per tile
+    const archDraw = (glow) => (ctx) => {
+      ctx.fillStyle = glow ? "#000000" : "#ebe3cf"; ctx.fillRect(0, 0, 256, 128);
+      for (let bI = 0; bI < 4; bI++) {
+        const x = bI * 64, gx = x + 20, gw = 26;
+        if (!glow) { ctx.fillStyle = "#f6f0e2"; ctx.fillRect(x, 0, 9, 128); ctx.fillStyle = "#cbbfa4"; ctx.fillRect(x + 9, 0, 2, 128); ctx.fillStyle = "#d8cdb4"; ctx.fillRect(0, 120, 256, 8); }
+        ctx.fillStyle = pane(glow, lit[40 + bI * 3]);
+        ctx.beginPath(); ctx.moveTo(gx, 112); ctx.lineTo(gx, 36); ctx.arc(gx + gw / 2, 36, gw / 2, Math.PI, 0); ctx.lineTo(gx + gw, 112); ctx.closePath(); ctx.fill();
+        if (glow) continue;
+        ctx.strokeStyle = "#f7f2e6"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(gx + gw / 2, 24); ctx.lineTo(gx + gw / 2, 112); ctx.moveTo(gx, 66); ctx.lineTo(gx + gw, 66); ctx.stroke();
+        ctx.strokeStyle = "#d2c6ab"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(gx + gw / 2, 36, gw / 2 + 4, Math.PI, 0); ctx.stroke();
+        ctx.fillStyle = "#d6cab0"; ctx.fillRect(gx - 4, 112, gw + 8, 5);
       }
     };
     // a colonnaded loggia: columns in front of a shaded recess, a balustrade along the bottom
@@ -26592,85 +26659,115 @@ void main() {
       for (let x = 3; x < 256; x += 16) { ctx.beginPath(); ctx.ellipse(x + 5, 17, 4.5, 9, 0, 0, Math.PI * 2); ctx.fill(); }
     };
     PALACE_TEX = {
-      win: [canvasTexture(256, 256, winDraw(false)), canvasTexture(256, 256, winDraw(true))],
+      front: [canvasTexture(256, 256, frontDraw(false)), canvasTexture(256, 256, frontDraw(true))],
+      grid: [canvasTexture(256, 256, gridDraw(false)), canvasTexture(256, 256, gridDraw(true))],
+      arch: [canvasTexture(256, 128, archDraw(false)), canvasTexture(256, 128, archDraw(true))],
       col: [canvasTexture(256, 256, colDraw(false)), canvasTexture(256, 256, colDraw(true))],
       base: [canvasTexture(256, 128, baseDraw), null],
       bal: [canvasTexture(256, 32, balDraw), null]
     };
+    // r139e: the facades carry their tiling in the UVs (whole bays per face), so one material per kind
+    for (const k in PALACE_TEX) for (const t of PALACE_TEX[k]) if (t) t.wrapS = t.wrapT = RepeatWrapping;
     return PALACE_TEX;
   }
   function buildCasaPoporului(parent, x, z) {
     const g = new Group();
     const T = palaceTextures();
-    const cache = {};
-    // one material per texture kind and repeat, so every bay keeps its proportions
-    const fac = (kind, rx, ry) => {
-      const k = `${kind}:${rx}:${ry}`;
-      if (cache[k]) return cache[k];
-      const [map0, glow0] = T[kind];
-      const map = map0.clone(); map.wrapS = map.wrapT = RepeatWrapping; map.repeat.set(rx, ry); map.needsUpdate = true;
-      const o = { map, roughness: 0.88, color: "#ffffff" };
-      if (glow0) { const em = glow0.clone(); em.wrapS = em.wrapT = RepeatWrapping; em.repeat.set(rx, ry); em.needsUpdate = true; o.emissiveMap = em; o.emissive = new Color("#ffffff"); o.emissiveIntensity = 0; }
-      const m = new MeshStandardMaterial(o);
-      if (glow0) STREET_GLOW.push([m, kind === "col" ? 0.6 : 0.9]);
-      return (cache[k] = m);
+    // r139e: one material per kind (the textures repeat through the UVs), all geometry gathered into buckets and
+    // merged at the end: one draw call per material instead of one per block and per side
+    const PM = {};
+    const matOf = (kind) => {
+      if (PM[kind]) return PM[kind];
+      let m;
+      if (kind === "roof") m = new MeshStandardMaterial({ color: "#d9d0bc", roughness: 0.95 });
+      else if (kind === "stone") m = new MeshStandardMaterial({ color: "#e6dece", roughness: 0.86 });
+      else if (kind === "court") m = new MeshStandardMaterial({ color: "#8cbf72", roughness: 1 });
+      else {
+        const [map, glow] = T[kind];
+        const o = { map, roughness: 0.88, color: "#ffffff" };
+        if (glow) { o.emissiveMap = glow; o.emissive = new Color("#ffffff"); o.emissiveIntensity = 0; }
+        m = new MeshStandardMaterial(o);
+        if (glow) STREET_GLOW.push([m, kind === "col" ? 0.6 : 0.9]);
+      }
+      return (PM[kind] = m);
     };
-    const roofM = new MeshStandardMaterial({ color: "#d9d0bc", roughness: 0.95 });
-    const stone = new MeshStandardMaterial({ color: "#efe8d8", roughness: 0.85 });
-    const stoneDk = new MeshStandardMaterial({ color: "#d3c8ae", roughness: 0.9 });
-    // a block with facades on all four sides; tile = [width, height] of one texture tile in world units
-    const block = (dx, h, dz, cx, y0, cz, kind, tile) => {
-      const rz = Math.max(1, Math.round(dz / tile[0])), rxx = Math.max(1, Math.round(dx / tile[0])), ry = Math.max(1, Math.round(h / tile[1]));
-      const side = fac(kind, rz, ry), end = fac(kind, rxx, ry);
-      const m = new Mesh(new BoxGeometry(dx, h, dz), [side, side, roofM, roofM, end, end]);
-      m.position.set(cx, y0 + h / 2, cz);
-      g.add(m);
-      return m;
+    const BK = {};
+    const quad = (kind, pts, n, us, vs) => {
+      const q = BK[kind] || (BK[kind] = { p: [], n: [], u: [], i: [] }), o = q.p.length / 3;
+      for (const p of pts) q.p.push(p[0], p[1], p[2]);
+      for (let j = 0; j < 4; j++) q.n.push(n[0], n[1], n[2]);
+      q.u.push(0, 0, us, 0, us, vs, 0, vs);
+      q.i.push(o, o + 1, o + 2, o, o + 2, o + 3);
     };
-    const slab = (dx, h, dz, cx, y0, cz, mat = stoneDk) => { const m = new Mesh(new BoxGeometry(dx, h, dz), mat); m.position.set(cx, y0 + h / 2, cz); g.add(m); return m; };
-    // a balustrade around the edge of a terrace
-    const balustrade = (dx, dz, cx, y0, cz) => {
-      const h = 4.2, t = 1.4;
-      const along = fac("bal", Math.max(1, Math.round(dz / 24)), 1), across = fac("bal", Math.max(1, Math.round(dx / 24)), 1);
+    // a box 2a long along (ux, uz) and 2b deep across it, from y0 to y1: four faces of `kind` in whole bays of
+    // tile = [w, h] (no tile: stretched once), a flat top of `top` (null: none), no bottom
+    const box = (cx, cz, ux, uz, a, b, y0, y1, kind, tile, top = "roof") => {
+      const nx = -uz, nz = ux;
+      for (const [fx, fz, d, hw] of [[ux, uz, a, b], [-ux, -uz, a, b], [nx, nz, b, a], [-nx, -nz, b, a]]) {
+        const ox = cx + fx * d, oz = cz + fz * d, rx = fz, rz = -fx;
+        const us = tile ? Math.max(1, Math.round(2 * hw / tile[0])) : 1, vs = tile ? Math.max(1, Math.round((y1 - y0) / tile[1])) : 1;
+        quad(kind, [[ox - rx * hw, y0, oz - rz * hw], [ox + rx * hw, y0, oz + rz * hw], [ox + rx * hw, y1, oz + rz * hw], [ox - rx * hw, y1, oz - rz * hw]], [fx, 0, fz], us, vs);
+      }
+      if (top) quad(top, [[cx - ux * a + nx * b, y1, cz - uz * a + nz * b], [cx + ux * a + nx * b, y1, cz + uz * a + nz * b], [cx + ux * a - nx * b, y1, cz + uz * a - nz * b], [cx - ux * a - nx * b, y1, cz - uz * a - nz * b]], [0, 1, 0], 1, 1);
+    };
+    // a parapet or balustrade standing on the edge of a roof
+    const ring = (cx, cz, ux, uz, a, b, y0, h, kind, tile) => {
+      const t = 0.7, nx = -uz, nz = ux;
       for (const s of [-1, 1]) {
-        const a = new Mesh(new BoxGeometry(t, h, dz), along); a.position.set(cx + s * (dx / 2 - t / 2), y0 + h / 2, cz); g.add(a);
-        const b = new Mesh(new BoxGeometry(dx, h, t), across); b.position.set(cx, y0 + h / 2, cz + s * (dz / 2 - t / 2)); g.add(b);
+        box(cx + nx * s * (b - t), cz + nz * s * (b - t), ux, uz, a, t, y0, y0 + h, kind, tile, "stone");
+        box(cx + ux * s * (a - t), cz + uz * s * (a - t), ux, uz, t, b - 2 * t, y0, y0 + h, kind, tile, "stone");
       }
     };
-    const WIN = [36, 22], COL = [36, 24], BASE = [72, 12];
-    // the podium
-    block(292, 11, 352, 0, 0, 0, "base", BASE);
-    slab(298, 1.6, 358, 0, 11, 0);
-    let y = 12.6;
-    // tier 1: the main body, with four corner pavilions standing proud of it
-    block(250, 48, 318, 0, y, 0, "win", WIN);
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-      block(58, 56, 60, sx * 104, y, sz * 140, "win", WIN);
-      slab(62, 2.4, 64, sx * 104, y + 56, sz * 140);
-      balustrade(60, 62, sx * 104, y + 58.4, sz * 140);
+    const P = 12.6, FT = [26, 46], GT = [30, 30], AT = [28, 14], CT = [36, 18], BT = [48, 12.6];
+    // a wing: a rusticated plinth, the facade, a cornice, and a balustrade (bal) or a low parapet on the roof
+    const mass = (cx, cz, ux, uz, a, b, y1, kind, tile, o = {}) => {
+      const y0 = o.y0 ?? P;
+      if (y0 === P) box(cx, cz, ux, uz, a + 1.2, b + 1.2, 0, P, "base", BT, "stone");
+      box(cx, cz, ux, uz, a, b, y0, y1, kind, tile, null);
+      box(cx, cz, ux, uz, a + 1.8, b + 1.8, y1, y1 + 2.4, "stone", null);
+      if (o.bal) ring(cx, cz, ux, uz, a + 1.2, b + 1.2, y1 + 2.4, 4.2, "bal", [24, 4.2]);
+      else ring(cx, cz, ux, uz, a + 1.2, b + 1.2, y1 + 2.4, 2.2, "stone", null);
+    };
+    const ax = (x0, x1, z0, z1, y1, kind, tile, o) => mass((x0 + x1) / 2, (z0 + z1) / 2, 1, 0, Math.abs(x1 - x0) / 2, Math.abs(z1 - z0) / 2, y1, kind, tile, o);
+    // the portico's slabs and balcony (below) go into the same buckets
+    const stone = matOf("stone");
+    const slab = (dx, h, dz, cx, y0, cz) => box(cx, cz, 1, 0, dx / 2, dz / 2, y0, y0 + h, "stone", null, "stone");
+    const balustrade = (dx, dz, cx, y0, cz) => ring(cx, cz, 1, 0, dx / 2, dz / 2, y0, 4.2, "bal", [24, 4.2]);
+    // the long front: tall arches below, square windows above; risalits at the centre and at the H's legs
+    ax(-119, -72, -100, 100, 58, "front", FT, { bal: true });
+    ax(-125, -70, -42, 42, 62, "front", FT, { bal: true });
+    for (const s of [-1, 1]) {
+      ax(-123, -90, s * 62, s * 84, 61, "front", FT);
+      // the ends swing forward on diagonal wings to the corner pavilions, a storey taller
+      mass(-113.5, s * 126, -0.6, 0.8 * s, 20.5, 20, 58, "front", FT, { bal: true });
+      mass(-132, s * 149, -0.6, 0.8 * s, 17, 22, 68, "front", FT, { bal: true });
+      // the side ranges, lower, running back to the rear
+      ax(-112, 146, s * 142, s * 176, 54, "front", FT);
+      // the two tall wings (the legs of the H) and the cross ranges between the courtyards
+      ax(-90, 140, s * 70, s * 102, 80, "grid", GT);
+      ax(20, 40, s * 102, s * 142, 58, "grid", GT);
+      // the courtyards' gardens
+      box(4, s * 122, 1, 0, 108, 20, 0, 1.2, "court", null, "court");
     }
-    // the side pavilions in the middle of each short end
-    for (const sz of [-1, 1]) { block(90, 54, 14, 0, y, sz * 162, "win", WIN); slab(94, 2.2, 17, 0, y + 54, sz * 162); }
-    slab(256, 2.6, 324, 0, y + 48, 0);
-    balustrade(254, 322, 0, y + 50.6, 0);
-    y += 50.6;
-    // the upper tiers step back: windows, loggia, windows, loggia
-    const tiers = [[200, 26, 262, "win", WIN], [156, 24, 206, "col", COL], [112, 22, 150, "win", WIN], [70, 24, 96, "col", COL]];
-    for (const [dx, h, dz, kind, tile] of tiers) {
-      block(dx, h, dz, 0, y, 0, kind, tile);
-      slab(dx + 6, 2.4, dz + 6, 0, y + h, 0);
-      balustrade(dx + 4, dz + 4, 0, y + h + 2.4, 0);
-      y += h + 2.4;
+    // the central tower, stepping back: square-windowed floors over the front's terrace, two storeys of arches,
+    // the colonnaded attic; its corner piers stand proud of it and rise above it
+    ax(-82, 34, -60, 60, 82, "grid", GT);
+    ax(-79, 31, -56, 56, 112, "arch", AT, { y0: 84.4 });
+    ax(-75, 27, -50, 50, 130, "col", CT, { y0: 114.4, bal: true });
+    for (const px of [-82, 34]) for (const s of [-1, 1]) {
+      ax(px - 10, px + 10, s * 48, s * 68, 112, "grid", GT);
+      ax(px - 9, px + 9, s * 49, s * 67, 140, "arch", AT, { y0: 114.4 });
     }
-    // the crown: a small attic block and the flag
-    block(40, 10, 50, 0, y, 0, "win", [25, 10]);
-    slab(44, 2, 54, 0, y + 10, 0);
-    y += 12;
+    ax(-55, 5, -26, 26, 142, "grid", [30, 9.6], { y0: 132.4 });
+    // behind it the great halls, and the rear range closing the courtyards
+    ax(34, 140, -70, 70, 70, "grid", GT);
+    ax(112, 146, -142, 142, 50, "grid", GT);
+    const yTop = 144.4;
     const mast = new Mesh(new CylinderGeometry(0.55, 0.7, 30, 8), new MeshStandardMaterial({ color: "#6b6b6b", metalness: 0.6, roughness: 0.4 }));
-    mast.position.y = y + 15; g.add(mast);
+    mast.position.set(-25, yTop + 15, 0); g.add(mast);
     const flagTex = canvasTexture(96, 64, (ctx) => { ["#002B7F", "#FCD116", "#CE1126"].forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(i * 32, 0, 32, 64); }); });
     const flag = new Mesh(new BoxGeometry(0.3, 9, 14), new MeshStandardMaterial({ map: flagTex, roughness: 0.7 }));
-    flag.position.set(0, y + 24.5, 7.4); g.add(flag);
+    flag.position.set(-25, yTop + 24.5, 7.4); g.add(flag);
     // the central portico on the front: stylobate, twelve columns, entablature and a balcony
     const PX = -125;
     slab(26, 3.4, 104, PX - 12, 12.6, 0, stone);
@@ -26706,20 +26803,25 @@ void main() {
     });
     const banM = new MeshStandardMaterial({ map: banTex, emissiveMap: banTex, emissive: new Color("#ffffff"), emissiveIntensity: 0, roughness: 0.7 });
     STREET_GLOW.push([banM, 0.45]);
-    for (const bz of [-92, -66, 66, 92]) { const b2 = new Mesh(new PlaneGeometry(13, 40), banM); b2.position.set(-125.6, 36, bz); b2.rotation.y = -Math.PI / 2; g.add(b2); }
+    // r139e: on the front beside the portico and on the risalits, merged into one mesh
+    const banGeos = [];
+    for (const [bx, bz] of [[-119.6, -56], [-123.6, -73], [-119.6, 56], [-123.6, 73]]) { const b2 = new PlaneGeometry(13, 40); b2.rotateY(-Math.PI / 2); b2.translate(bx, 36, bz); banGeos.push(b2); }
+    g.add(new Mesh(mergeGeometries(banGeos), banM));
     // the esplanade: paving, two lawns with fountains, and lamps along the walk
     const pave = new Mesh(new BoxGeometry(92, 0.8, 300), new MeshStandardMaterial({ color: "#e4ddce", roughness: 1 }));
     pave.position.set(-210, 0.4, 0); g.add(pave);
     const lawnM = new MeshStandardMaterial({ color: "#78c46c", roughness: 1 });
     const basinM = new MeshStandardMaterial({ color: "#d9d2c3", roughness: 0.9 }), waterM = new MeshStandardMaterial({ color: "#7fc8e8", roughness: 0.12, metalness: 0.25 });
     const jetM = new MeshStandardMaterial({ color: "#e4f6ff", transparent: true, opacity: 0.75 });
+    // r139e: both lawns and both fountains merged per material
+    const fz = { lawn: [], basin: [], water: [], jet: [] };
     for (const sz of [-1, 1]) {
-      const lawn = new Mesh(new BoxGeometry(62, 1.4, 100), lawnM); lawn.position.set(-212, 1, sz * 92); g.add(lawn);
-      const basin = new Mesh(new CylinderGeometry(13, 14, 3, 28), basinM); basin.position.set(-212, 2, sz * 92);
-      const water = new Mesh(new CylinderGeometry(11.5, 11.5, 0.6, 28), waterM); water.position.set(-212, 3.4, sz * 92);
-      const jet = new Mesh(new CylinderGeometry(0.7, 1.8, 13, 10), jetM); jet.position.set(-212, 9, sz * 92);
-      g.add(basin, water, jet);
+      fz.lawn.push(new BoxGeometry(62, 1.4, 100).translate(-212, 1, sz * 92));
+      fz.basin.push(new CylinderGeometry(13, 14, 3, 28).translate(-212, 2, sz * 92));
+      fz.water.push(new CylinderGeometry(11.5, 11.5, 0.6, 28).translate(-212, 3.4, sz * 92));
+      fz.jet.push(new CylinderGeometry(0.7, 1.8, 13, 10).translate(-212, 9, sz * 92));
     }
+    for (const [k, m] of [["lawn", lawnM], ["basin", basinM], ["water", waterM], ["jet", jetM]]) g.add(new Mesh(mergeGeometries(fz[k]), m));
     const lampGeos = [], globeGeos = [];
     for (const sz of [-1, 1]) for (let i = 0; i < 5; i++) {
       const lx = -176 - i * 18, lz = sz * 34;
@@ -26735,14 +26837,18 @@ void main() {
       const carpetM = new MeshStandardMaterial({ color: "#6e1420", roughness: 0.85 }), goldM = new MeshStandardMaterial({ color: "#c89b3c", roughness: 0.35, metalness: 0.6 });
       const gx0 = -408, gx1 = -150, cw = 22;
       const carpet = new Mesh(new BoxGeometry(gx1 - gx0, 1.2, cw), carpetM); carpet.position.set((gx0 + gx1) / 2, 1.4, 0); g.add(carpet);
-      for (const sz of [-1, 1]) for (let x2 = gx0 + 10; x2 < gx1; x2 += 22) {
-        const st = new Mesh(new CylinderGeometry(0.9, 1.2, 9, 8), goldM); st.position.set(x2, 5.5, sz * (cw / 2 + 3)); g.add(st);
-      }
+      // r139e: the stanchions, the gate's posts and its caps each merged into one mesh
+      const gold = [], posts = [];
+      for (const sz of [-1, 1]) for (let x2 = gx0 + 10; x2 < gx1; x2 += 22) gold.push(new CylinderGeometry(0.9, 1.2, 9, 8).translate(x2, 5.5, sz * (cw / 2 + 3)));
+      for (const sz of [-1, 1]) { posts.push(new BoxGeometry(6, 46, 6).translate(gx0 + 4, 23, sz * 22)); gold.push(new BoxGeometry(8, 3, 8).toNonIndexed().translate(gx0 + 4, 47.5, sz * 22)); }
+      g.add(new Mesh(mergeGeometries(gold.map((q) => q.index ? q.toNonIndexed() : q)), goldM), new Mesh(mergeGeometries(posts), new MeshStandardMaterial({ color: "#1a0909", roughness: 0.6 })));
       const gate = new Group();
-      for (const sz of [-1, 1]) { const p = new Mesh(new BoxGeometry(6, 46, 6), new MeshStandardMaterial({ color: "#1a0909", roughness: 0.6 })); p.position.set(0, 23, sz * 22); gate.add(p); const cap = new Mesh(new BoxGeometry(8, 3, 8), goldM); cap.position.set(0, 47.5, sz * 22); gate.add(cap); }
       const lintelTex = canvasTexture(512, 128, (ctx) => {
         ctx.fillStyle = "#1a0909"; ctx.fillRect(0, 0, 512, 128); ctx.strokeStyle = "#c89b3c"; ctx.lineWidth = 6; ctx.strokeRect(8, 8, 496, 112);
-        ctx.fillStyle = "#f4f0ea"; ctx.textAlign = "center"; ctx.font = "600 44px 'Cinzel', Georgia, serif"; ctx.fillText("THE AESTHETIC COURT", 256, 66);
+        // r139e: the name shrinks until it fits (in the fallback serif it ran off both ends)
+        ctx.fillStyle = "#f4f0ea"; ctx.textAlign = "center";
+        for (let fs = 44; fs >= 24; fs -= 2) { ctx.font = `600 ${fs}px 'Cinzel', Georgia, serif`; if (ctx.measureText("THE AESTHETIC COURT").width <= 468) break; }
+        ctx.fillText("THE AESTHETIC COURT", 256, 66);
         ctx.fillStyle = "#c89b3c"; ctx.font = "700 20px CromaticSans, sans-serif"; ctx.fillText("ENTRANCE \u00B7 ONE TRIAL, ONE VERDICT", 256, 100);
       });
       const lintM = new MeshStandardMaterial({ map: lintelTex, emissiveMap: lintelTex, emissive: new Color("#ffffff"), emissiveIntensity: 0, roughness: 0.6 });
@@ -26751,6 +26857,13 @@ void main() {
       gate.position.set(gx0 + 4, 0, 0); g.add(gate);
       // a big name over the portico, so the court reads from across the city
       const big = new Mesh(new BoxGeometry(2, 14, 92), [lintM, lintM, goldM, goldM, goldM, goldM]); big.position.set(PX - 29, 72, 0); g.add(big);
+    }
+    // r139e: the palace's buckets, one mesh per material
+    for (const k in BK) {
+      const q = BK[k], geo = new BufferGeometry();
+      geo.setAttribute("position", new Float32BufferAttribute(q.p, 3)); geo.setAttribute("normal", new Float32BufferAttribute(q.n, 3)); geo.setAttribute("uv", new Float32BufferAttribute(q.u, 2));
+      geo.setIndex(q.i);
+      g.add(new Mesh(geo, matOf(k)));
     }
     g.scale.setScalar(0.66);
     EXTRA_KEEPOUT.push({ x, y: z, r: 170 });
@@ -28237,7 +28350,10 @@ void main() {
       <ellipse cx="55" cy="26" rx="29" ry="5.5" fill="#3a1c0a"/>
       <path d="M28 36 C28 58 30 76 36 90" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity=".55"/></svg>`;
   };
-  function createKinetic(onFinale, preBurst) {
+  // r139g: opts.drop: the drive's ending (the cups settle, then drop out of frame under gravity, staggered; onDrop fires as the
+  // first one lets go so the map can start its pull-out). Without it (the website's hero) the ending is as before.
+  function createKinetic(onFinale, preBurst, opts) {
+    opts = opts || {};
     const C = { y: "#FED012", b: "#119BFE", g: "#28C840", r: "#F65342", l: "#B098C8" };
     const BEATS = [
       { veil: C.y, tr: "iris", marq: "STRATEGY ✳ DESIGN", lines: [[{ w: "Killer", fx: "stamp" }, { w: "strategy.", p: C.y, fx: "stamp", burst: 1 }], [{ w: "Outstanding" }, { w: "design.", p: C.b, fx: "wave" }]] },
@@ -28271,6 +28387,8 @@ void main() {
     const wait = (ms, t) => new Promise((r) => setTimeout(() => r(t === token), ms));
     const R = (n) => Math.random() * n;
     const EASE = "cubic-bezier(.2,.8,.2,1)";
+    // r139g: opts.lite (the drive, on phones): no blur in the word keyframes, a filter re-rasters the text every frame
+    const BL = (px) => (opts.lite ? "none" : `blur(${px}px)`);
 
     // ---------- glass veils ----------
     const veil = (color, kind) => {
@@ -28365,7 +28483,7 @@ void main() {
     const IN = (it, i, t) => {
       const { t: tk, inner, mask } = it, d = 30 + i * 42;
       if (tk.fx === "stamp") {
-        const a2 = anim(inner, [{ opacity: 0, transform: `scale(3.2) rotate(${i % 2 ? -12 : 10}deg)`, filter: "blur(8px)" }, { opacity: 1, transform: `scale(.95) rotate(${tk.p ? "var(--rot)" : "0deg"})`, filter: "blur(0)", offset: 0.62 }, { opacity: 1, transform: `scale(1) rotate(${tk.p ? "var(--rot)" : "0deg"})` }], { duration: 380, delay: d, easing: "cubic-bezier(.7,0,.3,1)" });
+        const a2 = anim(inner, [{ opacity: 0, transform: `scale(3.2) rotate(${i % 2 ? -12 : 10}deg)`, filter: BL(8) }, { opacity: 1, transform: `scale(.95) rotate(${tk.p ? "var(--rot)" : "0deg"})`, filter: BL(0), offset: 0.62 }, { opacity: 1, transform: `scale(1) rotate(${tk.p ? "var(--rot)" : "0deg"})` }], { duration: 380, delay: d, easing: "cubic-bezier(.7,0,.3,1)" });
         setTimeout(() => { if (t === token) { shake(); if (tk.burst) burst(24); } }, d + 240);
         return a2;
       }
@@ -28376,7 +28494,7 @@ void main() {
         return a2;
       }
       if (tk.fx === "glitch") {
-        const a2 = anim(inner, [{ opacity: 0, transform: "scaleY(.03) scaleX(1.5) rotate(var(--rot))", filter: "blur(8px)" }, { opacity: 1, transform: "scaleY(1.15) scaleX(.92) rotate(var(--rot))", offset: 0.5 }, { opacity: 1, transform: "rotate(var(--rot))", filter: "blur(0)" }], { duration: 480, delay: d, easing: EASE });
+        const a2 = anim(inner, [{ opacity: 0, transform: "scaleY(.03) scaleX(1.5) rotate(var(--rot))", filter: BL(8) }, { opacity: 1, transform: "scaleY(1.15) scaleX(.92) rotate(var(--rot))", offset: 0.5 }, { opacity: 1, transform: "rotate(var(--rot))", filter: BL(0) }], { duration: 480, delay: d, easing: EASE });
         mask.querySelectorAll(".kz-rgb").forEach((c2, k) => anim(c2, [{ transform: "translate(0,0) rotate(var(--rot))", opacity: 0 }, { transform: `translate(${k ? 10 : -10}px,${k ? -4 : 4}px) rotate(var(--rot))`, opacity: 0.9, offset: 0.2 }, { transform: `translate(${k ? -7 : 7}px,0) rotate(var(--rot))`, offset: 0.45 }, { transform: `translate(${k ? 14 : -14}px,${k ? 3 : -3}px) rotate(var(--rot))`, offset: 0.7 }, { transform: "translate(0,0) rotate(var(--rot))", opacity: 0 }], { duration: 1000, delay: d + 220 }));
         setTimeout(() => { if (t === token) anim(flash, [{ opacity: 0 }, { opacity: 0.55, offset: 0.15 }, { opacity: 0 }], { duration: 420 }); }, d + 260);
         return a2;
@@ -28387,11 +28505,13 @@ void main() {
         const t0 = performance.now() + d, dur = 600;
         // r131: each letter keeps the width of its final glyph while it scrambles, so the word never
         // reflows (on phones the pill used to jump between one and two lines: layout shift, jitter)
-        let locked = false;
+        let locked = false, skip2 = 0;
         const lock = (on) => ls.forEach((l) => { if (on) { const w = parseFloat(getComputedStyle(l).width) || l.offsetWidth; l.style.display = "inline-block"; l.style.width = `${w}px`; l.style.textAlign = "center"; l.style.whiteSpace = "pre"; } else { l.style.width = l.style.display = l.style.textAlign = l.style.whiteSpace = ""; } });
         const tick = () => { if (t !== token) return; const k2 = (performance.now() - t0) / dur; if (k2 < 0) { requestAnimationFrame(tick); return; }
           if (!locked) { lock(true); locked = true; }
-          ls.forEach((l, j) => { const done2 = k2 > (j + 1) / ls.length; l.textContent = done2 ? l.dataset.c : pool[(Math.random() * pool.length) | 0]; l.style.opacity = done2 ? 1 : 0.55; });
+          // r139g: settled letters are left alone, the opacity is written only when it changes, and on phones (lite) the
+          // scramble runs every other frame: each write recalculates the style of the whole block
+          if (!(opts.lite && (skip2++ & 1))) ls.forEach((l, j) => { if (l.dataset.d) return; const done2 = k2 > (j + 1) / ls.length; const o = done2 ? "1" : "0.55"; if (l.style.opacity !== o) l.style.opacity = o; l.textContent = done2 ? l.dataset.c : pool[(Math.random() * pool.length) | 0]; if (done2) l.dataset.d = "1"; });
           if (k2 < 1) requestAnimationFrame(tick); else lock(false); };
         requestAnimationFrame(tick);
         return pillDrop(inner, d);
@@ -28416,8 +28536,8 @@ void main() {
         // letters flip up out of the floor one after another, with a touch of motion blur
         const ls = [...inner.children];
         ls.forEach((l, j) => anim(l, [
-          { opacity: 0, transform: "translateY(85%) rotateX(-105deg) scale(.9)", filter: "blur(7px)" },
-          { opacity: 1, transform: "translateY(-6%) rotateX(12deg) scale(1.02)", filter: "blur(0)", offset: 0.7 },
+          { opacity: 0, transform: "translateY(85%) rotateX(-105deg) scale(.9)", filter: BL(7) },
+          { opacity: 1, transform: "translateY(-6%) rotateX(12deg) scale(1.02)", filter: BL(0), offset: 0.7 },
           { opacity: 1, transform: "none", filter: "none" }
         ], { duration: 360, delay: d + j * 15, easing: "cubic-bezier(.2,.8,.2,1)" }));
         return anim(inner, [{ opacity: 1 }, { opacity: 1 }], { duration: d + 360 + ls.length * 15 });
@@ -28628,6 +28748,26 @@ void main() {
           if (now < c.at) continue;
           c.g.visible = true;
           c.prev.copy(c.pos);
+          if (c.fall) {
+            // r139g: let go: a real fall (constant gravity), a tumble, a little sideways drift; gone once below the frame.
+            // Until its moment the cup only sits and sways a touch, the spin wound down
+            const f = c.fall;
+            if (now >= f.at) {
+              f.vy -= 150 * dt;
+              c.pos.y += f.vy * dt; c.pos.x += f.vx * dt; c.pos.z += f.vz * dt;
+              c.g.rotation.z += f.wz * dt; c.g.rotation.x += f.wx * dt;
+              c.g.position.copy(c.pos);
+              if (c.pos.y < f.gone) c.g.visible = false;
+            } else {
+              c.spin += (0 - c.spin) * (1 - Math.exp(-dt * 6));
+              c.ang += c.spin * dt;
+              c.s += (c.sT - c.s) * (1 - Math.exp(-dt * 8));
+              c.g.rotation.z = Math.sin((f.at - now) * 0.012 + c.swirl) * 0.018 * f.sway;
+              c.g.scale.setScalar(c.s);
+              c.spinner.rotation.y = c.ang;
+            }
+            continue;
+          }
           c.pos.lerp(c.tgt, 1 - Math.exp(-dt * c.k));
           c.s += (c.sT - c.s) * (1 - Math.exp(-dt * 8));
           if (c.sync) {
@@ -28659,8 +28799,8 @@ void main() {
           if (k >= 1) { const cb = camAnim.cb; camAnim = null; cb?.(); }
         }
         if (leaving) {
-          const k = Math.min(1, (now - leaving.t0) / leaving.dur);
-          canvas.style.opacity = String(k > 0.72 ? Math.max(0, 1 - (k - 0.72) / 0.28) : 1);
+          const k = Math.min(1, (now - leaving.t0) / leaving.dur), f0 = leaving.fade ?? 0.72; // r139g: fade may start later
+          canvas.style.opacity = String(k > f0 ? Math.max(0, 1 - (k - f0) / (1 - f0)) : 1);
           if (k >= 1) { const cb = leaving.cb; leaving = null; cb(); }
         }
         if (typeof noWarp === "function") noWarp(sc);
@@ -28740,13 +28880,29 @@ void main() {
               n++;
             }
           }
-          await sleep(700);
+          await sleep(opts.drop ? 520 : 700); // r139g: a touch tighter; the settle of the drop takes the time instead
           // pull way back: five times more cups on screen
           await new Promise((res) => { camAnim = { t0: performance.now(), dur: 1100, from: cam.position.z, to: CAMOUT, cb: res }; });
           await new Promise((res) => hold(res));
-          await sleep(250);
+          await sleep(opts.drop ? 120 : 250);
+        },
+        // r139g: warm this stage behind the loader: the programs of the five porcelains, the environment and the
+        // geometry go to the GPU now, with one cup of each design drawn once into the (invisible) canvas
+        async warm() {
+          init();
+          const made = [0, 1, 2, 3, 4].map((ci) => make(ci, new Vector3((ci - 2) * 5, 0, 0), new Vector3((ci - 2) * 5, 0, 0), { s0: 1, s: 1 }));
+          for (const c of made) c.g.visible = true;
+          if (typeof noWarp === "function") noWarp(sc);
+          try { if (R3.compileAsync) await R3.compileAsync(sc, cam); else R3.compile(sc, cam); } catch (e) {}
+          window.__noCityCull = true;
+          try { R3.render(sc, cam); } catch (e) {}
+          window.__noCityCull = false;
+          for (const c of made) sc.remove(c.g);
+          cups = cups.filter((q) => !made.includes(q));
+          R3.clear();
         },
         leave() {
+          if (opts.drop) return this.drop();
           return new Promise((res) => {
             const [hwO] = half(CAMOUT);
             // a quick wave, left to right: each cup spins up and drops out of frame
@@ -28758,6 +28914,29 @@ void main() {
               setTimeout(() => { c.k = 3.2; c.tgt.y -= hhO * 3.2; c.tgt.z += (Math.random() - 0.5) * 14; c.tgt.x += (Math.random() - 0.5) * 3; c.sT = 0.92; }, (1 - rowT) * 420 + Math.random() * 90 + dl);
             }
             leaving = { t0: performance.now(), dur: 1250, cb: () => { clear(); res(); } };
+          });
+        },
+        // r139g: the drive's ending. The wall comes to rest first (spins wind down, the cups size to one, the map
+        // shows through behind them), then the floor goes: the lowest rows let go first and the fall climbs the
+        // screen, a few cups hang on a beat longer and drop late; each one tumbles as it goes. Reduced motion: a fade
+        drop() {
+          return new Promise((res) => {
+            if (reduce) { leaving = { t0: performance.now() - 720, dur: 1000, cb: () => { clear(); res(); } }; return; }
+            const [, hhO] = half(CAMOUT), now = performance.now();
+            const settle = 820;
+            let late = 0, first = Infinity;
+            for (const c of cups) {
+              const rowT = Math.max(0, Math.min(1, (c.pos.y + hhO) / (2 * hhO)));
+              const straggler = Math.random() < 0.12;
+              const at = now + settle + rowT * 520 + Math.random() * 140 + (straggler ? 380 + Math.random() * 360 : 0);
+              c.sync = false; c.sT = 1;
+              c.fall = { at, vy: 0, vx: (Math.random() - 0.5) * 3, vz: (Math.random() - 0.5) * 6, wz: (Math.random() - 0.5) * 3.4, wx: (Math.random() - 0.5) * 1.4, gone: -hhO - 8, sway: straggler ? 2.5 : 1 };
+              late = Math.max(late, at); first = Math.min(first, at);
+            }
+            if (first < Infinity) setTimeout(() => { try { opts.onDrop?.(); } catch (e) {} }, Math.max(0, first - now));
+            // the last cup needs ~0.75 s to cross the frame; the canvas only fades at the very end, as a safety net
+            const dur = Math.max(1200, late - now + 780);
+            leaving = { t0: now, dur, fade: (late - now + 500) / dur, cb: () => { clear(); res(); } };
           });
         }
       };
@@ -28878,7 +29057,7 @@ void main() {
     const explode = async () => {
       pouring = false;
       anim(flash, [{ opacity: 0 }, { opacity: 0.28, offset: 0.2 }, { opacity: 0 }], { duration: 420 });
-      anim(block, [{ transform: "scale(1)", opacity: 1, filter: "blur(0)" }, { transform: "scale(1.3)", opacity: 0, filter: "blur(8px)" }], { duration: 420, easing: "cubic-bezier(.7,0,.84,0)" });
+      anim(block, [{ transform: "scale(1)", opacity: 1, filter: BL(0) }, { transform: "scale(1.3)", opacity: 0, filter: BL(8) }], { duration: 420, easing: "cubic-bezier(.7,0,.84,0)" });
       lensDrops();
       await fin(anim(coffee, [{ "--kr": "0%" }, { "--kr": "150%" }], { duration: 460, easing: "cubic-bezier(.3,.7,.1,1)" }));
       resetCoffee();
@@ -28925,10 +29104,10 @@ void main() {
         const outs = items.map((it, i) => {
           const ls = it.inner.querySelectorAll(".kz-l");
           if (idx % 2 && ls.length && !reduce) {
-            ls.forEach((l, j) => anim(l, [{ transform: "none", opacity: 1 }, { transform: `translate(${R(360) - 180}px, ${R(260) - 200}px) rotate(${R(220) - 110}deg) scale(${0.4 + R(0.8)})`, opacity: 0, filter: "blur(4px)" }], { duration: 300 + R(110), delay: i * 16 + j * 5, easing: "cubic-bezier(.5,0,.75,0)" }));
+            ls.forEach((l, j) => anim(l, [{ transform: "none", opacity: 1 }, { transform: `translate(${R(360) - 180}px, ${R(260) - 200}px) rotate(${R(220) - 110}deg) scale(${0.4 + R(0.8)})`, opacity: 0, filter: BL(4) }], { duration: 300 + R(110), delay: i * 16 + j * 5, easing: "cubic-bezier(.5,0,.75,0)" }));
             return anim(it.mask, [{ opacity: 1 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], { duration: 440, delay: i * 16 });
           }
-          return anim(it.mask, [{ transform: "none", opacity: 1, filter: "blur(0)" }, { transform: `scale(${2.2 + (i % 3) * 0.3}) translateY(${(i % 2 ? -1 : 1) * 8}%)`, opacity: 0, filter: "blur(14px)" }], { duration: 260, delay: i * 20, easing: "cubic-bezier(.7,0,.84,0)" });
+          return anim(it.mask, [{ transform: "none", opacity: 1, filter: BL(0) }, { transform: `scale(${2.2 + (i % 3) * 0.3}) translateY(${(i % 2 ? -1 : 1) * 8}%)`, opacity: 0, filter: BL(14) }], { duration: 260, delay: i * 20, easing: "cubic-bezier(.7,0,.84,0)" });
         });
         anim(marq, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
         await Promise.all(outs.map(fin));
@@ -28957,7 +29136,7 @@ void main() {
         const t = ++token;
         (async () => {
           live.forEach((a2) => { if (a2.effect?.target !== coffee) a2.cancel(); });
-          [...block.children].forEach((c2, i) => anim(c2, [{ transform: "none", opacity: 1 }, { transform: "translateY(-40%) scale(1.06)", opacity: 0, filter: "blur(8px)" }], { duration: 420, delay: i * 40, easing: "cubic-bezier(.7,0,.84,0)" }));
+          [...block.children].forEach((c2, i) => anim(c2, [{ transform: "none", opacity: 1 }, { transform: "translateY(-40%) scale(1.06)", opacity: 0, filter: BL(8) }], { duration: 420, delay: i * 40, easing: "cubic-bezier(.7,0,.84,0)" }));
           anim(marq, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
           await cupsFinale();
           idx = 0; doneHere = true; visible = false; token++; finishing = false;
@@ -28968,6 +29147,7 @@ void main() {
       },
       get busy() { return finishing; },
       cupSprite(frames, px, ci) { return cups3.sprite(frames, px, ci); },
+      warm() { try { return cups3.warm(); } catch (e) {} }, // r139g
       pause() {
         if (finishing) return;
         doneHere = false;
@@ -31035,7 +31215,7 @@ void main() {
     shadowAll(g);
     return { group: g, wheels, kind: "car" };
   }
-  // Cop cruiser: white body, navy cabin and stripe, a red/blue light bar that lights the street
+  // Poliția (r139e, was the Cop cruiser): a Romanian Police Dacia 1310, navy bonnet and doors, two blue lamps on the roof
   // 1300 (r138f): a yellow Dacia 1300, chrome bumpers and trim, red seats
   // Yellow submarine: capsule hull, conning tower, periscope, portholes, a spinning screw
   function kompusPattern(ctx, w, h, seed) {
@@ -31188,64 +31368,7 @@ void main() {
   }
   function archCut(sh, cz, r, sill = 7, cy = 9) { sh.lineTo(cz - r, sill); sh.lineTo(cz - r, cy); sh.absarc(cz, cy, r, Math.PI, 0, true); sh.lineTo(cz + r, sill); }
 
-  // ---------- Cop cruiser: a full-size police sedan, black & white ----------
-  function buildCop() {
-    const g = new Group();
-    const NAVY = "#14213d", W = 40;
-    const body = sideBody((s) => {
-      s.moveTo(-42, 7); archCut(s, -28, 12.2, 7, 9.2); archCut(s, 28, 12.2, 7, 9.2); s.lineTo(42, 7);
-      s.quadraticCurveTo(46, 7, 46, 11); s.lineTo(46, 17); s.quadraticCurveTo(46, 21.5, 41, 22); s.lineTo(22, 23.5);
-      s.quadraticCurveTo(14, 31, 8, 35); s.lineTo(-13, 35.5); s.quadraticCurveTo(-22, 32, -30, 25.5); s.lineTo(-42, 25);
-      s.quadraticCurveTo(-46, 24.5, -46, 20); s.lineTo(-46, 11); s.quadraticCurveTo(-46, 7, -42, 7);
-    }, W, M(WHITE), 2.4);
-    g.add(body);
-    const SX = W / 2 + 0.05;
-    // navy doors with POLICE and a gold star
-    const doorTex = canvasTexture(512, 160, (ctx) => {
-      ctx.fillStyle = NAVY; ctx.fillRect(0, 0, 512, 160);
-      ctx.fillStyle = "#ffffff"; ctx.font = "900 70px CromaticSans, sans-serif"; ctx.textAlign = "center"; ctx.fillText("POLICE", 300, 105);
-      ctx.fillStyle = "#d8b24a"; ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr2 = i % 2 ? 18 : 40; ctx.lineTo(80 + Math.cos(a) * rr2, 80 + Math.sin(a) * rr2); } ctx.fill();
-    });
-    for (const sx of [-1, 1]) {
-      const d = decal(doorTex, 38, 12); d.rotation.y = sx * Math.PI / 2; d.position.set(sx * (SX + 0.08), 16, 2); g.add(d);
-      for (const [z, w] of [[12, 12.5], [-2.5, 13], [-15, 7]]) { const p = glassPane(w, 7.5, 2); p.rotation.y = sx * Math.PI / 2; p.position.set(sx * (SX + 0.06), 29.5, z); g.add(p); }
-      const h = new Mesh(new BoxGeometry(0.9, 1, 3.4), chromeM()); h.position.set(sx * (SX + 0.4), 22.5, 5); g.add(h);
-      const h2 = h.clone(); h2.position.z = -9; g.add(h2);
-      const mir = new Mesh(new BoxGeometry(1.6, 3.6, 4.6), M(NAVY)); mir.position.set(sx * (SX + 2.4), 26, 19); g.add(mir);
-    }
-    const ws = glassPane(31, 13.5, 2.5); ws.rotation.x = -0.88; ws.position.set(0, 31.2, 16.8); g.add(ws);
-    const rw = glassPane(29, 11, 2.5); rw.rotation.set(0.99, Math.PI, 0); rw.position.set(0, 32.2, -23.4); g.add(rw);
-    // light bar: black base, red and blue lenses, the two lights that sweep the street
-    const barBase = topBody(rrDraw(30, 8, 3), 2.6, M("#121212"), 37.2, 0.8);
-    const redM = M("#ff2a2a", { emissive: "#ff2a2a", emissiveIntensity: 0.2, roughness: 0.15 });
-    const blueM = M("#2a6bff", { emissive: "#2a6bff", emissiveIntensity: 0.2, roughness: 0.15 });
-    const red = topBody(rrDraw(12.5, 6.4, 2.6), 3.6, redM, 39.6, 1); red.position.x = -7;
-    const blue = topBody(rrDraw(12.5, 6.4, 2.6), 3.6, blueM, 39.6, 1); blue.position.x = 7;
-    for (const sx of [-6, 6]) g.add(rod([sx, 35.5, -1], [sx, 37.4, -1], 0.6, M("#121212")));
-    g.add(barBase, red, blue);
-    // push bar, lamps, grille, bumpers, plates, aerial
-    const blk = M("#121212", { roughness: 0.6 });
-    for (const x of [-9, 9]) { g.add(rod([x, 6, 49], [x, 21, 49], 1, blk)); }
-    g.add(rod([-12, 19, 49], [12, 19, 49], 1, blk), rod([-12, 9, 49], [12, 9, 49], 1, blk));
-    const grille = new Mesh(new ShapeGeometry(rrShape(16, 5, 1.2), 4), M("#1a1a1a")); grille.position.set(0, 16.5, 48.45); g.add(grille);
-    for (const sx of [-1, 1]) {
-      const hl = new Mesh(new ShapeGeometry(rrShape(8.5, 4.6, 1.4), 4), new MeshPhysicalMaterial({ color: "#fff8e6", emissive: new Color("#ffe7b0"), emissiveIntensity: 0.6, roughness: 0.05, clearcoat: 1 }));
-      hl.position.set(sx * 13.5, 16.5, 48.45); g.add(hl);
-      const tl = new Mesh(new ShapeGeometry(rrShape(8, 4, 1.2), 4), new MeshPhysicalMaterial({ color: "#a3121a", emissive: new Color("#ff2a2a"), emissiveIntensity: 0.45, roughness: 0.1, clearcoat: 1 }));
-      tl.position.set(sx * 14, 20, -48.45); tl.rotation.y = Math.PI; g.add(tl);
-    }
-    for (const bz of [48.6, -48.6]) { const b = topBody(rrDraw(W + 2, 3.6, 1.6), 4.4, M("#1a1a1a", { roughness: 0.6 }), 6.4, 1); b.position.z = bz; g.add(b); }
-    const pf = plateMesh(11, 2.8); pf.position.set(0, 8.6, 50.6); g.add(pf);
-    const pb = plateMesh(11, 2.8); pb.position.set(0, 13, -48.6); pb.rotation.y = Math.PI; g.add(pb);
-    g.add(rod([-14, 25, -36], [-14, 46, -38], 0.3, blk, 6));
-    const lr = new PointLight("#ff2a2a", 0, 220, 1.6); lr.position.set(-10, 46, 0);
-    const lb = new PointLight("#2a6bff", 0, 220, 1.6); lb.position.set(10, 46, 0);
-    g.add(lr, lb);
-    const wheels = [];
-    for (const [x, z] of [[-20, 28], [20, 28], [-20, -28], [20, -28]]) { const w = carWheel({ r: 9.2, w: 6.4, rim: "#222428", rimR: 0.58, cap: "chrome" }); w.position.set(x, 9.2, z); wheels.push(w); g.add(w); }
-    shadowAll(g);
-    return { group: g, wheels, kind: "car", beacon: { redM, blueM, lr, lb } };
-  }
+  // r139e: the Cop cruiser (buildCop) is retired: the "cop" ride is the Poliția 1310, buildDacia1300({ police: true })
 
   // ---------- Chrome racer: a 1930s Monopoly roadster in polished chrome ----------
   function buildMonopoly() {
@@ -31387,9 +31510,11 @@ void main() {
   // ---------- r138f: the 1300, a Dacia 1300 in Dacia yellow (it replaces the lava buggy) ----------
   // The small print (grille mesh, lamps, plates, the DACIA 1300 lettering, the shield) is painted on one canvas
   // atlas; a second canvas of the same layout lights the lamps (emissiveMap), brighter at night (lampGlow)
-  function dacia1300Atlas() {
+  // r139e: pol = the Poliția 1310: its grille, tail lamps, plate and badge over the 1300's, plus the livery's
+  // lettering and the crest
+  function dacia1300Atlas(pol = false) {
     const AW = 1024, AH = 512;
-    const R = { grille: [0, 0, 512, 96], plate: [0, 104, 256, 64], head: [264, 104, 128, 80], tail: [400, 104, 256, 90], badge: [512, 0, 512, 96], amber: [664, 104, 96, 48], black: [768, 104, 32, 32], shield: [808, 104, 64, 80] };
+    const R = { grille: [0, 0, 512, 96], plate: [0, 104, 256, 64], head: [264, 104, 128, 80], tail: [400, 104, 256, 90], badge: [512, 0, 512, 96], amber: [664, 104, 96, 48], black: [768, 104, 32, 32], shield: [808, 104, 64, 80], word: [0, 208, 640, 120], crest: [656, 208, 112, 120] };
     const ribs = (ctx, x, y, w, h, sx, sy, col, lw = 1.5) => {
       ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath();
       for (let i = x + sx; i < x + w; i += sx) { ctx.moveTo(i, y); ctx.lineTo(i, y + h); }
@@ -31449,7 +31574,52 @@ void main() {
       ctx.fillStyle = "#b5161b"; ctx.beginPath(); ctx.moveTo(-18, 45); ctx.lineTo(18, 45); ctx.lineTo(0, 64); ctx.closePath(); ctx.fill();
       ctx.restore();
     };
-    const col = canvasTexture(AW, AH, draw(false)), glw = canvasTexture(AW, AH, draw(true));
+    // r139e: the 1310 parts painted over the 1300's, and the Poliția livery's lettering and crest
+    const polDraw = (glow) => (ctx) => {
+      draw(glow)(ctx);
+      let [x, y, w, h] = R.tail;
+      // 1310 tail lamps: amber over red outboard, red over a clear reversing lamp inboard, in a black frame
+      ctx.fillStyle = "#000"; ctx.fillRect(x, y, w, h);
+      for (const [a, b, r0, r1, c, gc] of [[0, 0.38, 0, 0.5, "#f08f1d", "#7a3c00"], [0.38, 1, 0, 0.5, "#c8171b", "#ff2414"], [0, 0.72, 0.5, 1, "#b8141a", "#ff2414"], [0.72, 1, 0.5, 1, "#ebe6de", "#000000"]]) {
+        ctx.fillStyle = glow ? gc : c; ctx.fillRect(x + a * w + 4, y + r0 * h + 4, (b - a) * w - 8, (r1 - r0) * h - 8);
+      }
+      if (glow) return;
+      ribs(ctx, x, y, w, h, 7, 8, "rgba(0,0,0,0.22)");
+      ctx.fillStyle = "rgba(255,255,255,0.22)"; ctx.fillRect(x + 4, y + 8, w - 8, 6);
+      // the 1310 grille: black plastic right across, horizontal bars between the lamps, the badge in the middle
+      [x, y, w, h] = R.grille;
+      ctx.fillStyle = "#0d0d0d"; ctx.fillRect(x, y, w, h);
+      const g0 = x + w * 0.3, g1 = x + w * 0.7;
+      ctx.strokeStyle = "#2c2c2c"; ctx.lineWidth = 5; ctx.beginPath(); for (let j = y + 14; j < y + h - 8; j += 13) { ctx.moveTo(g0, j); ctx.lineTo(g1, j); } ctx.stroke();
+      ctx.strokeStyle = "#242424"; ctx.lineWidth = 3; ctx.strokeRect(g0, y + 6, g1 - g0, h - 12);
+      ctx.fillStyle = "#b9bec4"; ctx.beginPath(); ctx.ellipse(x + w / 2, y + h / 2, 11, 15, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#3b4048"; ctx.beginPath(); ctx.ellipse(x + w / 2, y + h / 2, 7, 10, 0, 0, Math.PI * 2); ctx.fill();
+      // the plate: the old county format, 5-B-4733
+      [x, y, w, h] = R.plate;
+      ctx.fillStyle = "#f4f3ec"; ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = "#141414"; ctx.lineWidth = 4; ctx.strokeRect(x + 5, y + 5, w - 10, h - 10);
+      ctx.fillStyle = "#141414"; ctx.font = "800 40px CromaticSans, Arial, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("5-B-4733", x + w / 2, y + h / 2 + 2);
+      // DACIA 1310 on the boot, in silver
+      [x, y, w, h] = R.badge;
+      ctx.clearRect(x, y, w, h);
+      ctx.save(); ctx.font = "700 58px Georgia, 'Times New Roman', serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; try { ctx.letterSpacing = "8px"; } catch {}
+      ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillText("DACIA 1310", x + w / 2 + 2, y + h / 2 + 3);
+      ctx.fillStyle = "#d9dde2"; ctx.fillText("DACIA 1310", x + w / 2, y + h / 2); ctx.restore();
+      // POLIȚIA in white block capitals, for the doors and the bonnet
+      [x, y, w, h] = R.word;
+      ctx.save(); ctx.fillStyle = "#ffffff"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; try { ctx.letterSpacing = "6px"; } catch {}
+      for (let fs = 104; fs >= 60; fs -= 4) { ctx.font = `800 ${fs}px CromaticSans, Arial, sans-serif`; if (ctx.measureText("POLIȚIA").width <= w - 24) break; }
+      ctx.fillText("POLIȚIA", x + w / 2, y + h / 2 - 6); ctx.restore();
+      // the crest: a white shield outline with a star and an eagle's wings
+      [x, y, w, h] = R.crest;
+      ctx.save(); ctx.translate(x + w / 2, y + 10); ctx.strokeStyle = "#ffffff"; ctx.fillStyle = "#ffffff"; ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.moveTo(-44, 0); ctx.lineTo(44, 0); ctx.lineTo(44, 50); ctx.quadraticCurveTo(44, 86, 0, 100); ctx.quadraticCurveTo(-44, 86, -44, 50); ctx.closePath(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-30, 30); ctx.quadraticCurveTo(-14, 26, 0, 46); ctx.quadraticCurveTo(14, 26, 30, 30); ctx.lineTo(18, 46); ctx.lineTo(0, 70); ctx.lineTo(-18, 46); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 4 : 10; ctx.lineTo(Math.cos(a) * r, 16 + Math.sin(a) * r); } ctx.fill();
+      ctx.restore();
+    };
+    const pick = pol ? polDraw : draw;
+    const col = canvasTexture(AW, AH, pick(false)), glw = canvasTexture(AW, AH, pick(true));
     const mat = new MeshStandardMaterial({ map: col, emissiveMap: glw, emissive: new Color("#ffffff"), emissiveIntensity: 0.75, roughness: 0.32, metalness: 0.05, alphaTest: 0.5, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
     // atlas rectangle -> [u0, v0, u1, v1] (canvas textures are flipped in v); flip mirrors it left to right
     const uv = (k, flip) => { const [x, y, w, h] = R[k], u0 = (x + 1.5) / AW, u1 = (x + w - 1.5) / AW, v0 = 1 - (y + h - 1.5) / AH, v1 = 1 - (y + 1.5) / AH; return flip ? [u1, v0, u0, v1] : [u0, v0, u1, v1]; };
@@ -31480,20 +31650,41 @@ void main() {
   // falling to the tail; r138g: pinched in plan towards both ends, tumblehome above the chrome crease), chrome
   // bumpers with black rubber over-riders, chrome window frames, side trim and hub caps, red seats inside.
   // Everything is merged into one mesh per material, so the whole car draws in about twenty calls.
-  function buildDacia1300() {
+  // r139e: { police: true } builds the Poliția car (Daniel's photo: a Romanian Police Dacia 1310) on the same body:
+  // white with a navy bonnet and doors, POLIȚIA in white, the crest, a roof bar with two blue lamps and a siren horn,
+  // the 1310's black grille with four round lamps, black plastic bumpers, black window rubbers, its tail lamps
+  function buildDacia1300(opts = {}) {
+    const pol = !!opts.police;
     const g = new Group();
     // r138j: re-fitted to photo 18 (wheelbase 51.5 = 2.44 m): the nose face 0.72 m ahead of the front axle, the
     // tail 0.92 m behind the rear one
     const W = 34, ZF = 39.7, ZB = -46.4;
-    const paint = M("#F6BC0C", { roughness: 0.34, clearcoat: 0.85, clearcoatRoughness: 0.16, envMapIntensity: 0.5 });
+    const paint = M(pol ? "#f3f3ef" : "#F6BC0C", { roughness: 0.34, clearcoat: 0.85, clearcoatRoughness: 0.16, envMapIntensity: 0.5 });
+    if (pol) {
+      // the two-tone is painted per pixel from the body's own coordinates (crisp edges whatever the triangles):
+      // the doors (flank faces between the front door's leading edge and the rear door's trailing edge, up to the
+      // window frames) and the bonnet (faces looking up, ahead of the scuttle)
+      const navy = new Color("#13203f");
+      paint.onBeforeCompile = (sh) => {
+        sh.uniforms.uNavy = { value: navy };
+        sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vPolP;\nvarying vec3 vPolN;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvPolP = position; vPolN = normal;");
+        sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nuniform vec3 uNavy;\nvarying vec3 vPolP;\nvarying vec3 vPolN;").replace("#include <color_fragment>", `#include <color_fragment>
+          float pDoor = step(0.5, abs(vPolN.x)) * step(vPolP.z, 13.6) * step(-20.0, vPolP.z) * step(vPolP.y, 31.4);
+          float pBon = step(0.45, vPolN.y) * step(14.75, vPolP.z) * step(17.0, vPolP.y);
+          diffuseColor.rgb = mix(diffuseColor.rgb, uNavy, max(pDoor, pBon));`);
+      };
+      paint.customProgramCacheKey = () => "pol139e";
+    }
     // brighter than chromeM(): part diffuse, so the bumpers and trim read as polished metal even where the
     // reflection is weak (a fully metallic chrome goes almost black under the city's light)
     // r138j: on the chrome room of r138l (getChromeEnv), tagged so it dims at night and swaps in the ride previews
     const chrome = new MeshStandardMaterial({ color: "#e9ecf0", roughness: 0.2, metalness: 0.55, envMap: getChromeEnv(), envMapIntensity: 1.3, userData: { chrome: true, envI: 1.3 } });
     const black = new MeshStandardMaterial({ color: "#151515", roughness: 0.62, metalness: 0.05 });
-    const seatM = new MeshStandardMaterial({ color: "#b8211b", roughness: 0.8 });
+    const seatM = new MeshStandardMaterial({ color: pol ? "#7d8186" : "#b8211b", roughness: 0.8 });
     const glass = new MeshPhysicalMaterial({ color: "#22343f", roughness: 0.04, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.03, envMap: getEnvMap(), envMapIntensity: 1.4, transparent: true, opacity: 0.36, side: DoubleSide, depthWrite: false });
-    const A = dacia1300Atlas();
+    const A = dacia1300Atlas(pol);
+    // r139e: the 1310 trades the chrome trim for black rubber and plastic (window surrounds, handles, mirror)
+    const trim = pol ? black : chrome;
     // r138g (Daniel: "a bit boxy, the bonnet and the boot taper towards the ends"): every part except the wheels
     // goes through one x-pinch, so the details stay on the skin. In plan the car narrows towards the nose and the
     // tail (harder in the last few units: rounded corners); in section the flank folds in above the chrome crease
@@ -31588,9 +31779,9 @@ void main() {
       fr.rotateY(-Math.PI / 2); fr.translate(0.45, 0, 0); put(paint, fr, mx);
       for (const win of [WF, WR]) {
         const gl = new ShapeGeometry(poly(win)); gl.rotateY(-Math.PI / 2); put(glass, gl, mx);
-        loop(win.map(([z, y]) => [sx * 0.62, y, z]), 0.2, chrome, mx); // chrome window frames
+        loop(win.map(([z, y]) => [sx * 0.62, y, z]), 0.2, trim, mx); // chrome window frames (r139e: black on the 1310)
       }
-      edge([sx * 0.58, 32.22, 6.8], [sx * 0.58, 32.22, -17.8], 0.26, chrome, mx); // drip rail
+      edge([sx * 0.58, 32.22, 6.8], [sx * 0.58, 32.22, -17.8], 0.26, trim, mx); // drip rail
       // the C-pillar air outlet: three slanted slots
       for (let k = 0; k < 3; k++) add(at(new BoxGeometry(0.3, 4.0, 0.5), sx * 0.72, 27.6, -18.8 - k * 1.15, 0.54), black, mx);
     }
@@ -31598,7 +31789,7 @@ void main() {
     const WS = [[-14.3, 23.3, 13.8], [14.3, 23.3, 13.8], [13.3, 31.8, 7.9], [-13.3, 31.8, 7.9]];
     const RS = [[14.1, 24.1, -26.3], [-14.1, 24.1, -26.3], [-13.3, 31.8, -19.0], [13.3, 31.8, -19.0]];
     put(glass, quad(...WS)); put(glass, quad(...RS));
-    loop(WS, 0.32, chrome); loop(RS, 0.32, chrome);
+    loop(WS, 0.32, trim); loop(RS, 0.32, trim);
     // wipers parked along the screen, on chrome spindles
     for (const x0 of [-13, 1]) { edge([x0, 23.9, 13.67], [x0 + 10, 24.9, 12.93], 0.2, black); add(at(new CylinderGeometry(0.45, 0.45, 0.7, 8), x0, 23.5, 14.2), chrome); }
 
@@ -31624,32 +31815,42 @@ void main() {
     // r138g: the whole front face is lower and shorter: the grille band sits right under the bonnet's edge
     // r138j: lamps right under the bonnet's edge, a band with the intake and indicators below, the bumper high
     decalQ("grille", 32.4, 4.0, 0, 15.7, ZF + 0.06);
-    loop([[-16.35, 13.67, ZF + 0.12], [16.35, 13.67, ZF + 0.12], [16.35, 17.73, ZF + 0.12], [-16.35, 17.73, ZF + 0.12]], 0.26, chrome);
     const bezel = (w, h, r, t) => { const s = rrShape(w + 1.2, h + 1.1, r + 0.5); s.holes.push(rrShape(w, h, r)); return new ExtrudeGeometry(s, { depth: t, bevelEnabled: true, bevelThickness: 0.15, bevelSize: 0.15, bevelSegments: 2, curveSegments: 6 }); };
-    for (const sx of [-1, 1]) {
+    // r139e: the 1310's nose: four round lamps in black rings across the black grille, amber lamps in the bumper
+    if (pol) for (const sx of [-1, 1]) {
+      for (const xo of [10.2, 14.1]) {
+        add(at(new TorusGeometry(1.72, 0.34, 6, 20), sx * xo, 15.7, ZF + 0.3), black);
+        const lens = uvFit(new CircleGeometry(1.62, 20), A.uv("head")); lens.translate(sx * xo, 15.7, ZF + 0.38); put(A.mat, lens);
+      }
+      decalQ("amber", 2.6, 1.0, sx * 14.4, 10.3, ZF + 2.8);
+    }
+    else loop([[-16.35, 13.67, ZF + 0.12], [16.35, 13.67, ZF + 0.12], [16.35, 17.73, ZF + 0.12], [-16.35, 17.73, ZF + 0.12]], 0.26, chrome);
+    if (!pol) for (const sx of [-1, 1]) {
       const bz = bezel(6.6, 3.3, 1.2, 0.7); bz.translate(sx * 12.2, 15.7, ZF); put(chrome, bz);
       const lens = uvFit(new ShapeGeometry(rrShape(6.6, 3.3, 1.2), 6), A.uv("head")); lens.translate(sx * 12.2, 15.7, ZF + 0.4); put(A.mat, lens);
       // indicators under the lamps, in chrome cups
       add(at(new BoxGeometry(3.9, 1.7, 0.4), sx * 13.2, 12.8, ZF + 0.12), chrome);
       decalQ("amber", 3.4, 1.3, sx * 13.2, 12.8, ZF + 0.36);
     }
-    for (const [a, b] of [[[-2.0, 17.5, ZF + 0.3], [0, 14.0, ZF + 0.3]], [[0, 14.0, ZF + 0.3], [2.0, 17.5, ZF + 0.3]]]) edge(a, b, 0.3, chrome);
-    add(at(new SphereGeometry(0.3, 6, 4), 0, 14.0, ZF + 0.3), chrome);
-    decalQ("shield", 1.6, 2.0, 0, 16.5, ZF + 0.22);
-    // the slatted intake under the grille
-    decalQ("black", 9.6, 1.6, -5.6, 12.8, ZF + 0.06);
-    for (let i = 0; i < 3; i++) add(at(new BoxGeometry(9.6, 0.26, 0.45), -5.6, 12.25 + i * 0.55, ZF + 0.15), paint);
+    if (!pol) {
+      for (const [a, b] of [[[-2.0, 17.5, ZF + 0.3], [0, 14.0, ZF + 0.3]], [[0, 14.0, ZF + 0.3], [2.0, 17.5, ZF + 0.3]]]) edge(a, b, 0.3, chrome);
+      add(at(new SphereGeometry(0.3, 6, 4), 0, 14.0, ZF + 0.3), chrome);
+      decalQ("shield", 1.6, 2.0, 0, 16.5, ZF + 0.22);
+      // the slatted intake under the grille
+      decalQ("black", 9.6, 1.6, -5.6, 12.8, ZF + 0.06);
+      for (let i = 0; i < 3; i++) add(at(new BoxGeometry(9.6, 0.26, 0.45), -5.6, 12.25 + i * 0.55, ZF + 0.15), paint);
+    }
 
     // ---- chrome bumpers wrapping round the corners, black rubber over-riders, plates
     const bumper = (zc, back, y0) => {
       const b = topBody((s) => {
         s.moveTo(-17.4, -3); s.quadraticCurveTo(-17.6, 1.3, -14.4, 1.4); s.lineTo(14.4, 1.4); s.quadraticCurveTo(17.6, 1.3, 17.4, -3);
         s.lineTo(16.3, -3); s.quadraticCurveTo(16.4, -0.1, 14, 0); s.lineTo(-14, 0); s.quadraticCurveTo(-16.4, -0.1, -16.3, -3); s.closePath();
-      }, 2.8, chrome, y0, 0.7, 10);
-      b.position.z = zc; if (back) b.rotation.y = Math.PI; add(b, chrome);
+      }, pol ? 3.4 : 2.8, pol ? black : chrome, y0, 0.7, 10);
+      b.position.z = zc; if (back) b.rotation.y = Math.PI; add(b, pol ? black : chrome);
     };
-    bumper(ZF + 0.6, false, 9.1); bumper(ZB - 0.6, true, 11.0); // r138j: high, as on the car
-    for (const sx of [-1, 1]) {
+    bumper(ZF + 0.6, false, pol ? 8.7 : 9.1); bumper(ZB - 0.6, true, pol ? 10.6 : 11.0); // r138j: high, as on the car (r139e: the 1310's black plastic ones, deeper)
+    if (!pol) for (const sx of [-1, 1]) {
       const of = topBody(rrDraw(1.5, 1.8, 0.6), 5.8, black, 7.9, 0.45, 4); of.position.set(sx * 8.4, 0, ZF + 2.3); add(of, black);
       const ob = topBody(rrDraw(1.5, 1.8, 0.6), 6.6, black, 8.4, 0.45, 4); ob.position.set(sx * 8.4, 0, ZB - 2.3); add(ob, black);
     }
@@ -31658,8 +31859,9 @@ void main() {
     // ---- the tail: wide lamp clusters in chrome, DACIA 1300 on the panel, the plate between the lamps
     // r138j: a slimmer tail: the bumper high, the lamps above it, plate and lettering between the lamps
     for (const sx of [-1, 1]) {
-      const bz = bezel(9.4, 3.2, 0.8, 0.5); bz.rotateY(Math.PI); bz.translate(sx * 10.3, 15.6, ZB); put(chrome, bz);
-      const lens = uvFit(new ShapeGeometry(rrShape(9.4, 3.2, 0.8), 6), A.uv("tail", sx < 0)); lens.rotateY(Math.PI); lens.translate(sx * 10.3, 15.6, ZB - 0.3); put(A.mat, lens);
+      const th = pol ? 4.0 : 3.2, ty = pol ? 15.4 : 15.6; // r139e: the 1310's lamps are deeper
+      const bz = bezel(9.4, th, 0.8, 0.5); bz.rotateY(Math.PI); bz.translate(sx * 10.3, ty, ZB); put(trim, bz);
+      const lens = uvFit(new ShapeGeometry(rrShape(9.4, th, 0.8), 6), A.uv("tail", sx < 0)); lens.rotateY(Math.PI); lens.translate(sx * 10.3, ty, ZB - 0.3); put(A.mat, lens);
     }
     decalQ("badge", 8.4, 1.3, 0, 17.0, ZB - 0.08, Math.PI);
     decalQ("black", 10.4, 2.8, 0, 15.1, ZB - 0.06, Math.PI);
@@ -31670,15 +31872,43 @@ void main() {
 
     // ---- flanks: chrome waist trim and sill strip, door shut lines, chrome handles, the round wing mirror
     for (const sx of [-1, 1]) {
-      edge([sx * 17.08, CREASE(38.6), 38.6], [sx * 17.08, CREASE(0), 0], 0.24, chrome); // on the crease (r138j)
-      edge([sx * 17.08, CREASE(0), 0], [sx * 17.08, CREASE(-45.2), -45.2], 0.24, chrome);
-      edge([sx * 17.08, 8.6, 15.4], [sx * 17.08, 8.6, -17.9], 0.3, chrome);
+      if (!pol) { // r139e: the 1310 has no chrome strips on its flanks
+        edge([sx * 17.08, CREASE(38.6), 38.6], [sx * 17.08, CREASE(0), 0], 0.24, chrome); // on the crease (r138j)
+        edge([sx * 17.08, CREASE(0), 0], [sx * 17.08, CREASE(-45.2), -45.2], 0.24, chrome);
+        edge([sx * 17.08, 8.6, 15.4], [sx * 17.08, 8.6, -17.9], 0.3, chrome);
+      }
       for (const [z, y0, y1] of [[13.6, 6.0, 23.4], [-4.7, 6.0, 23.6], [-20.0, 12.0, 23.9]]) add(at(new BoxGeometry(0.12, y1 - y0, 0.22, 1, Math.ceil((y1 - y0) / 1.2), 1), sx * 17.0, (y0 + y1) / 2, z), black);
-      for (const z of [-2.6, -17.4]) add(at(new BoxGeometry(0.5, 0.65, 3.0), sx * 17.25, 22.0, z), chrome);
+      for (const z of [-2.6, -17.4]) add(at(new BoxGeometry(0.5, 0.65, 3.0), sx * 17.25, 22.0, z), trim);
     }
     add(at(new CylinderGeometry(1.0, 1.0, 0.3, 14), -17.1, 20.0, -33, 0, 0, Math.PI / 2), chrome); // fuel cap
-    edge([16.6, 23.0, 12.0], [18.3, 25.2, 11.6], 0.28, chrome);
-    add(at(new CylinderGeometry(1.55, 1.55, 0.8, 18), 18.5, 25.7, 11.5, Math.PI / 2), chrome);
+    edge([16.6, 23.0, 12.0], [18.3, 25.2, 11.6], 0.28, trim);
+    add(at(new CylinderGeometry(1.55, 1.55, 0.8, 18), 18.5, 25.7, 11.5, Math.PI / 2), trim);
+    // r139e: the Poliția livery and roof bar (the navy panels are in the paint's shader, above)
+    let beacon = null;
+    if (pol) {
+      // POLIȚIA across the front doors, reading front to back on both flanks, on the subdivided skin
+      for (const sx of [-1, 1]) { const q = uvFit(new PlaneGeometry(20, 3.75, 12, 3), A.uv("word")); q.rotateY(sx * Math.PI / 2); q.translate(sx * 17.1, 14.6, 3.0); put(A.mat, q); }
+      // on the bonnet: the lettering readable from the front, the crest by the scuttle, laid on the bonnet's curve
+      // (the profile's quadratic from the nose to the scuttle, plus the 1.4 bevel)
+      const bonY = (z) => { let lo = 0, hi = 1; for (let i = 0; i < 24; i++) { const t = (lo + hi) / 2, zt = (1 - t) ** 2 * 36.8 + 2 * (1 - t) * t * 25 + t * t * 14.6; if (zt > z) lo = t; else hi = t; } const t = (lo + hi) / 2; return (1 - t) ** 2 * 18.15 + 2 * (1 - t) * t * 21.2 + t * t * 22.0 + 1.48; };
+      const onBonnet = (k, w, h, zc) => { const q = uvFit(new PlaneGeometry(w, h, 10, 4), A.uv(k)); q.rotateX(-Math.PI / 2); q.translate(0, 0, zc); const p = q.attributes.position; for (let i = 0; i < p.count; i++) p.setY(i, bonY(p.getZ(i))); q.computeVertexNormals(); put(A.mat, q); };
+      onBonnet("word", 25, 4.7, 28.4); onBonnet("crest", 3.6, 3.9, 20.6);
+      // the roof bar: a light grey rack on two feet, a blue lamp box at each end, the siren horn in the middle
+      const rack = new MeshStandardMaterial({ color: "#d4d7db", roughness: 0.4, metalness: 0.3 });
+      add(at(new BoxGeometry(23, 0.7, 1.8), 0, 34.6, 0.5), rack);
+      for (const sx of [-1, 1]) add(at(new BoxGeometry(1.4, 1.8, 2.4), sx * 9, 33.6, 0.5), rack);
+      const lampM = () => M("#2f6bff", { emissive: "#2a6bff", emissiveIntensity: 0.2, roughness: 0.15 });
+      const bl = lampM(), br = lampM();
+      for (const [sx, m] of [[-1, bl], [1, br]]) { add(at(new BoxGeometry(6.4, 2.3, 2.8), sx * 8.2, 36.1, 0.5), m); add(at(new BoxGeometry(6.8, 0.5, 3.2), sx * 8.2, 35.15, 0.5), rack); }
+      add(at(new CylinderGeometry(0.4, 0.5, 2.2, 8), 0, 36.0, 0.5), rack);
+      const horn = new CylinderGeometry(1.5, 0.55, 3.0, 14, 1, true); horn.rotateX(Math.PI / 2); add(at(horn, 0, 37.4, 1.6), rack);
+      add(at(new CylinderGeometry(0.7, 0.7, 1.4, 10), 0, 37.4, -0.5, Math.PI / 2), rack);
+      const lr = new PointLight("#2a6bff", 0, 220, 1.6); lr.position.set(-9, 42, 0);
+      const lb = new PointLight("#2a6bff", 0, 220, 1.6); lb.position.set(9, 42, 0);
+      g.add(lr, lb);
+      // the drive loop flashes these two alternately (it calls them red and blue: here both are blue)
+      beacon = { redM: bl, blueM: br, lr, lb };
+    }
 
     for (const [mat, geos] of parts) {
       const m = new Mesh(mergeGeometries(geos), mat);
@@ -31692,7 +31922,9 @@ void main() {
     // where the exhaust ends, through the same pinch as the pipe itself (for the idle smoke, r138j)
     const exhaust = new Vector3(pipe[0] * pZ(pipe[2]) * fY(pipe[1] - CREASE(pipe[2])), pipe[1], pipe[2] - 0.6);
     // the lamps glow a little by day and properly at night (see setVehicle / the scheme switch)
-    return { group: g, wheels, kind: "car", exhaust, lampGlow: (dark) => { A.mat.emissiveIntensity = dark ? 1.9 : 0.75; } };
+    const out = { group: g, wheels, kind: "car", exhaust, lampGlow: (dark) => { A.mat.emissiveIntensity = dark ? 1.9 : 0.75; } };
+    if (beacon) out.beacon = beacon; // r139e
+    return out;
   }
 
   // ---------- Yellow submarine: a lathe hull, a conning tower, portholes, a shrouded prop ----------
@@ -31833,7 +32065,7 @@ void main() {
       case "foodvan":
         return buildFoodvan();
       case "cop":
-        return buildCop();
+        return buildDacia1300({ police: true }); // r139e: the Poliția 1310 (was the Cop cruiser, buildCop)
       case "dacia1300":
         return buildDacia1300();
       case "sub":
@@ -32194,7 +32426,7 @@ void main() {
   var craftCardRed = "data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22UTF-8%22%3F%3E%0A%3Csvg%20id%3D%22Layer_2%22%20data-name%3D%22Layer%202%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20xmlns%3Axlink%3D%22http%3A//www.w3.org/1999/xlink%22%20viewBox%3D%220%200%2095.04%20109.68%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cstyle%3E%0A%20%20%20%20%20%20.cls-1%20%7B%0A%20%20%20%20%20%20%20%20filter%3A%20url%28%23drop-shadow-1%29%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-1%2C%20.cls-2%2C%20.cls-3%20%7B%0A%20%20%20%20%20%20%20%20fill%3A%20%23f8f5f0%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-2%20%7B%0A%20%20%20%20%20%20%20%20font-family%3A%20Fraunces144pt-LightItalic%2C%20%27Fraunces%20144pt%27%3B%0A%20%20%20%20%20%20%20%20font-size%3A%2012.03px%3B%0A%20%20%20%20%20%20%20%20font-weight%3A%20300%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-2%2C%20.cls-3%20%7B%0A%20%20%20%20%20%20%20%20font-style%3A%20italic%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-4%20%7B%0A%20%20%20%20%20%20%20%20fill%3A%20none%3B%0A%20%20%20%20%20%20%20%20stroke%3A%20%23f04c5a%3B%0A%20%20%20%20%20%20%20%20stroke-miterlimit%3A%2010%3B%0A%20%20%20%20%20%20%20%20stroke-width%3A%20.5px%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-5%20%7B%0A%20%20%20%20%20%20%20%20fill%3A%20%23f04c5a%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-6%20%7B%0A%20%20%20%20%20%20%20%20letter-spacing%3A%20-.01em%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-7%20%7B%0A%20%20%20%20%20%20%20%20letter-spacing%3A%200em%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-8%20%7B%0A%20%20%20%20%20%20%20%20letter-spacing%3A%20-.01em%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-9%20%7B%0A%20%20%20%20%20%20%20%20letter-spacing%3A%200em%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-3%20%7B%0A%20%20%20%20%20%20%20%20font-family%3A%20Fraunces144pt-ThinItalic%2C%20%27Fraunces%20144pt%27%3B%0A%20%20%20%20%20%20%20%20font-size%3A%2027.19px%3B%0A%20%20%20%20%20%20%20%20font-weight%3A%20200%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-10%20%7B%0A%20%20%20%20%20%20%20%20letter-spacing%3A%200em%3B%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%3C/style%3E%0A%20%20%20%20%3Cfilter%20id%3D%22drop-shadow-1%22%20x%3D%220%22%20y%3D%220%22%20width%3D%2295.04%22%20height%3D%22109.68%22%20filterUnits%3D%22userSpaceOnUse%22%3E%0A%20%20%20%20%20%20%3CfeOffset%20dx%3D%222.83%22%20dy%3D%222.83%22/%3E%0A%20%20%20%20%20%20%3CfeGaussianBlur%20result%3D%22blur%22%20stdDeviation%3D%222.83%22/%3E%0A%20%20%20%20%20%20%3CfeFlood%20flood-color%3D%22%23423e35%22%20flood-opacity%3D%22.26%22/%3E%0A%20%20%20%20%20%20%3CfeComposite%20in2%3D%22blur%22%20operator%3D%22in%22/%3E%0A%20%20%20%20%20%20%3CfeComposite%20in%3D%22SourceGraphic%22/%3E%0A%20%20%20%20%3C/filter%3E%0A%20%20%3C/defs%3E%0A%20%20%3Cg%20id%3D%22Layer_1-2%22%20data-name%3D%22Layer%201%22%3E%0A%20%20%20%20%3Cg%3E%0A%20%20%20%20%20%20%3Cpath%20class%3D%22cls-1%22%20d%3D%22M71.23%2C11.31c-.11-.74.41-1.42%2C1.15-1.53l-.41-2.87c-.74.11-1.42-.41-1.53-1.14l-2.84.41c.11.74-.41%2C1.42-1.14%2C1.53s-1.42-.41-1.53-1.15l-2.84.41c.11.74-.41%2C1.42-1.14%2C1.53s-1.42-.41-1.53-1.15l-2.84.41c.11.74-.41%2C1.42-1.14%2C1.53s-1.42-.41-1.53-1.15l-2.84.41c.11.74-.41%2C1.42-1.14%2C1.53s-1.42-.41-1.53-1.14l-2.84.41c.11.74-.41%2C1.42-1.14%2C1.53s-1.42-.41-1.53-1.15l-2.84.41c.11.74-.41%2C1.42-1.14%2C1.53s-1.42-.41-1.53-1.15l-2.84.41c.11.74-.41%2C1.42-1.14%2C1.53s-1.42-.41-1.53-1.15l-2.84.41c.11.74-.41%2C1.42-1.14%2C1.53s-1.42-.41-1.53-1.15l-2.84.41c.11.74-.41%2C1.42-1.14%2C1.53s-1.42-.41-1.53-1.15l-2.84.41c.11.74-.41%2C1.42-1.14%2C1.53s-1.42-.41-1.53-1.15l-2.84.41c.11.74-.41%2C1.42-1.14%2C1.53s-1.42-.41-1.53-1.15l-2.84.41c.1.72-.39%2C1.39-1.1%2C1.52l.42%2C2.89c.72-.08%2C1.38.42%2C1.48%2C1.14s-.39%2C1.39-1.1%2C1.52l.42%2C2.89c.72-.08%2C1.38.42%2C1.48%2C1.14s-.39%2C1.39-1.1%2C1.52l.42%2C2.89c.72-.08%2C1.38.42%2C1.48%2C1.14s-.39%2C1.39-1.1%2C1.52l.42%2C2.89c.72-.08%2C1.38.42%2C1.48%2C1.14s-.39%2C1.39-1.1%2C1.52l.42%2C2.89c.72-.08%2C1.38.42%2C1.48%2C1.14s-.39%2C1.39-1.1%2C1.52l.42%2C2.89c.72-.08%2C1.38.42%2C1.48%2C1.14s-.39%2C1.39-1.1%2C1.52l.42%2C2.89c.72-.08%2C1.38.42%2C1.48%2C1.14s-.39%2C1.39-1.1%2C1.52l.42%2C2.89c.72-.08%2C1.38.42%2C1.48%2C1.14s-.39%2C1.39-1.1%2C1.52l.42%2C2.89c.72-.08%2C1.38.42%2C1.48%2C1.14s-.39%2C1.39-1.1%2C1.52l.42%2C2.89c.72-.08%2C1.38.42%2C1.48%2C1.14s-.39%2C1.39-1.1%2C1.52l.42%2C2.89c.72-.08%2C1.38.42%2C1.48%2C1.14s-.39%2C1.39-1.1%2C1.52l.42%2C2.89c.72-.08%2C1.38.42%2C1.48%2C1.14s-.39%2C1.39-1.1%2C1.52l.42%2C2.89c.72-.08%2C1.38.42%2C1.48%2C1.14s-.39%2C1.39-1.1%2C1.52l.42%2C2.89c.72-.08%2C1.38.42%2C1.48%2C1.14s-.39%2C1.39-1.1%2C1.52l.42%2C2.89c.72-.08%2C1.38.42%2C1.48%2C1.14l2.84-.41c-.11-.74.41-1.42%2C1.14-1.53s1.42.41%2C1.53%2C1.14l2.84-.41c-.11-.74.41-1.42%2C1.14-1.53s1.42.41%2C1.53%2C1.14l2.84-.41c-.11-.74.41-1.42%2C1.14-1.53s1.42.41%2C1.53%2C1.14l2.84-.41c-.11-.74.41-1.42%2C1.14-1.53s1.42.41%2C1.53%2C1.14l2.84-.41c-.11-.74.41-1.42%2C1.14-1.53s1.42.41%2C1.53%2C1.14l2.84-.41c-.11-.74.41-1.42%2C1.14-1.53s1.42.41%2C1.53%2C1.14l2.84-.41c-.11-.74.41-1.42%2C1.14-1.53s1.42.41%2C1.53%2C1.14l2.84-.41c-.11-.74.41-1.42%2C1.15-1.53s1.42.41%2C1.53%2C1.14l2.84-.41c-.11-.74.41-1.42%2C1.14-1.53s1.42.41%2C1.53%2C1.14l2.84-.41c-.11-.74.41-1.42%2C1.14-1.53s1.42.41%2C1.53%2C1.14l2.84-.41c-.11-.74.41-1.42%2C1.14-1.53s1.42.41%2C1.53%2C1.14l2.84-.41c-.11-.74.41-1.42%2C1.15-1.53l-.41-2.87c-.74.11-1.42-.41-1.53-1.14s.41-1.42%2C1.15-1.53l-.41-2.87c-.74.11-1.42-.41-1.53-1.14s.41-1.42%2C1.14-1.53l-.41-2.87c-.74.11-1.42-.41-1.53-1.14s.41-1.42%2C1.14-1.53l-.41-2.87c-.74.11-1.42-.41-1.53-1.14s.41-1.42%2C1.15-1.53l-.41-2.87c-.74.11-1.42-.41-1.53-1.14s.41-1.42%2C1.15-1.53l-.41-2.87c-.74.11-1.42-.41-1.53-1.14s.41-1.42%2C1.15-1.53l-.41-2.87c-.74.11-1.42-.41-1.53-1.14s.41-1.42%2C1.15-1.53l-.41-2.87c-.74.11-1.42-.41-1.53-1.14s.41-1.42%2C1.15-1.53l-.41-2.87c-.74.11-1.42-.41-1.53-1.14s.41-1.42%2C1.15-1.53l-.41-2.87c-.74.11-1.42-.41-1.53-1.14s.41-1.42%2C1.15-1.53l-.41-2.87c-.74.11-1.42-.41-1.53-1.14s.41-1.42%2C1.15-1.53l-.41-2.87c-.74.11-1.42-.41-1.53-1.14s.41-1.42%2C1.15-1.53l-.41-2.87c-.74.11-1.42-.41-1.53-1.14s.41-1.42%2C1.15-1.53l-.41-2.87c-.74.11-1.42-.41-1.53-1.14Z%22/%3E%0A%20%20%20%20%20%20%3Crect%20class%3D%22cls-5%22%20x%3D%2222.79%22%20y%3D%2229.41%22%20width%3D%2245.3%22%20height%3D%2255.49%22%20transform%3D%22translate%2895.53%204.02%29%20rotate%2881.8%29%22/%3E%0A%20%20%20%20%20%20%3Cg%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-5%22%20d%3D%22M30.78%2C88.93c-.59.08-1.12.06-1.6-.08s-.88-.38-1.19-.72-.5-.79-.58-1.34-.02-1.02.18-1.44c.2-.42.51-.76.94-1.03s.93-.45%2C1.52-.53c.46-.07.87-.08%2C1.25-.03.37.04.7.15.99.32l-.29.94c-.29-.15-.57-.24-.84-.27-.28-.04-.58-.03-.91.02-.56.08-.98.28-1.28.59s-.41.73-.33%2C1.25.3.9.67%2C1.12.84.28%2C1.4.2c.34-.05.63-.13.88-.24.25-.11.5-.28.73-.5l.55.82c-.23.24-.51.44-.86.59-.35.15-.75.26-1.21.33Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-5%22%20d%3D%22M38.65%2C87.79c-.46.07-.88.07-1.27%2C0-.39-.06-.74-.19-1.04-.37s-.55-.42-.74-.72c-.19-.29-.32-.64-.37-1.04s-.03-.75.07-1.09c.1-.34.27-.64.51-.9.24-.27.53-.48.89-.66.36-.17.77-.3%2C1.23-.36s.88-.06%2C1.27%2C0%2C.74.19%2C1.03.37c.3.18.54.42.74.72s.32.64.37%2C1.02.04.76-.07%2C1.1c-.1.34-.27.63-.5.9-.23.27-.53.48-.89.66s-.77.29-1.22.36ZM38.51%2C86.81c.38-.05.69-.17.95-.33.26-.17.44-.38.56-.64.12-.26.15-.56.1-.89s-.16-.61-.35-.82-.42-.36-.72-.45c-.29-.09-.63-.1-1.01-.05s-.7.17-.96.33c-.26.17-.44.38-.56.64-.12.26-.15.56-.1.89s.16.6.34.81c.18.21.42.36.72.45.3.09.64.11%2C1.02.05Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-5%22%20d%3D%22M44.98%2C86.8l-.72-4.99%2C4.25-.61.14.95-3.07.44.16%2C1.12%2C2.9-.42.14.95-2.9.42.28%2C1.98-1.18.17Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-5%22%20d%3D%22M52.29%2C85.75l-.72-4.99%2C4.25-.61.14.95-3.07.44.16%2C1.12%2C2.9-.42.14.95-2.9.42.28%2C1.98-1.18.17Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-5%22%20d%3D%22M59.59%2C84.7l-.72-4.99%2C4.28-.62.14.95-3.11.45.15%2C1.04%2C2.87-.41.14.95-2.87.41.16%2C1.1%2C3.11-.45.14.95-4.28.62Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-5%22%20d%3D%22M67.19%2C83.6l-.72-4.99%2C4.28-.62.14.95-3.11.45.15%2C1.04%2C2.87-.41.14.95-2.87.41.16%2C1.1%2C3.11-.45.14.95-4.28.62Z%22/%3E%0A%20%20%20%20%20%20%3C/g%3E%0A%20%20%20%20%20%20%3Cg%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-5%22%20d%3D%22M24.8%2C31.59c-1.51.22-2.73.08-3.65-.42-.92-.5-1.47-1.31-1.63-2.43s.13-2.01.86-2.74c.73-.73%2C1.82-1.2%2C3.27-1.41.76-.11%2C1.5-.11%2C2.23%2C0%2C.72.11%2C1.47.32%2C2.22.62l-.38-2.62c-.72-.59-1.49-1-2.29-1.24-.8-.24-1.65-.3-2.55-.17-1.17.17-2.17.61-3.01%2C1.32-.84.71-1.44%2C1.64-1.81%2C2.79-.37%2C1.15-.45%2C2.45-.24%2C3.9s.63%2C2.59%2C1.27%2C3.54c.64.95%2C1.47%2C1.62%2C2.48%2C2.02%2C1.01.4%2C2.13.51%2C3.36.33.95-.14%2C1.79-.4%2C2.52-.8.73-.39%2C1.37-.94%2C1.93-1.65l-.38-2.62c-.67.41-1.36.75-2.08%2C1.01-.72.27-1.43.45-2.13.55Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-5%22%20d%3D%22M32.74%2C23.58c-.54.49-1%2C1.18-1.36%2C2.08l-.11.02-.42-2.25-1.58.23%2C1.5%2C10.41%2C1.84-.27-.65-4.53v-.04c-.07-.44-.07-.86-.02-1.26.06-.4.28-.79.69-1.18s1.05-.65%2C1.95-.78c.82-.12%2C1.62-.09%2C2.38.07l-.46-3.23c-.58-.2-1.17-.26-1.78-.18-.77.11-1.43.41-1.98.91Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-5%22%20d%3D%22M46.62%2C21.14l-1.47.21.02%2C2.07-.11.02c-.39-.63-.93-1.1-1.62-1.41-.69-.31-1.44-.4-2.23-.29-.88.13-1.61.46-2.19.98-.58.53-.98%2C1.23-1.2%2C2.11-.22.88-.25%2C1.89-.09%2C3.03s.46%2C2.01.9%2C2.76c.44.75%2C1%2C1.28%2C1.68%2C1.61.68.33%2C1.44.43%2C2.29.31s1.55-.42%2C2.14-.91c.59-.49%2C1.02-1.12%2C1.27-1.91l.13-.02.36%2C2.09%2C1.79-.26-.72-3.98-.92-6.41ZM45.11%2C28.22c-.53.45-1.29.74-2.3.89s-1.85.08-2.48-.2c-.64-.28-1-.74-1.09-1.39s.12-1.18.65-1.63c.52-.45%2C1.3-.74%2C2.34-.89s1.83-.08%2C2.46.2c.63.28.99.74%2C1.09%2C1.4s-.12%2C1.18-.65%2C1.63Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-5%22%20d%3D%22M59.9%2C19.23l-.46-3.23-1.05.15c-.13.81-.33%2C1.48-.58%2C2-.25.53-.63.96-1.15%2C1.31-.51.35-1.22.59-2.12.72l-3.04.44c-.03-.06-.06-.11-.07-.18-.04-.29.1-.56.42-.79s.8-.4%2C1.44-.49c.28-.04.59-.06.93-.06.34%2C0%2C.62.02.84.07l-.45-3.13c-.46-.05-.94-.03-1.44.04-.82.12-1.52.37-2.09.76-.57.39-.98.88-1.23%2C1.48-.25.59-.32%2C1.25-.22%2C1.96.02.14.06.28.09.42l-2.21.32.27%2C1.9%2C2.17-.31%2C1.23%2C8.51%2C1.84-.27-1.23-8.51%2C6.51-.94%2C1.23%2C8.51%2C1.84-.27-1.23-8.51%2C3.58-.52-.27-1.9-3.58.52Z%22/%3E%0A%20%20%20%20%20%20%3C/g%3E%0A%20%20%20%20%20%20%3Cg%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20class%3D%22cls-3%22%20transform%3D%22translate%2823.81%2065.26%29%20rotate%28-8.2%29%22%3E%3Ctspan%20x%3D%220%22%20y%3D%220%22%3Efin%3C/tspan%3E%3Ctspan%20class%3D%22cls-9%22%20x%3D%2222.49%22%20y%3D%220%22%3Ee%3C/tspan%3E%3Ctspan%20class%3D%22cls-8%22%20x%3D%2230.97%22%20y%3D%220%22%3Es%3C/tspan%3E%3Ctspan%20x%3D%2238.63%22%20y%3D%220%22%3Et%3C/tspan%3E%3C/text%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20class%3D%22cls-2%22%20transform%3D%22translate%2826.51%2073.96%29%20rotate%28-8.2%29%22%3E%3Ctspan%20x%3D%220%22%20y%3D%220%22%3Ee%3C/tspan%3E%3Ctspan%20class%3D%22cls-10%22%20x%3D%224.25%22%20y%3D%220%22%3Eq%3C/tspan%3E%3Ctspan%20x%3D%229.22%22%20y%3D%220%22%3Euipm%3C/tspan%3E%3Ctspan%20class%3D%22cls-7%22%20x%3D%2230.31%22%20y%3D%220%22%3Ee%3C/tspan%3E%3Ctspan%20x%3D%2234.5%22%20y%3D%220%22%3Ent%3C/tspan%3E%3C/text%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20class%3D%22cls-2%22%20transform%3D%22translate%2835.63%2048.46%29%20rotate%28-8.2%29%22%3E%3Ctspan%20class%3D%22cls-6%22%20x%3D%220%22%20y%3D%220%22%3Et%3C/tspan%3E%3Ctspan%20x%3D%222.8%22%20y%3D%220%22%3Ehe%3C/tspan%3E%3C/text%3E%0A%20%20%20%20%20%20%3C/g%3E%0A%20%20%20%20%20%20%3Crect%20class%3D%22cls-4%22%20x%3D%228.32%22%20y%3D%2224.2%22%20width%3D%2272.75%22%20height%3D%2255.49%22%20transform%3D%22translate%2889.73%20.3%29%20rotate%2881.8%29%22/%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/g%3E%0A%3C/svg%3E";
   var craftCardBlue = "data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22UTF-8%22%3F%3E%0A%3Csvg%20id%3D%22Layer_2%22%20data-name%3D%22Layer%202%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20xmlns%3Axlink%3D%22http%3A//www.w3.org/1999/xlink%22%20viewBox%3D%220%200%2098.4%20112.08%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cstyle%3E%0A%20%20%20%20%20%20.cls-1%20%7B%0A%20%20%20%20%20%20%20%20filter%3A%20url%28%23drop-shadow-1%29%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-1%2C%20.cls-2%2C%20.cls-3%20%7B%0A%20%20%20%20%20%20%20%20fill%3A%20%23f8f5f0%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-4%20%7B%0A%20%20%20%20%20%20%20%20fill%3A%20%23357abe%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-2%20%7B%0A%20%20%20%20%20%20%20%20font-family%3A%20Fraunces144pt-LightItalic%2C%20%27Fraunces%20144pt%27%3B%0A%20%20%20%20%20%20%20%20font-size%3A%2012.03px%3B%0A%20%20%20%20%20%20%20%20font-weight%3A%20300%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-2%2C%20.cls-3%20%7B%0A%20%20%20%20%20%20%20%20font-style%3A%20italic%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-5%20%7B%0A%20%20%20%20%20%20%20%20fill%3A%20none%3B%0A%20%20%20%20%20%20%20%20stroke%3A%20%23357abe%3B%0A%20%20%20%20%20%20%20%20stroke-miterlimit%3A%2010%3B%0A%20%20%20%20%20%20%20%20stroke-width%3A%20.5px%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-6%20%7B%0A%20%20%20%20%20%20%20%20letter-spacing%3A%20-.01em%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-7%20%7B%0A%20%20%20%20%20%20%20%20letter-spacing%3A%200em%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-8%20%7B%0A%20%20%20%20%20%20%20%20letter-spacing%3A%20-.01em%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-9%20%7B%0A%20%20%20%20%20%20%20%20letter-spacing%3A%200em%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-3%20%7B%0A%20%20%20%20%20%20%20%20font-family%3A%20Fraunces144pt-ThinItalic%2C%20%27Fraunces%20144pt%27%3B%0A%20%20%20%20%20%20%20%20font-size%3A%2027.19px%3B%0A%20%20%20%20%20%20%20%20font-weight%3A%20200%3B%0A%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20.cls-10%20%7B%0A%20%20%20%20%20%20%20%20letter-spacing%3A%200em%3B%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%3C/style%3E%0A%20%20%20%20%3Cfilter%20id%3D%22drop-shadow-1%22%20x%3D%220%22%20y%3D%220%22%20width%3D%2298.4%22%20height%3D%22112.08%22%20filterUnits%3D%22userSpaceOnUse%22%3E%0A%20%20%20%20%20%20%3CfeOffset%20dx%3D%222.83%22%20dy%3D%222.83%22/%3E%0A%20%20%20%20%20%20%3CfeGaussianBlur%20result%3D%22blur%22%20stdDeviation%3D%222.83%22/%3E%0A%20%20%20%20%20%20%3CfeFlood%20flood-color%3D%22%23423e35%22%20flood-opacity%3D%22.26%22/%3E%0A%20%20%20%20%20%20%3CfeComposite%20in2%3D%22blur%22%20operator%3D%22in%22/%3E%0A%20%20%20%20%20%20%3CfeComposite%20in%3D%22SourceGraphic%22/%3E%0A%20%20%20%20%3C/filter%3E%0A%20%20%3C/defs%3E%0A%20%20%3Cg%20id%3D%22Layer_1-2%22%20data-name%3D%22Layer%201%22%3E%0A%20%20%20%20%3Cg%3E%0A%20%20%20%20%20%20%3Cpath%20class%3D%22cls-1%22%20d%3D%22M84.75%2C23.62c.14-.73.85-1.21%2C1.59-1.07l.56-2.85c-.73-.14-1.21-.85-1.07-1.59l-2.82-.55c-.14.73-.85%2C1.21-1.59%2C1.07s-1.21-.85-1.07-1.59l-2.82-.55c-.14.73-.85%2C1.21-1.59%2C1.07s-1.21-.85-1.07-1.59l-2.82-.55c-.14.73-.85%2C1.21-1.59%2C1.07s-1.21-.85-1.07-1.59l-2.82-.55c-.14.73-.85%2C1.21-1.59%2C1.07s-1.21-.85-1.07-1.59l-2.82-.55c-.14.73-.85%2C1.21-1.59%2C1.07s-1.21-.85-1.07-1.59l-2.82-.55c-.14.73-.85%2C1.21-1.59%2C1.07s-1.21-.85-1.07-1.59l-2.82-.55c-.14.73-.85%2C1.21-1.59%2C1.07s-1.21-.85-1.07-1.59l-2.82-.55c-.14.73-.85%2C1.21-1.59%2C1.07s-1.21-.85-1.07-1.59l-2.82-.55c-.14.73-.85%2C1.21-1.59%2C1.07s-1.21-.85-1.07-1.59l-2.82-.55c-.14.73-.85%2C1.21-1.59%2C1.07s-1.21-.85-1.07-1.59l-2.82-.55c-.14.73-.85%2C1.21-1.59%2C1.07s-1.21-.85-1.07-1.59l-2.82-.55c-.14.72-.82%2C1.18-1.54%2C1.07l-.56%2C2.87c.71.16%2C1.16.85%2C1.03%2C1.57s-.82%2C1.18-1.54%2C1.07l-.56%2C2.87c.71.16%2C1.16.85%2C1.03%2C1.57s-.82%2C1.18-1.54%2C1.07l-.56%2C2.87c.71.16%2C1.16.85%2C1.03%2C1.57s-.82%2C1.18-1.54%2C1.07l-.56%2C2.87c.71.16%2C1.16.85%2C1.03%2C1.57s-.82%2C1.18-1.54%2C1.07l-.56%2C2.87c.71.16%2C1.16.85%2C1.03%2C1.57s-.82%2C1.18-1.54%2C1.07l-.56%2C2.87c.71.16%2C1.16.85%2C1.03%2C1.57s-.82%2C1.18-1.54%2C1.07l-.56%2C2.87c.71.16%2C1.16.85%2C1.03%2C1.57s-.82%2C1.18-1.54%2C1.07l-.56%2C2.87c.71.16%2C1.16.85%2C1.03%2C1.57s-.82%2C1.18-1.54%2C1.07l-.56%2C2.87c.71.16%2C1.16.85%2C1.03%2C1.57s-.82%2C1.18-1.54%2C1.07l-.56%2C2.87c.71.16%2C1.16.85%2C1.03%2C1.57s-.82%2C1.18-1.54%2C1.07l-.56%2C2.87c.71.16%2C1.16.85%2C1.03%2C1.57s-.82%2C1.18-1.54%2C1.07l-.56%2C2.87c.71.16%2C1.16.85%2C1.03%2C1.57s-.82%2C1.18-1.54%2C1.07l-.56%2C2.87c.71.16%2C1.16.85%2C1.03%2C1.57s-.82%2C1.18-1.54%2C1.07l-.56%2C2.87c.71.16%2C1.16.85%2C1.03%2C1.57s-.82%2C1.18-1.54%2C1.07l-.56%2C2.87c.71.16%2C1.16.85%2C1.03%2C1.57l2.82.55c.14-.73.85-1.21%2C1.59-1.07s1.21.85%2C1.07%2C1.59l2.82.55c.14-.73.85-1.21%2C1.59-1.07s1.21.85%2C1.07%2C1.59l2.82.55c.14-.73.85-1.21%2C1.59-1.07s1.21.85%2C1.07%2C1.59l2.82.55c.14-.73.85-1.21%2C1.59-1.07s1.21.85%2C1.07%2C1.59l2.82.55c.14-.73.85-1.21%2C1.59-1.07s1.21.85%2C1.07%2C1.59l2.82.55c.14-.73.85-1.21%2C1.59-1.07s1.21.85%2C1.07%2C1.59l2.82.55c.14-.73.85-1.21%2C1.59-1.07s1.21.85%2C1.07%2C1.59l2.82.55c.14-.73.85-1.21%2C1.59-1.07s1.21.85%2C1.07%2C1.59l2.82.55c.14-.73.85-1.21%2C1.59-1.07s1.21.85%2C1.07%2C1.59l2.82.55c.14-.73.85-1.21%2C1.59-1.07s1.21.85%2C1.07%2C1.59l2.82.55c.14-.73.85-1.21%2C1.59-1.07s1.21.85%2C1.07%2C1.59l2.82.55c.14-.73.85-1.21%2C1.59-1.07l.56-2.85c-.73-.14-1.21-.85-1.07-1.59s.85-1.21%2C1.59-1.07l.56-2.85c-.73-.14-1.21-.85-1.07-1.59s.85-1.21%2C1.59-1.07l.56-2.85c-.73-.14-1.21-.85-1.07-1.59s.85-1.21%2C1.59-1.07l.56-2.85c-.73-.14-1.21-.85-1.07-1.59s.85-1.21%2C1.59-1.07l.56-2.85c-.73-.14-1.21-.85-1.07-1.59s.85-1.21%2C1.59-1.07l.56-2.85c-.73-.14-1.21-.85-1.07-1.59s.85-1.21%2C1.59-1.07l.56-2.85c-.73-.14-1.21-.85-1.07-1.59s.85-1.21%2C1.59-1.07l.56-2.85c-.73-.14-1.21-.85-1.07-1.59s.85-1.21%2C1.59-1.07l.56-2.85c-.73-.14-1.21-.85-1.07-1.59s.85-1.21%2C1.59-1.07l.56-2.85c-.73-.14-1.21-.85-1.07-1.59s.85-1.21%2C1.59-1.07l.56-2.85c-.73-.14-1.21-.85-1.07-1.59s.85-1.21%2C1.59-1.07l.56-2.85c-.73-.14-1.21-.85-1.07-1.59s.85-1.21%2C1.59-1.07l.56-2.85c-.73-.14-1.21-.85-1.07-1.59s.85-1.21%2C1.59-1.07l.56-2.85c-.73-.14-1.21-.85-1.07-1.59Z%22/%3E%0A%20%20%20%20%20%20%3Crect%20class%3D%22cls-4%22%20x%3D%2222.65%22%20y%3D%2230.67%22%20width%3D%2245.3%22%20height%3D%2255.49%22%20transform%3D%22translate%28111.3%2025.13%29%20rotate%28101.04%29%22/%3E%0A%20%20%20%20%20%20%3Cg%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-4%22%20d%3D%22M20.99%2C83.58c-.58-.11-1.08-.31-1.49-.6s-.71-.65-.89-1.08-.21-.92-.11-1.45.32-.97.65-1.3c.33-.33.74-.55%2C1.23-.66s1.03-.11%2C1.61%2C0c.45.09.85.22%2C1.19.38.34.17.62.37.83.62l-.59.8c-.22-.23-.46-.41-.7-.53-.25-.12-.54-.22-.87-.28-.55-.11-1.02-.06-1.4.13s-.63.56-.73%2C1.08-.01.95.26%2C1.28.7.54%2C1.25.65c.33.06.64.09.91.07.28-.02.56-.1.85-.23l.24.96c-.29.15-.63.24-1%2C.27-.38.03-.8%2C0-1.25-.09Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-4%22%20d%3D%22M28.79%2C85.1c-.45-.09-.86-.23-1.2-.42-.35-.19-.64-.42-.86-.69s-.38-.58-.46-.92c-.08-.34-.09-.71-.01-1.1s.22-.72.42-1.01c.21-.28.46-.51.77-.68.31-.17.66-.28%2C1.06-.33.4-.05.82-.03%2C1.28.06s.85.23%2C1.2.42.63.42.85.69c.22.27.37.58.46.92s.09.71.02%2C1.09-.22.73-.42%2C1.01c-.21.28-.46.51-.77.68-.31.17-.66.28-1.06.33s-.82.03-1.27-.06ZM28.98%2C84.13c.37.07.71.07%2C1.01%2C0%2C.3-.07.55-.21.74-.42.2-.21.33-.47.39-.8s.05-.63-.06-.89-.28-.48-.53-.66c-.25-.18-.56-.3-.94-.38s-.72-.07-1.02%2C0c-.3.07-.55.21-.74.42-.2.21-.33.47-.39.8s-.04.62.06.88c.1.26.28.48.53.66.25.18.57.31.95.38Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-4%22%20d%3D%22M35.1%2C86.25l.97-4.95%2C4.22.82-.18.94-3.05-.59-.22%2C1.11%2C2.87.56-.18.94-2.87-.56-.38%2C1.96-1.17-.23Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-4%22%20d%3D%22M42.34%2C87.67l.97-4.95%2C4.22.82-.18.94-3.05-.59-.22%2C1.11%2C2.87.56-.18.94-2.87-.56-.38%2C1.96-1.17-.23Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-4%22%20d%3D%22M49.59%2C89.08l.97-4.95%2C4.25.83-.18.94-3.08-.6-.2%2C1.03%2C2.85.56-.18.94-2.85-.56-.21%2C1.09%2C3.08.6-.18.94-4.25-.83Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-4%22%20d%3D%22M57.12%2C90.55l.97-4.95%2C4.25.83-.18.94-3.08-.6-.2%2C1.03%2C2.85.56-.18.94-2.85-.56-.21%2C1.09%2C3.08.6-.18.94-4.25-.83Z%22/%3E%0A%20%20%20%20%20%20%3C/g%3E%0A%20%20%20%20%20%20%3Cg%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-4%22%20d%3D%22M34.23%2C27.47c-1.5-.29-2.6-.83-3.31-1.6-.71-.78-.95-1.72-.74-2.83s.78-1.85%2C1.71-2.3c.93-.45%2C2.11-.54%2C3.55-.26.76.15%2C1.46.39%2C2.11.73.65.34%2C1.28.78%2C1.9%2C1.32l.51-2.6c-.49-.79-1.07-1.43-1.75-1.93-.68-.49-1.46-.82-2.35-1-1.16-.23-2.25-.14-3.27.25-1.03.39-1.9%2C1.07-2.63%2C2.04-.73.97-1.23%2C2.17-1.51%2C3.6s-.26%2C2.66.03%2C3.76c.3%2C1.11.86%2C2.02%2C1.68%2C2.73.82.71%2C1.84%2C1.18%2C3.06%2C1.42.94.18%2C1.82.21%2C2.64.08.82-.13%2C1.61-.44%2C2.36-.92l.51-2.6c-.77.17-1.53.26-2.3.27-.77.01-1.5-.05-2.19-.18Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-4%22%20d%3D%22M44.37%2C22.52c-.68.29-1.33.79-1.96%2C1.51l-.11-.02.35-2.27-1.57-.31-2.01%2C10.33%2C1.83.36.88-4.5v-.04c.09-.44.23-.84.41-1.19.18-.36.53-.65%2C1.04-.89s1.21-.27%2C2.1-.09c.82.16%2C1.56.44%2C2.22.85l.62-3.2c-.48-.38-1.02-.64-1.62-.75-.77-.15-1.49-.08-2.16.2Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-4%22%20d%3D%22M58.27%2C24.8l-1.46-.29-.67%2C1.96-.11-.02c-.16-.73-.52-1.35-1.07-1.87-.55-.52-1.22-.85-2.01-1.01-.88-.17-1.67-.1-2.39.21-.72.31-1.33.84-1.83%2C1.6-.5.76-.86%2C1.7-1.08%2C2.83s-.23%2C2.05-.06%2C2.9c.17.85.52%2C1.54%2C1.06%2C2.07.53.53%2C1.22.88%2C2.06%2C1.05s1.6.11%2C2.33-.15c.72-.26%2C1.33-.73%2C1.83-1.39l.13.02-.35%2C2.09%2C1.77.35.63-3.99%2C1.24-6.36ZM54.53%2C30.98c-.64.25-1.46.27-2.46.08s-1.77-.53-2.28-1c-.51-.47-.7-1.03-.57-1.68s.51-1.07%2C1.15-1.32c.64-.25%2C1.48-.27%2C2.5-.07s1.75.53%2C2.25%2C1c.5.47.69%2C1.03.56%2C1.68s-.51%2C1.07-1.15%2C1.32Z%22/%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20class%3D%22cls-4%22%20d%3D%22M71.45%2C27.37l.62-3.2-1.04-.2c-.39.72-.79%2C1.29-1.2%2C1.7-.41.41-.91.7-1.51.86-.6.16-1.35.15-2.23-.02l-3.01-.59c-.01-.06-.02-.13%2C0-.19.06-.29.28-.5.66-.61s.89-.11%2C1.52.01c.28.05.58.14.9.25.32.11.58.23.77.34l.61-3.11c-.42-.2-.88-.34-1.38-.44-.82-.16-1.56-.15-2.23.03-.67.18-1.22.51-1.64.99-.43.48-.71%2C1.07-.85%2C1.78-.03.14-.04.28-.05.43l-2.19-.43-.37%2C1.88%2C2.16.42-1.65%2C8.44%2C1.83.36%2C1.65-8.44%2C6.45%2C1.26-1.65%2C8.44%2C1.83.36%2C1.65-8.44%2C3.55.69.37-1.88-3.55-.69Z%22/%3E%0A%20%20%20%20%20%20%3C/g%3E%0A%20%20%20%20%20%20%3Cg%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20class%3D%22cls-3%22%20transform%3D%22translate%2822.15%2059.03%29%20rotate%2811.04%29%22%3E%3Ctspan%20x%3D%220%22%20y%3D%220%22%3Efin%3C/tspan%3E%3Ctspan%20class%3D%22cls-9%22%20x%3D%2222.49%22%20y%3D%220%22%3Ee%3C/tspan%3E%3Ctspan%20class%3D%22cls-8%22%20x%3D%2230.97%22%20y%3D%220%22%3Es%3C/tspan%3E%3Ctspan%20x%3D%2238.63%22%20y%3D%220%22%3Et%3C/tspan%3E%3C/text%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20class%3D%22cls-2%22%20transform%3D%22translate%2821.84%2068.13%29%20rotate%2811.04%29%22%3E%3Ctspan%20x%3D%220%22%20y%3D%220%22%3Ee%3C/tspan%3E%3Ctspan%20class%3D%22cls-10%22%20x%3D%224.25%22%20y%3D%220%22%3Eq%3C/tspan%3E%3Ctspan%20x%3D%229.22%22%20y%3D%220%22%3Euipm%3C/tspan%3E%3Ctspan%20class%3D%22cls-7%22%20x%3D%2230.31%22%20y%3D%220%22%3Ee%3C/tspan%3E%3Ctspan%20x%3D%2234.5%22%20y%3D%220%22%3Ent%3C/tspan%3E%3C/text%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20class%3D%22cls-2%22%20transform%3D%22translate%2838.86%2047.06%29%20rotate%2811.04%29%22%3E%3Ctspan%20class%3D%22cls-6%22%20x%3D%220%22%20y%3D%220%22%3Et%3C/tspan%3E%3Ctspan%20x%3D%222.8%22%20y%3D%220%22%3Ehe%3C/tspan%3E%3C/text%3E%0A%20%20%20%20%20%20%3C/g%3E%0A%20%20%20%20%20%20%3Crect%20class%3D%22cls-5%22%20x%3D%229.93%22%20y%3D%2225.5%22%20width%3D%2272.75%22%20height%3D%2255.49%22%20transform%3D%22translate%28107.43%2017.99%29%20rotate%28101.04%29%22/%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/g%3E%0A%3C/svg%3E";
   var craftMark = "data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22UTF-8%22%3F%3E%0A%3Csvg%20id%3D%22Layer_2%22%20data-name%3D%22Layer%202%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20173.85%2084.16%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cstyle%3E%0A%20%20%20%20%20%20.cls-1%20%7B%0A%20%20%20%20%20%20%20%20fill%3A%20%23e63445%3B%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%3C/style%3E%0A%20%20%3C/defs%3E%0A%20%20%3Cg%20id%3D%22Layer_1-2%22%20data-name%3D%22Layer%201%22%3E%0A%20%20%20%20%3Cpath%20class%3D%22cls-1%22%20d%3D%22M97.47.13c-.13%2C0-.26.07-.39.11h-1.33s0%2C.04%2C0%2C0c-.04%2C0-.08%2C0-.12%2C0-4.38%2C0-8.75%2C0-13.13%2C0-.08%2C0-.17%2C0-.25%2C0-.08%2C0-.15%2C0-.23%2C0-.4.02-.81.04-1.21.06-.45%2C0-.89.02-1.34.03%2C0%2C0%2C0%2C0%2C0%2C0-.06%2C0-.12.01-.18.02-.09-.03-.19-.06-.28-.1-1.01%2C0-2.01%2C0-3.02%2C0-4.38%2C0-8.76%2C0-13.14-.01%2C0%2C0%2C0%2C0%2C0%2C0-.08%2C0-.16%2C0-.24%2C0-11.65%2C0-23.3%2C0-34.94%2C0-.08%2C0-.17%2C0-.25%2C0-.12%2C0-.24%2C0-.35%2C0-.08%2C0-.17%2C0-.25%2C0-.48%2C0-.96%2C0-1.44%2C0-.12%2C0-.25%2C0-.37%2C0-.16.08-.32.16-.48.24.16-.08.32-.16.48-.24-.56%2C0-1.12%2C0-1.68%2C0-.2%2C0-.4%2C0-.61%2C0-.6%2C0-1.2%2C0-1.81%2C0-.9%2C0-1.8-.03-2.7%2C0-.4.01-.79.16-1.18.24-.06-.03-.12-.07-.19-.11-.11.02-.26%2C0-.34.06-1.42%2C1-2.83%2C2.02-4.24%2C3.03-1.36.98-2.72%2C1.96-4.06%2C2.95-.14.1-.2.3-.3.45-.44.32-.89.64-1.33.96-1.17.83-2.34%2C1.66-2.76%2C3.14-.02.04-.02.07-.02.11%2C0%2C0%2C0%2C0%2C0%2C0-.04.08-.08.16-.12.24-.08.12-.16.24-.25.36h0c-.08.16-.17.32-.25.48%2C0%2C0%2C0%2C0%2C0%2C0l-.13.25s0%2C0%2C0%2C0c-.08.16-.16.33-.25.49h0c-.12.24-.24.48-.36.72%2C0%2C0%2C0%2C0%2C0%2C0-.05.04-.09.08-.14.11-.23.41-.46.81-.7%2C1.22-.04.2-.08.4-.12.6h0c0%2C.08%2C0%2C.16%2C0%2C.24h0c-.05.57-.1%2C1.15-.15%2C1.73-.05-.14-.11-.29-.16-.43-.06.03-.12.06-.17.08.15.28.3.57.46.89-.28%2C0-.53%2C0-.79%2C0-.64-.01-.74.1-.68.71.15%2C1.35.29%2C2.7.4%2C4.05.3%2C3.65.58%2C7.29.86%2C10.94.03.45.23.63.69.61.74-.03%2C1.48-.04%2C2.22%2C0%2C.42.02.74-.09.99-.41.07.04.13.08.2.12%2C1.36.01%2C2.73.02%2C4.09.03.39%2C1.51.77%2C3.02%2C1.08%2C4.24-.73.85-1.39%2C1.64-2.07%2C2.4-.51.57-.89%2C1.21-.89%2C1.98%2C0%2C1.48.06%2C2.95.12%2C4.43.15%2C3.23.32%2C6.46.46%2C9.7.02.36.05.63.42.76.98.22%2C1.31-.13%2C1.2-1.17-.18-1.74-.33-3.49-.46-5.24-.16-2.13-.28-4.27-.42-6.41-.02-.19-.04-.38-.06-.57.02-.05.05-.1.07-.15%2C0-.08%2C0-.16-.01-.24%2C0-.08.01-.16.02-.24-.11-1.64.86-2.64%2C2.03-3.54.61%2C2.42%2C1.2%2C4.78%2C1.8%2C7.15.14.54.5%2C1.16.35%2C1.6-.25.69-.05%2C1.3-.05%2C1.94%2C0%2C1.39.08%2C2.77.12%2C4.16-.22.31-.68.69-.61.91.15.47-.61.37-.37.77-.42.09-.13.62-.48.75h0c-.03-.07-.06-.13-.09-.2-.09.11-.18.21-.28.32-.07.08-.14.16-.23.26.13.08.24.15.34.21-.03.05-.07.09-.1.14h-.58c.04.26.07.43.1.61h0c-.12.2-.24.39-.37.59.12-.2.24-.39.37-.59-.18-.2-.36-.24-.51.03-.12.22-.23.45-.35.68-.04.08-.08.16-.12.24-.21.04-.41.09-.62.13-.34%2C0-.69%2C0-1.08%2C0%2C.17.42-.35%2C1.09.48%2C1.32.13%2C1.97.26%2C3.94.38%2C5.9.08%2C1.42.15%2C2.84.25%2C4.26.01.19.15.37.22.56l.04.02.03-.02h0c.16.04.32.1.48.12.81.06%2C1.62.1%2C2.43.15.1%2C2.26.18%2C4.52.29%2C6.78.08%2C1.52.19%2C3.03.31%2C4.55.01.16.24.42.39.43.82.08%2C1.64.1%2C2.46.12.18%2C0%2C.46-.06.53-.19.51-.9%2C1.19-1.77%2C1.4-2.74.64-2.97%2C1.1-5.98%2C1.63-8.97%2C2.18%2C0%2C4.36-.02%2C6.55-.02%2C3.92-.01%2C7.85-.03%2C11.77-.04%2C3.02%2C0%2C6.05%2C0%2C9.07%2C0%2C.35%2C0%2C.69-.05%2C1.04-.07%2C3.01%2C0%2C6.03%2C0%2C9.04.01.04%2C0%2C.08%2C0%2C.12%2C0l2.29.02s0-.08%2C0-.13l-1.43-.03c.48%2C0%2C.96.02%2C1.43.03%2C0%2C.04%2C0%2C.08%2C0%2C.13.44%2C0%2C.89%2C0%2C1.33-.01.36%2C0%2C.72%2C0%2C1.08.01.19.03.39.07.58.07%2C4.12.02%2C8.23.03%2C12.35.04-.45-.09-.91-.17-1.36-.26.45.09.91.17%2C1.36.26.05%2C0%2C.11%2C0%2C.16%2C0%2C.11%2C0%2C.22%2C0%2C.33%2C0%2C0%2C0%2C.04%2C0%2C.04%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C.3%2C0%2C.59-.01.89-.02.76%2C0%2C1.52%2C0%2C2.28%2C0h.25c.08-.05.17-.11.25-.16-.08.05-.17.11-.25.16.64%2C0%2C1.28%2C0%2C1.92%2C0%2C1.05%2C0%2C2.1%2C0%2C3.15%2C0%2C6.45%2C0%2C12.9.01%2C19.35.02.49%2C0%2C.98.03%2C1.47.05.12.01.24.04.36.04%2C3.23%2C0%2C6.45%2C0%2C9.68%2C0%2C1.64%2C0%2C3.29%2C0%2C4.93%2C0%2C7.23.01%2C14.46.02%2C21.69.03%2C0%2C0%2C.06.01.06.01l.06-.02c.28%2C0%2C.56%2C0%2C.84%2C0%2C.89.03%2C1.77.05%2C2.66.08.64%2C0%2C1.28-.01%2C1.92-.02.1%2C0%2C.2.03.3.03%2C2.68%2C0%2C5.35.02%2C8.03.02%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C.01%2C0%2C.08.4.16.79.24%2C1.19%2C0%2C.08-.01.16%2C0%2C.24.42%2C2.05.85%2C4.11%2C1.26%2C6.16.23%2C1.17.39%2C2.37%2C1.13%2C3.37.15.63.49.95%2C1.19.89.66-.06%2C1.32-.05%2C1.98-.06.51%2C0%2C.74-.2.75-.75.1-3%2C.23-6%2C.35-9%2C.03-.67.06-1.35.1-2.06.38%2C0%2C.72.01%2C1.06%2C0%2C.47-.02.94-.06%2C1.41-.1.05%2C0%2C.1%2C0%2C.16%2C0%2C0%2C0%2C0-.01%2C0-.02.11-.1.28-.18.31-.3.07-.33.08-.67.1-1.01.15-3.03.29-6.06.45-9.09%2C0-.15.15-.29.22-.43.08-.36.16-.72.24-1.07-.12.28-.24.56-.36.84h0c.12-.28.24-.56.36-.84-.07-.22-.08-.48-.21-.66-.47-.65-.98-1.28-1.48-1.92.56-.03.94-.21.85-.89-.03-.19.05-.39.08-.58-.01-.38-.02-.76-.03-1.14.02-.15.04-.3.06-.45h0c.04-.35.08-.69.12-1.04-.03%2C0-.07.02-.1.04h0s.06-.03.1-.04c.04-.46.08-.91.13-1.37.29-2.61.61-5.22.87-7.83.06-.65-.07-1.32-.11-1.98-.2-.45-.33-.95-.61-1.33-.5-.67-1.09-1.27-1.64-1.9%2C0%2C0%2C.01%2C0%2C.01%2C0h0%2C0s0-.04%2C0-.05c.22-.79.44-1.58.66-2.36.28-.97.55-1.94.83-2.91.89%2C0%2C1.77.01%2C2.66.02.2-.09.41-.18.61-.26.33.22.66.59%2C1.01.62.83.07%2C1.68-.04%2C2.52-.05.41%2C0%2C.54-.16.57-.57.28-5.06.57-10.12.84-15.19.01-.22-.22-.44-.34-.67-.08-.11-.14-.24-.25-.32-.59-.44-.94-1.01-1-1.75-.07-.14-.14-.27-.2-.41.07.14.14.27.2.41.04-.22.17-.49.09-.66-.55-1.22-1.14-2.42-1.74-3.62-.45-.91-.79-1.94-1.44-2.68-.87-.98-2.01-1.72-3.03-2.56-.14-.14-.26-.3-.41-.42-2.29-1.79-4.59-3.57-6.9-5.35-.15-.12-.38-.13-.58-.2-.06%2C0-.12-.02-.18-.02-.09-.05-.18-.1-.27-.14-1.48%2C0-2.96%2C0-4.44.01-.14%2C0-.28-.02-.42-.02-5.05.04-10.1.08-15.16.11-1.56.01-3.13%2C0-4.69%2C0h-35.63Z%22/%3E%0A%20%20%3C/g%3E%0A%3C/svg%3E";
-  var steamCaseHtml = "<!DOCTYPE html>\n<html lang=\"en\"><!-- lang=\"ro\" for the Romanian version -->\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n<!-- <meta name=\"robots\" content=\"noindex, nofollow\"> uncomment for preview copies uploaded to the site -->\n<title>Steam \u2014 Cromatic Studios</title>\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n<link href=\"https://fonts.googleapis.com/css2?family=Darker+Grotesque:wght@400;500;600;700;800;900&display=swap\" rel=\"stylesheet\">\n<style>\n:root{\n  --ink:#121212;\n  --paper:#F1F1F1;\n  --white:#FFFFFF;\n  --yellow:#FFD147;\n  --cream:#FFEDB5;\n  --blue:#519EF5;\n  --blue-soft:#DCEBFD;\n  --green:#2ECB42;\n  --green-soft:#D8F5DC;\n  --purple:#B49BE0;\n  --purple-soft:#EAE2F8;\n  --red:#F0544C;\n  --red-soft:#FCDEDC;\n  --orange:#F58D42;\n  --orange-soft:#FCE3CF;\n  --muted:#5a5a5a;\n\n  --radius-l:36px;\n  --radius-m:18px;\n  --line:1px solid var(--ink);\n  --gutter:clamp(10px,1.2vw,16px);\n  --pad:clamp(22px,4vw,64px);\n  --media-pad:var(--gutter);\n  --font:\"Darker Grotesque\",system-ui,-apple-system,\"Segoe UI\",Roboto,Arial,sans-serif;\n\n  /* type scale (~1.333), 375px -> 1440px */\n  --fs-display:clamp(3rem,1.591rem + 6.01vw,7rem);\n  --fs-hero:clamp(2.86rem,1.761rem + 4.687vw,5.98rem);\n  --fs-h2:clamp(2.5rem,1.708rem + 3.38vw,4.75rem);\n  --fs-h3:clamp(1.875rem,1.479rem + 1.69vw,3rem);\n  --fs-lead:clamp(1.375rem,1.199rem + .751vw,1.875rem);\n  --fs-body:clamp(1.125rem,1.059rem + .282vw,1.3125rem);\n  --fs-ui:clamp(1.0625rem,1.041rem + .094vw,1.125rem);\n  --fs-small:clamp(.9375rem,.916rem + .094vw,1rem);\n  /* line heights: standard values reduced by 15% */\n  --lh-display:.89;\n  --lh-hero:.9;\n  --lh-h2:.92;\n  --lh-h3:.95;\n  --lh-lead:1.1;\n  --lh-body:1.2;\n  --lh-ui:1.1;\n  --lh-small:1.15;\n  --rail-h:clamp(300px,34vw,520px);\n  --caption-gap:8px;\n  --max-h:min(78svh,760px);\n}\n*,*::before,*::after{box-sizing:border-box}\nhtml{scroll-behavior:smooth}\nbody{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:var(--fs-body);font-weight:600;line-height:var(--lh-body);-webkit-font-smoothing:antialiased}\nimg,video,iframe{display:block;max-width:100%}\na{color:inherit}\nh1,h2,h3,p,figure,ul,blockquote{margin:0}\nh1,h2,h3{font-weight:900;letter-spacing:-.01em}\n:focus-visible{outline:3px solid var(--blue);outline-offset:3px;border-radius:6px}\n.page{padding:var(--gutter);display:grid;grid-template-columns:minmax(0,1fr);gap:var(--gutter)}\n.card{min-width:0;border:var(--line);border-radius:var(--radius-l);overflow:hidden}\n.inner{padding:var(--pad)}\n.prose{max-width:34em}\n.prose p+p{margin-top:.8em}\n.prose strong{font-weight:900}\n\n/* pills */\n.pills{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0}\n.pill{display:inline-block;padding:6px 20px 8px;border:var(--line);border-radius:999px;font-weight:700;font-size:var(--fs-ui);line-height:var(--lh-ui);text-decoration:none;transition:background .2s}\n.pill--brand{background:var(--green)}\n.pill--marketing{background:var(--red)}\n.pill--product{background:var(--purple)}\n.pill--accent{background:var(--yellow)}\n.pill--video{background:var(--orange)}\na.pill:hover{background:var(--white)}\n\n/* media: every frame keeps the file's own ratio (--r) */\n.frame{position:relative;width:100%;aspect-ratio:var(--r,1.5);max-height:var(--max-h);border-radius:var(--radius-m);overflow:hidden;background:#d9d9d9}\n.frame img,.frame video{width:100%;height:100%;object-fit:cover}\nfigcaption{margin-top:var(--caption-gap);font-size:var(--fs-small);font-weight:600;color:var(--muted);line-height:var(--lh-small)}\n.stack{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--gutter)}\n.stack>figcaption{margin-top:calc(var(--caption-gap) - var(--gutter))}\n.chapter-media>figcaption{margin-top:calc(var(--caption-gap) - clamp(28px,3vw,48px))}\n/* justified rows: widths follow each ratio, so heights match with zero cropping */\n.row{display:flex;flex-wrap:wrap;gap:var(--gutter)}\n.row>figure{flex:var(--r) 1 0;min-width:0}\n\n/* carousels: fixed height, width from ratio */\n.rail-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:12px}\n.rail-head h4{margin:0;display:flex;flex-wrap:wrap;gap:0;padding-top:5%}\n.rail-head h4 .pill{background:var(--white);font-size:var(--fs-ui);line-height:var(--lh-ui);font-weight:800;position:relative;transform:rotate(var(--rot,-9deg))}\n.rail-head h4 .pill:nth-child(even){margin-left:-14px;z-index:1;transform:rotate(var(--rot,7deg))}\n@media (min-width:1025px){\n  .chapter-media>:first-child .rail-head h4,.chapter-media>.rail-head:first-child h4{padding-top:2%}\n}\n.rail-btns{display:flex;gap:6px}\n.rail-btns button{width:46px;height:46px;border-radius:50%;border:var(--line);background:var(--white);font:inherit;font-size:calc(var(--fs-ui) * 1.63);line-height:1;cursor:pointer;display:grid;place-items:center;padding:0 0 2px}\n.rail-btns button:hover{background:var(--yellow)}\n.rail-btns button:disabled{opacity:.3;cursor:default;background:var(--white)}\n.track{display:flex;gap:var(--gutter);overflow-x:auto;scroll-behavior:auto;scroll-snap-type:x proximity;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}\n.track::-webkit-scrollbar{display:none}\n.track>*{flex:0 0 auto;scroll-snap-align:start}\n.track>figure{width:calc(var(--rail-h) * var(--r))}\n.track>figure .frame{width:100%;height:var(--rail-h);max-height:none}\n.track img{-webkit-user-drag:none;user-select:none}\n.track.is-dragging{scroll-snap-type:none;cursor:grabbing;user-select:none}\n.track.is-dragging *{pointer-events:none}\n@media (hover:hover) and (pointer:fine){.track{cursor:grab}}\n\n/* hero */\n.hero{background:var(--white)}\n.hero-top{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(300px,1fr);gap:clamp(24px,4vw,72px);align-items:start}\n.hero h1{font-size:var(--fs-hero);line-height:var(--lh-hero)}\n.hero-info{display:grid;gap:clamp(18px,2vw,28px);padding-top:15px}\n.hero-title{display:grid;gap:clamp(10px,1vw,16px)}\n.client-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px}\n.client-row .pill{font-weight:800;opacity:0;animation:pill-drop .95s cubic-bezier(.45,0,.9,.5) both}\n.client-row li:nth-child(1) .pill{animation-delay:1.1s}\n.client-row li:nth-child(2) .pill{animation-delay:1.28s}\n.client-row li:nth-child(3) .pill{animation-delay:1.46s}\n@keyframes pill-drop{\n  0%{opacity:0;transform:translateY(-190px)}\n  10%{opacity:1}\n  52%{transform:translateY(0);animation-timing-function:cubic-bezier(.2,.6,.4,1)}\n  70%{transform:translateY(-22px);animation-timing-function:cubic-bezier(.5,0,.9,.5)}\n  85%{transform:translateY(0);animation-timing-function:cubic-bezier(.2,.6,.4,1)}\n  93%{transform:translateY(-7px)}\n  100%{opacity:1;transform:translateY(0)}\n}\n.client-name{font-size:var(--fs-lead);font-weight:900;line-height:var(--lh-lead)}\n.info{list-style:none;padding:0;display:grid;gap:14px}\n.info li:first-child{font-weight:800}\n.hero-media{margin-top:clamp(28px,4vw,56px);animation:hero-in .85s ease-in .2s both}\n@keyframes hero-in{0%{opacity:0;transform:scale(.5)}28%{opacity:1;transform:scale(.5)}100%{opacity:1;transform:scale(1)}}\n.hero-media .frame{border:var(--line);border-radius:24px}\n\n/* section heads */\n.sec-head>.prose{padding-top:15px}\n.sec-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,4vw,72px);align-items:start}\n.sec-head h2{font-size:var(--fs-h2);line-height:var(--lh-h2)}\n\n/* problem */\n.problem{background:var(--white)}\n.problem-media{margin-top:clamp(32px,5vw,72px)}\n.quote{margin-top:clamp(32px,5vw,72px);padding:6.53% 19%;display:block}\n.quote blockquote p{font-size:var(--fs-h3);font-weight:800;line-height:var(--lh-h3);color:var(--blue)}\n.quote cite,.result-quote cite{display:block;margin-top:16px;font-size:var(--fs-small);line-height:var(--lh-small);font-weight:800;color:var(--ink);font-style:normal;opacity:0;transition:opacity .7s ease .1s}\n.line{display:block;overflow:hidden;padding-bottom:.22em;margin-bottom:-.22em}\n.line>span{display:block;transform:translateY(110%);opacity:0}\n.is-in .line>span{transform:none;opacity:1;transition:transform var(--line-dur,.85s) cubic-bezier(.2,.75,.2,1),opacity var(--line-dur,.85s) ease;transition-delay:calc(var(--i) * var(--line-step,.09s))}\n.is-in cite{opacity:1;transition-delay:calc(var(--lines,1) * var(--line-step,.09s) + .35s)}\n\n.handoff{margin-top:clamp(40px,6vw,96px);display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--gutter)}\n.solution-intro{background:var(--blue);border:var(--line);border-radius:var(--radius-m);padding:clamp(24px,3.5vw,56px);display:grid;gap:clamp(18px,2vw,28px);align-content:start}\n.solution-intro h2{font-size:var(--fs-h2);line-height:var(--lh-h2)}\n.solution-intro p{max-width:none}\n.to-result{display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:clamp(24px,3vw,40px);background:var(--ink);color:var(--white);border-radius:var(--radius-m);text-decoration:none;transition:transform .2s}\n.to-result b{font-size:calc(var(--fs-lead) * 1.1);font-weight:900;line-height:var(--lh-lead);color:var(--yellow)}\n.go-icon{font-size:1.63em;line-height:1;display:block;transform:translateY(-.02em)}\n.to-result-go{align-self:flex-start;display:inline-flex;align-items:center;gap:10px;margin-top:24px;padding:11px 24px 12px;border-radius:999px;border:1px solid var(--yellow);background:var(--yellow);color:var(--ink);font-weight:800;font-size:var(--fs-ui);line-height:var(--lh-ui)}\n.to-result:hover .to-result-go{background:var(--white);border-color:var(--white)}\n.to-result .to-result-go:hover,.to-result:hover .to-result-go:hover{background:var(--green);border-color:var(--green)}\n.to-result:hover{transform:translateY(-3px)}\n\n/* chapters */\n.chapter{background:var(--white);display:grid;grid-template-columns:minmax(200px,3.2fr) minmax(0,8.8fr)}\n.chapter-side{padding:clamp(22px,2.6vw,44px);border-right:var(--line)}\n.chapter-side>div{display:grid;gap:clamp(18px,2vw,28px)}\n.pill-title{display:flex;flex-direction:column;align-items:flex-start}\n.pill-title{padding-block:6px}\n.pill-title .pill{font-size:var(--fs-lead);line-height:var(--lh-lead);font-weight:900;-webkit-text-stroke:.7px var(--ink);padding:10px 22px 13px;position:relative;transform:rotate(-2.5deg);transform-origin:left center}\n.pill-title .pill:last-child{margin-left:16px;margin-top:-6px;z-index:1;transform:rotate(1.5deg)}\n/* the two title pills drop into place when the chapter first appears */\n.pill-title.drop-ready .pill{opacity:0}\n.pill-title.is-dropped .pill:first-child{animation:drop-a .95s cubic-bezier(.45,0,.9,.5) both}\n.pill-title.is-dropped .pill:last-child{animation:drop-b .95s cubic-bezier(.45,0,.9,.5) .18s both}\n@keyframes drop-a{\n  0%{opacity:0;transform:translateY(-190px) rotate(0deg)}\n  10%{opacity:1}\n  52%{transform:translateY(0) rotate(-2.5deg);animation-timing-function:cubic-bezier(.2,.6,.4,1)}\n  70%{transform:translateY(-22px) rotate(-1deg);animation-timing-function:cubic-bezier(.5,0,.9,.5)}\n  85%{transform:translateY(0) rotate(-2.5deg);animation-timing-function:cubic-bezier(.2,.6,.4,1)}\n  93%{transform:translateY(-7px) rotate(-2deg)}\n  100%{opacity:1;transform:translateY(0) rotate(-2.5deg)}\n}\n@keyframes drop-b{\n  0%{opacity:0;transform:translateY(-190px) rotate(0deg)}\n  10%{opacity:1}\n  52%{transform:translateY(0) rotate(1.5deg);animation-timing-function:cubic-bezier(.2,.6,.4,1)}\n  70%{transform:translateY(-20px) rotate(3deg);animation-timing-function:cubic-bezier(.5,0,.9,.5)}\n  85%{transform:translateY(0) rotate(1.5deg);animation-timing-function:cubic-bezier(.2,.6,.4,1)}\n  93%{transform:translateY(-6px) rotate(2deg)}\n  100%{opacity:1;transform:translateY(0) rotate(1.5deg)}\n}\n.chapter-text{font-size:var(--fs-body);font-weight:700;line-height:var(--lh-body)}\n.chapter--brand .chapter-side{background:var(--green-soft)}\n.chapter--marketing .chapter-side{background:var(--red-soft)}\n.chapter--product .chapter-side{background:var(--purple-soft)}\n.chapter--video .chapter-side{background:var(--orange-soft)}\n.deliverables{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px}\n.deliverables li{padding:5px 16px 7px;border:var(--line);border-radius:999px;background:var(--white);font-size:var(--fs-ui);line-height:var(--lh-ui);font-weight:700}\n.chapter-media{padding:var(--media-pad);display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(28px,3vw,48px);--stack-gap:clamp(28px,3vw,48px);align-content:start;min-width:0}\n.bleed{margin-inline:calc(-1 * var(--media-pad))}\n.bleed .rail-head{padding-inline:var(--media-pad)}\n.bleed .track{padding-inline:var(--media-pad);scroll-padding-inline:var(--media-pad)}\n\n/* website mockups */\n.site-row{align-items:flex-start}\n.device{border:var(--line);border-radius:var(--radius-m);overflow:hidden;background:var(--white);box-shadow:0 0 0 rgba(18,18,18,0);transition:border-color .45s ease,transform .35s ease,box-shadow .35s ease}\n.device:hover{border-color:var(--yellow);transform:translateY(-10px);box-shadow:0 24px 48px rgba(18,18,18,.25)}\n/* the levitation is reserved for the live site: a screenshot or recording stays still */\n.device:not(:has(iframe)):hover{border-color:var(--ink);transform:none;box-shadow:none}\n.device-bar{display:flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-bottom:var(--line);background:var(--paper);font-size:var(--fs-small);line-height:var(--lh-small);font-weight:700}\n.device-bar i{width:10px;height:10px;border-radius:50%;border:var(--line);display:block}\n.device-bar span{margin-left:10px}\n.screen{position:relative;overflow:hidden;width:100%;aspect-ratio:var(--sr);max-height:calc(var(--max-h) - 34px)}\n.screen iframe{position:absolute;top:0;left:0;border:0;max-width:none;transform-origin:0 0}\n.device--phone .device-bar{justify-content:center}\n.device--phone .device-bar span{margin-left:6px}\n.site-link{justify-self:start}\n\n/* result */\n.result{background:var(--ink);color:var(--white);border-color:var(--ink)}\n.result-text{font-size:var(--fs-h3);font-weight:800;line-height:var(--lh-h3)}\n.stats{margin-top:clamp(36px,5vw,80px);display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gutter);list-style:none;padding:0}\n.stats li{border-top:1px solid #555;padding-top:14px}\n.stats b{display:block;font-size:var(--fs-h2);font-weight:900;line-height:var(--lh-h2);color:var(--yellow)}\n.stats span{display:block;margin-top:10px;max-width:16em}\n.result-quote{margin-top:clamp(36px,5vw,80px);align-items:stretch}\n.result-quote blockquote{flex:1.1 1 0;min-width:0;background:var(--yellow);color:var(--ink);border-radius:var(--radius-m);padding:clamp(24px,3vw,44px);display:flex;flex-direction:column;justify-content:space-between;gap:24px}\n.result-quote blockquote p{font-size:var(--fs-h3);font-weight:800;line-height:var(--lh-h3)}\n.result-quote blockquote.is-in cite{opacity:1;transition-delay:calc(var(--lines,1) * var(--line-step,.09s) + .35s)}\n.result-showcase{margin-top:0} /* r138i: the section opens on the photos (no statement, no figures) */\n.btn{display:inline-flex;align-items:center;gap:10px;padding:10px 26px 13px;border-radius:999px;border:var(--line);background:var(--yellow);color:var(--ink);font-weight:800;font-size:var(--fs-ui);line-height:var(--lh-ui);text-decoration:none}\n.btn:hover{background:var(--white)}\n\n/* related */\n.related{background:var(--white)}\n.related .inner{--media-pad:var(--pad)}\n.related .rail-head h2{font-size:var(--fs-h2);line-height:var(--lh-h2)}\n.related .rail-head{justify-content:flex-start;gap:24px;margin-bottom:clamp(24px,3vw,48px)}\n.related .rail-head h2{text-align:left}\n.related .track .proj{width:clamp(280px,30vw,460px)}\n.related .track .frame{height:auto;width:100%}\n.proj{position:relative;display:grid;gap:14px;align-content:start}\n.proj .frame{border:var(--line)}\n.proj h3{font-size:var(--fs-lead);line-height:var(--lh-lead)}\n.proj p{max-width:20em}\n.proj a.cover{position:absolute;inset:0;border-radius:var(--radius-m)}\n.proj .pills{position:relative;z-index:1}\n.proj .pill{padding:4px 16px 6px}\n\n@media (min-width:1025px){\n  .related .bleed{margin-inline:0}\n  .related .track{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;padding-inline:0;cursor:auto}\n  .related .track .proj{width:auto}\n  .related .rail-btns{display:none}\n}\n.proj .frame{transition:border-color .45s ease}\n.proj:hover .frame{border-color:var(--yellow)}\n\n/* cta */\n.cta{background:var(--yellow);text-align:left}\n.cta .inner{min-height:clamp(252px,37vh,456px);display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:clamp(48px,8vw,120px)}\n.cta h2{font-size:var(--fs-display);line-height:var(--lh-display);max-width:10em}\n.cta .btn{background:var(--ink);color:var(--white);font-size:var(--fs-lead);line-height:var(--lh-lead);padding:18px 44px 22px}\n.cta .btn:hover{background:var(--blue);color:var(--ink)}\n\n@media (min-width:1025px){\n  .related .bleed .rail-head{padding-inline:0}\n}\n\n/* tablet */\n@media (min-width:641px) and (max-width:1024px){\n  .stats span{max-width:none}\n}\n@media (max-width:1024px){\n  .hero-top,.sec-head,.handoff{grid-template-columns:1fr}\n  .to-result{min-height:220px}\n  .chapter{grid-template-columns:1fr}\n  .chapter-side{border-right:0;border-bottom:var(--line)}\n  .stats{grid-template-columns:1fr}\n}\n/* mobile */\n@media (max-width:640px){\n  :root{--radius-l:26px;--radius-m:14px;--media-pad:10px;--rail-h:420px}\n  .full-sm{flex-basis:100% !important}\n  .hide-sm{display:none !important}\n  .rail-btns{display:none}\n  .result-quote{flex-direction:column}\n  .result-quote blockquote{flex:none}\n  .related .track .proj{width:82vw}\n}\n@media (prefers-reduced-motion:reduce){\n  html{scroll-behavior:auto}\n  .to-result,.pill,.device,.proj .frame{transition:none}\n  .hero-media,.device:hover{animation:none}\n  .client-row .pill{animation:none;opacity:1}\n  .device,.device:hover{transition:none;transform:none}\n  .line>span,.quote cite,.result-quote cite{transform:none;opacity:1;transition:none}\n  .to-result:hover{transform:none}\n}\n/* r136: the banner to the Craft Coffee case (same team), in place of the old webshop frames */\n.xbanner{display:grid;gap:14px;justify-items:start;padding:clamp(22px,3vw,40px);border:var(--line);border-radius:var(--radius-l);background:var(--blue);color:var(--ink);text-decoration:none;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s}\n.xbanner:hover{transform:translateY(-3px) rotate(-.3deg);box-shadow:0 14px 30px rgba(18,18,18,.14)}\n.xb-t{font-size:var(--fs-h3);line-height:var(--lh-h3);font-weight:900;letter-spacing:-.01em;max-width:16em}\n.xb-p{max-width:30em}\n.xb-go{display:inline-flex;align-items:center;gap:10px;margin-top:6px;padding:10px 26px 13px;border-radius:999px;background:var(--ink);color:var(--white);font-weight:800;font-size:var(--fs-ui);line-height:var(--lh-ui)}\n@media (prefers-reduced-motion:reduce){.xbanner{transition:none}.xbanner:hover{transform:none}}\n/* r137c: the green T-shirt answers the founder's quote early on (it used to sit by the closing quote) */\n.quote--photo{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(24px,4vw,72px);align-items:center;padding:clamp(8px,2vw,32px) 0 0 clamp(0px,5vw,80px)}\n.quote--photo figure{min-width:0}\n/* r138c: the tee photo on its own (the founder quote was not real) */\n.tee-solo{max-width:min(820px,100%);margin:clamp(28px,4vw,72px) auto 0}\n.tee-solo figure{margin:0}\n@media (max-width:640px){.quote--photo{grid-template-columns:minmax(0,1fr);padding:0}}\n/* r137c: \"Ne \u0219tim de la Steam\" closes the story between the last two photos.\n   r138d (Daniel: \"written way too big\"): a display size, no longer fitted to the width, in a classic high-contrast\n   serif with an italic, like Steam's T-shirts (\"Shared sips, endless energy.\"): DM Serif Display (SIL OFL 1.1),\n   served from our own fonts by the build as 'Steam Serif' (build/build.mjs); Didot/Georgia until it loads */\n.steam-outro{container-type:inline-size;padding:clamp(40px,6vw,104px) 0 clamp(44px,7vw,120px)}\n.steam-big{max-width:none;font-family:'Steam Serif','DM Serif Display',Didot,'Bodoni 72',Georgia,serif;font-size:clamp(46px,7.4cqi,104px);font-weight:400;line-height:1.02;letter-spacing:-.012em;color:var(--yellow);font-synthesis:none}\n.steam-big em{font-style:italic;letter-spacing:0;padding-right:.04em}\n.steam-big .sb-l{display:block;white-space:nowrap}\n.steam-big .sb-l+.sb-l{margin-top:.07em}\n@media (max-width:640px){.steam-big{font-size:clamp(38px,13.5cqi,64px)}}\n.steam-big.sb-ready .sb-l{opacity:0;transform:translateY(.3em)}\n.steam-big.sb-ready.sb-in .sb-l{opacity:1;transform:none;transition:opacity .7s ease,transform .9s cubic-bezier(.2,.75,.2,1)}\n.steam-big.sb-ready.sb-in .sb-l+.sb-l{transition-delay:.14s}\n/* r138h: Steam's first year, right after the hero: the stencilled logo on the wall first, then, as the page scrolls,\n   the founders on the floor below it (a zoom out and a pan, transform only, drawn by the script at the end). Without\n   the script or with reduced motion it is one still frame, cropped to show both */\n.sw-frame{position:relative;margin:0;height:min(calc(100svh - 2 * var(--gutter)),112vw);border:var(--line);border-radius:var(--radius-l);overflow:hidden;background:#cddfd5}\n.sw-frame img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;object-position:50% 62%}\n.sw-cap{position:absolute;left:clamp(12px,2vw,28px);bottom:clamp(12px,2vw,28px);z-index:1;margin:0;padding:6px 16px 8px;border:var(--line);border-radius:999px;background:var(--white);color:var(--ink);font-size:var(--fs-small);line-height:var(--lh-small);font-weight:800}\n.steam-wall.sw-live{height:calc(100svh + max(90svh,560px))}\n.sw-live .sw-frame{position:sticky;top:max(var(--gutter),calc(50svh - 56vw))}\n.sw-live .sw-frame img{inset:auto;left:0;top:0;object-fit:fill;transform-origin:0 0;will-change:transform}\n.sw-live .sw-cap{opacity:var(--sw-cap,0);transform:translateY(calc((1 - var(--sw-cap,0)) * 10px))}\n/* r138i (Daniel: \"on mobile it is still small, it sits in the middle of the page\"): on phones the wall fills the\n   screen, edge to edge and the full height, with no bands while it holds; the script pans across the three founders */\n@media (max-width:640px){\n  .sw-frame{margin-inline:calc(-1 * var(--gutter));height:100svh;height:100dvh;border:0;border-radius:0}\n  .steam-wall.sw-live{height:calc(100svh + max(150svh,960px))}\n  .sw-live .sw-frame{top:0}\n  .sw-cap{bottom:max(14px,calc(env(safe-area-inset-bottom) + 10px))}\n}\n/* r138h: the camera with the \"Ne \u0219tim de la Steam\" sticker, next to the line it carries */\n.sb-pair{display:grid;grid-template-columns:minmax(0,max-content) minmax(0,clamp(220px,30%,400px));justify-content:center;gap:clamp(36px,8vw,140px);align-items:center}\n.sb-photo{margin:0;transform:rotate(1.5deg)}\n.sb-photo .frame{max-height:none}\n@media (max-width:640px){.sb-pair{grid-template-columns:minmax(0,1fr);justify-content:normal}.sb-photo{width:min(78%,340px);justify-self:end;margin-top:8px}}\n/* r138h: the Craft Coffee banner carries a picture of the shop's equipment */\n.xb-has-img{grid-template-columns:minmax(0,1fr) minmax(0,clamp(180px,34%,320px));align-items:center;gap:clamp(18px,3vw,40px)}\n.xb-txt{display:grid;gap:14px;justify-items:start}\n.xb-img{display:block;width:100%;justify-self:stretch;aspect-ratio:4/5;border:var(--line);border-radius:var(--radius-m);overflow:hidden;background:#d9d9d9}\n.xb-img img{width:100%;height:100%;object-fit:cover}\n@media (max-width:640px){.xb-has-img{grid-template-columns:minmax(0,1fr)}.xb-img{order:-1;aspect-ratio:1}.xb-img img{object-position:50% 85%}}\n</style>\n</head>\n<body>\n\n<main class=\"page\">\n\n  <!-- HERO \u2014 client name, tagline, industry, year, services, pillar pills, cover media (16:9, cropped) -->\n  <header class=\"card hero\">\n    <div class=\"inner\">\n      <div class=\"hero-top\">\n        <div class=\"hero-title\">\n          <p class=\"client-name\">Steam Coffee Shop</p>\n          <h1>Refreshing a pioneer brand for its community.</h1>\n        </div>\n        <div class=\"hero-info\">\n          <div class=\"client-row\">\n            <ul class=\"pills\" aria-label=\"Jump to a pillar\">\n              <li><a class=\"pill pill--brand\" href=\"#branding-design\">Branding &amp; Design</a></li>\n              <li><a class=\"pill pill--marketing\" href=\"#growth-content\">Growth &amp; Content</a></li>\n              <li><a class=\"pill pill--product\" href=\"#product-design\">Product Design</a></li>\n            </ul>\n          </div>\n          <ul class=\"info\">\n            <li>Coffee shop, HoReCa</li>\n            <li>2024 \u2013 2025</li>\n            <li>Brand strategy, brand facelift, content strategy, photo, video, social media, ad campaigns, merch, packaging</li>\n          </ul>\n        </div>\n      </div>\n      <div class=\"hero-media\">\n        <figure style=\"--r:1.778\" data-fixed-ratio>\n          <div class=\"frame\"><video src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-cover.webm\" poster=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-001.jpg\" autoplay muted loop playsinline aria-label=\"Guests at a Steam table, sunlight through the window\"></video></div>\n        </figure>\n      </div>\n    </div>\n  </header>\n\n  <!-- r138h: Steam's first year: the logo on the wall first, then the founders on the floor as the page scrolls -->\n  <div class=\"steam-wall\">\n    <figure class=\"sw-frame\">\n      <img src=\"m:steam/founders-wall\" width=\"1400\" height=\"1076\" alt=\"Steam's three founders sitting on the floor under the stencilled Steam Coffee Shop logo on a pale mint brick wall\" loading=\"lazy\" decoding=\"async\">\n      <figcaption class=\"sw-cap\">Steam's founders, in the shop's first year</figcaption>\n    </figure>\n  </div>\n\n  <!-- PROBLEM \u2014 section title, 2-3 paragraphs with <strong> accents, context images, caption, client quote.\n       Ends with the blue solution intro and the black card that jumps to the result. -->\n  <section class=\"card problem\" id=\"problem\">\n    <div class=\"inner\">\n      <div class=\"sec-head\">\n        <h2>A pioneer that started to blend in</h2>\n        <div class=\"prose\">\n          <p>Steam opened when specialty coffee in Bucharest was <strong>still a niche</strong>. A decade later the city had <strong>over a hundred third-wave shops</strong>, many borrowing the same minimal look Steam helped popularise.</p>\n          <p>The identity <strong>felt dated</strong> next to the newcomers, the social channels <strong>had gone quiet</strong>, and the brand's biggest asset, the people who gather there every day, was <strong>invisible online</strong>.</p>\n        </div>\n      </div>\n\n      <div class=\"problem-media stack\">\n        <div class=\"row\">\n          <figure class=\"full-sm\" style=\"--r:1.596\">\n            <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-001.jpg\" alt=\"A full Steam interior with guests at every table\" loading=\"lazy\"></div>\n          </figure>\n          <figure style=\"--r:.528\">\n            <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-28.jpg\" alt=\"Barista preparing coffee behind the bar\" loading=\"lazy\"></div>\n          </figure>\n          <figure style=\"--r:.528\">\n            <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-26.jpg\" alt=\"A guest with her dog at Steam\" loading=\"lazy\"></div>\n          </figure>\n        </div>\n        <figcaption>A full house on a weekday morning, with the team and the regulars who make it feel like home.</figcaption>\n      </div>\n\n      <div class=\"tee-solo\"><figure style=\"--r:1.027\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-5.jpg\" alt=\"A guest seen from behind wearing a green Steam T-shirt\" loading=\"lazy\"></div></figure></div>\n\n      <div class=\"handoff\">\n        <div class=\"solution-intro\" id=\"solution\">\n          <h2>Community, coffee and connection</h2>\n          <p>We started by listening. Surveys and interviews with guests pointed to what they value most about Steam: the feeling of belonging. That idea shaped the brand, the content, the merch and the website that follow.</p>\n        </div>\n        <a class=\"to-result\" href=\"#result\">\n          <b>The result</b>\n          <span>How the brand looks out in the city today</span>\n          <span class=\"to-result-go\">Drop for more <span class=\"go-icon\" aria-hidden=\"true\">\u2193</span></span>\n        </a>\n      </div>\n    </div>\n  </section>\n\n  <!-- CHAPTER \u2014 one per pillar the project actually has. Duplicate or delete whole <section> blocks.\n       chapter--brand / chapter--marketing / chapter--product / chapter--video -->\n  <section class=\"card chapter chapter--brand\" id=\"branding-design\" aria-label=\"Branding and Design\">\n    <div class=\"chapter-side\">\n      <div>\n        <span class=\"pill-title\"><span class=\"pill pill--brand\">Branding</span><span class=\"pill pill--accent\">&amp; Design</span></span>\n        <p class=\"chapter-text\">The steaming cup guests recognise stays at the centre, now surrounded by a bolder typographic voice, a palette pulled from the shop itself and a positioning line the team can say out loud.</p>\n        <ul class=\"deliverables\">\n          <li>Customer research</li>\n          <li>Brand strategy</li>\n          <li>Brand positioning</li>\n          <li>Logo refinement</li>\n          <li>Logo lockups</li>\n          <li>Typography system</li>\n          <li>Colour system</li>\n          <li>Brand values</li>\n          <li>Tone of voice</li>\n        </ul>\n      </div>\n    </div>\n    <div class=\"chapter-media\">\n      <figure style=\"--r:2.463\">\n        <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-25-1.jpg\" alt=\"Steam logo lockups: stacked, horizontal and symbol-only\" loading=\"lazy\"></div>\n        <figcaption>Logo lockups for every surface, from cups to storefront</figcaption>\n      </figure>\n      <div class=\"row\">\n        <figure class=\"full-sm\" style=\"--r:1.779\">\n          <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-23.jpg\" alt=\"Colour palette: black, blue, green and grey\" loading=\"lazy\"></div>\n          <figcaption>Black, blue and green, with grey as the quiet base</figcaption>\n        </figure>\n        <figure class=\"full-sm\" style=\"--r:1.777\">\n          <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-24.jpg\" alt=\"Type specimen of the N27 typeface in regular, italic and bold\" loading=\"lazy\"></div>\n          <figcaption>N27 as the single brand typeface</figcaption>\n        </figure>\n      </div>\n      <figure style=\"--r:1.777\">\n        <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-10.jpg\" alt=\"Green brand board reading Community, coffee and connection\" loading=\"lazy\"></div>\n        <figcaption>The brand idea in one line</figcaption>\n      </figure>\n      <figure style=\"--r:1.777\">\n        <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-11.jpg\" alt=\"Blue brand board listing the brand values\" loading=\"lazy\"></div>\n        <figcaption>Five values that guide how the team treats every guest</figcaption>\n      </figure>\n    </div>\n  </section>\n\n  <!-- CHAPTER: MARKETING -->\n  <section class=\"card chapter chapter--marketing\" id=\"growth-content\" aria-label=\"Growth and Content\">\n    <div class=\"chapter-side\">\n      <div>\n        <span class=\"pill-title\"><span class=\"pill pill--marketing\">Growth</span><span class=\"pill pill--accent\">&amp; Content</span></span>\n        <p class=\"chapter-text\">The content follows the people. We shot the shop across a full season and built a posting rhythm around real guests, the team and the neighbourhood.</p>\n        <ul class=\"deliverables\">\n          <li>Content strategy</li>\n          <li>Photo production</li>\n          <li>Video production</li>\n          <li>Social media management</li>\n          <li>Instagram stories</li>\n          <li>Posters</li>\n          <li>Ad campaigns</li>\n        </ul>\n      </div>\n    </div>\n    <div class=\"chapter-media\">\n      <div class=\"stack\">\n        <div class=\"row\">\n          <figure style=\"--r:.5625\">\n            <div class=\"frame\"><video src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-reel.webm\" autoplay muted loop playsinline preload=\"metadata\" aria-label=\"Social media reel filmed inside Steam\"></video></div>\n          </figure>\n          <figure style=\"--r:1.1\">\n            <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/steam-aa.jpg\" alt=\"Friends around a table inside Steam\" loading=\"lazy\"></div>\n          </figure>\n        </div>\n        <figcaption>Season reel and the moments it was built from</figcaption>\n      </div>\n\n      <div class=\"rail bleed\" data-rail>\n        <div class=\"rail-head\">\n          <h4><span class=\"pill\" style=\"--rot:-7deg\">Instagram</span><span class=\"pill\" style=\"--rot:9deg\">stories</span></h4>\n          <div class=\"rail-btns\"><button type=\"button\" data-prev aria-label=\"Previous stories\">\u2190</button><button type=\"button\" data-next aria-label=\"Next stories\">\u2192</button></div>\n        </div>\n        <div class=\"track\" tabindex=\"0\" aria-label=\"Instagram stories, scroll horizontally\">\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-11-1.jpg\" alt=\"Green illustrated story with the community brand line\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-7-1.jpg\" alt=\"Story with two friends laughing and the brand line\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-4-1.jpg\" alt=\"Happyness story with two guests\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-5-1.jpg\" alt=\"New drink announcement story with latte art\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-8-1.jpg\" alt=\"Trust your local dealer illustrated story\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-10-1.jpg\" alt=\"Blue illustrated story: Let's coffee some more\" loading=\"lazy\"></div></figure>\n        </div>\n      </div>\n\n      <div class=\"rail bleed\" data-rail>\n        <div class=\"rail-head\">\n          <h4><span class=\"pill\" style=\"--rot:-10deg\">In-store</span><span class=\"pill\" style=\"--rot:4deg\">posters</span></h4>\n          <div class=\"rail-btns\"><button type=\"button\" data-prev aria-label=\"Previous posters\">\u2190</button><button type=\"button\" data-next aria-label=\"Next posters\">\u2192</button></div>\n        </div>\n        <div class=\"track\" style=\"gap:10px\" tabindex=\"0\" aria-label=\"In-store posters, scroll horizontally\">\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-12.jpg\" alt=\"Poster: Community, coffee and connection\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-13.jpg\" alt=\"Poster: Trust your local dealer\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.288\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-2-1.jpg\" alt=\"Tall vertical banner with the brand line\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-14.jpg\" alt=\"Poster with opening hours\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-15.jpg\" alt=\"Poster: Happyness is part of our daily coffee routine\" loading=\"lazy\"></div></figure>\n        </div>\n      </div>\n\n      <div class=\"stack\">\n        <div class=\"rail-head\"><h4><span class=\"pill\" style=\"--rot:-6deg\">Photography</span></h4></div>\n        <figure style=\"--r:2.426\">\n          <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-4.jpg\" alt=\"Guests seen through the shop window\" loading=\"lazy\"></div>\n        </figure>\n        <div class=\"row\">\n          <figure style=\"--r:1.027\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-8.jpg\" alt=\"A guest holding a cup at the counter\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:1.173\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-1.jpg\" alt=\"Busy interior of Steam\" loading=\"lazy\"></div></figure>\n        </div>\n        <div class=\"row\">\n          <figure style=\"--r:1.38\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-1-1.jpg\" alt=\"Barista working at the Steam bar\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.528\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-27.jpg\" alt=\"Two guests talking over coffee\" loading=\"lazy\"></div></figure>\n        </div>\n      </div>\n    </div>\n  </section>\n\n  <!-- CHAPTER: PRODUCT -->\n  <section class=\"card chapter chapter--product\" id=\"product-design\" aria-label=\"Product Design\">\n    <div class=\"chapter-side\">\n      <div>\n        <span class=\"pill-title\"><span class=\"pill pill--product\">Product</span><span class=\"pill pill--accent\">Design</span></span>\n        <p class=\"chapter-text\">A family of illustrated characters that turned the brand line into T-shirts, cups and a limited 10th anniversary cup.</p>\n        <ul class=\"deliverables\">\n          <li>Illustration system</li>\n          <li>T-shirt collection</li>\n          <li>Cup design</li>\n          <li>Packaging design</li>\n          <li>10-year anniversary cup</li>\n        </ul>\n      </div>\n    </div>\n    <div class=\"chapter-media\">\n      <a class=\"xbanner xb-has-img\" href=\"/work/craft-coffee/\">\n        <span class=\"xb-txt\">\n          <span class=\"pill pill--accent\">Same team</span>\n          <span class=\"xb-t\">The equipment shop has a story of its own.</span>\n          <span class=\"xb-p\">Craft Coffee, the coffee equipment business run by the same team: brand and webshop.</span>\n          <span class=\"xb-go\">See the Craft Coffee case <span aria-hidden=\"true\">\u2192</span></span>\n        </span>\n        <span class=\"xb-img\"><img src=\"m:steam/craft-micra\" width=\"800\" height=\"1000\" alt=\"A La Marzocco Linea Micra espresso machine and a grinder on a plinth with a Craft Coffee sticker\" loading=\"lazy\"></span>\n      </a>\n\n      <div class=\"stack\">\n        <div class=\"rail-head\"><h4><span class=\"pill\" style=\"--rot:-5deg\">T-shirt</span><span class=\"pill\" style=\"--rot:11deg\">collection</span></h4></div>\n        <div class=\"row\">\n          <figure style=\"--r:1.203\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Tricouri-Steam-Cromaticstudios-4.jpg\" alt=\"White T-shirts with an illustrated character\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:1.203\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Tricouri-Steam-Cromaticstudios-3.jpg\" alt=\"White T-shirts with illustrated guests at a table\" loading=\"lazy\"></div></figure>\n        </div>\n        <div class=\"row\">\n          <figure style=\"--r:1.203\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Tricouri-Steam-Cromaticstudios-2.jpg\" alt=\"White T-shirts with a cyclist illustration\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:1.203\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Tricouri-Steam-Cromaticstudios-1.jpg\" alt=\"White T-shirts with a group illustration\" loading=\"lazy\"></div></figure>\n        </div>\n        <figcaption>The T-shirt collection, one character per design</figcaption>\n      </div>\n\n      <div class=\"stack\">\n        <div class=\"rail-head\"><h4><span class=\"pill\" style=\"--rot:-12deg\">Prints</span><span class=\"pill\" style=\"--rot:6deg\">packaging</span></h4></div>\n        <div class=\"row\">\n          <figure style=\"--r:1.027\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-3.jpg\" alt=\"Back print of a white Steam T-shirt\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:1.173\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios.jpg\" alt=\"Steam takeaway cups on a sunny table\" loading=\"lazy\"></div></figure>\n        </div>\n        <figcaption>Back print and takeaway cups</figcaption>\n      </div>\n    </div>\n  </section>\n\n  <!-- RESULT \u2014 the closing photos (r138h: no figures; r138i: no claims either, the section opens on the photos) -->\n  <section class=\"card result\" id=\"result\">\n    <div class=\"inner\">\n      <div class=\"stack result-showcase\">\n        <figure style=\"--r:1.754\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-003.jpg\" alt=\"A crowd outside Steam on a sunny day\" loading=\"lazy\"></div></figure>\n        <div class=\"steam-outro sb-pair\"><p class=\"steam-big\" lang=\"ro\"><span class=\"sb-l\">Ne \u0219tim</span> <span class=\"sb-l\"><em>de la</em> Steam</span></p><figure class=\"sb-photo\" style=\"--r:.8\"><div class=\"frame\"><img src=\"m:steam/ne-stim-camera\" width=\"864\" height=\"1080\" alt=\"A Ricoh film camera on its strap with the Ne \u0219tim de la Steam sticker on its body\" loading=\"lazy\"></div></figure></div>\n        <figure style=\"--r:1.566\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-002.jpg\" alt=\"Guests in green Steam T-shirts drinking coffee outside\" loading=\"lazy\"></div></figure>\n      </div>\n\n    </div>\n  </section>\n\n  <!-- RELATED \u2014 three projects: cover media, name, tagline, pillar pills -->\n  <section class=\"card related\" aria-labelledby=\"related-title\">\n    <div class=\"inner\">\n      <div class=\"rail bleed\" data-rail>\n        <div class=\"rail-head\">\n          <h2 id=\"related-title\">Related projects</h2>\n          <div class=\"rail-btns\"><button type=\"button\" data-prev aria-label=\"Previous projects\">\u2190</button><button type=\"button\" data-next aria-label=\"Next projects\">\u2192</button></div>\n        </div>\n        <div class=\"track\" tabindex=\"0\" aria-label=\"Related projects, scroll horizontally\">\n          <article class=\"proj\">\n            <figure style=\"--r:1.778\" data-fixed-ratio><div class=\"frame\"><video src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/elithia-homepage.webm\" autoplay muted loop playsinline preload=\"metadata\" aria-hidden=\"true\"></video></div></figure>\n            <h3>Elithia</h3>\n            <p>Making motherhood a soothing, joyful experience.</p>\n            <ul class=\"pills\"><li><span class=\"pill pill--product\">Product Design</span></li><li><span class=\"pill pill--brand\">Branding &amp; Design</span></li><li><span class=\"pill pill--marketing\">Growth &amp; Content</span></li></ul>\n            <a class=\"cover\" href=\"/work/elithia/\" aria-label=\"Elithia case study\"></a>\n          </article>\n          <article class=\"proj\">\n            <figure style=\"--r:1.778\" data-fixed-ratio><div class=\"frame\"><video src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Help4brain.webm\" autoplay muted loop playsinline preload=\"metadata\" aria-hidden=\"true\"></video></div></figure>\n            <h3>Help4Brain</h3>\n            <p>Enabling a pharma challenger to become a leader.</p>\n            <ul class=\"pills\"><li><span class=\"pill pill--product\">Product Design</span></li><li><span class=\"pill pill--marketing\">Growth &amp; Content</span></li></ul>\n            <a class=\"cover\" href=\"/work/help-4-brain/\" aria-label=\"Help4Brain case study\"></a>\n          </article>\n          <article class=\"proj\">\n            <figure style=\"--r:1.778\" data-fixed-ratio><div class=\"frame\"><video src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Routin-Cover.webm\" autoplay muted loop playsinline preload=\"metadata\" aria-hidden=\"true\"></video></div></figure>\n            <h3>Routine Paris</h3>\n            <p>Making in Romania a brand that can win in Paris.</p>\n            <ul class=\"pills\"><li><span class=\"pill pill--product\">Product Design</span></li><li><span class=\"pill pill--marketing\">Growth &amp; Content</span></li></ul>\n            <a class=\"cover\" href=\"/work/routine-paris/\" aria-label=\"Routine Paris case study\"></a>\n          </article>\n        </div>\n      </div>\n    </div>\n  </section>\n\n  <!-- CTA \u2014 same wording on every project -->\n  <section class=\"card cta\">\n    <div class=\"inner\">\n      <h2>What is your winning soundtrack?</h2>\n      <a class=\"btn\" href=\"/site/#contact\">We can bring the mixtape</a>\n    </div>\n  </section>\n\n</main>\n\n<script>\n// carousels: prev/next buttons\ndocument.querySelectorAll('[data-rail]').forEach(rail=>{\n  const track=rail.querySelector('.track');\n  const prev=rail.querySelector('[data-prev]');\n  const next=rail.querySelector('[data-next]');\n  if(!track||!prev||!next) return;\n  const step=()=>{const item=track.firstElementChild;const gap=parseFloat(getComputedStyle(track).columnGap)||0;return item?item.getBoundingClientRect().width+gap:track.clientWidth};\n  const update=()=>{\n    const max=track.scrollWidth-track.clientWidth-2;\n    prev.disabled=track.scrollLeft<=2;\n    next.disabled=track.scrollLeft>=max;\n    rail.querySelector('.rail-btns').style.visibility=max<=0?'hidden':'visible';\n  };\n  let down=false,startX=0,startLeft=0,moved=false,target=0,raf=0;\n  const follow=()=>{raf=0;track.scrollLeft=target;};\n  track.addEventListener('pointerdown',e=>{\n    if(e.pointerType!=='mouse'||e.button!==0||track.scrollWidth<=track.clientWidth+2)return;\n    down=true;moved=false;startX=e.clientX;startLeft=track.scrollLeft;target=startLeft;\n    track.classList.add('is-dragging');\n    track.setPointerCapture(e.pointerId);\n  });\n  track.addEventListener('pointermove',e=>{\n    if(!down)return;\n    e.preventDefault();\n    const dx=e.clientX-startX;\n    if(Math.abs(dx)>3)moved=true;\n    target=startLeft-dx;\n    if(!raf)raf=requestAnimationFrame(follow);\n  });\n  const endDrag=e=>{\n    if(!down)return;\n    down=false;\n    if(raf){cancelAnimationFrame(raf);raf=0;track.scrollLeft=target;}\n    try{track.releasePointerCapture(e.pointerId)}catch(err){}\n    const x=track.scrollLeft;\n    track.classList.remove('is-dragging');\n    track.scrollLeft=x;\n  };\n  track.addEventListener('pointerup',endDrag);\n  track.addEventListener('pointercancel',endDrag);\n  track.addEventListener('dragstart',e=>e.preventDefault());\n  track.addEventListener('click',e=>{if(moved){e.preventDefault();e.stopPropagation();moved=false;}},true);\n  prev.addEventListener('click',()=>track.scrollBy({left:-step(),behavior:'smooth'}));\n  next.addEventListener('click',()=>track.scrollBy({left:step(),behavior:'smooth'}));\n  // r137c: as on the other case pages, a vertical wheel or trackpad gesture over a rail scrolls it sideways until it\n  // reaches an end (then the page scrolls on); the arrow keys step it when it has focus\n  track._wheel=1;\n  track.addEventListener('wheel',e=>{\n    if(e.ctrlKey||Math.abs(e.deltaX)>=Math.abs(e.deltaY))return;\n    const max=track.scrollWidth-track.clientWidth;\n    if(max<=1)return;\n    const d=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?track.clientWidth:1);\n    if((d>0&&track.scrollLeft>=max-1)||(d<0&&track.scrollLeft<=1))return;\n    e.preventDefault();\n    track.style.scrollSnapType='none';clearTimeout(track._ws);track._ws=setTimeout(()=>{track.style.scrollSnapType=''},220);\n    track.scrollLeft=Math.max(0,Math.min(max,track.scrollLeft+d));\n  },{passive:false});\n  track.addEventListener('keydown',e=>{\n    if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;\n    e.preventDefault();\n    track.scrollBy({left:(e.key==='ArrowRight'?1:-1)*step(),behavior:'smooth'});\n  });\n  track.addEventListener('scroll',update,{passive:true});\n  addEventListener('resize',update);\n  addEventListener('load',update);\n  update();\n});\n\n// videos: use the file's real ratio (no cropping), play only when visible, respect reduced motion\nconst reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;\nconst vids=document.querySelectorAll('video');\nvids.forEach(v=>{\n  const fit=()=>{if(v.videoWidth&&v.videoHeight){const fig=v.closest('figure');if(fig&&!fig.hasAttribute('data-fixed-ratio'))fig.style.setProperty('--r',(v.videoWidth/v.videoHeight).toFixed(4));}};\n  if(v.readyState>=1)fit();else v.addEventListener('loadedmetadata',fit,{once:true});\n});\nif(reduce){\n  vids.forEach(v=>{v.removeAttribute('autoplay');v.pause();v.controls=true;});\n}else if('IntersectionObserver' in window){\n  const io=new IntersectionObserver(entries=>entries.forEach(e=>{\n    if(e.isIntersecting){e.target.play().catch(()=>{});}else{e.target.pause();}\n  }),{threshold:.15});\n  vids.forEach(v=>io.observe(v));\n}\n\n// website mockups: scale the live site to the device width\nconst screens=document.querySelectorAll('[data-screen]');\nconst scale=s=>{\n  const f=s.querySelector('iframe');\n  const k=s.clientWidth/Number(s.dataset.screen);\n  if(!k) return;\n  f.style.width=s.dataset.screen+'px';\n  f.style.height=Math.ceil(s.clientHeight/k)+'px';\n  f.style.transform=`scale(${k})`;\n};\nif('ResizeObserver' in window){const ro=new ResizeObserver(es=>es.forEach(e=>scale(e.target)));screens.forEach(s=>ro.observe(s));}\nelse{screens.forEach(scale);addEventListener('resize',()=>screens.forEach(scale));}\n\n// pillar titles: the two pills drop in once, when the chapter first shows\nif(!matchMedia('(prefers-reduced-motion: reduce)').matches){\n  const titles=[...document.querySelectorAll('.chapter-side .pill-title')];\n  titles.forEach(t=>t.classList.add('drop-ready'));\n  const dropIo=new IntersectionObserver(es=>es.forEach(e=>{\n    if(e.isIntersecting){e.target.classList.add('is-dropped');dropIo.unobserve(e.target);}\n  }),{threshold:.6});\n  titles.forEach(t=>dropIo.observe(t));\n}\n\n// quote: reveal one line at a time\ndocument.querySelectorAll('[data-lines]').forEach(el=>{\n  const text=el.textContent.trim();\n  const build=()=>{\n    el.innerHTML=text.split(/\\s+/).map(w=>`<span class=\"w\">${w}</span>`).join(' ');\n    const words=[...el.querySelectorAll('.w')];\n    const lines=[];let top=null;\n    words.forEach(w=>{const t=Math.round(w.offsetTop);if(top===null||t!==top){lines.push([]);top=t;}lines[lines.length-1].push(w.textContent);});\n    el.innerHTML=lines.map((l,i)=>`<span class=\"line\" style=\"--i:${i}\"><span>${l.join(' ')}</span></span>`).join('');\n    const holder=el.closest('blockquote')||el;\n    holder.style.setProperty('--lines',lines.length);\n  };\n  build();\n  // r137c: the lines are measured again once the web font is in (measured on the fallback they broke one word early)\n  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(build);\n  let t;addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(()=>{(el.closest('blockquote')||el).classList.remove('is-in');build();io2.observe(el);},200);});\n});\nconst io2=new IntersectionObserver(es=>es.forEach(e=>{\n  if(e.isIntersecting){(e.target.closest('blockquote')||e.target).classList.add('is-in');io2.unobserve(e.target);}\n}),{threshold:.4});\ndocument.querySelectorAll('[data-lines]').forEach(el=>io2.observe(el));\n\n// r137c: \"Ne \u0219tim de la Steam\": the lines rise in once (r138d: at a set size, no longer fitted to the width)\n(function(){\n  const big=document.querySelector('.steam-big');\n  if(!big)return;\n  if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&'IntersectionObserver' in window){\n    big.classList.add('sb-ready');\n    const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){big.classList.add('sb-in');io.disconnect();}}),{threshold:.35});\n    io.observe(big);\n  }\n})();\n\n// r138h: Steam's first year: the frame holds still while the page scrolls past it, the photo starts close on the logo\n// stencilled on the wall and zooms out and down to the founders on the floor (transform only, one frame per scroll)\n(function(){\n  const box=document.querySelector('.steam-wall'),fr=box&&box.querySelector('.sw-frame'),img=fr&&fr.querySelector('img');\n  if(!img||matchMedia('(prefers-reduced-motion: reduce)').matches)return;\n  const NW=1400,NH=1076,LX=735,LY=235; // the photo's size and the logo's centre in it\n  box.classList.add('sw-live');\n  let W=0,H=0,b=1,s0=1,top=0,raf=0,tall=false;\n  const clamp=(v,a,z)=>Math.min(z,Math.max(a,v));\n  const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;\n  const size=()=>{W=fr.clientWidth;H=fr.clientHeight;b=Math.max(W/NW,H/NH);tall=W/H<.8;s0=Math.max(1.25,H/(b*(tall?560:500)));top=parseFloat(getComputedStyle(fr).top)||0;img.style.width=NW*b+'px';img.style.height=NH*b+'px';};\n  const draw=()=>{\n    raf=0;\n    const r=box.getBoundingClientRect();\n    if(r.bottom<-50||r.top>innerHeight+50)return;\n    const p=clamp((top-r.top)/Math.max(1,r.height-H),0,1),e=ease(clamp((p-.06)/.8,0,1));\n    const vEnd=NH-H/(2*b);let s,u,v;\n    if(tall){\n      // r138i: a phone shows a narrow slice of the photo: down from the logo to the founder on the left, then across to the right\n      const a=clamp(e/.45,0,1),c=clamp((e-.45)/.55,0,1);\n      s=Math.pow(s0,1-a);u=LX+(430-LX)*a+600*c;v=LY+(vEnd-LY)*a;\n    }else{s=Math.pow(s0,1-e);u=LX+(NW/2-LX)*e;v=LY+(vEnd-LY)*e;}\n    const tx=clamp(W/2-u*b*s,W-NW*b*s,0),ty=clamp(H/2-v*b*s,H-NH*b*s,0);\n    img.style.transform='translate3d('+tx.toFixed(1)+'px,'+ty.toFixed(1)+'px,0) scale('+s.toFixed(4)+')';\n    fr.style.setProperty('--sw-cap',clamp((e-.72)/.25,0,1).toFixed(3));\n  };\n  const req=()=>{if(!raf)raf=requestAnimationFrame(draw);};\n  size();draw();\n  addEventListener('scroll',req,{passive:true});\n  addEventListener('resize',()=>{size();draw();});\n  if('ResizeObserver' in window)new ResizeObserver(()=>{size();draw();}).observe(fr);\n})();\n\n// mobile: sections that end with text get double bottom padding\nconst small=matchMedia('(max-width: 640px)');\nconst tablet=matchMedia('(min-width: 641px) and (max-width: 1024px)');\nconst TEXT=new Set(['P','FIGCAPTION','LI','CITE','BLOCKQUOTE','H1','H2','H3','H4','SPAN']);\nconst isHidden=el=>getComputedStyle(el).display==='none';\nconst lastVisible=el=>{let c=el.lastElementChild;while(c&&isHidden(c))c=c.previousElementSibling;return c;};\nconst endsWithText=box=>{\n  let el=lastVisible(box);\n  while(el&&lastVisible(el)&&!el.matches('.btn,.pill,.frame,.to-result,.solution-intro'))el=lastVisible(el);\n  return !!el&&TEXT.has(el.tagName)&&!el.closest('.btn,.pill,.frame,.to-result,.solution-intro');\n};\nconst pads=[...document.querySelectorAll('.card')].map(c=>c.lastElementChild).filter(Boolean);\nconst applyPad=()=>pads.forEach(b=>{\n  b.style.paddingBottom='';\n  if(!endsWithText(b))return;\n  const pb=parseFloat(getComputedStyle(b).paddingBottom);\n  if(small.matches)b.style.paddingBottom=(pb*2)+'px';\n  else if(tablet.matches)b.style.paddingBottom=(pb+45)+'px';\n});\nsmall.addEventListener('change',applyPad);\ntablet.addEventListener('change',applyPad);\naddEventListener('load',applyPad);\napplyPad();\n<\\/script>\n</body>\n</html>\n";
+  var steamCaseHtml = "<!DOCTYPE html>\n<html lang=\"en\"><!-- lang=\"ro\" for the Romanian version -->\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n<!-- <meta name=\"robots\" content=\"noindex, nofollow\"> uncomment for preview copies uploaded to the site -->\n<title>Steam \u2014 Cromatic Studios</title>\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n<link href=\"https://fonts.googleapis.com/css2?family=Darker+Grotesque:wght@400;500;600;700;800;900&display=swap\" rel=\"stylesheet\">\n<style>\n:root{\n  --ink:#121212;\n  --paper:#F1F1F1;\n  --white:#FFFFFF;\n  --yellow:#FFD147;\n  --cream:#FFEDB5;\n  --blue:#519EF5;\n  --blue-soft:#DCEBFD;\n  --green:#2ECB42;\n  --green-soft:#D8F5DC;\n  --purple:#B49BE0;\n  --purple-soft:#EAE2F8;\n  --red:#F0544C;\n  --red-soft:#FCDEDC;\n  --orange:#F58D42;\n  --orange-soft:#FCE3CF;\n  --muted:#5a5a5a;\n\n  --radius-l:36px;\n  --radius-m:18px;\n  --line:1px solid var(--ink);\n  --gutter:clamp(10px,1.2vw,16px);\n  --pad:clamp(22px,4vw,64px);\n  --media-pad:var(--gutter);\n  --font:\"Darker Grotesque\",system-ui,-apple-system,\"Segoe UI\",Roboto,Arial,sans-serif;\n\n  /* type scale (~1.333), 375px -> 1440px */\n  --fs-display:clamp(3rem,1.591rem + 6.01vw,7rem);\n  --fs-hero:clamp(2.86rem,1.761rem + 4.687vw,5.98rem);\n  --fs-h2:clamp(2.5rem,1.708rem + 3.38vw,4.75rem);\n  --fs-h3:clamp(1.875rem,1.479rem + 1.69vw,3rem);\n  --fs-lead:clamp(1.375rem,1.199rem + .751vw,1.875rem);\n  --fs-body:clamp(1.125rem,1.059rem + .282vw,1.3125rem);\n  --fs-ui:clamp(1.0625rem,1.041rem + .094vw,1.125rem);\n  --fs-small:clamp(.9375rem,.916rem + .094vw,1rem);\n  /* line heights: standard values reduced by 15% */\n  --lh-display:.89;\n  --lh-hero:.9;\n  --lh-h2:.92;\n  --lh-h3:.95;\n  --lh-lead:1.1;\n  --lh-body:1.2;\n  --lh-ui:1.1;\n  --lh-small:1.15;\n  --rail-h:clamp(300px,34vw,520px);\n  --caption-gap:8px;\n  --max-h:min(78svh,760px);\n}\n*,*::before,*::after{box-sizing:border-box}\nhtml{scroll-behavior:smooth}\nbody{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:var(--fs-body);font-weight:600;line-height:var(--lh-body);-webkit-font-smoothing:antialiased}\nimg,video,iframe{display:block;max-width:100%}\na{color:inherit}\nh1,h2,h3,p,figure,ul,blockquote{margin:0}\nh1,h2,h3{font-weight:900;letter-spacing:-.01em}\n:focus-visible{outline:3px solid var(--blue);outline-offset:3px;border-radius:6px}\n.page{padding:var(--gutter);display:grid;grid-template-columns:minmax(0,1fr);gap:var(--gutter)}\n.card{min-width:0;border:var(--line);border-radius:var(--radius-l);overflow:hidden}\n.inner{padding:var(--pad)}\n.prose{max-width:34em}\n.prose p+p{margin-top:.8em}\n.prose strong{font-weight:900}\n\n/* pills */\n.pills{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0}\n.pill{display:inline-block;padding:6px 20px 8px;border:var(--line);border-radius:999px;font-weight:700;font-size:var(--fs-ui);line-height:var(--lh-ui);text-decoration:none;transition:background .2s}\n.pill--brand{background:var(--green)}\n.pill--marketing{background:var(--red)}\n.pill--product{background:var(--purple)}\n.pill--accent{background:var(--yellow)}\n.pill--video{background:var(--orange)}\na.pill:hover{background:var(--white)}\n\n/* media: every frame keeps the file's own ratio (--r) */\n.frame{position:relative;width:100%;aspect-ratio:var(--r,1.5);max-height:var(--max-h);border-radius:var(--radius-m);overflow:hidden;background:#d9d9d9}\n.frame img,.frame video{width:100%;height:100%;object-fit:cover}\nfigcaption{margin-top:var(--caption-gap);font-size:var(--fs-small);font-weight:600;color:var(--muted);line-height:var(--lh-small)}\n.stack{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--gutter)}\n.stack>figcaption{margin-top:calc(var(--caption-gap) - var(--gutter))}\n.chapter-media>figcaption{margin-top:calc(var(--caption-gap) - clamp(28px,3vw,48px))}\n/* justified rows: widths follow each ratio, so heights match with zero cropping */\n.row{display:flex;flex-wrap:wrap;gap:var(--gutter)}\n.row>figure{flex:var(--r) 1 0;min-width:0}\n\n/* carousels: fixed height, width from ratio */\n.rail-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:12px}\n.rail-head h4{margin:0;display:flex;flex-wrap:wrap;gap:0;padding-top:5%}\n.rail-head h4 .pill{background:var(--white);font-size:var(--fs-ui);line-height:var(--lh-ui);font-weight:800;position:relative;transform:rotate(var(--rot,-9deg))}\n.rail-head h4 .pill:nth-child(even){margin-left:-14px;z-index:1;transform:rotate(var(--rot,7deg))}\n@media (min-width:1025px){\n  .chapter-media>:first-child .rail-head h4,.chapter-media>.rail-head:first-child h4{padding-top:2%}\n}\n.rail-btns{display:flex;gap:6px}\n.rail-btns button{width:46px;height:46px;border-radius:50%;border:var(--line);background:var(--white);font:inherit;font-size:calc(var(--fs-ui) * 1.63);line-height:1;cursor:pointer;display:grid;place-items:center;padding:0 0 2px}\n.rail-btns button:hover{background:var(--yellow)}\n.rail-btns button:disabled{opacity:.3;cursor:default;background:var(--white)}\n.track{display:flex;gap:var(--gutter);overflow-x:auto;scroll-behavior:auto;scroll-snap-type:x proximity;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}\n.track::-webkit-scrollbar{display:none}\n.track>*{flex:0 0 auto;scroll-snap-align:start}\n.track>figure{width:calc(var(--rail-h) * var(--r))}\n.track>figure .frame{width:100%;height:var(--rail-h);max-height:none}\n.track img{-webkit-user-drag:none;user-select:none}\n.track.is-dragging{scroll-snap-type:none;cursor:grabbing;user-select:none}\n.track.is-dragging *{pointer-events:none}\n@media (hover:hover) and (pointer:fine){.track{cursor:grab}}\n\n/* hero */\n.hero{background:var(--white)}\n.hero-top{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(300px,1fr);gap:clamp(24px,4vw,72px);align-items:start}\n.hero h1{font-size:var(--fs-hero);line-height:var(--lh-hero)}\n.hero-info{display:grid;gap:clamp(18px,2vw,28px);padding-top:15px}\n.hero-title{display:grid;gap:clamp(10px,1vw,16px)}\n.client-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px}\n.client-row .pill{font-weight:800;opacity:0;animation:pill-drop .95s cubic-bezier(.45,0,.9,.5) both}\n.client-row li:nth-child(1) .pill{animation-delay:1.1s}\n.client-row li:nth-child(2) .pill{animation-delay:1.28s}\n.client-row li:nth-child(3) .pill{animation-delay:1.46s}\n@keyframes pill-drop{\n  0%{opacity:0;transform:translateY(-190px)}\n  10%{opacity:1}\n  52%{transform:translateY(0);animation-timing-function:cubic-bezier(.2,.6,.4,1)}\n  70%{transform:translateY(-22px);animation-timing-function:cubic-bezier(.5,0,.9,.5)}\n  85%{transform:translateY(0);animation-timing-function:cubic-bezier(.2,.6,.4,1)}\n  93%{transform:translateY(-7px)}\n  100%{opacity:1;transform:translateY(0)}\n}\n.client-name{font-size:var(--fs-lead);font-weight:900;line-height:var(--lh-lead)}\n.info{list-style:none;padding:0;display:grid;gap:14px}\n.info li:first-child{font-weight:800}\n.hero-media{margin-top:clamp(28px,4vw,56px);animation:hero-in .85s ease-in .2s both}\n@keyframes hero-in{0%{opacity:0;transform:scale(.5)}28%{opacity:1;transform:scale(.5)}100%{opacity:1;transform:scale(1)}}\n.hero-media .frame{border:var(--line);border-radius:24px}\n\n/* section heads */\n.sec-head>.prose{padding-top:15px}\n.sec-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,4vw,72px);align-items:start}\n.sec-head h2{font-size:var(--fs-h2);line-height:var(--lh-h2)}\n\n/* problem */\n.problem{background:var(--white)}\n.problem-media{margin-top:clamp(32px,5vw,72px)}\n.quote{margin-top:clamp(32px,5vw,72px);padding:6.53% 19%;display:block}\n.quote blockquote p{font-size:var(--fs-h3);font-weight:800;line-height:var(--lh-h3);color:var(--blue)}\n.quote cite,.result-quote cite{display:block;margin-top:16px;font-size:var(--fs-small);line-height:var(--lh-small);font-weight:800;color:var(--ink);font-style:normal;opacity:0;transition:opacity .7s ease .1s}\n.line{display:block;overflow:hidden;padding-bottom:.22em;margin-bottom:-.22em}\n.line>span{display:block;transform:translateY(110%);opacity:0}\n.is-in .line>span{transform:none;opacity:1;transition:transform var(--line-dur,.85s) cubic-bezier(.2,.75,.2,1),opacity var(--line-dur,.85s) ease;transition-delay:calc(var(--i) * var(--line-step,.09s))}\n.is-in cite{opacity:1;transition-delay:calc(var(--lines,1) * var(--line-step,.09s) + .35s)}\n\n.handoff{margin-top:clamp(40px,6vw,96px);display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--gutter)}\n.solution-intro{background:var(--blue);border:var(--line);border-radius:var(--radius-m);padding:clamp(24px,3.5vw,56px);display:grid;gap:clamp(18px,2vw,28px);align-content:start}\n.solution-intro h2{font-size:var(--fs-h2);line-height:var(--lh-h2)}\n.solution-intro p{max-width:none}\n.to-result{display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:clamp(24px,3vw,40px);background:var(--ink);color:var(--white);border-radius:var(--radius-m);text-decoration:none;transition:transform .2s}\n.to-result b{font-size:calc(var(--fs-lead) * 1.1);font-weight:900;line-height:var(--lh-lead);color:var(--yellow)}\n.go-icon{font-size:1.63em;line-height:1;display:block;transform:translateY(-.02em)}\n.to-result-go{align-self:flex-start;display:inline-flex;align-items:center;gap:10px;margin-top:24px;padding:11px 24px 12px;border-radius:999px;border:1px solid var(--yellow);background:var(--yellow);color:var(--ink);font-weight:800;font-size:var(--fs-ui);line-height:var(--lh-ui)}\n.to-result:hover .to-result-go{background:var(--white);border-color:var(--white)}\n.to-result .to-result-go:hover,.to-result:hover .to-result-go:hover{background:var(--green);border-color:var(--green)}\n.to-result:hover{transform:translateY(-3px)}\n\n/* chapters */\n.chapter{background:var(--white);display:grid;grid-template-columns:minmax(200px,3.2fr) minmax(0,8.8fr)}\n.chapter-side{padding:clamp(22px,2.6vw,44px);border-right:var(--line)}\n.chapter-side>div{display:grid;gap:clamp(18px,2vw,28px)}\n.pill-title{display:flex;flex-direction:column;align-items:flex-start}\n.pill-title{padding-block:6px}\n.pill-title .pill{font-size:var(--fs-lead);line-height:var(--lh-lead);font-weight:900;-webkit-text-stroke:.7px var(--ink);padding:10px 22px 13px;position:relative;transform:rotate(-2.5deg);transform-origin:left center}\n.pill-title .pill:last-child{margin-left:16px;margin-top:-6px;z-index:1;transform:rotate(1.5deg)}\n/* the two title pills drop into place when the chapter first appears */\n.pill-title.drop-ready .pill{opacity:0}\n.pill-title.is-dropped .pill:first-child{animation:drop-a .95s cubic-bezier(.45,0,.9,.5) both}\n.pill-title.is-dropped .pill:last-child{animation:drop-b .95s cubic-bezier(.45,0,.9,.5) .18s both}\n@keyframes drop-a{\n  0%{opacity:0;transform:translateY(-190px) rotate(0deg)}\n  10%{opacity:1}\n  52%{transform:translateY(0) rotate(-2.5deg);animation-timing-function:cubic-bezier(.2,.6,.4,1)}\n  70%{transform:translateY(-22px) rotate(-1deg);animation-timing-function:cubic-bezier(.5,0,.9,.5)}\n  85%{transform:translateY(0) rotate(-2.5deg);animation-timing-function:cubic-bezier(.2,.6,.4,1)}\n  93%{transform:translateY(-7px) rotate(-2deg)}\n  100%{opacity:1;transform:translateY(0) rotate(-2.5deg)}\n}\n@keyframes drop-b{\n  0%{opacity:0;transform:translateY(-190px) rotate(0deg)}\n  10%{opacity:1}\n  52%{transform:translateY(0) rotate(1.5deg);animation-timing-function:cubic-bezier(.2,.6,.4,1)}\n  70%{transform:translateY(-20px) rotate(3deg);animation-timing-function:cubic-bezier(.5,0,.9,.5)}\n  85%{transform:translateY(0) rotate(1.5deg);animation-timing-function:cubic-bezier(.2,.6,.4,1)}\n  93%{transform:translateY(-6px) rotate(2deg)}\n  100%{opacity:1;transform:translateY(0) rotate(1.5deg)}\n}\n.chapter-text{font-size:var(--fs-body);font-weight:700;line-height:var(--lh-body)}\n.chapter--brand .chapter-side{background:var(--green-soft)}\n.chapter--marketing .chapter-side{background:var(--red-soft)}\n.chapter--product .chapter-side{background:var(--purple-soft)}\n.chapter--video .chapter-side{background:var(--orange-soft)}\n.deliverables{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px}\n.deliverables li{padding:5px 16px 7px;border:var(--line);border-radius:999px;background:var(--white);font-size:var(--fs-ui);line-height:var(--lh-ui);font-weight:700}\n.chapter-media{padding:var(--media-pad);display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(28px,3vw,48px);--stack-gap:clamp(28px,3vw,48px);align-content:start;min-width:0}\n.bleed{margin-inline:calc(-1 * var(--media-pad))}\n.bleed .rail-head{padding-inline:var(--media-pad)}\n.bleed .track{padding-inline:var(--media-pad);scroll-padding-inline:var(--media-pad)}\n\n/* website mockups */\n.site-row{align-items:flex-start}\n.device{border:var(--line);border-radius:var(--radius-m);overflow:hidden;background:var(--white);box-shadow:0 0 0 rgba(18,18,18,0);transition:border-color .45s ease,transform .35s ease,box-shadow .35s ease}\n.device:hover{border-color:var(--yellow);transform:translateY(-10px);box-shadow:0 24px 48px rgba(18,18,18,.25)}\n/* the levitation is reserved for the live site: a screenshot or recording stays still */\n.device:not(:has(iframe)):hover{border-color:var(--ink);transform:none;box-shadow:none}\n.device-bar{display:flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-bottom:var(--line);background:var(--paper);font-size:var(--fs-small);line-height:var(--lh-small);font-weight:700}\n.device-bar i{width:10px;height:10px;border-radius:50%;border:var(--line);display:block}\n.device-bar span{margin-left:10px}\n.screen{position:relative;overflow:hidden;width:100%;aspect-ratio:var(--sr);max-height:calc(var(--max-h) - 34px)}\n.screen iframe{position:absolute;top:0;left:0;border:0;max-width:none;transform-origin:0 0}\n.device--phone .device-bar{justify-content:center}\n.device--phone .device-bar span{margin-left:6px}\n.site-link{justify-self:start}\n\n/* result */\n.result{background:var(--ink);color:var(--white);border-color:var(--ink)}\n.result-text{font-size:var(--fs-h3);font-weight:800;line-height:var(--lh-h3)}\n.stats{margin-top:clamp(36px,5vw,80px);display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gutter);list-style:none;padding:0}\n.stats li{border-top:1px solid #555;padding-top:14px}\n.stats b{display:block;font-size:var(--fs-h2);font-weight:900;line-height:var(--lh-h2);color:var(--yellow)}\n.stats span{display:block;margin-top:10px;max-width:16em}\n.result-quote{margin-top:clamp(36px,5vw,80px);align-items:stretch}\n.result-quote blockquote{flex:1.1 1 0;min-width:0;background:var(--yellow);color:var(--ink);border-radius:var(--radius-m);padding:clamp(24px,3vw,44px);display:flex;flex-direction:column;justify-content:space-between;gap:24px}\n.result-quote blockquote p{font-size:var(--fs-h3);font-weight:800;line-height:var(--lh-h3)}\n.result-quote blockquote.is-in cite{opacity:1;transition-delay:calc(var(--lines,1) * var(--line-step,.09s) + .35s)}\n.result-showcase{margin-top:0} /* r138i: the section opens on the photos (no statement, no figures) */\n.btn{display:inline-flex;align-items:center;gap:10px;padding:10px 26px 13px;border-radius:999px;border:var(--line);background:var(--yellow);color:var(--ink);font-weight:800;font-size:var(--fs-ui);line-height:var(--lh-ui);text-decoration:none}\n.btn:hover{background:var(--white)}\n\n/* related */\n.related{background:var(--white)}\n.related .inner{--media-pad:var(--pad)}\n.related .rail-head h2{font-size:var(--fs-h2);line-height:var(--lh-h2)}\n.related .rail-head{justify-content:flex-start;gap:24px;margin-bottom:clamp(24px,3vw,48px)}\n.related .rail-head h2{text-align:left}\n.related .track .proj{width:clamp(280px,30vw,460px)}\n.related .track .frame{height:auto;width:100%}\n.proj{position:relative;display:grid;gap:14px;align-content:start}\n.proj .frame{border:var(--line)}\n.proj h3{font-size:var(--fs-lead);line-height:var(--lh-lead)}\n.proj p{max-width:20em}\n.proj a.cover{position:absolute;inset:0;border-radius:var(--radius-m)}\n.proj .pills{position:relative;z-index:1}\n.proj .pill{padding:4px 16px 6px}\n\n@media (min-width:1025px){\n  .related .bleed{margin-inline:0}\n  .related .track{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;padding-inline:0;cursor:auto}\n  .related .track .proj{width:auto}\n  .related .rail-btns{display:none}\n}\n.proj .frame{transition:border-color .45s ease}\n.proj:hover .frame{border-color:var(--yellow)}\n\n/* cta */\n.cta{background:var(--yellow);text-align:left}\n.cta .inner{min-height:clamp(252px,37vh,456px);display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:clamp(48px,8vw,120px)}\n.cta h2{font-size:var(--fs-display);line-height:var(--lh-display);max-width:10em}\n.cta .btn{background:var(--ink);color:var(--white);font-size:var(--fs-lead);line-height:var(--lh-lead);padding:18px 44px 22px}\n.cta .btn:hover{background:var(--blue);color:var(--ink)}\n\n@media (min-width:1025px){\n  .related .bleed .rail-head{padding-inline:0}\n}\n\n/* tablet */\n@media (min-width:641px) and (max-width:1024px){\n  .stats span{max-width:none}\n}\n@media (max-width:1024px){\n  .hero-top,.sec-head,.handoff{grid-template-columns:1fr}\n  .to-result{min-height:220px}\n  .chapter{grid-template-columns:1fr}\n  .chapter-side{border-right:0;border-bottom:var(--line)}\n  .stats{grid-template-columns:1fr}\n}\n/* mobile */\n@media (max-width:640px){\n  :root{--radius-l:26px;--radius-m:14px;--media-pad:10px;--rail-h:420px}\n  .full-sm{flex-basis:100% !important}\n  .hide-sm{display:none !important}\n  .rail-btns{display:none}\n  .result-quote{flex-direction:column}\n  .result-quote blockquote{flex:none}\n  .related .track .proj{width:82vw}\n}\n@media (prefers-reduced-motion:reduce){\n  html{scroll-behavior:auto}\n  .to-result,.pill,.device,.proj .frame{transition:none}\n  .hero-media,.device:hover{animation:none}\n  .client-row .pill{animation:none;opacity:1}\n  .device,.device:hover{transition:none;transform:none}\n  .line>span,.quote cite,.result-quote cite{transform:none;opacity:1;transition:none}\n  .to-result:hover{transform:none}\n}\n/* r136: the banner to the Craft Coffee case (same team), in place of the old webshop frames */\n.xbanner{display:grid;gap:14px;justify-items:start;padding:clamp(22px,3vw,40px);border:var(--line);border-radius:var(--radius-l);background:var(--blue);color:var(--ink);text-decoration:none;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s}\n.xbanner:hover{transform:translateY(-3px) rotate(-.3deg);box-shadow:0 14px 30px rgba(18,18,18,.14)}\n.xb-t{font-size:var(--fs-h3);line-height:var(--lh-h3);font-weight:900;letter-spacing:-.01em;max-width:16em}\n.xb-p{max-width:30em}\n.xb-go{display:inline-flex;align-items:center;gap:10px;margin-top:6px;padding:10px 26px 13px;border-radius:999px;background:var(--ink);color:var(--white);font-weight:800;font-size:var(--fs-ui);line-height:var(--lh-ui)}\n@media (prefers-reduced-motion:reduce){.xbanner{transition:none}.xbanner:hover{transform:none}}\n/* r137c: the green T-shirt answers the founder's quote early on (it used to sit by the closing quote) */\n.quote--photo{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(24px,4vw,72px);align-items:center;padding:clamp(8px,2vw,32px) 0 0 clamp(0px,5vw,80px)}\n.quote--photo figure{min-width:0}\n/* r138c: the tee photo on its own (the founder quote was not real) */\n.tee-solo{max-width:min(820px,100%);margin:clamp(28px,4vw,72px) auto 0}\n.tee-solo figure{margin:0}\n@media (max-width:640px){.quote--photo{grid-template-columns:minmax(0,1fr);padding:0}}\n/* r137c: \"Ne \u0219tim de la Steam\" closes the story between the last two photos.\n   r138d (Daniel: \"written way too big\"): a display size, no longer fitted to the width, in a classic high-contrast\n   serif with an italic, like Steam's T-shirts (\"Shared sips, endless energy.\"): DM Serif Display (SIL OFL 1.1),\n   served from our own fonts by the build as 'Steam Serif' (build/build.mjs); Didot/Georgia until it loads */\n.steam-outro{container-type:inline-size;padding:clamp(40px,6vw,104px) 0 clamp(44px,7vw,120px)}\n.steam-big{max-width:none;font-family:'Steam Serif','DM Serif Display',Didot,'Bodoni 72',Georgia,serif;font-size:clamp(46px,7.4cqi,104px);font-weight:400;line-height:1.02;letter-spacing:-.012em;color:var(--yellow);font-synthesis:none}\n.steam-big em{font-style:italic;letter-spacing:0;padding-right:.04em}\n.steam-big .sb-l{display:block;white-space:nowrap}\n.steam-big .sb-l+.sb-l{margin-top:.07em}\n@media (max-width:640px){.steam-big{font-size:clamp(38px,13.5cqi,64px)}}\n.steam-big.sb-ready .sb-l{opacity:0;transform:translateY(.3em)}\n.steam-big.sb-ready.sb-in .sb-l{opacity:1;transform:none;transition:opacity .7s ease,transform .9s cubic-bezier(.2,.75,.2,1)}\n.steam-big.sb-ready.sb-in .sb-l+.sb-l{transition-delay:.14s}\n/* r138h: Steam's first year, right after the hero: the stencilled logo on the wall first, then, as the page scrolls,\n   the founders on the floor below it (a zoom out and a pan, transform only, drawn by the script at the end). Without\n   the script or with reduced motion it is one still frame, cropped to show both */\n.sw-frame{position:relative;margin:0;height:min(calc(100svh - 2 * var(--gutter)),112vw);border:var(--line);border-radius:var(--radius-l);overflow:hidden;background:#cddfd5}\n.sw-frame img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;object-position:50% 62%}\n.sw-cap{position:absolute;left:clamp(12px,2vw,28px);bottom:clamp(12px,2vw,28px);z-index:1;margin:0;padding:6px 16px 8px;border:var(--line);border-radius:999px;background:var(--white);color:var(--ink);font-size:var(--fs-small);line-height:var(--lh-small);font-weight:800}\n.steam-wall.sw-live{height:calc(100svh + max(90svh,560px))}\n.sw-live .sw-frame{position:sticky;top:max(var(--gutter),calc(50svh - 56vw))}\n.sw-live .sw-frame img{inset:auto;left:0;top:0;object-fit:fill;transform-origin:0 0;will-change:transform}\n.sw-live .sw-cap{opacity:var(--sw-cap,0);transform:translateY(calc((1 - var(--sw-cap,0)) * 10px))}\n/* r138i (Daniel: \"on mobile it is still small, it sits in the middle of the page\"): on phones the wall fills the\n   screen, edge to edge and the full height, with no bands while it holds; the script pans across the three founders */\n@media (max-width:640px){\n  .sw-frame{margin-inline:calc(-1 * var(--gutter));height:100svh;height:100dvh;border:0;border-radius:0}\n  .steam-wall.sw-live{height:calc(100svh + max(100svh,640px))}\n  .sw-live .sw-frame{top:0}\n  .sw-cap{bottom:max(14px,calc(env(safe-area-inset-bottom) + 10px))}\n}\n/* r138h: the camera with the \"Ne \u0219tim de la Steam\" sticker, next to the line it carries */\n.sb-pair{display:grid;grid-template-columns:minmax(0,max-content) minmax(0,clamp(220px,30%,400px));justify-content:center;gap:clamp(36px,8vw,140px);align-items:center}\n.sb-photo{margin:0;transform:rotate(1.5deg)}\n.sb-photo .frame{max-height:none}\n@media (max-width:640px){.sb-pair{grid-template-columns:minmax(0,1fr);justify-content:normal}.sb-photo{width:min(78%,340px);justify-self:end;margin-top:8px}}\n/* r138h: the Craft Coffee banner carries a picture of the shop's equipment */\n.xb-has-img{grid-template-columns:minmax(0,1fr) minmax(0,clamp(180px,34%,320px));align-items:center;gap:clamp(18px,3vw,40px)}\n.xb-txt{display:grid;gap:14px;justify-items:start}\n.xb-img{display:block;width:100%;justify-self:stretch;aspect-ratio:4/5;border:var(--line);border-radius:var(--radius-m);overflow:hidden;background:#d9d9d9}\n.xb-img img{width:100%;height:100%;object-fit:cover}\n@media (max-width:640px){.xb-has-img{grid-template-columns:minmax(0,1fr)}.xb-img{order:-1;aspect-ratio:1}.xb-img img{object-position:50% 85%}}\n</style>\n</head>\n<body>\n\n<main class=\"page\">\n\n  <!-- HERO \u2014 client name, tagline, industry, year, services, pillar pills, cover media (16:9, cropped) -->\n  <header class=\"card hero\">\n    <div class=\"inner\">\n      <div class=\"hero-top\">\n        <div class=\"hero-title\">\n          <p class=\"client-name\">Steam Coffee Shop</p>\n          <h1>Refreshing a pioneer brand for its community.</h1>\n        </div>\n        <div class=\"hero-info\">\n          <div class=\"client-row\">\n            <ul class=\"pills\" aria-label=\"Jump to a pillar\">\n              <li><a class=\"pill pill--brand\" href=\"#branding-design\">Branding &amp; Design</a></li>\n              <li><a class=\"pill pill--marketing\" href=\"#growth-content\">Growth &amp; Content</a></li>\n              <li><a class=\"pill pill--product\" href=\"#product-design\">Product Design</a></li>\n            </ul>\n          </div>\n          <ul class=\"info\">\n            <li>Coffee shop, HoReCa</li>\n            <li>2024 \u2013 2025</li>\n            <li>Brand strategy, brand facelift, content strategy, photo, video, social media, ad campaigns, merch, packaging</li>\n          </ul>\n        </div>\n      </div>\n      <div class=\"hero-media\">\n        <figure style=\"--r:1.778\" data-fixed-ratio>\n          <div class=\"frame\"><video src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-cover.webm\" poster=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-001.jpg\" autoplay muted loop playsinline aria-label=\"Guests at a Steam table, sunlight through the window\"></video></div>\n        </figure>\n      </div>\n    </div>\n  </header>\n\n  <!-- r138h: Steam's first year: the logo on the wall first, then the founders on the floor as the page scrolls -->\n  <div class=\"steam-wall\">\n    <figure class=\"sw-frame\">\n      <img data-full src=\"m:steam/founders-wall\" width=\"1400\" height=\"1076\" alt=\"Steam's three founders sitting on the floor under the stencilled Steam Coffee Shop logo on a pale mint brick wall\" loading=\"lazy\" decoding=\"async\">\n      <figcaption class=\"sw-cap\">Steam's founders, in the shop's first year</figcaption>\n    </figure>\n  </div>\n\n  <!-- PROBLEM \u2014 section title, 2-3 paragraphs with <strong> accents, context images, caption, client quote.\n       Ends with the blue solution intro and the black card that jumps to the result. -->\n  <section class=\"card problem\" id=\"problem\">\n    <div class=\"inner\">\n      <div class=\"sec-head\">\n        <h2>A pioneer that started to blend in</h2>\n        <div class=\"prose\">\n          <p>Steam opened when specialty coffee in Bucharest was <strong>still a niche</strong>. A decade later the city had <strong>over a hundred third-wave shops</strong>, many borrowing the same minimal look Steam helped popularise.</p>\n          <p>The identity <strong>felt dated</strong> next to the newcomers, the social channels <strong>had gone quiet</strong>, and the brand's biggest asset, the people who gather there every day, was <strong>invisible online</strong>.</p>\n        </div>\n      </div>\n\n      <div class=\"problem-media stack\">\n        <div class=\"row\">\n          <figure class=\"full-sm\" style=\"--r:1.596\">\n            <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-001.jpg\" alt=\"A full Steam interior with guests at every table\" loading=\"lazy\"></div>\n          </figure>\n          <figure style=\"--r:.528\">\n            <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-28.jpg\" alt=\"Barista preparing coffee behind the bar\" loading=\"lazy\"></div>\n          </figure>\n          <figure style=\"--r:.528\">\n            <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-26.jpg\" alt=\"A guest with her dog at Steam\" loading=\"lazy\"></div>\n          </figure>\n        </div>\n        <figcaption>A full house on a weekday morning, with the team and the regulars who make it feel like home.</figcaption>\n      </div>\n\n      <div class=\"tee-solo\"><figure style=\"--r:1.027\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-5.jpg\" alt=\"A guest seen from behind wearing a green Steam T-shirt\" loading=\"lazy\"></div></figure></div>\n\n      <div class=\"handoff\">\n        <div class=\"solution-intro\" id=\"solution\">\n          <h2>Community, coffee and connection</h2>\n          <p>We started by listening. Surveys and interviews with guests pointed to what they value most about Steam: the feeling of belonging. That idea shaped the brand, the content, the merch and the website that follow.</p>\n        </div>\n        <a class=\"to-result\" href=\"#result\">\n          <b>The result</b>\n          <span>How the brand looks out in the city today</span>\n          <span class=\"to-result-go\">Drop for more <span class=\"go-icon\" aria-hidden=\"true\">\u2193</span></span>\n        </a>\n      </div>\n    </div>\n  </section>\n\n  <!-- CHAPTER \u2014 one per pillar the project actually has. Duplicate or delete whole <section> blocks.\n       chapter--brand / chapter--marketing / chapter--product / chapter--video -->\n  <section class=\"card chapter chapter--brand\" id=\"branding-design\" aria-label=\"Branding and Design\">\n    <div class=\"chapter-side\">\n      <div>\n        <span class=\"pill-title\"><span class=\"pill pill--brand\">Branding</span><span class=\"pill pill--accent\">&amp; Design</span></span>\n        <p class=\"chapter-text\">The steaming cup guests recognise stays at the centre, now surrounded by a bolder typographic voice, a palette pulled from the shop itself and a positioning line the team can say out loud.</p>\n        <ul class=\"deliverables\">\n          <li>Customer research</li>\n          <li>Brand strategy</li>\n          <li>Brand positioning</li>\n          <li>Logo refinement</li>\n          <li>Logo lockups</li>\n          <li>Typography system</li>\n          <li>Colour system</li>\n          <li>Brand values</li>\n          <li>Tone of voice</li>\n        </ul>\n      </div>\n    </div>\n    <div class=\"chapter-media\">\n      <figure style=\"--r:2.463\">\n        <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-25-1.jpg\" alt=\"Steam logo lockups: stacked, horizontal and symbol-only\" loading=\"lazy\"></div>\n        <figcaption>Logo lockups for every surface, from cups to storefront</figcaption>\n      </figure>\n      <div class=\"row\">\n        <figure class=\"full-sm\" style=\"--r:1.779\">\n          <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-23.jpg\" alt=\"Colour palette: black, blue, green and grey\" loading=\"lazy\"></div>\n          <figcaption>Black, blue and green, with grey as the quiet base</figcaption>\n        </figure>\n        <figure class=\"full-sm\" style=\"--r:1.777\">\n          <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-24.jpg\" alt=\"Type specimen of the N27 typeface in regular, italic and bold\" loading=\"lazy\"></div>\n          <figcaption>N27 as the single brand typeface</figcaption>\n        </figure>\n      </div>\n      <figure style=\"--r:1.777\">\n        <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-10.jpg\" alt=\"Green brand board reading Community, coffee and connection\" loading=\"lazy\"></div>\n        <figcaption>The brand idea in one line</figcaption>\n      </figure>\n      <figure style=\"--r:1.777\">\n        <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-11.jpg\" alt=\"Blue brand board listing the brand values\" loading=\"lazy\"></div>\n        <figcaption>Five values that guide how the team treats every guest</figcaption>\n      </figure>\n    </div>\n  </section>\n\n  <!-- CHAPTER: MARKETING -->\n  <section class=\"card chapter chapter--marketing\" id=\"growth-content\" aria-label=\"Growth and Content\">\n    <div class=\"chapter-side\">\n      <div>\n        <span class=\"pill-title\"><span class=\"pill pill--marketing\">Growth</span><span class=\"pill pill--accent\">&amp; Content</span></span>\n        <p class=\"chapter-text\">The content follows the people. We shot the shop across a full season and built a posting rhythm around real guests, the team and the neighbourhood.</p>\n        <ul class=\"deliverables\">\n          <li>Content strategy</li>\n          <li>Photo production</li>\n          <li>Video production</li>\n          <li>Social media management</li>\n          <li>Instagram stories</li>\n          <li>Posters</li>\n          <li>Ad campaigns</li>\n        </ul>\n      </div>\n    </div>\n    <div class=\"chapter-media\">\n      <div class=\"stack\">\n        <div class=\"row\">\n          <figure style=\"--r:.5625\">\n            <div class=\"frame\"><video src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-reel.webm\" autoplay muted loop playsinline preload=\"metadata\" aria-label=\"Social media reel filmed inside Steam\"></video></div>\n          </figure>\n          <figure style=\"--r:1.1\">\n            <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/steam-aa.jpg\" alt=\"Friends around a table inside Steam\" loading=\"lazy\"></div>\n          </figure>\n        </div>\n        <figcaption>Season reel and the moments it was built from</figcaption>\n      </div>\n\n      <div class=\"rail bleed\" data-rail>\n        <div class=\"rail-head\">\n          <h4><span class=\"pill\" style=\"--rot:-7deg\">Instagram</span><span class=\"pill\" style=\"--rot:9deg\">stories</span></h4>\n          <div class=\"rail-btns\"><button type=\"button\" data-prev aria-label=\"Previous stories\">\u2190</button><button type=\"button\" data-next aria-label=\"Next stories\">\u2192</button></div>\n        </div>\n        <div class=\"track\" tabindex=\"0\" aria-label=\"Instagram stories, scroll horizontally\">\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-11-1.jpg\" alt=\"Green illustrated story with the community brand line\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-7-1.jpg\" alt=\"Story with two friends laughing and the brand line\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-4-1.jpg\" alt=\"Happyness story with two guests\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-5-1.jpg\" alt=\"New drink announcement story with latte art\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-8-1.jpg\" alt=\"Trust your local dealer illustrated story\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-10-1.jpg\" alt=\"Blue illustrated story: Let's coffee some more\" loading=\"lazy\"></div></figure>\n        </div>\n      </div>\n\n      <div class=\"rail bleed\" data-rail>\n        <div class=\"rail-head\">\n          <h4><span class=\"pill\" style=\"--rot:-10deg\">In-store</span><span class=\"pill\" style=\"--rot:4deg\">posters</span></h4>\n          <div class=\"rail-btns\"><button type=\"button\" data-prev aria-label=\"Previous posters\">\u2190</button><button type=\"button\" data-next aria-label=\"Next posters\">\u2192</button></div>\n        </div>\n        <div class=\"track\" style=\"gap:10px\" tabindex=\"0\" aria-label=\"In-store posters, scroll horizontally\">\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-12.jpg\" alt=\"Poster: Community, coffee and connection\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-13.jpg\" alt=\"Poster: Trust your local dealer\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.288\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-2-1.jpg\" alt=\"Tall vertical banner with the brand line\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-14.jpg\" alt=\"Poster with opening hours\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.552\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-15.jpg\" alt=\"Poster: Happyness is part of our daily coffee routine\" loading=\"lazy\"></div></figure>\n        </div>\n      </div>\n\n      <div class=\"stack\">\n        <div class=\"rail-head\"><h4><span class=\"pill\" style=\"--rot:-6deg\">Photography</span></h4></div>\n        <figure style=\"--r:2.426\">\n          <div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-4.jpg\" alt=\"Guests seen through the shop window\" loading=\"lazy\"></div>\n        </figure>\n        <div class=\"row\">\n          <figure style=\"--r:1.027\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-8.jpg\" alt=\"A guest holding a cup at the counter\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:1.173\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-1.jpg\" alt=\"Busy interior of Steam\" loading=\"lazy\"></div></figure>\n        </div>\n        <div class=\"row\">\n          <figure style=\"--r:1.38\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-1-1.jpg\" alt=\"Barista working at the Steam bar\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:.528\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-27.jpg\" alt=\"Two guests talking over coffee\" loading=\"lazy\"></div></figure>\n        </div>\n      </div>\n    </div>\n  </section>\n\n  <!-- CHAPTER: PRODUCT -->\n  <section class=\"card chapter chapter--product\" id=\"product-design\" aria-label=\"Product Design\">\n    <div class=\"chapter-side\">\n      <div>\n        <span class=\"pill-title\"><span class=\"pill pill--product\">Product</span><span class=\"pill pill--accent\">Design</span></span>\n        <p class=\"chapter-text\">A family of illustrated characters that turned the brand line into T-shirts, cups and a limited 10th anniversary cup.</p>\n        <ul class=\"deliverables\">\n          <li>Illustration system</li>\n          <li>T-shirt collection</li>\n          <li>Cup design</li>\n          <li>Packaging design</li>\n          <li>10-year anniversary cup</li>\n        </ul>\n      </div>\n    </div>\n    <div class=\"chapter-media\">\n      <a class=\"xbanner xb-has-img\" href=\"/work/craft-coffee/\">\n        <span class=\"xb-txt\">\n          <span class=\"pill pill--accent\">Same team</span>\n          <span class=\"xb-t\">The equipment shop has a story of its own.</span>\n          <span class=\"xb-p\">Craft Coffee, the coffee equipment business run by the same team: brand and webshop.</span>\n          <span class=\"xb-go\">See the Craft Coffee case <span aria-hidden=\"true\">\u2192</span></span>\n        </span>\n        <span class=\"xb-img\"><img src=\"m:steam/craft-micra\" width=\"800\" height=\"1000\" alt=\"A La Marzocco Linea Micra espresso machine and a grinder on a plinth with a Craft Coffee sticker\" loading=\"lazy\"></span>\n      </a>\n\n      <div class=\"stack\">\n        <div class=\"rail-head\"><h4><span class=\"pill\" style=\"--rot:-5deg\">T-shirt</span><span class=\"pill\" style=\"--rot:11deg\">collection</span></h4></div>\n        <div class=\"row\">\n          <figure style=\"--r:1.203\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Tricouri-Steam-Cromaticstudios-4.jpg\" alt=\"White T-shirts with an illustrated character\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:1.203\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Tricouri-Steam-Cromaticstudios-3.jpg\" alt=\"White T-shirts with illustrated guests at a table\" loading=\"lazy\"></div></figure>\n        </div>\n        <div class=\"row\">\n          <figure style=\"--r:1.203\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Tricouri-Steam-Cromaticstudios-2.jpg\" alt=\"White T-shirts with a cyclist illustration\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:1.203\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Tricouri-Steam-Cromaticstudios-1.jpg\" alt=\"White T-shirts with a group illustration\" loading=\"lazy\"></div></figure>\n        </div>\n        <figcaption>The T-shirt collection, one character per design</figcaption>\n      </div>\n\n      <div class=\"stack\">\n        <div class=\"rail-head\"><h4><span class=\"pill\" style=\"--rot:-12deg\">Prints</span><span class=\"pill\" style=\"--rot:6deg\">packaging</span></h4></div>\n        <div class=\"row\">\n          <figure style=\"--r:1.027\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios-3.jpg\" alt=\"Back print of a white Steam T-shirt\" loading=\"lazy\"></div></figure>\n          <figure style=\"--r:1.173\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Steam-Cromaticstudios.jpg\" alt=\"Steam takeaway cups on a sunny table\" loading=\"lazy\"></div></figure>\n        </div>\n        <figcaption>Back print and takeaway cups</figcaption>\n      </div>\n    </div>\n  </section>\n\n  <!-- RESULT \u2014 the closing photos (r138h: no figures; r138i: no claims either, the section opens on the photos) -->\n  <section class=\"card result\" id=\"result\">\n    <div class=\"inner\">\n      <div class=\"stack result-showcase\">\n        <figure style=\"--r:1.754\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-003.jpg\" alt=\"A crowd outside Steam on a sunny day\" loading=\"lazy\"></div></figure>\n        <div class=\"steam-outro sb-pair\"><p class=\"steam-big\" lang=\"ro\"><span class=\"sb-l\">Ne \u0219tim</span> <span class=\"sb-l\"><em>de la</em> Steam</span></p><figure class=\"sb-photo\" style=\"--r:.8\"><div class=\"frame\"><img src=\"m:steam/ne-stim-camera\" width=\"864\" height=\"1080\" alt=\"A Ricoh film camera on its strap with the Ne \u0219tim de la Steam sticker on its body\" loading=\"lazy\"></div></figure></div>\n        <figure style=\"--r:1.566\"><div class=\"frame\"><img src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Steam-Cromaticstudios-002.jpg\" alt=\"Guests in green Steam T-shirts drinking coffee outside\" loading=\"lazy\"></div></figure>\n      </div>\n\n    </div>\n  </section>\n\n  <!-- RELATED \u2014 three projects: cover media, name, tagline, pillar pills -->\n  <section class=\"card related\" aria-labelledby=\"related-title\">\n    <div class=\"inner\">\n      <div class=\"rail bleed\" data-rail>\n        <div class=\"rail-head\">\n          <h2 id=\"related-title\">Related projects</h2>\n          <div class=\"rail-btns\"><button type=\"button\" data-prev aria-label=\"Previous projects\">\u2190</button><button type=\"button\" data-next aria-label=\"Next projects\">\u2192</button></div>\n        </div>\n        <div class=\"track\" tabindex=\"0\" aria-label=\"Related projects, scroll horizontally\">\n          <article class=\"proj\">\n            <figure style=\"--r:1.778\" data-fixed-ratio><div class=\"frame\"><video src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/elithia-homepage.webm\" autoplay muted loop playsinline preload=\"metadata\" aria-hidden=\"true\"></video></div></figure>\n            <h3>Elithia</h3>\n            <p>Making motherhood a soothing, joyful experience.</p>\n            <ul class=\"pills\"><li><span class=\"pill pill--product\">Product Design</span></li><li><span class=\"pill pill--brand\">Branding &amp; Design</span></li><li><span class=\"pill pill--marketing\">Growth &amp; Content</span></li></ul>\n            <a class=\"cover\" href=\"/work/elithia/\" aria-label=\"Elithia case study\"></a>\n          </article>\n          <article class=\"proj\">\n            <figure style=\"--r:1.778\" data-fixed-ratio><div class=\"frame\"><video src=\"https://cromaticstudios.com/wp-content/uploads/2025/06/Help4brain.webm\" autoplay muted loop playsinline preload=\"metadata\" aria-hidden=\"true\"></video></div></figure>\n            <h3>Help4Brain</h3>\n            <p>Enabling a pharma challenger to become a leader.</p>\n            <ul class=\"pills\"><li><span class=\"pill pill--product\">Product Design</span></li><li><span class=\"pill pill--marketing\">Growth &amp; Content</span></li></ul>\n            <a class=\"cover\" href=\"/work/help-4-brain/\" aria-label=\"Help4Brain case study\"></a>\n          </article>\n          <article class=\"proj\">\n            <figure style=\"--r:1.778\" data-fixed-ratio><div class=\"frame\"><video src=\"https://cromaticstudios.com/wp-content/uploads/2025/07/Routin-Cover.webm\" autoplay muted loop playsinline preload=\"metadata\" aria-hidden=\"true\"></video></div></figure>\n            <h3>Routine Paris</h3>\n            <p>Making in Romania a brand that can win in Paris.</p>\n            <ul class=\"pills\"><li><span class=\"pill pill--product\">Product Design</span></li><li><span class=\"pill pill--marketing\">Growth &amp; Content</span></li></ul>\n            <a class=\"cover\" href=\"/work/routine-paris/\" aria-label=\"Routine Paris case study\"></a>\n          </article>\n        </div>\n      </div>\n    </div>\n  </section>\n\n  <!-- CTA \u2014 same wording on every project -->\n  <section class=\"card cta\">\n    <div class=\"inner\">\n      <h2>What is your winning soundtrack?</h2>\n      <a class=\"btn\" href=\"/site/#contact\">We can bring the mixtape</a>\n    </div>\n  </section>\n\n</main>\n\n<script>\n// carousels: prev/next buttons\ndocument.querySelectorAll('[data-rail]').forEach(rail=>{\n  const track=rail.querySelector('.track');\n  const prev=rail.querySelector('[data-prev]');\n  const next=rail.querySelector('[data-next]');\n  if(!track||!prev||!next) return;\n  const step=()=>{const item=track.firstElementChild;const gap=parseFloat(getComputedStyle(track).columnGap)||0;return item?item.getBoundingClientRect().width+gap:track.clientWidth};\n  const update=()=>{\n    const max=track.scrollWidth-track.clientWidth-2;\n    prev.disabled=track.scrollLeft<=2;\n    next.disabled=track.scrollLeft>=max;\n    rail.querySelector('.rail-btns').style.visibility=max<=0?'hidden':'visible';\n  };\n  let down=false,startX=0,startLeft=0,moved=false,target=0,raf=0;\n  const follow=()=>{raf=0;track.scrollLeft=target;};\n  track.addEventListener('pointerdown',e=>{\n    if(e.pointerType!=='mouse'||e.button!==0||track.scrollWidth<=track.clientWidth+2)return;\n    down=true;moved=false;startX=e.clientX;startLeft=track.scrollLeft;target=startLeft;\n    track.classList.add('is-dragging');\n    track.setPointerCapture(e.pointerId);\n  });\n  track.addEventListener('pointermove',e=>{\n    if(!down)return;\n    e.preventDefault();\n    const dx=e.clientX-startX;\n    if(Math.abs(dx)>3)moved=true;\n    target=startLeft-dx;\n    if(!raf)raf=requestAnimationFrame(follow);\n  });\n  const endDrag=e=>{\n    if(!down)return;\n    down=false;\n    if(raf){cancelAnimationFrame(raf);raf=0;track.scrollLeft=target;}\n    try{track.releasePointerCapture(e.pointerId)}catch(err){}\n    const x=track.scrollLeft;\n    track.classList.remove('is-dragging');\n    track.scrollLeft=x;\n  };\n  track.addEventListener('pointerup',endDrag);\n  track.addEventListener('pointercancel',endDrag);\n  track.addEventListener('dragstart',e=>e.preventDefault());\n  track.addEventListener('click',e=>{if(moved){e.preventDefault();e.stopPropagation();moved=false;}},true);\n  prev.addEventListener('click',()=>track.scrollBy({left:-step(),behavior:'smooth'}));\n  next.addEventListener('click',()=>track.scrollBy({left:step(),behavior:'smooth'}));\n  // r137c: as on the other case pages, a vertical wheel or trackpad gesture over a rail scrolls it sideways until it\n  // reaches an end (then the page scrolls on); the arrow keys step it when it has focus\n  track._wheel=1;\n  track.addEventListener('wheel',e=>{\n    if(e.ctrlKey||Math.abs(e.deltaX)>=Math.abs(e.deltaY))return;\n    const max=track.scrollWidth-track.clientWidth;\n    if(max<=1)return;\n    const d=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?track.clientWidth:1);\n    if((d>0&&track.scrollLeft>=max-1)||(d<0&&track.scrollLeft<=1))return;\n    e.preventDefault();\n    track.style.scrollSnapType='none';clearTimeout(track._ws);track._ws=setTimeout(()=>{track.style.scrollSnapType=''},220);\n    track.scrollLeft=Math.max(0,Math.min(max,track.scrollLeft+d));\n  },{passive:false});\n  track.addEventListener('keydown',e=>{\n    if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;\n    e.preventDefault();\n    track.scrollBy({left:(e.key==='ArrowRight'?1:-1)*step(),behavior:'smooth'});\n  });\n  track.addEventListener('scroll',update,{passive:true});\n  addEventListener('resize',update);\n  addEventListener('load',update);\n  update();\n});\n\n// videos: use the file's real ratio (no cropping), play only when visible, respect reduced motion\nconst reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;\nconst vids=document.querySelectorAll('video');\nvids.forEach(v=>{\n  const fit=()=>{if(v.videoWidth&&v.videoHeight){const fig=v.closest('figure');if(fig&&!fig.hasAttribute('data-fixed-ratio'))fig.style.setProperty('--r',(v.videoWidth/v.videoHeight).toFixed(4));}};\n  if(v.readyState>=1)fit();else v.addEventListener('loadedmetadata',fit,{once:true});\n});\nif(reduce){\n  vids.forEach(v=>{v.removeAttribute('autoplay');v.pause();v.controls=true;});\n}else if('IntersectionObserver' in window){\n  const io=new IntersectionObserver(entries=>entries.forEach(e=>{\n    if(e.isIntersecting){e.target.play().catch(()=>{});}else{e.target.pause();}\n  }),{threshold:.15});\n  vids.forEach(v=>io.observe(v));\n}\n\n// website mockups: scale the live site to the device width\nconst screens=document.querySelectorAll('[data-screen]');\nconst scale=s=>{\n  const f=s.querySelector('iframe');\n  const k=s.clientWidth/Number(s.dataset.screen);\n  if(!k) return;\n  f.style.width=s.dataset.screen+'px';\n  f.style.height=Math.ceil(s.clientHeight/k)+'px';\n  f.style.transform=`scale(${k})`;\n};\nif('ResizeObserver' in window){const ro=new ResizeObserver(es=>es.forEach(e=>scale(e.target)));screens.forEach(s=>ro.observe(s));}\nelse{screens.forEach(scale);addEventListener('resize',()=>screens.forEach(scale));}\n\n// pillar titles: the two pills drop in once, when the chapter first shows\nif(!matchMedia('(prefers-reduced-motion: reduce)').matches){\n  const titles=[...document.querySelectorAll('.chapter-side .pill-title')];\n  titles.forEach(t=>t.classList.add('drop-ready'));\n  const dropIo=new IntersectionObserver(es=>es.forEach(e=>{\n    if(e.isIntersecting){e.target.classList.add('is-dropped');dropIo.unobserve(e.target);}\n  }),{threshold:.6});\n  titles.forEach(t=>dropIo.observe(t));\n}\n\n// quote: reveal one line at a time\ndocument.querySelectorAll('[data-lines]').forEach(el=>{\n  const text=el.textContent.trim();\n  const build=()=>{\n    el.innerHTML=text.split(/\\s+/).map(w=>`<span class=\"w\">${w}</span>`).join(' ');\n    const words=[...el.querySelectorAll('.w')];\n    const lines=[];let top=null;\n    words.forEach(w=>{const t=Math.round(w.offsetTop);if(top===null||t!==top){lines.push([]);top=t;}lines[lines.length-1].push(w.textContent);});\n    el.innerHTML=lines.map((l,i)=>`<span class=\"line\" style=\"--i:${i}\"><span>${l.join(' ')}</span></span>`).join('');\n    const holder=el.closest('blockquote')||el;\n    holder.style.setProperty('--lines',lines.length);\n  };\n  build();\n  // r137c: the lines are measured again once the web font is in (measured on the fallback they broke one word early)\n  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(build);\n  let t;addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(()=>{(el.closest('blockquote')||el).classList.remove('is-in');build();io2.observe(el);},200);});\n});\nconst io2=new IntersectionObserver(es=>es.forEach(e=>{\n  if(e.isIntersecting){(e.target.closest('blockquote')||e.target).classList.add('is-in');io2.unobserve(e.target);}\n}),{threshold:.4});\ndocument.querySelectorAll('[data-lines]').forEach(el=>io2.observe(el));\n\n// r137c: \"Ne \u0219tim de la Steam\": the lines rise in once (r138d: at a set size, no longer fitted to the width)\n(function(){\n  const big=document.querySelector('.steam-big');\n  if(!big)return;\n  if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&'IntersectionObserver' in window){\n    big.classList.add('sb-ready');\n    const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){big.classList.add('sb-in');io.disconnect();}}),{threshold:.35});\n    io.observe(big);\n  }\n})();\n\n// r138h: Steam's first year: the frame holds still while the page scrolls past it, the photo starts close on the logo\n// stencilled on the wall and zooms out and down to the founders on the floor (transform only, one frame per scroll)\n(function(){\n  const box=document.querySelector('.steam-wall'),fr=box&&box.querySelector('.sw-frame'),img=fr&&fr.querySelector('img');\n  if(!img||matchMedia('(prefers-reduced-motion: reduce)').matches)return;\n  const NW=1400,NH=1076,LX=735,LY=235; // the photo's size and the logo's centre in it\n  box.classList.add('sw-live');\n  let W=0,H=0,b=1,s0=1,top=0,raf=0,tall=false;\n  const clamp=(v,a,z)=>Math.min(z,Math.max(a,v));\n  const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;\n  const size=()=>{W=fr.clientWidth;H=fr.clientHeight;b=Math.max(W/NW,H/NH);tall=W/H<.8;s0=Math.max(1.25,H/(b*(tall?560:500)));top=parseFloat(getComputedStyle(fr).top)||0;img.style.width=NW*b+'px';img.style.height=NH*b+'px';};\n  const draw=()=>{\n    raf=0;\n    const r=box.getBoundingClientRect();\n    if(r.bottom<-50||r.top>innerHeight+50)return;\n    const p=clamp((top-r.top)/Math.max(1,r.height-H),0,1),e=ease(clamp((p-.06)/.8,0,1));\n    const vEnd=NH-H/(2*b);let s,u,v;\n    if(tall){\n      // r139i (Daniel: \"too dramatic, left to right\"): a phone stays centred on the founder in the middle, down from the logo, the two beside him half in frame\n      s=Math.pow(s0,1-e);u=LX+(722-LX)*e;v=LY+(vEnd-LY)*e;\n    }else{s=Math.pow(s0,1-e);u=LX+(NW/2-LX)*e;v=LY+(vEnd-LY)*e;}\n    const tx=clamp(W/2-u*b*s,W-NW*b*s,0),ty=clamp(H/2-v*b*s,H-NH*b*s,0);\n    img.style.transform='translate3d('+tx.toFixed(1)+'px,'+ty.toFixed(1)+'px,0) scale('+s.toFixed(4)+')';\n    fr.style.setProperty('--sw-cap',clamp((e-.72)/.25,0,1).toFixed(3));\n  };\n  const req=()=>{if(!raf)raf=requestAnimationFrame(draw);};\n  size();draw();\n  addEventListener('scroll',req,{passive:true});\n  addEventListener('resize',()=>{size();draw();});\n  if('ResizeObserver' in window)new ResizeObserver(()=>{size();draw();}).observe(fr);\n})();\n\n// mobile: sections that end with text get double bottom padding\nconst small=matchMedia('(max-width: 640px)');\nconst tablet=matchMedia('(min-width: 641px) and (max-width: 1024px)');\nconst TEXT=new Set(['P','FIGCAPTION','LI','CITE','BLOCKQUOTE','H1','H2','H3','H4','SPAN']);\nconst isHidden=el=>getComputedStyle(el).display==='none';\nconst lastVisible=el=>{let c=el.lastElementChild;while(c&&isHidden(c))c=c.previousElementSibling;return c;};\nconst endsWithText=box=>{\n  let el=lastVisible(box);\n  while(el&&lastVisible(el)&&!el.matches('.btn,.pill,.frame,.to-result,.solution-intro'))el=lastVisible(el);\n  return !!el&&TEXT.has(el.tagName)&&!el.closest('.btn,.pill,.frame,.to-result,.solution-intro');\n};\nconst pads=[...document.querySelectorAll('.card')].map(c=>c.lastElementChild).filter(Boolean);\nconst applyPad=()=>pads.forEach(b=>{\n  b.style.paddingBottom='';\n  if(!endsWithText(b))return;\n  const pb=parseFloat(getComputedStyle(b).paddingBottom);\n  if(small.matches)b.style.paddingBottom=(pb*2)+'px';\n  else if(tablet.matches)b.style.paddingBottom=(pb+45)+'px';\n});\nsmall.addEventListener('change',applyPad);\ntablet.addEventListener('change',applyPad);\naddEventListener('load',applyPad);\napplyPad();\n<\\/script>\n</body>\n</html>\n";
   var bBerero = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAYAAAA+s9J6AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDkuMS1jMDAzIDc5Ljk2OTBhODdmYywgMjAyNS8wMy8wNi0yMDo1MDoxNiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIDI2LjggKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOkMxQjczM0EyNkM1QTExRjA4RUYyQjIxNjU2QTgzOTg3IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOkMxQjczM0EzNkM1QTExRjA4RUYyQjIxNjU2QTgzOTg3Ij4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6QzFCNzMzQTA2QzVBMTFGMDhFRjJCMjE2NTZBODM5ODciIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6QzFCNzMzQTE2QzVBMTFGMDhFRjJCMjE2NTZBODM5ODciLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz67vYjWAAAGEUlEQVR42uzdS6xccxzA8TO9l7ShRR8sqLdE1EbQRLrxaOIRIaQWFYmNeESwaL2JBekCSYWESkTqVRUWrGyEICxoGosSERHaeiTq0Ra3eun4/d3/6L/HOXMf7b3t4vNJ/jFzzpyZuX/nO+fMTJPpdLvdCth/ppkCECGIEBAhiBAQIYgQECGIEBAhiBAQIYgQECGIEBAhiBAQIYgQECGIEBAhiBAQIYgQECGIEBAhiBAQIYgQECGIEBAhiBAQIYgQECGIEBAhiBAQIYgQECGIEBAhiBAQIYgQECGIEBAhiBAQIYgQECGIEBAhiBAQIYgQECGIEKiqQVMwotPpvBj/mWEmpsxQt9u9xjTEvhcTYRZGIjQRUyz2vY5ZcDpa2m4KzLfT0QPHjTE2mYZJedFfHWOOqXA62nQ6ui3+MzNfHYixy6xMiq9jHJeOhLHvzTIdTkfbnGQKJsWAsy8RgggBEYIIARGCCAERgggBEYIIQYSACEGEgAhBhIAIQYSACEGEgAhBhIAIQYSACEGEgAhBhMCk8rsAo3s+xtExuvlF64MY9+d1R8R4JK9L0u/trY3xVr6+NMblxfqev2PsLK6n7Z6M8XG+nn4ValG1+0dpOnmb+2J8m5fdFWNBvu+HY2zIy++OcVbD3zEc46/asntibMyXV8Q4ofacvo9xZ36u6XcknogxO8aWGLfkx56dn3vbC3p63jfF+NWu1CL9KpPxbyPb8k6VxinFFH0aYyjGjnybZcW6p4tteuOhYv0rDevbxnXFdu+23GZpcZt1xfIri+VfjeMxFxbb/dJymxNrIfeW937g8/gxPM4x+bYp5M152Tb73chwJBzdgpbl6UhwfcPyLcXlFOyjDbe5LB/VSltrR6GmI9n7xfXfi8u/FZcvinFYw/b35qNyaccob00+L468vVDnVXv+duNwPtoNtMxT0xEYp6P7xBv5VC4dDY9quc3mPOqmN0RYWlUc6XrBrSnu6/AY57Rs+0XL8g0NEZYeiDG/uP5jfh5/FnHP879dhPvDDfm9X+8ULL2qvxfjoxxhOl39LMZBDdvOzsGU7wm7fQLqWZNHm1dbHq/KLwiHNDzmyaM85mN91qUfT33WriDC/WVVy/KF+YOUL2O8HuOqhtukDzXu2IfP5dgYb8Y4rc9tUiyX7MPHXBzj5Rhz+9ymM8F1iHCvHFpc/qblNvMneN+3x7ggH8HS+7Cr8/KhUQKsah8qjcfjedtOPnVdnpf/MUqAg1X/r7oG7Wci3FsrYxxZXE9fG7wd451i2fl93jfu6nPf51YjX3/UXRzjvOJ6+kDmqfw+bUmM1/rcZ3qPekbLuhTLFfk9aV0KfU6+fGE+HV4f48Nq5MOl5S33mT6IurnPES/9/T/bjfrwEXHjVxTj+c36a6s9P46/bRzbri22W1Isf6F2n+nDkYOL9Z/U1i8ex2NuKrY7vVi+rnaf64p16bF3Fus2TnB361S+ovjf8C9mmo1lJ5ueTxtXNxwZxvwaWFz+obi8vXa7FMGK2hG0/Hrhuwn+neVXDTtq686sdn//uDO/SPSe70S/cuhWvq5wOjqOI9TWhlOs3iek6T3S2VXzVxO35tPTaWPYIRcV1x+sRr5o70VWtyw/7q783IaL08qV+QgzbZTHGyhOOZPnYvyU/6ZTG7ZJ6y/Nl4eL5en0/JkJHgnn2r1qk5JPxUxEp5NOR2eaiSmzPfa9WabBP+AGEYIIARGCCAERgggBEYIIARGCCAERgggBEYIIARGCCAERgggBEYIIARGCCAERgggBEYIIARGCCAERgggBEYIIARGCCAERgggBEYIIARGCCAERgggBEYIIARGCCAERgggBEcKBrtPtds1CmohOx0RMsdj3OmahqgZNwX9eijHDNEyZIVPgSAjeEwIiBBGCCAERgggBEYIIARGCCAERgggBEYIIARGCCAERgggBEYIIARGCCAERgggBEYIIARGCCAERgggBEYIIARGCCAERgggBEYIIARGCCAERgggBEYIIARGCCAERgggBEYIIARGCCAERgggBEYIIARGCCAERgggBEYIIARHCgeIfAQYAhIE4+FmIhI4AAAAASUVORK5CYII=";
   var tmCover, tmPoster, tmTote, labSigns, labEditorial, labTonic, labSpread, labChinotto, labAmaro, labSketch, labBox, labMaking;
   var init_tmassets = __esm({
@@ -32690,6 +32922,9 @@ void main() {
     c.insertAdjacentHTML("beforeend", `<b>${p.name}</b><span class="msp-cat mono">${p.cat}</span><p>${p.desc}</p><span class="msp-more mono">OPEN CASE \u2192</span>`);
     c.onclick = () => {
       const m = projectMedia(p.name);
+      // r139a: a project with a case page on the website opens that page (the shared ending, the ticket), not a modal
+      const pg = window.__casePage?.(p.name);
+      if (pg && openFrameHook) return openFrameHook(`/work/${pg}/?embed=1`, p.name);
       if (m.scf && openScfHook) return openScfHook();
       if (m.ig && openSteamHook) return openSteamHook();
       if (m.page && openCaseHook) return openCaseHook(m.page);
@@ -33580,6 +33815,9 @@ void main() {
     };
     // ---- one case-study modal per project ----
     openProjectHook = (p) => {
+      // r139a: the modal is for projects without a case page; one with a page opens it (with the shared ending)
+      const pg = window.__casePage?.(p.name);
+      if (pg && openFrameHook) { closeModal(); return openFrameHook(`/work/${pg}/?embed=1`, p.name); }
       modalBack.innerHTML = "";
       const mEl = el("div", "hmodal media case");
       mEl.setAttribute("role", "dialog");
@@ -33657,6 +33895,10 @@ void main() {
     root.appendChild(casePage);
     const closeCase = () => { casePage.classList.add("hidden"); document.body.classList.remove("scf-open"); };
     openCaseHook = (key) => {
+      // r139a: where the website is there, these open their built case page (the shared ending, the ticket); the
+      // long-form pages below stay for copies with no website behind them
+      const brand0 = { artisan: "Artisan Coffee Gear", craft: "Craft Coffee" }[key], pg0 = brand0 && window.__casePage?.(brand0);
+      if (pg0 && openFrameHook) return openFrameHook(`/work/${pg0}/?embed=1`, brand0);
       const d = CASE_PAGES[key];
       if (!d) return;
       casePage.className = `scf-modal case-page ${d.cls}`;
@@ -33756,7 +33998,13 @@ void main() {
       ], { duration: 640, easing: "cubic-bezier(.22,.8,.2,1)" });
       caseFrame._anim.onfinish = caseFrame._anim.oncancel = () => { caseFrame._anim = null; };
     };
+    // r139a (Daniel: "Steam has no boarding pass at the end"): on the website Steam opens its built page,
+    // /work/steam/?embed=1, the way every other case page opens (the shared ending with the ticket, the WebP pictures,
+    // its fonts). The page kept as a string (steamCaseHtml) is only the fallback of copies with no website behind them
+    // (a local file); the production bundle ships it empty (build/build.mjs), so there the Instagram card stands in
     openSteamHook = () => {
+      if (openFrameHook && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname)) { openFrameHook("/work/steam/?embed=1", "Steam Coffee Shop"); steamSeen = true; return; }
+      if (!steamCaseHtml) return openSteamFeed();
       const fr = caseFrame.querySelector(".cf-iframe");
       fr.removeAttribute("src");
       // r137c: the string closes its script as <\/script> (it lives inside a script); as a document it must close for
@@ -34006,7 +34254,9 @@ void main() {
     const dashAPI = {
       speed(f, vmax, unit, red) {
         const v = Math.round(f * vmax);
-        if (dNum._v !== v) { dNum._v = v; dNum.textContent = String(v); dNum.classList.toggle("d3", v >= 100); }
+        // r139b: the digits change in place (text data). Replacing the text node was a child-list change, and with the
+        // stylesheet's body:has(…) rules every one re-styled the whole document (~1200 elements) while driving
+        if (dNum._v !== v) { dNum._v = v; const tn = dNum.firstChild; if (tn && tn.nodeType === 3 && !tn.nextSibling) tn.data = String(v); else dNum.textContent = String(v); dNum.classList.toggle("d3", v >= 100); }
         if (dUnit._u !== unit) { dUnit._u = unit; dUnit.textContent = unit; }
         dNeedle.style.transform = `rotate(${(DIAL_A0 + DIAL_SW * Math.min(1, f)).toFixed(1)}deg)`;
         dash.classList.toggle("redline", !!red);
@@ -34078,6 +34328,8 @@ void main() {
       </div>`;
       const close = el("button", "hm-close mono", "CLOSE \xD7");
       close.onclick = closeModal;
+      // r139a: the boxes are a chapter of the Two Minutes case: the way on to its page (and the shared ending there)
+      if (openFrameHook && /^https?:$/.test(location.protocol)) { const more = el("button", "coffee-btn tm-more", "See more → the whole Two Minutes case"); more.onclick = () => { closeModal(); openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); }; m.querySelector(".hm-info").appendChild(more); }
       m.querySelector(".hm-info").appendChild(close);
       modalBack.appendChild(m);
       openModal();
@@ -34165,7 +34417,10 @@ void main() {
       const line = el("p", "mono hm-line", "BOTTLES \xB7 LABELS \xB7 IDENTITY \xB7 BY CROMATIC STUDIOS");
       const close = el("button", "hm-close mono", "CLOSE \xD7");
       close.onclick = closeModal;
-      mEl.querySelector(".hm-info").append(line, close);
+      mEl.querySelector(".hm-info").append(line);
+      // r139a: the lab is a chapter of the Two Minutes case: the way on to its page (and the shared ending there)
+      if (openFrameHook && /^https?:$/.test(location.protocol)) { const more = el("button", "coffee-btn tm-more", "See more → the whole Two Minutes case"); more.onclick = () => { closeModal(); openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); }; mEl.querySelector(".hm-info").append(more); }
+      mEl.querySelector(".hm-info").append(close);
       modalBack.appendChild(mEl);
       openModal();
     };
@@ -34310,7 +34565,10 @@ void main() {
     const WORK_PAGES = { "Printoteca": "printoteca", "Sticker Republic": "sticker-republic", "Toskani MED": "toskani-med", "The Aesthetic Court": "the-aesthetic-court", "Slow Coffee Festival": "slow-coffee-festival", "Artisan Coffee Gear": "artisan-coffee-gear", "Craft Coffee": "craft-coffee", "Elithia": "elithia", "Yoshi Izakaya": "yoshi-izakaya", "ARCA Resort": "arca-resort",
       "Routine Paris": "routine-paris", "Altius": "altius", "Help 4 Brain": "help-4-brain", "Investimental": "investimental", "Sip": "sip-coffee-wine", "Sip Coffee & Wine": "sip-coffee-wine",
       "Bepco": "bepco", "K\xF3mpus": "kompus", "Assetto": "assetto", "Clinica Sante": "clinica-sante",
-      "ESD": "esd", "Techventures Bank": "techventures-bank", "Longshield": "longshield", "Infinity Capital": "infinity-capital", "Venevo": "venevo", "Witanalytica": "witanalitica", "Unchain Festival": "unchain-festival", "Patiline": "patiline", "Pain Plaisir": "pain-plaisir", "Berero": "casa-berero", "Casa Berero": "casa-berero", "Eliade 18": "eliade-18", "RDW 2023": "rdw-2023", "RDW 2023 \xB7 AI pop-up": "rdw-2023" };
+      "ESD": "esd", "Techventures Bank": "techventures-bank", "Longshield": "longshield", "Infinity Capital": "infinity-capital", "Venevo": "venevo", "Witanalytica": "witanalytica", "Unchain Festival": "unchain-festival", "Patiline": "patiline", "Pain Plaisir": "pain-plaisir", "Berero": "casa-berero", "Casa Berero": "casa-berero", "Eliade 18": "eliade-18", "RDW 2023": "rdw-2023", "RDW 2023 \xB7 AI pop-up": "rdw-2023",
+      // r139a: the pages that opened by other ways (Steam as a string, OMA by hand, Antila and UNDÉ by their tags) are
+      // known here too, so every card that asks "is there a page?" gets the built one, with the shared ending
+      "Steam": "steam", "Steam Coffee Shop": "steam", "OMA Coffee": "oma-coffee", "Antila": "antila", "UNDE": "unde", "UND\xC9": "unde" };
     window.__casePage = (brand) => (WORK_PAGES[brand] && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname) ? WORK_PAGES[brand] : null);
     const withPage = (brand, onClick) => () => { const pg = window.__casePage(brand); if (pg && openFrameHook) return openFrameHook(`/work/${pg}/?embed=1`, brand); return onClick?.(); };
     const mkTag = (brand, name, line, cta, onClick0, extra = "") => {
@@ -34579,6 +34837,8 @@ void main() {
           if (t) t.style.backgroundImage = `url(${url})`;
         });
         themeMenu.querySelectorAll(".wt-veh").forEach((v) => { const u = map[v.dataset.veh]; if (u) v.style.backgroundImage = `url(${u})`; });
+        // r139q: they land one by one now, so the map's ride picker, if it is open, gets them as they come too
+        document.querySelectorAll(".mrs-v").forEach((b) => { const u = map[b.dataset.v], th = b.querySelector(".mrs-th"); if (u && th) th.style.backgroundImage = `url(${u})`; });
       }
     };
   }
@@ -34609,7 +34869,7 @@ void main() {
       init_ui();
       init_data();
       init_util();
-      var isMobile = () => window.matchMedia("(max-width: 719px)").matches;
+      var mqMobile = null, isMobile = () => (mqMobile ||= window.matchMedia("(max-width: 719px)")).matches; // r139b: one live query, not a new one per call (several a frame)
       // r119: phones: no page zoom (pinch, double tap, iOS gestures); only the map's canvas zooms.
       // The keyboard flags the body so the map's dock steps out of the way of the form
       document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
@@ -35103,8 +35363,15 @@ void main() {
         rebuildGolden();
       }
       var ui = buildUI(api);
-      function makeVehiclePreviews() {
+      // r139q: the ride thumbnails, a step at a time. r129 drew all nine in one go: ~1.3 s on an M4 (most of it
+      // waiting for the preview context's programs to link, and its two PMREMs), right while the map was being
+      // dragged. Now every step is its own idle task: a vehicle's programs link on the GPU process (compileAsync)
+      // before its first draw, the rooms' programs too (linkedRun), and the PNGs encode off the main thread
+      // (toBlob). onEach(id, url) gets each thumbnail as it lands
+      async function makeVehiclePreviews(onEach) {
+        const idle = () => new Promise((res) => (window.requestIdleCallback || setTimeout)(res, { timeout: 1000 }));
         const size = 132;
+        await idle();
         const r = new WebGLRenderer({ antialias: true, alpha: true });
         r.setSize(size, size);
         r.setPixelRatio(2);
@@ -35115,36 +35382,63 @@ void main() {
         key.position.set(-120, 170, 140);
         s.add(key);
         const cam = new PerspectiveCamera(34, 1, 1, 900);
-        const out = {};
-        // r138l: a PMREM belongs to the renderer that drew it: the previews' chrome gets this renderer's own room
-        const cEnv = makeChromeEnv(r);
-        // r138n: and the other env-mapped materials (paint, glass) get this renderer's own city room, not the main
-        // renderer's (a texture of another context: it drew as nothing). With CITY_REFLECT off: left as it was
-        const pEnv = CITY_REFLECT ? makeCityEnv(r) : null, mainEnv = getEnvMap();
-        for (const v of VEHICLES) {
-          const built = buildVehicle(v.id);
-          built.group.traverse((o) => { const m = o.material; if (m?.userData?.chrome) { m.envMap = cEnv.texture; m.envMapIntensity = m.userData.envI; } });
-          if (pEnv) built.group.traverse((o) => { for (const m of o.material ? [].concat(o.material) : []) if (m.envMap && m.envMap === mainEnv && !m.userData.chrome) { m.envMap = pEnv.texture; m.envMapIntensity *= CITY_ENV_K; } }); // r138n
-          built.group.rotation.y = 2.5;
-          s.add(built.group);
-          const box = new Box3().setFromObject(built.group);
-          const c = box.getCenter(new Vector3());
-          const radius = box.getSize(new Vector3()).length() / 2;
-          const d = radius / Math.sin(cam.fov * Math.PI / 180 / 2) * 0.92;
-          cam.position.set(c.x + d * 0.52, c.y + d * 0.5, c.z + d * 0.72);
-          cam.lookAt(c);
-          noWarp(s);
-          window.__noCityCull = true;
-          r.render(s, cam);
-          window.__noCityCull = false;
-          out[v.id] = r.domElement.toDataURL("image/png");
-          s.remove(built.group);
-          disposeObject(built.group);
+        const groups = [];
+        let cEnv = null, pEnv = null;
+        try {
+          // r138l: a PMREM belongs to the renderer that drew it: the previews' chrome gets this renderer's own room
+          await idle();
+          cEnv = await linkedRun(r, () => makeChromeEnv(r));
+          // r138n: and the other env-mapped materials (paint, glass) get this renderer's own city room, not the main
+          // renderer's (a texture of another context: it drew as nothing). With CITY_REFLECT off: left as it was
+          if (CITY_REFLECT) { await idle(); pEnv = await linkedRun(r, () => makeCityEnv(r)); }
+          const mainEnv = getEnvMap();
+          for (const v of VEHICLES) {
+            await idle();
+            const built = buildVehicle(v.id);
+            groups.push(built.group);
+            built.group.traverse((o) => { const m = o.material; if (m?.userData?.chrome) { m.envMap = cEnv.texture; m.envMapIntensity = m.userData.envI; } });
+            if (pEnv) built.group.traverse((o) => { for (const m of o.material ? [].concat(o.material) : []) if (m.envMap && m.envMap === mainEnv && !m.userData.chrome) { m.envMap = pEnv.texture; m.envMapIntensity *= CITY_ENV_K; } }); // r138n
+            built.group.rotation.y = 2.5;
+            s.add(built.group);
+            const box = new Box3().setFromObject(built.group);
+            const c = box.getCenter(new Vector3());
+            const radius = box.getSize(new Vector3()).length() / 2;
+            const d = radius / Math.sin(cam.fov * Math.PI / 180 / 2) * 0.92;
+            cam.position.set(c.x + d * 0.52, c.y + d * 0.5, c.z + d * 0.72);
+            cam.lookAt(c);
+            noWarp(s);
+            if (r.compileAsync) await r.compileAsync(s, cam);
+            await idle();
+            window.__noCityCull = true;
+            try { r.render(s, cam); } finally { window.__noCityCull = false; }
+            // the drawing buffer is read now, in this task; only the encoding happens later
+            const url = await new Promise((res) => {
+              if (!r.domElement.toBlob) { res(r.domElement.toDataURL("image/png")); return; }
+              r.domElement.toBlob((b) => res(b ? URL.createObjectURL(b) : r.domElement.toDataURL("image/png")), "image/png");
+            });
+            s.remove(built.group);
+            onEach(v.id, url);
+          }
+        } finally {
+          // the groups go only now: a program the next ride shares stays linked meanwhile
+          groups.forEach(disposeObject);
+          cEnv?.dispose(); // r138l
+          pEnv?.dispose(); // r138n
+          r.dispose();
         }
-        cEnv.dispose(); // r138l
-        pEnv?.dispose(); // r138n
-        r.dispose();
-        return out;
+      }
+      // r139q: runs fn once with every draw turned into a compile, waits (polling, off the main thread) until those
+      // programs have linked, then runs it for real, so its draws find them ready instead of blocking on the link.
+      // The dry run's programs are held (usedTimes) so its own disposals do not delete them; they go with the renderer
+      async function linkedRun(r, fn) {
+        if (!r.extensions?.has?.("KHR_parallel_shader_compile")) return fn();
+        const render = r.render, progs = new Set();
+        r.render = (sc, cm) => {
+          for (const m of r.compile(sc, cm)) { const p = r.properties.get(m).currentProgram; if (p && !progs.has(p)) { progs.add(p); p.usedTimes++; } }
+        };
+        try { fn()?.dispose?.(); } finally { r.render = render; }
+        while ([...progs].some((p) => !p.isReady())) await new Promise((res) => setTimeout(res, 10));
+        return fn();
       }
       var xpLog = [];
       gainXPHook = gainXP;
@@ -35228,6 +35522,17 @@ void main() {
       // drawn out along the stroke), strokes stamped with a round brush into a per-stroke coverage buffer, then the
       // pigment deposited where coverage beats the tooth. Alpha-only PNGs, used as CSS masks over any colour.
       var crayonTex = null;
+      // r139b: the crayon PNGs are handed to CSS as short blob: URLs. As data: URLs they were ~340 KB of text in five
+      // custom properties on :root, re-substituted and re-parsed for every element that masks with them at every style
+      // recalc: in Sketchbook a full recalc took ~50-100 ms (map flights ran at ~30 fps with ~60 long tasks). Same pixels
+      function crayonUrl(cv) {
+        const d = cv.toDataURL("image/png");
+        try {
+          const bin = atob(d.slice(d.indexOf(",") + 1)), u8 = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+          return `url(${URL.createObjectURL(new Blob([u8], { type: "image/png" }))})`;
+        } catch { return `url(${d})`; }
+      }
       function crayonTextures() {
         if (crayonTex) return crayonTex;
         const R = rng(20261012);
@@ -35267,7 +35572,7 @@ void main() {
           const ctx = cv.getContext("2d"), id = ctx.createImageData(W, H);
           for (let o = 0; o < N; o++) { id.data[o * 4] = id.data[o * 4 + 1] = id.data[o * 4 + 2] = 255; id.data[o * 4 + 3] = Math.min(255, A[o] * 268); }
           ctx.putImageData(id, 0, 0);
-          return `url(${cv.toDataURL("image/png")})`;
+          return crayonUrl(cv);
         };
         // a swatch: back-and-forth horizontal passes, each a little tilted and wavy, ends uneven
         const swatch = (W, H, rows, w) => (stroke) => {
@@ -35309,7 +35614,7 @@ void main() {
           for (let i = 90; i >= 0; i--) ctx.lineTo(14 + (i / 90) * (W - 28), H - 12 + bot[i]);
           for (let i = 60; i >= 0; i--) ctx.lineTo(16 + Math.abs(left[i]) + (i % 3 === 0 ? R() * 5 : 0), 12 + (i / 60) * (H - 24));
           ctx.closePath(); ctx.fill();
-          crayonTex.torn = `url(${cv.toDataURL("image/png")})`;
+          crayonTex.torn = crayonUrl(cv); // r139b
         }
         const st = document.documentElement.style;
         st.setProperty("--cr-torn", crayonTex.torn);
@@ -35320,6 +35625,7 @@ void main() {
         if (state.schemeIdx != null && state.schemeIdx !== idx) czEv("world_change", { world: SCHEMES[idx]?.id });
         state.schemeIdx = idx;
         const s = SCHEMES[idx];
+        warmShaders(); // r139b
         window.__czAmb?.world(s.id);
         if (s.id === "sketch") try { crayonTextures(); } catch (e) {}
         const dark = lum(s.bg) < 0.45;
@@ -35331,7 +35637,7 @@ void main() {
         if (veh?.beams) veh.beams.visible = dark;
         veh?.lampGlow?.(dark); // r138f
         chromeTone(scene, dark ? 0.4 : 1); // r138l: the chrome's studio room, dimmed at night
-        cityTone(scene, dark ? 0.45 : 1); // r138n: and the city's reflections
+        cityTone(scene, dark ? 0.3 : 1); // r138n: and the city's reflections (low ambient at night: less, or paint glows)
         const cs = document.documentElement.style;
         cs.setProperty("--bg", s.bg);
         cs.setProperty("--fg", s.fg);
@@ -36004,6 +36310,29 @@ void main() {
       var prevT = performance.now();
       var heading = 0;
       var bank = 0;
+      // r139e: the ride's motion springs (all state in one object, no allocation per frame): the distance follower
+      // (L, Lv), the yaw's rate (hv) and last target (th), roll (b, bv), the weight-transfer pitch (p, pv), the
+      // suspension heave (hy, hyv), the front wheels' steer (st, stv), the road's curvature (kap), speeds and accelerations
+      var MO = { Lv: 0, Ls: 0, hv: 0, th: null, b: 0, bv: 0, p: 0, pv: 0, hy: 0, hyv: 0, st: 0, stv: 0, kap: 0, vs: 0, vf: 0, vfp: 0, acc: 0, cy: null, vy: 0, vyp: 0, ay: 0 };
+      // a damped spring on MO[k] (velocity MO[kv]) towards target: w = stiffness (rad/s), z = damping ratio (1 = critical);
+      // sub-stepped so a long frame stays stable
+      function moSpring(k, kv, target, w, z, dt) {
+        const n = Math.max(1, Math.ceil(dt * w / 0.4)), h = dt / n;
+        for (let i = 0; i < n; i++) { MO[kv] += (w * w * (target - MO[k]) - 2 * z * w * MO[kv]) * h; MO[k] += MO[kv] * h; }
+      }
+      // per ride: yaw stiffness; roll gain on the lateral acceleration (v² x curvature), its cap, stiffness and damping;
+      // pitch gain on the forward acceleration, its cap and stiffness; wheelbase for the steer; heave (suspension) gain
+      var VEH_MOTION = {
+        dacia1300: { yaw: 9, roll: 2.4e-4, rollMax: 0.13, rollW: 7, rollZ: 0.55, pitch: 2.2, pitchMax: 0.05, pitchW: 8, wb: 51.5, heave: 1 },
+        cop: { yaw: 9, roll: 2.4e-4, rollMax: 0.13, rollW: 7, rollZ: 0.55, pitch: 2.2, pitchMax: 0.05, pitchW: 8, wb: 51.5, heave: 1 },
+        monopoly: { yaw: 11, roll: 1.6e-4, rollMax: 0.1, rollW: 9, rollZ: 0.6, pitch: 1.6, pitchMax: 0.04, pitchW: 10, wb: 44, heave: 0.8 },
+        f1: { yaw: 14, roll: 0.9e-4, rollMax: 0.05, rollW: 13, rollZ: 0.75, pitch: 0.9, pitchMax: 0.025, pitchW: 14, wb: 60, heave: 0.4 },
+        scooter: { yaw: 12, roll: 4.4e-4, rollMax: 0.26, rollW: 8, rollZ: 0.7, pitch: 1.5, pitchMax: 0.04, pitchW: 10, wb: 30, heave: 0.7 },
+        groovy: { yaw: 7, roll: 3.2e-4, rollMax: 0.15, rollW: 5, rollZ: 0.45, pitch: 3, pitchMax: 0.06, pitchW: 6, wb: 56, heave: 1.3 },
+        foodvan: { yaw: 6, roll: 3.6e-4, rollMax: 0.16, rollW: 4.5, rollZ: 0.42, pitch: 3.2, pitchMax: 0.065, pitchW: 5.5, wb: 56, heave: 1.4 },
+        sub: { yaw: 3.5, roll: 2e-4, rollMax: 0.12, rollW: 2.2, rollZ: 0.5, pitch: 2, pitchMax: 0.05, pitchW: 2.5, wb: 0, heave: 0 },
+        plane: { yaw: 5, roll: 0, rollMax: 0, rollW: 3, rollZ: 0.6, pitch: 0.6, pitchMax: 0.03, pitchW: 4, wb: 0, heave: 0 }
+      };
       var wheelSpin = 0;
       var endConfettiT = 0;
       var boltTimer = 5;
@@ -36014,7 +36343,7 @@ void main() {
       // the plane's take-off: air eases towards airT (0 on the road, 1 high over the city)
       var air = 0, airT = 0, AIR_H = 150, airBank = 0;
       const _rP = new Vector3(), _rT = new Vector3();
-      const _tA = new Vector3();
+      const _tA = new Vector3(), _tB = new Vector3(); // r139e: _tB for the curvature
       var beaconOn = false, beaconBlinkUntil = 0, copMode = "";
       // r138j: the 1300 where the van used to be the default; worlds with their own ride keep it
       var ENV_VEH = { default: "dacia1300", monument: "dacia1300", ghibli: "dacia1300", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "dacia1300", orchid: "scooter", underwater: "sub", sincity: "cop", sketch: "dacia1300", riso: "scooter" };
@@ -36022,7 +36351,7 @@ void main() {
       var VEH_SPEED = {
         groovy: { max: 130, unit: "KM/H" }, f1: { max: 340, unit: "KM/H" }, monopoly: { max: 260, unit: "KM/H" },
         plane: { max: 150, unit: "KNOTS" }, scooter: { max: 45, unit: "KM/H" }, foodvan: { max: 110, unit: "KM/H" },
-        cop: { max: 220, unit: "KM/H" }, dacia1300: { max: 144, unit: "KM/H" }, sub: { max: 38, unit: "KNOTS" }
+        cop: { max: 150, unit: "KM/H" } /* r139e: the 1310 */, dacia1300: { max: 144, unit: "KM/H" }, sub: { max: 38, unit: "KNOTS" }
       };
       var copCar = (() => {
         const g = new Group();
@@ -36039,7 +36368,7 @@ void main() {
         barBase.position.set(0, 20.4, -2);
         g.add(barBase);
         const beacons = [];
-        for (const [sx, col] of [[-4.2, "#F65342"], [4.2, "#119BFE"]]) {
+        for (const [sx, col] of [[-4.2, "#2a6bff"], [4.2, "#119BFE"]]) { // r139e: Romanian police lamps are blue
           const b = new Mesh(
             new BoxGeometry(6, 3.4, 4.6),
             new MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 1.4, roughness: 0.35 })
@@ -37222,7 +37551,10 @@ void main() {
                 return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
               // crayon decals carry a marker alpha: to the pencil they are paper
               float lum(vec2 uv){ vec4 t = texture2D(tD, uv); if (abs(t.a - 0.25) < 0.03) return 1.0; vec3 c = pow(clamp(t.rgb, 0.0, 1.0), vec3(0.4545)); return dot(c, vec3(0.299, 0.587, 0.114)); }
-              float dep(vec2 uv){ float z = texture2D(tZ, uv).x; float ndc = z * 2.0 - 1.0; return (2.0 * near * far) / (far + near - ndc * (far - near)); }
+              float depZ(float z){ float ndc = z * 2.0 - 1.0; return (2.0 * near * far) / (far + near - ndc * (far - near)); }
+              float dep(vec2 uv){ return depZ(texture2D(tZ, uv).x); }
+              // r139b: for the taps inside a branch (no implicit derivatives there; tD has no mips, so the same texel)
+              float lumL(vec2 uv){ vec4 t = textureLod(tD, uv, 0.0); if (abs(t.a - 0.25) < 0.03) return 1.0; vec3 c = pow(clamp(t.rgb, 0.0, 1.0), vec3(0.4545)); return dot(c, vec3(0.299, 0.587, 0.114)); }
               void main(){
                 float tf = 0.0;
                 vec2 px = 1.0 / res;
@@ -37232,7 +37564,9 @@ void main() {
                 float l = lum(uv);
                 // silhouettes: the ink hulls come out near black. r130f: the mask is softened over a small cross
                 // first, so corners round off like a pencil turning rather than snapping
-                float lmin = min(l, min(min(lum(uv + vec2(px.x, 0.0)), lum(uv - vec2(px.x, 0.0))), min(lum(uv + vec2(0.0, px.y)), lum(uv - vec2(0.0, px.y)))));
+                // r139b: the four neighbours are read once (the tone edge below reused two of them by reading again)
+                float lR = lum(uv + vec2(px.x, 0.0)), lL = lum(uv - vec2(px.x, 0.0)), lU = lum(uv + vec2(0.0, px.y)), lD = lum(uv - vec2(0.0, px.y));
+                float lmin = min(l, min(min(lR, lL), min(lU, lD)));
                 float ink0 = 1.0 - smoothstep(0.08, 0.3, lmin);
                 float inkN = (1.0 - smoothstep(0.06, 0.22, lum(uv + vec2(1.4, 0.0) * px))) + (1.0 - smoothstep(0.06, 0.22, lum(uv - vec2(1.4, 0.0) * px)))
                            + (1.0 - smoothstep(0.06, 0.22, lum(uv + vec2(0.0, 1.4) * px))) + (1.0 - smoothstep(0.06, 0.22, lum(uv - vec2(0.0, 1.4) * px)));
@@ -37246,7 +37580,7 @@ void main() {
                 float ca = clamp(22.0 / dz, 0.004, 0.035);
                 float crease = smoothstep(ca, ca * 2.6, length(vec2(gx, gy)));
                 // tone edges: colour changes (windows, doors, road paint) drawn lighter
-                float l1 = lum(uv + vec2(px.x, 0.0)), l2 = lum(uv + vec2(0.0, px.y));
+                float l1 = lR, l2 = lU;
                 float tone = smoothstep(0.1, 0.2, abs(l1 - l) + abs(l2 - l)) * 0.12;
                 float line = max(ink * 0.82, max(crease * 0.7, tone));
                 // pencil pressure: the stroke swells and thins along its length; a faint second pass beside it
@@ -37255,7 +37589,8 @@ void main() {
                 float ghost = (1.0 - smoothstep(0.06, 0.22, lum(uv + vec2(2.2, -1.6) * px))) * 0.18 * vn(vUv * res * 0.09);
                 line = max(line, ghost);
                 // the far city is only suggested: lines thin out with distance
-                float dd = dep(vUv);
+                float zr = texture2D(tZ, vUv).x; // r139b: read once (it was read again for the reveal below)
+                float dd = depZ(zr);
                 line *= 1.0 - 0.5 * smoothstep(dz * 1.35, dz * 2.8, dd);
                 // hatching in the shade: one direction, then a cross, both a little irregular
                 vec2 p = vUv * res;
@@ -37268,7 +37603,6 @@ void main() {
                 float grain = 0.72 + 0.28 * vn(p * 0.9);
                 float g = max(line, hatch) * grain;
                 // where has the city been drawn yet? world position from depth, then the reveal map
-                float zr = texture2D(tZ, vUv).x;
                 vec4 ndc = vec4(vUv * 2.0 - 1.0, zr * 2.0 - 1.0, 1.0);
                 vec4 vp = pInv * ndc; vp /= vp.w;
                 vec3 wp = (cW * vp).xyz;
@@ -37282,7 +37616,9 @@ void main() {
                 vec2 gq = wp.xz / 140.0 + vec2(vn(wp.zx * 0.004) * 0.18, 0.0);
                 vec2 gd = abs(fract(gq - 0.5) - 0.5) / max(fwidth(gq), vec2(1e-4));
                 float grid = (1.0 - smoothstep(0.0, 1.3, min(gd.x, gd.y))) * step(wp.y, 4.0) * step(zr, 0.9999);
-                float ghost2 = max(1.0 - smoothstep(0.08, 0.3, lum(uv + vec2(5.0, 1.5) * px)), 1.0 - smoothstep(0.08, 0.3, lum(uv - vec2(1.5, 5.0) * px)));
+                // r139b: the overshooting second stroke only exists on the drawing front (band > 0): read it only there
+                float ghost2 = 0.0;
+                if (band > 0.0) ghost2 = max(1.0 - smoothstep(0.08, 0.3, lumL(uv + vec2(5.0, 1.5) * px)), 1.0 - smoothstep(0.08, 0.3, lumL(uv - vec2(1.5, 5.0) * px)));
                 float wip = max(grid * 0.32, max(ghost2 * 0.4, line * 0.55)) * band * (0.7 + 0.3 * vn(p * 0.6));
                 g *= mix(0.035, 1.0, shown);
                 g = max(g, wip);
@@ -37388,6 +37724,35 @@ void main() {
         renderer.setRenderTarget(null);
         renderer.render(risoFx.sc, risoFx.cam);
       }
+      // r139b: shaders are prepared for the way the city is actually drawn. The map (tilt-shift, Sketchbook, Riso) draws
+      // into a render target, which needs its own variants (no tone mapping, linear output); the boot compile only made
+      // the on-screen ones, so a dozen compiled mid-flight on the first mapGo and ~17 at the jet's take-off, as their
+      // buildings came into view (30-80 ms each). Now, when idle after boot, a world switch or a mode switch, every
+      // material of the scene (hidden ones too) is compiled for the target in use, hulls included where outlines draw
+      var warmDone = new Set(), warmQueued = false;
+      function warmShaders() {
+        if (warmQueued) return;
+        warmQueued = true;
+        (window.requestIdleCallback || setTimeout)(() => {
+          warmQueued = false;
+          const sch = SCHEMES[state.schemeIdx]?.id, key = `${sch}|${mapMode ? "map" : "drive"}`;
+          if (!sch || warmDone.has(key)) return;
+          warmDone.add(key);
+          const post = sch === "sketch" || sch === "riso" || sch === "sincity", toRT = post || mapMode || sch === "monument";
+          const hidden = [], prev = renderer.getRenderTarget();
+          const rt = toRT ? new WebGLRenderTarget(1, 1, { type: HalfFloatType }) : null;
+          scene.traverse((o) => { if (!o.visible && (o.isMesh || o.isGroup)) { hidden.push(o); o.visible = true; } });
+          try {
+            renderer.setRenderTarget(rt);
+            renderer.compile(scene, camera);
+            if (post || (!toRT && sch !== "monument")) outline.compileOutline(scene, camera);
+          } catch (e) {} finally {
+            hidden.forEach((o) => (o.visible = false));
+            renderer.setRenderTarget(prev);
+            rt?.dispose();
+          }
+        }, { timeout: 2500 });
+      }
       var perf = { avg: 16, t: 0, dpr: Math.min(window.devicePixelRatio, isMobile() ? 1.5 : 2) };
       function adaptResolution(rawMs, now) {
         perf.avg += (Math.min(rawMs, 60) - perf.avg) * 0.05;
@@ -37398,7 +37763,46 @@ void main() {
         else if (perf.avg < 13 && perf.dpr < max) next = Math.min(max, perf.dpr + 0.25);
         if (next !== perf.dpr) { perf.dpr = next; renderer.setPixelRatio(next); renderer.setSize(window.innerWidth, window.innerHeight); perf.t = now; }
       }
+      // r139b: a full-screen page (a case study in its frame, the Slow Coffee story) covers the city completely: the
+      // city is not drawn under it (the page scrolls on the same main thread and GPU). Only once it is fully opaque:
+      // while it grows out of the place card, fades, or is being closed, the city still shows and is still drawn
+      var coverEls = null;
+      // r139g: the kinetic intro plays over an opaque ground (body.kz-boot): the city under it is not seen, so it is not
+      // drawn either, not until the ground goes clear for the wall of cups. Its first few frames are drawn, behind the
+      // loader: that is where the textures, buffers and programs go up to the GPU, and where the adaptive resolution
+      // must not read the cost of those uploads as a slow machine
+      var kzWarm = { frames: 0, need: 3, resolve: null, on: false };
+      function introFreeze(now) {
+        if (!document.body.classList.contains("kz-boot")) { if (kzWarm.on) { kzWarm.on = false; perf.t = now + 3000; } return false; } // (the frames of the hand-off, two contexts at once, do not drive the resolution)
+        if (kzWarm.frames < kzWarm.need) {
+          // the first warm frame draws everything, culled or not: every texture and buffer the map can need goes up now
+          if (kzWarm.frames === 0) {
+            kzWarm.unc = [];
+            scene.traverse((o) => { if (o.frustumCulled && (o.isMesh || o.isSprite || o.isLine || o.isPoints)) { o.frustumCulled = false; kzWarm.unc.push(o); } });
+            // the map's post pass (tilt-shift) takes over a moment after the reveal: its targets and programs are used once here,
+            // with everything in the frame, so every program it needs is linked and queried now, not then
+            try { tiltShiftRender(now); } catch (e) {}
+          } else if (kzWarm.unc) { for (const o of kzWarm.unc) o.frustumCulled = true; kzWarm.unc = null; }
+          if (kzWarm.frames === 2) { try { tiltShiftRender(now); } catch (e) {} }
+          kzWarm.frames++;
+          if (kzWarm.frames >= kzWarm.need) kzWarm.resolve?.();
+          return false;
+        }
+        kzWarm.on = true;
+        return true;
+      }
+      function cityCovered() {
+        if (!coverEls) coverEls = [...document.querySelectorAll(".case-frame, .scf-modal")];
+        for (const c of coverEls) {
+          if (c.classList.contains("hidden") || c.style.opacity || c.style.clipPath) continue;
+          if (c.getAnimations().length) continue;
+          return true;
+        }
+        return false;
+      }
       function frame(now) {
+        if (cityCovered()) { prevT = now; requestAnimationFrame(frame); return; } // r139b
+        if (introFreeze(now)) { prevT = now; requestAnimationFrame(frame); return; } // r139g
         adaptResolution(now - prevT, now);
         const dt = Math.min(0.05, (now - prevT) / 1e3);
         const rawDt = Math.min(0.25, (now - prevT) / 1e3);
@@ -37425,7 +37829,16 @@ void main() {
         const nearDacia = state.L > route.stopL.merge - 1500 && state.L < route.stopL.merge - 250;
         const crawl = (coffee.near && !coffee.done && (!mapMode || mapNav.place?.tm)) || (nearDacia && !mapMode);
         if (siteMode) { state.targetL = state.L; state.speed = 0; }
-        state.L = smooth(state.L, state.targetL, dt, crawl ? 1.6 : 5.5);
+        // r139e: a critically damped follower instead of the first-order smooth: the speed now eases in and out (it
+        // jumped to full speed on every wheel tick and decayed, a sawtooth); it never overshoots the target, so the
+        // car never creeps back. The clamps below still cap it; then its velocity is re-synced (see dL)
+        {
+          const e0 = state.targetL - state.L;
+          const w = (crawl ? 1.6 : 5.5) * 1.7, n = Math.max(1, Math.ceil(dt * w / 0.4)), h = dt / n;
+          for (let i = 0; i < n; i++) { MO.Lv += (w * w * (state.targetL - state.L) - 2 * w * MO.Lv) * h; state.L += MO.Lv * h; }
+          if ((state.targetL - state.L) * e0 <= 0) { state.L = state.targetL; MO.Lv = 0; }
+          MO.Ls = state.L;
+        }
         if (police.active) {
           const maxStep = 260 * dt;
           state.L = clamp2(state.L, prevL - maxStep, prevL + maxStep);
@@ -37462,6 +37875,10 @@ void main() {
           }
         }
         const dL = state.L - prevL;
+        // r139e: a clamp (speed caps, police, the merge floor) or a jump moved L off the spring: its velocity follows
+        if (state.L !== MO.Ls) MO.Lv = Math.abs(dL) > 3000 ? 0 : dL / Math.max(dt, 1e-3);
+        const dLm = Math.abs(dL) > 3000 ? 0 : dL; // a jump is not motion (no lean, no pitch from it)
+        MO.vs = smooth(MO.vs, Math.abs(dLm) / Math.max(dt, 1e-3), dt, 10);
         prevL = state.L;
         state.speed = smooth(state.speed, Math.abs(dL / Math.max(dt, 1e-3)) * 0.09, dt, 4);
         {
@@ -37522,7 +37939,25 @@ void main() {
         let dh = targetHeading - heading;
         while (dh > Math.PI) dh -= Math.PI * 2;
         while (dh < -Math.PI) dh += Math.PI * 2;
-        heading += dh * Math.min(1, dt * 8);
+        // r139e: the yaw rides a critically damped spring that also feeds forward the road's own turn rate, so it
+        // stays on the tangent through a bend (no lag behind it) and never snaps at a kink; heavier rides turn slower
+        const mo = VEH_MOTION[state.vehicleId] || VEH_MOTION.dacia1300;
+        {
+          let dth = MO.th == null ? 0 : targetHeading - MO.th;
+          while (dth > Math.PI) dth -= Math.PI * 2; while (dth < -Math.PI) dth += Math.PI * 2;
+          MO.th = targetHeading;
+          const rate = Math.abs(dth) > 1.2 ? 0 : dth / Math.max(dt, 1e-3); // turning round (planeRev) is a turn, not a rate
+          const w = mo.yaw, n = Math.max(1, Math.ceil(dt * w / 0.4)), h = dt / n;
+          for (let i = 0; i < n; i++) { MO.hv += (w * w * dh + 2 * w * (rate - MO.hv)) * h; const s = MO.hv * h; heading += s; dh -= s; }
+        }
+        // the road's curvature here (rad per unit, signed like the heading), over a window from a little behind to a
+        // little ahead, so the lean and the steer start as the bend comes; in the driving direction
+        {
+          route.tangentAt(Math.max(0, state.L - 30), _tB); route.tangentAt(Math.min(route.total, state.L + 50), _tA);
+          let dA = Math.atan2(_tA.x, _tA.z) - Math.atan2(_tB.x, _tB.z);
+          while (dA > Math.PI) dA -= Math.PI * 2; while (dA < -Math.PI) dA += Math.PI * 2;
+          MO.kap = (planeRev > 0.5 ? -dA : dA) / 80;
+        }
         {
           // cars roll a little outwards; the plane leans INTO the turn, like an aircraft does
           // (a left turn raises the right wing), and harder
@@ -37532,21 +37967,32 @@ void main() {
             let dA = Math.atan2(_tA.x, _tA.z) - Math.atan2(carTan.x, carTan.z);
             while (dA > Math.PI) dA -= Math.PI * 2; while (dA < -Math.PI) dA += Math.PI * 2;
             if (planeRev > 0.5) dA = -dA;
-            airBank = smooth(airBank, clamp2(-dA * 1.1, -0.5, 0.5) * clamp2(state.speed / 15, 0.35, 1), dt, 1.6);
-            bank = airBank;
+            // r139e: on a soft, slightly underdamped spring: it rolls into the bank and settles like an aircraft
+            moSpring("b", "bv", clamp2(-dA * 1.1, -0.5, 0.5) * clamp2(state.speed / 15, 0.35, 1), 2.6, 0.7, dt);
+            bank = airBank = MO.b;
           }
           else {
-            // r133: cars lean INTO the bend (Daniel: the outward body roll read as the wrong way), from the road's
-            // curve a little ahead, so the lean starts as the bend comes and eases out after it, never twitchy
-            route.tangentAt(Math.min(route.total, state.L + 70), _tA);
-            let dA = Math.atan2(_tA.x, _tA.z) - Math.atan2(carTan.x, carTan.z);
-            while (dA > Math.PI) dA -= Math.PI * 2; while (dA < -Math.PI) dA += Math.PI * 2;
-            if (planeRev > 0.5) dA = -dA;
-            const k = state.vehicleId === "f1" ? 0.35 : 0.75;
-            bank = smooth(bank, clamp2(-dA * k, -0.16, 0.16) * clamp2(state.speed / 25, 0, 1), dt, 3.2);
+            // r133: cars lean INTO the bend (Daniel: the outward body roll read as the wrong way)
+            // r139e: from the lateral acceleration, v² x the curvature (zero standing still, growing with speed in a
+            // bend), through a damped spring per ride: it builds, settles with a hint of overshoot, and unwinds after
+            const aLat = MO.vs * MO.vs * MO.kap;
+            moSpring("b", "bv", clamp2(-aLat * mo.roll, -mo.rollMax, mo.rollMax), mo.rollW, mo.rollZ, dt);
+            bank = MO.b;
           }
         }
         const pitch = Math.atan2(carTan.y, Math.hypot(carTan.x, carTan.z));
+        // r139e: weight transfer: the nose lifts as the ride pulls away and dips as it brakes (the forward
+        // acceleration, through a spring); and a little suspension heave where the road's height bends (ramps, landings)
+        {
+          const vf = dLm / Math.max(dt, 1e-3) * (planeRev > 0.5 ? -1 : 1);
+          MO.vf = smooth(MO.vf, vf, dt, 12);
+          MO.acc = smooth(MO.acc, (MO.vf - MO.vfp) / Math.max(dt, 1e-3), dt, 9); MO.vfp = MO.vf;
+          moSpring("p", "pv", clamp2(-MO.acc * mo.pitch * 1e-5, -mo.pitchMax, mo.pitchMax), mo.pitchW, 0.55, dt);
+          const cy = carPos.y;
+          if (MO.cy != null && Math.abs(cy - MO.cy) < 40) { MO.vy = smooth(MO.vy, (cy - MO.cy) / Math.max(dt, 1e-3), dt, 12); MO.ay = smooth(MO.ay, (MO.vy - MO.vyp) / Math.max(dt, 1e-3), dt, 10); }
+          MO.vyp = MO.vy; MO.cy = cy;
+          moSpring("hy", "hyv", mo.heave && air < 0.05 ? clamp2(-MO.ay * 0.004 * mo.heave, -2.2, 2.2) : 0, 11, 0.35, dt);
+        }
         // the sway is added on top of the bank at render time (adding it to `bank` itself made it
         // pile up frame after frame)
         let sway = 0;
@@ -37579,7 +38025,8 @@ void main() {
         }
         // take-off: climbing noses up, descending noses down
         const climb = (airT - air) * (veh.kind === "plane" ? 1 : 0);
-        veh.group.rotation.set(-pitch + (flying ? -0.09 : 0) - clamp2(climb * 0.9, -0.35, 0.45), heading, bank + sway, "YXZ");
+        veh.group.rotation.set(-pitch + (flying ? -0.09 : 0) - clamp2(climb * 0.9, -0.35, 0.45) + MO.p, heading, bank + sway, "YXZ"); // r139e: + MO.p
+        veh.group.position.y += MO.hy; // r139e: the suspension's heave
         if (coffee.phase === "rush") {
           veh.group.position.x += (Math.random() - 0.5) * 3;
           veh.group.position.z += (Math.random() - 0.5) * 3;
@@ -37590,6 +38037,12 @@ void main() {
         for (const w of veh.wheels) w.children.forEach((c) => {
           c.rotation.x = wheelSpin;
         });
+        // r139e: the front wheels steer with the road: atan(wheelbase x curvature), a touch exaggerated so it reads at
+        // toy scale, on a quick spring; the rear ones stay straight
+        if (mo.wb && veh.kind !== "plane") {
+          moSpring("st", "stv", clamp2(Math.atan(mo.wb * MO.kap) * 1.2, -0.4, 0.4), 16, 0.85, dt);
+          for (const w of veh.wheels) if (w.position.z > 3) w.rotation.y = MO.st;
+        }
         smoke.tick(dt, !siteMode && !flying && spawnStart < 0 && SCHEMES[state.schemeIdx].id !== "underwater"); // r138j: idle exhaust (not while it drops in)
         if (veh.prop) veh.prop.rotation.z += dt * (18 + state.speed * 0.4);
         if (state.started && !siteMode && !mapMode && !flying && air < 0.05 && !police.active && state.vehicleId !== "cop" && (redHold > 2.5 || state.targetL - state.L > 9000) && now > police.next && now > jumpGuard) {
@@ -38193,7 +38646,7 @@ void main() {
         { id: "antila", br: "A", x: 560, z: 6040, px: 440, pz: 6040, h: 50, name: "Antila", line: "CHARCUTERIE \xB7 BRAND", c: "#F2C200", t: "#1a1405", work: "Antila", desc: "A charcuterie brand, 100% Romanian, with a bold wordmark, disruptive characters and colour-coded packaging." },
         { id: "unde", br: "A", x: 708, z: 6036, h: 50, name: "UND\xC9", line: "GROCERY \xB7 SIGNAGE", c: "#2b6fd6", t: "#ffffff", work: "UNDE", desc: "ARCA's grocery stores: a hand-drawn basket and three formats, Market, Store and Concept." },
         { id: "invest", br: "B", x: 2205, z: 4500, h: 170, name: "Investimental", line: "FINTECH \xB7 UX \xB7 UI", c: "#119BFE", t: "#ffffff", work: "Investimental" },
-        { id: "tac", br: "C", x: 1500, z: 4570, px: 1775, pz: 4570, h: 150, name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
+        { id: "tac", br: "C", x: 1500, z: 4570, px: 1775, pz: 4570, h: 128, /* r139e: the re-massed palace is lower */ name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
         { id: "zdrovit", br: "C", x: 1860, z: 5070, h: 96, name: "Zdrovit", line: "A YARD OF BRANDS", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health, clinic, beauty and perfume brands, from Bucharest to Barcelona, Los Angeles and Paris." },
         { id: "end", stop: "end", name: "Cromatic Studios House", line: "STR. OLARI 9 \xB7 COME BY", c: "#ffffff", t: "#111111", pin: "#111111" },
         { id: "jet", x: 1250, z: JET_HOME.z - 15, px: JET_HOME.x, pz: JET_HOME.z, h: 28 /* r138b: the smaller jet's fin top */, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", board: true, unmarked: true }
@@ -38828,9 +39281,135 @@ void main() {
         welcomeEl.onclick = (e) => {
           const b = e.target.closest("button"); if (!b) return;
           welcome(false);
+          if (b.classList.contains("mw-x")) { guideStart(); return; } // r139h: closed with ×: the first-time guide
           if (b.classList.contains("mw-free")) { showTapHint(); return; }
           if (b.dataset.go) mapGo(MAP_PLACES.find((p) => p.id === b.dataset.go));
         };
+        // ---- r139h: a light first-time guide after the welcome card is closed with ×: "Drag the map", then the camera
+        // eases a little toward Two Minutes and its pin says "Start here". Once per visitor, never on a deep link, and any
+        // other hand on the map (a tap elsewhere, a zoom, a ride, a world, a card) ends it at once: it never fights the camera
+        const guideDeep = (() => {
+          if (/[?&](boarding|place|stop|go|work)\b/.test(location.search) || location.hash.length > 1) return true;
+          try { const r = document.referrer ? new URL(document.referrer) : null; return !!(r && r.origin === location.origin && /^\/(work|cases?)\//.test(r.pathname)); } catch { return false; }
+        })();
+        const guide = { phase: null, done: false, els: null, t0: 0, timer: 0, down: null, last: 0, goal: null, v: [0, 0, 0], hl: null };
+        const guideReduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const guideTouch = matchMedia("(pointer: coarse)").matches;
+        const guideP = new Vector3();
+        const guideHand = `<svg class="mg-hand" viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" fill="#fff" stroke="#141414" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15V4a2 2 0 0 1 4 0v6-1a2 2 0 0 1 4 0v1a2 2 0 0 1 3 1z"/><path d="M11 10V9M15 10v1M18 11v1" fill="none"/></svg>`;
+        const guideEls = () => guide.els || (guide.els = (() => {
+          const drag = el("div", "map-guide hidden", `<span class="mg-track"><span class="mg-move"><span class="mg-dot"></span>${guideHand}</span></span><b>Grab and drag</b>`);
+          drag.setAttribute("role", "status");
+          const start = el("button", "mg-start hidden", `<span class="mg-ring"></span><span class="mg-ring r2"></span><span class="mg-badge"><b class="mg-t1">Everything starts</b><i class="mg-tap">with a tap</i><b class="mg-t2">Start here</b><i class="mg-nm">Two Minutes</i><span class="mg-arr" aria-hidden="true">→</span></span>`);
+          start.setAttribute("aria-label", "Everything starts with a tap: Two Minutes"); // r139i: Daniel's copy
+          start.onclick = (e) => { e.stopPropagation(); if (mapBoarding) return; guideEnd("done"); mapGo(MAP_PLACES.find((p) => p.id === "tm")); };
+          box.append(drag, start);
+          return { drag, start };
+        })());
+        const guideBusy = () => !mapMode || mapIntro || mapBoarding || mapNav.moving || !!mapNav.place || jetFx.phase !== "idle" || !card.classList.contains("hidden")
+          || !rides.classList.contains("hidden") || !!ui.themeMenu?.classList.contains("open") || (crewPanel && !crewPanel.classList.contains("hidden")) || document.body.classList.contains("map-at-stop");
+        const guideEnd = (action) => {
+          if (!guide.phase) return;
+          if (guide.phase === "drag") czEv("onboarding_step", { step: "drag", action: "skipped" });
+          else if (guide.phase === "start" && action) czEv("onboarding_step", { step: "start_here", action });
+          guide.phase = null; guide.goal = null; guide.down = null; clearTimeout(guide.timer);
+          guide.els?.drag.classList.add("hidden"); guide.els?.start.classList.add("hidden");
+          guide.hl?.classList.remove("mg-hl"); guide.hl = null;
+        };
+        const guideStartHere = () => {
+          if (guide.phase !== "wait") return;
+          if (guideBusy()) return guideEnd(null);
+          const now = performance.now();
+          // never over a hand still on the map or a glide still running: wait for a quiet moment
+          if (ptrs.size || mapView.vx || mapView.vz || now - guide.last < 700) { if (now - guide.t0 < 20000) guide.timer = setTimeout(guideStartHere, 200); else guideEnd(null); return; }
+          const pl = MAP_PLACES.find((p) => p.id === "tm");
+          if (!pl || pl.wx == null) return guideEnd(null);
+          guide.phase = "start"; guide.t0 = now;
+          guide.hl = pins.find((p) => p.pl === pl)?.b || null; guide.hl?.classList.add("mg-hl");
+          guide.els.start.classList.remove("hidden");
+          if (!guideReduce) {
+            mapView.follow = false; mapView.focus = null; mapView.vx = mapView.vz = 0; mapView.distGoal = null;
+            const kk = innerWidth < 720 ? 0.9 : 0.72; // a phone has less room around the pin
+            guide.goal = { x: mapView.tgt.x + (pl.wx - mapView.tgt.x) * kk, z: mapView.tgt.z + (pl.wz - mapView.tgt.z) * kk, d: clamp2(mapView.dist * 0.8, Math.min(mapView.dist, 3500), mapView.dist) };
+            guide.v = [0, 0, 0];
+          }
+          guide.timer = setTimeout(() => guideEnd("skipped"), 15000);
+        };
+        const guideDragDone = (action) => {
+          if (guide.phase !== "drag") return;
+          czEv("onboarding_step", { step: "drag", action });
+          guide.els.drag.classList.add("hidden");
+          guide.phase = "wait"; guide.t0 = performance.now(); clearTimeout(guide.timer);
+          guide.timer = setTimeout(guideStartHere, action === "done" ? 550 : 250);
+        };
+        function guideStart() {
+          if (guide.phase || guide.done || guideDeep || guideBusy()) return;
+          try { if (localStorage.getItem("cz-map-guide")) return; localStorage.setItem("cz-map-guide", "1"); } catch {}
+          guide.done = true;
+          const g = guideEls();
+          guide.phase = "drag"; guide.t0 = guide.last = performance.now();
+          g.drag.classList.remove("hidden");
+          guide.timer = setTimeout(() => guideDragDone("skipped"), 6000);
+        }
+        // per frame (from update): the critically damped camera ease, the "Start here" ring over the pin, and the exits
+        const guideStep = (dt) => {
+          if (!guide.phase) return;
+          if (guideBusy()) return guideEnd(guide.phase === "start" && mapNav.place?.id === "tm" ? "done" : "skipped");
+          if (guide.phase !== "start") return;
+          const pl = MAP_PLACES.find((p) => p.id === "tm"), g = guide.goal;
+          if (g) {
+            // exact critically damped step: x = goal + (e0 + (v0 + w·e0)·t)·e^(−w·t)
+            const w = 2.1, t = Math.min(dt, 0.05), ex = Math.exp(-w * t), cur = [mapView.tgt.x, mapView.tgt.z, mapView.dist], gl = [g.x, g.z, g.d];
+            let rest = true;
+            for (let i = 0; i < 3; i++) {
+              const e0 = cur[i] - gl[i], v0 = guide.v[i], c = v0 + w * e0;
+              cur[i] = gl[i] + (e0 + c * t) * ex; guide.v[i] = (v0 - w * c * t) * ex;
+              if (Math.abs(cur[i] - gl[i]) > 1.5 || Math.abs(guide.v[i]) > 3) rest = false;
+            }
+            mapView.tgt.x = cur[0]; mapView.tgt.z = cur[1]; mapView.dist = cur[2];
+            if (rest) guide.goal = null;
+          }
+          warpV(guideP.set(pl.wx, 0, pl.wz)).project(camera);
+          const W = innerWidth, H = innerHeight, phone = W < 720;
+          let x = (guideP.x * 0.5 + 0.5) * W, y = (-guideP.y * 0.5 + 0.5) * H;
+          // reduced motion: no camera move, so a pin off screen keeps its badge at the nearest edge
+          const x2 = clamp2(x, 70, W - 70), y2 = clamp2(y, phone ? 200 : 130, H - (phone ? 130 : 120)), edge = guideP.z > 1 || x2 !== x || y2 !== y;
+          guide.els.start.classList.toggle("edge", edge);
+          if (edge) { const s = guideP.z > 1 ? -1 : 1; guide.els.start.style.setProperty("--mga", Math.atan2((y - y2) * s, (x - x2) * s).toFixed(2) + "rad"); }
+          guide.els.start.style.transform = `translate3d(${x2.toFixed(1)}px, ${y2.toFixed(1)}px, 0)`;
+        };
+        // any hand on the map: a drag ends step 1; anything but the highlighted pin ends step 2
+        window.addEventListener("pointerdown", (e) => {
+          if (!guide.phase) return;
+          guide.last = performance.now();
+          const t = e.target;
+          if (t === renderer.domElement) { guide.down = { x: e.clientX, y: e.clientY, id: e.pointerId }; if (guide.phase === "start") guide.goal = null; return; }
+          if (t.closest?.(".mg-start") || (guide.phase === "start" && t.closest?.('.map-pin[data-id="tm"], .map-dock'))) return;
+          guideEnd("skipped");
+        }, true);
+        window.addEventListener("pointermove", (e) => {
+          if (!guide.phase || !guide.down || e.pointerId !== guide.down.id) return;
+          if (e.pointerType === "mouse" && !e.buttons) { guide.down = null; return; }
+          guide.last = performance.now();
+          if (Math.hypot(e.clientX - guide.down.x, e.clientY - guide.down.y) > 8) {
+            if (guide.phase === "drag") guideDragDone("done");
+            else if (guide.phase === "start") guideEnd("skipped");
+          }
+        }, true);
+        const guideUp = (e) => {
+          if (!guide.down || e.pointerId !== guide.down.id) return;
+          guide.down = null; guide.last = performance.now();
+          // a tap on the map: a tap on Two Minutes' building goes there (done, seen from update); anything else ends it
+          if (guide.phase === "start") setTimeout(() => { if (guide.phase === "start") guideEnd("skipped"); }, 450);
+        };
+        window.addEventListener("pointerup", guideUp, true);
+        window.addEventListener("pointercancel", guideUp, true);
+        for (const ev of ["wheel", "gesturestart"]) window.addEventListener(ev, (e) => {
+          if (!guide.phase) return;
+          guide.last = performance.now();
+          if (guide.phase !== "wait" && !e.target?.closest?.(".map-dock")) guideEnd("skipped");
+        }, { capture: true, passive: true });
+        document.addEventListener("keydown", (e) => { if (guide.phase && e.key === "Escape") guideEnd("skipped"); });
         // the street names float high over the head of each street, as the drive's motorway signs
         const STREETS = [["Coffee Street", "The story road", 822, 4700, "#28C840"], ["Fintech Boulevard", "Digital & finance", 2080, 5300, "#119BFE"], ["Medical Avenue", "Clinics, care & beauty", 1500, 4900, "#F28BA8"], ["The Smallest Shortcut", "Stickers & print", 1412, 5945, "#FED012"]];
         const streetEls = STREETS.map(([t, sub, x, z, c]) => {
@@ -39308,6 +39887,7 @@ void main() {
           update(dt, now) {
             mapStep();
             cineStep(dt);
+            guideStep(dt); // r139h
             jetUpdate(dt, now);
             olariUpdate(dt);
             // the diorama is cleaner from above without the far mesas, the cloud ring and the islands
@@ -39441,8 +40021,38 @@ void main() {
         mapUI?.skip.classList.add("hidden");
         setTimeout(() => { if (mapMode && !mapNav.moving && !mapNav.place) mapUI?.welcome(true); }, 1400);
       }
+      // r139i: the first time you go from the map to the drive, a guide in the map guide's style says how to move on:
+      // scroll down (wheel) or swipe up (finger) to drive forward, the other way to go back. Once per visitor, gone on
+      // the first real move, after 9 s, or when you go back to the map
+      var driveGuideEl = null, driveGuideOff = null;
+      function driveGuideEnd(action) {
+        if (!driveGuideEl || driveGuideEl.classList.contains("hidden")) return;
+        driveGuideEl.classList.add("hidden");
+        driveGuideOff?.(); driveGuideOff = null;
+        if (action) czEv("onboarding_step", { step: "drive_scroll", action });
+      }
+      function driveGuideStart() {
+        try { if (localStorage.getItem("cz-drive-guide")) return; localStorage.setItem("cz-drive-guide", "1"); } catch {}
+        const touch = matchMedia("(hover: none) and (pointer: coarse)").matches;
+        if (!driveGuideEl) { driveGuideEl = el("div", "drive-guide hidden", ""); document.body.appendChild(driveGuideEl); }
+        driveGuideEl.className = "drive-guide hidden";
+        driveGuideEl.innerHTML = touch
+          ? `<span class="dg-swipe" aria-hidden="true"><span class="dg-dot"></span></span><b>Swipe up to drive</b><i>Swipe down to go back</i>`
+          : `<span class="dg-mouse" aria-hidden="true"><span class="dg-wheel"></span></span><b>Scroll down to drive</b><i>Scroll up to go back</i>`;
+        setTimeout(() => {
+          if (mapMode || siteMode) return;
+          driveGuideEl.classList.remove("hidden");
+          const y0 = scrollY;
+          const onScroll = () => { if (Math.abs(scrollY - y0) > 140) driveGuideEnd("done"); };
+          const t = setTimeout(() => driveGuideEnd("skipped"), 9000);
+          addEventListener("scroll", onScroll, { passive: true });
+          driveGuideOff = () => { removeEventListener("scroll", onScroll); clearTimeout(t); };
+        }, 700);
+      }
       function setMapMode(on, { intro = false } = {}) {
         if (on === mapMode) return;
+        driveGuideEnd(); // r139i
+        warmShaders(); // r139b: the other mode draws through another target
         if (!intro) czEv("mode_switch", { to: on ? "map" : "drive" });
         if (on && siteMode) setSiteMode(false);
         mapMode = on;
@@ -39511,6 +40121,7 @@ void main() {
           updateScrollSpace();
           scrollToL(state.L, false);
           try { history.replaceState(null, "", location.pathname + "?drive" + location.hash); } catch {}
+          driveGuideStart(); // r139i
         }
       }
       window.__cam = (p2, t2) => { window.__camO = p2 ? [p2, t2] : null; };
@@ -39635,6 +40246,7 @@ void main() {
         lite(on) { (mats.cityTiles || []).forEach((m) => (m.castShadow = !on)); scene.traverse((o) => { if (o.isInstancedMesh) o.castShadow = !on; }); const sz = on ? 1024 : 2048; sun.shadow.mapSize.set(sz, sz); sun.shadow.map?.dispose(); sun.shadow.map = null; },
         cache(on) { window.__shadowCache = on; window.__shKey = null; },
         info() { return { ...renderer.info.render, dpr: renderer.getPixelRatio(), sh: [sun.shadow.autoUpdate, sun.shadow.needsUpdate, window.__shKey, sun.shadow.camera.right] }; },
+        three() { return { scene, renderer, camera, WebGLRenderTarget }; }, // r139b: for the smoothness harness (scene stats, timings)
         staticShadows(size = 4096) {
           window.__staticShadow = true;
           const c = sun.shadow.camera;
@@ -39682,6 +40294,8 @@ void main() {
       // straight in. Either way the wall of cups holds until the world is ready, then lifts off it
       const kzLoader = BOOT_MODE !== "drive";
       var brewEl = null;
+      // r139g: the drive's own ending (the cups settle and drop); as the first cup lets go the map starts its pull-out
+      var kzOpts = { drop: true, lite: innerWidth < 760, onDrop: () => { if (mapIntro) mapView.distGoal = innerWidth < 720 ? 6600 : 5400; } };
       if (kzLoader) {
         window.__cupsHold = true;
         state.started = true;
@@ -39693,7 +40307,7 @@ void main() {
         // works. Then the kinetic type starts on a free thread and never stutters.
         // r136c: the first paint (build.mjs) already is this cup, turning: the loader adopts that very element,
         // so there is no swap, no jump and never a star. Only without it (an old cached page) is one made here.
-        try { kinetic = createKinetic(() => mapEndIntro(), null); } catch (e) {}
+        try { kinetic = createKinetic(() => mapEndIntro(), null, kzOpts); } catch (e) {}
         const bootCup = document.querySelector(".boot.kz-brew");
         if (bootCup) { bootCup.classList.remove("boot"); brewEl = bootCup; }
         else {
@@ -39710,10 +40324,34 @@ void main() {
         const wait = 800 - (performance.now() - brewT0);
         if (wait > 0 && brewEl) { setTimeout(startKinetic, wait); return; }
         kineticStarted = true;
-        if (!kinetic) kinetic = createKinetic(() => mapEndIntro(), null);
+        if (!kinetic) kinetic = createKinetic(() => mapEndIntro(), null, kzOpts);
         kinetic.resume();
         if (BOOT_MODE === "map") setTimeout(() => kinetic.finish(), 60);
         if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; }
+      };
+      // r139g: the intro starts only once everything it needs is ready, all of it behind the loader: the city's first
+      // frames are drawn (textures, buffers and programs go up to the GPU there, not under the words: introFreeze),
+      // the render-target variants are compiled (warmShaders), the cups' own stage is warm; and only when the tab is
+      // visible: a page opened in the background starts from the beginning when it is looked at
+      const kzWarmStart = () => {
+        const framesDrawn = new Promise((res) => { kzWarm.resolve = res; if (kzWarm.frames >= kzWarm.need) res(); });
+        const rtWarm = new Promise((res) => { const iv = setInterval(() => { if (!warmQueued) { clearInterval(iv); res(); } }, 40); });
+        // the programs link in parallel on the GPU process: wait until they really are linked (for the screen and for
+        // the map's render target), or the first draw of each blocks on the link, after the reveal
+        const linked = (async () => {
+          if (!renderer.compileAsync) return;
+          try { await renderer.compileAsync(scene, camera); } catch (e) {}
+          const rt = new WebGLRenderTarget(1, 1, { type: HalfFloatType }), prev = renderer.getRenderTarget();
+          try { renderer.setRenderTarget(rt); await renderer.compileAsync(scene, camera); } catch (e) {} finally { renderer.setRenderTarget(prev); rt.dispose(); }
+        })();
+        // the cups' own stage warms alongside (its porcelain programs link on the GPU process too: a link still running
+        // under the words stalls the compositor for as long as it takes)
+        const cupsWarm = (async () => { try { await kinetic?.warm?.(); } catch (e) {} })();
+        const timeout = new Promise((res) => setTimeout(res, 5000));
+        Promise.race([Promise.all([framesDrawn, rtWarm, linked, cupsWarm]), timeout]).then(() => {
+          const go = () => { if (document.hidden) { document.addEventListener("visibilitychange", go, { once: true }); return; } startKinetic(); };
+          setTimeout(go, 0);
+        });
       };
       // r125: the city's streets, blocks and trees are built behind the intro (it plays on an opaque
       // ground meanwhile), so the first frame is the type, not a blank screen
@@ -39729,11 +40367,12 @@ void main() {
         scene.traverse((o) => { if (!o.visible && (o.isMesh || o.isGroup)) { hiddenNow.push(o); o.visible = true; } });
         try { renderer.compile(scene, camera); } catch {}
         hiddenNow.forEach((o) => (o.visible = false));
+        warmShaders(); // r139b: and, when idle, the variants for the render target the map draws into
         clearInterval(bootT);
         // r129: the vehicle thumbnails render off-screen: not while the intro plays, later, when idle
-        const vehPrev = () => { try { vehPreviews = makeVehiclePreviews(); ui.setVehiclePreviews(vehPreviews); } catch (e) {} };
+        const vehPrev = () => makeVehiclePreviews((id, url) => { vehPreviews[id] = url; ui.setVehiclePreviews({ [id]: url }); }).catch(() => {}); // r139q: one by one
         if (kzLoader) { const wait = () => (document.body.classList.contains("kz-intro") ? setTimeout(wait, 800) : setTimeout(() => (window.requestIdleCallback || setTimeout)(vehPrev, { timeout: 3000 }), 4500)); setTimeout(wait, 3000); } else vehPrev();
-        startKinetic();
+        if (kzLoader) kzWarmStart(); else startKinetic(); // r139g
         ui.setLoaderPct(100);
         if (kzLoader) { window.__cupsHold = false; spawnStart = performance.now() + 700; startRevealAt = Infinity; }
         else setTimeout(() => {

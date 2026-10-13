@@ -361,7 +361,9 @@ a.pcard:hover .pc-cta i { transform: translateX(5px); }
 }
 @media (prefers-reduced-motion: reduce) { .cv-el { opacity: 1; transform: none; transition: none; animation: none !important; } }
 /* inside the drive (opened full screen from the map): only the canvas */
-html.embed .hdr, html.embed .cv-hero, html.embed .c-end, html.embed .ftr, html.embed .skip { display: none; }
+html.embed .hdr, html.embed .cv-hero, html.embed .c-end, html.embed .ftr-in, html.embed .ftr-motto, html.embed .skip { display: none; }
+/* r139c: in the frame, the footer keeps only its small strip (© · Privacy · Cookies, build/footer.mjs) */
+html.embed .ftr { padding: 0; }
 html.embed .cv-sticky { top: 0; height: 100vh; height: 100svh; }
 html.embed .cv-stage { height: calc(100vh - 90px); height: calc(100svh - 90px); }
 @media (max-width: 760px), (pointer: coarse) { html.embed .cv-stage { height: calc(100svh - 120px); } html.embed body:has(main.cv-page) { overflow: hidden; } }

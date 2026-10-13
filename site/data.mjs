@@ -54,7 +54,7 @@ export const PROJECTS = [
   { name: "Venevo", cat: "Brand · Website · Fintech", c: "#7A5EAC", t: "#ffffff", poster: "Venture opportunity", img: "m:places/venevo", street: "B", page: "venevo", desc: "Fractional startup investing, for everyone. A dynamic V✳ logo, purple and yellow, and a website that opens the door to venture opportunities." },
   { name: "ESD", cat: "Rebranding · Website", c: "#E30613", t: "#ffffff", poster: "ESD", street: "B", page: "esd", desc: "The largest electronics service network in Romania, speaking for itself at last. Positioning, rebranding, fleet and esdrom.ro." },
   { name: "Unchain Festival", cat: "Festival · Brand", c: "#111111", t: "#ffffff", poster: "Unchained", street: "B", page: "unchain-festival", desc: "The Davos of CEE fintech, inside Oradea Fortress. Strategy, identity and a website where one red thread builds the fortress." },
-  { name: "Witanalytica", cat: "Business intelligence · Brand", c: "#275c5c", t: "#ffffff", poster: "Data made easy", img: "m:places/witanalitica", street: "B", page: "witanalitica", desc: "Business intelligence in a calm, consultative voice. Deep teal, a line of orange and a mark built from a pie chart, a keyhole and an open circle." },
+  { name: "Witanalytica", cat: "Business intelligence · Brand", c: "#275c5c", t: "#ffffff", poster: "Data made easy", img: "m:places/witanalitica", street: "B", page: "witanalytica", desc: "Business intelligence in a calm, consultative voice. Deep teal, a line of orange and a mark built from a pie chart, a keyhole and an open circle." },
   { name: "Techventures Bank", cat: "Rebranding · Website", c: "#1D2A42", t: "#ffffff", poster: "Techventures", street: "B", page: "techventures-bank", desc: "The first entrepreneurial bank in Romania, refreshed: silver wings, landscapes in navy and a website with a human approach to banking." },
   { name: "Clinica Sante", cat: "Clinic · Brand · Film", c: "#2f9e4f", t: "#ffffff", poster: "Health is not an option", img: "m:cs/Clinica-Sante", page: "clinica-sante", street: "C", desc: "Recommended by doctors, signed off by patients: the Clinica Sante TV film and brand work." },
   { name: "The Aesthetic Court", cat: "Website · UX · UI", c: "#1a0909", t: "#c89b3c", poster: "Toxin on trial", img: "m:tac/d-hero", page: "the-aesthetic-court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and a website built as the trial itself.", street: "C" },
@@ -305,7 +305,9 @@ export const CASES = {
 // brand canvases: one wide artboard, split into its elements by site/canvas/split-canvas.py,
 // shown as a horizontal page (vertical scroll on desktop, drag on phones)
 export const CANVASES = {
-  "witanalitica": {
+  // r139c (N46): the page's address spells the brand (it was /work/witanalitica/, which server.js now 301s here);
+  // the folder of the artboard keeps its old name
+  "witanalytica": {
     name: "Witanalytica", dir: "witanalitica", c: "#275c5c", t: "#ffffff",
     eyebrow: "Witanalytica · Business intelligence · Brand canvas · By Cromatic Studios",
     title: "Data made easy.",

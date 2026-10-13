@@ -34,8 +34,8 @@
 @media (max-width:1024px){:root{--fs:2.3vw;--h1:3rem;--h3:2rem;--slow:3rem;--nav:1.2rem}}
 @media (max-width:767px){:root{--fs:4.7vw;--h1:2rem;--h1lh:1.15;--h3:1.6rem;--slow:2rem;--nav:1rem}}
 *,*::before,*::after{box-sizing:border-box}
-html{background:var(--cream);-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--cream);color:var(--ink);font-family:"Darker Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:var(--fs);font-weight:600;line-height:1.3;overflow-x:clip}
+html{background:#fff;-webkit-text-size-adjust:100%}/* r139d: the page is white (Daniel; was --cream) */
+body{margin:0;background:#fff;color:var(--ink);font-family:"Darker Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:var(--fs);font-weight:600;line-height:1.3;overflow-x:clip}
 img,video{display:block;max-width:100%;height:auto}
 h1,h2,h3,p{margin:0}
 a{color:inherit}
@@ -66,6 +66,8 @@ html.embed .nav{display:none}
 .hero-w{border-radius:1em}
 .hero-in{min-height:40vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:5em 5em 1em;border-radius:2em}
 .vh{align-self:stretch;display:flex;flex-direction:column;align-items:center;font-size:inherit;line-height:1}
+/* r139c (N51): the title as words for search and screen readers; the three pictures above are how it looks */
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
 .v{display:block}
 .v1{width:40%}.v2,.v3{width:20%}
 .vi{display:block}.vi img{width:100%;height:auto}
@@ -81,8 +83,7 @@ html.embed .nav{display:none}
 .st-in>*{text-align:center}
 .st-intro .st-in{padding:0 7em 5em}
 .slow{font-size:var(--slow);line-height:1.1;font-weight:700}
-.blur-in{opacity:0;filter:blur(10px);transform:translateY(20px);transition:opacity .6s ease .9s,filter .6s ease .9s,transform .6s ease .9s}
-.blur-in.visible{opacity:1;filter:none;transform:none}
+/* r139d: the intro no longer blurs in (Daniel): it is there with the first paint */
 
 /* the year cards */
 .ys{padding:15px 10px 10px}
@@ -300,7 +301,6 @@ html.embed .nav{display:none}
   [data-fx]{opacity:var(--o,1);filter:blur(var(--b,0px))}
 }
 @media (prefers-reduced-motion:reduce){
-  .blur-in{opacity:1;filter:none;transform:none;transition:none}
   .nav,.ti>img,.pw img,.pt img{transition:none}
 }
 </style>
@@ -312,7 +312,7 @@ html.embed .nav{display:none}
     <li><a class="on" href="/site/#work">Projects</a></li>
     <li><a href="/site/#services">Services</a></li>
     <li><a href="/site/#contact">Contact</a></li>
-    <li class="lng" hidden><a></a></li>
+    <li class="lng" hidden></li>
   </ul>
 </nav>
 <main class="sc">
@@ -320,16 +320,17 @@ html.embed .nav{display:none}
 <header class="hero">
   <div class="hero-w"><div class="hero-in">
     <h1 class="vh">
-      <span class="v v1"><span class="vi"><img src="m:scf/vh-1" alt="Slow Coffee Festival" width="1851" height="235" fetchpriority="high"></span></span>
-      <span class="v v2"><span class="vi"><img src="m:scf/vh-2" alt="A visual" width="926" height="239"></span></span>
-      <span class="v v3"><span class="vi"><img src="m:scf/vh-3" alt="History" width="939" height="253"></span></span>
+      <span class="sr">Slow Coffee Festival: a visual history</span>
+      <span class="v v1" aria-hidden="true"><span class="vi"><img src="m:scf/vh-1" alt="" width="1851" height="235" fetchpriority="high"></span></span>
+      <span class="v v2" aria-hidden="true"><span class="vi"><img src="m:scf/vh-2" alt="" width="926" height="239"></span></span>
+      <span class="v v3" aria-hidden="true"><span class="vi"><img src="m:scf/vh-3" alt="" width="939" height="253"></span></span>
     </h1>
   </div></div>
 </header>
 
 <section class="st st-intro">
   <div class="st-box"><div class="st-in">
-    <h2 class="hp blur-in">For five years, we've been shaping the face of <b><i>Slow Coffee Festival</i></b>. Not just a <b><i>logo</i></b> and a poster, but a <b><i>positioning</i></b> and a <b><i>visual language</i></b> that connects with people, not slides them.</h2>
+    <h2 class="hp">For five years, we've been shaping the face of <b><i>Slow Coffee Festival</i></b>. Not just a <b><i>logo</i></b> and a poster, but a <b><i>positioning</i></b> and a <b><i>visual language</i></b> that connects with people, not slides them.</h2>
   </div></div>
 </section>
 
@@ -593,9 +594,8 @@ html.embed .nav{display:none}
   var RM=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
   var nav=document.getElementById("sc-nav");
   var sw=document.querySelector(".lang-fixed"),li=nav&&nav.querySelector(".lng");
-  if(sw&&li){var a=li.firstChild;a.href=sw.getAttribute("href");a.textContent=sw.textContent;a.setAttribute("hreflang",sw.getAttribute("hreflang")||"");a.setAttribute("lang",sw.getAttribute("lang")||"");a.title=sw.title;li.hidden=false;li.classList.add("on");document.body.classList.add("sc-lng")}
-  function onLoad(){document.querySelectorAll(".blur-in").forEach(function(e){e.classList.add("visible")})}
-  if(document.readyState==="complete")onLoad();else addEventListener("load",onLoad);
+  if(sw&&li){var a=li.appendChild(document.createElement("a"));a.href=sw.getAttribute("href");a.textContent=sw.textContent;a.setAttribute("hreflang",sw.getAttribute("hreflang")||"");a.setAttribute("lang",sw.getAttribute("lang")||"");a.title=sw.title;li.hidden=false;li.classList.add("on");document.body.classList.add("sc-lng")}
+  // r139d: the intro's blur-in is gone (Daniel): the words are there with the first paint
   // films: play while on screen
   var vids=[].slice.call(document.querySelectorAll(".sc video"));
   if("IntersectionObserver" in window){

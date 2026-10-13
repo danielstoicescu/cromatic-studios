@@ -84,14 +84,35 @@
     const els = [...cv.querySelectorAll(".cv-el")];
     const mq = matchMedia("(max-width: 760px), (pointer: coarse)");
     let travel = 0, raf = 0, batch = 0;
+    // r139a: elements past the first 18 come with data-src (render.mjs): one about to show gets its file at once, the
+    // ones within two and a half screens once the page has loaded and painted
+    // r139d: every element waits in data-src now, the first screen's too: they get their files once the board's
+    // background (the page's largest paint) is on screen (czAfterLcp, the page's loading gate), the ones on screen
+    // first, the ones within two and a half screens when those have come in (or 2.5 s later). Each takes, from its
+    // data-srcset (1×, 1.5× and 2× of the board), the file for its real width on this screen; it comes in (the reveal)
+    // once it is decoded, so it never slides in empty.
+    let gate = false, ahead = false, wait = 0, aheadT = 0;
+    const openAhead = () => { if (ahead) return; ahead = true; clearTimeout(aheadT); queue(); };
+    const go = () => { gate = true; aheadT = setTimeout(openAhead, 2500); queue(); };
+    if (window.czAfterLcp) window.czAfterLcp(go);
+    else { const g = () => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(go, 60))); if (document.readyState === "complete") g(); else addEventListener("load", g); }
+    const give = (e) => { const s = e.dataset.srcset; if (s) { e.sizes = `${Math.max(1, Math.ceil(e.getBoundingClientRect().width))}px`; e.srcset = s; e.removeAttribute("data-srcset"); } e.src = e.dataset.src; e.removeAttribute("data-src"); };
     const reveal = () => {
       const R = innerWidth * 0.94;
       let n = 0;
       for (const e of els) {
-        if (e.classList.contains("in")) continue;
-        const r = e.getBoundingClientRect();
-        if (r.left < R && r.right > -40) { e.style.transitionDelay = `${Math.min(n++, 10) * 55}ms`; e.classList.add("in"); }
+        if (e.classList.contains("in") || e.dataset.coming) continue;
+        const r = e.getBoundingClientRect(), near = r.left < R && r.right > -40;
+        if (e.dataset.src && gate && (near || (ahead && r.left < innerWidth * 2.5 && r.right > -innerWidth))) {
+          give(e);
+          if (near && !ahead) { wait++; const one = () => { if (--wait <= 0) openAhead(); }; e.decode ? e.decode().then(one, one) : one(); }
+        }
+        if (!near || e.dataset.src) continue;
+        const delay = `${Math.min(n++, 10) * 55}ms`, show = () => { delete e.dataset.coming; e.style.transitionDelay = delay; e.classList.add("in"); };
+        if (e.complete && e.naturalWidth) show();
+        else { e.dataset.coming = "1"; e.decode ? e.decode().then(show, show) : e.addEventListener("load", show, { once: true }); }
       }
+      if (gate && !wait && !ahead) openAhead();
     };
     const tick = () => {
       raf = 0;

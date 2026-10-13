@@ -242,7 +242,9 @@ const OLD = {
   // r138a (Daniel): the old Slow Coffee page (written in English) and its short address go to the rebuilt English page
   "/proiecte/slow-coffee-festival-history/": "/work/slow-coffee-festival/", "/scf/": "/work/slow-coffee-festival/",
   "/proiecte/slow/": "/ro/proiecte/slow-coffee-festival/",
-  "/proiecte/yoshy-izakaya/": "/ro/proiecte/yoshi-izakaya/", "/proiecte/arca/": "/ro/proiecte/arca-resort/"
+  "/proiecte/yoshy-izakaya/": "/ro/proiecte/yoshi-izakaya/", "/proiecte/arca/": "/ro/proiecte/arca-resort/",
+  // r139c (N46): the Witanalytica page's address now spells the brand
+  "/work/witanalitica/": "/work/witanalytica/", "/ro/proiecte/witanalitica/": "/ro/proiecte/witanalytica/"
 };
 const GONE = /^\/(?:testestes|online-core-beta|author\/[^/]+|feed|comments\/feed|wp-sitemap[^/]*\.xml|sitemap_index\.xml|xmlrpc\.php)\/?$/;
 // the new address of an old WordPress page (or null)
@@ -260,7 +262,7 @@ function finalUrl(url) {
   let p = u.pathname;
   try { p = normalize(decodeURIComponent(p)).replace(/\\/g, "/"); } catch { return url; }
   const old = oldTarget(p);
-  if (old) return old;
+  if (old) return old + (old.includes("#") ? "" : u.search); // r139c: the query goes along (?embed=1 from the map)
   if (/\/index\.html$/.test(p)) p = p.slice(0, -10);
   else if (!p.endsWith("/") && !extname(p) && files.has(p + "/index.html")) p += "/";
   return encodeURI(p) + u.search;
@@ -269,7 +271,7 @@ function legacy(req, res) {
   const p0 = new URL(req.url, "http://x").pathname;
   const p = !p0.endsWith("/") && !/\.[a-z0-9]+$/i.test(p0) ? p0 + "/" : p0;
   const to = oldTarget(p0);
-  if (to) { res.writeHead(301, { Location: to, "Cache-Control": "public, max-age=86400" }); res.end(); return true; }
+  if (to) { res.writeHead(301, { Location: to + (to.includes("#") ? "" : new URL(req.url, "http://x").search), "Cache-Control": "public, max-age=86400" }); res.end(); return true; }
   if (GONE.test(p)) { res.writeHead(410, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=86400" }); res.end("Gone"); return true; }
   return false;
 }

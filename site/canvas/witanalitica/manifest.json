@@ -369,6 +369,7 @@
  ],
  "bg": {
   "file": "bg.webp",
+  "solid": "#ffffff",
   "box": [
    0,
    0,

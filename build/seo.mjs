@@ -8,6 +8,8 @@ const role = (n, fallback) => (CREW_INFO[n] && CREW_INFO[n].role) || fallback;
 
 export const STUDIO = {
   name: "Cromatic Studios",
+  legalName: "Radio Intelligence SRL", // r139c: the operator named on /privacy/
+  vatID: "RO29014197",
   legalUrl: "https://cromaticstudios.com/",
   email: "hi@cromaticstudios.com",
   phone: "+40 728 978 068",
@@ -55,7 +57,7 @@ export const WORK = [
 
 export const FAQ = [
   ["What does Cromatic Studios do?", "Cromatic Studios is an independent creative studio in Bucharest, Romania. We do brand strategy, identity design, websites and apps (UX and UI), video production and photography, and content and growth for social media."],
-  ["Who do you work with?", "Indie and local businesses, startups, scale-ups and established companies. Many of our clients are specialty coffee brands (Slow Coffee Festival, Two Minutes, Steam, Craft Coffee, Artisan Coffee Gear, OMA Coffee), alongside fintech and digital products such as Investimental, Assetto, Cargus and Help4Brain."],
+  ["Who do you work with?", "Indie and local businesses, startups, scale-ups and established companies. Many of our clients are specialty coffee brands (Slow Coffee Festival, Two Minutes, Steam, Craft Coffee, Artisan Coffee Gear, OMA Coffee), alongside fintech and digital products such as Investimental, Assetto and Help4Brain."],
   ["Who runs Cromatic Studios?", "Cromatic Studios was founded in 2014 by Daniel Stoicescu, who is still its creative architect. Today the studio is led by two partners, who are also brothers: Daniel Stoicescu, the founder, and Cristian Stoicescu, the CEO."],
   ["Where is the studio?", "Strada Olari 9, Bucharest, Romania. Come by for a coffee."],
   ["How do I start a project?", "Complete the boarding pass at the end of the drive, or write to hi@cromaticstudios.com. We answer within one working day."]
@@ -71,6 +73,9 @@ export function studioNode(SITE, SAME_AS = [STUDIO.legalUrl]) {
     "@type": ["Organization", "ProfessionalService"],
     "@id": studio,
     name: STUDIO.name,
+    // r139c (N28): the company behind the studio, in the schema only (on the page it is named on /privacy/ alone)
+    legalName: STUDIO.legalName,
+    vatID: STUDIO.vatID,
     url: `${SITE}/`,
     sameAs: SAME_AS,
     logo: { "@type": "ImageObject", url: `${SITE}/icon-512.png`, width: 512, height: 512 },
@@ -216,7 +221,13 @@ ${studioPages.map((u) => `- [${pages[u].title.replace(/ · Cromatic Studios$/, "
 
 ## Also on the map
 
-Brands we worked with that have no case study page yet: ${noPage.join(", ")}. Friends along the way: ${FRIENDS.join(", ")}.
+Brands we worked with that have no case study page yet: ${noPage.join(", ")}.
+
+Friends we made along the way (the studio's own words on ${SITE}/site/; none of them has a case study on this site, so they are not listed as clients here): ${FRIENDS.join(", ")}.
+
+## About this website
+
+${[["/onboarding/", "How this website works"], ["/ro/onboarding/", "How this website works, in Romanian"], ["/privacy/", "Privacy policy"], ["/ro/confidentialitate/", "Privacy policy, in Romanian"]].filter(([u]) => pages[u]).map(([u, n]) => `- [${n}](${SITE}${u}): ${pages[u].fullDesc || pages[u].desc}`).join("\n")}
 
 ## FAQ
 

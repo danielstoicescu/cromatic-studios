@@ -8,6 +8,10 @@
   const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
   const smooth = (t) => t * t * (3 - 2 * t);
   let vw = innerWidth, vh = innerHeight;
+  // r139c: the same page in Romanian at /ro/onboarding/: files from /onboarding/, Romanian words and case pages
+  const RO = (root.lang || "").slice(0, 2) === "ro";
+  const M = "/onboarding/media/";
+  const W = (en, ro) => (RO ? ro : en);
 
   /* ---------- videos: play only while on screen ---------- */
   const vids = $$("video.lazy-v, video.layer, .hero-v");
@@ -82,8 +86,8 @@
     ["artisan-coffee-gear", "Artisan Coffee Gear", "c"], ["infinity-capital", "Infinity Capital", "f"], ["routine-paris", "Routine Paris", "m"], ["craft-coffee", "Craft Coffee", "c"],
     ["longshield", "Longshield", "f"], ["help-4-brain", "Help 4 Brain", "m"], ["sip-coffee-wine", "Sip Coffee & Wine", "c"], ["esd", "ESD", "f"],
     ["altius", "Altius", "m"], ["casa-berero", "Berero", "c"], ["assetto", "Assetto", "f"], ["pain-plaisir", "Pain Plaisir", "c"],
-    ["witanalitica", "Witanalytica", "f"], ["kompus", "Kómpus", "c"], ["venevo", "Venevo", "f"], ["yoshi-izakaya", "Yoshi Izakaya", "c"],
-    ["unde", "UNDÉ", "c"], ["patiline", "Patiline", "c"],
+    ["witanalytica", "Witanalytica", "f"], ["kompus", "Kómpus", "c"], ["venevo", "Venevo", "f"], ["yoshi-izakaya", "Yoshi Izakaya", "c"],
+    ["unde", "UNDÉ", "c"], ["patiline", "Patiline", "c"], ["eliade-18", "Eliade 18", "p"], ["rdw-2023", "RDW 2023", "p"], // r139i: all 36
   ];
   const wall = $("[data-wall]");
   let wallRows = [];
@@ -93,7 +97,7 @@
       const list = CASES.slice(r * per, r * per + per);
       const row = document.createElement("div");
       row.className = "wall-row";
-      const html = list.map(([s, n, st]) => `<a class="case" href="/work/${s}/" style="--sc:${STREET[st]}"><img src="media/covers/${s}.webp" alt="${n}" loading="lazy" width="560" height="380"><i aria-hidden="true"></i><span>${n}</span></a>`).join("");
+      const html = list.map(([s, n, st]) => `<a class="case" href="${RO ? "/ro/proiecte/" : "/work/"}${s}/" style="--sc:${STREET[st]}"><img src="${M}covers/${s}.webp" alt="${n}" loading="lazy" width="560" height="380"><i aria-hidden="true"></i><span>${n}</span></a>`).join("");
       row.innerHTML = RM ? html : html + html.replace(/<a /g, '<a aria-hidden="true" tabindex="-1" ');
       wall.appendChild(row);
       wallRows.push(row);
@@ -118,9 +122,9 @@
     police.state = state;
     pill.className = "cop-pill pop " + (state === "idle" ? "idle" : state === "free" ? "free" : "");
     const b = $("b", pill), s = $("span.mono", pill);
-    if (state === "idle") { b.textContent = "SPEED LIMIT 50"; s.textContent = "SCROLL FAST TO TEST IT"; }
-    if (state === "pulled") { b.textContent = "PULLED OVER"; s.textContent = "UNDER SURVEILLANCE · MAX 50 KM/H"; try { if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.([80, 60, 80, 60, 120]); } catch {} }
-    if (state === "free") { b.textContent = "✓ FREE TO GO"; s.textContent = "DRIVE NICE OUT THERE"; }
+    if (state === "idle") { b.textContent = W("SPEED LIMIT 50", "LIMITĂ DE VITEZĂ 50"); s.textContent = W("SCROLL FAST TO TEST IT", "DERULEAZĂ REPEDE CA SĂ TESTEZI"); }
+    if (state === "pulled") { b.textContent = W("PULLED OVER", "TRAS PE DREAPTA"); s.textContent = W("UNDER SURVEILLANCE · MAX 50 KM/H", "SUB SUPRAVEGHERE · MAX 50 KM/H"); try { if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.([80, 60, 80, 60, 120]); } catch {} }
+    if (state === "free") { b.textContent = W("✓ FREE TO GO", "✓ POȚI PLECA"); s.textContent = W("DRIVE NICE OUT THERE", "CONDU FRUMOS"); }
   };
   if (police.el && !RM) new IntersectionObserver((es) => { police.on = es[0].isIntersecting; }, { threshold: 0.3 }).observe(police.el);
 
@@ -138,7 +142,7 @@
     const order = [];
     for (let s = 8; s >= 1; s = s >> 1) for (let i = 0; i < N; i += s) if (!order.includes(i)) order.push(i);
     for (let i = 0; i < N; i++) if (!order.includes(i)) order.push(i);
-    order.forEach((i, k) => setTimeout(() => { const im = new Image(); im.decoding = "async"; im.onload = () => { frames[i] = im; lastDrawn = -1; }; im.src = `media/seq/d${String(i).padStart(2, "0")}.webp`; }, k * 25));
+    order.forEach((i, k) => setTimeout(() => { const im = new Image(); im.decoding = "async"; im.onload = () => { frames[i] = im; lastDrawn = -1; }; im.src = `${M}seq/d${String(i).padStart(2, "0")}.webp`; }, k * 25));
   };
   if (scrub && !RM) new IntersectionObserver((es) => { if (es[0].isIntersecting) askFrames(); }, { rootMargin: "1600px 0px" }).observe(scrub);
   const drawFrame = (i) => {
@@ -342,6 +346,6 @@
     });
     addEventListener("pageshow", () => wins.forEach((b) => b.classList.remove("peek")));
     // the picture is small; fetch it once the page has settled so the first hover is not empty
-    addEventListener("load", () => setTimeout(() => { const im = new Image(); im.src = "media/map-window.webp"; }, 1200), { once: true });
+    addEventListener("load", () => setTimeout(() => { const im = new Image(); im.src = M + "map-window.webp"; }, 1200), { once: true });
   }
 })();

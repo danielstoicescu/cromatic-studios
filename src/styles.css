@@ -3521,6 +3521,9 @@ body.olari-open .map-card, body.olari-open .mapcard:not(.contact), body.olari-op
 /* r125: while the city builds, the intro plays on an opaque ground; it melts away under the cups */
 .kz { background-color: transparent; transition: opacity .5s ease, background-color .9s ease .2s; }
 body.kz-boot .kz { background-color: #f7f1e6; opacity: 1 !important; }
+/* r139g: over the opaque boot ground a backdrop blur blurs a flat colour: it looks the same and costs a full-screen
+   re-raster every frame (the words dropped frames with an idle main thread); the website's hero keeps its veils */
+body.kz-intro .kz-veil { -webkit-backdrop-filter: none; backdrop-filter: none; }
 .map-pin.on { z-index: 6; }
 
 /* r126 audit fixes */
@@ -3546,6 +3549,10 @@ body.kz-boot .kz { background-color: #f7f1e6; opacity: 1 !important; }
 .map-welcome .mw-x { top: -20px !important; right: auto !important; left: 50%; translate: -50% 0; width: 40px; height: 40px; box-shadow: 0 2px 0 #141414; }
 .map-welcome .mw-k { padding-right: 0; text-align: center; }
 .map-welcome .mw-free { all: unset; cursor: pointer; display: block; margin: 16px auto 0; padding: 12px 20px; border-radius: 999px; border: 1px solid #141414; background: #FED012; font: 800 14px/1 CromaticSans, sans-serif; text-decoration: none; opacity: 1; box-shadow: 0 2px 0 #141414; }
+/* r139i: its hover (it had none: "all: unset" above dropped it) */
+.map-welcome .mw-free { transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease, background-color .22s ease; }
+.map-welcome .mw-free:hover, .map-welcome .mw-free:focus-visible { transform: translateY(-2px); box-shadow: 0 4px 0 #141414; background: #FFDA3A; }
+.map-welcome .mw-free:active { transform: translateY(1px); box-shadow: 0 1px 0 #141414; transition-duration: .08s; }
 .tap-hint { position: fixed; left: 0; top: 0; z-index: 23; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 6px; translate: -50% -30%; }
 .tap-hint.hidden { display: none; }
 .tap-hint .th-ring { width: 64px; height: 64px; border-radius: 50%; border: 4px solid #FED012; box-shadow: 0 0 0 1px #141414; animation: thPulse 1.2s ease-out infinite; }
@@ -3588,8 +3595,10 @@ body.kz-boot .kz { background-color: #f7f1e6; opacity: 1 !important; }
 /* r129: phones, the project pills strip (z 22, at 162px) sat over tall bottom sheets: a tap on the boarding
    form in that band opened Artisan. While any card is open, the strip steps aside. */
 @media (max-width: 760px) {
-  body:has(.mapcard:not(.hidden)) .poi-rail { opacity: 0; visibility: hidden; }
-  body:has(.mapcard:not(.hidden)) .poi-rail, body:has(.mapcard:not(.hidden)) .poi-rail * { pointer-events: none !important; }
+  /* r139b: anchored on the card being a child of .ui-root (the strip may sit deeper, in .poi-col), not body:has(…) with a "*" after
+     it: that form made every child-list change anywhere in the page (the speedometer digits) re-style the whole page */
+  .ui-root:has(> .mapcard:not(.hidden)) .poi-rail { opacity: 0; visibility: hidden; }
+  .ui-root:has(> .mapcard:not(.hidden)) .poi-rail, .ui-root:has(> .mapcard:not(.hidden)) .poi-rail * { pointer-events: none !important; }
 }
 /* r129: the drive-mode project pills (Artisan, Slow Coffee, Steam, Craft…) have no business on the map:
    on phones the strip (z 22) sat over the boarding pass and a tap on the form opened Artisan */
@@ -4082,9 +4091,14 @@ body.scheme-sketch .map-street .hw-stripe { height: 8px !important; border-radiu
 /* r136c: the brewing cup is the first paint (no star, ever): the 3D cup's own 24-frame strip, inlined into the
    HTML by build.mjs so it paints before any request; app.js adopts that element as the loader (no swap). Same
    200px box as before, so "Brewing the city" stays put. */
-.kz-brew .kb-sprite.kb-cs { width: 176px; height: 176px; margin: 12px; background-image: url(/cup-spin.png); background-size: 2400% 100%; animation: kbSpin24 2.244s steps(24) infinite; }
-@keyframes kbSpin24 { to { background-position: -4224px 0; } }
-@media (prefers-reduced-motion: reduce) { .kz-brew .kb-sprite.kb-cs { animation: none; } }
+.kz-brew .kb-sprite.kb-cs { width: 176px; height: 176px; margin: 12px; background-image: url(/cup-spin.png); background-size: 2400% 100%; animation: none; position: relative; overflow: hidden; }
+/* r139i: the box keeps the strip only for its ::before to inherit; its own first frame is pushed out of the box, or
+   it showed through the turning cup (transparent PNG) as a still handle on the right */
+.kz-brew .kb-sprite.kb-cs { background-repeat: no-repeat; background-position: 0 -9999px; }
+/* r139g: the turning is a transform of the strip, on the compositor: the cup keeps turning while the main thread warms the city */
+.kz-brew .kb-sprite.kb-cs::before { content: ""; position: absolute; left: 0; top: 0; width: 2400%; height: 100%; background-image: inherit; background-size: 100% 100%; background-repeat: no-repeat; animation: kbSpin24 2.244s steps(24) infinite; will-change: transform; }
+@keyframes kbSpin24 { to { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) { .kz-brew .kb-sprite.kb-cs::before { animation: none; } }
 /* r130k: Sketchbook: the DOM footprint goes (it was drawn over the houses); the crayon rings are on the ground now.
    Crayon swatches are scribbled in when they appear, left to right, and once more when you point at them. The
    pointer is a pencil. */
@@ -4196,7 +4210,7 @@ body:not(.map-mode).menus-top .hud-menu:not(.open) { transform: scale(.94) trans
 @media (max-width: 760px) {
   .drive-pins .map-pin .mp-label { padding: 7px 12px 7px 8px; gap: 6px; }
   .drive-pins .map-pin .mp-label b { font-size: 12.5px; }
-  body:has(.mapcard:not(.hidden)) .drive-pins { opacity: 0; visibility: hidden; }
+  .ui-root:has(> .mapcard:not(.hidden)) .drive-pins { opacity: 0; visibility: hidden; } /* r139b: see .poi-rail above */
 }
 body.map-mode .drive-pins, body.site-mode .drive-pins { display: none !important; }
 body.menu-open .drive-pins { opacity: 0 !important; pointer-events: none !important; }
@@ -4716,3 +4730,69 @@ body.map-mode .mapcard.contact .cf-strip { font-size: 9.5px !important; padding:
   body.map-mode .mapcard.contact .cform.done .bp-actions { margin-top: 10px; gap: 6px; }
   body.map-mode .mapcard.contact .cform.done .bp-actions .coffee-btn { padding: 11px 14px; font-size: 15px; }
 }
+/* r139b: animations nobody can see stay paused. Each running one cost a style recalc every frame (the SVG ones a
+   layout and a paint as well), ~45 of them were ticking under opacity: 0 in every world. Paused, not removed: they
+   carry on from where they were the moment their layer shows again. */
+body:not(.scheme-orchid) .sk-petals i, body.site-mode .sk-petals i,
+body:not(.scheme-underwater) .uw-veil i,
+.hud-menu:not(.open) .wt-img::after,
+.map-street.off, .map-pins .map-pin.off .mp-label,
+:is(.svc-house.off, .poi-card.out) svg *,
+.scroll-hint.gone,
+.speed-lines:not([style*="opacity"]), .speed-lines[style*="opacity: 0;"],
+body:not(.map-mode):not(.site-mode) .hud > .multi-btn, body:not(.map-mode):not(.site-mode) .hud > .multi-btn::before, body:not(.map-mode):not(.site-mode) .hud > .multi-btn * { animation-play-state: paused !important; }
+
+/* r139h: the first-time map guide: "Drag the map", then "Start here" over Two Minutes */
+.map-guide { position: fixed; z-index: 21; left: 50%; top: 54%; translate: -50% -50%; display: flex; flex-direction: column; align-items: center; gap: 14px; pointer-events: none; animation: mgIn .45s cubic-bezier(.2,.8,.2,1) both; }
+.map-guide.hidden, .mg-start.hidden { display: none; }
+.map-guide .mg-track { position: relative; width: 150px; height: 64px; }
+.map-guide .mg-track::before { content: ""; position: absolute; left: 22px; right: 22px; top: 31px; height: 2px; border-radius: 2px; background: repeating-linear-gradient(90deg, rgba(20,20,20,.55) 0 6px, transparent 6px 12px); opacity: .7; }
+.map-guide .mg-move { position: absolute; left: 50%; top: 32px; width: 0; height: 0; animation: mgDrag 2.6s cubic-bezier(.45,0,.25,1) infinite; }
+.map-guide .mg-dot { position: absolute; left: -11px; top: -11px; width: 22px; height: 22px; border-radius: 50%; background: #FED012; box-shadow: 0 0 0 1.5px #141414; animation: mgPress 2.6s ease-in-out infinite; }
+.map-guide .mg-hand { position: absolute; left: -12px; top: -8px; filter: drop-shadow(0 3px 0 rgba(0,0,0,.22)); transform-origin: 30% 10%; animation: mgHand 2.6s ease-in-out infinite; }
+.map-guide b, .mg-start .mg-badge { font: 800 14px/1 CromaticSans, sans-serif; background: #141414; color: #fff; padding: 10px 16px; border-radius: 999px; box-shadow: 0 6px 18px rgba(0,0,0,.18); white-space: nowrap; }
+@keyframes mgIn { from { opacity: 0; translate: -50% calc(-50% + 10px); } to { opacity: 1; translate: -50% -50%; } }
+@keyframes mgDrag { 0%, 12% { translate: -48px 0; opacity: 0; } 18% { opacity: 1; } 24% { translate: -48px 0; } 66% { translate: 48px 0; } 80% { translate: 48px 0; opacity: 1; } 92%, 100% { translate: 48px 0; opacity: 0; } }
+@keyframes mgPress { 0%, 20% { scale: 0; opacity: 0; } 26% { scale: 1; opacity: .95; } 66% { scale: 1; opacity: .95; } 74%, 100% { scale: 1.9; opacity: 0; } }
+@keyframes mgHand { 0%, 18% { transform: translateY(-6px) rotate(-6deg); } 26%, 68% { transform: translateY(0) rotate(0deg) scale(.94); } 78%, 100% { transform: translateY(-6px) rotate(-6deg); } }
+.mg-start { all: unset; position: fixed; z-index: 21; left: 0; top: 0; width: 0; height: 0; cursor: pointer; animation: mgFade .5s ease both; }
+.mg-start .mg-ring { position: absolute; left: -38px; top: -38px; width: 76px; height: 76px; box-sizing: border-box; border-radius: 50%; border: 2px solid rgba(254,208,18,.85); box-shadow: 0 0 14px rgba(254,208,18,.35); /* r139i: softer, no ink outline (Daniel: "a bit more faded") */ pointer-events: auto; animation: mgRing 1.8s cubic-bezier(.2,.7,.3,1) infinite; }
+.mg-start .mg-ring.r2 { animation-delay: .9s; }
+.mg-start .mg-badge { position: absolute; left: 0; top: 34px; translate: -50% 0; display: flex; align-items: center; gap: 8px; pointer-events: auto; animation: mgBob 2.2s ease-in-out infinite; }
+.mg-start .mg-badge::before { content: ""; position: absolute; left: 50%; top: -5px; width: 10px; height: 10px; translate: -50% 0; rotate: 45deg; background: #141414; border-radius: 2px; }
+.mg-start .mg-badge b { color: #FED012; font-weight: 900; }
+.mg-start .mg-badge i { font-style: normal; opacity: .75; font-weight: 700; }
+.mg-start:focus-visible .mg-badge { outline: 3px solid #FED012; outline-offset: 2px; }
+.mg-start.edge .mg-ring { display: none; }
+.mg-start.edge .mg-badge { top: 0; translate: -50% -50%; }
+.mg-start.edge .mg-badge::before { display: none; }
+.mg-start .mg-nm, .mg-start .mg-arr, .mg-start.edge .mg-tap, .mg-start .mg-t2, .mg-start.edge .mg-t1 { display: none; }
+.mg-start.edge .mg-nm, .mg-start.edge .mg-t2 { display: inline; }
+.mg-start.edge .mg-arr { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #FED012; color: #141414; font-size: 12px; rotate: var(--mga, 0rad); }
+@keyframes mgFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mgRing { 0% { scale: .55; opacity: 0; } 20% { opacity: .55; } 100% { scale: 1.35; opacity: 0; } }
+@keyframes mgBob { 0%, 100% { translate: -50% 0; } 50% { translate: -50% 4px; } }
+.map-pin.mg-hl { z-index: 6 !important; }
+.map-pin.mg-hl .mp-label { box-shadow: 0 0 0 3px #FED012, 0 0 0 4.5px #141414; }
+@media (prefers-reduced-motion: reduce) {
+  .map-guide, .map-guide *, .mg-start, .mg-start * { animation: none !important; }
+  .map-guide .mg-move { translate: 0 0; } .map-guide .mg-dot { scale: 1; opacity: .95; }
+  .mg-start .mg-ring.r2 { display: none; }
+}
+
+/* r139i: the first drive after the map, in the map guide's style: "Scroll down to drive" (a mouse wheel turning) or,
+   on touch, "Swipe up to drive" (a finger dot going up), with the way back underneath */
+.drive-guide { position: fixed; z-index: 21; left: 50%; top: 56%; translate: -50% -50%; display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; animation: mgIn .45s cubic-bezier(.2,.8,.2,1) both; }
+.drive-guide.hidden { display: none; }
+.drive-guide b { margin-top: 4px; font: 800 14px/1 CromaticSans, sans-serif; background: #141414; color: #fff; padding: 10px 16px; border-radius: 999px; box-shadow: 0 6px 18px rgba(0,0,0,.18); white-space: nowrap; }
+.drive-guide i { font: 700 12px/1 CromaticSans, sans-serif; font-style: normal; color: #141414; background: rgba(255,255,255,.85); padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+.drive-guide .dg-mouse { position: relative; width: 30px; height: 46px; box-sizing: border-box; border: 2px solid #141414; border-radius: 15px; background: #fff; box-shadow: 0 3px 0 rgba(0,0,0,.18); }
+.drive-guide .dg-wheel { position: absolute; left: 50%; top: 7px; width: 6px; height: 10px; margin-left: -3px; border-radius: 3px; background: #FED012; box-shadow: 0 0 0 1.5px #141414; animation: dgWheel 1.6s cubic-bezier(.45,0,.25,1) infinite; }
+.drive-guide .dg-swipe { position: relative; width: 44px; height: 86px; }
+.drive-guide .dg-swipe::before { content: ""; position: absolute; left: 21px; top: 10px; bottom: 18px; width: 2px; border-radius: 2px; background: repeating-linear-gradient(180deg, rgba(20,20,20,.55) 0 6px, transparent 6px 12px); opacity: .7; }
+.drive-guide .dg-dot { position: absolute; left: 50%; bottom: 6px; width: 24px; height: 24px; margin-left: -12px; border-radius: 50%; background: #FED012; box-shadow: 0 0 0 1.5px #141414, 0 4px 10px rgba(0,0,0,.18); animation: dgSwipe 1.8s cubic-bezier(.45,0,.25,1) infinite; }
+@keyframes dgWheel { 0% { translate: 0 0; opacity: 0; } 20% { opacity: 1; } 70% { translate: 0 14px; opacity: 1; } 100% { translate: 0 16px; opacity: 0; } }
+@keyframes dgSwipe { 0% { translate: 0 0; opacity: 0; scale: .8; } 15% { opacity: 1; scale: 1; } 75% { translate: 0 -52px; opacity: 1; } 100% { translate: 0 -58px; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .drive-guide, .drive-guide * { animation: none !important; } }
+/* r139i: the old one-line hint stays out of the way while the guide shows (on phones they sat on top of each other) */
+body:has(.drive-guide:not(.hidden)) .scroll-hint { opacity: 0 !important; }

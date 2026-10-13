@@ -10,6 +10,7 @@ export const RO_SLUGS = {
   "/site/": "/ro/",
   "/team/": "/ro/echipa/",
   "/privacy/": "/ro/confidentialitate/", // r136
+  "/onboarding/": "/ro/onboarding/", // r139c (N34): the launch page, translated in build.mjs
   "/industries/coffee-food-drink/": "/ro/industrii/cafea-mancare-bauturi/",
   "/industries/finance-fintech/": "/ro/industrii/finante-fintech/",
   "/industries/healthcare/": "/ro/industrii/sanatate/",

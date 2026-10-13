@@ -3,6 +3,7 @@
 // (site/render.mjs, site/cases/src/gen.mjs, or the Steam page lifted from src/app.js).
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { STUDIO, studioNode, websiteNode, withStudio } from "./seo.mjs";
 
 // search titles: what the page is about, in the words people search with (the H1 stays creative)
@@ -16,7 +17,7 @@ export const WORK_TITLES = {
   "two-minutes": "Two Minutes: coffee brand, packaging & film",
   "oma-coffee": "OMA Coffee Brașov: specialty coffee branding",
   "venevo": "Venevo: fintech brand identity & website",
-  "witanalitica": "Witanalytica: business intelligence brand identity",
+  "witanalytica": "Witanalytica: business intelligence brand identity",
   "sip-coffee-wine": "Sip Coffee & Wine: café identity & social launch",
   "pain-plaisir": "Pain Plaisir: bakery film, photo & product design",
   "yoshi-izakaya": "Yoshi Izakaya: restaurant content & social",
@@ -116,16 +117,42 @@ export function pageText(html) {
 }
 
 // per-page last modified date: kept in build/lastmod.json, bumped only when the page's words change
-export function lastmodStore(file, today) {
+// r139c (audit N47): with git at hand (a local build), the date is the last commit of the page's own source file
+// (site/cases/<slug>.html, a canvas folder, /onboarding): `src` = { files, own }. A page made from a shared file
+// (site/data.mjs, site/hubs.mjs, site/render.mjs) keeps its date while its words stay the same, and takes that file's
+// last commit when they change. Uncommitted sources count as today when the words changed. Without git (the Docker
+// build has no .git), the dates written to build/lastmod.json by the last local build are used, as before.
+export function lastmodStore(file, today, root) {
   let db = {};
   try { db = JSON.parse(readFileSync(file, "utf8")); } catch {}
   const used = {};
+  let git = false, dirty = new Set();
+  const cache = new Map();
+  if (root) {
+    try {
+      const st = execFileSync("git", ["status", "--porcelain", "--untracked-files=all"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+      dirty = new Set(st.split("\n").filter(Boolean).map((l) => l.slice(3).replace(/^.* -> /, "").replace(/^"|"$/g, "")));
+      git = true;
+    } catch {}
+  }
+  const isDirty = (files) => files.some((f) => [...dirty].some((d) => d === f || d.startsWith(f.replace(/\/?$/, "/"))));
+  const commitDate = (files) => {
+    const k = files.join("|");
+    if (!cache.has(k)) { let d = null; try { d = execFileSync("git", ["log", "-1", "--format=%cs", "--", ...files], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || null; } catch {} cache.set(k, d); }
+    return cache.get(k);
+  };
   return {
-    get(path, text) {
+    get(path, text, src) {
       const h = createHash("sha1").update(text).digest("hex").slice(0, 12);
-      const prev = db[path];
-      used[path] = prev && prev.h === h ? prev : { h, d: today };
-      return used[path].d;
+      const prev = db[path], same = !!prev && prev.h === h;
+      let d = same ? prev.d : today;
+      if (git && src && src.files && src.files.length && !isDirty(src.files)) {
+        const g = commitDate(src.files);
+        if (g) d = src.own ? g : (same ? prev.d : g);
+      }
+      if (d > today) d = today;
+      used[path] = { h, d };
+      return d;
     },
     save() { try { writeFileSync(file, JSON.stringify(used, null, 1) + "\n"); } catch {} }
   };
@@ -161,9 +188,15 @@ export function seoPage(html, { path, SITE, project, media, lastmod, wp, dg }) {
   // 3. films below the first one start loading only when they scroll into view (the page's own
   //    IntersectionObserver plays them); before, every autoplay film downloaded on page load
   if (/IntersectionObserver/.test(html) && /querySelectorAll\('video(?::not\(\[data-manual\]\))?'\)/.test(html)) {
+    // r139a: the first film too, wherever the page's observer can be told to wait for the page: it starts once the page
+    // has loaded. As an autoplay film it was fetched with the HTML (Steam: ~1 MB plus a 685 KB poster on a phone before
+    // the title had painted, LCP 6.5 s on a slow 4G); its poster holds the frame until then (images.mjs)
+    const IO_PLAY = "if(e.isIntersecting){e.target.play().catch(()=>{});}else{e.target.pause();}";
+    const late = html.includes(IO_PLAY);
+    if (late) html = html.split(IO_PLAY).join("const v=e.target;v._vis=e.isIntersecting;if(e.isIntersecting){if(document.readyState==='complete')v.play().catch(()=>{});else addEventListener('load',()=>requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(()=>{if(v._vis)v.play().catch(()=>{})},60))),{once:true});}else{v.pause();}");
     let k = 0;
     html = html.replace(/<video\b([^>]*)>/g, (m, a) => {
-      if (!/\bautoplay\b/.test(a) || k++ === 0) return m;
+      if (!/\bautoplay\b/.test(a) || (k++ === 0 && (!late || /\bdata-manual\b/.test(a)))) return m;
       return `<video${a.replace(/\s*\bautoplay\b/, "").replace(/\bpreload="[^"]*"/, 'preload="none"')}${/preload=/.test(a) ? "" : ' preload="none"'}>`;
     });
   }

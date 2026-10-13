@@ -7,6 +7,8 @@
 // open_drive_mode, case_study_click. Google Tag Manager (GTM_ID) loads after the same yes, for future tags (pixels,
 // ads); GA4 stays here, so it must not be added again as a GA4 tag inside GTM (it would count every visit twice).
 // r136: the card links the privacy policy (/privacy/, /ro/confidentialitate/).
+// r139c: that link is built with DOM calls (no '+'-glued href in the source, audit N50); the footer's "Cookies" link
+// (data-cookies, on every page) opens the card even inside the map's frame, where it otherwise never asks.
 export function consentSnippet(GA_ID, GTM_ID = "") {
   if (!GA_ID) return "";
   const css = `#cz-ck{position:fixed;left:50%;bottom:16px;z-index:2147483000;box-sizing:border-box;width:min(460px,calc(100vw - 24px));display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:18px 22px 20px;border-radius:24px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;box-shadow:0 14px 40px rgba(13,12,9,.2);font:500 15px/1.4 CromaticSans,"Darker Grotesque",system-ui,sans-serif;transform:translate(-50%,16px);opacity:0;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .45s}
@@ -24,7 +26,8 @@ export function consentSnippet(GA_ID, GTM_ID = "") {
 @keyframes czck{to{background-position:100% 0}}
 @media (prefers-reduced-motion:reduce){#cz-ck{transition:none}#cz-ck .ck-cup{animation:none}}
 @media (max-width:600px){#cz-ck{bottom:12px;width:calc(100vw - 24px);padding:16px 16px 18px}#cz-ck .ck-row{flex-wrap:nowrap}#cz-ck button{flex:1;min-width:0}}
-html.embed #cz-ck,body.map-boarding #cz-ck,body.modal-open #cz-ck,body.scf-open #cz-ck{display:none}`;
+html.embed #cz-ck,body.map-boarding #cz-ck,body.modal-open #cz-ck,body.scf-open #cz-ck{display:none}
+html.embed #cz-ck.ck-ask{display:flex}`;
   const js = `(function(){var ID=${JSON.stringify(GA_ID)},GTM=${JSON.stringify(GTM_ID)},K="cz-consent";
 var EMB=/[?&]embed=1/.test(location.search)||document.documentElement.classList.contains("embed");
 function get(){try{return localStorage.getItem(K)}catch(e){var m=document.cookie.match(/(?:^|; )cz-consent=(\\w+)/);return m&&m[1]}}
@@ -35,16 +38,19 @@ gtag("js",new Date());var go=function(){if(go.d)return;go.d=1;gtag("config",ID,{
 if(GTM){dataLayer.push({"gtm.start":new Date().getTime(),event:"gtm.js"});var g=document.createElement("script");g.async=1;g.src="https://www.googletagmanager.com/gtm.js?id="+GTM;document.head.appendChild(g)}};
 /* visits from the studio's own network are marked internal (GA4 data filter) */
 try{fetch("/api/ctx",{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.internal)gtag("set",{traffic_type:"internal"});go()}).catch(go);setTimeout(go,1200)}catch(e){go()}}
-function ask(){if(document.getElementById("cz-ck"))return;var ro=(document.documentElement.lang||"").slice(0,2)==="ro";
+function ask(force){if(document.getElementById("cz-ck"))return;var ro=(document.documentElement.lang||"").slice(0,2)==="ro";
 var d=document.createElement("div");d.id="cz-ck";d.setAttribute("role","dialog");d.setAttribute("aria-label",ro?"Cookie-uri":"Cookies");
-d.innerHTML='<span class="ck-cup" aria-hidden="true"></span><b>'+(ro?"Un cookie la cafea?":"A cookie with your coffee?")+'</b><p>'+(ro?"Statistici de vizitare prin Google Analytics, ca să știm ce merge. ":"Visit statistics with Google Analytics, so we know what works. ")+'<a href="'+(ro?"/ro/confidentialitate/":"/privacy/")+'">'+(ro?"Confidențialitate":"Privacy")+'</a></p><div class="ck-row"><button type="button" class="ck-yes">'+(ro?"Da, sigur":"Sure")+'</button><button type="button" class="ck-no">'+(ro?"Nu, mersi":"No, thanks")+"</button></div>";
+d.innerHTML='<span class="ck-cup" aria-hidden="true"></span><b>'+(ro?"Un cookie la cafea?":"A cookie with your coffee?")+'</b><p>'+(ro?"Statistici de vizitare prin Google Analytics, ca să știm ce merge. ":"Visit statistics with Google Analytics, so we know what works. ")+'</p><div class="ck-row"><button type="button" class="ck-yes">'+(ro?"Da, sigur":"Sure")+'</button><button type="button" class="ck-no">'+(ro?"Nu, mersi":"No, thanks")+"</button></div>";
+/* r139c (audit N50): the privacy link is made with DOM calls, so the page source holds no half-built href that crawlers report as a 404 */
+var pl=document.createElement("a");pl.setAttribute("href",ro?"/ro/confidentialitate/":"/privacy/");pl.textContent=ro?"Confidențialitate":"Privacy";d.querySelector("p").appendChild(pl);
+if(force)d.classList.add("ck-ask");
 document.body.appendChild(d);requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add("on")})});
 d.querySelector(".ck-yes").onclick=function(){set("yes");d.remove();ga()};d.querySelector(".ck-no").onclick=function(){set("no");d.remove()}}
-document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("[data-cookies]");if(a){e.preventDefault();ask()}});
+document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("[data-cookies]");if(a){e.preventDefault();ask(true)}});
 var ONCE={};function ev(n,p){p=p||{};if(p.once){if(ONCE[p.once])return;ONCE[p.once]=1;delete p.once}if(window.__czGA&&window.gtag)gtag("event",n,p)}window.czEvent=ev;
 document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a,button");if(!a)return;var h=a.getAttribute("href")||"",t=(a.textContent||"").trim().slice(0,60);
 if(/^mailto:/.test(h))ev("email_click",{link_text:t});else if(/^tel:/.test(h))ev("phone_click",{link_text:t});
-else if(a.classList.contains("lang-sw"))ev("language_switch",{to:h});
+else if(a.classList.contains("lang-sw")||a.closest(".czf-lang"))ev("language_switch",{to:h});
 else if(/^\\/(site|ro)\\/?$/.test(h))ev("open_normal_website",{link_text:t});
 else if(/^\\/(\\?drive|\\?map|\\/?$)/.test(h)&&a.closest("header,nav,.map-top,.drive-btn"))ev("open_drive_mode",{link_text:t});
 else if(/\\/(work|proiecte)\\//.test(h))ev("case_study_click",{case_path:h.split("?")[0]});

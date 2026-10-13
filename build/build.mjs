@@ -5,27 +5,31 @@ import { readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync } from "no
 import { createHash } from "node:crypto";
 import zlib from "node:zlib";
 import { readdirSync, statSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { jsonLd, llmsTxt, llmsFull, robotsTxt, sitemapXml, manifest, icoFromPng, studioNode, websiteNode } from "./seo.mjs";
 import { seoPage, pageText, lastmodStore, SAME_AS, CLIPPED } from "./seo-pages.mjs";
 import { consentSnippet } from "./consent.mjs";
+import { withFooter } from "./footer.mjs"; // r139c
+import { videoLd } from "./videos.mjs"; // r139c
 import { BOARD_HTML, BOARD_CSS, BOARD_JS } from "./board.mjs";
 import { FILM_AUTO, ytFacade } from "./film.mjs";
 import * as DATA from "../site/data.mjs";
 import { makeRender } from "../site/render.mjs";
 import { kineticBundle } from "./kinetic.mjs";
-import { optimizeImages, socialCards } from "./images.mjs";
+import { optimizeImages, socialCards, canvasVariants } from "./images.mjs"; // r139d: canvasVariants
 import { makeI18n, roPath } from "./i18n.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = (f) => join(root, "src", f);
 // r135: live on the main domain (Daniel, 2026-10-12): drive.cromaticstudios.com and www. answer with a 301 to it
 const SITE_URL = (process.env.SITE_URL || "https://cromaticstudios.com").replace(/\/$/, "");
+// r139c (N51): how many case studies there are, counted from their sources (the "34" in the copy was written by hand)
+const CASE_COUNT = (() => { let fs = []; try { fs = readdirSync(join(root, "site", "cases")).filter((f) => f.endsWith(".html")).map((f) => f.slice(0, -5)); } catch {} return new Set([...Object.keys(DATA.CASES || {}), ...Object.keys(DATA.CANVASES || {}), ...fs, "steam"]).size; })();
 const head = readFileSync(src("head.html"), "utf8");
 const css = readFileSync(src("styles.css"), "utf8");
 const js = readFileSync(src("app.js"), "utf8");
-const content = readFileSync(src("content.html"), "utf8").replace(/<!--[\s\S]*?-->\s*/, "");
+const content = readFileSync(src("content.html"), "utf8").replace(/<!--[\s\S]*?-->\s*/, "").replace(/\b\d+ case studies\b/g, `${CASE_COUNT} case studies`);
 // r136c: the first paint is the brewing cup, turning: the 3D cup's own 24-frame strip (src/cup-spin.png) is inlined,
 // so it paints with the HTML before any request, never a star. On "/" and ?map app.js adopts this element as its
 // "Brewing the city" loader (no swap); on ?drive it steps aside as soon as the app has drawn its own loader
@@ -90,6 +94,14 @@ const lazy = (text) => text.replace(/<img src=/g, "<img loading=lazy decoding=as
 const named = new Map();
 for (const m of js.matchAll(/([A-Za-z_$][\w$]*)\s*=\s*"data:((?:image|video)\/[a-z0-9+.-]+);base64,([A-Za-z0-9+/=]+)"/g)) named.set(m[1], m[3]);
 let jsOut = lazy(extract(js));
+// r139a: the map opens Steam's built page (/work/steam/?embed=1) like every other case page; the page kept as a string
+// in app.js is read from the source below (page "work/steam") and is only the fallback of the single-file copy, so the
+// production bundle ships it empty (~57 KB less)
+{
+  const before = jsOut.length;
+  jsOut = jsOut.replace(/var steamCaseHtml = "(?:[^"\\]|\\.)*";/, 'var steamCaseHtml = "";');
+  if (jsOut.length === before) console.warn("[build] steamCaseHtml not found in the bundle (nothing to drop)");
+}
 let cssOut = extract(css);
 // minify for production (the single-file build stays readable); skipped if esbuild is missing
 try {
@@ -114,7 +126,7 @@ const WP_MIRROR = new Set();
 // r136 (N34): /onboarding stays indexable, as a page of the site: a description under 155 characters, robots, the
 // page and the studio in JSON-LD, its email address kept away from Cloudflare's obfuscation (email_off), and a place
 // in the sitemap and llms-full.txt (ONB, used at the end)
-let ONB = null;
+let ONB = null, ONB_RO = null; // r139c: and its Romanian copy
 {
   const file = join(pub, "onboarding", "index.html");
   try {
@@ -129,6 +141,11 @@ let ONB = null;
       { "@type": "WebPage", "@id": url, url, name: title, description: desc, isPartOf: { "@id": `${SITE_URL}/#website` }, about: { "@id": `${SITE_URL}/#studio` }, primaryImageOfPage: og, inLanguage: "en" }] };
     if (!h.includes("application/ld+json")) h = h.replace("</head>", `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>\n</head>`);
     if (!h.includes("<!--email_off-->")) h = h.replace(/(<body\b[^>]*>)/, "$1<!--email_off-->").replace(/<\/body>(?![\s\S]*<\/body>)/, "<!--/email_off--></body>");
+    // r139c (N34, N51): its language for social cards (the Romanian copy says ro_RO), and the real number of case studies
+    if (!/<meta property="og:locale"/.test(h)) h = h.replace(/(<meta property="og:site_name"[^>]*>)/, `$1\n<meta property="og:locale" content="en_US">`);
+    h = h.replace(/<b data-count="\d+" data-suffix="\+">\d+\+<\/b>(<span>Case studies)/, `<b data-count="${CASE_COUNT}">${CASE_COUNT}</b>$1`)
+      .replace(/<b>\d+\+? case studies<\/b>/, `<b>${CASE_COUNT} case studies</b>`)
+      .replace(/(<h2 class="h2 light">)\d+ case studies\./, `$1${CASE_COUNT} case studies.`);
     writeFileSync(file, h);
     ONB = { path: "/onboarding/", title, desc, fullDesc: desc, images: [og], html: h };
   } catch (e) { console.warn("[build] onboarding:", e.message); }
@@ -287,7 +304,9 @@ const canvases = {};
     const outDir = join(pub, "assets", `canvas-${c.dir}-${h}`);
     mkdirSync(outDir, { recursive: true });
     for (const f of files) copyFileSync(join(dir, f), join(outDir, f));
-    canvases[slug] = { ...man, base: `/assets/canvas-${c.dir}-${h}` };
+    // r139d: each file's 1× and 1.5× copies next to it (the board is drawn at 2×), for the screen that needs less
+    const cvv = await canvasVariants(dir, files, outDir, root);
+    canvases[slug] = { ...man, ...cvv, base: `/assets/canvas-${c.dir}-${h}` };
   }
 }
 const R = makeRender({ SITE: SITE_URL, A, cssHref: "/" + siteCssName, jsHref: "/" + siteJsName, fonts: FONTS, kz, canvases });
@@ -295,7 +314,22 @@ const R = makeRender({ SITE: SITE_URL, A, cssHref: "/" + siteCssName, jsHref: "/
 const COVERS = {};
 // r131: every page goes through the same SEO pass (head, schema.org, sizes, lazy films, lastmod)
 const today = new Date().toISOString().slice(0, 10);
-const LASTMOD = lastmodStore(join(root, "build", "lastmod.json"), today);
+const LASTMOD = lastmodStore(join(root, "build", "lastmod.json"), today, root);
+// r139c (N47): the source files of a page, for its lastmod (own: made from that file alone)
+const srcOf = (path) => {
+  const w = /^work\/([\w-]+)$/.exec(path)?.[1];
+  if (w) {
+    try { statSync(join(root, "site", "cases", `${w}.html`)); return { files: [`site/cases/${w}.html`], own: true }; } catch {}
+    if (w === "steam") return { files: ["src/app.js", "site/media/steam"], own: false };
+    const cv = DATA.CANVASES?.[w];
+    if (cv) return { files: [`site/canvas/${cv.dir}`], own: true };
+    return { files: ["site/data.mjs"], own: false };
+  }
+  if (path === "site" || path === "team") return { files: ["site/data.mjs", "site/render.mjs"], own: false };
+  if (path === "privacy") return { files: ["site/render.mjs"], own: false };
+  if (/^(industries|services)\//.test(path)) return { files: ["site/hubs.mjs"], own: false };
+  return null;
+};
 const PAGES = {};
 const dimCache = new Map();
 const mediaDims = (src) => {
@@ -446,10 +480,11 @@ const page = (path, raw) => {
   const p = `/${path}/`, slug = path.replace(/^work\//, "");
   if (GF_CSS) raw = raw.replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\n?/, "").replace(/<link rel="preload" as="style" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"[^>]*>\n?<noscript><link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"><\/noscript>/, `<style>${GF_CSS}</style>`);
   const text = pageText(raw);
-  const lastmod = LASTMOD.get(p, text);
+  const lastmod = LASTMOD.get(p, text, srcOf(path));
   const project = DATA.PROJECTS.find((x) => x.page === slug);
   const r = seoPage(raw, { path: p, SITE: SITE_URL, project, media: mediaDims, lastmod, wp: wpLocal, dg: { ...DG, cs: CS_CSS } });
-  const html = wpMirror(r.html);
+  // r139c: the films a visitor can play on the page, as VideoObject in its JSON-LD
+  const html = videoLd(wpMirror(r.html), { path: p, SITE: SITE_URL, pub, name: project?.name || r.title.split(/ · |: /)[0] });
   PAGES[p] = { path: p, title: r.title, desc: r.desc, fullDesc: r.fullDesc, images: r.images, lastmod, text: pageText(html) };
   mkdirSync(join(pub, path), { recursive: true }); writeFileSync(join(pub, path, "index.html"), html);
   const m = path.match(/^work\/([\w-]+)$/);
@@ -474,8 +509,13 @@ for (const slug of R.canvasSlugs) page(`work/${slug}`, R.canvasPage(slug));
     // r136: Steam's own social picture (the hero film's poster), cut to 1200×630 with the other covers at the end
     const steamOg = mediaMap.get("m:wp/2025-07-Steam-Cromaticstudios-001");
     steam = steam.replace("<head>", `<head>\n<link rel="canonical" href="${SITE_URL}/work/steam/">\n<meta name="description" content="Steam Coffee Shop: a pioneer specialty coffee brand refreshed for its community. Branding, growth and product by Cromatic Studios, Bucharest.">\n${steamOg ? `<meta property="og:image" content="${SITE_URL}${steamOg.src}">\n` : ""}<link rel="icon" href="/favicon.ico" sizes="32x32">`)
-      .replace("</head>", `<style>body>main.page{padding-top:64px}</style>\n</head>`)
-      .replace(/<body([^>]*)>/, `<body$1>\n<a href="/site/#work" style="position:fixed;left:14px;top:14px;z-index:9999;padding:10px 16px;border-radius:999px;background:#FED012;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none">← Cromatic Studios</a>`);
+      // r139a: the map opens this page in its frame (?embed=1) like the other case pages, so it gets their embed mode:
+      // html.embed set before the first paint, no "← Cromatic Studios" and no top padding inside the map, and links to
+      // other case pages that stay in the frame
+      .replace("<head>", `<head>\n<script>(function(){try{if(/[?&]embed\\b/.test(location.search)||window.self!==window.top)document.documentElement.classList.add("embed")}catch(e){document.documentElement.classList.add("embed")}})();</script>`)
+      .replace("</head>", `<style>.cs-back{position:fixed;left:14px;top:14px;z-index:9999;padding:10px 16px;border-radius:999px;background:#FED012;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none}html.embed .cs-back{display:none}html:not(.embed) body>main.page{padding-top:64px}</style>\n</head>`)
+      .replace(/<body([^>]*)>/, `<body$1>\n<a class="cs-back" href="/site/#work">← Cromatic Studios</a>`)
+      .replace(/<\/body>(?![\s\S]*<\/body>)/, `<script>if(document.documentElement.classList.contains('embed'))document.querySelectorAll('a[href^="/work/"]').forEach(function(a){a.href=a.getAttribute('href')+'?embed=1'});</script>\n</body>`);
     // r138d: "Ne știm de la Steam" in a serif close to Steam's T-shirts: DM Serif Display (SIL OFL 1.1, site/fonts,
     // licence next to it), roman latin + latin-ext (ș) and the italic for "de la", from our own domain as 'Steam Serif'
     {
@@ -484,6 +524,13 @@ for (const slug of R.canvasSlugs) page(`work/${slug}`, R.canvasPage(slug));
         try { const buf = readFileSync(join(root, "site", "fonts", `dm-serif-display-${k}.woff2`)); const rel = `assets/fonts/dm-serif-display-${k}-${hash(buf).slice(0, 8)}.woff2`; mkdirSync(join(pub, "assets", "fonts"), { recursive: true }); writeFileSync(join(pub, rel), buf); ff.push(`@font-face{font-family:'Steam Serif';font-style:${style};font-weight:400;font-display:swap;src:url(/${rel}) format('woff2');unicode-range:${range}}`); } catch (e) { console.warn("[build] steam serif:", e.message); }
       }
       if (ff.length) steam = steam.replace("</head>", `<style>${ff.join("")}</style>\n</head>`);
+      // r139a: the three serif files (43 KB) are asked for only when the line comes near (two screens ahead), not with
+      // the title: until then the line, far below, is set in the same stack without 'Steam Serif'
+      const SB = ".steam-big{max-width:none;font-family:'Steam Serif',";
+      if (ff.length && steam.includes(SB)) steam = steam.replace(SB, ".steam-big{max-width:none;font-family:")
+        .replace("</head>", `<style>.steam-big.sb-font{font-family:'Steam Serif','DM Serif Display',Didot,'Bodoni 72',Georgia,serif}</style>\n<noscript><style>.steam-big{font-family:'Steam Serif','DM Serif Display',Didot,'Bodoni 72',Georgia,serif}</style></noscript>\n</head>`)
+        .replace(/<\/body>(?![\s\S]*<\/body>)/, `<script>(function(){var b=document.querySelector(".steam-big");if(!b)return;if(!("IntersectionObserver" in window)){b.classList.add("sb-font");return}var io=new IntersectionObserver(function(es){if(es[0].isIntersecting){b.classList.add("sb-font");io.disconnect()}},{rootMargin:"200% 0px 200% 0px"});io.observe(b)})();</script>\n</body>`);
+      else if (ff.length) console.warn("[build] steam: the .steam-big rule changed, its serif loads with the page");
     }
     page("work/steam", steam);
   }
@@ -552,19 +599,41 @@ const roPaths = [];
     PAGES[rp] = { path: rp, title: t, desc: d, fullDesc: d, images: PAGES[p].images, lastmod: PAGES[p].lastmod, text: pageText(ro) };
     roPaths.push(rp);
   }
+  // r139c (N34): /onboarding/ in Romanian (/ro/onboarding/), through the same dictionary. Its files stay in
+  // /onboarding/ (relative addresses made absolute); both copies point at each other (hreflang) and get a language
+  // switch in their own header, next to the drive button (not the corner pill the case pages have)
+  if (ONB) {
+    const file = join(pub, "onboarding", "index.html"), rp = roPath("/onboarding/");
+    const en = readFileSync(file, "utf8");
+    const alt = `<link rel="alternate" hreflang="en" href="${SITE_URL}/onboarding/">\n<link rel="alternate" hreflang="ro" href="${SITE_URL}${rp}">\n<link rel="alternate" hreflang="x-default" href="${SITE_URL}/onboarding/">`;
+    const sw = (href, l, name) => `<a class="onb-lang" href="${href}" hreflang="${l}" lang="${l}" title="${name}" style="display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:36px;margin-left:auto;margin-right:8px;padding:0 10px;border:2px solid currentColor;border-radius:999px;color:inherit;font:800 13px/1 CromaticSans,system-ui,sans-serif;letter-spacing:.04em;text-decoration:none">${l.toUpperCase()}</a>`;
+    const head2 = (h, href, l, name) => h.replace("</head>", `${alt}\n</head>`).replace(/(<a class="nav-cta see-map")/, `${sw(href, l, name)}$1`);
+    let ro = I18N.translate(en, "/onboarding/", SITE_URL, new Set([...enPaths, "/onboarding/"]))
+      .replace(/\b(src|href|poster|data-src)="(?![a-z][\w+.-]*:|\/|#)([^"]+)"/g, '$1="/onboarding/$2"');
+    ro = head2(ro, "/onboarding/", "en", "English");
+    mkdirSync(join(pub, rp), { recursive: true });
+    writeFileSync(join(pub, rp, "index.html"), ro);
+    writeFileSync(file, head2(en, rp, "ro", "Română"));
+    ONB.html = head2(en, rp, "ro", "Română");
+    const t = /<title>([^<]*)<\/title>/.exec(ro)?.[1] || "", d = /<meta name="description" content="([^"]*)"/.exec(ro)?.[1] || "";
+    ONB_RO = { path: rp, title: t, desc: d, fullDesc: d, images: ONB.images, html: ro };
+  }
   console.log(`[i18n] ${roPaths.length} Romanian pages, ${I18N.size} translations, ${I18N.saveMissing()} blocks still in English (site/i18n/ro.missing.json)`);
 }
 {
   const homeText = pageText(html);
-  const home = { path: "/", title: "Cromatic Studios · Branding, web & film studio in Bucharest", desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, video and content.", images: [`${SITE_URL}/og.jpg`], lastmod: LASTMOD.get("/", homeText), text: homeText };
+  const home = { path: "/", title: "Cromatic Studios · Branding, web & film studio in Bucharest", desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, video and content.", images: [`${SITE_URL}/og.jpg`], lastmod: LASTMOD.get("/", homeText, { files: ["src/content.html", "site/data.mjs"], own: false }), text: homeText };
   // r136: /onboarding, after the website's home
-  const onb = ONB ? (() => { const text = pageText(ONB.html); return { ...ONB, html: undefined, text, lastmod: LASTMOD.get(ONB.path, text) }; })() : null;
-  const order = [home, PAGES["/site/"], ...(onb ? [onb] : []), ...hubPaths.map((p) => PAGES[p]), ...workPaths.map((p) => PAGES[p]).filter(Boolean), ...roPaths.map((p) => PAGES[p])];
+  const onb = ONB ? (() => { const text = pageText(ONB.html); return { ...ONB, html: undefined, text, lastmod: LASTMOD.get(ONB.path, text, { files: ["site/onboarding"], own: true }) }; })() : null;
+  // r139c (N34): and its Romanian copy, with the English one's date (as every Romanian page)
+  const onbRo = onb && ONB_RO ? { ...ONB_RO, html: undefined, text: pageText(ONB_RO.html), lastmod: onb.lastmod } : null;
+  const order = [home, PAGES["/site/"], ...(onb ? [onb] : []), ...hubPaths.map((p) => PAGES[p]), ...workPaths.map((p) => PAGES[p]).filter(Boolean), ...roPaths.map((p) => PAGES[p]), ...(onbRo ? [onbRo] : [])];
   // r135d: each language pair also in the sitemap (Bing reads hreflang there more reliably than in the page head)
   const roSet = new Set(roPaths), pairs = new Map();
-  for (const p of ["/site/", ...hubPaths, ...workPaths]) { const rp = roPath(p); if (rp && roSet.has(rp)) { const alt = [["en", p], ["ro", rp], ["x-default", p]]; pairs.set(p, alt); pairs.set(rp, alt); } }
+  if (onbRo) roSet.add(onbRo.path); // r139c
+  for (const p of ["/site/", ...hubPaths, ...workPaths, ...(onbRo ? ["/onboarding/"] : [])]) { const rp = roPath(p); if (rp && roSet.has(rp)) { const alt = [["en", p], ["ro", rp], ["x-default", p]]; pairs.set(p, alt); pairs.set(rp, alt); } }
   writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, order.map((e) => ({ ...e, alt: pairs.get(e.path) }))));
-  writeFileSync(join(pub, "llms.txt"), llmsTxt(SITE_URL, { ...DATA, SAME_AS }, PAGES));
+  writeFileSync(join(pub, "llms.txt"), llmsTxt(SITE_URL, { ...DATA, SAME_AS }, { ...PAGES, ...(onb ? { "/onboarding/": onb } : {}), ...(onbRo ? { [onbRo.path]: onbRo } : {}) }));
   writeFileSync(join(pub, "llms-full.txt"), llmsFull(SITE_URL, order));
   LASTMOD.save();
 }
@@ -580,9 +649,65 @@ if (CLIPPED.length) console.warn(`[seo] description cut mid-sentence on ${CLIPPE
   for (const d of HUBS_DATA.INDUSTRIES || []) PICK[`/industries/${d.slug}/`] = FIRST(d.cases);
   for (const d of HUBS_DATA.SERVICE_PAGES || []) PICK[`/services/${d.slug}/`] = FIRST(d.cases);
   const pick = (p) => { const en = enOf.get(p) || p, w = /^\/work\/([\w-]+)\/$/.exec(en); return w ? COVERS[w[1]] : PICK[en]; };
-  const skip = (p) => ["/", "/site/", "/ro/", "/privacy/", "/ro/confidentialitate/"].includes(p) || p.startsWith("/onboarding/");
+  const skip = (p) => ["/", "/site/", "/ro/", "/privacy/", "/ro/confidentialitate/"].includes(p) || p.startsWith("/onboarding/") || p.startsWith("/ro/onboarding/"); // r139c: its own card
   await socialCards(pub, root, SITE_URL, pick, skip);
 }
+// r139f: the home pages, /onboarding, the team, the hubs and the services share six cinematic renders of the city
+// (src/og/<shot>-<en|ro>.jpg: 1200×630, ≤ 300 KB, rendered from the 3D scene at 2400×1260, the wordmark and one line
+// on them, the subject in the middle for WhatsApp's square crop). The Romanian pages get the Romanian line. Case pages
+// keep their own covers (above).
+{
+  const SHOT = { "/": "city-jet", "/site/": "city-jet", "/onboarding/": "dacia", "/team/": "olari-night",
+    "/industries/coffee-food-drink/": "dacia", "/industries/finance-fintech/": "fintech", "/industries/healthcare/": "night", "/industries/print-merch/": "sketch",
+    "/services/brand-strategy/": "city-jet", "/services/brand-identity/": "sketch", "/services/websites-apps/": "fintech", "/services/social-media-content/": "dacia", "/services/video-production/": "night" };
+  for (const d of HUBS_DATA.INDUSTRIES || []) SHOT[`/industries/${d.slug}/`] ||= "night";
+  for (const d of HUBS_DATA.SERVICE_PAGES || []) SHOT[`/services/${d.slug}/`] ||= "city-jet";
+  const ALT = {
+    "city-jet": ["The Cromatic Studios jet over the 3D city of Bucharest at golden hour", "Avionul Cromatic Studios deasupra orașului 3D al Bucureștiului, la apus"],
+    dacia: ["A yellow Dacia 1300 on Coffee Street, in the Cromatic Studios 3D city", "O Dacia 1300 galbenă pe Coffee Street, în orașul 3D Cromatic Studios"],
+    "olari-night": ["Strada Olari 9, the Cromatic Studios house, at night in the 3D city", "Strada Olari 9, casa Cromatic Studios, noaptea, în orașul 3D"],
+    fintech: ["The fintech towers at dusk in the Cromatic Studios 3D city", "Turnurile fintech la apus, în orașul 3D Cromatic Studios"],
+    night: ["The Cromatic Studios 3D city of Bucharest in Night Mode", "Orașul 3D al Bucureștiului de la Cromatic Studios, în Night Mode"],
+    sketch: ["The Cromatic Studios 3D city drawn in Sketchbook mode", "Orașul 3D Cromatic Studios desenat în modul Sketchbook"],
+  };
+  const at = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  const urls = new Map();
+  const card = (shot, lang) => {
+    const k = `${shot}-${lang}`;
+    if (!urls.has(k)) {
+      let buf = null;
+      try { buf = readFileSync(src(join("og", `${k}.jpg`))); } catch {}
+      if (buf) { mkdirSync(join(pub, "assets", "og"), { recursive: true }); writeFileSync(join(pub, "assets", "og", `${k}.${hash(buf)}.jpg`), buf); }
+      urls.set(k, buf ? `${SITE_URL}/assets/og/${k}.${hash(buf)}.jpg` : null);
+    }
+    return urls.get(k);
+  };
+  let n = 0;
+  for (const [en, shot] of Object.entries(SHOT)) for (const [p, lang] of [[en, "en"], [en === "/" ? null : roPath(en), "ro"]]) {
+    if (!p) continue;
+    const f = join(pub, p, "index.html");
+    let h;
+    try { h = readFileSync(f, "utf8"); } catch { continue; }
+    const u = card(shot, lang);
+    if (!u || !/<meta property="og:image" content="/.test(h)) continue;
+    const alt = at(ALT[shot][lang === "ro" ? 1 : 0]);
+    h = h.replace(/(<meta property="og:image" content=")[^"]*(")/, `$1${u}$2`)
+      .replace(/(<meta name="twitter:image" content=")[^"]*(")/, `$1${u}$2`)
+      .replace(/<meta property="og:image:width" content="\d+">/, `<meta property="og:image:width" content="1200">`)
+      .replace(/<meta property="og:image:height" content="\d+">/, `<meta property="og:image:height" content="630">`)
+      .replace(/(<meta property="og:image:alt" content=")[^"]*(")/, `$1${alt}$2`)
+      .replace(/(<meta name="twitter:image:alt" content=")[^"]*(")/, `$1${alt}$2`);
+    if (!/og:image:width/.test(h)) h = h.replace(/(<meta property="og:image" content="[^"]+">)/, `$1\n<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">`);
+    if (!/og:image:alt/.test(h)) h = h.replace(/(<meta property="og:image:height" content="630">)/, `$1\n<meta property="og:image:alt" content="${alt}">`);
+    if (!/og:image:type/.test(h)) h = h.replace(/(<meta property="og:image" content="[^"]+">)/, `$1\n<meta property="og:image:type" content="image/jpeg">`);
+    writeFileSync(f, h);
+    n++;
+  }
+  console.log(`[og] ${n} pages with a render of the city (${urls.size} pictures)`);
+}
+// r139a: the covers of the shared ending's five cards are filled in before the pictures are optimised (they were
+// filled in after, so every case page ended with five full-size JPEGs, 50-300 KB each, for 400 px cards)
+(function covers(d) { for (const f of readdirSync(d)) { const p2 = join(d, f); if (statSync(p2).isDirectory()) { covers(p2); continue; } if (f !== "index.html") continue; const t = readFileSync(p2, "utf8"); if (t.includes("%%COVER:")) writeFileSync(p2, t.replace(/%%COVER:([\w-]+)%%/g, (m, sl) => COVERS[sl] || COVERS["name:" + ((DATA.PROJECTS.find((x) => x.page === sl) || {}).name || "").toLowerCase()] || "/og.jpg")); } })(pub);
 await optimizeImages(pub, root);
 (function walkDG(d) { for (const f of readdirSync(d)) { const p2 = join(d, f); if (statSync(p2).isDirectory()) { walkDG(p2); continue; } if (!/\.(css|html|js)$/.test(f)) continue; const t = readFileSync(p2, "utf8"); let n2 = localDG(t);
   // the bold weights land before the first paint: no swap, no layout shift
@@ -590,12 +715,16 @@ await optimizeImages(pub, root);
   // r136 (N30): the regular weights too (Darker Grotesque), and on the hubs, services and team the mono eyebrow above
   // the fold (JetBrains Mono): their late swap moved the intro (CLS 0.11-0.15 on a slow phone)
   if (/\.html$/.test(f) && p2 !== join(pub, "index.html") && DG.latin && /<link rel="preload" href="\/assets\/fonts\/google-sans-latin/.test(n2) && !n2.includes(`rel="preload" href="${DG.latin}"`) && (n2.includes(DG.latin) || n2.includes("/assets/site."))) n2 = n2.replace(/(<link rel="preload" href="\/assets\/fonts\/google-sans-latin[^>]*>)/, `$1\n<link rel="preload" href="${DG.latin}" as="font" type="font/woff2" crossorigin>`);
-  if (/\.html$/.test(f) && n2.includes('class="c-hero c2-hero hub-hero"')) { const jb = gfAssets.find(([rel]) => /gf-jetbrains-mono-latin-[0-9a-f]+\.woff2$/.test(rel)); if (jb && !n2.includes(`rel="preload" href="/${jb[0]}"`)) n2 = n2.replace(/(<link rel="preload" href="\/assets\/fonts\/google-sans-latin[^>]*>)/, `$1\n<link rel="preload" href="/${jb[0]}" as="font" type="font/woff2" crossorigin>`); }
+  // r139d: and on the brand canvases (eyebrow, meta and the drag hint in mono, first screen): found late through the
+  // stylesheet it lengthened the chain to the board's first paint and could move the header (CLS 0.002)
+  if (/\.html$/.test(f) && (n2.includes('class="c-hero c2-hero hub-hero"') || n2.includes('class="case cv-page"'))) { const jb = gfAssets.find(([rel]) => /gf-jetbrains-mono-latin-[0-9a-f]+\.woff2$/.test(rel)); if (jb && !n2.includes(`rel="preload" href="/${jb[0]}"`)) n2 = n2.replace(/(<link rel="preload" href="\/assets\/fonts\/google-sans-latin[^>]*>)/, `$1\n<link rel="preload" href="/${jb[0]}" as="font" type="font/woff2" crossorigin>`); }
   // nothing is fetched from Google Fonts any more: no early connection to it either
   if (/\.html$/.test(f)) n2 = n2.replace(/<link rel="preconnect" href="https:\/\/fonts\.(?:gstatic|googleapis)\.com"[^>]*>\n?/g, "");
   if (/\.html$/.test(f) && n2.includes("%%COVER:")) n2 = n2.replace(/%%COVER:([\w-]+)%%/g, (m, sl) => COVERS[sl] || COVERS["name:" + ((DATA.PROJECTS.find((x) => x.page === sl) || {}).name || "").toLowerCase()] || "/og.jpg");
   // r135c: case pages start their big film when opened from the map, and stop everything when closed
   if (/\.html$/.test(f) && /[\\/](work|proiecte)[\\/]/.test(p2) && !n2.includes("r135c-film") && n2.includes("</body>")) n2 = n2.replace(/<\/body>(?![\s\S]*<\/body>)/, `<!--r135c-film-->${FILM_AUTO}\n</body>`);
+  // r139c (N49): the small footer (Privacy, Cookies, the other language) on every page of the website and every case page
+  if (/\.html$/.test(f)) n2 = withFooter(n2, relative(pub, p2), SITE_URL);
   // r134h: GA4 behind the cookie card, on every page (Daniel: G-BRW5QJTJ77, stream "Cromatic Studios COM - GA4")
   if (/\.html$/.test(f) && CONSENT && !n2.includes('id="cz-ck-css"') && n2.includes("</body>")) n2 = n2.replace(/<\/body>(?![\s\S]*<\/body>)/, `${CONSENT}\n</body>`);
   // long titles lose the studio suffix first in Google (~60 characters show); the brand stays in og:site_name and the schema

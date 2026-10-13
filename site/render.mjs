@@ -92,7 +92,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     </div>
   </div>
   <div class="wrap ftr-motto"><span class="cupspin" aria-hidden="true"></span><p>There is always a coffee.</p></div>
-  <p class="wrap ftr-note mono">© ${new Date().getFullYear()} Cromatic Studios · Strada Olari 9, Bucharest · since 2014 · <a href="#cookies" data-cookies>Cookies</a> · <a href="/privacy/">Privacy</a></p>
+  ${/* r139c: the last line is the strip every page ends with (build/footer.mjs fills it in, in the page's language) */ ""}<div class="cz-foot" data-czf></div>
 </footer>
 </body></html>`;
 
@@ -465,6 +465,10 @@ ${footer}`;
       ] }
     ] };
     const kindOf = (it) => it.kind === "img" ? "k-img" : it.box[0] < W * 0.145 ? "k-txt" : (it.box[2] - it.box[0]) < 230 && (it.box[3] - it.box[1]) < 260 ? "k-mas" : "k-vec";
+    // r139d: a file's smaller copies (cv.variants, made at build) and itself, as a srcset
+    // r139d: and its proportions, so a copy (rounded to whole pixels) draws in exactly the same box
+    const cvAr = (file) => { const d = cv.dims?.[file]; return d ? `;aspect-ratio:${d[0]}/${d[1]}` : ""; };
+    const cvSet = (file) => { const v = cv.variants?.[file], d = cv.dims?.[file]; return v?.length && d ? ` data-srcset="${[...v.map((x) => `${base}/${x.file} ${x.w}w`), `${base}/${file} ${d[0]}w`].join(", ")}"` : ""; };
     return `${head({ title: `${d.name} · Brand canvas · Cromatic Studios`, desc: shortDesc(d.lead), path: `/work/${slug}/`, image: (p?.img && A(p.img)?.src) || `${base}/${bg ? bg.file : items[0].file}`, ld })}
 ${header(false)}
 <main id="main" class="case cv-page" style="--bc:${d.c};--bt:${d.t}">
@@ -482,9 +486,15 @@ ${header(false)}
     <div class="cv-sticky" tabindex="0">
       <div class="cv-track">
         <div class="cv-stage">
-          ${items.filter((it) => it.under).map((it, k) => `<img class="cv-el cv-under ${kindOf(it)}" src="${base}/${it.file}" alt="" decoding="async" style="${pos(it.box)};--k:${k}">`).join("")}
-          ${bg ? `<img class="cv-bg" src="${base}/${bg.file}" alt="" decoding="async">` : ""}
-          ${items.filter((it) => !it.under).map((it, k) => `<img class="cv-el ${kindOf(it)}" src="${base}/${it.file}" alt="" loading="${k < 18 ? "eager" : "lazy"}" decoding="async" style="${pos(it.box)};--k:${k}">`).join("\n          ")}
+          ${/* r139d: every element waits in data-src (site.js hands the files out after the background has painted, the
+            screen's first) with its 1×, 1.5× and 2× copies in data-srcset (build.mjs, canvasVariants); the background,
+            the page's LCP, keeps its src with the same three copies for the stage's height (100vh less the header: 72 px,
+            128 px with the bar on a phone); a background of one flat colour (Witanalytica's white) is that colour */ ""}
+          ${items.filter((it) => it.under).map((it, k) => `<img class="cv-el cv-under ${kindOf(it)}" data-src="${base}/${it.file}"${cvSet(it.file)} alt="" decoding="async" style="${pos(it.box)}${cvAr(it.file)};--k:${k}">`).join("")}
+          ${bg ? (bg.solid ? `<div class="cv-bg" style="background:${bg.solid}"></div>` : `<img class="cv-bg" src="${base}/${bg.file}"${(() => { const s = cvSet(bg.file); if (!s) return ""; const r = (W / H).toFixed(4); return `${s.replace(" data-srcset=", " srcset=")} sizes="(max-width: 760px) calc((100vh - 128px) * ${r}), (pointer: coarse) calc((100vh - 128px) * ${r}), calc((100vh - 72px) * ${r})"`; })()} alt="" fetchpriority="high" decoding="async">`) : ""}
+          ${/* r139a: past the first 18, an element waits in data-src: site.js gives it its file as it comes within reach of the
+            screen (the browser's own lazy loading fetched the whole board with the title: 40-60 files, ~0.9 MB on a phone) */ ""}
+          ${items.filter((it) => !it.under).map((it, k) => `<img class="cv-el ${kindOf(it)}" data-src="${base}/${it.file}"${cvSet(it.file)} alt="" decoding="async" style="${pos(it.box)}${cvAr(it.file)};--k:${k}">`).join("\n          ")}
         </div>
       </div>
       <p class="cv-hint mono" aria-hidden="true"><span class="cv-desk">Scroll to slide the canvas</span><span class="cv-mob">Drag the canvas</span> <i>→</i></p>
