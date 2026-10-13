@@ -38665,6 +38665,10 @@ void main() {
       // The drive is the optional mode (?drive, or the Drive mode button).
       try { history.scrollRestoration = "manual"; } catch {}
       var BOOT_MODE = /[?&]drive\b/.test(location.search) ? "drive" : /[?&]map\b/.test(location.search) ? "map" : "intro";
+      // r139p (Daniel: "the intro must not play more than once on the site"): it plays once per visit (6 h); after that,
+      // and on every link into the map (?map, the website's "Ready to board" = ?map&boarding), the city opens directly
+      var BOOT_BOARD = /[?&]boarding\b/.test(location.search); // r139p: arriving for the boarding pass: no welcome card over it
+      try { if (BOOT_MODE === "intro") { const t0 = +localStorage.getItem("cz-intro-at") || 0; if (Date.now() - t0 < 6 * 3600e3 && !/[?&]intro\b/.test(location.search)) BOOT_MODE = "map"; else localStorage.setItem("cz-intro-at", String(Date.now())); } } catch {}
       // r140: ?onb = the city inside /onboarding/ (a same-origin frame behind the page, driven by it: see onbCmd)
       var ONB_MODE = /[?&]onb\b/.test(location.search) && window.parent !== window, onbPaused = false, onbL = null, onbFrames = 0, onbPush = 1, onbHalf = false, onbSkip = false;
       if (ONB_MODE) document.documentElement.classList.add("onb");
@@ -40091,7 +40095,7 @@ void main() {
         setTimeout(() => { mapView.distGoal = innerWidth < 720 ? 6600 : 5400; }, 250);
         document.body.classList.remove("kz-intro");
         mapUI?.skip.classList.add("hidden");
-        setTimeout(() => { if (mapMode && !mapNav.moving && !mapNav.place) mapUI?.welcome(true); }, 1400);
+        setTimeout(() => { if (mapMode && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI?.welcome(true); }, 1400);
       }
       // r139i: the first time you go from the map to the drive, a guide in the map guide's style says how to move on:
       // scroll down (wheel) or swipe up (finger) to drive forward, the other way to go back. Once per visitor, gone on
@@ -40158,8 +40162,8 @@ void main() {
           rebuildGolden();
           mapUI.mark();
           if (intro) { mapIntro = true; document.body.classList.add("kz-intro"); mapUI.skip.classList.remove("hidden"); }
-          else setTimeout(() => { if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place) mapUI.welcome(true); }, 1600);
-          try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" ? "" : "?map") + location.hash); } catch {}
+          else setTimeout(() => { if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI.welcome(true); }, 1600);
+          try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map") + location.hash); } catch {} // r139p: a plain "/" stays plain
         } else {
           mapEndIntro();
           kinetic?.pause?.();
@@ -40585,9 +40589,10 @@ void main() {
         const wait = 800 - (performance.now() - brewT0);
         if (wait > 0 && brewEl) { setTimeout(startKinetic, wait); return; }
         kineticStarted = true;
+        // r139p: straight into the map: no cups, no finale (it used to play the cup wall and its fall on every ?map)
+        if (BOOT_MODE === "map") { mapEndIntro(); if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; } return; }
         if (!kinetic) kinetic = createKinetic(() => mapEndIntro(), null, kzOpts);
         kinetic.resume();
-        if (BOOT_MODE === "map") setTimeout(() => kinetic.finish(), 60);
         if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; }
       };
       // r139g: the intro starts only once everything it needs is ready, all of it behind the loader: the city's first
