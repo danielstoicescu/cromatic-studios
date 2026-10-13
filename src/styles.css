@@ -4796,3 +4796,7 @@ body:not(.map-mode):not(.site-mode) .hud > .multi-btn, body:not(.map-mode):not(.
 @media (prefers-reduced-motion: reduce) { .drive-guide, .drive-guide * { animation: none !important; } }
 /* r139i: the old one-line hint stays out of the way while the guide shows (on phones they sat on top of each other) */
 body:has(.drive-guide:not(.hidden)) .scroll-hint { opacity: 0 !important; }
+/* r139l (Daniel: "a scroll bar on the boarding pass in Sketchbook"): the card and its form still scroll when they must,
+   but never show a bar (in Sketchbook the crayon lettering made the form 2 px taller than its box) */
+.mapcard.contact, .mapcard.contact .cform, .mapcard.contact .mc-content { scrollbar-width: none !important; }
+.mapcard.contact::-webkit-scrollbar, .mapcard.contact .cform::-webkit-scrollbar, .mapcard.contact .mc-content::-webkit-scrollbar { display: none !important; }

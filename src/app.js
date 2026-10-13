@@ -35112,7 +35112,7 @@ void main() {
       var kinetic = null, kineticArmedAt = Infinity;
       var mvK = 0;
       var povK = 0, povYaw = 0, povYawT = 0, povLastKey = 0, povGyroWas = false;
-      var povKeys = { l: false, r: false }, povHidCar = false;
+      var povKeys = { l: false, r: false }, povHidCar = false; var povLen = 45, povLenFor = null; // r139k
       window.addEventListener("keyup", (e) => { if (e.key === "ArrowLeft") povKeys.l = false; if (e.key === "ArrowRight") povKeys.r = false; });
       scene.add(spawnRing);
       var scrollSpace = document.createElement("div");
@@ -38211,9 +38211,12 @@ void main() {
           povYaw = smooth(povYaw, povYawT + auto, dt, 2.2);
           if (povK > 1e-3) {
             const hd = Math.atan2(carTan.x, carTan.z) + povYaw;
-            // a wide street-level lens: higher and a little behind, so both kerbs fit in frame
-            const eye = new Vector3(carPos.x - carTan.x * 8, carPos.y + 21, carPos.z - carTan.z * 8);
-            const look = new Vector3(eye.x + Math.sin(hd) * 240, eye.y + 6, eye.z + Math.cos(hd) * 240);
+            // r139k (Daniel: "show the car, like the default NFS camera, a bit closer"): a chase camera behind and above
+            // the ride, sized by the ride's own length; ← → swing it round the car (was first person, the car hidden)
+            if (povLenFor !== veh.group) { povLenFor = veh.group; const bx = new Box3().setFromObject(veh.group), sz = bx.getSize(new Vector3()); povLen = clamp2(Math.max(sz.x, sz.z), 24, 90); }
+            const fx = Math.sin(hd), fz = Math.cos(hd);
+            const eye = new Vector3(carPos.x - fx * povLen * 0.92, carPos.y + povLen * 0.34, carPos.z - fz * povLen * 0.92);
+            const look = new Vector3(carPos.x + fx * povLen * 1.3, carPos.y + povLen * 0.2, carPos.z + fz * povLen * 1.3);
             camPos.lerp(eye, povK);
             camTarget.lerp(look, povK);
             const fov = camera.fov + (78 - camera.fov) * povK;
@@ -38221,7 +38224,7 @@ void main() {
           }
           ui.setPovHint(povK > 0.6);
           // first person: the car disappears under you once the camera is down on the road
-          const hideCar = povK > 0.55;
+          const hideCar = false; // r139k: the chase camera keeps the car in view
           if (hideCar) veh.group.visible = false; else if (povHidCar && !siteMode) veh.group.visible = true;
           povHidCar = hideCar;
         }
@@ -39284,7 +39287,9 @@ void main() {
           const t0 = performance.now();
           const tick = () => {
             if (guide.phase || guide.done) return;
-            if (guideBusy() || ptrs.size || mapView.vx || mapView.vz) { if (performance.now() - t0 < 30000) setTimeout(tick, 400); return; }
+            if (!mapMode) return;
+            // r139l: no time limit: a drive to a place and its card can take minutes; the guide waits until the map is free
+            if (guideBusy() || ptrs.size || mapView.vx || mapView.vz || performance.now() - t0 < 700) { setTimeout(tick, 400); return; }
             guideStart();
           };
           setTimeout(tick, 900);
@@ -39317,7 +39322,9 @@ void main() {
           box.append(drag, start);
           return { drag, start };
         })());
-        const guideBusy = () => !mapMode || mapIntro || mapBoarding || mapNav.moving || !!mapNav.place || jetFx.phase !== "idle" || !card.classList.contains("hidden")
+        // r139l: a place you have arrived at stays mapNav.place after its card is closed: it no longer counts as busy (the guide
+        // never came after a first trip); a trip under way (moving) or an open card still does
+        const guideBusy = () => !mapMode || mapIntro || mapBoarding || mapNav.moving || jetFx.phase !== "idle" || !card.classList.contains("hidden")
           || !rides.classList.contains("hidden") || !!ui.themeMenu?.classList.contains("open") || (crewPanel && !crewPanel.classList.contains("hidden")) || document.body.classList.contains("map-at-stop");
         const guideEnd = (action) => {
           if (!guide.phase) return;
