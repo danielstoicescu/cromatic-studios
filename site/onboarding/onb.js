@@ -319,4 +319,29 @@
   frame(performance.now());
   // frames arriving late: redraw the scrub once they land
   setInterval(() => { if (lastDrawn === -1 && framesAsked) req(); }, 300);
+
+  /* ---------- r138k: the buttons into the map are windows onto it ----------
+     Behind the glass the city pans with the pointer, as if you were looking around through it (not with reduced
+     motion; then it simply stays centred). */
+  const wins = $$(".see-map");
+  if (wins.length) {
+    const place = (b, e) => {
+      if (RM || !e || e.clientX == null) return;
+      const r = b.getBoundingClientRect();
+      const fx = clamp((e.clientX - r.left) / r.width), fy = clamp((e.clientY - r.top) / r.height);
+      b.style.setProperty("--bx", (28 + fx * 44).toFixed(1) + "%");
+      b.style.setProperty("--by", (34 + fy * 24).toFixed(1) + "%");
+    };
+    wins.forEach((b) => {
+      b.addEventListener("pointerenter", (e) => place(b, e));
+      b.addEventListener("pointermove", (e) => place(b, e), { passive: true });
+      // touch has no hover: the window opens while the finger is down (and a moment after, while the page leaves)
+      b.addEventListener("pointerdown", (e) => { place(b, e); if (e.pointerType !== "mouse") b.classList.add("peek"); });
+      for (const t of ["pointerup", "pointercancel", "pointerleave"]) b.addEventListener(t, () => setTimeout(() => b.classList.remove("peek"), 450));
+      b.addEventListener("focus", () => place(b));
+    });
+    addEventListener("pageshow", () => wins.forEach((b) => b.classList.remove("peek")));
+    // the picture is small; fetch it once the page has settled so the first hover is not empty
+    addEventListener("load", () => setTimeout(() => { const im = new Image(); im.src = "media/map-window.webp"; }, 1200), { once: true });
+  }
 })();

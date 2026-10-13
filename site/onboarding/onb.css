@@ -604,3 +604,46 @@ mark { background: var(--y); color: var(--ink); border-radius: 6px; padding: 0 .
   .hero-btns { margin-top: 24px; }
   .hero-shade { background: radial-gradient(130% 70% at 35% 50%, rgba(13,12,9,.66), rgba(13,12,9,.14) 70%), linear-gradient(0deg, rgba(13,12,9,.45), transparent 40%); }
 }
+
+/* ---------- r138k (Daniel): the buttons into the map turn into a window onto it ----------
+   On hover / focus (a press on touch) the button's fill clears and the city shows through it: a picture of the map
+   behind the glass that pans a little with the pointer (onb.js), a frosted rim, a soft mist under the label so it
+   stays readable. */
+.see-map { position: relative; isolation: isolate; overflow: hidden; --bx: 50%; --by: 46%;
+  transition: transform .45s var(--spring), box-shadow .35s var(--eoq), background-color .35s ease, color .35s ease, border-color .35s ease; }
+.see-map::before, .see-map::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; opacity: 0; }
+.see-map::before {
+  background:
+    radial-gradient(ellipse 58% 62% at 50% 52%, rgba(251,250,245,.62), rgba(251,250,245,.22) 58%, rgba(251,250,245,0) 100%) center / 100% 100% no-repeat,
+    url(media/map-window.webp) var(--bx) var(--by) / max(190%, 560px) auto no-repeat, #ecebe7;
+  transform: scale(1.12); transition: opacity .4s ease, transform .9s var(--eoq), background-position .6s var(--eoq);
+}
+.see-map::after {
+  padding: 4px; background: rgba(255,255,255,.34); backdrop-filter: blur(5px) saturate(1.5); -webkit-backdrop-filter: blur(5px) saturate(1.5);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.75); transition: opacity .4s ease;
+}
+.see-map:is(:hover, :focus-visible), .see-map.peek { background-color: transparent; color: var(--ink); border-color: var(--ink);
+  text-shadow: 0 0 2px rgba(251,250,245,.95), 0 0 12px rgba(251,250,245,.9); }
+.see-map:is(:hover, :focus-visible)::before, .see-map.peek::before { opacity: 1; transform: none; }
+.see-map:is(:hover, :focus-visible)::after, .see-map.peek::after { opacity: 1; }
+.btn.see-map:is(:hover, :focus-visible) { transform: translate(-2px, -2px) scale(1.045); box-shadow: 6px 6px 0 var(--ink); }
+.btn-ink.see-map:is(:hover, :focus-visible) { box-shadow: 6px 6px 0 #fff; border-color: var(--ink); }
+.nav-cta.see-map { transition: transform .45s var(--spring), background-color .35s ease, box-shadow .35s; }
+.nav-cta.see-map:is(:hover, :focus-visible) { transform: scale(1.06); box-shadow: 0 6px 18px -8px rgba(13,12,9,.5); }
+.see-map:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+.btn-ink.see-map:focus-visible { outline-color: var(--ink); }
+.see-map:active { transform: translate(2px, 2px) scale(.98) !important; box-shadow: 1px 1px 0 var(--ink) !important; transition-duration: .12s; }
+.nav-cta.see-map:active { transform: scale(.97) !important; box-shadow: none !important; }
+/* touch: no hover, the window opens while the finger is down */
+@media (hover: none) {
+  .see-map:active { background-color: transparent; color: var(--ink); text-shadow: 0 0 2px rgba(251,250,245,.95), 0 0 12px rgba(251,250,245,.9); }
+  .see-map:active::before, .see-map:active::after { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .see-map, .see-map::before, .see-map::after { transition-duration: .01s !important; }
+  .see-map::before { transform: none; }
+  .btn.see-map:is(:hover, :focus-visible), .nav-cta.see-map:is(:hover, :focus-visible) { transform: none; }
+}
+.rm .see-map::before { transform: none; }
