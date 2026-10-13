@@ -147,7 +147,11 @@
     vw = innerWidth; vh = innerHeight;
     for (const s of scenes) { s.top = offTop(s.el); s.h = s.el.offsetHeight; }
     for (const t of themed) { t.top = offTop(t.el); t.h = t.el.offsetHeight; }
-    for (const z of ZONES) { z.top = offTop(z.el); z.h = z.el.offsetHeight; for (const s of z.steps) { s.top = offTop(s.el); s.h = s.el.offsetHeight; s.c = s.top + s.h / 2; } }
+    for (const z of ZONES) { z.top = offTop(z.el); z.h = z.el.offsetHeight; for (const s of z.steps) {
+      s.top = offTop(s.el); s.h = s.el.offsetHeight; s.c = s.top + s.h / 2;
+      const cd = s.el.querySelector(".zcard");
+      if (cd) { const r = cd.getBoundingClientRect(); s.card = { l: r.left, r: r.right, t: r.top + scrollY - s.c, b: r.bottom + scrollY - s.c }; } else s.card = null;
+    } }
     if (read) { read._top = offTop(read); read._h = read.offsetHeight; }
     if (!seamed) { seamed = true; seams(); }
     req();
@@ -210,19 +214,32 @@
   const hold = new Map();
   const steady = (key, v, now, ms = 90) => { const h = hold.get(key); if (!h || h.v !== v) { hold.set(key, { v, t: now, ok: h?.ok ?? v }); return h?.ok ?? v; } if (now - h.t >= ms) h.ok = v; return h.ok; };
 
+  // the middle of the part of the screen a step's card leaves free (beside it on a desktop, above it on a phone)
+  const freeOf = (s) => {
+    if (!s || !s.card) return null;
+    if (!phone()) return [(s.card.r + vw) / 2, vh / 2];
+    const top = vh / 2 + s.card.t, navB = 72;
+    return [vw / 2, (navB + Math.max(navB + 120, top)) / 2];
+  };
+  const frameAt = (z, a, b, u, subject) => {
+    const A = freeOf(z.steps[a]), B = freeOf(z.steps[b]), e = smooth(clamp(u)), mid = [vw / 2, vh / 2];
+    if (!A && !B) return null;
+    const P = A || mid, Q = B || mid;
+    return { x: Math.round(lerp(P[0], Q[0], e)), y: Math.round(lerp(P[1], Q[1], e)), subject };
+  };
   const want = (z, now) => {
     const y = scrollY + vh * 0.5, mob = phone();
     if (z.kind === "map") {
       const [a, b, u] = between(z, y), A = MAPCAM(z.steps[a]), B = MAPCAM(z.steps[b]), e = smooth(clamp(u));
       const far = Math.hypot(A[0] - B[0], A[1] - B[1]), hop = Math.min(2600, far * 0.55) * Math.sin(Math.PI * e);
       const dm = mob ? 1.3 : 1;
-      return { map: true, scheme: "monument", show: false, poster: z.steps[u < 0.5 ? a : b].d.still,
+      return { map: true, scheme: "monument", show: false, poster: z.steps[u < 0.5 ? a : b].d.still, frame: frameAt(z, a, b, u, "center"),
         cam: { t: [lerp(A[0], B[0], e), lerp(A[1], B[1], e)], dist: (lerp(A[2], B[2], e) + hop) * dm, yaw: lerpAng(A[3], B[3], e), pitch: clamp(lerp(A[4], B[4], e) + 0.12 * Math.sin(Math.PI * e), 0.2, 1.1) } };
     }
     if (z.kind === "drive") {
       const [a, b, u] = between(z, y), A = +z.steps[a].d.l, B = +z.steps[b].d.l;
       const n = nearestStep(z, y), s = z.steps[n];
-      const w = { map: false, scheme: steady("drive", s.d.scheme || "monument", now, 140), show: false, poster: s.d.still, L: lerp(A, B, clamp(u)), push: mob ? 0.5 : 0.32, veil: true, stepTheme: s.d.theme };
+      const w = { map: false, scheme: steady("drive", s.d.scheme || "monument", now, 140), show: false, poster: s.d.still, L: lerp(A, B, clamp(u)), push: mob ? 0.5 : 0.32, veil: true, stepTheme: s.d.theme, frame: frameAt(z, a, b, u, "car") };
       // the coffee stop, 8:00 am: the sun climbs behind Two Minutes as you scroll through it; each step is a beat
       // (the card, 1×, 2×, 3×, the fourth with a bang, the rush, the lesson), held while you stay on it
       const cs = z.steps.filter((q) => q.d.coffee != null);
@@ -230,6 +247,8 @@
         const c = s.d.coffee, a0 = cs[0].c, a1 = cs[cs.length - 1].c;
         w.coffee = /^\d$/.test(c) ? { on: true, n: +c, stage: "serve" } : { on: true, n: 4, stage: c };
         w.morning = { k: 1, rise: clamp((y - a0) / Math.max(1, a1 - a0)) };
+        // on a phone the beats keep Two Minutes itself in the middle of the screen (the city's own framing crops it)
+        if (mob && !s.card) w.frame = { x: Math.round(vw / 2), y: Math.round(vh * 0.44), subject: [700, 55, 4245] };
       }
       return w;
     }
@@ -269,6 +288,8 @@
     if (v && applied.veh !== v) { send({ op: "veh", id: v }); applied.veh = v; }
     if (w.show) { send({ op: "show", ...w.show }); applied.show = true; }
     if (w.cam) send({ op: "cam", ...w.cam });
+    const fk = w.frame ? `${w.frame.x}|${w.frame.y}|${String(w.frame.subject)}` : "";
+    if (fk !== applied.frame) { send(w.frame ? { op: "frame", ...w.frame } : { op: "frame" }); applied.frame = fk; }
     if (w.L != null) { send({ op: "drive", L: w.L, br: "A", push: w.push, snap: !!applied.snap }); applied.snap = false; }
     // the morning and the espressos (sent only when they change; off as soon as you leave them)
     const ck = w.coffee ? `${w.coffee.n}|${w.coffee.stage}` : "";
@@ -505,7 +526,20 @@
       if (!(await load()) || !window.cromaticKinetic) return;
       let k = null;
       const done = () => { go.classList.remove("kz-on"); };
-      try { k = window.cromaticKinetic(done, async () => {}, { drop: true, lite: phone() }); } catch { return; }
+      // the words, the buttons and the centre cup, in 0..1 of the stage, every frame: the wall parts around them and
+      // the falling cups bounce off them
+      const title = $(".go-h", go), cupEl = $(".go-in > .cup", go), rg = document.createRange();
+      const obstacles = () => {
+        const R = goKz.getBoundingClientRect(), W = R.width || 1, H = R.height || 1, out = [];
+        const box = (r, pad = 0) => ({ x0: (r.left - pad - R.left) / W, x1: (r.right + pad - R.left) / W, y0: (r.top - pad - R.top) / H, y1: (r.bottom + pad - R.top) / H });
+        // the title and the centre cup part the wall; the buttons and the contact line only stop the falling cups
+        const m = phone() ? 0.022 : 0.04;
+        if (title) { rg.selectNodeContents(title); for (const r of rg.getClientRects()) if (r.width > 4) out.push({ ...box({ left: r.left, right: r.right, top: r.top + r.height * 0.12, bottom: r.bottom - r.height * 0.06 }), m }); }
+        for (const b of go.querySelectorAll(".go-btns .btn, .go-contact")) out.push({ ...box(b.getBoundingClientRect(), 3), part: false });
+        if (cupEl) { const r = cupEl.getBoundingClientRect(); out.push({ x: (r.left + r.width / 2 - R.left) / W, y: (r.top + r.height * 0.56 - R.top) / H, r: (r.width * 0.4) / H, m: m * 1.2 }); }
+        return out;
+      };
+      try { k = window.cromaticKinetic(done, async () => {}, { drop: true, lite: phone(), obstacles }); } catch { return; }
       // the stage lives in this section, not over the page; only the cups play (the words skip straight to them)
       const st = document.body.querySelector(":scope > .kz");
       if (st) goKz.appendChild(st);

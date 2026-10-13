@@ -789,3 +789,27 @@ html:not(.js) .wcap, html:not(.js) .rcap { visibility: visible; margin-bottom: 1
 /* the end: the cups play behind the title and the buttons, which stay readable and tappable throughout */
 .go-in { z-index: 2; }
 .go-kz { z-index: 0 !important; }
+
+/* r140d (Daniel, round two) */
+/* the end: no bar above the cup */
+.go { border-top: 0 !important; }
+.go-kz { bottom: auto; height: 100vh; }
+/* "It opens" plain white; "with a coffee." white with its cup and the rainbow on the outline only */
+.open-h .pill-w { box-shadow: .06em .07em 0 var(--ink); }
+.pill-mv::after { inset: calc(.07em + 1.5px); }
+/* the map's opening card: smaller title */
+.z-map .zcard.big .h2 { font-size: clamp(28px, 3.1vw, 46px); }
+.z-map .zcard.big .lead { font-size: clamp(16px, 1.35vw, 19px); }
+.z-map .zcard.big { width: min(600px, 100%); }
+/* "Built for people. Read by machines." smaller */
+.find .h2 { font-size: clamp(30px, 3.9vw, 56px); }
+/* devices: truly thin bezels, like a current iPhone and MacBook */
+.laptop .lid { padding: .5% .5% .75%; border-radius: 1.4% 1.4% 0 0 / 2.2% 2.2% 0 0; }
+.laptop .lid::before { top: .14%; width: .3%; }
+.laptop .scr { border-radius: .9% / 1.4%; }
+.laptop .base { padding-bottom: 1.4%; margin: 0 -3.6%; }
+.tablet { padding: .65%; border-radius: 2.6% / 3.7%; }
+.tablet .scr { border-radius: 2.1% / 3%; }
+.phone { padding: 1.05%; border-radius: 15% / 7%; box-shadow: inset 0 0 0 1px #4a4a50, 0 30px 60px -30px rgba(0,0,0,.5); }
+.phone .scr { border-radius: 14% / 6.5%; }
+.phone .island { top: 2.2%; width: 25%; height: 2.6%; }

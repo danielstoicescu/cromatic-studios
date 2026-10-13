@@ -28740,10 +28740,32 @@ void main() {
         return c;
       };
       const acc = new Vector3(), nv = new Vector3();
+      // r140: opts.obstacles (only /onboarding/'s last section passes it): the page's title, buttons and centre cup,
+      // as rects / circles in 0..1 of the stage. The wall parts around them (the cups near them shrink and step
+      // aside), and once they let go the falling cups bounce off them and roll away. Screen space: X = u * aspect, Y = v
+      let OB = null;
+      const obSD = (X, Y, part) => {
+        let best = null;
+        for (const o of OB) {
+          if (part && o.part === false) continue;
+          let d, nX, nY;
+          if (o.r != null) { const ox = o.x * cam.aspect, dx = X - ox, dy = Y - o.y, L = Math.hypot(dx, dy) || 1e-6; d = L - o.r; nX = dx / L; nY = dy / L; }
+          else {
+            const x0 = o.x0 * cam.aspect, x1 = o.x1 * cam.aspect, ex = Math.max(x0 - X, X - x1), ey = Math.max(o.y0 - Y, Y - o.y1);
+            if (ex > 0 || ey > 0) { const qx = Math.max(ex, 0), qy = Math.max(ey, 0); d = Math.hypot(qx, qy); nX = qx ? Math.sign(X - (x0 + x1) / 2) * qx / d : 0; nY = qy ? Math.sign(Y - (o.y0 + o.y1) / 2) * qy / d : 0; }
+            else if (ex > ey) { d = ex; nX = Math.sign(X - (x0 + x1) / 2); nY = 0; } else { d = ey; nX = 0; nY = Math.sign(Y - (o.y0 + o.y1) / 2); }
+          }
+          if (!best || d < best.d) best = { d, nX, nY, o };
+        }
+        return best;
+      };
+      const obAt = (p) => { const hh = (cam.position.z - p.z) * Math.tan((cam.fov * Math.PI) / 360), hw = hh * cam.aspect; return [((p.x / hw + 1) / 2) * cam.aspect, (1 - p.y / hh) / 2, 2 * hh]; };
       const loop = (now) => {
         if (!running) return;
         const dt = Math.max(1e-3, Math.min(0.05, (now - last) / 1000)); last = now;
         const G = now * 0.0028;
+        OB = opts.obstacles ? opts.obstacles() : null;
+        if (OB && !OB.length) OB = null;
         for (const c of cups) {
           if (now < c.at) continue;
           c.g.visible = true;
@@ -28756,14 +28778,27 @@ void main() {
               f.vy -= 150 * dt;
               c.pos.y += f.vy * dt; c.pos.x += f.vx * dt; c.pos.z += f.vz * dt;
               c.g.rotation.z += f.wz * dt; c.g.rotation.x += f.wx * dt;
+              if (OB && !f.pass) {
+                // a falling cup meets the title, a button or the centre cup: it bounces, kicks sideways, rolls off
+                const [X, Y, W] = obAt(c.pos), rad = (2.4 * c.s) / W, q = obSD(X, Y);
+                if (q && q.d < rad) {
+                  const push = (rad - q.d) * W;
+                  c.pos.x += q.nX * push; c.pos.y -= q.nY * push;
+                  const wx = q.nX, wy = -q.nY, vn = f.vx * wx + f.vy * wy;
+                  if (vn < 0) { f.vx -= 1.55 * vn * wx; f.vy -= 1.55 * vn * wy; f.wz = -f.wz * 0.7 + (Math.random() - 0.5) * 4; }
+                  if (wy > 0.6) f.vx += (Math.sign(X - (q.o.r != null ? q.o.x * cam.aspect : (q.o.x0 + q.o.x1) * cam.aspect / 2)) || 1) * (9 + Math.random() * 12);
+                  if (++f.hits > 5) f.pass = true;
+                }
+              }
               c.g.position.copy(c.pos);
+              if (c.obK != null && c.obK < 1) { c.obK += (1 - c.obK) * (1 - Math.exp(-dt * 5)); c.g.scale.setScalar(c.s * c.obK); }
               if (c.pos.y < f.gone) c.g.visible = false;
             } else {
               c.spin += (0 - c.spin) * (1 - Math.exp(-dt * 6));
               c.ang += c.spin * dt;
               c.s += (c.sT - c.s) * (1 - Math.exp(-dt * 8));
               c.g.rotation.z = Math.sin((f.at - now) * 0.012 + c.swirl) * 0.018 * f.sway;
-              c.g.scale.setScalar(c.s);
+              c.g.scale.setScalar(c.s * (c.obK ?? 1));
               c.spinner.rotation.y = c.ang;
             }
             continue;
@@ -28791,6 +28826,16 @@ void main() {
           c.surf.rotation.y = c.swirl;
           c.g.position.copy(c.pos);
           c.g.scale.setScalar(c.s);
+          if (OB) {
+            // the wall parts around the page's words: near them a cup shrinks and steps aside
+            const [X, Y, W] = obAt(c.pos), q = obSD(X, Y, true), M = q ? q.o.m ?? 0.05 : 0;
+            if (q && q.d < M) {
+              const t = Math.max(0, Math.min(1, (q.d + M * 0.15) / (M * 1.15))), k = t * t * (3 - 2 * t);
+              c.g.position.x += q.nX * (M - q.d) * 0.55 * W; c.g.position.y -= q.nY * (M - q.d) * 0.55 * W;
+              c.obK = 0.12 + 0.88 * k;
+              c.g.scale.setScalar(c.s * c.obK);
+            } else c.obK = 1;
+          }
           c.spinner.rotation.y = c.ang;
         }
         if (camAnim) {
@@ -28926,16 +28971,17 @@ void main() {
             const settle = 820;
             let late = 0, first = Infinity;
             for (const c of cups) {
+              if (opts.obstacles) c.pos.copy(c.g.position); // r140: they let go from where the clearing put them
               const rowT = Math.max(0, Math.min(1, (c.pos.y + hhO) / (2 * hhO)));
               const straggler = Math.random() < 0.12;
               const at = now + settle + rowT * 520 + Math.random() * 140 + (straggler ? 380 + Math.random() * 360 : 0);
               c.sync = false; c.sT = 1;
-              c.fall = { at, vy: 0, vx: (Math.random() - 0.5) * 3, vz: (Math.random() - 0.5) * 6, wz: (Math.random() - 0.5) * 3.4, wx: (Math.random() - 0.5) * 1.4, gone: -hhO - 8, sway: straggler ? 2.5 : 1 };
+              c.fall = { at, vy: 0, vx: (Math.random() - 0.5) * 3, vz: (Math.random() - 0.5) * 6, wz: (Math.random() - 0.5) * 3.4, wx: (Math.random() - 0.5) * 1.4, gone: -hhO - 8, sway: straggler ? 2.5 : 1, hits: 0 };
               late = Math.max(late, at); first = Math.min(first, at);
             }
             if (first < Infinity) setTimeout(() => { try { opts.onDrop?.(); } catch (e) {} }, Math.max(0, first - now));
             // the last cup needs ~0.75 s to cross the frame; the canvas only fades at the very end, as a safety net
-            const dur = Math.max(1200, late - now + 780);
+            const dur = Math.max(1200, late - now + 780) + (opts.obstacles ? 1500 : 0); // r140: the bounces take a moment
             leaving = { t0: now, dur, fade: (late - now + 500) / dur, cb: () => { clear(); res(); } };
           });
         }
@@ -40294,7 +40340,7 @@ void main() {
       // (scheme), the ride (veh), the showroom (show: the ride alone on a plain warm ground, turning slowly, the way
       // the stories show it) and a pause while no zone is on screen. In the frame: no UI (styles.css html.onb), no
       // drop-in when a ride changes, no police, no coffee stop. It answers {cz:"onb", ev:"ready"} once it has drawn.
-      var onbShow = null, onbCoffee = null, onbMorning = null, onbSunS = null, onbSunV = new Vector3(), onbSunC = new Color(), onbBox = new Box3(), onbV = new Vector3(), onbC = new Vector3(), onbF = new Vector3(), onbR = new Vector3(), onbU = new Vector3(), onbY = new Vector3(0, 1, 0);
+      var onbOff = new Vector2(), onbOffT = new Vector2(), onbAim = null, onbShow = null, onbCoffee = null, onbMorning = null, onbSunS = null, onbSunV = new Vector3(), onbSunC = new Color(), onbBox = new Box3(), onbV = new Vector3(), onbC = new Vector3(), onbF = new Vector3(), onbR = new Vector3(), onbU = new Vector3(), onbY = new Vector3(0, 1, 0);
       function onbShowOff() {
         if (!onbShow) return;
         const S = onbShow;
@@ -40310,6 +40356,9 @@ void main() {
         const now = performance.now();
         switch (o.op) {
           case "pause": onbPaused = !!o.on; if (!onbPaused) prevT = now; break;
+          // the part of the screen the page's card leaves free: the view shifts so its subject (the car, or the
+          // camera's own target) sits in the middle of it. {x, y} in px, or nothing for a plain full-screen view
+          case "frame": onbAim = typeof o.x === "number" && typeof o.y === "number" ? { x: o.x, y: o.y, subject: o.subject || "center" } : null; break;
           case "rate": onbHalf = !!o.half; if (typeof o.dpr === "number" && o.dpr > 0) { perf.lock = true; perf.dpr = Math.min(o.dpr, window.devicePixelRatio || 1); renderer.setPixelRatio(perf.dpr); renderer.setSize(window.innerWidth, window.innerHeight); } break;
           case "mode": if (!!o.map !== mapMode) { onbShowOff(); setMapMode(!!o.map); } coffee.done = true; police.next = Infinity; break;
           case "drive": {
@@ -40379,11 +40428,29 @@ void main() {
       function onbFrame(now) {
         if (!onbFrames++) try { window.parent.postMessage({ cz: "onb", ev: "ready" }, location.origin); } catch (e) {}
         coffee.done = true; police.next = Infinity;
+        {
+          const ox = onbOff.x, oy = onbOff.y, W = innerWidth, H = innerHeight;
+          if (onbAim && !onbShow) {
+            let sx = W / 2, sy = H / 2;
+            const pt = Array.isArray(onbAim.subject) ? onbAim.subject : null;
+            if ((onbAim.subject === "car" && !mapMode && veh) || pt) {
+              // where the subject is on screen without the shift (the projection holds the current one)
+              if (pt) onbV.set(+pt[0] || 0, +pt[1] || 0, +pt[2] || 0); else onbV.set(carPos.x, carPos.y + 12, carPos.z);
+              warpV(onbV); onbV.project(camera);
+              sx = (onbV.x * 0.5 + 0.5) * W - onbOff.x; sy = (-onbV.y * 0.5 + 0.5) * H - onbOff.y;
+            }
+            onbOffT.set(clamp2(onbAim.x - sx, -W * 0.42, W * 0.42), clamp2(onbAim.y - sy, -H * 0.42, H * 0.42));
+          } else onbOffT.set(0, 0);
+          onbOff.lerp(onbOffT, 1 - Math.exp(-(now - (onbFrame.t || now)) / 1000 * 5));
+          onbFrame.t = now;
+          if (Math.abs(onbOff.x) < 0.5 && Math.abs(onbOff.y) < 0.5 && !onbOffT.x && !onbOffT.y) { if (camera.view && camera.view.enabled) camera.clearViewOffset(); }
+          else if (ox !== onbOff.x || oy !== onbOff.y || !(camera.view && camera.view.enabled) || camera.view.fullWidth !== innerWidth || camera.view.fullHeight !== innerHeight) camera.setViewOffset(innerWidth, innerHeight, -onbOff.x, -onbOff.y, innerWidth, innerHeight);
+        }
         if (onbCoffee) { coffee.t = 0; coffee.near = true; } else if (coffee.phase !== "idle" && !mapMode) { coffee.phase = "idle"; ui.coffeeEnd(); }
         {
           const m = onbMorning;
           if (m && !onbSunS) {
-            const tx = canvasTexture(256, 256, (ctx) => { const g2 = ctx.createRadialGradient(128, 128, 6, 128, 128, 128); g2.addColorStop(0, "rgba(255,252,236,1)"); g2.addColorStop(0.13, "rgba(255,236,170,1)"); g2.addColorStop(0.2, "rgba(255,196,120,0.75)"); g2.addColorStop(0.48, "rgba(255,160,100,0.28)"); g2.addColorStop(1, "rgba(255,150,100,0)"); ctx.fillStyle = g2; ctx.fillRect(0, 0, 256, 256); });
+            const tx = canvasTexture(256, 256, (ctx) => { const g2 = ctx.createRadialGradient(128, 128, 6, 128, 128, 128); g2.addColorStop(0, "rgba(255,253,240,1)"); g2.addColorStop(0.22, "rgba(255,240,190,1)"); g2.addColorStop(0.27, "rgba(255,206,140,0.7)"); g2.addColorStop(0.55, "rgba(255,170,110,0.22)"); g2.addColorStop(1, "rgba(255,150,100,0)"); ctx.fillStyle = g2; ctx.fillRect(0, 0, 256, 256); });
             onbSunS = new Sprite(new SpriteMaterial({ map: tx, transparent: true, depthWrite: false, fog: false }));
             onbSunS.material.userData.outlineParameters = { visible: false };
             onbSunS.renderOrder = -2;
@@ -40405,12 +40472,12 @@ void main() {
             if (m.base && scene.background && scene.background.isColor) scene.background.copy(m.base).lerp(onbSunC.set("#ffd2ae"), k * 0.7);
             // the disc: on the camera's line through Two Minutes' roof, farther than the shop (so the buildings hide it
             // until it clears them), climbing up the screen as you scroll
-            const T = warpV(new Vector3(650, 70, 4250)), dT = camera.position.distanceTo(T);
+            const T = warpV(new Vector3(650, 92, 4250)), dT = camera.position.distanceTo(T);
             T.project(camera);
-            onbV.set(clamp2(T.x, -0.9, 0.9) + 0.08, T.y - 0.12 + 0.75 * m.rise, 0.5).unproject(camera).sub(camera.position).normalize();
+            onbV.set(clamp2(T.x, -0.9, 0.9) + 0.06, T.y - 0.015 + 0.12 * m.rise, 0.5).unproject(camera).sub(camera.position).normalize();
             const dS = dT * 1.06;
             onbSunS.position.copy(camera.position).addScaledVector(onbV, dS);
-            onbSunS.scale.setScalar(2 * dS * Math.tan((camera.fov * Math.PI) / 360) * 0.62);
+            onbSunS.scale.setScalar(2 * dS * Math.tan((camera.fov * Math.PI) / 360) * 0.16); // small, low and far: a distant sun on the horizon
             onbSunS.material.opacity = k;
           }
         }
