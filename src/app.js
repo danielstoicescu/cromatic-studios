@@ -29191,6 +29191,23 @@ void main() {
           if (!finaleFired) onFinale?.();
         })();
       },
+      // r139r (Daniel: when the intro is skipped, keep the cups as the bridge from the loader cup to the map): no words,
+      // only the wall filling the screen and its fall onto the map
+      bridge() {
+        if (visible || finishing) return;
+        stage.getAnimations({ subtree: true }).forEach((a2) => a2.cancel());
+        live.clear();
+        resetCoffee();
+        block.innerHTML = ""; block.classList.remove("on-coffee"); fx.innerHTML = ""; cupsL.innerHTML = ""; cups3.clear();
+        finaleFired = false; visible = true; finishing = true; token++;
+        stage.classList.add("on");
+        (async () => {
+          try { await cupsFinale(); } catch (e) { if (!finaleFired) { finaleFired = true; onFinale?.(); } }
+          idx = 0; doneHere = true; visible = false; token++; finishing = false;
+          stage.classList.remove("on");
+          block.innerHTML = ""; veils.innerHTML = ""; marq.innerHTML = "";
+        })();
+      },
       get busy() { return finishing; },
       cupSprite(frames, px, ci) { return cups3.sprite(frames, px, ci); },
       warm() { try { return cups3.warm(); } catch (e) {} }, // r139g
@@ -35051,11 +35068,21 @@ void main() {
       spawnRing.material.userData.outlineParameters = { visible: false };
       var isDarkScheme = false;
       function setVehicle(id) {
-        if (state.vehicleId && state.vehicleId !== id) czEv("vehicle_select", { vehicle: id });
+        if (state.vehicleId && state.vehicleId !== id && !onbWarm) czEv("vehicle_select", { vehicle: id }); // r141: not the warm-up
         state.vehicleId = id;
         if (veh) {
           scene.remove(veh.group);
-          disposeObject(veh.group);
+          if (ONB_MODE && veh.__onbId) onbVehCache.set(veh.__onbId, veh); else disposeObject(veh.group); // r141: kept for the next switch
+        }
+        // r141: inside /onboarding/ a ride made once stays made (the showroom and the warm-up switch through all nine)
+        const cached = ONB_MODE ? onbVehCache.get(id) : null;
+        if (cached) {
+          veh = cached; onbVehCache.delete(id);
+          veh.beams.visible = isDarkScheme; veh.lampGlow?.(isDarkScheme); cityTone(veh.group, _cityK);
+          VEH_S = veh.__onbS; veh.group.scale.setScalar(VEH_S); veh.group.visible = true;
+          scene.add(veh.group);
+          spawnStart = performance.now();
+          return;
         }
         veh = buildVehicle(id);
         veh.group.traverse((o) => {
@@ -35099,8 +35126,10 @@ void main() {
           blob.position.set(c.x, 2.4 / VEH_S, c.z); blob.renderOrder = -1;
           veh.group.add(blob);
         }
+        if (ONB_MODE) { veh.__onbId = id; veh.__onbS = VEH_S; } // r141
         spawnStart = performance.now();
       }
+      var onbVehCache = new Map(); // r141: the rides built so far inside /onboarding/, by id (the current one is out)
       // r138j: idle exhaust for rides that have a tailpipe (veh.exhaust, the 1300): a few soft light-grey puffs drift
       // up and fade while it stands still, thinner as it rolls, none at speed. A small pool of camera-facing planes
       // (plain meshes, so they bend with the city like the car does); fewer on phones
@@ -35668,7 +35697,7 @@ void main() {
         return crayonTex;
       }
       function applyScheme(idx) {
-        if (state.schemeIdx != null && state.schemeIdx !== idx) czEv("world_change", { world: SCHEMES[idx]?.id });
+        if (state.schemeIdx != null && state.schemeIdx !== idx && !onbWarm) czEv("world_change", { world: SCHEMES[idx]?.id }); // r141: not the warm-up
         state.schemeIdx = idx;
         const s = SCHEMES[idx];
         warmShaders(); // r139b
@@ -37776,28 +37805,33 @@ void main() {
       // buildings came into view (30-80 ms each). Now, when idle after boot, a world switch or a mode switch, every
       // material of the scene (hidden ones too) is compiled for the target in use, hulls included where outlines draw
       var warmDone = new Set(), warmQueued = false;
-      function warmShaders() {
-        if (warmQueued) return;
-        warmQueued = true;
-        (window.requestIdleCallback || setTimeout)(() => {
-          warmQueued = false;
-          const sch = SCHEMES[state.schemeIdx]?.id, key = `${sch}|${mapMode ? "map" : "drive"}`;
+      // r141: the compile on its own (all: for the screen and for the render target both, whatever the mode), so
+      // /onboarding/ can warm every world and every ride while its city waits out of sight (onbCmd "warm")
+      function warmNow(all) {
+          const sch = SCHEMES[state.schemeIdx]?.id, key = all ? `${sch}|all` : `${sch}|${mapMode ? "map" : "drive"}`;
           if (!sch || warmDone.has(key)) return;
           warmDone.add(key);
-          const post = sch === "sketch" || sch === "riso" || sch === "sincity", toRT = post || mapMode || sch === "monument";
+          const post = sch === "sketch" || sch === "riso" || sch === "sincity", toRT = all || post || mapMode || sch === "monument";
           const hidden = [], prev = renderer.getRenderTarget();
           const rt = toRT ? new WebGLRenderTarget(1, 1, { type: HalfFloatType }) : null;
           scene.traverse((o) => { if (!o.visible && (o.isMesh || o.isGroup)) { hidden.push(o); o.visible = true; } });
           try {
             renderer.setRenderTarget(rt);
             renderer.compile(scene, camera);
-            if (post || (!toRT && sch !== "monument")) outline.compileOutline(scene, camera);
+            if (all) { renderer.setRenderTarget(null); renderer.compile(scene, camera); }
+            if (all || post || (!toRT && sch !== "monument")) outline.compileOutline(scene, camera);
+            // the warm-up draws one tiny frame too: the world's textures go up to the GPU now, not on its first real frame
+            if (all) { const tiny = new WebGLRenderTarget(64, 64); renderer.setRenderTarget(tiny); renderer.render(scene, camera); renderer.setRenderTarget(prev); tiny.dispose(); }
           } catch (e) {} finally {
             hidden.forEach((o) => (o.visible = false));
             renderer.setRenderTarget(prev);
             rt?.dispose();
           }
-        }, { timeout: 2500 });
+      }
+      function warmShaders() {
+        if (warmQueued) return;
+        warmQueued = true;
+        (window.requestIdleCallback || setTimeout)(() => { warmQueued = false; warmNow(); }, { timeout: 2500 });
       }
       var perf = { avg: 16, t: 0, dpr: Math.min(window.devicePixelRatio, isMobile() ? 1.5 : 2) };
       function adaptResolution(rawMs, now) {
@@ -38910,7 +38944,8 @@ void main() {
         };
         go();
       };
-      if (/[?&]boarding\b/.test(location.search)) setTimeout(() => window.__openBoarding(), 1800);
+      // r139r: after the cups have revealed the map (the boarding pass comes up over the city, not under the cups)
+      if (/[?&]boarding\b/.test(location.search)) { const t0b = performance.now(); const ob = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - t0b < 20000) return setTimeout(ob, 200); setTimeout(() => window.__openBoarding(), 300); }; setTimeout(ob, 1800); }
       function mapCloseBoarding(keepView = false) {
         if (!mapBoarding) return;
         boardFxStop?.();
@@ -40162,7 +40197,7 @@ void main() {
           rebuildGolden();
           mapUI.mark();
           if (intro) { mapIntro = true; document.body.classList.add("kz-intro"); mapUI.skip.classList.remove("hidden"); }
-          else setTimeout(() => { if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI.welcome(true); }, 1600);
+          else { const wt0 = performance.now(); const wl = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - wt0 < 20000) return setTimeout(wl, 250); if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI.welcome(true); }; setTimeout(wl, 1600); } // r139r: after the cups' reveal
           try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map") + location.hash); } catch {} // r139p: a plain "/" stays plain
         } else {
           mapEndIntro();
@@ -40344,6 +40379,7 @@ void main() {
       // (scheme), the ride (veh), the showroom (show: the ride alone on a plain warm ground, turning slowly, the way
       // the stories show it) and a pause while no zone is on screen. In the frame: no UI (styles.css html.onb), no
       // drop-in when a ride changes, no police, no coffee stop. It answers {cz:"onb", ev:"ready"} once it has drawn.
+      var onbWarm = null, onbWarmed = new Set(); // r141: the worlds and rides warmed out of sight (onbCmd "warm")
       var onbOff = new Vector2(), onbOffT = new Vector2(), onbAim = null, onbShow = null, onbCoffee = null, onbMorning = null, onbSunS = null, onbSunV = new Vector3(), onbSunC = new Color(), onbBox = new Box3(), onbV = new Vector3(), onbC = new Vector3(), onbF = new Vector3(), onbR = new Vector3(), onbU = new Vector3(), onbY = new Vector3(0, 1, 0);
       function onbShowOff() {
         if (!onbShow) return;
@@ -40384,10 +40420,33 @@ void main() {
           }
           case "scheme": {
             const i = SCHEMES.findIndex((x) => x.id === o.id);
+            if (onbWarm && i >= 0) { onbWarm.cur = i; if (o.ride && ENV_VEH[o.id]) onbWarm.curV = ENV_VEH[o.id]; } // r141: where to come back to
             if (i >= 0 && i !== state.schemeIdx) { if (o.ride) api.setScheme(i); else applyScheme(i); }
             break;
           }
-          case "veh": if (VEHICLES.some((v) => v.id === o.id) && o.id !== state.vehicleId) api.setVehicle(o.id); veh.group.visible = true; break;
+          case "veh": if (onbWarm && VEHICLES.some((v) => v.id === o.id)) onbWarm.curV = o.id; if (VEHICLES.some((v) => v.id === o.id) && o.id !== state.vehicleId) api.setVehicle(o.id); veh.group.visible = true; break;
+          // r141: while the city waits out of sight, every world and every ride gets its programs compiled, one per idle
+          // slot, so the first switch to it in the worlds and rides zones is a cut, not a stall; then the view goes back
+          // to where it was. It stops as soon as the city is wanted again; the page asks again when it is quiet
+          case "warm": {
+            if (!onbPaused || onbWarm) break;
+            const todo = [];
+            for (let i = 0; i < SCHEMES.length; i++) if (!onbWarmed.has("s" + SCHEMES[i].id)) todo.push(["s", i]);
+            for (const v of VEHICLES) if (!onbWarmed.has("v" + v.id)) todo.push(["v", v.id]);
+            if (!todo.length) break;
+            onbWarm = { cur: state.schemeIdx, curV: state.vehicleId, todo };
+            const back = () => { const W = onbWarm; onbWarm = null; try { if (state.vehicleId !== W.curV) setVehicle(W.curV); if (state.schemeIdx !== W.cur) applyScheme(W.cur); } catch (e) {} if (veh) veh.group.visible = true; };
+            const step = () => {
+              if (!onbWarm) return;
+              const it = onbWarm.todo.shift();
+              if (!it || !onbPaused || document.hidden) { back(); return; }
+              onbWarmed.add(it[0] + (it[0] === "s" ? SCHEMES[it[1]].id : it[1]));
+              try { if (it[0] === "s") applyScheme(it[1]); else setVehicle(it[1]); warmNow(true); } catch (e) {}
+              (window.requestIdleCallback || setTimeout)(step, { timeout: 1500 });
+            };
+            (window.requestIdleCallback || setTimeout)(step, { timeout: 1500 });
+            break;
+          }
           // the coffee stop, told by the page's scroll: n espressos (the fourth with a bang), then the rush, then calm;
           // the website's own cards, cups, shake and vignette, held on each step instead of running on a clock
           case "coffee": {
@@ -40524,6 +40583,7 @@ void main() {
       }
       if (ONB_MODE) {
         window.__onb = onbCmd;
+        window.__onbWarmLeft = () => (onbWarm ? onbWarm.todo.length + 1 : 0); // r141: tests
         window.__onbState = () => ({ speed: state.speed, f: window.__spd ? window.__spd.f : 0, L: state.L, map: mapMode, scheme: SCHEMES[state.schemeIdx].id, veh: state.vehicleId, branch: state.branch });
         window.addEventListener("message", (e) => { if (e.origin === location.origin && e.data && e.data.cz === "onb") onbCmd(e.data); });
       }
@@ -40590,6 +40650,8 @@ void main() {
         if (wait > 0 && brewEl) { setTimeout(startKinetic, wait); return; }
         kineticStarted = true;
         // r139p: straight into the map: no cups, no finale (it used to play the cup wall and its fall on every ?map)
+        // r139r: the cups still bridge the loader and the map (no words): they fill the screen and fall to reveal it
+        if (BOOT_MODE === "map" && kinetic?.bridge && !matchMedia("(prefers-reduced-motion: reduce)").matches) { mapUI?.skip.classList.add("hidden"); kinetic.bridge(); if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; } return; }
         if (BOOT_MODE === "map") { mapEndIntro(); if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; } return; }
         if (!kinetic) kinetic = createKinetic(() => mapEndIntro(), null, kzOpts);
         kinetic.resume();
