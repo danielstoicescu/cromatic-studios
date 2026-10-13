@@ -23966,7 +23966,7 @@ void main() {
         { id: "plane", label: "Cropduster" },
         { id: "scooter", label: "E-scooter" },
         { id: "foodvan", label: "Kompus truck" },
-        { id: "cop", label: "Poliția" }, // r139e: the Romanian Police 1310 (id kept for analytics)
+        { id: "cop", label: "Patrol" }, // r139e: the Romanian Police 1310 (id kept for analytics); r139j: named Patrol (Daniel)
         { id: "sub", label: "Yellow submarine" }
       ];
       FORM_DREAMS = ["Branding", "Website / App", "Video", "Growth & Social", "Not sure yet"];
@@ -39273,11 +39273,22 @@ void main() {
           hintAt = _hintV.clone();
           mapView.follow = true; mapView.distGoal = Math.max(mapView.dist * 0.82, innerWidth < 720 ? 3600 : 3200);
           hintEl.classList.remove("hidden");
-          const off = () => { hintEl.classList.add("hidden"); hintAt = null; canvas.removeEventListener("pointerdown", off); };
-          canvas.addEventListener("pointerdown", off);
+          const off = () => { if (hintEl.classList.contains("hidden")) return; hintEl.classList.add("hidden"); hintAt = null; removeEventListener("pointerdown", off, true); guideAfterHint(); };
+          addEventListener("pointerdown", off, true); // r139j: on the window: the canvas is under the map's layers and never got the tap, so the hint sat there 12 s
           setTimeout(off, 12000);
         };
         let _hintV = null;
+        // r139j (Daniel: "the other steps don't show after Tap the street to drive"): the tap hint is step one; once the
+        // ride has arrived and the map is quiet, the first-time guide follows ("Grab and drag", then the tap on Two Minutes)
+        const guideAfterHint = () => {
+          const t0 = performance.now();
+          const tick = () => {
+            if (guide.phase || guide.done) return;
+            if (guideBusy() || ptrs.size || mapView.vx || mapView.vz) { if (performance.now() - t0 < 30000) setTimeout(tick, 400); return; }
+            guideStart();
+          };
+          setTimeout(tick, 900);
+        };
         welcomeEl.onclick = (e) => {
           const b = e.target.closest("button"); if (!b) return;
           welcome(false);
