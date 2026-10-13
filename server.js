@@ -183,6 +183,8 @@ function serve(req, res) {
     "Vary": "Accept-Encoding",
     "ETag": f.etag
   };
+  // r140: private client reports: never indexed, never cached by Cloudflare, no referrer leaving the page
+  if (path.startsWith("/rapoarte/")) { headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"; headers["Cache-Control"] = "private, no-store"; headers["Referrer-Policy"] = "no-referrer"; }
   if (status === 404) headers["Cache-Control"] = "no-store";
   else if (req.headers["if-none-match"] === f.etag) { res.writeHead(304, headers); return res.end(); }
   if (f.disk) {

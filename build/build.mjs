@@ -730,6 +730,12 @@ await optimizeImages(pub, root);
   // long titles lose the studio suffix first in Google (~60 characters show); the brand stays in og:site_name and the schema
   if (/\.html$/.test(f)) n2 = n2.replace(/<title>([^<]*?) · Cromatic Studios<\/title>/, (m, t0) => (t0.length + 19 > 66 ? `<title>${t0}</title>` : m));
   if (n2 !== t) writeFileSync(p2, n2); } })(pub);
+// r140: /rapoarte, private client reports (site/rapoarte/**, copied as is AFTER the pass above: no footer, no
+// cookie card, no GA4). Unguessable folder names, noindex in the page and in the server headers, never in the sitemap
+{
+  const base = join(root, "site", "rapoarte");
+  (function walk(d, rel) { let fs = []; try { fs = readdirSync(d); } catch { return; } for (const f of fs) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p, rel + f + "/"); else { mkdirSync(join(pub, "rapoarte", rel), { recursive: true }); copyFileSync(p, join(pub, "rapoarte", rel, f)); } } })(base, "");
+}
 // precompress text files once, at build time (the server just picks the right variant)
 const COMP = /\.(html|js|css|svg|txt|xml|json|webmanifest|ico)$/;
 (function walk(d) {
