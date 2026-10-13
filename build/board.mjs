@@ -77,7 +77,7 @@ export const BOARD_CSS = `<style>
 .czb-main,.czb-stub{position:relative;box-sizing:border-box}
 .czb-main{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:10px;padding:30px 14px 30px 36px;min-height:220px;background:var(--y);border:2px solid var(--ink);border-right:0;border-radius:28px 0 0 28px}
 .czb-stub{flex:0 0 208px;display:flex;flex-direction:column;justify-content:space-between;gap:16px;padding:24px 24px 22px 28px;background:#fff;border:2px dashed var(--ink);border-radius:0 28px 28px 0;transform-origin:0 100%;transition:transform .7s cubic-bezier(.2,.8,.2,1)}
-.czb.on .czb-main,.czb.on .czb-stub{background:none;border:0}
+.czb.on .czb-main,.czb.on .czb-stub{background:none;border-color:transparent} /* r138q: same box before and after the outline is drawn */
 .czb-shape{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;display:none}
 .czb.on .czb-shape{display:block}
 .czb-shape .f{fill:var(--y)}.czb-stub .czb-shape .f{fill:#fff}
