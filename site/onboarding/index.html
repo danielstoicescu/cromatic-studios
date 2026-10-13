@@ -34,15 +34,24 @@
 <header class="nav" id="top">
   <a class="brand" href="/" aria-label="Cromatic Studios, take the 3D drive"><i class="cup" aria-hidden="true"></i><b>Cromatic Studios</b></a>
   <nav aria-label="Sections">
-    <a href="#map">The Map</a><a href="#drive">The Drive</a><a href="#website">The Website</a><a href="#worlds">Worlds</a><a href="#xp">XP</a>
+    <a href="#map">The Map</a><a href="#drive">The Drive</a><a href="#worlds">Worlds</a><a href="#rides">Rides</a><a href="#website">The Website</a>
   </nav>
   <a class="nav-cta see-map" href="/"><span class="long">Take the </span>3D drive <span aria-hidden="true">→</span></a>
 </header>
 
+<!-- r140: the stage. One live copy of the city (the real app, /?drive&nointro&onb, in a frame) sits behind the page and
+     shows through the "zones" (the map, the drive, the worlds, the rides); the page tells it where to be. It loads only
+     when a zone comes close; until then, and with reduced motion, a still of the same view stands in. -->
+<div class="stage" aria-hidden="true">
+  <img class="st-poster a" alt="" decoding="async">
+  <img class="st-poster b" alt="" decoding="async">
+  <i class="st-veil"></i>
+</div>
+
 <main>
 
 <!-- ============ HERO ============ -->
-<section class="hero" data-scene="hero" aria-label="A portfolio you can drive">
+<section class="hero" data-scene="hero" data-theme="ink" aria-label="A portfolio you can drive">
   <div class="hero-pin">
     <div class="hero-frame">
       <video class="hero-v" src="media/hero.mp4" poster="media/poster/hero.webp" muted playsinline loop autoplay preload="auto" aria-hidden="true"></video>
@@ -54,7 +63,7 @@
       <p class="hero-sub">Bucharest, rebuilt as a small 3D city. Every client is a building. Every industry is a street. Come and find the work.</p>
       <div class="hero-btns">
         <a class="btn btn-y see-map" href="/">Take the 3D drive</a>
-        <a class="btn btn-ghost" href="#ways">See the three ways in ↓</a>
+        <a class="btn btn-ghost" href="#map">Or scroll, we’ll drive ↓</a>
       </div>
     </div>
     <div class="hero-after">
@@ -65,7 +74,7 @@
 </section>
 
 <!-- ============ THE IDEA ============ -->
-<section class="idea" id="idea">
+<section class="idea" id="idea" data-theme="paper">
   <div class="wrap">
     <p class="eyebrow mono">The idea</p>
     <p class="big-read" data-words>Most studio portfolios are a grid of thumbnails. You scroll, you nod, you forget. We built a city instead. You drive in, you find the work by exploring, and you leave knowing what a brand is made of. And it still loads fast, reads well and shows up in search.</p>
@@ -79,12 +88,12 @@
 </section>
 
 <!-- ============ THE INTRO ============ -->
-<section class="intro sec" id="intro" data-scene="intro">
+<section class="intro sec" id="intro" data-scene="intro" data-theme="cream">
   <div class="intro-pin">
     <div class="wrap intro-grid">
       <div class="intro-copy">
         <p class="eyebrow mono">00 · The welcome</p>
-        <h2 class="h2"><span class="pill pill-y tilt-l">It opens</span><br><span class="pill pill-b tilt-r">with a coffee.</span></h2>
+        <h2 class="h2 open-h"><span class="pill pill-mv tilt-l"><i class="cup" aria-hidden="true"></i>It opens</span><br><span class="pill pill-b tilt-r">with a coffee.</span></h2>
         <ol class="kin" aria-label="The intro, line by line">
           <li>Killer <mark class="m-y">strategy.</mark></li>
           <li>Outstanding <mark class="m-b">design.</mark></li>
@@ -106,7 +115,7 @@
 </section>
 
 <!-- ============ THREE WAYS IN ============ -->
-<section class="ways sec" id="ways">
+<section class="ways sec" id="ways" data-theme="paper">
   <div class="wrap">
     <p class="eyebrow mono">Three ways in</p>
     <h2 class="h2 center"><span class="pill pill-g tilt-l">Map it.</span> <span class="pill pill-r tilt-r">Drive it.</span> <span class="pill pill-p tilt-l">Read it.</span></h2>
@@ -127,7 +136,7 @@
     <ol class="ways-list">
       <li class="reveal">
         <span class="num mono">01</span><h3>The Map</h3>
-        <p>Tap a place on the 3D map. The van drives you there, the camera swings round to the front door and a card opens with the project.</p>
+        <p>Tap a place on the 3D map. The car drives you there, the camera swings round to the front door and a card opens with the project.</p>
         <a href="/?map" class="link">Open the map →</a>
       </li>
       <li class="reveal">
@@ -141,172 +150,90 @@
         <a href="/site/" class="link">Read the website →</a>
       </li>
     </ol>
+    <p class="live-note mono reveal"><i class="dot" aria-hidden="true"></i>From here on, the city behind the words is the real one. Live, not a video.</p>
   </div>
 </section>
 
-<!-- ============ THE MAP ============ -->
-<section class="map sec" id="map">
-  <div class="wrap">
-    <p class="eyebrow mono">01 · The Map</p>
-    <h2 class="h2"><span class="pill pill-g tilt-l">Tap a place.</span><br><span class="pill pill-y tilt-r">We drive you there.</span></h2>
-    <p class="lead">Cromatic City is a diorama of the studio's Bucharest. The streets are industries, the buildings are clients, and every place is numbered, labelled and waiting to be found.</p>
-  </div>
-  <div class="steps" data-steps>
-    <div class="steps-stage">
-      <div class="dev laptop">
-        <div class="lid"><div class="scr">
-          <img class="layer on" data-layer="0" src="media/map-welcome.webp" alt="The welcome card: Where do you want to start? Coffee Street, Fintech Boulevard, Medical Avenue, Olari 9" loading="lazy">
-          <img class="layer" data-layer="1" src="media/map-labels.webp" alt="Numbered places with labels on fine stems, around the Palace of the Parliament" loading="lazy">
-          <video class="layer" data-layer="2" src="media/map-invest.mp4" poster="media/poster/map-invest.webp" muted playsinline loop preload="none" aria-label="The van drives to Investimental and the camera swings to the front"></video>
-          <img class="layer" data-layer="3" src="media/map-invest.webp" alt="The Investimental place card: photo, description and the Unpack the story button" loading="lazy">
-          <img class="layer" data-layer="4" src="media/map-zdrovit.webp" alt="The Zdrovit yard of brands on Medical Avenue" loading="lazy">
-        </div></div>
-        <div class="base"></div>
-      </div>
-    </div>
-    <ol class="steps-text">
-      <li data-step="0"><span class="mono">Step 1</span><h3>“Where do you want to start?”</h3><p>The map opens with a welcome card: tap a place, we drive you, see the work, say hi. Four doors in: Coffee Street, Fintech Boulevard, Medical Avenue, or straight to the studio.</p></li>
-      <li data-step="1"><span class="mono">Step 2</span><h3>Labels on fine stems.</h3><p>Every place is numbered. Its label hangs on a hairline stem from the roof: quiet at rest, rich on hover, with a soft glow on the ground when it is open. Zoom in, zoom out, or tap ◎ to find the van.</p></li>
-      <li data-step="2"><span class="mono">Step 3</span><h3>The van drives you there.</h3><p>Pick a place and the Mystery van takes the real roads of the map, the shortest way. Then the camera swings down, cinematic, to the building's front door.</p></li>
-      <li data-step="3"><span class="mono">Step 4</span><h3>A card with the work.</h3><p>Every place card carries a picture, a few honest lines and one button to the full case. “Unpack the story.” “Lift the lid.” “Dig deeper.”</p></li>
-      <li data-step="4"><span class="mono">Step 5</span><h3>Yards, shortcuts, side streets.</h3><p>Some clients are a whole neighbourhood. The Zdrovit yard holds a courtyard of health and beauty brands. The more you wander, the more you find: 50+ places, 43 of them waiting on the dock.</p></li>
-    </ol>
-  </div>
-
-  <!-- streets -->
-  <div class="streets" data-scene="streets">
-    <div class="streets-pin">
-      <div class="wrap streets-head">
-        <p class="eyebrow mono">Streets are industries</p>
-        <h3 class="h3">Five streets. Each one an industry the studio knows from the inside.</h3>
-      </div>
-      <div class="streets-track">
-        <article class="street" style="--sc:#28C840">
-          <div class="road-sign"><i></i><b>Coffee Street</b><span class="mono">Specialty coffee, food &amp; drink · 15 case studies</span></div>
-          <img src="media/map-tm.webp" alt="Two Minutes on Coffee Street, with the coffee boxes and the place card" loading="lazy">
-          <p>Where the studio grew up: coffee shops, roasters, a festival, bakeries, a craft beer, a charcuterie and a caviar farm.</p>
-        </article>
-        <article class="street" style="--sc:#119BFE">
-          <div class="road-sign"><i></i><b>Fintech Boulevard</b><span class="mono">Banks, investments, fintech &amp; energy · 8 case studies</span></div>
-          <img src="media/map-bepco.webp" alt="Bepco on Fintech Boulevard, solar roof and place card" loading="lazy">
-          <p>Banks, brokers, investment groups, a fintech festival and an energy company, made clear and human.</p>
-        </article>
-        <article class="street" style="--sc:#F28BA8">
-          <div class="road-sign"><i></i><b>Medical Avenue</b><span class="mono">Clinics, pharma &amp; aesthetic medicine · 7 case studies</span></div>
-          <img src="media/map-tac.webp" alt="The Aesthetic Court at the Palace of the Parliament on Medical Avenue" loading="lazy">
-          <p>Clinics, labs, pharma and aesthetic medicine, from Bucharest to Barcelona. Plus the Zdrovit yard of brands.</p>
-        </article>
-        <article class="street" style="--sc:#FED012">
-          <div class="road-sign"><i></i><b>The Smallest Shortcut</b><span class="mono">Print on demand &amp; stickers · 2 case studies</span></div>
-          <img src="media/map-sticker.webp" alt="Sticker Republic, the little yellow house on the lane" loading="lazy">
-          <p>Two print shops with a voice: one sings, one sticks. The little yellow house is plastered with its own work.</p>
-        </article>
-        <article class="street" style="--sc:#B098C8">
-          <div class="road-sign"><i></i><b>Bulevardul Dacia 99</b><span class="mono">Education &amp; culture · the old address</span></div>
-          <img src="media/map-dacia.webp" alt="The Dacia 99 palace, Echo School and the +50 other clients quarter" loading="lazy">
-          <p>The palace where the studio worked in 2024: Club 99 downstairs, a faculty and a school of digital arts upstairs.</p>
-        </article>
-      </div>
+<!-- ============ ZONE 1 · THE MAP (live) ============ -->
+<section class="zone z-map" id="map" data-zone="map" data-theme="paper" aria-label="The Map">
+  <div class="zstep z-intro" data-cam="1350,5200,6000,0.3,0.98" data-still="z/map-0">
+    <div class="zcard big">
+      <p class="eyebrow mono">01 · The Map</p>
+      <h2 class="h2"><span class="pill pill-g tilt-l">Tap a place.</span><br><span class="pill pill-y tilt-r">We drive you there.</span></h2>
+      <p class="lead">Cromatic City is a diorama of the studio's Bucharest. The streets are industries, the buildings are clients, and every place is numbered, labelled and waiting to be found.</p>
+      <p class="zhint mono">Keep scrolling. We'll fly you round it.</p>
     </div>
   </div>
-
-  <!-- olari -->
-  <div class="olari reveal">
-    <video class="lazy-v olari-v" src="media/map-olari.mp4" poster="media/poster/map-olari.webp" muted playsinline loop preload="none" aria-label="Arriving at Strada Olari 9: the camera descends to the green house and the studio photo cards fan out"></video>
-    <div class="olari-copy">
+  <div class="zstep" data-cam="700,4300,1400,0.4,0.62" data-still="z/map-1">
+    <article class="zcard street" style="--sc:#28C840">
+      <div class="road-sign"><i></i><b>Coffee Street</b><span class="mono">Specialty coffee, food &amp; drink · 15 case studies</span></div>
+      <p>Where the studio grew up: coffee shops, roasters, a festival, bakeries, a craft beer, a charcuterie and a caviar farm.</p>
+      <p class="zsmall">Two Minutes has been the studio's client and neighbour for a decade. The red attic across the street was ours.</p>
+    </article>
+  </div>
+  <div class="zstep" data-cam="2120,4430,1750,0.25,0.72" data-still="z/map-2">
+    <article class="zcard street" style="--sc:#119BFE">
+      <div class="road-sign"><i></i><b>Fintech Boulevard</b><span class="mono">Banks, investments, fintech &amp; energy · 8 case studies</span></div>
+      <p>Banks, brokers, investment groups, a fintech festival and an energy company, made clear and human.</p>
+    </article>
+  </div>
+  <div class="zstep" data-cam="1800,4800,2000,0.5,0.75" data-still="z/map-3">
+    <article class="zcard street" style="--sc:#F28BA8">
+      <div class="road-sign"><i></i><b>Medical Avenue</b><span class="mono">Clinics, pharma &amp; aesthetic medicine · 7 case studies</span></div>
+      <p>Clinics, labs, pharma and aesthetic medicine, from Bucharest to Barcelona. Plus the Zdrovit yard of brands.</p>
+    </article>
+  </div>
+  <div class="zstep" data-cam="1100,6330,1300,0.6,0.6" data-still="z/map-5">
+    <article class="zcard street" style="--sc:#B098C8">
+      <div class="road-sign"><i></i><b>Bulevardul Dacia 99</b><span class="mono">Education &amp; culture · the old address</span></div>
+      <p>The palace from Dacia 99, the temporary home of our studio. Club 99 downstairs, the BISM faculty and a school of digital arts upstairs.</p>
+    </article>
+  </div>
+  <div class="zstep" data-cam="1002,7350,1150,1.41,0.32" data-still="z/map-6">
+    <article class="zcard">
       <p class="eyebrow mono">The last stop · Strada Olari 9</p>
       <h3 class="h3">The last stop is ours.</h3>
       <p>Tap “Our house” and the camera takes a slow cinematic descent to the green house, under a beam of light. Photo cards of the studio fan out, with the address, the phone and a way to get there.</p>
-    </div>
+      <a class="btn btn-y see-map" href="/?map">Open the map →</a>
+    </article>
   </div>
 </section>
 
-<!-- ============ THE DRIVE ============ -->
-<section class="drive" id="drive">
-  <div class="wrap drive-intro">
-    <p class="eyebrow mono">02 · The Drive</p>
-    <h2 class="h2"><span class="pill pill-r tilt-l">Scroll like you</span><br><span class="pill pill-y tilt-r">normally do.</span></h2>
-    <p class="lead">In drive mode the page is the road. Every flick of the wheel or swipe of the thumb moves the van forward. Scroll down here and you will see.</p>
-  </div>
-  <div class="scrub" data-scene="scrub">
-    <div class="scrub-pin">
-      <canvas class="scrub-c" width="960" height="600" aria-label="The drive, frame by frame, controlled by your scroll"></canvas>
-      <img class="scrub-fallback" src="media/seq/d20.webp" alt="Drive mode: the van on the road, The Voice chapter card beside it" loading="lazy">
-      <div class="scrub-caps">
-        <div class="cap" data-cap="0"><span class="mono">Str. Muniției · Start</span><h3>The page is the road.</h3><p>The drive starts where the studio started, in 2014. Scroll down and the van rolls.</p></div>
-        <div class="cap" data-cap="1"><span class="mono">CH.02 · The Voice</span><h3>Chapters pull up beside you.</h3><p>Each chapter teaches a piece of branding, in plain words, and pays you 20 XP.</p></div>
-        <div class="cap" data-cap="2"><span class="mono">CH.03 · The World</span><h3>The speedometer keeps score.</h3><p>Scroll gently and you cruise. Scroll like a maniac and the needle goes red.</p></div>
-        <div class="cap" data-cap="3"><span class="mono">CH.06 · Three routes</span><h3>Then the road splits.</h3><p>Coffee, fintech or medical. Similar arrival time. Different scenery.</p></div>
-      </div>
-      <div class="scrub-bar" aria-hidden="true"><i></i></div>
+<!-- ============ ZONE 2 · THE DRIVE (live, then dark) ============ -->
+<section class="zone z-drive" id="drive" data-zone="drive" data-theme="paper" aria-label="The Drive">
+  <div class="zstep z-intro" data-l="40" data-still="z/drive-0">
+    <div class="zcard big">
+      <p class="eyebrow mono">02 · The Drive</p>
+      <h2 class="h2 scroll-h"><span class="sh-ic" aria-hidden="true"><i></i></span><span class="pill pill-r tilt-l">Scroll like you</span> <span class="pill pill-y tilt-r">normally do.</span></h2>
+      <p class="lead">In drive mode the page is the road. Every flick of the wheel or swipe of the thumb moves the car forward. Right here too: keep scrolling and you’re driving.</p>
     </div>
   </div>
+  <div class="zstep" data-l="1480" data-br="A" data-scheme="nightlife" data-theme="ink" data-still="z/drive-5">
+    <article class="zcard"><p class="eyebrow mono">Night Mode</p><h3 class="h3">Then the lights go down.</h3><p>Same street, after dark: windows light up, headlights come on, a light drizzle starts. This is Night Mode, one of the city’s worlds.</p></article>
+  </div>
+  <div class="zstep z-coffee" data-l="1790" data-br="A" data-coffee="0" data-still="z/coffee-0">
+    <article class="zcard"><p class="eyebrow mono"><span class="clock" aria-hidden="true"></span>8:00 am · Strada Aricescu 52A</p><h3 class="h3">Good morning, Two Minutes.</h3><p>The sun comes up behind the shop. Two Minutes has been the studio's client and neighbour for a decade, so the drive always stops here. Keep scrolling: the coffee is on its way.</p></article>
+  </div>
+  <div class="zstep zbeat" data-l="1790" data-br="A" data-coffee="1" data-still="z/coffee-1" aria-hidden="true"></div>
+  <div class="zstep zbeat" data-l="1790" data-br="A" data-coffee="2" data-still="z/coffee-2" aria-hidden="true"></div>
+  <div class="zstep zbeat" data-l="1790" data-br="A" data-coffee="3" data-still="z/coffee-3" aria-hidden="true"></div>
+  <div class="zstep zbeat" data-l="1790" data-br="A" data-coffee="4" data-still="z/coffee-4" aria-hidden="true"></div>
+  <div class="zstep zbeat" data-l="1790" data-br="A" data-coffee="rush" data-still="z/coffee-5" aria-hidden="true"></div>
+  <div class="zstep zbeat" data-l="1790" data-br="A" data-coffee="calm" data-still="z/coffee-6" aria-hidden="true"></div>
+</section>
 
-  <!-- crossroads -->
-  <div class="wrap feature reveal">
-    <div class="feature-media">
-      <div class="dev laptop">
-        <div class="lid"><div class="scr"><video class="lazy-v" src="media/drive-fork.mp4" poster="media/poster/drive-fork.webp" muted playsinline loop preload="none" aria-label="At the fork the driver picks Coffee Street and stops at Two Minutes for coffee"></video></div></div>
-        <div class="base"></div>
-      </div>
-    </div>
-    <div class="feature-copy">
-      <p class="eyebrow mono on-dark">The crossroads</p>
-      <h3 class="h3">Pick a street. Any street.</h3>
-      <p>At the end of the first stretch, three motorway signs drop in. Arrows on your keyboard work too. Coffee Street is the story road, so we take it.</p>
-      <div class="hw-row" aria-label="The three street signs, as on the site">
-        <span class="hw" style="--hwc:#119BFE"><i class="hw-stripe"></i><span class="hw-body"><b class="hw-arrow">←</b><span class="hw-txt"><b>Fintech Boulevard</b><i>Digital &amp; finance</i></span></span></span>
-        <span class="hw" style="--hwc:#F28BA8"><i class="hw-stripe"></i><span class="hw-body"><b class="hw-arrow">↑</b><span class="hw-txt"><b>Medical Avenue</b><i>Clinics, care &amp; beauty</i></span></span></span>
-        <span class="hw on" style="--hwc:#28C840"><i class="hw-stripe"></i><span class="hw-body"><span class="hw-txt"><b>Coffee Street</b><i>Continue the story</i></span><b class="hw-arrow">→</b></span></span>
-      </div>
-    </div>
-  </div>
-
-  <!-- coffee stop -->
-  <div class="wrap coffee reveal">
-    <div class="coffee-copy">
-      <p class="eyebrow mono on-dark">The coffee stop · Strada Aricescu 52A</p>
-      <h3 class="h3">Four double espressos. Twelve boxes of coffee.</h3>
-      <p>Two Minutes has been the studio's client and neighbour for a decade, so the drive always stops here. Four double espressos, +5 XP each. The coffee boxes fly down from the Cromatic attic and stack by the door, like resources in a strategy game. Then the coffee rush hits.</p>
-      <div class="toasts" data-coffee>
-        <div class="coffee-card serve"><span class="cc-num"><b data-espresso>1</b><i>×</i></span><span class="cc-body"><span class="cc-eyebrow mono">Two Minutes · Coffee stop</span><span class="cc-title">DOUBLE ESPRESSO <em>+5 XP</em></span><span class="cc-p">Two Minutes knows good coffee.</span></span></div>
-        <div class="coffee-card serve"><span class="cc-num boxes"><b>12</b><i>×</i></span><span class="cc-body"><span class="cc-eyebrow mono">Two Minutes · Fresh drop</span><span class="cc-title">TWO MIN BOXES</span><span class="cc-p">Sent down from the Cromatic mansard. <mark>Tap</mark> them for a closer look.</span></span></div>
-        <div class="rush-pill">⚡ COFFEE RUSH ⚡</div>
-        <div class="coffee-card calm"><span class="cc-eyebrow mono">Life lesson</span><p class="cc-lesson">Next time, I'll stop at <mark>three</mark> doubles.</p></div>
-      </div>
-    </div>
-    <div class="coffee-media">
-      <img src="media/map-tm.webp" alt="Two Minutes and Two Min Lab on Strada Aricescu, coffee boxes stacked by the door" loading="lazy">
-    </div>
-  </div>
-
-  <!-- police -->
-  <div class="wrap police reveal" data-police>
-    <div class="police-copy">
-      <p class="eyebrow mono on-dark">Speed limit</p>
-      <h3 class="h3">Scroll too fast and you get pulled over.</h3>
-      <p>Ten seconds at 50 km/h, a siren in the corner, then you are free to go. It is a joke, and a gentle way to say: slow down, this is worth reading. Try it. This speedometer reads your scroll.</p>
-    </div>
-    <div class="police-dash">
-      <div class="cop-pill idle" aria-live="polite"><span class="cop-siren" aria-hidden="true"></span><span class="cop-txt"><b>SPEED LIMIT 50</b><span class="mono">SCROLL FAST TO TEST IT</span></span><em class="mono">0:10</em></div>
-      <div class="dial" aria-hidden="true">
-        <svg viewBox="0 0 120 120"><path class="dd-arc"/><path class="dd-red"/><g class="dd-ticks"></g><g class="dd-needle"><line x1="60" y1="24" x2="60" y2="7"/></g></svg>
-        <b class="dd-num">0</b><span class="dd-unit">KM/H</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- crossroads at street ends + boarding -->
-  <div class="wrap duo reveal">
-    <figure class="shot"><img src="media/drive-crossroads.webp" alt="At the end of a street, a signpost: Fintech Boulevard, Medical Avenue, Olari 9 home" loading="lazy"><figcaption><b>End of the street. Where to next?</b> A signpost at every street end sends you on, or home to Olari 9.</figcaption></figure>
-    <figure class="shot"><img src="media/drive-fintech.webp" alt="Driving down Fintech Boulevard, with the street rail of client cards on the right" loading="lazy"><figcaption><b>A rail for every street.</b> As you drive a street, its clients line up on the right, one card and one button each.</figcaption></figure>
-    <figure class="shot"><img src="media/drive-services.webp" alt="Full tank of services: the UX and UI Design service card on the road to Olari 9" loading="lazy"><figcaption><b>Full tank of services.</b> Four service houses line the last stretch, one card each.</figcaption></figure>
+<!-- ============ AFTER DARK (the dark zone carries on) ============ -->
+<section class="night" id="night" data-theme="ink">
+  <div class="wrap duo">
+    <figure class="shot reveal"><img src="media/drive-crossroads.webp" alt="At the end of a street, a signpost: Fintech Boulevard, Medical Avenue, Olari 9 home" loading="lazy" width="1280" height="800"><figcaption><b>End of the street. Where to next?</b> A signpost at every street end sends you on, or home to Olari 9.</figcaption></figure>
+    <figure class="shot reveal"><img src="media/drive-fintech.webp" alt="Driving down Fintech Boulevard, with the street rail of client cards on the right" loading="lazy" width="1280" height="800"><figcaption><b>A rail for every street.</b> As you drive a street, its clients line up on the right, one card and one button each.</figcaption></figure>
+    <figure class="shot reveal"><img src="media/drive-services.webp" alt="Full tank of services: the UX and UI Design service card on the road to Olari 9" loading="lazy" width="1280" height="800"><figcaption><b>Full tank of services.</b> Four service houses line the last stretch, one card each.</figcaption></figure>
   </div>
 
   <div class="board" id="board">
     <div class="wrap board-grid">
       <div class="board-copy reveal">
-        <p class="eyebrow mono on-dark">Above the clouds · Final call</p>
+        <p class="eyebrow mono">Above the clouds · Final call</p>
         <h3 class="h2"><span class="pill pill-g tilt-l">Complete your</span><br><span class="pill pill-p tilt-r">boarding pass.</span></h3>
         <p>The drive ends at Strada Olari 9, then goes even further. The contact form is a boarding pass: what are we dreaming about, what kind of business you are, when do we start. Fill it in, press “I want to come on board”, and a pass is printed with your name on it.</p>
         <div class="ticket" aria-label="The boarding pass header">
@@ -325,63 +252,98 @@
   </div>
 </section>
 
-<!-- ============ WORLDS ============ -->
-<section class="worlds" id="worlds" data-scene="worlds">
-  <div class="worlds-pin">
-    <div class="worlds-head"><p class="eyebrow mono">Choose your brand multiverse</p><h2 class="h2">Nine worlds. Same city.</h2></div>
-    <div class="worlds-stack">
-      <figure class="world" style="--wc:#ff8a6a"><img src="media/world-monument.webp" alt="Cromatic world: the pastel diorama" loading="lazy"><figcaption><b>Cromatic</b><span>The pastel diorama. Soft light, real shadows, the default everywhere.</span></figcaption></figure>
-      <figure class="world" style="--wc:#FF9E3D"><img src="media/world-nightlife.webp" alt="Night Mode: lit windows, drizzle and wet roads" loading="lazy"><figcaption><b>Night Mode</b><span>Lit windows, a drizzle on the roads and an all-chrome car.</span></figcaption></figure>
-      <figure class="world" style="--wc:#e0b25a"><img src="media/world-ghibli.webp" alt="Ghib.ly world: green fields and sandy roads" loading="lazy"><figcaption><b>Ghib.ly</b><span>Green fields, sandy roads, an afternoon that never ends.</span></figcaption></figure>
-      <figure class="world" style="--wc:#ffd84a"><img src="media/world-sketch.webp" alt="Sketchbook: the city drawn in pencil" loading="lazy"><figcaption><b>Sketchbook</b><span>The city in pencil. It draws itself as you go, coloured in wax crayon.</span></figcaption></figure>
-      <figure class="world" style="--wc:#e10600"><img src="media/world-circuit.webp" alt="Race Day: asphalt roads and a red pit stop" loading="lazy"><figcaption><b>Race Day</b><span>Asphalt roads, kerbs and a pit stop with a red roof.</span></figcaption></figure>
-      <figure class="world" style="--wc:#f08bb4"><img src="media/world-orchid.webp" alt="Sakura: pink roads and cherry trees" loading="lazy"><figcaption><b>Sakura</b><span>Pink roads under cherry trees. Petals included.</span></figcaption></figure>
-      <figure class="world" style="--wc:#3de0d0"><img src="media/world-underwater.webp" alt="Underwater: fish, kelp and a yellow submarine" loading="lazy"><figcaption><b>Underwater</b><span>Fish, kelp and a pineapple house. Bring a submarine.</span></figcaption></figure>
-      <figure class="world" style="--wc:#e8c020"><img src="media/world-gta2.webp" alt="GTA 2 bonus world: dark, top-down, yellow roads" loading="lazy"><figcaption><b>GTA 2</b><span>A top-down bonus round, hidden in drive mode.</span></figcaption></figure>
-      <figure class="world" style="--wc:#ff48b0"><img src="media/world-riso.webp" alt="Risograph: two inks, pink and blue, halftone" loading="lazy"><figcaption><b>Risograph</b><span>Printed in two inks, fluorescent pink and blue, a little off-register.</span></figcaption></figure>
+<!-- ============ ZONE 3 · WORLDS (live, you switch) ============ -->
+<section class="zone z-worlds pinned" id="worlds" data-zone="worlds" data-theme="w-nightlife" aria-label="Worlds">
+  <div class="zpin">
+    <div class="zp-top">
+      <p class="eyebrow mono">Choose your brand multiverse</p>
+      <h2 class="h2">Nine worlds. Same city.</h2>
+      <p class="zp-lead">Tap a world, or keep scrolling and the city changes under you. Each one has its own light, and some bring their own ride.</p>
     </div>
-    <ol class="worlds-dots" aria-hidden="true"><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li></ol>
+    <div class="zp-bottom">
+      <div class="wcaps" aria-live="polite">
+        <p class="wcap" data-w="nightlife"><b style="--wc:#FF9E3D">Night Mode</b><span>Lit windows, a drizzle on the roads and an all-chrome car.</span></p>
+        <p class="wcap" data-w="underwater"><b style="--wc:#3de0d0">Underwater</b><span>Fish, kelp and a pineapple house. Bring a submarine.</span></p>
+        <p class="wcap" data-w="monument"><b style="--wc:#ff8a6a">Cromatic</b><span>The pastel diorama. Soft light, real shadows, the default everywhere.</span></p>
+        <p class="wcap" data-w="ghibli"><b style="--wc:#e0b25a">Ghib.ly</b><span>Green fields, sandy roads, an afternoon that never ends.</span></p>
+        <p class="wcap" data-w="sketch"><b style="--wc:#ffd84a">Sketchbook</b><span>The city in pencil. It draws itself as you go, coloured in wax crayon.</span></p>
+        <p class="wcap" data-w="circuit"><b style="--wc:#e10600">Race Day</b><span>Asphalt roads, kerbs and a pit stop with a red roof.</span></p>
+        <p class="wcap" data-w="orchid"><b style="--wc:#f08bb4">Sakura</b><span>Pink roads under cherry trees. Petals included.</span></p>
+        <p class="wcap" data-w="riso"><b style="--wc:#ff48b0">Risograph</b><span>Printed in two inks, fluorescent pink and blue, a little off-register.</span></p>
+      </div>
+      <div class="chips" role="group" aria-label="Pick a world">
+        <button type="button" class="chip" data-w="nightlife" style="--wc:#FF9E3D" aria-pressed="false">Night Mode</button>
+        <button type="button" class="chip" data-w="underwater" style="--wc:#3de0d0" aria-pressed="false">Underwater</button>
+        <button type="button" class="chip" data-w="monument" style="--wc:#ff8a6a" aria-pressed="false">Cromatic</button>
+        <button type="button" class="chip" data-w="ghibli" style="--wc:#e0b25a" aria-pressed="false">Ghib.ly</button>
+        <button type="button" class="chip" data-w="sketch" style="--wc:#ffd84a" aria-pressed="false">Sketchbook</button>
+        <button type="button" class="chip" data-w="circuit" style="--wc:#e10600" aria-pressed="false">Race Day</button>
+        <button type="button" class="chip" data-w="orchid" style="--wc:#f08bb4" aria-pressed="false">Sakura</button>
+        <button type="button" class="chip" data-w="riso" style="--wc:#ff48b0" aria-pressed="false">Risograph</button>
+      </div>
+      <p class="zp-foot mono">And a ninth, GTA 2: a top-down bonus round, hidden in drive mode.</p>
+    </div>
+  </div>
+  <div class="ztrack" aria-hidden="true">
+    <i class="zseg" data-w="nightlife" data-theme="w-nightlife" data-still="world-nightlife"></i>
+    <i class="zseg" data-w="underwater" data-theme="w-underwater" data-still="world-underwater"></i>
+    <i class="zseg" data-w="monument" data-theme="w-monument" data-still="world-monument"></i>
+    <i class="zseg" data-w="ghibli" data-theme="w-ghibli" data-still="world-ghibli"></i>
+    <i class="zseg" data-w="sketch" data-theme="w-sketch" data-still="world-sketch"></i>
+    <i class="zseg" data-w="circuit" data-theme="w-circuit" data-still="world-circuit"></i>
+    <i class="zseg" data-w="orchid" data-theme="w-orchid" data-still="world-orchid"></i>
+    <i class="zseg" data-w="riso" data-theme="w-riso" data-still="world-riso"></i>
   </div>
 </section>
 
-<section class="sketchsec sec">
-  <div class="wrap feature reveal">
-    <div class="feature-copy">
-      <p class="eyebrow mono">A world to talk about</p>
-      <h3 class="h3">Sketchbook draws itself.</h3>
-      <p>Graphite on paper, construction lines first. Wherever you go, the pencil fills in the city, and every button is coloured in wax crayon, slightly over the lines. Each world has its own light, its own ambient sound and its own default ride.</p>
+<!-- ============ ZONE 4 · RIDES (live showroom) ============ -->
+<section class="zone z-rides pinned" id="rides" data-zone="rides" data-theme="warm" aria-label="Your ride">
+  <div class="zpin">
+    <div class="zp-top">
+      <p class="eyebrow mono">Your ride</p>
+      <h2 class="h2"><span class="pill pill-w tilt-l">Nine rides.</span> <span class="pill pill-b tilt-r">Zero parking fines.</span></h2>
+      <p class="zp-lead">Want something else? There’s a submarine. Swap your ride any time, in the city or right here.</p>
     </div>
-    <div class="feature-media">
-      <div class="dev laptop">
-        <div class="lid"><div class="scr"><video class="lazy-v" src="media/sketch.mp4" poster="media/poster/sketch.webp" muted playsinline loop preload="none" aria-label="Sketchbook world: the van drives to Two Minutes through a pencil-drawn city"></video></div></div>
-        <div class="base"></div>
+    <div class="zp-bottom">
+      <div class="rcaps" aria-live="polite">
+        <p class="rcap" data-v="dacia1300"><span class="mono"><span>The rides</span> · <em>01</em>/09</span><b>Vintage yellow ride</b><i>The one you start with, in most worlds.</i></p>
+        <p class="rcap" data-v="groovy"><span class="mono"><span>The rides</span> · <em>02</em>/09</span><b>Mystery van</b><i>The default, before the yellow one took over.</i></p>
+        <p class="rcap" data-v="f1"><span class="mono"><span>The rides</span> · <em>03</em>/09</span><b>Classic Formula</b><i>Red and white, nineties style. Race Day’s own.</i></p>
+        <p class="rcap" data-v="monopoly"><span class="mono"><span>The rides</span> · <em>04</em>/09</span><b>Chrome racer</b><i>All chrome, like a board-game token. Night Mode’s own.</i></p>
+        <p class="rcap" data-v="plane"><span class="mono"><span>The rides</span> · <em>05</em>/09</span><b>Cropduster</b><i>The only one that takes off.</i></p>
+        <p class="rcap" data-v="scooter"><span class="mono"><span>The rides</span> · <em>06</em>/09</span><b>E-scooter</b><i>Sakura’s ride, and Risograph’s too.</i></p>
+        <p class="rcap" data-v="foodvan"><span class="mono"><span>The rides</span> · <em>07</em>/09</span><b>Kompus truck</b><i>A food truck in Kómpus colours: dark grey, orange letters.</i></p>
+        <p class="rcap" data-v="cop"><span class="mono"><span>The rides</span> · <em>08</em>/09</span><b>Patrol</b><i>A Romanian police classic. Yes, the beacon works.</i></p>
+        <p class="rcap" data-v="sub"><span class="mono"><span>The rides</span> · <em>09</em>/09</span><b>Yellow submarine</b><i>Made for Underwater. It floats along the road.</i></p>
+      </div>
+      <div class="chips" role="group" aria-label="Pick a ride">
+        <button type="button" class="chip" data-v="dacia1300" aria-pressed="false">Vintage yellow ride</button>
+        <button type="button" class="chip" data-v="groovy" aria-pressed="false">Mystery van</button>
+        <button type="button" class="chip" data-v="f1" aria-pressed="false">Classic Formula</button>
+        <button type="button" class="chip" data-v="monopoly" aria-pressed="false">Chrome racer</button>
+        <button type="button" class="chip" data-v="plane" aria-pressed="false">Cropduster</button>
+        <button type="button" class="chip" data-v="scooter" aria-pressed="false">E-scooter</button>
+        <button type="button" class="chip" data-v="foodvan" aria-pressed="false">Kompus truck</button>
+        <button type="button" class="chip" data-v="cop" aria-pressed="false">Patrol</button>
+        <button type="button" class="chip" data-v="sub" aria-pressed="false">Yellow submarine</button>
       </div>
     </div>
   </div>
-</section>
-
-<!-- ============ RIDES ============ -->
-<section class="rides sec" id="rides">
-  <div class="wrap">
-    <p class="eyebrow mono">Your ride</p>
-    <h2 class="h2"><span class="pill pill-w tilt-l">Nine rides.</span> <span class="pill pill-b tilt-r">Zero parking fines.</span></h2>
-    <p class="lead">The 1300 is the default. Swap it any time: every ride drops in with a little bounce and a golden shockwave.</p>
-    <ul class="ride-grid">
-      <li class="reveal"><img src="media/ride-1300.webp" alt="" loading="lazy"><b>1300</b></li>
-      <li class="reveal"><img src="media/ride-groovy.webp" alt="" loading="lazy"><b>Mystery van</b></li>
-      <li class="reveal"><img src="media/ride-f1.webp" alt="" loading="lazy"><b>Classic Formula</b></li>
-      <li class="reveal"><img src="media/ride-monopoly.webp" alt="" loading="lazy"><b>Chrome racer</b></li>
-      <li class="reveal"><img src="media/ride-plane.webp" alt="" loading="lazy"><b>Cropduster</b></li>
-      <li class="reveal"><img src="media/ride-scooter.webp" alt="" loading="lazy"><b>E-scooter</b></li>
-      <li class="reveal"><img src="media/ride-foodvan.webp" alt="" loading="lazy"><b>Kompus truck</b></li>
-      <li class="reveal"><img src="media/ride-cop.webp" alt="" loading="lazy"><b>Patrol</b></li>
-      <li class="reveal"><img src="media/ride-sub.webp" alt="" loading="lazy"><b>Yellow submarine</b></li>
-    </ul>
+  <div class="ztrack" aria-hidden="true">
+    <i class="zseg" data-v="dacia1300" data-still="z/ride-dacia1300"></i>
+    <i class="zseg" data-v="groovy" data-still="z/ride-groovy"></i>
+    <i class="zseg" data-v="f1" data-still="z/ride-f1"></i>
+    <i class="zseg" data-v="monopoly" data-still="z/ride-monopoly"></i>
+    <i class="zseg" data-v="plane" data-still="z/ride-plane"></i>
+    <i class="zseg" data-v="scooter" data-still="z/ride-scooter"></i>
+    <i class="zseg" data-v="foodvan" data-still="z/ride-foodvan"></i>
+    <i class="zseg" data-v="cop" data-still="z/ride-cop"></i>
+    <i class="zseg" data-v="sub" data-still="z/ride-sub"></i>
   </div>
 </section>
 
 <!-- ============ XP ============ -->
-<section class="xp" id="xp" data-scene="xp">
+<section class="xp" id="xp" data-scene="xp" data-theme="paper">
   <div class="xp-pin">
     <div class="wrap xp-grid">
       <div class="xp-copy">
@@ -416,63 +378,8 @@
   </div>
 </section>
 
-<!-- ============ LEARN ============ -->
-<section class="learn sec" id="learn">
-  <div class="wrap">
-    <p class="eyebrow mono">Learn branding as you go</p>
-    <h2 class="h2"><span class="pill pill-g tilt-l">From a dream</span><br><span class="pill pill-r tilt-r">to a crowd.</span></h2>
-    <p class="lead">Every stop teaches something. Strategy, identity, the places a brand lives in, the people who make it alive. The deliverables are named plainly, so a founder knows what to ask for.</p>
-    <div class="table-line"><span class="mono">CH.00 · What we bring to the table</span><p>Killer <mark>strategy</mark>. Outstanding <mark>design</mark>. Striking <mark>visuals</mark>. Powerful <mark>storytelling</mark>. Genuine passion and real empathy for your customer. And a coffee. There is always a coffee.</p></div>
-    <div class="chapters">
-      <article class="chapter" style="--cc:#28C840">
-        <div class="ch-top"><span class="mono">CH.01 / Slow pour, strong ideas</span><span class="xpc">+20xp</span></div>
-        <h3 class="pill-title"><span class="pill" style="background:#B098C8;--rot:-2deg">The</span><span class="pill" style="background:#28C840;--rot:1.5deg">Dream</span></h3>
-        <p class="ch-kind mono">Brand strategy</p>
-        <p>Every brand starts as somebody's dream at a kitchen table. Two cups of coffee and a lot of hard questions later, the dream has a spine: your strategy, positioning, personas, the reason anyone should care.</p>
-        <p class="mono inc">What this includes</p>
-        <ul class="chips"><li>Brand strategy</li><li>Positioning</li><li>Persona journeys</li><li>Naming</li><li>Workshop at the table</li></ul>
-      </article>
-      <article class="chapter" style="--cc:#B098C8">
-        <div class="ch-top"><span class="mono">CH.02 / Hot ideas, cold brew</span><span class="xpc">+20xp</span></div>
-        <h3 class="pill-title"><span class="pill" style="background:#B098C8;--rot:-1.5deg">The</span><span class="pill" style="background:#FED012;--rot:2deg">Voice</span></h3>
-        <p class="ch-kind mono">Brand identity</p>
-        <p>Then the dream learns to talk. A name, a mark, a tone of voice. The things people repeat about you when you are not in the room.</p>
-        <p class="mono inc">What this includes</p>
-        <ul class="chips"><li>Identity design</li><li>Brand book</li><li>Tone of voice</li><li>Content design</li><li>Editorial</li></ul>
-      </article>
-      <article class="chapter" style="--cc:#119BFE">
-        <div class="ch-top"><span class="mono">CH.03 / Brew. Create. Repeat.</span><span class="xpc">+20xp</span></div>
-        <h3 class="pill-title"><span class="pill" style="background:#119BFE;--rot:-2deg">The</span><span class="pill" style="background:#F65342;--rot:1.5deg">World</span></h3>
-        <p class="ch-kind mono">Web, apps, packaging, film</p>
-        <p>A voice needs a world to live in. Websites, apps, packaging, film. Places your customer can walk into and instantly feel who you are, before reading a single word.</p>
-        <p class="mono inc">What this includes</p>
-        <ul class="chips"><li>UX &amp; UI</li><li>Rapid prototyping</li><li>Websites &amp; apps</li><li>Design systems</li><li>Video &amp; sound</li></ul>
-      </article>
-      <article class="chapter" style="--cc:#F65342">
-        <div class="ch-top"><span class="mono">CH.04 / Pure creative energy</span><span class="xpc">+20xp</span></div>
-        <h3 class="pill-title"><span class="pill" style="background:#F65342;--rot:-2deg">The</span><span class="pill" style="background:#28C840;--rot:1.5deg">Crowd</span></h3>
-        <p class="ch-kind mono">Content &amp; growth</p>
-        <p>A beautiful world with nobody in it is a museum. We bring the crowd. Content strategy, social design, ad campaigns and Instagram growth with taste, not tricks.</p>
-        <p class="mono inc">What this includes</p>
-        <ul class="chips"><li>Content strategy</li><li>Social design</li><li>Ad campaigns</li><li>Instagram growth</li><li>Community</li></ul>
-      </article>
-    </div>
-
-    <div class="tank">
-      <p class="eyebrow mono">CH.07 · Full tank of services</p>
-      <h3 class="h3">What we carry.</h3>
-      <div class="svc-grid">
-        <a class="svc reveal" href="/services/brand-identity/" style="--sv:#28C840"><span class="mono">6 skills on board</span><b>Branding &amp; Design</b><ul><li>Brand strategy</li><li>Identity design</li><li>Brand book</li><li>Persona journeys</li><li>Content design</li><li>Generative AI for visuals</li></ul></a>
-        <a class="svc reveal" href="/services/video-production/" style="--sv:#FED012"><span class="mono">5 skills on board</span><b>Video Production</b><ul><li>Video production</li><li>Photography</li><li>Post production</li><li>Sound design</li><li>Generative AI for video</li></ul></a>
-        <a class="svc reveal" href="/services/websites-apps/" style="--sv:#B098C8"><span class="mono">5 skills on board</span><b>UX &amp; UI Design</b><ul><li>Rapid prototyping</li><li>Information architecture</li><li>High quality mockups</li><li>Websites &amp; apps</li><li>Design systems</li></ul></a>
-        <a class="svc reveal" href="/services/social-media-content/" style="--sv:#F65342"><span class="mono">4 skills on board</span><b>Growth &amp; Content</b><ul><li>Content strategy</li><li>Instagram growth</li><li>Social post design</li><li>Ad campaigns</li></ul></a>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ============ THE WEBSITE ============ -->
-<section class="website" id="website">
+<section class="website" id="website" data-theme="mist">
   <div class="wrap">
     <p class="eyebrow mono">03 · The Website</p>
     <h2 class="h2"><span class="pill pill-p tilt-l">Prefer reading?</span><br><span class="pill pill-y tilt-r">Same story. Fast.</span></h2>
@@ -495,22 +402,12 @@
       </ol>
     </div>
   </div>
-  <div class="wrap">
-    <div class="pages">
-      <a class="page reveal" href="/work/two-minutes/"><img src="media/site-case-tm.webp" alt="Two Minutes case study page" loading="lazy"><b>34+ case studies</b><span>One page each, with films, boxes and the full story.</span></a>
-      <a class="page reveal" href="/industries/coffee-food-drink/"><img src="media/site-ind-coffee.webp" alt="Coffee Street industry page" loading="lazy"><b>4 industry pages</b><span>Coffee, fintech, medical, print. The streets, written down.</span></a>
-      <a class="page reveal" href="/services/brand-identity/"><img src="media/site-svc-identity.webp" alt="Brand identity service page" loading="lazy"><b>5 service pages</b><span>Strategy, identity, websites and apps, video, social.</span></a>
-      <a class="page reveal" href="/team/"><img src="media/site-team.webp" alt="The team page" loading="lazy"><b>The team</b><span>Brilliant humans, one coffee at a time.</span></a>
-      <a class="page reveal" href="/ro/"><img src="media/site-ro.webp" alt="The Romanian version of the website" loading="lazy"><b>Și în română</b><span>A full Romanian version at /ro/, with an EN / RO switch.</span></a>
-      <a class="page reveal" href="/work/investimental/"><img src="media/site-case-inv.webp" alt="Investimental case study page" loading="lazy"><b>Read like a magazine</b><span>Big type, real work, and a link to drive there.</span></a>
-    </div>
-  </div>
 </section>
 
 <!-- ============ THE WALL ============ -->
-<section class="wall" id="work" data-scene="wall">
+<section class="wall" id="work" data-scene="wall" data-theme="ink">
   <div class="wrap">
-    <p class="eyebrow mono on-dark">Selected work</p>
+    <p class="eyebrow mono">Selected work</p>
     <h2 class="h2 light">34 case studies.<br>Every one on the map.</h2>
   </div>
   <div class="wall-rows" data-wall></div>
@@ -518,7 +415,7 @@
 </section>
 
 <!-- ============ FINDABLE ============ -->
-<section class="find sec" id="findable">
+<section class="find sec" id="findable" data-theme="paper">
   <div class="wrap">
     <p class="eyebrow mono">Fast · findable · readable</p>
     <h2 class="h2"><span class="pill pill-b tilt-l">Built for people.</span><br><span class="pill pill-w tilt-r">Read by machines.</span></h2>
@@ -543,12 +440,7 @@
       <article class="fcard reveal">
         <span class="mono">schema.org</span>
         <h3>Structured data on every page.</h3>
-        <ul class="chips dark"><li>Organization</li><li>WebSite</li><li>WebPage</li><li>CreativeWork</li><li>BreadcrumbList</li><li>Person</li></ul>
-      </article>
-      <article class="fcard reveal">
-        <span class="mono">robots.txt</span>
-        <h3>“Everyone is welcome, people and machines alike.”</h3>
-        <p>That is the first line of the file. Search and AI crawlers are named and let in.</p>
+        <ul class="chips-s dark"><li>Organization</li><li>WebSite</li><li>WebPage</li><li>CreativeWork</li><li>BreadcrumbList</li><li>Person</li></ul>
       </article>
       <article class="fcard reveal">
         <span class="mono">EN · RO</span>
@@ -574,59 +466,15 @@
   </div>
 </section>
 
-<!-- ============ CRAFT ============ -->
-<section class="craft sec" id="craft">
-  <div class="wrap">
-    <p class="eyebrow mono">Details nobody asked for</p>
-    <h2 class="h2">The craft is in the corners.</h2>
-    <div class="bento">
-      <article class="bx bx-cup reveal">
-        <div class="tab-mock" aria-hidden="true"><span class="tab"><i class="cup sm"></i>Cromatic Studios</span><span class="tab dim">New tab</span></div>
-        <i class="cup xl" aria-hidden="true"></i>
-        <h3>The cup that spins.</h3>
-        <p>24 frames of the yellow porcelain cup, on the loading screen and in the browser tab. Yes, the favicon turns.</p>
-      </article>
-      <article class="bx bx-labels reveal">
-        <img src="media/map-labels-hover.webp" alt="Map labels on hairline stems, numbered, around Medical Avenue" loading="lazy">
-        <h3>Labels on hairlines.</h3>
-        <p>White pills, a brand dot, a number, a stem down to the roof.</p>
-      </article>
-      <article class="bx bx-signs reveal">
-        <div class="map-street" style="--hwc:#28C840"><span class="hw-stripe"></span><span class="hw-body"><span class="hw-txt"><b>Coffee Street</b><i>The story road</i></span></span></div>
-        <div class="map-street" style="--hwc:#119BFE"><span class="hw-stripe"></span><span class="hw-body"><span class="hw-txt"><b>Fintech Boulevard</b><i>Digital &amp; finance</i></span></span></div>
-        <div class="map-street" style="--hwc:#F28BA8"><span class="hw-stripe"></span><span class="hw-body"><span class="hw-txt"><b>Medical Avenue</b><i>Clinics, care &amp; beauty</i></span></span></div>
-        <div class="map-street" style="--hwc:#FED012"><span class="hw-stripe"></span><span class="hw-body"><span class="hw-txt"><b>The Smallest Shortcut</b><i>Stickers &amp; print</i></span></span></div>
-        <h3>Road signs, not menus.</h3>
-        <p>Street names float over every street like motorway signs.</p>
-      </article>
-      <article class="bx bx-card reveal">
-        <img src="media/map-steam.webp" alt="The Steam Coffee Shop place card beside the building" loading="lazy">
-        <h3>Place cards that sit beside the place.</h3>
-        <p>A cover photo, a few lines, one button. The card opens away from the building, so you see both.</p>
-      </article>
-      <article class="bx bx-weather reveal">
-        <h3>Weather, sound, wind.</h3>
-        <p>Rain and lightning come and go on the drive, the umbrella turns them off, and each world hums its own ambient sound, with a mute button close by.</p>
-        <div class="wx" aria-hidden="true"><span>☂</span><span>⚡</span><span>♪</span></div>
-      </article>
-      <article class="bx bx-pass reveal">
-        <img src="media/drive-boarding.webp" alt="The boarding pass form in drive mode, above the clouds" loading="lazy">
-        <h3>A form you want to fill in.</h3>
-        <p>Chips instead of dropdowns, and a pass you can save as a picture.</p>
-      </article>
-    </div>
-  </div>
-</section>
-
 <!-- ============ STUDIO ============ -->
-<section class="studio sec" id="studio">
-  <div class="wrap studio-grid">
-    <div class="studio-copy">
-      <p class="eyebrow mono">The studio · Strada Olari 9</p>
-      <h2 class="h2"><span class="pill pill-g tilt-l">Brilliant humans,</span><br><span class="pill pill-y tilt-r">one coffee at a time.</span></h2>
-      <p class="lead">Cromatic Studios started in 2014 with two people and a company name written on a napkin. It was founded by Daniel Stoicescu, still the studio's creative architect. Today it is led by two partners who are also brothers: Daniel, the founder, and Cristian Stoicescu, the CEO. Ten people, one house, Strada Olari 9, Bucharest.</p>
-      <p class="small">On the drive you pass every address the studio ever had, each with its plate: Muniției 5, Călinescu 54, Eliade 18, Dacia 99, and Olari 9, today.</p>
-    </div>
+<section class="studio sec" id="studio" data-theme="paper">
+  <div class="wrap studio-head">
+    <p class="eyebrow mono">The studio · Strada Olari 9</p>
+    <h2 class="h3 studio-h">Ten people. One house. Always a coffee.</h2>
+    <p class="lead">Cromatic Studios started in 2014 with two people and a company name written on a napkin. It was founded by Daniel Stoicescu, still the studio's creative architect. Today it is led by two partners who are also brothers: Daniel, the founder, and Cristian Stoicescu, the CEO. Ten people, one house, Strada Olari 9, Bucharest.</p>
+    <p class="small">On the drive you pass every address the studio ever had, each with its plate: Muniției 5, Călinescu 54, Eliade 18, Dacia 99, and Olari 9, today.</p>
+  </div>
+  <div class="wrap">
     <div class="photos reveal" aria-label="Photos from the studio">
       <img src="media/studio/s5.webp" alt="Olari 9, the studio" loading="lazy">
       <img src="media/studio/s0.webp" alt="The studio, from the stairs" loading="lazy">
@@ -652,7 +500,8 @@
 </section>
 
 <!-- ============ CTA ============ -->
-<section class="go" id="go">
+<section class="go" id="go" data-theme="yellow">
+  <div class="go-kz" aria-hidden="true"></div>
   <div class="wrap go-in">
     <i class="cup xxl" aria-hidden="true"></i>
     <h2 class="go-h">Your turn<br>at the wheel.</h2>

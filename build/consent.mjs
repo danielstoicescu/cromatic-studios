@@ -29,7 +29,8 @@ export function consentSnippet(GA_ID, GTM_ID = "") {
 html.embed #cz-ck,body.map-boarding #cz-ck,body.modal-open #cz-ck,body.scf-open #cz-ck{display:none}
 html.embed #cz-ck.ck-ask{display:flex}`;
   const js = `(function(){var ID=${JSON.stringify(GA_ID)},GTM=${JSON.stringify(GTM_ID)},K="cz-consent";
-var EMB=/[?&]embed=1/.test(location.search)||document.documentElement.classList.contains("embed");
+var ONB=/[?&]onb(&|$)/.test(location.search);/* r140: the city inside /onboarding/ counts nothing, asks nothing */
+var EMB=ONB||/[?&]embed=1/.test(location.search)||document.documentElement.classList.contains("embed");
 function get(){try{return localStorage.getItem(K)}catch(e){var m=document.cookie.match(/(?:^|; )cz-consent=(\\w+)/);return m&&m[1]}}
 function set(v){try{localStorage.setItem(K,v)}catch(e){}document.cookie="cz-consent="+v+";path=/;max-age=15552000;SameSite=Lax"}
 function ga(){if(window.__czGA)return;window.__czGA=1;window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};
@@ -58,6 +59,6 @@ else if(/drive|ride/i.test(a.className||"")&&/drive/i.test(t))ev("open_drive_mod
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest(".vs-btn");if(b&&b.getAttribute("aria-pressed")!=="true")ev("video_sound_on",{page:location.pathname})},true);
 document.addEventListener("focusin",function(e){var f=e.target.closest&&e.target.closest("form, .bp-form, .mapcard.contact");if(f)ev("form_start",{form:"boarding_pass",page:location.pathname,once:"form_start"})});
 if(window.fetch){var f0=window.fetch;window.fetch=function(u,o){var r=f0.apply(this,arguments);try{if(String(u).indexOf("/api/boarding")>-1&&o&&o.method==="POST")r.then(function(x){if(x.ok)ev("generate_lead",{form:"boarding_pass",page:location.pathname})})}catch(e){}return r}}
-var v=get();if(v==="yes")ga();else if(!EMB&&v!=="no"){if(document.readyState==="complete")setTimeout(ask,1200);else addEventListener("load",function(){setTimeout(ask,1200)})}})();`;
+var v=get();if(v==="yes"&&!ONB)ga();else if(!EMB&&v!=="no"){if(document.readyState==="complete")setTimeout(ask,1200);else addEventListener("load",function(){setTimeout(ask,1200)})}})();`;
   return `<style id="cz-ck-css">${css}</style>\n<script>${js}</script>`;
 }

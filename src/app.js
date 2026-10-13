@@ -37801,6 +37801,8 @@ void main() {
         return false;
       }
       function frame(now) {
+        if (ONB_MODE && onbPaused) { prevT = now; requestAnimationFrame(frame); return; } // r140: no zone of /onboarding/ on screen
+        if (ONB_MODE && onbHalf && (onbSkip = !onbSkip)) { requestAnimationFrame(frame); return; } // r140: a slow phone: every other frame (the page's own scroll keeps the rest)
         if (cityCovered()) { prevT = now; requestAnimationFrame(frame); return; } // r139b
         if (introFreeze(now)) { prevT = now; requestAnimationFrame(frame); return; } // r139g
         adaptResolution(now - prevT, now);
@@ -37826,6 +37828,7 @@ void main() {
           }
         }
         if (mapMode) state.targetL = mapNav.targetL;
+        else if (ONB_MODE && onbL != null) state.targetL = onbL; // r140: the page's scroll is the road
         const nearDacia = state.L > route.stopL.merge - 1500 && state.L < route.stopL.merge - 250;
         const crawl = (coffee.near && !coffee.done && (!mapMode || mapNav.place?.tm)) || (nearDacia && !mapMode);
         if (siteMode) { state.targetL = state.L; state.speed = 0; }
@@ -37907,6 +37910,7 @@ void main() {
         const isPlane = veh.kind === "plane";
         const hover = isPlane ? 34 + Math.sin(now * 3e-3) * 5 : veh.kind === "sub" ? 20 + Math.sin(now * 1.9e-3) * 4 : 0;
         veh.group.position.set(carPos.x, carPos.y + hover, carPos.z);
+        if (ONB_MODE && spawnStart > 0) { spawnStart = -1; veh.group.visible = true; veh.group.scale.setScalar(VEH_S); spawnRing.material.opacity = 0; } // r140: a clean cut, no drop-in
         if (spawnStart > 0 && now < spawnStart) {
           veh.group.visible = false;
         } else if (spawnStart > 0) {
@@ -38148,7 +38152,7 @@ void main() {
           if (mvK > 1e-3) {
             // telephoto push, capped so overview shots never climb into the cloud layer
             const off = camPos.clone().sub(camTarget), d0 = off.length();
-            const d1 = Math.min(d0 * (1 + 2.1 * mvK), Math.max(d0, 3400));
+            const d1 = Math.min(d0 * (1 + 2.1 * mvK * (ONB_MODE ? onbPush : 1)), Math.max(d0, 3400)); // r140: /onboarding/ can sit closer
             camPos.copy(camTarget).addScaledVector(off, d1 / Math.max(d0, 1e-3));
             camPos.y += 160 * mvK;
           }
@@ -38603,6 +38607,7 @@ void main() {
           else if (state.L > 235) kinetic.pause();
         }
         if (!routeRing) routeRingInit(); else routeRing.update(now);
+        if (ONB_MODE) onbFrame(now); // r140
         if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sincity") sinCityRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sketch") sketchRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "riso") risoRender(now, camera); else if (mvK > 0.5 && !window.__noPost) tiltShiftRender(now); else if (window.__noPost) renderer.render(scene, camera); else outline.render(scene, camera);
         requestAnimationFrame(frame);
       }
@@ -38614,6 +38619,9 @@ void main() {
       // The drive is the optional mode (?drive, or the Drive mode button).
       try { history.scrollRestoration = "manual"; } catch {}
       var BOOT_MODE = /[?&]drive\b/.test(location.search) ? "drive" : /[?&]map\b/.test(location.search) ? "map" : "intro";
+      // r140: ?onb = the city inside /onboarding/ (a same-origin frame behind the page, driven by it: see onbCmd)
+      var ONB_MODE = /[?&]onb\b/.test(location.search) && window.parent !== window, onbPaused = false, onbL = null, onbFrames = 0, onbPush = 1, onbHalf = false, onbSkip = false;
+      if (ONB_MODE) document.documentElement.classList.add("onb");
       var mapMode = false, mapBoot = BOOT_MODE !== "drive", mapUI = null, mapPrev = null, mapBoarding = false, mapIntro = false;
       // r132: Daniel: the city shouldn't pull back further than the roundabout view, and should let you come much closer
       var MAP_MIND = 900;
@@ -40139,7 +40147,7 @@ void main() {
           updateScrollSpace();
           scrollToL(state.L, false);
           try { history.replaceState(null, "", location.pathname + "?drive" + location.hash); } catch {}
-          driveGuideStart(); // r139i
+          if (!ONB_MODE) driveGuideStart(); // r139i (r140: not inside /onboarding/)
         }
       }
       window.__cam = (p2, t2) => { window.__camO = p2 ? [p2, t2] : null; };
@@ -40280,6 +40288,174 @@ void main() {
       window.__api = api;
       window.__xp = () => ({ pts: state.points, log: xpLog.map((e) => e.title + " +" + e.pts), pending: xpPending && xpPending.title, collected: [...xpCollected], chosen: state.branchChosen, branch: state.branch, card: currentCardStop, veh: state.vehicleId });
       window.__scheme = (id) => api.setScheme(SCHEMES.findIndex((x) => x.id === id));
+      // ---- r140: /onboarding/ drives the city ----
+      // The page loads /?drive&nointro&onb in a same-origin frame behind its "zones" and sends {cz:"onb", op, ...}
+      // (postMessage, or window.__onb(o) directly): the place on the road (drive), the map camera (cam), the world
+      // (scheme), the ride (veh), the showroom (show: the ride alone on a plain warm ground, turning slowly, the way
+      // the stories show it) and a pause while no zone is on screen. In the frame: no UI (styles.css html.onb), no
+      // drop-in when a ride changes, no police, no coffee stop. It answers {cz:"onb", ev:"ready"} once it has drawn.
+      var onbShow = null, onbCoffee = null, onbMorning = null, onbSunS = null, onbSunV = new Vector3(), onbSunC = new Color(), onbBox = new Box3(), onbV = new Vector3(), onbC = new Vector3(), onbF = new Vector3(), onbR = new Vector3(), onbU = new Vector3(), onbY = new Vector3(0, 1, 0);
+      function onbShowOff() {
+        if (!onbShow) return;
+        const S = onbShow;
+        onbShow = null;
+        window.__noPost = false;
+        document.documentElement.classList.remove("onb-show");
+        for (const c of S.hid) c.visible = true;
+        camera.near = S.near; camera.far = S.far; camera.updateProjectionMatrix();
+        applyScheme(state.schemeIdx);
+      }
+      function onbCmd(o) {
+        if (!ONB_MODE || !o || typeof o !== "object") return;
+        const now = performance.now();
+        switch (o.op) {
+          case "pause": onbPaused = !!o.on; if (!onbPaused) prevT = now; break;
+          case "rate": onbHalf = !!o.half; if (typeof o.dpr === "number" && o.dpr > 0) { perf.lock = true; perf.dpr = Math.min(o.dpr, window.devicePixelRatio || 1); renderer.setPixelRatio(perf.dpr); renderer.setSize(window.innerWidth, window.innerHeight); } break;
+          case "mode": if (!!o.map !== mapMode) { onbShowOff(); setMapMode(!!o.map); } coffee.done = true; police.next = Infinity; break;
+          case "drive": {
+            if (mapMode || typeof o.L !== "number") break;
+            if (o.br && o.L > route.stopL.fork - 80 && (!state.branchChosen || state.branch !== o.br)) { state.branch = o.br; state.branchChosen = true; route.setBranch(o.br); rebuildGolden(); }
+            onbL = clamp2(o.L, 0, route.stopL.end);
+            if (typeof o.push === "number") onbPush = clamp2(o.push, 0, 1);
+            if (o.snap) state.L = prevL = onbL;
+            break;
+          }
+          case "cam": {
+            if (!mapMode) break;
+            mapIdleAt = now; mapNav.moving = false;
+            mapView.follow = false; mapView.focus = null; mapView.yawGoal = mapView.pitchGoal = mapView.distGoal = null;
+            const t = o.t === "car" ? [carPos.x, carPos.z] : o.t;
+            if (Array.isArray(t)) mapView.tgt.set(+t[0] || 0, 0, +t[1] || 0);
+            for (const k of ["dist", "yaw", "pitch"]) if (typeof o[k] === "number") mapView[k] = o[k];
+            break;
+          }
+          case "scheme": {
+            const i = SCHEMES.findIndex((x) => x.id === o.id);
+            if (i >= 0 && i !== state.schemeIdx) { if (o.ride) api.setScheme(i); else applyScheme(i); }
+            break;
+          }
+          case "veh": if (VEHICLES.some((v) => v.id === o.id) && o.id !== state.vehicleId) api.setVehicle(o.id); veh.group.visible = true; break;
+          // the coffee stop, told by the page's scroll: n espressos (the fourth with a bang), then the rush, then calm;
+          // the website's own cards, cups, shake and vignette, held on each step instead of running on a clock
+          case "coffee": {
+            if (mapMode) break;
+            const c = o.on ? { n: clamp2(o.n | 0, 0, 4), stage: o.stage || "serve" } : null;
+            if (!c) { if (onbCoffee) { onbCoffee = null; coffee.phase = "idle"; coffee.served = 0; ui.coffeeEnd(); document.documentElement.classList.remove("onb-coffee"); } break; }
+            const was = onbCoffee || { n: 0, stage: "serve" };
+            onbCoffee = c;
+            document.documentElement.classList.add("onb-coffee");
+            if (c.stage === "serve") {
+              coffee.phase = "sip2";
+              if (c.n !== was.n || was.stage !== "serve") {
+                if (c.n > 0) { ui.coffeeServe(c.n); if (c.n > was.n) for (let i = was.n; i < c.n; i++) spawnCup(); }
+                else ui.coffeeEnd();
+                document.documentElement.classList.toggle("onb-bam", c.n === 4);
+              }
+            } else if (c.stage === "rush" && was.stage !== "rush") { coffee.phase = "rush"; ui.coffeeRush(); }
+            else if (c.stage === "calm" && was.stage !== "calm") { coffee.phase = "calm"; ui.coffeeCalm(); }
+            coffee.served = c.n; coffee.t = 0;
+            break;
+          }
+          // early morning: the sun low behind Two Minutes, rising with the scroll (k: how much morning, rise: 0..1)
+          case "morning": {
+            if (!(o.k > 0)) { if (onbMorning) { const m0 = onbMorning; onbMorning = null; hemi.color.copy(m0.hs); hemi.groundColor.copy(m0.hg); applyScheme(state.schemeIdx); } break; }
+            if (!onbMorning) onbMorning = { base: scene.background && scene.background.isColor ? scene.background.clone() : null, hs: hemi.color.clone(), hg: hemi.groundColor.clone() };
+            onbMorning.k = clamp2(o.k, 0, 1); onbMorning.rise = clamp2(o.rise || 0, 0, 1);
+            break;
+          }
+          case "show": {
+            if (!o.on) { onbShowOff(); break; }
+            if (!onbShow) {
+              onbShow = { t0: now, hid: scene.children.filter((c) => c !== veh.group && !c.isLight && c.visible), near: camera.near, far: camera.far, R: null, vid: null };
+              onbShow.hid.forEach((c) => (c.visible = false));
+              window.__noPost = true;
+              document.documentElement.classList.add("onb-show");
+            }
+            Object.assign(onbShow, { bg: o.bg || "#ECEAE3", a0: o.a0 ?? 0.8, elev: o.elev ?? 0.26, fill: o.fill ?? 1.55, spin: o.spin ?? 0.22, ay: o.ay ?? -0.04, ax: o.ax || 0, turn: o.turn || 0 });
+            break;
+          }
+        }
+      }
+      function onbFrame(now) {
+        if (!onbFrames++) try { window.parent.postMessage({ cz: "onb", ev: "ready" }, location.origin); } catch (e) {}
+        coffee.done = true; police.next = Infinity;
+        if (onbCoffee) { coffee.t = 0; coffee.near = true; } else if (coffee.phase !== "idle" && !mapMode) { coffee.phase = "idle"; ui.coffeeEnd(); }
+        {
+          const m = onbMorning;
+          if (m && !onbSunS) {
+            const tx = canvasTexture(256, 256, (ctx) => { const g2 = ctx.createRadialGradient(128, 128, 6, 128, 128, 128); g2.addColorStop(0, "rgba(255,252,236,1)"); g2.addColorStop(0.13, "rgba(255,236,170,1)"); g2.addColorStop(0.2, "rgba(255,196,120,0.75)"); g2.addColorStop(0.48, "rgba(255,160,100,0.28)"); g2.addColorStop(1, "rgba(255,150,100,0)"); ctx.fillStyle = g2; ctx.fillRect(0, 0, 256, 256); });
+            onbSunS = new Sprite(new SpriteMaterial({ map: tx, transparent: true, depthWrite: false, fog: false }));
+            onbSunS.material.userData.outlineParameters = { visible: false };
+            onbSunS.renderOrder = -2;
+            scene.add(onbSunS);
+          }
+          if (onbSunS) onbSunS.visible = !!m && !onbShow;
+          if (m && !onbShow) {
+            // 8:00 am: a low, warm sun behind Two Minutes as the coffee camera sees it (from the south-east, looking
+            // north-west); the whole street takes the gold, the shadows run long towards you, and the sun itself
+            // climbs out from behind the roofs as you scroll (a soft disc, hidden by the buildings until it clears them)
+            const k = m.k, el = 0.1 + 0.32 * m.rise, az = -2.3;
+            onbSunV.set(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el));
+            const P = warpV(new Vector3(carPos.x, 0, carPos.z));
+            const sp = new Vector3(P.x + onbSunV.x * 1500, Math.max(160, 1500 * onbSunV.y), P.z + onbSunV.z * 1500);
+            sun.position.lerp(sp, k); sun.target.position.lerp(P, k); sun.target.updateMatrixWorld();
+            sun.color.lerp(onbSunC.set("#ffbe7a"), k); sun.intensity += (3.3 - sun.intensity) * k;
+            hemi.color.copy(m.hs).lerp(onbSunC.set("#ffd9b0"), k); hemi.groundColor.copy(m.hg).lerp(onbSunC.set("#e2a77e"), k);
+            hemi.intensity += (0.95 - hemi.intensity) * k;
+            if (m.base && scene.background && scene.background.isColor) scene.background.copy(m.base).lerp(onbSunC.set("#ffd2ae"), k * 0.7);
+            // the disc: on the camera's line through Two Minutes' roof, farther than the shop (so the buildings hide it
+            // until it clears them), climbing up the screen as you scroll
+            const T = warpV(new Vector3(650, 70, 4250)), dT = camera.position.distanceTo(T);
+            T.project(camera);
+            onbV.set(clamp2(T.x, -0.9, 0.9) + 0.08, T.y - 0.12 + 0.75 * m.rise, 0.5).unproject(camera).sub(camera.position).normalize();
+            const dS = dT * 1.06;
+            onbSunS.position.copy(camera.position).addScaledVector(onbV, dS);
+            onbSunS.scale.setScalar(2 * dS * Math.tan((camera.fov * Math.PI) / 360) * 0.62);
+            onbSunS.material.opacity = k;
+          }
+        }
+        const S = onbShow;
+        if (!S) return;
+        // the showroom: the ride alone, centred, at the same size whatever it is, turning slowly
+        for (const c of scene.children) if (c !== veh.group && !c.isLight && c.visible) c.visible = false;
+        if (scene.fog) { scene.fog.near = 1e6; scene.fog.far = 2e6; }
+        if (scene.background && scene.background.isColor) scene.background.set(S.bg); else scene.background = new Color(S.bg);
+        veh.group.visible = true;
+        veh.group.updateMatrixWorld(true);
+        onbBox.makeEmpty();
+        veh.group.traverse((m) => {
+          if (!m.isMesh || !m.geometry || !m.visible) return;
+          const mt = Array.isArray(m.material) ? m.material[0] : m.material;
+          if (mt && (mt.blending === AdditiveBlending || (mt.transparent && mt.depthWrite === false))) return;
+          if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+          const b = m.geometry.boundingBox;
+          if (!isFinite(b.min.x)) return;
+          for (let i = 0; i < 8; i++) { onbV.set(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z).applyMatrix4(m.matrixWorld); onbBox.expandByPoint(warpV(onbV)); }
+        });
+        if (onbBox.isEmpty()) return;
+        onbBox.getCenter(onbC);
+        const rad = 0.5 * onbBox.getSize(onbV).length();
+        const a = veh.group.rotation.y + S.a0 + S.turn + ((now - S.t0) / 1000) * S.spin;
+        onbF.set(-Math.sin(a), -S.elev, -Math.cos(a)).normalize();
+        onbR.crossVectors(onbF, onbY).normalize();
+        onbU.crossVectors(onbR, onbF).normalize();
+        if (camera.near !== 4) { camera.near = 4; camera.far = 6000; camera.updateProjectionMatrix(); }
+        const th = Math.tan((camera.fov * Math.PI) / 360);
+        const Rw = (2 * rad) / (S.fill * th * Math.min(1, camera.aspect));
+        // a new ride is a cut: the distance snaps to it, no zoom
+        S.R = S.R == null || S.vid !== state.vehicleId ? Rw : S.R + (Rw - S.R) * 0.2;
+        S.vid = state.vehicleId;
+        onbC.addScaledVector(onbU, -S.ay * S.R * th).addScaledVector(onbR, -S.ax * S.R * th * camera.aspect);
+        camera.position.copy(onbC).addScaledVector(onbF, -S.R);
+        camera.up.set(0, 1, 0);
+        camera.lookAt(onbC);
+        camera.updateMatrixWorld();
+      }
+      if (ONB_MODE) {
+        window.__onb = onbCmd;
+        window.__onbState = () => ({ speed: state.speed, f: window.__spd ? window.__spd.f : 0, L: state.L, map: mapMode, scheme: SCHEMES[state.schemeIdx].id, veh: state.vehicleId, branch: state.branch });
+        window.addEventListener("message", (e) => { if (e.origin === location.origin && e.data && e.data.cz === "onb") onbCmd(e.data); });
+      }
       window.__kzs = () => kinetic;
       window.__stopL = () => ({ ...route.stopL, total: route.total });
       window.__dbg = () => ({

@@ -4800,3 +4800,14 @@ body:has(.drive-guide:not(.hidden)) .scroll-hint { opacity: 0 !important; }
    but never show a bar (in Sketchbook the crayon lettering made the form 2 px taller than its box) */
 .mapcard.contact, .mapcard.contact .cform, .mapcard.contact .mc-content { scrollbar-width: none !important; }
 .mapcard.contact::-webkit-scrollbar, .mapcard.contact .cform::-webkit-scrollbar, .mapcard.contact .mc-content::-webkit-scrollbar { display: none !important; }
+
+/* r140: the city inside /onboarding/ (?onb): only the canvas and the worlds' own veils; nothing to click, nothing to read */
+html.onb, html.onb body { overflow: hidden !important; cursor: default; }
+html.onb body > :not(canvas.gl, .grade, .uw-veil, .gh-paper, .sk-petals) { display: none !important; }
+html.onb.onb-show body > :not(canvas.gl) { display: none !important; }
+/* r140: the coffee stop inside /onboarding/: the website's own espresso card, COFFEE RUSH pill and vignette, nothing else */
+html.onb.onb-coffee body > .ui-root { display: block !important; }
+html.onb.onb-coffee body > .ui-root > :not(.toast-col, .rush-vignette) { display: none !important; }
+html.onb.onb-coffee .toast-col > :not(.coffee-card, .rush-pill) { display: none !important; }
+html.onb.onb-bam .coffee-card .cc-num { animation: onbBam .62s cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes onbBam { 0% { transform: scale(.4) rotate(-14deg); } 55% { transform: scale(1.45) rotate(6deg); } 100% { transform: none; } }

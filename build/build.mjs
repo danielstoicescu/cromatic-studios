@@ -604,7 +604,9 @@ const roPaths = [];
   // switch in their own header, next to the drive button (not the corner pill the case pages have)
   if (ONB) {
     const file = join(pub, "onboarding", "index.html"), rp = roPath("/onboarding/");
-    const en = readFileSync(file, "utf8");
+    // r140: its last section plays the intro's wall of cups: it gets the kinetic bundle the website uses
+    let en = readFileSync(file, "utf8");
+    if (kz && !en.includes("data-kz=")) en = en.replace('<section class="go" id="go"', `<section class="go" id="go" data-kz="${kz.js}|${kz.css}"`);
     const alt = `<link rel="alternate" hreflang="en" href="${SITE_URL}/onboarding/">\n<link rel="alternate" hreflang="ro" href="${SITE_URL}${rp}">\n<link rel="alternate" hreflang="x-default" href="${SITE_URL}/onboarding/">`;
     const sw = (href, l, name) => `<a class="onb-lang" href="${href}" hreflang="${l}" lang="${l}" title="${name}" style="display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:36px;margin-left:auto;margin-right:8px;padding:0 10px;border:2px solid currentColor;border-radius:999px;color:inherit;font:800 13px/1 CromaticSans,system-ui,sans-serif;letter-spacing:.04em;text-decoration:none">${l.toUpperCase()}</a>`;
     const head2 = (h, href, l, name) => h.replace("</head>", `${alt}\n</head>`).replace(/(<a class="nav-cta see-map")/, `${sw(href, l, name)}$1`);
@@ -711,10 +713,12 @@ if (CLIPPED.length) console.warn(`[seo] description cut mid-sentence on ${CLIPPE
 await optimizeImages(pub, root);
 (function walkDG(d) { for (const f of readdirSync(d)) { const p2 = join(d, f); if (statSync(p2).isDirectory()) { walkDG(p2); continue; } if (!/\.(css|html|js)$/.test(f)) continue; const t = readFileSync(p2, "utf8"); let n2 = localDG(t);
   // the bold weights land before the first paint: no swap, no layout shift
-  if (/\.html$/.test(f) && GS.latin && n2.includes(GS.latin) && !n2.includes(`rel="preload" href="${GS.latin}"`)) n2 = n2.replace(/<head>|<head [^>]*>/, (h) => `${h}\n<link rel="preload" href="${GS.latin}" as="font" type="font/woff2" crossorigin>`);
+  // r140: and on /onboarding/ (EN and RO), whose fonts come from /fonts.css: its hero title is set in the bold weight
+  const onbPage = /\.html$/.test(f) && /[\\/]onboarding[\\/]index\.html$/.test(p2);
+  if (/\.html$/.test(f) && GS.latin && (n2.includes(GS.latin) || onbPage) && !n2.includes(`rel="preload" href="${GS.latin}"`)) n2 = n2.replace(/<head>|<head [^>]*>/, (h) => `${h}\n<link rel="preload" href="${GS.latin}" as="font" type="font/woff2" crossorigin>`);
   // r136 (N30): the regular weights too (Darker Grotesque), and on the hubs, services and team the mono eyebrow above
   // the fold (JetBrains Mono): their late swap moved the intro (CLS 0.11-0.15 on a slow phone)
-  if (/\.html$/.test(f) && p2 !== join(pub, "index.html") && DG.latin && /<link rel="preload" href="\/assets\/fonts\/google-sans-latin/.test(n2) && !n2.includes(`rel="preload" href="${DG.latin}"`) && (n2.includes(DG.latin) || n2.includes("/assets/site."))) n2 = n2.replace(/(<link rel="preload" href="\/assets\/fonts\/google-sans-latin[^>]*>)/, `$1\n<link rel="preload" href="${DG.latin}" as="font" type="font/woff2" crossorigin>`);
+  if (/\.html$/.test(f) && p2 !== join(pub, "index.html") && DG.latin && /<link rel="preload" href="\/assets\/fonts\/google-sans-latin/.test(n2) && !n2.includes(`rel="preload" href="${DG.latin}"`) && (n2.includes(DG.latin) || n2.includes("/assets/site.") || onbPage)) n2 = n2.replace(/(<link rel="preload" href="\/assets\/fonts\/google-sans-latin[^>]*>)/, `$1\n<link rel="preload" href="${DG.latin}" as="font" type="font/woff2" crossorigin>`);
   // r139d: and on the brand canvases (eyebrow, meta and the drag hint in mono, first screen): found late through the
   // stylesheet it lengthened the chain to the board's first paint and could move the header (CLS 0.002)
   if (/\.html$/.test(f) && (n2.includes('class="c-hero c2-hero hub-hero"') || n2.includes('class="case cv-page"'))) { const jb = gfAssets.find(([rel]) => /gf-jetbrains-mono-latin-[0-9a-f]+\.woff2$/.test(rel)); if (jb && !n2.includes(`rel="preload" href="/${jb[0]}"`)) n2 = n2.replace(/(<link rel="preload" href="\/assets\/fonts\/google-sans-latin[^>]*>)/, `$1\n<link rel="preload" href="/${jb[0]}" as="font" type="font/woff2" crossorigin>`); }
