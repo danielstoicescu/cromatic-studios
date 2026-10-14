@@ -264,13 +264,18 @@
     // the map's interface is built while the wall of cups covers the screen (its cost lands out of sight), so when
     // the cups fall the real map is already there, interface and all
     setTimeout(() => { if (tok === cur.token) { send({ op: "ui", on: true, welcome: false }); city.classList.add("live"); } }, 1100);
-    await cups(tok);
+    // the last line comes as the cups are still falling (the first one has let go), not after they have settled
+    let letGo = null; const dropP = new Promise((r) => (letGo = r));
+    const cupP = cups(tok, { onDrop: () => letGo() });
+    await Promise.race([dropP, cupP]);
+    if (tok !== cur.token) return;
+    await wait(650, tok);
+    const f = soft(["There's", "always", "a", "good", { w: "coffee", pill: "y", d: 300 }, { w: "around.", d: 360 }], { cls: "calm mid onCity lo" });
+    await cupP;
     if (tok !== cur.token) return;
     cur.camOn = false; // the map's own hands from here
-    await wait(500, tok);
-    const f = soft(["There's", "always", "a", "good", { w: "coffee", pill: "y", d: 300 }, { w: "around.", d: 360 }], { cls: "calm mid onCity lo" });
-    await wait(2600, tok); gone(f); over.querySelector(".cupbig")?.classList.add("gone");
-    await wait(800, tok);
+    await wait(700, tok); gone(f); over.querySelector(".cupbig")?.classList.add("gone");
+    await wait(700, tok);
     finish(tok);
   };
   // the end state: the real map, its interface, the welcome card, the lab's chrome out of the way
@@ -287,9 +292,9 @@
     const e = elapsed();
     const n = BEATS4.find((t) => t > e + 80);
     if (n == null) { skip(); return; }
-    cur.lines.forEach((el) => cur.gone?.(el)); cur.lines.clear();
-    over.querySelectorAll(".thumbs, .wchips, .xpbar, .cupbig").forEach((x) => { x.classList.add("gone"); setTimeout(() => x.remove(), 500); });
-    cur.t0 -= (n - e);
+    cur.lines.forEach((el) => { el.classList.add("outfast"); setTimeout(() => el.remove(), 220); }); cur.lines.clear();
+    over.querySelectorAll(".thumbs, .wchips, .xpbar, .cupbig").forEach((x) => { x.classList.add("outfast"); setTimeout(() => x.remove(), 220); });
+    cur.t0 -= (Math.max(e, n - 200) - e);
   };
 
   /* ================= 01 · parked: the site's own kinetic stage, with the new words ================= */
