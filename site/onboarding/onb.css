@@ -934,3 +934,34 @@ html { scroll-behavior: smooth; }
   .hero .r143-h .pill.r143-morph { display: inline-grid; margin: .06em 0 0; }
   .hero .hero-sub { margin-top: 18px; }
 }
+
+/* =====================================================================================================================
+   r145 (Daniel): the devices redrawn: a MacBook with a thin black bezel, a notch and an aluminium base; an iPhone with a
+   titanium rim, a black bezel and the island; an iPad with a slim frame. The three ways in as one composition: the map
+   on the MacBook in the middle, the website on the iPad behind it, the drive on the iPhone in front.
+   ===================================================================================================================== */
+.dev .scr { background: #000; }
+.laptop .lid { padding: 1.15% 1.15% 1.5%; border-radius: 2.4% 2.4% .6% .6% / 3.6% 3.6% .9% .9%; background: #16161a; box-shadow: inset 0 0 0 1px #2f2f35, inset 0 0 0 2px #0c0c0e, 0 36px 70px -34px rgba(0,0,0,.55); }
+.laptop .lid::before { content: ""; position: absolute; top: 0; left: 50%; width: 11%; height: 2.4%; transform: translateX(-50%); background: #16161a; border-radius: 0 0 .9em .9em / 0 0 100% 100%; aspect-ratio: auto; z-index: 2; }
+.laptop .lid::after { content: ""; position: absolute; top: .75%; left: 50%; width: .5%; aspect-ratio: 1; margin-left: -.25%; border-radius: 50%; background: #2a2c33; box-shadow: inset 0 0 0 1px #0d0d10; z-index: 3; }
+.laptop .scr { aspect-ratio: 16 / 10; border-radius: 1% / 1.6%; }
+.laptop .base { position: relative; height: 0; padding-bottom: 1.9%; margin: 0 -3.4%; background: linear-gradient(#e4e4e8, #c2c2c8 55%, #8f8f96); border-radius: 0 0 1.2em 1.2em / 0 0 100% 100%; box-shadow: 0 10px 22px -12px rgba(0,0,0,.5); }
+.laptop .base::before { content: ""; position: absolute; top: 0; left: 50%; width: 15%; height: 42%; transform: translateX(-50%); background: linear-gradient(#a4a4ab, #7c7c84); border-radius: 0 0 8px 8px; }
+.laptop .base::after { content: ""; position: absolute; left: 1%; right: 1%; top: 0; height: 1px; background: rgba(255,255,255,.7); }
+.phone { padding: 2.2%; border-radius: 16.5% / 7.6%; background: linear-gradient(135deg, #3a3a3e, #1f1f22 40%, #2c2c30 70%, #4a4a4f); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.22), 0 30px 60px -28px rgba(0,0,0,.55); }
+.phone::before { content: ""; position: absolute; inset: 1.6%; border-radius: 15% / 6.9%; background: #000; }
+.phone .scr { position: relative; border-radius: 13.6% / 6.3%; }
+.phone .island { top: 2.9%; width: 24%; height: 2.5%; background: #000; box-shadow: 0 0 0 1px rgba(255,255,255,.06); z-index: 2; }
+.tablet { padding: 2.2%; border-radius: 4.4% / 6.3%; background: linear-gradient(135deg, #34343a, #1c1c20 45%, #3a3a40); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.18), 0 36px 70px -34px rgba(0,0,0,.5); }
+.tablet::before { content: ""; position: absolute; inset: 1.4%; border-radius: 3.6% / 5.2%; background: #000; }
+.tablet .scr { position: relative; aspect-ratio: 1180 / 820; border-radius: 2.6% / 3.7%; }
+/* the composition */
+.ways-stage { max-width: 920px; height: auto; aspect-ratio: 1.3; margin: clamp(30px, 4vw, 54px) auto 0; }
+.w-tab { left: 0; top: 2%; bottom: auto; width: 50%; z-index: 1; transform: rotate(-4deg); }
+.w-lap { left: auto; right: 0; top: 10%; bottom: auto; width: 76%; z-index: 2; transform: none; }
+.w-ph { left: auto; right: 3%; top: auto; bottom: 0; width: 20%; z-index: 3; transform: rotate(4deg); }
+.js:not(.rm) .ways-stage.reveal .w-tab { transform: translate(-24px, 30px) rotate(-8deg); }
+.js:not(.rm) .ways-stage.reveal .w-ph { transform: translate(20px, 50px) rotate(10deg); }
+.js:not(.rm) .ways-stage.reveal.in .w-tab { transform: rotate(-4deg); }
+.js:not(.rm) .ways-stage.reveal.in .w-ph { transform: rotate(4deg); }
+@media (max-width: 760px) { .ways-stage { aspect-ratio: 1.08; } .w-tab { width: 58%; top: 0; } .w-lap { width: 84%; top: 24%; right: 0; } .w-ph { width: 26%; right: 1%; bottom: 0; } }
