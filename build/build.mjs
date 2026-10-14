@@ -367,7 +367,8 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
 // r134h: Google Sans (OFL, on Google Fonts since 2025) is CromaticSans 700–900: served from here too, Latin preloaded
 const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
 const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
-const CONSENT = consentSnippet(GA_ID, GTM_ID);
+const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
+const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
 const GS = {};
 for (const k of ["latin", "latin-ext", "vietnamese"]) {
   try { const buf = readFileSync(join(root, "site", "fonts", `google-sans-${k}.woff2`)); const rel = `assets/fonts/google-sans-${k}-${hash(buf).slice(0, 8)}.woff2`; writeFileSync(join(pub, rel), buf); GS[k] = "/" + rel; } catch {}

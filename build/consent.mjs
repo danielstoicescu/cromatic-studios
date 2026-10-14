@@ -9,7 +9,12 @@
 // r136: the card links the privacy policy (/privacy/, /ro/confidentialitate/).
 // r139c: that link is built with DOM calls (no '+'-glued href in the source, audit N50); the footer's "Cookies" link
 // (data-cookies, on every page) opens the card even inside the map's frame, where it otherwise never asks.
-export function consentSnippet(GA_ID, GTM_ID = "") {
+// r149 (Cristian, OpenAI Ads; Daniel: "let's add the pixel"): the OpenAI Ads measurement pixel loads after the same
+// yes, and a sent boarding pass is measured as "lead_created" (only that it happened, none of what was written). The
+// card now says "ad measurement" (Daniel: without naming OpenAI there; the privacy page names it), so a yes given
+// before ("yes") keeps Google Analytics and the card asks once more; the new yes is "yes2". The Conversions API
+// (server side) needs a secret key set in the server's environment by Daniel or Cristian: not wired.
+export function consentSnippet(GA_ID, GTM_ID = "", OAI_PIXEL = "") {
   if (!GA_ID) return "";
   const css = `#cz-ck{position:fixed;left:50%;bottom:16px;z-index:2147483000;box-sizing:border-box;width:min(460px,calc(100vw - 24px));display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:18px 22px 20px;border-radius:24px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;box-shadow:0 14px 40px rgba(13,12,9,.2);font:500 15px/1.4 CromaticSans,"Darker Grotesque",system-ui,sans-serif;transform:translate(-50%,16px);opacity:0;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .45s}
 #cz-ck.on{transform:translate(-50%,0);opacity:1}
@@ -28,7 +33,7 @@ export function consentSnippet(GA_ID, GTM_ID = "") {
 @media (max-width:600px){#cz-ck{bottom:12px;width:calc(100vw - 24px);padding:16px 16px 18px}#cz-ck .ck-row{flex-wrap:nowrap}#cz-ck button{flex:1;min-width:0}}
 html.embed #cz-ck,body.map-boarding #cz-ck,body.modal-open #cz-ck,body.scf-open #cz-ck{display:none}
 html.embed #cz-ck.ck-ask{display:flex}`;
-  const js = `(function(){var ID=${JSON.stringify(GA_ID)},GTM=${JSON.stringify(GTM_ID)},K="cz-consent";
+  const js = `(function(){var ID=${JSON.stringify(GA_ID)},GTM=${JSON.stringify(GTM_ID)},K="cz-consent",OAI=${JSON.stringify(OAI_PIXEL)};
 var ONB=/[?&]onb(&|$)/.test(location.search);/* r140: the city inside /onboarding/ counts nothing, asks nothing */
 var EMB=ONB||/[?&]embed=1/.test(location.search)||document.documentElement.classList.contains("embed");
 function get(){try{return localStorage.getItem(K)}catch(e){var m=document.cookie.match(/(?:^|; )cz-consent=(\\w+)/);return m&&m[1]}}
@@ -39,14 +44,15 @@ gtag("js",new Date());var go=function(){if(go.d)return;go.d=1;gtag("config",ID,{
 if(GTM){dataLayer.push({"gtm.start":new Date().getTime(),event:"gtm.js"});var g=document.createElement("script");g.async=1;g.src="https://www.googletagmanager.com/gtm.js?id="+GTM;document.head.appendChild(g)}};
 /* visits from the studio's own network are marked internal (GA4 data filter) */
 try{fetch("/api/ctx",{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.internal)gtag("set",{traffic_type:"internal"});go()}).catch(go);setTimeout(go,1200)}catch(e){go()}}
+function oai(){if(!OAI||window.__czOAI)return;window.__czOAI=1;window.oaiq=window.oaiq||function(){(window.oaiq.q=window.oaiq.q||[]).push(arguments)};oaiq("init",{pixelId:OAI});var s=document.createElement("script");s.async=1;s.src="https://bzrcdn.openai.com/sdk/oaiq.min.js";document.head.appendChild(s)}
 function ask(force){if(document.getElementById("cz-ck"))return;var ro=(document.documentElement.lang||"").slice(0,2)==="ro";
 var d=document.createElement("div");d.id="cz-ck";d.setAttribute("role","dialog");d.setAttribute("aria-label",ro?"Cookie-uri":"Cookies");
-d.innerHTML='<span class="ck-cup" aria-hidden="true"></span><b>'+(ro?"Un cookie la cafea?":"A cookie with your coffee?")+'</b><p>'+(ro?"Statistici de vizitare prin Google Analytics, ca să știm ce merge. ":"Visit statistics with Google Analytics, so we know what works. ")+'</p><div class="ck-row"><button type="button" class="ck-yes">'+(ro?"Da, sigur":"Sure")+'</button><button type="button" class="ck-no">'+(ro?"Nu, mersi":"No, thanks")+"</button></div>";
+d.innerHTML='<span class="ck-cup" aria-hidden="true"></span><b>'+(ro?"Un cookie la cafea?":"A cookie with your coffee?")+'</b><p>'+(ro?"Statistici de vizitare prin Google Analytics și măsurarea reclamelor, ca să știm ce merge. ":"Visit statistics with Google Analytics and ad measurement, so we know what works. ")+'</p><div class="ck-row"><button type="button" class="ck-yes">'+(ro?"Da, sigur":"Sure")+'</button><button type="button" class="ck-no">'+(ro?"Nu, mersi":"No, thanks")+"</button></div>";
 /* r139c (audit N50): the privacy link is made with DOM calls, so the page source holds no half-built href that crawlers report as a 404 */
 var pl=document.createElement("a");pl.setAttribute("href",ro?"/ro/confidentialitate/":"/privacy/");pl.textContent=ro?"Confidențialitate":"Privacy";d.querySelector("p").appendChild(pl);
 if(force)d.classList.add("ck-ask");
 document.body.appendChild(d);requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add("on")})});
-d.querySelector(".ck-yes").onclick=function(){set("yes");d.remove();ga()};d.querySelector(".ck-no").onclick=function(){set("no");d.remove()}}
+d.querySelector(".ck-yes").onclick=function(){set("yes2");d.remove();ga();oai()};d.querySelector(".ck-no").onclick=function(){set("no");d.remove()}}
 document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("[data-cookies]");if(a){e.preventDefault();ask(true)}});
 var ONCE={};function ev(n,p){p=p||{};if(p.once){if(ONCE[p.once])return;ONCE[p.once]=1;delete p.once}if(window.__czGA&&window.gtag)gtag("event",n,p)}window.czEvent=ev;
 document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a,button");if(!a)return;var h=a.getAttribute("href")||"",t=(a.textContent||"").trim().slice(0,60);
@@ -58,7 +64,7 @@ else if(/\\/(work|proiecte)\\//.test(h))ev("case_study_click",{case_path:h.split
 else if(/drive|ride/i.test(a.className||"")&&/drive/i.test(t))ev("open_drive_mode",{link_text:t})},true);
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest(".vs-btn");if(b&&b.getAttribute("aria-pressed")!=="true")ev("video_sound_on",{page:location.pathname})},true);
 document.addEventListener("focusin",function(e){var f=e.target.closest&&e.target.closest("form, .bp-form, .mapcard.contact");if(f)ev("form_start",{form:"boarding_pass",page:location.pathname,once:"form_start"})});
-if(window.fetch){var f0=window.fetch;window.fetch=function(u,o){var r=f0.apply(this,arguments);try{if(String(u).indexOf("/api/boarding")>-1&&o&&o.method==="POST")r.then(function(x){if(x.ok)ev("generate_lead",{form:"boarding_pass",page:location.pathname})})}catch(e){}return r}}
-var v=get();if(v==="yes"&&!ONB)ga();else if(!EMB&&v!=="no"){if(document.readyState==="complete")setTimeout(ask,1200);else addEventListener("load",function(){setTimeout(ask,1200)})}})();`;
+if(window.fetch){var f0=window.fetch;window.fetch=function(u,o){var r=f0.apply(this,arguments);try{if(String(u).indexOf("/api/boarding")>-1&&o&&o.method==="POST")r.then(function(x){if(x.ok&&window.__czOAI&&window.oaiq){try{oaiq("measure","lead_created",{type:"customer_action"},{event_id:"lead_"+Date.now().toString(36)+Math.random().toString(36).slice(2,8)})}catch(e){}}if(x.ok)ev("generate_lead",{form:"boarding_pass",page:location.pathname})})}catch(e){}return r}}
+var v=get();if(v==="yes2"&&!ONB){ga();oai()}else if(v==="yes"&&!ONB){ga();if(OAI&&!EMB){if(document.readyState==="complete")setTimeout(ask,1200);else addEventListener("load",function(){setTimeout(ask,1200)})}}else if(!EMB&&v!=="no"){if(document.readyState==="complete")setTimeout(ask,1200);else addEventListener("load",function(){setTimeout(ask,1200)})}})();`;
   return `<style id="cz-ck-css">${css}</style>\n<script>${js}</script>`;
 }

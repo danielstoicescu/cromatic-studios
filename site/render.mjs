@@ -626,13 +626,14 @@ ${footer}`;
     ["What we collect when you write to us", [`The boarding pass on the map is how you tell us about your project. It asks for:`,
       { ul: ["your name", "your email address", "your phone number, if you want to give it", "your message", "the choices you tick: what you dream of, your industry, when you want to start"] },
       `The server also notes when the boarding pass was sent and the IP address it came from, so we can stop spam.`]],
-    ["Why we use it", [`For one thing: to answer your enquiry and, if you want one, to prepare an offer. We do not sell your data, we do not add you to a newsletter and we do not use it for ads.`,
+    ["Why we use it", [`For one thing: to answer your enquiry and, if you want one, to prepare an offer. We do not sell your data, we do not add you to a newsletter and we do not use what you write for ads.`,
       `The legal basis is the steps you ask us to take before a possible contract (GDPR, Article 6(1)(b)) and your consent, which you give when you send the boarding pass (Article 6(1)(a)).`]],
     ["Who else handles it", [`A few services help us run the website. They process data only on our behalf:`,
       { ul: ["<strong>Google Workspace</strong> delivers the emails: your message to our inbox, and your copy of the boarding pass to you.", "<strong>Bunnyshell</strong> and <strong>DigitalOcean</strong> host the website and its server, where a backup copy of each message is kept.", "<strong>Cloudflare</strong> sits in front of the website, keeps it safe and fast, and sees technical data such as your IP address."] },
       `Some of these companies may process data outside the European Union. When they do, they rely on the European Commission's standard contractual clauses or adequacy decisions.`]],
     ["How long we keep it", [`Enquiries are kept for up to 24 months, then deleted. If your enquiry turns into a project, we keep what the contract and the law ask us to keep (accounting rules, for example) for as long as they ask.`]],
     ["Cookies, statistics and films", [`Nothing from Google Analytics or Google Tag Manager loads until you say yes on the cookie card. If you do, Google Analytics 4 counts visits and clicks, so we know what works. If you say no, your browser only remembers that answer, so we don't ask again. You can change your mind at any time with the Cookies link at the bottom of the page.`,
+      `The same yes also loads the <strong>OpenAI Ads</strong> measurement pixel, so we can see whether our ads in ChatGPT bring visits. When you send a boarding pass, it tells OpenAI only that one was sent, never what you wrote in it. Without your yes, nothing from OpenAI loads.`,
       `Films hosted on YouTube load only when you press play. Until then you see a picture from our own server, and nothing is sent to YouTube.`]],
     ["Your rights", [`You can ask us what data we hold about you and get a copy of it. You can have it corrected or deleted, limit how we use it or object to it, and take it with you. You can withdraw your consent at any time; what we did before stays lawful.`,
       `Write to <a href="mailto:${STUDIO.email}">${STUDIO.email}</a>. We answer within a month, usually much sooner.`]],
@@ -648,7 +649,7 @@ ${header(false)}
 <main id="main" class="case hub legal-page" style="--bc:#FED012;--bt:#111">
   <section class="c-hero c2-hero hub-hero">
     <div class="wrap">${hubCrumbs(`<a href="/site/#contact">Studio</a>`, "Privacy")}
-      <p class="eyebrow mono">Privacy policy · updated 12 October 2026</p>
+      <p class="eyebrow mono">Privacy policy · updated 14 October 2026</p>
       <h1 class="c2-title">${"Your data, plainly".split(" ").map((w, k) => `<span class="w" style="--k:${k}">${w}</span>`).join(" ")}</h1>
       <p class="lead hub-lead">What happens to what you tell us, in plain words. Short version: we use it to answer you, and nothing else.</p>
     </div></section>
