@@ -467,7 +467,7 @@
   const navIO = new IntersectionObserver((es) => {
     for (const e of es) if (e.isIntersecting) navLinks.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id));
   }, { rootMargin: "-50% 0px -50% 0px" });
-  ["idea", "map", "drive", "worlds", "rides", "website", "work", "studio", "go"].forEach((id) => { const s = document.getElementById(id); s && navIO.observe(s); });
+  ["idea", "drive", "worlds", "rides", "website", "work", "studio", "go"].forEach((id) => { const s = document.getElementById(id); s && navIO.observe(s); });
 
   // r141: the sheet of sections (a phone's menu); the line along the bar is how far down the page you are
   const menuBtn = $(".nav-menu"), chapters = $("#chapters");
