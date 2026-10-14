@@ -33722,6 +33722,57 @@ void main() {
       dTop.addEventListener("pointerdown", (e) => e.stopPropagation());
       root.appendChild(dTop);
     }
+    // r156 (Daniel): on a desktop the drive gets a game pad on the screen: you are at the wheel. ↑ drives on, ↓ backs up,
+    // ← → light up only where they do something (the street view, the crossroads); each key lights while it is held,
+    // from the keyboard or the mouse. Under it, "Where to next?": the map's own choices plus the start, so the drive
+    // never leaves you stuck (after Olari 9 the road only goes on). On a phone the same sheet opens from the end.
+    const pad = el("div", "dpad", `<span class="dp-h mono">YOU’RE DRIVING</span>
+      <div class="dp-keys"><button class="dp-k dp-u" data-k="ArrowUp" aria-label="Drive on">↑</button><button class="dp-k dp-l" data-k="ArrowLeft" aria-label="Left">←</button><button class="dp-k dp-d" data-k="ArrowDown" aria-label="Back up">↓</button><button class="dp-k dp-r" data-k="ArrowRight" aria-label="Right">→</button></div>
+      <span class="dp-t mono">↑ ↓ OR SCROLL TO DRIVE</span>
+      <button class="dp-where">Where to next? <span aria-hidden="true">↺</span></button>`);
+    const padKeys = {}; pad.querySelectorAll(".dp-k").forEach((b2) => { padKeys[b2.dataset.k] = b2; });
+    const padFire = (k, down) => window.dispatchEvent(new KeyboardEvent(down ? "keydown" : "keyup", { key: k }));
+    pad.querySelectorAll(".dp-k").forEach((b2) => {
+      const k = b2.dataset.k; let held = false;
+      b2.addEventListener("pointerdown", (e) => { e.preventDefault(); held = true; b2.setPointerCapture?.(e.pointerId); padFire(k, true); });
+      const up = () => { if (!held) return; held = false; padFire(k, false); };
+      b2.addEventListener("pointerup", up); b2.addEventListener("pointercancel", up); b2.addEventListener("lostpointercapture", up);
+    });
+    window.addEventListener("keydown", (e) => { const b2 = padKeys[e.key]; if (b2) b2.classList.add("on"); });
+    window.addEventListener("keyup", (e) => { const b2 = padKeys[e.key]; if (b2) b2.classList.remove("on"); });
+    window.addEventListener("blur", () => Object.values(padKeys).forEach((b2) => b2.classList.remove("on")));
+    pad.addEventListener("pointerdown", (e) => e.stopPropagation());
+    root.appendChild(pad);
+    const where = el("div", "dwhere hidden", `<div class="dw-card" role="dialog" aria-label="Where to next?"><button class="dw-x" aria-label="Close">×</button>
+      <b class="dw-t">Where to next?</b>
+      <div class="dw-opts">
+        <button data-w="start" style="--wc:#B098C8"><b>Back to the start</b><i>Str. Muniției, The Dream, The Voice, The World</i></button>
+        <button data-w="A" style="--wc:#28C840"><b>Coffee Street</b><i>Two Minutes, Steam, ARCA & co.</i></button>
+        <button data-w="B" style="--wc:#119BFE"><b>Fintech Boulevard</b><i>Investimental, Assetto, Bepco</i></button>
+        <button data-w="C" style="--wc:#F28BA8"><b>Medical Avenue</b><i>The Aesthetic Court, Zdrovit, Elithia</i></button>
+        <button data-w="end" style="--wc:#FED012"><b>Olari 9 · the studio</b><i>Come by, say hi</i></button>
+        <button data-w="map" style="--wc:#0d0c09"><b>Open the map</b><i>Tap a place, we drive you there</i></button>
+      </div></div>`);
+    const whereShow = (on) => { where.classList.toggle("hidden", !on); document.body.classList.toggle("dw-open", on); };
+    pad.querySelector(".dp-where").onclick = () => whereShow(true);
+    where.addEventListener("click", (e) => {
+      if (e.target === where || e.target.closest(".dw-x")) { whereShow(false); return; }
+      const b2 = e.target.closest("[data-w]"); if (!b2) return;
+      whereShow(false); api.whereTo?.(b2.dataset.w);
+    });
+    where.addEventListener("pointerdown", (e) => e.stopPropagation());
+    where.addEventListener("wheel", (e) => { e.preventDefault(); e.stopPropagation(); }, { passive: false }); where.addEventListener("touchmove", (e) => { if (!e.target.closest(".dw-card")) e.preventDefault(); }, { passive: false });
+    root.appendChild(where);
+    // r156 (Daniel): switching modes says so, big: "You're driving." / "You're on the map."
+    const flash = el("div", "mode-flash", `<b class="mf-t"></b><span class="mf-s mono"></span>`);
+    root.appendChild(flash);
+    let flashT = 0;
+    const modeFlash = (kind) => {
+      flash.querySelector(".mf-t").innerHTML = kind === "map" ? `You’re on the <span class="mf-pill mf-map">map.</span>` : `You’re <span class="mf-pill mf-drive">driving.</span>`;
+      flash.querySelector(".mf-s").textContent = kind === "map" ? "TAP A PLACE, WE DRIVE YOU THERE" : innerWidth < 720 ? "YOU’RE AT THE WHEEL · SWIPE UP TO DRIVE" : "YOU’RE AT THE WHEEL · SCROLL OR ↑ ↓ TO DRIVE";
+      flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go");
+      clearTimeout(flashT); flashT = setTimeout(() => flash.classList.remove("go"), 2300);
+    };
     const menuScrim = el("div", "menu-scrim");
     menuScrim.addEventListener("pointerdown", () => closeMenus());
     root.appendChild(menuScrim);
@@ -34827,6 +34878,13 @@ void main() {
       workTags,
       syncVeh: (id) => uiSyncVeh?.(id),
       setPoiTabs() {},
+      // r156: the pad's ← → are lit only where they do something; the "where to" sheet; the mode flash
+      setPad(lr, end) {
+        if (pad._lr !== lr) { pad._lr = lr; pad.classList.toggle("lr", lr); }
+        if (pad._end !== end) { pad._end = end; pad.classList.toggle("at-end", end); }
+      },
+      whereShow,
+      modeFlash,
       setPovHint(on) {
         if (povHint._on === on) return;
         povHint._on = on;
@@ -35300,6 +35358,14 @@ void main() {
           jumpGuard = performance.now() + 2600;
           scrollToL(target, false);
           state.L = prevL = state.targetL = target;
+        },
+        // r156: "Where to next?" from anywhere on the drive (never stuck after Olari 9): the start, a street, the studio, the map
+        whereTo(k) {
+          state.floorL = 0;
+          if (k === "map") { setMapMode(true); return; }
+          if (k === "end") { api.jumpTo("end"); return; }
+          if (k === "start") { resetBranch(); state.xrAway = false; jumpGuard = performance.now() + 2600; const L0 = route.stopL.dream + 60; scrollToL(L0, false); state.L = prevL = state.targetL = L0; return; }
+          api.crossTo(k);
         },
         goAround() {
           resetBranch();
@@ -38366,6 +38432,7 @@ void main() {
             if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
           }
           ui.setPovHint(povK > 0.6);
+          ui.setPad?.(povK > 0.3 || (Math.abs(state.L - route.stopL.fork) < 700 && !state.branchChosen), state.L > route.stopL.end - 300); // r156
           // first person: the car disappears under you once the camera is down on the road
           const hideCar = false; // r139k: the chase camera keeps the car in view
           if (hideCar) veh.group.visible = false; else if (povHidCar && !siteMode) veh.group.visible = true;
@@ -40313,6 +40380,8 @@ void main() {
       }
       function setMapMode(on, { intro = false, open = false } = {}) { // r147: open = the map as the site opens on it (?map, ?map&boarding): the first frame, no pull-out
         if (on === mapMode) return;
+        if (!ONB_MODE && !intro && !open) setTimeout(() => ui.modeFlash?.(on ? "map" : "drive"), on ? 300 : 450); // r156
+        if (on) ui.whereShow?.(false);
         driveGuideEnd(); // r139i
         warmShaders(); // r139b: the other mode draws through another target
         if (!intro) czEv("mode_switch", { to: on ? "map" : "drive" });
@@ -40957,12 +41026,13 @@ void main() {
             return;
           }
           // ?drive&nointro: straight onto the road, no kinetic type
-          if (/[?&]nointro\b/.test(location.search)) { window.scrollTo({ top: clamp2((route.stopL.dream + 60) / effectiveTotal(), 0, 1) * maxScroll(), behavior: "instant" }); return; }
+          if (/[?&]nointro\b/.test(location.search)) { window.scrollTo({ top: clamp2((route.stopL.dream + 60) / effectiveTotal(), 0, 1) * maxScroll(), behavior: "instant" }); if (!ONB_MODE) setTimeout(() => ui.modeFlash?.("drive"), 700); return; } // r156: the flash
           // the first card is told as kinetic type first; the card itself follows
           kinetic = createKinetic(() => {
             if (siteMode) return;
             // after the splash the car rolls off on its own towards the first chapter
             window.scrollTo({ top: clamp2((route.stopL.dream + 60) / effectiveTotal(), 0, 1) * maxScroll(), behavior: "smooth" });
+            if (!ONB_MODE) ui.modeFlash?.("drive"); // r156
           }, async () => {
             // classic site: while the screen is full of coffee, the page underneath jumps
             // to the next chapter, so the burst opens onto it
