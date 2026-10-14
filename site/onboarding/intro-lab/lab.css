@@ -160,7 +160,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ink); 
 @keyframes pillOut { to { opacity: 0; transform: translateY(-.3em); } }
 /* the pill's letters lead, the pill follows them by a breath */
 .kl.calm.in .kw.pill .l { animation-delay: var(--d, 0ms); }
-.kl.calm.in .kw.pill { animation-delay: calc(var(--d, 0ms) + 140ms) !important; }
+.kl.calm.in:not(.outsoft):not(.outfast) .kw.pill { animation-delay: calc(var(--d, 0ms) + 140ms) !important; }
 
 /* ---------- buttery: every letter moves on transform and opacity only (the compositor's own work), no filters ---------- */
 .kl.calm .kw .l { will-change: transform, opacity; backface-visibility: hidden; }
@@ -182,7 +182,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ink); 
 .kl.calm.in .kw.pill .l { animation-duration: .5s; }
 .kl.calm .kw.pill.mw .l { animation-duration: .5s; }
 @keyframes pillIn { from { opacity: 0; transform: translateY(.3em) scale(.96); } 35% { opacity: .35; } to { opacity: 1; transform: none; } }
-.kl.calm.in .kw.pill { animation-duration: .9s !important; animation-delay: calc(var(--d, 0ms) + 60ms) !important; }
+.kl.calm.in:not(.outsoft):not(.outfast) .kw.pill { animation-duration: .9s !important; animation-delay: calc(var(--d, 0ms) + 60ms) !important; }
 .kl.calm.outsoft .kw.pill { animation-delay: 0ms !important; animation-duration: .5s !important; }
 /* the morph as a crossfade: the old word leaves from where it stood, the new one arrives in the same place */
 .kl.calm .kw.pill { position: relative; }
@@ -270,7 +270,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ink); 
 .xp-fill { will-change: transform; }
 /* a pill's letters settle before the pill itself is fully there */
 .kl.calm.in .kw.pill .wn .l { animation-duration: .38s; }
-.kl.calm.in .kw.pill { animation-delay: calc(var(--d, 0ms) + 140ms) !important; }
+.kl.calm.in:not(.outsoft):not(.outfast) .kw.pill { animation-delay: calc(var(--d, 0ms) + 140ms) !important; }
 
 /* ---------- round five: the dissolve between worlds, the cup that stays standing ---------- */
 .ghost { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; opacity: 0; pointer-events: none; }
