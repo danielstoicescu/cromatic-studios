@@ -261,7 +261,7 @@ a{color:var(--ink)}
   <div class="stats">
     <div class="stat"><span class="pill blue" style="align-self:flex-start">Fișiere</span><span class="n">21.830</span><p>fișiere de pe server, inventariate și comparate după data modificării</p></div>
     <div class="stat"><span class="pill blue" style="align-self:flex-start">Log-uri</span><span class="n">128k</span><p>cereri către site, citite una câte una, între 1 septembrie și 14 octombrie</p></div>
-    <div class="stat"><span class="pill gray" style="align-self:flex-start">Zgomot de fond</span><span class="n">4.339</span><p>încercări automate de ghicire a parolei. Nicio adresă de pe care s-a încercat nu a intrat în site.</p></div>
+    <div class="stat"><span class="pill gray" style="align-self:flex-start">Zgomot de fond</span><span class="n">4.339</span><p>încercări automate de ghicire a parolei. Atacatorii nu au intrat așa, ci cu o parolă validă, de pe alte adrese.</p></div>
     <div class="stat"><span class="pill ok" style="align-self:flex-start">Candidați</span><span class="n">159</span><p>cereri de job în baza de date. Niciuna nu a fost deschisă de atacatori.</p></div>
   </div>
 </section>
@@ -318,7 +318,7 @@ a{color:var(--ink)}
   </div>
   <ol class="tl" id="tl">
     <li class="ev a"><time>1 sep · 00:05</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">104.207.37.129 · 45.3.34.15 · 104.207.35.144</span><p>Verificare automată a parolei: trei autentificări reușite în 43 de secunde, de pe trei servere proxy. Nicio altă acțiune.</p></div></li>
-    <li class="ev g"><time>sep – oct</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">rețele de boți, în special Google Cloud</span><p>4.339 de încercări de ghicire a parolei prin <code>xmlrpc.php</code>, ca pe orice site WordPress. Răspunsul a fost „parolă greșită”, iar adresele de pe care s-a încercat nu au intrat niciodată în site. Nu au legătură cu atacul de mai jos.</p></div></li>
+    <li class="ev g"><time>sep – oct</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">rețele de boți, în special Google Cloud</span><p>4.339 de încercări de ghicire a parolei prin <code>xmlrpc.php</code>, ca pe orice site WordPress. Atacatorii nu au intrat prin această metodă, ci cu parola validă, de pe alte adrese. Nu au legătură cu atacul de mai jos.</p></div></li>
     <li class="ev a"><time>6 oct · 03:53</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">151.123.176.108</span><p>O nouă verificare automată a parolei, fără nicio altă acțiune.</p></div></li>
     <li class="ev a"><time>8 oct · 18:03</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">45.147.233.246</span><p>Prima intrare în platformă: citește lista de utilizatori, se autentifică, deschide panoul de administrare și iese. Nu deschide nimic altceva.</p></div></li>
     <li class="ev a"><time>11 oct · 13:22</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">82.118.29.118</span><p>Prima folosire a parolei prin XML-RPC. Publică primul articol spam: „The Founding of YouTube”. Un al doilea, „Whales: Giants of the Ocean”, apare antedatat.</p></div></li>
