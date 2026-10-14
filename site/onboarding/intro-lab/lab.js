@@ -196,7 +196,7 @@
     const b = soft(["But", "someone", "could", { br: true }, { w: "remember", d: 300 }, { w: "a", d: 360 }, { brm: true }, { w: "house.", pill: "g", d: 440 }], { cls: "calm" });
     await at(4350);
     await morph(b.querySelector(".pill"), [["facade.", "#119BFE"], ["brand.", "#FED012"]], 640, tok);
-    await at(6250); gone(b);
+    await at(6100); gone(b);
     // 3 · the ground dissolves to the city; nine worlds, one will feel like yours (the sky changes behind the words)
     await at(6300); veilTo(0, 1300);
     await at(6900);
