@@ -31646,13 +31646,13 @@ void main() {
       [x, y, w, h] = R.plate;
       ctx.fillStyle = "#f4f3ec"; ctx.fillRect(x, y, w, h);
       ctx.strokeStyle = "#141414"; ctx.lineWidth = 4; ctx.strokeRect(x + 5, y + 5, w - 10, h - 10);
-      ctx.fillStyle = "#141414"; ctx.font = "800 44px CromaticSans, Arial, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("1300", x + w / 2, y + h / 2 + 2);
+      ctx.fillStyle = "#141414"; let pf = 44; ctx.font = `800 ${pf}px CromaticSans, Arial, sans-serif`; while (ctx.measureText("B 14 CRM").width > w - 26 && pf > 18) { pf -= 2; ctx.font = `800 ${pf}px CromaticSans, Arial, sans-serif`; } ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("B 14 CRM", x + w / 2, y + h / 2 + 2); // r144: no "1300" anywhere (Daniel); 14 for 2014
       // chrome DACIA 1300 lettering for the boot
       [x, y, w, h] = R.badge;
       ctx.save(); ctx.font = "700 58px Georgia, 'Times New Roman', serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; try { ctx.letterSpacing = "8px"; } catch {}
-      ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillText("DACIA 1300", x + w / 2 + 2, y + h / 2 + 3);
+      ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillText("DACIA", x + w / 2 + 2, y + h / 2 + 3);
       const tg = ctx.createLinearGradient(0, y + 20, 0, y + h - 20); tg.addColorStop(0, "#ffffff"); tg.addColorStop(0.48, "#d3d7dc"); tg.addColorStop(0.54, "#868c93"); tg.addColorStop(1, "#f6f7f8");
-      ctx.fillStyle = tg; ctx.fillText("DACIA 1300", x + w / 2, y + h / 2); ctx.restore();
+      ctx.fillStyle = tg; ctx.fillText("DACIA", x + w / 2, y + h / 2); ctx.restore();
       [x, y, w, h] = R.black;
       ctx.fillStyle = "#070707"; ctx.fillRect(x, y, w, h);
       // the shield in the grille's chrome V: a little castle over a red point, on dark blue
@@ -31763,7 +31763,7 @@ void main() {
         sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vPolP;\nvarying vec3 vPolN;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvPolP = position; vPolN = normal;");
         sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nuniform vec3 uNavy;\nvarying vec3 vPolP;\nvarying vec3 vPolN;").replace("#include <color_fragment>", `#include <color_fragment>
           float pDoor = step(0.5, abs(vPolN.x)) * step(vPolP.z, 14.4) * step(-20.6, vPolP.z) * step(vPolP.y, 32.0);
-          float pBon = step(0.45, vPolN.y) * step(16.0, vPolP.z) * step(13.0, vPolP.y);
+          float pBon = step(0.45, vPolN.y) * step(16.4, vPolP.z) * step(13.0, vPolP.y);
           diffuseColor.rgb = mix(diffuseColor.rgb, uNavy, max(pDoor, pBon));`);
       };
       paint.customProgramCacheKey = () => "pol144"; // r144: the doors and bonnet as reshaped (lower belt and bonnet)
@@ -31860,7 +31860,7 @@ void main() {
       s.lineTo(-27.0, 19.5); s.quadraticCurveTo(-38.5, 19.2, -43.7, 16.9); // waist, then the boot deck falling to the tail
       s.quadraticCurveTo(-45.0, 16.4, -45.0, 15.2); s.lineTo(-45.0, 10.6); s.quadraticCurveTo(-44.8, 7.2, -41.2, 6.9);
     }, W, paint, 1.4, 20).geometry, 4.5));
-    add(at(new BoxGeometry(24, 0.2, 0.7), 0, 20.42, 16.0), black); // scuttle vent (r144: lower, ahead of the screen)
+    add(at(new BoxGeometry(24, 0.2, 0.7), 0, 20.38, 16.9), black); // scuttle vent (r144: lower, ahead of the screen)
 
     // ---- the glasshouse: two side frames (pillars + window openings) leaning in, a roof, front and rear screens
     const gh = new Shape();
@@ -31868,9 +31868,9 @@ void main() {
     // rear screen foot at the rear axle; the waist rises a touch towards the back, the windows are shallower
     // r144 (Daniel: "the side windows are too small for the doors, it reads as a muscle car"): the glasshouse starts
     // on the lowered belt (about 3 lower), the roof stays: side glass about 10 tall against doors of about 15 (was 6.7 : 18)
-    gh.moveTo(16.0, 20.0); gh.lineTo(8.4, 31.5); gh.quadraticCurveTo(7.8, 32.2, 6.8, 32.2); gh.lineTo(-18.2, 32.2);
-    gh.quadraticCurveTo(-19.4, 32.2, -20.0, 31.6); gh.lineTo(-28.0, 20.5); gh.lineTo(16.0, 20.0);
-    const WF = [[14.2, 20.75], [7.9, 30.9], [7.1, 31.5], [-3.9, 31.5], [-3.9, 20.8]], WR = [[-5.6, 20.9], [-5.6, 31.5], [-15.8, 31.5], [-20.6, 21.1]];
+    gh.moveTo(16.6, 20.0); gh.lineTo(8.0, 31.5); gh.quadraticCurveTo(7.4, 32.2, 6.4, 32.2); gh.lineTo(-18.2, 32.2);
+    gh.quadraticCurveTo(-19.4, 32.2, -20.0, 31.6); gh.lineTo(-28.0, 20.5); gh.lineTo(16.6, 20.0);
+    const WF = [[14.7, 20.75], [7.5, 30.9], [6.7, 31.5], [-3.9, 31.5], [-3.9, 20.8]], WR = [[-5.6, 20.9], [-5.6, 31.5], [-15.8, 31.5], [-20.6, 21.1]];
     gh.holes.push(poly(WF), poly(WR));
     const sideMtx = (sx) => new Matrix4().makeTranslation(sx * 14.95, 23.4, 0).multiply(new Matrix4().makeRotationZ(sx * 0.1)).multiply(new Matrix4().makeTranslation(0, -23.4, 0));
     for (const sx of [-1, 1]) {
@@ -31881,29 +31881,29 @@ void main() {
         const gl = new ShapeGeometry(poly(win)); gl.rotateY(-Math.PI / 2); put(glass, gl, mx);
         loop(win.map(([z, y]) => [sx * 0.62, y, z]), 0.2, trim, mx); // chrome window frames (r139e: black on the 1310)
       }
-      edge([sx * 0.58, 32.32, 6.6], [sx * 0.58, 32.32, -18.2], 0.26, trim, mx); // drip rail
+      edge([sx * 0.58, 32.32, 6.2], [sx * 0.58, 32.32, -18.2], 0.26, trim, mx); // drip rail
       // the C-pillar air outlet: three slanted slots (r144: longer, on the taller pillar)
       for (let k = 0; k < 3; k++) add(at(new BoxGeometry(0.3, 4.6, 0.5), sx * 0.72, 26.4, -19.7 - k * 1.2, 0.6), black, mx);
     }
-    const roof = topBody(rrDraw(27.8, 26.0, 2.6), 1.4, paint, 31.5, 0.6, 8); roof.position.z = -5.8; add(roof, paint);
-    // r144: the screens reach down to the lowered belt
-    const WS = [[-14.5, 20.6, 15.2], [14.5, 20.6, 15.2], [13.3, 31.9, 7.7], [-13.3, 31.9, 7.7]];
+    const roof = topBody(rrDraw(27.8, 24.6, 2.6), 1.4, paint, 31.5, 0.6, 8); roof.position.z = -6.1; add(roof, paint); // r144: shorter at the front, over the raked screen
+    // r144: the screens reach down to the lowered belt, the front one a little more raked
+    const WS = [[-14.5, 20.6, 15.75], [14.5, 20.6, 15.75], [13.3, 31.9, 7.4], [-13.3, 31.9, 7.4]];
     const RS = [[14.3, 21.0, -27.2], [-14.3, 21.0, -27.2], [-13.3, 31.9, -19.4], [13.3, 31.9, -19.4]];
     put(glass, quad(...WS)); put(glass, quad(...RS));
     loop(WS, 0.32, trim); loop(RS, 0.32, trim);
     // wipers parked along the screen, on chrome spindles
-    for (const x0 of [-13, 1]) { edge([x0, 21.2, 15.1], [x0 + 10, 22.2, 14.45], 0.2, black); add(at(new CylinderGeometry(0.45, 0.45, 0.7, 8), x0, 20.6, 15.7), chrome); }
+    for (const x0 of [-13, 1]) { edge([x0, 21.2, 15.6], [x0 + 10, 22.2, 14.87], 0.2, black); add(at(new CylinderGeometry(0.45, 0.45, 0.7, 8), x0, 20.6, 16.2), chrome); }
 
     // ---- inside: black dash and steering wheel, red seats (Daniel: red cushions)
     // r144: everything 2.5 lower with the belt, the dash forward with the screen's foot
     add(at(new BoxGeometry(29.2, 0.12, 40), 0, 21.0, -6.3), black); // floor, level with the waist
-    const dash = sideBody(poly([[14.6, 20.9], [12.5, 23.3], [11.0, 23.6], [10.8, 20.9]]), 28.4, black, 0.3, 2); add(dash, black); // under the screen
+    const dash = sideBody(poly([[15.1, 20.9], [13.1, 23.3], [11.5, 23.6], [11.3, 20.9]]), 28.4, black, 0.3, 2); add(dash, black); // under the screen
     const hood = sideBody(rrShape(2.0, 1.2, 0.5), 7, black, 0.3, 4); hood.position.set(6.8, 23.6, 10.0); add(hood, black);
     add(at(new TorusGeometry(2.0, 0.3, 6, 20), 6.8, 24.1, 8.6, 0.55), black);
     add(at(new BoxGeometry(3.8, 0.35, 0.25), 6.8, 24.1, 8.6, 0.55), black);
     edge([6.8, 22.9, 10.6], [6.8, 24.0, 8.8], 0.35, black);
     edge([0, 21.1, 4.0], [0, 23.1, 3.4], 0.18, black); add(at(new SphereGeometry(0.55, 8, 6), 0, 23.2, 3.35), black); // gear lever
-    add(at(new BoxGeometry(3.2, 1.0, 0.35), 0, 30.3, 8.3), black); // rear-view mirror
+    add(at(new BoxGeometry(3.2, 1.0, 0.35), 0, 30.3, 8.1), black); // rear-view mirror
     const seat = (x, width, z, backZ, tilt, pleats, bh) => {
       const c = sideBody(rrShape(7.2, 1.5, 0.6), width, seatM, 0.55, 4); c.position.set(x, 21.75, z); add(c, seatM);
       const by = 22.7 + bh / 2;
@@ -31921,18 +31921,18 @@ void main() {
     // the tall over-riders below making it read as 14)
     const NY = 13.3; // the lamps' and the grille's centre line
     decalQ("grille", 32.4, 3.8, 0, NY, ZF + 0.06);
-    const bezel = (w, h, r, t) => { const s = rrShape(w + 1.2, h + 1.1, r + 0.5); s.holes.push(rrShape(w, h, r)); return new ExtrudeGeometry(s, { depth: t, bevelEnabled: true, bevelThickness: 0.15, bevelSize: 0.15, bevelSegments: 2, curveSegments: 6 }); };
+    const bezel = (w, h, r, t, rim = 1.2) => { const s = rrShape(w + rim, h + rim * 0.92, r + rim * 0.42); s.holes.push(rrShape(w, h, r)); return new ExtrudeGeometry(s, { depth: t, bevelEnabled: true, bevelThickness: 0.15, bevelSize: 0.15, bevelSegments: 2, curveSegments: 6 }); }; // r144: rim
     // r139e: the 1310's nose: four round lamps in black rings across the black grille, amber lamps in the bumper
     if (pol) for (const sx of [-1, 1]) {
       for (const xo of [10.2, 14.1]) {
         add(at(new TorusGeometry(1.62, 0.32, 6, 20), sx * xo, NY, ZF + 0.3), black);
         const lens = uvFit(new CircleGeometry(1.52, 20), A.uv("head")); lens.translate(sx * xo, NY, ZF + 0.38); put(A.mat, lens);
       }
-      decalQ("amber", 2.6, 1.0, sx * 14.4, 9.2, ZF + 2.5);
+      decalQ("amber", 2.6, 1.0, sx * 14.4, 9.1, ZF + 2.8);
     }
     else loop([[-16.35, NY - 1.98, ZF + 0.12], [16.35, NY - 1.98, ZF + 0.12], [16.35, NY + 1.98, ZF + 0.12], [-16.35, NY + 1.98, ZF + 0.12]], 0.26, chrome);
     if (!pol) for (const sx of [-1, 1]) {
-      const bz = bezel(5.9, 3.0, 1.1, 0.7); bz.translate(sx * 12.4, NY, ZF); put(chrome, bz);
+      const bz = bezel(5.9, 3.0, 1.1, 0.7, 0.8); bz.translate(sx * 12.4, NY, ZF); put(chrome, bz); // r144: thinner chrome rims, as on the car
       const lens = uvFit(new ShapeGeometry(rrShape(5.9, 3.0, 1.1), 6), A.uv("head")); lens.translate(sx * 12.4, NY, ZF + 0.4); put(A.mat, lens);
       // indicators under the lamps, in chrome cups
       add(at(new BoxGeometry(3.6, 1.25, 0.4), sx * 13.2, 10.65, ZF + 0.12), chrome);
@@ -31958,7 +31958,7 @@ void main() {
       const b = topBody((s) => {
         s.moveTo(-17.4, -3); s.quadraticCurveTo(-17.6, 1.3, -14.4, 1.4); s.lineTo(14.4, 1.4); s.quadraticCurveTo(17.6, 1.3, 17.4, -3);
         s.lineTo(16.3, -3); s.quadraticCurveTo(16.4, -0.1, 14, 0); s.lineTo(-14, 0); s.quadraticCurveTo(-16.4, -0.1, -16.3, -3); s.closePath();
-      }, pol ? 3.0 : 2.1, pol ? black : chrome, y0, 0.5, 10); // r144: slim blades (were 2.8 / 3.4 deep)
+      }, pol ? 3.0 : 2.1, pol ? black : chrome, y0, 0.7, 10); // r144: slim blades (were 2.8 / 3.4 deep; same bevel, so the same length)
       b.position.z = zc; if (back) b.rotation.y = Math.PI; add(b, pol ? black : chrome);
     };
     bumper(ZF + 0.6, false, pol ? 7.6 : 7.8); bumper(ZB - 0.6, true, pol ? 8.2 : 8.7); // r144: lower and slimmer, with the shallower nose and tail (r139e: the 1310's black plastic ones, deeper)
@@ -31967,7 +31967,7 @@ void main() {
       const of = topBody(rrDraw(1.5, 1.8, 0.6), 3.6, black, 7.3, 0.45, 4); of.position.set(sx * 8.4, 0, ZF + 2.1); add(of, black);
       const ob = topBody(rrDraw(1.5, 1.8, 0.6), 3.8, black, 8.2, 0.45, 4); ob.position.set(sx * 8.4, 0, ZB - 2.1); add(ob, black);
     }
-    decalQ("plate", 10.4, 2.7, -1.2, 8.9, ZF + 2.6);
+    decalQ("plate", 10.4, 2.7, -1.2, 8.9, ZF + 2.8);
 
     // ---- the tail: wide lamp clusters in chrome, DACIA 1300 on the panel, the plate between the lamps
     // r138j: a slimmer tail: the bumper high, the lamps above it, plate and lettering between the lamps
