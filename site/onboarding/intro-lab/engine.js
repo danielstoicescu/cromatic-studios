@@ -179,17 +179,17 @@
         dissolveTo(id);
       }
       await at(11900, tok); gone(c); chips.classList.add("gone"); setTimeout(() => chips.remove(), 700);
-      // 4 · that's how the right brand feels like: the site's own XP bar fills up under the words
+      // 4 · that's how the right brand feels (r144: Daniel's wording, was "feels like"): the site's own XP bar fills up under the words
       await at(12500, tok);
-      const d = line(["That's", "how", "the", { w: "right", pill: "y", d: 280 }, { w: "brand", d: 330 }, { w: "feels", d: 380 }, { w: "like.", d: 430 }], { cls: "mid onCity" });
+      const d = line(["That's", "how", "the", { w: "right", pill: "y", d: 280 }, { w: "brand", d: 330 }, { w: "feels.", d: 380 }], { cls: "mid onCity" });
       const xp = html(`<div class="xpbar"><span class="xp-fill"></span><span class="xp-sun"><svg viewBox="0 0 24 24" width="20" height="20"><g fill="#FED012"><circle cx="12" cy="12" r="5"/><path d="M12 1l1.4 4h-2.8zM12 23l-1.4-4h2.8zM1 12l4-1.4v2.8zM23 12l-4 1.4v-2.8zM4.2 4.2l3.8 1.9-1.9 1.9zM19.8 19.8l-3.8-1.9 1.9-1.9zM4.2 19.8l1.9-3.8 1.9 1.9zM19.8 4.2l-1.9 3.8-1.9-1.9z"/></g></svg></span><span class="xp-label">YOU + YOUR BRAND</span><span class="xp-num"><b>0</b> XP</span></div>`);
       xp.style.setProperty("--w", (xp.getBoundingClientRect().width - 26) + "px");
       requestAnimationFrame(() => xp.classList.add("in"));
       { const n = xp.querySelector("b"), t0 = performance.now(); const tick = () => { if (tok !== cur.token || !xp.isConnected) return; const u = Math.min(1, (performance.now() - t0 - 500) / 1500); const e = u <= 0 ? 0 : 1 - Math.pow(1 - u, 3); xp.style.setProperty("--f", e.toFixed(3)); n.textContent = Math.round(225 * e); if (u < 1) requestAnimationFrame(tick); else xp.classList.add("full"); }; tick(); }
       await at(14400, tok); gone(d); xp.classList.add("gone"); setTimeout(() => xp.remove(), 700);
-      // 5 · and like good coffee: the studio's cup stands in the middle; the words leave as the wall of cups comes
+      // 5 · and like a good coffee: the studio's cup stands in the middle; the words leave as the wall of cups comes
       await at(15000, tok);
-      const e = line(["And", "like", { w: "good", pill: "mv", d: 200 }, { w: "coffee.", pill: "y", d: 330 }], { cls: "mid onCity hi" });
+      const e = line(["And", "like", { w: "a", d: 160 }, { w: "good", pill: "mv", d: 240 }, { w: "coffee.", pill: "y", d: 330 }], { cls: "mid onCity hi" });
       html(`<i class="cupbig"></i>`);
       await at(16100, tok); gone(e);
       await at(16300, tok);

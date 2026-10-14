@@ -227,7 +227,7 @@ ${header(true)}
     <div class="wrap hc-in">
       <p class="eyebrow mono">Cromatic Studios · Bucharest · Since 2014</p>
       <h1 class="hc-h" id="hc-h"><span class="hc-k">Nobody remembers a thumbnail.</span> <span class="hc-big">But someone could remember a <span class="pill hc-morph"><span>place.</span><span aria-hidden="true">facade.</span><span aria-hidden="true">brand.</span></span></span></h1>
-      <p class="hc-sub">Nine worlds over the same streets. One will feel like <span class="pill hc-pill-y">yours.</span> That’s how the right brand feels like.</p>
+      <p class="hc-sub">Nine worlds over the same streets. One will feel like <span class="pill hc-pill-y">yours.</span> That’s how the right brand feels.</p>
       <p class="hc-what">An independent studio for brand strategy, identity, websites, film and content.</p>
       <div class="btns hc-btns"><a class="btn btn-y" href="/">${STAR}<span>Take the 3D drive</span></a><a class="btn hc-ghost" href="#work">See the work <span aria-hidden="true">↓</span></a></div>
     </div>
