@@ -4815,3 +4815,56 @@ html.onb.onb-coffee body > .ui-root > :not(.toast-col, .rush-vignette) { display
 html.onb.onb-coffee .toast-col > :not(.coffee-card, .rush-pill) { display: none !important; }
 html.onb.onb-bam .coffee-card .cc-num { animation: onbBam .62s cubic-bezier(.2, 1.6, .4, 1) both; }
 @keyframes onbBam { 0% { transform: scale(.4) rotate(-14deg); } 55% { transform: scale(1.45) rotate(6deg); } 100% { transform: none; } }
+/* r154 (Daniel: "with the house photos open, the ride picker opens underneath"): the panels you open yourself sit above
+   the Olari 9 photo fan and the place cards (the fan and the picker were both at 30, and the fan came later in the page) */
+.map-rides { z-index: 36; }
+
+/* =====================================================================================================================
+   r156 (Daniel): the drive's game pad (desktop), "Where to next?", and the big flash when the mode changes
+   ===================================================================================================================== */
+.dpad { pointer-events: auto; position: fixed; left: 22px; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); z-index: 21; display: grid; justify-items: center; gap: 8px; padding: 14px 16px 12px; border-radius: 26px; background: color-mix(in srgb, var(--card-bg, #fbfaf5) 90%, transparent); border: 1px solid var(--st-ink, #111); box-shadow: 0 16px 34px -18px rgba(30,20,30,.55); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--fg); transition: opacity .35s ease, transform .35s ease; }
+.dp-h { font-size: 10px; font-weight: 700; letter-spacing: .16em; }
+.dp-h::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: #28C840; box-shadow: 0 0 0 3px rgba(40,200,64,.22); vertical-align: 0; animation: dpLive 1.6s ease-in-out infinite; }
+@keyframes dpLive { 50% { box-shadow: 0 0 0 6px rgba(40,200,64,0); } }
+.dp-keys { display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: 52px 52px; gap: 6px; }
+.dp-k { all: unset; box-sizing: border-box; display: grid; place-items: center; border-radius: 14px; border: 1.5px solid var(--st-ink, #111); background: var(--card-bg, #fff); color: var(--fg); font: 900 24px/1 CromaticSans, sans-serif; cursor: pointer; box-shadow: 0 4px 0 var(--st-ink, #111); transition: transform .08s ease, box-shadow .08s ease, background .15s ease, opacity .25s ease; touch-action: none; user-select: none; }
+.dp-k:focus-visible { outline: 3px solid #119BFE; outline-offset: 2px; }
+.dp-u { grid-column: 2; grid-row: 1; } .dp-l { grid-column: 1; grid-row: 2; } .dp-d { grid-column: 2; grid-row: 2; } .dp-r { grid-column: 3; grid-row: 2; }
+.dp-u, .dp-d { background: #FED012; color: #111; }
+.dp-k.on, .dp-k:active { transform: translateY(4px); box-shadow: 0 0 0 var(--st-ink, #111); background: #F65342; color: #fff; }
+.dpad:not(.lr) .dp-l, .dpad:not(.lr) .dp-r { opacity: .28; pointer-events: none; box-shadow: 0 2px 0 var(--st-ink, #111); }
+.dpad.lr .dp-l, .dpad.lr .dp-r { background: #119BFE; color: #fff; animation: dpLr 1.2s ease-in-out 2; }
+@keyframes dpLr { 50% { transform: translateY(-3px); } }
+.dp-t { font-size: 9px; letter-spacing: .14em; opacity: .7; }
+.dpad.lr .dp-t::after { content: " \00B7  \2190 \2192 ARE ON"; color: #119BFE; opacity: 1; }
+.dp-where { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; text-align: center; padding: 9px 12px; border-radius: 999px; border: 1.5px solid var(--st-ink, #111); background: var(--card-bg, #fff); font: 800 14px/1 CromaticSans, sans-serif; color: var(--fg); }
+.dp-where:hover, .dpad.at-end .dp-where { background: #FED012; color: #111; }
+.dpad.at-end .dp-where { animation: dpLr 1.2s ease-in-out infinite; }
+body.map-mode .dpad, body.site-mode .dpad, html.onb .dpad, body.kz-intro .dpad { opacity: 0; pointer-events: none; transform: translateY(12px); }
+@media (max-width: 719px), (pointer: coarse) {
+  /* a phone drives by the finger: no pad, only "Where to next?", and only near the end of the road */
+  .dpad { left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); padding: 0; border: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .dp-h, .dp-keys, .dp-t { display: none; }
+  .dp-where { width: auto; padding: 11px 16px; box-shadow: 0 10px 24px -12px rgba(0,0,0,.5); }
+  .dpad:not(.at-end) { opacity: 0; pointer-events: none; }
+}
+.dwhere { pointer-events: auto; position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(13,12,9,.38); }
+.dwhere.hidden { display: none; }
+.dw-card { position: relative; width: min(560px, 100%); max-height: calc(100svh - 32px); overflow: auto; padding: 26px 24px 22px; border-radius: 26px; background: var(--card-bg, #fbfaf5); color: var(--fg); border: 1px solid var(--st-ink, #111); box-shadow: 0 24px 60px -24px rgba(0,0,0,.6); animation: dwIn .35s cubic-bezier(.2,1.2,.4,1) both; }
+@keyframes dwIn { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+.dw-x { all: unset; position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--st-ink, #111); background: var(--card-bg, #fff); cursor: pointer; font: 700 20px/1 CromaticSans, sans-serif; }
+.dw-t { display: block; font: 900 clamp(26px, 4vw, 34px)/1.05 CromaticSans, sans-serif; letter-spacing: -.03em; margin: 0 40px 16px 0; }
+.dw-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dw-opts button { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 4px; padding: 12px 14px 12px 18px; border-radius: 16px; border: 1.5px solid var(--st-ink, #111); background: var(--card-bg, #fff); border-left: 7px solid var(--wc); transition: transform .15s ease; }
+.dw-opts button:hover { transform: translateY(-2px); }
+.dw-opts button b { font: 800 16px/1.15 CromaticSans, sans-serif; }
+.dw-opts button i { font-style: normal; font-size: 12px; opacity: .7; }
+@media (max-width: 520px) { .dw-opts { grid-template-columns: 1fr; } }
+.mode-flash { position: fixed; inset: 0; z-index: 58; display: grid; place-content: center; justify-items: center; gap: 14px; pointer-events: none; opacity: 0; text-align: center; padding: 0 16px; }
+.mode-flash .mf-t { font: 900 clamp(40px, 8vw, 112px)/1 CromaticSans, sans-serif; letter-spacing: -.045em; color: #0d0c09; text-shadow: 0 2px 0 rgba(255,255,255,.8), 0 0 40px rgba(255,255,255,.95), 0 0 80px rgba(255,255,255,.8); }
+.mode-flash .mf-pill { display: inline-block; padding: .02em .32em .1em; border-radius: 999px; border: .03em solid #0d0c09; box-shadow: .05em .06em 0 #0d0c09; text-shadow: none; }
+.mode-flash .mf-drive { background: #FED012; } .mode-flash .mf-map { background: #28C840; color: #0d0c09; }
+.mode-flash .mf-s { font-size: clamp(11px, 1.2vw, 14px); letter-spacing: .16em; font-weight: 700; padding: 8px 14px; border-radius: 999px; background: rgba(13,12,9,.82); color: #fbfaf5; }
+.mode-flash.go { animation: mfIn 2.2s cubic-bezier(.2,1,.3,1) both; }
+@keyframes mfIn { 0% { opacity: 0; transform: scale(.92); } 14% { opacity: 1; transform: none; } 78% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-14px) scale(1.02); } }
+@media (prefers-reduced-motion: reduce) { .mode-flash.go { animation: mfFade 2.2s linear both; } @keyframes mfFade { 0%, 100% { opacity: 0; } 10%, 85% { opacity: 1; } } .dpad.lr .dp-l, .dpad.lr .dp-r, .dpad.at-end .dp-where, .dp-h::before { animation: none; } }
