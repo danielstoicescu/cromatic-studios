@@ -160,6 +160,9 @@ code{font-family:var(--f-mono);font-size:.84em;background:var(--white);border:1.
 /* data */
 .data{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:16px}
 .zero{background:var(--green);border:var(--stroke);border-radius:26px;padding:24px;display:flex;flex-direction:column;gap:8px}
+.zero2{display:flex;gap:12px;align-items:center;margin-top:auto;padding-top:14px;border-top:2px solid var(--ink)}
+.zero2 .n2{font:800 2.6rem/1 var(--f-display);letter-spacing:-.04em}
+.zero2 p{margin:0;font-size:.88rem}
 .zero .n{font:800 5.5rem/0.9 var(--f-display);letter-spacing:-.05em}
 .bars{display:grid;gap:10px;margin-top:6px}
 .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;font-size:.88rem}
@@ -239,7 +242,8 @@ a{color:var(--ink)}
     <p class="lead">Pe 13 octombrie, banca cu care lucrează Bepco a anunțat compania că pe site există cod periculos. Atacatorii l-au pus acolo după ce au intrat în site cu parola furată a unui administrator. În aceeași zi am aflat pe unde au intrat, le-am închis accesul și am verificat datele candidaților.</p>
     <div class="meta">
       <span class="pill ok">Acces închis</span>
-      <span class="pill">Niciun acces la CV-uri</span>
+      <span class="pill">0 CV-uri descărcate</span>
+      <span class="pill">0 descărcări ale backup-ului</span>
       <span class="pill">XML-RPC blocat</span>
     </div>
   </div>
@@ -336,9 +340,10 @@ a{color:var(--ink)}
   <div class="sec-h"><span class="num">04</span><h2 id="h-data">Datele candidaților</h2></div>
   <div class="data">
     <div class="zero">
-      <span class="pill" style="align-self:flex-start">Atacatori · CV-uri</span>
+      <span class="pill" style="align-self:flex-start">CV-uri descărcate de atacatori</span>
       <span class="n">0</span>
-      <p style="margin:0">În log-urile de acces nu există <em class="k">nicio</em> accesare a atacatorilor la lista de cereri, la export sau la fișierele CV.</p>
+      <p style="margin:0">În log-urile de acces nu există <em class="k">niciun</em> CV descărcat de atacatori. Nu au deschis nici lista de cereri, nici exportul.</p>
+      <div class="zero2"><span class="n2">0</span><p>descărcări ale arhivei de backup din noiembrie 2025. Singura descărcare înregistrată e verificarea noastră, din 13 octombrie.</p></div>
     </div>
     <div class="card">
       <h3>Ce era expus</h3>
@@ -360,7 +365,7 @@ a{color:var(--ink)}
     <div class="st"><div class="top"><h3>WP File Manager</h3><span class="pill ok">Rezolvat</span></div><p>Dezactivat și scos de pe site, împreună cu folderele <code>plugin-autoupdate</code>, <code>wpfm-private-backups</code> și <code>.tmb</code>.</p></div>
     <div class="st"><div class="top"><h3>Pluginurile din 13 octombrie</h3><span class="pill ok">Eliminate</span></div><p>Cele două pluginuri încărcate la 13:07 au fost eliminate de restaurarea de la 14:22. Pe server nu a rămas niciun fișier al lor.</p></div>
     <div class="st"><div class="top"><h3>Editorul de cod din wp-admin</h3><span class="pill ok">Rezolvat</span></div><p>Dezactivat prin <code>DISALLOW_FILE_EDIT</code>. Detalii mai jos.</p></div>
-    <div class="st"><div class="top"><h3>Backup descărcabil public</h3><span class="pill ok">Rezolvat</span></div><p>Arhiva din noiembrie 2025 nu mai e accesibilă din internet. Detalii mai jos.</p></div>
+    <div class="st"><div class="top"><h3>Arhiva de backup din noiembrie 2025</h3><span class="pill ok">Rezolvat</span></div><p><strong>Nicio descărcare</strong> în log-urile de acces, în afară de verificarea noastră. Arhiva a fost scoasă din zona publică a site-ului. Detalii mai jos.</p></div>
     <div class="st"><div class="top"><h3>Articole spam</h3><span class="pill ok">Rezolvat</span></div><p>Cele trei articole ale atacatorului nu mai apar pe site. Sunt în coș, alături de trei postări de test.</p></div>
     <div class="st"><div class="top"><h3>XML-RPC și lista de conturi</h3><span class="pill ok">Rezolvat</span></div><p><code>xmlrpc.php</code> e blocat. Lista utilizatorilor din API și adresele de tip <code>?author=1</code> nu mai dezvăluie numele conturilor. Detalii mai jos.</p></div>
     <div class="st"><div class="top"><h3>2FA și limită de login</h3><span class="pill bad">De făcut</span></div><p>Administratorii nu au încă autentificare în doi pași și nu există limită de încercări la pagina de login.</p></div>
@@ -414,6 +419,7 @@ a{color:var(--ink)}
     <div class="card">
       <span class="pill ok">Backup</span>
       <h3 style="margin-top:12px">Arhiva de backup din noiembrie 2025</h3>
+      <div class="zero2" style="margin:10px 0 14px;padding:12px 14px;border:2px solid var(--ink);border-radius:16px;background:var(--green)"><span class="n2">0</span><p><strong>descărcări ale arhivei</strong> în log-urile de acces, în afară de verificarea noastră din 13 octombrie.</p></div>
       <p>Arhiva avea 1,4 GB și conținea tot site-ul, inclusiv baza de date cu cererile de job de atunci. Stătea în <code>wp-content/backups-dup-pro</code>, în zona publică a site-ului. Pluginul Duplicator Pro o protejează în modul lui standard: numele conține un cod aleatoriu de 20 de caractere, folderul nu se poate lista și nu e indexat. Pluginul nu blochează însă descărcarea directă, așa că arhiva putea fi descărcată de cine îi știa adresa exactă.</p>
       <p>Am mutat folderul în afara zonei publice, unde se ajunge doar cu login de cPanel. Adresa veche răspunde acum cu <code>404</code>. În log-urile de acces nu există nicio descărcare, în afară de verificarea noastră.</p>
       <p><em class="k">Următorul</em> pas e ștergerea definitivă: hostingul are backup-uri mai noi.</p>
