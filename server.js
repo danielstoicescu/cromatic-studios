@@ -102,7 +102,7 @@ let lastMail = null; // the last send, for /healthz (no addresses, no secrets)
 // cookie card (cookie cz-consent=yes2): only that a lead happened, nothing of what was written. The key lives in the
 // server's environment (Bunnyshell secret OAI_CONVERSIONS_KEY), never in the repo. At start a validate_only event
 // (counted nowhere) checks the key; /healthz shows the result as oai: "ok" / "off" / "error <status>".
-const OAI_KEY = process.env.OAI_CONVERSIONS_KEY || "";
+const OAI_KEY = String(process.env.OAI_CONVERSIONS_KEY || "").trim().replace(/^Bearer\s+/i, ""); // a pasted space, newline or "Bearer " does not break it
 const OAI_PIXEL = process.env.OAI_PIXEL_ID || "8Kok98JE9jNE1Va2uAQwDG";
 let oaiState = OAI_KEY ? "checking" : "off";
 function oaiPost(events, validateOnly) {
