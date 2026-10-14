@@ -31656,14 +31656,15 @@ void main() {
       [x, y, w, h] = R.black;
       ctx.fillStyle = "#070707"; ctx.fillRect(x, y, w, h);
       // the shield in the grille's chrome V: a little castle over a red point, on dark blue
+      // r144 (Daniel: "the logo is rounded at the bottom, not pointed"): a shield with a round bottom, a red half-disc
       [x, y, w, h] = R.shield;
       ctx.save(); ctx.translate(x + w / 2, y + 4);
-      ctx.beginPath(); ctx.moveTo(-27, 0); ctx.lineTo(27, 0); ctx.lineTo(27, 34); ctx.quadraticCurveTo(27, 58, 0, 72); ctx.quadraticCurveTo(-27, 58, -27, 34); ctx.closePath();
+      ctx.beginPath(); ctx.moveTo(-27, 0); ctx.lineTo(27, 0); ctx.lineTo(27, 44); ctx.arc(0, 44, 27, 0, Math.PI); ctx.closePath();
       const sg = ctx.createLinearGradient(-27, 0, 27, 72); sg.addColorStop(0, "#ffffff"); sg.addColorStop(0.5, "#8c939b"); sg.addColorStop(1, "#eceff2");
       ctx.fillStyle = sg; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = "#5c636b"; ctx.stroke();
       ctx.fillStyle = "#1d2b4f"; ctx.fillRect(-19, 9, 38, 32);
       ctx.fillStyle = "#dfe2e6"; ctx.fillRect(-13, 24, 26, 13); for (const tx of [-13, -3, 7]) ctx.fillRect(tx, 17, 6, 7);
-      ctx.fillStyle = "#b5161b"; ctx.beginPath(); ctx.moveTo(-18, 45); ctx.lineTo(18, 45); ctx.lineTo(0, 64); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#b5161b"; ctx.beginPath(); ctx.moveTo(-19, 46); ctx.arc(0, 46, 19, Math.PI, 0, true); ctx.closePath(); ctx.fill(); // r144: round, not a point
       ctx.restore();
     };
     // r139e: the 1310 parts painted over the 1300's, and the Poliția livery's lettering and crest
@@ -31761,11 +31762,11 @@ void main() {
         sh.uniforms.uNavy = { value: navy };
         sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vPolP;\nvarying vec3 vPolN;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvPolP = position; vPolN = normal;");
         sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nuniform vec3 uNavy;\nvarying vec3 vPolP;\nvarying vec3 vPolN;").replace("#include <color_fragment>", `#include <color_fragment>
-          float pDoor = step(0.5, abs(vPolN.x)) * step(vPolP.z, 13.6) * step(-20.0, vPolP.z) * step(vPolP.y, 31.4);
-          float pBon = step(0.45, vPolN.y) * step(14.75, vPolP.z) * step(17.0, vPolP.y);
+          float pDoor = step(0.5, abs(vPolN.x)) * step(vPolP.z, 14.4) * step(-20.6, vPolP.z) * step(vPolP.y, 32.0);
+          float pBon = step(0.45, vPolN.y) * step(16.0, vPolP.z) * step(13.0, vPolP.y);
           diffuseColor.rgb = mix(diffuseColor.rgb, uNavy, max(pDoor, pBon));`);
       };
-      paint.customProgramCacheKey = () => "pol139e";
+      paint.customProgramCacheKey = () => "pol144"; // r144: the doors and bonnet as reshaped (lower belt and bonnet)
     }
     // brighter than chromeM(): part diffuse, so the bumpers and trim read as polished metal even where the
     // reflection is weak (a fully metallic chrome goes almost black under the city's light)
@@ -31782,7 +31783,9 @@ void main() {
     // tail (harder in the last few units: rounded corners); in section the flank folds in above the chrome crease
     // (tumblehome, the roof ends up narrower than the waist) and tucks under below it. Normals follow analytically.
     // r138j: the crease (and its chrome strip) rises from the nose to the B-pillar, then runs level (photo 18)
-    const CREASE = (z) => 18.0 - 0.025 * Math.max(0, z), dCREASE = (z) => z > 0 ? -0.025 : 0;
+    // r144: with the belt lowered the crease drops too (photo: a little over half way up the door, rising gently
+    // towards the tail, just clear of the wheel arches)
+    const CREASE = (z) => 15.0 - 0.008 * z, dCREASE = () => -0.008;
     const fY = (u) => u >= 0 ? 1 - 0.07 * Math.min(1, u / 4.8) : 1 - 0.05 * Math.pow(Math.min(1, -u / 12), 1.6);
     const dfY = (u) => u >= 0 ? (u < 4.8 ? -0.07 / 4.8 : 0) : (-u < 12 ? 0.05 * 1.6 * Math.pow(-u / 12, 0.6) / 12 : 0);
     const endT = (z) => z > 21 ? [Math.min(1, (z - 21) / 20), 0.08, 0.07, 1 / 20] : z < -26 ? [Math.min(1, (-26 - z) / 21.5), 0.07, 0.06, -1 / 21.5] : null;
@@ -31849,20 +31852,25 @@ void main() {
     put(paint, subdivYZ(sideBody((s) => {
       s.moveTo(-41.2, 6.9);
       archCut(s, -27, 8.6, 6.9, 7.2); archCut(s, 24.5, 8.6, 6.9, 7.2);
-      s.lineTo(34.4, 6.9); s.quadraticCurveTo(38.3, 7.2, 38.3, 11.0); s.lineTo(38.3, 17.7);
-      s.quadraticCurveTo(38.3, 18.1, 36.8, 18.15); s.quadraticCurveTo(25, 21.2, 14.6, 22.0); // the bonnet, falling to the nose
-      s.lineTo(-26.4, 22.9); s.quadraticCurveTo(-37, 22.6, -43.4, 19.6); // waist, then the boot deck falling to the tail
-      s.quadraticCurveTo(-45.0, 19.0, -45.0, 17.6); s.lineTo(-45.0, 11.6); s.quadraticCurveTo(-45.0, 7.4, -41.2, 6.9);
+      // r144 (Daniel, off the yellow 1300 photo): the nose is much shallower (the valance tucks up behind a slim bumper,
+      // the face is only bumper + indicator strip + grille band), the bonnet lower and sloping down to a crisp edge
+      // right over the lamps; the belt about 3 lower so the glass is taller; the boot lower, falling to a slim tail
+      s.lineTo(33.4, 6.9); s.quadraticCurveTo(38.3, 7.3, 38.3, 10.2); s.lineTo(38.3, 14.6);
+      s.quadraticCurveTo(38.3, 15.0, 37.8, 15.05); s.quadraticCurveTo(26, 17.9, 15.0, 19.0); // the bonnet, falling to the nose
+      s.lineTo(-27.0, 19.5); s.quadraticCurveTo(-38.5, 19.2, -43.7, 16.9); // waist, then the boot deck falling to the tail
+      s.quadraticCurveTo(-45.0, 16.4, -45.0, 15.2); s.lineTo(-45.0, 10.6); s.quadraticCurveTo(-44.8, 7.2, -41.2, 6.9);
     }, W, paint, 1.4, 20).geometry, 4.5));
-    add(at(new BoxGeometry(24, 0.2, 0.7), 0, 23.45, 14.4), black); // scuttle vent
+    add(at(new BoxGeometry(24, 0.2, 0.7), 0, 20.42, 16.0), black); // scuttle vent (r144: lower, ahead of the screen)
 
     // ---- the glasshouse: two side frames (pillars + window openings) leaning in, a roof, front and rear screens
     const gh = new Shape();
     // r138j: off photo 18: screen foot 0.53 m behind the front axle and fairly upright, roof from 0.75 m to 2.05 m,
     // rear screen foot at the rear axle; the waist rises a touch towards the back, the windows are shallower
-    gh.moveTo(14.2, 23.0); gh.lineTo(8.6, 31.4); gh.quadraticCurveTo(8.0, 32.1, 7.0, 32.1); gh.lineTo(-17.8, 32.1);
-    gh.quadraticCurveTo(-19.0, 32.1, -19.6, 31.5); gh.lineTo(-26.8, 23.9); gh.lineTo(14.2, 23.0);
-    const WF = [[12.2, 23.9], [8.2, 30.2], [7.4, 30.8], [-3.9, 30.8], [-3.9, 24.1]], WR = [[-5.6, 24.2], [-5.6, 30.8], [-15.4, 30.8], [-19.2, 24.4]];
+    // r144 (Daniel: "the side windows are too small for the doors, it reads as a muscle car"): the glasshouse starts
+    // on the lowered belt (about 3 lower), the roof stays: side glass about 10 tall against doors of about 15 (was 6.7 : 18)
+    gh.moveTo(16.0, 20.0); gh.lineTo(8.4, 31.5); gh.quadraticCurveTo(7.8, 32.2, 6.8, 32.2); gh.lineTo(-18.2, 32.2);
+    gh.quadraticCurveTo(-19.4, 32.2, -20.0, 31.6); gh.lineTo(-28.0, 20.5); gh.lineTo(16.0, 20.0);
+    const WF = [[14.2, 20.75], [7.9, 30.9], [7.1, 31.5], [-3.9, 31.5], [-3.9, 20.8]], WR = [[-5.6, 20.9], [-5.6, 31.5], [-15.8, 31.5], [-20.6, 21.1]];
     gh.holes.push(poly(WF), poly(WR));
     const sideMtx = (sx) => new Matrix4().makeTranslation(sx * 14.95, 23.4, 0).multiply(new Matrix4().makeRotationZ(sx * 0.1)).multiply(new Matrix4().makeTranslation(0, -23.4, 0));
     for (const sx of [-1, 1]) {
@@ -31873,64 +31881,76 @@ void main() {
         const gl = new ShapeGeometry(poly(win)); gl.rotateY(-Math.PI / 2); put(glass, gl, mx);
         loop(win.map(([z, y]) => [sx * 0.62, y, z]), 0.2, trim, mx); // chrome window frames (r139e: black on the 1310)
       }
-      edge([sx * 0.58, 32.22, 6.8], [sx * 0.58, 32.22, -17.8], 0.26, trim, mx); // drip rail
-      // the C-pillar air outlet: three slanted slots
-      for (let k = 0; k < 3; k++) add(at(new BoxGeometry(0.3, 4.0, 0.5), sx * 0.72, 27.6, -18.8 - k * 1.15, 0.54), black, mx);
+      edge([sx * 0.58, 32.32, 6.6], [sx * 0.58, 32.32, -18.2], 0.26, trim, mx); // drip rail
+      // the C-pillar air outlet: three slanted slots (r144: longer, on the taller pillar)
+      for (let k = 0; k < 3; k++) add(at(new BoxGeometry(0.3, 4.6, 0.5), sx * 0.72, 26.4, -19.7 - k * 1.2, 0.6), black, mx);
     }
     const roof = topBody(rrDraw(27.8, 26.0, 2.6), 1.4, paint, 31.5, 0.6, 8); roof.position.z = -5.8; add(roof, paint);
-    const WS = [[-14.3, 23.3, 13.8], [14.3, 23.3, 13.8], [13.3, 31.8, 7.9], [-13.3, 31.8, 7.9]];
-    const RS = [[14.1, 24.1, -26.3], [-14.1, 24.1, -26.3], [-13.3, 31.8, -19.0], [13.3, 31.8, -19.0]];
+    // r144: the screens reach down to the lowered belt
+    const WS = [[-14.5, 20.6, 15.2], [14.5, 20.6, 15.2], [13.3, 31.9, 7.7], [-13.3, 31.9, 7.7]];
+    const RS = [[14.3, 21.0, -27.2], [-14.3, 21.0, -27.2], [-13.3, 31.9, -19.4], [13.3, 31.9, -19.4]];
     put(glass, quad(...WS)); put(glass, quad(...RS));
     loop(WS, 0.32, trim); loop(RS, 0.32, trim);
     // wipers parked along the screen, on chrome spindles
-    for (const x0 of [-13, 1]) { edge([x0, 23.9, 13.67], [x0 + 10, 24.9, 12.93], 0.2, black); add(at(new CylinderGeometry(0.45, 0.45, 0.7, 8), x0, 23.5, 14.2), chrome); }
+    for (const x0 of [-13, 1]) { edge([x0, 21.2, 15.1], [x0 + 10, 22.2, 14.45], 0.2, black); add(at(new CylinderGeometry(0.45, 0.45, 0.7, 8), x0, 20.6, 15.7), chrome); }
 
     // ---- inside: black dash and steering wheel, red seats (Daniel: red cushions)
-    add(at(new BoxGeometry(29.2, 0.12, 40), 0, 23.5, -6.3), black); // floor, level with the waist
-    const dash = sideBody(poly([[13.6, 23.3], [11.3, 25.6], [9.8, 25.9], [9.6, 23.3]]), 28.4, black, 0.3, 2); add(dash, black); // under the screen
-    const hood = sideBody(rrShape(2.0, 1.2, 0.5), 7, black, 0.3, 4); hood.position.set(6.8, 26.1, 9.4); add(hood, black);
-    add(at(new TorusGeometry(2.0, 0.3, 6, 20), 6.8, 26.6, 8.0, 0.55), black);
-    add(at(new BoxGeometry(3.8, 0.35, 0.25), 6.8, 26.6, 8.0, 0.55), black);
-    edge([6.8, 25.4, 10.0], [6.8, 26.5, 8.2], 0.35, black);
-    edge([0, 23.6, 4.0], [0, 25.6, 3.4], 0.18, black); add(at(new SphereGeometry(0.55, 8, 6), 0, 25.7, 3.35), black); // gear lever
-    add(at(new BoxGeometry(3.2, 1.0, 0.35), 0, 30.6, 8.0), black); // rear-view mirror
+    // r144: everything 2.5 lower with the belt, the dash forward with the screen's foot
+    add(at(new BoxGeometry(29.2, 0.12, 40), 0, 21.0, -6.3), black); // floor, level with the waist
+    const dash = sideBody(poly([[14.6, 20.9], [12.5, 23.3], [11.0, 23.6], [10.8, 20.9]]), 28.4, black, 0.3, 2); add(dash, black); // under the screen
+    const hood = sideBody(rrShape(2.0, 1.2, 0.5), 7, black, 0.3, 4); hood.position.set(6.8, 23.6, 10.0); add(hood, black);
+    add(at(new TorusGeometry(2.0, 0.3, 6, 20), 6.8, 24.1, 8.6, 0.55), black);
+    add(at(new BoxGeometry(3.8, 0.35, 0.25), 6.8, 24.1, 8.6, 0.55), black);
+    edge([6.8, 22.9, 10.6], [6.8, 24.0, 8.8], 0.35, black);
+    edge([0, 21.1, 4.0], [0, 23.1, 3.4], 0.18, black); add(at(new SphereGeometry(0.55, 8, 6), 0, 23.2, 3.35), black); // gear lever
+    add(at(new BoxGeometry(3.2, 1.0, 0.35), 0, 30.3, 8.3), black); // rear-view mirror
     const seat = (x, width, z, backZ, tilt, pleats, bh) => {
-      const c = sideBody(rrShape(7.2, 1.5, 0.6), width, seatM, 0.55, 4); c.position.set(x, 24.25, z); add(c, seatM);
-      const by = 25.2 + bh / 2;
+      const c = sideBody(rrShape(7.2, 1.5, 0.6), width, seatM, 0.55, 4); c.position.set(x, 21.75, z); add(c, seatM);
+      const by = 22.7 + bh / 2;
       const b = sideBody(rrShape(1.8, bh, 0.8), width, seatM, 0.6, 4); b.position.set(x, by, backZ); b.rotation.x = tilt; add(b, seatM);
       for (const dx of pleats) add(at(new BoxGeometry(0.42, bh - 1, 0.3), x + dx, by + 1.5 * Math.sin(-tilt), backZ + 1.5 * Math.cos(tilt), tilt), seatM);
     };
-    for (const sx of [-1, 1]) seat(sx * 6.9, 9.2, -0.2, -4.4, -0.18, [-2.6, 0, 2.6], 4.0);
-    seat(0, 27, -13.0, -17.6, -0.22, [-10, -6.5, -3, 3, 6.5, 10], 3.6);
+    for (const sx of [-1, 1]) seat(sx * 6.9, 9.2, -0.2, -4.4, -0.18, [-2.6, 0, 2.6], 4.6); // r144: taller backs
+    seat(0, 27, -13.0, -17.6, -0.22, [-10, -6.5, -3, 3, 6.5, 10], 4.2);
 
     // ---- the nose: black grille between square headlamps, chrome surround, the chrome V with the shield
     // r138g: the whole front face is lower and shorter: the grille band sits right under the bonnet's edge
     // r138j: lamps right under the bonnet's edge, a band with the intake and indicators below, the bumper high
-    decalQ("grille", 32.4, 4.0, 0, 15.7, ZF + 0.06);
+    // r144: the face is now bumper (7.8-9.9), an indicator strip (to 11.4), the grille band (11.4-15.2) right under the
+    // bonnet's edge (16.4): from the bumper's lip to the lamps' top about 7.5 (was about 9.5, with the valance and
+    // the tall over-riders below making it read as 14)
+    const NY = 13.3; // the lamps' and the grille's centre line
+    decalQ("grille", 32.4, 3.8, 0, NY, ZF + 0.06);
     const bezel = (w, h, r, t) => { const s = rrShape(w + 1.2, h + 1.1, r + 0.5); s.holes.push(rrShape(w, h, r)); return new ExtrudeGeometry(s, { depth: t, bevelEnabled: true, bevelThickness: 0.15, bevelSize: 0.15, bevelSegments: 2, curveSegments: 6 }); };
     // r139e: the 1310's nose: four round lamps in black rings across the black grille, amber lamps in the bumper
     if (pol) for (const sx of [-1, 1]) {
       for (const xo of [10.2, 14.1]) {
-        add(at(new TorusGeometry(1.72, 0.34, 6, 20), sx * xo, 15.7, ZF + 0.3), black);
-        const lens = uvFit(new CircleGeometry(1.62, 20), A.uv("head")); lens.translate(sx * xo, 15.7, ZF + 0.38); put(A.mat, lens);
+        add(at(new TorusGeometry(1.62, 0.32, 6, 20), sx * xo, NY, ZF + 0.3), black);
+        const lens = uvFit(new CircleGeometry(1.52, 20), A.uv("head")); lens.translate(sx * xo, NY, ZF + 0.38); put(A.mat, lens);
       }
-      decalQ("amber", 2.6, 1.0, sx * 14.4, 10.3, ZF + 2.8);
+      decalQ("amber", 2.6, 1.0, sx * 14.4, 9.2, ZF + 2.5);
     }
-    else loop([[-16.35, 13.67, ZF + 0.12], [16.35, 13.67, ZF + 0.12], [16.35, 17.73, ZF + 0.12], [-16.35, 17.73, ZF + 0.12]], 0.26, chrome);
+    else loop([[-16.35, NY - 1.98, ZF + 0.12], [16.35, NY - 1.98, ZF + 0.12], [16.35, NY + 1.98, ZF + 0.12], [-16.35, NY + 1.98, ZF + 0.12]], 0.26, chrome);
     if (!pol) for (const sx of [-1, 1]) {
-      const bz = bezel(6.6, 3.3, 1.2, 0.7); bz.translate(sx * 12.2, 15.7, ZF); put(chrome, bz);
-      const lens = uvFit(new ShapeGeometry(rrShape(6.6, 3.3, 1.2), 6), A.uv("head")); lens.translate(sx * 12.2, 15.7, ZF + 0.4); put(A.mat, lens);
+      const bz = bezel(5.9, 3.0, 1.1, 0.7); bz.translate(sx * 12.4, NY, ZF); put(chrome, bz);
+      const lens = uvFit(new ShapeGeometry(rrShape(5.9, 3.0, 1.1), 6), A.uv("head")); lens.translate(sx * 12.4, NY, ZF + 0.4); put(A.mat, lens);
       // indicators under the lamps, in chrome cups
-      add(at(new BoxGeometry(3.9, 1.7, 0.4), sx * 13.2, 12.8, ZF + 0.12), chrome);
-      decalQ("amber", 3.4, 1.3, sx * 13.2, 12.8, ZF + 0.36);
+      add(at(new BoxGeometry(3.6, 1.25, 0.4), sx * 13.2, 10.65, ZF + 0.12), chrome);
+      decalQ("amber", 3.2, 0.95, sx * 13.2, 10.65, ZF + 0.36);
     }
     if (!pol) {
-      for (const [a, b] of [[[-2.0, 17.5, ZF + 0.3], [0, 14.0, ZF + 0.3]], [[0, 14.0, ZF + 0.3], [2.0, 17.5, ZF + 0.3]]]) edge(a, b, 0.3, chrome);
-      add(at(new SphereGeometry(0.3, 6, 4), 0, 14.0, ZF + 0.3), chrome);
-      decalQ("shield", 1.6, 2.0, 0, 16.5, ZF + 0.22);
+      // r144 (Daniel: "the logo is rounded at the bottom, not pointed"): the chrome emblem is a shield, its sides
+      // leaning in a touch and meeting in a round bottom (a half ring), the painted shield at its top
+      const lean = 0.14, rU = 1.3, cU = NY - 0.35, zE = ZF + 0.3;
+      const arc = new TorusGeometry(rU, 0.3, 6, 12, Math.PI - 2 * lean); arc.rotateZ(Math.PI + lean); arc.translate(0, cU, zE); put(chrome, arc);
+      for (const sx of [-1, 1]) {
+        const p0 = [sx * rU * Math.cos(lean), cU - rU * Math.sin(lean), zE], up = 1.95 + rU * Math.sin(lean);
+        edge(p0, [p0[0] + sx * up * Math.tan(lean), p0[1] + up, zE], 0.3, chrome);
+      }
+      decalQ("shield", 1.45, 1.75, 0, NY + 0.75, ZF + 0.22);
       // the slatted intake under the grille
-      decalQ("black", 9.6, 1.6, -5.6, 12.8, ZF + 0.06);
-      for (let i = 0; i < 3; i++) add(at(new BoxGeometry(9.6, 0.26, 0.45), -5.6, 12.25 + i * 0.55, ZF + 0.15), paint);
+      decalQ("black", 8.6, 1.1, -5.6, 10.65, ZF + 0.06);
+      for (let i = 0; i < 3; i++) add(at(new BoxGeometry(8.6, 0.22, 0.45), -5.6, 10.25 + i * 0.4, ZF + 0.15), paint);
     }
 
     // ---- chrome bumpers wrapping round the corners, black rubber over-riders, plates
@@ -31938,27 +31958,29 @@ void main() {
       const b = topBody((s) => {
         s.moveTo(-17.4, -3); s.quadraticCurveTo(-17.6, 1.3, -14.4, 1.4); s.lineTo(14.4, 1.4); s.quadraticCurveTo(17.6, 1.3, 17.4, -3);
         s.lineTo(16.3, -3); s.quadraticCurveTo(16.4, -0.1, 14, 0); s.lineTo(-14, 0); s.quadraticCurveTo(-16.4, -0.1, -16.3, -3); s.closePath();
-      }, pol ? 3.4 : 2.8, pol ? black : chrome, y0, 0.7, 10);
+      }, pol ? 3.0 : 2.1, pol ? black : chrome, y0, 0.5, 10); // r144: slim blades (were 2.8 / 3.4 deep)
       b.position.z = zc; if (back) b.rotation.y = Math.PI; add(b, pol ? black : chrome);
     };
-    bumper(ZF + 0.6, false, pol ? 8.7 : 9.1); bumper(ZB - 0.6, true, pol ? 10.6 : 11.0); // r138j: high, as on the car (r139e: the 1310's black plastic ones, deeper)
+    bumper(ZF + 0.6, false, pol ? 7.6 : 7.8); bumper(ZB - 0.6, true, pol ? 8.2 : 8.7); // r144: lower and slimmer, with the shallower nose and tail (r139e: the 1310's black plastic ones, deeper)
     if (!pol) for (const sx of [-1, 1]) {
-      const of = topBody(rrDraw(1.5, 1.8, 0.6), 5.8, black, 7.9, 0.45, 4); of.position.set(sx * 8.4, 0, ZF + 2.3); add(of, black);
-      const ob = topBody(rrDraw(1.5, 1.8, 0.6), 6.6, black, 8.4, 0.45, 4); ob.position.set(sx * 8.4, 0, ZB - 2.3); add(ob, black);
+      // r144: short rubber blocks on the blade (were nearly 6 tall, hanging under the nose)
+      const of = topBody(rrDraw(1.5, 1.8, 0.6), 3.6, black, 7.3, 0.45, 4); of.position.set(sx * 8.4, 0, ZF + 2.1); add(of, black);
+      const ob = topBody(rrDraw(1.5, 1.8, 0.6), 3.8, black, 8.2, 0.45, 4); ob.position.set(sx * 8.4, 0, ZB - 2.1); add(ob, black);
     }
-    decalQ("plate", 10.4, 2.7, -1.2, 10.5, ZF + 2.75);
+    decalQ("plate", 10.4, 2.7, -1.2, 8.9, ZF + 2.6);
 
     // ---- the tail: wide lamp clusters in chrome, DACIA 1300 on the panel, the plate between the lamps
     // r138j: a slimmer tail: the bumper high, the lamps above it, plate and lettering between the lamps
     for (const sx of [-1, 1]) {
-      const th = pol ? 4.0 : 3.2, ty = pol ? 15.4 : 15.6; // r139e: the 1310's lamps are deeper
+      const th = pol ? 3.8 : 3.0, ty = pol ? 13.2 : 12.9; // r139e: the 1310's lamps are deeper (r144: lower, on the lower tail)
       const bz = bezel(9.4, th, 0.8, 0.5); bz.rotateY(Math.PI); bz.translate(sx * 10.3, ty, ZB); put(trim, bz);
       const lens = uvFit(new ShapeGeometry(rrShape(9.4, th, 0.8), 6), A.uv("tail", sx < 0)); lens.rotateY(Math.PI); lens.translate(sx * 10.3, ty, ZB - 0.3); put(A.mat, lens);
     }
-    decalQ("badge", 8.4, 1.3, 0, 17.0, ZB - 0.08, Math.PI);
-    decalQ("black", 10.4, 2.8, 0, 15.1, ZB - 0.06, Math.PI);
-    decalQ("plate", 9.6, 2.4, 0, 15.1, ZB - 0.14, Math.PI);
-    add(at(new CylinderGeometry(0.5, 0.5, 0.5, 10), 0, 18.3, ZB + 0.15, Math.PI / 2), chrome); // boot lock
+    // r144: the tail panel is lower (the boot's edge at about 18): plate between the lamps, lettering and lock above
+    decalQ("badge", 8.0, 1.1, 0, 15.5, ZB - 0.1, Math.PI);
+    decalQ("black", 10.4, 2.6, 0, 12.9, ZB - 0.06, Math.PI);
+    decalQ("plate", 9.6, 2.2, 0, 12.9, ZB - 0.14, Math.PI);
+    add(at(new CylinderGeometry(0.45, 0.45, 0.5, 10), 0, 16.6, ZB + 0.3, Math.PI / 2), chrome); // boot lock
     const pipe = [-11, 6.6, ZB - 1.4]; // exhaust tip (r138j: the idle smoke comes out here)
     edge([-11, 6.8, -38], pipe, 0.7, chrome, undefined, 8);
 
@@ -31969,20 +31991,22 @@ void main() {
         edge([sx * 17.08, CREASE(0), 0], [sx * 17.08, CREASE(-45.2), -45.2], 0.24, chrome);
         edge([sx * 17.08, 8.6, 15.4], [sx * 17.08, 8.6, -17.9], 0.3, chrome);
       }
-      for (const [z, y0, y1] of [[13.6, 6.0, 23.4], [-4.7, 6.0, 23.6], [-20.0, 12.0, 23.9]]) add(at(new BoxGeometry(0.12, y1 - y0, 0.22, 1, Math.ceil((y1 - y0) / 1.2), 1), sx * 17.0, (y0 + y1) / 2, z), black);
-      for (const z of [-2.6, -17.4]) add(at(new BoxGeometry(0.5, 0.65, 3.0), sx * 17.25, 22.0, z), trim);
+      // r144: shut lines, handles, fuel cap and mirror follow the belt down
+      for (const [z, y0, y1] of [[14.4, 6.0, 20.3], [-4.7, 6.0, 20.9], [-20.6, 12.0, 21.1]]) add(at(new BoxGeometry(0.12, y1 - y0, 0.22, 1, Math.ceil((y1 - y0) / 1.2), 1), sx * 17.0, (y0 + y1) / 2, z), black);
+      for (const z of [-2.6, -17.4]) add(at(new BoxGeometry(0.5, 0.65, 3.0), sx * 17.25, 19.2, z), trim);
     }
-    add(at(new CylinderGeometry(1.0, 1.0, 0.3, 14), -17.1, 20.0, -33, 0, 0, Math.PI / 2), chrome); // fuel cap
-    edge([16.6, 23.0, 12.0], [18.3, 25.2, 11.6], 0.28, trim);
-    add(at(new CylinderGeometry(1.55, 1.55, 0.8, 18), 18.5, 25.7, 11.5, Math.PI / 2), trim);
+    add(at(new CylinderGeometry(1.0, 1.0, 0.3, 14), -17.1, 18.0, -33, 0, 0, Math.PI / 2), chrome); // fuel cap
+    edge([16.6, 19.9, 13.0], [18.3, 22.1, 12.6], 0.28, trim);
+    add(at(new CylinderGeometry(1.55, 1.55, 0.8, 18), 18.5, 22.6, 12.5, Math.PI / 2), trim);
     // r139e: the Poliția livery and roof bar (the navy panels are in the paint's shader, above)
     let beacon = null;
     if (pol) {
       // POLIȚIA across the front doors, reading front to back on both flanks, on the subdivided skin
-      for (const sx of [-1, 1]) { const q = uvFit(new PlaneGeometry(20, 3.75, 12, 3), A.uv("word")); q.rotateY(sx * Math.PI / 2); q.translate(sx * 17.1, 14.6, 3.0); put(A.mat, q); }
+      for (const sx of [-1, 1]) { const q = uvFit(new PlaneGeometry(20, 3.75, 12, 3), A.uv("word")); q.rotateY(sx * Math.PI / 2); q.translate(sx * 17.1, 12.4, 3.0); put(A.mat, q); } // r144: under the lowered crease
       // on the bonnet: the lettering readable from the front, the crest by the scuttle, laid on the bonnet's curve
       // (the profile's quadratic from the nose to the scuttle, plus the 1.4 bevel)
-      const bonY = (z) => { let lo = 0, hi = 1; for (let i = 0; i < 24; i++) { const t = (lo + hi) / 2, zt = (1 - t) ** 2 * 36.8 + 2 * (1 - t) * t * 25 + t * t * 14.6; if (zt > z) lo = t; else hi = t; } const t = (lo + hi) / 2; return (1 - t) ** 2 * 18.15 + 2 * (1 - t) * t * 21.2 + t * t * 22.0 + 1.48; };
+      // r144: the reshaped bonnet's curve
+      const bonY = (z) => { let lo = 0, hi = 1; for (let i = 0; i < 24; i++) { const t = (lo + hi) / 2, zt = (1 - t) ** 2 * 37.8 + 2 * (1 - t) * t * 26 + t * t * 15.0; if (zt > z) lo = t; else hi = t; } const t = (lo + hi) / 2; return (1 - t) ** 2 * 15.05 + 2 * (1 - t) * t * 17.9 + t * t * 19.0 + 1.48; };
       const onBonnet = (k, w, h, zc) => { const q = uvFit(new PlaneGeometry(w, h, 10, 4), A.uv(k)); q.rotateX(-Math.PI / 2); q.translate(0, 0, zc); const p = q.attributes.position; for (let i = 0; i < p.count; i++) p.setY(i, bonY(p.getZ(i))); q.computeVertexNormals(); put(A.mat, q); };
       onBonnet("word", 25, 4.7, 28.4); onBonnet("crest", 3.6, 3.9, 20.6);
       // the roof bar: a light grey rack on two feet, a blue lamp box at each end, the siren horn in the middle
@@ -37911,7 +37935,7 @@ void main() {
       }
       function frame(now) {
         if (ONB_MODE && onbPaused) { prevT = now; requestAnimationFrame(frame); return; } // r140: no zone of /onboarding/ on screen
-        if (ONB_MODE && onbHalf && (onbSkip = !onbSkip)) { requestAnimationFrame(frame); return; } // r140: a slow phone: every other frame (the page's own scroll keeps the rest)
+        if ((ONB_MODE || intro4Wall) && onbHalf && (onbSkip = !onbSkip)) { requestAnimationFrame(frame); return; } // r140: a slow phone: every other frame (the page's own scroll keeps the rest)
         if (cityCovered()) { prevT = now; requestAnimationFrame(frame); return; } // r139b
         if (introFreeze(now)) { prevT = now; requestAnimationFrame(frame); return; } // r139g
         adaptResolution(now - prevT, now);
@@ -38343,7 +38367,7 @@ void main() {
         }
         // dev hook: window.__cam([x,y,z],[tx,ty,tz]) parks the camera for inspection
         if (window.__camO) { camPos.fromArray(window.__camO[0]); camTarget.fromArray(window.__camO[1]); }
-        else if (mapMode && mapUI) { mapUI.update(dt, now); camPos.copy(mapView.pos); camTarget.copy(mapView.tgt); }
+        else if (mapMode && mapUI) { mapSettleTick(); mapUI.update(dt, now); camPos.copy(mapView.pos); camTarget.copy(mapView.tgt); } // r142b: mapSettleTick
         // exponential damping, frame-rate independent; the look target is damped too, so
         // set-piece cameras (fork, coffee, Dacia, spiral) blend in instead of cutting
         // r118: the camera lives in the bent world
@@ -38734,7 +38758,49 @@ void main() {
       var BOOT_BOARD = /[?&]boarding\b/.test(location.search); // r139p: arriving for the boarding pass: no welcome card over it
       // r142: the new opening (sketch 04 of /onboarding/intro-lab/, the same engine, hosted in the page) plays where the
       // kinetic intro did: on "/" once per visit, or with ?intro; ?intro=classic keeps the old one
-      var INTRO4 = false, intro4 = null, intro4SnapCb = null, intro4Drop = null, intro4Fin = null;
+      var INTRO4 = false, intro4 = null, intro4SnapCb = null, intro4Drop = null, intro4Fin = null, intro4Wall = false;
+      // r142b (Daniel): the first frame of the map, wherever it first appears (the opening's end, the cups-only bridge):
+      // the car high in the frame with Two Minutes in it too, a little closer than before; on a phone the car sits
+      // lower, clear of the welcome sheet. The camera looks north (yaw 0.3, the map's own look), so the car (north of
+      // Two Minutes) is up the screen and the shop down it; the target sits between them, nearer the shop
+      var mapSettle = 0; // r142b: frames left in which the view is nudged so the car lands where mapOpeningView wants it (the real lens)
+      function mapSettleTick() {
+        if (mapSettle <= 0) return;
+        if (!mapMode || mapNav.moving || mapNav.place || jetFx.phase !== "idle" || mapView.follow) { mapSettle = 0; return; }
+        mapSettle--;
+        const phone = innerWidth < 720, want = phone ? [0.62, 0.68] : [0.78, 0.22];
+        const yaw = mapView.yaw, r = new Vector3(Math.cos(yaw), 0, -Math.sin(yaw)), f = new Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+        const P = (p) => { const v = warpV(p.clone()).project(camera); return [v.x * 0.5 + 0.5, -v.y * 0.5 + 0.5]; };
+        const car = new Vector3(carPos.x, 0, carPos.z), c = P(car), pr = P(car.clone().addScaledVector(r, 100)), pf = P(car.clone().addScaledVector(f, 100));
+        const dxr = pr[0] - c[0] || 1e-4, dyf = pf[1] - c[1] || -1e-4;
+        const ex = want[0] - c[0], ey = want[1] - c[1];
+        if (Math.abs(ex) < 0.004 && Math.abs(ey) < 0.004) { mapSettle = 0; return; }
+        const ar = -ex / dxr * 100 * 0.45, af = -ey / dyf * 100 * 0.45; // part of the way each frame: a glide, no overshoot
+        mapView.tgt.x += ar * r.x + af * f.x; mapView.tgt.z += ar * r.z + af * f.z;
+      }
+      function mapOpeningView() {
+        const phone = innerWidth < 720, car = new Vector3(carPos.x, 0, carPos.z);
+        const yaw = 0.3, pitch = 0.62, dist = phone ? 3600 : 3300; // a lower, longer look: the car high in it, Two Minutes in it too
+        const want = phone ? [0.62, 0.68] : [0.78, 0.22]; // where the car lands on the screen (fractions of width, height)
+        // a scratch camera placed the way the map places its own, so the target can be solved from the car's projection
+        // (placed the way the map places its own: mapView.pos, the camera and its look in the bent world, the lens as it is)
+        const cam = new PerspectiveCamera(camera.fov, innerWidth / innerHeight, camera.near, camera.far);
+        const place = (t) => {
+          const cp = Math.cos(pitch);
+          cam.position.set(t.x + Math.sin(yaw) * cp * dist, Math.sin(pitch) * dist, t.z + Math.cos(yaw) * cp * dist);
+          warpV(cam.position); cam.lookAt(warpV(t.clone())); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+        };
+        const proj = (p) => { const v = (typeof warpV === "function" ? warpV(p.clone()) : p.clone()).project(cam); return [v.x * 0.5 + 0.5, -v.y * 0.5 + 0.5]; };
+        const r = new Vector3(Math.cos(yaw), 0, -Math.sin(yaw)), f = new Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+        const t = car.clone();
+        for (let i = 0; i < 3; i++) {
+          place(t);
+          const c = proj(car), pr = proj(car.clone().addScaledVector(r, 100)), pf = proj(car.clone().addScaledVector(f, 100));
+          const dxr = pr[0] - c[0] || 1e-4, dyf = pf[1] - c[1] || -1e-4; // per 100 units to the right / ahead
+          t.addScaledVector(r, -(want[0] - c[0]) / dxr * 100).addScaledVector(f, -(want[1] - c[1]) / dyf * 100);
+        }
+        return { t: [t.x, t.z], dist, yaw, pitch };
+      }
       try { if (BOOT_MODE === "intro") { const t0 = +localStorage.getItem("cz-intro-at") || 0; if (Date.now() - t0 < 6 * 3600e3 && !/[?&]intro\b/.test(location.search)) BOOT_MODE = "map"; else localStorage.setItem("cz-intro-at", String(Date.now())); } } catch {}
       INTRO4 = BOOT_MODE === "intro" && !/[?&]intro=classic\b/.test(location.search) && typeof window.cromaticIntro4 === "function"; // r142
       // r140: ?onb = the city inside /onboarding/ (a same-origin frame behind the page, driven by it: see onbCmd)
@@ -40165,10 +40231,10 @@ void main() {
         document.body.classList.remove("kz-boot");
         if (!mapIntro) return;
         mapIntro = false;
-        if (!INTRO4) setTimeout(() => { mapView.distGoal = innerWidth < 720 ? 6600 : 5400; }, 250); // r142: the opening leaves the camera where it ends, on the car
+        mapSettle = 90; // r142b: the camera stays where the map first shows (no pull-out), nudged so the car lands where it should
         document.body.classList.remove("kz-intro");
         mapUI?.skip.classList.add("hidden");
-        setTimeout(() => { if (mapMode && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI?.welcome(true); }, 1400);
+        setTimeout(() => { if (mapMode && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI?.welcome(true); }, 1000); // r142b: a second after the reveal
       }
       // r139i: the first time you go from the map to the drive, a guide in the map guide's style says how to move on:
       // scroll down (wheel) or swipe up (finger) to drive forward, the other way to go back. Once per visitor, gone on
@@ -40227,7 +40293,7 @@ void main() {
             mapView.tgt.set(carPos.x, 0, carPos.z); mapView.follow = true; mapView.dist = 1300; mapView.distRate = 0.9;
             if (!intro) setTimeout(() => { mapView.distGoal = innerWidth < 720 ? 6600 : 5400; }, 700);
           }
-          else { mapView.tgt.set(carPos.x, 0, carPos.z); mapView.follow = true; mapView.dist = innerWidth < 720 ? 7800 : 6400; }
+          else { const v = mapOpeningView(); mapView.tgt.set(v.t[0], 0, v.t[1]); mapView.follow = false; mapView.dist = v.dist; mapView.yaw = v.yaw; mapView.pitch = v.pitch; } // r142b: the first frame, as the opening leaves it
           mapView.distGoal = null;
           sun.shadow.camera.left = sun.shadow.camera.bottom = -3000; sun.shadow.camera.right = sun.shadow.camera.top = 3000; sun.shadow.camera.updateProjectionMatrix();
           scrollSpace.style.display = "none";
@@ -40235,7 +40301,7 @@ void main() {
           rebuildGolden();
           mapUI.mark();
           if (intro) { mapIntro = true; document.body.classList.add("kz-intro"); mapUI.skip.classList.remove("hidden"); }
-          else { const wt0 = performance.now(); const wl = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - wt0 < 20000) return setTimeout(wl, 250); if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI.welcome(true); }; setTimeout(wl, 1600); } // r139r: after the cups' reveal
+          else { const wt0 = performance.now(); const wl = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - wt0 < 20000) return setTimeout(wl, 250); mapSettle = 90; if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI.welcome(true); }; setTimeout(wl, 1000); } // r139r: after the cups' reveal (r142b: a second, and the view settles on the car)
           try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map") + location.hash); } catch {} // r139p: a plain "/" stays plain
         } else {
           mapEndIntro();
@@ -40660,11 +40726,26 @@ void main() {
           },
           snap: () => new Promise((res) => { intro4SnapCb = () => res(onbSnapCv); onbSnapReq = true; setTimeout(() => { if (intro4SnapCb) { intro4SnapCb = null; res(null); } }, 400); }),
           warm: () => new Promise((res) => onbWarmAll(true, res, true)),
-          cups: ({ onDrop } = {}) => new Promise((res) => { intro4Drop = onDrop; intro4Fin = res; if (kinetic?.bridge) kinetic.bridge(); else res(); setTimeout(res, 8000); }),
+          // under the wall of cups the city draws every other frame and at fewer pixels: nobody sees it there
+          cups: ({ onDrop } = {}) => new Promise((res) => {
+            intro4Drop = onDrop;
+            let dprWas = null;
+            const wall = (on) => { intro4Wall = on; onbHalf = on; try { if (on) { dprWas = perf.dpr; const cap = Math.max(0.75, Math.min(perf.dpr, Math.sqrt(1.0e6 / (innerWidth * innerHeight)))); if (cap < perf.dpr) { perf.dpr = cap; renderer.setPixelRatio(cap); renderer.setSize(innerWidth, innerHeight); } } else if (dprWas != null && dprWas > perf.dpr) { perf.dpr = dprWas; renderer.setPixelRatio(dprWas); renderer.setSize(innerWidth, innerHeight); perf.t = performance.now() + 4000; } } catch (e) {} };
+            const done = () => { wall(false); res(); };
+            intro4Fin = done;
+            wall(true);
+            if (kinetic?.bridge) kinetic.bridge(); else done();
+            setTimeout(done, 8000);
+          }),
+          // the map's interface laid out once under the opaque ground (one frame, unseen): its reveal behind the wall
+          // then costs a fraction (fonts and pictures already decoded, layers already made)
+          prebuild: () => { try { document.body.classList.remove("kz-intro"); void document.body.offsetHeight; requestAnimationFrame(() => { if (intro4 && !intro4.done) document.body.classList.add("kz-intro"); }); } catch (e) {} },
+          endView: () => mapOpeningView(),
           // the city shows under the words at no more than ~1.6 M pixels (it moves, nobody counts them); the adaptive
           // resolution climbs back on its own once the opening is over and the frames prove easy
           reveal: () => { document.body.classList.remove("kz-boot"); try { const cap = Math.min(perf.dpr, Math.max(1, Math.sqrt(1.6e6 / (innerWidth * innerHeight)))); if (cap < perf.dpr) { perf.dpr = cap; renderer.setPixelRatio(cap); renderer.setSize(innerWidth, innerHeight); perf.t = performance.now() + 20000; } } catch (e) {} },
           ui: (on) => { if (on) { document.body.classList.remove("kz-intro"); mapUI?.skip.classList.add("hidden"); } },
+          skipView: () => { const v = mapOpeningView(); mapView.tgt.set(v.t[0], 0, v.t[1]); mapView.dist = v.dist; mapView.yaw = v.yaw; mapView.pitch = v.pitch; mapView.distGoal = null; },
           end: () => { mapEndIntro(); setTimeout(() => stage.remove(), 1200); },
           skipEnd: () => { document.body.classList.remove("kz-boot"); mapEndIntro(); setTimeout(() => stage.remove(), 1200); },
         };
@@ -40676,6 +40757,7 @@ void main() {
         window.__onb = onbCmd;
         window.__onbWarmLeft = () => (onbWarm ? onbWarm.todo.length + 1 : 0); // r141: tests
         window.__onbSnapCanvas = () => onbSnapCv; // r141c
+        window.__onbOpeningView = () => mapOpeningView(); // r142b: the lab ends on the same first frame
         window.__onbState = () => ({ speed: state.speed, f: window.__spd ? window.__spd.f : 0, L: state.L, map: mapMode, scheme: SCHEMES[state.schemeIdx].id, veh: state.vehicleId, branch: state.branch });
         window.addEventListener("message", (e) => { if (e.origin === location.origin && e.data && e.data.cz === "onb") onbCmd(e.data); });
       }
@@ -40697,7 +40779,8 @@ void main() {
         cupsFlying: flights.filter((f) => f.kind === "cup").length,
         pnext: Math.round(police.next - performance.now()),
         car: veh.group.position.toArray().map((v) => Math.round(v)),
-        vehVis: veh.group.visible, vehScale: +veh.group.scale.x.toFixed(2), vehScreen: (() => { const v = veh.group.position.clone().project(camera); return [Math.round((v.x * 0.5 + 0.5) * innerWidth), Math.round((-v.y * 0.5 + 0.5) * innerHeight), +v.z.toFixed(3)]; })(), // r142: tests
+        vehVis: veh.group.visible, vehScale: +veh.group.scale.x.toFixed(2), tmScreen: (() => { const v = warpV(new Vector3(700, 0, 4250)).project(camera); return [Math.round((v.x * 0.5 + 0.5) * innerWidth), Math.round((-v.y * 0.5 + 0.5) * innerHeight)]; })(),
+        vehScreen: (() => { const v = warpV(veh.group.position.clone()).project(camera); return [Math.round((v.x * 0.5 + 0.5) * innerWidth), Math.round((-v.y * 0.5 + 0.5) * innerHeight), +v.z.toFixed(3)]; })(), // r142: tests
         rotY: +veh.group.rotation.y.toFixed(3),
         rotZ: +veh.group.rotation.z.toFixed(3),
         air: +air.toFixed(2),

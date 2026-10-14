@@ -105,6 +105,7 @@
       stage: $(".i4-stage"),
       isPhone: phone, reduced: RM, warmBlocking: true,
       carPos: () => { try { const d = win().__dbg?.(); return d && d.car ? [d.car[0], d.car[2]] : null; } catch (e) { return null; } },
+      endView: () => { try { return win().__onbOpeningView?.() || null; } catch (e) { return null; } },
       send,
       snap: () => new Promise((res) => { snapCb = () => { let c = null; try { c = win().__onbSnapCanvas?.(); } catch (e) {} res(c); }; send({ op: "snap" }); setTimeout(() => { if (snapCb) { snapCb = null; res(null); } }, 400); }),
       warm: () => cityWarm(tok),

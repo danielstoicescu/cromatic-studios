@@ -26,12 +26,12 @@
   const START = { t: [1000, 4800], dist: 3400, yaw: 0.2, pitch: 0.98 };
   // the camera's road; its end is the car (wherever it stands), framed on the right of the screen at the angle of
   // the coffee moment, so the map is left where the welcome card finds it
-  const road_ = (car, phone) => {
+  const road_ = (car, phone, view) => {
     const yaw = 1.02, dist = 2600, pitch = 0.8;
-    // to the right of the middle: along the camera's right vector (cos yaw, -sin yaw); on a phone a little, and lower
-    // down the screen (the welcome sheet takes the top): the target moves ahead of the car, along the view (-sin, -cos)
+    // the host's own opening view when it has one (the map's first frame: the car high, Two Minutes in it); else the
+    // car to the right of the middle, lower on a phone
     const off = dist * (phone ? 0.02 : 0.1), fwd = phone ? dist * 0.065 : 0;
-    const end = car ? { t: [car[0] - Math.cos(yaw) * off - Math.sin(yaw) * fwd, car[1] + Math.sin(yaw) * off - Math.cos(yaw) * fwd], dist, yaw, pitch } : { t: [1300, 5100], dist: 5400, yaw: 1.18, pitch: 0.98 };
+    const end = view || (car ? { t: [car[0] - Math.cos(yaw) * off - Math.sin(yaw) * fwd, car[1] + Math.sin(yaw) * off - Math.cos(yaw) * fwd], dist, yaw, pitch } : { t: [1300, 5100], dist: 5400, yaw: 1.18, pitch: 0.98 });
     return [
       [0, START], [5800, START],
       [8200, { t: [880, 4420], dist: 2350, yaw: 0.48, pitch: 0.8 }],
@@ -139,8 +139,9 @@
       root.classList.remove("warming");
       cur.t0 = performance.now(); cur.running = true; root.classList.add("running");
       opts.onStart?.();
-      let car = null; try { car = host.carPos?.() || null; } catch (e) {}
-      const road = path(road_(car, phone()));
+      let car = null, view = null; try { car = host.carPos?.() || null; view = host.endView?.() || null; } catch (e) {}
+      const road = path(road_(car, phone(), view));
+      host.prebuild?.();
       cur.camOn = true; cur.camOff = 0; cur.camHold = 0; let camLast = performance.now();
       (function drive(now) { if (tok !== cur.token || !cur.camOn) return; if (now < cur.camHold) cur.camOff += now - camLast; camLast = now; camAt(road(now - cur.t0 - cur.camOff)); requestAnimationFrame(drive); })(performance.now());
       // 1 · nobody remembers a thumbnail: the word sits on a sheet of thumbnails, and the sheet falls apart
@@ -236,6 +237,7 @@
       veilTo(0, 500); ghost.style.transition = "none"; ghost.style.opacity = "0";
       cur.done = true; root.classList.add("done");
       opts.onEnd?.();
+      try { host.skipView?.(); } catch (e) {}
       host.skipEnd?.(wasRunning);
     };
     root.addEventListener("click", () => { if (!cur.done) next(); });
