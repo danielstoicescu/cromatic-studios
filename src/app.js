@@ -30988,7 +30988,7 @@ void main() {
     // r118: the city fabric goes last, so it knows every landmark it has to leave room for.
     // r125: and it is built a moment later, once the intro is already playing (see boot)
     let fabricDone = false;
-    world.userData.buildFabric = () => { if (fabricDone) return; fabricDone = true; buildRoads(world); buildBuildings(world); buildTrees(world); buildContactShadows(world); };
+    world.userData.buildFabric = () => { if (fabricDone) return; fabricDone = true; world.userData.fabricDone = true; buildRoads(world); buildBuildings(world); buildTrees(world); buildContactShadows(world); };
     const ramp = buildRamp(world, accent);
     const clouds = buildClouds(world);
     scene.add(world);
@@ -40754,10 +40754,11 @@ void main() {
           carPos: () => [carPos.x, carPos.z], // the opening ends on the map where the car stands
           send(o) {
             if (o.op === "cam") { mapIdleAt = performance.now(); mapNav.moving = false; mapView.follow = false; mapView.focus = null; mapView.yawGoal = mapView.pitchGoal = mapView.distGoal = null; if (Array.isArray(o.t)) mapView.tgt.set(+o.t[0] || 0, 0, +o.t[1] || 0); for (const k of ["dist", "yaw", "pitch"]) if (typeof o[k] === "number") mapView[k] = o[k]; }
-            else if (o.op === "scheme") { const i = SCHEMES.findIndex((x) => x.id === o.id); if (onbWarm && i >= 0) onbWarm.cur = i; if (i >= 0 && i !== state.schemeIdx) applyScheme(i); }
+            else if (o.op === "scheme") { const i = SCHEMES.findIndex((x) => x.id === o.id); if (onbWarm && i >= 0) onbWarm.cur = i; if (i >= 0 && i !== state.schemeIdx) { if (worldRefs.world.userData.fabricDone) applyScheme(i); else state.schemeIdx = i; } } // r153: before the city is built, just the choice (fabricReady applies it)
           },
           snap: () => new Promise((res) => { intro4SnapCb = () => res(onbSnapCv); onbSnapReq = true; setTimeout(() => { if (intro4SnapCb) { intro4SnapCb = null; res(null); } }, 400); }),
-          warm: () => new Promise((res) => onbWarmAll(true, res, true)),
+          ready: introReady, // r153: the city built, linked and drawn (kzWarmStart): the engine holds its dissolve on it
+          warm: () => introReady.then(() => new Promise((res) => onbWarmAll(true, res, true))), // r153: the worlds warm once the city is ready, not under its build
           // under the wall of cups the city draws every other frame and at fewer pixels: nobody sees it there
           cups: ({ onDrop } = {}) => new Promise((res) => {
             intro4Drop = onDrop;
@@ -40779,7 +40780,7 @@ void main() {
           ui: (on) => { if (on) { document.body.classList.remove("kz-intro"); mapUI?.skip.classList.add("hidden"); } },
           skipView: () => { const v = mapOpeningView(); mapView.tgt.set(v.t[0], 0, v.t[1]); mapView.dist = v.dist; mapView.yaw = v.yaw; mapView.pitch = v.pitch; mapView.distGoal = null; },
           end: () => { mapEndIntro(); setTimeout(() => stage.remove(), 1200); },
-          skipEnd: () => { document.body.classList.remove("kz-boot"); mapEndIntro(); setTimeout(() => stage.remove(), 1200); },
+          skipEnd: () => { introReady.then(() => { document.body.classList.remove("kz-boot"); mapEndIntro(); setTimeout(() => stage.remove(), 1200); }); }, // r153: a skip before the city is ready waits for it
         };
         intro4 = window.cromaticIntro4(host, {});
         if (mapUI?.skip) mapUI.skip.onclick = () => intro4.skip();
@@ -40832,6 +40833,10 @@ void main() {
         ? { drop: true, lite: innerWidth < 760, settle: 700, obstacles: () => (intro4 ? intro4.obstacles() : []), onDrop: () => { try { intro4Drop?.(); } catch (e) {} } } // r142: the opening drives the camera; the standing cup is an obstacle
         : { drop: true, lite: innerWidth < 760, onDrop: () => { if (mapIntro && BOOT_MODE !== "map") mapView.distGoal = innerWidth < 720 ? 6600 : 5400; } }; // r147: the cups-only bridge (?map) keeps the first frame: no pull-out
       const kzEnd = () => { if (INTRO4 && intro4Fin) { const f = intro4Fin; intro4Fin = null; f(); } else mapEndIntro(); }; // r142
+      // r153: the opening no longer waits for the city: it starts the moment the bundle runs (its first beats are words
+      // on a plain ground) and the city builds, links and draws its first frames under them; this is the moment it is
+      // ready (the same gate that used to hold the whole opening back), which the engine awaits before the dissolve
+      let introReadyRes = null; const introReady = new Promise((r) => (introReadyRes = r));
       if (kzLoader) {
         window.__cupsHold = true;
         state.started = true;
@@ -40852,6 +40857,8 @@ void main() {
           brewEl.innerHTML = `<div class="kb-cup kb-3d"><i class="kb-sprite kb-cs"></i></div><span class="kb-t">Brewing the city</span>`;
           document.body.appendChild(brewEl);
         }
+        // r153: the opening starts now (not after the city's warm-up): the page's own first line is already up
+        if (INTRO4 && !matchMedia("(prefers-reduced-motion: reduce)").matches) { try { intro4Start(); } catch (e) { console.error(e); } if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; } }
       }
       const brewT0 = performance.now();
       let kineticStarted = false;
@@ -40865,7 +40872,7 @@ void main() {
         if (BOOT_MODE === "map" && kinetic?.bridge && !matchMedia("(prefers-reduced-motion: reduce)").matches) { mapUI?.skip.classList.add("hidden"); kinetic.bridge(); if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; } return; }
         if (BOOT_MODE === "map") { mapEndIntro(); if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; } return; }
         if (!kinetic) kinetic = createKinetic(kzEnd, null, kzOpts);
-        if (INTRO4) { intro4Start(); if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; } return; } // r142
+        if (INTRO4) { (window.__bootT ||= {}).ready = Math.round(performance.now()); if (intro4) introReadyRes?.(); else intro4Start(); if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; } return; } // r142 (r153: already running: the city is ready now)
         kinetic.resume();
         if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; }
       };
@@ -40874,8 +40881,9 @@ void main() {
       // the render-target variants are compiled (warmShaders), the cups' own stage is warm; and only when the tab is
       // visible: a page opened in the background starts from the beginning when it is looked at
       const kzWarmStart = () => {
-        const framesDrawn = new Promise((res) => { kzWarm.resolve = res; if (kzWarm.frames >= kzWarm.need) res(); });
-        const rtWarm = new Promise((res) => { const iv = setInterval(() => { if (!warmQueued) { clearInterval(iv); res(); } }, 40); });
+        const BT = (window.__bootT ||= {}), mk = (k) => () => { BT[k] = Math.round(performance.now()); }; BT.warmStart = Math.round(performance.now()); // r153: tests
+        const framesDrawn = new Promise((res) => { kzWarm.resolve = res; if (kzWarm.frames >= kzWarm.need) res(); }).then(mk("frames"));
+        const rtWarm = new Promise((res) => { const iv = setInterval(() => { if (!warmQueued) { clearInterval(iv); res(); } }, 40); }).then(mk("rt"));
         // the programs link in parallel on the GPU process: wait until they really are linked (for the screen and for
         // the map's render target), or the first draw of each blocks on the link, after the reveal
         const linked = (async () => {
@@ -40886,8 +40894,9 @@ void main() {
         })();
         // the cups' own stage warms alongside (its porcelain programs link on the GPU process too: a link still running
         // under the words stalls the compositor for as long as it takes)
-        const cupsWarm = (async () => { try { await kinetic?.warm?.(); } catch (e) {} })();
-        const timeout = new Promise((res) => setTimeout(res, 5000));
+        const cupsWarm = (async () => { try { await kinetic?.warm?.(); } catch (e) {} })().then(mk("cups"));
+        linked.then(mk("linked"));
+        const timeout = new Promise((res) => setTimeout(res, 5000)).then(mk("timeout"));
         Promise.race([Promise.all([framesDrawn, rtWarm, linked, cupsWarm]), timeout]).then(() => {
           const go = () => { if (document.hidden) { document.addEventListener("visibilitychange", go, { once: true }); return; } startKinetic(); };
           setTimeout(go, 0);
@@ -40897,7 +40906,7 @@ void main() {
       // ground meanwhile), so the first frame is the type, not a blank screen
       if (kzLoader) document.body.classList.add("kz-boot");
       const fabricReady = new Promise((res) => {
-        const go = () => { worldRefs.world.userData.buildFabric(); applyScheme(state.schemeIdx); res(); };
+        const go = () => { worldRefs.world.userData.buildFabric(); applyScheme(state.schemeIdx); (window.__bootT ||= {}).fabric = Math.round(performance.now()); res(); };
         if (kzLoader) requestAnimationFrame(() => setTimeout(go, 30)); else { go(); }
       });
       Promise.all([fabricReady, Promise.race([Promise.all([document.fonts?.load?.("500 16px CromaticSans"), document.fonts?.load?.("800 16px CromaticSans")]).then(() => document.fonts?.ready), new Promise((r) => setTimeout(r, 1600))])]).then(() => {

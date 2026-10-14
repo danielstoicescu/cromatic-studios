@@ -36,6 +36,20 @@ const content = readFileSync(src("content.html"), "utf8").replace(/<!--[\s\S]*?-
 const CUP_STRIP = `data:image/png;base64,${readFileSync(src("cup-spin.png")).toString("base64")}`;
 const boot = `<style>.kz-brew .kb-cup .kb-sprite.kb-cs{background-image:url(${CUP_STRIP})}</style><div class="boot kz-brew" aria-hidden="true"><div class="kb-cup kb-3d"><i class="kb-sprite kb-cs"></i></div><span class="kb-t">Brewing the city</span></div>
 <script>(function(){var t0=Date.now(),drive=/[?&]drive\\b/.test(location.search);(function w(){var b=document.querySelector(".boot");if(!b)return;if((drive&&document.querySelector(".loader"))||Date.now()-t0>30000){b.classList.add("gone");setTimeout(function(){b.remove()},450)}else requestAnimationFrame(w)})()})();<\/script>`;
+// r153 (Daniel: "the opening still takes long to start"): the opening's first line is painted from the HTML itself,
+// the moment the page arrives, with its own letter animation on the compositor; the bundle (parsed and run for
+// seconds on a phone) then adopts this very element (engine.js) and carries on from it, the beats in step. An inline
+// check decides, before the first paint, whether the opening will play (the same rule as app.js: "/" once per visit
+// (6 h) or ?intro, never ?map / ?drive / ?intro=classic, never with reduced motion); otherwise the cup stays
+const preLine = (() => {
+  const parts = [["Nobody", 0], ["remembers", 55], null, ["a", 260], ["thumbnail.", 330, "thumb"]];
+  const lead = 380; // the beat on the engine's clock (300 ms) plus a breath after the paint
+  const word = ([w, d, cls]) => `<span class="kw${cls ? " " + cls : ""}" style="--d:${lead + d}ms">${[...w].map((ch, j) => `<i class="l" style="--ld:${j * 16}ms">${ch}</i>`).join("")}</span>`;
+  const kl = parts.map((p) => (p ? word(p) : '<i class="br"></i>')).join("");
+  const css = `.i4-pre{position:fixed;inset:0;z-index:2147483001;display:grid;place-items:center;grid-template-columns:100%;padding:10vh 5vw 14vh;overflow:hidden;text-align:center;background:#fbf3cf;--ink:#0d0c09;--sans:CromaticSans,"Darker Grotesque",system-ui,sans-serif;color:var(--ink);transition:opacity .4s ease}.i4-pre[hidden]{display:none}.i4-pre.gone{opacity:0;pointer-events:none}.i4-pre.adopted{background:transparent}.i4-pre.adopted::before{display:none}.i4-pre::before{content:"";position:absolute;left:-25%;top:-25%;width:150%;height:150%;background:radial-gradient(45% 40% at 50% 46%, #fff9e0 0%, #fbf3cf 48%, #f5e4ad 100%);will-change:transform;animation:i4breathe 18s ease-in-out infinite alternate}@keyframes i4breathe{from{transform:translate(-4%,-3%)}to{transform:translate(4%,3%)}}.i4-pre .kl{position:relative;grid-area:1/1;justify-self:center;align-self:center;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.04em .24em;font:900 clamp(44px,7.8vw,128px)/1.02 var(--sans);letter-spacing:-.045em;max-width:1240px}.i4-pre .kl .br{flex-basis:100%;height:0}.i4-pre .kw{display:inline-block;opacity:1}.i4-pre .kw .l{display:inline-block;font-style:normal;opacity:0;will-change:transform,opacity}.i4-pre .kl.in .kw .l{animation:i4in .95s cubic-bezier(.16,1,.3,1) calc(var(--d,0ms) + var(--ld,0ms)) both}@keyframes i4in{from{opacity:0;transform:translateY(.42em) scale(.96)}to{opacity:1;transform:none}}`;
+  const js = `(function(){try{var q=location.search,rm=matchMedia("(prefers-reduced-motion: reduce)").matches,t=+localStorage.getItem("cz-intro-at")||0;var on=!/[?&](map|drive)\\b/.test(q)&&!/[?&]intro=classic\\b/.test(q)&&!rm&&(/[?&]intro\\b/.test(q)||Date.now()-t>=216e5);if(!on)return;var p=document.querySelector(".i4-pre"),b=document.querySelector(".boot");if(!p)return;p.hidden=false;window.__i4t0=performance.now();if(b)b.classList.add("gone");setTimeout(function(){if(p.isConnected&&!p.classList.contains("adopted")){p.classList.add("gone");setTimeout(function(){p.remove()},500)}},30000)}catch(e){}})();`;
+  return `<style>${css}</style><div class="i4-pre" hidden aria-hidden="true"><div class="kl calm in">${kl}</div></div><script>${js}</script>`;
+})();
 // the text version's portfolio, from site/data.mjs (every case study linked, grouped by street)
 const homeWork = () => {
   const e = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
@@ -178,6 +192,7 @@ const html = `${head.replaceAll("%%SITE_URL%%", SITE_URL).replace(/<link rel="pr
 ${jsonLd(SITE_URL, DATA.PROJECTS, SAME_AS)}
 </head><body><!--email_off-->
 ${boot}
+${preLine}
 ${content.replace("<!--WORK-->", homeWork())}
 <script src="${jsName}"></script>
 <!--/email_off--></body></html>`;
@@ -734,7 +749,7 @@ await optimizeImages(pub, root);
   // the bold weights land before the first paint: no swap, no layout shift
   // r140: and on /onboarding/ (EN and RO), whose fonts come from /fonts.css: its hero title is set in the bold weight
   const onbPage = /\.html$/.test(f) && /[\\/]onboarding[\\/]index\.html$/.test(p2);
-  if (/\.html$/.test(f) && GS.latin && (n2.includes(GS.latin) || onbPage) && !n2.includes(`rel="preload" href="${GS.latin}"`)) n2 = n2.replace(/<head>|<head [^>]*>/, (h) => `${h}\n<link rel="preload" href="${GS.latin}" as="font" type="font/woff2" crossorigin>`);
+  if (/\.html$/.test(f) && GS.latin && (n2.includes(GS.latin) || onbPage || n2.includes('class="i4-pre"')) && !n2.includes(`rel="preload" href="${GS.latin}"`)) n2 = n2.replace(/<head>|<head [^>]*>/, (h) => `${h}\n<link rel="preload" href="${GS.latin}" as="font" type="font/woff2" crossorigin>`);
   // r136 (N30): the regular weights too (Darker Grotesque), and on the hubs, services and team the mono eyebrow above
   // the fold (JetBrains Mono): their late swap moved the intro (CLS 0.11-0.15 on a slow phone)
   if (/\.html$/.test(f) && p2 !== join(pub, "index.html") && DG.latin && /<link rel="preload" href="\/assets\/fonts\/google-sans-latin/.test(n2) && !n2.includes(`rel="preload" href="${DG.latin}"`) && (n2.includes(DG.latin) || n2.includes("/assets/site.") || onbPage)) n2 = n2.replace(/(<link rel="preload" href="\/assets\/fonts\/google-sans-latin[^>]*>)/, `$1\n<link rel="preload" href="${DG.latin}" as="font" type="font/woff2" crossorigin>`);

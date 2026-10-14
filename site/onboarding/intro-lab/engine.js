@@ -53,11 +53,14 @@
     const veil = root.querySelector(".i4-veil"), ghost = root.querySelector(".i4-ghost"), gctx = ghost.getContext("2d"), words = root.querySelector(".i4-words"), over = root.querySelector(".i4-over");
     const cur = { token: 0, t0: 0, lines: new Set(), running: false, camOn: false, camOff: 0, camHold: 0, done: false };
     const abort = () => new Error("abort");
+    let readyDone = !host.ready; if (host.ready) host.ready.then(() => { readyDone = true; }, () => { readyDone = true; }); // r153: the city ready (or no gate)
+    const dropPre = (ms = 0) => { const pre = document.querySelector(".i4-pre"); if (pre) setTimeout(() => pre.remove(), ms); }; // r153: the page's own first line, once adopted and done with
     const wait = (ms, tok) => new Promise((res, rej) => setTimeout(() => (tok === cur.token ? res() : rej(abort())), ms));
     // the run's clock: at(ms) waits for its moment on the clock, and the clock can be pushed forward (a click skips
     // to the next beat), so everything after the push happens at once, in order
     const at = (ms, tok) => new Promise((res, rej) => { const tick = () => { if (tok !== cur.token) return rej(abort()); if (performance.now() - cur.t0 >= ms) res(); else requestAnimationFrame(tick); }; tick(); });
     const elapsed = () => performance.now() - cur.t0;
+    window.__i4dbg = () => ({ el: Math.round(elapsed()), stall: Math.round(cur.stall || 0), t0: Math.round(cur.t0), running: cur.running, lines: cur.lines.size }); // r153: tests
     const late = (ms) => elapsed() > ms + 450; // a moment the clock was pushed past: skip what it would have done
     const send = (o) => { try { host.send(o); } catch (e) {} };
     const veilTo = (o, ms = 900) => { veil.style.setProperty("--vt", ms + "ms"); veil.style.opacity = o; };
@@ -140,13 +143,26 @@
       cur.t0 = performance.now(); cur.running = true; root.classList.add("running");
       opts.onStart?.();
       let car = null, view = null; try { car = host.carPos?.() || null; view = host.endView?.() || null; } catch (e) {}
-      const road = path(road_(car, phone(), view));
+      let road = path(road_(car, phone(), view));
       host.prebuild?.();
       cur.camOn = true; cur.camOff = 0; cur.camHold = 0; let camLast = performance.now();
-      (function drive(now) { if (tok !== cur.token || !cur.camOn) return; if (now < cur.camHold) cur.camOff += now - camLast; camLast = now; camAt(road(now - cur.t0 - cur.camOff)); requestAnimationFrame(drive); })(performance.now());
+      // r153: a stall of the main thread (the city being built under the first beats) does not push the clock: the
+      // beats resume where they were, so nothing is skipped as late
+      cur.stall = 0;
+      (function drive(now) { if (tok !== cur.token || !cur.camOn) return; if (now - camLast > 250) { cur.t0 += now - camLast - 16; cur.stall += now - camLast - 16; } if (now < cur.camHold) cur.camOff += now - camLast; camLast = now; camAt(road(now - cur.t0 - cur.camOff)); requestAnimationFrame(drive); })(performance.now());
       // 1 · nobody remembers a thumbnail: the word sits on a sheet of thumbnails, and the sheet falls apart
-      await at(300, tok);
-      const a = line(["Nobody", "remembers", { br: true }, { w: "a", d: 260 }, { w: "thumbnail.", cls: "thumb", d: 330 }]);
+      // r153: when the page painted this line itself (build.mjs, .i4-pre, before the bundle ran), it is adopted in
+      // place, its letters wherever they got to, and the clock continues from its paint (at most 1.15 s in)
+      const pre = document.querySelector(".i4-pre:not([hidden]):not(.gone)"), preKl = pre && pre.querySelector(".kl");
+      let a;
+      if (preKl) {
+        const since = performance.now() - (window.__i4t0 || performance.now());
+        cur.t0 = performance.now() - Math.min(1150, Math.max(300, since - 80));
+        pre.classList.add("adopted"); a = preKl; cur.lines.add(a);
+      } else {
+        await at(300, tok);
+        a = line(["Nobody", "remembers", { br: true }, { w: "a", d: 260 }, { w: "thumbnail.", cls: "thumb", d: 330 }]);
+      }
       await at(1250, tok);
       const th = a.querySelector(".thumb");
       if (th && th.isConnected && !late(1250)) {
@@ -156,13 +172,17 @@
         grid.style.setProperty("--gw", Math.round(r.width + 120) + "px"); grid.style.setProperty("--gh", Math.round(r.height * 3) + "px");
       }
       await at(1750, tok); over.querySelector(".tgrid")?.classList.add("apart"); forget(th, 0.3, 500, 150); forget(a.querySelectorAll(".kw")[1], 0.25, 500, 400);
-      await at(2750, tok); gone(a); fast(over.querySelector(".tgrid"));
+      await at(2750, tok); gone(a); fast(over.querySelector(".tgrid")); if (pre) setTimeout(() => pre.remove(), 700);
       // 2 · but someone could remember a house → facade → brand
       await at(3350, tok);
       const b = line(["But", "someone", "could", { br: true }, { w: "remember", d: 300 }, { w: "a", d: 360 }, { brm: true }, { w: "place.", pill: "g", d: 440 }]);
       await at(4350, tok);
       if (!late(4350)) await morph(b.querySelector(".pill"), [["facade.", "#119BFE"], ["brand.", "#FED012"]], 640, tok);
       await at(6100, tok); gone(b);
+      // r153: the city is wanted from here on: if it is not ready yet (built, its programs linked, its first frames
+      // drawn), the clock holds on the empty ground until it is; and the road's end is solved now, on the real car
+      if (host.ready) { const w0 = performance.now(); try { await host.ready; } catch (e) {} if (tok !== cur.token) throw abort(); const dw = performance.now() - w0; if (dw > 16) cur.t0 += dw; }
+      try { car = host.carPos?.() || car; view = host.endView?.() || view; road = path(road_(car, phone(), view)); } catch (e) {}
       // 3 · the ground dissolves to the city; nine worlds, one will feel like yours (the sky dissolves from one world
       // to the next behind the words, the worlds' own chips along the bottom, the one on screen lit)
       await at(6300, tok); host.reveal?.(); veilTo(0, 1300);
@@ -223,7 +243,7 @@
       const e = elapsed();
       const n = BEATS.find((t) => t > e + 80);
       if (n == null) { skip(); return; }
-      cur.lines.forEach((el) => fast(el)); cur.lines.clear();
+      cur.lines.forEach((el) => fast(el)); cur.lines.clear(); dropPre(260);
       over.querySelectorAll(".tgrid, .wchips, .xpbar, .cupbig").forEach((x) => fast(x));
       cur.t0 -= (Math.max(e, n - 200) - e);
     };
@@ -232,12 +252,15 @@
       if (cur.done) return;
       const wasRunning = cur.running;
       cur.token++; cur.running = false; cur.camOn = false;
-      cur.lines.forEach((el) => fast(el)); cur.lines.clear();
+      cur.lines.forEach((el) => fast(el)); cur.lines.clear(); dropPre(260);
       over.innerHTML = ""; root.classList.remove("warming", "running", "ending");
-      veilTo(0, 500); ghost.style.transition = "none"; ghost.style.opacity = "0";
+      ghost.style.transition = "none"; ghost.style.opacity = "0";
       cur.done = true; root.classList.add("done");
       opts.onEnd?.();
       try { host.skipView?.(); } catch (e) {}
+      // r153: skipped before the city is ready: the ground stays up until it is, then lifts (the host ends the intro then too)
+      const lift = () => veilTo(0, 500);
+      if (readyDone) lift(); else host.ready.then(lift, lift);
       host.skipEnd?.(wasRunning);
     };
     root.addEventListener("click", () => { if (!cur.done) next(); });
