@@ -27,53 +27,7 @@
     rv.forEach((el, i) => { el.classList.add("rv"); el.style.transitionDelay = `${(i % 3) * 70}ms`; io2.observe(el); });
   } else vids.forEach((v) => { v.src = v.dataset.src; });
 
-  // the hero: the drive's kinetic intro plays inside the first fold, in its own card (not over
-  // the page); when the cups lift off, the hero's own content takes the card. Skip / replay.
-  const kjs = d.body.dataset.kzJs, hk = d.querySelector(".hero-kz");
-  if (kjs && hk) {
-    const stageBox = hk.querySelector(".hk-stage");
-    let k = null, over = false;
-    const done = () => { over = true; root.classList.remove("kz-play"); hk.classList.add("kz-done"); };
-    const start = () => {
-      if (!k) return done();
-      over = false; hk.classList.remove("kz-done"); root.classList.add("kz-play");
-      k.resume();
-    };
-    hk.querySelector(".hk-skip").addEventListener("click", () => { if (k && !over && !k.busy) k.finish(); else done(); });
-    hk.querySelector(".hk-replay").addEventListener("click", start);
-    const boot = () => {
-      const link = d.createElement("link"); link.rel = "stylesheet"; link.href = d.body.dataset.kzCss; d.head.appendChild(link);
-      const sc = d.createElement("script"); sc.src = kjs; sc.async = true;
-      sc.onerror = done;
-      sc.onload = () => {
-        clearTimeout(window.__kzT);
-        if (!window.cromaticKinetic) return done();
-        k = window.cromaticKinetic(done, async () => {});
-        // createKinetic puts its stage on <body>; it lives in the hero card instead
-        const st = d.body.querySelector(":scope > .kz");
-        if (st) stageBox.appendChild(st);
-        const go = () => k.resume();
-        link.sheet ? go() : link.addEventListener("load", go, { once: true });
-      };
-      d.body.appendChild(sc);
-    };
-    if (root.classList.contains("kz-play")) boot();
-    else if (root.classList.contains("kz-late")) {
-      // r134h, phones: the words come first (fast first screen, nothing blocking); the cups play once the page has
-      // loaded and gone quiet, if the visitor is still at the top. The card keeps its height, so nothing below moves.
-      hk.classList.add("kz-done");
-      const card = hk.querySelector(".hk-card") || hk;
-      const later = () => {
-        if (scrollY > 60 || d.visibilityState !== "visible") return;
-        card.style.height = card.offsetHeight + "px";
-        hk.classList.remove("kz-done"); root.classList.add("kz-play");
-        window.__kzT = setTimeout(() => { if (!k) done(); }, 8000);
-        boot();
-      };
-      const idle = () => (window.requestIdleCallback ? requestIdleCallback(later, { timeout: 2500 }) : setTimeout(later, 1200));
-      d.readyState === "complete" ? setTimeout(idle, 600) : addEventListener("load", () => setTimeout(idle, 600), { once: true });
-    } else hk.classList.add("kz-done");
-  }
+  // r143: the kinetic cups no longer play in the first fold of /site/ (it is the city and the opening's words now)
 
   // brand canvas: on desktop the page scrolls down while the board slides left; on phones the
   // board is dragged sideways. Elements appear as they enter the screen.
@@ -233,7 +187,7 @@
     });
   }
   // a thin reading progress bar
-  if (d.querySelector(".hero-kz")) {
+  if (d.querySelector(".hero-city")) { // r143
     const bar = d.createElement("div"); bar.className = "scroll-prog"; d.body.appendChild(bar);
     const sp = () => bar.style.setProperty("--sp", (scrollY / Math.max(1, d.documentElement.scrollHeight - innerHeight)).toFixed(4));
     addEventListener("scroll", sp, { passive: true }); sp();

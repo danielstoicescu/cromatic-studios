@@ -485,24 +485,63 @@ html.embed .crumbs { display: none; }
 .c2-heromedia { overflow: hidden; border-radius: 28px; border: 1px solid var(--ink); }
 .c2-heromedia img { border: 0; border-radius: 0; }
 
-/* ---- the hero card: the kinetic intro, contained in the first fold ---- */
-.hero-kz { padding: 14px 0 clamp(40px, 6vw, 70px); }
-.hk-card { position: relative; width: min(1480px, 100% - 28px); margin-inline: auto; min-height: calc(100vh - 72px - 28px); min-height: calc(100svh - 72px - 28px);
-  border: 1px solid var(--ink); border-radius: 30px; overflow: hidden; background: var(--paper); display: flex; align-items: center; isolation: isolate; }
-.hk-card .hero-in { width: min(1200px, 100% - 40px); padding: clamp(40px, 6vw, 80px) 0; transition: opacity .8s var(--eoq), transform 1s var(--eoq); }
-.hk-stage { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
-.hk-stage .kz { position: absolute !important; inset: 0; }
-html.kz-play .hk-card .hero-in { opacity: 0; transform: translateY(24px) scale(.98); }
-.hk-skip, .hk-replay { position: absolute; z-index: 5; bottom: 16px; right: 16px; border: 1px solid var(--ink); background: #fff; border-radius: 999px; padding: 9px 14px; font-size: 10.5px; cursor: pointer; transition: opacity .4s, transform .3s var(--eoq); }
-.hk-skip:hover, .hk-replay:hover { transform: translateY(-2px); }
-.hk-replay { opacity: 0; pointer-events: none; }
-.hero-kz.kz-done .hk-replay { opacity: 1; pointer-events: auto; }
-.hero-kz.kz-done .hk-skip, html:not(.kz-play) .hk-skip { opacity: 0; pointer-events: none; }
-@media (max-width: 860px) { .hk-card { min-height: calc(100svh - 64px - 24px); border-radius: 24px; } }
-
-html.kz-play .hk-card .hero-in { position: absolute; inset: 0 auto auto 50%; translate: -50% 0; }
-html.kz-play .hk-card { height: calc(100vh - 72px - 28px); height: calc(100svh - 72px - 28px); }
-@media (max-width: 860px) { html.kz-play .hk-card { height: calc(100svh - 64px - 24px); } }
+/* ---- r143 (Daniel): the first fold is the city and the drive's opening lines, not the kinetic cups ----
+   A card like the other scenes of the page: a still of Coffee Street (a tall cut on phones), a dark veil from the
+   bottom-left, the headline in paper white. The pill turns place → facade → brand once, then rests (CSS only). */
+.hero-city { padding: 14px 0 clamp(40px, 6vw, 70px); overflow: visible; }
+.hc-card { position: relative; isolation: isolate; width: min(1480px, 100% - 28px); margin-inline: auto; min-height: calc(100vh - 72px - 28px); min-height: calc(100svh - 72px - 28px);
+  display: flex; flex-direction: column; justify-content: flex-end; border: 1px solid var(--ink); border-radius: 30px; overflow: hidden; background: #4a3f3a; color: var(--paper); }
+.hc-pic, .hc-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+.hc-shade { position: absolute; inset: 0; z-index: -1; background: radial-gradient(110% 95% at 18% 92%, rgba(13,12,9,.76), rgba(13,12,9,.14) 66%), linear-gradient(90deg, rgba(13,12,9,.48), transparent 62%), linear-gradient(0deg, rgba(13,12,9,.5), transparent 46%); }
+.hc-in { padding: clamp(110px, 14vh, 170px) 0 clamp(40px, 7vh, 72px); }
+.hero-city .eyebrow { color: rgba(251,250,245,.74); }
+.hero-city .hc-h { font-size: clamp(44px, 6.4vw, 100px); font-weight: 900; line-height: .98; letter-spacing: -.045em; margin: 0 0 24px; max-width: 12.6em; text-shadow: 0 4px 40px rgba(0,0,0,.28); }
+.hc-k { display: block; font-size: .36em; font-weight: 800; line-height: 1.15; letter-spacing: -.02em; color: rgba(251,250,245,.86); margin-bottom: .45em; }
+.hc-big { display: block; }
+.hero-city .pill { --rot: -2deg; text-shadow: none; box-shadow: .05em .06em 0 var(--ink); }
+.hc-h .pill { font-size: .92em; padding: 0 .3em .1em; border-width: .035em; margin: 0 0 0 .04em; }
+.hc-morph { display: inline-grid; text-align: center; overflow: hidden; vertical-align: baseline; background: var(--g); animation: hcBg 2.4s linear 1.6s both; }
+.hc-morph > span { grid-area: 1 / 1; }
+.hc-morph > span + span { opacity: 0; }
+.hc-morph > span:nth-child(1) { animation: hcOut .45s var(--eoq) 1.6s forwards; }
+.hc-morph > span:nth-child(2) { animation: hcIn .55s var(--eoq) 1.8s both, hcOut .45s var(--eoq) 3.4s forwards; }
+.hc-morph > span:nth-child(3) { animation: hcIn .55s var(--eoq) 3.6s both; }
+@keyframes hcIn { from { opacity: 0; transform: translateY(.42em); } to { opacity: 1; transform: none; } }
+@keyframes hcOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-.36em); } }
+@keyframes hcBg { 0% { background-color: var(--g); } 12%, 75% { background-color: var(--b); } 90%, 100% { background-color: var(--y); } }
+.hc-sub { font-size: clamp(18px, 1.7vw, 23px); font-weight: 500; line-height: 1.42; max-width: 32em; color: rgba(251,250,245,.95); margin: 0 0 10px; }
+.hc-sub .pill, .hc-note .pill { --rot: 1.6deg; font-size: 1em; padding: 0 .42em .08em; margin: 0 .04em; }
+.hc-pill-y { --pc: var(--y); }
+.hc-what { font-size: 18px; font-weight: 500; line-height: 1.45; max-width: 34em; color: rgba(251,250,245,.74); margin: 0; }
+.hc-btns { margin-top: 26px; }
+.hc-ghost { background: rgba(251,250,245,.12); color: var(--paper); border-color: rgba(251,250,245,.72); box-shadow: none; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.hc-ghost:hover { box-shadow: none; background: rgba(251,250,245,.22); }
+/* the coffee line, a sticker in the corner: "good" in the white pill with the Multiverse button's turning rainbow */
+.hc-note { position: absolute; right: 22px; bottom: 22px; display: flex; align-items: center; gap: 8px; margin: 0; padding: 9px 18px 10px 10px; border: 1px solid var(--ink); border-radius: 999px; background: var(--paper); color: var(--ink);
+  font-size: 16px; font-weight: 800; line-height: 1.2; letter-spacing: -.01em; transform: rotate(-1.5deg); box-shadow: 0 3px 0 var(--ink); }
+.hc-note .cupspin { --cs: 40px; margin: -8px -2px -8px -4px; }
+@property --hcA { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.hc-mv { position: relative; isolation: isolate; background: transparent !important; border-color: transparent !important; }
+.hc-mv::before { content: ""; position: absolute; inset: -1px; border-radius: inherit; z-index: -2; background: conic-gradient(from var(--hcA), #FED012, #28C840, #119BFE, #B098C8, #F65342, #FED012); animation: hcMv 3.2s linear infinite; }
+.hc-mv::after { content: ""; position: absolute; inset: 2px; border-radius: inherit; z-index: -1; background: #fff; }
+@keyframes hcMv { to { --hcA: 360deg; } }
+@media (max-width: 860px) {
+  .hc-card { min-height: calc(100svh - 64px - 24px); border-radius: 24px; }
+  .hero-city { padding-top: 10px; }
+}
+@media (max-width: 700px) {
+  .hc-in { padding: 96px 0 22px; }
+  .hero-city .hc-h { font-size: min(11.6vw, 6.2svh); line-height: 1; margin-bottom: 18px; }
+  .hc-k { font-size: .44em; }
+  .hc-sub { font-size: 17px; line-height: 1.4; }
+  .hc-what { font-size: 15px; }
+  .hero-city .eyebrow { font-size: 11px; letter-spacing: .08em; }
+  .hc-shade { background: linear-gradient(0deg, rgba(13,12,9,.82) 0%, rgba(13,12,9,.6) 48%, rgba(13,12,9,.08) 78%); }
+  .hc-btns { margin-top: 20px; gap: 10px; }
+  .hc-btns .btn { width: 100%; justify-content: center; }
+  .hc-note { right: auto; left: 14px; bottom: auto; top: 14px; font-size: 14px; padding: 7px 14px 8px 8px; }
+  .hc-note .cupspin { --cs: 32px; }
+}
 
 /* ---- the coffee stop: a contained piece of the drive ---- */
 .road { padding: clamp(56px, 8vw, 100px) 0 0; }

@@ -12,7 +12,8 @@ const strip = (h) => String(h).replace(/<[^>]+>/g, "");
 // r133: the star left the visual language: buttons carry the spinning yellow cup instead
 const STAR = `<span class="cupspin cup-btn" aria-hidden="true"></span>`;
 
-export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz, canvases = {} }) {
+// r143: `kz` (the kinetic cups bundle) no longer plays on /site/; `heroCity` is the still of the city its first fold stands on
+export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz, heroCity = null, canvases = {} }) {
   const img = (name, alt = "", cls = "", eager = false) => {
     const a = A(name);
     if (!a) return "";
@@ -26,7 +27,7 @@ export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz, canvases = {} 
     return `<video class="lv ${cls}" data-src="${a.src}"${p ? ` poster="${p.src}"` : ""} muted loop playsinline preload="none" aria-hidden="true"></video>`;
   };
 
-  const head = ({ title, desc, path, image, ld }) => `<!DOCTYPE html><html lang="en"><head>
+  const head = ({ title, desc, path, image, ld, preload = "" }) => `<!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${esc(title)}</title>
@@ -53,9 +54,9 @@ export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz, canvases = {} 
 <noscript><link rel="stylesheet" href="${fonts}"></noscript>
 <link rel="stylesheet" href="${cssHref}">
 <script src="${jsHref}" defer></script>
-${kz ? `<script>try{if(location.pathname==="/site/"&&!matchMedia("(prefers-reduced-motion: reduce)").matches){if(matchMedia("(max-width: 860px), (pointer: coarse)").matches){document.documentElement.classList.add("kz-late")}else{document.documentElement.classList.add("kz-play");window.__kzT=setTimeout(function(){document.documentElement.classList.remove("kz-play")},5000)}}}catch(e){}</script>` : ""}
+${preload}
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>` : ""}
-</head><body${kz ? ` data-kz-js="${kz.js}" data-kz-css="${kz.css}"` : ""}>`;
+</head><body>`;
 
   const logo = A("logoLandscape");
   const header = (home) => `<a class="skip" href="#main">Skip to content</a>
@@ -211,27 +212,26 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       { "@type": "ItemList", "@id": `${SITE}/site/#work`, name: "Case studies by Cromatic Studios", itemListElement: PROJECTS.filter((p) => p.page).filter((p, i, a) => a.findIndex((q) => q.page === p.page) === i).map((p, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}/work/${p.page}/`, name: p.name })) },
       { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Cromatic Studios", item: `${SITE}/site/` }] }
     ] };
-    const hero = ["sP25b", "tmCover", "steamCoverImg"];
-    return `${head({ title: SITE_TITLE, desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, film and content for indie brands, startups and established firms.", path: "/site/", ld })}
+    // r143 (Daniel): the first fold is no longer the kinetic cups. It is the city, Coffee Street, under the words of the
+    // drive's opening (site/onboarding/intro-lab/engine.js): the pill turns place → facade → brand once, then rests
+    const hc = heroCity;
+    const preload = hc ? `<link rel="preload" as="image" href="${hc.m.src}" media="(max-width: 700px)" fetchpriority="high">
+<link rel="preload" as="image" href="${hc.d.src}" media="(min-width: 701px)" fetchpriority="high">` : "";
+    return `${head({ title: SITE_TITLE, desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, film and content for indie brands, startups and established firms.", path: "/site/", ld, preload })}
 ${header(true)}
 <main id="main">
-  <section class="hero hero-kz">
-   <div class="hk-card">
-    <div class="hk-stage" aria-hidden="true"></div>
-    <button class="hk-skip mono" type="button">Skip intro ↓</button>
-    <button class="hk-replay mono" type="button" aria-label="Replay the intro">↺ Replay the intro</button>
-    <div class="wrap hero-in">
-      <div class="hero-txt">
-        <p class="eyebrow mono">Cromatic Studios · Bucharest · Since 2014</p>
-        <h1 class="h-manif">Killer <mark>strategy</mark>. Outstanding <mark>design</mark>. Striking <mark>visuals</mark>. Powerful <mark>storytelling</mark>.</h1>
-        <p class="lead">Genuine passion and real empathy for your customer. And a coffee. There is always a coffee. An independent studio for brand strategy, identity, websites, film and content.</p>
-        <div class="btns"><a class="btn btn-y" href="#contact">${STAR}<span>Start a project</span></a><a class="btn" href="#work">See the work</a></div>
-      </div>
-      <div class="hero-art" aria-hidden="true">
-        ${hero.map((n, i) => `<span class="ha ha${i}">${img(n, "", "", i === 0)}</span>`).join("")}
-        <span class="ha-star"><span class="cupspin" aria-hidden="true"></span></span>
-      </div>
+  <section class="hero hero-city" aria-labelledby="hc-h">
+   <div class="hc-card">
+    ${hc ? `<picture class="hc-pic"><source media="(max-width: 700px)" srcset="${hc.m.src}" width="${hc.m.w}" height="${hc.m.h}"><img src="${hc.d.src}" width="${hc.d.w}" height="${hc.d.h}" alt="Coffee Street in the 3D city of Bucharest, the vintage yellow ride outside Two Min Lab" fetchpriority="high" decoding="async"></picture>` : ""}
+    <i class="hc-shade" aria-hidden="true"></i>
+    <div class="wrap hc-in">
+      <p class="eyebrow mono">Cromatic Studios · Bucharest · Since 2014</p>
+      <h1 class="hc-h" id="hc-h"><span class="hc-k">Nobody remembers a thumbnail.</span> <span class="hc-big">But someone could remember a <span class="pill hc-morph"><span>place.</span><span aria-hidden="true">facade.</span><span aria-hidden="true">brand.</span></span></span></h1>
+      <p class="hc-sub">Nine worlds over the same streets. One will feel like <span class="pill hc-pill-y">yours.</span> That’s how the right brand feels like.</p>
+      <p class="hc-what">An independent studio for brand strategy, identity, websites, film and content.</p>
+      <div class="btns hc-btns"><a class="btn btn-y" href="/">${STAR}<span>Take the 3D drive</span></a><a class="btn hc-ghost" href="#work">See the work <span aria-hidden="true">↓</span></a></div>
     </div>
+    <p class="hc-note"><span class="cupspin" aria-hidden="true"></span><span>There’s always a <span class="pill hc-mv">good</span> <span class="pill hc-pill-y">coffee</span> around.</span></p>
    </div>
   </section>
 

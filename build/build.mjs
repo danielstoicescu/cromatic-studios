@@ -286,8 +286,17 @@ try {
 const siteCssName = `assets/site.${hash(siteCss)}.css`, siteJsName = `assets/site.${hash(siteJs)}.js`;
 writeFileSync(join(pub, siteCssName), siteCss);
 writeFileSync(join(pub, siteJsName), siteJs);
+// r143: the website's first fold stands on a still of the city (Coffee Street, one of /onboarding/'s stills): a wide cut
+// for screens, a tall one for phones, hashed like the other assets so they cache for good
+let heroCity = null;
+try {
+  const wd = (b) => { const t = b.toString("latin1", 12, 16); if (t === "VP8X") return [b.readUIntLE(24, 3) + 1, b.readUIntLE(27, 3) + 1]; if (t === "VP8 ") return [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff]; if (t === "VP8L") { const v = b.readUInt32LE(21); return [(v & 0x3fff) + 1, ((v >> 14) & 0x3fff) + 1]; } return [0, 0]; };
+  const one = (f) => { const b = readFileSync(join(root, "site", "onboarding", "media", "z", f)); const rel = `assets/hero-${f.replace(/\.webp$/, "")}.${hash(b)}.webp`; writeFileSync(join(pub, rel), b); const [w, h] = wd(b); return { src: "/" + rel, w, h }; };
+  heroCity = { d: one("coffee-0.webp"), m: one("coffee-0-m.webp") };
+} catch (e) { console.warn("[build] hero still skipped:", e.message); }
 const FONTS = "https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Montserrat:wght@800;900&family=JetBrains+Mono:wght@700&display=swap";
-// the drive's kinetic intro, as the website's hero (loaded after the page has painted)
+// the drive's kinetic intro (the wall of cups). r143: no longer the website's hero; /onboarding/'s last section and the
+// intro lab still play it
 let kz = null;
 try {
   const K = kineticBundle(js, css);
@@ -316,7 +325,7 @@ const canvases = {};
     canvases[slug] = { ...man, ...cvv, base: `/assets/canvas-${c.dir}-${h}` };
   }
 }
-const R = makeRender({ SITE: SITE_URL, A, cssHref: "/" + siteCssName, jsHref: "/" + siteJsName, fonts: FONTS, kz, canvases });
+const R = makeRender({ SITE: SITE_URL, A, cssHref: "/" + siteCssName, jsHref: "/" + siteJsName, fonts: FONTS, kz, heroCity, canvases });
 // r129: every work page's cover (its og:image, else its first image) goes into covers.json, for the map cards
 const COVERS = {};
 // r131: every page goes through the same SEO pass (head, schema.org, sizes, lazy films, lastmod)
