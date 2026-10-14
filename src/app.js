@@ -40461,6 +40461,13 @@ void main() {
           // r141: while the city waits out of sight, every world and every ride gets its programs compiled, one per idle
           // slot, so the first switch to it in the worlds and rides zones is a cut, not a stall; then the view goes back
           // to where it was. It stops as soon as the city is wanted again; the page asks again when it is quiet
+          // r141b: the intro lab's ending: the frame becomes the real map, its interface shown (and the welcome card,
+          // as after the site's own intro), pointer events on; nothing of this runs on /onboarding/, which never asks
+          case "ui": {
+            document.documentElement.classList.toggle("onb", !o.on);
+            if (o.on) { document.body.classList.remove("kz-boot", "kz-intro"); if (o.welcome) setTimeout(() => { if (mapMode && !mapNav.moving && !mapNav.place && !mapBoarding) mapUI?.welcome(true); }, o.welcomeIn || 1400); else mapUI?.welcome(false); }
+            break;
+          }
           case "warm": {
             if (!onbPaused || onbWarm) break;
             const todo = [];

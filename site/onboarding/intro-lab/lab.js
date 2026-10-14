@@ -84,11 +84,11 @@
       if (!left) break;
     }
     send({ op: "pause", on: false });
-    if (phone()) send({ op: "rate", half: true }); else send({ op: "rate", half: false, dpr: 1.5 });
+    if (phone()) send({ op: "rate", half: true }); else send({ op: "rate", half: false, dpr: Math.min(1, Math.sqrt(1.6e6 / (innerWidth * innerHeight))) }); // the city behind the words: at most 1x, at most ~1.6 M pixels (it moves, nobody counts them)
   };
 
   /* ---------- a small timeline ---------- */
-  const cur = { token: 0, t0: 0, kz: null };
+  const cur = { token: 0, t0: 0, kz: null, lines: new Set(), running: false, camOn: false, gone: null };
   const abort = () => new Error("abort");
   const wait = (ms, tok) => new Promise((res, rej) => setTimeout(() => (tok === cur.token ? res() : rej(abort())), ms));
   const tween = (ms, fn, tok, ease = easeIO) => new Promise((res, rej) => {
@@ -133,20 +133,20 @@
   };
 
   /* ================= 04 · the final ================= */
-  // the worlds, in the order they pass behind "yours.": each one's sky (the wash) and the pill's colour under it
+  // the worlds, in the order they pass behind "yours.": id, sky (the wash), the pill's colour, the chip's name
   const WORLDS = [
-    ["nightlife", "#121d3a", "#FF9E3D"], ["ghibli", "#e4f1f4", "#e0b25a"], ["orchid", "#fbeef3", "#f08bb4"],
-    ["sketch", "#f6f3ec", "#ffd84a"], ["underwater", "#0b3b5c", "#3de0d0"], ["monument", "#f6e2d8", "#FED012"],
+    ["nightlife", "#121d3a", "#FF9E3D", "Night Mode"], ["ghibli", "#e4f1f4", "#e0b25a", "Ghib.ly"], ["orchid", "#fbeef3", "#f08bb4", "Sakura"],
+    ["sketch", "#f6f3ec", "#ffd84a", "Sketchbook"], ["underwater", "#0b3b5c", "#3de0d0", "Underwater"], ["monument", "#f6e2d8", "#FED012", "Cromatic"],
   ];
   const wash = (color) => { const b = document.createElement("i"); b.className = "wash"; b.style.background = color; over.appendChild(b); setTimeout(() => b.remove(), 700); };
-  // the pill's word changes in place: the old word blurs out, the pill eases to the new width, the new word blurs in
-  // (a crossfade: the old word's letters leave while the new word's letters arrive, in the same place, the pill
-  // easing between the two widths under them, so the pill is never seen empty)
+  const html = (h) => { const d = document.createElement("div"); d.innerHTML = h; const n = d.firstElementChild; over.appendChild(n); return n; };
+  // the pill's word changes in place: the old word's letters leave while the new word's letters arrive, in the same
+  // place, the pill easing between the two widths under them (a crossfade: the pill is never seen empty)
   const morph = async (el, list, every, tok) => {
     for (const [w, color] of list) {
       await wait(every, tok);
+      if (!el.isConnected) return;
       const w0 = el.offsetWidth;
-      // the word that stands becomes the one leaving (its span changes class: nothing moves, nothing restarts)
       const old = el.querySelector(":scope > .wn"); if (!old) return;
       old.className = "wv"; [...old.querySelectorAll(".l")].forEach((l, j) => l.style.setProperty("--lo", (j * 14) + "ms"));
       const nw = document.createElement("span"); nw.className = "wn m"; letterize(nw, w);
@@ -158,6 +158,11 @@
       old.remove(); el.classList.remove("mw"); el.style.width = "";
     }
   };
+  // the run's clock: at(ms) waits for its moment on the clock, and the clock can be pushed forward (a click skips
+  // to the next beat), so everything after the push happens at once, in order
+  const at = (ms, tok) => new Promise((res, rej) => { const tick = () => { if (tok !== cur.token) return rej(abort()); if (performance.now() - cur.t0 >= ms) res(); else requestAnimationFrame(tick); }; tick(); });
+  const elapsed = () => performance.now() - cur.t0;
+  const BEATS4 = [300, 3350, 6300, 12500, 15000, 16300]; // where each beat begins on the clock
   const v4 = async (tok) => {
     await prep(tok, { at: { t: [1000, 4800], dist: 3400, yaw: 0.2, pitch: 0.98 } });
     veil.classList.add("warm");
@@ -166,15 +171,17 @@
     await cupsPrep(tok);
     lab.classList.remove("warming");
     cur.t0 = performance.now();
+    cur.running = true; lab.classList.add("running");
     meter.begin();
-    const t0 = performance.now();
-    const at = async (ms) => { const d = ms - (performance.now() - t0); if (d > 0) await wait(d, tok); };
-    const soft = (parts, o = {}) => line(parts, { fx: "soft", stagger: 55, letters: true, ...o });
-    // a line leaves letter by letter, each on its own moment, upwards and out of focus
-    const gone = (el) => { if (!el || !el.isConnected) return; el.querySelectorAll(".l").forEach((l, j) => l.style.setProperty("--lo", Math.min(150, j * 6) + "ms")); el.classList.add("outsoft"); setTimeout(() => el.remove(), 700); };
+    const soft = (parts, o = {}) => { const el = line(parts, { fx: "soft", stagger: 55, letters: true, ...o }); cur.lines.add(el); return el; };
+    // a line leaves letter by letter in a short cascade; a pill leaves whole, with its letters inside it
+    const gone = (el) => { if (!el || !el.isConnected) return; cur.lines.delete(el); el.querySelectorAll(".l").forEach((l, j) => l.style.setProperty("--lo", Math.min(150, j * 6) + "ms")); el.classList.add("outsoft"); setTimeout(() => el.remove(), 700); };
+    cur.gone = gone;
     // a word is forgotten: its letters drift apart and out of focus, each on its own moment (k: how far it goes)
     const forget = (w, k = 1, spread = 700, from = 0) => { if (!w) return; const ls = [...w.querySelectorAll(".l")]; ls.forEach((l, j) => { const u = ls.length > 1 ? j / (ls.length - 1) : 0; l.style.setProperty("--lo", (from + (0.35 * u + 0.65 * ((j * 7) % 10) / 10) * spread).toFixed(0) + "ms"); l.style.setProperty("--fx", ((u - 0.5) * 26 * k).toFixed(1) + "px"); l.style.setProperty("--fy", (-(5 + ((j * 3) % 5) * 2) * k).toFixed(1) + "px"); l.style.setProperty("--fo", k >= 1 ? 0.06 : 0.3); }); w.classList.add("forget"); };
-    // the camera, start to end, one continuous move (it only shows from 6.9 s, when the ground dissolves)
+    const late = (ms) => elapsed() > ms + 450; // a moment the clock was pushed past: skip what it would have done
+    // the camera, start to end, one continuous move (it only shows from 6.3 s, when the ground dissolves); it lets go
+    // of the city at the end, where the map's own hands take over
     const road = path([
       [0, { t: [1000, 4800], dist: 3400, yaw: 0.2, pitch: 0.98 }],
       [5800, { t: [1000, 4800], dist: 3400, yaw: 0.2, pitch: 0.98 }],
@@ -182,49 +189,86 @@
       [11200, { t: [880, 4420], dist: 2100, yaw: 0.7, pitch: 0.75 }],
       [13800, { t: [900, 4400], dist: 1950, yaw: 0.9, pitch: 0.7 }],
       [15800, { t: [1000, 4700], dist: 2600, yaw: 1.02, pitch: 0.8 }],
-      [18800, { t: [1350, 5200], dist: 6000, yaw: 1.18, pitch: 0.98 }],
-      [24000, { t: [1350, 5200], dist: 6000, yaw: 1.26, pitch: 0.98 }],
+      [18800, { t: [1300, 5100], dist: 5400, yaw: 1.18, pitch: 0.98 }],
+      [21500, { t: [1300, 5100], dist: 5400, yaw: 1.22, pitch: 0.98 }],
     ]);
-    (function drive(now) { if (tok !== cur.token) return; camAt(road(now - t0)); requestAnimationFrame(drive); })(performance.now());
-    // 1 · nobody remembers a thumbnail (the word dissolves)
-    await at(300);
+    cur.camOn = true;
+    (function drive(now) { if (tok !== cur.token || !cur.camOn) return; camAt(road(now - cur.t0)); requestAnimationFrame(drive); })(performance.now());
+    // 1 · nobody remembers a thumbnail: a row of thumbnails under the word, forgotten with it
+    await at(300, tok);
     const a = soft(["Nobody", "remembers", { br: true }, { w: "a", d: 260 }, { w: "thumbnail.", cls: "thumb", d: 330 }], { cls: "calm" });
-    await at(1650); forget(a.querySelector(".thumb"), 1, 650); forget(a.querySelectorAll(".kw")[1], 0.45, 600, 300);
-    await at(2750); gone(a);
+    await at(1300, tok);
+    const th = a.querySelector(".thumb");
+    if (th && th.isConnected && !late(1300)) { const r = th.getBoundingClientRect(); const row = html(`<div class="thumbs">${"<i></i>".repeat(6)}</div>`); row.style.left = (r.left + r.width / 2) + "px"; row.style.top = (r.bottom + 18) + "px"; }
+    await at(1650, tok); forget(th, 1, 650); forget(a.querySelectorAll(".kw")[1], 0.45, 600, 300); over.querySelector(".thumbs")?.classList.add("gone");
+    await at(2750, tok); gone(a); over.querySelector(".thumbs")?.remove();
     // 2 · but someone could remember a house → facade → brand
-    await at(3350);
+    await at(3350, tok);
     const b = soft(["But", "someone", "could", { br: true }, { w: "remember", d: 300 }, { w: "a", d: 360 }, { brm: true }, { w: "house.", pill: "g", d: 440 }], { cls: "calm" });
-    await at(4350);
-    await morph(b.querySelector(".pill"), [["facade.", "#119BFE"], ["brand.", "#FED012"]], 640, tok);
-    await at(6100); gone(b);
-    // 3 · the ground dissolves to the city; nine worlds, one will feel like yours (the sky changes behind the words)
-    await at(6300); veilTo(0, 1300);
-    await at(6900);
-    // one block, two rows: the second row joins 0.9 s after the first, in the same place
+    await at(4350, tok);
+    if (!late(4350)) await morph(b.querySelector(".pill"), [["facade.", "#119BFE"], ["brand.", "#FED012"]], 640, tok);
+    await at(6100, tok); gone(b);
+    // 3 · the ground dissolves to the city; nine worlds, one will feel like yours (the sky changes behind the words,
+    // the worlds' own chips along the bottom, the one on screen lit)
+    await at(6300, tok); veilTo(0, 1300);
+    await at(6900, tok);
     const c = soft(["Nine", "worlds", "over", "the", "same", "streets.", { br: true }, { w: "One", d: 900 }, { w: "will", d: 955 }, { w: "feel", d: 1010 }, { w: "like", d: 1065 }, { w: "yours.", pill: "y", d: 1220 }], { cls: "calm mid onCity" });
     const yours = c.querySelector(".pill");
+    const chips = html(`<div class="wchips">${WORLDS.map(([id, , col, name], i) => `<span class="wchip" data-w="${id}" style="--wc:${col};--i:${i}">${name}</span>`).join("")}</div>`);
     for (let i = 0; i < WORLDS.length; i++) {
-      await at(8600 + i * 500);
+      await at(8600 + i * 500, tok);
+      if (late(8600 + i * 500)) continue;
       const [id, sky, pc] = WORLDS[i];
-      wash(sky); yours.style.background = pc; setTimeout(() => { if (tok === cur.token) send({ op: "scheme", id }); }, 70);
+      wash(sky); yours.style.background = pc;
+      chips.querySelectorAll(".wchip").forEach((ch) => ch.classList.toggle("on", ch.dataset.w === id));
+      setTimeout(() => { if (tok === cur.token) send({ op: "scheme", id }); }, 70);
     }
-    await at(11900); gone(c);
-    // 4 · that is what the right brand feels like
-    await at(12500);
+    await at(11900, tok); gone(c); chips.classList.add("gone"); setTimeout(() => chips.remove(), 700);
+    // 4 · that's how the right brand feels like: the site's own XP bar fills up under the words
+    await at(12500, tok);
     const d = soft(["That's", "how", "the", { w: "right", pill: "y", d: 280 }, { w: "brand", d: 330 }, { w: "feels", d: 380 }, { w: "like.", d: 430 }], { cls: "calm mid onCity" });
-    await at(14400); gone(d);
-    // 5 · and like good coffee: the words stay while the wall of cups fills the screen under them, then it falls
-    await at(15000);
+    const xp = html(`<div class="xpbar"><span class="xp-fill"></span><span class="xp-sun"><svg viewBox="0 0 24 24" width="20" height="20"><g fill="#FED012"><circle cx="12" cy="12" r="5"/><path d="M12 1l1.4 4h-2.8zM12 23l-1.4-4h2.8zM1 12l4-1.4v2.8zM23 12l-4 1.4v-2.8zM4.2 4.2l3.8 1.9-1.9 1.9zM19.8 19.8l-3.8-1.9 1.9-1.9zM4.2 19.8l1.9-3.8 1.9 1.9zM19.8 4.2l-1.9 3.8-1.9-1.9z"/></g></svg></span><span class="xp-label">YOU + YOUR BRAND</span><span class="xp-num"><b>0</b> XP</span></div>`);
+    xp.style.setProperty("--w", (xp.getBoundingClientRect().width - 26) + "px");
+    requestAnimationFrame(() => xp.classList.add("in"));
+    { const n = xp.querySelector("b"), t0 = performance.now(); const run = () => { if (tok !== cur.token || !xp.isConnected) return; const u = Math.min(1, (performance.now() - t0 - 500) / 1500); const e = u <= 0 ? 0 : 1 - Math.pow(1 - u, 3); xp.style.setProperty("--f", e.toFixed(3)); n.textContent = Math.round(225 * e); if (u < 1) requestAnimationFrame(run); else xp.classList.add("full"); }; run(); }
+    await at(14400, tok); gone(d); xp.classList.add("gone"); setTimeout(() => xp.remove(), 700);
+    // 5 · and like good coffee: the studio's cup turns up beside the words; the words leave as the wall of cups comes
+    await at(15000, tok);
     const e = soft(["And", "like", "good", { w: "coffee.", pill: "y", d: 300 }], { cls: "calm mid onCity" });
-    await at(16100); gone(e);
-    await at(16300);
+    const cup = html(`<i class="cupmid"></i>`);
+    await at(16100, tok); gone(e); cup.classList.add("gone");
+    await at(16300, tok); cup.remove();
+    // 6 · the cups fall onto the city, which becomes the map itself, its interface up, and the last line over it
+    lab.classList.add("ending");
+    // the map's interface is built while the wall of cups covers the screen (its cost lands out of sight), so when
+    // the cups fall the real map is already there, interface and all
+    setTimeout(() => { if (tok === cur.token) { send({ op: "ui", on: true, welcome: false }); city.classList.add("live"); } }, 1100);
     await cups(tok);
     if (tok !== cur.token) return;
-    // 6 · there's always a good coffee around, over the whole city
-    await wait(450, tok);
+    cur.camOn = false; // the map's own hands from here
+    await wait(500, tok);
     const f = soft(["There's", "always", "a", "good", { w: "coffee", pill: "y", d: 300 }, { w: "around.", d: 360 }], { cls: "calm mid onCity" });
     await wait(2600, tok); gone(f);
-    await wait(800, tok); meter.end();
+    await wait(800, tok);
+    finish(tok);
+  };
+  // the end state: the real map, its interface, the welcome card, the lab's chrome out of the way
+  const finish = (tok) => {
+    if (tok !== cur.token) return;
+    cur.running = false; cur.camOn = false; meter.end();
+    lab.classList.remove("running", "ending"); lab.classList.add("done");
+    send({ op: "ui", on: true, welcome: true, welcomeIn: 600 });
+    city.classList.add("live");
+  };
+  // a click (or Space / →) skips to the next beat: the clock is pushed forward, what is on screen leaves at once
+  const next = () => {
+    if (!cur.running) return;
+    const e = elapsed();
+    const n = BEATS4.find((t) => t > e + 80);
+    if (n == null) { skip(); return; }
+    cur.lines.forEach((el) => cur.gone?.(el)); cur.lines.clear();
+    over.querySelectorAll(".thumbs, .wchips, .xpbar, .cupmid").forEach((x) => { x.classList.add("gone"); setTimeout(() => x.remove(), 500); });
+    cur.t0 -= (n - e);
   };
 
   /* ================= 01 · parked: the site's own kinetic stage, with the new words ================= */
@@ -268,7 +312,7 @@
     box.innerHTML = '<canvas width="300" height="44"></canvas><span class="mono"></span>';
     document.body.appendChild(box);
     const cv = box.querySelector("canvas"), ctx = cv.getContext("2d"), txt = box.querySelector("span");
-    let last = 0, run = null;
+    const N = 150, ring = new Float32Array(N); let head = 0, last = 0, run = null;
     const begin = () => { run = { t0: performance.now(), n: 0, dropped: 0, worst: [], sum: 0 }; };
     const end = () => { if (!run) return; const r = run; run = null; report(r, true); };
     const report = (r, fin) => {
@@ -277,12 +321,10 @@
     };
     const tick = (now) => {
       const dt = last ? now - last : 16.7; last = now;
-      // the strip: one bar per frame, green under 20 ms, amber under 34, red above
+      ring[head] = dt; head = (head + 1) % N;
       const W = cv.width, H = cv.height;
-      ctx.drawImage(cv, -2, 0); ctx.clearRect(W - 2, 0, 2, H);
-      const h = Math.min(H, dt / 100 * H);
-      ctx.fillStyle = dt < 20 ? "#28C840" : dt < 34 ? "#FED012" : "#F65342";
-      ctx.fillRect(W - 2, H - h, 2, h);
+      ctx.clearRect(0, 0, W, H);
+      for (let i = 0; i < N; i++) { const v = ring[(head + i) % N]; if (!v) continue; const h = Math.min(H, v / 100 * H); ctx.fillStyle = v < 20 ? "#28C840" : v < 34 ? "#FED012" : "#F65342"; ctx.fillRect(i * 2, H - h, 2, h); }
       if (run) {
         run.n++; run.sum += dt;
         const d = Math.max(0, Math.round(dt / 16.667) - 1); run.dropped += d;
@@ -297,15 +339,22 @@
 
   /* ---------- skip: straight to the end, the city seen whole ---------- */
   const skip = () => {
-    cur.token++; meter.end();
+    cur.token++; const tok = cur.token; meter.end();
     try { cur.kz?.pause?.(); } catch (e) {}
     kzhost.innerHTML = ""; kzhost.className = "kzhost"; cur.kz = null;
-    clearAll(); lab.classList.remove("warming");
-    veilTo(0, 700);
-    send({ op: "pause", on: false }); send({ op: "scheme", id: "monument" }); cam(CAM.over);
+    clearAll(); cur.lines.clear(); lab.classList.remove("warming", "running", "ending");
+    whenReady().then(() => {
+      if (tok !== cur.token) return;
+      veilTo(0, 700);
+      send({ op: "pause", on: false }); send({ op: "scheme", id: "monument" }); cam(CAM.over);
+      city.classList.add("on");
+      finish(tok);
+    });
     document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-pressed", "false"));
   };
   $(".skip").addEventListener("click", skip);
+  $(".stage").addEventListener("click", (e) => { if (!lab.classList.contains("done")) next(); });
+  addEventListener("keydown", (e) => { if (e.key === " " || e.key === "ArrowRight") { e.preventDefault(); next(); } });
 
   /* ---------- play, replay, switch ---------- */
   const V = { 1: v1, 4: v4 };
@@ -318,8 +367,8 @@
     cur.t0 = performance.now();
     try { cur.kz?.pause?.(); } catch (e) {}
     kzhost.innerHTML = ""; kzhost.className = "kzhost"; cur.kz = null; cur.onDrop = cur.onFinale = null;
-    clearAll(); lab.classList.remove("warming");
-    city.classList.remove("on");
+    clearAll(); cur.lines.clear(); cur.running = false; cur.camOn = false; lab.classList.remove("warming", "running", "ending", "done");
+    city.classList.remove("on", "live"); send({ op: "ui", on: false });
     document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === String(n) ? "true" : "false"));
     V[n](tok).catch((e) => { if (!(e && e.message === "abort")) console.error(e); });
   };

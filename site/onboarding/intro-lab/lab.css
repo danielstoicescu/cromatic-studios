@@ -222,3 +222,52 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ink); 
 @keyframes forgetLite { from { opacity: 1; transform: none; } to { opacity: var(--fo, .06); transform: translate(var(--fx, 0px), var(--fy, -8px)); } }
 @keyframes pillOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-.3em); } }
 .kl.calm.outsoft .kw:not(.pill) .l { animation-duration: .5s; }
+/* the breathing ground, on the compositor: an oversized gradient layer slides by transform; before, the gradient's
+   centre was animated through custom properties, which repainted the whole screen every frame (at 2x: the main cost) */
+.veil.warm { background: #fbf3cf; animation: none; overflow: hidden; }
+.veil.warm::before { content: ""; position: absolute; left: -25%; top: -25%; width: 150%; height: 150%; background: radial-gradient(45% 40% at 50% 46%, #fff9e0 0%, #fbf3cf 48%, #f5e4ad 100%); will-change: transform; animation: breathe2 18s ease-in-out infinite alternate; }
+@keyframes breathe2 { from { transform: translate(-4%, -3%); } to { transform: translate(4%, 3%); } }
+@media (prefers-reduced-motion: reduce) { .veil.warm::before { animation: none; } }
+
+/* ---------- round four: the site's own objects inside the typography, a bigger skip, the real map at the end ---------- */
+.skip { font-size: 16px; padding: 12px 20px 13px; box-shadow: 3px 3px 0 var(--ink); }
+.lab.done .skip, .lab.done .tc { display: none; }
+.lab.done .stage { pointer-events: none; }
+.city.live { pointer-events: auto; }
+.lab.done .words, .lab.done .over, .lab.done .veil { pointer-events: none; }
+/* the thumbnails nobody remembers */
+.thumbs { position: absolute; transform: translateX(-50%); display: flex; gap: 8px; }
+.thumbs i { width: 46px; height: 32px; border-radius: 6px; background: #d9d6cc; border: 1.5px solid #bdb9ad; opacity: 0; animation: thumbIn .5s var(--eoq) calc(var(--k, 0) * 60ms) both; }
+.thumbs i:nth-child(2) { --k: 1; } .thumbs i:nth-child(3) { --k: 2; } .thumbs i:nth-child(4) { --k: 3; } .thumbs i:nth-child(5) { --k: 4; } .thumbs i:nth-child(6) { --k: 5; }
+@keyframes thumbIn { from { opacity: 0; transform: translateY(8px); } to { opacity: .9; transform: none; } }
+.thumbs.gone i { animation: thumbOut .9s ease calc(var(--k, 0) * 90ms) both; }
+@keyframes thumbOut { from { opacity: .9; } to { opacity: 0; transform: translateY(-10px) scale(.9); } }
+/* the worlds' chips along the bottom, the one on screen lit (the onboarding page's own chips) */
+.wchips { position: absolute; left: 0; right: 0; bottom: 12vh; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 0 16px; }
+.wchip { display: inline-flex; align-items: center; gap: 8px; padding: 10px 15px 11px; border-radius: 999px; border: 1.5px solid rgba(13,12,9,.45); background: rgba(251,250,245,.78); color: var(--ink); font: 800 15px/1 var(--sans); white-space: nowrap; opacity: 0; animation: chipIn .6s var(--eoq) calc(700ms + var(--i, 0) * 70ms) both; transition: background-color .3s, color .3s, transform .3s var(--spring); }
+.wchip::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--wc); border: 1.5px solid rgba(13,12,9,.5); }
+.wchip.on { background: var(--ink); color: var(--paper); transform: translateY(-3px); }
+@keyframes chipIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.wchips.gone .wchip { animation: chipOut .5s ease calc(var(--i, 0) * 40ms) both; }
+@keyframes chipOut { to { opacity: 0; transform: translateY(10px); } }
+/* the XP bar, as on the site: YOU + YOUR BRAND, the sun travels, the number counts */
+.xpbar { position: absolute; left: 50%; top: 62%; transform: translate(-50%, 14px); width: min(480px, 86vw); height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 9px 0 26px; border: 1.5px solid var(--ink); border-radius: 999px; background: #fff; overflow: hidden; font: 800 17px/1 var(--sans); color: var(--ink); opacity: 0; transition: opacity .6s ease .3s, transform .7s var(--eoq) .3s; box-shadow: 0 20px 40px -24px rgba(0,0,0,.35); }
+.xpbar.in { opacity: 1; transform: translate(-50%, 0); }
+.xpbar.gone { opacity: 0; transform: translate(-50%, -12px); transition-delay: 0s; }
+.xp-fill { position: absolute; inset: 0; transform-origin: left center; transform: scaleX(var(--f, 0)); background: color-mix(in srgb, #ff8a6a 85%, transparent); }
+.xp-sun { position: absolute; left: 3px; top: 50%; transform: translate(calc(var(--f, 0) * var(--w, 450px)), -50%); will-change: transform; display: inline-flex; z-index: 1; filter: drop-shadow(0 0 4px rgba(254,208,18,.8)); }
+.xp-sun svg { animation: spin 4s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.xp-label, .xp-num { position: relative; z-index: 1; }
+.xp-num { background: #ff8a6a; border: 1px solid #000; border-radius: 999px; padding: 9px 14px; white-space: nowrap; }
+.xpbar.full { animation: boom .7s var(--eoq); }
+@keyframes boom { 30% { transform: translate(-50%, 0) scale(1.05); box-shadow: 0 0 0 10px rgba(254,208,18,.5); } }
+/* the studio's cup beside the coffee line */
+.cupmid { position: absolute; left: 50%; top: 30%; width: clamp(80px, 9vw, 120px); aspect-ratio: 1; margin-left: calc(clamp(80px, 9vw, 120px) / -2); background: url(/cup-spin.png) 0 0 / 2400% 100% no-repeat; animation: cupspin 1.9s steps(24, jump-none) infinite, cupIn .7s var(--spring) .4s both; filter: drop-shadow(0 18px 24px rgba(0,0,0,.25)); }
+.cupmid.gone { animation: cupspin 1.9s steps(24, jump-none) infinite, cupOut .5s ease both; }
+@keyframes cupOut { to { opacity: 0; transform: translateY(-20px) scale(.8); } }
+@media (max-width: 760px) { .xpbar { top: 64%; height: 56px; font-size: 15px; padding-left: 18px; } .wchips { bottom: 16vh; gap: 6px; } .wchip { padding: 8px 12px 9px; font-size: 13px; } .cupmid { top: 28%; } .skip { font-size: 15px; padding: 11px 16px 12px; } }
+.xp-fill { will-change: transform; }
+/* a pill's letters settle before the pill itself is fully there */
+.kl.calm.in .kw.pill .wn .l { animation-duration: .38s; }
+.kl.calm.in .kw.pill { animation-delay: calc(var(--d, 0ms) + 140ms) !important; }
