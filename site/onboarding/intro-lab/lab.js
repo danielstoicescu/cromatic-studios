@@ -109,7 +109,8 @@
       if (w.br || w.brm) { const r = document.createElement("i"); r.className = w.brm ? "brm" : "br"; el.appendChild(r); return; } // a forced line break (brm: on phones only)
       const s = document.createElement("span");
       s.className = "kw fx-" + (w.fx || fx) + (w.pill ? " pill pill-" + w.pill : "") + (w.cls ? " " + w.cls : "");
-      if (letters) letterize(s, w.w); else s.textContent = w.w;
+      if (letters && w.pill) { const wn = document.createElement("span"); wn.className = "wn"; letterize(wn, w.w); s.appendChild(wn); }
+      else if (letters) letterize(s, w.w); else s.textContent = w.w;
       s.style.setProperty("--d", (delay + (w.d ?? i * stagger)) + "ms");
       el.appendChild(s);
     });
@@ -145,16 +146,16 @@
     for (const [w, color] of list) {
       await wait(every, tok);
       const w0 = el.offsetWidth;
-      const old = document.createElement("span"); old.className = "wv";
-      [...el.querySelectorAll(":scope > .l")].forEach((l, j) => { l.style.setProperty("--lo", (j * 14) + "ms"); old.appendChild(l); });
-      const nw = document.createElement("span"); nw.className = "wn"; letterize(nw, w);
-      el.appendChild(old); el.appendChild(nw);
+      // the word that stands becomes the one leaving (its span changes class: nothing moves, nothing restarts)
+      const old = el.querySelector(":scope > .wn"); if (!old) return;
+      old.className = "wv"; [...old.querySelectorAll(".l")].forEach((l, j) => l.style.setProperty("--lo", (j * 14) + "ms"));
+      const nw = document.createElement("span"); nw.className = "wn m"; letterize(nw, w);
+      el.appendChild(nw);
       el.style.width = "auto"; old.style.display = "none";
       const w1 = el.offsetWidth; old.style.display = ""; el.style.width = w0 + "px"; void el.offsetWidth;
       el.classList.add("mw"); el.style.width = w1 + "px"; if (color) el.style.background = color;
       await wait(620, tok);
-      old.remove(); [...nw.querySelectorAll(".l")].forEach((l) => el.appendChild(l)); nw.remove();
-      el.classList.remove("mw"); el.style.width = "";
+      old.remove(); el.classList.remove("mw"); el.style.width = "";
     }
   };
   const v4 = async (tok) => {
@@ -170,19 +171,19 @@
     const at = async (ms) => { const d = ms - (performance.now() - t0); if (d > 0) await wait(d, tok); };
     const soft = (parts, o = {}) => line(parts, { fx: "soft", stagger: 55, letters: true, ...o });
     // a line leaves letter by letter, each on its own moment, upwards and out of focus
-    const gone = (el) => { if (!el || !el.isConnected) return; el.querySelectorAll(".l").forEach((l, j) => l.style.setProperty("--lo", Math.min(260, j * 9) + "ms")); el.classList.add("outsoft"); setTimeout(() => el.remove(), 1000); };
+    const gone = (el) => { if (!el || !el.isConnected) return; el.querySelectorAll(".l").forEach((l, j) => l.style.setProperty("--lo", Math.min(150, j * 6) + "ms")); el.classList.add("outsoft"); setTimeout(() => el.remove(), 700); };
     // a word is forgotten: its letters drift apart and out of focus, each on its own moment (k: how far it goes)
     const forget = (w, k = 1, spread = 700, from = 0) => { if (!w) return; const ls = [...w.querySelectorAll(".l")]; ls.forEach((l, j) => { const u = ls.length > 1 ? j / (ls.length - 1) : 0; l.style.setProperty("--lo", (from + (0.35 * u + 0.65 * ((j * 7) % 10) / 10) * spread).toFixed(0) + "ms"); l.style.setProperty("--fx", ((u - 0.5) * 26 * k).toFixed(1) + "px"); l.style.setProperty("--fy", (-(5 + ((j * 3) % 5) * 2) * k).toFixed(1) + "px"); l.style.setProperty("--fo", k >= 1 ? 0.06 : 0.3); }); w.classList.add("forget"); };
     // the camera, start to end, one continuous move (it only shows from 6.9 s, when the ground dissolves)
     const road = path([
       [0, { t: [1000, 4800], dist: 3400, yaw: 0.2, pitch: 0.98 }],
-      [5400, { t: [1000, 4800], dist: 3400, yaw: 0.2, pitch: 0.98 }],
-      [7800, { t: [880, 4420], dist: 2350, yaw: 0.48, pitch: 0.8 }],
-      [10600, { t: [880, 4420], dist: 2100, yaw: 0.7, pitch: 0.75 }],
-      [13000, { t: [900, 4400], dist: 1950, yaw: 0.9, pitch: 0.7 }],
-      [15000, { t: [1000, 4700], dist: 2600, yaw: 1.02, pitch: 0.8 }],
-      [18000, { t: [1350, 5200], dist: 6000, yaw: 1.18, pitch: 0.98 }],
-      [23000, { t: [1350, 5200], dist: 6000, yaw: 1.26, pitch: 0.98 }],
+      [5800, { t: [1000, 4800], dist: 3400, yaw: 0.2, pitch: 0.98 }],
+      [8200, { t: [880, 4420], dist: 2350, yaw: 0.48, pitch: 0.8 }],
+      [11200, { t: [880, 4420], dist: 2100, yaw: 0.7, pitch: 0.75 }],
+      [13800, { t: [900, 4400], dist: 1950, yaw: 0.9, pitch: 0.7 }],
+      [15800, { t: [1000, 4700], dist: 2600, yaw: 1.02, pitch: 0.8 }],
+      [18800, { t: [1350, 5200], dist: 6000, yaw: 1.18, pitch: 0.98 }],
+      [24000, { t: [1350, 5200], dist: 6000, yaw: 1.26, pitch: 0.98 }],
     ]);
     (function drive(now) { if (tok !== cur.token) return; camAt(road(now - t0)); requestAnimationFrame(drive); })(performance.now());
     // 1 · nobody remembers a thumbnail (the word dissolves)
@@ -191,33 +192,32 @@
     await at(1650); forget(a.querySelector(".thumb"), 1, 650); forget(a.querySelectorAll(".kw")[1], 0.45, 600, 300);
     await at(2750); gone(a);
     // 2 · but someone could remember a house → facade → brand
-    await at(2900);
+    await at(3350);
     const b = soft(["But", "someone", "could", { br: true }, { w: "remember", d: 300 }, { w: "a", d: 360 }, { brm: true }, { w: "house.", pill: "g", d: 440 }], { cls: "calm" });
-    await at(4000);
+    await at(4350);
     await morph(b.querySelector(".pill"), [["facade.", "#119BFE"], ["brand.", "#FED012"]], 640, tok);
-    await at(5900); gone(b);
+    await at(6250); gone(b);
     // 3 · the ground dissolves to the city; nine worlds, one will feel like yours (the sky changes behind the words)
-    veilTo(0, 1300);
-    await at(6500);
-    const c = soft(["Nine", "worlds", "over", "the", "same", "streets."], { cls: "calm mid onCity" });
-    await at(7400);
-    const c2 = soft(["One", "will", "feel", "like", { w: "yours.", pill: "y", d: 320 }], { cls: "calm mid" });
-    const yours = c2.querySelector(".pill");
+    await at(6300); veilTo(0, 1300);
+    await at(6900);
+    // one block, two rows: the second row joins 0.9 s after the first, in the same place
+    const c = soft(["Nine", "worlds", "over", "the", "same", "streets.", { br: true }, { w: "One", d: 900 }, { w: "will", d: 955 }, { w: "feel", d: 1010 }, { w: "like", d: 1065 }, { w: "yours.", pill: "y", d: 1220 }], { cls: "calm mid onCity" });
+    const yours = c.querySelector(".pill");
     for (let i = 0; i < WORLDS.length; i++) {
-      await at(8300 + i * 500);
+      await at(8600 + i * 500);
       const [id, sky, pc] = WORLDS[i];
       wash(sky); yours.style.background = pc; setTimeout(() => { if (tok === cur.token) send({ op: "scheme", id }); }, 70);
     }
-    await at(11600); gone(c); gone(c2);
+    await at(11900); gone(c);
     // 4 · that is what the right brand feels like
-    await at(11850);
+    await at(12500);
     const d = soft(["That's", "how", "the", { w: "right", pill: "y", d: 280 }, { w: "brand", d: 330 }, { w: "feels", d: 380 }, { w: "like.", d: 430 }], { cls: "calm mid onCity" });
-    await at(13900); gone(d);
+    await at(14400); gone(d);
     // 5 · and like good coffee: the words stay while the wall of cups fills the screen under them, then it falls
-    await at(14150);
+    await at(15000);
     const e = soft(["And", "like", "good", { w: "coffee.", pill: "y", d: 300 }], { cls: "calm mid onCity" });
-    await at(15300); gone(e);
-    await at(15500);
+    await at(16100); gone(e);
+    await at(16300);
     await cups(tok);
     if (tok !== cur.token) return;
     // 6 · there's always a good coffee around, over the whole city

@@ -196,3 +196,29 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ink); 
 .meter canvas { width: 300px; height: 44px; background: rgba(13,12,9,.55); border-radius: 8px; }
 .meter span { color: var(--paper); background: rgba(13,12,9,.55); padding: 6px 9px; border-radius: 8px; white-space: nowrap; font-size: 10px; }
 @media (max-width: 760px) { .meter canvas { width: 180px; height: 30px; } .meter span { white-space: normal; max-width: 60vw; } }
+/* ROOT FIX: every line sits in the same place, in the middle, on its own layer; a line leaving never pushes the
+   next one down (that was the "words appear somewhere else, then jump": the column laid the new line under the old
+   one until it was removed) */
+.words { display: grid; place-items: center; grid-template-columns: 100%; }
+.kl { grid-area: 1 / 1; justify-self: center; align-self: center; }
+/* exits: plain words leave letter by letter in a short cascade; a pill leaves whole, with its letters inside it */
+.kl.calm.outsoft .kw:not(.pill) .l { animation: letterOut .45s cubic-bezier(.4,0,.2,1) var(--lo, 0ms) both; }
+.kl.calm.outsoft .kw.pill .l { animation: none !important; opacity: 1 !important; }
+.kl.calm.outsoft .kw.pill { animation: pillOut .45s cubic-bezier(.4,0,.2,1) 0ms both !important; }
+/* ---------- the pill's word, final rules (last in the file on purpose) ---------- */
+.kl.calm .kw.pill .wn { display: inline-block; white-space: nowrap; }
+.kl.calm .kw.pill .wv { position: absolute; left: .34em; top: .02em; white-space: nowrap; }
+.kl.calm.in .kw.pill .wn .l { animation: letterIn .5s cubic-bezier(.16,1,.3,1) calc(var(--d, 0ms) + var(--ld, 0ms)) both; }
+.kl.calm.in .kw.pill .wn.m .l { animation: letterIn .5s cubic-bezier(.16,1,.3,1) calc(var(--ld, 0ms) + 60ms) both; }
+.kl.calm.in .kw.pill .wv .l { animation: letterOut .4s cubic-bezier(.4,0,.2,1) var(--lo, 0ms) both; }
+.kl.calm.outsoft .kw.pill .wn .l, .kl.calm.outsoft .kw.pill .wv .l { animation: none !important; opacity: 1 !important; }
+.lite .kl.calm.in .kw.pill .wn .l, .lite .kl.calm.in .kw.pill .wn.m .l { animation-name: letterInLite; }
+.lite .kl.calm.in .kw.pill .wv .l { animation-name: letterOutLite; }
+/* exits start from the visible state explicitly (a letter's base style is invisible: without a "from", an exit snapped
+   to nothing at once and the pill was left behind alone) */
+@keyframes letterOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-.34em) scale(1.03); } }
+@keyframes letterOutLite { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-.34em); } }
+@keyframes forget { from { opacity: 1; transform: none; } to { opacity: var(--fo, .06); transform: translate(var(--fx, 0px), var(--fy, -8px)) scale(.94); } }
+@keyframes forgetLite { from { opacity: 1; transform: none; } to { opacity: var(--fo, .06); transform: translate(var(--fx, 0px), var(--fy, -8px)); } }
+@keyframes pillOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-.3em); } }
+.kl.calm.outsoft .kw:not(.pill) .l { animation-duration: .5s; }
