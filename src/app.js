@@ -38718,7 +38718,7 @@ void main() {
         if (!routeRing) routeRingInit(); else routeRing.update(now);
         if (ONB_MODE) onbFrame(now); // r140
         if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sincity") sinCityRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sketch") sketchRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "riso") risoRender(now, camera); else if (mvK > 0.5 && !window.__noPost) tiltShiftRender(now); else if (window.__noPost) renderer.render(scene, camera); else outline.render(scene, camera);
-        if (ONB_MODE && onbSnapReq) { onbSnapReq = false; onbSnap(); } // r141c
+        if (onbSnapReq) { onbSnapReq = false; onbSnap(); } // r141c, r142
         requestAnimationFrame(frame);
       }
       // ===================== r89/r90: Map Mode =====================
@@ -38732,7 +38732,11 @@ void main() {
       // r139p (Daniel: "the intro must not play more than once on the site"): it plays once per visit (6 h); after that,
       // and on every link into the map (?map, the website's "Ready to board" = ?map&boarding), the city opens directly
       var BOOT_BOARD = /[?&]boarding\b/.test(location.search); // r139p: arriving for the boarding pass: no welcome card over it
+      // r142: the new opening (sketch 04 of /onboarding/intro-lab/, the same engine, hosted in the page) plays where the
+      // kinetic intro did: on "/" once per visit, or with ?intro; ?intro=classic keeps the old one
+      var INTRO4 = false, intro4 = null, intro4SnapCb = null, intro4Drop = null, intro4Fin = null;
       try { if (BOOT_MODE === "intro") { const t0 = +localStorage.getItem("cz-intro-at") || 0; if (Date.now() - t0 < 6 * 3600e3 && !/[?&]intro\b/.test(location.search)) BOOT_MODE = "map"; else localStorage.setItem("cz-intro-at", String(Date.now())); } } catch {}
+      INTRO4 = BOOT_MODE === "intro" && !/[?&]intro=classic\b/.test(location.search) && typeof window.cromaticIntro4 === "function"; // r142
       // r140: ?onb = the city inside /onboarding/ (a same-origin frame behind the page, driven by it: see onbCmd)
       var ONB_MODE = /[?&]onb\b/.test(location.search) && window.parent !== window, onbPaused = false, onbL = null, onbFrames = 0, onbPush = 1, onbHalf = false, onbSkip = false;
       if (ONB_MODE) document.documentElement.classList.add("onb");
@@ -40424,7 +40428,8 @@ void main() {
           if (!onbSnapCv) onbSnapCv = document.createElement("canvas");
           if (onbSnapCv.width !== src.width || onbSnapCv.height !== src.height) { onbSnapCv.width = src.width; onbSnapCv.height = src.height; }
           onbSnapCv.getContext("2d").drawImage(src, 0, 0);
-          window.parent.postMessage({ cz: "onb", ev: "snap" }, location.origin);
+          if (intro4SnapCb) { const f = intro4SnapCb; intro4SnapCb = null; f(); } // r142
+          if (ONB_MODE) window.parent.postMessage({ cz: "onb", ev: "snap" }, location.origin);
         } catch (e) {}
       }
       var onbOff = new Vector2(), onbOffT = new Vector2(), onbAim = null, onbShow = null, onbCoffee = null, onbMorning = null, onbSunS = null, onbSunV = new Vector3(), onbSunC = new Color(), onbBox = new Box3(), onbV = new Vector3(), onbC = new Vector3(), onbF = new Vector3(), onbR = new Vector3(), onbU = new Vector3(), onbY = new Vector3(0, 1, 0);
@@ -40437,6 +40442,29 @@ void main() {
         for (const c of S.hid) c.visible = true;
         camera.near = S.near; camera.far = S.far; camera.updateProjectionMatrix();
         applyScheme(state.schemeIdx);
+      }
+      // r141/r142: every world and every ride gets its programs compiled and its textures uploaded, one per idle slot,
+      // while nothing is seen (inside /onboarding/ while its city waits out of sight; on "/" under the new opening's
+      // ground); then the view goes back to where it was. force: not only while paused (the opening)
+      function onbWarmAll(force, done, worldsOnly) {
+        if (onbWarm) { done?.(); return; }
+        const todo = [];
+        // the opening's worlds first, in the order they come; the rides only for /onboarding/ (its showroom)
+        for (const id of ["nightlife", "ghibli", "orchid", "sketch", "underwater", "monument"]) { const i = SCHEMES.findIndex((x) => x.id === id); if (i >= 0 && !onbWarmed.has("s" + id)) todo.push(["s", i]); }
+        for (let i = 0; i < SCHEMES.length; i++) if (!onbWarmed.has("s" + SCHEMES[i].id) && !todo.some((t) => t[0] === "s" && t[1] === i) && !worldsOnly) todo.push(["s", i]);
+        if (!worldsOnly) for (const v of VEHICLES) if (!onbWarmed.has("v" + v.id)) todo.push(["v", v.id]);
+        if (!todo.length) { done?.(); return; }
+        onbWarm = { cur: state.schemeIdx, curV: state.vehicleId, todo };
+        const back = () => { const W = onbWarm; onbWarm = null; try { if (state.vehicleId !== W.curV) setVehicle(W.curV); if (state.schemeIdx !== W.cur) applyScheme(W.cur); } catch (e) {} if (veh) veh.group.visible = true; done?.(); };
+        const step = () => {
+          if (!onbWarm) return;
+          const it = onbWarm.todo.shift();
+          if (!it || (!force && !onbPaused) || document.hidden) { back(); return; }
+          onbWarmed.add(it[0] + (it[0] === "s" ? SCHEMES[it[1]].id : it[1]));
+          try { if (it[0] === "s") applyScheme(it[1]); else setVehicle(it[1]); warmNow(true); } catch (e) {}
+          (window.requestIdleCallback || setTimeout)(step, { timeout: force ? 250 : 1500 });
+        };
+        (window.requestIdleCallback || setTimeout)(step, { timeout: force ? 250 : 1500 });
       }
       function onbCmd(o) {
         if (!ONB_MODE || !o || typeof o !== "object") return;
@@ -40483,25 +40511,7 @@ void main() {
             break;
           }
           case "snap": onbSnapReq = true; break; // r141c
-          case "warm": {
-            if (!onbPaused || onbWarm) break;
-            const todo = [];
-            for (let i = 0; i < SCHEMES.length; i++) if (!onbWarmed.has("s" + SCHEMES[i].id)) todo.push(["s", i]);
-            for (const v of VEHICLES) if (!onbWarmed.has("v" + v.id)) todo.push(["v", v.id]);
-            if (!todo.length) break;
-            onbWarm = { cur: state.schemeIdx, curV: state.vehicleId, todo };
-            const back = () => { const W = onbWarm; onbWarm = null; try { if (state.vehicleId !== W.curV) setVehicle(W.curV); if (state.schemeIdx !== W.cur) applyScheme(W.cur); } catch (e) {} if (veh) veh.group.visible = true; };
-            const step = () => {
-              if (!onbWarm) return;
-              const it = onbWarm.todo.shift();
-              if (!it || !onbPaused || document.hidden) { back(); return; }
-              onbWarmed.add(it[0] + (it[0] === "s" ? SCHEMES[it[1]].id : it[1]));
-              try { if (it[0] === "s") applyScheme(it[1]); else setVehicle(it[1]); warmNow(true); } catch (e) {}
-              (window.requestIdleCallback || setTimeout)(step, { timeout: 1500 });
-            };
-            (window.requestIdleCallback || setTimeout)(step, { timeout: 1500 });
-            break;
-          }
+          case "warm": if (onbPaused) onbWarmAll(false); break; // r142: see onbWarmAll
           // the coffee stop, told by the page's scroll: n espressos (the fourth with a bang), then the rush, then calm;
           // the website's own cards, cups, shake and vignette, held on each step instead of running on a clock
           case "coffee": {
@@ -40636,6 +40646,31 @@ void main() {
         camera.lookAt(onbC);
         camera.updateMatrixWorld();
       }
+      // r142: the opening's host on "/": the city is this page, so the engine's commands land on mapView and the
+      // scheme directly; the snapshot for the dissolve is taken after the draw; the wall of cups is the kinetic's bridge;
+      // the end is mapEndIntro (the welcome card's own rules), the UI having been built behind the wall
+      function intro4Start() {
+        const stage = document.createElement("div"); stage.className = "i4-host"; document.body.appendChild(stage);
+        const host = {
+          stage, reduced: matchMedia("(prefers-reduced-motion: reduce)").matches, isPhone: () => innerWidth < 760, warmBlocking: false,
+          send(o) {
+            if (o.op === "cam") { mapIdleAt = performance.now(); mapNav.moving = false; mapView.follow = false; mapView.focus = null; mapView.yawGoal = mapView.pitchGoal = mapView.distGoal = null; if (Array.isArray(o.t)) mapView.tgt.set(+o.t[0] || 0, 0, +o.t[1] || 0); for (const k of ["dist", "yaw", "pitch"]) if (typeof o[k] === "number") mapView[k] = o[k]; }
+            else if (o.op === "scheme") { const i = SCHEMES.findIndex((x) => x.id === o.id); if (onbWarm && i >= 0) onbWarm.cur = i; if (i >= 0 && i !== state.schemeIdx) applyScheme(i); }
+          },
+          snap: () => new Promise((res) => { intro4SnapCb = () => res(onbSnapCv); onbSnapReq = true; setTimeout(() => { if (intro4SnapCb) { intro4SnapCb = null; res(null); } }, 400); }),
+          warm: () => new Promise((res) => onbWarmAll(true, res, true)),
+          cups: ({ onDrop } = {}) => new Promise((res) => { intro4Drop = onDrop; intro4Fin = res; if (kinetic?.bridge) kinetic.bridge(); else res(); setTimeout(res, 8000); }),
+          // the city shows under the words at no more than ~1.6 M pixels (it moves, nobody counts them); the adaptive
+          // resolution climbs back on its own once the opening is over and the frames prove easy
+          reveal: () => { document.body.classList.remove("kz-boot"); try { const cap = Math.min(perf.dpr, Math.max(1, Math.sqrt(1.6e6 / (innerWidth * innerHeight)))); if (cap < perf.dpr) { perf.dpr = cap; renderer.setPixelRatio(cap); renderer.setSize(innerWidth, innerHeight); perf.t = performance.now() + 20000; } } catch (e) {} },
+          ui: (on) => { if (on) { document.body.classList.remove("kz-intro"); mapUI?.skip.classList.add("hidden"); } },
+          end: () => { mapEndIntro(); setTimeout(() => stage.remove(), 1200); },
+          skipEnd: () => { document.body.classList.remove("kz-boot"); mapEndIntro(); setTimeout(() => stage.remove(), 1200); },
+        };
+        intro4 = window.cromaticIntro4(host, {});
+        if (mapUI?.skip) mapUI.skip.onclick = () => intro4.skip();
+        intro4.start();
+      }
       if (ONB_MODE) {
         window.__onb = onbCmd;
         window.__onbWarmLeft = () => (onbWarm ? onbWarm.todo.length + 1 : 0); // r141: tests
@@ -40676,7 +40711,10 @@ void main() {
       const kzLoader = BOOT_MODE !== "drive";
       var brewEl = null;
       // r139g: the drive's own ending (the cups settle and drop); as the first cup lets go the map starts its pull-out
-      var kzOpts = { drop: true, lite: innerWidth < 760, onDrop: () => { if (mapIntro) mapView.distGoal = innerWidth < 720 ? 6600 : 5400; } };
+      var kzOpts = INTRO4
+        ? { drop: true, lite: innerWidth < 760, obstacles: () => (intro4 ? intro4.obstacles() : []), onDrop: () => { try { intro4Drop?.(); } catch (e) {} } } // r142: the opening drives the camera; the standing cup is an obstacle
+        : { drop: true, lite: innerWidth < 760, onDrop: () => { if (mapIntro) mapView.distGoal = innerWidth < 720 ? 6600 : 5400; } };
+      const kzEnd = () => { if (INTRO4 && intro4Fin) { const f = intro4Fin; intro4Fin = null; f(); } else mapEndIntro(); }; // r142
       if (kzLoader) {
         window.__cupsHold = true;
         state.started = true;
@@ -40688,7 +40726,7 @@ void main() {
         // works. Then the kinetic type starts on a free thread and never stutters.
         // r136c: the first paint (build.mjs) already is this cup, turning: the loader adopts that very element,
         // so there is no swap, no jump and never a star. Only without it (an old cached page) is one made here.
-        try { kinetic = createKinetic(() => mapEndIntro(), null, kzOpts); } catch (e) {}
+        try { kinetic = createKinetic(kzEnd, null, kzOpts); } catch (e) {}
         const bootCup = document.querySelector(".boot.kz-brew");
         if (bootCup) { bootCup.classList.remove("boot"); brewEl = bootCup; }
         else {
@@ -40709,7 +40747,8 @@ void main() {
         // r139r: the cups still bridge the loader and the map (no words): they fill the screen and fall to reveal it
         if (BOOT_MODE === "map" && kinetic?.bridge && !matchMedia("(prefers-reduced-motion: reduce)").matches) { mapUI?.skip.classList.add("hidden"); kinetic.bridge(); if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; } return; }
         if (BOOT_MODE === "map") { mapEndIntro(); if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; } return; }
-        if (!kinetic) kinetic = createKinetic(() => mapEndIntro(), null, kzOpts);
+        if (!kinetic) kinetic = createKinetic(kzEnd, null, kzOpts);
+        if (INTRO4) { intro4Start(); if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; } return; } // r142
         kinetic.resume();
         if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; }
       };

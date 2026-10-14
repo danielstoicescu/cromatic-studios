@@ -102,7 +102,14 @@ let jsOut = lazy(extract(js));
   jsOut = jsOut.replace(/var steamCaseHtml = "(?:[^"\\]|\\.)*";/, 'var steamCaseHtml = "";');
   if (jsOut.length === before) console.warn("[build] steamCaseHtml not found in the bundle (nothing to drop)");
 }
-let cssOut = extract(css);
+// r142: the opening's engine (site/onboarding/intro-lab/engine.js + .css) is one file for the lab and the site: it is
+// laid before the app in the bundle (window.cromaticIntro4 is there when the boot asks) and its styles join the sheet
+let engineCss = "";
+{
+  const eng = join(root, "site", "onboarding", "intro-lab");
+  try { jsOut = readFileSync(join(eng, "engine.js"), "utf8") + "\n" + jsOut; engineCss = readFileSync(join(eng, "engine.css"), "utf8"); } catch (e) { console.warn("[build] opening engine not found:", e.message); }
+}
+let cssOut = extract(css) + "\n" + engineCss;
 // minify for production (the single-file build stays readable); skipped if esbuild is missing
 try {
   const { transformSync } = await import("esbuild");
