@@ -38764,11 +38764,17 @@ void main() {
       // lower, clear of the welcome sheet. The camera looks north (yaw 0.3, the map's own look), so the car (north of
       // Two Minutes) is up the screen and the shop down it; the target sits between them, nearer the shop
       var mapSettle = 0; // r142b: frames left in which the view is nudged so the car lands where mapOpeningView wants it (the real lens)
+      // r147 (Daniel): on a desktop the first frame is his reference (design/first-frame-reference.webp): yaw 0.928, pitch 0.839,
+      // dist 3485, solved on the real lens (warp included) from seven landmarks of the reference (the car, the Two Minutes and
+      // Two Min Lab pins, the Attic, CH.02, CH.03, the fountain), each within a few % of where it is in the picture at 2000×1353.
+      // Other aspect ratios keep the yaw, pitch and dist and shift the target so the car keeps its place (0.93, 0.21).
+      // A phone keeps the r142b framing (the car lower, clear of the welcome sheet) until Daniel decides
+      var OPEN_VIEW = () => innerWidth < 720 ? { yaw: 0.3, pitch: 0.62, dist: 3600, want: [0.62, 0.68] } : { yaw: 0.928, pitch: 0.839, dist: 3485, want: [0.93, 0.21] };
       function mapSettleTick() {
         if (mapSettle <= 0) return;
         if (!mapMode || mapNav.moving || mapNav.place || jetFx.phase !== "idle" || mapView.follow) { mapSettle = 0; return; }
         mapSettle--;
-        const phone = innerWidth < 720, want = phone ? [0.62, 0.68] : [0.78, 0.22];
+        const want = OPEN_VIEW().want; // r147
         const yaw = mapView.yaw, r = new Vector3(Math.cos(yaw), 0, -Math.sin(yaw)), f = new Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
         const P = (p) => { const v = warpV(p.clone()).project(camera); return [v.x * 0.5 + 0.5, -v.y * 0.5 + 0.5]; };
         const car = new Vector3(carPos.x, 0, carPos.z), c = P(car), pr = P(car.clone().addScaledVector(r, 100)), pf = P(car.clone().addScaledVector(f, 100));
@@ -38779,25 +38785,32 @@ void main() {
         mapView.tgt.x += ar * r.x + af * f.x; mapView.tgt.z += ar * r.z + af * f.z;
       }
       function mapOpeningView() {
-        const phone = innerWidth < 720, car = new Vector3(carPos.x, 0, carPos.z);
-        const yaw = 0.3, pitch = 0.62, dist = phone ? 3600 : 3300; // a lower, longer look: the car high in it, Two Minutes in it too
-        const want = phone ? [0.62, 0.68] : [0.78, 0.22]; // where the car lands on the screen (fractions of width, height)
+        const car = new Vector3(carPos.x, 0, carPos.z);
+        const { yaw, pitch, dist, want } = OPEN_VIEW(); // r147: the reference's look; want = where the car lands on the screen (fractions of width, height)
         // a scratch camera placed the way the map places its own, so the target can be solved from the car's projection
         // (placed the way the map places its own: mapView.pos, the camera and its look in the bent world, the lens as it is)
-        const cam = new PerspectiveCamera(camera.fov, innerWidth / innerHeight, camera.near, camera.far);
+        // r147: the map's own lens, settled (mvK 1: fov 16, the telephoto push and lift of the frame, see "telephoto push"),
+        // not whatever the camera holds before the map's first frame: the solve has to be right at boot
+        const cam = new PerspectiveCamera(16, innerWidth / innerHeight, camera.near, camera.far);
         const place = (t) => {
           const cp = Math.cos(pitch);
           cam.position.set(t.x + Math.sin(yaw) * cp * dist, Math.sin(pitch) * dist, t.z + Math.cos(yaw) * cp * dist);
+          const off = cam.position.clone().sub(t), d0 = off.length(), d1 = Math.min(d0 * 3.1, Math.max(d0, 3400));
+          cam.position.copy(t).addScaledVector(off, d1 / Math.max(d0, 1e-3)); cam.position.y += 160;
           warpV(cam.position); cam.lookAt(warpV(t.clone())); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
         };
         const proj = (p) => { const v = (typeof warpV === "function" ? warpV(p.clone()) : p.clone()).project(cam); return [v.x * 0.5 + 0.5, -v.y * 0.5 + 0.5]; };
         const r = new Vector3(Math.cos(yaw), 0, -Math.sin(yaw)), f = new Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
-        const t = car.clone();
-        for (let i = 0; i < 3; i++) {
+        // r147: from a guess near the answer (the car sits top right, so the target is ahead of it and a little left), in
+        // damped steps: with the car far from the middle the lens is not linear enough for full Newton steps in three goes
+        const t = car.clone().addScaledVector(f, -(want[1] - 0.5) * dist * 0.55).addScaledVector(r, (want[0] - 0.5) * dist * 0.55 * -1);
+        for (let i = 0; i < 10; i++) {
           place(t);
           const c = proj(car), pr = proj(car.clone().addScaledVector(r, 100)), pf = proj(car.clone().addScaledVector(f, 100));
           const dxr = pr[0] - c[0] || 1e-4, dyf = pf[1] - c[1] || -1e-4; // per 100 units to the right / ahead
-          t.addScaledVector(r, -(want[0] - c[0]) / dxr * 100).addScaledVector(f, -(want[1] - c[1]) / dyf * 100);
+          const ar = -(want[0] - c[0]) / dxr * 100, af = -(want[1] - c[1]) / dyf * 100, k = i < 4 ? 0.7 : 1;
+          t.addScaledVector(r, ar * k).addScaledVector(f, af * k);
+          if (Math.abs(want[0] - c[0]) < 0.001 && Math.abs(want[1] - c[1]) < 0.001) break;
         }
         return { t: [t.x, t.z], dist, yaw, pitch };
       }
@@ -40264,7 +40277,7 @@ void main() {
           driveGuideOff = () => { removeEventListener("scroll", onScroll); clearTimeout(t); };
         }, 700);
       }
-      function setMapMode(on, { intro = false } = {}) {
+      function setMapMode(on, { intro = false, open = false } = {}) { // r147: open = the map as the site opens on it (?map, ?map&boarding): the first frame, no pull-out
         if (on === mapMode) return;
         driveGuideEnd(); // r139i
         warmShaders(); // r139b: the other mode draws through another target
@@ -40289,11 +40302,11 @@ void main() {
           mapNav.targetL = state.L; mapNav.legs = []; mapNav.moving = false; mapNav.place = null;
           mapView.focus = null;
           // the van is the first thing you see: centred, close, then the camera pulls out to the map
-          if (intro || state.L < route.stopL.fork) {
+          if (!open && (intro || state.L < route.stopL.fork)) {
             mapView.tgt.set(carPos.x, 0, carPos.z); mapView.follow = true; mapView.dist = 1300; mapView.distRate = 0.9;
             if (!intro) setTimeout(() => { mapView.distGoal = innerWidth < 720 ? 6600 : 5400; }, 700);
           }
-          else { const v = mapOpeningView(); mapView.tgt.set(v.t[0], 0, v.t[1]); mapView.follow = false; mapView.dist = v.dist; mapView.yaw = v.yaw; mapView.pitch = v.pitch; } // r142b: the first frame, as the opening leaves it
+          else { const v = mapOpeningView(); mapView.tgt.set(v.t[0], 0, v.t[1]); mapView.follow = false; mapView.dist = v.dist; mapView.yaw = v.yaw; mapView.pitch = v.pitch; if (open) { mapSettle = 90; mvK = 1; } } // r142b: the first frame, as the opening leaves it (r147: and as ?map opens, the lens settled from the first frame)
           mapView.distGoal = null;
           sun.shadow.camera.left = sun.shadow.camera.bottom = -3000; sun.shadow.camera.right = sun.shadow.camera.top = 3000; sun.shadow.camera.updateProjectionMatrix();
           scrollSpace.style.display = "none";
@@ -40798,13 +40811,13 @@ void main() {
       // r139g: the drive's own ending (the cups settle and drop); as the first cup lets go the map starts its pull-out
       var kzOpts = INTRO4
         ? { drop: true, lite: innerWidth < 760, settle: 700, obstacles: () => (intro4 ? intro4.obstacles() : []), onDrop: () => { try { intro4Drop?.(); } catch (e) {} } } // r142: the opening drives the camera; the standing cup is an obstacle
-        : { drop: true, lite: innerWidth < 760, onDrop: () => { if (mapIntro) mapView.distGoal = innerWidth < 720 ? 6600 : 5400; } };
+        : { drop: true, lite: innerWidth < 760, onDrop: () => { if (mapIntro && BOOT_MODE !== "map") mapView.distGoal = innerWidth < 720 ? 6600 : 5400; } }; // r147: the cups-only bridge (?map) keeps the first frame: no pull-out
       const kzEnd = () => { if (INTRO4 && intro4Fin) { const f = intro4Fin; intro4Fin = null; f(); } else mapEndIntro(); }; // r142
       if (kzLoader) {
         window.__cupsHold = true;
         state.started = true;
         state.visited.add("start");
-        setMapMode(true, { intro: true });
+        setMapMode(true, { intro: true, open: BOOT_MODE === "map" }); // r147: ?map (the cups-only bridge) opens on the first frame
         ui.hideLoader();
         // r129: a short brew first. One cup (the intro's own) fills up while the city is built and the
         // shaders compile; the fill is a compositor animation, so it stays smooth while the main thread
@@ -40891,7 +40904,7 @@ void main() {
           startRevealAt = Infinity;
           // r90: the site opens on the map: "/" plays the kinetic intro over it (skippable),
           // /?map goes straight to the map, /?drive is the scroll-driven drive as before
-          if (BOOT_MODE === "map") { setMapMode(true); return; }
+          if (BOOT_MODE === "map") { setMapMode(true, { open: true }); return; } // r147: straight onto the first frame
           if (BOOT_MODE === "intro") {
             setMapMode(true, { intro: true });
             kinetic = createKinetic(() => mapEndIntro(), null);
