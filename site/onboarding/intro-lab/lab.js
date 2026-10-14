@@ -165,13 +165,14 @@
     await cupsPrep(tok);
     lab.classList.remove("warming");
     cur.t0 = performance.now();
+    meter.begin();
     const t0 = performance.now();
     const at = async (ms) => { const d = ms - (performance.now() - t0); if (d > 0) await wait(d, tok); };
     const soft = (parts, o = {}) => line(parts, { fx: "soft", stagger: 55, letters: true, ...o });
     // a line leaves letter by letter, each on its own moment, upwards and out of focus
-    const gone = (el) => { if (!el || !el.isConnected) return; el.querySelectorAll(".l").forEach((l) => l.style.setProperty("--lo", Math.round(Math.random() * 240) + "ms")); el.classList.add("outsoft"); setTimeout(() => el.remove(), 1000); };
+    const gone = (el) => { if (!el || !el.isConnected) return; el.querySelectorAll(".l").forEach((l, j) => l.style.setProperty("--lo", Math.min(260, j * 9) + "ms")); el.classList.add("outsoft"); setTimeout(() => el.remove(), 1000); };
     // a word is forgotten: its letters drift apart and out of focus, each on its own moment (k: how far it goes)
-    const forget = (w, k = 1, spread = 700, from = 0) => { if (!w) return; w.querySelectorAll(".l").forEach((l) => { l.style.setProperty("--lo", (from + Math.random() * spread).toFixed(0) + "ms"); l.style.setProperty("--fx", ((Math.random() - 0.5) * 22 * k).toFixed(1) + "px"); l.style.setProperty("--fy", (-(4 + Math.random() * 10) * k).toFixed(1) + "px"); l.style.setProperty("--fo", k >= 1 ? 0.06 : 0.3); }); w.classList.add("forget"); };
+    const forget = (w, k = 1, spread = 700, from = 0) => { if (!w) return; const ls = [...w.querySelectorAll(".l")]; ls.forEach((l, j) => { const u = ls.length > 1 ? j / (ls.length - 1) : 0; l.style.setProperty("--lo", (from + (0.35 * u + 0.65 * ((j * 7) % 10) / 10) * spread).toFixed(0) + "ms"); l.style.setProperty("--fx", ((u - 0.5) * 26 * k).toFixed(1) + "px"); l.style.setProperty("--fy", (-(5 + ((j * 3) % 5) * 2) * k).toFixed(1) + "px"); l.style.setProperty("--fo", k >= 1 ? 0.06 : 0.3); }); w.classList.add("forget"); };
     // the camera, start to end, one continuous move (it only shows from 6.9 s, when the ground dissolves)
     const road = path([
       [0, { t: [1000, 4800], dist: 3400, yaw: 0.2, pitch: 0.98 }],
@@ -205,7 +206,7 @@
     for (let i = 0; i < WORLDS.length; i++) {
       await at(8300 + i * 500);
       const [id, sky, pc] = WORLDS[i];
-      wash(sky); send({ op: "scheme", id }); yours.style.background = pc;
+      wash(sky); yours.style.background = pc; setTimeout(() => { if (tok === cur.token) send({ op: "scheme", id }); }, 70);
     }
     await at(11600); gone(c); gone(c2);
     // 4 · that is what the right brand feels like
@@ -223,6 +224,7 @@
     await wait(450, tok);
     const f = soft(["There's", "always", "a", "good", { w: "coffee", pill: "y", d: 300 }, { w: "around.", d: 360 }], { cls: "calm mid onCity" });
     await wait(2600, tok); gone(f);
+    await wait(800, tok); meter.end();
   };
 
   /* ================= 01 · parked: the site's own kinetic stage, with the new words ================= */
@@ -260,9 +262,42 @@
     await played;
   };
 
+  /* ---------- the frame meter: how long every frame took (a bar each), the run's dropped share and its worst moments ---------- */
+  const meter = (() => {
+    const box = document.createElement("div"); box.className = "meter";
+    box.innerHTML = '<canvas width="300" height="44"></canvas><span class="mono"></span>';
+    document.body.appendChild(box);
+    const cv = box.querySelector("canvas"), ctx = cv.getContext("2d"), txt = box.querySelector("span");
+    let last = 0, run = null;
+    const begin = () => { run = { t0: performance.now(), n: 0, dropped: 0, worst: [], sum: 0 }; };
+    const end = () => { if (!run) return; const r = run; run = null; report(r, true); };
+    const report = (r, fin) => {
+      const w = r.worst.slice().sort((a, b) => b[1] - a[1]).slice(0, 3).map((x) => `${Math.round(x[1])} ms @ ${(x[0] / 1000).toFixed(1)}s`).join(" · ");
+      txt.textContent = `${fin ? "run" : "live"} · ${Math.round(1000 / (r.sum / Math.max(1, r.n)))} fps · dropped ${(100 * r.dropped / Math.max(1, r.n + r.dropped)).toFixed(1)}%` + (w ? ` · worst ${w}` : "");
+    };
+    const tick = (now) => {
+      const dt = last ? now - last : 16.7; last = now;
+      // the strip: one bar per frame, green under 20 ms, amber under 34, red above
+      const W = cv.width, H = cv.height;
+      ctx.drawImage(cv, -2, 0); ctx.clearRect(W - 2, 0, 2, H);
+      const h = Math.min(H, dt / 100 * H);
+      ctx.fillStyle = dt < 20 ? "#28C840" : dt < 34 ? "#FED012" : "#F65342";
+      ctx.fillRect(W - 2, H - h, 2, h);
+      if (run) {
+        run.n++; run.sum += dt;
+        const d = Math.max(0, Math.round(dt / 16.667) - 1); run.dropped += d;
+        if (dt > 40) run.worst.push([now - run.t0, dt]);
+        if (run.n % 30 === 0) report(run, false);
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    return { begin, end };
+  })();
+
   /* ---------- skip: straight to the end, the city seen whole ---------- */
   const skip = () => {
-    cur.token++;
+    cur.token++; meter.end();
     try { cur.kz?.pause?.(); } catch (e) {}
     kzhost.innerHTML = ""; kzhost.className = "kzhost"; cur.kz = null;
     clearAll(); lab.classList.remove("warming");
