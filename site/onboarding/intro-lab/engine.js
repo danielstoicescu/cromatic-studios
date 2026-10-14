@@ -24,15 +24,23 @@
   // the worlds, in the order they pass behind "yours.": id, the pill's colour under it, the chip's name
   const WORLDS = [["nightlife", "#FF9E3D", "Night Mode"], ["ghibli", "#e0b25a", "Ghib.ly"], ["orchid", "#f08bb4", "Sakura"], ["sketch", "#ffd84a", "Sketchbook"], ["underwater", "#3de0d0", "Underwater"], ["monument", "#FED012", "Cromatic"]];
   const START = { t: [1000, 4800], dist: 3400, yaw: 0.2, pitch: 0.98 };
-  const ROAD = [
-    [0, START], [5800, START],
-    [8200, { t: [880, 4420], dist: 2350, yaw: 0.48, pitch: 0.8 }],
-    [11200, { t: [880, 4420], dist: 2100, yaw: 0.7, pitch: 0.75 }],
-    [13800, { t: [900, 4400], dist: 1950, yaw: 0.9, pitch: 0.7 }],
-    [15800, { t: [1000, 4700], dist: 2600, yaw: 1.02, pitch: 0.8 }],
-    [18800, { t: [1300, 5100], dist: 5400, yaw: 1.18, pitch: 0.98 }],
-    [21500, { t: [1300, 5100], dist: 5400, yaw: 1.22, pitch: 0.98 }],
-  ];
+  // the camera's road; its end is the car (wherever it stands), framed on the right of the screen at the angle of
+  // the coffee moment, so the map is left where the welcome card finds it
+  const road_ = (car, phone) => {
+    const yaw = 1.02, dist = 2600, pitch = 0.8;
+    // to the right of the middle: along the camera's right vector (cos yaw, -sin yaw); on a phone a little, and lower
+    // down the screen (the welcome sheet takes the top): the target moves ahead of the car, along the view (-sin, -cos)
+    const off = dist * (phone ? 0.02 : 0.1), fwd = phone ? dist * 0.065 : 0;
+    const end = car ? { t: [car[0] - Math.cos(yaw) * off - Math.sin(yaw) * fwd, car[1] + Math.sin(yaw) * off - Math.cos(yaw) * fwd], dist, yaw, pitch } : { t: [1300, 5100], dist: 5400, yaw: 1.18, pitch: 0.98 };
+    return [
+      [0, START], [5800, START],
+      [8200, { t: [880, 4420], dist: 2350, yaw: 0.48, pitch: 0.8 }],
+      [11200, { t: [880, 4420], dist: 2100, yaw: 0.7, pitch: 0.75 }],
+      [13800, { t: [900, 4400], dist: 1950, yaw: 0.9, pitch: 0.7 }],
+      [15800, { t: [1000, 4700], dist: 2600, yaw: 1.02, pitch: 0.8 }],
+      [18600, end], [30000, end],
+    ];
+  };
   const BEATS = [300, 3350, 6300, 12500, 15000, 16300]; // where each beat begins on the clock
 
   window.cromaticIntro4 = function (host, opts = {}) {
@@ -131,7 +139,8 @@
       root.classList.remove("warming");
       cur.t0 = performance.now(); cur.running = true; root.classList.add("running");
       opts.onStart?.();
-      const road = path(ROAD);
+      let car = null; try { car = host.carPos?.() || null; } catch (e) {}
+      const road = path(road_(car, phone()));
       cur.camOn = true; cur.camOff = 0; cur.camHold = 0; let camLast = performance.now();
       (function drive(now) { if (tok !== cur.token || !cur.camOn) return; if (now < cur.camHold) cur.camOff += now - camLast; camLast = now; camAt(road(now - cur.t0 - cur.camOff)); requestAnimationFrame(drive); })(performance.now());
       // 1 · nobody remembers a thumbnail: the word sits on a sheet of thumbnails, and the sheet falls apart
@@ -149,7 +158,7 @@
       await at(2750, tok); gone(a); fast(over.querySelector(".tgrid"));
       // 2 · but someone could remember a house → facade → brand
       await at(3350, tok);
-      const b = line(["But", "someone", "could", { br: true }, { w: "remember", d: 300 }, { w: "a", d: 360 }, { brm: true }, { w: "house.", pill: "g", d: 440 }]);
+      const b = line(["But", "someone", "could", { br: true }, { w: "remember", d: 300 }, { w: "a", d: 360 }, { brm: true }, { w: "place.", pill: "g", d: 440 }]);
       await at(4350, tok);
       if (!late(4350)) await morph(b.querySelector(".pill"), [["facade.", "#119BFE"], ["brand.", "#FED012"]], 640, tok);
       await at(6100, tok); gone(b);
@@ -179,7 +188,7 @@
       await at(14400, tok); gone(d); xp.classList.add("gone"); setTimeout(() => xp.remove(), 700);
       // 5 · and like good coffee: the studio's cup stands in the middle; the words leave as the wall of cups comes
       await at(15000, tok);
-      const e = line(["And", "like", "good", { w: "coffee.", pill: "y", d: 300 }], { cls: "mid onCity hi" });
+      const e = line(["And", "like", { w: "good", pill: "mv", d: 200 }, { w: "coffee.", pill: "y", d: 330 }], { cls: "mid onCity hi" });
       html(`<i class="cupbig"></i>`);
       await at(16100, tok); gone(e);
       await at(16300, tok);
@@ -191,13 +200,13 @@
       const cupP = (host.cups ? host.cups({ onDrop: () => letGo() }) : Promise.resolve()).catch(() => {});
       await Promise.race([dropP, cupP]);
       if (tok !== cur.token) throw abort();
-      await wait(650, tok);
-      const f = line(["There's", "always", "a", "good", { w: "coffee", pill: "y", d: 300 }, { w: "around.", d: 360 }], { cls: "mid onCity lo" });
+      await wait(250, tok);
+      const f = line(["There's", "always", "a", { w: "good", pill: "mv", d: 240 }, { w: "coffee", pill: "y", d: 330 }, { w: "around.", d: 390 }], { cls: "mid onCity lo" });
       await cupP;
       if (tok !== cur.token) throw abort();
       cur.camOn = false; // the map's own hands from here
-      await wait(700, tok); gone(f); over.querySelector(".cupbig")?.classList.add("gone");
-      await wait(700, tok);
+      await wait(300, tok); gone(f); over.querySelector(".cupbig")?.classList.add("gone");
+      await wait(350, tok);
       finish(tok);
     };
     const finish = (tok) => {

@@ -29008,7 +29008,7 @@ void main() {
             }
             if (first < Infinity) setTimeout(() => { try { opts.onDrop?.(); } catch (e) {} }, Math.max(0, first - now));
             // the last cup needs ~0.75 s to cross the frame; the canvas only fades at the very end, as a safety net
-            const dur = Math.max(1200, late - now + 780) + (opts.obstacles ? 1500 : 0); // r140: the bounces take a moment
+            const dur = Math.max(1200, late - now + 780) + (opts.obstacles ? (opts.settle ?? 1500) : 0); // r140: the bounces take a moment (r142: opts.settle, shorter for the opening)
             leaving = { t0: now, dur, fade: (late - now + 500) / dur, cb: () => { clear(); res(); } };
           });
         }
@@ -40165,7 +40165,7 @@ void main() {
         document.body.classList.remove("kz-boot");
         if (!mapIntro) return;
         mapIntro = false;
-        setTimeout(() => { mapView.distGoal = innerWidth < 720 ? 6600 : 5400; }, 250);
+        if (!INTRO4) setTimeout(() => { mapView.distGoal = innerWidth < 720 ? 6600 : 5400; }, 250); // r142: the opening leaves the camera where it ends, on the car
         document.body.classList.remove("kz-intro");
         mapUI?.skip.classList.add("hidden");
         setTimeout(() => { if (mapMode && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI?.welcome(true); }, 1400);
@@ -40653,6 +40653,7 @@ void main() {
         const stage = document.createElement("div"); stage.className = "i4-host"; document.body.appendChild(stage);
         const host = {
           stage, reduced: matchMedia("(prefers-reduced-motion: reduce)").matches, isPhone: () => innerWidth < 760, warmBlocking: false,
+          carPos: () => [carPos.x, carPos.z], // the opening ends on the map where the car stands
           send(o) {
             if (o.op === "cam") { mapIdleAt = performance.now(); mapNav.moving = false; mapView.follow = false; mapView.focus = null; mapView.yawGoal = mapView.pitchGoal = mapView.distGoal = null; if (Array.isArray(o.t)) mapView.tgt.set(+o.t[0] || 0, 0, +o.t[1] || 0); for (const k of ["dist", "yaw", "pitch"]) if (typeof o[k] === "number") mapView[k] = o[k]; }
             else if (o.op === "scheme") { const i = SCHEMES.findIndex((x) => x.id === o.id); if (onbWarm && i >= 0) onbWarm.cur = i; if (i >= 0 && i !== state.schemeIdx) applyScheme(i); }
@@ -40696,6 +40697,7 @@ void main() {
         cupsFlying: flights.filter((f) => f.kind === "cup").length,
         pnext: Math.round(police.next - performance.now()),
         car: veh.group.position.toArray().map((v) => Math.round(v)),
+        vehVis: veh.group.visible, vehScale: +veh.group.scale.x.toFixed(2), vehScreen: (() => { const v = veh.group.position.clone().project(camera); return [Math.round((v.x * 0.5 + 0.5) * innerWidth), Math.round((-v.y * 0.5 + 0.5) * innerHeight), +v.z.toFixed(3)]; })(), // r142: tests
         rotY: +veh.group.rotation.y.toFixed(3),
         rotZ: +veh.group.rotation.z.toFixed(3),
         air: +air.toFixed(2),
@@ -40712,7 +40714,7 @@ void main() {
       var brewEl = null;
       // r139g: the drive's own ending (the cups settle and drop); as the first cup lets go the map starts its pull-out
       var kzOpts = INTRO4
-        ? { drop: true, lite: innerWidth < 760, obstacles: () => (intro4 ? intro4.obstacles() : []), onDrop: () => { try { intro4Drop?.(); } catch (e) {} } } // r142: the opening drives the camera; the standing cup is an obstacle
+        ? { drop: true, lite: innerWidth < 760, settle: 700, obstacles: () => (intro4 ? intro4.obstacles() : []), onDrop: () => { try { intro4Drop?.(); } catch (e) {} } } // r142: the opening drives the camera; the standing cup is an obstacle
         : { drop: true, lite: innerWidth < 760, onDrop: () => { if (mapIntro) mapView.distGoal = innerWidth < 720 ? 6600 : 5400; } };
       const kzEnd = () => { if (INTRO4 && intro4Fin) { const f = intro4Fin; intro4Fin = null; f(); } else mapEndIntro(); }; // r142
       if (kzLoader) {

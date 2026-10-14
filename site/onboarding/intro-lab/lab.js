@@ -37,7 +37,7 @@
   const cupsPrep = async (tok, obstacles, lite = phone()) => {
     if (RM || !(await loadKz()) || !window.cromaticKinetic || tok !== cur.token) return null;
     let k = null;
-    try { k = window.cromaticKinetic(() => cur.onFinale?.(), async () => {}, { drop: true, lite, obstacles, onDrop: () => { try { cur.onDrop?.(); } catch (e) {} } }); } catch (e) { return null; }
+    try { k = window.cromaticKinetic(() => cur.onFinale?.(), async () => {}, { drop: true, lite, settle: 700, obstacles, onDrop: () => { try { cur.onDrop?.(); } catch (e) {} } }); } catch (e) { return null; }
     const st = document.body.querySelector(":scope > .kz");
     kzhost.className = "kzhost cupsonly";
     if (st) kzhost.appendChild(st);
@@ -104,6 +104,7 @@
     const host = {
       stage: $(".i4-stage"),
       isPhone: phone, reduced: RM, warmBlocking: true,
+      carPos: () => { try { const d = win().__dbg?.(); return d && d.car ? [d.car[0], d.car[2]] : null; } catch (e) { return null; } },
       send,
       snap: () => new Promise((res) => { snapCb = () => { let c = null; try { c = win().__onbSnapCanvas?.(); } catch (e) {} res(c); }; send({ op: "snap" }); setTimeout(() => { if (snapCb) { snapCb = null; res(null); } }, 400); }),
       warm: () => cityWarm(tok),

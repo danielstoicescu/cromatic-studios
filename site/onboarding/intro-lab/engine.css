@@ -93,3 +93,10 @@
 }
 .i4.lite .cupbig { filter: none; }
 @media (prefers-reduced-motion: reduce) { .i4-veil.warm::before { animation: none; } }
+/* the rainbow pill (as the Multiverse button on /onboarding/): white, with a turning rainbow on its outline */
+@property --i4mv { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.i4 .kw.pill-mv { background: transparent; border-color: transparent; isolation: isolate; color: var(--ink); }
+.i4 .kw.pill-mv::before { content: ""; position: absolute; inset: -2px; border-radius: inherit; z-index: -2; background: conic-gradient(from var(--i4mv), #FED012, #28C840, #119BFE, #B098C8, #F65342, #FED012); animation: i4mv 3.2s linear infinite; }
+.i4 .kw.pill-mv::after { content: ""; position: absolute; inset: calc(.03em + 2px); border-radius: inherit; z-index: -1; background: #fff; }
+@keyframes i4mv { to { --i4mv: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .i4 .kw.pill-mv::before { animation: none; } }
