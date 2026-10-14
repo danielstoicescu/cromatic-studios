@@ -38005,6 +38005,9 @@ void main() {
       }
       function frame(now) {
         if (ONB_MODE && onbPaused) { prevT = now; requestAnimationFrame(frame); return; } // r140: no zone of /onboarding/ on screen
+        // r156b: a resolution change asked for outside the frame (the opening's wall and reveal) lands here, and this frame
+        // draws whatever the half-rate rule says: a resized canvas is blank until it is drawn (a frame of the cream ground)
+        if (perf.dprPend != null) { renderer.setPixelRatio(perf.dprPend); renderer.setSize(window.innerWidth, window.innerHeight); perf.dprPend = null; onbSkip = true; }
         if ((ONB_MODE || intro4Wall) && onbHalf && (onbSkip = !onbSkip)) { requestAnimationFrame(frame); return; } // r140: a slow phone: every other frame (the page's own scroll keeps the rest)
         if (cityCovered()) { prevT = now; requestAnimationFrame(frame); return; } // r139b
         if (introFreeze(now)) { prevT = now; requestAnimationFrame(frame); return; } // r139g
@@ -40849,7 +40852,7 @@ void main() {
           cups: ({ onDrop } = {}) => new Promise((res) => {
             intro4Drop = onDrop;
             let dprWas = null;
-            const wall = (on) => { intro4Wall = on; onbHalf = on; try { if (on) { dprWas = perf.dpr; const cap = Math.max(0.75, Math.min(perf.dpr, Math.sqrt(1.0e6 / (innerWidth * innerHeight)))); if (cap < perf.dpr) { perf.dpr = cap; renderer.setPixelRatio(cap); renderer.setSize(innerWidth, innerHeight); } } else if (dprWas != null && dprWas > perf.dpr) { perf.dpr = dprWas; renderer.setPixelRatio(dprWas); renderer.setSize(innerWidth, innerHeight); perf.t = performance.now() + 4000; } } catch (e) {} };
+            const wall = (on) => { intro4Wall = on; onbHalf = on; try { if (on) { dprWas = perf.dpr; const cap = Math.max(0.75, Math.min(perf.dpr, Math.sqrt(1.0e6 / (innerWidth * innerHeight)))); if (cap < perf.dpr) { perf.dpr = cap; perf.dprPend = cap; } } else if (dprWas != null && dprWas > perf.dpr) { perf.dpr = dprWas; perf.dprPend = dprWas; perf.t = performance.now() + 4000; } } catch (e) {} }; // r156b: applied in the frame
             const done = () => { wall(false); res(); };
             intro4Fin = done;
             wall(true);
@@ -40862,7 +40865,7 @@ void main() {
           endView: () => mapOpeningView(),
           // the city shows under the words at no more than ~1.6 M pixels (it moves, nobody counts them); the adaptive
           // resolution climbs back on its own once the opening is over and the frames prove easy
-          reveal: () => { document.body.classList.remove("kz-boot"); try { const cap = Math.min(perf.dpr, Math.max(1, Math.sqrt(1.6e6 / (innerWidth * innerHeight)))); if (cap < perf.dpr) { perf.dpr = cap; renderer.setPixelRatio(cap); renderer.setSize(innerWidth, innerHeight); perf.t = performance.now() + 20000; } } catch (e) {} },
+          reveal: () => { document.body.classList.remove("kz-boot"); try { const cap = Math.min(perf.dpr, Math.max(1, Math.sqrt(1.6e6 / (innerWidth * innerHeight)))); if (cap < perf.dpr) { perf.dpr = cap; perf.dprPend = cap; perf.t = performance.now() + 20000; } } catch (e) {} }, // r156b: applied in the frame
           ui: (on) => { if (on) { document.body.classList.remove("kz-intro"); mapUI?.skip.classList.add("hidden"); } },
           skipView: () => { const v = mapOpeningView(); mapView.tgt.set(v.t[0], 0, v.t[1]); mapView.dist = v.dist; mapView.yaw = v.yaw; mapView.pitch = v.pitch; mapView.distGoal = null; },
           end: () => { mapEndIntro(); setTimeout(() => stage.remove(), 1200); },
