@@ -38718,6 +38718,7 @@ void main() {
         if (!routeRing) routeRingInit(); else routeRing.update(now);
         if (ONB_MODE) onbFrame(now); // r140
         if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sincity") sinCityRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sketch") sketchRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "riso") risoRender(now, camera); else if (mvK > 0.5 && !window.__noPost) tiltShiftRender(now); else if (window.__noPost) renderer.render(scene, camera); else outline.render(scene, camera);
+        if (ONB_MODE && onbSnapReq) { onbSnapReq = false; onbSnap(); } // r141c
         requestAnimationFrame(frame);
       }
       // ===================== r89/r90: Map Mode =====================
@@ -40413,6 +40414,19 @@ void main() {
       // the stories show it) and a pause while no zone is on screen. In the frame: no UI (styles.css html.onb), no
       // drop-in when a ride changes, no police, no coffee stop. It answers {cz:"onb", ev:"ready"} once it has drawn.
       var onbWarm = null, onbWarmed = new Set(); // r141: the worlds and rides warmed out of sight (onbCmd "warm")
+      // r141c: a snapshot of the last drawn frame, for the intro lab's dissolve between worlds (onbCmd "snap"): copied
+      // right after the draw, in the same task, while the drawing buffer is still there; read by the page through
+      // window.__onbSnapCanvas()
+      var onbSnapReq = false, onbSnapCv = null;
+      function onbSnap() {
+        try {
+          const src = renderer.domElement;
+          if (!onbSnapCv) onbSnapCv = document.createElement("canvas");
+          if (onbSnapCv.width !== src.width || onbSnapCv.height !== src.height) { onbSnapCv.width = src.width; onbSnapCv.height = src.height; }
+          onbSnapCv.getContext("2d").drawImage(src, 0, 0);
+          window.parent.postMessage({ cz: "onb", ev: "snap" }, location.origin);
+        } catch (e) {}
+      }
       var onbOff = new Vector2(), onbOffT = new Vector2(), onbAim = null, onbShow = null, onbCoffee = null, onbMorning = null, onbSunS = null, onbSunV = new Vector3(), onbSunC = new Color(), onbBox = new Box3(), onbV = new Vector3(), onbC = new Vector3(), onbF = new Vector3(), onbR = new Vector3(), onbU = new Vector3(), onbY = new Vector3(0, 1, 0);
       function onbShowOff() {
         if (!onbShow) return;
@@ -40468,6 +40482,7 @@ void main() {
             if (o.on) { document.body.classList.remove("kz-boot", "kz-intro"); if (o.welcome) setTimeout(() => { if (mapMode && !mapNav.moving && !mapNav.place && !mapBoarding) mapUI?.welcome(true); }, o.welcomeIn || 1400); else mapUI?.welcome(false); }
             break;
           }
+          case "snap": onbSnapReq = true; break; // r141c
           case "warm": {
             if (!onbPaused || onbWarm) break;
             const todo = [];
@@ -40624,6 +40639,7 @@ void main() {
       if (ONB_MODE) {
         window.__onb = onbCmd;
         window.__onbWarmLeft = () => (onbWarm ? onbWarm.todo.length + 1 : 0); // r141: tests
+        window.__onbSnapCanvas = () => onbSnapCv; // r141c
         window.__onbState = () => ({ speed: state.speed, f: window.__spd ? window.__spd.f : 0, L: state.L, map: mapMode, scheme: SCHEMES[state.schemeIdx].id, veh: state.vehicleId, branch: state.branch });
         window.addEventListener("message", (e) => { if (e.origin === location.origin && e.data && e.data.cz === "onb") onbCmd(e.data); });
       }

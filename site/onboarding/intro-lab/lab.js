@@ -20,6 +20,25 @@
   const win = () => city.contentWindow;
   const send = (o) => { try { const w = win(); w.__onb ? w.__onb(o) : w.postMessage({ cz: "onb", ...o }, location.origin); } catch (e) {} };
   const whenReady = () => new Promise((r) => (ready ? r() : readyCbs.push(r)));
+  // a change of world as a dissolve: the city's last frame (snapped inside the frame, right after its draw) is laid
+  // over the city, the world changes under it, and it fades away
+  const ghost = $(".ghost"), gctx = ghost.getContext("2d");
+  let snapCb = null;
+  addEventListener("message", (e) => { if (e.origin === location.origin && e.data && e.data.cz === "onb" && e.data.ev === "snap" && snapCb) { const f = snapCb; snapCb = null; f(); } });
+  const dissolveTo = (id, ms = 650) => new Promise((res) => {
+    let done = false; const go = () => { if (done) return; done = true; send({ op: "scheme", id }); res(); };
+    snapCb = () => {
+      try {
+        const src = win().__onbSnapCanvas?.(); if (!src) return go();
+        if (ghost.width !== src.width || ghost.height !== src.height) { ghost.width = src.width; ghost.height = src.height; }
+        gctx.drawImage(src, 0, 0);
+        ghost.style.transition = "none"; ghost.style.opacity = "1";
+        requestAnimationFrame(() => { go(); requestAnimationFrame(() => { ghost.style.transition = `opacity ${ms}ms ease`; ghost.style.opacity = "0"; }); });
+      } catch (e) { go(); }
+    };
+    send({ op: "snap" });
+    setTimeout(go, 400); // no snapshot came: a plain change
+  });
   const CAM = {
     over: { t: [1350, 5200], dist: 6000, yaw: 0.3, pitch: 0.98 },
     worlds: { t: [880, 4420], dist: 2400, yaw: 0.5, pitch: 0.78 },
@@ -53,7 +72,9 @@
   const cupsPrep = async (tok, { lite = phone() } = {}) => {
     if (RM || !(await loadKz()) || !window.cromaticKinetic || tok !== cur.token) return null;
     let k = null;
-    try { k = window.cromaticKinetic(() => cur.onFinale?.(), async () => {}, { drop: true, lite, onDrop: () => { try { cur.onDrop?.(); } catch (e) {} } }); } catch (e) { return null; }
+    // the standing cup is an obstacle: the wall parts around it and the falling cups bounce off it (as /onboarding/'s end)
+    const obstacles = () => { const el = over.querySelector(".cupbig"); if (!el) return []; const r = el.getBoundingClientRect(); return [{ x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height * 0.56) / innerHeight, r: (r.width * 0.4) / innerHeight, m: (phone() ? 0.022 : 0.04) * 1.2 }]; };
+    try { k = window.cromaticKinetic(() => cur.onFinale?.(), async () => {}, { drop: true, lite, obstacles, onDrop: () => { try { cur.onDrop?.(); } catch (e) {} } }); } catch (e) { return null; }
     const st = document.body.querySelector(":scope > .kz");
     kzhost.className = "kzhost cupsonly";
     if (st) kzhost.appendChild(st);
@@ -218,10 +239,10 @@
     for (let i = 0; i < WORLDS.length; i++) {
       await at(8600 + i * 500, tok);
       if (late(8600 + i * 500)) continue;
-      const [id, sky, pc] = WORLDS[i];
-      wash(sky); yours.style.background = pc;
+      const [id, , pc] = WORLDS[i];
+      yours.style.background = pc;
       chips.querySelectorAll(".wchip").forEach((ch) => ch.classList.toggle("on", ch.dataset.w === id));
-      setTimeout(() => { if (tok === cur.token) send({ op: "scheme", id }); }, 70);
+      dissolveTo(id);
     }
     await at(11900, tok); gone(c); chips.classList.add("gone"); setTimeout(() => chips.remove(), 700);
     // 4 · that's how the right brand feels like: the site's own XP bar fills up under the words
@@ -234,10 +255,10 @@
     await at(14400, tok); gone(d); xp.classList.add("gone"); setTimeout(() => xp.remove(), 700);
     // 5 · and like good coffee: the studio's cup turns up beside the words; the words leave as the wall of cups comes
     await at(15000, tok);
-    const e = soft(["And", "like", "good", { w: "coffee.", pill: "y", d: 300 }], { cls: "calm mid onCity" });
-    const cup = html(`<i class="cupmid"></i>`);
-    await at(16100, tok); gone(e); cup.classList.add("gone");
-    await at(16300, tok); cup.remove();
+    const e = soft(["And", "like", "good", { w: "coffee.", pill: "y", d: 300 }], { cls: "calm mid onCity hi" });
+    const cup = html(`<i class="cupbig c4"></i>`);
+    await at(16100, tok); gone(e);
+    await at(16300, tok);
     // 6 · the cups fall onto the city, which becomes the map itself, its interface up, and the last line over it
     lab.classList.add("ending");
     // the map's interface is built while the wall of cups covers the screen (its cost lands out of sight), so when
@@ -247,8 +268,8 @@
     if (tok !== cur.token) return;
     cur.camOn = false; // the map's own hands from here
     await wait(500, tok);
-    const f = soft(["There's", "always", "a", "good", { w: "coffee", pill: "y", d: 300 }, { w: "around.", d: 360 }], { cls: "calm mid onCity" });
-    await wait(2600, tok); gone(f);
+    const f = soft(["There's", "always", "a", "good", { w: "coffee", pill: "y", d: 300 }, { w: "around.", d: 360 }], { cls: "calm mid onCity lo" });
+    await wait(2600, tok); gone(f); over.querySelector(".cupbig")?.classList.add("gone");
     await wait(800, tok);
     finish(tok);
   };
@@ -267,7 +288,7 @@
     const n = BEATS4.find((t) => t > e + 80);
     if (n == null) { skip(); return; }
     cur.lines.forEach((el) => cur.gone?.(el)); cur.lines.clear();
-    over.querySelectorAll(".thumbs, .wchips, .xpbar, .cupmid").forEach((x) => { x.classList.add("gone"); setTimeout(() => x.remove(), 500); });
+    over.querySelectorAll(".thumbs, .wchips, .xpbar, .cupbig").forEach((x) => { x.classList.add("gone"); setTimeout(() => x.remove(), 500); });
     cur.t0 -= (n - e);
   };
 
@@ -367,7 +388,7 @@
     cur.t0 = performance.now();
     try { cur.kz?.pause?.(); } catch (e) {}
     kzhost.innerHTML = ""; kzhost.className = "kzhost"; cur.kz = null; cur.onDrop = cur.onFinale = null;
-    clearAll(); cur.lines.clear(); cur.running = false; cur.camOn = false; lab.classList.remove("warming", "running", "ending", "done");
+    clearAll(); cur.lines.clear(); cur.running = false; cur.camOn = false; lab.classList.remove("warming", "running", "ending", "done"); ghost.style.transition = "none"; ghost.style.opacity = "0";
     city.classList.remove("on", "live"); send({ op: "ui", on: false });
     document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === String(n) ? "true" : "false"));
     V[n](tok).catch((e) => { if (!(e && e.message === "abort")) console.error(e); });
