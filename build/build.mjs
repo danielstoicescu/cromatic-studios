@@ -194,7 +194,9 @@ ${jsonLd(SITE_URL, DATA.PROJECTS, SAME_AS)}
 ${boot}
 ${preLine}
 ${content.replace("<!--WORK-->", homeWork())}
-<script src="${jsName}"></script>
+<script>/* r153b: when the opening's first line is up (.i4-pre), the bundle runs after the first paint, so the line is on
+screen (its letters animate on the compositor) while the bundle is parsed; otherwise at once, as before */(function(){var s=document.createElement("script"),d=0;s.src="${jsName}";var go=function(){if(d)return;d=1;document.body.appendChild(s)};if(window.__i4t0!=null){requestAnimationFrame(function(){setTimeout(go,0)});setTimeout(go,150)}else go()})();</script>
+<noscript></noscript>
 <!--/email_off--></body></html>`;
 writeFileSync(join(pub, "index.html"), html);
 copyFileSync(src("og.jpg"), join(pub, "og.jpg"));
