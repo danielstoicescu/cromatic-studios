@@ -38,7 +38,7 @@
       [11200, { t: [880, 4420], dist: 2100, yaw: 0.7, pitch: 0.75 }],
       [13800, { t: [900, 4400], dist: 1950, yaw: 0.9, pitch: 0.7 }],
       [15200, { t: [1000, 4700], dist: 2600, yaw: 1.02, pitch: 0.8 }],
-      [17000, end], [17300, end], [30000, end], // r155: at the first frame before the map shows (16300 + 1100); the end held twice so the spline stays put after it
+      [16600, end], [16900, end], [30000, end], // r155: at the first frame before the map shows (16300 + 1100); the end held twice so the spline stays put after it
 
     ];
   };
@@ -158,7 +158,7 @@
         if (now - camLast > 250) { cur.t0 += now - camLast - 16; cur.stall += now - camLast - 16; }
         if (now < cur.camHold) cur.camOff += now - camLast; camLast = now;
         const el = now - cur.t0; let rt = el - cur.camOff;
-        if (el >= 12500) { if (!cur.cu) cur.cu = { c0: el, r0: rt }; rt = el >= 17000 ? el : cur.cu.r0 + (17000 - cur.cu.r0) * Math.min(1, (el - cur.cu.c0) / Math.max(1, 17000 - cur.cu.c0)); }
+        if (el >= 12500) { if (!cur.cu) cur.cu = { c0: el, r0: rt }; rt = el >= 16600 ? el : cur.cu.r0 + (16600 - cur.cu.r0) * Math.min(1, (el - cur.cu.c0) / Math.max(1, 16600 - cur.cu.c0)); } // r157: at the end by 16.6 s, settled before the map shows
         camAt(road(rt)); requestAnimationFrame(drive);
       })(performance.now());
       // 1 · nobody remembers a thumbnail: the word sits on a sheet of thumbnails, and the sheet falls apart

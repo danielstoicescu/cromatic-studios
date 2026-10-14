@@ -37975,6 +37975,7 @@ void main() {
       // loader: that is where the textures, buffers and programs go up to the GPU, and where the adaptive resolution
       // must not read the cost of those uploads as a slow machine
       var kzWarm = { frames: 0, need: 3, resolve: null, on: false };
+      var mapFirstSolved = false, camSnapNext = false; // r157: the first frame drawn after a frozen stretch (the boot ground, the cups' fill) puts the camera exactly where it belongs: no glide in from a stale pose
       function introFreeze(now) {
         if (!document.body.classList.contains("kz-boot")) { if (kzWarm.on) { kzWarm.on = false; perf.t = now + 3000; } return false; } // (the frames of the hand-off, two contexts at once, do not drive the resolution)
         if (kzWarm.frames < kzWarm.need) {
@@ -38010,7 +38011,7 @@ void main() {
         if (perf.dprPend != null) { renderer.setPixelRatio(perf.dprPend); renderer.setSize(window.innerWidth, window.innerHeight); perf.dprPend = null; onbSkip = true; }
         if ((ONB_MODE || intro4Wall) && onbHalf && (onbSkip = !onbSkip)) { requestAnimationFrame(frame); return; } // r140: a slow phone: every other frame (the page's own scroll keeps the rest)
         if (cityCovered()) { prevT = now; requestAnimationFrame(frame); return; } // r139b
-        if (introFreeze(now)) { prevT = now; requestAnimationFrame(frame); return; } // r139g
+        if (introFreeze(now)) { camSnapNext = true; prevT = now; requestAnimationFrame(frame); return; } // r139g (r157: snap after)
         adaptResolution(now - prevT, now);
         const dt = Math.min(0.05, (now - prevT) / 1e3);
         const rawDt = Math.min(0.25, (now - prevT) / 1e3);
@@ -38443,15 +38444,22 @@ void main() {
         }
         // dev hook: window.__cam([x,y,z],[tx,ty,tz]) parks the camera for inspection
         if (window.__camO) { camPos.fromArray(window.__camO[0]); camTarget.fromArray(window.__camO[1]); }
-        else if (mapMode && mapUI) { mapSettleTick(); mapUI.update(dt, now); camPos.copy(mapView.pos); camTarget.copy(mapView.tgt); } // r142b: mapSettleTick
+        else if (mapMode && mapUI) {
+          // r157 (Daniel: "the camera still turns at the start"): on ?map the first frame was solved before the car stood
+          // in its place, and the camera then glided (and the settle nudge swung) into it while the cups let the city
+          // through; now the first visible frame is solved again on the real car and the camera is put there at once
+          if (camSnapNext && !mapFirstSolved && BOOT_MODE === "map" && !mapView.follow && !mapNav.moving && !mapNav.place) { mapFirstSolved = true; const v = mapOpeningView(); mapView.tgt.set(v.t[0], 0, v.t[1]); mapView.dist = v.dist; mapView.yaw = v.yaw; mapView.pitch = v.pitch; mapView.distGoal = null; mapView.yawGoal = mapView.pitchGoal = null; mapSettle = 0; }
+          mapSettleTick(); mapUI.update(dt, now); camPos.copy(mapView.pos); camTarget.copy(mapView.tgt);
+        } // r142b: mapSettleTick
         // exponential damping, frame-rate independent; the look target is damped too, so
         // set-piece cameras (fork, coffee, Dacia, spiral) blend in instead of cutting
         // r118: the camera lives in the bent world
         warpV(camPos); warpV(camTarget);
         if (!window.__lookSm) window.__lookSm = camTarget.clone();
         // in the street POV the camera rides with you: damping tightens as the POV takes over
-        const kp = 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 : 2.8 + 26 * povK * povK));
-        const kt = 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 : 6 + 12 * povK * povK));
+        const camSnap = camSnapNext; camSnapNext = false; // r157
+        const kp = camSnap ? 1 : 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 : 2.8 + 26 * povK * povK));
+        const kt = camSnap ? 1 : 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 : 6 + 12 * povK * povK));
         camera.position.lerp(camPos, kp);
         window.__lookSm.lerp(camTarget, kt);
         camera.lookAt(window.__lookSm);
@@ -38846,7 +38854,12 @@ void main() {
       // Two Min Lab pins, the Attic, CH.02, CH.03, the fountain), each within a few % of where it is in the picture at 2000×1353.
       // Other aspect ratios keep the yaw, pitch and dist and shift the target so the car keeps its place (0.93, 0.21).
       // A phone keeps the r142b framing (the car lower, clear of the welcome sheet) until Daniel decides
-      var OPEN_VIEW = () => innerWidth < 720 ? { yaw: 0.3, pitch: 0.62, dist: 3600, want: [0.62, 0.68] } : { yaw: 0.928, pitch: 0.839, dist: 3485, want: [0.93, 0.21] };
+      // r157 (Daniel, a second reference: design/first-frame-reference-2.webp): much closer, looking south down the start
+      // road with the car on it, a little way up from the start (MAP_START_L), at (0.18, 0.735): yaw 3.264, pitch 0.932,
+      // dist 3050, solved on the real lens from the reference's fixed landmarks (CH.01, CH.03, Two Min Lab, the
+      // roundabout; residual 0.0005), the car then placed on the road where the picture has it
+      var MAP_START_L = 430;
+      var OPEN_VIEW = () => innerWidth < 720 ? { yaw: 0.3, pitch: 0.62, dist: 3600, want: [0.62, 0.68] } : { yaw: 3.264, pitch: 0.932, dist: 3050, want: [0.18, 0.735] };
       function mapSettleTick() {
         if (mapSettle <= 0) return;
         if (!mapMode || mapNav.moving || mapNav.place || jetFx.phase !== "idle" || mapView.follow) { mapSettle = 0; return; }
@@ -38872,8 +38885,7 @@ void main() {
         const place = (t) => {
           const cp = Math.cos(pitch);
           cam.position.set(t.x + Math.sin(yaw) * cp * dist, Math.sin(pitch) * dist, t.z + Math.cos(yaw) * cp * dist);
-          const off = cam.position.clone().sub(t), d0 = off.length(), d1 = Math.min(d0 * 3.1, Math.max(d0, 3400));
-          cam.position.copy(t).addScaledVector(off, d1 / Math.max(d0, 1e-3)); cam.position.y += 160;
+          if (window.__ffPush) { const off = cam.position.clone().sub(t), d0 = off.length(), d1 = Math.min(d0 * 3.1, Math.max(d0, 3400)); cam.position.copy(t).addScaledVector(off, d1 / Math.max(d0, 1e-3)); cam.position.y += 160; }
           warpV(cam.position); cam.lookAt(warpV(t.clone())); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
         };
         const proj = (p) => { const v = (typeof warpV === "function" ? warpV(p.clone()) : p.clone()).project(cam); return [v.x * 0.5 + 0.5, -v.y * 0.5 + 0.5]; };
@@ -40405,6 +40417,8 @@ void main() {
           if (mi >= 0 && state.schemeIdx !== mi) applyScheme(mi);
           if (state.vehicleId !== "dacia1300") api.setVehicle("dacia1300"); // r138j: the default ride (was the van)
           veh.group.visible = true;
+          // r157: on a desktop the map's first frame has the car a little way up the start road (as in Daniel's reference)
+          if ((open || intro) && innerWidth >= 720 && state.L < 50) { state.L = prevL = state.targetL = MAP_START_L; }
           mapNav.targetL = state.L; mapNav.legs = []; mapNav.moving = false; mapNav.place = null;
           mapView.focus = null;
           // the van is the first thing you see: centred, close, then the camera pulls out to the map
@@ -40592,6 +40606,8 @@ void main() {
       };
       window.__proj = (x, z, y = 0) => { const v = warpV(new Vector3(x, y, z)).project(camera); return [(v.x * 0.5 + 0.5) * innerWidth, (-v.y * 0.5 + 0.5) * innerHeight]; };
       window.__mapView = () => ({ dist: mapView.dist, yaw: mapView.yaw, pitch: mapView.pitch, tgt: [mapView.tgt.x, mapView.tgt.z], fork: [FORK_POS.x, FORK_POS.z] });
+      window.__camSnap = () => { camSnapNext = true; };
+      window.__setL = (L) => { state.L = prevL = state.targetL = L; mapNav.targetL = L; }; // r157: tests // r157: tests (the solver measures a camera that is already there)
       window.__mapSet = (d, x, z) => { mapView.dist = d; mapView.distGoal = null; mapView.follow = false; mapView.tgt.set(x, 0, z); };
       window.__api = api;
       window.__xp = () => ({ pts: state.points, log: xpLog.map((e) => e.title + " +" + e.pts), pending: xpPending && xpPending.title, collected: [...xpCollected], chosen: state.branchChosen, branch: state.branch, card: currentCardStop, veh: state.vehicleId });
