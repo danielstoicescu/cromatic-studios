@@ -259,7 +259,10 @@
         w.coffee = /^\d$/.test(c) ? { on: true, n: +c, stage: "serve" } : { on: true, n: 4, stage: c };
         w.morning = { k: 1, rise: clamp((y - a0) / Math.max(1, a1 - a0)) };
         // on a phone the beats keep Two Minutes itself in the middle of the screen (the city's own framing crops it)
-        if (mob && !s.card) w.frame = { x: Math.round(vw / 2), y: Math.round(vh * 0.44), subject: [700, 55, 4245] };
+        // r151: the ride in the foreground, low in the frame, Two Minutes and the sky above it (the card-aware frame keeps the free side)
+        if (mob && !s.card) w.frame = { x: Math.round(vw * 0.6), y: Math.round(vh * 0.58), subject: "car" };
+        else if (mob && w.frame) w.frame = { x: Math.round(vw * 0.6), y: Math.round(Math.max(vh * 0.3, vh / 2 + s.card.t - vh * 0.2)), subject: "car" }; // just above the card
+        else if (!mob && w.frame) w.frame = { ...w.frame, y: Math.round(vh * 0.62) };
       }
       return w;
     }

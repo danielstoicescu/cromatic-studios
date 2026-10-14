@@ -292,7 +292,7 @@ let heroCity = null;
 try {
   const wd = (b) => { const t = b.toString("latin1", 12, 16); if (t === "VP8X") return [b.readUIntLE(24, 3) + 1, b.readUIntLE(27, 3) + 1]; if (t === "VP8 ") return [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff]; if (t === "VP8L") { const v = b.readUInt32LE(21); return [(v & 0x3fff) + 1, ((v >> 14) & 0x3fff) + 1]; } return [0, 0]; };
   const one = (f) => { const b = readFileSync(join(root, "site", "onboarding", "media", "z", f)); const rel = `assets/hero-${f.replace(/\.webp$/, "")}.${hash(b)}.webp`; writeFileSync(join(pub, rel), b); const [w, h] = wd(b); return { src: "/" + rel, w, h }; };
-  heroCity = { d: one("coffee-0.webp"), m: one("coffee-0-m.webp") };
+  heroCity = { d: one("hero-0.webp"), m: one("hero-0-m.webp") }; // r151: the hero keeps its own framing of the 8:00 scene (coffee-0 is now shot from the kerb for /onboarding/)
 } catch (e) { console.warn("[build] hero still skipped:", e.message); }
 const FONTS = "https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Montserrat:wght@800;900&family=JetBrains+Mono:wght@700&display=swap";
 // the drive's kinetic intro (the wall of cups). r143: no longer the website's hero; /onboarding/'s last section and the

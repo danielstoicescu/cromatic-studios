@@ -38260,8 +38260,10 @@ void main() {
           camTarget.lerp(new Vector3(735, 50, 4238), tmK * 0.9);
         }
         if ((coffee.phase === "sip1" || coffee.phase === "unload" || coffee.phase === "sip2") && coffee.near) {
-          camPos.lerp(new Vector3(carPos.x + 430, 395, 4660), 0.9);
-          camTarget.lerp(new Vector3(865, 225, 4185), 0.9);
+          // r151 (Daniel): on /onboarding/ the 8:00 scene is shot low from the kerb behind the ride: the ride fills the
+          // foreground, Two Minutes stands behind it, the sun on the horizon beyond the roofs; the drive keeps its own look
+          if (ONB_MODE) { if (innerWidth < 760) { camPos.set(carPos.x + 185, 74, carPos.z + 70); camTarget.set(carPos.x - 90, 36, carPos.z - 12); } else { camPos.set(carPos.x + 130, 70, carPos.z + 160); camTarget.set(carPos.x - 40, 34, carPos.z - 55); } }
+          else { camPos.lerp(new Vector3(carPos.x + 430, 395, 4660), 0.9); camTarget.lerp(new Vector3(865, 225, 4185), 0.9); }
         }
         const daciaK = clamp2((carPos.z - 6030) / 150, 0, 1) * clamp2((6500 - carPos.z) / 150, 0, 1) * clamp2(1 - Math.abs(carPos.x - 1170) / 220, 0, 1) * (flying ? 0 : 1);
         if (daciaK > 1e-3) {
@@ -38280,7 +38282,7 @@ void main() {
           }
         }
         {
-          const mvOn = (SCHEMES[state.schemeIdx].id === "monument" || mapMode) && !window.__camO && !siteMode;
+          const mvOn = (SCHEMES[state.schemeIdx].id === "monument" || mapMode) && !window.__camO && !siteMode && !(ONB_MODE && onbCoffee); // r151: the 8:00 scene on /onboarding/ is a normal lens from the kerb, not the telephoto
           mvK = smooth(mvK, mvOn ? 1 : 0, dt, 2.2);
           if (mvK > 1e-3) {
             // telephoto push, capped so overview shots never climb into the cloud layer
@@ -40694,13 +40696,15 @@ void main() {
             if (m.base && scene.background && scene.background.isColor) scene.background.copy(m.base).lerp(onbSunC.set("#ffd2ae"), k * 0.7);
             // the disc: on the camera's line through Two Minutes' roof, farther than the shop (so the buildings hide it
             // until it clears them), climbing up the screen as you scroll
-            const T = warpV(new Vector3(650, 92, 4250)), dT = camera.position.distanceTo(T);
-            T.project(camera);
-            onbV.set(clamp2(T.x, -0.9, 0.9) + 0.06, T.y - 0.015 + 0.12 * m.rise, 0.5).unproject(camera).sub(camera.position).normalize();
-            const dS = dT * 1.06;
+            // r151 (Daniel): the disc sits on the horizon, far behind the town: along the sun's own bearing, barely above
+            // level (it climbs a little with the scroll), far out, small; the near roofs in between hide it
+            const elD = 0.105 + 0.045 * m.rise; // just over the far roofs (the town stands ~6° high from the kerb)
+            onbV.set(Math.cos(az) * Math.cos(elD), Math.sin(elD), Math.sin(az) * Math.cos(elD));
+            const dS = 2600; // far enough to clear every roof on the way, inside the sky (farther, the sky's own shell hides it)
             onbSunS.position.copy(camera.position).addScaledVector(onbV, dS);
-            onbSunS.scale.setScalar(2 * dS * Math.tan((camera.fov * Math.PI) / 360) * 0.16); // small, low and far: a distant sun on the horizon
+            onbSunS.scale.setScalar(2 * dS * Math.tan((camera.fov * Math.PI) / 360) * 0.07); // small, low and far: a distant sun on the horizon
             onbSunS.material.opacity = k;
+            window.__onbSun = () => { const v = onbSunS.position.clone().project(camera); return { p: onbSunS.position.toArray().map(Math.round), sc: Math.round(onbSunS.scale.x), ndc: [+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(3)], vis: onbSunS.visible, op: onbSunS.material.opacity, far: camera.far, near: camera.near, cam: camera.position.toArray().map(Math.round), elD, ro: onbSunS.renderOrder }; }; // r151: tests
           }
         }
         const S = onbShow;
