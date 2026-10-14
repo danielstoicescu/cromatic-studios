@@ -98,7 +98,7 @@ code{font-family:var(--f-mono);font-size:.84em;background:var(--white);border:1.
 .ev{display:grid;grid-template-columns:150px 28px minmax(0,1fr);gap:14px;align-items:start}
 .ev time{font:700 .78rem/1.2 var(--f-mono);letter-spacing:.04em;text-align:right;padding-top:16px;font-variant-numeric:tabular-nums}
 .ev .dot{width:22px;height:22px;border:var(--stroke-s);border-radius:50%;background:var(--white);margin-top:14px}
-.ev.a .dot{background:var(--coral)} .ev.f .dot{background:var(--green)} .ev.h .dot{background:var(--blue)}
+.ev.a .dot{background:var(--coral)} .ev.g .dot{background:var(--bar)} .ev.f .dot{background:var(--green)} .ev.h .dot{background:var(--blue)}
 .ev.peak .dot{width:26px;height:26px;border-radius:4px;transform:rotate(45deg);background:var(--coral);margin-top:12px}
 .ev .body{background:var(--white);border:var(--stroke-s);border-radius:18px;padding:12px 16px;min-width:0}
 .ev.peak .dot{position:relative;display:flex;align-items:center;justify-content:center}
@@ -125,7 +125,7 @@ code{font-family:var(--f-mono);font-size:.84em;background:var(--white);border:1.
 .rail .line{right:0;border-top-color:var(--gridline)}
 .rail .fillline{width:0;transition:width .35s ease}
 .rail .stop{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border:var(--stroke-s);border-radius:50%;background:var(--white);cursor:pointer;padding:0;transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
-.rail .stop.a{background:var(--coral)} .rail .stop.h{background:var(--blue)} .rail .stop.f{background:var(--green)}
+.rail .stop.a{background:var(--coral)} .rail .stop.g{background:var(--bar)} .rail .stop.h{background:var(--blue)} .rail .stop.f{background:var(--green)}
 .rail .stop.peak{border-radius:3px;transform:rotate(45deg)}
 .rail .stop.cur{transform:scale(1.5)} .rail .stop.peak.cur{transform:rotate(45deg) scale(1.5)}
 .ctrls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
@@ -261,7 +261,7 @@ a{color:var(--ink)}
   <div class="stats">
     <div class="stat"><span class="pill blue" style="align-self:flex-start">Fișiere</span><span class="n">21.830</span><p>fișiere de pe server, inventariate și comparate după data modificării</p></div>
     <div class="stat"><span class="pill blue" style="align-self:flex-start">Log-uri</span><span class="n">128k</span><p>cereri către site, citite una câte una, între 1 septembrie și 14 octombrie</p></div>
-    <div class="stat"><span class="pill bad" style="align-self:flex-start">Atac</span><span class="n">4.339</span><p>încercări automate prin <code>xmlrpc.php</code>, canalul prin care se ghicesc și se testează parole</p></div>
+    <div class="stat"><span class="pill gray" style="align-self:flex-start">Zgomot de fond</span><span class="n">4.339</span><p>încercări automate de ghicire a parolei. Nicio adresă de pe care s-a încercat nu a intrat în site.</p></div>
     <div class="stat"><span class="pill ok" style="align-self:flex-start">Candidați</span><span class="n">159</span><p>cereri de job în baza de date. Niciuna nu a fost deschisă de atacatori.</p></div>
   </div>
 </section>
@@ -306,7 +306,7 @@ a{color:var(--ink)}
 <section aria-labelledby="h-tl">
   <div class="sec-h"><span class="num">03</span><h2 id="h-tl">Cronologie</h2></div>
   <p class="screen-only" style="margin-bottom:16px">Apasă „Parcurge” ca să vezi incidentul moment cu moment, în ordinea în care s-a petrecut. Poți merge și manual, înainte și înapoi, sau poți sări direct la un punct de pe linie.</p>
-  <div class="legend"><span class="pill bad">Atacator</span><span class="pill blue">Hosting</span><span class="pill ok">Cromatic</span></div>
+  <div class="legend"><span class="pill bad">Atacator</span><span class="pill gray">Boți generici</span><span class="pill blue">Hosting</span><span class="pill ok">Cromatic</span></div>
   <div class="player" id="player">
     <div class="rail" id="rail"><span class="line"></span><span class="fillline" id="fillline"></span></div>
     <div class="ctrls">
@@ -317,9 +317,11 @@ a{color:var(--ink)}
     </div>
   </div>
   <ol class="tl" id="tl">
-    <li class="ev a"><time>1 sep · 00:05</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">104.207.37.129 · 45.3.34.15 · 104.207.35.144</span><p>Trei login-uri reușite în 43 de secunde, de pe trei servere proxy diferite. Fiecare doar testează parola și pleacă.</p></div></li>
-    <li class="ev a"><time>sep – oct</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">zeci de IP-uri</span><p>4.339 de încercări prin <code>xmlrpc.php</code>.</p></div></li>
-    <li class="ev a"><time>11 oct · 13:06</time><span class="dot" aria-hidden="true"></span><div class="body"><p>Primul articol spam publicat de pe contul compromis: „The Founding of YouTube”. Un al doilea, „Whales: Giants of the Ocean”, apare antedatat.</p></div></li>
+    <li class="ev a"><time>1 sep · 00:05</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">104.207.37.129 · 45.3.34.15 · 104.207.35.144</span><p>Verificare automată a parolei: trei autentificări reușite în 43 de secunde, de pe trei servere proxy. Nicio altă acțiune.</p></div></li>
+    <li class="ev g"><time>sep – oct</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">rețele de boți, în special Google Cloud</span><p>4.339 de încercări de ghicire a parolei prin <code>xmlrpc.php</code>, ca pe orice site WordPress. Răspunsul a fost „parolă greșită”, iar adresele de pe care s-a încercat nu au intrat niciodată în site. Nu au legătură cu atacul de mai jos.</p></div></li>
+    <li class="ev a"><time>6 oct · 03:53</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">151.123.176.108</span><p>O nouă verificare automată a parolei, fără nicio altă acțiune.</p></div></li>
+    <li class="ev a"><time>8 oct · 18:03</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">45.147.233.246</span><p>Prima intrare în platformă: citește lista de utilizatori, se autentifică, deschide panoul de administrare și iese. Nu deschide nimic altceva.</p></div></li>
+    <li class="ev a"><time>11 oct · 13:22</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">82.118.29.118</span><p>Prima folosire a parolei prin XML-RPC. Publică primul articol spam: „The Founding of YouTube”. Un al doilea, „Whales: Giants of the Ocean”, apare antedatat.</p></div></li>
     <li class="ev a"><time>12 oct · 11:10</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">38.84.153.103</span><p>Intră în cont, își verifică drepturile creând și ștergând o pagină, apoi încearcă să urce un fișier PHP. Serverul îl refuză.</p></div></li>
     <li class="ev a"><time>12 oct · 16:16</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">193.202.80.233</span><p>Caută pluginuri prin care să insereze cod în pagini. Toate îi sunt blocate. Instalează în schimb WP File Manager.</p></div></li>
     <li class="ev a peak"><time>13 oct · 01:36</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">162.252.52.112</span><p><strong>Codul e injectat.</strong> <code>functions.php</code> crește cu 1,5 KB, iar fiecare pagină a site-ului îl include din acel moment.</p></div></li>
@@ -353,7 +355,7 @@ a{color:var(--ink)}
         <div class="bar"><span>Intrări în al doilea formular</span><b>6</b><div class="track"><div class="fill" style="width:3%"></div></div></div>
       </div>
       <p style="margin-top:14px;font-size:.9rem">În log-uri, cererile și CV-urile au fost deschise doar de pe IP-urile folosite de echipa Bepco. Răspunsurile primite de atacator de la File Manager au fost sub 1,6 KB, adică liste de foldere, nu fișiere descărcate.</p>
-      <div class="caveat"><strong>De ce nu există indicii de acces.</strong> Atacatorii s-au autentificat ca administratori în cel puțin șase sesiuni, iar secțiunea cu cereri era la un click distanță. Nu au deschis-o niciodată. Sesiunile lungi sunt un script automat, care caută doar locuri unde poate insera cod în pagini, iar codul găsit confirmă acest scop. Singura rezervă tehnică privește intervalul 13 octombrie, 13:07–14:22, când două pluginuri necunoscute au fost active pe server fără să fie apelate. Nu există niciun indiciu că au fost folosite pentru date. Recomandăm documentarea internă a incidentului, cum cere GDPR, art. 33 alin. 5. Decizia privind notificarea ANSPDCP aparține responsabilului juridic.</div>
+      <div class="caveat"><strong>De ce nu există indicii de acces.</strong> Atacatorii au intrat în panoul de administrare în opt sesiuni, între 8 și 13 octombrie, iar secțiunea cu cereri era la un click distanță. Nu au deschis-o niciodată. Sesiunile lungi sunt un script automat, care caută doar locuri unde poate insera cod în pagini, iar codul găsit confirmă acest scop. Singura rezervă tehnică privește intervalul 13 octombrie, 13:07–14:22, când două pluginuri necunoscute au fost active pe server fără să fie apelate. Nu există niciun indiciu că au fost folosite pentru date. Recomandăm documentarea internă a incidentului, cum cere GDPR, art. 33 alin. 5. Decizia privind notificarea ANSPDCP aparține responsabilului juridic.</div>
     </div>
   </div>
 </section>
@@ -552,7 +554,7 @@ a{color:var(--ink)}
   var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var stops=evs.map(function(ev,i){
     var b=document.createElement('button'); b.type='button';
-    b.className='stop '+['a','h','f','peak'].filter(function(c){return ev.classList.contains(c)}).join(' ');
+    b.className='stop '+['a','h','f','g','peak'].filter(function(c){return ev.classList.contains(c)}).join(' ');
     b.style.left=(n>1? i/(n-1)*100 : 0)+'%';
     b.setAttribute('aria-label','Momentul '+(i+1)+': '+ev.querySelector('time').textContent);
     b.addEventListener('click',function(){ stop(); go(i); });
