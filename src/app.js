@@ -38764,6 +38764,7 @@ void main() {
       // lower, clear of the welcome sheet. The camera looks north (yaw 0.3, the map's own look), so the car (north of
       // Two Minutes) is up the screen and the shop down it; the target sits between them, nearer the shop
       var mapSettle = 0; // r142b: frames left in which the view is nudged so the car lands where mapOpeningView wants it (the real lens)
+      var dockOn = false; // r148 (Daniel): the dock (N TO DISCOVER + the places) shows only once you reach the portfolio; see the map's frame
       // r147 (Daniel): on a desktop the first frame is his reference (design/first-frame-reference.webp): yaw 0.928, pitch 0.839,
       // dist 3485, solved on the real lens (warp included) from seven landmarks of the reference (the car, the Two Minutes and
       // Two Min Lab pins, the Attic, CH.02, CH.03, the fountain), each within a few % of where it is in the picture at 2000×1353.
@@ -39679,13 +39680,22 @@ void main() {
         skip.onclick = () => { kinetic?.finish?.(); mapEndIntro(); };
         const chips = dock.querySelector(".map-chips");
         // r130o: the bar scrolls sideways with a normal vertical wheel or trackpad gesture too
+        // r148 (Daniel): smoothly (a goal the bar glides to), and only while it can still scroll that way (at either
+        // end the event is not ours; over the dock the map's zoom never takes it); a horizontal trackpad swipe and a
+        // finger are the bar's own native scroll
+        let chipsGoal = null, chipsRaf = 0;
+        const chipsGlide = () => { chipsRaf = 0; if (chipsGoal == null) return; const d = chipsGoal - chips.scrollLeft; if (Math.abs(d) < 0.6) { chips.scrollLeft = chipsGoal; chipsGoal = null; return; } chips.scrollLeft += d * 0.22; chipsRaf = requestAnimationFrame(chipsGlide); };
         chips.addEventListener("wheel", (e) => {
-          if (e.ctrlKey || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+          if (e.ctrlKey || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) { chipsGoal = null; return; }
           const max = chips.scrollWidth - chips.clientWidth;
           if (max <= 1) return;
+          const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? chips.clientWidth : 1), from = chipsGoal ?? chips.scrollLeft;
+          if ((dy > 0 && from >= max - 0.5) || (dy < 0 && from <= 0.5)) return;
           e.preventDefault(); e.stopPropagation();
-          chips.scrollLeft = Math.max(0, Math.min(max, chips.scrollLeft + e.deltaY * (e.deltaMode === 1 ? 16 : 1)));
+          chipsGoal = Math.max(0, Math.min(max, from + dy));
+          if (!chipsRaf) chipsRaf = requestAnimationFrame(chipsGlide);
         }, { passive: false });
+        chips.addEventListener("pointerdown", () => { chipsGoal = null; });
         // r130b: the places to discover are numbered 01..N, on the pin, in the bar and on the route ring
         const PNO = placeNumbers();
         const pins = MAP_PLACES.map((pl) => {
@@ -40174,6 +40184,11 @@ void main() {
             // pins: projected every frame; labels give way to their neighbours when crowded
             const W = innerWidth, H = innerHeight, placed = [];
             const compact = mapView.dist > 8600;
+            // r148 (Daniel): the dock waits until you are in the portfolio: the car past the start area (south of the
+            // roundabout's latitude, where the streets begin; Two Minutes is on it) or a place on a street chosen (the
+            // welcome card's streets count, from the click); once shown it stays. The same rule holds as the opening
+            // ends and after the cups-only bridge: the car starts north of it, so the first frame has no dock
+            if (!dockOn && !mapIntro && (carPos.z > FORK_POS.y - 180 || (mapNav.place && mapNav.place.br))) { dockOn = true; document.body.classList.add("dock-on"); }
             // the zoom level, with a little hysteresis so cards don't flicker at the threshold
             const zl = mapView.dist > (mapView._zl === 1 ? 5800 : 6200) ? 1 : mapView.dist > (mapView._zl === 3 ? 3300 : 3000) ? 2 : 3;
             mapView._zl = zl;

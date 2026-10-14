@@ -2806,6 +2806,10 @@ body.map-mode .topbar .site-btn { display: none; }
 .map-dock { position: fixed; z-index: 22; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; width: min(1100px, calc(100vw - 32px));
   display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 18px; border-radius: 999px; background: color-mix(in srgb, var(--card-bg) 88%, transparent);
   border: 1px solid var(--st-ink, #111); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 14px 30px -14px rgba(40,20,40,.5); }
+/* r148 (Daniel): the dock waits for the portfolio (body.dock-on, set by the map once the car reaches a street); it rises in when it arrives */
+.map-dock { opacity: 0; pointer-events: none; translate: -50% 18px; transition: opacity .5s ease, translate .6s cubic-bezier(.2, .7, .2, 1); }
+body.dock-on .map-dock { opacity: 1; pointer-events: auto; translate: -50% 0; }
+@media (prefers-reduced-motion: reduce) { .map-dock { transition: none; } }
 .map-dock-h { flex: 0 0 auto; font-size: 9px; letter-spacing: .16em; font-weight: 700; color: var(--fg); opacity: .7; }
 .map-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; -webkit-mask: linear-gradient(90deg, #000 92%, transparent); mask: linear-gradient(90deg, #000 92%, transparent); padding-right: 30px; }
 .map-chips::-webkit-scrollbar { display: none; }
