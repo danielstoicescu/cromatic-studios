@@ -37448,14 +37448,16 @@ void main() {
         if (!tilt) {
           const rt = new WebGLRenderTarget(w, h, { samples: 2, type: HalfFloatType });
           const mat = new ShaderMaterial({
-            uniforms: { tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, amt: { value: 7 }, focus: { value: 0.46 }, band: { value: 0.1 }, t: { value: 0 }, zb: { value: 0 }, spot: { value: new Vector4(0.5, 0.5, 0.2, 0) } },
+            uniforms: { tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, amt: { value: 7 }, focus: { value: 0.46 }, band: { value: 0.1 }, t: { value: 0 }, zb: { value: 0 }, ep: { value: new Vector2(0, 0) }, spot: { value: new Vector4(0.5, 0.5, 0.2, 0) } },
             vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
             fragmentShader: `
-              uniform sampler2D tD; uniform vec2 res; uniform float amt, focus, band, t, zb; uniform vec4 spot; varying vec2 vUv;
+              uniform sampler2D tD; uniform vec2 res; uniform float amt, focus, band, t, zb; uniform vec4 spot; uniform vec2 ep; varying vec2 vUv;
               ${isMobile() ? "#define TAPS 6\n#define LITE 1" : "#define TAPS 12"}
               void main(){
                 float dy = abs(vUv.y - focus);
                 float r = amt * smoothstep(band, band + 0.42, dy);
+                // r155: the map's entry: a focus pull from the middle out (ep.x: the sharp radius, ep.y: the blur outside it)
+                if (ep.y > 0.01) r = max(r, ep.y * smoothstep(ep.x, ep.x + 0.32, length((vUv - 0.5) * vec2(res.x / res.y, 1.0))));
                 vec3 c = vec3(0.0);
                 if (r < 0.35) c = texture2D(tD, vUv).rgb;
                 else {
@@ -37517,6 +37519,8 @@ void main() {
         tilt.mat.uniforms.band.value = 0.16;
         tilt.mat.uniforms.t.value = (now * 0.001) % 100;
         tilt.mat.uniforms.zb.value = mapMode ? mapView.zoomBlur || 0 : 0;
+        if (entryPull) { const u = (now - entryPull.t0) / 1000, e = 1 - Math.pow(1 - Math.min(1, Math.max(0, u)), 3); if (u >= 1) { entryPull = null; tilt.mat.uniforms.ep.value.set(0, 0); } else tilt.mat.uniforms.ep.value.set(-0.08 + 1.3 * e, 16 * renderer.getPixelRatio() * (1 - 0.5 * e)); } // r155
+        else if (tilt.mat.uniforms.ep.value.y) tilt.mat.uniforms.ep.value.set(0, 0);
         tilt.mat.uniforms.spot.value.set(mapSpot.x, mapSpot.y, mapSpot.r, mapMode ? mapSpot.k : 0);
         renderer.setRenderTarget(tilt.rt);
         renderer.render(scene, camera);
@@ -39447,7 +39451,7 @@ void main() {
           <button class="map-exit" title="The same world as a scroll-driven drive"><span class="me-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M8 2 L6 22 M16 2 L18 22" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M12 4v3M12 10v3M12 16v3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span><span class="me-l">Drive mode</span></button>`);
         // r137a (Daniel): the ride card wears the worlds card's design: same popover, header, tiles and tick
         const rides = el("div", "map-rides hidden", `<div class="wt-head"><span class="wt-titles"><span class="hm-title mono">YOUR RIDE · ${VEHICLES.length} TO PICK FROM</span><span class="wt-lead">How do you want to get around?</span></span><button class="wt-close" aria-label="Close">×</button></div><div class="mrs-list">${VEHICLES.map((v) => `<button class="mrs-v" data-v="${v.id}"><span class="mrs-th"></span><b>${v.label}</b><span class="wt-check" aria-hidden="true">✓</span></button>`).join("")}</div>`);
-        const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="van" aria-label="Find your ride" title="Find your ride">◎</button><button data-z="wx" class="mz-wx" aria-label="Weather off" title="Turn weather off">\u2602</button>`);
+        const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="rot" class="mz-rot" aria-label="Turn the map" title="Turn the map"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.8 3.8v4.6h-4.6"/></svg></button><button data-z="van" aria-label="Find your ride" title="Find your ride">◎</button><button data-z="wx" class="mz-wx" aria-label="Weather off" title="Turn weather off">\u2602</button>`);
         const dock = el("div", "map-dock", `<span class="map-dock-h mono">WHERE TO?</span><div class="map-chips"></div>`);
         const card = el("div", "map-card hidden");
         // r123: the first thing on the map: where do you want to go?
@@ -39891,6 +39895,7 @@ void main() {
           end: { t: [1005, 26, 7350], yaw: 1.36, pitch: 0.24, dist: 1120, dur: 5.6 }
         };
         const cineIn = (pl) => {
+          if (innerWidth < 720 && pl.id !== "end") { cine = null; return; } // r155 (Daniel): on a phone no parking scene, the camera stays with the car
           const sh = SHOTS[pl.id];
           if (sh && jetFx.phase === "idle") {
             mapView.follow = false;
@@ -39968,6 +39973,8 @@ void main() {
           }
           mapView.distGoal = null;
           if (cine && cine.t < cine.dur) cine = null;
+          // r155 (Daniel): one button turns the map by an eighth, eased round the current target; it stays where it turned
+          if (z === "rot") { mapIdleAt = performance.now(); mapSettle = 0; cine = null; const st = Math.PI / 4; if (matchMedia("(prefers-reduced-motion: reduce)").matches) { mapView.yaw += st; mapView.yawGoal = null; } else mapView.yawGoal = (mapView.yawGoal ?? mapView.yaw) + st; return; }
           if (z === "in") mapView.distGoal = Math.max(MAP_MIND, mapView.dist / 1.4);
           if (z === "out") mapView.distGoal = Math.min(mapMaxD(), mapView.dist * 1.4);
           if (z === "van") { mapView.follow = true; mapView.focus = null; }
@@ -40190,7 +40197,8 @@ void main() {
             // roundabout's latitude, where the streets begin; Two Minutes is on it) or a place on a street chosen (the
             // welcome card's streets count, from the click); once shown it stays. The same rule holds as the opening
             // ends and after the cups-only bridge: the car starts north of it, so the first frame has no dock
-            if (!dockOn && !mapIntro && (carPos.z > FORK_POS.y - 180 || (mapNav.place && mapNav.place.br))) { dockOn = true; document.body.classList.add("dock-on"); }
+            // r155 (Daniel): a little earlier: as the car comes within 900 of the first roundabout
+            if (!dockOn && !mapIntro && (carPos.z > FORK_POS.y - 180 || Math.hypot(carPos.x - FORK_POS.x, carPos.z - FORK_POS.y) < 900 || (mapNav.place && mapNav.place.br))) { dockOn = true; document.body.classList.add("dock-on"); }
             // the zoom level, with a little hysteresis so cards don't flicker at the threshold
             const zl = mapView.dist > (mapView._zl === 1 ? 5800 : 6200) ? 1 : mapView.dist > (mapView._zl === 3 ? 3300 : 3000) ? 2 : 3;
             mapView._zl = zl;
@@ -40257,7 +40265,16 @@ void main() {
           }
         };
       }
+      // r155: the map arrives out of focus and sharpens from the middle out (~1 s, in the post pass, no extra layer); once
+      // per page, as the cups clear (the bridge, the opening's end) or as the intro ends (Skip); never with reduced motion
+      var entryPull = null, entryPullDone = false;
+      function startEntryPull() {
+        if (entryPullDone) return; entryPullDone = true;
+        if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        entryPull = { t0: performance.now() };
+      }
       function mapEndIntro() {
+        startEntryPull(); // r155
         document.body.classList.remove("kz-boot");
         if (!mapIntro) return;
         mapIntro = false;
@@ -40830,8 +40847,8 @@ void main() {
       var brewEl = null;
       // r139g: the drive's own ending (the cups settle and drop); as the first cup lets go the map starts its pull-out
       var kzOpts = INTRO4
-        ? { drop: true, lite: innerWidth < 760, settle: 700, obstacles: () => (intro4 ? intro4.obstacles() : []), onDrop: () => { try { intro4Drop?.(); } catch (e) {} } } // r142: the opening drives the camera; the standing cup is an obstacle
-        : { drop: true, lite: innerWidth < 760, onDrop: () => { if (mapIntro && BOOT_MODE !== "map") mapView.distGoal = innerWidth < 720 ? 6600 : 5400; } }; // r147: the cups-only bridge (?map) keeps the first frame: no pull-out
+        ? { drop: true, lite: innerWidth < 760, settle: 700, obstacles: () => (intro4 ? intro4.obstacles() : []), onDrop: () => { startEntryPull(); try { intro4Drop?.(); } catch (e) {} } } // r142: the opening drives the camera; the standing cup is an obstacle
+        : { drop: true, lite: innerWidth < 760, onDrop: () => { startEntryPull(); if (mapIntro && BOOT_MODE !== "map") mapView.distGoal = innerWidth < 720 ? 6600 : 5400; } }; // r147: the cups-only bridge (?map) keeps the first frame: no pull-out
       const kzEnd = () => { if (INTRO4 && intro4Fin) { const f = intro4Fin; intro4Fin = null; f(); } else mapEndIntro(); }; // r142
       // r153: the opening no longer waits for the city: it starts the moment the bundle runs (its first beats are words
       // on a plain ground) and the city builds, links and draws its first frames under them; this is the moment it is

@@ -37,8 +37,9 @@
       [8200, { t: [880, 4420], dist: 2350, yaw: 0.48, pitch: 0.8 }],
       [11200, { t: [880, 4420], dist: 2100, yaw: 0.7, pitch: 0.75 }],
       [13800, { t: [900, 4400], dist: 1950, yaw: 0.9, pitch: 0.7 }],
-      [15800, { t: [1000, 4700], dist: 2600, yaw: 1.02, pitch: 0.8 }],
-      [18600, end], [30000, end],
+      [15200, { t: [1000, 4700], dist: 2600, yaw: 1.02, pitch: 0.8 }],
+      [17000, end], [17300, end], [30000, end], // r155: at the first frame before the map shows (16300 + 1100); the end held twice so the spline stays put after it
+
     ];
   };
   const BEATS = [300, 3350, 6300, 12500, 15000, 16300]; // where each beat begins on the clock
@@ -149,7 +150,17 @@
       // r153: a stall of the main thread (the city being built under the first beats) does not push the clock: the
       // beats resume where they were, so nothing is skipped as late
       cur.stall = 0;
-      (function drive(now) { if (tok !== cur.token || !cur.camOn) return; if (now - camLast > 250) { cur.t0 += now - camLast - 16; cur.stall += now - camLast - 16; } if (now < cur.camHold) cur.camOff += now - camLast; camLast = now; camAt(road(now - cur.t0 - cur.camOff)); requestAnimationFrame(drive); })(performance.now());
+      // r155: the road pauses through the worlds' dissolves (camOff), so from beat 4 on it catches up gently and reaches
+      // the first frame at 17 s on the clock, before the map shows: nothing turns once the map is up
+      cur.cu = null;
+      (function drive(now) {
+        if (tok !== cur.token || !cur.camOn) return;
+        if (now - camLast > 250) { cur.t0 += now - camLast - 16; cur.stall += now - camLast - 16; }
+        if (now < cur.camHold) cur.camOff += now - camLast; camLast = now;
+        const el = now - cur.t0; let rt = el - cur.camOff;
+        if (el >= 12500) { if (!cur.cu) cur.cu = { c0: el, r0: rt }; rt = el >= 17000 ? el : cur.cu.r0 + (17000 - cur.cu.r0) * Math.min(1, (el - cur.cu.c0) / Math.max(1, 17000 - cur.cu.c0)); }
+        camAt(road(rt)); requestAnimationFrame(drive);
+      })(performance.now());
       // 1 · nobody remembers a thumbnail: the word sits on a sheet of thumbnails, and the sheet falls apart
       // r153: when the page painted this line itself (build.mjs, .i4-pre, before the bundle ran), it is adopted in
       // place, its letters wherever they got to, and the clock continues from its paint (at most 1.15 s in)
