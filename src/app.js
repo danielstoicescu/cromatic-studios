@@ -39938,7 +39938,7 @@ void main() {
             // parked: the lens breathes round the building, very slowly (zoom stays yours)
             c.dt += dt;
             const a = Math.min(1, c.dt / 5);
-            mapView.yaw = g.yaw + Math.sin(c.dt * 0.16) * 0.085 * a * a;
+            mapView.yaw = g.yaw; // r152 (Daniel): no sway once parked (it rocked ±0.085 rad)
             return;
           }
           const u = Math.min(1, c.t / c.dur), e = u * u * u * (u * (u * 6 - 15) + 10);
@@ -40245,8 +40245,8 @@ void main() {
               if (open) { warpV(proj.set(mapNav.place.wx, (mapNav.place.wy || 55) * 0.5, mapNav.place.wz)).project(camera); mapSpot.x += ((proj.x * 0.5 + 0.5) - mapSpot.x) * 0.2; mapSpot.y += ((proj.y * 0.5 + 0.5) - mapSpot.y) * 0.2; }
               mapSpot.r = 0.07 + 900 / Math.max(900, mapView.dist) * 0.1;
               mapSpot.k += ((open ? 1 : 0) - mapSpot.k) * (1 - Math.exp(-dt * 3));
-              // idle drift: after 9 s with no hand on the map and nothing open, the city turns slowly
-              if (!open && !mapIntro && !mapBoarding && !mapNav.moving && jetFx.phase === "idle" && now - mapIdleAt > 9000 && mapView.yawGoal == null) mapView.yaw += dt * 0.022 * Math.min(1, (now - mapIdleAt - 9000) / 3000);
+              // r152 (Daniel): no idle drift any more (it used to turn the city slowly after 9 s with no hand on it, and it
+              // started the moment the map appeared, since the clock ran from the page's load): the map holds still until you move it
             }
             if (hintAt) { warpV(proj.copy(hintAt)).project(camera); hintEl.style.transform = `translate3d(${((proj.x * 0.5 + 0.5) * W).toFixed(1)}px, ${((-proj.y * 0.5 + 0.5) * H).toFixed(1)}px, 0)`; }
             // a street sign gives way to any place pin it would cover
