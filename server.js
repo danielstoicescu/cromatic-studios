@@ -3,6 +3,7 @@
 // for video) plus one endpoint: POST /api/boarding, which emails the boarding pass to the studio
 // and a copy to the passenger.
 import http from "node:http";
+import https from "node:https";
 import { readFileSync, readdirSync, statSync, appendFileSync, mkdirSync, createReadStream } from "node:fs";
 import { join, extname, dirname, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -95,6 +96,39 @@ function keepLead(t, ip) {
 }
 const INTERNAL_IPS = (process.env.INTERNAL_IPS || "188.26.55.18").split(",").map((x) => x.trim()).filter(Boolean);
 let lastMail = null; // the last send, for /healthz (no addresses, no secrets)
+
+// r149b: OpenAI Ads Conversions API (server side). A sent boarding pass is also reported as "lead_created", with the
+// same id as the browser pixel ("lead_" + ref, so OpenAI counts it once), and only when the visitor said yes on the
+// cookie card (cookie cz-consent=yes2): only that a lead happened, nothing of what was written. The key lives in the
+// server's environment (Bunnyshell secret OAI_CONVERSIONS_KEY), never in the repo. At start a validate_only event
+// (counted nowhere) checks the key; /healthz shows the result as oai: "ok" / "off" / "error <status>".
+const OAI_KEY = process.env.OAI_CONVERSIONS_KEY || "";
+const OAI_PIXEL = process.env.OAI_PIXEL_ID || "8Kok98JE9jNE1Va2uAQwDG";
+let oaiState = OAI_KEY ? "checking" : "off";
+function oaiPost(events, validateOnly) {
+  return new Promise((resolve) => {
+    const body = JSON.stringify({ validate_only: !!validateOnly, events });
+    const r = https.request({ host: "bzr.openai.com", path: `/v1/events?pid=${encodeURIComponent(OAI_PIXEL)}`, method: "POST", timeout: 8000,
+      headers: { Authorization: `Bearer ${OAI_KEY}`, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) } }, (x) => {
+      let t = ""; x.on("data", (c) => { if (t.length < 2000) t += c; }); x.on("end", () => resolve({ status: x.statusCode, text: t }));
+    });
+    r.on("timeout", () => r.destroy(new Error("timeout")));
+    r.on("error", (e) => resolve({ status: 0, text: e.message }));
+    r.end(body);
+  });
+}
+const oaiEvent = (id, url) => ({ id, type: "lead_created", timestamp_ms: Date.now(), source_url: url, action_source: "web", data: { type: "customer_action" } });
+if (OAI_KEY) oaiPost([oaiEvent("check_" + Date.now(), "https://cromaticstudios.com/")], true).then((x) => {
+  oaiState = x.status >= 200 && x.status < 300 ? "ok" : `error ${x.status}`;
+  if (oaiState !== "ok") console.error("[oai] check", x.status, String(x.text).slice(0, 200));
+});
+function oaiLead(req, ref) {
+  if (!OAI_KEY || !ref) return;
+  if (!/(?:^|;\s*)cz-consent=yes2(?:;|$)/.test(String(req.headers.cookie || ""))) return;
+  let url = "https://cromaticstudios.com/";
+  try { const u = new URL(String(req.headers.referer || "")); if (/cromaticstudios\.com$/.test(u.hostname)) url = u.origin + u.pathname; } catch {}
+  oaiPost([oaiEvent("lead_" + ref, url)], false).then((x) => { if (x.status < 200 || x.status >= 300) { oaiState = `error ${x.status}`; console.error("[oai] lead", x.status, String(x.text).slice(0, 200)); } });
+}
 const SUBJECT_TAG = process.env.MAIL_SUBJECT_TAG || "[mesaj de pe site!!]";
 
 async function boarding(req, res) {
@@ -120,11 +154,13 @@ async function boarding(req, res) {
       html: passHtml(t, "passenger"), text: passText(t, "passenger")
     });
     lastMail = { at: new Date().toISOString(), error: null };
+    oaiLead(req, t.ref); // r149b
     return send(res, 200, { ok: true, ref: t.ref });
   } catch (e) {
     console.error("[mail]", e.message);
     lastMail = { at: new Date().toISOString(), error: String(e.response || e.message || e).replace(/[\w.+-]+@[\w.-]+/g, "<email>").slice(0, 300), code: e.responseCode || e.code || null };
     // the message is safe on the server: the visitor gets their confirmation, the studio reads it from the file
+    if (kept) oaiLead(req, t.ref); // r149b
     return kept ? send(res, 200, { ok: true, ref: t.ref, mail: false }) : send(res, 502, { ok: false });
   }
 }
@@ -290,7 +326,7 @@ http.createServer((req, res) => {
   if (req.url === "/healthz" || req.url.startsWith("/healthz?")) {
     const key = new URL(req.url, "http://x").searchParams.get("key") || "";
     const full = !!process.env.LEADS_KEY && key.length >= 16 && key === process.env.LEADS_KEY;
-    return send(res, 200, full ? { ok: true, mail: process.env.SMTP_HOST ? "smtp" : "log", leads: true, host: process.env.SMTP_HOST || null, port: process.env.SMTP_PORT || null, lastMail } : { ok: true });
+    return send(res, 200, full ? { ok: true, mail: process.env.SMTP_HOST ? "smtp" : "log", leads: true, host: process.env.SMTP_HOST || null, port: process.env.SMTP_PORT || null, lastMail, oai: oaiState } : { ok: true, oai: oaiState });
   }
   if (req.url.startsWith("/.well-known/acme-challenge/")) return acme(req, res);
   if (req.url === "/.well-known/security.txt" || req.url === "/security.txt") {
