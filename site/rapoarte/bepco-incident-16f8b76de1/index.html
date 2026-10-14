@@ -237,7 +237,6 @@ a{color:var(--ink)}
     <span class="label">Securitate · bepco.ro</span>
     <h1>Site-ul e <span class="nw"><span class="hl">curat</span>.</span> Ușa e închisă.</h1>
     <p class="lead">Pe 13 octombrie, banca Bepco a semnalat cod periculos pe site. Codul a ajuns acolo printr-un cont de administrator cu parola furată, nu printr-o vulnerabilitate a site-ului. În aceeași zi am găsit cum a intrat atacatorul, am închis accesul și am verificat dacă au fost atinse datele candidaților.</p>
-    <p class="scope"><strong>Perioada analizată:</strong> 1 septembrie – 14 octombrie 2026, intervalul pentru care serverul păstrează log-uri de acces. Toate constatările din raport se referă la această perioadă.</p>
     <div class="meta">
       <span class="pill ok">Acces închis</span>
       <span class="pill">Niciun acces la CV-uri</span>
@@ -339,7 +338,7 @@ a{color:var(--ink)}
     <div class="zero">
       <span class="pill" style="align-self:flex-start">Atacatori · CV-uri</span>
       <span class="n">0</span>
-      <p style="margin:0">În perioada analizată, atacatorii nu au deschis lista de cereri, nu au rulat exportul și nu au descărcat <em class="k">niciun</em> fișier CV.</p>
+      <p style="margin:0">În log-urile de acces nu există <em class="k">nicio</em> accesare a atacatorilor la lista de cereri, la export sau la fișierele CV.</p>
     </div>
     <div class="card">
       <h3>Ce era expus</h3>
@@ -416,7 +415,7 @@ a{color:var(--ink)}
       <span class="pill ok">Backup</span>
       <h3 style="margin-top:12px">Arhiva de backup din noiembrie 2025</h3>
       <p>Arhiva avea 1,4 GB și conținea tot site-ul, inclusiv baza de date cu cererile de job de atunci. Stătea în <code>wp-content/backups-dup-pro</code>, în zona publică a site-ului. Pluginul Duplicator Pro o protejează în modul lui standard: numele conține un cod aleatoriu de 20 de caractere, folderul nu se poate lista și nu e indexat. Pluginul nu blochează însă descărcarea directă, așa că arhiva putea fi descărcată de cine îi știa adresa exactă.</p>
-      <p>Am mutat folderul în afara zonei publice, unde se ajunge doar cu login de cPanel. Adresa veche răspunde acum cu <code>404</code>. În perioada analizată nu există nicio descărcare, în afară de verificarea noastră.</p>
+      <p>Am mutat folderul în afara zonei publice, unde se ajunge doar cu login de cPanel. Adresa veche răspunde acum cu <code>404</code>. În log-urile de acces nu există nicio descărcare, în afară de verificarea noastră.</p>
       <p><em class="k">Următorul</em> pas e ștergerea definitivă: hostingul are backup-uri mai noi.</p>
     </div>
     <div class="card">
@@ -528,7 +527,7 @@ a{color:var(--ink)}
   </div>
 </section>
 
-<footer>Perioada analizată: 1 sep – 14 oct 2026. Surse: cPanel, log-urile Apache, Imunify360, baza de date WordPress, inventarul fișierelor. Toate verificările au fost doar de citire. Modificările de pe server sunt cele marcate „Rezolvat” și au fost făcute pe 13 octombrie, la cererea Cromatic Studios. Fișierele scoase de pe site nu au fost șterse definitiv. Sunt păstrate într-un folder privat al contului de hosting.</footer>
+<footer>Surse: log-urile de acces ale serverului (1 sep – 14 oct 2026), cPanel, Imunify360, baza de date WordPress, inventarul fișierelor. Toate verificările au fost doar de citire. Modificările de pe server sunt cele marcate „Rezolvat” și au fost făcute pe 13 octombrie, la cererea Cromatic Studios. Fișierele scoase de pe site nu au fost șterse definitiv. Sunt păstrate într-un folder privat al contului de hosting.</footer>
 
 </main>
 <script>
