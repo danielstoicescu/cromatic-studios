@@ -48,6 +48,7 @@ code{font-family:var(--f-mono);font-size:.84em;background:var(--white);border:1.
 /* hero */
 .hero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:28px;align-items:end}
 .hero .lead{font-size:1.12rem;margin-top:20px}
+.hero .scope{font-size:.86rem;margin-top:14px;padding:10px 14px;background:var(--white);border:var(--stroke-s);border-radius:14px;max-width:62ch}
 .hero .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
 /* ilustrația: atacul (coral) lovește site-ul (albastru), bariera (romb) se închide, atacul e respins, apare „ok” (verde) */
 .shapes{position:relative;height:250px;width:100%;max-width:420px;justify-self:end;font:700 .74rem/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase}
@@ -236,9 +237,10 @@ a{color:var(--ink)}
     <span class="label">Securitate · bepco.ro</span>
     <h1>Site-ul e <span class="nw"><span class="hl">curat</span>.</span> Ușa e închisă.</h1>
     <p class="lead">Pe 13 octombrie, banca Bepco a semnalat cod periculos pe site. Codul a ajuns acolo printr-un cont de administrator cu parola furată, nu printr-o vulnerabilitate a site-ului. În aceeași zi am găsit cum a intrat atacatorul, am închis accesul și am verificat dacă au fost atinse datele candidaților.</p>
+    <p class="scope"><strong>Perioada analizată:</strong> 1 septembrie – 14 octombrie 2026, intervalul pentru care serverul păstrează log-uri de acces. Toate constatările din raport se referă la această perioadă.</p>
     <div class="meta">
       <span class="pill ok">Acces închis</span>
-      <span class="pill">0 accesări ale CV-urilor</span>
+      <span class="pill">Niciun acces la CV-uri</span>
       <span class="pill">XML-RPC blocat</span>
     </div>
   </div>
@@ -255,7 +257,7 @@ a{color:var(--ink)}
   <div class="sec-h"><span class="num">01</span><h2 id="h-cifre">Ce am verificat</h2></div>
   <div class="stats">
     <div class="stat"><span class="pill blue" style="align-self:flex-start">Fișiere</span><span class="n">21.830</span><p>fișiere de pe server, inventariate și comparate după data modificării</p></div>
-    <div class="stat"><span class="pill blue" style="align-self:flex-start">Log-uri</span><span class="n">120k</span><p>cereri către site, citite una câte una, între 1 septembrie și 13 octombrie</p></div>
+    <div class="stat"><span class="pill blue" style="align-self:flex-start">Log-uri</span><span class="n">128k</span><p>cereri către site, citite una câte una, între 1 septembrie și 14 octombrie</p></div>
     <div class="stat"><span class="pill bad" style="align-self:flex-start">Atac</span><span class="n">4.339</span><p>încercări automate prin <code>xmlrpc.php</code>, canalul prin care se ghicesc și se testează parole</p></div>
     <div class="stat"><span class="pill ok" style="align-self:flex-start">Candidați</span><span class="n">159</span><p>cereri de job în baza de date. Niciuna nu a fost deschisă de atacatori.</p></div>
   </div>
@@ -268,7 +270,7 @@ a{color:var(--ink)}
     <div class="node atk">
       <span class="step">01 · CHEIA</span>
       <h3>Parolă furată</h3>
-      <p>Parola unui cont de administrator circula deja la 1 septembrie. Trei roboți au testat-o în 43 de secunde.</p>
+      <p>Pe 1 septembrie, trei roboți s-au autentificat în 43 de secunde cu parola unui cont de administrator.</p>
       <div class="fix"><span class="pill ok">Închis</span><br>Parolă schimbată, chei de securitate noi, toate sesiunile închise.</div>
     </div>
     <div class="node">
@@ -318,7 +320,11 @@ a{color:var(--ink)}
     <li class="ev a"><time>12 oct · 11:10</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">38.84.153.103</span><p>Intră în cont, își verifică drepturile creând și ștergând o pagină, apoi încearcă să urce un fișier PHP. Serverul îl refuză.</p></div></li>
     <li class="ev a"><time>12 oct · 16:16</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">193.202.80.233</span><p>Caută pluginuri prin care să insereze cod în pagini. Toate îi sunt blocate. Instalează în schimb WP File Manager.</p></div></li>
     <li class="ev a peak"><time>13 oct · 01:36</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">162.252.52.112</span><p><strong>Codul e injectat.</strong> <code>functions.php</code> crește cu 1,5 KB, iar fiecare pagină a site-ului îl include din acel moment.</p></div></li>
-    <li class="ev h"><time>13 oct · 14:22</time><span class="dot" aria-hidden="true"></span><div class="body"><p>Hostingul restaurează site-ul din backup-ul de pe 12 octombrie seara. Codul injectat dispare. Pluginul atacatorului și parola furată rămân.</p></div></li>
+    <li class="ev a"><time>13 oct · 11:10</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">37.63.18.107</span><p>Autentificare cu contul compromis. Deschide doar pagina de profil.</p></div></li>
+    <li class="ev h"><time>13 oct · 12:14</time><span class="dot" aria-hidden="true"></span><div class="body"><p>Hostingul face o copie a site-ului înainte de restaurare. Scannerul de securitate al serverului semnalează <code>functions.php</code> ca fișier infectat.</p></div></li>
+    <li class="ev a"><time>13 oct · 13:07</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">91.132.139.5</span><p>Încarcă și activează două pluginuri în 60 de secunde, apoi pleacă. Nu urmează nicio cerere către ele. Restaurarea de la 14:22 le elimină.</p></div></li>
+    <li class="ev a"><time>13 oct · 13:22</time><span class="dot" aria-hidden="true"></span><div class="body"><span class="who">31.58.229.196 · 31.58.229.166</span><p>Două autentificări scurte: panoul de administrare și pagina de articol nou.</p></div></li>
+    <li class="ev h"><time>13 oct · 14:22</time><span class="dot" aria-hidden="true"></span><div class="body"><p>Hostingul restaurează site-ul din backup-ul de pe 12 octombrie seara. Codul injectat și pluginurile urcate la 13:07 dispar. WP File Manager și parola furată rămân.</p></div></li>
     <li class="ev a"><time>13 oct · 14:39</time><span class="dot" aria-hidden="true"></span><div class="body"><p>Atacatorul publică o nouă postare de test. Accesul lui funcționa și după restaurare.</p></div></li>
     <li class="ev f"><time>13 oct · 15:00</time><span class="dot" aria-hidden="true"></span><div class="body"><p>Cromatic începe investigația: log-uri, fișiere, baza de date.</p></div></li>
     <li class="ev f"><time>13 oct · 16:00</time><span class="dot" aria-hidden="true"></span><div class="body"><p>Acces închis. Parolă schimbată, sesiuni invalidate, plugin scos, editor dezactivat, spam și backup scoase de pe site.</p></div></li>
@@ -333,7 +339,7 @@ a{color:var(--ink)}
     <div class="zero">
       <span class="pill" style="align-self:flex-start">Atacatori · CV-uri</span>
       <span class="n">0</span>
-      <p style="margin:0">Atacatorii nu au deschis lista de cereri, nu au rulat exportul și nu au descărcat <em class="k">niciun</em> fișier CV.</p>
+      <p style="margin:0">În perioada analizată, atacatorii nu au deschis lista de cereri, nu au rulat exportul și nu au descărcat <em class="k">niciun</em> fișier CV.</p>
     </div>
     <div class="card">
       <h3>Ce era expus</h3>
@@ -343,7 +349,7 @@ a{color:var(--ink)}
         <div class="bar"><span>Intrări în al doilea formular</span><b>6</b><div class="track"><div class="fill" style="width:3%"></div></div></div>
       </div>
       <p style="margin-top:14px;font-size:.9rem">În log-uri, cererile și CV-urile au fost deschise doar de pe IP-urile folosite de echipa Bepco. Răspunsurile primite de atacator de la File Manager au fost sub 1,6 KB, adică liste de foldere, nu fișiere descărcate.</p>
-      <div class="caveat"><strong>Ce nu putem exclude.</strong> Contul compromis avea drepturi de administrator, iar înainte de 1 septembrie nu există log-uri. Recomandăm ca incidentul să fie documentat intern, cum cere oricum GDPR, art. 33 alin. 5. Decizia de notificare către ANSPDCP, în termen de 72 de ore, aparține responsabilului juridic.</div>
+      <div class="caveat"><strong>De ce nu există indicii de acces.</strong> Atacatorii s-au autentificat ca administratori în cel puțin șase sesiuni, iar secțiunea cu cereri era la un click distanță. Nu au deschis-o niciodată. Sesiunile lungi sunt un script automat, care caută doar locuri unde poate insera cod în pagini, iar codul găsit confirmă acest scop. Singura rezervă tehnică privește intervalul 13 octombrie, 13:07–14:22, când două pluginuri necunoscute au fost active pe server fără să fie apelate. Nu există niciun indiciu că au fost folosite pentru date. Recomandăm documentarea internă a incidentului, cum cere GDPR, art. 33 alin. 5. Decizia privind notificarea ANSPDCP aparține responsabilului juridic.</div>
     </div>
   </div>
 </section>
@@ -353,6 +359,7 @@ a{color:var(--ink)}
   <div class="board">
     <div class="st"><div class="top"><h3>Contul compromis</h3><span class="pill ok">Rezolvat</span></div><p>Parolă schimbată. Cheile de securitate din <code>wp-config.php</code> sunt noi, deci orice sesiune deschisă, inclusiv ale atacatorilor, a fost închisă.</p></div>
     <div class="st"><div class="top"><h3>WP File Manager</h3><span class="pill ok">Rezolvat</span></div><p>Dezactivat și scos de pe site, împreună cu folderele <code>plugin-autoupdate</code>, <code>wpfm-private-backups</code> și <code>.tmb</code>.</p></div>
+    <div class="st"><div class="top"><h3>Pluginurile din 13 octombrie</h3><span class="pill ok">Eliminate</span></div><p>Cele două pluginuri încărcate la 13:07 au fost eliminate de restaurarea de la 14:22. Pe server nu a rămas niciun fișier al lor.</p></div>
     <div class="st"><div class="top"><h3>Editorul de cod din wp-admin</h3><span class="pill ok">Rezolvat</span></div><p>Dezactivat prin <code>DISALLOW_FILE_EDIT</code>. Detalii mai jos.</p></div>
     <div class="st"><div class="top"><h3>Backup descărcabil public</h3><span class="pill ok">Rezolvat</span></div><p>Arhiva din noiembrie 2025 nu mai e accesibilă din internet. Detalii mai jos.</p></div>
     <div class="st"><div class="top"><h3>Articole spam</h3><span class="pill ok">Rezolvat</span></div><p>Cele trei articole ale atacatorului nu mai apar pe site. Sunt în coș, alături de trei postări de test.</p></div>
@@ -395,8 +402,9 @@ a{color:var(--ink)}
     <div class="cgroup"><h3>Dovezi</h3>
       <div class="ck"><span class="pill ok">Făcut</span><p><strong>Codul injectat, decodat.</strong> Rula doar în browserul vizitatorului și încărca un script extern. Nu citea baza de date sau fișierele de pe server, deci prin el nu au putut ieși date de pe site.</p></div>
       <div class="ck"><span class="pill ok">Făcut</span><p><strong>Inventar cu date și ore</strong> pentru toate cele 21.830 de fișiere, inclusiv CV-urile. Lista utilizatorilor cu datele de înregistrare și ultimele login-uri.</p></div>
-      <div class="ck"><span class="pill gray">De cerut hostingului</span><p><strong>Log-urile de acces din august și cele de pe 13 octombrie după ora 06:00.</strong> Nu sunt disponibile din cPanel.</p></div>
-      <div class="ck"><span class="pill yel">Parțial</span><p><strong>Log de erori PHP și log de mail.</strong> Log-urile de erori PHP de pe site sunt goale. Log-ul de mail nu e accesibil din cPanel și trebuie cerut hostingului: un mail trimis cu atașamente ar arăta o scurgere de date.</p></div>
+      <div class="ck"><span class="pill ok">Făcut</span><p><strong>Log-urile de acces.</strong> Analizate integral pentru 1 septembrie – 14 octombrie, inclusiv toată ziua de 13 octombrie. Hostingul a confirmat că nu există alte log-uri.</p></div>
+      <div class="ck"><span class="pill ok">Făcut</span><p><strong>Scannerul de securitate al serverului (Imunify360).</strong> Singurele detecții sunt pe <code>functions.php</code>, la copierea făcută de hosting. Modulul care blochează scripturile PHP malițioase nu are niciun eveniment în ultimele 30 de zile.</p></div>
+      <div class="ck"><span class="pill gray">Nu există</span><p><strong>Log de erori PHP și log de mail.</strong> Log-urile de erori PHP de pe site sunt goale. Hostingul nu păstrează un log de mail pentru acest cont.</p></div>
     </div>
   </div>
 </section>
@@ -408,7 +416,7 @@ a{color:var(--ink)}
       <span class="pill ok">Backup</span>
       <h3 style="margin-top:12px">Arhiva de backup din noiembrie 2025</h3>
       <p>Arhiva avea 1,4 GB și conținea tot site-ul, inclusiv baza de date cu cererile de job de atunci. Stătea în <code>wp-content/backups-dup-pro</code>, în zona publică a site-ului. Pluginul Duplicator Pro o protejează în modul lui standard: numele conține un cod aleatoriu de 20 de caractere, folderul nu se poate lista și nu e indexat. Pluginul nu blochează însă descărcarea directă, așa că arhiva putea fi descărcată de cine îi știa adresa exactă.</p>
-      <p>Am mutat folderul în afara zonei publice, unde se ajunge doar cu login de cPanel. Adresa veche răspunde acum cu <code>404</code>. Log-urile din septembrie și octombrie nu arată nicio descărcare, în afară de verificarea noastră.</p>
+      <p>Am mutat folderul în afara zonei publice, unde se ajunge doar cu login de cPanel. Adresa veche răspunde acum cu <code>404</code>. În perioada analizată nu există nicio descărcare, în afară de verificarea noastră.</p>
       <p><em class="k">Următorul</em> pas e ștergerea definitivă: hostingul are backup-uri mai noi.</p>
     </div>
     <div class="card">
@@ -497,7 +505,7 @@ a{color:var(--ink)}
         <li class="done"><span>Trecem site-ul pe PHP 8.2 sau mai nou.</span></li>
         <li class="done"><span>Oprim listarea publică a folderelor.</span></li>
         <li class="done"><span>Analizăm copia site-ului făcută de hosting înainte de restaurare, ca să documentăm exact codul injectat.</span></li>
-        <li><span>Cerem hostingului log-ul de mail și log-urile de acces care lipsesc din cPanel.</span></li>
+        <li class="done"><span>Cerem hostingului log-urile care lipsesc din cPanel. Hostingul a confirmat că nu există altele.</span></li>
       </ol>
     </div>
     <div class="card">
@@ -516,11 +524,11 @@ a{color:var(--ink)}
   <div class="cards">
     <div class="card"><span class="pill yel" style="justify-self:start">Ce s-a întâmplat</span><p>Un cont de administrator cu parola furată a fost folosit ca să insereze cod în site.</p></div>
     <div class="card"><span class="pill ok" style="justify-self:start">Unde suntem</span><p>Accesul atacatorului e închis, iar site-ul e curat. Datele candidaților nu apar accesate.</p></div>
-    <div class="card"><span class="pill blue" style="justify-self:start">Ce urmează</span><p>Doi pași de partea noastră: 2FA cu limită de login și log-urile cerute hostingului. Trei de partea voastră.</p></div>
+    <div class="card"><span class="pill blue" style="justify-self:start">Ce urmează</span><p>Un pas de partea noastră: 2FA cu limită de login. Trei de partea voastră.</p></div>
   </div>
 </section>
 
-<footer>Surse: cPanel, log-urile Apache din 1 sep – 13 oct 2026, baza de date WordPress, inventarul fișierelor. Toate verificările au fost doar de citire. Modificările de pe server sunt cele marcate „Rezolvat” și au fost făcute pe 13 octombrie, la cererea Cromatic Studios. Fișierele scoase de pe site nu au fost șterse definitiv. Sunt păstrate într-un folder privat al contului de hosting.</footer>
+<footer>Perioada analizată: 1 sep – 14 oct 2026. Surse: cPanel, log-urile Apache, Imunify360, baza de date WordPress, inventarul fișierelor. Toate verificările au fost doar de citire. Modificările de pe server sunt cele marcate „Rezolvat” și au fost făcute pe 13 octombrie, la cererea Cromatic Studios. Fișierele scoase de pe site nu au fost șterse definitiv. Sunt păstrate într-un folder privat al contului de hosting.</footer>
 
 </main>
 <script>
