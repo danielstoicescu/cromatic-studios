@@ -25,8 +25,8 @@
   const ghost = $(".ghost"), gctx = ghost.getContext("2d");
   let snapCb = null;
   addEventListener("message", (e) => { if (e.origin === location.origin && e.data && e.data.cz === "onb" && e.data.ev === "snap" && snapCb) { const f = snapCb; snapCb = null; f(); } });
-  const dissolveTo = (id, ms = 650) => new Promise((res) => {
-    let done = false; const go = () => { if (done) return; done = true; send({ op: "scheme", id }); res(); };
+  const dissolveTo = (id, ms = 420) => new Promise((res) => {
+    let done = false; const go = () => { if (done) return; done = true; cur.camHold = performance.now() + ms + 40; send({ op: "scheme", id }); res(); };
     snapCb = () => {
       try {
         const src = win().__onbSnapCanvas?.(); if (!src) return go();
@@ -196,7 +196,13 @@
     meter.begin();
     const soft = (parts, o = {}) => { const el = line(parts, { fx: "soft", stagger: 55, letters: true, ...o }); cur.lines.add(el); return el; };
     // a line leaves letter by letter in a short cascade; a pill leaves whole, with its letters inside it
-    const gone = (el) => { if (!el || !el.isConnected) return; cur.lines.delete(el); el.querySelectorAll(".l").forEach((l, j) => l.style.setProperty("--lo", Math.min(150, j * 6) + "ms")); el.classList.add("outsoft"); setTimeout(() => el.remove(), 700); };
+    const gone = (el) => {
+      if (!el || !el.isConnected) return; cur.lines.delete(el);
+      el.querySelectorAll(".l").forEach((l, j) => l.style.setProperty("--lo", Math.min(120, j * 5) + "ms"));
+      // a forgotten letter leaves from where it drifted to, with what little was left of it (no jump back to full)
+      el.querySelectorAll(".kw.forget .l").forEach((l) => { const cs = getComputedStyle(l); l.style.opacity = cs.opacity; l.style.transform = cs.transform; l.style.animation = "none"; l.style.transition = "opacity .3s ease"; requestAnimationFrame(() => { l.style.opacity = "0"; }); });
+      el.classList.add("outsoft"); setTimeout(() => el.remove(), 600);
+    };
     cur.gone = gone;
     // a word is forgotten: its letters drift apart and out of focus, each on its own moment (k: how far it goes)
     const forget = (w, k = 1, spread = 700, from = 0) => { if (!w) return; const ls = [...w.querySelectorAll(".l")]; ls.forEach((l, j) => { const u = ls.length > 1 ? j / (ls.length - 1) : 0; l.style.setProperty("--lo", (from + (0.35 * u + 0.65 * ((j * 7) % 10) / 10) * spread).toFixed(0) + "ms"); l.style.setProperty("--fx", ((u - 0.5) * 26 * k).toFixed(1) + "px"); l.style.setProperty("--fy", (-(5 + ((j * 3) % 5) * 2) * k).toFixed(1) + "px"); l.style.setProperty("--fo", k >= 1 ? 0.06 : 0.3); }); w.classList.add("forget"); };
@@ -213,16 +219,23 @@
       [18800, { t: [1300, 5100], dist: 5400, yaw: 1.18, pitch: 0.98 }],
       [21500, { t: [1300, 5100], dist: 5400, yaw: 1.22, pitch: 0.98 }],
     ]);
-    cur.camOn = true;
-    (function drive(now) { if (tok !== cur.token || !cur.camOn) return; camAt(road(now - cur.t0)); requestAnimationFrame(drive); })(performance.now());
+    cur.camOn = true; cur.camOff = 0; cur.camHold = 0; let camLast = performance.now();
+    (function drive(now) { if (tok !== cur.token || !cur.camOn) return; if (now < cur.camHold) cur.camOff += now - camLast; camLast = now; camAt(road(now - cur.t0 - cur.camOff)); requestAnimationFrame(drive); })(performance.now());
     // 1 · nobody remembers a thumbnail: a row of thumbnails under the word, forgotten with it
     await at(300, tok);
     const a = soft(["Nobody", "remembers", { br: true }, { w: "a", d: 260 }, { w: "thumbnail.", cls: "thumb", d: 330 }], { cls: "calm" });
-    await at(1300, tok);
+    await at(1250, tok);
     const th = a.querySelector(".thumb");
-    if (th && th.isConnected && !late(1300)) { const r = th.getBoundingClientRect(); const row = html(`<div class="thumbs">${"<i></i>".repeat(6)}</div>`); row.style.left = (r.left + r.width / 2) + "px"; row.style.top = (r.bottom + 18) + "px"; }
-    await at(1650, tok); forget(th, 1, 650); forget(a.querySelectorAll(".kw")[1], 0.45, 600, 300); over.querySelector(".thumbs")?.classList.add("gone");
-    await at(2750, tok); gone(a); over.querySelector(".thumbs")?.remove();
+    if (th && th.isConnected && !late(1250)) {
+      // a grid of thumbnails behind the word (the kind nobody remembers): nine cells, then it falls apart, each cell
+      // drifting its own way, out of focus, and the word goes dim with it
+      const r = th.getBoundingClientRect();
+      const grid = html(`<div class="tgrid">${Array.from({ length: 9 }, (_, i) => `<i style="--i:${i};--dx:${((i % 3) - 1) * 34}px;--dy:${(Math.floor(i / 3) - 1) * 26}px;--rz:${((i * 7) % 11 - 5) * 3}deg"></i>`).join("")}</div>`);
+      grid.style.left = (r.left + r.width / 2) + "px"; grid.style.top = (r.top + r.height / 2) + "px";
+      grid.style.setProperty("--gw", Math.round(r.width + 120) + "px"); grid.style.setProperty("--gh", Math.round(r.height * 3) + "px");
+    }
+    await at(1750, tok); over.querySelector(".tgrid")?.classList.add("apart"); forget(th, 0.3, 500, 150); forget(a.querySelectorAll(".kw")[1], 0.25, 500, 400);
+    await at(2750, tok); gone(a); { const g = over.querySelector(".tgrid"); if (g) { g.classList.add("outfast"); setTimeout(() => g.remove(), 240); } }
     // 2 · but someone could remember a house → facade → brand
     await at(3350, tok);
     const b = soft(["But", "someone", "could", { br: true }, { w: "remember", d: 300 }, { w: "a", d: 360 }, { brm: true }, { w: "house.", pill: "g", d: 440 }], { cls: "calm" });
@@ -293,7 +306,7 @@
     const n = BEATS4.find((t) => t > e + 80);
     if (n == null) { skip(); return; }
     cur.lines.forEach((el) => { el.classList.add("outfast"); setTimeout(() => el.remove(), 220); }); cur.lines.clear();
-    over.querySelectorAll(".thumbs, .wchips, .xpbar, .cupbig").forEach((x) => { x.classList.add("outfast"); setTimeout(() => x.remove(), 220); });
+    over.querySelectorAll(".tgrid, .wchips, .xpbar, .cupbig").forEach((x) => { x.classList.add("outfast"); setTimeout(() => x.remove(), 220); });
     cur.t0 -= (Math.max(e, n - 200) - e);
   };
 

@@ -284,3 +284,20 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ink); 
 .kl.outfast, .over > .outfast { animation: fastOut .18s ease-out both !important; }
 .kl.outfast .kw, .kl.outfast .kw .l, .kl.outfast .kw.pill { animation: none !important; opacity: 1 !important; }
 @keyframes fastOut { to { opacity: 0; transform: scale(.985); } }
+
+/* ---------- round six: the grid of thumbnails behind the word, falling apart; cleaner exits ---------- */
+.tgrid { position: absolute; z-index: -1; width: var(--gw, 420px); height: var(--gh, 180px); transform: translate(-50%, -50%); display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; pointer-events: none; }
+.tgrid i { display: block; border-radius: 7px; background: #e6e2d6; border: 1.5px solid #cfcabc; opacity: 0; animation: cellIn .55s var(--eoq) calc(var(--i, 0) * 45ms) both; will-change: transform, opacity; }
+@keyframes cellIn { from { opacity: 0; transform: scale(.92); } to { opacity: .85; transform: none; } }
+.tgrid.apart i { animation: cellApart 1.3s cubic-bezier(.3,.6,.2,1) calc(var(--i, 0) * 55ms) both; }
+@keyframes cellApart { from { opacity: .85; transform: none; } to { opacity: 0; transform: translate(var(--dx, 0), var(--dy, 0)) rotate(var(--rz, 0)) scale(.86); } }
+.words { z-index: 4; }
+.over { z-index: 3; }
+.over > .cupbig, .over > .wchips, .over > .xpbar { z-index: 5; }
+/* exits: shorter, so nothing of a line is left when the next arrives */
+.kl.calm.outsoft .kw:not(.pill) .l { animation-duration: .36s; }
+.kl.calm.outsoft .kw.pill { animation-duration: .36s !important; }
+.kl.calm .kw .l { backface-visibility: visible; }
+.tgrid i { background: linear-gradient(160deg, #e3dfd2, #d3cebf); border-color: #c4bfae; }
+.tgrid i::after { content: ""; position: absolute; left: 10%; bottom: 12%; width: 46%; height: 10%; border-radius: 3px; background: rgba(255,255,255,.55); }
+.tgrid i { position: relative; }
