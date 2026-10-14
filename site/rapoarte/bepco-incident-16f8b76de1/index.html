@@ -407,7 +407,7 @@ a{color:var(--ink)}
     <div class="card">
       <span class="pill ok">Backup</span>
       <h3 style="margin-top:12px">Arhiva de backup din noiembrie 2025</h3>
-      <p>Arhiva avea 1,4 GB și conținea tot site-ul, inclusiv baza de date cu cererile de job de atunci. Stătea în <code>wp-content/backups-dup-pro</code>, în zona publică a site-ului. Pluginul Duplicator pune acolo un fișier de protecție, dar acesta nu funcționa pe serverul actual. Oricine știa adresa exactă putea descărca arhiva.</p>
+      <p>Arhiva avea 1,4 GB și conținea tot site-ul, inclusiv baza de date cu cererile de job de atunci. Stătea în <code>wp-content/backups-dup-pro</code>, în zona publică a site-ului. Pluginul Duplicator Pro o protejează în modul lui standard: numele conține un cod aleatoriu de 20 de caractere, folderul nu se poate lista și nu e indexat. Pluginul nu blochează însă descărcarea directă, așa că arhiva putea fi descărcată de cine îi știa adresa exactă.</p>
       <p>Am mutat folderul în afara zonei publice, unde se ajunge doar cu login de cPanel. Adresa veche răspunde acum cu <code>404</code>. Log-urile din septembrie și octombrie nu arată nicio descărcare, în afară de verificarea noastră.</p>
       <p><em class="k">Următorul</em> pas e ștergerea definitivă: hostingul are backup-uri mai noi.</p>
     </div>
