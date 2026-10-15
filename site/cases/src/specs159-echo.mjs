@@ -200,7 +200,7 @@ export const ECHO = {
   name: "Echo School",
   tagline: "Two years of Instagram for a school of technology, digital arts and videogames.",
   desc: "Echo School: two years of Instagram for a School of Technology, Digital Arts & Videogames in Bucharest. Posts, stories, carousels, reels and campaigns by Cromatic Studios.",
-  title: "From gamer to creator, two years on the feed.",
+  title: "From gamer to creator.", // r159b (Daniel: without "two years")
   accent: { bg: "#8B3DFF", fg: "#ffffff", ink: "#6b21d6" },
   info: ["Education · Technology, digital arts, videogames", "Bucharest · Instagram", "Social media communication, two years"],
   cover: { img: m("cover") },

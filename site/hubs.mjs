@@ -43,7 +43,7 @@ export const INDUSTRIES = [
     streetName: "Fintech Boulevard",
     title: "Fintech, banking & investment branding in Bucharest",
     desc: "Brand strategy, identity, websites and apps for banks, brokers and fintech. Investimental, Techventures Bank and Unchain Festival, from Bucharest.",
-    eyebrow: "Fintech Boulevard · 9 case studies",
+    eyebrow: "Fintech Boulevard · 8 case studies",
     h1: "Finance brands with a human face.",
     lead: "Cromatic Studios designs brand strategy, identities, websites and apps for banks, brokers, investment groups, fintech startups and energy companies in Romania. Clear for the regulator, warm for the customer.",
     intro: [
@@ -59,7 +59,7 @@ export const INDUSTRIES = [
       { t: "Fintech events and conferences", p: "Unchain Festival, the summer festival of CEE fintech, got a brand strategy, an identity built on one red thread and unchainfestival.com, with the agenda, speakers, delegates, passes and travel on every screen." },
       { t: "Fleet, signage and merch", p: "Finance brands live offline too. ESD's vans announce “am ajuns” from the roof. Techventures Bank's wings sit on the branch façade and on cars at night. Longshield and Infinity Capital got stationery, roll-ups and pins." }
     ],
-    cases: ["investimental", "unchain-festival", "techventures-bank", "esd", "longshield", "infinity-capital", "assetto", "bepco", "echo-school"], // r159: Echo School stands on this boulevard on the map
+    cases: ["investimental", "unchain-festival", "techventures-bank", "esd", "longshield", "infinity-capital", "assetto", "bepco"], // r159b (Daniel: Echo School is at Dacia 99, not a fintech case); was: Echo School stands on this boulevard on the map
     faq: [
       ["Which branding studio in Romania works with fintech and banks?", "Cromatic Studios, an independent creative studio in Bucharest. Our finance work includes Techventures Bank, the first entrepreneurial bank in Romania, the retail broker Investimental, Longshield Investment Group, Infinity Capital Investments, the blockchain real estate startup Assetto and Unchain Festival, the summer festival of CEE fintech at Oradea Fortress."],
       ["Do you design trading platforms and banking apps?", "Yes. For Investimental we ran stakeholder workshops, user research and a competitor audit, defined three personas, then designed two design systems, a web trading platform and a native mobile app, with interactive prototypes, usability testing and developer handoff. The platform won design awards and is considered best practice in the market."],
