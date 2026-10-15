@@ -39629,10 +39629,9 @@ void main() {
         const guideEls = () => guide.els || (guide.els = (() => {
           const drag = el("div", "map-guide hidden", `<span class="mg-track"><span class="mg-move"><span class="mg-dot"></span>${guideHand}</span></span><b>Grab and drag</b>`);
           drag.setAttribute("role", "status");
-          const start = el("button", "mg-start hidden", `<span class="mg-ring"></span><span class="mg-ring r2"></span><span class="mg-badge"><b class="mg-t1">Everything starts</b><i class="mg-tap">with a tap</i><b class="mg-t2">Start here</b><i class="mg-nm">The road ahead</i><span class="mg-arr" aria-hidden="true">→</span></span>`);
-          start.setAttribute("aria-label", "Everything starts with a tap: the road ahead"); // r139i: Daniel's copy (r158: on the road)
-          // r158 (Daniel): the tap is on the road, the next step of the drive: the car goes there (to the roundabout)
-          start.onclick = (e) => { e.stopPropagation(); if (mapBoarding) return; const sp = guide.spot; guideEnd("done"); if (sp) { tapMark(sp.x, sp.z); setTimeout(() => mapGo({ id: "tap", tap: true, x: sp.x, z: sp.z, br: null, name: "", c: "#FED012" }), 380); } };
+          const start = el("button", "mg-start hidden", `<span class="mg-ring"></span><span class="mg-ring r2"></span><span class="mg-badge"><b class="mg-t1">Everything starts</b><i class="mg-tap">with a coffee</i><b class="mg-t2">Start here</b><i class="mg-nm">Two Minutes</i><span class="mg-arr" aria-hidden="true">→</span></span>`);
+          start.setAttribute("aria-label", "Everything starts with a coffee: Two Minutes"); // r159 (Daniel): "with a coffee", on Two Minutes again
+          start.onclick = (e) => { e.stopPropagation(); if (mapBoarding) return; guideEnd("done"); mapGo(MAP_PLACES.find((p) => p.id === "tm")); };
           box.append(drag, start);
           return { drag, start };
         })());
@@ -39662,8 +39661,11 @@ void main() {
           const now = performance.now();
           // never over a hand still on the map or a glide still running: wait for a quiet moment
           if (ptrs.size || mapView.vx || mapView.vz || now - guide.last < 700) { if (now - guide.t0 < 20000) guide.timer = setTimeout(guideStartHere, 200); else guideEnd(null); return; }
-          const pl = guide.spot = guideRoad("tap"); pl.wx = pl.x; pl.wz = pl.z; // r158: a point on the road, not a pin
+          // r159 (Daniel): the second step is Two Minutes again ("Everything starts with a coffee"); "Grab and drag" stays on the road
+          const pl = guide.spot = MAP_PLACES.find((p) => p.id === "tm");
+          if (!pl || pl.wx == null) return guideEnd(null);
           guide.phase = "start"; guide.t0 = now;
+          guide.hl = pins.find((p) => p.pl === pl)?.b || null; guide.hl?.classList.add("mg-hl");
           guide.els.start.classList.remove("hidden");
           // the camera only eases toward it when it is not already well inside the frame
           warpV(guideP.set(pl.wx, 0, pl.wz)).project(camera);
@@ -39702,7 +39704,7 @@ void main() {
         // per frame (from update): the critically damped camera ease, the "Start here" ring over the pin, and the exits
         const guideStep = (dt) => {
           if (!guide.phase) return;
-          if (guideBusy()) return guideEnd(guide.phase === "start" && mapNav.place?.id === "tap" ? "done" : "skipped");
+          if (guideBusy()) return guideEnd(guide.phase === "start" && mapNav.place?.id === "tm" ? "done" : "skipped");
           if (guide.phase !== "start") return;
           const pl = guide.spot, g = guide.goal;
           if (!pl) return guideEnd(null);
@@ -39726,6 +39728,10 @@ void main() {
           guide.els.start.classList.toggle("edge", edge);
           if (edge) { const s = guideP.z > 1 ? -1 : 1; guide.els.start.style.setProperty("--mga", Math.atan2((y - y2) * s, (x - x2) * s).toFixed(2) + "rad"); }
           guide.els.start.style.transform = `translate3d(${x2.toFixed(1)}px, ${y2.toFixed(1)}px, 0)`;
+          { // r159: the badge stays inside the screen (the ring stays on the building)
+            const bdg = guide.els.start.querySelector(".mg-badge"), hw = (bdg ? bdg.offsetWidth : 200) / 2 + 10;
+            guide.els.start.style.setProperty("--mgbx", (edge ? 0 : clamp2(x2, hw, W - hw) - x2).toFixed(1) + "px");
+          }
         };
         // any hand on the map: a drag ends step 1; anything but the highlighted pin ends step 2
         window.addEventListener("pointerdown", (e) => {
@@ -39733,7 +39739,7 @@ void main() {
           guide.last = performance.now();
           const t = e.target;
           if (t === renderer.domElement) { guide.down = { x: e.clientX, y: e.clientY, id: e.pointerId }; if (guide.phase === "start") guide.goal = null; return; }
-          if (t.closest?.(".mg-start") || (guide.phase === "start" && t.closest?.(".map-dock"))) return;
+          if (t.closest?.(".mg-start") || (guide.phase === "start" && t.closest?.('.map-pin[data-id="tm"], .map-dock'))) return;
           guideEnd("skipped");
         }, true);
         window.addEventListener("pointermove", (e) => {

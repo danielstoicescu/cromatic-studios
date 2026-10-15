@@ -4762,8 +4762,8 @@ body:not(.map-mode):not(.site-mode) .hud > .multi-btn, body:not(.map-mode):not(.
 .mg-start { all: unset; position: fixed; z-index: 21; left: 0; top: 0; width: 0; height: 0; cursor: pointer; animation: mgFade .5s ease both; }
 .mg-start .mg-ring { position: absolute; left: -38px; top: -38px; width: 76px; height: 76px; box-sizing: border-box; border-radius: 50%; border: 2px solid rgba(254,208,18,.85); box-shadow: 0 0 14px rgba(254,208,18,.35); /* r139i: softer, no ink outline (Daniel: "a bit more faded") */ pointer-events: auto; animation: mgRing 1.8s cubic-bezier(.2,.7,.3,1) infinite; }
 .mg-start .mg-ring.r2 { animation-delay: .9s; }
-.mg-start .mg-badge { position: absolute; left: 0; top: 34px; translate: -50% 0; display: flex; align-items: center; gap: 8px; pointer-events: auto; animation: mgBob 2.2s ease-in-out infinite; }
-.mg-start .mg-badge::before { content: ""; position: absolute; left: 50%; top: -5px; width: 10px; height: 10px; translate: -50% 0; rotate: 45deg; background: #141414; border-radius: 2px; }
+.mg-start .mg-badge { position: absolute; left: 0; top: 34px; translate: calc(-50% + var(--mgbx, 0px)) 0; display: flex; align-items: center; gap: 8px; pointer-events: auto; animation: mgBob 2.2s ease-in-out infinite; }
+.mg-start .mg-badge::before { content: ""; position: absolute; left: calc(50% - var(--mgbx, 0px)); top: -5px; width: 10px; height: 10px; translate: -50% 0; rotate: 45deg; background: #141414; border-radius: 2px; }
 .mg-start .mg-badge b { color: #FED012; font-weight: 900; }
 .mg-start .mg-badge i { font-style: normal; opacity: .75; font-weight: 700; }
 .mg-start:focus-visible .mg-badge { outline: 3px solid #FED012; outline-offset: 2px; }
