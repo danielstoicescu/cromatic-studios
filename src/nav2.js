@@ -1077,7 +1077,7 @@
       if (against(it)) return null; // the wrong way round the ring: your call
       // the road ahead, as far as a stop needs: on along the same street, straight on through a junction, into the
       // roundabout its own way round (and round it, until you steer out); else it ends at the junction
-      const look = 34 + au * 0.42, far = Math.max(look + 10, 60 + (au * au) / (2 * 520));
+      const look = e0.kind === "ring" ? 20 + au * 0.3 : 34 + au * 0.42, far = Math.max(look + 10, 60 + (au * au) / (2 * 520));
       let s0 = it.dir > 0 ? a.s : e0.len - a.s, run = 0, open = true, aimIt = it;
       const pts2 = [];
       for (let k = 0; k < 5; k++) {
@@ -1087,7 +1087,8 @@
         run += L - s0;
         const hin = inH(it), n = endNode(it);
         const cs = N[n].out.filter((o) => E[o.e].drive && !(o.e === it.e && o.dir === -it.dir) && !against(o)).map((o) => ({ o, d: Math.abs(wrapA(outH(o) - hin)) })).sort((x, y) => x.d - y.d);
-        const nx2 = cs[0] && cs[0].d <= 0.5 ? cs[0] : E[it.e].kind !== "ring" ? cs.find((c2) => E[c2.o.e].kind === "ring") : null;
+        const ringOn = cs.find((c2) => E[c2.o.e].kind === "ring");
+        const nx2 = E[it.e].kind === "ring" ? ringOn : cs[0] && cs[0].d <= 0.5 ? cs[0] : ringOn;
         if (!nx2) { pts2.push([...pointAt(p, c, L), run, it]); open = false; break; }
         it = nx2.o; s0 = 0;
       }
@@ -1106,7 +1107,7 @@
         const A = pts2[i - 3], B = pts2[i - 1], C = pts2[i];
         let t = Math.abs(wrapA(Math.atan2(C[0] - B[0], C[1] - B[1]) - Math.atan2(B[0] - A[0], B[1] - A[1]))) / Math.max(8, (C[2] - A[2]) / 2) * 1.5;
         t = Math.min(t, 1 / 26); // a kink at a junction: the car rounds it (a radius of some 26 units at least)
-        if (t > 1e-3) { const vy = (-t + Math.sqrt(t * t + (4 * t / 480) * 2.2)) / ((2 * t) / 480); vmax = Math.min(vmax, Math.sqrt(Math.min(1100 / t, vy * vy) + 2 * 480 * Math.max(0, A[2] - 10))); }
+        if (t > 1e-3) { const vy = (-t + Math.sqrt(t * t + (4 * t / 480) * 2.2)) / ((2 * t) / 480); vmax = Math.min(vmax, Math.sqrt(Math.min(1100 / t, vy * vy) + 2 * 400 * Math.max(0, A[2] - 10))); }
       }
       if (!open) vmax = Math.min(vmax, Math.sqrt(90 * 90 + 2 * 480 * Math.max(0, pts2[pts2.length - 1][2] - 40))); // a junction to choose at: arrive at it slowly
       return { steer: clamp(err * 2.2, -1, 1) * fade, vmax };
