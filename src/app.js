@@ -38576,8 +38576,9 @@ void main() {
         if (!window.__lookSm) window.__lookSm = camTarget.clone();
         // in the street POV the camera rides with you: damping tightens as the POV takes over
         const camSnap = camSnapNext; camSnapNext = false; // r157
-        const kp = camSnap ? 1 : 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 : 2.8 + 26 * povK * povK));
-        const kt = camSnap ? 1 : 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 : 6 + 12 * povK * povK));
+        const handOn = mapMode && now - (mapView.direct || 0) < 150; // r166: a hand on the map: the camera is where the hand puts it
+        const kp = camSnap || handOn ? 1 : 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 : 2.8 + 26 * povK * povK));
+        const kt = camSnap || handOn ? 1 : 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 : 6 + 12 * povK * povK));
         camera.position.lerp(camPos, kp);
         window.__lookSm.lerp(camTarget, kt);
         camera.lookAt(window.__lookSm);
@@ -39129,7 +39130,7 @@ void main() {
         mapNav.moving = true;
         mapNav.targetL = route.total;
         if (!pl.tap) { const m = document.querySelector(".tap-mark"); m?.classList.remove("on"); }
-        mapView.follow = true; mapView.focus = null;
+        mapView.follow = true; mapView.focus = null; mapNav.hand = false; // r166: hand = the camera was taken during this drive
         mapView.vx = mapView.vz = 0;
         mapUI.cineOut?.();
         if (coffee.phase !== "idle") { coffee.phase = "idle"; coffee.done = true; ui.coffeeEnd(); }
@@ -39502,10 +39503,10 @@ void main() {
       addEventListener("resize", () => { clearTimeout(olariCupsT); olariCupsT = setTimeout(() => { if (olari.cards?.classList.contains("go")) olariCups(olari.cards); }, 220); });
       function olariOpen() {
         const house = worldRefs.endHouse;
-        mapView.follow = false; mapView.focus = { x: house.position.x, z: house.position.z };
+        if (!mapNav.hand) { mapView.follow = false; mapView.focus = { x: house.position.x, z: house.position.z }; } // r166: unless the camera was moved by hand on the way
         olari.cards?.remove();
         const cineOn = !!olari.cine && jetFx.phase === "idle";
-        if (cineOn) olari.cine(); else { mapView.distGoal = innerWidth < 720 ? 2600 : 2100; mapView.distRate = 1.4; }
+        if (!mapNav.hand) { if (cineOn) olari.cine(); else { mapView.distGoal = innerWidth < 720 ? 2600 : 2100; mapView.distRate = 1.4; } }
         if (!olari.beam) {
           const bm = new MeshBasicMaterial({ color: "#FED012", transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false, side: DoubleSide });
           bm.userData.outlineParameters = { visible: false };
@@ -39937,6 +39938,7 @@ void main() {
         chips.addEventListener("pointerdown", () => { chipsGoal = null; });
         // r130b: the places to discover are numbered 01..N, on the pin, in the bar and on the route ring
         const PNO = placeNumbers();
+        let mapDown = null; // r166: set with the map's pointer handling below
         const pins = MAP_PLACES.map((pl) => {
           const s0 = pl.stop ? STOPS.find((s) => s.id === pl.stop) : null;
           pl.wx = pl.px ?? (s0 ? s0.x : pl.x);
@@ -39951,7 +39953,10 @@ void main() {
           b.style.setProperty("--i", String(MAP_PLACES.indexOf(pl) % 24));
           b.style.setProperty("--pc", pl.c); if (pl.t) b.style.setProperty("--pt", pl.t);
           b.dataset.id = pl.id;
-          b.onclick = (e) => { e.stopPropagation(); if (mapBoarding) return; mapGo(pl); };
+          // r166 (Daniel: "I keep hitting the names when I mean the road"): only the visible pill takes a press (see the CSS),
+          // and a press on it is the map's: a drag from a label pans the map, only a press let go in place opens the place
+          b.addEventListener("pointerdown", (e) => { e.stopPropagation(); mapDown?.(e, pl); });
+          b.onclick = (e) => { e.stopPropagation(); if (mapBoarding || e.detail > 0) return; mapGo(pl); }; // the keyboard's Enter / Space
           pinsEl.appendChild(b);
           let ch = null;
           // r130n: the jet is not marked on the map (no pin, no chip, no ring); you board it from Olari 9 or the form
@@ -40144,6 +40149,7 @@ void main() {
           end: { t: [1005, 26, 7350], yaw: 1.36, pitch: 0.24, dist: 1120, dur: 5.6 }
         };
         const cineIn = (pl) => {
+          if (mapNav.hand) { cine = null; return; } // r166: the camera was moved by hand on the way: it stays where it was put
           if (innerWidth < 720 && pl.id !== "end") { cine = null; return; } // r155 (Daniel): on a phone no parking scene, the camera stays with the car
           const sh = SHOTS[pl.id];
           if (sh && jetFx.phase === "idle") {
@@ -40223,10 +40229,10 @@ void main() {
           mapView.distGoal = null;
           if (cine && cine.t < cine.dur) cine = null;
           // r155 (Daniel): one button turns the map by an eighth, eased round the current target; it stays where it turned
-          if (z === "rot") { mapIdleAt = performance.now(); mapSettle = 0; cine = null; const st = Math.PI / 4; if (matchMedia("(prefers-reduced-motion: reduce)").matches) { mapView.yaw += st; mapView.yawGoal = null; } else mapView.yawGoal = (mapView.yawGoal ?? mapView.yaw) + st; return; }
+          if (z === "rot") { mapIdleAt = performance.now(); mapSettle = 0; cine = null; mapView.focus = null; /* r166: round the middle of the screen, no pull back to a parked place */ const st = Math.PI / 4; if (matchMedia("(prefers-reduced-motion: reduce)").matches) { mapView.yaw += st; mapView.yawGoal = null; } else mapView.yawGoal = (mapView.yawGoal ?? mapView.yaw) + st; return; }
           if (z === "in") mapView.distGoal = Math.max(MAP_MIND, mapView.dist / 1.4);
           if (z === "out") mapView.distGoal = Math.min(mapMaxD(), mapView.dist * 1.4);
-          if (z === "van") { mapView.follow = true; mapView.focus = null; }
+          if (z === "van") { mapView.follow = true; mapView.focus = null; mapNav.hand = false; }
         };
         // drag to move, wheel or pinch to zoom, a flick keeps gliding
         const ptrs = new Map();
@@ -40252,7 +40258,10 @@ void main() {
         };
         const zoomAt = (sx, sy, d0, d1) => {
           if (!isFinite(d1)) return;
-          let g0 = mapView.follow ? null : groundAt(sx, sy);
+          // r166: the zoom goes to the cursor / the fingers and lets go of a parked view (only a car on the move stays framed)
+          const ride = mapView.follow && mapNav.moving;
+          if (!ride) { mapView.follow = false; mapView.focus = null; mapSettle = 0; cine = null; }
+          let g0 = ride ? null : groundAt(sx, sy);
           // a point near the horizon is no anchor
           if (g0 && Math.hypot(g0.x - mapView.tgt.x, g0.z - mapView.tgt.z) > mapView.dist * 1.6) g0 = null;
           mapView.dist = d1;
@@ -40273,37 +40282,74 @@ void main() {
           zoomAt(e.clientX || innerWidth / 2, e.clientY || innerHeight / 2, mapView.dist, Math.min(mapMaxD(), Math.max(MAP_MIND, gDist0 * gScale0 / e.scale)));
         });
         window.addEventListener("gestureend", () => { gDist0 = 0; });
-        canvas.addEventListener("pointerdown", (e) => {
+        // r166 (Daniel: "the camera hangs from a fixed pivot"): the map moves with the hand now. A drag keeps the ground point
+        // you grabbed under the pointer (solved on the map's own camera: the flat pixel scale let it slide ~30 px under the
+        // telephoto lens), and the camera follows the hand frame for frame while it is down (no easing behind it); a pinch
+        // zooms, turns and pans about the point between the fingers; the right button turns the map round the middle of the
+        // screen; a flick glides on. A drag lets go of the car and of a parked place's framing (◎ follows the car again),
+        // and nothing pulls the view back to a fixed point
+        let downAt = null, grab = null, twist0 = 0, yaw0 = 0, rotDrag = null;
+        const handCam = () => { mapView.direct = performance.now(); mapSettle = 0; cine = null; mapView.distGoal = null; mapView.yawGoal = null; mapView.focus = null; };
+        const letGo = () => { mapView.follow = false; handCam(); if (mapNav.moving) mapNav.hand = true; }; // (no arrival shot then: see cineIn, olariOpen)
+        const usable = (g) => !!g && Math.hypot(g.x - mapView.tgt.x, g.z - mapView.tgt.z) < mapView.dist * 1.6;
+        // move the target so the ground point g sits under the screen point (sx, sy)
+        const pinTo = (g, sx, sy) => {
+          for (let k = 0; k < 3; k++) {
+            const g1 = groundAt(sx, sy); if (!g1) return false;
+            const dx = g.x - g1.x, dz = g.z - g1.z;
+            if (Math.abs(dx) > 1500 || Math.abs(dz) > 1500) return false;
+            mapView.tgt.x += dx; mapView.tgt.z += dz;
+            if (dx * dx + dz * dz < 0.01) break;
+          }
+          return true;
+        };
+        // r166: a press on a place's label starts here too (see the pins): it is a tap on the place only if it barely moved
+        mapDown = (e, pl) => {
           if (!mapMode || mapIntro) return;
           canvas.setPointerCapture?.(e.pointerId);
           ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
           mapView.vx = mapView.vz = 0;
-          if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); dist0 = mapView.dist; }
-        });
+          downAt = ptrs.size === 1 ? { x: e.clientX, y: e.clientY, t: performance.now(), pl: pl || null } : null;
+          grab = null; rotDrag = null;
+          if (ptrs.size === 1 && e.pointerType === "mouse" && e.button === 2) rotDrag = { x: e.clientX, yaw: mapView.yaw };
+          if (ptrs.size === 2) {
+            const [a, b] = [...ptrs.values()], g = groundAt((a.x + b.x) / 2, (a.y + b.y) / 2);
+            pinch0 = Math.hypot(a.x - b.x, a.y - b.y); dist0 = mapView.dist; twist0 = Math.atan2(b.y - a.y, b.x - a.x); yaw0 = mapView.yaw;
+            grab = usable(g) ? g : null;
+          }
+        };
+        canvas.addEventListener("pointerdown", (e) => mapDown(e));
+        canvas.addEventListener("contextmenu", (e) => { if (mapMode) e.preventDefault(); });
         canvas.addEventListener("pointermove", (e) => {
           if (!mapMode || !ptrs.has(e.pointerId)) return;
           // r125: a mouse with no button held is not dragging (a release outside the window was lost)
-          if (e.pointerType === "mouse" && e.buttons === 0) { ptrs.delete(e.pointerId); mapView.vx = mapView.vz = 0; return; }
-          const p = ptrs.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y;
+          if (e.pointerType === "mouse" && e.buttons === 0) { ptrs.delete(e.pointerId); mapView.vx = mapView.vz = 0; grab = rotDrag = null; return; }
+          const p = ptrs.get(e.pointerId), px = p.x, py = p.y, dx = e.clientX - px, dy = e.clientY - py;
           p.x = e.clientX; p.y = e.clientY;
           if (ptrs.size === 2) {
             const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
             if (pinch0 > 0) {
-              cine = null; mapView.distGoal = null;
-              const d0 = mapView.dist, d1 = Math.min(mapMaxD(), Math.max(MAP_MIND, dist0 * pinch0 / Math.max(d, 1)));
-              zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, d0, d1);
+              letGo();
+              mapView.dist = Math.min(mapMaxD(), Math.max(MAP_MIND, dist0 * pinch0 / Math.max(d, 1)));
+              mapView.yaw = yaw0 + Math.atan2(b.y - a.y, b.x - a.x) - twist0;
+              if (!grab || !pinTo(grab, (a.x + b.x) / 2, (a.y + b.y) / 2)) { grab = null; const [wx, wz] = panVec(dx / 2, dy / 2); mapView.tgt.x += wx; mapView.tgt.z += wz; }
             }
-            const [wx, wz] = panVec(dx / 2, dy / 2); mapView.tgt.x += wx; mapView.tgt.z += wz;
             return;
           }
-          if (Math.abs(dx) + Math.abs(dy) > 1) { mapView.follow = false; mapView.focus = null; cine = null; }
-          const [wx, wz] = panVec(dx, dy);
-          mapView.tgt.x += wx; mapView.tgt.z += wz;
+          if (rotDrag) { handCam(); mapView.yaw = rotDrag.yaw - (e.clientX - rotDrag.x) * 0.006; return; }
+          if (!grab) {
+            // a tap's jitter is not a drag: it does not move the map or let go of the car
+            if (downAt && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 6) return;
+            const g = groundAt(downAt ? downAt.x : px, downAt ? downAt.y : py);
+            grab = usable(g) ? g : 0;
+            downAt = null;
+          }
+          letGo();
+          const t0x = mapView.tgt.x, t0z = mapView.tgt.z;
+          if (!grab || !pinTo(grab, e.clientX, e.clientY)) { grab = 0; const [wx, wz] = panVec(dx, dy); mapView.tgt.x += wx; mapView.tgt.z += wz; }
           const now2 = performance.now(), dtp = Math.max(8, now2 - last) / 1000; last = now2;
-          mapView.vx = wx / dtp; mapView.vz = wz / dtp;
+          mapView.vx = mapView.vx * 0.35 + (mapView.tgt.x - t0x) / dtp * 0.65; mapView.vz = mapView.vz * 0.35 + (mapView.tgt.z - t0z) / dtp * 0.65;
         });
-        let downAt = null;
-        canvas.addEventListener("pointerdown", (e) => { if (mapMode) downAt = { x: e.clientX, y: e.clientY, t: performance.now() }; });
         const hit = new Vector3(), dir = new Vector3();
         const tapGo = (cx, cy) => {
           // the ground point under the tap: unproject and run the ray down to y = 0
@@ -40316,6 +40362,12 @@ void main() {
           for (const b2 of BRANCHES) for (const [x, z] of tapRoads[b2]) {
             const d = (x - hit.x) ** 2 + (z - hit.z) ** 2;
             if (!best || d < best.d) best = { d, x, z, br: b2 };
+          }
+          // r166 (Daniel): a tap on the asphalt is a tap on the road, even beside a place's building
+          if (best && best.d < 34 * 34) {
+            const shared = tapShared.some(([x, z]) => Math.abs(x - best.x) < 1 && Math.abs(z - best.z) < 1);
+            tapMark(best.x, best.z);
+            return setTimeout(() => mapGo({ id: "tap", tap: true, x: best.x, z: best.z, br: shared ? null : best.br, name: "", c: "#FED012" }), 380);
           }
           // a tap on a place's building goes there
           let near = null;
@@ -40337,8 +40389,11 @@ void main() {
         let markAt = null;
         const tapMark = (x, z) => { markAt = new Vector3(x, 0, z); markEl.classList.remove("on"); void markEl.offsetWidth; markEl.classList.add("on"); };
         const up = (e) => {
-          if (downAt && mapMode && !mapIntro && !mapBoarding && ptrs.size <= 1 && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 6 && performance.now() - downAt.t < 500 && jetFx.phase === "idle") tapGo(e.clientX, e.clientY);
-          downAt = null;
+          // r166: a label pressed and let go in place (under 6 px) opens its place; anything more was a drag of the map
+          if (downAt && mapMode && !mapIntro && !mapBoarding && ptrs.size <= 1 && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 6 && performance.now() - downAt.t < (downAt.pl ? 900 : 500) && (jetFx.phase === "idle" || downAt.pl)) {
+            if (downAt.pl) mapGo(downAt.pl); else tapGo(e.clientX, e.clientY);
+          }
+          downAt = null; grab = null; rotDrag = null;
           ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = 0; if (performance.now() - last > 90) mapView.vx = mapView.vz = 0;
         };
         canvas.addEventListener("pointerup", up);
