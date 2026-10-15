@@ -1699,7 +1699,7 @@
     const touchUI = matchMedia("(hover: none) and (pointer: coarse)").matches;
     const STEPS = [
       { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: touchUI ? "↑ to go: it keeps to the road · ← → to turn" : "↑ to go: it keeps to the road · ← → to turn (or W A S D)", at: "car" },
-      { id: "round", keys: [], t: "Take the roundabout", s: touchUI ? "Hold ↑: round it and straight on · steer to leave sooner" : "Hold ↑: round the fountain and straight on · steer out to leave sooner", at: "car" },
+      { id: "round", keys: ["↑"], t: "Take the roundabout", s: touchUI ? "Hold ↑: round it and straight on · steer to leave sooner" : "Hold ↑: round the fountain and straight on · steer out to leave sooner", at: "car" },
       { id: "back", keys: ["↓"], t: "Back up or turn round", s: touchUI ? "Hold ↓ to back up · stopped, ↑ with ← or → turns you round" : "Hold ↓ (or S) to back up · stopped, ↑ with ← or → turns you round", at: "car" },
       { id: "tap", keys: [], t: "Or let us drive", s: "Tap a place on the map, or a card in Nearby", at: "panel" },
       { id: "look", keys: [], t: "Look around", s: touchUI ? "Drag the map, pinch to zoom · ◎ brings you back" : "Drag the map, scroll to zoom · ◎ brings you back", at: "mid" },
@@ -1725,7 +1725,7 @@
       e.innerHTML = `${st.keys.length ? `<span class="n2-caps">${st.keys.map(key).join("")}</span>` : ""}<b>${st.t}</b><i>${st.s}</i><span class="n2-tbar"><em class="mono">${i + 1}/${STEPS.length}</em><button class="n2-skip">Skip</button></span>`;
       e.dataset.at = st.at;
       e.classList.remove("hidden", "in"); void e.offsetWidth; e.classList.add("in");
-      keyEls.u.classList.toggle("tut", st.id === "drive"); keyEls.l.classList.toggle("tut", st.id === "drive" || st.id === "round"); keyEls.r.classList.toggle("tut", st.id === "drive" || st.id === "round"); keyEls.d.classList.toggle("tut", st.id === "back");
+      keyEls.u.classList.toggle("tut", st.id === "drive" || st.id === "round"); keyEls.l.classList.toggle("tut", st.id === "drive"); keyEls.r.classList.toggle("tut", st.id === "drive"); keyEls.d.classList.toggle("tut", st.id === "back"); // polish: step 2 is "hold ↑"
       views.classList.toggle("tut", st.id === "view"); panel.classList.toggle("tut", st.id === "tap");
       czEv?.("onboarding_step", { step: "drive_" + st.id, action: "shown" });
     }
