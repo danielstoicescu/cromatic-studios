@@ -33420,7 +33420,7 @@ void main() {
       <span class="you-xp">0 XP</span>
       <button class="you-restart" aria-label="Drive again" title="Drive again">\u21BA</button>
     </div>
-    <a class="top-ro" href="/ro/" hreflang="ro" lang="ro" title="Site-ul în limba română" aria-label="Site-ul în limba română">RO</a>
+    <!-- r160 (Daniel): no language switch on the map or the drive: it lives on the normal website only -->
     <div class="top-right"></div>`);
     root.appendChild(header);
     header.querySelector(".brand").onclick = (e) => {
@@ -33571,7 +33571,10 @@ void main() {
       vehRows[v.id] = b;
       vehMenu.appendChild(b);
     });
-    const syncVeh = (id) => Object.entries(vehRows).forEach(([k, b]) => b.classList.toggle("on", k === id));
+    // r160 (Daniel): the Ride buttons (map and drive bars) show the ride you have, its own picture (the pickers' previews)
+    const rideThumbs = {}; let rideCur = "dacia1300";
+    const paintRideBtns = () => document.querySelectorAll(".map-ride .mr-th").forEach((t) => { const u = rideThumbs[rideCur]; t.style.backgroundImage = u ? `url(${u})` : ""; t.classList.toggle("ready", !!u); t.dataset.v = rideCur; });
+    const syncVeh = (id) => { Object.entries(vehRows).forEach(([k, b]) => b.classList.toggle("on", k === id)); rideCur = id; paintRideBtns(); };
     uiSyncVeh = syncVeh;
     syncVeh("dacia1300"); // r138j: the default ride
     vehBtn.onclick = () => {
@@ -33706,7 +33709,7 @@ void main() {
     // step back, their menus now drop down from under the bar
     {
       const dFaces = CREW.slice(0, 4).map((n, i) => `<i style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}">${CREW_FACES[n] ? `<img src="${CREW_FACES[n]}" alt="">` : n.slice(0, 1)}</i>`).join("");
-      const dTop = el("div", "map-top drive-top", `<button class="map-ride" title="Choose your ride"><span class="mr-ic">\u{1F690}</span><b>Ride</b></button>
+      const dTop = el("div", "map-top drive-top", `<button class="map-ride" title="Choose your ride"><span class="mr-ic mr-th" aria-hidden="true"></span><b>Ride</b></button>
         <button class="map-world" title="Choose your world"><span class="mb-orb">${orb}</span><b>Multiverse</b></button>
         <button class="map-crew" title="The crew you travel with"><span class="mcw-faces">${dFaces}</span><b>Crew</b></button>
         <button class="map-home" title="Cromatic Studios House, Str. Olari 9: say hi"><span class="mh-ic">\u{1F3E0}</span><b>Our house</b></button>
@@ -35006,7 +35009,9 @@ void main() {
         const i = SCHEMES.findIndex((s) => s.n === n);
         Object.entries(themeRows).forEach(([k, b]) => b.classList.toggle("on", +k === i));
       },
+      paintRide: () => paintRideBtns(), // r160: once a bar with a Ride button is built
       setVehiclePreviews(map) {
+        Object.assign(rideThumbs, map); paintRideBtns(); // r160
         Object.entries(map).forEach(([id, url]) => {
           const t = vehRows[id]?.querySelector(".hr-thumb");
           if (t) t.style.backgroundImage = `url(${url})`;
@@ -39539,16 +39544,15 @@ void main() {
         try { localStorage.removeItem("cz-map-visited"); } catch {}
         const faces = CREW.slice(0, 4).map((n, i) => `<i style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}">${CREW_FACES[n] ? `<img src="${CREW_FACES[n]}" alt="">` : n.slice(0, 1)}</i>`).join("");
         const top = el("div", "map-top", `<span class="map-title"><i class="mono">CROMATIC WORLD</i><b>Pick a place</b></span>
-          <button class="map-ride" title="Choose your ride"><span class="mr-ic">\u{1F690}</span><b>Ride</b></button>
+          <button class="map-ride" title="Choose your ride"><span class="mr-ic mr-th" aria-hidden="true"></span><b>Ride</b></button>
           <button class="map-world" title="Choose your world"><span class="mb-orb">${MB_ORB}</span><b>Multiverse</b></button>
           <button class="map-crew" title="The crew you travel with"><span class="mcw-faces">${faces}</span><b>Crew</b></button>
           <button class="map-home" title="Cromatic Studios House, Str. Olari 9"><span class="mh-ic">\u{1F3E0}</span><b>Our house</b></button>
           <a class="map-site" href="/site/" title="The same story as a normal, fast website"><span class="ms-ic" aria-hidden="true"><i></i><i></i><i></i></span><b>Normal website</b></a>
-          <a class="map-ro" href="/ro/" hreflang="ro" lang="ro" title="Site-ul în limba română" aria-label="Site-ul în limba română">RO</a>
           <button class="map-exit" title="The same world as a scroll-driven drive"><span class="me-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M8 2 L6 22 M16 2 L18 22" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M12 4v3M12 10v3M12 16v3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span><span class="me-l">Drive mode</span></button>`);
         // r137a (Daniel): the ride card wears the worlds card's design: same popover, header, tiles and tick
         const rides = el("div", "map-rides hidden", `<div class="wt-head"><span class="wt-titles"><span class="hm-title mono">YOUR RIDE · ${VEHICLES.length} TO PICK FROM</span><span class="wt-lead">How do you want to get around?</span></span><button class="wt-close" aria-label="Close">×</button></div><div class="mrs-list">${VEHICLES.map((v) => `<button class="mrs-v" data-v="${v.id}"><span class="mrs-th"></span><b>${v.label}</b><span class="wt-check" aria-hidden="true">✓</span></button>`).join("")}</div>`);
-        const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="rot" class="mz-rot" aria-label="Turn the map" title="Turn the map"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.8 3.8v4.6h-4.6"/></svg></button><button data-z="van" aria-label="Find your ride" title="Find your ride">◎</button><button data-z="wx" class="mz-wx" aria-label="Weather off" title="Turn weather off">\u2602</button>`);
+        const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="rot" class="mz-rot" aria-label="Turn the map" title="Turn the map"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.8 3.8v4.6h-4.6"/></svg></button><button data-z="van" aria-label="Find your ride" title="Find your ride">◎</button>`);
         const dock = el("div", "map-dock", `<span class="map-dock-h mono">WHERE TO?</span><div class="map-chips"></div>`);
         const card = el("div", "map-card hidden");
         // r123: the first thing on the map: where do you want to go?
@@ -39791,6 +39795,7 @@ void main() {
           b.classList.toggle("on", b.dataset.v === state.vehicleId);
           const u = vehPreviews[b.dataset.v]; if (u) b.querySelector(".mrs-th").style.backgroundImage = `url(${u})`;
         });
+        setTimeout(() => ui.paintRide?.(), 0); // r160
         top.querySelector(".map-ride").onclick = (e) => {
           e.stopPropagation(); welcome(false); paintRides(); rides.classList.toggle("hidden");
           if (!rides.classList.contains("hidden")) ui.popAnchor?.(rides, e.currentTarget);
@@ -39864,9 +39869,25 @@ void main() {
             if (p.ch) { p.ch.classList.toggle("visited", v); p.ch.classList.toggle("on", on); }
           }
           // r123: only the places still to discover, at the head of the bar below
-          const cnt = dock.querySelector(".map-dock-h");
-          if (cnt) cnt.innerHTML = `<b>${Math.max(0, total - n)}</b> TO DISCOVER`;
-          void f; void totalF;
+          void f; void totalF; void total; // r160: the dock's head says NEARBY now (nearbyTick)
+        };
+        // r160 (Daniel): the dock lists what is near: the places within reach of where you look (the camera's target, the
+        // car's place while it drives), nearest first, updated as you move; never empty: with nothing in reach, the
+        // nearest few. Re-ordered with CSS order only when the list changes (no DOM moves)
+        let nearKey = "", nearT = 0;
+        const NEAR_R = 750, NEAR_MIN = 4;
+        const nearbyTick = (now) => {
+          if (now - nearT < 350 || !dockOn) return; nearT = now;
+          const byCar = mapNav.moving || mapView.follow || !!mapView.focus || !!cine; // driving, following, or parked in a shot: the car; panned away: what you look at
+          const fx = byCar ? carPos.x : mapView.tgt.x, fz = byCar ? carPos.z : mapView.tgt.z;
+          const list = pins.filter((p) => p.ch).map((p) => ({ p, d: Math.hypot(p.pl.wx - fx, p.pl.wz - fz) })).sort((a, b) => a.d - b.d);
+          let near = list.filter((q) => q.d < NEAR_R); if (near.length < NEAR_MIN) near = list.slice(0, NEAR_MIN);
+          const key = near.map((q) => q.p.pl.id).join(",");
+          if (key === nearKey) return; nearKey = key;
+          const rank = new Map(near.map((q, i) => [q.p, i]));
+          for (const p of pins) if (p.ch) { const r = rank.get(p); p.ch.style.display = r == null ? "none" : ""; p.ch.style.order = r == null ? "" : String(r); }
+          const cnt = dock.querySelector(".map-dock-h"); if (cnt) cnt.innerHTML = `<b>${near.length}</b> NEARBY`;
+          chips.scrollLeft = 0;
         };
         // a pin flies from the place to the collection
         const flyPin = (pl, pts) => {
@@ -40255,6 +40276,7 @@ void main() {
             mapStep();
             cineStep(dt);
             guideStep(dt); // r139h
+            nearbyTick(now); // r160
             jetUpdate(dt, now);
             olariUpdate(dt);
             // the diorama is cleaner from above without the far mesas, the cloud ring and the islands
