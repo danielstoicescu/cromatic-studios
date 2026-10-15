@@ -33936,7 +33936,10 @@ void main() {
     // r123: every full-screen overlay is one step in the browser's history: Back closes it
     {
       const ovOpen = () => document.body.classList.contains("modal-open") || document.body.classList.contains("scf-open");
-      let pushed = false, popping = false;
+      let pushed = false, popping = false, baseUrl = null;
+      // r161 (Daniel: share a project): while a case page is open its own address is in the bar (/work/<page>/),
+      // so it can be copied or shared, and opening that link serves the page itself, with no city behind it
+      const frameUrl = () => { const f = document.querySelector(".case-frame:not(.hidden)"); return f?._url ? new URL(f._url, location.origin).href : null; };
       // r126: every panel counts: crew, human, rides, world menu, map card, boarding pass
       const panelsOpen = () => ovOpen() || !!document.querySelector(".crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:not(.hidden), .map-card:not(.hidden)") || document.body.classList.contains("map-boarding") || document.body.classList.contains("hud-world-open");
       const closeAll = () => {
@@ -33949,7 +33952,8 @@ void main() {
       window.__closeAllOverlays = closeAll;
       setInterval(() => {
         const on = panelsOpen();
-        if (on && !pushed) { pushed = true; try { history.pushState({ czOverlay: 1 }, ""); } catch {} }
+        if (on && !pushed) { pushed = true; baseUrl = location.href; try { history.pushState({ czOverlay: 1 }, "", frameUrl() || baseUrl); } catch {} }
+        else if (on && pushed && !popping) { const want = frameUrl() || baseUrl; if (want && location.href !== want) { try { history.replaceState(history.state, "", want); } catch {} } } // r161
         else if (!on && pushed) { pushed = false; if (!popping) { try { if (history.state?.czOverlay) history.back(); } catch {} } popping = false; }
       }, 250);
       window.addEventListener("popstate", () => {
@@ -34102,7 +34106,7 @@ void main() {
     // ---- Steam: the feed, Instagram style ----
     // the Steam case study page, full screen, closed with a big button top-right
     const caseFrame = el("div", "case-frame hidden");
-    caseFrame.innerHTML = `<button class="cf-close" aria-label="Close">\u00D7</button><iframe class="cf-iframe" title="Steam \u2014 Cromatic Studios"></iframe>`;
+    caseFrame.innerHTML = `<button class="cf-share" aria-label="Share this project"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg><span>Share</span></button><button class="cf-close" aria-label="Close">\u00D7</button><iframe class="cf-iframe" title="Steam \u2014 Cromatic Studios"></iframe>`;
     root.appendChild(caseFrame);
     // r135c: closing a page really closes it: the frame is swapped for an empty one, so no film keeps playing behind the map
     const blankFrame = () => {
@@ -34116,7 +34120,16 @@ void main() {
       if (caseFrame.classList.contains("hidden")) blankFrame();
       document.querySelectorAll(".scf-modal.hidden iframe").forEach((f) => { try { f.contentDocument?.querySelectorAll("video, audio").forEach((v) => v.pause()); } catch {} });
     };
-    const closeFrame = () => { caseFrame._anim?.cancel(); caseFrame.classList.add("hidden"); document.body.classList.remove("scf-open"); blankFrame(); }; // r137a: _anim = the grow-in from the place card
+    // r161: Share hands over the open page's own address (the phone's share sheet, or the link copied on a laptop)
+    caseFrame.querySelector(".cf-share").onclick = async (e) => {
+      const btn = e.currentTarget, url = caseFrame._url ? new URL(caseFrame._url, location.origin).href : location.href;
+      const title = (caseFrame.querySelector(".cf-iframe")?.title || "Cromatic Studios").replace(/\s*\u2014.*$/, "");
+      if (navigator.share && matchMedia("(pointer: coarse)").matches) { try { await navigator.share({ title: `${title} \u00B7 Cromatic Studios`, url }); } catch {} return; }
+      try { await navigator.clipboard.writeText(url); } catch { const t = document.createElement("textarea"); t.value = url; document.body.appendChild(t); t.select(); try { document.execCommand("copy"); } catch {} t.remove(); }
+      const sp = btn.querySelector("span"); sp.textContent = "Link copied"; btn.classList.add("done");
+      clearTimeout(btn._t); btn._t = setTimeout(() => { sp.textContent = "Share"; btn.classList.remove("done"); }, 1800);
+    };
+    const closeFrame = () => { caseFrame._url = null; caseFrame._anim?.cancel(); caseFrame.classList.add("hidden"); document.body.classList.remove("scf-open"); blankFrame(); }; // r137a: _anim = the grow-in from the place card
     // a case page inside the map asks for the boarding pass ("Ready for boarding")
     window.addEventListener("message", (e) => {
       if (e.origin !== location.origin || !e.data || e.data.cz !== "boarding") return;
@@ -34148,8 +34161,11 @@ void main() {
         // and Back must close the overlay instead of stepping inside it
         const nf = document.createElement("iframe");
         nf.className = "cf-iframe"; nf.setAttribute("allow", "autoplay; fullscreen; picture-in-picture"); nf.src = url;
+        // r161: a link inside the page (the next case) moves the address along with it
+        nf.addEventListener("load", () => { try { const l = nf.contentWindow.location; if (nf.isConnected && /^\/(ro\/)?(work|proiecte)\//.test(l.pathname)) caseFrame._url = l.pathname; } catch {} });
         fr.replaceWith(nf); fr = nf;
       }
+      caseFrame._url = /^\/(ro\/)?(work|proiecte)\//.test(url) ? url.replace(/[?&]embed=1\b/, "").replace(/\?$/, "") : null; // r161
       fr.title = `${title} \u2014 Cromatic Studios`;
       caseFrame.classList.remove("hidden");
       document.body.classList.add("scf-open");
