@@ -389,6 +389,8 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
 // r134h: Google Sans (OFL, on Google Fonts since 2025) is CromaticSans 700–900: served from here too, Latin preloaded
 const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
 const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
+// r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
+const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 2.0"; // the nav2 branch is beta 2.0 (main/live is beta 1.6)
 const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
 const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
 const GS = {};
@@ -775,6 +777,11 @@ await optimizeImages(pub, root);
   // r139q (Daniel: "avoid swipe-to-refresh on mobile as much as possible"): no pull-to-refresh and no scroll chaining
   // past the page's ends, on every page (Chrome/Android and Safari 16+ honour it; elsewhere it is ignored)
   if (/\.html$/.test(f) && !n2.includes('id="cz-ob"') && n2.includes("</head>")) n2 = n2.replace("</head>", `<style id="cz-ob">html,body{overscroll-behavior-y:none}</style>\n</head>`);
+  // r165: the build label: a meta every page carries (the map reads it), and under the website's logo
+  if (/\.html$/.test(f) && BUILD_LABEL && !n2.includes('name="cz-build"') && n2.includes("</head>")) {
+    n2 = n2.replace("</head>", `<meta name="cz-build" content="${BUILD_LABEL}">\n<style id="cz-bl">.brand{position:relative}.cz-build{position:absolute;left:2px;top:100%;margin-top:3px;font:500 9px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.1em;opacity:.38;color:currentColor;white-space:nowrap;pointer-events:none;mix-blend-mode:normal}</style>\n</head>`);
+    n2 = n2.replace(/(<a class="brand" href="\/(?:site\/|ro\/(?:site\/)?)"[^>]*>[\s\S]*?)(<\/a>)/, `$1<span class="cz-build" translate="no">${BUILD_LABEL} build</span>$2`);
+  }
   // long titles lose the studio suffix first in Google (~60 characters show); the brand stays in og:site_name and the schema
   if (/\.html$/.test(f)) n2 = n2.replace(/<title>([^<]*?) · Cromatic Studios<\/title>/, (m, t0) => (t0.length + 19 > 66 ? `<title>${t0}</title>` : m));
   if (n2 !== t) writeFileSync(p2, n2); } })(pub);
