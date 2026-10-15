@@ -106,14 +106,14 @@ export const INDUSTRIES = [
   {
     slug: "print-merch",
     street: "D",
-    streetName: "The Smallest Shortcut",
+    streetName: "The Shortest Shortcut",
     title: "Content for print, sticker & merch brands in Bucharest",
     desc: "Instagram reels, carousels and social content for print-on-demand and sticker brands. Printoteca and Sticker Republic, by Cromatic Studios in Bucharest.",
-    eyebrow: "The Smallest Shortcut · 2 case studies",
+    eyebrow: "The Shortest Shortcut · 2 case studies",
     h1: "Print and merch brands, made to be followed.",
     lead: "Cromatic Studios makes social content for print-on-demand, sticker and merch brands. Reels, carousels and series that show the people and the machines behind every order.",
     intro: [
-      "The Smallest Shortcut on our map is a lane with a little yellow house, plastered with its own work. Two sister brands live on it. <a href=\"/work/printoteca/\">Printoteca</a> is a print-on-demand hub with no minimum orders, printing tees and hoodies one by one. <a href=\"/work/sticker-republic/\">Sticker Republic</a> makes stickers for everything and everyone. Both sell things that are small and easy to scroll past. Our job was to make people stop.",
+      "The Shortest Shortcut on our map is a lane with a little yellow house, plastered with its own work. Two sister brands live on it. <a href=\"/work/printoteca/\">Printoteca</a> is a print-on-demand hub with no minimum orders, printing tees and hoodies one by one. <a href=\"/work/sticker-republic/\">Sticker Republic</a> makes stickers for everything and everyone. Both sell things that are small and easy to scroll past. Our job was to make people stop.",
       "For Printoteca we filmed two song reels in the atelier, among the clothes rails and the printers, with the lyrics on screen so each reel works with the sound off. Then came carousels in a hand-made spirit, useful before they are promotional. For Sticker Republic we built <strong>Sticker Zodiac</strong>, a reel series with a host in a green bob, a red table of ducks and a horoscope read through stickers. Each episode opens on the same title card and the same set, so you know it in one frame.",
       "Merch runs through the rest of the map too. T-shirts for <a href=\"/work/two-minutes/\">Two Minutes</a> with Ghica Popa. <a href=\"/work/steam/\">Steam</a>'s illustrated tees and its 10th anniversary cup. COMM UNITY tees for <a href=\"/work/casa-berero/\">Berero</a>. Patches, uniforms and backpacks for <a href=\"/work/craft-coffee/\">Craft Coffee</a>. Posters, stickers, totes and cups for our own pop-up at <a href=\"/work/rdw-2023/\">Romanian Design Week 2023</a>. If it gets printed, worn or stuck on something, we like it already."
     ],

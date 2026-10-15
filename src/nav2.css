@@ -113,7 +113,7 @@ body.n2-card .n2-panel { opacity: 0; translate: 0 14px; pointer-events: none; }
 @media (hover: none) and (pointer: coarse) { .n2-w { display: none; } }
 @media (prefers-reduced-motion: reduce) { .n2-cap, .n2-k.tut, .drive-guide.n2-guide.in { animation: none; } }
 
-/* r160 (Daniel): a place's label takes the pointer only on its pill (or its dot): the stem, the foot and the padding
+/* r164 (Daniel): a place's label takes the pointer only on its pill (or its dot): the stem, the foot and the padding
    let a tap through to the road under them */
 body.map-mode .map-pin { pointer-events: none; }
 body.map-mode .map-pin:not(.off):not(.dot) .mp-label, body.map-mode .map-pin.dot:not(.off) .mp-dot { pointer-events: auto; }

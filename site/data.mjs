@@ -25,8 +25,8 @@ export const SERVICES = [
 
 // route: which road it sits on in the drive; page: slug of its own case page
 // r122: 1:1 with the map: every place on the map, street by street (A Coffee Street, B Fintech
-// Boulevard, C Medical Avenue with the Zdrovit yard, D The Smallest Shortcut)
-export const STREETS = { A: ["Coffee Street", "#28C840"], B: ["Fintech Boulevard", "#119BFE"], C: ["Medical Avenue", "#F28BA8"], D: ["The Smallest Shortcut", "#FED012"] };
+// Boulevard, C Medical Avenue with the Zdrovit yard, D The Shortest Shortcut)
+export const STREETS = { A: ["Coffee Street", "#28C840"], B: ["Fintech Boulevard", "#119BFE"], C: ["Medical Avenue", "#F28BA8"], D: ["The Shortest Shortcut", "#FED012"] };
 export const PROJECTS = [
   { name: "Two Minutes", cat: "Brand · Boxes · Film", c: "#111111", t: "#fff", poster: "Two minutes, forever", img: "tmCover", badge: "bTm", page: "two-minutes", desc: "A specialty coffee shop brand made to be loved fast and remembered long. Two minutes to fall for it, a lifetime as a regular.", street: "A" },
   { name: "Two Min Lab", cat: "Drinks · Tonic Ionic", c: "#C6402E", t: "#ffffff", poster: "Bottled in the yard", street: "A", page: "two-minutes", desc: "The Two Minutes lab: Tonic Ionic and the drinks bottled by hand, in small batches, in Bucharest." },

@@ -27,7 +27,7 @@ identity, websites and apps, film, content) into Romanian. The output becomes th
 ## Keep in English (do not translate)
 - Brand and client names, product names, places: Cromatic Studios, Two Minutes, Two Min Lab, Steam, Slow Coffee
   Festival, Craft Coffee, Kómpus, ARCA, UNDÉ, Antila, Casa Berero, COMM, UNITY, Tonic Ionic, etc.
-- The map's street names: Coffee Street, Fintech Boulevard, Medical Avenue, The Smallest Shortcut, Bulevardul Dacia 99.
+- The map's street names: Coffee Street, Fintech Boulevard, Medical Avenue, The Shortest Shortcut, Bulevardul Dacia 99.
 - The four chapter names: The Dream, The Voice, The World, The Crowd (you may add the Romanian meaning around them
   where a sentence explains them, but the names stay English).
 - Client taglines and slogans that are the client's own English lines (e.g. "Designed by the skin architects in

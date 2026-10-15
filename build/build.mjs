@@ -36,7 +36,7 @@ const js = readFileSync(src("app.js"), "utf8");
 const content = readFileSync(src("content.html"), "utf8").replace(/<!--[\s\S]*?-->\s*/, "").replace(/\b\d+ case studies\b/g, `${CASE_COUNT} case studies`);
 // r136c: the first paint is the brewing cup, turning: the 3D cup's own 24-frame strip (src/cup-spin.png) is inlined,
 // so it paints with the HTML before any request, never a star. On "/" and ?map app.js adopts this element as its
-// "Brewing the city" loader (no swap); on ?drive it steps aside as soon as the app has drawn its own loader (r160: only
+// "Brewing the city" loader (no swap); on ?drive it steps aside as soon as the app has drawn its own loader (r164: only
 // the /onboarding/ frame still boots the drive, ?drive&onb; a plain ?drive opens the map)
 const CUP_STRIP = `data:image/png;base64,${readFileSync(src("cup-spin.png")).toString("base64")}`;
 const boot = `<style>.kz-brew .kb-cup .kb-sprite.kb-cs{background-image:url(${CUP_STRIP})}</style><div class="boot kz-brew" aria-hidden="true"><div class="kb-cup kb-3d"><i class="kb-sprite kb-cs"></i></div><span class="kb-t">Brewing the city</span></div>
@@ -595,7 +595,7 @@ const caseSlugs = [];
   }
 }
 // r130: map places with a real photo of their own (no case page cover, or a better one)
-for (const [id, k] of Object.entries({ steam: "m:cs/Steam-Cromaticstudios-1", lab: "m:tm/cubes-lab", "w-lapterra": "m:places/lapterra", "y-5": "m:places/litorsal", "y-0": "m:places/lacalut", zdrovit: "m:places/zdrovit", "w-printoteca": "m:places/printoteca", "w-zoetis": "m:places/zoetis", "w-clinicadrk": "m:places/drk", "w-sofmedica": "m:places/sofmedica", "w-medcity": "m:places/medcity", "w-stickerrepublic": "m:places/sticker", echo: "m:echo-school/cover" /* r159: one post from the case page, Echo Winter School */, end: "m:vibe/from-the-stairs", scf: "m:places/scf-poster", oma: "m:places/oma", "w-venevo": "m:places/venevo", "w-witanalytica": "m:places/witanalitica", friends: "m:rdw-2023/rdw-004" })) {
+for (const [id, k] of Object.entries({ steam: "m:cs/Steam-Cromaticstudios-1", lab: "m:tm/cubes-lab", "w-lapterra": "m:places/lapterra", "y-5": "m:places/litorsal", "y-0": "m:places/lacalut", zdrovit: "m:places/zdrovit", "w-printoteca": "m:places/printoteca", "w-zoetis": "m:places/zoetis", "w-clinicadrk": "m:places/drk", "w-sofmedica": "m:places/sofmedica", "w-medcity": "m:places/medcity", "w-stickerrepublic": "m:places/sticker", echo: "m:echo-school/cover" /* r161: a photo from the school, students laughing at an industry talk, no type (Daniel picked it) */, end: "m:vibe/from-the-stairs", scf: "m:places/scf-poster", oma: "m:places/oma", "w-venevo": "m:places/venevo", "w-witanalytica": "m:places/witanalitica", friends: "m:rdw-2023/rdw-004" })) {
   const a = mediaMap.get(k);
   if (a) COVERS["place:" + id] = a.src; else console.warn(`[build] covers: missing ${k}`);
 }
