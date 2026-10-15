@@ -934,7 +934,7 @@
     // ===================== 2c. round 4: GTA 2-style arcade driving =====================
     // Daniel: "take inspiration from car games like GTA 2". The keys are the car's own: ↑ / W accelerate, ↓ / S brake
     // then reverse, ← → / A D steer (the car turns as it moves, the other way round when backing), Space the
-    // handbrake (tighter turns, a slide). The car drives freely on the road surface of our own streets (round 5: the
+    // handbrake (round 5: a quick spin). The car drives freely on the road surface of our own streets (round 5: the
     // avenues and the side streets are closed at their mouths) and the ring round the fountain; off it is the kerb: pushed back and
     // slides along it, and can always steer or back away. The road graph is kept for the auto-pilot (a tap, Nearby),
     // which drives the same physics along its route, and for the Nearby panel and the road signs.
@@ -1012,37 +1012,48 @@
       D.vL = locate(P.x, P.z);
     }
     // the physics, one frame
-    function physics(dt, thr, steerIn, hb) {
-      P.st += (steerIn - P.st) * (1 - Math.exp(-dt * 9));
+    // round 5 (Daniel: "more arcade, less sim; turn round within the road's width"): a steering wheel that is smoothed and
+    // self-centres, a yaw rate capped by speed (tight at a crawl: a radius of 14 units; near a pivot when almost stopped
+    // with ↑ or ↓ held, so the car turns round in the road's own width), high grip (only the handbrake slides: Space + ← →
+    // is a quick spin), and the car's nose and tail meet the kerb too (three circles), so it stops at a closed street's
+    // kerb line instead of poking into it; pushes only ever move it back onto the road, so it can never get stuck
+    function physics(dt, thr, steerIn, hb, assisted) {
+      P.st += (steerIn - P.st) * (1 - Math.exp(-dt * (steerIn === 0 || assisted ? 11 : Math.abs(steerIn) < Math.abs(P.st) ? 11 : 6.5)));
       let u = P.u;
-      if (thr > 0) { if (u < -4) u = Math.min(0, u + BRAKE_F * dt); else u += ACC_F * dt * (1 - Math.max(0, u) / VMAX_F); }
-      else if (thr < 0) { if (u > 4) u = Math.max(0, u - BRAKE_F * dt); else u = Math.max(-VREV_F, u - REV_F * dt); }
+      const crawlCap = !hb && Math.abs(P.st) > 0.6 && Math.abs(u) < 70 ? 40 : Infinity; // turning hard from a crawl: stay slow, turn tight
+      if (thr > 0) { if (u < -4) u = Math.min(0, u + BRAKE_F * dt); else if (u < crawlCap) u = Math.min(Math.max(u, crawlCap), u + ACC_F * dt * (1 - Math.max(0, u) / VMAX_F)); }
+      else if (thr < 0) { if (u > 4) u = Math.max(0, u - BRAKE_F * dt); else if (u > -crawlCap) u = Math.max(-VREV_F, Math.min(u, -crawlCap), u - REV_F * dt); }
       else { const dec = (ROLL_F + DRAG_F * Math.abs(u)) * dt; u = Math.abs(u) <= dec ? 0 : u - Math.sign(u) * dec; }
       if (hb) { const dec = 280 * dt; u = Math.abs(u) <= dec ? 0 : u - Math.sign(u) * dec; }
-      const au = Math.abs(u);
-      // steering: tight when slow, smoother when fast; the other way round when backing; cars never turn on the spot
-      let turn = TURN_F * Math.min(1, au / 70) / (1 + au / 430);
-      if (hb) turn *= 1.4;
-      P.yr = au > 0.5 ? P.st * turn * Math.sign(u) : 0;
-      if (pivots() && au < 25) P.yr += P.st * 1.5 * (1 - au / 25);
-      // the velocity keeps its direction while the car turns under it, and the tyres pull it round (grip): a slide at speed
+      const au = Math.abs(u), sg = au > 4 ? Math.sign(u) : thr < 0 ? -1 : 1;
+      let yr = P.st * Math.sign(u) * Math.min(au / 14, 2.7 / (1 + au / 480));
+      if (thr !== 0 && au < 40) yr += P.st * sg * 2.3 * (1 - au / 40); // near a pivot, almost stopped with ↑ or ↓ held
+      if (hb && Math.abs(P.st) > 0.05) yr = P.st * sg * 3.4; // the handbrake spin
+      yr = clamp(yr, -3.6, 3.6);
+      P.yr += (yr - P.yr) * (1 - Math.exp(-dt * 14));
+      // the velocity keeps its direction while the car turns under it, and the tyres pull it round (grip: high, unless the handbrake)
       const f0x = Math.sin(P.h), f0z = Math.cos(P.h), r0x = -f0z, r0z = f0x;
       let vx = f0x * u + r0x * P.w, vz = f0z * u + r0z * P.w;
       P.h += P.yr * dt;
       const fx = Math.sin(P.h), fz = Math.cos(P.h), rx = -fz, rz = fx;
       u = vx * fx + vz * fz; let w = vx * rx + vz * rz;
-      w *= Math.exp(-dt * (hb ? 1.6 : 10 - 5 * Math.min(1, au / VMAX_F)));
+      w *= Math.exp(-dt * (hb ? 1.6 : 18));
       vx = fx * u + rx * w; vz = fz * u + rz * w;
-      let nx = P.x + vx * dt, nz = P.z + vz * dt;
-      const q = MASK.resolve(nx, nz, CR);
-      if (q.hit) {
-        nx = q.x; nz = q.z;
+      let nx = P.x + vx * dt, nz = P.z + vz * dt, hit = false, lost = false;
+      const half = clamp(H.carLen() * 0.5 - CR + 2, 2, 32);
+      for (let pass = 0; pass < 2; pass++) for (const k of [0, 1, -1]) {
+        const px = nx + fx * half * k, pz = nz + fz * half * k, q = MASK.resolve(px, pz, CR);
+        if (q.lost) { if (!k) lost = true; continue; }
+        if (!q.hit) continue;
+        nx += q.x - px; nz += q.z - pz; hit = true;
         const vn = vx * q.nx + vz * q.nz;
         if (vn > 0) { vx -= q.nx * vn; vz -= q.nz * vn; }
+      }
+      if (hit) {
         const k = Math.exp(-dt * 2.2); vx *= k; vz *= k; // the kerb scrubs speed
         u = vx * fx + vz * fz; w = vx * rx + vz * rz;
         P.contact = 0.3;
-      } else if (q.lost) { // nowhere near a road (should not happen): back to the last good spot
+      } else if (lost) { // nowhere near a road (should not happen): back to the last good spot
         nx = P.x; nz = P.z; u = 0; w = 0;
       }
       P.contact = Math.max(0, P.contact - dt);
@@ -1050,6 +1061,8 @@
       P.x = nx; P.z = nz; P.u = u; P.w = w; P.vx = vx; P.vz = vz;
       D.v = u;
       if (u < -0.5) D.revDist = (D.revDist || 0) + Math.abs(P.ds);
+      if (Math.abs(u) > 30) D.moved = true;
+      if (Math.abs(u) < 60) D.slowTurn = (D.slowTurn || 0) + Math.abs(P.yr) * dt; // turning round (the tutorial's "back" step)
     }
     // the auto-pilot on the same physics: pure pursuit of its route (the right-hand lane), slowing for the bends and the stop
     function pursuit(dt) {
@@ -1114,7 +1127,8 @@
     }
     let freeSig = "";
     function freeUI() {
-      let hint = touchUI || VP.w < 720 ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BRAKE / BACK · SPACE DRIFT";
+      let hint = touchUI || VP.w < 720 ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BRAKE / BACK · SPACE + ← → SPIN";
+      if (D.moved && Math.abs(P.u) < 5 && !D.auto && P.contact <= 0) hint = VP.w < 720 ? "STOPPED · ↑ + ← → TURNS YOU ROUND" : "STOPPED · ↑ OR ↓ WITH ← → TURNS YOU ROUND"; // round 5
       if (D.auto) hint = D.auto.rev ? "BACKING UP TO IT · ANY KEY TAKES OVER" : "DRIVING YOU THERE · ANY KEY TAKES OVER";
       else if (P.u < -5) hint = "REVERSING";
       else if (P.contact > 0) hint = VP.w < 720 ? "THE KERB · STEER OR BACK UP" : "THE KERB · STEER AWAY OR BACK UP";
@@ -1584,7 +1598,7 @@
     const STEPS = [
       { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: touchUI ? "↑ to go, ← → to steer" : "↑ to go, ← → to steer (or W A S D)", at: "car" },
       { id: "round", keys: [], t: "Take the roundabout", s: "Steer round the fountain and out onto a street", at: "car" },
-      { id: "back", keys: ["↓"], t: "Back up", s: touchUI ? "Hold ↓: it brakes, then reverses" : "Hold ↓ (or S): it brakes, then reverses", at: "car" },
+      { id: "back", keys: ["↓"], t: "Back up or turn round", s: touchUI ? "Hold ↓ to back up · stopped, ↑ with ← or → turns you round" : "Hold ↓ (or S) to back up · stopped, ↑ with ← or → turns you round", at: "car" },
       { id: "tap", keys: [], t: "Or let us drive", s: "Tap a place on the map, or a card in Nearby", at: "panel" },
       { id: "look", keys: [], t: "Look around", s: touchUI ? "Drag the map, pinch to zoom · ◎ brings you back" : "Drag the map, scroll to zoom · ◎ brings you back", at: "mid" },
       { id: "view", keys: [], t: "Street or Satellite", s: touchUI ? "Switch the view down here" : "Switch the view down here, or press V", at: "views" }
@@ -1604,7 +1618,7 @@
       return true;
     }
     function tutGo(i) {
-      TUT.i = i; TUT.t0 = performance.now(); TUT.L0 = curL(); TUT.x0 = P.x; TUT.z0 = P.z; TUT.inRing = false; TUT.turn = D.turnT || 0; TUT.rev = D.revDist || 0; TUT.view = D.view; TUT.dragged = false;
+      TUT.i = i; TUT.t0 = performance.now(); TUT.L0 = curL(); TUT.x0 = P.x; TUT.z0 = P.z; TUT.inRing = false; TUT.turn = D.turnT || 0; TUT.rev = D.revDist || 0; TUT.slow = D.slowTurn || 0; TUT.view = D.view; TUT.dragged = false;
       const st = STEPS[i], e = TUT.el, key = (k) => `<span class="n2-cap${k === "↑" ? " big" : ""}" aria-hidden="true">${k}</span>`;
       e.innerHTML = `${st.keys.length ? `<span class="n2-caps">${st.keys.map(key).join("")}</span>` : ""}<b>${st.t}</b><i>${st.s}</i><span class="n2-tbar"><em class="mono">${i + 1}/${STEPS.length}</em><button class="n2-skip">Skip</button></span>`;
       e.dataset.at = st.at;
@@ -1638,7 +1652,7 @@
       if (now - TUT.t0 > 600) {
         if (st.id === "drive" && Math.hypot(P.x - TUT.x0, P.z - TUT.z0) > 140) return tutNext();
         if (st.id === "round") { const d = Math.hypot(P.x - H.fork.x, P.z - H.fork.y); if (d < 105) TUT.inRing = true; if (TUT.inRing && d > 230) return tutNext(); }
-        if (st.id === "back" && (D.revDist || 0) - TUT.rev > 25) return tutNext();
+        if (st.id === "back" && ((D.revDist || 0) - TUT.rev > 25 || (D.slowTurn || 0) - TUT.slow > 2.4)) return tutNext();
         if (st.id === "tap" && D.auto) return tutNext();
         if (st.id === "look") { if ((mv.direct || 0) > TUT.t0) TUT.dragged = true; if (TUT.dragged && mv.follow) return tutNext(); } // a real hand on the map (r166's), then back with ◎ or by driving
         if (st.id === "view" && D.view !== TUT.view) return tutNext();
