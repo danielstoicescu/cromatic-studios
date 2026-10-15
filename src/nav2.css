@@ -156,3 +156,15 @@ body:has(.case-frame:not(.hidden)) .nav2-ui, body.modal-open .nav2-ui, body.scf-
 .n2-arm.picked .n2-cap.sm { background: #141414; color: #FED012; }
 body.nav2-street .n2-arm { font-size: 14px; }
 @media (max-width: 719px) { .n2-arm { font-size: 11.5px; padding: 3px 8px 3px 3px; } .n2-cap.sm { width: 20px; height: 20px; font-size: 12px; } }
+
+/* round 3: the tour, n/6 and Skip under each step; the part of the screen it talks about glows yellow */
+.drive-guide.n2-guide { pointer-events: none; max-width: min(320px, calc(100vw - 32px)); }
+.drive-guide.n2-guide i { white-space: normal; text-align: center; line-height: 1.25; }
+.n2-tbar { display: flex; align-items: center; gap: 8px; pointer-events: auto; }
+.n2-tbar em { font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: .1em; background: #141414; color: #FED012; padding: 4px 8px; border-radius: 999px; }
+.n2-skip { font: 700 12px/1 CromaticSans, sans-serif; background: #fff; color: #141414; border: 2px solid #141414; border-radius: 999px; padding: 5px 11px; cursor: pointer; box-shadow: 0 2px 0 #141414; }
+.n2-skip:hover { background: #FED012; }
+.n2-k.tut, .nav2-ui .n2-views.tut, .nav2-ui .n2-panel.tut { outline: 3px solid #FED012; outline-offset: 3px; }
+.nav2-ui .n2-views.tut { animation: n2need 1.1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .nav2-ui .n2-views.tut { animation: none; } }
+body:has(.map-welcome:not(.hidden)) .nav2-ui .n2-panel { opacity: 0; pointer-events: none; } /* round 3: the welcome card first */

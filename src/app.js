@@ -39808,8 +39808,8 @@ void main() {
         ];
         const welcomeEl = el("div", "map-welcome hidden", `<button class="mw-x" aria-label="Close">\u00D7</button><b class="mw-t" role="heading" aria-level="2">Welcome to Cromatic City</b>
           <div class="mw-how">
-            <span><i>${MW_IC[0]}</i><b>Tap a place</b></span><em>\u2192</em>
-            <span><i>${MW_IC[1]}</i><b>We drive you</b></span><em>\u2192</em>
+            <span><i>${MW_IC[1]}</i><b>Drive it yourself</b></span><em>\u2192</em>
+            <span><i>${MW_IC[0]}</i><b>Or tap a place</b></span><em>\u2192</em>
             <span><i>${MW_IC[2]}</i><b>See the work</b></span><em>\u2192</em>
             <span><i>${MW_IC[3]}</i><b>Say hi</b></span>
           </div>
@@ -39819,7 +39819,7 @@ void main() {
             <button data-go="invest" style="--wc:#119BFE"><b>Fintech Boulevard</b><i>Investimental, Assetto, Bepco</i></button>
             <button data-go="tac" style="--wc:#F28BA8"><b>Medical Avenue</b><i>The Aesthetic Court, Zdrovit, Elithia</i></button>
             <button data-go="end" style="--wc:#FED012"><b>Olari 9 \u00B7 the studio</b><i>Come by, say hi</i></button>
-          </div><button class="mw-free">Help me set my first direction \u2192</button><button class="mw-drive">Or drive it yourself \u2191</button>`);
+          </div><button class="mw-free mw-go">Drive it yourself \u2191</button><button class="mw-drive mw-tap">Or help me set my first direction \u2192</button>`); // beta 2.0 r3 (Daniel): drive first, then tap
         // r128: the content scrolls inside .mw-in, so the X can sit half outside the card without being clipped
         { const mwIn = document.createElement("div"); mwIn.className = "mw-in"; for (const n of [...welcomeEl.childNodes]) if (!n.classList?.contains("mw-x")) mwIn.append(n); welcomeEl.append(mwIn); }
         // r139s (Daniel: "the onboarding window should not show more than once in a session"): once per visit
@@ -39857,8 +39857,8 @@ void main() {
           const b = e.target.closest("button"); if (!b) return;
           welcome(false);
           if (b.classList.contains("mw-x")) { guideStart(); return; } // r139h: closed with ×: the first-time guide
-          if (b.classList.contains("mw-free")) { showTapHint(); return; }
-          if (b.classList.contains("mw-drive")) { guideStart(true); return; } // nav2: straight to the driving tutorial
+          if (b.classList.contains("mw-go")) { guideStart(true); return; } // nav2: the tour, driving first
+          if (b.classList.contains("mw-tap")) { showTapHint(); return; }
           if (b.dataset.go) mapGo(MAP_PLACES.find((p) => p.id === b.dataset.go));
         };
         // ---- r139h: a light first-time guide after the welcome card is closed with ×: "Drag the map", then the camera
@@ -39958,7 +39958,7 @@ void main() {
         }
         // per frame (from update): the critically damped camera ease, the "Start here" ring over the pin, and the exits
         const guideStep = (dt) => {
-          if (!guide.phase) return;
+          if (!guide.phase || guide.phase === "drive") return; // nav2's tour runs itself (cards, trips and drags are its steps)
           if (guideBusy()) return guideEnd(guide.phase === "start" && mapNav.place?.id === "tm" ? "done" : "skipped");
           if (guide.phase !== "start") return;
           const pl = guide.spot, g = guide.goal;
@@ -39990,7 +39990,7 @@ void main() {
         };
         // any hand on the map: a drag ends step 1; anything but the highlighted pin ends step 2
         window.addEventListener("pointerdown", (e) => {
-          if (!guide.phase) return;
+          if (!guide.phase || guide.phase === "drive") return; // nav2's tour asks for these hands itself
           guide.last = performance.now();
           const t = e.target;
           if (t === renderer.domElement) { guide.down = { x: e.clientX, y: e.clientY, id: e.pointerId }; if (guide.phase === "start") guide.goal = null; return; }

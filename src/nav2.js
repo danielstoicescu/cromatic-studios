@@ -627,6 +627,7 @@
         if (k === "u" && (!D.keys.u || dec.L - L > WINDOW)) return;
         commit(o);
         D.goUntil = dec.L + 40 + (o.pre || 0);
+        if (k !== "u" || dec.ex.l || dec.ex.r) D.turnT = (D.turnT || 0) + 1; // a way picked where there was a choice
         flashKey(k);
         return;
       }
@@ -637,7 +638,7 @@
       if (D.auto) stopAuto();
       H.follow();
       const L = H.state.L, dec = nextDecision(L);
-      if (dec && dec.type === "junction" && dec.ex[k] && dec.L - dec.gap >= L - 1) { commit(dec.ex[k]); flashKey(k); render(true); }
+      if (dec && dec.type === "junction" && dec.ex[k] && dec.L - dec.gap >= L - 1) { commit(dec.ex[k]); if (k !== "s") D.turnT = (D.turnT || 0) + 1; flashKey(k); render(true); }
       else nope(k);
     }
     // the rides that can: a half circle on the spot from one lane to the other
@@ -803,7 +804,7 @@
         }
       }
       // ↑ held into a junction that goes straight on: straight on
-      if (!D.auto && (D.keys.u || D.cruise) && D.v >= 0 && dec && dec.type === "junction" && dec.ex.s && dec.L - L2 < 70 + D.v * 0.45) { commit(dec.ex.s); dec = nextDecision(H.state.L); }
+      if (!D.auto && (D.keys.u || D.cruise) && D.v >= 0 && dec && dec.type === "junction" && dec.ex.s && dec.L - L2 < 70 + D.v * 0.45) { if (dec.ex.l || dec.ex.r) D.turnT = (D.turnT || 0) + 1; commit(dec.ex.s); dec = nextDecision(H.state.L); }
       let Lc = H.state.L;
       // after reversing, driving on again: the choices made beyond the car are dropped (you choose again)
       if (D.wasRev && (D.keys.u || D.cruise) && D.v >= 0) {
@@ -858,6 +859,7 @@
       if ((D.C >= Ls - 0.01 && want <= 0.5 && D.v > 0) || (D.C <= Lb + 0.01 && D.v < 0)) D.v = 0;
       if (D.v > 0) D.C = Math.max(D.C, Lc - 0.5);
       H.setTarget(D.C);
+      if (D.v < -0.5) D.revDist = (D.revDist || 0) - D.v * dt;
       lamps(D.v < -0.5 || (rev && Math.abs(D.v) < 0.5 && (D.keys.d || autoRev)));
       // arrivals
       if (autoRev && Math.abs(Lc - D.auto.Lt) < 6 && Math.abs(D.v) < 3) {
@@ -1160,7 +1162,10 @@
       let name = null;
       for (const d of [320, 200, 120]) { const p = pointAt(pts, cum, Math.min(e.len, d)), q = quarterAt(p[0], p[1]); if (q) { name = QNAME[q]; break; } }
       if (!name) { const ws = []; explore(o, 700, 0, ws, new Set(), 0); const f = uniq(ws)[0]; name = f ? (f.p.q && QNAME[f.p.q]) || f.p.pl.name : null; }
-      if (!name) { const p = pointAt(pts, cum, Math.min(e.len, 200)); name = Math.hypot(p[0] - H.start[0], p[1] - H.start[1]) < 1200 ? "The start" : e.kind === "long" ? "The avenue" : "The city"; }
+      if (!name) {
+        const h = outH(o), cmp = ["south", "east", "north", "west"][((Math.round(h / (Math.PI / 2)) % 4) + 4) % 4]; // plan: +z is south
+        name = e.kind === "long" ? `The avenue, ${cmp}` : e.kind === "drive" && Math.hypot(pointAt(pts, cum, Math.min(e.len, 200))[0] - H.start[0], pointAt(pts, cum, Math.min(e.len, 200))[1] - H.start[1]) < 900 ? "The start" : `The road ${cmp}`;
+      }
       armNames.set(k, name);
       return name;
     }
@@ -1346,59 +1351,88 @@
       api.go(pl);
     });
 
-    // ---------- the first-time tutorial (in the drive guide's look): "Or, you can drive it yourself" at the car, then
-    // "Pick a way" at the first junction, then "You're driving". Once per visitor (cz-drive-guide); a visitor who does not
-    // drive within 10 s goes on to the map guide's "Start here" (done("skipped")); any hand on the map ends it ----------
-    const TUT = { step: null, el: null, done: null, t0: 0, L0: 0, timer: 0 };
+    // ---------- round 3: the first-time tour (in the drive guide's look), six short steps, each done by doing it:
+    // drive yourself, pick a way, back up, or let us drive, look around, street or satellite. Progress n/6 and Skip on
+    // every step; once per visitor (cz-drive-guide = "2"); a visitor who began with a place gets it after that card ----------
+    const TUT = { i: -1, el: null, done: null, t0: 0, L0: 0, timer: 0, asked: false };
     const touchUI = matchMedia("(hover: none) and (pointer: coarse)").matches;
+    const STEPS = [
+      { id: "drive", keys: ["↑"], t: "Drive it yourself", s: touchUI ? "Hold ↑ on the pad, or tap it to cruise" : "Hold ↑ (or W), or tap it to cruise", at: "car" },
+      { id: "turn", keys: ["←", "↑", "→"], t: "Pick a way", s: "At a junction or a roundabout: ← or →, ↑ goes straight on", at: "car" },
+      { id: "back", keys: ["↓"], t: "Back up", s: touchUI ? "Hold ↓ on the pad" : "Hold ↓ (or S)", at: "car" },
+      { id: "tap", keys: [], t: "Or let us drive", s: "Tap a place on the map, or a card in Nearby", at: "panel" },
+      { id: "look", keys: [], t: "Look around", s: touchUI ? "Drag the map, pinch to zoom · ◎ brings you back" : "Drag the map, scroll to zoom · ◎ brings you back", at: "mid" },
+      { id: "view", keys: [], t: "Street or Satellite", s: touchUI ? "Switch the view down here" : "Switch the view down here, or press V", at: "views" }
+    ];
     function tutorial(done, force) {
-      try { if (!force && localStorage.getItem("cz-drive-guide")) return false; localStorage.setItem("cz-drive-guide", "1"); } catch {}
+      try { if (!force && localStorage.getItem("cz-drive-guide") === "2") return false; localStorage.setItem("cz-drive-guide", "2"); } catch {}
       if (!D.ready && !place()) return false;
       D.ready = true;
-      if (!TUT.el) { TUT.el = document.createElement("div"); TUT.el.className = "drive-guide n2-guide hidden"; TUT.el.setAttribute("role", "status"); document.body.appendChild(TUT.el); }
-      TUT.asked = true; TUT.done = done; TUT.step = "go"; TUT.t0 = performance.now(); TUT.L0 = H.state.L;
-      tutShow();
-      clearTimeout(TUT.timer); TUT.timer = setTimeout(() => tutEnd("skipped"), 10000);
+      if (!TUT.el) {
+        TUT.el = document.createElement("div"); TUT.el.className = "drive-guide n2-guide hidden"; TUT.el.setAttribute("role", "status");
+        document.body.appendChild(TUT.el);
+        TUT.el.addEventListener("click", (e) => { if (e.target.closest(".n2-skip")) tutEnd("skipped"); });
+        TUT.el.addEventListener("pointerdown", (e) => e.stopPropagation());
+      }
+      TUT.asked = true; TUT.done = done;
+      tutGo(0);
       return true;
     }
-    function tutShow() {
-      const e = TUT.el, st = TUT.step;
-      const key = (k, big) => `<span class="n2-cap${big ? " big" : ""}" aria-hidden="true">${k}</span>`;
-      if (st === "go") e.innerHTML = `<span class="n2-caps">${key("↑", 1)}</span><b>Or, you can drive it yourself</b><i>${touchUI ? "Hold ↑ on the pad" : "Hold ↑ to drive · WASD works too"}</i>`;
-      if (st === "turn") e.innerHTML = `<span class="n2-caps">${key("←")}${key("→")}</span><b>Pick a way</b><i>${touchUI ? "Tap ← or → on the pad" : "← or → at the junction"}</i>`;
-      if (st === "end") e.innerHTML = `<b>You're driving</b><i>Tap any place and we drive you there</i>`;
-      e.classList.remove("hidden");
-      e.classList.remove("in"); void e.offsetWidth; e.classList.add("in");
-      keyEls.u.classList.toggle("tut", st === "go"); keyEls.l.classList.toggle("tut", st === "turn"); keyEls.r.classList.toggle("tut", st === "turn");
+    function tutGo(i) {
+      TUT.i = i; TUT.t0 = performance.now(); TUT.L0 = H.state.L; TUT.turn = D.turnT || 0; TUT.rev = D.revDist || 0; TUT.view = D.view; TUT.dragged = false;
+      const st = STEPS[i], e = TUT.el, key = (k) => `<span class="n2-cap${k === "↑" ? " big" : ""}" aria-hidden="true">${k}</span>`;
+      e.innerHTML = `${st.keys.length ? `<span class="n2-caps">${st.keys.map(key).join("")}</span>` : ""}<b>${st.t}</b><i>${st.s}</i><span class="n2-tbar"><em class="mono">${i + 1}/${STEPS.length}</em><button class="n2-skip">Skip</button></span>`;
+      e.dataset.at = st.at;
+      e.classList.remove("hidden", "in"); void e.offsetWidth; e.classList.add("in");
+      keyEls.u.classList.toggle("tut", st.id === "drive"); keyEls.l.classList.toggle("tut", st.id === "turn"); keyEls.r.classList.toggle("tut", st.id === "turn"); keyEls.d.classList.toggle("tut", st.id === "back");
+      views.classList.toggle("tut", st.id === "view"); panel.classList.toggle("tut", st.id === "tap");
+      czEv?.("onboarding_step", { step: "drive_" + st.id, action: "shown" });
+    }
+    const czEv = (n, p) => { try { window.czEvent && window.czEvent(n, p || {}); } catch {} };
+    function tutNext() {
+      czEv("onboarding_step", { step: "drive_" + STEPS[TUT.i].id, action: "done" });
+      if (TUT.i + 1 < STEPS.length) { tutGo(TUT.i + 1); return; }
+      // the end: a short "you're all set", then it goes
+      const e = TUT.el; e.innerHTML = `<b>You're all set</b><i>Have a good drive</i>`; e.dataset.at = "mid";
+      for (const k of "udlr") keyEls[k].classList.remove("tut"); views.classList.remove("tut"); panel.classList.remove("tut");
+      TUT.i = STEPS.length; clearTimeout(TUT.timer); TUT.timer = setTimeout(() => tutEnd("done"), 2200);
     }
     function tutEnd(how) {
-      if (!TUT.step) return;
-      TUT.step = null; clearTimeout(TUT.timer);
+      if (TUT.i < 0) return;
+      TUT.i = -1; clearTimeout(TUT.timer);
       TUT.el?.classList.add("hidden");
-      for (const k of "ulr") keyEls[k].classList.remove("tut");
-      const d = TUT.done; TUT.done = null; d?.(how);
+      for (const k of "udlr") keyEls[k].classList.remove("tut"); views.classList.remove("tut"); panel.classList.remove("tut");
+      if (how === "skipped") czEv("onboarding_step", { step: "drive_tour", action: "skipped" });
+      const d = TUT.done; TUT.done = null; d?.("done");
     }
-    // per frame: follow the car on screen, and move on as the visitor drives
+    // per frame: is the step done? and the pill's place (over the car, by the panel, mid screen, over the views)
     function tutTick() {
-      // a visitor who began with a place (the welcome card, a pin): the invitation comes once that first card is closed
-      if (!TUT.step && !TUT.asked && D.arrT && !D.auto && !H.cardOpen() && performance.now() - D.arrT > 1500) { TUT.asked = true; tutorial(null); }
-      if (!TUT.step) return;
-      const L = H.state.L;
-      if (TUT.step === "go" && (D.v > 30 || Math.abs(L - TUT.L0) > 60)) { TUT.step = "drove"; TUT.el.classList.add("hidden"); keyEls.u.classList.remove("tut"); clearTimeout(TUT.timer); TUT.timer = setTimeout(() => tutEnd("done"), 20000); }
-      if (TUT.step === "drove") { const dec = nextDecision(L); if (dec && dec.type === "junction" && dec.L - L < WINDOW && (dec.ex.l || dec.ex.r)) { TUT.step = "turn"; TUT.dec = dec.key; tutShow(); } }
-      if (TUT.step === "turn") { const dec = nextDecision(L); if (!dec || dec.key !== TUT.dec) { TUT.step = "end"; tutShow(); clearTimeout(TUT.timer); TUT.timer = setTimeout(() => tutEnd("done"), 3200); } }
-      if (TUT.step === "drove" || TUT.el.classList.contains("hidden")) return;
-      // over the car, kept inside the screen
-      const p = H.project(H.carPos.x, 40, H.carPos.z), W = VP.w, Hh = VP.h, ph = W < 720;
-      if (p.z < 1) { TUT.el.style.left = clamp((p.x * 0.5 + 0.5) * W, 140, W - 140).toFixed(0) + "px"; TUT.el.style.top = clamp((-p.y * 0.5 + 0.5) * Hh - 70, ph ? 250 : 150, Hh - (ph ? 260 : 200)).toFixed(0) + "px"; }
+      if (TUT.i < 0 && !TUT.asked && D.arrT && !D.auto && !H.cardOpen() && performance.now() - D.arrT > 1500) { TUT.asked = true; tutorial(null); }
+      if (TUT.i < 0 || TUT.i >= STEPS.length) { if (TUT.i >= 0) tutPlace("mid"); return; }
+      const st = STEPS[TUT.i], L = H.state.L, now = performance.now(), mv = H.mapView;
+      if (now - TUT.t0 > 600) {
+        if (st.id === "drive" && Math.abs(L - TUT.L0) > 80) return tutNext();
+        if (st.id === "turn" && (D.turnT || 0) > TUT.turn) return tutNext();
+        if (st.id === "back" && (D.revDist || 0) - TUT.rev > 25) return tutNext();
+        if (st.id === "tap" && D.auto) return tutNext();
+        if (st.id === "look") { if ((mv.direct || 0) > TUT.t0) TUT.dragged = true; if (TUT.dragged && mv.follow) return tutNext(); } // a real hand on the map (r166's), then back with ◎ or by driving
+        if (st.id === "view" && D.view !== TUT.view) return tutNext();
+      }
+      tutPlace(st.at);
     }
-    // a hand on the map (a drag, a zoom) ends the tutorial, but the pad, the panel and the views do not
-    window.addEventListener("pointerdown", (e) => { if (TUT.step && TUT.step !== "end" && e.target === H.canvas() && D.streetT < 0.5) tutEnd("skipped"); }, true);
-    window.addEventListener("wheel", () => { if (TUT.step === "go") tutEnd("skipped"); }, { passive: true });
+    function tutPlace(at) {
+      const e = TUT.el, W = VP.w, Hh = VP.h, ph = W < 720;
+      let x = W / 2, y = Hh * 0.42;
+      if (at === "car") { const p = H.project(H.carPos.x, 40, H.carPos.z); if (p.z < 1) { x = (p.x * 0.5 + 0.5) * W; y = (-p.y * 0.5 + 0.5) * Hh - 80; } }
+      else if (at === "panel") { const r = panel.getBoundingClientRect(); if (ph) { x = W / 2; y = r.bottom + 70; } else { x = r.left + r.width / 2; y = r.top - 70; } }
+      else if (at === "views") { const r = views.getBoundingClientRect(); x = r.left + r.width / 2; y = r.top - 80; }
+      e.style.left = clamp(x, 150, W - 150).toFixed(0) + "px";
+      e.style.top = clamp(y, ph ? 250 : 150, Hh - (ph ? 230 : 120)).toFixed(0) + "px";
+    }
 
     const api = {
       on: false, graph: G, D,
-      tutorial, tutorialEnd: () => tutEnd(null),
+      tutorial, tutorialEnd: () => tutEnd(null), tourStep: () => (TUT.i >= 0 && TUT.i < STEPS.length ? STEPS[TUT.i].id : TUT.i >= STEPS.length ? "end" : null),
       get camK() { return D.camK; },
       tick, pose, camera, body,
       // a place from the map (a pin, a chip, the welcome card): driven to along the graph
@@ -1429,7 +1463,7 @@
         api.on = on;
         document.body.classList.toggle("nav2", on);
         if (!on) { for (const k of "udlr") keyUp(k); D.ready = false; D.auto = null; D.uturn = null; D.streetT = 0; D.camK = 0; viewSig = ""; document.body.classList.remove("nav2-street"); }
-        else { viewSig = ""; let seen = false; try { seen = !!localStorage.getItem("cz-drive-guide"); } catch {} if (seen) setTimeout(() => toast(H.isPhone() ? "Drive it yourself with the pad · or tap a place" : "Drive it yourself: arrows or WASD · V switches the view"), 1600); } // a first visit gets the tutorial instead
+        else { viewSig = ""; let seen = false; try { seen = localStorage.getItem("cz-drive-guide") === "2"; } catch {} if (seen) setTimeout(() => toast(H.isPhone() ? "Drive it yourself with the pad · or tap a place" : "Drive it yourself: arrows or WASD · V switches the view"), 1600); } // a first visit gets the tutorial instead
       },
       view: setView,
       press: (k, down = true) => (down ? keyDown(k) : keyUp(k)),
