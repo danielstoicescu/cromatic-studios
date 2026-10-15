@@ -123,3 +123,5 @@ body.map-mode .map-pin.dot { padding: 0; margin: 0; }
 .map-card .mcd-open.busy { pointer-events: none; animation: n2busy 1s ease-in-out infinite; }
 @keyframes n2busy { 50% { opacity: .65; } }
 @media (prefers-reduced-motion: reduce) { .map-card .mcd-open.busy { animation: none; } }
+/* beta 2.0: the pad, the views and the panel step aside under a case page or a modal */
+body:has(.case-frame:not(.hidden)) .nav2-ui, body.modal-open .nav2-ui, body.scf-open .nav2-ui { display: none !important; }
