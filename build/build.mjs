@@ -390,7 +390,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
 const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
 const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
 // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
-const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 2.0"; // the nav2 branch is beta 2.0 (main/live is beta 1.6)
+const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 2.5"; // the nav2 branch is beta 2.5 since round 5 (main/live is beta 1.6)
 const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
 const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
 const GS = {};
