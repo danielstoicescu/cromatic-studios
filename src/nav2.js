@@ -783,7 +783,7 @@
     let panelT = 0;
     function tick(dt, now) {
       if (!H.ready()) return;
-      if (!D.ready) { if (!place()) return; D.ready = true; render(true); H.closures?.(CLOSED); }
+      if (!D.ready) { if (!place()) return; D.ready = true; render(true); H.closures?.(CLOSED); setTimeout(preShots, 1200); }
       if (FREE) return freeTick(dt, now); // round 4: the arcade car
       const L = curL();
       if (D.uturn || D.kturn) {
@@ -1020,7 +1020,7 @@
     function physics(dt, thr, steerIn, hb, assisted) {
       P.st += (steerIn - P.st) * (1 - Math.exp(-dt * (steerIn === 0 || assisted ? 11 : Math.abs(steerIn) < Math.abs(P.st) ? 11 : 6.5)));
       let u = P.u;
-      const crawlCap = !hb && Math.abs(P.st) > 0.6 && Math.abs(u) < 70 ? 40 : Infinity; // turning hard from a crawl: stay slow, turn tight
+      const crawlCap = !hb && Math.abs(P.st) > 0.6 && Math.abs(u) < 70 ? 28 : Infinity; // turning hard from a crawl: stay slow, turn tight
       if (thr > 0) { if (u < -4) u = Math.min(0, u + BRAKE_F * dt); else if (u < crawlCap) u = Math.min(Math.max(u, crawlCap), u + ACC_F * dt * (1 - Math.max(0, u) / VMAX_F)); }
       else if (thr < 0) { if (u > 4) u = Math.max(0, u - BRAKE_F * dt); else if (u > -crawlCap) u = Math.max(-VREV_F, Math.min(u, -crawlCap), u - REV_F * dt); }
       else { const dec = (ROLL_F + DRAG_F * Math.abs(u)) * dt; u = Math.abs(u) <= dec ? 0 : u - Math.sign(u) * dec; }
@@ -1041,8 +1041,13 @@
       vx = fx * u + rx * w; vz = fz * u + rz * w;
       let nx = P.x + vx * dt, nz = P.z + vz * dt, hit = false, lost = false;
       const half = clamp(H.carLen() * 0.5 - CR + 2, 2, 32);
+      // polish: turning round on the spot, the car eases towards the middle of the road, so nose and tail clear both kerbs
+      if (thr !== 0 && !hb && au < 40 && Math.abs(P.st) > 0.3) {
+        const a = G.nearest(nx, nz, 60, (e) => e.drive && e.kind !== "ring");
+        if (a && a.d > 1) { const e = E[a.e], c = pointAt(e.pts, e.cum, a.s), k = Math.min(1, (110 * dt * Math.abs(P.st) * (1 - au / 40)) / a.d); nx += (c[0] - nx) * k; nz += (c[1] - nz) * k; }
+      }
       for (let pass = 0; pass < 2; pass++) for (const k of [0, 1, -1]) {
-        const px = nx + fx * half * k, pz = nz + fz * half * k, q = MASK.resolve(px, pz, CR);
+        const px = nx + fx * half * k, pz = nz + fz * half * k, q = MASK.resolve(px, pz, k ? CR - 2 : CR); // the ends a little rounder: the corners
         if (q.lost) { if (!k) lost = true; continue; }
         if (!q.hit) continue;
         nx += q.x - px; nz += q.z - pz; hit = true;
@@ -1067,6 +1072,20 @@
     // round 5: the steering assist, with no ← → held: the car aims a little ahead along the road it is on (on through a
     // junction when one way is straight on, else fading out as it nears it, so the turn stays yours), in its right-hand
     // lane: it self-aligns with the road, follows its bends and keeps its lane; and it eases off for a bend it cannot take
+    const ringExits = new Map();
+    function ringExitFor(spoke) {
+      const k = spoke.e * 2 + (spoke.dir > 0 ? 1 : 0);
+      if (ringExits.has(k)) return ringExits.get(k);
+      const hin = inH(spoke);
+      let best = null;
+      for (const n of ringNodes) for (const o of N[n].out) {
+        const e = E[o.e]; if (e.kind === "ring" || !e.drive || (o.e === spoke.e)) continue;
+        const d = Math.abs(wrapA(outH(o) - hin));
+        if (!best || d < best.d) best = { e: o.e, dir: o.dir, d };
+      }
+      ringExits.set(k, best);
+      return best;
+    }
     function assist() {
       const au = Math.abs(P.u);
       const a = G.nearest(P.x, P.z, 90, (e) => e.drive);
@@ -1088,16 +1107,21 @@
         const hin = inH(it), n = endNode(it);
         const cs = N[n].out.filter((o) => E[o.e].drive && !(o.e === it.e && o.dir === -it.dir) && !against(o)).map((o) => ({ o, d: Math.abs(wrapA(outH(o) - hin)) })).sort((x, y) => x.d - y.d);
         const ringOn = cs.find((c2) => E[c2.o.e].kind === "ring");
-        const nx2 = E[it.e].kind === "ring" ? ringOn : cs[0] && cs[0].d <= 0.5 ? cs[0] : ringOn;
+        // polish (Daniel: no circling forever): into the roundabout, ↑ alone means straight on: the arm nearest the way you came in
+        if (E[it.e].kind !== "ring" && ringOn && (!cs[0] || cs[0].d > 0.5)) D.ringExit = ringExitFor(it);
+        const out = E[it.e].kind === "ring" && D.ringExit ? cs.find((c2) => c2.o.e === D.ringExit.e && c2.o.dir === D.ringExit.dir) : null;
+        const nx2 = out || (E[it.e].kind === "ring" ? ringOn : cs[0] && cs[0].d <= 0.5 ? cs[0] : ringOn);
         if (!nx2) { pts2.push([...pointAt(p, c, L), run, it]); open = false; break; }
         it = nx2.o; s0 = 0;
       }
       if (pts2.length < 2) return null;
+      let laneK = 1;
+      for (let i = 2; i < pts2.length; i++) { const A = pts2[i - 2], B = pts2[i - 1], C = pts2[i]; if (A[3].e !== C[3].e && Math.abs(wrapA(Math.atan2(C[0] - B[0], C[1] - B[1]) - Math.atan2(B[0] - A[0], B[1] - A[1]))) > 0.35) { laneK = clamp((B[2] - 25) / 70, 0, 1); break; } }
       // the aim: `look` ahead, in the right-hand lane (the ring: its middle); a junction ahead with no way straight on fades it
       let j = pts2.findIndex((q) => q[2] >= look); if (j < 0) j = pts2.length - 1;
       const q = pts2[j], q2 = pts2[Math.min(pts2.length - 1, j + 1)] !== q ? pts2[Math.min(pts2.length - 1, j + 1)] : pts2[j - 1], sgn = q2 === pts2[j - 1] ? -1 : 1;
       let ax = q[0], az = q[1];
-      { const dx = (q2[0] - ax) * sgn, dz = (q2[1] - az) * sgn, l = Math.hypot(dx, dz) || 1, lane = E[q[3].e].kind === "ring" ? 0 : Math.min(9, E[q[3].e].w * 0.16); ax += (-dz / l) * lane; az += (dx / l) * lane; }
+      { const dx = (q2[0] - ax) * sgn, dz = (q2[1] - az) * sgn, l = Math.hypot(dx, dz) || 1, lane = E[q[3].e].kind === "ring" ? 0 : Math.min(9, E[q[3].e].w * 0.16) * laneK; ax += (-dz / l) * lane; az += (dx / l) * lane; }
       const fade = open ? 1 : clamp((pts2[pts2.length - 1][2] - 30) / 80, 0, 1);
       const dist = Math.hypot(ax - P.x, az - P.z) || 1, err = wrapA(Math.atan2(ax - P.x, az - P.z) - P.h);
       if (Math.abs(err) > (P.contact > 0 ? 1.75 : E[q[3].e].kind === "ring" ? 1.4 : 1.1)) return null; // crosswise (a spin, a turn half done): yours
@@ -1157,6 +1181,7 @@
         thr = (D.keys.u ? 1 : 0) - (D.keys.d ? 1 : 0); steer = (D.keys.l ? 1 : 0) - (D.keys.r ? 1 : 0);
       }
       let assisted = false;
+      if (!D.auto && steer !== 0 && D.ringExit && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) > 110) D.ringExit = null; // steering yourself, off the ring: your own way
       if (!D.auto && steer === 0 && !hb && (P.u > 12 || (P.contact > 0 && thr > 0 && P.u >= 0))) {
         const as = assist();
         if (as) { D.asv = Math.round(Math.min(as.vmax, 9999)); steer = as.steer; assisted = true; if (thr > 0 && P.u > as.vmax - 5) thr = P.u > as.vmax + 12 ? -1 : 0; }
@@ -1182,6 +1207,7 @@
     let freeSig = "";
     function freeUI() {
       let hint = touchUI || VP.w < 720 ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BRAKE / BACK · SPACE + ← → SPIN";
+      if (D.assist && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) < 110) hint = VP.w < 720 ? "ROUNDABOUT · ↑ STRAIGHT ON · OR STEER OUT" : "ROUNDABOUT · ↑ GOES STRAIGHT ON · STEER OUT FOR ANOTHER EXIT";
       if (D.moved && Math.abs(P.u) < 5 && !D.auto && P.contact <= 0) hint = VP.w < 720 ? "STOPPED · ↑ + ← → TURNS YOU ROUND" : "STOPPED · ↑ OR ↓ WITH ← → TURNS YOU ROUND"; // round 5
       if (D.auto) hint = D.auto.rev ? "BACKING UP TO IT · ANY KEY TAKES OVER" : "DRIVING YOU THERE · ANY KEY TAKES OVER";
       else if (P.u < -5) hint = "REVERSING";
@@ -1315,7 +1341,7 @@
       camTarget.set(tx, ty, tz);
       camPos.set(tx + Math.sin(yaw) * Math.cos(pitch) * d, ty + Math.sin(pitch) * d, tz + Math.cos(yaw) * Math.cos(pitch) * d);
       if (spd > 0.05) { const t = performance.now() * 0.001, a = spd * spd * 0.5 * k; camPos.x += Math.sin(t * 23.1) * a; camPos.y += Math.sin(t * 31.7 + 1) * a * 0.7; camPos.z += Math.sin(t * 19.3 + 2) * a; }
-      const cam = H.camera, near = Math.max(2.5, d * 0.32 * (1 - k) + 3 * k), far = Math.max(14000, d * 3 + 6000);
+      const cam = H.camera, near = Math.max(2.5, d * 0.32 * (1 - k) + 3 * k), far = Math.max(14000, d * 3 + 6000) * (1 - k) + 3300 * k; // polish: the street view draws what its haze lets you see (was the whole city)
       if (Math.abs(cam.fov - fov) > 0.01 || Math.abs(cam.near - near) > 0.5 || Math.abs(cam.far - far) > 10) { cam.fov = fov; cam.near = near; cam.far = far; cam.updateProjectionMatrix(); }
     }
     // one source of truth for the view: D.view is the visitor's choice; the view on screen is that choice unless a scene
@@ -1617,13 +1643,21 @@
       if (shotBusy) return;
       shotBusy = true;
       const next = () => {
+        // polish: a postcard is a whole render of the city (~50 ms): never while the car is moving, it would be a hitch
+        if (shotQ.length && Math.abs(P.u) > 25) { setTimeout(next, 450); return; }
         const q = shotQ.shift();
         if (!q) { shotBusy = false; imgV++; render(); return; }
-        const u = H.shot?.(q);
+        const t0 = performance.now(), u = H.shot?.(q);
+        (window.__n2shotMs ||= []).push(Math.round(performance.now() - t0)); // tests: what a postcard costs
         shots.set(q.id, u || "");
         (window.requestIdleCallback || setTimeout)(next, { timeout: 600 });
       };
       (window.requestIdleCallback || setTimeout)(next, { timeout: 600 });
+    }
+    // polish: the postcards of the places nearest the start, made while the welcome card is read (not on the first drive)
+    function preShots() {
+      const c = H.carPos;
+      PL.slice().sort((a, b) => Math.hypot(a.x - c.x, a.z - c.z) - Math.hypot(b.x - c.x, b.z - c.z)).slice(0, 10).forEach((p) => { if (!imgOf(p.pl)) wantShot(p.pl); });
     }
     function autoLeft() {
       const a = D.auto; if (!a) return 0;
@@ -1730,7 +1764,7 @@
       tutorial, tutorialEnd: () => tutEnd(null), tourStep: () => (TUT.i >= 0 && TUT.i < STEPS.length ? STEPS[TUT.i].id : TUT.i >= STEPS.length ? "end" : null),
       get camK() { return D.camK; },
       mv: () => { const m = H.mapView; return { x: Math.round(m.tgt.x), z: Math.round(m.tgt.z), dist: Math.round(m.dist), yaw: +m.yaw.toFixed(3), pitch: +m.pitch.toFixed(3), follow: m.follow }; },
-      onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, closed: () => CLOSED, look: (x, z, d) => { const m = H.mapView; m.follow = false; m.tgt.set(x, 0, z); m.dist = d; m.distGoal = null; m.vx = m.vz = 0; }, put: (x, z, h) => { P.x = x; P.z = z; P.h = h; P.u = P.w = P.yr = 0; }, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
+      onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, closed: () => CLOSED, speed: () => P.u, dims: () => ({ len: H.carLen(), span: H.vehSpan() }), cam: () => H.camera, look: (x, z, d) => { const m = H.mapView; m.follow = false; m.tgt.set(x, 0, z); m.dist = d; m.distGoal = null; m.vx = m.vz = 0; }, put: (x, z, h) => { P.x = x; P.z = z; P.h = h; P.u = P.w = P.yr = 0; }, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
       // a place from the map (a pin, a chip, the welcome card): driven to along the graph
       go(pl) {
         if (!pl || pl.find) return false;
