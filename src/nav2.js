@@ -244,6 +244,7 @@
         const p2 = e2.a === n ? e2.pts : e2.pts.slice().reverse(), b = e2.a === n ? e2.b : e2.a;
         if (a === b) continue; // would close a loop on itself
         if ((e1.kind === "minor") !== (e2.kind === "minor")) continue; // round 3: a side street never merges into a road
+        if ((e1.kind === "long") !== (e2.kind === "long")) continue; // round 5: nor does an avenue into one of our roads (closed vs open)
         const ne = { a, b, pts: [...p1, ...p2.slice(1)], w: Math.max(e1.w, e2.w), kind: e1.kind === e2.kind ? e1.kind : e1.kind === "drive" || e2.kind === "drive" ? "drive" : e1.kind };
         e1.dead = e2.dead = true;
         const ni = edges.length; edges.push(ne);
@@ -311,10 +312,16 @@
     // (cityNet().minor) stay in the graph only as mouths to back into for a turn, never to drive on
     {
       for (const e of E) e.drive = false;
+      // round 5 (Daniel: "close all roads that aren't ours"): ours are the drive's own network (navNet): an edge is ours when
+      // nearly all of it lies on one of its polylines (a long avenue merged onto one of them is not)
+      const own = [];
+      { const { P, adj } = H.navNet(); P.forEach((p, i) => { for (const [j] of adj[i]) if (j > i) own.push([p[0], p[1], P[j][0], P[j][1]]); }); }
+      const onOwn = (x, z) => own.some(([ax, az, bx, bz]) => { const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, t = clamp(((x - ax) * dx + (z - az) * dz) / l2, 0, 1); return Math.hypot(ax + dx * t - x, az + dz * t - z) < 8; });
+      for (const e of E) { if (e.kind === "minor") { e.ours = false; continue; } let k = 0, n = 0; for (let s2 = 0; s2 <= e.len; s2 += 20) { const p = pointAt(e.pts, e.cum, s2); n++; if (onOwn(p[0], p[1])) k++; } e.ours = k / n > 0.9; }
       const seen = new Uint8Array(N.length), st = [start2()];
-      function start2() { let b = 0, bd = Infinity; N.forEach((n, i) => { if (!n.out.some((o) => E[o.e].kind !== "minor")) return; const d = Math.hypot(n.x - H.start[0], n.z - H.start[1]); if (d < bd) { bd = d; b = i; } }); return b; }
+      function start2() { let b = 0, bd = Infinity; N.forEach((n, i) => { if (!n.out.some((o) => E[o.e].ours)) return; const d = Math.hypot(n.x - H.start[0], n.z - H.start[1]); if (d < bd) { bd = d; b = i; } }); return b; }
       seen[st[0]] = 1;
-      while (st.length) { const n = st.pop(); for (const o of N[n].out) { const e = E[o.e]; if (e.kind === "minor") continue; e.drive = true; const m = o.dir > 0 ? e.b : e.a; if (!seen[m]) { seen[m] = 1; st.push(m); } } }
+      while (st.length) { const n = st.pop(); for (const o of N[n].out) { const e = E[o.e]; if (!e.ours) continue; e.drive = true; const m = o.dir > 0 ? e.b : e.a; if (!seen[m]) { seen[m] = 1; st.push(m); } } }
       stats.drivable = E.filter((e) => e.drive).length;
       stats.drivableKm = Math.round(E.filter((e) => e.drive).reduce((a, e) => a + e.len, 0));
     }
@@ -776,7 +783,7 @@
     let panelT = 0;
     function tick(dt, now) {
       if (!H.ready()) return;
-      if (!D.ready) { if (!place()) return; D.ready = true; render(true); }
+      if (!D.ready) { if (!place()) return; D.ready = true; render(true); H.closures?.(CLOSED); }
       if (FREE) return freeTick(dt, now); // round 4: the arcade car
       const L = curL();
       if (D.uturn || D.kturn) {
@@ -927,8 +934,8 @@
     // ===================== 2c. round 4: GTA 2-style arcade driving =====================
     // Daniel: "take inspiration from car games like GTA 2". The keys are the car's own: ↑ / W accelerate, ↓ / S brake
     // then reverse, ← → / A D steer (the car turns as it moves, the other way round when backing), Space the
-    // handbrake (tighter turns, a slide). The car drives freely on the road surface that is drawn (the normal roads at
-    // their width, the ring round the fountain, the side streets' mouths); off it is the kerb: the car is pushed back and
+    // handbrake (tighter turns, a slide). The car drives freely on the road surface of our own streets (round 5: the
+    // avenues and the side streets are closed at their mouths) and the ring round the fountain; off it is the kerb: pushed back and
     // slides along it, and can always steer or back away. The road graph is kept for the auto-pilot (a tap, Nearby),
     // which drives the same physics along its route, and for the Nearby panel and the road signs.
     const FREE = true;
@@ -946,17 +953,7 @@
         }
       };
       for (const e of E) {
-        if (e.drive) { add(e.pts, e.w / 2 + 2); continue; }
-        if (e.kind !== "minor") continue;
-        // a side street's mouth on a road: room to back in for a turn
-        for (const end of [0, 1]) {
-          const n = end ? e.b : e.a;
-          if (!N[n].out.some((o) => E[o.e].drive)) continue;
-          const pts = end ? e.rpts : e.pts, cum = end ? e.rcum : e.cum, m = [];
-          for (let i = 0; i < pts.length && cum[i] < 60; i++) m.push(pts[i]);
-          m.push(pointAt(pts, cum, Math.min(60, e.len)));
-          if (m.length > 1) add(m, e.w / 2 + 1.5);
-        }
+        if (e.drive) add(e.pts, e.w / 2 + 2); // round 5: our roads only (the avenues and the side streets' mouths are closed)
       }
       // the point (x, z) for a car of radius r: on the road, or pushed back onto it (and the kerb's outward normal)
       function resolve(x, z, r) {
@@ -973,6 +970,26 @@
         return { hit: true, x: best.px + nx * lim, z: best.pz + nz * lim, nx, nz };
       }
       return { resolve, segs: segs.length };
+    })();
+    // round 5: the closures, where a street that is not ours leaves one of ours: just past our kerb line, across the
+    // closed street (its centre, its direction away from our road, its width), drawn by the host
+    const CLOSED = (() => {
+      const out = [];
+      for (const n of N) {
+        if (!n.out.some((o) => E[o.e].drive)) continue;
+        for (const o of n.out) {
+          const e = E[o.e]; if (e.drive) continue;
+          const pts = o.dir > 0 ? e.pts : e.rpts, cum = o.dir > 0 ? e.cum : e.rcum;
+          for (let s2 = 4; s2 <= Math.min(e.len, 260); s2 += 2) {
+            const p = pointAt(pts, cum, s2), a = G.nearest(p[0], p[1], 200, (e2) => e2.drive);
+            if (a && a.d < E[a.e].w / 2 + 5) continue;
+            const q = pointAt(pts, cum, Math.min(e.len, s2 + 8)), l = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1;
+            out.push({ x: p[0], z: p[1], nx: (q[0] - p[0]) / l, nz: (q[1] - p[1]) / l, w: e.w + 4, kind: e.kind });
+            break;
+          }
+        }
+      }
+      return out;
     })();
     const P = { x: 0, z: 0, h: 0, u: 0, w: 0, yr: 0, st: 0, ds: 0, init: false, contact: 0, vx: 0, vz: 0 };
     function freeInit() {
@@ -1645,7 +1662,7 @@
       tutorial, tutorialEnd: () => tutEnd(null), tourStep: () => (TUT.i >= 0 && TUT.i < STEPS.length ? STEPS[TUT.i].id : TUT.i >= STEPS.length ? "end" : null),
       get camK() { return D.camK; },
       mv: () => { const m = H.mapView; return { x: Math.round(m.tgt.x), z: Math.round(m.tgt.z), dist: Math.round(m.dist), yaw: +m.yaw.toFixed(3), pitch: +m.pitch.toFixed(3), follow: m.follow }; },
-      onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
+      onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, closed: () => CLOSED, look: (x, z, d) => { const m = H.mapView; m.follow = false; m.tgt.set(x, 0, z); m.dist = d; m.distGoal = null; m.vx = m.vz = 0; }, put: (x, z, h) => { P.x = x; P.z = z; P.h = h; P.u = P.w = P.yr = 0; }, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
       // a place from the map (a pin, a chip, the welcome card): driven to along the graph
       go(pl) {
         if (!pl || pl.find) return false;

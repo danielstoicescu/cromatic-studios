@@ -39168,6 +39168,30 @@ void main() {
             return m - g.position.y;
           },
           reverseLamps(on) { if (veh?.revLamps && veh.revLamps.visible !== on) veh.revLamps.visible = on; },
+          // round 5 (Daniel: "close all roads that aren't ours, and make it readable"): where a closed street meets one of ours,
+          // the kerb runs on across its mouth and a red-and-white striped barrier on two posts stands behind it, flanked by two
+          // bollards; one merged mesh for all of them (plan coordinates; the city warp bends it like the rest)
+          closures(list) {
+            if (worldRefs.world.userData.n2cl || !list?.length) return;
+            const geos = [], m = new Matrix4(), r = new Matrix4(), col = new Color();
+            const part = (geo, hex, x, y, z) => { col.set(hex); const n = geo.attributes.position.count, c = new Float32Array(n * 3); for (let i = 0; i < n; i++) { c[i * 3] = col.r; c[i * 3 + 1] = col.g; c[i * 3 + 2] = col.b; } geo.setAttribute("color", new Float32BufferAttribute(c, 3)); geo.translate(x, y, z); return geo; };
+            for (const b of list) {
+              const w = b.w, ps = [];
+              ps.push(part(new BoxGeometry(w + 8, 3.2, 5), "#b8b4a6", 0, 1.6, 0)); // the kerb, across the mouth
+              const n = Math.max(3, Math.round((w - 10) / 9)), sw = (w - 10) / n;
+              for (let i = 0; i < n; i++) ps.push(part(new BoxGeometry(sw, 3.6, 1.4), i % 2 ? "#f6f2e8" : "#e0442a", -(w - 10) / 2 + sw * (i + 0.5), 10.5, 9));
+              for (const sx of [-1, 1]) {
+                ps.push(part(new BoxGeometry(1.8, 12.5, 1.8), "#f6f2e8", sx * (w / 2 - 4), 6.25, 9)); // the barrier's posts
+                ps.push(part(new CylinderGeometry(1.7, 1.9, 8, 8), "#e0442a", sx * (w / 2 + 2), 4, -1)); // bollards, on the kerb's ends
+                ps.push(part(new CylinderGeometry(1.75, 1.75, 1.6, 8), "#f6f2e8", sx * (w / 2 + 2), 5.6, -1));
+              }
+              r.makeRotationY(Math.atan2(b.nx, b.nz)); m.makeTranslation(b.x, 0.6, b.z).multiply(r); // local +z: into the closed street
+              for (const g of ps) geos.push(g.toNonIndexed().applyMatrix4(m));
+            }
+            const mesh = new Mesh(mergeGeometries(geos), new MeshStandardMaterial({ vertexColors: true, roughness: 0.75 }));
+            mesh.castShadow = mesh.receiveShadow = true; mesh.name = "n2-closures";
+            worldRefs.world.add(mesh); worldRefs.world.userData.n2cl = mesh;
+          },
           camBusy: () => mapIntro || jetFx.phase !== "idle" || document.body.classList.contains("kz-intro"),
           ready: () => mapMode && !mapIntro && !!mapUI && spawnStart < 0 && jetFx.phase === "idle" && !mapBoarding && !document.body.classList.contains("kz-intro"),
           overlay: () => { const c = document.body.classList; return c.contains("modal-open") || c.contains("scf-open") || !!document.querySelector(".case-frame:not(.hidden)"); },
