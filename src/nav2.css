@@ -83,7 +83,7 @@ body.n2-card .n2-panel { opacity: 0; translate: 0 14px; pointer-events: none; }
 @media (max-width: 719px) {
   .n2-pad { --k: 64px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); gap: 6px; }
   .n2-keys { gap: 6px; }
-  .n2-hint { max-width: 230px; white-space: normal; font-size: 8.5px; }
+  .n2-hint { max-width: 240px; white-space: normal; font-size: 9.5px; }
   .n2-views { left: 12px; translate: none; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); flex-direction: column; border-radius: 22px; }
   .n2-views button { height: 52px; padding: 0 14px 0 12px; font-size: 14px; border-radius: 18px; }
   .n2-panel { left: 12px; right: 12px; width: auto; top: calc(120px + env(safe-area-inset-top, 0px)); bottom: auto; max-height: 36vh; padding: 9px 10px 6px; border-radius: 18px; box-shadow: 3px 4px 0 #141414; }

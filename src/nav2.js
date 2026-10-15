@@ -1046,14 +1046,14 @@
       w *= Math.exp(-dt * (hb ? 1.6 : 18));
       vx = fx * u + rx * w; vz = fz * u + rz * w;
       let nx = P.x + vx * dt, nz = P.z + vz * dt, hit = false, lost = false;
-      const half = clamp(H.carLen() * 0.5 - CR + 2, 2, 32);
+      const half = clamp(H.carLen() * 0.5 - CR + 2, 2, 20); // polish: the footprint of a laptop's car (phones show a bigger one)
       // polish: turning round on the spot, the car eases towards the middle of the road, so nose and tail clear both kerbs
       if (thr !== 0 && !hb && au < 40 && Math.abs(P.st) > 0.3) {
         const a = G.nearest(nx, nz, 60, (e) => e.drive && e.kind !== "ring");
-        if (a && a.d > 1) { const e = E[a.e], c = pointAt(e.pts, e.cum, a.s), k = Math.min(1, (110 * dt * Math.abs(P.st) * (1 - au / 40)) / a.d); nx += (c[0] - nx) * k; nz += (c[1] - nz) * k; }
+        if (a && a.d > 1) { const e = E[a.e], c = pointAt(e.pts, e.cum, a.s), k = Math.min(1, (150 * dt * Math.abs(P.st) * (1 - au / 70)) / a.d); nx += (c[0] - nx) * k; nz += (c[1] - nz) * k; }
       }
       for (let pass = 0; pass < 2; pass++) for (const k of [0, 1, -1]) {
-        const px = nx + fx * half * k, pz = nz + fz * half * k, q = MASK.resolve(px, pz, k ? CR - 2 : CR); // the ends a little rounder: the corners
+        const px = nx + fx * half * k, pz = nz + fz * half * k, q = MASK.resolve(px, pz, k ? CR - 4 : CR); // the ends rounder: a car turning round in the road's width may overhang its kerb a little at the corners
         if (q.lost) { if (!k) lost = true; continue; }
         if (!q.hit) continue;
         nx += q.x - px; nz += q.z - pz; hit = true;
