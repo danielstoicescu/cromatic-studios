@@ -1064,6 +1064,53 @@
       if (Math.abs(u) > 30) D.moved = true;
       if (Math.abs(u) < 60) D.slowTurn = (D.slowTurn || 0) + Math.abs(P.yr) * dt; // turning round (the tutorial's "back" step)
     }
+    // round 5: the steering assist, with no ← → held: the car aims a little ahead along the road it is on (on through a
+    // junction when one way is straight on, else fading out as it nears it, so the turn stays yours), in its right-hand
+    // lane: it self-aligns with the road, follows its bends and keeps its lane; and it eases off for a bend it cannot take
+    function assist() {
+      const au = Math.abs(P.u);
+      const a = G.nearest(P.x, P.z, 90, (e) => e.drive);
+      if (!a) return null;
+      const e0 = E[a.e], fx = Math.sin(P.h), fz = Math.cos(P.h);
+      const t0 = pointAt(e0.pts, e0.cum, Math.max(0, a.s - 5)), t1 = pointAt(e0.pts, e0.cum, Math.min(e0.len, a.s + 5));
+      let it = { e: a.e, dir: ((t1[0] - t0[0]) * fx + (t1[1] - t0[1]) * fz) >= 0 ? 1 : -1 };
+      if (against(it)) return null; // the wrong way round the ring: your call
+      // the road ahead, as far as a stop needs: on along the same street, straight on through a junction, into the
+      // roundabout its own way round (and round it, until you steer out); else it ends at the junction
+      const look = 34 + au * 0.42, far = Math.max(look + 10, 60 + (au * au) / (2 * 520));
+      let s0 = it.dir > 0 ? a.s : e0.len - a.s, run = 0, open = true, aimIt = it;
+      const pts2 = [];
+      for (let k = 0; k < 5; k++) {
+        const p = dpts(it), c = dcum(it), L = c[c.length - 1];
+        for (let s2 = s0; s2 < L && run + s2 - s0 <= far; s2 += 10) pts2.push([...pointAt(p, c, s2), run + s2 - s0, it]);
+        if (run + L - s0 > far) break;
+        run += L - s0;
+        const hin = inH(it), n = endNode(it);
+        const cs = N[n].out.filter((o) => E[o.e].drive && !(o.e === it.e && o.dir === -it.dir) && !against(o)).map((o) => ({ o, d: Math.abs(wrapA(outH(o) - hin)) })).sort((x, y) => x.d - y.d);
+        const nx2 = cs[0] && cs[0].d <= 0.5 ? cs[0] : E[it.e].kind !== "ring" ? cs.find((c2) => E[c2.o.e].kind === "ring") : null;
+        if (!nx2) { pts2.push([...pointAt(p, c, L), run, it]); open = false; break; }
+        it = nx2.o; s0 = 0;
+      }
+      if (pts2.length < 2) return null;
+      // the aim: `look` ahead, in the right-hand lane (the ring: its middle); a junction ahead with no way straight on fades it
+      let j = pts2.findIndex((q) => q[2] >= look); if (j < 0) j = pts2.length - 1;
+      const q = pts2[j], q2 = pts2[Math.min(pts2.length - 1, j + 1)] !== q ? pts2[Math.min(pts2.length - 1, j + 1)] : pts2[j - 1], sgn = q2 === pts2[j - 1] ? -1 : 1;
+      let ax = q[0], az = q[1];
+      { const dx = (q2[0] - ax) * sgn, dz = (q2[1] - az) * sgn, l = Math.hypot(dx, dz) || 1, lane = E[q[3].e].kind === "ring" ? 0 : Math.min(9, E[q[3].e].w * 0.16); ax += (-dz / l) * lane; az += (dx / l) * lane; }
+      const fade = open ? 1 : clamp((pts2[pts2.length - 1][2] - 30) / 80, 0, 1);
+      const dist = Math.hypot(ax - P.x, az - P.z) || 1, err = wrapA(Math.atan2(ax - P.x, az - P.z) - P.h);
+      if (Math.abs(err) > (P.contact > 0 ? 1.75 : E[q[3].e].kind === "ring" ? 1.4 : 1.1)) return null; // crosswise (a spin, a turn half done): yours
+      // the speed for the bends ahead: each 30 units' turn, reached by braking
+      let vmax = Infinity;
+      for (let i = 3; i < pts2.length; i++) {
+        const A = pts2[i - 3], B = pts2[i - 1], C = pts2[i];
+        let t = Math.abs(wrapA(Math.atan2(C[0] - B[0], C[1] - B[1]) - Math.atan2(B[0] - A[0], B[1] - A[1]))) / Math.max(8, (C[2] - A[2]) / 2) * 1.5;
+        t = Math.min(t, 1 / 26); // a kink at a junction: the car rounds it (a radius of some 26 units at least)
+        if (t > 1e-3) { const vy = (-t + Math.sqrt(t * t + (4 * t / 480) * 2.2)) / ((2 * t) / 480); vmax = Math.min(vmax, Math.sqrt(Math.min(1100 / t, vy * vy) + 2 * 480 * Math.max(0, A[2] - 10))); }
+      }
+      if (!open) vmax = Math.min(vmax, Math.sqrt(90 * 90 + 2 * 480 * Math.max(0, pts2[pts2.length - 1][2] - 40))); // a junction to choose at: arrive at it slowly
+      return { steer: clamp(err * 2.2, -1, 1) * fade, vmax };
+    }
     // the auto-pilot on the same physics: pure pursuit of its route (the right-hand lane), slowing for the bends and the stop
     function pursuit(dt) {
       const a = D.auto, Lp = locate(P.x, P.z, D.vL, 120); D.vL = Lp;
@@ -1108,7 +1155,13 @@
       } else {
         thr = (D.keys.u ? 1 : 0) - (D.keys.d ? 1 : 0); steer = (D.keys.l ? 1 : 0) - (D.keys.r ? 1 : 0);
       }
-      physics(dt, thr, steer, hb);
+      let assisted = false;
+      if (!D.auto && steer === 0 && !hb && (P.u > 12 || (P.contact > 0 && thr > 0 && P.u >= 0))) {
+        const as = assist();
+        if (as) { D.asv = Math.round(Math.min(as.vmax, 9999)); steer = as.steer; assisted = true; if (thr > 0 && P.u > as.vmax - 5) thr = P.u > as.vmax + 12 ? -1 : 0; }
+      }
+      D.assist = assisted;
+      physics(dt, thr, steer, hb, assisted);
       lamps(P.u < -0.5 || (D.keys.d && P.u <= 0.5 && !D.auto));
       if (!D.auto) {
         syncT -= dt;
@@ -1596,7 +1649,7 @@
     const TUT = { i: -1, el: null, done: null, t0: 0, L0: 0, timer: 0, asked: false };
     const touchUI = matchMedia("(hover: none) and (pointer: coarse)").matches;
     const STEPS = [
-      { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: touchUI ? "↑ to go, ← → to steer" : "↑ to go, ← → to steer (or W A S D)", at: "car" },
+      { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: touchUI ? "↑ to go: it keeps to the road · ← → to turn" : "↑ to go: it keeps to the road · ← → to turn (or W A S D)", at: "car" },
       { id: "round", keys: [], t: "Take the roundabout", s: "Steer round the fountain and out onto a street", at: "car" },
       { id: "back", keys: ["↓"], t: "Back up or turn round", s: touchUI ? "Hold ↓ to back up · stopped, ↑ with ← or → turns you round" : "Hold ↓ (or S) to back up · stopped, ↑ with ← or → turns you round", at: "car" },
       { id: "tap", keys: [], t: "Or let us drive", s: "Tap a place on the map, or a card in Nearby", at: "panel" },
