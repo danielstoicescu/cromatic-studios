@@ -1198,22 +1198,50 @@
         rows.push({ k, other: lead, items: groups.get(lead || q).slice(0, 3) });
       }
       const auto = D.auto;
-      const sig = JSON.stringify([q, here?.pl.id, auto ? [auto.pl?.id, Math.round(autoLeft() / 50)] : 0, dec ? [dec.type, dec.type === "junction" ? Math.round(jd / 50) : 0] : 0, rows.map((r) => [r.k, r.other, r.items.map((x) => [x.p.pl.id, Math.round(x.d / 50)])]), D.cardFor?.id]);
-      if (!force && sig === panelSig) return;
+      // round 2 (Daniel: "more visual"): the panel is rebuilt only when what it shows changes; the distances update in place
+      const sig = JSON.stringify([q, here?.pl.id, auto ? auto.pl?.id || "tap" : 0, rows.map((r) => [r.k, r.other, !!ex?.[r.k], r.items.map((x) => x.p.pl.id)]), D.cardFor?.id && H.cardOpen(), imgV]);
+      const dists = new Map();
+      for (const r of rows) for (const x of r.items) dists.set(r.k + ":" + x.p.pl.id, x.d);
+      if (!force && sig === panelSig) { updDist(dists, auto); return; }
       panelSig = sig;
-      const chip = (qq) => `<span class="n2-q" style="--qc:${QCOL[qq] || "#d9d7d2"}">${esc(qq ? QNAME[qq] : "Cromatic City")}</span>`;
-      const item = (x) => `<button class="n2-it" data-id="${esc(x.p.pl.id)}" style="--pc:${esc(x.p.pl.pin || x.p.pl.c || "#ddd")}"><i></i>${esc(x.p.pl.name)}<em>${mDist(x.d)}</em></button>`;
-      let h = `<header>${chip(q)}<span class="n2-sub mono">${q ? "YOU'RE IN THIS QUARTER" : "BETWEEN THE QUARTERS"}</span></header>`;
-      if (auto) h += `<div class="n2-auto"><span>Driving you to <b>${esc(auto.pl && !auto.pl.tap ? auto.pl.name : "the spot you tapped")}</b> · ${mDist(autoLeft())}</span><button class="n2-take">Take the wheel</button></div>`;
-      if (here && !(D.cardFor === here.pl && H.cardOpen())) h += `<button class="n2-here" data-id="${esc(here.pl.id)}" style="--pc:${esc(here.pl.pin || here.pl.c)}"><span class="mono">YOU'RE AT</span><b>${esc(here.pl.name)}</b><em>Open →</em></button>`;
+      const cols = (pl) => { const b = H.brand?.(pl); return { c: b?.c || pl.pin || pl.c || "#FED012", t: b?.t || pl.t || "#111" }; };
+      const pic = (pl) => { const u = imgOf(pl); const { c, t } = cols(pl); return u ? `<img src="${esc(u)}" alt="" decoding="async" loading="lazy">` : `<span class="n2-ini" style="color:${esc(t)}">${esc(pl.name.replace(/[^A-Za-z0-9 ]/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase())}</span>`; };
+      const card = (x, k) => { const pl = x.p.pl, { c, t } = cols(pl); return `<button class="n2-pc" data-id="${esc(pl.id)}" data-dk="${k}:${esc(pl.id)}" style="--pc:${esc(c)};--pt:${esc(t)}" aria-label="${esc(pl.name)}, ${mDist(x.d)}"><span class="n2-pic">${pic(pl)}<em class="n2-dch">${GLY[k]}</em></span><b class="n2-nm">${esc(pl.name)}</b><span class="n2-dist mono">${mDist(x.d)}</span></button>`; };
+      const qpill = (qq) => `<span class="n2-q" style="--qc:${QCOL[qq] || "#FED012"}">${esc(qq ? QNAME[qq] : "Cromatic City")}</span>`;
+      let h = `<header>${qpill(q)}<span class="n2-sub mono">${q ? "NEARBY IN THIS QUARTER" : "BETWEEN THE QUARTERS"}</span></header>`;
+      if (auto) { const pl = auto.pl && !auto.pl.tap ? auto.pl : null, cc = pl ? cols(pl) : { c: "#FED012", t: "#111" }; h += `<div class="n2-auto" style="--pc:${esc(cc.c)};--pt:${esc(cc.t)}">${pl ? `<span class="n2-pic sm">${pic(pl)}</span>` : ""}<span class="n2-at"><i class="mono">${auto.rev ? "BACKING UP TO" : "DRIVING YOU TO"}</i><b>${esc(pl ? pl.name : "the spot you tapped")}</b><em class="n2-dist mono" data-auto="1">${mDist(autoLeft())}</em></span><button class="n2-take">Take the wheel</button></div>`; }
+      if (here && !(D.cardFor === here.pl && H.cardOpen())) { const { c, t } = cols(here.pl); h += `<button class="n2-here" data-id="${esc(here.pl.id)}" style="--pc:${esc(c)};--pt:${esc(t)}"><span class="n2-pic sm">${pic(here.pl)}</span><span class="n2-at"><i class="mono">YOU'RE AT</i><b>${esc(here.pl.name)}</b></span><em class="n2-open">Open →</em></button>`; }
       for (const r of rows) {
         const lab = r.k === "s" ? "Ahead" : r.k === "l" ? "Left" : "Right";
-        const title = r.other ? `${lab} · <b>${esc(QNAME[r.other])}</b>` : lab;
-        h += `<div class="n2-row" data-k="${r.k}"><button class="n2-dir" data-turn="${r.k}" aria-label="${lab}"${r.k === "s" || !ex?.[r.k] ? " disabled" : ""}><span class="n2-g">${GLY[r.k]}</span></button><div class="n2-rb"><span class="n2-rt">${title}</span>${r.items.length ? `<span class="n2-its">${r.items.map(item).join("")}</span>` : ""}</div></div>`;
+        h += `<div class="n2-row" data-k="${r.k}"><div class="n2-rh"><button class="n2-dir" data-turn="${r.k}" aria-label="${lab}"${r.k === "s" || !ex?.[r.k] ? " disabled" : ""}><span class="n2-g">${GLY[r.k]}</span></button><span class="n2-rt">${lab}${r.other ? ` <span class="n2-q sm" style="--qc:${QCOL[r.other]}">${esc(QNAME[r.other])}</span>` : ""}</span></div><div class="n2-strip">${r.items.map((x) => card(x, r.k)).join("")}</div></div>`;
       }
-      if (!rows.length && !here && !auto) h += `<p class="n2-empty">Nothing of ours down this way. Turn round with ↓, or tap a place on the map.</p>`;
+      if (!rows.length && !here && !auto) h += `<p class="n2-empty">Nothing of ours down this way. Back up with ↓, or tap a place on the map.</p>`;
       panel.innerHTML = h;
       panel.classList.toggle("n2-has", true);
+      // the postcards of places with no photo are rendered one at a time, when the page is idle
+      for (const r of rows) for (const x of r.items) if (!imgOf(x.p.pl)) wantShot(x.p.pl);
+      if (here && !imgOf(here.pl)) wantShot(here.pl);
+    }
+    function updDist(dists, auto) {
+      for (const el of panel.querySelectorAll("[data-dk]")) { const d = dists.get(el.dataset.dk); if (d != null) { const t = mDist(d), s = el.querySelector(".n2-dist"); if (s && s.textContent !== t) s.textContent = t; } }
+      const a = panel.querySelector("[data-auto]"); if (a && auto) { const t = mDist(autoLeft()); if (a.textContent !== t) a.textContent = t; }
+    }
+    // pictures: the photo (case cover) when there is one, else the map's postcard of the place (cached)
+    const shots = new Map(), shotQ = []; let imgV = 0, shotBusy = false;
+    const imgOf = (pl) => H.cover?.(pl) || shots.get(pl.id) || null;
+    function wantShot(pl) {
+      if (shots.has(pl.id) || shotQ.includes(pl)) return;
+      shotQ.push(pl);
+      if (shotBusy) return;
+      shotBusy = true;
+      const next = () => {
+        const q = shotQ.shift();
+        if (!q) { shotBusy = false; imgV++; render(); return; }
+        const u = H.shot?.(q);
+        shots.set(q.id, u || "");
+        (window.requestIdleCallback || setTimeout)(next, { timeout: 600 });
+      };
+      (window.requestIdleCallback || setTimeout)(next, { timeout: 600 });
     }
     function autoLeft() {
       const a = D.auto; if (!a) return 0;
@@ -1228,7 +1256,7 @@
       const b = e.target.closest("button"); if (!b) return;
       if (b.classList.contains("n2-take")) { stopAuto(); return; }
       if (b.dataset.turn) { choose(b.dataset.turn); return; }
-      const pl = H.places.find((p) => p.id === b.dataset.id); if (!pl) return;
+      const pl = H.places.find((p) => p.id === b.dataset.id); if (!pl) return; // a card, the "you're at" banner
       if (b.classList.contains("n2-here")) { arrive(pl); return; }
       api.go(pl);
     });

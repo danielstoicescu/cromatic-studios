@@ -39144,6 +39144,11 @@ void main() {
           rebase(pts, L, T) { route.setPath(pts); state.L = prevL = L; state.targetL = mapNav.targetL = T; MO.Ls = L; planeRev = 0; },
           setTarget(T) { mapNav.targetL = T; },
           project: (x, y, z) => warpV(new Vector3(x, y, z)).project(camera),
+          // round 2: a place's picture for the nearby panel: its photo / case cover (covers.json), else the map's own postcard
+          // of it (rendered on demand, cached per world); and its brand colours
+          cover: (pl) => { try { return window.__coverOf?.(pl.id) || null; } catch { return null; } },
+          shot: (pl) => { try { return pl.wx != null ? placeShot(pl) : null; } catch { return null; } },
+          brand: (pl) => BRANDC[pl.work || pl.name] || BRANDC[pl.name] || null,
           vehicle: () => state.vehicleId, trees: () => TREE_BLOBS,
           // round 2: the ride's wheel span (half the wheelbase, half the track, in world units), from its own wheels, per ride
           vehSpan: () => {
