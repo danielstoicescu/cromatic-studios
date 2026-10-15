@@ -1426,8 +1426,10 @@
       if (at === "car") { const p = H.project(H.carPos.x, 40, H.carPos.z); if (p.z < 1) { x = (p.x * 0.5 + 0.5) * W; y = (-p.y * 0.5 + 0.5) * Hh - 80; } }
       else if (at === "panel") { const r = panel.getBoundingClientRect(); if (ph) { x = W / 2; y = r.bottom + 70; } else { x = r.left + r.width / 2; y = r.top - 70; } }
       else if (at === "views") { const r = views.getBoundingClientRect(); x = r.left + r.width / 2; y = r.top - 80; }
+      // on a phone the Nearby panel takes the top: the pill stays below it
+      const top = ph ? Math.max(250, (getComputedStyle(panel).opacity !== "0" && getComputedStyle(root).display !== "none" ? panel.getBoundingClientRect().bottom : 0) + 95) : 150;
       e.style.left = clamp(x, 150, W - 150).toFixed(0) + "px";
-      e.style.top = clamp(y, ph ? 250 : 150, Hh - (ph ? 230 : 120)).toFixed(0) + "px";
+      e.style.top = clamp(y, Math.min(top, Hh - 260), Hh - (ph ? 230 : 120)).toFixed(0) + "px";
     }
 
     const api = {
