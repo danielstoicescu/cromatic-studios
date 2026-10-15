@@ -39322,7 +39322,9 @@ void main() {
         crewPanel.classList.remove("hidden");
       }
       // ---- boarding the jet: the boarding pass, then wheels up ----
+      var boardCam = null; // beta 2.0 r4: the camera before the boarding pass, given back when it is closed
       function mapOpenBoarding() {
+        boardCam = mapUI?.camState?.() || null;
         mapBoarding = true;
         ui.clearCard();
         currentCardStop = null;
@@ -39416,6 +39418,8 @@ void main() {
       if (/[?&]boarding\b/.test(location.search)) { const t0b = performance.now(); const ob = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - t0b < 20000) return setTimeout(ob, 200); setTimeout(() => window.__openBoarding(), 300); }; setTimeout(ob, 1800); }
       function mapCloseBoarding(keepView = false) {
         if (!mapBoarding) return;
+        if (!keepView && boardCam && jetFx.phase === "idle") { const b = boardCam; setTimeout(() => mapUI?.camRestore?.(b), 50); }
+        boardCam = null;
         boardFxStop?.();
         mapBoarding = false;
         ui.card.classList.add("hidden");
@@ -40237,7 +40241,7 @@ void main() {
         const deep = (pl, open) => () => {
           if (innerWidth < 720 || matchMedia("(prefers-reduced-motion: reduce)").matches || jetFx.phase !== "idle" || (nav2?.on && nav2.camK > 0.5)) return open(); // (in the street view the chase camera stays)
           if (card._deepT) return;
-          tmBack = null; cineIn(pl);
+          tmBack = null; camSave = camState(); cineIn(pl); // beta 2.0 r4: the camera comes back exactly when the case page closes
           const dur = cine ? cine.dur : 0, btn = card.querySelector(".mcd-open");
           btn?.classList.add("busy");
           card._deepT = setTimeout(() => {
@@ -40250,7 +40254,7 @@ void main() {
         const arrive = (pl) => {
           if (pl.tap) { markEl.classList.remove("on"); markAt = null; return; }
           clearTimeout(card._deepT); card._deepT = 0;
-          if (pl.tm) { tmBack = { yaw: mapView.yaw, pitch: mapView.pitch, dist: mapView.dist }; cineIn(pl); } // its scene; the camera comes back after
+          if (pl.tm) { tmBack = camState(); cineIn(pl); } // its scene; the camera comes back after (exactly where it was, r4)
           else if (pl.stop !== "end") cine = null; // Olari 9 keeps its own arrival (olari.cine)
           if (visit(pl)) gainXP(5, pl.name, "Found on the map");
           mark();
@@ -40369,9 +40373,20 @@ void main() {
           mapView.lookY = mapView.lookYGoal = f.lookY + (g.lookY - f.lookY) * e;
           if (g.fx != null && mapView.focus) { mapView.focus.x = f.fx + (g.fx - f.fx) * e; mapView.focus.z = f.fz + (g.fz - f.fz) * e; }
           if (u < 1) return;
-          if (!g.drift) cine = null; else c.settled = true;
+          if (!g.drift) { cine = null; g.after?.(); } else c.settled = true;
         };
-        const cineStop = () => { cine = null; tmBack = null; };
+        const cineStop = () => { cine = null; tmBack = null; camSave = null; };
+        // beta 2.0 r4: the whole camera (target, distance, turn, tilt, follow, the street / satellite view), and the way back to it
+        let camSave = null;
+        const camState = () => ({ tgt: [mapView.tgt.x, mapView.tgt.z], dist: mapView.dist, yaw: mapView.yaw, pitch: mapView.pitch, lookY: mapView.lookY || 0, follow: mapView.follow, focus: mapView.focus ? { ...mapView.focus } : null, street: !!(nav2?.on && nav2.D.view === "street") });
+        const camRestore = (b) => {
+          if (!b) return;
+          if (nav2?.on && nav2.D.view === "street" !== b.street) nav2.view(b.street);
+          mapView.follow = false; mapView.focus = { x: mapView.tgt.x, z: mapView.tgt.z }; mapView.distGoal = mapView.yawGoal = mapView.pitchGoal = null;
+          const fin = () => { if (b.follow) { mapView.follow = true; mapView.focus = null; } else mapView.focus = b.focus || { x: b.tgt[0], z: b.tgt[1] }; };
+          if (matchMedia("(prefers-reduced-motion: reduce)").matches) { mapView.yaw = b.yaw; mapView.pitch = b.pitch; mapView.dist = b.dist; mapView.tgt.x = b.tgt[0]; mapView.tgt.z = b.tgt[1]; cine = null; fin(); return; }
+          cineTo({ yaw: b.yaw, pitch: b.pitch, dist: b.dist, lookY: b.lookY, fx: b.tgt[0], fz: b.tgt[1], after: fin }, 1.2);
+        };
         let tmBack = null; // beta 2.0: the view before Two Minutes' scene, given back when it ends
         const baam = () => {
           baamEl.classList.remove("hidden");
@@ -40602,11 +40617,18 @@ void main() {
           return [0, (topY + botY) / 2 - H / 2];
         };
         return {
-          box, mark, arrive, find, hideCard, baam, skip, paintRides, cineOut, cineStop, welcome,
+          box, mark, arrive, find, hideCard, baam, skip, paintRides, cineOut, cineStop, welcome, camState, camRestore,
           update(dt, now) {
             mapStep();
             // beta 2.0: Two Minutes' scene over (or never started): the camera eases back to the view the player had, on the car
-            if (tmBack && coffee.phase === "idle" && (!cine || cine.settled)) { const b = tmBack; tmBack = null; mapView.focus = null; mapView.follow = true; cineTo({ yaw: b.yaw, pitch: b.pitch, dist: b.dist, lookY: 0 }, 2.4); }
+            if (tmBack && coffee.phase === "idle" && (!cine || cine.settled)) { const b = tmBack; tmBack = null; camRestore(b); }
+            // beta 2.0 r4 (Daniel): a case page opened after the parking cinematic: when it closes (×, Back, Escape), or the card
+            // is closed before it opens, the camera eases back to exactly where it was before the cinematic
+            if (camSave) {
+              const open = !!document.querySelector(".case-frame:not(.hidden)") || document.body.classList.contains("modal-open");
+              if (open) camSave.seen = true;
+              else if (camSave.seen || (card.classList.contains("hidden") && !card._deepT)) { const b = camSave; camSave = null; camRestore(b); }
+            }
             cineStep(dt);
             guideStep(dt); // r139h
             nearbyTick(now); // r164

@@ -1644,6 +1644,7 @@
       on: false, graph: G, D,
       tutorial, tutorialEnd: () => tutEnd(null), tourStep: () => (TUT.i >= 0 && TUT.i < STEPS.length ? STEPS[TUT.i].id : TUT.i >= STEPS.length ? "end" : null),
       get camK() { return D.camK; },
+      mv: () => { const m = H.mapView; return { x: Math.round(m.tgt.x), z: Math.round(m.tgt.z), dist: Math.round(m.dist), yaw: +m.yaw.toFixed(3), pitch: +m.pitch.toFixed(3), follow: m.follow }; },
       onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
       // a place from the map (a pin, a chip, the welcome card): driven to along the graph
       go(pl) {
