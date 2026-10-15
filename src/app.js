@@ -34735,6 +34735,7 @@ void main() {
       "ESD": "esd", "Techventures Bank": "techventures-bank", "Longshield": "longshield", "Infinity Capital": "infinity-capital", "Venevo": "venevo", "Witanalytica": "witanalytica", "Unchain Festival": "unchain-festival", "Patiline": "patiline", "Pain Plaisir": "pain-plaisir", "Berero": "casa-berero", "Casa Berero": "casa-berero", "Eliade 18": "eliade-18", "RDW 2023": "rdw-2023", "RDW 2023 \xB7 AI pop-up": "rdw-2023",
       // r139a: the pages that opened by other ways (Steam as a string, OMA by hand, Antila and UNDÉ by their tags) are
       // known here too, so every card that asks "is there a page?" gets the built one, with the shared ending
+      "Echo School": "echo-school", // r158
       "Steam": "steam", "Steam Coffee Shop": "steam", "OMA Coffee": "oma-coffee", "Antila": "antila", "UNDE": "unde", "UND\xC9": "unde" };
     window.__casePage = (brand) => (WORK_PAGES[brand] && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname) ? WORK_PAGES[brand] : null);
     const withPage = (brand, onClick) => () => { const pg = window.__casePage(brand); if (pg && openFrameHook) return openFrameHook(`/work/${pg}/?embed=1`, brand); return onClick?.(); };
@@ -35177,6 +35178,11 @@ void main() {
       );
       spawnRing.rotation.x = -Math.PI / 2;
       spawnRing.material.userData.outlineParameters = { visible: false };
+      // r158 (Daniel: "a spawn effect"): the ride arrives on the map as in a game: a column of light, the ride drops through
+      // it, lands with a squash, a ring runs out over the ground and the column narrows away
+      var spawnBeam = new Mesh(new CylinderGeometry(30, 30, 1, 28, 1, true), new MeshBasicMaterial({ color: "#FED012", transparent: true, opacity: 0, side: DoubleSide, depthWrite: false, blending: AdditiveBlending, fog: false,
+        alphaMap: canvasTexture(4, 128, (ctx) => { const g = ctx.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, "#000"); g.addColorStop(0.55, "#777"); g.addColorStop(1, "#fff"); ctx.fillStyle = g; ctx.fillRect(0, 0, 4, 128); }) }));
+      spawnBeam.material.userData.outlineParameters = { visible: false }; spawnBeam.userData.noOutline = true; spawnBeam.visible = false; spawnBeam.renderOrder = 3;
       var isDarkScheme = false;
       function setVehicle(id) {
         if (state.vehicleId && state.vehicleId !== id && !onbWarm) czEv("vehicle_select", { vehicle: id }); // r141: not the warm-up
@@ -35300,7 +35306,7 @@ void main() {
       var povK = 0, povYaw = 0, povYawT = 0, povLastKey = 0, povGyroWas = false;
       var povKeys = { l: false, r: false }, povHidCar = false; var povLen = 45, povLenFor = null; // r139k
       window.addEventListener("keyup", (e) => { if (e.key === "ArrowLeft") povKeys.l = false; if (e.key === "ArrowRight") povKeys.r = false; });
-      scene.add(spawnRing);
+      scene.add(spawnRing); scene.add(spawnBeam); // r158
       var scrollSpace = document.createElement("div");
       scrollSpace.className = "scroll-space";
       document.body.appendChild(scrollSpace);
@@ -38117,12 +38123,18 @@ void main() {
         const isPlane = veh.kind === "plane";
         const hover = isPlane ? 34 + Math.sin(now * 3e-3) * 5 : veh.kind === "sub" ? 20 + Math.sin(now * 1.9e-3) * 4 : 0;
         veh.group.position.set(carPos.x, carPos.y + hover, carPos.z);
-        if (ONB_MODE && spawnStart > 0) { spawnStart = -1; veh.group.visible = true; veh.group.scale.setScalar(VEH_S); spawnRing.material.opacity = 0; } // r140: a clean cut, no drop-in
+        if (ONB_MODE && spawnStart > 0) { spawnStart = -1; veh.group.visible = true; veh.group.scale.setScalar(VEH_S); spawnRing.material.opacity = 0; spawnBeam.visible = false; } // r140: a clean cut, no drop-in
         if (spawnStart > 0 && now < spawnStart) {
           veh.group.visible = false;
+          spawnBeam.visible = false;
         } else if (spawnStart > 0) {
           veh.group.visible = true;
           const sp2 = clamp2((now - spawnStart) / 950, 0, 1);
+          { // r158: the column of light: up at once, narrowing away after the landing
+            const sb = clamp2((now - spawnStart + 220) / 1500, 0, 1), on = Math.min(1, sb / 0.12), off = clamp2((sb - 0.5) / 0.5, 0, 1), e = off * off * (3 - 2 * off);
+            spawnBeam.visible = sb < 1; spawnBeam.position.set(carPos.x, carPos.y + 520, carPos.z); const bw = (mapMode ? Math.max(1.2, mapView.dist / 1800) : 1.15) * (1 - e * 0.92); spawnBeam.scale.set(bw, 1040, bw);
+            spawnBeam.material.opacity = 0.75 * on * (1 - e);
+          }
           const fall = clamp2(sp2 / 0.55, 0, 1);
           veh.group.position.y += (1 - fall) * (1 - fall) * 320;
           if (sp2 < 0.55) {
@@ -38132,14 +38144,14 @@ void main() {
             const squash = Math.sin(k * Math.PI) * 0.18;
             veh.group.scale.set((1 + squash) * VEH_S, (1 - squash) * VEH_S, (1 + squash) * VEH_S);
             spawnRing.position.set(carPos.x, carPos.y + 2.2, carPos.z);
-            spawnRing.scale.setScalar(0.4 + k * 3.2);
+            spawnRing.scale.setScalar((0.4 + k * 3.2) * (mapMode ? Math.max(1, mapView.dist / 2600) : 1)); // r158: as wide on the map's overview
             spawnRing.material.opacity = 0.85 * (1 - k);
           }
-          if (sp2 >= 1) {
+          if (sp2 >= 1 && now - spawnStart > 1300) {
             spawnStart = -1;
             veh.group.scale.setScalar(VEH_S);
-            spawnRing.material.opacity = 0;
-          }
+            spawnRing.material.opacity = 0; spawnBeam.visible = false;
+          } else if (sp2 >= 1) veh.group.scale.setScalar(VEH_S);
         }
         // the plane turns round when you scroll back
         // on the map every vehicle turns round when it has to go back
@@ -38858,8 +38870,11 @@ void main() {
       // road with the car on it, a little way up from the start (MAP_START_L), at (0.18, 0.735): yaw 3.264, pitch 0.932,
       // dist 3050, solved on the real lens from the reference's fixed landmarks (CH.01, CH.03, Two Min Lab, the
       // roundabout; residual 0.0005), the car then placed on the road where the picture has it
-      var MAP_START_L = 430;
-      var OPEN_VIEW = () => innerWidth < 720 ? { yaw: 0.3, pitch: 0.62, dist: 3600, want: [0.62, 0.68] } : { yaw: 3.264, pitch: 0.932, dist: 3050, want: [0.18, 0.735] };
+      // r158 (Daniel, a third reference, sent in the chat 2026-10-15): further out, the roundabout up in the middle, the start
+      // road straight down the middle with the car on it: yaw 3.2547, pitch 0.9165, dist 4155 (residual 0.0007 over eight
+      // landmarks), the car at L 400, at (0.429, 0.798)
+      var MAP_START_L = 400;
+      var OPEN_VIEW = () => innerWidth < 720 ? { yaw: 0.3, pitch: 0.62, dist: 3600, want: [0.62, 0.68] } : { yaw: 3.2547, pitch: 0.9165, dist: 4155, want: [0.429, 0.798] };
       function mapSettleTick() {
         if (mapSettle <= 0) return;
         if (!mapMode || mapNav.moving || mapNav.place || jetFx.phase !== "idle" || mapView.follow) { mapSettle = 0; return; }
@@ -38955,7 +38970,7 @@ void main() {
         for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, street: b.lane ? "D" : b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
         ZDROVIT_YARD.forEach((n, i) => { const [x, z] = yardSpot(yardSlotOf(i)); add({ id: "y-" + i, br: "C", x: 1500, z, px: x, pz: z, h: 22, name: n, line: "IN THE ZDROVIT YARD", c: "#cfcdc8", t: "#3d3c39", small: true, desc: `${n}, one of the brands in the Zdrovit yard. By Cromatic Studios.` }); });
         add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Berero", line: "BRAND \xB7 LABELS \xB7 MERCH", c: "#111111", t: "#ffffff", act: "bereroTag" });
-        add({ id: "echo", x: 1170, z: 6340, px: 1078, pz: 6350, h: 110, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", soon: true, desc: "Echo School of Technology, Digital Arts & Videogames. The case page is on its way." });
+        add({ id: "echo", x: 1170, z: 6340, px: 1078, pz: 6350, h: 110, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", desc: "Two years of Instagram for a School of Technology, Digital Arts & Videogames in Bucharest: posts, stories, carousels, reels and campaigns." }); // r158: the case page is live
         add({ id: "friends", stop: "merge", px: 1365, pz: 6400, h: 150, float: true, name: "+50 Other Clients", line: "HUNDREDS OF PROJECTS \xB7 THOUSANDS OF DELIVERABLES", c: "#d9d7d2", t: "#1a1a1a" });
       })();
       // r117: how close you must be for a place to show its card (a coloured dot otherwise)
@@ -39614,14 +39629,23 @@ void main() {
         const guideEls = () => guide.els || (guide.els = (() => {
           const drag = el("div", "map-guide hidden", `<span class="mg-track"><span class="mg-move"><span class="mg-dot"></span>${guideHand}</span></span><b>Grab and drag</b>`);
           drag.setAttribute("role", "status");
-          const start = el("button", "mg-start hidden", `<span class="mg-ring"></span><span class="mg-ring r2"></span><span class="mg-badge"><b class="mg-t1">Everything starts</b><i class="mg-tap">with a tap</i><b class="mg-t2">Start here</b><i class="mg-nm">Two Minutes</i><span class="mg-arr" aria-hidden="true">→</span></span>`);
-          start.setAttribute("aria-label", "Everything starts with a tap: Two Minutes"); // r139i: Daniel's copy
-          start.onclick = (e) => { e.stopPropagation(); if (mapBoarding) return; guideEnd("done"); mapGo(MAP_PLACES.find((p) => p.id === "tm")); };
+          const start = el("button", "mg-start hidden", `<span class="mg-ring"></span><span class="mg-ring r2"></span><span class="mg-badge"><b class="mg-t1">Everything starts</b><i class="mg-tap">with a tap</i><b class="mg-t2">Start here</b><i class="mg-nm">The road ahead</i><span class="mg-arr" aria-hidden="true">→</span></span>`);
+          start.setAttribute("aria-label", "Everything starts with a tap: the road ahead"); // r139i: Daniel's copy (r158: on the road)
+          // r158 (Daniel): the tap is on the road, the next step of the drive: the car goes there (to the roundabout)
+          start.onclick = (e) => { e.stopPropagation(); if (mapBoarding) return; const sp = guide.spot; guideEnd("done"); if (sp) { tapMark(sp.x, sp.z); setTimeout(() => mapGo({ id: "tap", tap: true, x: sp.x, z: sp.z, br: null, name: "", c: "#FED012" }), 380); } };
           box.append(drag, start);
           return { drag, start };
         })());
         // r139l: a place you have arrived at stays mapNav.place after its card is closed: it no longer counts as busy (the guide
         // never came after a first trip); a trip under way (moving) or an open card still does
+        // r158 (Daniel): both steps of the guide sit on the road: "Grab and drag" on the road just ahead of the car, the tap
+        // on the road further on, at the roundabout's entrance while the car is before it (the streets and the dock start
+        // there), else a stretch further down the road
+        const guideRoad = (ahead) => {
+          const v = new Vector3(), L = state.L, fork = route.stopL && route.stopL.fork;
+          const at = ahead === "tap" && fork > L + 200 ? fork - 80 : Math.min(route.total, L + (ahead === "tap" ? 450 : 210));
+          route.posAt(at, v); return { x: v.x, z: v.z };
+        };
         const guideBusy = () => !mapMode || mapIntro || mapBoarding || mapNav.moving || jetFx.phase !== "idle" || !card.classList.contains("hidden")
           || !rides.classList.contains("hidden") || !!ui.themeMenu?.classList.contains("open") || (crewPanel && !crewPanel.classList.contains("hidden")) || document.body.classList.contains("map-at-stop");
         const guideEnd = (action) => {
@@ -39638,12 +39662,13 @@ void main() {
           const now = performance.now();
           // never over a hand still on the map or a glide still running: wait for a quiet moment
           if (ptrs.size || mapView.vx || mapView.vz || now - guide.last < 700) { if (now - guide.t0 < 20000) guide.timer = setTimeout(guideStartHere, 200); else guideEnd(null); return; }
-          const pl = MAP_PLACES.find((p) => p.id === "tm");
-          if (!pl || pl.wx == null) return guideEnd(null);
+          const pl = guide.spot = guideRoad("tap"); pl.wx = pl.x; pl.wz = pl.z; // r158: a point on the road, not a pin
           guide.phase = "start"; guide.t0 = now;
-          guide.hl = pins.find((p) => p.pl === pl)?.b || null; guide.hl?.classList.add("mg-hl");
           guide.els.start.classList.remove("hidden");
-          if (!guideReduce) {
+          // the camera only eases toward it when it is not already well inside the frame
+          warpV(guideP.set(pl.wx, 0, pl.wz)).project(camera);
+          const inView = guideP.z < 1 && Math.abs(guideP.x) < 0.75 && Math.abs(guideP.y) < 0.7;
+          if (!guideReduce && !inView) {
             mapView.follow = false; mapView.focus = null; mapView.vx = mapView.vz = 0; mapView.distGoal = null;
             const kk = innerWidth < 720 ? 0.9 : 0.72; // a phone has less room around the pin
             guide.goal = { x: mapView.tgt.x + (pl.wx - mapView.tgt.x) * kk, z: mapView.tgt.z + (pl.wz - mapView.tgt.z) * kk, d: clamp2(mapView.dist * 0.8, Math.min(mapView.dist, 3500), mapView.dist) };
@@ -39665,15 +39690,22 @@ void main() {
           guide.done = true;
           const g = guideEls();
           guide.phase = "drag"; guide.t0 = guide.last = performance.now();
+          { // r158: on the road ahead of the car (its own place on screen, kept inside the frame)
+            const r = guideRoad("drag"); warpV(guideP.set(r.x, 0, r.z)).project(camera);
+            const W = innerWidth, H = innerHeight, phone = W < 720;
+            if (guideP.z < 1) { g.drag.style.left = clamp2((guideP.x * 0.5 + 0.5) * W, 110, W - 110).toFixed(0) + "px"; g.drag.style.top = clamp2((-guideP.y * 0.5 + 0.5) * H, phone ? 230 : 160, H - (phone ? 170 : 150)).toFixed(0) + "px"; }
+            else { g.drag.style.left = ""; g.drag.style.top = ""; }
+          }
           g.drag.classList.remove("hidden");
           guide.timer = setTimeout(() => guideDragDone("skipped"), 6000);
         }
         // per frame (from update): the critically damped camera ease, the "Start here" ring over the pin, and the exits
         const guideStep = (dt) => {
           if (!guide.phase) return;
-          if (guideBusy()) return guideEnd(guide.phase === "start" && mapNav.place?.id === "tm" ? "done" : "skipped");
+          if (guideBusy()) return guideEnd(guide.phase === "start" && mapNav.place?.id === "tap" ? "done" : "skipped");
           if (guide.phase !== "start") return;
-          const pl = MAP_PLACES.find((p) => p.id === "tm"), g = guide.goal;
+          const pl = guide.spot, g = guide.goal;
+          if (!pl) return guideEnd(null);
           if (g) {
             // exact critically damped step: x = goal + (e0 + (v0 + w·e0)·t)·e^(−w·t)
             const w = 2.1, t = Math.min(dt, 0.05), ex = Math.exp(-w * t), cur = [mapView.tgt.x, mapView.tgt.z, mapView.dist], gl = [g.x, g.z, g.d];
@@ -39701,7 +39733,7 @@ void main() {
           guide.last = performance.now();
           const t = e.target;
           if (t === renderer.domElement) { guide.down = { x: e.clientX, y: e.clientY, id: e.pointerId }; if (guide.phase === "start") guide.goal = null; return; }
-          if (t.closest?.(".mg-start") || (guide.phase === "start" && t.closest?.('.map-pin[data-id="tm"], .map-dock'))) return;
+          if (t.closest?.(".mg-start") || (guide.phase === "start" && t.closest?.(".map-dock"))) return;
           guideEnd("skipped");
         }, true);
         window.addEventListener("pointermove", (e) => {
@@ -40279,8 +40311,8 @@ void main() {
             // roundabout's latitude, where the streets begin; Two Minutes is on it) or a place on a street chosen (the
             // welcome card's streets count, from the click); once shown it stays. The same rule holds as the opening
             // ends and after the cups-only bridge: the car starts north of it, so the first frame has no dock
-            // r155 (Daniel): a little earlier: as the car comes within 900 of the first roundabout
-            if (!dockOn && !mapIntro && (carPos.z > FORK_POS.y - 180 || Math.hypot(carPos.x - FORK_POS.x, carPos.z - FORK_POS.y) < 900 || (mapNav.place && mapNav.place.br))) { dockOn = true; document.body.classList.add("dock-on"); }
+            // r158 (Daniel): only once you are at the roundabout itself (not before), or at a place on a street (arrived)
+            if (!dockOn && !mapIntro && (Math.hypot(carPos.x - FORK_POS.x, carPos.z - FORK_POS.y) < 230 || (mapNav.place && mapNav.place.br && !mapNav.moving))) { dockOn = true; document.body.classList.add("dock-on"); }
             // the zoom level, with a little hysteresis so cards don't flicker at the threshold
             const zl = mapView.dist > (mapView._zl === 1 ? 5800 : 6200) ? 1 : mapView.dist > (mapView._zl === 3 ? 3300 : 3000) ? 2 : 3;
             mapView._zl = zl;
@@ -40352,8 +40384,9 @@ void main() {
       var entryPull = null, entryPullDone = false;
       function startEntryPull() {
         if (entryPullDone) return; entryPullDone = true;
-        if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        if (matchMedia("(prefers-reduced-motion: reduce)").matches) { if (spawnStart > 1e14) spawnStart = -1, veh && (veh.group.visible = true); return; }
         entryPull = { t0: performance.now() };
+        if (!ONB_MODE) spawnStart = performance.now() + (document.body.classList.contains("kz-intro") ? 1150 : 260); // r158: the ride spawns as the map comes into focus (after the cups have cleared)
       }
       function mapEndIntro() {
         startEntryPull(); // r155
@@ -41028,7 +41061,8 @@ void main() {
         if (kzLoader) { const wait = () => (document.body.classList.contains("kz-intro") ? setTimeout(wait, 800) : setTimeout(() => (window.requestIdleCallback || setTimeout)(vehPrev, { timeout: 3000 }), 4500)); setTimeout(wait, 3000); } else vehPrev();
         if (kzLoader) kzWarmStart(); else startKinetic(); // r139g
         ui.setLoaderPct(100);
-        if (kzLoader) { window.__cupsHold = false; spawnStart = performance.now() + 700; startRevealAt = Infinity; }
+        // r158: on the map's boots the ride waits out of sight (the opening, the cups) and spawns as the map shows (startEntryPull)
+        if (kzLoader) { window.__cupsHold = false; spawnStart = entryPullDone ? performance.now() + 200 : 1e15; startRevealAt = Infinity; setTimeout(() => { if (spawnStart > 1e14) spawnStart = performance.now(); }, 45000); }
         else setTimeout(() => {
           ui.hideLoader();
           state.started = true;
