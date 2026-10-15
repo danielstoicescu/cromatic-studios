@@ -131,7 +131,7 @@ function oaiLead(req, ref) {
 }
 const SUBJECT_TAG = process.env.MAIL_SUBJECT_TAG || "[mesaj de pe site!!]";
 
-async function boarding(req, res) {
+async function boarding(req, res, tag = SUBJECT_TAG) {
   let body = "";
   for await (const chunk of req) { body += chunk; if (body.length > 32e3) return send(res, 413, { ok: false }); }
   let b;
@@ -145,7 +145,7 @@ async function boarding(req, res) {
   try {
     await transport.sendMail({
       from: MAIL_FROM, to: MAIL_TO, replyTo: `${t.name} <${t.email}>`,
-      subject: `${SUBJECT_TAG} \u2708 Boarding pass ${t.ref} \u00B7 ${t.name}${t.biz ? " \u00B7 " + t.biz : ""}`,
+      subject: `${tag} \u2708 Boarding pass ${t.ref} \u00B7 ${t.name}${t.biz ? " \u00B7 " + t.biz : ""}`,
       html: passHtml(t, "studio"), text: passText(t, "studio")
     });
     await transport.sendMail({
@@ -269,6 +269,44 @@ function acme(req, res) {
   res.end("Not found");
 }
 
+// r169 (Daniel): beta 2.0 (branch nav2) on its own address, apart from the live site: built by the deploy into
+// public-beta beside the release, read from disk per request (nothing of it held in memory, so the live site's
+// memory stays as it is), never indexed, no analytics (built without GA), its boarding passes marked [beta 2.0]
+const BETA_HOST = process.env.BETA_HOST ?? "beta.cromaticstudios.com";
+const BETA_ROOT = process.env.BETA_DIR || join(APP_DIR, "public-beta");
+const statOr = (p) => { try { return statSync(p); } catch { return null; } };
+function serveBeta(req, res) {
+  const u = new URL(req.url, "http://x");
+  let path;
+  try { path = normalize(decodeURIComponent(u.pathname)).replace(/\\/g, "/"); } catch { res.writeHead(400); return res.end(); }
+  if (path === "/robots.txt") { res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache" }); return res.end("User-agent: *\nDisallow: /\n"); }
+  if (/\/index\.html$/.test(path)) { res.writeHead(301, { Location: path.slice(0, -10) + u.search }); return res.end(); }
+  if (path.endsWith("/")) path += "index.html";
+  let full = join(BETA_ROOT, path), st = full.startsWith(BETA_ROOT + "/") ? statOr(full) : null, status = 200;
+  if (st?.isDirectory() || (!st && !extname(path) && statOr(full + "/index.html"))) { res.writeHead(301, { Location: path + "/" + u.search }); return res.end(); }
+  if (!st) { full = join(BETA_ROOT, "404.html"); st = statOr(full); status = 404; }
+  if (!st) { res.writeHead(503, { "Content-Type": "text/plain; charset=utf-8", "Retry-After": "120" }); return res.end("beta 2.0 is not built yet"); }
+  const ext = extname(full).toLowerCase(), immutable = status === 200 && path.startsWith("/assets/");
+  const headers = { "Content-Type": TYPES[ext] || "application/octet-stream", "Cache-Control": immutable ? "public, max-age=31536000, immutable" : "no-cache", "X-Robots-Tag": "noindex, nofollow", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "SAMEORIGIN", "Vary": "Accept-Encoding" };
+  let file = full, size = st.size;
+  if (COMPRESS.has(ext)) {
+    const ae = String(req.headers["accept-encoding"] || "");
+    for (const [k, e] of [["br", ".br"], ["gzip", ".gz"]]) { const z = ae.includes(k) && statOr(full + e); if (z) { file = full + e; size = z.size; headers["Content-Encoding"] = k; break; } }
+  }
+  let start = 0, end = size - 1, code = status;
+  const rg = status === 200 && !headers["Content-Encoding"] && req.headers.range && /^bytes=(\d*)-(\d*)$/.exec(req.headers.range);
+  if (rg) {
+    start = rg[1] ? Number(rg[1]) : size - Number(rg[2]); end = rg[1] && rg[2] ? Math.min(Number(rg[2]), size - 1) : size - 1;
+    if (start >= size || start < 0 || start > end) { res.writeHead(416, { "Content-Range": `bytes */${size}` }); return res.end(); }
+    code = 206; headers["Content-Range"] = `bytes ${start}-${end}/${size}`;
+  }
+  if (!headers["Content-Encoding"]) headers["Accept-Ranges"] = "bytes";
+  headers["Content-Length"] = end - start + 1;
+  res.writeHead(code, headers);
+  if (req.method === "HEAD") return res.end();
+  createReadStream(file, { start, end }).on("error", () => res.destroy()).pipe(res);
+}
+
 // r133: moving to cromaticstudios.com. Set PRIMARY_HOST=cromaticstudios.com (and SITE_URL) on the day the domain
 // points here: every other host of ours (drive., www.) answers with a permanent redirect to it. The old WordPress
 // addresses keep working: each project page goes to its case study, contact and services to their sections, and
@@ -334,6 +372,14 @@ http.createServer((req, res) => {
     return res.end(req.method === "HEAD" ? undefined : SECURITY_TXT);
   }
   const host = String(req.headers.host || "").toLowerCase().split(":")[0];
+  // r169: beta 2.0 answers on its own host only, before any rule of the live site
+  if (BETA_HOST && host === BETA_HOST) {
+    if (/"scheme":"http"/.test(String(req.headers["cf-visitor"] || ""))) { res.writeHead(301, { Location: `https://${BETA_HOST}${req.url}` }); return res.end(); }
+    if (req.url === "/api/boarding" && req.method === "POST") return void boarding(req, res, "[beta 2.0]").catch(() => send(res, 500, { ok: false }));
+    if (req.url === "/api/ctx") return send(res, 200, { internal: false });
+    if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405); return res.end(); }
+    return serveBeta(req, res);
+  }
   const otherHost = PRIMARY_HOST && host !== PRIMARY_HOST && /(^|\.)cromaticstudios\.com$/.test(host);
   // behind Cloudflare: visitors who came in over plain http get sent to https; another host of ours (drive., www.)
   // to the main one. r136 (N39): both straight to the final address (old WordPress page, slash), in one 301
