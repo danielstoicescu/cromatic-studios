@@ -36,10 +36,11 @@ const js = readFileSync(src("app.js"), "utf8");
 const content = readFileSync(src("content.html"), "utf8").replace(/<!--[\s\S]*?-->\s*/, "").replace(/\b\d+ case studies\b/g, `${CASE_COUNT} case studies`);
 // r136c: the first paint is the brewing cup, turning: the 3D cup's own 24-frame strip (src/cup-spin.png) is inlined,
 // so it paints with the HTML before any request, never a star. On "/" and ?map app.js adopts this element as its
-// "Brewing the city" loader (no swap); on ?drive it steps aside as soon as the app has drawn its own loader
+// "Brewing the city" loader (no swap); on ?drive it steps aside as soon as the app has drawn its own loader (r160: only
+// the /onboarding/ frame still boots the drive, ?drive&onb; a plain ?drive opens the map)
 const CUP_STRIP = `data:image/png;base64,${readFileSync(src("cup-spin.png")).toString("base64")}`;
 const boot = `<style>.kz-brew .kb-cup .kb-sprite.kb-cs{background-image:url(${CUP_STRIP})}</style><div class="boot kz-brew" aria-hidden="true"><div class="kb-cup kb-3d"><i class="kb-sprite kb-cs"></i></div><span class="kb-t">Brewing the city</span></div>
-<script>(function(){var t0=Date.now(),drive=/[?&]drive\\b/.test(location.search);(function w(){var b=document.querySelector(".boot");if(!b)return;if((drive&&document.querySelector(".loader"))||Date.now()-t0>30000){b.classList.add("gone");setTimeout(function(){b.remove()},450)}else requestAnimationFrame(w)})()})();<\/script>`;
+<script>(function(){var t0=Date.now(),drive=/[?&]drive\\b/.test(location.search)&&/[?&]onb\\b/.test(location.search);(function w(){var b=document.querySelector(".boot");if(!b)return;if((drive&&document.querySelector(".loader"))||Date.now()-t0>30000){b.classList.add("gone");setTimeout(function(){b.remove()},450)}else requestAnimationFrame(w)})()})();<\/script>`;
 // r153 (Daniel: "the opening still takes long to start"): the opening's first line is painted from the HTML itself,
 // the moment the page arrives, with its own letter animation on the compositor; the bundle (parsed and run for
 // seconds on a phone) then adopts this very element (engine.js) and carries on from it, the beats in step. An inline

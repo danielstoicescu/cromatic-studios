@@ -35366,7 +35366,7 @@ void main() {
       }
       var api = {
         toggleSite() { setSiteMode(!siteMode); },
-        toggleMap() { setMapMode(!mapMode); },
+        toggleMap() { setMapMode(true); }, // r160: the map is the only 3D mode: this only ever opens it
         isMap() { return mapMode; },
         boardNow() { clearTimeout(boardTimer); clearInterval(boardTick); if (mapMode && mapBoarding && jetFx.phase === "idle") { mapCloseBoarding(true); mapTakeoff(); } },
         sayHi() { if (!mapMode) setMapMode(true); setTimeout(() => { mapUI?.welcome(false); mapOpenBoarding(); }, 350); },
@@ -38889,7 +38889,11 @@ void main() {
       // above. Pick a place and the van drives itself there along the real roads; when it arrives
       // the place opens. Chapters are quiet grey placards you can ignore; the crew is a button;
       // Olari 9 has a jet at the end of the runway where you board by filling the boarding pass.
-      // The drive is the optional mode (?drive, or the Drive mode button).
+      // r160 (nav2, Daniel): the scroll-driven drive is gone from the site; you drive the map itself (src/nav2.js). Old ?drive
+      // links open the map (?drive&nointro too); only the /onboarding/ page's own frame (?onb) still drives the city by its scroll
+      if (/[?&]drive\b/.test(location.search) && !/[?&]onb\b/.test(location.search)) {
+        try { const q = new URLSearchParams(location.search); q.delete("drive"); q.delete("nointro"); q.delete("map"); const r = q.toString(); history.replaceState(null, "", location.pathname + "?map" + (r ? "&" + r : "") + location.hash); } catch {}
+      }
       try { history.scrollRestoration = "manual"; } catch {}
       var BOOT_MODE = /[?&]drive\b/.test(location.search) ? "drive" : /[?&]map\b/.test(location.search) ? "map" : "intro";
       // r139p (Daniel: "the intro must not play more than once on the site"): it plays once per visit (6 h); after that,
@@ -38972,9 +38976,9 @@ void main() {
       var mapMaxD = () => innerWidth < 720 ? 7000 : 6200; // a phone in portrait needs a little more height to see as much
       var mapView = { tgt: new Vector3(1270, 0, 3170), pos: new Vector3(), dist: 8200, distGoal: null, yaw: 0.3, pitch: 0.98, vx: 0, vz: 0, follow: false, sx: 0, sy: 0 };
       var mapNav = { targetL: 0, legs: [], place: null, moving: false };
-      // nav2: an opt-in prototype (?nav=v2 on the map): you drive the city's whole road graph with the arrows, a street
-      // and a satellite view, a Waze-style panel (src/nav2.js). Without the flag nav2 stays null and nothing below runs
-      var NAV2 = /[?&]nav=v2\b/.test(location.search) && typeof window.czNav2 === "function" ? window.czNav2 : null, nav2 = null;
+      // nav2: you drive the city's whole road graph with the arrows, a street and a satellite view, a Waze-style panel
+      // (src/nav2.js); r160: the site's only 3D mode
+      var NAV2 = typeof window.czNav2 === "function" ? window.czNav2 : null, nav2 = null; // r160: always (the ?nav=v2 flag of the prototype is no longer needed)
       function nav2Host() { // nav2: what the module may see and do
         return {
           navNet, cityNet, rounded: (p, r) => roundedPolyline(p, r), fork: FORK_POS, stops: STOPS, places: MAP_PLACES, start: ROUTE_MAIN[0], streets: { A: ROUTE_A, B: ROUTE_B, C: ROUTE_C, D: ROUTE_MERGE, lane: LANE_PTS },
@@ -39268,11 +39272,10 @@ void main() {
         document.body.classList.add("flight-done");
         let end = document.querySelector(".flight-end");
         if (!end) {
-          end = el("div", "flight-end", `<b>See you on board.</b><span>Your boarding pass is with us. We write back within one working day.</span><button class="fe-save">\u2B07 Save my boarding pass</button><button class="fe-drive">\u{1F697} Restart in Drive mode</button><button class="fe-replay">\u21BB Start over on the map</button><button class="fe-map">Back to the map</button>`);
+          end = el("div", "flight-end", `<b>See you on board.</b><span>Your boarding pass is with us. We write back within one working day.</span><button class="fe-save">\u2B07 Save my boarding pass</button><button class="fe-replay">\u21BB Start over on the map</button><button class="fe-map">Back to the map</button>`);
           end.querySelector(".fe-save").onclick = () => window.__savePass?.();
           if (!window.__savePass) end.querySelector(".fe-save").remove();
           document.querySelector(".jet-baam")?.classList.add("hidden");
-          end.querySelector(".fe-drive").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?drive&nointro"; };
           end.querySelector(".fe-replay").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?r=" + Date.now().toString(36); };
           end.querySelector(".fe-map").onclick = () => {
             end.remove(); document.body.classList.remove("flight-done");
@@ -39622,8 +39625,7 @@ void main() {
           <button class="map-crew" title="The crew you travel with"><span class="mcw-faces">${faces}</span><b>Crew</b></button>
           <button class="map-home" title="Cromatic Studios House, Str. Olari 9"><span class="mh-ic">\u{1F3E0}</span><b>Our house</b></button>
           <a class="map-site" href="/site/" title="The same story as a normal, fast website"><span class="ms-ic" aria-hidden="true"><i></i><i></i><i></i></span><b>Normal website</b></a>
-          <a class="map-ro" href="/ro/" hreflang="ro" lang="ro" title="Site-ul în limba română" aria-label="Site-ul în limba română">RO</a>
-          <button class="map-exit" title="The same world as a scroll-driven drive"><span class="me-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M8 2 L6 22 M16 2 L18 22" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M12 4v3M12 10v3M12 16v3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span><span class="me-l">Drive mode</span></button>`);
+          <a class="map-ro" href="/ro/" hreflang="ro" lang="ro" title="Site-ul în limba română" aria-label="Site-ul în limba română">RO</a>`);
         // r137a (Daniel): the ride card wears the worlds card's design: same popover, header, tiles and tick
         const rides = el("div", "map-rides hidden", `<div class="wt-head"><span class="wt-titles"><span class="hm-title mono">YOUR RIDE · ${VEHICLES.length} TO PICK FROM</span><span class="wt-lead">How do you want to get around?</span></span><button class="wt-close" aria-label="Close">×</button></div><div class="mrs-list">${VEHICLES.map((v) => `<button class="mrs-v" data-v="${v.id}"><span class="mrs-th"></span><b>${v.label}</b><span class="wt-check" aria-hidden="true">✓</span></button>`).join("")}</div>`);
         const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="rot" class="mz-rot" aria-label="Turn the map" title="Turn the map"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.8 3.8v4.6h-4.6"/></svg></button><button data-z="van" aria-label="Find your ride" title="Find your ride">◎</button><button data-z="wx" class="mz-wx" aria-label="Weather off" title="Turn weather off">\u2602</button>`);
@@ -39863,7 +39865,6 @@ void main() {
         const speedEl = el("div", "speed-lines");
         box.append(speedEl, pinsEl, top, rides, zoom, dock, card, skip, baamEl, welcomeEl, hintEl);
         ui.root.appendChild(box);
-        top.querySelector(".map-exit").onclick = () => setMapMode(false);
         top.querySelector(".map-crew").onclick = () => { welcome(false); openCrew(); };
         top.querySelector(".map-home").onclick = () => { welcome(false); mapGo(MAP_PLACES.find((p) => p.id === "end")); };
 
@@ -40502,24 +40503,7 @@ void main() {
         driveGuideOff?.(); driveGuideOff = null;
         if (action) czEv("onboarding_step", { step: "drive_scroll", action });
       }
-      function driveGuideStart() {
-        try { if (localStorage.getItem("cz-drive-guide")) return; localStorage.setItem("cz-drive-guide", "1"); } catch {}
-        const touch = matchMedia("(hover: none) and (pointer: coarse)").matches;
-        if (!driveGuideEl) { driveGuideEl = el("div", "drive-guide hidden", ""); document.body.appendChild(driveGuideEl); }
-        driveGuideEl.className = "drive-guide hidden";
-        driveGuideEl.innerHTML = touch
-          ? `<span class="dg-swipe" aria-hidden="true"><span class="dg-dot"></span></span><b>Swipe up to drive</b><i>Swipe down to go back</i>`
-          : `<span class="dg-mouse" aria-hidden="true"><span class="dg-wheel"></span></span><b>Scroll down to drive</b><i>Scroll up to go back</i>`;
-        setTimeout(() => {
-          if (mapMode || siteMode) return;
-          driveGuideEl.classList.remove("hidden");
-          const y0 = scrollY;
-          const onScroll = () => { if (Math.abs(scrollY - y0) > 140) driveGuideEnd("done"); };
-          const t = setTimeout(() => driveGuideEnd("skipped"), 9000);
-          addEventListener("scroll", onScroll, { passive: true });
-          driveGuideOff = () => { removeEventListener("scroll", onScroll); clearTimeout(t); };
-        }, 700);
-      }
+      // r160: the drive guide's scroll instructions are gone with the scroll drive (nav2 has its own tutorial)
       function setMapMode(on, { intro = false, open = false } = {}) { // r147: open = the map as the site opens on it (?map, ?map&boarding): the first frame, no pull-out
         if (on === mapMode) return;
         if (!ONB_MODE && !intro && !open) setTimeout(() => ui.modeFlash?.(on ? "map" : "drive"), on ? 300 : 450); // r156
@@ -40564,7 +40548,7 @@ void main() {
           mapUI.mark();
           if (intro) { mapIntro = true; document.body.classList.add("kz-intro"); mapUI.skip.classList.remove("hidden"); }
           else { const wt0 = performance.now(); const wl = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - wt0 < 20000) return setTimeout(wl, 250); mapSettle = 90; if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI.welcome(true); }; setTimeout(wl, 1000); } // r139r: after the cups' reveal (r142b: a second, and the view settles on the car)
-          try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map") + (NAV2 ? (location.search ? "&" : "?map&") + "nav=v2" : "") + location.hash); } catch {} // r139p (nav2: keeps ?nav=v2): a plain "/" stays plain
+          try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map") + location.hash); } catch {} // r139p: a plain "/" stays plain
         } else {
           nav2?.setActive(false); // nav2
           mapEndIntro();
@@ -40599,7 +40583,6 @@ void main() {
           updateScrollSpace();
           scrollToL(state.L, false);
           try { history.replaceState(null, "", location.pathname + "?drive" + location.hash); } catch {}
-          if (!ONB_MODE) driveGuideStart(); // r139i (r140: not inside /onboarding/)
         }
       }
       window.__cam = (p2, t2) => { window.__camO = p2 ? [p2, t2] : null; };
