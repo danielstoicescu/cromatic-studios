@@ -5,7 +5,7 @@ body.nav2 .map-dock { display: none !important; }
 body.nav2.nav2-street :is(.map-pins, .svc-house) { opacity: 0; pointer-events: none; transition: opacity .3s; }
 body.nav2.nav2-street .map-zoom { display: none; }
 body.nav2 .map-zoom { bottom: 206px; }
-body.nav2 .map-card.cr { bottom: 206px; }
+@media (min-width: 721px) { body.nav2 .map-card.cr { bottom: 206px !important; right: 92px !important; } body.nav2 .map-card.cl { bottom: 96px !important; } }
 
 .nav2-ui :is(.n2-panel, .n2-views, .n2-pad) { position: fixed; z-index: 22; color: var(--fg); font-family: CromaticSans, "Darker Grotesque", system-ui, sans-serif; }
 .nav2-ui button { font: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
@@ -86,7 +86,9 @@ body.n2-card .n2-panel { opacity: 0; translate: 0 14px; pointer-events: none; }
   .n2-it { height: 28px; font-size: 12.5px; }
   body.nav2 .map-zoom { bottom: calc(206px + env(safe-area-inset-bottom, 0px)); }
   body.nav2 .map-zoom button { width: 40px; height: 40px; }
-  .n2-sub { display: none; }
+  .n2-sub, .n2-empty { display: none; }
+  .n2-panel:not(:has(.n2-row, .n2-here, .n2-auto)) { right: auto; padding: 6px; }
+  .n2-panel:not(:has(.n2-row, .n2-here, .n2-auto)) header { margin: 0; }
   body.nav2 .map-card, body.nav2 .map-card.cr { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
   body.n2-card .nav2-ui :is(.n2-pad, .n2-views) { opacity: 0; pointer-events: none; }
   .n2-toast { top: calc(124px + env(safe-area-inset-top, 0px)); font-size: 13px; white-space: normal; text-align: center; width: max-content; max-width: calc(100vw - 32px); }

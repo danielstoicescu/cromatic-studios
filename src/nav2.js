@@ -381,20 +381,20 @@
     const byEdge = new Map();
     for (const p of PL) { let l = byEdge.get(p.e); if (!l) byEdge.set(p.e, (l = [])); l.push(p); }
     // the quarters are the portfolio streets themselves (each from the roundabout to the Dacia row; the lane belongs to
-    // Medical Avenue, the road on to Olari 9 is its own): you are in a quarter within 380 units of its street
+    // Medical Avenue, the road on to Olari 9 is its own): you are in a quarter within 340 units of its street, and in none round the roundabout
     const QL = [];
     {
       const F = H.fork, st = H.streets;
       for (const k of ["A", "B", "C", "D"]) {
-        const pts = H.rounded(st[k], 160).map(([x, z]) => [x, z]).filter(([x, z]) => Math.hypot(x - F.x, z - F.y) > 90 && (k === "D" || !(z > 6090 && x < 1260)) && (k !== "C" || z < 6090));
+        const pts = H.rounded(st[k], 160).map(([x, z]) => [x, z]).filter(([x, z]) => Math.hypot(x - F.x, z - F.y) > 200 && (k === "D" || !(z > 6090 && x < 1260)) && (k !== "C" || z < 6090));
         QL.push([k, pts]);
       }
       QL.push(["C", st.lane.map(([x, z]) => [x, z])]);
     }
     const segD = (x, z, pts) => { let b = Infinity; for (let i = 0; i < pts.length - 1; i++) { const a = pts[i], c = pts[i + 1], dx = c[0] - a[0], dz = c[1] - a[1], l2 = dx * dx + dz * dz || 1, t = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / l2, 0, 1); b = Math.min(b, Math.hypot(a[0] + dx * t - x, a[1] + dz * t - z)); } return b; };
     function quarterAt(x, z) {
-      if (Math.hypot(x - H.fork.x, z - H.fork.y) < 200) return null;
-      let best = null, bd = 380;
+      if (Math.hypot(x - H.fork.x, z - H.fork.y) < 300) return null;
+      let best = null, bd = 340;
       for (const [k, pts] of QL) { const d = segD(x, z, pts); if (d < bd) { bd = d; best = k; } }
       return best;
     }
@@ -1019,7 +1019,7 @@
       press: (k, down = true) => (down ? keyDown(k) : keyUp(k)),
       quarterAt,
       place: (id) => H.places.find((p) => p.id === id),
-      state: () => { const L = H.state.L, dec = nextDecision(L); return { v: Math.round(D.v), L: Math.round(L), car: [Math.round(H.carPos.x), Math.round(H.carPos.z)], dec: dec && { type: dec.type, in: Math.round(dec.L - L), ex: dec.ex && { l: !!dec.ex.l, s: !!dec.ex.s, r: !!dec.ex.r }, side: dec.side }, auto: D.auto && (D.auto.pl?.id || "tap"), q: quarterAt(H.carPos.x, H.carPos.z), hint: hintEl.textContent, card: H.cardOpen(), yaw: +H.mapView.yaw.toFixed(2), hd: +H.heading().toFixed(2) }; }
+      state: () => { const L = H.state.L, dec = nextDecision(L); return { v: Math.round(D.v), L: Math.round(L), car: [Math.round(H.carPos.x), Math.round(H.carPos.z)], dec: dec && { type: dec.type, in: Math.round(dec.L - L), ex: dec.ex && { l: !!dec.ex.l, s: !!dec.ex.s, r: !!dec.ex.r }, side: dec.side }, auto: D.auto && (D.auto.pl?.id || "tap"), q: quarterAt(H.carPos.x, H.carPos.z), hint: hintEl.textContent, card: H.cardOpen(), keys: { ...D.keys }, yaw: +H.mapView.yaw.toFixed(2), hd: +H.heading().toFixed(2) }; }
     };
     window.__nav2 = api; // for tests
     return api;
