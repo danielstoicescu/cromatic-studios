@@ -405,7 +405,7 @@
     const D = {
       seq: [], px: [], pz: [], cum: [], kap: [], total: 0, C: 0, v: 0, uid: 1,
       cleared: new Set(), goUntil: -1, auto: null, uturn: null, backHold: false, downT: 0,
-      keys: { u: false, d: false, l: false, r: false }, ready: false, street: false, streetT: 0, camK: 0, camH: null,
+      keys: { u: false, d: false, l: false, r: false }, ready: false, view: "sat", streetT: 0, camK: 0, camH: null,
       lastArr: null, cardFor: null, firstDrive: true
     };
     // the path the car drives: the directed edges of D.seq, joined with a rounded corner at each node
@@ -748,12 +748,11 @@
     // ===================== 3. the cameras =====================
     const V3 = (x, y, z) => ({ x, y, z });
     function camera(dt, camPos, camTarget) {
-      const want = D.street ? 1 : 0;
+      const want = syncView() === "street" ? 1 : 0;
       if (reduced()) D.streetT = want;
       else D.streetT = want > D.streetT ? Math.min(1, D.streetT + dt / 1.15) : Math.max(0, D.streetT - dt / 1.15);
       const k = sss(D.streetT);
       D.camK = k;
-      document.body.classList.toggle("nav2-street", k > 0.5);
       const mv = H.mapView, hd = H.heading();
       if (D.camH == null) D.camH = hd;
       D.camH += wrapA(hd - D.camH) * (1 - Math.exp(-dt * 5.5));
@@ -781,10 +780,25 @@
       const cam = H.camera, near = Math.max(2.5, d * 0.32 * (1 - k) + 3 * k), far = Math.max(14000, d * 3 + 6000);
       if (Math.abs(cam.fov - fov) > 0.01 || Math.abs(cam.near - near) > 0.5 || Math.abs(cam.far - far) > 10) { cam.fov = fov; cam.near = near; cam.far = far; cam.updateProjectionMatrix(); }
     }
+    // one source of truth for the view: D.view is the visitor's choice; the view on screen is that choice unless a scene
+    // owns the camera (the jet's take-off, the opening), when it is the satellite. The buttons, the body class, the
+    // swipe and the wheel all follow the view on screen, checked every frame
+    let viewSig = "";
+    const viewNow = () => (D.view === "street" && !H.camBusy() ? "street" : "sat");
+    function syncView() {
+      const a = viewNow(), busy = H.camBusy(), sig = a + busy;
+      if (sig !== viewSig) {
+        viewSig = sig;
+        views.querySelectorAll("button").forEach((b) => { b.setAttribute("aria-pressed", String(b.dataset.v === a)); b.disabled = busy; });
+        document.body.classList.toggle("nav2-street", a === "street");
+      }
+      return a;
+    }
     function setView(street) {
-      if (D.street === street) return;
-      D.street = street;
-      views.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.v === "street") === street)));
+      const v = street ? "street" : "sat";
+      if (D.view === v) return;
+      D.view = v;
+      syncView();
       if (!street && H.mapView.pitch < 0.75) H.mapView.pitchGoal = 0.98;
       if (street) H.cineStop();
       H.follow();
@@ -846,7 +860,7 @@
     const typing = (e) => e.target?.closest?.("input, textarea, select, [contenteditable]");
     window.addEventListener("keydown", (e) => {
       if (!api.on || typing(e) || H.overlay() || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === "v" || e.key === "V") { e.preventDefault(); setView(!D.street); return; }
+      if (e.key === "v" || e.key === "V") { e.preventDefault(); setView(D.view !== "street"); return; }
       const k = KEYS[e.key];
       if (!k) return;
       e.preventDefault(); e.stopImmediatePropagation();
@@ -1012,8 +1026,8 @@
       setActive(on) {
         api.on = on;
         document.body.classList.toggle("nav2", on);
-        if (!on) { for (const k of "udlr") keyUp(k); D.ready = false; D.auto = null; D.uturn = null; D.street = false; D.streetT = 0; D.camK = 0; document.body.classList.remove("nav2-street"); }
-        else setTimeout(() => toast(H.isPhone() ? "Drive it yourself with the pad · or tap a place" : "Drive it yourself: arrows or WASD · V switches the view"), 1600);
+        if (!on) { for (const k of "udlr") keyUp(k); D.ready = false; D.auto = null; D.uturn = null; D.streetT = 0; D.camK = 0; viewSig = ""; document.body.classList.remove("nav2-street"); }
+        else { viewSig = ""; setTimeout(() => toast(H.isPhone() ? "Drive it yourself with the pad · or tap a place" : "Drive it yourself: arrows or WASD · V switches the view"), 1600); }
       },
       view: setView,
       press: (k, down = true) => (down ? keyDown(k) : keyUp(k)),

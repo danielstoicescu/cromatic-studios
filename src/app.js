@@ -38944,6 +38944,7 @@ void main() {
           carLen: () => { if (povLenFor !== veh.group) { povLenFor = veh.group; const bx = new Box3().setFromObject(veh.group), sz = bx.getSize(new Vector3()); povLen = clamp2(Math.max(sz.x, sz.z), 24, 90); } return povLen; },
           rebase(pts, L, T) { route.setPath(pts); state.L = prevL = L; state.targetL = mapNav.targetL = T; MO.Ls = L; planeRev = 0; },
           setTarget(T) { mapNav.targetL = T; },
+          camBusy: () => mapIntro || jetFx.phase !== "idle" || document.body.classList.contains("kz-intro"),
           ready: () => mapMode && !mapIntro && !!mapUI && spawnStart < 0 && jetFx.phase === "idle" && !mapBoarding && !document.body.classList.contains("kz-intro"),
           overlay: () => { const c = document.body.classList; return c.contains("modal-open") || c.contains("scf-open") || !!document.querySelector(".case-frame:not(.hidden)"); },
           follow() { mapView.follow = true; mapView.focus = null; mapView.vx = mapView.vz = 0; mapUI?.cineStop(); },
