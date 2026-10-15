@@ -697,6 +697,24 @@
       // drop the corners already chosen beyond the car
       const L = H.state.L, ci = ciOf(L);
       if (D.seq.length > ci + 1 && L < D.seq[ci].L1 - gapOf(D.seq[ci])) { D.seq.length = ci + 1; buildPath(); apply(L, clamp(D.C, L, D.total)); }
+      // round 2 (Daniel): a place close behind, on the road you just drove: the car backs up to it (lamps on); turning
+      // round is for the longer trips
+      if (!pivots()) {
+        for (let k = ci; k >= 0; k--) {
+          const it = D.seq[k];
+          if (it.e !== target.e) continue;
+          const sd = it.dir > 0 ? target.s : E[it.e].len - target.s, Lt = it.L0 + sd;
+          if (Lt < L - 8 && L - Lt < 350 && Lt > 2) {
+            D.auto = { pl, target, legs: [], rev: true, Lt };
+            D.goUntil = -1;
+            H.mapNav.place = pl && !pl.tap ? pl : null; H.mark(); H.follow();
+            if (D.firstDrive) firstDrive();
+            render(true);
+            return true;
+          }
+          break;
+        }
+      }
       const p = plan(target);
       if (!p) return false;
       // legs already on the path (a corner taken too late to drop) are skipped
@@ -711,7 +729,7 @@
     }
     // the stop for the place on the path, if its edge is on the path: a little short of it, the car parks beside it
     function autoStopL() {
-      const a = D.auto; if (!a || a.uturn || a.legs.length) return null;
+      const a = D.auto; if (!a || a.uturn || a.rev || a.legs.length) return null;
       for (let k = D.seq.length - 1; k >= ciOf(H.state.L); k--) {
         const it = D.seq[k];
         if (it.e !== a.target.e) continue;
@@ -750,7 +768,7 @@
       const L2 = H.state.L;
       let dec = nextDecision(L2);
       // the auto-pilot takes the junctions, the roundabouts and the bends itself
-      if (D.auto) {
+      if (D.auto && !D.auto.rev) {
         if (D.auto.uturn) {
           if (Math.abs(D.v) < 6 && Math.abs(D.C - L2) < 6) { const a = D.auto; uturn(); a.uturn = false; D.auto = a; }
         } else if (dec && dec.L - L2 < WINDOW) {
@@ -778,12 +796,13 @@
         const ci = ciOf(Lc);
         if (D.seq.length > ci + 1 && Lc < D.seq[ci].L1 - gapOf(D.seq[ci])) { D.seq.length = ci + 1; buildPath(); apply(Lc, Lc); dec = nextDecision(Lc); }
       }
-      const auto = D.auto && !D.auto.uturn;
+      const autoRev = !!(D.auto && D.auto.rev);
+      const auto = D.auto && !D.auto.uturn && !autoRev;
       const fwdIn = (D.keys.u || auto || D.goUntil > Lc || D.goUntil === Infinity) && !(D.keys.d && D.goUntil !== Infinity);
-      const rev = D.keys.d && D.v <= 0.5 && !pivots() && !D.auto; // ↓ held, stopped or backing: reverse
+      const rev = (D.keys.d && D.v <= 0.5 && !pivots() && !D.auto) || (autoRev && D.v <= 0.5); // ↓ held (or backing up to a place): reverse
       // and going back: the start of the path, unless you back into a street there
       let Lb = 4;
-      if (rev || D.v < -0.5) {
+      if ((rev || D.v < -0.5) && !autoRev) {
         D.wasRev = true;
         const b = backInto(Lc);
         if (b) {
@@ -798,6 +817,7 @@
       const As = autoStopL();
       if (As != null) Ls = Math.min(Ls, As);
       Ls = Math.max(Ls, Math.min(D.C, dec ? dec.L - 6 : D.total));
+      if (autoRev) Lb = D.auto.Lt;
       let want;
       if (rev) want = D.v > 0.5 ? 0 : Math.max(-VREV, -Math.sqrt(2 * BRAKE * Math.max(0, D.C - Lb)));
       else if (D.v < -0.5) want = 0; // ↓ let go while backing: it rolls to a stop
@@ -821,9 +841,14 @@
       if ((D.C >= Ls - 0.01 && want <= 0.5 && D.v > 0) || (D.C <= Lb + 0.01 && D.v < 0)) D.v = 0;
       if (D.v > 0) D.C = Math.max(D.C, Lc - 0.5);
       H.setTarget(D.C);
-      lamps(D.v < -0.5 || (rev && Math.abs(D.v) < 0.5 && D.keys.d));
+      lamps(D.v < -0.5 || (rev && Math.abs(D.v) < 0.5 && (D.keys.d || autoRev)));
       // arrivals
-      if (D.auto && As != null && Math.abs(Lc - As) < 6 && Math.abs(D.v) < 3) {
+      if (autoRev && Math.abs(Lc - D.auto.Lt) < 6 && Math.abs(D.v) < 3) {
+        const pl = D.auto.pl;
+        D.auto = null;
+        if (pl && !pl.tap) arrive(pl); else { if (pl) H.arrive(pl); H.mapNav.place = null; H.mark(); }
+        render(true);
+      } else if (D.auto && As != null && Math.abs(Lc - As) < 6 && Math.abs(D.v) < 3) {
         const pl = D.auto.pl;
         D.auto = null;
         if (pl) arrive(pl); else { H.mapNav.place = null; H.mark(); }
@@ -1096,7 +1121,7 @@
       let need = "";
       if (D.uturn) hint = "TURNING ROUND";
       else if (D.kturn) hint = "THREE-POINT TURN";
-      else if (D.auto) hint = D.auto.pl && !D.auto.pl.tap ? "DRIVING YOU THERE · ANY ARROW TAKES OVER" : "DRIVING YOU THERE";
+      else if (D.auto) hint = D.auto.rev ? "BACKING UP TO IT · ANY ARROW TAKES OVER" : D.auto.pl && !D.auto.pl.tap ? "DRIVING YOU THERE · ANY ARROW TAKES OVER" : "DRIVING YOU THERE";
       else if (reversing()) { const b = backInto(L); hint = b && (b.l || b.r) ? `REVERSING · ${[b.l && "←", b.r && "→"].filter(Boolean).join(" ")} BACKS INTO THE SIDE STREET` : "REVERSING"; }
       else if (dec && near) {
         const m = Math.max(0, Math.round((dec.L - L) / 10) * 10);
@@ -1183,6 +1208,7 @@
     }
     function autoLeft() {
       const a = D.auto; if (!a) return 0;
+      if (a.rev) return Math.max(0, H.state.L - a.Lt);
       const s = autoStopL(); if (s != null) return Math.max(0, s - H.state.L);
       const L = H.state.L, last = D.seq[D.seq.length - 1];
       let d = last.L1 - L;
