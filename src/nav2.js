@@ -954,6 +954,12 @@
       };
       for (const e of E) {
         if (e.drive) add(e.pts, e.w / 2 + 2); // round 5: our roads only (the avenues and the side streets' mouths are closed)
+        // polish: a sharp corner's inside is rounded off a little (a chord across it), so a car taking it tight is not caught
+        // on a point of kerb the eye hardly sees
+        if (e.drive && e.kind !== "ring") for (let i = 1; i < e.pts.length - 1; i++) {
+          const a0 = e.pts[i - 1], a1 = e.pts[i], a2 = e.pts[i + 1], dh = wrapA(Math.atan2(a2[0] - a1[0], a2[1] - a1[1]) - Math.atan2(a1[0] - a0[0], a1[1] - a0[1]));
+          if (Math.abs(dh) > 0.45 && e.cum[i] > 30 && e.cum[i] < e.len - 30) add([pointAt(e.pts, e.cum, e.cum[i] - 34), pointAt(e.pts, e.cum, e.cum[i] + 34)], e.w / 2 - 4);
+        }
       }
       // the point (x, z) for a car of radius r: on the road, or pushed back onto it (and the kerb's outward normal)
       function resolve(x, z, r) {
@@ -1115,13 +1121,17 @@
         it = nx2.o; s0 = 0;
       }
       if (pts2.length < 2) return null;
-      let laneK = 1;
-      for (let i = 2; i < pts2.length; i++) { const A = pts2[i - 2], B = pts2[i - 1], C = pts2[i]; if (A[3].e !== C[3].e && Math.abs(wrapA(Math.atan2(C[0] - B[0], C[1] - B[1]) - Math.atan2(B[0] - A[0], B[1] - A[1]))) > 0.35) { laneK = clamp((B[2] - 25) / 70, 0, 1); break; } }
-      // the aim: `look` ahead, in the right-hand lane (the ring: its middle); a junction ahead with no way straight on fades it
-      let j = pts2.findIndex((q) => q[2] >= look); if (j < 0) j = pts2.length - 1;
+      let laneK = 1, kinkAt = null;
+      for (let i = 2; i < pts2.length; i++) { const A = pts2[i - 2], B = pts2[i - 1], C = pts2[i]; if (A[3].e !== C[3].e && Math.abs(wrapA(Math.atan2(C[0] - B[0], C[1] - B[1]) - Math.atan2(B[0] - A[0], B[1] - A[1]))) > 0.35) { laneK = clamp((B[2] - 25) / 70, 0, 1); kinkAt = B[2]; break; } }
+      // the aim: `look` ahead, in the right-hand lane (the ring: its middle); a junction ahead with no way straight on fades it;
+      // before a corner it aims no further than just past it (aiming beyond cut the corner across the kerb)
+      const lk = kinkAt != null ? Math.min(look, Math.max(18, kinkAt + 16)) : look;
+      let wide = 0; // in a bend: the lane gives way to a wide line (aim a little to the outside), so the car's nose clears the inside corner
+      { let mt = 0, turn = 0; for (let i = 3; i < pts2.length && pts2[i][2] < 90; i++) { const A = pts2[i - 3], B = pts2[i - 1], C = pts2[i], dh = wrapA(Math.atan2(C[0] - B[0], C[1] - B[1]) - Math.atan2(B[0] - A[0], B[1] - A[1])); mt = Math.max(mt, Math.abs(dh) / Math.max(8, (C[2] - A[2]) / 2)); turn += dh; } laneK *= clamp(1 - mt * 70, 0, 1); wide = -Math.sign(turn) * Math.min(11, mt * 650); }
+      let j = pts2.findIndex((q) => q[2] >= lk); if (j < 0) j = pts2.length - 1;
       const q = pts2[j], q2 = pts2[Math.min(pts2.length - 1, j + 1)] !== q ? pts2[Math.min(pts2.length - 1, j + 1)] : pts2[j - 1], sgn = q2 === pts2[j - 1] ? -1 : 1;
       let ax = q[0], az = q[1];
-      { const dx = (q2[0] - ax) * sgn, dz = (q2[1] - az) * sgn, l = Math.hypot(dx, dz) || 1, lane = E[q[3].e].kind === "ring" ? 0 : Math.min(9, E[q[3].e].w * 0.16) * laneK; ax += (-dz / l) * lane; az += (dx / l) * lane; }
+      { const dx = (q2[0] - ax) * sgn, dz = (q2[1] - az) * sgn, l = Math.hypot(dx, dz) || 1, lane = E[q[3].e].kind === "ring" ? 0 : Math.min(9, E[q[3].e].w * 0.16) * laneK + wide; ax += (-dz / l) * lane; az += (dx / l) * lane; }
       const fade = open ? 1 : clamp((pts2[pts2.length - 1][2] - 30) / 80, 0, 1);
       const dist = Math.hypot(ax - P.x, az - P.z) || 1, err = wrapA(Math.atan2(ax - P.x, az - P.z) - P.h);
       if (Math.abs(err) > (P.contact > 0 ? 1.75 : E[q[3].e].kind === "ring" ? 1.4 : 1.1)) return null; // crosswise (a spin, a turn half done): yours
@@ -1130,11 +1140,14 @@
       for (let i = 3; i < pts2.length; i++) {
         const A = pts2[i - 3], B = pts2[i - 1], C = pts2[i];
         let t = Math.abs(wrapA(Math.atan2(C[0] - B[0], C[1] - B[1]) - Math.atan2(B[0] - A[0], B[1] - A[1]))) / Math.max(8, (C[2] - A[2]) / 2) * 1.5;
-        t = Math.min(t, 1 / 26); // a kink at a junction: the car rounds it (a radius of some 26 units at least)
+        t = Math.min(t, 1 / 19); // a kink at a junction: the car rounds it (a radius of some 26 units at least)
         if (t > 1e-3) { const vy = (-t + Math.sqrt(t * t + (4 * t / 480) * 2.2)) / ((2 * t) / 480); vmax = Math.min(vmax, Math.sqrt(Math.min(1100 / t, vy * vy) + 2 * 400 * Math.max(0, A[2] - 10))); }
       }
       if (!open) vmax = Math.min(vmax, Math.sqrt(90 * 90 + 2 * 480 * Math.max(0, pts2[pts2.length - 1][2] - 40))); // a junction to choose at: arrive at it slowly
-      return { steer: clamp(err * 2.2, -1, 1) * fade, vmax };
+      // and it keeps the car's nose off the kerb: a kerb within a few units of the nose steers it away (corners, tight bends)
+      let away = 0;
+      { const fx = Math.sin(P.h), fz = Math.cos(P.h), half = clamp(H.carLen() * 0.5 - CR + 2, 2, 32), k2 = MASK.resolve(P.x + fx * half, P.z + fz * half, CR + 4); if (k2.hit) away = clamp((k2.nx * -fz + k2.nz * fx) * 1.4, -0.9, 0.9); }
+      return { steer: clamp(err * 2.2 * fade + away, -1, 1), vmax };
     }
     // the auto-pilot on the same physics: pure pursuit of its route (the right-hand lane), slowing for the bends and the stop
     function pursuit(dt) {
@@ -1206,12 +1219,12 @@
     }
     let freeSig = "";
     function freeUI() {
-      let hint = touchUI || VP.w < 720 ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BRAKE / BACK · SPACE + ← → SPIN";
-      if (D.assist && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) < 110) hint = VP.w < 720 ? "ROUNDABOUT · ↑ STRAIGHT ON · OR STEER OUT" : "ROUNDABOUT · ↑ GOES STRAIGHT ON · STEER OUT FOR ANOTHER EXIT";
+      let hint = touchUI || VP.w < 720 ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BACK · SPACE SPIN";
+      if (D.assist && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) < 110) hint = VP.w < 720 ? "ROUNDABOUT · ↑ STRAIGHT ON · OR STEER OUT" : "ROUNDABOUT · ↑ STRAIGHT ON · STEER OUT FOR ANOTHER EXIT";
       if (D.moved && Math.abs(P.u) < 5 && !D.auto && P.contact <= 0) hint = VP.w < 720 ? "STOPPED · ↑ + ← → TURNS YOU ROUND" : "STOPPED · ↑ OR ↓ WITH ← → TURNS YOU ROUND"; // round 5
       if (D.auto) hint = D.auto.rev ? "BACKING UP TO IT · ANY KEY TAKES OVER" : "DRIVING YOU THERE · ANY KEY TAKES OVER";
       else if (P.u < -5) hint = "REVERSING";
-      else if (P.contact > 0) hint = VP.w < 720 ? "THE KERB · STEER OR BACK UP" : "THE KERB · STEER AWAY OR BACK UP";
+      else if (P.contact > 0 && (Math.abs(P.u) > 3 || D.keys.u || D.keys.d)) hint = VP.w < 720 ? "THE KERB · STEER OR BACK UP" : "THE KERB · STEER AWAY OR BACK UP";
       if (hint === freeSig) return;
       freeSig = hint;
       for (const k of "udlr") { keyEls[k].classList.remove("off", "need"); }
@@ -1281,7 +1294,8 @@
       D.camK = k;
       const mv = H.mapView, hd = H.heading();
       if (D.camH == null) D.camH = hd;
-      D.camH += wrapA(hd - D.camH) * (1 - Math.exp(-dt * 5.5));
+      // polish (comfort): the street camera turns after the car smoothly and never faster than ~1.7 rad/s (a spin or a turn on the spot no longer whips it round)
+      D.camH += clamp(wrapA(hd - D.camH) * (1 - Math.exp(-dt * 4.2)), -1.7 * dt, 1.7 * dt);
       // satellite: heading up while you drive (the arrows then point the way they turn), gently
       if (!FREE && D.ready && mv.follow && (D.v > 25 || D.auto || D.uturn || D.kturn) && !reduced()) {
         mv.yawGoal = null;
@@ -1301,7 +1315,7 @@
         camPos.x += D.lax; camPos.z += D.laz; camTarget.x += D.lax; camTarget.z += D.laz;
       }
       if (k < 1e-4) return;
-      const cp = H.carPos, len = H.carLen() * (VP.w < VP.h ? 1.7 : 1), f = [Math.sin(D.camH), Math.cos(D.camH)];
+      const cp = H.carPos, len = H.carLen() * (VP.w < VP.h ? 1.7 : 1.18), f = [Math.sin(D.camH), Math.cos(D.camH)]; // polish: a little further back on a laptop (the car filled the frame)
       // the camera stays over the road: where the spot behind the car is not road (a dead end's end, a turn), it comes
       // in closer and a little higher, so it never sits inside a tree or a wall
       let pull = 0.4;
@@ -1685,7 +1699,7 @@
     const touchUI = matchMedia("(hover: none) and (pointer: coarse)").matches;
     const STEPS = [
       { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: touchUI ? "↑ to go: it keeps to the road · ← → to turn" : "↑ to go: it keeps to the road · ← → to turn (or W A S D)", at: "car" },
-      { id: "round", keys: [], t: "Take the roundabout", s: "Steer round the fountain and out onto a street", at: "car" },
+      { id: "round", keys: [], t: "Take the roundabout", s: touchUI ? "Hold ↑: round it and straight on · steer to leave sooner" : "Hold ↑: round the fountain and straight on · steer out to leave sooner", at: "car" },
       { id: "back", keys: ["↓"], t: "Back up or turn round", s: touchUI ? "Hold ↓ to back up · stopped, ↑ with ← or → turns you round" : "Hold ↓ (or S) to back up · stopped, ↑ with ← or → turns you round", at: "car" },
       { id: "tap", keys: [], t: "Or let us drive", s: "Tap a place on the map, or a card in Nearby", at: "panel" },
       { id: "look", keys: [], t: "Look around", s: touchUI ? "Drag the map, pinch to zoom · ◎ brings you back" : "Drag the map, scroll to zoom · ◎ brings you back", at: "mid" },

@@ -12,7 +12,7 @@ body.nav2 .map-zoom { bottom: 206px; }
 
 /* ---- the pad ---- */
 .n2-pad { right: 22px; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: center; gap: 8px; user-select: none; -webkit-user-select: none; touch-action: none; }
-.n2-hint { max-width: 230px; text-align: center; font-size: 9.5px; letter-spacing: .14em; font-weight: 700; padding: 6px 10px; border-radius: 999px; background: #fff; color: #141414; border: 2px solid #141414; box-shadow: 2px 3px 0 #141414; }
+.n2-hint { max-width: 440px; white-space: nowrap; text-align: center; font-size: 9.5px; letter-spacing: .14em; font-weight: 700; padding: 6px 10px; border-radius: 999px; background: #fff; color: #141414; border: 2px solid #141414; box-shadow: 2px 3px 0 #141414; }
 .n2-keys { display: grid; grid-template-columns: repeat(3, var(--k, 58px)); grid-template-rows: repeat(2, var(--k, 58px)); gap: 7px; }
 .n2-k { width: var(--k, 58px); height: var(--k, 58px); border-radius: 18px; border: 2.5px solid #141414; background: #fff; color: #141414; display: grid; place-items: center; cursor: pointer; padding: 0;
   box-shadow: 0 4px 0 #141414; transition: opacity .2s, transform .08s, box-shadow .08s, background .2s; touch-action: none; }
@@ -83,7 +83,7 @@ body.n2-card .n2-panel { opacity: 0; translate: 0 14px; pointer-events: none; }
 @media (max-width: 719px) {
   .n2-pad { --k: 64px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); gap: 6px; }
   .n2-keys { gap: 6px; }
-  .n2-hint { max-width: 200px; font-size: 8.5px; }
+  .n2-hint { max-width: 230px; white-space: normal; font-size: 8.5px; }
   .n2-views { left: 12px; translate: none; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); flex-direction: column; border-radius: 22px; }
   .n2-views button { height: 52px; padding: 0 14px 0 12px; font-size: 14px; border-radius: 18px; }
   .n2-panel { left: 12px; right: 12px; width: auto; top: calc(120px + env(safe-area-inset-top, 0px)); bottom: auto; max-height: 36vh; padding: 9px 10px 6px; border-radius: 18px; box-shadow: 3px 4px 0 #141414; }
@@ -185,3 +185,13 @@ body:has(.map-welcome:not(.hidden)) .nav2-ui .n2-panel { opacity: 0; pointer-eve
   .n2-views button { height: 40px; padding: 0 12px 0 10px; font-size: 13px; border-radius: 999px; }
   body.nav2 .map-zoom { bottom: calc(206px + env(safe-area-inset-bottom, 0px)); }
 }
+
+/* beta 2.5 polish: every control at least 44 px to the touch (an invisible margin where the drawn one is smaller) */
+.n2-skip { position: relative; }
+.n2-skip::after { content: ""; position: absolute; inset: -10px -6px; }
+@media (max-width: 719px) {
+  body.nav2 .map-top :is(.map-ride, .map-world, .map-crew, .map-hi, .map-home, .map-site, .map-exit) { height: 44px; }
+  body.nav2 .map-zoom button { width: 44px; height: 44px; }
+}
+/* keyboard: a clear focus ring on nav2's own controls */
+.n2-k:focus-visible, .n2-views button:focus-visible, .n2-panel button:focus-visible, .n2-skip:focus-visible { outline: 3px solid #2f6bff; outline-offset: 3px; }

@@ -3556,7 +3556,7 @@ body.kz-intro .kz-veil { -webkit-backdrop-filter: none; backdrop-filter: none; }
 /* r139i: its hover (it had none: "all: unset" above dropped it) */
 .map-welcome .mw-free { transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease, background-color .22s ease; }
 .map-welcome .mw-free:hover, .map-welcome .mw-free:focus-visible { transform: translateY(-2px); box-shadow: 0 4px 0 #141414; background: #FFDA3A; }
-.map-welcome .mw-drive { all: unset; cursor: pointer; display: block; margin: 12px auto 0; font: 700 13px/1 CromaticSans, sans-serif; text-decoration: underline; text-underline-offset: 4px; opacity: .8; } /* nav2 */
+.map-welcome .mw-drive { all: unset; cursor: pointer; display: block; margin: 0 auto; padding: 16px 12px 15px; font: 700 13px/1 CromaticSans, sans-serif; text-decoration: underline; text-underline-offset: 4px; opacity: .8; } /* nav2 */
 .map-welcome .mw-drive:hover, .map-welcome .mw-drive:focus-visible { opacity: 1; }
 .map-welcome .mw-free:active { transform: translateY(1px); box-shadow: 0 1px 0 #141414; transition-duration: .08s; }
 .tap-hint { position: fixed; left: 0; top: 0; z-index: 23; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 6px; translate: -50% -30%; }
