@@ -897,7 +897,7 @@
     // on top of the ride's own springs (VEH_MOTION): the nose lifts as it pulls away and dips as it brakes (from the
     // carrot's own acceleration, so it reads at the map's scale), with a slightly underdamped bounce; stopped, the engine
     // trembles lightly (not the electric scooter); at speed a faint road buzz. None of it with reduced motion
-    const BODY = { p: 0, pv: 0, h: 0, hv: 0, acc: 0, vp: 0, idle: 0 };
+    const BODY = { p: 0, pv: 0, h: 0, hv: 0, acc: 0, vp: 0, idle: 0, ride: 1.2 };
     const ENGINE = { dacia1300: 1, cop: 1, groovy: 1.3, foodvan: 1.5, monopoly: 1, f1: 1.6, plane: 0.6, sub: 0.3, scooter: 0 };
     function body(g, dt, now) {
       if (!D.ready || dt <= 0) return;
@@ -905,9 +905,18 @@
       const a = (D.v - BODY.vp) / dt; BODY.vp = D.v;
       BODY.acc += (clamp(a, -1500, 1500) - BODY.acc) * (1 - Math.exp(-dt * 10));
       spr("p", "pv", red ? 0 : clamp(-BODY.acc * 6e-5, -0.05, 0.05), 7.5, 0.42);
-      spr("h", "hv", red ? 0 : clamp(-Math.abs(BODY.acc) * 6e-4, -0.9, 0), 9, 0.4);
       g.rotation.x += BODY.p;
-      g.position.y += BODY.h;
+      // round 2 (Daniel: "the wheels sink into the road"): the tyres sit on the asphalt. The car rides at the height of the
+      // road under it (the gold roads stand 1.3 up, the boulevards 0.55, the side streets 0.35; plus a little for the depth
+      // offset the roads are drawn with), eased between them; and the pitch and the roll, which turn the whole ride
+      // (wheels too), lift it by as much as they would push its lowest tyre under
+      {
+        const a = G.nearest(H.carPos.x, H.carPos.z, 80), kind = a ? E[a.e].kind : "minor";
+        const surf = kind === "drive" || kind === "ring" ? 1.75 : kind === "long" ? 0.85 : 0.65;
+        BODY.ride += (surf - BODY.ride) * (1 - Math.exp(-dt * 5));
+        const [hw, ht] = H.vehSpan?.() || [20, 10];
+        g.position.y += BODY.ride + Math.abs(Math.sin(g.rotation.x)) * hw + Math.abs(Math.sin(g.rotation.z)) * ht;
+      }
       if (red) return;
       const eng = ENGINE[H.vehicle()] ?? 1, still = Math.abs(D.v) < 4 && !D.kturn && !D.uturn;
       BODY.idle += ((still ? 1 : 0) - BODY.idle) * (1 - Math.exp(-dt * (still ? 2 : 8)));
@@ -1309,7 +1318,7 @@
       },
       view: setView,
       press: (k, down = true) => (down ? keyDown(k) : keyUp(k)),
-      quarterAt, lamps: (on) => H.reverseLamps(on), treeH: (x, z) => treeAt()(x, z), trees: () => (H.trees?.() || []).length,
+      quarterAt, vehLow: () => H.vehLow?.(), lamps: (on) => H.reverseLamps(on), treeH: (x, z) => treeAt()(x, z), trees: () => (H.trees?.() || []).length,
       place: (id) => H.places.find((p) => p.id === id),
       state: () => { const L = H.state.L, dec = nextDecision(L); return { v: Math.round(D.v), L: Math.round(L), car: [Math.round(H.carPos.x), Math.round(H.carPos.z)], dec: dec && { type: dec.type, in: Math.round(dec.L - L), ex: dec.ex && { l: !!dec.ex.l, s: !!dec.ex.s, r: !!dec.ex.r }, side: dec.side }, auto: D.auto && (D.auto.pl?.id || "tap"), q: quarterAt(H.carPos.x, H.carPos.z), hint: hintEl.textContent, card: H.cardOpen(), keys: { ...D.keys }, yaw: +H.mapView.yaw.toFixed(2), hd: +H.heading().toFixed(2) }; }
     };

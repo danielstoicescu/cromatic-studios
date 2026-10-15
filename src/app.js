@@ -39145,6 +39145,21 @@ void main() {
           setTarget(T) { mapNav.targetL = T; },
           project: (x, y, z) => warpV(new Vector3(x, y, z)).project(camera),
           vehicle: () => state.vehicleId, trees: () => TREE_BLOBS,
+          // round 2: the ride's wheel span (half the wheelbase, half the track, in world units), from its own wheels, per ride
+          vehSpan: () => {
+            if (veh._n2span) return veh._n2span;
+            const g = veh.group; g.updateMatrixWorld(true); const inv = g.matrixWorld.clone().invert(), p = new Vector3();
+            let z = 0, x = 0;
+            for (const w of veh.wheels || []) { w.getWorldPosition(p); p.applyMatrix4(inv); z = Math.max(z, Math.abs(p.z)); x = Math.max(x, Math.abs(p.x)); }
+            const k = g.scale.x || 1;
+            return (veh._n2span = [Math.max(z, 8) * k, Math.max(x, 5) * k]);
+          },
+          vehLow: () => { // the lowest point of the ride's wheels (else its body), above its own origin, in world units
+            const g = veh.group; g.updateMatrixWorld(true); let m = Infinity; const p = new Vector3();
+            const pick = veh.wheels?.length ? veh.wheels : [g];
+            for (const w of pick) w.traverse((o) => { const a = o.isMesh && o.geometry?.attributes?.position; if (!a) return; for (let i = 0; i < a.count; i += 3) { p.fromBufferAttribute(a, i).applyMatrix4(o.matrixWorld); if (p.y < m) m = p.y; } });
+            return m - g.position.y;
+          },
           reverseLamps(on) { if (veh?.revLamps && veh.revLamps.visible !== on) veh.revLamps.visible = on; },
           camBusy: () => mapIntro || jetFx.phase !== "idle" || document.body.classList.contains("kz-intro"),
           ready: () => mapMode && !mapIntro && !!mapUI && spawnStart < 0 && jetFx.phase === "idle" && !mapBoarding && !document.body.classList.contains("kz-intro"),
