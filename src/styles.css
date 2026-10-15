@@ -4882,3 +4882,6 @@ body.map-mode .dpad, body.site-mode .dpad, html.onb .dpad, body.kz-intro .dpad {
 .cf-share:hover, .cf-share.done { background: #FFD147; color: #121212; }
 .cf-share:hover { transform: scale(1.05); }
 @media (max-width: 760px) { .cf-share { top: 12px; right: 74px; height: 52px; padding: 0 16px; font-size: 14px; border-radius: 26px; } }
+
+/* r165: the build label under the logo, blended like the logo so it reads on any ground */
+body:not(.site-mode) .topbar .cz-build { color: #ffffff; mix-blend-mode: difference; opacity: .5; }

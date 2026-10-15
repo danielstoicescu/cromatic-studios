@@ -33465,6 +33465,9 @@ void main() {
     <!-- r160 (Daniel): no language switch on the map or the drive: it lives on the normal website only -->
     <div class="top-right"></div>`);
     root.appendChild(header);
+    // r165 (Daniel): under the logo, small and faint, the build that is live (the label comes from the page's
+    // <meta name="cz-build">, written by build/build.mjs)
+    { const bl = document.querySelector('meta[name="cz-build"]')?.content; if (bl) header.querySelector(".brand").appendChild(el("span", "cz-build", `${bl} build`)); }
     header.querySelector(".brand").onclick = (e) => {
       e.preventDefault();
       api.jumpTo("start");
