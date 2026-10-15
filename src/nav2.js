@@ -334,6 +334,10 @@
   }
 
   window.czNav2 = function czNav2(H) {
+    // the viewport, read on resize only: reading innerWidth in the frame, after the pins have moved, forced a style and
+    // layout pass (~3 ms a frame on phones)
+    const VP = { w: innerWidth, h: innerHeight };
+    addEventListener("resize", () => { VP.w = innerWidth; VP.h = innerHeight; });
     const G = buildGraph(H);
     const { N, E } = G;
     const reduced = () => H.reduced();
@@ -934,7 +938,7 @@
         mv.yaw += wrapA(hd + Math.PI - mv.yaw) * (1 - Math.exp(-dt * (D.uturn ? 1.8 : 1.3)));
       }
       if (k < 1e-4) return;
-      const cp = H.carPos, len = H.carLen() * (innerWidth < innerHeight ? 1.7 : 1), f = [Math.sin(D.camH), Math.cos(D.camH)];
+      const cp = H.carPos, len = H.carLen() * (VP.w < VP.h ? 1.7 : 1), f = [Math.sin(D.camH), Math.cos(D.camH)];
       // the camera stays over the road: where the spot behind the car is not road (a dead end's end, a turn), it comes
       // in closer and a little higher, so it never sits inside a tree or a wall
       let pull = 0.4;
@@ -1246,7 +1250,7 @@
       if (TUT.step === "turn") { const dec = nextDecision(L); if (!dec || dec.key !== TUT.dec) { TUT.step = "end"; tutShow(); clearTimeout(TUT.timer); TUT.timer = setTimeout(() => tutEnd("done"), 3200); } }
       if (TUT.step === "drove" || TUT.el.classList.contains("hidden")) return;
       // over the car, kept inside the screen
-      const p = H.project(H.carPos.x, 40, H.carPos.z), W = innerWidth, Hh = innerHeight, ph = W < 720;
+      const p = H.project(H.carPos.x, 40, H.carPos.z), W = VP.w, Hh = VP.h, ph = W < 720;
       if (p.z < 1) { TUT.el.style.left = clamp((p.x * 0.5 + 0.5) * W, 140, W - 140).toFixed(0) + "px"; TUT.el.style.top = clamp((-p.y * 0.5 + 0.5) * Hh - 70, ph ? 250 : 150, Hh - (ph ? 260 : 200)).toFixed(0) + "px"; }
     }
     // a hand on the map (a drag, a zoom) ends the tutorial, but the pad, the panel and the views do not
@@ -1288,7 +1292,7 @@
       },
       view: setView,
       press: (k, down = true) => (down ? keyDown(k) : keyUp(k)),
-      quarterAt, lamps: (on) => H.reverseLamps(on), cam: () => H.camera.position.toArray().map(Math.round), treeH: (x, z) => treeAt()(x, z), trees: () => (H.trees?.() || []).length,
+      quarterAt, lamps: (on) => H.reverseLamps(on), treeH: (x, z) => treeAt()(x, z), trees: () => (H.trees?.() || []).length,
       place: (id) => H.places.find((p) => p.id === id),
       state: () => { const L = H.state.L, dec = nextDecision(L); return { v: Math.round(D.v), L: Math.round(L), car: [Math.round(H.carPos.x), Math.round(H.carPos.z)], dec: dec && { type: dec.type, in: Math.round(dec.L - L), ex: dec.ex && { l: !!dec.ex.l, s: !!dec.ex.s, r: !!dec.ex.r }, side: dec.side }, auto: D.auto && (D.auto.pl?.id || "tap"), q: quarterAt(H.carPos.x, H.carPos.z), hint: hintEl.textContent, card: H.cardOpen(), keys: { ...D.keys }, yaw: +H.mapView.yaw.toFixed(2), hd: +H.heading().toFixed(2) }; }
     };

@@ -39035,6 +39035,7 @@ void main() {
       // nav2: you drive the city's whole road graph with the arrows, a street and a satellite view, a Waze-style panel
       // (src/nav2.js); r160: the site's only 3D mode
       var NAV2 = typeof window.czNav2 === "function" ? window.czNav2 : null, nav2 = null; // r164: always (the ?nav=v2 flag of the prototype is no longer needed)
+      var nav2RM = null;
       function nav2Host() { // nav2: what the module may see and do
         return {
           navNet, cityNet, rounded: (p, r) => roundedPolyline(p, r), fork: FORK_POS, stops: STOPS, places: MAP_PLACES, start: ROUTE_MAIN[0], streets: { A: ROUTE_A, B: ROUTE_B, C: ROUTE_C, D: ROUTE_MERGE, lane: LANE_PTS },
@@ -39063,7 +39064,7 @@ void main() {
           cineStop: () => mapUI?.cineStop(), hideCard: () => mapUI?.hideCard(), mark: () => mapUI?.mark(), welcome: (on) => mapUI?.welcome(on),
           cardOpen: () => !!document.querySelector(".map-card:not(.hidden)") || document.body.classList.contains("map-at-stop"),
           wantsCine: () => innerWidth >= 720, isPhone: () => innerWidth < 720,
-          reduced: () => matchMedia("(prefers-reduced-motion: reduce)").matches
+          reduced: () => (nav2RM ||= matchMedia("(prefers-reduced-motion: reduce)")).matches // one live query (a new one per call cost ms a frame on phones)
         };
       }
       var jetFx = { phase: "idle", t: 0, baam: false };
