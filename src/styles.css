@@ -4844,6 +4844,17 @@ html.onb.onb-bam .coffee-card .cc-num { animation: onbBam .62s cubic-bezier(.2, 
 @keyframes dpLr { 50% { transform: translateY(-3px); } }
 .dp-t { font-size: 9px; letter-spacing: .14em; opacity: .7; }
 .dpad.lr .dp-t::after { content: " \00B7  \2190 \2192 ARE ON"; color: #119BFE; opacity: 1; }
+/* r167 (Daniel): at a choice the keys say what they pick. A keycap like the pad's on every choice sign (fork, lane,
+   end-of-street signpost); on the pad only the keys that pick something light up, and the line under it names them */
+.kc { display: inline-grid; place-items: center; box-sizing: border-box; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 6px; border: 1.5px solid var(--st-ink, #111); background: var(--card-bg, #fff); color: var(--fg, #111); box-shadow: 0 2px 0 var(--st-ink, #111); font: 900 12px/1 CromaticSans, sans-serif; font-style: normal; letter-spacing: 0; text-transform: none; vertical-align: middle; }
+.hw-body > .kc, .xr-arm > .kc { flex: none; min-width: 26px; height: 26px; font-size: 15px; border-radius: 8px; box-shadow: 0 3px 0 var(--st-ink, #111); background: #119BFE; color: #fff; }
+.dpad.lr.no-l .dp-l, .dpad.lr.no-r .dp-r { opacity: .28; pointer-events: none; background: var(--card-bg, #fff); color: var(--fg); animation: none; box-shadow: 0 2px 0 var(--st-ink, #111); }
+.dpad.keys .dp-t::after { content: none; }
+.dpad.keys .dp-t { display: grid; gap: 5px; justify-items: start; opacity: 1; max-width: 200px; text-transform: uppercase; }
+.dp-c { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.dp-c .kc { min-width: 18px; height: 18px; font-size: 11px; box-shadow: 0 1.5px 0 var(--st-ink, #111); }
+/* a phone has no keys: the signs keep their arrows, without keycaps */
+@media (hover: none) and (pointer: coarse) { .hw-body > .kc, .xr-arm > .kc { display: none; } }
 .dp-where { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; text-align: center; padding: 9px 12px; border-radius: 999px; border: 1.5px solid var(--st-ink, #111); background: var(--card-bg, #fff); font: 800 14px/1 CromaticSans, sans-serif; color: var(--fg); }
 .dp-where:hover, .dpad.at-end .dp-where { background: #FED012; color: #111; }
 .dpad.at-end .dp-where { animation: dpLr 1.2s ease-in-out infinite; }

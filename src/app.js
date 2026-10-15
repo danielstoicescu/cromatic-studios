@@ -34700,7 +34700,10 @@ void main() {
     // the choices look like motorway signs: white panels, black lettering, one stripe in the
     // street's colour, the arrow pointing the way the street leaves the fork
     const jxHoldBox = { _hold: 0 };
-    const hwSign = (cls, dir, name, sub) => el("button", `jx-btn hw ${cls} hidden`, `<span class="hw-stripe" aria-hidden="true"></span><span class="hw-body">${dir === "l" ? '<span class="hw-arrow" aria-hidden="true">\u2190</span>' : ""}${dir === "u" ? '<span class="hw-arrow" aria-hidden="true">\u2191</span>' : ""}<span class="hw-txt"><b>${name}</b><i>${sub}</i></span>${dir === "r" ? '<span class="hw-arrow" aria-hidden="true">\u2192</span>' : ""}</span>`);
+    const hwSign = (cls, dir, name, sub) => el("button", `jx-btn hw ${cls} hidden`, `<span class="hw-stripe" aria-hidden="true"></span><span class="hw-body">${dir === "l" ? '<span class="hw-arrow" aria-hidden="true">\u2190</span>' + keyCap(dir) : ""}${dir === "u" ? '<span class="hw-arrow" aria-hidden="true">\u2191</span>' + keyCap(dir) : ""}<span class="hw-txt"><b>${name}</b><i>${sub}</i></span>${dir === "r" ? keyCap(dir) + '<span class="hw-arrow" aria-hidden="true">\u2192</span>' : ""}</span>`);
+    // r167 (Daniel: "not clear what ← → ↑ do at Dacia 99"): every choice sign wears the key that picks it, a small keycap
+    // like the pad's; its arrow and its key always agree (left sign ←, straight on ↑, right sign →)
+    function keyCap(dir) { return `<kbd class="kc" aria-hidden="true">${dir === "l" ? "\u2190" : dir === "r" ? "\u2192" : "\u2191"}</kbd>`; }
     const forkA = hwSign("a", "r", "Coffee Street", "Continue the story");
     const forkB = hwSign("b", "l", "Fintech Boulevard", "Digital & finance");
     const forkC = hwSign("c", "u", "Medical Avenue", "Clinics, care & beauty");
@@ -34745,7 +34748,7 @@ void main() {
     xrPost.setAttribute("role", "group"); xrPost.setAttribute("aria-label", "Choose where to go next");
     root.appendChild(xrPost);
     const XR = { A: ["Coffee Street", "The story road", "#28C840"], B: ["Fintech Boulevard", "Digital & finance", "#119BFE"], C: ["Medical Avenue", "Clinics, care & beauty", "#F28BA8"] };
-    const xrPaint = (cur, done) => {
+    const xrPaint = (cur, done, order) => {
       const arms = xrPost.querySelector(".xr-arms"); arms.innerHTML = "";
       xrPost.classList.remove("decided"); xrPost._busy = false;
       // the arm you pick fills with its street's colour and gets a tick; the post leaves a beat later
@@ -34756,10 +34759,13 @@ void main() {
         try { navigator.vibrate?.(18); } catch {}
         setTimeout(fn, 360);
       };
-      const mk = (cls, name, sub, col, dir, fn, i) => { const b = el("button", `xr-arm ${cls}`, `<span class="xr-arrow" aria-hidden="true">${dir}</span><span class="xr-t"><b>${name}</b><i>${sub}</i></span><span class="xr-ok" aria-hidden="true">\u2713</span>`); b.style.setProperty("--xc", col); b.style.setProperty("--i", i); fastTap(b, pick(b, fn), xrPost); arms.appendChild(b); };
+      const mk = (cls, name, sub, col, dir, fn, i, key) => { const b = el("button", `xr-arm ${cls}`, `<span class="xr-arrow" aria-hidden="true">${dir}</span>${keyCap(key)}<span class="xr-t"><b>${name}</b><i>${sub}</i></span><span class="xr-ok" aria-hidden="true">\u2713</span>`); b.style.setProperty("--xc", col); b.style.setProperty("--i", i); fastTap(b, pick(b, fn), xrPost); arms.appendChild(b); };
       let i = 0;
-      for (const k of ["A", "B", "C"]) if (k !== cur) mk(done.has(k) ? "seen" : "", XR[k][0], done.has(k) ? "Again, from the top" : XR[k][1], XR[k][2], "\u21A9", () => api.crossTo(k), i++);
-      mk("home", "Olari 9 \u00B7 home", "The studio. Say hi", "#FED012", "\u2192", () => api.crossTo("home"), i++);
+      // r167: the first arm (on the left, its arrow on the left) is ←, the second (its arrow on the right) is →: both turn
+      // back (↶ ↷), each to its side; home, Olari 9, is straight on down the road: ↑ (its arrow was →)
+      // (order: the two streets as they lie on the screen, left to right, from the camera; see the loop)
+      for (const k of (order || ((ks) => ks))(["A", "B", "C"].filter((k2) => k2 !== cur))) { const n = i; mk(done.has(k) ? "seen" : "", XR[k][0], done.has(k) ? "Again, from the top" : XR[k][1], XR[k][2], n ? "\u21B7" : "\u21B6", () => api.crossTo(k), i++, n ? "r" : "l"); }
+      mk("home", "Olari 9 \u00B7 home", "The studio. Say hi", "#FED012", "\u2191", () => api.crossTo("home"), i++, "u");
     };
     const rbBtn = el("button", "rb-btn hidden", `
     <span class="rb-badge"><span class="rb-loop">\u21A9</span><b>GO BACK</b></span>
@@ -34945,7 +34951,7 @@ void main() {
     laneRow.setAttribute("role", "group"); laneRow.setAttribute("aria-label", "Choose your street");
     for (const b2 of [laneStay, laneGo]) { b2.classList.remove("hidden"); laneRow.appendChild(b2); }
     fastTap(laneStay, () => api.takeLane(false), laneHold);
-    fastTap(laneGo, () => api.takeLane(true), laneHold);
+    fastTap(laneGo, () => api.takeLane(true, true), laneHold);
     root.appendChild(laneRow);
     anchors.append(rbBtn, addrCard, poiStack);
     return {
@@ -34998,9 +35004,27 @@ void main() {
       syncVeh: (id) => uiSyncVeh?.(id),
       setPoiTabs() {},
       // r156: the pad's ← → are lit only where they do something; the "where to" sheet; the mode flash
-      setPad(lr, end) {
+      setPad(lr, end, keys) {
         if (pad._lr !== lr) { pad._lr = lr; pad.classList.toggle("lr", lr); }
         if (pad._end !== end) { pad._end = end; pad.classList.toggle("at-end", end); }
+        // r167: at a choice only the keys that pick something light up, and the line under them names what each picks
+        const sig = keys ? `${keys.l}|${keys.u}|${keys.r}` : "";
+        if (pad._keys === sig) return;
+        pad._keys = sig;
+        pad.classList.toggle("keys", !!keys);
+        pad.classList.toggle("no-l", !!keys && !keys.l); pad.classList.toggle("no-r", !!keys && !keys.r);
+        const t = pad.querySelector(".dp-t");
+        if (t._txt == null) t._txt = t.textContent;
+        t.textContent = keys ? "" : t._txt;
+        if (keys) for (const [d, n] of [["l", keys.l], ["u", keys.u], ["r", keys.r]]) if (n) { const row = el("span", "dp-c", keyCap(d)); row.append(" " + n); t.appendChild(row); }
+      },
+      // r167: the choice in front of you, by key: the end-of-street signpost, the lane's signs, the fork
+      choiceKeys(atFork) {
+        const nm = (b) => b?.querySelector(".hw-txt b, .xr-t b")?.textContent || "";
+        if (!xrPost.classList.contains("hidden")) { const a = xrPost.querySelectorAll(".xr-arm:not(.home)"); return { l: nm(a[0]), u: nm(xrPost.querySelector(".xr-arm.home")), r: nm(a[1]) }; }
+        if (!laneRow.classList.contains("hidden")) return { l: "", u: nm(laneStay), r: nm(laneGo) };
+        if (atFork) return { l: nm(forkB), u: nm(forkC), r: nm(forkA) };
+        return null;
       },
       whereShow,
       modeFlash,
@@ -35494,7 +35518,8 @@ void main() {
           api.crossTo(k);
         },
         // r164: the lane off Medical Avenue (see setLane); only before its mouth
-        takeLane(on) { if (state.branch === "C" && state.branchChosen && state.L < routeLAt("lanemouth", 1500, 5700) + 10) setLane(on); },
+        // r167: roll = drive on into the lane (like a pick at the fork), so a ↑ held afterwards doesn't turn it back
+        takeLane(on, roll) { const Lm = routeLAt("lanemouth", 1500, 5700); if (state.branch === "C" && state.branchChosen && state.L < Lm + 10) { setLane(on); if (on && roll) setTimeout(() => scrollToL(routeLAt("lanemouth", 1500, 5700) + 90), 120); } },
         goAround() {
           resetBranch();
           scrollToL(route.stopL.fork - 175);
@@ -35685,6 +35710,9 @@ void main() {
         if (route.lane) setLane(false); // r164
         rebuildGolden();
       }
+      // r167: where each street meets the Dacia row, across the screen (-1 left .. 1 right): the signpost's ← street is the
+      // one that lies further left in the picture
+      function xrScreenX(k) { return warpV(new Vector3({ A: 820, B: 2080, C: 1500 }[k], 0, 6100)).project(camera).x; }
       // r164 (Adina): Medical Avenue straight on, or by the lane (The Shortest Shortcut). The two share the road up to the
       // lane's mouth, so the car stays where it is; the scroll is re-pinned to it (the road's length changes)
       function setLane(on) {
@@ -36298,7 +36326,10 @@ void main() {
         if (e.key === "ArrowUp" || e.key === "ArrowDown") {
           e.preventDefault();
           // r164 (Adina): held at the fork, a fresh ↑ goes straight on: Medical Avenue (← → turn, as before)
-          if (e.key === "ArrowUp" && !e.repeat && !siteMode && !mapMode && !state.branchChosen && Math.abs(state.L - route.stopL.fork) < 700 && state.L > route.stopL.fork - 200) api.pickBranch("C");
+          if (e.key === "ArrowUp" && !e.repeat && !siteMode && !mapMode && !state.branchChosen && Math.abs(state.L - route.stopL.fork) < 700) api.pickBranch("C");
+          // r167: ↑ is the straight-on sign at the other two choices too: Olari 9 at the signpost, Medical Avenue at the lane
+          else if (e.key === "ArrowUp" && !e.repeat && !siteMode && !ui.xrPost.classList.contains("hidden")) ui.xrPost.querySelector(".xr-arm.home")?.click();
+          else if (e.key === "ArrowUp" && !e.repeat && !siteMode && !ui.laneRow.classList.contains("hidden")) api.takeLane(false);
           if (!siteMode) { kbHold = e.key === "ArrowUp" ? 1 : -1; markInput(); }
           else siteEl?.scrollBy({ top: (e.key === "ArrowUp" ? -1 : 1) * 120, behavior: "smooth" });
         } else if (e.key === "PageUp" || e.key === " ") {
@@ -36320,8 +36351,8 @@ void main() {
           e.preventDefault();
           if (!e.repeat) ui.xrPost.querySelectorAll(".xr-arm:not(.home)")[e.key === "ArrowLeft" ? 0 : 1]?.click();
         } else if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && !ui.laneRow.classList.contains("hidden")) {
-          e.preventDefault(); // r164: → the lane (The Shortest Shortcut), ← back to the avenue
-          api.takeLane(e.key === "ArrowRight");
+          e.preventDefault(); // r164: → the lane (The Shortest Shortcut); r167: ↑ (not ←) keeps to the avenue, ← does nothing here
+          if (e.key === "ArrowRight") api.takeLane(true, true);
         }
       });
       var currentCardStop = null;
@@ -38595,7 +38626,8 @@ void main() {
             if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
           }
           ui.setPovHint(povK > 0.6);
-          ui.setPad?.(povK > 0.3 || (Math.abs(state.L - route.stopL.fork) < 700 && !state.branchChosen) || !ui.xrPost.classList.contains("hidden") || !ui.laneRow.classList.contains("hidden"), state.L > route.stopL.end - 300); // r156 (r164: the signpost and the lane too)
+          { const atFork = Math.abs(state.L - route.stopL.fork) < 700 && !state.branchChosen, ck = povK > 0.3 ? null : ui.choiceKeys(atFork); // r167: and which key picks what
+            ui.setPad?.(povK > 0.3 || !!ck, state.L > route.stopL.end - 300, ck); } // r156 (r164: the signpost and the lane too)
           // first person: the car disappears under you once the camera is down on the road
           const hideCar = false; // r139k: the chase camera keeps the car in view
           if (hideCar) veh.group.visible = false; else if (povHidCar && !siteMode) veh.group.visible = true;
@@ -38901,7 +38933,7 @@ void main() {
         {
           const m = route.stopL.merge, atXr = !mapMode && !siteMode && !flying && state.branchChosen && m && state.L > m - 380 && state.L < m + 240;
           if (state.L < (m || 0) - 700) state.xrAway = false;
-          if (atXr && !state.xrAway && ui.xrPost.classList.contains("hidden")) { ui.xrPaint(state.branch, state.xrDone || new Set()); ui.xrPost.classList.remove("hidden"); }
+          if (atXr && !state.xrAway && ui.xrPost.classList.contains("hidden")) { ui.xrPaint(state.branch, state.xrDone || new Set(), (ks) => ks.sort((a2, b2) => xrScreenX(a2) - xrScreenX(b2))); ui.xrPost.classList.remove("hidden"); }
           // r136: never pulled from under a finger that is on it, or while a picked arm is showing its tick
           if ((!atXr || state.xrAway) && !ui.xrPost.classList.contains("hidden") && !((ui.xrPost._hold || 0) > now)) ui.xrPost.classList.add("hidden");
         }
