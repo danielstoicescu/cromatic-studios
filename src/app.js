@@ -32172,7 +32172,7 @@ void main() {
   // nav2: white reversing lamps at the tail of every ride that has one, lit only while it backs up (v.revLamps); each
   // sits on the real rear surface, found from the ride's own vertices at the lamp's height. [x from the middle as a
   // fraction of the half width, y as a fraction of the height]. The scooter, the submarine and the plane turn on the spot
-  var REV_LAMP = { dacia1300: [0.6, 0.4], cop: [0.6, 0.4], groovy: [0.62, 0.3], foodvan: [0.72, 0.24], monopoly: [0.48, 0.4], f1: [0.34, 0.45] };
+  var REV_LAMP = { dacia1300: [0.6, 0.4], cop: [0.6, 0.4], groovy: [0.62, 0.3], foodvan: [0.78, 0.34], monopoly: [0.48, 0.4], f1: [0.34, 0.45] };
   var _revGlow = null;
   function addRevLamps(v, id) {
     const f = REV_LAMP[id];
@@ -38290,6 +38290,7 @@ void main() {
         const climb = (airT - air) * (veh.kind === "plane" ? 1 : 0);
         veh.group.rotation.set(-pitch + (flying ? -0.09 : 0) - clamp2(climb * 0.9, -0.35, 0.45) + MO.p, heading, bank + sway, "YXZ"); // r139e: + MO.p
         veh.group.position.y += MO.hy; // r139e: the suspension's heave
+        if (nav2?.on && mapMode) nav2.body(veh.group, dt, now); // nav2: weight transfer, a bounce, the engine at idle
         if (coffee.phase === "rush") {
           veh.group.position.x += (Math.random() - 0.5) * 3;
           veh.group.position.z += (Math.random() - 0.5) * 3;

@@ -435,7 +435,7 @@
     const D = {
       seq: [], px: [], pz: [], cum: [], kap: [], total: 0, C: 0, v: 0, uid: 1,
       cleared: new Set(), goUntil: -1, auto: null, uturn: null, kturn: null, revSteer: null, wasRev: false, backHold: false, downT: 0,
-      keys: { u: false, d: false, l: false, r: false }, ready: false, view: "sat", streetT: 0, camPull: 1, camUp: 0, camOver: 0, camK: 0, camH: null,
+      keys: { u: false, d: false, l: false, r: false }, ready: false, view: "sat", streetT: 0, camPull: 1, camUp: 0, camOver: 0, camLag: 0, camK: 0, camH: null,
       lastArr: null, cardFor: null, firstDrive: true
     };
     // the corner at a node: as wide as the narrower road allows (a lane change is a light blend), a tighter one on the
@@ -872,6 +872,33 @@
       carTan.set(Math.cos(a) * m.fx - Math.sin(a) * m.rx, 0, Math.cos(a) * m.fz - Math.sin(a) * m.rz).normalize();
     }
 
+    // ===================== 2b. the body: weight, bounce, the engine =====================
+    // on top of the ride's own springs (VEH_MOTION): the nose lifts as it pulls away and dips as it brakes (from the
+    // carrot's own acceleration, so it reads at the map's scale), with a slightly underdamped bounce; stopped, the engine
+    // trembles lightly (not the electric scooter); at speed a faint road buzz. None of it with reduced motion
+    const BODY = { p: 0, pv: 0, h: 0, hv: 0, acc: 0, vp: 0, idle: 0 };
+    const ENGINE = { dacia1300: 1, cop: 1, groovy: 1.3, foodvan: 1.5, monopoly: 1, f1: 1.6, plane: 0.6, sub: 0.3, scooter: 0 };
+    function body(g, dt, now) {
+      if (!D.ready || dt <= 0) return;
+      const red = reduced(), spr = (k, kv, target, w, z) => { const n = Math.max(1, Math.ceil(dt * w / 0.4)), h = dt / n; for (let i = 0; i < n; i++) { BODY[kv] += (w * w * (target - BODY[k]) - 2 * z * w * BODY[kv]) * h; BODY[k] += BODY[kv] * h; } };
+      const a = (D.v - BODY.vp) / dt; BODY.vp = D.v;
+      BODY.acc += (clamp(a, -1500, 1500) - BODY.acc) * (1 - Math.exp(-dt * 10));
+      spr("p", "pv", red ? 0 : clamp(-BODY.acc * 6e-5, -0.05, 0.05), 7.5, 0.42);
+      spr("h", "hv", red ? 0 : clamp(-Math.abs(BODY.acc) * 6e-4, -0.9, 0), 9, 0.4);
+      g.rotation.x += BODY.p;
+      g.position.y += BODY.h;
+      if (red) return;
+      const eng = ENGINE[H.vehicle()] ?? 1, still = Math.abs(D.v) < 4 && !D.kturn && !D.uturn;
+      BODY.idle += ((still ? 1 : 0) - BODY.idle) * (1 - Math.exp(-dt * (still ? 2 : 8)));
+      const t = now * 0.001, sp = Math.min(1, Math.abs(D.v) / VMAX);
+      const idle = BODY.idle * eng, buzz = sp * sp * 0.6 * eng;
+      if (idle > 1e-3 || buzz > 1e-3) {
+        g.position.y += (Math.sin(t * 108) * 0.07 + Math.sin(t * 171 + 1.3) * 0.045) * idle + Math.sin(t * 61 + 0.7) * 0.05 * buzz;
+        g.rotation.z += (Math.sin(t * 93 + 0.4) * 0.0032 + Math.sin(t * 137) * 0.0018) * idle + Math.sin(t * 47) * 0.0012 * buzz;
+        g.rotation.x += Math.sin(t * 119 + 2.1) * 0.0016 * idle;
+      }
+    }
+
     // ===================== 3. the cameras =====================
     const V3 = (x, y, z) => ({ x, y, z });
     // the city's trees (TREE_BLOBS) in a grid: treeAt()(x, z) is the height of the tallest canopy over that point (0 if none)
@@ -924,13 +951,17 @@
       D.camPull += (pull - D.camPull) * (1 - Math.exp(-dt * (pull < D.camPull ? 9 : 3)));
       // a manoeuvre (the three-point turn, the turn on the spot, backing up) is watched from up and over the car
       D.camUp += ((D.kturn || D.uturn || D.v < -0.5 ? 1 : 0) - D.camUp) * (1 - Math.exp(-dt * 2.5));
-      const back = len * 0.92 * D.camPull * (1 - 0.35 * D.camUp);
+      D.camLag += ((reduced() ? 0 : Math.min(1, Math.max(0, D.v) / VMAX)) - D.camLag) * (1 - Math.exp(-dt * 1.6));
+      const back = len * 0.92 * D.camPull * (1 - 0.35 * D.camUp) * (1 + 0.16 * D.camLag);
       const eye = V3(cp.x - f[0] * back, Math.max(cp.y + len * (0.36 + 0.3 * (1 - D.camPull) + 0.7 * D.camUp), D.camOver + 8), cp.z - f[1] * back);
       const ahead = len * 1.3 * (1 - 0.8 * D.camUp); // in a manoeuvre the camera looks at the car itself
       const look = V3(cp.x + f[0] * ahead, cp.y + len * 0.2, cp.z + f[1] * ahead);
       // blend on the orbit (target, yaw, pitch, the height the frame shows, lens), so the car stays in frame throughout
       const ex = eye.x - look.x, ey = eye.y - look.y, ez = eye.z - look.z, d1 = Math.hypot(ex, ey, ez);
-      const yaw1 = Math.atan2(ex, ez), pitch1 = Math.asin(ey / d1), fov1 = 74;
+      // speed: the lens widens a little and the camera falls back (lag), a faint shake, and the post pass's radial blur
+      const spd = reduced() ? 0 : Math.min(1, Math.max(0, D.v) / VMAX), kick = spd * Math.sqrt(spd);
+      const yaw1 = Math.atan2(ex, ez), pitch1 = Math.asin(ey / d1), fov1 = 74 + 12 * kick;
+      H.mapView.zoomBlur = Math.max(H.mapView.zoomBlur || 0, kick * kick * 0.55 * k);
       const fov0 = H.camera.fov, d0 = Math.hypot(camPos.x - camTarget.x, camPos.y - camTarget.y, camPos.z - camTarget.z);
       const yaw0 = Math.atan2(camPos.x - camTarget.x, camPos.z - camTarget.z), pitch0 = Math.asin(clamp((camPos.y - camTarget.y) / Math.max(d0, 1e-3), -1, 1));
       const tanH = (f) => Math.tan((f * Math.PI) / 360);
@@ -940,6 +971,7 @@
       const tx = camTarget.x + (look.x - camTarget.x) * k, ty = camTarget.y + (look.y - camTarget.y) * k, tz = camTarget.z + (look.z - camTarget.z) * k;
       camTarget.set(tx, ty, tz);
       camPos.set(tx + Math.sin(yaw) * Math.cos(pitch) * d, ty + Math.sin(pitch) * d, tz + Math.cos(yaw) * Math.cos(pitch) * d);
+      if (spd > 0.05) { const t = performance.now() * 0.001, a = spd * spd * 0.5 * k; camPos.x += Math.sin(t * 23.1) * a; camPos.y += Math.sin(t * 31.7 + 1) * a * 0.7; camPos.z += Math.sin(t * 19.3 + 2) * a; }
       const cam = H.camera, near = Math.max(2.5, d * 0.32 * (1 - k) + 3 * k), far = Math.max(14000, d * 3 + 6000);
       if (Math.abs(cam.fov - fov) > 0.01 || Math.abs(cam.near - near) > 0.5 || Math.abs(cam.far - far) > 10) { cam.fov = fov; cam.near = near; cam.far = far; cam.updateProjectionMatrix(); }
     }
@@ -1172,7 +1204,7 @@
     const api = {
       on: false, graph: G, D,
       get camK() { return D.camK; },
-      tick, pose, camera,
+      tick, pose, camera, body,
       // a place from the map (a pin, a chip, the welcome card): driven to along the graph
       go(pl) {
         if (!pl || pl.find) return false;
@@ -1200,7 +1232,7 @@
       },
       view: setView,
       press: (k, down = true) => (down ? keyDown(k) : keyUp(k)),
-      quarterAt, cam: () => H.camera.position.toArray().map(Math.round), treeH: (x, z) => treeAt()(x, z), trees: () => (H.trees?.() || []).length,
+      quarterAt, lamps: (on) => H.reverseLamps(on), cam: () => H.camera.position.toArray().map(Math.round), treeH: (x, z) => treeAt()(x, z), trees: () => (H.trees?.() || []).length,
       place: (id) => H.places.find((p) => p.id === id),
       state: () => { const L = H.state.L, dec = nextDecision(L); return { v: Math.round(D.v), L: Math.round(L), car: [Math.round(H.carPos.x), Math.round(H.carPos.z)], dec: dec && { type: dec.type, in: Math.round(dec.L - L), ex: dec.ex && { l: !!dec.ex.l, s: !!dec.ex.s, r: !!dec.ex.r }, side: dec.side }, auto: D.auto && (D.auto.pl?.id || "tap"), q: quarterAt(H.carPos.x, H.carPos.z), hint: hintEl.textContent, card: H.cardOpen(), keys: { ...D.keys }, yaw: +H.mapView.yaw.toFixed(2), hd: +H.heading().toFixed(2) }; }
     };
