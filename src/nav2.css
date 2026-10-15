@@ -32,7 +32,7 @@ body.nav2 .map-zoom { bottom: 206px; }
 
 /* ---- the two views ---- */
 .n2-views { left: 50%; translate: -50% 0; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: #fff; color: #141414; border: 2.5px solid #141414; box-shadow: 3px 4px 0 #141414; }
-.n2-views button { display: flex; align-items: center; gap: 7px; height: 42px; padding: 0 16px 0 12px; border-radius: 999px; border: 0; background: transparent; cursor: pointer; font-weight: 800; font-size: 15px; }
+.n2-views button { display: flex; align-items: center; gap: 7px; height: 44px; padding: 0 16px 0 12px; border-radius: 999px; border: 0; background: transparent; cursor: pointer; font-weight: 800; font-size: 15px; }
 .n2-views button svg { width: 20px; height: 20px; }
 .nav2-ui .n2-views button[aria-pressed="true"] { background: #141414; color: #fff; }
 .n2-views button:not([aria-pressed="true"]):hover { background: #FED012; }
@@ -182,7 +182,7 @@ body:has(.map-welcome:not(.hidden)) .nav2-ui .n2-panel { opacity: 0; pointer-eve
   .n2-k svg { width: 44%; height: 44%; }
   .n2-views { left: 12px; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); flex-direction: row; border-radius: 999px; }
   .n2-hint { max-width: 260px; white-space: nowrap; }
-  .n2-views button { height: 40px; padding: 0 12px 0 10px; font-size: 13px; border-radius: 999px; }
+  .n2-views button { height: 44px; padding: 0 12px 0 10px; font-size: 13px; border-radius: 999px; }
   body.nav2 .map-zoom { bottom: calc(206px + env(safe-area-inset-bottom, 0px)); }
 }
 
