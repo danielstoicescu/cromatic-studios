@@ -35606,6 +35606,7 @@ void main() {
       // side, rendered in the current world, on the main canvas between two frames (like the world previews)
       var placeShotCache = {};
       function placeShot(pl) {
+        nav2CullOff(); // beta 2.5: the postcard sees everything
         const key = pl.id + "|" + state.schemeIdx;
         if (placeShotCache[key]) return placeShotCache[key];
         const cw = renderer.domElement.width, ch = renderer.domElement.height;
@@ -38217,6 +38218,7 @@ void main() {
           }
         }
         if (nav2?.on && mapMode) nav2.tick(dt, now); // nav2: the arrows (or its auto-pilot) set mapNav.targetL
+        nav2Cull(); // beta 2.5: the street view skips the small things far off in its haze
         if (mapMode) state.targetL = mapNav.targetL;
         else if (ONB_MODE && onbL != null) state.targetL = onbL; // r140: the page's scroll is the road
         const nearDacia = state.L > route.stopL.merge - 1500 && state.L < route.stopL.merge - 250;
@@ -38787,7 +38789,7 @@ void main() {
         if (schemeId === "ghibli" || schemeId === "orchid") { fogNear = 1400; fogFar = 9000; }
         // the map looks from far above: fog starts past the ground, in every world (underwater keeps a little haze)
         if (mapMode) { const k = schemeId === "underwater" ? 0.75 : 1.15; fogNear = Math.max(fogNear, mapView.dist * k); fogFar = Math.max(fogFar, mapView.dist * (schemeId === "underwater" ? 2.2 : 3.2)); }
-        if (mapMode && nav2?.on && nav2.camK > 0.01) { const sk = nav2.camK; fogNear = fogNear * (1 - sk) + 1100 * sk; fogFar = fogFar * (1 - sk) + 3150 * sk; } // beta 2.5: the street view's haze
+        if (mapMode && nav2?.on && nav2.camK > 0.01) { const sk = nav2.camK; fogNear = fogNear * (1 - sk) + 520 * sk; fogFar = fogFar * (1 - sk) + 2250 * sk; } // beta 2.5: the street view's haze
         scene.fog.near = smooth(scene.fog.near, flying && schemeId !== "monument" ? 1400 : fogNear, dt, 1.5);
         scene.fog.far = smooth(scene.fog.far, flying && schemeId !== "monument" ? 6600 : fogFar, dt, 1.5);
         if (copCar.group.visible) {
@@ -39130,6 +39132,27 @@ void main() {
       // (src/nav2.js); r160: the site's only 3D mode
       var NAV2 = typeof window.czNav2 === "function" ? window.czNav2 : null, nav2 = null; // r164: always (the ?nav=v2 flag of the prototype is no longer needed)
       var nav2RM = null;
+      // beta 2.5 polish: in the street view ~60% of the draw calls were small things (props, little houses' parts) more than
+      // ~1000 units off, a few pixels in the haze: they leave every camera's layers there (never .visible, which other code
+      // owns) and come back when near or out of the street view. Rechecked every 8 frames from the car's place (plan units)
+      var n2C = null, n2Cf = 0;
+      function nav2CullOff() { if (!n2C?.on) return; for (const it of n2C.list) if (it[2]) { it[0].layers.mask = it[3]; it[2] = false; } n2C.on = false; }
+      function nav2Cull() {
+        if (!(nav2?.on && mapMode && nav2.camK > 0.6) || !worldRefs.world.userData.fabricDone) { nav2CullOff(); return; }
+        if (!n2C) {
+          n2C = { list: [], on: false }; const c = new Vector3();
+          worldRefs.world.updateMatrixWorld(true);
+          worldRefs.world.traverse((o) => { if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !o.geometry?.attributes?.position) return; o.geometry.boundingSphere || o.geometry.computeBoundingSphere(); const r = o.geometry.boundingSphere.radius * o.matrixWorld.getMaxScaleOnAxis(); if (r < 30) n2C.list.push([o, r, false, o.layers.mask]); });
+        }
+        if (++n2Cf % 8) return;
+        n2C.on = true;
+        const v = new Vector3();
+        for (const it of n2C.list) {
+          const o = it[0]; v.copy(o.geometry.boundingSphere.center).applyMatrix4(o.matrixWorld);
+          const far = Math.hypot(v.x - carPos.x, v.z - carPos.z) - it[1] > 1500;
+          if (far !== it[2]) { if (far) { it[3] = o.layers.mask; o.layers.mask = 0; } else o.layers.mask = it[3]; it[2] = far; }
+        }
+      }
       function nav2Host() { // nav2: what the module may see and do
         return {
           navNet, cityNet, rounded: (p, r) => roundedPolyline(p, r), fork: FORK_POS, stops: STOPS, places: MAP_PLACES, start: ROUTE_MAIN[0], streets: { A: ROUTE_A, B: ROUTE_B, C: ROUTE_C, D: ROUTE_MERGE, lane: LANE_PTS },
@@ -40741,7 +40764,11 @@ void main() {
               markEl.style.transform = `translate3d(${((proj.x * 0.5 + 0.5) * W).toFixed(1)}px, ${((-proj.y * 0.5 + 0.5) * H).toFixed(1)}px, 0)`;
               if (!mapNav.moving && mapNav.place?.tap && !markEl.classList.contains("on")) markAt = null;
             }
+            // beta 2.5 polish: in nav2's street view the pins far off (in its haze) step out: each moving pin restyles and
+            // repaints every frame, and a whole city of them cost ~15 fps while driving there
+            const svPins = nav2?.on && nav2.camK > 0.6;
             const order = pins.map((p) => {
+              if (svPins && Math.hypot(p.pl.wx - carPos.x, p.pl.wz - carPos.z) > 1300) return { p, x: -9999, y: -9999, z: 2 };
               warpV(proj.set(p.pl.wx, 0, p.pl.wz)).project(camera);
               const gx = (proj.x * 0.5 + 0.5) * W, gy = (-proj.y * 0.5 + 0.5) * H;
               warpV(proj.set(p.pl.wx + 34, 0, p.pl.wz)).project(camera);

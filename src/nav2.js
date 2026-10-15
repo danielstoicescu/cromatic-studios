@@ -1344,7 +1344,7 @@
       // speed: the lens widens a little and the camera falls back (lag), a faint shake, and the post pass's radial blur
       const spd = reduced() ? 0 : Math.min(1, Math.max(0, D.v) / VMAX), kick = spd * Math.sqrt(spd);
       const yaw1 = Math.atan2(ex, ez), pitch1 = Math.asin(ey / d1), fov1 = 74 + 12 * kick;
-      H.mapView.zoomBlur = Math.max(H.mapView.zoomBlur || 0, kick * kick * 0.55 * k);
+      // polish: no radial speed blur in the street view (10 more taps a pixel, ~15 fps on a laptop, and a nausea risk); the lens still widens
       const fov0 = H.camera.fov, d0 = Math.hypot(camPos.x - camTarget.x, camPos.y - camTarget.y, camPos.z - camTarget.z);
       const yaw0 = Math.atan2(camPos.x - camTarget.x, camPos.z - camTarget.z), pitch0 = Math.asin(clamp((camPos.y - camTarget.y) / Math.max(d0, 1e-3), -1, 1));
       const tanH = (f) => Math.tan((f * Math.PI) / 360);
@@ -1355,7 +1355,7 @@
       camTarget.set(tx, ty, tz);
       camPos.set(tx + Math.sin(yaw) * Math.cos(pitch) * d, ty + Math.sin(pitch) * d, tz + Math.cos(yaw) * Math.cos(pitch) * d);
       if (spd > 0.05) { const t = performance.now() * 0.001, a = spd * spd * 0.5 * k; camPos.x += Math.sin(t * 23.1) * a; camPos.y += Math.sin(t * 31.7 + 1) * a * 0.7; camPos.z += Math.sin(t * 19.3 + 2) * a; }
-      const cam = H.camera, near = Math.max(2.5, d * 0.32 * (1 - k) + 3 * k), far = Math.max(14000, d * 3 + 6000) * (1 - k) + 3300 * k; // polish: the street view draws what its haze lets you see (was the whole city)
+      const cam = H.camera, near = Math.max(2.5, d * 0.32 * (1 - k) + 3 * k), far = Math.max(14000, d * 3 + 6000) * (1 - k) + 2400 * k; // polish: the street view draws what its haze lets you see (was the whole city)
       if (Math.abs(cam.fov - fov) > 0.01 || Math.abs(cam.near - near) > 0.5 || Math.abs(cam.far - far) > 10) { cam.fov = fov; cam.near = near; cam.far = far; cam.updateProjectionMatrix(); }
     }
     // one source of truth for the view: D.view is the visitor's choice; the view on screen is that choice unless a scene
@@ -1671,7 +1671,7 @@
     // polish: the postcards of the places nearest the start, made while the welcome card is read (not on the first drive)
     function preShots() {
       const c = H.carPos;
-      PL.slice().sort((a, b) => Math.hypot(a.x - c.x, a.z - c.z) - Math.hypot(b.x - c.x, b.z - c.z)).slice(0, 10).forEach((p) => { if (!imgOf(p.pl)) wantShot(p.pl); });
+      PL.slice().sort((a, b) => Math.hypot(a.x - c.x, a.z - c.z) - Math.hypot(b.x - c.x, b.z - c.z)).forEach((p) => { if (!imgOf(p.pl)) wantShot(p.pl); });
     }
     function autoLeft() {
       const a = D.auto; if (!a) return 0;
