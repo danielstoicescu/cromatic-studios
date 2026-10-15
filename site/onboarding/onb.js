@@ -73,6 +73,7 @@
     ["altius", "Altius", "m"], ["casa-berero", "Berero", "c"], ["assetto", "Assetto", "f"], ["pain-plaisir", "Pain Plaisir", "c"],
     ["witanalytica", "Witanalytica", "f"], ["kompus", "Kómpus", "c"], ["venevo", "Venevo", "f"], ["yoshi-izakaya", "Yoshi Izakaya", "c"],
     ["unde", "UNDÉ", "c"], ["patiline", "Patiline", "c"], ["eliade-18", "Eliade 18", "p"], ["rdw-2023", "RDW 2023", "p"], // r139i: all 36
+    ["echo-school", "Echo School", "f"], // r159: 37
   ];
   const wall = $("[data-wall]");
   let wallRows = [];

@@ -43,7 +43,7 @@ export const INDUSTRIES = [
     streetName: "Fintech Boulevard",
     title: "Fintech, banking & investment branding in Bucharest",
     desc: "Brand strategy, identity, websites and apps for banks, brokers and fintech. Investimental, Techventures Bank and Unchain Festival, from Bucharest.",
-    eyebrow: "Fintech Boulevard · 8 case studies",
+    eyebrow: "Fintech Boulevard · 9 case studies",
     h1: "Finance brands with a human face.",
     lead: "Cromatic Studios designs brand strategy, identities, websites and apps for banks, brokers, investment groups, fintech startups and energy companies in Romania. Clear for the regulator, warm for the customer.",
     intro: [
@@ -59,7 +59,7 @@ export const INDUSTRIES = [
       { t: "Fintech events and conferences", p: "Unchain Festival, the summer festival of CEE fintech, got a brand strategy, an identity built on one red thread and unchainfestival.com, with the agenda, speakers, delegates, passes and travel on every screen." },
       { t: "Fleet, signage and merch", p: "Finance brands live offline too. ESD's vans announce “am ajuns” from the roof. Techventures Bank's wings sit on the branch façade and on cars at night. Longshield and Infinity Capital got stationery, roll-ups and pins." }
     ],
-    cases: ["investimental", "unchain-festival", "techventures-bank", "esd", "longshield", "infinity-capital", "assetto", "bepco"],
+    cases: ["investimental", "unchain-festival", "techventures-bank", "esd", "longshield", "infinity-capital", "assetto", "bepco", "echo-school"], // r159: Echo School stands on this boulevard on the map
     faq: [
       ["Which branding studio in Romania works with fintech and banks?", "Cromatic Studios, an independent creative studio in Bucharest. Our finance work includes Techventures Bank, the first entrepreneurial bank in Romania, the retail broker Investimental, Longshield Investment Group, Infinity Capital Investments, the blockchain real estate startup Assetto and Unchain Festival, the summer festival of CEE fintech at Oradea Fortress."],
       ["Do you design trading platforms and banking apps?", "Yes. For Investimental we ran stakeholder workshops, user research and a competitor audit, defined three personas, then designed two design systems, a web trading platform and a native mobile app, with interactive prototypes, usability testing and developer handoff. The platform won design awards and is considered best practice in the market."],
@@ -328,7 +328,7 @@ export const SERVICE_PAGES = [
       { t: "Make", p: "We shoot, design and edit in house. Photo and video sessions, reels, carousels, stories and key visuals, all in the brand's own voice." },
       { t: "Run and grow", p: "We publish, run the ad campaigns, talk with the community and watch what works, then adjust the plan as the crowd grows." }
     ],
-    cases: ["steam", "help-4-brain", "yoshi-izakaya", "printoteca", "sticker-republic", "sip-coffee-wine", "routine-paris", "elithia", "casa-berero"],
+    cases: ["steam", "help-4-brain", "yoshi-izakaya", "printoteca", "sticker-republic", "echo-school", "sip-coffee-wine", "routine-paris", "elithia", "casa-berero"], // r159: + Echo School
     faq: [
       ["Do you manage social media for restaurants and coffee shops?", "Yes. Steam got a content strategy, photo, video, social media management, stories and in-store posters. Yoshi Izakaya got a content strategy, events, ad campaigns and photography shot in the restaurant. Sip Coffee & Wine opened with a social media launch and an opening campaign."],
       ["Do you do social media for pharma and healthcare?", "Yes. Help4Brain, a nootropic produced by Zdrovit, launched on social media with education at the centre, reels with experts and creators, influencer marketing and a TV commercial. Elithia, a women's health clinic, posts calm, clear content in its own voice, from the first check-up to breast screening."],

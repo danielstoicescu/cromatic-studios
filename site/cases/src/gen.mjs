@@ -15,13 +15,14 @@ import { STUDIO_PAGES } from "./specs129-studio.mjs";
 import { TOSKANI } from "./specs130-toskani.mjs";
 import { VENEVO } from "./specs134-venevo.mjs";
 import { PRINTOTECA, STICKER } from "./specs130-social.mjs";
+import { ECHO } from "./specs159-echo.mjs"; // r159: Echo School, a feed of its Instagram
 import { existsSync } from "node:fs";
 // r129: rebuilt pages replace the older spec with the same slug
 const OVERRIDES = [UNCHAIN];
 try { const p = new URL("./specs129-craft.mjs", import.meta.url); if (existsSync(p)) OVERRIDES.push((await import(p)).CRAFT); } catch (e) { console.warn("craft spec", e.message); }
 // r135: Infinity Capital, rebuilt from the deck's Direction 2 (slides 30-46), with its own animated blocks
 try { const p = new URL("./specs135-infinity.mjs", import.meta.url); if (existsSync(p)) OVERRIDES.push((await import(p)).INFINITY); } catch (e) { console.warn("infinity spec", e.message); }
-const PAGES = [...PAGES0, ...PAGES128, ...STUDIO_PAGES, TOSKANI, VENEVO, PRINTOTECA, STICKER].map((p) => OVERRIDES.find((o) => o && o.slug === p.slug) || p);
+const PAGES = [...PAGES0, ...PAGES128, ...STUDIO_PAGES, TOSKANI, VENEVO, PRINTOTECA, STICKER, ECHO].map((p) => OVERRIDES.find((o) => o && o.slug === p.slug) || p);
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..", "..", "..");

@@ -3718,5 +3718,410 @@
 722,
 62,
 6626
+],
+"m:echo-school/admissions-1": [
+1080,
+1350,
+132629
+],
+"m:echo-school/admissions-2": [
+1080,
+1350,
+106054
+],
+"m:echo-school/admissions-3": [
+1080,
+1350,
+98929
+],
+"m:echo-school/banner-imagination": [
+1350,
+603,
+176675
+],
+"m:echo-school/banner-witch": [
+1350,
+995,
+317869
+],
+"m:echo-school/campus-1": [
+1350,
+900,
+189160
+],
+"m:echo-school/campus-2": [
+1350,
+900,
+182495
+],
+"m:echo-school/campus-3": [
+1350,
+900,
+222413
+],
+"m:echo-school/campus-4": [
+1350,
+900,
+183942
+],
+"m:echo-school/campus-5": [
+1350,
+900,
+248712
+],
+"m:echo-school/campus-6": [
+1350,
+1013,
+253261
+],
+"m:echo-school/campus-7": [
+1350,
+1013,
+241870
+],
+"m:echo-school/campus-8": [
+1350,
+1013,
+253406
+],
+"m:echo-school/campus-9": [
+1350,
+1013,
+211773
+],
+"m:echo-school/card-anghelar": [
+1080,
+1350,
+242059
+],
+"m:echo-school/card-gherman": [
+1080,
+1350,
+247164
+],
+"m:echo-school/card-ionescu": [
+1080,
+1350,
+255222
+],
+"m:echo-school/card-nae": [
+1080,
+1350,
+245122
+],
+"m:echo-school/card-solomon": [
+1080,
+1350,
+254180
+],
+"m:echo-school/card-stancu": [
+1080,
+1350,
+292051
+],
+"m:echo-school/card-ursu": [
+1080,
+1350,
+258953
+],
+"m:echo-school/card-zamfir": [
+1080,
+1350,
+239983
+],
+"m:echo-school/comiccon-1": [
+1080,
+1350,
+303027
+],
+"m:echo-school/comiccon-2": [
+1080,
+1350,
+320991
+],
+"m:echo-school/comiccon-3": [
+1080,
+1350,
+192013
+],
+"m:echo-school/comiccon-4": [
+1080,
+1350,
+305964
+],
+"m:echo-school/cover": [
+1350,
+900,
+173896
+],
+"m:echo-school/early-bird": [
+1080,
+1350,
+138059
+],
+"m:echo-school/economy-1": [
+1080,
+1350,
+107227
+],
+"m:echo-school/economy-2": [
+1080,
+1350,
+99772
+],
+"m:echo-school/economy-3": [
+1080,
+1350,
+146363
+],
+"m:echo-school/economy-4": [
+1080,
+1350,
+72802
+],
+"m:echo-school/economy-5": [
+1080,
+1350,
+145972
+],
+"m:echo-school/gdr-1": [
+1080,
+1350,
+72324
+],
+"m:echo-school/gdr-2": [
+1080,
+1350,
+100283
+],
+"m:echo-school/gdr-3": [
+1080,
+1350,
+117626
+],
+"m:echo-school/gdr-4": [
+1080,
+1350,
+116462
+],
+"m:echo-school/gdr-5": [
+1080,
+1350,
+94378
+],
+"m:echo-school/golden-1": [
+1080,
+1350,
+95892
+],
+"m:echo-school/golden-2": [
+1080,
+1350,
+68224
+],
+"m:echo-school/golden-3": [
+1080,
+1350,
+69570
+],
+"m:echo-school/golden-4": [
+1080,
+1350,
+74782
+],
+"m:echo-school/golden-5": [
+1080,
+1350,
+56361
+],
+"m:echo-school/golden-6": [
+1080,
+1350,
+144171
+],
+"m:echo-school/iuf": [
+1080,
+1350,
+143226
+],
+"m:echo-school/kv-game-art": [
+1080,
+1350,
+254541
+],
+"m:echo-school/kv-game-dev": [
+1080,
+1350,
+187419
+],
+"m:echo-school/meet-teachers": [
+1080,
+1350,
+182783
+],
+"m:echo-school/one-take-1": [
+1080,
+1350,
+234373
+],
+"m:echo-school/one-take-2": [
+1080,
+1350,
+141151
+],
+"m:echo-school/one-take-3": [
+1080,
+1350,
+93696
+],
+"m:echo-school/one-take-4": [
+1080,
+1350,
+179718
+],
+"m:echo-school/reel-ad-poster": [
+540,
+960,
+64748
+],
+"m:echo-school/reel-crina-poster": [
+540,
+960,
+53904
+],
+"m:echo-school/reel-first-projects-poster": [
+540,
+960,
+69804
+],
+"m:echo-school/reel-george-poster": [
+540,
+960,
+57561
+],
+"m:echo-school/reel-not-gaming-poster": [
+540,
+960,
+51469
+],
+"m:echo-school/reel-sara-poster": [
+540,
+960,
+61772
+],
+"m:echo-school/reel-sofia-poster": [
+540,
+960,
+54162
+],
+"m:echo-school/reel-theo-poster": [
+540,
+960,
+47886
+],
+"m:echo-school/scholarships": [
+1080,
+1350,
+239565
+],
+"m:echo-school/sticker-01": [
+600,
+600,
+41826
+],
+"m:echo-school/sticker-02": [
+600,
+600,
+45779
+],
+"m:echo-school/sticker-03": [
+600,
+600,
+33335
+],
+"m:echo-school/sticker-04": [
+600,
+600,
+45713
+],
+"m:echo-school/sticker-05": [
+600,
+600,
+51397
+],
+"m:echo-school/sticker-06": [
+600,
+600,
+29046
+],
+"m:echo-school/sticker-07": [
+600,
+600,
+31007
+],
+"m:echo-school/sticker-08": [
+600,
+600,
+22639
+],
+"m:echo-school/sticker-09": [
+600,
+600,
+27485
+],
+"m:echo-school/sticker-10": [
+600,
+600,
+37623
+],
+"m:echo-school/sticker-11": [
+600,
+600,
+46685
+],
+"m:echo-school/sticker-12": [
+600,
+600,
+53449
+],
+"m:echo-school/students-1": [
+1080,
+1350,
+111797
+],
+"m:echo-school/students-2": [
+1080,
+1350,
+122850
+],
+"m:echo-school/students-3": [
+1080,
+1350,
+135382
+],
+"m:echo-school/students-4": [
+1080,
+1350,
+105420
+],
+"m:echo-school/winter-1": [
+1080,
+1350,
+229508
+],
+"m:echo-school/winter-2": [
+1080,
+1350,
+148960
+],
+"m:echo-school/workshop-ai": [
+1080,
+1350,
+245826
+],
+"m:echo-school/workshop-gameloft": [
+1080,
+1350,
+146316
 ]
 }
