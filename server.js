@@ -273,6 +273,8 @@ function acme(req, res) {
 // public-beta beside the release, read from disk per request (nothing of it held in memory, so the live site's
 // memory stays as it is), never indexed, no analytics (built without GA), its boarding passes marked [beta 2.0]
 const BETA_HOST = process.env.BETA_HOST ?? "beta.cromaticstudios.com";
+// r169c: and, until beta. points here, on the app's own Bunnyshell address (http only: it has no certificate)
+const BETA_HOSTS = new Set([BETA_HOST, process.env.BETA_HOST2 ?? "cromaticdrive6abd2eab8b05b.cloud.bunnyroute.com"].filter(Boolean));
 const BETA_ROOT = process.env.BETA_DIR || join(APP_DIR, "public-beta");
 const statOr = (p) => { try { return statSync(p); } catch { return null; } };
 function serveBeta(req, res) {
@@ -373,8 +375,8 @@ http.createServer((req, res) => {
   }
   const host = String(req.headers.host || "").toLowerCase().split(":")[0];
   // r169: beta 2.0 answers on its own host only, before any rule of the live site
-  if (BETA_HOST && host === BETA_HOST) {
-    if (/"scheme":"http"/.test(String(req.headers["cf-visitor"] || ""))) { res.writeHead(301, { Location: `https://${BETA_HOST}${req.url}` }); return res.end(); }
+  if (BETA_HOSTS.has(host)) {
+    if (/"scheme":"http"/.test(String(req.headers["cf-visitor"] || ""))) { res.writeHead(301, { Location: `https://${host}${req.url}` }); return res.end(); }
     if (req.url === "/api/boarding" && req.method === "POST") return void boarding(req, res, "[beta 2.0]").catch(() => send(res, 500, { ok: false }));
     if (req.url === "/api/ctx") return send(res, 200, { internal: false });
     if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405); return res.end(); }
