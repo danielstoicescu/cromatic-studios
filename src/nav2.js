@@ -727,6 +727,7 @@
       return null;
     }
     function arrive(pl) {
+      D.arrT = performance.now();
       D.lastArr = pl;
       D.cardFor = pl;
       H.arrive(pl);
@@ -839,6 +840,7 @@
       }
       if (D.lastArr) { const p = PL.find((q) => q.pl === D.lastArr); if (p && Math.hypot(H.carPos.x - p.x, H.carPos.z - p.z) > 200) { D.lastArr = null; if (D.cardFor) { H.hideCard(); D.cardFor = null; } if (!D.auto) { H.mapNav.place = null; H.mark(); } } }
       ui(Lc, dec);
+      tutTick();
       panelT -= dt;
       if (panelT <= 0) { panelT = 0.22; document.body.classList.toggle("n2-card", H.cardOpen()); render(); }
     }
@@ -1026,10 +1028,10 @@
       <div class="n2-pad" aria-label="Drive">
         <span class="n2-hint mono">HOLD ↑ TO DRIVE</span>
         <div class="n2-keys">
-          <button class="n2-k n2-u" data-k="u" aria-label="Forward (↑ or W)">${ARR.u}</button>
-          <button class="n2-k n2-l" data-k="l" aria-label="Turn left (← or A)">${ARR.l}</button>
-          <button class="n2-k n2-d" data-k="d" aria-label="Brake, reverse (↓ or S)">${ARR.d}</button>
-          <button class="n2-k n2-r" data-k="r" aria-label="Turn right (→ or D)">${ARR.r}</button>
+          <button class="n2-k n2-u" data-k="u" aria-label="Forward (↑ or W)">${ARR.u}<i class="n2-w" aria-hidden="true">W</i></button>
+          <button class="n2-k n2-l" data-k="l" aria-label="Turn left (← or A)">${ARR.l}<i class="n2-w" aria-hidden="true">A</i></button>
+          <button class="n2-k n2-d" data-k="d" aria-label="Brake, reverse (↓ or S)">${ARR.d}<i class="n2-w" aria-hidden="true">S</i></button>
+          <button class="n2-k n2-r" data-k="r" aria-label="Turn right (→ or D)">${ARR.r}<i class="n2-w" aria-hidden="true">D</i></button>
         </div>
       </div>
       <div class="n2-toast" role="status"></div>`;
@@ -1201,8 +1203,59 @@
       api.go(pl);
     });
 
+    // ---------- the first-time tutorial (in the drive guide's look): "Or, you can drive it yourself" at the car, then
+    // "Pick a way" at the first junction, then "You're driving". Once per visitor (cz-drive-guide); a visitor who does not
+    // drive within 10 s goes on to the map guide's "Start here" (done("skipped")); any hand on the map ends it ----------
+    const TUT = { step: null, el: null, done: null, t0: 0, L0: 0, timer: 0 };
+    const touchUI = matchMedia("(hover: none) and (pointer: coarse)").matches;
+    function tutorial(done, force) {
+      try { if (!force && localStorage.getItem("cz-drive-guide")) return false; localStorage.setItem("cz-drive-guide", "1"); } catch {}
+      if (!D.ready && !place()) return false;
+      D.ready = true;
+      if (!TUT.el) { TUT.el = document.createElement("div"); TUT.el.className = "drive-guide n2-guide hidden"; TUT.el.setAttribute("role", "status"); document.body.appendChild(TUT.el); }
+      TUT.asked = true; TUT.done = done; TUT.step = "go"; TUT.t0 = performance.now(); TUT.L0 = H.state.L;
+      tutShow();
+      clearTimeout(TUT.timer); TUT.timer = setTimeout(() => tutEnd("skipped"), 10000);
+      return true;
+    }
+    function tutShow() {
+      const e = TUT.el, st = TUT.step;
+      const key = (k, big) => `<span class="n2-cap${big ? " big" : ""}" aria-hidden="true">${k}</span>`;
+      if (st === "go") e.innerHTML = `<span class="n2-caps">${key("↑", 1)}</span><b>Or, you can drive it yourself</b><i>${touchUI ? "Hold ↑ on the pad" : "Hold ↑ to drive · WASD works too"}</i>`;
+      if (st === "turn") e.innerHTML = `<span class="n2-caps">${key("←")}${key("→")}</span><b>Pick a way</b><i>${touchUI ? "Tap ← or → on the pad" : "← or → at the junction"}</i>`;
+      if (st === "end") e.innerHTML = `<b>You're driving</b><i>Tap any place and we drive you there</i>`;
+      e.classList.remove("hidden");
+      e.classList.remove("in"); void e.offsetWidth; e.classList.add("in");
+      keyEls.u.classList.toggle("tut", st === "go"); keyEls.l.classList.toggle("tut", st === "turn"); keyEls.r.classList.toggle("tut", st === "turn");
+    }
+    function tutEnd(how) {
+      if (!TUT.step) return;
+      TUT.step = null; clearTimeout(TUT.timer);
+      TUT.el?.classList.add("hidden");
+      for (const k of "ulr") keyEls[k].classList.remove("tut");
+      const d = TUT.done; TUT.done = null; d?.(how);
+    }
+    // per frame: follow the car on screen, and move on as the visitor drives
+    function tutTick() {
+      // a visitor who began with a place (the welcome card, a pin): the invitation comes once that first card is closed
+      if (!TUT.step && !TUT.asked && D.arrT && !D.auto && !H.cardOpen() && performance.now() - D.arrT > 1500) { TUT.asked = true; tutorial(null); }
+      if (!TUT.step) return;
+      const L = H.state.L;
+      if (TUT.step === "go" && (D.v > 30 || Math.abs(L - TUT.L0) > 60)) { TUT.step = "drove"; TUT.el.classList.add("hidden"); keyEls.u.classList.remove("tut"); clearTimeout(TUT.timer); TUT.timer = setTimeout(() => tutEnd("done"), 20000); }
+      if (TUT.step === "drove") { const dec = nextDecision(L); if (dec && dec.type === "junction" && dec.L - L < WINDOW && (dec.ex.l || dec.ex.r)) { TUT.step = "turn"; TUT.dec = dec.key; tutShow(); } }
+      if (TUT.step === "turn") { const dec = nextDecision(L); if (!dec || dec.key !== TUT.dec) { TUT.step = "end"; tutShow(); clearTimeout(TUT.timer); TUT.timer = setTimeout(() => tutEnd("done"), 3200); } }
+      if (TUT.step === "drove" || TUT.el.classList.contains("hidden")) return;
+      // over the car, kept inside the screen
+      const p = H.project(H.carPos.x, 40, H.carPos.z), W = innerWidth, Hh = innerHeight, ph = W < 720;
+      if (p.z < 1) { TUT.el.style.left = clamp((p.x * 0.5 + 0.5) * W, 140, W - 140).toFixed(0) + "px"; TUT.el.style.top = clamp((-p.y * 0.5 + 0.5) * Hh - 70, ph ? 250 : 150, Hh - (ph ? 260 : 200)).toFixed(0) + "px"; }
+    }
+    // a hand on the map (a drag, a zoom) ends the tutorial, but the pad, the panel and the views do not
+    window.addEventListener("pointerdown", (e) => { if (TUT.step && TUT.step !== "end" && e.target === H.canvas() && D.streetT < 0.5) tutEnd("skipped"); }, true);
+    window.addEventListener("wheel", () => { if (TUT.step === "go") tutEnd("skipped"); }, { passive: true });
+
     const api = {
       on: false, graph: G, D,
+      tutorial, tutorialEnd: () => tutEnd(null),
       get camK() { return D.camK; },
       tick, pose, camera, body,
       // a place from the map (a pin, a chip, the welcome card): driven to along the graph
@@ -1228,7 +1281,7 @@
         api.on = on;
         document.body.classList.toggle("nav2", on);
         if (!on) { for (const k of "udlr") keyUp(k); D.ready = false; D.auto = null; D.uturn = null; D.streetT = 0; D.camK = 0; viewSig = ""; document.body.classList.remove("nav2-street"); }
-        else { viewSig = ""; setTimeout(() => toast(H.isPhone() ? "Drive it yourself with the pad · or tap a place" : "Drive it yourself: arrows or WASD · V switches the view"), 1600); }
+        else { viewSig = ""; let seen = false; try { seen = !!localStorage.getItem("cz-drive-guide"); } catch {} if (seen) setTimeout(() => toast(H.isPhone() ? "Drive it yourself with the pad · or tap a place" : "Drive it yourself: arrows or WASD · V switches the view"), 1600); } // a first visit gets the tutorial instead
       },
       view: setView,
       press: (k, down = true) => (down ? keyDown(k) : keyUp(k)),

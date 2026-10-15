@@ -38992,6 +38992,7 @@ void main() {
           },
           rebase(pts, L, T) { route.setPath(pts); state.L = prevL = L; state.targetL = mapNav.targetL = T; MO.Ls = L; planeRev = 0; },
           setTarget(T) { mapNav.targetL = T; },
+          project: (x, y, z) => warpV(new Vector3(x, y, z)).project(camera),
           vehicle: () => state.vehicleId, trees: () => TREE_BLOBS,
           reverseLamps(on) { if (veh?.revLamps && veh.revLamps.visible !== on) veh.revLamps.visible = on; },
           camBusy: () => mapIntro || jetFx.phase !== "idle" || document.body.classList.contains("kz-intro"),
@@ -39650,7 +39651,7 @@ void main() {
             <button data-go="invest" style="--wc:#119BFE"><b>Fintech Boulevard</b><i>Investimental, Assetto, Bepco</i></button>
             <button data-go="tac" style="--wc:#F28BA8"><b>Medical Avenue</b><i>The Aesthetic Court, Zdrovit, Elithia</i></button>
             <button data-go="end" style="--wc:#FED012"><b>Olari 9 \u00B7 the studio</b><i>Come by, say hi</i></button>
-          </div><button class="mw-free">Help me set my first direction \u2192</button>`);
+          </div><button class="mw-free">Help me set my first direction \u2192</button><button class="mw-drive">Or drive it yourself \u2191</button>`);
         // r128: the content scrolls inside .mw-in, so the X can sit half outside the card without being clipped
         { const mwIn = document.createElement("div"); mwIn.className = "mw-in"; for (const n of [...welcomeEl.childNodes]) if (!n.classList?.contains("mw-x")) mwIn.append(n); welcomeEl.append(mwIn); }
         // r139s (Daniel: "the onboarding window should not show more than once in a session"): once per visit
@@ -39689,6 +39690,7 @@ void main() {
           welcome(false);
           if (b.classList.contains("mw-x")) { guideStart(); return; } // r139h: closed with ×: the first-time guide
           if (b.classList.contains("mw-free")) { showTapHint(); return; }
+          if (b.classList.contains("mw-drive")) { guideStart(true); return; } // nav2: straight to the driving tutorial
           if (b.dataset.go) mapGo(MAP_PLACES.find((p) => p.id === b.dataset.go));
         };
         // ---- r139h: a light first-time guide after the welcome card is closed with ×: "Drag the map", then the camera
@@ -39728,6 +39730,7 @@ void main() {
           if (!guide.phase) return;
           if (guide.phase === "drag") czEv("onboarding_step", { step: "drag", action: "skipped" });
           else if (guide.phase === "start" && action) czEv("onboarding_step", { step: "start_here", action });
+          if (guide.phase === "drive") { guide.phase = null; nav2?.tutorialEnd(); } // nav2
           guide.phase = null; guide.goal = null; guide.down = null; clearTimeout(guide.timer);
           guide.els?.drag.classList.add("hidden"); guide.els?.start.classList.add("hidden");
           guide.hl?.classList.remove("mg-hl"); guide.hl = null;
@@ -39768,6 +39771,13 @@ void main() {
           try { if (!force && localStorage.getItem("cz-map-guide")) return; localStorage.setItem("cz-map-guide", "1"); } catch {}
           guide.done = true;
           const g = guideEls();
+          // nav2: the first step is the car itself ("Or, you can drive it yourself"); a visitor who does not drive goes on to "Start here"
+          if (nav2?.on) {
+            guide.phase = "drive"; guide.t0 = guide.last = performance.now();
+            const ok = nav2.tutorial((how) => { if (guide.phase !== "drive") return; czEv("onboarding_step", { step: "drive", action: how || "skipped" }); if (how === "skipped") { guide.phase = "wait"; guide.t0 = performance.now(); guide.timer = setTimeout(guideStartHere, 250); } else guide.phase = null; }, force);
+            if (ok) return;
+            guide.phase = null;
+          }
           guide.phase = "drag"; guide.t0 = guide.last = performance.now();
           { // r158: on the road ahead of the car (its own place on screen, kept inside the frame)
             const r = guideRoad("drag"); warpV(guideP.set(r.x, 0, r.z)).project(camera);
@@ -39816,7 +39826,7 @@ void main() {
           guide.last = performance.now();
           const t = e.target;
           if (t === renderer.domElement) { guide.down = { x: e.clientX, y: e.clientY, id: e.pointerId }; if (guide.phase === "start") guide.goal = null; return; }
-          if (t.closest?.(".mg-start") || (guide.phase === "start" && t.closest?.('.map-pin[data-id="tm"], .map-dock'))) return;
+          if (t.closest?.(".mg-start, .nav2-ui") || (guide.phase === "start" && t.closest?.('.map-pin[data-id="tm"], .map-dock'))) return; // nav2: the pad is part of the guide
           guideEnd("skipped");
         }, true);
         window.addEventListener("pointermove", (e) => {
