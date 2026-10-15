@@ -1097,10 +1097,10 @@
     }
     let freeSig = "";
     function freeUI() {
-      let hint = touchUI ? "↑ GO · ← → STEER · ↓ BRAKE / BACK" : "↑ GO · ← → STEER · ↓ BRAKE / BACK · SPACE DRIFT";
+      let hint = touchUI || VP.w < 720 ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BRAKE / BACK · SPACE DRIFT";
       if (D.auto) hint = D.auto.rev ? "BACKING UP TO IT · ANY KEY TAKES OVER" : "DRIVING YOU THERE · ANY KEY TAKES OVER";
       else if (P.u < -5) hint = "REVERSING";
-      else if (P.contact > 0) hint = "THE KERB · STEER AWAY OR BACK UP";
+      else if (P.contact > 0) hint = VP.w < 720 ? "THE KERB · STEER OR BACK UP" : "THE KERB · STEER AWAY OR BACK UP";
       if (hint === freeSig) return;
       freeSig = hint;
       for (const k of "udlr") { keyEls[k].classList.remove("off", "need"); }

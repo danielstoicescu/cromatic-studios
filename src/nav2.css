@@ -180,7 +180,8 @@ body:has(.map-welcome:not(.hidden)) .nav2-ui .n2-panel { opacity: 0; pointer-eve
   .n2-u { grid-column: 5; grid-row: 1; }
   .n2-k { border-radius: 22px; }
   .n2-k svg { width: 44%; height: 44%; }
-  .n2-views { left: 12px; bottom: calc(118px + env(safe-area-inset-bottom, 0px)); flex-direction: row; border-radius: 999px; }
+  .n2-views { left: 12px; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); flex-direction: row; border-radius: 999px; }
+  .n2-hint { max-width: 260px; white-space: nowrap; }
   .n2-views button { height: 40px; padding: 0 12px 0 10px; font-size: 13px; border-radius: 999px; }
-  body.nav2 .map-zoom { bottom: calc(176px + env(safe-area-inset-bottom, 0px)); }
+  body.nav2 .map-zoom { bottom: calc(206px + env(safe-area-inset-bottom, 0px)); }
 }
