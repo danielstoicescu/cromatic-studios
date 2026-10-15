@@ -546,20 +546,10 @@
       const nL = locate(x, z, L - old1, 80), nC = locate(cx, cz, D.C - old1, 80);
       apply(nL, Math.max(nL, nC));
     }
-    // the next thing that needs a choice: a sharp bend on the way, the junction at the end of the path, a dead end
+    // the next thing that needs a choice: the junction at the end of the path, or a dead end
+    // round 2 (Daniel): a bend with no choice is no decision: ↑ carries you round it (the speed follows its curve);
+    // ← → are asked only at real choices, the junctions and the roundabout's exits
     function nextDecision(L) {
-      const ci = ciOf(L);
-      for (let k = ci; k < D.seq.length; k++) {
-        const it = D.seq[k], bs = bendsOf(it);
-        for (let j = 0; j < bs.length; j++) {
-          const b = bs[j], key = it.uid + ":" + j;
-          if (D.cleared.has(key)) continue;
-          if (b.s0 < 40 && (k > 0 || it.fresh)) { D.cleared.add(key); continue; } // a bend right out of a junction is the turn you chose
-          const L0 = it.L0 + b.s0;
-          if (L > it.L0 + b.s1 - 12) continue;
-          return { type: "bend", key, L: L0, side: b.sign > 0 ? "l" : "r", Lend: it.L0 + b.s1, it, ang: b.ang };
-        }
-      }
       const last = D.seq[D.seq.length - 1], n = endNode(last);
       if (N[n].out.length <= 1) return { type: "end", key: "end:" + last.uid, L: last.L1, it: last };
       const ex = exitsAt(last);
