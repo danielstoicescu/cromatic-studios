@@ -345,13 +345,18 @@
     const outH = (it) => { const p = dpts(it), c = dcum(it), L = c[c.length - 1], a = pointAt(p, c, Math.min(2, L * 0.1)), b = pointAt(p, c, Math.min(35, L * 0.6)); return Math.atan2(b[0] - a[0], b[1] - a[1]); };
     const inH = (it) => { const p = dpts(it), c = dcum(it), L = c[c.length - 1], a = pointAt(p, c, L - Math.min(35, L * 0.6)), b = pointAt(p, c, L - Math.min(2, L * 0.1)); return Math.atan2(b[0] - a[0], b[1] - a[1]); };
     const bendsOf = (it) => { const e = E[it.e]; return it.dir > 0 ? e.bends : e.bends.map((b) => ({ s0: e.len - b.s1, s1: e.len - b.s0, sign: -b.sign, ang: -b.ang })); };
-    // the exits of the node at the end of a directed edge, sorted into ← ↑ → (↑ only for a real straight on)
-    const exitCache = new Map();
-    function exitsAt(it) {
-      const k = it.e * 2 + (it.dir > 0 ? 1 : 0);
-      if (exitCache.has(k)) return exitCache.get(k);
-      const n = endNode(it), hin = inH(it);
-      const c = N[n].out.filter((o) => !(o.e === it.e && o.dir === -it.dir)).map((o) => ({ ...o, d: wrapA(outH(o) - hin) })).filter((o) => Math.abs(o.d) < 2.7).sort((a, b) => b.d - a.d);
+    // the roundabout's ring is one way: counter-clockwise seen from above (right-hand traffic: in to the right, round,
+    // out to the right). e.ccw is the direction of each ring edge that goes with the flow
+    const ringNodes = new Set();
+    for (const e of E) if (e.kind === "ring") {
+      const F = H.fork, p0 = e.pts[0], p1 = e.pts[Math.min(3, e.pts.length - 1)];
+      e.ccw = wrapA(Math.atan2(p1[1] - F.y, p1[0] - F.x) - Math.atan2(p0[1] - F.y, p0[0] - F.x)) < 0 ? 1 : -1;
+      ringNodes.add(e.a); ringNodes.add(e.b);
+    }
+    const against = (o) => E[o.e].kind === "ring" && o.dir !== E[o.e].ccw;
+    // candidates (each with d, its turn from the way you arrive) into ← ↑ →: order kept, ↑ only for a real straight on
+    function slots(c) {
+      c.sort((a, b) => b.d - a.d);
       const SL = [["l", Math.PI / 2], ["s", 0], ["r", -Math.PI / 2]];
       const ok = (o, s) => (s === "s" ? Math.abs(o.d) < 0.7 : s === "l" ? o.d > 0.22 : o.d < -0.22);
       let best = null;
@@ -362,7 +367,32 @@
       };
       rec(0, 0, 0, []);
       const ex = { l: null, s: null, r: null, all: c };
-      if (best) for (const [i, s] of best.asg) ex[s] = { e: c[i].e, dir: c[i].dir, d: c[i].d };
+      if (best) for (const [i, s] of best.asg) ex[s] = c[i];
+      return ex;
+    }
+    // the exits of the node at the end of a directed edge, sorted into ← ↑ →
+    const exitCache = new Map();
+    function exitsAt(it) {
+      const k = it.e * 2 + (it.dir > 0 ? 1 : 0);
+      if (exitCache.has(k)) return exitCache.get(k);
+      const n = endNode(it), hin = inH(it);
+      let ex;
+      if (E[it.e].kind !== "ring" && ringNodes.has(n)) {
+        // a roundabout: the choice is the arm you leave by; the ring in between is driven for you, with the flow
+        const c = [];
+        let m = n, via = [], pre = 0;
+        for (let g = 0; g < 16; g++) {
+          const r = N[m].out.find((o) => E[o.e].kind === "ring" && o.dir === E[o.e].ccw);
+          if (!r) break;
+          via = via.concat([{ e: r.e, dir: r.dir }]); pre += E[r.e].len; m = endNode(r);
+          if (m === n) break;
+          for (const o of N[m].out) if (E[o.e].kind !== "ring") c.push({ e: o.e, dir: o.dir, via, pre, d: wrapA(outH(o) - hin) });
+        }
+        ex = slots(c.filter((o) => Math.abs(o.d) < 2.7));
+        ex.round = true;
+      } else {
+        ex = slots(N[n].out.filter((o) => !(o.e === it.e && o.dir === -it.dir) && !against(o)).map((o) => ({ e: o.e, dir: o.dir, d: wrapA(outH(o) - hin) })).filter((o) => Math.abs(o.d) < 2.7));
+      }
       exitCache.set(k, ex);
       return ex;
     }
@@ -401,18 +431,27 @@
     for (const p of PL) if (!p.q) p.q = p.z > 6040 ? "D" : quarterAt(p.x, p.z) || "D";
 
     // ===================== 2. driving =====================
-    const VMAX = 430, ACC = 300, COAST = 380, BRAKE = 520, HARD = 1100, ALAT = 1300, STOPGAP = 34, WINDOW = 360;
+    const VMAX = 430, VREV = 140, ACC = 250, ACC_REV = 150, COAST = 300, BRAKE = 460, HARD = 950, ALAT = 1300, WINDOW = 360;
     const D = {
       seq: [], px: [], pz: [], cum: [], kap: [], total: 0, C: 0, v: 0, uid: 1,
-      cleared: new Set(), goUntil: -1, auto: null, uturn: null, backHold: false, downT: 0,
-      keys: { u: false, d: false, l: false, r: false }, ready: false, view: "sat", streetT: 0, camK: 0, camH: null,
+      cleared: new Set(), goUntil: -1, auto: null, uturn: null, kturn: null, revSteer: null, wasRev: false, backHold: false, downT: 0,
+      keys: { u: false, d: false, l: false, r: false }, ready: false, view: "sat", streetT: 0, camPull: 1, camUp: 0, camOver: 0, camK: 0, camH: null,
       lastArr: null, cardFor: null, firstDrive: true
     };
+    // the corner at a node: as wide as the narrower road allows (a lane change is a light blend), a tighter one on the
+    // roundabout's ring; never more than 42% of either edge
+    function filletR(a, b) {
+      const ea = E[a.e], eb = E[b.e], phi = Math.abs(wrapA(outH(b) - inH(a)));
+      let r = phi < 0.15 ? 10 : ea.kind === "ring" || eb.kind === "ring" ? 24 : Math.min(ea.w, eb.w) * 0.5 + 16;
+      if (phi > 2) r *= 0.75;
+      return Math.min(r, ea.len * 0.42, eb.len * 0.42);
+    }
+    const gapOf = (it) => Math.min(48, E[it.e].len * 0.42) + 6; // the stop line before a node
     // the path the car drives: the directed edges of D.seq, joined with a rounded corner at each node
     function buildPath() {
       const P = [];
       const S = D.seq;
-      const rAt = (k) => Math.min(26, E[S[k].e].len * 0.4, E[S[k + 1].e].len * 0.4);
+      const rAt = (k) => filletR(S[k], S[k + 1]);
       let rin = 0;
       for (let k = 0; k < S.length; k++) {
         const it = S[k], p = dpts(it), c = dcum(it), len = c[c.length - 1];
@@ -427,7 +466,7 @@
         if (k < S.length - 1) {
           const nxt = S[k + 1], q = dpts(nxt), qc = dcum(nxt);
           const A = pointAt(p, c, to), M = p[p.length - 1], Bp = pointAt(q, qc, rout);
-          for (let j = 1; j <= 8; j++) { const t = j / 8, u = 1 - t; pushP(P, [u * u * A[0] + 2 * u * t * M[0] + t * t * Bp[0], u * u * A[1] + 2 * u * t * M[1] + t * t * Bp[1]]); }
+          for (let j = 1; j <= 12; j++) { const t = j / 12, u = 1 - t; pushP(P, [u * u * A[0] + 2 * u * t * M[0] + t * t * Bp[0], u * u * A[1] + 2 * u * t * M[1] + t * t * Bp[1]]); }
         }
         rin = rout;
       }
@@ -468,7 +507,8 @@
       return best;
     }
     const pathPts = () => D.px.map((x, i) => [x, D.pz[i]]);
-    function apply(L, C) { H.rebase(pathPts(), L, C); D.C = C; }
+    // the path is re-based (L shifts): everything kept in path units shifts with it
+    function apply(L, C) { const dL = L - H.state.L; if (D.goUntil > 0 && isFinite(D.goUntil)) D.goUntil += dL; H.rebase(pathPts(), L, C); D.C = C; }
     function ciOf(L) { let k = 0; for (let i = 0; i < D.seq.length; i++) if (D.seq[i].L0 <= L + 0.01) k = i; return k; }
     function place() {
       // put the car on the graph where it stands, facing the way it faces
@@ -477,7 +517,7 @@
       if (!a) return false;
       const e = E[a.e], p = pointAt(e.pts, e.cum, Math.min(e.len, a.s + 4)), p0 = pointAt(e.pts, e.cum, Math.max(0, a.s - 4));
       const dir = (p[0] - p0[0]) * t.x + (p[1] - p0[1]) * t.z >= 0 ? 1 : -1;
-      D.seq = [{ e: a.e, dir, uid: D.uid++ }];
+      D.seq = [{ e: a.e, dir, uid: D.uid++, fresh: true }];
       buildPath();
       const L = locate(c.x, c.z);
       D.v = 0; D.auto = null; D.uturn = null; D.cleared.clear();
@@ -485,6 +525,7 @@
       return true;
     }
     function commit(it) {
+      for (const v of it.via || []) D.seq.push({ e: v.e, dir: v.dir, uid: D.uid++ });
       D.seq.push({ e: it.e, dir: it.dir, uid: D.uid++ });
       const L = H.state.L, C = D.C;
       buildPath();
@@ -492,7 +533,7 @@
     }
     function trim() {
       const L = H.state.L;
-      if (D.seq.length < 3) return;
+      if (D.seq.length < 3 || D.v < 0) return;
       const ci = ciOf(L);
       if (ci < 1 || L < D.seq[1].L0 + 90) return;
       const [x, z] = pathPos(L), [cx, cz] = pathPos(D.C), old1 = D.seq[1].L0;
@@ -509,7 +550,7 @@
         for (let j = 0; j < bs.length; j++) {
           const b = bs[j], key = it.uid + ":" + j;
           if (D.cleared.has(key)) continue;
-          if (b.s0 < 40 && k > 0) { D.cleared.add(key); continue; } // a bend right out of a junction is the turn you chose
+          if (b.s0 < 40 && (k > 0 || it.fresh)) { D.cleared.add(key); continue; } // a bend right out of a junction is the turn you chose
           const L0 = it.L0 + b.s0;
           if (L > it.L0 + b.s1 - 12) continue;
           return { type: "bend", key, L: L0, side: b.sign > 0 ? "l" : "r", Lend: it.L0 + b.s1, it, ang: b.ang };
@@ -518,27 +559,54 @@
       const last = D.seq[D.seq.length - 1], n = endNode(last);
       if (N[n].out.length <= 1) return { type: "end", key: "end:" + last.uid, L: last.L1, it: last };
       const ex = exitsAt(last);
-      return { type: "junction", key: "j:" + last.uid, L: last.L1, it: last, ex, node: n };
+      return { type: "junction", key: "j:" + last.uid, L: last.L1, it: last, ex, node: n, gap: gapOf(last) };
+    }
+    // the rides that turn on the spot (the scooter, the submarine, the plane); every car reverses instead
+    const pivots = () => { const id = H.vehicle(); return id === "scooter" || id === "sub" || id === "plane"; };
+    const reversing = () => D.v < -0.5 || (D.keys.d && D.v <= 0.5 && !pivots() && !D.kturn);
+    // the side streets a reversing car can back into, at the node behind it
+    function backInto(L) {
+      const ci = ciOf(L), it = D.seq[ci], B = startNode(it), h0 = outH(it), rin = ci > 0 ? filletR(D.seq[ci - 1], it) : 0;
+      if (L - it.L0 > 140 || L - it.L0 < rin + 3) return null;
+      const c = N[B].out.filter((o) => !(o.e === it.e && o.dir === it.dir) && E[o.e].kind !== "ring").map((o) => ({ ...o, d: wrapA(outH(o) - h0) }));
+      const side = (sg) => c.filter((o) => sg * o.d > 0.3 && sg * o.d < 2.6).sort((a, b) => Math.abs(Math.abs(a.d) - Math.PI / 2) - Math.abs(Math.abs(b.d) - Math.PI / 2))[0] || null;
+      return { ci, it, l: side(1), r: side(-1), back: c.filter((o) => Math.abs(o.d) >= 2.6).sort((a, b) => Math.abs(b.d) - Math.abs(a.d))[0] || null };
+    }
+    function reverseInto(o, L) {
+      const ci = ciOf(L), [x, z] = pathPos(L), [cx, cz] = pathPos(D.C), off = L - D.seq[ci].L0;
+      D.seq = [{ e: o.e, dir: -o.dir, uid: D.uid++ }, ...D.seq.slice(ci)];
+      buildPath();
+      const g = D.seq[1].L0 + off;
+      apply(locate(x, z, g, 60), locate(cx, cz, g + (D.C - L), 60));
     }
     // a key: what it does here
     function valid(dec, L) {
       const near = dec && dec.L - L < WINDOW;
-      const stopped = D.v < 8;
+      const stopped = Math.abs(D.v) < 8;
       const v = { u: true, d: true, l: false, r: false };
+      if (D.kturn || D.uturn) return { u: false, d: false, l: false, r: false };
+      if (reversing()) { const b = backInto(L); v.l = !!b?.l; v.r = !!b?.r; return v; }
       if (!dec) return v;
-      if (dec.type === "bend" && near) { v[dec.side] = true; if (stopped && dec.L - L < STOPGAP + 30) v.u = false; }
-      if (dec.type === "junction" && near) { v.l = !!dec.ex.l; v.r = !!dec.ex.r; if (!dec.ex.s && stopped && dec.L - L < STOPGAP + 40) v.u = false; }
+      if (dec.type === "bend" && near) { v[dec.side] = true; if (stopped && dec.L - L < 34) v.u = false; }
+      if (dec.type === "junction" && near) { v.l = !!dec.ex.l; v.r = !!dec.ex.r; if (!dec.ex.s && stopped && dec.L - L < dec.gap + 40) v.u = false; }
       if (dec.type === "end" && stopped && dec.L - L < 60) v.u = false;
       return v;
     }
     function press(k) {
-      if (!D.ready) return;
+      if (!D.ready || D.kturn || D.uturn) return;
       if (D.auto) stopAuto();
       H.follow();
       D.firstDrive && firstDrive();
-      if (k === "d") { D.downT = 0; if (D.v < 40 && !D.uturn) uturn(); return; }
       const L = H.state.L, dec = nextDecision(L);
-      if (!dec || dec.L - L > WINDOW) { if (k !== "u") nope(k); return; }
+      if (k === "d") {
+        D.downT = 0; D.goUntil = -1;
+        if (Math.abs(D.v) < 40 && pivots()) { uturn(); return; }
+        if (Math.abs(D.v) < 6 && dec && dec.type === "end" && dec.L - L < 44) kturn();
+        return;
+      }
+      // reversing: ← → back into the side street at the node behind
+      if ((k === "l" || k === "r") && reversing()) { D.revSteer = k; flashKey(k); return; }
+      if (!dec || dec.L - L > 600) { if (k !== "u") nope(k); return; }
       if (dec.type === "bend") {
         if (k === dec.side) { D.cleared.add(dec.key); D.goUntil = dec.Lend + 20; flashKey(k); return; }
         if (k !== "u") nope(k);
@@ -547,9 +615,9 @@
       if (dec.type === "junction") {
         const o = dec.ex[k];
         if (!o) { if (k !== "u") nope(k); return; }
-        if (k === "u" && !D.keys.u) return;
+        if (k === "u" && (!D.keys.u || dec.L - L > WINDOW)) return;
         commit(o);
-        D.goUntil = dec.L + 40;
+        D.goUntil = dec.L + 40 + (o.pre || 0);
         flashKey(k);
         return;
       }
@@ -560,20 +628,35 @@
       if (D.auto) stopAuto();
       H.follow();
       const L = H.state.L, dec = nextDecision(L);
-      if (dec && dec.type === "junction" && dec.ex[k] && dec.L - STOPGAP >= L - 1) { commit(dec.ex[k]); flashKey(k); render(true); }
+      if (dec && dec.type === "junction" && dec.ex[k] && dec.L - dec.gap >= L - 1) { commit(dec.ex[k]); flashKey(k); render(true); }
       else nope(k);
     }
+    // the rides that can: a half circle on the spot from one lane to the other
     function uturn() {
       const L = H.state.L, it = D.seq[ciOf(L)];
+      if (E[it.e].kind === "ring") { nope("d"); return; }
       const [x, z] = pathPos(L), [x2, z2] = pathPos(Math.min(D.total, L + 6)), [x1, z1] = pathPos(Math.max(0, L - 6));
       let fx = x2 - x1, fz = z2 - z1; const fl = Math.hypot(fx, fz) || 1; fx /= fl; fz /= fl;
-      D.seq = [{ e: it.e, dir: -it.dir, uid: D.uid++ }];
+      D.seq = [{ e: it.e, dir: -it.dir, uid: D.uid++, fresh: true }];
       buildPath();
       const nL = locate(x, z);
       D.v = 0;
       apply(nL, nL);
       D.uturn = { t: 0, dur: reduced() ? 0.35 : 1.05, cx: x, cz: z, fx, fz, rx: -fz, rz: fx };
       D.backHold = D.keys.d;
+    }
+    // a car at a dead end: a three-point turn (forward and left across the road, back and right, forward and away)
+    const KT = [[0, 11, 0], [17, -6, 1.6], [6, 4, 2.35], [-4, -11, Math.PI]], KTD = [0.95, 0.8, 0.95], KTS = [1, -1, 1];
+    function kturn() {
+      const L = H.state.L, it = D.seq[ciOf(L)];
+      const [x, z] = pathPos(L), [x2, z2] = pathPos(Math.min(D.total, L + 6)), [x1, z1] = pathPos(Math.max(0, L - 6));
+      let fx = x2 - x1, fz = z2 - z1; const fl = Math.hypot(fx, fz) || 1; fx /= fl; fz /= fl;
+      D.seq = [{ e: it.e, dir: -it.dir, uid: D.uid++, fresh: true }];
+      buildPath();
+      const nL = locate(x - fx * 4, z - fz * 4);
+      D.v = 0;
+      apply(nL, nL);
+      D.kturn = { t: 0, k: reduced() ? 0.6 : 1, cx: x, cz: z, fx, fz, rx: -fz, rz: fx };
     }
     function stopAuto() { D.auto = null; H.mapNav.place = null; H.mark(); render(true); }
     // ---------- auto-pilot: the shortest way along the graph to a place, the junctions taken for you ----------
@@ -582,23 +665,23 @@
       const L = H.state.L, it = D.seq[ciOf(L)], e = E[it.e];
       const sDir = clamp(L - it.L0, 0, e.len); // along the directed edge
       const tE = E[target.e];
-      // on this very edge
       const tsDir = it.dir > 0 ? target.s : tE.len - target.s;
       if (target.e === it.e && tsDir >= sDir - 4) return { legs: [], uturn: false, cost: tsDir - sDir };
-      if (target.e === it.e && sDir - tsDir < 400) return { legs: [], uturn: true, cost: sDir - tsDir + 90 };
+      const piv = pivots() && e.kind !== "ring";
+      if (piv && target.e === it.e && sDir - tsDir < 400) return { legs: [], uturn: true, cost: sDir - tsDir + 90 };
       const n = N.length, dist0 = new Float64Array(n).fill(Infinity), prev = new Int32Array(n).fill(-1), pe = new Int32Array(n).fill(-1), pd = new Int8Array(n);
       const heap = [];
       const push = (d, v) => { heap.push([d, v]); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
       const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
-      const fwdN = endNode(it), backN = startNode(it);
-      dist0[fwdN] = e.len - sDir; pd[fwdN] = 1; push(dist0[fwdN], fwdN);
-      const back = sDir + 90; // a U-turn costs a little
-      if (back < dist0[backN]) { dist0[backN] = back; pd[backN] = -1; push(back, backN); }
+      const fwdN = endNode(it), backN = startNode(it), deadAhead = N[fwdN].out.length === 1;
+      dist0[fwdN] = e.len - sDir + (deadAhead ? 160 : 0); pd[fwdN] = 1; push(dist0[fwdN], fwdN);
+      if (piv) { const back = sDir + 90; if (back < dist0[backN]) { dist0[backN] = back; pd[backN] = -1; push(back, backN); } }
       while (heap.length) {
         const [d, u] = pop();
         if (d > dist0[u]) continue;
         for (const o of N[u].out) {
-          if (o.e === it.e && prev[u] === -1) continue; // not back along the edge you are on
+          if (against(o)) continue; // the ring only with the flow
+          if (o.e === it.e && prev[u] === -1 && !(u === fwdN && deadAhead)) continue; // not back along your own edge (but out of a dead end, after the three-point turn)
           const ed = E[o.e], v = o.dir > 0 ? ed.b : ed.a, nd = d + ed.len;
           if (nd < dist0[v]) { dist0[v] = nd; prev[v] = u; pe[v] = o.e * 2 + (o.dir > 0 ? 1 : 0); pd[v] = pd[u]; push(nd, v); }
         }
@@ -610,18 +693,20 @@
       const legs = [];
       for (let v = endN; prev[v] !== -1; v = prev[v]) legs.push({ e: pe[v] >> 1, dir: pe[v] & 1 ? 1 : -1 });
       legs.reverse();
-      // the edge you are on, met again as the target (a U-turn, then straight there)
       if (!(legs.length === 0 && last.e === it.e && last.dir === it.dir)) legs.push(last);
       return { legs, uturn: pd[endN] === -1, cost: Math.min(viaA, viaB) };
     }
     function goTo(target, pl) {
       if (!D.ready && !place()) return false;
       D.ready = true;
+      if (D.kturn || D.uturn) return false;
       // drop the corners already chosen beyond the car
       const L = H.state.L, ci = ciOf(L);
-      if (D.seq.length > ci + 1) { D.seq.length = ci + 1; buildPath(); apply(L, clamp(D.C, L, D.total)); }
+      if (D.seq.length > ci + 1 && L < D.seq[ci].L1 - gapOf(D.seq[ci])) { D.seq.length = ci + 1; buildPath(); apply(L, clamp(D.C, L, D.total)); }
       const p = plan(target);
       if (!p) return false;
+      // legs already on the path (a corner taken too late to drop) are skipped
+      while (p.legs.length && D.seq.slice(ci + 1).some((q) => q.e === p.legs[0].e && q.dir === p.legs[0].dir)) p.legs.shift();
       D.auto = { pl, target, legs: p.legs, uturn: p.uturn };
       D.goUntil = -1;
       H.mapNav.place = pl && !pl.tap ? pl : null; H.mark();
@@ -655,10 +740,13 @@
       if (!H.ready()) return;
       if (!D.ready) { if (!place()) return; D.ready = true; render(true); }
       const L = H.state.L;
-      if (D.uturn) {
-        D.uturn.t += dt;
-        D.C = L; H.setTarget(L);
-        if (D.uturn.t >= D.uturn.dur) { D.uturn = null; if (D.keys.d && D.backHold) D.goUntil = Infinity; }
+      if (D.uturn || D.kturn) {
+        const m = D.uturn || D.kturn;
+        m.t += dt;
+        D.C = L; H.setTarget(L); D.v = 0;
+        const done = D.uturn ? m.t >= m.dur : m.t * (1 / m.k) >= KTD[0] + KTD[1] + KTD[2];
+        if (done) { if (D.uturn && D.keys.d && D.backHold) D.goUntil = Infinity; D.uturn = D.kturn = null; render(true); }
+        lamps(D.kturn ? ktSeg() === 1 : false);
         ui(L, null);
         return;
       }
@@ -666,42 +754,62 @@
       trim();
       const L2 = H.state.L;
       let dec = nextDecision(L2);
-      // the auto-pilot takes the junctions and the bends itself
+      // the auto-pilot takes the junctions, the roundabouts and the bends itself
       if (D.auto) {
         if (D.auto.uturn) {
-          if (D.v < 6 && Math.abs(D.C - L2) < 6) { const a = D.auto; uturn(); a.uturn = false; D.auto = a; }
+          if (Math.abs(D.v) < 6 && Math.abs(D.C - L2) < 6) { const a = D.auto; uturn(); a.uturn = false; D.auto = a; }
         } else if (dec && dec.L - L2 < WINDOW) {
           const As0 = autoStopL();
           if (dec.type === "bend" && (As0 == null || dec.L < As0)) { D.cleared.add(dec.key); dec = nextDecision(L2); }
-          if (dec && dec.type === "junction" && D.auto.legs.length) {
-            const nx = D.auto.legs[0];
-            const last = D.seq[D.seq.length - 1];
+          const last = D.seq[D.seq.length - 1], nx = D.auto.legs[0];
+          if (dec && dec.type === "junction" && nx) {
             if (nx.e === last.e && nx.dir === last.dir) D.auto.legs.shift();
-            else if (N[endNode(last)].out.some((o) => o.e === nx.e && o.dir === nx.dir)) { D.auto.legs.shift(); commit(nx); dec = nextDecision(H.state.L); }
+            else if (N[endNode(last)].out.some((o) => o.e === nx.e && o.dir === nx.dir)) {
+              D.auto.legs.shift(); commit(nx);
+              while (E[nx.e].kind === "ring" && D.auto.legs.length) { const n2 = D.auto.legs.shift(); commit(n2); if (E[n2.e].kind !== "ring") break; }
+              dec = nextDecision(H.state.L);
+            }
+          } else if (dec && dec.type === "end" && nx && nx.e === last.e && nx.dir === -last.dir && Math.abs(D.v) < 3 && dec.L - L2 < 44) {
+            const a = D.auto; kturn(); a.legs.shift(); D.auto = a; return;
           }
         }
       }
       // ↑ held into a junction that goes straight on: straight on
-      if (!D.auto && D.keys.u && dec && dec.type === "junction" && dec.ex.s && dec.L - L2 < 70 + D.v * 0.45) { commit(dec.ex.s); dec = nextDecision(H.state.L); }
-      // ↓ held: brake, then turn round, then drive back
-      if (D.keys.d && !D.auto) { D.downT += dt; if (D.v < 6 && Math.abs(D.C - L2) < 8 && D.downT > 0.18 && D.goUntil !== Infinity) { uturn(); return; } }
-      const Lc = H.state.L;
-      const auto = D.auto && !D.auto.uturn;
-      const thr = (D.keys.u || auto || D.goUntil > Lc || D.goUntil === Infinity) && !(D.keys.d && D.goUntil !== Infinity);
-      // where the carrot must stop: the next undecided choice, or the place the auto-pilot is going to
-      let Ls = D.total - 2;
-      if (dec) {
-        if (dec.type === "bend") Ls = dec.L - 4;
-        else if (dec.type === "junction") Ls = dec.L - STOPGAP;
-        else Ls = dec.L - 16;
+      if (!D.auto && D.keys.u && D.v >= 0 && dec && dec.type === "junction" && dec.ex.s && dec.L - L2 < 70 + D.v * 0.45) { commit(dec.ex.s); dec = nextDecision(H.state.L); }
+      let Lc = H.state.L;
+      // after reversing, driving on again: the choices made beyond the car are dropped (you choose again)
+      if (D.wasRev && D.keys.u && D.v >= 0) {
+        D.wasRev = false;
+        const ci = ciOf(Lc);
+        if (D.seq.length > ci + 1 && Lc < D.seq[ci].L1 - gapOf(D.seq[ci])) { D.seq.length = ci + 1; buildPath(); apply(Lc, Lc); dec = nextDecision(Lc); }
       }
+      const auto = D.auto && !D.auto.uturn;
+      const fwdIn = (D.keys.u || auto || D.goUntil > Lc || D.goUntil === Infinity) && !(D.keys.d && D.goUntil !== Infinity);
+      const rev = D.keys.d && D.v <= 0.5 && !pivots() && !D.auto; // ↓ held, stopped or backing: reverse
+      // and going back: the start of the path, unless you back into a street there
+      let Lb = 4;
+      if (rev || D.v < -0.5) {
+        D.wasRev = true;
+        const b = backInto(Lc);
+        if (b) {
+          const steer = D.keys.l ? "l" : D.keys.r ? "r" : D.revSteer;
+          const pick = steer ? b[steer] : b.ci === 0 ? b.back : null;
+          if (pick && !(b.ci > 0 && D.seq[b.ci - 1].e === pick.e && D.seq[b.ci - 1].dir === -pick.dir)) { reverseInto(pick, Lc); D.revSteer = null; Lc = H.state.L; dec = nextDecision(Lc); }
+        }
+      }
+      // where the carrot must stop going forward: the next undecided choice, or the auto-pilot's place
+      let Ls = D.total - 2;
+      if (dec) Ls = dec.type === "bend" ? dec.L - 4 : dec.type === "junction" ? dec.L - dec.gap : dec.L - 16;
       const As = autoStopL();
       if (As != null) Ls = Math.min(Ls, As);
       Ls = Math.max(Ls, Math.min(D.C, dec ? dec.L - 6 : D.total));
-      let want = thr ? VMAX : 0;
-      want = Math.min(want, Math.sqrt(2 * BRAKE * Math.max(0, Ls - D.C)));
-      // the bends ahead: the speed their curvature allows, braked for in time
-      {
+      let want;
+      if (rev) want = D.v > 0.5 ? 0 : Math.max(-VREV, -Math.sqrt(2 * BRAKE * Math.max(0, D.C - Lb)));
+      else if (D.v < -0.5) want = 0; // ↓ let go while backing: it rolls to a stop
+      else {
+        want = fwdIn ? VMAX : 0;
+        want = Math.min(want, Math.sqrt(2 * BRAKE * Math.max(0, Ls - D.C)));
+        // the bends ahead: the speed their curvature allows, braked for in time
         const look = (D.v * D.v) / (2 * BRAKE) + 40;
         let i = 0; while (i < D.cum.length - 1 && D.cum[i] < D.C) i++;
         for (; i < D.cum.length && D.cum[i] < D.C + look; i++) {
@@ -709,19 +817,23 @@
           want = Math.min(want, Math.sqrt(ALAT / k + 2 * BRAKE * Math.max(0, D.cum[i] - D.C)));
         }
       }
-      const dn = D.keys.d ? HARD : thr ? BRAKE : COAST;
-      D.v = D.v < want ? Math.min(want, D.v + ACC * dt) : Math.max(want, D.v - dn * dt);
-      D.C = Math.min(D.C + D.v * dt, Ls);
-      if (D.C >= Ls - 0.01 && want < 1) D.v = 0;
-      D.C = Math.max(D.C, Lc);
+      if (D.v === 0 && want !== 0) D.C = Lc; // pulling away (either way) from where the car is
+      const speedUp = Math.abs(want) > Math.abs(D.v) && want * D.v >= 0;
+      const rate = speedUp ? (want < 0 ? ACC_REV : ACC * (1 - 0.45 * Math.min(1, D.v / VMAX))) : (D.keys.d && D.v > 0) || (fwdIn && D.v < 0) ? HARD : fwdIn || rev ? BRAKE : COAST;
+      const nv = D.v < want ? Math.min(want, D.v + rate * dt) : Math.max(want, D.v - rate * dt);
+      D.v = D.v * nv < 0 ? 0 : nv;
+      D.C = clamp(D.C + D.v * dt, Lb, Math.max(Ls, Lb));
+      if ((D.C >= Ls - 0.01 && want <= 0.5 && D.v > 0) || (D.C <= Lb + 0.01 && D.v < 0)) D.v = 0;
+      if (D.v > 0) D.C = Math.max(D.C, Lc - 0.5);
       H.setTarget(D.C);
+      lamps(D.v < -0.5 || (rev && Math.abs(D.v) < 0.5 && D.keys.d));
       // arrivals
-      if (D.auto && As != null && Math.abs(Lc - As) < 6 && D.v < 3) {
+      if (D.auto && As != null && Math.abs(Lc - As) < 6 && Math.abs(D.v) < 3) {
         const pl = D.auto.pl;
         D.auto = null;
         if (pl) arrive(pl); else { H.mapNav.place = null; H.mark(); }
         render(true);
-      } else if (!D.auto && D.v < 3 && Math.abs(D.C - Lc) < 3) {
+      } else if (!D.auto && D.v === 0 && Math.abs(D.C - Lc) < 3 && !D.keys.d) {
         const here = hereAt();
         if (here && here.pl !== D.lastArr) arrive(here.pl);
       }
@@ -730,23 +842,54 @@
       panelT -= dt;
       if (panelT <= 0) { panelT = 0.22; document.body.classList.toggle("n2-card", H.cardOpen()); render(); }
     }
+    let lampOn = false;
+    function lamps(on) { lampOn = on; H.reverseLamps(on); }
     function hereAt() {
       let best = null;
       for (const p of PL) { const d = Math.hypot(H.carPos.x - p.x, H.carPos.z - p.z); if (d < 75 && (!best || d < best.d)) best = { pl: p.pl, d, p }; }
       return best;
     }
-    // the car's pose while it turns round: a tight half circle from its lane over to the other one
+    const ktSeg = () => { const m = D.kturn, t = m.t / m.k; return t < KTD[0] ? 0 : t < KTD[0] + KTD[1] ? 1 : 2; };
+    // the car's pose while it turns round: on the spot (the rides that can), or the three-point turn
     function pose(carPos, carTan) {
       const u = D.uturn;
-      if (!u) return;
-      const ph = Math.PI * sss(clamp(u.t / u.dur, 0, 1)), r = 11;
-      carPos.x = u.cx + r * (u.rx * Math.cos(ph) + u.fx * Math.sin(ph) * 1.2);
-      carPos.z = u.cz + r * (u.rz * Math.cos(ph) + u.fz * Math.sin(ph) * 1.2);
-      carTan.set(-u.rx * Math.sin(ph) + u.fx * Math.cos(ph), 0, -u.rz * Math.sin(ph) + u.fz * Math.cos(ph)).normalize();
+      if (u) {
+        const ph = Math.PI * sss(clamp(u.t / u.dur, 0, 1)), r = 11;
+        carPos.x = u.cx + r * (u.rx * Math.cos(ph) + u.fx * Math.sin(ph) * 1.2);
+        carPos.z = u.cz + r * (u.rz * Math.cos(ph) + u.fz * Math.sin(ph) * 1.2);
+        carTan.set(-u.rx * Math.sin(ph) + u.fx * Math.cos(ph), 0, -u.rz * Math.sin(ph) + u.fz * Math.cos(ph)).normalize();
+        return;
+      }
+      const m = D.kturn;
+      if (!m) return;
+      const t = m.t / m.k, i = ktSeg(), t0 = i === 0 ? 0 : i === 1 ? KTD[0] : KTD[0] + KTD[1], uu = clamp((t - t0) / KTD[i], 0, 1), e = uu * uu * (3 - 2 * uu);
+      const [f0, r0, a0] = KT[i], [f1, r1, a1] = KT[i + 1], sg = KTS[i];
+      // Hermite between the two key poses, its ends along the car's nose (forward) or tail (reverse)
+      const len = Math.hypot(f1 - f0, r1 - r0) * 1.25, d0 = [Math.cos(a0) * sg * len, -Math.sin(a0) * sg * len], d1 = [Math.cos(a1) * sg * len, -Math.sin(a1) * sg * len];
+      const h00 = 2 * e ** 3 - 3 * e * e + 1, h10 = e ** 3 - 2 * e * e + e, h01 = -2 * e ** 3 + 3 * e * e, h11 = e ** 3 - e * e;
+      const pf = h00 * f0 + h10 * d0[0] + h01 * f1 + h11 * d1[0], pr = h00 * r0 + h10 * d0[1] + h01 * r1 + h11 * d1[1], a = a0 + (a1 - a0) * e;
+      carPos.x = m.cx + pf * m.fx + pr * m.rx; carPos.z = m.cz + pf * m.fz + pr * m.rz;
+      carTan.set(Math.cos(a) * m.fx - Math.sin(a) * m.rx, 0, Math.cos(a) * m.fz - Math.sin(a) * m.rz).normalize();
     }
 
     // ===================== 3. the cameras =====================
     const V3 = (x, y, z) => ({ x, y, z });
+    // the city's trees (TREE_BLOBS) in a grid: treeAt()(x, z) is the height of the tallest canopy over that point (0 if none)
+    let TG = null;
+    const treeAt = () => {
+      if (!TG) {
+        const list = H.trees?.() || [];
+        if (!list.length) return () => 0;
+        TG = new Map();
+        for (const t of list) { const k = Math.floor(t.x / 60) * 4096 + Math.floor(t.z / 60); let l = TG.get(k); if (!l) TG.set(k, (l = [])); l.push(t); }
+      }
+      return (x, z) => {
+        let h = 0;
+        const cx = Math.floor(x / 60), cz = Math.floor(z / 60);
+        for (let i = cx - 1; i <= cx + 1; i++) for (let j = cz - 1; j <= cz + 1; j++) for (const t of TG.get(i * 4096 + j) || []) if (Math.hypot(t.x - x, t.z - z) < t.w * 0.6 + 4 && t.h * 1.6 > h) h = t.h * 1.6; // the drawn canopies stand taller than their shadow boxes
+        return h;
+      };
+    };
     function camera(dt, camPos, camTarget) {
       const want = syncView() === "street" ? 1 : 0;
       if (reduced()) D.streetT = want;
@@ -757,14 +900,34 @@
       if (D.camH == null) D.camH = hd;
       D.camH += wrapA(hd - D.camH) * (1 - Math.exp(-dt * 5.5));
       // satellite: heading up while you drive (the arrows then point the way they turn), gently
-      if (D.ready && mv.follow && (D.v > 25 || D.auto || D.uturn) && !reduced()) {
+      if (D.ready && mv.follow && (D.v > 25 || D.auto || D.uturn || D.kturn) && !reduced()) {
         mv.yawGoal = null;
         mv.yaw += wrapA(hd + Math.PI - mv.yaw) * (1 - Math.exp(-dt * (D.uturn ? 1.8 : 1.3)));
       }
       if (k < 1e-4) return;
       const cp = H.carPos, len = H.carLen() * (innerWidth < innerHeight ? 1.7 : 1), f = [Math.sin(D.camH), Math.cos(D.camH)];
-      const eye = V3(cp.x - f[0] * len * 0.92, cp.y + len * 0.34, cp.z - f[1] * len * 0.92);
-      const look = V3(cp.x + f[0] * len * 1.3, cp.y + len * 0.2, cp.z + f[1] * len * 1.3);
+      // the camera stays over the road: where the spot behind the car is not road (a dead end's end, a turn), it comes
+      // in closer and a little higher, so it never sits inside a tree or a wall
+      let pull = 0.4;
+      const tree = treeAt(); // the canopies near a point: the camera keeps out of them (or rises over them)
+      const onRoad = (x, z) => { const a = G.nearest(x, z, 60); if (!a) return false; const e = E[a.e]; if (a.d > e.w * 0.5 + 5) return false; return !((a.s < 4 && N[e.a].out.length === 1) || (a.s > e.len - 4 && N[e.b].out.length === 1)); };
+      let over = 0;
+      const hEye = cp.y + len * 0.4;
+      // the tallest canopy on the line from a camera spot to the car (sampled), against the line's own height there
+      const block = (x, z) => { let m = 0; for (const q of [0, 0.25, 0.5, 0.75]) { const th = tree(x + (cp.x - x) * q, z + (cp.z - z) * q); const yl = hEye + (cp.y + len * 0.25 - hEye) * q; if (th > yl - 2) m = Math.max(m, th); } return m; };
+      for (const t of [1, 0.85, 0.7, 0.55, 0.4]) {
+        const x = cp.x - f[0] * len * 0.92 * t, z = cp.z - f[1] * len * 0.92 * t, th = block(x, z);
+        if (t === 0.4) { pull = 0.4; over = th; break; }
+        if (onRoad(x, z) && !th) { pull = t; break; }
+      }
+      D.camOver += (over - D.camOver) * (1 - Math.exp(-dt * (over > D.camOver ? 8 : 2)));
+      D.camPull += (pull - D.camPull) * (1 - Math.exp(-dt * (pull < D.camPull ? 9 : 3)));
+      // a manoeuvre (the three-point turn, the turn on the spot, backing up) is watched from up and over the car
+      D.camUp += ((D.kturn || D.uturn || D.v < -0.5 ? 1 : 0) - D.camUp) * (1 - Math.exp(-dt * 2.5));
+      const back = len * 0.92 * D.camPull * (1 - 0.35 * D.camUp);
+      const eye = V3(cp.x - f[0] * back, Math.max(cp.y + len * (0.36 + 0.3 * (1 - D.camPull) + 0.7 * D.camUp), D.camOver + 8), cp.z - f[1] * back);
+      const ahead = len * 1.3 * (1 - 0.8 * D.camUp); // in a manoeuvre the camera looks at the car itself
+      const look = V3(cp.x + f[0] * ahead, cp.y + len * 0.2, cp.z + f[1] * ahead);
       // blend on the orbit (target, yaw, pitch, the height the frame shows, lens), so the car stays in frame throughout
       const ex = eye.x - look.x, ey = eye.y - look.y, ez = eye.z - look.z, d1 = Math.hypot(ex, ey, ez);
       const yaw1 = Math.atan2(ex, ez), pitch1 = Math.asin(ey / d1), fov1 = 74;
@@ -833,7 +996,7 @@
         <div class="n2-keys">
           <button class="n2-k n2-u" data-k="u" aria-label="Forward (↑ or W)">${ARR.u}</button>
           <button class="n2-k n2-l" data-k="l" aria-label="Turn left (← or A)">${ARR.l}</button>
-          <button class="n2-k n2-d" data-k="d" aria-label="Brake, turn around (↓ or S)">${ARR.d}</button>
+          <button class="n2-k n2-d" data-k="d" aria-label="Brake, reverse (↓ or S)">${ARR.d}</button>
           <button class="n2-k n2-r" data-k="r" aria-label="Turn right (→ or D)">${ARR.r}</button>
         </div>
       </div>
@@ -899,17 +1062,23 @@
     // the pad: only what does something here lights up; the hint says what is next
     let padSig = "";
     function ui(L, dec) {
-      const v = valid(dec, L), near = dec && dec.L - L < WINDOW, stoppedAt = D.v < 8 && dec && dec.L - L < STOPGAP + 50;
-      let hint = "HOLD ↑ TO DRIVE";
+      const v = valid(dec, L), near = dec && dec.L - L < WINDOW, stoppedAt = Math.abs(D.v) < 8 && dec && dec.L - L < (dec.gap || 34) + 50;
+      let hint = pivots() ? "HOLD ↑ TO DRIVE · ↓ TURNS ROUND" : "HOLD ↑ TO DRIVE · ↓ REVERSES";
       let need = "";
       if (D.uturn) hint = "TURNING ROUND";
+      else if (D.kturn) hint = "THREE-POINT TURN";
       else if (D.auto) hint = D.auto.pl && !D.auto.pl.tap ? "DRIVING YOU THERE · ANY ARROW TAKES OVER" : "DRIVING YOU THERE";
+      else if (reversing()) { const b = backInto(L); hint = b && (b.l || b.r) ? `REVERSING · ${[b.l && "←", b.r && "→"].filter(Boolean).join(" ")} BACKS INTO THE SIDE STREET` : "REVERSING"; }
       else if (dec && near) {
         const m = Math.max(0, Math.round((dec.L - L) / 10) * 10);
         if (dec.type === "bend") { hint = `${dec.side === "l" ? "←" : "→"} THE ROAD TURNS ${dec.side === "l" ? "LEFT" : "RIGHT"}${stoppedAt ? "" : ` · ${m} M`}`; need = dec.side; }
-        else if (dec.type === "junction") { const o = ["l", "s", "r"].filter((k) => dec.ex[k]).map((k) => GLY[k]).join(" "); hint = stoppedAt ? `JUNCTION · PICK ${o}` : `JUNCTION IN ${m} M · ${o}`; if (stoppedAt) need = ["l", "r"].filter((k) => dec.ex[k]).join("") + (dec.ex.s ? "u" : ""); }
-        else if (dec.type === "end") hint = stoppedAt ? "DEAD END · ↓ TO TURN ROUND" : `DEAD END IN ${m} M`;
-      } else if (D.v > 10) hint = "↓ BRAKES · HOLD IT TO TURN ROUND";
+        else if (dec.type === "junction") {
+          const o = ["l", "s", "r"].filter((k) => dec.ex[k]).map((k) => GLY[k]).join(" "), what = dec.ex.round ? "ROUNDABOUT" : "JUNCTION";
+          hint = stoppedAt ? `${what} · ${dec.ex.round ? "PICK YOUR EXIT" : "PICK"} ${o}` : `${what} IN ${m} M · ${o}`;
+          if (stoppedAt) need = ["l", "r"].filter((k) => dec.ex[k]).join("") + (dec.ex.s ? "u" : "");
+        }
+        else if (dec.type === "end") hint = stoppedAt ? (pivots() ? "DEAD END · ↓ TO TURN ROUND" : "DEAD END · ↓ FOR A THREE-POINT TURN") : `DEAD END IN ${m} M`;
+      } else if (D.v > 10) hint = "↓ BRAKES";
       const sig = `${v.u}${v.d}${v.l}${v.r}|${need}|${hint}`;
       if (sig === padSig) return;
       padSig = sig;
@@ -925,7 +1094,7 @@
       const e = E[it.e];
       for (const p of byEdge.get(it.e) || []) { const s = it.dir > 0 ? p.s : e.len - p.s; if (s <= budget) out.push({ p, d: base + s }); }
       if (e.len >= budget) return;
-      for (const o of N[endNode(it)].out) if (!(o.e === it.e)) explore(o, budget - e.len, base + e.len, out, seen, depth + 1);
+      for (const o of N[endNode(it)].out) if (!(o.e === it.e) && !against(o)) explore(o, budget - e.len, base + e.len, out, seen, depth + 1);
     }
     const uniq = (list) => { const s = new Set(); return list.sort((a, b) => a.d - b.d).filter((x) => (s.has(x.p.pl) ? false : (s.add(x.p.pl), true))); };
     const mDist = (d) => (d < 1000 ? `${Math.max(10, Math.round(d / 10) * 10)} m` : `${(d / 1000).toFixed(1)} km`);
@@ -943,7 +1112,7 @@
       const jd = dec && dec.type === "junction" ? dec.L - L : Infinity;
       const ex = dec && dec.type === "junction" && jd < 900 ? dec.ex : null;
       const ways = { l: [], s: [], r: [] };
-      if (ex) for (const k of ["l", "s", "r"]) if (ex[k]) { const o = []; explore(ex[k], 650, jd, o, new Set(), 0); ways[k] = uniq(o); }
+      if (ex) for (const k of ["l", "s", "r"]) if (ex[k]) { const o = []; explore(ex[k], 650, jd + (ex[k].pre || 0), o, new Set(), 0); ways[k] = uniq(o); }
       // a place reached by more than one way belongs to the shortest (a tie: the straighter way)
       {
         const best = new Map();
@@ -1031,7 +1200,7 @@
       },
       view: setView,
       press: (k, down = true) => (down ? keyDown(k) : keyUp(k)),
-      quarterAt,
+      quarterAt, cam: () => H.camera.position.toArray().map(Math.round), treeH: (x, z) => treeAt()(x, z), trees: () => (H.trees?.() || []).length,
       place: (id) => H.places.find((p) => p.id === id),
       state: () => { const L = H.state.L, dec = nextDecision(L); return { v: Math.round(D.v), L: Math.round(L), car: [Math.round(H.carPos.x), Math.round(H.carPos.z)], dec: dec && { type: dec.type, in: Math.round(dec.L - L), ex: dec.ex && { l: !!dec.ex.l, s: !!dec.ex.s, r: !!dec.ex.r }, side: dec.side }, auto: D.auto && (D.auto.pl?.id || "tap"), q: quarterAt(H.carPos.x, H.carPos.z), hint: hintEl.textContent, card: H.cardOpen(), keys: { ...D.keys }, yaw: +H.mapView.yaw.toFixed(2), hd: +H.heading().toFixed(2) }; }
     };

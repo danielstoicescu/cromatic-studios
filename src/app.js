@@ -32166,7 +32166,45 @@ void main() {
     // the Classic Formula is a slim single-seater: a good deal smaller than the road cars
     // (the scale sits on an inner group: the spawn animation resets the outer one to 1)
     if (id === "f1") { const outer = new Group(); v.group.scale.setScalar(0.5); outer.add(v.group); v.group = outer; }
+    addRevLamps(v, id); // nav2
     return addVehicleDetail(v, id);
+  }
+  // nav2: white reversing lamps at the tail of every ride that has one, lit only while it backs up (v.revLamps); each
+  // sits on the real rear surface, found from the ride's own vertices at the lamp's height. [x from the middle as a
+  // fraction of the half width, y as a fraction of the height]. The scooter, the submarine and the plane turn on the spot
+  var REV_LAMP = { dacia1300: [0.6, 0.4], cop: [0.6, 0.4], groovy: [0.62, 0.3], foodvan: [0.72, 0.24], monopoly: [0.48, 0.4], f1: [0.34, 0.45] };
+  var _revGlow = null;
+  function addRevLamps(v, id) {
+    const f = REV_LAMP[id];
+    if (!f) return;
+    const g = v.group;
+    g.updateMatrixWorld(true);
+    const bb = new Box3().setFromObject(g), W2 = (bb.max.x - bb.min.x) / 2, cx = (bb.max.x + bb.min.x) / 2, Y = bb.min.y + (bb.max.y - bb.min.y) * f[1], p = new Vector3();
+    const tailZ = (X) => {
+      let z = Infinity;
+      g.traverse((o) => {
+        const a = o.isMesh && o.geometry?.attributes?.position;
+        if (!a) return;
+        for (let i = 0; i < a.count; i++) { p.fromBufferAttribute(a, i).applyMatrix4(o.matrixWorld); if (Math.abs(p.x - X) < 1.8 && Math.abs(p.y - Y) < 1.8 && p.z < z) z = p.z; }
+      });
+      return isFinite(z) ? z : bb.min.z;
+    };
+    _revGlow = _revGlow || canvasTexture(64, 64, (ctx) => { const gr = ctx.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.35, "rgba(255,250,235,.45)"); gr.addColorStop(1, "rgba(255,250,235,0)"); ctx.fillStyle = gr; ctx.fillRect(0, 0, 64, 64); });
+    const lampM = new MeshBasicMaterial({ color: "#ffffff", toneMapped: false });
+    const glowM = new MeshBasicMaterial({ map: _revGlow, transparent: true, opacity: 0.9, blending: AdditiveBlending, depthWrite: false, toneMapped: false });
+    const poolM = new MeshBasicMaterial({ map: _revGlow, transparent: true, opacity: 0.35, blending: AdditiveBlending, depthWrite: false, toneMapped: false });
+    const lamps = new Group();
+    for (const sx of [-1, 1]) {
+      const X = cx + sx * W2 * f[0], z = tailZ(X);
+      const m = new Mesh(new BoxGeometry(Math.max(1.6, W2 * 0.16), 1.5, 0.6), lampM); m.position.set(X, Y, z - 0.1);
+      const gl = new Mesh(new PlaneGeometry(9, 7), glowM); gl.position.set(X, Y, z - 0.7); gl.rotation.y = Math.PI;
+      lamps.add(m, gl);
+    }
+    const pool = new Mesh(new PlaneGeometry(W2 * 2.6, 30), poolM); pool.rotation.x = -Math.PI / 2; pool.position.set(cx, bb.min.y + 0.5, bb.min.z - 13);
+    lamps.add(pool);
+    lamps.visible = false;
+    g.add(lamps);
+    v.revLamps = lamps;
   }
   function buildVehicleBase(id) {
     switch (id) {
@@ -38941,9 +38979,20 @@ void main() {
           navNet, cityNet, rounded: (p, r) => roundedPolyline(p, r), fork: FORK_POS, stops: STOPS, places: MAP_PLACES, start: ROUTE_MAIN[0], streets: { A: ROUTE_A, B: ROUTE_B, C: ROUTE_C, D: ROUTE_MERGE, lane: LANE_PTS },
           state, carPos, carTan, mapView, mapNav, camera,
           route: () => route, heading: () => heading, canvas: () => renderer.domElement,
-          carLen: () => { if (povLenFor !== veh.group) { povLenFor = veh.group; const bx = new Box3().setFromObject(veh.group), sz = bx.getSize(new Vector3()); povLen = clamp2(Math.max(sz.x, sz.z), 24, 90); } return povLen; },
+          carLen: () => { // the ride's own length: its opaque meshes only (not the reversing glow, the exhaust or the shadow)
+            if (povLenFor !== veh.group) {
+              povLenFor = veh.group; veh.group.updateMatrixWorld(true);
+              const bx = new Box3(), inv = veh.group.matrixWorld.clone().invert(), b = new Box3();
+              veh.group.traverse((o) => { if (!o.isMesh || !o.geometry || o === veh.revLamps || o.parent === veh.revLamps) return; const ms = Array.isArray(o.material) ? o.material : [o.material]; if (ms.some((m) => m.transparent || m.blending === AdditiveBlending)) return; o.geometry.computeBoundingBox?.(); b.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld).applyMatrix4(inv); bx.union(b); });
+              const sz = bx.getSize(new Vector3()).multiply(veh.group.scale);
+              povLen = clamp2(Math.max(sz.x, sz.z), 24, 90);
+            }
+            return povLen;
+          },
           rebase(pts, L, T) { route.setPath(pts); state.L = prevL = L; state.targetL = mapNav.targetL = T; MO.Ls = L; planeRev = 0; },
           setTarget(T) { mapNav.targetL = T; },
+          vehicle: () => state.vehicleId, trees: () => TREE_BLOBS,
+          reverseLamps(on) { if (veh?.revLamps && veh.revLamps.visible !== on) veh.revLamps.visible = on; },
           camBusy: () => mapIntro || jetFx.phase !== "idle" || document.body.classList.contains("kz-intro"),
           ready: () => mapMode && !mapIntro && !!mapUI && spawnStart < 0 && jetFx.phase === "idle" && !mapBoarding && !document.body.classList.contains("kz-intro"),
           overlay: () => { const c = document.body.classList; return c.contains("modal-open") || c.contains("scf-open") || !!document.querySelector(".case-frame:not(.hidden)"); },
