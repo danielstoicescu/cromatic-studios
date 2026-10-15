@@ -38266,7 +38266,8 @@ void main() {
             state.targetL = L2;
           }
         }
-        const dL = state.L - prevL;
+        let dL = state.L - prevL;
+        if (nav2?.on && mapMode && nav2.free) dL = nav2.stepDist(); // nav2 r4: the arcade car's own travel (wheels, speed, pitch)
         // r139e: a clamp (speed caps, police, the merge floor) or a jump moved L off the spring: its velocity follows
         if (state.L !== MO.Ls) MO.Lv = Math.abs(dL) > 3000 ? 0 : dL / Math.max(dt, 1e-3);
         const dLm = Math.abs(dL) > 3000 ? 0 : dL; // a jump is not motion (no lean, no pitch from it)
@@ -38357,6 +38358,7 @@ void main() {
           let dA = Math.atan2(_tA.x, _tA.z) - Math.atan2(_tB.x, _tB.z);
           while (dA > Math.PI) dA -= Math.PI * 2; while (dA < -Math.PI) dA += Math.PI * 2;
           MO.kap = (planeRev > 0.5 ? -dA : dA) / 80;
+          if (nav2?.on && mapMode && nav2.free) MO.kap = nav2.kap(); // nav2 r4: its yaw rate over its speed (roll, steered wheels)
         }
         {
           // cars roll a little outwards; the plane leans INTO the turn, like an aircraft does

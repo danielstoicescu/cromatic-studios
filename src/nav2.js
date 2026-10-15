@@ -546,12 +546,12 @@
     function commit(it) {
       for (const v of it.via || []) D.seq.push({ e: v.e, dir: v.dir, uid: D.uid++ });
       D.seq.push({ e: it.e, dir: it.dir, uid: D.uid++ });
-      const L = H.state.L, C = D.C;
+      const L = curL(), C = D.C;
       buildPath();
       apply(L, C); // the path before the new corner is unchanged: same L
     }
     function trim() {
-      const L = H.state.L;
+      const L = curL();
       if (D.seq.length < 3 || D.v < 0) return;
       const ci = ciOf(L);
       if (ci < 1 || L < D.seq[1].L0 + 90) return;
@@ -606,7 +606,8 @@
       if (D.auto) stopAuto();
       H.follow();
       D.firstDrive && firstDrive();
-      const L = H.state.L, dec = nextDecision(L);
+      if (FREE) return; // round 4: the keys drive the car itself (see physics)
+      const L = curL(), dec = nextDecision(L);
       if (k === "d") {
         D.downT = 0; D.goUntil = -1;
         if (Math.abs(D.v) < 40 && pivots()) { uturn(); return; }
@@ -637,13 +638,13 @@
     function choose(k) {
       if (D.auto) stopAuto();
       H.follow();
-      const L = H.state.L, dec = nextDecision(L);
+      const L = curL(), dec = nextDecision(L);
       if (dec && dec.type === "junction" && dec.ex[k] && dec.L - dec.gap >= L - 1) { commit(dec.ex[k]); if (k !== "s") D.turnT = (D.turnT || 0) + 1; flashKey(k); render(true); }
       else nope(k);
     }
     // the rides that can: a half circle on the spot from one lane to the other
     function uturn() {
-      const L = H.state.L, it = D.seq[ciOf(L)];
+      const L = curL(), it = D.seq[ciOf(L)];
       if (E[it.e].kind === "ring") { nope("d"); return; }
       const [x, z] = pathPos(L), [x2, z2] = pathPos(Math.min(D.total, L + 6)), [x1, z1] = pathPos(Math.max(0, L - 6));
       let fx = x2 - x1, fz = z2 - z1; const fl = Math.hypot(fx, fz) || 1; fx /= fl; fz /= fl;
@@ -658,7 +659,7 @@
     // a car at a dead end: a three-point turn (forward and left across the road, back and right, forward and away)
     const KT = [[0, 11, 0], [17, -6, 1.6], [6, 4, 2.35], [-4, -11, Math.PI]], KTD = [0.95, 0.8, 0.95], KTS = [1, -1, 1];
     function kturn() {
-      const L = H.state.L, it = D.seq[ciOf(L)];
+      const L = curL(), it = D.seq[ciOf(L)];
       const [x, z] = pathPos(L), [x2, z2] = pathPos(Math.min(D.total, L + 6)), [x1, z1] = pathPos(Math.max(0, L - 6));
       let fx = x2 - x1, fz = z2 - z1; const fl = Math.hypot(fx, fz) || 1; fx /= fl; fz /= fl;
       D.seq = [{ e: it.e, dir: -it.dir, uid: D.uid++, fresh: true }];
@@ -672,7 +673,7 @@
     // ---------- auto-pilot: the shortest way along the graph to a place, the junctions taken for you ----------
     function plan(target) {
       // target: { e, s } (s from the edge's a)
-      const L = H.state.L, it = D.seq[ciOf(L)], e = E[it.e];
+      const L = curL(), it = D.seq[ciOf(L)], e = E[it.e];
       const sDir = clamp(L - it.L0, 0, e.len); // along the directed edge
       const tE = E[target.e];
       const tsDir = it.dir > 0 ? target.s : tE.len - target.s;
@@ -709,9 +710,17 @@
     function goTo(target, pl) {
       if (!D.ready && !place()) return false;
       D.ready = true;
+      if (FREE) {
+        if (!P.init) freeInit();
+        if (!freeGo(target, pl)) return false;
+        H.mapNav.place = pl && !pl.tap ? pl : null; H.mark(); H.follow();
+        if (D.firstDrive) firstDrive();
+        render(true);
+        return true;
+      }
       if (D.kturn || D.uturn) return false;
       // drop the corners already chosen beyond the car
-      const L = H.state.L, ci = ciOf(L);
+      const L = curL(), ci = ciOf(L);
       if (D.seq.length > ci + 1 && L < D.seq[ci].L1 - gapOf(D.seq[ci])) { D.seq.length = ci + 1; buildPath(); apply(L, clamp(D.C, L, D.total)); }
       // round 2 (Daniel): a place close behind, on the road you just drove: the car backs up to it (lamps on); turning
       // round is for the longer trips
@@ -746,7 +755,7 @@
     // the stop for the place on the path, if its edge is on the path: a little short of it, the car parks beside it
     function autoStopL() {
       const a = D.auto; if (!a || a.uturn || a.rev || a.legs.length) return null;
-      for (let k = D.seq.length - 1; k >= ciOf(H.state.L); k--) {
+      for (let k = D.seq.length - 1; k >= ciOf(curL()); k--) {
         const it = D.seq[k];
         if (it.e !== a.target.e) continue;
         const e = E[it.e], s = it.dir > 0 ? a.target.s : e.len - a.target.s;
@@ -768,7 +777,8 @@
     function tick(dt, now) {
       if (!H.ready()) return;
       if (!D.ready) { if (!place()) return; D.ready = true; render(true); }
-      const L = H.state.L;
+      if (FREE) return freeTick(dt, now); // round 4: the arcade car
+      const L = curL();
       if (D.uturn || D.kturn) {
         const m = D.uturn || D.kturn;
         m.t += dt;
@@ -781,7 +791,7 @@
       }
       if (D.goUntil === Infinity && !D.keys.d) D.goUntil = -1;
       trim();
-      const L2 = H.state.L;
+      const L2 = curL();
       let dec = nextDecision(L2);
       // the auto-pilot takes the junctions, the roundabouts and the bends itself
       if (D.auto && !D.auto.rev) {
@@ -796,7 +806,7 @@
             else if (N[endNode(last)].out.some((o) => o.e === nx.e && o.dir === nx.dir)) {
               D.auto.legs.shift(); commit(nx);
               while (E[nx.e].kind === "ring" && D.auto.legs.length) { const n2 = D.auto.legs.shift(); commit(n2); if (E[n2.e].kind !== "ring") break; }
-              dec = nextDecision(H.state.L);
+              dec = nextDecision(curL());
             }
           } else if (dec && dec.type === "end" && nx && nx.e === last.e && nx.dir === -last.dir && Math.abs(D.v) < 3 && dec.L - L2 < 44) {
             const a = D.auto; kturn(); a.legs.shift(); D.auto = a; return;
@@ -804,8 +814,8 @@
         }
       }
       // ↑ held into a junction that goes straight on: straight on
-      if (!D.auto && (D.keys.u || D.cruise) && D.v >= 0 && dec && dec.type === "junction" && dec.ex.s && dec.L - L2 < 70 + D.v * 0.45) { if (dec.ex.l || dec.ex.r) D.turnT = (D.turnT || 0) + 1; commit(dec.ex.s); dec = nextDecision(H.state.L); }
-      let Lc = H.state.L;
+      if (!D.auto && (D.keys.u || D.cruise) && D.v >= 0 && dec && dec.type === "junction" && dec.ex.s && dec.L - L2 < 70 + D.v * 0.45) { if (dec.ex.l || dec.ex.r) D.turnT = (D.turnT || 0) + 1; commit(dec.ex.s); dec = nextDecision(curL()); }
+      let Lc = curL();
       // after reversing, driving on again: the choices made beyond the car are dropped (you choose again)
       if (D.wasRev && (D.keys.u || D.cruise) && D.v >= 0) {
         D.wasRev = false;
@@ -826,7 +836,7 @@
         if (b) {
           const steer = D.keys.l ? "l" : D.keys.r ? "r" : D.revSteer;
           const pick = steer ? b[steer] : b.ci === 0 ? b.back : null;
-          if (pick && !(b.ci > 0 && D.seq[b.ci - 1].e === pick.e && D.seq[b.ci - 1].dir === -pick.dir)) { reverseInto(pick, Lc); D.revSteer = null; Lc = H.state.L; dec = nextDecision(Lc); }
+          if (pick && !(b.ci > 0 && D.seq[b.ci - 1].e === pick.e && D.seq[b.ci - 1].dir === -pick.dir)) { reverseInto(pick, Lc); D.revSteer = null; Lc = curL(); dec = nextDecision(Lc); }
         }
       }
       // where the carrot must stop going forward: the next undecided choice, or the auto-pilot's place
@@ -893,6 +903,7 @@
     const ktSeg = () => { const m = D.kturn, t = m.t / m.k; return t < KTD[0] ? 0 : t < KTD[0] + KTD[1] ? 1 : 2; };
     // the car's pose while it turns round: on the spot (the rides that can), or the three-point turn
     function pose(carPos, carTan) {
+      if (FREE && P.init) { carPos.x = P.x; carPos.z = P.z; carTan.set(Math.sin(P.h), 0, Math.cos(P.h)); return; }
       const u = D.uturn;
       if (u) {
         const ph = Math.PI * sss(clamp(u.t / u.dur, 0, 1)), r = 11;
@@ -911,6 +922,189 @@
       const pf = h00 * f0 + h10 * d0[0] + h01 * f1 + h11 * d1[0], pr = h00 * r0 + h10 * d0[1] + h01 * r1 + h11 * d1[1], a = a0 + (a1 - a0) * e;
       carPos.x = m.cx + pf * m.fx + pr * m.rx; carPos.z = m.cz + pf * m.fz + pr * m.rz;
       carTan.set(Math.cos(a) * m.fx - Math.sin(a) * m.rx, 0, Math.cos(a) * m.fz - Math.sin(a) * m.rz).normalize();
+    }
+
+    // ===================== 2c. round 4: GTA 2-style arcade driving =====================
+    // Daniel: "take inspiration from car games like GTA 2". The keys are the car's own: ↑ / W accelerate, ↓ / S brake
+    // then reverse, ← → / A D steer (the car turns as it moves, the other way round when backing), Space the
+    // handbrake (tighter turns, a slide). The car drives freely on the road surface that is drawn (the normal roads at
+    // their width, the ring round the fountain, the side streets' mouths); off it is the kerb: the car is pushed back and
+    // slides along it, and can always steer or back away. The road graph is kept for the auto-pilot (a tap, Nearby),
+    // which drives the same physics along its route, and for the Nearby panel and the road signs.
+    const FREE = true;
+    const VMAX_F = 420, ACC_F = 270, BRAKE_F = 620, REV_F = 210, VREV_F = 150, ROLL_F = 45, DRAG_F = 0.22, TURN_F = 2.5, CR = 9;
+    // the road mask, from the same geometry the roads are drawn with
+    const MASK = (() => {
+      const segs = [], CS = 100, grid = new Map();
+      const gk2 = (cx, cz) => (cx + 300) * 5000 + (cz + 300);
+      const add = (pts, hw) => {
+        for (let i = 0; i < pts.length - 1; i++) {
+          const a = pts[i], b = pts[i + 1], si = segs.length;
+          segs.push([a[0], a[1], b[0], b[1], hw]);
+          for (let cx = Math.floor((Math.min(a[0], b[0]) - hw) / CS); cx <= Math.floor((Math.max(a[0], b[0]) + hw) / CS); cx++)
+            for (let cz = Math.floor((Math.min(a[1], b[1]) - hw) / CS); cz <= Math.floor((Math.max(a[1], b[1]) + hw) / CS); cz++) { const k = gk2(cx, cz); let l = grid.get(k); if (!l) grid.set(k, (l = [])); l.push(si); }
+        }
+      };
+      for (const e of E) {
+        if (e.drive) { add(e.pts, e.w / 2 + 2); continue; }
+        if (e.kind !== "minor") continue;
+        // a side street's mouth on a road: room to back in for a turn
+        for (const end of [0, 1]) {
+          const n = end ? e.b : e.a;
+          if (!N[n].out.some((o) => E[o.e].drive)) continue;
+          const pts = end ? e.rpts : e.pts, cum = end ? e.rcum : e.cum, m = [];
+          for (let i = 0; i < pts.length && cum[i] < 60; i++) m.push(pts[i]);
+          m.push(pointAt(pts, cum, Math.min(60, e.len)));
+          if (m.length > 1) add(m, e.w / 2 + 1.5);
+        }
+      }
+      // the point (x, z) for a car of radius r: on the road, or pushed back onto it (and the kerb's outward normal)
+      function resolve(x, z, r) {
+        let best = null;
+        const cx0 = Math.floor(x / CS), cz0 = Math.floor(z / CS);
+        for (let cx = cx0 - 1; cx <= cx0 + 1; cx++) for (let cz = cz0 - 1; cz <= cz0 + 1; cz++) for (const si of grid.get(gk2(cx, cz)) || []) {
+          const [ax, az, bx, bz, hw] = segs[si], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+          const t = clamp(((x - ax) * dx + (z - az) * dz) / l2, 0, 1), px = ax + dx * t, pz = az + dz * t, d = Math.hypot(x - px, z - pz), slack = hw - r - d;
+          if (slack >= 0) return { hit: false, x, z };
+          if (!best || slack > best.slack) best = { slack, px, pz, d, lim: hw - r };
+        }
+        if (!best) return { hit: false, x, z, lost: true };
+        const nx = (x - best.px) / (best.d || 1), nz = (z - best.pz) / (best.d || 1), lim = Math.max(0, best.lim);
+        return { hit: true, x: best.px + nx * lim, z: best.pz + nz * lim, nx, nz };
+      }
+      return { resolve, segs: segs.length };
+    })();
+    const P = { x: 0, z: 0, h: 0, u: 0, w: 0, yr: 0, st: 0, ds: 0, init: false, contact: 0, vx: 0, vz: 0 };
+    function freeInit() {
+      const c = H.carPos;
+      P.x = c.x; P.z = c.z; P.h = H.heading(); P.u = P.w = P.yr = P.st = 0; P.init = true;
+      const q = MASK.resolve(P.x, P.z, CR); P.x = q.x; P.z = q.z;
+      D.vL = 0;
+    }
+    const curL = () => (FREE ? D.vL || 0 : curL());
+    // the graph item under the car, in its direction of travel (for the Nearby panel, the road signs, the auto-pilot)
+    let syncT = 0;
+    function syncGraph(force) {
+      const a = G.nearest(P.x, P.z, 120, (e) => e.drive);
+      if (!a) return;
+      const e = E[a.e], p0 = pointAt(e.pts, e.cum, Math.max(0, a.s - 6)), p1 = pointAt(e.pts, e.cum, Math.min(e.len, a.s + 6));
+      const fx = Math.sin(P.h), fz = Math.cos(P.h), moving = Math.abs(P.u) > 8 ? Math.sign(P.u) : 1;
+      const dir = ((p1[0] - p0[0]) * fx + (p1[1] - p0[1]) * fz) * moving >= 0 ? 1 : -1;
+      const it0 = D.seq[0];
+      if (force || D.seq.length !== 1 || !it0 || it0.e !== a.e || it0.dir !== dir) { D.seq = [{ e: a.e, dir, uid: D.uid++ }]; buildPath(); }
+      D.vL = locate(P.x, P.z);
+    }
+    // the physics, one frame
+    function physics(dt, thr, steerIn, hb) {
+      P.st += (steerIn - P.st) * (1 - Math.exp(-dt * 9));
+      let u = P.u;
+      if (thr > 0) { if (u < -4) u = Math.min(0, u + BRAKE_F * dt); else u += ACC_F * dt * (1 - Math.max(0, u) / VMAX_F); }
+      else if (thr < 0) { if (u > 4) u = Math.max(0, u - BRAKE_F * dt); else u = Math.max(-VREV_F, u - REV_F * dt); }
+      else { const dec = (ROLL_F + DRAG_F * Math.abs(u)) * dt; u = Math.abs(u) <= dec ? 0 : u - Math.sign(u) * dec; }
+      if (hb) { const dec = 280 * dt; u = Math.abs(u) <= dec ? 0 : u - Math.sign(u) * dec; }
+      const au = Math.abs(u);
+      // steering: tight when slow, smoother when fast; the other way round when backing; cars never turn on the spot
+      let turn = TURN_F * Math.min(1, au / 70) / (1 + au / 430);
+      if (hb) turn *= 1.4;
+      P.yr = au > 0.5 ? P.st * turn * Math.sign(u) : 0;
+      if (pivots() && au < 25) P.yr += P.st * 1.5 * (1 - au / 25);
+      // the velocity keeps its direction while the car turns under it, and the tyres pull it round (grip): a slide at speed
+      const f0x = Math.sin(P.h), f0z = Math.cos(P.h), r0x = -f0z, r0z = f0x;
+      let vx = f0x * u + r0x * P.w, vz = f0z * u + r0z * P.w;
+      P.h += P.yr * dt;
+      const fx = Math.sin(P.h), fz = Math.cos(P.h), rx = -fz, rz = fx;
+      u = vx * fx + vz * fz; let w = vx * rx + vz * rz;
+      w *= Math.exp(-dt * (hb ? 1.6 : 10 - 5 * Math.min(1, au / VMAX_F)));
+      vx = fx * u + rx * w; vz = fz * u + rz * w;
+      let nx = P.x + vx * dt, nz = P.z + vz * dt;
+      const q = MASK.resolve(nx, nz, CR);
+      if (q.hit) {
+        nx = q.x; nz = q.z;
+        const vn = vx * q.nx + vz * q.nz;
+        if (vn > 0) { vx -= q.nx * vn; vz -= q.nz * vn; }
+        const k = Math.exp(-dt * 2.2); vx *= k; vz *= k; // the kerb scrubs speed
+        u = vx * fx + vz * fz; w = vx * rx + vz * rz;
+        P.contact = 0.3;
+      } else if (q.lost) { // nowhere near a road (should not happen): back to the last good spot
+        nx = P.x; nz = P.z; u = 0; w = 0;
+      }
+      P.contact = Math.max(0, P.contact - dt);
+      P.ds = (nx - P.x) * fx + (nz - P.z) * fz;
+      P.x = nx; P.z = nz; P.u = u; P.w = w; P.vx = vx; P.vz = vz;
+      D.v = u;
+      if (u < -0.5) D.revDist = (D.revDist || 0) + Math.abs(P.ds);
+    }
+    // the auto-pilot on the same physics: pure pursuit of its route (the right-hand lane), slowing for the bends and the stop
+    function pursuit(dt) {
+      const a = D.auto, Lp = locate(P.x, P.z, D.vL, 120); D.vL = Lp;
+      const au = Math.abs(P.u);
+      if (a.rev) {
+        const rem = Lp - a.Lt;
+        const [tx, tz] = pathPos(Math.max(a.Lt, Lp - (28 + au * 0.3)));
+        const err = wrapA(Math.atan2(tx - P.x, tz - P.z) + Math.PI - P.h);
+        const vt = -Math.min(VREV_F * 0.8, Math.sqrt(2 * BRAKE_F * 0.5 * Math.max(0, rem)));
+        return { rem, steer: clamp(-err * 2.4, -1, 1), thr: P.u > vt + 8 ? -1 : P.u < vt - 8 && P.u < -4 ? 1 : 0 };
+      }
+      const rem = a.Lt - Lp, la = 36 + au * 0.35, L2 = Math.min(D.total, Lp + la);
+      let [tx, tz] = pathPos(L2); const [ax2, az2] = pathPos(Math.min(D.total, L2 + 4)); const tl = Math.hypot(ax2 - tx, az2 - tz) || 1;
+      tx += (-(az2 - tz) / tl) * 10; tz += ((ax2 - tx) / tl) * 10; // keep right
+      const err = wrapA(Math.atan2(tx - P.x, tz - P.z) - P.h);
+      let vt = Math.min(VMAX_F * 0.82, Math.sqrt(2 * BRAKE_F * 0.55 * Math.max(0, rem)));
+      { let i = 0; while (i < D.cum.length - 1 && D.cum[i] < Lp) i++; for (; i < D.cum.length && D.cum[i] < Lp + 260; i++) { const k = D.kap[i]; if (k > 1e-4) vt = Math.min(vt, Math.sqrt(ALAT / k + 2 * BRAKE_F * 0.6 * Math.max(0, D.cum[i] - Lp))); } }
+      vt *= Math.max(0.3, 1 - Math.abs(err) * 0.7);
+      return { rem, steer: clamp(err * 2.4, -1, 1), thr: P.u < vt - 8 ? 1 : P.u > vt + 8 && P.u > 4 ? -1 : 0 };
+    }
+    function freeGo(target, pl) {
+      syncGraph(true);
+      const L = curL(), it = D.seq[0], e = E[it.e], sDir = clamp(L - it.L0, 0, e.len), tsDir = it.dir > 0 ? target.s : e.len - target.s;
+      if (target.e === it.e && tsDir < sDir - 8 && sDir - tsDir < 350) { D.auto = { pl, target, rev: true, Lt: it.L0 + tsDir }; return true; }
+      const p = plan(target);
+      if (!p) return false;
+      D.seq = [it, ...p.legs.filter((q, i) => !(i === 0 && q.e === it.e && q.dir === it.dir)).map((q) => ({ e: q.e, dir: q.dir, uid: D.uid++ }))];
+      buildPath();
+      D.vL = locate(P.x, P.z);
+      let Lt = D.total;
+      for (let k = D.seq.length - 1; k >= 0; k--) { const q = D.seq[k]; if (q.e !== target.e) continue; const s = q.dir > 0 ? target.s : E[q.e].len - target.s; Lt = Math.max(0, q.L0 + s - (pl && !pl.tap ? 18 : 0)); break; }
+      D.auto = { pl, target, legs: [], Lt };
+      return true;
+    }
+    function freeTick(dt, now) {
+      if (!P.init) freeInit();
+      H.setTarget(H.state.L);
+      let thr = 0, steer = 0, hb = !!D.keys.h;
+      if (D.auto) {
+        const c = pursuit(dt); thr = c.thr; steer = c.steer;
+        if (c.rem < 10 && Math.abs(P.u) < 25) { P.u *= 0.5; if (Math.abs(P.u) < 6) { P.u = 0; P.w = 0; const pl = D.auto.pl; D.auto = null; if (pl && !pl.tap) arrive(pl); else { if (pl) H.arrive(pl); H.mapNav.place = null; H.mark(); } render(true); } }
+      } else {
+        thr = (D.keys.u ? 1 : 0) - (D.keys.d ? 1 : 0); steer = (D.keys.l ? 1 : 0) - (D.keys.r ? 1 : 0);
+      }
+      physics(dt, thr, steer, hb);
+      lamps(P.u < -0.5 || (D.keys.d && P.u <= 0.5 && !D.auto));
+      if (!D.auto) {
+        syncT -= dt;
+        if (syncT <= 0) { syncT = 0.2; syncGraph(false); }
+        else D.vL = locate(P.x, P.z, D.vL, 80);
+        // arrivals: slowly past (or stopped at) a place opens its card
+        if (Math.abs(P.u) < 14) { const here = hereAt(); if (here && here.pl !== D.lastArr) arrive(here.pl); }
+      }
+      if (D.lastArr) { const p = PL.find((q) => q.pl === D.lastArr); if (p && Math.hypot(P.x - p.ax, P.z - p.az) > 200) { D.lastArr = null; if (D.cardFor) { H.hideCard(); D.cardFor = null; } if (!D.auto) { H.mapNav.place = null; H.mark(); } } }
+      const dec = nextDecision(curL());
+      freeUI();
+      arms(curL(), dec);
+      tutTick();
+      panelT -= dt;
+      if (panelT <= 0) { panelT = 0.22; document.body.classList.toggle("n2-card", H.cardOpen()); render(); }
+    }
+    let freeSig = "";
+    function freeUI() {
+      let hint = touchUI ? "↑ GO · ← → STEER · ↓ BRAKE / BACK" : "↑ GO · ← → STEER · ↓ BRAKE / BACK · SPACE DRIFT";
+      if (D.auto) hint = D.auto.rev ? "BACKING UP TO IT · ANY KEY TAKES OVER" : "DRIVING YOU THERE · ANY KEY TAKES OVER";
+      else if (P.u < -5) hint = "REVERSING";
+      else if (P.contact > 0) hint = "THE KERB · STEER AWAY OR BACK UP";
+      if (hint === freeSig) return;
+      freeSig = hint;
+      for (const k of "udlr") { keyEls[k].classList.remove("off", "need"); }
+      hintEl.textContent = hint;
     }
 
     // ===================== 2b. the body: weight, bounce, the engine =====================
@@ -978,9 +1172,22 @@
       if (D.camH == null) D.camH = hd;
       D.camH += wrapA(hd - D.camH) * (1 - Math.exp(-dt * 5.5));
       // satellite: heading up while you drive (the arrows then point the way they turn), gently
-      if (D.ready && mv.follow && (D.v > 25 || D.auto || D.uturn || D.kturn) && !reduced()) {
+      if (!FREE && D.ready && mv.follow && (D.v > 25 || D.auto || D.uturn || D.kturn) && !reduced()) {
         mv.yawGoal = null;
         mv.yaw += wrapA(hd + Math.PI - mv.yaw) * (1 - Math.exp(-dt * (D.uturn ? 1.8 : 1.3)));
+      }
+      // round 4 (GTA 2): following the car the satellite looks more straight down, pulls back as the speed rises (and in
+      // again when slow), and looks a little ahead of where the car is going; the map's own zoom stays the base
+      if (FREE && D.ready && P.init) {
+        const spd = Math.min(1, Math.abs(P.u) / VMAX_F);
+        if (mv.follow && !reduced()) {
+          const m = D.zm || 1, nm = m + (1 + 0.6 * spd - m) * (1 - Math.exp(-dt * 1.1));
+          mv.dist *= nm / m; D.zm = nm;
+          if (Math.abs(P.u) > 25 && mv.pitch < 1.2 && mv.pitchGoal == null) mv.pitchGoal = 1.24;
+        }
+        const lax = mv.follow && !reduced() ? clamp(P.vx * 0.45, -220, 220) : 0, laz = mv.follow && !reduced() ? clamp(P.vz * 0.45, -220, 220) : 0;
+        D.lax = (D.lax || 0) + (lax - (D.lax || 0)) * (1 - Math.exp(-dt * 1.6)); D.laz = (D.laz || 0) + (laz - (D.laz || 0)) * (1 - Math.exp(-dt * 1.6));
+        camPos.x += D.lax; camPos.z += D.laz; camTarget.x += D.lax; camTarget.z += D.laz;
       }
       if (k < 1e-4) return;
       const cp = H.carPos, len = H.carLen() * (VP.w < VP.h ? 1.7 : 1), f = [Math.sin(D.camH), Math.cos(D.camH)];
@@ -1110,7 +1317,7 @@
       b.addEventListener("contextmenu", (e) => e.preventDefault());
     });
     for (const n of [pad, views, panel]) n.addEventListener("pointerdown", (e) => e.stopPropagation());
-    const KEYS = { ArrowUp: "u", ArrowDown: "d", ArrowLeft: "l", ArrowRight: "r", w: "u", W: "u", s: "d", S: "d", a: "l", A: "l", d: "r", D: "r" };
+    const KEYS = { ArrowUp: "u", ArrowDown: "d", ArrowLeft: "l", ArrowRight: "r", w: "u", W: "u", s: "d", S: "d", a: "l", A: "l", d: "r", D: "r", " ": "h", Spacebar: "h" };
     const typing = (e) => e.target?.closest?.("input, textarea, select, [contenteditable]");
     window.addEventListener("keydown", (e) => {
       if (!api.on || typing(e) || H.overlay() || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -1172,7 +1379,7 @@
     let armSig = "";
     function arms(L, dec) {
       const show = { l: null, s: null, r: null };
-      const near = dec && dec.type === "junction" && dec.L - L < 460 && !D.auto && !D.uturn && !D.kturn && D.v >= -0.5;
+      const near = dec && dec.type === "junction" && dec.L - L < (FREE ? 320 : 460) && dec.L - L > (FREE ? 15 : -1e9) && !D.auto && !D.uturn && !D.kturn && D.v >= -0.5;
       if (near) for (const k of ["l", "s", "r"]) if (dec.ex[k]) show[k] = dec.ex[k];
       // a way already picked: the one the path takes at the last node passed or coming (shown until it is behind)
       let picked = null;
@@ -1208,7 +1415,7 @@
         const o = show[k], el = armEls[k];
         if (!o) continue;
         el.classList.toggle("picked", picked === k);
-        el.innerHTML = `<b class="n2-cap sm">${GLY[k]}</b><span>${esc(armName(o))}</span>`;
+        el.innerHTML = FREE ? `<i class="n2-sg">${GLY[k]}</i><span>${esc(armName(o))}</span>` : `<b class="n2-cap sm">${GLY[k]}</b><span>${esc(armName(o))}</span>`;
       }
     }
     // the pad: only what does something here lights up; the hint says what is next
@@ -1253,7 +1460,7 @@
     const mDist = (d) => (d < 1000 ? `${Math.max(10, Math.round(d / 10) * 10)} m` : `${(d / 1000).toFixed(1)} km`);
     function render(force) {
       if (!D.ready) return;
-      const L = H.state.L, ci = ciOf(L), cur = D.seq[ci], q = quarterAt(H.carPos.x, H.carPos.z), dec = nextDecision(L);
+      const L = curL(), ci = ciOf(L), cur = D.seq[ci], q = quarterAt(H.carPos.x, H.carPos.z), dec = nextDecision(L);
       const rows = [];
       // ahead: the places still in front of the car on the edges already chosen
       const ahead = [];
@@ -1335,9 +1542,10 @@
     }
     function autoLeft() {
       const a = D.auto; if (!a) return 0;
-      if (a.rev) return Math.max(0, H.state.L - a.Lt);
-      const s = autoStopL(); if (s != null) return Math.max(0, s - H.state.L);
-      const L = H.state.L, last = D.seq[D.seq.length - 1];
+      if (FREE) return Math.abs(a.Lt - curL());
+      if (a.rev) return Math.max(0, curL() - a.Lt);
+      const s = autoStopL(); if (s != null) return Math.max(0, s - curL());
+      const L = curL(), last = D.seq[D.seq.length - 1];
       let d = last.L1 - L;
       for (const lg of a.legs) d += E[lg.e].len;
       return d;
@@ -1357,9 +1565,9 @@
     const TUT = { i: -1, el: null, done: null, t0: 0, L0: 0, timer: 0, asked: false };
     const touchUI = matchMedia("(hover: none) and (pointer: coarse)").matches;
     const STEPS = [
-      { id: "drive", keys: ["↑"], t: "Drive it yourself", s: touchUI ? "Hold ↑ on the pad, or tap it to cruise" : "Hold ↑ (or W), or tap it to cruise", at: "car" },
-      { id: "turn", keys: ["←", "↑", "→"], t: "Pick a way", s: "At a junction or a roundabout: ← or →, ↑ goes straight on", at: "car" },
-      { id: "back", keys: ["↓"], t: "Back up", s: touchUI ? "Hold ↓ on the pad" : "Hold ↓ (or S)", at: "car" },
+      { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: touchUI ? "↑ to go, ← → to steer" : "↑ to go, ← → to steer (or W A S D)", at: "car" },
+      { id: "round", keys: [], t: "Take the roundabout", s: "Steer round the fountain and out onto a street", at: "car" },
+      { id: "back", keys: ["↓"], t: "Back up", s: touchUI ? "Hold ↓: it brakes, then reverses" : "Hold ↓ (or S): it brakes, then reverses", at: "car" },
       { id: "tap", keys: [], t: "Or let us drive", s: "Tap a place on the map, or a card in Nearby", at: "panel" },
       { id: "look", keys: [], t: "Look around", s: touchUI ? "Drag the map, pinch to zoom · ◎ brings you back" : "Drag the map, scroll to zoom · ◎ brings you back", at: "mid" },
       { id: "view", keys: [], t: "Street or Satellite", s: touchUI ? "Switch the view down here" : "Switch the view down here, or press V", at: "views" }
@@ -1379,12 +1587,12 @@
       return true;
     }
     function tutGo(i) {
-      TUT.i = i; TUT.t0 = performance.now(); TUT.L0 = H.state.L; TUT.turn = D.turnT || 0; TUT.rev = D.revDist || 0; TUT.view = D.view; TUT.dragged = false;
+      TUT.i = i; TUT.t0 = performance.now(); TUT.L0 = curL(); TUT.x0 = P.x; TUT.z0 = P.z; TUT.inRing = false; TUT.turn = D.turnT || 0; TUT.rev = D.revDist || 0; TUT.view = D.view; TUT.dragged = false;
       const st = STEPS[i], e = TUT.el, key = (k) => `<span class="n2-cap${k === "↑" ? " big" : ""}" aria-hidden="true">${k}</span>`;
       e.innerHTML = `${st.keys.length ? `<span class="n2-caps">${st.keys.map(key).join("")}</span>` : ""}<b>${st.t}</b><i>${st.s}</i><span class="n2-tbar"><em class="mono">${i + 1}/${STEPS.length}</em><button class="n2-skip">Skip</button></span>`;
       e.dataset.at = st.at;
       e.classList.remove("hidden", "in"); void e.offsetWidth; e.classList.add("in");
-      keyEls.u.classList.toggle("tut", st.id === "drive"); keyEls.l.classList.toggle("tut", st.id === "turn"); keyEls.r.classList.toggle("tut", st.id === "turn"); keyEls.d.classList.toggle("tut", st.id === "back");
+      keyEls.u.classList.toggle("tut", st.id === "drive"); keyEls.l.classList.toggle("tut", st.id === "drive" || st.id === "round"); keyEls.r.classList.toggle("tut", st.id === "drive" || st.id === "round"); keyEls.d.classList.toggle("tut", st.id === "back");
       views.classList.toggle("tut", st.id === "view"); panel.classList.toggle("tut", st.id === "tap");
       czEv?.("onboarding_step", { step: "drive_" + st.id, action: "shown" });
     }
@@ -1409,10 +1617,10 @@
     function tutTick() {
       if (TUT.i < 0 && !TUT.asked && D.arrT && !D.auto && !H.cardOpen() && performance.now() - D.arrT > 1500) { TUT.asked = true; tutorial(null); }
       if (TUT.i < 0 || TUT.i >= STEPS.length) { if (TUT.i >= 0) tutPlace("mid"); return; }
-      const st = STEPS[TUT.i], L = H.state.L, now = performance.now(), mv = H.mapView;
+      const st = STEPS[TUT.i], L = curL(), now = performance.now(), mv = H.mapView;
       if (now - TUT.t0 > 600) {
-        if (st.id === "drive" && Math.abs(L - TUT.L0) > 80) return tutNext();
-        if (st.id === "turn" && (D.turnT || 0) > TUT.turn) return tutNext();
+        if (st.id === "drive" && Math.hypot(P.x - TUT.x0, P.z - TUT.z0) > 140) return tutNext();
+        if (st.id === "round") { const d = Math.hypot(P.x - H.fork.x, P.z - H.fork.y); if (d < 105) TUT.inRing = true; if (TUT.inRing && d > 230) return tutNext(); }
         if (st.id === "back" && (D.revDist || 0) - TUT.rev > 25) return tutNext();
         if (st.id === "tap" && D.auto) return tutNext();
         if (st.id === "look") { if ((mv.direct || 0) > TUT.t0) TUT.dragged = true; if (TUT.dragged && mv.follow) return tutNext(); } // a real hand on the map (r166's), then back with ◎ or by driving
@@ -1436,7 +1644,7 @@
       on: false, graph: G, D,
       tutorial, tutorialEnd: () => tutEnd(null), tourStep: () => (TUT.i >= 0 && TUT.i < STEPS.length ? STEPS[TUT.i].id : TUT.i >= STEPS.length ? "end" : null),
       get camK() { return D.camK; },
-      tick, pose, camera, body,
+      onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
       // a place from the map (a pin, a chip, the welcome card): driven to along the graph
       go(pl) {
         if (!pl || pl.find) return false;
@@ -1471,7 +1679,7 @@
       press: (k, down = true) => (down ? keyDown(k) : keyUp(k)),
       quarterAt, vehLow: () => H.vehLow?.(), lamps: (on) => H.reverseLamps(on), treeH: (x, z) => treeAt()(x, z), trees: () => (H.trees?.() || []).length,
       place: (id) => H.places.find((p) => p.id === id),
-      state: () => { const L = H.state.L, dec = nextDecision(L); return { v: Math.round(D.v), L: Math.round(L), car: [Math.round(H.carPos.x), Math.round(H.carPos.z)], dec: dec && { type: dec.type, in: Math.round(dec.L - L), ex: dec.ex && { l: !!dec.ex.l, s: !!dec.ex.s, r: !!dec.ex.r }, side: dec.side }, auto: D.auto && (D.auto.pl?.id || "tap"), q: quarterAt(H.carPos.x, H.carPos.z), hint: hintEl.textContent, card: H.cardOpen(), keys: { ...D.keys }, yaw: +H.mapView.yaw.toFixed(2), hd: +H.heading().toFixed(2) }; }
+      state: () => { const L = curL(), dec = nextDecision(L); return { v: Math.round(D.v), L: Math.round(L), car: [Math.round(H.carPos.x), Math.round(H.carPos.z)], dec: dec && { type: dec.type, in: Math.round(dec.L - L), ex: dec.ex && { l: !!dec.ex.l, s: !!dec.ex.s, r: !!dec.ex.r }, side: dec.side }, auto: D.auto && (D.auto.pl?.id || "tap"), q: quarterAt(H.carPos.x, H.carPos.z), hint: hintEl.textContent, card: H.cardOpen(), keys: { ...D.keys }, yaw: +H.mapView.yaw.toFixed(2), hd: +H.heading().toFixed(2) }; }
     };
     window.__nav2 = api; // for tests
     return api;
