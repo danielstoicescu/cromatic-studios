@@ -31868,9 +31868,11 @@ void main() {
     // rear screen foot at the rear axle; the waist rises a touch towards the back, the windows are shallower
     // r144 (Daniel: "the side windows are too small for the doors, it reads as a muscle car"): the glasshouse starts
     // on the lowered belt (about 3 lower), the roof stays: side glass about 10 tall against doors of about 15 (was 6.7 : 18)
-    gh.moveTo(16.6, 20.0); gh.lineTo(8.0, 31.5); gh.quadraticCurveTo(7.4, 32.2, 6.4, 32.2); gh.lineTo(-18.2, 32.2);
-    gh.quadraticCurveTo(-19.4, 32.2, -20.0, 31.6); gh.lineTo(-28.0, 20.5); gh.lineTo(16.6, 20.0);
-    const WF = [[14.7, 20.75], [7.5, 30.9], [6.7, 31.5], [-3.9, 31.5], [-3.9, 20.8]], WR = [[-5.6, 20.9], [-5.6, 31.5], [-15.8, 31.5], [-20.6, 21.1]];
+    // r162 (Daniel: "still tall on top, a bit comical; a touch sportier", off the yellow 1300 photo): the roof 2 lower
+    // (the car about 1.49 m tall, the real one 1.44), both screens more raked, the roof shorter, a thicker C-pillar
+    gh.moveTo(16.6, 20.0); gh.lineTo(6.6, 29.5); gh.quadraticCurveTo(6.0, 30.2, 5.0, 30.2); gh.lineTo(-17.2, 30.2);
+    gh.quadraticCurveTo(-18.4, 30.2, -19.0, 29.6); gh.lineTo(-28.0, 20.5); gh.lineTo(16.6, 20.0);
+    const WF = [[14.7, 20.75], [6.3, 28.9], [5.5, 29.5], [-3.9, 29.5], [-3.9, 20.8]], WR = [[-5.6, 20.9], [-5.6, 29.5], [-14.8, 29.5], [-20.6, 21.1]];
     gh.holes.push(poly(WF), poly(WR));
     const sideMtx = (sx) => new Matrix4().makeTranslation(sx * 14.95, 23.4, 0).multiply(new Matrix4().makeRotationZ(sx * 0.1)).multiply(new Matrix4().makeTranslation(0, -23.4, 0));
     for (const sx of [-1, 1]) {
@@ -31881,14 +31883,14 @@ void main() {
         const gl = new ShapeGeometry(poly(win)); gl.rotateY(-Math.PI / 2); put(glass, gl, mx);
         loop(win.map(([z, y]) => [sx * 0.62, y, z]), 0.2, trim, mx); // chrome window frames (r139e: black on the 1310)
       }
-      edge([sx * 0.58, 32.32, 6.2], [sx * 0.58, 32.32, -18.2], 0.26, trim, mx); // drip rail
+      edge([sx * 0.58, 30.32, 4.8], [sx * 0.58, 30.32, -17.2], 0.26, trim, mx); // drip rail (r162: on the lower roof)
       // the C-pillar air outlet: three slanted slots (r144: longer, on the taller pillar)
-      for (let k = 0; k < 3; k++) add(at(new BoxGeometry(0.3, 4.6, 0.5), sx * 0.72, 26.4, -19.7 - k * 1.2, 0.6), black, mx);
+      for (let k = 0; k < 3; k++) add(at(new BoxGeometry(0.3, 3.8, 0.5), sx * 0.72, 25.4, -19.3 - k * 1.1, 0.6), black, mx); // r162: lower
     }
-    const roof = topBody(rrDraw(27.8, 24.6, 2.6), 1.4, paint, 31.5, 0.6, 8); roof.position.z = -6.1; add(roof, paint); // r144: shorter at the front, over the raked screen
+    const roof = topBody(rrDraw(27.8, 22.6, 2.6), 1.4, paint, 29.5, 0.6, 8); roof.position.z = -6.1; add(roof, paint); // r162: 2 lower, shorter // r144: shorter at the front, over the raked screen
     // r144: the screens reach down to the lowered belt, the front one a little more raked
-    const WS = [[-14.5, 20.6, 15.75], [14.5, 20.6, 15.75], [13.3, 31.9, 7.4], [-13.3, 31.9, 7.4]];
-    const RS = [[14.3, 21.0, -27.2], [-14.3, 21.0, -27.2], [-13.3, 31.9, -19.4], [13.3, 31.9, -19.4]];
+    const WS = [[-14.5, 20.6, 15.75], [14.5, 20.6, 15.75], [13.3, 29.9, 6.0], [-13.3, 29.9, 6.0]]; // r162: more raked, to the lower roof
+    const RS = [[14.3, 21.0, -27.2], [-14.3, 21.0, -27.2], [-13.3, 29.9, -18.6], [13.3, 29.9, -18.6]];
     put(glass, quad(...WS)); put(glass, quad(...RS));
     loop(WS, 0.32, trim); loop(RS, 0.32, trim);
     // wipers parked along the screen, on chrome spindles
@@ -31903,7 +31905,7 @@ void main() {
     add(at(new BoxGeometry(3.8, 0.35, 0.25), 6.8, 24.1, 8.6, 0.55), black);
     edge([6.8, 22.9, 10.6], [6.8, 24.0, 8.8], 0.35, black);
     edge([0, 21.1, 4.0], [0, 23.1, 3.4], 0.18, black); add(at(new SphereGeometry(0.55, 8, 6), 0, 23.2, 3.35), black); // gear lever
-    add(at(new BoxGeometry(3.2, 1.0, 0.35), 0, 30.3, 8.1), black); // rear-view mirror
+    add(at(new BoxGeometry(3.2, 1.0, 0.35), 0, 28.4, 6.9), black); // rear-view mirror (r162: under the lower roof)
     const seat = (x, width, z, backZ, tilt, pleats, bh) => {
       const c = sideBody(rrShape(7.2, 1.5, 0.6), width, seatM, 0.55, 4); c.position.set(x, 21.75, z); add(c, seatM);
       const by = 22.7 + bh / 2;
@@ -32009,18 +32011,18 @@ void main() {
       const bonY = (z) => { let lo = 0, hi = 1; for (let i = 0; i < 24; i++) { const t = (lo + hi) / 2, zt = (1 - t) ** 2 * 37.8 + 2 * (1 - t) * t * 26 + t * t * 15.0; if (zt > z) lo = t; else hi = t; } const t = (lo + hi) / 2; return (1 - t) ** 2 * 15.05 + 2 * (1 - t) * t * 17.9 + t * t * 19.0 + 1.48; };
       const onBonnet = (k, w, h, zc) => { const q = uvFit(new PlaneGeometry(w, h, 10, 4), A.uv(k)); q.rotateX(-Math.PI / 2); q.translate(0, 0, zc); const p = q.attributes.position; for (let i = 0; i < p.count; i++) p.setY(i, bonY(p.getZ(i))); q.computeVertexNormals(); put(A.mat, q); };
       onBonnet("word", 25, 4.7, 28.4); onBonnet("crest", 3.6, 3.9, 20.6);
-      // the roof bar: a light grey rack on two feet, a blue lamp box at each end, the siren horn in the middle
+      // the roof bar: a light grey rack on two feet (r162: 2 lower, on the lower roof), a blue lamp box at each end, the siren horn in the middle
       const rack = new MeshStandardMaterial({ color: "#d4d7db", roughness: 0.4, metalness: 0.3 });
-      add(at(new BoxGeometry(23, 0.7, 1.8), 0, 34.6, 0.5), rack);
-      for (const sx of [-1, 1]) add(at(new BoxGeometry(1.4, 1.8, 2.4), sx * 9, 33.6, 0.5), rack);
+      add(at(new BoxGeometry(23, 0.7, 1.8), 0, 32.6, 0.5), rack);
+      for (const sx of [-1, 1]) add(at(new BoxGeometry(1.4, 1.8, 2.4), sx * 9, 31.6, 0.5), rack);
       const lampM = () => M("#2f6bff", { emissive: "#2a6bff", emissiveIntensity: 0.2, roughness: 0.15 });
       const bl = lampM(), br = lampM();
-      for (const [sx, m] of [[-1, bl], [1, br]]) { add(at(new BoxGeometry(6.4, 2.3, 2.8), sx * 8.2, 36.1, 0.5), m); add(at(new BoxGeometry(6.8, 0.5, 3.2), sx * 8.2, 35.15, 0.5), rack); }
-      add(at(new CylinderGeometry(0.4, 0.5, 2.2, 8), 0, 36.0, 0.5), rack);
-      const horn = new CylinderGeometry(1.5, 0.55, 3.0, 14, 1, true); horn.rotateX(Math.PI / 2); add(at(horn, 0, 37.4, 1.6), rack);
-      add(at(new CylinderGeometry(0.7, 0.7, 1.4, 10), 0, 37.4, -0.5, Math.PI / 2), rack);
-      const lr = new PointLight("#2a6bff", 0, 220, 1.6); lr.position.set(-9, 42, 0);
-      const lb = new PointLight("#2a6bff", 0, 220, 1.6); lb.position.set(9, 42, 0);
+      for (const [sx, m] of [[-1, bl], [1, br]]) { add(at(new BoxGeometry(6.4, 2.3, 2.8), sx * 8.2, 34.1, 0.5), m); add(at(new BoxGeometry(6.8, 0.5, 3.2), sx * 8.2, 33.15, 0.5), rack); }
+      add(at(new CylinderGeometry(0.4, 0.5, 2.2, 8), 0, 34.0, 0.5), rack);
+      const horn = new CylinderGeometry(1.5, 0.55, 3.0, 14, 1, true); horn.rotateX(Math.PI / 2); add(at(horn, 0, 35.4, 1.6), rack);
+      add(at(new CylinderGeometry(0.7, 0.7, 1.4, 10), 0, 35.4, -0.5, Math.PI / 2), rack);
+      const lr = new PointLight("#2a6bff", 0, 220, 1.6); lr.position.set(-9, 40, 0);
+      const lb = new PointLight("#2a6bff", 0, 220, 1.6); lb.position.set(9, 40, 0);
       g.add(lr, lb);
       // the drive loop flashes these two alternately (it calls them red and blue: here both are blue)
       beacon = { redM: bl, blueM: br, lr, lb };
