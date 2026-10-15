@@ -35730,7 +35730,8 @@ void main() {
       // before its first draw, the rooms' programs too (linkedRun), and the PNGs encode off the main thread
       // (toBlob). onEach(id, url) gets each thumbnail as it lands
       async function makeVehiclePreviews(onEach) {
-        const idle = () => new Promise((res) => (window.requestIdleCallback || setTimeout)(res, { timeout: 1000 }));
+        // beta 2.5 polish: each step is a 30–60 ms render: never while the nav2 car is moving (a hitch on the first drive)
+        const idle = () => new Promise((res) => { const go = () => (window.requestIdleCallback || setTimeout)(() => (nav2?.on && mapMode && Math.abs(nav2.speed?.() || 0) > 25 ? setTimeout(go, 600) : res()), { timeout: 1000 }); go(); });
         const size = 132;
         await idle();
         const r = new WebGLRenderer({ antialias: true, alpha: true });
@@ -37761,7 +37762,7 @@ void main() {
           tilt = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
         }
         if (tilt.rt.width !== w || tilt.rt.height !== h) { tilt.rt.setSize(w, h); tilt.mat.uniforms.res.value.set(w, h); }
-        tilt.mat.uniforms.amt.value = 4.2 * renderer.getPixelRatio() * (mapMode && nav2?.on ? 1 - 0.8 * nav2.camK : 1); // nav2: little miniature blur in the street view
+        tilt.mat.uniforms.amt.value = 4.2 * renderer.getPixelRatio() * (mapMode && nav2?.on ? Math.max(0, 1 - 1.1 * nav2.camK) : 1); // nav2: no miniature blur in the street view (beta 2.5: one tap per pixel there, ~+5 fps)
         tilt.mat.uniforms.band.value = 0.16;
         tilt.mat.uniforms.t.value = (now * 0.001) % 100;
         tilt.mat.uniforms.zb.value = mapMode ? mapView.zoomBlur || 0 : 0;
@@ -38282,7 +38283,7 @@ void main() {
           const f = clamp2(state.speed / 69.75 + (siteMode || police.active ? 0 : lagAhead / 5000), 0, 1);
           window.__spd = { f, lag: Math.round(state.targetL - state.L) };
           const red = f >= 200 / 240 && state.vehicleId !== "cop";
-          ui.dash.speed(f, vs.max, vs.unit, red);
+          if (!mapMode) ui.dash.speed(f, vs.max, vs.unit, red); // beta 2.5: the dash is hidden on the map (no hidden DOM writes per frame)
           redHold = red && !siteMode ? redHold + dt : 0;
           if (xpPending && xpPending.kind === "msg" && now - xpPending.t > 4000) xpCommit(true);
         }
@@ -38786,6 +38787,7 @@ void main() {
         if (schemeId === "ghibli" || schemeId === "orchid") { fogNear = 1400; fogFar = 9000; }
         // the map looks from far above: fog starts past the ground, in every world (underwater keeps a little haze)
         if (mapMode) { const k = schemeId === "underwater" ? 0.75 : 1.15; fogNear = Math.max(fogNear, mapView.dist * k); fogFar = Math.max(fogFar, mapView.dist * (schemeId === "underwater" ? 2.2 : 3.2)); }
+        if (mapMode && nav2?.on && nav2.camK > 0.01) { const sk = nav2.camK; fogNear = fogNear * (1 - sk) + 1100 * sk; fogFar = fogFar * (1 - sk) + 3150 * sk; } // beta 2.5: the street view's haze
         scene.fog.near = smooth(scene.fog.near, flying && schemeId !== "monument" ? 1400 : fogNear, dt, 1.5);
         scene.fog.far = smooth(scene.fog.far, flying && schemeId !== "monument" ? 6600 : fogFar, dt, 1.5);
         if (copCar.group.visible) {
@@ -40164,7 +40166,7 @@ void main() {
         let nearKey = "", nearT = 0;
         const NEAR_R = 750, NEAR_MIN = 4;
         const nearbyTick = (now) => {
-          if (now - nearT < 350 || !dockOn) return; nearT = now;
+          if (now - nearT < 350 || !dockOn || nav2?.on) return; nearT = now; // beta 2.5: nav2 hides the dock (its own Nearby panel); no hidden layout work
           const byCar = mapNav.moving || mapView.follow || !!mapView.focus || !!cine; // driving, following, or parked in a shot: the car; panned away: what you look at
           const fx = byCar ? carPos.x : mapView.tgt.x, fz = byCar ? carPos.z : mapView.tgt.z;
           const list = pins.filter((p) => p.ch).map((p) => ({ p, d: Math.hypot(p.pl.wx - fx, p.pl.wz - fz) })).sort((a, b) => a.d - b.d);
