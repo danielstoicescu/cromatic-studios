@@ -39116,11 +39116,11 @@ void main() {
         for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, street: b.lane ? "D" : b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
         ZDROVIT_YARD.forEach((n, i) => { const [x, z] = yardSpot(yardSlotOf(i)); add({ id: "y-" + i, br: "C", x: 1500, z, px: x, pz: z, h: 22, name: n, line: "IN THE ZDROVIT YARD", c: "#cfcdc8", t: "#3d3c39", small: true, desc: `${n}, one of the brands in the Zdrovit yard. By Cromatic Studios.` }); });
         add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Berero", line: "BRAND \xB7 LABELS \xB7 MERCH", c: "#111111", t: "#ffffff", act: "bereroTag" });
-        add({ id: "echo", x: 1170, z: 6340, px: 1078, pz: 6350, h: 110, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", desc: "Two years of Instagram for a School of Technology, Digital Arts & Videogames in Bucharest: posts, stories, carousels, reels and campaigns." }); // r159: the case page is live
+        add({ id: "echo", x: 1170, z: 6340, px: 1078, pz: 6350, h: 110, tapW: 0.45 /* r168 (Daniel: "Echo School is hard to press, it matters more than Dacia 99"): it wins the building's taps, and shows as a card from afar (TIER1) */, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", desc: "Two years of Instagram for a School of Technology, Digital Arts & Videogames in Bucharest: posts, stories, carousels, reels and campaigns." }); // r159: the case page is live
         add({ id: "friends", stop: "merge", px: 1365, pz: 6400, h: 150, float: true, name: "+50 Other Clients", line: "HUNDREDS OF PROJECTS \xB7 THOUSANDS OF DELIVERABLES", c: "#d9d7d2", t: "#1a1a1a" });
       })();
       // r117: how close you must be for a place to show its card (a coloured dot otherwise)
-      const TIER1 = new Set(["tm", "oma", "scf", "steam", "arca", "tac", "zdrovit", "invest", "end", "jet"]);
+      const TIER1 = new Set(["tm", "oma", "scf", "steam", "arca", "tac", "zdrovit", "invest", "end", "jet", "echo"]); // r168: Echo School
       for (const p of MAP_PLACES) p.tier = TIER1.has(p.id) ? 1 : p.small ? 3 : p.chapter || p.past ? 2 : p.id.startsWith("w-") ? 3 : 2;
       function mapPlaceL(pl) {
         if (pl.stop) return route.stopL[pl.stop];
@@ -40403,7 +40403,7 @@ void main() {
           }
           // a tap on a place's building goes there
           let near = null;
-          for (const q of pins) { if (q.pl.chapter && !q.pl.past) continue; const d2 = (q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2; if (d2 < 75 * 75 && (!near || d2 < near.d)) near = { d: d2, pl: q.pl }; }
+          for (const q of pins) { if (q.pl.chapter && !q.pl.past) continue; const d2 = ((q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2) * (q.pl.tapW || 1); if (d2 < 75 * 75 && (!near || d2 < near.d)) near = { d: d2, pl: q.pl }; } // r168: tapW, a place that wins its shared building
           if (near) return mapGo(near.pl);
           for (const q of pins) if (q.pl.chapter && !q.pl.past && (q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2 < 70 * 70) return mapGo(q.pl);
           // otherwise only the street itself
