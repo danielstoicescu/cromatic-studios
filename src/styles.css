@@ -3579,6 +3579,7 @@ body.kz-intro .kz-veil { -webkit-backdrop-filter: none; backdrop-filter: none; }
 .svc-hc .oc-n { font-size: 9.5px; }
 /* drive at the fork: a nudge */
 .jx-row:not(.hidden)::before { content: "Pick a street to keep driving \2193"; position: absolute; left: 50%; bottom: calc(100% + 8px); translate: -50% 0; white-space: nowrap; font: 800 13px/1 CromaticSans, sans-serif; background: #141414; color: #fff; padding: 8px 14px; border-radius: 999px; }
+.lane-row:not(.hidden)::before { content: none; } /* r164: the lane is a choice, not a stop: no "pick a street" */
 /* phones: drive cards stay on screen */
 @media (max-width: 719px) { body:not(.map-mode) .mapcard:not(.contact) { max-height: calc(100dvh - 150px); overflow-y: auto; } }
 

@@ -24240,10 +24240,15 @@ void main() {
     for (let i = f + 1; i < pts.length; i++) if (Math.abs(pts[i][0] - 1170) < 10 && pts[i][1] > 6095) { j = i; break; }
     return [f, j];
   }
-  function branchPoints(branch) {
+  // r164 (Adina): Medical Avenue can take the lane (The Shortest Shortcut) down to the Dacia row: the same street up to
+  // the lane's mouth at (1500, 5700), then the lane, then the shared row on to Olari 9
+  function laneRouteC() {
+    return [...ROUTE_C.filter(([, z]) => z <= 5200), ...LANE_PTS, ...ROUTE_C.slice(ROUTE_C.findIndex(([x, z]) => x === 1170 && z === 6100))];
+  }
+  function branchPoints(branch, lane = false) {
     const pts = [
       ...ROUTE_MAIN,
-      ...branchRoute(branch).slice(1)
+      ...(lane && branch === "C" ? laneRouteC() : branchRoute(branch)).slice(1)
     ];
     const spiral = [];
     // quarter-circle fillets so the road meets the ring tangentially (a hard 90° join
@@ -24320,7 +24325,7 @@ void main() {
         }
         rebuild() {
           this.isPath = false;
-          const flat = roundedPolyline(branchPoints(this.branch));
+          const flat = roundedPolyline(branchPoints(this.branch, this.lane)); // r164: this.lane, Medical Avenue by the lane
           this.points = flat.map(([x, z, y]) => new Vector3(x, z > RAMP_BASE - 1 ? elevationAt(z) : y, z));
           this.cum = [0];
           for (let i = 1; i < this.points.length; i++) {
@@ -24344,6 +24349,7 @@ void main() {
         setBranch(b) {
           if (b !== this.branch) {
             this.branch = b;
+            this.lane = false; // r164
             this.rebuild();
           }
         }
@@ -25423,7 +25429,7 @@ void main() {
     net.at = G.at;
     return count;
   }
-  function buildGoldenRoute(parent, branch, accent, chosen = true, all = false) {
+  function buildGoldenRoute(parent, branch, accent, chosen = true, all = false, lane = false) {
     const group = new Group();
     group.name = "goldenRoute";
     mats.routeCasing = mats.routeCasing || new MeshStandardMaterial({ color: "#2a2620", roughness: 0.9 });
@@ -25440,7 +25446,9 @@ void main() {
       const w0 = chosen ? ROUTE_W * 0.8 : ROUTE_W;
       group.add(roadRibbonFromMap(roundedPolyline(branchRoute(b2)), w0, b2 === branch ? 0.72 : 0.7, mats.routeAlt));
     }
-    const flat = branchPoints(branch);
+    const flat = branchPoints(branch, lane);
+    // r164: Medical Avenue by the lane: its own last stretch stays a street (grey, like the streets not taken)
+    if (lane && chosen && !all) group.add(roadRibbonFromMap(roundedPolyline(ROUTE_C.filter(([, z]) => z >= 5200)), ROUTE_W * 0.8, 0.7, mats.routeAlt));
     const dense = roundedPolyline(flat).filter(([, z]) => z <= RAMP_LIP + 1);
     const all3 = dense.map(([x, z, y]) => new Vector3(x, z > RAMP_BASE - 1 ? elevationAt(z) : y, z));
     // before the choice only the shared road is gold: up to the fork, and from the merge on
@@ -34707,10 +34715,17 @@ void main() {
         b.classList.add("pressing"); hold(4000);
         try { b.setPointerCapture(e.pointerId); } catch {}
       });
+      // r164 (Adina): a finger that slides up or down on a sign drives the car (touch-action: none kept the press a tap,
+      // but the signpost over the Dacia row covers most of a phone: swipes there did nothing, the car looked stuck)
+      b.addEventListener("pointermove", (e) => {
+        if (!down || e.pointerId !== down.id || e.pointerType === "mouse") return;
+        if (!down.drag && Math.abs(e.clientY - down.y) > 12) { down.drag = true; down.ly = e.clientY; b.classList.remove("pressing"); }
+        if (down.drag) { window.scrollBy({ top: down.ly - e.clientY, behavior: "instant" }); down.ly = e.clientY; }
+      });
       b.addEventListener("pointerup", (e) => {
         b.classList.remove("pressing");
         if (!down || e.pointerId !== down.id) return;
-        const ok = Math.hypot(e.clientX - down.x, e.clientY - down.y) < 28;
+        const ok = !down.drag && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 28;
         down = null; hold(ok ? 1500 : 300);
         if (ok) { fired = performance.now(); e.preventDefault(); fn(e); }
       });
@@ -34920,6 +34935,15 @@ void main() {
     jxRow.setAttribute("aria-label", "Choose your street");
     for (const b2 of [forkB, forkC, forkA]) { b2.classList.remove("hidden"); jxRow.appendChild(b2); }
     root.appendChild(jxRow);
+    // r164 (Adina): the lane off Medical Avenue is a choice too, signed like the fork (the names are the map's street signs)
+    const laneStay = hwSign("c", "u", "Medical Avenue", "Clinics, care & beauty"), laneGo = hwSign("d", "r", "The Shortest Shortcut", "Stickers & print");
+    laneGo.style.setProperty("--hwc", "#FED012");
+    const laneRow = el("div", "jx-row lane-row hidden"), laneHold = { _hold: 0 };
+    laneRow.setAttribute("role", "group"); laneRow.setAttribute("aria-label", "Choose your street");
+    for (const b2 of [laneStay, laneGo]) { b2.classList.remove("hidden"); laneRow.appendChild(b2); }
+    fastTap(laneStay, () => api.takeLane(false), laneHold);
+    fastTap(laneGo, () => api.takeLane(true), laneHold);
+    root.appendChild(laneRow);
     anchors.append(rbBtn, addrCard, poiStack);
     return {
       root,
@@ -34959,7 +34983,7 @@ void main() {
       forkB,
       forkC,
       forkD,
-      jxRow, xrPost, xrPaint, jxHoldBox,
+      jxRow, xrPost, xrPaint, jxHoldBox, laneRow, laneStay, laneGo, laneHold, // r164
       rbBtn,
       addrCard,
       poiStack,
@@ -35466,6 +35490,8 @@ void main() {
           if (k === "start") { resetBranch(); state.xrAway = false; jumpGuard = performance.now() + 2600; const L0 = route.stopL.dream + 60; scrollToL(L0, false); state.L = prevL = state.targetL = L0; return; }
           api.crossTo(k);
         },
+        // r164: the lane off Medical Avenue (see setLane); only before its mouth
+        takeLane(on) { if (state.branch === "C" && state.branchChosen && state.L < routeLAt("lanemouth", 1500, 5700) + 10) setLane(on); },
         goAround() {
           resetBranch();
           scrollToL(route.stopL.fork - 175);
@@ -35647,13 +35673,24 @@ void main() {
       function rebuildGolden() {
         scene.remove(golden);
         disposeObject(golden);
-        golden = buildGoldenRoute(scene, state.branch, SCHEMES[state.schemeIdx].ac, state.branchChosen, mapMode);
+        golden = buildGoldenRoute(scene, state.branch, SCHEMES[state.schemeIdx].ac, state.branchChosen, mapMode, !mapMode && !!route.lane); // r164
         applyScheme(state.schemeIdx);
       }
       function resetBranch() {
         if (!state.branchChosen) return;
         state.branchChosen = false;
+        if (route.lane) setLane(false); // r164
         rebuildGolden();
+      }
+      // r164 (Adina): Medical Avenue straight on, or by the lane (The Shortest Shortcut). The two share the road up to the
+      // lane's mouth, so the car stays where it is; the scroll is re-pinned to it (the road's length changes)
+      function setLane(on) {
+        if (!!route.lane === on || route.isPath) return;
+        const L = state.L;
+        route.lane = on; route.rebuild(); rebuildGolden();
+        jumpGuard = performance.now() + 2600;
+        window.scrollTo({ top: clamp2(L / effectiveTotal(), 0, 1) * maxScroll(), behavior: "instant" });
+        state.L = prevL = state.targetL = L;
       }
       var ui = buildUI(api);
       // r139q: the ride thumbnails, a step at a time. r129 drew all nine in one go: ~1.3 s on an M4 (most of it
@@ -36257,6 +36294,8 @@ void main() {
         const step = window.innerHeight * 0.6;
         if (e.key === "ArrowUp" || e.key === "ArrowDown") {
           e.preventDefault();
+          // r164 (Adina): held at the fork, a fresh ↑ goes straight on: Medical Avenue (← → turn, as before)
+          if (e.key === "ArrowUp" && !e.repeat && !siteMode && !mapMode && !state.branchChosen && Math.abs(state.L - route.stopL.fork) < 700 && state.L > route.stopL.fork - 200) api.pickBranch("C");
           if (!siteMode) { kbHold = e.key === "ArrowUp" ? 1 : -1; markInput(); }
           else siteEl?.scrollBy({ top: (e.key === "ArrowUp" ? -1 : 1) * 120, behavior: "smooth" });
         } else if (e.key === "PageUp" || e.key === " ") {
@@ -36272,6 +36311,14 @@ void main() {
         } else if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && Math.abs(state.L - route.stopL.fork) < 700 && !state.branchChosen) {
           e.preventDefault();
           api.pickBranch(e.key === "ArrowRight" ? "A" : "B");
+        } else if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && !ui.xrPost.classList.contains("hidden")) {
+          // r164 (Adina): at the end of a street the signpost's two streets are ← (the arm pointing left) and → (the one
+          // pointing right); ↑ drives on to Olari 9, as before
+          e.preventDefault();
+          if (!e.repeat) ui.xrPost.querySelectorAll(".xr-arm:not(.home)")[e.key === "ArrowLeft" ? 0 : 1]?.click();
+        } else if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && !ui.laneRow.classList.contains("hidden")) {
+          e.preventDefault(); // r164: → the lane (The Shortest Shortcut), ← back to the avenue
+          api.takeLane(e.key === "ArrowRight");
         }
       });
       var currentCardStop = null;
@@ -38127,7 +38174,8 @@ void main() {
         // r130b: once the portfolio is behind you (past the merge), the road back to the fork is closed:
         // scrolling up stops at the merge instead of reversing all the way to the junction
         if (!mapMode && !siteMode && state.branchChosen && route.stopL.merge) {
-          if (state.L > route.stopL.merge + 40) state.floorL = Math.max(state.floorL || 0, route.stopL.merge - 60);
+          // r164 (Adina): the merge no longer sets a floor: from Olari 9 you can always back up, along the street you came
+          // by (it held the car at the Dacia row, "stuck" near Casa Cromatic). A floor set elsewhere still holds
           if (state.floorL && state.targetL < state.floorL && now > jumpGuard) {
             state.targetL = state.floorL;
             if (now - (state.floorFix || 0) > 120) { state.floorFix = now; window.scrollTo({ top: clamp2(state.floorL / effectiveTotal(), 0, 1) * maxScroll(), behavior: "instant" }); }
@@ -38544,7 +38592,7 @@ void main() {
             if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
           }
           ui.setPovHint(povK > 0.6);
-          ui.setPad?.(povK > 0.3 || (Math.abs(state.L - route.stopL.fork) < 700 && !state.branchChosen), state.L > route.stopL.end - 300); // r156
+          ui.setPad?.(povK > 0.3 || (Math.abs(state.L - route.stopL.fork) < 700 && !state.branchChosen) || !ui.xrPost.classList.contains("hidden") || !ui.laneRow.classList.contains("hidden"), state.L > route.stopL.end - 300); // r156 (r164: the signpost and the lane too)
           // first person: the car disappears under you once the camera is down on the road
           const hideCar = false; // r139k: the chase camera keeps the car in view
           if (hideCar) veh.group.visible = false; else if (povHidCar && !siteMode) veh.group.visible = true;
@@ -38860,6 +38908,13 @@ void main() {
         for (const [bk, btn] of [["A", ui.forkA], ["B", ui.forkB], ["C", ui.forkC]]) {
           btn.classList.toggle("leaving", state.branchChosen);
           btn.classList.toggle("on", state.branchChosen && state.branch === bk);
+        }
+        // r164 (Adina): the lane's signs, on Medical Avenue up to the lane's mouth
+        {
+          const Lm = state.branch === "C" ? routeLAt("lanemouth", 1500, 5700) : 0;
+          const atLane = !mapMode && !siteMode && !flying && state.branchChosen && state.branch === "C" && state.L > Lm - 560 && state.L < Lm + 10;
+          ui.laneRow.classList.toggle("hidden", !atLane && (ui.laneHold._hold || 0) <= now);
+          ui.laneStay.classList.toggle("on", !route.lane); ui.laneGo.classList.toggle("on", !!route.lane);
         }
         const nearRB = false;
         placeAnchor(ui.rbBtn, ROUNDABOUT.x, 300, ROUNDABOUT.y, nearRB);
@@ -40666,7 +40721,7 @@ void main() {
               const r2 = new Route(b2);
               for (let i = 0; i < r2.points.length; i++) { const q = r2.points[i], d = (q.x - here.x) ** 2 + (q.z - here.z) ** 2; if (d < bd) { bd = d; bb = b2; bL = r2.cum[i]; } }
             }
-            route.branch = bb; route.rebuild();
+            route.branch = bb; route.lane = false; route.rebuild(); // r164
             state.branch = bb; state.L = prevL = bL;
           }
           // the drive holds you at the fork until a street is chosen: past it, the map's street counts as chosen
