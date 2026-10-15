@@ -146,3 +146,13 @@ body.map-mode .map-pin.dot { padding: 0; margin: 0; }
 @media (prefers-reduced-motion: reduce) { .map-card .mcd-open.busy { animation: none; } }
 /* beta 2.0: the pad, the views and the panel step aside under a case page or a modal */
 body:has(.case-frame:not(.hidden)) .nav2-ui, body.modal-open .nav2-ui, body.scf-open .nav2-ui { display: none !important; }
+
+/* round 3: the ways at a junction or a roundabout, on the road itself: the key that takes it and where it leads */
+.n2-arms { position: fixed; inset: 0; pointer-events: none; z-index: 13; }
+.n2-arm { position: absolute; left: 0; top: 0; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 999px; background: #fff; color: #141414; border: 2.5px solid #141414; box-shadow: 2px 3px 0 #141414; font: 800 13px/1 CromaticSans, sans-serif; white-space: nowrap; transition: opacity .25s; }
+.n2-arm.off { opacity: 0; }
+.n2-arm.picked { background: #FED012; }
+.n2-cap.sm { width: 24px; height: 24px; border-width: 2px; border-radius: 7px; font-size: 14px; box-shadow: 0 2px 0 #141414; animation: none; background: #FED012; }
+.n2-arm.picked .n2-cap.sm { background: #141414; color: #FED012; }
+body.nav2-street .n2-arm { font-size: 14px; }
+@media (max-width: 719px) { .n2-arm { font-size: 11.5px; padding: 3px 8px 3px 3px; } .n2-cap.sm { width: 20px; height: 20px; font-size: 12px; } }

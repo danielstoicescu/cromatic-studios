@@ -453,7 +453,7 @@
     const VMAX = 430, VREV = 140, ACC = 250, ACC_REV = 150, COAST = 300, BRAKE = 460, HARD = 950, ALAT = 1300, WINDOW = 360;
     const D = {
       seq: [], px: [], pz: [], cum: [], kap: [], total: 0, C: 0, v: 0, uid: 1,
-      cleared: new Set(), goUntil: -1, auto: null, uturn: null, kturn: null, revSteer: null, wasRev: false, backHold: false, downT: 0,
+      cleared: new Set(), goUntil: -1, cruise: false, cruiseOff: false, keyT: {}, auto: null, uturn: null, kturn: null, revSteer: null, wasRev: false, backHold: false, downT: 0,
       keys: { u: false, d: false, l: false, r: false }, ready: false, view: "sat", streetT: 0, camPull: 1, camUp: 0, camOver: 0, camLag: 0, camK: 0, camH: null,
       lastArr: null, cardFor: null, firstDrive: true
     };
@@ -615,7 +615,7 @@
       }
       // reversing: ← → back into the side street at the node behind
       if ((k === "l" || k === "r") && reversing()) { D.revSteer = k; flashKey(k); return; }
-      if (!dec || dec.L - L > 600) { if (k !== "u") nope(k); return; }
+      if (!dec || (dec.type !== "junction" && dec.L - L > 600)) { if (k !== "u") nope(k); return; } // round 3: ← → pick the next junction's way however far it is
       if (dec.type === "bend") {
         if (k === dec.side) { D.cleared.add(dec.key); D.goUntil = dec.Lend + 20; flashKey(k); return; }
         if (k !== "u") nope(k);
@@ -803,17 +803,18 @@
         }
       }
       // ↑ held into a junction that goes straight on: straight on
-      if (!D.auto && D.keys.u && D.v >= 0 && dec && dec.type === "junction" && dec.ex.s && dec.L - L2 < 70 + D.v * 0.45) { commit(dec.ex.s); dec = nextDecision(H.state.L); }
+      if (!D.auto && (D.keys.u || D.cruise) && D.v >= 0 && dec && dec.type === "junction" && dec.ex.s && dec.L - L2 < 70 + D.v * 0.45) { commit(dec.ex.s); dec = nextDecision(H.state.L); }
       let Lc = H.state.L;
       // after reversing, driving on again: the choices made beyond the car are dropped (you choose again)
-      if (D.wasRev && D.keys.u && D.v >= 0) {
+      if (D.wasRev && (D.keys.u || D.cruise) && D.v >= 0) {
         D.wasRev = false;
         const ci = ciOf(Lc);
         if (D.seq.length > ci + 1 && Lc < D.seq[ci].L1 - gapOf(D.seq[ci])) { D.seq.length = ci + 1; buildPath(); apply(Lc, Lc); dec = nextDecision(Lc); }
       }
       const autoRev = !!(D.auto && D.auto.rev);
       const auto = D.auto && !D.auto.uturn && !autoRev;
-      const fwdIn = (D.keys.u || auto || D.goUntil > Lc || D.goUntil === Infinity) && !(D.keys.d && D.goUntil !== Infinity);
+      if (D.cruise && (D.auto || D.kturn || D.uturn)) D.cruise = false;
+      const fwdIn = (D.keys.u || D.cruise || auto || D.goUntil > Lc || D.goUntil === Infinity) && !(D.keys.d && D.goUntil !== Infinity);
       const rev = (D.keys.d && D.v <= 0.5 && !pivots() && !D.auto) || (autoRev && D.v <= 0.5); // ↓ held (or backing up to a place): reverse
       // and going back: the start of the path, unless you back into a street there
       let Lb = 4;
@@ -875,6 +876,7 @@
       }
       if (D.lastArr) { const p = PL.find((q) => q.pl === D.lastArr); if (p && Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az) > 200) { D.lastArr = null; if (D.cardFor) { H.hideCard(); D.cardFor = null; } if (!D.auto) { H.mapNav.place = null; H.mark(); } } }
       ui(Lc, dec);
+      arms(Lc, dec);
       tutTick();
       panelT -= dt;
       if (panelT <= 0) { panelT = 0.22; document.body.classList.toggle("n2-card", H.cardOpen()); render(); }
@@ -1079,7 +1081,8 @@
           <button class="n2-k n2-r" data-k="r" aria-label="Turn right (→ or D)">${ARR.r}<i class="n2-w" aria-hidden="true">D</i></button>
         </div>
       </div>
-      <div class="n2-toast" role="status"></div>`;
+      <div class="n2-toast" role="status"></div>
+      <div class="n2-arms" aria-hidden="true"><span class="n2-arm" data-k="l"></span><span class="n2-arm" data-k="s"></span><span class="n2-arm" data-k="r"></span></div>`;
     document.body.appendChild(root);
     const panel = root.querySelector(".n2-panel"), views = root.querySelector(".n2-views"), pad = root.querySelector(".n2-pad"), hintEl = root.querySelector(".n2-hint"), toastEl = root.querySelector(".n2-toast");
     const keyEls = {}; pad.querySelectorAll(".n2-k").forEach((b) => { keyEls[b.dataset.k] = b; });
@@ -1088,8 +1091,15 @@
     function toast(t) { toastEl.textContent = t; toastEl.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove("on"), 2600); }
     function nope(k) { const b = keyEls[k]; if (!b) return; b.classList.remove("nope"); void b.offsetWidth; b.classList.add("nope"); }
     function flashKey(k) { const b = keyEls[k === "s" ? "u" : k]; if (!b) return; b.classList.remove("took"); void b.offsetWidth; b.classList.add("took"); }
-    const keyDown = (k) => { if (D.keys[k]) return; D.keys[k] = true; keyEls[k]?.classList.add("on"); press(k); };
-    const keyUp = (k) => { D.keys[k] = false; keyEls[k]?.classList.remove("on"); if (k === "d") D.backHold = false; };
+    // round 3 (Daniel: "no well-timed presses"): a short tap of ↑ cruises (the car keeps going, round the bends, straight
+    // over the junctions that go straight on, along a way you picked, until ↓, a dead end, a choice still to make or a place);
+    // ↑ held drives and letting go coasts to a stop, as before
+    const keyDown = (k) => { if (D.keys[k]) return; D.keys[k] = true; D.keyT[k] = performance.now(); keyEls[k]?.classList.add("on"); if (k === "d") D.cruise = false; press(k); };
+    const keyUp = (k) => {
+      if (!D.keys[k]) return;
+      D.keys[k] = false; keyEls[k]?.classList.remove("on"); if (k === "d") D.backHold = false;
+      if (k === "u") { D.cruise = performance.now() - (D.keyT.u || 0) < 280 && !D.auto; } // a tap cruises; a hold let go stops
+    };
     pad.querySelectorAll(".n2-k").forEach((b) => {
       const k = b.dataset.k;
       b.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); b.setPointerCapture?.(e.pointerId); keyDown(k); });
@@ -1138,11 +1148,69 @@
       cv.addEventListener("pointerup", end, true); cv.addEventListener("pointercancel", end, true);
       window.addEventListener("wheel", (e) => { if (api.on && D.streetT > 0.5 && !e.target.closest?.(".map-card, .case-frame, .nav2-ui, .map-rides, .crew-panel")) { e.preventDefault(); e.stopImmediatePropagation(); } }, { passive: false, capture: true });
     }
+    // round 3 (Daniel: "show which arm each key means"): at a junction or a roundabout coming up, a pill on each way you can
+    // take, its key and where it leads; once a way is picked only that one stays, until you are through
+    const armEls = {};
+    document.querySelectorAll(".n2-arm").forEach((e) => { armEls[e.dataset.k] = e; });
+    const armNames = new Map();
+    function armName(o) {
+      const k = o.e * 2 + (o.dir > 0 ? 1 : 0);
+      if (armNames.has(k)) return armNames.get(k);
+      const e = E[o.e], pts = o.dir > 0 ? e.pts : e.rpts, cum = o.dir > 0 ? e.cum : e.rcum;
+      let name = null;
+      for (const d of [320, 200, 120]) { const p = pointAt(pts, cum, Math.min(e.len, d)), q = quarterAt(p[0], p[1]); if (q) { name = QNAME[q]; break; } }
+      if (!name) { const ws = []; explore(o, 700, 0, ws, new Set(), 0); const f = uniq(ws)[0]; name = f ? (f.p.q && QNAME[f.p.q]) || f.p.pl.name : null; }
+      if (!name) { const p = pointAt(pts, cum, Math.min(e.len, 200)); name = Math.hypot(p[0] - H.start[0], p[1] - H.start[1]) < 1200 ? "The start" : e.kind === "long" ? "The avenue" : "The city"; }
+      armNames.set(k, name);
+      return name;
+    }
+    let armSig = "";
+    function arms(L, dec) {
+      const show = { l: null, s: null, r: null };
+      const near = dec && dec.type === "junction" && dec.L - L < 460 && !D.auto && !D.uturn && !D.kturn && D.v >= -0.5;
+      if (near) for (const k of ["l", "s", "r"]) if (dec.ex[k]) show[k] = dec.ex[k];
+      // a way already picked: the one the path takes at the last node passed or coming (shown until it is behind)
+      let picked = null;
+      if (!near && !D.auto && D.seq.length > 1) {
+        for (let k = 0; k < D.seq.length - 1 && !picked; k++) {
+          const it = D.seq[k];
+          if (E[it.e].kind === "ring") continue;
+          if (it.L1 - L > 460) break;
+          const nx = D.seq[k + 1], ex = exitsAt(it);
+          for (const s2 of ["l", "s", "r"]) {
+            const o = ex[s2]; if (!o) continue;
+            const first = o.via ? o.via[0] : o;
+            if (nx.e !== first.e || nx.dir !== first.dir) continue;
+            const out = o.via ? D.seq.find((q, j) => j > k && q.e === o.e && q.dir === o.dir) : nx;
+            if (L < (out ? out.L0 : it.L1) + 30) { picked = s2; show[s2] = o; }
+            break;
+          }
+        }
+      }
+      const sig = ["l", "s", "r"].map((k) => (show[k] ? show[k].e + ":" + show[k].dir : "-")).join("|") + (picked || "");
+      for (const k of ["l", "s", "r"]) {
+        const el = armEls[k], o = show[k];
+        if (!o) { if (!el.classList.contains("off")) el.classList.add("off"); continue; }
+        const e = E[o.e], pts = o.dir > 0 ? e.pts : e.rpts, cum = o.dir > 0 ? e.cum : e.rcum, p = pointAt(pts, cum, Math.min(e.len * 0.6, o.via ? 70 : 90));
+        const v = H.project(p[0], 28, p[1]);
+        if (v.z > 1 || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1) { el.classList.add("off"); continue; }
+        el.classList.remove("off");
+        el.style.transform = `translate3d(${((v.x * 0.5 + 0.5) * VP.w).toFixed(1)}px, ${((-v.y * 0.5 + 0.5) * VP.h).toFixed(1)}px, 0) translate(-50%, -100%)`;
+      }
+      if (sig === armSig) return;
+      armSig = sig;
+      for (const k of ["l", "s", "r"]) {
+        const o = show[k], el = armEls[k];
+        if (!o) continue;
+        el.classList.toggle("picked", picked === k);
+        el.innerHTML = `<b class="n2-cap sm">${GLY[k]}</b><span>${esc(armName(o))}</span>`;
+      }
+    }
     // the pad: only what does something here lights up; the hint says what is next
     let padSig = "";
     function ui(L, dec) {
       const v = valid(dec, L), near = dec && dec.L - L < WINDOW, stoppedAt = Math.abs(D.v) < 8 && dec && dec.L - L < (dec.gap || 34) + 50;
-      let hint = pivots() ? "HOLD ↑ TO DRIVE · ↓ TURNS ROUND" : "HOLD ↑ TO DRIVE · ↓ REVERSES";
+      let hint = pivots() ? "↑ TO DRIVE · ↓ TURNS ROUND" : "↑ TO DRIVE (TAP TO CRUISE) · ↓ REVERSES";
       let need = "";
       if (D.uturn) hint = "TURNING ROUND";
       else if (D.kturn) hint = "THREE-POINT TURN";
@@ -1157,7 +1225,8 @@
           if (stoppedAt) need = ["l", "r"].filter((k) => dec.ex[k]).join("") + (dec.ex.s ? "u" : "");
         }
         else if (dec.type === "end") hint = stoppedAt ? (pivots() ? "DEAD END · ↓ TO TURN ROUND" : "DEAD END · ↓ FOR A THREE-POINT TURN") : `DEAD END IN ${m} M`;
-      } else if (D.v > 10) hint = "↓ BRAKES";
+      } else if (D.cruise && D.v > 10) hint = "CRUISING · ↓ TO STOP";
+      else if (D.v > 10) hint = "↓ BRAKES";
       const sig = `${v.u}${v.d}${v.l}${v.r}|${need}|${hint}`;
       if (sig === padSig) return;
       padSig = sig;
