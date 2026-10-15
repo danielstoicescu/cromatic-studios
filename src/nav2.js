@@ -1269,6 +1269,9 @@
         H.hideCard(); D.cardFor = null; D.lastArr = null;
         return goTo({ e: a.e, s: a.s }, pl);
       },
+      moving: () => Math.abs(D.v) > 20 || !!D.auto || !!D.kturn || !!D.uturn,
+      // a point on a drawn road (within its width, a little margin)
+      onRoad: (x, z) => { const a = G.nearest(x, z, 60); return !!a && a.d < E[a.e].w * 0.5 + 6; },
       // a tap on any street of the graph
       tap(x, z) {
         const a = G.nearest(x, z, 45);
