@@ -28,6 +28,10 @@ const SITE_URL = (process.env.SITE_URL || "https://cromaticstudios.com").replace
 const CASE_COUNT = (() => { let fs = []; try { fs = readdirSync(join(root, "site", "cases")).filter((f) => f.endsWith(".html")).map((f) => f.slice(0, -5)); } catch {} return new Set([...Object.keys(DATA.CASES || {}), ...Object.keys(DATA.CANVASES || {}), ...fs, "steam"]).size; })();
 const head = readFileSync(src("head.html"), "utf8");
 const css = readFileSync(src("styles.css"), "utf8");
+// nav2: the opt-in navigation prototype (?nav=v2) is its own module, laid before the app (window.czNav2 is there when
+// the map first opens) with its own styles; app.js only calls it when the flag is on
+const NAV2_JS = (() => { try { return readFileSync(src("nav2.js"), "utf8"); } catch { return ""; } })();
+const NAV2_CSS = (() => { try { return readFileSync(src("nav2.css"), "utf8"); } catch { return ""; } })();
 const js = readFileSync(src("app.js"), "utf8");
 const content = readFileSync(src("content.html"), "utf8").replace(/<!--[\s\S]*?-->\s*/, "").replace(/\b\d+ case studies\b/g, `${CASE_COUNT} case studies`);
 // r136c: the first paint is the brewing cup, turning: the 3D cup's own 24-frame strip (src/cup-spin.png) is inlined,
@@ -79,7 +83,7 @@ if (single >= 0) {
   mkdirSync(dirname(out), { recursive: true });
   // a local file has no domain: drop the absolute social/canonical tags
   const h = head.split("\n").filter((l) => !l.includes("%%SITE_URL%%")).join("\n");
-  const html = `${h}<style>${css}</style>\n</head><body>\n${boot}\n${content}\n<script>${js}<\/script>\n</body></html>`;
+  const html = `${h}<style>${css}\n${NAV2_CSS}</style>\n</head><body>\n${boot}\n${content}\n<script>${NAV2_JS}\n${js}<\/script>\n</body></html>`; // nav2
   writeFileSync(out, html);
   console.log(`single file -> ${out} (${(html.length / 1048576).toFixed(2)} MB)`);
   process.exit(0);
@@ -107,7 +111,7 @@ const lazy = (text) => text.replace(/<img src=/g, "<img loading=lazy decoding=as
 // name -> data URI, for every embedded file assigned to a named variable in app.js
 const named = new Map();
 for (const m of js.matchAll(/([A-Za-z_$][\w$]*)\s*=\s*"data:((?:image|video)\/[a-z0-9+.-]+);base64,([A-Za-z0-9+/=]+)"/g)) named.set(m[1], m[3]);
-let jsOut = lazy(extract(js));
+let jsOut = NAV2_JS + "\n" + lazy(extract(js)); // nav2
 // r139a: the map opens Steam's built page (/work/steam/?embed=1) like every other case page; the page kept as a string
 // in app.js is read from the source below (page "work/steam") and is only the fallback of the single-file copy, so the
 // production bundle ships it empty (~57 KB less)
@@ -123,7 +127,7 @@ let engineCss = "";
   const eng = join(root, "site", "onboarding", "intro-lab");
   try { jsOut = readFileSync(join(eng, "engine.js"), "utf8") + "\n" + jsOut; engineCss = readFileSync(join(eng, "engine.css"), "utf8"); } catch (e) { console.warn("[build] opening engine not found:", e.message); }
 }
-let cssOut = extract(css) + "\n" + engineCss;
+let cssOut = extract(css) + "\n" + engineCss + "\n" + NAV2_CSS; // nav2
 // minify for production (the single-file build stays readable); skipped if esbuild is missing
 try {
   const { transformSync } = await import("esbuild");

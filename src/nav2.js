@@ -1,0 +1,1027 @@
+// nav2 (prototype, opt-in: ?nav=v2 on the map). One way round Cromatic City that mixes the drive and the map:
+// the car drives the city's real road graph (every street the city draws, not only the scripted branches) under the
+// arrows: ↑ on, ↓ brake / turn round, ← → at junctions and at the sharp bends (↑ only where straight on exists).
+// Two views (Street: a chase camera behind the car; Satellite: the map's camera following it, zoom as on the map),
+// blended, and a Waze-style panel of what is ahead per direction, filtered to the quarter you are in.
+// app.js calls window.czNav2(host) when the map first opens with the flag; every hook on that side is tagged "nav2".
+(function () {
+  "use strict";
+  const TAU = Math.PI * 2;
+  const wrapA = (a) => { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; };
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  const sss = (t) => t * t * t * (t * (t * 6 - 15) + 10);
+  const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  const cumOf = (pts) => { const c = [0]; for (let i = 1; i < pts.length; i++) c.push(c[i - 1] + dist(pts[i], pts[i - 1])); return c; };
+  // the point at arc length s along a polyline (cum = its running lengths)
+  function pointAt(pts, cum, s) {
+    const n = pts.length;
+    if (s <= 0) return pts[0].slice();
+    if (s >= cum[n - 1]) return pts[n - 1].slice();
+    let lo = 0, hi = n - 1;
+    while (lo < hi - 1) { const m = (lo + hi) >> 1; if (cum[m] <= s) lo = m; else hi = m; }
+    const f = (s - cum[lo]) / (cum[hi] - cum[lo] || 1);
+    return [pts[lo][0] + (pts[hi][0] - pts[lo][0]) * f, pts[lo][1] + (pts[hi][1] - pts[lo][1]) * f];
+  }
+  const QNAME = { A: "Coffee Street", B: "Fintech Boulevard", C: "Medical Avenue", D: "Dacia 99 & Olari 9" };
+  const QCOL = { A: "#28C840", B: "#119BFE", C: "#F28BA8", D: "#FED012" };
+  const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+
+  // ===================== 1. the road graph =====================
+  // Every road the city draws, from the same data that draws it: the drive's own network (navNet: the start road, the
+  // roundabout's ring, the three portfolio streets, the Dacia row, the lane, the road to Olari 9), the long streets
+  // (cityNet().longs, densified the way buildRoads draws them) and the organic side streets (cityNet().minor). They
+  // are clipped to the part of the city the map shows, cut where they cross, joined where one ends on another (a
+  // T-junction), junction points closer than 14 units merged, tiny overshoot stubs pruned, chains of degree 2
+  // contracted into one edge; the connected piece that holds the start road is the graph.
+  function buildGraph(H) {
+    const t0 = performance.now();
+    const B = { x0: -280, x1: 2880, z0: 2380, z1: 9640 };
+    const raw = [];
+    {
+      const { P, adj } = H.navNet();
+      const nb = adj.map((l) => [...new Set(l.map((q) => q[0]))]);
+      const done = new Set(), ek = (a, b) => (a < b ? a * 1e6 + b : b * 1e6 + a);
+      for (let s = 0; s < P.length; s++) {
+        if (nb[s].length === 2) continue;
+        for (const n of nb[s]) {
+          if (done.has(ek(s, n))) continue;
+          done.add(ek(s, n));
+          const pts = [P[s], P[n]];
+          let prev = s, cur = n;
+          while (nb[cur].length === 2) {
+            const nx = nb[cur][0] === prev ? nb[cur][1] : nb[cur][0];
+            if (done.has(ek(cur, nx))) break;
+            done.add(ek(cur, nx)); pts.push(P[nx]); prev = cur; cur = nx;
+          }
+          const F = H.fork, ring = pts.every(([x, z]) => Math.abs(Math.hypot(x - F.x, z - F.y) - 70) < 6);
+          raw.push({ pts: pts.map(([x, z]) => [x, z]), w: 56, kind: ring ? "ring" : "drive" });
+        }
+      }
+    }
+    const net = H.cityNet();
+    for (const s of net.longs) raw.push({ pts: H.rounded(s.pts, 160).map(([x, z]) => [x, z]), w: s.w, kind: "long" });
+    for (const s of net.minor) raw.push({ pts: s.pts.map(([x, z]) => [x, z]), w: s.w, kind: "minor" });
+    // clip to the map's box (Liang-Barsky per segment)
+    const clipSeg = (ax, az, bx, bz) => {
+      let u0 = 0, u1 = 1;
+      const dx = bx - ax, dz = bz - az, p = [-dx, dx, -dz, dz], q = [ax - B.x0, B.x1 - ax, az - B.z0, B.z1 - az];
+      for (let i = 0; i < 4; i++) {
+        if (p[i] === 0) { if (q[i] < 0) return null; continue; }
+        const r = q[i] / p[i];
+        if (p[i] < 0) { if (r > u1) return null; if (r > u0) u0 = r; } else { if (r < u0) return null; if (r < u1) u1 = r; }
+      }
+      return [u0, u1];
+    };
+    const lines = [];
+    for (const L of raw) {
+      let run = [];
+      const flush = () => {
+        const o = [];
+        for (const p of run) if (!o.length || dist(o[o.length - 1], p) > 0.5) o.push(p);
+        if (o.length > 1 && cumOf(o)[o.length - 1] > 24) lines.push({ w: L.w, kind: L.kind, pts: o, cuts: [], pre: null, post: null });
+        run = [];
+      };
+      for (let i = 1; i < L.pts.length; i++) {
+        const [ax, az] = L.pts[i - 1], [bx, bz] = L.pts[i], c = clipSeg(ax, az, bx, bz);
+        if (!c) { flush(); continue; }
+        const A = [ax + (bx - ax) * c[0], az + (bz - az) * c[0]], Bp = [ax + (bx - ax) * c[1], az + (bz - az) * c[1]];
+        if (!run.length || c[0] > 0) { flush(); run.push(A); }
+        run.push(Bp);
+        if (c[1] < 1) flush();
+      }
+      flush();
+    }
+    // every segment in a coarse grid
+    const CS = 90, grid = new Map(), segs = [];
+    const gk = (cx, cz) => (cx + 200) * 4000 + (cz + 200);
+    lines.forEach((L, li) => {
+      for (let i = 0; i < L.pts.length - 1; i++) {
+        const si = segs.length, a = L.pts[i], b = L.pts[i + 1];
+        segs.push([li, i]);
+        for (let cx = Math.floor(Math.min(a[0], b[0]) / CS); cx <= Math.floor(Math.max(a[0], b[0]) / CS); cx++)
+          for (let cz = Math.floor(Math.min(a[1], b[1]) / CS); cz <= Math.floor(Math.max(a[1], b[1]) / CS); cz++) {
+            const k = gk(cx, cz); let l = grid.get(k); if (!l) grid.set(k, (l = [])); l.push(si);
+          }
+      }
+    });
+    // crossings: each pair is tested in every cell it shares, kept only in the cell the crossing falls in
+    let nCross = 0;
+    for (const [k, list] of grid) {
+      for (let x = 0; x < list.length; x++) for (let y = x + 1; y < list.length; y++) {
+        const [l1, i1] = segs[list[x]], [l2, i2] = segs[list[y]];
+        if (l1 === l2) continue;
+        const a = lines[l1].pts[i1], b = lines[l1].pts[i1 + 1], c = lines[l2].pts[i2], d = lines[l2].pts[i2 + 1];
+        const rx = b[0] - a[0], rz = b[1] - a[1], sx = d[0] - c[0], sz = d[1] - c[1], den = rx * sz - rz * sx;
+        if (Math.abs(den) < 1e-9) continue;
+        const qx = c[0] - a[0], qz = c[1] - a[1], t = (qx * sz - qz * sx) / den, u = (qx * rz - qz * rx) / den;
+        if (t < -1e-9 || t > 1 + 1e-9 || u < -1e-9 || u > 1 + 1e-9) continue;
+        const X = a[0] + rx * t, Z = a[1] + rz * t;
+        if (gk(Math.floor(X / CS), Math.floor(Z / CS)) !== k) continue;
+        lines[l1].cuts.push({ i: i1, t, x: X, z: Z });
+        lines[l2].cuts.push({ i: i2, t: u, x: X, z: Z });
+        nCross++;
+      }
+    }
+    // T-junctions: a street that ends just short of (or on) another is joined to it
+    const ek2 = (p) => Math.round(p[0]) + "," + Math.round(p[1]);
+    const ends = new Map();
+    for (const L of lines) for (const p of [L.pts[0], L.pts[L.pts.length - 1]]) ends.set(ek2(p), (ends.get(ek2(p)) || 0) + 1);
+    let nT = 0;
+    lines.forEach((L, li) => {
+      for (const side of [0, 1]) {
+        const p = side ? L.pts[L.pts.length - 1] : L.pts[0];
+        if (ends.get(ek2(p)) > 1) continue;
+        if (L.cuts.some((c) => Math.hypot(c.x - p[0], c.z - p[1]) < 3)) continue;
+        let best = null;
+        const cx0 = Math.floor(p[0] / CS), cz0 = Math.floor(p[1] / CS);
+        for (let cx = cx0 - 1; cx <= cx0 + 1; cx++) for (let cz = cz0 - 1; cz <= cz0 + 1; cz++) for (const si of grid.get(gk(cx, cz)) || []) {
+          const [l2, i2] = segs[si];
+          if (l2 === li) continue;
+          const a = lines[l2].pts[i2], b = lines[l2].pts[i2 + 1], dx = b[0] - a[0], dz = b[1] - a[1], l2s = dx * dx + dz * dz || 1;
+          const t = clamp(((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l2s, 0, 1), X = a[0] + dx * t, Z = a[1] + dz * t, d = Math.hypot(X - p[0], Z - p[1]);
+          const tol = lines[l2].w / 2 + 14;
+          if (d < tol && (!best || d < best.d)) best = { d, l2, i2, t, X, Z };
+        }
+        if (!best) continue;
+        lines[best.l2].cuts.push({ i: best.i2, t: best.t, x: best.X, z: best.Z });
+        if (best.d > 0.5) { if (side) L.post = [best.X, best.Z]; else L.pre = [best.X, best.Z]; }
+        nT++;
+      }
+    });
+    // every line as a list of points with its junction points flagged
+    const J = []; // junction points: [x, z]
+    const lineJ = lines.map((L) => {
+      const out = [];
+      const add = (x, z, j) => {
+        const last = out[out.length - 1];
+        if (last && Math.hypot(last.x - x, last.z - z) < 0.5) { last.j = last.j || j; return; }
+        out.push({ x, z, j });
+      };
+      if (L.pre) add(L.pre[0], L.pre[1], true);
+      const cuts = L.cuts.slice().sort((a, b) => a.i + a.t - (b.i + b.t));
+      let ci = 0;
+      add(L.pts[0][0], L.pts[0][1], !L.pre);
+      for (let i = 0; i < L.pts.length - 1; i++) {
+        while (ci < cuts.length && cuts[ci].i === i) { add(cuts[ci].x, cuts[ci].z, true); ci++; }
+        add(L.pts[i + 1][0], L.pts[i + 1][1], i + 1 === L.pts.length - 1 && !L.post);
+      }
+      if (L.post) add(L.post[0], L.post[1], true);
+      out[0].j = out[out.length - 1].j = true;
+      for (const p of out) if (p.j) { p.ji = J.length; J.push([p.x, p.z]); }
+      return out;
+    });
+    // junction points within 14 units are one node (union-find over a grid)
+    const par = J.map((_, i) => i), find = (i) => { while (par[i] !== i) i = par[i] = par[par[i]]; return i; };
+    {
+      const G2 = new Map(), C2 = 14;
+      J.forEach((p, i) => { const k = gk(Math.floor(p[0] / C2), Math.floor(p[1] / C2)); let l = G2.get(k); if (!l) G2.set(k, (l = [])); l.push(i); });
+      J.forEach((p, i) => {
+        const cx0 = Math.floor(p[0] / C2), cz0 = Math.floor(p[1] / C2);
+        for (let cx = cx0 - 1; cx <= cx0 + 1; cx++) for (let cz = cz0 - 1; cz <= cz0 + 1; cz++) for (const j of G2.get(gk(cx, cz)) || []) {
+          if (j <= i) continue;
+          if (Math.hypot(J[j][0] - p[0], J[j][1] - p[1]) < C2) { const a = find(i), b = find(j); if (a !== b) par[a] = b; }
+        }
+      });
+    }
+    const rootN = new Map(), nodes = [];
+    J.forEach((p, i) => {
+      const r = find(i);
+      if (!rootN.has(r)) { rootN.set(r, nodes.length); nodes.push({ x: 0, z: 0, n: 0 }); }
+      const nd = nodes[rootN.get(r)]; nd.x += p[0]; nd.z += p[1]; nd.n++;
+    });
+    for (const nd of nodes) { nd.x /= nd.n; nd.z /= nd.n; }
+    const nodeOf = (ji) => rootN.get(find(ji));
+    // edges: each line split at its junction points
+    let edges = [];
+    lines.forEach((L, li) => {
+      const pts = lineJ[li];
+      let start = 0;
+      for (let k = 1; k < pts.length; k++) {
+        if (!pts[k].j) continue;
+        const a = nodeOf(pts[start].ji), b = nodeOf(pts[k].ji);
+        if (a !== b) {
+          const g = [[nodes[a].x, nodes[a].z]];
+          for (let m = start + 1; m < k; m++) {
+            const q = [pts[m].x, pts[m].z];
+            if (dist(q, g[0]) < 8 || Math.hypot(q[0] - nodes[b].x, q[1] - nodes[b].z) < 8) continue;
+            g.push(q);
+          }
+          g.push([nodes[b].x, nodes[b].z]);
+          edges.push({ a, b, pts: g, w: L.w, kind: L.kind });
+        }
+        start = k;
+      }
+    });
+    // the same street twice between the same two nodes (a long street over a drive road): keep one
+    {
+      const seen = new Map();
+      edges = edges.filter((e) => {
+        const k = e.a < e.b ? e.a + ":" + e.b : e.b + ":" + e.a, len = cumOf(e.pts)[e.pts.length - 1], m = pointAt(e.pts, cumOf(e.pts), len / 2);
+        const o = seen.get(k) || [];
+        if (o.some((q) => Math.abs(q.len - len) < Math.max(12, len * 0.12) && dist(q.m, m) < 24)) return false;
+        o.push({ len, m }); seen.set(k, o);
+        return true;
+      });
+    }
+    // prune: tiny stubs (a street overshooting the one it meets), then contract the chains of degree 2
+    const inc = () => { const l = nodes.map(() => []); edges.forEach((e, i) => { if (!e.dead) { l[e.a].push(i); l[e.b].push(i); } }); return l; };
+    for (let pass = 0; pass < 3; pass++) {
+      const l = inc();
+      edges.forEach((e, i) => {
+        if (e.dead) return;
+        const len = cumOf(e.pts)[e.pts.length - 1];
+        if (len < 36 && ((l[e.a].length === 1 && l[e.b].length >= 3) || (l[e.b].length === 1 && l[e.a].length >= 3))) e.dead = true;
+      });
+    }
+    {
+      let l = inc();
+      for (let n = 0; n < nodes.length; n++) {
+        const es = l[n];
+        if (es.length !== 2 || es[0] === es[1]) continue;
+        const e1 = edges[es[0]], e2 = edges[es[1]];
+        if (e1.dead || e2.dead) continue;
+        const p1 = e1.b === n ? e1.pts : e1.pts.slice().reverse(), a = e1.b === n ? e1.a : e1.b;
+        const p2 = e2.a === n ? e2.pts : e2.pts.slice().reverse(), b = e2.a === n ? e2.b : e2.a;
+        if (a === b) continue; // would close a loop on itself
+        const ne = { a, b, pts: [...p1, ...p2.slice(1)], w: Math.max(e1.w, e2.w), kind: e1.kind === e2.kind ? e1.kind : e1.kind === "drive" || e2.kind === "drive" ? "drive" : e1.kind };
+        e1.dead = e2.dead = true;
+        const ni = edges.length; edges.push(ne);
+        l[n] = [];
+        l[a] = l[a].filter((i) => i !== es[0] && i !== es[1]).concat(ni);
+        l[b] = l[b].filter((i) => i !== es[0] && i !== es[1]).concat(ni);
+      }
+    }
+    edges = edges.filter((e) => !e.dead);
+    // the connected piece with the start road in it
+    let start = 0, sd = Infinity;
+    nodes.forEach((nd, i) => { const d = Math.hypot(nd.x - H.start[0], nd.z - H.start[1]); if (d < sd) { sd = d; start = i; } });
+    const l = nodes.map(() => []);
+    edges.forEach((e, i) => { l[e.a].push(i); l[e.b].push(i); });
+    const keep = new Uint8Array(nodes.length), q = [start];
+    keep[start] = 1;
+    while (q.length) { const n = q.pop(); for (const ei of l[n]) { const e = edges[ei], o = e.a === n ? e.b : e.a; if (!keep[o]) { keep[o] = 1; q.push(o); } } }
+    const remap = new Int32Array(nodes.length).fill(-1), N = [];
+    nodes.forEach((nd, i) => { if (keep[i]) { remap[i] = N.length; N.push({ id: N.length, x: nd.x, z: nd.z, out: [] }); } });
+    const E = [], dropped = [];
+    for (const e of edges) {
+      if (!keep[e.a]) { dropped.push(e.pts); continue; }
+      const ed = { id: E.length, a: remap[e.a], b: remap[e.b], pts: e.pts, w: e.w, kind: e.kind };
+      ed.cum = cumOf(ed.pts); ed.len = ed.cum[ed.cum.length - 1];
+      ed.rpts = ed.pts.slice().reverse(); ed.rcum = cumOf(ed.rpts);
+      ed.bends = ed.kind === "ring" ? [] : findBends(ed);
+      E.push(ed);
+      N[ed.a].out.push({ e: ed.id, dir: 1 }); N[ed.b].out.push({ e: ed.id, dir: -1 });
+    }
+    const stats = { nodes: N.length, edges: E.length, junctions: N.filter((n) => n.out.length >= 3).length, deadEnds: N.filter((n) => n.out.length === 1).length,
+      km: Math.round(E.reduce((s, e) => s + e.len, 0)), bends: E.reduce((s, e) => s + e.bends.length, 0), crossings: nCross, tees: nT, lines: lines.length,
+      byKind: E.reduce((o, e) => ((o[e.kind] = (o[e.kind] || 0) + 1), o), {}), dropped: dropped.length, ms: Math.round(performance.now() - t0) };
+    // a grid of the edges' segments for nearest-point queries
+    const SG = 120, sgrid = new Map();
+    E.forEach((e) => {
+      for (let i = 0; i < e.pts.length - 1; i++) {
+        const a = e.pts[i], b = e.pts[i + 1];
+        for (let cx = Math.floor(Math.min(a[0], b[0]) / SG); cx <= Math.floor(Math.max(a[0], b[0]) / SG); cx++)
+          for (let cz = Math.floor(Math.min(a[1], b[1]) / SG); cz <= Math.floor(Math.max(a[1], b[1]) / SG); cz++) {
+            const k = gk(cx, cz); let ll = sgrid.get(k); if (!ll) sgrid.set(k, (ll = [])); ll.push(e.id * 4096 + i);
+          }
+      }
+    });
+    // the nearest point of the graph to (x, z): its edge, arc length from the edge's a, the distance
+    const nearest = (x, z, maxD = 400) => {
+      let best = null;
+      const r = Math.ceil(maxD / SG), cx0 = Math.floor(x / SG), cz0 = Math.floor(z / SG);
+      for (let ring = 0; ring <= r; ring++) {
+        for (let cx = cx0 - ring; cx <= cx0 + ring; cx++) for (let cz = cz0 - ring; cz <= cz0 + ring; cz++) {
+          if (Math.max(Math.abs(cx - cx0), Math.abs(cz - cz0)) !== ring) continue;
+          for (const code of sgrid.get(gk(cx, cz)) || []) {
+            const e = E[Math.floor(code / 4096)], i = code % 4096, a = e.pts[i], b = e.pts[i + 1];
+            const dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz || 1, t = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / l2, 0, 1);
+            const d = Math.hypot(a[0] + dx * t - x, a[1] + dz * t - z);
+            if (!best || d < best.d) best = { e: e.id, s: e.cum[i] + Math.sqrt(l2) * t, d };
+          }
+        }
+        if (best && best.d < ring * SG) break;
+      }
+      return best && best.d <= maxD ? best : null;
+    };
+    return { N, E, stats, nearest, dropped };
+  }
+
+  // the sharp bends of an edge (a→b): runs of turning one way that add up to ≥ 46° within 460 units
+  function findBends(e) {
+    const STEP = 8, n = Math.floor(e.len / STEP);
+    if (n < 4) return [];
+    const q = [];
+    for (let k = 0; k <= n; k++) q.push(pointAt(e.pts, e.cum, k * STEP));
+    const h = [];
+    for (let k = 0; k < q.length - 1; k++) h.push(Math.atan2(q[k + 1][0] - q[k][0], q[k + 1][1] - q[k][1]));
+    const out = [];
+    let k0 = -1, sg = 0, sum = 0, gap = 0, kl = -1;
+    const end = () => {
+      if (k0 >= 0 && Math.abs(sum) >= 0.8 && (kl - k0 + 1) * STEP <= 460) out.push({ s0: k0 * STEP, s1: (kl + 2) * STEP, sign: Math.sign(sum), ang: sum });
+      k0 = -1; sum = 0; gap = 0;
+    };
+    for (let k = 0; k < h.length - 1; k++) {
+      const d = wrapA(h[k + 1] - h[k]);
+      if (Math.abs(d) < 0.004) { if (k0 >= 0 && ++gap > 3) end(); continue; }
+      const s = Math.sign(d);
+      if (k0 >= 0 && s !== sg) end();
+      if (k0 < 0) { k0 = k; sg = s; }
+      sum += d; gap = 0; kl = k;
+    }
+    end();
+    return out;
+  }
+
+  window.czNav2 = function czNav2(H) {
+    const G = buildGraph(H);
+    const { N, E } = G;
+    const reduced = () => H.reduced();
+    const dpts = (it) => (it.dir > 0 ? E[it.e].pts : E[it.e].rpts);
+    const dcum = (it) => (it.dir > 0 ? E[it.e].cum : E[it.e].rcum);
+    const endNode = (it) => (it.dir > 0 ? E[it.e].b : E[it.e].a);
+    const startNode = (it) => (it.dir > 0 ? E[it.e].a : E[it.e].b);
+    // heading leaving the start of a directed edge, and arriving at its end (35 units of chord)
+    const outH = (it) => { const p = dpts(it), c = dcum(it), L = c[c.length - 1], a = pointAt(p, c, Math.min(2, L * 0.1)), b = pointAt(p, c, Math.min(35, L * 0.6)); return Math.atan2(b[0] - a[0], b[1] - a[1]); };
+    const inH = (it) => { const p = dpts(it), c = dcum(it), L = c[c.length - 1], a = pointAt(p, c, L - Math.min(35, L * 0.6)), b = pointAt(p, c, L - Math.min(2, L * 0.1)); return Math.atan2(b[0] - a[0], b[1] - a[1]); };
+    const bendsOf = (it) => { const e = E[it.e]; return it.dir > 0 ? e.bends : e.bends.map((b) => ({ s0: e.len - b.s1, s1: e.len - b.s0, sign: -b.sign, ang: -b.ang })); };
+    // the exits of the node at the end of a directed edge, sorted into ← ↑ → (↑ only for a real straight on)
+    const exitCache = new Map();
+    function exitsAt(it) {
+      const k = it.e * 2 + (it.dir > 0 ? 1 : 0);
+      if (exitCache.has(k)) return exitCache.get(k);
+      const n = endNode(it), hin = inH(it);
+      const c = N[n].out.filter((o) => !(o.e === it.e && o.dir === -it.dir)).map((o) => ({ ...o, d: wrapA(outH(o) - hin) })).filter((o) => Math.abs(o.d) < 2.7).sort((a, b) => b.d - a.d);
+      const SL = [["l", Math.PI / 2], ["s", 0], ["r", -Math.PI / 2]];
+      const ok = (o, s) => (s === "s" ? Math.abs(o.d) < 0.7 : s === "l" ? o.d > 0.22 : o.d < -0.22);
+      let best = null;
+      const rec = (i, minSlot, cost, asg) => {
+        if (i === c.length) { if (!best || cost < best.cost) best = { cost, asg: asg.slice() }; return; }
+        rec(i + 1, minSlot, cost + 10, asg);
+        for (let s = minSlot; s < 3; s++) if (ok(c[i], SL[s][0])) { asg.push([i, SL[s][0]]); rec(i + 1, s + 1, cost + Math.abs(c[i].d - SL[s][1]), asg); asg.pop(); }
+      };
+      rec(0, 0, 0, []);
+      const ex = { l: null, s: null, r: null, all: c };
+      if (best) for (const [i, s] of best.asg) ex[s] = { e: c[i].e, dir: c[i].dir, d: c[i].d };
+      exitCache.set(k, ex);
+      return ex;
+    }
+
+    // ---------- places on the graph, and the quarters ----------
+    const PL = [];
+    for (const pl of H.places) {
+      if (pl.find || pl.unmarked || pl.small) continue;
+      const st = pl.stop ? H.stops.find((s) => s.id === pl.stop) : null;
+      const x = st ? st.x : pl.x ?? pl.px, z = st ? st.y : pl.z ?? pl.pz;
+      if (x == null || z == null) continue;
+      const a = G.nearest(x, z, 160);
+      if (!a) continue;
+      PL.push({ pl, x, z, e: a.e, s: a.s, q: pl.br || null });
+    }
+    const byEdge = new Map();
+    for (const p of PL) { let l = byEdge.get(p.e); if (!l) byEdge.set(p.e, (l = [])); l.push(p); }
+    // the quarters are the portfolio streets themselves (each from the roundabout to the Dacia row; the lane belongs to
+    // Medical Avenue, the road on to Olari 9 is its own): you are in a quarter within 380 units of its street
+    const QL = [];
+    {
+      const F = H.fork, st = H.streets;
+      for (const k of ["A", "B", "C", "D"]) {
+        const pts = H.rounded(st[k], 160).map(([x, z]) => [x, z]).filter(([x, z]) => Math.hypot(x - F.x, z - F.y) > 90 && (k === "D" || !(z > 6090 && x < 1260)) && (k !== "C" || z < 6090));
+        QL.push([k, pts]);
+      }
+      QL.push(["C", st.lane.map(([x, z]) => [x, z])]);
+    }
+    const segD = (x, z, pts) => { let b = Infinity; for (let i = 0; i < pts.length - 1; i++) { const a = pts[i], c = pts[i + 1], dx = c[0] - a[0], dz = c[1] - a[1], l2 = dx * dx + dz * dz || 1, t = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / l2, 0, 1); b = Math.min(b, Math.hypot(a[0] + dx * t - x, a[1] + dz * t - z)); } return b; };
+    function quarterAt(x, z) {
+      if (Math.hypot(x - H.fork.x, z - H.fork.y) < 200) return null;
+      let best = null, bd = 380;
+      for (const [k, pts] of QL) { const d = segD(x, z, pts); if (d < bd) { bd = d; best = k; } }
+      return best;
+    }
+    for (const p of PL) if (!p.q) p.q = p.z > 6040 ? "D" : quarterAt(p.x, p.z) || "D";
+
+    // ===================== 2. driving =====================
+    const VMAX = 430, ACC = 300, COAST = 380, BRAKE = 520, HARD = 1100, ALAT = 1300, STOPGAP = 34, WINDOW = 360;
+    const D = {
+      seq: [], px: [], pz: [], cum: [], kap: [], total: 0, C: 0, v: 0, uid: 1,
+      cleared: new Set(), goUntil: -1, auto: null, uturn: null, backHold: false, downT: 0,
+      keys: { u: false, d: false, l: false, r: false }, ready: false, street: false, streetT: 0, camK: 0, camH: null,
+      lastArr: null, cardFor: null, firstDrive: true
+    };
+    // the path the car drives: the directed edges of D.seq, joined with a rounded corner at each node
+    function buildPath() {
+      const P = [];
+      const S = D.seq;
+      const rAt = (k) => Math.min(26, E[S[k].e].len * 0.4, E[S[k + 1].e].len * 0.4);
+      let rin = 0;
+      for (let k = 0; k < S.length; k++) {
+        const it = S[k], p = dpts(it), c = dcum(it), len = c[c.length - 1];
+        const rout = k < S.length - 1 ? rAt(k) : 0;
+        const from = rin, to = len - rout;
+        const Lstart = P.length ? P.cumL : 0;
+        if (!P.length) { P.push(pointAt(p, c, from)); P.cumL = 0; }
+        it.L0 = Lstart - from;
+        for (let i = 0; i < p.length; i++) if (c[i] > from + 0.5 && c[i] < to - 0.5) pushP(P, p[i]);
+        pushP(P, pointAt(p, c, to));
+        it.L1 = P.cumL + rout;
+        if (k < S.length - 1) {
+          const nxt = S[k + 1], q = dpts(nxt), qc = dcum(nxt);
+          const A = pointAt(p, c, to), M = p[p.length - 1], Bp = pointAt(q, qc, rout);
+          for (let j = 1; j <= 8; j++) { const t = j / 8, u = 1 - t; pushP(P, [u * u * A[0] + 2 * u * t * M[0] + t * t * Bp[0], u * u * A[1] + 2 * u * t * M[1] + t * t * Bp[1]]); }
+        }
+        rin = rout;
+      }
+      D.px = P.map((p) => p[0]); D.pz = P.map((p) => p[1]);
+      D.cum = cumOf(P); D.total = D.cum[D.cum.length - 1];
+      // curvature per point, for the speed in the bends
+      D.kap = P.map((p, i) => {
+        if (i === 0 || i === P.length - 1) return 0;
+        const h1 = Math.atan2(p[0] - P[i - 1][0], p[1] - P[i - 1][1]), h2 = Math.atan2(P[i + 1][0] - p[0], P[i + 1][1] - p[1]);
+        return Math.abs(wrapA(h2 - h1)) / Math.max(4, (D.cum[i + 1] - D.cum[i - 1]) / 2);
+      });
+      return P;
+    }
+    function pushP(P, q) {
+      const last = P[P.length - 1];
+      const d = Math.hypot(q[0] - last[0], q[1] - last[1]);
+      if (d < 0.4) return;
+      P.push(q); P.cumL += d;
+    }
+    function pathPos(L) {
+      const n = D.cum.length;
+      if (L <= 0) return [D.px[0], D.pz[0]];
+      if (L >= D.total) return [D.px[n - 1], D.pz[n - 1]];
+      let lo = 0, hi = n - 1;
+      while (lo < hi - 1) { const m = (lo + hi) >> 1; if (D.cum[m] <= L) lo = m; else hi = m; }
+      const f = (L - D.cum[lo]) / (D.cum[hi] - D.cum[lo] || 1);
+      return [D.px[lo] + (D.px[hi] - D.px[lo]) * f, D.pz[lo] + (D.pz[hi] - D.pz[lo]) * f];
+    }
+    // the arc length on the current path nearest to (x, z), searched around a guess
+    function locate(x, z, guess = null, win = 1e9) {
+      let best = 0, bd = Infinity;
+      for (let i = 0; i < D.px.length - 1; i++) {
+        if (guess != null && (D.cum[i + 1] < guess - win || D.cum[i] > guess + win)) continue;
+        const ax = D.px[i], az = D.pz[i], dx = D.px[i + 1] - ax, dz = D.pz[i + 1] - az, l2 = dx * dx + dz * dz || 1;
+        const t = clamp(((x - ax) * dx + (z - az) * dz) / l2, 0, 1), d = Math.hypot(ax + dx * t - x, az + dz * t - z);
+        if (d < bd) { bd = d; best = D.cum[i] + Math.sqrt(l2) * t; }
+      }
+      return best;
+    }
+    const pathPts = () => D.px.map((x, i) => [x, D.pz[i]]);
+    function apply(L, C) { H.rebase(pathPts(), L, C); D.C = C; }
+    function ciOf(L) { let k = 0; for (let i = 0; i < D.seq.length; i++) if (D.seq[i].L0 <= L + 0.01) k = i; return k; }
+    function place() {
+      // put the car on the graph where it stands, facing the way it faces
+      const R = H.route(), c = R.posAt(H.state.L), t = R.tangentAt(H.state.L);
+      const a = G.nearest(c.x, c.z, 600);
+      if (!a) return false;
+      const e = E[a.e], p = pointAt(e.pts, e.cum, Math.min(e.len, a.s + 4)), p0 = pointAt(e.pts, e.cum, Math.max(0, a.s - 4));
+      const dir = (p[0] - p0[0]) * t.x + (p[1] - p0[1]) * t.z >= 0 ? 1 : -1;
+      D.seq = [{ e: a.e, dir, uid: D.uid++ }];
+      buildPath();
+      const L = locate(c.x, c.z);
+      D.v = 0; D.auto = null; D.uturn = null; D.cleared.clear();
+      apply(L, L);
+      return true;
+    }
+    function commit(it) {
+      D.seq.push({ e: it.e, dir: it.dir, uid: D.uid++ });
+      const L = H.state.L, C = D.C;
+      buildPath();
+      apply(L, C); // the path before the new corner is unchanged: same L
+    }
+    function trim() {
+      const L = H.state.L;
+      if (D.seq.length < 3) return;
+      const ci = ciOf(L);
+      if (ci < 1 || L < D.seq[1].L0 + 90) return;
+      const [x, z] = pathPos(L), [cx, cz] = pathPos(D.C), old1 = D.seq[1].L0;
+      D.seq.shift();
+      buildPath();
+      const nL = locate(x, z, L - old1, 80), nC = locate(cx, cz, D.C - old1, 80);
+      apply(nL, Math.max(nL, nC));
+    }
+    // the next thing that needs a choice: a sharp bend on the way, the junction at the end of the path, a dead end
+    function nextDecision(L) {
+      const ci = ciOf(L);
+      for (let k = ci; k < D.seq.length; k++) {
+        const it = D.seq[k], bs = bendsOf(it);
+        for (let j = 0; j < bs.length; j++) {
+          const b = bs[j], key = it.uid + ":" + j;
+          if (D.cleared.has(key)) continue;
+          if (b.s0 < 40 && k > 0) { D.cleared.add(key); continue; } // a bend right out of a junction is the turn you chose
+          const L0 = it.L0 + b.s0;
+          if (L > it.L0 + b.s1 - 12) continue;
+          return { type: "bend", key, L: L0, side: b.sign > 0 ? "l" : "r", Lend: it.L0 + b.s1, it, ang: b.ang };
+        }
+      }
+      const last = D.seq[D.seq.length - 1], n = endNode(last);
+      if (N[n].out.length <= 1) return { type: "end", key: "end:" + last.uid, L: last.L1, it: last };
+      const ex = exitsAt(last);
+      return { type: "junction", key: "j:" + last.uid, L: last.L1, it: last, ex, node: n };
+    }
+    // a key: what it does here
+    function valid(dec, L) {
+      const near = dec && dec.L - L < WINDOW;
+      const stopped = D.v < 8;
+      const v = { u: true, d: true, l: false, r: false };
+      if (!dec) return v;
+      if (dec.type === "bend" && near) { v[dec.side] = true; if (stopped && dec.L - L < STOPGAP + 30) v.u = false; }
+      if (dec.type === "junction" && near) { v.l = !!dec.ex.l; v.r = !!dec.ex.r; if (!dec.ex.s && stopped && dec.L - L < STOPGAP + 40) v.u = false; }
+      if (dec.type === "end" && stopped && dec.L - L < 60) v.u = false;
+      return v;
+    }
+    function press(k) {
+      if (!D.ready) return;
+      if (D.auto) stopAuto();
+      H.follow();
+      D.firstDrive && firstDrive();
+      if (k === "d") { D.downT = 0; if (D.v < 40 && !D.uturn) uturn(); return; }
+      const L = H.state.L, dec = nextDecision(L);
+      if (!dec || dec.L - L > WINDOW) { if (k !== "u") nope(k); return; }
+      if (dec.type === "bend") {
+        if (k === dec.side) { D.cleared.add(dec.key); D.goUntil = dec.Lend + 20; flashKey(k); return; }
+        if (k !== "u") nope(k);
+        return;
+      }
+      if (dec.type === "junction") {
+        const o = dec.ex[k];
+        if (!o) { if (k !== "u") nope(k); return; }
+        if (k === "u" && !D.keys.u) return;
+        commit(o);
+        D.goUntil = dec.L + 40;
+        flashKey(k);
+        return;
+      }
+      if (k !== "u") nope(k);
+    }
+    // a turn picked on the panel: taken at the next junction, however far it is
+    function choose(k) {
+      if (D.auto) stopAuto();
+      H.follow();
+      const L = H.state.L, dec = nextDecision(L);
+      if (dec && dec.type === "junction" && dec.ex[k] && dec.L - STOPGAP >= L - 1) { commit(dec.ex[k]); flashKey(k); render(true); }
+      else nope(k);
+    }
+    function uturn() {
+      const L = H.state.L, it = D.seq[ciOf(L)];
+      const [x, z] = pathPos(L), [x2, z2] = pathPos(Math.min(D.total, L + 6)), [x1, z1] = pathPos(Math.max(0, L - 6));
+      let fx = x2 - x1, fz = z2 - z1; const fl = Math.hypot(fx, fz) || 1; fx /= fl; fz /= fl;
+      D.seq = [{ e: it.e, dir: -it.dir, uid: D.uid++ }];
+      buildPath();
+      const nL = locate(x, z);
+      D.v = 0;
+      apply(nL, nL);
+      D.uturn = { t: 0, dur: reduced() ? 0.35 : 1.05, cx: x, cz: z, fx, fz, rx: -fz, rz: fx };
+      D.backHold = D.keys.d;
+    }
+    function stopAuto() { D.auto = null; H.mapNav.place = null; H.mark(); render(true); }
+    // ---------- auto-pilot: the shortest way along the graph to a place, the junctions taken for you ----------
+    function plan(target) {
+      // target: { e, s } (s from the edge's a)
+      const L = H.state.L, it = D.seq[ciOf(L)], e = E[it.e];
+      const sDir = clamp(L - it.L0, 0, e.len); // along the directed edge
+      const tE = E[target.e];
+      // on this very edge
+      const tsDir = it.dir > 0 ? target.s : tE.len - target.s;
+      if (target.e === it.e && tsDir >= sDir - 4) return { legs: [], uturn: false, cost: tsDir - sDir };
+      if (target.e === it.e && sDir - tsDir < 400) return { legs: [], uturn: true, cost: sDir - tsDir + 90 };
+      const n = N.length, dist0 = new Float64Array(n).fill(Infinity), prev = new Int32Array(n).fill(-1), pe = new Int32Array(n).fill(-1), pd = new Int8Array(n);
+      const heap = [];
+      const push = (d, v) => { heap.push([d, v]); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
+      const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
+      const fwdN = endNode(it), backN = startNode(it);
+      dist0[fwdN] = e.len - sDir; pd[fwdN] = 1; push(dist0[fwdN], fwdN);
+      const back = sDir + 90; // a U-turn costs a little
+      if (back < dist0[backN]) { dist0[backN] = back; pd[backN] = -1; push(back, backN); }
+      while (heap.length) {
+        const [d, u] = pop();
+        if (d > dist0[u]) continue;
+        for (const o of N[u].out) {
+          if (o.e === it.e && prev[u] === -1) continue; // not back along the edge you are on
+          const ed = E[o.e], v = o.dir > 0 ? ed.b : ed.a, nd = d + ed.len;
+          if (nd < dist0[v]) { dist0[v] = nd; prev[v] = u; pe[v] = o.e * 2 + (o.dir > 0 ? 1 : 0); pd[v] = pd[u]; push(nd, v); }
+        }
+      }
+      const viaA = dist0[tE.a] + target.s, viaB = dist0[tE.b] + (tE.len - target.s);
+      let endN, last;
+      if (viaA <= viaB) { endN = tE.a; last = { e: tE.id, dir: 1 }; } else { endN = tE.b; last = { e: tE.id, dir: -1 }; }
+      if (!isFinite(Math.min(viaA, viaB))) return null;
+      const legs = [];
+      for (let v = endN; prev[v] !== -1; v = prev[v]) legs.push({ e: pe[v] >> 1, dir: pe[v] & 1 ? 1 : -1 });
+      legs.reverse();
+      // the edge you are on, met again as the target (a U-turn, then straight there)
+      if (!(legs.length === 0 && last.e === it.e && last.dir === it.dir)) legs.push(last);
+      return { legs, uturn: pd[endN] === -1, cost: Math.min(viaA, viaB) };
+    }
+    function goTo(target, pl) {
+      if (!D.ready && !place()) return false;
+      D.ready = true;
+      // drop the corners already chosen beyond the car
+      const L = H.state.L, ci = ciOf(L);
+      if (D.seq.length > ci + 1) { D.seq.length = ci + 1; buildPath(); apply(L, clamp(D.C, L, D.total)); }
+      const p = plan(target);
+      if (!p) return false;
+      D.auto = { pl, target, legs: p.legs, uturn: p.uturn };
+      D.goUntil = -1;
+      H.mapNav.place = pl && !pl.tap ? pl : null; H.mark();
+      H.follow();
+      if (D.firstDrive) firstDrive();
+      render(true);
+      return true;
+    }
+    // the stop for the place on the path, if its edge is on the path: a little short of it, the car parks beside it
+    function autoStopL() {
+      const a = D.auto; if (!a || a.uturn || a.legs.length) return null;
+      for (let k = D.seq.length - 1; k >= ciOf(H.state.L); k--) {
+        const it = D.seq[k];
+        if (it.e !== a.target.e) continue;
+        const e = E[it.e], s = it.dir > 0 ? a.target.s : e.len - a.target.s;
+        return Math.max(it.L0 + s - (a.pl && !a.pl.tap ? 18 : 0), 0);
+      }
+      return null;
+    }
+    function arrive(pl) {
+      D.lastArr = pl;
+      D.cardFor = pl;
+      H.arrive(pl);
+      if (D.streetT > 0.5 || !H.wantsCine()) H.cineStop();
+      render(true);
+    }
+
+    // ---------- the frame: from the keys (or the auto-pilot) to the carrot the car's own spring follows ----------
+    let panelT = 0;
+    function tick(dt, now) {
+      if (!H.ready()) return;
+      if (!D.ready) { if (!place()) return; D.ready = true; render(true); }
+      const L = H.state.L;
+      if (D.uturn) {
+        D.uturn.t += dt;
+        D.C = L; H.setTarget(L);
+        if (D.uturn.t >= D.uturn.dur) { D.uturn = null; if (D.keys.d && D.backHold) D.goUntil = Infinity; }
+        ui(L, null);
+        return;
+      }
+      if (D.goUntil === Infinity && !D.keys.d) D.goUntil = -1;
+      trim();
+      const L2 = H.state.L;
+      let dec = nextDecision(L2);
+      // the auto-pilot takes the junctions and the bends itself
+      if (D.auto) {
+        if (D.auto.uturn) {
+          if (D.v < 6 && Math.abs(D.C - L2) < 6) { const a = D.auto; uturn(); a.uturn = false; D.auto = a; }
+        } else if (dec && dec.L - L2 < WINDOW) {
+          const As0 = autoStopL();
+          if (dec.type === "bend" && (As0 == null || dec.L < As0)) { D.cleared.add(dec.key); dec = nextDecision(L2); }
+          if (dec && dec.type === "junction" && D.auto.legs.length) {
+            const nx = D.auto.legs[0];
+            const last = D.seq[D.seq.length - 1];
+            if (nx.e === last.e && nx.dir === last.dir) D.auto.legs.shift();
+            else if (N[endNode(last)].out.some((o) => o.e === nx.e && o.dir === nx.dir)) { D.auto.legs.shift(); commit(nx); dec = nextDecision(H.state.L); }
+          }
+        }
+      }
+      // ↑ held into a junction that goes straight on: straight on
+      if (!D.auto && D.keys.u && dec && dec.type === "junction" && dec.ex.s && dec.L - L2 < 70 + D.v * 0.45) { commit(dec.ex.s); dec = nextDecision(H.state.L); }
+      // ↓ held: brake, then turn round, then drive back
+      if (D.keys.d && !D.auto) { D.downT += dt; if (D.v < 6 && Math.abs(D.C - L2) < 8 && D.downT > 0.18 && D.goUntil !== Infinity) { uturn(); return; } }
+      const Lc = H.state.L;
+      const auto = D.auto && !D.auto.uturn;
+      const thr = (D.keys.u || auto || D.goUntil > Lc || D.goUntil === Infinity) && !(D.keys.d && D.goUntil !== Infinity);
+      // where the carrot must stop: the next undecided choice, or the place the auto-pilot is going to
+      let Ls = D.total - 2;
+      if (dec) {
+        if (dec.type === "bend") Ls = dec.L - 4;
+        else if (dec.type === "junction") Ls = dec.L - STOPGAP;
+        else Ls = dec.L - 16;
+      }
+      const As = autoStopL();
+      if (As != null) Ls = Math.min(Ls, As);
+      Ls = Math.max(Ls, Math.min(D.C, dec ? dec.L - 6 : D.total));
+      let want = thr ? VMAX : 0;
+      want = Math.min(want, Math.sqrt(2 * BRAKE * Math.max(0, Ls - D.C)));
+      // the bends ahead: the speed their curvature allows, braked for in time
+      {
+        const look = (D.v * D.v) / (2 * BRAKE) + 40;
+        let i = 0; while (i < D.cum.length - 1 && D.cum[i] < D.C) i++;
+        for (; i < D.cum.length && D.cum[i] < D.C + look; i++) {
+          const k = D.kap[i]; if (k < 1e-4) continue;
+          want = Math.min(want, Math.sqrt(ALAT / k + 2 * BRAKE * Math.max(0, D.cum[i] - D.C)));
+        }
+      }
+      const dn = D.keys.d ? HARD : thr ? BRAKE : COAST;
+      D.v = D.v < want ? Math.min(want, D.v + ACC * dt) : Math.max(want, D.v - dn * dt);
+      D.C = Math.min(D.C + D.v * dt, Ls);
+      if (D.C >= Ls - 0.01 && want < 1) D.v = 0;
+      D.C = Math.max(D.C, Lc);
+      H.setTarget(D.C);
+      // arrivals
+      if (D.auto && As != null && Math.abs(Lc - As) < 6 && D.v < 3) {
+        const pl = D.auto.pl;
+        D.auto = null;
+        if (pl) arrive(pl); else { H.mapNav.place = null; H.mark(); }
+        render(true);
+      } else if (!D.auto && D.v < 3 && Math.abs(D.C - Lc) < 3) {
+        const here = hereAt();
+        if (here && here.pl !== D.lastArr) arrive(here.pl);
+      }
+      if (D.lastArr) { const p = PL.find((q) => q.pl === D.lastArr); if (p && Math.hypot(H.carPos.x - p.x, H.carPos.z - p.z) > 200) { D.lastArr = null; if (D.cardFor) { H.hideCard(); D.cardFor = null; } if (!D.auto) { H.mapNav.place = null; H.mark(); } } }
+      ui(Lc, dec);
+      panelT -= dt;
+      if (panelT <= 0) { panelT = 0.22; document.body.classList.toggle("n2-card", H.cardOpen()); render(); }
+    }
+    function hereAt() {
+      let best = null;
+      for (const p of PL) { const d = Math.hypot(H.carPos.x - p.x, H.carPos.z - p.z); if (d < 75 && (!best || d < best.d)) best = { pl: p.pl, d, p }; }
+      return best;
+    }
+    // the car's pose while it turns round: a tight half circle from its lane over to the other one
+    function pose(carPos, carTan) {
+      const u = D.uturn;
+      if (!u) return;
+      const ph = Math.PI * sss(clamp(u.t / u.dur, 0, 1)), r = 11;
+      carPos.x = u.cx + r * (u.rx * Math.cos(ph) + u.fx * Math.sin(ph) * 1.2);
+      carPos.z = u.cz + r * (u.rz * Math.cos(ph) + u.fz * Math.sin(ph) * 1.2);
+      carTan.set(-u.rx * Math.sin(ph) + u.fx * Math.cos(ph), 0, -u.rz * Math.sin(ph) + u.fz * Math.cos(ph)).normalize();
+    }
+
+    // ===================== 3. the cameras =====================
+    const V3 = (x, y, z) => ({ x, y, z });
+    function camera(dt, camPos, camTarget) {
+      const want = D.street ? 1 : 0;
+      if (reduced()) D.streetT = want;
+      else D.streetT = want > D.streetT ? Math.min(1, D.streetT + dt / 1.15) : Math.max(0, D.streetT - dt / 1.15);
+      const k = sss(D.streetT);
+      D.camK = k;
+      document.body.classList.toggle("nav2-street", k > 0.5);
+      const mv = H.mapView, hd = H.heading();
+      if (D.camH == null) D.camH = hd;
+      D.camH += wrapA(hd - D.camH) * (1 - Math.exp(-dt * 5.5));
+      // satellite: heading up while you drive (the arrows then point the way they turn), gently
+      if (D.ready && mv.follow && (D.v > 25 || D.auto || D.uturn) && !reduced()) {
+        mv.yawGoal = null;
+        mv.yaw += wrapA(hd + Math.PI - mv.yaw) * (1 - Math.exp(-dt * (D.uturn ? 1.8 : 1.3)));
+      }
+      if (k < 1e-4) return;
+      const cp = H.carPos, len = H.carLen() * (innerWidth < innerHeight ? 1.7 : 1), f = [Math.sin(D.camH), Math.cos(D.camH)];
+      const eye = V3(cp.x - f[0] * len * 0.92, cp.y + len * 0.34, cp.z - f[1] * len * 0.92);
+      const look = V3(cp.x + f[0] * len * 1.3, cp.y + len * 0.2, cp.z + f[1] * len * 1.3);
+      // blend on the orbit (target, yaw, pitch, the height the frame shows, lens), so the car stays in frame throughout
+      const ex = eye.x - look.x, ey = eye.y - look.y, ez = eye.z - look.z, d1 = Math.hypot(ex, ey, ez);
+      const yaw1 = Math.atan2(ex, ez), pitch1 = Math.asin(ey / d1), fov1 = 74;
+      const fov0 = H.camera.fov, d0 = Math.hypot(camPos.x - camTarget.x, camPos.y - camTarget.y, camPos.z - camTarget.z);
+      const yaw0 = Math.atan2(camPos.x - camTarget.x, camPos.z - camTarget.z), pitch0 = Math.asin(clamp((camPos.y - camTarget.y) / Math.max(d0, 1e-3), -1, 1));
+      const tanH = (f) => Math.tan((f * Math.PI) / 360);
+      const h0 = 2 * d0 * tanH(fov0), h1 = 2 * d1 * tanH(fov1);
+      const fov = fov0 + (fov1 - fov0) * k, h = Math.exp(Math.log(h0) + (Math.log(h1) - Math.log(h0)) * k), d = h / (2 * tanH(fov));
+      const yaw = yaw0 + wrapA(yaw1 - yaw0) * k, pitch = pitch0 + (pitch1 - pitch0) * k;
+      const tx = camTarget.x + (look.x - camTarget.x) * k, ty = camTarget.y + (look.y - camTarget.y) * k, tz = camTarget.z + (look.z - camTarget.z) * k;
+      camTarget.set(tx, ty, tz);
+      camPos.set(tx + Math.sin(yaw) * Math.cos(pitch) * d, ty + Math.sin(pitch) * d, tz + Math.cos(yaw) * Math.cos(pitch) * d);
+      const cam = H.camera, near = Math.max(2.5, d * 0.32 * (1 - k) + 3 * k), far = Math.max(14000, d * 3 + 6000);
+      if (Math.abs(cam.fov - fov) > 0.01 || Math.abs(cam.near - near) > 0.5 || Math.abs(cam.far - far) > 10) { cam.fov = fov; cam.near = near; cam.far = far; cam.updateProjectionMatrix(); }
+    }
+    function setView(street) {
+      if (D.street === street) return;
+      D.street = street;
+      views.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.v === "street") === street)));
+      if (!street && H.mapView.pitch < 0.75) H.mapView.pitchGoal = 0.98;
+      if (street) H.cineStop();
+      H.follow();
+      toast(street ? "Street view · the camera rides behind you" : "Satellite view · zoom with + − or the wheel");
+    }
+    function firstDrive() {
+      D.firstDrive = false;
+      const mv = H.mapView;
+      if (mv.dist > 3000) { mv.distGoal = H.isPhone() ? 2900 : 2500; mv.distRate = 1.4; }
+      if (mv.pitch < 0.85) mv.pitchGoal = 0.98;
+      H.welcome(false);
+    }
+
+    // ===================== 4. the screen =====================
+    const ARR = {
+      u: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5 5.5 11h4v8.5h5V11h4z"/></svg>',
+      d: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19.5 5.5 13h4V4.5h5V13h4z"/></svg>',
+      l: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12 11 5.5v4h8.5v5H11v4z"/></svg>',
+      r: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 12 13 5.5v4H4.5v5H13v4z"/></svg>'
+    };
+    const GLY = { l: "←", s: "↑", r: "→" };
+    const root = document.createElement("div");
+    root.className = "nav2-ui";
+    root.innerHTML = `
+      <section class="n2-panel" aria-label="What's nearby" aria-live="polite"></section>
+      <div class="n2-views" role="group" aria-label="View">
+        <button data-v="street" aria-pressed="false" title="Street view (V)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20 9 4h6l6 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 6.5v2.5M12 12v2.5M12 17.5V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>Street</b></button>
+        <button data-v="sat" aria-pressed="true" title="Satellite view (V)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 12H3.5M20.5 12H15M12 9V3.5M12 20.5V15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m4 4 3 3M20 20l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>Satellite</b></button>
+      </div>
+      <div class="n2-pad" aria-label="Drive">
+        <span class="n2-hint mono">HOLD ↑ TO DRIVE</span>
+        <div class="n2-keys">
+          <button class="n2-k n2-u" data-k="u" aria-label="Forward (↑ or W)">${ARR.u}</button>
+          <button class="n2-k n2-l" data-k="l" aria-label="Turn left (← or A)">${ARR.l}</button>
+          <button class="n2-k n2-d" data-k="d" aria-label="Brake, turn around (↓ or S)">${ARR.d}</button>
+          <button class="n2-k n2-r" data-k="r" aria-label="Turn right (→ or D)">${ARR.r}</button>
+        </div>
+      </div>
+      <div class="n2-toast" role="status"></div>`;
+    document.body.appendChild(root);
+    const panel = root.querySelector(".n2-panel"), views = root.querySelector(".n2-views"), pad = root.querySelector(".n2-pad"), hintEl = root.querySelector(".n2-hint"), toastEl = root.querySelector(".n2-toast");
+    const keyEls = {}; pad.querySelectorAll(".n2-k").forEach((b) => { keyEls[b.dataset.k] = b; });
+    views.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.v === "street"); });
+    let toastT = 0;
+    function toast(t) { toastEl.textContent = t; toastEl.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove("on"), 2600); }
+    function nope(k) { const b = keyEls[k]; if (!b) return; b.classList.remove("nope"); void b.offsetWidth; b.classList.add("nope"); }
+    function flashKey(k) { const b = keyEls[k === "s" ? "u" : k]; if (!b) return; b.classList.remove("took"); void b.offsetWidth; b.classList.add("took"); }
+    const keyDown = (k) => { if (D.keys[k]) return; D.keys[k] = true; keyEls[k]?.classList.add("on"); press(k); };
+    const keyUp = (k) => { D.keys[k] = false; keyEls[k]?.classList.remove("on"); if (k === "d") D.backHold = false; };
+    pad.querySelectorAll(".n2-k").forEach((b) => {
+      const k = b.dataset.k;
+      b.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); b.setPointerCapture?.(e.pointerId); keyDown(k); });
+      const up = () => keyUp(k);
+      b.addEventListener("pointerup", up); b.addEventListener("pointercancel", up); b.addEventListener("lostpointercapture", up);
+      b.addEventListener("contextmenu", (e) => e.preventDefault());
+    });
+    for (const n of [pad, views, panel]) n.addEventListener("pointerdown", (e) => e.stopPropagation());
+    const KEYS = { ArrowUp: "u", ArrowDown: "d", ArrowLeft: "l", ArrowRight: "r", w: "u", W: "u", s: "d", S: "d", a: "l", A: "l", d: "r", D: "r" };
+    const typing = (e) => e.target?.closest?.("input, textarea, select, [contenteditable]");
+    window.addEventListener("keydown", (e) => {
+      if (!api.on || typing(e) || H.overlay() || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "v" || e.key === "V") { e.preventDefault(); setView(!D.street); return; }
+      const k = KEYS[e.key];
+      if (!k) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (!e.repeat) keyDown(k);
+    }, true);
+    window.addEventListener("keyup", (e) => {
+      const k = KEYS[e.key];
+      if (!k || !api.on) return;
+      e.stopImmediatePropagation();
+      keyUp(k);
+    }, true);
+    window.addEventListener("blur", () => { for (const k of "udlr") keyUp(k); });
+    // phones, in street view: a swipe drives (up: go while the finger is down, left/right: turn, down: brake / turn round)
+    {
+      const cv = H.canvas();
+      let sw = null;
+      cv.addEventListener("pointerdown", (e) => {
+        if (!api.on || D.streetT < 0.5) return;
+        e.stopImmediatePropagation();
+        sw = { id: e.pointerId, x: e.clientX, y: e.clientY, k: null };
+      }, true);
+      cv.addEventListener("pointermove", (e) => {
+        if (!sw || e.pointerId !== sw.id) return;
+        e.stopImmediatePropagation();
+        if (sw.k) return;
+        const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+        if (Math.hypot(dx, dy) < 28) return;
+        sw.k = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "r" : "l") : dy < 0 ? "u" : "d";
+        keyDown(sw.k);
+        if (sw.k === "l" || sw.k === "r") keyUp(sw.k);
+      }, true);
+      const end = (e) => { if (!sw || e.pointerId !== sw.id) return; e.stopImmediatePropagation(); if (sw.k === "u" || sw.k === "d") keyUp(sw.k); sw = null; };
+      cv.addEventListener("pointerup", end, true); cv.addEventListener("pointercancel", end, true);
+      window.addEventListener("wheel", (e) => { if (api.on && D.streetT > 0.5 && !e.target.closest?.(".map-card, .case-frame, .nav2-ui, .map-rides, .crew-panel")) { e.preventDefault(); e.stopImmediatePropagation(); } }, { passive: false, capture: true });
+    }
+    // the pad: only what does something here lights up; the hint says what is next
+    let padSig = "";
+    function ui(L, dec) {
+      const v = valid(dec, L), near = dec && dec.L - L < WINDOW, stoppedAt = D.v < 8 && dec && dec.L - L < STOPGAP + 50;
+      let hint = "HOLD ↑ TO DRIVE";
+      let need = "";
+      if (D.uturn) hint = "TURNING ROUND";
+      else if (D.auto) hint = D.auto.pl && !D.auto.pl.tap ? "DRIVING YOU THERE · ANY ARROW TAKES OVER" : "DRIVING YOU THERE";
+      else if (dec && near) {
+        const m = Math.max(0, Math.round((dec.L - L) / 10) * 10);
+        if (dec.type === "bend") { hint = `${dec.side === "l" ? "←" : "→"} THE ROAD TURNS ${dec.side === "l" ? "LEFT" : "RIGHT"}${stoppedAt ? "" : ` · ${m} M`}`; need = dec.side; }
+        else if (dec.type === "junction") { const o = ["l", "s", "r"].filter((k) => dec.ex[k]).map((k) => GLY[k]).join(" "); hint = stoppedAt ? `JUNCTION · PICK ${o}` : `JUNCTION IN ${m} M · ${o}`; if (stoppedAt) need = ["l", "r"].filter((k) => dec.ex[k]).join("") + (dec.ex.s ? "u" : ""); }
+        else if (dec.type === "end") hint = stoppedAt ? "DEAD END · ↓ TO TURN ROUND" : `DEAD END IN ${m} M`;
+      } else if (D.v > 10) hint = "↓ BRAKES · HOLD IT TO TURN ROUND";
+      const sig = `${v.u}${v.d}${v.l}${v.r}|${need}|${hint}`;
+      if (sig === padSig) return;
+      padSig = sig;
+      for (const k of "udlr") { keyEls[k].classList.toggle("off", !v[k]); keyEls[k].classList.toggle("need", need.includes(k)); }
+      hintEl.textContent = hint;
+    }
+    // the Waze panel: where you are, what is here, and what each way leads to (the next junction's exits, looked ahead
+    // along the graph a few hundred units), only the places of the quarter you're in or the one an exit leads into
+    let panelSig = "";
+    function explore(it, budget, base, out, seen, depth) {
+      if (depth > 7 || seen.has(it.e)) return;
+      seen.add(it.e);
+      const e = E[it.e];
+      for (const p of byEdge.get(it.e) || []) { const s = it.dir > 0 ? p.s : e.len - p.s; if (s <= budget) out.push({ p, d: base + s }); }
+      if (e.len >= budget) return;
+      for (const o of N[endNode(it)].out) if (!(o.e === it.e)) explore(o, budget - e.len, base + e.len, out, seen, depth + 1);
+    }
+    const uniq = (list) => { const s = new Set(); return list.sort((a, b) => a.d - b.d).filter((x) => (s.has(x.p.pl) ? false : (s.add(x.p.pl), true))); };
+    const mDist = (d) => (d < 1000 ? `${Math.max(10, Math.round(d / 10) * 10)} m` : `${(d / 1000).toFixed(1)} km`);
+    function render(force) {
+      if (!D.ready) return;
+      const L = H.state.L, ci = ciOf(L), cur = D.seq[ci], q = quarterAt(H.carPos.x, H.carPos.z), dec = nextDecision(L);
+      const rows = [];
+      // ahead: the places still in front of the car on the edges already chosen
+      const ahead = [];
+      for (let k = ci; k < D.seq.length; k++) {
+        const it = D.seq[k], e = E[it.e];
+        for (const p of byEdge.get(it.e) || []) { const s = it.dir > 0 ? p.s : e.len - p.s, d = it.L0 + s - L; if (d > 30 && d < 900) ahead.push({ p, d }); }
+      }
+      const here = hereAt();
+      const jd = dec && dec.type === "junction" ? dec.L - L : Infinity;
+      const ex = dec && dec.type === "junction" && jd < 900 ? dec.ex : null;
+      const ways = { l: [], s: [], r: [] };
+      if (ex) for (const k of ["l", "s", "r"]) if (ex[k]) { const o = []; explore(ex[k], 650, jd, o, new Set(), 0); ways[k] = uniq(o); }
+      // a place reached by more than one way belongs to the shortest (a tie: the straighter way)
+      {
+        const best = new Map();
+        for (const k of ["l", "s", "r"]) for (const x of ways[k]) {
+          const c = best.get(x.p.pl);
+          if (!c || x.d < c.d - 5 || (Math.abs(x.d - c.d) <= 5 && Math.abs(ex[k].d) < Math.abs(ex[c.k].d))) best.set(x.p.pl, { k, d: x.d });
+        }
+        for (const k of ["l", "s", "r"]) ways[k] = ways[k].filter((x) => best.get(x.p.pl).k === k);
+      }
+      const onPath = new Set(ahead.map((x) => x.p.pl));
+      for (const k of ["l", "r"]) ways[k] = ways[k].filter((x) => !onPath.has(x.p.pl));
+      const sAhead = uniq([...ahead, ...ways.s]);
+      for (const k of ["s", "l", "r"]) {
+        const list = k === "s" ? sAhead : ways[k];
+        if (!list.length) continue;
+        const groups = new Map();
+        for (const x of list) { if (!groups.has(x.p.q)) groups.set(x.p.q, []); groups.get(x.p.q).push(x); }
+        // only the places of the quarter you're in; a way that leads into another quarter shows that quarter
+        const lead = q && groups.has(q) ? null : [...groups.keys()][0];
+        rows.push({ k, other: lead, items: groups.get(lead || q).slice(0, 3) });
+      }
+      const auto = D.auto;
+      const sig = JSON.stringify([q, here?.pl.id, auto ? [auto.pl?.id, Math.round(autoLeft() / 50)] : 0, dec ? [dec.type, dec.type === "junction" ? Math.round(jd / 50) : 0] : 0, rows.map((r) => [r.k, r.other, r.items.map((x) => [x.p.pl.id, Math.round(x.d / 50)])]), D.cardFor?.id]);
+      if (!force && sig === panelSig) return;
+      panelSig = sig;
+      const chip = (qq) => `<span class="n2-q" style="--qc:${QCOL[qq] || "#d9d7d2"}">${esc(qq ? QNAME[qq] : "Cromatic City")}</span>`;
+      const item = (x) => `<button class="n2-it" data-id="${esc(x.p.pl.id)}" style="--pc:${esc(x.p.pl.pin || x.p.pl.c || "#ddd")}"><i></i>${esc(x.p.pl.name)}<em>${mDist(x.d)}</em></button>`;
+      let h = `<header>${chip(q)}<span class="n2-sub mono">${q ? "YOU'RE IN THIS QUARTER" : "BETWEEN THE QUARTERS"}</span></header>`;
+      if (auto) h += `<div class="n2-auto"><span>Driving you to <b>${esc(auto.pl && !auto.pl.tap ? auto.pl.name : "the spot you tapped")}</b> · ${mDist(autoLeft())}</span><button class="n2-take">Take the wheel</button></div>`;
+      if (here && !(D.cardFor === here.pl && H.cardOpen())) h += `<button class="n2-here" data-id="${esc(here.pl.id)}" style="--pc:${esc(here.pl.pin || here.pl.c)}"><span class="mono">YOU'RE AT</span><b>${esc(here.pl.name)}</b><em>Open →</em></button>`;
+      for (const r of rows) {
+        const lab = r.k === "s" ? "Ahead" : r.k === "l" ? "Left" : "Right";
+        const title = r.other ? `${lab} · <b>${esc(QNAME[r.other])}</b>` : lab;
+        h += `<div class="n2-row" data-k="${r.k}"><button class="n2-dir" data-turn="${r.k}" aria-label="${lab}"${r.k === "s" || !ex?.[r.k] ? " disabled" : ""}><span class="n2-g">${GLY[r.k]}</span></button><div class="n2-rb"><span class="n2-rt">${title}</span>${r.items.length ? `<span class="n2-its">${r.items.map(item).join("")}</span>` : ""}</div></div>`;
+      }
+      if (!rows.length && !here && !auto) h += `<p class="n2-empty">Nothing of ours down this way. Turn round with ↓, or tap a place on the map.</p>`;
+      panel.innerHTML = h;
+      panel.classList.toggle("n2-has", true);
+    }
+    function autoLeft() {
+      const a = D.auto; if (!a) return 0;
+      const s = autoStopL(); if (s != null) return Math.max(0, s - H.state.L);
+      const L = H.state.L, last = D.seq[D.seq.length - 1];
+      let d = last.L1 - L;
+      for (const lg of a.legs) d += E[lg.e].len;
+      return d;
+    }
+    panel.addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      if (b.classList.contains("n2-take")) { stopAuto(); return; }
+      if (b.dataset.turn) { choose(b.dataset.turn); return; }
+      const pl = H.places.find((p) => p.id === b.dataset.id); if (!pl) return;
+      if (b.classList.contains("n2-here")) { arrive(pl); return; }
+      api.go(pl);
+    });
+
+    const api = {
+      on: false, graph: G, D,
+      get camK() { return D.camK; },
+      tick, pose, camera,
+      // a place from the map (a pin, a chip, the welcome card): driven to along the graph
+      go(pl) {
+        if (!pl || pl.find) return false;
+        const st = pl.stop ? H.stops.find((s) => s.id === pl.stop) : null;
+        const x = st ? st.x : pl.x ?? pl.px, z = st ? st.y : pl.z ?? pl.pz;
+        if (x == null) return false;
+        const a = G.nearest(x, z, 260);
+        if (!a) return false;
+        H.hideCard(); D.cardFor = null; D.lastArr = null;
+        return goTo({ e: a.e, s: a.s }, pl);
+      },
+      // a tap on any street of the graph
+      tap(x, z) {
+        const a = G.nearest(x, z, 45);
+        if (!a) return null;
+        const e = E[a.e], p = pointAt(e.pts, e.cum, a.s);
+        goTo({ e: a.e, s: a.s }, { id: "tap", tap: true, x: p[0], z: p[1], name: "", c: "#FED012" });
+        return p;
+      },
+      setActive(on) {
+        api.on = on;
+        document.body.classList.toggle("nav2", on);
+        if (!on) { for (const k of "udlr") keyUp(k); D.ready = false; D.auto = null; D.uturn = null; D.street = false; D.streetT = 0; D.camK = 0; document.body.classList.remove("nav2-street"); }
+        else setTimeout(() => toast(H.isPhone() ? "Drive it yourself with the pad · or tap a place" : "Drive it yourself: arrows or WASD · V switches the view"), 1600);
+      },
+      view: setView,
+      press: (k, down = true) => (down ? keyDown(k) : keyUp(k)),
+      quarterAt,
+      place: (id) => H.places.find((p) => p.id === id),
+      state: () => { const L = H.state.L, dec = nextDecision(L); return { v: Math.round(D.v), L: Math.round(L), car: [Math.round(H.carPos.x), Math.round(H.carPos.z)], dec: dec && { type: dec.type, in: Math.round(dec.L - L), ex: dec.ex && { l: !!dec.ex.l, s: !!dec.ex.s, r: !!dec.ex.r }, side: dec.side }, auto: D.auto && (D.auto.pl?.id || "tap"), q: quarterAt(H.carPos.x, H.carPos.z), hint: hintEl.textContent, card: H.cardOpen(), yaw: +H.mapView.yaw.toFixed(2), hd: +H.heading().toFixed(2) }; }
+    };
+    window.__nav2 = api; // for tests
+    return api;
+  };
+})();

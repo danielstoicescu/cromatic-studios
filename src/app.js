@@ -37587,7 +37587,7 @@ void main() {
           tilt = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
         }
         if (tilt.rt.width !== w || tilt.rt.height !== h) { tilt.rt.setSize(w, h); tilt.mat.uniforms.res.value.set(w, h); }
-        tilt.mat.uniforms.amt.value = 4.2 * renderer.getPixelRatio();
+        tilt.mat.uniforms.amt.value = 4.2 * renderer.getPixelRatio() * (mapMode && nav2?.on ? 1 - 0.8 * nav2.camK : 1); // nav2: little miniature blur in the street view
         tilt.mat.uniforms.band.value = 0.16;
         tilt.mat.uniforms.t.value = (now * 0.001) % 100;
         tilt.mat.uniforms.zb.value = mapMode ? mapView.zoomBlur || 0 : 0;
@@ -38040,6 +38040,7 @@ void main() {
             if (now - (state.floorFix || 0) > 120) { state.floorFix = now; window.scrollTo({ top: clamp2(state.floorL / effectiveTotal(), 0, 1) * maxScroll(), behavior: "instant" }); }
           }
         }
+        if (nav2?.on && mapMode) nav2.tick(dt, now); // nav2: the arrows (or its auto-pilot) set mapNav.targetL
         if (mapMode) state.targetL = mapNav.targetL;
         else if (ONB_MODE && onbL != null) state.targetL = onbL; // r140: the page's scroll is the road
         const nearDacia = state.L > route.stopL.merge - 1500 && state.L < route.stopL.merge - 250;
@@ -38119,6 +38120,7 @@ void main() {
         air = smooth(air, airT, dt, 0.9);
         if (air > 1e-3) carPos.y += AIR_H * air * air * (3 - 2 * air);
         route.tangentAt(state.L, carTan);
+        if (nav2?.on && mapMode) nav2.pose(carPos, carTan); // nav2: the U-turn's half circle
         const flying = carPos.z > RAMP_LIP + 30 && carPos.y > 30;
         const isPlane = veh.kind === "plane";
         const hover = isPlane ? 34 + Math.sin(now * 3e-3) * 5 : veh.kind === "sub" ? 20 + Math.sin(now * 1.9e-3) * 4 : 0;
@@ -38462,6 +38464,7 @@ void main() {
           // through; now the first visible frame is solved again on the real car and the camera is put there at once
           if (camSnapNext && !mapFirstSolved && BOOT_MODE === "map" && !mapView.follow && !mapNav.moving && !mapNav.place) { mapFirstSolved = true; const v = mapOpeningView(); mapView.tgt.set(v.t[0], 0, v.t[1]); mapView.dist = v.dist; mapView.yaw = v.yaw; mapView.pitch = v.pitch; mapView.distGoal = null; mapView.yawGoal = mapView.pitchGoal = null; mapSettle = 0; }
           mapSettleTick(); mapUI.update(dt, now); camPos.copy(mapView.pos); camTarget.copy(mapView.tgt);
+          if (nav2?.on) nav2.camera(dt, camPos, camTarget); // nav2: the street view, blended with the satellite
         } // r142b: mapSettleTick
         // exponential damping, frame-rate independent; the look target is damped too, so
         // set-piece cameras (fork, coffee, Dacia, spiral) blend in instead of cutting
@@ -38470,8 +38473,9 @@ void main() {
         if (!window.__lookSm) window.__lookSm = camTarget.clone();
         // in the street POV the camera rides with you: damping tightens as the POV takes over
         const camSnap = camSnapNext; camSnapNext = false; // r157
-        const kp = camSnap ? 1 : 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 : 2.8 + 26 * povK * povK));
-        const kt = camSnap ? 1 : 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 : 6 + 12 * povK * povK));
+        const n2k = mapMode && nav2?.on ? nav2.camK : 0; // nav2: the chase camera rides tight, like the drive's street view
+        const kp = camSnap ? 1 : 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 + 21 * n2k : 2.8 + 26 * povK * povK));
+        const kt = camSnap ? 1 : 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 + 9 * n2k : 6 + 12 * povK * povK));
         camera.position.lerp(camPos, kp);
         window.__lookSm.lerp(camTarget, kt);
         camera.lookAt(window.__lookSm);
@@ -38929,6 +38933,27 @@ void main() {
       var mapMaxD = () => innerWidth < 720 ? 7000 : 6200; // a phone in portrait needs a little more height to see as much
       var mapView = { tgt: new Vector3(1270, 0, 3170), pos: new Vector3(), dist: 8200, distGoal: null, yaw: 0.3, pitch: 0.98, vx: 0, vz: 0, follow: false, sx: 0, sy: 0 };
       var mapNav = { targetL: 0, legs: [], place: null, moving: false };
+      // nav2: an opt-in prototype (?nav=v2 on the map): you drive the city's whole road graph with the arrows, a street
+      // and a satellite view, a Waze-style panel (src/nav2.js). Without the flag nav2 stays null and nothing below runs
+      var NAV2 = /[?&]nav=v2\b/.test(location.search) && typeof window.czNav2 === "function" ? window.czNav2 : null, nav2 = null;
+      function nav2Host() { // nav2: what the module may see and do
+        return {
+          navNet, cityNet, rounded: (p, r) => roundedPolyline(p, r), fork: FORK_POS, stops: STOPS, places: MAP_PLACES, start: ROUTE_MAIN[0], streets: { A: ROUTE_A, B: ROUTE_B, C: ROUTE_C, D: ROUTE_MERGE, lane: LANE_PTS },
+          state, carPos, carTan, mapView, mapNav, camera,
+          route: () => route, heading: () => heading, canvas: () => renderer.domElement,
+          carLen: () => { if (povLenFor !== veh.group) { povLenFor = veh.group; const bx = new Box3().setFromObject(veh.group), sz = bx.getSize(new Vector3()); povLen = clamp2(Math.max(sz.x, sz.z), 24, 90); } return povLen; },
+          rebase(pts, L, T) { route.setPath(pts); state.L = prevL = L; state.targetL = mapNav.targetL = T; MO.Ls = L; planeRev = 0; },
+          setTarget(T) { mapNav.targetL = T; },
+          ready: () => mapMode && !mapIntro && !!mapUI && spawnStart < 0 && jetFx.phase === "idle" && !mapBoarding && !document.body.classList.contains("kz-intro"),
+          overlay: () => { const c = document.body.classList; return c.contains("modal-open") || c.contains("scf-open") || !!document.querySelector(".case-frame:not(.hidden)"); },
+          follow() { mapView.follow = true; mapView.focus = null; mapView.vx = mapView.vz = 0; mapUI?.cineStop(); },
+          arrive(pl) { mapNav.place = pl; mapUI?.arrive(pl); mapUI?.mark(); },
+          cineStop: () => mapUI?.cineStop(), hideCard: () => mapUI?.hideCard(), mark: () => mapUI?.mark(), welcome: (on) => mapUI?.welcome(on),
+          cardOpen: () => !!document.querySelector(".map-card:not(.hidden)") || document.body.classList.contains("map-at-stop"),
+          wantsCine: () => innerWidth >= 720, isPhone: () => innerWidth < 720,
+          reduced: () => matchMedia("(prefers-reduced-motion: reduce)").matches
+        };
+      }
       var jetFx = { phase: "idle", t: 0, baam: false };
       var boardTimer = 0, boardTick = 0;
       var MAP_STREET = { A: "COFFEE STREET", B: "FINTECH BOULEVARD", C: "MEDICAL AVENUE", D: "THE SMALLEST SHORTCUT" };
@@ -39000,6 +39025,7 @@ void main() {
       // The route itself is the truth: the drive drops branchChosen whenever you are back before the fork
       function mapGo(pl) {
         if (!pl || jetFx.phase !== "idle") return;
+        if (nav2?.on && nav2.go(pl)) { mapCloseBoarding(); mapUI.welcome?.(false); mapUI.cineOut?.(); return; } // nav2: driven along the road graph
         if (pl.find) return mapUI.find(pl);
         mapCloseBoarding();
         // where to: a stop, a road point, or a building beside the road (park just short of it)
@@ -40193,6 +40219,7 @@ void main() {
           for (const q of pins) { if (q.pl.chapter && !q.pl.past) continue; const d2 = (q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2; if (d2 < 75 * 75 && (!near || d2 < near.d)) near = { d: d2, pl: q.pl }; }
           if (near) return mapGo(near.pl);
           for (const q of pins) if (q.pl.chapter && !q.pl.past && (q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2 < 70 * 70) return mapGo(q.pl);
+          if (nav2?.on) { const g = nav2.tap(hit.x, hit.z); if (g) tapMark(g[0], g[1]); return; } // nav2: any street of the graph
           // otherwise only the street itself
           if (!best || best.d > 60 * 60) return;
           const shared = tapShared.some(([x, z]) => Math.abs(x - best.x) < 1 && Math.abs(z - best.z) < 1);
@@ -40443,6 +40470,8 @@ void main() {
         mapMode = on;
         if (on) {
           if (!mapUI) mapUI = buildMapUI();
+          if (NAV2 && !nav2) nav2 = NAV2(nav2Host()); // nav2
+          nav2?.setActive(true); // nav2
           mapPrev = { scheme: state.schemeIdx, veh: state.vehicleId };
           if (!intro) kinetic?.pause?.();
           if (police.active) { police.active = false; copCar.group.visible = false; }
@@ -40474,8 +40503,9 @@ void main() {
           mapUI.mark();
           if (intro) { mapIntro = true; document.body.classList.add("kz-intro"); mapUI.skip.classList.remove("hidden"); }
           else { const wt0 = performance.now(); const wl = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - wt0 < 20000) return setTimeout(wl, 250); mapSettle = 90; if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI.welcome(true); }; setTimeout(wl, 1000); } // r139r: after the cups' reveal (r142b: a second, and the view settles on the car)
-          try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map") + location.hash); } catch {} // r139p: a plain "/" stays plain
+          try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map") + (NAV2 ? (location.search ? "&" : "?map&") + "nav=v2" : "") + location.hash); } catch {} // r139p (nav2: keeps ?nav=v2): a plain "/" stays plain
         } else {
+          nav2?.setActive(false); // nav2
           mapEndIntro();
           kinetic?.pause?.();
           mapCloseBoarding();
