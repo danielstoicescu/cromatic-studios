@@ -24541,6 +24541,10 @@ void main() {
     const up = new Vector3(0, 1, 0);
     const tmp2 = new Vector3(), side = new Vector3();
     let dist = 0;
+    // r163 (Adina): where a bend is tighter than half the width (Medical Avenue into the Dacia row, the corner down to
+    // Olari 9), the inner edge used to run backwards and fold the ribbon over itself: a torn, flickering corner. Each
+    // edge now never steps back along the road; it waits at the inner corner until the road comes round
+    let lx = 0, lz = 0, rx = 0, rz = 0;
     for (let i = 0; i < points.length; i++) {
       const p = points[i];
       const prev = points[Math.max(0, i - 1)], next = points[Math.min(points.length - 1, i + 1)];
@@ -24551,8 +24555,14 @@ void main() {
       side.crossVectors(up, tmp2).normalize();
       if (wAt) hw = wAt(p) / 2;
       if (i > 0) dist += p.distanceTo(points[i - 1]);
-      pos.push(p.x + side.x * hw, p.y + yLift, p.z + side.z * hw);
-      pos.push(p.x - side.x * hw, p.y + yLift, p.z - side.z * hw);
+      let ax = p.x + side.x * hw, az = p.z + side.z * hw, bx = p.x - side.x * hw, bz = p.z - side.z * hw;
+      if (i > 0) {
+        if ((ax - lx) * tmp2.x + (az - lz) * tmp2.z < 0) { ax = lx; az = lz; }
+        if ((bx - rx) * tmp2.x + (bz - rz) * tmp2.z < 0) { bx = rx; bz = rz; }
+      }
+      lx = ax; lz = az; rx = bx; rz = bz;
+      pos.push(ax, p.y + yLift, az);
+      pos.push(bx, p.y + yLift, bz);
       uv.push(0, dist / width, 1, dist / width);
       if (i > 0) {
         const a = (i - 1) * 2, b = a + 1, c = i * 2, d = c + 1;
@@ -25129,12 +25139,14 @@ void main() {
     const net = cityNet();
     const group = new Group();
     const v3 = (pts) => pts.map(([x, z]) => new Vector3(x, 0, z));
-    const minorGeos = net.minor.map((s) => ribbonGeometry(v3(s.pts), s.w, 0.35));
+    // r163 (Adina): the side streets one notch lower (0.35 → 0.25, kerbs 0.22 → 0.12): their asphalt and a boulevard's kerb were
+    // only 0.05 apart, and flickered at every junction from far away
+    const minorGeos = net.minor.map((s) => ribbonGeometry(v3(s.pts), s.w, 0.25));
     const minorMesh = new Mesh(mergeGeometries(minorGeos), mats.roadMinor);
     minorMesh.receiveShadow = true;
     group.add(minorMesh);
     // kerbs: a darker edge under every street, so the blocks read from above
-    const casingGeos = net.minor.map((s) => ribbonGeometry(v3(s.pts), s.w + 5, 0.22));
+    const casingGeos = net.minor.map((s) => ribbonGeometry(v3(s.pts), s.w + 5, 0.12));
     const majorGeos = [], medGeos = [];
     for (const s of net.longs) {
       // densify so curves stay smooth
@@ -25418,6 +25430,11 @@ void main() {
     mats.route = mats.route || new MeshStandardMaterial({ color: accent, roughness: 0.65 });
     mats.routeDash = mats.routeDash || new MeshBasicMaterial({ color: "#fffdf2" });
     mats.routeAlt = mats.routeAlt || new MeshStandardMaterial({ color: "#c9c5b8", roughness: 1 });
+    // r163 (Adina): the gold road's layers sit a few tenths apart (city streets, labels, the lane, casing, asphalt): from
+    // far away that is less than the depth buffer can tell apart, and they flickered through each other. A depth-only
+    // offset (units, no slope factor, so nothing moves on screen) keeps the casing over the city and the asphalt over both
+    for (const [m, u] of [[mats.routeCasing, -2], [mats.route, -4]]) Object.assign(m, { polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: u });
+    const laid = []; // r163: the centre lines already drawn (see addGold: one set of dashes per stretch of road)
     for (const b2 of BRANCHES) {
       if ((b2 === branch && chosen) || all) continue;
       const w0 = chosen ? ROUTE_W * 0.8 : ROUTE_W;
@@ -25500,10 +25517,25 @@ void main() {
       dir.normalize();
       q.setFromUnitVectors(new Vector3(0, 0, 1), dir);
       const inRing = Math.hypot(p.x - FORK_POS.x, p.z - FORK_POS.y) < 106;
-      m.compose(new Vector3(p.x, p.y + 1.8, p.z), q, inRing ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1));
+      // r163 (Adina): where two streets share the asphalt (Fintech and Medical along the Dacia row, the ends of each run)
+      // the second set of dashes landed between the first, and a turning street's dashes cut across the other's lane
+      const dup = !inRing && onLaid(p);
+      m.compose(new Vector3(p.x, p.y + 1.8, p.z), q, inRing || dup ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1));
       dashes.setMatrixAt(i, m);
     }
     group.add(dashes);
+    laid.push(p3);
+    }
+    // a point on the asphalt of a road already drawn (within half its width of its centre line)
+    function onLaid(p) {
+      const r2 = (ROUTE_W / 2) ** 2;
+      for (const pl of laid) for (let k = 1; k < pl.length; k++) {
+        const a = pl[k - 1], b = pl[k], ex = b.x - a.x, ez = b.z - a.z, l2 = ex * ex + ez * ez || 1;
+        const t = Math.max(0, Math.min(1, ((p.x - a.x) * ex + (p.z - a.z) * ez) / l2));
+        const dx = a.x + ex * t - p.x, dz = a.z + ez * t - p.z;
+        if (dx * dx + dz * dz < r2 && Math.abs(a.y - p.y) < 5) return true;
+      }
+      return false;
     }
   }
   function buildRoundabout(parent) {
@@ -38954,7 +38986,7 @@ void main() {
       var mapNav = { targetL: 0, legs: [], place: null, moving: false };
       var jetFx = { phase: "idle", t: 0, baam: false };
       var boardTimer = 0, boardTick = 0;
-      var MAP_STREET = { A: "COFFEE STREET", B: "FINTECH BOULEVARD", C: "MEDICAL AVENUE", D: "THE SMALLEST SHORTCUT" };
+      var MAP_STREET = { A: "COFFEE STREET", B: "FINTECH BOULEVARD", C: "MEDICAL AVENUE", D: "THE SHORTEST SHORTCUT" };
       var MAP_PLACES = [
         // finds: placards off the road; you click them where they are, the van stays put
         { id: "dream", stop: "dream", chapter: true, find: true, h: 70, name: "The Dream", line: "CH.01", c: "#B098C8" },
@@ -39788,7 +39820,7 @@ void main() {
         }, { capture: true, passive: true });
         document.addEventListener("keydown", (e) => { if (guide.phase && e.key === "Escape") guideEnd("skipped"); });
         // the street names float high over the head of each street, as the drive's motorway signs
-        const STREETS = [["Coffee Street", "The story road", 822, 4700, "#28C840"], ["Fintech Boulevard", "Digital & finance", 2080, 5300, "#119BFE"], ["Medical Avenue", "Clinics, care & beauty", 1500, 4900, "#F28BA8"], ["The Smallest Shortcut", "Stickers & print", 1412, 5945, "#FED012"]];
+        const STREETS = [["Coffee Street", "The story road", 822, 4700, "#28C840"], ["Fintech Boulevard", "Digital & finance", 2080, 5300, "#119BFE"], ["Medical Avenue", "Clinics, care & beauty", 1500, 4900, "#F28BA8"], ["The Shortest Shortcut", "Stickers & print", 1412, 5945, "#FED012"]];
         const streetEls = STREETS.map(([t, sub, x, z, c]) => {
           const e = el("div", "map-street", `<span class="hw-stripe"></span><span class="hw-body"><span class="hw-txt"><b>${t}</b><i>${sub}</i></span></span>`);
           e.style.setProperty("--hwc", c); e._p = [x, z]; pinsEl.prepend(e); return e;
