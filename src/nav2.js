@@ -243,6 +243,7 @@
         const p1 = e1.b === n ? e1.pts : e1.pts.slice().reverse(), a = e1.b === n ? e1.a : e1.b;
         const p2 = e2.a === n ? e2.pts : e2.pts.slice().reverse(), b = e2.a === n ? e2.b : e2.a;
         if (a === b) continue; // would close a loop on itself
+        if ((e1.kind === "minor") !== (e2.kind === "minor")) continue; // round 3: a side street never merges into a road
         const ne = { a, b, pts: [...p1, ...p2.slice(1)], w: Math.max(e1.w, e2.w), kind: e1.kind === e2.kind ? e1.kind : e1.kind === "drive" || e2.kind === "drive" ? "drive" : e1.kind };
         e1.dead = e2.dead = true;
         const ni = edges.length; edges.push(ne);
@@ -287,7 +288,7 @@
       }
     });
     // the nearest point of the graph to (x, z): its edge, arc length from the edge's a, the distance
-    const nearest = (x, z, maxD = 400) => {
+    const nearest = (x, z, maxD = 400, only = null) => {
       let best = null;
       const r = Math.ceil(maxD / SG), cx0 = Math.floor(x / SG), cz0 = Math.floor(z / SG);
       for (let ring = 0; ring <= r; ring++) {
@@ -295,6 +296,7 @@
           if (Math.max(Math.abs(cx - cx0), Math.abs(cz - cz0)) !== ring) continue;
           for (const code of sgrid.get(gk(cx, cz)) || []) {
             const e = E[Math.floor(code / 4096)], i = code % 4096, a = e.pts[i], b = e.pts[i + 1];
+            if (only && !only(e)) continue;
             const dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz || 1, t = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / l2, 0, 1);
             const d = Math.hypot(a[0] + dx * t - x, a[1] + dz * t - z);
             if (!best || d < best.d) best = { e: e.id, s: e.cum[i] + Math.sqrt(l2) * t, d };
@@ -304,6 +306,18 @@
       }
       return best && best.d <= maxD ? best : null;
     };
+    // round 3 (Daniel: "only the normal roads, no back alleys"): the car drives the drive's own network (the start road,
+    // the ring, the three streets, the Dacia row, the lane, the road to Olari 9) and the long avenues; the side streets
+    // (cityNet().minor) stay in the graph only as mouths to back into for a turn, never to drive on
+    {
+      for (const e of E) e.drive = false;
+      const seen = new Uint8Array(N.length), st = [start2()];
+      function start2() { let b = 0, bd = Infinity; N.forEach((n, i) => { if (!n.out.some((o) => E[o.e].kind !== "minor")) return; const d = Math.hypot(n.x - H.start[0], n.z - H.start[1]); if (d < bd) { bd = d; b = i; } }); return b; }
+      seen[st[0]] = 1;
+      while (st.length) { const n = st.pop(); for (const o of N[n].out) { const e = E[o.e]; if (e.kind === "minor") continue; e.drive = true; const m = o.dir > 0 ? e.b : e.a; if (!seen[m]) { seen[m] = 1; st.push(m); } } }
+      stats.drivable = E.filter((e) => e.drive).length;
+      stats.drivableKm = Math.round(E.filter((e) => e.drive).reduce((a, e) => a + e.len, 0));
+    }
     return { N, E, stats, nearest, dropped };
   }
 
@@ -390,12 +404,12 @@
           if (!r) break;
           via = via.concat([{ e: r.e, dir: r.dir }]); pre += E[r.e].len; m = endNode(r);
           if (m === n) break;
-          for (const o of N[m].out) if (E[o.e].kind !== "ring") c.push({ e: o.e, dir: o.dir, via, pre, d: wrapA(outH(o) - hin) });
+          for (const o of N[m].out) if (E[o.e].kind !== "ring" && E[o.e].drive) c.push({ e: o.e, dir: o.dir, via, pre, d: wrapA(outH(o) - hin) });
         }
         ex = slots(c.filter((o) => Math.abs(o.d) < 2.7));
         ex.round = true;
       } else {
-        ex = slots(N[n].out.filter((o) => !(o.e === it.e && o.dir === -it.dir) && !against(o)).map((o) => ({ e: o.e, dir: o.dir, d: wrapA(outH(o) - hin) })).filter((o) => Math.abs(o.d) < 2.7));
+        ex = slots(N[n].out.filter((o) => !(o.e === it.e && o.dir === -it.dir) && !against(o) && E[o.e].drive).map((o) => ({ e: o.e, dir: o.dir, d: wrapA(outH(o) - hin) })).filter((o) => Math.abs(o.d) < 2.7));
       }
       exitCache.set(k, ex);
       return ex;
@@ -408,9 +422,10 @@
       const st = pl.stop ? H.stops.find((s) => s.id === pl.stop) : null;
       const x = st ? st.x : pl.x ?? pl.px, z = st ? st.y : pl.z ?? pl.pz;
       if (x == null || z == null) continue;
-      const a = G.nearest(x, z, 160);
+      const a = G.nearest(x, z, 360, (e) => e.drive);
       if (!a) continue;
-      PL.push({ pl, x, z, e: a.e, s: a.s, q: pl.br || null });
+      const ap = pointAt(E[a.e].pts, E[a.e].cum, a.s);
+      PL.push({ pl, x, z, e: a.e, s: a.s, ax: ap[0], az: ap[1], q: pl.br || null }); // ax/az: where the car parks for it
     }
     const byEdge = new Map();
     for (const p of PL) { let l = byEdge.get(p.e); if (!l) byEdge.set(p.e, (l = [])); l.push(p); }
@@ -517,7 +532,7 @@
     function place() {
       // put the car on the graph where it stands, facing the way it faces
       const R = H.route(), c = R.posAt(H.state.L), t = R.tangentAt(H.state.L);
-      const a = G.nearest(c.x, c.z, 600);
+      const a = G.nearest(c.x, c.z, 900, (e) => e.drive);
       if (!a) return false;
       const e = E[a.e], p = pointAt(e.pts, e.cum, Math.min(e.len, a.s + 4)), p0 = pointAt(e.pts, e.cum, Math.max(0, a.s - 4));
       const dir = (p[0] - p0[0]) * t.x + (p[1] - p0[1]) * t.z >= 0 ? 1 : -1;
@@ -551,7 +566,7 @@
     // ← → are asked only at real choices, the junctions and the roundabout's exits
     function nextDecision(L) {
       const last = D.seq[D.seq.length - 1], n = endNode(last);
-      if (N[n].out.length <= 1) return { type: "end", key: "end:" + last.uid, L: last.L1, it: last };
+      if (N[n].out.filter((o) => E[o.e].drive).length <= 1) return { type: "end", key: "end:" + last.uid, L: last.L1, it: last };
       const ex = exitsAt(last);
       return { type: "junction", key: "j:" + last.uid, L: last.L1, it: last, ex, node: n, gap: gapOf(last) };
     }
@@ -564,7 +579,7 @@
       if (L - it.L0 > 140 || L - it.L0 < rin + 3) return null;
       const c = N[B].out.filter((o) => !(o.e === it.e && o.dir === it.dir) && E[o.e].kind !== "ring").map((o) => ({ ...o, d: wrapA(outH(o) - h0) }));
       const side = (sg) => c.filter((o) => sg * o.d > 0.3 && sg * o.d < 2.6).sort((a, b) => Math.abs(Math.abs(a.d) - Math.PI / 2) - Math.abs(Math.abs(b.d) - Math.PI / 2))[0] || null;
-      return { ci, it, l: side(1), r: side(-1), back: c.filter((o) => Math.abs(o.d) >= 2.6).sort((a, b) => Math.abs(b.d) - Math.abs(a.d))[0] || null };
+      return { ci, it, l: side(1), r: side(-1), back: c.filter((o) => Math.abs(o.d) >= 2.6 && E[o.e].drive).sort((a, b) => Math.abs(b.d) - Math.abs(a.d))[0] || null };
     }
     function reverseInto(o, L) {
       const ci = ciOf(L), [x, z] = pathPos(L), [cx, cz] = pathPos(D.C), off = L - D.seq[ci].L0;
@@ -667,14 +682,14 @@
       const heap = [];
       const push = (d, v) => { heap.push([d, v]); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
       const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
-      const fwdN = endNode(it), backN = startNode(it), deadAhead = N[fwdN].out.length === 1;
+      const fwdN = endNode(it), backN = startNode(it), deadAhead = N[fwdN].out.filter((o) => E[o.e].drive).length === 1;
       dist0[fwdN] = e.len - sDir + (deadAhead ? 160 : 0); pd[fwdN] = 1; push(dist0[fwdN], fwdN);
       if (piv) { const back = sDir + 90; if (back < dist0[backN]) { dist0[backN] = back; pd[backN] = -1; push(back, backN); } }
       while (heap.length) {
         const [d, u] = pop();
         if (d > dist0[u]) continue;
         for (const o of N[u].out) {
-          if (against(o)) continue; // the ring only with the flow
+          if (against(o) || !E[o.e].drive) continue; // the ring only with the flow; the roads only
           if (o.e === it.e && prev[u] === -1 && !(u === fwdN && deadAhead)) continue; // not back along your own edge (but out of a dead end, after the three-point turn)
           const ed = E[o.e], v = o.dir > 0 ? ed.b : ed.a, nd = d + ed.len;
           if (nd < dist0[v]) { dist0[v] = nd; prev[v] = u; pe[v] = o.e * 2 + (o.dir > 0 ? 1 : 0); pd[v] = pd[u]; push(nd, v); }
@@ -802,6 +817,7 @@
       const rev = (D.keys.d && D.v <= 0.5 && !pivots() && !D.auto) || (autoRev && D.v <= 0.5); // ↓ held (or backing up to a place): reverse
       // and going back: the start of the path, unless you back into a street there
       let Lb = 4;
+      if (D.seq.length > 1 && !E[D.seq[0].e].drive) Lb = Math.max(4, D.seq[1].L0 - 45); // a side street: only its mouth, for a turn
       if ((rev || D.v < -0.5) && !autoRev) {
         D.wasRev = true;
         const b = backInto(Lc);
@@ -857,7 +873,7 @@
         const here = hereAt();
         if (here && here.pl !== D.lastArr) arrive(here.pl);
       }
-      if (D.lastArr) { const p = PL.find((q) => q.pl === D.lastArr); if (p && Math.hypot(H.carPos.x - p.x, H.carPos.z - p.z) > 200) { D.lastArr = null; if (D.cardFor) { H.hideCard(); D.cardFor = null; } if (!D.auto) { H.mapNav.place = null; H.mark(); } } }
+      if (D.lastArr) { const p = PL.find((q) => q.pl === D.lastArr); if (p && Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az) > 200) { D.lastArr = null; if (D.cardFor) { H.hideCard(); D.cardFor = null; } if (!D.auto) { H.mapNav.place = null; H.mark(); } } }
       ui(Lc, dec);
       tutTick();
       panelT -= dt;
@@ -867,7 +883,7 @@
     function lamps(on) { lampOn = on; H.reverseLamps(on); }
     function hereAt() {
       let best = null;
-      for (const p of PL) { const d = Math.hypot(H.carPos.x - p.x, H.carPos.z - p.z); if (d < 75 && (!best || d < best.d)) best = { pl: p.pl, d, p }; }
+      for (const p of PL) { const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 75 && (!best || d < best.d)) best = { pl: p.pl, d, p }; }
       return best;
     }
     const ktSeg = () => { const m = D.kturn, t = m.t / m.k; return t < KTD[0] ? 0 : t < KTD[0] + KTD[1] ? 1 : 2; };
@@ -1157,7 +1173,7 @@
       const e = E[it.e];
       for (const p of byEdge.get(it.e) || []) { const s = it.dir > 0 ? p.s : e.len - p.s; if (s <= budget) out.push({ p, d: base + s }); }
       if (e.len >= budget) return;
-      for (const o of N[endNode(it)].out) if (!(o.e === it.e) && !against(o)) explore(o, budget - e.len, base + e.len, out, seen, depth + 1);
+      for (const o of N[endNode(it)].out) if (!(o.e === it.e) && !against(o) && E[o.e].drive) explore(o, budget - e.len, base + e.len, out, seen, depth + 1);
     }
     const uniq = (list) => { const s = new Set(); return list.sort((a, b) => a.d - b.d).filter((x) => (s.has(x.p.pl) ? false : (s.add(x.p.pl), true))); };
     const mDist = (d) => (d < 1000 ? `${Math.max(10, Math.round(d / 10) * 10)} m` : `${(d / 1000).toFixed(1)} km`);
@@ -1322,7 +1338,7 @@
         const st = pl.stop ? H.stops.find((s) => s.id === pl.stop) : null;
         const x = st ? st.x : pl.x ?? pl.px, z = st ? st.y : pl.z ?? pl.pz;
         if (x == null) return false;
-        const a = G.nearest(x, z, 260);
+        const a = G.nearest(x, z, 420, (e) => e.drive);
         if (!a) return false;
         H.hideCard(); D.cardFor = null; D.lastArr = null;
         return goTo({ e: a.e, s: a.s }, pl);
@@ -1332,7 +1348,9 @@
       onRoad: (x, z) => { const a = G.nearest(x, z, 60); return !!a && a.d < E[a.e].w * 0.5 + 6; },
       // a tap on any street of the graph
       tap(x, z) {
-        const a = G.nearest(x, z, 45);
+        // round 3: a tap on any street (side streets too) drives to the nearest point of a normal road
+        if (!G.nearest(x, z, 45)) return null;
+        const a = G.nearest(x, z, 420, (e) => e.drive);
         if (!a) return null;
         const e = E[a.e], p = pointAt(e.pts, e.cum, a.s);
         goTo({ e: a.e, s: a.s }, { id: "tap", tap: true, x: p[0], z: p[1], name: "", c: "#FED012" });
