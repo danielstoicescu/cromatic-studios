@@ -39178,12 +39178,15 @@ void main() {
             for (const b of list) {
               const w = b.w, ps = [];
               ps.push(part(new BoxGeometry(w + 8, 3.2, 5), "#b8b4a6", 0, 1.6, 0)); // the kerb, across the mouth
-              const n = Math.max(3, Math.round((w - 10) / 9)), sw = (w - 10) / n;
-              for (let i = 0; i < n; i++) ps.push(part(new BoxGeometry(sw, 3.6, 1.4), i % 2 ? "#f6f2e8" : "#e0442a", -(w - 10) / 2 + sw * (i + 0.5), 10.5, 9));
+              // red hatching painted on the closed mouth, between the kerb and the barrier (reads from the satellite view)
+              for (let x = -w / 2 + 6; x <= w / 2 - 6; x += 8) { const g = new BoxGeometry(2.6, 0.3, 12); g.rotateY(Math.PI / 4); ps.push(part(g, "#e0442a", x, 0.5, 9)); }
+              // the barrier: two striped boards on two posts, a little way in, tall enough to show over the car
+              const n = Math.max(3, Math.round((w - 6) / 8)), sw = (w - 6) / n;
+              for (const [y, hh] of [[16, 4.4], [9, 3.2]]) for (let i = 0; i < n; i++) ps.push(part(new BoxGeometry(sw, hh, 1.6), (i + (y > 10 ? 0 : 1)) % 2 ? "#f6f2e8" : "#e0442a", -(w - 6) / 2 + sw * (i + 0.5), y, 16));
               for (const sx of [-1, 1]) {
-                ps.push(part(new BoxGeometry(1.8, 12.5, 1.8), "#f6f2e8", sx * (w / 2 - 4), 6.25, 9)); // the barrier's posts
-                ps.push(part(new CylinderGeometry(1.7, 1.9, 8, 8), "#e0442a", sx * (w / 2 + 2), 4, -1)); // bollards, on the kerb's ends
-                ps.push(part(new CylinderGeometry(1.75, 1.75, 1.6, 8), "#f6f2e8", sx * (w / 2 + 2), 5.6, -1));
+                ps.push(part(new BoxGeometry(2.2, 19, 2.2), "#3b3a36", sx * (w / 2 - 2), 9.5, 16)); // the barrier's posts
+                ps.push(part(new CylinderGeometry(1.9, 2.1, 10, 8), "#e0442a", sx * (w / 2 + 2), 5, -1)); // bollards, on the kerb's ends
+                ps.push(part(new CylinderGeometry(1.95, 1.95, 1.8, 8), "#f6f2e8", sx * (w / 2 + 2), 7, -1));
               }
               r.makeRotationY(Math.atan2(b.nx, b.nz)); m.makeTranslation(b.x, 0.6, b.z).multiply(r); // local +z: into the closed street
               for (const g of ps) geos.push(g.toNonIndexed().applyMatrix4(m));
