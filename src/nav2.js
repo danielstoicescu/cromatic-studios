@@ -899,9 +899,10 @@
       const t = now * 0.001, sp = Math.min(1, Math.abs(D.v) / VMAX);
       const idle = BODY.idle * eng, buzz = sp * sp * 0.6 * eng;
       if (idle > 1e-3 || buzz > 1e-3) {
-        g.position.y += (Math.sin(t * 108) * 0.07 + Math.sin(t * 171 + 1.3) * 0.045) * idle + Math.sin(t * 61 + 0.7) * 0.05 * buzz;
-        g.rotation.z += (Math.sin(t * 93 + 0.4) * 0.0032 + Math.sin(t * 137) * 0.0018) * idle + Math.sin(t * 47) * 0.0012 * buzz;
-        g.rotation.x += Math.sin(t * 119 + 2.1) * 0.0016 * idle;
+        // round 2 (Daniel: "too strong"): about a fifth of r1, barely there: a hum, not a shake
+        g.position.y += (Math.sin(t * 108) * 0.014 + Math.sin(t * 171 + 1.3) * 0.009) * idle + Math.sin(t * 61 + 0.7) * 0.03 * buzz;
+        g.rotation.z += (Math.sin(t * 93 + 0.4) * 0.0006 + Math.sin(t * 137) * 0.00035) * idle + Math.sin(t * 47) * 0.0008 * buzz;
+        g.rotation.x += Math.sin(t * 119 + 2.1) * 0.0003 * idle;
       }
     }
 
