@@ -118,3 +118,8 @@ body.n2-card .n2-panel { opacity: 0; translate: 0 14px; pointer-events: none; }
 body.map-mode .map-pin { pointer-events: none; }
 body.map-mode .map-pin:not(.off):not(.dot) .mp-label, body.map-mode .map-pin.dot:not(.off) .mp-dot { pointer-events: auto; }
 body.map-mode .map-pin.dot { padding: 0; margin: 0; }
+
+/* beta 2.0: "Go deeper" while the camera parks in front of the building (the case page opens after) */
+.map-card .mcd-open.busy { pointer-events: none; animation: n2busy 1s ease-in-out infinite; }
+@keyframes n2busy { 50% { opacity: .65; } }
+@media (prefers-reduced-motion: reduce) { .map-card .mcd-open.busy { animation: none; } }

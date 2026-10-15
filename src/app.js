@@ -39114,7 +39114,7 @@ void main() {
           camBusy: () => mapIntro || jetFx.phase !== "idle" || document.body.classList.contains("kz-intro"),
           ready: () => mapMode && !mapIntro && !!mapUI && spawnStart < 0 && jetFx.phase === "idle" && !mapBoarding && !document.body.classList.contains("kz-intro"),
           overlay: () => { const c = document.body.classList; return c.contains("modal-open") || c.contains("scf-open") || !!document.querySelector(".case-frame:not(.hidden)"); },
-          follow() { mapView.follow = true; mapView.focus = null; mapView.vx = mapView.vz = 0; mapUI?.cineStop(); },
+          follow() { mapView.follow = true; mapView.focus = null; mapView.vx = mapView.vz = 0; mapUI?.cineStop(); if (mapView.pitch < 0.8) mapView.pitchGoal = 0.98; if (mapView.dist < 1800 && !mapView.distGoal) mapView.distGoal = innerWidth < 720 ? 2900 : 2500; }, // beta 2.0: out of a parking pose too
           arrive(pl) { mapNav.place = pl; mapUI?.arrive(pl); mapUI?.mark(); },
           cineStop: () => mapUI?.cineStop(), hideCard: () => mapUI?.hideCard(), mark: () => mapUI?.mark(), welcome: (on) => mapUI?.welcome(on),
           cardOpen: () => !!document.querySelector(".map-card:not(.hidden)") || document.body.classList.contains("map-at-stop"),
@@ -40173,9 +40173,27 @@ void main() {
           if (pl.stop) return mapShowChapter(pl.stop);
           showCard(pl, "A FORMER ADDRESS", `<p>${pl.desc}</p>`, "");
         };
+        // beta 2.0 (Daniel): arriving shows the place's card, with no parking cinematic. The cinematic is for "Go deeper": on a
+        // laptop the camera parks in front of the building, then the case page opens out of the card; a phone (or reduced
+        // motion) opens it at once. Two Minutes keeps its little coffee scene, and the camera goes back to the player after
+        const deep = (pl, open) => () => {
+          if (innerWidth < 720 || matchMedia("(prefers-reduced-motion: reduce)").matches || jetFx.phase !== "idle" || (nav2?.on && nav2.camK > 0.5)) return open(); // (in the street view the chase camera stays)
+          if (card._deepT) return;
+          tmBack = null; cineIn(pl);
+          const dur = cine ? cine.dur : 0, btn = card.querySelector(".mcd-open");
+          btn?.classList.add("busy");
+          card._deepT = setTimeout(() => {
+            card._deepT = 0; btn?.classList.remove("busy");
+            if (card.classList.contains("hidden")) return; // closed meanwhile
+            const cf = document.querySelector(".case-frame"); if (cf) cf._from = { r: card.getBoundingClientRect(), t: performance.now() };
+            open();
+          }, Math.round(dur * 1000) + 150);
+        };
         const arrive = (pl) => {
           if (pl.tap) { markEl.classList.remove("on"); markAt = null; return; }
-          cineIn(pl);
+          clearTimeout(card._deepT); card._deepT = 0;
+          if (pl.tm) { tmBack = { yaw: mapView.yaw, pitch: mapView.pitch, dist: mapView.dist }; cineIn(pl); } // its scene; the camera comes back after
+          else if (pl.stop !== "end") cine = null; // Olari 9 keeps its own arrival (olari.cine)
           if (visit(pl)) gainXP(5, pl.name, "Found on the map");
           mark();
           if (pl.board) { mapOpenBoarding(); return; }
@@ -40183,7 +40201,7 @@ void main() {
           if (pl.past) {
             const pgP = pl.work && window.__casePage?.(pl.work);
             showCard(pl, "A BLAST FROM THE PAST", `<p>${pl.desc}</p>`, pgP ? `<button class="mcd-open">See the photos \u2192</button>` : "");
-            if (pgP) card.querySelector(".mcd-open").onclick = () => openFrameHook?.(`/work/${pgP}/?embed=1`, pl.name);
+            if (pgP) card.querySelector(".mcd-open").onclick = deep(pl, () => openFrameHook?.(`/work/${pgP}/?embed=1`, pl.name));
             return;
           }
           if (pl.stop && pl.stop !== "services") { mapShowChapter(pl.stop); return; }
@@ -40196,7 +40214,7 @@ void main() {
             // Two Minutes: three double espressos, the boxes come down from our old balcony, a fourth, and the rush
             coffee.done = false; coffee.phase = "sip1"; coffee.t = 0; coffee.served = 0;
             showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52A", `<p>${pl.desc}</p>`, `<button class="mcd-open">Dig deeper \u2192</button>`);
-            card.querySelector(".mcd-open").onclick = () => { if (openFrameHook && /^https?:$/.test(location.protocol)) openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); };
+            card.querySelector(".mcd-open").onclick = deep(pl, () => { if (openFrameHook && /^https?:$/.test(location.protocol)) openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); });
             return;
           }
           const pr = projectOf(pl.name);
@@ -40207,7 +40225,7 @@ void main() {
           }
           showCard(pl, pl.br ? MAP_STREET[pl.street || pl.br] : pl.line.split(" \xB7 ")[0], `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`, pl.wip ? `<span class="mcd-wip mono">WORK IN PROGRESS</span>` : pl.small && !pg ? "" : `<button class="mcd-open">${ctaFor(pl.name)}</button>`);
           if (pl.wip || (pl.small && !pg)) return;
-          card.querySelector(".mcd-open").onclick = () => (pg && openFrameHook ? openFrameHook(`/work/${pg}/?embed=1`, pl.name) : tagOf(pl)?.click());
+          card.querySelector(".mcd-open").onclick = deep(pl, () => (pg && openFrameHook ? openFrameHook(`/work/${pg}/?embed=1`, pl.name) : tagOf(pl)?.click()));
         };
         // r118: arriving somewhere, the camera swings slowly round onto the building's front, lower
         // and in three-quarters, with the van parked in the foreground. No jolt: every value runs on
@@ -40294,7 +40312,8 @@ void main() {
           if (u < 1) return;
           if (!g.drift) cine = null; else c.settled = true;
         };
-        const cineStop = () => { cine = null; };
+        const cineStop = () => { cine = null; tmBack = null; };
+        let tmBack = null; // beta 2.0: the view before Two Minutes' scene, given back when it ends
         const baam = () => {
           baamEl.classList.remove("hidden");
           baamEl.classList.remove("go"); void baamEl.offsetWidth; baamEl.classList.add("go");
@@ -40489,6 +40508,8 @@ void main() {
           box, mark, arrive, find, hideCard, baam, skip, paintRides, cineOut, cineStop, welcome, dragging: () => ptrs.size > 0,
           update(dt, now) {
             mapStep();
+            // beta 2.0: Two Minutes' scene over (or never started): the camera eases back to the view the player had, on the car
+            if (tmBack && coffee.phase === "idle" && (!cine || cine.settled)) { const b = tmBack; tmBack = null; mapView.focus = null; mapView.follow = true; cineTo({ yaw: b.yaw, pitch: b.pitch, dist: b.dist, lookY: 0 }, 2.4); }
             cineStep(dt);
             guideStep(dt); // r139h
             nearbyTick(now); // r164
