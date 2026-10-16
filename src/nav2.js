@@ -1367,15 +1367,72 @@
     // far horn, a café murmur near Two Minutes. Mixed by the view (Street: the car up front; Bird's eye: the city). It starts
     // on the first touch or key (browsers ask for one), fades in, never loud; a speaker button mutes it (cz-sound); silent
     // with the tab hidden, under a case page or the boarding pass. Per frame it only sets a few parameter targets.
-    const SND = (() => {
-      const TIMBRE = {
-        // a base pitch in the range small speakers play (a phone has no bass), a waveform, a filter, how much sub
-        dacia1300: { f: 58, w: "sawtooth", lp: 1100, sub: 0.45 }, cop: { f: 62, w: "sawtooth", lp: 1200, sub: 0.45 },
-        groovy: { f: 50, w: "sawtooth", lp: 850, sub: 0.55 }, foodvan: { f: 44, w: "sawtooth", lp: 750, sub: 0.6 },
-        monopoly: { f: 66, w: "square", lp: 1400, sub: 0.35 }, f1: { f: 96, w: "sawtooth", lp: 3200, sub: 0.2 },
-        scooter: { f: 120, w: "square", lp: 2400, sub: 0.1 }, sub: { f: 40, w: "triangle", lp: 420, sub: 0.7, bubble: 1 },
-        plane: { f: 74, w: "triangle", lp: 1700, sub: 0.25, jet: 1 }
+    // beta 2.9 (Daniel: "the engine sounds very weird: much more realistic, for every vehicle, and much quieter"): a
+    // combustion model, pre-rendered: for each ride, at a few rpm steps and two loads (on the throttle / off it), a short
+    // seamless loop is built in an OfflineAudioContext: a pulse train at the firing frequency (rpm / 60 x cylinders / 2;
+    // a two-stroke fires every turn), each firing a low thump and a short burst of noise, a little uneven from cylinder to
+    // cylinder and from cycle to cycle, then an exhaust: a pipe resonance (a comb), a muffler (a lowpass) and the body (a
+    // peak); on the throttle the intake breathes in time with it, off it the pulses thin out and crackle; a diesel knocks,
+    // an old carb idles rough. At run time the two nearest steps play, pitched to the exact rpm and crossfaded, the two
+    // loads crossfaded too. The submarine is an electric whine and a propeller's wash; the plane a turboprop and a jet's rush.
+    const ENGINES = {
+      dacia1300: { kind: "ice", cyl: 4, idle: 820, max: 5600, gears: [0, 95, 190, 290, 400], thump: 1.0, noise: 0.55, pipe: 3.1, fb: 0.55, muf: 1500, body: 115, rough: 0.09, carb: 1, level: 1 },
+      cop: { kind: "ice", cyl: 4, idle: 850, max: 5800, gears: [0, 100, 200, 300, 410], thump: 1.0, noise: 0.62, pipe: 3.0, fb: 0.55, muf: 1700, body: 120, rough: 0.07, carb: 1, level: 1.2 },
+      groovy: { kind: "ice", cyl: 4, idle: 750, max: 4200, diesel: 1, gears: [0, 80, 160, 250, 360], thump: 1.1, noise: 0.5, pipe: 3.8, fb: 0.5, muf: 1100, body: 95, rough: 0.06, level: 1 },
+      foodvan: { kind: "ice", cyl: 6, idle: 620, max: 3200, diesel: 1, gears: [0, 70, 140, 220, 320], thump: 1.25, noise: 0.45, pipe: 4.6, fb: 0.5, muf: 900, body: 80, rough: 0.05, level: 1.05 },
+      monopoly: { kind: "ice", cyl: 6, idle: 600, max: 4600, gears: [0, 110, 220, 340], thump: 0.9, noise: 0.35, pipe: 3.4, fb: 0.62, muf: 1200, body: 105, rough: 0.025, level: 0.9 },
+      f1: { kind: "ice", cyl: 10, idle: 4000, max: 18000, gears: [0, 60, 110, 160, 210, 260, 320, 400], thump: 0.7, noise: 0.9, pipe: 1.3, fb: 0.45, muf: 5200, body: 300, rough: 0.02, level: 0.85 },
+      scooter: { kind: "ice", cyl: 1, two: 1, idle: 1900, max: 9000, gears: [0], thump: 0.6, noise: 1.0, pipe: 1.9, fb: 0.6, muf: 3200, body: 260, rough: 0.05, level: 0.75 },
+      sub: { kind: "electric", level: 0.5 },
+      plane: { kind: "turbo", level: 0.9 }
+    };
+    async function renderEngine(pr, sr) {
+      const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!OAC) return null;
+      const steps = []; for (let i = 0; i < 6; i++) steps.push(pr.idle * Math.pow(pr.max / pr.idle, i / 5));
+      const fire = (rpm) => (rpm / 60) * (pr.two ? 1 : pr.cyl / 2);
+      const one = async (rpm, load, isIdle) => {
+        const fF = fire(rpm), T0 = 1 / fF, N = Math.max(8, Math.round(0.7 * fF)), L = Math.round(N * T0 * sr), pre = L, len = pre + L;
+        const raw = new Float32Array(len), pat = [];
+        let seed = Math.round(rpm * 7 + load * 13 + 1); const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+        for (let k = 0; k < N; k++) pat.push({ j: (rnd() - 0.5) * 2 * pr.rough * (isIdle && pr.carb ? 2.2 : 1), a: 1 + (((k % (pr.two ? 1 : pr.cyl)) * 0.37) % 0.3 - 0.15) * (pr.rough * 4) + (rnd() - 0.5) * pr.rough * 2, pop: !load && rnd() < 0.06 && rpm > pr.idle * 1.8 });
+        const fT = Math.min(2400, Math.max(45, fF * 1.6)), tauT = Math.min(0.03, 2.2 / fF / 3), tauN = Math.min(pr.diesel ? 0.0009 : pr.two ? 0.0022 : 0.0016, 0.4 / fF); // a fast engine's bursts stay shorter than its period (a tone, a scream)
+        const amp = load ? 1 : 0.38;
+        for (let rep2 = 0; rep2 < 2; rep2++) for (let k = 0; k < N; k++) {
+          const p = pat[k], t0 = Math.round((rep2 * N + k + p.j) * T0 * sr); if (t0 < 0 || t0 >= len) continue;
+          const A = amp * p.a, n1 = Math.min(len - t0, Math.round(sr * Math.max(tauT * 5, 0.02)));
+          for (let i = 0; i < n1; i++) {
+            const t = i / sr;
+            let v = pr.thump * A * Math.sin(2 * Math.PI * fT * t) * Math.exp(-t / tauT);
+            v += pr.noise * A * (rnd() * 2 - 1) * Math.exp(-t / tauN);
+            if (pr.diesel) v += 0.5 * A * (rnd() * 2 - 1) * Math.exp(-t / 0.00035) * (isIdle ? 1.6 : 1); // the knock
+            if (p.pop) v += 1.4 * (rnd() * 2 - 1) * Math.exp(-t / 0.0012); // overrun crackle
+            raw[t0 + i] += v;
+          }
+        }
+        // the intake, on the throttle: noise breathing at the firing rate
+        if (load) for (let i = 0; i < len; i++) { const ph = (i / sr) * fF; raw[i] += 0.12 * (rnd() * 2 - 1) * (0.5 + 0.5 * Math.sin(2 * Math.PI * ph)) * Math.min(1, rpm / pr.max + 0.2); }
+        // mechanical clatter at idle (valves, an old engine's ticking)
+        if (isIdle && (pr.carb || pr.diesel)) for (let k = 0; k < N * 2; k++) { const t0 = Math.round((k + 0.5) * T0 * 0.5 * sr); for (let r2 = 0; r2 < 2; r2++) { const b = t0 + r2 * L; for (let i = 0; i < 40 && b + i < len; i++) raw[b + i] += 0.08 * (rnd() * 2 - 1) * Math.exp(-i / 8); } }
+        // the pipe: a comb (done here: a Web Audio feedback loop can't be shorter than a render quantum)
+        { const Dd = Math.max(1, Math.round((pr.pipe / 1000) * sr)); for (let i = Dd; i < len; i++) raw[i] += pr.fb * raw[i - Dd]; }
+        const oc = new OAC(1, len, sr), b = oc.createBuffer(1, len, sr); b.copyToChannel(raw, 0);
+        const src = oc.createBufferSource(); src.buffer = b;
+        const sum = oc.createGain(); src.connect(sum);
+        const muf = oc.createBiquadFilter(); muf.type = "lowpass"; muf.frequency.value = pr.muf * (load ? 1 : 0.75); muf.Q.value = 0.8;
+        const body = oc.createBiquadFilter(); body.type = "peaking"; body.frequency.value = pr.body; body.Q.value = 1.4; body.gain.value = 7;
+        const hp = oc.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 35;
+        sum.connect(muf); muf.connect(body); body.connect(hp); hp.connect(oc.destination);
+        src.start();
+        const out = await oc.startRendering(), d = out.getChannelData(0).slice(pre, pre + L);
+        let rms = 0; for (let i = 0; i < d.length; i++) rms += d[i] * d[i]; rms = Math.sqrt(rms / d.length) || 1;
+        const k2 = 0.18 / rms; for (let i = 0; i < d.length; i++) d[i] = Math.max(-1, Math.min(1, d[i] * k2));
+        return d;
       };
+      const on = [], off = [];
+      for (let i = 0; i < steps.length; i++) { on.push(await one(steps[i], 1, i === 0)); off.push(await one(steps[i], 0, i === 0)); }
+      return { steps, on, off, sr };
+    }
+    const SND = (() => {
       let on = true, ctx = null, master = null, carBus = null, cityBus = null, E2 = null, C = null, started = false, out = 1, cafe = 0;
       try { on = localStorage.getItem("cz-sound") !== "off"; } catch {}
       const btns = new Set();
@@ -1394,14 +1451,9 @@
         master = gain(0); master.connect(comp);
         carBus = gain(0.8); cityBus = gain(0.6); carBus.connect(master); cityBus.connect(master);
         const white = noiseBuf(2, false), brown = noiseBuf(4, true);
-        // the engine: two detuned oscillators and a sub, a lowpass that opens with the throttle, a little grit
-        E2 = { o1: ctx.createOscillator(), o2: ctx.createOscillator(), o3: ctx.createOscillator(), lp: filt("lowpass", 700, 2.2), g: gain(0), am: gain(1), lfo: ctx.createOscillator(), lfoG: gain(0), grit: gain(0), gbp: filt("bandpass", 1200, 1.2), rpm: 0.2 };
-        E2.o3.type = "sine"; E2.o2.detune.value = 9; E2.o3g = gain(0.45);
-        for (const o of [E2.o1, E2.o2]) { o.connect(E2.lp); o.start(); }
-        E2.o3.connect(E2.o3g); E2.o3g.connect(E2.lp); E2.o3.start();
-        E2.lp.connect(E2.am); E2.am.connect(E2.g); E2.g.connect(carBus);
-        E2.lfo.frequency.value = 7; E2.lfo.connect(E2.lfoG); E2.lfoG.connect(E2.am.gain); E2.lfo.start(); // the idle burble
-        const gn = loop(white); gn.connect(E2.gbp); E2.gbp.connect(E2.grit); E2.grit.connect(carBus);
+        // the engine (beta 2.9): its own bus; the voice is built per ride (see ENGINES)
+        E2 = { g: gain(0), rpm: 820, load: 0, gear: 1, shift: 0, id: null, v: null, cache: new Map(), white };
+        E2.g.connect(carBus);
         // the tyres: a narrow band of noise and a wailing tone
         const sq = { n: loop(white, 1.3), bp: filt("bandpass", 2300, 7), o: ctx.createOscillator(), og: gain(0.25), g: gain(0) };
         const sqn = gain(3.2); sq.n.connect(sq.bp); sq.bp.connect(sqn); sqn.connect(sq.g); sq.o.type = "triangle"; sq.o.frequency.value = 1750; sq.o.connect(sq.og); sq.og.connect(sq.g); sq.o.start(); sq.g.connect(carBus);
@@ -1432,6 +1484,63 @@
         else if (ctx) { ramp(master.gain, 0, 0.12); setTimeout(() => { if (!on) ctx.suspend(); }, 700); }
         sync();
       }
+      // the engine's voice for a ride: the pre-rendered loops (6 rpm steps x on/off), or live for the electric and the turbine
+      function voiceFor(id) {
+        const pr = ENGINES[id] || ENGINES.dacia1300;
+        if (E2.v) { const old = E2.v; ramp(old.out.gain, 0, 0.1); setTimeout(() => old.stop(), 400); }
+        E2.v = null; E2.id = id;
+        const out = gain(0); out.connect(E2.g);
+        if (pr.kind === "electric") { // the sub: a motor's whine and its harmonic, a propeller's wash, all through water
+          const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g1 = gain(0.5), g2 = gain(0.18), lp = filt("lowpass", 700, 0.7), wash = loop(E2.white, 0.6), wbp = filt("bandpass", 260, 0.8), wg = gain(0), am = gain(1), lfo = ctx.createOscillator(), lfoG = gain(0.5);
+          o1.type = "sine"; o2.type = "triangle"; o1.connect(g1); o2.connect(g2); g1.connect(lp); g2.connect(lp); wash.connect(wbp); wbp.connect(wg); wg.connect(am); lfo.connect(lfoG); lfoG.connect(am.gain); am.connect(lp); lp.connect(out); o1.start(); o2.start(); lfo.start();
+          E2.v = { pr, out, live: (rpmK, load) => { ramp(o1.frequency, 180 + rpmK * 520, 0.08); ramp(o2.frequency, (180 + rpmK * 520) * 2.01, 0.08); ramp(wg.gain, 0.5 + rpmK * 1.5, 0.1); ramp(lfo.frequency, 3 + rpmK * 14, 0.1); ramp(g1.gain, 0.12 + 0.25 * load, 0.1); }, stop: () => { for (const n of [o1, o2, wash, lfo]) try { n.stop(); } catch {} out.disconnect(); } };
+          return;
+        }
+        if (pr.kind === "turbo") { // the plane: a turbine's rush and whine, a propeller's buzz
+          const rush = loop(E2.white, 1), bp = filt("bandpass", 900, 0.6), rg = gain(0), wh = ctx.createOscillator(), whg = gain(0), lpw = filt("lowpass", 5000, 0.7), prop = ctx.createOscillator(), pg = gain(0), plp = filt("lowpass", 420, 0.9);
+          wh.type = "sine"; prop.type = "sawtooth"; rush.connect(bp); bp.connect(rg); rg.connect(out); wh.connect(whg); whg.connect(lpw); lpw.connect(out); prop.connect(plp); plp.connect(pg); pg.connect(out); wh.start(); prop.start();
+          E2.v = { pr, out, live: (rpmK, load) => { ramp(bp.frequency, 600 + rpmK * 2200, 0.15); ramp(rg.gain, 0.25 + rpmK * 0.5, 0.15); ramp(wh.frequency, 2400 + rpmK * 2600, 0.2); ramp(whg.gain, 0.012 + 0.02 * rpmK, 0.2); ramp(prop.frequency, 55 + rpmK * 60, 0.15); ramp(pg.gain, 0.08 + 0.1 * load, 0.15); }, stop: () => { for (const n of [rush, wh, prop]) try { n.stop(); } catch {} out.disconnect(); } };
+          return;
+        }
+        const make = (d) => {
+          const srcs = [];
+          for (const set of [d.on, d.off]) set.forEach((arr) => { const b = ctx.createBuffer(1, arr.length, d.sr); b.copyToChannel(arr, 0); const s2 = ctx.createBufferSource(); s2.buffer = b; s2.loop = true; const g = gain(0); s2.connect(g); g.connect(out); s2.start(ctx.currentTime + Math.random() * 0.05); srcs.push({ s: s2, g }); });
+          E2.v = { pr, out, d, srcs, stop: () => { for (const q of srcs) try { q.s.stop(); } catch {} out.disconnect(); } };
+        };
+        const c = E2.cache.get(id);
+        if (c) make(c);
+        else renderEngine(pr, 32000).then((d) => { if (!d) return; E2.cache.set(id, d); if (E2.id === id) make(d); }).catch(() => {});
+      }
+      // per frame: the engine's rpm (a gearbox), its load, the voice's mix
+      function engineTick(thr, sp, red) {
+        const id = H.vehicle(); if (id !== E2.id) voiceFor(id);
+        const v = E2.v; if (!v) return;
+        const pr = v.pr, gears = pr.gears || [0];
+        let g = 1; for (let i = 1; i < gears.length; i++) if (sp >= gears[i] * (VMAX_F / 460)) g = i + 1;
+        if (g > E2.gear) E2.shift = 0.16; E2.gear = g;
+        E2.shift = Math.max(0, E2.shift - 1 / 30);
+        let rpm;
+        if (pr.kind !== "ice") rpm = pr.idle || 0;
+        else if (sp < 6) rpm = pr.idle * (1 + thr * 1.6); // stopped: a blip when you press
+        else { const lo = gears[g - 1] * (VMAX_F / 460), hi = (gears[g] || (gears[g - 1] + 160)) * (VMAX_F / 460), k = clamp((sp - lo) / Math.max(1, hi - lo), 0, 1); rpm = pr.idle * 1.3 + (pr.max - pr.idle * 1.3) * (0.28 + 0.66 * k); }
+        E2.rpm += (rpm - E2.rpm) * (E2.shift > 0 ? 0.5 : 0.22);
+        const load = E2.shift > 0 ? 0 : thr > 0.05 ? 1 : 0;
+        E2.load += (load - E2.load) * 0.3;
+        // quieter than before (Daniel): Street about -10 dB, more in Bird's eye; a little fuller on the throttle
+        ramp(E2.g.gain, pr.level * (0.2 + 0.11 * E2.load + 0.06 * Math.min(1, sp / VMAX_F)), 0.08);
+        if (v.live) { const rk = Math.min(1, sp / VMAX_F); v.live(rk, E2.load); ramp(v.out.gain, 1, 0.1); return; }
+        if (!v.srcs) return;
+        ramp(v.out.gain, 1, 0.2);
+        const st = v.d.steps, r = clamp(E2.rpm, st[0], st[st.length - 1]);
+        let i = 0; while (i < st.length - 2 && r > st[i + 1]) i++;
+        const w = Math.log(r / st[i]) / Math.log(st[i + 1] / st[i]), n = st.length;
+        for (let k = 0; k < n; k++) {
+          const wk = k === i ? Math.cos(w * Math.PI / 2) : k === i + 1 ? Math.sin(w * Math.PI / 2) : 0;
+          const on = v.srcs[k], off = v.srcs[n + k], rate = r / st[k];
+          if (wk > 0) { on.s.playbackRate.setTargetAtTime(rate, T(), 0.03); off.s.playbackRate.setTargetAtTime(rate, T(), 0.03); }
+          ramp(on.g.gain, wk * Math.sqrt(E2.load), 0.05); ramp(off.g.gain, wk * Math.sqrt(1 - E2.load) * 0.8, 0.05);
+        }
+      }
       // one-shots
       function thud(s) {
         if (!started || !on) return; const t = T(), o = ctx.createOscillator(), g = gain(0); o.type = "sine";
@@ -1442,7 +1551,7 @@
       function whoosh(lvl) {
         if (!started || !on) return; const t = T(), n = ctx.createBufferSource(); n.buffer = ctx._wb || (ctx._wb = noiseBuf(1.4, false));
         const b = filt("bandpass", 400, 1.4), g = gain(0); b.frequency.setValueAtTime(380, t); b.frequency.exponentialRampToValueAtTime(lvl > 1 ? 3600 : 2600, t + 0.55);
-        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(lvl > 1 ? 0.5 : 0.36, t + 0.06); g.gain.exponentialRampToValueAtTime(0.001, t + (lvl > 1 ? 1.2 : 0.8));
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(lvl > 1 ? 0.32 : 0.24, t + 0.06); g.gain.exponentialRampToValueAtTime(0.001, t + (lvl > 1 ? 1.2 : 0.8));
         n.connect(b); b.connect(g); g.connect(carBus); n.start(t); n.stop(t + 1.3);
       }
       function chirp() {
@@ -1456,7 +1565,7 @@
         for (const k of [1, 1.26]) { const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = f * k; o.connect(lp); o.start(t); o.stop(t + 0.9); }
         g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.035, t + 0.04); g.gain.setValueAtTime(0.035, t + (Math.random() < 0.5 ? 0.18 : 0.5)); g.gain.exponentialRampToValueAtTime(0.0005, t + 0.8);
       }
-      let fN = 0, prevBoost = null, gearT = 0;
+      let fN = 0, prevBoost = null, gearT = 0; let soloEng = false;
       // per frame (every other): the targets
       function update(dt) {
         if (!started || !ctx) return;
@@ -1465,24 +1574,16 @@
         out += ((hold ? 0 : 1) - out) * 0.2;
         ramp(master.gain, 0.42 * out, 0.15);
         if (out < 0.02 && hold) return;
-        const red = reduced(), k = D.camK || 0, tm = TIMBRE[H.vehicle()] || TIMBRE.dacia1300;
+        const red = reduced(), k = D.camK || 0;
         // the mix by view
-        ramp(carBus.gain, 0.42 + 0.58 * k, 0.25); ramp(cityBus.gain, 0.7 - 0.38 * k, 0.25);
-        // the engine: rpm from a little four-speed box, louder with the throttle
-        const sp = Math.abs(P.u), vm = VMAX_F * 1.3, x = Math.min(1, sp / vm), gear = Math.min(3, Math.floor(x * 4)), inGear = x * 4 - gear;
+        ramp(carBus.gain, 0.3 + 0.7 * k, 0.25); ramp(cityBus.gain, soloEng ? 0 : 0.7 - 0.3 * k, 0.25); // Bird's eye: the car further back
+        // the engine (beta 2.9: the combustion model)
+        const sp = Math.abs(P.u), x = Math.min(1, sp / VMAX_F);
         const thr = D.auto ? 0.7 : Math.max(0, (D.keys.u ? 1 : 0) + (D.stick ? Math.max(0, D.stick.y) : 0));
-        const rpmT = sp < 6 ? 0.12 + thr * 0.25 : 0.25 + inGear * 0.68 + (D.boost ? 0.12 : 0);
-        E2.rpm += (rpmT - E2.rpm) * 0.35;
-        const f = tm.f * (1 + E2.rpm * 2.4);
-        if (tm.w !== E2.o1.type) { E2.o1.type = tm.w; E2.o2.type = tm.w; ramp(E2.o3g.gain, tm.sub, 0.1); }
-        ramp(E2.o1.frequency, f, 0.03); ramp(E2.o2.frequency, f * 1.005, 0.03); ramp(E2.o3.frequency, f * 0.5, 0.03);
-        ramp(E2.lp.frequency, tm.lp * (0.55 + 0.6 * thr + 0.4 * E2.rpm) * (tm.bubble ? 0.6 : 1), 0.05);
-        ramp(E2.g.gain, 0.09 + 0.1 * thr + 0.08 * x, 0.08);
-        ramp(E2.lfoG.gain, sp < 8 ? 0.35 : tm.bubble ? 0.25 : 0.04, 0.2); ramp(E2.lfo.frequency, sp < 8 ? 7.5 : tm.bubble ? 4 : 18 + E2.rpm * 20, 0.2);
-        ramp(E2.grit.gain, (tm.jet ? 0.12 : 0.025) * (0.3 + thr + x), 0.08); ramp(E2.gbp.frequency, tm.jet ? 2400 + x * 2000 : 900 + E2.rpm * 900, 0.08);
+        engineTick(Math.min(1, thr), sp, red);
         // the tyres
         const slip = D.drift ? 1 : Math.min(1, Math.max(0, (Math.abs(P.w) - 25) / 90)) * (sp > 40 ? 1 : 0);
-        ramp(E2.sq.g.gain, slip * 0.16, 0.05); ramp(E2.sq.o.frequency, 1650 + Math.sin(performance.now() / 90) * 60 + sp * 0.4, 0.05);
+        ramp(E2.sq.g.gain, slip * 0.1, 0.05); ramp(E2.sq.o.frequency, 1650 + Math.sin(performance.now() / 90) * 60 + sp * 0.4, 0.05);
         if (D.boost && D.boost !== prevBoost) whoosh(D.boost.lvl); prevBoost = D.boost;
         // the siren: the cooldown's (two tones; a little higher coming up behind, lower as it drops back)
         if (COP.on) { const t2 = COP.on.t, base = (Math.floor(performance.now() / 480) % 2 ? 960 : 720) * (t2 < 1.2 ? 1.04 : t2 > 5 ? 0.95 : 1); ramp(E2.si.o.frequency, base, 0.02); ramp(E2.si.g.gain, t2 > 5 ? Math.max(0, 0.05 * (6.4 - t2) / 1.4) : 0.05, 0.1); } else ramp(E2.si.g.gain, 0, 0.2);
@@ -1499,6 +1600,8 @@
       return {
         start, toggle, update, thud, bind(b) { btns.add(b); b.addEventListener("click", (e) => { e.stopPropagation(); toggle(); }); sync(); },
         get on() { return on; }, get running() { return started && on && !!ctx && ctx.state === "running"; }, ctx: () => ctx,
+        info: () => E2 && { id: E2.id, voice: !!E2.v, srcs: E2.v?.srcs?.length || 0, rpm: Math.round(E2.rpm), load: +E2.load.toFixed(2), gear: E2.gear, gain: +E2.g.gain.value.toFixed(3) },
+        solo(on2) { soloEng = !!on2; }, // tests: the engine alone
         stream() { if (!ctx) return null; if (!ctx._dest) { ctx._dest = ctx.createMediaStreamDestination(); ctx._comp.connect(ctx._dest); } return ctx._dest.stream; } // tests: what it sounds like
       };
     })();
