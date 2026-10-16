@@ -25850,6 +25850,30 @@ void main() {
     g.userData.plate = plateG;
     return g;
   }
+  // beta 3.01 (Daniel: "Str. Olari: its text is partly covered"; the enamel sign's post ran through the middle of its plate):
+  // a Bucharest street plate: deep blue enamel, a white rim, STRADA small above the name, on a post beside it (the plate
+  // hangs off the post's side on two brackets, so nothing crosses the letters), readable both ways
+  function bucharestStreetSign(name, kind = "STRADA") {
+    const g = new Group();
+    const postM = new MeshStandardMaterial({ color: "#2b2d33", roughness: 0.6, metalness: 0.3 });
+    const post = new Mesh(new CylinderGeometry(1.5, 1.8, 62, 10), postM); post.position.y = 31; post.castShadow = true;
+    const cap = new Mesh(new SphereGeometry(2.2, 12, 8), postM); cap.position.y = 62.5;
+    const tex = canvasTexture(640, 220, (c) => {
+      c.fillStyle = "#1c4c9c"; c.beginPath(); c.roundRect(0, 0, 640, 220, 26); c.fill();
+      c.strokeStyle = "#ffffff"; c.lineWidth = 9; c.beginPath(); c.roundRect(16, 16, 608, 188, 16); c.stroke();
+      c.fillStyle = "#ffffff"; c.textAlign = "center";
+      c.font = "700 34px CromaticSans, sans-serif"; c.fillText(kind.split("").join(" "), 320, 76);
+      c.font = "800 92px CromaticSans, sans-serif"; c.fillText(name.toUpperCase(), 320, 170, 560);
+    });
+    const plate = new Mesh(new BoxGeometry(48, 16.5, 1.4), new MeshStandardMaterial({ color: "#1c4c9c", roughness: 0.35, metalness: 0.1 }));
+    const fm = new MeshBasicMaterial({ map: tex });
+    const f1 = new Mesh(new PlaneGeometry(48, 16.5), fm); f1.position.z = 0.75;
+    const f2 = new Mesh(new PlaneGeometry(48, 16.5), fm); f2.position.z = -0.75; f2.rotation.y = Math.PI;
+    const pg = new Group(); pg.add(plate, f1, f2); pg.position.set(26.5, 50, 0); // beside the post
+    for (const y of [56, 44]) { const br = new Mesh(new BoxGeometry(3.5, 1.2, 1.2), postM); br.position.set(2.4, y, 0); g.add(br); }
+    g.add(post, cap, pg);
+    return g;
+  }
   function buildCoffeeEntrance(parent) {
     const g = new Group();
     const tm = new Group();
@@ -30050,7 +30074,7 @@ void main() {
     // Coffee Street, opposite Patiline; where it stood, a Str. Olari street sign at the corner of the boulevard
     g.rotation.y = Math.PI / 2;
     g.position.set(1005, 0, 6185);
-    { const sg = enamelStreetSign("Str. Olari"); sg.position.set(1112, 0, 6250); sg.rotation.y = Math.PI / 2; parent.add(sg); }
+    { const sg = bucharestStreetSign("Olari"); sg.position.set(1114, 0, 6236); sg.rotation.y = Math.PI / 2; parent.add(sg); } // beta 3.01: a proper street plate
     g.traverse((o) => {
       if (o.isMesh) {
         o.castShadow = true;
