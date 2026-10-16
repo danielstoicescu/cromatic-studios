@@ -1,5 +1,5 @@
 diff --git a/build/build.mjs b/build/build.mjs
-index 1c42cfa..b1554b5 100644
+index 1c42cfa..0a684e8 100644
 --- a/build/build.mjs
 +++ b/build/build.mjs
 @@ -28,14 +28,19 @@ const SITE_URL = (process.env.SITE_URL || "https://cromaticstudios.com").replace
@@ -56,129 +56,19 @@ index 1c42cfa..b1554b5 100644
  const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
  // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
 -const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 1.6";
-+const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 2.9"; // the nav2 branch: beta 2.9 (main/live is beta 1.6)
++const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 2.91"; // the nav2 branch: beta 2.91 (main/live is beta 1.6)
  const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
  const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
  const GS = {};
 diff --git a/src/app.js b/src/app.js
-index a1b1cac..b091041 100644
+index a1b1cac..381efc9 100644
 --- a/src/app.js
 +++ b/src/app.js
-@@ -24084,33 +24084,6 @@ void main() {
-   }
-   // r119: the map drives on a real network: every road both ways, junctions joined, the shortest
-   // path to wherever you are going (no more going back to the fork)
--  // r182 (Daniel: "the roads aren't connected very well to the roundabouts, so getting out of them is more complicated"):
--  // every arm meets the ring through two links, one curving into the ring each way round. A link leaves the arm's centre
--  // line 140 from the fountain, heading in, and joins the ring's 70 centre line tangentially, 27° round from the arm
--  // (a cubic, tangent at both ends). Drawn as road (buildGoldenRoute) they fill the square notches between an arm and the ring
--  // with flared curves, the arm widening as it meets it; in navNet they are roads, so the map's drives (and nav2's graph
--  // and road mask, built from navNet) take the curves in and out
--  var RING_LINKS = null;
--  function ringLinks() {
--    if (RING_LINKS) return RING_LINKS;
--    const C = FORK_POS, R = 70, D0 = 140, A = 27 * Math.PI / 180;
--    RING_LINKS = [];
--    for (const [ux, uz, arm] of [[0, -1, ""], [-1, 0, "A"], [1, 0, "B"], [0, 1, "C"]]) { // arm: the street it opens onto ("" the start road)
--      const th = Math.atan2(uz, ux);
--      for (const s of [-1, 1]) {
--        const t3 = th + s * A, p0 = [C.x + ux * D0, C.y + uz * D0], p3 = [C.x + Math.cos(t3) * R, C.y + Math.sin(t3) * R];
--        const T3 = [-Math.sin(t3) * s, Math.cos(t3) * s], k = Math.hypot(p3[0] - p0[0], p3[1] - p0[1]) * 0.5;
--        const p1 = [p0[0] - ux * k, p0[1] - uz * k], p2 = [p3[0] - T3[0] * k * 0.8, p3[1] - T3[1] * k * 0.8];
--        const pts = [];
--        for (let i = 0; i <= 14; i++) {
--          const t = i / 14, a = (1 - t) ** 3, b = 3 * (1 - t) ** 2 * t, c = 3 * (1 - t) * t * t, d = t ** 3;
--          pts.push(i === 0 ? p0 : i === 14 ? p3 : [a * p0[0] + b * p1[0] + c * p2[0] + d * p3[0], a * p0[1] + b * p1[1] + c * p2[1] + d * p3[1]]);
--        }
--        RING_LINKS.push({ pts, u: [ux, uz], p0, arm });
--      }
--    }
--    return RING_LINKS;
--  }
-   var NAV = null;
-   function navNet() {
-     if (NAV) return NAV;
-@@ -24129,16 +24102,6 @@ void main() {
-       roundedPolyline(LANE_PTS, 120).map(([x, z]) => [x, z]),
-       rp([[1170, 6100], [1170, 6180], ...ROUTE_MERGE.slice(1)]).filter(([, z]) => z < RAMP_BASE - 60)
-     ];
--    // r182: the ring's links; each one's arm end is spliced into its arm (the two arm points either side of it, on the
--    // arm's straight centre line, are joined to it), its ring end is one of the arcs' points (27° = three 9° steps)
--    for (const L of ringLinks()) {
--      const [ux, uz] = L.u, along = (q) => (q[0] - C[0]) * ux + (q[1] - C[1]) * uz, off = (q) => Math.abs((q[0] - C[0]) * uz - (q[1] - C[1]) * ux);
--      let qa = null, qb = null;
--      for (const sg of segs) for (const q of sg) { if (off(q) > 1) continue; const a = along(q); if (a < 140 && a > 98 && (!qa || a > along(qa))) qa = q; if (a > 140 && (!qb || a < along(qb))) qb = q; }
--      if (qa) segs.push([qa, L.p0]);
--      if (qb) segs.push([L.p0, qb]);
--      segs.push(L.pts);
--    }
-     const key = (x, z) => Math.round(x * 2) + "," + Math.round(z * 2);
-     const ids = new Map(), P = [], adj = [];
-     const node = (x, z) => { const k = key(x, z); if (!ids.has(k)) { ids.set(k, P.length); P.push([x, z]); adj.push([]); } return ids.get(k); };
-@@ -25522,16 +25485,6 @@ void main() {
-       lc.receiveShadow = lb.receiveShadow = true;
-       group.add(lc, lb);
-     }
--    // r182: the arms flare into the ring (see ringLinks): each link drawn as its arm's road (gold where the arm is gold,
--    // the streets not taken grey, as their ribbons are), under the ring, the casing following its outer curve; the same
--    // ribbons as every road here
--    for (const L of ringLinks()) {
--      const gold = !L.arm || all || (chosen && L.arm === branch), p3 = L.pts.map(([x, z]) => new Vector3(x, 0, z));
--      const w = gold || !chosen ? ROUTE_W : ROUTE_W * 0.8;
--      const body = new Mesh(ribbonGeometry(p3, w, gold ? 1.3 : 0.7), gold ? mats.route : mats.routeAlt);
--      body.receiveShadow = true; group.add(body);
--      if (gold) { const cas = new Mesh(ribbonGeometry(p3, w + 4.5, 0.8), mats.routeCasing); cas.receiveShadow = true; group.add(cas); } // (the grey streets have no casing)
--    }
-     // r101: on the map every street is open: all three are gold, no choosing
-     if (all) for (const b2 of BRANCHES) {
-       if (b2 === branch && chosen) continue;
-@@ -26976,7 +26929,7 @@ void main() {
-     // esplanade to the portico, gold stanchions, and a gate on the avenue's kerb with the court's name
-     {
-       const carpetM = new MeshStandardMaterial({ color: "#6e1420", roughness: 0.85 }), goldM = new MeshStandardMaterial({ color: "#c89b3c", roughness: 0.35, metalness: 0.6 });
--      const gx0 = -392, gx1 = -150, cw = 22; // r181: the gate and the carpet on the kerb, no longer on the avenue (gx0 was -408: 7 into the asphalt)
-+      const gx0 = -408, gx1 = -150, cw = 22;
-       const carpet = new Mesh(new BoxGeometry(gx1 - gx0, 1.2, cw), carpetM); carpet.position.set((gx0 + gx1) / 2, 1.4, 0); g.add(carpet);
-       // r139e: the stanchions, the gate's posts and its caps each merged into one mesh
-       const gold = [], posts = [];
-@@ -27332,31 +27285,26 @@ void main() {
-     const e = Math.max(0, Math.min(1, Math.min(bt - 0.06, 0.92 - bt) / 0.12));
-     return e * e * (3 - 2 * e) * Math.max(0, 1 - best / 40);
-   }
--  // r181 (Daniel, from beta 2.9): nothing stands on a road. The lane leaves Medical Avenue at a narrow angle, so its first
--  // houses and its trees stood on the avenue or on the lane itself (Sticker Republic's roll too, see below): a lane building (or tree) steps back
--  // along its own facing, 5 at a time, until its footprint (radius r) clears every drive road, the lane at its own width.
--  // Sticker Republic's and Printoteca's spots are set here, so their pins and labels move with them. (beta 2.9 does the
--  // same with awayFromRoads in nav2; here the roads are read once the route data exists, the lane at its drawn 40)
--  var LANE_ROAD_SEGS = null;
--  function awayFromRoads(sp, r) {
--    if (!LANE_ROAD_SEGS) {
--      init_data(); init_route();
--      LANE_ROAD_SEGS = [];
--      cityRoutes().forEach((pts, i) => { const hw = i === 3 ? 20 : 28; for (let k = 1; k < pts.length; k++) LANE_ROAD_SEGS.push([pts[k - 1], pts[k], hw]); });
--    }
--    const clear = (x, z) => LANE_ROAD_SEGS.every(([[ax, az], [bx, bz], hw]) => { const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, f = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)); return Math.hypot(ax + dx * f - x, az + dz * f - z) >= hw + r + 3; });
--    for (let k = 0; k <= 16; k++) { const x = sp.x - sp.fx * k * 5, z = sp.z - sp.fz * k * 5; if (clear(x, z)) return { ...sp, x, z }; }
--    return null;
--  }
-   var LANE_SR = laneSpot(0.34, 1, 60), LANE_PR = laneSpot(0.62, -1, 60);
--  LANE_SR = awayFromRoads(LANE_SR, Math.hypot(58, 44) / 2 * 0.8) || LANE_SR; LANE_PR = awayFromRoads(LANE_PR, Math.hypot(60, 46) / 2 * 0.8) || LANE_PR; // r181
-+  try { LANE_SR = awayFromRoads(LANE_SR, Math.hypot(58, 44) / 2 * 0.8) || LANE_SR; LANE_PR = awayFromRoads(LANE_PR, Math.hypot(60, 46) / 2 * 0.8) || LANE_PR; } catch (e) {} // beta 2.9: clear of the roads (their pins follow)
-   var LANE_BRANDS = [
+@@ -27354,9 +27354,10 @@ void main() {
      { br: "C", name: "Sticker Republic", x: Math.round(LANE_SR.x), z: Math.round(LANE_SR.z), lane: true, line: "STICKERS \xB7 PRINT", c: "#FFD21F", t: "#111111", desc: "Stickers for everything and everyone: the little yellow house on the lane, plastered with its own work." },
      { br: "C", name: "Printoteca", x: Math.round(LANE_PR.x), z: Math.round(LANE_PR.z), lane: true, line: "PRINT ON DEMAND", c: "#ffffff", t: "#111111", desc: "Print on demand with no minimum orders: tees and hoodies printed one by one, for anyone who wants to sell their own." }
    ];
 -  function buildLaneHouse(parent, sp, o) {
-+  // beta 2.9 (Daniel: "some houses sit on the road"): a lane building is moved back from the kerb (along its own facing)
-+  // until its footprint clears every drive road (the lane leaves Medical Avenue at a narrow angle: its first houses and
-+  // Sticker Republic stood on the roads)
-+  function awayFromRoads(sp, r) {
-+    const routes = cityRoutes(), segs = [];
-+    for (const pts of routes) for (let k = 1; k < pts.length; k++) segs.push([pts[k - 1], pts[k]]);
-+    const dmin = (x, z) => { let m = Infinity; for (const [[ax, az], [bx, bz]] of segs) { const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, f = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)); m = Math.min(m, Math.hypot(ax + dx * f - x, az + dz * f - z)); } return m; };
-+    for (let k = 0; k <= 16; k++) { const x = sp.x - sp.fx * k * 5, z = sp.z - sp.fz * k * 5; if (dmin(x, z) >= ROUTE_W / 2 + r + 3) return { ...sp, x, z }; }
-+    return null;
-+  }
 +  function buildLaneHouse(parent, sp0, o) {
      const g = new Group();
      const W = o.w, D = o.d, H = o.h;
@@ -186,35 +76,7 @@ index a1b1cac..b091041 100644
      const wallM = new MeshStandardMaterial({ color: o.wall, roughness: 0.88 });
      const trimM = new MeshStandardMaterial({ color: o.trim, roughness: 0.6 });
      const roofM = new MeshStandardMaterial({ color: o.roof, roughness: 0.8 });
-@@ -27437,7 +27385,7 @@ void main() {
-       paint: (ctx) => stickers(ctx, 26, 7),
-       extra: (g, W, D, H) => {
-         // a sticker roll the size of a barrel by the door
--        const roll = new Mesh(new CylinderGeometry(4.4, 4.4, 7, 18), new MeshStandardMaterial({ color: "#F65342", roughness: 0.5 })); roll.rotation.z = Math.PI / 2; roll.position.set(-W * 0.36, 4.4, D / 2 + 7); g.add(roll); // r181: on the pavement, not on the lane (was D / 2 + 13)
-+        const roll = new Mesh(new CylinderGeometry(4.4, 4.4, 7, 18), new MeshStandardMaterial({ color: "#F65342", roughness: 0.5 })); roll.rotation.z = Math.PI / 2; roll.position.set(-W * 0.36, 4.4, D / 2 + 13); g.add(roll);
-         const core = new Mesh(new CylinderGeometry(1.6, 1.6, 7.2, 12), new MeshStandardMaterial({ color: "#d9c7a3" })); core.rotation.z = Math.PI / 2; core.position.copy(roll.position); g.add(core);
-       }
-     });
-@@ -27467,7 +27415,7 @@ void main() {
-     // the lane itself: small houses in pastel plaster and red tiles, trees, two lamps
-     const rnd = rng(1188), tints = ["#f1d8c4", "#e6dcc8", "#d9e3d4", "#f2e2b8", "#e8cfd4", "#d6dde6"];
-     for (const [t, sd] of [[0.14, 1], [0.2, -1], [0.5, 1], [0.38, -1], [0.66, 1]]) {
--      const W = 34 + rnd() * 14, D = 30 + rnd() * 8, H = 20 + rnd() * 14, sp = awayFromRoads(laneSpot(t, sd, 50), Math.hypot(W, D) / 2 * 0.8); // r181
-+      const W = 34 + rnd() * 14, D = 30 + rnd() * 8, H = 20 + rnd() * 14, sp = awayFromRoads(laneSpot(t, sd, 50), Math.hypot(W, D) / 2 * 0.8);
-       if (!sp) continue; // no room clear of the roads: no house
-       const g = new Group(), wall = new MeshStandardMaterial({ color: tints[Math.floor(rnd() * tints.length)], roughness: 0.9 });
-       const body = new Mesh(new BoxGeometry(W, H, D), wall); body.position.y = H / 2; g.add(body);
-@@ -27480,8 +27428,7 @@ void main() {
-     }
-     const trunkM = new MeshStandardMaterial({ color: "#7a4a22", roughness: 1 }), leafM = new MeshStandardMaterial({ color: "#4f9a4a", roughness: 0.9 });
-     for (let i = 0; i < 12; i++) {
--      const sp = awayFromRoads(laneSpot(0.06 + i * 0.075, i % 2 ? 1 : -1, 26), 6), tr = new Group(); // r181: the trunk and most of the crown off the roads
--      if (!sp) continue;
-+      const sp = laneSpot(0.06 + i * 0.075, i % 2 ? 1 : -1, 26), tr = new Group();
-       const trunk = new Mesh(new CylinderGeometry(1.4, 1.8, 12, 6), trunkM); trunk.position.y = 6; tr.add(trunk);
-       const crown = new Mesh(new IcosahedronGeometry(8 + (i % 3) * 1.5, 1), leafM); crown.position.y = 17; tr.add(crown);
-       finish(tr, parent, sp.x, sp.z);
-@@ -32337,8 +32284,46 @@ void main() {
+@@ -32337,8 +32338,46 @@ void main() {
      // the Classic Formula is a slim single-seater: a good deal smaller than the road cars
      // (the scale sits on an inner group: the spawn animation resets the outer one to 1)
      if (id === "f1") { const outer = new Group(); v.group.scale.setScalar(0.5); outer.add(v.group); v.group = outer; }
@@ -261,7 +123,7 @@ index a1b1cac..b091041 100644
    function buildVehicleBase(id) {
      switch (id) {
        case "f1":
-@@ -32875,6 +32860,9 @@ void main() {
+@@ -32875,6 +32914,9 @@ void main() {
      "Iulic\u0103": { bio: "Brings the energy into the room and the frame. Equally at home behind a camera and in front of a moodboard." },
      "Melissa": { bio: "Curious about everything, careful with everything. The fresh pair of eyes that spots what the rest of us got used to." }
    };
@@ -271,7 +133,7 @@ index a1b1cac..b091041 100644
    function crewPhoto(i, cls) {
      const face = CREW_FACES[CREW[i]];
      const ph = face ? { src: face, cap: CREW[i] } : CREW_PHOTOS[i % CREW_PHOTOS.length];
-@@ -33298,7 +33286,7 @@ void main() {
+@@ -33298,7 +33340,7 @@ void main() {
        const grid = el("div", "crew-faces");
        CREW.forEach((n, i) => {
          const col = CREW_COLORS[i % CREW_COLORS.length], src = CREW_FACES[n];
@@ -280,7 +142,7 @@ index a1b1cac..b091041 100644
          b.setAttribute("aria-label", `Meet ${n}`);
          b.style.setProperty("--d", `${i * 45}ms`);
          b.onclick = () => api.openHuman(i);
-@@ -33746,8 +33734,26 @@ void main() {
+@@ -33746,8 +33788,26 @@ void main() {
        vehMenu.appendChild(b);
      });
      // r160 (Daniel): the Ride buttons (map and drive bars) show the ride you have, its own picture (the pickers' previews)
@@ -309,7 +171,7 @@ index a1b1cac..b091041 100644
      const syncVeh = (id) => { Object.entries(vehRows).forEach(([k, b]) => b.classList.toggle("on", k === id)); rideCur = id; paintRideBtns(); };
      uiSyncVeh = syncVeh;
      syncVeh("dacia1300"); // r138j: the default ride
-@@ -34501,7 +34507,7 @@ void main() {
+@@ -34501,7 +34561,7 @@ void main() {
          <div class="hp-body">
            <span class="eyebrow mono">WILD BRAIN ${String(i + 1).padStart(2, "0")} / ${String(n).padStart(2, "0")}</span>
            <b class="hp-name" style="background:${col}">${name}</b>
@@ -318,7 +180,7 @@ index a1b1cac..b091041 100644
            <p>${info.bio || "Brilliant human. Good taste, real empathy, and a strong opinion about your customer's first three seconds. Part of the crew that glues coherent brands together."}</p>
            ${links ? `<div class="hp-links">${links}</div>` : ""}
            <div class="hp-nav"><button class="hp-prev" aria-label="Previous human">\u2039</button><button class="hp-next" aria-label="Next human">\u203A</button></div>
-@@ -35242,7 +35248,8 @@ void main() {
+@@ -35242,7 +35302,8 @@ void main() {
        },
        paintRide: () => paintRideBtns(), // r160: once a bar with a Ride button is built
        setVehiclePreviews(map) {
@@ -328,7 +190,7 @@ index a1b1cac..b091041 100644
          Object.entries(map).forEach(([id, url]) => {
            const t = vehRows[id]?.querySelector(".hr-thumb");
            if (t) t.style.backgroundImage = `url(${url})`;
-@@ -35564,7 +35571,7 @@ void main() {
+@@ -35564,7 +35625,7 @@ void main() {
        }
        var api = {
          toggleSite() { setSiteMode(!siteMode); },
@@ -337,7 +199,7 @@ index a1b1cac..b091041 100644
          isMap() { return mapMode; },
          boardNow() { clearTimeout(boardTimer); clearInterval(boardTick); if (mapMode && mapBoarding && jetFx.phase === "idle") { mapCloseBoarding(true); mapTakeoff(); } },
          sayHi() { if (!mapMode) setMapMode(true); setTimeout(() => { mapUI?.welcome(false); mapOpenBoarding(); }, 350); },
-@@ -35698,6 +35705,7 @@ void main() {
+@@ -35698,6 +35759,7 @@ void main() {
        // side, rendered in the current world, on the main canvas between two frames (like the world previews)
        var placeShotCache = {};
        function placeShot(pl) {
@@ -345,7 +207,7 @@ index a1b1cac..b091041 100644
          const key = pl.id + "|" + state.schemeIdx;
          if (placeShotCache[key]) return placeShotCache[key];
          const cw = renderer.domElement.width, ch = renderer.domElement.height;
-@@ -35822,7 +35830,8 @@ void main() {
+@@ -35822,7 +35884,8 @@ void main() {
        // before its first draw, the rooms' programs too (linkedRun), and the PNGs encode off the main thread
        // (toBlob). onEach(id, url) gets each thumbnail as it lands
        async function makeVehiclePreviews(onEach) {
@@ -355,7 +217,7 @@ index a1b1cac..b091041 100644
          const size = 132;
          await idle();
          const r = new WebGLRenderer({ antialias: true, alpha: true });
-@@ -36074,7 +36083,21 @@ void main() {
+@@ -36074,7 +36137,21 @@ void main() {
          st.setProperty("--cr-pill", crayonTex.pill); st.setProperty("--cr-card", crayonTex.card); st.setProperty("--cr-ring", crayonTex.ring); st.setProperty("--cr-dot", crayonTex.dot);
          return crayonTex;
        }
@@ -377,7 +239,7 @@ index a1b1cac..b091041 100644
          if (state.schemeIdx != null && state.schemeIdx !== idx && !onbWarm) czEv("world_change", { world: SCHEMES[idx]?.id }); // r141: not the warm-up
          state.schemeIdx = idx;
          const s = SCHEMES[idx];
-@@ -37195,17 +37218,18 @@ void main() {
+@@ -37195,17 +37272,18 @@ void main() {
              kelpU.value = t;
              for (const f of fishes) {
                const u = f.userData, sc = u.school;
@@ -399,7 +261,7 @@ index a1b1cac..b091041 100644
                j.scale.set(u.s * (1 + pulse * 0.18), u.s * (1 - pulse * 0.2), u.s * (1 + pulse * 0.18));
              }
              for (let i = 0; i < BN; i++) {
-@@ -37786,10 +37810,10 @@ void main() {
+@@ -37786,10 +37864,10 @@ void main() {
          if (!tilt) {
            const rt = new WebGLRenderTarget(w, h, { samples: 2, type: HalfFloatType });
            const mat = new ShaderMaterial({
@@ -412,7 +274,7 @@ index a1b1cac..b091041 100644
                ${isMobile() ? "#define TAPS 6\n#define LITE 1" : "#define TAPS 12"}
                void main(){
                  float dy = abs(vUv.y - focus);
-@@ -37840,7 +37864,7 @@ void main() {
+@@ -37840,7 +37918,7 @@ void main() {
                  vec2 gp = floor(vUv * res / 1.6);
                  float n = fract(sin(dot(gp + vec2(tf * 7.13, tf * 3.71), vec2(12.9898, 78.233))) * 43758.5453);
                  float n2 = fract(sin(dot(gp + vec2(tf * 1.97, tf * 5.29), vec2(39.346, 11.135))) * 24634.6345);
@@ -421,7 +283,7 @@ index a1b1cac..b091041 100644
                  gl_FragColor = vec4(c, 1.0);
                  #include <tonemapping_fragment>
                  #include <colorspace_fragment>
-@@ -37853,8 +37877,9 @@ void main() {
+@@ -37853,8 +37931,9 @@ void main() {
            tilt = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
          }
          if (tilt.rt.width !== w || tilt.rt.height !== h) { tilt.rt.setSize(w, h); tilt.mat.uniforms.res.value.set(w, h); }
@@ -432,7 +294,7 @@ index a1b1cac..b091041 100644
          tilt.mat.uniforms.t.value = (now * 0.001) % 100;
          tilt.mat.uniforms.zb.value = mapMode ? mapView.zoomBlur || 0 : 0;
          if (entryPull) { const u = (now - entryPull.t0) / 1000, e = 1 - Math.pow(1 - Math.min(1, Math.max(0, u)), 3); if (u >= 1) { entryPull = null; tilt.mat.uniforms.ep.value.set(0, 0); } else tilt.mat.uniforms.ep.value.set(-0.08 + 1.3 * e, 16 * renderer.getPixelRatio() * (1 - 0.5 * e)); } // r155
-@@ -38307,6 +38332,8 @@ void main() {
+@@ -38307,6 +38386,8 @@ void main() {
              if (now - (state.floorFix || 0) > 120) { state.floorFix = now; window.scrollTo({ top: clamp2(state.floorL / effectiveTotal(), 0, 1) * maxScroll(), behavior: "instant" }); }
            }
          }
@@ -441,7 +303,7 @@ index a1b1cac..b091041 100644
          if (mapMode) state.targetL = mapNav.targetL;
          else if (ONB_MODE && onbL != null) state.targetL = onbL; // r140: the page's scroll is the road
          const nearDacia = state.L > route.stopL.merge - 1500 && state.L < route.stopL.merge - 250;
-@@ -38357,7 +38384,8 @@ void main() {
+@@ -38357,7 +38438,8 @@ void main() {
              state.targetL = L2;
            }
          }
@@ -451,7 +313,7 @@ index a1b1cac..b091041 100644
          // r139e: a clamp (speed caps, police, the merge floor) or a jump moved L off the spring: its velocity follows
          if (state.L !== MO.Ls) MO.Lv = Math.abs(dL) > 3000 ? 0 : dL / Math.max(dt, 1e-3);
          const dLm = Math.abs(dL) > 3000 ? 0 : dL; // a jump is not motion (no lean, no pitch from it)
-@@ -38372,7 +38400,7 @@ void main() {
+@@ -38372,7 +38454,7 @@ void main() {
            const f = clamp2(state.speed / 69.75 + (siteMode || police.active ? 0 : lagAhead / 5000), 0, 1);
            window.__spd = { f, lag: Math.round(state.targetL - state.L) };
            const red = f >= 200 / 240 && state.vehicleId !== "cop";
@@ -460,7 +322,7 @@ index a1b1cac..b091041 100644
            redHold = red && !siteMode ? redHold + dt : 0;
            if (xpPending && xpPending.kind === "msg" && now - xpPending.t > 4000) xpCommit(true);
          }
-@@ -38386,6 +38414,7 @@ void main() {
+@@ -38386,6 +38468,7 @@ void main() {
          air = smooth(air, airT, dt, 0.9);
          if (air > 1e-3) carPos.y += AIR_H * air * air * (3 - 2 * air);
          route.tangentAt(state.L, carTan);
@@ -468,7 +330,7 @@ index a1b1cac..b091041 100644
          const flying = carPos.z > RAMP_LIP + 30 && carPos.y > 30;
          const isPlane = veh.kind === "plane";
          const hover = isPlane ? 34 + Math.sin(now * 3e-3) * 5 : veh.kind === "sub" ? 20 + Math.sin(now * 1.9e-3) * 4 : 0;
-@@ -38447,6 +38476,7 @@ void main() {
+@@ -38447,6 +38530,7 @@ void main() {
            let dA = Math.atan2(_tA.x, _tA.z) - Math.atan2(_tB.x, _tB.z);
            while (dA > Math.PI) dA -= Math.PI * 2; while (dA < -Math.PI) dA += Math.PI * 2;
            MO.kap = (planeRev > 0.5 ? -dA : dA) / 80;
@@ -476,7 +338,7 @@ index a1b1cac..b091041 100644
          }
          {
            // cars roll a little outwards; the plane leans INTO the turn, like an aircraft does
-@@ -38517,6 +38547,7 @@ void main() {
+@@ -38517,6 +38601,7 @@ void main() {
          const climb = (airT - air) * (veh.kind === "plane" ? 1 : 0);
          veh.group.rotation.set(-pitch + (flying ? -0.09 : 0) - clamp2(climb * 0.9, -0.35, 0.45) + MO.p, heading, bank + sway, "YXZ"); // r139e: + MO.p
          veh.group.position.y += MO.hy; // r139e: the suspension's heave
@@ -484,7 +346,7 @@ index a1b1cac..b091041 100644
          if (coffee.phase === "rush") {
            veh.group.position.x += (Math.random() - 0.5) * 3;
            veh.group.position.z += (Math.random() - 0.5) * 3;
-@@ -38730,6 +38761,7 @@ void main() {
+@@ -38730,6 +38815,7 @@ void main() {
            // through; now the first visible frame is solved again on the real car and the camera is put there at once
            if (camSnapNext && !mapFirstSolved && BOOT_MODE === "map" && !mapView.follow && !mapNav.moving && !mapNav.place) { mapFirstSolved = true; const v = mapOpeningView(); mapView.tgt.set(v.t[0], 0, v.t[1]); mapView.dist = v.dist; mapView.yaw = v.yaw; mapView.pitch = v.pitch; mapView.distGoal = null; mapView.yawGoal = mapView.pitchGoal = null; mapSettle = 0; }
            mapSettleTick(); mapUI.update(dt, now); camPos.copy(mapView.pos); camTarget.copy(mapView.tgt);
@@ -492,7 +354,7 @@ index a1b1cac..b091041 100644
          } // r142b: mapSettleTick
          // exponential damping, frame-rate independent; the look target is damped too, so
          // set-piece cameras (fork, coffee, Dacia, spiral) blend in instead of cutting
-@@ -38739,8 +38771,9 @@ void main() {
+@@ -38739,8 +38825,9 @@ void main() {
          // in the street POV the camera rides with you: damping tightens as the POV takes over
          const camSnap = camSnapNext; camSnapNext = false; // r157
          const handOn = mapMode && now - (mapView.direct || 0) < 150; // r166: a hand on the map: the camera is where the hand puts it
@@ -504,7 +366,7 @@ index a1b1cac..b091041 100644
          camera.position.lerp(camPos, kp);
          window.__lookSm.lerp(camTarget, kt);
          camera.lookAt(window.__lookSm);
-@@ -38755,7 +38788,7 @@ void main() {
+@@ -38755,7 +38842,7 @@ void main() {
          if (FOUNTAIN && !siteMode) FOUNTAIN.update(now * 0.001);
          farClouds.rotation.y += dt * 0.006;
          const prog = state.L / route.total;
@@ -513,7 +375,7 @@ index a1b1cac..b091041 100644
          const schemeId = SCHEMES[state.schemeIdx].id;
          if ((schemeId === "nightlife" || schemeId === "sincity") && state.weatherOn) wx = "rain";
          if (schemeId === "sketch") {
-@@ -38765,7 +38798,7 @@ void main() {
+@@ -38765,7 +38852,7 @@ void main() {
            wx = sketchRain.state === 1 ? "rain" : "sun";
          }
          {
@@ -522,7 +384,7 @@ index a1b1cac..b091041 100644
            ui.setRainBtn(schemeId !== "monument" && schemeId !== "underwater" && !siteMode);
            if (veh?.kind !== "plane" || siteMode) airT = 0;
            ui.setTakeoff(veh?.kind === "plane" && !siteMode, airT > 0.5);
-@@ -38839,6 +38872,7 @@ void main() {
+@@ -38839,6 +38926,7 @@ void main() {
          }
          rainAlpha = smooth(rainAlpha, wantRain ? 1 : 0, dt, 2.5);
          rain.visible = rainAlpha > 0.02;
@@ -530,7 +392,7 @@ index a1b1cac..b091041 100644
          if (rain.visible) {
            // r129: Night Mode keeps a light drizzle, not a downpour
            const rainN = SCHEMES[state.schemeIdx].id === "nightlife" ? 150 : RAIN_N;
-@@ -38871,9 +38905,10 @@ void main() {
+@@ -38871,9 +38959,10 @@ void main() {
          if (schemeId === "ghibli" || schemeId === "orchid") { fogNear = 1400; fogFar = 9000; }
          // the map looks from far above: fog starts past the ground, in every world (underwater keeps a little haze)
          if (mapMode) { const k = schemeId === "underwater" ? 0.75 : 1.15; fogNear = Math.max(fogNear, mapView.dist * k); fogFar = Math.max(fogFar, mapView.dist * (schemeId === "underwater" ? 2.2 : 3.2)); }
@@ -542,7 +404,7 @@ index a1b1cac..b091041 100644
            const behind = route.posAt(Math.max(0, state.L - 120), new Vector3());
            const tan = route.tangentAt(Math.max(0, state.L - 120), new Vector3());
            const side = new Vector3(-tan.z, 0, tan.x).multiplyScalar(30);
-@@ -39122,7 +39157,11 @@ void main() {
+@@ -39122,7 +39211,11 @@ void main() {
        // above. Pick a place and the van drives itself there along the real roads; when it arrives
        // the place opens. Chapters are quiet grey placards you can ignore; the crew is a button;
        // Olari 9 has a jet at the end of the runway where you board by filling the boarding pass.
@@ -555,7 +417,7 @@ index a1b1cac..b091041 100644
        try { history.scrollRestoration = "manual"; } catch {}
        var BOOT_MODE = /[?&]drive\b/.test(location.search) ? "drive" : /[?&]map\b/.test(location.search) ? "map" : "intro";
        // r139p (Daniel: "the intro must not play more than once on the site"): it plays once per visit (6 h); after that,
-@@ -39205,6 +39244,157 @@ void main() {
+@@ -39205,6 +39298,157 @@ void main() {
        var mapMaxD = () => innerWidth < 720 ? 7000 : 6200; // a phone in portrait needs a little more height to see as much
        var mapView = { tgt: new Vector3(1270, 0, 3170), pos: new Vector3(), dist: 8200, distGoal: null, yaw: 0.3, pitch: 0.98, vx: 0, vz: 0, follow: false, sx: 0, sy: 0 };
        var mapNav = { targetL: 0, legs: [], place: null, moving: false };
@@ -713,7 +575,7 @@ index a1b1cac..b091041 100644
        var jetFx = { phase: "idle", t: 0, baam: false };
        var boardTimer = 0, boardTick = 0;
        var MAP_STREET = { A: "COFFEE STREET", B: "FINTECH BOULEVARD", C: "MEDICAL AVENUE", D: "THE SHORTEST SHORTCUT" };
-@@ -39276,6 +39466,7 @@ void main() {
+@@ -39276,6 +39520,7 @@ void main() {
        // The route itself is the truth: the drive drops branchChosen whenever you are back before the fork
        function mapGo(pl) {
          if (!pl || jetFx.phase !== "idle") return;
@@ -721,7 +583,7 @@ index a1b1cac..b091041 100644
          if (pl.find) return mapUI.find(pl);
          mapCloseBoarding();
          // where to: a stop, a road point, or a building beside the road (park just short of it)
-@@ -39347,7 +39538,9 @@ void main() {
+@@ -39347,7 +39592,9 @@ void main() {
          crewPanel.classList.remove("hidden");
        }
        // ---- boarding the jet: the boarding pass, then wheels up ----
@@ -731,7 +593,7 @@ index a1b1cac..b091041 100644
          mapBoarding = true;
          ui.clearCard();
          currentCardStop = null;
-@@ -39441,6 +39634,8 @@ void main() {
+@@ -39441,6 +39688,8 @@ void main() {
        if (/[?&]boarding\b/.test(location.search)) { const t0b = performance.now(); const ob = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - t0b < 20000) return setTimeout(ob, 200); setTimeout(() => window.__openBoarding(), 300); }; setTimeout(ob, 1800); }
        function mapCloseBoarding(keepView = false) {
          if (!mapBoarding) return;
@@ -740,7 +602,7 @@ index a1b1cac..b091041 100644
          boardFxStop?.();
          mapBoarding = false;
          ui.card.classList.add("hidden");
-@@ -39466,11 +39661,10 @@ void main() {
+@@ -39466,11 +39715,10 @@ void main() {
          document.body.classList.add("flight-done");
          let end = document.querySelector(".flight-end");
          if (!end) {
@@ -753,7 +615,7 @@ index a1b1cac..b091041 100644
            end.querySelector(".fe-replay").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?r=" + Date.now().toString(36); };
            end.querySelector(".fe-map").onclick = () => {
              end.remove(); document.body.classList.remove("flight-done");
-@@ -39819,8 +40013,7 @@ void main() {
+@@ -39819,8 +40067,7 @@ void main() {
            <button class="map-world" title="Choose your world"><span class="mb-orb">${MB_ORB}</span><b>Multiverse</b></button>
            <button class="map-crew" title="The crew you travel with"><span class="mcw-faces">${faces}</span><b>Crew</b></button>
            <button class="map-home" title="Cromatic Studios House, Str. Olari 9"><span class="mh-ic">\u{1F3E0}</span><b>Our house</b></button>
@@ -763,7 +625,7 @@ index a1b1cac..b091041 100644
          // r137a (Daniel): the ride card wears the worlds card's design: same popover, header, tiles and tick
          const rides = el("div", "map-rides hidden", `<div class="wt-head"><span class="wt-titles"><span class="hm-title mono">YOUR RIDE · ${VEHICLES.length} TO PICK FROM</span><span class="wt-lead">How do you want to get around?</span></span><button class="wt-close" aria-label="Close">×</button></div><div class="mrs-list">${VEHICLES.map((v) => `<button class="mrs-v" data-v="${v.id}"><span class="mrs-th"></span><b>${v.label}</b><span class="wt-check" aria-hidden="true">✓</span></button>`).join("")}</div>`);
          const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="rot" class="mz-rot" aria-label="Turn the map" title="Turn the map"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.8 3.8v4.6h-4.6"/></svg></button><button data-z="van" aria-label="Find your ride" title="Find your ride">◎</button>`);
-@@ -39837,8 +40030,8 @@ void main() {
+@@ -39837,8 +40084,8 @@ void main() {
          ];
          const welcomeEl = el("div", "map-welcome hidden", `<button class="mw-x" aria-label="Close">\u00D7</button><b class="mw-t" role="heading" aria-level="2">Welcome to Cromatic City</b>
            <div class="mw-how">
@@ -774,7 +636,7 @@ index a1b1cac..b091041 100644
              <span><i>${MW_IC[2]}</i><b>See the work</b></span><em>\u2192</em>
              <span><i>${MW_IC[3]}</i><b>Say hi</b></span>
            </div>
-@@ -39848,7 +40041,7 @@ void main() {
+@@ -39848,7 +40095,7 @@ void main() {
              <button data-go="invest" style="--wc:#119BFE"><b>Fintech Boulevard</b><i>Investimental, Assetto, Bepco</i></button>
              <button data-go="tac" style="--wc:#F28BA8"><b>Medical Avenue</b><i>The Aesthetic Court, Zdrovit, Elithia</i></button>
              <button data-go="end" style="--wc:#FED012"><b>Olari 9 \u00B7 the studio</b><i>Come by, say hi</i></button>
@@ -783,7 +645,7 @@ index a1b1cac..b091041 100644
          // r128: the content scrolls inside .mw-in, so the X can sit half outside the card without being clipped
          { const mwIn = document.createElement("div"); mwIn.className = "mw-in"; for (const n of [...welcomeEl.childNodes]) if (!n.classList?.contains("mw-x")) mwIn.append(n); welcomeEl.append(mwIn); }
          // r139s (Daniel: "the onboarding window should not show more than once in a session"): once per visit
-@@ -39886,7 +40079,8 @@ void main() {
+@@ -39886,7 +40133,8 @@ void main() {
            const b = e.target.closest("button"); if (!b) return;
            welcome(false);
            if (b.classList.contains("mw-x")) { guideStart(); return; } // r139h: closed with ×: the first-time guide
@@ -793,7 +655,7 @@ index a1b1cac..b091041 100644
            if (b.dataset.go) mapGo(MAP_PLACES.find((p) => p.id === b.dataset.go));
          };
          // ---- r139h: a light first-time guide after the welcome card is closed with ×: "Drag the map", then the camera
-@@ -39926,6 +40120,7 @@ void main() {
+@@ -39926,6 +40174,7 @@ void main() {
            if (!guide.phase) return;
            if (guide.phase === "drag") czEv("onboarding_step", { step: "drag", action: "skipped" });
            else if (guide.phase === "start" && action) czEv("onboarding_step", { step: "start_here", action });
@@ -801,7 +663,7 @@ index a1b1cac..b091041 100644
            guide.phase = null; guide.goal = null; guide.down = null; clearTimeout(guide.timer);
            guide.els?.drag.classList.add("hidden"); guide.els?.start.classList.add("hidden");
            guide.hl?.classList.remove("mg-hl"); guide.hl = null;
-@@ -39966,6 +40161,13 @@ void main() {
+@@ -39966,6 +40215,13 @@ void main() {
            try { if (!force && localStorage.getItem("cz-map-guide")) return; localStorage.setItem("cz-map-guide", "1"); } catch {}
            guide.done = true;
            const g = guideEls();
@@ -815,7 +677,7 @@ index a1b1cac..b091041 100644
            guide.phase = "drag"; guide.t0 = guide.last = performance.now();
            { // r158: on the road ahead of the car (its own place on screen, kept inside the frame)
              const r = guideRoad("drag"); warpV(guideP.set(r.x, 0, r.z)).project(camera);
-@@ -39978,7 +40180,7 @@ void main() {
+@@ -39978,7 +40234,7 @@ void main() {
          }
          // per frame (from update): the critically damped camera ease, the "Start here" ring over the pin, and the exits
          const guideStep = (dt) => {
@@ -824,7 +686,7 @@ index a1b1cac..b091041 100644
            if (guideBusy()) return guideEnd(guide.phase === "start" && mapNav.place?.id === "tm" ? "done" : "skipped");
            if (guide.phase !== "start") return;
            const pl = guide.spot, g = guide.goal;
-@@ -40010,11 +40212,11 @@ void main() {
+@@ -40010,11 +40266,11 @@ void main() {
          };
          // any hand on the map: a drag ends step 1; anything but the highlighted pin ends step 2
          window.addEventListener("pointerdown", (e) => {
@@ -838,7 +700,7 @@ index a1b1cac..b091041 100644
            guideEnd("skipped");
          }, true);
          window.addEventListener("pointermove", (e) => {
-@@ -40051,12 +40253,12 @@ void main() {
+@@ -40051,12 +40307,12 @@ void main() {
          const speedEl = el("div", "speed-lines");
          box.append(speedEl, pinsEl, top, rides, zoom, dock, card, skip, baamEl, welcomeEl, hintEl);
          ui.root.appendChild(box);
@@ -852,7 +714,7 @@ index a1b1cac..b091041 100644
          top.querySelector(".map-world").onclick = (e) => {
            e.stopPropagation(); welcome(false); ui.themeBtn.click();
            if (ui.themeMenu?.classList.contains("open")) ui.popAnchor?.(ui.themeMenu, e.currentTarget);
-@@ -40066,7 +40268,7 @@ void main() {
+@@ -40066,7 +40322,7 @@ void main() {
            b.classList.toggle("on", b.dataset.v === state.vehicleId);
            const u = vehPreviews[b.dataset.v]; if (u) b.querySelector(".mrs-th").style.backgroundImage = `url(${u})`;
          });
@@ -861,7 +723,16 @@ index a1b1cac..b091041 100644
          top.querySelector(".map-ride").onclick = (e) => {
            e.stopPropagation(); welcome(false); paintRides(); rides.classList.toggle("hidden");
            if (!rides.classList.contains("hidden")) ui.popAnchor?.(rides, e.currentTarget);
-@@ -40152,7 +40354,7 @@ void main() {
+@@ -40079,7 +40335,7 @@ void main() {
+           setTimeout(() => rides.classList.add("hidden"), 220);
+         };
+         document.addEventListener("pointerdown", (e) => { if (!rides.classList.contains("hidden") && !e.target.closest(".map-rides, .map-ride")) rides.classList.add("hidden"); });
+-        skip.onclick = () => { kinetic?.finish?.(); mapEndIntro(); };
++        skip.onclick = () => { window.__czSkipWanted = true; kinetic?.finish?.(); mapEndIntro(); }; // beta 2.91: a skip pressed while the city still loads is kept (it used to be lost: the whole intro played)
+         const chips = dock.querySelector(".map-chips");
+         // r130o: the bar scrolls sideways with a normal vertical wheel or trackpad gesture too
+         // r148 (Daniel): smoothly (a goal the bar glides to), and only while it can still scroll that way (at either
+@@ -40152,7 +40408,7 @@ void main() {
          let nearKey = "", nearT = 0;
          const NEAR_R = 750, NEAR_MIN = 4;
          const nearbyTick = (now) => {
@@ -870,7 +741,7 @@ index a1b1cac..b091041 100644
            const byCar = mapNav.moving || mapView.follow || !!mapView.focus || !!cine; // driving, following, or parked in a shot: the car; panned away: what you look at
            const fx = byCar ? carPos.x : mapView.tgt.x, fz = byCar ? carPos.z : mapView.tgt.z;
            const list = pins.filter((p) => p.ch).map((p) => ({ p, d: Math.hypot(p.pl.wx - fx, p.pl.wz - fz) })).sort((a, b) => a.d - b.d);
-@@ -40250,9 +40452,27 @@ void main() {
+@@ -40250,9 +40506,27 @@ void main() {
            if (pl.stop) return mapShowChapter(pl.stop);
            showCard(pl, "A FORMER ADDRESS", `<p>${pl.desc}</p>`, "");
          };
@@ -899,7 +770,7 @@ index a1b1cac..b091041 100644
            if (visit(pl)) gainXP(5, pl.name, "Found on the map");
            mark();
            if (pl.board) { mapOpenBoarding(); return; }
-@@ -40260,7 +40480,7 @@ void main() {
+@@ -40260,7 +40534,7 @@ void main() {
            if (pl.past) {
              const pgP = pl.work && window.__casePage?.(pl.work);
              showCard(pl, "A BLAST FROM THE PAST", `<p>${pl.desc}</p>`, pgP ? `<button class="mcd-open">See the photos \u2192</button>` : "");
@@ -908,7 +779,7 @@ index a1b1cac..b091041 100644
              return;
            }
            if (pl.stop && pl.stop !== "services") { mapShowChapter(pl.stop); return; }
-@@ -40273,7 +40493,7 @@ void main() {
+@@ -40273,7 +40547,7 @@ void main() {
              // Two Minutes: three double espressos, the boxes come down from our old balcony, a fourth, and the rush
              coffee.done = false; coffee.phase = "sip1"; coffee.t = 0; coffee.served = 0;
              showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52A", `<p>${pl.desc}</p>`, `<button class="mcd-open">Dig deeper \u2192</button>`);
@@ -917,7 +788,7 @@ index a1b1cac..b091041 100644
              return;
            }
            const pr = projectOf(pl.name);
-@@ -40284,7 +40504,7 @@ void main() {
+@@ -40284,7 +40558,7 @@ void main() {
            }
            showCard(pl, pl.br ? MAP_STREET[pl.street || pl.br] : pl.line.split(" \xB7 ")[0], `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`, pl.wip ? `<span class="mcd-wip mono">WORK IN PROGRESS</span>` : pl.small && !pg ? "" : `<button class="mcd-open">${ctaFor(pl.name)}</button>`);
            if (pl.wip || (pl.small && !pg)) return;
@@ -926,13 +797,14 @@ index a1b1cac..b091041 100644
          };
          // r118: arriving somewhere, the camera swings slowly round onto the building's front, lower
          // and in three-quarters, with the van parked in the foreground. No jolt: every value runs on
-@@ -40370,9 +40590,21 @@ void main() {
+@@ -40370,9 +40644,21 @@ void main() {
            mapView.lookY = mapView.lookYGoal = f.lookY + (g.lookY - f.lookY) * e;
            if (g.fx != null && mapView.focus) { mapView.focus.x = f.fx + (g.fx - f.fx) * e; mapView.focus.z = f.fz + (g.fz - f.fz) * e; }
            if (u < 1) return;
 -          if (!g.drift) cine = null; else c.settled = true;
 +          if (!g.drift) { cine = null; g.after?.(); } else c.settled = true;
-+        };
+         };
+-        const cineStop = () => { cine = null; };
 +        const cineStop = () => { cine = null; tmBack = null; camSave = null; };
 +        // beta 2.0 r4: the whole camera (target, distance, turn, tilt, follow, the street / satellite view), and the way back to it
 +        let camSave = null;
@@ -944,13 +816,12 @@ index a1b1cac..b091041 100644
 +          const fin = () => { if (b.follow) { mapView.follow = true; mapView.focus = null; } else mapView.focus = b.focus || { x: b.tgt[0], z: b.tgt[1] }; };
 +          if (matchMedia("(prefers-reduced-motion: reduce)").matches) { mapView.yaw = b.yaw; mapView.pitch = b.pitch; mapView.dist = b.dist; mapView.tgt.x = b.tgt[0]; mapView.tgt.z = b.tgt[1]; cine = null; fin(); return; }
 +          cineTo({ yaw: b.yaw, pitch: b.pitch, dist: b.dist, lookY: b.lookY, fx: b.tgt[0], fz: b.tgt[1], after: fin }, 1.2);
-         };
--        const cineStop = () => { cine = null; };
++        };
 +        let tmBack = null; // beta 2.0: the view before Two Minutes' scene, given back when it ends
          const baam = () => {
            baamEl.classList.remove("hidden");
            baamEl.classList.remove("go"); void baamEl.offsetWidth; baamEl.classList.add("go");
-@@ -40440,6 +40672,7 @@ void main() {
+@@ -40440,6 +40726,7 @@ void main() {
          window.addEventListener("gesturechange", (e) => {
            if (!mapMode || mapIntro || !gDist0 || !(e.scale > 0)) return;
            if (cine && cine.t < cine.dur) cine = null;
@@ -958,7 +829,7 @@ index a1b1cac..b091041 100644
            mapView.distGoal = null;
            zoomAt(e.clientX || innerWidth / 2, e.clientY || innerHeight / 2, mapView.dist, Math.min(mapMaxD(), Math.max(MAP_MIND, gDist0 * gScale0 / e.scale)));
          });
-@@ -40549,6 +40782,8 @@ void main() {
+@@ -40549,6 +40836,8 @@ void main() {
              const d = (x - hit.x) ** 2 + (z - hit.z) ** 2;
              if (!best || d < best.d) best = { d, x, z, br: b2 };
            }
@@ -967,7 +838,7 @@ index a1b1cac..b091041 100644
            // r166 (Daniel): a tap on the asphalt is a tap on the road, even beside a place's building
            if (best && best.d < 34 * 34) {
              const shared = tapShared.some(([x, z]) => Math.abs(x - best.x) < 1 && Math.abs(z - best.z) < 1);
-@@ -40560,6 +40795,7 @@ void main() {
+@@ -40560,6 +40849,7 @@ void main() {
            for (const q of pins) { if (q.pl.chapter && !q.pl.past) continue; const d2 = ((q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2) * (q.pl.tapW || 1); if (d2 < 75 * 75 && (!near || d2 < near.d)) near = { d: d2, pl: q.pl }; } // r168: tapW, a place that wins its shared building
            if (near) return mapGo(near.pl);
            for (const q of pins) if (q.pl.chapter && !q.pl.past && (q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2 < 70 * 70) return mapGo(q.pl);
@@ -975,7 +846,7 @@ index a1b1cac..b091041 100644
            // otherwise only the street itself
            if (!best || best.d > 60 * 60) return;
            const shared = tapShared.some(([x, z]) => Math.abs(x - best.x) < 1 && Math.abs(z - best.z) < 1);
-@@ -40592,6 +40828,8 @@ void main() {
+@@ -40592,6 +40882,8 @@ void main() {
            e.preventDefault();
            mapView.distGoal = null;
            if (cine && cine.t < cine.dur) cine = null;
@@ -984,7 +855,7 @@ index a1b1cac..b091041 100644
            zoomAt(e.clientX, e.clientY, mapView.dist, Math.min(mapMaxD(), Math.max(MAP_MIND, mapView.dist * Math.exp(clamp2(e.deltaY, -120, 120) * (e.ctrlKey ? 0.006 : 0.0012)))));
          }, { passive: false });
          const proj = new Vector3();
-@@ -40620,12 +40858,21 @@ void main() {
+@@ -40620,12 +40912,21 @@ void main() {
            return [0, (topY + botY) / 2 - H / 2];
          };
          return {
@@ -1008,7 +879,7 @@ index a1b1cac..b091041 100644
              jetUpdate(dt, now);
              olariUpdate(dt);
              // the diorama is cleaner from above without the far mesas, the cloud ring and the islands
-@@ -40706,7 +40953,11 @@ void main() {
+@@ -40706,7 +41007,11 @@ void main() {
                markEl.style.transform = `translate3d(${((proj.x * 0.5 + 0.5) * W).toFixed(1)}px, ${((-proj.y * 0.5 + 0.5) * H).toFixed(1)}px, 0)`;
                if (!mapNav.moving && mapNav.place?.tap && !markEl.classList.contains("on")) markAt = null;
              }
@@ -1020,7 +891,7 @@ index a1b1cac..b091041 100644
                warpV(proj.set(p.pl.wx, 0, p.pl.wz)).project(camera);
                const gx = (proj.x * 0.5 + 0.5) * W, gy = (-proj.y * 0.5 + 0.5) * H;
                warpV(proj.set(p.pl.wx + 34, 0, p.pl.wz)).project(camera);
-@@ -40785,24 +41036,7 @@ void main() {
+@@ -40785,24 +41090,7 @@ void main() {
          driveGuideOff?.(); driveGuideOff = null;
          if (action) czEv("onboarding_step", { step: "drive_scroll", action });
        }
@@ -1046,7 +917,7 @@ index a1b1cac..b091041 100644
        function setMapMode(on, { intro = false, open = false } = {}) { // r147: open = the map as the site opens on it (?map, ?map&boarding): the first frame, no pull-out
          if (on === mapMode) return;
          if (!ONB_MODE && !intro && !open) setTimeout(() => ui.modeFlash?.(on ? "map" : "drive"), on ? 300 : 450); // r156
-@@ -40814,6 +41048,8 @@ void main() {
+@@ -40814,6 +41102,8 @@ void main() {
          mapMode = on;
          if (on) {
            if (!mapUI) mapUI = buildMapUI();
@@ -1055,7 +926,7 @@ index a1b1cac..b091041 100644
            mapPrev = { scheme: state.schemeIdx, veh: state.vehicleId };
            if (!intro) kinetic?.pause?.();
            if (police.active) { police.active = false; copCar.group.visible = false; }
-@@ -40847,6 +41083,7 @@ void main() {
+@@ -40847,6 +41137,7 @@ void main() {
            else { const wt0 = performance.now(); const wl = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - wt0 < 20000) return setTimeout(wl, 250); mapSettle = 90; if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI.welcome(true); }; setTimeout(wl, 1000); } // r139r: after the cups' reveal (r142b: a second, and the view settles on the car)
            try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map") + location.hash); } catch {} // r139p: a plain "/" stays plain
          } else {
@@ -1063,7 +934,7 @@ index a1b1cac..b091041 100644
            mapEndIntro();
            kinetic?.pause?.();
            mapCloseBoarding();
-@@ -40879,7 +41116,6 @@ void main() {
+@@ -40879,7 +41170,6 @@ void main() {
            updateScrollSpace();
            scrollToL(state.L, false);
            try { history.replaceState(null, "", location.pathname + "?drive" + location.hash); } catch {}
@@ -1071,12 +942,20 @@ index a1b1cac..b091041 100644
          }
        }
        window.__cam = (p2, t2) => { window.__camO = p2 ? [p2, t2] : null; };
+@@ -41300,6 +41590,7 @@ void main() {
+         intro4 = window.cromaticIntro4(host, {});
+         if (mapUI?.skip) mapUI.skip.onclick = () => intro4.skip();
+         intro4.start();
++        if (window.__czSkipWanted) intro4.skip(); // beta 2.91: the visitor already asked to skip
+       }
+       if (ONB_MODE) {
+         window.__onb = onbCmd;
 diff --git a/src/nav2.css b/src/nav2.css
 new file mode 100644
-index 0000000..4f0b001
+index 0000000..a2fee90
 --- /dev/null
 +++ b/src/nav2.css
-@@ -0,0 +1,276 @@
+@@ -0,0 +1,290 @@
 +/* nav2 (?nav=v2 on the map): the arrow pad, the two views, the Waze-style panel. Nothing here applies without body.nav2 */
 +.nav2-ui { display: none; }
 +body.nav2.map-mode:not(.kz-intro) .nav2-ui { display: block; }
@@ -1353,12 +1232,26 @@ index 0000000..4f0b001
 +/* beta 2.9 (Daniel): the crew's roles, under their names (only the site's own role lines) */
 +.crew-face .cf-role { display: block; margin-top: 5px; max-width: 108px; text-align: center; font-size: 8.5px; line-height: 1.3; letter-spacing: .06em; opacity: .72; text-transform: uppercase; }
 +body.nav2.scheme-nightlife::after { opacity: .09; } /* beta 2.9 (Daniel): the night's film grain, much lighter */
++/* beta 2.91: under every full panel (the crew, a human, the rides, the worlds, the boarding pass), nav2's controls step
++   away (the speaker, the stick, the pad, the toggle, the hints) */
++body:is(.map-boarding, .human-open, .menu-open, .hud-world-open):is(.nav2) .nav2-ui,
++body.nav2:has(.crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:not(.hidden), .theme-menu.open) .nav2-ui { opacity: 0 !important; pointer-events: none !important; transition: opacity .2s; }
++/* beta 2.91 (usage pass): the tour's bubble never over a case page or a full panel; the cookie card sits above the
++   Street / Bird's eye toggle on a laptop (it covered it) */
++body:has(.case-frame:not(.hidden), .crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:not(.hidden), .theme-menu.open) .n2-guide,
++body:is(.modal-open, .scf-open, .map-boarding, .menu-open) .n2-guide { opacity: 0 !important; pointer-events: none !important; }
++@media (min-width: 720px) { body.nav2 #cz-ck { bottom: 92px; } }
++/* beta 2.91 (usage pass): "Skip intro" could not be pressed while the opening's first line was up: the page's own
++   pre-painted line (.i4-pre, adopted by the intro) lay over it, full screen, so the tap only jumped one beat */
++.i4-pre { pointer-events: none; }
++body.kz-intro .kz-skip { z-index: 2147483002; }
++body.n2-phone:has(.map-welcome:not(.hidden)) .nav2-ui { opacity: 0 !important; pointer-events: none !important; } /* beta 2.91: the welcome card first (the toggle and the speaker sat on its top) */
 diff --git a/src/nav2.js b/src/nav2.js
 new file mode 100644
-index 0000000..6927e9f
+index 0000000..00d2fb0
 --- /dev/null
 +++ b/src/nav2.js
-@@ -0,0 +1,2304 @@
+@@ -0,0 +1,2362 @@
 +// nav2 (prototype, opt-in: ?nav=v2 on the map). One way round Cromatic City that mixes the drive and the map:
 +// the car drives the city's real road graph (every street the city draws, not only the scripted branches) under the
 +// arrows: ↑ on, ↓ brake / turn round, ← → at junctions and at the sharp bends (↑ only where straight on exists).
@@ -2042,6 +1935,7 @@ index 0000000..6927e9f
 +    }
 +    function stopAuto() { D.auto = null; H.mapNav.place = null; H.mark(); render(true); }
 +    // ---------- auto-pilot: the shortest way along the graph to a place, the junctions taken for you ----------
++    let PLAN_LOOSE = false; // beta 2.91: the no-hairpin rule, relaxed when it leaves no route at all
 +    function plan(target) {
 +      // target: { e, s } (s from the edge's a)
 +      const L = curL(), it = D.seq[ciOf(L)], e = E[it.e];
@@ -2064,11 +1958,15 @@ index 0000000..6927e9f
 +        for (const o of N[u].out) {
 +          if (against(o) || !E[o.e].drive) continue; // the ring only with the flow; the roads only
 +          if (o.e === it.e && prev[u] === -1 && !(u === fwdN && deadAhead)) continue; // not back along your own edge (but out of a dead end, after the three-point turn)
++          if (FREE && !PLAN_LOOSE) { const inIt = prev[u] === -1 ? (u === fwdN ? it : null) : { e: pe[u] >> 1, dir: pe[u] & 1 ? 1 : -1 }; if (inIt && Math.abs(wrapA(outH(o) - inH(inIt))) > 2.5) continue; } // beta 2.91: no hairpins (r182's flares meet the spokes at a point: link -> spoke back was a U-turn the car circled)
 +          const ed = E[o.e], v = o.dir > 0 ? ed.b : ed.a, nd = d + ed.len;
 +          if (nd < dist0[v]) { dist0[v] = nd; prev[v] = u; pe[v] = o.e * 2 + (o.dir > 0 ? 1 : 0); pd[v] = pd[u]; push(nd, v); }
 +        }
 +      }
-+      const viaA = dist0[tE.a] + target.s, viaB = dist0[tE.b] + (tE.len - target.s);
++      let viaA = dist0[tE.a] + target.s, viaB = dist0[tE.b] + (tE.len - target.s);
++      // beta 2.91 (usage pass: the auto-pilot stood still after backing up): the arcade car cannot reverse along its own
++      // edge at its end node (that was the old three-point turn): such a route is no route (freeGo turns round instead)
++      if (FREE && target.e === it.e) { if (tE.a === fwdN && prev[tE.a] === -1 && it.dir < 0) viaA = Infinity; if (tE.b === fwdN && prev[tE.b] === -1 && it.dir > 0) viaB = Infinity; }
 +      let endN, last;
 +      if (viaA <= viaB) { endN = tE.a; last = { e: tE.id, dir: 1 }; } else { endN = tE.b; last = { e: tE.id, dir: -1 }; }
 +      if (!isFinite(Math.min(viaA, viaB))) return null;
@@ -2147,7 +2045,7 @@ index 0000000..6927e9f
 +    let panelT = 0;
 +    function tick(dt, now) {
 +      if (!H.ready()) return;
-+      if (!D.ready) { if (!place()) return; D.ready = true; render(true); H.closures?.(CLOSED); setTimeout(preShots, 1200); }
++      if (!D.ready) { if (!place()) return; D.ready = true; render(true); H.closures?.(CLOSED); setTimeout(preShots, 1200); setTimeout(() => engineLoops(H.vehicle()), 2500); }
 +      if (FREE) return freeTick(dt, now); // round 4: the arcade car
 +      const L = curL();
 +      if (D.uturn || D.kturn) {
@@ -2638,6 +2536,7 @@ index 0000000..6927e9f
 +      let vt = Math.min(a.vmax || VMAX_F * 0.82, Math.sqrt(2 * BRAKE_F * 0.7 * Math.max(0, rem)));
 +      { let i = 0; while (i < D.cum.length - 1 && D.cum[i] < Lp) i++; for (; i < D.cum.length && D.cum[i] < Lp + 300 + au * 0.9; i++) { const k = D.kap[i]; if (k > 1e-4) { const vy = (-k + Math.sqrt(k * k + (4 * k / 480) * 3.1)) / ((2 * k) / 480); vt = Math.min(vt, Math.sqrt(Math.min(ALAT * 1.6 / k, vy * vy) + 2 * BRAKE_F * 0.6 * Math.max(0, D.cum[i] - Lp))); } } }
 +      vt *= Math.max(0.45, 1 - Math.abs(err) * 0.5);
++      if (rem > 20) vt = Math.max(vt, 30); // beta 2.91: never stall short of the place
 +      return { rem, steer: clamp(err * 2.4 + kerbAway(), -1, 1), thr: P.u < vt - 8 ? 1 : P.u > vt + 8 && P.u > 4 ? -1 : 0 };
 +    }
 +    // beta 2.5 (Daniel: "a place behind the car: turn round fast, arcade"): the route is planned both ways, as the car
@@ -2650,8 +2549,10 @@ index 0000000..6927e9f
 +      const fwd = plan(target);
 +      const itR = { e: it.e, dir: -it.dir, uid: D.uid++ };
 +      D.seq = [itR]; buildPath(); D.vL = locate(P.x, P.z);
-+      const bwd = e.kind === "ring" ? null : plan(target);
-+      const turn = !!bwd && (!fwd || bwd.cost + 110 + Math.max(0, P.u) * 0.6 < fwd.cost);
++      let bwd = plan(target);
++      if (!fwd && !bwd) { PLAN_LOOSE = true; bwd = plan(target); PLAN_LOOSE = false; }
++      // on the ring facing against its flow: always turn round first (beta 2.91: a tap there did nothing, or the car stood)
++      const turn = !!bwd && (!fwd || against(it) || bwd.cost + 110 + Math.max(0, P.u) * 0.6 < fwd.cost) && !against(itR);
 +      const base = turn ? itR : { e: it.e, dir: it.dir, uid: D.uid++ };
 +      const p = turn ? bwd : fwd;
 +      if (!p) { D.seq = [base]; buildPath(); D.vL = locate(P.x, P.z); return false; }
@@ -2679,6 +2580,27 @@ index 0000000..6927e9f
 +      }
 +      let assisted = false;
 +      if (!D.auto && steer !== 0 && D.ringExit && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) > 110) D.ringExit = null; // steering yourself, off the ring: your own way
++      // beta 2.91 (Daniel: "exiting the roundabout should be easier"; r182's smooth links): on the ring, a tap outwards
++      // means "the next exit": the assist takes the next arm ahead out (a tap inwards: stay on the ring)
++      if (!D.auto && steer !== 0) {
++        const rx2 = P.x - H.fork.x, rz2 = P.z - H.fork.y, rr = Math.hypot(rx2, rz2);
++        if (rr < 105 && rr > 30) {
++          const fx = Math.sin(P.h), fz = Math.cos(P.h), outSign = (fz * rx2 - fx * rz2) > 0 ? 1 : -1;
++          if (Math.sign(steer) === outSign) {
++            const ac = Math.atan2(rz2, rx2), sgn = rx2 * fz - rz2 * fx > 0 ? 1 : -1; // the way round: + or - in angle
++            let best = null;
++            for (const n of ringNodes) for (const o of N[n].out) {
++              const e = E[o.e]; if (e.kind === "ring" || !e.drive) continue;
++              const h0 = outH(o), ox = Math.sin(h0), oz = Math.cos(h0), nx = N[n].x - H.fork.x, nz = N[n].z - H.fork.y;
++              if (ox * nx + oz * nz <= 0) continue; // leads away from the fountain
++              let d = ((Math.atan2(nz, nx) - ac) * sgn) % (2 * Math.PI); if (d < 0) d += 2 * Math.PI;
++              if (d < 0.12 || d > 2.6) continue;
++              if (!best || d < best.d) best = { e: o.e, dir: o.dir, d };
++            }
++            if (best) { D.ringExit = { e: best.e, dir: best.dir }; D.ringTap = performance.now(); }
++          } else if (D.ringExit && performance.now() - (D.ringTap || 0) > 300) D.ringExit = { e: -1, dir: 0 }; // inwards: round again
++        }
++      }
 +      if (!D.auto && steer === 0 && !hb && (P.u > 12 || (P.contact > 0 && thr > 0 && P.u >= 0))) {
 +        const as = assist();
 +        if (as) { D.asv = Math.round(Math.min(as.vmax, 9999)); steer = as.steer; assisted = true; if (thr > 0 && P.u > as.vmax - 5) thr = P.u > as.vmax + 12 ? -1 : 0; }
@@ -2708,7 +2630,7 @@ index 0000000..6927e9f
 +    let freeSig = "";
 +    function freeUI() {
 +      let hint = phoneUI() ? "DRAG THE STICK TO DRIVE" : touchUI ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BACK · SPACE + ← → DRIFT";
-+      if (D.assist && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) < 110) hint = phoneUI() ? "ROUNDABOUT · ↑ STRAIGHT ON · OR STEER OUT" : "ROUNDABOUT · ↑ STRAIGHT ON · STEER OUT FOR ANOTHER EXIT";
++      if (D.assist && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) < 110) hint = phoneUI() ? "ROUNDABOUT · STRAIGHT ON · NUDGE → FOR THE NEXT EXIT" : "ROUNDABOUT · ↑ STRAIGHT ON · TAP → FOR THE NEXT EXIT";
 +      if (D.moved && Math.abs(P.u) < 5 && !D.auto && P.contact <= 0) hint = phoneUI() ? "STOPPED · ↑ + ← → TURNS YOU ROUND" : "STOPPED · ↑ OR ↓ WITH ← → TURNS YOU ROUND"; // round 5
 +      if (D.auto) hint = D.auto.rev ? "BACKING UP TO IT · ANY KEY TAKES OVER" : "DRIVING YOU THERE · ANY KEY TAKES OVER";
 +      else if (D.drift) hint = D.drift.t > 1.4 ? "DRIFT · LET GO OF SPACE: SUPER BOOST" : D.drift.t > 0.6 ? "DRIFT · LET GO OF SPACE: BOOST" : "DRIFT · HOLD SPACE, STEER WITH ← →";
@@ -2789,10 +2711,16 @@ index 0000000..6927e9f
 +        const k2 = 0.18 / rms; for (let i = 0; i < d.length; i++) d[i] = Math.max(-1, Math.min(1, d[i] * k2));
 +        return d;
 +      };
++      // beta 2.91: one loop per task, when the page is idle (the whole set in one go was ~0.5 s of main thread: the
++      // "first drive on a phone stutters" of 2.9, as the sound started with the first touch)
++      const idle = () => new Promise((r) => (window.requestIdleCallback || setTimeout)(r, { timeout: 400 }));
 +      const on = [], off = [];
-+      for (let i = 0; i < steps.length; i++) { on.push(await one(steps[i], 1, i === 0)); off.push(await one(steps[i], 0, i === 0)); }
++      for (let i = 0; i < steps.length; i++) { await idle(); on.push(await one(steps[i], 1, i === 0)); await idle(); off.push(await one(steps[i], 0, i === 0)); }
 +      return { steps, on, off, sr };
 +    }
++    // the rendered loops, kept per ride (they need no AudioContext: rendered ahead, before the first touch)
++    const ENG_CACHE = new Map(), ENG_PEND = new Map();
++    const engineLoops = (id) => { const pr = ENGINES[id] || ENGINES.dacia1300; if (pr.kind !== "ice") return Promise.resolve(null); if (ENG_CACHE.has(id)) return Promise.resolve(ENG_CACHE.get(id)); if (!ENG_PEND.has(id)) ENG_PEND.set(id, renderEngine(pr, 32000).then((d) => { ENG_CACHE.set(id, d); return d; }).catch(() => null)); return ENG_PEND.get(id); };
 +    const SND = (() => {
 +      let on = true, ctx = null, master = null, carBus = null, cityBus = null, E2 = null, C = null, started = false, out = 1, cafe = 0;
 +      try { on = localStorage.getItem("cz-sound") !== "off"; } catch {}
@@ -2870,9 +2798,9 @@ index 0000000..6927e9f
 +          for (const set of [d.on, d.off]) set.forEach((arr) => { const b = ctx.createBuffer(1, arr.length, d.sr); b.copyToChannel(arr, 0); const s2 = ctx.createBufferSource(); s2.buffer = b; s2.loop = true; const g = gain(0); s2.connect(g); g.connect(out); s2.start(ctx.currentTime + Math.random() * 0.05); srcs.push({ s: s2, g }); });
 +          E2.v = { pr, out, d, srcs, stop: () => { for (const q of srcs) try { q.s.stop(); } catch {} out.disconnect(); } };
 +        };
-+        const c = E2.cache.get(id);
++        const c = ENG_CACHE.get(id);
 +        if (c) make(c);
-+        else renderEngine(pr, 32000).then((d) => { if (!d) return; E2.cache.set(id, d); if (E2.id === id) make(d); }).catch(() => {});
++        else engineLoops(id).then((d) => { if (d && E2.id === id && !E2.v) make(d); });
 +      }
 +      // per frame: the engine's rpm (a gearbox), its load, the voice's mix
 +      function engineTick(thr, sp, red) {
@@ -3440,6 +3368,28 @@ index 0000000..6927e9f
 +        rows.push({ k, other: lead, items: groups.get(lead || q).filter((x) => x.d < (here ? NEAR_AHEAD * 0.7 : NEAR_AHEAD) && x.p.pl !== here?.pl).slice(0, 3) });
 +        if (!rows[rows.length - 1].items.length) rows.pop();
 +      }
++      // beta 2.91 (usage pass: "at the roundabout Nearby said: nothing of ours down this way"): round the fountain, where
++      // you choose, Nearby shows each street's first places, Ahead / Left / Right as the arm lies from where you are
++      if (Math.hypot(H.carPos.x - H.fork.x, H.carPos.z - H.fork.y) < 420 && !here) {
++        rows.length = 0;
++        const fx = Math.sin(P.h), fz = Math.cos(P.h), byQ = new Map(), dirQ = new Map();
++        for (const n of ringNodes) for (const o of N[n].out) {
++          const e = E[o.e]; if (e.kind === "ring" || !e.drive) continue;
++          const nx = N[n].x - H.fork.x, nz = N[n].z - H.fork.y, h0 = outH(o); if (Math.sin(h0) * nx + Math.cos(h0) * nz <= 0) continue;
++          const o2 = [];
++          // out along the street only (never back into the ring: a depth-first walk with one "seen" set cut it short)
++          const walk = (it, budget, base, depth) => { if (depth > 6) return; const e2 = E[it.e]; for (const p of byEdge.get(it.e) || []) { const s2 = it.dir > 0 ? p.s : e2.len - p.s; if (s2 <= budget) o2.push({ p, d: base + s2 }); } if (e2.len >= budget) return; const m = endNode(it); if (ringNodes.has(m)) return; for (const o3 of N[m].out) if (o3.e !== it.e && E[o3.e].drive && E[o3.e].kind !== "ring" && !ringNodes.has(o3.dir > 0 ? E[o3.e].b : E[o3.e].a)) walk(o3, budget - e2.len, base + e2.len, depth + 1); };
++          walk(o, 700, Math.hypot(N[n].x - H.carPos.x, N[n].z - H.carPos.z), 0);
++          for (const x of uniq(o2)) { const q2 = x.p.q; if (!q2) continue; const l = byQ.get(q2) || []; const j = l.findIndex((y) => y.p.pl === x.p.pl); if (j < 0) l.push(x); else if (x.d < l[j].d) l[j] = x; byQ.set(q2, l); const dq = dirQ.get(q2); if (!dq || x.d < dq.d) dirQ.set(q2, { a: Math.atan2(nx, nz), d: x.d }); }
++        }
++        for (const [q2, l] of byQ) {
++          const d = wrapA(dirQ.get(q2).a - P.h);
++          if (Math.abs(d) > 2.5) continue; // the street behind you
++          const k = Math.abs(d) < 0.6 ? "s" : d > 0 ? "l" : "r";
++          rows.push({ k, other: q2, items: l.sort((a2, b2) => a2.d - b2.d).slice(0, 3) });
++        }
++        rows.sort((a2, b2) => "slr".indexOf(a2.k) - "slr".indexOf(b2.k));
++      }
 +      const auto = D.auto;
 +      // round 2 (Daniel: "more visual"): the panel is rebuilt only when what it shows changes; the distances update in place
 +      const sig = JSON.stringify([q, here?.pl.id, auto ? auto.pl?.id || "tap" : 0, rows.map((r) => [r.k, r.other, !!ex?.[r.k], r.items.map((x) => x.p.pl.id)]), D.cardFor?.id && H.cardOpen(), imgV]);
@@ -3529,7 +3479,7 @@ index 0000000..6927e9f
 +    let STEPS;
 +    const DESK_STEPS = [
 +      { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: touchUI ? "↑ to go: it keeps to the road · ← → to turn" : "↑ to go: it keeps to the road · ← → to turn (or W A S D)", at: "car" },
-+      { id: "round", keys: ["↑"], t: "Take the roundabout", s: touchUI ? "Hold ↑: round it and straight on · steer to leave sooner" : "Hold ↑: round the fountain and straight on · steer out to leave sooner", at: "car" },
++      { id: "round", keys: ["↑"], t: "Take the roundabout", s: touchUI ? "Hold ↑: round it and straight on · tap → for the next exit" : "Hold ↑: round the fountain and straight on · tap → for the next exit", at: "car" },
 +      { id: "back", keys: ["↓"], t: "Back up or turn round", s: touchUI ? "Hold ↓ to back up · stopped, ↑ with ← or → turns you round" : "Hold ↓ (or S) to back up · stopped, ↑ with ← or → turns you round", at: "car" },
 +      { id: "tap", keys: [], t: "Or let us drive", s: "Tap a place on the map, or a card in Nearby", at: "panel" },
 +      { id: "look", keys: [], t: "Look around", s: touchUI ? "Drag the map, pinch to zoom · ◎ brings you back" : "Drag the map, scroll to zoom · ◎ brings you back", at: "mid" },
@@ -3552,6 +3502,7 @@ index 0000000..6927e9f
 +      return true;
 +    }
 +    function tutGo(i) {
++      if (FREE && !P.init) freeInit(); // beta 2.91: the tour can start before the car's first frame (an early skip): step 1 measured from x=0 and passed at once
 +      TUT.i = i; TUT.t0 = performance.now(); TUT.L0 = curL(); TUT.x0 = P.x; TUT.z0 = P.z; TUT.inRing = false; TUT.turn = D.turnT || 0; TUT.rev = D.revDist || 0; TUT.slow = D.slowTurn || 0; TUT.view = D.view; TUT.dragged = false;
 +      const st = STEPS[i], e = TUT.el, key = (k) => `<span class="n2-cap${k === "↑" ? " big" : ""}" aria-hidden="true">${k}</span>`;
 +      e.innerHTML = `${st.keys.length ? `<span class="n2-caps">${st.keys.map(key).join("")}</span>` : ""}<b>${st.t}</b><i>${st.s}</i><span class="n2-tbar"><em class="mono">${i + 1}/${STEPS.length}</em><button class="n2-skip">Skip</button></span>`;
@@ -3622,7 +3573,7 @@ index 0000000..6927e9f
 +      tutorial, tutorialEnd: () => tutEnd(null), tourStep: () => (TUT.i >= 0 && TUT.i < STEPS.length ? STEPS[TUT.i].id : TUT.i >= STEPS.length ? "end" : null),
 +      get camK() { return D.camK; },
 +      mv: () => { const m = H.mapView; return { x: Math.round(m.tgt.x), z: Math.round(m.tgt.z), dist: Math.round(m.dist), yaw: +m.yaw.toFixed(3), pitch: +m.pitch.toFixed(3), follow: m.follow }; },
-+      onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, closed: () => CLOSED, snd: SND, copT: () => (COP.on ? +COP.on.t.toFixed(2) : null), speed: () => P.u, dims: () => ({ len: H.carLen(), span: H.vehSpan() }), cam: () => H.camera, look: (x, z, d) => { const m = H.mapView; m.follow = false; m.tgt.set(x, 0, z); m.dist = d; m.distGoal = null; m.vx = m.vz = 0; }, put: (x, z, h) => { P.x = x; P.z = z; P.h = h; P.u = P.w = P.yr = 0; }, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
++      onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, closed: () => CLOSED, snd: SND, explore: (e, dir) => { const o = []; explore({ e, dir }, 700, 0, o, new Set(), 0); return uniq(o).map((x) => [x.p.pl.name, x.p.q, Math.round(x.d)]); }, copT: () => (COP.on ? +COP.on.t.toFixed(2) : null), speed: () => P.u, dims: () => ({ len: H.carLen(), span: H.vehSpan() }), cam: () => H.camera, look: (x, z, d) => { const m = H.mapView; m.follow = false; m.tgt.set(x, 0, z); m.dist = d; m.distGoal = null; m.vx = m.vz = 0; }, put: (x, z, h) => { P.x = x; P.z = z; P.h = h; P.u = P.w = P.yr = 0; }, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
 +      // a place from the map (a pin, a chip, the welcome card): driven to along the graph
 +      go(pl) {
 +        if (!pl || pl.find) return false;
