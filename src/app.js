@@ -34555,6 +34555,9 @@ void main() {
     });
     caseFrame.querySelector(".cf-close").onclick = closeFrame;
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !caseFrame.classList.contains("hidden")) closeFrame(); });
+    // beta 3.1 (Daniel): the mini-game's own "Back to map" (and its Escape) closes the frame like the × does
+    window.addEventListener("message", (e) => { if (e.origin === location.origin && e.data && e.data.cz === "gloves-close" && !caseFrame.classList.contains("hidden")) closeFrame(); });
+    window.__openGloves = () => openFrameHook?.("/play/gloves/?embed=1", "At the gloves with I O N");
     let steamSeen = false;
     // any page of the website, full screen over the map (OMA's brand canvas, …)
     openFrameHook = (url, title) => {
@@ -34566,9 +34569,12 @@ void main() {
         nf.className = "cf-iframe"; nf.setAttribute("allow", "autoplay; fullscreen; picture-in-picture"); nf.src = url;
         // r161: a link inside the page (the next case) moves the address along with it
         nf.addEventListener("load", () => { try { const l = nf.contentWindow.location; if (nf.isConnected && /^\/(ro\/)?(work|proiecte)\//.test(l.pathname)) caseFrame._url = l.pathname; } catch {} });
+        // beta 3.1 (Daniel): the mini-game takes the keys as soon as it is there
+        if (/^\/play\//.test(url)) nf.addEventListener("load", () => { try { nf.focus(); nf.contentWindow.focus(); } catch {} });
         fr.replaceWith(nf); fr = nf;
       }
-      caseFrame._url = /^\/(ro\/)?(work|proiecte)\//.test(url) ? url.replace(/[?&]embed=1\b/, "").replace(/\?$/, "") : null; // r161
+      caseFrame._url = /^\/(ro\/)?(work|proiecte|play)\//.test(url) ? url.replace(/[?&]embed=1\b/, "").replace(/\?$/, "") : null; // r161 (beta 3.1: and the game's own address)
+      caseFrame.classList.toggle("cf-game", /^\/play\//.test(url)); // beta 3.1: a dark frame, no Share button
       fr.title = `${title} \u2014 Cromatic Studios`;
       caseFrame.classList.remove("hidden");
       document.body.classList.add("scf-open");
@@ -35009,6 +35015,8 @@ void main() {
       mEl.querySelector(".hm-info").append(line);
       // r139a: the lab is a chapter of the Two Minutes case: the way on to its page (and the shared ending there)
       if (openFrameHook && /^https?:$/.test(location.protocol)) { const more = el("button", "coffee-btn tm-more", "See more → the whole Two Minutes case"); more.onclick = () => { closeModal(); openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); }; mEl.querySelector(".hm-info").append(more); }
+      // beta 3.1 (Daniel): and the lab's mini-game
+      if (openFrameHook && /^https?:$/.test(location.protocol)) { const play = el("button", "coffee-btn tm-more lab-play", "Play: gloves with I O N →"); play.onclick = () => { closeModal(); window.__openGloves?.(); }; mEl.querySelector(".hm-info").append(play); }
       mEl.querySelector(".hm-info").append(close);
       modalBack.appendChild(mEl);
       openModal();
@@ -40871,6 +40879,14 @@ void main() {
           showCard(pl, pl.br ? MAP_STREET[pl.street || pl.br] : pl.line.split(" \xB7 ")[0], `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`, pl.wip ? `<span class="mcd-wip mono">WORK IN PROGRESS</span>` : pl.small && !pg ? "" : `<button class="mcd-open">${ctaFor(pl.name)}</button>`);
           if (pl.wip || (pl.small && !pg)) return;
           card.querySelector(".mcd-open").onclick = deep(pl, () => (pg && openFrameHook ? openFrameHook(`/work/${pg}/?embed=1`, pl.name) : tagOf(pl)?.click()));
+          // beta 3.1 (Daniel): at the Two Min Lab you can play: "at the gloves with I O N", the mini-game, in the case frame
+          if (pl.id === "lab" && window.__openGloves && /^https?:$/.test(location.protocol)) {
+            const acts = card.querySelector(".mcd-actions"), play = document.createElement("button");
+            acts.classList.add("mcd-two");
+            play.className = "mcd-open mcd-play"; play.innerHTML = `Play: gloves with I O N <span class="mcd-arr" aria-hidden="true">\u2192</span>`;
+            acts.insertBefore(play, acts.querySelector(".mcd-close"));
+            play.onclick = deep(pl, () => window.__openGloves());
+          }
         };
         // r118: arriving somewhere, the camera swings slowly round onto the building's front, lower
         // and in three-quarters, with the van parked in the foreground. No jolt: every value runs on

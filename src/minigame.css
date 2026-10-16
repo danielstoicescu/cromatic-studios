@@ -1,0 +1,51 @@
+/* beta 3.1 (Daniel): "at the gloves with I O N", the Two Min Lab mini-game (/play/gloves/, src/minigame.js) */
+html, body { margin: 0; height: 100%; background: #0b0816; overflow: hidden; overscroll-behavior: none; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+.mg { position: fixed; inset: 0; background: radial-gradient(120% 90% at 50% 40%, #1d1638 0%, #0b0816 70%); color: #fff; }
+.mg-cv { position: absolute; image-rendering: pixelated; image-rendering: crisp-edges; display: block; box-shadow: 0 0 0 2px #170f19, 0 0 0 4px #3a2f6a, 0 30px 80px -20px rgba(0,0,0,.8); background: #140f22; }
+/* a faint CRT: scanlines over the picture, never over the controls */
+.mg::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0 2px, rgba(0,0,0,.09) 2px 3px); mix-blend-mode: multiply; }
+.mg-lbl { image-rendering: pixelated; display: block; pointer-events: none; }
+.mg-snd { position: absolute; top: 18px; left: 18px; z-index: 3; width: 52px; height: 52px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center;
+  background: #121212; color: #fff; box-shadow: 0 0 0 1px #fff, 0 14px 34px -12px rgba(0,0,0,.55); transition: background .2s, color .2s; }
+.mg-snd:hover { background: #FFD147; color: #121212; }
+.mg-snd .x { display: none; }
+.mg-snd.off .w { display: none; }
+.mg-snd.off .x { display: inline; }
+.mg-hint { position: absolute; left: 0; right: 0; top: calc(var(--cv-bottom, 80vh) + 14px); display: flex; flex-direction: column; align-items: center; gap: 8px; opacity: .9; pointer-events: none; }
+/* touch: a d-pad and three buttons */
+.mg-dpad { position: absolute; z-index: 2; width: 148px; height: 148px; border-radius: 50%; touch-action: none; background: rgba(23,15,25,.55); box-shadow: inset 0 0 0 2px rgba(255,255,255,.18); }
+.mg-dpad i { position: absolute; background: #3a2f6a; box-shadow: inset 0 0 0 2px #170f19, inset 0 -4px 0 #241d3d; }
+.mg-dpad i.u, .mg-dpad i.d { left: 50%; width: 42px; height: 52px; margin-left: -21px; }
+.mg-dpad i.l, .mg-dpad i.r { top: 50%; width: 52px; height: 42px; margin-top: -21px; }
+.mg-dpad i.u { top: 10px; border-radius: 8px 8px 0 0; } .mg-dpad i.d { bottom: 10px; border-radius: 0 0 8px 8px; }
+.mg-dpad i.l { left: 10px; border-radius: 8px 0 0 8px; } .mg-dpad i.r { right: 10px; border-radius: 0 8px 8px 0; }
+.mg-dpad b { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px; background: #3a2f6a; box-shadow: inset 0 0 0 2px #170f19; }
+.mg-dpad i::after { content: ""; position: absolute; left: 50%; top: 50%; margin: -5px; border: 5px solid transparent; }
+.mg-dpad i.u::after { border-bottom-color: #a99cc8; margin-top: -9px; } .mg-dpad i.d::after { border-top-color: #a99cc8; margin-top: -1px; }
+.mg-dpad i.l::after { border-right-color: #a99cc8; margin-left: -9px; } .mg-dpad i.r::after { border-left-color: #a99cc8; margin-left: -1px; }
+.mg-dpad.on-u i.u, .mg-dpad.on-d i.d, .mg-dpad.on-l i.l, .mg-dpad.on-r i.r { background: #fed012; }
+.mg-btns { position: absolute; z-index: 2; width: 230px; height: 134px; }
+.mg-b { position: absolute; width: 74px; height: 74px; border-radius: 50%; border: 0; padding: 0; touch-action: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  box-shadow: inset 0 0 0 3px #170f19, inset 0 -6px 0 rgba(0,0,0,.25), 0 6px 14px -6px rgba(0,0,0,.6); }
+.mg-b.on { transform: translateY(2px) scale(.96); box-shadow: inset 0 0 0 3px #170f19, inset 0 3px 0 rgba(0,0,0,.28); filter: brightness(1.15); }
+.mg-b.b-p { left: 0; bottom: 0; background: #fed012; }
+.mg-b.b-k { left: 78px; bottom: 30px; background: #2fd6f0; }
+.mg-b.b-s { left: 156px; bottom: 60px; background: #f0389a; }
+.mg-tips { position: absolute; left: 0; right: 0; top: calc(var(--cv-bottom) + 18px); display: flex; flex-direction: column; align-items: center; gap: 9px; pointer-events: none; opacity: .85; }
+.mg-tips[hidden] { display: none; }
+.mg.mg-nocrt::after { display: none; }
+/* held upright: the picture on top, the controls at the bottom, in reach of the thumbs */
+.mg-up .mg-snd { top: 12px; left: 12px; }
+.mg-up .mg-dpad { left: max(12px, env(safe-area-inset-left)); bottom: max(26px, calc(env(safe-area-inset-bottom) + 14px)); }
+.mg-up .mg-btns { right: max(12px, env(safe-area-inset-right)); bottom: max(34px, calc(env(safe-area-inset-bottom) + 22px)); }
+@media (max-width: 400px) { .mg-up .mg-dpad { transform: scale(.92); transform-origin: left bottom; } .mg-up .mg-btns { transform: scale(.92); transform-origin: right bottom; } }
+/* held sideways: the picture in the middle, the controls either side of it */
+.mg-side .mg-snd { top: 12px; left: 12px; width: 44px; height: 44px; }
+.mg-side .mg-dpad { left: max(8px, env(safe-area-inset-left)); bottom: 18px; transform: scale(.86); transform-origin: left bottom; }
+.mg-side .mg-btns { right: max(6px, env(safe-area-inset-right)); bottom: 12px; width: 150px; height: 178px; }
+.mg-side .mg-b { width: 72px; height: 72px; }
+.mg-side .mg-b.b-p { left: 0; bottom: 0; }
+.mg-side .mg-b.b-k { left: auto; right: 0; bottom: 22px; }
+.mg-side .mg-b.b-s { left: 39px; bottom: auto; top: 0; }
+@media (max-width: 760px) { .mg-snd { top: 12px; left: 12px; } }
+@media (prefers-reduced-motion: reduce) { .mg-b.on { transform: none; } }

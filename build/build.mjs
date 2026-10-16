@@ -394,7 +394,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
 const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
 const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
 // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
-const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.01"; // nav2: the next live (beta 3.0 is live)
+const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.1"; // beta 3.1 (Daniel): the Two Min Lab mini-game (/play/gloves/), on beta 3.01
 const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
 const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
 const GS = {};
@@ -794,6 +794,37 @@ await optimizeImages(pub, root);
 {
   const base = join(root, "site", "rapoarte");
   (function walk(d, rel) { let fs = []; try { fs = readdirSync(d); } catch { return; } for (const f of fs) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p, rel + f + "/"); else { mkdirSync(join(pub, "rapoarte", rel), { recursive: true }); copyFileSync(p, join(pub, "rapoarte", rel, f)); } } })(base, "");
+}
+// beta 3.1 (Daniel): "at the gloves with I O N", the Two Min Lab mini-game: its own page, /play/gloves/, with its own
+// script and styles (src/minigame.js + .css, minified, hashed), so the map's bundle does not carry it: the map opens
+// the page in its case frame only when the game is asked for. Written after the pass above: no footer, no cookie card
+// (it sets nothing and measures nothing), never in the sitemap
+{
+  let mj = "", mc = "";
+  try { mj = readFileSync(src("minigame.js"), "utf8"); mc = readFileSync(src("minigame.css"), "utf8"); } catch (e) { console.warn("[build] minigame:", e.message); }
+  if (mj) {
+    try { const { transformSync } = await import("esbuild"); mj = transformSync(mj, { minify: true, target: "es2020", legalComments: "none" }).code; mc = transformSync(mc, { loader: "css", minify: true, legalComments: "none" }).code; } catch (e) { console.warn("[build] minigame not minified:", e.message.split("\n")[0]); }
+    const mjName = `assets/minigame.${hash(mj)}.js`, mcName = `assets/minigame.${hash(mc)}.css`;
+    writeFileSync(join(pub, mjName), mj); writeFileSync(join(pub, mcName), mc);
+    mkdirSync(join(pub, "play", "gloves"), { recursive: true });
+    writeFileSync(join(pub, "play", "gloves", "index.html"), `<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>At the gloves with I O N · Two Min Lab · Cromatic Studios</title>
+<meta name="description" content="A small 16-bit fighting game from the Two Min Lab: pick Daniel, Cristian or Coz from the Cromatic crew and box I O N, the founder of Two Minutes.">
+<meta name="robots" content="noindex, follow">
+<meta name="theme-color" content="#0b0816">
+${BUILD_LABEL ? `<meta name="cz-build" content="${BUILD_LABEL}">\n` : ""}<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/${mcName}">
+</head><body>
+<div id="mg" class="mg"></div>
+<noscript><p style="color:#fff;font:16px/1.4 system-ui;padding:24px">The game needs JavaScript. <a href="/?map" style="color:#FED012">Back to the map</a></p></noscript>
+<script src="/${mjName}"></script>
+</body></html>
+`);
+    console.log(`[minigame] /play/gloves/ -> ${mjName} (${(mj.length / 1024).toFixed(0)} KB), ${mcName}`);
+  }
 }
 // precompress text files once, at build time (the server just picks the right variant)
 const COMP = /\.(html|js|css|svg|txt|xml|json|webmanifest|ico)$/;

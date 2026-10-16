@@ -4913,3 +4913,13 @@ body.map-mode .dpad, body.site-mode .dpad, html.onb .dpad, body.kz-intro .dpad {
 
 /* r165: the build label under the logo, blended like the logo so it reads on any ground */
 body:not(.site-mode) .topbar .cz-build { color: #ffffff; mix-blend-mode: difference; opacity: .5; }
+
+/* beta 3.1 (Daniel): the Two Min Lab mini-game: its call to action on the lab's card (first, in the lab's red) and its
+   frame (dark behind the game, no Share: the game has its own speaker and its own way back) */
+.map-card .mcd-actions.mcd-two { flex-wrap: wrap; }
+.map-card .mcd-actions.mcd-two .mcd-play { order: -1; flex: 1 0 100%; background: #C6402E; border-color: #C6402E !important; color: #fff; }
+.map-card .mcd-actions.mcd-two .mcd-play:hover { background: #FED012; border-color: #FED012 !important; color: #121212; }
+body.scheme-sketch .map-card .mcd-actions.mcd-two .mcd-play { background-color: #C6402E !important; color: #fff !important; }
+.coffee-btn.lab-play { background: #C6402E; color: #fff; }
+.case-frame.cf-game, .case-frame.cf-game .cf-iframe { background: #0b0816; }
+.case-frame.cf-game .cf-share { display: none; }
