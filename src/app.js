@@ -27286,13 +27286,25 @@ void main() {
     return e * e * (3 - 2 * e) * Math.max(0, 1 - best / 40);
   }
   var LANE_SR = laneSpot(0.34, 1, 60), LANE_PR = laneSpot(0.62, -1, 60);
+  try { LANE_SR = awayFromRoads(LANE_SR, Math.hypot(58, 44) / 2 * 0.8) || LANE_SR; LANE_PR = awayFromRoads(LANE_PR, Math.hypot(60, 46) / 2 * 0.8) || LANE_PR; } catch (e) {} // beta 2.9: clear of the roads (their pins follow)
   var LANE_BRANDS = [
     { br: "C", name: "Sticker Republic", x: Math.round(LANE_SR.x), z: Math.round(LANE_SR.z), lane: true, line: "STICKERS \xB7 PRINT", c: "#FFD21F", t: "#111111", desc: "Stickers for everything and everyone: the little yellow house on the lane, plastered with its own work." },
     { br: "C", name: "Printoteca", x: Math.round(LANE_PR.x), z: Math.round(LANE_PR.z), lane: true, line: "PRINT ON DEMAND", c: "#ffffff", t: "#111111", desc: "Print on demand with no minimum orders: tees and hoodies printed one by one, for anyone who wants to sell their own." }
   ];
-  function buildLaneHouse(parent, sp, o) {
+  // beta 2.9 (Daniel: "some houses sit on the road"): a lane building is moved back from the kerb (along its own facing)
+  // until its footprint clears every drive road (the lane leaves Medical Avenue at a narrow angle: its first houses and
+  // Sticker Republic stood on the roads)
+  function awayFromRoads(sp, r) {
+    const routes = cityRoutes(), segs = [];
+    for (const pts of routes) for (let k = 1; k < pts.length; k++) segs.push([pts[k - 1], pts[k]]);
+    const dmin = (x, z) => { let m = Infinity; for (const [[ax, az], [bx, bz]] of segs) { const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, f = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)); m = Math.min(m, Math.hypot(ax + dx * f - x, az + dz * f - z)); } return m; };
+    for (let k = 0; k <= 16; k++) { const x = sp.x - sp.fx * k * 5, z = sp.z - sp.fz * k * 5; if (dmin(x, z) >= ROUTE_W / 2 + r + 3) return { ...sp, x, z }; }
+    return null;
+  }
+  function buildLaneHouse(parent, sp0, o) {
     const g = new Group();
     const W = o.w, D = o.d, H = o.h;
+    const sp = awayFromRoads(sp0, Math.hypot(W, D) / 2 * 0.8) || sp0;
     const wallM = new MeshStandardMaterial({ color: o.wall, roughness: 0.88 });
     const trimM = new MeshStandardMaterial({ color: o.trim, roughness: 0.6 });
     const roofM = new MeshStandardMaterial({ color: o.roof, roughness: 0.8 });
@@ -27403,7 +27415,8 @@ void main() {
     // the lane itself: small houses in pastel plaster and red tiles, trees, two lamps
     const rnd = rng(1188), tints = ["#f1d8c4", "#e6dcc8", "#d9e3d4", "#f2e2b8", "#e8cfd4", "#d6dde6"];
     for (const [t, sd] of [[0.14, 1], [0.2, -1], [0.5, 1], [0.38, -1], [0.66, 1]]) {
-      const sp = laneSpot(t, sd, 50), W = 34 + rnd() * 14, D = 30 + rnd() * 8, H = 20 + rnd() * 14;
+      const W = 34 + rnd() * 14, D = 30 + rnd() * 8, H = 20 + rnd() * 14, sp = awayFromRoads(laneSpot(t, sd, 50), Math.hypot(W, D) / 2 * 0.8);
+      if (!sp) continue; // no room clear of the roads: no house
       const g = new Group(), wall = new MeshStandardMaterial({ color: tints[Math.floor(rnd() * tints.length)], roughness: 0.9 });
       const body = new Mesh(new BoxGeometry(W, H, D), wall); body.position.y = H / 2; g.add(body);
       const ft = facadeTexture({}, 2, 3, { glass: "#3a4550", frame: wall.color.getStyle(), lit: "#ffe2a8" });
@@ -32847,6 +32860,9 @@ void main() {
     "Iulic\u0103": { bio: "Brings the energy into the room and the frame. Equally at home behind a camera and in front of a moodboard." },
     "Melissa": { bio: "Curious about everything, careful with everything. The fresh pair of eyes that spots what the rest of us got used to." }
   };
+  // beta 2.9 (Daniel: "the roles under the names"): the role line of each person, as the site's crew list has it
+  // (site/onboarding: Cristian's and Daniel's titles, the others' lines)
+  var CREW_LINE = { "Cristian": "Partner \u00B7 CEO & Strategy Master", "Daniel": "Founder \u00B7 Partner \u00B7 Creative Architect", "Ana": "Impatient with the obvious", "Coz": "Calm on set, loud in the good ideas", "Alexandra": "Knows where every promise lives", "Stefan": "Already building it", "Adina": "Listens first, writes second", "Anne": "The crop, the colour, the pause", "Iulic\u0103": "Brings the energy into the frame", "Melissa": "The fresh pair of eyes" };
   function crewPhoto(i, cls) {
     const face = CREW_FACES[CREW[i]];
     const ph = face ? { src: face, cap: CREW[i] } : CREW_PHOTOS[i % CREW_PHOTOS.length];
@@ -33270,7 +33286,7 @@ void main() {
       const grid = el("div", "crew-faces");
       CREW.forEach((n, i) => {
         const col = CREW_COLORS[i % CREW_COLORS.length], src = CREW_FACES[n];
-        const b = el("button", "crew-face", `<span class="cf-ring" style="--cc:${col}">${src ? `<img src="${src}" alt="" loading="lazy">` : `<b>${n.replace(/[^A-Za-zĂÂÎȘȚăâîșț]/g, "").slice(0, 1)}</b>`}</span><span class="cf-tag" style="--cc:${col}">${n}</span>${CREW_INFO[n]?.role ? `<span class="cf-role mono">${CREW_INFO[n].role}</span>` : ""}`);
+        const b = el("button", "crew-face", `<span class="cf-ring" style="--cc:${col}">${src ? `<img src="${src}" alt="" loading="lazy">` : `<b>${n.replace(/[^A-Za-zĂÂÎȘȚăâîșț]/g, "").slice(0, 1)}</b>`}</span><span class="cf-tag" style="--cc:${col}">${n}</span>${CREW_LINE[n] || CREW_INFO[n]?.role ? `<span class="cf-role mono">${CREW_LINE[n] || CREW_INFO[n].role}</span>` : ""}`);
         b.setAttribute("aria-label", `Meet ${n}`);
         b.style.setProperty("--d", `${i * 45}ms`);
         b.onclick = () => api.openHuman(i);
@@ -34491,7 +34507,7 @@ void main() {
         <div class="hp-body">
           <span class="eyebrow mono">WILD BRAIN ${String(i + 1).padStart(2, "0")} / ${String(n).padStart(2, "0")}</span>
           <b class="hp-name" style="background:${col}">${name}</b>
-          ${info.role ? `<span class="hp-role mono">${info.role}</span>` : ""}
+          ${info.role || CREW_LINE[name] ? `<span class="hp-role mono">${info.role || CREW_LINE[name]}</span>` : ""}
           <p>${info.bio || "Brilliant human. Good taste, real empathy, and a strong opinion about your customer's first three seconds. Part of the crew that glues coherent brands together."}</p>
           ${links ? `<div class="hp-links">${links}</div>` : ""}
           <div class="hp-nav"><button class="hp-prev" aria-label="Previous human">\u2039</button><button class="hp-next" aria-label="Next human">\u203A</button></div>
