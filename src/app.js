@@ -39193,6 +39193,44 @@ void main() {
             return m - g.position.y;
           },
           reverseLamps(on) { if (veh?.revLamps && veh.revLamps.visible !== on) veh.revLamps.visible = on; },
+          // beta 2.5 (Daniel: "more like Mario Kart"): little effects on the road, in plan coordinates (the city warp bends
+          // them with the rest): puffs (tyre smoke, drift sparks, a boost's flame, dust) from a small pool, and skid marks
+          // (one instanced mesh, a ring of 240). Cheap: at most 36 puffs alive, one draw call for every mark
+          fx: (() => {
+            let F = null;
+            const init = () => {
+              F = { puffs: [], i: 0, marks: null, mi: 0, m: new Matrix4(), q: new Quaternion(), v: new Vector3(), sc: new Vector3() };
+              const geo = new IcosahedronGeometry(1, 1);
+              for (let k = 0; k < 36; k++) { const mesh = new Mesh(geo, new MeshBasicMaterial({ color: "#ffffff", transparent: true, opacity: 0, depthWrite: false })); mesh.visible = false; mesh.renderOrder = 3; worldRefs.world.add(mesh); F.puffs.push({ mesh, life: 0, age: 0, r0: 1, r1: 1, vy: 0, vx: 0, vz: 0, a0: 1 }); }
+              const pg = new PlaneGeometry(1, 1); pg.rotateX(-Math.PI / 2);
+              F.marks = new InstancedMesh(pg, new MeshBasicMaterial({ color: "#2b2522", transparent: true, opacity: 0.3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), 240);
+              F.marks.count = 0; F.marks.frustumCulled = false; F.marks.renderOrder = 2; worldRefs.world.add(F.marks);
+            };
+            return {
+              puff(x, y, z, o = {}) {
+                if (!F) init();
+                const p = F.puffs[F.i]; F.i = (F.i + 1) % F.puffs.length;
+                p.mesh.material.color.set(o.color || "#f4f1ea"); p.life = o.life || 0.7; p.age = 0; p.r0 = o.r0 || 2.5; p.r1 = o.r1 || 7; p.vy = o.vy ?? 9; p.vx = o.vx || 0; p.vz = o.vz || 0; p.a0 = o.a ?? 0.55;
+                p.mesh.position.set(x, y, z); p.mesh.scale.setScalar(p.r0); p.mesh.material.opacity = p.a0; p.mesh.visible = true;
+              },
+              skid(x, z, h, len = 6, w = 2.6) {
+                if (!F) init();
+                F.q.setFromAxisAngle(F.v.set(0, 1, 0), h); F.m.compose(F.v.set(x, 2.0, z), F.q, F.sc.set(w, 1, len));
+                F.marks.setMatrixAt(F.mi, F.m); F.mi = (F.mi + 1) % 240; F.marks.count = Math.max(F.marks.count, F.mi === 0 ? 240 : F.mi); F.marks.instanceMatrix.needsUpdate = true;
+              },
+              tick(dt) {
+                if (!F) return;
+                for (const p of F.puffs) {
+                  if (!p.mesh.visible) continue;
+                  p.age += dt; const k = p.age / p.life;
+                  if (k >= 1) { p.mesh.visible = false; continue; }
+                  p.mesh.position.x += p.vx * dt; p.mesh.position.y += p.vy * dt; p.mesh.position.z += p.vz * dt;
+                  p.mesh.scale.setScalar(p.r0 + (p.r1 - p.r0) * Math.sqrt(k));
+                  p.mesh.material.opacity = p.a0 * (1 - k) * (1 - k);
+                }
+              }
+            };
+          })(),
           // round 5 (Daniel: "close all roads that aren't ours, and make it readable"): where a closed street meets one of ours,
           // the kerb runs on across its mouth and a red-and-white striped barrier on two posts stands behind it, flanked by two
           // bollards; one merged mesh for all of them (plan coordinates; the city warp bends it like the rest)

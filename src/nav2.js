@@ -939,7 +939,7 @@
     // slides along it, and can always steer or back away. The road graph is kept for the auto-pilot (a tap, Nearby),
     // which drives the same physics along its route, and for the Nearby panel and the road signs.
     const FREE = true;
-    const VMAX_F = 420, ACC_F = 270, BRAKE_F = 620, REV_F = 210, VREV_F = 150, ROLL_F = 45, DRAG_F = 0.22, TURN_F = 2.5, CR = 9;
+    const VMAX_F = 460, ACC_F = 340, BRAKE_F = 620, REV_F = 210, VREV_F = 150, ROLL_F = 45, DRAG_F = 0.22, TURN_F = 2.5, CR = 9;
     // the road mask, from the same geometry the roads are drawn with
     const MASK = (() => {
       const segs = [], CS = 100, grid = new Map();
@@ -1023,29 +1023,83 @@
     // with ↑ or ↓ held, so the car turns round in the road's own width), high grip (only the handbrake slides: Space + ← →
     // is a quick spin), and the car's nose and tail meet the kerb too (three circles), so it stops at a closed street's
     // kerb line instead of poking into it; pushes only ever move it back onto the road, so it can never get stuck
+    // beta 2.5 (Daniel: "hold the road much better, more arcade, more fun, more like Mario Kart"): snappier off the line
+    // and in the wheel; Space + ← → at speed is a drift (a little hop, the tail out, smoke and marks on the road) that
+    // charges a mini-turbo: let go after ~0.6 s for a short boost (longer after ~1.4 s); stopped or slow, Space + ← → is
+    // still the quick spin; and the kerbs are soft bumpers: the car bounces off them back into the road, it never grinds
+    const DRIFT_V = 110;
+    const FX = { hop: 0, bump: 0, squash: 0, boostKick: 0, smokeT: 0, skidL: 0, skidR: 0, lastX: 0, lastZ: 0, side: 0, sparkT: 0, dustT: 0 };
+    // the road effects of a frame: tyre smoke and skid marks in a drift (or a hard spin), the mini-turbo's charge as
+    // sparks at the rear wheels (blue, then orange), a boost's flame, dust at top speed; none with reduced motion but the marks
+    function roadFx(dt) {
+      const fxh = H.fx; if (!fxh) return;
+      fxh.tick(dt);
+      const red = reduced(), [hw, ht] = H.vehSpan?.() || [20, 10], fx = Math.sin(P.h), fz = Math.cos(P.h), rx = -fz, rz = fx, au = Math.abs(P.u);
+      const rearX = P.x - fx * hw * 0.85, rearZ = P.z - fz * hw * 0.85;
+      const wheel = (sd) => [rearX + rx * ht * sd, rearZ + rz * ht * sd];
+      const sliding = !!D.drift || (D.keys.h && au > 25 && Math.abs(P.yr) > 1) || Math.abs(P.w) > 40;
+      const moved = Math.hypot(P.x - FX.lastX, P.z - FX.lastZ); FX.lastX = P.x; FX.lastZ = P.z;
+      if (sliding && moved < 60) {
+        FX.skidL += moved;
+        if (FX.skidL > 5) { FX.skidL = 0; for (const sd of [-1, 1]) { const [x, z] = wheel(sd); fxh.skid(x, z, Math.atan2(P.vx || fx, P.vz || fz), 7, 2.4); } }
+        FX.smokeT -= dt;
+        if (!red && FX.smokeT <= 0) { FX.smokeT = 0.05; FX.side = -FX.side || 1; const [x, z] = wheel(FX.side); fxh.puff(x, 3, z, { r0: 2, r1: 5.5 + Math.random() * 2, life: 0.7, vy: 6, vx: -P.vx * 0.12, vz: -P.vz * 0.12, a: 0.42 }); }
+      }
+      if (red) return;
+      if (D.drift && D.drift.t > 0.6) { // the mini-turbo's charge
+        FX.sparkT -= dt;
+        if (FX.sparkT <= 0) { FX.sparkT = 0.04; const lvl = D.drift.t > 1.4 ? 2 : 1, sd = Math.random() < 0.5 ? -1 : 1, [x, z] = wheel(sd); fxh.puff(x + (Math.random() - 0.5) * 3, 2.5, z + (Math.random() - 0.5) * 3, { color: lvl === 2 ? "#ffab2e" : "#5fc4ff", r0: 2, r1: 0.4, life: 0.3, vy: 22 + Math.random() * 14, vx: rx * sd * 20, vz: rz * sd * 20, a: 0.95 }); }
+      }
+      if (D.boost) { // the boost: a flame from the back
+        FX.sparkT -= dt;
+        if (FX.sparkT <= 0) { FX.sparkT = 0.035; fxh.puff(rearX - fx * 6, 5, rearZ - fz * 6, { color: Math.random() < 0.5 ? "#ffcf3a" : "#ff7a2e", r0: 4, r1: 1.2, life: 0.3, vy: 4, vx: -fx * 90, vz: -fz * 90, a: 0.9 }); }
+      }
+      if (P.u > VMAX_F * 0.86 && !D.boost) { // light dust at top speed
+        FX.dustT -= dt;
+        if (FX.dustT <= 0) { FX.dustT = 0.09; FX.side = -FX.side || 1; const [x, z] = wheel(FX.side * 1.3); fxh.puff(x, 2, z, { color: "#e9dfcf", r0: 2, r1: 9, life: 0.6, vy: 5, vx: -P.vx * 0.2, vz: -P.vz * 0.2, a: 0.32 }); }
+      }
+    }
     function physics(dt, thr, steerIn, hb, assisted) {
-      P.st += (steerIn - P.st) * (1 - Math.exp(-dt * (steerIn === 0 || assisted ? 11 : Math.abs(steerIn) < Math.abs(P.st) ? 11 : 6.5)));
+      const spinning = (thr !== 0 || hb) && Math.abs(P.u) < 40 && steerIn !== 0; // turning round on the spot: the wheel goes over at once
+      P.st += (steerIn - P.st) * (1 - Math.exp(-dt * (spinning ? 16 : steerIn === 0 || assisted ? 11 : Math.abs(steerIn) < Math.abs(P.st) ? 11 : 9)));
       let u = P.u;
+      // the drift: starts with Space + ← / → above DRIFT_V, holds while Space is held and the car keeps some speed
+      if (!D.drift && hb && u > DRIFT_V && Math.abs(steerIn) > 0.2 && !D.auto) { D.drift = { t: 0, dir: Math.sign(steerIn) }; FX.hop = 1; }
+      if (D.drift && (!hb || Math.hypot(u, P.w) < 60)) {
+        const t = D.drift.t; D.drift = null;
+        if (t > 0.6 && u > 60) { D.boost = { t: 0, dur: t > 1.4 ? 1.15 : 0.7, lvl: t > 1.4 ? 2 : 1 }; FX.boostKick = 1; }
+      }
+      const drift = D.drift; if (drift) drift.t += dt;
+      if (D.boost) { D.boost.t += dt; if (D.boost.t > D.boost.dur) D.boost = null; }
+      const boost = D.boost ? 1 - D.boost.t / D.boost.dur : 0;
+      // beta 2.5: the auto-pilot drives faster between places (its own top speed, quicker off the line); a boost lifts both
+      const vcap = (D.auto?.vmax ? Math.max(VMAX_F, D.auto.vmax * 1.04) : VMAX_F) * (1 + 0.28 * boost), acc = (D.auto ? ACC_F * 1.5 : ACC_F) * (1 + 1.5 * boost);
       const crawlCap = !hb && Math.abs(P.st) > 0.6 && Math.abs(u) < 70 ? 28 : Infinity; // turning hard from a crawl: stay slow, turn tight
-      if (thr > 0) { if (u < -4) u = Math.min(0, u + BRAKE_F * dt); else if (u < crawlCap) u = Math.min(Math.max(u, crawlCap), u + ACC_F * dt * (1 - Math.max(0, u) / VMAX_F)); }
+      if (boost > 0 && u > 0 && thr >= 0) u = Math.min(vcap, u + 520 * boost * dt); // the mini-turbo pushes even off the throttle
+      if (thr > 0) { if (u < -4) u = Math.min(0, u + BRAKE_F * dt); else if (u < crawlCap) u = Math.min(Math.max(u, crawlCap), u + acc * dt * (1 - Math.max(0, u) / vcap)); }
       else if (thr < 0) { if (u > 4) u = Math.max(0, u - BRAKE_F * dt); else if (u > -crawlCap) u = Math.max(-VREV_F, Math.min(u, -crawlCap), u - REV_F * dt); }
       else { const dec = (ROLL_F + DRAG_F * Math.abs(u)) * dt; u = Math.abs(u) <= dec ? 0 : u - Math.sign(u) * dec; }
-      if (hb) { const dec = 280 * dt; u = Math.abs(u) <= dec ? 0 : u - Math.sign(u) * dec; }
+      if (u > vcap) u = Math.max(vcap, u - 260 * dt); // out of a boost: eases back to the normal top speed
+      if (hb && !drift) { const dec = 280 * dt; u = Math.abs(u) <= dec ? 0 : u - Math.sign(u) * dec; }
+      if (drift) u = Math.max(0, u - 35 * dt); // a drift keeps its speed
       const au = Math.abs(u), sg = au > 4 ? Math.sign(u) : thr < 0 ? -1 : 1;
       let yr = P.st * Math.sign(u) * Math.min(au / 14, 2.7 / (1 + au / 480));
-      if (thr !== 0 && au < 40) yr += P.st * sg * 2.3 * (1 - au / 40); // near a pivot, almost stopped with ↑ or ↓ held
-      if (hb && Math.abs(P.st) > 0.05) yr = P.st * sg * 3.4; // the handbrake spin
+      if (thr !== 0 && au < 40) yr += P.st * sg * 3.3 * (1 - au / 40); // near a pivot, almost stopped with ↑ or ↓ held (beta 2.5: snappier, ~1 s round)
+      if (hb && !drift && Math.abs(P.st) > 0.05) yr = P.st * sg * 3.6; // the handbrake spin (slow)
+      if (drift) yr = drift.dir * clamp(1.0 + 0.8 * P.st * drift.dir, 0.25, 1.9) * Math.min(1, au / 160 + 0.4); // into the drift: ← → make it tighter or wider
       yr = clamp(yr, -3.6, 3.6);
       P.yr += (yr - P.yr) * (1 - Math.exp(-dt * 14));
-      // the velocity keeps its direction while the car turns under it, and the tyres pull it round (grip: high, unless the handbrake)
+      // the velocity keeps its direction while the car turns under it, and the tyres pull it round: glued to the road
+      // (beta 2.5: grip 22), a drift lets the tail out (its own slide), the slow handbrake slides freely
       const f0x = Math.sin(P.h), f0z = Math.cos(P.h), r0x = -f0z, r0z = f0x;
       let vx = f0x * u + r0x * P.w, vz = f0z * u + r0z * P.w;
       P.h += P.yr * dt;
       const fx = Math.sin(P.h), fz = Math.cos(P.h), rx = -fz, rz = fx;
       u = vx * fx + vz * fz; let w = vx * rx + vz * rz;
-      w *= Math.exp(-dt * (hb ? 1.6 : 18));
+      if (drift) { const sp = Math.hypot(u, w); w *= Math.exp(-dt * 3.2); u = Math.sign(u || 1) * Math.sqrt(Math.max(0, sp * sp - w * w)); } // a drift keeps its speed while the tail comes round
+      else w *= Math.exp(-dt * (hb ? 1.6 : 22));
       vx = fx * u + rx * w; vz = fz * u + rz * w;
-      let nx = P.x + vx * dt, nz = P.z + vz * dt, hit = false, lost = false;
+      let nx = P.x + vx * dt, nz = P.z + vz * dt, hit = false, lost = false, impact = 0;
       const half = clamp(H.carLen() * 0.5 - CR + 2, 2, 20); // polish: the footprint of a laptop's car (phones show a bigger one)
       // polish: turning round on the spot, the car eases towards the middle of the road, so nose and tail clear both kerbs
       if (thr !== 0 && !hb && au < 40 && Math.abs(P.st) > 0.3) {
@@ -1058,17 +1112,23 @@
         if (!q.hit) continue;
         nx += q.x - px; nz += q.z - pz; hit = true;
         const vn = vx * q.nx + vz * q.nz;
-        if (vn > 0) { vx -= q.nx * vn; vz -= q.nz * vn; }
+        // beta 2.5: a soft bumper: the push into the kerb comes back out as a bounce (not a grind along it)
+        if (vn > 0) { impact = Math.max(impact, vn); const b = vn * (vn > 35 ? 1.45 : 1); vx -= q.nx * b; vz -= q.nz * b; }
       }
       if (hit) {
-        const k = Math.exp(-dt * 2.2); vx *= k; vz *= k; // the kerb scrubs speed
-        u = vx * fx + vz * fz; w = vx * rx + vz * rz;
+        const k = Math.exp(-dt * 0.7); vx *= k; vz *= k;
+        // and the car turns with its new way (back along the road), so it does not nose into the kerb again
+        const sp = Math.hypot(vx, vz);
+        if (sp > 25 && !drift) { const want = Math.atan2(vx, vz) + (u < 0 ? Math.PI : 0); P.h += wrapA(want - P.h) * (1 - Math.exp(-dt * 7)); }
+        const gx = Math.sin(P.h), gz = Math.cos(P.h);
+        u = vx * gx + vz * gz; w = vx * -gz + vz * gx;
         P.contact = 0.3;
+        if (impact > 45 && !reduced()) { const s = Math.min(1, impact / 260); FX.bump = Math.max(FX.bump, s); FX.squash = Math.max(FX.squash, s); }
       } else if (lost) { // nowhere near a road (should not happen): back to the last good spot
         nx = P.x; nz = P.z; u = 0; w = 0;
       }
       P.contact = Math.max(0, P.contact - dt);
-      P.ds = (nx - P.x) * fx + (nz - P.z) * fz;
+      { const gx = Math.sin(P.h), gz = Math.cos(P.h); P.ds = (nx - P.x) * gx + (nz - P.z) * gz; }
       P.x = nx; P.z = nz; P.u = u; P.w = w; P.vx = vx; P.vz = vz;
       D.v = u;
       if (u < -0.5) D.revDist = (D.revDist || 0) + Math.abs(P.ds);
@@ -1078,6 +1138,11 @@
     // round 5: the steering assist, with no ← → held: the car aims a little ahead along the road it is on (on through a
     // junction when one way is straight on, else fading out as it nears it, so the turn stays yours), in its right-hand
     // lane: it self-aligns with the road, follows its bends and keeps its lane; and it eases off for a bend it cannot take
+    // the nose about to touch a kerb: a steer away from it (the assist and the auto-pilot both use it)
+    function kerbAway() {
+      const fx = Math.sin(P.h), fz = Math.cos(P.h), half = clamp(H.carLen() * 0.5 - CR + 2, 2, 20), k2 = MASK.resolve(P.x + fx * half, P.z + fz * half, CR + 4);
+      return k2.hit ? clamp((k2.nx * -fz + k2.nz * fx) * 1.4, -0.9, 0.9) : 0;
+    }
     const ringExits = new Map();
     function ringExitFor(spoke) {
       const k = spoke.e * 2 + (spoke.dir > 0 ? 1 : 0);
@@ -1145,9 +1210,7 @@
       }
       if (!open) vmax = Math.min(vmax, Math.sqrt(90 * 90 + 2 * 480 * Math.max(0, pts2[pts2.length - 1][2] - 40))); // a junction to choose at: arrive at it slowly
       // and it keeps the car's nose off the kerb: a kerb within a few units of the nose steers it away (corners, tight bends)
-      let away = 0;
-      { const fx = Math.sin(P.h), fz = Math.cos(P.h), half = clamp(H.carLen() * 0.5 - CR + 2, 2, 32), k2 = MASK.resolve(P.x + fx * half, P.z + fz * half, CR + 4); if (k2.hit) away = clamp((k2.nx * -fz + k2.nz * fx) * 1.4, -0.9, 0.9); }
-      return { steer: clamp(err * 2.2 * fade + away, -1, 1), vmax };
+      return { steer: clamp(err * 2.2 * fade + kerbAway(), -1, 1), vmax };
     }
     // the auto-pilot on the same physics: pure pursuit of its route (the right-hand lane), slowing for the bends and the stop
     function pursuit(dt) {
@@ -1160,27 +1223,48 @@
         const vt = -Math.min(VREV_F * 0.8, Math.sqrt(2 * BRAKE_F * 0.5 * Math.max(0, rem)));
         return { rem, steer: clamp(-err * 2.4, -1, 1), thr: P.u > vt + 8 ? -1 : P.u < vt - 8 && P.u < -4 ? 1 : 0 };
       }
-      const rem = a.Lt - Lp, la = 36 + au * 0.35, L2 = Math.min(D.total, Lp + la);
+      if (a.turn) {
+        const [x0, z0] = pathPos(Math.min(D.total, Lp + 4)), [x1, z1] = pathPos(Math.min(D.total, Lp + 30));
+        const err = wrapA(Math.atan2(x1 - x0, z1 - z0) - P.h);
+        if (Math.abs(err) < 0.45) a.turn = false;
+        else if (P.u > 30) return { rem: a.Lt - Lp, steer: 0, thr: -1 }; // brake first (a hard stop, arcade)
+        else return { rem: a.Lt - Lp, steer: err > 0 ? 1 : -1, thr: 1, spin: true }; // round on the spot
+      }
+      let la = 36 + au * 0.35, keep = 10;
+      { let i = 0; while (i < D.cum.length - 1 && D.cum[i] < Lp) i++; for (; i < D.cum.length && D.cum[i] < Lp + Math.max(la, 110); i++) if (D.kap[i] > 1 / 65) { const dk = D.cum[i] - Lp; la = Math.min(la, Math.max(18, dk < 28 ? dk + 16 : dk)); keep = 10 * clamp((dk - 25) / 80, 0, 1); break; } } // before a corner: aim just past it, in the middle of the road
+      const rem = a.Lt - Lp, L2 = Math.min(D.total, Lp + la);
       let [tx, tz] = pathPos(L2); const [ax2, az2] = pathPos(Math.min(D.total, L2 + 4)); const tl = Math.hypot(ax2 - tx, az2 - tz) || 1;
-      tx += (-(az2 - tz) / tl) * 10; tz += ((ax2 - tx) / tl) * 10; // keep right
+      tx += (-(az2 - tz) / tl) * keep; tz += ((ax2 - tx) / tl) * keep; // keep right
       const err = wrapA(Math.atan2(tx - P.x, tz - P.z) - P.h);
-      let vt = Math.min(VMAX_F * 0.82, Math.sqrt(2 * BRAKE_F * 0.55 * Math.max(0, rem)));
-      { let i = 0; while (i < D.cum.length - 1 && D.cum[i] < Lp) i++; for (; i < D.cum.length && D.cum[i] < Lp + 260; i++) { const k = D.kap[i]; if (k > 1e-4) vt = Math.min(vt, Math.sqrt(ALAT / k + 2 * BRAKE_F * 0.6 * Math.max(0, D.cum[i] - Lp))); } }
+      let vt = Math.min(a.vmax || VMAX_F * 0.82, Math.sqrt(2 * BRAKE_F * 0.7 * Math.max(0, rem)));
+      { let i = 0; while (i < D.cum.length - 1 && D.cum[i] < Lp) i++; for (; i < D.cum.length && D.cum[i] < Lp + 300 + au * 0.9; i++) { const k = D.kap[i]; if (k > 1e-4) { const vy = (-k + Math.sqrt(k * k + (4 * k / 480) * 2.4)) / ((2 * k) / 480); vt = Math.min(vt, Math.sqrt(Math.min(ALAT / k, vy * vy) + 2 * BRAKE_F * 0.6 * Math.max(0, D.cum[i] - Lp))); } } }
       vt *= Math.max(0.3, 1 - Math.abs(err) * 0.7);
-      return { rem, steer: clamp(err * 2.4, -1, 1), thr: P.u < vt - 8 ? 1 : P.u > vt + 8 && P.u > 4 ? -1 : 0 };
+      return { rem, steer: clamp(err * 2.4 + kerbAway(), -1, 1), thr: P.u < vt - 8 ? 1 : P.u > vt + 8 && P.u > 4 ? -1 : 0 };
     }
+    // beta 2.5 (Daniel: "a place behind the car: turn round fast, arcade"): the route is planned both ways, as the car
+    // points and as if it were turned round; when turned round is the shorter way (or the place is just behind), the
+    // auto-pilot first spins the car round on the spot (about a second, in the road's width), then drives
     function freeGo(target, pl) {
       syncGraph(true);
-      const L = curL(), it = D.seq[0], e = E[it.e], sDir = clamp(L - it.L0, 0, e.len), tsDir = it.dir > 0 ? target.s : e.len - target.s;
-      if (target.e === it.e && tsDir < sDir - 8 && sDir - tsDir < 350) { D.auto = { pl, target, rev: true, Lt: it.L0 + tsDir }; return true; }
-      const p = plan(target);
-      if (!p) return false;
-      D.seq = [it, ...p.legs.filter((q, i) => !(i === 0 && q.e === it.e && q.dir === it.dir)).map((q) => ({ e: q.e, dir: q.dir, uid: D.uid++ }))];
+      const it = D.seq[0], e = E[it.e], L = curL(), sDir = clamp(L - it.L0, 0, e.len), tsDir = it.dir > 0 ? target.s : e.len - target.s;
+      if (target.e === it.e && tsDir < sDir - 8 && sDir - tsDir < 70 && Math.abs(P.u) < 60) { D.auto = { pl, target, rev: true, Lt: it.L0 + tsDir }; return true; } // a few metres back: backs up to it
+      const fwd = plan(target);
+      const itR = { e: it.e, dir: -it.dir, uid: D.uid++ };
+      D.seq = [itR]; buildPath(); D.vL = locate(P.x, P.z);
+      const bwd = e.kind === "ring" ? null : plan(target);
+      const turn = !!bwd && (!fwd || bwd.cost + 110 + Math.max(0, P.u) * 0.6 < fwd.cost);
+      const base = turn ? itR : { e: it.e, dir: it.dir, uid: D.uid++ };
+      const p = turn ? bwd : fwd;
+      if (!p) { D.seq = [base]; buildPath(); D.vL = locate(P.x, P.z); return false; }
+      D.seq = [base, ...p.legs.filter((q, i) => !(i === 0 && q.e === base.e && q.dir === base.dir)).map((q) => ({ e: q.e, dir: q.dir, uid: D.uid++ }))];
       buildPath();
       D.vL = locate(P.x, P.z);
       let Lt = D.total;
       for (let k = D.seq.length - 1; k >= 0; k--) { const q = D.seq[k]; if (q.e !== target.e) continue; const s = q.dir > 0 ? target.s : E[q.e].len - target.s; Lt = Math.max(0, q.L0 + s - (pl && !pl.tap ? 18 : 0)); break; }
-      D.auto = { pl, target, legs: [], Lt };
+      const dist = Math.max(0, Lt - D.vL);
+      // beta 2.5: faster between places, more so the further it is (x1.3 on a short hop, up to x1.9 across the city)
+      const vmax = VMAX_F * 0.82 * clamp(1.3 + (dist - 500) / 3500 * 0.6, 1.3, 1.9);
+      D.auto = { pl, target, legs: [], Lt, turn: turn, vmax };
       return true;
     }
     function freeTick(dt, now) {
@@ -1201,6 +1285,7 @@
       }
       D.assist = assisted;
       physics(dt, thr, steer, hb, assisted);
+      roadFx(dt);
       lamps(P.u < -0.5 || (D.keys.d && P.u <= 0.5 && !D.auto));
       if (!D.auto) {
         syncT -= dt;
@@ -1219,10 +1304,12 @@
     }
     let freeSig = "";
     function freeUI() {
-      let hint = touchUI || VP.w < 720 ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BACK · SPACE SPIN";
+      let hint = touchUI || VP.w < 720 ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BACK · SPACE + ← → DRIFT";
       if (D.assist && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) < 110) hint = VP.w < 720 ? "ROUNDABOUT · ↑ STRAIGHT ON · OR STEER OUT" : "ROUNDABOUT · ↑ STRAIGHT ON · STEER OUT FOR ANOTHER EXIT";
       if (D.moved && Math.abs(P.u) < 5 && !D.auto && P.contact <= 0) hint = VP.w < 720 ? "STOPPED · ↑ + ← → TURNS YOU ROUND" : "STOPPED · ↑ OR ↓ WITH ← → TURNS YOU ROUND"; // round 5
       if (D.auto) hint = D.auto.rev ? "BACKING UP TO IT · ANY KEY TAKES OVER" : "DRIVING YOU THERE · ANY KEY TAKES OVER";
+      else if (D.drift) hint = D.drift.t > 1.4 ? "DRIFT · LET GO OF SPACE: SUPER BOOST" : D.drift.t > 0.6 ? "DRIFT · LET GO OF SPACE: BOOST" : "DRIFT · HOLD SPACE, STEER WITH ← →";
+      else if (D.boost) hint = D.boost.lvl > 1 ? "SUPER BOOST!" : "BOOST!";
       else if (P.u < -5) hint = "REVERSING";
       else if (P.contact > 0 && (Math.abs(P.u) > 3 || D.keys.u || D.keys.d)) hint = VP.w < 720 ? "THE KERB · STEER OR BACK UP" : "THE KERB · STEER AWAY OR BACK UP";
       if (hint === freeSig) return;
@@ -1255,7 +1342,21 @@
         const [hw, ht] = H.vehSpan?.() || [20, 10];
         g.position.y += BODY.ride + Math.abs(Math.sin(g.rotation.x)) * hw + Math.abs(Math.sin(g.rotation.z)) * ht;
       }
-      if (red) return;
+      const base = g.userData.n2base || (g.userData.n2base = g.scale.clone());
+      if (red) { g.scale.copy(base); return; }
+      // beta 2.5 (Mario Kart): a hop into a drift, squash and stretch (bumps, landings, a boost, pulling away), a bigger
+      // lean into the turns (and into a drift), the wheels bouncing a little over the road at speed
+      if (FX.hop) { FX.hop = 0; BODY.hyv = 52; BODY.hy = BODY.hy || 0.01; }
+      if (BODY.hy > 0) { BODY.hyv -= 980 * dt; BODY.hy += BODY.hyv * dt; if (BODY.hy <= 0) { BODY.hy = 0; FX.squash = Math.max(FX.squash, 0.4); BODY.hyv = 0; } }
+      g.position.y += BODY.hy || 0;
+      if (FX.squash) { BODY.sv = (BODY.sv || 0) + FX.squash * 1.7; FX.squash = 0; }
+      if (FX.boostKick) { BODY.sv = (BODY.sv || 0) - 1.3; FX.boostKick = 0; }
+      BODY.s = BODY.s || 0; BODY.sv = BODY.sv || 0;
+      spr("s", "sv", clamp(BODY.acc * 2.4e-5, -0.035, 0.035) * -1, 13, 0.3);
+      const sq = clamp(BODY.s, -0.12, 0.16);
+      g.scale.set(base.x * (1 + sq * 0.5), base.y * (1 - sq), base.z * (1 + sq * 0.5));
+      BODY.lean = (BODY.lean || 0) + (clamp(-P.u * P.yr * 0.00011, -0.075, 0.075) + (D.drift ? -D.drift.dir * 0.055 : 0) - (BODY.lean || 0)) * (1 - Math.exp(-dt * 8));
+      g.rotation.z += BODY.lean;
       const eng = ENGINE[H.vehicle()] ?? 1, still = Math.abs(D.v) < 4 && !D.kturn && !D.uturn;
       BODY.idle += ((still ? 1 : 0) - BODY.idle) * (1 - Math.exp(-dt * (still ? 2 : 8)));
       const t = now * 0.001, sp = Math.min(1, Math.abs(D.v) / VMAX);
@@ -1266,6 +1367,7 @@
         g.rotation.z += (Math.sin(t * 93 + 0.4) * 0.0006 + Math.sin(t * 137) * 0.00035) * idle + Math.sin(t * 47) * 0.0008 * buzz;
         g.rotation.x += Math.sin(t * 119 + 2.1) * 0.0003 * idle;
       }
+      if (sp > 0.2) g.position.y += Math.abs(Math.sin(t * 10.5)) * 0.32 * sp * sp; // over the road's little bumps
     }
 
     // ===================== 3. the cameras =====================
@@ -1304,7 +1406,7 @@
       // round 4 (GTA 2): following the car the satellite looks more straight down, pulls back as the speed rises (and in
       // again when slow), and looks a little ahead of where the car is going; the map's own zoom stays the base
       if (FREE && D.ready && P.init) {
-        const spd = Math.min(1, Math.abs(P.u) / VMAX_F);
+        const spd = Math.min(1.45, Math.abs(P.u) / VMAX_F); // beta 2.5: the auto-pilot goes faster: the map pulls back further with it
         if (mv.follow && !reduced()) {
           const m = D.zm || 1, nm = m + (1 + 0.6 * spd - m) * (1 - Math.exp(-dt * 1.1));
           mv.dist *= nm / m; D.zm = nm;
@@ -1314,7 +1416,9 @@
         D.lax = (D.lax || 0) + (lax - (D.lax || 0)) * (1 - Math.exp(-dt * 1.6)); D.laz = (D.laz || 0) + (laz - (D.laz || 0)) * (1 - Math.exp(-dt * 1.6));
         camPos.x += D.lax; camPos.z += D.laz; camTarget.x += D.lax; camTarget.z += D.laz;
       }
-      if (k < 1e-4) return;
+      FX.bump *= Math.exp(-dt * 7);
+      const shake = (amt) => { if (amt > 0.05 && !reduced()) { camPos.x += (Math.random() - 0.5) * amt; camPos.y += (Math.random() - 0.5) * amt; camPos.z += (Math.random() - 0.5) * amt; } };
+      if (k < 1e-4) { shake(FX.bump * H.mapView.dist * 0.006); return; }
       const cp = H.carPos, len = H.carLen() * (VP.w < VP.h ? 1.7 : 1.18), f = [Math.sin(D.camH), Math.cos(D.camH)]; // polish: a little further back on a laptop (the car filled the frame)
       // the camera stays over the road: where the spot behind the car is not road (a dead end's end, a turn), it comes
       // in closer and a little higher, so it never sits inside a tree or a wall
@@ -1343,7 +1447,7 @@
       const ex = eye.x - look.x, ey = eye.y - look.y, ez = eye.z - look.z, d1 = Math.hypot(ex, ey, ez);
       // speed: the lens widens a little and the camera falls back (lag), a faint shake, and the post pass's radial blur
       const spd = reduced() ? 0 : Math.min(1, Math.max(0, D.v) / VMAX), kick = spd * Math.sqrt(spd);
-      const yaw1 = Math.atan2(ex, ez), pitch1 = Math.asin(ey / d1), fov1 = 74 + 12 * kick;
+      const yaw1 = Math.atan2(ex, ez), pitch1 = Math.asin(ey / d1), fov1 = 74 + 12 * kick + (D.boost && !reduced() ? 10 * (1 - D.boost.t / D.boost.dur) : 0);
       // polish: no radial speed blur in the street view (10 more taps a pixel, ~15 fps on a laptop, and a nausea risk); the lens still widens
       const fov0 = H.camera.fov, d0 = Math.hypot(camPos.x - camTarget.x, camPos.y - camTarget.y, camPos.z - camTarget.z);
       const yaw0 = Math.atan2(camPos.x - camTarget.x, camPos.z - camTarget.z), pitch0 = Math.asin(clamp((camPos.y - camTarget.y) / Math.max(d0, 1e-3), -1, 1));
@@ -1355,6 +1459,10 @@
       camTarget.set(tx, ty, tz);
       camPos.set(tx + Math.sin(yaw) * Math.cos(pitch) * d, ty + Math.sin(pitch) * d, tz + Math.cos(yaw) * Math.cos(pitch) * d);
       if (spd > 0.05) { const t = performance.now() * 0.001, a = spd * spd * 0.5 * k; camPos.x += Math.sin(t * 23.1) * a; camPos.y += Math.sin(t * 31.7 + 1) * a * 0.7; camPos.z += Math.sin(t * 19.3 + 2) * a; }
+      shake(FX.bump * 3.2 * k);
+      // beta 2.5: the street camera leans into the turns (and a drift), a little
+      { const want = reduced() ? 0 : clamp(P.u * P.yr * 0.00016, -0.07, 0.07) + (D.drift ? D.drift.dir * 0.03 : 0); D.roll = (D.roll || 0) + (want - (D.roll || 0)) * (1 - Math.exp(-dt * 5));
+        if (Math.abs(D.roll) > 1e-4) { const fx2 = camTarget.x - camPos.x, fz2 = camTarget.z - camPos.z, l = Math.hypot(fx2, fz2) || 1, r = D.roll * k; H.camera.up.set((-fz2 / l) * Math.sin(r), Math.cos(r), (fx2 / l) * Math.sin(r)); } }
       const cam = H.camera, near = Math.max(2.5, d * 0.32 * (1 - k) + 3 * k), far = Math.max(14000, d * 3 + 6000) * (1 - k) + 2400 * k; // polish: the street view draws what its haze lets you see (was the whole city)
       if (Math.abs(cam.fov - fov) > 0.01 || Math.abs(cam.near - near) > 0.5 || Math.abs(cam.far - far) > 10) { cam.fov = fov; cam.near = near; cam.far = far; cam.updateProjectionMatrix(); }
     }
