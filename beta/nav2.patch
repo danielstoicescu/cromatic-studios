@@ -60,11 +60,169 @@ index 1c42cfa..ae105a4 100644
  const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
  const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
  const GS = {};
+diff --git a/site/data.mjs b/site/data.mjs
+index ba87ccd..a879ade 100644
+--- a/site/data.mjs
++++ b/site/data.mjs
+@@ -58,13 +58,13 @@ export const PROJECTS = [
+   { name: "Techventures Bank", cat: "Rebranding · Website", c: "#1D2A42", t: "#ffffff", poster: "Techventures", street: "B", page: "techventures-bank", desc: "The first entrepreneurial bank in Romania, refreshed: silver wings, landscapes in navy and a website with a human approach to banking." },
+   { name: "Clinica Sante", cat: "Clinic · Brand · Film", c: "#2f9e4f", t: "#ffffff", poster: "Health is not an option", img: "m:cs/Clinica-Sante", page: "clinica-sante", street: "C", desc: "Recommended by doctors, signed off by patients: the Clinica Sante TV film and brand work." },
+   { name: "The Aesthetic Court", cat: "Website · UX · UI", c: "#1a0909", t: "#c89b3c", poster: "Toxin on trial", img: "m:tac/d-hero", page: "the-aesthetic-court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and a website built as the trial itself.", street: "C" },
+-  { name: "Zdrovit", cat: "Health · A yard of brands", c: "#e30613", t: "#ffffff", poster: "Zdrovit", street: "C", desc: "A courtyard of health and clinic brands, from Bucharest to Barcelona." },
++  { name: "Zdrovit", cat: "Health · A yard of brands", c: "#e30613", t: "#ffffff", poster: "Zdrovit", street: "C", desc: "A courtyard of health, clinic, beauty and perfume brands, from Bucharest to Barcelona, Los Angeles and Paris." },
+   { name: "Sofmedica", cat: "Medical · A yard with a clinic", c: "#2b6fd6", t: "#ffffff", poster: "Sofmedica", street: "C", desc: "Sofmedica, with a small yard of its own and Medcity, the clinic, inside it. By Cromatic Studios." },
+   { name: "Medcity", cat: "Clinic · In the Sofmedica yard", c: "#18a39b", t: "#ffffff", poster: "Medcity", street: "C", desc: "Medcity, the clinic inside the Sofmedica yard. By Cromatic Studios." },
+   { name: "Clinica Dr. K", cat: "Aesthetics medical center", c: "#b88a6e", t: "#ffffff", poster: "Clinica Dr. K", street: "C", desc: "Clinica Dr. K, an aesthetics medical center on Medical Avenue. By Cromatic Studios." },
+   { name: "Toskani MED", cat: "Brand strategy · Packaging · Barcelona", c: "#E8A33D", t: "#2a1a05", poster: "Layers of beauty", street: "C", page: "toskani-med", desc: "Aesthetic non-invasive solutions for caring doctors, from Barcelona. Their core, their archetype, two visual concepts and packaging for new ranges." },
+-  { name: "Darya Hope", cat: "Beauty · Los Angeles", c: "#f08fb0", t: "#2a0f17", poster: "Darya Hope", street: "C", small: true, desc: "Darya Hope, on Medical Avenue. By Cromatic Studios." },
+-  { name: "Tracy J", cat: "Beauty · Los Angeles", c: "#62c6a6", t: "#0c2a20", poster: "Tracy J", street: "C", small: true, desc: "Tracy J, on Medical Avenue. By Cromatic Studios." },
++  { name: "Darya Hope", cat: "Beauty · Los Angeles", c: "#f08fb0", t: "#2a0f17", poster: "Darya Hope", street: "C", small: true, desc: "Darya Hope, in the Zdrovit yard. By Cromatic Studios." },
++  { name: "Jesse J", cat: "Beauty · Los Angeles", c: "#62c6a6", t: "#0c2a20", poster: "Jesse J", street: "C", small: true, desc: "Jesse J, in the Zdrovit yard. By Cromatic Studios." },
+   { name: "Routine Paris", cat: "Brand · Identity", c: "#28C840", t: "#0e0e0e", poster: "Make it a ritual", img: "routineCoverImg", vid: "routineCoverVid", badge: "bRoutine", page: "routine-paris", desc: "A daily ritual brand with a Parisian address and an indie heart. Built to be part of somebody's morning, every morning.", street: "C" },
+   { name: "Lacalut", cat: "In the Zdrovit yard", c: "#cfcdc8", t: "#3d3c39", poster: "Lacalut", street: "C", small: true, desc: "Lacalut, one of the brands in the Zdrovit yard. By Cromatic Studios." },
+   { name: "Periferisan", cat: "In the Zdrovit yard", c: "#cfcdc8", t: "#3d3c39", poster: "Periferisan", street: "C", small: true, desc: "Periferisan, one of the brands in the Zdrovit yard. By Cromatic Studios." },
+diff --git a/site/i18n/ro.json b/site/i18n/ro.json
+index 2fcfbe7..1377347 100644
+--- a/site/i18n/ro.json
++++ b/site/i18n/ro.json
+@@ -109,7 +109,7 @@
+  "A conversation in the middle of the room": "O conversație în mijlocul camerei",
+  "A cookie on a blue plate, with the Sip logo": "Un biscuit pe o farfurie albastră, cu logoul Sip",
+  "A cosy patisserie, in the making. Work in progress: more soon.": "O patiserie primitoare, în devenire. Lucrăm la ea: revenim curând cu mai multe.",
+- "A courtyard of health and clinic brands, from Bucharest to Barcelona.": "O curte plină de branduri de sănătate și clinici, de la București la Barcelona.",
++ "A courtyard of health, clinic, beauty and perfume brands, from Bucharest to Barcelona, Los Angeles and Paris.": "O curte plină de branduri de sănătate, clinici, frumusețe și parfumuri, de la București la Barcelona, Los Angeles și Paris.",
+  "A crowd outside Steam on a sunny day": "Mulțime în fața cafenelei Steam, într-o zi însorită",
+  "A cup set on the drip tray": "O ceașcă așezată pe tava de scurgere",
+  "A daily ritual brand with a Parisian address and an indie heart. Built to be part of somebody's morning, every morning.": "Un brand de ritual zilnic, cu adresă pariziană și suflet indie. Construit să facă parte din dimineața cuiva, în fiecare dimineață.",
+@@ -1104,7 +1104,7 @@
+  "Jars and skin trays for the smoked fish": "Borcane și caserole vidate pentru peștele afumat",
+  "Jars of fish zacuscă from Blăgești": "Borcane cu zacuscă de pește de la Blăgești",
+  "Jay grinder": "Râșnița Jay",
+- "Tracy J": "Tracy J",
++ "Jesse J": "Jesse J",
+  "Joking around by the yellow wall": "Ne prostim lângă peretele galben",
+  "Jump to a pillar": "Sari la un pilon",
+  "Jury deliberation": "Deliberarea juriului",
 diff --git a/src/app.js b/src/app.js
-index 4296f0f..3b0a5d2 100644
+index 6ea2343..3b0a5d2 100644
 --- a/src/app.js
 +++ b/src/app.js
-@@ -32208,8 +32208,46 @@ void main() {
+@@ -26602,60 +26602,6 @@ void main() {
+     if (o.keep) EXTRA_KEEPOUT.push({ x: o.x, y: o.z, r: o.keep });
+     return finish(g, parent, o.x, o.z);
+   }
+-  // r176 (Daniel: Routine Paris "bigger", on its own): a Haussmann building that reads from the map. Cream stone, a
+-  // dark green shop front with the Routine sign, three floors of tall windows with black iron balconies on the second
+-  // and the top floor, a cornice, a zinc mansard with dormers and two chimney stacks. The front is local +z
+-  function buildParisian(parent, o) {
+-    const g = new Group();
+-    const W = o.w, D = o.d, H = o.h, stone = o.wall || "#efe7d8";
+-    const front = canvasTexture(256, 256, (ctx) => {
+-      ctx.fillStyle = stone; ctx.fillRect(0, 0, 256, 256);
+-      // stone courses
+-      ctx.strokeStyle = "rgba(120,100,70,.18)"; ctx.lineWidth = 1;
+-      for (let y = 12; y < 190; y += 12) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(256, y); ctx.stroke(); }
+-      // three floors, five bays of tall windows
+-      for (let f = 0; f < 3; f++) for (let c = 0; c < 5; c++) {
+-        const x = 14 + c * 48, y = 14 + f * 60;
+-        ctx.fillStyle = "#3c4650"; ctx.fillRect(x, y, 34, 46);
+-        ctx.fillStyle = "#ffe2a8"; ctx.fillRect(x + 4, y + 4, 26, 16);
+-        ctx.fillStyle = stone; ctx.fillRect(x + 15, y, 4, 46);
+-      }
+-      // the iron balconies: the second floor and the top one run the whole width
+-      ctx.strokeStyle = "#1c1c1c"; ctx.lineWidth = 3;
+-      for (const y of [58, 118]) { ctx.beginPath(); ctx.moveTo(6, y); ctx.lineTo(250, y); ctx.stroke(); for (let x = 8; x < 250; x += 7) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 10); ctx.stroke(); } }
+-      // the ground floor: the shop front
+-      ctx.fillStyle = "#1f3d33"; ctx.fillRect(0, 194, 256, 62);
+-      ctx.fillStyle = "#ffe2a8"; for (const x of [16, 150]) ctx.fillRect(x, 206, 90, 44);
+-      ctx.fillStyle = "#14261f"; ctx.fillRect(114, 206, 28, 50);
+-    });
+-    const side = canvasTexture(128, 256, (ctx) => {
+-      ctx.fillStyle = stone; ctx.fillRect(0, 0, 128, 256);
+-      for (let f = 0; f < 3; f++) for (let c = 0; c < 3; c++) { ctx.fillStyle = "#3c4650"; ctx.fillRect(10 + c * 40, 14 + f * 60, 26, 46); }
+-      ctx.fillStyle = "#1f3d33"; ctx.fillRect(0, 194, 128, 62);
+-    });
+-    const fm = new MeshStandardMaterial({ map: front, emissiveMap: front, emissive: new Color("#ffcf8a"), emissiveIntensity: 0, roughness: 0.85 });
+-    const sm = new MeshStandardMaterial({ map: side, emissiveMap: side, emissive: new Color("#ffcf8a"), emissiveIntensity: 0, roughness: 0.85 });
+-    const wallM = new MeshStandardMaterial({ color: stone, roughness: 0.85 });
+-    STREET_GLOW.push([fm, 0.7], [sm, 0.5]);
+-    const body = new Mesh(new BoxGeometry(W, H, D), [sm, sm, wallM, wallM, fm, sm]); // windows all round: the map sees it from every side
+-    body.position.y = H / 2; g.add(body);
+-    // the balconies stand out a little from the wall, and a cornice runs under the roof
+-    const ironM = new MeshStandardMaterial({ color: "#1c1c1c", roughness: 0.6, metalness: 0.4 });
+-    for (const y of [H * 0.54, H * 0.8]) { const b = new Mesh(new BoxGeometry(W - 2, 1.2, 3), new MeshStandardMaterial({ color: stone, roughness: 0.8 })); b.position.set(0, y, D / 2 + 1.5); g.add(b); const r = new Mesh(new BoxGeometry(W - 2, 2.6, 0.5), ironM); r.position.set(0, y + 1.9, D / 2 + 2.9); g.add(r); }
+-    const corn = new Mesh(new BoxGeometry(W + 3, 2.2, D + 3), new MeshStandardMaterial({ color: "#e4dac6", roughness: 0.8 })); corn.position.y = H + 1.1; g.add(corn);
+-    // the zinc mansard, its dormers and the chimney stacks
+-    const MH = 17, inset = 9, zinc = new MeshStandardMaterial({ color: "#6f7a86", roughness: 0.5, metalness: 0.3 });
+-    const sh = new Shape(); sh.moveTo(-D / 2, 0); sh.lineTo(D / 2, 0); sh.lineTo(D / 2 - inset, MH); sh.lineTo(-D / 2 + inset, MH); sh.lineTo(-D / 2, 0);
+-    const roof = new Mesh(new ExtrudeGeometry(sh, { depth: W, bevelEnabled: false }), zinc); roof.rotation.y = Math.PI / 2; roof.position.set(-W / 2, H + 2.2, 0); g.add(roof);
+-    const dormM = new MeshStandardMaterial({ color: "#f1ece2", roughness: 0.8 });
+-    for (let i = 0; i < 4; i++) { const dx = -W / 2 + W * (i + 0.5) / 4; const dor = new Mesh(new BoxGeometry(7, 8, 5), dormM); dor.position.set(dx, H + 2.2 + 7, D / 2 - 6.5); g.add(dor); const cap = new Mesh(new BoxGeometry(8.5, 1.4, 6), zinc); cap.position.set(dx, H + 2.2 + 11.6, D / 2 - 6.5); g.add(cap); }
+-    for (const sx of [-1, 1]) { const ch = new Mesh(new BoxGeometry(5, 9, 12), new MeshStandardMaterial({ color: "#d8c9b0", roughness: 0.9 })); ch.position.set(sx * (W / 2 - 8), H + 2.2 + MH + 3, 0); g.add(ch); }
+-    // the Routine sign over the shop front
+-    const sb = signBoard(o, Math.min(W * 0.62, 44), Math.min(W * 0.62, 44) * 0.3); sb.position.set(0, H * 0.27, D / 2 + 1.4); g.add(sb);
+-    facing(g, o.face);
+-    if (o.keep) EXTRA_KEEPOUT.push({ x: o.x, y: o.z, r: o.keep });
+-    return finish(g, parent, o.x, o.z);
+-  }
+ 
+   // The Aesthetic Court at Casa Poporului (r87, rebuilt): the Palace of the Parliament as it
+   // stands, a symmetric cream travertine mass in five stepped tiers. Arched windows between
+@@ -27064,9 +27010,7 @@ void main() {
+   var ZDROVIT_YARD = ["Lacalut", "Periferisan", "Help 4 Brain", "Parusan", "Bonylash", "Litorsal"];
+   // r134: Daniel: the small buildings stand along the edges of the yard, not round the fountain: four along the
+   // hedge side (towards Sofmedica), one each side of the gate
+-  // r176: the beauty shops' side (south) is not left bare now they have moved out: two kiosks there, two on the hedge
+-  // side, one each side of the gate
+-  var YARD_EDGE = [[1690, 5006], [1790, 5006], [1690, 5205], [1790, 5205], [1590, 5012], [1590, 5150]];
++  var YARD_EDGE = [[1630, 5006], [1690, 5006], [1750, 5006], [1810, 5006], [1590, 5012], [1590, 5150]];
+   var YARD_SLOTS = YARD_EDGE.length;
+   const yardSlotOf = (k) => k;
+   function yardSpot(i) { return YARD_EDGE[i % YARD_EDGE.length]; }
+@@ -27087,7 +27031,7 @@ void main() {
+           const roof = new Mesh(new BoxGeometry(19, 1.4, 15), new MeshStandardMaterial({ color: "#e30613", roughness: 0.6 })); roof.position.y = 11.7; k.add(roof);
+           const sg = signBoard({ name: ZDROVIT_YARD[k0], signBg: "#ecebe7", signInk: "#3d3c39" }, 15, 3.2); sg.position.set(0, 8.4, 6.2); k.add(sg);
+         }
+-        k.position.set(kx, 0, kz); k.rotation.y = kx < 1600 ? Math.PI / 2 : kz > cz ? Math.PI : 0; g.add(k); // (r176: the south ones face the yard too)
++        k.position.set(kx, 0, kz); k.rotation.y = kx < 1600 ? Math.PI / 2 : 0; g.add(k);
+       }
+     }
+     const pave = new Mesh(new BoxGeometry(340, 0.8, 370), new MeshStandardMaterial({ color: "#e7e0d2", roughness: 1 }));
+@@ -27645,20 +27589,14 @@ void main() {
+     { br: "C", name: "Toskani MED", x: 1420, z: 5170, face: "+x", kind: "barcelona", w: 60, d: 46, h: 36, wall: "#f3e6cf", accent: "#e8a33d", c: "#E8A33D", t: "#2a1a05", line: "AESTHETIC MEDICINE \xB7 BARCELONA", desc: "Aesthetic non-invasive solutions for caring doctors, from Barcelona. We found their core, their archetype and two visual concepts, then the packaging for new ranges." },
+     { br: "C", name: "Sofmedica", x: 1630, z: 4905, face: "-x", kind: "house", w: 58, d: 44, h: 34, wall: "#f4f4f0", accent: "#2b6fd6", c: "#2b6fd6", t: "#ffffff", line: "MEDICAL \xB7 A YARD WITH A CLINIC" },
+     { br: "C", name: "Medcity", x: 1780, z: 4900, face: "-x", kind: "house", w: 52, d: 40, h: 30, wall: "#eef6f4", accent: "#18a39b", c: "#18a39b", t: "#ffffff", line: "CLINIC \xB7 IN THE SOFMEDICA YARD" },
+-    // r176 (Daniel: "Routine Paris completely separate from Zdrovit, and bigger; Jesse J and Darya Hope also completely
+-    // separate, but smaller"): out of the Zdrovit yard onto plots of their own. Routine Paris, half as big again (was
+-    // 46 x 40 x 34), a Haussmann building on the west kerb between Toskani MED and Elithia (buildParisian); the two LA
+-    // beauty shops at three quarters (were 56 x 42 x 28) on the east kerb past Zoetis, 260 apart (clear of the lane's houses)
+-    { br: "C", name: "Routine Paris", logo: "logoRoutine", x: 1415, z: 5322, face: "+x", kind: "paris", grand: true, pinH: 78, w: 69, d: 60, h: 51, wall: "#efe7d8", accent: "#28C840", c: "#28C840", t: "#0e0e0e", line: "PERFUMES \xB7 PARIS" },
+-    { br: "C", name: "Darya Hope", x: 1574, z: 5690, face: "-x", kind: "la", w: 42, d: 32, h: 21, wall: "#f8d7df", accent: "#f08fb0", c: "#f08fb0", t: "#2a0f17", line: "BEAUTY \xB7 LOS ANGELES" },
+-    // r177 (Daniel): the brand the code called "Jesse J" (Daniel wrote "Jessie J") is Tracy J
+-    { br: "C", name: "Tracy J", x: 1574, z: 5950, face: "-x", kind: "la", w: 42, d: 32, h: 21, wall: "#d8efe6", accent: "#62c6a6", c: "#62c6a6", t: "#0c2a20", line: "BEAUTY \xB7 LOS ANGELES" }
+   ];
+-  // the Zdrovit courtyard (Medical Avenue, east side): Zdrovit and its six brands' kiosks around a yard
+-  // (r176: Routine Paris, Darya Hope and Jesse J moved out to their own plots, see STREET_BRANDS)
++  // the Zdrovit courtyard (Medical Avenue, east side): eight small buildings around a yard
+   var COURT = { x: 1720, z: 5070 };
+   var COURT_BRANDS = [
+-    { br: "C", name: "Zdrovit", x: 1860, z: 5070, face: "-x", kind: "house", w: 70, d: 48, h: 84, wall: "#f2f7f1", accent: "#e30613", c: "#e30613", t: "#ffffff", line: "HEALTH" }
++    { br: "C", name: "Zdrovit", x: 1860, z: 5070, face: "-x", kind: "house", w: 70, d: 48, h: 84, wall: "#f2f7f1", accent: "#e30613", c: "#e30613", t: "#ffffff", line: "HEALTH" },
++    { br: "C", name: "Darya Hope", x: 1720, z: 5215, face: "-z", kind: "la", w: 56, d: 42, h: 28, wall: "#f8d7df", accent: "#f08fb0", c: "#f08fb0", t: "#2a0f17", line: "BEAUTY · LOS ANGELES" },
++    { br: "C", name: "Jesse J", x: 1820, z: 5205, face: "-z", kind: "la", w: 56, d: 42, h: 28, wall: "#d8efe6", accent: "#62c6a6", c: "#62c6a6", t: "#0c2a20", line: "BEAUTY · LOS ANGELES" },
++    { br: "C", name: "Routine Paris", logo: "logoRoutine", x: 1560, z: 5226, face: "-x", kind: "paris", w: 46, d: 40, h: 34, wall: "#efe7d8", accent: "#28C840", c: "#28C840", t: "#0e0e0e", line: "PERFUMES · PARIS" }
+   ];
+   // Coffee Street additions
+   var COFFEE_ADDS = [
+@@ -27679,7 +27617,6 @@ void main() {
+       if (o.kind === "festival") buildUnchainFortress(parent, o2);
+       else if (o.kind === "assetto") buildAssetto(parent, o2);
+       else if (o.kind === "energy") buildBepco(parent, o2);
+-      else if (o.grand) buildParisian(parent, o2); // r176
+       else buildBrandBuilding(parent, o2);
+     }
+     buildFriendsBlocks(parent);
+@@ -32271,8 +32208,46 @@ void main() {
      // the Classic Formula is a slim single-seater: a good deal smaller than the road cars
      // (the scale sits on an inner group: the spawn animation resets the outer one to 1)
      if (id === "f1") { const outer = new Group(); v.group.scale.setScalar(0.5); outer.add(v.group); v.group = outer; }
@@ -111,7 +269,7 @@ index 4296f0f..3b0a5d2 100644
    function buildVehicleBase(id) {
      switch (id) {
        case "f1":
-@@ -33617,8 +33655,26 @@ void main() {
+@@ -33680,8 +33655,26 @@ void main() {
        vehMenu.appendChild(b);
      });
      // r160 (Daniel): the Ride buttons (map and drive bars) show the ride you have, its own picture (the pickers' previews)
@@ -140,7 +298,25 @@ index 4296f0f..3b0a5d2 100644
      const syncVeh = (id) => { Object.entries(vehRows).forEach(([k, b]) => b.classList.toggle("on", k === id)); rideCur = id; paintRideBtns(); };
      uiSyncVeh = syncVeh;
      syncVeh("dacia1300"); // r138j: the default ride
-@@ -35112,7 +35168,8 @@ void main() {
+@@ -34931,7 +34924,7 @@ void main() {
+       const m = el("div", "hmodal court-modal");
+       m.setAttribute("role", "dialog");
+       m.innerHTML = `<div class="hm-info wide"><span class="eyebrow">MEDICAL AVENUE \u00B7 THE COURTYARD</span><span class="hm-name drop1" style="background:#e30613;color:#fff">Zdrovit</span>
+-        <p>Seven brands around one yard: health and clinics, from Bucharest to Barcelona.</p>
++        <p>Eight brands around one yard: health, clinics, beauty and perfume, from Bucharest to Barcelona, Los Angeles and Paris.</p>
+         <div class="court-grid">${COURT_BRANDS.map((b, i) => `<button class="court-b" data-i="${i}" style="--cc:${b.c};--ct:${b.t}"><b>${b.name}</b><span class="mono">${b.line}</span></button>`).join("")}${ZDROVIT_YARD.map((n) => `<button class="court-b yard-b" data-n="${n}" style="--cc:#cfcdc8;--ct:#3d3c39"><b>${n}</b><span class="mono">IN THE YARD</span></button>`).join("")}</div></div>`;
+       m.querySelectorAll(".court-b").forEach((btn) => { if (btn.dataset.n) { btn.onclick = () => { const pg = window.__casePage(btn.dataset.n); if (pg && openFrameHook) { closeModal(); openFrameHook(`/work/${pg}/?embed=1`, btn.dataset.n); } }; return; } btn.onclick = () => { const b0 = COURT_BRANDS[+btn.dataset.i], pg = window.__casePage(b0.name); if (pg && openFrameHook) { closeModal(); openFrameHook(`/work/${pg}/?embed=1`, b0.name); } else openProjectHook?.(projOf(b0)); }; });
+       const close = el("button", "hm-close mono", "CLOSE \u00D7");
+@@ -34940,7 +34933,7 @@ void main() {
+       modalBack.appendChild(m);
+       openModal();
+     };
+-    const COURT_TAG = { br: "C", name: "Zdrovit", x: COURT.x - 150, z: COURT.z, line: "7 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff" };
++    const COURT_TAG = { br: "C", name: "Zdrovit", x: COURT.x - 150, z: COURT.z, line: "8 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff" };
+     const workTags = [...STREET_BRANDS, COURT_TAG, TAC, ...COFFEE_ADDS, ...LANE_BRANDS].map((b) => {
+       BRANDC[b.name] = BRANDC[b.name] || { c: b.c, t: b.t };
+       // brands with a case page on the website open it full screen (offline copies fall back to the card)
+@@ -35175,7 +35168,8 @@ void main() {
        },
        paintRide: () => paintRideBtns(), // r160: once a bar with a Ride button is built
        setVehiclePreviews(map) {
@@ -150,7 +326,7 @@ index 4296f0f..3b0a5d2 100644
          Object.entries(map).forEach(([id, url]) => {
            const t = vehRows[id]?.querySelector(".hr-thumb");
            if (t) t.style.backgroundImage = `url(${url})`;
-@@ -35434,7 +35491,7 @@ void main() {
+@@ -35497,7 +35491,7 @@ void main() {
        }
        var api = {
          toggleSite() { setSiteMode(!siteMode); },
@@ -159,7 +335,7 @@ index 4296f0f..3b0a5d2 100644
          isMap() { return mapMode; },
          boardNow() { clearTimeout(boardTimer); clearInterval(boardTick); if (mapMode && mapBoarding && jetFx.phase === "idle") { mapCloseBoarding(true); mapTakeoff(); } },
          sayHi() { if (!mapMode) setMapMode(true); setTimeout(() => { mapUI?.welcome(false); mapOpenBoarding(); }, 350); },
-@@ -35568,6 +35625,7 @@ void main() {
+@@ -35631,6 +35625,7 @@ void main() {
        // side, rendered in the current world, on the main canvas between two frames (like the world previews)
        var placeShotCache = {};
        function placeShot(pl) {
@@ -167,7 +343,7 @@ index 4296f0f..3b0a5d2 100644
          const key = pl.id + "|" + state.schemeIdx;
          if (placeShotCache[key]) return placeShotCache[key];
          const cw = renderer.domElement.width, ch = renderer.domElement.height;
-@@ -35692,7 +35750,8 @@ void main() {
+@@ -35755,7 +35750,8 @@ void main() {
        // before its first draw, the rooms' programs too (linkedRun), and the PNGs encode off the main thread
        // (toBlob). onEach(id, url) gets each thumbnail as it lands
        async function makeVehiclePreviews(onEach) {
@@ -177,7 +353,7 @@ index 4296f0f..3b0a5d2 100644
          const size = 132;
          await idle();
          const r = new WebGLRenderer({ antialias: true, alpha: true });
-@@ -35944,7 +36003,21 @@ void main() {
+@@ -36007,7 +36003,21 @@ void main() {
          st.setProperty("--cr-pill", crayonTex.pill); st.setProperty("--cr-card", crayonTex.card); st.setProperty("--cr-ring", crayonTex.ring); st.setProperty("--cr-dot", crayonTex.dot);
          return crayonTex;
        }
@@ -199,7 +375,7 @@ index 4296f0f..3b0a5d2 100644
          if (state.schemeIdx != null && state.schemeIdx !== idx && !onbWarm) czEv("world_change", { world: SCHEMES[idx]?.id }); // r141: not the warm-up
          state.schemeIdx = idx;
          const s = SCHEMES[idx];
-@@ -37723,7 +37796,7 @@ void main() {
+@@ -37786,7 +37796,7 @@ void main() {
            tilt = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
          }
          if (tilt.rt.width !== w || tilt.rt.height !== h) { tilt.rt.setSize(w, h); tilt.mat.uniforms.res.value.set(w, h); }
@@ -208,7 +384,7 @@ index 4296f0f..3b0a5d2 100644
          tilt.mat.uniforms.band.value = 0.16;
          tilt.mat.uniforms.t.value = (now * 0.001) % 100;
          tilt.mat.uniforms.zb.value = mapMode ? mapView.zoomBlur || 0 : 0;
-@@ -38177,6 +38250,8 @@ void main() {
+@@ -38240,6 +38250,8 @@ void main() {
              if (now - (state.floorFix || 0) > 120) { state.floorFix = now; window.scrollTo({ top: clamp2(state.floorL / effectiveTotal(), 0, 1) * maxScroll(), behavior: "instant" }); }
            }
          }
@@ -217,7 +393,7 @@ index 4296f0f..3b0a5d2 100644
          if (mapMode) state.targetL = mapNav.targetL;
          else if (ONB_MODE && onbL != null) state.targetL = onbL; // r140: the page's scroll is the road
          const nearDacia = state.L > route.stopL.merge - 1500 && state.L < route.stopL.merge - 250;
-@@ -38227,7 +38302,8 @@ void main() {
+@@ -38290,7 +38302,8 @@ void main() {
              state.targetL = L2;
            }
          }
@@ -227,7 +403,7 @@ index 4296f0f..3b0a5d2 100644
          // r139e: a clamp (speed caps, police, the merge floor) or a jump moved L off the spring: its velocity follows
          if (state.L !== MO.Ls) MO.Lv = Math.abs(dL) > 3000 ? 0 : dL / Math.max(dt, 1e-3);
          const dLm = Math.abs(dL) > 3000 ? 0 : dL; // a jump is not motion (no lean, no pitch from it)
-@@ -38242,7 +38318,7 @@ void main() {
+@@ -38305,7 +38318,7 @@ void main() {
            const f = clamp2(state.speed / 69.75 + (siteMode || police.active ? 0 : lagAhead / 5000), 0, 1);
            window.__spd = { f, lag: Math.round(state.targetL - state.L) };
            const red = f >= 200 / 240 && state.vehicleId !== "cop";
@@ -236,7 +412,7 @@ index 4296f0f..3b0a5d2 100644
            redHold = red && !siteMode ? redHold + dt : 0;
            if (xpPending && xpPending.kind === "msg" && now - xpPending.t > 4000) xpCommit(true);
          }
-@@ -38256,6 +38332,7 @@ void main() {
+@@ -38319,6 +38332,7 @@ void main() {
          air = smooth(air, airT, dt, 0.9);
          if (air > 1e-3) carPos.y += AIR_H * air * air * (3 - 2 * air);
          route.tangentAt(state.L, carTan);
@@ -244,7 +420,7 @@ index 4296f0f..3b0a5d2 100644
          const flying = carPos.z > RAMP_LIP + 30 && carPos.y > 30;
          const isPlane = veh.kind === "plane";
          const hover = isPlane ? 34 + Math.sin(now * 3e-3) * 5 : veh.kind === "sub" ? 20 + Math.sin(now * 1.9e-3) * 4 : 0;
-@@ -38317,6 +38394,7 @@ void main() {
+@@ -38380,6 +38394,7 @@ void main() {
            let dA = Math.atan2(_tA.x, _tA.z) - Math.atan2(_tB.x, _tB.z);
            while (dA > Math.PI) dA -= Math.PI * 2; while (dA < -Math.PI) dA += Math.PI * 2;
            MO.kap = (planeRev > 0.5 ? -dA : dA) / 80;
@@ -252,7 +428,7 @@ index 4296f0f..3b0a5d2 100644
          }
          {
            // cars roll a little outwards; the plane leans INTO the turn, like an aircraft does
-@@ -38387,6 +38465,7 @@ void main() {
+@@ -38450,6 +38465,7 @@ void main() {
          const climb = (airT - air) * (veh.kind === "plane" ? 1 : 0);
          veh.group.rotation.set(-pitch + (flying ? -0.09 : 0) - clamp2(climb * 0.9, -0.35, 0.45) + MO.p, heading, bank + sway, "YXZ"); // r139e: + MO.p
          veh.group.position.y += MO.hy; // r139e: the suspension's heave
@@ -260,7 +436,7 @@ index 4296f0f..3b0a5d2 100644
          if (coffee.phase === "rush") {
            veh.group.position.x += (Math.random() - 0.5) * 3;
            veh.group.position.z += (Math.random() - 0.5) * 3;
-@@ -38600,6 +38679,7 @@ void main() {
+@@ -38663,6 +38679,7 @@ void main() {
            // through; now the first visible frame is solved again on the real car and the camera is put there at once
            if (camSnapNext && !mapFirstSolved && BOOT_MODE === "map" && !mapView.follow && !mapNav.moving && !mapNav.place) { mapFirstSolved = true; const v = mapOpeningView(); mapView.tgt.set(v.t[0], 0, v.t[1]); mapView.dist = v.dist; mapView.yaw = v.yaw; mapView.pitch = v.pitch; mapView.distGoal = null; mapView.yawGoal = mapView.pitchGoal = null; mapSettle = 0; }
            mapSettleTick(); mapUI.update(dt, now); camPos.copy(mapView.pos); camTarget.copy(mapView.tgt);
@@ -268,7 +444,7 @@ index 4296f0f..3b0a5d2 100644
          } // r142b: mapSettleTick
          // exponential damping, frame-rate independent; the look target is damped too, so
          // set-piece cameras (fork, coffee, Dacia, spiral) blend in instead of cutting
-@@ -38609,8 +38689,9 @@ void main() {
+@@ -38672,8 +38689,9 @@ void main() {
          // in the street POV the camera rides with you: damping tightens as the POV takes over
          const camSnap = camSnapNext; camSnapNext = false; // r157
          const handOn = mapMode && now - (mapView.direct || 0) < 150; // r166: a hand on the map: the camera is where the hand puts it
@@ -280,7 +456,7 @@ index 4296f0f..3b0a5d2 100644
          camera.position.lerp(camPos, kp);
          window.__lookSm.lerp(camTarget, kt);
          camera.lookAt(window.__lookSm);
-@@ -38741,6 +38822,7 @@ void main() {
+@@ -38804,6 +38822,7 @@ void main() {
          if (schemeId === "ghibli" || schemeId === "orchid") { fogNear = 1400; fogFar = 9000; }
          // the map looks from far above: fog starts past the ground, in every world (underwater keeps a little haze)
          if (mapMode) { const k = schemeId === "underwater" ? 0.75 : 1.15; fogNear = Math.max(fogNear, mapView.dist * k); fogFar = Math.max(fogFar, mapView.dist * (schemeId === "underwater" ? 2.2 : 3.2)); }
@@ -288,7 +464,7 @@ index 4296f0f..3b0a5d2 100644
          scene.fog.near = smooth(scene.fog.near, flying && schemeId !== "monument" ? 1400 : fogNear, dt, 1.5);
          scene.fog.far = smooth(scene.fog.far, flying && schemeId !== "monument" ? 6600 : fogFar, dt, 1.5);
          if (copCar.group.visible) {
-@@ -38992,7 +39074,11 @@ void main() {
+@@ -39055,7 +39074,11 @@ void main() {
        // above. Pick a place and the van drives itself there along the real roads; when it arrives
        // the place opens. Chapters are quiet grey placards you can ignore; the crew is a button;
        // Olari 9 has a jet at the end of the runway where you board by filling the boarding pass.
@@ -301,7 +477,7 @@ index 4296f0f..3b0a5d2 100644
        try { history.scrollRestoration = "manual"; } catch {}
        var BOOT_MODE = /[?&]drive\b/.test(location.search) ? "drive" : /[?&]map\b/.test(location.search) ? "map" : "intro";
        // r139p (Daniel: "the intro must not play more than once on the site"): it plays once per visit (6 h); after that,
-@@ -39075,6 +39161,147 @@ void main() {
+@@ -39138,6 +39161,147 @@ void main() {
        var mapMaxD = () => innerWidth < 720 ? 7000 : 6200; // a phone in portrait needs a little more height to see as much
        var mapView = { tgt: new Vector3(1270, 0, 3170), pos: new Vector3(), dist: 8200, distGoal: null, yaw: 0.3, pitch: 0.98, vx: 0, vz: 0, follow: false, sx: 0, sy: 0 };
        var mapNav = { targetL: 0, legs: [], place: null, moving: false };
@@ -449,7 +625,25 @@ index 4296f0f..3b0a5d2 100644
        var jetFx = { phase: "idle", t: 0, baam: false };
        var boardTimer = 0, boardTick = 0;
        var MAP_STREET = { A: "COFFEE STREET", B: "FINTECH BOULEVARD", C: "MEDICAL AVENUE", D: "THE SHORTEST SHORTCUT" };
-@@ -39146,6 +39373,7 @@ void main() {
+@@ -39168,7 +39332,7 @@ void main() {
+         { id: "unde", br: "A", x: 708, z: 6036, h: 50, name: "UND\xC9", line: "GROCERY \xB7 SIGNAGE", c: "#2b6fd6", t: "#ffffff", work: "UNDE", desc: "ARCA's grocery stores: a hand-drawn basket and three formats, Market, Store and Concept." },
+         { id: "invest", br: "B", x: 2205, z: 4500, h: 170, name: "Investimental", line: "FINTECH \xB7 UX \xB7 UI", c: "#119BFE", t: "#ffffff", work: "Investimental" },
+         { id: "tac", br: "C", x: 1500, z: 4570, px: 1775, pz: 4570, h: 128, /* r139e: the re-massed palace is lower */ name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
+-        { id: "zdrovit", br: "C", x: 1860, z: 5070, h: 96, name: "Zdrovit", line: "A YARD OF BRANDS", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health and clinic brands, from Bucharest to Barcelona." }, // r176: the beauty and perfume brands have their own plots now
++        { id: "zdrovit", br: "C", x: 1860, z: 5070, h: 96, name: "Zdrovit", line: "A YARD OF BRANDS", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health, clinic, beauty and perfume brands, from Bucharest to Barcelona, Los Angeles and Paris." },
+         { id: "end", stop: "end", name: "Cromatic Studios House", line: "STR. OLARI 9 \xB7 COME BY", c: "#ffffff", t: "#111111", pin: "#111111" },
+         { id: "jet", x: 1250, z: JET_HOME.z - 15, px: JET_HOME.x, pz: JET_HOME.z, h: 28 /* r138b: the smaller jet's fin top */, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", board: true, unmarked: true }
+       ];
+@@ -39176,7 +39340,7 @@ void main() {
+       (() => {
+         const have = new Set(MAP_PLACES.map((p) => (p.work || p.name).toLowerCase()));
+         const add = (o) => { if (have.has(o.name.toLowerCase())) return; have.add(o.name.toLowerCase()); MAP_PLACES.splice(MAP_PLACES.length - 2, 0, o); };
+-        for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, street: b.lane ? "D" : b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.pinH || (b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60), name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
++        for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, street: b.lane ? "D" : b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
+         ZDROVIT_YARD.forEach((n, i) => { const [x, z] = yardSpot(yardSlotOf(i)); add({ id: "y-" + i, br: "C", x: 1500, z, px: x, pz: z, h: 22, name: n, line: "IN THE ZDROVIT YARD", c: "#cfcdc8", t: "#3d3c39", small: true, desc: `${n}, one of the brands in the Zdrovit yard. By Cromatic Studios.` }); });
+         add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Berero", line: "BRAND \xB7 LABELS \xB7 MERCH", c: "#111111", t: "#ffffff", act: "bereroTag" });
+         add({ id: "echo", x: 1170, z: 6340, px: 1078, pz: 6350, h: 110, tapW: 0.45 /* r168 (Daniel: "Echo School is hard to press, it matters more than Dacia 99"): it wins the building's taps, and shows as a card from afar (TIER1) */, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", desc: "Two years of Instagram for a School of Technology, Digital Arts & Videogames in Bucharest: posts, stories, carousels, reels and campaigns." }); // r159: the case page is live
+@@ -39209,6 +39373,7 @@ void main() {
        // The route itself is the truth: the drive drops branchChosen whenever you are back before the fork
        function mapGo(pl) {
          if (!pl || jetFx.phase !== "idle") return;
@@ -457,7 +651,7 @@ index 4296f0f..3b0a5d2 100644
          if (pl.find) return mapUI.find(pl);
          mapCloseBoarding();
          // where to: a stop, a road point, or a building beside the road (park just short of it)
-@@ -39217,7 +39445,9 @@ void main() {
+@@ -39280,7 +39445,9 @@ void main() {
          crewPanel.classList.remove("hidden");
        }
        // ---- boarding the jet: the boarding pass, then wheels up ----
@@ -467,7 +661,7 @@ index 4296f0f..3b0a5d2 100644
          mapBoarding = true;
          ui.clearCard();
          currentCardStop = null;
-@@ -39311,6 +39541,8 @@ void main() {
+@@ -39374,6 +39541,8 @@ void main() {
        if (/[?&]boarding\b/.test(location.search)) { const t0b = performance.now(); const ob = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - t0b < 20000) return setTimeout(ob, 200); setTimeout(() => window.__openBoarding(), 300); }; setTimeout(ob, 1800); }
        function mapCloseBoarding(keepView = false) {
          if (!mapBoarding) return;
@@ -476,7 +670,7 @@ index 4296f0f..3b0a5d2 100644
          boardFxStop?.();
          mapBoarding = false;
          ui.card.classList.add("hidden");
-@@ -39336,11 +39568,10 @@ void main() {
+@@ -39399,11 +39568,10 @@ void main() {
          document.body.classList.add("flight-done");
          let end = document.querySelector(".flight-end");
          if (!end) {
@@ -489,7 +683,7 @@ index 4296f0f..3b0a5d2 100644
            end.querySelector(".fe-replay").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?r=" + Date.now().toString(36); };
            end.querySelector(".fe-map").onclick = () => {
              end.remove(); document.body.classList.remove("flight-done");
-@@ -39689,8 +39920,7 @@ void main() {
+@@ -39752,8 +39920,7 @@ void main() {
            <button class="map-world" title="Choose your world"><span class="mb-orb">${MB_ORB}</span><b>Multiverse</b></button>
            <button class="map-crew" title="The crew you travel with"><span class="mcw-faces">${faces}</span><b>Crew</b></button>
            <button class="map-home" title="Cromatic Studios House, Str. Olari 9"><span class="mh-ic">\u{1F3E0}</span><b>Our house</b></button>
@@ -499,7 +693,7 @@ index 4296f0f..3b0a5d2 100644
          // r137a (Daniel): the ride card wears the worlds card's design: same popover, header, tiles and tick
          const rides = el("div", "map-rides hidden", `<div class="wt-head"><span class="wt-titles"><span class="hm-title mono">YOUR RIDE · ${VEHICLES.length} TO PICK FROM</span><span class="wt-lead">How do you want to get around?</span></span><button class="wt-close" aria-label="Close">×</button></div><div class="mrs-list">${VEHICLES.map((v) => `<button class="mrs-v" data-v="${v.id}"><span class="mrs-th"></span><b>${v.label}</b><span class="wt-check" aria-hidden="true">✓</span></button>`).join("")}</div>`);
          const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="rot" class="mz-rot" aria-label="Turn the map" title="Turn the map"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.8 3.8v4.6h-4.6"/></svg></button><button data-z="van" aria-label="Find your ride" title="Find your ride">◎</button>`);
-@@ -39707,8 +39937,8 @@ void main() {
+@@ -39770,8 +39937,8 @@ void main() {
          ];
          const welcomeEl = el("div", "map-welcome hidden", `<button class="mw-x" aria-label="Close">\u00D7</button><b class="mw-t" role="heading" aria-level="2">Welcome to Cromatic City</b>
            <div class="mw-how">
@@ -510,7 +704,7 @@ index 4296f0f..3b0a5d2 100644
              <span><i>${MW_IC[2]}</i><b>See the work</b></span><em>\u2192</em>
              <span><i>${MW_IC[3]}</i><b>Say hi</b></span>
            </div>
-@@ -39718,7 +39948,7 @@ void main() {
+@@ -39781,7 +39948,7 @@ void main() {
              <button data-go="invest" style="--wc:#119BFE"><b>Fintech Boulevard</b><i>Investimental, Assetto, Bepco</i></button>
              <button data-go="tac" style="--wc:#F28BA8"><b>Medical Avenue</b><i>The Aesthetic Court, Zdrovit, Elithia</i></button>
              <button data-go="end" style="--wc:#FED012"><b>Olari 9 \u00B7 the studio</b><i>Come by, say hi</i></button>
@@ -519,7 +713,7 @@ index 4296f0f..3b0a5d2 100644
          // r128: the content scrolls inside .mw-in, so the X can sit half outside the card without being clipped
          { const mwIn = document.createElement("div"); mwIn.className = "mw-in"; for (const n of [...welcomeEl.childNodes]) if (!n.classList?.contains("mw-x")) mwIn.append(n); welcomeEl.append(mwIn); }
          // r139s (Daniel: "the onboarding window should not show more than once in a session"): once per visit
-@@ -39756,7 +39986,8 @@ void main() {
+@@ -39819,7 +39986,8 @@ void main() {
            const b = e.target.closest("button"); if (!b) return;
            welcome(false);
            if (b.classList.contains("mw-x")) { guideStart(); return; } // r139h: closed with ×: the first-time guide
@@ -529,7 +723,7 @@ index 4296f0f..3b0a5d2 100644
            if (b.dataset.go) mapGo(MAP_PLACES.find((p) => p.id === b.dataset.go));
          };
          // ---- r139h: a light first-time guide after the welcome card is closed with ×: "Drag the map", then the camera
-@@ -39796,6 +40027,7 @@ void main() {
+@@ -39859,6 +40027,7 @@ void main() {
            if (!guide.phase) return;
            if (guide.phase === "drag") czEv("onboarding_step", { step: "drag", action: "skipped" });
            else if (guide.phase === "start" && action) czEv("onboarding_step", { step: "start_here", action });
@@ -537,7 +731,7 @@ index 4296f0f..3b0a5d2 100644
            guide.phase = null; guide.goal = null; guide.down = null; clearTimeout(guide.timer);
            guide.els?.drag.classList.add("hidden"); guide.els?.start.classList.add("hidden");
            guide.hl?.classList.remove("mg-hl"); guide.hl = null;
-@@ -39836,6 +40068,13 @@ void main() {
+@@ -39899,6 +40068,13 @@ void main() {
            try { if (!force && localStorage.getItem("cz-map-guide")) return; localStorage.setItem("cz-map-guide", "1"); } catch {}
            guide.done = true;
            const g = guideEls();
@@ -551,7 +745,7 @@ index 4296f0f..3b0a5d2 100644
            guide.phase = "drag"; guide.t0 = guide.last = performance.now();
            { // r158: on the road ahead of the car (its own place on screen, kept inside the frame)
              const r = guideRoad("drag"); warpV(guideP.set(r.x, 0, r.z)).project(camera);
-@@ -39848,7 +40087,7 @@ void main() {
+@@ -39911,7 +40087,7 @@ void main() {
          }
          // per frame (from update): the critically damped camera ease, the "Start here" ring over the pin, and the exits
          const guideStep = (dt) => {
@@ -560,7 +754,7 @@ index 4296f0f..3b0a5d2 100644
            if (guideBusy()) return guideEnd(guide.phase === "start" && mapNav.place?.id === "tm" ? "done" : "skipped");
            if (guide.phase !== "start") return;
            const pl = guide.spot, g = guide.goal;
-@@ -39880,11 +40119,11 @@ void main() {
+@@ -39943,11 +40119,11 @@ void main() {
          };
          // any hand on the map: a drag ends step 1; anything but the highlighted pin ends step 2
          window.addEventListener("pointerdown", (e) => {
@@ -574,7 +768,7 @@ index 4296f0f..3b0a5d2 100644
            guideEnd("skipped");
          }, true);
          window.addEventListener("pointermove", (e) => {
-@@ -39921,12 +40160,12 @@ void main() {
+@@ -39984,12 +40160,12 @@ void main() {
          const speedEl = el("div", "speed-lines");
          box.append(speedEl, pinsEl, top, rides, zoom, dock, card, skip, baamEl, welcomeEl, hintEl);
          ui.root.appendChild(box);
@@ -588,7 +782,7 @@ index 4296f0f..3b0a5d2 100644
          top.querySelector(".map-world").onclick = (e) => {
            e.stopPropagation(); welcome(false); ui.themeBtn.click();
            if (ui.themeMenu?.classList.contains("open")) ui.popAnchor?.(ui.themeMenu, e.currentTarget);
-@@ -39936,7 +40175,7 @@ void main() {
+@@ -39999,7 +40175,7 @@ void main() {
            b.classList.toggle("on", b.dataset.v === state.vehicleId);
            const u = vehPreviews[b.dataset.v]; if (u) b.querySelector(".mrs-th").style.backgroundImage = `url(${u})`;
          });
@@ -597,7 +791,7 @@ index 4296f0f..3b0a5d2 100644
          top.querySelector(".map-ride").onclick = (e) => {
            e.stopPropagation(); welcome(false); paintRides(); rides.classList.toggle("hidden");
            if (!rides.classList.contains("hidden")) ui.popAnchor?.(rides, e.currentTarget);
-@@ -40022,7 +40261,7 @@ void main() {
+@@ -40085,7 +40261,7 @@ void main() {
          let nearKey = "", nearT = 0;
          const NEAR_R = 750, NEAR_MIN = 4;
          const nearbyTick = (now) => {
@@ -606,7 +800,7 @@ index 4296f0f..3b0a5d2 100644
            const byCar = mapNav.moving || mapView.follow || !!mapView.focus || !!cine; // driving, following, or parked in a shot: the car; panned away: what you look at
            const fx = byCar ? carPos.x : mapView.tgt.x, fz = byCar ? carPos.z : mapView.tgt.z;
            const list = pins.filter((p) => p.ch).map((p) => ({ p, d: Math.hypot(p.pl.wx - fx, p.pl.wz - fz) })).sort((a, b) => a.d - b.d);
-@@ -40120,9 +40359,27 @@ void main() {
+@@ -40183,9 +40359,27 @@ void main() {
            if (pl.stop) return mapShowChapter(pl.stop);
            showCard(pl, "A FORMER ADDRESS", `<p>${pl.desc}</p>`, "");
          };
@@ -635,7 +829,7 @@ index 4296f0f..3b0a5d2 100644
            if (visit(pl)) gainXP(5, pl.name, "Found on the map");
            mark();
            if (pl.board) { mapOpenBoarding(); return; }
-@@ -40130,7 +40387,7 @@ void main() {
+@@ -40193,7 +40387,7 @@ void main() {
            if (pl.past) {
              const pgP = pl.work && window.__casePage?.(pl.work);
              showCard(pl, "A BLAST FROM THE PAST", `<p>${pl.desc}</p>`, pgP ? `<button class="mcd-open">See the photos \u2192</button>` : "");
@@ -644,7 +838,7 @@ index 4296f0f..3b0a5d2 100644
              return;
            }
            if (pl.stop && pl.stop !== "services") { mapShowChapter(pl.stop); return; }
-@@ -40143,7 +40400,7 @@ void main() {
+@@ -40206,7 +40400,7 @@ void main() {
              // Two Minutes: three double espressos, the boxes come down from our old balcony, a fourth, and the rush
              coffee.done = false; coffee.phase = "sip1"; coffee.t = 0; coffee.served = 0;
              showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52A", `<p>${pl.desc}</p>`, `<button class="mcd-open">Dig deeper \u2192</button>`);
@@ -653,7 +847,7 @@ index 4296f0f..3b0a5d2 100644
              return;
            }
            const pr = projectOf(pl.name);
-@@ -40154,7 +40411,7 @@ void main() {
+@@ -40217,7 +40411,7 @@ void main() {
            }
            showCard(pl, pl.br ? MAP_STREET[pl.street || pl.br] : pl.line.split(" \xB7 ")[0], `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`, pl.wip ? `<span class="mcd-wip mono">WORK IN PROGRESS</span>` : pl.small && !pg ? "" : `<button class="mcd-open">${ctaFor(pl.name)}</button>`);
            if (pl.wip || (pl.small && !pg)) return;
@@ -662,7 +856,7 @@ index 4296f0f..3b0a5d2 100644
          };
          // r118: arriving somewhere, the camera swings slowly round onto the building's front, lower
          // and in three-quarters, with the van parked in the foreground. No jolt: every value runs on
-@@ -40240,9 +40497,21 @@ void main() {
+@@ -40303,9 +40497,21 @@ void main() {
            mapView.lookY = mapView.lookYGoal = f.lookY + (g.lookY - f.lookY) * e;
            if (g.fx != null && mapView.focus) { mapView.focus.x = f.fx + (g.fx - f.fx) * e; mapView.focus.z = f.fz + (g.fz - f.fz) * e; }
            if (u < 1) return;
@@ -686,7 +880,7 @@ index 4296f0f..3b0a5d2 100644
          const baam = () => {
            baamEl.classList.remove("hidden");
            baamEl.classList.remove("go"); void baamEl.offsetWidth; baamEl.classList.add("go");
-@@ -40310,6 +40579,7 @@ void main() {
+@@ -40373,6 +40579,7 @@ void main() {
          window.addEventListener("gesturechange", (e) => {
            if (!mapMode || mapIntro || !gDist0 || !(e.scale > 0)) return;
            if (cine && cine.t < cine.dur) cine = null;
@@ -694,7 +888,7 @@ index 4296f0f..3b0a5d2 100644
            mapView.distGoal = null;
            zoomAt(e.clientX || innerWidth / 2, e.clientY || innerHeight / 2, mapView.dist, Math.min(mapMaxD(), Math.max(MAP_MIND, gDist0 * gScale0 / e.scale)));
          });
-@@ -40382,32 +40652,8 @@ void main() {
+@@ -40445,32 +40652,8 @@ void main() {
            const now2 = performance.now(), dtp = Math.max(8, now2 - last) / 1000; last = now2;
            mapView.vx = mapView.vx * 0.35 + (mapView.tgt.x - t0x) / dtp * 0.65; mapView.vz = mapView.vz * 0.35 + (mapView.tgt.z - t0z) / dtp * 0.65;
          });
@@ -728,7 +922,7 @@ index 4296f0f..3b0a5d2 100644
            // the ground point under the tap: unproject and run the ray down to y = 0
            dir.set((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1, 0.5).unproject(camera).sub(camera.position).normalize();
            if (dir.y > -1e-3) return;
-@@ -40419,6 +40665,8 @@ void main() {
+@@ -40482,6 +40665,8 @@ void main() {
              const d = (x - hit.x) ** 2 + (z - hit.z) ** 2;
              if (!best || d < best.d) best = { d, x, z, br: b2 };
            }
@@ -737,7 +931,7 @@ index 4296f0f..3b0a5d2 100644
            // r166 (Daniel): a tap on the asphalt is a tap on the road, even beside a place's building
            if (best && best.d < 34 * 34) {
              const shared = tapShared.some(([x, z]) => Math.abs(x - best.x) < 1 && Math.abs(z - best.z) < 1);
-@@ -40430,6 +40678,7 @@ void main() {
+@@ -40493,6 +40678,7 @@ void main() {
            for (const q of pins) { if (q.pl.chapter && !q.pl.past) continue; const d2 = ((q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2) * (q.pl.tapW || 1); if (d2 < 75 * 75 && (!near || d2 < near.d)) near = { d: d2, pl: q.pl }; } // r168: tapW, a place that wins its shared building
            if (near) return mapGo(near.pl);
            for (const q of pins) if (q.pl.chapter && !q.pl.past && (q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2 < 70 * 70) return mapGo(q.pl);
@@ -745,7 +939,7 @@ index 4296f0f..3b0a5d2 100644
            // otherwise only the street itself
            if (!best || best.d > 60 * 60) return;
            const shared = tapShared.some(([x, z]) => Math.abs(x - best.x) < 1 && Math.abs(z - best.z) < 1);
-@@ -40462,6 +40711,8 @@ void main() {
+@@ -40525,6 +40711,8 @@ void main() {
            e.preventDefault();
            mapView.distGoal = null;
            if (cine && cine.t < cine.dur) cine = null;
@@ -754,7 +948,7 @@ index 4296f0f..3b0a5d2 100644
            zoomAt(e.clientX, e.clientY, mapView.dist, Math.min(mapMaxD(), Math.max(MAP_MIND, mapView.dist * Math.exp(clamp2(e.deltaY, -120, 120) * (e.ctrlKey ? 0.006 : 0.0012)))));
          }, { passive: false });
          const proj = new Vector3();
-@@ -40490,12 +40741,21 @@ void main() {
+@@ -40553,12 +40741,21 @@ void main() {
            return [0, (topY + botY) / 2 - H / 2];
          };
          return {
@@ -778,7 +972,7 @@ index 4296f0f..3b0a5d2 100644
              jetUpdate(dt, now);
              olariUpdate(dt);
              // the diorama is cleaner from above without the far mesas, the cloud ring and the islands
-@@ -40576,7 +40836,11 @@ void main() {
+@@ -40639,7 +40836,11 @@ void main() {
                markEl.style.transform = `translate3d(${((proj.x * 0.5 + 0.5) * W).toFixed(1)}px, ${((-proj.y * 0.5 + 0.5) * H).toFixed(1)}px, 0)`;
                if (!mapNav.moving && mapNav.place?.tap && !markEl.classList.contains("on")) markAt = null;
              }
@@ -790,7 +984,7 @@ index 4296f0f..3b0a5d2 100644
                warpV(proj.set(p.pl.wx, 0, p.pl.wz)).project(camera);
                const gx = (proj.x * 0.5 + 0.5) * W, gy = (-proj.y * 0.5 + 0.5) * H;
                warpV(proj.set(p.pl.wx + 34, 0, p.pl.wz)).project(camera);
-@@ -40655,24 +40919,7 @@ void main() {
+@@ -40718,24 +40919,7 @@ void main() {
          driveGuideOff?.(); driveGuideOff = null;
          if (action) czEv("onboarding_step", { step: "drive_scroll", action });
        }
@@ -816,7 +1010,7 @@ index 4296f0f..3b0a5d2 100644
        function setMapMode(on, { intro = false, open = false } = {}) { // r147: open = the map as the site opens on it (?map, ?map&boarding): the first frame, no pull-out
          if (on === mapMode) return;
          if (!ONB_MODE && !intro && !open) setTimeout(() => ui.modeFlash?.(on ? "map" : "drive"), on ? 300 : 450); // r156
-@@ -40684,6 +40931,8 @@ void main() {
+@@ -40747,6 +40931,8 @@ void main() {
          mapMode = on;
          if (on) {
            if (!mapUI) mapUI = buildMapUI();
@@ -825,7 +1019,7 @@ index 4296f0f..3b0a5d2 100644
            mapPrev = { scheme: state.schemeIdx, veh: state.vehicleId };
            if (!intro) kinetic?.pause?.();
            if (police.active) { police.active = false; copCar.group.visible = false; }
-@@ -40717,6 +40966,7 @@ void main() {
+@@ -40780,6 +40966,7 @@ void main() {
            else { const wt0 = performance.now(); const wl = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - wt0 < 20000) return setTimeout(wl, 250); mapSettle = 90; if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI.welcome(true); }; setTimeout(wl, 1000); } // r139r: after the cups' reveal (r142b: a second, and the view settles on the car)
            try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map") + location.hash); } catch {} // r139p: a plain "/" stays plain
          } else {
@@ -833,7 +1027,7 @@ index 4296f0f..3b0a5d2 100644
            mapEndIntro();
            kinetic?.pause?.();
            mapCloseBoarding();
-@@ -40749,7 +40999,6 @@ void main() {
+@@ -40812,7 +40999,6 @@ void main() {
            updateScrollSpace();
            scrollToL(state.L, false);
            try { history.replaceState(null, "", location.pathname + "?drive" + location.hash); } catch {}

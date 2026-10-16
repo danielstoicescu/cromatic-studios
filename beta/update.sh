@@ -4,5 +4,6 @@
 set -e
 cd "$(dirname "$0")/.."
 git fetch -q origin main nav2
-git diff origin/main origin/nav2 -- . ':(exclude)server.js' ':(exclude)beta' > beta/nav2.patch
-echo "beta/nav2.patch: $(wc -c < beta/nav2.patch | tr -d ' ') bytes, from nav2 $(git rev-parse --short origin/nav2) on main $(git rev-parse --short origin/main)"
+REF="${1:-origin/nav2}" # r176c: or a given nav2 commit, to keep beta on a finished round
+git diff origin/main "$REF" -- . ':(exclude)server.js' ':(exclude)beta' > beta/nav2.patch
+echo "beta/nav2.patch: $(wc -c < beta/nav2.patch | tr -d ' ') bytes, from nav2 $(git rev-parse --short "$REF") on main $(git rev-parse --short origin/main)"
