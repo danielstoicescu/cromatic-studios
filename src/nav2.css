@@ -199,12 +199,11 @@ body:has(.map-welcome:not(.hidden)) .nav2-ui .n2-panel { opacity: 0; pointer-eve
 /* beta 2.6 (Daniel): on a phone, no Nearby panel; the Street view is driven with the pad, the map (Satellite) by
    tapping the road (a short hint says so); desktop keeps everything */
 .n2-taphint { display: none; }
-@media (max-width: 719px) {
-  body.nav2 .n2-panel { display: none !important; }
-  body.nav2:not(.nav2-street) .n2-pad { display: none; }
-  body.nav2:not(.nav2-street):not(.n2-tour):not(.n2-driving-auto):not(.n2-card) .n2-taphint { display: block; position: fixed; z-index: 24; right: 12px; bottom: calc(30px + env(safe-area-inset-bottom, 0px)); max-width: 190px; text-align: center; font-size: 10px; letter-spacing: .14em; font-weight: 700; line-height: 1.35; padding: 9px 14px; border-radius: 999px; background: #fff; color: #141414; border: 2px solid #141414; box-shadow: 2px 3px 0 #141414; pointer-events: none; }
-  body.nav2:not(.nav2-street) .map-zoom { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
-}
+/* beta 2.9: phone rules key on body.n2-phone (set by nav2: a narrow screen, or a phone held sideways) */
+body.n2-phone .n2-panel { display: none !important; }
+body.n2-phone:not(.nav2-street) .n2-pad { display: none; }
+body.n2-phone:not(.nav2-street):not(.n2-tour):not(.n2-driving-auto):not(.n2-card) .n2-taphint { display: block; position: fixed; z-index: 24; right: 12px; bottom: calc(30px + env(safe-area-inset-bottom, 0px)); max-width: 190px; text-align: center; font-size: 10px; letter-spacing: .14em; font-weight: 700; line-height: 1.35; padding: 9px 14px; border-radius: 999px; background: #fff; color: #141414; border: 2px solid #141414; box-shadow: 2px 3px 0 #141414; pointer-events: none; }
+body.n2-phone:not(.nav2-street) .map-zoom { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 
 /* beta 2.6 (Daniel): the Ride button's ride fills its thumbnail; the Multiverse button is the world you are in (its
    picture across the whole button, the rainbow outline kept), with just "Multiverse" on it */
@@ -213,28 +212,37 @@ body.nav2 .map-top .map-world.has-img .mb-orb { display: none; }
 body.nav2 .map-top .map-world.has-img { justify-content: center; padding: 0 18px; min-width: 128px; }
 body.nav2 .map-top .map-world.has-img::after { background: linear-gradient(rgba(20, 16, 12, .16), rgba(20, 16, 12, .38)), var(--wimg) center 55% / cover no-repeat; }
 body.nav2 .map-top .map-world.has-img b { color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .75), 0 0 8px rgba(0, 0, 0, .35); position: relative; z-index: 1; display: inline !important; }
-@media (max-width: 719px) {
-  body.nav2 .map-ride .mr-th.ready { width: 46px !important; height: 30px; flex: 0 0 46px; }
-  body.nav2 .map-top .map-world.has-img { min-width: 92px; padding: 0 8px; }
-  body.nav2 .map-top .map-world.has-img b { font-size: 11.5px; letter-spacing: -.01em; }
-}
+body.n2-phone .map-ride .mr-th.ready { width: 46px !important; height: 30px; flex: 0 0 46px; }
+body.n2-phone .map-top .map-world.has-img { min-width: 88px; padding: 0 8px; }
+body.n2-phone .map-top .map-world.has-img b { font-size: 11.5px; letter-spacing: -.01em; }
 
 /* beta 2.7 (Daniel): phones have no arrows any more: the Street view is driven with a floating stick in the lower half
    (cream ring, black outline, yellow knob) and a DRIFT button; the Street / Satellite toggle sits at the top, under the bar */
 .n2-stick, .n2-driftb { display: none; }
-@media (max-width: 719px) {
-  body.nav2 .n2-keys { display: none !important; }
-  body.nav2 .nav2-ui .n2-views { top: calc(100px + env(safe-area-inset-top, 0px)); bottom: auto; left: 50%; right: auto; translate: -50% 0; flex-direction: row; border-radius: 999px; }
-  body.nav2 .nav2-ui .n2-views button { height: 44px; padding: 0 14px 0 11px; font-size: 13px; border-radius: 999px; }
-  body.nav2 .nav2-ui .n2-pad { top: calc(156px + env(safe-area-inset-top, 0px)); bottom: auto; right: auto; left: 50%; translate: -50% 0; }
-  body.nav2.nav2-street:not(.n2-card) .n2-stick { display: block; position: fixed; left: 0; top: 0; width: 0; height: 0; z-index: 23; pointer-events: none; }
-  .n2-ring { position: absolute; left: -64px; top: -64px; width: 128px; height: 128px; box-sizing: border-box; border-radius: 50%; background: rgba(255, 248, 234, .78); border: 2.5px solid #141414; box-shadow: 2px 3px 0 rgba(20, 20, 20, .85), inset 0 0 0 10px rgba(254, 208, 18, .14); opacity: .5; transition: opacity .2s; }
-  .n2-knob { position: absolute; left: 0; top: 0; width: 56px; height: 56px; box-sizing: border-box; border-radius: 50%; background: #FED012; border: 2.5px solid #141414; box-shadow: 2px 4px 0 #141414, 0 8px 18px rgba(0, 0, 0, .18); transform: translate(-50%, -50%); opacity: .65; }
-  .n2-stick.on .n2-ring, .n2-stick.on .n2-knob { opacity: 1; }
-  body.nav2.nav2-street:not(.n2-card) .n2-driftb { display: block; position: fixed; z-index: 24; right: 16px; bottom: calc(44px + env(safe-area-inset-bottom, 0px)); width: 66px; height: 66px; border-radius: 50%; background: #fff; color: #141414; border: 2.5px solid #141414; box-shadow: 2px 3px 0 #141414; font-size: 11px; font-weight: 700; letter-spacing: .1em; touch-action: none; -webkit-tap-highlight-color: transparent; }
-  .n2-driftb.on { background: #FED012; translate: 0 2px; box-shadow: 1px 1px 0 #141414; }
-}
-@media (max-width: 719px) { .n2-toast { top: calc(214px + env(safe-area-inset-top, 0px)); } } /* beta 2.7: below the toggle and the hint */
+/* beta 2.9 (Daniel's phone): the toggle sits under the top bar's real bottom (nav2 measures it into --n2top), with the
+   hint under it and the speaker at its right; the stick has the lower half; a card in the Street view is compact, at the
+   bottom right, so the stick stays free */
+body.n2-phone .n2-keys { display: none !important; }
+body.n2-phone .nav2-ui .n2-views { top: var(--n2top, 112px); bottom: auto; left: 50%; right: auto; translate: -50% 0; flex-direction: row; border-radius: 999px; }
+body.n2-phone .nav2-ui .n2-views button { height: 44px; padding: 0 14px 0 11px; font-size: 13px; border-radius: 999px; }
+body.n2-phone .nav2-ui .n2-pad { top: calc(var(--n2top, 112px) + 64px); bottom: auto; right: auto; left: 50%; translate: -50% 0; }
+body.n2-phone.n2-card .nav2-ui .n2-views { opacity: 1; pointer-events: auto; }
+body.n2-phone.nav2-street .n2-stick { display: block; position: fixed; left: 0; top: 0; width: 0; height: 0; z-index: 23; pointer-events: none; }
+.n2-ring { position: absolute; left: -64px; top: -64px; width: 128px; height: 128px; box-sizing: border-box; border-radius: 50%; background: rgba(255, 248, 234, .78); border: 2.5px solid #141414; box-shadow: 2px 3px 0 rgba(20, 20, 20, .85), inset 0 0 0 10px rgba(254, 208, 18, .14); opacity: .5; transition: opacity .2s; }
+.n2-knob { position: absolute; left: 0; top: 0; width: 56px; height: 56px; box-sizing: border-box; border-radius: 50%; background: #FED012; border: 2.5px solid #141414; box-shadow: 2px 4px 0 #141414, 0 8px 18px rgba(0, 0, 0, .18); transform: translate(-50%, -50%); opacity: .65; }
+.n2-stick.on .n2-ring, .n2-stick.on .n2-knob { opacity: 1; }
+body.n2-phone.nav2-street:not(.n2-card) .n2-driftb { display: block; position: fixed; z-index: 24; right: 16px; bottom: calc(44px + env(safe-area-inset-bottom, 0px)); width: 66px; height: 66px; border-radius: 50%; background: #fff; color: #141414; border: 2.5px solid #141414; box-shadow: 2px 3px 0 #141414; font-size: 11px; font-weight: 700; letter-spacing: .1em; touch-action: none; -webkit-tap-highlight-color: transparent; }
+.n2-driftb.on { background: #FED012; translate: 0 2px; box-shadow: 1px 1px 0 #141414; }
+body.n2-phone .n2-toast { top: calc(var(--n2top, 112px) + 110px); }
+/* the card, in the phone's Street view: compact and squarer, bottom right, no photo; Go deeper and × stay 44 px */
+body.n2-phone.nav2-street .map-card, body.n2-phone.nav2-street .map-card.cr { left: auto !important; right: 10px !important; bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important; top: auto !important; width: min(214px, 54vw) !important; max-width: none !important; translate: none !important; }
+body.n2-phone.nav2-street .map-card .mcd-img { display: none !important; }
+body.n2-phone.nav2-street .map-card .mcd-body { padding: 12px 12px 12px !important; }
+body.n2-phone.nav2-street .map-card .mcd-body p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12.5px !important; margin: 6px 0 10px !important; }
+body.n2-phone.nav2-street .map-card .mcd-title { font-size: 17px !important; }
+body.n2-phone.nav2-street .map-card .mcd-actions { gap: 8px !important; }
+body.n2-phone.nav2-street .map-card .mcd-open { min-height: 44px; flex: 1 1 auto; min-width: 0; padding: 0 12px !important; font-size: 12px !important; }
+body.n2-phone.nav2-street .map-card .mcd-close { width: 44px !important; height: 44px !important; flex: 0 0 44px; }
 
 /* beta 2.7: the police cooldown pill, with its 5 s ring */
 .n2-cop { position: fixed; z-index: 31; left: 50%; top: calc(150px + env(safe-area-inset-top, 0px)); translate: -50% -8px; display: flex; align-items: center; gap: 9px; padding: 6px 14px 6px 6px; border-radius: 999px; background: #fff; color: #141414; border: 2.5px solid #141414; box-shadow: 2px 3px 0 #141414; opacity: 0; pointer-events: none; transition: opacity .25s, translate .25s; --k: 1; }
@@ -244,7 +252,7 @@ body.nav2 .map-top .map-world.has-img b { color: #fff; text-shadow: 0 1px 2px rg
 .n2-cop-ring { fill: none; stroke: #2a6bff; stroke-width: 4; stroke-linecap: round; stroke-dasharray: 94.25; stroke-dashoffset: calc(94.25 * (1 - var(--k))); }
 .n2-cop b { font: 800 14px/1 CromaticSans, system-ui, sans-serif; letter-spacing: .02em; }
 .n2-cop em { position: absolute; left: 6px; top: 6px; width: 34px; height: 34px; display: grid; place-items: center; font-style: normal; font-weight: 700; font-size: 13px; }
-@media (max-width: 719px) { .n2-cop { top: calc(258px + env(safe-area-inset-top, 0px)); } .n2-cop b { font-size: 13px; } }
+body.n2-phone .n2-cop { top: calc(var(--n2top, 112px) + 150px); } body.n2-phone .n2-cop b { font-size: 13px; }
 
 /* beta 2.8: the speaker */
 .n2-snd { position: fixed; z-index: 26; right: 24px; top: calc(92px + env(safe-area-inset-top, 0px)); width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: #141414; border: 2px solid #141414; box-shadow: 2px 3px 0 #141414; cursor: pointer; padding: 0; }
@@ -255,5 +263,11 @@ body.nav2 .map-top .map-world.has-img b { color: #fff; text-shadow: 0 1px 2px rg
 .n2-snd.off { background: #f1ede4; color: #6d6a63; }
 .n2-snd:hover { background: #FED012; }
 .n2-snd:focus-visible { outline: 3px solid #2f6bff; outline-offset: 3px; }
-@media (max-width: 719px) { .n2-snd { right: 12px; top: calc(100px + env(safe-area-inset-top, 0px)); } }
+body.n2-phone .n2-snd { right: 12px; top: var(--n2top, 112px); }
 body.nav2.n2-card .n2-snd { z-index: 26; }
+/* beta 2.9: the labels on one line; the game's own notes (the toast column) under the toggle and its hint; nothing of
+   nav2 over the "turn your phone upright" screen */
+body.n2-phone .nav2-ui .n2-views button { white-space: nowrap; }
+body.n2-phone.map-mode .toast-col { top: calc(var(--n2top, 112px) + 106px) !important; }
+@media (orientation: landscape) and (pointer: coarse) and (max-height: 520px) { body:not(.site-mode) .nav2-ui { display: none !important; } }
+body.n2-phone.map-mode .toast-col > :is(.coffee-card, .rush-pill) { top: calc(var(--n2top, 112px) + 106px) !important; }

@@ -359,6 +359,9 @@
     // layout pass (~3 ms a frame on phones)
     const VP = { w: innerWidth, h: innerHeight };
     addEventListener("resize", () => { VP.w = innerWidth; VP.h = innerHeight; });
+    // beta 2.9: a phone's layout: a narrow screen, or a touch screen held sideways (short)
+    const coarse = matchMedia("(hover: none) and (pointer: coarse)").matches;
+    const phoneUI = () => VP.w < 720 || (coarse && VP.h < 520);
     const G = buildGraph(H);
     const { N, E } = G;
     const reduced = () => H.reduced();
@@ -1343,14 +1346,14 @@
     }
     let freeSig = "";
     function freeUI() {
-      let hint = VP.w < 720 ? "DRAG THE STICK TO DRIVE" : touchUI ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BACK · SPACE + ← → DRIFT";
-      if (D.assist && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) < 110) hint = VP.w < 720 ? "ROUNDABOUT · ↑ STRAIGHT ON · OR STEER OUT" : "ROUNDABOUT · ↑ STRAIGHT ON · STEER OUT FOR ANOTHER EXIT";
-      if (D.moved && Math.abs(P.u) < 5 && !D.auto && P.contact <= 0) hint = VP.w < 720 ? "STOPPED · ↑ + ← → TURNS YOU ROUND" : "STOPPED · ↑ OR ↓ WITH ← → TURNS YOU ROUND"; // round 5
+      let hint = phoneUI() ? "DRAG THE STICK TO DRIVE" : touchUI ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BACK · SPACE + ← → DRIFT";
+      if (D.assist && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) < 110) hint = phoneUI() ? "ROUNDABOUT · ↑ STRAIGHT ON · OR STEER OUT" : "ROUNDABOUT · ↑ STRAIGHT ON · STEER OUT FOR ANOTHER EXIT";
+      if (D.moved && Math.abs(P.u) < 5 && !D.auto && P.contact <= 0) hint = phoneUI() ? "STOPPED · ↑ + ← → TURNS YOU ROUND" : "STOPPED · ↑ OR ↓ WITH ← → TURNS YOU ROUND"; // round 5
       if (D.auto) hint = D.auto.rev ? "BACKING UP TO IT · ANY KEY TAKES OVER" : "DRIVING YOU THERE · ANY KEY TAKES OVER";
       else if (D.drift) hint = D.drift.t > 1.4 ? "DRIFT · LET GO OF SPACE: SUPER BOOST" : D.drift.t > 0.6 ? "DRIFT · LET GO OF SPACE: BOOST" : "DRIFT · HOLD SPACE, STEER WITH ← →";
       else if (D.boost) hint = D.boost.lvl > 1 ? "SUPER BOOST!" : "BOOST!";
       else if (P.u < -5) hint = "REVERSING";
-      else if (P.contact > 0 && (Math.abs(P.u) > 3 || D.keys.u || D.keys.d)) hint = VP.w < 720 ? "THE KERB · STEER OR BACK UP" : "THE KERB · STEER AWAY OR BACK UP";
+      else if (P.contact > 0 && (Math.abs(P.u) > 3 || D.keys.u || D.keys.d)) hint = phoneUI() ? "THE KERB · STEER OR BACK UP" : "THE KERB · STEER AWAY OR BACK UP";
       if (hint === freeSig) return;
       freeSig = hint;
       for (const k of "udlr") { keyEls[k].classList.remove("off", "need"); }
@@ -1670,7 +1673,7 @@
       if (!street && H.mapView.pitch < 0.75) H.mapView.pitchGoal = 0.98;
       if (street) H.cineStop();
       H.follow();
-      toast(street ? "Street view · the camera rides behind you" : VP.w < 720 ? "Bird's eye · pinch to zoom" : "Bird's eye · zoom with + − or the wheel");
+      toast(street ? "Street view · the camera rides behind you" : phoneUI() ? "Bird's eye · pinch to zoom" : "Bird's eye · zoom with + − or the wheel");
     }
     function firstDrive() {
       D.firstDrive = false;
@@ -1715,6 +1718,15 @@
     document.body.appendChild(root);
     const panel = root.querySelector(".n2-panel"), views = root.querySelector(".n2-views"), pad = root.querySelector(".n2-pad"), hintEl = root.querySelector(".n2-hint"), toastEl = root.querySelector(".n2-toast");
     const copEl = root.querySelector(".n2-cop");
+    // beta 2.9 (Daniel's phone): the phone layout's class, and the top bar's real bottom (the brand, the bar, the XP pill),
+    // measured, so the toggle, the hint and the speaker sit under it with 8 px clear, on any phone, either way round
+    function phoneLayout() {
+      const ph = phoneUI(); document.body.classList.toggle("n2-phone", ph);
+      if (!ph) return;
+      let b = 0; for (const sel of [".map-top", ".you", ".brand"]) for (const e of document.querySelectorAll(sel)) { const r = e.getBoundingClientRect(); if (r.width > 0 && r.height > 0 && r.top < VP.h * 0.4) b = Math.max(b, r.bottom); }
+      const v = Math.round((b || 104) + 8) + "px", de = document.documentElement; if (de.style.getPropertyValue("--n2top") !== v) de.style.setProperty("--n2top", v);
+    }
+    phoneLayout(); setInterval(phoneLayout, 700); addEventListener("resize", () => setTimeout(phoneLayout, 60));
     SND.bind(root.querySelector(".n2-snd"));
     root.querySelector(".n2-snd").addEventListener("pointerdown", (e) => e.stopPropagation());
     const keyEls = {}; pad.querySelectorAll(".n2-k").forEach((b) => { keyEls[b.dataset.k] = b; });
@@ -1775,11 +1787,11 @@
         const dz = (v) => (Math.abs(v) < 0.14 ? 0 : Math.sign(v) * (Math.abs(v) - 0.14) / 0.86);
         D.stick = { x: dz(dx / R), y: dz(-dy / R) };
       };
-      const phoneStreet = () => VP.w < 720 && D.streetT >= 0.5;
+      const phoneStreet = () => phoneUI() && D.streetT >= 0.5;
       cv.addEventListener("pointerdown", (e) => {
         if (!api.on || D.streetT < 0.5) return;
         if (phoneStreet()) {
-          if (e.clientY < VP.h * 0.45 || H.cardOpen()) return; // the upper half stays the map's (taps, the toggle)
+          if (e.clientY < VP.h * 0.45) return; // the upper half stays the map's (taps, the toggle); beta 2.9: a card (compact, right) leaves it free
           e.stopImmediatePropagation(); e.preventDefault?.();
           st = { id: e.pointerId, x: e.clientX, y: e.clientY };
           stickEl.classList.add("on"); stickEl.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`; stickSet(e);
@@ -2047,7 +2059,7 @@
     ];
     STEPS = DESK_STEPS;
     function tutorial(done, force) {
-      STEPS = VP.w < 720 ? PHONE_STEPS : DESK_STEPS;
+      STEPS = phoneUI() ? PHONE_STEPS : DESK_STEPS;
       try { if (!force && localStorage.getItem("cz-drive-guide") === "2") return false; localStorage.setItem("cz-drive-guide", "2"); } catch {}
       if (!D.ready && !place()) return false;
       D.ready = true;
