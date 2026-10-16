@@ -288,3 +288,10 @@ body:is(.modal-open, .scf-open, .map-boarding, .menu-open) .n2-guide { opacity: 
 .i4-pre { pointer-events: none; }
 body.kz-intro .kz-skip { z-index: 2147483002; }
 body.n2-phone:has(.map-welcome:not(.hidden)) .nav2-ui { opacity: 0 !important; pointer-events: none !important; } /* beta 2.91: the welcome card first (the toggle and the speaker sat on its top) */
+
+/* beta 2.92 (Daniel: "in Night Mode the switch looks bad"): nav2's controls keep the site's own ink in every world (the
+   unselected view inherited the world's light text colour in Night Mode and Underwater: 1.2:1 on white) */
+.nav2-ui .n2-views, .nav2-ui .n2-views button:not([aria-pressed="true"]) { color: #141414; }
+.nav2-ui .n2-views button:not([aria-pressed="true"]) svg { color: #141414; }
+.nav2-ui .n2-k, .nav2-ui .n2-snd:not(.off), .nav2-ui .n2-driftb:not(.on), .n2-guide .n2-skip, .nav2-ui .n2-hint, .nav2-ui .n2-taphint { color: #141414; }
+.nav2-ui .n2-panel { color: #141414; } .nav2-ui .n2-panel :is(.n2-sub, .n2-empty, .n2-rt) { color: #3a3833; }

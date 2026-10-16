@@ -1038,6 +1038,7 @@
     // charges a mini-turbo: let go after ~0.6 s for a short boost (longer after ~1.4 s); stopped or slow, Space + ← → is
     // still the quick spin; and the kerbs are soft bumpers: the car bounces off them back into the road, it never grinds
     const DRIFT_V = 110;
+    const BOUNDS = (() => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const n of N) { x0 = Math.min(x0, n.x); x1 = Math.max(x1, n.x); z0 = Math.min(z0, n.z); z1 = Math.max(z1, n.z); } return { x0: x0 - 150, x1: x1 + 150, z0: z0 - 150, z1: z1 + 150 }; })();
     // beta 2.7 (Daniel): drift too long at speed (4 s of drifting within 8 s) and the police come: the patrol car arrives behind
     // you, blue lamps flashing, and follows for a 5 s cooldown: top speed ~55%, no drift, no boost; then it drops back and
     // goes. Not with the auto-pilot, the tour or a card open; reduced motion: no flashing
@@ -1127,7 +1128,8 @@
       if (drift) u = Math.max(0, u - 35 * dt); // a drift keeps its speed
       const au = Math.abs(u), sg = au > 4 ? Math.sign(u) : thr < 0 ? -1 : 1;
       let yr = P.st * Math.sign(u) * Math.min(au / 14, (D.auto ? 3.5 : 2.7) / (1 + au / 480)); // the auto-pilot turns a little sharper (it never overshoots)
-      if (thr !== 0 && au < 40) yr += P.st * sg * 3.3 * (1 - au / 40); // near a pivot, almost stopped with ↑ or ↓ held (beta 2.5: snappier, ~1 s round)
+      if (thr !== 0 && au < 40) yr += P.st * sg * 3.3 * (1 - au / 40);
+      else if (thr === 0 && au < 30 && pivots()) yr += P.st * 2.4 * (1 - au / 30); // beta 2.92: the sub and the plane turn on the spot with ← → alone // near a pivot, almost stopped with ↑ or ↓ held (beta 2.5: snappier, ~1 s round)
       if (hb && !drift && Math.abs(P.st) > 0.05) yr = P.st * sg * 3.6; // the handbrake spin (slow)
       if (drift) yr = drift.dir * clamp(1.0 + 0.8 * P.st * drift.dir, 0.25, 1.9) * Math.min(1, au / 160 + 0.4); // into the drift: ← → make it tighter or wider
       yr = clamp(yr, -3.6, 3.6);
@@ -1149,7 +1151,9 @@
         const a = G.nearest(nx, nz, 60, (e) => e.drive && e.kind !== "ring");
         if (a && a.d > 1) { const e = E[a.e], c = pointAt(e.pts, e.cum, a.s), k = Math.min(1, (150 * dt * Math.abs(P.st) * (1 - au / 70)) / a.d); nx += (c[0] - nx) * k; nz += (c[1] - nz) * k; }
       }
-      for (let pass = 0; pass < 2; pass++) for (const k of [0, 1, -1]) {
+      const flying = H.vehicle() === "plane"; // beta 2.92 (Daniel): the plane flies over the fountain, the kerbs, the closures
+      if (flying) { nx = clamp(nx, BOUNDS.x0, BOUNDS.x1); nz = clamp(nz, BOUNDS.z0, BOUNDS.z1); }
+      for (let pass = 0; pass < (flying ? 0 : 2); pass++) for (const k of [0, 1, -1]) {
         const px = nx + fx * half * k, pz = nz + fz * half * k, q = MASK.resolve(px, pz, k ? CR - 4 : CR); // the ends rounder: a car turning round in the road's width may overhang its kerb a little at the corners
         if (q.lost) { if (!k) lost = true; continue; }
         if (!q.hit) continue;
@@ -1202,6 +1206,7 @@
     }
     function assist() {
       const au = Math.abs(P.u);
+      if (H.vehicle() === "plane" && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) < 200) return { steer: 0, vmax: Infinity }; // beta 2.92: straight over the fountain
       const a = G.nearest(P.x, P.z, 90, (e) => e.drive);
       if (!a) return null;
       const e0 = E[a.e], fx = Math.sin(P.h), fz = Math.cos(P.h);
