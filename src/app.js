@@ -26602,6 +26602,60 @@ void main() {
     if (o.keep) EXTRA_KEEPOUT.push({ x: o.x, y: o.z, r: o.keep });
     return finish(g, parent, o.x, o.z);
   }
+  // r176 (Daniel: Routine Paris "bigger", on its own): a Haussmann building that reads from the map. Cream stone, a
+  // dark green shop front with the Routine sign, three floors of tall windows with black iron balconies on the second
+  // and the top floor, a cornice, a zinc mansard with dormers and two chimney stacks. The front is local +z
+  function buildParisian(parent, o) {
+    const g = new Group();
+    const W = o.w, D = o.d, H = o.h, stone = o.wall || "#efe7d8";
+    const front = canvasTexture(256, 256, (ctx) => {
+      ctx.fillStyle = stone; ctx.fillRect(0, 0, 256, 256);
+      // stone courses
+      ctx.strokeStyle = "rgba(120,100,70,.18)"; ctx.lineWidth = 1;
+      for (let y = 12; y < 190; y += 12) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(256, y); ctx.stroke(); }
+      // three floors, five bays of tall windows
+      for (let f = 0; f < 3; f++) for (let c = 0; c < 5; c++) {
+        const x = 14 + c * 48, y = 14 + f * 60;
+        ctx.fillStyle = "#3c4650"; ctx.fillRect(x, y, 34, 46);
+        ctx.fillStyle = "#ffe2a8"; ctx.fillRect(x + 4, y + 4, 26, 16);
+        ctx.fillStyle = stone; ctx.fillRect(x + 15, y, 4, 46);
+      }
+      // the iron balconies: the second floor and the top one run the whole width
+      ctx.strokeStyle = "#1c1c1c"; ctx.lineWidth = 3;
+      for (const y of [58, 118]) { ctx.beginPath(); ctx.moveTo(6, y); ctx.lineTo(250, y); ctx.stroke(); for (let x = 8; x < 250; x += 7) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 10); ctx.stroke(); } }
+      // the ground floor: the shop front
+      ctx.fillStyle = "#1f3d33"; ctx.fillRect(0, 194, 256, 62);
+      ctx.fillStyle = "#ffe2a8"; for (const x of [16, 150]) ctx.fillRect(x, 206, 90, 44);
+      ctx.fillStyle = "#14261f"; ctx.fillRect(114, 206, 28, 50);
+    });
+    const side = canvasTexture(128, 256, (ctx) => {
+      ctx.fillStyle = stone; ctx.fillRect(0, 0, 128, 256);
+      for (let f = 0; f < 3; f++) for (let c = 0; c < 3; c++) { ctx.fillStyle = "#3c4650"; ctx.fillRect(10 + c * 40, 14 + f * 60, 26, 46); }
+      ctx.fillStyle = "#1f3d33"; ctx.fillRect(0, 194, 128, 62);
+    });
+    const fm = new MeshStandardMaterial({ map: front, emissiveMap: front, emissive: new Color("#ffcf8a"), emissiveIntensity: 0, roughness: 0.85 });
+    const sm = new MeshStandardMaterial({ map: side, emissiveMap: side, emissive: new Color("#ffcf8a"), emissiveIntensity: 0, roughness: 0.85 });
+    const wallM = new MeshStandardMaterial({ color: stone, roughness: 0.85 });
+    STREET_GLOW.push([fm, 0.7], [sm, 0.5]);
+    const body = new Mesh(new BoxGeometry(W, H, D), [sm, sm, wallM, wallM, fm, sm]); // windows all round: the map sees it from every side
+    body.position.y = H / 2; g.add(body);
+    // the balconies stand out a little from the wall, and a cornice runs under the roof
+    const ironM = new MeshStandardMaterial({ color: "#1c1c1c", roughness: 0.6, metalness: 0.4 });
+    for (const y of [H * 0.54, H * 0.8]) { const b = new Mesh(new BoxGeometry(W - 2, 1.2, 3), new MeshStandardMaterial({ color: stone, roughness: 0.8 })); b.position.set(0, y, D / 2 + 1.5); g.add(b); const r = new Mesh(new BoxGeometry(W - 2, 2.6, 0.5), ironM); r.position.set(0, y + 1.9, D / 2 + 2.9); g.add(r); }
+    const corn = new Mesh(new BoxGeometry(W + 3, 2.2, D + 3), new MeshStandardMaterial({ color: "#e4dac6", roughness: 0.8 })); corn.position.y = H + 1.1; g.add(corn);
+    // the zinc mansard, its dormers and the chimney stacks
+    const MH = 17, inset = 9, zinc = new MeshStandardMaterial({ color: "#6f7a86", roughness: 0.5, metalness: 0.3 });
+    const sh = new Shape(); sh.moveTo(-D / 2, 0); sh.lineTo(D / 2, 0); sh.lineTo(D / 2 - inset, MH); sh.lineTo(-D / 2 + inset, MH); sh.lineTo(-D / 2, 0);
+    const roof = new Mesh(new ExtrudeGeometry(sh, { depth: W, bevelEnabled: false }), zinc); roof.rotation.y = Math.PI / 2; roof.position.set(-W / 2, H + 2.2, 0); g.add(roof);
+    const dormM = new MeshStandardMaterial({ color: "#f1ece2", roughness: 0.8 });
+    for (let i = 0; i < 4; i++) { const dx = -W / 2 + W * (i + 0.5) / 4; const dor = new Mesh(new BoxGeometry(7, 8, 5), dormM); dor.position.set(dx, H + 2.2 + 7, D / 2 - 6.5); g.add(dor); const cap = new Mesh(new BoxGeometry(8.5, 1.4, 6), zinc); cap.position.set(dx, H + 2.2 + 11.6, D / 2 - 6.5); g.add(cap); }
+    for (const sx of [-1, 1]) { const ch = new Mesh(new BoxGeometry(5, 9, 12), new MeshStandardMaterial({ color: "#d8c9b0", roughness: 0.9 })); ch.position.set(sx * (W / 2 - 8), H + 2.2 + MH + 3, 0); g.add(ch); }
+    // the Routine sign over the shop front
+    const sb = signBoard(o, Math.min(W * 0.62, 44), Math.min(W * 0.62, 44) * 0.3); sb.position.set(0, H * 0.27, D / 2 + 1.4); g.add(sb);
+    facing(g, o.face);
+    if (o.keep) EXTRA_KEEPOUT.push({ x: o.x, y: o.z, r: o.keep });
+    return finish(g, parent, o.x, o.z);
+  }
 
   // The Aesthetic Court at Casa Poporului (r87, rebuilt): the Palace of the Parliament as it
   // stands, a symmetric cream travertine mass in five stepped tiers. Arched windows between
@@ -27010,7 +27064,9 @@ void main() {
   var ZDROVIT_YARD = ["Lacalut", "Periferisan", "Help 4 Brain", "Parusan", "Bonylash", "Litorsal"];
   // r134: Daniel: the small buildings stand along the edges of the yard, not round the fountain: four along the
   // hedge side (towards Sofmedica), one each side of the gate
-  var YARD_EDGE = [[1630, 5006], [1690, 5006], [1750, 5006], [1810, 5006], [1590, 5012], [1590, 5150]];
+  // r176: the beauty shops' side (south) is not left bare now they have moved out: two kiosks there, two on the hedge
+  // side, one each side of the gate
+  var YARD_EDGE = [[1690, 5006], [1790, 5006], [1690, 5205], [1790, 5205], [1590, 5012], [1590, 5150]];
   var YARD_SLOTS = YARD_EDGE.length;
   const yardSlotOf = (k) => k;
   function yardSpot(i) { return YARD_EDGE[i % YARD_EDGE.length]; }
@@ -27031,7 +27087,7 @@ void main() {
           const roof = new Mesh(new BoxGeometry(19, 1.4, 15), new MeshStandardMaterial({ color: "#e30613", roughness: 0.6 })); roof.position.y = 11.7; k.add(roof);
           const sg = signBoard({ name: ZDROVIT_YARD[k0], signBg: "#ecebe7", signInk: "#3d3c39" }, 15, 3.2); sg.position.set(0, 8.4, 6.2); k.add(sg);
         }
-        k.position.set(kx, 0, kz); k.rotation.y = kx < 1600 ? Math.PI / 2 : 0; g.add(k);
+        k.position.set(kx, 0, kz); k.rotation.y = kx < 1600 ? Math.PI / 2 : kz > cz ? Math.PI : 0; g.add(k); // (r176: the south ones face the yard too)
       }
     }
     const pave = new Mesh(new BoxGeometry(340, 0.8, 370), new MeshStandardMaterial({ color: "#e7e0d2", roughness: 1 }));
@@ -27589,14 +27645,19 @@ void main() {
     { br: "C", name: "Toskani MED", x: 1420, z: 5170, face: "+x", kind: "barcelona", w: 60, d: 46, h: 36, wall: "#f3e6cf", accent: "#e8a33d", c: "#E8A33D", t: "#2a1a05", line: "AESTHETIC MEDICINE \xB7 BARCELONA", desc: "Aesthetic non-invasive solutions for caring doctors, from Barcelona. We found their core, their archetype and two visual concepts, then the packaging for new ranges." },
     { br: "C", name: "Sofmedica", x: 1630, z: 4905, face: "-x", kind: "house", w: 58, d: 44, h: 34, wall: "#f4f4f0", accent: "#2b6fd6", c: "#2b6fd6", t: "#ffffff", line: "MEDICAL \xB7 A YARD WITH A CLINIC" },
     { br: "C", name: "Medcity", x: 1780, z: 4900, face: "-x", kind: "house", w: 52, d: 40, h: 30, wall: "#eef6f4", accent: "#18a39b", c: "#18a39b", t: "#ffffff", line: "CLINIC \xB7 IN THE SOFMEDICA YARD" },
+    // r176 (Daniel: "Routine Paris completely separate from Zdrovit, and bigger; Jesse J and Darya Hope also completely
+    // separate, but smaller"): out of the Zdrovit yard onto plots of their own. Routine Paris, half as big again (was
+    // 46 x 40 x 34), a Haussmann building on the west kerb between Toskani MED and Elithia (buildParisian); the two LA
+    // beauty shops at three quarters (were 56 x 42 x 28) on the east kerb past Zoetis, 260 apart (clear of the lane's houses)
+    { br: "C", name: "Routine Paris", logo: "logoRoutine", x: 1415, z: 5322, face: "+x", kind: "paris", grand: true, pinH: 78, w: 69, d: 60, h: 51, wall: "#efe7d8", accent: "#28C840", c: "#28C840", t: "#0e0e0e", line: "PERFUMES \xB7 PARIS" },
+    { br: "C", name: "Darya Hope", x: 1574, z: 5690, face: "-x", kind: "la", w: 42, d: 32, h: 21, wall: "#f8d7df", accent: "#f08fb0", c: "#f08fb0", t: "#2a0f17", line: "BEAUTY \xB7 LOS ANGELES" },
+    { br: "C", name: "Jesse J", x: 1574, z: 5950, face: "-x", kind: "la", w: 42, d: 32, h: 21, wall: "#d8efe6", accent: "#62c6a6", c: "#62c6a6", t: "#0c2a20", line: "BEAUTY \xB7 LOS ANGELES" }
   ];
-  // the Zdrovit courtyard (Medical Avenue, east side): eight small buildings around a yard
+  // the Zdrovit courtyard (Medical Avenue, east side): Zdrovit and its six brands' kiosks around a yard
+  // (r176: Routine Paris, Darya Hope and Jesse J moved out to their own plots, see STREET_BRANDS)
   var COURT = { x: 1720, z: 5070 };
   var COURT_BRANDS = [
-    { br: "C", name: "Zdrovit", x: 1860, z: 5070, face: "-x", kind: "house", w: 70, d: 48, h: 84, wall: "#f2f7f1", accent: "#e30613", c: "#e30613", t: "#ffffff", line: "HEALTH" },
-    { br: "C", name: "Darya Hope", x: 1720, z: 5215, face: "-z", kind: "la", w: 56, d: 42, h: 28, wall: "#f8d7df", accent: "#f08fb0", c: "#f08fb0", t: "#2a0f17", line: "BEAUTY · LOS ANGELES" },
-    { br: "C", name: "Jesse J", x: 1820, z: 5205, face: "-z", kind: "la", w: 56, d: 42, h: 28, wall: "#d8efe6", accent: "#62c6a6", c: "#62c6a6", t: "#0c2a20", line: "BEAUTY · LOS ANGELES" },
-    { br: "C", name: "Routine Paris", logo: "logoRoutine", x: 1560, z: 5226, face: "-x", kind: "paris", w: 46, d: 40, h: 34, wall: "#efe7d8", accent: "#28C840", c: "#28C840", t: "#0e0e0e", line: "PERFUMES · PARIS" }
+    { br: "C", name: "Zdrovit", x: 1860, z: 5070, face: "-x", kind: "house", w: 70, d: 48, h: 84, wall: "#f2f7f1", accent: "#e30613", c: "#e30613", t: "#ffffff", line: "HEALTH" }
   ];
   // Coffee Street additions
   var COFFEE_ADDS = [
@@ -27617,6 +27678,7 @@ void main() {
       if (o.kind === "festival") buildUnchainFortress(parent, o2);
       else if (o.kind === "assetto") buildAssetto(parent, o2);
       else if (o.kind === "energy") buildBepco(parent, o2);
+      else if (o.grand) buildParisian(parent, o2); // r176
       else buildBrandBuilding(parent, o2);
     }
     buildFriendsBlocks(parent);
@@ -34868,7 +34930,7 @@ void main() {
       const m = el("div", "hmodal court-modal");
       m.setAttribute("role", "dialog");
       m.innerHTML = `<div class="hm-info wide"><span class="eyebrow">MEDICAL AVENUE \u00B7 THE COURTYARD</span><span class="hm-name drop1" style="background:#e30613;color:#fff">Zdrovit</span>
-        <p>Eight brands around one yard: health, clinics, beauty and perfume, from Bucharest to Barcelona, Los Angeles and Paris.</p>
+        <p>Seven brands around one yard: health and clinics, from Bucharest to Barcelona.</p>
         <div class="court-grid">${COURT_BRANDS.map((b, i) => `<button class="court-b" data-i="${i}" style="--cc:${b.c};--ct:${b.t}"><b>${b.name}</b><span class="mono">${b.line}</span></button>`).join("")}${ZDROVIT_YARD.map((n) => `<button class="court-b yard-b" data-n="${n}" style="--cc:#cfcdc8;--ct:#3d3c39"><b>${n}</b><span class="mono">IN THE YARD</span></button>`).join("")}</div></div>`;
       m.querySelectorAll(".court-b").forEach((btn) => { if (btn.dataset.n) { btn.onclick = () => { const pg = window.__casePage(btn.dataset.n); if (pg && openFrameHook) { closeModal(); openFrameHook(`/work/${pg}/?embed=1`, btn.dataset.n); } }; return; } btn.onclick = () => { const b0 = COURT_BRANDS[+btn.dataset.i], pg = window.__casePage(b0.name); if (pg && openFrameHook) { closeModal(); openFrameHook(`/work/${pg}/?embed=1`, b0.name); } else openProjectHook?.(projOf(b0)); }; });
       const close = el("button", "hm-close mono", "CLOSE \u00D7");
@@ -34877,7 +34939,7 @@ void main() {
       modalBack.appendChild(m);
       openModal();
     };
-    const COURT_TAG = { br: "C", name: "Zdrovit", x: COURT.x - 150, z: COURT.z, line: "8 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff" };
+    const COURT_TAG = { br: "C", name: "Zdrovit", x: COURT.x - 150, z: COURT.z, line: "7 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff" };
     const workTags = [...STREET_BRANDS, COURT_TAG, TAC, ...COFFEE_ADDS, ...LANE_BRANDS].map((b) => {
       BRANDC[b.name] = BRANDC[b.name] || { c: b.c, t: b.t };
       // brands with a case page on the website open it full screen (offline copies fall back to the card)
@@ -39105,7 +39167,7 @@ void main() {
         { id: "unde", br: "A", x: 708, z: 6036, h: 50, name: "UND\xC9", line: "GROCERY \xB7 SIGNAGE", c: "#2b6fd6", t: "#ffffff", work: "UNDE", desc: "ARCA's grocery stores: a hand-drawn basket and three formats, Market, Store and Concept." },
         { id: "invest", br: "B", x: 2205, z: 4500, h: 170, name: "Investimental", line: "FINTECH \xB7 UX \xB7 UI", c: "#119BFE", t: "#ffffff", work: "Investimental" },
         { id: "tac", br: "C", x: 1500, z: 4570, px: 1775, pz: 4570, h: 128, /* r139e: the re-massed palace is lower */ name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
-        { id: "zdrovit", br: "C", x: 1860, z: 5070, h: 96, name: "Zdrovit", line: "A YARD OF BRANDS", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health, clinic, beauty and perfume brands, from Bucharest to Barcelona, Los Angeles and Paris." },
+        { id: "zdrovit", br: "C", x: 1860, z: 5070, h: 96, name: "Zdrovit", line: "A YARD OF BRANDS", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health and clinic brands, from Bucharest to Barcelona." }, // r176: the beauty and perfume brands have their own plots now
         { id: "end", stop: "end", name: "Cromatic Studios House", line: "STR. OLARI 9 \xB7 COME BY", c: "#ffffff", t: "#111111", pin: "#111111" },
         { id: "jet", x: 1250, z: JET_HOME.z - 15, px: JET_HOME.x, pz: JET_HOME.z, h: 28 /* r138b: the smaller jet's fin top */, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", board: true, unmarked: true }
       ];
@@ -39113,7 +39175,7 @@ void main() {
       (() => {
         const have = new Set(MAP_PLACES.map((p) => (p.work || p.name).toLowerCase()));
         const add = (o) => { if (have.has(o.name.toLowerCase())) return; have.add(o.name.toLowerCase()); MAP_PLACES.splice(MAP_PLACES.length - 2, 0, o); };
-        for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, street: b.lane ? "D" : b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60, name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
+        for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, street: b.lane ? "D" : b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.pinH || (b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60), name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
         ZDROVIT_YARD.forEach((n, i) => { const [x, z] = yardSpot(yardSlotOf(i)); add({ id: "y-" + i, br: "C", x: 1500, z, px: x, pz: z, h: 22, name: n, line: "IN THE ZDROVIT YARD", c: "#cfcdc8", t: "#3d3c39", small: true, desc: `${n}, one of the brands in the Zdrovit yard. By Cromatic Studios.` }); });
         add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Berero", line: "BRAND \xB7 LABELS \xB7 MERCH", c: "#111111", t: "#ffffff", act: "bereroTag" });
         add({ id: "echo", x: 1170, z: 6340, px: 1078, pz: 6350, h: 110, tapW: 0.45 /* r168 (Daniel: "Echo School is hard to press, it matters more than Dacia 99"): it wins the building's taps, and shows as a card from afar (TIER1) */, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", desc: "Two years of Instagram for a School of Technology, Digital Arts & Videogames in Bucharest: posts, stories, carousels, reels and campaigns." }); // r159: the case page is live
