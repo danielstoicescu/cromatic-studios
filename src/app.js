@@ -40335,7 +40335,7 @@ void main() {
           setTimeout(() => rides.classList.add("hidden"), 220);
         };
         document.addEventListener("pointerdown", (e) => { if (!rides.classList.contains("hidden") && !e.target.closest(".map-rides, .map-ride")) rides.classList.add("hidden"); });
-        skip.onclick = () => { window.__czSkipWanted = true; kinetic?.finish?.(); mapEndIntro(); }; // beta 2.91: a skip pressed while the city still loads is kept (it used to be lost: the whole intro played)
+        skip.onclick = () => { window.__czSkipWanted = true; kinetic?.finish?.(); mapEndIntro(); }; // r184: kept, if the intro is not ready to end yet
         const chips = dock.querySelector(".map-chips");
         // r130o: the bar scrolls sideways with a normal vertical wheel or trackpad gesture too
         // r148 (Daniel): smoothly (a goal the bar glides to), and only while it can still scroll that way (at either
@@ -41133,7 +41133,7 @@ void main() {
           document.body.classList.add("map-mode");
           rebuildGolden();
           mapUI.mark();
-          if (intro) { mapIntro = true; document.body.classList.add("kz-intro"); mapUI.skip.classList.remove("hidden"); }
+          if (intro) { mapIntro = true; document.body.classList.add("kz-intro"); mapUI.skip.classList.remove("hidden"); document.querySelector(".i4-skip")?.remove(); } // r184: the app's Skip takes over from the page's
           else { const wt0 = performance.now(); const wl = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - wt0 < 20000) return setTimeout(wl, 250); mapSettle = 90; if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI.welcome(true); }; setTimeout(wl, 1000); } // r139r: after the cups' reveal (r142b: a second, and the view settles on the car)
           try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map") + location.hash); } catch {} // r139p: a plain "/" stays plain
         } else {
@@ -41588,9 +41588,9 @@ void main() {
           skipEnd: () => { introReady.then(() => { document.body.classList.remove("kz-boot"); mapEndIntro(); setTimeout(() => stage.remove(), 1200); }); }, // r153: a skip before the city is ready waits for it
         };
         intro4 = window.cromaticIntro4(host, {});
-        if (mapUI?.skip) mapUI.skip.onclick = () => intro4.skip();
+        if (mapUI?.skip) mapUI.skip.onclick = () => { window.__czSkipWanted = true; intro4.skip(); };
         intro4.start();
-        if (window.__czSkipWanted) intro4.skip(); // beta 2.91: the visitor already asked to skip
+        if (window.__czSkipWanted) intro4.skip(); // r184: the visitor asked to skip before the intro was running (the page's own Skip, or the app's)
       }
       if (ONB_MODE) {
         window.__onb = onbCmd;
