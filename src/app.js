@@ -33655,8 +33655,26 @@ void main() {
       vehMenu.appendChild(b);
     });
     // r160 (Daniel): the Ride buttons (map and drive bars) show the ride you have, its own picture (the pickers' previews)
-    const rideThumbs = {}; let rideCur = "dacia1300";
-    const paintRideBtns = () => document.querySelectorAll(".map-ride .mr-th").forEach((t) => { const u = rideThumbs[rideCur]; t.style.backgroundImage = u ? `url(${u})` : ""; t.classList.toggle("ready", !!u); t.dataset.v = rideCur; });
+    const rideThumbs = {}, rideCrop = {}; let rideCur = "dacia1300";
+    // beta 2.6 (Daniel): the ride fills its thumbnail: the preview cropped to the ride's own outline (its opaque pixels), 3:2
+    const cropRide = (id, url) => {
+      const im = new Image();
+      im.onload = () => {
+        try {
+          const w = im.naturalWidth, h = im.naturalHeight, c = document.createElement("canvas"); c.width = w; c.height = h;
+          const g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(im, 0, 0);
+          const d = g.getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = -1, y1 = -1;
+          for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2) { const i = (y * w + x) * 4; if (d[i + 3] > 24 && !(d[i] > 246 && d[i + 1] > 246 && d[i + 2] > 246)) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } }
+          if (x1 < 0) return;
+          let cw = (x1 - x0) * 1.1 + 4, chh = (y1 - y0) * 1.1 + 4; const A = 1.5; if (cw / chh > A) chh = cw / A; else cw = chh * A;
+          const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, o = document.createElement("canvas"); o.width = 150; o.height = 100;
+          o.getContext("2d").drawImage(c, cx - cw / 2, cy - chh / 2, cw, chh, 0, 0, 150, 100);
+          rideCrop[id] = o.toDataURL("image/png"); paintRideBtns();
+        } catch (e) {}
+      };
+      im.src = url;
+    };
+    const paintRideBtns = () => document.querySelectorAll(".map-ride .mr-th").forEach((t) => { const u = rideCrop[rideCur] || rideThumbs[rideCur]; t.style.backgroundImage = u ? `url(${u})` : ""; t.classList.toggle("ready", !!u); t.dataset.v = rideCur; });
     const syncVeh = (id) => { Object.entries(vehRows).forEach(([k, b]) => b.classList.toggle("on", k === id)); rideCur = id; paintRideBtns(); };
     uiSyncVeh = syncVeh;
     syncVeh("dacia1300"); // r138j: the default ride
@@ -35151,6 +35169,7 @@ void main() {
       paintRide: () => paintRideBtns(), // r160: once a bar with a Ride button is built
       setVehiclePreviews(map) {
         Object.assign(rideThumbs, map); paintRideBtns(); // r164
+        Object.entries(map).forEach(([id, url]) => cropRide(id, url)); // beta 2.6
         Object.entries(map).forEach(([id, url]) => {
           const t = vehRows[id]?.querySelector(".hr-thumb");
           if (t) t.style.backgroundImage = `url(${url})`;
@@ -35984,7 +36003,21 @@ void main() {
         st.setProperty("--cr-pill", crayonTex.pill); st.setProperty("--cr-card", crayonTex.card); st.setProperty("--cr-ring", crayonTex.ring); st.setProperty("--cr-dot", crayonTex.dot);
         return crayonTex;
       }
+      // beta 2.6 (Daniel): the Multiverse button shows the world you are in: its picker's preview when there is one, else a
+      // postcard of the roundabout in it (one render, once per world, a moment after the world changes)
+      let worldBtnT = 0;
+      function paintWorldBtn() {
+        clearTimeout(worldBtnT);
+        worldBtnT = setTimeout(() => (window.requestIdleCallback || setTimeout)(() => {
+          try {
+            if (!worldRefs.world.userData.fabricDone) { paintWorldBtn(); return; }
+            const i = state.schemeIdx, u = worldPrevCache.urls?.[i] || placeShot({ id: "__world", wx: FORK_POS.x, wz: FORK_POS.y, wy: 70 });
+            if (u) document.querySelectorAll(".map-world").forEach((b) => { b.style.setProperty("--wimg", `url("${u}")`); b.classList.add("has-img"); });
+          } catch (e) {}
+        }, { timeout: 1500 }), 700);
+      }
       function applyScheme(idx) {
+        paintWorldBtn();
         if (state.schemeIdx != null && state.schemeIdx !== idx && !onbWarm) czEv("world_change", { world: SCHEMES[idx]?.id }); // r141: not the warm-up
         state.schemeIdx = idx;
         const s = SCHEMES[idx];
@@ -40132,6 +40165,7 @@ void main() {
 
         // r137a: both cards open as popovers under their buttons (ui.popAnchor); the bar stays above the dimmed map
         // while the worlds card is open, so a tap on any other button in it closes the card first
+        paintWorldBtn(); // beta 2.6: the world's picture on the button
         top.querySelector(".map-world").onclick = (e) => {
           e.stopPropagation(); welcome(false); ui.themeBtn.click();
           if (ui.themeMenu?.classList.contains("open")) ui.popAnchor?.(ui.themeMenu, e.currentTarget);
