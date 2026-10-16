@@ -274,3 +274,7 @@ body.n2-phone.map-mode .toast-col > :is(.coffee-card, .rush-pill) { top: calc(va
 /* beta 2.9 (Daniel): the crew's roles, under their names (only the site's own role lines) */
 .crew-face .cf-role { display: block; margin-top: 5px; max-width: 108px; text-align: center; font-size: 8.5px; line-height: 1.3; letter-spacing: .06em; opacity: .72; text-transform: uppercase; }
 body.nav2.scheme-nightlife::after { opacity: .09; } /* beta 2.9 (Daniel): the night's film grain, much lighter */
+/* beta 2.91: under every full panel (the crew, a human, the rides, the worlds, the boarding pass), nav2's controls step
+   away (the speaker, the stick, the pad, the toggle, the hints) */
+body:is(.map-boarding, .human-open, .menu-open, .hud-world-open):is(.nav2) .nav2-ui,
+body.nav2:has(.crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:not(.hidden), .theme-menu.open) .nav2-ui { opacity: 0 !important; pointer-events: none !important; transition: opacity .2s; }
