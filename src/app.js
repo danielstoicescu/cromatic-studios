@@ -40281,7 +40281,7 @@ void main() {
           setTimeout(() => rides.classList.add("hidden"), 220);
         };
         document.addEventListener("pointerdown", (e) => { if (!rides.classList.contains("hidden") && !e.target.closest(".map-rides, .map-ride")) rides.classList.add("hidden"); });
-        skip.onclick = () => { kinetic?.finish?.(); mapEndIntro(); };
+        skip.onclick = () => { window.__czSkipWanted = true; kinetic?.finish?.(); mapEndIntro(); }; // beta 2.91: a skip pressed while the city still loads is kept (it used to be lost: the whole intro played)
         const chips = dock.querySelector(".map-chips");
         // r130o: the bar scrolls sideways with a normal vertical wheel or trackpad gesture too
         // r148 (Daniel): smoothly (a goal the bar glides to), and only while it can still scroll that way (at either
@@ -41536,6 +41536,7 @@ void main() {
         intro4 = window.cromaticIntro4(host, {});
         if (mapUI?.skip) mapUI.skip.onclick = () => intro4.skip();
         intro4.start();
+        if (window.__czSkipWanted) intro4.skip(); // beta 2.91: the visitor already asked to skip
       }
       if (ONB_MODE) {
         window.__onb = onbCmd;

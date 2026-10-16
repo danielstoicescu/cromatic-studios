@@ -278,3 +278,13 @@ body.nav2.scheme-nightlife::after { opacity: .09; } /* beta 2.9 (Daniel): the ni
    away (the speaker, the stick, the pad, the toggle, the hints) */
 body:is(.map-boarding, .human-open, .menu-open, .hud-world-open):is(.nav2) .nav2-ui,
 body.nav2:has(.crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:not(.hidden), .theme-menu.open) .nav2-ui { opacity: 0 !important; pointer-events: none !important; transition: opacity .2s; }
+/* beta 2.91 (usage pass): the tour's bubble never over a case page or a full panel; the cookie card sits above the
+   Street / Bird's eye toggle on a laptop (it covered it) */
+body:has(.case-frame:not(.hidden), .crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:not(.hidden), .theme-menu.open) .n2-guide,
+body:is(.modal-open, .scf-open, .map-boarding, .menu-open) .n2-guide { opacity: 0 !important; pointer-events: none !important; }
+@media (min-width: 720px) { body.nav2 #cz-ck { bottom: 92px; } }
+/* beta 2.91 (usage pass): "Skip intro" could not be pressed while the opening's first line was up: the page's own
+   pre-painted line (.i4-pre, adopted by the intro) lay over it, full screen, so the tap only jumped one beat */
+.i4-pre { pointer-events: none; }
+body.kz-intro .kz-skip { z-index: 2147483002; }
+body.n2-phone:has(.map-welcome:not(.hidden)) .nav2-ui { opacity: 0 !important; pointer-events: none !important; } /* beta 2.91: the welcome card first (the toggle and the speaker sat on its top) */

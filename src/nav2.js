@@ -786,7 +786,7 @@
     let panelT = 0;
     function tick(dt, now) {
       if (!H.ready()) return;
-      if (!D.ready) { if (!place()) return; D.ready = true; render(true); H.closures?.(CLOSED); setTimeout(preShots, 1200); }
+      if (!D.ready) { if (!place()) return; D.ready = true; render(true); H.closures?.(CLOSED); setTimeout(preShots, 1200); setTimeout(() => engineLoops(H.vehicle()), 2500); }
       if (FREE) return freeTick(dt, now); // round 4: the arcade car
       const L = curL();
       if (D.uturn || D.kturn) {
@@ -1428,10 +1428,16 @@
         const k2 = 0.18 / rms; for (let i = 0; i < d.length; i++) d[i] = Math.max(-1, Math.min(1, d[i] * k2));
         return d;
       };
+      // beta 2.91: one loop per task, when the page is idle (the whole set in one go was ~0.5 s of main thread: the
+      // "first drive on a phone stutters" of 2.9, as the sound started with the first touch)
+      const idle = () => new Promise((r) => (window.requestIdleCallback || setTimeout)(r, { timeout: 400 }));
       const on = [], off = [];
-      for (let i = 0; i < steps.length; i++) { on.push(await one(steps[i], 1, i === 0)); off.push(await one(steps[i], 0, i === 0)); }
+      for (let i = 0; i < steps.length; i++) { await idle(); on.push(await one(steps[i], 1, i === 0)); await idle(); off.push(await one(steps[i], 0, i === 0)); }
       return { steps, on, off, sr };
     }
+    // the rendered loops, kept per ride (they need no AudioContext: rendered ahead, before the first touch)
+    const ENG_CACHE = new Map(), ENG_PEND = new Map();
+    const engineLoops = (id) => { const pr = ENGINES[id] || ENGINES.dacia1300; if (pr.kind !== "ice") return Promise.resolve(null); if (ENG_CACHE.has(id)) return Promise.resolve(ENG_CACHE.get(id)); if (!ENG_PEND.has(id)) ENG_PEND.set(id, renderEngine(pr, 32000).then((d) => { ENG_CACHE.set(id, d); return d; }).catch(() => null)); return ENG_PEND.get(id); };
     const SND = (() => {
       let on = true, ctx = null, master = null, carBus = null, cityBus = null, E2 = null, C = null, started = false, out = 1, cafe = 0;
       try { on = localStorage.getItem("cz-sound") !== "off"; } catch {}
@@ -1509,9 +1515,9 @@
           for (const set of [d.on, d.off]) set.forEach((arr) => { const b = ctx.createBuffer(1, arr.length, d.sr); b.copyToChannel(arr, 0); const s2 = ctx.createBufferSource(); s2.buffer = b; s2.loop = true; const g = gain(0); s2.connect(g); g.connect(out); s2.start(ctx.currentTime + Math.random() * 0.05); srcs.push({ s: s2, g }); });
           E2.v = { pr, out, d, srcs, stop: () => { for (const q of srcs) try { q.s.stop(); } catch {} out.disconnect(); } };
         };
-        const c = E2.cache.get(id);
+        const c = ENG_CACHE.get(id);
         if (c) make(c);
-        else renderEngine(pr, 32000).then((d) => { if (!d) return; E2.cache.set(id, d); if (E2.id === id) make(d); }).catch(() => {});
+        else engineLoops(id).then((d) => { if (d && E2.id === id && !E2.v) make(d); });
       }
       // per frame: the engine's rpm (a gearbox), its load, the voice's mix
       function engineTick(thr, sp, red) {
