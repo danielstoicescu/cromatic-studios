@@ -38825,7 +38825,7 @@ void main() {
         if (mapMode && nav2?.on && nav2.camK > 0.01) { const sk = nav2.camK; fogNear = fogNear * (1 - sk) + 520 * sk; fogFar = fogFar * (1 - sk) + 2250 * sk; } // beta 2.5: the street view's haze
         scene.fog.near = smooth(scene.fog.near, flying && schemeId !== "monument" ? 1400 : fogNear, dt, 1.5);
         scene.fog.far = smooth(scene.fog.far, flying && schemeId !== "monument" ? 6600 : fogFar, dt, 1.5);
-        if (copCar.group.visible) {
+        if (copCar.group.visible && !nav2Cop) {
           const behind = route.posAt(Math.max(0, state.L - 120), new Vector3());
           const tan = route.tangentAt(Math.max(0, state.L - 120), new Vector3());
           const side = new Vector3(-tan.z, 0, tan.x).multiplyScalar(30);
@@ -39164,7 +39164,7 @@ void main() {
       // nav2: you drive the city's whole road graph with the arrows, a street and a satellite view, a Waze-style panel
       // (src/nav2.js); r160: the site's only 3D mode
       var NAV2 = typeof window.czNav2 === "function" ? window.czNav2 : null, nav2 = null; // r164: always (the ?nav=v2 flag of the prototype is no longer needed)
-      var nav2RM = null;
+      var nav2RM = null, nav2Cop = false; // beta 2.7: nav2 drives the police car itself (its drift cooldown)
       // beta 2.5 polish: in the street view ~60% of the draw calls were small things (props, little houses' parts) more than
       // ~1000 units off, a few pixels in the haze: they leave every camera's layers there (never .visible, which other code
       // owns) and come back when near or out of the street view. Rechecked every 8 frames from the car's place (plan units)
@@ -39224,6 +39224,16 @@ void main() {
             const pick = veh.wheels?.length ? veh.wheels : [g];
             for (const w of pick) w.traverse((o) => { const a = o.isMesh && o.geometry?.attributes?.position; if (!a) return; for (let i = 0; i < a.count; i += 3) { p.fromBufferAttribute(a, i).applyMatrix4(o.matrixWorld); if (p.y < m) m = p.y; } });
             return m - g.position.y;
+          },
+          // beta 2.7 (Daniel): the police car for nav2's drift cooldown: where nav2 puts it, its blue lamps flashing (not
+          // with reduced motion); null puts it away
+          cop(o) {
+            if (!o) { if (nav2Cop) { nav2Cop = false; copCar.group.visible = false; } return; }
+            nav2Cop = true; copCar.group.visible = true;
+            copCar.group.position.set(o.x, 1.7, o.z); copCar.group.rotation.set(0, o.h, 0);
+            const t = Math.floor(performance.now() / 190) % 2;
+            copCar.beacons[0].material.emissiveIntensity = o.flash ? (t ? 2.8 : 0.15) : 1.3;
+            copCar.beacons[1].material.emissiveIntensity = o.flash ? (t ? 0.15 : 2.8) : 1.3;
           },
           reverseLamps(on) { if (veh?.revLamps && veh.revLamps.visible !== on) veh.revLamps.visible = on; },
           // beta 2.5 (Daniel: "more like Mario Kart"): little effects on the road, in plan coordinates (the city warp bends

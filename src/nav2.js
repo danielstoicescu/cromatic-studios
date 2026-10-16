@@ -432,10 +432,10 @@
       const a = G.nearest(x, z, 360, (e) => e.drive);
       if (!a) continue;
       const ap = pointAt(E[a.e].pts, E[a.e].cum, a.s);
-      PL.push({ pl, x, z, e: a.e, s: a.s, ax: ap[0], az: ap[1], q: pl.br || null }); // ax/az: where the car parks for it
+      PL.push({ pl, x, z, e: a.e, s: a.s, ax: ap[0], az: ap[1], q: pl.br || null, hide: !!(pl.past || pl.chapter) }); // ax/az: where the car parks for it; hide: beta 2.7, a discovery (never suggested)
     }
     const byEdge = new Map();
-    for (const p of PL) { let l = byEdge.get(p.e); if (!l) byEdge.set(p.e, (l = [])); l.push(p); }
+    for (const p of PL) { if (p.hide) continue; let l = byEdge.get(p.e); if (!l) byEdge.set(p.e, (l = [])); l.push(p); } // beta 2.7 (Daniel): the blast-from-the-past places are found only by driving past them
     // the quarters are the portfolio streets themselves (each from the roundabout to the Dacia row; the lane belongs to
     // Medical Avenue, the road on to Olari 9 is its own): you are in a quarter within 340 units of its street, and in none round the roundabout
     const QL = [];
@@ -902,11 +902,11 @@
     }
     let lampOn = false;
     function lamps(on) { lampOn = on; H.reverseLamps(on); }
-    function hereAt() {
+    function hereAt(listed) {
       let best = null;
-      for (const p of PL) { const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 75 && (!best || d < best.d)) best = { pl: p.pl, d, p }; }
+      for (const p of PL) { if (listed && p.hide) continue; const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 75 && (!best || d < best.d)) best = { pl: p.pl, d, p }; }
       // beta 2.6: the place you just arrived at stays "here" (two places can share a stretch of kerb: Dacia 99 read as Echo School)
-      if (D.lastArr) { const p = PL.find((q) => q.pl === D.lastArr); if (p) { const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 110) return { pl: p.pl, d, p }; } }
+      if (D.lastArr) { const p = PL.find((q) => q.pl === D.lastArr && !(listed && q.hide)); if (p) { const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 110) return { pl: p.pl, d, p }; } }
       return best;
     }
     const ktSeg = () => { const m = D.kturn, t = m.t / m.k; return t < KTD[0] ? 0 : t < KTD[0] + KTD[1] ? 1 : 2; };
@@ -1030,6 +1030,38 @@
     // charges a mini-turbo: let go after ~0.6 s for a short boost (longer after ~1.4 s); stopped or slow, Space + ← → is
     // still the quick spin; and the kerbs are soft bumpers: the car bounces off them back into the road, it never grinds
     const DRIFT_V = 110;
+    // beta 2.7 (Daniel): drift too long at speed (4 s of drifting within 8 s) and the police come: the patrol car arrives behind
+    // you, blue lamps flashing, and follows for a 5 s cooldown: top speed ~55%, no drift, no boost; then it drops back and
+    // goes. Not with the auto-pilot, the tour or a card open; reduced motion: no flashing
+    const COP = { log: [], on: null, trail: [] };
+    function copTick(dt) {
+      const now = performance.now(), fx = Math.sin(P.h), fz = Math.cos(P.h);
+      COP.trail.push([P.x, P.z]); if (COP.trail.length > 400) COP.trail.shift();
+      const behind = (dist) => { let acc = 0; for (let i = COP.trail.length - 1; i > 0; i--) { const a = COP.trail[i], b = COP.trail[i - 1]; acc += Math.hypot(a[0] - b[0], a[1] - b[1]); if (acc >= dist) return b; } return COP.trail[0] || [P.x - fx * dist, P.z - fz * dist]; };
+      const ok = !D.auto && TUT.i < 0 && !H.cardOpen();
+      if (!COP.on) {
+        if (D.drift && Math.hypot(P.u, P.w) > VMAX_F * 0.42 && ok) COP.log.push([now, dt]);
+        while (COP.log.length && now - COP.log[0][0] > 8000) COP.log.shift();
+        D.copSum = COP.log.reduce((a, q) => a + q[1], 0);
+        if (ok && D.copSum > 4) {
+          COP.log.length = 0;
+          const b = behind(260), q = MASK.resolve(b[0], b[1], CR);
+          COP.on = { t: 0, x: q.lost ? P.x - fx * 120 : q.x, z: q.lost ? P.z - fz * 120 : q.z, h: P.h };
+          D.cop = true; D.drift = null; D.boost = null;
+          copEl.classList.add("on"); copEl.querySelector("em").textContent = "5";
+        }
+        return;
+      }
+      const c = COP.on; c.t += dt;
+      if (c.t > 5 && D.cop) { D.cop = false; copEl.classList.remove("on"); }
+      const tgt = c.t > 5 ? behind(70 + (c.t - 5) * 260) : behind(75), k = 1 - Math.exp(-dt * (c.t < 1.2 ? 2.6 : 4));
+      const nx = c.x + (tgt[0] - c.x) * k, nz = c.z + (tgt[1] - c.z) * k;
+      if (Math.hypot(nx - c.x, nz - c.z) > 0.3) c.h += wrapA(Math.atan2(nx - c.x, nz - c.z) - c.h) * (1 - Math.exp(-dt * 8));
+      c.x = nx; c.z = nz;
+      if (c.t <= 5) { const left = Math.max(0, 5 - c.t); copEl.querySelector("em").textContent = String(Math.ceil(left)); copEl.style.setProperty("--k", (left / 5).toFixed(3)); }
+      if (c.t > 6.4) { COP.on = null; H.cop?.(null); return; }
+      H.cop?.({ x: c.x, z: c.z, h: c.h, flash: !reduced() });
+    }
     const FX = { hop: 0, bump: 0, squash: 0, boostKick: 0, smokeT: 0, skidL: 0, skidR: 0, lastX: 0, lastZ: 0, side: 0, sparkT: 0, dustT: 0 };
     // the road effects of a frame: tyre smoke and skid marks in a drift (or a hard spin), the mini-turbo's charge as
     // sparks at the rear wheels (blue, then orange), a boost's flame, dust at top speed; none with reduced motion but the marks
@@ -1066,7 +1098,7 @@
       P.st += (steerIn - P.st) * (1 - Math.exp(-dt * (spinning ? 16 : steerIn === 0 || assisted ? 11 : Math.abs(steerIn) < Math.abs(P.st) ? 11 : 9)));
       let u = P.u;
       // the drift: starts with Space + ← / → above DRIFT_V, holds while Space is held and the car keeps some speed
-      if (!D.drift && hb && u > DRIFT_V && Math.abs(steerIn) > 0.2 && !D.auto) { D.drift = { t: 0, dir: Math.sign(steerIn) }; FX.hop = 1; }
+      if (!D.drift && hb && u > DRIFT_V && Math.abs(steerIn) > 0.2 && !D.auto && !D.cop) { D.drift = { t: 0, dir: Math.sign(steerIn) }; FX.hop = 1; }
       if (D.drift && (!hb || Math.hypot(u, P.w) < 60)) {
         const t = D.drift.t; D.drift = null;
         if (t > 0.6 && u > 60) { D.boost = { t: 0, dur: t > 1.4 ? 1.15 : 0.7, lvl: t > 1.4 ? 2 : 1 }; FX.boostKick = 1; }
@@ -1075,11 +1107,12 @@
       if (D.boost) { D.boost.t += dt; if (D.boost.t > D.boost.dur) D.boost = null; }
       const boost = D.boost ? 1 - D.boost.t / D.boost.dur : 0;
       // beta 2.5: the auto-pilot drives faster between places (its own top speed, quicker off the line); a boost lifts both
-      const vcap = (D.auto?.vmax ? Math.max(VMAX_F, D.auto.vmax * 1.04) : VMAX_F) * (1 + 0.28 * boost), acc = (D.auto ? ACC_F * 1.5 : ACC_F) * (1 + 1.5 * boost);
+      const vcap = (D.auto?.vmax ? Math.max(VMAX_F, D.auto.vmax * 1.04) : VMAX_F) * (1 + 0.28 * boost) * (D.cop ? 0.55 : 1), acc = (D.auto ? ACC_F * 1.5 : ACC_F) * (1 + 1.5 * boost);
       const crawlCap = !hb && Math.abs(P.st) > 0.6 && Math.abs(u) < 70 ? 28 : Infinity; // turning hard from a crawl: stay slow, turn tight
       if (boost > 0 && u > 0 && thr >= 0) u = Math.min(vcap, u + 520 * boost * dt); // the mini-turbo pushes even off the throttle
-      if (thr > 0) { if (u < -4) u = Math.min(0, u + BRAKE_F * dt); else if (u < crawlCap) u = Math.min(Math.max(u, crawlCap), u + acc * dt * (1 - Math.max(0, u) / vcap)); }
-      else if (thr < 0) { if (u > 4) u = Math.max(0, u - BRAKE_F * dt); else if (u > -crawlCap) u = Math.max(-VREV_F, Math.min(u, -crawlCap), u - REV_F * dt); }
+      const tA = Math.min(1, Math.abs(thr)), vcapT = vcap * (0.3 + 0.7 * tA); // a stick pushed part way: a gentler, slower drive
+      if (thr > 0) { if (u < -4) u = Math.min(0, u + BRAKE_F * tA * dt); else if (u < Math.min(crawlCap, vcapT)) u = Math.min(Math.max(u, Math.min(crawlCap, vcapT)), u + acc * Math.max(0.4, tA) * dt * (1 - Math.max(0, u) / vcap)); else if (u > vcapT + 10 && !boost) u -= (ROLL_F + DRAG_F * u) * dt; }
+      else if (thr < 0) { if (u > 4) u = Math.max(0, u - BRAKE_F * Math.max(0.35, tA) * dt); else if (u > -crawlCap) u = Math.max(-VREV_F * Math.max(0.4, tA), Math.min(u, -crawlCap), u - REV_F * dt); }
       else { const dec = (ROLL_F + DRAG_F * Math.abs(u)) * dt; u = Math.abs(u) <= dec ? 0 : u - Math.sign(u) * dec; }
       if (u > vcap) u = Math.max(vcap, u - 260 * dt); // out of a boost: eases back to the normal top speed
       if (hb && !drift) { const dec = 280 * dt; u = Math.abs(u) <= dec ? 0 : u - Math.sign(u) * dec; }
@@ -1278,6 +1311,7 @@
         if (c.rem < 10 && Math.abs(P.u) < 25) { P.u *= 0.5; if (Math.abs(P.u) < 6) { P.u = 0; P.w = 0; const pl = D.auto.pl; D.auto = null; if (pl && !pl.tap) arrive(pl); else { if (pl) H.arrive(pl); H.mapNav.place = null; H.mark(); } render(true); } }
       } else {
         thr = (D.keys.u ? 1 : 0) - (D.keys.d ? 1 : 0); steer = (D.keys.l ? 1 : 0) - (D.keys.r ? 1 : 0);
+        if (D.stick) { thr = D.stick.y; steer = -D.stick.x; } // beta 2.7: the phone's stick, proportional
       }
       let assisted = false;
       if (!D.auto && steer !== 0 && D.ringExit && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) > 110) D.ringExit = null; // steering yourself, off the ring: your own way
@@ -1288,6 +1322,7 @@
       D.assist = assisted;
       physics(dt, thr, steer, hb, assisted);
       roadFx(dt);
+      copTick(dt);
       { const au = !!D.auto; if (au !== D.autoCls) { D.autoCls = au; document.body.classList.toggle("n2-driving-auto", au); } } // beta 2.6: the phone's tap hint steps aside while it drives
       lamps(P.u < -0.5 || (D.keys.d && P.u <= 0.5 && !D.auto));
       if (!D.auto) {
@@ -1307,7 +1342,7 @@
     }
     let freeSig = "";
     function freeUI() {
-      let hint = touchUI || VP.w < 720 ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BACK · SPACE + ← → DRIFT";
+      let hint = VP.w < 720 ? "DRAG THE STICK TO DRIVE" : touchUI ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BACK · SPACE + ← → DRIFT";
       if (D.assist && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) < 110) hint = VP.w < 720 ? "ROUNDABOUT · ↑ STRAIGHT ON · OR STEER OUT" : "ROUNDABOUT · ↑ STRAIGHT ON · STEER OUT FOR ANOTHER EXIT";
       if (D.moved && Math.abs(P.u) < 5 && !D.auto && P.contact <= 0) hint = VP.w < 720 ? "STOPPED · ↑ + ← → TURNS YOU ROUND" : "STOPPED · ↑ OR ↓ WITH ← → TURNS YOU ROUND"; // round 5
       if (D.auto) hint = D.auto.rev ? "BACKING UP TO IT · ANY KEY TAKES OVER" : "DRIVING YOU THERE · ANY KEY TAKES OVER";
@@ -1528,9 +1563,13 @@
       </div>
       <div class="n2-toast" role="status"></div>
       <div class="n2-taphint mono" aria-hidden="true">TAP THE ROAD TO DRIVE THERE</div>
+      <div class="n2-cop" role="status" aria-live="polite"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15" class="n2-cop-bg"/><circle cx="18" cy="18" r="15" class="n2-cop-ring"/></svg><b>POLICE · SLOW DOWN</b><em class="mono">5</em></div>
+      <div class="n2-stick" aria-hidden="true"><span class="n2-ring"></span><span class="n2-knob"></span></div>
+      <button class="n2-driftb mono" aria-label="Drift (hold)">DRIFT</button>
       <div class="n2-arms" aria-hidden="true"><span class="n2-arm" data-k="l"></span><span class="n2-arm" data-k="s"></span><span class="n2-arm" data-k="r"></span></div>`;
     document.body.appendChild(root);
     const panel = root.querySelector(".n2-panel"), views = root.querySelector(".n2-views"), pad = root.querySelector(".n2-pad"), hintEl = root.querySelector(".n2-hint"), toastEl = root.querySelector(".n2-toast");
+    const copEl = root.querySelector(".n2-cop");
     const keyEls = {}; pad.querySelectorAll(".n2-k").forEach((b) => { keyEls[b.dataset.k] = b; });
     views.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.v === "street"); });
     let toastT = 0;
@@ -1575,12 +1614,36 @@
     {
       const cv = H.canvas();
       let sw = null;
+      // beta 2.7 (Daniel): on a phone the Street view is driven with a floating stick: it appears under the thumb anywhere in
+      // the lower half; push up to go (as far as you push), down to brake and back, sideways to steer, diagonals combine;
+      // let go and it coasts with the road assist. A small DRIFT button (held) is Space
+      const stickEl = root.querySelector(".n2-stick"), knobEl = root.querySelector(".n2-knob"), driftB = root.querySelector(".n2-driftb");
+      const R = 58; let st = null;
+      const stickHome = () => { stickEl.style.transform = `translate(${70}px, ${VP.h - 150}px)`; knobEl.style.transform = "translate(-50%, -50%)"; };
+      stickHome();
+      addEventListener("resize", () => { if (!st) stickHome(); });
+      const stickSet = (e) => {
+        let dx = e.clientX - st.x, dy = e.clientY - st.y; const l = Math.hypot(dx, dy); if (l > R) { dx *= R / l; dy *= R / l; }
+        knobEl.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), calc(-50% + ${dy.toFixed(1)}px))`;
+        const dz = (v) => (Math.abs(v) < 0.14 ? 0 : Math.sign(v) * (Math.abs(v) - 0.14) / 0.86);
+        D.stick = { x: dz(dx / R), y: dz(-dy / R) };
+      };
+      const phoneStreet = () => VP.w < 720 && D.streetT >= 0.5;
       cv.addEventListener("pointerdown", (e) => {
         if (!api.on || D.streetT < 0.5) return;
+        if (phoneStreet()) {
+          if (e.clientY < VP.h * 0.45 || H.cardOpen()) return; // the upper half stays the map's (taps, the toggle)
+          e.stopImmediatePropagation(); e.preventDefault?.();
+          st = { id: e.pointerId, x: e.clientX, y: e.clientY };
+          stickEl.classList.add("on"); stickEl.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`; stickSet(e);
+          if (D.auto) { D.auto = null; render(true); }
+          return;
+        }
         e.stopImmediatePropagation();
         sw = { id: e.pointerId, x: e.clientX, y: e.clientY, k: null };
       }, true);
       cv.addEventListener("pointermove", (e) => {
+        if (st && e.pointerId === st.id) { e.stopImmediatePropagation(); stickSet(e); return; }
         if (!sw || e.pointerId !== sw.id) return;
         e.stopImmediatePropagation();
         if (sw.k) return;
@@ -1590,8 +1653,11 @@
         keyDown(sw.k);
         if (sw.k === "l" || sw.k === "r") keyUp(sw.k);
       }, true);
-      const end = (e) => { if (!sw || e.pointerId !== sw.id) return; e.stopImmediatePropagation(); if (sw.k === "u" || sw.k === "d") keyUp(sw.k); sw = null; };
+      const stickEnd = (e) => { if (!st || e.pointerId !== st.id) return false; st = null; D.stick = null; stickEl.classList.remove("on"); stickHome(); return true; };
+      const end = (e) => { if (stickEnd(e)) { e.stopImmediatePropagation(); return; } if (!sw || e.pointerId !== sw.id) return; e.stopImmediatePropagation(); if (sw.k === "u" || sw.k === "d") keyUp(sw.k); sw = null; };
       cv.addEventListener("pointerup", end, true); cv.addEventListener("pointercancel", end, true);
+      driftB.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); driftB.setPointerCapture?.(e.pointerId); D.keys.h = true; driftB.classList.add("on"); });
+      for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) driftB.addEventListener(ev, () => { D.keys.h = false; driftB.classList.remove("on"); });
       window.addEventListener("wheel", (e) => { if (api.on && D.streetT > 0.5 && !e.target.closest?.(".map-card, .case-frame, .nav2-ui, .map-rides, .crew-panel")) { e.preventDefault(); e.stopImmediatePropagation(); } }, { passive: false, capture: true });
     }
     // round 3 (Daniel: "show which arm each key means"): at a junction or a roundabout coming up, a pill on each way you can
@@ -1708,7 +1774,7 @@
         const it = D.seq[k], e = E[it.e];
         for (const p of byEdge.get(it.e) || []) { const s = it.dir > 0 ? p.s : e.len - p.s, d = it.L0 + s - L; if (d > 30 && d < NEAR_AHEAD) ahead.push({ p, d }); }
       }
-      const here = hereAt();
+      const here = hereAt(true); // beta 2.7: the panel never names a discovery place
       const jd = dec && dec.type === "junction" ? dec.L - L : Infinity;
       const ex = dec && dec.type === "junction" && jd < NEAR_JUNCTION ? dec.ex : null;
       const ways = { l: [], s: [], r: [] };
@@ -1821,7 +1887,7 @@
       { id: "tapplace", keys: [], t: "Tap a place to visit it", s: "Its pin or its name: the car drives you there", at: "mid" },
       { id: "look", keys: [], t: "Look around", s: "Drag the map, pinch to zoom · ◎ brings you back", at: "mid" },
       { id: "view", keys: [], t: "Take the wheel", s: "Switch to Street down here", at: "views" },
-      { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: "↑ to go, ← → to steer", at: "car" }
+      { id: "drive", keys: [], t: "Drive it yourself", s: "Drag the stick: up to go, sideways to steer", at: "car" }
     ];
     let STEPS;
     const DESK_STEPS = [
@@ -1859,7 +1925,7 @@
       document.body.classList.toggle("n2-tour", true);
       // phone, "tap a place": the map pulls back to show the nearest places (the car's own spot may have none in view)
       TUT.fly = null;
-      if (st.id === "tapplace") { const c = H.carPos, q = PL.slice().sort((a, b) => Math.hypot(a.x - c.x, a.z - c.z) - Math.hypot(b.x - c.x, b.z - c.z))[0]; if (q) { const d = Math.hypot(q.x - c.x, q.z - c.z); TUT.fly = { x: q.x * 0.85 + c.x * 0.15, z: q.z * 0.85 + c.z * 0.15, d: clamp(d * 1.6, 2400, 4600), t: 0 }; } }
+      if (st.id === "tapplace") { const c = H.carPos, q = PL.filter((p) => !p.hide).sort((a, b) => Math.hypot(a.x - c.x, a.z - c.z) - Math.hypot(b.x - c.x, b.z - c.z))[0]; if (q) { const d = Math.hypot(q.x - c.x, q.z - c.z); TUT.fly = { x: q.x * 0.85 + c.x * 0.15, z: q.z * 0.85 + c.z * 0.15, d: clamp(d * 1.6, 2400, 4600), t: 0 }; } }
       czEv?.("onboarding_step", { step: "drive_" + st.id, action: "shown" });
     }
     const czEv = (n, p) => { try { window.czEvent && window.czEvent(n, p || {}); } catch {} };
@@ -1906,11 +1972,12 @@
       let x = W / 2, y = Hh * 0.42;
       if (at === "car") { const p = H.project(H.carPos.x, 40, H.carPos.z); if (p.z < 1) { x = (p.x * 0.5 + 0.5) * W; y = (-p.y * 0.5 + 0.5) * Hh - 80; } }
       else if (at === "panel") { const r = panel.getBoundingClientRect(); if (ph) { x = W / 2; y = r.bottom + 70; } else { x = r.left + r.width / 2; y = r.top - 70; } }
-      else if (at === "views") { const r = views.getBoundingClientRect(); x = r.left + r.width / 2; y = r.top - 80; }
+      else if (at === "views") { const r = views.getBoundingClientRect(); x = r.left + r.width / 2; y = ph ? r.bottom + 70 : r.top - 80; } // beta 2.7: on a phone the toggle is at the top
+      if (ph && D.streetT > 0.5) y = Math.min(y, Hh * 0.4); // the lower half is the stick's
       // on a phone the Nearby panel takes the top: the pill stays below it
       const top = ph ? Math.max(250, (getComputedStyle(panel).opacity !== "0" && getComputedStyle(root).display !== "none" ? panel.getBoundingClientRect().bottom : 0) + 95) : 150;
       e.style.left = clamp(x, 150, W - 150).toFixed(0) + "px";
-      e.style.top = clamp(y, Math.min(top, Hh - 260), Hh - (ph ? 230 : 120)).toFixed(0) + "px";
+      e.style.top = (ph && at === "views" ? clamp(y, 150, Hh - 230) : clamp(y, Math.min(top, Hh - 260), Hh - (ph ? 230 : 120))).toFixed(0) + "px";
     }
 
     const api = {
@@ -1918,7 +1985,7 @@
       tutorial, tutorialEnd: () => tutEnd(null), tourStep: () => (TUT.i >= 0 && TUT.i < STEPS.length ? STEPS[TUT.i].id : TUT.i >= STEPS.length ? "end" : null),
       get camK() { return D.camK; },
       mv: () => { const m = H.mapView; return { x: Math.round(m.tgt.x), z: Math.round(m.tgt.z), dist: Math.round(m.dist), yaw: +m.yaw.toFixed(3), pitch: +m.pitch.toFixed(3), follow: m.follow }; },
-      onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, closed: () => CLOSED, speed: () => P.u, dims: () => ({ len: H.carLen(), span: H.vehSpan() }), cam: () => H.camera, look: (x, z, d) => { const m = H.mapView; m.follow = false; m.tgt.set(x, 0, z); m.dist = d; m.distGoal = null; m.vx = m.vz = 0; }, put: (x, z, h) => { P.x = x; P.z = z; P.h = h; P.u = P.w = P.yr = 0; }, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
+      onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, closed: () => CLOSED, copT: () => (COP.on ? +COP.on.t.toFixed(2) : null), speed: () => P.u, dims: () => ({ len: H.carLen(), span: H.vehSpan() }), cam: () => H.camera, look: (x, z, d) => { const m = H.mapView; m.follow = false; m.tgt.set(x, 0, z); m.dist = d; m.distGoal = null; m.vx = m.vz = 0; }, put: (x, z, h) => { P.x = x; P.z = z; P.h = h; P.u = P.w = P.yr = 0; }, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
       // a place from the map (a pin, a chip, the welcome card): driven to along the graph
       go(pl) {
         if (!pl || pl.find) return false;

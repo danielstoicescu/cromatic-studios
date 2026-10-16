@@ -218,3 +218,30 @@ body.nav2 .map-top .map-world.has-img b { color: #fff; text-shadow: 0 1px 2px rg
   body.nav2 .map-top .map-world.has-img { min-width: 92px; padding: 0 8px; }
   body.nav2 .map-top .map-world.has-img b { font-size: 11.5px; letter-spacing: -.01em; }
 }
+
+/* beta 2.7 (Daniel): phones have no arrows any more: the Street view is driven with a floating stick in the lower half
+   (cream ring, black outline, yellow knob) and a DRIFT button; the Street / Satellite toggle sits at the top, under the bar */
+.n2-stick, .n2-driftb { display: none; }
+@media (max-width: 719px) {
+  body.nav2 .n2-keys { display: none !important; }
+  body.nav2 .nav2-ui .n2-views { top: calc(100px + env(safe-area-inset-top, 0px)); bottom: auto; left: 50%; right: auto; translate: -50% 0; flex-direction: row; border-radius: 999px; }
+  body.nav2 .nav2-ui .n2-views button { height: 44px; padding: 0 14px 0 11px; font-size: 13px; border-radius: 999px; }
+  body.nav2 .nav2-ui .n2-pad { top: calc(156px + env(safe-area-inset-top, 0px)); bottom: auto; right: auto; left: 50%; translate: -50% 0; }
+  body.nav2.nav2-street:not(.n2-card) .n2-stick { display: block; position: fixed; left: 0; top: 0; width: 0; height: 0; z-index: 23; pointer-events: none; }
+  .n2-ring { position: absolute; left: -64px; top: -64px; width: 128px; height: 128px; box-sizing: border-box; border-radius: 50%; background: rgba(255, 248, 234, .78); border: 2.5px solid #141414; box-shadow: 2px 3px 0 rgba(20, 20, 20, .85), inset 0 0 0 10px rgba(254, 208, 18, .14); opacity: .5; transition: opacity .2s; }
+  .n2-knob { position: absolute; left: 0; top: 0; width: 56px; height: 56px; box-sizing: border-box; border-radius: 50%; background: #FED012; border: 2.5px solid #141414; box-shadow: 2px 4px 0 #141414, 0 8px 18px rgba(0, 0, 0, .18); transform: translate(-50%, -50%); opacity: .65; }
+  .n2-stick.on .n2-ring, .n2-stick.on .n2-knob { opacity: 1; }
+  body.nav2.nav2-street:not(.n2-card) .n2-driftb { display: block; position: fixed; z-index: 24; right: 16px; bottom: calc(44px + env(safe-area-inset-bottom, 0px)); width: 66px; height: 66px; border-radius: 50%; background: #fff; color: #141414; border: 2.5px solid #141414; box-shadow: 2px 3px 0 #141414; font-size: 11px; font-weight: 700; letter-spacing: .1em; touch-action: none; -webkit-tap-highlight-color: transparent; }
+  .n2-driftb.on { background: #FED012; translate: 0 2px; box-shadow: 1px 1px 0 #141414; }
+}
+@media (max-width: 719px) { .n2-toast { top: calc(214px + env(safe-area-inset-top, 0px)); } } /* beta 2.7: below the toggle and the hint */
+
+/* beta 2.7: the police cooldown pill, with its 5 s ring */
+.n2-cop { position: fixed; z-index: 31; left: 50%; top: calc(150px + env(safe-area-inset-top, 0px)); translate: -50% -8px; display: flex; align-items: center; gap: 9px; padding: 6px 14px 6px 6px; border-radius: 999px; background: #fff; color: #141414; border: 2.5px solid #141414; box-shadow: 2px 3px 0 #141414; opacity: 0; pointer-events: none; transition: opacity .25s, translate .25s; --k: 1; }
+.n2-cop.on { opacity: 1; translate: -50% 0; }
+.n2-cop svg { width: 34px; height: 34px; transform: rotate(-90deg); }
+.n2-cop-bg { fill: #eaf1ff; stroke: #d4def5; stroke-width: 4; }
+.n2-cop-ring { fill: none; stroke: #2a6bff; stroke-width: 4; stroke-linecap: round; stroke-dasharray: 94.25; stroke-dashoffset: calc(94.25 * (1 - var(--k))); }
+.n2-cop b { font: 800 14px/1 CromaticSans, system-ui, sans-serif; letter-spacing: .02em; }
+.n2-cop em { position: absolute; left: 6px; top: 6px; width: 34px; height: 34px; display: grid; place-items: center; font-style: normal; font-weight: 700; font-size: 13px; }
+@media (max-width: 719px) { .n2-cop { top: calc(258px + env(safe-area-inset-top, 0px)); } .n2-cop b { font-size: 13px; } }
