@@ -905,6 +905,8 @@
     function hereAt() {
       let best = null;
       for (const p of PL) { const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 75 && (!best || d < best.d)) best = { pl: p.pl, d, p }; }
+      // beta 2.6: the place you just arrived at stays "here" (two places can share a stretch of kerb: Dacia 99 read as Echo School)
+      if (D.lastArr) { const p = PL.find((q) => q.pl === D.lastArr); if (p) { const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 110) return { pl: p.pl, d, p }; } }
       return best;
     }
     const ktSeg = () => { const m = D.kturn, t = m.t / m.k; return t < KTD[0] ? 0 : t < KTD[0] + KTD[1] ? 1 : 2; };
@@ -1286,6 +1288,7 @@
       D.assist = assisted;
       physics(dt, thr, steer, hb, assisted);
       roadFx(dt);
+      { const au = !!D.auto; if (au !== D.autoCls) { D.autoCls = au; document.body.classList.toggle("n2-driving-auto", au); } } // beta 2.6: the phone's tap hint steps aside while it drives
       lamps(P.u < -0.5 || (D.keys.d && P.u <= 0.5 && !D.auto));
       if (!D.auto) {
         syncT -= dt;
@@ -1524,6 +1527,7 @@
         </div>
       </div>
       <div class="n2-toast" role="status"></div>
+      <div class="n2-taphint mono" aria-hidden="true">TAP THE ROAD TO DRIVE THERE</div>
       <div class="n2-arms" aria-hidden="true"><span class="n2-arm" data-k="l"></span><span class="n2-arm" data-k="s"></span><span class="n2-arm" data-k="r"></span></div>`;
     document.body.appendChild(root);
     const panel = root.querySelector(".n2-panel"), views = root.querySelector(".n2-views"), pad = root.querySelector(".n2-pad"), hintEl = root.querySelector(".n2-hint"), toastEl = root.querySelector(".n2-toast");
@@ -1691,6 +1695,9 @@
     }
     const uniq = (list) => { const s = new Set(); return list.sort((a, b) => a.d - b.d).filter((x) => (s.has(x.p.pl) ? false : (s.add(x.p.pl), true))); };
     const mDist = (d) => (d < 1000 ? `${Math.max(10, Math.round(d / 10) * 10)} m` : `${(d / 1000).toFixed(1)} km`);
+    // beta 2.6 (Daniel: "Nearby: only what is genuinely near"): ahead on your own stretch up to 420, a junction's ways
+    // only when it is within 240 (and 320 beyond it)
+    const NEAR_AHEAD = 420, NEAR_JUNCTION = 240, NEAR_BEYOND = 320;
     function render(force) {
       if (!D.ready) return;
       const L = curL(), ci = ciOf(L), cur = D.seq[ci], q = quarterAt(H.carPos.x, H.carPos.z), dec = nextDecision(L);
@@ -1699,13 +1706,13 @@
       const ahead = [];
       for (let k = ci; k < D.seq.length; k++) {
         const it = D.seq[k], e = E[it.e];
-        for (const p of byEdge.get(it.e) || []) { const s = it.dir > 0 ? p.s : e.len - p.s, d = it.L0 + s - L; if (d > 30 && d < 900) ahead.push({ p, d }); }
+        for (const p of byEdge.get(it.e) || []) { const s = it.dir > 0 ? p.s : e.len - p.s, d = it.L0 + s - L; if (d > 30 && d < NEAR_AHEAD) ahead.push({ p, d }); }
       }
       const here = hereAt();
       const jd = dec && dec.type === "junction" ? dec.L - L : Infinity;
-      const ex = dec && dec.type === "junction" && jd < 900 ? dec.ex : null;
+      const ex = dec && dec.type === "junction" && jd < NEAR_JUNCTION ? dec.ex : null;
       const ways = { l: [], s: [], r: [] };
-      if (ex) for (const k of ["l", "s", "r"]) if (ex[k]) { const o = []; explore(ex[k], 650, jd + (ex[k].pre || 0), o, new Set(), 0); ways[k] = uniq(o); }
+      if (ex) for (const k of ["l", "s", "r"]) if (ex[k]) { const o = []; explore(ex[k], NEAR_BEYOND, jd + (ex[k].pre || 0), o, new Set(), 0); ways[k] = uniq(o); }
       // a place reached by more than one way belongs to the shortest (a tie: the straighter way)
       {
         const best = new Map();
@@ -1723,9 +1730,12 @@
         if (!list.length) continue;
         const groups = new Map();
         for (const x of list) { if (!groups.has(x.p.q)) groups.set(x.p.q, []); groups.get(x.p.q).push(x); }
-        // only the places of the quarter you're in; a way that leads into another quarter shows that quarter
+        // only the places of the quarter you're in; a way that leads into another quarter shows that quarter, but only
+        // right at its junction (beta 2.6: Nearby is the car's immediate zone)
         const lead = q && groups.has(q) ? null : [...groups.keys()][0];
-        rows.push({ k, other: lead, items: groups.get(lead || q).slice(0, 3) });
+        if (lead && !(k !== "s" && jd < 160) && !(k === "s" && !q)) continue;
+        rows.push({ k, other: lead, items: groups.get(lead || q).filter((x) => x.d < (here ? NEAR_AHEAD * 0.7 : NEAR_AHEAD) && x.p.pl !== here?.pl).slice(0, 3) });
+        if (!rows[rows.length - 1].items.length) rows.pop();
       }
       const auto = D.auto;
       // round 2 (Daniel: "more visual"): the panel is rebuilt only when what it shows changes; the distances update in place
@@ -1805,7 +1815,16 @@
     // every step; once per visitor (cz-drive-guide = "2"); a visitor who began with a place gets it after that card ----------
     const TUT = { i: -1, el: null, done: null, t0: 0, L0: 0, timer: 0, asked: false };
     const touchUI = matchMedia("(hover: none) and (pointer: coarse)").matches;
-    const STEPS = [
+    // beta 2.6 (Daniel): on a phone the map (Satellite) is driven by tapping, the Street view by the pad; its tour follows
+    const PHONE_STEPS = [
+      { id: "taproad", keys: [], t: "Tap the road to drive there", s: "Anywhere on a street: the car takes you", at: "mid" },
+      { id: "tapplace", keys: [], t: "Tap a place to visit it", s: "Its pin or its name: the car drives you there", at: "mid" },
+      { id: "look", keys: [], t: "Look around", s: "Drag the map, pinch to zoom · ◎ brings you back", at: "mid" },
+      { id: "view", keys: [], t: "Take the wheel", s: "Switch to Street down here", at: "views" },
+      { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: "↑ to go, ← → to steer", at: "car" }
+    ];
+    let STEPS;
+    const DESK_STEPS = [
       { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: touchUI ? "↑ to go: it keeps to the road · ← → to turn" : "↑ to go: it keeps to the road · ← → to turn (or W A S D)", at: "car" },
       { id: "round", keys: ["↑"], t: "Take the roundabout", s: touchUI ? "Hold ↑: round it and straight on · steer to leave sooner" : "Hold ↑: round the fountain and straight on · steer out to leave sooner", at: "car" },
       { id: "back", keys: ["↓"], t: "Back up or turn round", s: touchUI ? "Hold ↓ to back up · stopped, ↑ with ← or → turns you round" : "Hold ↓ (or S) to back up · stopped, ↑ with ← or → turns you round", at: "car" },
@@ -1813,7 +1832,9 @@
       { id: "look", keys: [], t: "Look around", s: touchUI ? "Drag the map, pinch to zoom · ◎ brings you back" : "Drag the map, scroll to zoom · ◎ brings you back", at: "mid" },
       { id: "view", keys: [], t: "Street or Satellite", s: touchUI ? "Switch the view down here" : "Switch the view down here, or press V", at: "views" }
     ];
+    STEPS = DESK_STEPS;
     function tutorial(done, force) {
+      STEPS = VP.w < 720 ? PHONE_STEPS : DESK_STEPS;
       try { if (!force && localStorage.getItem("cz-drive-guide") === "2") return false; localStorage.setItem("cz-drive-guide", "2"); } catch {}
       if (!D.ready && !place()) return false;
       D.ready = true;
@@ -1835,6 +1856,10 @@
       e.classList.remove("hidden", "in"); void e.offsetWidth; e.classList.add("in");
       keyEls.u.classList.toggle("tut", st.id === "drive" || st.id === "round"); keyEls.l.classList.toggle("tut", st.id === "drive"); keyEls.r.classList.toggle("tut", st.id === "drive"); keyEls.d.classList.toggle("tut", st.id === "back"); // polish: step 2 is "hold ↑"
       views.classList.toggle("tut", st.id === "view"); panel.classList.toggle("tut", st.id === "tap");
+      document.body.classList.toggle("n2-tour", true);
+      // phone, "tap a place": the map pulls back to show the nearest places (the car's own spot may have none in view)
+      TUT.fly = null;
+      if (st.id === "tapplace") { const c = H.carPos, q = PL.slice().sort((a, b) => Math.hypot(a.x - c.x, a.z - c.z) - Math.hypot(b.x - c.x, b.z - c.z))[0]; if (q) { const d = Math.hypot(q.x - c.x, q.z - c.z); TUT.fly = { x: q.x * 0.85 + c.x * 0.15, z: q.z * 0.85 + c.z * 0.15, d: clamp(d * 1.6, 2400, 4600), t: 0 }; } }
       czEv?.("onboarding_step", { step: "drive_" + st.id, action: "shown" });
     }
     const czEv = (n, p) => { try { window.czEvent && window.czEvent(n, p || {}); } catch {} };
@@ -1848,7 +1873,7 @@
     }
     function tutEnd(how) {
       if (TUT.i < 0) return;
-      TUT.i = -1; clearTimeout(TUT.timer);
+      TUT.i = -1; clearTimeout(TUT.timer); document.body.classList.remove("n2-tour");
       TUT.el?.classList.add("hidden");
       for (const k of "udlr") keyEls[k].classList.remove("tut"); views.classList.remove("tut"); panel.classList.remove("tut");
       if (how === "skipped") czEv("onboarding_step", { step: "drive_tour", action: "skipped" });
@@ -1859,11 +1884,18 @@
       if (TUT.i < 0 && !TUT.asked && D.arrT && !D.auto && !H.cardOpen() && performance.now() - D.arrT > 1500) { TUT.asked = true; tutorial(null); }
       if (TUT.i < 0 || TUT.i >= STEPS.length) { if (TUT.i >= 0) tutPlace("mid"); return; }
       const st = STEPS[TUT.i], L = curL(), now = performance.now(), mv = H.mapView;
+      if (TUT.fly && st.id === "tapplace") {
+        const f = TUT.fly; f.t += 1 / 60;
+        if ((mv.direct || 0) > TUT.t0 || f.t > 2.2 || (D.auto && !D.auto.pl?.tap)) TUT.fly = null;
+        else { const k = reduced() ? 1 : 0.06; mv.follow = false; mv.focus = null; mv.distGoal = null; mv.tgt.x += (f.x - mv.tgt.x) * k; mv.tgt.z += (f.z - mv.tgt.z) * k; mv.dist += (f.d - mv.dist) * k; }
+      }
       if (now - TUT.t0 > 600) {
         if (st.id === "drive" && Math.hypot(P.x - TUT.x0, P.z - TUT.z0) > 140) return tutNext();
         if (st.id === "round") { const d = Math.hypot(P.x - H.fork.x, P.z - H.fork.y); if (d < 105) TUT.inRing = true; if (TUT.inRing && d > 230) return tutNext(); }
         if (st.id === "back" && ((D.revDist || 0) - TUT.rev > 25 || (D.slowTurn || 0) - TUT.slow > 2.4)) return tutNext();
         if (st.id === "tap" && D.auto) return tutNext();
+        if (st.id === "taproad" && D.auto && D.auto.pl?.tap) return tutNext();
+        if (st.id === "tapplace" && ((D.auto && D.auto.pl && !D.auto.pl.tap) || H.cardOpen())) return tutNext();
         if (st.id === "look") { if ((mv.direct || 0) > TUT.t0) TUT.dragged = true; if (TUT.dragged && mv.follow) return tutNext(); } // a real hand on the map (r166's), then back with ◎ or by driving
         if (st.id === "view" && D.view !== TUT.view) return tutNext();
       }
