@@ -24898,6 +24898,7 @@ void main() {
       }
     }
     for (const t of CITY_TREES) spots.push(t);
+    for (let i = spots.length - 1; i >= 0; i--) if (!boardClear(spots[i].x, spots[i].z)) spots.splice(i, 1); // beta 3.01
     for (let i = spots.length - 1; i >= 0; i--) { const sp = spots[i], v = CITY_NET?.at?.(sp.x, sp.z); if (v === 1 || (v === 2 && !sp.med) || (!sp.med && CITY_NET?.roadDist && CITY_NET.roadDist(sp.x, sp.z) < 8)) spots.splice(i, 1); }
     for (const t of spots) TREE_BLOBS.push({ x: t.x, z: t.z, w: 22 * t.s, d: 22 * t.s, h: 30 * t.s });
     const round = spots.filter((_, i) => i % 4 !== 3);
@@ -25106,7 +25107,7 @@ void main() {
     // the Cromatic Jet's runway and taxiway
     const runway = [];
     for (let z = JET_HOME.z - 160; z <= JET_HOME.z + 1800; z += 50) runway.push({ x: JET_HOME.x, y: z, r: 92 });
-    for (let x = 1290; x < JET_HOME.x; x += 50) runway.push({ x, y: JET_HOME.z - 15, r: 50 });
+    for (let x = 1290; x < JET_HOME.x; x += 50) runway.push({ x, y: JET_WALK_Z, r: 50 }); // beta 3.01: the boarding walk (was the taxiway)
     zones.push(...runway);
     // zones hashed on a coarse grid
     const ZS = 160, zhash = new Map();
@@ -30291,7 +30292,7 @@ void main() {
     g.add(bulbs);
     // three trees in round planters, clear of the house and of the way through
     const stoneM = new MeshStandardMaterial({ color: "#d9d2c3", roughness: 0.9 }), trunkM = new MeshStandardMaterial({ color: "#7a4a22", roughness: 1 }), leafM = new MeshStandardMaterial({ color: "#4f9a4a", roughness: 0.9 });
-    for (const [x, z] of [[P.x + 80, P.z - 60], [P.x + 105, P.z + 10], [P.x, P.z + 105]]) {
+    for (const [x, z] of [[P.x + 80, P.z - 60], [P.x, P.z + 105]]) { // beta 3.01: the one at the east edge made way for the boarding walk
       const pl = new Mesh(new CylinderGeometry(10, 11, 6, 20), stoneM); pl.position.set(x, 3, z); g.add(pl);
       const tr = new Mesh(new CylinderGeometry(1.5, 2, 14, 6), trunkM); tr.position.set(x, 12, z); g.add(tr);
       const cr = new Mesh(new IcosahedronGeometry(10, 1), leafM); cr.position.set(x, 24, z); g.add(cr);
@@ -31173,7 +31174,18 @@ void main() {
     const root = new Group(); root.add(g);
     return { group: root, stair, carpet: [carpet, edge], glows, glowM, strobe, beaconM };
   }
-  var JET_HOME = { x: 1560, z: 7820 };
+  // beta 3.01 (Daniel): the runway closer to Cromatic Studios House, parallel to Olari Street (both run north-south), and
+  // the way from the house's forecourt to the jet's carpet kept clear (no trees or props on the boarding walk)
+  // The jet stands abeam the forecourt, so the house, the forecourt, the boarding walk and the jet's carpet are on
+  // one east-west line (z = JET_WALK_Z): the walk runs straight from the forecourt's east edge to the carpet
+  var JET_HOME = { x: 1420, z: 7322 }, JET_WALK_Z = JET_HOME.z + 28;
+  for (let x = OLARI_PLAZA.x + 60; x <= JET_HOME.x - 20; x += 18) EXTRA_KEEPOUT.push({ x, y: JET_WALK_Z, r: 40 });
+  // the walk and the runway stay clear of the trees along the drive's road (they were planted before there was a walk)
+  function boardClear(x, z) {
+    if (x > OLARI_PLAZA.x + OLARI_PLAZA.r - 24 && x < JET_HOME.x + 10 && Math.abs(z - JET_WALK_Z) < 46) return false;
+    if (Math.abs(x - JET_HOME.x) < 66 && z > JET_HOME.z - 170 && z < JET_HOME.z + 1880) return false;
+    return true;
+  }
   // r119: every ride a size smaller next to the street and the buildings
   var VEH_S = 0.74;
   // r91: the chapters as grey placards on posts, scattered off the road before the fork
@@ -31209,7 +31221,7 @@ void main() {
   }
   function buildAirfield(parent) {
     const g = new Group();
-    const z0 = JET_HOME.z - 120, z1 = z0 + 1850, X = JET_HOME.x, W = 64, TZ = JET_HOME.z - 15;
+    const z0 = JET_HOME.z - 120, z1 = z0 + 1850, X = JET_HOME.x, W = 64;
     const asphalt = new MeshStandardMaterial({ color: "#3a3b40", roughness: 0.95 });
     const run = new Mesh(new BoxGeometry(W, 1.2, z1 - z0), asphalt); run.position.set(X, 0.6, (z0 + z1) / 2); run.receiveShadow = true; g.add(run);
     const paint = new MeshBasicMaterial({ color: "#f5f3ea" }); paint.userData.outlineParameters = { visible: false };
@@ -31219,10 +31231,8 @@ void main() {
     for (const s of [-1, 1]) { const e = new BoxGeometry(1.2, 0.2, z1 - z0 - 20); e.translate(X + s * (W / 2 - 3), 1.3, (z0 + z1) / 2); marks.push(e); }
     for (let k = 0; k < 8; k++) { const p = new BoxGeometry(3.2, 0.2, 30); p.translate(X - 24 + k * 6.85, 1.3, z0 + 110); marks.push(p); }
     g.add(new Mesh(mergeGeometries(marks), paint));
-    // the yellow lead-in line from the stand, and a taxiway to the secret road
+    // the yellow lead-in line from the stand (beta 3.01: no taxiway any more: the boarding walk joins the forecourt to the stand)
     const lead = new Mesh(new BoxGeometry(1.4, 0.2, 90), yel); lead.position.set(X, 1.35, z0 + 50); g.add(lead);
-    const taxi = new Mesh(new BoxGeometry(X - 1250 - 40, 1.1, 44), asphalt); taxi.position.set((1290 + X - W / 2) / 2, 0.55, TZ); taxi.receiveShadow = true; g.add(taxi);
-    const tl = new Mesh(new BoxGeometry(X - 1250 - 50, 0.2, 1.2), yel); tl.position.set((1290 + X - W / 2) / 2, 1.2, TZ); g.add(tl);
     // edge lights
     const lightM = new MeshStandardMaterial({ color: "#fff2c4", emissive: new Color("#ffcf6a"), emissiveIntensity: 0.25 });
     STREET_GLOW.push([lightM, 2.4]);
@@ -31274,7 +31284,7 @@ void main() {
       jet.clouds.add(jet.sea);
     }
     for (let z = z0 - 40; z <= z1 + 60; z += 110) EXTRA_KEEPOUT.push({ x: X, y: z, r: 120 });
-    EXTRA_KEEPOUT.push({ x: X + 86, y: JET_HOME.z - 80, r: 90 }, { x: 1420, y: TZ, r: 120 });
+    EXTRA_KEEPOUT.push({ x: X + 86, y: JET_HOME.z - 80, r: 90 });
     return jet;
   }
   function buildWorld(scene, accent) {
@@ -39644,7 +39654,7 @@ void main() {
         { id: "tac", br: "C", x: 1500, z: 4570, px: 1775, pz: 4570, h: 128, /* r139e: the re-massed palace is lower */ name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
         { id: "zdrovit", br: "C", x: 1860, z: 5070, h: 96, name: "Zdrovit", line: "A YARD OF BRANDS", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health and clinic brands, from Bucharest to Barcelona." }, // r176: the beauty and perfume brands have their own plots now
         { id: "end", stop: "end", name: "Cromatic Studios House", line: "STR. OLARI 9 \xB7 COME BY", c: "#ffffff", t: "#111111", pin: "#111111" },
-        { id: "jet", x: 1250, z: JET_HOME.z - 15, px: JET_HOME.x, pz: JET_HOME.z, h: 28 /* r138b: the smaller jet's fin top */, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", board: true, unmarked: true }
+        { id: "jet", x: 1250, z: JET_WALK_Z, px: JET_HOME.x, pz: JET_HOME.z, h: 28 /* r138b: the smaller jet's fin top */, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", board: true, unmarked: true }
       ];
       // r115: every brand the drive shows also stands on the map
       (() => {
