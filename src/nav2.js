@@ -681,6 +681,7 @@
     }
     function stopAuto() { D.auto = null; H.mapNav.place = null; H.mark(); render(true); }
     // ---------- auto-pilot: the shortest way along the graph to a place, the junctions taken for you ----------
+    let PLAN_LOOSE = false; // beta 2.91: the no-hairpin rule, relaxed when it leaves no route at all
     function plan(target) {
       // target: { e, s } (s from the edge's a)
       const L = curL(), it = D.seq[ciOf(L)], e = E[it.e];
@@ -703,11 +704,15 @@
         for (const o of N[u].out) {
           if (against(o) || !E[o.e].drive) continue; // the ring only with the flow; the roads only
           if (o.e === it.e && prev[u] === -1 && !(u === fwdN && deadAhead)) continue; // not back along your own edge (but out of a dead end, after the three-point turn)
+          if (FREE && !PLAN_LOOSE) { const inIt = prev[u] === -1 ? (u === fwdN ? it : null) : { e: pe[u] >> 1, dir: pe[u] & 1 ? 1 : -1 }; if (inIt && Math.abs(wrapA(outH(o) - inH(inIt))) > 2.5) continue; } // beta 2.91: no hairpins (r182's flares meet the spokes at a point: link -> spoke back was a U-turn the car circled)
           const ed = E[o.e], v = o.dir > 0 ? ed.b : ed.a, nd = d + ed.len;
           if (nd < dist0[v]) { dist0[v] = nd; prev[v] = u; pe[v] = o.e * 2 + (o.dir > 0 ? 1 : 0); pd[v] = pd[u]; push(nd, v); }
         }
       }
-      const viaA = dist0[tE.a] + target.s, viaB = dist0[tE.b] + (tE.len - target.s);
+      let viaA = dist0[tE.a] + target.s, viaB = dist0[tE.b] + (tE.len - target.s);
+      // beta 2.91 (usage pass: the auto-pilot stood still after backing up): the arcade car cannot reverse along its own
+      // edge at its end node (that was the old three-point turn): such a route is no route (freeGo turns round instead)
+      if (FREE && target.e === it.e) { if (tE.a === fwdN && prev[tE.a] === -1 && it.dir < 0) viaA = Infinity; if (tE.b === fwdN && prev[tE.b] === -1 && it.dir > 0) viaB = Infinity; }
       let endN, last;
       if (viaA <= viaB) { endN = tE.a; last = { e: tE.id, dir: 1 }; } else { endN = tE.b; last = { e: tE.id, dir: -1 }; }
       if (!isFinite(Math.min(viaA, viaB))) return null;
@@ -1277,6 +1282,7 @@
       let vt = Math.min(a.vmax || VMAX_F * 0.82, Math.sqrt(2 * BRAKE_F * 0.7 * Math.max(0, rem)));
       { let i = 0; while (i < D.cum.length - 1 && D.cum[i] < Lp) i++; for (; i < D.cum.length && D.cum[i] < Lp + 300 + au * 0.9; i++) { const k = D.kap[i]; if (k > 1e-4) { const vy = (-k + Math.sqrt(k * k + (4 * k / 480) * 3.1)) / ((2 * k) / 480); vt = Math.min(vt, Math.sqrt(Math.min(ALAT * 1.6 / k, vy * vy) + 2 * BRAKE_F * 0.6 * Math.max(0, D.cum[i] - Lp))); } } }
       vt *= Math.max(0.45, 1 - Math.abs(err) * 0.5);
+      if (rem > 20) vt = Math.max(vt, 30); // beta 2.91: never stall short of the place
       return { rem, steer: clamp(err * 2.4 + kerbAway(), -1, 1), thr: P.u < vt - 8 ? 1 : P.u > vt + 8 && P.u > 4 ? -1 : 0 };
     }
     // beta 2.5 (Daniel: "a place behind the car: turn round fast, arcade"): the route is planned both ways, as the car
@@ -1289,8 +1295,10 @@
       const fwd = plan(target);
       const itR = { e: it.e, dir: -it.dir, uid: D.uid++ };
       D.seq = [itR]; buildPath(); D.vL = locate(P.x, P.z);
-      const bwd = e.kind === "ring" ? null : plan(target);
-      const turn = !!bwd && (!fwd || bwd.cost + 110 + Math.max(0, P.u) * 0.6 < fwd.cost);
+      let bwd = plan(target);
+      if (!fwd && !bwd) { PLAN_LOOSE = true; bwd = plan(target); PLAN_LOOSE = false; }
+      // on the ring facing against its flow: always turn round first (beta 2.91: a tap there did nothing, or the car stood)
+      const turn = !!bwd && (!fwd || against(it) || bwd.cost + 110 + Math.max(0, P.u) * 0.6 < fwd.cost) && !against(itR);
       const base = turn ? itR : { e: it.e, dir: it.dir, uid: D.uid++ };
       const p = turn ? bwd : fwd;
       if (!p) { D.seq = [base]; buildPath(); D.vL = locate(P.x, P.z); return false; }
@@ -1318,6 +1326,27 @@
       }
       let assisted = false;
       if (!D.auto && steer !== 0 && D.ringExit && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) > 110) D.ringExit = null; // steering yourself, off the ring: your own way
+      // beta 2.91 (Daniel: "exiting the roundabout should be easier"; r182's smooth links): on the ring, a tap outwards
+      // means "the next exit": the assist takes the next arm ahead out (a tap inwards: stay on the ring)
+      if (!D.auto && steer !== 0) {
+        const rx2 = P.x - H.fork.x, rz2 = P.z - H.fork.y, rr = Math.hypot(rx2, rz2);
+        if (rr < 105 && rr > 30) {
+          const fx = Math.sin(P.h), fz = Math.cos(P.h), outSign = (fz * rx2 - fx * rz2) > 0 ? 1 : -1;
+          if (Math.sign(steer) === outSign) {
+            const ac = Math.atan2(rz2, rx2), sgn = rx2 * fz - rz2 * fx > 0 ? 1 : -1; // the way round: + or - in angle
+            let best = null;
+            for (const n of ringNodes) for (const o of N[n].out) {
+              const e = E[o.e]; if (e.kind === "ring" || !e.drive) continue;
+              const h0 = outH(o), ox = Math.sin(h0), oz = Math.cos(h0), nx = N[n].x - H.fork.x, nz = N[n].z - H.fork.y;
+              if (ox * nx + oz * nz <= 0) continue; // leads away from the fountain
+              let d = ((Math.atan2(nz, nx) - ac) * sgn) % (2 * Math.PI); if (d < 0) d += 2 * Math.PI;
+              if (d < 0.12 || d > 2.6) continue;
+              if (!best || d < best.d) best = { e: o.e, dir: o.dir, d };
+            }
+            if (best) { D.ringExit = { e: best.e, dir: best.dir }; D.ringTap = performance.now(); }
+          } else if (D.ringExit && performance.now() - (D.ringTap || 0) > 300) D.ringExit = { e: -1, dir: 0 }; // inwards: round again
+        }
+      }
       if (!D.auto && steer === 0 && !hb && (P.u > 12 || (P.contact > 0 && thr > 0 && P.u >= 0))) {
         const as = assist();
         if (as) { D.asv = Math.round(Math.min(as.vmax, 9999)); steer = as.steer; assisted = true; if (thr > 0 && P.u > as.vmax - 5) thr = P.u > as.vmax + 12 ? -1 : 0; }
@@ -1347,7 +1376,7 @@
     let freeSig = "";
     function freeUI() {
       let hint = phoneUI() ? "DRAG THE STICK TO DRIVE" : touchUI ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BACK · SPACE + ← → DRIFT";
-      if (D.assist && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) < 110) hint = phoneUI() ? "ROUNDABOUT · ↑ STRAIGHT ON · OR STEER OUT" : "ROUNDABOUT · ↑ STRAIGHT ON · STEER OUT FOR ANOTHER EXIT";
+      if (D.assist && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) < 110) hint = phoneUI() ? "ROUNDABOUT · STRAIGHT ON · NUDGE → FOR THE NEXT EXIT" : "ROUNDABOUT · ↑ STRAIGHT ON · TAP → FOR THE NEXT EXIT";
       if (D.moved && Math.abs(P.u) < 5 && !D.auto && P.contact <= 0) hint = phoneUI() ? "STOPPED · ↑ + ← → TURNS YOU ROUND" : "STOPPED · ↑ OR ↓ WITH ← → TURNS YOU ROUND"; // round 5
       if (D.auto) hint = D.auto.rev ? "BACKING UP TO IT · ANY KEY TAKES OVER" : "DRIVING YOU THERE · ANY KEY TAKES OVER";
       else if (D.drift) hint = D.drift.t > 1.4 ? "DRIFT · LET GO OF SPACE: SUPER BOOST" : D.drift.t > 0.6 ? "DRIFT · LET GO OF SPACE: BOOST" : "DRIFT · HOLD SPACE, STEER WITH ← →";
@@ -2085,6 +2114,28 @@
         rows.push({ k, other: lead, items: groups.get(lead || q).filter((x) => x.d < (here ? NEAR_AHEAD * 0.7 : NEAR_AHEAD) && x.p.pl !== here?.pl).slice(0, 3) });
         if (!rows[rows.length - 1].items.length) rows.pop();
       }
+      // beta 2.91 (usage pass: "at the roundabout Nearby said: nothing of ours down this way"): round the fountain, where
+      // you choose, Nearby shows each street's first places, Ahead / Left / Right as the arm lies from where you are
+      if (Math.hypot(H.carPos.x - H.fork.x, H.carPos.z - H.fork.y) < 420 && !here) {
+        rows.length = 0;
+        const fx = Math.sin(P.h), fz = Math.cos(P.h), byQ = new Map(), dirQ = new Map();
+        for (const n of ringNodes) for (const o of N[n].out) {
+          const e = E[o.e]; if (e.kind === "ring" || !e.drive) continue;
+          const nx = N[n].x - H.fork.x, nz = N[n].z - H.fork.y, h0 = outH(o); if (Math.sin(h0) * nx + Math.cos(h0) * nz <= 0) continue;
+          const o2 = [];
+          // out along the street only (never back into the ring: a depth-first walk with one "seen" set cut it short)
+          const walk = (it, budget, base, depth) => { if (depth > 6) return; const e2 = E[it.e]; for (const p of byEdge.get(it.e) || []) { const s2 = it.dir > 0 ? p.s : e2.len - p.s; if (s2 <= budget) o2.push({ p, d: base + s2 }); } if (e2.len >= budget) return; const m = endNode(it); if (ringNodes.has(m)) return; for (const o3 of N[m].out) if (o3.e !== it.e && E[o3.e].drive && E[o3.e].kind !== "ring" && !ringNodes.has(o3.dir > 0 ? E[o3.e].b : E[o3.e].a)) walk(o3, budget - e2.len, base + e2.len, depth + 1); };
+          walk(o, 700, Math.hypot(N[n].x - H.carPos.x, N[n].z - H.carPos.z), 0);
+          for (const x of uniq(o2)) { const q2 = x.p.q; if (!q2) continue; const l = byQ.get(q2) || []; const j = l.findIndex((y) => y.p.pl === x.p.pl); if (j < 0) l.push(x); else if (x.d < l[j].d) l[j] = x; byQ.set(q2, l); const dq = dirQ.get(q2); if (!dq || x.d < dq.d) dirQ.set(q2, { a: Math.atan2(nx, nz), d: x.d }); }
+        }
+        for (const [q2, l] of byQ) {
+          const d = wrapA(dirQ.get(q2).a - P.h);
+          if (Math.abs(d) > 2.5) continue; // the street behind you
+          const k = Math.abs(d) < 0.6 ? "s" : d > 0 ? "l" : "r";
+          rows.push({ k, other: q2, items: l.sort((a2, b2) => a2.d - b2.d).slice(0, 3) });
+        }
+        rows.sort((a2, b2) => "slr".indexOf(a2.k) - "slr".indexOf(b2.k));
+      }
       const auto = D.auto;
       // round 2 (Daniel: "more visual"): the panel is rebuilt only when what it shows changes; the distances update in place
       const sig = JSON.stringify([q, here?.pl.id, auto ? auto.pl?.id || "tap" : 0, rows.map((r) => [r.k, r.other, !!ex?.[r.k], r.items.map((x) => x.p.pl.id)]), D.cardFor?.id && H.cardOpen(), imgV]);
@@ -2174,7 +2225,7 @@
     let STEPS;
     const DESK_STEPS = [
       { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: touchUI ? "↑ to go: it keeps to the road · ← → to turn" : "↑ to go: it keeps to the road · ← → to turn (or W A S D)", at: "car" },
-      { id: "round", keys: ["↑"], t: "Take the roundabout", s: touchUI ? "Hold ↑: round it and straight on · steer to leave sooner" : "Hold ↑: round the fountain and straight on · steer out to leave sooner", at: "car" },
+      { id: "round", keys: ["↑"], t: "Take the roundabout", s: touchUI ? "Hold ↑: round it and straight on · tap → for the next exit" : "Hold ↑: round the fountain and straight on · tap → for the next exit", at: "car" },
       { id: "back", keys: ["↓"], t: "Back up or turn round", s: touchUI ? "Hold ↓ to back up · stopped, ↑ with ← or → turns you round" : "Hold ↓ (or S) to back up · stopped, ↑ with ← or → turns you round", at: "car" },
       { id: "tap", keys: [], t: "Or let us drive", s: "Tap a place on the map, or a card in Nearby", at: "panel" },
       { id: "look", keys: [], t: "Look around", s: touchUI ? "Drag the map, pinch to zoom · ◎ brings you back" : "Drag the map, scroll to zoom · ◎ brings you back", at: "mid" },
@@ -2197,6 +2248,7 @@
       return true;
     }
     function tutGo(i) {
+      if (FREE && !P.init) freeInit(); // beta 2.91: the tour can start before the car's first frame (an early skip): step 1 measured from x=0 and passed at once
       TUT.i = i; TUT.t0 = performance.now(); TUT.L0 = curL(); TUT.x0 = P.x; TUT.z0 = P.z; TUT.inRing = false; TUT.turn = D.turnT || 0; TUT.rev = D.revDist || 0; TUT.slow = D.slowTurn || 0; TUT.view = D.view; TUT.dragged = false;
       const st = STEPS[i], e = TUT.el, key = (k) => `<span class="n2-cap${k === "↑" ? " big" : ""}" aria-hidden="true">${k}</span>`;
       e.innerHTML = `${st.keys.length ? `<span class="n2-caps">${st.keys.map(key).join("")}</span>` : ""}<b>${st.t}</b><i>${st.s}</i><span class="n2-tbar"><em class="mono">${i + 1}/${STEPS.length}</em><button class="n2-skip">Skip</button></span>`;
@@ -2267,7 +2319,7 @@
       tutorial, tutorialEnd: () => tutEnd(null), tourStep: () => (TUT.i >= 0 && TUT.i < STEPS.length ? STEPS[TUT.i].id : TUT.i >= STEPS.length ? "end" : null),
       get camK() { return D.camK; },
       mv: () => { const m = H.mapView; return { x: Math.round(m.tgt.x), z: Math.round(m.tgt.z), dist: Math.round(m.dist), yaw: +m.yaw.toFixed(3), pitch: +m.pitch.toFixed(3), follow: m.follow }; },
-      onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, closed: () => CLOSED, snd: SND, copT: () => (COP.on ? +COP.on.t.toFixed(2) : null), speed: () => P.u, dims: () => ({ len: H.carLen(), span: H.vehSpan() }), cam: () => H.camera, look: (x, z, d) => { const m = H.mapView; m.follow = false; m.tgt.set(x, 0, z); m.dist = d; m.distGoal = null; m.vx = m.vz = 0; }, put: (x, z, h) => { P.x = x; P.z = z; P.h = h; P.u = P.w = P.yr = 0; }, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
+      onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, closed: () => CLOSED, snd: SND, explore: (e, dir) => { const o = []; explore({ e, dir }, 700, 0, o, new Set(), 0); return uniq(o).map((x) => [x.p.pl.name, x.p.q, Math.round(x.d)]); }, copT: () => (COP.on ? +COP.on.t.toFixed(2) : null), speed: () => P.u, dims: () => ({ len: H.carLen(), span: H.vehSpan() }), cam: () => H.camera, look: (x, z, d) => { const m = H.mapView; m.follow = false; m.tgt.set(x, 0, z); m.dist = d; m.distGoal = null; m.vx = m.vz = 0; }, put: (x, z, h) => { P.x = x; P.z = z; P.h = h; P.u = P.w = P.yr = 0; }, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
       // a place from the map (a pin, a chip, the welcome card): driven to along the graph
       go(pl) {
         if (!pl || pl.find) return false;
