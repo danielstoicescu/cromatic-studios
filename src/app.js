@@ -26929,7 +26929,7 @@ void main() {
     // esplanade to the portico, gold stanchions, and a gate on the avenue's kerb with the court's name
     {
       const carpetM = new MeshStandardMaterial({ color: "#6e1420", roughness: 0.85 }), goldM = new MeshStandardMaterial({ color: "#c89b3c", roughness: 0.35, metalness: 0.6 });
-      const gx0 = -408, gx1 = -150, cw = 22;
+      const gx0 = -392, gx1 = -150, cw = 22; // r181: the gate and the carpet on the kerb, no longer on the avenue (gx0 was -408: 7 into the asphalt)
       const carpet = new Mesh(new BoxGeometry(gx1 - gx0, 1.2, cw), carpetM); carpet.position.set((gx0 + gx1) / 2, 1.4, 0); g.add(carpet);
       // r139e: the stanchions, the gate's posts and its caps each merged into one mesh
       const gold = [], posts = [];
@@ -27285,7 +27285,24 @@ void main() {
     const e = Math.max(0, Math.min(1, Math.min(bt - 0.06, 0.92 - bt) / 0.12));
     return e * e * (3 - 2 * e) * Math.max(0, 1 - best / 40);
   }
+  // r181 (Daniel, from beta 2.9): nothing stands on a road. The lane leaves Medical Avenue at a narrow angle, so its first
+  // houses and its trees stood on the avenue or on the lane itself (Sticker Republic's roll too, see below): a lane building (or tree) steps back
+  // along its own facing, 5 at a time, until its footprint (radius r) clears every drive road, the lane at its own width.
+  // Sticker Republic's and Printoteca's spots are set here, so their pins and labels move with them. (beta 2.9 does the
+  // same with awayFromRoads in nav2; here the roads are read once the route data exists, the lane at its drawn 40)
+  var LANE_ROAD_SEGS = null;
+  function awayFromRoads(sp, r) {
+    if (!LANE_ROAD_SEGS) {
+      init_data(); init_route();
+      LANE_ROAD_SEGS = [];
+      cityRoutes().forEach((pts, i) => { const hw = i === 3 ? 20 : 28; for (let k = 1; k < pts.length; k++) LANE_ROAD_SEGS.push([pts[k - 1], pts[k], hw]); });
+    }
+    const clear = (x, z) => LANE_ROAD_SEGS.every(([[ax, az], [bx, bz], hw]) => { const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, f = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)); return Math.hypot(ax + dx * f - x, az + dz * f - z) >= hw + r + 3; });
+    for (let k = 0; k <= 16; k++) { const x = sp.x - sp.fx * k * 5, z = sp.z - sp.fz * k * 5; if (clear(x, z)) return { ...sp, x, z }; }
+    return null;
+  }
   var LANE_SR = laneSpot(0.34, 1, 60), LANE_PR = laneSpot(0.62, -1, 60);
+  LANE_SR = awayFromRoads(LANE_SR, Math.hypot(58, 44) / 2 * 0.8) || LANE_SR; LANE_PR = awayFromRoads(LANE_PR, Math.hypot(60, 46) / 2 * 0.8) || LANE_PR; // r181
   var LANE_BRANDS = [
     { br: "C", name: "Sticker Republic", x: Math.round(LANE_SR.x), z: Math.round(LANE_SR.z), lane: true, line: "STICKERS \xB7 PRINT", c: "#FFD21F", t: "#111111", desc: "Stickers for everything and everyone: the little yellow house on the lane, plastered with its own work." },
     { br: "C", name: "Printoteca", x: Math.round(LANE_PR.x), z: Math.round(LANE_PR.z), lane: true, line: "PRINT ON DEMAND", c: "#ffffff", t: "#111111", desc: "Print on demand with no minimum orders: tees and hoodies printed one by one, for anyone who wants to sell their own." }
@@ -27373,7 +27390,7 @@ void main() {
       paint: (ctx) => stickers(ctx, 26, 7),
       extra: (g, W, D, H) => {
         // a sticker roll the size of a barrel by the door
-        const roll = new Mesh(new CylinderGeometry(4.4, 4.4, 7, 18), new MeshStandardMaterial({ color: "#F65342", roughness: 0.5 })); roll.rotation.z = Math.PI / 2; roll.position.set(-W * 0.36, 4.4, D / 2 + 13); g.add(roll);
+        const roll = new Mesh(new CylinderGeometry(4.4, 4.4, 7, 18), new MeshStandardMaterial({ color: "#F65342", roughness: 0.5 })); roll.rotation.z = Math.PI / 2; roll.position.set(-W * 0.36, 4.4, D / 2 + 7); g.add(roll); // r181: on the pavement, not on the lane (was D / 2 + 13)
         const core = new Mesh(new CylinderGeometry(1.6, 1.6, 7.2, 12), new MeshStandardMaterial({ color: "#d9c7a3" })); core.rotation.z = Math.PI / 2; core.position.copy(roll.position); g.add(core);
       }
     });
@@ -27403,7 +27420,8 @@ void main() {
     // the lane itself: small houses in pastel plaster and red tiles, trees, two lamps
     const rnd = rng(1188), tints = ["#f1d8c4", "#e6dcc8", "#d9e3d4", "#f2e2b8", "#e8cfd4", "#d6dde6"];
     for (const [t, sd] of [[0.14, 1], [0.2, -1], [0.5, 1], [0.38, -1], [0.66, 1]]) {
-      const sp = laneSpot(t, sd, 50), W = 34 + rnd() * 14, D = 30 + rnd() * 8, H = 20 + rnd() * 14;
+      const W = 34 + rnd() * 14, D = 30 + rnd() * 8, H = 20 + rnd() * 14, sp = awayFromRoads(laneSpot(t, sd, 50), Math.hypot(W, D) / 2 * 0.8); // r181
+      if (!sp) continue; // no room clear of the roads: no house
       const g = new Group(), wall = new MeshStandardMaterial({ color: tints[Math.floor(rnd() * tints.length)], roughness: 0.9 });
       const body = new Mesh(new BoxGeometry(W, H, D), wall); body.position.y = H / 2; g.add(body);
       const ft = facadeTexture({}, 2, 3, { glass: "#3a4550", frame: wall.color.getStyle(), lit: "#ffe2a8" });
@@ -27415,7 +27433,8 @@ void main() {
     }
     const trunkM = new MeshStandardMaterial({ color: "#7a4a22", roughness: 1 }), leafM = new MeshStandardMaterial({ color: "#4f9a4a", roughness: 0.9 });
     for (let i = 0; i < 12; i++) {
-      const sp = laneSpot(0.06 + i * 0.075, i % 2 ? 1 : -1, 26), tr = new Group();
+      const sp = awayFromRoads(laneSpot(0.06 + i * 0.075, i % 2 ? 1 : -1, 26), 6), tr = new Group(); // r181: the trunk and most of the crown off the roads
+      if (!sp) continue;
       const trunk = new Mesh(new CylinderGeometry(1.4, 1.8, 12, 6), trunkM); trunk.position.y = 6; tr.add(trunk);
       const crown = new Mesh(new IcosahedronGeometry(8 + (i % 3) * 1.5, 1), leafM); crown.position.y = 17; tr.add(crown);
       finish(tr, parent, sp.x, sp.z);
