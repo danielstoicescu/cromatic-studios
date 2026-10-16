@@ -1,5 +1,5 @@
 diff --git a/build/build.mjs b/build/build.mjs
-index 1c42cfa..0a684e8 100644
+index 3dcf517..0a684e8 100644
 --- a/build/build.mjs
 +++ b/build/build.mjs
 @@ -28,14 +28,19 @@ const SITE_URL = (process.env.SITE_URL || "https://cromaticstudios.com").replace
@@ -24,7 +24,24 @@ index 1c42cfa..0a684e8 100644
  // r153 (Daniel: "the opening still takes long to start"): the opening's first line is painted from the HTML itself,
  // the moment the page arrives, with its own letter animation on the compositor; the bundle (parsed and run for
  // seconds on a phone) then adopts this very element (engine.js) and carries on from it, the beats in step. An inline
-@@ -79,7 +84,7 @@ if (single >= 0) {
+@@ -46,13 +51,9 @@ const preLine = (() => {
+   const lead = 380; // the beat on the engine's clock (300 ms) plus a breath after the paint
+   const word = ([w, d, cls]) => `<span class="kw${cls ? " " + cls : ""}" style="--d:${lead + d}ms">${[...w].map((ch, j) => `<i class="l" style="--ld:${j * 16}ms">${ch}</i>`).join("")}</span>`;
+   const kl = parts.map((p) => (p ? word(p) : '<i class="br"></i>')).join("");
+-  // r184 (Daniel, from the beta's usage pass): "Skip intro" could not be pressed while this line was up (it lay over the
+-  // button, full screen), and a skip pressed before the city was ready was lost: the whole opening played. The line lets
+-  // taps through now, and the page paints its own Skip button with it, above it, from the first paint; a press there
+-  // (or on the app's) is kept in window.__czSkipWanted and honoured as soon as the intro can take it (src/app.js)
+-  const css = `.i4-pre{pointer-events:none;position:fixed;inset:0;z-index:2147483001;display:grid;place-items:center;grid-template-columns:100%;padding:10vh 5vw 14vh;overflow:hidden;text-align:center;background:#fbf3cf;--ink:#0d0c09;--sans:CromaticSans,"Darker Grotesque",system-ui,sans-serif;color:var(--ink);transition:opacity .4s ease}.i4-pre[hidden]{display:none}.i4-pre.gone{opacity:0;pointer-events:none}.i4-pre.adopted{background:transparent}.i4-pre.adopted::before{display:none}.i4-pre::before{content:"";position:absolute;left:-25%;top:-25%;width:150%;height:150%;background:radial-gradient(45% 40% at 50% 46%, #fff9e0 0%, #fbf3cf 48%, #f5e4ad 100%);will-change:transform;animation:i4breathe 18s ease-in-out infinite alternate}@keyframes i4breathe{from{transform:translate(-4%,-3%)}to{transform:translate(4%,3%)}}.i4-pre .kl{position:relative;grid-area:1/1;justify-self:center;align-self:center;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.04em .24em;font:900 clamp(44px,7.8vw,128px)/1.02 var(--sans);letter-spacing:-.045em;max-width:1240px}.i4-pre .kl .br{flex-basis:100%;height:0}.i4-pre .kw{display:inline-block;opacity:1}.i4-pre .kw .l{display:inline-block;font-style:normal;opacity:0;will-change:transform,opacity}.i4-pre .kl.in .kw .l{animation:i4in .95s cubic-bezier(.16,1,.3,1) calc(var(--d,0ms) + var(--ld,0ms)) both}@keyframes i4in{from{opacity:0;transform:translateY(.42em) scale(.96)}to{opacity:1;transform:none}}.i4-skip{z-index:2147483002}.i4-skip[hidden]{display:none}.i4-skip.on{background:#FED012}`;
+-  const js = `(function(){try{var q=location.search,rm=matchMedia("(prefers-reduced-motion: reduce)").matches,t=+localStorage.getItem("cz-intro-at")||0;var on=!/[?&](map|drive)\\b/.test(q)&&!/[?&]intro=classic\\b/.test(q)&&!rm&&(/[?&]intro\\b/.test(q)||Date.now()-t>=216e5);if(!on)return;var p=document.querySelector(".i4-pre"),b=document.querySelector(".boot"),k=document.querySelector(".i4-skip");if(!p)return;p.hidden=false;if(k){k.hidden=false;k.onclick=function(){window.__czSkipWanted=true;k.classList.add("on")}}window.__i4t0=performance.now();if(b)b.classList.add("gone");setTimeout(function(){if(p.isConnected&&!p.classList.contains("adopted")){p.classList.add("gone");setTimeout(function(){p.remove()},500)}if(k&&k.isConnected)k.remove()},30000)}catch(e){}})();`;
+-  return `<style>${css}</style><div class="i4-pre" hidden aria-hidden="true"><div class="kl calm in">${kl}</div></div><button type="button" class="kz-skip i4-skip" hidden>Skip intro <span>→</span></button><script>${js}</script>`;
++  const css = `.i4-pre{position:fixed;inset:0;z-index:2147483001;display:grid;place-items:center;grid-template-columns:100%;padding:10vh 5vw 14vh;overflow:hidden;text-align:center;background:#fbf3cf;--ink:#0d0c09;--sans:CromaticSans,"Darker Grotesque",system-ui,sans-serif;color:var(--ink);transition:opacity .4s ease}.i4-pre[hidden]{display:none}.i4-pre.gone{opacity:0;pointer-events:none}.i4-pre.adopted{background:transparent}.i4-pre.adopted::before{display:none}.i4-pre::before{content:"";position:absolute;left:-25%;top:-25%;width:150%;height:150%;background:radial-gradient(45% 40% at 50% 46%, #fff9e0 0%, #fbf3cf 48%, #f5e4ad 100%);will-change:transform;animation:i4breathe 18s ease-in-out infinite alternate}@keyframes i4breathe{from{transform:translate(-4%,-3%)}to{transform:translate(4%,3%)}}.i4-pre .kl{position:relative;grid-area:1/1;justify-self:center;align-self:center;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.04em .24em;font:900 clamp(44px,7.8vw,128px)/1.02 var(--sans);letter-spacing:-.045em;max-width:1240px}.i4-pre .kl .br{flex-basis:100%;height:0}.i4-pre .kw{display:inline-block;opacity:1}.i4-pre .kw .l{display:inline-block;font-style:normal;opacity:0;will-change:transform,opacity}.i4-pre .kl.in .kw .l{animation:i4in .95s cubic-bezier(.16,1,.3,1) calc(var(--d,0ms) + var(--ld,0ms)) both}@keyframes i4in{from{opacity:0;transform:translateY(.42em) scale(.96)}to{opacity:1;transform:none}}`;
++  const js = `(function(){try{var q=location.search,rm=matchMedia("(prefers-reduced-motion: reduce)").matches,t=+localStorage.getItem("cz-intro-at")||0;var on=!/[?&](map|drive)\\b/.test(q)&&!/[?&]intro=classic\\b/.test(q)&&!rm&&(/[?&]intro\\b/.test(q)||Date.now()-t>=216e5);if(!on)return;var p=document.querySelector(".i4-pre"),b=document.querySelector(".boot");if(!p)return;p.hidden=false;window.__i4t0=performance.now();if(b)b.classList.add("gone");setTimeout(function(){if(p.isConnected&&!p.classList.contains("adopted")){p.classList.add("gone");setTimeout(function(){p.remove()},500)}},30000)}catch(e){}})();`;
++  return `<style>${css}</style><div class="i4-pre" hidden aria-hidden="true"><div class="kl calm in">${kl}</div></div><script>${js}</script>`;
+ })();
+ // the text version's portfolio, from site/data.mjs (every case study linked, grouped by street)
+ const homeWork = () => {
+@@ -83,7 +84,7 @@ if (single >= 0) {
    mkdirSync(dirname(out), { recursive: true });
    // a local file has no domain: drop the absolute social/canonical tags
    const h = head.split("\n").filter((l) => !l.includes("%%SITE_URL%%")).join("\n");
@@ -33,7 +50,7 @@ index 1c42cfa..0a684e8 100644
    writeFileSync(out, html);
    console.log(`single file -> ${out} (${(html.length / 1048576).toFixed(2)} MB)`);
    process.exit(0);
-@@ -107,7 +112,7 @@ const lazy = (text) => text.replace(/<img src=/g, "<img loading=lazy decoding=as
+@@ -111,7 +112,7 @@ const lazy = (text) => text.replace(/<img src=/g, "<img loading=lazy decoding=as
  // name -> data URI, for every embedded file assigned to a named variable in app.js
  const named = new Map();
  for (const m of js.matchAll(/([A-Za-z_$][\w$]*)\s*=\s*"data:((?:image|video)\/[a-z0-9+.-]+);base64,([A-Za-z0-9+/=]+)"/g)) named.set(m[1], m[3]);
@@ -42,7 +59,7 @@ index 1c42cfa..0a684e8 100644
  // r139a: the map opens Steam's built page (/work/steam/?embed=1) like every other case page; the page kept as a string
  // in app.js is read from the source below (page "work/steam") and is only the fallback of the single-file copy, so the
  // production bundle ships it empty (~57 KB less)
-@@ -123,7 +128,7 @@ let engineCss = "";
+@@ -127,7 +128,7 @@ let engineCss = "";
    const eng = join(root, "site", "onboarding", "intro-lab");
    try { jsOut = readFileSync(join(eng, "engine.js"), "utf8") + "\n" + jsOut; engineCss = readFileSync(join(eng, "engine.css"), "utf8"); } catch (e) { console.warn("[build] opening engine not found:", e.message); }
  }
@@ -51,7 +68,7 @@ index 1c42cfa..0a684e8 100644
  // minify for production (the single-file build stays readable); skipped if esbuild is missing
  try {
    const { transformSync } = await import("esbuild");
-@@ -385,7 +390,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
+@@ -389,7 +390,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
  const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
  const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
  // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
@@ -61,7 +78,7 @@ index 1c42cfa..0a684e8 100644
  const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
  const GS = {};
 diff --git a/src/app.js b/src/app.js
-index a1b1cac..381efc9 100644
+index 4d40432..381efc9 100644
 --- a/src/app.js
 +++ b/src/app.js
 @@ -27354,9 +27354,10 @@ void main() {
@@ -727,7 +744,7 @@ index a1b1cac..381efc9 100644
            setTimeout(() => rides.classList.add("hidden"), 220);
          };
          document.addEventListener("pointerdown", (e) => { if (!rides.classList.contains("hidden") && !e.target.closest(".map-rides, .map-ride")) rides.classList.add("hidden"); });
--        skip.onclick = () => { kinetic?.finish?.(); mapEndIntro(); };
+-        skip.onclick = () => { window.__czSkipWanted = true; kinetic?.finish?.(); mapEndIntro(); }; // r184: kept, if the intro is not ready to end yet
 +        skip.onclick = () => { window.__czSkipWanted = true; kinetic?.finish?.(); mapEndIntro(); }; // beta 2.91: a skip pressed while the city still loads is kept (it used to be lost: the whole intro played)
          const chips = dock.querySelector(".map-chips");
          // r130o: the bar scrolls sideways with a normal vertical wheel or trackpad gesture too
@@ -926,7 +943,12 @@ index a1b1cac..381efc9 100644
            mapPrev = { scheme: state.schemeIdx, veh: state.vehicleId };
            if (!intro) kinetic?.pause?.();
            if (police.active) { police.active = false; copCar.group.visible = false; }
-@@ -40847,6 +41137,7 @@ void main() {
+@@ -40843,10 +41133,11 @@ void main() {
+           document.body.classList.add("map-mode");
+           rebuildGolden();
+           mapUI.mark();
+-          if (intro) { mapIntro = true; document.body.classList.add("kz-intro"); mapUI.skip.classList.remove("hidden"); document.querySelector(".i4-skip")?.remove(); } // r184: the app's Skip takes over from the page's
++          if (intro) { mapIntro = true; document.body.classList.add("kz-intro"); mapUI.skip.classList.remove("hidden"); }
            else { const wt0 = performance.now(); const wl = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - wt0 < 20000) return setTimeout(wl, 250); mapSettle = 90; if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI.welcome(true); }; setTimeout(wl, 1000); } // r139r: after the cups' reveal (r142b: a second, and the view settles on the car)
            try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map") + location.hash); } catch {} // r139p: a plain "/" stays plain
          } else {
@@ -942,10 +964,14 @@ index a1b1cac..381efc9 100644
          }
        }
        window.__cam = (p2, t2) => { window.__camO = p2 ? [p2, t2] : null; };
-@@ -41300,6 +41590,7 @@ void main() {
+@@ -41298,9 +41588,9 @@ void main() {
+           skipEnd: () => { introReady.then(() => { document.body.classList.remove("kz-boot"); mapEndIntro(); setTimeout(() => stage.remove(), 1200); }); }, // r153: a skip before the city is ready waits for it
+         };
          intro4 = window.cromaticIntro4(host, {});
-         if (mapUI?.skip) mapUI.skip.onclick = () => intro4.skip();
+-        if (mapUI?.skip) mapUI.skip.onclick = () => { window.__czSkipWanted = true; intro4.skip(); };
++        if (mapUI?.skip) mapUI.skip.onclick = () => intro4.skip();
          intro4.start();
+-        if (window.__czSkipWanted) intro4.skip(); // r184: the visitor asked to skip before the intro was running (the page's own Skip, or the app's)
 +        if (window.__czSkipWanted) intro4.skip(); // beta 2.91: the visitor already asked to skip
        }
        if (ONB_MODE) {
@@ -3615,10 +3641,18 @@ index 0000000..00d2fb0
 +  };
 +})();
 diff --git a/src/styles.css b/src/styles.css
-index 2ef3ce3..0cfd9d1 100644
+index 8eeb768..0cfd9d1 100644
 --- a/src/styles.css
 +++ b/src/styles.css
-@@ -3556,6 +3556,8 @@ body.kz-intro .kz-veil { -webkit-backdrop-filter: none; backdrop-filter: none; }
+@@ -2871,7 +2871,6 @@ body.kz-intro .topbar { opacity: 0; pointer-events: none; }
+   display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 12px 26px -12px rgba(0,0,0,.5); transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
+ .kz-skip:hover { transform: translateY(-2px) scale(1.04); background: #FED012; }
+ .kz-skip.hidden { display: none; }
+-body.kz-intro .kz-skip { z-index: 2147483002; } /* r184: above the opening's first line (.i4-pre) the page paints, which lets taps through now */
+ @media (max-width: 719px) { .kz-skip { right: 14px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); height: 44px; font-size: 14px; } }
+ 
+ /* chapters: quiet grey placards with a colour edge, there if you want them */
+@@ -3557,6 +3556,8 @@ body.kz-intro .kz-veil { -webkit-backdrop-filter: none; backdrop-filter: none; }
  /* r139i: its hover (it had none: "all: unset" above dropped it) */
  .map-welcome .mw-free { transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease, background-color .22s ease; }
  .map-welcome .mw-free:hover, .map-welcome .mw-free:focus-visible { transform: translateY(-2px); box-shadow: 0 4px 0 #141414; background: #FFDA3A; }
