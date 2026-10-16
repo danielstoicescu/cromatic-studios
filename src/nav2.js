@@ -22,7 +22,7 @@
     const f = (s - cum[lo]) / (cum[hi] - cum[lo] || 1);
     return [pts[lo][0] + (pts[hi][0] - pts[lo][0]) * f, pts[lo][1] + (pts[hi][1] - pts[lo][1]) * f];
   }
-  const QNAME = { A: "Coffee Street", B: "Fintech Boulevard", C: "Medical Avenue", D: "Dacia 99 & Olari 9" };
+  const QNAME = { A: "Coffee Street", B: "Fintech Boulevard", C: "Medical Avenue", D: "Strada Olari" }; // beta 3.01: Dacia 99 lives on Coffee Street now
   const QCOL = { A: "#28C840", B: "#119BFE", C: "#F28BA8", D: "#FED012" };
   const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
 
@@ -913,6 +913,8 @@
     function hereAt(listed) {
       let best = null;
       for (const p of PL) { if (listed && p.hide) continue; const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 75 && (!best || d < best.d)) best = { pl: p.pl, d, p }; }
+      // beta 3.01 (Daniel): in front of Two Minutes, Two Minutes (its neighbours Two Min Lab and Călinescu 54 don't take it)
+      { const tmP = PL.find((q) => q.pl.id === "tm"); if (tmP && Math.hypot(H.carPos.x - tmP.ax, H.carPos.z - tmP.az) < 90 && !(best && best.pl.id === "tm")) { const lab = best && best.pl.id === "lab" && best.d < 25; if (!lab) best = { pl: tmP.pl, d: Math.hypot(H.carPos.x - tmP.ax, H.carPos.z - tmP.az), p: tmP }; } }
       // beta 2.6: the place you just arrived at stays "here" (two places can share a stretch of kerb: Dacia 99 read as Echo School)
       if (D.lastArr) { const p = PL.find((q) => q.pl === D.lastArr && !(listed && q.hide)); if (p) { const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 110) return { pl: p.pl, d, p }; } }
       return best;
@@ -2147,6 +2149,11 @@
         }
         rows.sort((a2, b2) => "slr".indexOf(a2.k) - "slr".indexOf(b2.k));
       }
+      // beta 3.01 (Daniel): at Two Minutes, Nearby lists Two Min Lab, then Călinescu 54 (an exception to the discovery rule)
+      if (here?.pl.id === "tm") { const it = ["lab", "hq"].map((id) => PL.find((q) => q.pl.id === id)).filter(Boolean).map((q) => ({ p: q, d: Math.hypot(q.ax - H.carPos.x, q.az - H.carPos.z) })); if (it.length) { rows.length = 0; rows.push({ k: "s", other: null, items: it }); } }
+      // beta 3.01: on Strada Olari, with nothing of ours in the immediate zone, Nearby names the house ahead (it said
+      // "nothing of ours down this way" on the way to it, now that Dacia 99 is not on Olari any more)
+      if (!rows.length && !here && (q === "D" || Math.abs(H.carPos.x - 1170) < 60)) { let f = null; for (let k = ci; k < D.seq.length && !f; k++) { const it = D.seq[k], e = E[it.e]; for (const p of byEdge.get(it.e) || []) if (p.pl.stop === "end") { f = { p, d: it.L0 + (it.dir > 0 ? p.s : e.len - p.s) - L }; break; } } if (f && f.d > 30 && f.d < 1400) rows.push({ k: "s", other: null, items: [f] }); }
       const auto = D.auto;
       // round 2 (Daniel: "more visual"): the panel is rebuilt only when what it shows changes; the distances update in place
       const sig = JSON.stringify([q, here?.pl.id, auto ? auto.pl?.id || "tap" : 0, rows.map((r) => [r.k, r.other, !!ex?.[r.k], r.items.map((x) => x.p.pl.id)]), D.cardFor?.id && H.cardOpen(), imgV]);
