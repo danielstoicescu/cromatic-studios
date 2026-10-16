@@ -33270,7 +33270,7 @@ void main() {
       const grid = el("div", "crew-faces");
       CREW.forEach((n, i) => {
         const col = CREW_COLORS[i % CREW_COLORS.length], src = CREW_FACES[n];
-        const b = el("button", "crew-face", `<span class="cf-ring" style="--cc:${col}">${src ? `<img src="${src}" alt="" loading="lazy">` : `<b>${n.replace(/[^A-Za-zĂÂÎȘȚăâîșț]/g, "").slice(0, 1)}</b>`}</span><span class="cf-tag" style="--cc:${col}">${n}</span>`);
+        const b = el("button", "crew-face", `<span class="cf-ring" style="--cc:${col}">${src ? `<img src="${src}" alt="" loading="lazy">` : `<b>${n.replace(/[^A-Za-zĂÂÎȘȚăâîșț]/g, "").slice(0, 1)}</b>`}</span><span class="cf-tag" style="--cc:${col}">${n}</span>${CREW_INFO[n]?.role ? `<span class="cf-role mono">${CREW_INFO[n].role}</span>` : ""}`);
         b.setAttribute("aria-label", `Meet ${n}`);
         b.style.setProperty("--d", `${i * 45}ms`);
         b.onclick = () => api.openHuman(i);
@@ -37201,17 +37201,18 @@ void main() {
             kelpU.value = t;
             for (const f of fishes) {
               const u = f.userData, sc = u.school;
-              const R = 120 + sc * 55, w = (0.16 + sc * 0.03) * (sc % 2 ? -1 : 1);
+              const far = mapMode && nav2?.on; // beta 2.9 (Daniel): on nav2's map the schools keep to the edges and the depth, never over the car or the road ahead
+              const R = far ? 560 + sc * 110 : 120 + sc * 55, w = (far ? 0.09 + sc * 0.02 : 0.16 + sc * 0.03) * (sc % 2 ? -1 : 1);
               const a = t * w + sc * 1.3 - u.k * 0.09 * Math.sign(w);
               const lx = Math.cos(u.k * 1.9 + sc) * u.k * 11, lz = Math.sin(u.k * 2.7 + sc) * u.k * 11;
-              f.position.set(center.x + Math.cos(a) * R + lx, 40 + sc * 22 + Math.sin(t * 0.9 + u.k + sc) * 10 + (u.k % 3) * 6, center.z + Math.sin(a) * R + lz);
+              f.position.set(center.x + Math.cos(a) * R + lx, (far ? 90 + sc * 30 : 40 + sc * 22) + Math.sin(t * 0.9 + u.k + sc) * 10 + (u.k % 3) * 6, center.z + Math.sin(a) * R + lz);
               f.rotation.y = -a + (w > 0 ? 0 : Math.PI);
               u.tailPivot.rotation.y = Math.sin(t * 9 + u.ph) * 0.55;
             }
             for (const j of jellies) {
               const u = j.userData;
               const pulse = 0.5 + 0.5 * Math.sin(t * 1.6 + u.ph);
-              j.position.set(center.x + Math.cos(u.a + t * 0.03) * u.r, u.y0 + Math.sin(t * 0.5 + u.ph) * 40, center.z + Math.sin(u.a + t * 0.03) * u.r);
+              const jr = mapMode && nav2?.on ? Math.max(u.r, 560) : u.r; j.position.set(center.x + Math.cos(u.a + t * 0.03) * jr, u.y0 + Math.sin(t * 0.5 + u.ph) * 40, center.z + Math.sin(u.a + t * 0.03) * jr);
               j.scale.set(u.s * (1 + pulse * 0.18), u.s * (1 - pulse * 0.2), u.s * (1 + pulse * 0.18));
             }
             for (let i = 0; i < BN; i++) {
@@ -37792,10 +37793,10 @@ void main() {
         if (!tilt) {
           const rt = new WebGLRenderTarget(w, h, { samples: 2, type: HalfFloatType });
           const mat = new ShaderMaterial({
-            uniforms: { tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, amt: { value: 7 }, focus: { value: 0.46 }, band: { value: 0.1 }, t: { value: 0 }, zb: { value: 0 }, ep: { value: new Vector2(0, 0) }, spot: { value: new Vector4(0.5, 0.5, 0.2, 0) } },
+            uniforms: { gk: { value: 1 }, tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, amt: { value: 7 }, focus: { value: 0.46 }, band: { value: 0.1 }, t: { value: 0 }, zb: { value: 0 }, ep: { value: new Vector2(0, 0) }, spot: { value: new Vector4(0.5, 0.5, 0.2, 0) } },
             vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
             fragmentShader: `
-              uniform sampler2D tD; uniform vec2 res; uniform float amt, focus, band, t, zb; uniform vec4 spot; uniform vec2 ep; varying vec2 vUv;
+              uniform sampler2D tD; uniform vec2 res; uniform float amt, focus, band, t, zb, gk; uniform vec4 spot; uniform vec2 ep; varying vec2 vUv;
               ${isMobile() ? "#define TAPS 6\n#define LITE 1" : "#define TAPS 12"}
               void main(){
                 float dy = abs(vUv.y - focus);
@@ -37846,7 +37847,7 @@ void main() {
                 vec2 gp = floor(vUv * res / 1.6);
                 float n = fract(sin(dot(gp + vec2(tf * 7.13, tf * 3.71), vec2(12.9898, 78.233))) * 43758.5453);
                 float n2 = fract(sin(dot(gp + vec2(tf * 1.97, tf * 5.29), vec2(39.346, 11.135))) * 24634.6345);
-                c += ((n + n2) - 1.0) * 0.034 * (0.45 + 0.55 * (1.0 - abs(l - 0.5) * 2.0));
+                c += ((n + n2) - 1.0) * 0.034 * gk * (0.45 + 0.55 * (1.0 - abs(l - 0.5) * 2.0)); // beta 2.9: gk (less at night)
                 gl_FragColor = vec4(c, 1.0);
                 #include <tonemapping_fragment>
                 #include <colorspace_fragment>
@@ -37861,6 +37862,7 @@ void main() {
         if (tilt.rt.width !== w || tilt.rt.height !== h) { tilt.rt.setSize(w, h); tilt.mat.uniforms.res.value.set(w, h); }
         tilt.mat.uniforms.amt.value = 4.2 * renderer.getPixelRatio() * (mapMode && nav2?.on ? Math.max(0, 1 - 1.1 * nav2.camK) : 1); // nav2: no miniature blur in the street view (beta 2.5: one tap per pixel there, ~+5 fps)
         tilt.mat.uniforms.band.value = 0.16;
+        tilt.mat.uniforms.gk.value = SCHEMES[state.schemeIdx].id === "nightlife" ? 0.35 : 1; // beta 2.9 (Daniel): the night's grain, much lighter
         tilt.mat.uniforms.t.value = (now * 0.001) % 100;
         tilt.mat.uniforms.zb.value = mapMode ? mapView.zoomBlur || 0 : 0;
         if (entryPull) { const u = (now - entryPull.t0) / 1000, e = 1 - Math.pow(1 - Math.min(1, Math.max(0, u)), 3); if (u >= 1) { entryPull = null; tilt.mat.uniforms.ep.value.set(0, 0); } else tilt.mat.uniforms.ep.value.set(-0.08 + 1.3 * e, 16 * renderer.getPixelRatio() * (1 - 0.5 * e)); } // r155
@@ -38769,7 +38771,7 @@ void main() {
         if (FOUNTAIN && !siteMode) FOUNTAIN.update(now * 0.001);
         farClouds.rotation.y += dt * 0.006;
         const prog = state.L / route.total;
-        let wx = state.weatherOn ? weatherState(prog) : "sun";
+        let wx = state.weatherOn && !(mapMode && nav2?.on) ? weatherState(prog) : "sun"; // beta 2.9: on nav2's map the drive's progress means nothing (it made any world rain and flash)
         const schemeId = SCHEMES[state.schemeIdx].id;
         if ((schemeId === "nightlife" || schemeId === "sincity") && state.weatherOn) wx = "rain";
         if (schemeId === "sketch") {
@@ -38779,7 +38781,7 @@ void main() {
           wx = sketchRain.state === 1 ? "rain" : "sun";
         }
         {
-          const rawWx = schemeId === "nightlife" || schemeId === "sincity" ? "rain" : weatherState(prog);
+          const rawWx = schemeId === "nightlife" || schemeId === "sincity" ? "rain" : mapMode && nav2?.on ? "sun" : weatherState(prog);
           ui.setRainBtn(schemeId !== "monument" && schemeId !== "underwater" && !siteMode);
           if (veh?.kind !== "plane" || siteMode) airT = 0;
           ui.setTakeoff(veh?.kind === "plane" && !siteMode, airT > 0.5);
@@ -38853,6 +38855,7 @@ void main() {
         }
         rainAlpha = smooth(rainAlpha, wantRain ? 1 : 0, dt, 2.5);
         rain.visible = rainAlpha > 0.02;
+        (window.__wxNow ||= {}).wx = wx; window.__wxNow.rain = rain.visible; window.__wxNow.bolt = boltActive > 0; // tests: the weather per world
         if (rain.visible) {
           // r129: Night Mode keeps a light drizzle, not a downpour
           const rainN = SCHEMES[state.schemeIdx].id === "nightlife" ? 150 : RAIN_N;
@@ -39272,7 +39275,7 @@ void main() {
           cover: (pl) => { try { return window.__coverOf?.(pl.id) || null; } catch { return null; } },
           shot: (pl) => { try { return pl.wx != null ? placeShot(pl) : null; } catch { return null; } },
           brand: (pl) => BRANDC[pl.work || pl.name] || BRANDC[pl.name] || null,
-          vehicle: () => state.vehicleId, trees: () => TREE_BLOBS,
+          vehicle: () => state.vehicleId, trees: () => TREE_BLOBS, vehAlt: () => Math.max(0, (veh?.group?.position.y || 0) - 2), // beta 2.9: the plane's altitude, for the street camera
           // round 2: the ride's wheel span (half the wheelbase, half the track, in world units), from its own wheels, per ride
           vehSpan: () => {
             if (veh._n2span) return veh._n2span;

@@ -1465,6 +1465,8 @@
         const hn = loop(brown, 0.7), hlp = filt("lowpass", 380, 0.6); hn.connect(hlp); hlp.connect(C.hum); C.hum.connect(cityBus);
         const wn = loop(white, 0.5); wn.connect(C.windBp); C.windBp.connect(C.wind); C.wind.connect(cityBus);
         const cn = loop(brown, 2.2); for (const [f, q] of [[480, 3], [1100, 4], [2300, 5]]) { const b = filt("bandpass", f, q); cn.connect(b); b.connect(C.cafe); }
+        // beta 2.9 (Daniel): rain where it rains (Night Mode, Sin City), under the city
+        C.rain = gain(0); { const rn = loop(white, 0.85), rh = filt("highpass", 900, 0.5), rl = filt("lowpass", 7000, 0.5); rn.connect(rh); rh.connect(rl); rl.connect(C.rain); C.rain.connect(cityBus); }
         const cam = gain(1), cl = ctx.createOscillator(), clg = gain(0.5); cl.frequency.value = 3.1; cl.connect(clg); clg.connect(cam.gain); cl.start(); C.cafe.connect(cam); cam.connect(cityBus);
         document.addEventListener("visibilitychange", () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else if (on) ctx.resume(); });
         return true;
@@ -1560,6 +1562,14 @@
         for (let i = 0; i < n; i++) { const t0 = t + i * (0.11 + Math.random() * 0.06); o.frequency.setValueAtTime(f * (1 + Math.random() * 0.15), t0); o.frequency.exponentialRampToValueAtTime(f * 1.35, t0 + 0.07); g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.045, t0 + 0.012); g.gain.exponentialRampToValueAtTime(0.0008, t0 + 0.09); }
         o.start(t); o.stop(t + n * 0.2 + 0.2);
       }
+      // thunder: a short while after each flash, a low rumble rolling away
+      function thunder() {
+        const t = T() + 0.5 + Math.random() * 1.3, n = ctx.createBufferSource(); n.buffer = ctx._tb || (ctx._tb = noiseBuf(4, true));
+        const lp = filt("lowpass", 260, 0.7), g = gain(0); lp.frequency.setValueAtTime(420, t); lp.frequency.exponentialRampToValueAtTime(110, t + 2.6);
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.5, t + 0.08); g.gain.setTargetAtTime(0.22, t + 0.25, 0.3); g.gain.exponentialRampToValueAtTime(0.001, t + 3.4);
+        n.connect(lp); lp.connect(g); g.connect(cityBus); n.start(t); n.stop(t + 3.6);
+      }
+      let boltWas = false;
       function horn() {
         const t = T(), g = gain(0), lp = filt("lowpass", 900, 0.7), f = 300 + Math.random() * 120; lp.connect(g); g.connect(cityBus);
         for (const k of [1, 1.26]) { const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = f * k; o.connect(lp); o.start(t); o.stop(t + 0.9); }
@@ -1593,6 +1603,7 @@
         ramp(C.hum.gain, 0.32 * edge, 0.6); ramp(C.wind.gain, (0.04 + 0.04 * Math.sin(performance.now() / 7300)) * (1.2 - 0.6 * edge), 0.8);
         ramp(C.windBp.frequency, 500 + 300 * Math.sin(performance.now() / 5100), 0.8);
         ramp(C.cafe.gain, clamp(1 - dTm / 420, 0, 1) * 0.16, 0.6);
+        { const w2 = window.__wxNow || {}; ramp(C.rain.gain, w2.rain ? 0.11 : 0, 0.8); if (w2.bolt && !boltWas) thunder(); boltWas = !!w2.bolt; }
         const t = T();
         if (t > C.birdT) { C.birdT = t + 2.5 + Math.random() * 6; if (!red || true) chirp(); }
         if (t > C.hornT) { C.hornT = t + 14 + Math.random() * 26; if (C.hornT > 20) horn(); }
@@ -1707,7 +1718,10 @@
       FX.bump *= Math.exp(-dt * 7);
       const shake = (amt) => { if (amt > 0.05 && !reduced()) { camPos.x += (Math.random() - 0.5) * amt; camPos.y += (Math.random() - 0.5) * amt; camPos.z += (Math.random() - 0.5) * amt; } };
       if (k < 1e-4) { shake(FX.bump * H.mapView.dist * 0.006); return; }
-      const cp = H.carPos, len = H.carLen() * (VP.w < VP.h ? 1.7 : 1.18), f = [Math.sin(D.camH), Math.cos(D.camH)]; // polish: a little further back on a laptop (the car filled the frame)
+      // beta 2.9 (Daniel): small rides are framed like the car (the scooter's length reads long: its stem), the plane from
+      // further back and higher, at its own altitude
+      const vid = H.vehicle(), vk = vid === "scooter" ? 0.82 : vid === "plane" ? 1.12 : vid === "sub" ? 1.1 : 1, alt = H.vehAlt?.() || 0;
+      const cp = { x: H.carPos.x, y: (H.carPos.y || 0) + alt, z: H.carPos.z }, len = H.carLen() * vk * (VP.w < VP.h ? 1.7 : 1.18), f = [Math.sin(D.camH), Math.cos(D.camH)]; // polish: a little further back on a laptop (the car filled the frame)
       // the camera stays over the road: where the spot behind the car is not road (a dead end's end, a turn), it comes
       // in closer and a little higher, so it never sits inside a tree or a wall
       let pull = 0.4;

@@ -271,3 +271,6 @@ body.n2-phone .nav2-ui .n2-views button { white-space: nowrap; }
 body.n2-phone.map-mode .toast-col { top: calc(var(--n2top, 112px) + 106px) !important; }
 @media (orientation: landscape) and (pointer: coarse) and (max-height: 520px) { body:not(.site-mode) .nav2-ui { display: none !important; } }
 body.n2-phone.map-mode .toast-col > :is(.coffee-card, .rush-pill) { top: calc(var(--n2top, 112px) + 106px) !important; }
+/* beta 2.9 (Daniel): the crew's roles, under their names (only the site's own role lines) */
+.crew-face .cf-role { display: block; margin-top: 5px; max-width: 108px; text-align: center; font-size: 8.5px; line-height: 1.3; letter-spacing: .06em; opacity: .72; text-transform: uppercase; }
+body.nav2.scheme-nightlife::after { opacity: .09; } /* beta 2.9 (Daniel): the night's film grain, much lighter */
