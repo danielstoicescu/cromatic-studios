@@ -39469,6 +39469,7 @@ void main() {
           cover: (pl) => { try { return window.__coverOf?.(pl.id) || null; } catch { return null; } },
           shot: (pl) => { try { return pl.wx != null ? placeShot(pl) : null; } catch { return null; } },
           brand: (pl) => BRANDC[pl.work || pl.name] || BRANDC[pl.name] || null,
+          plaza: { x: OLARI_PLAZA.x, z: OLARI_PLAZA.z, r: OLARI_PLAZA.r, w: BLVD_W, z0: BLVD_Z0 }, // beta 2.92: r185's boulevard and forecourt
           vehicle: () => state.vehicleId, trees: () => TREE_BLOBS, vehAlt: () => Math.max(0, (veh?.group?.position.y || 0) - 2), // beta 2.9: the plane's altitude, for the street camera
           // round 2: the ride's wheel span (half the wheelbase, half the track, in world units), from its own wheels, per ride
           vehSpan: () => {
@@ -40066,7 +40067,7 @@ void main() {
         olari.t = 0;
         // r132: the cards wait for the camera to come down in front of the house
         const show = () => { if (olari.cards !== wrap || wrap.classList.contains("gone")) return; ui.root.appendChild(wrap); document.body.classList.add("olari-open"); requestAnimationFrame(() => olariLiftPhotos(wrap, worldRefs.endHouse)); };
-        if (cineOn) setTimeout(show, 3600); else show();
+        if (cineOn) setTimeout(show, nav2?.on ? (nav2.camK > 0.5 ? 300 : 1500) : 3600); else show(); // beta 2.92: on nav2's map the house's cards come up as you pull in (the street view has no arrival shot)
       }
       var roadSvc = null;
       // r125: the service cards stand on their three houses between Dacia 99 and Olari 9; a tap opens one

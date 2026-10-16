@@ -295,3 +295,6 @@ body.n2-phone:has(.map-welcome:not(.hidden)) .nav2-ui { opacity: 0 !important; p
 .nav2-ui .n2-views button:not([aria-pressed="true"]) svg { color: #141414; }
 .nav2-ui .n2-k, .nav2-ui .n2-snd:not(.off), .nav2-ui .n2-driftb:not(.on), .n2-guide .n2-skip, .nav2-ui .n2-hint, .nav2-ui .n2-taphint { color: #141414; }
 .nav2-ui .n2-panel { color: #141414; } .nav2-ui .n2-panel :is(.n2-sub, .n2-empty, .n2-rt) { color: #3a3833; }
+/* beta 2.92: at Olari 9 on a phone, the house's photos fan out under the bar's controls, not over them */
+body.n2-phone.olari-open .nav2-ui :is(.n2-views, .n2-snd) { z-index: 31; position: fixed; }
+body.n2-phone.olari-open .nav2-ui .n2-pad { display: none; }

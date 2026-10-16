@@ -963,7 +963,7 @@
         }
       };
       for (const e of E) {
-        if (e.drive) add(e.pts, e.w / 2 + 2); // round 5: our roads only (the avenues and the side streets' mouths are closed)
+        if (e.drive) add(e.pts, (H.plaza && e.pts.every(([x, z]) => Math.abs(x - H.plaza.x) < 6 && z > H.plaza.z0 - 10) ? H.plaza.w : e.w) / 2 + 2); // round 5: our roads only; beta 2.92: r185's Olari boulevard at its width
         // polish: a sharp corner's inside is rounded off a little (a chord across it), so a car taking it tight is not caught
         // on a point of kerb the eye hardly sees
         if (e.drive && e.kind !== "ring") for (let i = 1; i < e.pts.length - 1; i++) {
@@ -971,6 +971,8 @@
           if (Math.abs(dh) > 0.45 && e.cum[i] > 30 && e.cum[i] < e.len - 30) add([pointAt(e.pts, e.cum, e.cum[i] - 34), pointAt(e.pts, e.cum, e.cum[i] + 34)], e.w / 2 - 4);
         }
       }
+      // beta 2.92 (r185): the forecourt in front of Casa Cromatic is road too (the boulevard ends in it)
+      if (H.plaza) add([[H.plaza.x, H.plaza.z - 0.5], [H.plaza.x, H.plaza.z + 0.5]], H.plaza.r - 8);
       // the point (x, z) for a car of radius r: on the road, or pushed back onto it (and the kerb's outward normal)
       function resolve(x, z, r) {
         let best = null;
@@ -2079,6 +2081,7 @@
     const mDist = (d) => (d < 1000 ? `${Math.max(10, Math.round(d / 10) * 10)} m` : `${(d / 1000).toFixed(1)} km`);
     // beta 2.6 (Daniel: "Nearby: only what is genuinely near"): ahead on your own stretch up to 420, a junction's ways
     // only when it is within 240 (and 320 beyond it)
+    const inkLum = (hex) => { const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(hex).trim()); if (!m) return 0.5; let h = m[1]; if (h.length === 3) h = [...h].map((x) => x + x).join(""); const v = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
     const NEAR_AHEAD = 420, NEAR_JUNCTION = 240, NEAR_BEYOND = 320;
     function render(force) {
       if (!D.ready) return;
@@ -2148,7 +2151,7 @@
       for (const r of rows) for (const x of r.items) dists.set(r.k + ":" + x.p.pl.id, x.d);
       if (!force && sig === panelSig) { updDist(dists, auto); return; }
       panelSig = sig;
-      const cols = (pl) => { const b = H.brand?.(pl); return { c: b?.c || pl.pin || pl.c || "#FED012", t: b?.t || pl.t || "#111" }; };
+      const cols = (pl) => { const b = H.brand?.(pl); const c = b?.c || pl.pin || pl.c || "#FED012"; let t = b?.t || pl.t || "#111"; if (inkLum(c) < 0.25 && inkLum(t) < 0.25) t = "#ffffff"; else if (inkLum(c) > 0.6 && inkLum(t) > 0.6) t = "#141414"; return { c, t }; }; // beta 2.92: a dark name on a dark colour (Olari 9's "you're at") turned white
       const pic = (pl) => { const u = imgOf(pl); const { c, t } = cols(pl); return u ? `<img src="${esc(u)}" alt="" decoding="async" loading="lazy">` : `<span class="n2-ini" style="color:${esc(t)}">${esc(pl.name.replace(/[^A-Za-z0-9 ]/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase())}</span>`; };
       const card = (x, k) => { const pl = x.p.pl, { c, t } = cols(pl); return `<button class="n2-pc" data-id="${esc(pl.id)}" data-dk="${k}:${esc(pl.id)}" style="--pc:${esc(c)};--pt:${esc(t)}" aria-label="${esc(pl.name)}, ${mDist(x.d)}"><span class="n2-pic">${pic(pl)}<em class="n2-dch">${GLY[k]}</em></span><b class="n2-nm">${esc(pl.name)}</b><span class="n2-dist mono">${mDist(x.d)}</span></button>`; };
       const qpill = (qq) => `<span class="n2-q" style="--qc:${QCOL[qq] || "#FED012"}">${esc(qq ? QNAME[qq] : "Cromatic City")}</span>`;
