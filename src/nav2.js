@@ -1158,7 +1158,7 @@
         const gx = Math.sin(P.h), gz = Math.cos(P.h);
         u = vx * gx + vz * gz; w = vx * -gz + vz * gx;
         P.contact = 0.3;
-        if (impact > 45 && !reduced()) { const s = Math.min(1, impact / 260); FX.bump = Math.max(FX.bump, s); FX.squash = Math.max(FX.squash, s); }
+        if (impact > 45) { const s = Math.min(1, impact / 260); if (!reduced()) { FX.bump = Math.max(FX.bump, s); FX.squash = Math.max(FX.squash, s); } SND.thud(s); }
       } else if (lost) { // nowhere near a road (should not happen): back to the last good spot
         nx = P.x; nz = P.z; u = 0; w = 0;
       }
@@ -1323,6 +1323,7 @@
       physics(dt, thr, steer, hb, assisted);
       roadFx(dt);
       copTick(dt);
+      SND.update(dt);
       { const au = !!D.auto; if (au !== D.autoCls) { D.autoCls = au; document.body.classList.toggle("n2-driving-auto", au); } } // beta 2.6: the phone's tap hint steps aside while it drives
       lamps(P.u < -0.5 || (D.keys.d && P.u <= 0.5 && !D.auto));
       if (!D.auto) {
@@ -1355,6 +1356,149 @@
       for (const k of "udlr") { keyEls[k].classList.remove("off", "need"); }
       hintEl.textContent = hint;
     }
+
+    // ===================== 2s. beta 2.8: sound (Daniel) =====================
+    // All generated with Web Audio (no files): the car's engine following the physics (its pitch from a little gearbox
+    // model, louder with the throttle, an idle burble when stopped), tyres squealing in a drift, a whoosh on a boost, a
+    // rubbery thud on a kerb, the police siren in the cooldown; and the city: a far traffic hum, wind, birds, now and then a
+    // far horn, a café murmur near Two Minutes. Mixed by the view (Street: the car up front; Bird's eye: the city). It starts
+    // on the first touch or key (browsers ask for one), fades in, never loud; a speaker button mutes it (cz-sound); silent
+    // with the tab hidden, under a case page or the boarding pass. Per frame it only sets a few parameter targets.
+    const SND = (() => {
+      const TIMBRE = {
+        // a base pitch in the range small speakers play (a phone has no bass), a waveform, a filter, how much sub
+        dacia1300: { f: 58, w: "sawtooth", lp: 1100, sub: 0.45 }, cop: { f: 62, w: "sawtooth", lp: 1200, sub: 0.45 },
+        groovy: { f: 50, w: "sawtooth", lp: 850, sub: 0.55 }, foodvan: { f: 44, w: "sawtooth", lp: 750, sub: 0.6 },
+        monopoly: { f: 66, w: "square", lp: 1400, sub: 0.35 }, f1: { f: 96, w: "sawtooth", lp: 3200, sub: 0.2 },
+        scooter: { f: 120, w: "square", lp: 2400, sub: 0.1 }, sub: { f: 40, w: "triangle", lp: 420, sub: 0.7, bubble: 1 },
+        plane: { f: 74, w: "triangle", lp: 1700, sub: 0.25, jet: 1 }
+      };
+      let on = true, ctx = null, master = null, carBus = null, cityBus = null, E2 = null, C = null, started = false, out = 1, cafe = 0;
+      try { on = localStorage.getItem("cz-sound") !== "off"; } catch {}
+      const btns = new Set();
+      const noiseBuf = (sec, brown) => {
+        const b = ctx.createBuffer(1, Math.floor(ctx.sampleRate * sec), ctx.sampleRate), d = b.getChannelData(0);
+        let last = 0; for (let i = 0; i < d.length; i++) { const w = Math.random() * 2 - 1; if (brown) { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; } else d[i] = w; }
+        return b;
+      };
+      const loop = (buf, rate = 1) => { const n = ctx.createBufferSource(); n.buffer = buf; n.loop = true; n.playbackRate.value = rate; n.start(); return n; };
+      const filt = (type, f, q = 0.7) => { const b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b; };
+      const gain = (v = 0) => { const g = ctx.createGain(); g.gain.value = v; return g; };
+      function build() {
+        const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+        ctx = new AC();
+        const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 3; comp.connect(ctx.destination); ctx._comp = comp;
+        master = gain(0); master.connect(comp);
+        carBus = gain(0.8); cityBus = gain(0.6); carBus.connect(master); cityBus.connect(master);
+        const white = noiseBuf(2, false), brown = noiseBuf(4, true);
+        // the engine: two detuned oscillators and a sub, a lowpass that opens with the throttle, a little grit
+        E2 = { o1: ctx.createOscillator(), o2: ctx.createOscillator(), o3: ctx.createOscillator(), lp: filt("lowpass", 700, 2.2), g: gain(0), am: gain(1), lfo: ctx.createOscillator(), lfoG: gain(0), grit: gain(0), gbp: filt("bandpass", 1200, 1.2), rpm: 0.2 };
+        E2.o3.type = "sine"; E2.o2.detune.value = 9; E2.o3g = gain(0.45);
+        for (const o of [E2.o1, E2.o2]) { o.connect(E2.lp); o.start(); }
+        E2.o3.connect(E2.o3g); E2.o3g.connect(E2.lp); E2.o3.start();
+        E2.lp.connect(E2.am); E2.am.connect(E2.g); E2.g.connect(carBus);
+        E2.lfo.frequency.value = 7; E2.lfo.connect(E2.lfoG); E2.lfoG.connect(E2.am.gain); E2.lfo.start(); // the idle burble
+        const gn = loop(white); gn.connect(E2.gbp); E2.gbp.connect(E2.grit); E2.grit.connect(carBus);
+        // the tyres: a narrow band of noise and a wailing tone
+        const sq = { n: loop(white, 1.3), bp: filt("bandpass", 2300, 7), o: ctx.createOscillator(), og: gain(0.25), g: gain(0) };
+        const sqn = gain(3.2); sq.n.connect(sq.bp); sq.bp.connect(sqn); sqn.connect(sq.g); sq.o.type = "triangle"; sq.o.frequency.value = 1750; sq.o.connect(sq.og); sq.og.connect(sq.g); sq.o.start(); sq.g.connect(carBus);
+        E2.sq = sq;
+        // the siren: two tones, a lowpass, quiet
+        const si = { o: ctx.createOscillator(), lp: filt("lowpass", 1800, 0.8), g: gain(0) }; si.o.type = "square"; si.o.frequency.value = 720; si.o.connect(si.lp); si.lp.connect(si.g); si.g.connect(carBus); si.o.start(); E2.si = si;
+        // the city: a far traffic hum, wind that comes and goes, the café
+        C = { hum: gain(0.5), wind: gain(0.0), windBp: filt("bandpass", 600, 0.5), cafe: gain(0), birdT: 0, hornT: 0 };
+        const hn = loop(brown, 0.7), hlp = filt("lowpass", 380, 0.6); hn.connect(hlp); hlp.connect(C.hum); C.hum.connect(cityBus);
+        const wn = loop(white, 0.5); wn.connect(C.windBp); C.windBp.connect(C.wind); C.wind.connect(cityBus);
+        const cn = loop(brown, 2.2); for (const [f, q] of [[480, 3], [1100, 4], [2300, 5]]) { const b = filt("bandpass", f, q); cn.connect(b); b.connect(C.cafe); }
+        const cam = gain(1), cl = ctx.createOscillator(), clg = gain(0.5); cl.frequency.value = 3.1; cl.connect(clg); clg.connect(cam.gain); cl.start(); C.cafe.connect(cam); cam.connect(cityBus);
+        document.addEventListener("visibilitychange", () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else if (on) ctx.resume(); });
+        return true;
+      }
+      const T = () => ctx.currentTime;
+      const ramp = (p, v, k = 0.08) => p.setTargetAtTime(v, T(), k);
+      function start() {
+        if (!on || started) return; if (!ctx && !build()) return;
+        started = true; ctx.resume?.(); ramp(master.gain, 0.42, 0.9);
+      }
+      const first = () => { start(); if (started) for (const ev of ["pointerdown", "keydown", "touchend"]) window.removeEventListener(ev, first, true); };
+      for (const ev of ["pointerdown", "keydown", "touchend"]) window.addEventListener(ev, first, true);
+      const sync = () => { for (const b of btns) { b.classList.toggle("off", !on); b.setAttribute("aria-pressed", String(on)); b.title = on ? "Sound off" : "Sound on"; b.setAttribute("aria-label", b.title); } };
+      function toggle() {
+        on = !on; try { localStorage.setItem("cz-sound", on ? "on" : "off"); } catch {}
+        if (on) { if (!started) start(); else { ctx.resume(); ramp(master.gain, 0.42, 0.4); } }
+        else if (ctx) { ramp(master.gain, 0, 0.12); setTimeout(() => { if (!on) ctx.suspend(); }, 700); }
+        sync();
+      }
+      // one-shots
+      function thud(s) {
+        if (!started || !on) return; const t = T(), o = ctx.createOscillator(), g = gain(0); o.type = "sine";
+        o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.16);
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.5 * s + 0.12, t + 0.008); g.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
+        o.connect(g); g.connect(carBus); o.start(t); o.stop(t + 0.3);
+      }
+      function whoosh(lvl) {
+        if (!started || !on) return; const t = T(), n = ctx.createBufferSource(); n.buffer = ctx._wb || (ctx._wb = noiseBuf(1.4, false));
+        const b = filt("bandpass", 400, 1.4), g = gain(0); b.frequency.setValueAtTime(380, t); b.frequency.exponentialRampToValueAtTime(lvl > 1 ? 3600 : 2600, t + 0.55);
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(lvl > 1 ? 0.5 : 0.36, t + 0.06); g.gain.exponentialRampToValueAtTime(0.001, t + (lvl > 1 ? 1.2 : 0.8));
+        n.connect(b); b.connect(g); g.connect(carBus); n.start(t); n.stop(t + 1.3);
+      }
+      function chirp() {
+        const t = T(), o = ctx.createOscillator(), g = gain(0), f = 2600 + Math.random() * 2200, n = 2 + Math.floor(Math.random() * 3);
+        o.type = "sine"; g.connect(cityBus); o.connect(g);
+        for (let i = 0; i < n; i++) { const t0 = t + i * (0.11 + Math.random() * 0.06); o.frequency.setValueAtTime(f * (1 + Math.random() * 0.15), t0); o.frequency.exponentialRampToValueAtTime(f * 1.35, t0 + 0.07); g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.045, t0 + 0.012); g.gain.exponentialRampToValueAtTime(0.0008, t0 + 0.09); }
+        o.start(t); o.stop(t + n * 0.2 + 0.2);
+      }
+      function horn() {
+        const t = T(), g = gain(0), lp = filt("lowpass", 900, 0.7), f = 300 + Math.random() * 120; lp.connect(g); g.connect(cityBus);
+        for (const k of [1, 1.26]) { const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = f * k; o.connect(lp); o.start(t); o.stop(t + 0.9); }
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.035, t + 0.04); g.gain.setValueAtTime(0.035, t + (Math.random() < 0.5 ? 0.18 : 0.5)); g.gain.exponentialRampToValueAtTime(0.0005, t + 0.8);
+      }
+      let fN = 0, prevBoost = null, gearT = 0;
+      // per frame (every other): the targets
+      function update(dt) {
+        if (!started || !ctx) return;
+        if (++fN % 2) return;
+        const hold = !on || H.overlay() || document.body.classList.contains("map-boarding") || document.hidden;
+        out += ((hold ? 0 : 1) - out) * 0.2;
+        ramp(master.gain, 0.42 * out, 0.15);
+        if (out < 0.02 && hold) return;
+        const red = reduced(), k = D.camK || 0, tm = TIMBRE[H.vehicle()] || TIMBRE.dacia1300;
+        // the mix by view
+        ramp(carBus.gain, 0.42 + 0.58 * k, 0.25); ramp(cityBus.gain, 0.7 - 0.38 * k, 0.25);
+        // the engine: rpm from a little four-speed box, louder with the throttle
+        const sp = Math.abs(P.u), vm = VMAX_F * 1.3, x = Math.min(1, sp / vm), gear = Math.min(3, Math.floor(x * 4)), inGear = x * 4 - gear;
+        const thr = D.auto ? 0.7 : Math.max(0, (D.keys.u ? 1 : 0) + (D.stick ? Math.max(0, D.stick.y) : 0));
+        const rpmT = sp < 6 ? 0.12 + thr * 0.25 : 0.25 + inGear * 0.68 + (D.boost ? 0.12 : 0);
+        E2.rpm += (rpmT - E2.rpm) * 0.35;
+        const f = tm.f * (1 + E2.rpm * 2.4);
+        if (tm.w !== E2.o1.type) { E2.o1.type = tm.w; E2.o2.type = tm.w; ramp(E2.o3g.gain, tm.sub, 0.1); }
+        ramp(E2.o1.frequency, f, 0.03); ramp(E2.o2.frequency, f * 1.005, 0.03); ramp(E2.o3.frequency, f * 0.5, 0.03);
+        ramp(E2.lp.frequency, tm.lp * (0.55 + 0.6 * thr + 0.4 * E2.rpm) * (tm.bubble ? 0.6 : 1), 0.05);
+        ramp(E2.g.gain, 0.09 + 0.1 * thr + 0.08 * x, 0.08);
+        ramp(E2.lfoG.gain, sp < 8 ? 0.35 : tm.bubble ? 0.25 : 0.04, 0.2); ramp(E2.lfo.frequency, sp < 8 ? 7.5 : tm.bubble ? 4 : 18 + E2.rpm * 20, 0.2);
+        ramp(E2.grit.gain, (tm.jet ? 0.12 : 0.025) * (0.3 + thr + x), 0.08); ramp(E2.gbp.frequency, tm.jet ? 2400 + x * 2000 : 900 + E2.rpm * 900, 0.08);
+        // the tyres
+        const slip = D.drift ? 1 : Math.min(1, Math.max(0, (Math.abs(P.w) - 25) / 90)) * (sp > 40 ? 1 : 0);
+        ramp(E2.sq.g.gain, slip * 0.16, 0.05); ramp(E2.sq.o.frequency, 1650 + Math.sin(performance.now() / 90) * 60 + sp * 0.4, 0.05);
+        if (D.boost && D.boost !== prevBoost) whoosh(D.boost.lvl); prevBoost = D.boost;
+        // the siren: the cooldown's (two tones; a little higher coming up behind, lower as it drops back)
+        if (COP.on) { const t2 = COP.on.t, base = (Math.floor(performance.now() / 480) % 2 ? 960 : 720) * (t2 < 1.2 ? 1.04 : t2 > 5 ? 0.95 : 1); ramp(E2.si.o.frequency, base, 0.02); ramp(E2.si.g.gain, t2 > 5 ? Math.max(0, 0.05 * (6.4 - t2) / 1.4) : 0.05, 0.1); } else ramp(E2.si.g.gain, 0, 0.2);
+        // the city: hum, wind, birds, the odd horn; the café near Two Minutes; quieter at the city's edges
+        const tmP = PL.find((q) => q.pl.id === "tm"), dTm = tmP ? Math.hypot(H.carPos.x - tmP.x, H.carPos.z - tmP.z) : 9999;
+        const edge = clamp(1.25 - Math.hypot(H.carPos.x - 1500, (H.carPos.z - 5000) * 0.5) / 2400, 0.35, 1);
+        ramp(C.hum.gain, 0.32 * edge, 0.6); ramp(C.wind.gain, (0.04 + 0.04 * Math.sin(performance.now() / 7300)) * (1.2 - 0.6 * edge), 0.8);
+        ramp(C.windBp.frequency, 500 + 300 * Math.sin(performance.now() / 5100), 0.8);
+        ramp(C.cafe.gain, clamp(1 - dTm / 420, 0, 1) * 0.16, 0.6);
+        const t = T();
+        if (t > C.birdT) { C.birdT = t + 2.5 + Math.random() * 6; if (!red || true) chirp(); }
+        if (t > C.hornT) { C.hornT = t + 14 + Math.random() * 26; if (C.hornT > 20) horn(); }
+      }
+      return {
+        start, toggle, update, thud, bind(b) { btns.add(b); b.addEventListener("click", (e) => { e.stopPropagation(); toggle(); }); sync(); },
+        get on() { return on; }, get running() { return started && on && !!ctx && ctx.state === "running"; }, ctx: () => ctx,
+        stream() { if (!ctx) return null; if (!ctx._dest) { ctx._dest = ctx.createMediaStreamDestination(); ctx._comp.connect(ctx._dest); } return ctx._dest.stream; } // tests: what it sounds like
+      };
+    })();
 
     // ===================== 2b. the body: weight, bounce, the engine =====================
     // on top of the ride's own springs (VEH_MOTION): the nose lifts as it pulls away and dips as it brakes (from the
@@ -1526,7 +1670,7 @@
       if (!street && H.mapView.pitch < 0.75) H.mapView.pitchGoal = 0.98;
       if (street) H.cineStop();
       H.follow();
-      toast(street ? "Street view · the camera rides behind you" : "Satellite view · zoom with + − or the wheel");
+      toast(street ? "Street view · the camera rides behind you" : VP.w < 720 ? "Bird's eye · pinch to zoom" : "Bird's eye · zoom with + − or the wheel");
     }
     function firstDrive() {
       D.firstDrive = false;
@@ -1550,7 +1694,7 @@
       <section class="n2-panel" aria-label="What's nearby" aria-live="polite"></section>
       <div class="n2-views" role="group" aria-label="View">
         <button data-v="street" aria-pressed="false" title="Street view (V)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20 9 4h6l6 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 6.5v2.5M12 12v2.5M12 17.5V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>Street</b></button>
-        <button data-v="sat" aria-pressed="true" title="Satellite view (V)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 12H3.5M20.5 12H15M12 9V3.5M12 20.5V15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m4 4 3 3M20 20l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>Satellite</b></button>
+        <button data-v="sat" aria-pressed="true" title="Bird's eye view (V)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 12H3.5M20.5 12H15M12 9V3.5M12 20.5V15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m4 4 3 3M20 20l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>Bird's eye</b></button>
       </div>
       <div class="n2-pad" aria-label="Drive">
         <span class="n2-hint mono">HOLD ↑ TO DRIVE</span>
@@ -1563,6 +1707,7 @@
       </div>
       <div class="n2-toast" role="status"></div>
       <div class="n2-taphint mono" aria-hidden="true">TAP THE ROAD TO DRIVE THERE</div>
+      <button class="n2-snd" aria-pressed="true" title="Sound off" aria-label="Sound off"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z" fill="currentColor"/><path class="w1" d="M15.2 9.2a4 4 0 0 1 0 5.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="w2" d="M17.8 6.8a7.4 7.4 0 0 1 0 10.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M15.5 9.5l5 5m0-5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
       <div class="n2-cop" role="status" aria-live="polite"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15" class="n2-cop-bg"/><circle cx="18" cy="18" r="15" class="n2-cop-ring"/></svg><b>POLICE · SLOW DOWN</b><em class="mono">5</em></div>
       <div class="n2-stick" aria-hidden="true"><span class="n2-ring"></span><span class="n2-knob"></span></div>
       <button class="n2-driftb mono" aria-label="Drift (hold)">DRIFT</button>
@@ -1570,6 +1715,8 @@
     document.body.appendChild(root);
     const panel = root.querySelector(".n2-panel"), views = root.querySelector(".n2-views"), pad = root.querySelector(".n2-pad"), hintEl = root.querySelector(".n2-hint"), toastEl = root.querySelector(".n2-toast");
     const copEl = root.querySelector(".n2-cop");
+    SND.bind(root.querySelector(".n2-snd"));
+    root.querySelector(".n2-snd").addEventListener("pointerdown", (e) => e.stopPropagation());
     const keyEls = {}; pad.querySelectorAll(".n2-k").forEach((b) => { keyEls[b.dataset.k] = b; });
     views.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.v === "street"); });
     let toastT = 0;
@@ -1886,7 +2033,7 @@
       { id: "taproad", keys: [], t: "Tap the road to drive there", s: "Anywhere on a street: the car takes you", at: "mid" },
       { id: "tapplace", keys: [], t: "Tap a place to visit it", s: "Its pin or its name: the car drives you there", at: "mid" },
       { id: "look", keys: [], t: "Look around", s: "Drag the map, pinch to zoom · ◎ brings you back", at: "mid" },
-      { id: "view", keys: [], t: "Take the wheel", s: "Switch to Street down here", at: "views" },
+      { id: "view", keys: [], t: "Take the wheel", s: "Switch to Street up here", at: "views" },
       { id: "drive", keys: [], t: "Drive it yourself", s: "Drag the stick: up to go, sideways to steer", at: "car" }
     ];
     let STEPS;
@@ -1896,7 +2043,7 @@
       { id: "back", keys: ["↓"], t: "Back up or turn round", s: touchUI ? "Hold ↓ to back up · stopped, ↑ with ← or → turns you round" : "Hold ↓ (or S) to back up · stopped, ↑ with ← or → turns you round", at: "car" },
       { id: "tap", keys: [], t: "Or let us drive", s: "Tap a place on the map, or a card in Nearby", at: "panel" },
       { id: "look", keys: [], t: "Look around", s: touchUI ? "Drag the map, pinch to zoom · ◎ brings you back" : "Drag the map, scroll to zoom · ◎ brings you back", at: "mid" },
-      { id: "view", keys: [], t: "Street or Satellite", s: touchUI ? "Switch the view down here" : "Switch the view down here, or press V", at: "views" }
+      { id: "view", keys: [], t: "Street or Bird's eye", s: touchUI ? "Switch the view down here" : "Switch the view down here, or press V", at: "views" }
     ];
     STEPS = DESK_STEPS;
     function tutorial(done, force) {
@@ -1985,7 +2132,7 @@
       tutorial, tutorialEnd: () => tutEnd(null), tourStep: () => (TUT.i >= 0 && TUT.i < STEPS.length ? STEPS[TUT.i].id : TUT.i >= STEPS.length ? "end" : null),
       get camK() { return D.camK; },
       mv: () => { const m = H.mapView; return { x: Math.round(m.tgt.x), z: Math.round(m.tgt.z), dist: Math.round(m.dist), yaw: +m.yaw.toFixed(3), pitch: +m.pitch.toFixed(3), follow: m.follow }; },
-      onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, closed: () => CLOSED, copT: () => (COP.on ? +COP.on.t.toFixed(2) : null), speed: () => P.u, dims: () => ({ len: H.carLen(), span: H.vehSpan() }), cam: () => H.camera, look: (x, z, d) => { const m = H.mapView; m.follow = false; m.tgt.set(x, 0, z); m.dist = d; m.distGoal = null; m.vx = m.vz = 0; }, put: (x, z, h) => { P.x = x; P.z = z; P.h = h; P.u = P.w = P.yr = 0; }, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
+      onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, closed: () => CLOSED, snd: SND, copT: () => (COP.on ? +COP.on.t.toFixed(2) : null), speed: () => P.u, dims: () => ({ len: H.carLen(), span: H.vehSpan() }), cam: () => H.camera, look: (x, z, d) => { const m = H.mapView; m.follow = false; m.tgt.set(x, 0, z); m.dist = d; m.distGoal = null; m.vx = m.vz = 0; }, put: (x, z, h) => { P.x = x; P.z = z; P.h = h; P.u = P.w = P.yr = 0; }, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
       // a place from the map (a pin, a chip, the welcome card): driven to along the graph
       go(pl) {
         if (!pl || pl.find) return false;
