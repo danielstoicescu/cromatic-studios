@@ -827,7 +827,7 @@
     tile(ctx, 302, 40, "ion", false, t, true);
     text(ctx, "I O N", 334, 110, "#ff8a6e", { al: "c" });
     text(ctx, "CPU", 334, 122, "#a99cc8", { al: "c" });
-    text(ctx, TOUCH ? "< > TO CHOOSE - TAP P TO FIGHT" : "< > TO CHOOSE - ENTER OR J TO FIGHT", W / 2, 178, "#ffffff", { al: "c" });
+    text(ctx, TOUCH ? "TAP A FIGHTER, TAP AGAIN TO FIGHT" : "< > TO CHOOSE - ENTER OR J TO FIGHT", W / 2, 178, "#ffffff", { al: "c" });
     text(ctx, TOUCH ? "" : "ARROWS/WASD MOVE - J PUNCH - K KICK - L SPECIAL", W / 2, 194, "#a99cc8", { al: "c" });
   }
   function drawVS(ctx, t, me, k) {
@@ -1315,7 +1315,7 @@
     else if (g.phase === "time" && g.pt < 150) banner(ctx, g.f[0].hp === g.f[1].hp ? "DRAW" : "TIME", GOLD, 6, 78);
     else if (g.phase === "match") { banner(ctx, g.result === "win" ? "YOU WIN" : "I O N WINS", g.result === "win" ? GOLD : RED, 5, 70); if (g.perfect && g.result === "win") text(ctx, "PERFECT!", W / 2, 112, "#ffffff", { sc: 2, al: "c" }); }
     if ((g.phase === "ko" || g.phase === "time") && g.pt > 150 && g.pt < 220) { const [a, b] = g.f; if (a.hp !== b.hp) banner(ctx, (a.hp > b.hp ? a : b).R.name + " WINS THE ROUND", "#ffffff", 2, 86); }
-    if (paused) { ctx.fillStyle = "rgba(14,10,26,.7)"; ctx.fillRect(0, 0, W, H); banner(ctx, "PAUSE", GOLD, 5, 74); text(ctx, TOUCH ? "TAP TO PLAY ON" : "P TO PLAY ON - ESC FOR THE MAP", W / 2, 124, "#ffffff", { al: "c" }); hit(0, 0, W, H, () => setPause(false)); }
+    if (paused) { ctx.fillStyle = "rgba(14,10,26,.7)"; ctx.fillRect(0, 0, W, H); banner(ctx, "PAUSE", GOLD, 5, 74); text(ctx, TOUCH ? "TAP TO PLAY ON" : "P TO PLAY ON - ESC FOR THE MAP", W / 2, 128, "#ffffff", { al: "c" }); hit(0, 0, W, H, () => setPause(false)); }
   }
   function drawResult(ctx, t) {
     const S = stage();
@@ -1355,7 +1355,7 @@
     try { if (window.parent !== window && window.parent.location.origin === location.origin) { window.parent.postMessage({ cz: "gloves-close" }, location.origin); return; } } catch {}
     location.href = "/?map";
   }
-  function setPause(v) { if (scene !== "fight" || !g || g.phase === "match") v = false; if (paused === v) return; paused = v; SND.play("pause"); if (paused) for (const k in held) held[k] = 0; }
+  function setPause(v) { if (scene !== "game" || !g || g.scene !== "fight" || g.phase === "match") v = false; if (paused === v) return; paused = v; SND.play("pause"); if (paused) for (const k in held) held[k] = 0; }
   function menuInput() {
     const P = (k) => pressed.has(k);
     if (scene === "title") { if (P("ok") || P("p") || P("k")) { scene = "select"; sceneT = 0; SND.play("confirm"); SND.music("menu"); } return; }
