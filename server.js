@@ -380,6 +380,8 @@ http.createServer((req, res) => {
     if (req.url === "/api/boarding" && req.method === "POST") return void boarding(req, res, "[beta 2.0]").catch(() => send(res, 500, { ok: false }));
     if (req.url === "/api/ctx") return send(res, 200, { internal: false });
     if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405); return res.end(); }
+    // r188: with no separate beta built (beta 3.0 is the live site now), beta. shows the live site, never indexed
+    if (!statOr(join(BETA_ROOT, "index.html"))) { const wh = res.writeHead.bind(res); res.writeHead = (c, h) => wh(c, { ...(h || {}), "X-Robots-Tag": "noindex, nofollow" }); return serve(req, res); }
     return serveBeta(req, res);
   }
   const otherHost = PRIMARY_HOST && host !== PRIMARY_HOST && /(^|\.)cromaticstudios\.com$/.test(host);
