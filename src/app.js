@@ -39644,7 +39644,7 @@ void main() {
       // The route itself is the truth: the drive drops branchChosen whenever you are back before the fork
       function mapGo(pl) {
         if (!pl || jetFx.phase !== "idle") return;
-        if (nav2?.on && nav2.go(pl)) { mapCloseBoarding(); mapUI.welcome?.(false); mapUI.cineOut?.(); return; } // nav2: driven along the road graph
+        if (nav2?.on && nav2.go(pl)) { if (!pl.board) mapCloseBoarding(); mapUI.welcome?.(false); if (!pl.board) mapUI.cineOut?.(); return; } // beta 2.92: the jet's own go opens the boarding pass (r185: no road to it) // nav2: driven along the road graph
         if (pl.find) return mapUI.find(pl);
         mapCloseBoarding();
         // where to: a stop, a road point, or a building beside the road (park just short of it)

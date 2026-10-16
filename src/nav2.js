@@ -727,7 +727,7 @@
       D.ready = true;
       if (FREE) {
         if (!P.init) freeInit();
-        if (!freeGo(target, pl)) return false;
+        if (!freeGo(target, pl)) { if (pl?.board) { H.arrive(pl); return true; } return false; } // beta 2.92: since r185 the road ends at Olari 9's forecourt: the jet (no road to it now) opens its boarding pass straight away
         H.mapNav.place = pl && !pl.tap ? pl : null; H.mark(); H.follow();
         if (D.firstDrive) firstDrive();
         render(true);
@@ -2331,6 +2331,7 @@
       // a place from the map (a pin, a chip, the welcome card): driven to along the graph
       go(pl) {
         if (!pl || pl.find) return false;
+        if (pl.board) { H.hideCard(); D.auto = null; H.arrive(pl); return true; } // beta 2.92 (r185): no road to the jet any more: its pin opens the boarding pass
         const st = pl.stop ? H.stops.find((s) => s.id === pl.stop) : null;
         const x = st ? st.x : pl.x ?? pl.px, z = st ? st.y : pl.z ?? pl.pz;
         if (x == null) return false;
