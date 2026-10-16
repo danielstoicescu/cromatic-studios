@@ -40652,8 +40652,32 @@ void main() {
           const now2 = performance.now(), dtp = Math.max(8, now2 - last) / 1000; last = now2;
           mapView.vx = mapView.vx * 0.35 + (mapView.tgt.x - t0x) / dtp * 0.65; mapView.vz = mapView.vz * 0.35 + (mapView.tgt.z - t0z) / dtp * 0.65;
         });
-        const hit = new Vector3(), dir = new Vector3();
+        const hit = new Vector3(), dir = new Vector3(), bq = new Vector3();
+        // r175 (Daniel: "a tap on Steam's building keeps opening Lapterra"): the ground point under a tap on a tall
+        // building lies far behind it (the ray runs on to y = 0), so the place nearest to it could be across the street.
+        // A tap is first matched on screen to a place's building: its column from the ground to its label's height,
+        // about its footprint wide; the closest column wins (tapW still favours a place that shares its building)
+        const tapBuilding = (cx, cy) => {
+          const sc = (x, y, z) => { warpV(bq.set(x, y, z)).project(camera); return [(bq.x * 0.5 + 0.5) * innerWidth, (-bq.y * 0.5 + 0.5) * innerHeight, bq.z]; };
+          let win = null;
+          for (const q of pins) {
+            const pl = q.pl;
+            if ((pl.chapter && !pl.past) || pl.wx == null || pl.float || pl.unmarked) continue;
+            const g = sc(pl.wx, 0, pl.wz), t = sc(pl.wx, pl.wy || 55, pl.wz), e = sc(pl.wx + 34, 0, pl.wz);
+            if (g[2] > 1 || t[2] > 1) continue;
+            const half = Math.min(110, Math.max(16, Math.hypot(e[0] - g[0], e[1] - g[1])));
+            const vx = t[0] - g[0], vy = t[1] - g[1], L2 = vx * vx + vy * vy || 1;
+            const u = ((cx - g[0]) * vx + (cy - g[1]) * vy) / L2;
+            if (u < -0.04 || u > 1.08) continue; // not below its ground point (the road in front stays the road's)
+            const k = Math.max(0, Math.min(1, u)), d = Math.hypot(cx - (g[0] + vx * k), cy - (g[1] + vy * k));
+            if (d > half) continue;
+            const score = (d / half) * (pl.tapW || 1);
+            if (!win || score < win.s) win = { s: score, pl };
+          }
+          return win && win.pl;
+        };
         const tapGo = (cx, cy) => {
+          { const b0 = tapBuilding(cx, cy); if (b0) return mapGo(b0); } // r175
           // the ground point under the tap: unproject and run the ray down to y = 0
           dir.set((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1, 0.5).unproject(camera).sub(camera.position).normalize();
           if (dir.y > -1e-3) return;

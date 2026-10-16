@@ -1,5 +1,5 @@
 diff --git a/build/build.mjs b/build/build.mjs
-index 1c42cfa..5a18d8d 100644
+index 1c42cfa..ae105a4 100644
 --- a/build/build.mjs
 +++ b/build/build.mjs
 @@ -28,14 +28,19 @@ const SITE_URL = (process.env.SITE_URL || "https://cromaticstudios.com").replace
@@ -56,12 +56,12 @@ index 1c42cfa..5a18d8d 100644
  const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
  // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
 -const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 1.6";
-+const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 2.0"; // the nav2 branch is beta 2.0 (main/live is beta 1.6)
++const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 2.6"; // the nav2 branch: beta 2.6 (main/live is beta 1.6)
  const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
  const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
  const GS = {};
 diff --git a/src/app.js b/src/app.js
-index b60e233..61ad202 100644
+index 4296f0f..3b0a5d2 100644
 --- a/src/app.js
 +++ b/src/app.js
 @@ -32208,8 +32208,46 @@ void main() {
@@ -111,16 +111,46 @@ index b60e233..61ad202 100644
    function buildVehicleBase(id) {
      switch (id) {
        case "f1":
-@@ -35112,7 +35150,7 @@ void main() {
+@@ -33617,8 +33655,26 @@ void main() {
+       vehMenu.appendChild(b);
+     });
+     // r160 (Daniel): the Ride buttons (map and drive bars) show the ride you have, its own picture (the pickers' previews)
+-    const rideThumbs = {}; let rideCur = "dacia1300";
+-    const paintRideBtns = () => document.querySelectorAll(".map-ride .mr-th").forEach((t) => { const u = rideThumbs[rideCur]; t.style.backgroundImage = u ? `url(${u})` : ""; t.classList.toggle("ready", !!u); t.dataset.v = rideCur; });
++    const rideThumbs = {}, rideCrop = {}; let rideCur = "dacia1300";
++    // beta 2.6 (Daniel): the ride fills its thumbnail: the preview cropped to the ride's own outline (its opaque pixels), 3:2
++    const cropRide = (id, url) => {
++      const im = new Image();
++      im.onload = () => {
++        try {
++          const w = im.naturalWidth, h = im.naturalHeight, c = document.createElement("canvas"); c.width = w; c.height = h;
++          const g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(im, 0, 0);
++          const d = g.getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = -1, y1 = -1;
++          for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2) { const i = (y * w + x) * 4; if (d[i + 3] > 24 && !(d[i] > 246 && d[i + 1] > 246 && d[i + 2] > 246)) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } }
++          if (x1 < 0) return;
++          let cw = (x1 - x0) * 1.1 + 4, chh = (y1 - y0) * 1.1 + 4; const A = 1.5; if (cw / chh > A) chh = cw / A; else cw = chh * A;
++          const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, o = document.createElement("canvas"); o.width = 150; o.height = 100;
++          o.getContext("2d").drawImage(c, cx - cw / 2, cy - chh / 2, cw, chh, 0, 0, 150, 100);
++          rideCrop[id] = o.toDataURL("image/png"); paintRideBtns();
++        } catch (e) {}
++      };
++      im.src = url;
++    };
++    const paintRideBtns = () => document.querySelectorAll(".map-ride .mr-th").forEach((t) => { const u = rideCrop[rideCur] || rideThumbs[rideCur]; t.style.backgroundImage = u ? `url(${u})` : ""; t.classList.toggle("ready", !!u); t.dataset.v = rideCur; });
+     const syncVeh = (id) => { Object.entries(vehRows).forEach(([k, b]) => b.classList.toggle("on", k === id)); rideCur = id; paintRideBtns(); };
+     uiSyncVeh = syncVeh;
+     syncVeh("dacia1300"); // r138j: the default ride
+@@ -35112,7 +35168,8 @@ void main() {
        },
        paintRide: () => paintRideBtns(), // r160: once a bar with a Ride button is built
        setVehiclePreviews(map) {
 -        Object.assign(rideThumbs, map); paintRideBtns(); // r160
 +        Object.assign(rideThumbs, map); paintRideBtns(); // r164
++        Object.entries(map).forEach(([id, url]) => cropRide(id, url)); // beta 2.6
          Object.entries(map).forEach(([id, url]) => {
            const t = vehRows[id]?.querySelector(".hr-thumb");
            if (t) t.style.backgroundImage = `url(${url})`;
-@@ -35434,7 +35472,7 @@ void main() {
+@@ -35434,7 +35491,7 @@ void main() {
        }
        var api = {
          toggleSite() { setSiteMode(!siteMode); },
@@ -129,24 +159,65 @@ index b60e233..61ad202 100644
          isMap() { return mapMode; },
          boardNow() { clearTimeout(boardTimer); clearInterval(boardTick); if (mapMode && mapBoarding && jetFx.phase === "idle") { mapCloseBoarding(true); mapTakeoff(); } },
          sayHi() { if (!mapMode) setMapMode(true); setTimeout(() => { mapUI?.welcome(false); mapOpenBoarding(); }, 350); },
-@@ -37723,7 +37761,7 @@ void main() {
+@@ -35568,6 +35625,7 @@ void main() {
+       // side, rendered in the current world, on the main canvas between two frames (like the world previews)
+       var placeShotCache = {};
+       function placeShot(pl) {
++        nav2CullOff(); // beta 2.5: the postcard sees everything
+         const key = pl.id + "|" + state.schemeIdx;
+         if (placeShotCache[key]) return placeShotCache[key];
+         const cw = renderer.domElement.width, ch = renderer.domElement.height;
+@@ -35692,7 +35750,8 @@ void main() {
+       // before its first draw, the rooms' programs too (linkedRun), and the PNGs encode off the main thread
+       // (toBlob). onEach(id, url) gets each thumbnail as it lands
+       async function makeVehiclePreviews(onEach) {
+-        const idle = () => new Promise((res) => (window.requestIdleCallback || setTimeout)(res, { timeout: 1000 }));
++        // beta 2.5 polish: each step is a 30–60 ms render: never while the nav2 car is moving (a hitch on the first drive)
++        const idle = () => new Promise((res) => { const go = () => (window.requestIdleCallback || setTimeout)(() => (nav2?.on && mapMode && Math.abs(nav2.speed?.() || 0) > 25 ? setTimeout(go, 600) : res()), { timeout: 1000 }); go(); });
+         const size = 132;
+         await idle();
+         const r = new WebGLRenderer({ antialias: true, alpha: true });
+@@ -35944,7 +36003,21 @@ void main() {
+         st.setProperty("--cr-pill", crayonTex.pill); st.setProperty("--cr-card", crayonTex.card); st.setProperty("--cr-ring", crayonTex.ring); st.setProperty("--cr-dot", crayonTex.dot);
+         return crayonTex;
+       }
++      // beta 2.6 (Daniel): the Multiverse button shows the world you are in: its picker's preview when there is one, else a
++      // postcard of the roundabout in it (one render, once per world, a moment after the world changes)
++      let worldBtnT = 0;
++      function paintWorldBtn() {
++        clearTimeout(worldBtnT);
++        worldBtnT = setTimeout(() => (window.requestIdleCallback || setTimeout)(() => {
++          try {
++            if (!worldRefs.world.userData.fabricDone) { paintWorldBtn(); return; }
++            const i = state.schemeIdx, u = worldPrevCache.urls?.[i] || placeShot({ id: "__world", wx: FORK_POS.x, wz: FORK_POS.y, wy: 70 });
++            if (u) document.querySelectorAll(".map-world").forEach((b) => { b.style.setProperty("--wimg", `url("${u}")`); b.classList.add("has-img"); });
++          } catch (e) {}
++        }, { timeout: 1500 }), 700);
++      }
+       function applyScheme(idx) {
++        paintWorldBtn();
+         if (state.schemeIdx != null && state.schemeIdx !== idx && !onbWarm) czEv("world_change", { world: SCHEMES[idx]?.id }); // r141: not the warm-up
+         state.schemeIdx = idx;
+         const s = SCHEMES[idx];
+@@ -37723,7 +37796,7 @@ void main() {
            tilt = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
          }
          if (tilt.rt.width !== w || tilt.rt.height !== h) { tilt.rt.setSize(w, h); tilt.mat.uniforms.res.value.set(w, h); }
 -        tilt.mat.uniforms.amt.value = 4.2 * renderer.getPixelRatio();
-+        tilt.mat.uniforms.amt.value = 4.2 * renderer.getPixelRatio() * (mapMode && nav2?.on ? 1 - 0.8 * nav2.camK : 1); // nav2: little miniature blur in the street view
++        tilt.mat.uniforms.amt.value = 4.2 * renderer.getPixelRatio() * (mapMode && nav2?.on ? Math.max(0, 1 - 1.1 * nav2.camK) : 1); // nav2: no miniature blur in the street view (beta 2.5: one tap per pixel there, ~+5 fps)
          tilt.mat.uniforms.band.value = 0.16;
          tilt.mat.uniforms.t.value = (now * 0.001) % 100;
          tilt.mat.uniforms.zb.value = mapMode ? mapView.zoomBlur || 0 : 0;
-@@ -38177,6 +38215,7 @@ void main() {
+@@ -38177,6 +38250,8 @@ void main() {
              if (now - (state.floorFix || 0) > 120) { state.floorFix = now; window.scrollTo({ top: clamp2(state.floorL / effectiveTotal(), 0, 1) * maxScroll(), behavior: "instant" }); }
            }
          }
 +        if (nav2?.on && mapMode) nav2.tick(dt, now); // nav2: the arrows (or its auto-pilot) set mapNav.targetL
++        nav2Cull(); // beta 2.5: the street view skips the small things far off in its haze
          if (mapMode) state.targetL = mapNav.targetL;
          else if (ONB_MODE && onbL != null) state.targetL = onbL; // r140: the page's scroll is the road
          const nearDacia = state.L > route.stopL.merge - 1500 && state.L < route.stopL.merge - 250;
-@@ -38227,7 +38266,8 @@ void main() {
+@@ -38227,7 +38302,8 @@ void main() {
              state.targetL = L2;
            }
          }
@@ -156,7 +227,16 @@ index b60e233..61ad202 100644
          // r139e: a clamp (speed caps, police, the merge floor) or a jump moved L off the spring: its velocity follows
          if (state.L !== MO.Ls) MO.Lv = Math.abs(dL) > 3000 ? 0 : dL / Math.max(dt, 1e-3);
          const dLm = Math.abs(dL) > 3000 ? 0 : dL; // a jump is not motion (no lean, no pitch from it)
-@@ -38256,6 +38296,7 @@ void main() {
+@@ -38242,7 +38318,7 @@ void main() {
+           const f = clamp2(state.speed / 69.75 + (siteMode || police.active ? 0 : lagAhead / 5000), 0, 1);
+           window.__spd = { f, lag: Math.round(state.targetL - state.L) };
+           const red = f >= 200 / 240 && state.vehicleId !== "cop";
+-          ui.dash.speed(f, vs.max, vs.unit, red);
++          if (!mapMode) ui.dash.speed(f, vs.max, vs.unit, red); // beta 2.5: the dash is hidden on the map (no hidden DOM writes per frame)
+           redHold = red && !siteMode ? redHold + dt : 0;
+           if (xpPending && xpPending.kind === "msg" && now - xpPending.t > 4000) xpCommit(true);
+         }
+@@ -38256,6 +38332,7 @@ void main() {
          air = smooth(air, airT, dt, 0.9);
          if (air > 1e-3) carPos.y += AIR_H * air * air * (3 - 2 * air);
          route.tangentAt(state.L, carTan);
@@ -164,7 +244,7 @@ index b60e233..61ad202 100644
          const flying = carPos.z > RAMP_LIP + 30 && carPos.y > 30;
          const isPlane = veh.kind === "plane";
          const hover = isPlane ? 34 + Math.sin(now * 3e-3) * 5 : veh.kind === "sub" ? 20 + Math.sin(now * 1.9e-3) * 4 : 0;
-@@ -38317,6 +38358,7 @@ void main() {
+@@ -38317,6 +38394,7 @@ void main() {
            let dA = Math.atan2(_tA.x, _tA.z) - Math.atan2(_tB.x, _tB.z);
            while (dA > Math.PI) dA -= Math.PI * 2; while (dA < -Math.PI) dA += Math.PI * 2;
            MO.kap = (planeRev > 0.5 ? -dA : dA) / 80;
@@ -172,7 +252,7 @@ index b60e233..61ad202 100644
          }
          {
            // cars roll a little outwards; the plane leans INTO the turn, like an aircraft does
-@@ -38387,6 +38429,7 @@ void main() {
+@@ -38387,6 +38465,7 @@ void main() {
          const climb = (airT - air) * (veh.kind === "plane" ? 1 : 0);
          veh.group.rotation.set(-pitch + (flying ? -0.09 : 0) - clamp2(climb * 0.9, -0.35, 0.45) + MO.p, heading, bank + sway, "YXZ"); // r139e: + MO.p
          veh.group.position.y += MO.hy; // r139e: the suspension's heave
@@ -180,7 +260,7 @@ index b60e233..61ad202 100644
          if (coffee.phase === "rush") {
            veh.group.position.x += (Math.random() - 0.5) * 3;
            veh.group.position.z += (Math.random() - 0.5) * 3;
-@@ -38600,6 +38643,7 @@ void main() {
+@@ -38600,6 +38679,7 @@ void main() {
            // through; now the first visible frame is solved again on the real car and the camera is put there at once
            if (camSnapNext && !mapFirstSolved && BOOT_MODE === "map" && !mapView.follow && !mapNav.moving && !mapNav.place) { mapFirstSolved = true; const v = mapOpeningView(); mapView.tgt.set(v.t[0], 0, v.t[1]); mapView.dist = v.dist; mapView.yaw = v.yaw; mapView.pitch = v.pitch; mapView.distGoal = null; mapView.yawGoal = mapView.pitchGoal = null; mapSettle = 0; }
            mapSettleTick(); mapUI.update(dt, now); camPos.copy(mapView.pos); camTarget.copy(mapView.tgt);
@@ -188,7 +268,7 @@ index b60e233..61ad202 100644
          } // r142b: mapSettleTick
          // exponential damping, frame-rate independent; the look target is damped too, so
          // set-piece cameras (fork, coffee, Dacia, spiral) blend in instead of cutting
-@@ -38609,8 +38653,9 @@ void main() {
+@@ -38609,8 +38689,9 @@ void main() {
          // in the street POV the camera rides with you: damping tightens as the POV takes over
          const camSnap = camSnapNext; camSnapNext = false; // r157
          const handOn = mapMode && now - (mapView.direct || 0) < 150; // r166: a hand on the map: the camera is where the hand puts it
@@ -200,7 +280,15 @@ index b60e233..61ad202 100644
          camera.position.lerp(camPos, kp);
          window.__lookSm.lerp(camTarget, kt);
          camera.lookAt(window.__lookSm);
-@@ -38992,7 +39037,11 @@ void main() {
+@@ -38741,6 +38822,7 @@ void main() {
+         if (schemeId === "ghibli" || schemeId === "orchid") { fogNear = 1400; fogFar = 9000; }
+         // the map looks from far above: fog starts past the ground, in every world (underwater keeps a little haze)
+         if (mapMode) { const k = schemeId === "underwater" ? 0.75 : 1.15; fogNear = Math.max(fogNear, mapView.dist * k); fogFar = Math.max(fogFar, mapView.dist * (schemeId === "underwater" ? 2.2 : 3.2)); }
++        if (mapMode && nav2?.on && nav2.camK > 0.01) { const sk = nav2.camK; fogNear = fogNear * (1 - sk) + 520 * sk; fogFar = fogFar * (1 - sk) + 2250 * sk; } // beta 2.5: the street view's haze
+         scene.fog.near = smooth(scene.fog.near, flying && schemeId !== "monument" ? 1400 : fogNear, dt, 1.5);
+         scene.fog.far = smooth(scene.fog.far, flying && schemeId !== "monument" ? 6600 : fogFar, dt, 1.5);
+         if (copCar.group.visible) {
+@@ -38992,7 +39074,11 @@ void main() {
        // above. Pick a place and the van drives itself there along the real roads; when it arrives
        // the place opens. Chapters are quiet grey placards you can ignore; the crew is a button;
        // Olari 9 has a jet at the end of the runway where you board by filling the boarding pass.
@@ -213,7 +301,7 @@ index b60e233..61ad202 100644
        try { history.scrollRestoration = "manual"; } catch {}
        var BOOT_MODE = /[?&]drive\b/.test(location.search) ? "drive" : /[?&]map\b/.test(location.search) ? "map" : "intro";
        // r139p (Daniel: "the intro must not play more than once on the site"): it plays once per visit (6 h); after that,
-@@ -39075,6 +39124,61 @@ void main() {
+@@ -39075,6 +39161,147 @@ void main() {
        var mapMaxD = () => innerWidth < 720 ? 7000 : 6200; // a phone in portrait needs a little more height to see as much
        var mapView = { tgt: new Vector3(1270, 0, 3170), pos: new Vector3(), dist: 8200, distGoal: null, yaw: 0.3, pitch: 0.98, vx: 0, vz: 0, follow: false, sx: 0, sy: 0 };
        var mapNav = { targetL: 0, legs: [], place: null, moving: false };
@@ -221,6 +309,27 @@ index b60e233..61ad202 100644
 +      // (src/nav2.js); r160: the site's only 3D mode
 +      var NAV2 = typeof window.czNav2 === "function" ? window.czNav2 : null, nav2 = null; // r164: always (the ?nav=v2 flag of the prototype is no longer needed)
 +      var nav2RM = null;
++      // beta 2.5 polish: in the street view ~60% of the draw calls were small things (props, little houses' parts) more than
++      // ~1000 units off, a few pixels in the haze: they leave every camera's layers there (never .visible, which other code
++      // owns) and come back when near or out of the street view. Rechecked every 8 frames from the car's place (plan units)
++      var n2C = null, n2Cf = 0;
++      function nav2CullOff() { if (!n2C?.on) return; for (const it of n2C.list) if (it[2]) { it[0].layers.mask = it[3]; it[2] = false; } n2C.on = false; }
++      function nav2Cull() {
++        if (!(nav2?.on && mapMode && nav2.camK > 0.6) || !worldRefs.world.userData.fabricDone) { nav2CullOff(); return; }
++        if (!n2C) {
++          n2C = { list: [], on: false }; const c = new Vector3();
++          worldRefs.world.updateMatrixWorld(true);
++          worldRefs.world.traverse((o) => { if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !o.geometry?.attributes?.position) return; o.geometry.boundingSphere || o.geometry.computeBoundingSphere(); const r = o.geometry.boundingSphere.radius * o.matrixWorld.getMaxScaleOnAxis(); if (r < 30) n2C.list.push([o, r, false, o.layers.mask]); });
++        }
++        if (++n2Cf % 8) return;
++        n2C.on = true;
++        const v = new Vector3();
++        for (const it of n2C.list) {
++          const o = it[0]; v.copy(o.geometry.boundingSphere.center).applyMatrix4(o.matrixWorld);
++          const far = Math.hypot(v.x - carPos.x, v.z - carPos.z) - it[1] > 1500;
++          if (far !== it[2]) { if (far) { it[3] = o.layers.mask; o.layers.mask = 0; } else o.layers.mask = it[3]; it[2] = far; }
++        }
++      }
 +      function nav2Host() { // nav2: what the module may see and do
 +        return {
 +          navNet, cityNet, rounded: (p, r) => roundedPolyline(p, r), fork: FORK_POS, stops: STOPS, places: MAP_PLACES, start: ROUTE_MAIN[0], streets: { A: ROUTE_A, B: ROUTE_B, C: ROUTE_C, D: ROUTE_MERGE, lane: LANE_PTS },
@@ -261,6 +370,71 @@ index b60e233..61ad202 100644
 +            return m - g.position.y;
 +          },
 +          reverseLamps(on) { if (veh?.revLamps && veh.revLamps.visible !== on) veh.revLamps.visible = on; },
++          // beta 2.5 (Daniel: "more like Mario Kart"): little effects on the road, in plan coordinates (the city warp bends
++          // them with the rest): puffs (tyre smoke, drift sparks, a boost's flame, dust) from a small pool, and skid marks
++          // (one instanced mesh, a ring of 240). Cheap: at most 36 puffs alive, one draw call for every mark
++          fx: (() => {
++            let F = null;
++            const init = () => {
++              F = { puffs: [], i: 0, marks: null, mi: 0, m: new Matrix4(), q: new Quaternion(), v: new Vector3(), sc: new Vector3() };
++              const geo = new IcosahedronGeometry(1, 1);
++              for (let k = 0; k < 36; k++) { const mesh = new Mesh(geo, new MeshBasicMaterial({ color: "#ffffff", transparent: true, opacity: 0, depthWrite: false })); mesh.visible = false; mesh.renderOrder = 3; worldRefs.world.add(mesh); F.puffs.push({ mesh, life: 0, age: 0, r0: 1, r1: 1, vy: 0, vx: 0, vz: 0, a0: 1 }); }
++              const pg = new PlaneGeometry(1, 1); pg.rotateX(-Math.PI / 2);
++              F.marks = new InstancedMesh(pg, new MeshBasicMaterial({ color: "#2b2522", transparent: true, opacity: 0.3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), 240);
++              F.marks.count = 0; F.marks.frustumCulled = false; F.marks.renderOrder = 2; worldRefs.world.add(F.marks);
++            };
++            return {
++              puff(x, y, z, o = {}) {
++                if (!F) init();
++                const p = F.puffs[F.i]; F.i = (F.i + 1) % F.puffs.length;
++                p.mesh.material.color.set(o.color || "#f4f1ea"); p.life = o.life || 0.7; p.age = 0; p.r0 = o.r0 || 2.5; p.r1 = o.r1 || 7; p.vy = o.vy ?? 9; p.vx = o.vx || 0; p.vz = o.vz || 0; p.a0 = o.a ?? 0.55;
++                p.mesh.position.set(x, y, z); p.mesh.scale.setScalar(p.r0); p.mesh.material.opacity = p.a0; p.mesh.visible = true;
++              },
++              skid(x, z, h, len = 6, w = 2.6) {
++                if (!F) init();
++                F.q.setFromAxisAngle(F.v.set(0, 1, 0), h); F.m.compose(F.v.set(x, 2.0, z), F.q, F.sc.set(w, 1, len));
++                F.marks.setMatrixAt(F.mi, F.m); F.mi = (F.mi + 1) % 240; F.marks.count = Math.max(F.marks.count, F.mi === 0 ? 240 : F.mi); F.marks.instanceMatrix.needsUpdate = true;
++              },
++              tick(dt) {
++                if (!F) return;
++                for (const p of F.puffs) {
++                  if (!p.mesh.visible) continue;
++                  p.age += dt; const k = p.age / p.life;
++                  if (k >= 1) { p.mesh.visible = false; continue; }
++                  p.mesh.position.x += p.vx * dt; p.mesh.position.y += p.vy * dt; p.mesh.position.z += p.vz * dt;
++                  p.mesh.scale.setScalar(p.r0 + (p.r1 - p.r0) * Math.sqrt(k));
++                  p.mesh.material.opacity = p.a0 * (1 - k) * (1 - k);
++                }
++              }
++            };
++          })(),
++          // round 5 (Daniel: "close all roads that aren't ours, and make it readable"): where a closed street meets one of ours,
++          // the kerb runs on across its mouth and a red-and-white striped barrier on two posts stands behind it, flanked by two
++          // bollards; one merged mesh for all of them (plan coordinates; the city warp bends it like the rest)
++          closures(list) {
++            if (worldRefs.world.userData.n2cl || !list?.length) return;
++            const geos = [], m = new Matrix4(), r = new Matrix4(), col = new Color();
++            const part = (geo, hex, x, y, z) => { col.set(hex); const n = geo.attributes.position.count, c = new Float32Array(n * 3); for (let i = 0; i < n; i++) { c[i * 3] = col.r; c[i * 3 + 1] = col.g; c[i * 3 + 2] = col.b; } geo.setAttribute("color", new Float32BufferAttribute(c, 3)); geo.translate(x, y, z); return geo; };
++            for (const b of list) {
++              const w = b.w, ps = [];
++              ps.push(part(new BoxGeometry(w + 8, 3.2, 5), "#b8b4a6", 0, 1.6, 0)); // the kerb, across the mouth
++              // red hatching painted on the closed mouth, between the kerb and the barrier (reads from the satellite view)
++              for (let x = -w / 2 + 6; x <= w / 2 - 6; x += 8) { const g = new BoxGeometry(2.6, 0.3, 12); g.rotateY(Math.PI / 4); ps.push(part(g, "#e0442a", x, 0.5, 9)); }
++              // the barrier: two striped boards on two posts, a little way in, tall enough to show over the car
++              const n = Math.max(3, Math.round((w - 6) / 8)), sw = (w - 6) / n;
++              for (const [y, hh] of [[16, 4.4], [9, 3.2]]) for (let i = 0; i < n; i++) ps.push(part(new BoxGeometry(sw, hh, 1.6), (i + (y > 10 ? 0 : 1)) % 2 ? "#f6f2e8" : "#e0442a", -(w - 6) / 2 + sw * (i + 0.5), y, 16));
++              for (const sx of [-1, 1]) {
++                ps.push(part(new BoxGeometry(2.2, 19, 2.2), "#3b3a36", sx * (w / 2 - 2), 9.5, 16)); // the barrier's posts
++                ps.push(part(new CylinderGeometry(1.9, 2.1, 10, 8), "#e0442a", sx * (w / 2 + 2), 5, -1)); // bollards, on the kerb's ends
++                ps.push(part(new CylinderGeometry(1.95, 1.95, 1.8, 8), "#f6f2e8", sx * (w / 2 + 2), 7, -1));
++              }
++              r.makeRotationY(Math.atan2(b.nx, b.nz)); m.makeTranslation(b.x, 0.6, b.z).multiply(r); // local +z: into the closed street
++              for (const g of ps) geos.push(g.toNonIndexed().applyMatrix4(m));
++            }
++            const mesh = new Mesh(mergeGeometries(geos), new MeshStandardMaterial({ vertexColors: true, roughness: 0.75 }));
++            mesh.castShadow = mesh.receiveShadow = true; mesh.name = "n2-closures";
++            worldRefs.world.add(mesh); worldRefs.world.userData.n2cl = mesh;
++          },
 +          camBusy: () => mapIntro || jetFx.phase !== "idle" || document.body.classList.contains("kz-intro"),
 +          ready: () => mapMode && !mapIntro && !!mapUI && spawnStart < 0 && jetFx.phase === "idle" && !mapBoarding && !document.body.classList.contains("kz-intro"),
 +          overlay: () => { const c = document.body.classList; return c.contains("modal-open") || c.contains("scf-open") || !!document.querySelector(".case-frame:not(.hidden)"); },
@@ -275,7 +449,7 @@ index b60e233..61ad202 100644
        var jetFx = { phase: "idle", t: 0, baam: false };
        var boardTimer = 0, boardTick = 0;
        var MAP_STREET = { A: "COFFEE STREET", B: "FINTECH BOULEVARD", C: "MEDICAL AVENUE", D: "THE SHORTEST SHORTCUT" };
-@@ -39146,6 +39250,7 @@ void main() {
+@@ -39146,6 +39373,7 @@ void main() {
        // The route itself is the truth: the drive drops branchChosen whenever you are back before the fork
        function mapGo(pl) {
          if (!pl || jetFx.phase !== "idle") return;
@@ -283,7 +457,7 @@ index b60e233..61ad202 100644
          if (pl.find) return mapUI.find(pl);
          mapCloseBoarding();
          // where to: a stop, a road point, or a building beside the road (park just short of it)
-@@ -39217,7 +39322,9 @@ void main() {
+@@ -39217,7 +39445,9 @@ void main() {
          crewPanel.classList.remove("hidden");
        }
        // ---- boarding the jet: the boarding pass, then wheels up ----
@@ -293,7 +467,7 @@ index b60e233..61ad202 100644
          mapBoarding = true;
          ui.clearCard();
          currentCardStop = null;
-@@ -39311,6 +39418,8 @@ void main() {
+@@ -39311,6 +39541,8 @@ void main() {
        if (/[?&]boarding\b/.test(location.search)) { const t0b = performance.now(); const ob = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - t0b < 20000) return setTimeout(ob, 200); setTimeout(() => window.__openBoarding(), 300); }; setTimeout(ob, 1800); }
        function mapCloseBoarding(keepView = false) {
          if (!mapBoarding) return;
@@ -302,7 +476,7 @@ index b60e233..61ad202 100644
          boardFxStop?.();
          mapBoarding = false;
          ui.card.classList.add("hidden");
-@@ -39336,11 +39445,10 @@ void main() {
+@@ -39336,11 +39568,10 @@ void main() {
          document.body.classList.add("flight-done");
          let end = document.querySelector(".flight-end");
          if (!end) {
@@ -315,7 +489,7 @@ index b60e233..61ad202 100644
            end.querySelector(".fe-replay").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?r=" + Date.now().toString(36); };
            end.querySelector(".fe-map").onclick = () => {
              end.remove(); document.body.classList.remove("flight-done");
-@@ -39689,8 +39797,7 @@ void main() {
+@@ -39689,8 +39920,7 @@ void main() {
            <button class="map-world" title="Choose your world"><span class="mb-orb">${MB_ORB}</span><b>Multiverse</b></button>
            <button class="map-crew" title="The crew you travel with"><span class="mcw-faces">${faces}</span><b>Crew</b></button>
            <button class="map-home" title="Cromatic Studios House, Str. Olari 9"><span class="mh-ic">\u{1F3E0}</span><b>Our house</b></button>
@@ -325,7 +499,7 @@ index b60e233..61ad202 100644
          // r137a (Daniel): the ride card wears the worlds card's design: same popover, header, tiles and tick
          const rides = el("div", "map-rides hidden", `<div class="wt-head"><span class="wt-titles"><span class="hm-title mono">YOUR RIDE · ${VEHICLES.length} TO PICK FROM</span><span class="wt-lead">How do you want to get around?</span></span><button class="wt-close" aria-label="Close">×</button></div><div class="mrs-list">${VEHICLES.map((v) => `<button class="mrs-v" data-v="${v.id}"><span class="mrs-th"></span><b>${v.label}</b><span class="wt-check" aria-hidden="true">✓</span></button>`).join("")}</div>`);
          const zoom = el("div", "map-zoom", `<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="rot" class="mz-rot" aria-label="Turn the map" title="Turn the map"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.8 3.8v4.6h-4.6"/></svg></button><button data-z="van" aria-label="Find your ride" title="Find your ride">◎</button>`);
-@@ -39707,8 +39814,8 @@ void main() {
+@@ -39707,8 +39937,8 @@ void main() {
          ];
          const welcomeEl = el("div", "map-welcome hidden", `<button class="mw-x" aria-label="Close">\u00D7</button><b class="mw-t" role="heading" aria-level="2">Welcome to Cromatic City</b>
            <div class="mw-how">
@@ -336,7 +510,7 @@ index b60e233..61ad202 100644
              <span><i>${MW_IC[2]}</i><b>See the work</b></span><em>\u2192</em>
              <span><i>${MW_IC[3]}</i><b>Say hi</b></span>
            </div>
-@@ -39718,7 +39825,7 @@ void main() {
+@@ -39718,7 +39948,7 @@ void main() {
              <button data-go="invest" style="--wc:#119BFE"><b>Fintech Boulevard</b><i>Investimental, Assetto, Bepco</i></button>
              <button data-go="tac" style="--wc:#F28BA8"><b>Medical Avenue</b><i>The Aesthetic Court, Zdrovit, Elithia</i></button>
              <button data-go="end" style="--wc:#FED012"><b>Olari 9 \u00B7 the studio</b><i>Come by, say hi</i></button>
@@ -345,7 +519,7 @@ index b60e233..61ad202 100644
          // r128: the content scrolls inside .mw-in, so the X can sit half outside the card without being clipped
          { const mwIn = document.createElement("div"); mwIn.className = "mw-in"; for (const n of [...welcomeEl.childNodes]) if (!n.classList?.contains("mw-x")) mwIn.append(n); welcomeEl.append(mwIn); }
          // r139s (Daniel: "the onboarding window should not show more than once in a session"): once per visit
-@@ -39756,7 +39863,8 @@ void main() {
+@@ -39756,7 +39986,8 @@ void main() {
            const b = e.target.closest("button"); if (!b) return;
            welcome(false);
            if (b.classList.contains("mw-x")) { guideStart(); return; } // r139h: closed with ×: the first-time guide
@@ -355,7 +529,7 @@ index b60e233..61ad202 100644
            if (b.dataset.go) mapGo(MAP_PLACES.find((p) => p.id === b.dataset.go));
          };
          // ---- r139h: a light first-time guide after the welcome card is closed with ×: "Drag the map", then the camera
-@@ -39796,6 +39904,7 @@ void main() {
+@@ -39796,6 +40027,7 @@ void main() {
            if (!guide.phase) return;
            if (guide.phase === "drag") czEv("onboarding_step", { step: "drag", action: "skipped" });
            else if (guide.phase === "start" && action) czEv("onboarding_step", { step: "start_here", action });
@@ -363,7 +537,7 @@ index b60e233..61ad202 100644
            guide.phase = null; guide.goal = null; guide.down = null; clearTimeout(guide.timer);
            guide.els?.drag.classList.add("hidden"); guide.els?.start.classList.add("hidden");
            guide.hl?.classList.remove("mg-hl"); guide.hl = null;
-@@ -39836,6 +39945,13 @@ void main() {
+@@ -39836,6 +40068,13 @@ void main() {
            try { if (!force && localStorage.getItem("cz-map-guide")) return; localStorage.setItem("cz-map-guide", "1"); } catch {}
            guide.done = true;
            const g = guideEls();
@@ -377,7 +551,7 @@ index b60e233..61ad202 100644
            guide.phase = "drag"; guide.t0 = guide.last = performance.now();
            { // r158: on the road ahead of the car (its own place on screen, kept inside the frame)
              const r = guideRoad("drag"); warpV(guideP.set(r.x, 0, r.z)).project(camera);
-@@ -39848,7 +39964,7 @@ void main() {
+@@ -39848,7 +40087,7 @@ void main() {
          }
          // per frame (from update): the critically damped camera ease, the "Start here" ring over the pin, and the exits
          const guideStep = (dt) => {
@@ -386,7 +560,7 @@ index b60e233..61ad202 100644
            if (guideBusy()) return guideEnd(guide.phase === "start" && mapNav.place?.id === "tm" ? "done" : "skipped");
            if (guide.phase !== "start") return;
            const pl = guide.spot, g = guide.goal;
-@@ -39880,11 +39996,11 @@ void main() {
+@@ -39880,11 +40119,11 @@ void main() {
          };
          // any hand on the map: a drag ends step 1; anything but the highlighted pin ends step 2
          window.addEventListener("pointerdown", (e) => {
@@ -400,7 +574,7 @@ index b60e233..61ad202 100644
            guideEnd("skipped");
          }, true);
          window.addEventListener("pointermove", (e) => {
-@@ -39921,7 +40037,6 @@ void main() {
+@@ -39921,12 +40160,12 @@ void main() {
          const speedEl = el("div", "speed-lines");
          box.append(speedEl, pinsEl, top, rides, zoom, dock, card, skip, baamEl, welcomeEl, hintEl);
          ui.root.appendChild(box);
@@ -408,7 +582,13 @@ index b60e233..61ad202 100644
          top.querySelector(".map-crew").onclick = () => { welcome(false); openCrew(); };
          top.querySelector(".map-home").onclick = () => { welcome(false); mapGo(MAP_PLACES.find((p) => p.id === "end")); };
  
-@@ -39936,7 +40051,7 @@ void main() {
+         // r137a: both cards open as popovers under their buttons (ui.popAnchor); the bar stays above the dimmed map
+         // while the worlds card is open, so a tap on any other button in it closes the card first
++        paintWorldBtn(); // beta 2.6: the world's picture on the button
+         top.querySelector(".map-world").onclick = (e) => {
+           e.stopPropagation(); welcome(false); ui.themeBtn.click();
+           if (ui.themeMenu?.classList.contains("open")) ui.popAnchor?.(ui.themeMenu, e.currentTarget);
+@@ -39936,7 +40175,7 @@ void main() {
            b.classList.toggle("on", b.dataset.v === state.vehicleId);
            const u = vehPreviews[b.dataset.v]; if (u) b.querySelector(".mrs-th").style.backgroundImage = `url(${u})`;
          });
@@ -417,7 +597,16 @@ index b60e233..61ad202 100644
          top.querySelector(".map-ride").onclick = (e) => {
            e.stopPropagation(); welcome(false); paintRides(); rides.classList.toggle("hidden");
            if (!rides.classList.contains("hidden")) ui.popAnchor?.(rides, e.currentTarget);
-@@ -40120,9 +40235,27 @@ void main() {
+@@ -40022,7 +40261,7 @@ void main() {
+         let nearKey = "", nearT = 0;
+         const NEAR_R = 750, NEAR_MIN = 4;
+         const nearbyTick = (now) => {
+-          if (now - nearT < 350 || !dockOn) return; nearT = now;
++          if (now - nearT < 350 || !dockOn || nav2?.on) return; nearT = now; // beta 2.5: nav2 hides the dock (its own Nearby panel); no hidden layout work
+           const byCar = mapNav.moving || mapView.follow || !!mapView.focus || !!cine; // driving, following, or parked in a shot: the car; panned away: what you look at
+           const fx = byCar ? carPos.x : mapView.tgt.x, fz = byCar ? carPos.z : mapView.tgt.z;
+           const list = pins.filter((p) => p.ch).map((p) => ({ p, d: Math.hypot(p.pl.wx - fx, p.pl.wz - fz) })).sort((a, b) => a.d - b.d);
+@@ -40120,9 +40359,27 @@ void main() {
            if (pl.stop) return mapShowChapter(pl.stop);
            showCard(pl, "A FORMER ADDRESS", `<p>${pl.desc}</p>`, "");
          };
@@ -446,7 +635,7 @@ index b60e233..61ad202 100644
            if (visit(pl)) gainXP(5, pl.name, "Found on the map");
            mark();
            if (pl.board) { mapOpenBoarding(); return; }
-@@ -40130,7 +40263,7 @@ void main() {
+@@ -40130,7 +40387,7 @@ void main() {
            if (pl.past) {
              const pgP = pl.work && window.__casePage?.(pl.work);
              showCard(pl, "A BLAST FROM THE PAST", `<p>${pl.desc}</p>`, pgP ? `<button class="mcd-open">See the photos \u2192</button>` : "");
@@ -455,7 +644,7 @@ index b60e233..61ad202 100644
              return;
            }
            if (pl.stop && pl.stop !== "services") { mapShowChapter(pl.stop); return; }
-@@ -40143,7 +40276,7 @@ void main() {
+@@ -40143,7 +40400,7 @@ void main() {
              // Two Minutes: three double espressos, the boxes come down from our old balcony, a fourth, and the rush
              coffee.done = false; coffee.phase = "sip1"; coffee.t = 0; coffee.served = 0;
              showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52A", `<p>${pl.desc}</p>`, `<button class="mcd-open">Dig deeper \u2192</button>`);
@@ -464,7 +653,7 @@ index b60e233..61ad202 100644
              return;
            }
            const pr = projectOf(pl.name);
-@@ -40154,7 +40287,7 @@ void main() {
+@@ -40154,7 +40411,7 @@ void main() {
            }
            showCard(pl, pl.br ? MAP_STREET[pl.street || pl.br] : pl.line.split(" \xB7 ")[0], `<p>${pl.desc || pr?.desc || "By Cromatic Studios."}</p>`, pl.wip ? `<span class="mcd-wip mono">WORK IN PROGRESS</span>` : pl.small && !pg ? "" : `<button class="mcd-open">${ctaFor(pl.name)}</button>`);
            if (pl.wip || (pl.small && !pg)) return;
@@ -473,7 +662,7 @@ index b60e233..61ad202 100644
          };
          // r118: arriving somewhere, the camera swings slowly round onto the building's front, lower
          // and in three-quarters, with the van parked in the foreground. No jolt: every value runs on
-@@ -40240,9 +40373,21 @@ void main() {
+@@ -40240,9 +40497,21 @@ void main() {
            mapView.lookY = mapView.lookYGoal = f.lookY + (g.lookY - f.lookY) * e;
            if (g.fx != null && mapView.focus) { mapView.focus.x = f.fx + (g.fx - f.fx) * e; mapView.focus.z = f.fz + (g.fz - f.fz) * e; }
            if (u < 1) return;
@@ -497,7 +686,7 @@ index b60e233..61ad202 100644
          const baam = () => {
            baamEl.classList.remove("hidden");
            baamEl.classList.remove("go"); void baamEl.offsetWidth; baamEl.classList.add("go");
-@@ -40310,6 +40455,7 @@ void main() {
+@@ -40310,6 +40579,7 @@ void main() {
          window.addEventListener("gesturechange", (e) => {
            if (!mapMode || mapIntro || !gDist0 || !(e.scale > 0)) return;
            if (cine && cine.t < cine.dur) cine = null;
@@ -505,7 +694,41 @@ index b60e233..61ad202 100644
            mapView.distGoal = null;
            zoomAt(e.clientX || innerWidth / 2, e.clientY || innerHeight / 2, mapView.dist, Math.min(mapMaxD(), Math.max(MAP_MIND, gDist0 * gScale0 / e.scale)));
          });
-@@ -40395,6 +40541,8 @@ void main() {
+@@ -40382,32 +40652,8 @@ void main() {
+           const now2 = performance.now(), dtp = Math.max(8, now2 - last) / 1000; last = now2;
+           mapView.vx = mapView.vx * 0.35 + (mapView.tgt.x - t0x) / dtp * 0.65; mapView.vz = mapView.vz * 0.35 + (mapView.tgt.z - t0z) / dtp * 0.65;
+         });
+-        const hit = new Vector3(), dir = new Vector3(), bq = new Vector3();
+-        // r175 (Daniel: "a tap on Steam's building keeps opening Lapterra"): the ground point under a tap on a tall
+-        // building lies far behind it (the ray runs on to y = 0), so the place nearest to it could be across the street.
+-        // A tap is first matched on screen to a place's building: its column from the ground to its label's height,
+-        // about its footprint wide; the closest column wins (tapW still favours a place that shares its building)
+-        const tapBuilding = (cx, cy) => {
+-          const sc = (x, y, z) => { warpV(bq.set(x, y, z)).project(camera); return [(bq.x * 0.5 + 0.5) * innerWidth, (-bq.y * 0.5 + 0.5) * innerHeight, bq.z]; };
+-          let win = null;
+-          for (const q of pins) {
+-            const pl = q.pl;
+-            if ((pl.chapter && !pl.past) || pl.wx == null || pl.float || pl.unmarked) continue;
+-            const g = sc(pl.wx, 0, pl.wz), t = sc(pl.wx, pl.wy || 55, pl.wz), e = sc(pl.wx + 34, 0, pl.wz);
+-            if (g[2] > 1 || t[2] > 1) continue;
+-            const half = Math.min(110, Math.max(16, Math.hypot(e[0] - g[0], e[1] - g[1])));
+-            const vx = t[0] - g[0], vy = t[1] - g[1], L2 = vx * vx + vy * vy || 1;
+-            const u = ((cx - g[0]) * vx + (cy - g[1]) * vy) / L2;
+-            if (u < -0.04 || u > 1.08) continue; // not below its ground point (the road in front stays the road's)
+-            const k = Math.max(0, Math.min(1, u)), d = Math.hypot(cx - (g[0] + vx * k), cy - (g[1] + vy * k));
+-            if (d > half) continue;
+-            const score = (d / half) * (pl.tapW || 1);
+-            if (!win || score < win.s) win = { s: score, pl };
+-          }
+-          return win && win.pl;
+-        };
++        const hit = new Vector3(), dir = new Vector3();
+         const tapGo = (cx, cy) => {
+-          { const b0 = tapBuilding(cx, cy); if (b0) return mapGo(b0); } // r175
+           // the ground point under the tap: unproject and run the ray down to y = 0
+           dir.set((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1, 0.5).unproject(camera).sub(camera.position).normalize();
+           if (dir.y > -1e-3) return;
+@@ -40419,6 +40665,8 @@ void main() {
              const d = (x - hit.x) ** 2 + (z - hit.z) ** 2;
              if (!best || d < best.d) best = { d, x, z, br: b2 };
            }
@@ -514,7 +737,7 @@ index b60e233..61ad202 100644
            // r166 (Daniel): a tap on the asphalt is a tap on the road, even beside a place's building
            if (best && best.d < 34 * 34) {
              const shared = tapShared.some(([x, z]) => Math.abs(x - best.x) < 1 && Math.abs(z - best.z) < 1);
-@@ -40406,6 +40554,7 @@ void main() {
+@@ -40430,6 +40678,7 @@ void main() {
            for (const q of pins) { if (q.pl.chapter && !q.pl.past) continue; const d2 = ((q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2) * (q.pl.tapW || 1); if (d2 < 75 * 75 && (!near || d2 < near.d)) near = { d: d2, pl: q.pl }; } // r168: tapW, a place that wins its shared building
            if (near) return mapGo(near.pl);
            for (const q of pins) if (q.pl.chapter && !q.pl.past && (q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2 < 70 * 70) return mapGo(q.pl);
@@ -522,7 +745,7 @@ index b60e233..61ad202 100644
            // otherwise only the street itself
            if (!best || best.d > 60 * 60) return;
            const shared = tapShared.some(([x, z]) => Math.abs(x - best.x) < 1 && Math.abs(z - best.z) < 1);
-@@ -40438,6 +40587,8 @@ void main() {
+@@ -40462,6 +40711,8 @@ void main() {
            e.preventDefault();
            mapView.distGoal = null;
            if (cine && cine.t < cine.dur) cine = null;
@@ -531,7 +754,7 @@ index b60e233..61ad202 100644
            zoomAt(e.clientX, e.clientY, mapView.dist, Math.min(mapMaxD(), Math.max(MAP_MIND, mapView.dist * Math.exp(clamp2(e.deltaY, -120, 120) * (e.ctrlKey ? 0.006 : 0.0012)))));
          }, { passive: false });
          const proj = new Vector3();
-@@ -40466,12 +40617,21 @@ void main() {
+@@ -40490,12 +40741,21 @@ void main() {
            return [0, (topY + botY) / 2 - H / 2];
          };
          return {
@@ -555,7 +778,19 @@ index b60e233..61ad202 100644
              jetUpdate(dt, now);
              olariUpdate(dt);
              // the diorama is cleaner from above without the far mesas, the cloud ring and the islands
-@@ -40631,24 +40791,7 @@ void main() {
+@@ -40576,7 +40836,11 @@ void main() {
+               markEl.style.transform = `translate3d(${((proj.x * 0.5 + 0.5) * W).toFixed(1)}px, ${((-proj.y * 0.5 + 0.5) * H).toFixed(1)}px, 0)`;
+               if (!mapNav.moving && mapNav.place?.tap && !markEl.classList.contains("on")) markAt = null;
+             }
++            // beta 2.5 polish: in nav2's street view the pins far off (in its haze) step out: each moving pin restyles and
++            // repaints every frame, and a whole city of them cost ~15 fps while driving there
++            const svPins = nav2?.on && nav2.camK > 0.6;
+             const order = pins.map((p) => {
++              if (svPins && Math.hypot(p.pl.wx - carPos.x, p.pl.wz - carPos.z) > 1300) return { p, x: -9999, y: -9999, z: 2 };
+               warpV(proj.set(p.pl.wx, 0, p.pl.wz)).project(camera);
+               const gx = (proj.x * 0.5 + 0.5) * W, gy = (-proj.y * 0.5 + 0.5) * H;
+               warpV(proj.set(p.pl.wx + 34, 0, p.pl.wz)).project(camera);
+@@ -40655,24 +40919,7 @@ void main() {
          driveGuideOff?.(); driveGuideOff = null;
          if (action) czEv("onboarding_step", { step: "drive_scroll", action });
        }
@@ -581,7 +816,7 @@ index b60e233..61ad202 100644
        function setMapMode(on, { intro = false, open = false } = {}) { // r147: open = the map as the site opens on it (?map, ?map&boarding): the first frame, no pull-out
          if (on === mapMode) return;
          if (!ONB_MODE && !intro && !open) setTimeout(() => ui.modeFlash?.(on ? "map" : "drive"), on ? 300 : 450); // r156
-@@ -40660,6 +40803,8 @@ void main() {
+@@ -40684,6 +40931,8 @@ void main() {
          mapMode = on;
          if (on) {
            if (!mapUI) mapUI = buildMapUI();
@@ -590,7 +825,7 @@ index b60e233..61ad202 100644
            mapPrev = { scheme: state.schemeIdx, veh: state.vehicleId };
            if (!intro) kinetic?.pause?.();
            if (police.active) { police.active = false; copCar.group.visible = false; }
-@@ -40693,6 +40838,7 @@ void main() {
+@@ -40717,6 +40966,7 @@ void main() {
            else { const wt0 = performance.now(); const wl = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - wt0 < 20000) return setTimeout(wl, 250); mapSettle = 90; if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI.welcome(true); }; setTimeout(wl, 1000); } // r139r: after the cups' reveal (r142b: a second, and the view settles on the car)
            try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map") + location.hash); } catch {} // r139p: a plain "/" stays plain
          } else {
@@ -598,7 +833,7 @@ index b60e233..61ad202 100644
            mapEndIntro();
            kinetic?.pause?.();
            mapCloseBoarding();
-@@ -40725,7 +40871,6 @@ void main() {
+@@ -40749,7 +40999,6 @@ void main() {
            updateScrollSpace();
            scrollToL(state.L, false);
            try { history.replaceState(null, "", location.pathname + "?drive" + location.hash); } catch {}
@@ -608,10 +843,10 @@ index b60e233..61ad202 100644
        window.__cam = (p2, t2) => { window.__camO = p2 ? [p2, t2] : null; };
 diff --git a/src/nav2.css b/src/nav2.css
 new file mode 100644
-index 0000000..3717f7b
+index 0000000..fd55925
 --- /dev/null
 +++ b/src/nav2.css
-@@ -0,0 +1,187 @@
+@@ -0,0 +1,220 @@
 +/* nav2 (?nav=v2 on the map): the arrow pad, the two views, the Waze-style panel. Nothing here applies without body.nav2 */
 +.nav2-ui { display: none; }
 +body.nav2.map-mode:not(.kz-intro) .nav2-ui { display: block; }
@@ -626,7 +861,7 @@ index 0000000..3717f7b
 +
 +/* ---- the pad ---- */
 +.n2-pad { right: 22px; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: center; gap: 8px; user-select: none; -webkit-user-select: none; touch-action: none; }
-+.n2-hint { max-width: 230px; text-align: center; font-size: 9.5px; letter-spacing: .14em; font-weight: 700; padding: 6px 10px; border-radius: 999px; background: #fff; color: #141414; border: 2px solid #141414; box-shadow: 2px 3px 0 #141414; }
++.n2-hint { max-width: 440px; white-space: nowrap; text-align: center; font-size: 9.5px; letter-spacing: .14em; font-weight: 700; padding: 6px 10px; border-radius: 999px; background: #fff; color: #141414; border: 2px solid #141414; box-shadow: 2px 3px 0 #141414; }
 +.n2-keys { display: grid; grid-template-columns: repeat(3, var(--k, 58px)); grid-template-rows: repeat(2, var(--k, 58px)); gap: 7px; }
 +.n2-k { width: var(--k, 58px); height: var(--k, 58px); border-radius: 18px; border: 2.5px solid #141414; background: #fff; color: #141414; display: grid; place-items: center; cursor: pointer; padding: 0;
 +  box-shadow: 0 4px 0 #141414; transition: opacity .2s, transform .08s, box-shadow .08s, background .2s; touch-action: none; }
@@ -646,7 +881,7 @@ index 0000000..3717f7b
 +
 +/* ---- the two views ---- */
 +.n2-views { left: 50%; translate: -50% 0; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: #fff; color: #141414; border: 2.5px solid #141414; box-shadow: 3px 4px 0 #141414; }
-+.n2-views button { display: flex; align-items: center; gap: 7px; height: 42px; padding: 0 16px 0 12px; border-radius: 999px; border: 0; background: transparent; cursor: pointer; font-weight: 800; font-size: 15px; }
++.n2-views button { display: flex; align-items: center; gap: 7px; height: 44px; padding: 0 16px 0 12px; border-radius: 999px; border: 0; background: transparent; cursor: pointer; font-weight: 800; font-size: 15px; }
 +.n2-views button svg { width: 20px; height: 20px; }
 +.nav2-ui .n2-views button[aria-pressed="true"] { background: #141414; color: #fff; }
 +.n2-views button:not([aria-pressed="true"]):hover { background: #FED012; }
@@ -697,7 +932,7 @@ index 0000000..3717f7b
 +@media (max-width: 719px) {
 +  .n2-pad { --k: 64px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); gap: 6px; }
 +  .n2-keys { gap: 6px; }
-+  .n2-hint { max-width: 200px; font-size: 8.5px; }
++  .n2-hint { max-width: 240px; white-space: normal; font-size: 9.5px; }
 +  .n2-views { left: 12px; translate: none; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); flex-direction: column; border-radius: 22px; }
 +  .n2-views button { height: 52px; padding: 0 14px 0 12px; font-size: 14px; border-radius: 18px; }
 +  .n2-panel { left: 12px; right: 12px; width: auto; top: calc(120px + env(safe-area-inset-top, 0px)); bottom: auto; max-height: 36vh; padding: 9px 10px 6px; border-radius: 18px; box-shadow: 3px 4px 0 #141414; }
@@ -796,15 +1031,48 @@ index 0000000..3717f7b
 +  .n2-k svg { width: 44%; height: 44%; }
 +  .n2-views { left: 12px; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); flex-direction: row; border-radius: 999px; }
 +  .n2-hint { max-width: 260px; white-space: nowrap; }
-+  .n2-views button { height: 40px; padding: 0 12px 0 10px; font-size: 13px; border-radius: 999px; }
++  .n2-views button { height: 44px; padding: 0 12px 0 10px; font-size: 13px; border-radius: 999px; }
 +  body.nav2 .map-zoom { bottom: calc(206px + env(safe-area-inset-bottom, 0px)); }
++}
++
++/* beta 2.5 polish: every control at least 44 px to the touch (an invisible margin where the drawn one is smaller) */
++.n2-skip { position: relative; }
++.n2-skip::after { content: ""; position: absolute; inset: -10px -6px; }
++@media (max-width: 719px) {
++  body.nav2 .map-top :is(.map-ride, .map-world, .map-crew, .map-hi, .map-home, .map-site, .map-exit) { height: 44px; }
++  body.nav2 .map-zoom button { width: 44px; height: 44px; }
++}
++/* keyboard: a clear focus ring on nav2's own controls */
++.n2-k:focus-visible, .n2-views button:focus-visible, .n2-panel button:focus-visible, .n2-skip:focus-visible { outline: 3px solid #2f6bff; outline-offset: 3px; }
++
++/* beta 2.6 (Daniel): on a phone, no Nearby panel; the Street view is driven with the pad, the map (Satellite) by
++   tapping the road (a short hint says so); desktop keeps everything */
++.n2-taphint { display: none; }
++@media (max-width: 719px) {
++  body.nav2 .n2-panel { display: none !important; }
++  body.nav2:not(.nav2-street) .n2-pad { display: none; }
++  body.nav2:not(.nav2-street):not(.n2-tour):not(.n2-driving-auto):not(.n2-card) .n2-taphint { display: block; position: fixed; z-index: 24; right: 12px; bottom: calc(30px + env(safe-area-inset-bottom, 0px)); max-width: 190px; text-align: center; font-size: 10px; letter-spacing: .14em; font-weight: 700; line-height: 1.35; padding: 9px 14px; border-radius: 999px; background: #fff; color: #141414; border: 2px solid #141414; box-shadow: 2px 3px 0 #141414; pointer-events: none; }
++  body.nav2:not(.nav2-street) .map-zoom { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
++}
++
++/* beta 2.6 (Daniel): the Ride button's ride fills its thumbnail; the Multiverse button is the world you are in (its
++   picture across the whole button, the rainbow outline kept), with just "Multiverse" on it */
++body.nav2 .map-ride .mr-th.ready { width: 50px !important; height: 33px; flex: 0 0 50px; background-size: cover; background-position: center; border-radius: 7px; margin: 0 -4px 0 -4px; }
++body.nav2 .map-top .map-world.has-img .mb-orb { display: none; }
++body.nav2 .map-top .map-world.has-img { justify-content: center; padding: 0 18px; min-width: 128px; }
++body.nav2 .map-top .map-world.has-img::after { background: linear-gradient(rgba(20, 16, 12, .16), rgba(20, 16, 12, .38)), var(--wimg) center 55% / cover no-repeat; }
++body.nav2 .map-top .map-world.has-img b { color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .75), 0 0 8px rgba(0, 0, 0, .35); position: relative; z-index: 1; display: inline !important; }
++@media (max-width: 719px) {
++  body.nav2 .map-ride .mr-th.ready { width: 46px !important; height: 30px; flex: 0 0 46px; }
++  body.nav2 .map-top .map-world.has-img { min-width: 92px; padding: 0 8px; }
++  body.nav2 .map-top .map-world.has-img b { font-size: 11.5px; letter-spacing: -.01em; }
 +}
 diff --git a/src/nav2.js b/src/nav2.js
 new file mode 100644
-index 0000000..fdc5c54
+index 0000000..5e4117f
 --- /dev/null
 +++ b/src/nav2.js
-@@ -0,0 +1,1688 @@
+@@ -0,0 +1,1961 @@
 +// nav2 (prototype, opt-in: ?nav=v2 on the map). One way round Cromatic City that mixes the drive and the map:
 +// the car drives the city's real road graph (every street the city draws, not only the scripted branches) under the
 +// arrows: ↑ on, ↓ brake / turn round, ← → at junctions and at the sharp bends (↑ only where straight on exists).
@@ -1051,6 +1319,7 @@ index 0000000..fdc5c54
 +        const p2 = e2.a === n ? e2.pts : e2.pts.slice().reverse(), b = e2.a === n ? e2.b : e2.a;
 +        if (a === b) continue; // would close a loop on itself
 +        if ((e1.kind === "minor") !== (e2.kind === "minor")) continue; // round 3: a side street never merges into a road
++        if ((e1.kind === "long") !== (e2.kind === "long")) continue; // round 5: nor does an avenue into one of our roads (closed vs open)
 +        const ne = { a, b, pts: [...p1, ...p2.slice(1)], w: Math.max(e1.w, e2.w), kind: e1.kind === e2.kind ? e1.kind : e1.kind === "drive" || e2.kind === "drive" ? "drive" : e1.kind };
 +        e1.dead = e2.dead = true;
 +        const ni = edges.length; edges.push(ne);
@@ -1118,10 +1387,16 @@ index 0000000..fdc5c54
 +    // (cityNet().minor) stay in the graph only as mouths to back into for a turn, never to drive on
 +    {
 +      for (const e of E) e.drive = false;
++      // round 5 (Daniel: "close all roads that aren't ours"): ours are the drive's own network (navNet): an edge is ours when
++      // nearly all of it lies on one of its polylines (a long avenue merged onto one of them is not)
++      const own = [];
++      { const { P, adj } = H.navNet(); P.forEach((p, i) => { for (const [j] of adj[i]) if (j > i) own.push([p[0], p[1], P[j][0], P[j][1]]); }); }
++      const onOwn = (x, z) => own.some(([ax, az, bx, bz]) => { const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, t = clamp(((x - ax) * dx + (z - az) * dz) / l2, 0, 1); return Math.hypot(ax + dx * t - x, az + dz * t - z) < 8; });
++      for (const e of E) { if (e.kind === "minor") { e.ours = false; continue; } let k = 0, n = 0; for (let s2 = 0; s2 <= e.len; s2 += 20) { const p = pointAt(e.pts, e.cum, s2); n++; if (onOwn(p[0], p[1])) k++; } e.ours = k / n > 0.9; }
 +      const seen = new Uint8Array(N.length), st = [start2()];
-+      function start2() { let b = 0, bd = Infinity; N.forEach((n, i) => { if (!n.out.some((o) => E[o.e].kind !== "minor")) return; const d = Math.hypot(n.x - H.start[0], n.z - H.start[1]); if (d < bd) { bd = d; b = i; } }); return b; }
++      function start2() { let b = 0, bd = Infinity; N.forEach((n, i) => { if (!n.out.some((o) => E[o.e].ours)) return; const d = Math.hypot(n.x - H.start[0], n.z - H.start[1]); if (d < bd) { bd = d; b = i; } }); return b; }
 +      seen[st[0]] = 1;
-+      while (st.length) { const n = st.pop(); for (const o of N[n].out) { const e = E[o.e]; if (e.kind === "minor") continue; e.drive = true; const m = o.dir > 0 ? e.b : e.a; if (!seen[m]) { seen[m] = 1; st.push(m); } } }
++      while (st.length) { const n = st.pop(); for (const o of N[n].out) { const e = E[o.e]; if (!e.ours) continue; e.drive = true; const m = o.dir > 0 ? e.b : e.a; if (!seen[m]) { seen[m] = 1; st.push(m); } } }
 +      stats.drivable = E.filter((e) => e.drive).length;
 +      stats.drivableKm = Math.round(E.filter((e) => e.drive).reduce((a, e) => a + e.len, 0));
 +    }
@@ -1583,7 +1858,7 @@ index 0000000..fdc5c54
 +    let panelT = 0;
 +    function tick(dt, now) {
 +      if (!H.ready()) return;
-+      if (!D.ready) { if (!place()) return; D.ready = true; render(true); }
++      if (!D.ready) { if (!place()) return; D.ready = true; render(true); H.closures?.(CLOSED); setTimeout(preShots, 1200); }
 +      if (FREE) return freeTick(dt, now); // round 4: the arcade car
 +      const L = curL();
 +      if (D.uturn || D.kturn) {
@@ -1705,6 +1980,8 @@ index 0000000..fdc5c54
 +    function hereAt() {
 +      let best = null;
 +      for (const p of PL) { const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 75 && (!best || d < best.d)) best = { pl: p.pl, d, p }; }
++      // beta 2.6: the place you just arrived at stays "here" (two places can share a stretch of kerb: Dacia 99 read as Echo School)
++      if (D.lastArr) { const p = PL.find((q) => q.pl === D.lastArr); if (p) { const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 110) return { pl: p.pl, d, p }; } }
 +      return best;
 +    }
 +    const ktSeg = () => { const m = D.kturn, t = m.t / m.k; return t < KTD[0] ? 0 : t < KTD[0] + KTD[1] ? 1 : 2; };
@@ -1734,12 +2011,12 @@ index 0000000..fdc5c54
 +    // ===================== 2c. round 4: GTA 2-style arcade driving =====================
 +    // Daniel: "take inspiration from car games like GTA 2". The keys are the car's own: ↑ / W accelerate, ↓ / S brake
 +    // then reverse, ← → / A D steer (the car turns as it moves, the other way round when backing), Space the
-+    // handbrake (tighter turns, a slide). The car drives freely on the road surface that is drawn (the normal roads at
-+    // their width, the ring round the fountain, the side streets' mouths); off it is the kerb: the car is pushed back and
++    // handbrake (round 5: a quick spin). The car drives freely on the road surface of our own streets (round 5: the
++    // avenues and the side streets are closed at their mouths) and the ring round the fountain; off it is the kerb: pushed back and
 +    // slides along it, and can always steer or back away. The road graph is kept for the auto-pilot (a tap, Nearby),
 +    // which drives the same physics along its route, and for the Nearby panel and the road signs.
 +    const FREE = true;
-+    const VMAX_F = 420, ACC_F = 270, BRAKE_F = 620, REV_F = 210, VREV_F = 150, ROLL_F = 45, DRAG_F = 0.22, TURN_F = 2.5, CR = 9;
++    const VMAX_F = 460, ACC_F = 340, BRAKE_F = 620, REV_F = 210, VREV_F = 150, ROLL_F = 45, DRAG_F = 0.22, TURN_F = 2.5, CR = 9;
 +    // the road mask, from the same geometry the roads are drawn with
 +    const MASK = (() => {
 +      const segs = [], CS = 100, grid = new Map();
@@ -1753,16 +2030,12 @@ index 0000000..fdc5c54
 +        }
 +      };
 +      for (const e of E) {
-+        if (e.drive) { add(e.pts, e.w / 2 + 2); continue; }
-+        if (e.kind !== "minor") continue;
-+        // a side street's mouth on a road: room to back in for a turn
-+        for (const end of [0, 1]) {
-+          const n = end ? e.b : e.a;
-+          if (!N[n].out.some((o) => E[o.e].drive)) continue;
-+          const pts = end ? e.rpts : e.pts, cum = end ? e.rcum : e.cum, m = [];
-+          for (let i = 0; i < pts.length && cum[i] < 60; i++) m.push(pts[i]);
-+          m.push(pointAt(pts, cum, Math.min(60, e.len)));
-+          if (m.length > 1) add(m, e.w / 2 + 1.5);
++        if (e.drive) add(e.pts, e.w / 2 + 2); // round 5: our roads only (the avenues and the side streets' mouths are closed)
++        // polish: a sharp corner's inside is rounded off a little (a chord across it), so a car taking it tight is not caught
++        // on a point of kerb the eye hardly sees
++        if (e.drive && e.kind !== "ring") for (let i = 1; i < e.pts.length - 1; i++) {
++          const a0 = e.pts[i - 1], a1 = e.pts[i], a2 = e.pts[i + 1], dh = wrapA(Math.atan2(a2[0] - a1[0], a2[1] - a1[1]) - Math.atan2(a1[0] - a0[0], a1[1] - a0[1]));
++          if (Math.abs(dh) > 0.45 && e.cum[i] > 30 && e.cum[i] < e.len - 30) add([pointAt(e.pts, e.cum, e.cum[i] - 34), pointAt(e.pts, e.cum, e.cum[i] + 34)], e.w / 2 - 4);
 +        }
 +      }
 +      // the point (x, z) for a car of radius r: on the road, or pushed back onto it (and the kerb's outward normal)
@@ -1780,6 +2053,26 @@ index 0000000..fdc5c54
 +        return { hit: true, x: best.px + nx * lim, z: best.pz + nz * lim, nx, nz };
 +      }
 +      return { resolve, segs: segs.length };
++    })();
++    // round 5: the closures, where a street that is not ours leaves one of ours: just past our kerb line, across the
++    // closed street (its centre, its direction away from our road, its width), drawn by the host
++    const CLOSED = (() => {
++      const out = [];
++      for (const n of N) {
++        if (!n.out.some((o) => E[o.e].drive)) continue;
++        for (const o of n.out) {
++          const e = E[o.e]; if (e.drive) continue;
++          const pts = o.dir > 0 ? e.pts : e.rpts, cum = o.dir > 0 ? e.cum : e.rcum;
++          for (let s2 = 4; s2 <= Math.min(e.len, 260); s2 += 2) {
++            const p = pointAt(pts, cum, s2), a = G.nearest(p[0], p[1], 200, (e2) => e2.drive);
++            if (a && a.d < E[a.e].w / 2 + 5) continue;
++            const q = pointAt(pts, cum, Math.min(e.len, s2 + 8)), l = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1;
++            out.push({ x: p[0], z: p[1], nx: (q[0] - p[0]) / l, nz: (q[1] - p[1]) / l, w: e.w + 4, kind: e.kind });
++            break;
++          }
++        }
++      }
++      return out;
 +    })();
 +    const P = { x: 0, z: 0, h: 0, u: 0, w: 0, yr: 0, st: 0, ds: 0, init: false, contact: 0, vx: 0, vz: 0 };
 +    function freeInit() {
@@ -1802,44 +2095,199 @@ index 0000000..fdc5c54
 +      D.vL = locate(P.x, P.z);
 +    }
 +    // the physics, one frame
-+    function physics(dt, thr, steerIn, hb) {
-+      P.st += (steerIn - P.st) * (1 - Math.exp(-dt * 9));
++    // round 5 (Daniel: "more arcade, less sim; turn round within the road's width"): a steering wheel that is smoothed and
++    // self-centres, a yaw rate capped by speed (tight at a crawl: a radius of 14 units; near a pivot when almost stopped
++    // with ↑ or ↓ held, so the car turns round in the road's own width), high grip (only the handbrake slides: Space + ← →
++    // is a quick spin), and the car's nose and tail meet the kerb too (three circles), so it stops at a closed street's
++    // kerb line instead of poking into it; pushes only ever move it back onto the road, so it can never get stuck
++    // beta 2.5 (Daniel: "hold the road much better, more arcade, more fun, more like Mario Kart"): snappier off the line
++    // and in the wheel; Space + ← → at speed is a drift (a little hop, the tail out, smoke and marks on the road) that
++    // charges a mini-turbo: let go after ~0.6 s for a short boost (longer after ~1.4 s); stopped or slow, Space + ← → is
++    // still the quick spin; and the kerbs are soft bumpers: the car bounces off them back into the road, it never grinds
++    const DRIFT_V = 110;
++    const FX = { hop: 0, bump: 0, squash: 0, boostKick: 0, smokeT: 0, skidL: 0, skidR: 0, lastX: 0, lastZ: 0, side: 0, sparkT: 0, dustT: 0 };
++    // the road effects of a frame: tyre smoke and skid marks in a drift (or a hard spin), the mini-turbo's charge as
++    // sparks at the rear wheels (blue, then orange), a boost's flame, dust at top speed; none with reduced motion but the marks
++    function roadFx(dt) {
++      const fxh = H.fx; if (!fxh) return;
++      fxh.tick(dt);
++      const red = reduced(), [hw, ht] = H.vehSpan?.() || [20, 10], fx = Math.sin(P.h), fz = Math.cos(P.h), rx = -fz, rz = fx, au = Math.abs(P.u);
++      const rearX = P.x - fx * hw * 0.85, rearZ = P.z - fz * hw * 0.85;
++      const wheel = (sd) => [rearX + rx * ht * sd, rearZ + rz * ht * sd];
++      const sliding = !!D.drift || (D.keys.h && au > 25 && Math.abs(P.yr) > 1) || Math.abs(P.w) > 40;
++      const moved = Math.hypot(P.x - FX.lastX, P.z - FX.lastZ); FX.lastX = P.x; FX.lastZ = P.z;
++      if (sliding && moved < 60) {
++        FX.skidL += moved;
++        if (FX.skidL > 5) { FX.skidL = 0; for (const sd of [-1, 1]) { const [x, z] = wheel(sd); fxh.skid(x, z, Math.atan2(P.vx || fx, P.vz || fz), 7, 2.4); } }
++        FX.smokeT -= dt;
++        if (!red && FX.smokeT <= 0) { FX.smokeT = 0.05; FX.side = -FX.side || 1; const [x, z] = wheel(FX.side); fxh.puff(x, 3, z, { r0: 2, r1: 5.5 + Math.random() * 2, life: 0.7, vy: 6, vx: -P.vx * 0.12, vz: -P.vz * 0.12, a: 0.42 }); }
++      }
++      if (red) return;
++      if (D.drift && D.drift.t > 0.6) { // the mini-turbo's charge
++        FX.sparkT -= dt;
++        if (FX.sparkT <= 0) { FX.sparkT = 0.04; const lvl = D.drift.t > 1.4 ? 2 : 1, sd = Math.random() < 0.5 ? -1 : 1, [x, z] = wheel(sd); fxh.puff(x + (Math.random() - 0.5) * 3, 2.5, z + (Math.random() - 0.5) * 3, { color: lvl === 2 ? "#ffab2e" : "#5fc4ff", r0: 2, r1: 0.4, life: 0.3, vy: 22 + Math.random() * 14, vx: rx * sd * 20, vz: rz * sd * 20, a: 0.95 }); }
++      }
++      if (D.boost) { // the boost: a flame from the back
++        FX.sparkT -= dt;
++        if (FX.sparkT <= 0) { FX.sparkT = 0.035; fxh.puff(rearX - fx * 6, 5, rearZ - fz * 6, { color: Math.random() < 0.5 ? "#ffcf3a" : "#ff7a2e", r0: 4, r1: 1.2, life: 0.3, vy: 4, vx: -fx * 90, vz: -fz * 90, a: 0.9 }); }
++      }
++      if (P.u > VMAX_F * 0.86 && !D.boost) { // light dust at top speed
++        FX.dustT -= dt;
++        if (FX.dustT <= 0) { FX.dustT = 0.09; FX.side = -FX.side || 1; const [x, z] = wheel(FX.side * 1.3); fxh.puff(x, 2, z, { color: "#e9dfcf", r0: 2, r1: 9, life: 0.6, vy: 5, vx: -P.vx * 0.2, vz: -P.vz * 0.2, a: 0.32 }); }
++      }
++    }
++    function physics(dt, thr, steerIn, hb, assisted) {
++      const spinning = (thr !== 0 || hb) && Math.abs(P.u) < 40 && steerIn !== 0; // turning round on the spot: the wheel goes over at once
++      P.st += (steerIn - P.st) * (1 - Math.exp(-dt * (spinning ? 16 : steerIn === 0 || assisted ? 11 : Math.abs(steerIn) < Math.abs(P.st) ? 11 : 9)));
 +      let u = P.u;
-+      if (thr > 0) { if (u < -4) u = Math.min(0, u + BRAKE_F * dt); else u += ACC_F * dt * (1 - Math.max(0, u) / VMAX_F); }
-+      else if (thr < 0) { if (u > 4) u = Math.max(0, u - BRAKE_F * dt); else u = Math.max(-VREV_F, u - REV_F * dt); }
++      // the drift: starts with Space + ← / → above DRIFT_V, holds while Space is held and the car keeps some speed
++      if (!D.drift && hb && u > DRIFT_V && Math.abs(steerIn) > 0.2 && !D.auto) { D.drift = { t: 0, dir: Math.sign(steerIn) }; FX.hop = 1; }
++      if (D.drift && (!hb || Math.hypot(u, P.w) < 60)) {
++        const t = D.drift.t; D.drift = null;
++        if (t > 0.6 && u > 60) { D.boost = { t: 0, dur: t > 1.4 ? 1.15 : 0.7, lvl: t > 1.4 ? 2 : 1 }; FX.boostKick = 1; }
++      }
++      const drift = D.drift; if (drift) drift.t += dt;
++      if (D.boost) { D.boost.t += dt; if (D.boost.t > D.boost.dur) D.boost = null; }
++      const boost = D.boost ? 1 - D.boost.t / D.boost.dur : 0;
++      // beta 2.5: the auto-pilot drives faster between places (its own top speed, quicker off the line); a boost lifts both
++      const vcap = (D.auto?.vmax ? Math.max(VMAX_F, D.auto.vmax * 1.04) : VMAX_F) * (1 + 0.28 * boost), acc = (D.auto ? ACC_F * 1.5 : ACC_F) * (1 + 1.5 * boost);
++      const crawlCap = !hb && Math.abs(P.st) > 0.6 && Math.abs(u) < 70 ? 28 : Infinity; // turning hard from a crawl: stay slow, turn tight
++      if (boost > 0 && u > 0 && thr >= 0) u = Math.min(vcap, u + 520 * boost * dt); // the mini-turbo pushes even off the throttle
++      if (thr > 0) { if (u < -4) u = Math.min(0, u + BRAKE_F * dt); else if (u < crawlCap) u = Math.min(Math.max(u, crawlCap), u + acc * dt * (1 - Math.max(0, u) / vcap)); }
++      else if (thr < 0) { if (u > 4) u = Math.max(0, u - BRAKE_F * dt); else if (u > -crawlCap) u = Math.max(-VREV_F, Math.min(u, -crawlCap), u - REV_F * dt); }
 +      else { const dec = (ROLL_F + DRAG_F * Math.abs(u)) * dt; u = Math.abs(u) <= dec ? 0 : u - Math.sign(u) * dec; }
-+      if (hb) { const dec = 280 * dt; u = Math.abs(u) <= dec ? 0 : u - Math.sign(u) * dec; }
-+      const au = Math.abs(u);
-+      // steering: tight when slow, smoother when fast; the other way round when backing; cars never turn on the spot
-+      let turn = TURN_F * Math.min(1, au / 70) / (1 + au / 430);
-+      if (hb) turn *= 1.4;
-+      P.yr = au > 0.5 ? P.st * turn * Math.sign(u) : 0;
-+      if (pivots() && au < 25) P.yr += P.st * 1.5 * (1 - au / 25);
-+      // the velocity keeps its direction while the car turns under it, and the tyres pull it round (grip): a slide at speed
++      if (u > vcap) u = Math.max(vcap, u - 260 * dt); // out of a boost: eases back to the normal top speed
++      if (hb && !drift) { const dec = 280 * dt; u = Math.abs(u) <= dec ? 0 : u - Math.sign(u) * dec; }
++      if (drift) u = Math.max(0, u - 35 * dt); // a drift keeps its speed
++      const au = Math.abs(u), sg = au > 4 ? Math.sign(u) : thr < 0 ? -1 : 1;
++      let yr = P.st * Math.sign(u) * Math.min(au / 14, (D.auto ? 3.5 : 2.7) / (1 + au / 480)); // the auto-pilot turns a little sharper (it never overshoots)
++      if (thr !== 0 && au < 40) yr += P.st * sg * 3.3 * (1 - au / 40); // near a pivot, almost stopped with ↑ or ↓ held (beta 2.5: snappier, ~1 s round)
++      if (hb && !drift && Math.abs(P.st) > 0.05) yr = P.st * sg * 3.6; // the handbrake spin (slow)
++      if (drift) yr = drift.dir * clamp(1.0 + 0.8 * P.st * drift.dir, 0.25, 1.9) * Math.min(1, au / 160 + 0.4); // into the drift: ← → make it tighter or wider
++      yr = clamp(yr, -3.6, 3.6);
++      P.yr += (yr - P.yr) * (1 - Math.exp(-dt * 14));
++      // the velocity keeps its direction while the car turns under it, and the tyres pull it round: glued to the road
++      // (beta 2.5: grip 22), a drift lets the tail out (its own slide), the slow handbrake slides freely
 +      const f0x = Math.sin(P.h), f0z = Math.cos(P.h), r0x = -f0z, r0z = f0x;
 +      let vx = f0x * u + r0x * P.w, vz = f0z * u + r0z * P.w;
 +      P.h += P.yr * dt;
 +      const fx = Math.sin(P.h), fz = Math.cos(P.h), rx = -fz, rz = fx;
 +      u = vx * fx + vz * fz; let w = vx * rx + vz * rz;
-+      w *= Math.exp(-dt * (hb ? 1.6 : 10 - 5 * Math.min(1, au / VMAX_F)));
++      if (drift) { const sp = Math.hypot(u, w); w *= Math.exp(-dt * 3.2); u = Math.sign(u || 1) * Math.sqrt(Math.max(0, sp * sp - w * w)); } // a drift keeps its speed while the tail comes round
++      else w *= Math.exp(-dt * (hb ? 1.6 : 22));
 +      vx = fx * u + rx * w; vz = fz * u + rz * w;
-+      let nx = P.x + vx * dt, nz = P.z + vz * dt;
-+      const q = MASK.resolve(nx, nz, CR);
-+      if (q.hit) {
-+        nx = q.x; nz = q.z;
++      let nx = P.x + vx * dt, nz = P.z + vz * dt, hit = false, lost = false, impact = 0;
++      const half = clamp(H.carLen() * 0.5 - CR + 2, 2, 20); // polish: the footprint of a laptop's car (phones show a bigger one)
++      // polish: turning round on the spot, the car eases towards the middle of the road, so nose and tail clear both kerbs
++      if (thr !== 0 && !hb && au < 40 && Math.abs(P.st) > 0.3) {
++        const a = G.nearest(nx, nz, 60, (e) => e.drive && e.kind !== "ring");
++        if (a && a.d > 1) { const e = E[a.e], c = pointAt(e.pts, e.cum, a.s), k = Math.min(1, (150 * dt * Math.abs(P.st) * (1 - au / 70)) / a.d); nx += (c[0] - nx) * k; nz += (c[1] - nz) * k; }
++      }
++      for (let pass = 0; pass < 2; pass++) for (const k of [0, 1, -1]) {
++        const px = nx + fx * half * k, pz = nz + fz * half * k, q = MASK.resolve(px, pz, k ? CR - 4 : CR); // the ends rounder: a car turning round in the road's width may overhang its kerb a little at the corners
++        if (q.lost) { if (!k) lost = true; continue; }
++        if (!q.hit) continue;
++        nx += q.x - px; nz += q.z - pz; hit = true;
 +        const vn = vx * q.nx + vz * q.nz;
-+        if (vn > 0) { vx -= q.nx * vn; vz -= q.nz * vn; }
-+        const k = Math.exp(-dt * 2.2); vx *= k; vz *= k; // the kerb scrubs speed
-+        u = vx * fx + vz * fz; w = vx * rx + vz * rz;
++        // beta 2.5: a soft bumper: the push into the kerb comes back out as a bounce (not a grind along it)
++        if (vn > 0) { impact = Math.max(impact, vn); const b = vn * (vn > 35 ? 1.45 : 1); vx -= q.nx * b; vz -= q.nz * b; }
++      }
++      if (hit) {
++        const k = Math.exp(-dt * 0.7); vx *= k; vz *= k;
++        // and the car turns with its new way (back along the road), so it does not nose into the kerb again
++        const sp = Math.hypot(vx, vz);
++        if (sp > 25 && !drift) { const want = Math.atan2(vx, vz) + (u < 0 ? Math.PI : 0); P.h += wrapA(want - P.h) * (1 - Math.exp(-dt * 7)); }
++        const gx = Math.sin(P.h), gz = Math.cos(P.h);
++        u = vx * gx + vz * gz; w = vx * -gz + vz * gx;
 +        P.contact = 0.3;
-+      } else if (q.lost) { // nowhere near a road (should not happen): back to the last good spot
++        if (impact > 45 && !reduced()) { const s = Math.min(1, impact / 260); FX.bump = Math.max(FX.bump, s); FX.squash = Math.max(FX.squash, s); }
++      } else if (lost) { // nowhere near a road (should not happen): back to the last good spot
 +        nx = P.x; nz = P.z; u = 0; w = 0;
 +      }
 +      P.contact = Math.max(0, P.contact - dt);
-+      P.ds = (nx - P.x) * fx + (nz - P.z) * fz;
++      { const gx = Math.sin(P.h), gz = Math.cos(P.h); P.ds = (nx - P.x) * gx + (nz - P.z) * gz; }
 +      P.x = nx; P.z = nz; P.u = u; P.w = w; P.vx = vx; P.vz = vz;
 +      D.v = u;
 +      if (u < -0.5) D.revDist = (D.revDist || 0) + Math.abs(P.ds);
++      if (Math.abs(u) > 30) D.moved = true;
++      if (Math.abs(u) < 60) D.slowTurn = (D.slowTurn || 0) + Math.abs(P.yr) * dt; // turning round (the tutorial's "back" step)
++    }
++    // round 5: the steering assist, with no ← → held: the car aims a little ahead along the road it is on (on through a
++    // junction when one way is straight on, else fading out as it nears it, so the turn stays yours), in its right-hand
++    // lane: it self-aligns with the road, follows its bends and keeps its lane; and it eases off for a bend it cannot take
++    // the nose about to touch a kerb: a steer away from it (the assist and the auto-pilot both use it)
++    function kerbAway() {
++      const fx = Math.sin(P.h), fz = Math.cos(P.h), half = clamp(H.carLen() * 0.5 - CR + 2, 2, 20), k2 = MASK.resolve(P.x + fx * half, P.z + fz * half, CR + 4);
++      return k2.hit ? clamp((k2.nx * -fz + k2.nz * fx) * 1.4, -0.9, 0.9) : 0;
++    }
++    const ringExits = new Map();
++    function ringExitFor(spoke) {
++      const k = spoke.e * 2 + (spoke.dir > 0 ? 1 : 0);
++      if (ringExits.has(k)) return ringExits.get(k);
++      const hin = inH(spoke);
++      let best = null;
++      for (const n of ringNodes) for (const o of N[n].out) {
++        const e = E[o.e]; if (e.kind === "ring" || !e.drive || (o.e === spoke.e)) continue;
++        const d = Math.abs(wrapA(outH(o) - hin));
++        if (!best || d < best.d) best = { e: o.e, dir: o.dir, d };
++      }
++      ringExits.set(k, best);
++      return best;
++    }
++    function assist() {
++      const au = Math.abs(P.u);
++      const a = G.nearest(P.x, P.z, 90, (e) => e.drive);
++      if (!a) return null;
++      const e0 = E[a.e], fx = Math.sin(P.h), fz = Math.cos(P.h);
++      const t0 = pointAt(e0.pts, e0.cum, Math.max(0, a.s - 5)), t1 = pointAt(e0.pts, e0.cum, Math.min(e0.len, a.s + 5));
++      let it = { e: a.e, dir: ((t1[0] - t0[0]) * fx + (t1[1] - t0[1]) * fz) >= 0 ? 1 : -1 };
++      if (against(it)) return null; // the wrong way round the ring: your call
++      // the road ahead, as far as a stop needs: on along the same street, straight on through a junction, into the
++      // roundabout its own way round (and round it, until you steer out); else it ends at the junction
++      const look = e0.kind === "ring" ? 20 + au * 0.3 : 34 + au * 0.42, far = Math.max(look + 10, 60 + (au * au) / (2 * 520));
++      let s0 = it.dir > 0 ? a.s : e0.len - a.s, run = 0, open = true, aimIt = it;
++      const pts2 = [];
++      for (let k = 0; k < 5; k++) {
++        const p = dpts(it), c = dcum(it), L = c[c.length - 1];
++        for (let s2 = s0; s2 < L && run + s2 - s0 <= far; s2 += 10) pts2.push([...pointAt(p, c, s2), run + s2 - s0, it]);
++        if (run + L - s0 > far) break;
++        run += L - s0;
++        const hin = inH(it), n = endNode(it);
++        const cs = N[n].out.filter((o) => E[o.e].drive && !(o.e === it.e && o.dir === -it.dir) && !against(o)).map((o) => ({ o, d: Math.abs(wrapA(outH(o) - hin)) })).sort((x, y) => x.d - y.d);
++        const ringOn = cs.find((c2) => E[c2.o.e].kind === "ring");
++        // polish (Daniel: no circling forever): into the roundabout, ↑ alone means straight on: the arm nearest the way you came in
++        if (E[it.e].kind !== "ring" && ringOn && (!cs[0] || cs[0].d > 0.5)) D.ringExit = ringExitFor(it);
++        const out = E[it.e].kind === "ring" && D.ringExit ? cs.find((c2) => c2.o.e === D.ringExit.e && c2.o.dir === D.ringExit.dir) : null;
++        const nx2 = out || (E[it.e].kind === "ring" ? ringOn : cs[0] && cs[0].d <= 0.5 ? cs[0] : ringOn);
++        if (!nx2) { pts2.push([...pointAt(p, c, L), run, it]); open = false; break; }
++        it = nx2.o; s0 = 0;
++      }
++      if (pts2.length < 2) return null;
++      let laneK = 1, kinkAt = null;
++      for (let i = 2; i < pts2.length; i++) { const A = pts2[i - 2], B = pts2[i - 1], C = pts2[i]; if (A[3].e !== C[3].e && Math.abs(wrapA(Math.atan2(C[0] - B[0], C[1] - B[1]) - Math.atan2(B[0] - A[0], B[1] - A[1]))) > 0.35) { laneK = clamp((B[2] - 25) / 70, 0, 1); kinkAt = B[2]; break; } }
++      // the aim: `look` ahead, in the right-hand lane (the ring: its middle); a junction ahead with no way straight on fades it;
++      // before a corner it aims no further than just past it (aiming beyond cut the corner across the kerb)
++      const lk = kinkAt != null ? Math.min(look, Math.max(18, kinkAt + 16)) : look;
++      let wide = 0; // in a bend: the lane gives way to a wide line (aim a little to the outside), so the car's nose clears the inside corner
++      { let mt = 0, turn = 0; for (let i = 3; i < pts2.length && pts2[i][2] < 90; i++) { const A = pts2[i - 3], B = pts2[i - 1], C = pts2[i], dh = wrapA(Math.atan2(C[0] - B[0], C[1] - B[1]) - Math.atan2(B[0] - A[0], B[1] - A[1])); mt = Math.max(mt, Math.abs(dh) / Math.max(8, (C[2] - A[2]) / 2)); turn += dh; } laneK *= clamp(1 - mt * 70, 0, 1); wide = -Math.sign(turn) * Math.min(11, mt * 650); }
++      let j = pts2.findIndex((q) => q[2] >= lk); if (j < 0) j = pts2.length - 1;
++      const q = pts2[j], q2 = pts2[Math.min(pts2.length - 1, j + 1)] !== q ? pts2[Math.min(pts2.length - 1, j + 1)] : pts2[j - 1], sgn = q2 === pts2[j - 1] ? -1 : 1;
++      let ax = q[0], az = q[1];
++      { const dx = (q2[0] - ax) * sgn, dz = (q2[1] - az) * sgn, l = Math.hypot(dx, dz) || 1, lane = E[q[3].e].kind === "ring" ? 0 : Math.min(9, E[q[3].e].w * 0.16) * laneK + wide; ax += (-dz / l) * lane; az += (dx / l) * lane; }
++      const fade = open ? 1 : clamp((pts2[pts2.length - 1][2] - 30) / 80, 0, 1);
++      const dist = Math.hypot(ax - P.x, az - P.z) || 1, err = wrapA(Math.atan2(ax - P.x, az - P.z) - P.h);
++      if (Math.abs(err) > (P.contact > 0 ? 1.75 : E[q[3].e].kind === "ring" ? 1.4 : 1.1)) return null; // crosswise (a spin, a turn half done): yours
++      // the speed for the bends ahead: each 30 units' turn, reached by braking
++      let vmax = Infinity;
++      for (let i = 3; i < pts2.length; i++) {
++        const A = pts2[i - 3], B = pts2[i - 1], C = pts2[i];
++        let t = Math.abs(wrapA(Math.atan2(C[0] - B[0], C[1] - B[1]) - Math.atan2(B[0] - A[0], B[1] - A[1]))) / Math.max(8, (C[2] - A[2]) / 2) * 1.5;
++        t = Math.min(t, 1 / 19); // a kink at a junction: the car rounds it (a radius of some 26 units at least)
++        if (t > 1e-3) { const vy = (-t + Math.sqrt(t * t + (4 * t / 480) * 2.2)) / ((2 * t) / 480); vmax = Math.min(vmax, Math.sqrt(Math.min(1100 / t, vy * vy) + 2 * 400 * Math.max(0, A[2] - 10))); }
++      }
++      if (!open) vmax = Math.min(vmax, Math.sqrt(90 * 90 + 2 * 480 * Math.max(0, pts2[pts2.length - 1][2] - 40))); // a junction to choose at: arrive at it slowly
++      // and it keeps the car's nose off the kerb: a kerb within a few units of the nose steers it away (corners, tight bends)
++      return { steer: clamp(err * 2.2 * fade + kerbAway(), -1, 1), vmax };
 +    }
 +    // the auto-pilot on the same physics: pure pursuit of its route (the right-hand lane), slowing for the bends and the stop
 +    function pursuit(dt) {
@@ -1852,27 +2300,48 @@ index 0000000..fdc5c54
 +        const vt = -Math.min(VREV_F * 0.8, Math.sqrt(2 * BRAKE_F * 0.5 * Math.max(0, rem)));
 +        return { rem, steer: clamp(-err * 2.4, -1, 1), thr: P.u > vt + 8 ? -1 : P.u < vt - 8 && P.u < -4 ? 1 : 0 };
 +      }
-+      const rem = a.Lt - Lp, la = 36 + au * 0.35, L2 = Math.min(D.total, Lp + la);
++      if (a.turn) {
++        const [x0, z0] = pathPos(Math.min(D.total, Lp + 4)), [x1, z1] = pathPos(Math.min(D.total, Lp + 30));
++        const err = wrapA(Math.atan2(x1 - x0, z1 - z0) - P.h);
++        if (Math.abs(err) < 0.45) a.turn = false;
++        else if (P.u > 30) return { rem: a.Lt - Lp, steer: 0, thr: -1 }; // brake first (a hard stop, arcade)
++        else return { rem: a.Lt - Lp, steer: err > 0 ? 1 : -1, thr: 1, spin: true }; // round on the spot
++      }
++      let la = 36 + au * 0.35, keep = 10;
++      { let i = 0; while (i < D.cum.length - 1 && D.cum[i] < Lp) i++; for (; i < D.cum.length && D.cum[i] < Lp + Math.max(la, 110); i++) if (D.kap[i] > 1 / 65) { const dk = D.cum[i] - Lp; la = Math.min(la, Math.max(18, dk < 28 ? dk + 16 : dk)); keep = 10 * clamp((dk - 25) / 80, 0, 1); break; } } // before a corner: aim just past it, in the middle of the road
++      const rem = a.Lt - Lp, L2 = Math.min(D.total, Lp + la);
 +      let [tx, tz] = pathPos(L2); const [ax2, az2] = pathPos(Math.min(D.total, L2 + 4)); const tl = Math.hypot(ax2 - tx, az2 - tz) || 1;
-+      tx += (-(az2 - tz) / tl) * 10; tz += ((ax2 - tx) / tl) * 10; // keep right
++      tx += (-(az2 - tz) / tl) * keep; tz += ((ax2 - tx) / tl) * keep; // keep right
 +      const err = wrapA(Math.atan2(tx - P.x, tz - P.z) - P.h);
-+      let vt = Math.min(VMAX_F * 0.82, Math.sqrt(2 * BRAKE_F * 0.55 * Math.max(0, rem)));
-+      { let i = 0; while (i < D.cum.length - 1 && D.cum[i] < Lp) i++; for (; i < D.cum.length && D.cum[i] < Lp + 260; i++) { const k = D.kap[i]; if (k > 1e-4) vt = Math.min(vt, Math.sqrt(ALAT / k + 2 * BRAKE_F * 0.6 * Math.max(0, D.cum[i] - Lp))); } }
-+      vt *= Math.max(0.3, 1 - Math.abs(err) * 0.7);
-+      return { rem, steer: clamp(err * 2.4, -1, 1), thr: P.u < vt - 8 ? 1 : P.u > vt + 8 && P.u > 4 ? -1 : 0 };
++      let vt = Math.min(a.vmax || VMAX_F * 0.82, Math.sqrt(2 * BRAKE_F * 0.7 * Math.max(0, rem)));
++      { let i = 0; while (i < D.cum.length - 1 && D.cum[i] < Lp) i++; for (; i < D.cum.length && D.cum[i] < Lp + 300 + au * 0.9; i++) { const k = D.kap[i]; if (k > 1e-4) { const vy = (-k + Math.sqrt(k * k + (4 * k / 480) * 3.1)) / ((2 * k) / 480); vt = Math.min(vt, Math.sqrt(Math.min(ALAT * 1.6 / k, vy * vy) + 2 * BRAKE_F * 0.6 * Math.max(0, D.cum[i] - Lp))); } } }
++      vt *= Math.max(0.45, 1 - Math.abs(err) * 0.5);
++      return { rem, steer: clamp(err * 2.4 + kerbAway(), -1, 1), thr: P.u < vt - 8 ? 1 : P.u > vt + 8 && P.u > 4 ? -1 : 0 };
 +    }
++    // beta 2.5 (Daniel: "a place behind the car: turn round fast, arcade"): the route is planned both ways, as the car
++    // points and as if it were turned round; when turned round is the shorter way (or the place is just behind), the
++    // auto-pilot first spins the car round on the spot (about a second, in the road's width), then drives
 +    function freeGo(target, pl) {
 +      syncGraph(true);
-+      const L = curL(), it = D.seq[0], e = E[it.e], sDir = clamp(L - it.L0, 0, e.len), tsDir = it.dir > 0 ? target.s : e.len - target.s;
-+      if (target.e === it.e && tsDir < sDir - 8 && sDir - tsDir < 350) { D.auto = { pl, target, rev: true, Lt: it.L0 + tsDir }; return true; }
-+      const p = plan(target);
-+      if (!p) return false;
-+      D.seq = [it, ...p.legs.filter((q, i) => !(i === 0 && q.e === it.e && q.dir === it.dir)).map((q) => ({ e: q.e, dir: q.dir, uid: D.uid++ }))];
++      const it = D.seq[0], e = E[it.e], L = curL(), sDir = clamp(L - it.L0, 0, e.len), tsDir = it.dir > 0 ? target.s : e.len - target.s;
++      if (target.e === it.e && tsDir < sDir - 8 && sDir - tsDir < 70 && Math.abs(P.u) < 60) { D.auto = { pl, target, rev: true, Lt: it.L0 + tsDir }; return true; } // a few metres back: backs up to it
++      const fwd = plan(target);
++      const itR = { e: it.e, dir: -it.dir, uid: D.uid++ };
++      D.seq = [itR]; buildPath(); D.vL = locate(P.x, P.z);
++      const bwd = e.kind === "ring" ? null : plan(target);
++      const turn = !!bwd && (!fwd || bwd.cost + 110 + Math.max(0, P.u) * 0.6 < fwd.cost);
++      const base = turn ? itR : { e: it.e, dir: it.dir, uid: D.uid++ };
++      const p = turn ? bwd : fwd;
++      if (!p) { D.seq = [base]; buildPath(); D.vL = locate(P.x, P.z); return false; }
++      D.seq = [base, ...p.legs.filter((q, i) => !(i === 0 && q.e === base.e && q.dir === base.dir)).map((q) => ({ e: q.e, dir: q.dir, uid: D.uid++ }))];
 +      buildPath();
 +      D.vL = locate(P.x, P.z);
 +      let Lt = D.total;
 +      for (let k = D.seq.length - 1; k >= 0; k--) { const q = D.seq[k]; if (q.e !== target.e) continue; const s = q.dir > 0 ? target.s : E[q.e].len - target.s; Lt = Math.max(0, q.L0 + s - (pl && !pl.tap ? 18 : 0)); break; }
-+      D.auto = { pl, target, legs: [], Lt };
++      const dist = Math.max(0, Lt - D.vL);
++      // beta 2.5: faster between places, more so the further it is (x1.3 on a short hop, up to x1.9 across the city)
++      const vmax = VMAX_F * 0.82 * clamp(1.3 + (dist - 500) / 3500 * 0.6, 1.3, 1.9);
++      D.auto = { pl, target, legs: [], Lt, turn: turn, vmax };
 +      return true;
 +    }
 +    function freeTick(dt, now) {
@@ -1885,7 +2354,16 @@ index 0000000..fdc5c54
 +      } else {
 +        thr = (D.keys.u ? 1 : 0) - (D.keys.d ? 1 : 0); steer = (D.keys.l ? 1 : 0) - (D.keys.r ? 1 : 0);
 +      }
-+      physics(dt, thr, steer, hb);
++      let assisted = false;
++      if (!D.auto && steer !== 0 && D.ringExit && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) > 110) D.ringExit = null; // steering yourself, off the ring: your own way
++      if (!D.auto && steer === 0 && !hb && (P.u > 12 || (P.contact > 0 && thr > 0 && P.u >= 0))) {
++        const as = assist();
++        if (as) { D.asv = Math.round(Math.min(as.vmax, 9999)); steer = as.steer; assisted = true; if (thr > 0 && P.u > as.vmax - 5) thr = P.u > as.vmax + 12 ? -1 : 0; }
++      }
++      D.assist = assisted;
++      physics(dt, thr, steer, hb, assisted);
++      roadFx(dt);
++      { const au = !!D.auto; if (au !== D.autoCls) { D.autoCls = au; document.body.classList.toggle("n2-driving-auto", au); } } // beta 2.6: the phone's tap hint steps aside while it drives
 +      lamps(P.u < -0.5 || (D.keys.d && P.u <= 0.5 && !D.auto));
 +      if (!D.auto) {
 +        syncT -= dt;
@@ -1904,10 +2382,14 @@ index 0000000..fdc5c54
 +    }
 +    let freeSig = "";
 +    function freeUI() {
-+      let hint = touchUI || VP.w < 720 ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BRAKE / BACK · SPACE DRIFT";
++      let hint = touchUI || VP.w < 720 ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BACK · SPACE + ← → DRIFT";
++      if (D.assist && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) < 110) hint = VP.w < 720 ? "ROUNDABOUT · ↑ STRAIGHT ON · OR STEER OUT" : "ROUNDABOUT · ↑ STRAIGHT ON · STEER OUT FOR ANOTHER EXIT";
++      if (D.moved && Math.abs(P.u) < 5 && !D.auto && P.contact <= 0) hint = VP.w < 720 ? "STOPPED · ↑ + ← → TURNS YOU ROUND" : "STOPPED · ↑ OR ↓ WITH ← → TURNS YOU ROUND"; // round 5
 +      if (D.auto) hint = D.auto.rev ? "BACKING UP TO IT · ANY KEY TAKES OVER" : "DRIVING YOU THERE · ANY KEY TAKES OVER";
++      else if (D.drift) hint = D.drift.t > 1.4 ? "DRIFT · LET GO OF SPACE: SUPER BOOST" : D.drift.t > 0.6 ? "DRIFT · LET GO OF SPACE: BOOST" : "DRIFT · HOLD SPACE, STEER WITH ← →";
++      else if (D.boost) hint = D.boost.lvl > 1 ? "SUPER BOOST!" : "BOOST!";
 +      else if (P.u < -5) hint = "REVERSING";
-+      else if (P.contact > 0) hint = VP.w < 720 ? "THE KERB · STEER OR BACK UP" : "THE KERB · STEER AWAY OR BACK UP";
++      else if (P.contact > 0 && (Math.abs(P.u) > 3 || D.keys.u || D.keys.d)) hint = VP.w < 720 ? "THE KERB · STEER OR BACK UP" : "THE KERB · STEER AWAY OR BACK UP";
 +      if (hint === freeSig) return;
 +      freeSig = hint;
 +      for (const k of "udlr") { keyEls[k].classList.remove("off", "need"); }
@@ -1938,7 +2420,21 @@ index 0000000..fdc5c54
 +        const [hw, ht] = H.vehSpan?.() || [20, 10];
 +        g.position.y += BODY.ride + Math.abs(Math.sin(g.rotation.x)) * hw + Math.abs(Math.sin(g.rotation.z)) * ht;
 +      }
-+      if (red) return;
++      const base = g.userData.n2base || (g.userData.n2base = g.scale.clone());
++      if (red) { g.scale.copy(base); return; }
++      // beta 2.5 (Mario Kart): a hop into a drift, squash and stretch (bumps, landings, a boost, pulling away), a bigger
++      // lean into the turns (and into a drift), the wheels bouncing a little over the road at speed
++      if (FX.hop) { FX.hop = 0; BODY.hyv = 52; BODY.hy = BODY.hy || 0.01; }
++      if (BODY.hy > 0) { BODY.hyv -= 980 * dt; BODY.hy += BODY.hyv * dt; if (BODY.hy <= 0) { BODY.hy = 0; FX.squash = Math.max(FX.squash, 0.4); BODY.hyv = 0; } }
++      g.position.y += BODY.hy || 0;
++      if (FX.squash) { BODY.sv = (BODY.sv || 0) + FX.squash * 1.7; FX.squash = 0; }
++      if (FX.boostKick) { BODY.sv = (BODY.sv || 0) - 1.3; FX.boostKick = 0; }
++      BODY.s = BODY.s || 0; BODY.sv = BODY.sv || 0;
++      spr("s", "sv", clamp(BODY.acc * 2.4e-5, -0.035, 0.035) * -1, 13, 0.3);
++      const sq = clamp(BODY.s, -0.12, 0.16);
++      g.scale.set(base.x * (1 + sq * 0.5), base.y * (1 - sq), base.z * (1 + sq * 0.5));
++      BODY.lean = (BODY.lean || 0) + (clamp(-P.u * P.yr * 0.00011, -0.075, 0.075) + (D.drift ? -D.drift.dir * 0.055 : 0) - (BODY.lean || 0)) * (1 - Math.exp(-dt * 8));
++      g.rotation.z += BODY.lean;
 +      const eng = ENGINE[H.vehicle()] ?? 1, still = Math.abs(D.v) < 4 && !D.kturn && !D.uturn;
 +      BODY.idle += ((still ? 1 : 0) - BODY.idle) * (1 - Math.exp(-dt * (still ? 2 : 8)));
 +      const t = now * 0.001, sp = Math.min(1, Math.abs(D.v) / VMAX);
@@ -1949,6 +2445,7 @@ index 0000000..fdc5c54
 +        g.rotation.z += (Math.sin(t * 93 + 0.4) * 0.0006 + Math.sin(t * 137) * 0.00035) * idle + Math.sin(t * 47) * 0.0008 * buzz;
 +        g.rotation.x += Math.sin(t * 119 + 2.1) * 0.0003 * idle;
 +      }
++      if (sp > 0.2) g.position.y += Math.abs(Math.sin(t * 10.5)) * 0.32 * sp * sp; // over the road's little bumps
 +    }
 +
 +    // ===================== 3. the cameras =====================
@@ -1977,7 +2474,8 @@ index 0000000..fdc5c54
 +      D.camK = k;
 +      const mv = H.mapView, hd = H.heading();
 +      if (D.camH == null) D.camH = hd;
-+      D.camH += wrapA(hd - D.camH) * (1 - Math.exp(-dt * 5.5));
++      // polish (comfort): the street camera turns after the car smoothly and never faster than ~1.7 rad/s (a spin or a turn on the spot no longer whips it round)
++      D.camH += clamp(wrapA(hd - D.camH) * (1 - Math.exp(-dt * 4.2)), -1.7 * dt, 1.7 * dt);
 +      // satellite: heading up while you drive (the arrows then point the way they turn), gently
 +      if (!FREE && D.ready && mv.follow && (D.v > 25 || D.auto || D.uturn || D.kturn) && !reduced()) {
 +        mv.yawGoal = null;
@@ -1986,7 +2484,7 @@ index 0000000..fdc5c54
 +      // round 4 (GTA 2): following the car the satellite looks more straight down, pulls back as the speed rises (and in
 +      // again when slow), and looks a little ahead of where the car is going; the map's own zoom stays the base
 +      if (FREE && D.ready && P.init) {
-+        const spd = Math.min(1, Math.abs(P.u) / VMAX_F);
++        const spd = Math.min(1.45, Math.abs(P.u) / VMAX_F); // beta 2.5: the auto-pilot goes faster: the map pulls back further with it
 +        if (mv.follow && !reduced()) {
 +          const m = D.zm || 1, nm = m + (1 + 0.6 * spd - m) * (1 - Math.exp(-dt * 1.1));
 +          mv.dist *= nm / m; D.zm = nm;
@@ -1996,8 +2494,10 @@ index 0000000..fdc5c54
 +        D.lax = (D.lax || 0) + (lax - (D.lax || 0)) * (1 - Math.exp(-dt * 1.6)); D.laz = (D.laz || 0) + (laz - (D.laz || 0)) * (1 - Math.exp(-dt * 1.6));
 +        camPos.x += D.lax; camPos.z += D.laz; camTarget.x += D.lax; camTarget.z += D.laz;
 +      }
-+      if (k < 1e-4) return;
-+      const cp = H.carPos, len = H.carLen() * (VP.w < VP.h ? 1.7 : 1), f = [Math.sin(D.camH), Math.cos(D.camH)];
++      FX.bump *= Math.exp(-dt * 7);
++      const shake = (amt) => { if (amt > 0.05 && !reduced()) { camPos.x += (Math.random() - 0.5) * amt; camPos.y += (Math.random() - 0.5) * amt; camPos.z += (Math.random() - 0.5) * amt; } };
++      if (k < 1e-4) { shake(FX.bump * H.mapView.dist * 0.006); return; }
++      const cp = H.carPos, len = H.carLen() * (VP.w < VP.h ? 1.7 : 1.18), f = [Math.sin(D.camH), Math.cos(D.camH)]; // polish: a little further back on a laptop (the car filled the frame)
 +      // the camera stays over the road: where the spot behind the car is not road (a dead end's end, a turn), it comes
 +      // in closer and a little higher, so it never sits inside a tree or a wall
 +      let pull = 0.4;
@@ -2025,8 +2525,8 @@ index 0000000..fdc5c54
 +      const ex = eye.x - look.x, ey = eye.y - look.y, ez = eye.z - look.z, d1 = Math.hypot(ex, ey, ez);
 +      // speed: the lens widens a little and the camera falls back (lag), a faint shake, and the post pass's radial blur
 +      const spd = reduced() ? 0 : Math.min(1, Math.max(0, D.v) / VMAX), kick = spd * Math.sqrt(spd);
-+      const yaw1 = Math.atan2(ex, ez), pitch1 = Math.asin(ey / d1), fov1 = 74 + 12 * kick;
-+      H.mapView.zoomBlur = Math.max(H.mapView.zoomBlur || 0, kick * kick * 0.55 * k);
++      const yaw1 = Math.atan2(ex, ez), pitch1 = Math.asin(ey / d1), fov1 = 74 + 12 * kick + (D.boost && !reduced() ? 10 * (1 - D.boost.t / D.boost.dur) : 0);
++      // polish: no radial speed blur in the street view (10 more taps a pixel, ~15 fps on a laptop, and a nausea risk); the lens still widens
 +      const fov0 = H.camera.fov, d0 = Math.hypot(camPos.x - camTarget.x, camPos.y - camTarget.y, camPos.z - camTarget.z);
 +      const yaw0 = Math.atan2(camPos.x - camTarget.x, camPos.z - camTarget.z), pitch0 = Math.asin(clamp((camPos.y - camTarget.y) / Math.max(d0, 1e-3), -1, 1));
 +      const tanH = (f) => Math.tan((f * Math.PI) / 360);
@@ -2037,7 +2537,11 @@ index 0000000..fdc5c54
 +      camTarget.set(tx, ty, tz);
 +      camPos.set(tx + Math.sin(yaw) * Math.cos(pitch) * d, ty + Math.sin(pitch) * d, tz + Math.cos(yaw) * Math.cos(pitch) * d);
 +      if (spd > 0.05) { const t = performance.now() * 0.001, a = spd * spd * 0.5 * k; camPos.x += Math.sin(t * 23.1) * a; camPos.y += Math.sin(t * 31.7 + 1) * a * 0.7; camPos.z += Math.sin(t * 19.3 + 2) * a; }
-+      const cam = H.camera, near = Math.max(2.5, d * 0.32 * (1 - k) + 3 * k), far = Math.max(14000, d * 3 + 6000);
++      shake(FX.bump * 3.2 * k);
++      // beta 2.5: the street camera leans into the turns (and a drift), a little
++      { const want = reduced() ? 0 : clamp(P.u * P.yr * 0.00016, -0.07, 0.07) + (D.drift ? D.drift.dir * 0.03 : 0); D.roll = (D.roll || 0) + (want - (D.roll || 0)) * (1 - Math.exp(-dt * 5));
++        if (Math.abs(D.roll) > 1e-4) { const fx2 = camTarget.x - camPos.x, fz2 = camTarget.z - camPos.z, l = Math.hypot(fx2, fz2) || 1, r = D.roll * k; H.camera.up.set((-fz2 / l) * Math.sin(r), Math.cos(r), (fx2 / l) * Math.sin(r)); } }
++      const cam = H.camera, near = Math.max(2.5, d * 0.32 * (1 - k) + 3 * k), far = Math.max(14000, d * 3 + 6000) * (1 - k) + 2400 * k; // polish: the street view draws what its haze lets you see (was the whole city)
 +      if (Math.abs(cam.fov - fov) > 0.01 || Math.abs(cam.near - near) > 0.5 || Math.abs(cam.far - far) > 10) { cam.fov = fov; cam.near = near; cam.far = far; cam.updateProjectionMatrix(); }
 +    }
 +    // one source of truth for the view: D.view is the visitor's choice; the view on screen is that choice unless a scene
@@ -2098,6 +2602,7 @@ index 0000000..fdc5c54
 +        </div>
 +      </div>
 +      <div class="n2-toast" role="status"></div>
++      <div class="n2-taphint mono" aria-hidden="true">TAP THE ROAD TO DRIVE THERE</div>
 +      <div class="n2-arms" aria-hidden="true"><span class="n2-arm" data-k="l"></span><span class="n2-arm" data-k="s"></span><span class="n2-arm" data-k="r"></span></div>`;
 +    document.body.appendChild(root);
 +    const panel = root.querySelector(".n2-panel"), views = root.querySelector(".n2-views"), pad = root.querySelector(".n2-pad"), hintEl = root.querySelector(".n2-hint"), toastEl = root.querySelector(".n2-toast");
@@ -2265,6 +2770,9 @@ index 0000000..fdc5c54
 +    }
 +    const uniq = (list) => { const s = new Set(); return list.sort((a, b) => a.d - b.d).filter((x) => (s.has(x.p.pl) ? false : (s.add(x.p.pl), true))); };
 +    const mDist = (d) => (d < 1000 ? `${Math.max(10, Math.round(d / 10) * 10)} m` : `${(d / 1000).toFixed(1)} km`);
++    // beta 2.6 (Daniel: "Nearby: only what is genuinely near"): ahead on your own stretch up to 420, a junction's ways
++    // only when it is within 240 (and 320 beyond it)
++    const NEAR_AHEAD = 420, NEAR_JUNCTION = 240, NEAR_BEYOND = 320;
 +    function render(force) {
 +      if (!D.ready) return;
 +      const L = curL(), ci = ciOf(L), cur = D.seq[ci], q = quarterAt(H.carPos.x, H.carPos.z), dec = nextDecision(L);
@@ -2273,13 +2781,13 @@ index 0000000..fdc5c54
 +      const ahead = [];
 +      for (let k = ci; k < D.seq.length; k++) {
 +        const it = D.seq[k], e = E[it.e];
-+        for (const p of byEdge.get(it.e) || []) { const s = it.dir > 0 ? p.s : e.len - p.s, d = it.L0 + s - L; if (d > 30 && d < 900) ahead.push({ p, d }); }
++        for (const p of byEdge.get(it.e) || []) { const s = it.dir > 0 ? p.s : e.len - p.s, d = it.L0 + s - L; if (d > 30 && d < NEAR_AHEAD) ahead.push({ p, d }); }
 +      }
 +      const here = hereAt();
 +      const jd = dec && dec.type === "junction" ? dec.L - L : Infinity;
-+      const ex = dec && dec.type === "junction" && jd < 900 ? dec.ex : null;
++      const ex = dec && dec.type === "junction" && jd < NEAR_JUNCTION ? dec.ex : null;
 +      const ways = { l: [], s: [], r: [] };
-+      if (ex) for (const k of ["l", "s", "r"]) if (ex[k]) { const o = []; explore(ex[k], 650, jd + (ex[k].pre || 0), o, new Set(), 0); ways[k] = uniq(o); }
++      if (ex) for (const k of ["l", "s", "r"]) if (ex[k]) { const o = []; explore(ex[k], NEAR_BEYOND, jd + (ex[k].pre || 0), o, new Set(), 0); ways[k] = uniq(o); }
 +      // a place reached by more than one way belongs to the shortest (a tie: the straighter way)
 +      {
 +        const best = new Map();
@@ -2297,9 +2805,12 @@ index 0000000..fdc5c54
 +        if (!list.length) continue;
 +        const groups = new Map();
 +        for (const x of list) { if (!groups.has(x.p.q)) groups.set(x.p.q, []); groups.get(x.p.q).push(x); }
-+        // only the places of the quarter you're in; a way that leads into another quarter shows that quarter
++        // only the places of the quarter you're in; a way that leads into another quarter shows that quarter, but only
++        // right at its junction (beta 2.6: Nearby is the car's immediate zone)
 +        const lead = q && groups.has(q) ? null : [...groups.keys()][0];
-+        rows.push({ k, other: lead, items: groups.get(lead || q).slice(0, 3) });
++        if (lead && !(k !== "s" && jd < 160) && !(k === "s" && !q)) continue;
++        rows.push({ k, other: lead, items: groups.get(lead || q).filter((x) => x.d < (here ? NEAR_AHEAD * 0.7 : NEAR_AHEAD) && x.p.pl !== here?.pl).slice(0, 3) });
++        if (!rows[rows.length - 1].items.length) rows.pop();
 +      }
 +      const auto = D.auto;
 +      // round 2 (Daniel: "more visual"): the panel is rebuilt only when what it shows changes; the distances update in place
@@ -2339,13 +2850,21 @@ index 0000000..fdc5c54
 +      if (shotBusy) return;
 +      shotBusy = true;
 +      const next = () => {
++        // polish: a postcard is a whole render of the city (~50 ms): never while the car is moving, it would be a hitch
++        if (shotQ.length && Math.abs(P.u) > 25) { setTimeout(next, 450); return; }
 +        const q = shotQ.shift();
 +        if (!q) { shotBusy = false; imgV++; render(); return; }
-+        const u = H.shot?.(q);
++        const t0 = performance.now(), u = H.shot?.(q);
++        (window.__n2shotMs ||= []).push(Math.round(performance.now() - t0)); // tests: what a postcard costs
 +        shots.set(q.id, u || "");
 +        (window.requestIdleCallback || setTimeout)(next, { timeout: 600 });
 +      };
 +      (window.requestIdleCallback || setTimeout)(next, { timeout: 600 });
++    }
++    // polish: the postcards of the places nearest the start, made while the welcome card is read (not on the first drive)
++    function preShots() {
++      const c = H.carPos;
++      PL.slice().sort((a, b) => Math.hypot(a.x - c.x, a.z - c.z) - Math.hypot(b.x - c.x, b.z - c.z)).forEach((p) => { if (!imgOf(p.pl)) wantShot(p.pl); });
 +    }
 +    function autoLeft() {
 +      const a = D.auto; if (!a) return 0;
@@ -2371,15 +2890,26 @@ index 0000000..fdc5c54
 +    // every step; once per visitor (cz-drive-guide = "2"); a visitor who began with a place gets it after that card ----------
 +    const TUT = { i: -1, el: null, done: null, t0: 0, L0: 0, timer: 0, asked: false };
 +    const touchUI = matchMedia("(hover: none) and (pointer: coarse)").matches;
-+    const STEPS = [
-+      { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: touchUI ? "↑ to go, ← → to steer" : "↑ to go, ← → to steer (or W A S D)", at: "car" },
-+      { id: "round", keys: [], t: "Take the roundabout", s: "Steer round the fountain and out onto a street", at: "car" },
-+      { id: "back", keys: ["↓"], t: "Back up", s: touchUI ? "Hold ↓: it brakes, then reverses" : "Hold ↓ (or S): it brakes, then reverses", at: "car" },
++    // beta 2.6 (Daniel): on a phone the map (Satellite) is driven by tapping, the Street view by the pad; its tour follows
++    const PHONE_STEPS = [
++      { id: "taproad", keys: [], t: "Tap the road to drive there", s: "Anywhere on a street: the car takes you", at: "mid" },
++      { id: "tapplace", keys: [], t: "Tap a place to visit it", s: "Its pin or its name: the car drives you there", at: "mid" },
++      { id: "look", keys: [], t: "Look around", s: "Drag the map, pinch to zoom · ◎ brings you back", at: "mid" },
++      { id: "view", keys: [], t: "Take the wheel", s: "Switch to Street down here", at: "views" },
++      { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: "↑ to go, ← → to steer", at: "car" }
++    ];
++    let STEPS;
++    const DESK_STEPS = [
++      { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: touchUI ? "↑ to go: it keeps to the road · ← → to turn" : "↑ to go: it keeps to the road · ← → to turn (or W A S D)", at: "car" },
++      { id: "round", keys: ["↑"], t: "Take the roundabout", s: touchUI ? "Hold ↑: round it and straight on · steer to leave sooner" : "Hold ↑: round the fountain and straight on · steer out to leave sooner", at: "car" },
++      { id: "back", keys: ["↓"], t: "Back up or turn round", s: touchUI ? "Hold ↓ to back up · stopped, ↑ with ← or → turns you round" : "Hold ↓ (or S) to back up · stopped, ↑ with ← or → turns you round", at: "car" },
 +      { id: "tap", keys: [], t: "Or let us drive", s: "Tap a place on the map, or a card in Nearby", at: "panel" },
 +      { id: "look", keys: [], t: "Look around", s: touchUI ? "Drag the map, pinch to zoom · ◎ brings you back" : "Drag the map, scroll to zoom · ◎ brings you back", at: "mid" },
 +      { id: "view", keys: [], t: "Street or Satellite", s: touchUI ? "Switch the view down here" : "Switch the view down here, or press V", at: "views" }
 +    ];
++    STEPS = DESK_STEPS;
 +    function tutorial(done, force) {
++      STEPS = VP.w < 720 ? PHONE_STEPS : DESK_STEPS;
 +      try { if (!force && localStorage.getItem("cz-drive-guide") === "2") return false; localStorage.setItem("cz-drive-guide", "2"); } catch {}
 +      if (!D.ready && !place()) return false;
 +      D.ready = true;
@@ -2394,13 +2924,17 @@ index 0000000..fdc5c54
 +      return true;
 +    }
 +    function tutGo(i) {
-+      TUT.i = i; TUT.t0 = performance.now(); TUT.L0 = curL(); TUT.x0 = P.x; TUT.z0 = P.z; TUT.inRing = false; TUT.turn = D.turnT || 0; TUT.rev = D.revDist || 0; TUT.view = D.view; TUT.dragged = false;
++      TUT.i = i; TUT.t0 = performance.now(); TUT.L0 = curL(); TUT.x0 = P.x; TUT.z0 = P.z; TUT.inRing = false; TUT.turn = D.turnT || 0; TUT.rev = D.revDist || 0; TUT.slow = D.slowTurn || 0; TUT.view = D.view; TUT.dragged = false;
 +      const st = STEPS[i], e = TUT.el, key = (k) => `<span class="n2-cap${k === "↑" ? " big" : ""}" aria-hidden="true">${k}</span>`;
 +      e.innerHTML = `${st.keys.length ? `<span class="n2-caps">${st.keys.map(key).join("")}</span>` : ""}<b>${st.t}</b><i>${st.s}</i><span class="n2-tbar"><em class="mono">${i + 1}/${STEPS.length}</em><button class="n2-skip">Skip</button></span>`;
 +      e.dataset.at = st.at;
 +      e.classList.remove("hidden", "in"); void e.offsetWidth; e.classList.add("in");
-+      keyEls.u.classList.toggle("tut", st.id === "drive"); keyEls.l.classList.toggle("tut", st.id === "drive" || st.id === "round"); keyEls.r.classList.toggle("tut", st.id === "drive" || st.id === "round"); keyEls.d.classList.toggle("tut", st.id === "back");
++      keyEls.u.classList.toggle("tut", st.id === "drive" || st.id === "round"); keyEls.l.classList.toggle("tut", st.id === "drive"); keyEls.r.classList.toggle("tut", st.id === "drive"); keyEls.d.classList.toggle("tut", st.id === "back"); // polish: step 2 is "hold ↑"
 +      views.classList.toggle("tut", st.id === "view"); panel.classList.toggle("tut", st.id === "tap");
++      document.body.classList.toggle("n2-tour", true);
++      // phone, "tap a place": the map pulls back to show the nearest places (the car's own spot may have none in view)
++      TUT.fly = null;
++      if (st.id === "tapplace") { const c = H.carPos, q = PL.slice().sort((a, b) => Math.hypot(a.x - c.x, a.z - c.z) - Math.hypot(b.x - c.x, b.z - c.z))[0]; if (q) { const d = Math.hypot(q.x - c.x, q.z - c.z); TUT.fly = { x: q.x * 0.85 + c.x * 0.15, z: q.z * 0.85 + c.z * 0.15, d: clamp(d * 1.6, 2400, 4600), t: 0 }; } }
 +      czEv?.("onboarding_step", { step: "drive_" + st.id, action: "shown" });
 +    }
 +    const czEv = (n, p) => { try { window.czEvent && window.czEvent(n, p || {}); } catch {} };
@@ -2414,7 +2948,7 @@ index 0000000..fdc5c54
 +    }
 +    function tutEnd(how) {
 +      if (TUT.i < 0) return;
-+      TUT.i = -1; clearTimeout(TUT.timer);
++      TUT.i = -1; clearTimeout(TUT.timer); document.body.classList.remove("n2-tour");
 +      TUT.el?.classList.add("hidden");
 +      for (const k of "udlr") keyEls[k].classList.remove("tut"); views.classList.remove("tut"); panel.classList.remove("tut");
 +      if (how === "skipped") czEv("onboarding_step", { step: "drive_tour", action: "skipped" });
@@ -2425,11 +2959,18 @@ index 0000000..fdc5c54
 +      if (TUT.i < 0 && !TUT.asked && D.arrT && !D.auto && !H.cardOpen() && performance.now() - D.arrT > 1500) { TUT.asked = true; tutorial(null); }
 +      if (TUT.i < 0 || TUT.i >= STEPS.length) { if (TUT.i >= 0) tutPlace("mid"); return; }
 +      const st = STEPS[TUT.i], L = curL(), now = performance.now(), mv = H.mapView;
++      if (TUT.fly && st.id === "tapplace") {
++        const f = TUT.fly; f.t += 1 / 60;
++        if ((mv.direct || 0) > TUT.t0 || f.t > 2.2 || (D.auto && !D.auto.pl?.tap)) TUT.fly = null;
++        else { const k = reduced() ? 1 : 0.06; mv.follow = false; mv.focus = null; mv.distGoal = null; mv.tgt.x += (f.x - mv.tgt.x) * k; mv.tgt.z += (f.z - mv.tgt.z) * k; mv.dist += (f.d - mv.dist) * k; }
++      }
 +      if (now - TUT.t0 > 600) {
 +        if (st.id === "drive" && Math.hypot(P.x - TUT.x0, P.z - TUT.z0) > 140) return tutNext();
 +        if (st.id === "round") { const d = Math.hypot(P.x - H.fork.x, P.z - H.fork.y); if (d < 105) TUT.inRing = true; if (TUT.inRing && d > 230) return tutNext(); }
-+        if (st.id === "back" && (D.revDist || 0) - TUT.rev > 25) return tutNext();
++        if (st.id === "back" && ((D.revDist || 0) - TUT.rev > 25 || (D.slowTurn || 0) - TUT.slow > 2.4)) return tutNext();
 +        if (st.id === "tap" && D.auto) return tutNext();
++        if (st.id === "taproad" && D.auto && D.auto.pl?.tap) return tutNext();
++        if (st.id === "tapplace" && ((D.auto && D.auto.pl && !D.auto.pl.tap) || H.cardOpen())) return tutNext();
 +        if (st.id === "look") { if ((mv.direct || 0) > TUT.t0) TUT.dragged = true; if (TUT.dragged && mv.follow) return tutNext(); } // a real hand on the map (r166's), then back with ◎ or by driving
 +        if (st.id === "view" && D.view !== TUT.view) return tutNext();
 +      }
@@ -2452,7 +2993,7 @@ index 0000000..fdc5c54
 +      tutorial, tutorialEnd: () => tutEnd(null), tourStep: () => (TUT.i >= 0 && TUT.i < STEPS.length ? STEPS[TUT.i].id : TUT.i >= STEPS.length ? "end" : null),
 +      get camK() { return D.camK; },
 +      mv: () => { const m = H.mapView; return { x: Math.round(m.tgt.x), z: Math.round(m.tgt.z), dist: Math.round(m.dist), yaw: +m.yaw.toFixed(3), pitch: +m.pitch.toFixed(3), follow: m.follow }; },
-+      onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
++      onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, closed: () => CLOSED, speed: () => P.u, dims: () => ({ len: H.carLen(), span: H.vehSpan() }), cam: () => H.camera, look: (x, z, d) => { const m = H.mapView; m.follow = false; m.tgt.set(x, 0, z); m.dist = d; m.distGoal = null; m.vx = m.vz = 0; }, put: (x, z, h) => { P.x = x; P.z = z; P.h = h; P.u = P.w = P.yr = 0; }, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
 +      // a place from the map (a pin, a chip, the welcome card): driven to along the graph
 +      go(pl) {
 +        if (!pl || pl.find) return false;
@@ -2494,14 +3035,14 @@ index 0000000..fdc5c54
 +  };
 +})();
 diff --git a/src/styles.css b/src/styles.css
-index 2ef3ce3..3ac6dc9 100644
+index 2ef3ce3..0cfd9d1 100644
 --- a/src/styles.css
 +++ b/src/styles.css
 @@ -3556,6 +3556,8 @@ body.kz-intro .kz-veil { -webkit-backdrop-filter: none; backdrop-filter: none; }
  /* r139i: its hover (it had none: "all: unset" above dropped it) */
  .map-welcome .mw-free { transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease, background-color .22s ease; }
  .map-welcome .mw-free:hover, .map-welcome .mw-free:focus-visible { transform: translateY(-2px); box-shadow: 0 4px 0 #141414; background: #FFDA3A; }
-+.map-welcome .mw-drive { all: unset; cursor: pointer; display: block; margin: 12px auto 0; font: 700 13px/1 CromaticSans, sans-serif; text-decoration: underline; text-underline-offset: 4px; opacity: .8; } /* nav2 */
++.map-welcome .mw-drive { all: unset; cursor: pointer; display: block; margin: 0 auto; padding: 16px 12px 15px; font: 700 13px/1 CromaticSans, sans-serif; text-decoration: underline; text-underline-offset: 4px; opacity: .8; } /* nav2 */
 +.map-welcome .mw-drive:hover, .map-welcome .mw-drive:focus-visible { opacity: 1; }
  .map-welcome .mw-free:active { transform: translateY(1px); box-shadow: 0 1px 0 #141414; transition-duration: .08s; }
  .tap-hint { position: fixed; left: 0; top: 0; z-index: 23; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 6px; translate: -50% -30%; }
