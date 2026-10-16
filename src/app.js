@@ -24127,8 +24127,20 @@ void main() {
       rp([[1500, 4330], [1500, 4360], [1500, 5200], [1500, 5700]]),
       rp([[1500, 5700], [1500, 5900], [1500, 6100]]),
       roundedPolyline(LANE_PTS, 120).map(([x, z]) => [x, z]),
-      rp([[1170, 6100], [1170, 6180], ...ROUTE_MERGE.slice(1)]).filter(([, z]) => z < RAMP_BASE - 60)
+      boulevardPts() // r185: the boulevard to Olari 9, ending at the house's forecourt (was the merge on to the airfield)
     ];
+    // r185: from the Dacia row into the boulevard, each way, a curve (tangent at both ends) the drives take
+    for (const sx of [-1, 1]) {
+      let qa = null, qb = null;
+      for (const sg of segs) for (const q of sg) {
+        if (Math.abs(q[1] - BLVD_Z0) < 1 && Math.sign(q[0] - OLARI_PLAZA.x) === sx && Math.abs(q[0] - OLARI_PLAZA.x) > 45 && Math.abs(q[0] - OLARI_PLAZA.x) < 110 && (!qa || Math.abs(Math.abs(q[0] - OLARI_PLAZA.x) - 70) < Math.abs(Math.abs(qa[0] - OLARI_PLAZA.x) - 70))) qa = q;
+      }
+      for (const q of segs[segs.length - 1]) if (Math.abs(q[1] - (BLVD_Z0 + 75)) < 13 && (!qb || Math.abs(q[1] - BLVD_Z0 - 75) < Math.abs(qb[1] - BLVD_Z0 - 75))) qb = q;
+      if (!qa || !qb) continue;
+      const pts = [];
+      for (let i = 0; i <= 10; i++) { const t = i / 10, a = (1 - t) ** 3, b = 3 * (1 - t) ** 2 * t, c = 3 * (1 - t) * t * t, d = t ** 3, k = Math.abs(qa[0] - qb[0]) * 0.55; const p1 = [qa[0] - sx * k, qa[1]], p2 = [qb[0], qb[1] - k]; pts.push(i === 0 ? qa : i === 10 ? qb : [a * qa[0] + b * p1[0] + c * p2[0] + d * qb[0], a * qa[1] + b * p1[1] + c * p2[1] + d * qb[1]]); }
+      segs.push(pts);
+    }
     // r182: the ring's links; each one's arm end is spliced into its arm (the two arm points either side of it, on the
     // arm's straight centre line, are joined to it), its ring end is one of the arcs' points (27° = three 9° steps)
     for (const L of ringLinks()) {
@@ -24267,6 +24279,19 @@ void main() {
   // places that must stay clear of the generic city blocks (filled by the street builders)
   // r134: Daniel: no block on Medical Avenue between the Zdrovit gate and Altius (in front of the yard, right of the gate)
   var EXTRA_KEEPOUT = [{ x: 1548, y: 5224, r: 48 }];
+  // r185 (Daniel: "make it much clearer when you arrive at Olari 9, so you don't drive past it; the world wider, the
+  // entrance more inviting, not made of crumbs from the other roads; the boulevard wider"): the way from the Dacia row
+  // to the Cromatic Studios House is one boulevard, 1.4 times a street (BLVD_W), straight down from the row (flared into
+  // it on both sides) to a paved forecourt in front of the house (OLARI_PLAZA), where the road ends: a gateway with the
+  // house's name over its mouth, festoons over the last stretch, planters round it (buildOlariPlaza). The boulevard and
+  // the forecourt are ordinary road data (navNet: the drives, and nav2's graph and road mask, end there). The road on
+  // past the house (the drive's take-off, "Go even further") is drawn only once it is open
+  var BLVD_W = 78, OLARI_PLAZA = { x: 1170, z: 7350, r: 120 }, BLVD_ZEBRAS = []; // (the zebra crossings on it: no dash over them)
+  var BLVD_Z0 = 6100, BLVD_FR = 40; // the boulevard leaves the Dacia row's centre line (z 6100); its corner fillets' radius
+  function boulevardPts() { const o = []; for (let z = BLVD_Z0; z <= OLARI_PLAZA.z; z += 25) o.push([OLARI_PLAZA.x, z]); if (o[o.length - 1][1] !== OLARI_PLAZA.z) o.push([OLARI_PLAZA.x, OLARI_PLAZA.z]); return o; }
+  // the wider world: the blocks stand back from the boulevard and round the forecourt
+  for (let z = 6180; z <= 7260; z += 45) EXTRA_KEEPOUT.push({ x: OLARI_PLAZA.x, y: z, r: 74 });
+  EXTRA_KEEPOUT.push({ x: OLARI_PLAZA.x, y: OLARI_PLAZA.z, r: 300 });
   function branchRoute(b) { return b === "B" ? ROUTE_B : b === "C" ? ROUTE_C : b === "D" ? ROUTE_D : ROUTE_A; }
   // index range of a dense branch polyline that belongs to the street itself (after the fork,
   // before the shared Dacia row at x=1170)
@@ -25097,6 +25122,7 @@ void main() {
     // segments of every real road, hashed, for distance queries
     const segs = [];
     for (const pts of routes) for (let k = 1; k < pts.length; k++) segs.push([pts[k - 1], pts[k], ROUTE_W]);
+    { const bp = boulevardPts(); for (let k = 1; k < bp.length; k++) segs.push([bp[k - 1], bp[k], BLVD_W + 8]); } // r185: the boulevard is wider
     for (const s of LONG_STREETS) for (let k = 1; k < s.pts.length; k++) segs.push([s.pts[k - 1], s.pts[k], s.w]);
     const HS = 120, hash = new Map();
     segs.forEach((sg, si) => {
@@ -25225,6 +25251,7 @@ void main() {
     for (const s of net.minor) G.line(s.pts, s.w / 2 + 5, 2);
     for (const s of net.longs) G.line(roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]), s.w / 2 + 6, 2);
     for (const pts of net.routes) G.line(pts, ROUTE_W / 2 + 8, 2);
+    G.line(boulevardPts(), BLVD_W / 2 + 14, 2); // r185: the blocks stand back from the wider boulevard
     // past Olari 9 the drive takes off: the airfield and the ramp keep a wide corridor
     for (const pts of net.routes) G.line(pts.filter(([, z]) => z > 7480), 130, 3);
     for (const z of net.zones) G.disk(z.x, z.y, z.r, 3);
@@ -25466,7 +25493,7 @@ void main() {
     net.at = G.at;
     return count;
   }
-  function buildGoldenRoute(parent, branch, accent, chosen = true, all = false, lane = false) {
+  function buildGoldenRoute(parent, branch, accent, chosen = true, all = false, lane = false, secret = false) {
     const group = new Group();
     group.name = "goldenRoute";
     mats.routeCasing = mats.routeCasing || new MeshStandardMaterial({ color: "#2a2620", roughness: 0.9 });
@@ -25478,6 +25505,31 @@ void main() {
     // offset (units, no slope factor, so nothing moves on screen) keeps the casing over the city and the asphalt over both
     for (const [m, u] of [[mats.routeCasing, -2], [mats.route, -4]]) Object.assign(m, { polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: u });
     const laid = []; // r163: the centre lines already drawn (see addGold: one set of dashes per stretch of road)
+    // r185: the boulevard to Olari 9 first (so the streets that run down it lay no dashes of their own there): casing,
+    // asphalt and one line of dashes, ending before the forecourt
+    {
+      const bp = boulevardPts().map(([x, z]) => new Vector3(x, 0, z));
+      const cas = new Mesh(ribbonGeometry(bp, BLVD_W + 4.5, 0.8), mats.routeCasing), body = new Mesh(ribbonGeometry(bp, BLVD_W, 1.3), mats.route);
+      cas.receiveShadow = body.receiveShadow = true; group.add(cas, body);
+      const z1 = OLARI_PLAZA.z - Math.sqrt(OLARI_PLAZA.r ** 2 - (BLVD_W / 2) ** 2) - 40, dg = new PlaneGeometry(4.2, 22); dg.rotateX(-Math.PI / 2);
+      const n = Math.floor((z1 - BLVD_Z0 - 90) / 88), dsh = new InstancedMesh(dg, mats.routeDash, Math.max(1, n)), m4 = new Matrix4();
+      for (let i = 0; i < n; i++) { const dz = BLVD_Z0 + 90 + 44 + i * 88, off = BLVD_ZEBRAS.some((zz) => Math.abs(zz - dz) < 26); m4.makeTranslation(OLARI_PLAZA.x, 1.8, dz); if (off) m4.scale(new Vector3(0, 0, 0)); dsh.setMatrixAt(i, m4); }
+      group.add(dsh);
+      const lp = bp.slice(); lp.hw = BLVD_W / 2; laid.push(lp);
+      // the corners where it leaves the Dacia row, flared on both sides: a quarter-circle fillet each, in the row's own
+      // colour there (gold where the row is gold), the casing following the curve
+      for (const sx of [-1, 1]) {
+        const gold = all || (chosen && (sx < 0 ? branch === "A" : branch !== "A"));
+        const ex = OLARI_PLAZA.x + sx * BLVD_W / 2, ez = BLVD_Z0 + ROUTE_W / 2, cx = ex + sx * BLVD_FR, cz = ez + BLVD_FR;
+        const sh = new Shape();
+        // from the row's edge (cx, ez) round to the boulevard's edge (ex, cz), concave towards the corner
+        const pts2 = []; for (let i = 0; i <= 12; i++) { const a = (i / 12) * Math.PI / 2; pts2.push([cx - sx * BLVD_FR * Math.sin(a), cz - BLVD_FR * Math.cos(a)]); }
+        sh.moveTo(ex - 2 * sx, -(ez - 2)); for (const [x, z] of pts2) sh.lineTo(x, -z); sh.lineTo(ex - 2 * sx, -(cz + 2)); sh.closePath();
+        const fg = new ShapeGeometry(sh); fg.rotateX(-Math.PI / 2); // shape (x, -z) -> world (x, z), facing up
+        const fm = new Mesh(fg, gold ? mats.route : mats.routeAlt); fm.position.y = gold ? 1.3 : 0.72; fm.receiveShadow = true; group.add(fm);
+        if (gold) { const kc = new Mesh(ribbonGeometry(pts2.map(([x, z]) => new Vector3(x, 0, z)), 4.5, 0.8), mats.routeCasing); group.add(kc); }
+      }
+    }
     for (const b2 of BRANCHES) {
       if ((b2 === branch && chosen) || all) continue;
       const w0 = chosen ? ROUTE_W * 0.8 : ROUTE_W;
@@ -25486,7 +25538,8 @@ void main() {
     const flat = branchPoints(branch, lane);
     // r164: Medical Avenue by the lane: its own last stretch stays a street (grey, like the streets not taken)
     if (lane && chosen && !all) group.add(roadRibbonFromMap(roundedPolyline(ROUTE_C.filter(([, z]) => z >= 5200)), ROUTE_W * 0.8, 0.7, mats.routeAlt));
-    const dense = roundedPolyline(flat).filter(([, z]) => z <= RAMP_LIP + 1);
+    // r185: the streets end in the forecourt of the house (the drive's road on past it only once "Go even further" opened it)
+    const dense = roundedPolyline(flat).filter(([, z]) => z <= (secret && !all ? RAMP_LIP + 1 : OLARI_PLAZA.z));
     const all3 = dense.map(([x, z, y]) => new Vector3(x, z > RAMP_BASE - 1 ? elevationAt(z) : y, z));
     // before the choice only the shared road is gold: up to the fork, and from the merge on
     const [fI, jI] = branchSpan(dense);
@@ -25583,8 +25636,7 @@ void main() {
     }
     // a point on the asphalt of a road already drawn (within half its width of its centre line)
     function onLaid(p) {
-      const r2 = (ROUTE_W / 2) ** 2;
-      for (const pl of laid) for (let k = 1; k < pl.length; k++) {
+      for (const pl of laid) for (let k = 1, r2 = (pl.hw || ROUTE_W / 2) ** 2; k < pl.length; k++) { // r185: a laid road may be wider (pl.hw)
         const a = pl[k - 1], b = pl[k], ex = b.x - a.x, ez = b.z - a.z, l2 = ex * ex + ez * ez || 1;
         const t = Math.max(0, Math.min(1, ((p.x - a.x) * ex + (p.z - a.z) * ez) / l2));
         const dx = a.x + ex * t - p.x, dz = a.z + ez * t - p.z;
@@ -27667,7 +27719,7 @@ void main() {
     { x: 1080, z: 7010, face: "+x", svc: [1], cx: -170 },
     // r129: one service per house, alternating kerbs, so no two cards touch
     { x: 1262, z: 6830, face: "-x", svc: [2], cx: 190 },
-    { x: 1290, z: 7180, face: "-x", svc: [3], cx: 190 }
+    { x: 1290, z: 7110, face: "-x", svc: [3], cx: 190 } // r185: a little further up (was z 7180), the gateway has room
   ];
   function buildServiceHouses(parent) {
     const cols = ["#28C840", "#FED012", "#B098C8", "#F65342"];
@@ -29924,8 +29976,8 @@ void main() {
     pavFace.rotation.y = Math.PI / 2;
     pavFace.position.set(56.2, 104, 54);
     g.add(pavFace);
-    const steps = new Mesh(new BoxGeometry(14, 6, 40), trimM);
-    steps.position.set(62, 3, 54);
+    const steps = new Mesh(new BoxGeometry(5, 6, 40), trimM); // r185: shallower (was 14 deep), clear of the wider boulevard
+    steps.position.set(58.5, 3, 54);
     g.add(steps);
     const tex = canvasTexture(480, 760, (ctx) => {
       ctx.fillStyle = "#E6DECB";
@@ -30150,6 +30202,71 @@ void main() {
     parent.add(g);
     return g;
   }
+  // r185: the arrival at Olari 9 (see BLVD_W, OLARI_PLAZA): the forecourt, paved in the ring's colour, joined to the
+  // boulevard by two fillets (the road widens into it); the casing runs round it; a gateway over its mouth with the
+  // house's name on both faces (readable on the way in); festoons strung across the last stretch; three planted trees
+  function plazaOutline() {
+    const P = OLARI_PLAZA, h = BLVD_W / 2, rf = 30, t = Math.sqrt((P.r + rf) ** 2 - (h + rf) ** 2), zt = P.z - t, out = [];
+    for (const sx of [-1, 1]) {
+      // the fillet, centred beside the boulevard: from the boulevard's edge (angle 0 or π round its centre) to the point
+      // where it touches the circle (towards the plaza's centre)
+      const fx = P.x + sx * (h + rf), seg = [], aE = sx < 0 ? 0 : Math.PI, aT = Math.atan2(P.z - zt, P.x - fx);
+      for (let i = 0; i <= 10; i++) { const a = aE + (i / 10) * (aT - aE); seg.push([fx + rf * Math.cos(a), zt + rf * Math.sin(a)]); }
+      out.push(seg);
+    }
+    // the circle, the long way round (west, south, east), from the left fillet's end to the right one's
+    const [L, R] = out, a0 = Math.atan2(L[10][1] - P.z, L[10][0] - P.x), a1 = Math.atan2(R[10][1] - P.z, R[10][0] - P.x) - Math.PI * 2, ring = [];
+    for (let i = 1; i < 48; i++) { const a = a0 + (a1 - a0) * (i / 48); ring.push([P.x + P.r * Math.cos(a), P.z + P.r * Math.sin(a)]); }
+    return { path: [...L, ...ring, ...R.slice().reverse()], zt };
+  }
+  function buildOlariPlaza(parent) {
+    const g = new Group(), P = OLARI_PLAZA, { path, zt } = plazaOutline();
+    // the paving: square setts, the ring's colour (it follows every world)
+    const pave = canvasTexture(128, 128, (ctx) => { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 128, 128); ctx.strokeStyle = "rgba(60,50,40,.22)"; ctx.lineWidth = 3; for (let i = 0; i <= 128; i += 32) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 128); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(128, i); ctx.stroke(); } }, { repeat: [1 / 48, 1 / 48] });
+    const paveM = new MeshStandardMaterial({ map: pave, roughness: 0.95 }); paveM.color = mats.roadMajor.color;
+    const sh = new Shape(); sh.moveTo(path[0][0], -path[0][1]); for (const [x, z] of path.slice(1)) sh.lineTo(x, -z); sh.closePath();
+    const pg = new ShapeGeometry(sh, 24); pg.rotateX(-Math.PI / 2);
+    const plaza = new Mesh(pg, paveM); plaza.position.y = 1.55; plaza.receiveShadow = true; g.add(plaza);
+    mats.routeCasing = mats.routeCasing || new MeshStandardMaterial({ color: "#2a2620", roughness: 0.9 });
+    const kerb = new Mesh(ribbonGeometry(path.map(([x, z]) => new Vector3(x, 0, z)), 4.5, 1.8), mats.routeCasing); g.add(kerb);
+    // the gateway over the mouth: two white pillars with lit globes, a board with the house's name, both faces
+    const whiteM = new MeshStandardMaterial({ color: "#eeece6", roughness: 0.7 }), gz = zt + 4, gw = BLVD_W / 2 + 9;
+    mats.festoon = mats.festoon || new MeshStandardMaterial({ color: "#fff0c4", emissive: "#ffca6a", emissiveIntensity: 0.1 });
+    for (const sx of [-1, 1]) {
+      const pil = new Mesh(new BoxGeometry(9, 50, 9), whiteM); pil.position.set(P.x + sx * gw, 25, gz); g.add(pil);
+      const cap = new Mesh(new BoxGeometry(12, 3, 12), whiteM); cap.position.set(P.x + sx * gw, 51.5, gz); g.add(cap);
+      const glob = new Mesh(new SphereGeometry(4.4, 14, 10), mats.festoon); glob.position.set(P.x + sx * gw, 57.5, gz); g.add(glob);
+    }
+    const signTex = canvasTexture(1024, 176, (ctx) => {
+      ctx.fillStyle = "#fbfaf5"; ctx.beginPath(); ctx.roundRect(5, 5, 1014, 166, 22); ctx.fill();
+      ctx.strokeStyle = "#000000"; ctx.lineWidth = 9; ctx.stroke();
+      ctx.fillStyle = "#28C840"; ctx.beginPath(); ctx.roundRect(5, 5, 1014, 30, [22, 22, 0, 0]); ctx.fill(); ctx.fillStyle = "#000000"; ctx.fillRect(5, 33, 1014, 7);
+      ctx.textAlign = "center"; ctx.fillStyle = "#111111"; ctx.font = "900 70px CromaticSans, sans-serif"; ctx.fillText("Cromatic Studios House", 512, 112);
+      ctx.font = '600 28px "JetBrains Mono", monospace'; ctx.fillStyle = "rgba(0,0,0,0.72)"; ctx.fillText("STR. OLARI 9 \xB7 COME BY", 512, 154);
+    });
+    const signM = new MeshStandardMaterial({ map: signTex, roughness: 0.6, emissive: new Color("#ffffff"), emissiveMap: signTex, emissiveIntensity: 0 });
+    STREET_GLOW.push([signM, 0.5]);
+    const board = new Mesh(new BoxGeometry(gw * 2 + 14, (gw * 2 + 14) * 176 / 1024, 3.2), [whiteM, whiteM, whiteM, whiteM, signM, signM]); board.position.set(P.x, 41, gz); g.add(board);
+    // festoons across the last stretch: posts on both kerbs, a sagging string of bulbs between each pair
+    const postM = new MeshStandardMaterial({ color: "#26292e", roughness: 0.5, metalness: 0.3 }), fw = BLVD_W / 2 + 7, zs = [];
+    for (let z = zt - 40; z > zt - 340; z -= 60) zs.push(z);
+    const bulbs = new InstancedMesh(new SphereGeometry(1.7, 8, 6), mats.festoon, zs.length * 13), m4 = new Matrix4();
+    zs.forEach((z, j) => {
+      for (const sx of [-1, 1]) { const pst = new Mesh(new CylinderGeometry(0.8, 1.1, 34, 8), postM); pst.position.set(P.x + sx * fw, 17, z); g.add(pst); }
+      for (let i = 0; i < 13; i++) { const u = i / 12, x = P.x - fw + 2 * fw * u, y = 33 - 7 * Math.sin(Math.PI * u); m4.makeTranslation(x, y, z); bulbs.setMatrixAt(j * 13 + i, m4); }
+    });
+    g.add(bulbs);
+    // three trees in round planters, clear of the house and of the way through
+    const stoneM = new MeshStandardMaterial({ color: "#d9d2c3", roughness: 0.9 }), trunkM = new MeshStandardMaterial({ color: "#7a4a22", roughness: 1 }), leafM = new MeshStandardMaterial({ color: "#4f9a4a", roughness: 0.9 });
+    for (const [x, z] of [[P.x + 80, P.z - 60], [P.x + 105, P.z + 10], [P.x, P.z + 105]]) {
+      const pl = new Mesh(new CylinderGeometry(10, 11, 6, 20), stoneM); pl.position.set(x, 3, z); g.add(pl);
+      const tr = new Mesh(new CylinderGeometry(1.5, 2, 14, 6), trunkM); tr.position.set(x, 12, z); g.add(tr);
+      const cr = new Mesh(new IcosahedronGeometry(10, 1), leafM); cr.position.set(x, 24, z); g.add(cr);
+    }
+    g.traverse((o) => { if (o.isMesh && o !== plaza && o !== kerb) { o.castShadow = true; o.receiveShadow = true; } });
+    parent.add(g);
+    return g;
+  }
   function heritageSign(h) {
     const g = new Group();
     const house = new Group();
@@ -30361,7 +30478,9 @@ void main() {
       const [x, z] = flat[j], [px2, pz2] = flat[Math.max(0, j - 1)];
       const dx = x - px2, dz = z - pz2, l = Math.hypot(dx, dz) || 1;
       const tx = dx / l, tz = dz / l, nx = -tz, nz = tx;
-      const nStripes = 6;
+      const onBlvd = Math.abs(x - OLARI_PLAZA.x) < 20 && z > BLVD_Z0 && z < OLARI_PLAZA.z; // r185: across the whole boulevard
+      const nStripes = onBlvd ? 8 : 6;
+      if (onBlvd) BLVD_ZEBRAS.push(z);
       const zebra = new InstancedMesh(stripeGeo, zebraM, nStripes);
       const zm = new Matrix4();
       const zq = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.atan2(tx, tz));
@@ -30383,10 +30502,11 @@ void main() {
       const dx = x - px2, dz = z - pz2, l = Math.hypot(dx, dz) || 1;
       const nx = -dz / l, nz = dx / l;
       const side = i % 2 ? 1 : -1;
-      const bx = x + nx * side * (ROAD_W / 2 + 15), bz = z + nz * side * (ROAD_W / 2 + 15);
+      let bx = x + nx * side * (ROAD_W / 2 + 15), bz = z + nz * side * (ROAD_W / 2 + 15);
+      if (bz > BLVD_Z0 + 40 && bz < OLARI_PLAZA.z && Math.abs(bx - OLARI_PLAZA.x) < BLVD_W / 2 + 15) bx = OLARI_PLAZA.x + Math.sign(bx - OLARI_PLAZA.x) * (BLVD_W / 2 + 15); // r185: off the wider boulevard
       if ((bx - ROUNDABOUT.x) ** 2 + (bz - ROUNDABOUT.y) ** 2 < 320 ** 2) continue;
       if (bx > 700 && bx < 1160 && bz > 4040 && bz < 4470) continue;
-      if (bz > 8700) continue;
+      if (bz > 8700 || bz > OLARI_PLAZA.z - OLARI_PLAZA.r - 30) continue; // (r185: nor in the forecourt or past it)
       let ok = true;
       for (const q of STOPS) if ((bx - q.x) ** 2 + (bz - q.y) ** 2 < 170 ** 2) { ok = false; break; }
       if (ok) benchSpots.push({ x: bx, z: bz, ry: Math.atan2(dx, dz) + (side > 0 ? Math.PI : 0) });
@@ -30575,6 +30695,7 @@ void main() {
       const nx = -dz / l, nz = dx / l;
       if ((x - ROUNDABOUT.x) ** 2 + (z - ROUNDABOUT.y) ** 2 < 280 ** 2) continue;
       if ((x - FORK_POS.x) ** 2 + (z - FORK_POS.y) ** 2 < 200 ** 2) continue;
+      if (z > OLARI_PLAZA.z - OLARI_PLAZA.r - 40) continue; // r185: none in the forecourt, nor along the road on past the house
       spots.push({ x: x + nx * side * (ROAD_W / 2 + 16), z: z + nz * side * (ROAD_W / 2 + 16), side, dirx: nx * side, dirz: nz * side });
     }
     const poleGeo = new CylinderGeometry(1.8, 2.4, 64, 6);
@@ -31134,6 +31255,7 @@ void main() {
     buildStreetlights(world);
     buildStreetProps(world);
     const endHouse = buildEndHouse(world);
+    buildOlariPlaza(world); // r185
     const streetSigns = buildCoffeeEntrance(world);
     buildRomexpo(world);
     buildSteamShop(world);
@@ -35636,6 +35758,7 @@ void main() {
           if (!state.secretOpen) {
             state.secretOpen = true;
             updateScrollSpace();
+            rebuildGolden(); // r185: the road on past the house appears
           }
           setTimeout(() => { ui.confetti(50, 42); setTimeout(() => ui.confetti(44, 50), 260); }, 650);
           setTimeout(() => scrollToL(route.stopL.contact), 60);
@@ -35793,7 +35916,7 @@ void main() {
       function rebuildGolden() {
         scene.remove(golden);
         disposeObject(golden);
-        golden = buildGoldenRoute(scene, state.branch, SCHEMES[state.schemeIdx].ac, state.branchChosen, mapMode, !mapMode && !!route.lane); // r164
+        golden = buildGoldenRoute(scene, state.branch, SCHEMES[state.schemeIdx].ac, state.branchChosen, mapMode, !mapMode && !!route.lane, !mapMode && state.secretOpen); // r164 (r185: the road on past the house once it is open)
         applyScheme(state.schemeIdx);
       }
       function resetBranch() {
