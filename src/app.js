@@ -30873,9 +30873,13 @@ void main() {
     // z from -59 (tail tip) to +59 (nose tip)
     const s = z + 59;
     // r138b: slimmer (7.6 → 5.8 at the widest), a longer finer nose and tail cone
-    const K = [[0, 0.5], [6, 1.9], [20, 3.9], [34, 5.3], [44, JET_R], [88, JET_R], [99, 5.4], [106, 4.5], [111, 3.3], [115.5, 1.7], [118, 0]];
-    for (let i = 1; i < K.length; i++) if (s <= K[i][0]) { const [s0, r0] = K[i - 1], [s1, r1] = K[i]; const t = (s - s0) / (s1 - s0), e = t * t * (3 - 2 * t); return r0 + (r1 - r0) * e; }
-    return 0;
+    // beta 3.01 (Daniel: "the nose has waves"): the keyframes each eased in and out (a smoothstep per segment), so the
+    // nose and the tail went round in steps. Now one smooth curve each: the nose a rounded bullet (a superellipse: full
+    // width at 88, round at the tip), the tail cone easing out of the cabin
+    if (s <= 0 || s >= JET_LEN) return 0;
+    if (s >= 88) { const u = (s - 88) / (JET_LEN - 88); return JET_R * Math.pow(Math.max(0, 1 - Math.pow(u, 2.3)), 1 / 2.3); }
+    if (s <= 44) { const u = s / 44; return 0.5 + (JET_R - 0.5) * (1 - Math.pow(1 - u, 2.2)); }
+    return JET_R;
   }
   function jetLift(z) { return z < -22 ? (-22 - z) * 0.13 : 0; }
   function buildCromaticJet() {
@@ -30891,8 +30895,9 @@ void main() {
     const rubber = new MeshStandardMaterial({ color: "#151515", roughness: 0.95 });
     // fuselage: a lathe along z, the tail cone lifted
     const pts = [];
-    for (let i = 0; i <= 140; i++) { const z = -59 + (i / 140) * JET_LEN; pts.push(new Vector2(Math.max(0.001, jetRadius(z)), z + 59)); }
-    const fg = new LatheGeometry(pts, 72);
+    // beta 3.01: denser towards the round nose tip (an even step left a flat ring at the very front)
+    for (let i = 0; i <= 260; i++) { const u = i / 260, s = u < 0.85 ? (u / 0.85) * 108 : 108 + (1 - Math.pow(1 - (u - 0.85) / 0.15, 2)) * (JET_LEN - 108), z = -59 + s; pts.push(new Vector2(Math.max(0.001, jetRadius(z)), z + 59)); }
+    const fg = new LatheGeometry(pts, 96);
     fg.rotateX(Math.PI / 2); fg.translate(0, 0, -59);
     const pa = fg.attributes.position;
     for (let i = 0; i < pa.count; i++) { const z = pa.getZ(i); pa.setY(i, pa.getY(i) + jetLift(z)); }
