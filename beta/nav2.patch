@@ -1,5 +1,5 @@
 diff --git a/build/build.mjs b/build/build.mjs
-index fd48456..faa045e 100644
+index fd48456..2e640c8 100644
 --- a/build/build.mjs
 +++ b/build/build.mjs
 @@ -394,7 +394,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
@@ -7,7 +7,7 @@ index fd48456..faa045e 100644
  const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
  // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
 -const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.01"; // nav2: the next live (beta 3.0 is live)
-+const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.11"; // beta 3.11 (Daniel): the mini-game, round 2 (ten fighters, both sides picked); beta 3.1 brought it (/play/gloves/), on beta 3.01
++const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.12"; // beta 3.12 (Daniel): the mini-game, round 3 (likeness, outfits, the "?" back); 3.11 round 2, 3.1 brought it (/play/gloves/), on beta 3.01
  const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
  const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
  const GS = {};
@@ -160,10 +160,10 @@ index 0000000..9aa6316
 +@media (prefers-reduced-motion: reduce) { .mg-b.on { transform: none; } }
 diff --git a/src/minigame.js b/src/minigame.js
 new file mode 100644
-index 0000000..a837c3b
+index 0000000..73edf89
 --- /dev/null
 +++ b/src/minigame.js
-@@ -0,0 +1,2297 @@
+@@ -0,0 +1,2257 @@
 +// beta 3.1 (Daniel): "at the gloves with I O N", the Two Min Lab mini-game. A small 16-bit fighting game, original in
 +// every pixel (no character, name, sprite, sound or font of any existing game): pick Daniel, Cristian or Coz from the
 +// Cromatic crew and box I O N, the founder of Two Minutes, in front of the Two Minutes shop. Best of three rounds.
@@ -946,237 +946,6 @@ index 0000000..a837c3b
 +  // the light on it (five tones a material), not outlined piece by piece. One dark outline goes round the whole
 +  // figure; where a nearer part crosses a farther one (an arm over the chest), the farther one gets a one-pixel
 +  // shadow in its own colour. Broad shoulders, tapered limbs with the muscle in them, a low stance.
-+  // heads, facing right (three quarters); legend: o outline, s skin, S skin shadow, k skin light, H hair, h hair
-+  // light, B beard, b beard light (or stubble), w white (eyes, teeth), p pupil, g glasses, C/c cap
-+  const HEADS = {
-+    daniel: [
-+      "......ooo.........",
-+      ".....oHhHo........",
-+      ".....oHHHo........",
-+      "...ooooHooooo.....",
-+      "..oHHhhhhhhHHoo...",
-+      ".oHHHHHHHHHHhhHo..",
-+      ".oHHHHHHHHHHHHHHo.",
-+      ".oHHHHHHHHkkkkkko.",
-+      ".oHHHHHHHkHHkkHHo.",
-+      ".oHHHoSSskwpkwpko.",
-+      ".oHHoSoSsksskksko.",
-+      ".oHHoSSSBsssskkkso",
-+      ".oHHHoBBBBsBBssBo.",
-+      "..oHHBBBBBowwwwBo.",
-+      "..oHBBBBBBBowwoBo.",
-+      "...oBBBbBBBBBBBBo.",
-+      "....oBBBBBbBBBBo..",
-+      ".....oBBBBBBBBo...",
-+      "......oooBBBoo....",
-+      ".........ooo......"
-+    ],
-+    cristian: [
-+      "..................",
-+      "......ooooooo.....",
-+      "....ooHHhhhhHoo...",
-+      "...oHHHHHhhhhhHo..",
-+      "..oHHHHHHHHHHhHHo.",
-+      ".oHHHHHHHHHHHHHHo.",
-+      ".oHHHHHHHHHkkkkko.",
-+      ".oHHHHHHHkkkkkkko.",
-+      ".oHHHHHHHHHHkHHHo.",
-+      ".oHHHoSSsgggsgggso",
-+      ".oHHoSoSggwpggwpgo",
-+      ".oHHoSSSsgggsgggso",
-+      ".oHHHoBBsssskkskso",
-+      "..oHHBBBBBBsBBBBo.",
-+      "..oHBBBBBowwwwoBo.",
-+      "...oBBBBBBoooBBBo.",
-+      "....oBBBBBBBBBBo..",
-+      ".....oBBBBBBBBo...",
-+      "......oooBBBoo....",
-+      ".........ooo......"
-+    ],
-+    coz: [
-+      "..................",
-+      ".....ooooooo......",
-+      "...ooCCCCCCCoo....",
-+      "..oCCCcCCCCCCCo...",
-+      ".occCCCCCCCCCCCo..",
-+      ".oHHcccCCCCCCCCo..",
-+      ".oHHHoooooooooko..",
-+      ".oHHHHHHkkkkkkko..",
-+      ".oHHHHHHkHHkkHHko.",
-+      ".oHHHoSSskwpkwpko.",
-+      ".oHHoSoSsksskksko.",
-+      ".oHHoSSSssssskkkso",
-+      ".oHHHoBBBBsBBBBBo.",
-+      ".oHHHBBBBBowwwwBo.",
-+      ".oHHHBBBBBBowwoBo.",
-+      ".oHHHoBBbBBBBBBBo.",
-+      ".oHHH.oBBBBBbBBBo.",
-+      ".oHHo..oBBBBBBBBo.",
-+      "..oo....oBBBBBBo..",
-+      ".........oooooo..."
-+    ],
-+    ion: [
-+      "..................",
-+      ".....oooooo.......",
-+      "...ooHHHHHHoo.....",
-+      "..oHHHhhhHHHHo....",
-+      ".oHHHHHHHhhHHHo...",
-+      ".oHHHHHHHHHHHHHo..",
-+      ".oHHHHHHHHkkkkko..",
-+      ".oHHHHHHHkkkkkkko.",
-+      ".oHHHHHHkHHkkHHko.",
-+      ".oHHHoSSskwpkwpko.",
-+      ".oHHoSoSsksskksko.",
-+      ".oHHoSSSssssskkkso",
-+      "..oHHoBbssssskkso.",
-+      "..oHBBBBsBBBBBsBo.",
-+      "...oBBBBBBoooBBBo.",
-+      "...oBBBBBBBBBBBo..",
-+      "....oBBBBBBBBBo...",
-+      ".....oSBBBBBBo....",
-+      "......ossssso.....",
-+      ".......ooooo......"
-+    ],
-+    maria: [
-+      "......oooooooo........",
-+      "....ooHHhHHhHHoo......",
-+      "...oHHhHHHHHhHHHo.....",
-+      "..oHHHHhHHHHHHhHHo....",
-+      ".oHHhHHHHHHHHHHHHHo...",
-+      ".oHHHHHHHhHHkkkkHHHo..",
-+      "oHHhHHHHHHHkkkkkkHHo..",
-+      "oHHHHHHHHkkkkkkkkkHo..",
-+      "oHhHHHHHHkHHkkkHHkko..",
-+      "oHHHHHoSskkwpkkwpkko..",
-+      "oHHhHoSoSkkkkkkkkkso..",
-+      "oHHHHoSSSkkkkkskkkkso.",
-+      "oHhHHHoSskkkkkkkkkso..",
-+      "oHHHHHHoSkkkkoookkso..",
-+      "oHHhHHHHoSkkkkkkkso...",
-+      ".oHHHHHHHoSSkkkkso....",
-+      ".oHhHHHHHHoossssoo....",
-+      "..oHHHHhHHHoSsso......",
-+      ".oHHhHHHHHHHoSso......",
-+      ".oHHHHHHhHHHHo........",
-+      "..oHhHHHHHHHo.........",
-+      "..oHHHHhHHo...........",
-+      "...oHHHHHo............",
-+      "....ooooo............."
-+    ],
-+    cristache: [
-+      "..................",
-+      ".....oooooo.......",
-+      "...ooHHHHHHoo.....",
-+      "..oHHHhhhHHHHo....",
-+      ".oHHHHHHHHhhHHo...",
-+      ".oHHHHHHHHHHHHHo..",
-+      ".oHHHHHHHkkkkkko..",
-+      ".oHHHHHkkkkkkkko..",
-+      ".oHHHHHkHHkkHHko..",
-+      ".oHHHoSskwpkwpko..",
-+      ".oHHoSoSskskkskso.",
-+      ".oHHoSSSsssskkkso.",
-+      "..oHHoSssssskkso..",
-+      "..oHSBBssBBBssBo..",
-+      "...oSBBBowwwoBBo..",
-+      "...oSBBBBoooBBo...",
-+      "....oBBBBBBBBo....",
-+      ".....oSBBBBBo.....",
-+      "......ossssso.....",
-+      ".......ooooo......"
-+    ],
-+    steve: [
-+      "..................",
-+      "....oooooooo......",
-+      "...oHhHHhHHhHo....",
-+      "..oHHHhHHhHHHhHo..",
-+      ".oHhHHHHHHHHHhHHo.",
-+      ".oHHHHHHHHHHHHHHo.",
-+      ".oHHHHHHHkkkkkkko.",
-+      ".oHHHHHHkkkkkkkko.",
-+      ".oHHHHHHHHHkHHHHo.",
-+      ".oHHHoSSsgggsgggso",
-+      ".oHHoSoSggwpggwpgo",
-+      ".oHHoSSSsgggsgggso",
-+      ".oHHHoSssssskkskso",
-+      "..oHSbBsssssskksko",
-+      "..oSbBBBBoooBBsso.",
-+      "..obBBBBBBBBBBbo..",
-+      "...obBBBBBBBBBbo..",
-+      "....obBBBBBBBbo...",
-+      ".....oobBBBboo....",
-+      ".......ooooo......"
-+    ],
-+    rares: [
-+      "....ooooooooo.....",
-+      "...oHhHHhHHhHHo...",
-+      "..oHHHhHHHHhHHHo..",
-+      ".oHhHHHHHHHHHhHHo.",
-+      "oHHHHhHHHHHHHHHHo.",
-+      "oHhHHHHHHHkkkkHHo.",
-+      "oHHHHHHHkkkkkkkko.",
-+      "oHHhHHHHkHHkkHHko.",
-+      "oHHHHHoSskwpkwpko.",
-+      "oHhHHoSoSksskksko.",
-+      "oHHHHoSSSsssskkkso",
-+      "oHHhHHoSssssskkko.",
-+      "oHHHHHHoSsBBBBBso.",
-+      "oHhHHHHoSsbsoobso.",
-+      "oHHHhHHHoSbbbbbso.",
-+      ".oHHHHHHHoSsssso..",
-+      ".oHhHHHHHHoossso..",
-+      "..oHHHHHHo.oSso...",
-+      "...ooooo...oSso...",
-+      "...........oooo..."
-+    ],
-+    iulica: [
-+      "..................",
-+      "....oooooooo......",
-+      "...oHHhHHHhHHo....",
-+      "..oHHHHHhHHHHHo...",
-+      ".oHHhHHHHHHHHHHo..",
-+      ".oHHHHHHHHHHHHHHo.",
-+      ".oHHHHHHHkkkkkHHo.",
-+      ".oHHHHHHkkkkkkkko.",
-+      ".oHHHHHkHHkkkHHko.",
-+      ".oHHHoSskwpkkwpko.",
-+      ".oHHoSoSskskkskso.",
-+      ".oHHoSSSsssskkkso.",
-+      "..oHHoSssssskkkso.",
-+      "..oHSbbsoooooobo..",
-+      "...oSbbowwwwwwo...",
-+      "...oSbbboooooo....",
-+      "....obbbbbbbbo....",
-+      ".....oSbbbbbo.....",
-+      "......ossssso.....",
-+      ".......ooooo......"
-+    ]
-+  };
-+  // beta 3.11 (Daniel): Dony, who roasts the coffee: the trucker cap backwards, round thin glasses, light stubble
-+  HEADS.dony = [
-+    "..................",
-+    ".....oooooooo.....",
-+    "...ooCCCCCCCCoo...",
-+    "..oCCCCcCCCCCCCo..",
-+    ".occCCCCCCCCCCCCo.",
-+    "occcCCCCCCCCCCCCo.",
-+    "occccccccccccccoo.",
-+    ".ooHHkkkkkkkkkko..",
-+    ".oHHHkkHHkkkHHko..",
-+    ".oHHHoSgggsgggko..",
-+    ".oHHoSgwpgsgwpgo..",
-+    ".oHHoSSgggsggggso.",
-+    "..oHHoSssssskkso..",
-+    "..oHSbbsssssssbo..",
-+    "...oSbbsoooosbo...",
-+    "...oSbbbbbbbbbo...",
-+    "....obbbbbbbbo....",
-+    ".....oSbbbbbo.....",
-+    "......ossssso.....",
-+    ".......ooooo......"
-+  ];
-+  // where the skull's centre is on each map (the head joint is drawn there); default: the map's middle
-+  const HEAD_AT = { maria: [11, 9], rares: [9, 9] };
 +  // colours: one base per material, five tones made from it (light, lit, base, shade, deep)
 +  const rgbOf = (h) => { const n = parseInt(h.slice(1, 7), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
 +  const hexOf = (c) => "#" + c.map((v) => clamp(Math.round(v), 0, 255).toString(16).padStart(2, "0")).join("");
@@ -1189,29 +958,22 @@ index 0000000..a837c3b
 +    return r;
 +  }
 +  // per fighter: the build (sh shoulders, arm, leg, waist, sc the whole size) and the clothes
++  // beta 3.12 (Daniel: "neater, more meaningful outfits, with accessories"; three archetype nods): per fighter, the
++  // build (sh shoulders, arm, leg, waist, chest, sc the whole size) and a clean fighting outfit that still reads as them
 +  const LOOKS = {
-+    daniel: { head: { s: "#e8a77f", S: "#b8745a", k: "#f6c9a3", H: "#3b2618", h: "#6a4a30", B: "#3a2617", b: "#7b6450", w: "#ffffff", p: "#21140f" },
-+      skin: "#e8a77f", top: "#22b6c0", topKind: "tee", sleeve: "short", pants: "#34416c", shoe: "#e8e8f0", sole: "#9a9ab0", glove: "#fed012", stripe: "#fed012", build: {} },
-+    cristian: { head: { s: "#eaae86", S: "#bb7b5c", k: "#f7cfaa", H: "#2e2018", h: "#574231", B: "#5a3b26", b: "#8a6448", w: "#ffffff", p: "#21140f", g: "#1c1416" },
-+      skin: "#eaae86", top: "#7c6e54", topKind: "henley", sleeve: "long", pants: "#44444f", shoe: "#3a2a22", sole: "#1a120e", glove: "#2f6fe0", build: {} },
-+    coz: { head: { s: "#eeb48c", S: "#c07f5f", k: "#f8d2b0", H: "#3a281c", h: "#5a4232", B: "#4a3020", b: "#7a5a40", w: "#ffffff", p: "#21140f", C: "#8a8660", c: "#5f5c40" },
-+      skin: "#eeb48c", top: "#dccca6", topKind: "tee", sleeve: "short", pants: "#4b5634", shoe: "#2a2a2a", sole: "#111111", glove: "#f07a1e", build: { sh: 1.04 } },
-+    ion: { head: { s: "#e0a47c", S: "#b07052", k: "#f0c49e", H: "#1a1416", h: "#3a3034", B: "#231a1c", b: "#5a4038", w: "#ffffff", p: "#1a1012" },
-+      skin: "#e0a47c", top: "#3c4434", topKind: "camo", sleeve: "short", pants: "#2c2c34", shoe: "#2a2a30", sole: "#e8e8e8", glove: "#d8342a", build: { sh: 1.04 } },
-+    maria: { head: { s: "#eab394", S: "#c08068", k: "#f8d4bc", H: "#2a1a14", h: "#5a3a28", w: "#ffffff", p: "#21140f" },
-+      skin: "#eab394", top: "#f2f0ea", topKind: "oversize", sleeve: "short", legs: "skirt", skirt: "#1c1c22", shoe: "#a8b89a", sole: "#6e7c62", glove: "#f0389a", build: { sh: 0.84, arm: 0.82, leg: 0.88, waist: 0.86, chest: 0.94 } },
-+    cristache: { head: { s: "#e2a27a", S: "#b26e50", k: "#f2c6a0", H: "#1e1612", h: "#40322a", B: "#2a1e18", b: "#6a4a3a", w: "#ffffff", p: "#1a1012" },
-+      skin: "#e2a27a", top: "#6a3fd0", topKind: "tank", sleeve: "none", pants: "#8e8e92", shoe: "#f2f2f2", sole: "#8a8a96", glove: "#28c840", build: { sh: 1.02, arm: 1.06 } },
-+    steve: { head: { s: "#e8b090", S: "#b87c62", k: "#f6d0b4", H: "#6e6c70", h: "#a6a4aa", B: "#6a5a52", b: "#9a8a80", w: "#ffffff", p: "#1a1012", g: "#121014" },
-+      skin: "#e8b090", top: "#8a5a32", topKind: "overshirt", inner: "#f0f0f0", sleeve: "long", pants: "#4a6890", shoe: "#3a2a22", sole: "#1a120e", glove: "#7a4fe0", build: { sh: 1.1, arm: 1.12, leg: 1.1, waist: 1.3, chest: 1.12, sc: 1.14 } },
-+    rares: { head: { s: "#eab08c", S: "#bc7c5e", k: "#f8d0ae", H: "#24180f", h: "#4a3424", B: "#2e2016", b: "#8a6a50", w: "#ffffff", p: "#21140f" },
-+      skin: "#eab08c", top: "#f4f2ee", topKind: "printtee", sleeve: "short", tattoo: true, key: true, pants: "#1e1e24", shoe: "#1e1e24", sole: "#0c0c10", glove: "#2fd6f0", build: {} },
-+    dony: { head: { s: "#ecb896", S: "#c08468", k: "#f8d4b8", H: "#2a1e18", h: "#4a3a30", b: "#c89878", w: "#ffffff", p: "#1a1012", g: "#2a2026", C: "#6a7040", c: "#4a5030" },
-+      skin: "#ecb896", top: "#2c3c6c", topKind: "fleece", sleeve: "long", pants: "#38383f", shoe: "#2a2a2a", sole: "#d8d8d8", glove: "#8a5530", build: { sc: 0.86, arm: 0.96 } },
-+    iulica: { head: { s: "#c98a62", S: "#9a6248", k: "#dca47c", H: "#1c1410", h: "#3a2c22", B: "#2a1e18", b: "#6a4a38", w: "#ffffff", p: "#1a1012" },
-+      skin: "#c98a62", top: "#5f6e40", topKind: "tee", sleeve: "short", pants: "#2c2c32", shoe: "#3a3a3a", sole: "#e0e0e0", glove: "#b8e02f", build: { sh: 0.98 } }
++    // I O N: the tough, military nod: a fitted camo tee, dog tags, khaki cargo trousers, boots, the cap backwards
++    ion: { skin: "#dfa27a", top: "#3c4434", topKind: "military", sleeve: "short", dogtags: true, pants: "#8c7e58", cargo: true, boots: true, shoe: "#1e1e22", sole: "#0c0c0e", glove: "#d8342a", build: { sh: 1.08, arm: 1.06 } },
++    // Cristache: the calm karate nod: an indigo gi, a black belt, wrapped hands, barefoot
++    cristache: { skin: "#e1a079", top: "#2b3c68", topKind: "gi", sleeve: "gi", pants: "#2b3c68", loose: 1.8, belt: "#141416", barefoot: true, gloveKind: "wraps", wrap: "#f2efe6", build: { sh: 1.04 } },
++    // Rares: the flashy, hot-blooded nod: sleeveless, a gold chain, open-finger gloves, wrapped ankles, the key tag
++    rares: { skin: "#e9ae8a", top: "#f4f2ee", topKind: "muscle", sleeve: "none", chain: "#e8c050", tattoo: true, key: true, pants: "#1c1c22", loose: 1.5, belt: "#1c1c22", barefoot: true, ankle: "#f2efe6", gloveKind: "mma", glove: "#1c1c22", trim: "#2fd6f0", build: { arm: 1.08 } },
++    iulica: { skin: "#c88961", top: "#5f6e40", topKind: "tee", sleeve: "short", strap: "#d9cba8", pants: "#2c2c32", shoe: "#3a3a3a", sole: "#e0e0e0", glove: "#b8e02f", wrist: "#b8e02f", build: { sh: 0.98 } },
++    maria: { skin: "#ebb597", top: "#f2f0ea", topKind: "oversize", knot: true, sleeve: "short", legs: "skirt", skirt: "#1c1c22", shoe: "#a8b89a", sole: "#6e7c62", glove: "#f0389a", wrist: "#f0389a", build: { sh: 0.84, arm: 0.82, leg: 0.88, waist: 0.86, chest: 0.94 } },
++    steve: { skin: "#e8af8f", top: "#8a5a32", topKind: "overshirt", inner: "#f0f0f0", sleeve: "long", belt: "#2a1c14", buckle: "#c9a640", pants: "#4a6890", shoe: "#3a2a22", sole: "#1a120e", glove: "#7a4fe0", build: { sh: 1.1, arm: 1.12, leg: 1.1, waist: 1.3, chest: 1.12, sc: 1.14 } },
++    dony: { skin: "#ecb895", top: "#2c3c6c", topKind: "fleece", sleeve: "long", apron: "#b08a5a", pants: "#2e2e36", shoe: "#2a2a2a", sole: "#d8d8d8", glove: "#8a5530", build: { sc: 0.86, arm: 0.96 } },
++    cristian: { skin: "#e9ab84", top: "#7a6c50", topKind: "henley", sleeve: "rolled", belt: "#3a2618", buckle: "#c9a640", pants: "#3e4048", shoe: "#4a3022", sole: "#1a120e", glove: "#2f6fe0", build: {} },
++    daniel: { skin: "#e7a57d", top: "#1fb0ba", topKind: "tee", sleeve: "short", stripe: "#fed012", belt: "#1c1820", buckle: "#c9ccd4", pants: "#2e3a62", shoe: "#f2f2f6", sole: "#9a9ab0", glove: "#fed012", wrist: "#fed012", build: {} }
 +  };
-+  const headPal = (id) => Object.assign({ o: OUT, g: OUT }, LOOKS[id].head);
 +  // the canvas of one frame: colour, the order things were laid (z) and which form they belong to (group)
 +  function Fig(w, h) { this.w = w; this.h = h; this.c = new Uint32Array(w * h); this.z = new Uint16Array(w * h); this.g = new Uint8Array(w * h); this.n = 0; }
 +  Fig.prototype.fill = function (x0, y0, x1, y1, inside, color, group) {
@@ -1228,11 +990,11 @@ index 0000000..a837c3b
 +    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
 +      const ch = rows[y][x]; if (!ch || ch === ".") continue;
 +      let px, py;
-+      if (rot === 1) { px = cx + (ay - y); py = cy + (x - ax); } // a quarter turn, the face up (lying on the back)
++      if (rot === 1) { px = cx - (ay - y); py = cy - (x - ax); } // a quarter turn, the face up, the crown away from the body (lying on the back)
 +      else { px = cx + x - ax; py = cy + y - ay; }
 +      px = Math.round(px); py = Math.round(py);
 +      if (px < 0 || py < 0 || px >= this.w || py >= this.h) continue;
-+      const i = py * this.w + px; this.c[i] = u32(pal[ch] || "#ff00ff"); this.z[i] = z; this.g[i] = group;
++      const v = pal[ch]; const i = py * this.w + px; this.c[i] = typeof v === "number" ? v : u32(v || "#ff00ff"); this.z[i] = z; this.g[i] = group;
 +    }
 +  };
 +  // the finish: a soft shadow where a nearer form crosses a farther one, and one outline round the figure
@@ -1331,9 +1093,157 @@ index 0000000..a837c3b
 +    dony: [pose({ hip: [-2, -46], neck: [-3, -74], head: [0, -85], eF: [2, -58], hF: [-6, -50] }), pose({ hip: [4, -46], neck: [11, -74], head: [14, -84], eF: [26, -64], hF: [38, -60], kF: [16, -25], fF: [24, 0], tw: 0.8 })],
 +    iulica: [pose({ hip: [-2, -47], neck: [-3, -75], head: [0, -86], eF: [-6, -60], hF: [-14, -54] }), pose({ hip: [4, -47], neck: [11, -75], head: [14, -85], eF: [24, -76], hF: [36, -84], kF: [16, -25], fF: [24, 0], tw: 0.9 })]
 +  };
++  // beta 3.12: the archetype stances (a nod, not a copy): Cristache low and still like a karateka, the back fist at the
++  // hip; Rares bouncing on his toes, fists high; I O N upright and square, the guard tight
++  const breathe = (b0, amp) => [0, 1, 2, 1].map((d) => upper(Object.assign({}, b0, { hip: [b0.hip[0], b0.hip[1] + d * amp * 0.6] }), d * 0.2, d * amp));
++  const STYLE_POSES = {
++    cristache: { idle: breathe(pose({ hip: [0, -43], neck: [6, -71], head: [9, -82], eF: [20, -56], hF: [31, -60], eB: [-1, -50], hB: [5, -44], kF: [16, -21], fF: [27, 0], kB: [-15, -19], fB: [-27, 0] }), 0.6) },
++    rares: { idle: [0, 1.5, 3, 1.5].map((d) => { const b0 = pose({ eF: [15, -66], hF: [21, -79], eB: [6, -64], hB: [14, -75], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-17, 0] }); const q = upper(Object.assign({}, b0, { hip: [0, -47 + d] }), 0, d); q.kF = [12, -24 + d * 0.5]; q.kB = [-8, -23 + d * 0.5]; return q; }) },
++    ion: { idle: breathe(pose({ hip: [0, -48], neck: [3, -77], head: [5, -88], eF: [15, -64], hF: [18, -80], eB: [8, -64], hB: [13, -78], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-16, 0] }), 0.8) }
++  };
 +  const SPECIAL_PROP = { coz: "camera", iulica: "tote", rares: "key" };
-+  // the cell every frame is baked into: 128x132, the feet at (64, 128)
-+  const CW = 128, CH = 132, OX = 64, OY = 128;
++  // the cell every frame is baked into: 140x142, the feet at (70, 138)
++  const CW = 140, CH = 142, OX = 70, OY = 138;
++  // beta 3.12 (Daniel: "you can't tell it's them"): bigger heads (28x36), built from one shaded three-quarter face and,
++  // per person, what makes them them: the hair (its line, volume, texture), the beard, glasses, a cap, the smile.
++  // Read from their photos. The neck's foot (13, 31) sits on the body's neck.
++  const HW = 28, HH = 36, HEAD_ANCHOR = [13, 28];
++  const HEADSPEC = {
++    daniel: { skin: "#e7a57d", hair: "#3a2516", hl: "#6e4c30", beard: "#33200f", bhl: "#6e5444", grey: 0.12,
++      hairline: [7, 10], thick: 0.4, back: 19, tex: "slick", bun: [6.5, 3, 2.6, 2.3],
++      beardKind: "full", beardTop: 15, beardDrop: 2.5, mouth: "grin", eyes: "smile" },
++    cristian: { skin: "#e9ab84", hair: "#2c1f17", hl: "#57412f", beard: "#55361f", bhl: "#8a6244",
++      hairline: [6.5, 9], thick: 1.2, back: 17, tex: "short", blobs: [[15, 3.2, 5.5, 2.6], [11, 2.8, 4, 2.4]],
++      beardKind: "full", beardTop: 16, beardDrop: 1.5, mouth: "grin", glasses: { kind: "round", color: "#1c1416", thick: 1 } },
++    ion: { skin: "#dfa27a", hair: "#1b1517", hl: "#3d3034", beard: "#211819", bhl: "#4a3a36",
++      hairline: [7, 10], thick: 0.6, back: 17, tex: "short",
++      beardKind: "short", beardTop: 16.5, beardDrop: 1, mouth: "flat", brows: "heavy",
++      cap: { color: "#24252b", band: "#3a3b44", back: true } },
++    maria: { skin: "#ebb597", hair: "#2a1912", hl: "#5d3b27", fem: true, rx: 0.93, jaw: 0.88,
++      hairline: [6.5, 11], thick: 1.6, back: 35, tex: "curly", blobs: [[8, 18, 6.5, 13], [5.5, 26, 5, 8.5], [12, 4, 8, 4], [17.5, 5.5, 4.5, 3]],
++      beardKind: null, mouth: "small", lips: "#c46a64" },
++    cristache: { skin: "#e1a079", hair: "#1d1511", hl: "#3e3129", beard: "#281c16", bhl: "#5c4234",
++      hairline: [7, 10.5], thick: 0.5, back: 17, tex: "short", blobs: [[14, 4, 6, 2.4]],
++      beardKind: "stubble", beardTop: 16.5, mouth: "flat", brows: "heavy" },
++    steve: { skin: "#e8af8f", hair: "#76747a", hl: "#b0aeb4", beard: "#6c5e58", bhl: "#a49890", rx: 1.08, jaw: 1.14,
++      hairline: [6.5, 9.5], thick: 1.6, back: 17, tex: "wavy", blobs: [[13, 2.5, 8, 3.2], [7, 5, 4, 4]],
++      beardKind: "full", beardTop: 16.5, beardDrop: 2, mouth: "flat", glasses: { kind: "square", color: "#121014", thick: 1 } },
++    rares: { skin: "#e9ae8a", hair: "#23170f", hl: "#4d3524", beard: "#2c1e14", bhl: "#6a4c38",
++      hairline: [6.5, 11], thick: 1.8, back: 27, tex: "curly", blobs: [[10, 3, 8, 4], [5.5, 13, 4.5, 8], [7, 22, 5.5, 5.5], [17, 3.6, 5, 3]],
++      beardKind: "stubble", beardTop: 17, mustache: true, mouth: "flat" },
++    iulica: { skin: "#c88961", hair: "#1b130f", hl: "#3b2c22", beard: "#2a1d16", bhl: "#4c3a2e", rx: 0.96,
++      hairline: [6.5, 10], thick: 1.2, back: 18, tex: "messy", blobs: [[12, 3, 7, 3], [16.5, 4, 4, 2.6]],
++      beardKind: "stubble", beardTop: 16, mouth: "grin", eyes: "smile" },
++    dony: { skin: "#ecb895", hair: "#271c16", hl: "#463428", beard: "#7a5a48", rx: 0.96, jaw: 0.94,
++      hairline: [7.5, 10], thick: 0.4, back: 16, tex: "short",
++      beardKind: "stubble", beardTop: 17.5, mouth: "flat", glasses: { kind: "round", color: "#2a2026", thick: 1, thin: true },
++      cap: { color: "#6a7040", band: "#8a9058", back: true, mesh: "#4e5432" } }
++  };
++  const HEAD_CACHE = {};
++  function headOf(id) {
++    if (HEAD_CACHE[id]) return HEAD_CACHE[id];
++    const P = HEADSPEC[id], rx = 8.7 * (P.rx || 1), ry = 10.2, cx0 = 13, cy0 = 12.5, jw = P.jaw || 1;
++    const buf = new Array(HW * HH).fill(null), put = (x, y, c) => { if (x >= 0 && y >= 0 && x < HW && y < HH) buf[y * HW + x] = c; };
++    const at = (x, y) => (x >= 0 && y >= 0 && x < HW && y < HH ? buf[y * HW + x] : null);
++    const R = (b) => ramp(b); const SK = R(P.skin), HA = R(P.hair), BE = R(P.beard || P.hair);
++    const inPoly = (pts, x, y) => { let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c; } return c; };
++    const jawPts = [[5.2, 13], [7.6, 21.5], [10.8, 25.2], [14.4, 26.2], [18, 24.4], [20.6, 20.8], [21.7, 15.5], [21.2, 11]].map(([x, y]) => [cx0 + (x - cx0) * jw, y]);
++    const skull = (x, y) => ((x - cx0) / rx) ** 2 + ((y - cy0) / ry) ** 2 <= 1;
++    const face = (x, y) => skull(x, y) || inPoly(jawPts, x, y) || (x >= 21 && x <= (P.fem ? 21.8 : 22.6 + (P.rx || 1) - 1) && y >= (P.fem ? 14.5 : 13.5) && y <= 17.2);
++    const L = [0.52, -0.5, 0.69];
++    const shadeAt = (x, y, bias = 0) => { const nx = clamp((x - cx0 - 1.5) / (rx + 1), -1, 1), ny = clamp((y - cy0 + 1) / (ry + 3), -1, 1), nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny)); const d = nx * L[0] + ny * L[1] + nz * L[2] - bias; return d > 0.8 ? 0 : d > 0.52 ? 1 : d > 0.2 ? 2 : d > -0.1 ? 3 : 4; };
++    // the neck (behind), the face, the ear
++    for (let y = 22; y <= 28; y++) for (let x = 9; x <= 16; x++) put(x, y, SK[x < 11 ? 4 : 3]);
++    for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) if (face(x + 0.5, y + 0.5)) put(x, y, SK[shadeAt(x + 0.5, y + 0.5)]);
++    for (let y = 12; y <= 17; y++) for (let x = 6; x <= 9; x++) if (((x + 0.5 - 7.8) / 1.7) ** 2 + ((y + 0.5 - 14.6) / 2.7) ** 2 <= 1) put(x, y, SK[x === 8 && y > 12 && y < 17 ? 3 : 2]);
++    // the eye sockets and the cheek, a little darker; under the nose
++    for (const [x, y] of [[13, 12], [14, 12], [18, 12], [19, 12], [21, 17], [20, 17]]) if (at(x, y)) put(x, y, SK[Math.min(4, shadeAt(x, y) + 1)]);
++    // the beard: below a cheek line that runs from the sideburn (at the ear) down to the mouth's corner; a moustache
++    // over the lip; full beards fall a little below the jaw. Stubble is the skin darkened towards the beard colour
++    if (P.beardKind) {
++      const kind = P.beardKind, drop = P.beardDrop || 0, lift = (P.beardTop ? 16.5 - P.beardTop : 0);
++      const mix2 = (c1, c2, k2) => { const a2 = [c1 & 255, (c1 >> 8) & 255, (c1 >> 16) & 255], b2 = [c2 & 255, (c2 >> 8) & 255, (c2 >> 16) & 255]; const m2 = a2.map((v, i) => Math.round(v + (b2[i] - v) * k2)); return (0xff000000 | (m2[2] << 16) | (m2[1] << 8) | m2[0]) >>> 0; };
++      const jawOut = jawPts.map(([a2, b2]) => [a2 + (a2 - cx0) * 0.05, b2 + drop * clamp((b2 - 14) / 12, 0, 1)]);
++      for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) {
++        const fx = x + 0.5, fy = y + 0.5;
++        if (!(face(fx, fy) || (kind === "full" && inPoly(jawOut, fx, fy)))) continue;
++        const cheek = (fx < 8.5 ? 10.5 : fx < 14 ? lerp(11.5, 17.2, (fx - 8.5) / 5.5) : 17.6) - lift;
++        if (fy < cheek) continue;
++        const mouthHole = fx > 14.6 && fx < 20.4 && fy > 19.4 && fy < 21.6;
++        if (mouthHole) continue;
++        if (fx > 20.6 && fy < 19) continue; // the nose and the tip of the lip stay skin
++        const base = buf[y * HW + x];
++        if (kind === "stubble") { if (base) put(x, y, mix2(base, BE[2], 0.42)); continue; }
++        if (kind === "short") { if (base) put(x, y, mix2(base, BE[clamp(shadeAt(fx, fy) , 1, 3)], 0.8)); else put(x, y, BE[3]); continue; }
++        let t = clamp(shadeAt(fx, fy, 0.05), 1, 4); if ((x * 3 + y) % 5 === 0 && t < 4) t++; // strands
++        if (fy > 22 && fx > 11 && fx < 18 && ((x + y) % 4 === 0)) t = Math.max(1, t - 1);
++        put(x, y, BE[t]);
++      }
++    }
++    if (P.mustache) for (let y = 18; y <= 19; y++) for (let x = 14; x <= 21; x++) if (!(y === 18 && (x === 14 || x === 21))) put(x, y, BE[y === 18 ? 2 : 3]);
++    // the hair: what's above the hair line (lower at the temples), the back down to the nape, and the volume
++    const [fy0, ty0] = P.hairline, th = P.thick || 0;
++    const hairIn = (x, y) => {
++      const sk = ((x - cx0) / (rx + th)) ** 2 + ((y - cy0) / (ry + th)) ** 2 <= 1;
++      const hl = lerp(ty0, fy0, clamp((x - 8) / 12, 0, 1)) - (x > 19 ? (x - 19) * 0.6 : 0);
++      if (sk && y < hl) return true;
++      if (sk && x < 9.2 && y < P.back && !(x > 5.5 && y > 11.5 && y < 17.5)) return true; // behind the ear
++      if (P.back > 20 && x < 10 && y < P.back && x > 3 - (y - 14) * 0.15 && y > 10 && !(x > 6 && y > 11.5 && y < 17.5 && x < 10)) return true; // long at the back
++      for (const [bx, by, brx, bry] of P.blobs || []) if (((x - bx) / brx) ** 2 + ((y - by) / bry) ** 2 <= 1) return true;
++      return false;
++    };
++    const HL = R(P.hl || P.hair);
++    for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) {
++      const fx = x + 0.5, fy = y + 0.5; if (!hairIn(fx, fy)) continue;
++      if (P.fem && fx > 17 && fy > 9 && fy < 22) continue; // her face stays open
++      let t = clamp(shadeAt(fx, fy, -0.15), 0, 4);
++      const tex = P.tex, n = hash2(x * 3 + 1, y * 5 + 2);
++      if (tex === "curly") { const c = (Math.sin(x * 1.7 + y * 0.9) + Math.sin(y * 1.9 - x * 0.6)) * 0.5; t = clamp(t + (c > 0.45 ? -1 : c < -0.45 ? 1 : 0), 1, 4); }
++      else if (tex === "slick") { t = clamp(t + ((y % 3 === 0 && x > 8) ? -1 : 0), 1, 4); }
++      else if (tex === "wavy") { const c = Math.sin(x * 0.9 + y * 1.4); t = clamp(t + (c > 0.6 ? -1 : c < -0.7 ? 1 : 0), 0, 4); }
++      else if (tex === "messy") { t = clamp(t + (n > 0.78 ? -1 : n < 0.15 ? 1 : 0), 1, 4); }
++      else { t = clamp(t + (n > 0.85 ? -1 : 0), 1, 4); }
++      put(x, y, t <= 1 ? HL[t === 0 ? 1 : 2] : HA[t]);
++    }
++    if (P.bun) { const [bx, by, brx, bry] = P.bun; for (let y = 0; y < 6; y++) for (let x = 3; x < 14; x++) { const d = ((x + 0.5 - bx) / brx) ** 2 + ((y + 0.5 - by) / bry) ** 2; if (d <= 1) put(x, y, d > 0.55 ? HA[3] : (x + y) % 3 ? HA[2] : HL[1]); } } // the knot on top
++    if (P.grey) for (let i = 0; i < HW * HH; i++) if (buf[i] === HA[2] && hash2(i, 7) < P.grey) buf[i] = HL[1];
++    // a cap, worn backwards: the crown over the hair, the strap's opening at the forehead, the peak behind
++    if (P.cap) {
++      const CP = R(P.cap.color), crown = (x, y) => ((x - cx0) / (rx + 1.1)) ** 2 + ((y - cy0 + 0.5) / (ry + 1.1)) ** 2 <= 1 && y < 8.6 - Math.max(0, x - 18) * 0.5;
++      for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) { const fx = x + 0.5, fy = y + 0.5; if (!crown(fx, fy)) continue; const t = clamp(shadeAt(fx, fy, -0.1), 0, 4); put(x, y, P.cap.mesh && x < 12 && (x + y) % 2 ? u32(P.cap.mesh) : CP[clamp(t, 1, 4)]); }
++      for (let x = 15; x <= 20; x++) put(x, 8, u32(P.cap.band)); // the strap across the forehead
++      for (let x = 16; x <= 19; x++) put(x, 7, HA[2]); // hair through the opening
++      for (let x = 1; x <= 5; x++) put(x, 8 + (x < 3 ? 1 : 0), CP[x < 3 ? 3 : 2]); // the peak, behind
++      put(1, 9, CP[4]); put(2, 9, CP[3]);
++    }
++    // the brows, the eyes, the nose, the mouth
++    const browC = P.brows === "heavy" ? HA[4] : HA[3];
++    for (const [x0, x1, y] of [[12, 15, 10], [17, 20, 10]]) for (let x = x0; x <= x1; x++) put(x, y + (x === x0 ? 1 : 0), browC);
++    if (P.brows === "heavy") { put(13, 11, browC); put(18, 11, browC); }
++    const EW = u32("#f2ece6"), EP = u32("#1c1214");
++    if (P.eyes === "smile") { for (const [x0, x1] of [[13, 15], [18, 19]]) for (let x = x0; x <= x1; x++) put(x, 13, EP); put(13, 12, SK[3]); put(18, 12, SK[3]); }
++    else { put(13, 13, EW); put(14, 13, EP); put(15, 13, SK[2]); put(18, 13, EW); put(19, 13, EP); put(14, 12, SK[3]); put(19, 12, SK[3]); }
++    if (P.fem) { put(15, 12, EP); put(20, 12, EP); put(13, 13, EP); } // lashes
++    if (P.fem) { put(21, 16, SK[3]); put(20, 17, SK[3]); } else { put(21, 15, SK[2]); put(21, 16, SK[3]); put(20, 17, SK[4]); put(22, 15, SK[1]); }
++    const MO = u32("#5a2220"), TE = u32("#fbf6ee");
++    if (P.mouth === "grin") { for (let x = 15; x <= 19; x++) { put(x, 20, TE); put(x, 21, MO); } put(14, 19, MO); put(20, 19, MO); }
++    else if (P.mouth === "small") { put(16, 20, u32(P.lips || "#b05a50")); put(17, 20, u32(P.lips || "#b05a50")); put(18, 20, MO); }
++    else for (let x = 15; x <= 19; x++) put(x, 20, x === 15 || x === 19 ? SK[3] : MO);
++    // glasses
++    if (P.glasses) {
++      const G = u32(P.glasses.color), ring = (gx, gy, grx, gry) => { for (let a = 0; a < 40; a++) { const an = (a / 40) * Math.PI * 2; put(Math.round(gx + Math.cos(an) * grx), Math.round(gy + Math.sin(an) * gry), G); } };
++      if (P.glasses.kind === "square") { for (let x = 12; x <= 16; x++) { put(x, 11, G); put(x, 15, G); } for (let y = 11; y <= 15; y++) { put(12, y, G); put(16, y, G); } for (let x = 18; x <= 21; x++) { put(x, 11, G); put(x, 15, G); } for (let y = 11; y <= 15; y++) { put(18, y, G); put(21, y, G); } put(17, 12, G); }
++      else { ring(13.9, 13, 2.2, 1.9); ring(19, 13, 1.6, 1.9); put(16, 12, G); put(17, 12, G); }
++      for (let x = 8; x <= 11; x++) put(x, 12 + (x < 10 ? 1 : 0), G); // the arm to the ear
++    }
++    // one outline round the silhouette
++    const out = buf.slice();
++    for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) { if (at(x, y)) continue; if (y >= 26 && x >= 8 && x <= 17) continue; if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => at(x + dx, y + dy))) out[y * HW + x] = u32(OUT); }
++    // rows + palette, for the blitter
++    const keys = new Map(), pal = {}; let k = 0; const CH = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
++    const rows = []; for (let y = 0; y < HH; y++) { let r = ""; for (let x = 0; x < HW; x++) { const c = out[y * HW + x]; if (c == null) { r += "."; continue; } if (!keys.has(c)) { const ch = CH[k++]; keys.set(c, ch); pal[ch] = c; } r += keys.get(c); } rows.push(r); }
++    return (HEAD_CACHE[id] = { rows, pal, at: HEAD_ANCHOR });
++  }
 +  const hueTurn = (hex, deg) => {
 +    let [r, g2, b] = rgbOf(hex).map((v) => v / 255); const mx = Math.max(r, g2, b), mn = Math.min(r, g2, b), l = (mx + mn) / 2, d = mx - mn;
 +    if (d < 0.04) return hexOf([r, g2, b].map((v) => (1 - v) * 0.5 * 255 + v * 0.5 * 255 * 0.6)); // greys: a darker shade
@@ -1341,7 +1251,7 @@ index 0000000..a837c3b
 +    const c = (1 - Math.abs(2 * l - 1)) * s2, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = l - c / 2, k = Math.floor(h / 60);
 +    const rgb = [[c, x, 0], [x, c, 0], [0, c, x], [0, x, c], [x, 0, c], [c, 0, x]][k]; return hexOf(rgb.map((v) => (v + m) * 255));
 +  };
-+  const lookOf = (id, alt) => { if (!alt) return LOOKS[id]; const L = Object.assign({}, LOOKS[id]); for (const k of ["top", "pants", "glove", "skirt", "inner"]) if (L[k]) L[k] = hueTurn(L[k], 150); return L; };
++  const lookOf = (id, alt) => { if (!alt) return LOOKS[id]; const L = Object.assign({}, LOOKS[id]); for (const k of ["top", "pants", "glove", "skirt", "inner", "trim", "wrist", "apron"]) if (L[k]) L[k] = hueTurn(L[k], 150); return L; };
 +  function drawFighter(id, p0, prop, alt) {
 +    const L = lookOf(id, alt), B = Object.assign({ sh: 1, arm: 1, leg: 1, waist: 1, chest: 1, sc: 1 }, L.build), sc = B.sc;
 +    const p = {}; for (const k in p0) p[k] = Array.isArray(p0[k]) ? [p0[k][0] * sc, p0[k][1] * sc] : p0[k];
@@ -1349,7 +1259,7 @@ index 0000000..a837c3b
 +    const hip = T(p.hip), neck = T(p.neck), head = T(p.head), tw = p.tw || 0;
 +    const ang = Math.atan2(neck[0] - hip[0], -(neck[1] - hip[1])), ca = Math.cos(ang), sa = Math.sin(ang);
 +    const off = (o, dx, dy) => [o[0] + dx * ca - dy * sa, o[1] + dx * sa + dy * ca];
-+    const SK = ramp(L.skin), TOP = ramp(L.top), PA = ramp(L.pants || L.skin), SH = ramp(L.shoe), GL = ramp(L.glove), SO = u32(L.sole);
++    const SK = ramp(L.skin), TOP = ramp(L.top), PA = ramp(L.pants || L.skin), GL = ramp(L.glove || L.wrap || "#f4f4f4"), SO = u32(L.sole || "#101014");
 +    const tone = (R, nx, ny) => R[toneOf(nx, ny)];
 +    const back = (R, nx, ny) => R[Math.min(4, toneOf(nx, ny) + 1)]; // the far side, a tone darker
 +    const wsh = 13 * B.sh * sc, len = Math.hypot(neck[0] - hip[0], neck[1] - hip[1]);
@@ -1357,24 +1267,43 @@ index 0000000..a837c3b
 +    const lF = off(hip, 4 * sc, 2), lB = off(hip, -4 * sc, 2);
 +    // an arm: the deltoid, the upper arm with the biceps, the forearm, then the glove with its cuff
 +    const arm = (s, e, h, far) => {
-+      const g = far ? 1 : 2, ar = B.arm * sc, sleeveTo = L.sleeve === "long" ? 2 : L.sleeve === "short" ? 0.55 : -1;
++      const g = far ? 1 : 2, ar = B.arm * sc, sleeveTo = L.sleeve === "long" ? 2 : L.sleeve === "rolled" ? 1.4 : L.sleeve === "gi" ? 1.3 : L.sleeve === "short" ? 0.55 : -1;
 +      const mat = (seg) => (nx, ny, t, px, py) => { const R = seg + t * 0.999 < sleeveTo || (seg === 1 && sleeveTo >= 2) ? TOP : SK;
++        if (seg === 1 && t > 0.78 && (L.wrist || L.gloveKind === "wraps")) return (far ? back : tone)(ramp(L.wrist || L.wrap), nx, ny); // wristbands, the tape
++        if (L.sleeve === "rolled" && seg === 1 && Math.abs(t - 0.4) < 0.06) return TOP[far ? 4 : 3]; // the rolled cuff
 +        if (L.topKind === "fleece" && R === TOP) { const fz = hash2(px * 7.3, py * 5.1); return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (fz > 0.72 ? 1 : fz < 0.12 ? -1 : 0), 0, 4)]; } if (L.tattoo && R === SK && seg === 1 && t > 0.2 && t < 0.8 && hash2(t * 40, nx * 6 + 9) > 0.62) return u32("#3a4a6a"); return far ? back(R, nx, ny) : tone(R, nx, ny); };
 +      limb(F, s, e, 5.6 * ar, 3.8 * ar, 1.1 * ar, 0.4, mat(0), g);
 +      limb(F, e, h, 4.3 * ar, 3.2 * ar, 0.6 * ar, 0.3, mat(1), g);
 +      const vx = h[0] - e[0], vy = h[1] - e[1], vl = Math.hypot(vx, vy) || 1, ux = vx / vl, uy = vy / vl, gr = 5.9 * Math.min(1.1, sc);
-+      limb(F, [h[0] - ux * 6, h[1] - uy * 6], [h[0] - ux * 3.5, h[1] - uy * 3.5], 4.2, 4.2, 0, 0.5, (nx, ny) => (far ? back : tone)(ramp("#f4f4f8"), nx, ny), g + 10);
-+      blob(F, [h[0] + ux, h[1] + uy], gr, gr * 0.92, (nx, ny) => { if (nx * -0.5 + ny * -0.8 > 0.55 && nx * nx + ny * ny < 0.5) return u32("#ffffff"); return (far ? back : tone)(GL, nx, ny); }, g + 10);
++      if (L.gloveKind === "wraps") { // a bare fist in white tape
++        const WR = ramp(L.wrap); blob(F, [h[0] + ux, h[1] + uy], 4.3, 4, (nx, ny, px, py) => { const band = Math.floor((px * ux + py * uy) / 1.6) & 1; return (far ? back : tone)(band ? WR : SK, nx, ny); }, g + 10);
++      } else if (L.gloveKind === "mma") { // open-finger gloves, a coloured band at the wrist
++        limb(F, [h[0] - ux * 5, h[1] - uy * 5], [h[0] - ux * 3, h[1] - uy * 3], 3.8, 3.8, 0, 0.5, (nx, ny) => (far ? back : tone)(ramp(L.trim), nx, ny), g + 10);
++        blob(F, [h[0] + ux, h[1] + uy], 4.8, 4.4, (nx, ny) => (ny < -0.55 && nx > -0.2 ? (far ? back : tone)(SK, nx, ny) : (far ? back : tone)(GL, nx, ny)), g + 10);
++      } else {
++        limb(F, [h[0] - ux * 6, h[1] - uy * 6], [h[0] - ux * 3.5, h[1] - uy * 3.5], 4.2, 4.2, 0, 0.5, (nx, ny) => (far ? back : tone)(ramp("#f4f4f8"), nx, ny), g + 10);
++        blob(F, [h[0] + ux, h[1] + uy], gr, gr * 0.92, (nx, ny) => { if (nx * -0.5 + ny * -0.8 > 0.55 && nx * nx + ny * ny < 0.5) return u32("#ffffff"); return (far ? back : tone)(GL, nx, ny); }, g + 10);
++      }
 +    };
 +    const leg = (r, k, f, far) => {
 +      const g = far ? 3 : 4, lg = B.leg * sc, bare = L.legs === "skirt";
-+      const R = bare ? SK : PA, loose = bare ? 0 : 0.8;
++      const R = bare ? SK : PA, loose = bare ? 0 : L.loose || 0.8;
 +      const mat = (nx, ny) => (far ? back : tone)(R, nx, ny);
-+      limb(F, r, k, (7 + loose) * lg, (4.9 + loose) * lg, (bare ? 1.2 : 0.6) * lg, 0.35, mat, g);
-+      limb(F, k, [f[0], f[1] - 4], (4.9 + loose) * lg, (3.3 + loose * 1.2) * lg, (bare ? 1 : 0.4) * lg, 0.25, mat, g);
-+      // the shoe, pointing forward, its sole
-+      const sr = ramp(L.shoe);
-+      poly(F, [[f[0] - 5, f[1] - 6], [f[0] + 4, f[1] - 6], [f[0] + 11, f[1] - 2], [f[0] + 11, f[1] + 1], [f[0] - 5, f[1] + 1]], (x, y) => (y > f[1] - 0.6 ? SO : sr[far ? 3 : x > f[0] + 3 ? 1 : 2]), g + 10);
++      const thighMat = (nx, ny, t) => (L.cargo && t > 0.45 && t < 0.78 && nx < -0.1 && nx > -0.85 ? R[far ? 4 : t < 0.5 ? 1 : 3] : mat(nx, ny)); // the cargo pocket
++      const shinMat = (nx, ny, t) => (L.ankle && t > 0.78 ? (far ? back : tone)(ramp(L.ankle), nx, ny) : L.barefoot && !L.pants ? mat(nx, ny) : mat(nx, ny));
++      limb(F, r, k, (7 + loose) * lg, (4.9 + loose) * lg, (bare ? 1.2 : 0.6) * lg, 0.35, thighMat, g);
++      limb(F, k, [f[0], f[1] - 4], (4.9 + loose) * lg, (3.3 + loose * 1.2) * lg, (bare ? 1 : 0.4) * lg, 0.25, shinMat, g);
++      if (L.barefoot) { // a bare foot, the toes forward
++        poly(F, [[f[0] - 4, f[1] - 5], [f[0] + 3, f[1] - 4], [f[0] + 10, f[1] - 1], [f[0] + 10, f[1] + 1], [f[0] - 4, f[1] + 1]], (x, y) => SK[far ? 3 : y < f[1] - 2 ? 1 : 2], g + 10);
++        if (L.ankle) limb(F, [f[0] - 1, f[1] - 6], [f[0] - 1, f[1] - 4], 3.4, 3.4, 0, 0.5, (nx, ny) => (far ? back : tone)(ramp(L.ankle), nx, ny), g + 11);
++      } else if (L.boots) { // boots, laced up the ankle
++        const sr = ramp(L.shoe);
++        poly(F, [[f[0] - 5, f[1] - 11], [f[0] + 3, f[1] - 11], [f[0] + 4, f[1] - 5], [f[0] + 11, f[1] - 2], [f[0] + 11, f[1] + 1], [f[0] - 5, f[1] + 1]], (x, y) => (y > f[1] - 0.6 ? SO : (Math.floor(y) % 2 === 0 && x > f[0] + 1 && x < f[0] + 3.5 && y < f[1] - 4 ? u32("#5a5a62") : sr[far ? 3 : x > f[0] + 3 ? 1 : 2])), g + 10);
++      } else {
++        // the shoe, pointing forward, its sole
++        const sr = ramp(L.shoe);
++        poly(F, [[f[0] - 5, f[1] - 6], [f[0] + 4, f[1] - 6], [f[0] + 11, f[1] - 2], [f[0] + 11, f[1] + 1], [f[0] - 5, f[1] + 1]], (x, y) => (y > f[1] - 0.6 ? SO : sr[far ? 3 : x > f[0] + 3 ? 1 : 2]), g + 10);
++      }
 +    };
 +    // the torso: a V from the shoulders to the waist, then the hips; u across (-1 back .. 1 front), v down (0..1)
 +    const shape = (v) => {
@@ -1391,7 +1320,30 @@ index 0000000..a837c3b
 +      // the chest: the pecs, a shadow under them; the waistband at the bottom
 +      const pec = v > 0.34 && v < 0.39 && u > -0.4 ? 1 : 0;
 +      if (v > 0.9) return (L.legs === "skirt" ? ramp(L.skirt) : PA)[u < -0.3 ? 3 : 2];
++      if (L.belt && v > 0.82 && v <= 0.9) { if (L.buckle && u > 0.42 && u < 0.62) return u32(L.buckle); if (L.topKind === "gi" && u > 0.5 && u < 0.62) return u32("#2a2a30"); return ramp(L.belt)[u < -0.3 ? 3 : 2]; }
++      if (L.dogtags) { const cu = lerp(0.3, 0.55, clamp(v / 0.3, 0, 1)); if (v > 0.03 && v < 0.3 && Math.abs(u - cu) < 0.05 && (Math.floor(y) % 2 === 0)) return u32("#c9ccd4"); if (v >= 0.3 && v < 0.4 && u > 0.48 && u < 0.64) return u32(v < 0.33 ? "#f0f2f6" : "#9a9ca6"); }
++      if (L.chain) { const cv = 0.1 + Math.abs(u - 0.55) * -0.06; if (u > 0.2 && u < 0.85 && Math.abs(v - (0.14 - Math.abs(u - 0.55) * 0.12)) < 0.022) return u32((Math.floor(x) % 2) ? L.chain : "#fff2b0"); }
++      if (L.strap && Math.abs(u - lerp(-0.7, 0.9, clamp(v / 0.86, 0, 1))) < 0.14) return ramp(L.strap)[u < -0.3 ? 3 : (Math.floor(y) % 3 ? 1 : 2)]; // the tote bag's strap
++      if (L.apron && u > -0.05 && v > 0.1) return ramp(L.apron)[u < 0.12 ? 3 : Math.min(4, toneOf(nx, ny) + (Math.floor(x * 1.3 + y) % 6 === 0 ? 1 : 0))];
++      if (L.apron && v <= 0.1 && Math.abs(u - 0.25) < 0.08) return ramp(L.apron)[2]; // the neck strap
 +      const k = L.topKind;
++      if (k === "gi") { // a wrap-over jacket: the chest showing in the V, the lapels, folds
++        const lap = 0.12 + v * 0.95, lap2 = 0.98 - v * 0.6;
++        if (v < 0.5 && u > lap && u < lap2) return tone(SK, nx, ny);
++        if (v < 0.56 && (Math.abs(u - lap) < 0.09 || (Math.abs(u - lap2) < 0.07 && v < 0.5))) return TOP[Math.min(4, toneOf(nx, ny) + 1)];
++        return TOP[Math.min(4, toneOf(nx, ny) + ((Math.floor(x - y * 0.5) % 7 === 0) ? 1 : 0))];
++      }
++      if (k === "muscle") { // sleeveless: deep arm holes, a crew neck, a small print
++        if ((u < -0.5 && v < 0.34) || (u > 0.86 && v < 0.3) || (v < 0.07 && u > 0.3 && u < 0.82)) return tone(SK, nx, ny);
++        if (v > 0.2 && v < 0.3 && u > 0.5 && u < 0.7 && hash2(x * 3, y * 7) > 0.5) return u32("#1c1c22");
++        return TOP[Math.min(4, toneOf(nx, ny) + pec)];
++      }
++      if (k === "military") { // a fitted camo tee: a plain crew neck at the front, nothing open at the back
++        if (v < 0.06 && u > 0.34 && u < 0.84) return tone(SK, nx, ny);
++        const n = hash2(Math.floor(u * 6 + 7), Math.floor(v * 9)) + hash2(Math.floor(u * 3 + 3), Math.floor(v * 5 + 1)) * 0.8;
++        const base = n > 1.25 ? "#56604a" : n < 0.55 ? "#2a3027" : L.top;
++        return ramp(base)[Math.min(4, toneOf(nx, ny) + pec)];
++      }
 +      if (k === "tank") {
 +        if ((u > 0.28 && u < 0.86 && v < 0.24 - (u - 0.28) * 0.05) || (v < 0.1 && u > -0.2)) return tone(SK, nx, ny); // the neckline and the open shoulders
 +        if (u < -0.6 && v < 0.3) return tone(SK, nx, ny);
@@ -1437,9 +1389,13 @@ index 0000000..a837c3b
 +    for (let i = 10; i >= 0; i--) { const v = i / 10, hw = shape(v); tp.push(off(neck, 1.5 * sc - hw, v * len)); }
 +    poly(F, tp, torsoMat, 5);
 +    if (L.legs === "skirt") { const SKR = ramp(L.skirt); poly(F, [off(hip, -hw1 - 1, -3), off(hip, hw1 + 1, -3), off(hip, hw1 + 6, 15), off(hip, -hw1 - 5, 15)], (x, y) => { const [u] = tloc(x, y); return SKR[u > 0.3 ? 2 : u > -0.4 ? 3 : 4]; }, 6); }
++    if (L.apron) { const AR = ramp(L.apron); poly(F, [off(hip, -1, -2), off(hip, hw1 + 2, -2), off(hip, hw1 + 4, 20), off(hip, 1, 22)], (x, y) => AR[x > hip[0] + hw1 * 0.5 ? 1 : 2], 6); }
++    if (L.knot) { const kp = off(hip, hw1 * 0.75, -5); blob(F, kp, 3.2, 2.6, (nx, ny) => TOP[toneOf(nx, ny)], 7); limb(F, [kp[0], kp[1] + 1], [kp[0] + 1.5, kp[1] + 6], 1.6, 1.2, 0, 0.5, (nx, ny) => TOP[toneOf(nx, ny) + 1 > 4 ? 4 : toneOf(nx, ny) + 1], 7); }
 +    if (L.key) { const k = off(hip, hw1 * 0.6, 4); blob(F, [k[0], k[1] + 6], 1.6, 3.2, () => u32("#ffd23a"), 7); blob(F, [k[0], k[1] + 1.5], 1.2, 1.4, () => u32("#c9ccd4"), 7); }
-+    limb(F, off(neck, 1.5, 3), off(neck, 2.5, -5), 4.4 * B.sh * sc, 4, 0, 0.5, (nx, ny) => tone(SK, nx * 0.7, ny), 5);
-+    F.blit(HEADS[id], headPal(id), head[0], head[1], p.lie ? 1 : 0, HEAD_AT[id], 8);
++    { // beta 3.12: the head's neck stands on the body's neck; the pose's head offset still tilts it a little
++      const HD = headOf(id), hx = (p.head[0] - p.neck[0] - 3 * sc) * 0.6, hy = (p.head[1] - p.neck[1] + 11 * sc) * 0.6, a2 = off(neck, 0.5, 1);
++      if (p.lie) F.blit(HD.rows, HD.pal, a2[0], a2[1], 1, HD.at, 8); else F.blit(HD.rows, HD.pal, Math.round(a2[0] + hx), Math.round(a2[1] + hy), 0, HD.at, 8);
++    }
 +    arm(sF, T(p.eF), T(p.hF), false);
 +    const hF = T(p.hF);
 +    if (prop === "camera") {
@@ -1461,7 +1417,7 @@ index 0000000..a837c3b
 +    const key = id + (alt ? ":alt" : "");
 +    if (SPR[key]) return SPR[key];
 +    const S = {};
-+    for (const [k, list] of Object.entries(POSES)) S[k] = list.map((p) => drawFighter(id, p, k === "intro" && id === "ion" ? "stack" : null, alt));
++    for (const [k, list] of Object.entries(Object.assign({}, POSES, STYLE_POSES[id] || {}))) S[k] = list.map((p) => drawFighter(id, p, k === "intro" && id === "ion" ? "stack" : null, alt));
 +    S.special = SPECIAL_POSES[id].map((p) => drawFighter(id, p, SPECIAL_PROP[id] || null, alt));
 +    return (SPR[key] = S);
 +  }
@@ -1595,7 +1551,6 @@ index 0000000..a837c3b
 +  const ROSTER = {
 +    daniel: { id: "daniel", name: "DANIEL", role: "FOUNDER - CREATIVE ARCHITECT", special: "COLOR WAVE", line: "PAINTS THE ROOM IN ONE MOVE", speed: 1, power: 1 },
 +    cristian: { id: "cristian", name: "CRISTIAN", role: "PARTNER - CEO", special: "DEADLINE DASH", line: "ALWAYS ONE STEP AHEAD", speed: 1.08, power: 0.95 },
-+    coz: { id: "coz", name: "COZ", role: "CALM ON SET", special: "FLASH STUN", line: "FINDS THE ANGLE, THEN THE FLASH", speed: 0.96, power: 1.05 },
 +    ion: { id: "ion", name: "I O N", role: "FOUNDER OF TWO MINUTES", special: "ESPRESSO SHOT", line: "TWO MINUTES IS ALL HE NEEDS", speed: 1, power: 1 },
 +    // beta 3.11 (Daniel): the guests (Iulica is on the crew page too)
 +    cristache: { id: "cristache", name: "CRISTACHE", role: "SPECIAL GUEST", special: "HIGH FIVE", line: "ALWAYS REACHING HIGHER", speed: 1.06, power: 1 },
@@ -1607,7 +1562,7 @@ index 0000000..a837c3b
 +  };
 +  // the select grid: a small config. Both sides pick from it (Player 1, then the CPU); "random" is the "?" tile.
 +  // I O N stays the CPU's first choice
-+  const GRID = { cols: 5, rows: 2, order: ["daniel", "cristian", "coz", "iulica", "ion", "dony", "maria", "cristache", "steve", "rares"] };
++  const GRID = { cols: 5, rows: 2, order: ["ion", "cristache", "rares", "iulica", "maria", "steve", "dony", "cristian", "daniel", "random"] }; // beta 3.12 (Daniel): I O N first, the "?" back
 +  const FIGHTERS = GRID.order.filter((id) => id !== "random");
 +  const pickRandom = () => FIGHTERS[Math.floor(Math.random() * FIGHTERS.length)];
 +
@@ -1862,7 +1817,7 @@ index 0000000..a837c3b
 +  }
 +  const onGround = (f) => f.y >= 0;
 +  const free = (f) => onGround(f) && (f.st === "idle" || f.st === "walk" || f.st === "crouch");
-+  const hurt = (f) => { const top = (f.st === "crouch" || (f.st === "atk" && f.atk?.crouch) || (f.st === "block" && f.crouchBlock) ? -64 : f.st === "down" ? -14 : -92) * f.sc, hw = 14 * f.sc; return [f.x - hw, f.y + top, f.x + hw, f.y - (onGround(f) ? 0 : 18)]; };
++  const hurt = (f) => { const top = (f.st === "crouch" || (f.st === "atk" && f.atk?.crouch) || (f.st === "block" && f.crouchBlock) ? -70 : f.st === "down" ? -14 : -102) * f.sc, hw = 14 * f.sc; return [f.x - hw, f.y + top, f.x + hw, f.y - (onGround(f) ? 0 : 18)]; };
 +  const boxOf = (f, b0) => { const b = b0.map((v) => v * f.sc); return f.face > 0 ? [f.x + b[0], f.y + b[1], f.x + b[2], f.y + b[3]] : [f.x - b[2], f.y + b[1], f.x - b[0], f.y + b[3]]; };
 +  const overlap = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
 +
@@ -2435,6 +2390,11 @@ index 0000000..a837c3b
 +      out[`sprites-${id}`] = up(c, 4);
 +      const [ic, ix] = mk(CW, CH); ix.fillStyle = "#332a58"; ix.fillRect(0, 0, CW, CH); ix.drawImage(S.idle[0], 0, 0); out[`idle-${id}`] = up(ic, 6);
 +      const [pc, px] = mk(64, 64); px.fillStyle = "#241d3d"; px.fillRect(0, 0, 64, 64); px.drawImage(portrait(id), 0, 0); out[`portrait-${id}`] = up(pc, 6);    }
++    { // the heads, big
++      const ids = Object.keys(HEADSPEC), [c, x] = mk(ids.length * (HW + 6) + 6, HH + 16); x.fillStyle = "#2a2148"; x.fillRect(0, 0, c.width, c.height);
++      ids.forEach((id, i) => { const HD = headOf(id), [hc, hx2] = mk(HW, HH), idd = hx2.createImageData(HW, HH), d = new Uint32Array(idd.data.buffer); HD.rows.forEach((r, y) => [...r].forEach((ch, xx) => { if (ch !== ".") d[y * HW + xx] = HD.pal[ch]; })); hx2.putImageData(idd, 0, 0); x.drawImage(hc, 6 + i * (HW + 6), 4); });
++      out.heads = up(c, 8);
++    }
 +    { // the line-up: everyone in the stance, then a punch and a kick at full stretch
 +      const ids = Object.keys(LOOKS), [c, x] = mk(ids.length * 84 + 24, 3 * (CH - 8) + 12);
 +      x.fillStyle = "#2a2148"; x.fillRect(0, 0, c.width, c.height);
@@ -2444,8 +2404,8 @@ index 0000000..a837c3b
 +    const S = stage(); { const [c, x] = mk(STAGE_W, H); x.drawImage(S.far, 0, 0); x.drawImage(S.mid, 0, 0); drawCrowd(x, 0, 0, false); out.stage = up(c, 4); }
 +    const [c, x] = mk(W, H);
 +    drawTitle(x, 0); out.title = up(c);
-+    drawSelect(x, 0.1, { phase: "p1", p1: 0, cpu: 3 }); out.select = up(c);
-+    drawSelect(x, 0.1, { phase: "cpu", p1: 5, cpu: 3 }); out["select-cpu"] = up(c);
++    drawSelect(x, 0.1, { phase: "p1", p1: 0, cpu: 0 }); out.select = up(c);
++    drawSelect(x, 0.1, { phase: "cpu", p1: 8, cpu: 0 }); out["select-cpu"] = up(c);
 +    drawVS(x, 0, "daniel", 1); out.vs = up(c);
 +    { // the HUD over the stage, with the two fighters in their stance
 +      x.drawImage(S.far, -60, 0); x.drawImage(S.mid, -96, 0); drawCrowd(x, 96, 0, false);
