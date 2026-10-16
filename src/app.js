@@ -24084,6 +24084,33 @@ void main() {
   }
   // r119: the map drives on a real network: every road both ways, junctions joined, the shortest
   // path to wherever you are going (no more going back to the fork)
+  // r182 (Daniel: "the roads aren't connected very well to the roundabouts, so getting out of them is more complicated"):
+  // every arm meets the ring through two links, one curving into the ring each way round. A link leaves the arm's centre
+  // line 140 from the fountain, heading in, and joins the ring's 70 centre line tangentially, 27° round from the arm
+  // (a cubic, tangent at both ends). Drawn as road (buildGoldenRoute) they fill the square notches between an arm and the ring
+  // with flared curves, the arm widening as it meets it; in navNet they are roads, so the map's drives (and nav2's graph
+  // and road mask, built from navNet) take the curves in and out
+  var RING_LINKS = null;
+  function ringLinks() {
+    if (RING_LINKS) return RING_LINKS;
+    const C = FORK_POS, R = 70, D0 = 140, A = 27 * Math.PI / 180;
+    RING_LINKS = [];
+    for (const [ux, uz, arm] of [[0, -1, ""], [-1, 0, "A"], [1, 0, "B"], [0, 1, "C"]]) { // arm: the street it opens onto ("" the start road)
+      const th = Math.atan2(uz, ux);
+      for (const s of [-1, 1]) {
+        const t3 = th + s * A, p0 = [C.x + ux * D0, C.y + uz * D0], p3 = [C.x + Math.cos(t3) * R, C.y + Math.sin(t3) * R];
+        const T3 = [-Math.sin(t3) * s, Math.cos(t3) * s], k = Math.hypot(p3[0] - p0[0], p3[1] - p0[1]) * 0.5;
+        const p1 = [p0[0] - ux * k, p0[1] - uz * k], p2 = [p3[0] - T3[0] * k * 0.8, p3[1] - T3[1] * k * 0.8];
+        const pts = [];
+        for (let i = 0; i <= 14; i++) {
+          const t = i / 14, a = (1 - t) ** 3, b = 3 * (1 - t) ** 2 * t, c = 3 * (1 - t) * t * t, d = t ** 3;
+          pts.push(i === 0 ? p0 : i === 14 ? p3 : [a * p0[0] + b * p1[0] + c * p2[0] + d * p3[0], a * p0[1] + b * p1[1] + c * p2[1] + d * p3[1]]);
+        }
+        RING_LINKS.push({ pts, u: [ux, uz], p0, arm });
+      }
+    }
+    return RING_LINKS;
+  }
   var NAV = null;
   function navNet() {
     if (NAV) return NAV;
@@ -24102,6 +24129,16 @@ void main() {
       roundedPolyline(LANE_PTS, 120).map(([x, z]) => [x, z]),
       rp([[1170, 6100], [1170, 6180], ...ROUTE_MERGE.slice(1)]).filter(([, z]) => z < RAMP_BASE - 60)
     ];
+    // r182: the ring's links; each one's arm end is spliced into its arm (the two arm points either side of it, on the
+    // arm's straight centre line, are joined to it), its ring end is one of the arcs' points (27° = three 9° steps)
+    for (const L of ringLinks()) {
+      const [ux, uz] = L.u, along = (q) => (q[0] - C[0]) * ux + (q[1] - C[1]) * uz, off = (q) => Math.abs((q[0] - C[0]) * uz - (q[1] - C[1]) * ux);
+      let qa = null, qb = null;
+      for (const sg of segs) for (const q of sg) { if (off(q) > 1) continue; const a = along(q); if (a < 140 && a > 98 && (!qa || a > along(qa))) qa = q; if (a > 140 && (!qb || a < along(qb))) qb = q; }
+      if (qa) segs.push([qa, L.p0]);
+      if (qb) segs.push([L.p0, qb]);
+      segs.push(L.pts);
+    }
     const key = (x, z) => Math.round(x * 2) + "," + Math.round(z * 2);
     const ids = new Map(), P = [], adj = [];
     const node = (x, z) => { const k = key(x, z); if (!ids.has(k)) { ids.set(k, P.length); P.push([x, z]); adj.push([]); } return ids.get(k); };
@@ -25484,6 +25521,16 @@ void main() {
       const lb = new Mesh(ribbonGeometry(lp, 35, 1.25), all ? mats.route : mats.routeAlt);
       lc.receiveShadow = lb.receiveShadow = true;
       group.add(lc, lb);
+    }
+    // r182: the arms flare into the ring (see ringLinks): each link drawn as its arm's road (gold where the arm is gold,
+    // the streets not taken grey, as their ribbons are), under the ring, the casing following its outer curve; the same
+    // ribbons as every road here
+    for (const L of ringLinks()) {
+      const gold = !L.arm || all || (chosen && L.arm === branch), p3 = L.pts.map(([x, z]) => new Vector3(x, 0, z));
+      const w = gold || !chosen ? ROUTE_W : ROUTE_W * 0.8;
+      const body = new Mesh(ribbonGeometry(p3, w, gold ? 1.3 : 0.7), gold ? mats.route : mats.routeAlt);
+      body.receiveShadow = true; group.add(body);
+      if (gold) { const cas = new Mesh(ribbonGeometry(p3, w + 4.5, 0.8), mats.routeCasing); cas.receiveShadow = true; group.add(cas); } // (the grey streets have no casing)
     }
     // r101: on the map every street is open: all three are gold, no choosing
     if (all) for (const b2 of BRANCHES) {
