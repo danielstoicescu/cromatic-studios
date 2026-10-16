@@ -6,6 +6,8 @@
 // do for a case page. Everything is drawn here, in code, on a 384x216 canvas scaled up with crisp pixels: the font,
 // the fighters (a jointed pixel puppet baked into frames at start), the portraits (pixel maps below), the stage, the
 // HUD. The sound is Web Audio, made on the spot, and keeps the site's mute setting (localStorage "cz-sound").
+// beta 3.11 (Daniel, round 2): ten fighters (the crew, I O N, and guests: Dony, Maria, Cristache, Steve, Rares),
+// drawn as shaded athletes, and both sides picked on the select screen: Player 1, then the CPU (I O N by default).
 (function () {
   "use strict";
   const W = 384, H = 216, FLOOR = 200, STAGE_W = 576;
@@ -38,10 +40,16 @@
     ">": "#...|.#..|..#.|...#|..#.|.#..|#...", "<": "...#|..#.|.#..|#...|.#..|..#.|...#", "+": ".....|..#..|..#..|#####|..#..|..#..|.....",
     "x": ".....|.....|#...#|.#.#.|..#..|.#.#.|#...#", "&": ".##..|#..#.|#.#..|.#...|#.#.#|#..#.|.##.#", "(": ".#|#.|#.|#.|#.|#.|.#", ")": "#.|.#|.#|.#|.#|.#|#.",
     "*": ".|.|.|#|.|.|.", "%": "##..#|##.#.|...#.|..#..|.#...|.#.##|#..##", " ": "...|...|...|...|...|...|...",
-    "^": "..#..|.###.|#.#.#|..#..|..#..|..#..|..#..", "v": "..#..|..#..|..#..|..#..|#.#.#|.###.|..#.."
+    "^": "..#..|.###.|#.#.#|..#..|..#..|..#..|..#..", "v": "..#..|..#..|..#..|..#..|#.#.#|.###.|..#..",
+    // beta 3.11: Romanian names: rows above (~ before) and below (~ after) the letter
+    "\u0102": "#...#|.###.~.###.|#...#|#...#|#####|#...#|#...#|#...#", "\u0218": ".####|#....|#....|.###.|....#|....#|####.~..#..|.#...",
+    "\u021A": "#####|..#..|..#..|..#..|..#..|..#..|..#..~..#..|.#...", "\u00CE": ".###.|.....~###|.#.|.#.|.#.|.#.|.#.|###", "\u00C2": ".#.|#.#~.###.|#...#|#...#|#####|#...#|#...#|#...#"
   };
   const GL = {};
-  for (const [k, v] of Object.entries(GLYPHS)) { const rows = v.split("|"); GL[k] = { w: rows[0].length, rows }; }
+  for (const [k, v] of Object.entries(GLYPHS)) {
+    const parts = v.split("~"), up = parts.length > 1 && parts[0].split("|").length < 7 ? parts.shift().split("|") : [], rows = parts.shift().split("|"), down = parts.length ? parts.shift().split("|").filter(Boolean) : [];
+    GL[k] = { w: Math.max(...rows.map((r) => r.length)), rows, up, down };
+  }
   const glyph = (ch) => GL[ch] || GL[ch.toUpperCase()] || GL["?"];
   const textW = (s, sc = 1, sp = 1) => { let w = 0; for (const ch of s) w += (glyph(ch).w + sp) * sc; return Math.max(0, w - sp * sc); };
   const TXT = new Map();
@@ -51,15 +59,16 @@
     const sc = o.sc || 1, sp = o.sp ?? 1, ol = o.ol === undefined ? OUT : o.ol, sh = o.sh || 0;
     const key = s + "|" + fill + "|" + sc + "|" + sp + "|" + ol + "|" + sh;
     if (TXT.has(key)) return TXT.get(key);
-    const pad = (ol ? 1 : 0) + sh, tw = textW(s, sc, sp), th = 7 * sc;
-    const [c, x] = mk(tw + pad * 2 + 1, th + pad * 2 + 1);
+    const pad = (ol ? 1 : 0) + sh, padY = pad + 2 * sc, tw = textW(s, sc, sp), th = 7 * sc; // 2 rows of room above and below (accents)
+    const [c, x] = mk(tw + pad * 2 + 1, th + padY * 2 + 1);
     const grad = Array.isArray(fill) ? fill : null;
     let cx = pad;
     for (const ch of s) {
       const g = glyph(ch);
-      for (let r = 0; r < 7; r++) for (let q = 0; q < g.w; q++) if (g.rows[r][q] === "#") {
-        x.fillStyle = grad ? grad[Math.min(grad.length - 1, Math.floor((r * grad.length) / 7))] : fill;
-        x.fillRect(cx + q * sc, pad + r * sc, sc, sc);
+      const all = [...g.up.map((row, i) => [i - g.up.length, row]), ...g.rows.map((row, i) => [i, row]), ...g.down.map((row, i) => [7 + i, row])];
+      for (const [r, row] of all) for (let q = 0; q < row.length; q++) if (row[q] === "#") {
+        x.fillStyle = grad ? grad[clamp(Math.floor((r * grad.length) / 7), 0, grad.length - 1)] : fill;
+        x.fillRect(cx + q * sc + Math.floor((g.w - row.length) / 2) * sc, padY + r * sc, sc, sc);
       }
       cx += (g.w + sp) * sc;
     }
@@ -70,7 +79,7 @@
       if (sh) { const s2 = d.slice(), sc2 = u32(OUT); for (let y = h - 1; y >= sh; y--) for (let q = w - 1; q >= sh; q--) { const i = y * w + q; if ((s2[i] >>> 24) === 0 && (s2[(y - sh) * w + q - sh] >>> 24) > 0) d[i] = sc2; } }
       x.putImageData(id, 0, 0);
     }
-    const r = { c, w: c.width, h: c.height, pad };
+    const r = { c, w: c.width, h: c.height, pad, padY };
     TXT.set(key, r);
     return r;
   }
@@ -78,7 +87,7 @@
   function text(ctx, s, x, y, fill, o = {}) {
     const t = textImg(s, fill, o), al = o.al || "l";
     const lx = al === "c" ? Math.round(x - (t.w - t.pad * 2) / 2) : al === "r" ? x - (t.w - t.pad * 2) : x;
-    ctx.drawImage(t.c, lx - t.pad, Math.round(y) - t.pad);
+    ctx.drawImage(t.c, lx - t.pad, Math.round(y) - t.padY);
   }
   const GOLD = ["#fff6b8", "#ffe14a", "#ffc21a", "#ff9d14", "#f2700f", "#d9480f", "#b8320c"];
   const RED = ["#ffd0c4", "#ff8a6e", "#ff5236", "#e8301c", "#c41f14", "#9c160f", "#7a0f0b"];
@@ -287,71 +296,467 @@
       "....0igiijiijllmm00hdbdljhjnmmjhhmmmlllmlldjefhmhnjnooonnooooooo",
       ".....geeggggggggk..fdchjjhjnnmjhhmmmmllmjlejeffnhnhooojlnooooooo"
     ] },
-    ion: { pal: "a010000 b110702 c19150e d301e12 e5c2c12 f363934 g874220 h525650 ia5572b j6c7979 kb86c44 lcc8a63 m90a8ab neeaf8a of5d6b8", rows: [
+    ion: { pal: "a010100 b040a05 c14150a d242416 e3a2c19 f4c412e g7f583c h697268 ib67753 j979a8d kda986e lf2b187 mfbc49e nffd5b0 offe6c5", rows: [
       "................................................................",
-      "..............................00................................",
-      "..........................0000fh0000000000......................",
-      "......................0000llkffklffdcdffff00....................",
-      "..................0000ffflhflfdffbbaaadfffdf0...................",
-      ".................0lhfffhlhffdaaaaaaaaaabcdfhf0..................",
-      "................0hhfffhlfaaaaaaaaaaaaaaaacccba0.................",
-      "...............0ffffdklcabbbaaaaaaaaaaaaaaaaaaa0................",
-      "..............0hfffhlhacccaaabaaaaaaaaaaaaaaaaaa0...............",
-      ".............0ffffflhccdcbaaaaaaaaaaaaaaaaaaaaaad0..............",
-      ".............0fffhkccdccbbaaaaaaaaaaaaaaaaaaaaaad0..............",
-      "............0ffhhhfcabbbaaaaaaaaaaaaaaaaaaaaaaaacf0.............",
-      "...........0ffhlhcbabbaaaaaaaaaaaaaaaaaaaaaaaaaadh0.............",
-      "............0fhdaaaaabcbaaaaaaaaaaaaaaaaaaaaaaaafll0............",
-      "............0fccdccaabfdbbaaaaabaaaaaaaaaaaaaaaaflh0............",
-      "............0dfffffdccdaccaaaaaaaaaaaaaaaaaaaaaacfh0............",
-      "............0ffcccffdcaacaaaabaaaaaaaaaaaaaaaaaaalo0............",
-      "............0ccbaababdabbaaccaaaaaaaaaaaaaaaaaaaafh0............",
-      "............0ccbaaaaccabaacfaaaaaaaaaaaaaaaaaaaaabf0............",
-      "............0bbbaabababcddddaaaaaaaaaaaaaaaaaaaaac0.............",
-      "............0baadiedddhlledeaabaaaaaaaaaaaaaaaaaac0.............",
-      ".............0bblolllnnnnlgedbacddecaaaaaaaaaaaaab0.............",
-      ".............0cdnnnoonnnnnnkggggikgdaaaaaaaaaaaaab0.............",
-      ".............0ddlnnnooonnnnlnlkkikkgdbaaaaaaaaaaaa0.............",
-      ".............0fhnnoooooonnlllkiiiikkkgebbaaaaabeeb0.............",
-      ".............0choooooooonligdbdgiiiikkkgdbaaaagkgi0.............",
-      ".............0cfnooooooolecbdeddgiiikikkebaabgiigg0.............",
-      ".............0lhbloooooldbeknnlkggiikkiigcbdgiiiig0.............",
-      ".............0hkielooongeinoonllkiiiikiigdbdiigiig0.............",
-      "..............0boolooonkilnnllllkiiiiiikgddeigeeii0.............",
-      "..............0clonlonnkgkgilkeggikkkiiigdbgkggggi0.............",
-      "..............0fhkknnonigikiookgggkllkiigbbikgeggi0.............",
-      "..............0ffhkoooliiknnnliiikllkkiiiddikiegi0..............",
-      "...............0llknnnkikknnllkkklnlkiiiigeiiggkg0..............",
-      "...............0lhlnnnkkkklnnnnnnnlkkiiiigegiggi0...............",
-      "...............0lhnonlkkllllnnnnnllkkiiiigegiggi0...............",
-      "...............0lhnonkiiilllnnnnlllkkiiiigegigg0................",
-      "................0hnonkiiiglnnllnlllkkiiiggegige0................",
-      "................0hkonkikkggnnllllllkkiiiigegii0.................",
-      "................0lhongeekgennnlllllkkiigggeegi0.................",
-      "................0lfolebegglnnnlllllkkiigggeeg0..................",
-      ".................0foollkeilnnnnlllkkiiiggggeg0..................",
-      ".................0hnnelgdegkllllllkkiigeeeeeg0..................",
-      ".................0hlkellkigggggkllkiiggeeeddg0..................",
-      "..................0hkknligigegggllkggeegeebei0..................",
-      "..................0dlklkklkgginklligeedeedbe0...................",
-      "...................0hnnoonkkklllkkieedddcbdg0...................",
-      "...................0dlnlkkiiklkklkgeddcbcddg00..................",
-      "...................0dfolgekllkkllkgedcbbddegii000...............",
-      "....................0chonlnnlllliggdbabcdegiiiiib000............",
-      "....................0cjolllllklkddcaabbceegiiiikgbcf00..........",
-      ".....................00hklkkigedaaaaabdddegiiiiiidddhj0.........",
-      ".......................0hihhhdaaaaaabdddeegiiiiiiecdfjh00.......",
-      ".............000000000000fdbbbaaaaabcddegggiiiiiiebfdhhhh0......",
-      "..........000cdjmomhjohjofdnlllllhhheeeggiiiiiiiiebfhfhhhf00....",
-      ".......000fcfjmmjjjhmojhohboooonnnnligggiiiiiiiiigbchhhhhfhh0...",
-      ".....00hhcfjmmjhhjjjjojfmjagoonnnnnnliiiiiiiiiiiigdahjhhhhfhh00.",
-      "..000jjhjjmmmmjfhmmhhomjjjacloonnnnnnkiiiiiiiiiiigeajjjhhffhhff0",
-      "00hhfjmmommmmjhhfjmhhojmjfaaenonnnnlllkkkkiiiiiiiidajjjjhhffhhfh",
-      "hhjhhmmmmmmmmhhjfhmjhomjmfaaaenonnnllllllliiiiiikibahmjjhhhffhjh",
-      "ffcfjmmmmmmmmffjjfmjhmmhmhaaaabgnoonlllllliiiiklkbaafmjjhhhffhjj",
-      "ffjmmmmmmjmmmhfhjhjjhmmjjjcaaaaachlnnlllnnlkkkieaaaafmmjmhhhffhj",
-      "fjmmmmmmmjjmmjffhjjjjmmmhhdaaaaaaaabegggikgedbaaaaaafmmjjmhhjhjh",
-      "jmmmmjjmmmjjjjfffjjhjmmmjffaaaaaaaaaaaaaaaaaaaaaaaaafomjjmjacccd"
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "..................................000...........................",
+      "...............................000jjj0000000....................",
+      "............................000jfaaaaacfdfhj0...................",
+      "...........................0jfbaaaaaaaaaaaaaf00.................",
+      "..........................0faaaaaaaaaaaaaaaaaah00...............",
+      ".........................0daaaabaaaaaaaabbaaaaaah0..............",
+      "........................0caaabaaabaaaaaaacbaaaaaaf0.............",
+      ".......................0daaaabbbacbaaaabbaaaaaaaaad0............",
+      "......................0faaabbaabcbabaabccbaaaaaaaaaf0...........",
+      ".....................0haaaaababbbcabdbdacbabaaaaaaaah0..........",
+      "....................0jabaaaaabdbbbdaabdaaaabaaaaaaaaaf0.........",
+      "....................0babaacccdbacbbdaacaaaaaaaaaaaaaaa0.........",
+      "...................0jabbaceffddcdfcdaaaaaaaaaaaaaaaaaaf0........",
+      "...................0fabbcfdbddefefecbaaaaabaaaaaaaaaaaa0........",
+      "...................0bbcdfeddfgfggecbbabcbabaaaaaaaaaaaa0........",
+      "..................0hbddefffgllkkiiggfdaaaabcaaaaaaaaaaah0.......",
+      "..................0fddfefffiklmnnnnnmlgfbaabaaaaaaaaaaadh0......",
+      "..................0fefffffhkmnnnnoonmllkifcbaaaaaaaaaaaah0......",
+      "..................0fffffffhlnonnnnnmmlkklkifecccbaaaaaad0.......",
+      ".................0jefffggjklnooonnmmmllkklkgffffedbbaaac0.......",
+      ".................0jdhhghhhilooooonmllllkkkkiigfffecabaaaj0......",
+      ".................0hehgghijlnonnnnnomkkkkkkiiigffffedaaad0.......",
+      ".................0fghhgimooonnnonnoolkkkkkiiigfffedebaaj0.......",
+      "................0kdfjhimonnnnolgilnnmlkkkiiiigffeddedac0........",
+      "...............0lnkgiiknnnnnnligfegkmlkkkiiiiggffedeeae0........",
+      "..............0mlookiilnnnnnlkmnlgddfilkkiiiigggfedfdaf0........",
+      ".............0mmnoonikmnnnnmmnnnmkkgeagkkikiiiigfddfdaj0........",
+      ".............0mlooooikmnnnnmnnollkkllgfikikiiigeaaaeca0.........",
+      ".............0mlonmogknnnnnmmlggfaefkmkkkiiigfdaaaabah0.........",
+      ".............0mmmklnglnnnnnmlgiofajgfinlkiigfcaabbacbj0.........",
+      ".............0mmilomgmnnnnnnmnmnkklggiooligfedfggfebf0..........",
+      ".............0mnimominnnnnmmnnnmkiiggloonkfcaaacfgfch0..........",
+      ".............0mnminmknnnnnnmmmmlkigginnonkeaaaaecdfdj0..........",
+      "..............0nollmlnnnnnonmlmlkkkknnnnnieaabehdafej0..........",
+      "..............0nonnmlnnnnnoonlkllmmmmmnnmkecbdeeccef0...........",
+      "..............0mooollnnnnnnnnmllmmmmnonlliddcdfeedcg0...........",
+      "..............0mnoollmnnnnnnnnmmmmllmnnmlidddeeeedcj0...........",
+      "...............0mnolmmnnnnnnnnmmmliknmmnlieeddeeeed0............",
+      "................0lmlmmnnnnonnnnmligmoooomifeecdeeef0............",
+      ".................0mlmmmnnnnnnnnligilnefnlifeeedefdh0............",
+      ".................0lkmmnnnnnnmnmkiklmlkmmkfeeeeeeeej0............",
+      ".................0kkmmnnnnonnmllllmllnmmfcedeeeeee0.............",
+      ".................0lkmllmnnnnnmmlkllkkkggdaeeeeeeeg0.............",
+      ".................0llmklmmmnnmllkiklmmmeefaceefffej0.............",
+      ".................0lkllmmlmmmmkigikklkliigaadffffej0.............",
+      ".................0lkkmllmklnliggikkiiiigfecdefffg0..............",
+      ".................0mkilklkllliiloommlkigecedcdffeh0..............",
+      ".................0mliikkkkklimomnnmliiigdacdeffej0..............",
+      ".................0nmkgikkkkklmmmmlkiiigfeddefeef0...............",
+      "................0hnnlifiikklmmmmmliecdfffedefeaj0...............",
+      "...............0fdonlkifgilmlnnnnllifceeeeeeebe0................",
+      "..............0jagonmklgegliknonnlkifeffffeecaj0................",
+      ".............0jfakonmllifeffgklllkgggedfefedah0.................",
+      "...........00jhdaonnnmligfdeehiiiigggecdddcae0..................",
+      "..........0hfhjbfonnnlkkkgefcdggggffedcbbaad0...................",
+      "........00dahhhdgonnnmllkifedaaeefeeedbaaah0....................",
+      ".......0hdafhhhdeonnnmmkkkiffdddcbbccbaabaj0....................",
+      ".....00hdabjhhhfanonnmmlkkkigeeffdbaaaaacaaj00..................",
+      ".....jfdaafhhhhhainnnnmllkkiigfffecbaaaccaaaaf.................."
+    ] },
+    maria: { pal: "a010100 b0d0b01 c1a1505 d30230d e48341c f6e492a g84654c hc0784c i9c8f81 jf2a670 kbfb5af ld4cecc me2dee1 nefecf2 ofbf9fc", rows: [
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "....................000000000...................................",
+      "..................00gedcbfgii000................................",
+      "................00ggaaaaaaaaaabb0...............................",
+      "...............0gfeaaacbbbaaaaaab00.............................",
+      ".............00gbaaaaaaaaaaaaaaaaci0............................",
+      "............0gbaaaaaaaaaaaaaaaaaaaag00..........................",
+      "...........0icaaaaaaaaaaaaaaaaaaccbael0.........................",
+      "..........0kfaabccaaaaaaaaaaaaaaabbaab0.........................",
+      "..........0kcabeedbaaaaaaaaaaaaaaaabbad0........................",
+      "..........0iaaffffdaaaaaaaaaaaaaaaabcbck0.......................",
+      "..........0gafgfffebaaaaaaaaaaaaaaabcbce0.......................",
+      "..........0eagfffgfdaaaaaaaaaaaabaabbbcec0......................",
+      "..........0degfgfddebaaaaaaaaaaabbacbbadid0.....................",
+      "..........0efgggdfhjhaaaacaacaabbbacbaaagle0....................",
+      "..........0fcghhhedfjfaaaddbdcbbbaabcbabclig0...................",
+      "..........0gefhjgakgfhaaacfcccccbbaaacccbfkg0...................",
+      "..........0gaegjfdigfgeaacgebccgcaaaabcccagg0...................",
+      "..........0gdggheehhggheacefbbcgdaaaabcccbcf00..................",
+      "..........0gcfhgfeffhhhhebdgbaaecaaabbcbccbekl00................",
+      "..........0fehhhfefhhjjjhcdfaaacdaabbccbbcbfiiil0...............",
+      ".........0ifjjhhfghhjjjjhdddaaaegabbaccbabccknkil0..............",
+      ".........0ijlhjjfhhjjjjjhecbabaffacbbccbbbddegok0...............",
+      "........0ikighhfghjjjjjjhebbacbfaccbbbbbbadegegl0...............",
+      "........0iliefghhhjjjjjhgcbabafebecbcbaabacdfig0................",
+      "........0ilkghhjjjjjjjjhfcbbbcgdbdcbababcaccfik0................",
+      "........0kllfcggfgjjjjjheccbcehdccbbaabacbcagik0................",
+      "........0kllghjhhhjjjjjhdcdccehddcbaaabacbbceggn000.............",
+      "........0ilkigghhhjjjjjhddebceeeccaaaabaccaceffikkl0............",
+      "........0klkeeefhjjjjjjhedfbdfcfabaaaaaaadbbgkiiiigl0...........",
+      "........0kkgafgjjjjjjjhheeecffbfbbaabbaaacbdfgilnoki0...........",
+      ".........0idehjjjjjjjhhgeecehfdebaaadcaaaccdecilllik0...........",
+      ".........0ibefhjjhghhhhgffdfhefeacbbdbaabdccdeilkil0............",
+      "........0lkfccaaaaabghhffhdfffhfcdccccaabdbadeglll00............",
+      ".......0liliabbaaeaafgjfejbhggjfddccedbabcbbccdkmmll0...........",
+      "...00000igeaacdbbcabfgghhgdjfhjfecccecdcaabcdccilmlk000000000...",
+      "..0gggggecdbbcccaaabfffjjfdjggjgfdcddadddccddddfilnknmmmmmmmm0..",
+      "...00gggigdabbbaaaadffhjhhbhjfhhgebdiaeddedbcedeggggmnmmmmmmm0..",
+      ".....00ggfcdeebaaacifghhhmffmjfhhebikaiecbdddeedbabdflmmmmmmm0..",
+      "......0igcefdcbaadg0khgjjjlfjjhggdikidkigdikikkkkiiiginmmmmmm0..",
+      ".......0ie00gdadf00.00khjjjjghfeemolgekiilolkllilllllkmmmmmmm0..",
+      ".......0g0.0gbd00....0onlkihggikkollifllnmnlllkklklklllmmmmmmm0.",
+      "........0...0ce0...00mmnooonnookkmkkignnmmmlllimlmlknmllmmmmmm0.",
+      "............0dc0..0llmmmnnooonmkkkkllilnlmmlmkknmnlmommmlmmmmm0.",
+      "............0fc0..0llmmmnnnnnnmikklmmlgmmmmlmilnmnknonmmmlmmmm0.",
+      "...........00ee0..0llmmmnnnnnmlkkkklmmiinmmmlimonmlonnnmmmlmmm0.",
+      "..........0eeg0...0llmmnnmnnnmmlllklllnmmmmlkkmonmlononnmmmlmm0.",
+      "..........0di0....0mlmmmmmmmnmmlmllmlmmmmmmlkkoonmmonoonnnmmmm0.",
+      "...........00.....0mmmmmmmmmmmmllllmllmmmmmlkloonmmoooonnnnmmmm0",
+      "..................0mmmmmmmmmmmmmllllllmmmmmlkmoonmnoooomnonnnmm0",
+      "..................0mmmmmmmmmmmnmmlklmlmmmmmkknoonmnonoomnonnnnm0",
+      "..................0mmmmmmmmmmmmmmmlmmmmmmmlklnoonmooooomnonnnnm0",
+      "..................0mmmmmmmmmmmmmmmmmmmmnmmlkmooonnoonoomnonnnnm0",
+      "..................0mmmmmmmmmmmmmmmmmmmmmmmkknoonnnoonoomnonnnnm0",
+      "..................0mmmmmmmmmmmmmmmllmmmmmlklnoooonoonoommonnnnn0",
+      "..................0mmmmmmmmmmmmmmmmlnonmomknoooonnonnonmmoononnn",
+      "..................0mmmmmmmmmmmmmmmmmggklfflilooonnonnonmmoooonnn",
+      "..................0mmmmmmmmmmmmmmmnkcgekdgmilooonnonnonmmoooonno",
+      "...................mmmmmmmmmmmmmmloifkdliinimooonooooonmmooooooo"
+    ] },
+    cristache: { pal: "a0d0407 b40251d c684133 d875846 e653dba faa6b4d g8d7373 hbc836a ia58581 jc29994 k9c5dfe ld9a7a0 mc3b8ca nebcdcc of5faf8", rows: [
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "............................00000...............................",
+      ".........................000mmmmm0000...........................",
+      ".......................00mjijidginlno00.........................",
+      ".....................00mgdddcbbbciiimoo0........................",
+      "....................0mggcbaaaaaaabbacino0.......................",
+      "...................0mgcbbaaaaaaaaaaaaabo0.......................",
+      "..................0mdcbaaaacbcdcdcaaaaabo0......................",
+      "..................0ggbaabgjjjljjlljjdaaaco0.....................",
+      ".................0ijcamjjjjjjjjjjjllliaaai0.....................",
+      "................0mnhamolijjjjjjjjjjllnjaaa0.....................",
+      "................0nogjojgiijjjjjjjjjjllniaag0....................",
+      "...............0moljoniijjjjjjjjjllllllncaa0....................",
+      "...............0nlgoonoojjjjjjljiggllllmgaam0...................",
+      "..............0oojnoooomgddijjjjdaabdglmiaae0...................",
+      "..............0onnnoooodaaachhhhdcbaaabmmaab0...................",
+      ".............0oooodioocaabcdffhffdcdffcbmaaa0...................",
+      ".............0ooogamoccddccddhhhdbbcfhhdjcaa0...................",
+      ".............0oooacoidfdcbbcdjjhdbaaacfhngaa0...................",
+      ".............0onnbmoddcaababgljjfbaabbbfnmaa0...................",
+      "..............0njcojcbbbbbbdnnjljidddfgdlmaa0...................",
+      ".............0ongiodbcdccdijnljlnjliiijjjmaa0...................",
+      ".............0onjnomigggijinjhhjnljljljjlmab0...................",
+      "..............0ngooooomllilhachabnhllllllnag0...................",
+      "..............0ocnoooojjhffbacffbfhhlllllnago0..................",
+      "..............0omoonoihhfhibbcccbglhhllllnifg0..................",
+      "..............0onoonlfhffgcgfffhfcdjjllllmlhb0..................",
+      ".............0ohcoonjfhfcbhfdddffldbhllllmilc0..................",
+      ".............0ofdnonifhcaidcbccccdjcdllllmild0..................",
+      ".............0olfnoniihcccacddbfcaabflljljhfd0..................",
+      ".............0olcloojgjdbabfffffffcchljhljffi0..................",
+      "..............0ldloolgjidjlhfffhhllhhljijgfji0..................",
+      "..............0oonoolghhjjhfdaacfhjljljijddi0...................",
+      "..............0oocnolihhhjiiigiijjllgjhiig00....................",
+      "...............0mmonjgicdjjiijiiiljibdlhgg0.....................",
+      "................00onlddbcgdddddfdgcbacggcg0.....................",
+      "..................0niccaabbcddddddbaabccbi0.....................",
+      "..................0ngcbaababcccbcbaabbccc0......................",
+      "0..................0gccbabaabcbbbaabccccg0......................",
+      "m0.................0idcbccbabccbcabbcdddm0......................",
+      "jm00...............0nddccccfddcccbbbccgg0.......................",
+      "ljmo0..............0olcddcdddfddccccddgi0.......................",
+      "lljmo0.............0kohfffdffdffffcdddij0.......................",
+      "jljjmo00............0khfdfffffffffdfdfjj0.......................",
+      "jjjjjjoo0...........0klfddhhffffffhhfhjj0.......................",
+      "jjjjjjjlo0..........0kkjffffffffhhhhhhjj0.......................",
+      "jjjjjjljjm0.........0kkofffdffffhhhhjjjj0.......................",
+      "jjjiijjlljm0........0kkkffffffffhhhhjjje0.......................",
+      "jjjiiijmmnlm0.......0kkkhfffffffhhhhjjje0.......................",
+      "jhjiiijjmnnlm0......0kkkefffhfffhhhhjjee0.......................",
+      "hhjigijmmmnole0.....0kkkehffhhhhffhhjjee0.......................",
+      "hhhigimmmmmookk00000kkkkkedfiiiiiihhjeee0.......................",
+      "hhiigimmmmmnokkkkkkkkkkkkkngggiiiiijjeeee0......................",
+      "hhiggjmmmmmjokkkkkkkkkkkkkeljgiiiiiieeeee0......................",
+      "iiggimmmmmmmmkkkkkkkkkkkkkknjggggiiieeeee0......................",
+      "ggiiimmmmmmmjkkkkkkkkkeeeeekkkkeeeeeeeeeee0.....................",
+      "ggiiimmmmmmmmekkkkkkkkeeeeekkkkkeeeeeeeeeee0....................",
+      "igiiijmmmmmmmeekkkkkkkkkkkkkkkkkeeeeeeeeeeee...................."
+    ] },
+    steve: { pal: "a322029 b564049 c7a5052 d696372 e966564 f817e8e gae7773 h9c93a0 ic78b83 jd69d94 keaa89f lf9b5ad mfcc4bd nfcd5d0 offfaf0", rows: [
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "..................................00............................",
+      "..........................00.00000oo0000........................",
+      ".........................0dh0bbfhfhooooo0.......................",
+      ".........................0dfhfhhhfdhnnhno00.....................",
+      "........................0dfhfffffdfhffhhooo0....................",
+      "........................0dfffdfddffhfh00000.....................",
+      "........................0ddddddddfffffh0........................",
+      "........................0dddbddbdddfhhfh0.......................",
+      ".......................0bdbbbbbbbbdhfdfhh00.0...................",
+      ".......................0bbbbbbbbbbdddffffhh0h0..................",
+      ".......................0bbbbbbefedcdddddfhhhfh0.................",
+      "......................0abbaabejmmljigdddddddf0..................",
+      "......................0bbbbgkmnnnnnnmkhffdfff0..................",
+      "......................0beikmmmmmnnmnnnmjjnhffh0.................",
+      "......................0jlkllmmmmnnmmnnnmmmmfdf0.................",
+      "......................0kkklllmmmnnnnnnnmmljhdf0.................",
+      ".....................0ikkkllmmmmnnnnnnnnljhhfff0................",
+      ".....................0ikklllmmmmnnnnnnmmlkjhfdf0................",
+      ".....................0iklmmlllkkjigcehhfdhjmhdd0................",
+      ".....................0jlmmlllkgcaaacgiknfhfnjdd0................",
+      ".....................0klkllllgaaccceggijhlgfnhd0................",
+      ".....................0jgeccbaaaeecceeeegegibdjf0................",
+      ".....................0baaaaaaacebbbabceiejnnjbh0................",
+      "....................0babbceabcaecbbcgiimgjnnomkn0...............",
+      "....................0cccbbbagncageegikmmbmnnmnieo0..............",
+      "....................0ccccbaajnnbelkllkgcjnnnnmlgo0..............",
+      "....................0bbbabbajmmmccccbbelnmnnnmnl00..............",
+      ".....................0abbecalmmmmigilnnmmmmmnmlmmo0.............",
+      ".....................0ceijacjkllnnjiklllmmmmmlljn0..............",
+      ".....................0jjeacieggcbeiigilllmmmmmml0...............",
+      ".....................0cabiiebceccelljiikllmmllmmn0..............",
+      ".....................0eilicbabeggijkijjjllmlklmjl0..............",
+      ".....................0iiigeccceceggigegjllllklmk0...............",
+      ".....................0giiggebceeegggcacgklllllm0................",
+      ".....................0ggggecceeccccgggegjkkklml0................",
+      "......................0gecbccbceiklmlligijkkklk0................",
+      "......................0gcbbbbeijjjjklljgggjjjkj0................",
+      "......................0gccbceggggegklmkgggiiikkk00..............",
+      ".......................0eceegeceegjllmleeggiijlkff0.............",
+      ".......................0gegggeegikllkjiebeegijj000..............",
+      ".......................0ecegiiikkkjjjegebeeejij0................",
+      "........................0bceiijjjiiggeedcceiggj0................",
+      "........................0bbceiiigggeddbdcegigik0................",
+      "........................0bbbdeggeegcbcceeceegjl0................",
+      "........................0bbbcdcccccbceeegegejkm0................",
+      ".......................0bbbbbbbbcbbbceeeggeikkm0................",
+      ".......................0cccccbbccbceeegegegjklm0................",
+      ".......................0cccceccccceggeggegikllmm00..............",
+      "......................00ecceeeecceeeeeeeeijlllnngo000...........",
+      ".....................0aceecbbcccceeeeeeeijkklmnmkojig00.........",
+      "...................00aceceeccccceeeeegijjjkkmnnnokiiiim0........",
+      ".................00ohbiieabccccceeeeggiijklmmnmomiiiiii0...000..",
+      "...............00aamojgjiebbcccceegiijklmmmmmkooijggiiii000kij00",
+      "..............0bdbadhnnjiiiggggiijkllmmnmmmmkooijiiijjiijjiegedk",
+      "...............0hhfbfdmomjjjiiijkklllmmmmmmmoogijiiiiijjlijggjmg",
+      "..............0ooo00hhbdnomkkkkkklllmmmmnnooojgkjjjiiikkmmjjjici",
+      "...............000..000dbf0mlkkkllllmmnnookoniikkkkjjkjiikkjieik",
+      ".....................0oo00.0oooooooooooo0fagliiggjjgijjjiimnkjjk",
+      "............................hh....o....f...jjggggkbaaaaeiikmljjj"
+    ] },
+    rares: { pal: "a010100 b0b0f05 c1d0e02 d251f10 e44311c f4e4839 g814c2e h6e6a5c iad6e4b j8f8c83 kd68d64 lb2aba7 mf8ab7b ncdccc6 of1f0f4", rows: [
+      "..........................0.00000..000..........................",
+      ".........................0h0fefbd00ffh000.......................",
+      ".......................00febaadaaaaabbbbe00.....................",
+      "..................00000fabaaaaaaaaaaaaabadh000..................",
+      ".............0.000hfedaaaaaaaaaaaaaaaaaabaddhj0.................",
+      "............0j0hheaaaaaaaaaaaaaaaaaaaaaaaaaabhj0................",
+      "..........000jffdaaaaaaaaaaaaaaaaaaaaaaaaabbade0................",
+      ".........0hhfaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadbbah0...............",
+      "........0hjlbbfaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaah0000...........",
+      "........0fhfadbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaba0hff0..........",
+      "........0jdddaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabdbehnf0.........",
+      "......000hbadbaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaabbalnlne0........",
+      ".....0jl0hdfddabbbaaaaaaaaaaaaabaaaaaaaaaaaaaaaabafoloh0........",
+      ".....0jl0djjdbbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbabhljeh0.......",
+      "......0jhfhffbabbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaabaabdecjj0.......",
+      ".......00hbffacbbbbaaaaaaaaaaabbaaaaaaaaaaaaaaaaaaaddflh0.......",
+      "........0hhhbadebbbbabbaaabaaaabbccaaaaaaaaaaaaaabaahffhj0......",
+      ".........00faaefdbbaaaaaaaaaadcdddaaaaaaaaaabaaaabbabhddjj0.....",
+      "........0hhdaahfddbaabbabbabaceiedbaaaaaaabebbaaabbdabhehjl0....",
+      "........0jfdadheeeedccedcdccbcegeeddaaaaaabaaaaabbabbahhhjh0....",
+      "........0jhdaghgfffgfeggfedcadeggeddaaadaaaaaaaabbabbadfhhjl0...",
+      "........0jhbbhiiiiiigfddcdedcfegffdbbaaaaaaaaaaabbabbabfhfhj0...",
+      "........0jhbeedikikigeeeggfggiiggedbccbaaaaaaaaabbabbbadlfjj0...",
+      ".........0hbehfgmkkkkkkigiiiikiggebaedaaaaaaabdaddaababbjfjj0...",
+      ".........0hdblkefkkmmmiccchiggiigdacgeaaaaaacdebdabaaadbdhhh0...",
+      ".........0hfaecacgimmmgcaelgeikgecdeieaaabaaccccdaaaaadbfjfh0...",
+      "..........0heaedefgkkiedcegiigeggfddieaaabbaddcdbaaaaaabdj00....",
+      "..........0jdaefeeikkieegikmkggiigecggcaabbaedddaaaaaadddhn0....",
+      "...........0eahmggkkkigeeggggggikieedgdacddddcgcaaaabbdbbh0.....",
+      "............0ahkegkkkkgggggggiikkmiggfdcdddgdcddaaaabbdaal0.....",
+      "............0hggeiiimmggggggikkkkkmkiieedcgecdedabbabbabf0......",
+      "............0jgggiiggigggggiikmmmmmmkkgeciecegeaaadebbaaf00.....",
+      "............0lgiikkkkkgggiiikmmmmmmmmkkikmiigegdbabdbbba00l00...",
+      "............0lgmmmmmnmggiiikkmmmmmmmkmmkmmkiimiabaaaaabd0hfhj0..",
+      "............0niiimgeiigggikkmmmmmmmmmmkkmmkimkaaabaadhbabdbh0...",
+      ".............0ihaddadggggikkmmmmmmmkmkkkkmkmkcaabaaabeehhfh0....",
+      ".............0ldaaaaacdegikkmmmmmmmmmmkkkmmkgeabdbcdadefdfj0....",
+      ".............0hababaaaaaeikmmmmmmkmmmkkkkkmkgdbedaebdfeffh0.....",
+      ".............0faeiiggedccekmmmmmmmmmmkkiikmkidcbadeabehh00......",
+      ".............0edhggegggefekmmmmmmmmmkkkkikmmiecaababbdefhj0.....",
+      ".............0heeccceeeggekmmmmmmmmmkkkikkmmigcaaaabbeeeaf0.....",
+      ".............0nhikkkkkmmkikmmmmmmmmkkkkikkmmgecaadbdddfdf0......",
+      "..............0lkiiikmmkmkkmmmmmmmkkkkiikmmmggdaadefdddh000.....",
+      "..............0ljihgkmkmmkkmkkkkmkkkkiikkmmmigdddddfedffjjl0....",
+      "...............0hmieikkkikkmkkiikiiiiikkkmmmigededdfjejejll0....",
+      "...............0higfggiiikkkkkkikiiikkkkmmmmiiedddefhha0000.....",
+      "...............0jfggggiikkikiikiiiiikkkmmmmmkkecdccehhhjj0......",
+      "................0fiiiggkkkighigiiikiiikmmmmmmmgecdeabeffl0......",
+      ".............000nfiiiiiiiiigghiiiiikkkmmmmmmmmiacbhfdeejn00000..",
+      "........00000hefhefiiiighgefggiikkkkkkkmmmmmmmljfecdhlnnnnnnnn00",
+      ".....000hdbfedeffffefhhfefgggikkkkkkmkmmmmmmmmmonnnjllnnnnnnnnnn",
+      "..000ffebdjhdhhhhhhhdefffghggiikkkkkkmmmmmmmmmmnnlnnnnnnnnnnnnnn",
+      "00hefffbfnjdhjhjjhhjeefgffgiikkkkkmmmmmmmmmmmmmnnnnnnnnnnnnnnnnn",
+      "hefhhfbfolffljjjjjjjfegggikkkmmmmmmmmmmmmmmmmmmjnnnnnnnnnnnnnnnn",
+      "fhjhfbfonjfhnlllljjjhegggikkkmmmmmmmmmmmmmmmmmmijonnnnnnnnnnnnnn",
+      "jjhfdfonljflnllllljjlfgggiikkkmmmmmmmmmmmmmmmmmkjonnnnnnnnnnnnnn",
+      "jhhefoollhhonlllllljljggiiikkkmmmmmmmmmmmmmmmmminonnnnnnnnnnnnnn",
+      "hjffnonllflonllllllllnjgiiikkkmmmmmmmmmmmmmmmmklooonnnnnnnnnnnnn",
+      "jhelonnnjfoonlllnnllllolgikkkkkmmmmmmmmmmmmmmmlooooonnnnnnnnnnnn",
+      "jfhoonnnhjooljjllnnlllnoniikkkkmmmmmmmmmmmmmmnooooonnnnnnnnnnnnn",
+      "jhnonnnlfnonjjnnlnnnnlnnoolkkkmmmmmmmmmmmmkkoooooooonnllnnnnnnnn",
+      "hjoonnnhjooljnonnnnnnnnnnooolkkkmmmmmmmmkknoooooooonlonlonnnnnnn",
+      "jnonnolhnonjjoonnnnnnnnnnooooonlkkkkkkklnooooooooonnnonlnnnnnnnn",
+      "loononjjoojjnonnnnnnnnnnnoooooooooooooooooooooooonnnnonlnnnnnnnn"
+    ] },
+    dony: { pal: "a060203 b1d0304 c1c1112 d2f1615 e242328 f402220 g3e3625 h583c34 i5b572c j735047 k856655 l977a68 mb19080 nc9aea1 oe7cfb8", rows: [
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "............................000000..............................",
+      "........................0000nlkikl0000000.......................",
+      "....................0000omliggiiiigiggimo0000...................",
+      "..................00bgomiggiikigecccghgfioonn0..................",
+      ".................0omfkkgiiiliecceeefeegggdlonn0.................",
+      ".................0ookigiiikeacedeeegeeeeghehonn0................",
+      "................0ooigiiiilcaedceedeeeecceeggeno0................",
+      "...............0loigiiiilcaccddcdbabcccacecggenn0...............",
+      "...............0omgiiiimgacdfhlmlmkhffdbaaacgggon0..............",
+      "..............0oogiiiiliagjklllmllkjjkjljdbaaeghon0.............",
+      "..............0oliiikikeillmllllieggggggjkjgaahdlon0............",
+      ".............0ongiiikligmllkmgmiggggggggceghgacgcnn0............",
+      ".............0okiihiiliilgminlmligggggggegeeeececio0............",
+      ".............0ngiiiiimilnmmmlliigaeggghggeeeeceeecn0............",
+      ".............0mgiiiikighgdbbbbbbdfbbaaaceggeececebl0............",
+      ".............0kgiikhcaaabbhkmnnooonmljhdbaaegeecdch0............",
+      ".............0iiiiiaabbflnooooonnnmnmnnnmkhbaccceecn0...........",
+      ".............0ihikaabhloooonooonnmmmmmmmmmmlhbaaceam0...........",
+      ".............0iikaaflnooonnnnmmmmlmllllkklkkljcaaccl0...........",
+      "............0hlhaafnoonlkjjjjkjkkkkjjjjhhdccdjjcaabk0...........",
+      "............0iiaabmonljdcbaaabdhhjhhhfbaaaaaachgaaaj0...........",
+      "............0kcaajonjhfdcccccdddfhhfdbaaacbbbccgdaah0...........",
+      "............0laabnolhhfdddccdffdhkjdbccccccccccgfaag0...........",
+      "............0iaajonlhfjlmkfedcddjonfbccccccceeegjaag0...........",
+      "............0gaalookgmmjhhecddcblomfaaaaaaaccehejba0............",
+      "............0aaemljgnmdbcaaabccahhjcaaaaaaaaachedaa0............",
+      "............0aafjkghnbbdfbaccbchnookdaaaccccecgecca0............",
+      "...........0oiackonkllljhffffjjhmonkdcfcccbbdfdljaa0............",
+      "...........0omaanonkonnkjhhkmokbnonkbdlkjhhfghhlhag0............",
+      "...........0kmhconnjmnnnnnnooomfnnnjdflmmmmlkjhhgjj0............",
+      "............0kkjonnlknnnooonmmfknnnlhbhlmmmmljjfhjf0............",
+      "............0jfknnmmjlonnmljjhbmnonmmdbhkkjkkkhhhjj0............",
+      "............0njhnnnmnlkmmkjhhbkonomlkjdbfhhhjhjjhjk0............",
+      "............0mhdnnnmmnljhhhfbkomjjjjfhkbcbcdfghhhh0.............",
+      ".............0bjnmmmmkkkhfffbjkfddfdbcdbcccdddffhf0.............",
+      ".............0dfmmmmljhhffddbhbbdhdcbabfbcccccdfgd0.............",
+      ".............0lklmmmkjhffdddknjddfdbccbhhdfdccddf0..............",
+      ".............0mmmmllkjhhfffknnmjbbccccbfjhgfdcddg0..............",
+      ".............0lmmmlkkjjjjjkmmmnoldccdcdghhhfdccdf0..............",
+      "..............0mlmlkkkklkkkmnonmlhdcccghfhhfdcdd0...............",
+      "..............0ahnllkkllkkjlmjfbbbbbbbbdddfhfcdd0...............",
+      "...............0golllllllkgbbbaabbaaaaaaachjdcd0................",
+      "...............0gomllllllkjkkkkjhdbbaaaaafhhddd0................",
+      "...............0eommlllllkmommnnmmljfdfddghfcd0.................",
+      "................0nmmllllkkmnmjjkklljhdddfhhdc0..................",
+      "................0mmmlllkklmmmlhdfddddccfghfcc00.................",
+      "...............0ommmllkkllmllkjdbccddcdffgdcccd00...............",
+      "..............0nomlllllllmmmlkkjfbbcccffgfdcccdca00.............",
+      ".............0nnonklllllmmmmmmmnnmkhffgggfdcccdaaag0............",
+      "............0nnnokjlklllmmmmmnnnmmmmkjhgfdcccccaaad0............",
+      "............0ooomeelkklllmmmmmmmllkkkkjffcccccaaacal0...........",
+      "...........0kbolaaahkkkkkklmmllkjkkjjjgeccccaaacgecjm0..........",
+      "..........0nbdhcccaflhjjjjkkjjjhhhhgfddcccaaaeeeeaaglj0.........",
+      "..........0oigeeecaenjhhhhjhfffffedccccccaaeeeeccaacmm0.........",
+      "..........0leceeeeccnlhghggdcccccccccccaaaeggecaaaadon0.........",
+      "..........0eeeeeeeccnmkhfffdcccccccccaaaaeggeeeacaafnm0.........",
+      ".........0cgeeeeeeecmmkjgdddcccccccaaaaaeeggecaaaaafnmm0........",
+      "..........geeeeeeeeamnkhhhfdccccbaaaaaaceaaaaaaaaaadnmn........."
+    ] },
+    iulica: { pal: "a141109 b2a2010 c412911 d3e3420 e59381a f59482d g734825 h89552c i755f43 j9e6839 kbd8045 le39952 mb5a884 nf9bd70 ofbefb3", rows: [
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      ".................................000............................",
+      "........................000000000mom000.........................",
+      ".......................0nmkkmoonnidfjnm000......................",
+      ".....................00onmjfefiiiffffijmmo000...................",
+      "....................0onnkifdddcdddffddfimnmmo0..................",
+      "...................0iifffffddddcddddddddfimonk0.................",
+      "..................0ffffffddffddcdddddbbbdddiimo0................",
+      ".................0fffffffdfjifdbbbbbbbbbdddffko0................",
+      "................0ffifffdcfiiddbbbbbbabbbbbdddfmo0...............",
+      "...............0iffifddbdifbbbbcdbbbbabbbbbdddio0...............",
+      "..............0iifffddbddfddeiifecccbdcbabbbbddim0..............",
+      ".............0fffffeddddfjkjjnkjhjjjecedbbaaabbbi0..............",
+      ".............0ffdefecgghllllnnnoonnlkedcdbbbabbddd0.............",
+      ".............0dddfecijklllnnnnooonnnlhebaaaaaabbbd0.............",
+      "............0dddfeeggjlknnlllnooooonnnkgbbabaaaabb0.............",
+      "............0dddffghjkklllllllnnnnnnnnnnjedbaaaaaa0.............",
+      "............0dcfhhjkkkllllllllnnnnnlllllljgdaaaaaa0.............",
+      "...........0ddejjjkkllllnllnnnnnnnnllllkkkhfdbbaaaa0............",
+      "...........0dbgkkkkllllnnnnnnoooonlllkkkkkjgdddaaaa0............",
+      "..........0fdcikkllllnnooooooooooonllkkkkkjgfcaaaaa0............",
+      "..........0dddjklllnlllnnooooooonnnlllkkkkjhebaaaaa0............",
+      "..........0ddfjlnlllkkllnnnnnnnlllllllkkkkjhebabaaa0............",
+      "..........0ddhlnnkjjjjkklllllllkkkllkkkkkkjhebaaaaa0............",
+      "..........0deknljfeeghhjkkkkkkkjhhhjkklkkkjhfbaaaaa0............",
+      "..........0dgkhgeceefghjkkjkkjhgeccefhkllkjhfbaaaaa0............",
+      "..........0dghgggggggghjjjjjjhgfeccbbdehkljhgbaaaaa0............",
+      "..........0chgghjhggeeghjjjjjhgfefeccbccejjjidaaaaa0............",
+      ".........0bdjjhhecccbcegjjjjhgeeeeeggeecccgjifbaaaa0............",
+      ".........0afkjgeeccbbceghllhgeecccceeggfeegjigcaaaa0............",
+      ".........0bgkhghgggeeeeekoojeeccccbaaacggggiiicaaaa0............",
+      ".........0chkhhhggggggghnookeeecccecccbcfgiiiidaaaa0............",
+      ".........0jhkjjjggggghglnonlheeeeeeeeeeccegiifbaaaa0............",
+      ".........0lhknnnljhhhhjlnnlljhggeeeeeeeeeegiifbaaaa0............",
+      ".........0njnnnnnkkjjjllnnlljhhhggeeehgegggiifaaaa0.............",
+      ".........0lnnllllkkjhlnnnnnnlhhhggggknljgghhifaceg0.............",
+      ".........0kkkkkkkkjhnonnnnnnnlggjhhjlklljhjjigfijg0.............",
+      ".........0jjkkjjjhelonnlllllnongghhjjjjjkjkkjggiig0.............",
+      ".........0jjkjjjhhhjkllllllllnnheghhhhhhjjkkjggice0.............",
+      "..........0jjjjhghhhhhkkkkkjhhhgggghhhhhhhjkiegiee0.............",
+      "..........0hjjheghhggghjjjgggggggggghhhhhhhjifiiee0.............",
+      "..........0hjjgeegeecbbehgeeceggggeeghhhhhhjgeiebe0.............",
+      "..........0gjjeeeeeeccbcggcbbbceeeceeghhhhiiffige0..............",
+      "..........0fhjeeegfggghhhhgeeeeecccccehhggggffiij0..............",
+      "..........0ehjgeeceegggggggeeeefeedcbchgegggffifj0..............",
+      "..........0ghjhggcchkjhjgghegegeccccbehgeffffffif0..............",
+      "..........0ighjghgcgkllnkllkkjkebbcecghfefffffffa0..............",
+      "..........0kghjhhhecchkkkmkkhhjecceeghgefgfffdaab0..............",
+      "..........0nehhhhhhgeeghjjggebbcegeehggefffefcacf0..............",
+      "..........0oggghghjhhgggggggggghhgeeheeffffefdadi0..............",
+      "..........0okeggghjjjhhjjhhhhhjhggeegeefeeeffiafmm0.............",
+      "..........0onefefgjjjhhhhhhhhhhhgeeeeceeddfffiaioon0............",
+      "..........0ookdeeegjjhhhgghhhhhgeeedccdeddfffiafooo0............",
+      "..........0oooicffgghhhhhhhhhhgfecdbccddddeffiiammjo0...........",
+      ".........0ooooocdfgghjjjjjjjhhgeccbbbccdcddeicjfabmoo0..........",
+      ".........0ooooomceeghjjjjjjjhgfecbbbccccbbceiebmmoooo0..........",
+      ".........0oooonokbeghhhgghhggedcbbbddbbbbceegedmmoooom0.........",
+      ".........0oooooofbdfhgeceggeeedcbbbcbabaceeegeafdiooomo0........",
+      ".........0ooooofabcbeeeceeebccbbaaaaabbbeeeegcbbbffmomoo0.......",
+      "..........oooomabbffcbbabbbaaaaaaabbbbccceeeebbbcddbfmooo......."
     ] }
   };
   /*/PORTRAITS*/
@@ -370,9 +775,13 @@
     return (PORT[id] = mapImg(p.rows, pal, 64, 64));
   }
 
-  // ===================== 3. the fighters: heads and a jointed pixel puppet =====================
-  // heads, 18x20, facing right (three quarters); legend per fighter below: o outline, s skin, S skin shadow,
-  // k skin light, H hair, h hair light, B beard, b beard light, w white (eyes, teeth), p pupil, g glasses, C/c cap
+  // ===================== 3. the fighters: heads and a shaded pixel puppet =====================
+  // beta 3.11 (Daniel: "more athletic, no lines between the pieces"): every limb is one continuous form, shaded by
+  // the light on it (five tones a material), not outlined piece by piece. One dark outline goes round the whole
+  // figure; where a nearer part crosses a farther one (an arm over the chest), the farther one gets a one-pixel
+  // shadow in its own colour. Broad shoulders, tapered limbs with the muscle in them, a low stance.
+  // heads, facing right (three quarters); legend: o outline, s skin, S skin shadow, k skin light, H hair, h hair
+  // light, B beard, b beard light (or stubble), w white (eyes, teeth), p pupil, g glasses, C/c cap
   const HEADS = {
     daniel: [
       "......ooo.........",
@@ -441,209 +850,454 @@
       ".........oooooo..."
     ],
     ion: [
-      "......oooo........",
-      "....ooHHHHoooo....",
-      "...oHHHhhHHHHHoo..",
-      "..oHHHHHHhhhHHHHo.",
-      ".oHHHHHHHHHHhhHHHo",
-      ".oHHHHHHHHHHHHHHHo",
-      ".oHHHHHHHHHHHHHHo.",
-      ".oHHHHHHHHkkkkHko.",
-      ".oHHHHHHHkHHkkHHo.",
+      "..................",
+      ".....oooooo.......",
+      "...ooHHHHHHoo.....",
+      "..oHHHhhhHHHHo....",
+      ".oHHHHHHHhhHHHo...",
+      ".oHHHHHHHHHHHHHo..",
+      ".oHHHHHHHHkkkkko..",
+      ".oHHHHHHHkkkkkkko.",
+      ".oHHHHHHkHHkkHHko.",
       ".oHHHoSSskwpkwpko.",
       ".oHHoSoSsksskksko.",
       ".oHHoSSSssssskkkso",
-      "..oHHoSsssssskkso.",
-      "..oHSbbssBBBBssbo.",
-      "...oSbbbbowwwwbbo.",
-      "...oSbbbbBoooBbo..",
-      "....obbbbBBBbbo...",
-      ".....oSbbbbbbo....",
+      "..oHHoBbssssskkso.",
+      "..oHBBBBsBBBBBsBo.",
+      "...oBBBBBBoooBBBo.",
+      "...oBBBBBBBBBBBo..",
+      "....oBBBBBBBBBo...",
+      ".....oSBBBBBBo....",
+      "......ossssso.....",
+      ".......ooooo......"
+    ],
+    maria: [
+      "......oooooooo........",
+      "....ooHHhHHhHHoo......",
+      "...oHHhHHHHHhHHHo.....",
+      "..oHHHHhHHHHHHhHHo....",
+      ".oHHhHHHHHHHHHHHHHo...",
+      ".oHHHHHHHhHHkkkkHHHo..",
+      "oHHhHHHHHHHkkkkkkHHo..",
+      "oHHHHHHHHkkkkkkkkkHo..",
+      "oHhHHHHHHkHHkkkHHkko..",
+      "oHHHHHoSskkwpkkwpkko..",
+      "oHHhHoSoSkkkkkkkkkso..",
+      "oHHHHoSSSkkkkkskkkkso.",
+      "oHhHHHoSskkkkkkkkkso..",
+      "oHHHHHHoSkkkkoookkso..",
+      "oHHhHHHHoSkkkkkkkso...",
+      ".oHHHHHHHoSSkkkkso....",
+      ".oHhHHHHHHoossssoo....",
+      "..oHHHHhHHHoSsso......",
+      ".oHHhHHHHHHHoSso......",
+      ".oHHHHHHhHHHHo........",
+      "..oHhHHHHHHHo.........",
+      "..oHHHHhHHo...........",
+      "...oHHHHHo............",
+      "....ooooo............."
+    ],
+    cristache: [
+      "..................",
+      ".....oooooo.......",
+      "...ooHHHHHHoo.....",
+      "..oHHHhhhHHHHo....",
+      ".oHHHHHHHHhhHHo...",
+      ".oHHHHHHHHHHHHHo..",
+      ".oHHHHHHHkkkkkko..",
+      ".oHHHHHkkkkkkkko..",
+      ".oHHHHHkHHkkHHko..",
+      ".oHHHoSskwpkwpko..",
+      ".oHHoSoSskskkskso.",
+      ".oHHoSSSsssskkkso.",
+      "..oHHoSssssskkso..",
+      "..oHSBBssBBBssBo..",
+      "...oSBBBowwwoBBo..",
+      "...oSBBBBoooBBo...",
+      "....oBBBBBBBBo....",
+      ".....oSBBBBBo.....",
+      "......ossssso.....",
+      ".......ooooo......"
+    ],
+    steve: [
+      "..................",
+      "....oooooooo......",
+      "...oHhHHhHHhHo....",
+      "..oHHHhHHhHHHhHo..",
+      ".oHhHHHHHHHHHhHHo.",
+      ".oHHHHHHHHHHHHHHo.",
+      ".oHHHHHHHkkkkkkko.",
+      ".oHHHHHHkkkkkkkko.",
+      ".oHHHHHHHHHkHHHHo.",
+      ".oHHHoSSsgggsgggso",
+      ".oHHoSoSggwpggwpgo",
+      ".oHHoSSSsgggsgggso",
+      ".oHHHoSssssskkskso",
+      "..oHSbBsssssskksko",
+      "..oSbBBBBoooBBsso.",
+      "..obBBBBBBBBBBbo..",
+      "...obBBBBBBBBBbo..",
+      "....obBBBBBBBbo...",
+      ".....oobBBBboo....",
+      ".......ooooo......"
+    ],
+    rares: [
+      "....ooooooooo.....",
+      "...oHhHHhHHhHHo...",
+      "..oHHHhHHHHhHHHo..",
+      ".oHhHHHHHHHHHhHHo.",
+      "oHHHHhHHHHHHHHHHo.",
+      "oHhHHHHHHHkkkkHHo.",
+      "oHHHHHHHkkkkkkkko.",
+      "oHHhHHHHkHHkkHHko.",
+      "oHHHHHoSskwpkwpko.",
+      "oHhHHoSoSksskksko.",
+      "oHHHHoSSSsssskkkso",
+      "oHHhHHoSssssskkko.",
+      "oHHHHHHoSsBBBBBso.",
+      "oHhHHHHoSsbsoobso.",
+      "oHHHhHHHoSbbbbbso.",
+      ".oHHHHHHHoSsssso..",
+      ".oHhHHHHHHoossso..",
+      "..oHHHHHHo.oSso...",
+      "...ooooo...oSso...",
+      "...........oooo..."
+    ],
+    iulica: [
+      "..................",
+      "....oooooooo......",
+      "...oHHhHHHhHHo....",
+      "..oHHHHHhHHHHHo...",
+      ".oHHhHHHHHHHHHHo..",
+      ".oHHHHHHHHHHHHHHo.",
+      ".oHHHHHHHkkkkkHHo.",
+      ".oHHHHHHkkkkkkkko.",
+      ".oHHHHHkHHkkkHHko.",
+      ".oHHHoSskwpkkwpko.",
+      ".oHHoSoSskskkskso.",
+      ".oHHoSSSsssskkkso.",
+      "..oHHoSssssskkkso.",
+      "..oHSbbsoooooobo..",
+      "...oSbbowwwwwwo...",
+      "...oSbbboooooo....",
+      "....obbbbbbbbo....",
+      ".....oSbbbbbo.....",
       "......ossssso.....",
       ".......ooooo......"
     ]
   };
-  // per fighter: head colours, clothes, gloves, shoes; sleeves "short" | "long"
+  // beta 3.11 (Daniel): Dony, who roasts the coffee: the trucker cap backwards, round thin glasses, light stubble
+  HEADS.dony = [
+    "..................",
+    ".....oooooooo.....",
+    "...ooCCCCCCCCoo...",
+    "..oCCCCcCCCCCCCo..",
+    ".occCCCCCCCCCCCCo.",
+    "occcCCCCCCCCCCCCo.",
+    "occccccccccccccoo.",
+    ".ooHHkkkkkkkkkko..",
+    ".oHHHkkHHkkkHHko..",
+    ".oHHHoSgggsgggko..",
+    ".oHHoSgwpgsgwpgo..",
+    ".oHHoSSgggsggggso.",
+    "..oHHoSssssskkso..",
+    "..oHSbbsssssssbo..",
+    "...oSbbsoooosbo...",
+    "...oSbbbbbbbbbo...",
+    "....obbbbbbbbo....",
+    ".....oSbbbbbo.....",
+    "......ossssso.....",
+    ".......ooooo......"
+  ];
+  // where the skull's centre is on each map (the head joint is drawn there); default: the map's middle
+  const HEAD_AT = { maria: [11, 9], rares: [9, 9] };
+  // colours: one base per material, five tones made from it (light, lit, base, shade, deep)
+  const rgbOf = (h) => { const n = parseInt(h.slice(1, 7), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
+  const hexOf = (c) => "#" + c.map((v) => clamp(Math.round(v), 0, 255).toString(16).padStart(2, "0")).join("");
+  const RAMPS = new Map();
+  function ramp(base) {
+    if (RAMPS.has(base)) return RAMPS.get(base);
+    const c = rgbOf(base), mix = (t, k) => c.map((v, i) => v + (t[i] - v) * k);
+    const r = [mix([255, 250, 236], 0.42), mix([255, 248, 230], 0.18), c, mix([46, 26, 72], 0.36), mix([26, 14, 44], 0.6)].map((x) => u32(hexOf(x)));
+    RAMPS.set(base, r);
+    return r;
+  }
+  // per fighter: the build (sh shoulders, arm, leg, waist, sc the whole size) and the clothes
   const LOOKS = {
-    daniel: {
-      head: { s: "#e8a77f", S: "#b8745a", k: "#f6c9a3", H: "#3b2618", h: "#6a4a30", B: "#3a2617", b: "#7b6450", w: "#ffffff", p: "#21140f" },
-      skin: ["#f6c9a3", "#e8a77f", "#b8745a"], top: ["#5fe0e4", "#22b6c0", "#137f8c"], sleeve: "short",
-      pants: ["#4a5a86", "#323f66", "#232c4a"], shoe: ["#ffffff", "#d7d7e0", "#8e8ea0"], glove: ["#fff27a", "#fed012", "#d69a00"], cuff: "#ffffff"
-    },
-    cristian: {
-      head: { s: "#eaae86", S: "#bb7b5c", k: "#f7cfaa", H: "#2e2018", h: "#574231", B: "#5a3b26", b: "#8a6448", w: "#ffffff", p: "#21140f", g: "#1c1416" },
-      skin: ["#f7cfaa", "#eaae86", "#bb7b5c"], top: ["#9c8f73", "#776a52", "#544a39"], sleeve: "long",
-      pants: ["#5a5a66", "#40404a", "#2b2b33"], shoe: ["#3a2a22", "#2a1c16", "#140c0a"], glove: ["#7fb2ff", "#2f6fe0", "#1d48a0"], cuff: "#ffffff"
-    },
-    coz: {
-      head: { s: "#eeb48c", S: "#c07f5f", k: "#f8d2b0", H: "#3a281c", h: "#5a4232", B: "#4a3020", b: "#7a5a40", w: "#ffffff", p: "#21140f", C: "#8a8660", c: "#5f5c40" },
-      skin: ["#f8d2b0", "#eeb48c", "#c07f5f"], top: ["#f2e6c8", "#d9c9a3", "#ad9c78"], sleeve: "short",
-      pants: ["#5f6a46", "#46502f", "#30381f"], shoe: ["#2a2a2a", "#1a1a1a", "#0a0a0a"], glove: ["#ffb36b", "#f07a1e", "#b8520c"], cuff: "#ffffff"
-    },
-    ion: {
-      head: { s: "#e3a982", S: "#b37555", k: "#f3c7a2", H: "#1c1618", h: "#3d3236", B: "#2a2024", b: "#8a5e4c", w: "#ffffff", p: "#1a1012" },
-      skin: ["#f3c7a2", "#e3a982", "#b37555"], top: ["#9ec0e0", "#6f95bd", "#4c6d93"], sleeve: "long", tee: ["#2e2e34", "#1c1c22", "#0e0e12"],
-      pants: ["#cfc8b4", "#a9a28c", "#7f7966"], shoe: ["#33333b", "#22222a", "#111116"], glove: ["#ff7a6a", "#d8342a", "#9a1c16"], cuff: "#ffffff"
-    }
+    daniel: { head: { s: "#e8a77f", S: "#b8745a", k: "#f6c9a3", H: "#3b2618", h: "#6a4a30", B: "#3a2617", b: "#7b6450", w: "#ffffff", p: "#21140f" },
+      skin: "#e8a77f", top: "#22b6c0", topKind: "tee", sleeve: "short", pants: "#34416c", shoe: "#e8e8f0", sole: "#9a9ab0", glove: "#fed012", stripe: "#fed012", build: {} },
+    cristian: { head: { s: "#eaae86", S: "#bb7b5c", k: "#f7cfaa", H: "#2e2018", h: "#574231", B: "#5a3b26", b: "#8a6448", w: "#ffffff", p: "#21140f", g: "#1c1416" },
+      skin: "#eaae86", top: "#7c6e54", topKind: "henley", sleeve: "long", pants: "#44444f", shoe: "#3a2a22", sole: "#1a120e", glove: "#2f6fe0", build: {} },
+    coz: { head: { s: "#eeb48c", S: "#c07f5f", k: "#f8d2b0", H: "#3a281c", h: "#5a4232", B: "#4a3020", b: "#7a5a40", w: "#ffffff", p: "#21140f", C: "#8a8660", c: "#5f5c40" },
+      skin: "#eeb48c", top: "#dccca6", topKind: "tee", sleeve: "short", pants: "#4b5634", shoe: "#2a2a2a", sole: "#111111", glove: "#f07a1e", build: { sh: 1.04 } },
+    ion: { head: { s: "#e0a47c", S: "#b07052", k: "#f0c49e", H: "#1a1416", h: "#3a3034", B: "#231a1c", b: "#5a4038", w: "#ffffff", p: "#1a1012" },
+      skin: "#e0a47c", top: "#3c4434", topKind: "camo", sleeve: "short", pants: "#2c2c34", shoe: "#2a2a30", sole: "#e8e8e8", glove: "#d8342a", build: { sh: 1.04 } },
+    maria: { head: { s: "#eab394", S: "#c08068", k: "#f8d4bc", H: "#2a1a14", h: "#5a3a28", w: "#ffffff", p: "#21140f" },
+      skin: "#eab394", top: "#f2f0ea", topKind: "oversize", sleeve: "short", legs: "skirt", skirt: "#1c1c22", shoe: "#a8b89a", sole: "#6e7c62", glove: "#f0389a", build: { sh: 0.84, arm: 0.82, leg: 0.88, waist: 0.86, chest: 0.94 } },
+    cristache: { head: { s: "#e2a27a", S: "#b26e50", k: "#f2c6a0", H: "#1e1612", h: "#40322a", B: "#2a1e18", b: "#6a4a3a", w: "#ffffff", p: "#1a1012" },
+      skin: "#e2a27a", top: "#6a3fd0", topKind: "tank", sleeve: "none", pants: "#8e8e92", shoe: "#f2f2f2", sole: "#8a8a96", glove: "#28c840", build: { sh: 1.02, arm: 1.06 } },
+    steve: { head: { s: "#e8b090", S: "#b87c62", k: "#f6d0b4", H: "#6e6c70", h: "#a6a4aa", B: "#6a5a52", b: "#9a8a80", w: "#ffffff", p: "#1a1012", g: "#121014" },
+      skin: "#e8b090", top: "#8a5a32", topKind: "overshirt", inner: "#f0f0f0", sleeve: "long", pants: "#4a6890", shoe: "#3a2a22", sole: "#1a120e", glove: "#7a4fe0", build: { sh: 1.1, arm: 1.12, leg: 1.1, waist: 1.3, chest: 1.12, sc: 1.14 } },
+    rares: { head: { s: "#eab08c", S: "#bc7c5e", k: "#f8d0ae", H: "#24180f", h: "#4a3424", B: "#2e2016", b: "#8a6a50", w: "#ffffff", p: "#21140f" },
+      skin: "#eab08c", top: "#f4f2ee", topKind: "printtee", sleeve: "short", tattoo: true, key: true, pants: "#1e1e24", shoe: "#1e1e24", sole: "#0c0c10", glove: "#2fd6f0", build: {} },
+    dony: { head: { s: "#ecb896", S: "#c08468", k: "#f8d4b8", H: "#2a1e18", h: "#4a3a30", b: "#c89878", w: "#ffffff", p: "#1a1012", g: "#2a2026", C: "#6a7040", c: "#4a5030" },
+      skin: "#ecb896", top: "#2c3c6c", topKind: "fleece", sleeve: "long", pants: "#38383f", shoe: "#2a2a2a", sole: "#d8d8d8", glove: "#8a5530", build: { sc: 0.86, arm: 0.96 } },
+    iulica: { head: { s: "#c98a62", S: "#9a6248", k: "#dca47c", H: "#1c1410", h: "#3a2c22", B: "#2a1e18", b: "#6a4a38", w: "#ffffff", p: "#1a1012" },
+      skin: "#c98a62", top: "#5f6e40", topKind: "tee", sleeve: "short", pants: "#2c2c32", shoe: "#3a3a3a", sole: "#e0e0e0", glove: "#b8e02f", build: { sh: 0.98 } }
   };
-  const HEAD_IMG = {};
   const headPal = (id) => Object.assign({ o: OUT, g: OUT }, LOOKS[id].head);
-  // a pixel buffer and its painter: every part is a shape (a test per pixel) filled with a colour per pixel and
-  // given its own 1 px outline, so a limb in front of the body keeps its edge
-  function Buf(w, h) { this.w = w; this.h = h; this.d = new Uint32Array(w * h); }
-  Buf.prototype.part = function (x0, y0, x1, y1, inside, color) {
-    x0 = Math.max(0, Math.floor(x0) - 1); y0 = Math.max(0, Math.floor(y0) - 1); x1 = Math.min(this.w - 1, Math.ceil(x1) + 1); y1 = Math.min(this.h - 1, Math.ceil(y1) + 1);
-    const bw = x1 - x0 + 1, bh = y1 - y0 + 1, m = new Uint8Array(bw * bh);
-    for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) m[y * bw + x] = inside(x0 + x + 0.5, y0 + y + 0.5) ? 1 : 0;
-    const oc = u32(OUT);
-    for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) {
-      const i = y * bw + x, gi = (y0 + y) * this.w + x0 + x;
-      if (m[i]) { const c = color(x0 + x + 0.5, y0 + y + 0.5); if (c) this.d[gi] = c; }
-      else if ((x > 0 && m[i - 1]) || (x < bw - 1 && m[i + 1]) || (y > 0 && m[i - bw]) || (y < bh - 1 && m[i + bw])) this.d[gi] = oc;
+  // the canvas of one frame: colour, the order things were laid (z) and which form they belong to (group)
+  function Fig(w, h) { this.w = w; this.h = h; this.c = new Uint32Array(w * h); this.z = new Uint16Array(w * h); this.g = new Uint8Array(w * h); this.n = 0; }
+  Fig.prototype.fill = function (x0, y0, x1, y1, inside, color, group) {
+    const z = ++this.n;
+    x0 = Math.max(0, Math.floor(x0)); y0 = Math.max(0, Math.floor(y0)); x1 = Math.min(this.w - 1, Math.ceil(x1)); y1 = Math.min(this.h - 1, Math.ceil(y1));
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const px = x + 0.5, py = y + 0.5; if (!inside(px, py)) continue;
+      const col = color(px, py); if (!col) continue;
+      const i = y * this.w + x; this.c[i] = col; this.z[i] = z; this.g[i] = group;
     }
   };
-  Buf.prototype.blit = function (rows, pal, cx, cy, rot) {
-    const h = rows.length, w = rows[0].length;
+  Fig.prototype.blit = function (rows, pal, cx, cy, rot, at, group) {
+    const z = ++this.n, h = rows.length, w = rows[0].length, ax = at ? at[0] : w / 2, ay = at ? at[1] : h / 2;
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const ch = rows[y][x]; if (!ch || ch === ".") continue;
       let px, py;
-      if (rot === 1) { px = cx - h / 2 + (h - 1 - y); py = cy - w / 2 + x; } // turned a quarter, face up (lying on the back)
-      else { px = cx - w / 2 + x; py = cy - h / 2 + y; }
+      if (rot === 1) { px = cx + (ay - y); py = cy + (x - ax); } // a quarter turn, the face up (lying on the back)
+      else { px = cx + x - ax; py = cy + y - ay; }
       px = Math.round(px); py = Math.round(py);
       if (px < 0 || py < 0 || px >= this.w || py >= this.h) continue;
-      this.d[py * this.w + px] = u32(pal[ch] || "#ff00ff");
+      const i = py * this.w + px; this.c[i] = u32(pal[ch] || "#ff00ff"); this.z[i] = z; this.g[i] = group;
     }
   };
-  Buf.prototype.toCanvas = function () { const [c, x] = mk(this.w, this.h), id = x.createImageData(this.w, this.h); new Uint32Array(id.data.buffer).set(this.d); x.putImageData(id, 0, 0); return c; };
-  const segD = (px, py, ax, ay, bx, by) => {
-    const vx = bx - ax, vy = by - ay, l2 = vx * vx + vy * vy || 1;
-    const t = clamp(((px - ax) * vx + (py - ay) * vy) / l2, 0, 1), qx = ax + vx * t, qy = ay + vy * t;
-    return [Math.hypot(px - qx, py - qy), px - qx, py - qy, t];
+  // the finish: a soft shadow where a nearer form crosses a farther one, and one outline round the figure
+  Fig.prototype.finish = function () {
+    const { w, h, c, z, g } = this, out = new Uint32Array(c), oc = u32(OUT);
+    const dark = (v) => { const r = v & 255, gg = (v >> 8) & 255, b = (v >> 16) & 255; return (0xff000000 | (Math.round(b * 0.62 + 10) << 16) | (Math.round(gg * 0.58) << 8) | Math.round(r * 0.6)) >>> 0; };
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (!z[i]) { if ((x > 0 && z[i - 1]) || (x < w - 1 && z[i + 1]) || (y > 0 && z[i - w]) || (y < h - 1 && z[i + w])) out[i] = oc; continue; }
+      if (c[i] === oc) continue;
+      for (const j of [i - 1, i + 1, i - w, i + w]) { if (j < 0 || j >= w * h || !z[j]) continue; if (z[j] > z[i] && g[j] !== g[i] && c[j] !== oc) { out[i] = dark(c[i]); break; } }
+    }
+    const [cv2, x2] = mk(w, h), id = x2.createImageData(w, h); new Uint32Array(id.data.buffer).set(out); x2.putImageData(id, 0, 0);
+    return cv2;
   };
-  const LX = -0.55, LY = -0.83; // the light comes from the front, above (in the fighter's own frame, before mirroring)
-  const shade3 = (ramp, nx, ny, r) => { const d = (nx * LX + ny * LY) / (r || 1); return u32(d > 0.42 ? ramp[0] : d < -0.3 ? ramp[2] : ramp[1]); };
-  function capsule(b, a, c, r, ramp, ramp2, split) {
-    b.part(Math.min(a[0], c[0]) - r, Math.min(a[1], c[1]) - r, Math.max(a[0], c[0]) + r, Math.max(a[1], c[1]) + r,
-      (x, y) => segD(x, y, a[0], a[1], c[0], c[1])[0] <= r,
-      (x, y) => { const [, nx, ny, t] = segD(x, y, a[0], a[1], c[0], c[1]); return shade3(ramp2 && t > split ? ramp2 : ramp, nx, ny, r); });
+  // light from the front, above, a little towards us; a normal (nx, ny) on a round form -> one of five tones
+  const LI = [-0.46, -0.68, 0.57];
+  const toneOf = (nx, ny) => { const nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny)), d = nx * LI[0] + ny * LI[1] + nz * LI[2]; return d > 0.86 ? 0 : d > 0.64 ? 1 : d > 0.3 ? 2 : d > -0.05 ? 3 : 4; };
+  // a limb: from a to b, its radius going from r0 to r1 with a swell (the muscle) peaking at "at" along it
+  function limb(F, a, b, r0, r1, swell, at, mat, group) {
+    const vx = b[0] - a[0], vy = b[1] - a[1], l2 = vx * vx + vy * vy || 1, R = Math.max(r0, r1) + swell, ul = Math.sqrt(l2), ux = vx / ul, uy = vy / ul;
+    const geo = (px, py) => {
+      const t = clamp(((px - a[0]) * vx + (py - a[1]) * vy) / l2, 0, 1), qx = a[0] + vx * t, qy = a[1] + vy * t;
+      const r = lerp(r0, r1, t) + swell * Math.max(0, Math.sin(Math.PI * clamp(t / (2 * at), 0, 1)));
+      return [px - qx, py - qy, r, t];
+    };
+    // the shading normal is taken across the limb only, so the round ends (knee, elbow) do not light up as spots
+    F.fill(Math.min(a[0], b[0]) - R - 1, Math.min(a[1], b[1]) - R - 1, Math.max(a[0], b[0]) + R + 1, Math.max(a[1], b[1]) + R + 1,
+      (px, py) => { const [dx, dy, r] = geo(px, py); return dx * dx + dy * dy <= r * r; },
+      (px, py) => { const [dx, dy, r, t] = geo(px, py), along = dx * ux + dy * uy, ex = dx - along * ux, ey = dy - along * uy; return mat(ex / r, ey / r, t, px, py); }, group);
   }
-  function ball(b, c, r, ramp, extra) {
-    b.part(c[0] - r, c[1] - r, c[0] + r, c[1] + r, (x, y) => Math.hypot(x - c[0], y - c[1]) <= r,
-      (x, y) => (extra && extra(x - c[0], y - c[1])) || shade3(ramp, x - c[0], y - c[1], r));
+  function blob(F, c, rx, ry, mat, group) {
+    F.fill(c[0] - rx - 1, c[1] - ry - 1, c[0] + rx + 1, c[1] + ry + 1, (x, y) => ((x - c[0]) / rx) ** 2 + ((y - c[1]) / ry) ** 2 <= 1, (x, y) => mat((x - c[0]) / rx, (y - c[1]) / ry, x, y), group);
   }
-  function poly(b, pts, color) {
+  function poly(F, pts, mat, group) {
     const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
-    b.part(Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys), (x, y) => {
+    F.fill(Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys), (x, y) => {
       let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c; } return c;
-    }, color);
+    }, mat, group);
   }
-  // ---- poses: joints in the fighter's frame (feet centre on the ground = 0,0; y up is negative; facing right)
-  const P0 = { hip: [0, -46], neck: [3, -70], head: [6, -80], eF: [13, -58], hF: [19, -68], eB: [2, -57], hB: [10, -65], kF: [9, -24], fF: [13, 0], kB: [-6, -23], fB: [-12, 0], lie: 0 };
+  const hash2 = (x, y) => { let h = (Math.floor(x) * 374761393 + Math.floor(y) * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+  // ---- poses: joints in the fighter's frame (feet centre on the ground = 0,0; y up is negative; facing right).
+  // tw: how far the shoulders have turned into a punch (0 side on, 1 square)
+  const P0 = { hip: [0, -47], neck: [5, -75], head: [8, -86], eF: [17, -62], hF: [25, -74], eB: [7, -60], hB: [16, -69], kF: [12, -25], fF: [19, 0], kB: [-10, -23], fB: [-19, 0], tw: 0, lie: 0 };
   const pose = (o) => Object.assign({}, P0, o);
-  const mixP = (a, b, t) => { const o = {}; for (const k in a) o[k] = Array.isArray(a[k]) ? [lerp(a[k][0], b[k][0], t), lerp(a[k][1], b[k][1], t)] : t < 0.5 ? a[k] : b[k]; return o; };
-  const shiftP = (p, dx, dy) => { const o = {}; for (const k in p) o[k] = Array.isArray(p[k]) ? [p[k][0] + dx, p[k][1] + dy] : p[k]; return o; };
-  const CROUCH = pose({ hip: [0, -28], neck: [5, -51], head: [8, -61], eF: [15, -40], hF: [21, -49], eB: [4, -38], hB: [12, -46], kF: [14, -17], fF: [12, 0], kB: [-11, -12], fB: [-14, 0] });
+  const mixP = (a, b, t) => { const o = {}; for (const k in a) o[k] = Array.isArray(a[k]) ? [lerp(a[k][0], b[k][0], t), lerp(a[k][1], b[k][1], t)] : typeof a[k] === "number" ? lerp(a[k], b[k] ?? a[k], t) : a[k]; return o; };
+  const upper = (p, dx, dy) => { const o = Object.assign({}, p); for (const k of ["neck", "head", "eF", "hF", "eB", "hB"]) o[k] = [p[k][0] + dx, p[k][1] + dy]; return o; };
+  const CROUCH = pose({ hip: [0, -31], neck: [8, -57], head: [11, -68], eF: [20, -45], hF: [27, -56], eB: [10, -43], hB: [19, -52], kF: [17, -19], fF: [20, 0], kB: [-13, -13], fB: [-21, 0] });
+  const KCH = pose({ hip: [-2, -49], neck: [-4, -77], head: [-1, -88], eF: [12, -64], hF: [19, -75], eB: [-1, -62], hB: [7, -71], kF: [15, -48], fF: [9, -30], kB: [-5, -24], fB: [-7, 0], tw: 0.3 });
+  const KFULL = pose({ hip: [-5, -51], neck: [-12, -77], head: [-12, -88], eF: [6, -67], hF: [13, -77], eB: [-13, -61], hB: [-20, -52], kF: [24, -58], fF: [49, -64], kB: [-6, -24], fB: [-8, 0], tw: 0.6 });
+  const JUMP = pose({ hip: [0, -58], neck: [4, -86], head: [7, -97], eF: [16, -73], hF: [24, -84], eB: [6, -71], hB: [15, -80], kF: [13, -46], fF: [8, -32], kB: [-1, -42], fB: [-11, -33] });
   const POSES = {
-    idle: [pose({}), pose({ hip: [0, -45], neck: [3, -69], head: [6, -79], eF: [13, -57], hF: [19, -67], eB: [2, -56], hB: [10, -64], kF: [10, -23] }), pose({ hip: [0, -44], neck: [3, -68], head: [6, -78], eF: [13, -56], hF: [19, -66], eB: [2, -55], hB: [10, -63], kF: [10, -22], kB: [-7, -22] }), pose({ hip: [0, -45], neck: [3, -69], head: [6, -79], eF: [13, -57], hF: [19, -67], eB: [2, -56], hB: [10, -64], kF: [10, -23] })],
+    idle: [0, 1, 2, 1].map((d) => { const p = upper(pose({ hip: [0, -47 + d * 0.6] }), d * 0.3, d); p.hF = [p.hF[0] + (d === 2 ? 1 : 0), p.hF[1]]; return p; }),
     crouch: [CROUCH],
-    cblock: [pose(Object.assign({}, CROUCH, { eF: [12, -44], hF: [13, -58], eB: [9, -42], hB: [15, -54] }))],
-    block: [pose({ hip: [-1, -46], neck: [0, -70], head: [3, -80], eF: [11, -62], hF: [12, -78], eB: [8, -60], hB: [15, -72] })],
-    punch: [pose({ hip: [1, -46], neck: [5, -70], head: [8, -80], eF: [10, -60], hF: [8, -66], eB: [3, -57], hB: [12, -64] }), pose({ hip: [3, -46], neck: [8, -70], head: [11, -80], eF: [24, -66], hF: [36, -67], eB: [1, -57], hB: [8, -63], kF: [11, -24], fF: [16, 0] }), pose({ hip: [2, -46], neck: [6, -70], head: [9, -80], eF: [18, -62], hF: [26, -67], eB: [2, -57], hB: [10, -64] })],
-    kick: [pose({ hip: [-2, -47], neck: [-4, -71], head: [-2, -81], eF: [8, -60], hF: [14, -69], eB: [-4, -58], hB: [2, -66], kF: [10, -42], fF: [6, -26], kB: [-4, -23], fB: [-5, 0] }), pose({ hip: [-3, -48], neck: [-8, -71], head: [-7, -81], eF: [5, -61], hF: [10, -70], eB: [-8, -58], hB: [-3, -66], kF: [18, -50], fF: [38, -58], kB: [-4, -23], fB: [-5, 0] }), pose({ hip: [-2, -47], neck: [-4, -71], head: [-2, -81], eF: [8, -60], hF: [14, -69], eB: [-4, -58], hB: [2, -66], kF: [12, -38], fF: [16, -18], kB: [-4, -23], fB: [-5, 0] })],
-    cpunch: [shiftP(pose(Object.assign({}, CROUCH, { eF: [22, -44], hF: [34, -47], neck: [8, -51], head: [11, -61] })), 0, 0)],
-    ckick: [pose(Object.assign({}, CROUCH, { hip: [-2, -24], neck: [-6, -46], head: [-4, -56], kF: [16, -8], fF: [37, -3], kB: [-9, -11], fB: [-14, 0], eF: [8, -38], hF: [14, -46], eB: [-4, -34], hB: [-14, -22] }))],
-    jump: [pose({ hip: [0, -52], neck: [3, -76], head: [6, -86], kF: [11, -40], fF: [7, -28], kB: [-2, -37], fB: [-11, -30], eF: [13, -64], hF: [19, -74], eB: [2, -62], hB: [10, -70] })],
-    jkick: [pose({ hip: [0, -52], neck: [-2, -76], head: [0, -86], kF: [17, -48], fF: [36, -42], kB: [-3, -36], fB: [-12, -31], eF: [9, -66], hF: [15, -75], eB: [-4, -62], hB: [3, -70] })],
-    jpunch: [pose({ hip: [0, -52], neck: [5, -76], head: [8, -86], kF: [11, -40], fF: [7, -28], kB: [-2, -37], fB: [-11, -30], eF: [20, -64], hF: [32, -58], eB: [2, -62], hB: [10, -70] })],
-    hit: [pose({ hip: [-3, -46], neck: [-9, -68], head: [-11, -77], eF: [4, -58], hF: [10, -64], eB: [-12, -58], hB: [-16, -66], kF: [6, -24], fF: [10, 0], kB: [-8, -23], fB: [-14, 0] })],
-    fall: [pose({ hip: [-6, -40], neck: [-20, -58], head: [-25, -66], eF: [-4, -58], hF: [4, -68], eB: [-22, -50], hB: [-30, -58], kF: [6, -30], fF: [14, -12], kB: [-2, -26], fB: [4, -8] })],
-    down: [pose({ lie: 1, hip: [-4, -7], neck: [-28, -9], head: [-38, -11], eF: [-20, -17], hF: [-14, -23], eB: [-36, -3], hB: [-44, -4], kF: [10, -16], fF: [26, -4], kB: [8, -10], fB: [24, -3] })],
-    win: [pose({ hip: [0, -46], neck: [2, -70], head: [5, -80], eF: [12, -84], hF: [14, -98], eB: [-6, -56], hB: [4, -50] }), pose({ hip: [0, -47], neck: [2, -71], head: [5, -81], eF: [12, -86], hF: [15, -101], eB: [-6, -57], hB: [4, -51] })],
-    dizzy: [pose({ hip: [-1, -45], neck: [-3, -68], head: [-2, -78], eF: [6, -52], hF: [10, -46], eB: [-6, -52], hB: [-2, -46], kF: [8, -23], fF: [11, 0], kB: [-6, -22], fB: [-12, 0] }), pose({ hip: [1, -45], neck: [4, -68], head: [6, -78], eF: [10, -52], hF: [14, -46], eB: [-3, -52], hB: [1, -46], kF: [9, -23], fF: [12, 0], kB: [-5, -22], fB: [-11, 0] })]
+    cblock: [Object.assign({}, CROUCH, { eF: [16, -50], hF: [17, -65], eB: [13, -48], hB: [22, -61] })],
+    block: [pose({ hip: [-2, -47], neck: [1, -75], head: [4, -85], eF: [15, -68], hF: [16, -84], eB: [11, -66], hB: [21, -79] })],
+    punch: [
+      pose({ hip: [-1, -47], neck: [2, -75], head: [5, -86], eF: [13, -62], hF: [17, -70], eB: [5, -60], hB: [13, -68] }),
+      pose({ hip: [3, -47], neck: [10, -75], head: [13, -85], eF: [26, -70], hF: [38, -72], eB: [4, -61], hB: [12, -69], kF: [14, -25], fF: [21, 0], tw: 0.55 }),
+      pose({ hip: [5, -46], neck: [13, -74], head: [16, -84], eF: [31, -72], hF: [47, -73], eB: [3, -62], hB: [10, -70], kF: [17, -25], fF: [24, 0], kB: [-12, -21], fB: [-22, 0], tw: 0.9 }),
+      pose({ hip: [2, -47], neck: [8, -75], head: [11, -85], eF: [23, -66], hF: [32, -72], eB: [6, -60], hB: [14, -69], tw: 0.4 })
+    ],
+    kick: [KCH, mixP(KCH, KFULL, 0.6), KFULL, mixP(KFULL, KCH, 0.6), mixP(KCH, P0, 0.5)],
+    cpunch: [Object.assign({}, CROUCH, { eF: [16, -46], hF: [19, -53] }), Object.assign({}, CROUCH, { neck: [11, -56], head: [14, -66], eF: [30, -50], hF: [44, -50], tw: 0.8 })],
+    ckick: [pose({ hip: [-2, -28], neck: [-6, -52], head: [-5, -63], eF: [8, -44], hF: [14, -54], eB: [-10, -36], hB: [-16, -26], kF: [12, -13], fF: [26, -3], kB: [-12, -11], fB: [-20, 0] }),
+      pose({ hip: [-3, -26], neck: [-10, -50], head: [-10, -61], eF: [5, -42], hF: [12, -52], eB: [-14, -30], hB: [-22, -18], kF: [20, -9], fF: [48, -4], kB: [-12, -11], fB: [-20, 0] })],
+    jump: [JUMP],
+    jkick: [Object.assign({}, JUMP, { neck: [0, -86], head: [3, -97], eF: [11, -74], hF: [18, -84], eB: [-8, -70], hB: [-2, -80], kF: [20, -54], fF: [46, -48], kB: [-3, -40], fB: [-14, -34] })],
+    jpunch: [Object.assign({}, JUMP, { neck: [7, -86], head: [10, -97], eF: [27, -72], hF: [42, -66], tw: 0.7 })],
+    hit: [pose({ hip: [-3, -46], neck: [-11, -72], head: [-15, -81], eF: [6, -62], hF: [12, -70], eB: [-12, -62], hB: [-18, -72], kF: [8, -24], fF: [14, 0], kB: [-9, -23], fB: [-16, 0] })],
+    fall: [pose({ hip: [-6, -40], neck: [-22, -58], head: [-28, -66], eF: [-4, -60], hF: [4, -72], eB: [-24, -50], hB: [-33, -58], kF: [8, -32], fF: [18, -14], kB: [-2, -28], fB: [6, -10] })],
+    down: [pose({ lie: 1, hip: [-4, -8], neck: [-30, -10], head: [-41, -12], eF: [-22, -18], hF: [-15, -25], eB: [-38, -4], hB: [-48, -5], kF: [12, -17], fF: [30, -5], kB: [9, -11], fB: [27, -4] })],
+    win: [pose({ eF: [13, -92], hF: [15, -108], eB: [-6, -58], hB: [6, -54] }), pose({ hip: [0, -48], neck: [5, -76], head: [8, -87], eF: [13, -93], hF: [16, -111], eB: [-6, -59], hB: [6, -55] })],
+    dizzy: [pose({ hip: [-1, -46], neck: [-3, -73], head: [-2, -84], eF: [8, -56], hF: [13, -48], eB: [-6, -56], hB: [-2, -48], kF: [10, -24], fF: [14, 0], kB: [-8, -23], fB: [-16, 0] }),
+      pose({ hip: [1, -46], neck: [6, -73], head: [8, -84], eF: [13, -56], hF: [18, -48], eB: [-2, -56], hB: [2, -48], kF: [11, -24], fF: [15, 0], kB: [-7, -23], fB: [-15, 0] })],
+    intro: [pose({ hip: [0, -47], neck: [3, -75], head: [6, -86], eF: [15, -58], hF: [24, -64], eB: [9, -58], hB: [20, -62], kF: [8, -25], fF: [12, 0], kB: [-8, -24], fB: [-12, 0] })]
   };
-  // the walk: six steps of the stance, the feet swapping
+  // the walk: six steps, the stance kept, the feet swapping
   POSES.walk = [];
   for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2, s = Math.sin(a), c = Math.cos(a);
-    POSES.walk.push(pose({ hip: [0, -46 + Math.abs(s) * 1.5], fF: [4 + 10 * s, -Math.max(0, c) * 5], kF: [6 + 6 * s, -24 + Math.max(0, c) * 3], fB: [-4 - 10 * s, -Math.max(0, -c) * 5], kB: [-1 - 6 * s, -23 + Math.max(0, -c) * 3] }));
+    const a = (i / 6) * Math.PI * 2, s = Math.sin(a), c = Math.cos(a), lf = Math.max(0, c) * 6, lb = Math.max(0, -c) * 6, hy = -47 + Math.abs(s) * 1.5;
+    const fF = [4 + 15 * s, -lf], fB = [-4 - 15 * s, -lb];
+    POSES.walk.push(upper(pose({ hip: [0, hy], fF, fB, kF: [(fF[0]) / 2 + 7, -24 - lf * 0.4], kB: [(fB[0]) / 2 + 5, -23 - lb * 0.4] }), 0, hy + 47));
   }
-  // the specials: Daniel pushes a colour wave out with both hands, Cristian dashes in shoulder first, Coz lifts the
-  // camera, I O N throws an espresso
+  // the specials, two or three frames each
   const SPECIAL_POSES = {
-    daniel: [pose({ hip: [-2, -46], neck: [-3, -70], head: [0, -80], eF: [2, -56], hF: [-6, -52], eB: [-6, -56], hB: [-10, -50], kF: [10, -24], fF: [15, 0] }), pose({ hip: [3, -46], neck: [8, -70], head: [11, -80], eF: [22, -64], hF: [34, -64], eB: [18, -58], hB: [31, -56], kF: [12, -24], fF: [18, 0] })],
-    cristian: [pose({ hip: [-2, -44], neck: [2, -66], head: [5, -76], eF: [6, -56], hF: [2, -62], kF: [10, -22], fF: [15, 0] }), pose({ hip: [6, -42], neck: [18, -62], head: [22, -71], eF: [28, -60], hF: [40, -61], eB: [14, -54], hB: [20, -50], kF: [16, -22], fF: [24, 0], kB: [-10, -18], fB: [-24, -3] })],
-    coz: [pose({ hip: [0, -46], neck: [3, -70], head: [5, -80], eF: [12, -64], hF: [14, -76], eB: [8, -60], hB: [12, -72] }), pose({ hip: [1, -46], neck: [4, -70], head: [6, -80], eF: [16, -66], hF: [22, -76], eB: [10, -62], hB: [18, -72] })],
-    ion: [pose({ hip: [-2, -46], neck: [-3, -70], head: [0, -80], eF: [-4, -70], hF: [-10, -82], eB: [4, -58], hB: [12, -64] }), pose({ hip: [3, -46], neck: [8, -70], head: [11, -80], eF: [24, -70], hF: [35, -74], eB: [2, -57], hB: [8, -63], kF: [12, -24], fF: [17, 0] })]
+    daniel: [pose({ hip: [-2, -47], neck: [-2, -75], head: [1, -86], eF: [0, -58], hF: [-6, -54], eB: [-4, -58], hB: [-10, -52] }), pose({ hip: [4, -46], neck: [11, -74], head: [14, -84], eF: [26, -68], hF: [40, -68], eB: [22, -62], hB: [37, -60], kF: [16, -25], fF: [24, 0], tw: 0.8 })],
+    cristian: [Object.assign({}, CROUCH, { neck: [2, -57], head: [5, -68] }), pose({ hip: [6, -42], neck: [19, -63], head: [24, -72], eF: [30, -62], hF: [46, -63], eB: [14, -56], hB: [22, -50], kF: [18, -22], fF: [26, 0], kB: [-12, -18], fB: [-28, -3], tw: 0.9 })],
+    coz: [pose({ eF: [14, -68], hF: [16, -80], eB: [9, -64], hB: [17, -77] }), pose({ hip: [2, -47], neck: [8, -75], head: [10, -86], eF: [18, -70], hF: [22, -80], eB: [12, -66], hB: [21, -77] })],
+    ion: [pose({ hip: [-2, -47], neck: [-2, -75], head: [1, -86], eF: [-6, -72], hF: [-14, -84] }), pose({ hip: [4, -47], neck: [11, -75], head: [14, -85], eF: [26, -72], hF: [38, -76], kF: [16, -25], fF: [24, 0], tw: 0.8 })],
+    maria: [KCH, pose({ hip: [0, -52], neck: [0, -79], head: [3, -90], eF: [18, -72], hF: [30, -76], eB: [-14, -70], hB: [-26, -74], kF: [22, -54], fF: [46, -56], kB: [-4, -26], fB: [-4, 0] }),
+      pose({ hip: [0, -52], neck: [0, -79], head: [3, -90], eF: [16, -70], hF: [28, -72], eB: [-14, -72], hB: [-26, -76], kF: [16, -42], fF: [24, -30], kB: [-4, -26], fB: [-4, 0] })],
+    cristache: [CROUCH, pose({ hip: [2, -52], neck: [6, -80], head: [8, -91], eF: [12, -98], hF: [14, -114], eB: [-4, -64], hB: [2, -56], kF: [12, -40], fF: [6, -26], kB: [-6, -32], fB: [-12, -18] })],
+    steve: [pose({ hip: [-2, -47], neck: [0, -75], head: [3, -86], eF: [22, -66], hF: [32, -76], eB: [-8, -66], hB: [-16, -78], tw: 0.9 }), pose({ hip: [4, -46], neck: [12, -74], head: [15, -84], eF: [28, -66], hF: [34, -58], eB: [24, -62], hB: [30, -54], kF: [16, -25], fF: [24, 0], tw: 1 })],
+    rares: [pose({ hip: [-2, -47], neck: [-2, -75], head: [1, -86], eF: [-6, -70], hF: [-14, -80] }), pose({ hip: [4, -47], neck: [11, -75], head: [14, -85], eF: [26, -70], hF: [38, -70], kF: [16, -25], fF: [24, 0], tw: 0.8 })],
+    dony: [pose({ hip: [-2, -46], neck: [-3, -74], head: [0, -85], eF: [2, -58], hF: [-6, -50] }), pose({ hip: [4, -46], neck: [11, -74], head: [14, -84], eF: [26, -64], hF: [38, -60], kF: [16, -25], fF: [24, 0], tw: 0.8 })],
+    iulica: [pose({ hip: [-2, -47], neck: [-3, -75], head: [0, -86], eF: [-6, -60], hF: [-14, -54] }), pose({ hip: [4, -47], neck: [11, -75], head: [14, -85], eF: [24, -76], hF: [36, -84], kF: [16, -25], fF: [24, 0], tw: 0.9 })]
   };
-  // the cell every frame is baked into: 96x108, the feet at (48, 104)
-  const CW = 96, CH = 108, OX = 48, OY = 104;
-  function drawFighter(id, p, prop) {
-    const L = LOOKS[id], b = new Buf(CW, CH), T = (q) => [q[0] + OX, q[1] + OY];
-    const hip = T(p.hip), neck = T(p.neck), head = T(p.head);
-    const ang = Math.atan2(neck[0] - hip[0], -(neck[1] - hip[1])); // the torso's lean
-    const ca = Math.cos(ang), sa = Math.sin(ang), rot = (x, y) => [x * ca - y * sa, x * sa + y * ca];
-    const off = (o, dx, dy) => { const [rx, ry] = rot(dx, dy); return [o[0] + rx, o[1] + ry]; };
-    const sF = off(neck, 7, 5), sB = off(neck, -6, 5), lF = off(hip, 4, 1), lB = off(hip, -4, 1);
-    const darker = (ramp) => [ramp[1], ramp[2], ramp[2]];
-    const sleeveL = L.sleeve === "long";
-    const arm = (s, e, h, back) => {
-      const top = back ? darker(L.top) : L.top, sk = back ? darker(L.skin) : L.skin;
-      if (sleeveL) { capsule(b, s, e, 4.4, top); capsule(b, e, h, 3.8, top); }
-      else { capsule(b, s, e, 4.4, top, sk, 0.5); capsule(b, e, h, 3.8, sk); }
-      // the glove, its white cuff towards the elbow
-      const g = back ? darker(L.glove) : L.glove, vx = h[0] - e[0], vy = h[1] - e[1], vl = Math.hypot(vx, vy) || 1;
-      capsule(b, [h[0] - (vx / vl) * 5.5, h[1] - (vy / vl) * 5.5], [h[0] - (vx / vl) * 3, h[1] - (vy / vl) * 3], 4, [L.cuff, L.cuff, "#c8c8d0"]);
-      ball(b, h, 6, g, (dx, dy) => (dx * LX + dy * LY > 3.9 && Math.hypot(dx, dy) < 5.4 ? u32("#ffffff") : 0));
+  const SPECIAL_PROP = { coz: "camera", iulica: "tote", rares: "key" };
+  // the cell every frame is baked into: 128x132, the feet at (64, 128)
+  const CW = 128, CH = 132, OX = 64, OY = 128;
+  const hueTurn = (hex, deg) => {
+    let [r, g2, b] = rgbOf(hex).map((v) => v / 255); const mx = Math.max(r, g2, b), mn = Math.min(r, g2, b), l = (mx + mn) / 2, d = mx - mn;
+    if (d < 0.04) return hexOf([r, g2, b].map((v) => (1 - v) * 0.5 * 255 + v * 0.5 * 255 * 0.6)); // greys: a darker shade
+    const s2 = d / (1 - Math.abs(2 * l - 1)); let h = mx === r ? ((g2 - b) / d) % 6 : mx === g2 ? (b - r) / d + 2 : (r - g2) / d + 4; h = (h * 60 + deg + 360) % 360;
+    const c = (1 - Math.abs(2 * l - 1)) * s2, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = l - c / 2, k = Math.floor(h / 60);
+    const rgb = [[c, x, 0], [x, c, 0], [0, c, x], [0, x, c], [x, 0, c], [c, 0, x]][k]; return hexOf(rgb.map((v) => (v + m) * 255));
+  };
+  const lookOf = (id, alt) => { if (!alt) return LOOKS[id]; const L = Object.assign({}, LOOKS[id]); for (const k of ["top", "pants", "glove", "skirt", "inner"]) if (L[k]) L[k] = hueTurn(L[k], 150); return L; };
+  function drawFighter(id, p0, prop, alt) {
+    const L = lookOf(id, alt), B = Object.assign({ sh: 1, arm: 1, leg: 1, waist: 1, chest: 1, sc: 1 }, L.build), sc = B.sc;
+    const p = {}; for (const k in p0) p[k] = Array.isArray(p0[k]) ? [p0[k][0] * sc, p0[k][1] * sc] : p0[k];
+    const F = new Fig(CW, CH), T = (q) => [q[0] + OX, q[1] + OY];
+    const hip = T(p.hip), neck = T(p.neck), head = T(p.head), tw = p.tw || 0;
+    const ang = Math.atan2(neck[0] - hip[0], -(neck[1] - hip[1])), ca = Math.cos(ang), sa = Math.sin(ang);
+    const off = (o, dx, dy) => [o[0] + dx * ca - dy * sa, o[1] + dx * sa + dy * ca];
+    const SK = ramp(L.skin), TOP = ramp(L.top), PA = ramp(L.pants || L.skin), SH = ramp(L.shoe), GL = ramp(L.glove), SO = u32(L.sole);
+    const tone = (R, nx, ny) => R[toneOf(nx, ny)];
+    const back = (R, nx, ny) => R[Math.min(4, toneOf(nx, ny) + 1)]; // the far side, a tone darker
+    const wsh = 13 * B.sh * sc, len = Math.hypot(neck[0] - hip[0], neck[1] - hip[1]);
+    const sF = off(neck, (6 + 3 * tw) * B.sh * sc, 4), sB = off(neck, (-6 + 2 * tw) * B.sh * sc, 3);
+    const lF = off(hip, 4 * sc, 2), lB = off(hip, -4 * sc, 2);
+    // an arm: the deltoid, the upper arm with the biceps, the forearm, then the glove with its cuff
+    const arm = (s, e, h, far) => {
+      const g = far ? 1 : 2, ar = B.arm * sc, sleeveTo = L.sleeve === "long" ? 2 : L.sleeve === "short" ? 0.55 : -1;
+      const mat = (seg) => (nx, ny, t, px, py) => { const R = seg + t * 0.999 < sleeveTo || (seg === 1 && sleeveTo >= 2) ? TOP : SK;
+        if (L.topKind === "fleece" && R === TOP) { const fz = hash2(px * 7.3, py * 5.1); return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (fz > 0.72 ? 1 : fz < 0.12 ? -1 : 0), 0, 4)]; } if (L.tattoo && R === SK && seg === 1 && t > 0.2 && t < 0.8 && hash2(t * 40, nx * 6 + 9) > 0.62) return u32("#3a4a6a"); return far ? back(R, nx, ny) : tone(R, nx, ny); };
+      limb(F, s, e, 5.6 * ar, 3.8 * ar, 1.1 * ar, 0.4, mat(0), g);
+      limb(F, e, h, 4.3 * ar, 3.2 * ar, 0.6 * ar, 0.3, mat(1), g);
+      const vx = h[0] - e[0], vy = h[1] - e[1], vl = Math.hypot(vx, vy) || 1, ux = vx / vl, uy = vy / vl, gr = 5.9 * Math.min(1.1, sc);
+      limb(F, [h[0] - ux * 6, h[1] - uy * 6], [h[0] - ux * 3.5, h[1] - uy * 3.5], 4.2, 4.2, 0, 0.5, (nx, ny) => (far ? back : tone)(ramp("#f4f4f8"), nx, ny), g + 10);
+      blob(F, [h[0] + ux, h[1] + uy], gr, gr * 0.92, (nx, ny) => { if (nx * -0.5 + ny * -0.8 > 0.55 && nx * nx + ny * ny < 0.5) return u32("#ffffff"); return (far ? back : tone)(GL, nx, ny); }, g + 10);
     };
-    const leg = (r, k, f, back) => {
-      const pa = back ? darker(L.pants) : L.pants;
-      capsule(b, r, k, 6.4, pa); capsule(b, k, [f[0], f[1] - 3], 5.2, pa);
-      // the shoe, pointing forward
-      const sh = back ? darker(L.shoe) : L.shoe;
-      poly(b, [[f[0] - 5, f[1] - 6], [f[0] + 4, f[1] - 6], [f[0] + 10, f[1] - 2], [f[0] + 10, f[1] + 1], [f[0] - 5, f[1] + 1]], (x, y) => u32(y > f[1] - 0.5 ? (L.shoe[2]) : sh[x > f[0] + 2 ? 0 : 1]));
+    const leg = (r, k, f, far) => {
+      const g = far ? 3 : 4, lg = B.leg * sc, bare = L.legs === "skirt";
+      const R = bare ? SK : PA, loose = bare ? 0 : 0.8;
+      const mat = (nx, ny) => (far ? back : tone)(R, nx, ny);
+      limb(F, r, k, (7 + loose) * lg, (4.9 + loose) * lg, (bare ? 1.2 : 0.6) * lg, 0.35, mat, g);
+      limb(F, k, [f[0], f[1] - 4], (4.9 + loose) * lg, (3.3 + loose * 1.2) * lg, (bare ? 1 : 0.4) * lg, 0.25, mat, g);
+      // the shoe, pointing forward, its sole
+      const sr = ramp(L.shoe);
+      poly(F, [[f[0] - 5, f[1] - 6], [f[0] + 4, f[1] - 6], [f[0] + 11, f[1] - 2], [f[0] + 11, f[1] + 1], [f[0] - 5, f[1] + 1]], (x, y) => (y > f[1] - 0.6 ? SO : sr[far ? 3 : x > f[0] + 3 ? 1 : 2]), g + 10);
     };
-    if (prop === "camera" || prop === "cup") {} // the props are drawn after the front arm
-    // back arm, back leg, front leg, the body, the head, the front arm
+    // the torso: a V from the shoulders to the waist, then the hips; u across (-1 back .. 1 front), v down (0..1)
+    const shape = (v) => {
+      const w0 = wsh * (1 - 0.18 * tw), wc = 12.5 * B.chest * sc * (1 - 0.15 * tw), ww = 8.6 * B.waist * sc, wh = 9.8 * Math.max(1, B.waist * 0.92) * sc;
+      if (v < 0.16) return w0 * (0.5 + 0.5 * Math.sqrt(v / 0.16)); // round shoulders
+      if (v < 0.42) return lerp(w0, wc, (v - 0.16) / 0.26);
+      if (v < 0.8) return lerp(wc, ww, (v - 0.42) / 0.38);
+      return lerp(ww, wh, (v - 0.8) / 0.2);
+    };
+    const tloc = (x, y) => { const dx = x - neck[0], dy = y - neck[1], s = dx * ca + dy * sa, v = (dx * -sa + dy * ca) / (len || 1); const hw = shape(clamp(v, 0, 1)), cx = 1.5 * sc; return [(s - cx) / hw, v, hw]; };
+    const torsoMat = (x, y) => {
+      const [u, v] = tloc(x, y);
+      let nx = u * 0.85, ny = v < 0.12 ? -0.75 : v < 0.4 ? -0.15 : 0.1;
+      // the chest: the pecs, a shadow under them; the waistband at the bottom
+      const pec = v > 0.34 && v < 0.39 && u > -0.4 ? 1 : 0;
+      if (v > 0.9) return (L.legs === "skirt" ? ramp(L.skirt) : PA)[u < -0.3 ? 3 : 2];
+      const k = L.topKind;
+      if (k === "tank") {
+        if ((u > 0.28 && u < 0.86 && v < 0.24 - (u - 0.28) * 0.05) || (v < 0.1 && u > -0.2)) return tone(SK, nx, ny); // the neckline and the open shoulders
+        if (u < -0.6 && v < 0.3) return tone(SK, nx, ny);
+        const t2 = toneOf(nx, ny) + pec; return TOP[Math.min(4, t2)];
+      }
+      if (k === "camo") {
+        const n = hash2(Math.floor(u * 6 + 7), Math.floor(v * 9)) + hash2(Math.floor(u * 3 + 3), Math.floor(v * 5 + 1)) * 0.8;
+        const base = n > 1.25 ? "#56604a" : n < 0.55 ? "#2a3027" : L.top;
+        if (u > 0.36 && u < 0.62 && v < 0.2) return tone(SK, nx, ny); // the open collar
+        return ramp(base)[Math.min(4, toneOf(nx, ny) + pec)];
+      }
+      if (k === "overshirt") {
+        if (u > 0.2 && u < 0.62) { if (v < 0.08 && u > 0.3) return tone(SK, nx, ny); return ramp(L.inner)[Math.min(4, toneOf(nx * 0.4, ny) + (v > 0.6 ? 1 : 0))]; } // the white tee between the open sides
+        const rib = (Math.floor(x) & 1) ? 1 : 0;
+        if (u >= 0.62 && u < 0.72 && v < 0.6) return TOP[0]; // the open edge catching the light
+        return TOP[Math.min(4, toneOf(nx, ny) + rib * (toneOf(nx, ny) < 3 ? 1 : 0))];
+      }
+      if (k === "fleece") {
+        if (v < 0.07 && u > 0.2 && u < 0.85) return TOP[Math.min(4, toneOf(nx, ny) + 1)]; // the stand-up collar
+        if (u > 0.52 && u < 0.6 && v < 0.85) return u32(v < 0.1 ? "#c9ccd4" : "#1a2440"); // the zip
+        const fz = hash2(x * 7.3, y * 5.1); return TOP[clamp(toneOf(nx, ny) + (fz > 0.72 ? 1 : fz < 0.12 ? -1 : 0), 0, 4)];
+      }
+      if (k === "henley") {
+        if (v < 0.11 && u > 0.36 && u < 0.78) return tone(SK, nx, ny);
+        if (u > 0.55 && u < 0.62 && (Math.abs(v - 0.16) < 0.025 || Math.abs(v - 0.25) < 0.025)) return u32("#ece0c4");
+      }
+      if (k === "tee" || k === "printtee" || k === "oversize") {
+        if (v < (k === "oversize" ? 0.08 : 0.1) && u > 0.36 && u < 0.8) return tone(SK, nx, ny);
+        if (k === "printtee" && v > 0.2 && v < 0.32 && u > 0.5 && u < 0.72 && hash2(x * 3, y * 7) > 0.45) return u32("#1c1c22");
+        if (k === "oversize" && v > 0.22 && v < 0.36 && u > 0.46 && u < 0.66 && ((Math.floor(x) + Math.floor(y)) % 3 === 0)) return u32("#1c1c22");
+        if (L.stripe && v > 0.2 && v < 0.26 && u > 0.44 && u < 0.86) return u32(L.stripe);
+        if (k === "oversize" && v > 0.55) return TOP[Math.min(4, toneOf(nx, ny) + ((Math.floor(y) % 5 === 0 && u > -0.6) ? 1 : 0))]; // the folds of a big tee
+      }
+      return TOP[Math.min(4, toneOf(nx, ny) + pec)];
+    };
+    // back arm, back leg, front leg, the body (and a skirt), the neck and head, the front arm
     arm(sB, T(p.eB), T(p.hB), true);
     leg(lB, T(p.kB), T(p.fB), true);
     leg(lF, T(p.kF), T(p.fF), false);
-    // the body: a slightly tapered block from the shoulders to the hips; the clothes are a colour per (u, v)
-    const tp = [off(neck, -10, 6), off(neck, -7, 1), off(neck, 9, 1), off(neck, 12, 6), off(hip, 9, 3), off(hip, -9, 3)];
-    poly(b, tp, (x, y) => {
-      const dx = x - neck[0], dy = y - neck[1], v = clamp((dx * sa - dy * -ca) / (Math.hypot(hip[0] - neck[0], hip[1] - neck[1]) || 1), 0, 1);
-      const u = clamp(((dx * ca + dy * sa) + 10) / 22, 0, 1); // 0 at the back, 1 at the front
-      const sh = u < 0.22 ? 2 : u > 0.72 && v < 0.6 ? 0 : 1;
-      if (v > 0.88) return u32(L.pants[sh === 0 ? 1 : sh]); // the waistband
-      if (id === "ion") {
-        if (u > 0.5 && u < 0.84) { if (v > 0.18 && v < 0.42 && u > 0.58 && u < 0.76 && ((Math.floor(x) + Math.floor(y)) & 1)) return u32("#e8e8ea"); return u32(L.tee[sh === 2 ? 2 : sh]); }
-        if (u >= 0.84 && v < 0.5) return u32(L.top[0]);
-      }
-      if (id === "daniel" || id === "coz") if (v < 0.1 && u > 0.5 && u < 0.85) return u32(L.skin[1]); // the neckline
-      if (id === "cristian") { if (v < 0.12 && u > 0.55 && u < 0.85) return u32(L.skin[1]); if (u > 0.66 && u < 0.74 && (v > 0.15 && v < 0.2 || v > 0.28 && v < 0.33)) return u32("#e8dcc0"); }
-      if (id === "daniel" && v > 0.2 && v < 0.27 && u > 0.6 && u < 0.85) return u32("#fed012"); // a little Cromatic stripe
-      return u32(L.top[sh]);
-    });
-    // the neck and the head
-    capsule(b, off(neck, 1, 2), off(neck, 2, -4), 3.6, L.skin);
-    if (!HEAD_IMG[id]) HEAD_IMG[id] = HEADS[id];
-    b.blit(HEADS[id], headPal(id), head[0], head[1], p.lie ? 1 : 0);
+    const hw0 = shape(0), hw1 = shape(1);
+    const tp = [];
+    for (let i = 0; i <= 10; i++) { const v = i / 10, hw = shape(v); tp.push(off(neck, 1.5 * sc + hw, v * len)); }
+    for (let i = 10; i >= 0; i--) { const v = i / 10, hw = shape(v); tp.push(off(neck, 1.5 * sc - hw, v * len)); }
+    poly(F, tp, torsoMat, 5);
+    if (L.legs === "skirt") { const SKR = ramp(L.skirt); poly(F, [off(hip, -hw1 - 1, -3), off(hip, hw1 + 1, -3), off(hip, hw1 + 6, 15), off(hip, -hw1 - 5, 15)], (x, y) => { const [u] = tloc(x, y); return SKR[u > 0.3 ? 2 : u > -0.4 ? 3 : 4]; }, 6); }
+    if (L.key) { const k = off(hip, hw1 * 0.6, 4); blob(F, [k[0], k[1] + 6], 1.6, 3.2, () => u32("#ffd23a"), 7); blob(F, [k[0], k[1] + 1.5], 1.2, 1.4, () => u32("#c9ccd4"), 7); }
+    limb(F, off(neck, 1.5, 3), off(neck, 2.5, -5), 4.4 * B.sh * sc, 4, 0, 0.5, (nx, ny) => tone(SK, nx * 0.7, ny), 5);
+    F.blit(HEADS[id], headPal(id), head[0], head[1], p.lie ? 1 : 0, HEAD_AT[id], 8);
     arm(sF, T(p.eF), T(p.hF), false);
+    const hF = T(p.hF);
     if (prop === "camera") {
-      const h = T(p.hF);
-      poly(b, [[h[0] - 5, h[1] - 6], [h[0] + 7, h[1] - 6], [h[0] + 7, h[1] + 1], [h[0] - 5, h[1] + 1]], (x, y) => u32(y < h[1] - 4.5 ? "#4a4a52" : "#26262c"));
-      ball(b, [h[0] + 7, h[1] - 2.5], 2.6, ["#bfe9ff", "#3a8fe0", "#1a3a70"]);
-      b.d[Math.round(h[1] - 6) * CW + Math.round(h[0] - 2)] = u32("#ffffff");
+      poly(F, [[hF[0] - 5, hF[1] - 7], [hF[0] + 8, hF[1] - 7], [hF[0] + 8, hF[1] + 1], [hF[0] - 5, hF[1] + 1]], (x, y) => u32(y < hF[1] - 5 ? "#4a4a52" : "#26262c"), 20);
+      blob(F, [hF[0] + 8, hF[1] - 3], 2.8, 2.8, (nx, ny) => ramp("#3a8fe0")[toneOf(nx, ny)], 21);
+    } else if (prop === "tote") {
+      poly(F, [[hF[0] - 2, hF[1] + 2], [hF[0] + 12, hF[1] + 4], [hF[0] + 10, hF[1] + 22], [hF[0] - 6, hF[1] + 19]], (x, y) => ramp("#e8dcc0")[x > hF[0] + 5 ? 1 : 2], 20);
+      poly(F, [[hF[0] - 1, hF[1] + 1], [hF[0] + 4, hF[1] + 2], [hF[0] + 3, hF[1] + 6], [hF[0] - 2, hF[1] + 5]], () => u32("#c9b896"), 21);
+    } else if (prop === "key") {
+      blob(F, [hF[0] + 2, hF[1] - 7], 1.8, 3.4, () => u32("#ffd23a"), 20);
+    } else if (prop === "stack") {
+      for (let i = 0; i < 6; i++) poly(F, [[hF[0] - 12, hF[1] - 3 - i * 3], [hF[0] + 8, hF[1] - 3 - i * 3], [hF[0] + 8, hF[1] - i * 3], [hF[0] - 12, hF[1] - i * 3]], (x, y) => (Math.floor(y) === Math.floor(hF[1] - 2 - i * 3) && x > hF[0] - 9 && x < hF[0] + 5 && (Math.floor(x) % 3) ? u32("#1c1c22") : u32(i % 2 ? "#ffffff" : "#ecebe6")), 20 + i);
     }
-    return b.toCanvas();
+    return F.finish();
   }
   // every frame of a fighter, baked once
   const SPR = {};
-  function sprites(id) {
-    if (SPR[id]) return SPR[id];
+  function sprites(id, alt) {
+    const key = id + (alt ? ":alt" : "");
+    if (SPR[key]) return SPR[key];
     const S = {};
-    for (const [k, list] of Object.entries(POSES)) S[k] = list.map((p) => drawFighter(id, p));
-    S.special = SPECIAL_POSES[id].map((p) => drawFighter(id, p, id === "coz" ? "camera" : null));
-    return (SPR[id] = S);
+    for (const [k, list] of Object.entries(POSES)) S[k] = list.map((p) => drawFighter(id, p, k === "intro" && id === "ion" ? "stack" : null, alt));
+    S.special = SPECIAL_POSES[id].map((p) => drawFighter(id, p, SPECIAL_PROP[id] || null, alt));
+    return (SPR[key] = S);
   }
 
   // ===================== 4. the stage: the Two Minutes shop, at dusk =====================
@@ -776,9 +1430,20 @@
     daniel: { id: "daniel", name: "DANIEL", role: "FOUNDER - CREATIVE ARCHITECT", special: "COLOR WAVE", line: "PAINTS THE ROOM IN ONE MOVE", speed: 1, power: 1 },
     cristian: { id: "cristian", name: "CRISTIAN", role: "PARTNER - CEO", special: "DEADLINE DASH", line: "ALWAYS ONE STEP AHEAD", speed: 1.08, power: 0.95 },
     coz: { id: "coz", name: "COZ", role: "CALM ON SET", special: "FLASH STUN", line: "FINDS THE ANGLE, THEN THE FLASH", speed: 0.96, power: 1.05 },
-    ion: { id: "ion", name: "I O N", role: "FOUNDER OF TWO MINUTES", special: "ESPRESSO SHOT", line: "TWO MINUTES IS ALL HE NEEDS", speed: 1, power: 1 }
+    ion: { id: "ion", name: "I O N", role: "FOUNDER OF TWO MINUTES", special: "ESPRESSO SHOT", line: "TWO MINUTES IS ALL HE NEEDS", speed: 1, power: 1 },
+    // beta 3.11 (Daniel): the guests (Iulica is on the crew page too)
+    cristache: { id: "cristache", name: "CRISTACHE", role: "SPECIAL GUEST", special: "HIGH FIVE", line: "ALWAYS REACHING HIGHER", speed: 1.06, power: 1 },
+    steve: { id: "steve", name: "STEVE", role: "SPECIAL GUEST - OVER TWO METRES", special: "BEAR HUG", line: "TWO METRES OF GOOD VIBES", speed: 0.86, power: 1.15 },
+    rares: { id: "rares", name: "RARE\u0218", role: "SPECIAL GUEST", special: "KEY BOOMERANG", line: "NEVER LOSES HIS KEYS", speed: 1, power: 1 },
+    dony: { id: "dony", name: "DONY", role: "ROASTS THE COFFEE", special: "BEAN BARRAGE", line: "SMALL, QUICK, FRESHLY ROASTED", speed: 1.12, power: 0.92 },
+    iulica: { id: "iulica", name: "IULIC\u0102", role: "CREW", special: "TOTE SWING", line: "BRINGS THE ENERGY INTO THE FRAME", speed: 1.02, power: 1.02 },
+    maria: { id: "maria", name: "MARIA", role: "SPECIAL GUEST", special: "CURL CYCLONE", line: "SPINS FIRST, ASKS LATER", speed: 1.1, power: 0.92 }
   };
-  const CREW = ["daniel", "cristian", "coz"];
+  // the select grid: a small config. Both sides pick from it (Player 1, then the CPU); "random" is the "?" tile.
+  // I O N stays the CPU's first choice
+  const GRID = { cols: 5, rows: 2, order: ["daniel", "cristian", "coz", "iulica", "ion", "dony", "maria", "cristache", "steve", "rares"] };
+  const FIGHTERS = GRID.order.filter((id) => id !== "random");
+  const pickRandom = () => FIGHTERS[Math.floor(Math.random() * FIGHTERS.length)];
 
   // ===================== 6. screens: title, select, VS, the HUD =====================
   const BG_DARK = "#140f22";
@@ -805,45 +1470,64 @@
     if (Math.floor(t * 2) % 2 === 0) text(ctx, TOUCH ? "TAP TO START" : "PRESS ENTER", W / 2, 162, "#ffffff", { sc: 1, al: "c" });
     text(ctx, "A TWO MIN LAB MINI-GAME BY CROMATIC STUDIOS", W / 2, 196, "#a99cc8", { al: "c" });
   }
-  function tile(ctx, x, y, id, on, t, locked) {
-    ctx.fillStyle = OUT; ctx.fillRect(x - 3, y - 3, 70, 70);
-    ctx.fillStyle = on ? (Math.floor(t * 6) % 2 ? "#fff27a" : "#fed012") : locked ? "#d8342a" : "#5a4e7a"; ctx.fillRect(x - 2, y - 2, 68, 68);
-    ctx.fillStyle = on ? "#3a2f6a" : "#241d3d"; ctx.fillRect(x, y, 64, 64);
-    ctx.fillStyle = on ? "#4a3d86" : "#2d2550"; for (let i = 0; i < 64; i += 4) ctx.fillRect(x, y + i, 64, 2);
-    const p = portrait(id); if (p) ctx.drawImage(p, x, y);
+  // the grid's geometry, from GRID: tiles of 36 px faces (the middle of each 64 px portrait)
+  const TILE = 36, GAP = 5;
+  const tilePos = (i) => { const c = i % GRID.cols, r = Math.floor(i / GRID.cols), gw = GRID.cols * (TILE + 4) + (GRID.cols - 1) * GAP; return [Math.round(10 + (222 - gw) / 2) + c * (TILE + 4 + GAP) + 2, 34 + r * (TILE + 4 + GAP) + 2]; };
+  function face(ctx, id, x, y, size, t) {
+    ctx.fillStyle = "#241d3d"; ctx.fillRect(x, y, size, size);
+    ctx.fillStyle = "#2d2550"; for (let i = 0; i < size; i += 4) ctx.fillRect(x, y + i, size, 2);
+    if (id === "random") { text(ctx, "?", x + size / 2, y + size / 2 - (size > 40 ? 14 : 7), ["#ffffff", "#bfe9ff", "#7fd8ff", "#3a8fe0"], { sc: size > 40 ? 4 : 2, al: "c" }); return; }
+    const p = portrait(id); if (!p) return;
+    const fc = FACE_AT[id] || [14, 4];
+    if (size >= 64) ctx.drawImage(p, x, y); else ctx.drawImage(p, fc[0], fc[1], size, size, x, y, size, size);
   }
-  function drawSelect(ctx, t, sel) {
+  // where each face sits in its 64 px portrait (the tile shows 36 px of it)
+  const FACE_AT = { dony: [14, 10], ion: [14, 12], rares: [12, 14], iulica: [14, 12], maria: [2, 4], cristache: [16, 6], steve: [16, 8], cristian: [14, 2], coz: [12, 4] };
+  const P1C = "#fed012", CPUC = "#ff5236";
+  function frame(ctx, x, y, w, col) { ctx.fillStyle = OUT; ctx.fillRect(x - 3, y - 3, w + 6, w + 6); ctx.fillStyle = col; ctx.fillRect(x - 2, y - 2, w + 4, w + 4); }
+  // S: { phase: "p1" | "cpu", p1, cpu } (indexes in GRID.order)
+  function drawSelect(ctx, t, S) {
     stripes(ctx, t, "#1b1438", "#211a44");
-    text(ctx, "CHOOSE YOUR FIGHTER", W / 2, 10, GOLD, { sc: 2, sh: 1, al: "c" });
-    for (let i = 0; i < 3; i++) { const x = 18 + i * 76, y = 40; tile(ctx, x, y, CREW[i], i === sel, t); text(ctx, ROSTER[CREW[i]].name, x + 32, y + 70, i === sel ? "#fed012" : "#ffffff", { al: "c" }); }
-    // the cursor: "1P" over the chosen tile
-    const cx = 18 + sel * 76 + 32; text(ctx, "1P", cx, 28 + Math.round(Math.sin(t * 8)), "#fed012", { al: "c" });
-    const R = ROSTER[CREW[sel]];
-    text(ctx, R.role, 18, 128, "#a99cc8");
-    text(ctx, "SPECIAL: " + R.special, 18, 142, "#ffffff");
-    text(ctx, R.line, 18, 154, "#7fd8ff");
-    // the opponent
-    text(ctx, "VS", 268, 64, RED, { sc: 3, sh: 1, al: "c" });
-    tile(ctx, 302, 40, "ion", false, t, true);
-    text(ctx, "I O N", 334, 110, "#ff8a6e", { al: "c" });
-    text(ctx, "CPU", 334, 122, "#a99cc8", { al: "c" });
-    text(ctx, TOUCH ? "TAP A FIGHTER, TAP AGAIN TO FIGHT" : "< > TO CHOOSE - ENTER OR J TO FIGHT", W / 2, 178, "#ffffff", { al: "c" });
-    text(ctx, TOUCH ? "" : "ARROWS/WASD MOVE - J PUNCH - K KICK - L SPECIAL", W / 2, 194, "#a99cc8", { al: "c" });
+    text(ctx, S.phase === "p1" ? "CHOOSE YOUR FIGHTER" : "CHOOSE THE CPU", W / 2, 8, S.phase === "p1" ? GOLD : RED, { sc: 2, sh: 1, al: "c" });
+    const blink = Math.floor(t * 6) % 2;
+    GRID.order.forEach((id, i) => {
+      const [x, y] = tilePos(i), isP1 = i === S.p1, isCpu = i === S.cpu && S.phase === "cpu";
+      frame(ctx, x, y, TILE, isCpu ? (blink ? "#ff8a6e" : CPUC) : isP1 ? (S.phase === "p1" && blink ? "#fff27a" : P1C) : "#5a4e7a");
+      face(ctx, id, x, y, TILE, t);
+    });
+    // the cursors' tags
+    { const [x, y] = tilePos(S.p1); text(ctx, "1P", x + 2, y - 10 + (S.phase === "p1" ? Math.round(Math.sin(t * 8)) : 0), P1C, {}); }
+    if (S.phase === "cpu") { const [x, y] = tilePos(S.cpu); text(ctx, "CPU", x + TILE - 1, y - 10 + Math.round(Math.sin(t * 8)), CPUC, { al: "r" }); }
+    // the two sides, big
+    const id1 = GRID.order[S.p1], id2 = S.phase === "cpu" ? GRID.order[S.cpu] : null;
+    frame(ctx, 238, 34, 64, P1C); face(ctx, id1, 238, 34, 64, t);
+    frame(ctx, 310, 34, 64, CPUC); if (id2) face(ctx, id2, 310, 34, 64, t); else { ctx.fillStyle = "#241d3d"; ctx.fillRect(310, 34, 64, 64); text(ctx, "CPU", 342, 62, "#5a4e7a", { al: "c" }); }
+    text(ctx, "VS", 306, 104, RED, { sc: 1, al: "c" });
+    text(ctx, id1 === "random" ? "RANDOM" : ROSTER[id1].name, 270, 104, P1C, { al: "c" });
+    if (id2) text(ctx, id2 === "random" ? "RANDOM" : ROSTER[id2].name, 342, 104, CPUC, { al: "c" });
+    // what the cursor is on
+    const cur = S.phase === "p1" ? id1 : id2;
+    if (cur === "random") { text(ctx, "ANY FIGHTER, PICKED AT RANDOM", 12, 128, "#a99cc8"); text(ctx, "FEELING LUCKY?", 12, 142, "#ffffff"); }
+    else { const R = ROSTER[cur]; text(ctx, R.name + " - " + R.role, 12, 128, "#a99cc8"); text(ctx, "SPECIAL: " + R.special, 12, 142, "#ffffff"); text(ctx, R.line, 12, 154, "#7fd8ff"); }
+    const hint = S.phase === "p1" ? (TOUCH ? "TAP A FIGHTER, TAP AGAIN TO PICK" : "ARROWS TO CHOOSE - ENTER OR J TO PICK")
+      : (TOUCH ? "TAP THE CPU, TAP AGAIN TO FIGHT - TAP 1P TO GO BACK" : "ARROWS TO CHOOSE - ENTER OR J TO FIGHT - K BACK");
+    text(ctx, hint, W / 2, 176, "#ffffff", { al: "c" });
+    if (!TOUCH) text(ctx, "ARROWS/WASD MOVE - J PUNCH - K KICK - L SPECIAL", W / 2, 194, "#a99cc8", { al: "c" });
   }
-  function drawVS(ctx, t, me, k) {
+  function drawVS(ctx, t, me, k, cpu = "ion") {
     stripes(ctx, t * 3, "#120c24", "#1d1540");
     const slide = Math.min(1, k * 2.4), ease = 1 - Math.pow(1 - slide, 3);
     const lx = Math.round(-140 + (20 + 140) * ease), rx = Math.round(W + 12 - (W + 12 - (W - 148)) * ease);
     const big = (id, x, flip) => {
       const p = portrait(id); if (!p) return;
-      ctx.fillStyle = OUT; ctx.fillRect(x - 3, 37, 134, 134); ctx.fillStyle = id === "ion" ? "#d8342a" : "#fed012"; ctx.fillRect(x - 2, 38, 132, 132); ctx.fillStyle = "#241d3d"; ctx.fillRect(x, 40, 128, 128);
-      ctx.save(); if (flip) { ctx.translate(x + 128, 40); ctx.scale(-1, 1); ctx.drawImage(p, 0, 0, 128, 128); } else ctx.drawImage(p, x, 40, 128, 128); ctx.restore();
+      ctx.fillStyle = OUT; ctx.fillRect(x - 3, 37, 134, 134); ctx.fillStyle = flip ? "#d8342a" : "#fed012"; ctx.fillRect(x - 2, 38, 132, 132); ctx.fillStyle = "#241d3d"; ctx.fillRect(x, 40, 128, 128);
+      ctx.drawImage(p, x, 40, 128, 128);
     };
     big(me, lx, false);
-    big("ion", rx, false);
+    big(cpu, rx, true);
     if (k > 0.35) { const s = k < 0.45 ? 7 : 5; text(ctx, "VS", W / 2, 86 - (s - 5) * 4, RED, { sc: s, sh: 2, al: "c" }); }
     text(ctx, ROSTER[me].name, lx + 64, 180, GOLD, { sc: 2, sh: 1, al: "c" });
-    text(ctx, "I O N", rx + 64, 180, RED, { sc: 2, sh: 1, al: "c" });
+    text(ctx, ROSTER[cpu].name, rx + 64, 180, RED, { sc: 2, sh: 1, al: "c" });
     text(ctx, "STAGE: TWO MINUTES COFFEE SHOP", W / 2, 10, "#ffffff", { al: "c" });
     text(ctx, "STR. ARICESCU, BUCHAREST", W / 2, 21, "#a99cc8", { al: "c" });
   }
@@ -916,6 +1600,11 @@
     const notes = (list, type, dur, vol, gap) => list.forEach((f, i) => tone(type, f, f, dur, vol, i * gap));
     const SFX = {
       swing: () => hiss(2600, 0.8, 0.07, 0.07, 0, "highpass"),
+      rise: () => { tone("square", 300, 1300, 0.28, 0.09); hiss(2000, 0.8, 0.25, 0.25, 0, "bandpass", 5000); },
+      hug: () => { tone("triangle", 140, 55, 0.35, 0.3); hiss(500, 0.8, 0.3, 0.35, 0, "lowpass"); },
+      key: () => notes([1900, 2500, 1900, 2500], "triangle", 0.05, 0.07, 0.05),
+      beans: () => { for (let i = 0; i < 5; i++) hiss(3200 + i * 300, 3, 0.03, 0.22, i * 0.035, "bandpass"); tone("square", 520, 260, 0.12, 0.06); },
+      tote: () => { hiss(900, 0.8, 0.32, 0.4, 0, "bandpass", 200); tone("square", 200, 90, 0.25, 0.08); },
       hit: () => { hiss(900, 1.1, 0.12, 0.5); tone("square", 220, 70, 0.1, 0.16); },
       heavy: () => { hiss(600, 1, 0.2, 0.6); tone("square", 160, 45, 0.18, 0.2); tone("triangle", 90, 40, 0.25, 0.3); },
       block: () => { tone("square", 1100, 900, 0.05, 0.1); hiss(4200, 2, 0.06, 0.2, 0, "highpass"); },
@@ -977,40 +1666,52 @@
   // frame data at 60 steps a second: su start-up, ac active, rc recovery; box = [x0, y0, x1, y1] in front of the
   // fighter (y up negative from the feet); hs / bs = the stun on hit / on block; push = the knockback
   const ATK = {
-    punch: { su: 4, ac: 3, rc: 9, dmg: 6, box: [12, -76, 42, -58], hs: 15, bs: 9, push: 2.4, frames: "punch", sfx: "hit" },
-    kick: { su: 7, ac: 4, rc: 13, dmg: 9, box: [12, -66, 48, -46], hs: 19, bs: 11, push: 3.2, frames: "kick", sfx: "heavy" },
-    cpunch: { su: 4, ac: 3, rc: 8, dmg: 5, box: [12, -54, 40, -38], hs: 14, bs: 8, push: 2, frames: "cpunch", crouch: true, sfx: "hit" },
-    ckick: { su: 6, ac: 4, rc: 15, dmg: 8, box: [10, -16, 48, 0], hs: 18, bs: 10, push: 2.6, frames: "ckick", crouch: true, low: true, kd: true, sfx: "heavy" },
-    jpunch: { su: 3, ac: 10, rc: 0, dmg: 7, box: [10, -68, 40, -42], hs: 16, bs: 9, push: 2.2, frames: "jpunch", air: true, high: true, sfx: "hit" },
-    jkick: { su: 4, ac: 11, rc: 0, dmg: 9, box: [10, -60, 46, -30], hs: 18, bs: 10, push: 2.8, frames: "jkick", air: true, high: true, sfx: "heavy" }
+    // beta 3.11: more frames (fr: which drawing shows in the start-up, the hit and the recovery) and the longer reach
+    punch: { su: 5, ac: 3, rc: 10, dmg: 6, box: [16, -82, 54, -62], hs: 15, bs: 9, push: 2.4, frames: "punch", fr: [[0, 1], [2], [3]], sfx: "hit" },
+    kick: { su: 8, ac: 4, rc: 14, dmg: 9, box: [14, -74, 57, -50], hs: 19, bs: 11, push: 3.2, frames: "kick", fr: [[0, 1], [2], [3, 4]], sfx: "heavy" },
+    cpunch: { su: 4, ac: 3, rc: 8, dmg: 5, box: [14, -60, 52, -42], hs: 14, bs: 8, push: 2, frames: "cpunch", fr: [[0], [1], [0]], crouch: true, sfx: "hit" },
+    ckick: { su: 6, ac: 4, rc: 15, dmg: 8, box: [12, -16, 55, 0], hs: 18, bs: 10, push: 2.6, frames: "ckick", fr: [[0], [1], [0]], crouch: true, low: true, kd: true, sfx: "heavy" },
+    jpunch: { su: 3, ac: 10, rc: 0, dmg: 7, box: [12, -76, 50, -50], hs: 16, bs: 9, push: 2.2, frames: "jpunch", air: true, high: true, sfx: "hit" },
+    jkick: { su: 4, ac: 11, rc: 0, dmg: 9, box: [12, -64, 54, -34], hs: 18, bs: 10, push: 2.8, frames: "jkick", air: true, high: true, sfx: "heavy" }
   };
   const SPECIAL = {
     daniel: { su: 13, ac: 1, rc: 20, cool: 150, proj: "wave", dmg: 12, speed: 3.4, sfx: "wave", sp: true },
     ion: { su: 13, ac: 1, rc: 20, cool: 150, proj: "espresso", dmg: 11, speed: 3.8, sfx: "espresso", sp: true },
-    cristian: { su: 7, ac: 16, rc: 16, cool: 150, dash: 5.6, dmg: 13, box: [6, -76, 42, -34], hs: 22, bs: 14, push: 4, sfx: "dash", kd: true, sp: true, chip: 2 },
-    coz: { su: 10, ac: 6, rc: 16, cool: 170, flash: true, dmg: 6, box: [6, -98, 76, -20], hs: 0, bs: 12, push: 1.5, dizzy: 80, sfx: "flash", sp: true }
+    cristian: { su: 7, ac: 16, rc: 16, cool: 150, dash: 5.6, dmg: 13, box: [6, -82, 48, -34], hs: 22, bs: 14, push: 4, sfx: "dash", kd: true, sp: true, chip: 2 },
+    coz: { su: 10, ac: 6, rc: 16, cool: 170, flash: true, dmg: 6, box: [6, -104, 80, -20], hs: 0, bs: 12, push: 1.5, dizzy: 80, sfx: "flash", sp: true },
+    // beta 3.11: the guests. Maria spins in (both sides of her hit), Cristache goes up for a high five (it beats a
+    // jump), Steve's hug can't be blocked (but only reaches close and leaves him open), Rares's keys come back to
+    // him, Iulica swings the tote bag in a wide arc
+    maria: { su: 8, ac: 24, rc: 14, cool: 150, spin: true, dash: 3.6, dmg: 12, box: [-34, -82, 52, -36], hs: 20, bs: 12, push: 3.6, kd: true, sfx: "dash", sp: true, chip: 2, fr: [[0], [1, 2], [0]] },
+    cristache: { su: 5, ac: 16, rc: 14, cool: 150, rise: true, dmg: 13, box: [-4, -128, 36, -50], hs: 20, bs: 12, push: 3, kd: true, sfx: "rise", sp: true, chip: 2, armor: 10 },
+    steve: { su: 11, ac: 5, rc: 24, cool: 160, grab: true, dmg: 16, box: [8, -96, 42, -30], hs: 0, bs: 0, push: 4.5, kd: true, sfx: "hug", sp: true },
+    rares: { su: 12, ac: 1, rc: 18, cool: 160, proj: "key", dmg: 10, speed: 4.2, sfx: "key", sp: true },
+    dony: { su: 11, ac: 1, rc: 18, cool: 150, proj: "bean", beans: 3, dmg: 5, speed: 3.6, sfx: "beans", sp: true, hs: 12, bs: 8, push: 1.6 },
+    iulica: { su: 12, ac: 6, rc: 18, cool: 150, dmg: 13, box: [4, -116, 58, -30], hs: 22, bs: 14, push: 4.2, kd: true, sfx: "tote", sp: true, chip: 2 }
   };
   const GRAV = 0.34, JUMP_V = -6.8, ROUND_TIME = 60;
-  function fighter(id, cpu, x, face) {
+  function fighter(id, cpu, x, face, alt) {
     const R = ROSTER[id];
-    return { id, R, S: sprites(id), cpu, x, y: 0, vx: 0, vy: 0, face, hp: 100, trail: 100, st: "idle", t: 0, atk: null, atkHit: false, hs: 0, spCool: 40, spMax: SPECIAL[id].cool, inv: 0, walkT: 0, walkDir: 1, holdBack: false, holdDown: false, ai: { t: 30, plan: null, pt: 0, seen: 0 }, flashT: 0, dz: 0, landT: 0 };
+    return { id, R, S: sprites(id, alt), sc: LOOKS[id].build.sc || 1, armor: 0, cpu, x, y: 0, vx: 0, vy: 0, face, hp: 100, trail: 100, st: "idle", t: 0, atk: null, atkHit: false, hs: 0, spCool: 40, spMax: SPECIAL[id].cool, inv: 0, walkT: 0, walkDir: 1, holdBack: false, holdDown: false, ai: { t: 30, plan: null, pt: 0, seen: 0 }, flashT: 0, dz: 0, landT: 0 };
   }
   const onGround = (f) => f.y >= 0;
   const free = (f) => onGround(f) && (f.st === "idle" || f.st === "walk" || f.st === "crouch");
-  const hurt = (f) => { const top = f.st === "crouch" || (f.st === "atk" && f.atk?.crouch) || (f.st === "block" && f.crouchBlock) ? -58 : f.st === "down" ? -14 : -86; return [f.x - 12, f.y + top, f.x + 12, f.y - (onGround(f) ? 0 : 18)]; };
-  const boxOf = (f, b) => (f.face > 0 ? [f.x + b[0], f.y + b[1], f.x + b[2], f.y + b[3]] : [f.x - b[2], f.y + b[1], f.x - b[0], f.y + b[3]]);
+  const hurt = (f) => { const top = (f.st === "crouch" || (f.st === "atk" && f.atk?.crouch) || (f.st === "block" && f.crouchBlock) ? -64 : f.st === "down" ? -14 : -92) * f.sc, hw = 14 * f.sc; return [f.x - hw, f.y + top, f.x + hw, f.y - (onGround(f) ? 0 : 18)]; };
+  const boxOf = (f, b0) => { const b = b0.map((v) => v * f.sc); return f.face > 0 ? [f.x + b[0], f.y + b[1], f.x + b[2], f.y + b[3]] : [f.x - b[2], f.y + b[1], f.x - b[0], f.y + b[3]]; };
   const overlap = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
 
   let g = null; // the match
-  function newMatch(me) {
-    g = { scene: "vs", me, t: 0, round: 1, wins: [0, 0], phase: "intro", pt: 0, time: ROUND_TIME, f: [], proj: [], fx: [], hitstop: 0, shake: 0, flash: 0, camX: (STAGE_W - W) / 2, slow: 0, menu: 0, result: null, perfect: false };
+  function newMatch(me, cpu) {
+    g = { scene: "vs", me, cpu: cpu || "ion", t: 0, round: 1, wins: [0, 0], phase: "intro", pt: 0, time: ROUND_TIME, f: [], proj: [], fx: [], hitstop: 0, shake: 0, flash: 0, camX: (STAGE_W - W) / 2, slow: 0, menu: 0, result: null, perfect: false };
     resetRound();
     g.scene = "vs"; g.t = 0;
     SND.play("confirm");
   }
   function resetRound() {
-    g.f = [fighter(g.me, false, STAGE_W / 2 - 64, 1), fighter("ion", true, STAGE_W / 2 + 64, -1)];
-    g.proj = []; g.fx = []; g.phase = "intro"; g.pt = 0; g.time = ROUND_TIME; g.camX = (STAGE_W - W) / 2; g.hitstop = 0; g.shake = 0; g.flash = 0;
+    g.f = [fighter(g.me, false, STAGE_W / 2 - 64, 1), fighter(g.cpu, true, STAGE_W / 2 + 64, -1, g.cpu === g.me)];
+    g.proj = []; g.fx = [];
+    // I O N comes in with a stack of Two Minutes tees (round 1); then it waits on the pavement behind him
+    for (const f of g.f) if (f.id === "ion") { if (g.round === 1) f.st = "intro"; else g.fx.push({ k: "stack", x: f.x - f.face * 30, y: 0, t: 0, life: 1e9 }); } g.phase = "intro"; g.pt = 0; g.time = ROUND_TIME; g.camX = (STAGE_W - W) / 2; g.hitstop = 0; g.shake = 0; g.flash = 0;
   }
   const spark = (x, y, kind) => g.fx.push({ k: kind || "spark", x, y, t: 0, life: kind === "bspark" ? 8 : kind === "burst" ? 14 : 10 });
   function startAtk(f, name) {
@@ -1059,6 +1760,7 @@
       if (r < 0.4 && Math.abs(f.x - pr.x) > 46) ai.plan = { k: "jumpf", n: 1 };
       else if (r < 0.75) ai.plan = { k: "block", low: false, n: 40 };
     }
+    if (SPECIAL[f.id].rise && f.spCool <= 0 && free(f) && !onGround(o) && d < 80 && Math.random() < 0.08) { inp.sp = 1; return inp; }
     if (!onGround(f)) {
       if (!f.atk && d < 56 && f.vy > -2 && Math.random() < 0.3) inp.kp = 1;
       return inp;
@@ -1073,12 +1775,15 @@
     }
     if (!free(f) || ai.t > 0) return inp;
     ai.t = 14 + (Math.random() * 18 | 0) + (g.round === 1 ? 8 : 0);
-    const r = Math.random(), ready = f.spCool <= 0;
+    const r = Math.random(), ready = f.spCool <= 0, SP = SPECIAL[f.id], close = 66 * f.sc;
+    // beta 3.11: any fighter can be the CPU; each special is used where it works (from afar, mid range, up close)
+    const spAt = SP.proj ? d > 110 : SP.dash || SP.spin ? d > 50 && d < 150 : SP.grab ? d < 44 * f.sc : SP.rise ? d < 70 && (!onGround(o) || r < 0.5) : SP.flash ? d < 95 : d < 72 * f.sc;
+    if (ready && spAt && r < (SP.proj ? 0.35 : 0.3)) { inp.sp = 1; return inp; }
     if (d > 150) {
-      if (ready && r < 0.35) inp.sp = 1;
+      if (false) inp.sp = 1;
       else ai.plan = { k: "walk", dir: 1, n: 24 + (Math.random() * 24 | 0) };
-    } else if (d > 62) {
-      if (ready && r < 0.18) inp.sp = 1;
+    } else if (d > close) {
+      if (r < 0.2) ai.plan = { k: "wait", n: 8 };
       else if (r < 0.36) ai.plan = { k: "jumpf", n: 1 };
       else if (r < 0.82) ai.plan = { k: "walk", dir: 1, n: 14 + (Math.random() * 18 | 0) };
       else ai.plan = { k: "wait", n: 14 };
@@ -1086,7 +1791,6 @@
       if (r < 0.33) inp.pp = 1;
       else if (r < 0.56) inp.kp = 1;
       else if (r < 0.66) { inp.d = 1; inp.kp = 1; }
-      else if (r < 0.71 && ready) inp.sp = 1;
       else if (r < 0.8) ai.plan = { k: "walk", dir: -1, n: 16 };
       else if (r < 0.86) ai.plan = { k: "jumpb", n: 1 };
       else ai.plan = { k: "block", low: Math.random() < 0.4, n: 22 };
@@ -1098,6 +1802,7 @@
     f.t++;
     if (f.spCool > 0) f.spCool--;
     if (f.inv > 0) f.inv--;
+    if (f.armor > 0) f.armor--;
     if (f.trail > f.hp) f.trail = Math.max(f.hp, f.trail - (f.hs > 0 || f.st === "hit" ? 0 : 0.6));
     // attacks run their course
     if (f.atk) {
@@ -1105,11 +1810,14 @@
       if (t === 1) f.atkId = ++atkSeq;
       if (a.sp && t === a.su) {
         SND.play(a.sfx);
-        if (a.proj) g.proj.push({ k: a.proj, x: f.x + f.face * 30, y: f.y - (a.proj === "wave" ? 62 : 70), vx: a.speed * f.face, owner: f, dmg: a.dmg, t: 0 });
-        if (a.flash) { g.flash = 10; spark(f.x + f.face * 28, f.y - 76, "flash"); }
+        if (a.beans) for (let i = 0; i < a.beans; i++) g.proj.push({ k: "bean", x: f.x + f.face * 26, y: f.y - 58 * f.sc, vx: (a.speed + i * 0.5) * f.face, vy: -1.6 + i * 1.1, owner: f, dmg: a.dmg, t: 0, i });
+        else if (a.proj) g.proj.push({ k: a.proj, x: f.x + f.face * 30, y: f.y - (a.proj === "wave" ? 62 : 70), vx: a.speed * f.face, owner: f, dmg: a.dmg, t: 0 });
+        if (a.flash) { g.flash = 10; spark(f.x + f.face * 28, f.y - 80, "flash"); }
+        if (a.rise) { f.vy = -7.8; f.vx = 1.5 * f.face; f.y = Math.min(f.y, -1); }
+        if (a.armor) f.armor = a.armor;
       }
       if (a.dash) { if (t >= a.su && t < a.su + a.ac && !f.atkHit) f.vx = a.dash * f.face; else f.vx *= 0.7; if (t % 3 === 0 && t >= a.su && t < a.su + a.ac) g.fx.push({ k: "ghost", x: f.x, y: f.y, face: f.face, img: f.S.special[1], t: 0, life: 10 }); }
-      if (!a.air && t >= a.su + a.ac + a.rc) { f.atk = null; f.st = a.crouch ? "crouch" : "idle"; f.vx = 0; }
+      if (!a.air && t >= a.su + a.ac + a.rc && onGround(f)) { f.atk = null; f.st = a.crouch ? "crouch" : "idle"; f.vx = 0; }
       if (a.air && t >= a.su + a.ac) f.atkDone = true;
     }
     // stuns
@@ -1126,6 +1834,7 @@
         f.y = 0; f.vy = 0;
         if (f.st === "fall") { f.st = "down"; f.t = 0; f.vx = 0; g.shake = Math.max(g.shake, 3); SND.play("land"); spark(f.x - f.face * 18, -2, "dust"); }
         else if (f.st === "jump") { f.st = "idle"; f.atk = null; f.atkDone = false; f.vx = 0; SND.play("land"); }
+        else if (f.st === "atk" && f.atk?.rise) { f.vx = 0; f.t = Math.max(f.t, f.atk.su + f.atk.ac); SND.play("land"); }
         else if (f.st === "hit") f.vx = 0;
       }
     }
@@ -1135,8 +1844,9 @@
   }
   const canBlock = (d) => onGround(d) && d.holdBack && (d.st === "idle" || d.st === "walk" || d.st === "crouch" || d.st === "block");
   function land(a, d, def, px, py, proj) {
-    if (d.st === "down" || d.inv > 0 || (d.st === "fall" && d.hp <= 0)) return false;
-    const blocked = canBlock(d) && !(def.low && !d.holdDown) && !(def.high && d.holdDown);
+    if (d.st === "down" || d.inv > 0 || d.armor > 0 || (d.st === "fall" && d.hp <= 0)) return false;
+    if (def.grab && !onGround(d)) return false; // a hug needs both feet on the ground
+    const blocked = !def.grab && canBlock(d) && !(def.low && !d.holdDown) && !(def.high && d.holdDown);
     const away = proj ? Math.sign(proj.vx) : (d.x >= a.x ? 1 : -1);
     if (blocked) {
       d.st = "block"; d.crouchBlock = d.holdDown; d.t = 0; d.hs = def.bs; d.vx = away * def.push * 0.9;
@@ -1148,6 +1858,7 @@
     d.hp = Math.max(0, d.hp - dmg); d.t = 0; d.atk = null; d.atkDone = false;
     if (d.hp <= 0) { d.st = "fall"; d.vy = -4.2; d.vx = away * 2.4; d.y = Math.min(d.y, -1); }
     else if (def.dizzy && onGround(d)) { d.st = "dizzy"; d.dz = def.dizzy; d.vx = away * 1; SND.play("dizzy"); }
+    else if (def.grab) { d.st = "fall"; d.vy = -5; d.vx = away * 3.4; d.y = Math.min(d.y, -1); g.hitstop = 14; g.shake = 6; }
     else if (def.kd || !onGround(d)) { d.st = "fall"; d.vy = -3.4; d.vx = away * 2; d.y = Math.min(d.y, -1); }
     else { d.st = "hit"; d.hs = def.hs; d.vx = away * def.push; }
     spark(px, py, dmg >= 9 ? "burst" : "spark"); SND.play(def.sfx === "hit" ? "hit" : "heavy");
@@ -1177,14 +1888,17 @@
     // the projectiles
     for (const p of g.proj) {
       p.x += p.vx; p.t++;
+      if (p.vy !== undefined) { p.y += p.vy; p.vy += 0.07; if (p.y > -3) { p.dead = true; spark(p.x, -3, "dust"); continue; } }
+      if (p.k === "key") { if (!p.back && p.t > 32) { p.back = true; p.vx = -p.vx; } if (p.back && Math.abs(p.x - p.owner.x) < 16) { p.dead = true; continue; } }
       const o = p.owner === a ? b : a, hu = hurt(o), pb = [p.x - 9, p.y - 9, p.x + 9, p.y + 9];
       if (!p.dead && overlap(pb, hu) && o.st !== "down") { if (land(p.owner, o, Object.assign({ hs: 20, bs: 12, push: 2.6, sfx: "heavy", sp: true }, SPECIAL[p.owner.id]), p.x, p.y, p)) p.dead = true; }
       if (p.x < g.camX - 40 || p.x > g.camX + W + 40) p.dead = true;
     }
-    if (g.proj.length === 2 && !g.proj[0].dead && !g.proj[1].dead && Math.abs(g.proj[0].x - g.proj[1].x) < 14) { g.proj.forEach((p) => (p.dead = true)); spark((g.proj[0].x + g.proj[1].x) / 2, g.proj[0].y, "burst"); SND.play("block"); }
+    for (const p of g.proj) for (const q of g.proj) if (p !== q && p.owner !== q.owner && !p.dead && !q.dead && Math.abs(p.x - q.x) < 14 && Math.abs(p.y - q.y) < 16) { p.dead = q.dead = true; spark((p.x + q.x) / 2, p.y, "burst"); SND.play("block"); }
     g.proj = g.proj.filter((p) => !p.dead);
     // bodies don't overlap; both stay on screen
-    if (Math.abs(a.x - b.x) < 26 && Math.abs(a.y - b.y) < 70 && a.st !== "down" && b.st !== "down") { const push = (26 - Math.abs(a.x - b.x)) / 2, s = a.x <= b.x ? -1 : 1; a.x += s * push; b.x -= s * push; }
+    const pbw = 28 * Math.max(a.sc, b.sc);
+    if (Math.abs(a.x - b.x) < pbw && Math.abs(a.y - b.y) < 70 && a.st !== "down" && b.st !== "down") { const push = (pbw - Math.abs(a.x - b.x)) / 2, s = a.x <= b.x ? -1 : 1; a.x += s * push; b.x -= s * push; }
     for (const f of g.f) f.x = clamp(f.x, Math.max(18, g.camX + 18), Math.min(STAGE_W - 18, g.camX + W - 18));
     const goal = clamp((a.x + b.x) / 2 - W / 2, 0, STAGE_W - W); g.camX += (goal - g.camX) * 0.18;
   }
@@ -1193,6 +1907,7 @@
     const [a, b] = g.f;
     if (g.phase === "intro") {
       if (g.pt === 1) { SND.play("round"); SND.music("fight"); }
+      if (g.pt === 64) for (const f of g.f) if (f.st === "intro") { f.st = "idle"; f.t = 0; g.fx.push({ k: "stack", x: f.x - f.face * 30, y: 0, t: 0, life: 1e9 }); }
       if (g.pt === 64) SND.play("fight");
       if (g.pt >= 104) { g.phase = "fight"; g.pt = 0; }
     } else if (g.phase === "fight") {
@@ -1223,10 +1938,12 @@
   function frameOf(f) {
     const S = f.S, t = f.t;
     if (f.st === "atk" || (f.atk && !onGround(f))) {
-      const a = f.atk;
-      if (a.sp) return t < a.su ? S.special[0] : S.special[1];
-      const fr = S[a.frames]; if (fr.length === 1) return fr[0];
-      return t < a.su ? fr[0] : t < a.su + a.ac ? fr[1] : fr[2];
+      const a = f.atk, list = a.sp ? S.special : S[a.frames];
+      if (list.length === 1 || (!a.fr && a.air)) return list[0];
+      const fr = a.fr || [[0], [1], [list.length - 1]], ph = t < a.su ? 0 : t < a.su + a.ac ? 1 : 2, ids = fr[ph];
+      if (a.spin && ph === 1) return list[ids[(t >> 3) & 1]];
+      const start = ph === 0 ? 0 : ph === 1 ? a.su : a.su + a.ac, len = ph === 0 ? a.su : ph === 1 ? a.ac : a.rc;
+      return list[Math.min(list.length - 1, ids[Math.min(ids.length - 1, Math.floor(((t - start) / Math.max(1, len)) * ids.length))])];
     }
     switch (f.st) {
       case "walk": { const n = S.walk.length, i = ((Math.floor(f.walkT / 6) % n) + n) % n; return S.walk[i]; }
@@ -1238,6 +1955,7 @@
       case "fall": return S.fall[0];
       case "down": return S.down[0];
       case "win": return S.win[Math.floor(t / 14) % 2];
+      case "intro": return S.intro[0];
       default: return S.idle[Math.floor(t / 10) % 4];
     }
   }
@@ -1257,6 +1975,20 @@
       }
       ctx.fillStyle = "#ffffff"; ctx.fillRect(x + d * 1, y - 3, 1, 6);
       for (let i = 0; i < 4; i++) { ctx.fillStyle = C[(i + (p.t >> 2)) % 3]; ctx.fillRect(x - d * (14 + i * 5) - 1, y + ((i * 7 + p.t) % 15) - 7, 2, 2); }
+    } else if (p.k === "bean") {
+      // a roasted coffee bean, turning, with a little smoke
+      const ph = Math.floor((p.t + p.i * 2) / 3) % 2;
+      ctx.fillStyle = OUT; ctx.fillRect(x - 3 - ph, y - 3 + ph, 6 + ph * 2, 6 - ph * 2); ctx.fillStyle = "#6b3f22"; ctx.fillRect(x - 2 - ph, y - 2 + ph, 4 + ph * 2, 4 - ph * 2);
+      ctx.fillStyle = "#2a160c"; if (ph) ctx.fillRect(x - 2, y, 4, 1); else ctx.fillRect(x, y - 2, 1, 4); ctx.fillStyle = "#a8683a"; ctx.fillRect(x - 2 - ph, y - 2 + ph, 1, 1);
+      ctx.fillStyle = "rgba(220,220,230,.5)"; ctx.fillRect(x - Math.sign(p.vx) * 6, y - 3 - (p.t % 4), 2, 2);
+    } else if (p.k === "key") {
+      // Rares's keys: the yellow tag and two keys on a ring, spinning
+      const ph = Math.floor(p.t / 3) % 4, wv = ph % 2 ? 4 : 7, hv = ph % 2 ? 9 : 5;
+      ctx.fillStyle = OUT; ctx.fillRect(x - wv / 2 - 1, y - hv / 2 - 1, wv + 2, hv + 2);
+      ctx.fillStyle = "#ffd23a"; ctx.fillRect(x - wv / 2, y - hv / 2, wv, hv); ctx.fillStyle = "#fff2a0"; ctx.fillRect(x - wv / 2, y - hv / 2, wv, 1);
+      const kx = x + (ph < 2 ? 5 : -6), ky = y + (ph % 3 ? 3 : -3);
+      ctx.fillStyle = OUT; ctx.fillRect(kx - 1, ky - 2, 5, 4); ctx.fillStyle = "#c9ccd4"; ctx.fillRect(kx, ky - 1, 3, 2); ctx.fillRect(kx + 3, ky, 2, 1);
+      ctx.fillStyle = "rgba(255,255,255,.6)"; for (let i = 1; i < 4; i++) ctx.fillRect(x - Math.sign(p.vx) * i * 5, y + ((i + p.t) % 3) - 1, 2, 1);
     } else {
       // the espresso: a little white cup, coffee in it, flying with its steam
       const tilt = Math.floor(p.t / 4) % 2;
@@ -1272,6 +2004,10 @@
   function drawFx(ctx, e, cx) {
     const x = Math.round(e.x - cx), y = Math.round(e.y + FLOOR), k = e.t / e.life;
     if (e.k === "ghost") { ctx.globalAlpha = 0.35 * (1 - k); drawSprite(ctx, e.img, e.x - cx, e.y + FLOOR, e.face); ctx.globalAlpha = 1; return; }
+    if (e.k === "stack") { // the Two Minutes tees I O N brought, folded, on the pavement
+      for (let i = 0; i < 6; i++) { const yy = y - 3 - i * 3; ctx.fillStyle = OUT; ctx.fillRect(x - 11, yy - 1, 22, 4); ctx.fillStyle = i % 2 ? "#ffffff" : "#ecebe6"; ctx.fillRect(x - 10, yy, 20, 3); ctx.fillStyle = "#1c1c22"; for (let q = 0; q < 14; q += 3) ctx.fillRect(x - 8 + q, yy + 1, 2, 1); }
+      return;
+    }
     if (e.k === "dust") { ctx.fillStyle = "rgba(220,210,240," + (0.7 * (1 - k)) + ")"; for (let i = 0; i < 5; i++) ctx.fillRect(x - 10 + i * 5, y - 2 - Math.round(k * 6) - (i % 2) * 2, 3, 2); return; }
     if (e.k === "flash") { const r = Math.round(10 + k * 28); ctx.fillStyle = "rgba(255,255,255," + (1 - k) + ")"; for (let a = 0; a < 12; a++) { const an = (a / 12) * Math.PI * 2; ctx.fillRect(x + Math.round(Math.cos(an) * r) - 1, y + Math.round(Math.sin(an) * r * 0.8) - 1, 3, 3); } ctx.fillRect(x - 6, y - 6, 12, 12); return; }
     const col = e.k === "bspark" ? ["#ffffff", "#7fd8ff"] : ["#ffffff", "#ffe14a", "#ff9d14"], n = e.k === "burst" ? 10 : 8, r = (e.k === "burst" ? 6 : 4) + Math.round(k * (e.k === "burst" ? 16 : 10));
@@ -1291,17 +2027,18 @@
     ctx.save(); ctx.translate(0, sy);
     // shadows
     for (const f of g.f) { const w = Math.round(30 - Math.min(16, -f.y / 6)), x = Math.round(f.x - cx); ctx.fillStyle = "rgba(10,6,24,.45)"; ctx.fillRect(x - w / 2, FLOOR - 2, w, 3); ctx.fillRect(x - w / 2 + 3, FLOOR - 3, w - 6, 5); }
-    for (const e of g.fx) if (e.k === "ghost") drawFx(ctx, e, cx);
+    for (const e of g.fx) if (e.k === "ghost" || e.k === "stack") drawFx(ctx, e, cx);
     // the one attacking is drawn in front
     const order = g.f[0].st === "atk" ? [g.f[1], g.f[0]] : [g.f[0], g.f[1]];
     for (const f of order) {
       const jit = (f.st === "hit" || f.st === "block") && g.hitstop > 0 ? (g.hitstop % 2 ? 1 : -1) : 0;
       if (f.inv > 0 && f.inv % 4 < 2 && f.hp > 0) continue;
-      drawSprite(ctx, frameOf(f), f.x - cx + jit, FLOOR + f.y, f.face);
+      const spin = f.atk?.spin && f.t >= f.atk.su && f.t < f.atk.su + f.atk.ac && (f.t >> 2) & 1 ? -1 : 1; // beta 3.11: Maria turns round
+      drawSprite(ctx, frameOf(f), f.x - cx + jit, FLOOR + f.y, f.face * spin);
       if (f.st === "dizzy") for (let i = 0; i < 3; i++) { const an = t * 5 + (i * Math.PI * 2) / 3, x = Math.round(f.x - cx + Math.cos(an) * 12), y = Math.round(FLOOR + f.y - 92 + Math.sin(an) * 3); ctx.fillStyle = OUT; ctx.fillRect(x - 2, y - 2, 5, 5); ctx.fillStyle = i === 1 ? "#ffffff" : "#ffe14a"; ctx.fillRect(x - 1, y - 1, 3, 3); }
     }
     for (const p of g.proj) drawProj(ctx, p, cx);
-    for (const e of g.fx) if (e.k !== "ghost") drawFx(ctx, e, cx);
+    for (const e of g.fx) if (e.k !== "ghost" && e.k !== "stack") drawFx(ctx, e, cx);
     ctx.restore();
     if (g.flash > 0) { ctx.fillStyle = "rgba(255,255,255," + Math.min(0.75, g.flash / 10) + ")"; ctx.fillRect(0, 0, W, H); }
     drawHUD(ctx, g, t);
@@ -1313,7 +2050,7 @@
       else banner(ctx, "FIGHT!", RED, g.pt < 70 ? 7 : 6, 80);
     } else if (g.phase === "ko" && g.pt < 150) banner(ctx, "K.O.", RED, g.pt < 8 ? 9 : 7, 72);
     else if (g.phase === "time" && g.pt < 150) banner(ctx, g.f[0].hp === g.f[1].hp ? "DRAW" : "TIME", GOLD, 6, 78);
-    else if (g.phase === "match") { banner(ctx, g.result === "win" ? "YOU WIN" : "I O N WINS", g.result === "win" ? GOLD : RED, 5, 70); if (g.perfect && g.result === "win") text(ctx, "PERFECT!", W / 2, 112, "#ffffff", { sc: 2, al: "c" }); }
+    else if (g.phase === "match") { banner(ctx, g.result === "win" ? "YOU WIN" : ROSTER[g.cpu].name + " WINS", g.result === "win" ? GOLD : RED, ROSTER[g.cpu].name.length > 6 && g.result !== "win" ? 4 : 5, 70); if (g.perfect && g.result === "win") text(ctx, "PERFECT!", W / 2, 112, "#ffffff", { sc: 2, al: "c" }); }
     if ((g.phase === "ko" || g.phase === "time") && g.pt > 150 && g.pt < 220) { const [a, b] = g.f; if (a.hp !== b.hp) banner(ctx, (a.hp > b.hp ? a : b).R.name + " WINS THE ROUND", "#ffffff", 2, 86); }
     if (paused) { ctx.fillStyle = "rgba(14,10,26,.7)"; ctx.fillRect(0, 0, W, H); banner(ctx, "PAUSE", GOLD, 5, 74); text(ctx, TOUCH ? "TAP TO PLAY ON" : "P TO PLAY ON - ESC FOR THE MAP", W / 2, 128, "#ffffff", { al: "c" }); hit(0, 0, W, H, () => setPause(false)); }
   }
@@ -1322,12 +2059,12 @@
     ctx.drawImage(S.far, -60, 0); ctx.drawImage(S.mid, -96, 0);
     ctx.fillStyle = "rgba(14,10,26,.86)"; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = "rgba(29,21,64,.9)"; ctx.fillRect(180, 22, 180, 172);
-    const win = g.result === "win", id = win ? g.me : "ion", p = portrait(id);
+    const win = g.result === "win", id = win ? g.me : g.cpu, p = portrait(id), cpuN = ROSTER[g.cpu].name;
     ctx.fillStyle = OUT; ctx.fillRect(25, 37, 134, 134); ctx.fillStyle = win ? "#fed012" : "#d8342a"; ctx.fillRect(26, 38, 132, 132); ctx.fillStyle = "#241d3d"; ctx.fillRect(28, 40, 128, 128);
     if (p) ctx.drawImage(p, 28, 40, 128, 128);
-    text(ctx, win ? "YOU WIN" : "I O N WINS", 270, 34, win ? GOLD : RED, { sc: 3, sh: 1, al: "c" });
-    text(ctx, win ? "THE COFFEE IS ON I O N." : "TWO MINUTES WERE ENOUGH.", 270, 64, "#ffffff", { al: "c" });
-    text(ctx, (win ? ROSTER[g.me].name : "I O N") + " " + g.wins[win ? 0 : 1] + " - " + g.wins[win ? 1 : 0], 270, 78, "#a99cc8", { al: "c" });
+    text(ctx, win ? "YOU WIN" : cpuN + " WINS", 270, 34, win ? GOLD : RED, { sc: (win ? 7 : cpuN.length + 5) > 11 ? 2 : 3, sh: 1, al: "c" });
+    text(ctx, win ? "THE COFFEE IS ON " + cpuN + "." : g.cpu === "ion" ? "TWO MINUTES WERE ENOUGH." : "ONE MORE COFFEE, ONE MORE GO.", 270, 64, "#ffffff", { al: "c" });
+    text(ctx, (win ? ROSTER[g.me].name : cpuN) + " " + g.wins[win ? 0 : 1] + " - " + g.wins[win ? 1 : 0], 270, 78, "#a99cc8", { al: "c" });
     const items = ["REMATCH", "CHANGE FIGHTER", "BACK TO MAP"];
     items.forEach((s, i) => {
       const y = 104 + i * 22, on = g.menu === i, w = 150;
@@ -1338,13 +2075,13 @@
   }
   function pick(i) {
     SND.play("confirm");
-    if (i === 0) newMatch(g.me);
-    else if (i === 1) { scene = "select"; g = null; SND.music("menu"); }
+    if (i === 0) newMatch(g.me, g.cpu);
+    else if (i === 1) { scene = "select"; SEL.phase = "p1"; g = null; SND.music("menu"); }
     else backToMap();
   }
 
   // ===================== 10. the page: canvas, keys, touch, the loop =====================
-  let root = null, cv = null, cx2 = null, scene = "title", sel = 0, sceneT = 0, paused = false, hits = [], stats = { fps: 0, frames: 0, t0: 0 };
+  let root = null, cv = null, cx2 = null, scene = "title", sceneT = 0, paused = false, hits = [], stats = { fps: 0, frames: 0, t0: 0 };
   const hit = (x, y, w, h, fn) => hits.push({ x, y, w, h, fn });
   const KEYMAP = { ArrowLeft: "l", KeyA: "l", ArrowRight: "r", KeyD: "r", ArrowUp: "u", KeyW: "u", ArrowDown: "d", KeyS: "d", KeyJ: "p", KeyZ: "p", KeyK: "k", KeyX: "k", KeyL: "s", KeyC: "s", Enter: "ok", Space: "ok" };
   const held = { l: 0, r: 0, u: 0, d: 0, p: 0, k: 0, s: 0, ok: 0 }, pressed = new Set();
@@ -1356,13 +2093,22 @@
     location.href = "/?map";
   }
   function setPause(v) { if (scene !== "game" || !g || g.scene !== "fight" || g.phase === "match") v = false; if (paused === v) return; paused = v; SND.play("pause"); if (paused) for (const k in held) held[k] = 0; }
+  // the select screen: Player 1 picks, then picks the CPU (I O N first), "?" is any fighter at random
+  const SEL = { phase: "p1", p1: 0, cpu: GRID.order.indexOf("ion") };
+  function selConfirm() {
+    if (SEL.phase === "p1") { SEL.phase = "cpu"; SND.play("confirm"); return; }
+    const a = GRID.order[SEL.p1], b = GRID.order[SEL.cpu];
+    newMatch(a === "random" ? pickRandom() : a, b === "random" ? pickRandom() : b); scene = "game";
+  }
   function menuInput() {
     const P = (k) => pressed.has(k);
     if (scene === "title") { if (P("ok") || P("p") || P("k")) { scene = "select"; sceneT = 0; SND.play("confirm"); SND.music("menu"); } return; }
     if (scene === "select") {
-      if (P("l")) { sel = (sel + 2) % 3; SND.play("select"); }
-      if (P("r")) { sel = (sel + 1) % 3; SND.play("select"); }
-      if (P("ok") || P("p")) { newMatch(CREW[sel]); scene = "game"; }
+      const k = SEL.phase === "p1" ? "p1" : "cpu", n = GRID.order.length, c = GRID.cols;
+      const move = (d) => { SEL[k] = (SEL[k] + d + n) % n; SND.play("select"); };
+      if (P("l")) move(-1); if (P("r")) move(1); if (P("u")) move(-c); if (P("d")) move(c);
+      if (P("ok") || P("p")) selConfirm();
+      else if (P("k") && SEL.phase === "cpu") { SEL.phase = "p1"; SND.play("pause"); }
       return;
     }
     if (g && g.scene === "result") {
@@ -1396,10 +2142,11 @@
     ctx.imageSmoothingEnabled = false;
     if (scene === "title") { drawTitle(ctx, t); hit(0, 0, W, H, () => pressed.add("ok")); }
     else if (scene === "select") {
-      drawSelect(ctx, t, sel);
-      for (let i = 0; i < 3; i++) hit(18 + i * 76 - 3, 37, 70, 82, () => { if (sel === i) pressed.add("ok"); else { sel = i; SND.play("select"); } });
+      drawSelect(ctx, t, SEL);
+      GRID.order.forEach((id, i) => { const [x, y] = tilePos(i); hit(x - 3, y - 3, TILE + 6, TILE + 6, () => { const k = SEL.phase === "p1" ? "p1" : "cpu"; if (SEL[k] === i) pressed.add("ok"); else { SEL[k] = i; SND.play("select"); } }); });
+      if (SEL.phase === "cpu") hit(235, 31, 70, 70, () => { SEL.phase = "p1"; SND.play("pause"); });
     } else if (g) {
-      if (g.scene === "vs") { drawVS(ctx, g.t, g.me, g.t); hit(0, 0, W, H, () => pressed.add("ok")); }
+      if (g.scene === "vs") { drawVS(ctx, g.t, g.me, g.t, g.cpu); hit(0, 0, W, H, () => pressed.add("ok")); }
       else if (g.scene === "fight") drawFight(ctx, t);
       else drawResult(ctx, t);
     }
@@ -1488,10 +2235,11 @@
     });
     addEventListener("resize", layout); layout();
     // everything is baked before the first frame (a few ms), then the loop: logic in fixed 1/60 s steps
-    for (const id of ["daniel", "cristian", "coz", "ion"]) { sprites(id); portrait(id); } stage();
+    for (const id of FIGHTERS) portrait(id); stage(); // the fighters themselves are baked when they are picked (the VS screen)
     let last = performance.now(), acc = 0;
     stats.t0 = last;
     const loop = (now) => {
+      stats.maxDt = Math.max(stats.maxDt || 0, now - last);
       acc += Math.min(0.1, (now - last) / 1000); last = now;
       let n = 0; while (acc >= 1 / 60 && n < 4) { step(); acc -= 1 / 60; n++; }
       if (n === 4) acc = 0;
@@ -1504,27 +2252,34 @@
     try { window.focus(); } catch {}
   }
   // for tests and the review: the state, the frame rate, a shortcut to the end of a round
-  const probe = () => ({ scene: scene === "game" && g ? g.scene : scene, phase: g?.phase, round: g?.round, wins: g?.wins.slice(), hp: g?.f.map((f) => f.hp), st: g?.f.map((f) => f.st), time: g ? Math.ceil(g.time) : null, me: g?.me, sel, menu: g?.menu, result: g?.result, paused, fps: stats.fps, sound: SND.on, proj: g ? g.proj.map((p) => p.k) : [] });
+  const probe = () => ({ scene: scene === "game" && g ? g.scene : scene, phase: g?.phase, round: g?.round, wins: g?.wins.slice(), hp: g?.f.map((f) => f.hp), st: g?.f.map((f) => f.st), time: g ? Math.ceil(g.time) : null, me: g?.me, cpu: g?.cpu, sel: SEL.p1, selCpu: SEL.cpu, selPhase: SEL.phase, menu: g?.menu, result: g?.result, paused, fps: stats.fps, maxDt: Math.round(stats.maxDt || 0), sound: SND.on, proj: g ? g.proj.map((p) => p.k) : [] });
+  const resetMaxDt = () => { stats.maxDt = 0; };
   const setHp = (a, b) => { if (g && g.f.length) { g.f[0].hp = g.f[0].trail = a; g.f[1].hp = g.f[1].trail = b; } };
 
   // the art on its own, for review: every sheet as a PNG data URL, scaled with crisp pixels
   function exportArt(scale = 5) {
     const up = (c, s = scale) => { const [o, x] = mk(c.width * s, c.height * s); x.drawImage(c, 0, 0, o.width, o.height); return o.toDataURL("image/png"); };
     const out = {};
-    for (const id of ["daniel", "cristian", "coz", "ion"]) {
-      const S = sprites(id), order = ["idle", "walk", "crouch", "jump", "punch", "kick", "cpunch", "ckick", "jpunch", "jkick", "block", "cblock", "special", "hit", "dizzy", "fall", "down", "win"];
+    for (const id of Object.keys(LOOKS)) {
+      const S = sprites(id), order = ["idle", "walk", "crouch", "jump", "punch", "kick", "cpunch", "ckick", "jpunch", "jkick", "block", "cblock", "special", "hit", "dizzy", "fall", "down", "win", "intro"];
       const frames = []; for (const k of order) for (const f of S[k]) frames.push([k, f]);
       const cols = 8, rows = Math.ceil(frames.length / cols), [c, x] = mk(cols * CW, rows * (CH + 10));
       x.fillStyle = "#2a2148"; x.fillRect(0, 0, c.width, c.height);
       frames.forEach(([k, f], i) => { const cx = (i % cols) * CW, cy = Math.floor(i / cols) * (CH + 10); x.fillStyle = "#332a58"; x.fillRect(cx + 1, cy + 1, CW - 2, CH - 2); x.drawImage(f, cx, cy); text(x, k.toUpperCase(), cx + 3, cy + CH + 1, "#a99cc8", { ol: null }); });
       out[`sprites-${id}`] = up(c, 4);
       const [ic, ix] = mk(CW, CH); ix.fillStyle = "#332a58"; ix.fillRect(0, 0, CW, CH); ix.drawImage(S.idle[0], 0, 0); out[`idle-${id}`] = up(ic, 6);
-      const [pc, px] = mk(64, 64); px.fillStyle = "#241d3d"; px.fillRect(0, 0, 64, 64); px.drawImage(portrait(id), 0, 0); out[`portrait-${id}`] = up(pc, 6);
+      const [pc, px] = mk(64, 64); px.fillStyle = "#241d3d"; px.fillRect(0, 0, 64, 64); px.drawImage(portrait(id), 0, 0); out[`portrait-${id}`] = up(pc, 6);    }
+    { // the line-up: everyone in the stance, then a punch and a kick at full stretch
+      const ids = Object.keys(LOOKS), [c, x] = mk(ids.length * 84 + 24, 3 * (CH - 8) + 12);
+      x.fillStyle = "#2a2148"; x.fillRect(0, 0, c.width, c.height);
+      ["idle", "punch", "kick"].forEach((k, r) => ids.forEach((id, i) => { const S = sprites(id), f = k === "idle" ? S.idle[0] : S[k][2]; x.drawImage(f, i * 84 + 12 - (OX - 42), r * (CH - 8) - 4); if (r === 0) text(x, ROSTER[id] ? ROSTER[id].name : id.toUpperCase(), i * 84 + 54, 4, "#ffffff", { al: "c" }); }));
+      out.lineup = up(c, 3);
     }
     const S = stage(); { const [c, x] = mk(STAGE_W, H); x.drawImage(S.far, 0, 0); x.drawImage(S.mid, 0, 0); drawCrowd(x, 0, 0, false); out.stage = up(c, 4); }
     const [c, x] = mk(W, H);
     drawTitle(x, 0); out.title = up(c);
-    drawSelect(x, 0.1, 0); out.select = up(c);
+    drawSelect(x, 0.1, { phase: "p1", p1: 0, cpu: 3 }); out.select = up(c);
+    drawSelect(x, 0.1, { phase: "cpu", p1: 5, cpu: 3 }); out["select-cpu"] = up(c);
     drawVS(x, 0, "daniel", 1); out.vs = up(c);
     { // the HUD over the stage, with the two fighters in their stance
       x.drawImage(S.far, -60, 0); x.drawImage(S.mid, -96, 0); drawCrowd(x, 96, 0, false);
@@ -1536,7 +2291,7 @@
     }
     return out;
   }
-  window.czGloves = Object.assign(window.czGloves || {}, { mount, exportArt, probe, setHp });
+  window.czGloves = Object.assign(window.czGloves || {}, { mount, exportArt, probe, setHp, resetMaxDt });
   const auto = () => { const el = document.getElementById("mg"); if (el && !root) mount(el); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", auto); else auto();
 })();

@@ -394,7 +394,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
 const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
 const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
 // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
-const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.1"; // beta 3.1 (Daniel): the Two Min Lab mini-game (/play/gloves/), on beta 3.01
+const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.11"; // beta 3.11 (Daniel): the mini-game, round 2 (ten fighters, both sides picked); beta 3.1 brought it (/play/gloves/), on beta 3.01
 const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
 const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
 const GS = {};

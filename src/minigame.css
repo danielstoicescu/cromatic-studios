@@ -24,13 +24,13 @@ html, body { margin: 0; height: 100%; background: #0b0816; overflow: hidden; ove
 .mg-dpad i.u::after { border-bottom-color: #a99cc8; margin-top: -9px; } .mg-dpad i.d::after { border-top-color: #a99cc8; margin-top: -1px; }
 .mg-dpad i.l::after { border-right-color: #a99cc8; margin-left: -9px; } .mg-dpad i.r::after { border-left-color: #a99cc8; margin-left: -1px; }
 .mg-dpad.on-u i.u, .mg-dpad.on-d i.d, .mg-dpad.on-l i.l, .mg-dpad.on-r i.r { background: #fed012; }
-.mg-btns { position: absolute; z-index: 2; width: 230px; height: 134px; }
+.mg-btns { position: absolute; z-index: 2; width: 234px; height: 140px; }
 .mg-b { position: absolute; width: 74px; height: 74px; border-radius: 50%; border: 0; padding: 0; touch-action: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
   box-shadow: inset 0 0 0 3px #170f19, inset 0 -6px 0 rgba(0,0,0,.25), 0 6px 14px -6px rgba(0,0,0,.6); }
 .mg-b.on { transform: translateY(2px) scale(.96); box-shadow: inset 0 0 0 3px #170f19, inset 0 3px 0 rgba(0,0,0,.28); filter: brightness(1.15); }
 .mg-b.b-p { left: 0; bottom: 0; background: #fed012; }
 .mg-b.b-k { left: 78px; bottom: 30px; background: #2fd6f0; }
-.mg-b.b-s { left: 156px; bottom: 60px; background: #f0389a; }
+.mg-b.b-s { left: 154px; bottom: 58px; width: 80px; height: 80px; background: #f0389a; }
 .mg-tips { position: absolute; left: 0; right: 0; top: calc(var(--cv-bottom) + 18px); display: flex; flex-direction: column; align-items: center; gap: 9px; pointer-events: none; opacity: .85; }
 .mg-tips[hidden] { display: none; }
 .mg.mg-nocrt::after { display: none; }
@@ -46,6 +46,6 @@ html, body { margin: 0; height: 100%; background: #0b0816; overflow: hidden; ove
 .mg-side .mg-b { width: 72px; height: 72px; }
 .mg-side .mg-b.b-p { left: 0; bottom: 0; }
 .mg-side .mg-b.b-k { left: auto; right: 0; bottom: 22px; }
-.mg-side .mg-b.b-s { left: 39px; bottom: auto; top: 0; }
+.mg-side .mg-b.b-s { left: 35px; bottom: auto; top: 0; width: 80px; height: 80px; }
 @media (max-width: 760px) { .mg-snd { top: 12px; left: 12px; } }
 @media (prefers-reduced-motion: reduce) { .mg-b.on { transform: none; } }
