@@ -38899,7 +38899,7 @@ void main() {
             camPos.copy(camTarget).addScaledVector(off, d1 / Math.max(d0, 1e-3));
             camPos.y += 160 * mvK;
           }
-          const fov = 46 - 30 * mvK;
+          const fov = mapMode && jetFx.fov ? jetFx.fov : 46 - 30 * mvK; // beta 3.01: the take-off's shots have their own lenses
           if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.far = 13e3 + 32e3 * mvK; camera.updateProjectionMatrix(); }
           
         }
@@ -39611,7 +39611,7 @@ void main() {
             mesh.castShadow = mesh.receiveShadow = true; mesh.name = "n2-closures";
             worldRefs.world.add(mesh); worldRefs.world.userData.n2cl = mesh;
           },
-          camBusy: () => mapIntro || jetFx.phase !== "idle" || document.body.classList.contains("kz-intro"),
+          camBusy: () => mapIntro || jetFx.phase !== "idle" || document.body.classList.contains("kz-intro"), jetCine: () => !!jetFx.cine,
           ready: () => mapMode && !mapIntro && !!mapUI && spawnStart < 0 && jetFx.phase === "idle" && !mapBoarding && !document.body.classList.contains("kz-intro"),
           overlay: () => { const c = document.body.classList; return c.contains("modal-open") || c.contains("scf-open") || !!document.querySelector(".case-frame:not(.hidden)"); },
           follow() { mapView.follow = true; mapView.focus = null; mapView.vx = mapView.vz = 0; mapUI?.cineStop(); if (mapView.pitch < 0.8) mapView.pitchGoal = 0.98; if (mapView.dist < 1800 && !mapView.distGoal) mapView.distGoal = innerWidth < 720 ? 2900 : 2500; }, // beta 2.0: out of a parking pose too
@@ -39902,98 +39902,170 @@ void main() {
           ui.root.appendChild(end);
         }
       }
-      // beta 3.0 (Daniel: "connect Olari 9 to the airstrip, like an airport boarding route"): from the forecourt of the house
-      // a paved boarding walk runs to the jet's carpet, through a gate arch and four turnstiles; when the boarding pass is
-      // sent the camera walks it: each turnstile turns as it passes, the last gate's light goes from red to green (a soft
-      // chime, if the sound is on), and it steps onto the jet, which takes off as before. A tap or a key skips the walk;
-      // with reduced motion there is no walk
+      // beta 3.01 (Daniel: "make the boarding walk / take-off Pixar-cinematic: shorter, several shots with hard cuts,
+      // eased moves, nice framing, fewer gadgets in shot, a warm welcome aboard"): once the boarding pass is sent the
+      // take-off is cut like a short film, about six seconds in five framings joined by hard cuts (jetShot):
+      //   1. a low wide of the gate: the walk's arch, the jet waiting beyond it                        (0 - 0.9 s)
+      //   2. a close on the arch's signal light: red, then green with a chime; the board over the arch lights up
+      //      WELCOME ABOARD and the lamps along the walk come on one by one towards the jet          (0.9 - 1.7 s)
+      //   3. a dolly at eye height along the walk, through the arch, towards the jet's carpet          (1.7 - 2.6 s)
+      //   4. a hero low angle of the jet: the airstair folds up, the engines light                     (0.6 s)
+      //   5. the take-off: tracking alongside the roll, then from behind as it climbs into the clouds  (2.8 s)
+      // Letterbox bars while it plays. A tap or a key skips it (a quick crossfade to the clouds), and with reduced
+      // motion it never plays: the same crossfade. The walk is one arch with its light and a row of low lamps
+      // (the turnstiles are gone), straight from the forecourt's east edge to the carpet (JET_WALK_Z)
       var boardWalk = null;
+      const JET_GATES_T = 2.65, JET_BOARD_T = 0.6, JET_ROLL = { T: 1.3, A: 160 };
       function buildBoardWalk() {
-        if (boardWalk) return boardWalk;
-        const P0 = { x: OLARI_PLAZA.x, z: OLARI_PLAZA.z }, P1 = { x: JET_HOME.x - 24, z: JET_HOME.z + 28 };
-        const dx = P1.x - P0.x, dz = P1.z - P0.z, L = Math.hypot(dx, dz), ux = dx / L, uz = dz / L;
-        const A = { x: P0.x + ux * (OLARI_PLAZA.r - 6), z: P0.z + uz * (OLARI_PLAZA.r - 6) }, len = Math.hypot(P1.x - A.x, P1.z - A.z);
-        const at = (s) => ({ x: A.x + ux * s, z: A.z + uz * s });
+        if (boardWalk || boardWalk === false) return boardWalk;
+        const z = JET_WALK_Z, x0 = OLARI_PLAZA.x + OLARI_PLAZA.r - 6, x1 = JET_HOME.x - 24, len = x1 - x0, AS = 18;
         const g = new Group(); g.name = "board-walk";
-        const pts = []; for (let s2 = 0; s2 <= len; s2 += 20) { const q = at(Math.min(s2, len)); pts.push(new Vector3(q.x, 0, q.z)); }
+        const pts = []; for (let s2 = 0; s2 < len; s2 += 12) pts.push(new Vector3(x0 + s2, 0, z)); pts.push(new Vector3(x1, 0, z));
         const edge = new Mesh(ribbonGeometry(pts, 26, 0.7), new MeshStandardMaterial({ color: "#FED012", roughness: 0.85 }));
-        const walk = new Mesh(ribbonGeometry(pts, 20, 0.9), new MeshStandardMaterial({ color: "#f3ead8", roughness: 0.9 }));
+        const walk = new Mesh(ribbonGeometry(pts, 21, 0.9), new MeshStandardMaterial({ color: "#1b1b1d", roughness: 0.95 })); // the jet's own carpet (black, yellow edges), all the way from the house
         edge.receiveShadow = walk.receiveShadow = true; g.add(edge, walk);
-        const ink = new MeshStandardMaterial({ color: "#141414", roughness: 0.6 }), cream = new MeshStandardMaterial({ color: "#fbf3df", roughness: 0.7 }), yel = new MeshStandardMaterial({ color: "#FED012", roughness: 0.6 });
-        const yaw = Math.atan2(ux, uz);
-        const place = (o, s2, y = 0) => { const q = at(s2); o.position.set(q.x, y, q.z); o.rotation.y = yaw; g.add(o); return o; };
-        // the gate arch at the start, its board: BOARDING · GATE 1A
-        { const arch = new Group(); for (const sx of [-12, 12]) { const p = new Mesh(new BoxGeometry(2.4, 26, 2.4), ink); p.position.set(sx, 13, 0); arch.add(p); }
-          const tex = canvasTexture(512, 96, (c) => { c.fillStyle = "#141414"; c.fillRect(0, 0, 512, 96); c.fillStyle = "#FED012"; c.font = "900 46px CromaticSans, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("BOARDING \u00B7 GATE 1A", 256, 50); });
-          const board = new Mesh(new BoxGeometry(30, 5.6, 1.2), [ink, ink, ink, ink, new MeshStandardMaterial({ map: tex, roughness: 0.6 }), new MeshStandardMaterial({ map: tex, roughness: 0.6 })]); board.position.set(0, 25, 0); arch.add(board);
-          place(arch, 18); }
-        // four turnstiles, then the last gate's light
-        const gates = [];
-        [0.3, 0.48, 0.66, 0.84].forEach((f, i) => {
-          const s2 = f * len, tg = new Group();
-          for (const sx of [-10, 10]) { const p = new Mesh(new BoxGeometry(3, 10, 6), sx < 0 ? yel : cream); p.position.set(sx, 5, 0); tg.add(p); const top = new Mesh(new BoxGeometry(3.2, 0.8, 6.2), ink); top.position.set(sx, 10.4, 0); tg.add(top); }
-          const hub = new Group(); hub.position.set(-8.2, 7, 0); tg.add(hub); // the tripod turns about the walk's axis
-          for (let k = 0; k < 3; k++) { const arm = new Mesh(new BoxGeometry(9, 0.9, 0.9), ink); arm.position.x = 4.5; const a = new Group(); a.rotation.z = (k * Math.PI * 2) / 3; a.add(arm); hub.add(a); }
-          tg.scale.setScalar(1.5); place(tg, s2); gates.push({ s: s2, hub, k: 0 });
-        });
-        const lightM = new MeshStandardMaterial({ color: "#F65342", emissive: new Color("#F65342"), emissiveIntensity: 1.6, roughness: 0.3 });
-        { const pole = new Mesh(new CylinderGeometry(0.9, 1.1, 22, 10), ink); pole.position.set(14, 11, 0); const lamp = new Mesh(new SphereGeometry(3.4, 16, 12), lightM); lamp.position.set(14, 24, 0); const lg = new Group(); lg.add(pole, lamp); place(lg, 0.84 * len + 6); }
-        g.traverse((o) => { if (o.isMesh) { o.castShadow = true; } });
+        const ink = new MeshStandardMaterial({ color: "#141414", roughness: 0.6 });
+        // the arch: two black posts, a board with two faces (BOARDING · GATE 1A, then WELCOME ABOARD, lit warm) and the light on top
+        const board = (bg, ink2, txt, px) => canvasTexture(1024, 192, (c) => { c.fillStyle = bg; c.fillRect(0, 0, 1024, 192); c.fillStyle = ink2; c.textAlign = "center"; c.textBaseline = "middle"; do { c.font = `900 ${px}px CromaticSans, sans-serif`; px -= 4; } while (c.measureText(txt).width > 900 && px > 30); c.fillText(txt, 512, 102); });
+        const texIdle = board("#141414", "#FED012", "BOARDING · GATE 1A", 92), texGo = board("#FED012", "#141414", "✸ WELCOME ABOARD ✸", 104);
+        const boardM = new MeshStandardMaterial({ map: texIdle, emissive: new Color("#ffffff"), emissiveMap: texIdle, emissiveIntensity: 0.12, roughness: 0.55 });
+        const arch = new Group();
+        for (const sx of [-16.4, 16.4]) { const p = new Mesh(new BoxGeometry(2.4, 29, 2.4), ink); p.position.set(sx, 14.5, 0); arch.add(p); } // the posts beside the board, never over its words
+        const bd = new Mesh(new BoxGeometry(30, 5.6, 1.4), [ink, ink, ink, ink, boardM, boardM]); bd.position.set(0, 25.2, 0); arch.add(bd);
+        const lightM = new MeshStandardMaterial({ color: "#F65342", emissive: new Color("#F65342"), emissiveIntensity: 1.8, roughness: 0.25 });
+        const box = new Mesh(new BoxGeometry(7.4, 7.4, 3.2), ink); box.position.set(0, 31.6, 0); arch.add(box);
+        const hood = new Mesh(new BoxGeometry(8.6, 0.8, 5.6), ink); hood.position.set(0, 35.6, 0); arch.add(hood);
+        const lamp = new Mesh(new SphereGeometry(2.5, 20, 14), lightM); lamp.scale.set(1, 1, 0.9); lamp.position.set(0, 31.6, 0); arch.add(lamp);
+        const haloM = new MeshBasicMaterial({ color: "#7dff9a", transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false }); haloM.userData.outlineParameters = { visible: false };
+        const halo = new Mesh(new SphereGeometry(3.7, 18, 12), haloM); halo.position.copy(lamp.position); arch.add(halo);
+        arch.rotation.y = Math.PI / 2; arch.position.set(x0 + AS, 0, z); g.add(arch);
+        // low lamps on both sides of the walk, warm, lit one after another once the light is green
+        const bulbs = [];
+        for (let s2 = AS + 18; s2 < len - 6; s2 += 18) {
+          const m = new MeshStandardMaterial({ color: "#f2d9a6", emissive: new Color("#ffad33"), emissiveIntensity: 0, roughness: 0.4 });
+          for (const sz of [-15, 15]) { const p = new Mesh(new CylinderGeometry(0.55, 0.7, 5, 8), ink); p.position.set(x0 + s2, 2.5, z + sz); const gl = new Mesh(new SphereGeometry(1.5, 12, 8), m); gl.position.set(x0 + s2, 5.9, z + sz); g.add(p, gl); }
+          bulbs.push(m);
+        }
+        g.traverse((o) => { if (o.isMesh && o !== halo) o.castShadow = true; });
         worldRefs.world.add(g);
-        return (boardWalk = { g, at, len, ux, uz, gates, lightM, green: false });
+        return (boardWalk = { g, x0, x1, z, len, AS, lightM, haloM, boardM, texIdle, texGo, bulbs, green: false });
       }
-      function boardWalkReset() { if (!boardWalk) return; for (const q of boardWalk.gates) { q.k = 0; q.hub.rotation.x = 0; } boardWalk.green = false; boardWalk.lightM.color.set("#F65342"); boardWalk.lightM.emissive.set("#F65342"); }
-      function boardWalkCam(dt) {
-        const W = buildBoardWalk(), T = 7.2, t = jetFx.t, c0 = jetFx.cam0;
-        const k = jss(t / T), s2 = -40 + (W.len + 10) * k, q = W.at(Math.max(0, s2 + 50));
-        const b = jss(t / 1.4), yaw = Math.atan2(-W.ux, -W.uz);
-        let dy = yaw - c0.yaw; while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2;
-        mapView.yaw = c0.yaw + dy * b; mapView.pitch = c0.pitch + (0.3 - c0.pitch) * b; mapView.dist = c0.dist + (150 - c0.dist) * b;
-        mapView.tgt.x = c0.x + (q.x - c0.x) * b; mapView.tgt.z = c0.z + (q.z - c0.z) * b; mapView.lookY = mapView.lookYGoal = c0.y + (9 - c0.y) * b;
-        for (const gq of W.gates) { if (s2 + 30 > gq.s && gq.k < 1) { gq.k = Math.min(1, gq.k + dt / 0.55); gq.hub.rotation.x = -(Math.PI * 2 / 3) * (1 - (1 - gq.k) ** 3); } }
-        if (!W.green && s2 + 24 > W.gates[W.gates.length - 1].s) { W.green = true; W.lightM.color.set("#28C840"); W.lightM.emissive.set("#28C840"); try { window.__czChime?.(); } catch (e) {} }
-        if (t >= T || jetFx.skip) {
-          jetFx.skip = false; jetFx.phase = "board"; jetFx.t = 0; jetFx.tt = 0;
-          jetFx.cam0 = { yaw: mapView.yaw, pitch: mapView.pitch, dist: mapView.dist, x: mapView.tgt.x, z: mapView.tgt.z, y: mapView.lookY || 0 };
-          document.removeEventListener("pointerdown", boardWalkSkip, true); document.removeEventListener("keydown", boardWalkSkip, true);
+      function boardWalkReset() {
+        const W = boardWalk; if (!W) return;
+        W.green = false; W.lightM.color.set("#F65342"); W.lightM.emissive.set("#F65342"); W.haloM.opacity = 0;
+        W.boardM.map = W.boardM.emissiveMap = W.texIdle; W.boardM.emissiveIntensity = 0.12;
+        for (const m of W.bulbs) m.emissiveIntensity = 0;
+      }
+      // the walk's own clock: the light, the board and the lamps
+      function boardWalkStep(t) {
+        const W = boardWalk; if (!W) return;
+        if (!W.green && t > 1.25) { W.green = true; W.lightM.color.set("#28C840"); W.lightM.emissive.set("#28C840"); W.boardM.map = W.boardM.emissiveMap = W.texGo; try { window.__czChime?.(); } catch (e) {} }
+        if (W.green) {
+          const k = Math.min(1, (t - 1.25) / 0.3);
+          W.haloM.opacity = 0.32 * k; W.boardM.emissiveIntensity = 0.12 + 0.5 * k;
+          W.bulbs.forEach((m, i) => { m.emissiveIntensity = 2.2 * Math.max(0, Math.min(1, (t - 1.4 - i * 0.12) / 0.2)); });
         }
       }
-      function boardWalkSkip() { if (jetFx.phase === "gates") jetFx.skip = true; }
+      function boardWalkSkip(e) { if (jetFx.cine && !jetFx.xf && jetFx.phase !== "gone" && jetFx.phase !== "idle") { if (e?.type === "keydown" && /^(Shift|Control|Alt|Meta|Tab)$/.test(e.key)) return; e?.stopPropagation(); jetQuickCut(); } }
+      function jetBars(on) {
+        let b = document.querySelector(".jet-bars");
+        if (!b && on) { b = el("div", "jet-bars", "<i></i><i></i>"); document.body.appendChild(b); }
+        document.body.classList.toggle("jet-cine", on);
+        if (b) requestAnimationFrame(() => b.classList.toggle("on", on));
+      }
+      function jetCineEnd() {
+        jetFx.cine = false; jetBars(false);
+        document.removeEventListener("pointerdown", boardWalkSkip, true); document.removeEventListener("keydown", boardWalkSkip, true);
+      }
+      // a quick crossfade to the clouds: the skip, and the whole take-off with reduced motion
+      function jetQuickCut() {
+        if (jetFx.xf) return;
+        const x = el("div", "jet-xfade"); document.body.appendChild(x);
+        jetFx.xf = { el: x, t: 0, cut: false };
+        requestAnimationFrame(() => x.classList.add("on"));
+      }
+      function jetQuickCutStep(dt) {
+        const f = jetFx.xf, jet = worldRefs.jet; if (!f || !jet) return;
+        f.t += dt;
+        if (!f.cut && f.t > 0.3) {
+          f.cut = true; jetCineEnd();
+          jet.group.visible = false; jet.glowM.opacity = 0; jetFx.speed = 0; jetFx.fov = null;
+          jetCloudCover(true, 1);
+          const cz = jet.clouds.position.z;
+          mapView.tgt.x = JET_HOME.x; mapView.tgt.z = cz; mapView.lookY = mapView.lookYGoal = 400; mapView.yaw = Math.PI + 0.22; mapView.pitch = 0.32; mapView.dist = 900; camSnapNext = true;
+          jetFx.phase = "gone"; jetFx.t = 0; jetFx.shot = null;
+          mapUI.baam();
+          f.el.classList.remove("on");
+        }
+        if (f.t > 1) { f.el.remove(); jetFx.xf = null; }
+      }
+      // the jet's path from the start of the roll: a hard roll, then a steep climb
+      function jetPathAt(T) {
+        const R = JET_ROLL;
+        if (T < R.T) return { z: 0.5 * R.A * T * T, v: R.A * T, y: 0, c: -1 };
+        const c = T - R.T, v0 = R.A * R.T;
+        return { z: 0.5 * R.A * R.T * R.T + v0 * c + 60 * c * c, v: v0 + 120 * c, y: 170 * c * c, c };
+      }
       function mapTakeoff() {
         const jet = worldRefs.jet;
         if (!jet || jetFx.phase !== "idle") return;
-        jetFx.phase = "board"; jetFx.t = 0; jetFx.baam = false; jetFx.speed = 0; jetFx.watch = false; jetFx.passBack = false;
+        jetFx.phase = "board"; jetFx.t = 0; jetFx.baam = false; jetFx.speed = 0; jetFx.watch = false; jetFx.passBack = false; jetFx.shot = null; jetFx.fov = null; jetFx.cine = false;
         document.body.classList.add("map-takeoff");
         if (mapBoarding) mapCloseBoarding(true);
         mapUI.cineStop?.();
-        // r120: the camera rides one smooth rig from here (see jetCam): where it is now is where it starts
         mapView.follow = false; mapView.focus = null;
         mapView.yawGoal = mapView.pitchGoal = mapView.distGoal = null;
         jetFx.tt = 0;
         jetFx.cam0 = { yaw: mapView.yaw, pitch: mapView.pitch, dist: mapView.dist, x: mapView.tgt.x, z: mapView.tgt.z, y: mapView.lookY || 0 };
-        // the jet reaches the deck (y 690) about 4.8 s after rotation: the clouds wait right there
-        const c0 = Math.sqrt(300 / 30);
-        jet.clouds.position.set(JET_HOME.x, 0, JET_HOME.z + 975 + 390 * c0 + 20 * c0 * c0);
+        // the clouds wait where the jet punches through them (y 300)
+        jet.clouds.position.set(JET_HOME.x, 0, JET_HOME.z + jetPathAt(JET_ROLL.T + Math.sqrt(300 / 170)).z);
         jet.clouds.visible = true;
         jetCloudCover(true, 0, false);
-        // beta 3.0: the boarding walk first (not with reduced motion)
         try { buildBoardWalk(); boardWalkReset(); } catch (e) {}
-        if (boardWalk && !matchMedia("(prefers-reduced-motion: reduce)").matches) { jetFx.phase = "gates"; jetFx.skip = false; document.addEventListener("pointerdown", boardWalkSkip, true); document.addEventListener("keydown", boardWalkSkip, true); }
+        mapFirstSolved = true; // (a cut must never be taken for the opening frame)
+        if (matchMedia("(prefers-reduced-motion: reduce)").matches) { jetQuickCut(); return; }
+        if (boardWalk) {
+          jetFx.phase = "gates"; jetFx.cine = true; jetBars(true);
+          document.addEventListener("pointerdown", boardWalkSkip, true); document.addEventListener("keydown", boardWalkSkip, true);
+        }
       }
-      // r120: the take-off camera. Always aimed at the jet (it stays in the middle), and every value
-      // eases on one clock: a low three-quarters view while it rolls, slowly swinging behind and
-      // pulling back as it lifts, so it climbs away from you into the clouds
+      // the five shots. jetShot frames a target (x, y, z) from a bearing (yaw) at a distance, the camera at height camY,
+      // through its own lens (fov); a change of shot is a hard cut (camSnapNext: no damping on that frame)
+      // (on a phone held upright the frame is a slice of the wide framing: the width it must show is cut, or the camera would back off into the houses)
+      function jetFit(w, h, fov, crop = 0.55) { const asp = Math.max(0.3, innerWidth / Math.max(1, innerHeight)); return Math.max(h, (asp < 1 ? w * Math.max(crop, asp) : w) / asp) / (2 * Math.tan((fov * Math.PI) / 360)); }
+      function jetShot(id, fov, tx, ty, tz, yaw, dist, camY) {
+        jetFx.shot = id; camSnapNext = true; // every frame: the shots are eased by hand, a damped camera only lagged (behind the jet, off the frame)
+        jetFx.fov = fov;
+        mapView.tgt.x = tx; mapView.tgt.z = tz; mapView.lookY = mapView.lookYGoal = ty;
+        mapView.yaw = yaw; mapView.dist = dist; mapView.pitch = Math.asin(clamp2((camY - ty) / dist, -0.9, 0.9)); mapView.vx = mapView.vz = 0;
+      }
+      function jetCineCam() {
+        const W = boardWalk, gp = worldRefs.jet.group.position, t = jetFx.t, ph = jetFx.phase, L = (a, b, k) => a + (b - a) * k, Q = Math.PI / 2;
+        if (ph === "gates") {
+          const ax = W.x0 + W.AS;
+          if (t < 0.85) { const k = jss(t / 0.85); jetShot("wide", 24, ax + (innerWidth < innerHeight ? 16 : 34), 20, W.z, -Q + 0.36 - 0.07 * k, jetFit(100, 50, 24) * L(1.12, 1, k), 7); }
+          else if (t < 1.75) { const k = jss((t - 0.85) / 0.9); jetShot("light", 18, ax, 28.4, W.z, -Q - 0.32 + 0.1 * k, jetFit(40, 17, 18) * L(1.14, 1, k), 25); }
+          else { const k = jss((t - 1.75) / (JET_GATES_T - 1.75)), s = L(0, W.len - 30, k); jetShot("dolly", 34, W.x0 + s + 48, 11, W.z - 3, -Q + 0.06, L(72, 64, k), 12); }
+        } else if (ph === "board") {
+          const k = jss(t / JET_BOARD_T); jetShot("hero", 30, gp.x, 10, gp.z + 8, L(-0.66, -0.44, k), jetFit(76, 32, 30) * L(1.06, 1, k), 3.2);
+        } else if (ph === "roll") {
+          const k = jss(t / JET_ROLL.T); jetShot("track", 24, gp.x, 9, gp.z + 14, -Q + L(0.6, 0.16, k), jetFit(112, 40, 24, 0.5), 5);
+        } else if (ph === "climb") {
+          const c = Math.max(0, t - JET_ROLL.T), k = jss(c / 1.5); jetShot("behind", 26, gp.x, gp.y + 9, gp.z, Math.PI + 0.24, jetFit(96, 42, 26) * L(1, 1.8, k), L(7, gp.y + 80, k));
+        }
+      }
+      // r120: the take-off camera (now only when the cinematic could not be set up): always aimed at the jet, every
+      // value eased on one clock: a low three-quarters view while it rolls, swinging behind and pulling back as it lifts
       const jss = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * x * (x * (x * 6 - 15) + 10); };
       function jetCam(dt) {
         const g = worldRefs.jet.group, c0 = jetFx.cam0;
         if (!c0 || !g.visible) return;
         jetFx.tt += dt;
         const T = jetFx.tt, ph = innerWidth < 720 ? 1.35 : 1;
-        let yaw = -1.0 - 1.35 * jss((T - 1.5) / 9);
-        const pitch = 0.3 - 0.1 * jss((T - 6) / 5);
-        // r138b: closer in for the smaller jet (it was 950 + 1250 for the 118-long one)
-        const dist = (700 + 1050 * jss((T - 1.5) / 8)) * ph;
-        const w = jss(T / 2.6);
+        let yaw = -1.0 - 1.35 * jss((T - 1.5) / 4);
+        const pitch = 0.3 - 0.1 * jss((T - 3) / 3);
+        const dist = (700 + 1050 * jss((T - 1.5) / 4)) * ph;
+        const w = jss(T / 1.6);
         let dy = yaw - c0.yaw; while (dy > Math.PI) { dy -= Math.PI * 2; yaw -= Math.PI * 2; } while (dy < -Math.PI) { dy += Math.PI * 2; yaw += Math.PI * 2; }
         mapView.yaw = c0.yaw + (yaw - c0.yaw) * w;
         mapView.pitch = c0.pitch + (pitch - c0.pitch) * w;
@@ -40021,43 +40093,48 @@ void main() {
         jet.strobe.emissiveIntensity = Math.sin(now * 0.006) > 0.92 ? 3 : 0;
         jet.beaconM.emissiveIntensity = Math.sin(now * 0.0045) > 0.6 ? 2.6 : 0.1;
         jetFx.speed = 0;
+        if (boardWalk === null && worldRefs.world && now > 4000) { try { buildBoardWalk(); } catch (e) { boardWalk = false; } } // the walk is on the map from the start (a few seconds in, not on the first frames)
         if (jetFx.phase === "idle") return;
         jetFx.t += dt;
+        if (jetFx.xf) jetQuickCutStep(dt);
         const t = jetFx.t, g = jet.group;
-        if (jetFx.phase === "gates") { boardWalkCam(dt); return; }
-        if (jetFx.phase !== "gone") jetCam(dt);
+        if (jetFx.phase === "gates") {
+          boardWalkStep(t); jetCineCam();
+          if (t >= JET_GATES_T) { jetFx.phase = "board"; jetFx.t = 0; }
+          return;
+        }
+        if (jetFx.phase !== "gone") { if (jetFx.cine) jetCineCam(); else jetCam(dt); }
         if (jetFx.phase === "board") {
-          const k = Math.min(1, t / 1.2);
+          const TB = jetFx.cine ? JET_BOARD_T : 1.2, k = Math.min(1, t / (TB * 0.8));
           jet.stair.scale.setScalar(1 - k * 0.999);
           jet.glowM.opacity = 0.3 * k;
-          if (t > 1.8) { jetFx.phase = "roll"; jetFx.t = 0; jet.carpet.forEach((c) => (c.visible = false)); }
+          if (t > TB) { jetFx.phase = "roll"; jetFx.t = 0; jet.carpet.forEach((c) => (c.visible = false)); }
         } else if (jetFx.phase === "roll" || jetFx.phase === "climb") {
-          const T = t;
-          // the roll: hard acceleration down the runway
-          const v = T < 5 ? 78 * T : 390 + 40 * (T - 5);
-          const zRoll = T < 5 ? 0.5 * 78 * T * T : 975 + 390 * (T - 5) + 20 * (T - 5) ** 2;
-          g.position.z = JET_HOME.z + zRoll;
-          jetFx.speed = Math.min(1, v / 390);
-          jet.glowM.opacity = Math.min(0.9, 0.3 + T * 0.16);
+          // beta 3.01: a hard roll (1.3 s), then a steep climb into the clouds (1.5 s): see jetPathAt
+          const p = jetPathAt(t);
+          g.position.z = JET_HOME.z + p.z;
+          jetFx.speed = Math.min(1, p.v / (JET_ROLL.A * JET_ROLL.T));
+          jet.glowM.opacity = Math.min(0.9, 0.3 + t * 0.5);
           for (const gl of jet.glows) gl.scale.set(1, 1 + Math.sin(now * 0.05) * 0.15 + jetFx.speed * 0.6, 1);
-          if (T > 5) {
-            // rotate, lift, climb; the camera pulls back to watch it go
-            const c = T - 5;
+          if (p.c >= 0) {
             if (jetFx.phase === "roll") jetFx.phase = "climb";
-            g.position.y = c * c * 30;
+            const c = p.c;
+            g.position.y = p.y;
             if (g.position.y > 280) jetCloudCover(true, dt);
-            g.rotation.x = -Math.min(0.26, c * 0.17);
-            g.rotation.z = Math.sin(Math.min(1, c / 4) * Math.PI) * 0.1;
-            jetFx.speed = Math.max(0, 1 - c / 3);
+            g.rotation.x = -Math.min(0.42, c * 0.6);
+            g.rotation.z = Math.sin(Math.min(1, c / 1.6) * Math.PI) * 0.08;
+            jetFx.speed = Math.max(0, 1 - c / 1.6);
             // into the clouds
             if (g.position.y > 400) {
               g.visible = false; jet.glowM.opacity = 0;
               jetFx.phase = "gone"; jetFx.t = 0;
+              jetCineEnd();
               mapUI.baam();
             }
           }
         } else if (jetFx.phase === "gone") {
-          // the camera stays with the clouds the jet went into; the pass takes the stage
+          // the camera stays with the clouds the jet went into; the pass takes the stage. The lens eases back
+          if (jetFx.fov) { jetFx.fov += (16 - jetFx.fov) * (1 - Math.exp(-dt * 2.5)); if (Math.abs(jetFx.fov - 16) < 0.2) jetFx.fov = null; }
           if (t < 6) jetCloudCover(true, dt);
           if (t > 1.6 && !jetFx.passBack) { jetFx.passBack = true; mapBoardingDone(); }
           if (t > 6) {
@@ -40067,7 +40144,8 @@ void main() {
             jet.stair.scale.setScalar(1); jet.carpet.forEach((c) => (c.visible = true)); jet.glowM.opacity = 0;
             jet.clouds.visible = false;
             jetCloudCover(false);
-            jetFx.phase = "idle";
+            boardWalkReset();
+            jetFx.phase = "idle"; jetFx.fov = null; jetFx.shot = null;
             document.body.classList.remove("map-takeoff");
           }
         }

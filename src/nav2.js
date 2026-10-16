@@ -1737,6 +1737,7 @@
       const want = syncView() === "street" ? 1 : 0;
       if (reduced()) D.streetT = want;
       else D.streetT = want > D.streetT ? Math.min(1, D.streetT + dt / 1.15) : Math.max(0, D.streetT - dt / 1.15);
+      if (H.jetCine?.() || H.camBusy() && document.querySelector(".jet-xfade")) D.streetT = 0; // beta 3.01: the take-off's film cuts straight in
       const k = sss(D.streetT);
       D.camK = k;
       const mv = H.mapView, hd = H.heading();

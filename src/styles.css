@@ -2921,6 +2921,16 @@ body.map-mode .mapcard.contact .map-x { top: 14px; right: 14px; }
 body.map-takeoff .map-dock, body.map-takeoff .map-zoom, body.map-takeoff .map-card { opacity: 0; pointer-events: none; transition: opacity .4s; }
 /* r136: in the clouds the map's pins, street signs and service tags step aside (they drew over the clouds) */
 body.map-takeoff .map-pins, body.jet-cloud .map-pins, body.jet-cloud .svc-house { opacity: 0 !important; pointer-events: none !important; transition: opacity .35s; }
+/* beta 3.01: the take-off is a short film: letterbox bars while it plays, nothing else on screen; a skip (and reduced
+   motion) is a quick crossfade to the clouds */
+.jet-bars { position: fixed; inset: 0; pointer-events: none; z-index: 9400; }
+.jet-bars i { position: absolute; left: 0; right: 0; height: min(11vh, 9vw); background: #0b0b0c; transition: transform .45s cubic-bezier(.2,.8,.2,1); }
+.jet-bars i:first-child { top: 0; transform: translateY(-101%); }
+.jet-bars i:last-child { bottom: 0; transform: translateY(101%); }
+.jet-bars.on i { transform: none; }
+body.jet-cine .topbar, body.jet-cine .map-top, body.jet-cine .hud, body.jet-cine .cz-build, body.jet-cine #cz-ck { opacity: 0 !important; pointer-events: none !important; transition: opacity .3s; }
+.jet-xfade { position: fixed; inset: 0; z-index: 9450; background: #f4f2ec; opacity: 0; pointer-events: none; transition: opacity .28s ease; }
+.jet-xfade.on { opacity: 1; }
 .map-chip.beacon { background: #FED012; }
 .map-chip.beacon .mc-dot { background: #111; }
 
