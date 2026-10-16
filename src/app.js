@@ -27651,7 +27651,8 @@ void main() {
     // beauty shops at three quarters (were 56 x 42 x 28) on the east kerb past Zoetis, 260 apart (clear of the lane's houses)
     { br: "C", name: "Routine Paris", logo: "logoRoutine", x: 1415, z: 5322, face: "+x", kind: "paris", grand: true, pinH: 78, w: 69, d: 60, h: 51, wall: "#efe7d8", accent: "#28C840", c: "#28C840", t: "#0e0e0e", line: "PERFUMES \xB7 PARIS" },
     { br: "C", name: "Darya Hope", x: 1574, z: 5690, face: "-x", kind: "la", w: 42, d: 32, h: 21, wall: "#f8d7df", accent: "#f08fb0", c: "#f08fb0", t: "#2a0f17", line: "BEAUTY \xB7 LOS ANGELES" },
-    { br: "C", name: "Jesse J", x: 1574, z: 5950, face: "-x", kind: "la", w: 42, d: 32, h: 21, wall: "#d8efe6", accent: "#62c6a6", c: "#62c6a6", t: "#0c2a20", line: "BEAUTY \xB7 LOS ANGELES" }
+    // r177 (Daniel): the brand the code called "Jesse J" (Daniel wrote "Jessie J") is Tracy J
+    { br: "C", name: "Tracy J", x: 1574, z: 5950, face: "-x", kind: "la", w: 42, d: 32, h: 21, wall: "#d8efe6", accent: "#62c6a6", c: "#62c6a6", t: "#0c2a20", line: "BEAUTY \xB7 LOS ANGELES" }
   ];
   // the Zdrovit courtyard (Medical Avenue, east side): Zdrovit and its six brands' kiosks around a yard
   // (r176: Routine Paris, Darya Hope and Jesse J moved out to their own plots, see STREET_BRANDS)
