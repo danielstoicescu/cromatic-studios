@@ -27650,9 +27650,9 @@ void main() {
     // 46 x 40 x 34), a Haussmann building on the west kerb between Toskani MED and Elithia (buildParisian); the two LA
     // beauty shops at three quarters (were 56 x 42 x 28) on the east kerb past Zoetis, 260 apart (clear of the lane's houses)
     { br: "C", name: "Routine Paris", logo: "logoRoutine", x: 1415, z: 5322, face: "+x", kind: "paris", grand: true, pinH: 78, w: 69, d: 60, h: 51, wall: "#efe7d8", accent: "#28C840", c: "#28C840", t: "#0e0e0e", line: "PERFUMES \xB7 PARIS" },
-    { br: "C", name: "Darya Hope", x: 1574, z: 5690, face: "-x", kind: "la", w: 42, d: 32, h: 21, wall: "#f8d7df", accent: "#f08fb0", c: "#f08fb0", t: "#2a0f17", line: "BEAUTY \xB7 LOS ANGELES" },
+    { br: "C", name: "Darya Hope", x: 1574, z: 5690, face: "-x", kind: "la", w: 42, d: 32, h: 21, wall: "#f8d7df", accent: "#f08fb0", c: "#f08fb0", t: "#2a0f17", line: "BEAUTY \xB7 LOS ANGELES", desc: "The Core of a science based skincare brand, ideas for its social media and the Rescue Drops packaging." }, // r179: as on its case page
     // r177 (Daniel): the brand the code called "Jesse J" (Daniel wrote "Jessie J") is Tracy J
-    { br: "C", name: "Tracy J", x: 1574, z: 5950, face: "-x", kind: "la", w: 42, d: 32, h: 21, wall: "#d8efe6", accent: "#62c6a6", c: "#62c6a6", t: "#0c2a20", line: "BEAUTY \xB7 LOS ANGELES" }
+    { br: "C", name: "Tracy J", x: 1574, z: 5950, face: "-x", kind: "la", w: 42, d: 32, h: 21, wall: "#d8efe6", accent: "#62c6a6", c: "#62c6a6", t: "#0c2a20", line: "BEAUTY \xB7 LOS ANGELES", desc: "The Core of a skincare brand with a joyous voice, its visual identity, packaging and brand universe." } // r179: as on its case page
   ];
   // the Zdrovit courtyard (Medical Avenue, east side): Zdrovit and its six brands' kiosks around a yard
   // (r176: Routine Paris, Darya Hope and Jesse J moved out to their own plots, see STREET_BRANDS)
@@ -34876,6 +34876,7 @@ void main() {
       // r139a: the pages that opened by other ways (Steam as a string, OMA by hand, Antila and UNDÉ by their tags) are
       // known here too, so every card that asks "is there a page?" gets the built one, with the shared ending
       "Echo School": "echo-school", // r159
+      "Darya Hope": "darya-hope", "Tracy J": "tracy-j", // r179: their case pages, from the Core decks
       "Steam": "steam", "Steam Coffee Shop": "steam", "OMA Coffee": "oma-coffee", "Antila": "antila", "UNDE": "unde", "UND\xC9": "unde" };
     window.__casePage = (brand) => (WORK_PAGES[brand] && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname) ? WORK_PAGES[brand] : null);
     const withPage = (brand, onClick) => () => { const pg = window.__casePage(brand); if (pg && openFrameHook) return openFrameHook(`/work/${pg}/?embed=1`, brand); return onClick?.(); };

@@ -76,7 +76,7 @@ export const INDUSTRIES = [
     streetName: "Medical Avenue",
     title: "Healthcare, clinic & pharma branding in Bucharest",
     desc: "Brand strategy, websites, TV ads and content for clinics, pharma and aesthetic medicine. Elithia, Clinica Sante, Toskani MED and Help4Brain.", // r136: under 155 characters
-    eyebrow: "Medical Avenue · 7 case studies",
+    eyebrow: "Medical Avenue · 9 case studies",
     h1: "Healthcare brands that feel like care.",
     lead: "Cromatic Studios builds brands, websites, films and content for clinics, laboratories, pharma and aesthetic medicine, in Romania and abroad. Precise for the doctor. Calm for the patient.",
     intro: [
@@ -92,7 +92,7 @@ export const INDUSTRIES = [
       { t: "Medical congresses", p: "The Aesthetic Court put botulinum toxin on trial at the Palace of the Parliament. Its website follows the courtroom, from the charge and the bench of experts to the order of proceedings, the jury's live vote and the verdict." },
       { t: "Repositioning for established players", p: "ALTIUS got a new strategy, a refreshed wordmark with its orange arrow, teal gradients, icons for every product area and a website for vets. We stayed on as its long-term partner for video content, including Vets Congress." }
     ],
-    cases: ["elithia", "clinica-sante", "toskani-med", "help-4-brain", "the-aesthetic-court", "altius", "routine-paris"],
+    cases: ["elithia", "clinica-sante", "toskani-med", "help-4-brain", "the-aesthetic-court", "altius", "routine-paris", "darya-hope", "tracy-j"], // r179: + Darya Hope, Tracy J
     faq: [
       ["Who does branding for clinics in Bucharest?", "Cromatic Studios, an independent creative studio at Strada Olari 9, Bucharest. Our medical work includes Elithia, a women's health clinic, Clinica Sante, a national network of medical laboratories, ALTIUS in veterinary pharma distribution, Help4Brain by Zdrovit and Toskani MED, an aesthetic medicine company in Barcelona."],
       ["Can you make a TV ad for a clinic or laboratory?", "Yes. For Clinica Sante we made a TV spot that, in under a minute, puts forward what the laboratories stand for: precision and up-to-date technology, more than 30 years of experience, fair prices and national coverage. It closes on the line “Recomandată de medici, parafată de pacienți”."],
