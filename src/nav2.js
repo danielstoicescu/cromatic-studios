@@ -1083,7 +1083,7 @@
       if (hb && !drift) { const dec = 280 * dt; u = Math.abs(u) <= dec ? 0 : u - Math.sign(u) * dec; }
       if (drift) u = Math.max(0, u - 35 * dt); // a drift keeps its speed
       const au = Math.abs(u), sg = au > 4 ? Math.sign(u) : thr < 0 ? -1 : 1;
-      let yr = P.st * Math.sign(u) * Math.min(au / 14, 2.7 / (1 + au / 480));
+      let yr = P.st * Math.sign(u) * Math.min(au / 14, (D.auto ? 3.5 : 2.7) / (1 + au / 480)); // the auto-pilot turns a little sharper (it never overshoots)
       if (thr !== 0 && au < 40) yr += P.st * sg * 3.3 * (1 - au / 40); // near a pivot, almost stopped with ↑ or ↓ held (beta 2.5: snappier, ~1 s round)
       if (hb && !drift && Math.abs(P.st) > 0.05) yr = P.st * sg * 3.6; // the handbrake spin (slow)
       if (drift) yr = drift.dir * clamp(1.0 + 0.8 * P.st * drift.dir, 0.25, 1.9) * Math.min(1, au / 160 + 0.4); // into the drift: ← → make it tighter or wider
@@ -1237,8 +1237,8 @@
       tx += (-(az2 - tz) / tl) * keep; tz += ((ax2 - tx) / tl) * keep; // keep right
       const err = wrapA(Math.atan2(tx - P.x, tz - P.z) - P.h);
       let vt = Math.min(a.vmax || VMAX_F * 0.82, Math.sqrt(2 * BRAKE_F * 0.7 * Math.max(0, rem)));
-      { let i = 0; while (i < D.cum.length - 1 && D.cum[i] < Lp) i++; for (; i < D.cum.length && D.cum[i] < Lp + 300 + au * 0.9; i++) { const k = D.kap[i]; if (k > 1e-4) { const vy = (-k + Math.sqrt(k * k + (4 * k / 480) * 2.4)) / ((2 * k) / 480); vt = Math.min(vt, Math.sqrt(Math.min(ALAT / k, vy * vy) + 2 * BRAKE_F * 0.6 * Math.max(0, D.cum[i] - Lp))); } } }
-      vt *= Math.max(0.3, 1 - Math.abs(err) * 0.7);
+      { let i = 0; while (i < D.cum.length - 1 && D.cum[i] < Lp) i++; for (; i < D.cum.length && D.cum[i] < Lp + 300 + au * 0.9; i++) { const k = D.kap[i]; if (k > 1e-4) { const vy = (-k + Math.sqrt(k * k + (4 * k / 480) * 3.1)) / ((2 * k) / 480); vt = Math.min(vt, Math.sqrt(Math.min(ALAT * 1.6 / k, vy * vy) + 2 * BRAKE_F * 0.6 * Math.max(0, D.cum[i] - Lp))); } } }
+      vt *= Math.max(0.45, 1 - Math.abs(err) * 0.5);
       return { rem, steer: clamp(err * 2.4 + kerbAway(), -1, 1), thr: P.u < vt - 8 ? 1 : P.u > vt + 8 && P.u > 4 ? -1 : 0 };
     }
     // beta 2.5 (Daniel: "a place behind the car: turn round fast, arcade"): the route is planned both ways, as the car
