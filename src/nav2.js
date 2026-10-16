@@ -1611,6 +1611,8 @@
         g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.5, t + 0.08); g.gain.setTargetAtTime(0.22, t + 0.25, 0.3); g.gain.exponentialRampToValueAtTime(0.001, t + 3.4);
         n.connect(lp); lp.connect(g); g.connect(cityBus); n.start(t); n.stop(t + 3.6);
       }
+      // beta 3.0: the boarding gate's soft chime (two notes, a bell)
+      window.__czChime = () => { if (!started || !on || !ctx) return; const t = T(); [880, 1318.5].forEach((f, i) => { const o = ctx.createOscillator(), g = gain(0); o.type = "sine"; o.frequency.value = f; o.connect(g); g.connect(master); g.gain.setValueAtTime(0, t + i * 0.16); g.gain.linearRampToValueAtTime(0.12, t + i * 0.16 + 0.01); g.gain.exponentialRampToValueAtTime(0.0005, t + i * 0.16 + 1.1); o.start(t + i * 0.16); o.stop(t + i * 0.16 + 1.2); }); };
       let boltWas = false;
       function horn() {
         const t = T(), g = gain(0), lp = filt("lowpass", 900, 0.7), f = 300 + Math.random() * 120; lp.connect(g); g.connect(cityBus);
@@ -2124,7 +2126,8 @@
       }
       // beta 2.91 (usage pass: "at the roundabout Nearby said: nothing of ours down this way"): round the fountain, where
       // you choose, Nearby shows each street's first places, Ahead / Left / Right as the arm lies from where you are
-      if (Math.hypot(H.carPos.x - H.fork.x, H.carPos.z - H.fork.y) < 420 && !here) {
+      { const dF = Math.hypot(H.carPos.x - H.fork.x, H.carPos.z - H.fork.y); var nearFork = !here && (dF < 420 || (dF < 1100 && !rows.length)); } // beta 3.0: on the start road too (it said "nothing of ours" at the very first frame)
+      if (nearFork) {
         rows.length = 0;
         const fx = Math.sin(P.h), fz = Math.cos(P.h), byQ = new Map(), dirQ = new Map();
         for (const n of ringNodes) for (const o of N[n].out) {
@@ -2157,7 +2160,7 @@
       const qpill = (qq) => `<span class="n2-q" style="--qc:${QCOL[qq] || "#FED012"}">${esc(qq ? QNAME[qq] : "Cromatic City")}</span>`;
       let h = `<header>${qpill(q)}<span class="n2-sub mono">${q ? "NEARBY IN THIS QUARTER" : "BETWEEN THE QUARTERS"}</span></header>`;
       if (auto) { const pl = auto.pl && !auto.pl.tap ? auto.pl : null, cc = pl ? cols(pl) : { c: "#FED012", t: "#111" }; h += `<div class="n2-auto" style="--pc:${esc(cc.c)};--pt:${esc(cc.t)}">${pl ? `<span class="n2-pic sm">${pic(pl)}</span>` : ""}<span class="n2-at"><i class="mono">${auto.rev ? "BACKING UP TO" : "DRIVING YOU TO"}</i><b>${esc(pl ? pl.name : "the spot you tapped")}</b><em class="n2-dist mono" data-auto="1">${mDist(autoLeft())}</em></span><button class="n2-take">Take the wheel</button></div>`; }
-      if (here && !(D.cardFor === here.pl && H.cardOpen())) { const { c, t } = cols(here.pl); h += `<button class="n2-here" data-id="${esc(here.pl.id)}" style="--pc:${esc(c)};--pt:${esc(t)}"><span class="n2-pic sm">${pic(here.pl)}</span><span class="n2-at"><i class="mono">YOU'RE AT</i><b>${esc(here.pl.name)}</b></span><em class="n2-open">Open →</em></button>`; }
+      if (here && here.pl.stop !== "end" && !(D.cardFor === here.pl && H.cardOpen())) { /* beta 3.0: at Olari 9 the house's own cards are enough (no "Open" banner) */ const { c, t } = cols(here.pl); h += `<button class="n2-here" data-id="${esc(here.pl.id)}" style="--pc:${esc(c)};--pt:${esc(t)}"><span class="n2-pic sm">${pic(here.pl)}</span><span class="n2-at"><i class="mono">YOU'RE AT</i><b>${esc(here.pl.name)}</b></span><em class="n2-open">Open →</em></button>`; }
       for (const r of rows) {
         const lab = r.k === "s" ? "Ahead" : r.k === "l" ? "Left" : "Right";
         h += `<div class="n2-row" data-k="${r.k}"><div class="n2-rh"><button class="n2-dir" data-turn="${r.k}" aria-label="${lab}"${r.k === "s" || !ex?.[r.k] ? " disabled" : ""}><span class="n2-g">${GLY[r.k]}</span></button><span class="n2-rt">${lab}${r.other ? ` <span class="n2-q sm" style="--qc:${QCOL[r.other]}">${esc(QNAME[r.other])}</span>` : ""}</span></div><div class="n2-strip">${r.items.map((x) => card(x, r.k)).join("")}</div></div>`;

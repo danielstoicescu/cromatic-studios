@@ -24850,7 +24850,7 @@ void main() {
     zones.push({ x: 930, y: 4560, r: 110 }, { x: 930, y: 4800, r: 110 }, { x: 930, y: 5900, r: 110 }, { x: 706, y: 4420, r: 110 });
     for (let tz = 4500; tz <= 4820; tz += 80) zones.push({ x: 510, y: tz, r: 130 });
     zones.push({ x: 1010, y: 4120, r: 210 });
-    zones.push({ x: 1070, y: 6320, r: 250 });
+    zones.push({ x: 1005, y: 6185, r: 150 }, { x: 1080, y: 6290, r: 95 }); // beta 3.0: Dacia 99 opposite Patiline; the Str. Olari sign where it stood
     zones.push({ x: 1205, y: 3010, r: 150 });
     return zones;
   }
@@ -25593,6 +25593,10 @@ void main() {
       const [f2, j2] = branchSpan(d2);
       addGold(p2.slice(Math.max(0, f2 - 1), j2 + 2));
     }
+    // beta 3.0 (Daniel: "the end of Olari Street looks odd"): where the Dacia row meets the boulevard every street's
+    // ribbon turned the corner on its own, and their outer edges met in a notch on the far kerb: one straight piece of
+    // the row across the junction (its kerb straight, the fillets r185 drew on the near side)
+    if (all) { const row = []; for (let x = OLARI_PLAZA.x - 150; x <= OLARI_PLAZA.x + 150; x += 10) row.push(new Vector3(x, 0, BLVD_Z0)); const c2 = new Mesh(ribbonGeometry(row, ROUTE_W + 4.5, 0.8), mats.routeCasing), b2m = new Mesh(ribbonGeometry(row, ROUTE_W, 1.3), mats.route); c2.receiveShadow = b2m.receiveShadow = true; group.add(c2, b2m); }
     parent.add(group);
     return group;
     function addGold(p3) {
@@ -30042,7 +30046,11 @@ void main() {
     face.rotation.y = Math.PI / 2;
     face.position.set(41.3, 100, -29);
     g.add(face);
-    g.position.set(1070, 0, 6320);
+    // beta 3.0 (Daniel): turned a quarter (its front with the sign faces the Dacia row, north) and moved to the end of
+    // Coffee Street, opposite Patiline; where it stood, a Str. Olari street sign at the corner of the boulevard
+    g.rotation.y = Math.PI / 2;
+    g.position.set(1005, 0, 6185);
+    { const sg = enamelStreetSign("Str. Olari"); sg.position.set(1112, 0, 6250); sg.rotation.y = Math.PI / 2; parent.add(sg); }
     g.traverse((o) => {
       if (o.isMesh) {
         o.castShadow = true;
@@ -38829,7 +38837,7 @@ void main() {
         const daciaK = clamp2((carPos.z - 6030) / 150, 0, 1) * clamp2((6500 - carPos.z) / 150, 0, 1) * clamp2(1 - Math.abs(carPos.x - 1170) / 220, 0, 1) * (flying ? 0 : 1);
         if (daciaK > 1e-3) {
           camPos.lerp(new Vector3(1935, 195, 6350 + (carPos.z - 6265) * 0.35), daciaK * 0.9);
-          camTarget.lerp(new Vector3(1085, 100, 6320), daciaK * 0.9);
+          camTarget.lerp(new Vector3(1010, 100, 6185), daciaK * 0.9);
         }
         // Steam: the camera crosses to the other kerb and frames the building head-on
         if (state.branch === "A" && !flying && !siteMode) {
@@ -38868,8 +38876,8 @@ void main() {
             camPos.set(1165 + drift * 0.6, 205, 4638);
             camTarget.set(590, 58, 4170);
           } else if (cur === "dacia") {
-            camPos.set(1900 + drift * 0.5, 190, 6320);
-            camTarget.set(1085, 95, 6320);
+            camPos.set(1010 + drift * 0.5, 190, 5370);
+            camTarget.set(1010, 95, 6185);
           } else {
             const a = siteT * 0.035 + siteProg * 1.15;
             const cx = 1240, cz = 3200 + siteProg * 5900, r = 1420;
@@ -39366,7 +39374,9 @@ void main() {
       // road straight down the middle with the car on it: yaw 3.2547, pitch 0.9165, dist 4155 (residual 0.0007 over eight
       // landmarks), the car at L 400, at (0.429, 0.798)
       var MAP_START_L = 400;
-      var OPEN_VIEW = () => innerWidth < 720 ? { yaw: 0.3, pitch: 0.62, dist: 3600, want: [0.62, 0.68] } : { yaw: 3.2547, pitch: 0.9165, dist: 4155, want: [0.429, 0.798] };
+      // beta 3.0 (Daniel): a phone starts from the same view as a desktop (the same turn and tilt, the start road down the
+      // middle, the roundabout up the frame), a little further out for the narrow portrait frame
+      var OPEN_VIEW = () => innerWidth < 720 ? { yaw: 3.2547, pitch: 0.9165, dist: 4780, want: [0.5, 0.76] } : { yaw: 3.2547, pitch: 0.9165, dist: 4155, want: [0.429, 0.798] };
       function mapSettleTick() {
         if (mapSettle <= 0) return;
         if (!mapMode || mapNav.moving || mapNav.place || jetFx.phase !== "idle" || mapView.follow) { mapSettle = 0; return; }
@@ -39587,7 +39597,7 @@ void main() {
           desc: "Congrats, you found a blast from the past (2019): Eliade Tower, the long grey office slab where Cromatic Studios had a floor. More room, more people, the first proper studio." },
         { id: "rdw", chapter: true, x: 1560, z: 6100, px: 1548, pz: 6158, h: 120, name: "RDW 2023 \xB7 AI pop-up", line: "ROMANIAN DESIGN WEEK \xB7 2023", c: "#7B4FD6", pts: 5, past: true, work: "RDW 2023",
           desc: "During Romanian Design Week 2023 our Eliade 18 floor became a pop-up space, and we talked about using AI in design, early, in 2023." },
-        { id: "dacia", chapter: true, x: 1170, z: 6320, px: 1070, pz: 6320, h: 230, name: "Dacia 99", line: "OUR STUDIO \xB7 2024", c: "#B098C8", pts: 5, past: true,
+        { id: "dacia", chapter: true, x: 1005, z: 6110, px: 1005, pz: 6185, h: 230, name: "Dacia 99", line: "OUR STUDIO \xB7 2024", c: "#B098C8", pts: 5, past: true,
           desc: "Congrats, you found a blast from the past (2024): Bulevardul Dacia 99, the Cromatic Studios home right before Olari 9, and the loudest address we ever had." },
         { id: "lab", br: "A", x: 820, z: 4260, px: 602, pz: 4142, h: 70, name: "Two Min Lab", line: "DRINKS \xB7 TONIC IONIC", c: "#C6402E", t: "#ffffff", act: "labTag", desc: "The Two Minutes lab: Tonic Ionic and the drinks bottled by hand, in small batches, in Bucharest. The bottles are on the Two Minutes page too." },
         { id: "tm", br: "A", x: 900, z: 4262, px: 640, pz: 4260, h: 80, name: "Two Minutes", line: "BRAND \xB7 BOXES \xB7 FILM", c: "#111111", t: "#ffffff", act: "tmMedia", tm: true, desc: "A specialty coffee shop brand made to be loved fast and remembered long. Three double espressos are on us." },
@@ -39614,7 +39624,7 @@ void main() {
         for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, street: b.lane ? "D" : b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.pinH || (b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60), name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
         ZDROVIT_YARD.forEach((n, i) => { const [x, z] = yardSpot(yardSlotOf(i)); add({ id: "y-" + i, br: "C", x: 1500, z, px: x, pz: z, h: 22, name: n, line: "IN THE ZDROVIT YARD", c: "#cfcdc8", t: "#3d3c39", small: true, desc: `${n}, one of the brands in the Zdrovit yard. By Cromatic Studios.` }); });
         add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Berero", line: "BRAND \xB7 LABELS \xB7 MERCH", c: "#111111", t: "#ffffff", act: "bereroTag" });
-        add({ id: "echo", x: 1170, z: 6340, px: 1078, pz: 6350, h: 110, tapW: 0.45 /* r168 (Daniel: "Echo School is hard to press, it matters more than Dacia 99"): it wins the building's taps, and shows as a card from afar (TIER1) */, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", desc: "Two years of Instagram for a School of Technology, Digital Arts & Videogames in Bucharest: posts, stories, carousels, reels and campaigns." }); // r159: the case page is live
+        add({ id: "echo", x: 1035, z: 6110, px: 1035, pz: 6177, h: 110, tapW: 0.45 /* r168 (Daniel: "Echo School is hard to press, it matters more than Dacia 99"): it wins the building's taps, and shows as a card from afar (TIER1) */, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", desc: "Two years of Instagram for a School of Technology, Digital Arts & Videogames in Bucharest: posts, stories, carousels, reels and campaigns." }); // r159: the case page is live
         add({ id: "friends", stop: "merge", px: 1365, pz: 6400, h: 150, float: true, name: "+50 Other Clients", line: "HUNDREDS OF PROJECTS \xB7 THOUSANDS OF DELIVERABLES", c: "#d9d7d2", t: "#1a1a1a" });
       })();
       // r117: how close you must be for a place to show its card (a coloured dot otherwise)
@@ -39853,6 +39863,63 @@ void main() {
           ui.root.appendChild(end);
         }
       }
+      // beta 3.0 (Daniel: "connect Olari 9 to the airstrip, like an airport boarding route"): from the forecourt of the house
+      // a paved boarding walk runs to the jet's carpet, through a gate arch and four turnstiles; when the boarding pass is
+      // sent the camera walks it: each turnstile turns as it passes, the last gate's light goes from red to green (a soft
+      // chime, if the sound is on), and it steps onto the jet, which takes off as before. A tap or a key skips the walk;
+      // with reduced motion there is no walk
+      var boardWalk = null;
+      function buildBoardWalk() {
+        if (boardWalk) return boardWalk;
+        const P0 = { x: OLARI_PLAZA.x, z: OLARI_PLAZA.z }, P1 = { x: JET_HOME.x - 24, z: JET_HOME.z + 28 };
+        const dx = P1.x - P0.x, dz = P1.z - P0.z, L = Math.hypot(dx, dz), ux = dx / L, uz = dz / L;
+        const A = { x: P0.x + ux * (OLARI_PLAZA.r - 6), z: P0.z + uz * (OLARI_PLAZA.r - 6) }, len = Math.hypot(P1.x - A.x, P1.z - A.z);
+        const at = (s) => ({ x: A.x + ux * s, z: A.z + uz * s });
+        const g = new Group(); g.name = "board-walk";
+        const pts = []; for (let s2 = 0; s2 <= len; s2 += 20) { const q = at(Math.min(s2, len)); pts.push(new Vector3(q.x, 0, q.z)); }
+        const edge = new Mesh(ribbonGeometry(pts, 26, 0.7), new MeshStandardMaterial({ color: "#FED012", roughness: 0.85 }));
+        const walk = new Mesh(ribbonGeometry(pts, 20, 0.9), new MeshStandardMaterial({ color: "#f3ead8", roughness: 0.9 }));
+        edge.receiveShadow = walk.receiveShadow = true; g.add(edge, walk);
+        const ink = new MeshStandardMaterial({ color: "#141414", roughness: 0.6 }), cream = new MeshStandardMaterial({ color: "#fbf3df", roughness: 0.7 }), yel = new MeshStandardMaterial({ color: "#FED012", roughness: 0.6 });
+        const yaw = Math.atan2(ux, uz);
+        const place = (o, s2, y = 0) => { const q = at(s2); o.position.set(q.x, y, q.z); o.rotation.y = yaw; g.add(o); return o; };
+        // the gate arch at the start, its board: BOARDING · GATE 1A
+        { const arch = new Group(); for (const sx of [-12, 12]) { const p = new Mesh(new BoxGeometry(2.4, 26, 2.4), ink); p.position.set(sx, 13, 0); arch.add(p); }
+          const tex = canvasTexture(512, 96, (c) => { c.fillStyle = "#141414"; c.fillRect(0, 0, 512, 96); c.fillStyle = "#FED012"; c.font = "900 46px CromaticSans, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("BOARDING \u00B7 GATE 1A", 256, 50); });
+          const board = new Mesh(new BoxGeometry(30, 5.6, 1.2), [ink, ink, ink, ink, new MeshStandardMaterial({ map: tex, roughness: 0.6 }), new MeshStandardMaterial({ map: tex, roughness: 0.6 })]); board.position.set(0, 25, 0); arch.add(board);
+          place(arch, 18); }
+        // four turnstiles, then the last gate's light
+        const gates = [];
+        [0.3, 0.48, 0.66, 0.84].forEach((f, i) => {
+          const s2 = f * len, tg = new Group();
+          for (const sx of [-10, 10]) { const p = new Mesh(new BoxGeometry(3, 10, 6), sx < 0 ? yel : cream); p.position.set(sx, 5, 0); tg.add(p); const top = new Mesh(new BoxGeometry(3.2, 0.8, 6.2), ink); top.position.set(sx, 10.4, 0); tg.add(top); }
+          const hub = new Group(); hub.position.set(-8.2, 7, 0); tg.add(hub); // the tripod turns about the walk's axis
+          for (let k = 0; k < 3; k++) { const arm = new Mesh(new BoxGeometry(9, 0.9, 0.9), ink); arm.position.x = 4.5; const a = new Group(); a.rotation.z = (k * Math.PI * 2) / 3; a.add(arm); hub.add(a); }
+          tg.scale.setScalar(1.5); place(tg, s2); gates.push({ s: s2, hub, k: 0 });
+        });
+        const lightM = new MeshStandardMaterial({ color: "#F65342", emissive: new Color("#F65342"), emissiveIntensity: 1.6, roughness: 0.3 });
+        { const pole = new Mesh(new CylinderGeometry(0.9, 1.1, 22, 10), ink); pole.position.set(14, 11, 0); const lamp = new Mesh(new SphereGeometry(3.4, 16, 12), lightM); lamp.position.set(14, 24, 0); const lg = new Group(); lg.add(pole, lamp); place(lg, 0.84 * len + 6); }
+        g.traverse((o) => { if (o.isMesh) { o.castShadow = true; } });
+        worldRefs.world.add(g);
+        return (boardWalk = { g, at, len, ux, uz, gates, lightM, green: false });
+      }
+      function boardWalkReset() { if (!boardWalk) return; for (const q of boardWalk.gates) { q.k = 0; q.hub.rotation.x = 0; } boardWalk.green = false; boardWalk.lightM.color.set("#F65342"); boardWalk.lightM.emissive.set("#F65342"); }
+      function boardWalkCam(dt) {
+        const W = buildBoardWalk(), T = 7.2, t = jetFx.t, c0 = jetFx.cam0;
+        const k = jss(t / T), s2 = -40 + (W.len + 10) * k, q = W.at(Math.max(0, s2 + 50));
+        const b = jss(t / 1.4), yaw = Math.atan2(-W.ux, -W.uz);
+        let dy = yaw - c0.yaw; while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2;
+        mapView.yaw = c0.yaw + dy * b; mapView.pitch = c0.pitch + (0.3 - c0.pitch) * b; mapView.dist = c0.dist + (150 - c0.dist) * b;
+        mapView.tgt.x = c0.x + (q.x - c0.x) * b; mapView.tgt.z = c0.z + (q.z - c0.z) * b; mapView.lookY = mapView.lookYGoal = c0.y + (9 - c0.y) * b;
+        for (const gq of W.gates) { if (s2 + 30 > gq.s && gq.k < 1) { gq.k = Math.min(1, gq.k + dt / 0.55); gq.hub.rotation.x = -(Math.PI * 2 / 3) * (1 - (1 - gq.k) ** 3); } }
+        if (!W.green && s2 + 24 > W.gates[W.gates.length - 1].s) { W.green = true; W.lightM.color.set("#28C840"); W.lightM.emissive.set("#28C840"); try { window.__czChime?.(); } catch (e) {} }
+        if (t >= T || jetFx.skip) {
+          jetFx.skip = false; jetFx.phase = "board"; jetFx.t = 0; jetFx.tt = 0;
+          jetFx.cam0 = { yaw: mapView.yaw, pitch: mapView.pitch, dist: mapView.dist, x: mapView.tgt.x, z: mapView.tgt.z, y: mapView.lookY || 0 };
+          document.removeEventListener("pointerdown", boardWalkSkip, true); document.removeEventListener("keydown", boardWalkSkip, true);
+        }
+      }
+      function boardWalkSkip() { if (jetFx.phase === "gates") jetFx.skip = true; }
       function mapTakeoff() {
         const jet = worldRefs.jet;
         if (!jet || jetFx.phase !== "idle") return;
@@ -39870,6 +39937,9 @@ void main() {
         jet.clouds.position.set(JET_HOME.x, 0, JET_HOME.z + 975 + 390 * c0 + 20 * c0 * c0);
         jet.clouds.visible = true;
         jetCloudCover(true, 0, false);
+        // beta 3.0: the boarding walk first (not with reduced motion)
+        try { buildBoardWalk(); boardWalkReset(); } catch (e) {}
+        if (boardWalk && !matchMedia("(prefers-reduced-motion: reduce)").matches) { jetFx.phase = "gates"; jetFx.skip = false; document.addEventListener("pointerdown", boardWalkSkip, true); document.addEventListener("keydown", boardWalkSkip, true); }
       }
       // r120: the take-off camera. Always aimed at the jet (it stays in the middle), and every value
       // eases on one clock: a low three-quarters view while it rolls, slowly swinging behind and
@@ -39915,6 +39985,7 @@ void main() {
         if (jetFx.phase === "idle") return;
         jetFx.t += dt;
         const t = jetFx.t, g = jet.group;
+        if (jetFx.phase === "gates") { boardWalkCam(dt); return; }
         if (jetFx.phase !== "gone") jetCam(dt);
         if (jetFx.phase === "board") {
           const k = Math.min(1, t / 1.2);
@@ -41242,7 +41313,7 @@ void main() {
           if (state.vehicleId !== "dacia1300") api.setVehicle("dacia1300"); // r138j: the default ride (was the van)
           veh.group.visible = true;
           // r157: on a desktop the map's first frame has the car a little way up the start road (as in Daniel's reference)
-          if ((open || intro) && innerWidth >= 720 && state.L < 50) { state.L = prevL = state.targetL = MAP_START_L; }
+          if ((open || intro) && state.L < 50) { state.L = prevL = state.targetL = MAP_START_L; } // beta 3.0: phones too (the same first frame)
           mapNav.targetL = state.L; mapNav.legs = []; mapNav.moving = false; mapNav.place = null;
           mapView.focus = null;
           // the van is the first thing you see: centred, close, then the camera pulls out to the map

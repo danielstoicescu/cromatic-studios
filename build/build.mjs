@@ -394,7 +394,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
 const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
 const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
 // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
-const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 2.92"; // the nav2 branch: beta 2.92 (main/live is beta 1.6)
+const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.0"; // the nav2 branch: beta 3.0, to replace the live site
 const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
 const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
 const GS = {};
@@ -783,7 +783,7 @@ await optimizeImages(pub, root);
   if (/\.html$/.test(f) && !n2.includes('id="cz-ob"') && n2.includes("</head>")) n2 = n2.replace("</head>", `<style id="cz-ob">html,body{overscroll-behavior-y:none}</style>\n</head>`);
   // r165: the build label: a meta every page carries (the map reads it), and under the website's logo
   if (/\.html$/.test(f) && BUILD_LABEL && !n2.includes('name="cz-build"') && n2.includes("</head>")) {
-    n2 = n2.replace("</head>", `<meta name="cz-build" content="${BUILD_LABEL}">\n<style id="cz-bl">.brand{position:relative}.cz-build{position:absolute;left:2px;top:100%;margin-top:3px;font:500 9px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.1em;opacity:.38;color:currentColor;white-space:nowrap;pointer-events:none;mix-blend-mode:normal}</style>\n</head>`);
+    n2 = n2.replace("</head>", `<meta name="cz-build" content="${BUILD_LABEL}">\n<style id="cz-bl">.brand{position:relative}.cz-build{position:absolute;right:0;left:auto;text-align:right;top:100%;margin-top:3px;font:500 9px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.1em;opacity:.38;color:currentColor;white-space:nowrap;pointer-events:none;mix-blend-mode:normal}</style>\n</head>`);
     n2 = n2.replace(/(<a class="brand" href="\/(?:site\/|ro\/(?:site\/)?)"[^>]*>[\s\S]*?)(<\/a>)/, `$1<span class="cz-build" translate="no">${BUILD_LABEL} build</span>$2`);
   }
   // long titles lose the studio suffix first in Google (~60 characters show); the brand stays in og:site_name and the schema

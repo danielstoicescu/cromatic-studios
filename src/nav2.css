@@ -298,3 +298,7 @@ body.n2-phone:has(.map-welcome:not(.hidden)) .nav2-ui { opacity: 0 !important; p
 /* beta 2.92: at Olari 9 on a phone, the house's photos fan out under the bar's controls, not over them */
 body.n2-phone.olari-open .nav2-ui :is(.n2-views, .n2-snd) { z-index: 31; position: fixed; }
 body.n2-phone.olari-open .nav2-ui .n2-pad { display: none; }
+/* beta 3.0: the take-off (and its boarding walk) has the screen to itself */
+body.map-takeoff .nav2-ui, body.map-takeoff .olari-fan, body.map-takeoff .n2-guide { opacity: 0 !important; pointer-events: none !important; transition: opacity .3s; }
+/* beta 3.0: the build label ends where the logo ends (the map's brand has 2 px of padding round its image) */
+@media (min-width: 720px) { body.map-mode .brand .cz-build, body.map-mode .brand > .cz-build { right: 2px !important; } }
