@@ -61,7 +61,7 @@ index 1c42cfa..ae105a4 100644
  const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
  const GS = {};
 diff --git a/src/app.js b/src/app.js
-index b60e233..3b0a5d2 100644
+index 4296f0f..3b0a5d2 100644
 --- a/src/app.js
 +++ b/src/app.js
 @@ -32208,8 +32208,46 @@ void main() {
@@ -668,8 +668,7 @@ index b60e233..3b0a5d2 100644
            if (u < 1) return;
 -          if (!g.drift) cine = null; else c.settled = true;
 +          if (!g.drift) { cine = null; g.after?.(); } else c.settled = true;
-         };
--        const cineStop = () => { cine = null; };
++        };
 +        const cineStop = () => { cine = null; tmBack = null; camSave = null; };
 +        // beta 2.0 r4: the whole camera (target, distance, turn, tilt, follow, the street / satellite view), and the way back to it
 +        let camSave = null;
@@ -681,7 +680,8 @@ index b60e233..3b0a5d2 100644
 +          const fin = () => { if (b.follow) { mapView.follow = true; mapView.focus = null; } else mapView.focus = b.focus || { x: b.tgt[0], z: b.tgt[1] }; };
 +          if (matchMedia("(prefers-reduced-motion: reduce)").matches) { mapView.yaw = b.yaw; mapView.pitch = b.pitch; mapView.dist = b.dist; mapView.tgt.x = b.tgt[0]; mapView.tgt.z = b.tgt[1]; cine = null; fin(); return; }
 +          cineTo({ yaw: b.yaw, pitch: b.pitch, dist: b.dist, lookY: b.lookY, fx: b.tgt[0], fz: b.tgt[1], after: fin }, 1.2);
-+        };
+         };
+-        const cineStop = () => { cine = null; };
 +        let tmBack = null; // beta 2.0: the view before Two Minutes' scene, given back when it ends
          const baam = () => {
            baamEl.classList.remove("hidden");
@@ -694,7 +694,41 @@ index b60e233..3b0a5d2 100644
            mapView.distGoal = null;
            zoomAt(e.clientX || innerWidth / 2, e.clientY || innerHeight / 2, mapView.dist, Math.min(mapMaxD(), Math.max(MAP_MIND, gDist0 * gScale0 / e.scale)));
          });
-@@ -40395,6 +40665,8 @@ void main() {
+@@ -40382,32 +40652,8 @@ void main() {
+           const now2 = performance.now(), dtp = Math.max(8, now2 - last) / 1000; last = now2;
+           mapView.vx = mapView.vx * 0.35 + (mapView.tgt.x - t0x) / dtp * 0.65; mapView.vz = mapView.vz * 0.35 + (mapView.tgt.z - t0z) / dtp * 0.65;
+         });
+-        const hit = new Vector3(), dir = new Vector3(), bq = new Vector3();
+-        // r175 (Daniel: "a tap on Steam's building keeps opening Lapterra"): the ground point under a tap on a tall
+-        // building lies far behind it (the ray runs on to y = 0), so the place nearest to it could be across the street.
+-        // A tap is first matched on screen to a place's building: its column from the ground to its label's height,
+-        // about its footprint wide; the closest column wins (tapW still favours a place that shares its building)
+-        const tapBuilding = (cx, cy) => {
+-          const sc = (x, y, z) => { warpV(bq.set(x, y, z)).project(camera); return [(bq.x * 0.5 + 0.5) * innerWidth, (-bq.y * 0.5 + 0.5) * innerHeight, bq.z]; };
+-          let win = null;
+-          for (const q of pins) {
+-            const pl = q.pl;
+-            if ((pl.chapter && !pl.past) || pl.wx == null || pl.float || pl.unmarked) continue;
+-            const g = sc(pl.wx, 0, pl.wz), t = sc(pl.wx, pl.wy || 55, pl.wz), e = sc(pl.wx + 34, 0, pl.wz);
+-            if (g[2] > 1 || t[2] > 1) continue;
+-            const half = Math.min(110, Math.max(16, Math.hypot(e[0] - g[0], e[1] - g[1])));
+-            const vx = t[0] - g[0], vy = t[1] - g[1], L2 = vx * vx + vy * vy || 1;
+-            const u = ((cx - g[0]) * vx + (cy - g[1]) * vy) / L2;
+-            if (u < -0.04 || u > 1.08) continue; // not below its ground point (the road in front stays the road's)
+-            const k = Math.max(0, Math.min(1, u)), d = Math.hypot(cx - (g[0] + vx * k), cy - (g[1] + vy * k));
+-            if (d > half) continue;
+-            const score = (d / half) * (pl.tapW || 1);
+-            if (!win || score < win.s) win = { s: score, pl };
+-          }
+-          return win && win.pl;
+-        };
++        const hit = new Vector3(), dir = new Vector3();
+         const tapGo = (cx, cy) => {
+-          { const b0 = tapBuilding(cx, cy); if (b0) return mapGo(b0); } // r175
+           // the ground point under the tap: unproject and run the ray down to y = 0
+           dir.set((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1, 0.5).unproject(camera).sub(camera.position).normalize();
+           if (dir.y > -1e-3) return;
+@@ -40419,6 +40665,8 @@ void main() {
              const d = (x - hit.x) ** 2 + (z - hit.z) ** 2;
              if (!best || d < best.d) best = { d, x, z, br: b2 };
            }
@@ -703,7 +737,7 @@ index b60e233..3b0a5d2 100644
            // r166 (Daniel): a tap on the asphalt is a tap on the road, even beside a place's building
            if (best && best.d < 34 * 34) {
              const shared = tapShared.some(([x, z]) => Math.abs(x - best.x) < 1 && Math.abs(z - best.z) < 1);
-@@ -40406,6 +40678,7 @@ void main() {
+@@ -40430,6 +40678,7 @@ void main() {
            for (const q of pins) { if (q.pl.chapter && !q.pl.past) continue; const d2 = ((q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2) * (q.pl.tapW || 1); if (d2 < 75 * 75 && (!near || d2 < near.d)) near = { d: d2, pl: q.pl }; } // r168: tapW, a place that wins its shared building
            if (near) return mapGo(near.pl);
            for (const q of pins) if (q.pl.chapter && !q.pl.past && (q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2 < 70 * 70) return mapGo(q.pl);
@@ -711,7 +745,7 @@ index b60e233..3b0a5d2 100644
            // otherwise only the street itself
            if (!best || best.d > 60 * 60) return;
            const shared = tapShared.some(([x, z]) => Math.abs(x - best.x) < 1 && Math.abs(z - best.z) < 1);
-@@ -40438,6 +40711,8 @@ void main() {
+@@ -40462,6 +40711,8 @@ void main() {
            e.preventDefault();
            mapView.distGoal = null;
            if (cine && cine.t < cine.dur) cine = null;
@@ -720,7 +754,7 @@ index b60e233..3b0a5d2 100644
            zoomAt(e.clientX, e.clientY, mapView.dist, Math.min(mapMaxD(), Math.max(MAP_MIND, mapView.dist * Math.exp(clamp2(e.deltaY, -120, 120) * (e.ctrlKey ? 0.006 : 0.0012)))));
          }, { passive: false });
          const proj = new Vector3();
-@@ -40466,12 +40741,21 @@ void main() {
+@@ -40490,12 +40741,21 @@ void main() {
            return [0, (topY + botY) / 2 - H / 2];
          };
          return {
@@ -744,7 +778,7 @@ index b60e233..3b0a5d2 100644
              jetUpdate(dt, now);
              olariUpdate(dt);
              // the diorama is cleaner from above without the far mesas, the cloud ring and the islands
-@@ -40552,7 +40836,11 @@ void main() {
+@@ -40576,7 +40836,11 @@ void main() {
                markEl.style.transform = `translate3d(${((proj.x * 0.5 + 0.5) * W).toFixed(1)}px, ${((-proj.y * 0.5 + 0.5) * H).toFixed(1)}px, 0)`;
                if (!mapNav.moving && mapNav.place?.tap && !markEl.classList.contains("on")) markAt = null;
              }
@@ -756,7 +790,7 @@ index b60e233..3b0a5d2 100644
                warpV(proj.set(p.pl.wx, 0, p.pl.wz)).project(camera);
                const gx = (proj.x * 0.5 + 0.5) * W, gy = (-proj.y * 0.5 + 0.5) * H;
                warpV(proj.set(p.pl.wx + 34, 0, p.pl.wz)).project(camera);
-@@ -40631,24 +40919,7 @@ void main() {
+@@ -40655,24 +40919,7 @@ void main() {
          driveGuideOff?.(); driveGuideOff = null;
          if (action) czEv("onboarding_step", { step: "drive_scroll", action });
        }
@@ -782,7 +816,7 @@ index b60e233..3b0a5d2 100644
        function setMapMode(on, { intro = false, open = false } = {}) { // r147: open = the map as the site opens on it (?map, ?map&boarding): the first frame, no pull-out
          if (on === mapMode) return;
          if (!ONB_MODE && !intro && !open) setTimeout(() => ui.modeFlash?.(on ? "map" : "drive"), on ? 300 : 450); // r156
-@@ -40660,6 +40931,8 @@ void main() {
+@@ -40684,6 +40931,8 @@ void main() {
          mapMode = on;
          if (on) {
            if (!mapUI) mapUI = buildMapUI();
@@ -791,7 +825,7 @@ index b60e233..3b0a5d2 100644
            mapPrev = { scheme: state.schemeIdx, veh: state.vehicleId };
            if (!intro) kinetic?.pause?.();
            if (police.active) { police.active = false; copCar.group.visible = false; }
-@@ -40693,6 +40966,7 @@ void main() {
+@@ -40717,6 +40966,7 @@ void main() {
            else { const wt0 = performance.now(); const wl = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - wt0 < 20000) return setTimeout(wl, 250); mapSettle = 90; if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI.welcome(true); }; setTimeout(wl, 1000); } // r139r: after the cups' reveal (r142b: a second, and the view settles on the car)
            try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map") + location.hash); } catch {} // r139p: a plain "/" stays plain
          } else {
@@ -799,7 +833,7 @@ index b60e233..3b0a5d2 100644
            mapEndIntro();
            kinetic?.pause?.();
            mapCloseBoarding();
-@@ -40725,7 +40999,6 @@ void main() {
+@@ -40749,7 +40999,6 @@ void main() {
            updateScrollSpace();
            scrollToL(state.L, false);
            try { history.replaceState(null, "", location.pathname + "?drive" + location.hash); } catch {}
