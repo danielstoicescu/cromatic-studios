@@ -1,5 +1,5 @@
 diff --git a/build/build.mjs b/build/build.mjs
-index f460c72..77ef396 100644
+index f460c72..ca29994 100644
 --- a/build/build.mjs
 +++ b/build/build.mjs
 @@ -398,7 +398,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
@@ -7,24 +7,101 @@ index f460c72..77ef396 100644
  const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
  // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
 -const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.22"; // beta 3.22 r200 (Daniel, shorter boarding): the take-off without its extra hero shot or the "Wheels up!" hold, a 3 s wait after sending, the clouds kept behind the end card, "Back to the map" to where you were. beta 3.21 (r198): the city's small static meshes batched (Street view frame time), hints wrap on phones. beta 3.20 (r197): the next exit marked on the roundabout. beta 3.19 (r196): the cookie card is slim on phones. beta 3.18 (r195): /onboarding/ updated to the map you drive. beta 3.16 (Daniel): the mini-game, round 5 (the real Two Minutes front, the voucher, sideways on phones) and the address, 50A
-+const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.31"; // beta 3.22 r200 (Daniel, shorter boarding): the take-off without its extra hero shot or the "Wheels up!" hold, a 3 s wait after sending, the clouds kept behind the end card, "Back to the map" to where you were. beta 3.21 (r198): the city's small static meshes batched (Street view frame time), hints wrap on phones. beta 3.20 (r197): the next exit marked on the roundabout. beta 3.19 (r196): the cookie card is slim on phones. beta 3.18 (r195): /onboarding/ updated to the map you drive. beta 3.16 (Daniel): the mini-game, round 5 (the real Two Minutes front, the voucher, sideways on phones) and the address, 50A
++const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.32"; // beta 3.22 r200 (Daniel, shorter boarding): the take-off without its extra hero shot or the "Wheels up!" hold, a 3 s wait after sending, the clouds kept behind the end card, "Back to the map" to where you were. beta 3.21 (r198): the city's small static meshes batched (Street view frame time), hints wrap on phones. beta 3.20 (r197): the next exit marked on the roundabout. beta 3.19 (r196): the cookie card is slim on phones. beta 3.18 (r195): /onboarding/ updated to the map you drive. beta 3.16 (Daniel): the mini-game, round 5 (the real Two Minutes front, the voucher, sideways on phones) and the address, 50A
  const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
  const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
  const GS = {};
 diff --git a/src/minigame.js b/src/minigame.js
-index 6542a55..e1e1463 100644
+index 6542a55..33a58e5 100644
 --- a/src/minigame.js
 +++ b/src/minigame.js
-@@ -113,7 +113,7 @@
+@@ -10,6 +10,11 @@
+ // drawn as shaded athletes, and both sides picked on the select screen: Player 1, then the CPU (I O N by default).
+ // beta 3.15 (Daniel, round 4, for the live site): bare fists in coloured wraps, workwear I O N, shirtless Cristache
+ // with glasses and a cigarette, Steve in a varsity jacket, portraits drawn from the fighters themselves, a MENU button.
++// beta 3.32 (Daniel: "closer to the GIFs I sent: the pixel density, the shadows, the white and black outlines"): the
++// arcade sprites' look, in the same puppet: six tones a material with the hue turning (yellow in the light, red or
++// blue-violet in the shade), hard cel bands with no dither, every outline in its material's own darkest tone (black
++// only on black things), a rim of light on the edges facing the light, fists with fingers, cloth folds with their lit
++// ridge, hair in lit locks; the portraits drawn at 2x (one-pixel detail, not 2x2); Cristache smokes.
+ (function () {
+   "use strict";
+   const W = 384, H = 216, FLOOR = 200, STAGE_W = 576;
+@@ -111,15 +116,28 @@
+     x.putImageData(id, 0, 0); return c;
+   }
    const PORT = {};
-   function bust(id) { // 36x36, at the game's size
+-  function bust(id) { // 36x36, at the game's size
++  // beta 3.32 (Daniel: "closer to the GIFs: the pixel density"): the portraits are no longer the small bust doubled
++  // (2x2 pixels): the bust is drawn again at twice the resolution (the body K = 2, the head at 2x with its own
++  // details), so a 64 px portrait has one-pixel detail like the fighters; the VS screen doubles that. Cristache has his
++  // cigarette in his mouth with a wisp of smoke
++  const bustPose = (id) => (LOOKS[id].smokes ? Object.assign({}, BUST_POSE, { cig: "mouth" }) : BUST_POSE);
++  function wisp(x, c, e, k) { // a thin S of smoke rising from the lit end, fading
++    if (!e) return;
++    const pts = k > 1 ? [[0, -2, 0], [1, -3, 0], [1, -4, 0], [0, -5, 0], [-1, -6, 1], [-1, -7, 1], [0, -8, 1], [1, -9, 1], [2, -10, 2], [2, -11, 2], [1, -13, 2], [0, -14, 3], [0, -16, 3]] : [[0, -2, 0], [1, -3, 1], [0, -4, 1], [0, -5, 2], [1, -7, 3]];
++    for (const [dx, dy, a] of pts) { x.fillStyle = ["#f0f0f4", "#d6d6e0", "#b8b8c8", "#9a9aac"][a]; x.fillRect(e[0] + dx, e[1] + dy, 1, 1); }
++  }
++  function bust(id) { // 36x36, at the game's size (the select grid's tiles)
      if (PORT[id + ":s"]) return PORT[id + ":s"];
 -    const f = drawFighter(id, BUST_POSE, null), sc = LOOKS[id].build.sc || 1, nx = OX + BUST_POSE.neck[0] * sc, ny = OY + BUST_POSE.neck[1] * sc;
-+    const f = drawFighter(id, BUST_POSE, null), sc = (LOOKS[id].build.sc || 1) * BODY, nx = OX + BUST_POSE.neck[0] * sc, ny = OY + BUST_POSE.neck[1] * sc;
-     const [c, x] = mk(36, 36); x.drawImage(f, Math.round(nx - 16), Math.round(ny - 29), 36, 36, 0, 0, 36, 36);
+-    const [c, x] = mk(36, 36); x.drawImage(f, Math.round(nx - 16), Math.round(ny - 29), 36, 36, 0, 0, 36, 36);
++    const f = drawFighter(id, bustPose(id), null), sc = (LOOKS[id].build.sc || 1) * BODY, nx = Math.round(OX + BUST_POSE.neck[0] * sc - 16), ny = Math.round(OY + BUST_POSE.neck[1] * sc - 29);
++    const [c, x] = mk(36, 36); x.drawImage(f, nx, ny, 36, 36, 0, 0, 36, 36);
++    if (f.ember) wisp(x, c, [f.ember[0] - nx, f.ember[1] - ny], 1);
      return (PORT[id + ":s"] = c);
    }
-@@ -147,17 +147,23 @@
+-  function portrait(id) { // 64x64 (from 72x72 doubled)
++  function portrait(id) { // 64x64, drawn at 2x (72x72, cropped)
+     if (PORT[id]) return PORT[id];
+-    const [c, x] = mk(64, 64); x.drawImage(epx(bust(id)), 4, 2, 64, 64, 0, 0, 64, 64);
++    const sc = (LOOKS[id].build.sc || 1) * BODY * 2, f = drawFighter(id, bustPose(id), null, null, { K: 2, w: 72, h: 72, ox: 32 - BUST_POSE.neck[0] * sc, oy: 58 - BUST_POSE.neck[1] * sc });
++    const [c, x] = mk(64, 64); x.drawImage(f, 4, 2, 64, 64, 0, 0, 64, 64);
++    if (f.ember) { c.ember = [f.ember[0] - 4, f.ember[1] - 2]; wisp(x, c, c.ember, 2); }
+     return (PORT[id] = c);
+   }
+   const portraitBig = (id) => PORT[id + ":b"] || (PORT[id + ":b"] = epx(portrait(id)));
+@@ -133,31 +151,60 @@
+   // colours: one base per material, five tones made from it (light, lit, base, shade, deep)
+   const rgbOf = (h) => { const n = parseInt(h.slice(1, 7), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
+   const hexOf = (c) => "#" + c.map((v) => clamp(Math.round(v), 0, 255).toString(16).padStart(2, "0")).join("");
+-  const RAMPS = new Map();
++  // beta 3.32 (Daniel: "closer to the GIFs: the pixel density, the shadows, the white and black outlines"): the ramps
++  // as the 90s arcade sprites have them. Six tones a material: a pale highlight turned towards yellow, a lit tone, the
++  // base, two shades turned towards red (warm colours) or blue-violet (cool ones) with the lightness stepping down
++  // (x0.84, x0.66), and an outline tone (x0.40), the material's own darkest colour, not a flat black. Greys get a cool
++  // shade; near-whites keep their colour as the lit tone and shade to warm greys (the white tee, the sneakers)
++  const RAMPS = new Map(), OUTL = new Map(), RIM = new Map();
++  const hslOf = ([r, g2, b]) => { r /= 255; g2 /= 255; b /= 255; const mx = Math.max(r, g2, b), mn = Math.min(r, g2, b), l = (mx + mn) / 2, d = mx - mn; if (d < 1e-6) return [0, 0, l]; const s2 = d / (1 - Math.abs(2 * l - 1)); let h = mx === r ? ((g2 - b) / d) % 6 : mx === g2 ? (b - r) / d + 2 : (r - g2) / d + 4; return [(h * 60 + 360) % 360, s2, l]; };
++  const rgbOfHsl = (h, s2, l) => { h = ((h % 360) + 360) % 360; s2 = clamp(s2, 0, 1); l = clamp(l, 0, 1); const c = (1 - Math.abs(2 * l - 1)) * s2, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = l - c / 2, k = Math.floor(h / 60) % 6; return [[c, x, 0], [x, c, 0], [0, c, x], [0, x, c], [x, 0, c], [c, 0, x]][k].map((v) => (v + m) * 255); };
++  const towards = (h, to, by) => { let d = ((to - h + 540) % 360) - 180; return h + clamp(d, -by, by); };
+   function ramp(base) {
+     if (RAMPS.has(base)) return RAMPS.get(base);
+-    const c = rgbOf(base), mix = (t, k) => c.map((v, i) => v + (t[i] - v) * k);
+-    const r = [mix([255, 250, 236], 0.42), mix([255, 248, 230], 0.18), c, mix([46, 26, 72], 0.36), mix([26, 14, 44], 0.6)].map((x) => u32(hexOf(x)));
++    let [h, s2, l] = hslOf(rgbOf(base));
++    const grey = s2 < 0.1, warm = !grey && (h < 75 || h > 320), cool = !grey && !warm;
++    const muted = warm && s2 < 0.88; // skin, tan, khaki: the shades step down gently and lose their colour (as the refs' skin)
++    const vivid = s2 > 0.55 && !muted, up1 = vivid ? 0.42 : 0.58, up2 = vivid ? 0.2 : 0.26; // a vivid colour keeps its colour in the light (a red goes orange, not pink)
++    const hiH = warm ? towards(h, 50, vivid ? 22 : 14) : cool ? towards(h, 195, 8) : h, shH = (k) => (warm ? towards(h, muted ? 10 : 0, (muted ? 4 : 9) * k) : cool ? towards(h, 245, 9 * k) : grey && s2 < 0.03 ? 250 : h);
++    const sh2 = (k) => (grey ? Math.max(s2, 0.05 + 0.02 * k) : muted ? s2 * [1, 0.78, 0.5, 0.44][k] : s2 * (1 - 0.05 * k));
++    let L = [l + (0.97 - l) * up1, l + (0.97 - l) * up2, l, l * (muted ? 0.88 : 0.82), l * (muted ? 0.72 : 0.64), Math.max(0.06, l * (muted ? 0.38 : 0.4))];
++    if (l > 0.86) L = [Math.min(0.99, l + (1 - l) * 0.6), l, l * 0.9, l * 0.78, l * 0.64, l * 0.4]; // a white: it shades to warm greys
++    const S = [Math.min(1, s2 * (muted ? 1.12 : 1.05)), s2, s2, sh2(1), sh2(2), Math.max(grey ? 0.06 : 0.2, sh2(3) * 0.95)];
++    const Hh = [hiH, towards(h, hiH, 6), h, shH(1), shH(2), l > 0.86 ? (cool ? 240 : 30) : shH(2.6)];
++    if (l > 0.86) { S[3] = Math.max(S[3], 0.12); S[4] = Math.max(S[4], 0.14); S[5] = 0.18; if (!cool) { Hh[3] = Hh[4] = 38; } }
++    const r = L.map((v, i) => u32(hexOf(rgbOfHsl(Hh[i], S[i], v))));
++    if (l > 0.86) r[1] = u32(base);
++    else r[2] = u32(base);
++    for (let i = 0; i < 6; i++) { if (!OUTL.has(r[i])) OUTL.set(r[i], r[5]); if (i > 1 && i < 5 && !RIM.has(r[i])) RIM.set(r[i], r[i - 1]); }
+     RAMPS.set(base, r);
+     return r;
+   }
++  // the outline tone of any colour (a colour from a ramp has its ramp's; any other gets one made the same way)
++  const outlineOf = (v) => { let o = OUTL.get(v); if (o === undefined) { o = ramp(hexOf([v & 255, (v >> 8) & 255, (v >> 16) & 255]))[5]; OUTL.set(v, o); } return o; };
+   // per fighter: the build (sh shoulders, arm, leg, waist, sc the whole size) and the clothes
+   // beta 3.12 (Daniel: "neater, more meaningful outfits, with accessories"; three archetype nods): per fighter, the
+   // build (sh shoulders, arm, leg, waist, chest, sc the whole size) and a clean fighting outfit that still reads as them
    // beta 3.15 (Daniel): bare fists in hand wraps for everyone, the tape in each fighter's colour (glove)
    const LOOKS = {
      // I O N: workwear, relaxed: a navy work shirt, loose canvas work trousers, work boots worn casual, the cap backwards
@@ -32,11 +109,11 @@ index 6542a55..e1e1463 100644
 +    // beta 3.31 (Daniel: "Ion's shoes are proportioned strangely, put him in Asics running shoes"): low, sleek runners
 +    // the size of everyone's shoes (light grey upper, the crossing side stripes as a nod, no logo, a chunky light
 +    // midsole), the trousers a little narrower at the hem so the shoe shows
-+    ion: { skin: "#dca07a", top: "#22305a", topKind: "workshirt", sleeve: "rolled", pants: "#a07a44", loose: 1.8, hem: 0.7, canvas: true, runner: { upper: "#c9ced8", stripe: "#2a4a9e", heel: "#22305a", mid: "#fbf8f0" }, shoe: "#c9ced8", sole: "#3a3a46", glove: "#d8342a", build: { sh: 1.08, arm: 1.06 } },
++    ion: { skin: "#dca07a", top: "#22305a", topKind: "workshirt", sleeve: "rolled", pants: "#a07a44", loose: 1.8, hem: 0.7, canvas: true, runner: { upper: "#f2f3f6", stripe: "#1d4fd8", heel: "#1d4fd8", mid: "#fbfaf6" }, shoe: "#f2f3f6", sole: "#3a3a46", glove: "#d8342a", build: { sh: 1.08, arm: 1.06 } },
      // Cristache: shirtless, grey trousers, the calm karate stance; glasses and a cigarette (on the head)
 -    cristache: { skin: "#e3a47e", top: "#e3a47e", topKind: "bare", sleeve: "none", pants: "#8a8a90", loose: 1.5, barefoot: true, glove: "#28c840", build: { sh: 1.04, arm: 1.04 } },
 +    // beta 3.31 (Daniel: "Cristache smaller, leaner"): a size down, a narrow chest and waist, slim arms, as in his photos
-+    cristache: { skin: "#e6aa86", top: "#e6aa86", topKind: "bare", lean: true, sleeve: "none", pants: "#8a8a90", loose: 1.4, barefoot: true, glove: "#28c840", build: { sc: 0.9, sh: 0.86, arm: 0.8, chest: 0.84, waist: 0.82, leg: 0.92 } },
++    cristache: { skin: "#e6aa86", top: "#e6aa86", topKind: "bare", lean: true, smokes: true, sleeve: "none", pants: "#8a8a90", loose: 1.4, barefoot: true, glove: "#28c840", build: { sc: 0.9, sh: 0.86, arm: 0.8, chest: 0.84, waist: 0.82, leg: 0.92 } },
      // Rares: the flashy nod: sleeveless, a gold chain, the key tag, taped ankles, barefoot
 -    rares: { skin: "#e9ae8a", top: "#f4f2ee", topKind: "muscle", sleeve: "none", chain: "#e8c050", tattoo: true, key: true, pants: "#1c1c22", loose: 1.5, belt: "#1c1c22", barefoot: true, ankle: "#f2efe6", glove: "#2fd6f0", build: { arm: 1.08 } },
 -    iulica: { skin: "#c88961", top: "#5f6e40", topKind: "tee", sleeve: "short", strap: "#d9cba8", pants: "#2c2c32", shoe: "#3a3a3a", sole: "#e0e0e0", glove: "#b8e02f", build: { sh: 0.98 } },
@@ -54,7 +131,7 @@ index 6542a55..e1e1463 100644
      cristian: { skin: "#e9ab84", top: "#7a6c50", topKind: "henley", sleeve: "rolled", belt: "#3a2618", buckle: "#c9a640", pants: "#3e4048", shoe: "#4a3022", sole: "#1a120e", glove: "#2f6fe0", build: {} },
      daniel: { skin: "#e7a57d", top: "#1fb0ba", topKind: "tee", sleeve: "short", stripe: "#fed012", belt: "#1c1820", buckle: "#c9ccd4", pants: "#2e3a62", shoe: "#f2f2f6", sole: "#9a9ab0", glove: "#fed012", build: {} }
    };
-@@ -168,6 +174,7 @@
+@@ -168,6 +215,7 @@
      x0 = Math.max(0, Math.floor(x0)); y0 = Math.max(0, Math.floor(y0)); x1 = Math.min(this.w - 1, Math.ceil(x1)); y1 = Math.min(this.h - 1, Math.ceil(y1));
      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
        const px = x + 0.5, py = y + 0.5; if (!inside(px, py)) continue;
@@ -62,33 +139,72 @@ index 6542a55..e1e1463 100644
        const col = color(px, py); if (!col) continue;
        const i = y * this.w + x; this.c[i] = col; this.z[i] = z; this.g[i] = group;
      }
-@@ -187,7 +194,7 @@
-   // the finish: a soft shadow where a nearer form crosses a farther one, and one outline round the figure
+@@ -184,22 +232,55 @@
+       const v = pal[ch]; const i = py * this.w + px; this.c[i] = typeof v === "number" ? v : u32(v || "#ff00ff"); this.z[i] = z; this.g[i] = group;
+     }
+   };
+-  // the finish: a soft shadow where a nearer form crosses a farther one, and one outline round the figure
++  // the finish: a line where a nearer form crosses a farther one, and the outline round the figure.
++  // beta 3.32 (Daniel, the arcade refs): the outline in each material's own darkest tone (dark brown round the skin, a
++  // warm grey round a white tee, near black round black hair and trousers), the inner lines the same, and a rim of light
++  // on the edges that face the light (up and towards the back), one tone lighter, as the 90s sprites have it
    Fig.prototype.finish = function () {
-     const { w, h, c, z, g } = this, out = new Uint32Array(c), oc = u32(OUT);
+-    const { w, h, c, z, g } = this, out = new Uint32Array(c), oc = u32(OUT);
 -    const dark = (v) => { const r = v & 255, gg = (v >> 8) & 255, b = (v >> 16) & 255; return (0xff000000 | (Math.round(b * 0.62 + 10) << 16) | (Math.round(gg * 0.58) << 8) | Math.round(r * 0.6)) >>> 0; };
-+    const dark = (v) => { const r = v & 255, gg = (v >> 8) & 255, b = (v >> 16) & 255; return (0xff000000 | (Math.round(b * 0.3 + 18) << 16) | (Math.round(gg * 0.26 + 8) << 8) | Math.round(r * 0.3 + 14)) >>> 0; }; // beta 3.30: the contour, dark, in the colour's own hue
-     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-       const i = y * w + x;
-       if (!z[i]) { if ((x > 0 && z[i - 1]) || (x < w - 1 && z[i + 1]) || (y > 0 && z[i - w]) || (y < h - 1 && z[i + w])) out[i] = oc; continue; }
-@@ -199,7 +206,15 @@
+-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+-      const i = y * w + x;
+-      if (!z[i]) { if ((x > 0 && z[i - 1]) || (x < w - 1 && z[i + 1]) || (y > 0 && z[i - w]) || (y < h - 1 && z[i + w])) out[i] = oc; continue; }
+-      if (c[i] === oc) continue;
+-      for (const j of [i - 1, i + 1, i - w, i + w]) { if (j < 0 || j >= w * h || !z[j]) continue; if (z[j] > z[i] && g[j] !== g[i] && c[j] !== oc) { out[i] = dark(c[i]); break; } }
++    const { w, h, c, z, g } = this, out = new Uint32Array(c), oc = u32(OUT), n = w * h;
++    const lum = (v) => (v & 255) * 3 + ((v >> 8) & 255) * 6 + ((v >> 16) & 255);
++    let best = 0, bl = 0;
++    const take = (j) => { const o = c[j] === oc ? oc : outlineOf(c[j]), lo = lum(o); if (lo < bl) { bl = lo; best = o; } };
++    for (let y = 0, i = 0; y < h; y++) for (let x = 0; x < w; x++, i++) {
++      if (!z[i]) {
++        best = 0; bl = 1e9;
++        if (x > 0 && z[i - 1]) take(i - 1); if (x < w - 1 && z[i + 1]) take(i + 1); if (y > 0 && z[i - w]) take(i - w); if (y < h - 1 && z[i + w]) take(i + w);
++        if (best) out[i] = best;
++        continue;
++      }
++      const ci = c[i]; if (ci === oc) continue;
++      const zi = z[i], gi = g[i];
++      if ((x > 0 && z[i - 1] > zi && g[i - 1] !== gi && c[i - 1] !== oc) || (x < w - 1 && z[i + 1] > zi && g[i + 1] !== gi && c[i + 1] !== oc) || (y > 0 && z[i - w] > zi && g[i - w] !== gi && c[i - w] !== oc) || (i + w < n && z[i + w] > zi && g[i + w] !== gi && c[i + w] !== oc)) { out[i] = outlineOf(ci); continue; }
++      if ((x > 0 && !z[i - 1]) || (y > 0 && !z[i - w])) { const r = RIM.get(ci); if (r !== undefined) out[i] = r; } // the rim light
+     }
+     const [cv2, x2] = mk(w, h), id = x2.createImageData(w, h); new Uint32Array(id.data.buffer).set(out); x2.putImageData(id, 0, 0);
+     return cv2;
    };
    // light from the front, above, a little towards us; a normal (nx, ny) on a round form -> one of five tones
    const LI = [-0.46, -0.68, 0.57];
 -  const toneOf = (nx, ny) => { const nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny)), d = nx * LI[0] + ny * LI[1] + nz * LI[2]; return d > 0.86 ? 0 : d > 0.64 ? 1 : d > 0.3 ? 2 : d > -0.05 ? 3 : 4; };
-+  // beta 3.30 (Daniel: the 90s arcade look): cel shading in hard bands, with a checker dither where two bands meet
++  // beta 3.30 (Daniel: the 90s arcade look): cel shading in hard bands. beta 3.32: no dither between them (the refs
++  // have none on the fighters), the highlight a broader band
 +  let CURX = 0, CURY = 0;
-+  const BANDS = [0.84, 0.56, 0.16, -0.22];
++  const BANDS = [0.8, 0.56, 0.26, -0.06];
 +  const toneOf = (nx, ny) => {
 +    const nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny)), d = nx * LI[0] + ny * LI[1] + nz * LI[2];
 +    let t = 0; while (t < 4 && d <= BANDS[t]) t++;
-+    if (t > 0 && d - BANDS[t - 1] > -0.035 && ((CURX + CURY) & 1)) t--; // just under a band's edge: every other pixel takes the lighter band
 +    return t;
++  };
++  // beta 3.32 (the arcade refs): cloth folds as the 90s sprites draw them: a dark line two tones down with a ridge one
++  // tone up on its lit side (the light comes from behind, so the ridge sits towards the back). A fold: [t0, t1, nx at
++  // t0, nx at t1] along a limb, or [t, width] for a crease across it
++  const LEG_FOLDS = [[[0.28, 0.78, -0.02, 0.45], [0.45, 0.9, -0.62, -0.3], [0.12, 0.42, 0.55, 0.3], [0.9, 0.03]], [[0.1, 0.035], [0.3, 0.85, -0.42, -0.3], [0.15, 0.55, 0.42, 0.1], [0.62, 0.95, 0.5, 0.2]]];
++  const ARM_FOLDS = [[[0.9, 0.04], [0.5, 0.95, -0.4, 0.05], [0.2, 0.55, 0.45, 0.2]], [[0.1, 0.04], [0.25, 0.7, -0.3, 0]]];
++  const folds = (nx, t, list) => {
++    for (const f of list) {
++      if (f.length === 2) { if (Math.abs(t - f[0]) < f[1]) return 1; continue; }
++      if (t < f[0] || t > f[1]) continue;
++      const d = nx - lerp(f[2], f[3], (t - f[0]) / (f[1] - f[0]));
++      if (Math.abs(d) < 0.075) return 2; if (d < -0.075 && d > -0.21) return -1;
++    }
++    return 0;
 +  };
    // a limb: from a to b, its radius going from r0 to r1 with a swell (the muscle) peaking at "at" along it
    function limb(F, a, b, r0, r1, swell, at, mat, group) {
      const vx = b[0] - a[0], vy = b[1] - a[1], l2 = vx * vx + vy * vy || 1, R = Math.max(r0, r1) + swell, ul = Math.sqrt(l2), ux = vx / ul, uy = vy / ul;
-@@ -234,7 +249,8 @@
+@@ -234,7 +315,8 @@
    const KFULL = pose({ hip: [-5, -51], neck: [-12, -77], head: [-12, -88], eF: [6, -67], hF: [13, -77], eB: [-13, -61], hB: [-20, -52], kF: [24, -58], fF: [49, -64], kB: [-6, -24], fB: [-8, 0], tw: 0.6 });
    const JUMP = pose({ hip: [0, -58], neck: [4, -86], head: [7, -97], eF: [16, -73], hF: [24, -84], eB: [6, -71], hB: [15, -80], kF: [13, -46], fF: [8, -32], kB: [-1, -42], fB: [-11, -33] });
    const POSES = {
@@ -98,17 +214,21 @@ index 6542a55..e1e1463 100644
      crouch: [CROUCH],
      cblock: [Object.assign({}, CROUCH, { eF: [16, -50], hF: [17, -65], eB: [13, -48], hB: [22, -61] })],
      block: [pose({ hip: [-2, -47], neck: [1, -75], head: [4, -85], eF: [15, -68], hF: [16, -84], eB: [11, -66], hB: [21, -79] })],
-@@ -282,7 +298,7 @@
+@@ -282,19 +364,30 @@
    };
    // beta 3.12: the archetype stances (a nod, not a copy): Cristache low and still like a karateka, the back fist at the
    // hip; Rares bouncing on his toes, fists high; I O N upright and square, the guard tight
 -  const breathe = (b0, amp) => [0, 1, 2, 1].map((d) => upper(Object.assign({}, b0, { hip: [b0.hip[0], b0.hip[1] + d * amp * 0.6] }), d * 0.2, d * amp));
 +  const breathe = (b0, amp) => [0, 1, 2, 1].map((d) => { const q = upper(Object.assign({}, b0, { hip: [b0.hip[0] + (d - 1) * 0.5, b0.hip[1] + d * amp * 0.4] }), d * 0.2, -d * amp * 1.2); q.br = d; return q; });
    const STYLE_POSES = {
-     cristache: { idle: breathe(pose({ hip: [0, -43], neck: [6, -71], head: [9, -82], eF: [20, -56], hF: [31, -60], eB: [-1, -50], hB: [5, -44], kF: [16, -21], fF: [27, 0], kB: [-15, -19], fB: [-27, 0] }), 0.6) },
+-    cristache: { idle: breathe(pose({ hip: [0, -43], neck: [6, -71], head: [9, -82], eF: [20, -56], hF: [31, -60], eB: [-1, -50], hB: [5, -44], kF: [16, -21], fF: [27, 0], kB: [-15, -19], fB: [-27, 0] }), 0.6) },
++    // beta 3.32: Cristache wins with the back fist up and the cigarette in his mouth (the face stays clear of the arm)
++    cristache: { win: [0, 1].map((d) => pose({ hip: [0, -47 - d], neck: [4, -75 - d], head: [7, -86 - d], eB: [-6, -90 - d], hB: [-3, -106 - d * 2], eF: [13, -58 - d], hF: [22, -54 - d] })), idle: breathe(pose({ hip: [0, -43], neck: [6, -71], head: [9, -82], eF: [20, -56], hF: [31, -60], eB: [-1, -50], hB: [5, -44], kF: [16, -21], fF: [27, 0], kB: [-15, -19], fB: [-27, 0] }), 0.6) },
      rares: { idle: [0, 1.5, 3, 1.5].map((d) => { const b0 = pose({ eF: [15, -66], hF: [21, -79], eB: [6, -64], hB: [14, -75], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-17, 0] }); const q = upper(Object.assign({}, b0, { hip: [0, -47 + d] }), 0, d); q.kF = [12, -24 + d * 0.5]; q.kB = [-8, -23 + d * 0.5]; return q; }) },
-@@ -290,11 +306,19 @@
+     ion: { idle: breathe(pose({ hip: [0, -48], neck: [3, -77], head: [5, -88], eF: [15, -64], hF: [18, -80], eB: [8, -64], hB: [13, -78], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-16, 0] }), 0.8) }
    };
++  // beta 3.32: Cristache bringing the cigarette to his lips (the front hand up at the mouth, the back fist at the hip)
++  const SMOKE_POSES = { cristache: [pose({ hip: [0, -43], neck: [6, -71], head: [9, -82], eF: [14, -58], hF: [17, -73], eB: [-1, -50], hB: [5, -44], kF: [16, -21], fF: [27, 0], kB: [-15, -19], fB: [-27, 0] })] };
    // beta 3.16: the bystanders, in the same puppet as the fighters (bare hands, a little smaller)
    const WRAP = "#f2f0ea";
 +  // beta 3.30 (Daniel): the people watching stand further back, smaller (65%), always the same ones: roster faces in
@@ -131,7 +251,7 @@ index 6542a55..e1e1463 100644
    };
    const NPC_HEADS = {
      npcSit: { skin: "#e2a882", hair: "#2a1e18", hl: "#4a3a30", beard: "#3a2a20", hairline: [7, 10], thick: 0.5, back: 17, tex: "short", beardKind: "stubble", beardTop: 16.5, mouth: "flat" },
-@@ -304,16 +328,18 @@
+@@ -304,16 +397,18 @@
    };
    const SIT = { hip: [-2, -12], neck: [3, -40], head: [6, -51], kF: [12, -17], fF: [16, 0], kB: [9, -15], fB: [13, 0], eF: [12, -24], hF: [18, -20], eB: [6, -24], hB: [12, -16] };
    const STAND = { hip: [0, -47], neck: [1, -75], head: [4, -86], kF: [3, -24], fF: [5, 0], kB: [-3, -24], fB: [-5, 0], eF: [5, -58], hF: [7, -44], eB: [-4, -58], hB: [-5, -44] };
@@ -155,9 +275,12 @@ index 6542a55..e1e1463 100644
    // beta 3.12 (Daniel: "you can't tell it's them"): bigger heads (28x36), built from one shaded three-quarter face and,
    // per person, what makes them them: the hair (its line, volume, texture), the beard, glasses, a cap, the smile.
    // Read from their photos. The neck's foot (13, 31) sits on the body's neck.
-@@ -325,49 +351,67 @@
+@@ -323,117 +418,175 @@
+       hairline: [7, 10], thick: 0.4, back: 19, tex: "slick", bun: [6.5, 3, 2.6, 2.3],
+       beardKind: "full", beardTop: 15, beardDrop: 2.5, mouth: "grin", eyes: "smile" },
      cristian: { skin: "#e9ab84", hair: "#2c1f17", hl: "#57412f", beard: "#55361f", bhl: "#8a6244",
-       hairline: [6.5, 9], thick: 1.2, back: 17, tex: "short", blobs: [[15, 3.2, 5.5, 2.6], [11, 2.8, 4, 2.4]],
+-      hairline: [6.5, 9], thick: 1.2, back: 17, tex: "short", blobs: [[15, 3.2, 5.5, 2.6], [11, 2.8, 4, 2.4]],
++      hairline: [6.5, 9], thick: 1.2, back: 17, tex: "shag", crown: [9, 5], lockN: 2, curl: 0.1, blobs: [[15, 3.2, 5.5, 2.6], [11, 2.8, 4, 2.4]],
        beardKind: "full", beardTop: 16, beardDrop: 1.5, mouth: "grin", glasses: { kind: "round", color: "#1c1416", thick: 1 } },
 -    ion: { skin: "#dfa27a", hair: "#1b1517", hl: "#3d3034", beard: "#211819", bhl: "#4a3a36",
 -      hairline: [7, 10], thick: 0.6, back: 17, tex: "short",
@@ -170,12 +293,12 @@ index 6542a55..e1e1463 100644
 +    // recent photo): no cap, short dark hair with some height at the front and short sides, a broad full face, a short
 +    // dark beard along the jaw with the moustache, heavy straight brows, a strong nose
 +    ion: { skin: "#dca07a", hair: "#191416", hl: "#2c2426", beard: "#1e1617", bhl: "#4a3a36", rx: 1.06, jaw: 1.12, nose: 0.6,
-+      hairline: [6, 9.5], thick: 0.9, back: 17, tex: "short", blobs: [[16.5, 2.6, 6, 2.6], [20, 4.4, 2.6, 1.8]],
++      hairline: [6, 9.5], thick: 0.9, back: 17, tex: "shag", crown: [9, 6], lockN: 2, curl: 0.08, blobs: [[16.5, 2.6, 6, 2.6], [20, 4.4, 2.6, 1.8]],
 +      beardKind: "boxed", beardK: 0.32, beardTop: 17, beardDrop: 0.8, mouth: "flat", brows: "heavy" },
 +    // beta 3.31 (Daniel, likeness): the long dark curls fuller, a lock down in front of the ear framing the face, the
 +    // brows darker
 +    maria: { skin: "#ebb597", hair: "#24160f", hl: "#4e3424", fem: true, rx: 0.93, jaw: 0.88,
-+      hairline: [6.5, 11], thick: 1.8, back: 35, tex: "curly", blobs: [[8, 18, 6.5, 13], [5.5, 26, 5, 8.5], [12, 4, 8, 4], [17.5, 5.5, 4.5, 3], [10.6, 17, 2.2, 7.5], [3, 14, 3, 9]],
++      hairline: [6.5, 11], thick: 1.8, back: 35, tex: "shag", crown: [12, 3], lockN: 2.8, curl: 0.4, blobs: [[8, 18, 6.5, 13], [5.5, 26, 5, 8.5], [12, 4, 8, 4], [17.5, 5.5, 4.5, 3], [10.6, 17, 2.2, 7.5], [3, 14, 3, 9]],
 +      beardKind: null, mouth: "small", lips: "#c46a64", browCol: "#2a1a12" },
      // beta 3.15 (Daniel, from his second photo): buzzed dark hair, heavy brows, heavy-lidded eyes, stubble round the
      // jaw, full lips; glasses added; a lit cigarette in the corner of the mouth
@@ -197,7 +320,7 @@ index 6542a55..e1e1463 100644
 +    // the lip dark, the cheeks shadowed), the nose bigger, and thin clear glasses (the eyes show; no more sunglasses)
 +    cristache: { skin: "#e6aa86", hair: "#1d1511", hl: "#3a2c24", beard: "#2a1c16", bhl: "#5c4234", rx: 0.97, jaw: 0.95, nose: 0.6,
 +      hairline: [7.2, 10.2], thick: 0.3, back: 16, tex: "buzz",
-+      beardKind: "goatee", beardTop: 16.5, mouth: "lips", lips: "#c27a68", brows: "flat", eyes: "lidded", cig: true,
++      beardKind: "goatee", beardTop: 16.5, beardDrop: 1.1, mouth: "lips", lips: "#c27a68", brows: "flat", eyes: "lidded",
 +      glasses: { kind: "square", color: "#3a2a2c", lens: [[12, 12, 16, 15], [18, 12, 21, 15]], glint: [[15, 13], [20, 13]], bridge: [[17, 13]], armY: 13 } },
 +    // beta 3.31 (Daniel, likeness): the hair thick and swept up and back, grey through dark brown (not white); a round,
 +    // full face; big black rectangular frames; a short salt-and-pepper beard, the half smile
@@ -206,13 +329,18 @@ index 6542a55..e1e1463 100644
 +      beardKind: "boxed", beardTop: 16.5, beardDrop: 0.6, mouth: "smirk", glasses: { kind: "square", color: "#121014", lens: [[11, 11, 16, 15], [18, 11, 22, 15]], glint: [[15, 12], [21, 12]], bridge: [[17, 12]] } },
 +    // beta 3.31 (Daniel, likeness): the shaggy mullet (a fringe down over the forehead, wavy at the sides, down to the
 +    // nape), the big dark moustache over the lip, stubble round the chin
-+    rares: { skin: "#ecb593", hair: "#1f150f", hl: "#4a3628", beard: "#22160f", bhl: "#4d3524",
-+      hairline: [9.2, 10.6], thick: 1.8, back: 24, tex: "curly", blobs: [[11, 2.6, 8.5, 4], [17.5, 3.4, 5.5, 3.2], [20.6, 7.4, 2, 2.6], [17.5, 8.6, 1.4, 1.6], [14.5, 8.6, 1.6, 1.4], [5.5, 13, 4.5, 7], [7.5, 21, 4.5, 4.5], [10.5, 23, 2.4, 2.2]],
++    // beta 3.32 (Daniel: "Rares's hair is weird"): redone from his two photos: the dark shaggy mullet, curly, with
++    // volume on top and a broken outline; curls falling on the forehead to the brows in separate locks, the sides over
++    // the ears, the back down to the jaw line, flicking out. Near-black brown, its light in warm grey-brown streaks
++    rares: { skin: "#ecb593", hair: "#1e1611", hl: "#6a5a52", beard: "#22160f", bhl: "#4d3524",
++      hairline: [8.2, 10.6], thick: 1.3, back: 22, tex: "shag", crown: [10.5, 3], lockN: 2.6, earHid: true,
++      blobs: [[6.5, 3.6, 3.2, 2.6], [10.5, 1.8, 3.6, 2.2], [15, 1.9, 3.4, 2.1], [19, 3.6, 2.6, 2], [4.2, 8.5, 2.8, 3.2], [3.6, 14.5, 2.6, 3.6], [4.6, 20, 3, 3.2], [7.6, 22.6, 2.8, 2.2], [21, 6.2, 1.4, 1.6]],
++      locks: [[16, 5, 15.2, 10.4, 1.4, 0.5], [19.2, 5.4, 19.8, 10, 1.3, 0.5], [21.3, 6, 22.2, 9.2, 1, 0.4], [13, 5, 12.2, 9.6, 1.3, 0.5], [9.8, 9, 10.4, 18.6, 1.5, 0.7], [3.4, 21, 1.6, 24.6, 1.5, 0.6], [7.4, 22, 7, 25.4, 1.3, 0.5], [11, 21, 11.8, 23.6, 1.1, 0.5]],
 +      beardKind: "stubble", stubble: 0.5, beardTop: 16.5, mustache: "big", mouth: "under", lips: "#d4917c" },
 +    // beta 3.31 (Daniel, likeness): thick black hair falling forward to the brows and over the ears, the wide grin
 +    // with all the teeth, the eyes shut with it, stubble, the darker skin
 +    iulica: { skin: "#c27f57", hair: "#16100d", hl: "#2e241e", beard: "#24180f", bhl: "#4c3a2e", rx: 0.96,
-+      hairline: [9.6, 11], thick: 1.1, back: 19, tex: "messy", blobs: [[18, 8.6, 3.8, 1.5], [14.5, 8.9, 2.6, 1.3], [21, 8, 1.4, 2], [7.6, 11, 2.6, 4]],
++      hairline: [9.6, 11], thick: 1.1, back: 19, tex: "shag", crown: [10, 4], lockN: 2.4, curl: 0.2, blobs: [[18, 8.6, 3.8, 1.5], [14.5, 8.9, 2.6, 1.3], [21, 8, 1.4, 2], [7.6, 11, 2.6, 4]],
 +      beardKind: "stubble", stubble: 0.5, beardTop: 16, mouth: "biggrin", eyes: "smile" },
 +    // beta 3.31 (Daniel, likeness): clean-shaven, thin round wire glasses, a little open smile, the olive trucker cap
 +    // worn backwards, its strap on the forehead
@@ -223,16 +351,27 @@ index 6542a55..e1e1463 100644
 +      glasses: { kind: "round", color: "#4a3e44", lens: [[14, 13.4, 2.7, 2.4], [19.7, 13.4, 1.9, 2.4]], glint: [[15, 12], [20, 12]], bridge: [[17, 13]] },
        cap: { color: "#6a7040", band: "#8a9058", back: true, mesh: "#4e5432" } }
    };
++  HEADSPEC["cristache+cig"] = Object.assign({}, HEADSPEC.cristache, { cig: true }); // beta 3.32: the same face, the cigarette in the mouth
    const HEAD_CACHE = {};
 -  function headOf(id) {
 -    if (HEAD_CACHE[id]) return HEAD_CACHE[id];
 -    const P = HEADSPEC[id] || NPC_HEADS[id], rx = 8.7 * (P.rx || 1), ry = 10.2, cx0 = 13, cy0 = 12.5, jw = P.jaw || 1;
-+  function headOf(id, k = 1, noG = false) {
+-    const buf = new Array(HW * HH).fill(null), put = (x, y, c) => { if (x >= 0 && y >= 0 && x < HW && y < HH) buf[y * HW + x] = c; };
+-    const at = (x, y) => (x >= 0 && y >= 0 && x < HW && y < HH ? buf[y * HW + x] : null);
++  // beta 3.32: K = 2 draws the head at twice the resolution (for the portraits): every shape is worked out per small
++  // pixel, the features (eyes, brows, mouth) are drawn in 2x2 blocks with a few details only that size can carry
++  function headOf(id, k = 1, noG = false, K = 1) {
++    if (K > 1) { const key = id + (noG ? "!" : "") + "#" + K; return HEAD_CACHE[key] || (HEAD_CACHE[key] = headAt(id, noG, K)); }
 +    if (k < 1) { const key = id + "@" + k; if (HEAD_CACHE[key]) return HEAD_CACHE[key]; const G0 = (HEADSPEC[id] || NPC_HEADS[id]).glasses; return (HEAD_CACHE[key] = smallGlasses(shrinkHead(headOf(id, 1, !!G0), k), G0, k)); }
 +    if (HEAD_CACHE[id + (noG ? "!" : "")]) return HEAD_CACHE[id + (noG ? "!" : "")];
++    return (HEAD_CACHE[id + (noG ? "!" : "")] = headAt(id, noG, 1));
++  }
++  function headAt(id, noG, K) {
 +    const P0 = HEADSPEC[id] || NPC_HEADS[id], P = noG ? Object.assign({}, P0, { glasses: null }) : P0, rx = 8.7 * (P.rx || 1), ry = 10.2, cx0 = 13, cy0 = 12.5, jw = P.jaw || 1;
-     const buf = new Array(HW * HH).fill(null), put = (x, y, c) => { if (x >= 0 && y >= 0 && x < HW && y < HH) buf[y * HW + x] = c; };
-     const at = (x, y) => (x >= 0 && y >= 0 && x < HW && y < HH ? buf[y * HW + x] : null);
++    const W2 = HW * K, H2 = HH * K, buf = new Array(W2 * H2).fill(null), putH = (x, y, c) => { if (x >= 0 && y >= 0 && x < W2 && y < H2) buf[y * W2 + x] = c; };
++    const put = (x, y, c) => { for (let j = 0; j < K; j++) for (let i = 0; i < K; i++) putH(x * K + i, y * K + j, c); };
++    const at = (x, y) => (x >= 0 && y >= 0 && x < HW && y < HH ? buf[y * K * W2 + x * K] : null);
++    const each = (fn) => { for (let Y = 0; Y < H2; Y++) for (let X = 0; X < W2; X++) fn(X, Y, (X + 0.5) / K, (Y + 0.5) / K); }; // every small pixel, with its place in head units
      const R = (b) => ramp(b); const SK = R(P.skin), HA = R(P.hair), BE = R(P.beard || P.hair);
      const inPoly = (pts, x, y) => { let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c; } return c; };
      const jawPts = [[5.2, 13], [7.6, 21.5], [10.8, 25.2], [14.4, 26.2], [18, 24.4], [20.6, 20.8], [21.7, 15.5], [21.2, 11]].map(([x, y]) => [cx0 + (x - cx0) * jw, y]);
@@ -247,45 +386,59 @@ index 6542a55..e1e1463 100644
      // the neck (behind), the face, the ear
      for (let y = 22; y <= 28; y++) for (let x = 9; x <= 16; x++) put(x, y, SK[x < 11 ? 4 : 3]);
 -    for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) if (face(x + 0.5, y + 0.5)) put(x, y, SK[shadeAt(x + 0.5, y + 0.5)]);
-+    for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) if (face(x + 0.5, y + 0.5)) put(x, y, SK[shadeAt(x + 0.5, y + 0.5, FACE_LIFT)]); // beta 3.31: the face a little more in the light, so the features read
-     for (let y = 12; y <= 17; y++) for (let x = 6; x <= 9; x++) if (((x + 0.5 - 7.8) / 1.7) ** 2 + ((y + 0.5 - 14.6) / 2.7) ** 2 <= 1) put(x, y, SK[x === 8 && y > 12 && y < 17 ? 3 : 2]);
+-    for (let y = 12; y <= 17; y++) for (let x = 6; x <= 9; x++) if (((x + 0.5 - 7.8) / 1.7) ** 2 + ((y + 0.5 - 14.6) / 2.7) ** 2 <= 1) put(x, y, SK[x === 8 && y > 12 && y < 17 ? 3 : 2]);
++    each((X, Y, fx, fy) => { if (face(fx, fy)) putH(X, Y, SK[shadeAt(fx, fy, FACE_LIFT)]); }); // beta 3.31: the face a little more in the light, so the features read
++    each((X, Y, fx, fy) => { if (((fx - 7.8) / 1.7) ** 2 + ((fy - 14.6) / 2.7) ** 2 <= 1 && fx > 6 && fx < 10) putH(X, Y, SK[Math.floor(fx) === 8 && fy > 13 && fy < 17 ? 3 : 2]); });
      // the eye sockets and the cheek, a little darker; under the nose
      for (const [x, y] of [[13, 12], [14, 12], [18, 12], [19, 12], [21, 17], [20, 17]]) if (at(x, y)) put(x, y, SK[Math.min(4, shadeAt(x, y) + 1)]);
-@@ -375,25 +419,38 @@
+     // the beard: below a cheek line that runs from the sideburn (at the ear) down to the mouth's corner; a moustache
      // over the lip; full beards fall a little below the jaw. Stubble is the skin darkened towards the beard colour
      if (P.beardKind) {
        const kind = P.beardKind, drop = P.beardDrop || 0, lift = (P.beardTop ? 16.5 - P.beardTop : 0);
 -      const mix2 = (c1, c2, k2) => { const a2 = [c1 & 255, (c1 >> 8) & 255, (c1 >> 16) & 255], b2 = [c2 & 255, (c2 >> 8) & 255, (c2 >> 16) & 255]; const m2 = a2.map((v, i) => Math.round(v + (b2[i] - v) * k2)); return (0xff000000 | (m2[2] << 16) | (m2[1] << 8) | m2[0]) >>> 0; };
        const jawOut = jawPts.map(([a2, b2]) => [a2 + (a2 - cx0) * 0.05, b2 + drop * clamp((b2 - 14) / 12, 0, 1)]);
-       for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) {
-         const fx = x + 0.5, fy = y + 0.5;
+-      for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) {
+-        const fx = x + 0.5, fy = y + 0.5;
 -        if (!(face(fx, fy) || (kind === "full" && inPoly(jawOut, fx, fy)))) continue;
-+        if (!(face(fx, fy) || ((kind === "full" || kind === "boxed") && inPoly(jawOut, fx, fy)))) continue;
++      each((X, Y, fx, fy) => {
++        const x = Math.floor(fx), y = Math.floor(fy), put = (x2, y2, c) => putH(X, Y, c);
++        if (!(face(fx, fy) || ((kind === "full" || kind === "boxed" || (kind === "goatee" && fx > 15.4 && fx < 20.2)) && inPoly(jawOut, fx, fy)))) return;
          const cheek = (fx < 8.5 ? 10.5 : fx < 14 ? lerp(11.5, 17.2, (fx - 8.5) / 5.5) : 17.6) - lift;
-         if (fy < cheek) continue;
+-        if (fy < cheek) continue;
 -        const mouthHole = fx > 14.6 && fx < 20.4 && fy > 19.4 && fy < 21.6;
-+        const mouthHole = kind === "boxed" ? fx > 15.6 && fx < 19.4 && fy > 19.4 && fy < 21.6 : fx > 14.6 && fx < 20.4 && fy > 19.4 && fy < 21.6; // beta 3.31: in a boxed beard only the lips show
-         if (mouthHole) continue;
-         if (fx > 20.6 && fy < 19) continue; // the nose and the tip of the lip stay skin
-         const base = buf[y * HW + x];
+-        if (mouthHole) continue;
+-        if (fx > 20.6 && fy < 19) continue; // the nose and the tip of the lip stay skin
+-        const base = buf[y * HW + x];
 -        if (kind === "stubble") { if (base) put(x, y, mix2(base, BE[2], 0.42)); continue; }
-+        if (kind === "stubble") { if (base) put(x, y, mix2(base, BE[2], P.stubble || 0.42)); continue; }
+-        if (kind === "short") { if (base) put(x, y, mix2(base, BE[clamp(shadeAt(fx, fy) , 1, 3)], 0.8)); else put(x, y, BE[3]); continue; }
+-        let t = clamp(shadeAt(fx, fy, 0.05), 1, 4); if ((x * 3 + y) % 5 === 0 && t < 4) t++; // strands
+-        if (fy > 22 && fx > 11 && fx < 18 && ((x + y) % 4 === 0)) t = Math.max(1, t - 1);
++        if (fy < cheek) return;
++        const mouthHole = kind === "boxed" ? fx > 15.6 && fx < 19.4 && fy > 19.4 && fy < 21.6 : fx > 14.6 && fx < 20.4 && fy > 19.4 && fy < 21.6; // beta 3.31: in a boxed beard only the lips show
++        if (mouthHole) return;
++        if (fx > 20.6 && fy < 19) return; // the nose and the tip of the lip stay skin
++        const base = buf[Y * W2 + X];
++        if (kind === "stubble") { if (base) put(x, y, mix2(base, BE[2], P.stubble || 0.42)); return; }
 +        // beta 3.31 (Daniel, likeness): a goatee (the chin and the moustache dark, the cheeks only shadowed: Cristache)
 +        // and a short boxed beard (dense along the jaw, the chin and over the lip, the skin still under it: I O N, Steve)
 +        if (kind === "goatee") {
-+          const chin = fx > 12.6 && fx < 20.4 && fy > 21.2, must = fy > 17.6 && fy < 19.4 && fx > 14.6 && fx < 20.6;
-+          if (base) put(x, y, chin ? BE[fx > 16.5 && fy < 23 ? 3 : 4] : mix2(base, BE[2], must ? 0.75 : 0.2)); else put(x, y, BE[4]); continue;
++          // beta 3.32 (Daniel: "the beard more on the chin"): the goatee on the chin only, pointed a little below it, the
++          // moustache lighter, the jaw and the cheeks clean (a faint shadow where the chin beard ends)
++          const chin = fx > 15.2 && fy > 21.3, edge2 = fx > 13.6 && fx <= 15.2 && fy > 21.6, must = fy > 17.6 && fy < 19.4 && fx > 14.6 && fx < 20.6;
++          if (!base) { put(x, y, BE[fx > 17.5 ? 3 : 4]); return; }
++          if (chin) put(x, y, BE[fx > 17.2 && fy < 23.2 ? 2 : fy > 24 || fx < 16.2 ? 4 : 3]); else if (edge2) put(x, y, mix2(base, BE[3], 0.4)); else if (must) put(x, y, mix2(base, BE[2], 0.6)); return;
 +        }
 +        if (kind === "boxed") {
 +          const edge = !face(fx, fy + 1) || !face(fx - 1, fy), must = fy > 17.6 && fy < 19.4 && fx > 14.6 && fx < 20.4, chin = fy > 21.6 && fx > 11.5;
-+          const k3 = chin || edge ? 0.88 : must ? 0.74 : (P.beardK || 0.58) + clamp((fy - cheek) / 5, 0, 1) * 0.32; // denser towards the jaw
-+          if (base) put(x, y, mix2(base, BE[clamp(shadeAt(fx, fy), 2, 4)], Math.min(1, k3))); else put(x, y, BE[3]); continue;
++          const k0 = chin || edge ? 0.88 : must ? 0.74 : (P.beardK || 0.58) + clamp((fy - cheek) / 5, 0, 1) * 0.32, k3 = k0 > 0.8 ? 0.9 : k0 > 0.62 ? 0.7 : 0.45; // denser towards the jaw (beta 3.32: in three hard steps, no gradient)
++          if (base) put(x, y, mix2(base, BE[clamp(shadeAt(fx, fy), 2, 4)], Math.min(1, k3))); else put(x, y, BE[3]); return;
 +        }
-         if (kind === "short") { if (base) put(x, y, mix2(base, BE[clamp(shadeAt(fx, fy) , 1, 3)], 0.8)); else put(x, y, BE[3]); continue; }
-         let t = clamp(shadeAt(fx, fy, 0.05), 1, 4); if ((x * 3 + y) % 5 === 0 && t < 4) t++; // strands
-         if (fy > 22 && fx > 11 && fx < 18 && ((x + y) % 4 === 0)) t = Math.max(1, t - 1);
++        if (kind === "short") { if (base) put(x, y, mix2(base, BE[clamp(shadeAt(fx, fy) , 1, 3)], 0.8)); else put(x, y, BE[3]); return; }
++        let t = clamp(shadeAt(fx, fy, 0.05), 1, 4); if ((X * 3 + Y) % 5 === 0 && t < 4) t++; // strands
++        if (fy > 22 && fx > 11 && fx < 18 && ((X + Y) % 4 === 0)) t = Math.max(1, t - 1);
          put(x, y, BE[t]);
-       }
+-      }
++      });
      }
 -    if (P.mustache) for (let y = 18; y <= 19; y++) for (let x = 14; x <= 21; x++) if (!(y === 18 && (x === 14 || x === 21))) put(x, y, BE[y === 18 ? 2 : 3]);
 +    if (P.mustache === "big") { // beta 3.31: Rares's moustache, thick, a chevron over the lip, the ends dropping past the corners
@@ -295,26 +448,58 @@ index 6542a55..e1e1463 100644
      // the hair: what's above the hair line (lower at the temples), the back down to the nape, and the volume
      const [fy0, ty0] = P.hairline, th = P.thick || 0;
      const hairIn = (x, y) => {
-@@ -405,7 +462,7 @@
+       const sk = ((x - cx0) / (rx + th)) ** 2 + ((y - cy0) / (ry + th)) ** 2 <= 1;
+       const hl = lerp(ty0, fy0, clamp((x - 8) / 12, 0, 1)) - (x > 19 ? (x - 19) * 0.6 : 0);
+       if (sk && y < hl) return true;
+-      if (sk && x < 9.2 && y < P.back && !(x > 5.5 && y > 11.5 && y < 17.5)) return true; // behind the ear
++      if (sk && x < 9.2 && y < P.back && (P.earHid || !(x > 5.5 && y > 11.5 && y < 17.5))) return true; // behind the ear (beta 3.32: over it, earHid)
+       if (P.back > 20 && x < 10 && y < P.back && x > 3 - (y - 14) * 0.15 && y > 10 && !(x > 6 && y > 11.5 && y < 17.5 && x < 10)) return true; // long at the back
        for (const [bx, by, brx, bry] of P.blobs || []) if (((x - bx) / brx) ** 2 + ((y - by) / bry) ** 2 <= 1) return true;
++      for (const [x0, y0, x1, y1, w0, w1] of P.locks || []) { const vx = x1 - x0, vy = y1 - y0, q = clamp(((x - x0) * vx + (y - y0) * vy) / (vx * vx + vy * vy), 0, 1), w = lerp(w0, w1, q); if ((x - x0 - vx * q) ** 2 + (y - y0 - vy * q) ** 2 <= w * w) return true; } // beta 3.32: a lock of hair, a tapered stroke
        return false;
      };
 -    const HL = R(P.hl || P.hair);
+-    for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) {
+-      const fx = x + 0.5, fy = y + 0.5; if (!hairIn(fx, fy)) continue;
+-      if (P.fem && fx > 17 && fy > 9 && fy < 22) continue; // her face stays open
 +    const HL = R(P.hl || P.hair), HC = u32(P.hl || P.hair), HR = [HC, mix2(HA[2], HC, 0.5), HA[2], HA[3], HA[4]]; // beta 3.31: the hair's tones run from its own colour to its highlight (no grey lift on dark hair)
-     for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) {
-       const fx = x + 0.5, fy = y + 0.5; if (!hairIn(fx, fy)) continue;
-       if (P.fem && fx > 17 && fy > 9 && fy < 22) continue; // her face stays open
-@@ -417,7 +474,8 @@
++    each((X, Y, fx, fy) => {
++      if (!hairIn(fx, fy)) return;
++      if (P.fem && fx > 17 && fy > 9 && fy < 22) return; // her face stays open
++      const x = fx - 0.5, y = fy - 0.5;
+       let t = clamp(shadeAt(fx, fy, -0.15), 0, 4);
+-      const tex = P.tex, n = hash2(x * 3 + 1, y * 5 + 2);
++      const tex = P.tex, n = hash2(X * 3 + 1, Y * 5 + 2);
+       if (tex === "curly") { const c = (Math.sin(x * 1.7 + y * 0.9) + Math.sin(y * 1.9 - x * 0.6)) * 0.5; t = clamp(t + (c > 0.45 ? -1 : c < -0.45 ? 1 : 0), 1, 4); }
+-      else if (tex === "slick") { t = clamp(t + ((y % 3 === 0 && x > 8) ? -1 : 0), 1, 4); }
++      else if (tex === "slick") { t = clamp(t + ((Math.floor(y * K) % (3 * K) === 0 && x > 8) ? -1 : 0), 1, 4); }
+       else if (tex === "wavy") { const c = Math.sin(x * 0.9 + y * 1.4); t = clamp(t + (c > 0.6 ? -1 : c < -0.7 ? 1 : 0), 0, 4); }
        else if (tex === "buzz") { t = clamp(t + 1, 2, 4); if (n > 0.6) t = Math.min(4, t + 1); }
++      else if (tex === "shag") { // beta 3.32 (Rares): locks from the crown, each a lit streak, a mid tone and a dark parting, curling as they go
++        const [kx, ky] = P.crown || [11, 3], dx = fx - kx, dy = fy - ky, rr = Math.hypot(dx, dy), u = Math.atan2(dy, dx) * (P.lockN || 2.3) + Math.sin(rr * 0.85) * (P.curl ?? 0.32), fr = u - Math.floor(u);
++        const lit = t <= 1; t = Math.max(2, t) + (rr > 12 ? 1 : 0); // dark hair: the mass dark, the light only in the streaks
++        if (fr < 0.2 && t < 4) t -= lit ? 2 : 1; else if (fr < 0.3 && lit) t = 1; else if (fr > 0.74) t++;
++        t = clamp(t, 0, 4);
++      }
        else if (tex === "messy") { t = clamp(t + (n > 0.78 ? -1 : n < 0.15 ? 1 : 0), 1, 4); }
        else { t = clamp(t + (n > 0.85 ? -1 : 0), 1, 4); }
 -      put(x, y, t <= 1 ? HL[t === 0 ? 1 : 2] : HA[t]);
-+      if (P.fade && fx < P.fade[0] && fy > P.fade[1] && buf[y * HW + x] != null) { put(x, y, mix2(buf[y * HW + x], HA[clamp(t, 2, 4)], 0.55 + (n > 0.6 ? 0.2 : 0))); continue; } // beta 3.31: short at the sides, the skin through it
-+      put(x, y, HR[t]);
-     }
-     if (P.bun) { const [bx, by, brx, bry] = P.bun; for (let y = 0; y < 6; y++) for (let x = 3; x < 14; x++) { const d = ((x + 0.5 - bx) / brx) ** 2 + ((y + 0.5 - by) / bry) ** 2; if (d <= 1) put(x, y, d > 0.55 ? HA[3] : (x + y) % 3 ? HA[2] : HL[1]); } } // the knot on top
-     if (P.grey) for (let i = 0; i < HW * HH; i++) if (buf[i] === HA[2] && hash2(i, 7) < P.grey) buf[i] = HL[1];
-@@ -431,9 +489,10 @@
+-    }
+-    if (P.bun) { const [bx, by, brx, bry] = P.bun; for (let y = 0; y < 6; y++) for (let x = 3; x < 14; x++) { const d = ((x + 0.5 - bx) / brx) ** 2 + ((y + 0.5 - by) / bry) ** 2; if (d <= 1) put(x, y, d > 0.55 ? HA[3] : (x + y) % 3 ? HA[2] : HL[1]); } } // the knot on top
+-    if (P.grey) for (let i = 0; i < HW * HH; i++) if (buf[i] === HA[2] && hash2(i, 7) < P.grey) buf[i] = HL[1];
++      if (P.fade && fx < P.fade[0] && fy > P.fade[1] && buf[Y * W2 + X] != null) { putH(X, Y, mix2(buf[Y * W2 + X], HA[clamp(t, 2, 4)], 0.55 + (n > 0.6 ? 0.2 : 0))); return; } // beta 3.31: short at the sides, the skin through it
++      putH(X, Y, HR[t]);
++    });
++    if (P.bun) { const [bx, by, brx, bry] = P.bun; each((X, Y, fx, fy) => { const d = ((fx - bx) / brx) ** 2 + ((fy - by) / bry) ** 2; if (d <= 1 && fy < 6) putH(X, Y, d > 0.55 ? HA[3] : (X + Y) % (3 * K) ? HA[2] : HL[1]); }); } // the knot on top
++    if (P.grey) for (let i = 0; i < W2 * H2; i++) if (buf[i] === HA[2] && hash2(i, 7) < P.grey) buf[i] = HL[1];
+     // a cap, worn backwards: the crown over the hair, the strap's opening at the forehead, the peak behind
+     if (P.cap) {
+       const CP = R(P.cap.color), crown = (x, y) => ((x - cx0) / (rx + 1.1)) ** 2 + ((y - cy0 + 0.5) / (ry + 1.1)) ** 2 <= 1 && y < 8.6 - Math.max(0, x - 18) * 0.5;
+-      for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) { const fx = x + 0.5, fy = y + 0.5; if (!crown(fx, fy)) continue; const t = clamp(shadeAt(fx, fy, -0.1), 0, 4); put(x, y, P.cap.mesh && x < 12 && (x + y) % 2 ? u32(P.cap.mesh) : CP[clamp(t, 1, 4)]); }
++      each((X, Y, fx, fy) => { if (!crown(fx, fy)) return; const t = clamp(shadeAt(fx, fy, -0.1), 0, 4); putH(X, Y, P.cap.mesh && fx < 12 && (X + Y) % 2 ? u32(P.cap.mesh) : CP[clamp(t, 1, 4)]); });
+       for (let x = 15; x <= 20; x++) put(x, 8, u32(P.cap.band)); // the strap across the forehead
+       for (let x = 16; x <= 19; x++) put(x, 7, HA[2]); // hair through the opening
+       for (let x = 1; x <= 5; x++) put(x, 8 + (x < 3 ? 1 : 0), CP[x < 3 ? 3 : 2]); // the peak, behind
        put(1, 9, CP[4]); put(2, 9, CP[3]);
      }
      // the brows, the eyes, the nose, the mouth
@@ -328,7 +513,7 @@ index 6542a55..e1e1463 100644
      const EW = u32("#f2ece6"), EP = u32("#1c1214");
      if (P.eyes === "lidded") { put(13, 13, EW); put(14, 13, EP); put(18, 13, EW); put(19, 13, EP); for (const x of [13, 14, 15, 18, 19, 20]) put(x, 12, SK[4]); } // heavy lids
      else if (P.eyes === "smile") { for (const [x0, x1] of [[13, 15], [18, 19]]) for (let x = x0; x <= x1; x++) put(x, 13, EP); put(13, 12, SK[3]); put(18, 12, SK[3]); }
-@@ -441,16 +500,28 @@
+@@ -441,27 +594,74 @@
      if (P.fem) { put(15, 12, EP); put(20, 12, EP); put(13, 13, EP); } // lashes
      if (P.fem) { put(21, 16, SK[3]); put(20, 17, SK[3]); } else { put(21, 15, SK[2]); put(21, 16, SK[3]); put(20, 17, SK[4]); put(22, 15, SK[1]); }
      const MO = u32("#5a2220"), TE = u32("#fbf6ee");
@@ -350,29 +535,41 @@ index 6542a55..e1e1463 100644
 -      else { ring(13.9, 13, 2.2, 1.9); ring(19, 13, 1.6, 1.9); put(16, 12, G); put(17, 12, G); }
 -      for (let x = 8; x <= 11; x++) put(x, 12 + (x < 10 ? 1 : 0), G); // the arm to the ear
 +      const GP = P.glasses, G = u32(GP.color), frame = [], lens = [];
-+      const rect = ([x0, y0, x1, y1]) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) (x === x0 || x === x1 || y === y0 || y === y1 ? frame : lens).push([x, y]); };
-+      const ring = ([gx, gy, grx, gry]) => { const e = (x, y) => ((x - gx) / grx) ** 2 + ((y - gy) / gry) ** 2 <= 1; for (let y = Math.floor(gy - gry - 1); y <= gy + gry + 1; y++) for (let x = Math.floor(gx - grx - 1); x <= gx + grx + 1; x++) { const fx = x + 0.5, fy = y + 0.5; if (!e(fx, fy)) continue; (!e(fx - 1, fy) || !e(fx + 1, fy) || !e(fx, fy - 1) || !e(fx, fy + 1) ? frame : lens).push([x, y]); } };
++      // (in small pixels: at K = 2 the frame is one small pixel, finer than the 1x frame, as a portrait has it)
++      const rect = ([x0, y0, x1, y1]) => { const X0 = x0 * K, Y0 = y0 * K, X1 = x1 * K + K - 1, Y1 = y1 * K + K - 1; for (let y = Y0; y <= Y1; y++) for (let x = X0; x <= X1; x++) (x === X0 || x === X1 || y === Y0 || y === Y1 ? frame : lens).push([x, y]); };
++      const ring = ([gx, gy, grx, gry]) => { const e = (x, y) => ((x - gx) / grx) ** 2 + ((y - gy) / gry) ** 2 <= 1, d = 1 / K; for (let y = Math.floor((gy - gry - 1) * K); y <= (gy + gry + 1) * K; y++) for (let x = Math.floor((gx - grx - 1) * K); x <= (gx + grx + 1) * K; x++) { const fx = (x + 0.5) / K, fy = (y + 0.5) / K; if (!e(fx, fy)) continue; (!e(fx - d, fy) || !e(fx + d, fy) || !e(fx, fy - d) || !e(fx, fy + d) ? frame : lens).push([x, y]); } };
 +      if (GP.kind === "square") (GP.lens || [[12, 11, 16, 15], [18, 11, 21, 15]]).forEach(rect);
 +      else (GP.lens || [[13.9, 13, 2.2, 1.9], [19, 13, 1.6, 1.9]]).forEach(ring);
 +      const tint = u32(GP.tint || "#e6f4fb");
-+      for (const [x, y] of lens) { const c0 = at(x, y); if (c0 != null && c0 !== EW && c0 !== EP) put(x, y, mix2(c0, tint, 0.3)); }
-+      for (const [x, y] of GP.glint || []) put(x, y, u32("#ffffff"));
-+      for (const [x, y] of frame) put(x, y, G);
-+      for (const [x, y] of GP.bridge || [[16, 12], [17, 12]]) put(x, y, G);
-+      for (let x = 8; x <= (GP.arm || 11); x++) put(x, (GP.armY || 12) + (x < 10 ? 1 : 0), G); // the arm to the ear
++      for (const [x, y] of lens) { const c0 = buf[y * W2 + x]; if (c0 != null && c0 !== EW && c0 !== EP) putH(x, y, mix2(c0, tint, 0.3)); }
++      for (const [x, y] of GP.glint || []) { putH(x * K, y * K, u32("#ffffff")); if (K > 1) putH(x * K + 1, y * K + 1, mix2(u32("#ffffff"), tint, 0.5)); }
++      for (const [x, y] of frame) putH(x, y, G);
++      for (const [x, y] of GP.bridge || [[16, 12], [17, 12]]) { for (let i = 0; i < K; i++) putH(x * K + i, y * K, G); }
++      if (K > 1) { for (let x = 8 * K; x < ((GP.arm || 11) + 1) * K; x++) putH(x, (GP.armY || 12) * K + (x < 10 * K ? 2 : 1), G); }
++      else for (let x = 8; x <= (GP.arm || 11); x++) put(x, (GP.armY || 12) + (x < 10 ? 1 : 0), G); // the arm to the ear
      }
      // the cigarette, in the corner of the mouth: white paper, the lit end
-     if (P.cig) { for (let x = 19; x <= 24; x++) put(x, 21 - (x > 22 ? 1 : 0), u32(x === 24 ? "#ff7a2a" : x === 19 ? "#d8b48a" : "#f4f2ee")); put(24, 19, u32("#ffcf6a")); }
-@@ -459,9 +530,37 @@
-     for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) { if (at(x, y)) continue; if (y >= 26 && x >= 8 && x <= 17) continue; if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => at(x + dx, y + dy))) out[y * HW + x] = u32(OUT); }
-     if (P.cig) for (const [x, y, a2] of [[25, 18, 0.7], [25, 16, 0.55], [26, 15, 0.45], [25, 13, 0.35], [26, 12, 0.25]]) out[y * HW + x] = u32(a2 > 0.5 ? "#d8d8de" : "#a8a8b4"); // a thin wisp of smoke
+-    if (P.cig) { for (let x = 19; x <= 24; x++) put(x, 21 - (x > 22 ? 1 : 0), u32(x === 24 ? "#ff7a2a" : x === 19 ? "#d8b48a" : "#f4f2ee")); put(24, 19, u32("#ffcf6a")); }
+-    // one outline round the silhouette
++    // beta 3.32 (Daniel: "from time to time he keeps it in his mouth"): this head is the one with the cigarette in it
++    // ("cristache+cig"); it hangs from the lips, forward and a little down, the lit end at (25, 22)
++    if (P.cig) { for (const [x, y, c] of [[19, 21, "#c98a52"], [20, 21, "#f6f4ee"], [21, 21, "#f6f4ee"], [22, 22, "#f6f4ee"], [23, 22, "#e4e0d8"], [24, 22, "#ff7a22"]]) put(x, y, u32(c)); }
++    // beta 3.32: no outline of its own any more: the figure's finish outlines the head with the rest, in the hair's and
++    // the skin's own dark tones
++    if (K > 1) { // beta 3.32: what the bigger head can carry: a light in each eye, the lid's line, a light on the lip
++      if (P.eyes !== "smile") for (const ex of [14, 19]) { putH(ex * K, 13 * K, mix2(EP, EW, 0.35)); for (let i = -K; i < K; i++) if (at(ex, 12) !== EP) putH(ex * K + i, 13 * K - 1, SK[4]); }
++      if (P.lips && P.mouth !== "under") putH(17 * K, 21 * K, ramp(P.lips)[0]);
++    }
+     const out = buf.slice();
+-    for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) { if (at(x, y)) continue; if (y >= 26 && x >= 8 && x <= 17) continue; if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => at(x + dx, y + dy))) out[y * HW + x] = u32(OUT); }
+-    if (P.cig) for (const [x, y, a2] of [[25, 18, 0.7], [25, 16, 0.55], [26, 15, 0.45], [25, 13, 0.35], [26, 12, 0.25]]) out[y * HW + x] = u32(a2 > 0.5 ? "#d8d8de" : "#a8a8b4"); // a thin wisp of smoke
      // rows + palette, for the blitter
 -    const keys = new Map(), pal = {}; let k = 0; const CH = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 -    const rows = []; for (let y = 0; y < HH; y++) { let r = ""; for (let x = 0; x < HW; x++) { const c = out[y * HW + x]; if (c == null) { r += "."; continue; } if (!keys.has(c)) { const ch = CH[k++]; keys.set(c, ch); pal[ch] = c; } r += keys.get(c); } rows.push(r); }
 -    return (HEAD_CACHE[id] = { rows, pal, at: HEAD_ANCHOR });
 +    const keys = new Map(), pal = {}; let kk = 0; const CH = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-+    const rows = []; for (let y = 0; y < HH; y++) { let r = ""; for (let x = 0; x < HW; x++) { const c = out[y * HW + x]; if (c == null) { r += "."; continue; } if (!keys.has(c)) { const ch = CH[kk++]; keys.set(c, ch); pal[ch] = c; } r += keys.get(c); } rows.push(r); }
-+    return (HEAD_CACHE[id + (noG ? "!" : "")] = { rows, pal, at: HEAD_ANCHOR });
++    const rows = []; for (let y = 0; y < H2; y++) { let r = ""; for (let x = 0; x < W2; x++) { const c = out[y * W2 + x]; if (c == null) { r += "."; continue; } if (!keys.has(c)) { const ch = kk < CH.length ? CH[kk] : String.fromCharCode(0x100 + kk); kk++; keys.set(c, ch); pal[ch] = c; } r += keys.get(c); } rows.push(r); }
++    return { rows, pal, at: [HEAD_ANCHOR[0] * K, HEAD_ANCHOR[1] * K], ember: P.cig ? [24 * K + (K - 1), 22 * K] : null };
 +  }
 +  // a head made smaller (for the people further back): each new pixel takes the colour most of its block has, but the
 +  // darks (the outline, the eyes, the brows) win when they are a quarter of it, so the face keeps its features
@@ -386,7 +583,7 @@ index 6542a55..e1e1463 100644
 +      if ((cnt.get(".") || 0) > n * 0.55) best = "."; else if (dark && nd >= n * 0.4) best = dark;
 +      r += best;
 +    } rows.push(r); }
-+    return { rows, pal: H0.pal, at: [Math.round(HEAD_ANCHOR[0] * k), Math.round(HEAD_ANCHOR[1] * k)] };
++    return { rows, pal: H0.pal, at: [Math.round(HEAD_ANCHOR[0] * k), Math.round(HEAD_ANCHOR[1] * k)], ember: H0.ember ? [Math.round(H0.ember[0] * k), Math.round(H0.ember[1] * k)] : null };
 +  }
 +  // beta 3.31: on a head made smaller, glasses drawn again at that size, so they stay clear glasses (a thin frame line
 +  // over a light lens, the eye in it), not the dark band the shrinking makes of them
@@ -400,20 +597,27 @@ index 6542a55..e1e1463 100644
 +      for (let x = X0; x <= X1; x++) { set(x, Y0, "!"); for (let y = Y0 + 1; y < Math.max(Y0 + 2, Y1); y++) set(x, y, x === px2 && y === Y0 + 1 ? "&" : "%"); if (Y1 - Y0 >= 3) set(x, Y1, "!"); }
 +      if (X1 - X0 >= 3) for (let y = Y0 + 1; y < Math.max(Y0 + 2, Y1); y++) { set(X0, y, "!"); set(X1, y, "!"); }
 +    });
-+    return { rows: rows.map((r) => r.join("")), pal, at: H.at };
++    return { rows: rows.map((r) => r.join("")), pal, at: H.at, ember: H.ember };
    }
    const hueTurn = (hex, deg) => {
      let [r, g2, b] = rgbOf(hex).map((v) => v / 255); const mx = Math.max(r, g2, b), mn = Math.min(r, g2, b), l = (mx + mn) / 2, d = mx - mn;
-@@ -472,7 +571,7 @@
+@@ -471,19 +671,23 @@
+     const rgb = [[c, x, 0], [x, c, 0], [0, c, x], [0, x, c], [x, 0, c], [c, 0, x]][k]; return hexOf(rgb.map((v) => (v + m) * 255));
    };
    const lookOf = (id, alt) => { if (!alt) return LOOKS[id] || NPC_LOOKS[id]; const L = Object.assign({}, LOOKS[id]); for (const k of ["top", "pants", "glove", "skirt", "inner", "trim", "wrist", "apron"]) if (L[k]) L[k] = hueTurn(L[k], 150); return L; };
-   function drawFighter(id, p0, prop, alt) {
+-  function drawFighter(id, p0, prop, alt) {
 -    const L = lookOf(id, alt), B = Object.assign({ sh: 1, arm: 1, leg: 1, waist: 1, chest: 1, sc: 1 }, L.build), sc = B.sc;
-+    const L = lookOf(id, alt), B = Object.assign({ sh: 1, arm: 1, leg: 1, waist: 1, chest: 1, sc: 1 }, L.build), sc = B.sc * (L.hands ? 1 : BODY);
++  // view (beta 3.32, the portraits): { K, w, h, ox, oy }: the figure K times finer, into a w x h cell, the pose's origin
++  // at (ox, oy); without it, a frame of the game (CW x CH, the feet at OX, OY)
++  function drawFighter(id, p0, prop, alt, view) {
++    const KK = view ? view.K : 1, L = lookOf(id, alt), B = Object.assign({ sh: 1, arm: 1, leg: 1, waist: 1, chest: 1, sc: 1 }, L.build), sc = B.sc * (L.hands ? 1 : BODY) * KK;
      const p = {}; for (const k in p0) p[k] = Array.isArray(p0[k]) ? [p0[k][0] * sc, p0[k][1] * sc] : p0[k];
-     const F = new Fig(CW, CH), T = (q) => [q[0] + OX, q[1] + OY];
+-    const F = new Fig(CW, CH), T = (q) => [q[0] + OX, q[1] + OY];
++    const F = view ? new Fig(view.w, view.h) : new Fig(CW, CH), T = view ? (q) => [q[0] + view.ox, q[1] + view.oy] : (q) => [q[0] + OX, q[1] + OY];
++    let ember = null; // beta 3.32: where the cigarette's lit end is in this frame (the smoke rises from it)
      const hip = T(p.hip), neck = T(p.neck), head = T(p.head), tw = p.tw || 0;
-@@ -481,9 +580,10 @@
+     const ang = Math.atan2(neck[0] - hip[0], -(neck[1] - hip[1])), ca = Math.cos(ang), sa = Math.sin(ang);
+     const off = (o, dx, dy) => [o[0] + dx * ca - dy * sa, o[1] + dx * sa + dy * ca];
      const SK = ramp(L.skin), TOP = ramp(L.top), PA = ramp(L.pants || L.skin), GL = ramp(L.glove || L.wrap || "#f4f4f4"), SO = u32(L.sole || "#101014");
      const tone = (R, nx, ny) => R[toneOf(nx, ny)];
      const back = (R, nx, ny) => R[Math.min(4, toneOf(nx, ny) + 1)]; // the far side, a tone darker
@@ -422,23 +626,23 @@ index 6542a55..e1e1463 100644
 -    const lF = off(hip, 4 * sc, 2), lB = off(hip, -4 * sc, 2);
 +    const br = p.br || 0; // the breath: the chest a little wider, the shoulders a little higher
 +    const wsh = (15 + br * 0.35) * B.sh * sc, len = Math.hypot(neck[0] - hip[0], neck[1] - hip[1]);
-+    const sF = off(neck, (7 + 3 * tw) * B.sh * sc, 4), sB = off(neck, (-7 + 2 * tw) * B.sh * sc, 3);
++    const sF = off(neck, (7 + 3 * tw) * B.sh * sc, 4 * KK), sB = off(neck, (-7 + 2 * tw) * B.sh * sc, 3 * KK);
 +    const lF = off(hip, 3.5 * sc, 1), lB = off(hip, -2.5 * sc, 1); // beta 3.30: the legs from under the body (no seat sticking out)
      // an arm: the deltoid, the upper arm with the biceps, the forearm, then the glove with its cuff
      const arm = (s, e, h, far) => {
        const g = far ? 1 : 2, ar = B.arm * sc, sleeveTo = L.sleeve === "long" ? 2 : L.sleeve === "rolled" ? 1.4 : L.sleeve === "gi" ? 1.3 : L.sleeve === "short" ? 0.55 : -1;
-@@ -492,13 +592,18 @@
+@@ -492,43 +696,75 @@
          if (L.topKind === "varsity" && seg === 1 && t > 0.82) return (far ? back : tone)(ramp(L.top), nx, ny); // the knit cuff
          if (seg === 1 && t > 0.8 && R === SK && !L.hands) return (far ? back : tone)(ramp(WRAP), nx, ny); // the tape up the wrist
          if (L.sleeve === "rolled" && seg === 1 && Math.abs(t - 0.4) < 0.06) return TOP[far ? 4 : 3]; // the rolled cuff
 -        if (L.topKind === "fleece" && R === TOP && R === SLV) { const fz = hash2(px * 7.3, py * 5.1); return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (fz > 0.72 ? 1 : fz < 0.12 ? -1 : 0), 0, 4)]; } if (L.tattoo && R === SK && seg === 1 && t > 0.2 && t < 0.8 && hash2(t * 40, nx * 6 + 9) > 0.62) return u32("#3a4a6a"); return far ? back(R, nx, ny) : tone(R, nx, ny); };
 -      limb(F, s, e, 5.6 * ar, 3.8 * ar, 1.1 * ar, 0.4, mat(0), g);
 -      limb(F, e, h, 4.3 * ar, 3.2 * ar, 0.6 * ar, 0.3, mat(1), g);
-+        if (L.topKind === "fleece" && R === TOP && R === SLV) { const fz = hash2(px * 7.3, py * 5.1); return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (fz > 0.72 ? 1 : fz < 0.12 ? -1 : 0), 0, 4)]; } if (L.tattoo && R === SK && seg === 1 && t > 0.2 && t < 0.8 && hash2(t * 40, nx * 6 + 9) > 0.62) return u32("#3a4a6a");
++        if (L.topKind === "fleece" && R === TOP && R === SLV) { const fz = hash2(px * 7.3, py * 5.1); return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (fz > 0.72 ? 1 : fz < 0.12 ? -1 : 0), 0, 4)]; } if (L.tattoo && R === SK && seg === 1 && t > 0.2 && t < 0.8 && hash2(Math.floor(t * 8), Math.floor((nx + 1) * 2.2)) > 0.5) return ramp("#56607e")[clamp(toneOf(nx, ny) + (far ? 1 : 0) + 1, 1, 4)]; // beta 3.32: the tattoos in blocks of ink, shaded with the arm
 +        // beta 3.30: the muscle drawn in: the line between biceps and triceps, the deltoid's edge, the forearm's ridge; on a sleeve, the creases at the elbow
 +        let ex2 = 0;
 +        if (R === SK) { if (seg === 0 && t > 0.32 && t < 0.86 && Math.abs(nx - 0.05) < 0.12) ex2 = 1; if (seg === 0 && t > 0.24 && t < 0.32 && nx > -0.3) ex2 = 1; if (seg === 1 && t > 0.1 && t < 0.62 && Math.abs(nx + 0.28) < 0.11) ex2 = 1; }
-+        else if ((seg === 0 && Math.abs(t - 0.9) < 0.04) || (seg === 1 && Math.abs(t - 0.1) < 0.04) || (seg === 0 && t > 0.5 && Math.abs(nx + 0.4 - (t - 0.5)) < 0.07)) ex2 = 1; // the crease round the elbow, a fold down the sleeve
++        else ex2 = folds(nx, t, ARM_FOLDS[seg]); // beta 3.32: the creases round the elbow, the folds down the sleeve, each with its lit ridge
 +        return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + ex2, 0, 4)]; };
 +      limb(F, s, e, 6.3 * ar, 4.1 * ar, 1.4 * ar, 0.42, mat(0), g); // a strong upper arm, the deltoid and the biceps
 +      limb(F, e, h, 4.9 * ar, 3.5 * ar, 0.8 * ar, 0.28, mat(1), g); // a thick forearm
@@ -446,11 +650,23 @@ index 6542a55..e1e1463 100644
        if (L.hands) blob(F, [h[0] + ux * 0.5, h[1] + uy * 0.5], 3.1 * sc + 0.6, 2.8 * sc + 0.6, (nx, ny) => (far ? back : tone)(SK, nx, ny), g + 10); // a bystander's bare hand
        else { // beta 3.16 (Daniel): a bare fist in plain white hand wraps, for everyone; the knuckles just showing
 -        const WR = ramp(WRAP), fr2 = 4.7 * Math.min(1.08, sc);
-+        const WR = ramp(WRAP), fr2 = 5.6 * Math.min(1.12, sc); // big fists
-         blob(F, [h[0] + ux, h[1] + uy], fr2, fr2 * 0.9, (nx, ny, px, py) => {
-           const along = (px - h[0]) * ux + (py - h[1]) * uy, band = Math.floor((along + 8) / 1.7) & 1;
-           if (along > fr2 * 0.55 && (Math.floor(px + py) & 1)) return (far ? back : tone)(SK, nx, ny); // the knuckles
-@@ -509,26 +614,45 @@
+-        blob(F, [h[0] + ux, h[1] + uy], fr2, fr2 * 0.9, (nx, ny, px, py) => {
+-          const along = (px - h[0]) * ux + (py - h[1]) * uy, band = Math.floor((along + 8) / 1.7) & 1;
+-          if (along > fr2 * 0.55 && (Math.floor(px + py) & 1)) return (far ? back : tone)(SK, nx, ny); // the knuckles
+-          return (far ? back : tone)(WR, nx, ny + (band ? 0.25 : 0));
++        // beta 3.32 (the arcade refs): a fist that reads as a hand: the tape over the wrist, the back of the hand and the
++        // knuckles; the curled fingers bare under it, split by dark lines, the thumb across them
++        const WR = ramp(WRAP), fr2 = 5.6 * Math.min(1.12, sc / KK) * KK, c0 = [h[0] + ux, h[1] + uy]; // big fists
++        let qx = -uy, qy = ux; if (qy < 0 || (Math.abs(qy) < 0.2 && qx < 0)) { qx = -qx; qy = -qy; } // across the fist, towards the palm
++        blob(F, c0, fr2, fr2 * 0.9, (nx, ny, px, py) => {
++          const aa = ((px - c0[0]) * ux + (py - c0[1]) * uy) / fr2, cc = ((px - c0[0]) * qx + (py - c0[1]) * qy) / fr2, sh = far ? back : tone;
++          if (aa < -0.3 || cc < -0.4 + aa * 0.2) { const band = Math.floor((aa * fr2 + 9) / 2) % 3 === 0; return sh(WR, nx, ny + (band && aa < -0.3 ? 0.35 : 0)); } // the tape
++          if (cc > 0.45 && aa < 0.35) return SK[Math.min(4, toneOf(nx, ny) + (far ? 1 : 0) + (cc < 0.58 ? 2 : 0))]; // the thumb, its edge
++          const line = Math.abs(cc - 0.05) < 0.09 || Math.abs(cc - 0.36) < 0.09 || (Math.abs(cc - 0.66) < 0.09 && aa >= 0.35);
++          return SK[Math.min(4, toneOf(nx, ny) + (far ? 1 : 0) + (line ? 2 : 0))];
+         }, g + 10);
+       }
+     };
      const leg = (r, k, f, far) => {
        const g = far ? 3 : 4, lg = B.leg * sc, bare = L.legs === "skirt";
        const R = bare ? SK : PA, loose = bare ? 0 : L.loose || 0.8;
@@ -462,31 +678,34 @@ index 6542a55..e1e1463 100644
 +      const mat = (nx, ny, t = 0.5, px = CURX, py = CURY, shin = false) => {
 +        let ex2 = 0;
 +        if (R === SK) { if (shin && t > 0.12 && t < 0.55 && Math.abs(nx - 0.3) < 0.12) ex2 = 1; if (!shin && t > 0.86 && nx < 0) ex2 = 1; }
-+        else if ((shin && Math.abs(t - 0.1) < 0.035) || (!shin && Math.abs(t - 0.9) < 0.03) || (!shin && t > 0.3 && t < 0.75 && Math.abs(nx - 0.25 - (t - 0.5) * 0.9) < 0.07) || (shin && t > 0.35 && t < 0.8 && Math.abs(nx + 0.35) < 0.06)) ex2 = 1; // the creases at the knee, a fold down the thigh, the shin's
++        else ex2 = shin ? folds(nx, t, LEG_FOLDS[1]) : folds(nx, t, LEG_FOLDS[0]); // beta 3.32: the folds, a dark line with the lit ridge beside it
 +        return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + ex2, 0, 4)];
 +      };
 +      const thighMat = (nx, ny, t) => (L.cargo && t > 0.45 && t < 0.78 && nx < -0.1 && nx > -0.85 ? R[far ? 4 : t < 0.5 ? 1 : 3] : L.canvas && t > 0.6 && nx > -0.2 && Math.abs(t - 0.62) < 0.03 ? R[far ? 4 : 3] : mat(nx, ny, t)); // the cargo pocket; the canvas trousers' double front
 +      const shinMat = (nx, ny, t) => (L.ankle && t > 0.78 ? (far ? back : tone)(ramp(L.ankle), nx, ny) : mat(nx, ny, t, CURX, CURY, true));
 +      limb(F, r, k, (6.2 + loose) * lg, (5 + loose) * lg, (bare ? 1.4 : 1) * lg, 0.5, thighMat, g); // solid thighs, the swell mid-way (not at the seat)
 +      limb(F, k, [f[0], f[1] - 4], (5 + loose) * lg, (3.4 + loose * (L.hem || 1.2)) * lg, (bare ? 1.3 : 0.6) * lg, 0.28, shinMat, g); // the calf high
-+      const fq = Math.min(1, sc); // the feet keep to the size of the person
++      const fq = Math.min(1, sc / KK) * KK; // the feet keep to the size of the person
        if (L.barefoot) { // a bare foot, the toes forward
 -        poly(F, [[f[0] - 4, f[1] - 5], [f[0] + 3, f[1] - 4], [f[0] + 10, f[1] - 1], [f[0] + 10, f[1] + 1], [f[0] - 4, f[1] + 1]], (x, y) => SK[far ? 3 : y < f[1] - 2 ? 1 : 2], g + 10);
 -        if (L.ankle) limb(F, [f[0] - 1, f[1] - 6], [f[0] - 1, f[1] - 4], 3.4, 3.4, 0, 0.5, (nx, ny) => (far ? back : tone)(ramp(L.ankle), nx, ny), g + 11);
 +        poly(F, [[f[0] - 5 * fq, f[1] - 6 * fq], [f[0] + 3 * fq, f[1] - 5 * fq], [f[0] + 12 * fq, f[1] - 1 * fq], [f[0] + 12 * fq, f[1] + 1 * fq], [f[0] - 5 * fq, f[1] + 1 * fq]], (x, y) => (x > f[0] + 7 * fq && Math.floor(x) % 2 === 0 && y > f[1] - 1.5 * fq ? SK[3] : SK[far ? 3 : y < f[1] - 2 * fq ? 1 : 2]), g + 10); // the toes
 +        if (L.ankle) limb(F, [f[0] - 1 * fq, f[1] - 6 * fq], [f[0] - 1 * fq, f[1] - 4 * fq], 3.4, 3.4, 0, 0.5, (nx, ny) => (far ? back : tone)(ramp(L.ankle), nx, ny), g + 11);
 +      } else if (L.runner) { // beta 3.31: a running shoe: low heel collar, the toe sloping down, a chunky midsole, the stripes crossing on the side
-+        const RU = L.runner, up2 = ramp(RU.upper), MID = ramp(RU.mid), ST = ramp(RU.stripe), HE = ramp(RU.heel);
-+        poly(F, [[f[0] - 6.6 * fq, f[1] - 2 * fq], [f[0] - 6 * fq, f[1] - 6.6 * fq], [f[0] - 4.6 * fq, f[1] - 7.4 * fq], [f[0] - 1 * fq, f[1] - 6.8 * fq], [f[0] + 2.5 * fq, f[1] - 7.2 * fq], [f[0] + 6 * fq, f[1] - 5.6 * fq], [f[0] + 10.5 * fq, f[1] - 3.6 * fq], [f[0] + 13.2 * fq, f[1] - 2.2 * fq], [f[0] + 13.6 * fq, f[1] + 0.2 * fq], [f[0] - 6.6 * fq, f[1] + 0.8 * fq]], (x, y) => {
-+          const u = (x - f[0]) / fq, v = (f[1] - y) / fq;
-+          if (v < 0.4) return SO; // the outsole
-+          const mt = u < 0 ? 2.9 : 2.4 - u * 0.04;
-+          if (v < mt) return MID[far ? 3 : v > mt - 0.8 ? 1 : 0]; // the midsole, thicker at the heel, its top edge in shade
-+          if (u < -4.8 && v > 3.4) return HE[far ? 3 : 2]; // the heel tab
-+          const sA = Math.abs(v - (2.4 + (6 - u) * 0.66)) < 0.6 && u > -1.2 && u < 6.2, sC = Math.abs(v - (2.4 + (u + 2.6) * 0.72)) < 0.6 && u > -2.6 && u < 3;
-+          if (sA || sC) return ST[far ? 3 : sA ? 2 : 1]; // the stripes, an X on the side
-+          if (u > 9.5 && v < 3.6) return HE[far ? 3 : 2]; // the toe bumper
-+          return up2[far ? 3 : v > 5.6 ? 0 : x > f[0] + 4 * fq ? 1 : 2];
++        // beta 3.32 (Daniel: "make Ion's Asics more visible"): a size up (x1.15), a bright white upper, the crossing side
++        // stripes bold (two pixels) in a strong blue, the heel counter blue, the laces, a white midsole on a dark outsole
++        const RU = L.runner, up2 = ramp(RU.upper), MID = ramp(RU.mid), ST = ramp(RU.stripe), HE = ramp(RU.heel), fr3 = fq * 1.15, fo = [f[0] + 1.2, f[1]];
++        poly(F, [[fo[0] - 7 * fr3, fo[1] - 2 * fr3], [fo[0] - 6.4 * fr3, fo[1] - 6.8 * fr3], [fo[0] - 4.8 * fr3, fo[1] - 7.6 * fr3], [fo[0] - 1 * fr3, fo[1] - 7 * fr3], [fo[0] + 2.5 * fr3, fo[1] - 7.4 * fr3], [fo[0] + 6 * fr3, fo[1] - 5.8 * fr3], [fo[0] + 10.5 * fr3, fo[1] - 3.8 * fr3], [fo[0] + 13.4 * fr3, fo[1] - 2.4 * fr3], [fo[0] + 13.8 * fr3, fo[1] + 0.4 * fr3], [fo[0] - 7 * fr3, fo[1] + 0.9 * fr3]], (x, y) => {
++          const u = (x - fo[0]) / fr3, v = (fo[1] - y) / fr3;
++          if (v < 0.7) return (Math.floor(x) % 3 === 0 && v < 0.2) ? SO : ramp(L.sole)[far ? 4 : 3]; // the outsole, its tread
++          const mt = u < 0 ? 3 : 2.6 - u * 0.05;
++          if (v < mt) return MID[far ? 3 : v > mt - 0.7 ? 2 : u > 8 ? 1 : 0]; // the midsole, thicker at the heel
++          if (u < -4.2 && v > mt) return HE[far ? 4 : v > 5.6 ? 1 : 2]; // the heel counter
++          const sA = Math.abs(v - (2.8 + (3.4 - u) * 0.85)) < 0.85 && u > -1.8 && u < 3.6, sC = Math.abs(v - (2.8 + (u + 0.8) * 0.85)) < 0.85 && u > -1 && u < 4.4;
++          if (sA || sC) return ST[far ? 3 : sA ? 2 : 1]; // the stripes, crossing on the side
++          if (u > 10 && v < 3.8) return up2[far ? 4 : 3]; // the toe bumper
++          if (u > 0.5 && u < 6 && v > 5.2 && (Math.floor(x) % 2 === 0)) return MID[far ? 4 : 3]; // the laces
++          return up2[far ? 3 : v > 5.4 ? 0 : u > 5 ? 1 : 1];
 +        }, g + 10);
        } else if (L.boots) { // boots, laced up the ankle
          const sr = ramp(L.shoe);
@@ -506,7 +725,7 @@ index 6542a55..e1e1463 100644
        if (v < 0.16) return w0 * (0.5 + 0.5 * Math.sqrt(v / 0.16)); // round shoulders
        if (v < 0.42) return lerp(w0, wc, (v - 0.16) / 0.26);
        if (v < 0.8) return lerp(wc, ww, (v - 0.42) / 0.38);
-@@ -569,7 +693,8 @@
+@@ -569,7 +805,8 @@
          let t2 = toneOf(nx, ny);
          if (v > 0.33 && v < 0.38 && u > -0.4) t2++; // under the pecs
          if (Math.abs(u - 0.38) < 0.04 && v > 0.14 && v < 0.36) t2++; // between them
@@ -516,16 +735,65 @@ index 6542a55..e1e1463 100644
          if (Math.abs(v - 0.8) < 0.025 && Math.abs(u - 0.4) < 0.06) t2 += 2; // the navel
          return SK[clamp(t2, 0, 4)];
        }
-@@ -646,7 +771,7 @@
+@@ -646,11 +883,21 @@
      if (L.knot) { const kp = off(hip, hw1 * 0.75, -5); blob(F, kp, 3.2, 2.6, (nx, ny) => TOP[toneOf(nx, ny)], 7); limb(F, [kp[0], kp[1] + 1], [kp[0] + 1.5, kp[1] + 6], 1.6, 1.2, 0, 0.5, (nx, ny) => TOP[toneOf(nx, ny) + 1 > 4 ? 4 : toneOf(nx, ny) + 1], 7); }
      if (L.key) { const k = off(hip, hw1 * 0.6, 4); blob(F, [k[0], k[1] + 6], 1.6, 3.2, () => u32("#ffd23a"), 7); blob(F, [k[0], k[1] + 1.5], 1.2, 1.4, () => u32("#c9ccd4"), 7); }
      { // beta 3.12: the head's neck stands on the body's neck; the pose's head offset still tilts it a little
 -      const HD = headOf(id), hx = (p.head[0] - p.neck[0] - 3 * sc) * 0.6, hy = (p.head[1] - p.neck[1] + 11 * sc) * 0.6, a2 = off(neck, 0.5, 1);
-+      const HD = headOf(L.headId || id, L.hands ? B.sc : 1), hx = (p.head[0] - p.neck[0] - 3 * sc) * 0.6, hy = (p.head[1] - p.neck[1] + 11 * sc) * 0.6, a2 = off(neck, 0.5, 1);
-       if (p.lie) F.blit(HD.rows, HD.pal, a2[0], a2[1], 1, HD.at, 8); else F.blit(HD.rows, HD.pal, Math.round(a2[0] + hx), Math.round(a2[1] + hy), 0, HD.at, 8);
+-      if (p.lie) F.blit(HD.rows, HD.pal, a2[0], a2[1], 1, HD.at, 8); else F.blit(HD.rows, HD.pal, Math.round(a2[0] + hx), Math.round(a2[1] + hy), 0, HD.at, 8);
++      const hid = (L.headId || id) + (p.cig === "mouth" && HEADSPEC[(L.headId || id) + "+cig"] ? "+cig" : "");
++      const HD = headOf(hid, L.hands ? B.sc : 1, false, KK), hx = (p.head[0] - p.neck[0] - 3 * sc) * 0.6, hy = (p.head[1] - p.neck[1] + 11 * sc) * 0.6, a2 = off(neck, 0.5 * KK, KK);
++      if (p.lie) F.blit(HD.rows, HD.pal, a2[0], a2[1], 1, HD.at, 8); else { const bx2 = Math.round(a2[0] + hx), by2 = Math.round(a2[1] + hy); F.blit(HD.rows, HD.pal, bx2, by2, 0, HD.at, 8); if (HD.ember) ember = [bx2 + HD.ember[0] - HD.at[0], by2 + HD.ember[1] - HD.at[1]]; }
      }
      arm(sF, T(p.eF), T(p.hF), false);
-@@ -797,7 +922,8 @@
+     const hF = T(p.hF);
++    if (p.cig === "hand" && L.smokes) { // beta 3.32 (Daniel: "the rest of the time he holds it in his hand"): between two fingers of the front hand, the lit end out in front
++      const e0 = T(p.eF), vx = hF[0] - e0[0], vy = hF[1] - e0[1], vl = Math.hypot(vx, vy) || 1, ux = vx / vl, uy = vy / vl, fr2 = 5.6 * Math.min(1.12, sc / KK) * KK, c0 = [hF[0] + ux, hF[1] + uy];
++      let dx = ux * 0.35 + 0.9, dy = uy * 0.35 - 0.5; const dl = Math.hypot(dx, dy); dx /= dl; dy /= dl;
++      let qx = -uy, qy = ux; if (qy < 0) { qx = -qx; qy = -qy; }
++      const b0 = [c0[0] + qx * fr2 * 0.15, c0[1] + qy * fr2 * 0.15], pts = [];
++      for (let i = 0; i < 16 && pts.length < 6; i++) { const px = Math.round(b0[0] + dx * i * 0.7), py = Math.round(b0[1] + dy * i * 0.7); if (Math.hypot(px + 0.5 - c0[0], py + 0.5 - c0[1]) < fr2 * 0.8) continue; if (pts.some(([a, b]) => a === px && b === py)) continue; pts.push([px, py]); }
++      pts.forEach(([px, py], i) => F.fill(px, py, px, py, () => true, () => u32(i === pts.length - 1 ? "#ff7a22" : i === pts.length - 2 ? "#e4e0d8" : "#f6f4ee"), 30));
++      if (pts.length) ember = pts[pts.length - 1].slice();
++    }
+     if (prop === "camera") {
+       poly(F, [[hF[0] - 5, hF[1] - 7], [hF[0] + 8, hF[1] - 7], [hF[0] + 8, hF[1] + 1], [hF[0] - 5, hF[1] + 1]], (x, y) => u32(y < hF[1] - 5 ? "#4a4a52" : "#26262c"), 20);
+       blob(F, [hF[0] + 8, hF[1] - 3], 2.8, 2.8, (nx, ny) => ramp("#3a8fe0")[toneOf(nx, ny)], 21);
+@@ -665,16 +912,30 @@
+     } else if (prop === "stack") {
+       for (let i = 0; i < 6; i++) poly(F, [[hF[0] - 12, hF[1] - 3 - i * 3], [hF[0] + 8, hF[1] - 3 - i * 3], [hF[0] + 8, hF[1] - i * 3], [hF[0] - 12, hF[1] - i * 3]], (x, y) => (Math.floor(y) === Math.floor(hF[1] - 2 - i * 3) && x > hF[0] - 9 && x < hF[0] + 5 && (Math.floor(x) % 3) ? u32("#1c1c22") : u32(i % 2 ? "#ffffff" : "#ecebe6")), 20 + i);
+     }
+-    return F.finish();
++    const out = F.finish();
++    if (ember) out.ember = ember;
++    return out;
+   }
+   // every frame of a fighter, baked once
+   const SPR = {};
+   function sprites(id, alt) {
+     const key = id + (alt ? ":alt" : "");
+     if (SPR[key]) return SPR[key];
+-    const S = {};
+-    for (const [k, list] of Object.entries(Object.assign({}, POSES, STYLE_POSES[id] || {}))) S[k] = list.map((p) => drawFighter(id, p, k === "intro" && id === "ion" ? "stack" : null, alt));
++    const b0 = performance.now(), S = {}, smokes = !!LOOKS[id].smokes;
++    // beta 3.32 (Daniel: Cristache smokes): the cigarette in the hand when he stands, walks, guards, crouches or jumps
++    // (hidden in the fist when he hits, gone when he is hit); in the mouth in the win pose. idleM / walkM are the same
++    // frames with it in the mouth, puff the hand brought up to the lips
++    const CIG = (k) => (!smokes ? null : k === "win" ? "mouth" : ["idle", "walk", "crouch", "cblock", "block", "jump", "intro", "dizzy"].includes(k) ? "hand" : null);
++    const withCig = (p, c) => (c ? Object.assign({}, p, { cig: c }) : p);
++    for (const [k, list] of Object.entries(Object.assign({}, POSES, STYLE_POSES[id] || {}))) S[k] = list.map((p) => drawFighter(id, withCig(p, CIG(k)), k === "intro" && id === "ion" ? "stack" : null, alt));
+     S.special = SPECIAL_POSES[id].map((p) => drawFighter(id, p, SPECIAL_PROP[id] || null, alt));
++    if (smokes) {
++      const own = Object.assign({}, POSES, STYLE_POSES[id] || {});
++      S.idleM = own.idle.map((p) => drawFighter(id, withCig(p, "mouth"), null, alt));
++      S.walkM = own.walk.map((p) => drawFighter(id, withCig(p, "mouth"), null, alt));
++      S.puff = (SMOKE_POSES[id] || []).map((p) => drawFighter(id, withCig(p, "mouth"), null, alt));
++    }
++    stats.spr[key] = Math.round(performance.now() - b0); // for the probe: how long a fighter takes to bake
+     return (SPR[key] = S);
+   }
+ 
+@@ -797,7 +1058,8 @@
        m.fillStyle = OUT; m.beginPath(); m.arc(cx0 + 92, cb + 2, 9, 0, Math.PI * 2); m.fill(); m.fillStyle = "#4a4a50"; m.beginPath(); m.arc(cx0 + 92, cb + 2, 4, 0, Math.PI * 2); m.fill(); // the wheel
        m.fillStyle = "#a8acb4"; m.fillRect(cx0 - 26, cb - 2, 28, 2); m.fillRect(cx0 - 26, cb - 2, 2, 8); m.fillStyle = OUT; m.fillRect(cx0 - 28, cb + 5, 6, 4); } // the drawbar, the jockey wheel
      // ---- the people around: drawn like the fighters (same puppet), smaller, with a little idle loop each
@@ -535,7 +803,7 @@ index 6542a55..e1e1463 100644
      STAGE = { sky, clouds, far, mid, npc };
      return STAGE;
    }
-@@ -809,16 +935,55 @@
+@@ -809,16 +1071,55 @@
      ctx.drawImage(S.far, 0, 0, S.far.width, S.far.height, -Math.round(camX * 0.4), 40 + sy, S.far.width * 2, S.far.height * 2);
      ctx.drawImage(S.mid, -Math.round(camX), sy);
    }
@@ -592,7 +860,7 @@ index 6542a55..e1e1463 100644
    }
  
    // ===================== 5. the roster =====================
-@@ -827,7 +992,7 @@
+@@ -827,7 +1128,7 @@
      cristian: { id: "cristian", name: "CRISTIAN", role: "PARTNER - CEO", special: "DEADLINE DASH", line: "ALWAYS ONE STEP AHEAD", speed: 1.08, power: 0.95 },
      ion: { id: "ion", name: "I O N", role: "FOUNDER OF TWO MINUTES", special: "ESPRESSO SHOT", line: "TWO MINUTES IS ALL HE NEEDS", speed: 1, power: 1 },
      // beta 3.11 (Daniel): the guests (Iulica is on the crew page too)
@@ -601,7 +869,7 @@ index 6542a55..e1e1463 100644
      steve: { id: "steve", name: "STEVE", role: "SPECIAL GUEST - OVER TWO METRES", special: "BEAR HUG", line: "TWO METRES OF GOOD VIBES", speed: 0.86, power: 1.15 },
      rares: { id: "rares", name: "RARE\u0218", role: "SPECIAL GUEST", special: "KEY BOOMERANG", line: "NEVER LOSES HIS KEYS", speed: 1, power: 1 },
      dony: { id: "dony", name: "DONY", role: "ROASTS THE COFFEE", special: "BEAN BARRAGE", line: "SMALL, QUICK, FRESHLY ROASTED", speed: 1.12, power: 0.92 },
-@@ -853,16 +1018,45 @@
+@@ -853,16 +1154,45 @@
      const pal = { o: OUT, y: col, w: "#ffffff" };
      for (let r = 0; r < GLOVE_ICON.length; r++) for (let q = 0; q < 12; q++) { const ch = GLOVE_ICON[r][flip ? 11 - q : q]; if (ch === ".") continue; ctx.fillStyle = pal[ch]; ctx.fillRect(x + q * sc, y + r * sc, sc, sc); }
    }
@@ -656,7 +924,24 @@ index 6542a55..e1e1463 100644
    }
    // the grid's geometry, from GRID: tiles of 36 px faces (the middle of each 64 px portrait)
    const TILE = 36, GAP = 5;
-@@ -1082,7 +1276,7 @@
+@@ -912,6 +1242,16 @@
+       const p = portraitBig(id); if (!p) return;
+       ctx.fillStyle = OUT; ctx.fillRect(x - 3, 37, 134, 134); ctx.fillStyle = flip ? "#d8342a" : "#fed012"; ctx.fillRect(x - 2, 38, 132, 132); ctx.fillStyle = "#241d3d"; ctx.fillRect(x, 40, 128, 128);
+       drawFlipped(ctx, p, x, 40, 128, 128, flip);
++      const e = portrait(id).ember; // beta 3.32: Cristache's smoke keeps rising over his portrait
++      if (e) {
++        ctx.save(); ctx.beginPath(); ctx.rect(x, 40, 128, 128); ctx.clip();
++        for (let i = 0; i < 6; i++) {
++          const a = (t * 0.45 + i / 6) % 1, ex = e[0] * 2 + Math.round(Math.sin(a * 6 + i * 1.7) * (1 + a * 5)) + Math.round(a * 8), ey = e[1] * 2 - 30 - Math.round(a * 40), sx = flip ? x + 128 - ex - 2 : x + ex;
++          ctx.globalAlpha = a < 0.4 ? 0.85 : a < 0.7 ? 0.55 : 0.28; ctx.fillStyle = a < 0.35 ? "#e8e8f0" : a < 0.7 ? "#c8c8d6" : "#a4a4b6";
++          ctx.fillRect(sx, 40 + ey, 2, 2); if (a > 0.3) ctx.fillRect(sx + (flip ? -2 : 2), 40 + ey - 2, 2, 2); if (a > 0.6) ctx.fillRect(sx, 40 + ey - 4, 2, 2);
++        }
++        ctx.restore();
++      }
+     };
+     big(me, lx, false);
+     big(cpu, rx, true);
+@@ -1082,7 +1422,7 @@
    const GRAV = 0.34, JUMP_V = -6.8, ROUND_TIME = 60;
    function fighter(id, cpu, x, face, alt) {
      const R = ROSTER[id];
@@ -665,7 +950,15 @@ index 6542a55..e1e1463 100644
    }
    const onGround = (f) => f.y >= 0;
    const free = (f) => onGround(f) && (f.st === "idle" || f.st === "walk" || f.st === "crouch");
-@@ -1251,7 +1445,7 @@
+@@ -1137,6 +1477,7 @@
+   function think(f, o) {
+     const ai = f.ai, d = Math.abs(o.x - f.x), inp = { l: 0, r: 0, u: 0, d: 0, pp: 0, kp: 0, sp: 0 };
+     const fwd = f.face > 0 ? "r" : "l", back = f.face > 0 ? "l" : "r";
++    if (cpuHold) return inp; // for the review renders: the CPU stands still
+     ai.t--;
+     // a threat: the player's attack starting near, or a projectile coming
+     const threatAtk = o.st === "atk" || (o.atk && !onGround(o));
+@@ -1251,7 +1592,7 @@
      else if (def.grab) { d.st = "fall"; d.vy = -5; d.vx = away * 3.4; d.y = Math.min(d.y, -1); g.hitstop = 14; g.shake = 6; }
      else if (def.kd || !onGround(d)) { d.st = "fall"; d.vy = -3.4; d.vx = away * 2; d.y = Math.min(d.y, -1); }
      else { d.st = "hit"; d.hs = def.hs; d.vx = away * def.push; }
@@ -674,7 +967,67 @@ index 6542a55..e1e1463 100644
      g.hitstop = dmg >= 9 ? 8 : 6; if (dmg >= 9 || def.sp) g.shake = 4;
      return true;
    }
-@@ -1413,7 +1607,8 @@
+@@ -1291,6 +1632,41 @@
+     if (Math.abs(a.x - b.x) < pbw && Math.abs(a.y - b.y) < 70 && a.st !== "down" && b.st !== "down") { const push = (pbw - Math.abs(a.x - b.x)) / 2, s = a.x <= b.x ? -1 : 1; a.x += s * push; b.x -= s * push; }
+     for (const f of g.f) f.x = clamp(f.x, Math.max(18, g.camX + 18), Math.min(STAGE_W - 18, g.camX + W - 18));
+     const goal = clamp((a.x + b.x) / 2 - W / 2, 0, STAGE_W - W); g.camX += (goal - g.camX) * 0.18;
++    for (const f of g.f) stepSmoke(f);
++  }
++  // beta 3.32 (Daniel: "Cristache should blow smoke from his cigarette; he keeps it in his mouth from time to time, the
++  // rest of the time he holds it in his hand"): standing or walking he runs a loop: about four seconds with it in his
++  // hand, the hand up to the lips, a few seconds with it in his mouth (the guard back up), the hand up again, and as it
++  // comes down he breathes the smoke out. Any other move puts it back in the hand (or the fist). The smoke: small grey
++  // puffs from wherever the lit end is in the frame drawn, rising, drifting, thinning out
++  const CIG_HAND = 240, CIG_UP = 20, CIG_MOUTH = 160, CIG_LOOP = CIG_HAND + CIG_UP * 2 + CIG_MOUTH;
++  const cigPhase = (f) => { const n = (f.ct || 0) % CIG_LOOP; return n < CIG_HAND ? "hand" : n < CIG_HAND + CIG_UP ? "up" : n < CIG_HAND + CIG_UP + CIG_MOUTH ? "mouth" : "down"; };
++  const emberAt = (f, e) => [f.x + (f.face > 0 ? e[0] - OX : OX - e[0] - 1) + 0.5, f.y + e[1] - OY + 0.5];
++  function stepSmoke(f) {
++    if (!f.S.puff) return;
++    if (f.st === "idle" || f.st === "walk") f.ct = (f.ct || 0) + 1; // the loop runs while he stands or walks; any other move
++    else if (cigPhase(f) !== "hand") f.ct = Math.ceil((f.ct || 0) / CIG_LOOP) * CIG_LOOP; // takes it out of his mouth (to the hand, the fist)
++    const sm = f.smoke || (f.smoke = []), e = frameOf(f).ember;
++    f.sk = (f.sk || 0) + 1;
++    if (e && f.sk % 6 === 0) { const [x, y] = emberAt(f, e); sm.push({ x, y: y - 1, t: 0, life: 56 + Math.floor(rnd(0, 26)), vx: rnd(-0.06, 0.1), ph: rnd(0, 6) }); }
++    if ((f.ct || 0) % CIG_LOOP === CIG_HAND + CIG_UP * 2 + CIG_MOUTH - 4) { // breathing out, as the hand comes down
++      const m = f.S.idleM[0].ember; if (m) { const [x, y] = emberAt(f, [m[0] - 5, m[1] - 1]); for (let i = 0; i < 7; i++) sm.push({ x, y, t: 0, life: 40 + i * 4, vx: f.face * (0.45 + i * 0.06), vy: -0.05 - i * 0.02, ph: i, ex: 1 }); }
++    }
++    for (const q of sm) { q.t++; q.x += q.vx + Math.sin(q.t * 0.11 + q.ph) * 0.12; q.y -= q.ex ? 0.12 - (q.vy || 0) + q.t * 0.004 : 0.3 + q.t * 0.003; if (q.ex) q.vx *= 0.96; }
++    if (sm.length) f.smoke = sm.filter((q) => q.t < q.life);
++  }
++  // the puffs: one light pixel when new, then a small cloud of two or three, darker and thinner as they rise
++  function drawSmoke(ctx, list, cx, oy) {
++    for (const q of list) {
++      const k = q.t / q.life, x = Math.round(q.x - cx), y = Math.round(q.y + oy);
++      // a light core with a grey underside, so a puff reads on the white wall as on the dark shopfront
++      ctx.globalAlpha = k < 0.35 ? 0.95 : k < 0.65 ? 0.75 : k < 0.85 ? 0.5 : 0.25;
++      const lt = k < 0.3 ? "#f6f6fa" : k < 0.65 ? "#dcdce6" : "#c0c0ce", dk = k < 0.65 ? "#8c8ca2" : "#9c9cb0";
++      if (k < 0.18) { ctx.fillStyle = lt; ctx.fillRect(x, y, 1, 1); ctx.fillStyle = dk; ctx.fillRect(x, y + 1, 1, 1); }
++      else if (k < 0.5) { ctx.fillStyle = dk; ctx.fillRect(x, y + 1, 2, 1); ctx.fillRect(x + 2, y, 1, 1); ctx.fillStyle = lt; ctx.fillRect(x, y, 2, 1); ctx.fillRect(x, y - 1, 1, 1); }
++      else { ctx.fillStyle = dk; ctx.fillRect(x - 1, y + 1, 3, 1); ctx.fillStyle = lt; ctx.fillRect(x - 1, y, 3, 1); ctx.fillRect(x, y - 1, 2, 1); }
++    }
++    ctx.globalAlpha = 1;
+   }
+   function stepRound(inp) {
+     g.pt++;
+@@ -1336,7 +1712,7 @@
+       return list[Math.min(list.length - 1, ids[Math.min(ids.length - 1, Math.floor(((t - start) / Math.max(1, len)) * ids.length))])];
+     }
+     switch (f.st) {
+-      case "walk": { const n = S.walk.length, i = ((Math.floor(f.walkT / 6) % n) + n) % n; return S.walk[i]; }
++      case "walk": { const n = S.walk.length, i = ((Math.floor(f.walkT / 6) % n) + n) % n; return (S.walkM && cigPhase(f) === "mouth" ? S.walkM : S.walk)[i]; }
+       case "crouch": return S.crouch[0];
+       case "block": return f.crouchBlock ? S.cblock[0] : S.block[0];
+       case "jump": return S.jump[0];
+@@ -1346,7 +1722,7 @@
+       case "down": return S.down[0];
+       case "win": return S.win[Math.floor(t / 14) % 2];
+       case "intro": return S.intro[0];
+-      default: return S.idle[Math.floor(t / 10) % 4];
++      default: { if (S.puff) { const ph = cigPhase(f); if (ph === "up" || ph === "down") return S.puff[0]; if (ph === "mouth") return S.idleM[Math.floor(t / 10) % 4]; } return S.idle[Math.floor(t / 10) % 4]; }
+     }
+   }
+   function drawSprite(ctx, img, x, y, face) {
+@@ -1413,7 +1789,8 @@
      const sx = g.shake > 0 ? Math.round(rnd(-g.shake, g.shake)) : 0, sy = g.shake > 0 ? Math.round(rnd(-g.shake, g.shake) * 0.6) : 0;
      const cx = Math.round(g.camX) - sx;
      drawBackdrop(ctx, cx, t, sy);
@@ -684,7 +1037,19 @@ index 6542a55..e1e1463 100644
      ctx.save(); ctx.translate(0, sy);
      // shadows
      for (const f of g.f) { const w = Math.round(30 - Math.min(16, -f.y / 6)), x = Math.round(f.x - cx); ctx.fillStyle = "rgba(10,6,24,.45)"; ctx.fillRect(x - w / 2, FLOOR - 2, w, 3); ctx.fillRect(x - w / 2 + 3, FLOOR - 3, w - 6, 5); }
-@@ -1461,54 +1656,96 @@
+@@ -1427,6 +1804,11 @@
+       drawSprite(ctx, frameOf(f), f.x - cx + jit, FLOOR + f.y, f.face * spin);
+       if (f.st === "dizzy") for (let i = 0; i < 3; i++) { const an = t * 5 + (i * Math.PI * 2) / 3, x = Math.round(f.x - cx + Math.cos(an) * 12), y = Math.round(FLOOR + f.y - 92 + Math.sin(an) * 3); ctx.fillStyle = OUT; ctx.fillRect(x - 2, y - 2, 5, 5); ctx.fillStyle = i === 1 ? "#ffffff" : "#ffe14a"; ctx.fillRect(x - 1, y - 1, 3, 3); }
+     }
++    for (const f of g.f) { // beta 3.32: the smoke, and the lit end glowing now and then
++      if (f.smoke) drawSmoke(ctx, f.smoke, cx, FLOOR);
++      const e = f.S.puff && !(f.inv > 0 && f.inv % 4 < 2) ? frameOf(f).ember : null;
++      if (e && Math.floor(t * 7) % 3 === 0) { const [x, y] = emberAt(f, e); ctx.fillStyle = "#ffe08a"; ctx.fillRect(Math.floor(x - cx), Math.floor(y + FLOOR), 1, 1); }
++    }
+     for (const p of g.proj) drawProj(ctx, p, cx);
+     for (const e of g.fx) if (e.k !== "ghost" && e.k !== "stack") drawFx(ctx, e, cx);
+     ctx.restore();
+@@ -1461,54 +1843,100 @@
      let rnd4 = ""; try { const a = new Uint32Array(4); crypto.getRandomValues(a); for (const v of a) rnd4 += CODE_AB[v % CODE_AB.length]; } catch { for (let i = 0; i < 4; i++) rnd4 += CODE_AB[Math.floor(Math.random() * CODE_AB.length)]; }
      return { code: `TM-${rnd4}-${p2(d.getDate())}${p2(d.getMonth() + 1)}`, date: `${p2(d.getDate())}.${p2(d.getMonth() + 1)}.${d.getFullYear()}  ${p2(d.getHours())}:${p2(d.getMinutes())}` };
    }
@@ -750,7 +1115,7 @@ index 6542a55..e1e1463 100644
 +    rares: pose({ eF: [16, -88], hF: [22, -104], eB: [-6, -58], hB: [4, -52], kF: [10, -24], fF: [14, 0], kB: [-8, -23], fB: [-14, 0] })
 +  };
 +  const END_FR = {}, END_SC = 0.74; // in the scene they stand back by the car: a size that suits a car
-+  const endFrame = (id) => { if (END_FR[id]) return END_FR[id]; const L0 = LOOKS[id]; NPC_LOOKS["end_" + id] = Object.assign({}, L0, { headId: id, hands: "bare", build: Object.assign({}, L0.build, { sc: END_SC * (L0.build.sc || 1) }) }); return (END_FR[id] = drawFighter("end_" + id, END_POSES[id], null)); };
++  const endFrame = (id) => { if (END_FR[id]) return END_FR[id]; const L0 = LOOKS[id]; NPC_LOOKS["end_" + id] = Object.assign({}, L0, { headId: id, hands: "bare", build: Object.assign({}, L0.build, { sc: END_SC * (L0.build.sc || 1) }) }); return (END_FR[id] = drawFighter("end_" + id, L0.smokes ? Object.assign({}, END_POSES[id], { cig: "mouth" }) : END_POSES[id], null)); };
 +  function drawEnding(ctx, t) {
 +    drawBackdrop(ctx, 150, t);
 +    const gy = FLOOR - 4, cx0 = 4;
@@ -764,6 +1129,10 @@ index 6542a55..e1e1463 100644
 +    // the three of them
 +    const put3 = (id, x2, face) => { ctx.save(); ctx.translate(Math.round(x2), gy); if (face < 0) ctx.scale(-1, 1); ctx.drawImage(endFrame(id), -OX, -OY); ctx.restore(); };
 +    put3("rares", 26, 1); put3("cristache", 178, -1); put3("ion", 216, -1);
++    { const e = endFrame("cristache").ember; if (e) for (let i = 0; i < 5; i++) { // beta 3.32: and he smokes while they work
++      const a = (t * 0.5 + i / 5) % 1, x = Math.round(178 - (e[0] - OX) - 1 + Math.sin(a * 6 + i) * (1 + a * 3) - a * 4), y = Math.round(gy + e[1] - OY - 2 - a * 26);
++      ctx.globalAlpha = a < 0.4 ? 0.85 : a < 0.7 ? 0.55 : 0.3; ctx.fillStyle = a < 0.35 ? "#eeeef4" : a < 0.7 ? "#cfcfdc" : "#a8a8ba"; ctx.fillRect(x, y, a < 0.3 ? 1 : 2, 1); if (a > 0.5) ctx.fillRect(x + 1, y - 1, 1, 1);
++    } ctx.globalAlpha = 1; }
 +    // the sparks, at the clamps
 +    for (const [sx, sy] of [[bx + 3, by - 3], [cx0 + 146, gy - 43]]) for (let i = 0; i < 6; i++) { const an = (i / 6) * Math.PI * 2 + t * 7, r2 = 2 + ((Math.floor(t * 12) + i) % 4) * 2; ctx.fillStyle = i % 2 ? "#ffffff" : "#ffd23a"; ctx.fillRect(Math.round(sx + Math.cos(an) * r2), Math.round(sy + Math.sin(an) * r2), 2, 2); }
    }
@@ -824,7 +1193,46 @@ index 6542a55..e1e1463 100644
      });
    }
    function pick(i) {
-@@ -1768,6 +2005,11 @@
+@@ -1519,7 +1947,7 @@
+   }
+ 
+   // ===================== 10. the page: canvas, keys, touch, the loop =====================
+-  let root = null, cv = null, cx2 = null, scene = "title", sceneT = 0, paused = false, hits = [], stats = { fps: 0, frames: 0, t0: 0 };
++  let root = null, cv = null, cx2 = null, scene = "title", sceneT = 0, paused = false, hits = [], stats = { fps: 0, frames: 0, t0: 0, bake: 0, spr: {} };
+   const hit = (x, y, w, h, fn) => hits.push({ x, y, w, h, fn });
+   const KEYMAP = { ArrowLeft: "l", KeyA: "l", ArrowRight: "r", KeyD: "r", ArrowUp: "u", KeyW: "u", ArrowDown: "d", KeyS: "d", KeyJ: "p", KeyZ: "p", KeyK: "k", KeyX: "k", KeyL: "s", KeyC: "s", Enter: "ok", Space: "ok" };
+   const held = { l: 0, r: 0, u: 0, d: 0, p: 0, k: 0, s: 0, ok: 0 }, pressed = new Set();
+@@ -1726,7 +2154,7 @@
+       rot.appendChild(btn); root.appendChild(rot); }
+     addEventListener("resize", layout); addEventListener("orientationchange", () => setTimeout(layout, 120)); layout();
+     // everything is baked before the first frame (a few ms), then the loop: logic in fixed 1/60 s steps
+-    for (const id of FIGHTERS) portrait(id); stage(); // the fighters themselves are baked when they are picked (the VS screen)
++    { const b0 = performance.now(); for (const id of FIGHTERS) portrait(id); stage(); stats.bake = Math.round(performance.now() - b0); } // the fighters themselves are baked when they are picked (the VS screen)
+     let last = performance.now(), acc = 0;
+     stats.t0 = last;
+     const loop = (now) => {
+@@ -1745,8 +2173,9 @@
+     try { window.focus(); } catch {}
+   }
+   // for tests and the review: the state, the frame rate, a shortcut to the end of a round
+-  const probe = () => ({ scene: scene === "game" && g ? g.scene : scene, phase: g?.phase, round: g?.round, wins: g?.wins.slice(), hp: g?.f.map((f) => f.hp), st: g?.f.map((f) => f.st), time: g ? Math.ceil(g.time) : null, me: g?.me, cpu: g?.cpu, sel: SEL.p1, selCpu: SEL.cpu, selPhase: SEL.phase, menu: g?.menu, result: g?.result, paused, voucher: g?.voucher?.code || null, sideways: !!SIDEWAYS, rotate: !!(root && root.classList.contains("mg-rot")), fps: stats.fps, maxDt: Math.round(stats.maxDt || 0), sound: SND.on, proj: g ? g.proj.map((p) => p.k) : [] });
++  const probe = () => ({ scene: scene === "game" && g ? g.scene : scene, phase: g?.phase, round: g?.round, wins: g?.wins.slice(), hp: g?.f.map((f) => f.hp), st: g?.f.map((f) => f.st), time: g ? Math.ceil(g.time) : null, me: g?.me, cpu: g?.cpu, sel: SEL.p1, selCpu: SEL.cpu, selPhase: SEL.phase, menu: g?.menu, result: g?.result, paused, voucher: g?.voucher?.code || null, sideways: !!SIDEWAYS, rotate: !!(root && root.classList.contains("mg-rot")), fps: stats.fps, maxDt: Math.round(stats.maxDt || 0), sound: SND.on, proj: g ? g.proj.map((p) => p.k) : [], bake: stats.bake, spr: Object.assign({}, stats.spr) });
+   const resetMaxDt = () => { stats.maxDt = 0; };
++  let cpuHold = false; // beta 3.32: for the review renders (window.czGloves.hold(true)): the CPU stands in its guard
+   const setHp = (a, b) => { if (g && g.f.length) { g.f[0].hp = g.f[0].trail = a; g.f[1].hp = g.f[1].trail = b; } };
+ 
+   // the art on its own, for review: every sheet as a PNG data URL, scaled with crisp pixels
+@@ -1763,11 +2192,21 @@
+       const [ic, ix] = mk(CW, CH); ix.fillStyle = "#332a58"; ix.fillRect(0, 0, CW, CH); ix.drawImage(S.idle[0], 0, 0); out[`idle-${id}`] = up(ic, 6);
+       const [pc, px] = mk(64, 64); px.fillStyle = "#241d3d"; px.fillRect(0, 0, 64, 64); px.drawImage(portrait(id), 0, 0); out[`portrait-${id}`] = up(pc, 6);
+       if (id === Object.keys(LOOKS)[0]) { const ids = Object.keys(LOOKS), [sc2, sx2] = mk(ids.length * 70 + 6, 76); sx2.fillStyle = "#1b1438"; sx2.fillRect(0, 0, sc2.width, sc2.height); ids.forEach((q, i) => { sx2.fillStyle = "#241d3d"; sx2.fillRect(6 + i * 70, 6, 64, 64); sx2.drawImage(portrait(q), 6 + i * 70, 6); }); out.portraits = up(sc2, 4); }    }
++    { // beta 3.32: Cristache's cigarette: in the hand, up to the lips, in the mouth, walking, the win
++      const S = sprites("cristache"), list = [S.idle[0], S.puff[0], S.idleM[0], S.walkM[2], S.win[0]], [c, x] = mk(list.length * 90 + 10, CH - 20);
++      x.fillStyle = "#332a58"; x.fillRect(0, 0, c.width, c.height); list.forEach((f, i) => x.drawImage(f, i * 90 + 5 - (OX - 45), -20));
++      out["cig-cristache"] = up(c, 4);
++    }
+     { // the heads, big
+       const ids = Object.keys(HEADSPEC), [c, x] = mk(ids.length * (HW + 6) + 6, HH + 16); x.fillStyle = "#2a2148"; x.fillRect(0, 0, c.width, c.height);
        ids.forEach((id, i) => { const HD = headOf(id), [hc, hx2] = mk(HW, HH), idd = hx2.createImageData(HW, HH), d = new Uint32Array(idd.data.buffer); HD.rows.forEach((r, y) => [...r].forEach((ch, xx) => { if (ch !== ".") d[y * HW + xx] = HD.pal[ch]; })); hx2.putImageData(idd, 0, 0); x.drawImage(hc, 6 + i * (HW + 6), 4); });
        out.heads = up(c, 8);
      }
@@ -836,7 +1244,7 @@ index 6542a55..e1e1463 100644
      { // the line-up: everyone in the stance, then a punch and a kick at full stretch
        const ids = Object.keys(LOOKS), [c, x] = mk(ids.length * 84 + 24, 3 * (CH - 8) + 12);
        x.fillStyle = "#2a2148"; x.fillRect(0, 0, c.width, c.height);
-@@ -1781,6 +2023,7 @@
+@@ -1781,6 +2220,7 @@
      drawSelect(x, 0.1, { phase: "cpu", p1: 8, cpu: 0 }); out["select-cpu"] = up(c);
      drawVS(x, 0, "daniel", 1); out.vs = up(c);
      { const g0 = g; g = { result: "win", me: "cristache", cpu: "ion", wins: [2, 1], menu: 0, voucher: { code: "TM-K7QX-1710", date: "17.10.2026  14:32" } }; hits = []; drawResult(x, 0.2); out.voucher = up(c); g = g0; hits = []; }
@@ -844,3 +1252,12 @@ index 6542a55..e1e1463 100644
      { // the HUD over the stage, with the two fighters in their stance
        drawBackdrop(x, 96, 0); drawCrowd(x, 96, 0, false);
        const A = sprites("daniel").idle[0], B = sprites("ion").idle[0];
+@@ -1791,7 +2231,7 @@
+     }
+     return out;
+   }
+-  window.czGloves = Object.assign(window.czGloves || {}, { mount, exportArt, probe, setHp, resetMaxDt });
++  window.czGloves = Object.assign(window.czGloves || {}, { mount, exportArt, probe, setHp, resetMaxDt, hold: (v) => { cpuHold = !!v; } });
+   const auto = () => { const el = document.getElementById("mg"); if (el && !root) mount(el); };
+   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", auto); else auto();
+ })();
