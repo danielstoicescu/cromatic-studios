@@ -398,7 +398,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
 const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
 const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
 // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
-const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.16"; // beta 3.16 (Daniel): the mini-game, round 5 (the real Two Minutes front, the voucher, sideways on phones) and the address, 50A
+const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.17"; // beta 3.16 (Daniel): the mini-game, round 5 (the real Two Minutes front, the voucher, sideways on phones) and the address, 50A
 const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
 const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
 const GS = {};
@@ -813,7 +813,7 @@ await optimizeImages(pub, root);
     mkdirSync(join(pub, "play", "gloves"), { recursive: true });
     writeFileSync(join(pub, "play", "gloves", "index.html"), `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
 <title>At the gloves with I O N · Two Min Lab · Cromatic Studios</title>
 <meta name="description" content="A small 16-bit fighting game from the Two Min Lab: pick Daniel, Cristian or Coz from the Cromatic crew and box I O N, the founder of Two Minutes.">
 <meta name="robots" content="noindex, follow">

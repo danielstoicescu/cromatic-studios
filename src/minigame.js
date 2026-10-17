@@ -1641,6 +1641,16 @@
     const btn = root.querySelector(".mg-rot-btn"); if (btn) btn.hidden = !(rotSince && performance.now() - rotSince > 3000);
   }
   const pxText = (s, fill, sc = 2) => { const t = textImg(s, fill, { ol: null }), [c, x] = mk(t.w, t.h); x.drawImage(t.c, 0, 0); c.className = "mg-lbl"; c.style.width = t.w * sc + "px"; c.style.height = t.h * sc + "px"; return c; };
+  // beta 3.17 (Daniel: "on the iPhone it zooms in at some point and the buttons and the interface are lost"): Safari
+  // ignores user-scalable=no, so quick taps on the buttons (a double-tap) or two thumbs (a pinch) zoomed the page.
+  // Safari's own gesture events, a second tap within 350 ms and two-finger moves are cancelled on the game page
+  (() => {
+    const stop = (e) => e.preventDefault();
+    for (const ev of ["gesturestart", "gesturechange", "gestureend", "dblclick"]) document.addEventListener(ev, stop, { passive: false });
+    let lastEnd = 0;
+    document.addEventListener("touchend", (e) => { if (e.timeStamp - lastEnd < 350) e.preventDefault(); lastEnd = e.timeStamp; }, { passive: false });
+    document.addEventListener("touchmove", (e) => { if (e.touches.length > 1 || (e.scale && e.scale !== 1)) e.preventDefault(); }, { passive: false });
+  })();
   function buildControls() {
     // the d-pad: one surface, 8 directions from where the thumb is
     const pad = document.createElement("div"); pad.className = "mg-dpad"; pad.setAttribute("aria-label", "Move");
