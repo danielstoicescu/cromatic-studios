@@ -14,6 +14,10 @@
 // card now says "ad measurement" (Daniel: without naming OpenAI there; the privacy page names it), so a yes given
 // before ("yes") keeps Google Analytics and the card asks once more; the new yes is "yes2". The Conversions API
 // (server side) needs a secret key set in the server's environment by Daniel or Cristian: not wired.
+// r196 (Daniel: on phones the card covered the bottom third until answered): on a phone it is a slim card, the same
+// copy and the same Sure / No, thanks, the buttons stacked at its right; on the map it sits under the top controls
+// (the views, the sound) instead of over the joystick, the zoom and the place cards at the bottom. The consent logic
+// is unchanged (GA and the OpenAI pixel only after "Sure"); a desktop keeps the card as it was.
 export function consentSnippet(GA_ID, GTM_ID = "", OAI_PIXEL = "") {
   if (!GA_ID) return "";
   const css = `#cz-ck{position:fixed;left:50%;bottom:16px;z-index:2147483000;box-sizing:border-box;width:min(460px,calc(100vw - 24px));display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:18px 22px 20px;border-radius:24px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;box-shadow:0 14px 40px rgba(13,12,9,.2);font:500 15px/1.4 CromaticSans,"Darker Grotesque",system-ui,sans-serif;transform:translate(-50%,16px);opacity:0;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .45s}
@@ -21,7 +25,7 @@ export function consentSnippet(GA_ID, GTM_ID = "", OAI_PIXEL = "") {
 #cz-ck .ck-cup{width:46px;height:46px;margin-bottom:2px;background:url(/cup-spin.png) 0 0/2400% 100%;animation:czck 2.25s steps(24,jump-none) infinite}
 #cz-ck b{display:block;font:800 19px/1.2 CromaticSans,system-ui,sans-serif;letter-spacing:-.01em;margin:0}
 #cz-ck p{margin:2px 0 0;max-width:34ch;color:#3d3a34;font-size:15px;line-height:1.4;text-wrap:balance}
-#cz-ck p a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+#cz-ck p a{all:unset;cursor:pointer;color:inherit;text-decoration:underline;text-underline-offset:2px}#cz-ck p a:focus-visible{outline:3px solid #119BFE;outline-offset:2px}
 #cz-ck .ck-row{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:14px;width:100%}
 #cz-ck button{all:unset;box-sizing:border-box;cursor:pointer;min-width:132px;text-align:center;padding:12px 20px;border-radius:999px;border:2px solid #0d0c09;font:800 15px/1 CromaticSans,system-ui,sans-serif;white-space:nowrap;transition:transform .2s}
 #cz-ck button:hover{transform:translateY(-1px)}
@@ -30,7 +34,8 @@ export function consentSnippet(GA_ID, GTM_ID = "", OAI_PIXEL = "") {
 #cz-ck button:focus-visible{outline:3px solid #119BFE;outline-offset:2px}
 @keyframes czck{to{background-position:100% 0}}
 @media (prefers-reduced-motion:reduce){#cz-ck{transition:none}#cz-ck .ck-cup{animation:none}}
-@media (max-width:600px){#cz-ck{bottom:12px;width:calc(100vw - 24px);padding:16px 16px 18px}#cz-ck .ck-row{flex-wrap:nowrap}#cz-ck button{flex:1;min-width:0}}
+@media (max-width:600px){#cz-ck{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"cup t row" "p p row";align-items:center;column-gap:10px;row-gap:2px;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));width:auto;text-align:left;padding:10px 10px 11px 12px;border-radius:18px;border-width:2px;box-shadow:0 8px 24px rgba(13,12,9,.18);transform:translateY(12px)}#cz-ck.on{transform:none}#cz-ck .ck-cup{grid-area:cup;width:24px;height:24px;margin:0}#cz-ck b{grid-area:t;font-size:15px}#cz-ck p{grid-area:p;max-width:none;margin:0;font-size:12.5px;line-height:1.3;text-wrap:pretty}#cz-ck .ck-row{grid-area:row;flex-direction:column;flex-wrap:nowrap;gap:6px;margin:0;width:auto}#cz-ck button{min-width:0;padding:9px 14px;font-size:14px;border-width:1.5px}
+body.map-mode #cz-ck{bottom:auto;top:calc(186px + env(safe-area-inset-top));transform:translateY(-12px)}body.map-mode #cz-ck.on{transform:none}}
 html.embed #cz-ck,body.map-boarding #cz-ck,body.modal-open #cz-ck,body.scf-open #cz-ck{display:none}
 html.embed #cz-ck.ck-ask{display:flex}`;
   const js = `(function(){var ID=${JSON.stringify(GA_ID)},GTM=${JSON.stringify(GTM_ID)},K="cz-consent",OAI=${JSON.stringify(OAI_PIXEL)};
