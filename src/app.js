@@ -35914,7 +35914,7 @@ void main() {
           // on the map, the pass goes in and the jet takes off
           if (mapMode && mapBoarding) {
             clearTimeout(boardTimer); clearInterval(boardTick);
-            let left = 6;
+            let left = 3; // r200 (Daniel, shorter boarding): the sent pass holds 3 s before wheels up (was 6; it can be saved on the end card too)
             const paint = () => {
               const b = document.querySelector(".mapcard.contact .bp-go");
               if (b) b.innerHTML = `\u2708 Board now <i class="bp-count">${left}</i>`;
@@ -39975,6 +39975,7 @@ void main() {
       }
       // ---- boarding the jet: the boarding pass, then wheels up ----
       var boardCam = null; // beta 2.0 r4: the camera before the boarding pass, given back when it is closed
+      var flightBack = null; // r200: the same camera, kept through a take-off for "Back to the map"
       function mapOpenBoarding() {
         boardCam = mapUI?.camState?.() || null;
         mapBoarding = true;
@@ -40071,6 +40072,7 @@ void main() {
       function mapCloseBoarding(keepView = false) {
         if (!mapBoarding) return;
         if (!keepView && boardCam && jetFx.phase === "idle") { const b = boardCam; setTimeout(() => mapUI?.camRestore?.(b), 50); }
+        if (keepView && boardCam && jetFx.phase === "idle") flightBack = boardCam; // r200: the take-off gives it back once the flight is over
         boardCam = null;
         boardFxStop?.();
         mapBoarding = false;
@@ -40102,11 +40104,20 @@ void main() {
           if (!window.__savePass) end.querySelector(".fe-save").remove();
           document.querySelector(".jet-baam")?.classList.add("hidden");
           end.querySelector(".fe-replay").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?r=" + Date.now().toString(36); };
+          // r200 (Daniel, shorter boarding): the clouds stay behind the end card (the city no longer pops in under it
+          // at the 6 s mark); "Back to the map" crossfades straight to where the visitor was before the boarding pass
           end.querySelector(".fe-map").onclick = () => {
-            end.remove(); document.body.classList.remove("flight-done");
-            if (worldRefs.jet && jetFx.phase === "idle") worldRefs.jet.group.visible = true;
-            mapView.follow = false; mapView.focus = { x: JET_HOME.x - 120, z: JET_HOME.z };
-            mapView.yawGoal = 0.3; mapView.pitchGoal = 0.98; mapView.lookYGoal = 0; mapView.distGoal = innerWidth < 720 ? 5600 : 4600; mapView.distRate = 1;
+            const back = jetFx.back; jetFx.back = null;
+            const go = () => {
+              end.remove(); document.body.classList.remove("flight-done");
+              jetLand();
+              if (back) mapUI?.camRestore?.(back, true);
+              else { mapView.follow = false; mapView.focus = { x: JET_HOME.x - 120, z: JET_HOME.z }; mapView.yawGoal = 0.3; mapView.pitchGoal = 0.98; mapView.lookYGoal = 0; mapView.distGoal = innerWidth < 720 ? 5600 : 4600; mapView.distRate = 1; }
+            };
+            if (matchMedia("(prefers-reduced-motion: reduce)").matches) { go(); return; }
+            const x = el("div", "jet-xfade"); document.body.appendChild(x);
+            requestAnimationFrame(() => x.classList.add("on"));
+            setTimeout(() => { go(); x.classList.remove("on"); setTimeout(() => x.remove(), 400); }, 300);
           };
           ui.root.appendChild(end);
         }
@@ -40120,11 +40131,17 @@ void main() {
       //   3. a dolly at eye height along the walk, through the arch, towards the jet's carpet          (1.7 - 2.6 s)
       //   4. a hero low angle of the jet: the airstair folds up, the engines light                     (0.6 s)
       //   5. the take-off: tracking alongside the roll, then from behind as it climbs into the clouds  (2.8 s)
+      // r200 (Daniel: "at the boarding there is still one extra shot, it could be shorter"): shot 4 is cut (a second
+      // side view of the parked jet between the dolly and the roll): the airstair folds and the engines light as the
+      // dolly arrives, then straight to the roll. Wide 0.7, light 0.75, dolly 0.95, a harder roll 1.0, the climb 1.5:
+      // about 4.9 s (was 6.1). The "Wheels up!" hold in the clouds (1.6 s) is gone too: the end card comes up as the
+      // jet goes in, and the sent pass waits 3 s (was 6) before the walk starts: send to end card 7.9 s (was 13.7)
       // Letterbox bars while it plays. A tap or a key skips it (a quick crossfade to the clouds), and with reduced
       // motion it never plays: the same crossfade. The walk is one arch with its light and a row of low lamps
       // (the turnstiles are gone), straight from the forecourt's east edge to the carpet (JET_WALK_Z)
       var boardWalk = null;
-      const JET_GATES_T = 2.65, JET_BOARD_T = 0.6, JET_ROLL = { T: 1.3, A: 160 };
+      const JET_GATES_T = 2.4, JET_BOARD_T = 0.6, JET_ROLL = { T: 1.0, A: 210 }; // r200: gates 2.65 -> 2.4, roll 1.3 s at 160 -> 1.0 s at 210 (the same speed at lift-off); JET_BOARD_T was the hero shot's, no longer reached
+      const JET_GREEN_T = 1.0, JET_FOLD_T = 0.55; // r200: the light turns green (was 1.25); the airstair folds over the dolly's last 0.55 s
       function buildBoardWalk() {
         if (boardWalk || boardWalk === false) return boardWalk;
         const z = JET_WALK_Z, x0 = OLARI_PLAZA.x + OLARI_PLAZA.r - 6, x1 = JET_HOME.x - 24, len = x1 - x0, AS = 18;
@@ -40168,11 +40185,11 @@ void main() {
       // the walk's own clock: the light, the board and the lamps
       function boardWalkStep(t) {
         const W = boardWalk; if (!W) return;
-        if (!W.green && t > 1.25) { W.green = true; W.lightM.color.set("#28C840"); W.lightM.emissive.set("#28C840"); W.boardM.map = W.boardM.emissiveMap = W.texGo; try { window.__czChime?.(); } catch (e) {} }
+        if (!W.green && t > JET_GREEN_T) { W.green = true; W.lightM.color.set("#28C840"); W.lightM.emissive.set("#28C840"); W.boardM.map = W.boardM.emissiveMap = W.texGo; try { window.__czChime?.(); } catch (e) {} }
         if (W.green) {
-          const k = Math.min(1, (t - 1.25) / 0.3);
+          const k = Math.min(1, (t - JET_GREEN_T) / 0.3);
           W.haloM.opacity = 0.32 * k; W.boardM.emissiveIntensity = 0.12 + 0.5 * k;
-          W.bulbs.forEach((m, i) => { m.emissiveIntensity = 2.2 * Math.max(0, Math.min(1, (t - 1.4 - i * 0.12) / 0.2)); });
+          W.bulbs.forEach((m, i) => { m.emissiveIntensity = 2.2 * Math.max(0, Math.min(1, (t - JET_GREEN_T - 0.15 - i * 0.1) / 0.2)); });
         }
       }
       function boardWalkSkip(e) { if (jetFx.cine && !jetFx.xf && jetFx.phase !== "gone" && jetFx.phase !== "idle") { if (e?.type === "keydown" && /^(Shift|Control|Alt|Meta|Tab)$/.test(e.key)) return; e?.stopPropagation(); jetQuickCut(); } }
@@ -40226,6 +40243,7 @@ void main() {
         mapView.yawGoal = mapView.pitchGoal = mapView.distGoal = null;
         jetFx.tt = 0;
         jetFx.cam0 = { yaw: mapView.yaw, pitch: mapView.pitch, dist: mapView.dist, x: mapView.tgt.x, z: mapView.tgt.z, y: mapView.lookY || 0 };
+        jetFx.back = flightBack || mapUI?.camState?.() || null; flightBack = null; // r200: where the visitor was before the boarding pass
         // the clouds wait where the jet punches through them (y 300)
         jet.clouds.position.set(JET_HOME.x, 0, JET_HOME.z + jetPathAt(JET_ROLL.T + Math.sqrt(300 / 170)).z);
         jet.clouds.visible = true;
@@ -40252,10 +40270,10 @@ void main() {
         const W = boardWalk, gp = worldRefs.jet.group.position, t = jetFx.t, ph = jetFx.phase, L = (a, b, k) => a + (b - a) * k, Q = Math.PI / 2;
         if (ph === "gates") {
           const ax = W.x0 + W.AS;
-          if (t < 0.85) { const k = jss(t / 0.85); jetShot("wide", 24, ax + (innerWidth < innerHeight ? 16 : 34), 20, W.z, -Q + 0.36 - 0.07 * k, jetFit(100, 50, 24) * L(1.12, 1, k), 7); }
-          else if (t < 1.75) { const k = jss((t - 0.85) / 0.9); jetShot("light", 18, ax, 28.4, W.z, -Q - 0.32 + 0.1 * k, jetFit(40, 17, 18) * L(1.14, 1, k), 25); }
-          else { const k = jss((t - 1.75) / (JET_GATES_T - 1.75)), s = L(0, W.len - 30, k); jetShot("dolly", 34, W.x0 + s + 48, 11, W.z - 3, -Q + 0.06, L(72, 64, k), 12); }
-        } else if (ph === "board") {
+          if (t < 0.7) { const k = jss(t / 0.7); jetShot("wide", 24, ax + (innerWidth < innerHeight ? 16 : 34), 20, W.z, -Q + 0.36 - 0.07 * k, jetFit(100, 50, 24) * L(1.12, 1, k), 7); }
+          else if (t < 1.45) { const k = jss((t - 0.7) / 0.75); jetShot("light", 18, ax, 28.4, W.z, -Q - 0.32 + 0.1 * k, jetFit(40, 17, 18) * L(1.14, 1, k), 25); }
+          else { const k = jss((t - 1.45) / (JET_GATES_T - 1.45)), s = L(0, W.len - 30, k); jetShot("dolly", 34, W.x0 + s + 48, 11, W.z - 3, -Q + 0.06, L(72, 64, k), 12); }
+        } else if (ph === "board") { // (r200: no longer reached: the cinematic goes from the dolly straight to the roll)
           const k = jss(t / JET_BOARD_T); jetShot("hero", 30, gp.x, 10, gp.z + 8, L(-0.66, -0.44, k), jetFit(76, 32, 30) * L(1.06, 1, k), 3.2);
         } else if (ph === "roll") {
           const k = jss(t / JET_ROLL.T); jetShot("track", 24, gp.x, 9, gp.z + 14, -Q + L(0.6, 0.16, k), jetFit(112, 40, 24, 0.5), 5);
@@ -40309,7 +40327,10 @@ void main() {
         const t = jetFx.t, g = jet.group;
         if (jetFx.phase === "gates") {
           boardWalkStep(t); jetCineCam();
-          if (t >= JET_GATES_T) { jetFx.phase = "board"; jetFx.t = 0; }
+          // r200: the airstair folds up and the engines light while the dolly arrives (no hero shot of its own any more)
+          const kf = Math.max(0, Math.min(1, (t - (JET_GATES_T - JET_FOLD_T)) / (JET_FOLD_T * 0.8)));
+          jet.stair.scale.setScalar(1 - kf * 0.999); jet.glowM.opacity = 0.3 * kf;
+          if (t >= JET_GATES_T) { jetFx.phase = "roll"; jetFx.t = 0; jet.carpet.forEach((c) => (c.visible = false)); }
           return;
         }
         if (jetFx.phase !== "gone") { if (jetFx.cine) jetCineCam(); else jetCam(dt); }
@@ -40344,20 +40365,26 @@ void main() {
         } else if (jetFx.phase === "gone") {
           // the camera stays with the clouds the jet went into; the pass takes the stage. The lens eases back
           if (jetFx.fov) { jetFx.fov += (16 - jetFx.fov) * (1 - Math.exp(-dt * 2.5)); if (Math.abs(jetFx.fov - 16) < 0.2) jetFx.fov = null; }
-          if (t < 6) jetCloudCover(true, dt);
-          if (t > 1.6 && !jetFx.passBack) { jetFx.passBack = true; mapBoardingDone(); }
-          if (t > 6) {
-            // a fresh jet waits on the stand, stair down, carpet out
-            // r129: it stays hidden while the end screen is up (its tail, CROMATIC on it, poked out of the clouds)
-            g.position.set(JET_HOME.x, 0, JET_HOME.z); g.rotation.set(0, 0, 0); g.visible = !document.body.classList.contains("flight-done");
-            jet.stair.scale.setScalar(1); jet.carpet.forEach((c) => (c.visible = true)); jet.glowM.opacity = 0;
-            jet.clouds.visible = false;
-            jetCloudCover(false);
-            boardWalkReset();
-            jetFx.phase = "idle"; jetFx.fov = null; jetFx.shot = null;
-            document.body.classList.remove("map-takeoff");
-          }
+          const endUp = document.body.classList.contains("flight-done");
+          if (t < 6 || endUp) jetCloudCover(true, dt);
+          // r200: the end card comes up as the jet goes into the clouds (was a 1.6 s "Wheels up!" hold first: the same words twice)
+          if (!jetFx.passBack) { jetFx.passBack = true; mapBoardingDone(); }
+          // r200: while the end card is up the clouds stay (the city used to come back under it at 6 s, from the clouds' low camera)
+          if (t > 6 && !endUp) jetLand();
         }
+      }
+      // a fresh jet waits on the stand, stair down, carpet out; the clouds go (r200: on "Back to the map", or 6 s on without the end card)
+      function jetLand() {
+        const jet = worldRefs.jet;
+        if (!jet || jetFx.phase !== "gone") return;
+        const g = jet.group;
+        g.position.set(JET_HOME.x, 0, JET_HOME.z); g.rotation.set(0, 0, 0); g.visible = !document.body.classList.contains("flight-done"); // r129: hidden while the end screen is up
+        jet.stair.scale.setScalar(1); jet.carpet.forEach((c) => (c.visible = true)); jet.glowM.opacity = 0;
+        jet.clouds.visible = false;
+        jetCloudCover(false);
+        boardWalkReset();
+        jetFx.phase = "idle"; jetFx.fov = null; jetFx.shot = null;
+        document.body.classList.remove("map-takeoff");
       }
       // r107: Olari 9 opens up. The roof lifts off and hovers, a beam of light rises, and the four
       // services fly out of the house one after another and settle in a fan. Then the address card.
@@ -41179,12 +41206,12 @@ void main() {
         // beta 2.0 r4: the whole camera (target, distance, turn, tilt, follow, the street / satellite view), and the way back to it
         let camSave = null;
         const camState = () => ({ tgt: [mapView.tgt.x, mapView.tgt.z], dist: mapView.dist, yaw: mapView.yaw, pitch: mapView.pitch, lookY: mapView.lookY || 0, follow: mapView.follow, focus: mapView.focus ? { ...mapView.focus } : null, street: !!(nav2?.on && nav2.D.view === "street") });
-        const camRestore = (b) => {
+        const camRestore = (b, snap = false) => { // r200: snap = a cut (under a crossfade), not a 1.2 s glide
           if (!b) return;
           if (nav2?.on && nav2.D.view === "street" !== b.street) nav2.view(b.street);
           mapView.follow = false; mapView.focus = { x: mapView.tgt.x, z: mapView.tgt.z }; mapView.distGoal = mapView.yawGoal = mapView.pitchGoal = null;
           const fin = () => { if (b.follow) { mapView.follow = true; mapView.focus = null; } else mapView.focus = b.focus || { x: b.tgt[0], z: b.tgt[1] }; };
-          if (matchMedia("(prefers-reduced-motion: reduce)").matches) { mapView.yaw = b.yaw; mapView.pitch = b.pitch; mapView.dist = b.dist; mapView.tgt.x = b.tgt[0]; mapView.tgt.z = b.tgt[1]; cine = null; fin(); return; }
+          if (snap || matchMedia("(prefers-reduced-motion: reduce)").matches) { mapView.yaw = b.yaw; mapView.pitch = b.pitch; mapView.dist = b.dist; mapView.tgt.x = b.tgt[0]; mapView.tgt.z = b.tgt[1]; if (snap) { mapView.lookY = mapView.lookYGoal = b.lookY || 0; mapView.vx = mapView.vz = 0; camSnapNext = true; } cine = null; fin(); return; }
           cineTo({ yaw: b.yaw, pitch: b.pitch, dist: b.dist, lookY: b.lookY, fx: b.tgt[0], fz: b.tgt[1], after: fin }, 1.2);
         };
         let tmBack = null; // beta 2.0: the view before Two Minutes' scene, given back when it ends

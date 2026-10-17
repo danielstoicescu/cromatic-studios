@@ -398,7 +398,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
 const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
 const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
 // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
-const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.21"; // beta 3.21 (r198): the city's small static meshes batched (Street view frame time), hints wrap on phones. beta 3.20 (r197): the next exit marked on the roundabout. beta 3.19 (r196): the cookie card is slim on phones. beta 3.18 (r195): /onboarding/ updated to the map you drive. beta 3.16 (Daniel): the mini-game, round 5 (the real Two Minutes front, the voucher, sideways on phones) and the address, 50A
+const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.22"; // beta 3.22 r200 (Daniel, shorter boarding): the take-off without its extra hero shot or the "Wheels up!" hold, a 3 s wait after sending, the clouds kept behind the end card, "Back to the map" to where you were. beta 3.21 (r198): the city's small static meshes batched (Street view frame time), hints wrap on phones. beta 3.20 (r197): the next exit marked on the roundabout. beta 3.19 (r196): the cookie card is slim on phones. beta 3.18 (r195): /onboarding/ updated to the map you drive. beta 3.16 (Daniel): the mini-game, round 5 (the real Two Minutes front, the voucher, sideways on phones) and the address, 50A
 const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
 const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
 const GS = {};
