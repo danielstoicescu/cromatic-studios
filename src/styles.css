@@ -4923,3 +4923,6 @@ body.scheme-sketch .map-card .mcd-actions.mcd-two .mcd-play { background-color: 
 .coffee-btn.lab-play { background: #C6402E; color: #fff; }
 .case-frame.cf-game, .case-frame.cf-game .cf-iframe { background: #0b0816; }
 .case-frame.cf-game .cf-share { display: none; }
+
+/* beta 3.16 (Daniel): the mini-game is played sideways on a phone: no "turn your phone back" over its frame */
+body:has(.case-frame.cf-game:not(.hidden)) .rotate-lock { display: none !important; }

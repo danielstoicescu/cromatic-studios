@@ -193,6 +193,10 @@ const steamM = new Map();
 }
 const steamMedia = (t) => t.replace(/m:steam\/([\w-]+)/g, (x, k) => steamM.get(k) || (console.warn(`[build] steam: missing media m:steam/${k}`), x));
 jsOut = steamMedia(jsOut);
+// beta 3.16: the bundle's own pictures by absolute path: while a page or the game is open over the map the address
+// bar shows its address (/work/<page>/, /play/gloves/, r161), and a picture loaded then (a phone turned) must not be
+// looked for under it
+jsOut = jsOut.replace(/"assets\/([0-9a-f]{10}\.(?:png|jpe?g|webp|gif|svg|mp4|webm))"/g, '"/assets/$1"');
 const jsName = `assets/app.${hash(jsOut)}.js`, cssName = `assets/styles.${hash(cssOut)}.css`;
 writeFileSync(join(pub, jsName), jsOut);
 writeFileSync(join(pub, cssName), cssOut);
@@ -394,7 +398,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
 const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
 const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
 // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
-const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.15"; // beta 3.15 (Daniel): the mini-game, round 4, for the live site (3.12 round 3, 3.11 round 2, 3.1 brought it: /play/gloves/), on beta 3.01
+const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.16"; // beta 3.16 (Daniel): the mini-game, round 5 (the real Two Minutes front, the voucher, sideways on phones) and the address, 50A
 const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
 const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
 const GS = {};

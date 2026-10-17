@@ -57,3 +57,11 @@ html, body { margin: 0; height: 100%; background: #0b0816; overflow: hidden; ove
 .mg-fight .mg-menu { display: inline-flex; }
 @media (max-width: 760px) { .mg-menu { top: 12px; left: 72px; } }
 .mg-side .mg-menu { top: 12px; left: 64px; height: 44px; }
+/* beta 3.16: phones play sideways; held upright, a "rotate your phone" screen (and, after 3 s, a way to play anyway) */
+.mg-rotate { display: none; }
+.mg-rot .mg-rotate { display: flex; position: absolute; inset: 0; z-index: 5; flex-direction: column; align-items: center; justify-content: center; gap: 22px; background: #140f22; padding: 24px; }
+.mg-rot-cv { width: min(92vw, 576px); height: auto; aspect-ratio: 16 / 9; image-rendering: pixelated; image-rendering: crisp-edges; }
+.mg-rot-btn { border: 0; border-radius: 999px; padding: 14px 20px; background: #fed012; cursor: pointer; box-shadow: inset 0 0 0 3px #170f19, 0 10px 24px -10px rgba(0,0,0,.6); }
+.mg-rot-btn[hidden] { display: none; }
+.mg.mg-sideways { right: auto; bottom: auto; transform-origin: 0 0; }
+.mg-rot .mg-snd { z-index: 6; }
