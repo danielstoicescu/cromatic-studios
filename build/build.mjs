@@ -398,7 +398,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
 const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
 const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
 // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
-const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.17"; // beta 3.16 (Daniel): the mini-game, round 5 (the real Two Minutes front, the voucher, sideways on phones) and the address, 50A
+const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.18"; // beta 3.18 (r195): /onboarding/ updated to the map you drive. beta 3.16 (Daniel): the mini-game, round 5 (the real Two Minutes front, the voucher, sideways on phones) and the address, 50A
 const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
 const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
 const GS = {};

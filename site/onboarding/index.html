@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cromatic Studios · The new website</title>
-<meta name="description" content="The new Cromatic Studios website: a stylised 3D city of Bucharest where every client is a building and every industry is a street. Explore it as a map, drive it by scrolling, or read it as a fast website, in English and Romanian.">
+<meta name="description" content="The new Cromatic Studios website: a stylised 3D city of Bucharest where every client is a building and every industry is a street. Explore it as a map, drive it yourself, or read it as a fast website, in English and Romanian.">
 <link rel="canonical" href="https://cromaticstudios.com/onboarding/">
 <meta name="theme-color" content="#0d0c09">
 <meta property="og:type" content="website">
@@ -58,8 +58,8 @@
   </div>
 </div>
 
-<!-- r140: the stage. One live copy of the city (the real app, /?drive&nointro&onb, in a frame) sits behind the page and
-     shows through the "zones" (the map, the drive, the worlds, the rides); the page tells it where to be. It loads only
+<!-- r140: the stage. One live copy of the city (the real app, r195: /?map&nointro&onb, the map itself, in a frame) sits behind the page and
+     shows through the "zones" (the drive, the worlds, the rides); the page tells it where to be. It loads only
      when a zone comes close; until then, and with reduced motion, a still of the same view stands in. -->
 <div class="stage" aria-hidden="true">
   <img class="st-poster a" alt="" decoding="async">
@@ -83,7 +83,7 @@
       <p class="hero-sub">A portfolio you can drive: Bucharest, rebuilt as a small 3D city. Every client is a building, every industry a street. Come and find the work.</p>
       <div class="hero-btns">
         <a class="btn btn-y see-map" href="/">Take the 3D drive</a>
-        <a class="btn btn-ghost" href="#drive">Or scroll, we’ll drive ↓</a>
+        <a class="btn btn-ghost" href="#drive">Or scroll, we’ll show you ↓</a>
       </div>
     </div>
     <div class="hero-after">
@@ -122,17 +122,18 @@
     <h2 class="h2 center"><span class="pill pill-g tilt-l">Map it.</span> <span class="pill pill-r tilt-r">Drive it.</span> <span class="pill pill-p tilt-l">Read it.</span></h2>
     <p class="lead center">One studio, one story, three ways to take it in. Pick the one that suits your mood, your device or your deadline.</p>
     <div class="ways-stage reveal">
-      <!-- r145: the three screens, shot from the site as it is now (the map's first frame, Coffee Street on the drive,
-           the website's first fold), in MacBook, iPhone and iPad frames -->
+      <!-- r145: the three screens, shot from the site as it is now, in MacBook, iPhone and iPad frames. r195: re-shot from
+           beta 3.17: the map in Bird's eye on the laptop (the car driving you to Two Minutes), Street view with the joystick
+           on the phone; the website's first fold as before -->
       <figure class="dev tablet w-tab">
         <div class="scr"><img src="media/ways-site.webp" alt="The classic website on a tablet" loading="lazy" width="1500" height="1042"></div>
       </figure>
       <figure class="dev laptop w-lap">
-        <div class="lid"><div class="scr"><img src="media/ways-map.webp" alt="Map mode on a laptop: pick a street, the van drives you there" loading="lazy" width="1800" height="1125"></div></div>
+        <div class="lid"><div class="scr"><img src="media/ways-map.webp" alt="The map on a laptop, in Bird’s eye: tap a place and the car drives you there" loading="lazy" width="1800" height="1125"></div></div>
         <div class="base"></div>
       </figure>
       <figure class="dev phone w-ph">
-        <div class="scr"><img src="media/ways-drive.webp" alt="Drive mode on a phone: scroll and the van drives" loading="lazy" width="780" height="1688"></div>
+        <div class="scr"><img src="media/ways-drive.webp" alt="Street view on a phone: drag the stick to drive" loading="lazy" width="780" height="1688"></div>
         <i class="island" aria-hidden="true"></i>
       </figure>
     </div>
@@ -144,8 +145,8 @@
       </li>
       <li class="reveal">
         <span class="num mono">02</span><h3>The Drive</h3>
-        <p>Scroll like you normally do and you drive the route. Chapters, a coffee stop, a crossroads, a speedometer, and a boarding pass at the end.</p>
-        <div class="way-links"><a href="#drive" class="link">See it below ↓</a><a href="/?drive" class="link alt">Start the drive →</a></div>
+        <p>Take the wheel: the arrows or W A S D on a laptop, a joystick on a phone. Street view rides behind the car, Bird’s eye shows the whole city.</p>
+        <div class="way-links"><a href="#drive" class="link">See it below ↓</a><a href="/?map" class="link alt">Start the drive →</a></div>
       </li>
       <li class="reveal">
         <span class="num mono">03</span><h3>The Website</h3>
@@ -160,19 +161,25 @@
 <!-- r150 (Daniel): the road section (the live map zone flying over the streets) is gone; the city first shows live on the drive -->
 
 <!-- ============ ZONE 2 · THE DRIVE (live, then dark) ============ -->
+<!-- r195 (Daniel: "update it to the current site"): the scroll drive is gone from the site; you drive the map itself
+     (src/nav2.js). The zone shows the map round the car where it waits at the start (1489, 3423), from behind, low as in Street
+     view, then the city from above (data-cam: x, z, dist, yaw, pitch),
+     and says how you drive it now; the coffee stop's scroll beats went with the scroll drive. Night Mode stays. -->
 <section class="zone z-drive" id="drive" data-zone="drive" data-theme="paper" aria-label="The Drive">
-  <div class="zstep" data-l="1480" data-br="A" data-scheme="nightlife" data-theme="ink" data-still="z/drive-5">
+  <div class="zstep" data-cam="1489,3423,900,3.14,0.6" data-still="z/drive-1">
+    <article class="zcard"><p class="eyebrow mono">02 · The Drive</p><h3 class="h3">Drive it yourself.</h3><p>The map is the city, and the car is yours. On a laptop: the arrows or W A S D, and hold Space to drift. On a phone: a joystick.</p>
+      <div class="keys" aria-hidden="true"><!-- the arrows are the map pad's own (src/nav2.js) --><span class="kgrp"><kbd><svg viewBox="0 0 24 24" width="18" height="18"><path d="M4.5 12 11 5.5v4h8.5v5H11v4z" fill="currentColor"/></svg></kbd><kbd><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 4.5 5.5 11h4v8.5h5V11h4z" fill="currentColor"/></svg></kbd><kbd><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 19.5 5.5 13h4V4.5h5V13h4z" fill="currentColor"/></svg></kbd><kbd><svg viewBox="0 0 24 24" width="18" height="18"><path d="M19.5 12 13 5.5v4H4.5v5H13v4z" fill="currentColor"/></svg></kbd></span><span class="kor mono">or</span><span class="kgrp"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span class="kgrp"><kbd class="wide">Space</kbd></span></div>
+    </article>
+  </div>
+  <div class="zstep" data-cam="1489,3460,330,3.14,0.22" data-still="z/drive-2">
+    <article class="zcard"><p class="eyebrow mono">02 · The Drive · Two views</p><h3 class="h3">Street or Bird’s eye.</h3><p>Street view rides behind the car. Bird’s eye shows the city from above. Switch any time, or press V on a laptop.</p></article>
+  </div>
+  <div class="zstep" data-cam="1350,3900,3300,3.14,1.08" data-still="z/drive-3">
+    <article class="zcard"><p class="eyebrow mono">02 · The Drive · Tap to go</p><h3 class="h3">Or let us drive.</h3><p>Tap a place on the map, or the road, and the car takes you there. Steer, and the wheel is yours again.</p></article>
+  </div>
+  <div class="zstep" data-cam="1489,3423,800,3.14,0.45" data-scheme="nightlife" data-theme="ink" data-still="z/drive-5">
     <article class="zcard"><p class="eyebrow mono">02 · The Drive · Night Mode</p><h3 class="h3">Then the lights go down.</h3><p>Same street, after dark: windows light up, headlights come on, a light drizzle starts. This is Night Mode, one of the city’s worlds.</p></article>
   </div>
-  <div class="zstep z-coffee" data-l="1790" data-br="A" data-coffee="0" data-still="z/coffee-0">
-    <article class="zcard"><p class="eyebrow mono"><span class="clock" aria-hidden="true"></span>8:00 am · Strada Constantin Aricescu 50A</p><h3 class="h3">Good morning, Two Minutes.</h3><p>The sun comes up behind the shop. Two Minutes has been the studio's client and neighbour for a decade, so the drive always stops here. Keep scrolling: the coffee is on its way.</p></article>
-  </div>
-  <div class="zstep zbeat" data-l="1790" data-br="A" data-coffee="1" data-still="z/coffee-1" aria-hidden="true"></div>
-  <div class="zstep zbeat" data-l="1790" data-br="A" data-coffee="2" data-still="z/coffee-2" aria-hidden="true"></div>
-  <div class="zstep zbeat" data-l="1790" data-br="A" data-coffee="3" data-still="z/coffee-3" aria-hidden="true"></div>
-  <div class="zstep zbeat" data-l="1790" data-br="A" data-coffee="4" data-still="z/coffee-4" aria-hidden="true"></div>
-  <div class="zstep zbeat" data-l="1790" data-br="A" data-coffee="rush" data-still="z/coffee-5" aria-hidden="true"></div>
-  <div class="zstep zbeat" data-l="1790" data-br="A" data-coffee="calm" data-still="z/coffee-6" aria-hidden="true"></div>
 </section>
 
 <!-- ============ AFTER DARK (the dark zone carries on) ============ -->
@@ -229,7 +236,7 @@
         <button type="button" class="chip" data-w="orchid" style="--wc:#f08bb4" aria-pressed="false">Sakura</button>
         <button type="button" class="chip" data-w="riso" style="--wc:#ff48b0" aria-pressed="false">Risograph</button>
       </div>
-      <p class="zp-foot mono">And a ninth, GTA 2: a top-down bonus round, hidden in drive mode.</p>
+      <p class="zp-foot mono">And a ninth, GTA 2: a top-down bonus round, in the Multiverse menu.</p>
     </div>
   </div>
   <div class="ztrack" aria-hidden="true">

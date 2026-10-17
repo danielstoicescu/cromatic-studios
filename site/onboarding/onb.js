@@ -2,7 +2,9 @@
    r140: the page now has four live zones (the map, the drive, the worlds, the rides) where the real city shows through
    it. One copy of the app runs in a frame behind the page (/?drive&nointro&onb, loaded only when a zone comes close)
    and the page tells it, frame by frame, where to be: the camera over the map, the car's place on the road, the world,
-   the ride, the showroom. Until it is ready, with reduced motion or without WebGL, a still of the same view stands in. */
+   the ride, the showroom. Until it is ready, with reduced motion or without WebGL, a still of the same view stands in.
+   r195: the scroll drive is gone from the site, so the frame is the map itself (/?map&nointro&onb) and the drive zone
+   is the map's camera, from above and low along the streets, the way you drive it now (Street and Bird's eye). */
 (() => {
   const root = document.documentElement;
   const RM = root.classList.contains("rm");
@@ -184,7 +186,7 @@
     frame3d.title = W("The Cromatic city, live", "Orașul Cromatic, live");
     frame3d.setAttribute("aria-hidden", "true");
     frame3d.tabIndex = -1;
-    frame3d.src = "/?drive&nointro&onb";
+    frame3d.src = "/?map&nointro&onb"; // r195: the map, never the old scroll drive
     stage.insertBefore(frame3d, $(".st-veil", stage));
     win3d = frame3d.contentWindow;
     setTimeout(() => { if (!live) failed = true; }, 30000);
@@ -241,31 +243,13 @@
   };
   const want = (z, now) => {
     const y = scrollY + vh * 0.5, mob = phone();
-    if (z.kind === "map") {
+    // r195: the drive zone is the map's camera too (a step may bring its world, data-scheme, and its page colour)
+    if (z.kind === "map" || z.kind === "drive") {
       const [a, b, u] = between(z, y), A = MAPCAM(z.steps[a]), B = MAPCAM(z.steps[b]), e = smooth(clamp(u));
       const far = Math.hypot(A[0] - B[0], A[1] - B[1]), hop = Math.min(2600, far * 0.55) * Math.sin(Math.PI * e);
-      const dm = mob ? 1.3 : 1;
-      return { map: true, scheme: "monument", show: false, poster: z.steps[u < 0.5 ? a : b].d.still, frame: frameAt(z, a, b, u, "center"),
+      const dm = mob ? 1.3 : 1, s = z.steps[nearestStep(z, y)];
+      return { map: true, scheme: steady(z.kind, s.d.scheme || "monument", now, 140), veil: true, stepTheme: s.d.theme, show: false, poster: s.d.still, frame: frameAt(z, a, b, u, "center"),
         cam: { t: [lerp(A[0], B[0], e), lerp(A[1], B[1], e)], dist: (lerp(A[2], B[2], e) + hop) * dm, yaw: lerpAng(A[3], B[3], e), pitch: clamp(lerp(A[4], B[4], e) + 0.12 * Math.sin(Math.PI * e), 0.2, 1.1) } };
-    }
-    if (z.kind === "drive") {
-      const [a, b, u] = between(z, y), A = +z.steps[a].d.l, B = +z.steps[b].d.l;
-      const n = nearestStep(z, y), s = z.steps[n];
-      const w = { map: false, scheme: steady("drive", s.d.scheme || "monument", now, 140), show: false, poster: s.d.still, L: lerp(A, B, clamp(u)), push: mob ? 0.5 : 0.32, veil: true, stepTheme: s.d.theme, frame: frameAt(z, a, b, u, "car") };
-      // the coffee stop, 8:00 am: the sun climbs behind Two Minutes as you scroll through it; each step is a beat
-      // (the card, 1×, 2×, 3×, the fourth with a bang, the rush, the lesson), held while you stay on it
-      const cs = z.steps.filter((q) => q.d.coffee != null);
-      if (cs.length && s.d.coffee != null) {
-        const c = s.d.coffee, a0 = cs[0].c, a1 = cs[cs.length - 1].c;
-        w.coffee = /^\d$/.test(c) ? { on: true, n: +c, stage: "serve" } : { on: true, n: 4, stage: c };
-        w.morning = { k: 1, rise: clamp((y - a0) / Math.max(1, a1 - a0)) };
-        // on a phone the beats keep Two Minutes itself in the middle of the screen (the city's own framing crops it)
-        // r151: the ride in the foreground, low in the frame, Two Minutes and the sky above it (the card-aware frame keeps the free side)
-        if (mob && !s.card) w.frame = { x: Math.round(vw * 0.6), y: Math.round(vh * 0.58), subject: "car" };
-        else if (mob && w.frame) w.frame = { x: Math.round(vw * 0.6), y: Math.round(Math.max(vh * 0.3, vh / 2 + s.card.t - vh * 0.2)), subject: "car" }; // just above the card
-        else if (!mob && w.frame) w.frame = { ...w.frame, y: Math.round(vh * 0.62) };
-      }
-      return w;
     }
     if (z.kind === "worlds") {
       const i = segPick(z, y, now), w = steady("worlds", z.steps[i].d.w, now);
@@ -291,8 +275,6 @@
       if (now < veilT) return;
     }
     if (applied.map !== w.map) {
-      if (applied.coffee) { send({ op: "coffee", on: false }); applied.coffee = ""; }
-      if (applied.morning) { send({ op: "morning", k: 0 }); applied.morning = ""; }
       send({ op: "mode", map: w.map });
       applied.map = w.map; applied.scheme = applied.veh = undefined; applied.show = false; applied.snap = true;
       settleUntil = Math.max(settleUntil, now + 700);
@@ -305,12 +287,7 @@
     if (w.cam) send({ op: "cam", ...w.cam });
     const fk = w.frame ? `${w.frame.x}|${w.frame.y}|${String(w.frame.subject)}` : "";
     if (fk !== applied.frame) { send(w.frame ? { op: "frame", ...w.frame } : { op: "frame" }); applied.frame = fk; }
-    if (w.L != null) { send({ op: "drive", L: w.L, br: "A", push: w.push, snap: !!applied.snap }); applied.snap = false; }
-    // the morning and the espressos (sent only when they change; off as soon as you leave them)
-    const ck = w.coffee ? `${w.coffee.n}|${w.coffee.stage}` : "";
-    if (ck !== applied.coffee) { send(w.coffee ? { op: "coffee", ...w.coffee } : { op: "coffee", on: false }); applied.coffee = ck; }
-    const mk = w.morning ? w.morning.rise.toFixed(3) : "";
-    if (mk !== applied.morning) { send(w.morning ? { op: "morning", ...w.morning } : { op: "morning", k: 0 }); applied.morning = mk; }
+    // r195: no more road place, espressos or morning: the scroll drive (op drive, coffee, morning) is gone from the page
     if (veilT && now >= veilT) { veilT = 0; setTimeout(() => stage.classList.remove("veil"), 160); }
     applied.k = k;
   };

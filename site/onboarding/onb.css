@@ -948,3 +948,12 @@ html { scroll-behavior: smooth; }
 .js:not(.rm) .ways-stage.reveal.in .w-tab { transform: rotate(-4deg); }
 .js:not(.rm) .ways-stage.reveal.in .w-ph { transform: rotate(4deg); }
 @media (max-width: 760px) { .ways-stage { aspect-ratio: 1.08; } .w-tab { width: 58%; top: 0; } .w-lap { width: 84%; top: 24%; right: 0; } .w-ph { width: 26%; right: 1%; bottom: 0; } }
+
+/* r195: the drive zone's keys (the map's own controls: the arrows or W A S D, Space to drift) */
+.zcard .keys { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin-top: 20px; }
+.zcard .kgrp { display: inline-flex; gap: 6px; }
+.zcard kbd svg { display: block; }
+.zcard kbd { display: inline-grid; place-items: center; min-width: 34px; height: 34px; padding: 0 9px; border-radius: 9px; background: #fff; color: #0d0c09; font: 800 15px/1 var(--sans); box-shadow: 0 0 0 1.5px #0d0c09, 0 3px 0 1.5px #0d0c09; margin-bottom: 3px; }
+.zcard kbd.wide { min-width: 86px; font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.zcard .kor { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; opacity: .6; }
+@media (max-width: 759px) { .zcard .keys { gap: 8px 10px; margin-top: 16px; } .zcard kbd { min-width: 30px; height: 30px; font-size: 13px; } .zcard kbd.wide { min-width: 72px; } }
