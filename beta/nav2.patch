@@ -1,0 +1,842 @@
+diff --git a/build/build.mjs b/build/build.mjs
+index e75076e..a2d3278 100644
+--- a/build/build.mjs
++++ b/build/build.mjs
+@@ -193,6 +193,10 @@ const steamM = new Map();
+ }
+ const steamMedia = (t) => t.replace(/m:steam\/([\w-]+)/g, (x, k) => steamM.get(k) || (console.warn(`[build] steam: missing media m:steam/${k}`), x));
+ jsOut = steamMedia(jsOut);
++// beta 3.16: the bundle's own pictures by absolute path: while a page or the game is open over the map the address
++// bar shows its address (/work/<page>/, /play/gloves/, r161), and a picture loaded then (a phone turned) must not be
++// looked for under it
++jsOut = jsOut.replace(/"assets\/([0-9a-f]{10}\.(?:png|jpe?g|webp|gif|svg|mp4|webm))"/g, '"/assets/$1"');
+ const jsName = `assets/app.${hash(jsOut)}.js`, cssName = `assets/styles.${hash(cssOut)}.css`;
+ writeFileSync(join(pub, jsName), jsOut);
+ writeFileSync(join(pub, cssName), cssOut);
+@@ -394,7 +398,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
+ const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
+ const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
+ // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
+-const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.15"; // beta 3.15 (Daniel): the mini-game, round 4, for the live site (3.12 round 3, 3.11 round 2, 3.1 brought it: /play/gloves/), on beta 3.01
++const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 3.16"; // beta 3.16 (Daniel): the mini-game, round 5 (the real Two Minutes front, the voucher, sideways on phones) and the address, 50A
+ const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
+ const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
+ const GS = {};
+diff --git a/site/data.mjs b/site/data.mjs
+index 14a8891..4a83aa9 100644
+--- a/site/data.mjs
++++ b/site/data.mjs
+@@ -178,7 +178,7 @@ export const CASES = {
+     c: "#111111", t: "#fff",
+     eyebrow: "Two Minutes · Brand development & media · By Cromatic Studios",
+     title: "Two minutes to fall for it. A lifetime as a regular.",
+-    lead: "Identity, packaging, editorial and film for a specialty coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 52A. Two Minutes has been our client and our neighbour for a decade.",
++    lead: "Identity, packaging, editorial and film for a specialty coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 50A. Two Minutes has been our client and our neighbour for a decade.",
+     meta: ["Brand · Packaging · Editorial · Film", "Two Min Lab drinks · Boxes · Merch"],
+     youtube: "m4-5T3i3wN0",
+     swatches: ["#111111", "#F2A9C4", "#28C840", "#119BFE"],
+@@ -187,7 +187,7 @@ export const CASES = {
+       // r137: the Ghica Popa drop moves up, in big portrait frames; the whole crew closes it, full width
+       { h: "Two Minutes × Ghica Popa", p: "A T-shirt drop with Ghica Popa, shot in the studio with friends, a guitar and a pile of tees.", layout: "tall", imgs: ["m:tm/tee-033", "m:tm/tee-081", "m:tm/tee-014", "m:tm/tee-045", "m:tm/tee-022", "m:tm/tee-041", "m:tm/tee-071"], pos: [null, "47% 50%", null, null, null, "38% 50%"] },
+       { imgs: ["m:tm/tee-048"], caps: ["Friends, a guitar and the tees, in the studio."] },
+-      { h: "The boxes", p: "Green, pink, blue: coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 52A.", vids: ["boxesvideo_default"], layout: "side" },
++      { h: "The boxes", p: "Green, pink, blue: coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 50A.", vids: ["boxesvideo_default"], layout: "side" },
+       { h: "Two Min Lab", p: "Two Minutes's flavour laboratory, micro-roastery and kitchen: the space where signature flavours like the <i>Tonic Ionic</i> are perfected before they reach your cup. Bottled by hand, in small batches, in Bucharest.", imgs: ["labTonic", "labSpread", "labChinotto", "labAmaro"], caps: ["Tonic Ionic · 6 plante", "Tonic Ionic · specimen index", "Chinotto · Citrus myrtifolia", "Amaro · bitter formula"] },
+       { h: "In-house work", p: "From the first sketches on grid paper to the acrylic signs, fresh from the maker.", imgs: ["labSketch", "labSigns", "labEditorial"], vids: ["labBox", "labMaking"] },
+       { h: "Inside the boxes", p: "Every box carries a card with the coffee's story: The Blueprint, Silent Punch, Mosto, set in a typewriter voice, with the recipe on the back. And cubes for the Roastery and the Lab.", imgs: ["m:tm/card-blueprint", "m:tm/card-silent", "m:tm/card-mosto", "m:tm/card-silent-photo", "m:tm/cube-roastery", "m:tm/cubes-lab"] },
+diff --git a/site/i18n/ro.json b/site/i18n/ro.json
+index fcd4c4e..4f33c59 100644
+--- a/site/i18n/ro.json
++++ b/site/i18n/ro.json
+@@ -173,7 +173,7 @@
+  "A one-day aesthetic medicine congress staged as a courtroom, at the Palace of the Parliament in Bucharest. We built its website as the trial itself: the charge, the bench of experts, the order of proceedings, the jury's live vote and the verdict.": "Un congres de medicină estetică de o zi, pus în scenă ca un proces, la Palatul Parlamentului din București. I-am construit site-ul ca pe procesul însuși: acuzația, completul de experți, ordinea dezbaterilor, votul juriului în direct și verdictul.",
+  "A pastry that deserved its own name": "Un produs de patiserie care își merita propriul nume",
+  "A pastry with four folds, turned into a product brand, a shoot and a holiday campaign.": "Un produs de patiserie cu patru pliuri, transformat în brand, ședință foto și campanie de sărbători.",
+- "A piece of the drive · Strada Aricescu 52A": "O bucată din traseu · Strada Aricescu 52A",
++ "A piece of the drive · Strada Constantin Aricescu 50A": "O bucată din traseu · Strada Constantin Aricescu 50A",
+  "A pioneer brand refreshed for its community. New energy for the people who were there from the start, and a clear invitation for the ones just arriving.": "Un brand pionier, reîmprospătat pentru comunitatea lui. Energie nouă pentru cei care au fost acolo de la început și o invitație clară pentru cei care abia sosesc.",
+  "A pioneer that started to blend in": "Un pionier care începuse să se piardă în mulțime",
+  "A plane towing a Kómpus banner: take a photo and win": "Un avion care tractează un banner Kómpus: fă o poză și câștigă",
+@@ -858,7 +858,7 @@
+  "Festival brands": "Branduri de festival",
+  "Festival · Brand": "Festival · Brand",
+  "Film, photo and sound, made in house.": "Film, foto și sunet, făcute în casă.",
+- "Filmed in the 3D drive · Strada Aricescu 52A": "Filmat pe traseul 3D · Strada Aricescu 52A",
++ "Filmed in the 3D drive · Strada Constantin Aricescu 50A": "Filmat pe traseul 3D · Strada Constantin Aricescu 50A",
+  "Films that introduce a brand or a product. The first perfume campaign for Routine Paris, the video work for Bepco, the season reel for Steam, and film for Two Minutes, our neighbour for a decade.": "Filme care prezintă un brand sau un produs. Prima campanie de parfum pentru Routine Paris, video-urile pentru Bepco, filmul de sezon pentru Steam și filmele pentru Two Minutes, vecinii noștri de un deceniu.",
+  "Filters": "Filtre",
+  "Final call · Strada Olari 9": "Ultimul apel · Strada Olari 9",
+@@ -958,7 +958,7 @@
+  "Green brand board reading Community, coffee and connection": "Panou de brand verde cu textul Community, coffee and connection",
+  "Green coffee packaging and jute sacks with the Artisan mark": "Ambalaje pentru cafea verde și saci de iută cu marca Artisan",
+  "Green illustrated story with the community brand line": "Story verde ilustrat, cu mesajul comunității",
+- "Green, pink, blue: coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 52A.": "Verde, roz, albastru: cutii de cafea gândite să le iei de pe raft ca pe cărțile preferate. Direct de pe raftul de pe Aricescu 52A.",
++ "Green, pink, blue: coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 50A.": "Verde, roz, albastru: cutii de cafea gândite să le iei de pe raft ca pe cărțile preferate. Direct de pe raftul de pe Aricescu 50A.",
+  "Grey technician overalls with the Craft Coffee badge": "Salopete gri de tehnician, cu emblema Craft Coffee",
+  "Grinders": "Râșnițe",
+  "Growth": "Creștere",
+@@ -1019,8 +1019,8 @@
+  "Identity begins with the strategy, so every choice has a reason you can say out loud. When there is no strategy yet, we write it first, in a workshop at the table.": "Identitatea începe cu strategia, așa că fiecare alegere are un motiv pe care îl poți spune cu voce tare. Când încă nu există o strategie, o scriem întâi, într-un workshop la masă.",
+  "Identity design": "Design de identitate",
+  "Identity · Digital": "Identitate · Digital",
+- "Identity, packaging, editorial and film for a specialty coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 52A.": "Identitate, ambalaje, editorial și film pentru un brand de cafea de specialitate pe care îl iubești repede și nu-l mai uiți. Zilnic pe Aricescu 52A.",
+- "Identity, packaging, editorial and film for a specialty coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 52A. Two Minutes has been our client and our neighbour for a decade.": "Identitate, ambalaje, editorial și film pentru un brand de cafea de specialitate făcut să-l iubești repede și să nu-l mai uiți. Se toarnă zilnic pe Aricescu 52A. Two Minutes ne e client și vecin de un deceniu.",
++ "Identity, packaging, editorial and film for a specialty coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 50A.": "Identitate, ambalaje, editorial și film pentru un brand de cafea de specialitate pe care îl iubești repede și nu-l mai uiți. Zilnic pe Aricescu 50A.",
++ "Identity, packaging, editorial and film for a specialty coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 50A. Two Minutes has been our client and our neighbour for a decade.": "Identitate, ambalaje, editorial și film pentru un brand de cafea de specialitate făcut să-l iubești repede și să nu-l mai uiți. Se toarnă zilnic pe Aricescu 50A. Two Minutes ne e client și vecin de un deceniu.",
+  "Illustration": "Ilustrație",
+  "Illustration system": "Sistem de ilustrații",
+  "Imagery": "Imagistică",
+@@ -3078,7 +3078,7 @@
+  "Digital &amp; finance": "Digital și finanțe",
+  "Clinics, care &amp; beauty": "Clinici, îngrijire și frumusețe",
+  "Continue the story": "Continuă povestea",
+- "The coffee stop · Strada Aricescu 52A": "Oprirea la cafea · Strada Aricescu 52A",
++ "The coffee stop · Strada Constantin Aricescu 50A": "Oprirea la cafea · Strada Constantin Aricescu 50A",
+  "Four double espressos. Twelve boxes of coffee.": "Patru espresso-uri duble. Douăsprezece cutii de cafea.",
+  "Two Minutes has been the studio's client and neighbour for a decade, so the drive always stops here. Four double espressos, +5 XP each. The coffee boxes fly down from the Cromatic attic and stack by the door, like resources in a strategy game. Then the coffee rush hits.": "Two Minutes e clientul și vecinul studioului de un deceniu, așa că drumul se oprește mereu aici. Patru espresso-uri duble, +5 XP fiecare. Cutiile de cafea zboară din mansarda Cromatic și se stivuiesc lângă ușă, ca resursele într-un joc de strategie. Apoi te lovește valul de cofeină.",
+  "Two Minutes · Coffee stop": "Two Minutes · Oprire la cafea",
+@@ -3357,7 +3357,7 @@
+  "Next stop: coffee.": "Următoarea oprire: cafeaua.",
+  "<i class=\"cup\" aria-hidden=\"true\"></i>It opens": "<i class=\"cup\" aria-hidden=\"true\"></i>Totul începe",
+  "The palace from Dacia 99, the temporary home of our studio. Club 99 downstairs, the BISM faculty and a school of digital arts upstairs.": "Palatul de pe Dacia 99, casa temporară a studioului nostru. Club 99 la parter, facultatea BISM și o școală de arte digitale la etaj.",
+- "<span class=\"clock\" aria-hidden=\"true\"></span>8:00 am · Strada Aricescu 52A": "<span class=\"clock\" aria-hidden=\"true\"></span>8:00 dimineața · Strada Aricescu 52A",
++ "<span class=\"clock\" aria-hidden=\"true\"></span>8:00 am · Strada Constantin Aricescu 50A": "<span class=\"clock\" aria-hidden=\"true\"></span>8:00 dimineața · Strada Constantin Aricescu 50A",
+  "Good morning, Two Minutes.": "Bună dimineața, Two Minutes.",
+  "The sun comes up behind the shop. Two Minutes has been the studio's client and neighbour for a decade, so the drive always stops here. Keep scrolling: the coffee is on its way.": "Soarele răsare în spatele cafenelei. Two Minutes e clientul și vecinul studioului de un deceniu, așa că drumul se oprește mereu aici. Derulează mai departe: vine cafeaua.",
+  "Ten people. One house. Always a coffee.": "Zece oameni. O casă. Mereu o cafea.",
+diff --git a/site/onboarding/index.html b/site/onboarding/index.html
+index d1a947e..6e971d7 100644
+--- a/site/onboarding/index.html
++++ b/site/onboarding/index.html
+@@ -165,7 +165,7 @@
+     <article class="zcard"><p class="eyebrow mono">02 · The Drive · Night Mode</p><h3 class="h3">Then the lights go down.</h3><p>Same street, after dark: windows light up, headlights come on, a light drizzle starts. This is Night Mode, one of the city’s worlds.</p></article>
+   </div>
+   <div class="zstep z-coffee" data-l="1790" data-br="A" data-coffee="0" data-still="z/coffee-0">
+-    <article class="zcard"><p class="eyebrow mono"><span class="clock" aria-hidden="true"></span>8:00 am · Strada Aricescu 52A</p><h3 class="h3">Good morning, Two Minutes.</h3><p>The sun comes up behind the shop. Two Minutes has been the studio's client and neighbour for a decade, so the drive always stops here. Keep scrolling: the coffee is on its way.</p></article>
++    <article class="zcard"><p class="eyebrow mono"><span class="clock" aria-hidden="true"></span>8:00 am · Strada Constantin Aricescu 50A</p><h3 class="h3">Good morning, Two Minutes.</h3><p>The sun comes up behind the shop. Two Minutes has been the studio's client and neighbour for a decade, so the drive always stops here. Keep scrolling: the coffee is on its way.</p></article>
+   </div>
+   <div class="zstep zbeat" data-l="1790" data-br="A" data-coffee="1" data-still="z/coffee-1" aria-hidden="true"></div>
+   <div class="zstep zbeat" data-l="1790" data-br="A" data-coffee="2" data-still="z/coffee-2" aria-hidden="true"></div>
+diff --git a/site/render.mjs b/site/render.mjs
+index 9e33e28..188e330 100644
+--- a/site/render.mjs
++++ b/site/render.mjs
+@@ -253,13 +253,13 @@ ${header(true)}
+ 
+   <section class="road" aria-label="The coffee stop on the drive">
+     <div class="wrap road-head">
+-      <p class="eyebrow mono">A piece of the drive · Strada Aricescu 52A</p>
++      <p class="eyebrow mono">A piece of the drive · Strada Constantin Aricescu 50A</p>
+       <h2 class="ptitle">${pill("The coffee", "#FED012", -1.5)} ${pill("stop", "#F2A9C4", 1)}</h2>
+       <p class="sec-lead">Two Minutes has been our client and our neighbour for a decade. On the drive we always stop here: four double espressos, and the coffee boxes fly down from the Cromatic mansard to the shelf.</p>
+     </div>
+     <div class="road-scene road-video">
+       ${vid("m:tm/coffee-stop", "m:tm/coffee-stop-poster")}
+-      <span class="rv-tag mono">Filmed in the 3D drive · Strada Aricescu 52A</span>
++      <span class="rv-tag mono">Filmed in the 3D drive · Strada Constantin Aricescu 50A</span>
+       <a class="rs-cta" href="/work/two-minutes/">Two Minutes, the case →</a>
+       <a class="rs-drive" href="/">Drive it yourself →</a>
+     </div>
+diff --git a/src/app.js b/src/app.js
+index 7886c00..e95995a 100644
+--- a/src/app.js
++++ b/src/app.js
+@@ -26110,7 +26110,7 @@ void main() {
+       }
+     });
+     g.add(lab);
+-    const signTM = enamelStreetSign("Str. Aricescu 52A");
++    const signTM = enamelStreetSign("Str. C. Aricescu 50A");
+     signTM.position.set(752, 0, 4180);
+     g.add(signTM);
+     mats.festoon = new MeshStandardMaterial({
+@@ -33631,7 +33631,7 @@ void main() {
+     // ---- the coffee stop, playable in place ----
+     const coffee = section("coffee", "sec-coffee sec-alt");
+     coffee.innerHTML = `
+-      <span class="eyebrow">COFFEE STREET · ARICESCU 52A</span>
++      <span class="eyebrow">COFFEE STREET · ARICESCU 50A</span>
+       <h2 class="site-h2 pill-title drop"><span class="pill" style="background:#F65342;--rot:-2.5deg">The coffee</span><span class="pill" style="background:#FED012;--rot:1.5deg">stop</span></h2>
+       <p class="site-lead">Two Minutes has been our client and our neighbour for a decade.
+       On the drive we always stop here. On the page, you can still order.</p>`;
+@@ -34918,7 +34918,7 @@ void main() {
+       <div class="hm-info">
+         <span class="eyebrow">TWO MINUTES \xB7 THE SHELF</span>
+         <span class="hm-name drop1" style="background:#F2A9C4">TWO MIN boxes</span>
+-        <p>Green, pink, blue \u2014 coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 52A.</p>
++        <p>Green, pink, blue \u2014 coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 50A.</p>
+         <p class="mono hm-line">BRAND \xB7 PACKAGING \xB7 BY CROMATIC STUDIOS</p>
+       </div>`;
+       const close = el("button", "hm-close mono", "CLOSE \xD7");
+@@ -34970,7 +34970,7 @@ void main() {
+       <div class="hm-info wide">
+         <span class="eyebrow">TWO MINUTES \xB7 BRAND DEVELOPMENT & MEDIA</span>
+         <span class="hm-name drop1" style="background:#F2A9C4">Two Minutes</span>
+-        <p>Identity, packaging, editorial and film for a coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 52A.</p>
++        <p>Identity, packaging, editorial and film for a coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 50A.</p>
+       </div>`;
+       mEl.querySelector(".hm-info").appendChild(gallery([
+         { img: tmCover, cap: "TWO MIN \xB7 cover" },
+@@ -40866,7 +40866,7 @@ void main() {
+           if (pl.tm) {
+             // Two Minutes: three double espressos, the boxes come down from our old balcony, a fourth, and the rush
+             coffee.done = false; coffee.phase = "sip1"; coffee.t = 0; coffee.served = 0;
+-            showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52A", `<p>${pl.desc}</p>`, `<button class="mcd-open">Dig deeper \u2192</button>`);
++            showCard(pl, "COFFEE STREET \xB7 STR. CONSTANTIN ARICESCU 50A", `<p>${pl.desc}</p>`, `<button class="mcd-open">Dig deeper \u2192</button>`);
+             card.querySelector(".mcd-open").onclick = deep(pl, () => { if (openFrameHook && /^https?:$/.test(location.protocol)) openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); });
+             return;
+           }
+diff --git a/src/minigame.css b/src/minigame.css
+index 3e44979..0463e28 100644
+--- a/src/minigame.css
++++ b/src/minigame.css
+@@ -57,3 +57,11 @@ html, body { margin: 0; height: 100%; background: #0b0816; overflow: hidden; ove
+ .mg-fight .mg-menu { display: inline-flex; }
+ @media (max-width: 760px) { .mg-menu { top: 12px; left: 72px; } }
+ .mg-side .mg-menu { top: 12px; left: 64px; height: 44px; }
++/* beta 3.16: phones play sideways; held upright, a "rotate your phone" screen (and, after 3 s, a way to play anyway) */
++.mg-rotate { display: none; }
++.mg-rot .mg-rotate { display: flex; position: absolute; inset: 0; z-index: 5; flex-direction: column; align-items: center; justify-content: center; gap: 22px; background: #140f22; padding: 24px; }
++.mg-rot-cv { width: min(92vw, 576px); height: auto; aspect-ratio: 16 / 9; image-rendering: pixelated; image-rendering: crisp-edges; }
++.mg-rot-btn { border: 0; border-radius: 999px; padding: 14px 20px; background: #fed012; cursor: pointer; box-shadow: inset 0 0 0 3px #170f19, 0 10px 24px -10px rgba(0,0,0,.6); }
++.mg-rot-btn[hidden] { display: none; }
++.mg.mg-sideways { right: auto; bottom: auto; transform-origin: 0 0; }
++.mg-rot .mg-snd { z-index: 6; }
+diff --git a/src/minigame.js b/src/minigame.js
+index e257c76..7353409 100644
+--- a/src/minigame.js
++++ b/src/minigame.js
+@@ -288,6 +288,28 @@
+     rares: { idle: [0, 1.5, 3, 1.5].map((d) => { const b0 = pose({ eF: [15, -66], hF: [21, -79], eB: [6, -64], hB: [14, -75], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-17, 0] }); const q = upper(Object.assign({}, b0, { hip: [0, -47 + d] }), 0, d); q.kF = [12, -24 + d * 0.5]; q.kB = [-8, -23 + d * 0.5]; return q; }) },
+     ion: { idle: breathe(pose({ hip: [0, -48], neck: [3, -77], head: [5, -88], eF: [15, -64], hF: [18, -80], eB: [8, -64], hB: [13, -78], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-16, 0] }), 0.8) }
+   };
++  // beta 3.16: the bystanders, in the same puppet as the fighters (bare hands, a little smaller)
++  const WRAP = "#f2f0ea";
++  const NPC_LOOKS = {
++    npcSit: { skin: "#e2a882", top: "#232f52", topKind: "vest", sleeve: "long", sleeveCol: "#a8c8e4", pants: "#4a6a92", shoe: "#7ad08a", sole: "#e8e8e8", hands: "bare", build: { sc: 0.84 } },
++    npcPlaid: { skin: "#e6ae8a", top: "#b8a690", topKind: "plaid", plaid: "#6a5a4a", sleeve: "long", pants: "#2a2a30", shoe: "#2a2a2a", sole: "#e0e0e0", hands: "bare", build: { sc: 0.86 } },
++    npcBun: { skin: "#e9b08e", top: "#2c3a6a", topKind: "plaid", plaid: "#8aa0c8", sleeve: "long", pants: "#5a7aa0", shoe: "#f2f2f2", sole: "#b0b0b8", hands: "bare", build: { sc: 0.86 } },
++    npcBarista: { skin: "#f0c0a0", top: "#3a3a40", topKind: "tee", sleeve: "short", apron: "#b08a5a", pants: "#2a2a30", shoe: "#2a2a2a", sole: "#dddddd", hands: "bare", build: { sc: 0.84 } }
++  };
++  const NPC_HEADS = {
++    npcSit: { skin: "#e2a882", hair: "#2a1e18", hl: "#4a3a30", beard: "#3a2a20", hairline: [7, 10], thick: 0.5, back: 17, tex: "short", beardKind: "stubble", beardTop: 16.5, mouth: "flat" },
++    npcPlaid: { skin: "#e6ae8a", hair: "#5a3e2a", hl: "#7a5a40", beard: "#5a3e2a", hairline: [6.5, 9.5], thick: 0.6, back: 17, tex: "short", beardKind: "short", beardTop: 16.5, mouth: "flat" },
++    npcBun: { skin: "#e9b08e", hair: "#3a281c", hl: "#5a4232", beard: "#3a281c", hairline: [7, 10], thick: 0.4, back: 19, tex: "slick", bun: [7, 3.5, 2.4, 2.2], beardKind: "stubble", beardTop: 16.5, mouth: "flat" },
++    npcBarista: { skin: "#f0c0a0", hair: "#2a1a12", hl: "#4a3020", fem: true, rx: 0.93, jaw: 0.88, hairline: [6.5, 11], thick: 1.2, back: 20, tex: "wavy", blobs: [[6, 7, 3.5, 3.5]], beardKind: null, mouth: "small", lips: "#c46a64" }
++  };
++  const SIT = { hip: [-2, -12], neck: [3, -40], head: [6, -51], kF: [12, -17], fF: [16, 0], kB: [9, -15], fB: [13, 0], eF: [12, -24], hF: [18, -20], eB: [6, -24], hB: [12, -16] };
++  const STAND = { hip: [0, -47], neck: [1, -75], head: [4, -86], kF: [3, -24], fF: [5, 0], kB: [-3, -24], fB: [-5, 0], eF: [5, -58], hF: [7, -44], eB: [-4, -58], hB: [-5, -44] };
++  const NPCS = [
++    { id: "npcBarista", x: 186, y: 206, face: 1, rate: 0.9, clip: [106, 105, 98, 47], poses: [pose(Object.assign({}, STAND, { eF: [10, -56], hF: [18, -50], eB: [4, -56], hB: [12, -50] })), pose(Object.assign({}, STAND, { head: [6, -86], eF: [10, -56], hF: [18, -50], eB: [4, -56], hB: [12, -50] }))] },
++    { id: "npcSit", x: 128, y: 176, face: 1, rate: 0.7, prop: "cup", poses: [pose(SIT), pose(Object.assign({}, SIT, { eF: [13, -30], hF: [11, -40] })), pose(SIT), pose(SIT)], cheer: pose(Object.assign({}, SIT, { eF: [10, -52], hF: [12, -64] })) },
++    { id: "npcPlaid", x: 462, y: 178, face: 1, rate: 1.4, poses: [pose(STAND), pose(Object.assign({}, STAND, { eF: [12, -58], hF: [18, -62] })), pose(STAND), pose(Object.assign({}, STAND, { head: [5, -86] }))], cheer: pose(Object.assign({}, STAND, { eF: [8, -90], hF: [10, -104], eB: [-2, -90], hB: [0, -104] })) },
++    { id: "npcBun", x: 494, y: 178, face: -1, rate: 1.1, poses: [pose(STAND), pose(STAND), pose(Object.assign({}, STAND, { eF: [11, -60], hF: [16, -66] })), pose(STAND)], cheer: pose(Object.assign({}, STAND, { eF: [8, -90], hF: [10, -104] })) },
++  ];
+   const BUST_POSE = pose({ hip: [0, -47], neck: [3, -75], head: [6, -86], eF: [12, -56], hF: [14, -40], eB: [-5, -56], hB: [-7, -40], tw: 0.55 }); // for the portraits: the arms down
+   const SPECIAL_PROP = { coz: "camera", iulica: "tote", rares: "key" };
+   // the cell every frame is baked into: 140x142, the feet at (70, 138)
+@@ -333,7 +355,7 @@
+   const HEAD_CACHE = {};
+   function headOf(id) {
+     if (HEAD_CACHE[id]) return HEAD_CACHE[id];
+-    const P = HEADSPEC[id], rx = 8.7 * (P.rx || 1), ry = 10.2, cx0 = 13, cy0 = 12.5, jw = P.jaw || 1;
++    const P = HEADSPEC[id] || NPC_HEADS[id], rx = 8.7 * (P.rx || 1), ry = 10.2, cx0 = 13, cy0 = 12.5, jw = P.jaw || 1;
+     const buf = new Array(HW * HH).fill(null), put = (x, y, c) => { if (x >= 0 && y >= 0 && x < HW && y < HH) buf[y * HW + x] = c; };
+     const at = (x, y) => (x >= 0 && y >= 0 && x < HW && y < HH ? buf[y * HW + x] : null);
+     const R = (b) => ramp(b); const SK = R(P.skin), HA = R(P.hair), BE = R(P.beard || P.hair);
+@@ -448,7 +470,7 @@
+     const c = (1 - Math.abs(2 * l - 1)) * s2, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = l - c / 2, k = Math.floor(h / 60);
+     const rgb = [[c, x, 0], [x, c, 0], [0, c, x], [0, x, c], [x, 0, c], [c, 0, x]][k]; return hexOf(rgb.map((v) => (v + m) * 255));
+   };
+-  const lookOf = (id, alt) => { if (!alt) return LOOKS[id]; const L = Object.assign({}, LOOKS[id]); for (const k of ["top", "pants", "glove", "skirt", "inner", "trim", "wrist", "apron"]) if (L[k]) L[k] = hueTurn(L[k], 150); return L; };
++  const lookOf = (id, alt) => { if (!alt) return LOOKS[id] || NPC_LOOKS[id]; const L = Object.assign({}, LOOKS[id]); for (const k of ["top", "pants", "glove", "skirt", "inner", "trim", "wrist", "apron"]) if (L[k]) L[k] = hueTurn(L[k], 150); return L; };
+   function drawFighter(id, p0, prop, alt) {
+     const L = lookOf(id, alt), B = Object.assign({ sh: 1, arm: 1, leg: 1, waist: 1, chest: 1, sc: 1 }, L.build), sc = B.sc;
+     const p = {}; for (const k in p0) p[k] = Array.isArray(p0[k]) ? [p0[k][0] * sc, p0[k][1] * sc] : p0[k];
+@@ -468,14 +490,15 @@
+       const SLV = L.sleeveCol ? ramp(L.sleeveCol) : TOP;
+       const mat = (seg) => (nx, ny, t, px, py) => { const R = seg + t * 0.999 < sleeveTo || (seg === 1 && sleeveTo >= 2) ? SLV : SK;
+         if (L.topKind === "varsity" && seg === 1 && t > 0.82) return (far ? back : tone)(ramp(L.top), nx, ny); // the knit cuff
+-        if (seg === 1 && t > 0.8 && R === SK) return (far ? back : tone)(ramp(L.glove), nx, ny); // the tape up the wrist
++        if (seg === 1 && t > 0.8 && R === SK && !L.hands) return (far ? back : tone)(ramp(WRAP), nx, ny); // the tape up the wrist
+         if (L.sleeve === "rolled" && seg === 1 && Math.abs(t - 0.4) < 0.06) return TOP[far ? 4 : 3]; // the rolled cuff
+         if (L.topKind === "fleece" && R === TOP && R === SLV) { const fz = hash2(px * 7.3, py * 5.1); return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (fz > 0.72 ? 1 : fz < 0.12 ? -1 : 0), 0, 4)]; } if (L.tattoo && R === SK && seg === 1 && t > 0.2 && t < 0.8 && hash2(t * 40, nx * 6 + 9) > 0.62) return u32("#3a4a6a"); return far ? back(R, nx, ny) : tone(R, nx, ny); };
+       limb(F, s, e, 5.6 * ar, 3.8 * ar, 1.1 * ar, 0.4, mat(0), g);
+       limb(F, e, h, 4.3 * ar, 3.2 * ar, 0.6 * ar, 0.3, mat(1), g);
+       const vx = h[0] - e[0], vy = h[1] - e[1], vl = Math.hypot(vx, vy) || 1, ux = vx / vl, uy = vy / vl, gr = 5.9 * Math.min(1.1, sc);
+-      { // beta 3.15: a bare fist in hand wraps, the tape in the fighter's colour; the knuckles just showing
+-        const WR = ramp(L.glove), fr2 = 4.7 * Math.min(1.08, sc);
++      if (L.hands) blob(F, [h[0] + ux * 0.5, h[1] + uy * 0.5], 3.1 * sc + 0.6, 2.8 * sc + 0.6, (nx, ny) => (far ? back : tone)(SK, nx, ny), g + 10); // a bystander's bare hand
++      else { // beta 3.16 (Daniel): a bare fist in plain white hand wraps, for everyone; the knuckles just showing
++        const WR = ramp(WRAP), fr2 = 4.7 * Math.min(1.08, sc);
+         blob(F, [h[0] + ux, h[1] + uy], fr2, fr2 * 0.9, (nx, ny, px, py) => {
+           const along = (px - h[0]) * ux + (py - h[1]) * uy, band = Math.floor((along + 8) / 1.7) & 1;
+           if (along > fr2 * 0.55 && (Math.floor(px + py) & 1)) return (far ? back : tone)(SK, nx, ny); // the knuckles
+@@ -525,6 +548,16 @@
+       if (L.apron && u > -0.05 && v > 0.1) return ramp(L.apron)[u < 0.12 ? 3 : Math.min(4, toneOf(nx, ny) + (Math.floor(x * 1.3 + y) % 6 === 0 ? 1 : 0))];
+       if (L.apron && v <= 0.1 && Math.abs(u - 0.25) < 0.08) return ramp(L.apron)[2]; // the neck strap
+       const k = L.topKind;
++      if (k === "plaid") { // a checked shirt: two sets of lines over the base
++        const lx2 = Math.floor(x) % 5 === 0, ly2 = Math.floor(y) % 5 === 0, t2 = toneOf(nx, ny);
++        if (v < 0.06 && u > 0.34 && u < 0.84) return tone(SK, nx, ny);
++        return lx2 || ly2 ? ramp(L.plaid)[Math.min(4, t2 + (lx2 && ly2 ? 1 : 0))] : TOP[t2];
++      }
++      if (k === "vest") { // a padded vest over a light shirt
++        if (v < 0.07 && u > 0.34 && u < 0.84) return tone(SK, nx, ny);
++        if (u > 0.3 && u < 0.6 && v < 0.75) return ramp(L.sleeveCol)[Math.min(4, toneOf(nx * 0.4, ny))];
++        return TOP[Math.min(4, toneOf(nx, ny) + (Math.floor(y) % 4 === 0 ? 1 : 0))];
++      }
+       if (k === "workshirt") { // a loose work shirt: the collar, the button placket, a chest pocket
+         if (v < 0.06 && u > 0.3 && u < 0.86) return tone(SK, nx, ny);
+         if (v < 0.13 && (Math.abs(u - 0.32) < 0.12 || Math.abs(u - 0.82) < 0.1)) return TOP[Math.min(4, toneOf(nx, ny) + 1)]; // the collar points
+@@ -624,6 +657,9 @@
+     } else if (prop === "tote") {
+       poly(F, [[hF[0] - 2, hF[1] + 2], [hF[0] + 12, hF[1] + 4], [hF[0] + 10, hF[1] + 22], [hF[0] - 6, hF[1] + 19]], (x, y) => ramp("#e8dcc0")[x > hF[0] + 5 ? 1 : 2], 20);
+       poly(F, [[hF[0] - 1, hF[1] + 1], [hF[0] + 4, hF[1] + 2], [hF[0] + 3, hF[1] + 6], [hF[0] - 2, hF[1] + 5]], () => u32("#c9b896"), 21);
++    } else if (prop === "cup") { // a takeaway cup
++      poly(F, [[hF[0] - 2, hF[1] - 8], [hF[0] + 4, hF[1] - 8], [hF[0] + 3.5, hF[1] - 1], [hF[0] - 1.5, hF[1] - 1]], (x, y) => u32(y < hF[1] - 6.5 ? "#2a2a30" : x > hF[0] + 2 ? "#d8d4cc" : "#f4f2ec"), 20);
++      poly(F, [[hF[0] - 1.6, hF[1] - 5.5], [hF[0] + 3.6, hF[1] - 5.5], [hF[0] + 3.4, hF[1] - 3.5], [hF[0] - 1.4, hF[1] - 3.5]], () => u32("#b07a46"), 21);
+     } else if (prop === "key") {
+       blob(F, [hF[0] + 2, hF[1] - 7], 1.8, 3.4, () => u32("#ffd23a"), 20);
+     } else if (prop === "stack") {
+@@ -642,128 +678,146 @@
+     return (SPR[key] = S);
+   }
+ 
+-  // ===================== 4. the stage: the Two Minutes shop, at dusk =====================
++  // ===================== 4. the stage: Two Minutes, Str. Constantin Aricescu 50A =====================
++  // beta 3.16 (Daniel, from the street photo): the beige plaster house with the black shopfront and the white II' on
++  // the door, the wooden step people sit on, the steel bin, the black bollard, the white wall with the green street
++  // plate, the cream caravan parked in front, the green house-number plate, 50A. Daytime, soft clouds that drift on
++  // their own parallax, the far blocks softened (drawn at half size, hazed: depth, kept pixel art)
++  // a tiny 3x5 font for the signs on the stage (plates, the menu board)
++  const T3 = { A: "010101111101101", B: "110101110101110", C: "011100100100011", D: "110101101101110", E: "111100110100111", F: "111100110100100", G: "011100101101011", H: "101101111101101", I: "111010010010111", K: "101101110101101", L: "100100100100111", M: "101111111101101", N: "110101101101101", O: "010101101101010", P: "110101110100100", R: "110101110101101", S: "011100010001110", T: "111010010010010", U: "101101101101111", V: "101101101101010", W: "101101111111101", Y: "101101010010010", 0: "111101101101111", 1: "010110010010111", 2: "110001010100111", 3: "110001010001110", 4: "101101111001001", 5: "111100110001110", 6: "011100111101111", 7: "111001010010010", 8: "111101111101111", 9: "111101111001110", ".": "000000000000010", " ": "000000000000000", "-": "000000111000000", "'": "010010000000000" };
++  function tiny(ctx, s, x, y, col) { ctx.fillStyle = col; let cx = x; for (const ch of s) { const g2 = T3[ch] || T3[" "]; for (let i = 0; i < 15; i++) if (g2[i] === "1") ctx.fillRect(cx + (i % 3), y + Math.floor(i / 3), 1, 1); cx += 4; } }
++  const tinyW = (s) => s.length * 4 - 1;
+   let STAGE = null;
++  const SKY_TOP = "#9cc4e4", HAZE = "#c8dcea";
+   function stage() {
+     if (STAGE) return STAGE;
+-    const [far, fx] = mk(Math.ceil(W + (STAGE_W - W) * 0.5) + 2, H);
+-    const [mid, m] = mk(STAGE_W, H);
+-    // the sky: bands, dithered where two meet (no gradients: 16 colours, like the cartridges had)
+-    const SKY = ["#1b1838", "#26204a", "#38285a", "#552f66", "#7a3a6c", "#a3476a", "#cc5c62", "#ea7d5c", "#f7a364"];
+-    for (let y = 0; y < 132; y++) {
+-      const t = y / 132 * (SKY.length - 1), i = Math.floor(t), f = t - i;
+-      for (let x = 0; x < far.width; x++) { const c = f > 0.5 && ((x + y) & 1) ? SKY[Math.min(SKY.length - 1, i + 1)] : SKY[i]; fx.fillStyle = c; fx.fillRect(x, y, 1, 1); }
+-    }
+-    fx.fillStyle = "#2a2142"; fx.fillRect(0, 132, far.width, H - 132);
+-    // a few stars, a thin moon
+-    fx.fillStyle = "#fff6d8"; for (let i = 0; i < 26; i++) { const sx = (i * 97) % far.width, sy = (i * 37) % 40 + 38; fx.fillRect(sx, sy, 1, 1); }
+-    fx.fillStyle = "#fff2c0"; fx.beginPath(); fx.arc(232, 54, 9, 0, Math.PI * 2); fx.fill(); fx.fillStyle = SKY[3]; fx.beginPath(); fx.arc(228, 51, 8, 0, Math.PI * 2); fx.fill();
+-    // far Bucharest: blocks and old roofs, lit windows, one church dome
+-    let x = 0, seed = 7; const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+-    while (x < far.width) {
+-      const bw = 14 + Math.floor(r() * 26), bh = 26 + Math.floor(r() * 46), top = 132 - bh;
+-      fx.fillStyle = "#2a2142"; fx.fillRect(x, top, bw, bh + 10);
+-      fx.fillStyle = "#33284f"; fx.fillRect(x, top, 2, bh + 10);
+-      if (r() < 0.35) { fx.fillStyle = "#2a2142"; fx.fillRect(x + 2, top - 5, bw - 4, 5); fx.fillRect(x + 5, top - 9, bw - 10, 4); }
+-      for (let wy = top + 4; wy < 128; wy += 6) for (let wx = x + 3; wx < x + bw - 3; wx += 5) if (r() < 0.3) { fx.fillStyle = r() < 0.5 ? "#ffcf6a" : "#f2a04a"; fx.fillRect(wx, wy, 2, 3); }
+-      x += bw + Math.floor(r() * 4);
+-    }
+-    fx.fillStyle = "#2a2142"; fx.beginPath(); fx.arc(120, 96, 12, Math.PI, 0); fx.fill(); fx.fillRect(108, 96, 24, 40); fx.fillRect(119, 78, 2, 6); fx.fillRect(117, 80, 6, 1);
+-    // ---- the near street (scrolls with the fight): old houses either side, the shop in the middle
+-    const house = (x0, w, h, wall, trim, roof) => {
+-      const top = 176 - h;
+-      m.fillStyle = roof; m.fillRect(x0 - 3, top - 6, w + 6, 6); m.fillRect(x0 + 4, top - 10, w - 8, 4);
+-      m.fillStyle = wall; m.fillRect(x0, top, w, h);
+-      m.fillStyle = trim; m.fillRect(x0, top, w, 3); m.fillRect(x0, top + 40, w, 2); m.fillRect(x0, 170, w, 6);
+-      for (let wx = x0 + 8; wx < x0 + w - 16; wx += 24) {
+-        for (const wy of [top + 10, top + 50]) {
+-          m.fillStyle = trim; m.fillRect(wx - 2, wy - 3, 16, 3); m.fillRect(wx - 1, wy + 22, 14, 2);
+-          m.fillStyle = "#2a2440"; m.fillRect(wx, wy, 12, 22);
+-          m.fillStyle = (wx + wy) % 3 ? "#f7c46a" : "#3b3456"; m.fillRect(wx + 1, wy + 1, 10, 20);
+-          m.fillStyle = "#2a2440"; m.fillRect(wx + 6, wy, 1, 22); m.fillRect(wx, wy + 9, 12, 1);
+-        }
++    const r = (() => { let s2 = 11; return () => ((s2 = (s2 * 16807) % 2147483647) / 2147483647); })();
++    const dith = (ctx, x, y, w, h, c1, c2, f) => { for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { ctx.fillStyle = ((xx + yy) & 1) && f ? c2 : c1; ctx.fillRect(x + xx, y + yy, 1, 1); } };
++    // ---- the sky: a few bands, dithered where they meet
++    const [sky, s] = mk(W, H);
++    const BANDS = ["#8ab8de", "#96c0e2", "#a4c8e6", "#b2d0ea", "#c0d8ec", "#cfe0ee", "#dce8f0"];
++    for (let y = 0; y < 150; y++) { const t = (y / 150) * (BANDS.length - 1), i = Math.floor(t), f = t - i; for (let x = 0; x < W; x++) { s.fillStyle = f > 0.5 && ((x + y) & 1) ? BANDS[Math.min(BANDS.length - 1, i + 1)] : BANDS[i]; s.fillRect(x, y, 1, 1); } }
++    s.fillStyle = BANDS[BANDS.length - 1]; s.fillRect(0, 150, W, H - 150);
++    // ---- the clouds, on a strip that wraps
++    const [clouds, c] = mk(768, 80);
++    const cloud = (cx0, cy0, w2) => {
++      const puffs = []; for (let i = 0; i < 6; i++) puffs.push([cx0 - w2 / 2 + (i + 0.5) * (w2 / 6) + (r() - 0.5) * 6, cy0 - r() * 6 - (i > 1 && i < 4 ? 5 : 0), 6 + r() * 6]);
++      for (let y = Math.floor(cy0 - 26); y <= cy0 + 2; y++) for (let x = Math.floor(cx0 - w2 / 2 - 14); x <= cx0 + w2 / 2 + 14; x++) {
++        let inside = false, top = 1e9; for (const [px, py, pr] of puffs) { const d = Math.hypot(x - px, (y - py) * 1.2); if (d <= pr) { inside = true; top = Math.min(top, (y - (py - pr / 1.2)) / pr); } }
++        if (!inside || y > cy0) continue;
++        c.fillStyle = y > cy0 - 3 ? (((x + y) & 1) ? "#dfe7f0" : "#d2dcea") : top < 0.35 ? "#ffffff" : top < 0.9 ? "#f6f8fb" : ((x + y) & 1) ? "#eaf0f6" : "#f6f8fb";
++        c.fillRect(((x % 768) + 768) % 768, y, 1, 1);
+       }
+-      // a balcony
+-      m.fillStyle = OUT; m.fillRect(x0 + 6, top + 72, w - 12, 1); for (let bx = x0 + 6; bx < x0 + w - 6; bx += 3) m.fillRect(bx, top + 72, 1, 8); m.fillRect(x0 + 6, top + 80, w - 12, 2);
+     };
+-    house(-4, 116, 128, "#e2c79a", "#f4e2bd", "#7d4a3a");
+-    house(426, 154, 136, "#c9b8d9", "#e6dcef", "#5a4466");
+-    // the shop: black facade, its white mark, the door open, warm light, the counter and the machine
+-    const sx = 176, sw = 236, st = 44;
+-    m.fillStyle = "#121214"; m.fillRect(sx, st, sw, 132);
+-    m.fillStyle = "#26262b"; m.fillRect(sx, st, sw, 2); m.fillRect(sx, st, 2, 132); m.fillRect(sx + sw - 2, st, 2, 132);
+-    m.fillStyle = "#0a0a0b"; m.fillRect(sx + 4, st + 4, sw - 8, 1);
+-    // the mark: two tall bars and a short one, white (the shop's sign), and the name under it
+-    m.fillStyle = "#f4f4f4"; m.fillRect(sx + 18, st + 22, 7, 44); m.fillRect(sx + 30, st + 22, 7, 44); m.fillRect(sx + 42, st + 22, 4, 12);
+-    text(m, "TWO MINUTES", sx + 14, st + 74, "#f4f4f4", { ol: null });
+-    text(m, "COFFEE SHOP", sx + 14, st + 84, "#bdbdc4", { ol: null });
+-    // the door, open, with the light inside
+-    const dx = sx + 84, dw = 62;
+-    m.fillStyle = "#3b2414"; m.fillRect(dx, st + 14, dw, 118);
+-    for (let y = st + 16; y < 176; y++) { const t = (y - st) / 132; m.fillStyle = t < 0.3 ? "#ffd27a" : t < 0.6 ? "#f6b45a" : "#d98a3c"; m.fillRect(dx + 2, y, dw - 4, 1); }
+-    // inside: the shelf with cups, the espresso machine on the counter
+-    m.fillStyle = "#6b3f22"; m.fillRect(dx + 2, st + 40, dw - 4, 3);
+-    for (let i = 0; i < 6; i++) { const cx = dx + 6 + i * 9; m.fillStyle = OUT; m.fillRect(cx - 1, st + 32, 8, 8); m.fillStyle = i % 2 ? "#ffffff" : "#d8c7a8"; m.fillRect(cx, st + 33, 6, 7); }
+-    m.fillStyle = "#6b3f22"; m.fillRect(dx + 2, st + 98, dw - 4, 34);
+-    m.fillStyle = "#8a5530"; m.fillRect(dx + 2, st + 98, dw - 4, 3);
+-    m.fillStyle = OUT; m.fillRect(dx + 14, st + 74, 34, 24); m.fillStyle = "#c9ccd4"; m.fillRect(dx + 15, st + 75, 32, 22); m.fillStyle = "#8b8f9a"; m.fillRect(dx + 15, st + 86, 32, 11);
+-    m.fillStyle = "#2a2a30"; m.fillRect(dx + 20, st + 90, 4, 6); m.fillRect(dx + 37, st + 90, 4, 6); m.fillStyle = "#e85a3a"; m.fillRect(dx + 29, st + 78, 4, 4);
+-    m.fillStyle = "#121214"; m.fillRect(dx - 3, st + 12, 3, 120); m.fillRect(dx + dw, st + 12, 3, 120); m.fillRect(dx - 3, st + 10, dw + 6, 4);
+-    // the open door leaf, black, with its edge catching the light
+-    m.fillStyle = "#1b1b1f"; m.fillRect(dx + dw + 3, st + 14, 14, 118); m.fillStyle = "#34343a"; m.fillRect(dx + dw + 3, st + 14, 1, 118);
+-    // right panel: the chalk menu board
+-    const bx = sx + 166, by = st + 22;
+-    m.fillStyle = "#2b3130"; m.fillRect(bx, by, 60, 76); m.fillStyle = "#53585a"; m.fillRect(bx, by, 60, 1); m.fillRect(bx, by + 75, 60, 1); m.fillRect(bx, by, 1, 76); m.fillRect(bx + 59, by, 1, 76);
+-    text(m, "MENU", bx + 30, by + 5, "#f2f2ea", { ol: null, al: "c" });
+-    text(m, "ESPRESSO", bx + 5, by + 20, "#e6e6dc", { ol: null });
+-    text(m, "BATCH BREW", bx + 5, by + 31, "#e6e6dc", { ol: null });
+-    text(m, "TONIC", bx + 5, by + 42, "#ffd27a", { ol: null });
+-    text(m, "IONIC", bx + 5, by + 51, "#ffd27a", { ol: null });
+-    m.fillStyle = "#e6e6dc"; for (let i = 0; i < 5; i++) m.fillRect(bx + 8 + i * 10, by + 66, 6, 1);
+-    // chalk doodles on the facade, as on the wall behind the counter
+-    m.fillStyle = "#4a4a52";
+-    for (const [px, py, w2, h2] of [[sx + 60, st + 102, 14, 1], [sx + 60, st + 102, 1, 14], [sx + 73, st + 102, 1, 14], [sx + 60, st + 115, 14, 1], [sx + 76, st + 106, 4, 1], [sx + 79, st + 106, 1, 6], [sx + 12, st + 104, 30, 1], [sx + 12, st + 108, 22, 1], [sx + 12, st + 112, 26, 1]]) m.fillRect(px, py, w2, h2);
+-    // the pavement, the kerb, the cobbles
++    for (const [x0, y0, w2] of [[60, 34, 70], [240, 22, 48], [400, 46, 90], [600, 28, 60], [720, 54, 40]]) cloud(x0, y0, w2);
++    // ---- the far city: grey blocks, a pink one, trees; drawn at half size (soft), in the haze
++    const FW = Math.ceil((W + (STAGE_W - W) * 0.4) / 2) + 2, [far, f] = mk(FW, Math.ceil(H / 2));
++    const block = (x0, w2, top, col, win) => { f.fillStyle = col; f.fillRect(x0, top, w2, 90 - top); f.fillStyle = win; for (let y = top + 3; y < 82; y += 5) for (let x = x0 + 2; x < x0 + w2 - 2; x += 4) if (r() < 0.75) f.fillRect(x, y, 2, 2); f.fillStyle = "#d6dde4"; f.fillRect(x0, top, w2, 1); };
++    block(2, 26, 34, "#b8bfc8", "#9aa4b0"); block(34, 18, 46, "#c8b8b8", "#a89898"); block(58, 40, 12, "#c4c9d0", "#a3abb6"); block(104, 22, 40, "#b6bcc4", "#98a0ac"); block(132, 34, 26, "#c9cdd2", "#a8afb8"); block(170, 26, 44, "#c4b2ae", "#a8958f"); block(200, 30, 20, "#bfc5cc", "#a0a8b2");
++    f.fillStyle = "#9fb69a"; for (let i = 0; i < 18; i++) { const tx = (i * 23) % FW, ty = 70 + (i % 3) * 3; f.beginPath(); f.arc(tx, ty, 5 + (i % 3), 0, Math.PI * 2); f.fill(); }
++    { const id2 = f.getImageData(0, 0, FW, far.height), d2 = new Uint32Array(id2.data.buffer), hz = u32(HAZE); for (let y = 0; y < far.height; y++) for (let x = 0; x < FW; x++) { const i = y * FW + x; if ((d2[i] >>> 24) && ((x + y) & 1) && (y > 20 || (x & 2))) d2[i] = hz; } f.putImageData(id2, 0, 0); } // the haze, one pixel in two
++    // ---- the street (it scrolls with the fight)
++    const [mid, m] = mk(STAGE_W, H);
+     const yG = 176;
+-    m.fillStyle = "#4b4560"; m.fillRect(0, yG, STAGE_W, H - yG);
+-    m.fillStyle = "#5c5674"; m.fillRect(0, yG, STAGE_W, 2);
+-    for (let y = yG + 4, row = 0; y < H; y += 6 + row, row++) {
+-      m.fillStyle = "#3d3850"; m.fillRect(0, y, STAGE_W, 1);
+-      const step = 18 + row * 4;
+-      for (let x2 = (row % 2) * (step / 2); x2 < STAGE_W; x2 += step) m.fillRect(Math.round(x2), y - 5 - row, 1, 5 + row);
++    // a small, cute neighbour on the left: yellow plaster, a tiled roof, a window with flowers
++    { const x0 = 0, w2 = 46, top = 92; m.fillStyle = "#b8573c"; m.fillRect(x0, top - 10, w2 + 4, 10); m.fillStyle = "#9a4430"; for (let x = x0; x < x0 + w2 + 4; x += 4) m.fillRect(x, top - 10, 1, 10); m.fillStyle = "#e9cf8a"; m.fillRect(x0, top, w2, yG - top); dith(m, x0, top, w2, 3, "#e9cf8a", "#d8bd76", 1);
++      m.fillStyle = "#5a3a26"; m.fillRect(x0 + 10, top + 14, 22, 26); m.fillStyle = "#a9c6d8"; m.fillRect(x0 + 12, top + 16, 8, 22); m.fillRect(x0 + 22, top + 16, 8, 22); m.fillStyle = "#d8e8f0"; m.fillRect(x0 + 12, top + 16, 3, 8);
++      m.fillStyle = "#6b4a2e"; m.fillRect(x0 + 8, top + 40, 26, 4); for (let i = 0; i < 7; i++) { m.fillStyle = i % 2 ? "#e84a6a" : "#ffd23a"; m.fillRect(x0 + 9 + i * 3.5, top + 37 + (i % 2), 3, 3); m.fillStyle = "#4a8a3a"; m.fillRect(x0 + 10 + i * 3.5, top + 40, 2, 1); }
++      m.fillStyle = "#4a3428"; m.fillRect(x0 + 14, yG - 30, 16, 30); m.fillStyle = "#6a4a36"; m.fillRect(x0 + 15, yG - 29, 14, 29); m.fillStyle = "#ffd23a"; m.fillRect(x0 + 26, yG - 16, 2, 2); }
++    // the Two Minutes house: beige-pink plaster, two floors
++    const hx = 46, hw = 200, ht = 22;
++    m.fillStyle = "#dcc2ae"; m.fillRect(hx, ht, hw, yG - ht);
++    for (let i = 0; i < 900; i++) { m.fillStyle = r() < 0.5 ? "#d2b6a2" : "#e6d0c0"; m.fillRect(hx + Math.floor(r() * hw), ht + Math.floor(r() * (yG - ht)), 1, 1); }
++    m.fillStyle = "#c9ab96"; m.fillRect(hx, ht, hw, 2); m.fillRect(hx + hw - 3, ht, 3, yG - ht);
++    // the upper windows: dark brown frames, the sky in the glass
++    const win = (x0, y0, w2, h2) => { m.fillStyle = "#3e2418"; m.fillRect(x0, y0, w2, h2); m.fillStyle = "#9ab8cc"; m.fillRect(x0 + 2, y0 + 2, w2 - 4, h2 - 4); m.fillStyle = "#c6dbe8"; m.fillRect(x0 + 2, y0 + 2, Math.floor((w2 - 4) / 2), Math.floor((h2 - 4) / 3)); m.fillStyle = "#3e2418"; m.fillRect(x0 + Math.floor(w2 / 2) - 1, y0, 2, h2); m.fillRect(x0, y0 + Math.floor(h2 * 0.38), w2, 2); m.fillStyle = "#b89a86"; m.fillRect(x0 - 2, y0 + h2, w2 + 4, 2); };
++    win(78, 32, 34, 46); win(150, 36, 26, 38);
++    // the drainpipe, stickered, at the corner
++    m.fillStyle = "#8a8e96"; m.fillRect(hx + hw - 6, 0, 3, yG); m.fillStyle = "#b6bac2"; m.fillRect(hx + hw - 6, 0, 1, yG);
++    for (let y = 120; y < 170; y += 3) { m.fillStyle = ["#e84a6a", "#ffd23a", "#2fb8f0", "#ffffff", "#28c840"][(y / 3) % 5 | 0]; m.fillRect(hx + hw - 6, y, 3, 2); }
++    // the awning bar over the shopfront, the name on it
++    m.fillStyle = "#3c3d42"; m.fillRect(hx + 4, 88, 168, 11); m.fillStyle = "#56585e"; m.fillRect(hx + 4, 88, 168, 1); m.fillStyle = "rgba(40,24,20,.25)"; m.fillRect(hx + 6, 99, 164, 3);
++    text(m, "TWO MINUTES", hx + 90, 90, "#f4f4f4", { ol: null, al: "c" });
++    // the shopfront: a black frame; the door (the white II' on its glass, a curtain), the big window (shelves, the counter)
++    const sx0 = hx + 14, sw = 152, sy0 = 102;
++    m.fillStyle = "#121214"; m.fillRect(sx0, sy0, sw, yG - sy0);
++    m.fillStyle = "#3a3f46"; m.fillRect(sx0 + 3, sy0 + 3, 38, yG - sy0 - 6);
++    m.fillStyle = "#e9e6de"; m.fillRect(sx0 + 4, sy0 + 4, 12, yG - sy0 - 10); m.fillStyle = "#d4d0c6"; for (let y = sy0 + 4; y < yG - 6; y++) if (y % 3 === 0) m.fillRect(sx0 + 7 + ((y / 3) & 1), y, 1, 1); // the curtain
++    m.fillStyle = "#f4f4f4"; m.fillRect(sx0 + 18, sy0 + 20, 4, 30); m.fillRect(sx0 + 25, sy0 + 20, 4, 30); m.fillRect(sx0 + 32, sy0 + 20, 3, 8); // II'
++    m.fillStyle = "#9a9ca4"; m.fillRect(sx0 + 37, sy0 + 34, 1, 18); // the handle
++    const wx0 = sx0 + 44, ww = sw - 47;
++    m.fillStyle = "#5a4636"; m.fillRect(wx0, sy0 + 3, ww, yG - sy0 - 6); // the room inside, warm
++    m.fillStyle = "#7a5a40"; for (const yy of [sy0 + 18, sy0 + 34]) m.fillRect(wx0 + 2, yy, ww - 4, 2); // shelves
++    for (let i = 0; i < 14; i++) { const bx = wx0 + 4 + i * 7, yy = i < 7 ? sy0 + 11 : sy0 + 27; m.fillStyle = ["#e84a6a", "#28c840", "#2fb8f0", "#ffd23a", "#f4f2ea"][i % 5]; m.fillRect(bx, yy, 5, 7); m.fillStyle = "rgba(0,0,0,.25)"; m.fillRect(bx + 4, yy, 1, 7); }
++    m.fillStyle = "#c9a878"; m.fillRect(wx0 + 2, yG - 24, ww - 4, 4); m.fillStyle = "#8a6a4a"; m.fillRect(wx0 + 2, yG - 20, ww - 4, 14); // the counter
++    m.fillStyle = "#d8d8de"; m.fillRect(wx0 + 60, yG - 34, 18, 10); m.fillStyle = "#9a9aa4"; m.fillRect(wx0 + 60, yG - 27, 18, 3); // the machine
++    m.fillStyle = "rgba(255,255,255,.16)"; for (let i = 0; i < 3; i++) { m.beginPath(); m.moveTo(wx0 + 10 + i * 34, sy0 + 3); m.lineTo(wx0 + 22 + i * 34, sy0 + 3); m.lineTo(wx0 + i * 34 - 6, yG - 6); m.lineTo(wx0 + i * 34 - 18, yG - 6); m.fill(); } // reflections
++    m.fillStyle = "#121214"; m.fillRect(wx0 + 50, sy0, 2, yG - sy0);
++    // the wooden step along the shopfront, where people sit
++    m.fillStyle = "#b98a55"; m.fillRect(sx0 + 40, yG - 8, 110, 4); m.fillStyle = "#8a6038"; m.fillRect(sx0 + 40, yG - 4, 110, 4); m.fillStyle = "#d4a870"; m.fillRect(sx0 + 40, yG - 8, 110, 1);
++    // the house-number plate, green, by the door: 50A
++    { const px2 = sx0 + sw + 6; m.fillStyle = "#f4f4f4"; m.fillRect(px2, 110, 17, 13); m.fillStyle = "#1e6b43"; m.fillRect(px2 + 1, 111, 15, 11); tiny(m, "50A", px2 + 3, 114, "#f4f4f4"); } // the house number, on a green Bucharest plate
++    // the menu board on the wall by the door
++    m.fillStyle = "#4a3428"; m.fillRect(hx - 1, 136, 17, 30); m.fillStyle = "#2b3130"; m.fillRect(hx, 137, 15, 28);
++    // a tree's branches hanging over from the left, the leaves catching the light
++    { // a tree's branches hanging in from the left, leaves in clusters, the light on top
++      const twig = (x0, y0, x1, y1) => { for (let i = 0; i <= 40; i++) { const t2 = i / 40; m.fillStyle = "#5a4430"; m.fillRect(Math.round(lerp(x0, x1, t2)), Math.round(lerp(y0, y1, t2) + Math.sin(t2 * 3) * 3), 2, 1); } };
++      twig(0, 18, 110, 52); twig(30, 30, 70, 72); twig(60, 38, 140, 70);
++      for (const [cx2, cy2, n2] of [[20, 20, 24], [52, 30, 22], [84, 44, 26], [112, 54, 20], [66, 66, 16], [134, 66, 16], [36, 46, 14]]) for (let i = 0; i < n2; i++) { const a2 = r() * Math.PI * 2, d2 = r() * 10, lx = cx2 + Math.cos(a2) * d2, ly = cy2 + Math.sin(a2) * d2 * 0.7; m.fillStyle = OUT; m.fillRect(lx - 1, ly - 1, 5, 4); m.fillStyle = ly < cy2 ? "#7aa84a" : "#5e8a3c"; m.fillRect(lx, ly, 3, 2); m.fillStyle = "#a6cc6a"; if (ly < cy2 - 2) m.fillRect(lx, ly, 2, 1); }
+     }
+-    // an outdoor table with a stack of cups, and a bike against the house
+-    const tx = 440;
+-    m.fillStyle = OUT; m.fillRect(tx, 150, 34, 3); m.fillRect(tx + 15, 153, 4, 23); m.fillRect(tx + 8, 174, 18, 2);
+-    m.fillStyle = "#f4f4f4"; for (let i = 0; i < 5; i++) { m.fillStyle = OUT; m.fillRect(tx + 4, 140 - i * 3, 9, 1); m.fillStyle = i % 2 ? "#ffffff" : "#e8e2d4"; m.fillRect(tx + 4, 141 - i * 3, 9, 2); }
+-    m.fillStyle = OUT; m.fillRect(tx + 20, 143, 7, 7); m.fillStyle = "#121214"; m.fillRect(tx + 21, 144, 5, 6); m.fillStyle = "#fff"; m.fillRect(tx + 22, 146, 1, 3); m.fillRect(tx + 24, 146, 1, 3);
+-    const bike = (bx2, by2) => { m.strokeStyle = OUT; m.lineWidth = 2; m.beginPath(); m.arc(bx2, by2, 9, 0, Math.PI * 2); m.stroke(); m.beginPath(); m.arc(bx2 + 28, by2, 9, 0, Math.PI * 2); m.stroke(); m.strokeStyle = "#d8342a"; m.beginPath(); m.moveTo(bx2, by2); m.lineTo(bx2 + 12, by2 - 14); m.lineTo(bx2 + 24, by2 - 14); m.lineTo(bx2 + 28, by2); m.moveTo(bx2 + 12, by2 - 14); m.lineTo(bx2 + 14, by2); m.lineTo(bx2, by2); m.stroke(); m.fillStyle = OUT; m.fillRect(bx2 + 8, by2 - 18, 8, 2); m.fillRect(bx2 + 22, by2 - 20, 6, 2); };
+-    bike(40, 165);
+-    // a street lamp
+-    m.fillStyle = "#2a2440"; m.fillRect(150, 70, 3, 106); m.fillRect(144, 64, 15, 6); m.fillStyle = "#ffe6a0"; m.fillRect(146, 70, 11, 3);
+-    STAGE = { far, mid };
++    // the white wall next door: rough plaster, the green enamel street plate, a box, a pipe
++    const wx = hx + hw, wwid = 112;
++    m.fillStyle = "#ecebe5"; m.fillRect(wx, 72, wwid, yG - 72); for (let i = 0; i < 700; i++) { m.fillStyle = r() < 0.5 ? "#dcdbd4" : "#f8f7f2"; m.fillRect(wx + Math.floor(r() * wwid), 72 + Math.floor(r() * (yG - 72)), 1, 1); }
++    m.fillStyle = "#d6d4cc"; m.fillRect(wx, 72, wwid, 2); m.fillRect(wx, yG - 12, wwid, 12);
++    m.fillStyle = "#f4f4f4"; m.fillRect(wx + 44, 110, 34, 15); m.fillStyle = "#1e6b5a"; m.fillRect(wx + 45, 111, 32, 13); tiny(m, "STR.C.", wx + 47, 112, "#f4f4f4"); tiny(m, "ARICESCU", wx + 46, 118, "#f4f4f4");
++    m.fillStyle = "#c9ccd4"; m.fillRect(wx + 84, 132, 9, 12); m.fillStyle = "#9a9ca4"; m.fillRect(wx + 84, 143, 9, 1); m.fillStyle = "#1c1c20"; m.fillRect(wx + 88, 144, 2, 32);
++    // the pavement, the kerb
++    m.fillStyle = "#8c8a86"; m.fillRect(0, yG, STAGE_W, H - yG); m.fillStyle = "#a4a29e"; m.fillRect(0, yG, STAGE_W, 2);
++    for (let y = yG + 4, row = 0; y < H; y += 6 + row, row++) { m.fillStyle = "#7a7874"; m.fillRect(0, y, STAGE_W, 1); const step = 18 + row * 4; for (let x = (row % 2) * (step / 2); x < STAGE_W; x += step) m.fillRect(Math.round(x), y - 5 - row, 1, 5 + row); }
++    // the steel bin and the black bollard
++    { const bx = sx0 + sw + 4; m.fillStyle = OUT; m.fillRect(bx - 1, 145, 16, yG - 145); m.fillStyle = "#b8bcc4"; m.fillRect(bx, 146, 14, yG - 147); m.fillStyle = "#e4e7ec"; m.fillRect(bx + 2, 148, 2, yG - 152); m.fillStyle = "#2a2a30"; m.fillRect(bx - 1, 143, 16, 4); }
++    { const bx = wx + 26; m.fillStyle = OUT; m.fillRect(bx - 1, 141, 6, 36); m.fillStyle = "#26262c"; m.fillRect(bx, 142, 4, 34); m.fillStyle = "#4a4a52"; m.fillRect(bx, 142, 1, 34); m.fillRect(bx - 2, yG - 2, 8, 2); }
++    // a pink suitcase with a jacket over it
++    { const bx = wx + 52; m.fillStyle = OUT; m.fillRect(bx - 1, 148, 14, 28); m.fillStyle = "#e84a7a"; m.fillRect(bx, 149, 12, 26); m.fillStyle = "#f07a9a"; m.fillRect(bx + 2, 150, 2, 24); m.fillStyle = "#6a6a72"; m.fillRect(bx - 2, 140, 10, 14); m.fillStyle = "#2a2a30"; m.fillRect(bx + 4, 144, 2, 6); }
++    // past the wall: a low house with a red roof, a tree
++    { const x0 = wx + wwid - 4; m.fillStyle = "#3e6a34"; m.beginPath(); m.arc(x0 + 8, 104, 18, 0, Math.PI * 2); m.fill(); m.fillStyle = "#5e8a44"; m.beginPath(); m.arc(x0 + 4, 98, 10, 0, Math.PI * 2); m.fill();
++      m.fillStyle = "#e2ddd2"; m.fillRect(x0 + 20, 118, 70, yG - 118); m.fillStyle = "#a8402e"; m.fillRect(x0 + 16, 112, 78, 7); m.fillStyle = "#c4553c"; m.fillRect(x0 + 16, 112, 78, 2);
++      m.fillStyle = "#c98a3a"; m.fillRect(x0 + 34, 126, 16, 12); m.fillStyle = "#f2c47a"; m.fillRect(x0 + 35, 127, 14, 10); m.fillStyle = "#c98a3a"; m.fillRect(x0 + 41, 127, 1, 10);
++      m.fillStyle = "#b8402e"; for (let x = x0 + 56; x < x0 + 90; x += 3) m.fillRect(x, 150, 2, 26); }
++    // the cream caravan parked in front (a generic retro one, no name on it)
++    { const cx0 = 430, cw = 136, cy0 = 112, cb = 166;
++      m.fillStyle = OUT; m.beginPath(); m.moveTo(cx0 + 10, cy0 - 1); m.lineTo(cx0 + cw + 1, cy0 - 1); m.lineTo(cx0 + cw + 1, cb + 1); m.lineTo(cx0 - 1, cb + 1); m.lineTo(cx0 - 1, cy0 + 22); m.closePath(); m.fill();
++      m.fillStyle = "#ece2c6"; m.beginPath(); m.moveTo(cx0 + 10, cy0); m.lineTo(cx0 + cw, cy0); m.lineTo(cx0 + cw, cb); m.lineTo(cx0, cb); m.lineTo(cx0, cy0 + 22); m.closePath(); m.fill();
++      m.fillStyle = "#f8f2de"; m.fillRect(cx0 + 12, cy0 + 1, cw - 14, 3);
++      m.fillStyle = "#b07a46"; m.fillRect(cx0, cy0 + 24, cw, 3); m.fillStyle = "#d89a5a"; m.fillRect(cx0, cy0 + 27, cw, 2); m.fillStyle = "#b07a46"; m.fillRect(cx0, cb - 10, cw, 2);
++      m.fillStyle = "#3a3632"; m.fillRect(cx0 + 4, cy0 + 8, 40, 14); m.fillStyle = "#6a6660"; m.fillRect(cx0 + 6, cy0 + 9, 12, 4); // the front window
++      m.fillStyle = "#3a3632"; m.fillRect(cx0 + 96, cy0 + 8, 26, 16); m.fillStyle = "#6a6660"; m.fillRect(cx0 + 98, cy0 + 9, 8, 4);
++      m.fillStyle = "#d8ccb0"; m.fillRect(cx0 + 62, cy0 + 6, 20, cb - cy0 - 10); m.fillStyle = "#b8ac90"; m.fillRect(cx0 + 62, cy0 + 6, 1, cb - cy0 - 10); m.fillStyle = "#8a8070"; m.fillRect(cx0 + 78, cy0 + 30, 2, 4); // the door
++      m.fillStyle = "#c8beb0"; m.fillRect(cx0 + 20, cy0 - 4, 40, 4); // the roof vent
++      m.fillStyle = OUT; m.beginPath(); m.arc(cx0 + 92, cb + 2, 9, 0, Math.PI * 2); m.fill(); m.fillStyle = "#4a4a50"; m.beginPath(); m.arc(cx0 + 92, cb + 2, 4, 0, Math.PI * 2); m.fill(); // the wheel
++      m.fillStyle = "#a8acb4"; m.fillRect(cx0 - 26, cb - 2, 28, 2); m.fillRect(cx0 - 26, cb - 2, 2, 8); m.fillStyle = OUT; m.fillRect(cx0 - 28, cb + 5, 6, 4); } // the drawbar, the jockey wheel
++    // ---- the people around: drawn like the fighters (same puppet), smaller, with a little idle loop each
++    const npc = NPCS.map((n) => ({ n, frames: n.poses.map((p) => drawFighter(n.id, p, n.prop || null)), cheer: n.cheer ? drawFighter(n.id, n.cheer, n.prop || null) : null }));
++    STAGE = { sky, clouds, far, mid, npc };
+     return STAGE;
+   }
+-  // a few people at the door, watching (they bob, and cheer at a K.O.)
+-  const CROWD = [
+-    { x: 268, c: "#d8342a", h: "#2a1c16", s: "#e8a77f", cup: 1 },
+-    { x: 300, c: "#f2e6c8", h: "#4a3020", s: "#f0c49c", cup: 0 },
+-    { x: 330, c: "#2f6fe0", h: "#151515", s: "#c98d68", cup: 1 },
+-    { x: 520, c: "#28c840", h: "#6a4a30", s: "#f6c9a3", cup: 0 },
+-    { x: 92, c: "#fed012", h: "#2a1c16", s: "#e3a982", cup: 1 }
+-  ];
++  // the backdrop, layer by layer: the sky (still), the clouds (drifting, slow), the far city (soft), the street
++  function drawBackdrop(ctx, camX, t, sy = 0) {
++    const S = stage();
++    ctx.drawImage(S.sky, 0, 0);
++    const cxo = Math.floor(camX * 0.15 + t * 3) % 768; ctx.drawImage(S.clouds, -cxo, sy); ctx.drawImage(S.clouds, 768 - cxo, sy);
++    ctx.drawImage(S.far, 0, 0, S.far.width, S.far.height, -Math.round(camX * 0.4), 40 + sy, S.far.width * 2, S.far.height * 2);
++    ctx.drawImage(S.mid, -Math.round(camX), sy);
++  }
++  // the bystanders: someone on the step with a cup, two people chatting by the caravan, the barista inside
+   function drawCrowd(ctx, camX, t, cheer) {
+-    for (let i = 0; i < CROWD.length; i++) {
+-      const p = CROWD[i], x = Math.round(p.x - camX), bob = Math.round(Math.abs(Math.sin(t * (cheer ? 9 : 2.2) + i * 1.7)) * (cheer ? 3 : 1)), y = 176 - bob;
+-      if (x < -20 || x > W + 20) continue;
+-      ctx.fillStyle = OUT; ctx.fillRect(x - 6, y - 30, 13, 31); ctx.fillRect(x - 4, y - 40, 9, 11);
+-      ctx.fillStyle = p.c; ctx.fillRect(x - 5, y - 29, 11, 18);
+-      ctx.fillStyle = "#3a3448"; ctx.fillRect(x - 5, y - 11, 11, 11);
+-      ctx.fillStyle = p.s; ctx.fillRect(x - 3, y - 39, 7, 9);
+-      ctx.fillStyle = p.h; ctx.fillRect(x - 3, y - 39, 7, 3);
+-      ctx.fillStyle = OUT; ctx.fillRect(x + 1, y - 35, 1, 1);
+-      if (cheer) { ctx.fillStyle = OUT; ctx.fillRect(x - 8, y - 46, 3, 16); ctx.fillStyle = p.s; ctx.fillRect(x - 7, y - 45, 1, 14); }
+-      else if (p.cup) { ctx.fillStyle = OUT; ctx.fillRect(x + 4, y - 24, 6, 7); ctx.fillStyle = "#ffffff"; ctx.fillRect(x + 5, y - 23, 4, 5); }
++    const S = stage();
++    for (let i = 0; i < S.npc.length; i++) {
++      const { n, frames, cheer: ch } = S.npc[i], x = Math.round(n.x - camX), img = cheer && ch ? ch : frames[Math.floor(t * n.rate + i) % frames.length];
++      if (x < -60 || x > W + 60) continue;
++      if (n.clip) { ctx.save(); ctx.beginPath(); ctx.rect(n.clip[0] - camX, n.clip[1], n.clip[2], n.clip[3]); ctx.clip(); }
++      ctx.save(); ctx.translate(x, n.y + (cheer && !ch ? -Math.round(Math.abs(Math.sin(t * 9 + i)) * 2) : 0)); if (n.face < 0) ctx.scale(-1, 1); ctx.drawImage(img, -OX, -OY); ctx.restore();
++      if (n.clip) ctx.restore();
+     }
+   }
+ 
+@@ -800,8 +854,7 @@
+     for (let r = 0; r < GLOVE_ICON.length; r++) for (let q = 0; q < 12; q++) { const ch = GLOVE_ICON[r][flip ? 11 - q : q]; if (ch === ".") continue; ctx.fillStyle = pal[ch]; ctx.fillRect(x + q * sc, y + r * sc, sc, sc); }
+   }
+   function drawTitle(ctx, t) {
+-    const S = stage();
+-    ctx.drawImage(S.far, -20, 0); ctx.drawImage(S.mid, -96, 0);
++    drawBackdrop(ctx, 96, t);
+     ctx.fillStyle = "rgba(14,10,26,.84)"; ctx.fillRect(0, 0, W, H);
+     gloveIcon(ctx, 24, 36 + Math.round(Math.sin(t * 3) * 2), "#fed012", false, 3);
+     gloveIcon(ctx, W - 60, 36 + Math.round(Math.sin(t * 3 + 1) * 2), "#d8342a", true, 3);
+@@ -866,7 +919,7 @@
+     text(ctx, ROSTER[me].name, lx + 64, 180, GOLD, { sc: 2, sh: 1, al: "c" });
+     text(ctx, ROSTER[cpu].name, rx + 64, 180, RED, { sc: 2, sh: 1, al: "c" });
+     text(ctx, "STAGE: TWO MINUTES COFFEE SHOP", W / 2, 10, "#ffffff", { al: "c" });
+-    text(ctx, "STR. ARICESCU, BUCHAREST", W / 2, 21, "#a99cc8", { al: "c" });
++    text(ctx, "STR. C. ARICESCU 50A, BUCHAREST", W / 2, 21, "#a99cc8", { al: "c" });
+   }
+   // the HUD: two bars, the names, the round wins (coffee cups), the timer, the special meters
+   function bar(ctx, x, y, w, hp, trail, flip, t) {
+@@ -1039,7 +1092,7 @@
+ 
+   let g = null; // the match
+   function newMatch(me, cpu) {
+-    g = { scene: "vs", me, cpu: cpu || "ion", t: 0, round: 1, wins: [0, 0], phase: "intro", pt: 0, time: ROUND_TIME, f: [], proj: [], fx: [], hitstop: 0, shake: 0, flash: 0, camX: (STAGE_W - W) / 2, slow: 0, menu: 0, result: null, perfect: false };
++    g = { scene: "vs", me, cpu: cpu || "ion", voucher: null, t: 0, round: 1, wins: [0, 0], phase: "intro", pt: 0, time: ROUND_TIME, f: [], proj: [], fx: [], hitstop: 0, shake: 0, flash: 0, camX: (STAGE_W - W) / 2, slow: 0, menu: 0, result: null, perfect: false };
+     resetRound();
+     g.scene = "vs"; g.t = 0;
+     SND.play("confirm");
+@@ -1357,9 +1410,9 @@
+   // a big line over the fight, on a dark band so it reads over the facade
+   function banner(ctx, s, fill, sc, y) { const bh = 7 * sc + 13; ctx.fillStyle = "rgba(14,10,26,.74)"; ctx.fillRect(0, y - 6, W, bh); ctx.fillStyle = "rgba(254,208,18,.5)"; ctx.fillRect(0, y - 7, W, 1); ctx.fillRect(0, y - 6 + bh, W, 1); text(ctx, s, W / 2, y, fill, { sc, sh: 2, al: "c" }); }
+   function drawFight(ctx, t) {
+-    const S = stage(), sx = g.shake > 0 ? Math.round(rnd(-g.shake, g.shake)) : 0, sy = g.shake > 0 ? Math.round(rnd(-g.shake, g.shake) * 0.6) : 0;
++    const sx = g.shake > 0 ? Math.round(rnd(-g.shake, g.shake)) : 0, sy = g.shake > 0 ? Math.round(rnd(-g.shake, g.shake) * 0.6) : 0;
+     const cx = Math.round(g.camX) - sx;
+-    ctx.drawImage(S.far, -Math.round(cx * 0.5), sy); ctx.drawImage(S.mid, -cx, sy);
++    drawBackdrop(ctx, cx, t, sy);
+     drawCrowd(ctx, cx, t, g.phase === "ko" && g.pt > 60 || g.phase === "match");
+     ctx.save(); ctx.translate(0, sy);
+     // shadows
+@@ -1383,7 +1436,7 @@
+     if (g.phase === "intro") {
+       if (g.pt < 64) { const fin = g.round === 1 ? "ROUND 1" : g.wins[0] === 1 && g.wins[1] === 1 ? "FINAL ROUND" : "ROUND " + g.round; banner(ctx, fin, GOLD, g.pt < 6 ? 6 : 4, 84); }
+       // the stage, named once, at the start of the match
+-      if (g.round === 1) { ctx.fillStyle = "rgba(14,10,26,.72)"; ctx.fillRect(0, H - 22, W, 16); text(ctx, "TWO MINUTES COFFEE SHOP - STR. ARICESCU, BUCHAREST", W / 2, H - 18, "#ffffff", { al: "c" }); }
++      if (g.round === 1) { ctx.fillStyle = "rgba(14,10,26,.72)"; ctx.fillRect(0, H - 22, W, 16); text(ctx, "TWO MINUTES COFFEE SHOP - ARICESCU 50A, BUCHAREST", W / 2, H - 18, "#ffffff", { al: "c" }); }
+       else banner(ctx, "FIGHT!", RED, g.pt < 70 ? 7 : 6, 80);
+     } else if (g.phase === "ko" && g.pt < 150) banner(ctx, "K.O.", RED, g.pt < 8 ? 9 : 7, 72);
+     else if (g.phase === "time" && g.pt < 150) banner(ctx, g.f[0].hp === g.f[1].hp ? "DRAW" : "TIME", GOLD, 6, 78);
+@@ -1400,23 +1453,62 @@
+       if (!TOUCH) text(ctx, "P RESUME - ESC FOR THE MAP - UP/DOWN + ENTER", W / 2, 176, "#a99cc8", { al: "c" });
+     }
+   }
++  // beta 3.16 (Daniel): beat the CPU and win a batch brew on the house at Two Minutes. The win screen is a voucher:
++  // a screenshot of it is shown at the counter. One code per win: the date, the time, four random characters
++  const CODE_AB = "ACDEFGHJKLMNPQRTUVWXY34679";
++  function makeVoucher() {
++    const d = new Date(), p2 = (n) => String(n).padStart(2, "0");
++    let rnd4 = ""; try { const a = new Uint32Array(4); crypto.getRandomValues(a); for (const v of a) rnd4 += CODE_AB[v % CODE_AB.length]; } catch { for (let i = 0; i < 4; i++) rnd4 += CODE_AB[Math.floor(Math.random() * CODE_AB.length)]; }
++    return { code: `TM-${rnd4}-${p2(d.getDate())}${p2(d.getMonth() + 1)}`, date: `${p2(d.getDate())}.${p2(d.getMonth() + 1)}.${d.getFullYear()}  ${p2(d.getHours())}:${p2(d.getMinutes())}` };
++  }
++  function drawVoucher(ctx, t, v) {
++    const x0 = 10, y0 = 10, w = 218, h = 196;
++    ctx.fillStyle = OUT; ctx.fillRect(x0 - 1, y0 - 1, w + 2, h + 2);
++    ctx.fillStyle = "#f6efdc"; ctx.fillRect(x0, y0, w, h);
++    ctx.fillStyle = "#e8dcbc"; for (let y = y0 + 2; y < y0 + h; y += 4) ctx.fillRect(x0, y, w, 1);
++    ctx.fillStyle = "#1b1438"; for (let x = x0 + 4; x < x0 + w - 2; x += 8) { ctx.fillRect(x, y0 + 46, 4, 1); ctx.fillRect(x, y0 + h - 58, 4, 1); } // the tear lines
++    for (const yy of [y0 + 46, y0 + h - 58]) { ctx.fillStyle = "#1b1438"; ctx.beginPath(); ctx.arc(x0, yy, 5, 0, Math.PI * 2); ctx.arc(x0 + w, yy, 5, 0, Math.PI * 2); ctx.fill(); }
++    text(ctx, "YOU WON", x0 + w / 2, y0 + 8, GOLD, { sc: 2, al: "c" });
++    text(ctx, "A BATCH BREW ON THE HOUSE", x0 + w / 2, y0 + 30, "#1b1438", { al: "c", ol: null });
++    // a takeaway cup, steaming
++    const cx3 = x0 + 36, cy3 = y0 + 62;
++    ctx.fillStyle = OUT; ctx.fillRect(cx3 - 1, cy3 - 1, 26, 34); ctx.fillStyle = "#f4f2ec"; ctx.fillRect(cx3, cy3 + 4, 24, 28); ctx.fillStyle = "#2a2a30"; ctx.fillRect(cx3 - 2, cy3, 28, 5);
++    ctx.fillStyle = "#b07a46"; ctx.fillRect(cx3 + 2, cy3 + 13, 20, 10); ctx.fillStyle = "#f4f4f4"; ctx.fillRect(cx3 + 7, cy3 + 15, 2, 6); ctx.fillRect(cx3 + 11, cy3 + 15, 2, 6); ctx.fillRect(cx3 + 15, cy3 + 15, 1, 2); // II'
++    ctx.fillStyle = "rgba(120,110,130,.7)"; for (let i = 0; i < 3; i++) ctx.fillRect(cx3 + 6 + i * 6, cy3 - 6 - ((Math.floor(t * 4) + i) % 3) * 2, 2, 3);
++    text(ctx, "SHOW THIS AT", x0 + 74, y0 + 62, "#1b1438", { ol: null });
++    text(ctx, "TWO MINUTES", x0 + 74, y0 + 74, "#1b1438", { ol: null });
++    text(ctx, "ARICESCU 50A", x0 + 74, y0 + 86, "#7a5a40", { ol: null });
++    text(ctx, "ONE PER WIN", x0 + 74, y0 + 100, "#7a5a40", { ol: null });
++    text(ctx, "YOUR CODE", x0 + w / 2, y0 + h - 50, "#7a5a40", { al: "c", ol: null });
++    text(ctx, v.code, x0 + w / 2, y0 + h - 38, ["#1b1438", "#2a2148", "#3a2f6a"], { sc: 3, sp: 1, al: "c", ol: null });
++    text(ctx, v.date, x0 + w / 2, y0 + h - 12, "#1b1438", { al: "c", ol: null });
++  }
+   function drawResult(ctx, t) {
+-    const S = stage();
+-    ctx.drawImage(S.far, -60, 0); ctx.drawImage(S.mid, -96, 0);
++    drawBackdrop(ctx, 96, t);
+     ctx.fillStyle = "rgba(14,10,26,.86)"; ctx.fillRect(0, 0, W, H);
+-    ctx.fillStyle = "rgba(29,21,64,.9)"; ctx.fillRect(180, 22, 180, 172);
+     const win = g.result === "win", id = win ? g.me : g.cpu, p = portraitBig(id), cpuN = ROSTER[g.cpu].name;
+-    ctx.fillStyle = OUT; ctx.fillRect(25, 37, 134, 134); ctx.fillStyle = win ? "#fed012" : "#d8342a"; ctx.fillRect(26, 38, 132, 132); ctx.fillStyle = "#241d3d"; ctx.fillRect(28, 40, 128, 128);
+-    if (p) ctx.drawImage(p, 28, 40, 128, 128);
+-    text(ctx, win ? "YOU WIN" : cpuN + " WINS", 270, 34, win ? GOLD : RED, { sc: (win ? 7 : cpuN.length + 5) > 11 ? 2 : 3, sh: 1, al: "c" });
+-    text(ctx, win ? "THE COFFEE IS ON " + cpuN + "." : g.cpu === "ion" ? "TWO MINUTES WERE ENOUGH." : "ONE MORE COFFEE, ONE MORE GO.", 270, 64, "#ffffff", { al: "c" });
+-    text(ctx, (win ? ROSTER[g.me].name : cpuN) + " " + g.wins[win ? 0 : 1] + " - " + g.wins[win ? 1 : 0], 270, 78, "#a99cc8", { al: "c" });
++    if (win) { // the voucher on the left, the winner and the menu on the right
++      if (!g.voucher) g.voucher = makeVoucher();
++      drawVoucher(ctx, t, g.voucher);
++      ctx.fillStyle = "rgba(29,21,64,.92)"; ctx.fillRect(238, 10, 138, 196);
++      ctx.fillStyle = OUT; ctx.fillRect(274, 19, 70, 70); ctx.fillStyle = "#fed012"; ctx.fillRect(275, 20, 68, 68); ctx.fillStyle = "#241d3d"; ctx.fillRect(277, 22, 64, 64); ctx.drawImage(portrait(id), 277, 22);
++      text(ctx, "YOU WIN", 307, 94, GOLD, { sc: 2, sh: 1, al: "c" });
++      text(ctx, ROSTER[g.me].name + " " + g.wins[0] + " - " + g.wins[1] + " " + cpuN, 307, 113, "#a99cc8", { al: "c" });
++    } else {
++      ctx.fillStyle = "rgba(29,21,64,.9)"; ctx.fillRect(170, 22, 200, 172);
++      ctx.fillStyle = OUT; ctx.fillRect(25, 37, 134, 134); ctx.fillStyle = "#d8342a"; ctx.fillRect(26, 38, 132, 132); ctx.fillStyle = "#241d3d"; ctx.fillRect(28, 40, 128, 128);
++      if (p) drawFlipped(ctx, p, 28, 40, 128, 128, true);
++      text(ctx, cpuN + " WINS", 270, 34, RED, { sc: cpuN.length + 5 > 11 ? 2 : 3, sh: 1, al: "c" });
++      text(ctx, g.cpu === "ion" ? "TWO MINUTES WERE ENOUGH." : "ONE MORE COFFEE, ONE MORE GO.", 270, 64, "#ffffff", { al: "c" });
++      text(ctx, "WIN FOR A BATCH BREW ON THE HOUSE", 270, 78, "#ffd23a", { al: "c" });
++    }
+     const items = ["REMATCH", "CHANGE FIGHTERS", "BACK TO MAP"];
++    const mx = win ? 307 : 270, my = win ? 132 : 104, w = win ? 126 : 150;
+     items.forEach((s, i) => {
+-      const y = 104 + i * 22, on = g.menu === i, w = 150;
+-      ctx.fillStyle = OUT; ctx.fillRect(270 - w / 2 - 1, y - 5, w + 2, 18); ctx.fillStyle = on ? "#fed012" : "#2d2550"; ctx.fillRect(270 - w / 2, y - 4, w, 16);
+-      text(ctx, (on ? "> " : "") + s, 270, y, on ? OUT : "#ffffff", { al: "c", ol: on ? null : OUT });
+-      hit(270 - w / 2, y - 5, w, 18, () => { if (g.menu !== i) { g.menu = i; SND.play("select"); } pick(i); });
++      const y = my + i * 22, on = g.menu === i;
++      ctx.fillStyle = OUT; ctx.fillRect(mx - w / 2 - 1, y - 5, w + 2, 18); ctx.fillStyle = on ? "#fed012" : "#2d2550"; ctx.fillRect(mx - w / 2, y - 4, w, 16);
++      text(ctx, (on ? "> " : "") + s, mx, y, on ? OUT : "#ffffff", { al: "c", ol: on ? null : OUT });
++      hit(mx - w / 2, y - 5, w, 18, () => { if (g.menu !== i) { g.menu = i; SND.play("select"); } pick(i); });
+     });
+   }
+   function pick(i) {
+@@ -1433,8 +1525,19 @@
+   const held = { l: 0, r: 0, u: 0, d: 0, p: 0, k: 0, s: 0, ok: 0 }, pressed = new Set();
+   const press = (k) => { if (!held[k]) pressed.add(k); held[k] = 1; };
+   const release = (k) => { held[k] = 0; };
++  // beta 3.16 (Daniel): on a phone the game is played sideways. Held upright it shows a "rotate your phone" screen;
++  // on Android the first tap asks for full screen and locks landscape (where the browser allows it); where it can't
++  // be locked (iPhone, or a rotation lock), after 3 s a button turns the game itself 90 degrees ("play sideways")
++  let SIDEWAYS = false, rotSince = 0, cvBox = { left: 0, top: 0, w: 1, h: 1 };
++  const toLocal = (x, y) => (SIDEWAYS ? [y, innerWidth - x] : [x, y]);
++  async function lockLandscape() {
++    if (!TOUCH) return;
++    try { const el = document.documentElement; if (!document.fullscreenElement && el.requestFullscreen) await el.requestFullscreen({ navigationUI: "hide" }); } catch {}
++    try { if (screen.orientation && screen.orientation.lock) await screen.orientation.lock("landscape"); } catch {}
++  }
++  function unlockLandscape() { try { screen.orientation?.unlock?.(); } catch {} try { if (document.fullscreenElement) document.exitFullscreen(); } catch {} }
+   function backToMap() {
+-    SND.music(null);
++    SND.music(null); unlockLandscape();
+     try { if (window.parent !== window && window.parent.location.origin === location.origin) { window.parent.postMessage({ cz: "gloves-close" }, location.origin); return; } } catch {}
+     location.href = "/?map";
+   }
+@@ -1457,7 +1560,7 @@
+   }
+   function menuInput() {
+     const P = (k) => pressed.has(k);
+-    if (scene === "title") { if (P("ok") || P("p") || P("k")) { scene = "select"; sceneT = 0; SND.play("confirm"); SND.music("menu"); } return; }
++    if (scene === "title") { if (P("ok") || P("p") || P("k")) { scene = "select"; sceneT = 0; SND.play("confirm"); SND.music("menu"); lockLandscape(); } return; }
+     if (scene === "select") {
+       const k = SEL.phase === "p1" ? "p1" : "cpu", n = GRID.order.length, c = GRID.cols;
+       const move = (d) => { SEL[k] = (SEL[k] + d + n) % n; SND.play("select"); };
+@@ -1509,19 +1612,33 @@
+   // the layout: the picture as big as it fits (whole multiples on a laptop), the controls under it on a phone held
+   // upright, over its lower corners when held sideways
+   function layout() {
+-    const vw = innerWidth, vh = innerHeight, upright = vh > vw * 1.05;
+-    root.classList.toggle("mg-touch", TOUCH); root.classList.toggle("mg-up", TOUCH && upright); root.classList.toggle("mg-side", TOUCH && !upright);
++    let vw = innerWidth, vh = innerHeight;
++    if (TOUCH && SIDEWAYS && vw > vh * 1.05) SIDEWAYS = false; // turned for real: no need any more
++    root.classList.toggle("mg-sideways", SIDEWAYS);
++    if (SIDEWAYS) { [vw, vh] = [vh, vw]; root.style.width = vw + "px"; root.style.height = vh + "px"; root.style.transform = `translateX(${innerWidth}px) rotate(90deg)`; }
++    else { root.style.width = root.style.height = root.style.transform = ""; }
++    const upright = TOUCH && vh > vw * 1.05;
++    root.classList.toggle("mg-touch", TOUCH); root.classList.toggle("mg-side", TOUCH && !upright); root.classList.toggle("mg-rot", upright);
++    if (upright) { if (!rotSince) rotSince = performance.now(); setPause(true); } else rotSince = 0;
+     let sc, top;
+-    if (TOUCH && upright) { sc = Math.min(vw / W, (vh - 76 - 230) / H); top = 76; }
+-    else if (TOUCH) { const side = clamp(vw * 0.16, 128, 176); sc = Math.min((vw - side * 2) / W, vh / H); top = (vh - H * sc) / 2; }
++    if (TOUCH) { const side = clamp(vw * 0.16, 128, 176); sc = Math.min((vw - side * 2) / W, vh / H); top = (vh - H * sc) / 2; }
+     else { sc = Math.min((vw - 32) / W, (vh - 96) / H); if (sc >= 2) sc = Math.floor(sc); top = Math.max(16, (vh - H * sc) / 2 - 14); }
+-    sc = Math.max(0.5, sc);
+-    cv.style.width = Math.round(W * sc) + "px"; cv.style.height = Math.round(H * sc) + "px";
+-    cv.style.left = Math.round((vw - W * sc) / 2) + "px"; cv.style.top = Math.round(top) + "px";
++    sc = Math.max(0.3, sc);
++    cvBox = { left: Math.round((vw - W * sc) / 2), top: Math.round(top), w: Math.round(W * sc), h: Math.round(H * sc) };
++    cv.style.width = cvBox.w + "px"; cv.style.height = cvBox.h + "px"; cv.style.left = cvBox.left + "px"; cv.style.top = cvBox.top + "px";
+     root.style.setProperty("--cv-bottom", Math.round(top + H * sc) + "px");
+-    // held upright: the moves between the picture and the controls, when there is room for them
+-    const tips = root.querySelector(".mg-tips");
+-    if (tips) { const room = vh - 230 - (top + H * sc); tips.hidden = !(TOUCH && upright) || room < 96; }
++  }
++  // the rotate screen: a little phone turning, in the game's pixels
++  function drawRotate(t) {
++    const c = root.querySelector(".mg-rot-cv"); if (!c) return; const x = c.getContext("2d"); x.imageSmoothingEnabled = false;
++    x.fillStyle = "#140f22"; x.fillRect(0, 0, c.width, c.height);
++    const side = Math.floor(t / 1.1) % 2 === 1, cx = c.width / 2, cy = 44;
++    const phone = (w2, h2) => { x.fillStyle = OUT; x.fillRect(cx - w2 / 2 - 1, cy - h2 / 2 - 1, w2 + 2, h2 + 2); x.fillStyle = "#3a2f6a"; x.fillRect(cx - w2 / 2, cy - h2 / 2, w2, h2); x.fillStyle = "#9cc4e4"; x.fillRect(cx - w2 / 2 + 2, cy - h2 / 2 + 2, w2 - 4, h2 - 4); x.fillStyle = "#dcc2ae"; x.fillRect(cx - w2 / 2 + 2, cy + h2 / 2 - 2 - Math.floor((h2 - 4) * 0.45), Math.floor((w2 - 4) * 0.6), Math.floor((h2 - 4) * 0.45)); x.fillStyle = "#8c8a86"; x.fillRect(cx - w2 / 2 + 2, cy + h2 / 2 - 5, w2 - 4, 3); };
++    if (side) phone(52, 30); else phone(30, 52);
++    x.fillStyle = "#fed012"; for (let i = 0; i < 9; i++) { const an = -Math.PI * 0.9 + (i / 9) * Math.PI * 0.6 + (side ? 0 : 0.2); x.fillRect(Math.round(cx + Math.cos(an) * 38), Math.round(cy + Math.sin(an) * 38), 2, 2); }
++    text(x, "ROTATE YOUR PHONE", cx, 82, GOLD, { al: "c" });
++    text(x, "THE GAME PLAYS SIDEWAYS", cx, 96, "#ffffff", { al: "c" });
++    const btn = root.querySelector(".mg-rot-btn"); if (btn) btn.hidden = !(rotSince && performance.now() - rotSince > 3000);
+   }
+   const pxText = (s, fill, sc = 2) => { const t = textImg(s, fill, { ol: null }), [c, x] = mk(t.w, t.h); x.drawImage(t.c, 0, 0); c.className = "mg-lbl"; c.style.width = t.w * sc + "px"; c.style.height = t.h * sc + "px"; return c; };
+   function buildControls() {
+@@ -1530,7 +1647,7 @@
+     pad.innerHTML = '<i class="u"></i><i class="d"></i><i class="l"></i><i class="r"></i><b></b>';
+     let pid = null;
+     const setDir = (e) => {
+-      const r = pad.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2), dz = r.width * 0.14;
++      const r = pad.getBoundingClientRect(), [ccx, ccy] = toLocal(r.left + r.width / 2, r.top + r.height / 2), [ex, ey] = toLocal(e.clientX, e.clientY), dx = ex - ccx, dy = ey - ccy, dz = Math.max(r.width, r.height) * 0.14;
+       const want = { l: 0, r: 0, u: 0, d: 0 };
+       if (Math.hypot(dx, dy) > dz) { const an = Math.atan2(dy, dx), oct = Math.round(an / (Math.PI / 4)); want.r = [0, 1, -1].includes(oct) ? 1 : 0; want.l = [4, -4, 3, -3].includes(oct) ? 1 : 0; want.d = [1, 2, 3].includes(oct) ? 1 : 0; want.u = [-1, -2, -3].includes(oct) ? 1 : 0; }
+       for (const k of ["l", "r", "u", "d"]) { if (want[k]) press(k); else release(k); pad.classList.toggle("on-" + k, !!want[k]); }
+@@ -1568,9 +1685,6 @@
+     if (!TOUCH) { const hint = document.createElement("div"); hint.className = "mg-hint"; hint.appendChild(pxText("ARROWS/WASD MOVE   J/Z PUNCH   K/X KICK   L/C SPECIAL   P PAUSE   ESC MAP", "#a99cc8", 2)); hint.appendChild(pxText("HOLD AWAY TO BLOCK   DOWN+KICK SWEEP   UP JUMP   M SOUND   V SCANLINES", "#6f6496", 2)); root.appendChild(hint); }
+     else {
+       buildControls();
+-      const tips = document.createElement("div"); tips.className = "mg-tips"; tips.hidden = true;
+-      for (const [l, c] of [["HOLD BACK: BLOCK", "#ffffff"], ["DOWN + K: SWEEP", "#ffffff"], ["UP: JUMP, THEN P OR K", "#ffffff"], ["S: SPECIAL, WHEN THE", "#7fd8ff"], ["BLUE BAR IS FULL", "#7fd8ff"]]) tips.appendChild(pxText(l, c, 2));
+-      root.appendChild(tips);
+     }
+     // the scanlines: on, unless switched off (V); remembered
+     try { if (localStorage.getItem("cz-gloves-crt") === "off") root.classList.add("mg-nocrt"); } catch {}
+@@ -1591,10 +1705,16 @@
+     document.addEventListener("visibilitychange", () => { if (document.hidden) setPause(true); });
+     cv.addEventListener("pointerdown", (e) => {
+       SND.init(); try { window.focus(); } catch {}
+-      const r = cv.getBoundingClientRect(), x = ((e.clientX - r.left) / r.width) * W, y = ((e.clientY - r.top) / r.height) * H;
++      const [lx, ly] = toLocal(e.clientX, e.clientY), x = ((lx - cvBox.left) / cvBox.w) * W, y = ((ly - cvBox.top) / cvBox.h) * H;
+       for (let i = hits.length - 1; i >= 0; i--) { const h = hits[i]; if (x >= h.x && x < h.x + h.w && y >= h.y && y < h.y + h.h) { h.fn(); break; } }
+     });
+-    addEventListener("resize", layout); layout();
++    { const rot = document.createElement("div"); rot.className = "mg-rotate";
++      const [rc] = mk(192, 108); rc.className = "mg-rot-cv"; rot.appendChild(rc);
++      const btn = document.createElement("button"); btn.type = "button"; btn.className = "mg-rot-btn"; btn.hidden = true; btn.appendChild(pxText("PLAY SIDEWAYS ANYWAY", "#170f19", 2));
++      btn.onclick = (e) => { e.stopPropagation(); SIDEWAYS = true; layout(); };
++      rot.addEventListener("pointerdown", () => { SND.init(); lockLandscape(); });
++      rot.appendChild(btn); root.appendChild(rot); }
++    addEventListener("resize", layout); addEventListener("orientationchange", () => setTimeout(layout, 120)); layout();
+     // everything is baked before the first frame (a few ms), then the loop: logic in fixed 1/60 s steps
+     for (const id of FIGHTERS) portrait(id); stage(); // the fighters themselves are baked when they are picked (the VS screen)
+     let last = performance.now(), acc = 0;
+@@ -1606,6 +1726,7 @@
+       if (n === 4) acc = 0;
+       draw(now / 1000);
+       root.classList.toggle("mg-fight", scene === "game" && !!g && g.scene === "fight" && g.phase !== "match");
++      if (root.classList.contains("mg-rot")) drawRotate(now / 1000);
+       stats.frames++; if (now - stats.t0 >= 1000) { stats.fps = Math.round((stats.frames * 1000) / (now - stats.t0)); stats.frames = 0; stats.t0 = now; }
+       requestAnimationFrame(loop);
+     };
+@@ -1614,7 +1735,7 @@
+     try { window.focus(); } catch {}
+   }
+   // for tests and the review: the state, the frame rate, a shortcut to the end of a round
+-  const probe = () => ({ scene: scene === "game" && g ? g.scene : scene, phase: g?.phase, round: g?.round, wins: g?.wins.slice(), hp: g?.f.map((f) => f.hp), st: g?.f.map((f) => f.st), time: g ? Math.ceil(g.time) : null, me: g?.me, cpu: g?.cpu, sel: SEL.p1, selCpu: SEL.cpu, selPhase: SEL.phase, menu: g?.menu, result: g?.result, paused, fps: stats.fps, maxDt: Math.round(stats.maxDt || 0), sound: SND.on, proj: g ? g.proj.map((p) => p.k) : [] });
++  const probe = () => ({ scene: scene === "game" && g ? g.scene : scene, phase: g?.phase, round: g?.round, wins: g?.wins.slice(), hp: g?.f.map((f) => f.hp), st: g?.f.map((f) => f.st), time: g ? Math.ceil(g.time) : null, me: g?.me, cpu: g?.cpu, sel: SEL.p1, selCpu: SEL.cpu, selPhase: SEL.phase, menu: g?.menu, result: g?.result, paused, voucher: g?.voucher?.code || null, sideways: !!SIDEWAYS, rotate: !!(root && root.classList.contains("mg-rot")), fps: stats.fps, maxDt: Math.round(stats.maxDt || 0), sound: SND.on, proj: g ? g.proj.map((p) => p.k) : [] });
+   const resetMaxDt = () => { stats.maxDt = 0; };
+   const setHp = (a, b) => { if (g && g.f.length) { g.f[0].hp = g.f[0].trail = a; g.f[1].hp = g.f[1].trail = b; } };
+ 
+@@ -1643,14 +1764,15 @@
+       ["idle", "punch", "kick"].forEach((k, r) => ids.forEach((id, i) => { const S = sprites(id), f = k === "idle" ? S.idle[0] : S[k][2]; x.drawImage(f, i * 84 + 12 - (OX - 42), r * (CH - 8) - 4); if (r === 0) text(x, ROSTER[id] ? ROSTER[id].name : id.toUpperCase(), i * 84 + 54, 4, "#ffffff", { al: "c" }); }));
+       out.lineup = up(c, 3);
+     }
+-    const S = stage(); { const [c, x] = mk(STAGE_W, H); x.drawImage(S.far, 0, 0); x.drawImage(S.mid, 0, 0); drawCrowd(x, 0, 0, false); out.stage = up(c, 4); }
++    const S = stage(); { const [c, x] = mk(STAGE_W, H); for (let cx3 = 0; cx3 < STAGE_W; cx3 += W) { x.save(); x.translate(cx3, 0); x.beginPath(); x.rect(0, 0, Math.min(W, STAGE_W - cx3), H); x.clip(); drawBackdrop(x, cx3, 0); drawCrowd(x, cx3, 0, false); x.restore(); } out.stage = up(c, 4); }
+     const [c, x] = mk(W, H);
+     drawTitle(x, 0); out.title = up(c);
+     drawSelect(x, 0.1, { phase: "p1", p1: 0, cpu: 0 }); out.select = up(c);
+     drawSelect(x, 0.1, { phase: "cpu", p1: 8, cpu: 0 }); out["select-cpu"] = up(c);
+     drawVS(x, 0, "daniel", 1); out.vs = up(c);
++    { const g0 = g; g = { result: "win", me: "cristache", cpu: "ion", wins: [2, 1], menu: 0, voucher: { code: "TM-K7QX-1710", date: "17.10.2026  14:32" } }; hits = []; drawResult(x, 0.2); out.voucher = up(c); g = g0; hits = []; }
+     { // the HUD over the stage, with the two fighters in their stance
+-      x.drawImage(S.far, -60, 0); x.drawImage(S.mid, -96, 0); drawCrowd(x, 96, 0, false);
++      drawBackdrop(x, 96, 0); drawCrowd(x, 96, 0, false);
+       const A = sprites("daniel").idle[0], B = sprites("ion").idle[0];
+       x.drawImage(A, 140 - OX, FLOOR - OY);
+       x.save(); x.translate(244 + OX, FLOOR - OY); x.scale(-1, 1); x.drawImage(B, 0, 0); x.restore();
+diff --git a/src/styles.css b/src/styles.css
+index 16b5a7c..e90711e 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -4923,3 +4923,6 @@ body.scheme-sketch .map-card .mcd-actions.mcd-two .mcd-play { background-color:
+ .coffee-btn.lab-play { background: #C6402E; color: #fff; }
+ .case-frame.cf-game, .case-frame.cf-game .cf-iframe { background: #0b0816; }
+ .case-frame.cf-game .cf-share { display: none; }
++
++/* beta 3.16 (Daniel): the mini-game is played sideways on a phone: no "turn your phone back" over its frame */
++body:has(.case-frame.cf-game:not(.hidden)) .rotate-lock { display: none !important; }
