@@ -31289,47 +31289,50 @@ void main() {
   }
   function buildWorld(scene, accent) {
     const world = new Group();
-    buildGround(world);
+    // r198: each top-level piece of the world says which builder made it (userData.bld), so mergeStatic() knows which
+    // ones it may batch (see STATIC_BUILDERS)
+    const tag = (name, f) => { const n0 = world.children.length, r = f(); for (let i = n0; i < world.children.length; i++) world.children[i].userData.bld ??= name; return r; };
+    tag("Ground", () => buildGround(world));
     initRoadMats();
     // r101: the roundabout (the turnaround) is gone
-    buildFork(world);
-    buildStart(world);
+    tag("Fork", () => buildFork(world));
+    tag("Start", () => buildStart(world));
     // the four streets' landmarks go first, so the generic city blocks leave room for them
-    buildFourStreets(world);
-    const jet = buildAirfield(world);
-    buildChapterSigns(world);
-    buildPitLane(world);
-    buildRivals(world);
-    buildStreetlights(world);
-    buildStreetProps(world);
-    const endHouse = buildEndHouse(world);
-    buildOlariPlaza(world); // r185
-    const streetSigns = buildCoffeeEntrance(world);
-    buildRomexpo(world);
-    buildSteamShop(world);
-    buildStreetShop(world, { key: "sipGlow", name: "SIP", label: "coffee & wine", x: 706, z: 4985,
-      w: 66, h: 54, d: 46, wall: "#2b2620", trim: "#C9A227", glass: "#1a1712", ink: "#C9A227", boardInk: "#14120c" });
+    tag("FourStreets", () => buildFourStreets(world));
+    const jet = tag("Airfield", () => buildAirfield(world));
+    tag("ChapterSigns", () => buildChapterSigns(world));
+    tag("PitLane", () => buildPitLane(world));
+    tag("Rivals", () => buildRivals(world));
+    tag("Streetlights", () => buildStreetlights(world));
+    tag("StreetProps", () => buildStreetProps(world));
+    const endHouse = tag("EndHouse", () => buildEndHouse(world));
+    tag("OlariPlaza", () => buildOlariPlaza(world)); // r185
+    const streetSigns = tag("CoffeeEntrance", () => buildCoffeeEntrance(world));
+    tag("Romexpo", () => buildRomexpo(world));
+    tag("SteamShop", () => buildSteamShop(world));
+    tag("StreetShop", () => buildStreetShop(world, { key: "sipGlow", name: "SIP", label: "coffee & wine", x: 706, z: 4985,
+      w: 66, h: 54, d: 46, wall: "#2b2620", trim: "#C9A227", glass: "#1a1712", ink: "#C9A227", boardInk: "#14120c" }));
     // r87, west kerb in the order you pass it: Sip, Tâmpa, then OMA at the foot of the
     // mountain right next to Yoshi Izakaya, Casa Berero, and ARCA at the end
-    buildOmaShop(world, 706, 4560);
-    buildIzakaya(world, 706, 5175);
-    buildCasaBerero(world, 706, 5480);
-    buildBrasov(world);
-    buildCoffeeStreetAdds(world);
-    buildPrintLane(world);
-    buildPeople(world);
-    buildDacia99(world);
-    buildMunitiei5(world);
-    buildEliade18(world);
-    const heritage = buildHeritage(world);
-    const plots = buildPlots(world);
-    const pois = buildPOIs(world);
+    tag("OmaShop", () => buildOmaShop(world, 706, 4560));
+    tag("Izakaya", () => buildIzakaya(world, 706, 5175));
+    tag("CasaBerero", () => buildCasaBerero(world, 706, 5480));
+    tag("Brasov", () => buildBrasov(world));
+    tag("CoffeeStreetAdds", () => buildCoffeeStreetAdds(world));
+    tag("PrintLane", () => buildPrintLane(world));
+    tag("People", () => buildPeople(world));
+    tag("Dacia99", () => buildDacia99(world));
+    tag("Munitiei5", () => buildMunitiei5(world));
+    tag("Eliade18", () => buildEliade18(world));
+    const heritage = tag("Heritage", () => buildHeritage(world));
+    const plots = tag("Plots", () => buildPlots(world));
+    const pois = tag("POIs", () => buildPOIs(world));
     // r118: the city fabric goes last, so it knows every landmark it has to leave room for.
     // r125: and it is built a moment later, once the intro is already playing (see boot)
     let fabricDone = false;
-    world.userData.buildFabric = () => { if (fabricDone) return; fabricDone = true; world.userData.fabricDone = true; buildRoads(world); buildBuildings(world); buildTrees(world); buildContactShadows(world); };
-    const ramp = buildRamp(world, accent);
-    const clouds = buildClouds(world);
+    world.userData.buildFabric = () => { if (fabricDone) return; fabricDone = true; world.userData.fabricDone = true; tag("Roads", () => buildRoads(world)); tag("Buildings", () => buildBuildings(world)); tag("Trees", () => buildTrees(world)); tag("ContactShadows", () => buildContactShadows(world)); };
+    const ramp = tag("Ramp", () => buildRamp(world, accent));
+    const clouds = tag("Clouds", () => buildClouds(world));
     scene.add(world);
     return { world, heritage, plots, pois, ramp, clouds, endHouse, streetSigns, jet };
   }
@@ -38566,6 +38569,7 @@ void main() {
         }
         if (nav2?.on && mapMode) nav2.tick(dt, now); // nav2: the arrows (or its auto-pilot) set mapNav.targetL
         nav2Cull(); // beta 2.5: the street view skips the small things far off in its haze
+        mergeWatch(); // r198
         if (mapMode) state.targetL = mapNav.targetL;
         else if (ONB_MODE && onbL != null) state.targetL = onbL; // r140: the page's scroll is the road
         const nearDacia = state.L > route.stopL.merge - 1500 && state.L < route.stopL.merge - 250;
@@ -39472,6 +39476,7 @@ void main() {
       // r140: ?onb = the city inside /onboarding/ (a same-origin frame behind the page, driven by it: see onbCmd)
       var ONB_MODE = /[?&]onb\b/.test(location.search) && window.parent !== window, onbPaused = false, onbL = null, onbFrames = 0, onbPush = 1, onbHalf = false, onbSkip = false;
       if (ONB_MODE) document.documentElement.classList.add("onb");
+      var NO_MERGE = /[?&]nomerge\b/.test(location.search); // r198: ?nomerge keeps every small mesh on its own (for comparison)
       var mapMode = false, mapBoot = BOOT_MODE !== "drive", mapUI = null, mapPrev = null, mapBoarding = false, mapIntro = false;
       // r132: Daniel: the city shouldn't pull back further than the roundabout view, and should let you come much closer
       var MAP_MIND = 900;
@@ -39492,7 +39497,7 @@ void main() {
         if (!n2C) {
           n2C = { list: [], on: false }; const c = new Vector3();
           worldRefs.world.updateMatrixWorld(true);
-          worldRefs.world.traverse((o) => { if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !o.geometry?.attributes?.position) return; o.geometry.boundingSphere || o.geometry.computeBoundingSphere(); const r = o.geometry.boundingSphere.radius * o.matrixWorld.getMaxScaleOnAxis(); if (r < 30) n2C.list.push([o, r, false, o.layers.mask]); });
+          worldRefs.world.traverse((o) => { if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !o.geometry?.attributes?.position || o.userData.__merged) return; o.geometry.boundingSphere || o.geometry.computeBoundingSphere(); const r = o.geometry.boundingSphere.radius * o.matrixWorld.getMaxScaleOnAxis(); if (r < 30) n2C.list.push([o, r, false, o.layers.mask]); });
         }
         if (++n2Cf % 8) return;
         n2C.on = true;
@@ -39501,6 +39506,182 @@ void main() {
           const o = it[0]; v.copy(o.geometry.boundingSphere.center).applyMatrix4(o.matrixWorld);
           const far = Math.hypot(v.x - carPos.x, v.z - carPos.z) - it[1] > 1500;
           if (far !== it[2]) { if (far) { it[3] = o.layers.mask; o.layers.mask = 0; } else o.layers.mask = it[3]; it[2] = far; }
+        }
+      }
+      // r198 (Daniel: Street view at 60 fps on laptops): the city is ~2,500 small separate meshes, each drawn twice (the
+      // colour pass and the ink outline) and again into the shadow map. Once the city is built, the small meshes of the
+      // builders seen to stay still (STATIC_BUILDERS, from a pass over every world, ride, view and arrival) are batched:
+      // per top-level piece, per material, per shadow flags and per 800-unit cell (so far cells still cull), baked in the
+      // piece's own space (its own visibility and place still apply). Nothing changes in how they look: same materials,
+      // same vertices. The originals stay where they are, out of every camera's layers; a watch compares them every few
+      // frames with how they were batched (place, visibility, material, geometry), and the first change puts that batch's
+      // originals back for good (something that moves, turns to face you or is swapped never stays frozen)
+      var STATIC_BUILDERS = new Set(["FourStreets", "StreetProps", "CoffeeStreetAdds", "CoffeeEntrance", "PrintLane", "SteamShop", "OmaShop", "OlariPlaza", "Fork", "Dacia99", "Izakaya", "CasaBerero", "ChapterSigns", "Eliade18", "Romexpo", "StreetShop", "Brasov", "Munitiei5", "Ground"]);
+      var MERGED = null, mergeWatchI = 0;
+      // a baked material's look at batching time (a later change to it puts its parts back)
+      const matSnap = (m) => `${m.color.getHex()}|${m.emissive ? m.emissive.getHex() : ""}|${m.emissiveIntensity}|${m.version}|${m.visible}|${m.opacity}|${m.map ? m.map.uuid : ""}|${m.side}|${m.wireframe}`;
+      function mergeStatic() {
+        if (MERGED || NO_MERGE) return;
+        const W = worldRefs.world; W.updateMatrixWorld(true);
+        MERGED = [];
+        const t0 = performance.now(), inv = new Matrix4().copy(W.matrixWorld).invert(), rel = new Matrix4(), c = new Vector3();
+        const sig = (g, bake) => Object.keys(g.attributes).filter((k) => !(bake && k === "color")).sort().map((k) => { const a = g.attributes[k]; return `${k}${a.itemSize}${a.array.constructor.name}${a.normalized ? "n" : ""}`; }).join("|") + (g.index ? "|i" : "");
+        // most of the small parts have a material of their own that differs from its neighbours' only by its colour: those
+        // batch together, each part's colour baked into its vertices (the same linear colour the material gave it), drawn
+        // by one copy of the material in white with vertex colours. The shared library materials (mats.*), whose colours
+        // the worlds change, are never baked: their batches keep the material itself
+        const lib = new Set();
+        for (const v of Object.values(mats)) { if (v?.isMaterial) lib.add(v); else if (Array.isArray(v)) for (const x of v) if (x?.isMaterial) lib.add(x); }
+        for (const [m] of STREET_GLOW) lib.add(m); // the shop signs that light up after dark
+        const BAKE = new Set(["MeshStandardMaterial", "MeshLambertMaterial", "MeshPhongMaterial", "MeshBasicMaterial"]);
+        const msig = (m) => { const o = []; for (const k of Object.keys(m).sort()) { if (k === "uuid" || k === "id" || k === "name" || k === "version" || k === "color" || k === "vertexColors" || k[0] === "_") continue; const v = m[k]; o.push(k + "=" + (v && v.isTexture ? v.uuid : v && v.isColor ? v.getHexString() : typeof v === "function" ? String(v) : v && typeof v === "object" ? (k === "userData" ? JSON.stringify(v.outlineParameters || null) : JSON.stringify(v)) : String(v))); } return m.type + "{" + o.join(";") + "}"; };
+        const msigs = new Map(), msigOf = (m) => { if (!msigs.has(m)) { let v; try { v = msig(m); } catch { v = m.uuid; } msigs.set(m, v); } return msigs.get(m); };
+        const bakeable = (m) => BAKE.has(m.type) && !lib.has(m);
+        const okMat = (m) => m && !m.transparent && m.depthWrite !== false && m.blending === NormalBlending;
+        // the parts of every static piece: a part is a mesh, or one material's share of a mesh with several (a box with a
+        // sign on one face); a mesh with several goes only if all its shares can
+        const groups = new Map(), owners = new Map();
+        for (const T of W.children) {
+          if (!STATIC_BUILDERS.has(T.userData.bld) || !T.visible) continue;
+          T.traverse((o) => {
+            if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !o.geometry?.attributes?.position || o.userData.noMerge) return;
+            o.userData.__bld = T.userData.bld;
+            const g = o.geometry, multi = Array.isArray(o.material);
+            if (o.renderOrder !== 0 || !o.frustumCulled || o.onBeforeRender !== Mesh.prototype.onBeforeRender) return;
+            if (Object.keys(g.morphAttributes || {}).length || g.drawRange.count !== Infinity || g.drawRange.start !== 0) return;
+            if (Object.values(g.attributes).some((x) => x.isInterleavedBufferAttribute)) return;
+            for (let p = o; p && p !== W; p = p.parent) if (!p.visible) return;
+            if (multi ? !g.groups.length || !g.index || !g.groups.every((gr) => okMat(o.material[gr.materialIndex])) : !okMat(o.material)) return;
+            g.boundingSphere || g.computeBoundingSphere();
+            c.copy(g.boundingSphere.center).applyMatrix4(o.matrixWorld);
+            const cell = `${Math.floor(c.x / 800)},${Math.floor(c.z / 800)}`;
+            const shares = multi ? g.groups.map((gr) => ({ m: o.material[gr.materialIndex], gr })) : [{ m: o.material, gr: null }];
+            owners.set(o, shares.length);
+            for (const sh of shares) {
+              const bake = bakeable(sh.m);
+              const k = `${bake ? "B" + msigOf(sh.m) : sh.m.uuid}|${o.castShadow ? 1 : 0}${o.receiveShadow ? 1 : 0}|${o.layers.mask}|${cell}|${sig(g, bake)}`;
+              (groups.get(k) || groups.set(k, []).get(k)).push({ o, ...sh, T });
+            }
+          });
+        }
+        // a lone plain mesh stays as it is; a mesh with several materials goes only when every share of it is batched
+        const take = new Map();
+        for (const [k, list] of groups) for (const p of list) if (list.length >= 2 || p.gr) take.set(p.o, (take.get(p.o) || 0) + 1);
+        const jobs = [];
+        for (const [key, list0] of groups) {
+          const list = list0.filter((p) => take.get(p.o) === owners.get(p.o));
+          if (list.length && (list.length >= 2 || list[0].gr)) jobs.push({ bake: key[0] === "B", list, snaps: list.map((p) => chainSnap(p.o)) });
+        }
+        // the geometry is built a slice at a time while the page is idle (a phone needs several hundred ms for all of it),
+        // then everything is switched over in one frame (never a batch and its originals drawn together)
+        let j = 0;
+        const slice = (dl) => {
+          const t1 = performance.now();
+          while (j < jobs.length && (dl?.timeRemaining ? dl.timeRemaining() > 2 : performance.now() - t1 < 8)) { const jb = jobs[j++]; jb.mg = batchGeo(jb.list, jb.bake); }
+          if (j < jobs.length) { (window.requestIdleCallback || setTimeout)(slice, { timeout: 500 }); return; }
+          let n0 = 0;
+          for (const jb of jobs) {
+            if (!jb.mg) continue;
+            // anything that moved, showed, hid or changed meanwhile: that batch is not made
+            if (jb.list.some((p, i) => !snapSame(p.o, jb.snaps[i]) || p.o.userData.noMerge)) { jb.mg.dispose(); continue; }
+            const p0 = jb.list[0], o0 = p0.o;
+            let bmat = p0.m;
+            if (jb.bake) { bmat = p0.m.clone(); bmat.color.setRGB(1, 1, 1); bmat.vertexColors = true; bmat.name = "batch"; }
+            const bm = new Mesh(jb.mg, bmat);
+            bm.castShadow = o0.castShadow; bm.receiveShadow = o0.receiveShadow; bm.layers.mask = o0.layers.mask; bm.userData.batch = true;
+            bm.matrixAutoUpdate = false; bm.updateMatrix();
+            W.add(bm);
+            MERGED.push({ bm, bake: jb.bake, list: jb.list.map((p, i) => ({ p, snap: jb.snaps[i], mat: p.o.material, sm: p.m, geo: p.o.geometry, ver: Object.values(p.o.geometry.attributes).map((x) => x.version).join(), ms: jb.bake ? matSnap(p.m) : null })) });
+          }
+          // the batched meshes leave every camera's layers (they stay where they are, watched); a leaf no longer
+          // recomputes its world matrix every frame (the watch compares its own place instead)
+          for (const rec of MERGED) for (const e of rec.list) {
+            const o = e.p.o;
+            if (!o.userData.__merged) { o.userData.__merged = { mask: o.layers.mask, mwau: o.matrixWorldAutoUpdate }; o.layers.mask = 0; if (!o.children.length) o.matrixWorldAutoUpdate = false; n0++; }
+          }
+          if (n2C) { nav2CullOff(); n2C = null; } // the street view's far cull rebuilds its list (the batches, not the hidden originals)
+          (window.__bootT ||= {}).merge = { meshes: n0, batches: MERGED.length, ms: Math.round(performance.now() - t0) };
+        };
+        slice(null);
+      }
+      // where a mesh is: its own place, turn, size and visibility, and those of every group above it up to the world
+      // group's piece (a flat list of numbers, compared without allocating)
+      function chainSnap(o) {
+        const a = [], W = worldRefs.world;
+        for (let q = o; q && q !== W; q = q.parent) a.push(q.position.x, q.position.y, q.position.z, q.quaternion.x, q.quaternion.y, q.quaternion.z, q.quaternion.w, q.scale.x, q.scale.y, q.scale.z, q.visible ? 1 : 0, q.parent === W ? 1 : 0);
+        return Float64Array.from(a);
+      }
+      function snapSame(o, a) {
+        const W = worldRefs.world; let i = 0;
+        for (let q = o; q && q !== W; q = q.parent) {
+          if (i + 12 > a.length) return false;
+          const P = q.position, Q = q.quaternion, S = q.scale, d = (x, y) => x - y > 1e-4 || y - x > 1e-4;
+          if (d(P.x, a[i]) || d(P.y, a[i + 1]) || d(P.z, a[i + 2]) || d(Q.x, a[i + 3]) || d(Q.y, a[i + 4]) || d(Q.z, a[i + 5]) || d(Q.w, a[i + 6]) || d(S.x, a[i + 7]) || d(S.y, a[i + 8]) || d(S.z, a[i + 9])) return false;
+          if ((q.visible ? 1 : 0) !== a[i + 10] || (q.parent === W ? 1 : 0) !== a[i + 11]) return false;
+          i += 12;
+        }
+        return i === a.length;
+      }
+      // the merged geometry of a batch's parts, in the world group's space (rebuilt the same way when one part leaves)
+      function batchGeo(list, bake) {
+        const W = worldRefs.world, inv = new Matrix4().copy(W.matrixWorld).invert(), rel = new Matrix4(), geos = [];
+        {
+          for (const p of list) {
+            const o = p.o;
+            o.updateWorldMatrix(true, false);
+            rel.multiplyMatrices(inv, o.matrixWorld);
+            const gg = o.geometry.clone();
+            if (p.gr) { gg.setIndex(new BufferAttribute(o.geometry.index.array.slice(p.gr.start, p.gr.start + p.gr.count), 1)); gg.clearGroups(); }
+            gg.applyMatrix4(rel);
+            if (rel.determinant() < 0) { // a mirrored part: its triangles turn the other way once baked
+              if (gg.index) { const ix = gg.index.array; for (let i = 0; i < ix.length; i += 3) { const t = ix[i + 1]; ix[i + 1] = ix[i + 2]; ix[i + 2] = t; } }
+              else for (const a of Object.values(gg.attributes)) { const it = a.itemSize, ar = a.array; for (let i = 0; i < a.count; i += 3) for (let j = 0; j < it; j++) { const t = ar[(i + 1) * it + j]; ar[(i + 1) * it + j] = ar[(i + 2) * it + j]; ar[(i + 2) * it + j] = t; } }
+            }
+            if (bake) { // the part's colour, in its vertices (times its own vertex colours, if its material used them)
+              const m = p.m, n = gg.attributes.position.count, ca = new Float32Array(n * 3), src = m.vertexColors && gg.attributes.color;
+              for (let i = 0; i < n; i++) { ca[i * 3] = m.color.r * (src ? src.getX(i) : 1); ca[i * 3 + 1] = m.color.g * (src ? src.getY(i) : 1); ca[i * 3 + 2] = m.color.b * (src ? src.getZ(i) : 1); }
+              gg.setAttribute("color", new BufferAttribute(ca, 3));
+            }
+            geos.push(gg);
+          }
+        }
+        const mg = mergeGeometries(geos, false);
+        geos.forEach((x) => x.dispose());
+        if (mg) { mg.computeBoundingSphere(); mg.computeBoundingBox(); }
+        return mg;
+      }
+      // a mesh that changed comes back as itself, for good, and every batch that held it (or a share of it) is rebuilt
+      // without it (a batch left with nothing goes)
+      function evict(o, why) {
+        const u = o.userData.__merged; if (!u) return;
+        o.layers.mask = u.mask; o.matrixWorldAutoUpdate = u.mwau !== false; delete o.userData.__merged; o.userData.noMerge = true;
+        for (const rec of MERGED.slice()) {
+          if (!rec.list.some((e) => e.p.o === o)) continue;
+          rec.list = rec.list.filter((e) => e.p.o !== o);
+          rec.bm.geometry.dispose();
+          const mg = rec.list.length ? batchGeo(rec.list.map((e) => e.p), rec.bake) : null;
+          if (mg) rec.bm.geometry = mg;
+          else { rec.bm.removeFromParent(); if (rec.bm.material.name === "batch") rec.bm.material.dispose(); MERGED.splice(MERGED.indexOf(rec), 1); }
+        }
+        if (n2C) { nav2CullOff(); n2C = null; }
+        ((window.__bootT ||= {}).evicted ||= []).push(`${o.userData.__bld || ""}:${why}`);
+      }
+      function mergeWatch() {
+        if (!MERGED?.length) return;
+        // a few batches per frame, all of them every ~6 frames
+        const n = Math.max(1, Math.ceil(MERGED.length / 6)), W = worldRefs.world;
+        for (let k = 0; k < n && MERGED.length; k++) {
+          mergeWatchI = mergeWatchI % MERGED.length;
+          const rec = MERGED[mergeWatchI];
+          let bad = null;
+          for (const e of rec.list) {
+            const o = e.p.o;
+            if (o.material !== e.mat || o.geometry !== e.geo) bad = [o, "swap"];
+            else if (!snapSame(o, e.snap)) bad = [o, "moved"];
+            else if (Object.values(o.geometry.attributes).map((x) => x.version).join() !== e.ver || (e.ms && matSnap(e.sm) !== e.ms)) bad = [o, "changed"];
+            if (bad) break;
+          }
+          if (bad) evict(bad[0], bad[1]); else mergeWatchI++;
         }
       }
       function nav2Host() { // nav2: what the module may see and do
@@ -41634,6 +41815,8 @@ void main() {
       window.__path = () => route.points.filter((_, i) => i % 3 === 0).map((p) => [Math.round(p.x), Math.round(p.z)]);
       window.__mv = (o) => { mapView.follow = false; mapView.focus = null; mapView.yawGoal = mapView.pitchGoal = mapView.distGoal = null; Object.assign(mapView, o.v || {}); if (o.t) mapView.tgt.set(o.t[0], o.t[1] || 0, o.t[2]); mapView.lookY = mapView.lookYGoal = o.t ? o.t[1] || 0 : mapView.lookY; };
       window.__perfLab = {
+        // r198: the batches off / on in place (an A/B of the same view): their meshes come back into the cameras' layers
+        merge(on) { for (const rec of MERGED || []) { rec.bm.visible = !!on; for (const e of rec.list) { const u = e.p.o.userData.__merged; if (u) e.p.o.layers.mask = on ? 0 : u.mask; } } if (n2C) { nav2CullOff(); n2C = null; } return { batches: (MERGED || []).length, ...(window.__bootT || {}).merge }; },
         shadows(on) { renderer.shadowMap.enabled = on; renderer.shadowMap.needsUpdate = true; scene.traverse((o) => { if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => (m.needsUpdate = true)); } }); },
         post(on) { window.__noPost = !on; },
         dpr(v) { perf.lock = v; renderer.setPixelRatio(v); },
@@ -42060,7 +42243,7 @@ void main() {
       // ground meanwhile), so the first frame is the type, not a blank screen
       if (kzLoader) document.body.classList.add("kz-boot");
       const fabricReady = new Promise((res) => {
-        const go = () => { worldRefs.world.userData.buildFabric(); applyScheme(state.schemeIdx); (window.__bootT ||= {}).fabric = Math.round(performance.now()); res(); };
+        const go = () => { worldRefs.world.userData.buildFabric(); applyScheme(state.schemeIdx); (window.__bootT ||= {}).fabric = Math.round(performance.now()); res(); (window.requestIdleCallback || setTimeout)(mergeStatic, { timeout: 1500 }); }; // r198: then the batches
         if (kzLoader) requestAnimationFrame(() => setTimeout(go, 30)); else { go(); }
       });
       Promise.all([fabricReady, Promise.race([Promise.all([document.fonts?.load?.("500 16px CromaticSans"), document.fonts?.load?.("800 16px CromaticSans")]).then(() => document.fonts?.ready), new Promise((r) => setTimeout(r, 1600))])]).then(() => {

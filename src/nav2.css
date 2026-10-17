@@ -302,3 +302,8 @@ body.n2-phone.olari-open .nav2-ui .n2-pad { display: none; }
 body.map-takeoff .nav2-ui, body.map-takeoff .olari-fan, body.map-takeoff .n2-guide { opacity: 0 !important; pointer-events: none !important; transition: opacity .3s; }
 /* beta 3.0: the build label ends where the logo ends (the map's brand has 2 px of padding round its image) */
 @media (min-width: 720px) { body.map-mode .brand .cz-build, body.map-mode .brand > .cz-build { right: 2px !important; } }
+
+/* beta 3.21 (r198): on a phone no hint is ever cut off: it wraps (balanced: one line, two for the longest ones)
+   inside the screen, centred under the views, at any width from 360 px */
+body.n2-phone .nav2-ui .n2-pad { width: max-content; max-width: calc(100vw - 32px); } /* (at left: 50% it was held to half the screen) */
+body.n2-phone .nav2-ui .n2-hint { white-space: normal; text-wrap: balance; max-width: min(310px, calc(100vw - 32px)); line-height: 1.45; box-sizing: border-box; }
