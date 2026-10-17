@@ -26110,7 +26110,7 @@ void main() {
       }
     });
     g.add(lab);
-    const signTM = enamelStreetSign("Str. Aricescu 52A");
+    const signTM = enamelStreetSign("Str. C. Aricescu 50A");
     signTM.position.set(752, 0, 4180);
     g.add(signTM);
     mats.festoon = new MeshStandardMaterial({
@@ -33631,7 +33631,7 @@ void main() {
     // ---- the coffee stop, playable in place ----
     const coffee = section("coffee", "sec-coffee sec-alt");
     coffee.innerHTML = `
-      <span class="eyebrow">COFFEE STREET · ARICESCU 52A</span>
+      <span class="eyebrow">COFFEE STREET · ARICESCU 50A</span>
       <h2 class="site-h2 pill-title drop"><span class="pill" style="background:#F65342;--rot:-2.5deg">The coffee</span><span class="pill" style="background:#FED012;--rot:1.5deg">stop</span></h2>
       <p class="site-lead">Two Minutes has been our client and our neighbour for a decade.
       On the drive we always stop here. On the page, you can still order.</p>`;
@@ -34918,7 +34918,7 @@ void main() {
       <div class="hm-info">
         <span class="eyebrow">TWO MINUTES \xB7 THE SHELF</span>
         <span class="hm-name drop1" style="background:#F2A9C4">TWO MIN boxes</span>
-        <p>Green, pink, blue \u2014 coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 52A.</p>
+        <p>Green, pink, blue \u2014 coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 50A.</p>
         <p class="mono hm-line">BRAND \xB7 PACKAGING \xB7 BY CROMATIC STUDIOS</p>
       </div>`;
       const close = el("button", "hm-close mono", "CLOSE \xD7");
@@ -34970,7 +34970,7 @@ void main() {
       <div class="hm-info wide">
         <span class="eyebrow">TWO MINUTES \xB7 BRAND DEVELOPMENT & MEDIA</span>
         <span class="hm-name drop1" style="background:#F2A9C4">Two Minutes</span>
-        <p>Identity, packaging, editorial and film for a coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 52A.</p>
+        <p>Identity, packaging, editorial and film for a coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 50A.</p>
       </div>`;
       mEl.querySelector(".hm-info").appendChild(gallery([
         { img: tmCover, cap: "TWO MIN \xB7 cover" },
@@ -40866,7 +40866,7 @@ void main() {
           if (pl.tm) {
             // Two Minutes: three double espressos, the boxes come down from our old balcony, a fourth, and the rush
             coffee.done = false; coffee.phase = "sip1"; coffee.t = 0; coffee.served = 0;
-            showCard(pl, "COFFEE STREET \xB7 STR. ARICESCU 52A", `<p>${pl.desc}</p>`, `<button class="mcd-open">Dig deeper \u2192</button>`);
+            showCard(pl, "COFFEE STREET \xB7 STR. CONSTANTIN ARICESCU 50A", `<p>${pl.desc}</p>`, `<button class="mcd-open">Dig deeper \u2192</button>`);
             card.querySelector(".mcd-open").onclick = deep(pl, () => { if (openFrameHook && /^https?:$/.test(location.protocol)) openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); });
             return;
           }
