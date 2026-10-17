@@ -39554,6 +39554,26 @@ void main() {
             copCar.beacons[1].material.emissiveIntensity = o.flash ? (t ? 0.15 : 2.8) : 1.3;
           },
           reverseLamps(on) { if (veh?.revLamps && veh.revLamps.visible !== on) veh.revLamps.visible = on; },
+          // beta 3.20 (r197): the roundabout's next exit, painted on the road: an arrow turning out, yellow on an ink outline
+          // (o.pts and o.out, their outlines in plan coordinates, rebuilt only when o.key changes); white once it is the exit
+          // you will take (o.picked); null hides it
+          exitMark: (() => {
+            let fill = null, ink = null, key = "";
+            const flat = (pts, y) => { const g = new ShapeGeometry(new Shape(pts.map(([x, z]) => new Vector2(x, -z)))); g.rotateX(-Math.PI / 2); g.translate(0, y, 0); return g; };
+            return (o) => {
+              if (!o) { if (fill && fill.visible) fill.visible = ink.visible = false; return; }
+              if (!fill) {
+                const mk = (c, ro) => { const m = new Mesh(new BufferGeometry(), new MeshBasicMaterial({ color: c, toneMapped: false, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -8 })); m.renderOrder = ro; m.frustumCulled = false; worldRefs.world.add(m); return m; };
+                ink = mk("#141414", 3); fill = mk("#FED012", 4);
+              }
+              if (o.key !== key) {
+                key = o.key;
+                fill.geometry.dispose(); fill.geometry = flat(o.pts, 2.5);
+                ink.geometry.dispose(); ink.geometry = flat(o.out, 2.4);
+              }
+              fill.material.color.set(o.picked ? "#ffffff" : "#FED012"); fill.visible = ink.visible = true;
+            };
+          })(),
           // beta 2.5 (Daniel: "more like Mario Kart"): little effects on the road, in plan coordinates (the city warp bends
           // them with the rest): puffs (tyre smoke, drift sparks, a boost's flame, dust) from a small pool, and skid marks
           // (one instanced mesh, a ring of 240). Cheap: at most 36 puffs alive, one draw call for every mark

@@ -1194,6 +1194,29 @@
       const fx = Math.sin(P.h), fz = Math.cos(P.h), half = clamp(H.carLen() * 0.5 - CR + 2, 2, 20), k2 = MASK.resolve(P.x + fx * half, P.z + fz * half, CR + 4);
       return k2.hit ? clamp((k2.nx * -fz + k2.nz * fx) * 1.4, -0.9, 0.9) : 0;
     }
+    // on the ring (or just at its edge): which side is out (the steer sign that means "out"), and the next exit ahead the
+    // way you are going round (the one a tap out takes); null off the ring. beta 3.20 (r197): shared by the tap and the marker
+    function ringNext() {
+      const rx2 = P.x - H.fork.x, rz2 = P.z - H.fork.y, rr = Math.hypot(rx2, rz2);
+      if (!(rr < 105 && rr > 30)) return null;
+      const fx = Math.sin(P.h), fz = Math.cos(P.h), outSign = (fz * rx2 - fx * rz2) > 0 ? 1 : -1;
+      const ac = Math.atan2(rz2, rx2), sgn = rx2 * fz - rz2 * fx > 0 ? 1 : -1; // the way round: + or - in angle
+      let best = null;
+      for (const n of ringNodes) for (const o of N[n].out) {
+        const e = E[o.e]; if (e.kind === "ring" || !e.drive) continue;
+        const h0 = outH(o), ox = Math.sin(h0), oz = Math.cos(h0), nx = N[n].x - H.fork.x, nz = N[n].z - H.fork.y;
+        if (ox * nx + oz * nz <= 0) continue; // leads away from the fountain
+        let d = ((Math.atan2(nz, nx) - ac) * sgn) % (2 * Math.PI); if (d < 0) d += 2 * Math.PI;
+        if (d < 0.12 || d > 2.6) continue;
+        // beta 3.20 (r197): and the arm it leads to is ahead too (an arm's other link, taken backwards, led out behind you,
+        // to the arm just passed, or the one you came in by)
+        const f = dpts(o)[dpts(o).length - 1];
+        let dA = ((Math.atan2(f[1] - H.fork.y, f[0] - H.fork.x) - ac) * sgn) % (2 * Math.PI); if (dA < 0) dA += 2 * Math.PI;
+        if (dA < 0.12 || dA > 2.9) continue;
+        if (!best || d < best.d) best = { e: o.e, dir: o.dir, d, n, ang: Math.atan2(nz, nx) };
+      }
+      return { outSign, sgn, rr, rx: rx2, rz: rz2, best };
+    }
     const ringExits = new Map();
     function ringExitFor(spoke) {
       const k = spoke.e * 2 + (spoke.dir > 0 ? 1 : 0);
@@ -1338,21 +1361,10 @@
       // beta 2.91 (Daniel: "exiting the roundabout should be easier"; r182's smooth links): on the ring, a tap outwards
       // means "the next exit": the assist takes the next arm ahead out (a tap inwards: stay on the ring)
       if (!D.auto && steer !== 0) {
-        const rx2 = P.x - H.fork.x, rz2 = P.z - H.fork.y, rr = Math.hypot(rx2, rz2);
-        if (rr < 105 && rr > 30) {
-          const fx = Math.sin(P.h), fz = Math.cos(P.h), outSign = (fz * rx2 - fx * rz2) > 0 ? 1 : -1;
-          if (Math.sign(steer) === outSign) {
-            const ac = Math.atan2(rz2, rx2), sgn = rx2 * fz - rz2 * fx > 0 ? 1 : -1; // the way round: + or - in angle
-            let best = null;
-            for (const n of ringNodes) for (const o of N[n].out) {
-              const e = E[o.e]; if (e.kind === "ring" || !e.drive) continue;
-              const h0 = outH(o), ox = Math.sin(h0), oz = Math.cos(h0), nx = N[n].x - H.fork.x, nz = N[n].z - H.fork.y;
-              if (ox * nx + oz * nz <= 0) continue; // leads away from the fountain
-              let d = ((Math.atan2(nz, nx) - ac) * sgn) % (2 * Math.PI); if (d < 0) d += 2 * Math.PI;
-              if (d < 0.12 || d > 2.6) continue;
-              if (!best || d < best.d) best = { e: o.e, dir: o.dir, d };
-            }
-            if (best) { D.ringExit = { e: best.e, dir: best.dir }; D.ringTap = performance.now(); }
+        const rn = ringNext();
+        if (rn) {
+          if (Math.sign(steer) === rn.outSign) {
+            if (rn.best) { D.ringExit = { e: rn.best.e, dir: rn.best.dir }; D.ringTap = performance.now(); }
           } else if (D.ringExit && performance.now() - (D.ringTap || 0) > 300) D.ringExit = { e: -1, dir: 0 }; // inwards: round again
         }
       }
@@ -1378,6 +1390,7 @@
       const dec = nextDecision(curL());
       freeUI();
       arms(curL(), dec);
+      nextExit(dt);
       tutTick();
       panelT -= dt;
       if (panelT <= 0) { panelT = 0.22; document.body.classList.toggle("n2-card", H.cardOpen()); render(); }
@@ -1878,7 +1891,7 @@
       <div class="n2-cop" role="status" aria-live="polite"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15" class="n2-cop-bg"/><circle cx="18" cy="18" r="15" class="n2-cop-ring"/></svg><b>POLICE · SLOW DOWN</b><em class="mono">5</em></div>
       <div class="n2-stick" aria-hidden="true"><span class="n2-ring"></span><span class="n2-knob"></span></div>
       <button class="n2-driftb mono" aria-label="Drift (hold)">DRIFT</button>
-      <div class="n2-arms" aria-hidden="true"><span class="n2-arm" data-k="l"></span><span class="n2-arm" data-k="s"></span><span class="n2-arm" data-k="r"></span></div>`;
+      <div class="n2-arms" aria-hidden="true"><span class="n2-arm" data-k="l"></span><span class="n2-arm" data-k="s"></span><span class="n2-arm" data-k="r"></span><span class="n2-arm n2-next off"></span></div>`;
     document.body.appendChild(root);
     const panel = root.querySelector(".n2-panel"), views = root.querySelector(".n2-views"), pad = root.querySelector(".n2-pad"), hintEl = root.querySelector(".n2-hint"), toastEl = root.querySelector(".n2-toast");
     const copEl = root.querySelector(".n2-cop");
@@ -1983,14 +1996,70 @@
       for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) driftB.addEventListener(ev, () => { D.keys.h = false; driftB.classList.remove("on"); });
       window.addEventListener("wheel", (e) => { if (api.on && D.streetT > 0.5 && !e.target.closest?.(".map-card, .case-frame, .nav2-ui, .map-rides, .crew-panel")) { e.preventDefault(); e.stopImmediatePropagation(); } }, { passive: false, capture: true });
     }
+    // beta 3.20 (r197, Daniel: the next exit should be obvious without reading the hint): driving round the ring yourself,
+    // the next exit ahead is painted on the road, an arrow in the lane just before it turning out, and named in a pill
+    // over it with the key (or the stick's way) that takes it, → (← if out were left); white with a yellow pill once it is
+    // the exit you will take (a tap out, or the straight on picked as you came in). Both views; never on auto-pilot
+    let nxSig = "";
+    // a simple polygon pushed out by d on every side (mitred corners, capped), for the marker's ink outline
+    function grow(pts, d) {
+      const n = pts.length; let A = 0;
+      for (let i = 0; i < n; i++) { const p = pts[i], q = pts[(i + 1) % n]; A += p[0] * q[1] - q[0] * p[1]; }
+      const sg = A > 0 ? 1 : -1, nrm = (p, q) => { const dx = q[0] - p[0], dz = q[1] - p[1], l = Math.hypot(dx, dz) || 1; return [(dz / l) * sg, (-dx / l) * sg]; };
+      return pts.map((p, i) => {
+        const a = nrm(pts[(i + n - 1) % n], p), b = nrm(p, pts[(i + 1) % n]), mx = a[0] + b[0], mz = a[1] + b[1], ml = Math.hypot(mx, mz) || 1;
+        const k = Math.min(d / Math.max(0.35, (mx / ml) * a[0] + (mz / ml) * a[1]), d * 2.5);
+        return [p[0] + (mx / ml) * k, p[1] + (mz / ml) * k];
+      });
+    }
+    function nextExit(dt) {
+      const el = nextEl;
+      const fx = Math.sin(P.h), fz = Math.cos(P.h);
+      let rn = !D.auto && !D.uturn && !D.kturn && P.u > 3 && H.vehicle() !== "plane" ? ringNext() : null;
+      // going round with the flow (the ring is one way: its angle about the fountain falls), not in or out along a spoke
+      if (rn && (rn.sgn !== -1 || Math.abs((fx * -rn.rz + fz * rn.rx) / rn.rr) < 0.55)) rn = null;
+      const b = rn && rn.best;
+      D.onRing = !!b; // the arms' pills step aside meanwhile
+      if (!b) { if (nxSig) { nxSig = ""; H.exitMark?.(null); el.classList.add("off"); } return; }
+      const F = H.fork, R = 70, a0 = b.ang; // the arrow: in the lane, its head turning out where the exit leaves the ring
+      const bx = F.x + Math.cos(a0) * R, bz = F.y + Math.sin(a0) * R;
+      const ux = Math.cos(a0), uz = Math.sin(a0), tx = -Math.sin(a0) * rn.sgn, tz = Math.cos(a0) * rn.sgn; // out, and the way round
+      const picked = !!D.ringExit && D.ringExit.e === b.e && D.ringExit.dir === b.dir;
+      const key = `${b.e}:${b.dir}:${rn.sgn}`;
+      // its outline: a stem along the lane, then a bar and a head turning out (X out, Y along), some 41 by 24 units
+      const SH = [[-2.5, -16], [2.5, -16], [2.5, -1], [8, -1], [8, -6], [17, 1.5], [8, 9], [8, 4], [-2.5, 4]];
+      const pts = SH.map(([X, Y]) => [bx + ux * (X - 7) * 1.25 + tx * (Y - 4) * 1.25, bz + uz * (X - 7) * 1.25 + tz * (Y - 4) * 1.25]);
+      H.exitMark?.({ key, pts, out: grow(pts, 2.2), picked });
+      const ep = dpts(b), ec = dcum(b), pp = pointAt(ep, ec, Math.min(ec[ec.length - 1], 55)); // the pill: over the street it leads into
+      const v = H.project(pp[0], 22, pp[1]);
+      if (v.z > 1 || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1) el.classList.add("off");
+      else { el.classList.remove("off"); el.style.transform = `translate3d(${((v.x * 0.5 + 0.5) * VP.w).toFixed(1)}px, ${((-v.y * 0.5 + 0.5) * VP.h).toFixed(1)}px, 0) translate(-50%, -100%)`; }
+      const sig = key + (picked ? "p" : "");
+      if (sig === nxSig) return;
+      nxSig = sig;
+      el.classList.toggle("picked", picked);
+      el.innerHTML = `<i class="n2-sg">${rn.outSign > 0 ? "←" : "→"}</i><span>${esc(armName(b))}</span>`;
+    }
     // round 3 (Daniel: "show which arm each key means"): at a junction or a roundabout coming up, a pill on each way you can
     // take, its key and where it leads; once a way is picked only that one stays, until you are through
     const armEls = {};
-    document.querySelectorAll(".n2-arm").forEach((e) => { armEls[e.dataset.k] = e; });
+    document.querySelectorAll(".n2-arm[data-k]").forEach((e) => { armEls[e.dataset.k] = e; });
+    const nextEl = document.querySelector(".n2-next"); // beta 3.20 (r197): the next exit's pill
     const armNames = new Map();
     function armName(o) {
       const k = o.e * 2 + (o.dir > 0 ? 1 : 0);
       if (armNames.has(k)) return armNames.get(k);
+      // beta 3.20 (r197): a roundabout's short links (r182: three per arm) take the name of the arm they lead to, so
+      // every way into one arm reads the same (they were named by their own slant: "the road north" and "west" for one arm)
+      if (E[o.e].len < 140 && ringNodes.has(startNode(o)) && !ringNodes.has(endNode(o))) {
+        let far = null, fd = 0;
+        for (const q of N[endNode(o)].out) {
+          const e2 = E[q.e]; if (!e2.drive || e2.kind === "ring") continue;
+          const p2 = dpts(q), f = p2[p2.length - 1], d = Math.hypot(f[0] - H.fork.x, f[1] - H.fork.y);
+          if (d > fd) { fd = d; far = q; }
+        }
+        if (far && fd > 200) { const nm = armName(far); armNames.set(k, nm); return nm; }
+      }
       const e = E[o.e], pts = o.dir > 0 ? e.pts : e.rpts, cum = o.dir > 0 ? e.cum : e.rcum;
       let name = null;
       for (const d of [320, 200, 120]) { const p = pointAt(pts, cum, Math.min(e.len, d)), q = quarterAt(p[0], p[1]); if (q) { name = QNAME[q]; break; } }
@@ -2005,11 +2074,11 @@
     let armSig = "";
     function arms(L, dec) {
       const show = { l: null, s: null, r: null };
-      const near = dec && dec.type === "junction" && dec.L - L < (FREE ? 320 : 460) && dec.L - L > (FREE ? 15 : -1e9) && !D.auto && !D.uturn && !D.kturn && D.v >= -0.5;
+      const near = dec && dec.type === "junction" && dec.L - L < (FREE ? 320 : 460) && dec.L - L > (FREE ? 15 : -1e9) && !D.auto && !D.uturn && !D.kturn && D.v >= -0.5 && !D.onRing; // beta 3.20 (r197): on the ring the next exit's own marker says it
       if (near) for (const k of ["l", "s", "r"]) if (dec.ex[k]) show[k] = dec.ex[k];
       // a way already picked: the one the path takes at the last node passed or coming (shown until it is behind)
       let picked = null;
-      if (!near && !D.auto && D.seq.length > 1) {
+      if (!near && !D.auto && !D.onRing && D.seq.length > 1) {
         for (let k = 0; k < D.seq.length - 1 && !picked; k++) {
           const it = D.seq[k];
           if (E[it.e].kind === "ring") continue;
@@ -2367,7 +2436,7 @@
       setActive(on) {
         api.on = on;
         document.body.classList.toggle("nav2", on);
-        if (!on) { for (const k of "udlr") keyUp(k); D.ready = false; D.auto = null; D.uturn = null; D.streetT = 0; D.camK = 0; viewSig = ""; document.body.classList.remove("nav2-street"); }
+        if (!on) { H.exitMark?.(null); nextEl.classList.add("off"); nxSig = ""; for (const k of "udlr") keyUp(k); D.ready = false; D.auto = null; D.uturn = null; D.streetT = 0; D.camK = 0; viewSig = ""; document.body.classList.remove("nav2-street"); }
         else { viewSig = ""; let seen = false; try { seen = localStorage.getItem("cz-drive-guide") === "2"; } catch {} if (seen) setTimeout(() => toast(H.isPhone() ? "Drive it yourself with the pad · or tap a place" : "Drive it yourself: arrows or WASD · V switches the view"), 1600); } // a first visit gets the tutorial instead
       },
       view: setView,
