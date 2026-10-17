@@ -49,3 +49,11 @@ html, body { margin: 0; height: 100%; background: #0b0816; overflow: hidden; ove
 .mg-side .mg-b.b-s { left: 35px; bottom: auto; top: 0; width: 80px; height: 80px; }
 @media (max-width: 760px) { .mg-snd { top: 12px; left: 12px; } }
 @media (prefers-reduced-motion: reduce) { .mg-b.on { transform: none; } }
+/* beta 3.15: the menu button, during a fight */
+.mg-menu { position: absolute; top: 18px; left: 80px; z-index: 3; height: 52px; padding: 0 18px 0 14px; border-radius: 26px; border: 0; cursor: pointer; display: none; align-items: center; gap: 8px;
+  background: #121212; color: #fff; box-shadow: 0 0 0 1px #fff, 0 14px 34px -12px rgba(0,0,0,.55); transition: background .2s, color .2s; }
+.mg-menu:hover { background: #FFD147; color: #121212; }
+.mg-menu:hover .mg-lbl { filter: invert(1); }
+.mg-fight .mg-menu { display: inline-flex; }
+@media (max-width: 760px) { .mg-menu { top: 12px; left: 72px; } }
+.mg-side .mg-menu { top: 12px; left: 64px; height: 44px; }
