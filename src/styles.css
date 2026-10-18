@@ -4926,3 +4926,38 @@ body.scheme-sketch .map-card .mcd-actions.mcd-two .mcd-play { background-color: 
 
 /* beta 3.16 (Daniel): the mini-game is played sideways on a phone: no "turn your phone back" over its frame */
 body:has(.case-frame.cf-game:not(.hidden)) .rotate-lock { display: none !important; }
+/* r201 (Daniel): "Challenge I O N to a fight!": the mini-game's own button on the Two Minutes, Two Min Lab and game cards.
+   The words are the game's pixel letters (an SVG of squares, yellow over orange with a dark red drop), a pixel glove that
+   throws a jab now and then, deep purple with stepped arcade corners and a bevel; it presses down like a cabinet button */
+.map-card .mcd-actions .mcd-fight { order: -1; flex: 1 0 100%; height: auto; min-height: 54px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 9px 16px 11px !important; min-width: 0 !important;
+  border: 0 !important; border-radius: 0 !important; background: #1d1638 !important; color: #FED012 !important; cursor: pointer;
+  clip-path: polygon(0 4px, 4px 4px, 4px 0, calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px));
+  box-shadow: inset 0 0 0 2px #121212, inset 0 3px 0 2px #3a2f6a, inset 0 -5px 0 2px #0b0816; transition: transform .1s steps(2), background-color .12s; }
+.map-card .mcd-actions .mcd-fight:hover { background: #2c2158 !important; }
+.map-card .mcd-actions .mcd-fight:active { transform: translateY(2px); box-shadow: inset 0 0 0 2px #121212, inset 0 2px 0 2px #3a2f6a, inset 0 -2px 0 2px #0b0816; }
+.map-card .mcd-actions .mcd-fight:focus-visible { outline: 3px solid #FED012; outline-offset: 2px; }
+.mcd-fight svg { display: block; flex: 0 0 auto; image-rendering: pixelated; }
+.mcd-fight .mf-glove { animation: mfJab 2.4s steps(1) infinite; }
+@keyframes mfJab { 0%, 78%, 100% { transform: none; } 82% { transform: translateX(4px) rotate(-8deg); } 88% { transform: translateX(1px); } }
+@media (prefers-reduced-motion: reduce) { .mcd-fight .mf-glove { animation: none; } }
+.map-card .mcd-actions.mcd-solo .mcd-fight { flex: 1 1 auto; order: 0; }
+.map-card .mcd-actions.mcd-solo { flex-wrap: nowrap; }
+body.scheme-sketch .map-card .mcd-actions .mcd-fight { background-color: #1d1638 !important; color: #FED012 !important; }
+body.scheme-sketch .map-card .mcd-actions .mcd-fight::before { display: none !important; }
+/* the game's own card: its night-purple, the title screen, the Two Minutes mark in a white circle on the picture's corner */
+.map-card.mcd-game { background: #170f19 !important; color: #f3eefe; }
+.map-card.mcd-game .mcd-body .mcd-eyebrow { color: #a99cc8 !important; opacity: 1; }
+.map-card.mcd-game .mcd-body p { color: #e6def7 !important; }
+.map-card.mcd-game .mcd-title { background: #FED012 !important; color: #1d1638 !important; border-color: #121212 !important; }
+.map-card.mcd-game .mcd-img { position: relative; background: #1d1638; }
+.map-card.mcd-game .mcd-img img { object-position: 50% 30%; image-rendering: pixelated; }
+.map-card.mcd-game .mcd-close { background: #2a1f4a !important; color: #f3eefe !important; border-color: #3a2f6a !important; }
+.mg-tm { position: absolute; left: 10px; top: 10px; width: 58px; height: 58px; border-radius: 50%; background: #fff; display: grid; place-items: center;
+  box-shadow: 0 0 0 3px #FED012, 0 0 0 5px #121212, 0 5px 0 4px #121212; z-index: 1; }
+.map-card .mcd-img .mg-tm img { display: block; height: 37px !important; width: auto !important; max-width: none; transform: none !important; object-fit: contain !important; image-rendering: auto !important; }
+body.scheme-sketch .map-card.mcd-game { background: #170f19 !important; border: 1px solid #141414 !important; border-radius: 24px !important; overflow: hidden !important; }
+@media (max-width: 720px) { .mg-tm { width: 46px; height: 46px; left: 8px; top: 8px; } .map-card .mcd-img .mg-tm img { height: 29px !important; } }
+.mcd-fight .mf-txt { min-width: 0; max-width: 100%; height: auto; flex: 0 1 auto; }
+/* the phone's compact Street card (r179): the words take the whole button, no glove */
+body.n2-phone.nav2-street .map-card .mcd-fight { min-height: 44px; padding: 7px 10px 9px !important; }
+body.n2-phone.nav2-street .map-card .mcd-fight .mf-glove { display: none; }

@@ -25931,27 +25931,26 @@ void main() {
     tmSign.material.userData.outlineParameters = { visible: false };
     tmSign.position.set(-8, 43, 31.4);
     tmSign.renderOrder = 3;
-    const stickTex = canvasTexture(128, 256, (ctx) => {
-      const rnd = (i) => (i * 131 + 47) % 89 / 89;
-      const cols = ["#FED012", "#F65342", "#119BFE", "#28C840", "#ffffff", "#F2A9C4", "#111111"];
-      for (let i = 0; i < 26; i++) {
-        const x = rnd(i) * 104, y = rnd(i + 40) * 232, w = 14 + rnd(i + 7) * 18, h = 10 + rnd(i + 19) * 16;
-        ctx.save();
-        ctx.translate(x + w / 2, y + h / 2);
-        ctx.rotate((rnd(i + 3) - 0.5) * 0.9);
-        ctx.fillStyle = cols[i % cols.length];
-        ctx.beginPath();
-        ctx.roundRect(-w / 2, -h / 2, w, h, 3);
-        ctx.fill();
-        ctx.strokeStyle = "rgba(0,0,0,.35)";
-        ctx.lineWidth = 1.4;
-        ctx.stroke();
-        ctx.restore();
-      }
+    // r201 (Daniel: "at Two Minutes, the random coloured thing in the window has to go"): the sticker panel (26 rounded
+    // rectangles in seven colours at random angles, 9 x 20) sat half over the shop window's right side and read as a
+    // glitch in the glass. In its place, a calm shop window on the glass itself: the warm room behind it, the counter
+    // with the espresso machine and two cups in silhouette, and one soft diagonal reflection
+    const winTex = canvasTexture(240, 208, (ctx) => {
+      const gr = ctx.createLinearGradient(0, 0, 0, 208); gr.addColorStop(0, "#2a2420"); gr.addColorStop(1, "#4a3a2e");
+      ctx.fillStyle = gr; ctx.fillRect(0, 0, 240, 208);
+      ctx.fillStyle = "rgba(255,214,150,.16)"; ctx.fillRect(0, 70, 240, 6); // a shelf line, lit from the room
+      ctx.fillStyle = "#1a1512"; ctx.fillRect(0, 150, 240, 58); // the counter
+      ctx.fillStyle = "#6b5442"; ctx.fillRect(0, 146, 240, 6); // its wooden top
+      ctx.fillStyle = "#1a1512"; ctx.beginPath(); ctx.roundRect(132, 100, 64, 48, 5); ctx.fill(); // the espresso machine
+      ctx.fillRect(146, 92, 36, 9);
+      ctx.fillStyle = "rgba(255,225,180,.35)"; ctx.fillRect(140, 108, 48, 3);
+      ctx.fillStyle = "#e9e1d4"; for (const x of [84, 104]) { ctx.beginPath(); ctx.roundRect(x, 132, 12, 14, 2); ctx.fill(); } // two cups
+      const rf = ctx.createLinearGradient(0, 0, 240, 208); rf.addColorStop(0.3, "rgba(255,255,255,0)"); rf.addColorStop(0.42, "rgba(255,255,255,.13)"); rf.addColorStop(0.5, "rgba(255,255,255,0)"); rf.addColorStop(0.62, "rgba(255,255,255,.07)"); rf.addColorStop(0.68, "rgba(255,255,255,0)");
+      ctx.fillStyle = rf; ctx.fillRect(0, 0, 240, 208);
     });
-    const stickers = new Mesh(new PlaneGeometry(9, 20), new MeshBasicMaterial({ map: stickTex, transparent: true }));
-    stickers.position.set(5.5, 15, 30.8);
-    tm.add(stickers);
+    const shopWin = new Mesh(new PlaneGeometry(28, 24.2), new MeshStandardMaterial({ map: winTex, roughness: 0.35, metalness: 0.05, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
+    shopWin.position.set(-8, 14, 30.86);
+    tm.add(shopWin);
     const annex = new Mesh(new BoxGeometry(34, 52, 50), new MeshStandardMaterial({ color: "#EFEAE0", roughness: 0.95 }));
     annex.position.set(48, 26, -2);
     const annexTop = new Mesh(new BoxGeometry(36, 3, 52), new MeshStandardMaterial({ color: "#B4552E", roughness: 0.9 }));
@@ -26110,6 +26109,38 @@ void main() {
       }
     });
     g.add(lab);
+    // r201 (Daniel): the mini-game has its own place on the map: an arcade cabinet in front of the Two Min Lab, beside its
+    // door (deep purple, the game's title on its screen, I O N on the marquee, two buttons), where its pin and card stand
+    {
+      const arc = new Group();
+      const paint = (w, h, draw) => { const t = canvasTexture(w, h, draw); t.magFilter = NearestFilter; t.minFilter = NearestFilter; t.generateMipmaps = false; return t; };
+      const title = (ctx, w, h, big) => {
+        const gr = ctx.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "#1d1638"); gr.addColorStop(0.55, "#5a2a6a"); gr.addColorStop(1, "#e0622a");
+        ctx.fillStyle = gr; ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = "rgba(0,0,0,.18)"; for (let y = 1; y < h; y += 3) ctx.fillRect(0, y, w, 1); // scanlines
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.font = `900 ${big}px ui-monospace, Menlo, monospace`; ctx.lineWidth = Math.max(2, big / 7); ctx.strokeStyle = "#c6402e";
+        ctx.strokeText("I O N", w / 2, h * 0.58); ctx.fillStyle = "#FED012"; ctx.fillText("I O N", w / 2, h * 0.58);
+      };
+      const scrTex = paint(64, 48, (ctx) => { title(ctx, 64, 48, 17); ctx.font = "700 7px ui-monospace, Menlo, monospace"; ctx.fillStyle = "#f3eefe"; ctx.fillText("AT THE GLOVES", 32, 10); });
+      const marTex = paint(64, 24, (ctx) => title(ctx, 64, 24, 15));
+      const purple = new MeshStandardMaterial({ color: "#2a1f4a", roughness: 0.55 }), edge = new MeshStandardMaterial({ color: "#FED012", roughness: 0.5 });
+      const box = (w, h, d, m, x, y, z, rx = 0) => { const q = new Mesh(new BoxGeometry(w, h, d), m); q.position.set(x, y, z); q.rotation.x = rx; arc.add(q); return q; };
+      box(15, 27, 12, purple, 0, 13.5, 0); // the cabinet
+      for (const sx of [-1, 1]) box(0.8, 31, 12.6, edge, sx * 7.9, 15.5, 0); // yellow side trims
+      box(15, 2.2, 7, purple, 0, 15.4, 7.2, 0.32); // the control panel
+      for (const [bx, c] of [[-3.2, "#F65342"], [0.2, "#FED012"], [3.4, "#119BFE"]]) { const b = new Mesh(new CylinderGeometry(0.9, 0.9, 0.9, 10), new MeshStandardMaterial({ color: c, roughness: 0.4 })); b.position.set(bx, 16.8, 7.8); arc.add(b); }
+      mats.arcGlow = new MeshStandardMaterial({ map: scrTex, emissive: "#ffffff", emissiveMap: scrTex, emissiveIntensity: 0.55, roughness: 0.3 });
+      const scr = new Mesh(new PlaneGeometry(11.6, 8.7), mats.arcGlow); scr.position.set(0, 22.6, 6.15); scr.rotation.x = -0.14; arc.add(scr);
+      box(15.4, 5.4, 3.4, purple, 0, 30.4, 4.6); // the marquee's box, its lit face in front
+      const mar = new Mesh(new PlaneGeometry(14.2, 4.6), new MeshStandardMaterial({ map: marTex, emissive: "#ffffff", emissiveMap: marTex, emissiveIntensity: 0.65, roughness: 0.3 })); mar.position.set(0, 30.4, 6.35); arc.add(mar);
+      for (const o of [scr, mar]) o.material.userData.outlineParameters = { visible: false };
+      arc.rotation.y = Math.PI / 2;
+      arc.position.set(652, 0, 4114);
+      arc.name = "gloves-arcade";
+      arc.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      g.add(arc);
+    }
     const signTM = enamelStreetSign("Str. C. Aricescu 50A");
     signTM.position.set(752, 0, 4180);
     g.add(signTM);
@@ -31868,9 +31899,21 @@ void main() {
     }
     // cockpit opening, driver, steering
     const pit = new Mesh(new ShapeGeometry(rrShape(10, 16, 4), 8), M("#0b0b0b")); pit.rotation.x = -Math.PI / 2; pit.position.set(0, 15.7, 4); g.add(pit);
-    const helmet = new Mesh(new SphereGeometry(4.6, 20, 14), red); helmet.position.set(0, 19.5, 2); helmet.scale.set(1, 1, 1.12); g.add(helmet);
-    const visor = new Mesh(new SphereGeometry(4.75, 20, 10, -Math.PI * 0.3, Math.PI * 0.6, Math.PI * 0.32, Math.PI * 0.26), glassM()); visor.position.copy(helmet.position); visor.scale.copy(helmet.scale); g.add(visor);
-    const stripe = new Mesh(new BoxGeometry(9.4, 0.4, 1.4), white); stripe.position.set(0, 23.9, 2); g.add(stripe);
+    // r201 (Daniel: "the driver should look straight ahead, in a yellow helmet"): the visor's band was centred on the
+    // helmet's right side (SphereGeometry's phi 0 is -x), so the driver looked to the right; now it is centred on +z, the
+    // nose. A yellow helmet, a dark smoked visor, one thin red stripe over the crown
+    const helmet = new Mesh(new SphereGeometry(4.6, 20, 14), M("#FED012", { roughness: 0.3 })); helmet.position.set(0, 19.5, 2); helmet.scale.set(1, 1, 1.12); g.add(helmet);
+    const visor = new Mesh(new SphereGeometry(4.75, 20, 10, Math.PI * 0.2, Math.PI * 0.6, Math.PI * 0.32, Math.PI * 0.24), M("#17191d", { roughness: 0.12, metalness: 0.35 })); visor.position.copy(helmet.position); visor.scale.copy(helmet.scale); g.add(visor);
+    for (const [c, tl] of [[0.5, 0.3], [-0.5, 0.62]]) { const st = new Mesh(new SphereGeometry(4.68, 4, 12, Math.PI * (c - 0.035), Math.PI * 0.07, 0, Math.PI * tl), red); st.position.copy(helmet.position); st.scale.copy(helmet.scale); g.add(st); } // front half to the visor's top, back half down the nape
+    // r201 (Daniel): a subtle 14: white on the red nose (read from behind the car), dark on the white engine cover's flanks
+    {
+      const num = (ink, edge) => canvasTexture(128, 96, (ctx) => { ctx.font = "italic 900 84px system-ui, -apple-system, Arial, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineJoin = "round"; ctx.lineWidth = 8; ctx.strokeStyle = edge; ctx.strokeText("14", 64, 52); ctx.fillStyle = ink; ctx.fillText("14", 64, 52); });
+      const decal = (tex) => { const m = new MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }); m.userData.outlineParameters = { visible: false }; return m; };
+      const nose = new PlaneGeometry(5.2, 3.9); nose.rotateX(-Math.PI / 2); nose.rotateY(Math.PI); nose.translate(0, 15.56, 38);
+      g.add(new Mesh(nose, decal(num("#ffffff", "rgba(20,20,20,.55)"))));
+      const sideM = decal(num("#141414", "rgba(255,255,255,0)"));
+      for (const sx of [-1, 1]) { const q = new PlaneGeometry(4.6, 3.45); q.rotateY(sx * Math.PI / 2); q.translate(sx * 5.56, 18.2, -16); g.add(new Mesh(q, sideM)); }
+    }
     // front wing with endplates, rear wing on its pillar
     const fw = topBody(rrDraw(46, 9, 2), 1.8, white, 5.2, 0.7); fw.position.z = 51; g.add(fw);
     const fw2 = topBody(rrDraw(40, 5, 1.6), 1.4, red, 7.2, 0.6); fw2.position.z = 49; g.add(fw2);
@@ -36347,6 +36390,7 @@ void main() {
         if (scene.fog) { scene.fog.near = s.id === "nightlife" ? 1100 : 900; scene.fog.far = s.id === "nightlife" ? 5200 : 4200; }
         if (veh?.beams) veh.beams.visible = dark;
         veh?.lampGlow?.(dark); // r138f
+        copCar?.lampGlow?.(dark); // r201: the chaser is the 1310 now, its lamps too
         chromeTone(scene, dark ? 0.4 : 1); // r138l: the chrome's studio room, dimmed at night
         cityTone(scene, dark ? 0.3 : 1); // r138n: and the city's reflections (low ambient at night: less, or paint glows)
         const cs = document.documentElement.style;
@@ -37066,6 +37110,7 @@ void main() {
       var redHold = 0;
       // the plane's take-off: air eases towards airT (0 on the road, 1 high over the city)
       var air = 0, airT = 0, AIR_H = 150, airBank = 0;
+      var planeAlt = 34, PLANE_CRUISE = 300; // r201: the plane's height on the map (34 on the road, 300 cruising: roofs top out near 242)
       const _rP = new Vector3(), _rT = new Vector3();
       const _tA = new Vector3(), _tB = new Vector3(); // r139e: _tB for the curvature
       var beaconOn = false, beaconBlinkUntil = 0, copMode = "";
@@ -37077,43 +37122,23 @@ void main() {
         plane: { max: 150, unit: "KNOTS" }, scooter: { max: 45, unit: "KM/H" }, foodvan: { max: 110, unit: "KM/H" },
         cop: { max: 150, unit: "KM/H" } /* r139e: the 1310 */, dacia1300: { max: 144, unit: "KM/H" }, sub: { max: 38, unit: "KNOTS" }
       };
+      // r201 (Daniel: "the police car that chases you should be our police car from the game"): the chaser was a white box
+      // with a navy cabin and two lamp blocks (r19's stand-in); now it is the Patrol ride itself, the Poliția Dacia 1310
+      // (buildDacia1300({ police: true }): the white body with the navy bonnet and doors, POLIȚIA on the doors and the bonnet,
+      // the crest, the roof bar with its two blue lamps and the siren horn), at the size every ride has on the road. Its two
+      // point lights stay out (two more lights in the scene would recompile every material the first time it shows); the
+      // lamp boxes flash through their emissive, as the stand-in's did. beacons[i].material keeps the old interface
       var copCar = (() => {
-        const g = new Group();
-        const body = new Mesh(new BoxGeometry(20, 9, 44), new MeshStandardMaterial({ color: "#f4f4f4", roughness: 0.45, metalness: 0.1 }));
-        body.position.y = 8.5;
-        const cabin = new Mesh(new BoxGeometry(17.4, 7, 22), new MeshStandardMaterial({ color: "#1b2a5e", roughness: 0.4 }));
-        cabin.position.set(0, 16, -2);
-        const glass = new Mesh(new BoxGeometry(17.8, 4.6, 18), new MeshStandardMaterial({ color: "#a9cfe0", roughness: 0.2, metalness: 0.3 }));
-        glass.position.set(0, 15.6, -2);
-        const stripe = new Mesh(new BoxGeometry(20.6, 4.4, 30), new MeshStandardMaterial({ color: "#1b2a5e", roughness: 0.5 }));
-        stripe.position.set(0, 8, 2);
-        g.add(body, cabin, glass, stripe);
-        const barBase = new Mesh(new BoxGeometry(15, 1.8, 5), new MeshStandardMaterial({ color: "#20242e" }));
-        barBase.position.set(0, 20.4, -2);
-        g.add(barBase);
-        const beacons = [];
-        for (const [sx, col] of [[-4.2, "#2a6bff"], [4.2, "#119BFE"]]) { // r139e: Romanian police lamps are blue
-          const b = new Mesh(
-            new BoxGeometry(6, 3.4, 4.6),
-            new MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 1.4, roughness: 0.35 })
-          );
-          b.position.set(sx, 22.4, -2);
-          beacons.push(b);
-          g.add(b);
-        }
-        for (const [wx, wz] of [[-9, 14], [9, 14], [-9, -14], [9, -14]]) {
-          const wh = new Mesh(new CylinderGeometry(4.6, 4.6, 3.6, 12), new MeshStandardMaterial({ color: "#151515", roughness: 0.9 }));
-          wh.rotation.z = Math.PI / 2;
-          wh.position.set(wx, 4.6, wz);
-          g.add(wh);
-        }
-        g.traverse((o) => {
-          if (o.isMesh) o.castShadow = true;
-        });
+        const v = buildDacia1300({ police: true }), g = v.group;
+        if (v.beacon) { v.beacon.lr.removeFromParent(); v.beacon.lb.removeFromParent(); }
+        const bb = new Box3().setFromObject(g), sz = bb.getSize(new Vector3());
+        g.scale.setScalar(1.5 * Math.min(0.74, 46 / Math.max(sz.z, 1), 30 / Math.max(sz.x, 1))); // as setVehicle sizes a ride (r124/r133)
+        g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
         g.visible = false;
-        g.scale.setScalar(1.2); // r133: every vehicle 20% bigger
+        cityTone(g, _cityK); v.lampGlow?.(isDarkScheme);
         scene.add(g);
-        return { group: g, beacons };
+        const beacons = v.beacon ? [{ material: v.beacon.redM }, { material: v.beacon.blueM }] : [];
+        return { group: g, beacons, lampGlow: v.lampGlow };
       })();
       var crawlLock = () => coffee.phase === "sip1" || coffee.phase === "unload" || coffee.phase === "sip2";
       // ---- Monument Valley extras: only alive in the Monument scheme ----
@@ -38038,17 +38063,17 @@ void main() {
       // ---- tilt-shift: renders the Monument world as a miniature diorama ----
       var tilt = null;
       // r130 (after jenamdvacetpet.cz): the opened place in a pool of light; the map drifts round when left alone
-      var mapSpot = { x: 0.5, y: 0.5, r: 0.16, k: 0 }, mapIdleAt = 0;
+      var mapIdleAt = 0; // r201: mapSpot (the open card's spotlight grade) removed
       for (const ev of ["pointerdown", "wheel", "keydown", "touchstart"]) window.addEventListener(ev, () => { mapIdleAt = performance.now(); }, { passive: true });
       function tiltShiftRender(now) {
         const w = renderer.domElement.width, h = renderer.domElement.height;
         if (!tilt) {
           const rt = new WebGLRenderTarget(w, h, { samples: 2, type: HalfFloatType });
           const mat = new ShaderMaterial({
-            uniforms: { gk: { value: 1 }, tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, amt: { value: 7 }, focus: { value: 0.46 }, band: { value: 0.1 }, t: { value: 0 }, zb: { value: 0 }, ep: { value: new Vector2(0, 0) }, spot: { value: new Vector4(0.5, 0.5, 0.2, 0) } },
+            uniforms: { gk: { value: 1 }, tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, amt: { value: 7 }, focus: { value: 0.46 }, band: { value: 0.1 }, t: { value: 0 }, zb: { value: 0 }, ep: { value: new Vector2(0, 0) } },
             vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
             fragmentShader: `
-              uniform sampler2D tD; uniform vec2 res; uniform float amt, focus, band, t, zb, gk; uniform vec4 spot; uniform vec2 ep; varying vec2 vUv;
+              uniform sampler2D tD; uniform vec2 res; uniform float amt, focus, band, t, zb, gk; uniform vec2 ep; varying vec2 vUv;
               ${isMobile() ? "#define TAPS 6\n#define LITE 1" : "#define TAPS 12"}
               void main(){
                 float dy = abs(vUv.y - focus);
@@ -38081,13 +38106,8 @@ void main() {
                 c.b = mix(c.b, texture2D(tD, vUv - ca).b, 0.85);
                 #endif
                 c *= 1.0 - dot(q, q) * 0.42;
-                // r130: the place you opened keeps its light; the rest of the city steps back (paler, a little darker)
-                if (spot.w > 0.001) {
-                  float sd = length((vUv - spot.xy) * vec2(res.x / res.y, 1.0));
-                  float sm = smoothstep(spot.z, spot.z * 2.6, sd) * spot.w;
-                  float sl = dot(c, vec3(0.299, 0.587, 0.114));
-                  c = mix(c, mix(vec3(sl), c, 0.3) * 0.8 + 0.035, sm * 0.6);
-                }
+                // r201 (Daniel): no spotlight grade any more while a place's card is open (the rest of the city went paler and
+                // darker, "greyer", and came back on close): the look stays exactly as it is
                 // print film: lifted blacks, warm highlights, cool shadows, a touch less saturation
                 float l = dot(c, vec3(0.299, 0.587, 0.114));
                 c = mix(vec3(l), c, 0.9);
@@ -38119,7 +38139,6 @@ void main() {
         tilt.mat.uniforms.zb.value = mapMode ? mapView.zoomBlur || 0 : 0;
         if (entryPull) { const u = (now - entryPull.t0) / 1000, e = 1 - Math.pow(1 - Math.min(1, Math.max(0, u)), 3); if (u >= 1) { entryPull = null; tilt.mat.uniforms.ep.value.set(0, 0); } else tilt.mat.uniforms.ep.value.set(-0.08 + 1.3 * e, 16 * renderer.getPixelRatio() * (1 - 0.5 * e)); } // r155
         else if (tilt.mat.uniforms.ep.value.y) tilt.mat.uniforms.ep.value.set(0, 0);
-        tilt.mat.uniforms.spot.value.set(mapSpot.x, mapSpot.y, mapSpot.r, mapMode ? mapSpot.k : 0);
         renderer.setRenderTarget(tilt.rt);
         renderer.render(scene, camera);
         renderer.setRenderTarget(null);
@@ -38653,7 +38672,16 @@ void main() {
         if (nav2?.on && mapMode) nav2.pose(carPos, carTan); // nav2: the U-turn's half circle
         const flying = carPos.z > RAMP_LIP + 30 && carPos.y > 30;
         const isPlane = veh.kind === "plane";
-        const hover = isPlane ? 34 + Math.sin(now * 3e-3) * 5 : veh.kind === "sub" ? 20 + Math.sin(now * 1.9e-3) * 4 : 0;
+        // r201 (Daniel: "the plane can go almost anywhere, so it should fly higher: now it passes through buildings and
+        // disappears"): on the map the plane climbs to a cruising height over the city's roofs (the tallest, the Călinescu
+        // villa's ridge and the towers, top out at about 242; the trees much lower) as soon as it rolls, and lands again on
+        // the road when it stops there; stopped over the houses (it flies off the road) it holds its height
+        if (isPlane && mapMode && nav2?.on) {
+          const goUp = nav2.moving() || Math.abs(nav2.speed()) > 12 || !nav2.onRoad(carPos.x, carPos.z);
+          const tgt = goUp ? PLANE_CRUISE : 34;
+          planeAlt += (tgt - planeAlt) * (1 - Math.exp(-dt * (tgt > planeAlt ? 1.9 : 0.9)));
+        } else planeAlt = 34;
+        const hover = isPlane ? planeAlt + Math.sin(now * 3e-3) * 5 : veh.kind === "sub" ? 20 + Math.sin(now * 1.9e-3) * 4 : 0;
         veh.group.position.set(carPos.x, carPos.y + hover, carPos.z);
         if (ONB_MODE && spawnStart > 0) { spawnStart = -1; veh.group.visible = true; veh.group.scale.setScalar(VEH_S); spawnRing.material.opacity = 0; spawnBeam.visible = false; } // r140: a clean cut, no drop-in
         if (spawnStart > 0 && now < spawnStart) {
@@ -39849,6 +39877,10 @@ void main() {
           desc: "Congrats, you found a blast from the past (2024): Bulevardul Dacia 99, the Cromatic Studios home right before Olari 9, and the loudest address we ever had." },
         { id: "lab", br: "A", x: 820, z: 4260, px: 602, pz: 4142, h: 70, name: "Two Min Lab", line: "DRINKS \xB7 TONIC IONIC", c: "#C6402E", t: "#ffffff", act: "labTag", desc: "The Two Minutes lab: Tonic Ionic and the drinks bottled by hand, in small batches, in Bucharest. The bottles are on the Two Minutes page too." },
         { id: "tm", br: "A", x: 900, z: 4262, px: 640, pz: 4260, h: 80, name: "Two Minutes", line: "BRAND \xB7 BOXES \xB7 FILM", c: "#111111", t: "#ffffff", act: "tmMedia", tm: true, desc: "A specialty coffee shop brand made to be loved fast and remembered long. Three double espressos are on us." },
+        // r201 (Daniel): the mini-game, a place of its own by the Two Min Lab (its arcade cabinet): the card in the game's
+        // look, the Two Minutes mark in a circle, "Challenge I O N to a fight!"; not numbered (it is not a project)
+        { id: "gloves", br: "A", x: 860, z: 4262, px: 652, pz: 4114, h: 34, game: true, name: "At the gloves with I O N", line: "A TWO MIN LAB GAME", c: "#1d1638", t: "#FED012",
+          desc: "A small 16-bit fighting game from the Two Min Lab. Pick Daniel, Cristian or Coz from the Cromatic crew and box I O N, the founder of Two Minutes." },
         { id: "oma", br: "A", x: 706, z: 4560, h: 80, name: "OMA Coffee", line: "BRAȘOV \xB7 AT THE FOOT OF T\xC2MPA", c: "#4a7c4e", t: "#ffffff", act: "omaTag" },
         { id: "sip", br: "A", x: 706, z: 4985, h: 70, name: "Sip Coffee & Wine", line: "BRANDING \xB7 COMMUNICATION", c: "#C9A227", t: "#14120c", act: "sipTag" },
         { id: "yoshi", br: "A", x: 706, z: 5175, h: 60, name: "Yoshi Izakaya", line: "COMMUNICATION \xB7 CONTENT", c: "#F4876F", t: "#2a0f08", act: "yoshiTag" },
@@ -40595,13 +40627,56 @@ void main() {
         <ellipse cx="8.8" cy="7.6" rx="1.9" ry="1.05" fill="#fff" opacity=".9"/></g></svg>`; };
       window.__czPinFor = (title) => { const q = MAP_PLACES.find((p) => p.name === title); return q ? pinSVG(q.pin || q.c, "pin-ic xl-pin") : ""; };
       var _pno = null;
+      // r201 (Daniel): "Challenge I O N to a fight!", the mini-game's call to action on the Two Minutes and Two Min Lab cards
+      // and on the game's own card: the words in the game's own 5x7 pixel letters (the same glyphs as src/minigame.js,
+      // drawn here as crisp SVG squares: no font to load), yellow over orange like its title, a small pixel glove, deep
+      // purple with stepped arcade corners. The map is English; a page in Romanian (lang="ro") gets Daniel's line
+      var FIGHT_GLYPHS = {
+        A: ".###.|#...#|#...#|#####|#...#|#...#|#...#", C: ".###.|#...#|#....|#....|#....|#...#|.###.", E: "#####|#....|#....|####.|#....|#....|#####",
+        F: "#####|#....|#....|####.|#....|#....|#....", G: ".###.|#...#|#....|#.###|#...#|#...#|.####", H: "#...#|#...#|#...#|#####|#...#|#...#|#...#",
+        I: "###|.#.|.#.|.#.|.#.|.#.|###", L: "#....|#....|#....|#....|#....|#....|#####", N: "#...#|##..#|#.#.#|#..##|#...#|#...#|#...#",
+        O: ".###.|#...#|#...#|#...#|#...#|#...#|.###.", P: "####.|#...#|#...#|####.|#....|#....|#....", R: "####.|#...#|#...#|####.|#.#..|#..#.|#...#",
+        T: "#####|..#..|..#..|..#..|..#..|..#..|..#..", U: "#...#|#...#|#...#|#...#|#...#|#...#|.###.", V: "#...#|#...#|#...#|#...#|#...#|.#.#.|..#..",
+        "\u0102": ".#.#.|..#..|.###.|#...#|#####|#...#|#...#", "!": "#|#|#|#|#|.|#", "-": "...|...|...|###|...|...|...", " ": "..|..|..|..|..|..|.."
+      };
+      function fightLines() { return /^ro/i.test(document.documentElement.lang || "") ? ["PROVOAC\u0102-L PE I O N", "LA O LUPT\u0102!"] : ["CHALLENGE I O N", "TO A FIGHT!"]; }
+      function fightLabel() { return /^ro/i.test(document.documentElement.lang || "") ? "Provoac\u0103-l pe I O N la o lupt\u0103!" : "Challenge I O N to a fight!"; }
+      function pixelSVG(lines) {
+        const rowsOf = (ch) => (FIGHT_GLYPHS[ch] || FIGHT_GLYPHS[" "]).split("|");
+        const widths = lines.map((l) => [...l].reduce((w, ch) => w + rowsOf(ch)[0].length + 1, -1));
+        const W = Math.max(...widths), H = lines.length * 8 - 1;
+        const fill = ["#FFF3A6", "#FED012", "#FED012", "#FFB21A", "#FF9A1F", "#FF7A1F", "#F65342"];
+        let r = "";
+        lines.forEach((l, li) => {
+          let x = Math.round((W - widths[li]) / 2); const y0 = li * 8;
+          for (const ch of l) { const rows = rowsOf(ch); rows.forEach((row, ry) => { for (let rx = 0; rx < row.length; rx++) if (row[rx] === "#") r += `<rect x="${x + rx}" y="${y0 + ry}" width="1" height="1" fill="${fill[ry]}"/><rect x="${x + rx + 0.5}" y="${y0 + ry + 0.5}" width="1" height="1" fill="#7a1a2a" class="sh"/>`; }); x += rows[0].length + 1; }
+        });
+        // the shadow squares are drawn first (under the letters): move them to the front of the list
+        const sh = r.match(/<rect[^>]*class="sh"\/>/g) || [], fg = r.replace(/<rect[^>]*class="sh"\/>/g, "");
+        return `<svg class="mf-txt" viewBox="0 0 ${W + 1} ${H + 1}" width="${(W + 1) * 2}" height="${(H + 1) * 2}" shape-rendering="crispEdges" aria-hidden="true">${sh.join("")}${fg}</svg>`;
+      }
+      // a boxing glove in 11x11 pixels: red, a highlight, the white cuff
+      var GLOVE_SVG = (() => {
+        const px = [
+          "...####....", "..#RRRR#...", ".#RRWRRR#..", "#RRWRRRRR#.", "#RRRRRRRR#.", "#RRRRRRRR##", ".#RRRRRRR#R", "..#RRRRR#R#", "..#CCCCC##.", "..#CCCCC#..", "...#####..."
+        ], col = { "#": "#121212", R: "#F65342", W: "#FFD8CF", C: "#F3EEFE" };
+        let r = ""; px.forEach((row, y) => { for (let x = 0; x < row.length; x++) if (col[row[x]]) r += `<rect x="${x}" y="${y}" width="1" height="1" fill="${col[row[x]]}"/>`; });
+        return `<svg class="mf-glove" viewBox="0 0 11 11" width="26" height="26" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
+      })();
+      function fightButton(extra = "") {
+        const b = document.createElement("button");
+        b.className = `mcd-open mcd-fight${extra ? " " + extra : ""}`;
+        b.setAttribute("aria-label", fightLabel());
+        b.innerHTML = `${GLOVE_SVG}${pixelSVG(fightLines())}`;
+        return b;
+      }
       function placeNumbers() {
         if (_pno) return _pno;
         _pno = {};
         // r136b (Daniel): the numbers follow how much each project matters, not where it stands on the map
         const FIRST = ["tm", "oma", "scf", "steam", "craft", "arca", "w-clinicasante", "berero", "antila", "tac", "sip", "artisan", "w-bepco", "w-venevo", "w-patiline"];
         const rank = (p, i) => { const k = FIRST.indexOf(p.id); return k < 0 ? 100 + i : k; };
-        MAP_PLACES.filter((p) => !p.chapter && !p.small && !p.unmarked).map((p, i) => [p, rank(p, i)]).sort((a, b) => a[1] - b[1]).forEach(([p], i) => { _pno[p.id] = String(i + 1).padStart(2, "0"); });
+        MAP_PLACES.filter((p) => !p.chapter && !p.small && !p.unmarked && !p.game).map((p, i) => [p, rank(p, i)]).sort((a, b) => a[1] - b[1]).forEach(([p], i) => { _pno[p.id] = String(i + 1).padStart(2, "0"); });
         return _pno;
       }
       function buildMapUI() {
@@ -41016,7 +41091,7 @@ void main() {
           const cov = coverOf(pl);
           const shot = !cov;
           card.style.setProperty("--pc", pl.c); card.style.setProperty("--pt", pl.t || "#fff");
-          card.classList.add("has-img"); card.classList.toggle("shot", shot);
+          card.classList.add("has-img"); card.classList.toggle("shot", shot); card.classList.remove("mcd-game"); // r201: only the game's card is dressed as the game
           // r130h: the card sits in a bottom corner, on the side away from the place, so the scene stays clear
           { const pv = warpV(new Vector3(pl.wx, 0, pl.wz)).project(camera); const right = pv.x < 0; card.classList.toggle("cr", right); card.classList.toggle("cl", !right); }
           card.innerHTML = `<figure class="mcd-img${cov ? "" : " mcd-poster"}">${cov ? `<img src="${cov}" alt="" decoding="async">` : `<span class="mcd-pt">${pl.name}</span><i class="mcd-pl mono">${pl.line || ""}</i>`}</figure><div class="mcd-body"><span class="mcd-eyebrow mono">${eyebrow}</span><b class="mcd-title" style="--pc:${pl.c};--pt:${pl.t || "#fff"}">${pl.name}</b>${body}
@@ -41057,6 +41132,15 @@ void main() {
         // beta 2.0 (Daniel): arriving shows the place's card, with no parking cinematic. The cinematic is for "Go deeper": on a
         // laptop the camera parks in front of the building, then the case page opens out of the card; a phone (or reduced
         // motion) opens it at once. Two Minutes keeps its little coffee scene, and the camera goes back to the player after
+        // r201: the fight button on a card (Two Minutes, Two Min Lab, the game's own): above the card's other buttons, full
+        // width; it opens /play/gloves/ in the case frame (after the parking shot on a laptop, as "Go deeper" does)
+        const addFight = (pl, only) => {
+          if (!window.__openGloves || !/^https?:$/.test(location.protocol)) return;
+          const acts = card.querySelector(".mcd-actions"), b = fightButton();
+          acts.classList.add("mcd-two"); if (only) acts.classList.add("mcd-solo");
+          acts.insertBefore(b, acts.firstChild);
+          b.onclick = deep(pl, () => window.__openGloves());
+        };
         const deep = (pl, open) => () => {
           if (innerWidth < 720 || matchMedia("(prefers-reduced-motion: reduce)").matches || jetFx.phase !== "idle" || (nav2?.on && nav2.camK > 0.5)) return open(); // (in the street view the chase camera stays)
           if (card._deepT) return;
@@ -41096,6 +41180,16 @@ void main() {
             coffee.done = false; coffee.phase = "sip1"; coffee.t = 0; coffee.served = 0;
             showCard(pl, "COFFEE STREET \xB7 STR. CONSTANTIN ARICESCU 50A", `<p>${pl.desc}</p>`, `<button class="mcd-open">Dig deeper \u2192</button>`);
             card.querySelector(".mcd-open").onclick = deep(pl, () => { if (openFrameHook && /^https?:$/.test(location.protocol)) openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); });
+            addFight(pl); // r201
+            return;
+          }
+          // r201 (Daniel): the mini-game's own card: the title screen, the Two Minutes mark in a circle on its corner, the
+          // game's colours, and the one call to action (the case frame opens the game, like any page from the map)
+          if (pl.game) {
+            showCard(pl, "TWO MIN LAB \xB7 ARCADE", `<p>${pl.desc}</p>`, "");
+            card.classList.add("mcd-game");
+            card.querySelector(".mcd-img")?.insertAdjacentHTML("beforeend", `<span class="mg-tm" aria-hidden="true"><img src="${twoMinMark}" alt=""></span>`);
+            addFight(pl, true);
             return;
           }
           const pr = projectOf(pl.name);
@@ -41108,13 +41202,8 @@ void main() {
           if (pl.wip || (pl.small && !pg)) return;
           card.querySelector(".mcd-open").onclick = deep(pl, () => (pg && openFrameHook ? openFrameHook(`/work/${pg}/?embed=1`, pl.name) : tagOf(pl)?.click()));
           // beta 3.1 (Daniel): at the Two Min Lab you can play: "at the gloves with I O N", the mini-game, in the case frame
-          if (pl.id === "lab" && window.__openGloves && /^https?:$/.test(location.protocol)) {
-            const acts = card.querySelector(".mcd-actions"), play = document.createElement("button");
-            acts.classList.add("mcd-two");
-            play.className = "mcd-open mcd-play"; play.innerHTML = `Play: gloves with I O N <span class="mcd-arr" aria-hidden="true">\u2192</span>`;
-            acts.insertBefore(play, acts.querySelector(".mcd-close"));
-            play.onclick = deep(pl, () => window.__openGloves());
-          }
+          // r201 (Daniel): the button is the game's own: "Challenge I O N to a fight!" in its pixel letters (fightButton)
+          if (pl.id === "lab") addFight(pl);
         };
         // r118: arriving somewhere, the camera swings slowly round onto the building's front, lower
         // and in three-quarters, with the van parked in the foreground. No jolt: every value runs on
@@ -41457,6 +41546,15 @@ void main() {
           const aside = document.body.classList.contains("boarding-aside");
           const c = aside ? ui.card : vis(card) ? card : document.body.classList.contains("map-at-stop") && vis(ui.card) ? ui.card : null;
           const topY = phone ? (aside ? 60 : 170) : 100, botY = phone ? H - 74 : H - 96;
+          // r201 (Daniel: "tapping a place rearranges the camera, and again when the card closes: drop the whole chain"): a
+          // place's card no longer reframes the map (it used to slide the car into the space beside the card, and back on
+          // close). Only the boarding pass (aside) keeps its framing, and on a phone, where the card sits over the bottom of
+          // the screen, the car is lifted just enough to stay above the card's top edge (nothing when it is clear already)
+          if (c && !aside) {
+            const mid = (topY + botY) / 2;
+            if (phone) { const r = c.getBoundingClientRect(), clear = r.top - 70; if (clear < mid && clear > topY) return [0, clear - H / 2]; }
+            return [0, mid - H / 2];
+          }
           if (c) {
             const r = c.getBoundingClientRect();
             if (phone) return [0, (topY + Math.min(botY, r.top)) / 2 - H / 2];
@@ -41511,7 +41609,8 @@ void main() {
               const jet = worldRefs.jet, flyingJet = jetFx.phase === "roll" || jetFx.phase === "climb";
               // a climbing jet is followed where it shows on screen, not the ground under it
               const jp = jet.group.position, lift = 0;
-              mapView.lookY = (mapView.lookY || 0) + ((flyingJet && jet.group.visible ? jp.y : 0) - (mapView.lookY || 0)) * (1 - Math.exp(-dt * 8));
+              // r201: the camera looks up at the cruising plane (so it stays framed, and as big, as it was on the road)
+              mapView.lookY = (mapView.lookY || 0) + ((flyingJet && jet.group.visible ? jp.y : veh?.kind === "plane" && nav2?.on ? Math.max(0, planeAlt - 34) * 0.85 : 0) - (mapView.lookY || 0)) * (1 - Math.exp(-dt * 8));
               const atJet = !flyingJet && mapNav.place?.board && !mapNav.moving;
               const fxp = flyingJet ? jp.x - Math.sin(mapView.yaw) * lift : atJet ? (carPos.x + JET_HOME.x) / 2 : carPos.x;
               const fzp = flyingJet ? jp.z - Math.cos(mapView.yaw) * lift : atJet ? (carPos.z + JET_HOME.z) / 2 : carPos.z;
@@ -41601,10 +41700,7 @@ void main() {
               pinBoxes.push([o.x, o.y]);
             }
             {
-              const open = !card.classList.contains("hidden") && mapNav.place && !mapNav.moving;
-              if (open) { warpV(proj.set(mapNav.place.wx, (mapNav.place.wy || 55) * 0.5, mapNav.place.wz)).project(camera); mapSpot.x += ((proj.x * 0.5 + 0.5) - mapSpot.x) * 0.2; mapSpot.y += ((proj.y * 0.5 + 0.5) - mapSpot.y) * 0.2; }
-              mapSpot.r = 0.07 + 900 / Math.max(900, mapView.dist) * 0.1;
-              mapSpot.k += ((open ? 1 : 0) - mapSpot.k) * (1 - Math.exp(-dt * 3));
+              // r201: the open card's spotlight (mapSpot, a grade in the post pass) is gone with its per-frame projection
               // r152 (Daniel): no idle drift any more (it used to turn the city slowly after 9 s with no hand on it, and it
               // started the moment the map appeared, since the clock ran from the page's load): the map holds still until you move it
             }

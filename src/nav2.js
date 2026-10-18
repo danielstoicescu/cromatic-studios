@@ -435,7 +435,10 @@
       const a = G.nearest(x, z, 360, (e) => e.drive);
       if (!a) continue;
       const ap = pointAt(E[a.e].pts, E[a.e].cum, a.s);
-      PL.push({ pl, x, z, e: a.e, s: a.s, ax: ap[0], az: ap[1], q: pl.br || null, hide: !!(pl.past || pl.chapter) }); // ax/az: where the car parks for it; hide: beta 2.7, a discovery (never suggested)
+      // r201: which kerb the building stands on, seen along the edge's own direction (+1 left, -1 right, 0 on the road)
+      const t0 = pointAt(E[a.e].pts, E[a.e].cum, a.s - 6), t1 = pointAt(E[a.e].pts, E[a.e].cum, a.s + 6), bx = pl.px ?? x, bz = pl.pz ?? z;
+      const cr = (t1[0] - t0[0]) * (bz - ap[1]) - (t1[1] - t0[1]) * (bx - ap[0]), side = Math.hypot(bx - ap[0], bz - ap[1]) < 12 ? 0 : cr > 0 ? 1 : -1;
+      PL.push({ pl, x, z, e: a.e, s: a.s, ax: ap[0], az: ap[1], side, q: pl.br || null, hide: !!(pl.past || pl.chapter) }); // ax/az: where the car parks for it; hide: beta 2.7, a discovery (never suggested)
     }
     const byEdge = new Map();
     for (const p of PL) { if (p.hide) continue; let l = byEdge.get(p.e); if (!l) byEdge.set(p.e, (l = [])); l.push(p); } // beta 2.7 (Daniel): the blast-from-the-past places are found only by driving past them
@@ -914,7 +917,7 @@
       let best = null;
       for (const p of PL) { if (listed && p.hide) continue; const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 75 && (!best || d < best.d)) best = { pl: p.pl, d, p }; }
       // beta 3.01 (Daniel): in front of Two Minutes, Two Minutes (its neighbours Two Min Lab and Călinescu 54 don't take it)
-      { const tmP = PL.find((q) => q.pl.id === "tm"); if (tmP && Math.hypot(H.carPos.x - tmP.ax, H.carPos.z - tmP.az) < 90 && !(best && best.pl.id === "tm")) { const lab = best && best.pl.id === "lab" && best.d < 25; if (!lab) best = { pl: tmP.pl, d: Math.hypot(H.carPos.x - tmP.ax, H.carPos.z - tmP.az), p: tmP }; } }
+      { const tmP = PL.find((q) => q.pl.id === "tm"); if (tmP && Math.hypot(H.carPos.x - tmP.ax, H.carPos.z - tmP.az) < 90 && !(best && best.pl.id === "tm")) { const lab = best && (best.pl.id === "lab" || best.pl.id === "gloves") && best.d < 25; if (!lab) best = { pl: tmP.pl, d: Math.hypot(H.carPos.x - tmP.ax, H.carPos.z - tmP.az), p: tmP }; } }
       // beta 2.6: the place you just arrived at stays "here" (two places can share a stretch of kerb: Dacia 99 read as Echo School)
       if (D.lastArr) { const p = PL.find((q) => q.pl === D.lastArr && !(listed && q.hide)); if (p) { const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 110) return { pl: p.pl, d, p }; } }
       return best;
@@ -2147,25 +2150,47 @@
       if (depth > 7 || seen.has(it.e)) return;
       seen.add(it.e);
       const e = E[it.e];
-      for (const p of byEdge.get(it.e) || []) { const s = it.dir > 0 ? p.s : e.len - p.s; if (s <= budget) out.push({ p, d: base + s }); }
+      for (const p of byEdge.get(it.e) || []) { const s = it.dir > 0 ? p.s : e.len - p.s; if (s <= budget) out.push({ p, d: base + s, sd: p.side * (it.dir > 0 ? 1 : -1) }); }
       if (e.len >= budget) return;
       for (const o of N[endNode(it)].out) if (!(o.e === it.e) && !against(o) && E[o.e].drive) explore(o, budget - e.len, base + e.len, out, seen, depth + 1);
     }
     const uniq = (list) => { const s = new Set(); return list.sort((a, b) => a.d - b.d).filter((x) => (s.has(x.p.pl) ? false : (s.add(x.p.pl), true))); };
-    const mDist = (d) => (d < 1000 ? `${Math.max(10, Math.round(d / 10) * 10)} m` : `${(d / 1000).toFixed(1)} km`);
+    const mDist = (d) => (d = Math.abs(d), d < 1000 ? `${Math.max(10, Math.round(d / 10) * 10)} m` : `${(d / 1000).toFixed(1)} km`);
     // beta 2.6 (Daniel: "Nearby: only what is genuinely near"): ahead on your own stretch up to 420, a junction's ways
     // only when it is within 240 (and 320 beyond it)
     const inkLum = (hex) => { const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(hex).trim()); if (!m) return 0.5; let h = m[1]; if (h.length === 3) h = [...h].map((x) => x + x).join(""); const v = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
     const NEAR_AHEAD = 420, NEAR_JUNCTION = 240, NEAR_BEYOND = 320;
+    // r201: the Ahead row: what is up to 160 behind still counts (passed but beside you, behind weighs 1.6x its distance),
+    // four cards at most, both kerbs kept in: while each side has places in reach, neither gets more than one card over
+    // the other; the cards stay nearest first (ahead before just passed at the same distance)
+    const NEAR_BEHIND = 160, NEAR_CAP = 4;
+    const nearW = (x) => (x.d < 0 ? -x.d * 1.6 : x.d);
+    function balance(list, cap) {
+      const by = { 1: [], [-1]: [], 0: [] };
+      for (const x of list.slice().sort((a, b) => nearW(a) - nearW(b))) (by[x.sd ?? 0] || by[0]).push(x);
+      const out = [];
+      while (out.length < cap && (by[1].length || by[-1].length || by[0].length)) {
+        const nL = out.filter((x) => x.sd === 1).length, nR = out.filter((x) => x.sd === -1).length;
+        let pick = null;
+        if (by[1].length && by[-1].length && Math.abs(nL - nR) >= 1) pick = nL < nR ? by[1] : by[-1]; // the side that is behind gets the next card
+        else pick = [by[1], by[-1], by[0]].filter((l) => l.length).sort((a, b) => nearW(a[0]) - nearW(b[0]))[0];
+        out.push(pick.shift());
+      }
+      return out.sort((a, b) => nearW(a) - nearW(b));
+    }
     function render(force) {
       if (!D.ready) return;
       const L = curL(), ci = ciOf(L), cur = D.seq[ci], q = quarterAt(H.carPos.x, H.carPos.z), dec = nextDecision(L);
       const rows = [];
       // ahead: the places still in front of the car on the edges already chosen
+      // r201 (Daniel: "sometimes it shows me only the places on one side of the street"): the row used to take only what
+      // was more than 30 ahead, the three nearest: a place dropped out the moment you drew level with it, so as you passed
+      // one kerb's places the row was the other kerb's (often one card). Now the stretch around the car counts, a little
+      // behind too (what you just passed, while it is still beside you), and each card knows its kerb (x.sd: 1 left, -1 right)
       const ahead = [];
-      for (let k = ci; k < D.seq.length; k++) {
+      for (let k = Math.max(0, ci - 1); k < D.seq.length; k++) {
         const it = D.seq[k], e = E[it.e];
-        for (const p of byEdge.get(it.e) || []) { const s = it.dir > 0 ? p.s : e.len - p.s, d = it.L0 + s - L; if (d > 30 && d < NEAR_AHEAD) ahead.push({ p, d }); }
+        for (const p of byEdge.get(it.e) || []) { const s = it.dir > 0 ? p.s : e.len - p.s, d = it.L0 + s - L; if (d > -NEAR_BEHIND && d < NEAR_AHEAD) ahead.push({ p, d, sd: p.side * (it.dir > 0 ? 1 : -1) }); }
       }
       const here = hereAt(true); // beta 2.7: the panel never names a discovery place
       const jd = dec && dec.type === "junction" ? dec.L - L : Infinity;
@@ -2183,7 +2208,8 @@
       }
       const onPath = new Set(ahead.map((x) => x.p.pl));
       for (const k of ["l", "r"]) ways[k] = ways[k].filter((x) => !onPath.has(x.p.pl));
-      const sAhead = uniq([...ahead, ...ways.s]);
+      // one card per place, its nearest sighting (a place behind and met again ahead: whichever weighs less)
+      const sAhead = (() => { const m = new Map(); for (const x of [...ahead, ...ways.s]) { const c = m.get(x.p.pl); if (!c || nearW(x) < nearW(c)) m.set(x.p.pl, x); } return [...m.values()].sort((a, b) => nearW(a) - nearW(b)); })();
       for (const k of ["s", "l", "r"]) {
         const list = k === "s" ? sAhead : ways[k];
         if (!list.length) continue;
@@ -2193,7 +2219,9 @@
         // right at its junction (beta 2.6: Nearby is the car's immediate zone)
         const lead = q && groups.has(q) ? null : [...groups.keys()][0];
         if (lead && !(k !== "s" && jd < 160) && !(k === "s" && !q)) continue;
-        rows.push({ k, other: lead, items: groups.get(lead || q).filter((x) => x.d < (here ? NEAR_AHEAD * 0.7 : NEAR_AHEAD) && x.p.pl !== here?.pl).slice(0, 3) });
+        // r201: the Ahead row keeps its full reach with a "you're at" banner (the 0.7 cut dropped the far kerb's next place), one card fewer instead
+        const pool = groups.get(lead || q).filter((x) => x.d < (here && k !== "s" ? NEAR_AHEAD * 0.7 : NEAR_AHEAD) && x.p.pl !== here?.pl);
+        rows.push({ k, other: lead, items: k === "s" ? balance(pool, here ? NEAR_CAP - 1 : NEAR_CAP) : pool.slice(0, 3) });
         if (!rows[rows.length - 1].items.length) rows.pop();
       }
       // beta 2.91 (usage pass: "at the roundabout Nearby said: nothing of ours down this way"): round the fountain, where
@@ -2220,20 +2248,21 @@
         rows.sort((a2, b2) => "slr".indexOf(a2.k) - "slr".indexOf(b2.k));
       }
       // beta 3.01 (Daniel): at Two Minutes, Nearby lists Two Min Lab, then Călinescu 54 (an exception to the discovery rule)
-      if (here?.pl.id === "tm") { const it = ["lab", "hq"].map((id) => PL.find((q) => q.pl.id === id)).filter(Boolean).map((q) => ({ p: q, d: Math.hypot(q.ax - H.carPos.x, q.az - H.carPos.z) })); if (it.length) { rows.length = 0; rows.push({ k: "s", other: null, items: it }); } }
+      // r201: and the mini-game's place, the arcade by the Lab
+      if (here?.pl.id === "tm") { const it = ["lab", "gloves", "hq"].map((id) => PL.find((q) => q.pl.id === id)).filter(Boolean).map((q) => ({ p: q, d: Math.hypot(q.ax - H.carPos.x, q.az - H.carPos.z) })); if (it.length) { rows.length = 0; rows.push({ k: "s", other: null, items: it }); } }
       // beta 3.01: on Strada Olari, with nothing of ours in the immediate zone, Nearby names the house ahead (it said
       // "nothing of ours down this way" on the way to it, now that Dacia 99 is not on Olari any more)
       if (!rows.length && !here && (q === "D" || Math.abs(H.carPos.x - 1170) < 60)) { let f = null; for (let k = ci; k < D.seq.length && !f; k++) { const it = D.seq[k], e = E[it.e]; for (const p of byEdge.get(it.e) || []) if (p.pl.stop === "end") { f = { p, d: it.L0 + (it.dir > 0 ? p.s : e.len - p.s) - L }; break; } } if (!f && Math.abs(H.carPos.x - 1170) < 60 && Math.cos(P.h) > 0.7) { const p = PL.find((x) => x.pl.stop === "end"); if (p) f = { p, d: Math.hypot(p.ax - H.carPos.x, p.az - H.carPos.z) }; } /* (at the junction itself the path ahead stops at the turn) */ if (f && f.d > 30 && f.d < 1400) rows.push({ k: "s", other: null, items: [f] }); }
       const auto = D.auto;
       // round 2 (Daniel: "more visual"): the panel is rebuilt only when what it shows changes; the distances update in place
-      const sig = JSON.stringify([q, here?.pl.id, auto ? auto.pl?.id || "tap" : 0, rows.map((r) => [r.k, r.other, !!ex?.[r.k], r.items.map((x) => x.p.pl.id)]), D.cardFor?.id && H.cardOpen(), imgV]);
+      const sig = JSON.stringify([q, here?.pl.id, auto ? auto.pl?.id || "tap" : 0, rows.map((r) => [r.k, r.other, !!ex?.[r.k], r.items.map((x) => x.p.pl.id + (x.d < 0 ? "-" : ""))]), D.cardFor?.id && H.cardOpen(), imgV]);
       const dists = new Map();
       for (const r of rows) for (const x of r.items) dists.set(r.k + ":" + x.p.pl.id, x.d);
       if (!force && sig === panelSig) { updDist(dists, auto); return; }
       panelSig = sig;
       const cols = (pl) => { const b = H.brand?.(pl); const c = b?.c || pl.pin || pl.c || "#FED012"; let t = b?.t || pl.t || "#111"; if (inkLum(c) < 0.25 && inkLum(t) < 0.25) t = "#ffffff"; else if (inkLum(c) > 0.6 && inkLum(t) > 0.6) t = "#141414"; return { c, t }; }; // beta 2.92: a dark name on a dark colour (Olari 9's "you're at") turned white
       const pic = (pl) => { const u = imgOf(pl); const { c, t } = cols(pl); return u ? `<img src="${esc(u)}" alt="" decoding="async" loading="lazy">` : `<span class="n2-ini" style="color:${esc(t)}">${esc(pl.name.replace(/[^A-Za-z0-9 ]/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase())}</span>`; };
-      const card = (x, k) => { const pl = x.p.pl, { c, t } = cols(pl); return `<button class="n2-pc" data-id="${esc(pl.id)}" data-dk="${k}:${esc(pl.id)}" style="--pc:${esc(c)};--pt:${esc(t)}" aria-label="${esc(pl.name)}, ${mDist(x.d)}"><span class="n2-pic">${pic(pl)}<em class="n2-dch">${GLY[k]}</em></span><b class="n2-nm">${esc(pl.name)}</b><span class="n2-dist mono">${mDist(x.d)}</span></button>`; };
+      const card = (x, k) => { const pl = x.p.pl, { c, t } = cols(pl), g = k === "s" && x.sd ? (x.d < 0 ? (x.sd > 0 ? "\u2199" : "\u2198") : (x.sd > 0 ? "\u2196" : "\u2197")) : GLY[k]; return `<button class="n2-pc" data-id="${esc(pl.id)}" data-dk="${k}:${esc(pl.id)}" style="--pc:${esc(c)};--pt:${esc(t)}" aria-label="${esc(pl.name)}, ${mDist(x.d)}${k === "s" && x.sd ? `, on your ${x.sd > 0 ? "left" : "right"}${x.d < 0 ? ", just passed" : ""}` : ""}"><span class="n2-pic">${pic(pl)}<em class="n2-dch">${g}</em></span><b class="n2-nm">${esc(pl.name)}</b><span class="n2-dist mono">${mDist(x.d)}</span></button>`; };
       const qpill = (qq) => `<span class="n2-q" style="--qc:${QCOL[qq] || "#FED012"}">${esc(qq ? QNAME[qq] : "Cromatic City")}</span>`;
       let h = `<header>${qpill(q)}<span class="n2-sub mono">${q ? "NEARBY IN THIS QUARTER" : "BETWEEN THE QUARTERS"}</span></header>`;
       if (auto) { const pl = auto.pl && !auto.pl.tap ? auto.pl : null, cc = pl ? cols(pl) : { c: "#FED012", t: "#111" }; h += `<div class="n2-auto" style="--pc:${esc(cc.c)};--pt:${esc(cc.t)}">${pl ? `<span class="n2-pic sm">${pic(pl)}</span>` : ""}<span class="n2-at"><i class="mono">${auto.rev ? "BACKING UP TO" : "DRIVING YOU TO"}</i><b>${esc(pl ? pl.name : "the spot you tapped")}</b><em class="n2-dist mono" data-auto="1">${mDist(autoLeft())}</em></span><button class="n2-take">Take the wheel</button></div>`; }
@@ -2443,6 +2472,9 @@
       press: (k, down = true) => (down ? keyDown(k) : keyUp(k)),
       quarterAt, vehLow: () => H.vehLow?.(), lamps: (on) => H.reverseLamps(on), treeH: (x, z) => treeAt()(x, z), trees: () => (H.trees?.() || []).length,
       place: (id) => H.places.find((p) => p.id === id),
+      pl: () => PL.map((p) => ({ id: p.pl.id, name: p.pl.name, x: p.x, z: p.z, bx: p.pl.px ?? p.x, bz: p.pl.pz ?? p.z, e: p.e, s: Math.round(p.s), ax: Math.round(p.ax), az: Math.round(p.az), q: p.q, hide: p.hide })), // r201: tests (Nearby balance)
+      rows: () => [...panel.querySelectorAll(".n2-pc")].map((b) => b.dataset.dk), // r201: tests
+      copNow: () => { COP.log.push([performance.now(), 5]); }, // r201: tests (the chase without four seconds of drifting by script)
       state: () => { const L = curL(), dec = nextDecision(L); return { v: Math.round(D.v), L: Math.round(L), car: [Math.round(H.carPos.x), Math.round(H.carPos.z)], dec: dec && { type: dec.type, in: Math.round(dec.L - L), ex: dec.ex && { l: !!dec.ex.l, s: !!dec.ex.s, r: !!dec.ex.r }, side: dec.side }, auto: D.auto && (D.auto.pl?.id || "tap"), q: quarterAt(H.carPos.x, H.carPos.z), hint: hintEl.textContent, card: H.cardOpen(), keys: { ...D.keys }, yaw: +H.mapView.yaw.toFixed(2), hd: +H.heading().toFixed(2) }; }
     };
     window.__nav2 = api; // for tests
