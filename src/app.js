@@ -26123,8 +26123,12 @@ void main() {
         ctx.strokeText("I O N", w / 2, h * 0.58); ctx.fillStyle = "#FED012"; ctx.fillText("I O N", w / 2, h * 0.58); }
       };
       // beta 3.44 (Daniel): the game is now "2 MINUTES 2 FIGHT w/ I O N": the cabinet's screen and marquee say so
-      const scrTex = paint(64, 48, (ctx) => { title(ctx, 64, 48, 0); ctx.font = "900 8px ui-monospace, Menlo, monospace"; ctx.fillStyle = "#f3eefe"; ctx.fillText("2 MINUTES", 32, 9); ctx.strokeStyle = "#c6402e"; ctx.lineWidth = 2; ctx.strokeText("2 FIGHT", 32, 20); ctx.fillStyle = "#FED012"; ctx.fillText("2 FIGHT", 32, 20); ctx.font = "900 13px ui-monospace, Menlo, monospace"; ctx.strokeText("I O N", 32, 37); ctx.fillText("I O N", 32, 37); ctx.font = "700 6px ui-monospace, Menlo, monospace"; ctx.fillStyle = "#f3eefe"; ctx.fillText("w/", 9, 37); });
-      const marTex = paint(64, 24, (ctx) => { title(ctx, 64, 24, 0); ctx.font = "900 8px ui-monospace, Menlo, monospace"; ctx.lineWidth = 2; ctx.strokeStyle = "#c6402e"; for (const [s2, y] of [["2 MINUTES", 8], ["2 FIGHT", 17]]) { ctx.strokeText(s2, 32, y); ctx.fillStyle = "#FED012"; ctx.fillText(s2, 32, y); } });
+      // the game's own hand-drawn 2 (a round top, the diagonal, a flat base), one pixel a cell, with its dark edge
+      const TWO = ["..###..", ".##.##.", "##...##", "....##.", "..###..", ".##....", "#######"];
+      const two = (ctx, x0, y0) => { for (const [col, o] of [["#7a1a10", 1], ["#FED012", 0]]) { ctx.fillStyle = col; TWO.forEach((r, y) => [...r].forEach((ch, x) => { if (ch === "#") ctx.fillRect(x0 + x + o, y0 + y + o, 1, 1); })); } };
+      const word = (ctx, s2, x, y, fill) => { ctx.textAlign = "left"; ctx.lineWidth = 2; ctx.strokeStyle = "#c6402e"; ctx.strokeText(s2, x, y); ctx.fillStyle = fill; ctx.fillText(s2, x, y); };
+      const scrTex = paint(64, 48, (ctx) => { title(ctx, 64, 48, 0); ctx.font = "900 8px ui-monospace, Menlo, monospace"; two(ctx, 4, 3); word(ctx, "MINUTES", 14, 7, "#f3eefe"); two(ctx, 4, 14); word(ctx, "FIGHT", 14, 18, "#FED012"); ctx.textAlign = "center"; ctx.font = "900 13px ui-monospace, Menlo, monospace"; ctx.strokeText("I O N", 34, 37); ctx.fillStyle = "#FED012"; ctx.fillText("I O N", 34, 37); ctx.font = "700 6px ui-monospace, Menlo, monospace"; ctx.fillStyle = "#f3eefe"; ctx.fillText("w/", 10, 37); });
+      const marTex = paint(64, 24, (ctx) => { title(ctx, 64, 24, 0); ctx.font = "900 8px ui-monospace, Menlo, monospace"; two(ctx, 4, 1); word(ctx, "MINUTES", 14, 5, "#f3eefe"); two(ctx, 4, 12); word(ctx, "FIGHT", 14, 16, "#FED012"); });
       const purple = new MeshStandardMaterial({ color: "#2a1f4a", roughness: 0.55 }), edge = new MeshStandardMaterial({ color: "#FED012", roughness: 0.5 });
       const box = (w, h, d, m, x, y, z, rx = 0) => { const q = new Mesh(new BoxGeometry(w, h, d), m); q.position.set(x, y, z); q.rotation.x = rx; arc.add(q); return q; };
       box(15, 27, 12, purple, 0, 13.5, 0); // the cabinet

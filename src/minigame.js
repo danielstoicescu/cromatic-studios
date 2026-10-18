@@ -65,7 +65,10 @@
     ":": ".|.|#|.|.|#|.", "-": "...|...|...|###|...|...|...", "'": "#|#|.|.|.|.|.", "/": "....#|...#.|...#.|..#..|.#...|.#...|#....",
     ">": "#...|.#..|..#.|...#|..#.|.#..|#...", "<": "...#|..#.|.#..|#...|.#..|..#.|...#", "+": ".....|..#..|..#..|#####|..#..|..#..|.....",
     "x": ".....|.....|#...#|.#.#.|..#..|.#.#.|#...#", "&": ".##..|#..#.|#.#..|.#...|#.#.#|#..#.|.##.#", "(": ".#|#.|#.|#.|#.|#.|.#", ")": "#.|.#|.#|.#|.#|.#|#.",
-    "*": ".|.|.|#|.|.|.", "\u00B7": ".|.|.|#|.|.|.", "%": "##..#|##.#.|...#.|..#..|.#...|.#.##|#..##", " ": "...|...|...|...|...|...|...",
+    "*": ".|.|.|#|.|.|.", "\u00B7": ".|.|.|#|.|.|.",
+    // beta 3.44: the title's big 2, drawn by hand: a round top (no flat bar), the hook down on the left, a clear
+    // diagonal, a flat base, so slanted it still reads as a 2 and never as a Z
+    "\u2461": "..###..|.##.##.|##...##|....##.|..###..|.##....|#######", "%": "##..#|##.#.|...#.|..#..|.#...|.#.##|#..##", " ": "...|...|...|...|...|...|...",
     "^": "..#..|.###.|#.#.#|..#..|..#..|..#..|..#..", "v": "..#..|..#..|..#..|..#..|#.#.#|.###.|..#..",
     // beta 3.11: Romanian names: rows above (~ before) and below (~ after) the letter
     "\u0102": "#...#|.###.~.###.|#...#|#...#|#####|#...#|#...#|#...#", "\u0218": ".####|#....|#....|.###.|....#|....#|####.~..#..|.#...",
@@ -1510,7 +1513,7 @@
     // glowing: the two big gold 2s one over the other (the lines start from them), MINUTES in chrome on a dark sign
     // bar (the shop's own sign over its window), FIGHT in red fire, and under them, smaller, W/ I O N
     const logo = () => { const [c, x] = mk(WD, HD), s1 = 3 * RS, s2 = 4 * RS;
-      const two = logoText("2", s2, GOLD, "#d8342a"), min = logoText("MINUTES", s1, METAL, "#d8342a"), fight = logoText("FIGHT", s1, FIRE, "#fed012"), withIon = logoText("W/ I O N", 2 * RS, ["#ffffff", "#fff6b8", "#ffe14a", "#ffc21a", "#f29a14"], "#d8342a");
+      const two = logoText("\u2461", s2, GOLD, "#d8342a"), min = logoText("MINUTES", s1, METAL, "#d8342a"), fight = logoText("FIGHT", s1, FIRE, "#fed012"), withIon = logoText("W/ I O N", 2 * RS, ["#ffffff", "#fff6b8", "#ffe14a", "#ffc21a", "#f29a14"], "#d8342a");
       const at = (t2, sc, x0, bottom) => x.drawImage(t2.c, Math.round(x0), Math.round(bottom - 7 * sc - (5 + 2 * sc))); // a line, its letters' foot at bottom
       const gap = 3 * RS, w1 = two.w + gap + min.w - 10, x0 = Math.round(WD / 2 - w1 / 2), b1 = 31 * RS, b2 = 62 * RS;
       x.fillStyle = OUT; x.fillRect(x0 + two.w - 6 * RS, b1 - 25 * RS, min.w + 2 * RS, 26 * RS); x.fillStyle = "#3c3d42"; x.fillRect(x0 + two.w - 5 * RS, b1 - 24 * RS, min.w, 24 * RS); x.fillStyle = "#6a6c74"; x.fillRect(x0 + two.w - 5 * RS, b1 - 24 * RS, min.w, RS); // the sign bar
