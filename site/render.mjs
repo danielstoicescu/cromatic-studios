@@ -118,9 +118,9 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   const contactForm = () => `
   <form class="bform" id="bform" novalidate>
     <div class="bf-strip mono"><span>Cromatic Air</span><span>Flight CS-99</span><span>Olari 9 → your brand</span><span>Seat 1A</span></div>
-    <fieldset><legend>What do you dream of?</legend><div class="chips" data-name="dreams" data-multi="1">${FORM.dreams.map((d) => `<button type="button" class="chip" aria-pressed="false">${esc(d)}</button>`).join("")}</div></fieldset>
-    <fieldset><legend>What kind of business are you?</legend><div class="chips" data-name="biz">${FORM.biz.map((d) => `<button type="button" class="chip" aria-pressed="false">${esc(d)}</button>`).join("")}</div></fieldset>
-    <fieldset><legend>When do you want to take off?</legend><div class="chips" data-name="when">${FORM.when.map((d) => `<button type="button" class="chip" aria-pressed="false">${esc(d)}</button>`).join("")}</div></fieldset>
+    <fieldset><legend>What do you dream of?</legend><div class="chips" data-name="dreams" data-multi="1">${FORM.dreams.map((d) => `<button type="button" class="chip" aria-pressed="false" data-v="${esc(d)}">${esc(d)}</button>`).join("")}</div></fieldset>
+    <fieldset><legend>What kind of business are you?</legend><div class="chips" data-name="biz">${FORM.biz.map((d) => `<button type="button" class="chip" aria-pressed="false" data-v="${esc(d)}">${esc(d)}</button>`).join("")}</div></fieldset>
+    <fieldset><legend>When do you want to take off?</legend><div class="chips" data-name="when">${FORM.when.map((d) => `<button type="button" class="chip" aria-pressed="false" data-v="${esc(d)}">${esc(d)}</button>`).join("")}</div></fieldset>
     <div class="bf-row">
       <label><span>Your name</span><input name="name" autocomplete="name" required></label>
       <label><span>Email</span><input name="email" type="email" autocomplete="email" required></label>

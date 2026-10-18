@@ -214,7 +214,7 @@
     g.addEventListener("click", (e) => {
       const b = e.target.closest(".chip");
       if (!b) return;
-      const v = b.textContent.trim(), on = b.getAttribute("aria-pressed") !== "true";
+      const v = b.dataset.v || b.textContent.trim(), on = b.getAttribute("aria-pressed") !== "true"; // beta 3.46 r215 (Daniel, QA pass): data-v = the English chip, so the Romanian page's pass maps to the same codes (it got TBD, "Open Class", "When you are ready")
       if (multi) { b.setAttribute("aria-pressed", String(on)); pick[name] = on ? [...pick[name], v] : pick[name].filter((x) => x !== v); }
       else { g.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", String(on)); pick[name] = on ? v : ""; }
     });
@@ -225,6 +225,11 @@
   const BOARD = { "Yesterday :)": "Now boarding", "1 - 3 months": "In 1–3 months", "Just exploring": "Open ticket" };
   const MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
   const status = f.querySelector(".bf-status");
+  // beta 3.46 r215 (Daniel, QA pass): the form's messages in Romanian on the Romanian pages (the pass keeps its Cromatic Air English)
+  const RO = (root.lang || "").slice(0, 2) === "ro";
+  const T = RO
+    ? { name: "Ne-ar plăcea să știm cum te cheamă.", mail: "Adresa de email nu pare corectă.", printing: "Îți tipărim biletul de îmbarcare…", busy: "Prea multe bilete de aici, deocamdată. Scrie-ne la hi@cromaticstudios.com și îți răspundem.", hello: "Bine ai venit la bord,", sent: "Biletul e deja în inboxul tău și îți răspundem într-o zi lucrătoare.", mailto: "Aplicația ta de email ar trebui să se deschidă cu detaliile; trimite-le și îți răspundem într-o zi lucrătoare." }
+    : { name: "We'd love to know your name.", mail: "That email doesn't look right.", printing: "Printing your boarding pass…", busy: "Too many passes from here for now. Write to hi@cromaticstudios.com and we'll answer.", hello: "Welcome aboard,", sent: "Your pass is in your inbox, and we'll answer within one working day.", mailto: "Your email app should open with the details; send it and we'll answer within one working day." };
   const bars = (ref) => { let x = 0, s = ""; for (let i = 0; i < 44; i++) { const c = ref.charCodeAt(i % ref.length) * (i + 3), w = 1 + (c % 3); s += `<rect x="${x}" y="0" width="${w}" height="40"/>`; x += w + 1 + ((c >> 2) % 2); } return `<svg viewBox="0 0 ${x} 40" preserveAspectRatio="none" aria-hidden="true">${s}</svg>`; };
 
   f.addEventListener("submit", async (e) => {
@@ -234,7 +239,7 @@
     f.elements.name.setAttribute("aria-invalid", String(!name));
     const okMail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
     f.elements.email.setAttribute("aria-invalid", String(!okMail));
-    if (!name || !okMail) { status.textContent = !name ? "We'd love to know your name." : "That email doesn't look right."; (!name ? f.elements.name : f.elements.email).focus(); return; }
+    if (!name || !okMail) { status.textContent = !name ? T.name : T.mail; (!name ? f.elements.name : f.elements.email).focus(); return; }
     const now = new Date();
     let h = 2166136261;
     for (const ch of `${name}|${email}|${now.getTime()}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
@@ -249,12 +254,12 @@
       company_site: v("company_site")
     };
     const btn = f.querySelector("button[type=submit]");
-    btn.disabled = true; status.textContent = "Printing your boarding pass…";
+    btn.disabled = true; status.textContent = T.printing;
     let sent = false;
     try {
       const r = await fetch("/api/boarding", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(t) });
       sent = r.ok;
-      if (r.status === 429) { status.textContent = "Too many passes from here for now. Write to hi@cromaticstudios.com and we'll answer."; btn.disabled = false; return; }
+      if (r.status === 429) { status.textContent = T.busy; btn.disabled = false; return; }
     } catch {}
     if (!sent) {
       // no server (or it failed): hand it to the visitor's email app instead
@@ -266,7 +271,7 @@
     pass.className = "pass"; pass.setAttribute("role", "status"); pass.tabIndex = -1;
     pass.innerHTML = `<div class="pass-main">
       <div class="pass-head mono"><span>✳ Cromatic Air</span><b>Boarding pass</b><span>Booking ${esc(t.ref)}</span></div>
-      <p class="pass-hello">Welcome aboard, <b>${esc(t.first)}</b>. ${sent ? "Your pass is in your inbox, and we'll answer within one working day." : "Your email app should open with the details; send it and we'll answer within one working day."}</p>
+      <p class="pass-hello">${T.hello} <b>${esc(t.first)}</b>. ${sent ? T.sent : T.mailto}</p>
       <div class="pass-route">${legs.map(([c, n], i) => `<span class="${i === 0 || i === legs.length - 1 ? "end" : ""}"><b>${esc(c)}</b><i>${esc(n)}</i></span>`).join('<span class="hop">· · ✈ · ·</span>')}</div>
       <div class="pass-grid">
         <span><small>PASSENGER</small>${esc(t.name)}</span><span><small>FLIGHT</small>${esc(t.flight)}</span>

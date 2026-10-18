@@ -26136,7 +26136,9 @@ void main() {
       box(15, 2.2, 7, purple, 0, 15.4, 7.2, 0.32); // the control panel
       for (const [bx, c] of [[-3.2, "#F65342"], [0.2, "#FED012"], [3.4, "#119BFE"]]) { const b = new Mesh(new CylinderGeometry(0.9, 0.9, 0.9, 10), new MeshStandardMaterial({ color: c, roughness: 0.4 })); b.position.set(bx, 16.8, 7.8); arc.add(b); }
       mats.arcGlow = new MeshStandardMaterial({ map: scrTex, emissive: "#ffffff", emissiveMap: scrTex, emissiveIntensity: 0.55, roughness: 0.3 });
-      const scr = new Mesh(new PlaneGeometry(11.6, 8.7), mats.arcGlow); scr.position.set(0, 22.6, 6.15); scr.rotation.x = -0.14; arc.add(scr);
+      // beta 3.46 r215 (Daniel, QA pass): the screen leaned back 0.14 from z 6.15, so its top third (the title's "2 MINUTES"
+      // and "2 FIGHT") went behind the cabinet's face (z 6); a lighter lean a little further out keeps all of it in front
+      const scr = new Mesh(new PlaneGeometry(11.6, 8.7), mats.arcGlow); scr.position.set(0, 22.6, 6.45); scr.rotation.x = -0.06; arc.add(scr);
       box(15.4, 5.4, 3.4, purple, 0, 30.4, 4.6); // the marquee's box, its lit face in front
       const mar = new Mesh(new PlaneGeometry(14.2, 4.6), new MeshStandardMaterial({ map: marTex, emissive: "#ffffff", emissiveMap: marTex, emissiveIntensity: 0.65, roughness: 0.3 })); mar.position.set(0, 30.4, 6.35); arc.add(mar);
       for (const o of [scr, mar]) o.material.userData.outlineParameters = { visible: false };
@@ -34583,7 +34585,7 @@ void main() {
       const sp = btn.querySelector("span"); sp.textContent = "Link copied"; btn.classList.add("done");
       clearTimeout(btn._t); btn._t = setTimeout(() => { sp.textContent = "Share"; btn.classList.remove("done"); }, 1800);
     };
-    const closeFrame = () => { caseFrame._url = null; caseFrame._anim?.cancel(); caseFrame.classList.add("hidden"); document.body.classList.remove("scf-open"); blankFrame(); }; // r137a: _anim = the grow-in from the place card
+    const closeFrame = () => { caseFrame._url = null; caseFrame._anim?.cancel(); caseFrame.classList.add("hidden"); caseFrame.classList.remove("cf-side"); document.body.classList.remove("scf-open"); blankFrame(); }; // r137a: _anim = the grow-in from the place card; beta 3.46 r215: cf-side = the game sideways
     // a case page inside the map asks for the boarding pass ("Ready for boarding")
     window.addEventListener("message", (e) => {
       if (e.origin !== location.origin || !e.data || e.data.cz !== "boarding") return;
@@ -34624,10 +34626,22 @@ void main() {
         nf.addEventListener("load", () => { try { const l = nf.contentWindow.location; if (nf.isConnected && /^\/(ro\/)?(work|proiecte)\//.test(l.pathname)) caseFrame._url = l.pathname; } catch {} });
         // beta 3.1 (Daniel): the mini-game takes the keys as soon as it is there
         if (/^\/play\//.test(url)) nf.addEventListener("load", () => { try { nf.focus(); nf.contentWindow.focus(); } catch {} });
+        // beta 3.46 r215 (Daniel, QA pass): a phone held upright playing sideways has the game's own speaker and MENU at the
+        // screen's top right, right under this ×, so a tap on the speaker closed the game; while the game is sideways
+        // (its root has .mg-sideways) the × moves to the bottom right, an empty corner of the sideways game
+        if (/^\/play\//.test(url)) nf.addEventListener("load", () => {
+          try {
+            const d = nf.contentDocument;
+            const sync = () => { if (nf.isConnected) caseFrame.classList.toggle("cf-side", !!d.querySelector(".mg-sideways")); };
+            new MutationObserver(sync).observe(d.body, { subtree: true, attributes: true, attributeFilter: ["class"] });
+            sync();
+          } catch {}
+        });
         fr.replaceWith(nf); fr = nf;
       }
       caseFrame._url = /^\/(ro\/)?(work|proiecte|play)\//.test(url) ? (() => { const u = new URL(url, location.origin); u.searchParams.delete("embed"); u.searchParams.delete("from"); return u.pathname + u.search; })() : null; // r161 (beta 3.1: and the game's own address; r211: without its ?from= either, so a shared link stays clean)
       caseFrame.classList.toggle("cf-game", /^\/play\//.test(url)); // beta 3.1: a dark frame, no Share button
+      if (!/^\/play\//.test(url)) caseFrame.classList.remove("cf-side"); // beta 3.46 r215: the × back in its corner for a case page
       fr.title = `${title} \u2014 Cromatic Studios`;
       caseFrame.classList.remove("hidden");
       document.body.classList.add("scf-open");
@@ -36023,7 +36037,7 @@ void main() {
         }
         return placeShotCache[key];
       }
-      var worldPrevCache = { key: null, urls: [] }, worldPrevBusy = false;
+      var worldPrevCache = { key: null, urls: [] }, worldPrevBusy = false, worldPrevNow = false; // beta 3.46 r215 (Daniel, QA pass): worldPrevNow = a preview's own scheme switch (not the visitor's)
       function makeWorldPreviews(onEach) {
         const key = Math.round(state.L / 600) + (state.branchChosen ? state.branch : "-");
         if (worldPrevCache.key === key) { worldPrevCache.urls.forEach((u, i) => u && onEach(i, u)); return; }
@@ -36040,6 +36054,7 @@ void main() {
         const step = () => {
           if (i >= SCHEMES.length) { worldPrevBusy = false; return; }
           const orig = state.schemeIdx, sch = SCHEMES[i];
+          worldPrevNow = true;
           try {
             applyScheme(i);
             // aim at the road ahead of the car
@@ -36077,6 +36092,7 @@ void main() {
             sky.position.copy(camera.position);
             // repaint the real view at once, so the swap never reaches the screen
             if (mvK > 0.5) tiltShiftRender(performance.now()); else outline.render(scene, camera);
+            worldPrevNow = false;
           }
           i++;
           requestAnimationFrame(step);
@@ -36411,7 +36427,8 @@ void main() {
       }
       function applyScheme(idx) {
         paintWorldBtn();
-        if (state.schemeIdx != null && state.schemeIdx !== idx && !onbWarm) czEv("world_change", { world: SCHEMES[idx]?.id }); // r141: not the warm-up
+        if (state.schemeIdx != null && state.schemeIdx !== idx && !onbWarm && !worldPrevNow) czEv("world_change", { world: SCHEMES[idx]?.id }); // r141: not the warm-up
+        // beta 3.46 r215 (Daniel, QA pass): nor the Multiverse card's previews, which ran every world and back (16 world_change per opening)
         state.schemeIdx = idx;
         const s = SCHEMES[idx];
         warmShaders(); // r139b

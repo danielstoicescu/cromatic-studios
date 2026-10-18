@@ -202,7 +202,8 @@ body:has(.map-welcome:not(.hidden)) .nav2-ui .n2-panel { opacity: 0; pointer-eve
 /* beta 2.9: phone rules key on body.n2-phone (set by nav2: a narrow screen, or a phone held sideways) */
 body.n2-phone .n2-panel { display: none !important; }
 body.n2-phone:not(.nav2-street) .n2-pad { display: none; }
-body.n2-phone:not(.nav2-street):not(.n2-tour):not(.n2-driving-auto):not(.n2-card) .n2-taphint { display: block; position: fixed; z-index: 24; right: 12px; bottom: calc(30px + env(safe-area-inset-bottom, 0px)); max-width: 190px; text-align: center; font-size: 10px; letter-spacing: .14em; font-weight: 700; line-height: 1.35; padding: 9px 14px; border-radius: 999px; background: #fff; color: #141414; border: 2px solid #141414; box-shadow: 2px 3px 0 #141414; pointer-events: none; }
+/* beta 3.46 r215 (Daniel, QA pass): the tap hint is not shown over the Olari 9 card (it covered its e-mail button on a phone) */
+body.n2-phone:not(.nav2-street):not(.n2-tour):not(.n2-driving-auto):not(.n2-card):not(.olari-open) .n2-taphint { display: block; position: fixed; z-index: 24; right: 12px; bottom: calc(30px + env(safe-area-inset-bottom, 0px)); max-width: 190px; text-align: center; font-size: 10px; letter-spacing: .14em; font-weight: 700; line-height: 1.35; padding: 9px 14px; border-radius: 999px; background: #fff; color: #141414; border: 2px solid #141414; box-shadow: 2px 3px 0 #141414; pointer-events: none; }
 body.n2-phone:not(.nav2-street) .map-zoom { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 
 /* beta 2.6 (Daniel): the Ride button's ride fills its thumbnail; the Multiverse button is the world you are in (its
@@ -283,6 +284,9 @@ body.nav2:has(.crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:no
 body:has(.case-frame:not(.hidden), .crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:not(.hidden), .theme-menu.open) .n2-guide,
 body:is(.modal-open, .scf-open, .map-boarding, .menu-open) .n2-guide { opacity: 0 !important; pointer-events: none !important; }
 @media (min-width: 720px) { body.nav2 #cz-ck { bottom: 92px; } }
+/* beta 3.46 r215 (Daniel, QA pass): on a first visit the cookie card came up over the welcome card (on a laptop over its
+   start buttons, on a phone over its title); it now waits while the welcome card is open and shows once it closes */
+body.nav2:not(.kz-intro):has(.map-welcome:not(.hidden)) #cz-ck { opacity: 0 !important; pointer-events: none !important; }
 /* beta 2.91 (usage pass): "Skip intro" could not be pressed while the opening's first line was up: the page's own
    pre-painted line (.i4-pre, adopted by the intro) lay over it, full screen, so the tap only jumped one beat */
 .i4-pre { pointer-events: none; }

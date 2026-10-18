@@ -2824,6 +2824,10 @@ body.dock-on .map-dock { opacity: 1; pointer-events: auto; translate: -50% 0; }
   background: var(--card-bg); color: var(--fg); border: 1px solid var(--st-ink, #111); box-shadow: 0 22px 46px -18px rgba(40,20,40,.55);
   transition: opacity .35s, transform .45s cubic-bezier(.34,1.4,.64,1); }
 .map-card.hidden { opacity: 0; transform: translateY(18px) scale(.97); pointer-events: none; }
+/* beta 3.46 r215 (Daniel, QA pass): and its buttons too. ".ui-root :where(button)" gives every button pointer-events: auto,
+   so a closed card's invisible buttons still took taps where they had been: on a phone a tap on the map there opened the
+   last case page again, and on the boarding pass "I want to come on board" opened it instead of sending the pass */
+.map-card.hidden * { pointer-events: none !important; }
 .mcd-eyebrow { display: block; font-size: 9px; letter-spacing: .16em; opacity: .65; margin-bottom: 8px; font-weight: 700; }
 .mcd-title { display: inline-block; padding: 6px 14px 7px; border-radius: 14px; background: var(--pc); color: var(--pt); border: 1px solid var(--st-ink, #111);
   font: 900 24px/1.05 CromaticSans, CromaticSans, sans-serif; letter-spacing: -.02em; margin-bottom: 12px; transform: rotate(-1.5deg); }
@@ -3174,6 +3178,7 @@ body.map-mode .coffee-card { top: calc(132px + env(safe-area-inset-top, 0px)) !i
 
 /* r107: the services fly out of Olari 9 */
 body.olari-open .map-dock, body.olari-open .map-zoom { opacity: 0; pointer-events: none; }
+body.olari-open :is(.map-dock, .map-zoom) * { pointer-events: none !important; } /* beta 3.46 r215 (QA pass): the hidden zoom buttons took taps over the Olari 9 card */
 .olari-fan { position: fixed; inset: 0; z-index: 30; pointer-events: none; display: grid; grid-template-columns: repeat(4, minmax(0, 250px)); justify-content: center; align-content: center; gap: 18px; padding: 120px 24px 140px; }
 .olari-fan > * { pointer-events: auto; }
 .olari-card { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 18px 18px 20px; border-radius: 24px; background: var(--sc); color: #111; border: 1px solid #111;
@@ -4923,6 +4928,8 @@ body.scheme-sketch .map-card .mcd-actions.mcd-two .mcd-play { background-color: 
 .coffee-btn.lab-play { background: #C6402E; color: #fff; }
 .case-frame.cf-game, .case-frame.cf-game .cf-iframe { background: #0b0816; }
 .case-frame.cf-game .cf-share { display: none; }
+/* beta 3.46 r215 (Daniel, QA pass): the game played sideways on an upright phone has its speaker and MENU under the ×: the × goes to the bottom right */
+.case-frame.cf-game.cf-side .cf-close { top: auto; bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
 
 /* beta 3.16 (Daniel): the mini-game is played sideways on a phone: no "turn your phone back" over its frame */
 body:has(.case-frame.cf-game:not(.hidden)) .rotate-lock { display: none !important; }
@@ -4957,6 +4964,12 @@ body.scheme-sketch .map-card .mcd-actions .mcd-fight::before { display: none !im
 .map-card .mcd-img .mg-tm img { display: block; height: 37px !important; width: auto !important; max-width: none; transform: none !important; object-fit: contain !important; image-rendering: auto !important; }
 body.scheme-sketch .map-card.mcd-game { background: #170f19 !important; border: 1px solid #141414 !important; border-radius: 24px !important; overflow: hidden !important; }
 @media (max-width: 720px) { .mg-tm { width: 46px; height: 46px; left: 8px; top: 8px; } .map-card .mcd-img .mg-tm img { height: 29px !important; } }
+/* beta 3.46 r215 (Daniel, QA pass): the 3.44 picture has the title at its top left, under the TWO MIN badge (it hid both 2s) and,
+   on a phone, cut at the top: the picture now hangs from its top edge, and the badge goes to the bottom right (a laptop's
+   tall picture) or the top right (a phone's wide one) */
+.map-card.mcd-game .mcd-img img { object-position: 8% 0; }
+.map-card.mcd-game .mg-tm { left: auto; top: auto; right: 10px; bottom: 10px; }
+@media (max-width: 720px) { .map-card.mcd-game .mcd-img img { object-position: 50% 0; } .map-card.mcd-game .mg-tm { bottom: auto; top: 8px; right: 8px; } }
 .mcd-fight .mf-txt { min-width: 0; max-width: 100%; height: auto; flex: 0 1 auto; }
 /* the phone's compact Street card (r179): the words take the whole button, no glove */
 body.n2-phone.nav2-street .map-card .mcd-fight { min-height: 44px; padding: 7px 10px 9px !important; }
