@@ -338,10 +338,12 @@
     }
     return 0;
   };
-  // beta 3.38 (Daniel: "Rares, many more tattoos"): tattoos in chunky blocks of ink (a blue-black, with a touch of
-  // red and teal), shaded with the limb they are on, laid on a grid along it (key: a different pattern per limb)
-  const INK = ramp("#3e4766"), INKR = ramp("#c2413a"), INKT = ramp("#2f8f86");
-  const tattoo = (key, t, nx, ny, far) => { const u = Math.floor(t * 6), v = Math.floor((nx + 1) * 2), h = hash2(u * 7 + key * 13, v * 3 + key * 5); if (h < 0.28) return 0; const R = h > 0.91 ? INKR : h > 0.83 ? INKT : INK; return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (R === INK ? 1 : 0), 1, 4)]; };
+  // beta 3.38 (Daniel: "Rares, many more tattoos"); beta 3.39 (Daniel: "black and petrol grey only, and lighter"):
+  // small, sparse marks of ink laid on a grid along the limb, a dark petrol grey with a few black accents, let into
+  // the skin (the skin's own tone mixed with the ink, so they read as tattoos and not as patches); a different
+  // pattern per limb (key)
+  const INK = u32("#3e4c56"), INKB = u32("#16181c");
+  const tattoo = (key, t, nx, ny, far, base) => { const u = Math.floor(t * 9), v = Math.floor((nx + 1) * 2.4), h = hash2(u * 7 + key * 13, v * 3 + key * 5); if (h < 0.58) return 0; const mixc = (c1, c2, k) => { const a = [c1 & 255, (c1 >> 8) & 255, (c1 >> 16) & 255], b = [c2 & 255, (c2 >> 8) & 255, (c2 >> 16) & 255], m = a.map((q, i) => Math.round(q + (b[i] - q) * k)); return (0xff000000 | (m[2] << 16) | (m[1] << 8) | m[0]) >>> 0; }; return h > 0.93 ? mixc(base, INKB, 0.62) : mixc(base, INK, far ? 0.55 : 0.5); };
   // a limb: from a to b, its radius going from r0 to r1 with a swell (the muscle) peaking at "at" along it
   function limb(F, a, b, r0, r1, swell, at, mat, group) {
     const vx = b[0] - a[0], vy = b[1] - a[1], l2 = vx * vx + vy * vy || 1, R = Math.max(r0, r1) + swell, ul = Math.sqrt(l2), ux = vx / ul, uy = vy / ul;
@@ -953,7 +955,7 @@
         if (L.topKind === "varsity" && seg === 1 && t > 0.82) return (far ? back : tone)(ramp(L.top), nx, ny); // the knit cuff
         if (seg === 1 && t > 0.8 && R === SK && !L.hands) return (far ? back : tone)(ramp(WRAP), nx, ny); // the tape up the wrist
         if (L.sleeve === "rolled" && seg === 1 && Math.abs(t - 0.4) < 0.06) return TOP[far ? 4 : 3]; // the rolled cuff
-        if (L.topKind === "fleece" && R === TOP && R === SLV) { const fz = hash2(px * 7.3, py * 5.1); return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (fz > 0.72 ? 1 : fz < 0.12 ? -1 : 0), 0, 4)]; } if (L.tattoo && R === SK && (seg === 1 ? t > 0.06 && t < 0.8 : t > sleeveTo + 0.04)) { const c = tattoo(seg + (far ? 2 : 0), t, nx, ny, far); if (c) return c; } // beta 3.38: tattoo sleeves, the upper arm below the sleeve and the forearm
+        if (L.topKind === "fleece" && R === TOP && R === SLV) { const fz = hash2(px * 7.3, py * 5.1); return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (fz > 0.72 ? 1 : fz < 0.12 ? -1 : 0), 0, 4)]; } if (L.tattoo && R === SK && (seg === 1 ? t > 0.06 && t < 0.8 : t > sleeveTo + 0.04)) { const c = tattoo(seg + (far ? 2 : 0), t, nx, ny, far, SK[clamp(toneOf(nx, ny) + (far ? 1 : 0), 0, 4)]); if (c) return c; } // beta 3.38: tattoo sleeves, the upper arm below the sleeve and the forearm
         // beta 3.30: the muscle drawn in: the line between biceps and triceps, the deltoid's edge, the forearm's ridge; on a sleeve, the creases at the elbow
         let ex2 = 0;
         if (R === SK) { if (seg === 0 && t > 0.32 && t < 0.86 && Math.abs(nx - 0.05) < 0.12) ex2 = 1; if (seg === 0 && t > 0.24 && t < 0.32 && nx > -0.3) ex2 = 1; if (seg === 1 && t > 0.1 && t < 0.62 && Math.abs(nx + 0.28) < 0.11) ex2 = 1; }
@@ -988,10 +990,13 @@
       };
       const thighMat = (nx, ny, t) => (L.cargo && t > 0.45 && t < 0.78 && nx < -0.1 && nx > -0.85 ? R[far ? 4 : t < 0.5 ? 1 : 3] : L.canvas && t > 0.6 && nx > -0.2 && Math.abs(t - 0.62) < 0.03 ? R[far ? 4 : 3] : mat(nx, ny, t)); // the cargo pocket; the canvas trousers' double front
       // beta 3.38: knee-length shorts (Rares): the thigh in the trousers' cloth with a hem at the knee, the shin bare, tattooed
-      const shinSkin = (nx, ny, t) => { if (L.tattoo && t > 0.1 && t < 0.72) { const c = tattoo(4 + (far ? 1 : 0), t, nx, ny, far); if (c) return c; } return SK[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (t > 0.12 && t < 0.55 && Math.abs(nx - 0.3) < 0.12 ? 1 : 0), 0, 4)]; };
+      const shinSkin = (nx, ny, t) => { const base = SK[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (t > 0.12 && t < 0.55 && Math.abs(nx - 0.3) < 0.12 ? 1 : 0), 0, 4)]; if (L.tattoo && t > 0.14 && t < 0.72) { const c = tattoo(4 + (far ? 1 : 0), t, nx, ny, far, base); if (c) return c; } return base; };
       const shinMat = (nx, ny, t) => (L.ankle && t > 0.78 ? (far ? back : tone)(ramp(L.ankle), nx, ny) : L.shorts ? shinSkin(nx, ny, t) : mat(nx, ny, t, CURX, CURY, true));
-      const thighM = L.shorts ? (nx, ny, t) => (t > 0.9 ? PA[far ? 4 : 3] : thighMat(nx, ny, t)) : thighMat;
-      limb(F, r, k, (6.2 + loose) * lg, (5 + loose) * lg, (bare ? 1.4 : 1) * lg, 0.5, thighM, g); // solid thighs, the swell mid-way (not at the seat)
+      // beta 3.39 (Daniel: "nicer shorts, finished at the hem"): a turned-up hem at the knee, square to the leg in every
+      // pose: its lit fold on top, the cuff, its shadowed edge; the cloth a little looser, falling in a fold or two
+      const thighM = L.shorts ? (nx, ny, t) => (t > 0.95 ? PA[far ? 5 : 4] : t > 0.8 ? PA[clamp((t < 0.85 ? 0 : 2) + (far ? 1 : 0) + (nx < -0.55 ? 1 : 0), 0, 4)] : t > 0.76 ? PA[far ? 5 : 4] : thighMat(nx, ny, t)) : thighMat; // the crease, the lit roll of the cuff, the cuff, its dark edge
+      const tl = L.shorts ? loose + 0.6 : loose;
+      limb(F, r, k, (6.2 + tl) * lg, (5.4 + tl) * lg, (bare ? 1.4 : 1) * lg, 0.5, thighM, g); // solid thighs, the swell mid-way (not at the seat)
       const sl = L.shorts ? 0 : loose; // a bare shin is the leg's own width
       limb(F, k, [f[0], f[1] - 4 * U], (5 + sl) * lg, (3.4 + sl * (L.hem || 1.2)) * lg, (bare || L.shorts ? 1.3 : 0.6) * lg, 0.28, shinMat, g); // the calf high
       const fq = Math.min(1, B.sc * 1.1) * U * FOOT; // the feet keep to the size of the person (beta 3.33: bigger, as the arcade fighters' are)
@@ -2531,22 +2536,29 @@
     const stop = (e) => e.preventDefault();
     for (const ev of ["gesturestart", "gesturechange", "gestureend", "dblclick"]) document.addEventListener(ev, stop, { passive: false });
     let lastEnd = 0;
-    document.addEventListener("touchend", (e) => { if (e.timeStamp - lastEnd < 350) e.preventDefault(); lastEnd = e.timeStamp; }, { passive: false });
-    document.addEventListener("touchmove", (e) => { if (e.touches.length > 1 || (e.scale && e.scale !== 1)) e.preventDefault(); }, { passive: false });
+    document.addEventListener("touchend", (e) => { if (e.cancelable && e.timeStamp - lastEnd < 350) e.preventDefault(); lastEnd = e.timeStamp; }, { passive: false }); // beta 3.39: only what can be cancelled (no console warnings)
+    document.addEventListener("touchmove", (e) => { if (e.cancelable && (e.touches.length > 1 || (e.scale && e.scale !== 1))) e.preventDefault(); }, { passive: false });
   })();
   function buildControls() {
-    // the d-pad: one surface, 8 directions from where the thumb is
-    const pad = document.createElement("div"); pad.className = "mg-dpad"; pad.setAttribute("aria-label", "Move");
-    pad.innerHTML = '<i class="u"></i><i class="d"></i><i class="l"></i><i class="r"></i><b></b>';
+    // beta 3.39 (Daniel: "a circle joystick, as on the map"): a filled knob in a ring. The knob follows the thumb inside
+    // the ring (held to its edge) and springs back to the middle when let go; what it gives is the d-pad's eight ways
+    // (up, down, left, right and the diagonals, a small dead zone in the middle), so crouch, jump, block (hold away)
+    // and the down+kick sweep work as before; the way being pushed lights its arrow on the ring
+    const pad = document.createElement("div"); pad.className = "mg-dpad mg-stick"; pad.setAttribute("aria-label", "Move");
+    pad.innerHTML = '<span class="ring"></span><i class="u"></i><i class="d"></i><i class="l"></i><i class="r"></i><span class="knob"></span>';
+    const knob = pad.querySelector(".knob");
     let pid = null;
     const setDir = (e) => {
-      const r = pad.getBoundingClientRect(), [ccx, ccy] = toLocal(r.left + r.width / 2, r.top + r.height / 2), [ex, ey] = toLocal(e.clientX, e.clientY), dx = ex - ccx, dy = ey - ccy, dz = Math.max(r.width, r.height) * 0.14;
+      const r = pad.getBoundingClientRect(), [ccx, ccy] = toLocal(r.left + r.width / 2, r.top + r.height / 2), [ex, ey] = toLocal(e.clientX, e.clientY), k = (SIDEWAYS ? r.height : r.width) / (pad.offsetWidth || 1);
+      let dx = (ex - ccx) / k, dy = (ey - ccy) / k; const R = pad.offsetWidth * 0.32, l = Math.hypot(dx, dy);
+      if (l > R) { dx *= R / l; dy *= R / l; }
+      knob.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
       const want = { l: 0, r: 0, u: 0, d: 0 };
-      if (Math.hypot(dx, dy) > dz) { const an = Math.atan2(dy, dx), oct = Math.round(an / (Math.PI / 4)); want.r = [0, 1, -1].includes(oct) ? 1 : 0; want.l = [4, -4, 3, -3].includes(oct) ? 1 : 0; want.d = [1, 2, 3].includes(oct) ? 1 : 0; want.u = [-1, -2, -3].includes(oct) ? 1 : 0; }
-      for (const k of ["l", "r", "u", "d"]) { if (want[k]) press(k); else release(k); pad.classList.toggle("on-" + k, !!want[k]); }
+      if (l > R * 0.3) { const an = Math.atan2(dy, dx), oct = Math.round(an / (Math.PI / 4)); want.r = [0, 1, -1].includes(oct) ? 1 : 0; want.l = [4, -4, 3, -3].includes(oct) ? 1 : 0; want.d = [1, 2, 3].includes(oct) ? 1 : 0; want.u = [-1, -2, -3].includes(oct) ? 1 : 0; }
+      for (const q of ["l", "r", "u", "d"]) { if (want[q]) press(q); else release(q); pad.classList.toggle("on-" + q, !!want[q]); }
     };
-    const clear = () => { for (const k of ["l", "r", "u", "d"]) { release(k); pad.classList.remove("on-" + k); } pid = null; };
-    pad.addEventListener("pointerdown", (e) => { e.preventDefault(); pid = e.pointerId; try { pad.setPointerCapture(pid); } catch {} SND.init(); setDir(e); });
+    const clear = () => { for (const q of ["l", "r", "u", "d"]) { release(q); pad.classList.remove("on-" + q); } pid = null; pad.classList.remove("held"); knob.style.transform = ""; };
+    pad.addEventListener("pointerdown", (e) => { e.preventDefault(); pid = e.pointerId; try { pad.setPointerCapture(pid); } catch {} SND.init(); pad.classList.add("held"); setDir(e); });
     pad.addEventListener("pointermove", (e) => { if (e.pointerId === pid) setDir(e); });
     for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) pad.addEventListener(ev, (e) => { if (e.pointerId === pid) clear(); });
     const btns = document.createElement("div"); btns.className = "mg-btns";
@@ -2631,7 +2643,7 @@
     try { window.focus(); } catch {}
   }
   // for tests and the review: the state, the frame rate, a shortcut to the end of a round
-  const probe = () => ({ scene: scene === "game" && g ? g.scene : scene, phase: g?.phase, round: g?.round, wins: g?.wins.slice(), hp: g?.f.map((f) => f.hp), st: g?.f.map((f) => f.st), time: g ? Math.ceil(g.time) : null, me: g?.me, cpu: g?.cpu, sel: SEL.p1, selCpu: SEL.cpu, selPhase: SEL.phase, menu: g?.menu, result: g?.result, paused, voucher: g?.voucher?.code || null, sideways: !!SIDEWAYS, rotate: !!(root && root.classList.contains("mg-rot")), fps: stats.fps, maxDt: Math.round(stats.maxDt || 0), sound: SND.on, proj: g ? g.proj.map((p) => p.k) : [], bake: stats.bake, spr: Object.assign({}, stats.spr), lazy: Math.round(stats.lazy), queue: BAKEQ.length });
+  const probe = () => ({ scene: scene === "game" && g ? g.scene : scene, phase: g?.phase, round: g?.round, wins: g?.wins.slice(), hp: g?.f.map((f) => f.hp), st: g?.f.map((f) => f.st), xs: g?.f.map((f) => Math.round(f.x)), ys: g?.f.map((f) => Math.round(f.y)), atk: g?.f.map((f) => (f.atk ? Object.keys(ATK).find((n) => ATK[n] === f.atk) || "sp" : null)), held: Object.assign({}, held), time: g ? Math.ceil(g.time) : null, me: g?.me, cpu: g?.cpu, sel: SEL.p1, selCpu: SEL.cpu, selPhase: SEL.phase, menu: g?.menu, result: g?.result, paused, voucher: g?.voucher?.code || null, sideways: !!SIDEWAYS, rotate: !!(root && root.classList.contains("mg-rot")), fps: stats.fps, maxDt: Math.round(stats.maxDt || 0), sound: SND.on, proj: g ? g.proj.map((p) => p.k) : [], bake: stats.bake, spr: Object.assign({}, stats.spr), lazy: Math.round(stats.lazy), queue: BAKEQ.length });
   const resetMaxDt = () => { stats.maxDt = 0; };
   let cpuHold = false, autoP1 = false, gapWatch = 0, gapFreeze = false; const HITLOG = [], GAPLOG = []; // beta 3.32: for the review renders (window.czGloves.hold(true)): the CPU stands in its guard
   const setHp = (a, b) => { if (g && g.f.length) { g.f[0].hp = g.f[0].trail = a; g.f[1].hp = g.f[1].trail = b; } };

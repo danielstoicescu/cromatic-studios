@@ -14,16 +14,18 @@ html, body { margin: 0; height: 100%; background: #0b0816; overflow: hidden; ove
 .mg-hint { position: absolute; left: 0; right: 0; top: calc(var(--cv-bottom, 80vh) + 14px); display: flex; flex-direction: column; align-items: center; gap: 8px; opacity: .9; pointer-events: none; }
 /* touch: a d-pad and three buttons */
 .mg-dpad { position: absolute; z-index: 2; width: 148px; height: 148px; border-radius: 50%; touch-action: none; background: rgba(23,15,25,.55); box-shadow: inset 0 0 0 2px rgba(255,255,255,.18); }
-.mg-dpad i { position: absolute; background: #3a2f6a; box-shadow: inset 0 0 0 2px #170f19, inset 0 -4px 0 #241d3d; }
-.mg-dpad i.u, .mg-dpad i.d { left: 50%; width: 42px; height: 52px; margin-left: -21px; }
-.mg-dpad i.l, .mg-dpad i.r { top: 50%; width: 52px; height: 42px; margin-top: -21px; }
-.mg-dpad i.u { top: 10px; border-radius: 8px 8px 0 0; } .mg-dpad i.d { bottom: 10px; border-radius: 0 0 8px 8px; }
-.mg-dpad i.l { left: 10px; border-radius: 8px 0 0 8px; } .mg-dpad i.r { right: 10px; border-radius: 0 8px 8px 0; }
-.mg-dpad b { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px; background: #3a2f6a; box-shadow: inset 0 0 0 2px #170f19; }
-.mg-dpad i::after { content: ""; position: absolute; left: 50%; top: 50%; margin: -5px; border: 5px solid transparent; }
-.mg-dpad i.u::after { border-bottom-color: #a99cc8; margin-top: -9px; } .mg-dpad i.d::after { border-top-color: #a99cc8; margin-top: -1px; }
-.mg-dpad i.l::after { border-right-color: #a99cc8; margin-left: -9px; } .mg-dpad i.r::after { border-left-color: #a99cc8; margin-left: -1px; }
-.mg-dpad.on-u i.u, .mg-dpad.on-d i.d, .mg-dpad.on-l i.l, .mg-dpad.on-r i.r { background: #fed012; }
+/* beta 3.39 (Daniel): the circle joystick, as the map's: a filled knob in a ring, the game's colours */
+.mg-dpad.mg-stick { background: none; box-shadow: none; }
+.mg-stick .ring { position: absolute; inset: 8px; border-radius: 50%; box-sizing: border-box; background: rgba(23,15,25,.5); border: 3px solid #170f19; box-shadow: 2px 3px 0 rgba(23,15,25,.85), inset 0 0 0 3px rgba(169,156,200,.35), inset 0 0 0 14px rgba(254,208,18,.07); pointer-events: none; }
+.mg-stick .knob { position: absolute; left: 50%; top: 50%; width: 60px; height: 60px; margin: -30px; box-sizing: border-box; border-radius: 50%; background: #fed012; border: 3px solid #170f19; box-shadow: 2px 4px 0 #170f19, inset -4px -6px 0 rgba(201,140,16,.55), inset 4px 4px 0 rgba(255,246,184,.85); transition: transform .16s cubic-bezier(.3,1.6,.5,1); pointer-events: none; }
+.mg-stick.held .knob { transition: none; }
+.mg-stick i { position: absolute; width: 0; height: 0; border: 7px solid transparent; opacity: .6; pointer-events: none; }
+.mg-stick i.u { left: 50%; top: 15px; margin-left: -7px; border-top-width: 0; border-bottom-color: #a99cc8; }
+.mg-stick i.d { left: 50%; bottom: 15px; margin-left: -7px; border-bottom-width: 0; border-top-color: #a99cc8; }
+.mg-stick i.l { top: 50%; left: 15px; margin-top: -7px; border-left-width: 0; border-right-color: #a99cc8; }
+.mg-stick i.r { top: 50%; right: 15px; margin-top: -7px; border-right-width: 0; border-left-color: #a99cc8; }
+.mg-stick.on-u i.u { border-bottom-color: #fed012; opacity: 1; } .mg-stick.on-d i.d { border-top-color: #fed012; opacity: 1; }
+.mg-stick.on-l i.l { border-right-color: #fed012; opacity: 1; } .mg-stick.on-r i.r { border-left-color: #fed012; opacity: 1; }
 .mg-btns { position: absolute; z-index: 2; width: 234px; height: 140px; }
 .mg-b { position: absolute; width: 74px; height: 74px; border-radius: 50%; border: 0; padding: 0; touch-action: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
   box-shadow: inset 0 0 0 3px #170f19, inset 0 -6px 0 rgba(0,0,0,.25), 0 6px 14px -6px rgba(0,0,0,.6); }
