@@ -37161,6 +37161,7 @@ void main() {
       var copCar = (() => {
         const v = buildDacia1300({ police: true }), g = v.group;
         if (v.beacon) { v.beacon.lr.removeFromParent(); v.beacon.lb.removeFromParent(); }
+        addRevLamps(v, "cop"); // r212 (Daniel: "the police car is gigantic"): the Patrol ride is measured with its (hidden) reversing lamps and their pool, so the chaser is too, or it came out ~31% bigger than the same car you drive
         const bb = new Box3().setFromObject(g), sz = bb.getSize(new Vector3());
         g.scale.setScalar(1.5 * Math.min(0.74, 46 / Math.max(sz.z, 1), 30 / Math.max(sz.x, 1))); // as setVehicle sizes a ride (r124/r133)
         g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
