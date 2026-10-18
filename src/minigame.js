@@ -2672,7 +2672,7 @@
       for (let i = hits.length - 1; i >= 0; i--) { const h = hits[i]; if (x >= h.x && x < h.x + h.w && y >= h.y && y < h.y + h.h) { h.fn(); break; } }
     });
     { const rot = document.createElement("div"); rot.className = "mg-rotate";
-      const [rc] = mk(192 * RS, 108 * RS); rc.className = "mg-rot-cv"; // beta 3.34: at twice the pixels, like the game rot.appendChild(rc);
+      const [rc] = mk(192 * RS, 108 * RS); rc.className = "mg-rot-cv"; rot.appendChild(rc); // beta 3.34: at twice the pixels, like the game. beta 3.43 (Daniel: "black screen until I turn the phone"): the append had slipped into this comment, so the rotate screen was empty
       const btn = document.createElement("button"); btn.type = "button"; btn.className = "mg-rot-btn"; btn.hidden = true; btn.appendChild(pxText("PLAY SIDEWAYS ANYWAY", "#170f19", 2));
       btn.onclick = (e) => { e.stopPropagation(); SIDEWAYS = true; layout(); };
       rot.addEventListener("pointerdown", () => { SND.init(); lockLandscape(); });
