@@ -24,6 +24,7 @@
 // beta 3.34 (Daniel: "the fixes related to the enlarged pixels: redraw them"): what was still the 1x drawing doubled is
 // drawn at 768x432: the projectiles and the effects (sprites in the fighters' Fig), the whole street, the HUD's pieces,
 // the frames, the ticket, the buttons; the letters doubled with a scaler that only fills the steps of the diagonals.
+// beta 3.35: the bodies kept apart in the corner and when one gets up (they could stand inside each other for a moment).
 (function () {
   "use strict";
   const W = 384, H = 216, FLOOR = 200, STAGE_W = 576;
@@ -1983,10 +1984,25 @@
     for (const p of g.proj) for (const q of g.proj) if (p !== q && p.owner !== q.owner && !p.dead && !q.dead && Math.abs(p.x - q.x) < 14 && Math.abs(p.y - q.y) < 16) { p.dead = q.dead = true; spark((p.x + q.x) / 2, p.y, "burst"); SND.play("block"); }
     g.proj = g.proj.filter((p) => !p.dead);
     // bodies don't overlap; both stay on screen
-    const pbw = 30 * Math.max(a.sc, b.sc);
-    if (Math.abs(a.x - b.x) < pbw && Math.abs(a.y - b.y) < 70 && a.st !== "down" && b.st !== "down") { const push = (pbw - Math.abs(a.x - b.x)) / 2, s = a.x <= b.x ? -1 : 1; a.x += s * push; b.x -= s * push; }
-    for (const f of g.f) f.x = clamp(f.x, Math.max(18, g.camX + 18), Math.min(STAGE_W - 18, g.camX + W - 18));
-    if (onGround(a) && onGround(b) && a.st !== "down" && b.st !== "down") stats.minGap = Math.min(stats.minGap ?? 1e9, Math.abs(a.x - b.x)); // for the tests: how close the bodies come
+    // beta 3.35 (the bodies came 15.6 apart in the tests): the bodies never overlap, in the corner too. The overlap is
+    // shared between the two, then whatever a wall (the stage's end or the screen's edge) took back from one is given
+    // to the other, in the same step; one lying down is not moved, the one standing over him is (a few units a step,
+    // so he slides off rather than jumps), so getting up never starts inside the other. The width a touch more (32 units
+    // a size, was 30), as the 3.33 bodies are broader: in the clinch only the guards overlap, not the chests
+    const pbw = 32 * Math.max(a.sc, b.sc), lo = Math.max(18, g.camX + 18), hi = Math.min(STAGE_W - 18, g.camX + W - 18), near = Math.abs(a.y - b.y) < 70;
+    const side = a.x < b.x || (a.x === b.x && a.face > 0) ? 1 : -1; // b to the right of a: 1
+    if (near && Math.abs(b.x - a.x) < pbw) {
+      const over = pbw - Math.abs(b.x - a.x), ma = a.st === "down" ? 0 : 1, mb = b.st === "down" ? 0 : 1;
+      if (ma && mb) { a.x -= side * over / 2; b.x += side * over / 2; }
+      else if (ma || mb) { const f = ma ? a : b, d = Math.min(over, 4); f.x += (f === a ? -side : side) * d; }
+    }
+    for (const f of g.f) f.x = clamp(f.x, lo, hi);
+    if (near && a.st !== "down" && b.st !== "down" && Math.abs(b.x - a.x) < pbw - 0.01) { // a wall held one back: the other steps aside the rest
+      const aWall = a.x <= lo + 0.01 || a.x >= hi - 0.01, bWall = b.x <= lo + 0.01 || b.x >= hi - 0.01;
+      if (aWall && !bWall) b.x = clamp(a.x + side * pbw, lo, hi); else if (bWall && !aWall) a.x = clamp(b.x - side * pbw, lo, hi);
+    }
+    if (onGround(a) && onGround(b) && a.st !== "down" && b.st !== "down") { const gap = Math.abs(a.x - b.x); stats.minGap = Math.min(stats.minGap ?? 1e9, gap); // for the tests: how close the bodies come
+      if (gapWatch && gap < gapWatch && !g.frozen) { const lo = Math.max(18, g.camX + 18), hi = Math.min(STAGE_W - 18, g.camX + W - 18); GAPLOG.push({ gap: +gap.toFixed(1), pbw: +pbw.toFixed(1), x: [+a.x.toFixed(1), +b.x.toFixed(1)], st: [a.st, b.st], vx: [+a.vx.toFixed(2), +b.vx.toFixed(2)], atk: [a.atk ? Object.keys(ATK).find((n) => ATK[n] === a.atk) || "sp" : null, b.atk ? Object.keys(ATK).find((n) => ATK[n] === b.atk) || "sp" : null], edge: [a.x <= lo + 0.01 ? "L" : a.x >= hi - 0.01 ? "R" : "", b.x <= lo + 0.01 ? "L" : b.x >= hi - 0.01 ? "R" : ""], camX: +g.camX.toFixed(1), lo: +lo.toFixed(1), hi: +hi.toFixed(1) }); if (gapFreeze) g.frozen = true; } }
     const goal = clamp((a.x + b.x) / 2 - W / 2, 0, STAGE_W - W); g.camX += (goal - g.camX) * 0.18;
     for (const f of g.f) stepSmoke(f);
   }
@@ -2495,7 +2511,8 @@
         for (const e of g.fx) e.t++; g.fx = g.fx.filter((e) => e.t < e.life);
         if (g.flash > 0) g.flash--;
         if (g.shake > 0 && !g.hitstop) g.shake = Math.max(0, g.shake - 0.35);
-        if (g.hitstop > 0) g.hitstop--;
+        if (g.frozen) {} // for the tests: held on the frame where the bodies came too close
+        else if (g.hitstop > 0) g.hitstop--;
         else if (g.slow > 0 && g.slow-- % 3) {} // the K.O. in slow motion
         else stepFight(inp);
         stepRound(inp);
@@ -2661,7 +2678,7 @@
   // for tests and the review: the state, the frame rate, a shortcut to the end of a round
   const probe = () => ({ scene: scene === "game" && g ? g.scene : scene, phase: g?.phase, round: g?.round, wins: g?.wins.slice(), hp: g?.f.map((f) => f.hp), st: g?.f.map((f) => f.st), time: g ? Math.ceil(g.time) : null, me: g?.me, cpu: g?.cpu, sel: SEL.p1, selCpu: SEL.cpu, selPhase: SEL.phase, menu: g?.menu, result: g?.result, paused, voucher: g?.voucher?.code || null, sideways: !!SIDEWAYS, rotate: !!(root && root.classList.contains("mg-rot")), fps: stats.fps, maxDt: Math.round(stats.maxDt || 0), sound: SND.on, proj: g ? g.proj.map((p) => p.k) : [], bake: stats.bake, spr: Object.assign({}, stats.spr), lazy: Math.round(stats.lazy), queue: BAKEQ.length });
   const resetMaxDt = () => { stats.maxDt = 0; };
-  let cpuHold = false, autoP1 = false; const HITLOG = []; // beta 3.32: for the review renders (window.czGloves.hold(true)): the CPU stands in its guard
+  let cpuHold = false, autoP1 = false, gapWatch = 0, gapFreeze = false; const HITLOG = [], GAPLOG = []; // beta 3.32: for the review renders (window.czGloves.hold(true)): the CPU stands in its guard
   const setHp = (a, b) => { if (g && g.f.length) { g.f[0].hp = g.f[0].trail = a; g.f[1].hp = g.f[1].trail = b; } };
 
   // the art on its own, for review: every sheet as a PNG data URL, scaled with crisp pixels. beta 3.33: the sheets are
@@ -2738,7 +2755,7 @@
     for (const id of FIGHTERS) { const f = sprites(id).idle[0], HD = headOf(id, 1, false, HK); let top = 1e9, chin = -1; HD.rows.forEach((r, y) => { if (r.replace(/\./g, "").length) top = Math.min(top, y); const fr = r.slice(Math.round(17 * HK), Math.round(23 * HK)); if (fr.replace(/\./g, "").length) chin = y; }); o[id] = { h: f.height, w: f.width, head: chin - top + 1, heads: +(f.height / (chin - top + 1)).toFixed(2) }; }
     return o;
   }
-  window.czGloves = Object.assign(window.czGloves || {}, { mount, exportArt, measure, probe, setHp, resetMaxDt, hold: (v) => { cpuHold = !!v; }, auto: (v) => { autoP1 = !!v; }, hits: () => HITLOG.splice(0), fxKinds: () => (g ? g.fx.map((e) => e.k) : []), fxPos: () => (g ? { proj: g.proj.map((p) => [p.k, Math.round((p.x - g.camX) * RS), Math.round((p.y + FLOOR) * RS)]), fx: g.fx.filter((e) => e.k !== "stack" && e.k !== "ghost").map((e) => [e.k, Math.round((e.x - g.camX) * RS), Math.round((e.y + FLOOR) * RS), e.t]) } : null), minGap: () => { const v = stats.minGap; stats.minGap = null; return v == null ? null : Math.round(v * 10) / 10; } });
+  window.czGloves = Object.assign(window.czGloves || {}, { mount, exportArt, measure, probe, setHp, resetMaxDt, hold: (v) => { cpuHold = !!v; }, auto: (v) => { autoP1 = !!v; }, hits: () => HITLOG.splice(0), fxKinds: () => (g ? g.fx.map((e) => e.k) : []), gapWatch: (th, freeze) => { gapWatch = th; gapFreeze = !!freeze; }, gaps: () => GAPLOG.splice(0), unfreeze: () => { if (g) g.frozen = false; }, fxPos: () => (g ? { proj: g.proj.map((p) => [p.k, Math.round((p.x - g.camX) * RS), Math.round((p.y + FLOOR) * RS)]), fx: g.fx.filter((e) => e.k !== "stack" && e.k !== "ghost").map((e) => [e.k, Math.round((e.x - g.camX) * RS), Math.round((e.y + FLOOR) * RS), e.t]) } : null), minGap: () => { const v = stats.minGap; stats.minGap = null; return v == null ? null : Math.round(v * 10) / 10; } });
   const auto = () => { const el = document.getElementById("mg"); if (el && !root) mount(el); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", auto); else auto();
 })();
