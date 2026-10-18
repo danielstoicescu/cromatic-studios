@@ -34603,7 +34603,9 @@ void main() {
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !caseFrame.classList.contains("hidden")) closeFrame(); });
     // beta 3.1 (Daniel): the mini-game's own "Back to map" (and its Escape) closes the frame like the × does
     window.addEventListener("message", (e) => { if (e.origin === location.origin && e.data && e.data.cz === "gloves-close" && !caseFrame.classList.contains("hidden")) closeFrame(); });
-    window.__openGloves = () => openFrameHook?.("/play/gloves/?embed=1", "At the gloves with I O N");
+    // r211 (Daniel: GA4 on the mini-game): every way in says where it came from (?from=…); the game reports it as
+    // entry_source on gloves_open and takes it off its own address straight away
+    window.__openGloves = (from) => openFrameHook?.(`/play/gloves/?${from ? `from=${encodeURIComponent(from)}&` : ""}embed=1`, "At the gloves with I O N");
     let steamSeen = false;
     // any page of the website, full screen over the map (OMA's brand canvas, …)
     openFrameHook = (url, title) => {
@@ -34619,7 +34621,7 @@ void main() {
         if (/^\/play\//.test(url)) nf.addEventListener("load", () => { try { nf.focus(); nf.contentWindow.focus(); } catch {} });
         fr.replaceWith(nf); fr = nf;
       }
-      caseFrame._url = /^\/(ro\/)?(work|proiecte|play)\//.test(url) ? url.replace(/[?&]embed=1\b/, "").replace(/\?$/, "") : null; // r161 (beta 3.1: and the game's own address)
+      caseFrame._url = /^\/(ro\/)?(work|proiecte|play)\//.test(url) ? (() => { const u = new URL(url, location.origin); u.searchParams.delete("embed"); u.searchParams.delete("from"); return u.pathname + u.search; })() : null; // r161 (beta 3.1: and the game's own address; r211: without its ?from= either, so a shared link stays clean)
       caseFrame.classList.toggle("cf-game", /^\/play\//.test(url)); // beta 3.1: a dark frame, no Share button
       fr.title = `${title} \u2014 Cromatic Studios`;
       caseFrame.classList.remove("hidden");
@@ -35062,7 +35064,7 @@ void main() {
       // r139a: the lab is a chapter of the Two Minutes case: the way on to its page (and the shared ending there)
       if (openFrameHook && /^https?:$/.test(location.protocol)) { const more = el("button", "coffee-btn tm-more", "See more → the whole Two Minutes case"); more.onclick = () => { closeModal(); openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); }; mEl.querySelector(".hm-info").append(more); }
       // beta 3.1 (Daniel): and the lab's mini-game
-      if (openFrameHook && /^https?:$/.test(location.protocol)) { const play = el("button", "coffee-btn tm-more lab-play", "Play: gloves with I O N →"); play.onclick = () => { closeModal(); window.__openGloves?.(); }; mEl.querySelector(".hm-info").append(play); }
+      if (openFrameHook && /^https?:$/.test(location.protocol)) { const play = el("button", "coffee-btn tm-more lab-play", "Play: gloves with I O N →"); play.onclick = () => { closeModal(); window.__openGloves?.("lab-modal"); }; /* r211 */ mEl.querySelector(".hm-info").append(play); }
       mEl.querySelector(".hm-info").append(close);
       modalBack.appendChild(mEl);
       openModal();
@@ -41167,7 +41169,7 @@ void main() {
           const acts = card.querySelector(".mcd-actions"), b = fightButton();
           acts.classList.add("mcd-two"); if (only) acts.classList.add("mcd-solo");
           acts.insertBefore(b, acts.firstChild);
-          b.onclick = deep(pl, () => window.__openGloves());
+          b.onclick = deep(pl, () => window.__openGloves(pl.game ? "map-card-arcade" : pl.tm ? "map-card-two-minutes" : "map-card-" + pl.id)); // r211: the way in, for GA4
         };
         const deep = (pl, open) => () => {
           if (innerWidth < 720 || matchMedia("(prefers-reduced-motion: reduce)").matches || jetFx.phase !== "idle" || (nav2?.on && nav2.camK > 0.5)) return open(); // (in the street view the chase camera stays)

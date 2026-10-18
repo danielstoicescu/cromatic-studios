@@ -1808,6 +1808,7 @@
 
   let g = null; // the match
   function newMatch(me, cpu) {
+    TRK.match(); // r211: a match begins (its length, the count for gloves_exit)
     g = { scene: "vs", me, cpu: cpu || "ion", voucher: null, t: 0, round: 1, wins: [0, 0], phase: "intro", pt: 0, time: ROUND_TIME, f: [], proj: [], fx: [], hitstop: 0, shake: 0, flash: 0, camX: (STAGE_W - W) / 2, slow: 0, menu: 0, result: null, perfect: false };
     resetRound();
     BAKEQ.push(() => carDacia(), ...["cristache", "ion", "rares"].map((id) => () => endFrame(id))); // beta 3.33: the ending's art, in the spare time of the fight
@@ -2086,9 +2087,11 @@
     const [a] = g.f;
     if (winner) g.wins[winner === a ? 0 : 1]++;
     g.perfect = !!winner && winner.hp >= 100;
+    TRK.round(winner); // r211
     if (g.wins[0] >= 2 || g.wins[1] >= 2 || (!winner && g.round >= 5)) {
       if (!winner && g.round >= 5) g.wins[0] = 2;
       g.phase = "match"; g.pt = 0; g.result = g.wins[0] >= 2 ? "win" : "lose"; SND.music(null); SND.play(g.result === "win" ? "win" : "lose");
+      TRK.matchEnd(); // r211
       return;
     }
     g.round++; resetRound();
@@ -2366,7 +2369,7 @@
     drawEnding(ctx, t);
     const win = g.result === "win", cpuN = ROSTER[g.cpu].name, px0 = 4, pw = 148; // beta 3.33: the card on the left, the jump-start at the window on the right
     if (win) { // the voucher, a cream ticket
-      if (!g.voucher) g.voucher = makeVoucher();
+      if (!g.voucher) { g.voucher = makeVoucher(); if (scene === "game") TRK.voucher(); } // r211 (not for the review renders)
       const v = g.voucher, y0 = 6, h = 146;
       ctx.fillStyle = OUT; ctx.fillRect(px0 - 1, y0 - 1, pw + 2, h + 2); ctx.fillStyle = "#f6efdc"; ctx.fillRect(px0, y0, pw, h);
       ctx.fillStyle = "#e8dcbc"; for (let y = y0 + 2; y < y0 + h; y += 4) ctx.fillRect(px0, y, pw, 1);
@@ -2398,8 +2401,8 @@
   }
   function pick(i) {
     SND.play("confirm");
-    if (i === 0) newMatch(g.me, g.cpu);
-    else if (i === 1) { scene = "select"; SEL.phase = "p1"; g = null; SND.music("menu"); }
+    if (i === 0) { TRK.ev("gloves_rematch", { fighter: g.me, cpu_fighter: g.cpu, last_result: g.result }); newMatch(g.me, g.cpu); } // r211
+    else if (i === 1) { TRK.ev("gloves_change_fighters", { from_screen: "result" }); scene = "select"; SEL.phase = "p1"; g = null; SND.music("menu"); }
     else backToMap();
   }
 
@@ -2422,6 +2425,7 @@
   }
   function unlockLandscape() { try { screen.orientation?.unlock?.(); } catch {} try { if (document.fullscreenElement) document.exitFullscreen(); } catch {} }
   function backToMap() {
+    TRK.ev("gloves_back_to_map", { from_screen: TRK.screenNow() }); // r211
     SND.music(null); unlockLandscape();
     try { if (window.parent !== window && window.parent.location.origin === location.origin) { window.parent.postMessage({ cz: "gloves-close" }, location.origin); return; } } catch {}
     location.href = "/?map";
@@ -2432,7 +2436,7 @@
     SND.play("confirm");
     if (i === 0) return setPause(false);
     paused = false;
-    if (i === 1) { scene = "select"; SEL.phase = "p1"; g = null; SND.music("menu"); return; }
+    if (i === 1) { TRK.ev("gloves_change_fighters", { from_screen: "pause" }); scene = "select"; SEL.phase = "p1"; g = null; SND.music("menu"); return; } // r211
     backToMap();
   }
   function setPause(v) { if (scene !== "game" || !g || g.scene !== "fight" || g.phase === "match") v = false; if (paused === v) return; paused = v; pmenu = 0; SND.play("pause"); if (paused) for (const k in held) held[k] = 0; }
@@ -2442,6 +2446,7 @@
     if (SEL.phase === "p1") { SEL.phase = "cpu"; SND.play("confirm"); return; }
     const a = GRID.order[SEL.p1], b = GRID.order[SEL.cpu];
     newMatch(a === "random" ? pickRandom() : a, b === "random" ? pickRandom() : b); scene = "game";
+    TRK.pick(g.me, g.cpu, a === "random" || b === "random"); // r211
   }
   function menuInput() {
     const P = (k) => pressed.has(k);
@@ -2462,6 +2467,7 @@
   }
   function step() {
     sceneT += 1 / 60;
+    TRK.watch(); // r211: a change of screen (cheap: one comparison a frame)
     if (scene !== "game" || !g || g.scene !== "fight") menuInput();
     if (scene === "game" && g) {
       g.t += 1 / 60;
@@ -2506,7 +2512,7 @@
     else { root.style.width = root.style.height = root.style.transform = ""; }
     const upright = TOUCH && vh > vw * 1.05;
     root.classList.toggle("mg-touch", TOUCH); root.classList.toggle("mg-side", TOUCH && !upright); root.classList.toggle("mg-rot", upright);
-    if (upright) { if (!rotSince) rotSince = performance.now(); setPause(true); } else rotSince = 0;
+    if (upright) { if (!rotSince) rotSince = performance.now(); setPause(true); TRK.rotate(); } else rotSince = 0; // r211: once a visit
     let sc, top;
     if (TOUCH) { const side = clamp(vw * 0.16, 128, 176); sc = Math.min((vw - side * 2) / W, vh / H); top = (vh - H * sc) / 2; }
     else { // beta 3.33: whole multiples of the canvas's own pixels on the screen's pixels, where it is big enough
@@ -2571,15 +2577,67 @@
     }
     root.append(pad, btns);
   }
+  // ===================== 11. r211 (Daniel: "GTM/GA4 on the mini-game: who came in, from where, and what they did") ======
+  // A small, named set of GA4 events through the site's own helper (window.czEvent, from build/consent.mjs: it sends only
+  // when the visitor said yes to Google Analytics; with a no, or no answer yet, Google isn't even loaded and nothing goes
+  // anywhere). Where they came from: ?from=… (each button on the map that opens the game sets it), else utm_source, else
+  // the referrer's site (ours: "site"), else "direct"; ?from= comes off the address at once (shared links stay clean).
+  // Low-cardinality params only, no personal data; nothing per frame (each event is one change of screen or one click).
+  const TRK = (() => {
+    const t0 = performance.now(), clean = (v, n = 40) => String(v || "").toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, n);
+    let src = "direct", matches = 0, matchT0 = 0, prev = "title", rotSent = false, exitSent = false;
+    try {
+      const u = new URL(location.href), from = clean(u.searchParams.get("from")), utm = clean(u.searchParams.get("utm_source"));
+      let ref = ""; try { ref = document.referrer ? new URL(document.referrer).hostname.replace(/^(www|m|l|lm)\./, "") : ""; } catch {}
+      src = from || (utm ? "utm-" + utm : ref ? (ref === location.hostname.replace(/^www\./, "") ? "site" : "ref-" + clean(ref)) : "direct");
+      if (u.searchParams.has("from")) { u.searchParams.delete("from"); history.replaceState(history.state, "", u.pathname + u.search + u.hash); }
+    } catch {}
+    // the consent snippet defines gtag at once but configures GA a moment later: the first events wait for it (8 s at most)
+    const ready = () => !!(window.__czGA && window.gtag && (window.dataLayer || []).some((a) => a && a[0] === "config"));
+    // gtag("event") straight to GA4 (the site's GA4 runs on gtag, not through GTM: the GTM container has no tags); and,
+    // for a GTM setup one day, the same as a plain dataLayer event ("gloves" + gloves_event): harmless while GTM is empty
+    const send = (n, p) => { try { if (typeof window.czEvent === "function") window.czEvent(n, p); else if (window.__czGA && window.gtag) window.gtag("event", n, p); (window.dataLayer = window.dataLayer || []).push({ event: "gloves", gloves_event: n, gloves_params: p }); } catch {} };
+    const queue = []; let wait = 0;
+    function ev(n, p = {}) {
+      if (!window.__czGA) return; // no yes to analytics: nothing
+      if (ready()) return send(n, p);
+      queue.push([n, p]);
+      if (!wait) { const tw = performance.now(); wait = setInterval(() => { if (ready() || performance.now() - tw > 8000) { clearInterval(wait); wait = 0; if (ready()) queue.splice(0).forEach(([a, b]) => send(a, b)); else queue.length = 0; } }, 250); }
+    }
+    const screenNow = () => (paused ? "pause" : scene === "game" && g ? g.scene : scene);
+    const device = () => (TOUCH ? (Math.min(innerWidth, innerHeight) < 600 ? "phone" : "tablet") : "desktop");
+    const fighters = () => (g ? { fighter: g.me, cpu_fighter: g.cpu } : {});
+    return {
+      ev, screenNow,
+      open() {
+        const p = { entry_source: src, device: device(), orientation: innerWidth >= innerHeight ? "landscape" : "portrait", in_map: window.parent !== window ? "yes" : "no" };
+        if (window.__czGA) return ev("gloves_open", p);
+        // opened on its own (a shared link): the consent card asks here; a "Sure" in the first two minutes still counts the visit
+        let n = 0; const t = setInterval(() => { if (window.__czGA) { clearInterval(t); ev("gloves_open", p); } else if (++n > 120) clearInterval(t); }, 1000);
+      },
+      // called every frame: only a change of screen sends anything
+      watch() { const sc = scene; if (sc !== prev) { if (prev === "title" && sc === "select") ev("gloves_start", { device: device() }); prev = sc; } },
+      pick(me, cpu, rnd) { ev("gloves_pick", { fighter: me, cpu_fighter: cpu, random_pick: rnd ? "yes" : "no" }); },
+      match() { matches++; matchT0 = performance.now(); },
+      round(winner) { ev("gloves_round_end", { round: g.round, winner: !winner ? "draw" : winner === g.f[0] ? "player" : "cpu", time_left: Math.max(0, Math.ceil(g.time)), player_hp: Math.round(Math.max(0, g.f[0].hp) / 10) * 10, ...fighters() }); },
+      matchEnd() { ev("gloves_match_end", { result: g.result, rounds_won: g.wins[0], rounds_lost: g.wins[1], duration_s: Math.round((performance.now() - matchT0) / 1000), ...fighters() }); },
+      // the voucher's code is not sent: it is unique, and redeemed in the shop it could tie a visit to a person
+      voucher() { ev("gloves_voucher_shown", { voucher: "batch_brew", ...fighters() }); },
+      rotate() { if (rotSent) return; rotSent = true; ev("gloves_rotate_prompt_shown", { device: device() }); },
+      exit() { if (exitSent) return; exitSent = true; ev("gloves_exit", { last_screen: screenNow(), time_on_game_s: Math.round((performance.now() - t0) / 1000), matches_played: matches }); } // (gtag sends with sendBeacon/keepalive on its own: no transport_type needed)
+    };
+  })();
+  addEventListener("pagehide", () => TRK.exit());
   function mount(el) {
     root = el; root.classList.add("mg");
     TOUCH = matchMedia("(pointer: coarse)").matches || (navigator.maxTouchPoints > 0 && !matchMedia("(pointer: fine)").matches);
+    TRK.open(); // r211: the visit, and where it came from
     [cv, cx2] = mk(W * RS, H * RS); cv.className = "mg-cv"; cv.setAttribute("role", "img"); cv.setAttribute("aria-label", "At the gloves with I O N, a fighting game");
     root.appendChild(cv);
     // the speaker (the site's own switch) and, on a laptop, the keys under the picture
     const snd = document.createElement("button"); snd.type = "button"; snd.className = "mg-snd";
     snd.innerHTML = '<svg viewBox="0 0 16 16" width="22" height="22" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M2 6h3l4-3v10l-4-3H2z"/><path class="w" fill="currentColor" d="M11 5h1v1h1v4h-1v1h-1zM13 3h1v1h1v8h-1v1h-1z"/><path class="x" fill="currentColor" d="M11 6h1v1h1V6h1v1h-1v1h1v1h-1v1h-1V9h-1V8h1V7h-1z"/></svg>';
-    snd.onclick = () => { SND.toggle(); };
+    snd.onclick = () => { SND.toggle(); TRK.ev("gloves_sound_toggle", { sound: SND.on ? "on" : "off" }); }; // r211
     SND.bind(snd); root.appendChild(snd);
     // beta 3.15: the menu button, during a fight (the pause menu: resume, change fighters, back to the map)
     const menu = document.createElement("button"); menu.type = "button"; menu.className = "mg-menu"; menu.setAttribute("aria-label", "Menu");
@@ -2597,7 +2655,7 @@
       SND.init();
       if (e.code === "Escape") { e.preventDefault(); backToMap(); return; }
       if (e.code === "KeyP") { setPause(!paused); return; }
-      if (e.code === "KeyM") { SND.toggle(); return; }
+      if (e.code === "KeyM") { SND.toggle(); TRK.ev("gloves_sound_toggle", { sound: SND.on ? "on" : "off" }); return; }
       if (e.code === "KeyV") { const off = root.classList.toggle("mg-nocrt"); try { localStorage.setItem("cz-gloves-crt", off ? "off" : "on"); } catch {} return; }
       const k = KEYMAP[e.code]; if (!k) return;
       e.preventDefault();
