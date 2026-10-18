@@ -36140,12 +36140,40 @@ void main() {
             if (pEnv) built.group.traverse((o) => { for (const m of o.material ? [].concat(o.material) : []) if (m.envMap && m.envMap === mainEnv && !m.userData.chrome) { m.envMap = pEnv.texture; m.envMapIntensity *= CITY_ENV_K; } }); // r138n
             built.group.rotation.y = 2.5;
             s.add(built.group);
-            const box = new Box3().setFromObject(built.group);
-            const c = box.getCenter(new Vector3());
-            const radius = box.getSize(new Vector3()).length() / 2;
-            const d = radius / Math.sin(cam.fov * Math.PI / 180 / 2) * 0.92;
-            cam.position.set(c.x + d * 0.52, c.y + d * 0.5, c.z + d * 0.72);
-            cam.lookAt(c);
+            // r210 (Daniel: "in the Rides preview some look too small"): the lens used to stand off by the bounding
+            // sphere of the whole group (hidden parts too: the reversing lamps' light pool, the beams), so long, flat rides
+            // came out small and the tall ones large. Now every ride is framed by what the camera actually sees: its
+            // visible vertices, projected from the same three-quarter direction, the view pulled in or out until the
+            // larger of its width and height fills 80% of the frame (its diagonal at most 92%: the tiles are round), and re-aimed so that
+            // outline sits in the middle. Same angle, same padding, each ride as big as the next
+            {
+              built.group.updateMatrixWorld(true);
+              const pts = [], q = new Vector3();
+              built.group.traverse((o) => {
+                const a = o.isMesh && o.geometry?.attributes?.position; if (!a) return;
+                for (let p = o; p; p = p.parent) if (!p.visible) return;
+                const ms = [].concat(o.material || []); if (ms.length && ms.every((m) => m.visible === false || (m.transparent && m.opacity < 0.05) || m.blending === AdditiveBlending)) return;
+                const step = Math.max(1, Math.floor(a.count / 600));
+                for (let i = 0; i < a.count; i += step) pts.push(q.fromBufferAttribute(a, i).applyMatrix4(o.matrixWorld).clone());
+              });
+              const box = pts.length ? new Box3().setFromPoints(pts) : new Box3().setFromObject(built.group);
+              const tgt = box.getCenter(new Vector3()), dir = new Vector3(0.52, 0.5, 0.72).normalize();
+              let d = box.getSize(new Vector3()).length() / 2 / Math.sin(cam.fov * Math.PI / 180 / 2);
+              const right = new Vector3(), up = new Vector3(), v = new Vector3();
+              for (let it = 0; it < 5 && pts.length; it++) {
+                cam.position.copy(tgt).addScaledVector(dir, d); cam.lookAt(tgt); cam.updateMatrixWorld(true);
+                let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+                for (const p of pts) { v.copy(p).project(cam); if (v.x < x0) x0 = v.x; if (v.x > x1) x1 = v.x; if (v.y < y0) y0 = v.y; if (v.y > y1) y1 = v.y; }
+                const w = (x1 - x0) / 2, h = (y1 - y0) / 2, k = Math.max(Math.max(w, h) / 0.8, Math.hypot(w, h) / 0.92);
+                // re-aim at the outline's middle (NDC offsets to world, at the target's depth), then scale the distance
+                const t = Math.tan(cam.fov * Math.PI / 360) * d;
+                right.setFromMatrixColumn(cam.matrixWorld, 0); up.setFromMatrixColumn(cam.matrixWorld, 1);
+                tgt.addScaledVector(right, (x0 + x1) / 2 * t * cam.aspect).addScaledVector(up, (y0 + y1) / 2 * t);
+                d *= k;
+              }
+              cam.position.copy(tgt).addScaledVector(dir, d); cam.lookAt(tgt);
+              cam.near = Math.max(0.5, d * 0.05); cam.far = d * 4; cam.updateProjectionMatrix();
+            }
             noWarp(s);
             if (r.compileAsync) await r.compileAsync(s, cam);
             await idle();
