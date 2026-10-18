@@ -501,7 +501,7 @@
     // the lip dark, the cheeks shadowed), the nose bigger, and thin clear glasses (the eyes show; no more sunglasses)
     cristache: { skin: "#e6aa86", hair: "#1d1511", hl: "#3a2c24", beard: "#2a1c16", bhl: "#5c4234", rx: 0.97, jaw: 0.95, nose: 0.6,
       hairline: [7.2, 10.2], thick: 0.3, back: 16, tex: "buzz",
-      beardKind: "goatee", beardTop: 16.5, beardDrop: 1.1, mouth: "lips", lips: "#c27a68", brows: "flat", eyes: "lidded",
+      beardKind: "fade", beard: "#3a281e", beardTop: 17.2, beardDrop: 0.5, mouth: "lips", lips: "#c27a68", brows: "flat", eyes: "lidded", // beta 3.37 (Daniel: "not a goatee: a lighter beard, from the chin up towards the cheeks")
       glasses: { kind: "square", color: "#3a2a2c", lens: [[12, 12, 16, 15], [18, 12, 21, 15]], glint: [[15, 13], [20, 13]], bridge: [[17, 13]], armY: 13 } },
     // beta 3.31 (Daniel, likeness): the hair thick and swept up and back, grey through dark brown (not white); a round,
     // full face; big black rectangular frames; a short salt-and-pepper beard, the half smile
@@ -588,7 +588,7 @@
       const jawOut = jawPts.map(([a2, b2]) => [a2 + (a2 - cx0) * 0.05, b2 + drop * clamp((b2 - 14) / 12, 0, 1)]);
       each((X, Y, fx, fy) => {
         const put = (x2, y2, c) => putH(X, Y, c);
-        if (!(face(fx, fy) || ((kind === "full" || kind === "boxed" || (kind === "goatee" && fx > 15.4 && fx < 20.2)) && inPoly(jawOut, fx, fy)))) return;
+        if (!(face(fx, fy) || ((kind === "full" || kind === "boxed" || kind === "fade" || (kind === "goatee" && fx > 15.4 && fx < 20.2)) && inPoly(jawOut, fx, fy)))) return;
         const cheek = (fx < 8.5 ? 10.5 : fx < 14 ? lerp(11.5, 17.2, (fx - 8.5) / 5.5) : 17.6) - lift;
         if (fy < cheek) return;
         const mouthHole = kind === "boxed" ? fx > 15.6 && fx < 19.4 && fy > 19.4 && fy < 21.6 : fx > 14.6 && fx < 20.4 && fy > 19.4 && fy < 21.6; // beta 3.31: in a boxed beard only the lips show
@@ -598,6 +598,15 @@
         if (kind === "stubble") { if (base) put(x, y, mix2(base, BE[2], (P.stubble || 0.42) * (FINE && grain(X, Y, 7, 3) > 0.7 ? 1.25 : 1))); return; } // fine: the stubble in grains
         // beta 3.31 (Daniel, likeness): a goatee (the chin and the moustache dark, the cheeks only shadowed: Cristache)
         // and a short boxed beard (dense along the jaw, the chin and over the lip, the skin still under it: I O N, Steve)
+        if (kind === "fade") { // beta 3.37 (Cristache, from his photos): a short light beard, a dark-brown tint over the skin: densest on the chin, thinning up the jaw, fading out on the cheeks; the moustache only a shadow
+          if (!base) { if (fx > 13.5) put(x, y, mix2(SK[3], BE[3], 0.45)); return; } // just under the jaw line
+          let e = 0; for (let q = 0.5; q <= 3.5; q += 0.5) if (!face(fx, fy + q)) { e = q; break; } // how far above the jaw's edge
+          const chin = fx > 14.6 && fy > 21.6, must = fy > 17.9 && fy < 19.3 && fx > 15.2 && fx < 20.4, up = fy - cheek;
+          let k = chin ? 0.58 : e && e <= 1.5 ? 0.46 : e && e <= 3 ? 0.32 : up < 1.6 ? 0.1 : 0.2;
+          if (must) k = 0.26; if (up < 0.8 && !chin) k = Math.min(k, 0.12);
+          if (FINE && grain(X, Y, 5, 9) > 0.7) k += 0.1;
+          put(x, y, mix2(base, BE[2], Math.round(k * 8) / 8)); return; // in hard steps, as the rest of the shading
+        }
         if (kind === "goatee") {
           // beta 3.32 (Daniel: "the beard more on the chin"): the goatee on the chin only, pointed a little below it, the
           // moustache lighter, the jaw and the cheeks clean (a faint shadow where the chin beard ends)
