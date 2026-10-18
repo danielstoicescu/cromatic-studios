@@ -250,7 +250,7 @@
     // Rares: the flashy nod: sleeveless, a gold chain, the key tag, taped ankles, barefoot
     // beta 3.31 (Daniel, likeness): the white tee he wears in both photos (short sleeves, the small print on the chest), the
     // tattoos on the arms, the yellow key tag at the belt
-    rares: { skin: "#ecb593", top: "#f4f2ee", topKind: "printtee", sleeve: "short", tattoo: true, key: true, pants: "#1c1c22", loose: 1.5, shorts: true, belt: "#1c1c22", barefoot: true, ankle: "#f2efe6", glove: "#2fd6f0", build: { arm: 1.08 } }, // beta 3.38 (Daniel): knee-length shorts, tattoo sleeves on both arms, tattoos on the calves and shins
+    rares: { skin: "#ecb593", top: "#f4f2ee", topKind: "printtee", sleeve: "cap", tattoo: true, key: true, pants: "#1c1c22", loose: 1.5, shorts: true, belt: "#1c1c22", barefoot: true, ankle: "#f2efe6", glove: "#2fd6f0", build: { arm: 1.08 } }, // beta 3.38 (Daniel): knee-length shorts, tattoo sleeves on both arms, tattoos on the calves and shins
     iulica: { skin: "#c27f57", top: "#5f6e40", topKind: "tee", sleeve: "short", strap: "#d9cba8", pants: "#2c2c32", shoe: "#3a3a3a", sole: "#e0e0e0", glove: "#b8e02f", build: { sh: 0.98 } },
     maria: { skin: "#ebb597", top: "#f2f0ea", topKind: "oversize", knot: true, sleeve: "short", legs: "skirt", skirt: "#1c1c22", shoe: "#a8b89a", sole: "#6e7c62", glove: "#f0389a", build: { sc: 0.94, sh: 0.84, arm: 0.82, leg: 0.88, waist: 0.86, chest: 0.94 } }, // beta 3.33: a size down
     // Steve: dressed American: a varsity jacket (wool body, cream leather sleeves, a letter on the chest) over a white
@@ -367,7 +367,9 @@
   const hash2 = (x, y) => { let h = (Math.floor(x) * 374761393 + Math.floor(y) * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
   // ---- poses: joints in the fighter's frame (feet centre on the ground = 0,0; y up is negative; facing right).
   // tw: how far the shoulders have turned into a punch (0 side on, 1 square)
-  const P0 = { hip: [0, -47], neck: [5, -75], head: [8, -86], eF: [17, -62], hF: [25, -74], eB: [7, -60], hB: [16, -69], kF: [12, -25], fF: [19, 0], kB: [-10, -23], fB: [-19, 0], tw: 0, lie: 0 };
+  // beta 3.38 (Daniel, the refs): the guard tucked as Ken's: the elbows in and down, the forearms angled up, the
+  // fists at the chest and the chin, close together, the chest showing between the arms
+  const P0 = { hip: [0, -47], neck: [5, -75], head: [8, -86], eF: [14, -57], hF: [23, -66], eB: [5, -56], hB: [15, -62], kF: [12, -25], fF: [19, 0], kB: [-10, -23], fB: [-19, 0], tw: 0, lie: 0 };
   const pose = (o) => Object.assign({}, P0, o);
   const mixP = (a, b, t) => { const o = {}; for (const k in a) o[k] = Array.isArray(a[k]) ? [lerp(a[k][0], b[k][0], t), lerp(a[k][1], b[k][1], t)] : typeof a[k] === "number" ? lerp(a[k], b[k] ?? a[k], t) : a[k]; return o; };
   const upper = (p, dx, dy) => { const o = Object.assign({}, p); for (const k of ["neck", "head", "eF", "hF", "eB", "hB"]) o[k] = [p[k][0] + dx, p[k][1] + dy]; return o; };
@@ -429,8 +431,8 @@
   const STYLE_POSES = {
     // beta 3.32: Cristache wins with the back fist up and the cigarette in his mouth (the face stays clear of the arm)
     cristache: { win: [0, 1].map((d) => pose({ hip: [0, -47 - d], neck: [4, -75 - d], head: [7, -86 - d], eB: [-6, -90 - d], hB: [-3, -106 - d * 2], eF: [13, -58 - d], hF: [22, -54 - d] })), idle: breathe(pose({ hip: [0, -43], neck: [6, -71], head: [9, -82], eF: [20, -56], hF: [31, -60], eB: [-1, -50], hB: [5, -44], kF: [16, -21], fF: [27, 0], kB: [-15, -19], fB: [-27, 0] }), 0.6) },
-    rares: { idle: [0, 1.5, 3, 1.5].map((d) => { const b0 = pose({ eF: [15, -66], hF: [21, -79], eB: [6, -64], hB: [14, -75], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-17, 0] }); const q = upper(Object.assign({}, b0, { hip: [0, -47 + d] }), 0, d); q.kF = [12, -24 + d * 0.5]; q.kB = [-8, -23 + d * 0.5]; return q; }) },
-    ion: { idle: breathe(pose({ hip: [0, -48], neck: [3, -77], head: [5, -88], eF: [15, -64], hF: [18, -80], eB: [8, -64], hB: [13, -78], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-16, 0] }), 0.8) }
+    rares: { idle: [0, 1.5, 3, 1.5].map((d) => { const b0 = pose({ eF: [14, -59], hF: [22, -70], eB: [5, -58], hB: [15, -66], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-17, 0] }); const q = upper(Object.assign({}, b0, { hip: [0, -47 + d] }), 0, d); q.kF = [12, -24 + d * 0.5]; q.kB = [-8, -23 + d * 0.5]; return q; }) },
+    ion: { idle: breathe(pose({ hip: [0, -48], neck: [3, -77], head: [5, -88], eF: [13, -58], hF: [21, -69], eB: [5, -57], hB: [14, -65], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-16, 0] }), 0.8) }
   };
   // beta 3.32: Cristache bringing the cigarette to his lips (the front hand up at the mouth, the back fist at the hip)
   const SMOKE_POSES = { cristache: [pose({ hip: [0, -43], neck: [6, -71], head: [9, -82], eF: [14, -58], hF: [17, -73], eB: [-1, -50], hB: [5, -44], kF: [16, -21], fF: [27, 0], kB: [-15, -19], fB: [-27, 0] })] };
@@ -476,7 +478,7 @@
   // about five and a half heads tall, as the arcade fighters are; the people around NPCB (and the small 1x head)
   // beta 3.36 (Daniel: "back to the initial pixels, so it resembles the reference figures"): at 1x, as the arcade
   // fighters are: about 95 px in the guard, the head about 17 px (HK 0.66, the small arcade head), five and a half heads
-  const BODY = 1.0, HK = 0.66, NPCB = 0.9, FIST = 6.2, FOOT = 1.15, FSC = BODY / RS;
+  const BODY = 1.0, HK = 0.66, NPCB = 0.9, FIST = 4.9, FOOT = 1.15, FSC = BODY / RS;
   // beta 3.12 (Daniel: "you can't tell it's them"): bigger heads (28x36), built from one shaded three-quarter face and,
   // per person, what makes them them: the hair (its line, volume, texture), the beard, glasses, a cap, the smile.
   // Read from their photos. The neck's foot (13, 31) sits on the body's neck.
@@ -945,7 +947,7 @@
     const lF = off(hip, 3.5 * sc, U), lB = off(hip, -2.5 * sc, U); // beta 3.30: the legs from under the body (no seat sticking out)
     // an arm: the deltoid, the upper arm with the biceps, the forearm, then the glove with its cuff
     const arm = (s, e, h, far) => {
-      const g = far ? 1 : 2, ar = B.arm * sc * (L.hands && !L.full ? 0.8 : 1), /* beta 3.33: the people around keep everyday arms (beta 3.34: the ending's three keep the fighters') */ sleeveTo = L.sleeve === "long" ? 2 : L.sleeve === "rolled" ? 1.4 : L.sleeve === "gi" ? 1.3 : L.sleeve === "short" ? 0.55 : -1;
+      const g = far ? 1 : 2, ar = B.arm * sc * (L.hands && !L.full ? 0.8 : 1), /* beta 3.33: the people around keep everyday arms (beta 3.34: the ending's three keep the fighters') */ sleeveTo = L.sleeve === "long" ? 2 : L.sleeve === "rolled" ? 1.4 : L.sleeve === "gi" ? 1.3 : L.sleeve === "short" ? 0.55 : L.sleeve === "cap" ? 0.3 : -1; // cap (beta 3.38, Rares): a short sleeve, high on the arm, the tattoos showing
       const SLV = L.sleeveCol ? ramp(L.sleeveCol) : TOP;
       const mat = (seg) => (nx, ny, t, px, py) => { const R = seg + t * 0.999 < sleeveTo || (seg === 1 && sleeveTo >= 2) ? SLV : SK;
         if (L.topKind === "varsity" && seg === 1 && t > 0.82) return (far ? back : tone)(ramp(L.top), nx, ny); // the knit cuff
@@ -957,8 +959,8 @@
         if (R === SK) { if (seg === 0 && t > 0.32 && t < 0.86 && Math.abs(nx - 0.05) < 0.12) ex2 = 1; if (seg === 0 && t > 0.24 && t < 0.32 && nx > -0.3) ex2 = 1; if (seg === 1 && t > 0.1 && t < 0.62 && Math.abs(nx + 0.28) < 0.11) ex2 = 1; }
         else ex2 = folds(nx, t, ARM_FOLDS[seg]); // beta 3.32: the creases round the elbow, the folds down the sleeve, each with its lit ridge
         return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + ex2, 0, 4)]; };
-      limb(F, s, e, 5.0 * ar, 3.6 * ar, 1.0 * ar, 0.42, mat(0), g); // a strong upper arm, the deltoid and the biceps (beta 3.38: back towards the refs')
-      limb(F, e, h, 4.2 * ar, 3.2 * ar, 0.6 * ar, 0.28, mat(1), g); // the forearm
+      limb(F, s, e, 4.1 * ar, 3.3 * ar, 0.6 * ar, 0.42, mat(0), g); // a strong upper arm, the deltoid and the biceps (beta 3.38: back towards the refs')
+      limb(F, e, h, 3.6 * ar, 2.9 * ar, 0.4 * ar, 0.28, mat(1), g); // the forearm (beta 3.38: slim, as the refs')
       const vx = h[0] - e[0], vy = h[1] - e[1], vl = Math.hypot(vx, vy) || 1, ux = vx / vl, uy = vy / vl, gr = 5.9 * Math.min(1.1, sc);
       if (L.hands) blob(F, [h[0] + ux * 0.5 * U, h[1] + uy * 0.5 * U], 3.1 * sc + 0.55 * U, 2.8 * sc + 0.55 * U, (nx, ny) => (far ? back : tone)(SK, nx, ny), g + 10); // a bystander's bare hand
       else { // beta 3.16 (Daniel): a bare fist in plain white hand wraps, for everyone; the knuckles just showing
