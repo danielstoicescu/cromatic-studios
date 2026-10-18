@@ -67,3 +67,17 @@ html, body { margin: 0; height: 100%; background: #0b0816; overflow: hidden; ove
 .mg-rot-btn[hidden] { display: none; }
 .mg.mg-sideways { right: auto; bottom: auto; transform-origin: 0 0; }
 .mg-rot .mg-snd { z-index: 6; }
+/* beta 3.47 (Daniel, QA G3): < MAP, on every screen but the fight (where MENU holds its place and its pause menu has BACK TO MAP); over the rotate screen too */
+.mg-back { position: absolute; top: 18px; left: 80px; z-index: 3; height: 52px; padding: 0 18px 0 14px; border-radius: 26px; border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+  background: #121212; color: #fff; box-shadow: 0 0 0 1px #fff, 0 14px 34px -12px rgba(0,0,0,.55); transition: background .2s, color .2s; }
+.mg-back:hover { background: #FFD147; color: #121212; }
+.mg-back:hover .mg-lbl { filter: invert(1); }
+.mg-fight .mg-back { display: none; }
+.mg-rot .mg-back { display: inline-flex; z-index: 6; }
+@media (max-width: 760px) { .mg-back { top: 12px; left: 72px; } }
+.mg-side .mg-back { top: 12px; left: 64px; height: 44px; }
+/* beta 3.47 (Daniel, QA G4): inside the map's frame and played sideways on an upright phone, the game's top left is the
+   screen's top right, where the site's × was; the site now moves its × to the screen's bottom right (the game's top right,
+   kept empty). The speaker, MENU and MAP step down the left edge, clear of both corners, above the joystick */
+.mg.mg-embed.mg-sideways .mg-snd { top: 76px; left: 12px; }
+.mg.mg-embed.mg-sideways .mg-menu, .mg.mg-embed.mg-sideways .mg-back { top: 128px; left: 12px; }

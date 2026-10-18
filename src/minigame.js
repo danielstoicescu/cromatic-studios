@@ -2707,8 +2707,13 @@
     try { if (screen.orientation && screen.orientation.lock) await screen.orientation.lock("landscape"); } catch {}
   }
   function unlockLandscape() { try { screen.orientation?.unlock?.(); } catch {} try { if (document.fullscreenElement) document.exitFullscreen(); } catch {} }
+  // beta 3.47 (Daniel, QA G1): leaving is remembered with the screen it left from, so the pause the closing frame's blur
+  // (or the hidden page) brings on can't change what gloves_exit reports; pauseAuto: the screen a pause the player didn't
+  // ask for (focus lost, page hidden, phone turned upright) interrupted
+  let leavingFrom = null, pauseAuto = null;
   function backToMap() {
-    TRK.ev("gloves_back_to_map", { from_screen: TRK.screenNow() }); // r211
+    const from = TRK.screenNow(); if (!leavingFrom) leavingFrom = from;
+    TRK.ev("gloves_back_to_map", { from_screen: from }); // r211
     SND.music(null); unlockLandscape();
     try { if (window.parent !== window && window.parent.location.origin === location.origin) { window.parent.postMessage({ cz: "gloves-close" }, location.origin); return; } } catch {}
     location.href = "/?map";
@@ -2718,11 +2723,11 @@
   function pausePick(i) {
     SND.play("confirm");
     if (i === 0) return setPause(false);
-    paused = false;
+    if (i === 2) return backToMap(); // beta 3.47 (Daniel, QA G2): from the pause menu it reports "pause", as ESC from the same menu does (the pause was lifted first)
+    paused = false; pauseAuto = null;
     if (i === 1) { TRK.ev("gloves_change_fighters", { from_screen: "pause" }); scene = "select"; SEL.phase = "p1"; g = null; SND.music("menu"); return; } // r211
-    backToMap();
   }
-  function setPause(v) { if (scene !== "game" || !g || g.scene !== "fight" || g.phase === "match") v = false; if (paused === v) return; paused = v; pmenu = 0; SND.play("pause"); if (paused) for (const k in held) held[k] = 0; }
+  function setPause(v, auto) { if (scene !== "game" || !g || g.scene !== "fight" || g.phase === "match") v = false; if (paused === v) return; pauseAuto = v && auto ? TRK.screenNow() : null; paused = v; pmenu = 0; SND.play("pause"); if (paused) for (const k in held) held[k] = 0; }
   // the select screen: Player 1 picks, then picks the CPU (I O N first), "?" is any fighter at random
   const SEL = { phase: "p1", p1: 0, cpu: GRID.order.indexOf("ion") };
   function selConfirm() {
@@ -2801,7 +2806,7 @@
     else { root.style.width = root.style.height = root.style.transform = ""; }
     const upright = TOUCH && vh > vw * 1.05;
     root.classList.toggle("mg-touch", TOUCH); root.classList.toggle("mg-side", TOUCH && !upright); root.classList.toggle("mg-rot", upright);
-    if (upright) { if (!rotSince) rotSince = performance.now(); setPause(true); TRK.rotate(); } else rotSince = 0; // r211: once a visit
+    if (upright) { if (!rotSince) rotSince = performance.now(); setPause(true, true); TRK.rotate(); } else rotSince = 0; // r211: once a visit
     let sc, top;
     if (TOUCH) { const side = clamp(vw * 0.16, 128, 176); sc = Math.min((vw - side * 2) / W, vh / H); top = (vh - H * sc) / 2; }
     else { // beta 3.33: whole multiples of the canvas's own pixels on the screen's pixels, where it is big enough
@@ -2913,7 +2918,7 @@
       // the voucher's code is not sent: it is unique, and redeemed in the shop it could tie a visit to a person
       voucher() { ev("gloves_voucher_shown", { voucher: "batch_brew", ...fighters() }); },
       rotate() { if (rotSent) return; rotSent = true; ev("gloves_rotate_prompt_shown", { device: device() }); },
-      exit() { if (exitSent) return; exitSent = true; ev("gloves_exit", { last_screen: screenNow(), time_on_game_s: Math.round((performance.now() - t0) / 1000), matches_played: matches }); } // (gtag sends with sendBeacon/keepalive on its own: no transport_type needed)
+      exit() { if (exitSent) return; exitSent = true; ev("gloves_exit", { last_screen: leavingFrom || (paused && pauseAuto) || screenNow(), time_on_game_s: Math.round((performance.now() - t0) / 1000), matches_played: matches }); } // (gtag sends with sendBeacon/keepalive on its own: no transport_type needed)
     };
   })();
   addEventListener("pagehide", () => TRK.exit());
@@ -2934,6 +2939,17 @@
     menu.appendChild(pxText("MENU", "#ffffff", 2));
     menu.onclick = () => { SND.init(); setPause(!paused); menu.blur(); };
     root.appendChild(menu);
+    // beta 3.47 (Daniel, QA G3: "no way back to the map on a phone before a fight"): on every other screen (the title,
+    // the select, the VS, the result, the rotate screen) the same place holds < MAP, in MENU's style: opened on its own
+    // it goes to the map (/?map), inside the map's frame it closes the frame, as ESC and BACK TO MAP do
+    const back = document.createElement("button"); back.type = "button"; back.className = "mg-back"; back.setAttribute("aria-label", "Back to the map");
+    back.innerHTML = '<svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M6 3h2v2H6zM4 5h2v2H4zM2 7h12v2H2zM4 9h2v2H4zM6 11h2v2H6z"/></svg>';
+    back.appendChild(pxText("MAP", "#ffffff", 2));
+    back.onclick = (e) => { e.stopPropagation(); back.blur(); backToMap(); };
+    root.appendChild(back);
+    // beta 3.47 (QA G4): inside the map's frame (the site's × over the game's top right, or its bottom right while the
+    // game is sideways) the CSS keeps the speaker, MENU and MAP clear of both corners
+    try { if (window.parent !== window || new URLSearchParams(location.search).get("embed") === "1") root.classList.add("mg-embed"); } catch { root.classList.add("mg-embed"); }
     if (!TOUCH) { const hint = document.createElement("div"); hint.className = "mg-hint"; hint.appendChild(pxText("ARROWS/WASD MOVE   J/Z PUNCH   K/X KICK   L/C SPECIAL   P PAUSE   ESC MAP", "#a99cc8", 2)); hint.appendChild(pxText("HOLD AWAY TO BLOCK   DOWN+KICK SWEEP   UP JUMP   M SOUND   V SCANLINES", "#6f6496", 2)); root.appendChild(hint); }
     else {
       buildControls();
@@ -2953,8 +2969,8 @@
       if (k === "ok" && g && g.scene === "fight") { /* Enter does nothing in a fight */ }
     });
     addEventListener("keyup", (e) => { const k = KEYMAP[e.code]; if (k) release(k); });
-    addEventListener("blur", () => { for (const k in held) held[k] = 0; setPause(true); });
-    document.addEventListener("visibilitychange", () => { if (document.hidden) setPause(true); });
+    addEventListener("blur", () => { for (const k in held) held[k] = 0; if (!leavingFrom) setPause(true, true); }); // beta 3.47 (QA G1): not once the game is on its way out
+    document.addEventListener("visibilitychange", () => { if (document.hidden && !leavingFrom) setPause(true, true); });
     cv.addEventListener("pointerdown", (e) => {
       SND.init(); try { window.focus(); } catch {}
       const [lx, ly] = toLocal(e.clientX, e.clientY), x = ((lx - cvBox.left) / cvBox.w) * W, y = ((ly - cvBox.top) / cvBox.h) * H;
