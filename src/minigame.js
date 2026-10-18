@@ -1506,8 +1506,18 @@
       x.save(); x.globalCompositeOperation = "lighter"; for (let i = 0; i < 18; i++) { const a0 = (i / 18) * Math.PI * 2 + 0.1, a1 = a0 + 0.09; x.fillStyle = i % 2 ? "rgba(255,170,90,.10)" : "rgba(255,120,160,.07)"; x.beginPath(); x.moveTo(WD / 2, HD * 0.62); x.lineTo(WD / 2 + Math.cos(a0) * 900, HD * 0.62 + Math.sin(a0) * 900); x.lineTo(WD / 2 + Math.cos(a1) * 900, HD * 0.62 + Math.sin(a1) * 900); x.fill(); } x.restore();
       layers.push(c); }
     // 2. the logo (cheap: it is there from the first frame)
-    const logo = () => { const [c, x] = mk(WD, HD); const l1 = logoText("AT THE GLOVES", 3 * RS, METAL, "#d8342a"), l2 = logoText("I O N", 5 * RS, FIRE, "#fed012"); // beta 3.36: the 3.32 sizes at 1x
-      x.drawImage(l1.c, Math.round(WD / 2 - l1.w / 2), RS); x.setTransform(RS, 0, 0, RS, 0, 0); text(x, RO ? "CU" : "WITH", W / 2, 35, "#ffffff", { sc: 1, al: "c", sh: 1 }); x.setTransform(1, 0, 0, 1, 0, 0); x.drawImage(l2.c, Math.round(WD / 2 - l2.w / 2), 44 * RS); return c; };
+    // beta 3.44 (Daniel: the game is now "2 MINUTES 2 FIGHT w/ I O N"): the lockup in three lines, slanted, outlined,
+    // glowing: the two big gold 2s one over the other (the lines start from them), MINUTES in chrome on a dark sign
+    // bar (the shop's own sign over its window), FIGHT in red fire, and under them, smaller, W/ I O N
+    const logo = () => { const [c, x] = mk(WD, HD), s1 = 3 * RS, s2 = 4 * RS;
+      const two = logoText("2", s2, GOLD, "#d8342a"), min = logoText("MINUTES", s1, METAL, "#d8342a"), fight = logoText("FIGHT", s1, FIRE, "#fed012"), withIon = logoText("W/ I O N", 2 * RS, ["#ffffff", "#fff6b8", "#ffe14a", "#ffc21a", "#f29a14"], "#d8342a");
+      const at = (t2, sc, x0, bottom) => x.drawImage(t2.c, Math.round(x0), Math.round(bottom - 7 * sc - (5 + 2 * sc))); // a line, its letters' foot at bottom
+      const gap = 3 * RS, w1 = two.w + gap + min.w - 10, x0 = Math.round(WD / 2 - w1 / 2), b1 = 31 * RS, b2 = 62 * RS;
+      x.fillStyle = OUT; x.fillRect(x0 + two.w - 6 * RS, b1 - 25 * RS, min.w + 2 * RS, 26 * RS); x.fillStyle = "#3c3d42"; x.fillRect(x0 + two.w - 5 * RS, b1 - 24 * RS, min.w, 24 * RS); x.fillStyle = "#6a6c74"; x.fillRect(x0 + two.w - 5 * RS, b1 - 24 * RS, min.w, RS); // the sign bar
+      at(two, s2, x0, b1); at(min, s1, x0 + two.w + gap - 10, b1 - 2 * RS);
+      at(two, s2, x0 - 3 * RS, b2); at(fight, s1, x0 + two.w + gap - 13 * RS, b2 - 2 * RS);
+      at(withIon, 2 * RS, Math.round(WD / 2 - withIon.w / 2) + 6 * RS, 78 * RS);
+      return c; };
     const steps = [];
     // 3. Two Minutes at dusk: the street's drawing, in the dusk's colour, its windows lit warm
     steps.push(() => stageStep()); // the street first, a step at a time (beta 3.34)
@@ -2632,7 +2642,7 @@
     root = el; root.classList.add("mg");
     TOUCH = matchMedia("(pointer: coarse)").matches || (navigator.maxTouchPoints > 0 && !matchMedia("(pointer: fine)").matches);
     TRK.open(); // r211: the visit, and where it came from
-    [cv, cx2] = mk(W * RS, H * RS); cv.className = "mg-cv"; cv.setAttribute("role", "img"); cv.setAttribute("aria-label", "At the gloves with I O N, a fighting game");
+    [cv, cx2] = mk(W * RS, H * RS); cv.className = "mg-cv"; cv.setAttribute("role", "img"); cv.setAttribute("aria-label", "2 Minutes 2 Fight with I O N, a fighting game");
     root.appendChild(cv);
     // the speaker (the site's own switch) and, on a laptop, the keys under the picture
     const snd = document.createElement("button"); snd.type = "button"; snd.className = "mg-snd";

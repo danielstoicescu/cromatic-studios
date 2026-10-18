@@ -26119,11 +26119,12 @@ void main() {
         ctx.fillStyle = gr; ctx.fillRect(0, 0, w, h);
         ctx.fillStyle = "rgba(0,0,0,.18)"; for (let y = 1; y < h; y += 3) ctx.fillRect(0, y, w, 1); // scanlines
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.font = `900 ${big}px ui-monospace, Menlo, monospace`; ctx.lineWidth = Math.max(2, big / 7); ctx.strokeStyle = "#c6402e";
-        ctx.strokeText("I O N", w / 2, h * 0.58); ctx.fillStyle = "#FED012"; ctx.fillText("I O N", w / 2, h * 0.58);
+        if (big) { ctx.font = `900 ${big}px ui-monospace, Menlo, monospace`; ctx.lineWidth = Math.max(2, big / 7); ctx.strokeStyle = "#c6402e";
+        ctx.strokeText("I O N", w / 2, h * 0.58); ctx.fillStyle = "#FED012"; ctx.fillText("I O N", w / 2, h * 0.58); }
       };
-      const scrTex = paint(64, 48, (ctx) => { title(ctx, 64, 48, 17); ctx.font = "700 7px ui-monospace, Menlo, monospace"; ctx.fillStyle = "#f3eefe"; ctx.fillText("AT THE GLOVES", 32, 10); });
-      const marTex = paint(64, 24, (ctx) => title(ctx, 64, 24, 15));
+      // beta 3.44 (Daniel): the game is now "2 MINUTES 2 FIGHT w/ I O N": the cabinet's screen and marquee say so
+      const scrTex = paint(64, 48, (ctx) => { title(ctx, 64, 48, 0); ctx.font = "900 8px ui-monospace, Menlo, monospace"; ctx.fillStyle = "#f3eefe"; ctx.fillText("2 MINUTES", 32, 9); ctx.strokeStyle = "#c6402e"; ctx.lineWidth = 2; ctx.strokeText("2 FIGHT", 32, 20); ctx.fillStyle = "#FED012"; ctx.fillText("2 FIGHT", 32, 20); ctx.font = "900 13px ui-monospace, Menlo, monospace"; ctx.strokeText("I O N", 32, 37); ctx.fillText("I O N", 32, 37); ctx.font = "700 6px ui-monospace, Menlo, monospace"; ctx.fillStyle = "#f3eefe"; ctx.fillText("w/", 9, 37); });
+      const marTex = paint(64, 24, (ctx) => { title(ctx, 64, 24, 0); ctx.font = "900 8px ui-monospace, Menlo, monospace"; ctx.lineWidth = 2; ctx.strokeStyle = "#c6402e"; for (const [s2, y] of [["2 MINUTES", 8], ["2 FIGHT", 17]]) { ctx.strokeText(s2, 32, y); ctx.fillStyle = "#FED012"; ctx.fillText(s2, 32, y); } });
       const purple = new MeshStandardMaterial({ color: "#2a1f4a", roughness: 0.55 }), edge = new MeshStandardMaterial({ color: "#FED012", roughness: 0.5 });
       const box = (w, h, d, m, x, y, z, rx = 0) => { const q = new Mesh(new BoxGeometry(w, h, d), m); q.position.set(x, y, z); q.rotation.x = rx; arc.add(q); return q; };
       box(15, 27, 12, purple, 0, 13.5, 0); // the cabinet
@@ -34605,7 +34606,7 @@ void main() {
     window.addEventListener("message", (e) => { if (e.origin === location.origin && e.data && e.data.cz === "gloves-close" && !caseFrame.classList.contains("hidden")) closeFrame(); });
     // r211 (Daniel: GA4 on the mini-game): every way in says where it came from (?from=…); the game reports it as
     // entry_source on gloves_open and takes it off its own address straight away
-    window.__openGloves = (from) => openFrameHook?.(`/play/gloves/?${from ? `from=${encodeURIComponent(from)}&` : ""}embed=1`, "At the gloves with I O N");
+    window.__openGloves = (from) => openFrameHook?.(`/play/gloves/?${from ? `from=${encodeURIComponent(from)}&` : ""}embed=1`, "2 Minutes 2 Fight w/ I O N"); // beta 3.44: the game's new name (the URL and the gloves_* events keep the old one)
     let steamSeen = false;
     // any page of the website, full screen over the map (OMA's brand canvas, …)
     openFrameHook = (url, title) => {
@@ -35064,7 +35065,7 @@ void main() {
       // r139a: the lab is a chapter of the Two Minutes case: the way on to its page (and the shared ending there)
       if (openFrameHook && /^https?:$/.test(location.protocol)) { const more = el("button", "coffee-btn tm-more", "See more → the whole Two Minutes case"); more.onclick = () => { closeModal(); openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); }; mEl.querySelector(".hm-info").append(more); }
       // beta 3.1 (Daniel): and the lab's mini-game
-      if (openFrameHook && /^https?:$/.test(location.protocol)) { const play = el("button", "coffee-btn tm-more lab-play", "Play: gloves with I O N →"); play.onclick = () => { closeModal(); window.__openGloves?.("lab-modal"); }; /* r211 */ mEl.querySelector(".hm-info").append(play); }
+      if (openFrameHook && /^https?:$/.test(location.protocol)) { const play = el("button", "coffee-btn tm-more lab-play", /^ro/i.test(document.documentElement.lang || "") ? "Joacă: 2 Minutes 2 Fight cu I O N →" : "Play: 2 Minutes 2 Fight w/ I O N →"); play.onclick = () => { closeModal(); window.__openGloves?.("lab-modal"); }; /* r211 */ mEl.querySelector(".hm-info").append(play); }
       mEl.querySelector(".hm-info").append(close);
       modalBack.appendChild(mEl);
       openModal();
@@ -39910,7 +39911,7 @@ void main() {
         { id: "tm", br: "A", x: 900, z: 4262, px: 640, pz: 4260, h: 80, name: "Two Minutes", line: "BRAND \xB7 BOXES \xB7 FILM", c: "#111111", t: "#ffffff", act: "tmMedia", tm: true, desc: "A specialty coffee shop brand made to be loved fast and remembered long. Three double espressos are on us." },
         // r201 (Daniel): the mini-game, a place of its own by the Two Min Lab (its arcade cabinet): the card in the game's
         // look, the Two Minutes mark in a circle, "Challenge I O N to a fight!"; not numbered (it is not a project)
-        { id: "gloves", br: "A", x: 860, z: 4262, px: 652, pz: 4114, h: 34, game: true, name: "At the gloves with I O N", line: "A TWO MIN LAB GAME", c: "#1d1638", t: "#FED012",
+        { id: "gloves", br: "A", x: 860, z: 4262, px: 652, pz: 4114, h: 34, game: true, name: "2 Minutes 2 Fight w/ I O N", line: "A TWO MIN LAB GAME", c: "#1d1638", t: "#FED012",
           desc: "A small 16-bit fighting game from the Two Min Lab. Pick Daniel, Cristian or Coz from the Cromatic crew and box I O N, the founder of Two Minutes." },
         { id: "oma", br: "A", x: 706, z: 4560, h: 80, name: "OMA Coffee", line: "BRAȘOV \xB7 AT THE FOOT OF T\xC2MPA", c: "#4a7c4e", t: "#ffffff", act: "omaTag" },
         { id: "sip", br: "A", x: 706, z: 4985, h: 70, name: "Sip Coffee & Wine", line: "BRANDING \xB7 COMMUNICATION", c: "#C9A227", t: "#14120c", act: "sipTag" },
