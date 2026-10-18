@@ -3425,6 +3425,9 @@ body.kz-intro .map-welcome, body.map-boarding .map-welcome { display: none; }
 @media (max-width: 719px) { .map-top .map-hi { height: 38px; padding: 0 9px; } .map-top .map-hi b { display: none; } }
 .site-btn.hi-link .sb-hi { background: #FED012; color: #141414; display: grid; place-items: center; font-size: 15px; }
 @media (max-width: 520px) { .map-welcome { top: calc(150px + env(safe-area-inset-top, 0px)); translate: -50% 0; max-height: calc(100dvh - 250px); } }
+/* beta 3.48 r217 (Daniel, QA round 2): on a short phone (iPhone 13: 664 px) "Drive it yourself" sat under the fold of the card;
+   the map's own controls are hidden while the welcome card is open, so it may come down to the bottom of the screen */
+@media (max-width: 520px) { body.n2-phone .map-welcome { max-height: calc(100vh - 166px - env(safe-area-inset-bottom, 0px)); max-height: calc(100dvh - 166px - env(safe-area-inset-bottom, 0px)); } }
 
 /* r123: the pass after sending: full width, with save and take-off */
 .mapcard.contact .cform.done { display: block !important; }
@@ -4928,8 +4931,8 @@ body.scheme-sketch .map-card .mcd-actions.mcd-two .mcd-play { background-color: 
 .coffee-btn.lab-play { background: #C6402E; color: #fff; }
 .case-frame.cf-game, .case-frame.cf-game .cf-iframe { background: #0b0816; }
 .case-frame.cf-game .cf-share { display: none; }
-/* beta 3.46 r215 (Daniel, QA pass): the game played sideways on an upright phone has its speaker and MENU under the ×: the × goes to the bottom right */
-.case-frame.cf-game.cf-side .cf-close { top: auto; bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
+/* beta 3.48 r217: r215 moved the × to the bottom right while the game was sideways (it covered the game's speaker); since the
+   game's 3.47 keeps its own controls clear of the × it stays in its corner, as on every page */
 
 /* beta 3.16 (Daniel): the mini-game is played sideways on a phone: no "turn your phone back" over its frame */
 body:has(.case-frame.cf-game:not(.hidden)) .rotate-lock { display: none !important; }

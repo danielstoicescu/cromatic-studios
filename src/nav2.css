@@ -284,9 +284,17 @@ body.nav2:has(.crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:no
 body:has(.case-frame:not(.hidden), .crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:not(.hidden), .theme-menu.open) .n2-guide,
 body:is(.modal-open, .scf-open, .map-boarding, .menu-open) .n2-guide { opacity: 0 !important; pointer-events: none !important; }
 @media (min-width: 720px) { body.nav2 #cz-ck { bottom: 92px; } }
+/* beta 3.48 r217 (Daniel, QA round 2): on a phone the cookie card sat at the top during the opening, over its headline:
+   until the map shows it waits at the bottom, just above "Skip intro" */
+@media (max-width: 600px) { body.map-mode.kz-intro #cz-ck { top: auto; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
 /* beta 3.46 r215 (Daniel, QA pass): on a first visit the cookie card came up over the welcome card (on a laptop over its
    start buttons, on a phone over its title); it now waits while the welcome card is open and shows once it closes */
-body.nav2:not(.kz-intro):has(.map-welcome:not(.hidden)) #cz-ck { opacity: 0 !important; pointer-events: none !important; }
+body.nav2:not(.kz-intro):not(.ck-welcome):has(.map-welcome:not(.hidden)) #cz-ck { opacity: 0 !important; pointer-events: none !important; }
+/* beta 3.48 r217 (Daniel, QA round 2): ...for 20 s; then it comes up at the top, and the welcome card sits under it (its own
+   content scrolls if it must), so the cookie card never covers the welcome card's buttons */
+body.nav2.ck-welcome:has(#cz-ck) #cz-ck { top: calc(8px + env(safe-area-inset-top, 0px)) !important; bottom: auto !important; }
+body.nav2.ck-welcome:has(#cz-ck) .map-welcome { top: auto; bottom: 12px; translate: -50% 0; max-height: calc(100vh - var(--ckh, 230px) - 36px - env(safe-area-inset-top, 0px)); max-height: calc(100dvh - var(--ckh, 230px) - 36px - env(safe-area-inset-top, 0px)); }
+@media (min-width: 521px) { body.nav2.ck-welcome:has(#cz-ck) .map-welcome { bottom: 96px; max-height: calc(100vh - var(--ckh, 230px) - 120px); max-height: calc(100dvh - var(--ckh, 230px) - 120px); } } /* a laptop: above the Street / Bird's eye toggle */
 /* beta 2.91 (usage pass): "Skip intro" could not be pressed while the opening's first line was up: the page's own
    pre-painted line (.i4-pre, adopted by the intro) lay over it, full screen, so the tap only jumped one beat */
 .i4-pre { pointer-events: none; }

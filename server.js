@@ -77,7 +77,7 @@ function clean(b) {
     ref: str(b.ref, 12).replace(/[^A-Z0-9]/gi, "") || "CS00000",
     name: str(b.name, 120), first: str(b.first, 60), email: str(b.email, 160), phone: str(b.phone, 40), msg: str(b.msg, 2000),
     date: str(b.date, 20), time: str(b.time, 8), flight: str(b.flight, 12), klass: str(b.klass, 30), boarding: str(b.boarding, 40),
-    biz: str(b.biz, 40), when: str(b.when, 40), seat: "1A", gate: "9", terminal: "Coffee",
+    biz: str(b.biz, 40), when: str(b.when, 40), seat: "1A", gate: "9", terminal: "Coffee", lang: b.lang === "ro" ? "ro" : "en", // beta 3.48 r217: the passenger's e-mail in Romanian from the Romanian website
     dreams: Array.isArray(b.dreams) ? b.dreams.slice(0, 6).map((d) => str(d, 40)).filter(Boolean) : [],
     stops: Array.isArray(b.stops) ? b.stops.slice(0, 6).map((s) => [str(s?.[0], 4), str(s?.[1], 30)]) : []
   };
@@ -150,7 +150,7 @@ async function boarding(req, res, tag = SUBJECT_TAG) {
     });
     await transport.sendMail({
       from: MAIL_FROM, to: `${t.name} <${t.email}>`, replyTo: MAIL_TO,
-      subject: `Your boarding pass to Olari 9 \u00B7 ${t.ref}`,
+      subject: t.lang === "ro" ? `Boarding pass-ul tău spre Olari 9 \u00B7 ${t.ref}` : `Your boarding pass to Olari 9 \u00B7 ${t.ref}`,
       html: passHtml(t, "passenger"), text: passText(t, "passenger")
     });
     lastMail = { at: new Date().toISOString(), error: null };

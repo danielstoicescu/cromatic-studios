@@ -2,6 +2,7 @@
 // and the boarding-pass form (the same POST /api/boarding the drive uses).
 (() => {
   const d = document, root = d.documentElement;
+  const RO = (root.lang || "").slice(0, 2) === "ro"; // beta 3.48 r217 (Daniel, QA round 2): the script's own words in Romanian on the Romanian pages
   root.classList.add("js");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -137,8 +138,8 @@
   });
   const lbList = [...d.querySelectorAll("img[data-lb]")];
   if (lbList.length) {
-    const box = d.createElement("div"); box.className = "lbx"; box.setAttribute("role", "dialog"); box.setAttribute("aria-label", "Image viewer");
-    box.innerHTML = '<img alt=""><button class="lx-close" aria-label="Close">×</button><button class="lx-prev" aria-label="Previous">←</button><button class="lx-next" aria-label="Next">→</button><span class="lx-n"></span>';
+    const box = d.createElement("div"); box.className = "lbx"; box.setAttribute("role", "dialog"); box.setAttribute("aria-label", RO ? "Galerie foto" : "Image viewer");
+    box.innerHTML = RO ? '<img alt=""><button class="lx-close" aria-label="Închide">×</button><button class="lx-prev" aria-label="Înapoi">←</button><button class="lx-next" aria-label="Înainte">→</button><span class="lx-n"></span>' : '<img alt=""><button class="lx-close" aria-label="Close">×</button><button class="lx-prev" aria-label="Previous">←</button><button class="lx-next" aria-label="Next">→</button><span class="lx-n"></span>';
     d.body.appendChild(box);
     const im = box.querySelector("img"), nEl = box.querySelector(".lx-n");
     let k = 0;
@@ -201,7 +202,7 @@
   // YouTube: a poster until clicked, then the privacy-friendly embed
   d.querySelectorAll(".yt").forEach((y) => y.querySelector(".yt-play")?.addEventListener("click", () => {
     if (window.__ytPlay && y.hasAttribute("data-yt")) return; // r138d: the build's chromeless player takes it (build/film.mjs)
-    y.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${y.dataset.id}?autoplay=1&rel=0&modestbranding=1&playsinline=1" title="Two Minutes film" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+    y.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${y.dataset.id}?autoplay=1&rel=0&modestbranding=1&playsinline=1" title="${RO ? "Filmul Two Minutes" : "Two Minutes film"}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
   }));
 
   // the boarding pass
@@ -223,13 +224,17 @@
   const CODES = { "Branding": ["BRD", "Branding"], "Website / App": ["WEB", "Website / App"], "Video": ["VID", "Video"], "Growth & Social": ["GRW", "Growth & Social"], "Not sure yet": ["TBD", "Open route"] };
   const CLASS = { "Indie / local": "Indie Class", "Startup": "Startup Class", "Scale-up": "Growth Class", "Established": "First Class" };
   const BOARD = { "Yesterday :)": "Now boarding", "1 - 3 months": "In 1–3 months", "Just exploring": "Open ticket" };
-  const MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+  const MON = RO ? ["IAN", "FEB", "MAR", "APR", "MAI", "IUN", "IUL", "AUG", "SEP", "OCT", "NOI", "DEC"] : ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
   const status = f.querySelector(".bf-status");
-  // beta 3.46 r215 (Daniel, QA pass): the form's messages in Romanian on the Romanian pages (the pass keeps its Cromatic Air English)
-  const RO = (root.lang || "").slice(0, 2) === "ro";
+  // beta 3.46 r215 (Daniel, QA pass): the form's messages in Romanian on the Romanian pages; beta 3.48 r217: and the pass
   const T = RO
-    ? { name: "Ne-ar plăcea să știm cum te cheamă.", mail: "Adresa de email nu pare corectă.", printing: "Îți tipărim biletul de îmbarcare…", busy: "Prea multe bilete de aici, deocamdată. Scrie-ne la hi@cromaticstudios.com și îți răspundem.", hello: "Bine ai venit la bord,", sent: "Biletul e deja în inboxul tău și îți răspundem într-o zi lucrătoare.", mailto: "Aplicația ta de email ar trebui să se deschidă cu detaliile; trimite-le și îți răspundem într-o zi lucrătoare." }
-    : { name: "We'd love to know your name.", mail: "That email doesn't look right.", printing: "Printing your boarding pass…", busy: "Too many passes from here for now. Write to hi@cromaticstudios.com and we'll answer.", hello: "Welcome aboard,", sent: "Your pass is in your inbox, and we'll answer within one working day.", mailto: "Your email app should open with the details; send it and we'll answer within one working day." };
+    ? { name: "Ne-ar plăcea să știm cum te cheamă.", mail: "Adresa de email nu pare corectă.", printing: "Îți tipărim boarding pass-ul…", busy: "Prea multe boarding pass-uri de aici, deocamdată. Scrie-ne la hi@cromaticstudios.com și îți răspundem.", hello: "Bine ai venit la bord,", sent: "Boarding pass-ul e deja în inboxul tău și îți răspundem într-o zi lucrătoare.", mailto: "Aplicația ta de email ar trebui să se deschidă cu detaliile; trimite-le și îți răspundem într-o zi lucrătoare.",
+        pass: "Carte de îmbarcare", booking: "Rezervare", passenger: "PASAGER", flight: "ZBOR", klass: "CLASĂ", boarding: "ÎMBARCARE", to: "Spre · Str. Olari 9", gate: "Poarta", seat: "Loc" }
+    : { name: "We'd love to know your name.", mail: "That email doesn't look right.", printing: "Printing your boarding pass…", busy: "Too many passes from here for now. Write to hi@cromaticstudios.com and we'll answer.", hello: "Welcome aboard,", sent: "Your pass is in your inbox, and we'll answer within one working day.", mailto: "Your email app should open with the details; send it and we'll answer within one working day.",
+        pass: "Boarding pass", booking: "Booking", passenger: "PASSENGER", flight: "FLIGHT", klass: "CLASS", boarding: "BOARDING", to: "To · Str. Olari 9", gate: "Gate", seat: "Seat" };
+  // the values sent are the English ones (the studio reads them, the codes map from them); the Romanian pass shows them in Romanian
+  const RO_VAL = { "Website / App": "Site / Aplicație", "Growth & Social": "Creștere și social media", "Open route": "Rută deschisă", "Indie Class": "Clasa Indie", "Startup Class": "Clasa Startup", "Growth Class": "Clasa Growth", "First Class": "Clasa întâi", "Open Class": "Clasă deschisă", "Now boarding": "Îmbarcare acum", "In 1–3 months": "În 1–3 luni", "Open ticket": "Bilet deschis", "When you are ready": "Când ești gata" };
+  const val = (x) => (RO && RO_VAL[x]) || x;
   const bars = (ref) => { let x = 0, s = ""; for (let i = 0; i < 44; i++) { const c = ref.charCodeAt(i % ref.length) * (i + 3), w = 1 + (c % 3); s += `<rect x="${x}" y="0" width="${w}" height="40"/>`; x += w + 1 + ((c >> 2) % 2); } return `<svg viewBox="0 0 ${x} 40" preserveAspectRatio="none" aria-hidden="true">${s}</svg>`; };
 
   f.addEventListener("submit", async (e) => {
@@ -251,7 +256,7 @@
       flight: `CS ${String(99 + pick.dreams.length).padStart(3, "0")}`,
       stops: pick.dreams.map((x) => CODES[x] || ["TBD", x]), dreams: pick.dreams, biz: pick.biz, when: pick.when,
       klass: CLASS[pick.biz] || "Open Class", boarding: BOARD[pick.when] || "When you are ready",
-      company_site: v("company_site")
+      company_site: v("company_site"), lang: RO ? "ro" : "en"
     };
     const btn = f.querySelector("button[type=submit]");
     btn.disabled = true; status.textContent = T.printing;
@@ -270,14 +275,14 @@
     const pass = d.createElement("div");
     pass.className = "pass"; pass.setAttribute("role", "status"); pass.tabIndex = -1;
     pass.innerHTML = `<div class="pass-main">
-      <div class="pass-head mono"><span>✳ Cromatic Air</span><b>Boarding pass</b><span>Booking ${esc(t.ref)}</span></div>
+      <div class="pass-head mono"><span>✳ Cromatic Air</span><b>${T.pass}</b><span>${T.booking} ${esc(t.ref)}</span></div>
       <p class="pass-hello">${T.hello} <b>${esc(t.first)}</b>. ${sent ? T.sent : T.mailto}</p>
-      <div class="pass-route">${legs.map(([c, n], i) => `<span class="${i === 0 || i === legs.length - 1 ? "end" : ""}"><b>${esc(c)}</b><i>${esc(n)}</i></span>`).join('<span class="hop">· · ✈ · ·</span>')}</div>
+      <div class="pass-route">${legs.map(([c, n], i) => `<span class="${i === 0 || i === legs.length - 1 ? "end" : ""}"><b>${esc(c)}</b><i>${esc(val(n))}</i></span>`).join('<span class="hop">· · ✈ · ·</span>')}</div>
       <div class="pass-grid">
-        <span><small>PASSENGER</small>${esc(t.name)}</span><span><small>FLIGHT</small>${esc(t.flight)}</span>
-        <span><small>CLASS</small>${esc(t.klass)}</span><span><small>BOARDING</small>${esc(t.boarding)}</span>
+        <span><small>${T.passenger}</small>${esc(t.name)}</span><span><small>${T.flight}</small>${esc(t.flight)}</span>
+        <span><small>${T.klass}</small>${esc(val(t.klass))}</span><span><small>${T.boarding}</small>${esc(val(t.boarding))}</span>
       </div></div>
-      <div class="pass-stub"><span class="mono">To · Str. Olari 9</span><span><small class="mono">Gate</small> <span class="big">9</span> · <small class="mono">Seat</small> <span class="big">1A</span></span>${bars(t.ref)}<span class="mono">${esc(t.ref)}</span></div>`;
+      <div class="pass-stub"><span class="mono">${T.to}</span><span><small class="mono">${T.gate}</small> <span class="big">9</span> · <small class="mono">${T.seat}</small> <span class="big">1A</span></span>${bars(t.ref)}<span class="mono">${esc(t.ref)}</span></div>`;
     f.replaceWith(pass);
     pass.focus();
   });

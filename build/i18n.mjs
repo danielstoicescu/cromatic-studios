@@ -27,14 +27,18 @@ const norm = (t) => String(t).replace(/\s+/g, " ").trim();
 const hasWords = (t) => /[A-Za-z]{2,}/.test(t.replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/gi, " "));
 const INLINE = new Set(["strong", "b", "em", "i", "mark", "u", "small", "sup", "sub", "br", "code", "abbr", "a", "span", "q", "s", "time"]);
 const SKIP = new Set(["script", "style", "noscript", "svg", "template", "code", "pre", "video", "iframe", "select", "title", "head"]);
-const ATTRS = ["alt", "aria-label", "title", "placeholder", "data-label"];
+// beta 3.48 r217: in schema.org, a text with no lower-case word (a name: "Cromatic Studios", "Two Minutes") stays as it is
+const JSONLD_KEEP = { test: (t) => !/(?:^|[\s(·:,/-])[a-zăâîșț][a-zăâîșț'’]+/.test(t) };
+const ATTRS = ["alt", "aria-label", "title", "placeholder", "data-label", "data-title"]; // beta 3.48 r217: + data-title (the films' facades)
 
 // the translatable blocks of a page: the first element on each branch that holds words of its own
 function walk(node, out) {
   for (const el of node.childNodes) {
     if (el.nodeType !== 1) continue;
     const tag = el.rawTagName?.toLowerCase();
-    if (!tag || SKIP.has(tag)) continue;
+    if (!tag) continue;
+    // beta 3.48 r217 (Daniel, QA round 2): a film or a frame keeps its insides, but its own label is read out: translated
+    if (SKIP.has(tag)) { if (tag === "video" || tag === "iframe") for (const a of ATTRS) { const v = el.getAttribute?.(a); if (v && hasWords(v)) out.push({ el, attr: a, key: norm(v) }); } continue; }
     for (const a of ATTRS) { const v = el.getAttribute?.(a); if (v && hasWords(v)) out.push({ el, attr: a, key: norm(v) }); }
     const kids = el.childNodes.filter((c) => c.nodeType === 1);
     // a title made of pills (<h2 class="ptitle">, <span class="pill-title">): translated as one phrase, the pills
@@ -61,9 +65,33 @@ export function makeI18n(root) {
   let dict = {};
   try { dict = JSON.parse(readFileSync(dictFile, "utf8")); } catch {}
   const D = new Map(Object.entries(dict).map(([k, v]) => [norm(k), v]));
-  const missing = new Map();
-  const tr = (key, path) => { const v = D.get(key); if (v != null && v !== "") return v; if (!missing.has(key)) missing.set(key, path); return null; };
+  const missing = new Map(), used = new Map();
+  const tr = (key, path) => { const v = D.get(key); if (v != null && v !== "") { if (!used.has(key)) used.set(key, path); return v; } if (!missing.has(key)) missing.set(key, path); return null; };
+  // beta 3.48 r217 (Daniel, QA round 2): an entry whose Romanian is the English itself counted as translated, so English left
+  // by mistake never showed up in ro.missing.json. Those used on a page that read as English prose (two words or more, an
+  // English function word, no Romanian letters, not a Title Case name) are now listed in ro.same.json, unless
+  // ro.keep-en.json keeps them in English on purpose (client taglines, the opening's lines since r144, quoted slide text)
+  let keepEn = {};
+  try { keepEn = JSON.parse(readFileSync(join(root, "site", "i18n", "ro.keep-en.json"), "utf8")); } catch {}
+  const KEEP = new Set(Object.keys(keepEn).filter((k) => k !== "_about").map(norm));
+  const FW = /^(a|an|the|and|of|to|in|on|for|with|your|our|we|you|is|are|it|its|by|from|at|as|but|or|how|what|who|will|can|one|all|more|that|this|there|s|be|not|no)$/i;
+  const looksEnglish = (k) => {
+    const t = k.replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/gi, " ");
+    if (/[ăâîșțşţĂÂÎȘȚ]/.test(t)) return false;
+    const w = t.match(/[A-Za-z][A-Za-z'’]*/g) || [];
+    if (w.length < 2 || !w.some((x) => FW.test(x))) return false;
+    return !w.every((x) => x.length < 4 || /^[A-Z]/.test(x)); // a Title Case name ("The One Who Knocks")
+  };
 
+  // beta 3.48 r217: the schema.org names the build writes from a pattern ("Bepco: case study", "Brand strategy: case
+  // studies", "Bepco video reel, from the Bepco case study by Cromatic Studios.") are translated by the same pattern
+  const plain = (t) => { const v = D.get(norm(t)); return v != null && v !== "" ? v.replace(/<[^>]+>/g, "") : null; };
+  const ldRule = (t) => {
+    let m = /^(.+): case study$/.exec(t); if (m) return `${m[1]}: studiu de caz`;
+    m = /^(.+): case studies$/.exec(t); if (m) { const n = plain(m[1]) || plain(m[1].replace(/&/g, "&amp;")); return n || JSONLD_KEEP.test(m[1]) ? `${n || m[1]}: studii de caz` : null; }
+    m = /^(.+), (?:a film )?from the (.+) case study by Cromatic Studios\.$/.exec(t); if (m) { const n = plain(m[1]) || (JSONLD_KEEP.test(m[1]) ? m[1] : null); return n ? `${n}, din studiul de caz ${m[2]} de la Cromatic Studios.` : null; }
+    return null;
+  };
   // EN path -> RO path for every link we rewrite
   const linkRo = (href) => {
     const m = /^(\/[^?#]*)([?#].*)?$/.exec(href);
@@ -125,7 +153,10 @@ export function makeI18n(root) {
             for (const k of Object.keys(o)) {
               // r136 (N28): the page is Romanian; the website (inLanguage ["en", "ro"]) stays the same everywhere
               if (k === "inLanguage") { if (!Array.isArray(o[k])) o[k] = "ro"; }
-              else if (typeof o[k] === "string" && ["name", "headline", "description", "text"].includes(k)) { const v = D.get(norm(o[k])); if (v) o[k] = v.replace(/<[^>]+>/g, ""); }
+              // beta 3.48 r217 (Daniel, QA round 2): through tr(), so a schema.org text with no Romanian is listed in ro.missing.json
+              // like any block (it stayed English, unseen); and the slogan, the genres and the keywords too
+              else if (typeof o[k] === "string" && ["name", "headline", "description", "text", "slogan", "genre", "abstract", "caption"].includes(k) && hasWords(o[k]) && !JSONLD_KEEP.test(o[k])) { const v = ldRule(norm(o[k])) || tr(norm(o[k]), path); if (v) o[k] = v.replace(/<[^>]+>/g, ""); }
+              else if (Array.isArray(o[k]) && ["genre", "keywords"].includes(k)) o[k] = o[k].map((x) => { if (typeof x !== "string" || !hasWords(x)) return x; const v = tr(norm(x), path); return v ? v.replace(/<[^>]+>/g, "") : x; });
               else if (typeof o[k] === "string" && (k === "url" || k === "item" || k === "@id" || k === "mainEntityOfPage") && o[k].startsWith(SITE)) {
                 const u = o[k].slice(SITE.length), hash = u.includes("#") ? u.slice(u.indexOf("#")) : "", p = u.replace(/#.*$/, "");
                 if (enPaths.has(p)) o[k] = SITE + roPath(p) + hash;
@@ -155,6 +186,12 @@ export function makeI18n(root) {
     return html;
   }
 
+  function sameAsEnglish() {
+    const out = {};
+    for (const [k, p] of used) { const v = D.get(k); if (norm(v) === k && !KEEP.has(k) && looksEnglish(k)) out[k] = p; }
+    try { writeFileSync(join(root, "site", "i18n", "ro.same.json"), JSON.stringify(out, null, 1) + "\n"); } catch {}
+    return Object.keys(out).length;
+  }
   function saveMissing() {
     const file = join(root, "site", "i18n", "ro.missing.json");
     mkdirSync(join(root, "site", "i18n"), { recursive: true });
@@ -163,5 +200,5 @@ export function makeI18n(root) {
     try { writeFileSync(file, JSON.stringify(obj, null, 1) + "\n"); } catch {}
     return missing.size;
   }
-  return { translate, alternates, saveMissing, size: D.size };
+  return { translate, alternates, saveMissing, sameAsEnglish, keptEnglish: KEEP.size, size: D.size };
 }

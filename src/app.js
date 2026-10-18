@@ -26128,7 +26128,9 @@ void main() {
       const two = (ctx, x0, y0) => { for (const [col, o] of [["#7a1a10", 1], ["#FED012", 0]]) { ctx.fillStyle = col; TWO.forEach((r, y) => [...r].forEach((ch, x) => { if (ch === "#") ctx.fillRect(x0 + x + o, y0 + y + o, 1, 1); })); } };
       const word = (ctx, s2, x, y, fill) => { ctx.textAlign = "left"; ctx.lineWidth = 2; ctx.strokeStyle = "#c6402e"; ctx.strokeText(s2, x, y); ctx.fillStyle = fill; ctx.fillText(s2, x, y); };
       const scrTex = paint(64, 48, (ctx) => { title(ctx, 64, 48, 0); ctx.font = "900 8px ui-monospace, Menlo, monospace"; two(ctx, 4, 3); word(ctx, "MINUTES", 14, 7, "#f3eefe"); two(ctx, 4, 14); word(ctx, "FIGHT", 14, 18, "#FED012"); ctx.textAlign = "center"; ctx.font = "900 13px ui-monospace, Menlo, monospace"; ctx.strokeText("I O N", 34, 37); ctx.fillStyle = "#FED012"; ctx.fillText("I O N", 34, 37); ctx.font = "700 6px ui-monospace, Menlo, monospace"; ctx.fillStyle = "#f3eefe"; ctx.fillText("w/", 10, 37); });
-      const marTex = paint(64, 24, (ctx) => { title(ctx, 64, 24, 0); ctx.font = "900 8px ui-monospace, Menlo, monospace"; two(ctx, 4, 1); word(ctx, "MINUTES", 14, 5, "#f3eefe"); two(ctx, 4, 12); word(ctx, "FIGHT", 14, 16, "#FED012"); });
+      // beta 3.48 r217 (Daniel, QA round 2): the marquee has the whole name too, "w/ I O N" after "2 FIGHT", right-aligned to
+      // the measured text (80x26 is also the marquee's own shape, so the letters are no longer stretched)
+      const marTex = paint(80, 26, (ctx) => { title(ctx, 80, 26, 0); ctx.font = "900 8px ui-monospace, Menlo, monospace"; two(ctx, 3, 2); word(ctx, "MINUTES", 13, 6, "#f3eefe"); two(ctx, 3, 14); word(ctx, "FIGHT", 13, 18, "#FED012"); const xi = 78 - Math.ceil(ctx.measureText("I O N").width); word(ctx, "I O N", xi, 18, "#FED012"); ctx.font = "700 6px ui-monospace, Menlo, monospace"; ctx.fillStyle = "#f3eefe"; ctx.fillText("w/", xi - 2 - Math.ceil(ctx.measureText("w/").width), 18); });
       const purple = new MeshStandardMaterial({ color: "#2a1f4a", roughness: 0.55 }), edge = new MeshStandardMaterial({ color: "#FED012", roughness: 0.5 });
       const box = (w, h, d, m, x, y, z, rx = 0) => { const q = new Mesh(new BoxGeometry(w, h, d), m); q.position.set(x, y, z); q.rotation.x = rx; arc.add(q); return q; };
       box(15, 27, 12, purple, 0, 13.5, 0); // the cabinet
@@ -30922,7 +30924,7 @@ void main() {
         let t = im.height, bo = 0;
         for (let j = 0; j < im.height; j++) for (let i = a; i < b; i++) if (d[(j * im.width + i) * 4 + 3] > 20) { if (j < t) t = j; if (j > bo) bo = j; }
         const o = document.createElement("canvas"); o.width = b - a; o.height = bo - t + 1;
-        const ox = o.getContext("2d"); ox.drawImage(im, a, t, b - a, o.height, 0, 0, b - a, o.height);
+        const ox = o.getContext("2d", { willReadFrequently: true }); ox.drawImage(im, a, t, b - a, o.height, 0, 0, b - a, o.height); // beta 3.48 r217: the tail's lettering reads these back (runs()) on every draw: Chrome warned twice
         ox.globalCompositeOperation = "source-in"; ox.fillStyle = "#111111"; ox.fillRect(0, 0, o.width, o.height);
         return o;
       };
@@ -34585,7 +34587,7 @@ void main() {
       const sp = btn.querySelector("span"); sp.textContent = "Link copied"; btn.classList.add("done");
       clearTimeout(btn._t); btn._t = setTimeout(() => { sp.textContent = "Share"; btn.classList.remove("done"); }, 1800);
     };
-    const closeFrame = () => { caseFrame._url = null; caseFrame._anim?.cancel(); caseFrame.classList.add("hidden"); caseFrame.classList.remove("cf-side"); document.body.classList.remove("scf-open"); blankFrame(); }; // r137a: _anim = the grow-in from the place card; beta 3.46 r215: cf-side = the game sideways
+    const closeFrame = () => { caseFrame._url = null; caseFrame._anim?.cancel(); caseFrame.classList.add("hidden"); document.body.classList.remove("scf-open"); blankFrame(); }; // r137a: _anim = the grow-in from the place card
     // a case page inside the map asks for the boarding pass ("Ready for boarding")
     window.addEventListener("message", (e) => {
       if (e.origin !== location.origin || !e.data || e.data.cz !== "boarding") return;
@@ -34626,22 +34628,10 @@ void main() {
         nf.addEventListener("load", () => { try { const l = nf.contentWindow.location; if (nf.isConnected && /^\/(ro\/)?(work|proiecte)\//.test(l.pathname)) caseFrame._url = l.pathname; } catch {} });
         // beta 3.1 (Daniel): the mini-game takes the keys as soon as it is there
         if (/^\/play\//.test(url)) nf.addEventListener("load", () => { try { nf.focus(); nf.contentWindow.focus(); } catch {} });
-        // beta 3.46 r215 (Daniel, QA pass): a phone held upright playing sideways has the game's own speaker and MENU at the
-        // screen's top right, right under this ×, so a tap on the speaker closed the game; while the game is sideways
-        // (its root has .mg-sideways) the × moves to the bottom right, an empty corner of the sideways game
-        if (/^\/play\//.test(url)) nf.addEventListener("load", () => {
-          try {
-            const d = nf.contentDocument;
-            const sync = () => { if (nf.isConnected) caseFrame.classList.toggle("cf-side", !!d.querySelector(".mg-sideways")); };
-            new MutationObserver(sync).observe(d.body, { subtree: true, attributes: true, attributeFilter: ["class"] });
-            sync();
-          } catch {}
-        });
         fr.replaceWith(nf); fr = nf;
       }
       caseFrame._url = /^\/(ro\/)?(work|proiecte|play)\//.test(url) ? (() => { const u = new URL(url, location.origin); u.searchParams.delete("embed"); u.searchParams.delete("from"); return u.pathname + u.search; })() : null; // r161 (beta 3.1: and the game's own address; r211: without its ?from= either, so a shared link stays clean)
       caseFrame.classList.toggle("cf-game", /^\/play\//.test(url)); // beta 3.1: a dark frame, no Share button
-      if (!/^\/play\//.test(url)) caseFrame.classList.remove("cf-side"); // beta 3.46 r215: the × back in its corner for a case page
       fr.title = `${title} \u2014 Cromatic Studios`;
       caseFrame.classList.remove("hidden");
       document.body.classList.add("scf-open");
@@ -35726,7 +35716,7 @@ void main() {
       spawnBeam.material.userData.outlineParameters = { visible: false }; spawnBeam.userData.noOutline = true; spawnBeam.visible = false; spawnBeam.renderOrder = 3;
       var isDarkScheme = false;
       function setVehicle(id) {
-        if (state.vehicleId && state.vehicleId !== id && !onbWarm) czEv("vehicle_select", { vehicle: id }); // r141: not the warm-up
+        if (state.vehicleId && state.vehicleId !== id && !onbWarm && !state._vehAuto) czEv("vehicle_select", { vehicle: id }); // r141: not the warm-up; beta 3.48 r217 (Daniel, QA round 2): nor a ride a world or the map picks by itself (_vehAuto)
         state.vehicleId = id;
         if (veh) {
           scene.remove(veh.group);
@@ -35956,7 +35946,7 @@ void main() {
           applyScheme(i);
           // every environment comes with its own vehicle
           const vid = ENV_VEH[SCHEMES[i].id];
-          if (vid && vid !== state.vehicleId) api.setVehicle(vid);
+          if (vid && vid !== state.vehicleId) { state._vehAuto = true; try { api.setVehicle(vid); } finally { state._vehAuto = false; } }
         },
         toggleWeather() {
           state.weatherOn = !state.weatherOn;
@@ -39932,7 +39922,7 @@ void main() {
         { id: "tm", br: "A", x: 900, z: 4262, px: 640, pz: 4260, h: 80, name: "Two Minutes", line: "BRAND \xB7 BOXES \xB7 FILM", c: "#111111", t: "#ffffff", act: "tmMedia", tm: true, desc: "A specialty coffee shop brand made to be loved fast and remembered long. Three double espressos are on us." },
         // r201 (Daniel): the mini-game, a place of its own by the Two Min Lab (its arcade cabinet): the card in the game's
         // look, the Two Minutes mark in a circle, "Challenge I O N to a fight!"; not numbered (it is not a project)
-        { id: "gloves", br: "A", x: 860, z: 4262, px: 652, pz: 4114, h: 34, game: true, name: "2 Minutes 2 Fight w/ I O N", line: "A TWO MIN LAB GAME", c: "#1d1638", t: "#FED012",
+        { id: "gloves", br: "A", x: 860, z: 4262, px: 652, pz: 4114, h: 38, /* beta 3.48 r217: 34 put the pin's dot on the marquee's top edge */ game: true, name: "2 Minutes 2 Fight w/ I O N", line: "A TWO MIN LAB GAME", c: "#1d1638", t: "#FED012",
           desc: "A small 16-bit fighting game from the Two Min Lab. Pick Daniel, Cristian or Coz from the Cromatic crew and box I O N, the founder of Two Minutes." },
         { id: "oma", br: "A", x: 706, z: 4560, h: 80, name: "OMA Coffee", line: "BRAȘOV \xB7 AT THE FOOT OF T\xC2MPA", c: "#4a7c4e", t: "#ffffff", act: "omaTag" },
         { id: "sip", br: "A", x: 706, z: 4985, h: 70, name: "Sip Coffee & Wine", line: "BRANDING \xB7 COMMUNICATION", c: "#C9A227", t: "#14120c", act: "sipTag" },
@@ -40778,6 +40768,15 @@ void main() {
         const welcome = (on) => {
           if (on) { try { if (Date.now() - (+localStorage.getItem("cz-welcome-at") || 0) < 6 * 3600e3) return; localStorage.setItem("cz-welcome-at", String(Date.now())); } catch {} } // a visit = 6 h, like the intro, across tabs
           welcomeEl.classList.toggle("hidden", !on);
+          // beta 3.48 r217 (Daniel, QA round 2): the cookie card waits while the welcome card is open (r215), but not forever:
+          // after 20 s it comes up anyway, at the top, and the welcome card moves down under it (nothing of it covered)
+          clearTimeout(welcome._ck); document.body.classList.remove("ck-welcome");
+          if (on) welcome._ck = setTimeout(() => {
+            if (welcomeEl.classList.contains("hidden")) return;
+            const ck = document.getElementById("cz-ck");
+            if (ck) document.body.style.setProperty("--ckh", Math.ceil(ck.getBoundingClientRect().height) + "px");
+            document.body.classList.add("ck-welcome");
+          }, 20000);
         };
         // a hand over the street in front of the van: tap here, the van drives there
         const hintEl = el("div", "tap-hint hidden", `<span class="th-ring"></span><span class="th-hand">\u{1F446}</span><b>Tap the street to drive</b>`);
@@ -41164,6 +41163,7 @@ void main() {
           { const v = warpV(new Vector3(pl.wx, 0, pl.wz)); sketchPaint(v.x, v.z, 900, 1); }
           card.querySelector(".mcd-close").onclick = hideCard;
           card.classList.remove("hidden");
+          document.body.classList.add("n2-card"); // beta 3.48 r217 (Daniel, QA round 2): at once (nav2 refreshes it every 0.22 s): the phone's "tap the road" pill no longer flashes over a new card
         };
         const tagOf = (pl) => (pl.work ? ui.workTags.find((t) => t._st && t._st.name === pl.work) : ui[pl.act]);
         // finds: the chapters and the old address, clicked where they are
@@ -41820,7 +41820,7 @@ void main() {
           state.started = true;
           const mi = SCHEMES.findIndex((x) => x.id === "monument");
           if (mi >= 0 && state.schemeIdx !== mi) applyScheme(mi);
-          if (state.vehicleId !== "dacia1300") api.setVehicle("dacia1300"); // r138j: the default ride (was the van)
+          if (state.vehicleId !== "dacia1300") { state._vehAuto = true; try { api.setVehicle("dacia1300"); } finally { state._vehAuto = false; } } // r138j: the default ride (was the van)
           veh.group.visible = true;
           // r157: on a desktop the map's first frame has the car a little way up the start road (as in Daniel's reference)
           if ((open || intro) && state.L < 50) { state.L = prevL = state.targetL = MAP_START_L; } // beta 3.0: phones too (the same first frame)
@@ -41856,7 +41856,7 @@ void main() {
           if (coffee.phase !== "idle") { coffee.phase = "idle"; ui.coffeeEnd(); }
           if (mapPrev && state.schemeIdx !== mapPrev.scheme) api.setScheme(mapPrev.scheme);
           else applyScheme(state.schemeIdx);
-          if (mapPrev && state.vehicleId !== mapPrev.veh && SCHEMES[state.schemeIdx].id !== "monument") api.setVehicle(mapPrev.veh);
+          if (mapPrev && state.vehicleId !== mapPrev.veh && SCHEMES[state.schemeIdx].id !== "monument") { state._vehAuto = true; try { api.setVehicle(mapPrev.veh); } finally { state._vehAuto = false; } }
           if (route.isPath) {
             // from the map's path back onto the nearest of the drive's streets
             const here = route.posAt(state.L, new Vector3());

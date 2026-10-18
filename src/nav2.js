@@ -1320,10 +1320,23 @@
       if (rem > 20) vt = Math.max(vt, 30); // beta 2.91: never stall short of the place
       return { rem, steer: clamp(err * 2.4 + kerbAway(), -1, 1), thr: P.u < vt - 8 ? 1 : P.u > vt + 8 && P.u > 4 ? -1 : 0 };
     }
+    // beta 3.48 r217 (Daniel, QA round 2): the Cropduster flies over anything; a car picked up where it flew (the airfield
+    // past Olari 9, the middle of a block) stood off every road, and "Our house" or a place could not be driven to from
+    // there. Off the roads (no drivable street within 120), the ride is set down on the nearest one, facing along it
+    function toRoad(plane) {
+      if ((!plane && H.vehicle() === "plane") || G.nearest(P.x, P.z, 120, (e) => e.drive)) return false;
+      const a = G.nearest(P.x, P.z, 4000, (e) => e.drive);
+      if (!a) return false;
+      const e = E[a.e], p = pointAt(e.pts, e.cum, a.s), q = pointAt(e.pts, e.cum, Math.min(e.len, a.s + 6)), o = pointAt(e.pts, e.cum, Math.max(0, a.s - 6));
+      P.x = p[0]; P.z = p[1]; P.h = Math.atan2(q[0] - o[0], q[1] - o[1]); P.u = P.w = P.yr = 0;
+      return true;
+    }
+    let lastVeh = null;
     // beta 2.5 (Daniel: "a place behind the car: turn round fast, arcade"): the route is planned both ways, as the car
     // points and as if it were turned round; when turned round is the shorter way (or the place is just behind), the
     // auto-pilot first spins the car round on the spot (about a second, in the road's width), then drives
     function freeGo(target, pl) {
+      toRoad(true); // (the plane too: it then flies the roads to the place)
       syncGraph(true);
       const it = D.seq[0], e = E[it.e], L = curL(), sDir = clamp(L - it.L0, 0, e.len), tsDir = it.dir > 0 ? target.s : e.len - target.s;
       if (target.e === it.e && tsDir < sDir - 8 && sDir - tsDir < 70 && Math.abs(P.u) < 60) { D.auto = { pl, target, rev: true, Lt: it.L0 + tsDir }; return true; } // a few metres back: backs up to it
@@ -1350,6 +1363,7 @@
     }
     function freeTick(dt, now) {
       if (!P.init) freeInit();
+      { const v = H.vehicle(); if (lastVeh === "plane" && v !== "plane" && toRoad()) syncGraph(true); lastVeh = v; } // beta 3.48 r217: down from the plane, onto a road
       H.setTarget(H.state.L);
       let thr = 0, steer = 0, hb = !!D.keys.h;
       if (D.auto) {
