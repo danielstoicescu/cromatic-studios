@@ -15,9 +15,21 @@
 // blue-violet in the shade), hard cel bands with no dither, every outline in its material's own darkest tone (black
 // only on black things), a rim of light on the edges facing the light, fists with fingers, cloth folds with their lit
 // ridge, hair in lit locks; the portraits drawn at 2x (one-pixel detail, not 2x2); Cristache smokes.
+// beta 3.33 (Daniel: "let's make the pixels smaller, so we have more detail"; "closer to the refs' proportions"): the
+// canvas is 768x432 (the game still counts in its 384x216 units); the fighters about 200 px in the guard with a head
+// of about 36, five and a half heads tall, broader shoulders, bigger fists and feet; every face drawn again at the size
+// it is shown (the fight, the select busts, the portraits, the VS at 8 pixels a head unit), never a small one made
+// bigger; the splash a still key art at dusk; the ending's jump-start runs off the La Marzocco in the shop window; the
+// art is baked in the spare time of the frames so nothing waits on it.
 (function () {
   "use strict";
   const W = 384, H = 216, FLOOR = 200, STAGE_W = 576;
+  // beta 3.33 (Daniel: "let's make the pixels smaller, so we have more detail"): the canvas is 768x432, twice the
+  // pixels each way. The game still thinks in its 384x216 units (the fight, the hit boxes, the layout of every screen:
+  // a frame is drawn with the context scaled by RS), but everything that carries detail is drawn at the canvas's own
+  // pixels: the fighters, the heads, the portraits, the people, the street, the bike, the car, the text (its letters
+  // twice the size with a one-pixel outline). hiDraw puts such an image at a point given in game units
+  const RS = 2;
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   const lerp = (a, b, t) => a + (b - a) * t;
   const rnd = (a, b) => a + Math.random() * (b - a);
@@ -46,7 +58,7 @@
     ":": ".|.|#|.|.|#|.", "-": "...|...|...|###|...|...|...", "'": "#|#|.|.|.|.|.", "/": "....#|...#.|...#.|..#..|.#...|.#...|#....",
     ">": "#...|.#..|..#.|...#|..#.|.#..|#...", "<": "...#|..#.|.#..|#...|.#..|..#.|...#", "+": ".....|..#..|..#..|#####|..#..|..#..|.....",
     "x": ".....|.....|#...#|.#.#.|..#..|.#.#.|#...#", "&": ".##..|#..#.|#.#..|.#...|#.#.#|#..#.|.##.#", "(": ".#|#.|#.|#.|#.|#.|.#", ")": "#.|.#|.#|.#|.#|.#|#.",
-    "*": ".|.|.|#|.|.|.", "%": "##..#|##.#.|...#.|..#..|.#...|.#.##|#..##", " ": "...|...|...|...|...|...|...",
+    "*": ".|.|.|#|.|.|.", "\u00B7": ".|.|.|#|.|.|.", "%": "##..#|##.#.|...#.|..#..|.#...|.#.##|#..##", " ": "...|...|...|...|...|...|...",
     "^": "..#..|.###.|#.#.#|..#..|..#..|..#..|..#..", "v": "..#..|..#..|..#..|..#..|#.#.#|.###.|..#..",
     // beta 3.11: Romanian names: rows above (~ before) and below (~ after) the letter
     "\u0102": "#...#|.###.~.###.|#...#|#...#|#####|#...#|#...#|#...#", "\u0218": ".####|#....|#....|.###.|....#|....#|####.~..#..|.#...",
@@ -92,9 +104,22 @@
   }
   // draws text; align "l" | "c" | "r"; y is the top of the letters
   function text(ctx, s, x, y, fill, o = {}) {
+    const m = ctx.getTransform(), k = Math.round(m.a);
+    if (k > 1) { // on the 2x canvas: the letters k times bigger, drawn at the canvas's pixels (a one-pixel outline, a k-pixel shadow)
+      const sc = o.sc || 1, sp = o.sp ?? 1, t = textImg(s, fill, Object.assign({}, o, { sc: sc * k, sh: (o.sh || 0) * k })), al = o.al || "l", tw = textW(s, sc, sp);
+      const lx = al === "c" ? Math.round((x - tw / 2) * k) / k : al === "r" ? x - tw : x;
+      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(t.c, Math.round(m.e + m.a * lx) - t.pad, Math.round(m.f + m.d * y) - t.padY); ctx.restore();
+      return;
+    }
     const t = textImg(s, fill, o), al = o.al || "l";
     const lx = al === "c" ? Math.round(x - (t.w - t.pad * 2) / 2) : al === "r" ? x - (t.w - t.pad * 2) : x;
     ctx.drawImage(t.c, lx - t.pad, Math.round(y) - t.padY);
+  }
+  // an image drawn at the canvas's own pixels, its anchor (ax, ay, in its pixels) at the point (x, y) in game units,
+  // flipped when face < 0; under any scale the context has (the game's RS, or 1 for an export)
+  function hiDraw(ctx, img, x, y, face = 1, ax = 0, ay = 0) {
+    const m = ctx.getTransform(), k = m.a / RS;
+    ctx.save(); ctx.setTransform(k, 0, 0, k, Math.round(m.e + m.a * x), Math.round(m.f + m.d * y)); if (face < 0) ctx.scale(-1, 1); ctx.drawImage(img, -ax, -ay); ctx.restore();
   }
   const GOLD = ["#fff6b8", "#ffe14a", "#ffc21a", "#ff9d14", "#f2700f", "#d9480f", "#b8320c"];
   const RED = ["#ffd0c4", "#ff8a6e", "#ff5236", "#e8301c", "#c41f14", "#9c160f", "#7a0f0b"];
@@ -126,21 +151,31 @@
     const pts = k > 1 ? [[0, -2, 0], [1, -3, 0], [1, -4, 0], [0, -5, 0], [-1, -6, 1], [-1, -7, 1], [0, -8, 1], [1, -9, 1], [2, -10, 2], [2, -11, 2], [1, -13, 2], [0, -14, 3], [0, -16, 3]] : [[0, -2, 0], [1, -3, 1], [0, -4, 1], [0, -5, 2], [1, -7, 3]];
     for (const [dx, dy, a] of pts) { x.fillStyle = ["#f0f0f4", "#d6d6e0", "#b8b8c8", "#9a9aac"][a]; x.fillRect(e[0] + dx, e[1] + dy, 1, 1); }
   }
-  function bust(id) { // 36x36, at the game's size (the select grid's tiles)
+  // beta 3.33 (Daniel, finer pixels): the select tiles' busts, the portraits and the VS faces are each drawn at their
+  // own size, at the canvas's pixels: the head at Kh small pixels a head unit (2, 4, 8: one, two and four times the
+  // fight's), the body at the scale that keeps the fight's proportions, framed the same way (the neck at the same
+  // place, the head filling the frame); never a smaller picture made bigger
+  function bustAt(id, Kh, size, pad) {
+    const sc = (LOOKS[id].build.sc || 1) * BODY * (Kh / HK), cw = size + pad * 2, nX = size / 2 + pad, nY = Math.round(size * 0.906) + pad;
+    const f = drawFighter(id, bustPose(id), null, null, { K: Kh / HK, HK: Kh, w: cw, h: cw, ox: nX - BUST_POSE.neck[0] * sc, oy: nY - BUST_POSE.neck[1] * sc });
+    const [c, x] = mk(size, size); x.drawImage(f, pad, Math.round(pad / 2), size, size, 0, 0, size, size);
+    if (f.ember) c.ember = [f.ember[0] - pad, f.ember[1] - Math.round(pad / 2)];
+    return c;
+  }
+  function bust(id) { // 36x36 game units: 72 px, the head at 2
     if (PORT[id + ":s"]) return PORT[id + ":s"];
-    const f = drawFighter(id, bustPose(id), null), sc = (LOOKS[id].build.sc || 1) * BODY, nx = Math.round(OX + BUST_POSE.neck[0] * sc - 16), ny = Math.round(OY + BUST_POSE.neck[1] * sc - 29);
-    const [c, x] = mk(36, 36); x.drawImage(f, nx, ny, 36, 36, 0, 0, 36, 36);
-    if (f.ember) wisp(x, c, [f.ember[0] - nx, f.ember[1] - ny], 1);
+    const c = bustAt(id, 2, TILE * RS, 4); if (c.ember) wisp(c.getContext("2d"), c, c.ember, 1);
     return (PORT[id + ":s"] = c);
   }
-  function portrait(id) { // 64x64, drawn at 2x (72x72, cropped)
+  function portrait(id) { // 64x64 game units: 128 px, the head at 4
     if (PORT[id]) return PORT[id];
-    const sc = (LOOKS[id].build.sc || 1) * BODY * 2, f = drawFighter(id, bustPose(id), null, null, { K: 2, w: 72, h: 72, ox: 32 - BUST_POSE.neck[0] * sc, oy: 58 - BUST_POSE.neck[1] * sc });
-    const [c, x] = mk(64, 64); x.drawImage(f, 4, 2, 64, 64, 0, 0, 64, 64);
-    if (f.ember) { c.ember = [f.ember[0] - 4, f.ember[1] - 2]; wisp(x, c, c.ember, 2); }
+    const c = bustAt(id, 4, 64 * RS, 8); if (c.ember) wisp(c.getContext("2d"), c, c.ember, 2);
     return (PORT[id] = c);
   }
-  const portraitBig = (id) => PORT[id + ":b"] || (PORT[id + ":b"] = epx(portrait(id)));
+  const portraitBig = (id) => PORT[id + ":b"] || (PORT[id + ":b"] = bustAt(id, 8, 128 * RS, 16)); // the VS: 256 px, the head at 8
+  // the VS face is the biggest bake (a few tenths of a second on a slow phone): it is queued as soon as a cursor rests
+  // on a fighter, and the VS screen shows the portrait made bigger until it is ready
+  const VSQ = new Set(), wantBig = (id, front) => { if (id === "random" || PORT[id + ":b"] || VSQ.has(id)) return; VSQ.add(id); const jobs = [() => headOf(LOOKS[id].smokes ? id + "+cig" : id, 1, false, 8), () => portraitBig(id)]; if (front) BAKEQ.unshift(...jobs); else BAKEQ.push(...jobs); }; // the head and the bust as two jobs
   const drawFlipped = (ctx, img, x, y, w, h, flip) => { if (!flip) return ctx.drawImage(img, x, y, w, h); ctx.save(); ctx.translate(x + w, y); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0, w, h); ctx.restore(); };
 
   // ===================== 3. the fighters: heads and a shaded pixel puppet =====================
@@ -200,7 +235,7 @@
     // tattoos on the arms, the yellow key tag at the belt
     rares: { skin: "#ecb593", top: "#f4f2ee", topKind: "printtee", sleeve: "short", tattoo: true, key: true, pants: "#1c1c22", loose: 1.5, belt: "#1c1c22", barefoot: true, ankle: "#f2efe6", glove: "#2fd6f0", build: { arm: 1.08 } },
     iulica: { skin: "#c27f57", top: "#5f6e40", topKind: "tee", sleeve: "short", strap: "#d9cba8", pants: "#2c2c32", shoe: "#3a3a3a", sole: "#e0e0e0", glove: "#b8e02f", build: { sh: 0.98 } },
-    maria: { skin: "#ebb597", top: "#f2f0ea", topKind: "oversize", knot: true, sleeve: "short", legs: "skirt", skirt: "#1c1c22", shoe: "#a8b89a", sole: "#6e7c62", glove: "#f0389a", build: { sh: 0.84, arm: 0.82, leg: 0.88, waist: 0.86, chest: 0.94 } },
+    maria: { skin: "#ebb597", top: "#f2f0ea", topKind: "oversize", knot: true, sleeve: "short", legs: "skirt", skirt: "#1c1c22", shoe: "#a8b89a", sole: "#6e7c62", glove: "#f0389a", build: { sc: 0.94, sh: 0.84, arm: 0.82, leg: 0.88, waist: 0.86, chest: 0.94 } }, // beta 3.33: a size down
     // Steve: dressed American: a varsity jacket (wool body, cream leather sleeves, a letter on the chest) over a white
     // tee, jeans, white sneakers; the glasses, the grey hair, the beard, the two metres
     steve: { skin: "#ecb497", top: "#7a1f2a", topKind: "varsity", inner: "#f0f0f0", sleeve: "long", sleeveCol: "#efe6d0", letter: "#efe6d0", pants: "#4a6890", shoe: "#f4f4f6", sole: "#b8b8c4", glove: "#7a4fe0", build: { sh: 1.1, arm: 1.12, leg: 1.1, waist: 1.3, chest: 1.12, sc: 1.14 } },
@@ -236,7 +271,7 @@
   // beta 3.32 (Daniel, the arcade refs): the outline in each material's own darkest tone (dark brown round the skin, a
   // warm grey round a white tee, near black round black hair and trousers), the inner lines the same, and a rim of light
   // on the edges that face the light (up and towards the back), one tone lighter, as the 90s sprites have it
-  Fig.prototype.finish = function () {
+  Fig.prototype.finish = function (crop) {
     const { w, h, c, z, g } = this, out = new Uint32Array(c), oc = u32(OUT), n = w * h;
     const lum = (v) => (v & 255) * 3 + ((v >> 8) & 255) * 6 + ((v >> 16) & 255);
     let best = 0, bl = 0;
@@ -253,7 +288,12 @@
       if ((x > 0 && z[i - 1] > zi && g[i - 1] !== gi && c[i - 1] !== oc) || (x < w - 1 && z[i + 1] > zi && g[i + 1] !== gi && c[i + 1] !== oc) || (y > 0 && z[i - w] > zi && g[i - w] !== gi && c[i - w] !== oc) || (i + w < n && z[i + w] > zi && g[i + w] !== gi && c[i + w] !== oc)) { out[i] = outlineOf(ci); continue; }
       if ((x > 0 && !z[i - 1]) || (y > 0 && !z[i - w])) { const r = RIM.get(ci); if (r !== undefined) out[i] = r; } // the rim light
     }
-    const [cv2, x2] = mk(w, h), id = x2.createImageData(w, h); new Uint32Array(id.data.buffer).set(out); x2.putImageData(id, 0, 0);
+    // beta 3.33: a frame of the game is kept only as big as the figure in it (bx, by: where that box starts in the cell)
+    let bx0 = 0, by0 = 0, bx1 = w - 1, by1 = h - 1;
+    if (crop) { bx0 = w; by0 = h; bx1 = -1; by1 = -1; for (let y = 0, i = 0; y < h; y++) for (let x = 0; x < w; x++, i++) if (out[i]) { if (x < bx0) bx0 = x; if (x > bx1) bx1 = x; if (y < by0) by0 = y; if (y > by1) by1 = y; } if (bx1 < 0) { bx0 = by0 = 0; bx1 = by1 = 0; } }
+    const cw = bx1 - bx0 + 1, chh = by1 - by0 + 1, [cv2, x2] = mk(cw, chh), id = x2.createImageData(cw, chh), o32 = new Uint32Array(id.data.buffer);
+    for (let y = 0; y < chh; y++) o32.set(out.subarray((y + by0) * w + bx0, (y + by0) * w + bx0 + cw), y * cw);
+    x2.putImageData(id, 0, 0); cv2.bx = bx0; cv2.by = by0;
     return cv2;
   };
   // light from the front, above, a little towards us; a normal (nx, ny) on a round form -> one of five tones
@@ -399,16 +439,21 @@
   const STAND = { hip: [0, -47], neck: [1, -75], head: [4, -86], kF: [3, -24], fF: [5, 0], kB: [-3, -24], fB: [-5, 0], eF: [5, -58], hF: [7, -44], eB: [-4, -58], hB: [-5, -44] };
   const BAR = { eF: [10, -56], hF: [18, -50], eB: [4, -56], hB: [12, -50] }, UP = { eF: [8, -90], hF: [10, -104], eB: [-2, -90], hB: [0, -104] };
   const NPCS = [
-    { id: "specDony", alt: "npcBarista", x: 186, y: 178, face: 1, rate: 0.9, clip: [106, 105, 98, 47], poses: [pose(Object.assign({}, STAND, BAR)), pose(Object.assign({}, STAND, BAR, { head: [6, -86] }))], cheer: pose(Object.assign({}, STAND, UP)) },
-    { id: "specMaria", alt: "npcSit", x: 128, y: 176, face: 1, rate: 0.7, prop: "cup", poses: [pose(SIT), pose(Object.assign({}, SIT, { eF: [13, -30], hF: [11, -40] })), pose(SIT), pose(SIT)], cheer: pose(Object.assign({}, SIT, { eF: [10, -52], hF: [12, -64] })) },
+    { id: "specDony", alt: "npcBarista", x: 178, y: 178, face: -1, rate: 0.9, clip: [106, 105, 98, 47], poses: [pose(Object.assign({}, STAND, BAR)), pose(Object.assign({}, STAND, BAR, { head: [6, -86] }))], cheer: pose(Object.assign({}, STAND, UP)) },
+    { id: "specMaria", alt: "npcSit", x: 96, y: 176, face: 1, /* beta 3.33: at the door's end of the step, the La Marzocco clear in the window */ rate: 0.7, prop: "cup", poses: [pose(SIT), pose(Object.assign({}, SIT, { eF: [13, -30], hF: [11, -40] })), pose(SIT), pose(SIT)], cheer: pose(Object.assign({}, SIT, { eF: [10, -52], hF: [12, -64] })) },
     { id: "specSteve", alt: "npcPlaid", x: 466, y: 174, face: 1, rate: 1.4, poses: [pose(STAND), pose(Object.assign({}, STAND, { eF: [12, -58], hF: [18, -62] })), pose(STAND), pose(Object.assign({}, STAND, { head: [5, -86] }))], cheer: pose(Object.assign({}, STAND, UP)) },
     { id: "specIulica", alt: "npcBun", x: 490, y: 174, face: -1, rate: 1.1, poses: [pose(STAND), pose(STAND), pose(Object.assign({}, STAND, { eF: [11, -60], hF: [16, -66] })), pose(STAND)], cheer: pose(Object.assign({}, STAND, UP)) }
   ];
   const BUST_POSE = pose({ hip: [0, -47], neck: [3, -75], head: [6, -86], eF: [12, -56], hF: [14, -40], eB: [-5, -56], hB: [-7, -40], tw: 0.55 }); // for the portraits: the arms down
   const SPECIAL_PROP = { coz: "camera", iulica: "tote", rares: "key" };
   // the cell every frame is baked into: 140x142, the feet at (70, 138)
-  const CW = 150, CH = 156, OX = 75, OY = 152;
-  const BODY = 1.1; // beta 3.30: the bodies a size up, the heads as they are (the arcade proportions)
+  // beta 3.33: in canvas pixels (twice the game's units); a frame is then cropped to the figure
+  const CW = 320, CH = 330, OX = 160, OY = 318;
+  // beta 3.30: the bodies a size up, the heads as they are. beta 3.33 (Daniel, finer pixels and arcade proportions):
+  // the body BODY canvas pixels to a pose unit (about 200 px from the feet to the top of the head in the guard, 100 of
+  // the game's units, where 3.32 stood 115), the head HK pixels to a head unit (about 36 px from the hair to the chin):
+  // about five and a half heads tall, as the arcade fighters are; the people around NPCB (and the small 1x head)
+  const BODY = 2.08, HK = 1.44, NPCB = 1.9, FIST = 6.5, FOOT = 1.18, FSC = BODY / RS;
   // beta 3.12 (Daniel: "you can't tell it's them"): bigger heads (28x36), built from one shaded three-quarter face and,
   // per person, what makes them them: the hair (its line, volume, texture), the beard, glasses, a cap, the smile.
   // Read from their photos. The neck's foot (13, 31) sits on the body's neck.
@@ -469,74 +514,93 @@
   };
   HEADSPEC["cristache+cig"] = Object.assign({}, HEADSPEC.cristache, { cig: true }); // beta 3.32: the same face, the cigarette in the mouth
   const HEAD_CACHE = {};
-  // beta 3.32: K = 2 draws the head at twice the resolution (for the portraits): every shape is worked out per small
-  // pixel, the features (eyes, brows, mouth) are drawn in 2x2 blocks with a few details only that size can carry
+  // beta 3.33 (Daniel, finer pixels): a head can be drawn at any size, K small pixels to a head unit (the 28x36 grid
+  // the faces are designed on). K = 1 is the old small head (the select tiles' busts, the people watching); in the
+  // fight the heads are drawn at HK (about 36 px from the hair to the chin); the portraits and the VS at 4 and 6.
+  // From K = 1.3 up the face is not the 1x map made bigger: the shapes (skull, jaw, hair, beard) are worked out per
+  // small pixel, and the features (eyes, brows, nose, mouth, glasses, the moustache, the cigarette) are drawn again
+  // at that size, snapped to the pixel grid, with what the size can carry: an iris and a light in it, the lid's line,
+  // lips in two tones, the teeth, a glint on the lenses
   function headOf(id, k = 1, noG = false, K = 1) {
-    if (K > 1) { const key = id + (noG ? "!" : "") + "#" + K; return HEAD_CACHE[key] || (HEAD_CACHE[key] = headAt(id, noG, K)); }
     if (k < 1) { const key = id + "@" + k; if (HEAD_CACHE[key]) return HEAD_CACHE[key]; const G0 = (HEADSPEC[id] || NPC_HEADS[id]).glasses; return (HEAD_CACHE[key] = smallGlasses(shrinkHead(headOf(id, 1, !!G0), k), G0, k)); }
-    if (HEAD_CACHE[id + (noG ? "!" : "")]) return HEAD_CACHE[id + (noG ? "!" : "")];
-    return (HEAD_CACHE[id + (noG ? "!" : "")] = headAt(id, noG, 1));
+    const key = id + (noG ? "!" : "") + "#" + K;
+    return HEAD_CACHE[key] || (HEAD_CACHE[key] = headAt(id, noG, K));
   }
   function headAt(id, noG, K) {
     const P0 = HEADSPEC[id] || NPC_HEADS[id], P = noG ? Object.assign({}, P0, { glasses: null }) : P0, rx = 8.7 * (P.rx || 1), ry = 10.2, cx0 = 13, cy0 = 12.5, jw = P.jaw || 1;
-    const W2 = HW * K, H2 = HH * K, buf = new Array(W2 * H2).fill(null), putH = (x, y, c) => { if (x >= 0 && y >= 0 && x < W2 && y < H2) buf[y * W2 + x] = c; };
-    const put = (x, y, c) => { for (let j = 0; j < K; j++) for (let i = 0; i < K; i++) putH(x * K + i, y * K + j, c); };
-    const at = (x, y) => (x >= 0 && y >= 0 && x < HW && y < HH ? buf[y * K * W2 + x * K] : null);
+    const FINE = K >= 1.3, GR = Math.max(1, Math.round(K / 3)); // GR: the grain of the textures (hair, stubble), in small pixels
+    const W2 = Math.ceil(HW * K), H2 = Math.ceil(HH * K), buf = new Array(W2 * H2).fill(null), feat = new Uint8Array(W2 * H2);
+    const putH = (x, y, c) => { if (x >= 0 && y >= 0 && x < W2 && y < H2) buf[y * W2 + x] = c; };
+    const PX = (u) => Math.round(u * K); // a head unit's edge, in small pixels
+    const put = (x, y, c) => { const X0 = PX(x), Y0 = PX(y), X1 = Math.max(X0 + 1, PX(x + 1)), Y1 = Math.max(Y0 + 1, PX(y + 1)); for (let Y = Y0; Y < Y1; Y++) for (let X = X0; X < X1; X++) putH(X, Y, c); };
+    const at = (x, y) => (x >= 0 && y >= 0 && x < HW && y < HH ? buf[Math.floor((y + 0.5) * K) * W2 + Math.floor((x + 0.5) * K)] : null);
     const each = (fn) => { for (let Y = 0; Y < H2; Y++) for (let X = 0; X < W2; X++) fn(X, Y, (X + 0.5) / K, (Y + 0.5) / K); }; // every small pixel, with its place in head units
     const R = (b) => ramp(b); const SK = R(P.skin), HA = R(P.hair), BE = R(P.beard || P.hair);
     const inPoly = (pts, x, y) => { let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c; } return c; };
-    const jawPts = [[5.2, 13], [7.6, 21.5], [10.8, 25.2], [14.4, 26.2], [18, 24.4], [20.6, 20.8], [21.7, 15.5], [21.2, 11]].map(([x, y]) => [cx0 + (x - cx0) * jw, y]);
+    const chaikin = (pts, n) => { for (let k = 0; k < n; k++) { const o = [pts[0]]; for (let i = 0; i < pts.length - 1; i++) { const [a, b] = [pts[i], pts[i + 1]]; o.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25], [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]); } o.push(pts[pts.length - 1]); pts = o; } return pts; };
+    const jaw0 = [[5.2, 13], [7.6, 21.5], [10.8, 25.2], [14.4, 26.2], [18, 24.4], [20.6, 20.8], [21.7, 15.5], [21.2, 11]].map(([x, y]) => [cx0 + (x - cx0) * jw, y]);
+    const jawPts = FINE ? chaikin(jaw0, 2) : jaw0; // fine: the jaw a smooth line, not facets
     const skull = (x, y) => ((x - cx0) / rx) ** 2 + ((y - cy0) / ry) ** 2 <= 1;
     const nz = P.nose || 0; // beta 3.31: a bigger nose where it is theirs (Cristache, I O N)
-    const face = (x, y) => skull(x, y) || inPoly(jawPts, x, y) || (x >= 21 && x <= (P.fem ? 21.8 : 22.6 + (P.rx || 1) - 1 + nz) && y >= (P.fem ? 14.5 : 13.5 - nz * 0.5) && y <= 17.2 + nz * 0.4);
+    const nx2 = (P.rx || 1) - 1 + nz, NOSE = P.fem ? [[20.8, 13.2], [21.3, 13.4], [22, 15.7], [22.1, 16.4], [21.7, 16.9], [20.9, 17.1]] : [[20.8, 11.6 - nz * 0.5], [21.5, 12 - nz * 0.5], [22.9 + nx2, 15.2], [23.3 + nx2, 16.2], [22.9 + nx2, 17], [21.8, 17.4 + nz * 0.4], [20.4, 17.6 + nz * 0.4]];
+    const face = (x, y) => skull(x, y) || inPoly(jawPts, x, y) || (FINE ? inPoly(NOSE, x, y) : x >= 21 && x <= (P.fem ? 21.8 : 22.6 + nx2) && y >= (P.fem ? 14.5 : 13.5 - nz * 0.5) && y <= 17.2 + nz * 0.4); // fine: the nose a shape, the bridge sloping to the tip
     const mix2 = (c1, c2, k2) => { const a2 = [c1 & 255, (c1 >> 8) & 255, (c1 >> 16) & 255], b2 = [c2 & 255, (c2 >> 8) & 255, (c2 >> 16) & 255]; const m2 = a2.map((v, i) => Math.round(v + (b2[i] - v) * k2)); return (0xff000000 | (m2[2] << 16) | (m2[1] << 8) | m2[0]) >>> 0; };
     const L = [0.52, -0.5, 0.69], FACE_LIFT = -0.14;
     const shadeAt = (x, y, bias = 0) => { const nx = clamp((x - cx0 - 1.5) / (rx + 1), -1, 1), ny = clamp((y - cy0 + 1) / (ry + 3), -1, 1), nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny)); const d = nx * L[0] + ny * L[1] + nz * L[2] - bias; return d > 0.8 ? 0 : d > 0.52 ? 1 : d > 0.2 ? 2 : d > -0.1 ? 3 : 4; };
+    const grain = (X, Y, a, b) => hash2(Math.floor(X / GR) * a + 1, Math.floor(Y / GR) * b + 2);
     // the neck (behind), the face, the ear
-    for (let y = 22; y <= 28; y++) for (let x = 9; x <= 16; x++) put(x, y, SK[x < 11 ? 4 : 3]);
+    each((X, Y, fx, fy) => { if (fy >= 22 && fy < 29 && fx >= 9 && fx < 17) putH(X, Y, SK[fx < 11 ? 4 : 3]); });
     each((X, Y, fx, fy) => { if (face(fx, fy)) putH(X, Y, SK[shadeAt(fx, fy, FACE_LIFT)]); }); // beta 3.31: the face a little more in the light, so the features read
-    each((X, Y, fx, fy) => { if (((fx - 7.8) / 1.7) ** 2 + ((fy - 14.6) / 2.7) ** 2 <= 1 && fx > 6 && fx < 10) putH(X, Y, SK[Math.floor(fx) === 8 && fy > 13 && fy < 17 ? 3 : 2]); });
+    each((X, Y, fx, fy) => { if (((fx - 7.8) / 1.7) ** 2 + ((fy - 14.6) / 2.7) ** 2 <= 1 && fx > 6 && fx < 10) putH(X, Y, SK[(FINE ? Math.abs(fx - 8) < 0.45 && fy > 13.2 && fy < 16.6 || (fx > 7.2 && fx < 8.6 && Math.abs(fy - 13.1) < 0.35) : Math.floor(fx) === 8 && fy > 13 && fy < 17) ? 3 : 2]); }); // the ear (fine: its inner curl)
     // the eye sockets and the cheek, a little darker; under the nose
-    for (const [x, y] of [[13, 12], [14, 12], [18, 12], [19, 12], [21, 17], [20, 17]]) if (at(x, y)) put(x, y, SK[Math.min(4, shadeAt(x, y) + 1)]);
+    for (const [x, y] of [[13, 12], [14, 12], [18, 12], [19, 12], [21, 17], [20, 17]]) if (at(x, y)) put(x, y, SK[Math.min(4, shadeAt(x + 0.5, y + 0.5) + 1)]);
     // the beard: below a cheek line that runs from the sideburn (at the ear) down to the mouth's corner; a moustache
     // over the lip; full beards fall a little below the jaw. Stubble is the skin darkened towards the beard colour
     if (P.beardKind) {
       const kind = P.beardKind, drop = P.beardDrop || 0, lift = (P.beardTop ? 16.5 - P.beardTop : 0);
       const jawOut = jawPts.map(([a2, b2]) => [a2 + (a2 - cx0) * 0.05, b2 + drop * clamp((b2 - 14) / 12, 0, 1)]);
       each((X, Y, fx, fy) => {
-        const x = Math.floor(fx), y = Math.floor(fy), put = (x2, y2, c) => putH(X, Y, c);
+        const put = (x2, y2, c) => putH(X, Y, c);
         if (!(face(fx, fy) || ((kind === "full" || kind === "boxed" || (kind === "goatee" && fx > 15.4 && fx < 20.2)) && inPoly(jawOut, fx, fy)))) return;
         const cheek = (fx < 8.5 ? 10.5 : fx < 14 ? lerp(11.5, 17.2, (fx - 8.5) / 5.5) : 17.6) - lift;
         if (fy < cheek) return;
         const mouthHole = kind === "boxed" ? fx > 15.6 && fx < 19.4 && fy > 19.4 && fy < 21.6 : fx > 14.6 && fx < 20.4 && fy > 19.4 && fy < 21.6; // beta 3.31: in a boxed beard only the lips show
         if (mouthHole) return;
         if (fx > 20.6 && fy < 19) return; // the nose and the tip of the lip stay skin
-        const base = buf[Y * W2 + X];
-        if (kind === "stubble") { if (base) put(x, y, mix2(base, BE[2], P.stubble || 0.42)); return; }
+        const base = buf[Y * W2 + X], x = 0, y = 0;
+        if (kind === "stubble") { if (base) put(x, y, mix2(base, BE[2], (P.stubble || 0.42) * (FINE && grain(X, Y, 7, 3) > 0.7 ? 1.25 : 1))); return; } // fine: the stubble in grains
         // beta 3.31 (Daniel, likeness): a goatee (the chin and the moustache dark, the cheeks only shadowed: Cristache)
         // and a short boxed beard (dense along the jaw, the chin and over the lip, the skin still under it: I O N, Steve)
         if (kind === "goatee") {
           // beta 3.32 (Daniel: "the beard more on the chin"): the goatee on the chin only, pointed a little below it, the
           // moustache lighter, the jaw and the cheeks clean (a faint shadow where the chin beard ends)
-          const chin = fx > 15.2 && fy > 21.3, edge2 = fx > 13.6 && fx <= 15.2 && fy > 21.6, must = fy > 17.6 && fy < 19.4 && fx > 14.6 && fx < 20.6;
-          if (!base) { put(x, y, BE[fx > 17.5 ? 3 : 4]); return; }
-          if (chin) put(x, y, BE[fx > 17.2 && fy < 23.2 ? 2 : fy > 24 || fx < 16.2 ? 4 : 3]); else if (edge2) put(x, y, mix2(base, BE[3], 0.4)); else if (must) put(x, y, mix2(base, BE[2], 0.6)); return;
+          const chin = FINE ? fy > 20.9 && ((fx - 17.7) / 2.7) ** 2 + ((fy - 23.4) / 3.1) ** 2 <= 1 : fx > 15.2 && fy > 21.3, edge2 = FINE ? !chin && fy > 21.2 && ((fx - 17.7) / 3.5) ** 2 + ((fy - 23.4) / 3.7) ** 2 <= 1 : fx > 13.6 && fx <= 15.2 && fy > 21.6;
+          const must = FINE ? fy > 17.9 + ((fx - 17.8) / 2.8) ** 2 * 0.6 && fy < 19.35 && Math.abs(fx - 17.8) < 2.9 : fy > 17.8 && fy < 19.3 && fx > 14.8 && fx < 20.6; // fine: the chin beard an oval, the moustache a curved band
+          const str = FINE && (Math.floor(X / GR) + Math.floor(Y / GR) * 2) % 5 === 0 ? 1 : 0; // fine: the hair of the goatee in strands
+          if (!base) { put(x, y, BE[Math.min(5, (fx > 17.5 ? 3 : 4) + str)]); return; }
+          if (chin) put(x, y, BE[Math.min(4, (fx > 17.2 && fy < 23.2 ? 2 : fy > 24 || fx < 16.2 ? 4 : 3) + str)]); else if (edge2) put(x, y, mix2(base, BE[3], 0.4)); else if (must) put(x, y, FINE ? mix2(base, BE[3], fy > 18.6 ? 0.85 : 0.6) : mix2(base, BE[2], 0.6)); return;
         }
         if (kind === "boxed") {
           const edge = !face(fx, fy + 1) || !face(fx - 1, fy), must = fy > 17.6 && fy < 19.4 && fx > 14.6 && fx < 20.4, chin = fy > 21.6 && fx > 11.5;
           const k0 = chin || edge ? 0.88 : must ? 0.74 : (P.beardK || 0.58) + clamp((fy - cheek) / 5, 0, 1) * 0.32, k3 = k0 > 0.8 ? 0.9 : k0 > 0.62 ? 0.7 : 0.45; // denser towards the jaw (beta 3.32: in three hard steps, no gradient)
-          if (base) put(x, y, mix2(base, BE[clamp(shadeAt(fx, fy), 2, 4)], Math.min(1, k3))); else put(x, y, BE[3]); return;
+          const fl = FINE && grain(X, Y, 3, 11) > 0.78 ? -1 : 0; // fine: single hairs catching the light
+          if (base) put(x, y, mix2(base, BE[clamp(shadeAt(fx, fy) + fl, 1, 4)], Math.min(1, k3))); else put(x, y, BE[3]); return;
         }
-        if (kind === "short") { if (base) put(x, y, mix2(base, BE[clamp(shadeAt(fx, fy) , 1, 3)], 0.8)); else put(x, y, BE[3]); return; }
-        let t = clamp(shadeAt(fx, fy, 0.05), 1, 4); if ((X * 3 + Y) % 5 === 0 && t < 4) t++; // strands
-        if (fy > 22 && fx > 11 && fx < 18 && ((X + Y) % 4 === 0)) t = Math.max(1, t - 1);
+        if (kind === "short") { if (base) put(x, y, mix2(base, BE[clamp(shadeAt(fx, fy), 1, 3)], 0.8)); else put(x, y, BE[3]); return; }
+        let t = clamp(shadeAt(fx, fy, 0.05), 1, 4); if ((Math.floor(X / GR) * 3 + Math.floor(Y / GR)) % 5 === 0 && t < 4) t++; // strands
+        if (fy > 22 && fx > 11 && fx < 18 && ((Math.floor(X / GR) + Math.floor(Y / GR)) % 4 === 0)) t = Math.max(1, t - 1);
         put(x, y, BE[t]);
       });
     }
-    if (P.mustache === "big") { // beta 3.31: Rares's moustache, thick, a chevron over the lip, the ends dropping past the corners
-      for (const [y, x0, x1] of [[17, 16, 20], [18, 14, 21], [19, 14, 21]]) for (let x = x0; x <= x1; x++) if (!(y === 19 && x > 15 && x < 20)) put(x, y, y === 17 ? BE[x === 18 ? 1 : 2] : BE[x === 14 || x === 21 || y === 19 ? 4 : 3]);
-      put(14, 20, BE[4]); put(20, 20, BE[4]);
-    } else if (P.mustache) for (let y = 18; y <= 19; y++) for (let x = 14; x <= 21; x++) if (!(y === 18 && (x === 14 || x === 21))) put(x, y, BE[y === 18 ? 2 : 3]);
+    if (!FINE) {
+      if (P.mustache === "big") { // beta 3.31: Rares's moustache, thick, a chevron over the lip, the ends dropping past the corners
+        for (const [y, x0, x1] of [[17, 16, 20], [18, 14, 21], [19, 14, 21]]) for (let x = x0; x <= x1; x++) if (!(y === 19 && x > 15 && x < 20)) put(x, y, y === 17 ? BE[x === 18 ? 1 : 2] : BE[x === 14 || x === 21 || y === 19 ? 4 : 3]);
+        put(14, 20, BE[4]); put(20, 20, BE[4]);
+      } else if (P.mustache) for (let y = 18; y <= 19; y++) for (let x = 14; x <= 21; x++) if (!(y === 18 && (x === 14 || x === 21))) put(x, y, BE[y === 18 ? 2 : 3]);
+    } else if (P.mustache === "big") { // fine: the chevron as a shape, lit on top, its lower edge dark, in strands
+      const MU = [[14, 20.4], [14.4, 19], [15.6, 18], [17.2, 17.3], [18.6, 17.4], [20.2, 17.9], [21.3, 18.9], [21.5, 20.6], [20.6, 19.8], [19.4, 19.3], [17.6, 19.4], [15.6, 19.8], [14.8, 20.7]];
+      each((X, Y, fx, fy) => { if (!inPoly(MU, fx, fy)) return; const below = !inPoly(MU, fx, fy + 1 / K), str = (Math.floor(X / GR) * 2 + Math.floor(Y / GR)) % 4 === 0; putH(X, Y, BE[below ? 4 : fy < 18.2 ? (fx > 17.4 && fx < 19 ? 1 : 2) : str ? 4 : 3]); });
+    } else if (P.mustache) each((X, Y, fx, fy) => { if (fy >= 18 && fy < 19.6 && fx >= 14.2 && fx < 21.6) putH(X, Y, BE[fy < 18.6 ? 2 : 3]); });
     // the hair: what's above the hair line (lower at the temples), the back down to the nape, and the volume
     const [fy0, ty0] = P.hairline, th = P.thick || 0;
     const hairIn = (x, y) => {
@@ -555,15 +619,20 @@
       if (P.fem && fx > 17 && fy > 9 && fy < 22) return; // her face stays open
       const x = fx - 0.5, y = fy - 0.5;
       let t = clamp(shadeAt(fx, fy, -0.15), 0, 4);
-      const tex = P.tex, n = hash2(X * 3 + 1, Y * 5 + 2);
+      const tex = P.tex, n = grain(X, Y, 3, 5);
       if (tex === "curly") { const c = (Math.sin(x * 1.7 + y * 0.9) + Math.sin(y * 1.9 - x * 0.6)) * 0.5; t = clamp(t + (c > 0.45 ? -1 : c < -0.45 ? 1 : 0), 1, 4); }
-      else if (tex === "slick") { t = clamp(t + ((Math.floor(y * K) % (3 * K) === 0 && x > 8) ? -1 : 0), 1, 4); }
-      else if (tex === "wavy") { const c = Math.sin(x * 0.9 + y * 1.4); t = clamp(t + (c > 0.6 ? -1 : c < -0.7 ? 1 : 0), 0, 4); }
+      else if (tex === "slick") { t = clamp(t + ((Math.floor(Y / GR) % Math.max(3, Math.round(3 * K / GR)) === 0 && x > 8) ? -1 : 0), 1, 4); }
+      else if (tex === "wavy") { const c = Math.sin(x * 0.9 + y * 1.4); t = clamp(t + (c > 0.6 ? -1 : c < -0.7 ? 1 : 0), 0, 4); if (FINE && t > 0 && n > 0.82) t--; }
       else if (tex === "buzz") { t = clamp(t + 1, 2, 4); if (n > 0.6) t = Math.min(4, t + 1); }
       else if (tex === "shag") { // beta 3.32 (Rares): locks from the crown, each a lit streak, a mid tone and a dark parting, curling as they go
-        const [kx, ky] = P.crown || [11, 3], dx = fx - kx, dy = fy - ky, rr = Math.hypot(dx, dy), u = Math.atan2(dy, dx) * (P.lockN || 2.3) + Math.sin(rr * 0.85) * (P.curl ?? 0.32), fr = u - Math.floor(u);
+        // fine: the strands flow from a point further back and down (they sweep over the head rather than fan out of a spot)
+        const [kx0, ky0] = P.crown || [11, 3], kx = FINE ? kx0 - 9 : kx0, ky = FINE ? ky0 + 12 : ky0, dx = fx - kx, dy = fy - ky, rr = Math.hypot(dx, dy) - (FINE ? 12 : 0);
+        const u = Math.atan2(dy, dx) * (P.lockN || 2.3) * (FINE ? 5.5 : 1) + Math.sin(rr * 0.85) * (P.curl ?? 0.32) * (FINE ? 2 : 1), fr = u - Math.floor(u);
         const lit = t <= 1; t = Math.max(2, t) + (rr > 12 ? 1 : 0); // dark hair: the mass dark, the light only in the streaks
-        if (fr < 0.2 && t < 4) t -= lit ? 2 : 1; else if (fr < 0.3 && lit) t = 1; else if (fr > 0.74) t++;
+        if (FINE) { // fine: the locks in short lengths (each lit at its root, a dark gap where it ends), none at the crown itself
+          const li = Math.floor(u), sv = Math.max(0, rr + 12) * (0.42 + (P.curl || 0) * 0.5) + hash2(li, 3) * 1.7, fv = sv - Math.floor(sv);
+          if (fr < 0.22 && fv < 0.62 && t < 4) t -= lit || fv < 0.25 ? 2 : 1; else if (fr < 0.32 && lit && fv < 0.5) t = 1; else if (fr > 0.78 || fv > 0.9) t++;
+        } else if (fr < 0.2 && t < 4) t -= lit ? 2 : 1; else if (fr < 0.3 && lit) t = 1; else if (fr > 0.74) t++;
         t = clamp(t, 0, 4);
       }
       else if (tex === "messy") { t = clamp(t + (n > 0.78 ? -1 : n < 0.15 ? 1 : 0), 1, 4); }
@@ -571,69 +640,168 @@
       if (P.fade && fx < P.fade[0] && fy > P.fade[1] && buf[Y * W2 + X] != null) { putH(X, Y, mix2(buf[Y * W2 + X], HA[clamp(t, 2, 4)], 0.55 + (n > 0.6 ? 0.2 : 0))); return; } // beta 3.31: short at the sides, the skin through it
       putH(X, Y, HR[t]);
     });
-    if (P.bun) { const [bx, by, brx, bry] = P.bun; each((X, Y, fx, fy) => { const d = ((fx - bx) / brx) ** 2 + ((fy - by) / bry) ** 2; if (d <= 1 && fy < 6) putH(X, Y, d > 0.55 ? HA[3] : (X + Y) % (3 * K) ? HA[2] : HL[1]); }); } // the knot on top
-    if (P.grey) for (let i = 0; i < W2 * H2; i++) if (buf[i] === HA[2] && hash2(i, 7) < P.grey) buf[i] = HL[1];
+    if (FINE) each((X, Y, fx, fy) => { // fine: where the hair meets the forehead, a few single hairs and the line in shadow
+      const c = buf[Y * W2 + X]; if (c == null || !face(fx, fy) || hairIn(fx, fy)) return;
+      if (hairIn(fx, fy - 1 / K) && !(P.fem && fx > 17)) putH(X, Y, grain(X, Y, 5, 7) > 0.55 ? HR[3] : mix2(c, SK[4], 0.5));
+    });
+    if (P.bun) { const [bx, by, brx, bry] = P.bun; each((X, Y, fx, fy) => { const d = ((fx - bx) / brx) ** 2 + ((fy - by) / bry) ** 2; if (d <= 1 && fy < 6) putH(X, Y, d > 0.55 ? HA[3] : (Math.floor(X / GR) + Math.floor(Y / GR)) % 3 ? HA[2] : HL[1]); }); } // the knot on top
+    if (P.grey) each((X, Y) => { const i = Y * W2 + X; if (buf[i] === HA[2] && grain(X, Y, 13, 7) < P.grey) buf[i] = HL[1]; });
     // a cap, worn backwards: the crown over the hair, the strap's opening at the forehead, the peak behind
     if (P.cap) {
       const CP = R(P.cap.color), crown = (x, y) => ((x - cx0) / (rx + 1.1)) ** 2 + ((y - cy0 + 0.5) / (ry + 1.1)) ** 2 <= 1 && y < 8.6 - Math.max(0, x - 18) * 0.5;
-      each((X, Y, fx, fy) => { if (!crown(fx, fy)) return; const t = clamp(shadeAt(fx, fy, -0.1), 0, 4); putH(X, Y, P.cap.mesh && fx < 12 && (X + Y) % 2 ? u32(P.cap.mesh) : CP[clamp(t, 1, 4)]); });
+      each((X, Y, fx, fy) => { if (!crown(fx, fy)) return; const t = clamp(shadeAt(fx, fy, -0.1), 0, 4); putH(X, Y, P.cap.mesh && fx < 12 && (Math.floor(X / GR) + Math.floor(Y / GR)) % 2 ? u32(P.cap.mesh) : CP[clamp(t + (FINE && Math.abs(fx - 12.2) < 0.5 / K + 0.2 ? 1 : 0), 1, 4)]); }); // fine: the seam between the panels
       for (let x = 15; x <= 20; x++) put(x, 8, u32(P.cap.band)); // the strap across the forehead
       for (let x = 16; x <= 19; x++) put(x, 7, HA[2]); // hair through the opening
       for (let x = 1; x <= 5; x++) put(x, 8 + (x < 3 ? 1 : 0), CP[x < 3 ? 3 : 2]); // the peak, behind
       put(1, 9, CP[4]); put(2, 9, CP[3]);
     }
-    // the brows, the eyes, the nose, the mouth
+    const EW = u32("#f2ece6"), EP = u32("#1c1214"), MO = u32("#5a2220"), TE = u32("#fbf6ee");
     const browC = P.brows === "heavy" || P.brows === "thick" || P.brows === "flat" ? HA[4] : P.browCol ? u32(P.browCol) : HA[3], bY = P.browY || 10;
-    for (const [x0, x1, y] of [[12, 15, bY], [17, 20, bY]]) for (let x = x0; x <= x1; x++) put(x, y + (x === x0 && P.brows !== "flat" ? 1 : 0), browC);
-    if (P.brows === "thick") for (const [x0, x1] of [[12, 15], [17, 20]]) for (let x = x0 + 1; x <= x1; x++) put(x, bY - 1, browC); // straight and thick, a row above
-    if (P.brows === "heavy") { if (P.browsUp) { for (const x of [13, 14, 18, 19]) put(x, bY - 1, browC); } else { put(13, bY + 1, browC); put(18, bY + 1, browC); } } // beta 3.31: over glasses, the weight goes up, clear of the frame
-    const EW = u32("#f2ece6"), EP = u32("#1c1214");
-    if (P.eyes === "lidded") { put(13, 13, EW); put(14, 13, EP); put(18, 13, EW); put(19, 13, EP); for (const x of [13, 14, 15, 18, 19, 20]) put(x, 12, SK[4]); } // heavy lids
-    else if (P.eyes === "smile") { for (const [x0, x1] of [[13, 15], [18, 19]]) for (let x = x0; x <= x1; x++) put(x, 13, EP); put(13, 12, SK[3]); put(18, 12, SK[3]); }
-    else { put(13, 13, EW); put(14, 13, EP); put(15, 13, SK[2]); put(18, 13, EW); put(19, 13, EP); put(14, 12, SK[3]); put(19, 12, SK[3]); }
-    if (P.fem) { put(15, 12, EP); put(20, 12, EP); put(13, 13, EP); } // lashes
-    if (P.fem) { put(21, 16, SK[3]); put(20, 17, SK[3]); } else { put(21, 15, SK[2]); put(21, 16, SK[3]); put(20, 17, SK[4]); put(22, 15, SK[1]); }
-    const MO = u32("#5a2220"), TE = u32("#fbf6ee");
-    if (P.mouth === "biggrin") { for (let x = 14; x <= 20; x++) { put(x, 20, x === 14 || x === 20 ? MO : TE); put(x, 21, x === 14 || x === 20 ? SK[3] : MO); } put(13, 19, MO); put(21, 19, MO); for (let x = 15; x <= 19; x++) put(x, 22, SK[3]); } // beta 3.31: Iulica's wide grin, all the teeth
-    else if (P.mouth === "under") { for (let x = 16; x <= 18; x++) put(x, 21, u32(P.lips || "#c47a6a")); put(17, 20, SK[3]); } // the lips, closed, under a big moustache
-    else if (P.mouth === "smirk") { for (let x = 16; x <= 18; x++) { put(x, 20, MO); put(x, 21, u32(P.lips || "#c98a7a")); } put(19, 19, MO); }
-    else if (P.mouth === "open") { for (let x = 16; x <= 18; x++) { put(x, 20, MO); put(x, 21, u32(P.lips || "#c47a6a")); } put(15, 19, MO); put(19, 19, MO); } // a small open smile
-    else if (P.mouth === "grin") { for (let x = 15; x <= 19; x++) { put(x, 20, TE); put(x, 21, MO); } put(14, 19, MO); put(20, 19, MO); }
-    else if (P.mouth === "lips") { for (let x = 15; x <= 19; x++) { put(x, 20, x === 15 || x === 19 ? MO : u32(P.lips)); put(x, 21, x > 15 && x < 19 ? u32(P.lips) : SK[2]); } for (let x = 16; x <= 18; x++) put(x, 20, MO); put(16, 21, ramp(P.lips)[1]); }
-    else if (P.mouth === "small") { put(16, 20, u32(P.lips || "#b05a50")); put(17, 20, u32(P.lips || "#b05a50")); put(18, 20, MO); }
-    else for (let x = 15; x <= 19; x++) put(x, 20, x === 15 || x === 19 ? SK[3] : MO);
-    // glasses. beta 3.31 (Daniel): one thin pixel of frame, the eyes showing through, the lens a touch lighter and a
-    // glint on it, so they read as clear glasses on the small heads too (not sunglasses)
-    if (P.glasses) {
-      const GP = P.glasses, G = u32(GP.color), frame = [], lens = [];
-      // (in small pixels: at K = 2 the frame is one small pixel, finer than the 1x frame, as a portrait has it)
-      const rect = ([x0, y0, x1, y1]) => { const X0 = x0 * K, Y0 = y0 * K, X1 = x1 * K + K - 1, Y1 = y1 * K + K - 1; for (let y = Y0; y <= Y1; y++) for (let x = X0; x <= X1; x++) (x === X0 || x === X1 || y === Y0 || y === Y1 ? frame : lens).push([x, y]); };
-      const ring = ([gx, gy, grx, gry]) => { const e = (x, y) => ((x - gx) / grx) ** 2 + ((y - gy) / gry) ** 2 <= 1, d = 1 / K; for (let y = Math.floor((gy - gry - 1) * K); y <= (gy + gry + 1) * K; y++) for (let x = Math.floor((gx - grx - 1) * K); x <= (gx + grx + 1) * K; x++) { const fx = (x + 0.5) / K, fy = (y + 0.5) / K; if (!e(fx, fy)) continue; (!e(fx - d, fy) || !e(fx + d, fy) || !e(fx, fy - d) || !e(fx, fy + d) ? frame : lens).push([x, y]); } };
-      if (GP.kind === "square") (GP.lens || [[12, 11, 16, 15], [18, 11, 21, 15]]).forEach(rect);
-      else (GP.lens || [[13.9, 13, 2.2, 1.9], [19, 13, 1.6, 1.9]]).forEach(ring);
-      const tint = u32(GP.tint || "#e6f4fb");
-      for (const [x, y] of lens) { const c0 = buf[y * W2 + x]; if (c0 != null && c0 !== EW && c0 !== EP) putH(x, y, mix2(c0, tint, 0.3)); }
-      for (const [x, y] of GP.glint || []) { putH(x * K, y * K, u32("#ffffff")); if (K > 1) putH(x * K + 1, y * K + 1, mix2(u32("#ffffff"), tint, 0.5)); }
-      for (const [x, y] of frame) putH(x, y, G);
-      for (const [x, y] of GP.bridge || [[16, 12], [17, 12]]) { for (let i = 0; i < K; i++) putH(x * K + i, y * K, G); }
-      if (K > 1) { for (let x = 8 * K; x < ((GP.arm || 11) + 1) * K; x++) putH(x, (GP.armY || 12) * K + (x < 10 * K ? 2 : 1), G); }
-      else for (let x = 8; x <= (GP.arm || 11); x++) put(x, (GP.armY || 12) + (x < 10 ? 1 : 0), G); // the arm to the ear
+    let ember = null;
+    if (!FINE) {
+      // the brows, the eyes, the nose, the mouth (the 1x map, as designed)
+      for (const [x0, x1, y] of [[12, 15, bY], [17, 20, bY]]) for (let x = x0; x <= x1; x++) put(x, y + (x === x0 && P.brows !== "flat" ? 1 : 0), browC);
+      if (P.brows === "thick") for (const [x0, x1] of [[12, 15], [17, 20]]) for (let x = x0 + 1; x <= x1; x++) put(x, bY - 1, browC); // straight and thick, a row above
+      if (P.brows === "heavy") { if (P.browsUp) { for (const x of [13, 14, 18, 19]) put(x, bY - 1, browC); } else { put(13, bY + 1, browC); put(18, bY + 1, browC); } } // beta 3.31: over glasses, the weight goes up, clear of the frame
+      if (P.eyes === "lidded") { put(13, 13, EW); put(14, 13, EP); put(18, 13, EW); put(19, 13, EP); for (const x of [13, 14, 15, 18, 19, 20]) put(x, 12, SK[4]); } // heavy lids
+      else if (P.eyes === "smile") { for (const [x0, x1] of [[13, 15], [18, 19]]) for (let x = x0; x <= x1; x++) put(x, 13, EP); put(13, 12, SK[3]); put(18, 12, SK[3]); }
+      else { put(13, 13, EW); put(14, 13, EP); put(15, 13, SK[2]); put(18, 13, EW); put(19, 13, EP); put(14, 12, SK[3]); put(19, 12, SK[3]); }
+      if (P.fem) { put(15, 12, EP); put(20, 12, EP); put(13, 13, EP); } // lashes
+      if (P.fem) { put(21, 16, SK[3]); put(20, 17, SK[3]); } else { put(21, 15, SK[2]); put(21, 16, SK[3]); put(20, 17, SK[4]); put(22, 15, SK[1]); }
+      if (P.mouth === "biggrin") { for (let x = 14; x <= 20; x++) { put(x, 20, x === 14 || x === 20 ? MO : TE); put(x, 21, x === 14 || x === 20 ? SK[3] : MO); } put(13, 19, MO); put(21, 19, MO); for (let x = 15; x <= 19; x++) put(x, 22, SK[3]); } // beta 3.31: Iulica's wide grin, all the teeth
+      else if (P.mouth === "under") { for (let x = 16; x <= 18; x++) put(x, 21, u32(P.lips || "#c47a6a")); put(17, 20, SK[3]); } // the lips, closed, under a big moustache
+      else if (P.mouth === "smirk") { for (let x = 16; x <= 18; x++) { put(x, 20, MO); put(x, 21, u32(P.lips || "#c98a7a")); } put(19, 19, MO); }
+      else if (P.mouth === "open") { for (let x = 16; x <= 18; x++) { put(x, 20, MO); put(x, 21, u32(P.lips || "#c47a6a")); } put(15, 19, MO); put(19, 19, MO); } // a small open smile
+      else if (P.mouth === "grin") { for (let x = 15; x <= 19; x++) { put(x, 20, TE); put(x, 21, MO); } put(14, 19, MO); put(20, 19, MO); }
+      else if (P.mouth === "lips") { for (let x = 15; x <= 19; x++) { put(x, 20, x === 15 || x === 19 ? MO : u32(P.lips)); put(x, 21, x > 15 && x < 19 ? u32(P.lips) : SK[2]); } for (let x = 16; x <= 18; x++) put(x, 20, MO); put(16, 21, ramp(P.lips)[1]); }
+      else if (P.mouth === "small") { put(16, 20, u32(P.lips || "#b05a50")); put(17, 20, u32(P.lips || "#b05a50")); put(18, 20, MO); }
+      else for (let x = 15; x <= 19; x++) put(x, 20, x === 15 || x === 19 ? SK[3] : MO);
+      // glasses. beta 3.31 (Daniel): one thin pixel of frame, the eyes showing through, the lens a touch lighter and a
+      // glint on it, so they read as clear glasses on the small heads too (not sunglasses)
+      if (P.glasses) {
+        const GP = P.glasses, G = u32(GP.color), frame = [], lens = [];
+        const rect = ([x0, y0, x1, y1]) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) (x === x0 || x === x1 || y === y0 || y === y1 ? frame : lens).push([x, y]); };
+        const ring = ([gx, gy, grx, gry]) => { const e = (x, y) => ((x - gx) / grx) ** 2 + ((y - gy) / gry) ** 2 <= 1; for (let y = Math.floor(gy - gry - 1); y <= gy + gry + 1; y++) for (let x = Math.floor(gx - grx - 1); x <= gx + grx + 1; x++) { const fx = x + 0.5, fy = y + 0.5; if (!e(fx, fy)) continue; (!e(fx - 1, fy) || !e(fx + 1, fy) || !e(fx, fy - 1) || !e(fx, fy + 1) ? frame : lens).push([x, y]); } };
+        if (GP.kind === "square") (GP.lens || [[12, 11, 16, 15], [18, 11, 21, 15]]).forEach(rect);
+        else (GP.lens || [[13.9, 13, 2.2, 1.9], [19, 13, 1.6, 1.9]]).forEach(ring);
+        const tint = u32(GP.tint || "#e6f4fb");
+        for (const [x, y] of lens) { const c0 = buf[y * W2 + x]; if (c0 != null && c0 !== EW && c0 !== EP) putH(x, y, mix2(c0, tint, 0.3)); }
+        for (const [x, y] of GP.glint || []) putH(x, y, u32("#ffffff"));
+        for (const [x, y] of frame) putH(x, y, G);
+        for (const [x, y] of GP.bridge || [[16, 12], [17, 12]]) putH(x, y, G);
+        for (let x = 8; x <= (GP.arm || 11); x++) put(x, (GP.armY || 12) + (x < 10 ? 1 : 0), G); // the arm to the ear
+      }
+      // the cigarette, in the corner of the mouth: white paper, the lit end
+      // beta 3.32 (Daniel: "from time to time he keeps it in his mouth"): this head is the one with the cigarette in it
+      // ("cristache+cig"); it hangs from the lips, forward and a little down, the lit end at (25, 22)
+      if (P.cig) { for (const [x, y, c] of [[19, 21, "#c98a52"], [20, 21, "#f6f4ee"], [21, 21, "#f6f4ee"], [22, 22, "#f6f4ee"], [23, 22, "#e4e0d8"], [24, 22, "#ff7a22"]]) put(x, y, u32(c)); ember = [PX(24), PX(22)]; }
+    } else {
+      // ---- fine: the features drawn again at this size, snapped to the pixel grid
+      const mark = (X, Y, c) => { putH(X, Y, c); if (X >= 0 && Y >= 0 && X < W2 && Y < H2) feat[Y * W2 + X] = 1; };
+      const hline = (X0, X1, Y, c, m) => { for (let X = X0; X < Math.max(X0 + 1, X1); X++) (m ? mark : putH)(X, Y, c); };
+      const T = Math.max(1, Math.round(K / 3)); // the weight of a drawn line: one pixel, two on the biggest heads
+      // a tapered stroke along a polyline (in head units), never thinner than one pixel
+      const stroke = (pts, w0, w1, col) => {
+        let tot = 0; const seg = []; for (let i = 1; i < pts.length; i++) { const l = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); seg.push([pts[i - 1], pts[i], tot, l]); tot += l; }
+        const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]), m = Math.max(w0, w1) + 1;
+        for (let Y = Math.floor((Math.min(...ys) - m) * K); Y <= (Math.max(...ys) + m) * K; Y++) for (let X = Math.floor((Math.min(...xs) - m) * K); X <= (Math.max(...xs) + m) * K; X++) {
+          const fx = (X + 0.5) / K, fy = (Y + 0.5) / K; let best = 1e9, bt = 0;
+          for (const [a, b, t0, l] of seg) { const vx = b[0] - a[0], vy = b[1] - a[1], q = clamp(((fx - a[0]) * vx + (fy - a[1]) * vy) / (l * l || 1), 0, 1), d = Math.hypot(fx - a[0] - vx * q, fy - a[1] - vy * q); if (d < best) { best = d; bt = (t0 + q * l) / (tot || 1); } }
+          const wv = lerp(w0, w1, bt) / 2; if (best * K <= Math.max(0.55, wv * K)) { const c = typeof col === "function" ? col(bt, fx, fy) : col; if (c) putH(X, Y, c); }
+        }
+      };
+      // the brows: a stroke, the back end lower, heavier where theirs are
+      const bw = P.brows === "heavy" ? [1.5, 1.0] : P.brows === "thick" ? [1.9, 1.6] : P.brows === "flat" ? [1.0, 0.9] : [0.95, 0.6];
+      const bo = (P.brows === "thick" ? -0.5 : P.brows === "heavy" && P.browsUp ? -0.35 : 0) - (P.glasses && K < 2.5 ? 0.45 : 0); // over glasses, the brows clear of the frame
+      for (const [x0, x1] of [[12, 15.9], [17, 20.9]]) {
+        const pts = P.brows === "flat" ? [[x0 + 0.2, bY + 0.5], [x1, bY + 0.5]] : [[x0 + 0.2, bY + 1.3 + bo], [x0 + 1.1, bY + 0.55 + bo], [x1, bY + 0.45 + bo]];
+        stroke(pts, bw[0], bw[1], (t) => (K >= 3 && t > 0.15 && t < 0.9 && grain(PX(x0 + t * (x1 - x0)), 0, 3, 1) > 0.7 ? mix2(browC, HR[2], 0.5) : browC));
+      }
+      // the eyes: an almond of white, the iris towards the nose (they look ahead), its pupil and a light in it, the
+      // upper lid's line over it, the lower lid in shadow
+      const IR = ramp(P.iris || "#5a3a26"), LID = mix2(EP, SK[5], 0.35);
+      const eye = (cx, cy, hw, hh, minW) => {
+        const X0 = PX(cx - hw), X1 = Math.max(X0 + minW, PX(cx + hw)), Y0 = PX(cy - hh), Y1 = Math.max(Y0 + 2, PX(cy + hh)), w = X1 - X0, h = Y1 - Y0;
+        const ecx = (X0 + X1) / 2, ecy = (Y0 + Y1) / 2, inA = (X, Y) => { if (w < 5 || h < 3) return !(Y === Y1 - 1 && X === X1 - 1 && w >= 4); const u = (X + 0.5 - ecx) / (w / 2 + 0.25), v = (Y + 0.5 - ecy) / (h / 2 + 0.25); return u * u + v * v * (v < 0 ? 0.75 : 1.1) <= 1; };
+        if (P.eyes === "smile") { // shut with the smile: an arc, the cheek pushed up under it
+          for (let X = X0; X < X1; X++) { const u = (X + 0.5 - X0) / w * 2 - 1, y = Y1 - 1 - Math.round((h - 1) * 0.9 * (1 - u * u)); for (let i = 0; i < T; i++) mark(X, y + i, EP); }
+          if (K >= 2.5) hline(X0 + 1, X1 - 1, Y1 + T, SK[1]);
+          return;
+        }
+        const ix = X0 + w * 0.62, iy = ecy + (h >= 4 ? 0.2 : 0), ir = Math.max(1.15, h * 0.45);
+        for (let Y = Y0; Y < Y1; Y++) for (let X = X0; X < X1; X++) {
+          if (!inA(X, Y)) continue;
+          const d = Math.hypot(X + 0.5 - ix, Y + 0.5 - iy);
+          let c = EW;
+          if (d <= ir) c = d <= ir * 0.5 || ir < 1.6 && d <= ir * 0.75 ? EP : IR[Y + 0.5 < iy ? 3 : 2];
+          else if (Y === Y0 && h >= 3) c = mix2(EW, SK[3], 0.45); // the lid's shadow on the white
+          mark(X, Y, c);
+        }
+        if (ir >= 1.6) mark(Math.floor(ix - ir * 0.45), Math.floor(iy - ir * 0.45), u32("#ffffff")); // the light in the eye
+        const lidRows = P.eyes === "lidded" ? Math.max(1, Math.round(h * 0.45)) : 0;
+        for (let i = 0; i < lidRows; i++) hline(X0, X1, Y0 + i, i === lidRows - 1 ? LID : SK[3], true); // heavy lids: the lid down over the eye, its edge dark
+        if (!(P.glasses && K < 2.5)) for (let i = 1; i <= T; i++) hline(X0 - (i === 1 ? 1 : 0), X1, Y0 - i, i === 1 && lidRows ? SK[4] : LID, true); // the upper lid's line (behind small glasses the frame draws it)
+        mark(X0 - 1, Y0, LID); // its back end, down at the corner
+        if (P.fem) { mark(X0 - 2, Y0 - T - 1 + T, EP); mark(X0 - 2, Y0 - 1, EP); if (K >= 2.5) mark(X0 - 3, Y0 - 2, EP); } // the lashes
+        if (K >= 2.5) hline(X0 + 1, X1 - 1, Y1, SK[3]); // the lower lid
+      };
+      eye(14, 13.5, 1.35, 0.62, 4); eye(19, 13.5, 1.05, 0.62, 3);
+      // the nose: the bridge and the tip lit, the nostril and the shadow under it
+      const rU = (x0, y0, x1, y1, c) => { const X0 = PX(x0), Y0 = PX(y0), X1 = Math.max(X0 + 1, PX(x1)), Y1 = Math.max(Y0 + 1, PX(y1)); for (let Y = Y0; Y < Y1; Y++) for (let X = X0; X < X1; X++) if (buf[Y * W2 + X] != null) putH(X, Y, c); };
+      if (!P.fem) { rU(21, 12.8 - nz * 0.5, 21.5, 15, SK[1]); rU(21.6, 15, 22.3 + nz * 0.5, 15.6, SK[0]); rU(20.3, 16.4, 21.1, 17.1, SK[4]); rU(19.6, 17.1, 21.4, 17.6, SK[3]); }
+      else { rU(21, 13.4, 21.4, 15.4, SK[1]); rU(20.6, 16.4, 21.2, 17, SK[3]); }
+      // the moustache and the mouth: rows stacked down from the lip line, each at least a pixel
+      const LP = ramp(P.lips || "#c47a6a"), my = PX(P.mouth === "under" ? 20.5 : 19.7);
+      const rows = (spec, y0 = my) => { let Y = y0; for (const [hU, x0, x1, c] of spec) { const n = Math.max(1, Math.round(hU * K)); for (let i = 0; i < n; i++) hline(PX(x0), PX(x1), Y + i, c); Y += n; } return Y; };
+      const teeth = (x0, x1, Y0, Y1, c) => { if (K < 3) return; for (const tx of [16.2, 17.4, 18.6, 19.8]) if (tx > x0 + 0.3 && tx < x1 - 0.3) for (let Y = Y0; Y < Y1; Y++) putH(PX(tx), Y, mix2(c, SK[3], 0.4)); };
+      const corner = (x0, x1, c = MO) => hline(PX(x0), PX(x1), my - 1, c);
+      const m = P.mouth;
+      if (m === "grin") { const y1 = rows([[0.8, 15, 19.9, TE]]); teeth(15, 19.9, my, y1, TE); rows([[0.6, 15, 19.9, MO], [0.5, 15.5, 19.5, SK[1]]], y1); corner(14.4, 15); corner(19.9, 20.5); }
+      else if (m === "biggrin") { const y1 = rows([[K < 2.5 ? 1.3 : 0.9, 14, 20.9, TE]]); teeth(14, 20.9, my, y1, TE); rows(K < 2.5 ? [[0.5, 14, 20.9, MO], [0.6, 14.7, 20.2, mix2(TE, SK[3], 0.3)], [0.5, 15.2, 19.7, SK[3]]] : [[0.45, 14, 20.9, MO], [0.5, 14.7, 20.2, mix2(TE, SK[3], 0.25)], [0.45, 14.7, 20.2, MO], [0.4, 15.2, 19.7, SK[3]]], y1); corner(13.3, 14); corner(20.9, 21.6); }
+      else if (m === "open") { rows([[0.55, 16, 19, MO], [0.4, 16.2, 18.8, u32("#9a3434")], [0.5, 16.2, 18.8, LP[1]]]); corner(15.3, 16); corner(19, 19.7); }
+      else if (m === "smirk") { rows([[0.45, 16, 18.9, MO], [0.6, 16, 18.9, LP[2]]]); corner(18.9, 19.7); }
+      else if (m === "under") { rows([[0.4, 16, 19, SK[4]], [0.75, 16, 19, LP[2]], [0.35, 16.4, 18.6, SK[3]]]); if (K >= 2) putH(PX(16.6), my + Math.max(1, Math.round(0.4 * K)), LP[0]); }
+      else if (m === "lips") { const y1 = rows([[0.7, 15, 20, LP[3]], [0.3, 15, 20, MO], [0.85, 15.6, 19.4, LP[2]], [0.3, 16, 19, SK[3]]]); if (K >= 2) putH(PX(16.4), y1 - Math.max(1, Math.round(0.3 * K)) - 1, LP[0]); }
+      else if (m === "small") { const y1 = rows([[0.5, 16, 18.6, LP[3]], [0.3, 16, 18.8, MO], [0.65, 16.2, 18.4, LP[2]]]); if (K >= 2) putH(PX(16.8), y1 - 1, LP[0]); }
+      else rows([[0.45, 15, 19.6, MO], [0.5, 15.4, 19.2, SK[3]]]);
+      // glasses: the frame (thicker on Steve's), the eye through a lens a touch lighter, a glint across it, the bridge, the arm to the ear
+      if (P.glasses) {
+        const GP = P.glasses, G = u32(GP.color), tint = u32(GP.tint || "#e6f4fb"), ft = Math.max(1, Math.round(K * (GP.t || 0.3))), lenses = [];
+        if (GP.kind === "square") for (const [x0, y0, x1, y1] of GP.lens || [[12, 11, 16, 15], [18, 11, 21, 15]]) {
+          const X0 = PX(x0), Y0 = PX(y0), X1 = PX(x1 + 1), Y1 = PX(y1 + 1), rr = K >= 3 ? 1 : 0;
+          const inside = (X, Y) => X >= X0 && X < X1 && Y >= Y0 && Y < Y1 && !(rr && (X === X0 || X === X1 - 1) && (Y === Y0 || Y === Y1 - 1));
+          lenses.push({ X0, Y0, X1, Y1, inside, edge: (X, Y) => X < X0 + ft || X >= X1 - ft || Y < Y0 + ft || Y >= Y1 - ft });
+        } else for (const [gx, gy, grx, gry] of GP.lens || [[13.9, 13, 2.2, 1.9], [19, 13, 1.6, 1.9]]) {
+          const e = (X, Y, g) => (((X + 0.5) / K - gx) / (grx - g)) ** 2 + (((Y + 0.5) / K - gy) / (gry - g)) ** 2 <= 1;
+          lenses.push({ X0: PX(gx - grx) - 1, Y0: PX(gy - gry) - 1, X1: PX(gx + grx) + 1, Y1: PX(gy + gry) + 1, inside: (X, Y) => e(X, Y, 0), edge: (X, Y) => !e(X, Y, ft / K) });
+        }
+        for (const l of lenses) {
+          for (let Y = l.Y0; Y < l.Y1; Y++) for (let X = l.X0; X < l.X1; X++) {
+            if (!l.inside(X, Y)) continue; const i = Y * W2 + X;
+            if (l.edge(X, Y)) { putH(X, Y, G); continue; }
+            if (buf[i] != null && !feat[i]) putH(X, Y, mix2(buf[i], tint, 0.26));
+          }
+          const iw = l.X1 - l.X0 - ft * 2, ih = l.Y1 - l.Y0 - ft * 2;
+          if (iw >= 4 && ih >= 4) for (let i = 0; i < Math.min(iw, ih) - 2; i++) { const X = l.X0 + ft + 1 + i, Y = l.Y0 + ft + Math.round(ih * 0.62) - i; if (Y > l.Y0 + ft && !feat[Y * W2 + X]) putH(X, Y, mix2(u32("#ffffff"), tint, 0.3)); } // the glint
+          else putH(l.X1 - ft - 1, l.Y0 + ft, u32("#ffffff"));
+        }
+        if (lenses.length > 1) { const a = lenses[0], b = lenses[1], Y = Math.round(lerp(a.Y0, a.Y1, 0.3)); for (let X = a.X1 - ft; X < b.X0 + ft; X++) for (let i = 0; i < ft; i++) if (!b.inside(X, Y + i) || b.edge(X, Y + i)) putH(X, Y + i, G); } // the bridge
+        { const a = lenses[0], Y = Math.round(lerp(a.Y0, a.Y1, 0.28)); for (let X = PX(8.2); X < a.X0 + 1; X++) for (let i = 0; i < ft; i++) putH(X, Y + i + (X < PX(10) ? Math.max(1, ft) : 0), G); } // the arm
+      }
+      // the cigarette hanging from the corner of the mouth: the filter, the paper lit on top, the ash, the lit end
+      if (P.cig) {
+        const a = [19.2, 21.0], b = [24.8, 22.5];
+        stroke([a, b], 0.95, 0.85, (t, fx, fy) => { const up = (fy - lerp(a[1], b[1], t)) < 0; return t < 0.15 ? u32(up ? "#e0a066" : "#b0703e") : t > 0.93 ? u32(K >= 3 && up ? "#ffd27a" : "#ff6a1a") : t > 0.87 ? u32("#8a8a94") : u32(up ? "#f8f6f0" : "#d4d0c8"); });
+        ember = [PX(b[0]) - 1, PX(b[1])];
+      }
     }
-    // the cigarette, in the corner of the mouth: white paper, the lit end
-    // beta 3.32 (Daniel: "from time to time he keeps it in his mouth"): this head is the one with the cigarette in it
-    // ("cristache+cig"); it hangs from the lips, forward and a little down, the lit end at (25, 22)
-    if (P.cig) { for (const [x, y, c] of [[19, 21, "#c98a52"], [20, 21, "#f6f4ee"], [21, 21, "#f6f4ee"], [22, 22, "#f6f4ee"], [23, 22, "#e4e0d8"], [24, 22, "#ff7a22"]]) put(x, y, u32(c)); }
-    // beta 3.32: no outline of its own any more: the figure's finish outlines the head with the rest, in the hair's and
-    // the skin's own dark tones
-    if (K > 1) { // beta 3.32: what the bigger head can carry: a light in each eye, the lid's line, a light on the lip
-      if (P.eyes !== "smile") for (const ex of [14, 19]) { putH(ex * K, 13 * K, mix2(EP, EW, 0.35)); for (let i = -K; i < K; i++) if (at(ex, 12) !== EP) putH(ex * K + i, 13 * K - 1, SK[4]); }
-      if (P.lips && P.mouth !== "under") putH(17 * K, 21 * K, ramp(P.lips)[0]);
-    }
+    // beta 3.32: no outline of its own: the figure's finish outlines the head with the rest, in the hair's and the
+    // skin's own dark tones
     const out = buf.slice();
     // rows + palette, for the blitter
     const keys = new Map(), pal = {}; let kk = 0; const CH = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     const rows = []; for (let y = 0; y < H2; y++) { let r = ""; for (let x = 0; x < W2; x++) { const c = out[y * W2 + x]; if (c == null) { r += "."; continue; } if (!keys.has(c)) { const ch = kk < CH.length ? CH[kk] : String.fromCharCode(0x100 + kk); kk++; keys.set(c, ch); pal[ch] = c; } r += keys.get(c); } rows.push(r); }
-    return { rows, pal, at: [HEAD_ANCHOR[0] * K, HEAD_ANCHOR[1] * K], ember: P.cig ? [24 * K + (K - 1), 22 * K] : null };
+    return { rows, pal, at: [PX(HEAD_ANCHOR[0]), PX(HEAD_ANCHOR[1])], ember, K };
   }
   // a head made smaller (for the people further back): each new pixel takes the colour most of its block has, but the
   // darks (the outline, the eyes, the brows) win when they are a quarter of it, so the face keeps its features
@@ -674,7 +842,9 @@
   // view (beta 3.32, the portraits): { K, w, h, ox, oy }: the figure K times finer, into a w x h cell, the pose's origin
   // at (ox, oy); without it, a frame of the game (CW x CH, the feet at OX, OY)
   function drawFighter(id, p0, prop, alt, view) {
-    const KK = view ? view.K : 1, L = lookOf(id, alt), B = Object.assign({ sh: 1, arm: 1, leg: 1, waist: 1, chest: 1, sc: 1 }, L.build), sc = B.sc * (L.hands ? 1 : BODY) * KK;
+    // beta 3.33: sc, the canvas pixels to a pose unit; U, the canvas pixels to one pixel of the old 1.1 fighter (the
+    // sizes below that were given in pixels: the feet, the fists, the props)
+    const KK = view ? view.K : 1, L = lookOf(id, alt), B = Object.assign({ sh: 1, arm: 1, leg: 1, waist: 1, chest: 1, sc: 1 }, L.build), sc = B.sc * (L.hands ? NPCB : BODY) * KK, U = (L.hands ? NPCB : BODY) * KK / 1.1;
     const p = {}; for (const k in p0) p[k] = Array.isArray(p0[k]) ? [p0[k][0] * sc, p0[k][1] * sc] : p0[k];
     const F = view ? new Fig(view.w, view.h) : new Fig(CW, CH), T = view ? (q) => [q[0] + view.ox, q[1] + view.oy] : (q) => [q[0] + OX, q[1] + OY];
     let ember = null; // beta 3.32: where the cigarette's lit end is in this frame (the smoke rises from it)
@@ -685,12 +855,13 @@
     const tone = (R, nx, ny) => R[toneOf(nx, ny)];
     const back = (R, nx, ny) => R[Math.min(4, toneOf(nx, ny) + 1)]; // the far side, a tone darker
     const br = p.br || 0; // the breath: the chest a little wider, the shoulders a little higher
-    const wsh = (15 + br * 0.35) * B.sh * sc, len = Math.hypot(neck[0] - hip[0], neck[1] - hip[1]);
-    const sF = off(neck, (7 + 3 * tw) * B.sh * sc, 4 * KK), sB = off(neck, (-7 + 2 * tw) * B.sh * sc, 3 * KK);
-    const lF = off(hip, 3.5 * sc, 1), lB = off(hip, -2.5 * sc, 1); // beta 3.30: the legs from under the body (no seat sticking out)
+    // beta 3.33 (Daniel, arcade proportions): heroic: the shoulders and the chest broader, the waist narrower
+    const wsh = (16.8 + br * 0.35) * B.sh * sc, len = Math.hypot(neck[0] - hip[0], neck[1] - hip[1]);
+    const sF = off(neck, (7.8 + 3 * tw) * B.sh * sc, 4 * U), sB = off(neck, (-7.6 + 2 * tw) * B.sh * sc, 3 * U);
+    const lF = off(hip, 3.5 * sc, U), lB = off(hip, -2.5 * sc, U); // beta 3.30: the legs from under the body (no seat sticking out)
     // an arm: the deltoid, the upper arm with the biceps, the forearm, then the glove with its cuff
     const arm = (s, e, h, far) => {
-      const g = far ? 1 : 2, ar = B.arm * sc, sleeveTo = L.sleeve === "long" ? 2 : L.sleeve === "rolled" ? 1.4 : L.sleeve === "gi" ? 1.3 : L.sleeve === "short" ? 0.55 : -1;
+      const g = far ? 1 : 2, ar = B.arm * sc * (L.hands ? 0.8 : 1), /* beta 3.33: the people around keep everyday arms */ sleeveTo = L.sleeve === "long" ? 2 : L.sleeve === "rolled" ? 1.4 : L.sleeve === "gi" ? 1.3 : L.sleeve === "short" ? 0.55 : -1;
       const SLV = L.sleeveCol ? ramp(L.sleeveCol) : TOP;
       const mat = (seg) => (nx, ny, t, px, py) => { const R = seg + t * 0.999 < sleeveTo || (seg === 1 && sleeveTo >= 2) ? SLV : SK;
         if (L.topKind === "varsity" && seg === 1 && t > 0.82) return (far ? back : tone)(ramp(L.top), nx, ny); // the knit cuff
@@ -702,18 +873,18 @@
         if (R === SK) { if (seg === 0 && t > 0.32 && t < 0.86 && Math.abs(nx - 0.05) < 0.12) ex2 = 1; if (seg === 0 && t > 0.24 && t < 0.32 && nx > -0.3) ex2 = 1; if (seg === 1 && t > 0.1 && t < 0.62 && Math.abs(nx + 0.28) < 0.11) ex2 = 1; }
         else ex2 = folds(nx, t, ARM_FOLDS[seg]); // beta 3.32: the creases round the elbow, the folds down the sleeve, each with its lit ridge
         return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + ex2, 0, 4)]; };
-      limb(F, s, e, 6.3 * ar, 4.1 * ar, 1.4 * ar, 0.42, mat(0), g); // a strong upper arm, the deltoid and the biceps
-      limb(F, e, h, 4.9 * ar, 3.5 * ar, 0.8 * ar, 0.28, mat(1), g); // a thick forearm
+      limb(F, s, e, 6.9 * ar, 4.3 * ar, 1.7 * ar, 0.42, mat(0), g); // a strong upper arm, the deltoid and the biceps (beta 3.33: bigger)
+      limb(F, e, h, 5.3 * ar, 3.7 * ar, 0.9 * ar, 0.28, mat(1), g); // a thick forearm
       const vx = h[0] - e[0], vy = h[1] - e[1], vl = Math.hypot(vx, vy) || 1, ux = vx / vl, uy = vy / vl, gr = 5.9 * Math.min(1.1, sc);
-      if (L.hands) blob(F, [h[0] + ux * 0.5, h[1] + uy * 0.5], 3.1 * sc + 0.6, 2.8 * sc + 0.6, (nx, ny) => (far ? back : tone)(SK, nx, ny), g + 10); // a bystander's bare hand
+      if (L.hands) blob(F, [h[0] + ux * 0.5 * U, h[1] + uy * 0.5 * U], 3.1 * sc + 0.55 * U, 2.8 * sc + 0.55 * U, (nx, ny) => (far ? back : tone)(SK, nx, ny), g + 10); // a bystander's bare hand
       else { // beta 3.16 (Daniel): a bare fist in plain white hand wraps, for everyone; the knuckles just showing
         // beta 3.32 (the arcade refs): a fist that reads as a hand: the tape over the wrist, the back of the hand and the
         // knuckles; the curled fingers bare under it, split by dark lines, the thumb across them
-        const WR = ramp(WRAP), fr2 = 5.6 * Math.min(1.12, sc / KK) * KK, c0 = [h[0] + ux, h[1] + uy]; // big fists
+        const WR = ramp(WRAP), fr2 = FIST * Math.min(1.12, B.sc * 1.1) * U, c0 = [h[0] + ux * U, h[1] + uy * U]; // big fists (beta 3.33: bigger)
         let qx = -uy, qy = ux; if (qy < 0 || (Math.abs(qy) < 0.2 && qx < 0)) { qx = -qx; qy = -qy; } // across the fist, towards the palm
         blob(F, c0, fr2, fr2 * 0.9, (nx, ny, px, py) => {
           const aa = ((px - c0[0]) * ux + (py - c0[1]) * uy) / fr2, cc = ((px - c0[0]) * qx + (py - c0[1]) * qy) / fr2, sh = far ? back : tone;
-          if (aa < -0.3 || cc < -0.4 + aa * 0.2) { const band = Math.floor((aa * fr2 + 9) / 2) % 3 === 0; return sh(WR, nx, ny + (band && aa < -0.3 ? 0.35 : 0)); } // the tape
+          if (aa < -0.3 || cc < -0.4 + aa * 0.2) { const band = Math.floor((aa * fr2 / U + 9) / 1.2) % 3 === 0; return sh(WR, nx, ny + (band && aa < -0.3 ? 0.35 : 0)); } // the tape
           if (cc > 0.45 && aa < 0.35) return SK[Math.min(4, toneOf(nx, ny) + (far ? 1 : 0) + (cc < 0.58 ? 2 : 0))]; // the thumb, its edge
           const line = Math.abs(cc - 0.05) < 0.09 || Math.abs(cc - 0.36) < 0.09 || (Math.abs(cc - 0.66) < 0.09 && aa >= 0.35);
           return SK[Math.min(4, toneOf(nx, ny) + (far ? 1 : 0) + (line ? 2 : 0))];
@@ -732,15 +903,15 @@
       const thighMat = (nx, ny, t) => (L.cargo && t > 0.45 && t < 0.78 && nx < -0.1 && nx > -0.85 ? R[far ? 4 : t < 0.5 ? 1 : 3] : L.canvas && t > 0.6 && nx > -0.2 && Math.abs(t - 0.62) < 0.03 ? R[far ? 4 : 3] : mat(nx, ny, t)); // the cargo pocket; the canvas trousers' double front
       const shinMat = (nx, ny, t) => (L.ankle && t > 0.78 ? (far ? back : tone)(ramp(L.ankle), nx, ny) : mat(nx, ny, t, CURX, CURY, true));
       limb(F, r, k, (6.2 + loose) * lg, (5 + loose) * lg, (bare ? 1.4 : 1) * lg, 0.5, thighMat, g); // solid thighs, the swell mid-way (not at the seat)
-      limb(F, k, [f[0], f[1] - 4], (5 + loose) * lg, (3.4 + loose * (L.hem || 1.2)) * lg, (bare ? 1.3 : 0.6) * lg, 0.28, shinMat, g); // the calf high
-      const fq = Math.min(1, sc / KK) * KK; // the feet keep to the size of the person
+      limb(F, k, [f[0], f[1] - 4 * U], (5 + loose) * lg, (3.4 + loose * (L.hem || 1.2)) * lg, (bare ? 1.3 : 0.6) * lg, 0.28, shinMat, g); // the calf high
+      const fq = Math.min(1, B.sc * 1.1) * U * FOOT; // the feet keep to the size of the person (beta 3.33: bigger, as the arcade fighters' are)
       if (L.barefoot) { // a bare foot, the toes forward
-        poly(F, [[f[0] - 5 * fq, f[1] - 6 * fq], [f[0] + 3 * fq, f[1] - 5 * fq], [f[0] + 12 * fq, f[1] - 1 * fq], [f[0] + 12 * fq, f[1] + 1 * fq], [f[0] - 5 * fq, f[1] + 1 * fq]], (x, y) => (x > f[0] + 7 * fq && Math.floor(x) % 2 === 0 && y > f[1] - 1.5 * fq ? SK[3] : SK[far ? 3 : y < f[1] - 2 * fq ? 1 : 2]), g + 10); // the toes
-        if (L.ankle) limb(F, [f[0] - 1 * fq, f[1] - 6 * fq], [f[0] - 1 * fq, f[1] - 4 * fq], 3.4, 3.4, 0, 0.5, (nx, ny) => (far ? back : tone)(ramp(L.ankle), nx, ny), g + 11);
+        poly(F, [[f[0] - 5 * fq, f[1] - 6 * fq], [f[0] + 3 * fq, f[1] - 5 * fq], [f[0] + 12 * fq, f[1] - 1 * fq], [f[0] + 12 * fq, f[1] + 1 * fq], [f[0] - 5 * fq, f[1] + 1 * fq]], (x, y) => { const u = (x - f[0]) / fq, v = (f[1] - y) / fq; if (u > 7.4 && v < 2.2 && Math.floor((u - 7.4) / 1.25) % 2 === 1) return SK[4]; if (u > 7.4 && v < 0.6) return SK[3]; if (u < -2.5 && v < 2.5) return SK[far ? 4 : 3]; if (Math.abs(u - 1.5) < 0.7 && v > 2.4 && v < 4) return SK[far ? 3 : 2]; return SK[far ? 3 : v > 3.4 ? 1 : 2]; }, g + 10); // the toes (beta 3.33: split, the sole and the heel in shade, the ankle bone)
+        if (L.ankle) limb(F, [f[0] - 1 * fq, f[1] - 6 * fq], [f[0] - 1 * fq, f[1] - 4 * fq], 3.4 * fq, 3.4 * fq, 0, 0.5, (nx, ny) => (far ? back : tone)(ramp(L.ankle), nx, ny), g + 11);
       } else if (L.runner) { // beta 3.31: a running shoe: low heel collar, the toe sloping down, a chunky midsole, the stripes crossing on the side
         // beta 3.32 (Daniel: "make Ion's Asics more visible"): a size up (x1.15), a bright white upper, the crossing side
         // stripes bold (two pixels) in a strong blue, the heel counter blue, the laces, a white midsole on a dark outsole
-        const RU = L.runner, up2 = ramp(RU.upper), MID = ramp(RU.mid), ST = ramp(RU.stripe), HE = ramp(RU.heel), fr3 = fq * 1.15, fo = [f[0] + 1.2, f[1]];
+        const RU = L.runner, up2 = ramp(RU.upper), MID = ramp(RU.mid), ST = ramp(RU.stripe), HE = ramp(RU.heel), fr3 = fq * 1.15, fo = [f[0] + 1.2 * U, f[1]];
         poly(F, [[fo[0] - 7 * fr3, fo[1] - 2 * fr3], [fo[0] - 6.4 * fr3, fo[1] - 6.8 * fr3], [fo[0] - 4.8 * fr3, fo[1] - 7.6 * fr3], [fo[0] - 1 * fr3, fo[1] - 7 * fr3], [fo[0] + 2.5 * fr3, fo[1] - 7.4 * fr3], [fo[0] + 6 * fr3, fo[1] - 5.8 * fr3], [fo[0] + 10.5 * fr3, fo[1] - 3.8 * fr3], [fo[0] + 13.4 * fr3, fo[1] - 2.4 * fr3], [fo[0] + 13.8 * fr3, fo[1] + 0.4 * fr3], [fo[0] - 7 * fr3, fo[1] + 0.9 * fr3]], (x, y) => {
           const u = (x - fo[0]) / fr3, v = (fo[1] - y) / fr3;
           if (v < 0.7) return (Math.floor(x) % 3 === 0 && v < 0.2) ? SO : ramp(L.sole)[far ? 4 : 3]; // the outsole, its tread
@@ -764,7 +935,7 @@
     };
     // the torso: a V from the shoulders to the waist, then the hips; u across (-1 back .. 1 front), v down (0..1)
     const shape = (v) => {
-      const w0 = wsh * (1 - 0.18 * tw), wc = (13.8 + br * 0.4) * B.chest * sc * (1 - 0.15 * tw), ww = 7.6 * B.waist * sc, wh = 8.4 * Math.max(1, B.waist * 0.92) * sc;
+      const w0 = wsh * (1 - 0.18 * tw), wc = (15.2 + br * 0.4) * B.chest * sc * (1 - 0.15 * tw), ww = 7.3 * B.waist * sc, wh = 8.4 * Math.max(1, B.waist * 0.92) * sc;
       if (v < 0.16) return w0 * (0.5 + 0.5 * Math.sqrt(v / 0.16)); // round shoulders
       if (v < 0.42) return lerp(w0, wc, (v - 0.16) / 0.26);
       if (v < 0.8) return lerp(wc, ww, (v - 0.42) / 0.38);
@@ -878,66 +1049,84 @@
     for (let i = 0; i <= 10; i++) { const v = i / 10, hw = shape(v); tp.push(off(neck, 1.5 * sc + hw, v * len)); }
     for (let i = 10; i >= 0; i--) { const v = i / 10, hw = shape(v); tp.push(off(neck, 1.5 * sc - hw, v * len)); }
     poly(F, tp, torsoMat, 5);
-    if (L.legs === "skirt") { const SKR = ramp(L.skirt); poly(F, [off(hip, -hw1 - 1, -3), off(hip, hw1 + 1, -3), off(hip, hw1 + 6, 15), off(hip, -hw1 - 5, 15)], (x, y) => { const [u] = tloc(x, y); return SKR[u > 0.3 ? 2 : u > -0.4 ? 3 : 4]; }, 6); }
-    if (L.apron) { const AR = ramp(L.apron); poly(F, [off(hip, -1, -2), off(hip, hw1 + 2, -2), off(hip, hw1 + 4, 20), off(hip, 1, 22)], (x, y) => AR[x > hip[0] + hw1 * 0.5 ? 1 : 2], 6); }
-    if (L.knot) { const kp = off(hip, hw1 * 0.75, -5); blob(F, kp, 3.2, 2.6, (nx, ny) => TOP[toneOf(nx, ny)], 7); limb(F, [kp[0], kp[1] + 1], [kp[0] + 1.5, kp[1] + 6], 1.6, 1.2, 0, 0.5, (nx, ny) => TOP[toneOf(nx, ny) + 1 > 4 ? 4 : toneOf(nx, ny) + 1], 7); }
-    if (L.key) { const k = off(hip, hw1 * 0.6, 4); blob(F, [k[0], k[1] + 6], 1.6, 3.2, () => u32("#ffd23a"), 7); blob(F, [k[0], k[1] + 1.5], 1.2, 1.4, () => u32("#c9ccd4"), 7); }
+    if (L.legs === "skirt") { const SKR = ramp(L.skirt); poly(F, [off(hip, -hw1 - U, -3 * U), off(hip, hw1 + U, -3 * U), off(hip, hw1 + 6 * U, 15 * U), off(hip, -hw1 - 5 * U, 15 * U)], (x, y) => { const [u] = tloc(x, y); return SKR[u > 0.3 ? 2 : u > -0.4 ? 3 : 4]; }, 6); }
+    if (L.apron) { const AR = ramp(L.apron); poly(F, [off(hip, -U, -2 * U), off(hip, hw1 + 2 * U, -2 * U), off(hip, hw1 + 4 * U, 20 * U), off(hip, U, 22 * U)], (x, y) => AR[x > hip[0] + hw1 * 0.5 ? 1 : 2], 6); }
+    if (L.knot) { const kp = off(hip, hw1 * 0.75, -5 * U); blob(F, kp, 3.2 * U, 2.6 * U, (nx, ny) => TOP[toneOf(nx, ny)], 7); limb(F, [kp[0], kp[1] + U], [kp[0] + 1.5 * U, kp[1] + 6 * U], 1.6 * U, 1.2 * U, 0, 0.5, (nx, ny) => TOP[toneOf(nx, ny) + 1 > 4 ? 4 : toneOf(nx, ny) + 1], 7); }
+    if (L.key) { const k = off(hip, hw1 * 0.6, 4 * U); blob(F, [k[0], k[1] + 6 * U], 1.6 * U, 3.2 * U, (nx, ny) => ramp("#ffd23a")[toneOf(nx, ny)], 7); blob(F, [k[0], k[1] + 1.5 * U], 1.2 * U, 1.4 * U, () => u32("#c9ccd4"), 7); }
     { // beta 3.12: the head's neck stands on the body's neck; the pose's head offset still tilts it a little
       const hid = (L.headId || id) + (p.cig === "mouth" && HEADSPEC[(L.headId || id) + "+cig"] ? "+cig" : "");
-      const HD = headOf(hid, L.hands ? B.sc : 1, false, KK), hx = (p.head[0] - p.neck[0] - 3 * sc) * 0.6, hy = (p.head[1] - p.neck[1] + 11 * sc) * 0.6, a2 = off(neck, 0.5 * KK, KK);
+      // beta 3.33: the head at its own resolution (HK in the fight; the people around keep the small 1x head)
+      const HD = headOf(hid, 1, false, view ? view.HK : L.hands ? 1 : HK), hx = (p.head[0] - p.neck[0] - 3 * sc) * 0.6, hy = (p.head[1] - p.neck[1] + 11 * sc) * 0.6, a2 = off(neck, 0.5 * U, U);
       if (p.lie) F.blit(HD.rows, HD.pal, a2[0], a2[1], 1, HD.at, 8); else { const bx2 = Math.round(a2[0] + hx), by2 = Math.round(a2[1] + hy); F.blit(HD.rows, HD.pal, bx2, by2, 0, HD.at, 8); if (HD.ember) ember = [bx2 + HD.ember[0] - HD.at[0], by2 + HD.ember[1] - HD.at[1]]; }
     }
     arm(sF, T(p.eF), T(p.hF), false);
     const hF = T(p.hF);
     if (p.cig === "hand" && L.smokes) { // beta 3.32 (Daniel: "the rest of the time he holds it in his hand"): between two fingers of the front hand, the lit end out in front
-      const e0 = T(p.eF), vx = hF[0] - e0[0], vy = hF[1] - e0[1], vl = Math.hypot(vx, vy) || 1, ux = vx / vl, uy = vy / vl, fr2 = 5.6 * Math.min(1.12, sc / KK) * KK, c0 = [hF[0] + ux, hF[1] + uy];
+      const e0 = T(p.eF), vx = hF[0] - e0[0], vy = hF[1] - e0[1], vl = Math.hypot(vx, vy) || 1, ux = vx / vl, uy = vy / vl, fr2 = FIST * Math.min(1.12, B.sc * 1.1) * U, c0 = [hF[0] + ux * U, hF[1] + uy * U];
       let dx = ux * 0.35 + 0.9, dy = uy * 0.35 - 0.5; const dl = Math.hypot(dx, dy); dx /= dl; dy /= dl;
       let qx = -uy, qy = ux; if (qy < 0) { qx = -qx; qy = -qy; }
       const b0 = [c0[0] + qx * fr2 * 0.15, c0[1] + qy * fr2 * 0.15], pts = [];
-      for (let i = 0; i < 16 && pts.length < 6; i++) { const px = Math.round(b0[0] + dx * i * 0.7), py = Math.round(b0[1] + dy * i * 0.7); if (Math.hypot(px + 0.5 - c0[0], py + 0.5 - c0[1]) < fr2 * 0.8) continue; if (pts.some(([a, b]) => a === px && b === py)) continue; pts.push([px, py]); }
-      pts.forEach(([px, py], i) => F.fill(px, py, px, py, () => true, () => u32(i === pts.length - 1 ? "#ff7a22" : i === pts.length - 2 ? "#e4e0d8" : "#f6f4ee"), 30));
+      const nCig = Math.round(6 * U);
+      for (let i = 0; i < 40 && pts.length < nCig; i++) { const px = Math.round(b0[0] + dx * i * 0.7), py = Math.round(b0[1] + dy * i * 0.7); if (Math.hypot(px + 0.5 - c0[0], py + 0.5 - c0[1]) < fr2 * 0.8) continue; if (pts.some(([a, b]) => a === px && b === py)) continue; pts.push([px, py]); }
+      pts.forEach(([px, py], i) => { const c = u32(i === pts.length - 1 ? "#ff7a22" : i === pts.length - 2 ? "#8a8a94" : i < 2 ? "#d89a5a" : "#f6f4ee"); F.fill(px, py, px, py, () => true, () => c, 30); if (U > 1.5 && i < pts.length - 1) F.fill(px, py + 1, px, py + 1, () => true, () => u32(i < 2 ? "#a8683a" : "#cfcac0"), 30); }); // beta 3.33: two pixels thick, the filter, the paper in the light and in shade, the ash
       if (pts.length) ember = pts[pts.length - 1].slice();
     }
+    const Q = (dx, dy) => [hF[0] + dx * U, hF[1] + dy * U]; // a point by the front hand, in old pixels
     if (prop === "camera") {
-      poly(F, [[hF[0] - 5, hF[1] - 7], [hF[0] + 8, hF[1] - 7], [hF[0] + 8, hF[1] + 1], [hF[0] - 5, hF[1] + 1]], (x, y) => u32(y < hF[1] - 5 ? "#4a4a52" : "#26262c"), 20);
-      blob(F, [hF[0] + 8, hF[1] - 3], 2.8, 2.8, (nx, ny) => ramp("#3a8fe0")[toneOf(nx, ny)], 21);
+      poly(F, [Q(-5, -7), Q(8, -7), Q(8, 1), Q(-5, 1)], (x, y) => u32(y < hF[1] - 5 * U ? "#4a4a52" : y < hF[1] - 4.4 * U ? "#6a6a74" : "#26262c"), 20);
+      blob(F, Q(8, -3), 2.8 * U, 2.8 * U, (nx, ny) => ramp("#3a8fe0")[toneOf(nx, ny)], 21);
     } else if (prop === "tote") {
-      poly(F, [[hF[0] - 2, hF[1] + 2], [hF[0] + 12, hF[1] + 4], [hF[0] + 10, hF[1] + 22], [hF[0] - 6, hF[1] + 19]], (x, y) => ramp("#e8dcc0")[x > hF[0] + 5 ? 1 : 2], 20);
-      poly(F, [[hF[0] - 1, hF[1] + 1], [hF[0] + 4, hF[1] + 2], [hF[0] + 3, hF[1] + 6], [hF[0] - 2, hF[1] + 5]], () => u32("#c9b896"), 21);
+      poly(F, [Q(-2, 2), Q(12, 4), Q(10, 22), Q(-6, 19)], (x, y) => ramp("#e8dcc0")[x > hF[0] + 5 * U ? 1 : (Math.floor(y / U) % 7 === 0 ? 3 : 2)], 20);
+      poly(F, [Q(-1, 1), Q(4, 2), Q(3, 6), Q(-2, 5)], () => u32("#c9b896"), 21);
     } else if (prop === "cup") { // a takeaway cup
-      poly(F, [[hF[0] - 2, hF[1] - 8], [hF[0] + 4, hF[1] - 8], [hF[0] + 3.5, hF[1] - 1], [hF[0] - 1.5, hF[1] - 1]], (x, y) => u32(y < hF[1] - 6.5 ? "#2a2a30" : x > hF[0] + 2 ? "#d8d4cc" : "#f4f2ec"), 20);
-      poly(F, [[hF[0] - 1.6, hF[1] - 5.5], [hF[0] + 3.6, hF[1] - 5.5], [hF[0] + 3.4, hF[1] - 3.5], [hF[0] - 1.4, hF[1] - 3.5]], () => u32("#b07a46"), 21);
+      poly(F, [Q(-2, -8), Q(4, -8), Q(3.5, -1), Q(-1.5, -1)], (x, y) => u32(y < hF[1] - 6.5 * U ? "#2a2a30" : x > hF[0] + 2 * U ? "#d8d4cc" : "#f4f2ec"), 20);
+      poly(F, [Q(-1.6, -5.5), Q(3.6, -5.5), Q(3.4, -3.5), Q(-1.4, -3.5)], () => u32("#b07a46"), 21);
     } else if (prop === "key") {
-      blob(F, [hF[0] + 2, hF[1] - 7], 1.8, 3.4, () => u32("#ffd23a"), 20);
+      blob(F, Q(2, -7), 1.8 * U, 3.4 * U, (nx, ny) => ramp("#ffd23a")[toneOf(nx, ny)], 20);
     } else if (prop === "stack") {
-      for (let i = 0; i < 6; i++) poly(F, [[hF[0] - 12, hF[1] - 3 - i * 3], [hF[0] + 8, hF[1] - 3 - i * 3], [hF[0] + 8, hF[1] - i * 3], [hF[0] - 12, hF[1] - i * 3]], (x, y) => (Math.floor(y) === Math.floor(hF[1] - 2 - i * 3) && x > hF[0] - 9 && x < hF[0] + 5 && (Math.floor(x) % 3) ? u32("#1c1c22") : u32(i % 2 ? "#ffffff" : "#ecebe6")), 20 + i);
+      for (let i = 0; i < 6; i++) { const y0 = -3 - i * 3; poly(F, [Q(-12, y0), Q(8, y0), Q(8, y0 + 3), Q(-12, y0 + 3)], (x, y) => (Math.floor((y - hF[1]) / U) === -2 - i * 3 && x > hF[0] - 9 * U && x < hF[0] + 5 * U && (Math.floor((x - hF[0]) / U) % 3) ? u32("#1c1c22") : u32(i % 2 ? "#ffffff" : "#ecebe6")), 20 + i); }
     }
-    const out = F.finish();
+    const out = F.finish(!view);
+    if (!view) { out.ax = OX - out.bx; out.ay = OY - out.by; } // the feet's point in the cropped frame
     if (ember) out.ember = ember;
     return out;
   }
   // every frame of a fighter, baked once
-  const SPR = {};
+  // beta 3.33 (Daniel, finer pixels: four times the pixels, so four times the work): a frame is baked the first time it
+  // is shown, and the rest are baked in the spare time of each frame (BAKEQ, a few milliseconds a frame) while the VS
+  // screen and the round's intro play; the guard and the intro are baked at once
+  const SPR = {}, BAKEQ = [];
   function sprites(id, alt) {
     const key = id + (alt ? ":alt" : "");
     if (SPR[key]) return SPR[key];
-    const b0 = performance.now(), S = {}, smokes = !!LOOKS[id].smokes;
+    const b0 = performance.now(), S = {}, smokes = !!LOOKS[id].smokes, jobs = [];
     // beta 3.32 (Daniel: Cristache smokes): the cigarette in the hand when he stands, walks, guards, crouches or jumps
     // (hidden in the fist when he hits, gone when he is hit); in the mouth in the win pose. idleM / walkM are the same
     // frames with it in the mouth, puff the hand brought up to the lips
     const CIG = (k) => (!smokes ? null : k === "win" ? "mouth" : ["idle", "walk", "crouch", "cblock", "block", "jump", "intro", "dizzy"].includes(k) ? "hand" : null);
     const withCig = (p, c) => (c ? Object.assign({}, p, { cig: c }) : p);
-    for (const [k, list] of Object.entries(Object.assign({}, POSES, STYLE_POSES[id] || {}))) S[k] = list.map((p) => drawFighter(id, withCig(p, CIG(k)), k === "intro" && id === "ion" ? "stack" : null, alt));
-    S.special = SPECIAL_POSES[id].map((p) => drawFighter(id, p, SPECIAL_PROP[id] || null, alt));
+    const lazy = (k, list, make) => {
+      const arr = [], cache = [];
+      for (let i = 0; i < list.length; i++) { Object.defineProperty(arr, i, { enumerable: true, get() { if (!cache[i]) { const t0 = performance.now(); cache[i] = make(list[i]); stats.lazy += performance.now() - t0; } return cache[i]; } }); jobs.push([k, () => arr[i]]); }
+      S[k] = arr;
+    };
+    const own = Object.assign({}, POSES, STYLE_POSES[id] || {});
+    for (const [k, list] of Object.entries(own)) lazy(k, list, (p) => drawFighter(id, withCig(p, CIG(k)), k === "intro" && id === "ion" ? "stack" : null, alt));
+    lazy("special", SPECIAL_POSES[id], (p) => drawFighter(id, p, SPECIAL_PROP[id] || null, alt));
     if (smokes) {
-      const own = Object.assign({}, POSES, STYLE_POSES[id] || {});
-      S.idleM = own.idle.map((p) => drawFighter(id, withCig(p, "mouth"), null, alt));
-      S.walkM = own.walk.map((p) => drawFighter(id, withCig(p, "mouth"), null, alt));
-      S.puff = (SMOKE_POSES[id] || []).map((p) => drawFighter(id, withCig(p, "mouth"), null, alt));
+      lazy("idleM", own.idle, (p) => drawFighter(id, withCig(p, "mouth"), null, alt));
+      lazy("walkM", own.walk, (p) => drawFighter(id, withCig(p, "mouth"), null, alt));
+      lazy("puff", SMOKE_POSES[id] || [], (p) => drawFighter(id, withCig(p, "mouth"), null, alt));
     }
-    stats.spr[key] = Math.round(performance.now() - b0); // for the probe: how long a fighter takes to bake
+    const first = ["idle", "intro", "puff", "idleM"], order = ["walk", "block", "punch", "kick", "crouch", "hit", "jump", "special", "cpunch", "ckick", "jpunch", "jkick", "cblock", "fall", "down", "dizzy", "walkM", "win"];
+    BAKEQ.unshift(...jobs.filter(([k]) => first.includes(k)).map(([, fn]) => fn)); // the guard and the intro first, then the rest
+    for (const k of order) for (const [k2, fn] of jobs) if (k2 === k) BAKEQ.push(fn);
+    for (const [k2, fn] of jobs) if (!first.includes(k2) && !order.includes(k2)) BAKEQ.push(fn);
+    stats.spr[key] = Math.round(performance.now() - b0); // for the probe: how long setting a fighter up takes (its frames are queued)
     return (SPR[key] = S);
   }
+  // the spare-time baker: frames (and other art queued) until the budget of this frame is spent
+  function bakeIdle(budget) { const t0 = performance.now(); while (BAKEQ.length && performance.now() - t0 < budget) BAKEQ.shift()(); }
 
   // ===================== 4. the stage: Two Minutes, Str. Constantin Aricescu 50A =====================
   // beta 3.16 (Daniel, from the street photo): the beige plaster house with the black shopfront and the white II' on
@@ -945,40 +1134,74 @@
   // plate, the cream caravan parked in front, the green house-number plate, 50A. Daytime, soft clouds that drift on
   // their own parallax, the far blocks softened (drawn at half size, hazed: depth, kept pixel art)
   // a tiny 3x5 font for the signs on the stage (plates, the menu board)
-  const T3 = { A: "010101111101101", B: "110101110101110", C: "011100100100011", D: "110101101101110", E: "111100110100111", F: "111100110100100", G: "011100101101011", H: "101101111101101", I: "111010010010111", K: "101101110101101", L: "100100100100111", M: "101111111101101", N: "110101101101101", O: "010101101101010", P: "110101110100100", R: "110101110101101", S: "011100010001110", T: "111010010010010", U: "101101101101111", V: "101101101101010", W: "101101111111101", Y: "101101010010010", 0: "111101101101111", 1: "010110010010111", 2: "110001010100111", 3: "110001010001110", 4: "101101111001001", 5: "111100110001110", 6: "011100111101111", 7: "111001010010010", 8: "111101111101111", 9: "111101111001110", ".": "000000000000010", " ": "000000000000000", "-": "000000111000000", "'": "010010000000000" };
+  const T3 = { A: "010101111101101", B: "110101110101110", C: "011100100100011", D: "110101101101110", E: "111100110100111", F: "111100110100100", G: "011100101101011", H: "101101111101101", I: "111010010010111", K: "101101110101101", L: "100100100100111", M: "101111111101101", N: "110101101101101", O: "010101101101010", P: "110101110100100", R: "110101110101101", S: "011100010001110", T: "111010010010010", U: "101101101101111", V: "101101101101010", W: "101101111111101", Y: "101101010010010", Z: "111001010100111", 0: "111101101101111", 1: "010110010010111", 2: "110001010100111", 3: "110001010001110", 4: "101101111001001", 5: "111100110001110", 6: "011100111101111", 7: "111001010010010", 8: "111101111101111", 9: "111101111001110", ".": "000000000000010", " ": "000000000000000", "-": "000000111000000", "'": "010010000000000" };
   function tiny(ctx, s, x, y, col) { ctx.fillStyle = col; let cx = x; for (const ch of s) { const g2 = T3[ch] || T3[" "]; for (let i = 0; i < 15; i++) if (g2[i] === "1") ctx.fillRect(cx + (i % 3), y + Math.floor(i / 3), 1, 1); cx += 4; } }
   const tinyW = (s) => s.length * 4 - 1;
   let STAGE = null;
+  // beta 3.33: the street's fine work, at the canvas's pixels, over the shapes drawn at the game's units: the plaster's
+  // grain, the light on the window frames and the glass, the labels on the shelves, the bevel of the paving, the
+  // caravan's trim. (The places are the stage's own: the house at 46..246, the shop front at 60..212, the wall, the caravan)
+  function midDetail(m, r) {
+    const k = RS; m.save(); m.setTransform(1, 0, 0, 1, 0, 0);
+    const dot = (x, y, c) => { m.fillStyle = c; m.fillRect(x, y, 1, 1); }, hl = (x, y, w, c) => { m.fillStyle = c; m.fillRect(x, y, w, 1); }, vl = (x, y, h, c) => { m.fillStyle = c; m.fillRect(x, y, 1, h); };
+    const grainOn = (x0, y0, w0, h0, n, base, c1, c2) => { // fine grain only where the plaster itself shows (not over a window, the tree, a sign)
+      const id = m.getImageData(x0, y0, w0, h0), d = new Uint32Array(id.data.buffer), ok = new Set(base.map(u32)), a1 = u32(c1), a2 = u32(c2);
+      for (let i = 0; i < n; i++) { const q = Math.floor(r() * w0 * h0); if (ok.has(d[q])) d[q] = r() < 0.5 ? a1 : a2; }
+      m.putImageData(id, x0, y0);
+    };
+    grainOn(46 * k, 22 * k, 200 * k, 154 * k, 5200, ["#dcc2ae", "#d2b6a2", "#e6d0c0"], "#cfb29e", "#ecd8ca"); // the house's plaster
+    grainOn(246 * k, 72 * k, 112 * k, 92 * k, 3200, ["#ecebe5", "#dcdbd4", "#f8f7f2"], "#d4d3cc", "#fbfaf6"); // the white wall
+    for (const [x0, y0, w0, h0] of [[78, 32, 34, 46], [150, 36, 26, 38]]) { // the upper windows: the frame lit on its top and left, a streak on the glass, the sill's edge
+      hl(x0 * k, y0 * k, w0 * k, "#6a4232"); vl(x0 * k, y0 * k, h0 * k, "#6a4232");
+      for (let i = 0; i < 10; i++) { dot((x0 + 4) * k + i + 2, (y0 + 12) * k - i, "#e4f0f6"); dot((x0 + 4) * k + i + 6, (y0 + 12) * k - i, "#d0e2ec"); }
+      hl((x0 - 2) * k, (y0 + h0) * k, (w0 + 4) * k, "#d6c0b0"); hl((x0 - 2) * k, (y0 + h0 + 2) * k - 1, (w0 + 4) * k, "#9a7c6a");
+    }
+    hl(50 * k, 88 * k, 168 * k, "#7a7c84"); hl(50 * k, 99 * k - 1, 168 * k, "#24252a"); // the sign board's bevel
+    hl(60 * k + 1, 102 * k + 1, 152 * k - 2, "#2e2e34"); // the shop front's frame, lit inside its top
+    for (let i = 0; i < 14; i++) { const bx = (104 + 4 + i * 7) * k, yy = (i < 7 ? 102 + 11 : 102 + 27) * k; hl(bx, yy + 5, 8, "#ffffff"); hl(bx + 1, yy + 7, 6, "rgba(255,255,255,.5)"); dot(bx, yy, "rgba(255,255,255,.6)"); } // the labels on the bags
+    for (let x = 60 * k; x < 212 * k; x += 6) dot(x, 176 * k - 9, "rgba(0,0,0,.25)"); // the step's grain
+    hl(100 * k, 168 * k, 110 * k, "#e8bc84"); // the step's lit edge
+    hl(0, 176 * k + 4, 576 * k, "#b8b6b2"); // the kerb's edge
+    for (let y = 176 + 4, row = 0; y < 216; y += 6 + row, row++) hl(0, y * k + 2, 576 * k, "rgba(255,255,255,.12)"); // the paving's bevel under each joint
+    { const cx0 = 430, cw = 136, cy0 = 112, cb = 166; hl((cx0 + 12) * k, (cy0 + 1) * k, (cw - 14) * k, "#ffffff"); hl(cx0 * k, (cy0 + 24) * k - 1, cw * k, "#8a5a30"); hl(cx0 * k, (cy0 + 29) * k, cw * k, "#f0b070");
+      for (let x = (cx0 + 2) * k; x < (cx0 + cw - 2) * k; x += 10) dot(x, (cb - 6) * k, "#b8ac90"); // the rivets
+      for (const [x0, y0, w0, h0] of [[cx0 + 4, cy0 + 8, 40, 14], [cx0 + 96, cy0 + 8, 26, 16]]) { hl(x0 * k, y0 * k, w0 * k, "#8a8680"); for (let i = 0; i < 8; i++) dot((x0 + 14) * k + i, (y0 + 12) * k - i, "#9a968e"); } }
+    m.restore();
+  }
   const SKY_TOP = "#9cc4e4", HAZE = "#c8dcea";
   function stage() {
     if (STAGE) return STAGE;
     const r = (() => { let s2 = 11; return () => ((s2 = (s2 * 16807) % 2147483647) / 2147483647); })();
     const dith = (ctx, x, y, w, h, c1, c2, f) => { for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { ctx.fillStyle = ((xx + yy) & 1) && f ? c2 : c1; ctx.fillRect(x + xx, y + yy, 1, 1); } };
     // ---- the sky: a few bands, dithered where they meet
-    const [sky, s] = mk(W, H);
+    // beta 3.33: the stage's layers are drawn at the canvas's pixels (RS times the game's units): the shapes through a
+    // scaled context, the fine work (the dither, the plaster, the glass, the leaves) pixel by pixel at the full size
+    const [sky, s] = mk(W * RS, H * RS);
     const BANDS = ["#8ab8de", "#96c0e2", "#a4c8e6", "#b2d0ea", "#c0d8ec", "#cfe0ee", "#dce8f0"];
-    for (let y = 0; y < 150; y++) { const t = (y / 150) * (BANDS.length - 1), i = Math.floor(t), f = t - i; for (let x = 0; x < W; x++) { s.fillStyle = f > 0.5 && ((x + y) & 1) ? BANDS[Math.min(BANDS.length - 1, i + 1)] : BANDS[i]; s.fillRect(x, y, 1, 1); } }
-    s.fillStyle = BANDS[BANDS.length - 1]; s.fillRect(0, 150, W, H - 150);
+    { const id = s.createImageData(W * RS, H * RS), d = new Uint32Array(id.data.buffer), B32 = BANDS.map(u32), yy0 = 150 * RS;
+      for (let y = 0; y < H * RS; y++) { const t = (Math.min(y, yy0) / yy0) * (BANDS.length - 1), i = Math.min(BANDS.length - 1, Math.floor(t)), f = t - i; for (let x = 0; x < W * RS; x++) d[y * W * RS + x] = f > 0.5 && ((x + y) & 1) ? B32[Math.min(BANDS.length - 1, i + 1)] : B32[i]; }
+      s.putImageData(id, 0, 0); }
     // ---- the clouds, on a strip that wraps
-    const [clouds, c] = mk(768, 80);
+    const CL = ["#dfe7f0", "#d2dcea", "#ffffff", "#f6f8fb", "#eaf0f6"].map(u32), [clouds, c] = mk(768 * RS, 80 * RS), cid = c.createImageData(768 * RS, 80 * RS), cd = new Uint32Array(cid.data.buffer), CW2 = 768 * RS;
     const cloud = (cx0, cy0, w2) => {
       const puffs = []; for (let i = 0; i < 6; i++) puffs.push([cx0 - w2 / 2 + (i + 0.5) * (w2 / 6) + (r() - 0.5) * 6, cy0 - r() * 6 - (i > 1 && i < 4 ? 5 : 0), 6 + r() * 6]);
-      for (let y = Math.floor(cy0 - 26); y <= cy0 + 2; y++) for (let x = Math.floor(cx0 - w2 / 2 - 14); x <= cx0 + w2 / 2 + 14; x++) {
+      for (let Y = Math.floor((cy0 - 26) * RS); Y <= (cy0 + 2) * RS; Y++) for (let X = Math.floor((cx0 - w2 / 2 - 14) * RS); X <= (cx0 + w2 / 2 + 14) * RS; X++) {
+        const x = (X + 0.5) / RS, y = (Y + 0.5) / RS;
         let inside = false, top = 1e9; for (const [px, py, pr] of puffs) { const d = Math.hypot(x - px, (y - py) * 1.2); if (d <= pr) { inside = true; top = Math.min(top, (y - (py - pr / 1.2)) / pr); } }
-        if (!inside || y > cy0) continue;
-        c.fillStyle = y > cy0 - 3 ? (((x + y) & 1) ? "#dfe7f0" : "#d2dcea") : top < 0.35 ? "#ffffff" : top < 0.9 ? "#f6f8fb" : ((x + y) & 1) ? "#eaf0f6" : "#f6f8fb";
-        c.fillRect(((x % 768) + 768) % 768, y, 1, 1);
+        if (!inside || y > cy0 || Y < 0) continue;
+        cd[Y * CW2 + (((X % CW2) + CW2) % CW2)] = CL[y > cy0 - 3 ? (((X + Y) & 1) ? 0 : 1) : top < 0.35 ? 2 : top < 0.9 ? 3 : ((X + Y) & 1) ? 4 : 3];
       }
     };
     for (const [x0, y0, w2] of [[60, 34, 70], [240, 22, 48], [400, 46, 90], [600, 28, 60], [720, 54, 40]]) cloud(x0, y0, w2);
+    c.putImageData(cid, 0, 0);
     // ---- the far city: grey blocks, a pink one, trees; drawn at half size (soft), in the haze
-    const FW = Math.ceil((W + (STAGE_W - W) * 0.4) / 2) + 2, [far, f] = mk(FW, Math.ceil(H / 2));
+    const FW = Math.ceil((W + (STAGE_W - W) * 0.4) / 2) + 2, FH = Math.ceil(H / 2), [far, f] = mk(FW * RS, FH * RS); f.scale(RS, RS);
     const block = (x0, w2, top, col, win) => { f.fillStyle = col; f.fillRect(x0, top, w2, 90 - top); f.fillStyle = win; for (let y = top + 3; y < 82; y += 5) for (let x = x0 + 2; x < x0 + w2 - 2; x += 4) if (r() < 0.75) f.fillRect(x, y, 2, 2); f.fillStyle = "#d6dde4"; f.fillRect(x0, top, w2, 1); };
     block(2, 26, 34, "#b8bfc8", "#9aa4b0"); block(34, 18, 46, "#c8b8b8", "#a89898"); block(58, 40, 12, "#c4c9d0", "#a3abb6"); block(104, 22, 40, "#b6bcc4", "#98a0ac"); block(132, 34, 26, "#c9cdd2", "#a8afb8"); block(170, 26, 44, "#c4b2ae", "#a8958f"); block(200, 30, 20, "#bfc5cc", "#a0a8b2");
     f.fillStyle = "#9fb69a"; for (let i = 0; i < 18; i++) { const tx = (i * 23) % FW, ty = 70 + (i % 3) * 3; f.beginPath(); f.arc(tx, ty, 5 + (i % 3), 0, Math.PI * 2); f.fill(); }
-    { const id2 = f.getImageData(0, 0, FW, far.height), d2 = new Uint32Array(id2.data.buffer), hz = u32(HAZE); for (let y = 0; y < far.height; y++) for (let x = 0; x < FW; x++) { const i = y * FW + x; if ((d2[i] >>> 24) && ((x + y) & 1) && (y > 20 || (x & 2))) d2[i] = hz; } f.putImageData(id2, 0, 0); } // the haze, one pixel in two
+    { const FW2 = far.width, id2 = f.getImageData(0, 0, FW2, far.height), d2 = new Uint32Array(id2.data.buffer), hz = u32(HAZE); for (let y = 0; y < far.height; y++) for (let x = 0; x < FW2; x++) { const i = y * FW2 + x; if ((d2[i] >>> 24) && ((x + y) & 1) && (y > 20 * RS || (x & 2))) d2[i] = hz; } f.putImageData(id2, 0, 0); } // the haze, one pixel in two
     // ---- the street (it scrolls with the fight)
-    const [mid, m] = mk(STAGE_W, H);
+    const [mid, m] = mk(STAGE_W * RS, H * RS); m.scale(RS, RS);
     const yG = 176;
     // a small, cute neighbour on the left: yellow plaster, a tiled roof, a window with flowers
     { const x0 = 0, w2 = 46, top = 92; m.fillStyle = "#b8573c"; m.fillRect(x0, top - 10, w2 + 4, 10); m.fillStyle = "#9a4430"; for (let x = x0; x < x0 + w2 + 4; x += 4) m.fillRect(x, top - 10, 1, 10); m.fillStyle = "#e9cf8a"; m.fillRect(x0, top, w2, yG - top); dith(m, x0, top, w2, 3, "#e9cf8a", "#d8bd76", 1);
@@ -1011,7 +1234,7 @@
     m.fillStyle = "#7a5a40"; for (const yy of [sy0 + 18, sy0 + 34]) m.fillRect(wx0 + 2, yy, ww - 4, 2); // shelves
     for (let i = 0; i < 14; i++) { const bx = wx0 + 4 + i * 7, yy = i < 7 ? sy0 + 11 : sy0 + 27; m.fillStyle = ["#e84a6a", "#28c840", "#2fb8f0", "#ffd23a", "#f4f2ea"][i % 5]; m.fillRect(bx, yy, 5, 7); m.fillStyle = "rgba(0,0,0,.25)"; m.fillRect(bx + 4, yy, 1, 7); }
     m.fillStyle = "#c9a878"; m.fillRect(wx0 + 2, yG - 24, ww - 4, 4); m.fillStyle = "#8a6a4a"; m.fillRect(wx0 + 2, yG - 20, ww - 4, 14); // the counter
-    m.fillStyle = "#d8d8de"; m.fillRect(wx0 + 60, yG - 34, 18, 10); m.fillStyle = "#9a9aa4"; m.fillRect(wx0 + 60, yG - 27, 18, 3); // the machine
+    m.drawImage(marzocco(), MZ.x, MZ.y, MZ.w, MZ.h); // beta 3.33: the La Marzocco on the counter
     m.fillStyle = "rgba(255,255,255,.16)"; for (let i = 0; i < 3; i++) { m.beginPath(); m.moveTo(wx0 + 10 + i * 34, sy0 + 3); m.lineTo(wx0 + 22 + i * 34, sy0 + 3); m.lineTo(wx0 + i * 34 - 6, yG - 6); m.lineTo(wx0 + i * 34 - 18, yG - 6); m.fill(); } // reflections
     m.fillStyle = "#121214"; m.fillRect(wx0 + 50, sy0, 2, yG - sy0);
     // the wooden step along the shopfront, where people sit
@@ -1060,53 +1283,54 @@
     // ---- the people around: drawn like the fighters (same puppet), smaller, with a little idle loop each
     const bake = (id, n) => ({ frames: n.poses.map((p) => drawFighter(id, p, n.prop || null)), cheer: n.cheer ? drawFighter(id, n.cheer, n.prop || null) : null });
     const npc = NPCS.map((n) => ({ n, own: bake(n.id, n), alt: bake(n.alt, n) }));
-    STAGE = { sky, clouds, far, mid, npc };
+    midDetail(m, r);
+    STAGE = { sky, clouds, far, mid, npc, FW, FH };
     return STAGE;
   }
   // the backdrop, layer by layer: the sky (still), the clouds (drifting, slow), the far city (soft), the street
-  function drawBackdrop(ctx, camX, t, sy = 0) {
+  function drawBackdrop(ctx, camX, t, sy = 0, cups = true) {
     const S = stage();
-    ctx.drawImage(S.sky, 0, 0);
-    const cxo = Math.floor(camX * 0.15 + t * 3) % 768; ctx.drawImage(S.clouds, -cxo, sy); ctx.drawImage(S.clouds, 768 - cxo, sy);
-    ctx.drawImage(S.far, 0, 0, S.far.width, S.far.height, -Math.round(camX * 0.4), 40 + sy, S.far.width * 2, S.far.height * 2);
-    ctx.drawImage(S.mid, -Math.round(camX), sy);
+    const q = (v) => Math.round(v * RS) / RS; // to the canvas's pixel
+    ctx.drawImage(S.sky, 0, 0, W, H);
+    const cxo = q((camX * 0.15 + t * 3) % 768); ctx.drawImage(S.clouds, -cxo, sy, 768, 80); ctx.drawImage(S.clouds, 768 - cxo, sy, 768, 80);
+    ctx.drawImage(S.far, -q(camX * 0.4), 40 + sy, S.FW * 2, S.FH * 2);
+    ctx.drawImage(S.mid, -q(camX), sy, STAGE_W, H);
+    if (cups) drawCups(ctx, MZ.x - q(camX), MZ.y + sy, t, false); // the cups on the machine (the ending rattles its own)
   }
   // beta 3.31 (Daniel: "park a purple road bike in front of Two Minutes"): a road bike (drop bars, thin wheels) standing
   // on the pavement against the step, under the shop window. Drawn pixel by pixel, outlined like the props; it moves
   // with the street (the facade's own layer) and stands in front of the people inside, behind the fighters
-  const BIKE_X = 148, BIKE_Y = 142;
+  const BIKE_X = 150, BIKE_Y = 142;
   let BIKE = null;
-  function bikeImg() {
+  function bikeImg() { // beta 3.33: drawn again at the canvas's pixels (twice the size): finer spokes, the tubes lit along their top
     if (BIKE) return BIKE;
-    const [c, x] = mk(66, 41), px = (a, b, col) => { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), 1, 1); };
-    const line = (x0, y0, x1, y1, col, w = 1, o = 0) => { const n = Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))) * 2 || 1; x.fillStyle = col; for (let i = 0; i <= n; i++) { const t2 = i / n; x.fillRect(Math.round(lerp(x0, x1, t2)) + o, Math.round(lerp(y0, y1, t2)) + o, w, w); } };
+    const k = RS, [c, x] = mk(66 * k, 41 * k), px = (a, b, col) => { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), 1, 1); };
+    const line = (x0, y0, x1, y1, col, w = 1) => { x0 *= k; y0 *= k; x1 *= k; y1 *= k; const n = Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))) * 2 || 1, o = -Math.floor(w / 2); x.fillStyle = col; for (let i = 0; i <= n; i++) { const t2 = i / n; x.fillRect(Math.round(lerp(x0, x1, t2)) + o, Math.round(lerp(y0, y1, t2)) + o, w, w); } };
     const PU = ["#c08ef0", "#9a5ee0", "#7c42c4", "#5a2c94", "#3e1d6a"], TY = "#1e1c24", SIL = "#c9ccd4", SIL2 = "#8a8e98";
-    const R = [13, 28], FW = [52, 28], BB = [30, 29], ST = [25, 12], HT = [46, 12], HB = [48, 19];
-    // the wheels: an outline, the tyre, the silver rim, thin spokes, the hub
-    for (const [cx, cy] of [R, FW]) {
-      for (let yy = -13; yy <= 13; yy++) for (let xx = -13; xx <= 13; xx++) { const d = Math.hypot(xx + 0.5 - 0.5, yy + 0.5 - 0.5); if (d > 12.2) continue; if (d > 11.2) px(cx + xx, cy + yy, OUT); else if (d > 10) px(cx + xx, cy + yy, yy < -8 && xx < 2 && xx > -6 ? "#4a4852" : TY); else if (d > 9.1) px(cx + xx, cy + yy, yy < 0 ? SIL : SIL2); else if (d > 8.4) px(cx + xx, cy + yy, "#2a2830"); }
-      for (let i = 0; i < 8; i++) { const an = (i / 8) * Math.PI * 2 + 0.2; for (let r2 = 2; r2 < 8.6; r2 += 1.4) px(cx + Math.cos(an) * r2, cy + Math.sin(an) * r2, "#a4a8b2"); }
-      x.fillStyle = OUT; x.fillRect(cx - 1, cy - 1, 3, 3); x.fillStyle = SIL; x.fillRect(cx, cy, 1, 1);
+    const R0 = [13, 28], FW = [52, 28], BB = [30, 29], ST = [25, 12], HT = [46, 12], HB = [48, 19];
+    for (const [cx0, cy0] of [R0, FW]) {
+      const cx = cx0 * k, cy = cy0 * k;
+      for (let yy = -26; yy <= 26; yy++) for (let xx = -26; xx <= 26; xx++) { const d = Math.hypot(xx + 0.5, yy + 0.5); if (d > 24.6) continue; if (d > 23.6) px(cx + xx, cy + yy, OUT); else if (d > 20.4) px(cx + xx, cy + yy, yy < -14 && xx < 4 && xx > -12 && d > 22.6 ? "#4a4852" : (xx * 3 + yy) % 7 === 0 && d > 21.6 ? "#2c2a34" : TY); else if (d > 18.4) px(cx + xx, cy + yy, yy < 0 ? SIL : SIL2); else if (d > 17.4) px(cx + xx, cy + yy, "#2a2830"); }
+      for (let i = 0; i < 16; i++) { const an = (i / 16) * Math.PI * 2 + 0.2; for (let r2 = 3; r2 < 17.6; r2 += 0.7) px(cx + Math.cos(an) * r2, cy + Math.sin(an) * r2, i % 2 ? "#a4a8b2" : "#8a8e98"); }
+      x.fillStyle = OUT; x.fillRect(cx - 3, cy - 3, 6, 6); x.fillStyle = SIL; x.fillRect(cx - 2, cy - 2, 4, 4); x.fillStyle = "#ffffff"; x.fillRect(cx - 1, cy - 2, 1, 1);
     }
-    // the frame: every tube an outline first, then the purple, a lit line along its top
-    const tubes = [[BB, R], [ST, R], [BB, ST], [[25.5, 13], HT], [BB, [47, 17]], [HT, HB], [HB, FW]];
-    for (const [a, b] of tubes) line(a[0], a[1], b[0], b[1], OUT, 4, -1);
-    line(46, 11, 50, 10, OUT, 4, -1); line(50, 10, 54, 10, OUT, 3, -1); line(54, 10, 55, 14, OUT, 3, -1); line(55, 14, 51, 16, OUT, 3, -1); // the stem, the drop bar
-    line(24, 12, 23, 9, OUT, 3, -1); line(18, 8, 28, 8, OUT, 4, -1); // the seat post, the saddle
-    tubes.forEach(([a, b], i) => { line(a[0], a[1], b[0], b[1], i < 2 ? PU[3] : PU[2], 2); if (i >= 2) line(a[0], a[1], b[0], b[1], PU[1], 1); });
-    line(25.5, 13, 46, 12, PU[0], 1); // the top tube catching the light
-    line(46, 11, 50, 10, "#2a2a32", 2); line(50, 10, 54, 10, "#2a2a32", 2); line(54, 10, 55, 14, "#2a2a32", 2); line(55, 14, 51, 16, "#2a2a32", 2); px(54, 10, "#4a4a56"); // the bar tape, black
-    line(24, 12, 23, 9, SIL, 1); line(18, 8, 28, 8, "#24222a", 2); px(27, 8, "#4a4854"); // the saddle
-    // the chainring, the crank, the pedal, the chain to the back
-    for (let yy = -4; yy <= 4; yy++) for (let xx = -4; xx <= 4; xx++) { const d = Math.hypot(xx, yy); if (d <= 4.3) px(BB[0] + xx, BB[1] + yy, d > 3.3 ? OUT : d > 2.2 ? SIL2 : SIL); }
-    line(BB[0], BB[1] + 4, R[0] + 1, R[1] + 2, "#4a4a52", 1); line(BB[0] - 1, BB[1] - 4, R[0] + 1, R[1] - 2, "#4a4a52", 1);
-    line(BB[0], BB[1], BB[0] + 3, BB[1] + 6, OUT, 3, -1); line(BB[0], BB[1], BB[0] + 3, BB[1] + 6, SIL2, 1); x.fillStyle = OUT; x.fillRect(BB[0] + 1, BB[1] + 6, 5, 3); x.fillStyle = "#3a3a42"; x.fillRect(BB[0] + 2, BB[1] + 7, 3, 1);
+    const tubes = [[BB, R0], [ST, R0], [BB, ST], [[25.5, 13], HT], [BB, [47, 17]], [HT, HB], [HB, FW]];
+    for (const [a, b] of tubes) line(a[0], a[1], b[0], b[1], OUT, 7);
+    line(46, 11, 50, 10, OUT, 6); line(50, 10, 54, 10, OUT, 6); line(54, 10, 55, 14, OUT, 6); line(55, 14, 51, 16, OUT, 6); // the stem, the drop bar
+    line(24, 12, 23, 9, OUT, 5); line(18, 8, 28, 8, OUT, 7); // the seat post, the saddle
+    tubes.forEach(([a, b], i) => { line(a[0], a[1], b[0], b[1], i < 2 ? PU[3] : PU[2], 5); if (i >= 2) line(a[0], a[1] - 0.6, b[0], b[1] - 0.6, PU[1], 2); line(a[0], a[1] + 0.8, b[0], b[1] + 0.8, PU[i < 2 ? 4 : 3], 1); });
+    line(25.5, 12.5, 46, 11.5, PU[0], 1); // the top tube catching the light
+    for (const [a, b, c2, d] of [[46, 11, 50, 10], [50, 10, 54, 10], [54, 10, 55, 14], [55, 14, 51, 16]]) line(a, b, c2, d, "#2a2a32", 4); line(50, 9.6, 54, 9.6, "#4a4a56", 1); // the bar tape, black
+    line(24, 12, 23, 9, SIL, 2); line(18, 8, 28, 8, "#24222a", 4); line(19, 7.4, 27, 7.4, "#4a4854", 1); // the saddle
+    for (let yy = -9; yy <= 9; yy++) for (let xx = -9; xx <= 9; xx++) { const d = Math.hypot(xx + 0.5, yy + 0.5); if (d <= 8.8) px(BB[0] * k + xx, BB[1] * k + yy, d > 7.8 ? OUT : d > 6.6 ? ((Math.atan2(yy, xx) * 12 / Math.PI) | 0) % 2 ? SIL2 : SIL : d > 4.4 ? SIL2 : SIL); } // the chainring, its teeth
+    for (let i = 0; i <= 60; i++) { const t2 = i / 60; px(lerp(BB[0] * k, R0[0] * k + 2, t2), lerp(BB[1] * k + 8, R0[1] * k + 4, t2), i % 2 ? "#5a5a62" : "#3a3a42"); px(lerp(BB[0] * k - 2, R0[0] * k + 2, t2), lerp(BB[1] * k - 8, R0[1] * k - 4, t2), i % 2 ? "#5a5a62" : "#3a3a42"); } // the chain
+    line(BB[0], BB[1], BB[0] + 3, BB[1] + 6, OUT, 4); line(BB[0], BB[1], BB[0] + 3, BB[1] + 6, SIL2, 2); x.fillStyle = OUT; x.fillRect((BB[0] + 1) * k, (BB[1] + 6) * k, 5 * k, 3 * k); x.fillStyle = "#3a3a42"; x.fillRect((BB[0] + 2) * k, (BB[1] + 7) * k, 3 * k, k);
     return (BIKE = c);
   }
   function drawBike(ctx, camX, sy = 0) {
-    const bx = BIKE_X - Math.round(camX), by = BIKE_Y + sy; if (bx < -70 || bx > W) return;
+    const bx = BIKE_X - Math.round(camX * RS) / RS, by = BIKE_Y + sy; if (bx < -70 || bx > W) return;
     ctx.fillStyle = "rgba(20,14,30,.28)"; ctx.fillRect(bx + 3, by + 39, 62, 2); ctx.fillRect(bx + 8, by + 38, 52, 1); // its shadow on the pavement
-    ctx.drawImage(bikeImg(), bx, by);
+    ctx.drawImage(bikeImg(), bx, by, 66, 41);
   }
   // the bystanders: someone on the step with a cup, two people chatting by the caravan, the barista inside
   function drawCrowd(ctx, camX, t, cheer) {
@@ -1116,7 +1340,7 @@
       const x = Math.round(n.x - camX), img = cheer && ch ? ch : frames[Math.floor(t * n.rate + i) % frames.length];
       if (x < -60 || x > W + 60) continue;
       if (n.clip) { ctx.save(); ctx.beginPath(); ctx.rect(n.clip[0] - camX, n.clip[1], n.clip[2], n.clip[3]); ctx.clip(); }
-      ctx.save(); ctx.translate(x, n.y + (cheer && !ch ? -Math.round(Math.abs(Math.sin(t * 9 + i)) * 2) : 0)); if (n.face < 0) ctx.scale(-1, 1); ctx.drawImage(img, -OX, -OY); ctx.restore();
+      hiDraw(ctx, img, n.x - camX, n.y + (cheer && !ch ? -Math.round(Math.abs(Math.sin(t * 9 + i)) * 4) / RS : 0), n.face, img.ax, img.ay);
       if (n.clip) ctx.restore();
     }
     drawBike(ctx, camX); // beta 3.31: the bike stands outside the window, in front of the barista
@@ -1171,28 +1395,92 @@
     x.putImageData(id, 0, 0);
     const r = { c, w, h }; LOGO.set(key, r); return r;
   }
-  const TITLE_POSES = [P0, pose({ eF: [20, -90], hF: [26, -106], eB: [-6, -58], hB: [6, -54] }), pose({ eF: [20, -64], hF: [30, -74], eB: [4, -62], hB: [14, -70], tw: 0.6 }), pose({ eF: [18, -86], hF: [28, -102], eB: [-10, -86], hB: [-18, -102], tw: 0.7 })];
-  const TITLE_FR = {};
-  const titleFrame = (id, k) => TITLE_FR[id] || (TITLE_FR[id] = drawFighter(id, TITLE_POSES[k % TITLE_POSES.length], null));
+  // beta 3.33 (Daniel: "a much more commercial splash, the characters posed much cooler, better finished"): the key
+  // art, one still picture: Two Minutes at dusk (the street's own drawing, graded, the windows lit), light rays and a
+  // burst of speed lines behind I O N, front and centre, a size up, the crew around him in two rows (the back one
+  // smaller, in the dusk's shade), every figure rimmed with the light of the shop on one side and the sky on the
+  // other; the logo over them; the lines that say what this is. Only PRESS START blinks. It is built in layers in the
+  // spare time of the first frames (the sky and the logo at once, the street and the people as they are ready)
+  const RO = (() => { try { if (window.parent !== window && /^\/ro(\/|$)/.test(window.parent.location.pathname)) return true; } catch {} try { return /^\/ro(\/|$)/.test(new URL(document.referrer).pathname) || new URLSearchParams(location.search).get("lang") === "ro"; } catch { return false; } })();
+  const COPY = RO ? { where: "TWO MINUTES · STR. C. ARICESCU 50A", what: "CAFEA. BATCH BREW. PUMNI.", site: "PE CROMATICSTUDIOS.COM", cta: "PROVOACĂ-L PE I O N LA LUPTĂ", start: "APĂSĂ START", tap: "ATINGE PENTRU START" }
+    : { where: "TWO MINUTES · STR. C. ARICESCU 50A", what: "COFFEE. BATCH BREW. FISTS.", site: "ON CROMATICSTUDIOS.COM", cta: "CHALLENGE I O N TO A FIGHT", start: "PRESS START", tap: "TAP TO START" };
+  const KEY_POSES = {
+    ion: pose({ hip: [0, -48], neck: [4, -77], head: [7, -88], eF: [17, -62], hF: [-1, -67], eB: [-8, -61], hB: [10, -70], kF: [12, -25], fF: [20, 0], kB: [-11, -24], fB: [-21, 0], tw: 0.8 }), // arms crossed, feet planted
+    steve: pose({ hip: [0, -47], neck: [2, -75], head: [5, -86], eF: [16, -64], hF: [26, -76], eB: [8, -62], hB: [18, -72], kF: [8, -25], fF: [12, 0], kB: [-8, -24], fB: [-14, 0] }),
+    cristache: Object.assign(pose({ hip: [0, -47], neck: [4, -75], head: [7, -86], eB: [-6, -90], hB: [-3, -106], eF: [13, -58], hF: [22, -54] }), { cig: "mouth" }),
+    rares: pose({ hip: [0, -46], neck: [6, -74], head: [9, -85], eF: [18, -66], hF: [24, -80], eB: [8, -64], hB: [16, -76], kF: [12, -24], fF: [18, 0], kB: [-9, -23], fB: [-17, 0] }),
+    daniel: pose({ eF: [18, -88], hF: [26, -104], eB: [-6, -58], hB: [6, -54] }),
+    maria: pose({ hip: [0, -52], neck: [0, -79], head: [3, -90], eF: [18, -72], hF: [30, -76], eB: [-14, -70], hB: [-26, -74], kF: [22, -54], fF: [46, -56], kB: [-4, -26], fB: [-4, 0] }),
+    dony: pose({ hip: [0, -47], neck: [5, -75], head: [8, -86], eF: [20, -64], hF: [30, -74], eB: [4, -62], hB: [14, -70], tw: 0.6 }),
+    cristian: pose({ hip: [-2, -47], neck: [1, -75], head: [4, -86], eF: [15, -68], hF: [16, -84], eB: [11, -66], hB: [21, -79] }),
+    iulica: pose({ eF: [18, -86], hF: [28, -102], eB: [-10, -86], hB: [-18, -102], tw: 0.7 })
+  };
+  // [id, x, feet y (game units), face, size, row (0 back, 1 middle, 2 front)]
+  const KEY_CAST = [["steve", 70, 176, 1, 0.9, 0], ["cristian", 318, 175, -1, 0.88, 0], ["iulica", 268, 172, -1, 0.84, 0], ["daniel", 118, 172, 1, 0.84, 0],
+    ["cristache", 146, 192, 1, 1, 1], ["maria", 250, 194, -1, 1, 1], ["dony", 330, 198, -1, 1, 1], ["rares", 40, 198, 1, 1, 1], ["ion", 192, 214, 1, 1.3, 2]];
+  // a rim of light: the figure's own edge (just inside its outline) lit on the side that faces a light
+  function rimLight(c, colL, colR, kL = 0.6, kR = 0.55) {
+    const x = c.getContext("2d"), w = c.width, h = c.height, id = x.getImageData(0, 0, w, h), d = new Uint32Array(id.data.buffer), src = d.slice(), on = (i) => (src[i] >>> 24) > 0;
+    const L = rgbOf(colL), Rr = rgbOf(colR), mixc = (v, cc, k) => { const r0 = v & 255, g0 = (v >> 8) & 255, b0 = (v >> 16) & 255; return (0xff000000 | (Math.round(b0 + (cc[2] - b0) * k) << 16) | (Math.round(g0 + (cc[1] - g0) * k) << 8) | Math.round(r0 + (cc[0] - r0) * k)) >>> 0; };
+    for (let y = 2; y < h - 2; y++) for (let q = 2; q < w - 2; q++) { const i = y * w + q; if (!on(i)) continue;
+      if (!on(i - 2) && on(i - 1) || !on(i - 2 * w) && on(i - w) && !on(i - w - 2)) d[i] = mixc(src[i], L, kL); else if (!on(i + 2) && on(i + 1)) d[i] = mixc(src[i], Rr, kR); }
+    x.putImageData(id, 0, 0); return c;
+  }
+  const grade = (c, col, k) => { const x = c.getContext("2d"); x.save(); x.globalCompositeOperation = "source-atop"; x.globalAlpha = k; x.fillStyle = col; x.fillRect(0, 0, c.width, c.height); x.restore(); return c; };
+  let SPLASH = null;
+  function splashArt() {
+    if (SPLASH) return SPLASH;
+    const WD = W * RS, HD = H * RS, layers = [];
+    SPLASH = { layers, done: false };
+    // 1. the dusk sky, dithered bands from violet to a burning horizon; the rays turning behind the logo
+    { const [c, x] = mk(WD, HD), id = x.createImageData(WD, HD), d = new Uint32Array(id.data.buffer), SK = ["#120c2c", "#1d1240", "#2e1650", "#4a1c5c", "#6e2458", "#9c3450", "#c8503e", "#ec7a36", "#f8a848"].map(u32);
+      for (let y = 0; y < HD; y++) { const t = Math.min(1, y / (HD * 0.72)) * (SK.length - 1), i = Math.floor(t), f = t - i; for (let q = 0; q < WD; q++) d[y * WD + q] = SK[Math.min(SK.length - 1, f > 0.5 && ((q + y) & 1) ? i + 1 : i)]; }
+      x.putImageData(id, 0, 0);
+      x.save(); x.globalCompositeOperation = "lighter"; for (let i = 0; i < 18; i++) { const a0 = (i / 18) * Math.PI * 2 + 0.1, a1 = a0 + 0.09; x.fillStyle = i % 2 ? "rgba(255,170,90,.10)" : "rgba(255,120,160,.07)"; x.beginPath(); x.moveTo(WD / 2, HD * 0.62); x.lineTo(WD / 2 + Math.cos(a0) * 900, HD * 0.62 + Math.sin(a0) * 900); x.lineTo(WD / 2 + Math.cos(a1) * 900, HD * 0.62 + Math.sin(a1) * 900); x.fill(); } x.restore();
+      layers.push(c); }
+    // 2. the logo (cheap: it is there from the first frame)
+    const logo = () => { const [c, x] = mk(WD, HD); const l1 = logoText("AT THE GLOVES", 5, METAL, "#d8342a"), l2 = logoText("I O N", 9, FIRE, "#fed012");
+      x.drawImage(l1.c, Math.round(WD / 2 - l1.w / 2), 2); x.setTransform(RS, 0, 0, RS, 0, 0); text(x, RO ? "CU" : "WITH", W / 2, 33, "#ffffff", { sc: 1, al: "c", sh: 1 }); x.setTransform(1, 0, 0, 1, 0, 0); x.drawImage(l2.c, Math.round(WD / 2 - l2.w / 2), 76); return c; };
+    const steps = [];
+    // 3. Two Minutes at dusk: the street's drawing, in the dusk's colour, its windows lit warm
+    steps.push(() => { const S = stage(), [c, x] = mk(WD, HD), cam = 22; x.drawImage(S.far, 0, 0, S.far.width, S.far.height, -Math.round(cam * 0.4 * RS), 40 * RS, S.FW * 2 * RS, S.FH * 2 * RS); x.drawImage(S.mid, cam * RS, 0, WD, HD, 0, 0, WD, HD);
+      grade(c, "#2a1a5a", 0.58); x.save(); x.globalCompositeOperation = "lighter"; x.fillStyle = "rgba(255,150,60,.42)";
+      for (const [x0, y0, w0, h0] of [[78, 32, 34, 46], [150, 36, 26, 38], [104, 105, 105, 65], [63, 105, 38, 68]]) x.fillRect((x0 - cam) * RS, y0 * RS, w0 * RS, h0 * RS);
+      x.fillStyle = "rgba(255,220,150,.22)"; x.fillRect((50 - cam) * RS, 88 * RS, 168 * RS, 11 * RS); x.restore();
+      const gr = x.createLinearGradient(0, HD * 0.55, 0, HD); gr.addColorStop(0, "rgba(255,140,60,0)"); gr.addColorStop(1, "rgba(255,140,60,.18)"); x.fillStyle = gr; x.fillRect(0, 0, WD, HD);
+      layers.splice(1, 0, c); });
+    // 4. the burst of speed lines behind I O N
+    steps.push(() => { const [c, x] = mk(WD, HD), cx = 192 * RS, cy = 128 * RS; let s2 = 7;
+      const hal = x.createRadialGradient(cx, cy, 10, cx, cy, 190); hal.addColorStop(0, "rgba(255,214,120,.55)"); hal.addColorStop(0.5, "rgba(255,150,80,.2)"); hal.addColorStop(1, "rgba(255,120,80,0)"); x.fillStyle = hal; x.fillRect(0, 0, WD, HD); /* the light behind him */ const r = () => ((s2 = (s2 * 16807) % 2147483647) / 2147483647);
+      for (let i = 0; i < 90; i++) { const an = r() * Math.PI * 2, r0 = 70 + r() * 60, r1 = r0 + 60 + r() * 220; x.strokeStyle = i % 3 ? "rgba(255,240,200,.5)" : "rgba(255,210,58,.7)"; x.lineWidth = 1 + (i % 4 === 0 ? 1 : 0); x.beginPath(); x.moveTo(Math.round(cx + Math.cos(an) * r0) + 0.5, Math.round(cy + Math.sin(an) * r0 * 0.8) + 0.5); x.lineTo(Math.round(cx + Math.cos(an) * r1) + 0.5, Math.round(cy + Math.sin(an) * r1 * 0.8) + 0.5); x.stroke(); }
+      layers.push(c); });
+    // 5. the people, back row first; each rimmed (the shop's warm light from the left, the sky's from the right)
+    const cast = KEY_CAST.slice().sort((a, b) => a[5] - b[5]);
+    for (const [id, gx, gy, face, size, row] of cast) steps.push(() => {
+      const f0 = drawFighter(id, KEY_POSES[id], id === "ion" ? null : null, null, { K: size, HK: HK * size * (row === 2 ? 1.08 : 1), w: Math.round(CW * size), h: Math.round(CH * size), ox: Math.round(OX * size), oy: Math.round(OY * size) });
+      const f = rimLight(f0, row === 2 ? "#ffd27a" : "#ffb070", row === 2 ? "#9fe4ff" : "#c0a0ff", row === 2 ? 0.7 : 0.5, row === 2 ? 0.6 : 0.45);
+      if (row === 0) grade(f, "#2a1a5a", 0.42); else if (row === 1) grade(f, "#2a1a5a", 0.16);
+      const [c, x] = mk(WD, HD); x.save(); x.translate(Math.round(gx * RS), Math.round(gy * RS)); if (face < 0) x.scale(-1, 1); x.drawImage(f, -Math.round(OX * size), -Math.round(OY * size)); x.restore();
+      if (row === 2) { x.save(); x.globalCompositeOperation = "destination-over"; x.fillStyle = "rgba(10,6,24,.55)"; x.beginPath(); x.ellipse(gx * RS, gy * RS - 6, 70, 9, 0, 0, Math.PI * 2); x.fill(); x.restore(); }
+      layers.push(c); });
+    // 6. the band at the foot for the lines, and the lines
+    steps.push(() => { const [c, x] = mk(WD, HD), y0 = 300; const gr = x.createLinearGradient(0, y0, 0, HD); gr.addColorStop(0, "rgba(14,10,26,0)"); gr.addColorStop(0.3, "rgba(14,10,26,.8)"); gr.addColorStop(1, "rgba(14,10,26,.96)"); x.fillStyle = gr; x.fillRect(0, y0, WD, HD - y0);
+      x.setTransform(RS, 0, 0, RS, 0, 0);
+      const plate = (s3, x0, y1, fill, bg) => { const tw = textW(s3, 1, 1); x.fillStyle = OUT; x.fillRect(x0 - 4, y1 - 3.5, tw + 8, 14); x.fillStyle = bg; x.fillRect(x0 - 3.5, y1 - 3, tw + 7, 13); text(x, s3, x0, y1, fill, { ol: null }); return tw + 8; };
+      text(x, COPY.cta, W / 2, 158, GOLD, { sc: 2, sh: 1, al: "c" });
+      const w1 = textW(COPY.where, 1, 1) + 8, w2 = textW(COPY.site, 1, 1) + 8, gap = 10, x0 = Math.round((W - w1 - w2 - gap) / 2) + 4;
+      plate(COPY.where, x0, 179, "#170f19", "#fed012"); plate(COPY.site, x0 + w1 + gap, 179, "#170f19", "#7fd8ff");
+      text(x, COPY.what, W / 2, 193, "#ffffff", { al: "c" });
+      layers.push(c); SPLASH.done = true; });
+    SPLASH.logo = logo();
+    BAKEQ.unshift(...steps);
+    return SPLASH;
+  }
   function drawTitle(ctx, t) {
-    // a sky going from night to fire, sun rays turning slowly
-    const SK2 = ["#1b1438", "#2a1a4a", "#4a2060", "#7a2a5a", "#b8404a", "#e8703a", "#f6a24a"];
-    for (let y = 0; y < H; y++) { const tt = (y / H) * (SK2.length - 1), i = Math.floor(tt), f = tt - i; ctx.fillStyle = f > 0.5 && (y & 1) ? SK2[Math.min(SK2.length - 1, i + 1)] : SK2[i]; ctx.fillRect(0, y, W, 1); }
-    ctx.save(); ctx.globalAlpha = 0.12; ctx.fillStyle = "#ffe6a0"; const rot = t * 0.08;
-    for (let i = 0; i < 12; i++) { const a0 = rot + (i / 12) * Math.PI * 2; ctx.beginPath(); ctx.moveTo(W / 2, 150); ctx.lineTo(W / 2 + Math.cos(a0) * 400, 150 + Math.sin(a0) * 400); ctx.lineTo(W / 2 + Math.cos(a0 + 0.13) * 400, 150 + Math.sin(a0 + 0.13) * 400); ctx.fill(); }
-    ctx.restore();
-    // the roster: a back row and a front row, posing
-    const back = ["steve", "cristian", "maria", "dony", "daniel"], front = ["rares", "ion", "cristache", "iulica"];
-    back.forEach((id, i) => { const img = titleFrame(id, i + 1), x = 38 + i * 77; ctx.save(); ctx.filter = "brightness(0.72)"; ctx.drawImage(img, Math.round(x - OX), 214 - OY); ctx.restore(); });
-    front.forEach((id, i) => { const img = titleFrame(id, i), x = 74 + i * 78, bob = Math.round(Math.sin(t * 2 + i) * 0.6); ctx.save(); if (i >= 2) { ctx.translate(Math.round(x), 0); ctx.scale(-1, 1); ctx.drawImage(img, -OX, 232 - OY + bob); } else ctx.drawImage(img, Math.round(x - OX), 232 - OY + bob); ctx.restore(); });
-    // the logo
-    const l1 = logoText("AT THE GLOVES", 3, METAL, "#d8342a"), l2 = logoText("I O N", 5, FIRE, "#fed012");
-    ctx.drawImage(l1.c, Math.round(W / 2 - l1.w / 2), 1);
-    text(ctx, "WITH", W / 2, 40, "#ffffff", { sc: 1, al: "c" });
-    ctx.drawImage(l2.c, Math.round(W / 2 - l2.w / 2), 48);
-    ctx.fillStyle = "rgba(14,10,26,.7)"; ctx.fillRect(0, H - 22, W, 22);
-    if (Math.floor(t * 2) % 2 === 0) text(ctx, TOUCH ? "TAP TO START" : "PRESS START", W / 2, H - 19, GOLD, { sc: 1, al: "c" });
-    text(ctx, "A TWO MIN LAB GAME BY CROMATIC STUDIOS", W / 2, H - 9, "#a99cc8", { al: "c" });
+    const S = splashArt();
+    if (S.done && !S.flat) { const [c, x] = mk(W * RS, H * RS); for (const l of S.layers) x.drawImage(l, 0, 0); x.drawImage(S.logo, 0, 0); S.flat = c; S.layers.length = 0; } // once whole: one picture
+    if (S.flat) ctx.drawImage(S.flat, 0, 0, W, H); else { for (const c of S.layers) ctx.drawImage(c, 0, 0, W, H); ctx.drawImage(S.logo, 0, 0, W, H); }
+    if (Math.floor(t * 2) % 2 === 0) text(ctx, TOUCH ? COPY.tap : COPY.start, W / 2, 204, GOLD, { sc: 1, al: "c", sh: 1 });
   }
   // the grid's geometry, from GRID: tiles of 36 px faces (the middle of each 64 px portrait)
   const TILE = 36, GAP = 5;
@@ -1208,6 +1496,7 @@
   // S: { phase: "p1" | "cpu", p1, cpu } (indexes in GRID.order)
   function drawSelect(ctx, t, S) {
     stripes(ctx, t, "#1b1438", "#211a44");
+    if (S === SEL && sceneT - (S.moved || 0) > 0.35) { wantBig(GRID.order[S.p1]); if (S.phase === "cpu") wantBig(GRID.order[S.cpu]); } // beta 3.33: the VS faces baked ahead
     text(ctx, S.phase === "p1" ? "CHOOSE YOUR FIGHTER" : "CHOOSE THE CPU", W / 2, 8, S.phase === "p1" ? GOLD : RED, { sc: 2, sh: 1, al: "c" });
     const blink = Math.floor(t * 6) % 2;
     GRID.order.forEach((id, i) => {
@@ -1239,10 +1528,10 @@
     const slide = Math.min(1, k * 2.4), ease = 1 - Math.pow(1 - slide, 3);
     const lx = Math.round(-140 + (20 + 140) * ease), rx = Math.round(W + 12 - (W + 12 - (W - 148)) * ease);
     const big = (id, x, flip) => {
-      const p = portraitBig(id); if (!p) return;
+      const ready = !!PORT[id + ":b"], p = ready ? PORT[id + ":b"] : portrait(id); if (!ready) wantBig(id, true);
       ctx.fillStyle = OUT; ctx.fillRect(x - 3, 37, 134, 134); ctx.fillStyle = flip ? "#d8342a" : "#fed012"; ctx.fillRect(x - 2, 38, 132, 132); ctx.fillStyle = "#241d3d"; ctx.fillRect(x, 40, 128, 128);
       drawFlipped(ctx, p, x, 40, 128, 128, flip);
-      const e = portrait(id).ember; // beta 3.32: Cristache's smoke keeps rising over his portrait
+      const e0 = ready && p.ember, e = e0 && [e0[0] / RS / 2, e0[1] / RS / 2]; // beta 3.32: Cristache's smoke keeps rising over his portrait
       if (e) {
         ctx.save(); ctx.beginPath(); ctx.rect(x, 40, 128, 128); ctx.clip();
         for (let i = 0; i < 6; i++) {
@@ -1262,16 +1551,19 @@
     text(ctx, "STR. C. ARICESCU 50A, BUCHAREST", W / 2, 21, "#a99cc8", { al: "c" });
   }
   // the HUD: two bars, the names, the round wins (coffee cups), the timer, the special meters
-  function bar(ctx, x, y, w, hp, trail, flip, t) {
+  function bar(ctx, x, y, w, hp, trail, flip, t) { // beta 3.33: at the canvas's pixels: a one-pixel outline, the gold frame lit on top, the bar's light and shade lines, ticks
+    const p = 1 / RS;
     ctx.fillStyle = OUT; ctx.fillRect(x - 2, y - 2, w + 4, 12);
-    ctx.fillStyle = "#c9a640"; ctx.fillRect(x - 1, y - 1, w + 2, 10);
-    ctx.fillStyle = "#7a0f0b"; ctx.fillRect(x, y, w, 8);
-    const tw = Math.round(w * clamp(trail, 0, 1)), hw = Math.round(w * clamp(hp, 0, 1));
+    ctx.fillStyle = "#c9a640"; ctx.fillRect(x - 2 + p, y - 2 + p, w + 4 - 2 * p, 12 - 2 * p); ctx.fillStyle = "#f2d27a"; ctx.fillRect(x - 2 + p, y - 2 + p, w + 4 - 2 * p, p); ctx.fillStyle = "#8a6a20"; ctx.fillRect(x - 2 + p, y + 10 - 2 * p, w + 4 - 2 * p, p);
+    ctx.fillStyle = OUT; ctx.fillRect(x - p, y - p, w + 2 * p, 8 + 2 * p);
+    ctx.fillStyle = "#7a0f0b"; ctx.fillRect(x, y, w, 8); ctx.fillStyle = "#5a0a08"; ctx.fillRect(x, y + 8 - p, w, p);
+    const tw = Math.round(w * clamp(trail, 0, 1) * RS) / RS, hw = Math.round(w * clamp(hp, 0, 1) * RS) / RS;
     ctx.fillStyle = "#ff5236"; ctx.fillRect(flip ? x : x + w - tw, y, tw, 8);
-    const low = hp < 0.25 && Math.floor(t * 8) % 2;
-    ctx.fillStyle = low ? "#ffffff" : "#ffd23a"; ctx.fillRect(flip ? x : x + w - hw, y, hw, 8);
-    ctx.fillStyle = low ? "#ffffff" : "#fff6b8"; ctx.fillRect(flip ? x : x + w - hw, y, hw, 2);
-    ctx.fillStyle = low ? "#e8e8e8" : "#f29a14"; ctx.fillRect(flip ? x : x + w - hw, y + 6, hw, 2);
+    const low = hp < 0.25 && Math.floor(t * 8) % 2, hx = flip ? x : x + w - hw;
+    ctx.fillStyle = low ? "#ffffff" : "#ffd23a"; ctx.fillRect(hx, y, hw, 8);
+    ctx.fillStyle = low ? "#ffffff" : "#fff6b8"; ctx.fillRect(hx, y, hw, 1.5); ctx.fillStyle = low ? "#ffffff" : "#ffe680"; ctx.fillRect(hx, y + 1.5, hw, p);
+    ctx.fillStyle = low ? "#e8e8e8" : "#f29a14"; ctx.fillRect(hx, y + 6, hw, 2); ctx.fillStyle = low ? "#d0d0d0" : "#d9700f"; ctx.fillRect(hx, y + 8 - p, hw, p);
+    ctx.fillStyle = "rgba(23,15,25,.35)"; for (let i = 1; i < 10; i++) ctx.fillRect(x + (w * i) / 10, y + 1.5, p, 5); // the ticks
   }
   function cupIcon(ctx, x, y, full) {
     ctx.fillStyle = OUT; ctx.fillRect(x, y, 8, 8); ctx.fillRect(x + 8, y + 2, 2, 4);
@@ -1419,14 +1711,15 @@
     dony: { su: 11, ac: 1, rc: 18, cool: 150, proj: "bean", beans: 3, dmg: 5, speed: 3.6, sfx: "beans", sp: true, hs: 12, bs: 8, push: 1.6 },
     iulica: { su: 12, ac: 6, rc: 18, cool: 150, dmg: 13, box: [4, -116, 58, -30], hs: 22, bs: 14, push: 4.2, kd: true, sfx: "tote", sp: true, chip: 2 }
   };
-  const GRAV = 0.34, JUMP_V = -6.8, ROUND_TIME = 60;
+  const GRAV = 0.34, JUMP_V = -6.4, ROUND_TIME = 60; // beta 3.33: the jump a little lower, as the fighters are (about 60 units up)
   function fighter(id, cpu, x, face, alt) {
     const R = ROSTER[id];
-    return { id, R, S: sprites(id, alt), sc: (LOOKS[id].build.sc || 1) * BODY, armor: 0, cpu, x, y: 0, vx: 0, vy: 0, face, hp: 100, trail: 100, st: "idle", t: 0, atk: null, atkHit: false, hs: 0, spCool: 40, spMax: SPECIAL[id].cool, inv: 0, walkT: 0, walkDir: 1, holdBack: false, holdDown: false, ai: { t: 30, plan: null, pt: 0, seen: 0 }, flashT: 0, dz: 0, landT: 0 };
+    return { id, R, S: sprites(id, alt), sc: (LOOKS[id].build.sc || 1) * FSC, armor: 0, cpu, x, y: 0, vx: 0, vy: 0, face, hp: 100, trail: 100, st: "idle", t: 0, atk: null, atkHit: false, hs: 0, spCool: 40, spMax: SPECIAL[id].cool, inv: 0, walkT: 0, walkDir: 1, holdBack: false, holdDown: false, ai: { t: 30, plan: null, pt: 0, seen: 0 }, flashT: 0, dz: 0, landT: 0 };
   }
   const onGround = (f) => f.y >= 0;
   const free = (f) => onGround(f) && (f.st === "idle" || f.st === "walk" || f.st === "crouch");
-  const hurt = (f) => { const top = (f.st === "crouch" || (f.st === "atk" && f.atk?.crouch) || (f.st === "block" && f.crouchBlock) ? -70 : f.st === "down" ? -14 : -102) * f.sc, hw = 14 * f.sc; return [f.x - hw, f.y + top, f.x + hw, f.y - (onGround(f) ? 0 : 18)]; };
+  // beta 3.33: the boxes refitted to the new proportions (the guard 101 units tall where it stood 115, broader)
+  const hurt = (f) => { const top = (f.st === "crouch" || (f.st === "atk" && f.atk?.crouch) || (f.st === "block" && f.crouchBlock) ? -68 : f.st === "down" ? -14 : -97) * f.sc, hw = 14.5 * f.sc; return [f.x - hw, f.y + top, f.x + hw, f.y - (onGround(f) ? 0 : 18)]; };
   const boxOf = (f, b0) => { const b = b0.map((v) => v * f.sc); return f.face > 0 ? [f.x + b[0], f.y + b[1], f.x + b[2], f.y + b[3]] : [f.x - b[2], f.y + b[1], f.x - b[0], f.y + b[3]]; };
   const overlap = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
 
@@ -1434,6 +1727,7 @@
   function newMatch(me, cpu) {
     g = { scene: "vs", me, cpu: cpu || "ion", voucher: null, t: 0, round: 1, wins: [0, 0], phase: "intro", pt: 0, time: ROUND_TIME, f: [], proj: [], fx: [], hitstop: 0, shake: 0, flash: 0, camX: (STAGE_W - W) / 2, slow: 0, menu: 0, result: null, perfect: false };
     resetRound();
+    BAKEQ.push(() => carDacia(), ...["cristache", "ion", "rares"].map((id) => () => endFrame(id))); // beta 3.33: the ending's art, in the spare time of the fight
     g.scene = "vs"; g.t = 0;
     SND.play("confirm");
   }
@@ -1453,7 +1747,7 @@
   function startSpecial(f) {
     const s = SPECIAL[f.id]; f.atk = s; f.atkHit = false; f.t = 0; f.st = "atk"; f.vx = 0; f.spCool = s.cool;
   }
-  function jump(f, dir) { f.st = "jump"; f.vy = JUMP_V; f.vx = dir * 1.95 * f.R.speed; f.atk = null; f.t = 0; SND.play("jump"); }
+  function jump(f, dir) { f.st = "jump"; f.vy = JUMP_V; f.vx = dir * 2.05 * f.R.speed; f.atk = null; f.t = 0; SND.play("jump"); }
   // one step of a fighter's controls (the player's keys or the CPU's plan, both as the same intent)
   function control(f, o, inp) {
     const fw = f.face > 0 ? inp.r : inp.l, bk = f.face > 0 ? inp.l : inp.r;
@@ -1541,9 +1835,9 @@
       if (t === 1) f.atkId = ++atkSeq;
       if (a.sp && t === a.su) {
         SND.play(a.sfx);
-        if (a.beans) for (let i = 0; i < a.beans; i++) g.proj.push({ k: "bean", x: f.x + f.face * 26, y: f.y - 58 * f.sc, vx: (a.speed + i * 0.5) * f.face, vy: -1.6 + i * 1.1, owner: f, dmg: a.dmg, t: 0, i });
-        else if (a.proj) g.proj.push({ k: a.proj, x: f.x + f.face * 30, y: f.y - (a.proj === "wave" ? 62 : 70), vx: a.speed * f.face, owner: f, dmg: a.dmg, t: 0 });
-        if (a.flash) { g.flash = 10; spark(f.x + f.face * 28, f.y - 80, "flash"); }
+        if (a.beans) for (let i = 0; i < a.beans; i++) g.proj.push({ k: "bean", x: f.x + f.face * 26, y: f.y - 56 * f.sc, vx: (a.speed + i * 0.5) * f.face, vy: -1.6 + i * 1.1, owner: f, dmg: a.dmg, t: 0, i });
+        else if (a.proj) g.proj.push({ k: a.proj, x: f.x + f.face * 30, y: f.y - (a.proj === "wave" ? 56 : 63) * f.sc, vx: a.speed * f.face, owner: f, dmg: a.dmg, t: 0 });
+        if (a.flash) { g.flash = 10; spark(f.x + f.face * 28, f.y - 76 * f.sc, "flash"); }
         if (a.rise) { f.vy = -7.8; f.vx = 1.5 * f.face; f.y = Math.min(f.y, -1); }
         if (a.armor) f.armor = a.armor;
       }
@@ -1599,6 +1893,7 @@
   function stepFight(inp) {
     const [a, b] = g.f, fighting = g.phase === "fight";
     if (fighting) {
+      if (autoP1) inp = think(a, b); // beta 3.33, for the tests: the CPU on both sides
       if (free(a) || a.st === "jump") control(a, b, inp); else { a.holdBack = !!(a.face > 0 ? inp.l : inp.r); a.holdDown = !!inp.d; }
       const ci = think(b, a);
       if (free(b) || b.st === "jump") control(b, a, ci); else { b.holdBack = !!(b.face > 0 ? ci.l : ci.r); b.holdDown = !!ci.d; }
@@ -1614,7 +1909,7 @@
       if (!at || !at.box || f.atkHit) continue;
       const t = f.t; if (t < at.su || t >= at.su + at.ac) continue;
       const hb = boxOf(f, at.box), hu = hurt(o);
-      if (overlap(hb, hu)) { f.atkHit = true; land(f, o, at, (Math.max(hb[0], hu[0]) + Math.min(hb[2], hu[2])) / 2, (Math.max(hb[1], hu[1]) + Math.min(hb[3], hu[3])) / 2); if (at.dash) f.vx = -f.face * 1.5; }
+      if (overlap(hb, hu)) { f.atkHit = true; if (HITLOG.length < 400) HITLOG.push({ k: f.atk === SPECIAL[f.id] ? "sp" : Object.keys(ATK).find((n) => ATK[n] === f.atk), d: Math.round(Math.abs(f.x - o.x)), who: f.id }); land(f, o, at, (Math.max(hb[0], hu[0]) + Math.min(hb[2], hu[2])) / 2, (Math.max(hb[1], hu[1]) + Math.min(hb[3], hu[3])) / 2); if (at.dash) f.vx = -f.face * 1.5; }
     }
     // the projectiles
     for (const p of g.proj) {
@@ -1628,9 +1923,10 @@
     for (const p of g.proj) for (const q of g.proj) if (p !== q && p.owner !== q.owner && !p.dead && !q.dead && Math.abs(p.x - q.x) < 14 && Math.abs(p.y - q.y) < 16) { p.dead = q.dead = true; spark((p.x + q.x) / 2, p.y, "burst"); SND.play("block"); }
     g.proj = g.proj.filter((p) => !p.dead);
     // bodies don't overlap; both stay on screen
-    const pbw = 28 * Math.max(a.sc, b.sc);
+    const pbw = 30 * Math.max(a.sc, b.sc);
     if (Math.abs(a.x - b.x) < pbw && Math.abs(a.y - b.y) < 70 && a.st !== "down" && b.st !== "down") { const push = (pbw - Math.abs(a.x - b.x)) / 2, s = a.x <= b.x ? -1 : 1; a.x += s * push; b.x -= s * push; }
     for (const f of g.f) f.x = clamp(f.x, Math.max(18, g.camX + 18), Math.min(STAGE_W - 18, g.camX + W - 18));
+    if (onGround(a) && onGround(b) && a.st !== "down" && b.st !== "down") stats.minGap = Math.min(stats.minGap ?? 1e9, Math.abs(a.x - b.x)); // for the tests: how close the bodies come
     const goal = clamp((a.x + b.x) / 2 - W / 2, 0, STAGE_W - W); g.camX += (goal - g.camX) * 0.18;
     for (const f of g.f) stepSmoke(f);
   }
@@ -1641,7 +1937,7 @@
   // puffs from wherever the lit end is in the frame drawn, rising, drifting, thinning out
   const CIG_HAND = 240, CIG_UP = 20, CIG_MOUTH = 160, CIG_LOOP = CIG_HAND + CIG_UP * 2 + CIG_MOUTH;
   const cigPhase = (f) => { const n = (f.ct || 0) % CIG_LOOP; return n < CIG_HAND ? "hand" : n < CIG_HAND + CIG_UP ? "up" : n < CIG_HAND + CIG_UP + CIG_MOUTH ? "mouth" : "down"; };
-  const emberAt = (f, e) => [f.x + (f.face > 0 ? e[0] - OX : OX - e[0] - 1) + 0.5, f.y + e[1] - OY + 0.5];
+  const emberAt = (f, e) => [f.x + ((f.face > 0 ? e[0] - OX : OX - e[0] - 1) + 0.5) / RS, f.y + (e[1] - OY + 0.5) / RS]; // beta 3.33: the frame's pixels are half a game unit
   function stepSmoke(f) {
     if (!f.S.puff) return;
     if (f.st === "idle" || f.st === "walk") f.ct = (f.ct || 0) + 1; // the loop runs while he stands or walks; any other move
@@ -1650,21 +1946,21 @@
     f.sk = (f.sk || 0) + 1;
     if (e && f.sk % 6 === 0) { const [x, y] = emberAt(f, e); sm.push({ x, y: y - 1, t: 0, life: 56 + Math.floor(rnd(0, 26)), vx: rnd(-0.06, 0.1), ph: rnd(0, 6) }); }
     if ((f.ct || 0) % CIG_LOOP === CIG_HAND + CIG_UP * 2 + CIG_MOUTH - 4) { // breathing out, as the hand comes down
-      const m = f.S.idleM[0].ember; if (m) { const [x, y] = emberAt(f, [m[0] - 5, m[1] - 1]); for (let i = 0; i < 7; i++) sm.push({ x, y, t: 0, life: 40 + i * 4, vx: f.face * (0.45 + i * 0.06), vy: -0.05 - i * 0.02, ph: i, ex: 1 }); }
+      const m = f.S.idleM[0].ember; if (m) { const [x, y] = emberAt(f, [m[0] - 5 * RS, m[1] - RS]); for (let i = 0; i < 7; i++) sm.push({ x, y, t: 0, life: 40 + i * 4, vx: f.face * (0.45 + i * 0.06), vy: -0.05 - i * 0.02, ph: i, ex: 1 }); }
     }
     for (const q of sm) { q.t++; q.x += q.vx + Math.sin(q.t * 0.11 + q.ph) * 0.12; q.y -= q.ex ? 0.12 - (q.vy || 0) + q.t * 0.004 : 0.3 + q.t * 0.003; if (q.ex) q.vx *= 0.96; }
     if (sm.length) f.smoke = sm.filter((q) => q.t < q.life);
   }
   // the puffs: one light pixel when new, then a small cloud of two or three, darker and thinner as they rise
-  function drawSmoke(ctx, list, cx, oy) {
+  function drawSmoke(ctx, list, cx, oy) { // beta 3.33: in the canvas's pixels (p: one of them, in game units)
+    const p = 1 / RS;
     for (const q of list) {
-      const k = q.t / q.life, x = Math.round(q.x - cx), y = Math.round(q.y + oy);
+      const k = q.t / q.life, x = Math.round((q.x - cx) * RS) / RS, y = Math.round((q.y + oy) * RS) / RS;
       // a light core with a grey underside, so a puff reads on the white wall as on the dark shopfront
       ctx.globalAlpha = k < 0.35 ? 0.95 : k < 0.65 ? 0.75 : k < 0.85 ? 0.5 : 0.25;
-      const lt = k < 0.3 ? "#f6f6fa" : k < 0.65 ? "#dcdce6" : "#c0c0ce", dk = k < 0.65 ? "#8c8ca2" : "#9c9cb0";
-      if (k < 0.18) { ctx.fillStyle = lt; ctx.fillRect(x, y, 1, 1); ctx.fillStyle = dk; ctx.fillRect(x, y + 1, 1, 1); }
-      else if (k < 0.5) { ctx.fillStyle = dk; ctx.fillRect(x, y + 1, 2, 1); ctx.fillRect(x + 2, y, 1, 1); ctx.fillStyle = lt; ctx.fillRect(x, y, 2, 1); ctx.fillRect(x, y - 1, 1, 1); }
-      else { ctx.fillStyle = dk; ctx.fillRect(x - 1, y + 1, 3, 1); ctx.fillStyle = lt; ctx.fillRect(x - 1, y, 3, 1); ctx.fillRect(x, y - 1, 2, 1); }
+      const lt = k < 0.3 ? "#f6f6fa" : k < 0.65 ? "#dcdce6" : "#c0c0ce", dk = k < 0.65 ? "#8c8ca2" : "#9c9cb0", sz = k < 0.18 ? 1 : k < 0.5 ? 2 : 3;
+      ctx.fillStyle = dk; ctx.fillRect(x - p * (sz - 1), y + p, p * (sz + 1), p);
+      ctx.fillStyle = lt; ctx.fillRect(x - p * (sz - 1), y - p * (sz - 1), p * (sz + 1), p * sz); if (sz > 1) ctx.fillRect(x - p * (sz - 2), y - p * sz, p * (sz - 1), p);
     }
     ctx.globalAlpha = 1;
   }
@@ -1726,7 +2022,7 @@
     }
   }
   function drawSprite(ctx, img, x, y, face) {
-    ctx.save(); ctx.translate(Math.round(x), Math.round(y)); if (face < 0) ctx.scale(-1, 1); ctx.drawImage(img, -OX, -OY); ctx.restore();
+    hiDraw(ctx, img, x, y, face, img.ax, img.ay); // beta 3.33: at the canvas's pixels, the feet at (x, y)
   }
   function drawProj(ctx, p, cx) {
     const x = Math.round(p.x - cx), y = Math.round(p.y + FLOOR), d = Math.sign(p.vx);
@@ -1793,7 +2089,7 @@
     drawCrowd(ctx, cx, t, g.cheerT > 0 || g.phase === "ko" && g.pt > 60 || g.phase === "match");
     ctx.save(); ctx.translate(0, sy);
     // shadows
-    for (const f of g.f) { const w = Math.round(30 - Math.min(16, -f.y / 6)), x = Math.round(f.x - cx); ctx.fillStyle = "rgba(10,6,24,.45)"; ctx.fillRect(x - w / 2, FLOOR - 2, w, 3); ctx.fillRect(x - w / 2 + 3, FLOOR - 3, w - 6, 5); }
+    for (const f of g.f) { const w = Math.round((31 * f.sc - Math.min(16, -f.y / 6)) * RS) / RS, x = Math.round((f.x - cx) * RS) / RS; ctx.fillStyle = "rgba(10,6,24,.45)"; ctx.fillRect(x - w / 2, FLOOR - 2, w, 3); ctx.fillRect(x - w / 2 + 2.5, FLOOR - 3, w - 5, 5); ctx.fillRect(x - w / 2 + 6, FLOOR - 3.5, w - 12, 6); } // beta 3.33: rounder, at the canvas's pixels
     for (const e of g.fx) if (e.k === "ghost" || e.k === "stack") drawFx(ctx, e, cx);
     // the one attacking is drawn in front
     const order = g.f[0].st === "atk" ? [g.f[1], g.f[0]] : [g.f[0], g.f[1]];
@@ -1802,12 +2098,12 @@
       if (f.inv > 0 && f.inv % 4 < 2 && f.hp > 0) continue;
       const spin = f.atk?.spin && f.t >= f.atk.su && f.t < f.atk.su + f.atk.ac && (f.t >> 2) & 1 ? -1 : 1; // beta 3.11: Maria turns round
       drawSprite(ctx, frameOf(f), f.x - cx + jit, FLOOR + f.y, f.face * spin);
-      if (f.st === "dizzy") for (let i = 0; i < 3; i++) { const an = t * 5 + (i * Math.PI * 2) / 3, x = Math.round(f.x - cx + Math.cos(an) * 12), y = Math.round(FLOOR + f.y - 92 + Math.sin(an) * 3); ctx.fillStyle = OUT; ctx.fillRect(x - 2, y - 2, 5, 5); ctx.fillStyle = i === 1 ? "#ffffff" : "#ffe14a"; ctx.fillRect(x - 1, y - 1, 3, 3); }
+      if (f.st === "dizzy") for (let i = 0; i < 3; i++) { const an = t * 5 + (i * Math.PI * 2) / 3, x = Math.round(f.x - cx + Math.cos(an) * 12), y = Math.round(FLOOR + f.y - 100 * f.sc - 2 + Math.sin(an) * 3); ctx.fillStyle = OUT; ctx.fillRect(x - 2, y - 2, 5, 5); ctx.fillStyle = i === 1 ? "#ffffff" : "#ffe14a"; ctx.fillRect(x - 1, y - 1, 3, 3); }
     }
     for (const f of g.f) { // beta 3.32: the smoke, and the lit end glowing now and then
       if (f.smoke) drawSmoke(ctx, f.smoke, cx, FLOOR);
       const e = f.S.puff && !(f.inv > 0 && f.inv % 4 < 2) ? frameOf(f).ember : null;
-      if (e && Math.floor(t * 7) % 3 === 0) { const [x, y] = emberAt(f, e); ctx.fillStyle = "#ffe08a"; ctx.fillRect(Math.floor(x - cx), Math.floor(y + FLOOR), 1, 1); }
+      if (e && Math.floor(t * 7) % 3 === 0) { const [x, y] = emberAt(f, e); ctx.fillStyle = "#ffe08a"; ctx.fillRect(Math.floor((x - cx) * RS) / RS, Math.floor((y + FLOOR) * RS) / RS, 1 / RS, 1 / RS); }
     }
     for (const p of g.proj) drawProj(ctx, p, cx);
     for (const e of g.fx) if (e.k !== "ghost" && e.k !== "stack") drawFx(ctx, e, cx);
@@ -1846,68 +2142,147 @@
   // beta 3.30 (Daniel): after the match, always the same little scene: I O N, Cristache and Rares jump-starting the
   // yellow Dacia (the site's car) in front of Two Minutes, the bonnet up, cables from a battery, sparks. The voucher (a
   // win) or the try-again (a loss) sits on its right
-  let CAR = null;
-  function carDacia() { // the yellow saloon, side on, facing right, the bonnet up
-    if (CAR) return CAR;
-    const [c, x] = mk(176, 76), Y = ramp("#f2c21a"), gy = 70;
-    const P = (pts, col) => { x.fillStyle = col; x.beginPath(); x.moveTo(pts[0][0], pts[0][1]); for (const q of pts.slice(1)) x.lineTo(q[0], q[1]); x.closePath(); x.fill(); };
-    const hx3 = (v) => "#" + [v & 255, (v >> 8) & 255, (v >> 16) & 255].map((n) => n.toString(16).padStart(2, "0")).join("");
-    const Yc = Y.map(hx3);
-    const body = [[4, 44], [8, 36], [44, 34], [58, 20], [100, 20], [116, 36], [166, 40], [170, 48], [168, 60], [6, 60], [3, 52]];
-    x.save(); x.translate(1, 1); P(body, OUT); x.restore(); P(body.map(([a2, b2]) => [a2 - 1, b2 - 1]), OUT);
-    P(body, Yc[2]);
-    P([[8, 37], [44, 35], [58, 21], [100, 21], [114, 36], [166, 41], [166, 44], [6, 44]], Yc[1]); // the upper body in the light
-    x.fillStyle = Yc[0]; x.fillRect(10, 37, 34, 1); x.fillRect(116, 39, 48, 1); x.fillRect(58, 21, 42, 1);
-    x.fillStyle = Yc[3]; x.fillRect(6, 52, 162, 7); x.fillStyle = Yc[4]; x.fillRect(6, 58, 162, 2);
-    // the windows, the pillars, the chrome round them
-    P([[48, 34], [60, 22], [77, 22], [77, 34]], "#c9ccd4"); P([[80, 22], [99, 22], [111, 34], [80, 34]], "#c9ccd4");
-    P([[50, 33], [61, 23], [76, 23], [76, 33]], "#3a4a5e"); P([[81, 23], [98, 23], [109, 33], [81, 33]], "#3a4a5e");
-    x.fillStyle = "#6a7e96"; x.fillRect(62, 24, 6, 2); x.fillRect(84, 24, 6, 2);
-    // the doors, the handles, the chrome strip
-    x.fillStyle = Yc[4]; x.fillRect(78, 35, 1, 22); x.fillRect(112, 37, 1, 20); x.fillRect(47, 35, 1, 22);
-    x.fillStyle = "#c9ccd4"; x.fillRect(66, 40, 5, 1); x.fillRect(100, 41, 5, 1); x.fillRect(8, 47, 158, 1);
-    // the bumpers, the lights, the badge
-    x.fillStyle = OUT; x.fillRect(0, 48, 10, 6); x.fillRect(164, 48, 12, 6); x.fillStyle = "#d8dbe2"; x.fillRect(1, 49, 8, 4); x.fillRect(165, 49, 10, 4); x.fillStyle = "#ffffff"; x.fillRect(166, 49, 8, 1);
-    x.fillStyle = "#c81e1e"; x.fillRect(4, 40, 3, 5); x.fillStyle = "#fff2b0"; x.fillRect(164, 42, 3, 4);
-    tiny(x, "DACIA", 12, 41, "#7a5a10"); // the name on the boot, as on the site's car
-    // the wheels
-    for (const wx of [34, 136]) { x.fillStyle = OUT; x.beginPath(); x.arc(wx, gy - 10, 11, 0, Math.PI * 2); x.fill(); x.fillStyle = "#2a2a30"; x.beginPath(); x.arc(wx, gy - 10, 10, 0, Math.PI * 2); x.fill(); x.fillStyle = "#c9ccd4"; x.beginPath(); x.arc(wx, gy - 10, 5, 0, Math.PI * 2); x.fill(); x.fillStyle = "#ffffff"; x.fillRect(wx - 3, gy - 14, 2, 2); x.fillStyle = "#8a8e98"; x.fillRect(wx - 1, gy - 11, 2, 2); }
-    // the engine showing over the wing, the bonnet up on its hinge
-    x.fillStyle = "#3a3a42"; x.fillRect(118, 32, 44, 6); x.fillStyle = "#9a9ea8"; x.fillRect(124, 29, 14, 7); x.fillRect(142, 30, 8, 5); x.fillStyle = "#5a5e68"; x.fillRect(126, 31, 10, 2); x.fillStyle = "#d8342a"; x.fillRect(152, 31, 4, 3);
-    P([[114, 35], [156, 2], [162, 6], [118, 37]], OUT); P([[115, 34], [156, 4], [160, 7], [118, 36]], Yc[3]); P([[116, 34], [154, 6], [156, 8], [118, 35]], Yc[1]);
-    x.fillStyle = "#9a9ea8"; x.fillRect(136, 18, 1, 16); // the prop rod
-    CAR = c; return c;
+  // beta 3.33 (Daniel: "they should charge it from the La Marzocco espresso machine in the shop's window; the La
+  // Marzocco should be visible"): the shop's espresso machine, on the counter in the window: the wide polished steel
+  // body, red side panels, three chrome group heads with their portafilters, the steam wands, two pressure gauges, the
+  // nameplate, the cup rail on top (the cups are drawn on their own, so they can rattle). At the canvas's pixels,
+  // 84x56, the counter under its feet. MZ: where it stands on the street, in game units
+  const MZ = { x: 108, y: 124, w: 42, h: 28 };
+  let MZ_IMG = null;
+  function marzocco() {
+    if (MZ_IMG) return MZ_IMG;
+    const [c, x] = mk(84, 56), px = (a, b, col) => { x.fillStyle = col; x.fillRect(a, b, 1, 1); }, rect = (a, b, w, h, col) => { x.fillStyle = col; x.fillRect(a, b, w, h); };
+    const ST = ["#ffffff", "#e8ecf2", "#c9ced8", "#a4aab8", "#7a8090", "#4a4e5c"], RD = ["#ff8a6a", "#e8402c", "#c42a1e", "#901c16", "#5a100c"];
+    // the body: an outline, the steel brushed in vertical streaks, lit on top, a shadow line under the top edge
+    rect(3, 15, 78, 30, OUT);
+    for (let yy = 16; yy < 44; yy++) for (let xx = 4; xx < 80; xx++) { const t = yy < 18 ? 0 : yy < 20 ? 1 : (xx * 7 + (xx >> 2)) % 9 === 0 ? 3 : yy > 39 ? 3 : 2; px(xx, yy, ST[t]); }
+    rect(4, 20, 76, 1, ST[3]);
+    // the red side panels at both ends, curved, lit at the edge
+    for (const x0 of [4, 70]) { for (let yy = 16; yy < 44; yy++) for (let xx = x0; xx < x0 + 10; xx++) { const u = (xx - x0) / 9; px(xx, yy, RD[yy < 18 ? 0 : u < 0.2 || u > 0.85 ? 3 : u < 0.4 ? 1 : 2]); } rect(x0, 16, 10, 1, RD[0]); }
+    // the two pressure gauges, the nameplate between the side panels
+    for (const gx of [20, 64]) { for (let yy = -4; yy <= 4; yy++) for (let xx = -4; xx <= 4; xx++) { const d = Math.hypot(xx, yy); if (d <= 3.9) px(gx + xx, 22 + yy, d > 3 ? "#2a2a30" : d > 2.2 ? ST[2] : "#fbfaf4"); } px(gx, 22, "#1c1a20"); px(gx + 1, 21, "#d8342a"); }
+    rect(18, 27, 48, 8, OUT); rect(19, 28, 46, 6, "#1c1a20"); rect(19, 28, 46, 1, "#3a3840"); tiny(x, "LA MARZOCCO", 20, 29, "#f2f2f6");
+    // the three group heads, chrome, each with its portafilter (the black handle out to the left, a little down)
+    for (const gx of [24, 42, 60]) {
+      rect(gx - 6, 37, 12, 6, OUT); for (let yy = 38; yy < 42; yy++) for (let xx = gx - 5; xx < gx + 5; xx++) px(xx, yy, ST[xx < gx - 2 ? 1 : xx > gx + 2 ? 3 : 0]);
+      rect(gx - 5, 42, 10, 3, OUT); rect(gx - 4, 42, 8, 2, ST[3]); // the basket
+      for (let i = 0; i < 9; i++) { rect(gx - 6 - i, 43 + (i >> 2), 1, 3, OUT); rect(gx - 6 - i, 44 + (i >> 2), 1, 1, i < 2 ? ST[3] : "#2a2628"); } // the handle
+    }
+    // the steam wands, chrome, down and out from the ends; the hot water tap in the middle
+    for (const [x0, d] of [[13, -1], [72, 1]]) for (let i = 0; i < 12; i++) { px(x0 + Math.round(i * 0.25 * d), 41 + i, OUT); px(x0 + Math.round(i * 0.25 * d) + 1, 41 + i, ST[i < 6 ? 1 : 2]); }
+    // the drip tray, its grille; the feet
+    rect(3, 44, 78, 6, OUT); for (let xx = 4; xx < 80; xx++) px(xx, 45, ST[1]); for (let xx = 4; xx < 80; xx++) for (const yy of [46, 47, 48]) px(xx, yy, xx % 3 === 0 ? "#2a2a30" : ST[3]);
+    rect(6, 50, 4, 2, OUT); rect(74, 50, 4, 2, OUT);
+    // the cup rail on top
+    rect(6, 12, 72, 4, OUT); rect(7, 13, 70, 1, ST[0]); rect(7, 14, 70, 1, ST[3]); for (const xx of [6, 41, 77]) rect(xx, 11, 2, 5, OUT);
+    return (MZ_IMG = c);
   }
+  // the cups on the rail (game units: MZ), rattling when shake > 0; and the steam from the right wand
+  function drawCups(ctx, ox, oy, t, shake) {
+    const p = 1 / RS;
+    for (let i = 0; i < 5; i++) {
+      const jx = shake ? Math.round(Math.sin(t * 50 + i * 2.1)) * p : 0, jy = shake && (Math.floor(t * 24) + i) % 3 === 0 ? -p : 0, x0 = ox + 5 + i * 7 + jx, y0 = oy + 3 + jy;
+      ctx.fillStyle = OUT; ctx.fillRect(x0 - p, y0 - p, 4 + 2 * p, 3 + 2 * p); ctx.fillRect(x0 + 4, y0 + p, 1.5, 1.5);
+      ctx.fillStyle = i % 2 ? "#f4f2ec" : "#ffffff"; ctx.fillRect(x0, y0, 4, 3); ctx.fillStyle = "#c8c2b8"; ctx.fillRect(x0, y0 + 3 - p, 4, p); ctx.fillRect(x0 + 3, y0, 1, 3);
+    }
+  }
+  // beta 3.33: the yellow Dacia, redrawn at the canvas's pixels (300x150) and facing left, so its bonnet opens towards
+  // the shop: a three-box saloon, chrome round the glass, the doors and their handles, the bonnet up on its rod over the
+  // engine (the battery's two terminals where the clamps go: CAR.clamps), the name on the boot, no badge
+  let CAR = null;
+  function carDacia() {
+    if (CAR) return CAR;
+    const [c, x] = mk(300, 150), Y = ramp("#f2c21a").map((v) => hexOf([v & 255, (v >> 8) & 255, (v >> 16) & 255])), gy = 140;
+    const P = (pts, col) => { x.fillStyle = col; x.beginPath(); x.moveTo(pts[0][0], pts[0][1]); for (const q of pts.slice(1)) x.lineTo(q[0], q[1]); x.closePath(); x.fill(); };
+    const rect = (a, b, w, h, col) => { x.fillStyle = col; x.fillRect(a, b, w, h); };
+    const body = [[4, 84], [10, 78], [98, 76], [130, 40], [204, 40], [232, 74], [290, 78], [296, 88], [296, 118], [6, 118], [2, 104]];
+    x.save(); x.translate(0, 1); P(body.map(([a, b]) => [a, b + 1]), OUT); x.restore(); P(body.map(([a, b]) => [a - 1, b - 1]), OUT); P(body.map(([a, b]) => [a + 1, b - 1]), OUT);
+    P(body, Y[2]);
+    P([[10, 79], [98, 77], [130, 41], [204, 41], [232, 75], [290, 79], [292, 92], [6, 92]], Y[1]); // the upper body in the light
+    rect(12, 79, 84, 1, Y[0]); rect(234, 76, 54, 1, Y[0]); rect(131, 41, 72, 1, Y[0]);
+    rect(6, 106, 288, 10, Y[3]); rect(6, 114, 288, 4, Y[4]);
+    // the glass: the windscreen, two side windows, the rear window; chrome round them, a reflection streak
+    P([[104, 76], [132, 44], [164, 44], [164, 76]], "#c9ccd4"); P([[168, 44], [202, 44], [226, 76], [168, 76]], "#c9ccd4");
+    P([[107, 74], [134, 46], [162, 46], [162, 74]], "#33435a"); P([[170, 46], [200, 46], [222, 74], [170, 74]], "#33435a");
+    P([[136, 46], [146, 46], [124, 74], [114, 74]], "#5a6e88"); P([[178, 46], [186, 46], [176, 74], [170, 74], [170, 60]], "#5a6e88");
+    rect(164, 44, 4, 33, Y[3]); // the pillar
+    // the doors, their handles, the chrome strip along the side
+    rect(102, 78, 1, 36, Y[4]); rect(166, 78, 1, 36, Y[4]); rect(230, 78, 1, 34, Y[4]);
+    rect(150, 84, 10, 2, "#e4e7ec"); rect(150, 86, 10, 1, "#8a8e98"); rect(214, 84, 10, 2, "#e4e7ec"); rect(214, 86, 10, 1, "#8a8e98");
+    rect(8, 96, 286, 2, "#e4e7ec"); rect(8, 98, 286, 1, "#8a8e98");
+    // the bumpers, the lights; the name on the boot
+    rect(0, 98, 14, 10, OUT); rect(1, 99, 12, 8, "#d8dbe2"); rect(1, 99, 12, 2, "#ffffff");
+    rect(286, 98, 14, 10, OUT); rect(287, 99, 12, 8, "#d8dbe2"); rect(287, 99, 12, 2, "#ffffff");
+    rect(4, 82, 8, 10, OUT); rect(5, 83, 6, 8, "#fff2b0"); rect(6, 84, 3, 3, "#ffffff"); rect(5, 92, 6, 3, "#ff9a2a");
+    rect(288, 80, 7, 14, OUT); rect(289, 81, 5, 12, "#c81e1e"); rect(289, 81, 2, 4, "#ff6a5a");
+    tiny(x, "DACIA", 246, 84, "#8a6a10"); tiny(x, "DACIA", 245, 83, "#5a4408");
+    // the wheels, in their arches
+    for (const wx of [64, 236]) {
+      x.fillStyle = OUT; x.beginPath(); x.arc(wx, gy - 20, 24, Math.PI, 0); x.fill();
+      for (let yy = -20; yy <= 20; yy++) for (let xx = -20; xx <= 20; xx++) { const d = Math.hypot(xx + 0.5, yy + 0.5); if (d > 20.5) continue; rect(wx + xx, gy - 20 + yy, 1, 1, d > 19.3 ? OUT : d > 13 ? (yy < -10 && xx < 0 && d > 16 ? "#4a4852" : "#24222a") : d > 11.8 ? "#8a8e98" : d > 3 ? (yy + xx < -4 ? "#f0f2f6" : "#c9ccd4") : "#8a8e98"); }
+      for (const [a, b] of [[-5, -5], [5, -5], [-5, 5], [5, 5]]) rect(wx + a, gy - 20 + b, 2, 2, "#6a6e78");
+    }
+    // the engine bay under the raised bonnet: the block, the air filter, the battery (its terminals: red +, black -)
+    rect(14, 68, 82, 11, OUT); rect(15, 69, 80, 10, "#3a3a42"); rect(46, 62, 28, 12, OUT); rect(47, 63, 26, 10, "#9a9ea8"); rect(47, 63, 26, 2, "#c9ccd4");
+    rect(18, 64, 20, 12, OUT); rect(19, 65, 18, 10, "#26262c"); rect(19, 65, 18, 2, "#4a4a52"); rect(21, 61, 4, 4, "#d8342a"); rect(31, 61, 4, 4, "#1c1c22");
+    rect(78, 66, 12, 8, "#5a5e68");
+    // the bonnet, up on its hinge at the windscreen, its underside dark; the rod
+    P([[100, 78], [22, 18], [14, 24], [94, 82]], OUT); P([[98, 77], [22, 21], [17, 25], [93, 80]], Y[3]); P([[97, 76], [23, 22], [21, 23], [95, 77]], Y[1]);
+    rect(40, 30, 1, 40, "#9a9ea8"); rect(41, 30, 1, 40, "#5a5e68");
+    CAR = c; c.clamps = [[23, 62], [33, 62]]; return c;
+  }
+  // beta 3.33 (Daniel): the jump-start, now from the La Marzocco: the camera on the shop window, the machine on the
+  // counter inside, its left pane pushed open a crack and the two cables out through it, across the pavement, up to the
+  // battery under the Dacia's bonnet (parked facing the shop). Cristache by the window feeding the cables (smoking),
+  // I O N bent over the engine, Rares at the back cheering. A loop: the clamps spark while it cranks; then it catches:
+  // a puff of steam from the wand, the cups rattle on the rail, the car shakes, a puff from the exhaust
   const END_POSES = {
-    cristache: pose({ hip: [2, -46], neck: [14, -66], head: [18, -75], eF: [24, -56], hF: [32, -58], eB: [18, -54], hB: [26, -50], kF: [12, -24], fF: [16, 0], kB: [-6, -23], fB: [-10, 0], tw: 0.5 }),
-    ion: pose({ hip: [0, -28], neck: [6, -52], head: [9, -63], eF: [16, -38], hF: [24, -26], eB: [10, -40], hB: [20, -30], kF: [14, -20], fF: [18, 0], kB: [-6, -5], fB: [-20, 0], tw: 0.4 }),
-    rares: pose({ eF: [16, -88], hF: [22, -104], eB: [-6, -58], hB: [4, -52], kF: [10, -24], fF: [14, 0], kB: [-8, -23], fB: [-14, 0] })
+    cristache: pose({ hip: [0, -47], neck: [5, -75], head: [8, -86], eF: [15, -60], hF: [24, -58], eB: [9, -58], hB: [18, -55], kF: [8, -24], fF: [12, 0], kB: [-6, -24], fB: [-10, 0], tw: 0.4 }),
+    ion: pose({ hip: [0, -44], neck: [14, -66], head: [18, -74], eF: [26, -52], hF: [36, -46], eB: [20, -52], hB: [32, -42], kF: [10, -23], fF: [14, 0], kB: [-8, -22], fB: [-14, 0], tw: 0.5 }),
+    rares: pose({ eF: [16, -88], hF: [22, -104], eB: [-6, -88], hB: [-2, -104], kF: [10, -24], fF: [14, 0], kB: [-8, -23], fB: [-14, 0] })
   };
-  const END_FR = {}, END_SC = 0.74; // in the scene they stand back by the car: a size that suits a car
+  const END_FR = {}, END_SC = 0.84; // a size that suits the car
   const endFrame = (id) => { if (END_FR[id]) return END_FR[id]; const L0 = LOOKS[id]; NPC_LOOKS["end_" + id] = Object.assign({}, L0, { headId: id, hands: "bare", build: Object.assign({}, L0.build, { sc: END_SC * (L0.build.sc || 1) }) }); return (END_FR[id] = drawFighter("end_" + id, L0.smokes ? Object.assign({}, END_POSES[id], { cig: "mouth" }) : END_POSES[id], null)); };
+  const END_CAM = -48, END_CAR = 262, END_LOOP = 3.2; // the window at the middle of the picture, the card on its left, the car running out on the right
   function drawEnding(ctx, t) {
-    drawBackdrop(ctx, 150, t);
-    const gy = FLOOR - 4, cx0 = 4;
-    ctx.fillStyle = "rgba(10,6,24,.35)"; ctx.fillRect(cx0 + 6, gy - 2, 170, 4);
-    ctx.drawImage(carDacia(), cx0, gy - 74);
-    // the battery on the pavement, the cables to the engine
-    const bx = 190, by = gy - 11;
-    ctx.fillStyle = OUT; ctx.fillRect(bx - 1, by - 1, 18, 12); ctx.fillStyle = "#2a2a30"; ctx.fillRect(bx, by, 16, 10); ctx.fillStyle = "#4a4a52"; ctx.fillRect(bx, by, 16, 2); ctx.fillStyle = "#d8342a"; ctx.fillRect(bx + 2, by - 3, 3, 3); ctx.fillStyle = "#9a9ea8"; ctx.fillRect(bx + 11, by - 3, 3, 3);
-    const cable = (x1, y1, x2, y2, col, sag) => { ctx.strokeStyle = OUT; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo((x1 + x2) / 2, Math.max(y1, y2) + sag, x2, y2); ctx.stroke(); ctx.strokeStyle = col; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo((x1 + x2) / 2, Math.max(y1, y2) + sag, x2, y2); ctx.stroke(); };
-    cable(bx + 3, by - 2, cx0 + 146, gy - 42, "#e8301c", 26); cable(bx + 12, by - 2, cx0 + 156, gy - 40, "#2a2a30", 30);
+    const gy = FLOOR - 4, p = 1 / RS, lt = t % END_LOOP, caught = lt > 2.2, k2 = caught ? (lt - 2.2) / (END_LOOP - 2.2) : 0;
+    drawBackdrop(ctx, END_CAM, t, 0, false);
+    const mx = MZ.x - END_CAM, my = MZ.y;
+    drawCups(ctx, mx, my, t, caught && k2 < 0.6);
+    // the left pane pushed open a crack: a dark slit, the glass edge catching the light
+    ctx.fillStyle = "#1c1612"; ctx.fillRect(mx + 41, 106, 3, 64); ctx.fillStyle = "#c6dbe8"; ctx.fillRect(mx + 44, 106, p, 64); ctx.fillStyle = "#121214"; ctx.fillRect(mx + 44 + p, 106, p, 64);
+    // the car, shaking a little once it runs; its shadow
+    const shk = caught && k2 < 0.7 ? (Math.floor(t * 30) % 2 ? p : 0) : 0, car = carDacia(), cy0 = gy - 70 + shk;
+    ctx.fillStyle = "rgba(10,6,24,.35)"; ctx.fillRect(END_CAR + 4, gy - 1, 144, 3); ctx.fillRect(END_CAR + 10, gy - 2, 132, 1);
+    ctx.drawImage(car, END_CAR, cy0, 150, 75);
+    // the cables: from the back of the machine, out through the slit, down across the pavement, up to the terminals
+    const [c1, c2] = car.clamps.map(([a, b]) => [END_CAR + a / RS, cy0 + b / RS]);
+    const cable = (pts, col) => { // a cable in the canvas's pixels: its outline, then its colour, along a smooth curve
+      const P2 = (u) => { const n = pts.length - 1, i = Math.min(n - 1, Math.floor(u * n)), f = u * n - i, a = pts[i], b = pts[i + 1], m0 = pts[Math.max(0, i - 1)], m3 = pts[Math.min(n, i + 2)]; const h = (q) => 0.5 * (2 * a[q] + (-m0[q] + b[q]) * f + (2 * m0[q] - 5 * a[q] + 4 * b[q] - m3[q]) * f * f + (-m0[q] + 3 * a[q] - 3 * b[q] + m3[q]) * f * f * f); return [h(0), h(1)]; };
+      for (const [w, c] of [[2, OUT], [1, col]]) { ctx.fillStyle = c; for (let i = 0; i <= 240; i++) { const [x, y] = P2(i / 240); ctx.fillRect(Math.round(x * RS) / RS - (w - 1) * p / 2, Math.round(y * RS) / RS - (w - 1) * p / 2, w * p, w * p); } }
+    };
+    cable([[mx + 36, my + 18], [mx + 42, my + 24], [mx + 47, my + 40], [mx + 52, gy - 2], [mx + 60, gy - 1], [c1[0] - 4, gy - 8], [c1[0], c1[1] + 4], [c1[0], c1[1]]], "#e8301c");
+    cable([[mx + 37, my + 20], [mx + 42, my + 27], [mx + 48, my + 43], [mx + 55, gy - 1], [mx + 64, gy], [c2[0] - 2, gy - 6], [c2[0], c2[1] + 4], [c2[0], c2[1]]], "#2a2a30");
+    for (const [cx, cyy] of [c1, c2]) { ctx.fillStyle = OUT; ctx.fillRect(cx - 1.5, cyy - 1.5, 3, 3); ctx.fillStyle = cx === c1[0] ? "#e8301c" : "#3a3a42"; ctx.fillRect(cx - 1, cyy - 1, 2, 2); } // the clamps
     // the three of them
-    const put3 = (id, x2, face) => { ctx.save(); ctx.translate(Math.round(x2), gy); if (face < 0) ctx.scale(-1, 1); ctx.drawImage(endFrame(id), -OX, -OY); ctx.restore(); };
-    put3("rares", 26, 1); put3("cristache", 178, -1); put3("ion", 216, -1);
-    { const e = endFrame("cristache").ember; if (e) for (let i = 0; i < 5; i++) { // beta 3.32: and he smokes while they work
-      const a = (t * 0.5 + i / 5) % 1, x = Math.round(178 - (e[0] - OX) - 1 + Math.sin(a * 6 + i) * (1 + a * 3) - a * 4), y = Math.round(gy + e[1] - OY - 2 - a * 26);
-      ctx.globalAlpha = a < 0.4 ? 0.85 : a < 0.7 ? 0.55 : 0.3; ctx.fillStyle = a < 0.35 ? "#eeeef4" : a < 0.7 ? "#cfcfdc" : "#a8a8ba"; ctx.fillRect(x, y, a < 0.3 ? 1 : 2, 1); if (a > 0.5) ctx.fillRect(x + 1, y - 1, 1, 1);
+    const put3 = (id, x2, face) => { const im = endFrame(id); hiDraw(ctx, im, x2, gy, face, im.ax, im.ay); };
+    put3("rares", END_CAR + 102, -1); put3("ion", END_CAR + 52, -1); put3("cristache", mx + 78, 1);
+    { const im = endFrame("cristache"), e = im.ember; if (e) for (let i = 0; i < 5; i++) { // beta 3.32: and he smokes while they work
+      const a = (t * 0.5 + i / 5) % 1, x = mx + 78 + (e[0] - OX) / RS + Math.sin(a * 6 + i) * (1 + a * 3) + a * 3, y = gy + (e[1] - OY) / RS - 2 - a * 26;
+      ctx.globalAlpha = a < 0.4 ? 0.85 : a < 0.7 ? 0.55 : 0.3; ctx.fillStyle = a < 0.35 ? "#eeeef4" : a < 0.7 ? "#cfcfdc" : "#a8a8ba"; ctx.fillRect(Math.round(x * RS) / RS, Math.round(y * RS) / RS, a < 0.3 ? p : 2 * p, p); if (a > 0.5) ctx.fillRect(Math.round(x * RS) / RS + p, Math.round(y * RS) / RS - p, p, p);
     } ctx.globalAlpha = 1; }
-    // the sparks, at the clamps
-    for (const [sx, sy] of [[bx + 3, by - 3], [cx0 + 146, gy - 43]]) for (let i = 0; i < 6; i++) { const an = (i / 6) * Math.PI * 2 + t * 7, r2 = 2 + ((Math.floor(t * 12) + i) % 4) * 2; ctx.fillStyle = i % 2 ? "#ffffff" : "#ffd23a"; ctx.fillRect(Math.round(sx + Math.cos(an) * r2), Math.round(sy + Math.sin(an) * r2), 2, 2); }
+    // the sparks at the clamps while it cranks
+    if (!caught || k2 < 0.3) for (const [sx, sy] of [c1, c2]) for (let i = 0; i < 7; i++) { const an = (i / 7) * Math.PI * 2 + t * 9, r2 = 1.5 + ((Math.floor(t * 14) + i) % 4) * 1.6; ctx.fillStyle = i % 3 === 0 ? "#ffffff" : i % 3 === 1 ? "#ffd23a" : "#ff9d14"; ctx.fillRect(Math.round((sx + Math.cos(an) * r2) * RS) / RS, Math.round((sy + Math.sin(an) * r2) * RS) / RS, 2 * p, 2 * p); }
+    // it catches: the steam out of the wand, the exhaust's puff
+    if (caught) {
+      const puff = (x0, y0, dx, dy, n, col, s0) => { for (let i = 0; i < n; i++) { const a = Math.min(1, k2 * 1.6 + i * 0.04), r2 = s0 * (0.4 + a), x = x0 + dx * a * 18 + Math.sin(i * 2.3) * r2, y = y0 + dy * a * 18 + Math.cos(i * 1.7) * r2 * 0.7; ctx.globalAlpha = Math.max(0, 0.9 - a * 0.8); ctx.fillStyle = i % 3 ? col : "#ffffff"; ctx.fillRect(Math.round(x * RS) / RS, Math.round(y * RS) / RS, 2 + (i % 3), 1.5 + (i % 2)); } ctx.globalAlpha = 1; };
+      puff(mx + 6, my + 26, -0.4, -1.1, 14, "#e8ecf4", 3);
+      puff(END_CAR + 150, gy - 8, 0.8, -0.5, 10, "#9a9aac", 2.4);
+    }
   }
   function drawResult(ctx, t) {
     drawEnding(ctx, t);
-    const win = g.result === "win", cpuN = ROSTER[g.cpu].name, px0 = 232, pw = 148;
+    const win = g.result === "win", cpuN = ROSTER[g.cpu].name, px0 = 4, pw = 148; // beta 3.33: the card on the left, the jump-start at the window on the right
     if (win) { // the voucher, a cream ticket
       if (!g.voucher) g.voucher = makeVoucher();
       const v = g.voucher, y0 = 6, h = 146;
@@ -1947,7 +2322,7 @@
   }
 
   // ===================== 10. the page: canvas, keys, touch, the loop =====================
-  let root = null, cv = null, cx2 = null, scene = "title", sceneT = 0, paused = false, hits = [], stats = { fps: 0, frames: 0, t0: 0, bake: 0, spr: {} };
+  let root = null, cv = null, cx2 = null, scene = "title", sceneT = 0, paused = false, hits = [], stats = { fps: 0, frames: 0, t0: 0, bake: 0, spr: {}, lazy: 0 };
   const hit = (x, y, w, h, fn) => hits.push({ x, y, w, h, fn });
   const KEYMAP = { ArrowLeft: "l", KeyA: "l", ArrowRight: "r", KeyD: "r", ArrowUp: "u", KeyW: "u", ArrowDown: "d", KeyS: "d", KeyJ: "p", KeyZ: "p", KeyK: "k", KeyX: "k", KeyL: "s", KeyC: "s", Enter: "ok", Space: "ok" };
   const held = { l: 0, r: 0, u: 0, d: 0, p: 0, k: 0, s: 0, ok: 0 }, pressed = new Set();
@@ -1991,7 +2366,7 @@
     if (scene === "title") { if (P("ok") || P("p") || P("k")) { scene = "select"; sceneT = 0; SND.play("confirm"); SND.music("menu"); lockLandscape(); } return; }
     if (scene === "select") {
       const k = SEL.phase === "p1" ? "p1" : "cpu", n = GRID.order.length, c = GRID.cols;
-      const move = (d) => { SEL[k] = (SEL[k] + d + n) % n; SND.play("select"); };
+      const move = (d) => { SEL[k] = (SEL[k] + d + n) % n; SEL.moved = sceneT; SND.play("select"); };
       if (P("l")) move(-1); if (P("r")) move(1); if (P("u")) move(-c); if (P("d")) move(c);
       if (P("ok") || P("p")) selConfirm();
       else if (P("k") && SEL.phase === "cpu") { SEL.phase = "p1"; SND.play("pause"); }
@@ -2025,11 +2400,12 @@
   function draw(t) {
     hits = [];
     const ctx = cx2;
+    ctx.setTransform(RS, 0, 0, RS, 0, 0); // beta 3.33: every screen is laid out in the game's units
     ctx.imageSmoothingEnabled = false;
     if (scene === "title") { drawTitle(ctx, t); hit(0, 0, W, H, () => pressed.add("ok")); }
     else if (scene === "select") {
       drawSelect(ctx, t, SEL);
-      GRID.order.forEach((id, i) => { const [x, y] = tilePos(i); hit(x - 3, y - 3, TILE + 6, TILE + 6, () => { const k = SEL.phase === "p1" ? "p1" : "cpu"; if (SEL[k] === i) pressed.add("ok"); else { SEL[k] = i; SND.play("select"); } }); });
+      GRID.order.forEach((id, i) => { const [x, y] = tilePos(i); hit(x - 3, y - 3, TILE + 6, TILE + 6, () => { const k = SEL.phase === "p1" ? "p1" : "cpu"; if (SEL[k] === i) pressed.add("ok"); else { SEL[k] = i; SEL.moved = sceneT; SND.play("select"); } }); });
       if (SEL.phase === "cpu") hit(235, 31, 70, 70, () => { SEL.phase = "p1"; SND.play("pause"); });
     } else if (g) {
       if (g.scene === "vs") { drawVS(ctx, g.t, g.me, g.t, g.cpu); hit(0, 0, W, H, () => pressed.add("ok")); }
@@ -2050,7 +2426,8 @@
     if (upright) { if (!rotSince) rotSince = performance.now(); setPause(true); } else rotSince = 0;
     let sc, top;
     if (TOUCH) { const side = clamp(vw * 0.16, 128, 176); sc = Math.min((vw - side * 2) / W, vh / H); top = (vh - H * sc) / 2; }
-    else { sc = Math.min((vw - 32) / W, (vh - 96) / H); if (sc >= 2) sc = Math.floor(sc); top = Math.max(16, (vh - H * sc) / 2 - 14); }
+    else { // beta 3.33: whole multiples of the canvas's own pixels on the screen's pixels, where it is big enough
+      const dpr = devicePixelRatio || 1; sc = Math.min((vw - 32) / W, (vh - 96) / H); const d = (sc * dpr) / RS; if (d >= 2) sc = (Math.floor(d) * RS) / dpr; top = Math.max(16, (vh - H * sc) / 2 - 14); }
     sc = Math.max(0.3, sc);
     cvBox = { left: Math.round((vw - W * sc) / 2), top: Math.round(top), w: Math.round(W * sc), h: Math.round(H * sc) };
     cv.style.width = cvBox.w + "px"; cv.style.height = cvBox.h + "px"; cv.style.left = cvBox.left + "px"; cv.style.top = cvBox.top + "px";
@@ -2107,7 +2484,7 @@
   function mount(el) {
     root = el; root.classList.add("mg");
     TOUCH = matchMedia("(pointer: coarse)").matches || (navigator.maxTouchPoints > 0 && !matchMedia("(pointer: fine)").matches);
-    [cv, cx2] = mk(W, H); cv.className = "mg-cv"; cv.setAttribute("role", "img"); cv.setAttribute("aria-label", "At the gloves with I O N, a fighting game");
+    [cv, cx2] = mk(W * RS, H * RS); cv.className = "mg-cv"; cv.setAttribute("role", "img"); cv.setAttribute("aria-label", "At the gloves with I O N, a fighting game");
     root.appendChild(cv);
     // the speaker (the site's own switch) and, on a laptop, the keys under the picture
     const snd = document.createElement("button"); snd.type = "button"; snd.className = "mg-snd";
@@ -2154,7 +2531,9 @@
       rot.appendChild(btn); root.appendChild(rot); }
     addEventListener("resize", layout); addEventListener("orientationchange", () => setTimeout(layout, 120)); layout();
     // everything is baked before the first frame (a few ms), then the loop: logic in fixed 1/60 s steps
-    { const b0 = performance.now(); for (const id of FIGHTERS) portrait(id); stage(); stats.bake = Math.round(performance.now() - b0); } // the fighters themselves are baked when they are picked (the VS screen)
+    // beta 3.33: at the start only what the first screen needs (the splash); the street, the busts and the portraits
+    // are baked in the spare time of the frames that follow (BAKEQ), the fighters when they are picked
+    { const b0 = performance.now(); splashArt(); stats.bake = Math.round(performance.now() - b0); BAKEQ.push(() => stage(), ...FIGHTERS.map((id) => () => bust(id)), ...FIGHTERS.map((id) => () => portrait(id))); }
     let last = performance.now(), acc = 0;
     stats.t0 = last;
     const loop = (now) => {
@@ -2163,6 +2542,7 @@
       let n = 0; while (acc >= 1 / 60 && n < 4) { step(); acc -= 1 / 60; n++; }
       if (n === 4) acc = 0;
       draw(now / 1000);
+      if (BAKEQ.length) bakeIdle(scene === "game" && g && g.scene === "fight" && g.phase === "fight" ? 3 : 7);
       root.classList.toggle("mg-fight", scene === "game" && !!g && g.scene === "fight" && g.phase !== "match");
       if (root.classList.contains("mg-rot")) drawRotate(now / 1000);
       stats.frames++; if (now - stats.t0 >= 1000) { stats.fps = Math.round((stats.frames * 1000) / (now - stats.t0)); stats.frames = 0; stats.t0 = now; }
@@ -2173,65 +2553,75 @@
     try { window.focus(); } catch {}
   }
   // for tests and the review: the state, the frame rate, a shortcut to the end of a round
-  const probe = () => ({ scene: scene === "game" && g ? g.scene : scene, phase: g?.phase, round: g?.round, wins: g?.wins.slice(), hp: g?.f.map((f) => f.hp), st: g?.f.map((f) => f.st), time: g ? Math.ceil(g.time) : null, me: g?.me, cpu: g?.cpu, sel: SEL.p1, selCpu: SEL.cpu, selPhase: SEL.phase, menu: g?.menu, result: g?.result, paused, voucher: g?.voucher?.code || null, sideways: !!SIDEWAYS, rotate: !!(root && root.classList.contains("mg-rot")), fps: stats.fps, maxDt: Math.round(stats.maxDt || 0), sound: SND.on, proj: g ? g.proj.map((p) => p.k) : [], bake: stats.bake, spr: Object.assign({}, stats.spr) });
+  const probe = () => ({ scene: scene === "game" && g ? g.scene : scene, phase: g?.phase, round: g?.round, wins: g?.wins.slice(), hp: g?.f.map((f) => f.hp), st: g?.f.map((f) => f.st), time: g ? Math.ceil(g.time) : null, me: g?.me, cpu: g?.cpu, sel: SEL.p1, selCpu: SEL.cpu, selPhase: SEL.phase, menu: g?.menu, result: g?.result, paused, voucher: g?.voucher?.code || null, sideways: !!SIDEWAYS, rotate: !!(root && root.classList.contains("mg-rot")), fps: stats.fps, maxDt: Math.round(stats.maxDt || 0), sound: SND.on, proj: g ? g.proj.map((p) => p.k) : [], bake: stats.bake, spr: Object.assign({}, stats.spr), lazy: Math.round(stats.lazy), queue: BAKEQ.length });
   const resetMaxDt = () => { stats.maxDt = 0; };
-  let cpuHold = false; // beta 3.32: for the review renders (window.czGloves.hold(true)): the CPU stands in its guard
+  let cpuHold = false, autoP1 = false; const HITLOG = []; // beta 3.32: for the review renders (window.czGloves.hold(true)): the CPU stands in its guard
   const setHp = (a, b) => { if (g && g.f.length) { g.f[0].hp = g.f[0].trail = a; g.f[1].hp = g.f[1].trail = b; } };
 
-  // the art on its own, for review: every sheet as a PNG data URL, scaled with crisp pixels
-  function exportArt(scale = 5) {
+  // the art on its own, for review: every sheet as a PNG data URL, scaled with crisp pixels. beta 3.33: the sheets are
+  // at the canvas's pixels (a frame of the game is 768x432)
+  function exportArt(scale = 3) {
     const up = (c, s = scale) => { const [o, x] = mk(c.width * s, c.height * s); x.drawImage(c, 0, 0, o.width, o.height); return o.toDataURL("image/png"); };
+    const screen = () => { const [c, x] = mk(W * RS, H * RS); x.setTransform(RS, 0, 0, RS, 0, 0); x.imageSmoothingEnabled = false; return [c, x]; };
+    const cell = (x, f, cx, cy) => x.drawImage(f, cx + OX - f.ax, cy + OY - f.ay); // a cropped frame back in its cell
+    while (BAKEQ.length) BAKEQ.shift()(); // everything baked first
     const out = {};
-    for (const id of Object.keys(LOOKS)) {
+    const ids = Object.keys(LOOKS);
+    for (const id of ids) {
       const S = sprites(id), order = ["idle", "walk", "crouch", "jump", "punch", "kick", "cpunch", "ckick", "jpunch", "jkick", "block", "cblock", "special", "hit", "dizzy", "fall", "down", "win", "intro"];
       const frames = []; for (const k of order) for (const f of S[k]) frames.push([k, f]);
-      const cols = 8, rows = Math.ceil(frames.length / cols), [c, x] = mk(cols * CW, rows * (CH + 10));
+      const cols = 8, rows = Math.ceil(frames.length / cols), [c, x] = mk(cols * CW, rows * (CH + 20));
       x.fillStyle = "#2a2148"; x.fillRect(0, 0, c.width, c.height);
-      frames.forEach(([k, f], i) => { const cx = (i % cols) * CW, cy = Math.floor(i / cols) * (CH + 10); x.fillStyle = "#332a58"; x.fillRect(cx + 1, cy + 1, CW - 2, CH - 2); x.drawImage(f, cx, cy); text(x, k.toUpperCase(), cx + 3, cy + CH + 1, "#a99cc8", { ol: null }); });
-      out[`sprites-${id}`] = up(c, 4);
-      const [ic, ix] = mk(CW, CH); ix.fillStyle = "#332a58"; ix.fillRect(0, 0, CW, CH); ix.drawImage(S.idle[0], 0, 0); out[`idle-${id}`] = up(ic, 6);
-      const [pc, px] = mk(64, 64); px.fillStyle = "#241d3d"; px.fillRect(0, 0, 64, 64); px.drawImage(portrait(id), 0, 0); out[`portrait-${id}`] = up(pc, 6);
-      if (id === Object.keys(LOOKS)[0]) { const ids = Object.keys(LOOKS), [sc2, sx2] = mk(ids.length * 70 + 6, 76); sx2.fillStyle = "#1b1438"; sx2.fillRect(0, 0, sc2.width, sc2.height); ids.forEach((q, i) => { sx2.fillStyle = "#241d3d"; sx2.fillRect(6 + i * 70, 6, 64, 64); sx2.drawImage(portrait(q), 6 + i * 70, 6); }); out.portraits = up(sc2, 4); }    }
+      frames.forEach(([k, f], i) => { const cx = (i % cols) * CW, cy = Math.floor(i / cols) * (CH + 20); x.fillStyle = "#332a58"; x.fillRect(cx + 1, cy + 1, CW - 2, CH - 2); cell(x, f, cx, cy); text(x, k.toUpperCase(), cx + 3, cy + CH + 4, "#a99cc8", { ol: null, sc: 2 }); });
+      out[`sprites-${id}`] = up(c, 1);
+      const f0 = S.idle[0], [ic, ix] = mk(CW, CH); ix.fillStyle = "#332a58"; ix.fillRect(0, 0, CW, CH); cell(ix, f0, 0, 0); out[`idle-${id}`] = up(ic, 3);
+      const P = portrait(id), [pc, px] = mk(P.width, P.height); px.fillStyle = "#241d3d"; px.fillRect(0, 0, P.width, P.height); px.drawImage(P, 0, 0); out[`portrait-${id}`] = up(pc, 3);
+    }
+    { const [c, x] = mk(ids.length * 136 + 8, 144); x.fillStyle = "#1b1438"; x.fillRect(0, 0, c.width, c.height); ids.forEach((q, i) => { x.fillStyle = "#241d3d"; x.fillRect(8 + i * 136, 8, 128, 128); x.drawImage(portrait(q), 8 + i * 136, 8); }); out.portraits = up(c, 2); }
+    { const [c, x] = mk(ids.length * 80 + 8, 88); x.fillStyle = "#1b1438"; x.fillRect(0, 0, c.width, c.height); ids.forEach((q, i) => { x.fillStyle = "#241d3d"; x.fillRect(8 + i * 80, 8, 72, 72); x.drawImage(bust(q), 8 + i * 80, 8); }); out.busts = up(c, 3); }
+    { const [c, x] = mk(2 * 264 + 8, 272); x.fillStyle = "#1b1438"; x.fillRect(0, 0, c.width, c.height); ["ion", "cristache"].forEach((q, i) => { x.fillStyle = "#241d3d"; x.fillRect(8 + i * 264, 8, 256, 256); x.drawImage(portraitBig(q), 8 + i * 264, 8); }); out["vs-heads"] = up(c, 2); }
     { // beta 3.32: Cristache's cigarette: in the hand, up to the lips, in the mouth, walking, the win
-      const S = sprites("cristache"), list = [S.idle[0], S.puff[0], S.idleM[0], S.walkM[2], S.win[0]], [c, x] = mk(list.length * 90 + 10, CH - 20);
-      x.fillStyle = "#332a58"; x.fillRect(0, 0, c.width, c.height); list.forEach((f, i) => x.drawImage(f, i * 90 + 5 - (OX - 45), -20));
-      out["cig-cristache"] = up(c, 4);
+      const S = sprites("cristache"), list = [S.idle[0], S.puff[0], S.idleM[0], S.walkM[2], S.win[0]], [c, x] = mk(list.length * 180 + 20, CH - 40);
+      x.fillStyle = "#332a58"; x.fillRect(0, 0, c.width, c.height); list.forEach((f, i) => cell(x, f, i * 180 + 10 - (OX - 90), -40));
+      out["cig-cristache"] = up(c, 3);
     }
-    { // the heads, big
-      const ids = Object.keys(HEADSPEC), [c, x] = mk(ids.length * (HW + 6) + 6, HH + 16); x.fillStyle = "#2a2148"; x.fillRect(0, 0, c.width, c.height);
-      ids.forEach((id, i) => { const HD = headOf(id), [hc, hx2] = mk(HW, HH), idd = hx2.createImageData(HW, HH), d = new Uint32Array(idd.data.buffer); HD.rows.forEach((r, y) => [...r].forEach((ch, xx) => { if (ch !== ".") d[y * HW + xx] = HD.pal[ch]; })); hx2.putImageData(idd, 0, 0); x.drawImage(hc, 6 + i * (HW + 6), 4); });
-      out.heads = up(c, 8);
-    }
-    { // the idle loop: the four breathing frames of each fighter, in a row
-      const ids = Object.keys(LOOKS), [c, x] = mk(4 * 70 + 10, ids.length * (CH - 30)); x.fillStyle = "#2a2148"; x.fillRect(0, 0, c.width, c.height);
-      ids.forEach((id, r) => sprites(id).idle.forEach((f, i) => x.drawImage(f, i * 70 + 5 - (OX - 35), r * (CH - 30) - 24)));
-      out["idle-loop"] = up(c, 3);
+    { // the heads, at the fight's size (HK), at 1 (the busts' small head) and the cigarette one
+      const hs = Object.keys(HEADSPEC), hw = Math.ceil(HW * HK), hh = Math.ceil(HH * HK), [c, x] = mk(hs.length * (hw + 8) + 8, hh + 16); x.fillStyle = "#2a2148"; x.fillRect(0, 0, c.width, c.height);
+      hs.forEach((id, i) => { const HD = headOf(id, 1, false, HK), w2 = HD.rows[0].length, h2 = HD.rows.length, [hc, hx2] = mk(w2, h2), idd = hx2.createImageData(w2, h2), d = new Uint32Array(idd.data.buffer); HD.rows.forEach((r, y) => [...r].forEach((ch, xx) => { if (ch !== ".") d[y * w2 + xx] = HD.pal[ch]; })); hx2.putImageData(idd, 0, 0); x.drawImage(hc, 8 + i * (hw + 8), 8); });
+      out.heads = up(c, 6);
     }
     { // the line-up: everyone in the stance, then a punch and a kick at full stretch
-      const ids = Object.keys(LOOKS), [c, x] = mk(ids.length * 84 + 24, 3 * (CH - 8) + 12);
+      const [c, x] = mk(ids.length * 168 + 48, 3 * (CH - 16) + 24);
       x.fillStyle = "#2a2148"; x.fillRect(0, 0, c.width, c.height);
-      ["idle", "punch", "kick"].forEach((k, r) => ids.forEach((id, i) => { const S = sprites(id), f = k === "idle" ? S.idle[0] : S[k][2]; x.drawImage(f, i * 84 + 12 - (OX - 42), r * (CH - 8) - 4); if (r === 0) text(x, ROSTER[id] ? ROSTER[id].name : id.toUpperCase(), i * 84 + 54, 4, "#ffffff", { al: "c" }); }));
-      out.lineup = up(c, 3);
+      ["idle", "punch", "kick"].forEach((k, r) => ids.forEach((id, i) => { const S = sprites(id), f = k === "idle" ? S.idle[0] : S[k][2]; cell(x, f, i * 168 + 24 - (OX - 84), r * (CH - 16) - 8); if (r === 0) text(x, ROSTER[id] ? ROSTER[id].name : id.toUpperCase(), i * 168 + 108, 8, "#ffffff", { al: "c", sc: 2 }); }));
+      out.lineup = up(c, 2);
     }
-    const S = stage(); { const [c, x] = mk(STAGE_W, H); for (let cx3 = 0; cx3 < STAGE_W; cx3 += W) { x.save(); x.translate(cx3, 0); x.beginPath(); x.rect(0, 0, Math.min(W, STAGE_W - cx3), H); x.clip(); drawBackdrop(x, cx3, 0); drawCrowd(x, cx3, 0, false); x.restore(); } out.stage = up(c, 4); }
-    const [c, x] = mk(W, H);
-    drawTitle(x, 0); out.title = up(c);
-    drawSelect(x, 0.1, { phase: "p1", p1: 0, cpu: 0 }); out.select = up(c);
-    drawSelect(x, 0.1, { phase: "cpu", p1: 8, cpu: 0 }); out["select-cpu"] = up(c);
-    drawVS(x, 0, "daniel", 1); out.vs = up(c);
-    { const g0 = g; g = { result: "win", me: "cristache", cpu: "ion", wins: [2, 1], menu: 0, voucher: { code: "TM-K7QX-1710", date: "17.10.2026  14:32" } }; hits = []; drawResult(x, 0.2); out.voucher = up(c); g = g0; hits = []; }
-    { const g0 = g; g = { result: "lose", me: "daniel", cpu: "ion", wins: [1, 2], menu: 0 }; hits = []; drawResult(x, 0.2); out["ending-lose"] = up(c); g = g0; hits = []; }
+    { const S = stage(), [c, x] = mk(STAGE_W * RS, H * RS); x.setTransform(RS, 0, 0, RS, 0, 0); for (let cx3 = 0; cx3 < STAGE_W; cx3 += W) { x.save(); x.translate(cx3, 0); x.beginPath(); x.rect(0, 0, Math.min(W, STAGE_W - cx3), H); x.clip(); drawBackdrop(x, cx3, 0); drawCrowd(x, cx3, 0, false); x.restore(); } out.stage = up(c, 2); }
+    let [c, x] = screen();
+    drawTitle(x, 0); out.title = up(c, 2);
+    drawSelect(x, 0.1, { phase: "p1", p1: 0, cpu: 0 }); out.select = up(c, 2);
+    drawSelect(x, 0.1, { phase: "cpu", p1: 8, cpu: 0 }); out["select-cpu"] = up(c, 2);
+    drawVS(x, 0, "daniel", 1); out.vs = up(c, 2);
+    drawVS(x, 0, "cristache", 1, "ion"); out["vs-cristache"] = up(c, 2);
+    { const g0 = g; g = { result: "win", me: "cristache", cpu: "ion", wins: [2, 1], menu: 0, voucher: { code: "TM-K7QX-1710", date: "17.10.2026  14:32" } }; hits = []; drawResult(x, 0.2); out.voucher = up(c, 2); drawResult(x, 2.15); out["voucher-catch"] = up(c, 2); g = g0; hits = []; }
+    { const g0 = g; g = { result: "lose", me: "daniel", cpu: "ion", wins: [1, 2], menu: 0 }; hits = []; drawResult(x, 0.2); out["ending-lose"] = up(c, 2); g = g0; hits = []; }
     { // the HUD over the stage, with the two fighters in their stance
       drawBackdrop(x, 96, 0); drawCrowd(x, 96, 0, false);
       const A = sprites("daniel").idle[0], B = sprites("ion").idle[0];
-      x.drawImage(A, 140 - OX, FLOOR - OY);
-      x.save(); x.translate(244 + OX, FLOOR - OY); x.scale(-1, 1); x.drawImage(B, 0, 0); x.restore();
+      hiDraw(x, A, 140, FLOOR, 1, A.ax, A.ay); hiDraw(x, B, 244, FLOOR, -1, B.ax, B.ay);
       drawHUD(x, { f: [{ R: ROSTER.daniel, hp: 72, trail: 80, spCool: 0, spMax: 1 }, { R: ROSTER.ion, hp: 45, trail: 45, spCool: 0.5, spMax: 1 }], wins: [1, 0], time: 47 }, 0);
-      out.hud = up(c);
+      out.hud = up(c, 2);
     }
     return out;
   }
-  window.czGloves = Object.assign(window.czGloves || {}, { mount, exportArt, probe, setHp, resetMaxDt, hold: (v) => { cpuHold = !!v; } });
+  // beta 3.33: the sizes, for the review: each fighter's guard (its frame's height) and the head, in canvas pixels
+  function measure(timeOnly) {
+    const o = {};
+    { const T = (f) => { const t0 = performance.now(); f(); return Math.round(performance.now() - t0); }, id = "steve"; o.times = { headHK: T(() => headAt(id, false, HK)), head4: T(() => headAt(id, false, 4)), head8: T(() => headAt(id, false, 8)), bust: T(() => bustAt(id, 2, TILE * RS, 4)), portrait: T(() => bustAt(id, 4, 128, 8)), vs: T(() => bustAt(id, 8, 256, 16)), frame: T(() => drawFighter(id, POSES.idle[0], null)), stage: T(() => { STAGE = null; stage(); }) }; if (timeOnly) return o; }
+    for (const id of FIGHTERS) { const f = sprites(id).idle[0], HD = headOf(id, 1, false, HK); let top = 1e9, chin = -1; HD.rows.forEach((r, y) => { if (r.replace(/\./g, "").length) top = Math.min(top, y); const fr = r.slice(Math.round(17 * HK), Math.round(23 * HK)); if (fr.replace(/\./g, "").length) chin = y; }); o[id] = { h: f.height, w: f.width, head: chin - top + 1, heads: +(f.height / (chin - top + 1)).toFixed(2) }; }
+    return o;
+  }
+  window.czGloves = Object.assign(window.czGloves || {}, { mount, exportArt, measure, probe, setHp, resetMaxDt, hold: (v) => { cpuHold = !!v; }, auto: (v) => { autoP1 = !!v; }, hits: () => HITLOG.splice(0), minGap: () => { const v = stats.minGap; stats.minGap = null; return v == null ? null : Math.round(v * 10) / 10; } });
   const auto = () => { const el = document.getElementById("mg"); if (el && !root) mount(el); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", auto); else auto();
 })();
