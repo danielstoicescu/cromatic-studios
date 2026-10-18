@@ -28,6 +28,10 @@
 // beta 3.36 (Daniel: "it doesn't look like Street Fighter any more; back to the initial pixels"): RS = 1, the game drawn
 // at its own 384x216 again; the fighters at the arcade's size (about 95 px, a 17 px head drawn for that size), the
 // 3.32 street, effects and HUD pieces at 1x, an arcade HUD; the faces in the portraits at 1x art pixels, doubled for VS.
+// beta 3.45 (Daniel: "the feel of a real early-90s arcade fighter"): the glasses on the small faces made to read as
+// glasses; the fight timed as the arcade's (the hit-stop, the sparks, the shake, the reactions, the breath, the walk,
+// the jump and its somersault, the knock-down's bounce: see HSTOP, ATK's seq, POSES); the street in parallax layers
+// with a crowd that cheers and the life of the street (see stageGen, drawAmbient). Frame data and boxes unchanged.
 (function () {
   "use strict";
   const W = 384, H = 216, FLOOR = 200, STAGE_W = 576;
@@ -281,6 +285,8 @@
       const ch = rows[y][x]; if (!ch || ch === ".") continue;
       let px, py;
       if (rot === 1) { px = cx - (ay - y); py = cy - (x - ax); } // a quarter turn, the face up, the crown away from the body (lying on the back)
+      else if (rot === 2) { px = cx - (x - ax); py = cy - (y - ay); } // beta 3.45, the somersault: upside down
+      else if (rot === 3) { px = cx + (ay - y); py = cy + (x - ax); } // and the crown forward, the face down
       else { px = cx + x - ax; py = cy + y - ay; }
       px = Math.round(px); py = Math.round(py);
       if (px < 0 || py < 0 || px >= this.w || py >= this.h) continue;
@@ -382,39 +388,75 @@
   const KCH = pose({ hip: [-2, -49], neck: [-4, -77], head: [-1, -88], eF: [12, -64], hF: [19, -75], eB: [-1, -62], hB: [7, -71], kF: [15, -48], fF: [9, -30], kB: [-5, -24], fB: [-7, 0], tw: 0.3 });
   const KFULL = pose({ hip: [-5, -51], neck: [-12, -77], head: [-12, -88], eF: [6, -67], hF: [13, -77], eB: [-13, -61], hB: [-20, -52], kF: [24, -58], fF: [49, -64], kB: [-6, -24], fB: [-8, 0], tw: 0.6 });
   const JUMP = pose({ hip: [0, -58], neck: [4, -86], head: [7, -97], eF: [16, -73], hF: [24, -84], eB: [6, -71], hB: [15, -80], kF: [13, -46], fF: [8, -32], kB: [-1, -42], fB: [-11, -33] });
+  // beta 3.45 (Daniel: "the feel of a real early-90s arcade fighter"; the timings and the moves read off the reference
+  // GIFs frame by frame). The stance breathes as the arcade fighters' does: the whole body rises and falls on the knees
+  // (the hips about 2 px each way, the shoulders more than the head, a shrug), the fists riding with the chest; four
+  // drawings, low, mid, high, mid (the refs: the headband 0, -2, -4, -2 px, the belt and the shoulders more)
+  const breath = (b0, amp = 1) => [-1, 0, 1, 0].map((d) => {
+    const a = d * amp, q = Object.assign({}, b0), mv = (k, dx, dy) => { q[k] = [b0[k][0] + dx, b0[k][1] + dy]; };
+    mv("hip", -d * 0.3, -a * 2); mv("neck", d * 0.2, -a * 2.9); mv("head", d * 0.3, -a * 2.3);
+    mv("eF", 0, -a * 2.6); mv("eB", 0, -a * 2.6); mv("hF", d * 0.4, -a * 2.5); mv("hB", d * 0.3, -a * 2.5);
+    mv("kF", -a * 0.4, -a * 1.1); mv("kB", a * 0.3, -a * 1.1);
+    q.br = d + 1; return q;
+  });
+  // the jump in four drawings: the take-off stretch (the legs long, the toes down), the tuck at the top, the legs
+  // reaching for the ground on the way down, and a squat on landing (the body's pose: the sprite is never stretched); a
+  // forward or a back jump turns a somersault, the tucked ball in quarter turns
+  const JRISE = pose({ hip: [0, -57], neck: [3, -85], head: [6, -96], eF: [15, -72], hF: [23, -83], eB: [5, -70], hB: [14, -79], kF: [7, -32], fF: [6, -8], kB: [-5, -30], fB: [-9, -5] });
+  const JFALL = pose({ hip: [0, -57], neck: [4, -85], head: [7, -96], eF: [17, -71], hF: [25, -80], eB: [3, -69], hB: [11, -77], kF: [12, -34], fF: [14, -9], kB: [-7, -32], fB: [-13, -8] });
+  const JSQUAT = pose({ hip: [1, -39], neck: [7, -66], head: [10, -77], eF: [19, -53], hF: [27, -62], eB: [9, -51], hB: [18, -58], kF: [16, -21], fF: [20, 0], kB: [-12, -17], fB: [-20, 0] });
+  const BALL = pose({ hip: [-5, -48], neck: [5, -74], head: [9, -85], eF: [15, -63], hF: [19, -55], eB: [7, -62], hB: [11, -54], kF: [15, -67], fF: [5, -53], kB: [10, -63], fB: [-1, -50] });
+  // a quarter turn q (clockwise on the screen, the way a forward somersault goes) round the ball's middle; rot is how
+  // the head's pixel map is turned to match (blit: 1 = the crown back, 2 = upside down, 3 = the crown forward)
+  const turn = (p, q) => { const c = [3, -62], o = Object.assign({}, p, { rot: [0, 3, 2, 1][q], rotA: (q * Math.PI) / 2, ball: true }), ca = [1, 0, -1, 0][q], sa = [0, 1, 0, -1][q]; for (const k in p) if (Array.isArray(p[k])) { const dx = p[k][0] - c[0], dy = p[k][1] - c[1]; o[k] = [c[0] + dx * ca - dy * sa, c[1] + dx * sa + dy * ca]; } return o; };
+  // the hit reactions in three drawings (the impact, held through the freeze; the recoil; the way back to the guard),
+  // one set for a blow to the head (snapped back) and one to the body (doubled over); the knock-down: the launch, the
+  // fall, the bounce off the pavement, lying, getting up
+  const HIT1 = pose({ hip: [-3, -46], neck: [-11, -72], head: [-15, -81], eF: [6, -62], hF: [12, -70], eB: [-12, -62], hB: [-18, -72], kF: [8, -24], fF: [14, 0], kB: [-9, -23], fB: [-16, 0] });
+  const HITH = pose({ hip: [-5, -46], neck: [-15, -71], head: [-22, -79], eF: [1, -65], hF: [7, -76], eB: [-15, -63], hB: [-21, -73], kF: [8, -24], fF: [14, 0], kB: [-11, -23], fB: [-19, 0], tw: 0.2 });
+  const GUT = pose({ hip: [-7, -44], neck: [3, -67], head: [9, -73], eF: [9, -54], hF: [5, -47], eB: [-1, -55], hB: [-3, -46], kF: [6, -23], fF: [13, 0], kB: [-13, -21], fB: [-20, 0], tw: 0.25 });
   const POSES = {
     // beta 3.30 (Daniel): the stance breathes: four frames, the chest and the shoulders rise and fall, the weight shifts
-    idle: [0, 1, 2, 1].map((d) => { const p = upper(pose({ hip: [(d - 1) * 0.6, -47 + d * 0.4] }), d * 0.2, -d * 1.1); p.br = d; p.kF = [p.kF[0], p.kF[1] + d * 0.3]; p.kB = [p.kB[0] - d * 0.3, p.kB[1] + d * 0.3]; return p; }),
+    idle: breath(P0, 1), // beta 3.45: the arcade breath (it was the chest only, 2 px)
     crouch: [CROUCH],
     cblock: [Object.assign({}, CROUCH, { eF: [16, -50], hF: [17, -65], eB: [13, -48], hB: [22, -61] })],
     block: [pose({ hip: [-2, -47], neck: [1, -75], head: [4, -85], eF: [15, -68], hF: [16, -84], eB: [11, -66], hB: [21, -79] })],
-    punch: [
-      pose({ hip: [-1, -47], neck: [2, -75], head: [5, -86], eF: [13, -62], hF: [17, -70], eB: [5, -60], hB: [13, -68] }),
+    punch: [ // beta 3.45: the wind-up (the weight back, the fist in to the chin), a blur half way, the full stretch with the shoulder in it, the way back, the guard
+      pose({ hip: [-2, -46], neck: [0, -74], head: [3, -85], eF: [10, -60], hF: [13, -69], eB: [5, -60], hB: [14, -67], kF: [12, -25], fF: [19, 0], kB: [-11, -23], fB: [-19, 0] }),
       pose({ hip: [3, -47], neck: [10, -75], head: [13, -85], eF: [26, -70], hF: [38, -72], eB: [4, -61], hB: [12, -69], kF: [14, -25], fF: [21, 0], tw: 0.55 }),
-      pose({ hip: [5, -46], neck: [13, -74], head: [16, -84], eF: [31, -72], hF: [47, -73], eB: [3, -62], hB: [10, -70], kF: [17, -25], fF: [24, 0], kB: [-12, -21], fB: [-22, 0], tw: 0.9 }),
+      pose({ hip: [6, -46], neck: [15, -74], head: [18, -84], eF: [33, -72], hF: [49, -73], eB: [3, -62], hB: [9, -70], kF: [18, -25], fF: [25, 0], kB: [-12, -21], fB: [-22, 0], tw: 1 }),
       pose({ hip: [2, -47], neck: [8, -75], head: [11, -85], eF: [23, -66], hF: [32, -72], eB: [6, -60], hB: [14, -69], tw: 0.4 })
     ],
     kick: [KCH, mixP(KCH, KFULL, 0.6), KFULL, mixP(KFULL, KCH, 0.6), mixP(KCH, P0, 0.5)],
     cpunch: [Object.assign({}, CROUCH, { eF: [16, -46], hF: [19, -53] }), Object.assign({}, CROUCH, { neck: [11, -56], head: [14, -66], eF: [30, -50], hF: [44, -50], tw: 0.8 })],
     ckick: [pose({ hip: [-2, -28], neck: [-6, -52], head: [-5, -63], eF: [8, -44], hF: [14, -54], eB: [-10, -36], hB: [-16, -26], kF: [12, -13], fF: [26, -3], kB: [-12, -11], fB: [-20, 0] }),
       pose({ hip: [-3, -26], neck: [-10, -50], head: [-10, -61], eF: [5, -42], hF: [12, -52], eB: [-14, -30], hB: [-22, -18], kF: [20, -9], fF: [48, -4], kB: [-12, -11], fB: [-20, 0] })],
-    jump: [JUMP],
-    jkick: [Object.assign({}, JUMP, { neck: [0, -86], head: [3, -97], eF: [11, -74], hF: [18, -84], eB: [-8, -70], hB: [-2, -80], kF: [20, -54], fF: [46, -48], kB: [-3, -40], fB: [-14, -34] })],
-    jpunch: [Object.assign({}, JUMP, { neck: [7, -86], head: [10, -97], eF: [27, -72], hF: [42, -66], tw: 0.7 })],
-    hit: [pose({ hip: [-3, -46], neck: [-11, -72], head: [-15, -81], eF: [6, -62], hF: [12, -70], eB: [-12, -62], hB: [-18, -72], kF: [8, -24], fF: [14, 0], kB: [-9, -23], fB: [-16, 0] })],
-    fall: [pose({ hip: [-6, -40], neck: [-22, -58], head: [-28, -66], eF: [-4, -60], hF: [4, -72], eB: [-24, -50], hB: [-33, -58], kF: [8, -32], fF: [18, -14], kB: [-2, -28], fB: [6, -10] })],
+    jump: [JUMP], jrise: [JRISE], jfall: [JFALL], jsquat: [JSQUAT], roll: [0, 1, 2, 3].map((q) => turn(BALL, q)),
+    jkick: [JUMP, Object.assign({}, JUMP, { neck: [0, -86], head: [3, -97], eF: [11, -74], hF: [18, -84], eB: [-8, -70], hB: [-2, -80], kF: [20, -54], fF: [46, -48], kB: [-3, -40], fB: [-14, -34] })],
+    jpunch: [Object.assign({}, JUMP, { neck: [3, -86], head: [6, -97], eF: [12, -76], hF: [16, -86], tw: 0.1 }), Object.assign({}, JUMP, { neck: [7, -86], head: [10, -97], eF: [27, -72], hF: [42, -66], tw: 0.7 })],
+    hit: [HITH, HIT1, mixP(HIT1, P0, 0.55)],
+    gut: [GUT, mixP(GUT, P0, 0.4), mixP(GUT, P0, 0.75)],
+    fall: [pose({ hip: [-3, -48], neck: [-15, -71], head: [-23, -78], eF: [-3, -78], hF: [3, -90], eB: [-22, -66], hB: [-31, -73], kF: [9, -27], fF: [17, -7], kB: [-3, -25], fB: [2, -5] }),
+      pose({ hip: [-6, -40], neck: [-22, -58], head: [-28, -66], eF: [-4, -60], hF: [4, -72], eB: [-24, -50], hB: [-33, -58], kF: [8, -32], fF: [18, -14], kB: [-2, -28], fB: [6, -10] })],
+    bounce: [pose({ lie: 1, hip: [-4, -10], neck: [-29, -13], head: [-40, -15], eF: [-20, -24], hF: [-11, -31], eB: [-37, -7], hB: [-47, -9], kF: [8, -27], fF: [22, -33], kB: [5, -21], fB: [19, -25] })],
+    getup: [pose({ hip: [-6, -11], neck: [-2, -37], head: [1, -48], eF: [7, -29], hF: [13, -24], eB: [-12, -25], hB: [-17, -12], kF: [9, -22], fF: [17, 0], kB: [-1, -14], fB: [9, -1] }), JSQUAT],
     down: [pose({ lie: 1, hip: [-4, -8], neck: [-30, -10], head: [-41, -12], eF: [-22, -18], hF: [-15, -25], eB: [-38, -4], hB: [-48, -5], kF: [12, -17], fF: [30, -5], kB: [9, -11], fB: [27, -4] })],
     win: [pose({ eF: [13, -92], hF: [15, -108], eB: [-6, -58], hB: [6, -54] }), pose({ hip: [0, -48], neck: [5, -76], head: [8, -87], eF: [13, -93], hF: [16, -111], eB: [-6, -59], hB: [6, -55] })],
     dizzy: [pose({ hip: [-1, -46], neck: [-3, -73], head: [-2, -84], eF: [8, -56], hF: [13, -48], eB: [-6, -56], hB: [-2, -48], kF: [10, -24], fF: [14, 0], kB: [-8, -23], fB: [-16, 0] }),
       pose({ hip: [1, -46], neck: [6, -73], head: [8, -84], eF: [13, -56], hF: [18, -48], eB: [-2, -56], hB: [2, -48], kF: [11, -24], fF: [15, 0], kB: [-7, -23], fB: [-15, 0] })],
     intro: [pose({ hip: [0, -47], neck: [3, -75], head: [6, -86], eF: [15, -58], hF: [24, -64], eB: [9, -58], hB: [20, -62], kF: [8, -25], fF: [12, 0], kB: [-8, -24], fB: [-12, 0] })]
   };
-  // the walk: six steps, the stance kept, the feet swapping
+  POSES.punch.push(mixP(POSES.punch[3], P0, 0.6)); // beta 3.45: and back in the guard
+  // the walk: six steps, the stance kept, the feet swapping. beta 3.45: with weight: the body drops on each contact
+  // and rises as the legs pass (about 3 px), leans into the step, the guard pumping a little with it, the swing foot
+  // lifted higher
   POSES.walk = [];
   for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2, s = Math.sin(a), c = Math.cos(a), lf = Math.max(0, c) * 6, lb = Math.max(0, -c) * 6, hy = -47 + Math.abs(s) * 1.5;
+    const a = (i / 6) * Math.PI * 2, s = Math.sin(a), c = Math.cos(a), lf = Math.max(0, c) * 7, lb = Math.max(0, -c) * 7, sp = Math.abs(s), dy = sp * 2.6 - (1 - sp) * 1.2, hy = -47 + dy;
     const fF = [4 + 15 * s, -lf], fB = [-4 - 15 * s, -lb];
-    POSES.walk.push(upper(pose({ hip: [0, hy], fF, fB, kF: [(fF[0]) / 2 + 7, -24 - lf * 0.4], kB: [(fB[0]) / 2 + 5, -23 - lb * 0.4] }), 0, hy + 47));
+    const q = upper(pose({ hip: [0.6, hy], fF, fB, kF: [fF[0] / 2 + 7, -24 - lf * 0.45 + dy * 0.6], kB: [fB[0] / 2 + 5, -23 - lb * 0.45 + dy * 0.6] }), 1.4, dy + Math.cos(a * 2 - 0.8) * 0.5);
+    q.hF = [q.hF[0] + c * 1.3, q.hF[1] - sp * 0.6]; q.hB = [q.hB[0] - c * 1.1, q.hB[1]]; q.br = 1 - sp;
+    POSES.walk.push(q);
   }
   // the specials, two or three frames each
   const SPECIAL_POSES = {
@@ -432,12 +474,11 @@
   };
   // beta 3.12: the archetype stances (a nod, not a copy): Cristache low and still like a karateka, the back fist at the
   // hip; Rares bouncing on his toes, fists high; I O N upright and square, the guard tight
-  const breathe = (b0, amp) => [0, 1, 2, 1].map((d) => { const q = upper(Object.assign({}, b0, { hip: [b0.hip[0] + (d - 1) * 0.5, b0.hip[1] + d * amp * 0.4] }), d * 0.2, -d * amp * 1.2); q.br = d; return q; });
   const STYLE_POSES = {
     // beta 3.32: Cristache wins with the back fist up and the cigarette in his mouth (the face stays clear of the arm)
-    cristache: { win: [0, 1].map((d) => pose({ hip: [0, -47 - d], neck: [4, -75 - d], head: [7, -86 - d], eB: [-6, -90 - d], hB: [-3, -106 - d * 2], eF: [13, -58 - d], hF: [22, -54 - d] })), idle: breathe(pose({ hip: [0, -43], neck: [6, -71], head: [9, -82], eF: [20, -56], hF: [31, -60], eB: [-1, -50], hB: [5, -44], kF: [16, -21], fF: [27, 0], kB: [-15, -19], fB: [-27, 0] }), 0.6) },
-    rares: { idle: [0, 1.5, 3, 1.5].map((d) => { const b0 = pose({ eF: [14, -59], hF: [22, -70], eB: [5, -58], hB: [15, -66], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-17, 0] }); const q = upper(Object.assign({}, b0, { hip: [0, -47 + d] }), 0, d); q.kF = [12, -24 + d * 0.5]; q.kB = [-8, -23 + d * 0.5]; return q; }) },
-    ion: { idle: breathe(pose({ hip: [0, -48], neck: [3, -77], head: [5, -88], eF: [13, -58], hF: [21, -69], eB: [5, -57], hB: [14, -65], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-16, 0] }), 0.8) }
+    cristache: { win: [0, 1].map((d) => pose({ hip: [0, -47 - d], neck: [4, -75 - d], head: [7, -86 - d], eB: [-6, -90 - d], hB: [-3, -106 - d * 2], eF: [13, -58 - d], hF: [22, -54 - d] })), idle: breath(pose({ hip: [0, -43], neck: [6, -71], head: [9, -82], eF: [20, -56], hF: [31, -60], eB: [-1, -50], hB: [5, -44], kF: [16, -21], fF: [27, 0], kB: [-15, -19], fB: [-27, 0] }), 0.6) }, // beta 3.45: the calm one, a slow small breath
+    rares: { idle: breath(pose({ eF: [14, -59], hF: [22, -70], eB: [5, -58], hB: [15, -66], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-17, 0] }), 1.4) }, // beta 3.45: bouncing on his toes, the biggest breath
+    ion: { idle: breath(pose({ hip: [0, -48], neck: [3, -77], head: [5, -88], eF: [13, -58], hF: [21, -69], eB: [5, -57], hB: [14, -65], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-16, 0] }), 0.8) }
   };
   // beta 3.32: Cristache bringing the cigarette to his lips (the front hand up at the mouth, the back fist at the hip)
   const SMOKE_POSES = { cristache: [pose({ hip: [0, -43], neck: [6, -71], head: [9, -82], eF: [14, -58], hF: [17, -73], eB: [-1, -50], hB: [5, -44], kF: [16, -21], fF: [27, 0], kB: [-15, -19], fB: [-27, 0] })] };
@@ -455,22 +496,37 @@
     npcSit: { skin: "#e2a882", top: "#232f52", topKind: "vest", sleeve: "long", sleeveCol: "#a8c8e4", pants: "#4a6a92", shoe: "#7ad08a", sole: "#e8e8e8", hands: "bare", build: { sc: SPEC } },
     npcPlaid: { skin: "#e6ae8a", top: "#b8a690", topKind: "plaid", plaid: "#6a5a4a", sleeve: "long", pants: "#2a2a30", shoe: "#2a2a2a", sole: "#e0e0e0", hands: "bare", build: { sc: SPEC } },
     npcBun: { skin: "#e9b08e", top: "#2c3a6a", topKind: "plaid", plaid: "#8aa0c8", sleeve: "long", pants: "#5a7aa0", shoe: "#f2f2f2", sole: "#b0b0b8", hands: "bare", build: { sc: SPEC } },
-    npcBarista: { skin: "#f0c0a0", top: "#3a3a40", topKind: "tee", sleeve: "short", apron: "#b08a5a", pants: "#2a2a30", shoe: "#2a2a2a", sole: "#dddddd", hands: "bare", build: { sc: SPEC } }
+    npcBarista: { skin: "#f0c0a0", top: "#3a3a40", topKind: "tee", sleeve: "short", apron: "#b08a5a", pants: "#2a2a30", shoe: "#2a2a2a", sole: "#dddddd", hands: "bare", build: { sc: SPEC } },
+    // beta 3.45 (Daniel: "a lively crowd"): three more people on the street: a girl filming the fight on her phone, a
+    // lad in a cap, arms crossed, by the bollard, and the neighbour leaning out of the upstairs window
+    npcPhone: { skin: "#eab18f", top: "#e8d24a", topKind: "tee", sleeve: "short", pants: "#2c3e66", shoe: "#f2f2f2", sole: "#c8c8d0", hands: "bare", build: { sc: SPEC * 0.92, sh: 0.86, arm: 0.84, waist: 0.86 } },
+    npcCap: { skin: "#d8a07a", top: "#2a6a5a", topKind: "tee", sleeve: "short", pants: "#3a3a42", shoe: "#e84a3a", sole: "#f2f2f2", hands: "bare", build: { sc: SPEC } },
+    npcWin: { skin: "#eab896", top: "#9a3a5a", topKind: "tee", sleeve: "long", pants: "#3a3a42", shoe: "#2a2a2a", sole: "#2a2a2a", hands: "bare", build: { sc: SPEC * 0.86, sh: 0.9, waist: 0.95 } }
   };
   const NPC_HEADS = {
     npcSit: { skin: "#e2a882", hair: "#2a1e18", hl: "#4a3a30", beard: "#3a2a20", hairline: [7, 10], thick: 0.5, back: 17, tex: "short", beardKind: "stubble", beardTop: 16.5, mouth: "flat" },
     npcPlaid: { skin: "#e6ae8a", hair: "#5a3e2a", hl: "#7a5a40", beard: "#5a3e2a", hairline: [6.5, 9.5], thick: 0.6, back: 17, tex: "short", beardKind: "short", beardTop: 16.5, mouth: "flat" },
     npcBun: { skin: "#e9b08e", hair: "#3a281c", hl: "#5a4232", beard: "#3a281c", hairline: [7, 10], thick: 0.4, back: 19, tex: "slick", bun: [7, 3.5, 2.4, 2.2], beardKind: "stubble", beardTop: 16.5, mouth: "flat" },
-    npcBarista: { skin: "#f0c0a0", hair: "#2a1a12", hl: "#4a3020", fem: true, rx: 0.93, jaw: 0.88, hairline: [6.5, 11], thick: 1.2, back: 20, tex: "wavy", blobs: [[6, 7, 3.5, 3.5]], beardKind: null, mouth: "small", lips: "#c46a64" }
+    npcBarista: { skin: "#f0c0a0", hair: "#2a1a12", hl: "#4a3020", fem: true, rx: 0.93, jaw: 0.88, hairline: [6.5, 11], thick: 1.2, back: 20, tex: "wavy", blobs: [[6, 7, 3.5, 3.5]], beardKind: null, mouth: "small", lips: "#c46a64" },
+    npcPhone: { skin: "#eab18f", hair: "#b8782e", hl: "#e0a854", fem: true, rx: 0.93, jaw: 0.88, hairline: [6.5, 11], thick: 1, back: 22, tex: "wavy", blobs: [[4, 10, 2.6, 5]], beardKind: null, mouth: "open", lips: "#c46a64" },
+    npcCap: { skin: "#d8a07a", hair: "#1e1612", hl: "#3a2c22", beard: "#2a1e16", hairline: [7, 10], thick: 0.4, back: 16, tex: "short", beardKind: "stubble", stubble: 0.35, beardTop: 16.5, mouth: "flat", cap: { color: "#e84a3a", band: "#f4f4f4", back: true } },
+    npcWin: { skin: "#eab896", hair: "#c8c4c8", hl: "#eeeaf0", fem: true, rx: 0.95, jaw: 0.92, hairline: [6.5, 10.5], thick: 0.9, back: 19, tex: "wavy", bun: [6.5, 3.5, 2.6, 2.3], beardKind: null, mouth: "open", lips: "#c47a70" }
   };
   const SIT = { hip: [-2, -12], neck: [3, -40], head: [6, -51], kF: [12, -17], fF: [16, 0], kB: [9, -15], fB: [13, 0], eF: [12, -24], hF: [18, -20], eB: [6, -24], hB: [12, -16] };
   const STAND = { hip: [0, -47], neck: [1, -75], head: [4, -86], kF: [3, -24], fF: [5, 0], kB: [-3, -24], fB: [-5, 0], eF: [5, -58], hF: [7, -44], eB: [-4, -58], hB: [-5, -44] };
   const BAR = { eF: [10, -56], hF: [18, -50], eB: [4, -56], hB: [12, -50] }, UP = { eF: [8, -90], hF: [10, -104], eB: [-2, -90], hB: [0, -104] };
+  // beta 3.45: the second cheer (one fist pumping), the flinch at a jab (hands up to the face, leaning back), the phone held up
+  const PUMP = { eF: [10, -82], hF: [13, -98], eB: [-3, -62], hB: [4, -70] }, OOH = { neck: [-1, -75], head: [1, -86], eF: [9, -66], hF: [11, -78], eB: [1, -64], hB: [5, -76] }, PHONE = { eF: [10, -66], hF: [15, -77] };
+  const XARMS = { eF: [9, -60], hF: [3, -61], eB: [3, -60], hB: [10, -63] };
   const NPCS = [
-    { id: "specDony", alt: "npcBarista", x: 178, y: 178, face: -1, rate: 0.9, clip: [106, 105, 98, 47], poses: [pose(Object.assign({}, STAND, BAR)), pose(Object.assign({}, STAND, BAR, { head: [6, -86] }))], cheer: pose(Object.assign({}, STAND, UP)) },
-    { id: "specMaria", alt: "npcSit", x: 96, y: 176, face: 1, /* beta 3.33: at the door's end of the step, the La Marzocco clear in the window */ rate: 0.7, prop: "cup", poses: [pose(SIT), pose(Object.assign({}, SIT, { eF: [13, -30], hF: [11, -40] })), pose(SIT), pose(SIT)], cheer: pose(Object.assign({}, SIT, { eF: [10, -52], hF: [12, -64] })) },
-    { id: "specSteve", alt: "npcPlaid", x: 466, y: 174, face: 1, rate: 1.4, poses: [pose(STAND), pose(Object.assign({}, STAND, { eF: [12, -58], hF: [18, -62] })), pose(STAND), pose(Object.assign({}, STAND, { head: [5, -86] }))], cheer: pose(Object.assign({}, STAND, UP)) },
-    { id: "specIulica", alt: "npcBun", x: 490, y: 174, face: -1, rate: 1.1, poses: [pose(STAND), pose(STAND), pose(Object.assign({}, STAND, { eF: [11, -60], hF: [16, -66] })), pose(STAND)], cheer: pose(Object.assign({}, STAND, UP)) }
+    { id: "specDony", alt: "npcBarista", x: 178, y: 178, face: -1, rate: 0.9, clip: [106, 105, 98, 47], poses: [pose(Object.assign({}, STAND, BAR)), pose(Object.assign({}, STAND, BAR, { head: [6, -86] }))], cheer: pose(Object.assign({}, STAND, UP)), cheer2: pose(Object.assign({}, STAND, PUMP)), ooh: pose(Object.assign({}, STAND, OOH)) },
+    { id: "specMaria", alt: "npcSit", x: 96, y: 176, face: 1, /* beta 3.33: at the door's end of the step, the La Marzocco clear in the window */ rate: 0.7, prop: "cup", poses: [pose(SIT), pose(Object.assign({}, SIT, { eF: [13, -30], hF: [11, -40] })), pose(SIT), pose(SIT)], cheer: pose(Object.assign({}, SIT, { eF: [10, -52], hF: [12, -64] })), cheer2: pose(Object.assign({}, SIT, { eF: [10, -48], hF: [13, -58], eB: [0, -50], hB: [2, -62] })), ooh: pose(Object.assign({}, SIT, { neck: [1, -40], head: [3, -51], eF: [12, -30], hF: [12, -40] })), sits: true },
+    { id: "specSteve", alt: "npcPlaid", x: 466, y: 174, face: 1, rate: 1.4, poses: [pose(STAND), pose(Object.assign({}, STAND, { eF: [12, -58], hF: [18, -62] })), pose(STAND), pose(Object.assign({}, STAND, { head: [5, -86] }))], cheer: pose(Object.assign({}, STAND, UP)), cheer2: pose(Object.assign({}, STAND, PUMP)), ooh: pose(Object.assign({}, STAND, OOH)) },
+    { id: "specIulica", alt: "npcBun", x: 490, y: 174, face: -1, rate: 1.1, poses: [pose(STAND), pose(STAND), pose(Object.assign({}, STAND, { eF: [11, -60], hF: [16, -66] })), pose(STAND)], cheer: pose(Object.assign({}, STAND, UP)), cheer2: pose(Object.assign({}, STAND, PUMP)), ooh: pose(Object.assign({}, STAND, OOH)) },
+    // beta 3.45: the new faces: the phone held up to film, the arms crossed, the neighbour on her elbows at the window
+    { id: "npcPhone", x: 414, y: 177, face: -1, rate: 1.2, prop: "phone", poses: [pose(Object.assign({}, STAND, PHONE)), pose(Object.assign({}, STAND, PHONE, { head: [5, -86] })), pose(Object.assign({}, STAND, PHONE)), pose(Object.assign({}, STAND, PHONE, { hF: [15, -78] }))], cheer: pose(Object.assign({}, STAND, PHONE, { eB: [-2, -86], hB: [0, -100] })), cheer2: pose(Object.assign({}, STAND, PHONE, { eB: [-2, -82], hB: [3, -92] })), ooh: pose(Object.assign({}, STAND, PHONE, { neck: [-1, -75], head: [1, -86] })) },
+    { id: "npcCap", x: 36, y: 178, face: 1, rate: 0.8, poses: [pose(Object.assign({}, STAND, XARMS)), pose(Object.assign({}, STAND, XARMS, { head: [5, -86] })), pose(Object.assign({}, STAND, XARMS)), pose(Object.assign({}, STAND, XARMS, { hip: [1, -47] }))], cheer: pose(Object.assign({}, STAND, UP)), cheer2: pose(Object.assign({}, STAND, PUMP)), ooh: pose(Object.assign({}, STAND, OOH)) },
+    { id: "npcWin", x: 161, y: 101, face: 1, rate: 0.6, clip: [152, 38, 22, 34], poses: [pose(Object.assign({}, STAND, BAR)), pose(Object.assign({}, STAND, BAR, { head: [6, -86] }))], cheer: pose(Object.assign({}, STAND, BAR, { eF: [8, -84], hF: [12, -98] })), cheer2: pose(Object.assign({}, STAND, BAR, { eF: [10, -80], hF: [16, -92] })), ooh: pose(Object.assign({}, STAND, BAR, { eF: [9, -66], hF: [11, -78] })), win: true }
   ];
   const BUST_POSE = pose({ hip: [0, -47], neck: [3, -75], head: [6, -86], eF: [12, -56], hF: [14, -40], eB: [-5, -56], hB: [-7, -40], tw: 0.55 }); // for the portraits: the arms down
   const SPECIAL_PROP = { coz: "camera", iulica: "tote", rares: "key" };
@@ -539,7 +595,7 @@
     dony: { skin: "#efbe9e", hair: "#271c16", hl: "#463428", beard: "#7a5a48", rx: 0.96, jaw: 0.94,
       hairline: [7.5, 10], thick: 0.4, back: 16, tex: "short",
       beardKind: "stubble", stubble: 0.12, beardTop: 17.5, mouth: "open", browCol: "#3a2a22",
-      glasses: { kind: "round", color: "#4a3e44", lens: [[14, 13.4, 2.7, 2.4], [19.7, 13.4, 1.9, 2.4]], glint: [[15, 12], [20, 12]], bridge: [[17, 13]] },
+      glasses: { kind: "round", wire: true, color: "#4a3e44", lens: [[14, 13.4, 2.7, 2.4], [19.7, 13.4, 1.9, 2.4]], glint: [[15, 12], [20, 12]], bridge: [[17, 13]] },
       cap: { color: "#6a7040", band: "#8a9058", back: true, mesh: "#4e5432" } }
   };
   HEADSPEC["cristache+cig"] = Object.assign({}, HEADSPEC.cristache, { cig: true }); // beta 3.32: the same face, the cigarette in the mouth
@@ -737,15 +793,24 @@
       else hz(m0, m1, my, MO);
       // the glasses: a box round each eye (one pixel of frame), the lens light so it reads as glass and not as a dark
       // band, a glint, the eye in it, the bridge, the arm to the ear
+      // beta 3.45 (Daniel: "the glasses dominate the small faces"): glasses that read as glasses without eating the face.
+      // The brows stay the top of the shape (no rim of its own over them, so brow and frame never stack into one dark
+      // band; only Steve's big frames have one); the lens is the skin seen through glass (a touch lighter and cooler,
+      // never white) over the lid and the eye, the eye's dark in it, a glint pixel in the near lens's corner; the frame
+      // is the outer sides, the bridge and the lower rims, in a dark made from the frame's colour and the skin's shade
+      // (not a flat black), the far side in the light; the arm back to the ear
       if (P.glasses) {
-        const GP = P.glasses, G = u32(GP.color), lensC = mix2(SK[1], u32("#e6f4fb"), 0.55), round = GP.kind !== "square", big = (GP.lens && GP.lens[0][0] <= 11) ? 1 : 0;
-        const boxes = [[nE[0] - 1 - big, ey - 1, nE[1] + 2, ey + 2], [fE[0] - 1, ey - 1, fE[1] + 1 + big, ey + 2]];
-        for (const [x0, y0, x1, y1] of boxes) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
-          const edge = x === x0 || x === x1 || y === y0 || y === y1, corner = (x === x0 || x === x1) && (y === y0 || y === y1);
-          if (edge) { if (!(round && corner)) putH(x, y, G); } else { const c0 = buf[y * W2 + x]; if (c0 !== EW && c0 !== EP) putH(x, y, lensC); }
-        }
-        putH(boxes[0][2] - 1, boxes[0][1] + 1, u32("#ffffff")); // the glint
-        for (let x = F(8.6); x < boxes[0][0]; x++) putH(x, ey, G); // the arm
+        const GP = P.glasses, G0 = u32(GP.color), big = (GP.lens && GP.lens[0][0] <= 11) ? 1 : 0;
+        const G = mix2(G0, SK[4], big ? 0.12 : GP.wire ? 0.45 : 0.25), GL = mix2(G0, SK[3], big ? 0.45 : 0.6);
+        const lensOf = (c) => mix2(c, u32("#eaf7fd"), 0.34);
+        const nx0 = nE[0] - 1 - big, nx1 = nE[1] + 1, fx0 = fE[0], fx1 = fE[1] + 1, top = ey - 2, bot = ey + 1;
+        for (let y = top + 1; y < bot; y++) for (const [a, b] of [[nx0 + 1, nx1], [fx0, fx1 - 1]]) for (let x = a; x <= b; x++) { const c0 = buf[y * W2 + x]; if (c0 != null && c0 !== EP && c0 !== browC) putH(x, y, c0 === EW ? mix2(EW, SK[2], 0.2) : lensOf(c0)); }
+        if (big) for (const [a, b] of [[nx0, nx1], [fx0, fx1]]) for (let x = a; x <= b; x++) putH(x, top, G); // Steve's big frames: the top rim over the brows
+        putH(nx1 + 1, ey - 1, G); // the bridge
+        for (let y = top + 1; y < bot; y++) { putH(nx0, y, G); putH(fx1, y, GL); } // the outer sides (the far one in the light)
+        for (const [a, b] of [[nx0 + 1, nx1], [fx0, fx1 - 1]]) for (let x = a; x <= b; x++) putH(x, bot, G); // the lower rims
+        putH(nx1, top + 1, u32("#fbfdff")); // the glint
+        for (let x = F(8.6); x < nx0; x++) putH(x, ey - 1, GL); // the arm
       }
       // the cigarette from the corner of the mouth, the lit end
       if (P.cig) { const cx = m1 + 1, cy = my + 1; putH(cx, cy, u32("#d89a5a")); putH(cx + 1, cy, u32("#f6f4ee")); putH(cx + 2, cy, u32("#f6f4ee")); putH(cx + 3, cy + 1, u32("#ff7a22")); ember = [cx + 3, cy + 1]; }
@@ -770,7 +835,7 @@
       // glasses. beta 3.31 (Daniel): one thin pixel of frame, the eyes showing through, the lens a touch lighter and a
       // glint on it, so they read as clear glasses on the small heads too (not sunglasses)
       if (P.glasses) {
-        const GP = P.glasses, G = u32(GP.color), frame = [], lens = [];
+        const GP = P.glasses, G = mix2(u32(GP.color), SK[4], GP.lens && GP.lens[0][0] <= 11 ? 0.1 : GP.wire ? 0.4 : 0.22), frame = [], lens = []; // beta 3.45: the frame's dark harmonised with the skin's shade
         const rect = ([x0, y0, x1, y1]) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) (x === x0 || x === x1 || y === y0 || y === y1 ? frame : lens).push([x, y]); };
         const ring = ([gx, gy, grx, gry]) => { const e = (x, y) => ((x - gx) / grx) ** 2 + ((y - gy) / gry) ** 2 <= 1; for (let y = Math.floor(gy - gry - 1); y <= gy + gry + 1; y++) for (let x = Math.floor(gx - grx - 1); x <= gx + grx + 1; x++) { const fx = x + 0.5, fy = y + 0.5; if (!e(fx, fy)) continue; (!e(fx - 1, fy) || !e(fx + 1, fy) || !e(fx, fy - 1) || !e(fx, fy + 1) ? frame : lens).push([x, y]); } };
         if (GP.kind === "square") (GP.lens || [[12, 11, 16, 15], [18, 11, 21, 15]]).forEach(rect);
@@ -857,7 +922,7 @@
       else rows([[0.45, 15, 19.6, MO], [0.5, 15.4, 19.2, SK[3]]]);
       // glasses: the frame (thicker on Steve's), the eye through a lens a touch lighter, a glint across it, the bridge, the arm to the ear
       if (P.glasses) {
-        const GP = P.glasses, G = u32(GP.color), tint = u32(GP.tint || "#e6f4fb"), ft = Math.max(1, Math.round(K * (GP.t || 0.3))), lenses = [];
+        const GP = P.glasses, G = mix2(u32(GP.color), SK[4], GP.wire ? 0.3 : 0.12), tint = u32(GP.tint || "#e6f4fb"), ft = Math.max(1, Math.round(K * (GP.t || 0.3))), lenses = []; // beta 3.45: the frame's dark harmonised
         if (GP.kind === "square") for (const [x0, y0, x1, y1] of GP.lens || [[12, 11, 16, 15], [18, 11, 21, 15]]) {
           const X0 = PX(x0), Y0 = PX(y0), X1 = PX(x1 + 1), Y1 = PX(y1 + 1), rr = K >= 3 ? 1 : 0;
           const inside = (X, Y) => X >= X0 && X < X1 && Y >= Y0 && Y < Y1 && !(rr && (X === X0 || X === X1 - 1) && (Y === Y0 || Y === Y1 - 1));
@@ -1003,14 +1068,21 @@
       const sl = L.shorts ? 0 : loose; // a bare shin is the leg's own width
       limb(F, k, [f[0], f[1] - 4 * U], (5 + sl) * lg, (3.4 + sl * (L.hem || 1.2)) * lg, (bare || L.shorts ? 1.3 : 0.6) * lg, 0.28, shinMat, g); // the calf high
       const fq = Math.min(1, B.sc * 1.1) * U * FOOT; // the feet keep to the size of the person (beta 3.33: bigger, as the arcade fighters' are)
+      // beta 3.45: in a somersault the feet turn with the body (their outline is turned, and each pixel is shaded where it
+      // would be on the upright foot)
+      const ra = p.rotA || 0, rC = Math.cos(ra), rS = Math.sin(ra);
+      const rp = (q) => (ra ? [f[0] + (q[0] - f[0]) * rC - (q[1] - f[1]) * rS, f[1] + (q[0] - f[0]) * rS + (q[1] - f[1]) * rC] : q);
+      const ur = (x, y) => (ra ? [f[0] + (x - f[0]) * rC + (y - f[1]) * rS, f[1] - (x - f[0]) * rS + (y - f[1]) * rC] : [x, y]);
+      const fpoly = (F2, pts, mat, gr) => poly(F2, pts.map(rp), ra ? (x, y) => { const [x2, y2] = ur(x, y); return mat(x2, y2); } : mat, gr);
+      const flimb = (F2, a, b, ...rest) => limb(F2, rp(a), rp(b), ...rest);
       if (L.barefoot) { // a bare foot, the toes forward
-        poly(F, [[f[0] - 5 * fq, f[1] - 6 * fq], [f[0] + 3 * fq, f[1] - 5 * fq], [f[0] + 12 * fq, f[1] - 1 * fq], [f[0] + 12 * fq, f[1] + 1 * fq], [f[0] - 5 * fq, f[1] + 1 * fq]], (x, y) => { const u = (x - f[0]) / fq, v = (f[1] - y) / fq; if (u > 7.4 && v < 2.2 && Math.floor((u - 7.4) / 1.25) % 2 === 1) return SK[4]; if (u > 7.4 && v < 0.6) return SK[3]; if (u < -2.5 && v < 2.5) return SK[far ? 4 : 3]; if (Math.abs(u - 1.5) < 0.7 && v > 2.4 && v < 4) return SK[far ? 3 : 2]; return SK[far ? 3 : v > 3.4 ? 1 : 2]; }, g + 10); // the toes (beta 3.33: split, the sole and the heel in shade, the ankle bone)
-        if (L.ankle) limb(F, [f[0] - 1 * fq, f[1] - 6 * fq], [f[0] - 1 * fq, f[1] - 4 * fq], 3.4 * fq, 3.4 * fq, 0, 0.5, (nx, ny) => (far ? back : tone)(ramp(L.ankle), nx, ny), g + 11);
+        fpoly(F, [[f[0] - 5 * fq, f[1] - 6 * fq], [f[0] + 3 * fq, f[1] - 5 * fq], [f[0] + 12 * fq, f[1] - 1 * fq], [f[0] + 12 * fq, f[1] + 1 * fq], [f[0] - 5 * fq, f[1] + 1 * fq]], (x, y) => { const u = (x - f[0]) / fq, v = (f[1] - y) / fq; if (u > 7.4 && v < 2.2 && Math.floor((u - 7.4) / 1.25) % 2 === 1) return SK[4]; if (u > 7.4 && v < 0.6) return SK[3]; if (u < -2.5 && v < 2.5) return SK[far ? 4 : 3]; if (Math.abs(u - 1.5) < 0.7 && v > 2.4 && v < 4) return SK[far ? 3 : 2]; return SK[far ? 3 : v > 3.4 ? 1 : 2]; }, g + 10); // the toes (beta 3.33: split, the sole and the heel in shade, the ankle bone)
+        if (L.ankle) flimb(F, [f[0] - 1 * fq, f[1] - 6 * fq], [f[0] - 1 * fq, f[1] - 4 * fq], 3.4 * fq, 3.4 * fq, 0, 0.5, (nx, ny) => (far ? back : tone)(ramp(L.ankle), nx, ny), g + 11);
       } else if (L.runner) { // beta 3.31: a running shoe: low heel collar, the toe sloping down, a chunky midsole, the stripes crossing on the side
         // beta 3.32 (Daniel: "make Ion's Asics more visible"): a size up (x1.15), a bright white upper, the crossing side
         // stripes bold (two pixels) in a strong blue, the heel counter blue, the laces, a white midsole on a dark outsole
         const RU = L.runner, up2 = ramp(RU.upper), MID = ramp(RU.mid), ST = ramp(RU.stripe), HE = ramp(RU.heel), fr3 = fq * 1.15, fo = [f[0] + 1.2 * U, f[1]];
-        poly(F, [[fo[0] - 7 * fr3, fo[1] - 2 * fr3], [fo[0] - 6.4 * fr3, fo[1] - 6.8 * fr3], [fo[0] - 4.8 * fr3, fo[1] - 7.6 * fr3], [fo[0] - 1 * fr3, fo[1] - 7 * fr3], [fo[0] + 2.5 * fr3, fo[1] - 7.4 * fr3], [fo[0] + 6 * fr3, fo[1] - 5.8 * fr3], [fo[0] + 10.5 * fr3, fo[1] - 3.8 * fr3], [fo[0] + 13.4 * fr3, fo[1] - 2.4 * fr3], [fo[0] + 13.8 * fr3, fo[1] + 0.4 * fr3], [fo[0] - 7 * fr3, fo[1] + 0.9 * fr3]], (x, y) => {
+        fpoly(F, [[fo[0] - 7 * fr3, fo[1] - 2 * fr3], [fo[0] - 6.4 * fr3, fo[1] - 6.8 * fr3], [fo[0] - 4.8 * fr3, fo[1] - 7.6 * fr3], [fo[0] - 1 * fr3, fo[1] - 7 * fr3], [fo[0] + 2.5 * fr3, fo[1] - 7.4 * fr3], [fo[0] + 6 * fr3, fo[1] - 5.8 * fr3], [fo[0] + 10.5 * fr3, fo[1] - 3.8 * fr3], [fo[0] + 13.4 * fr3, fo[1] - 2.4 * fr3], [fo[0] + 13.8 * fr3, fo[1] + 0.4 * fr3], [fo[0] - 7 * fr3, fo[1] + 0.9 * fr3]], (x, y) => {
           const u = (x - fo[0]) / fr3, v = (fo[1] - y) / fr3;
           if (v < 0.7) return (Math.floor(x) % 3 === 0 && v < 0.2) ? SO : ramp(L.sole)[far ? 4 : 3]; // the outsole, its tread
           const mt = u < 0 ? 3 : 2.6 - u * 0.05;
@@ -1024,11 +1096,11 @@
         }, g + 10);
       } else if (L.boots) { // boots, laced up the ankle
         const sr = ramp(L.shoe);
-        poly(F, [[f[0] - 5 * fq, f[1] - 11 * fq], [f[0] + 3 * fq, f[1] - 11 * fq], [f[0] + 4 * fq, f[1] - 5 * fq], [f[0] + 11 * fq, f[1] - 2 * fq], [f[0] + 11 * fq, f[1] + 1 * fq], [f[0] - 5 * fq, f[1] + 1 * fq]], (x, y) => (y > f[1] - 0.6 * fq ? SO : (Math.floor(y) % 2 === 0 && x > f[0] + 1 * fq && x < f[0] + 3.5 * fq && y < f[1] - 4 * fq ? u32("#5a5a62") : sr[far ? 3 : x > f[0] + 3 * fq ? 1 : 2])), g + 10);
+        fpoly(F, [[f[0] - 5 * fq, f[1] - 11 * fq], [f[0] + 3 * fq, f[1] - 11 * fq], [f[0] + 4 * fq, f[1] - 5 * fq], [f[0] + 11 * fq, f[1] - 2 * fq], [f[0] + 11 * fq, f[1] + 1 * fq], [f[0] - 5 * fq, f[1] + 1 * fq]], (x, y) => (y > f[1] - 0.6 * fq ? SO : (Math.floor(y) % 2 === 0 && x > f[0] + 1 * fq && x < f[0] + 3.5 * fq && y < f[1] - 4 * fq ? u32("#5a5a62") : sr[far ? 3 : x > f[0] + 3 * fq ? 1 : 2])), g + 10);
       } else {
         // the shoe, pointing forward, its sole
         const sr = ramp(L.shoe);
-        poly(F, [[f[0] - 6 * fq, f[1] - 7 * fq], [f[0] + 4 * fq, f[1] - 7 * fq], [f[0] + 13 * fq, f[1] - 2 * fq], [f[0] + 13 * fq, f[1] + 1 * fq], [f[0] - 6 * fq, f[1] + 1 * fq]], (x, y) => (y > f[1] - 0.6 * fq ? SO : y < f[1] - 5.5 * fq && x < f[0] + 3 * fq ? sr[far ? 3 : 1] : sr[far ? 3 : x > f[0] + 4 * fq ? 1 : 2]), g + 10);
+        fpoly(F, [[f[0] - 6 * fq, f[1] - 7 * fq], [f[0] + 4 * fq, f[1] - 7 * fq], [f[0] + 13 * fq, f[1] - 2 * fq], [f[0] + 13 * fq, f[1] + 1 * fq], [f[0] - 6 * fq, f[1] + 1 * fq]], (x, y) => (y > f[1] - 0.6 * fq ? SO : y < f[1] - 5.5 * fq && x < f[0] + 3 * fq ? sr[far ? 3 : 1] : sr[far ? 3 : x > f[0] + 4 * fq ? 1 : 2]), g + 10);
       }
     };
     // the torso: a V from the shoulders to the waist, then the hips; u across (-1 back .. 1 front), v down (0..1)
@@ -1147,15 +1219,16 @@
     for (let i = 0; i <= 10; i++) { const v = i / 10, hw = shape(v); tp.push(off(neck, 1.5 * sc + hw, v * len)); }
     for (let i = 10; i >= 0; i--) { const v = i / 10, hw = shape(v); tp.push(off(neck, 1.5 * sc - hw, v * len)); }
     poly(F, tp, torsoMat, 5);
-    if (L.legs === "skirt") { const SKR = ramp(L.skirt); poly(F, [off(hip, -hw1 - U, -3 * U), off(hip, hw1 + U, -3 * U), off(hip, hw1 + 6 * U, 15 * U), off(hip, -hw1 - 5 * U, 15 * U)], (x, y) => { const [u] = tloc(x, y); return SKR[u > 0.3 ? 2 : u > -0.4 ? 3 : 4]; }, 6); }
-    if (L.apron) { const AR = ramp(L.apron); poly(F, [off(hip, -U, -2 * U), off(hip, hw1 + 2 * U, -2 * U), off(hip, hw1 + 4 * U, 20 * U), off(hip, U, 22 * U)], (x, y) => AR[x > hip[0] + hw1 * 0.5 ? 1 : 2], 6); }
+    const sl = p.ball ? 0.45 : 1; // beta 3.45: in the somersault's tuck a skirt or an apron folds with the legs (short), not out like a flag
+    if (L.legs === "skirt") { const SKR = ramp(L.skirt); poly(F, [off(hip, -hw1 - U, -3 * U), off(hip, hw1 + U, -3 * U), off(hip, hw1 + 6 * U * sl, 15 * U * sl), off(hip, -hw1 - 5 * U * sl, 15 * U * sl)], (x, y) => { const [u] = tloc(x, y); return SKR[u > 0.3 ? 2 : u > -0.4 ? 3 : 4]; }, 6); }
+    if (L.apron) { const AR = ramp(L.apron); poly(F, [off(hip, -U, -2 * U), off(hip, hw1 + 2 * U, -2 * U), off(hip, hw1 + 4 * U, 20 * U * sl), off(hip, U, 22 * U * sl)], (x, y) => AR[x > hip[0] + hw1 * 0.5 ? 1 : 2], 6); }
     if (L.knot) { const kp = off(hip, hw1 * 0.75, -5 * U); blob(F, kp, 3.2 * U, 2.6 * U, (nx, ny) => TOP[toneOf(nx, ny)], 7); limb(F, [kp[0], kp[1] + U], [kp[0] + 1.5 * U, kp[1] + 6 * U], 1.6 * U, 1.2 * U, 0, 0.5, (nx, ny) => TOP[toneOf(nx, ny) + 1 > 4 ? 4 : toneOf(nx, ny) + 1], 7); }
     if (L.key) { const k = off(hip, hw1 * 0.6, 4 * U); blob(F, [k[0], k[1] + 6 * U], 1.6 * U, 3.2 * U, (nx, ny) => ramp("#ffd23a")[toneOf(nx, ny)], 7); blob(F, [k[0], k[1] + 1.5 * U], 1.2 * U, 1.4 * U, () => u32("#c9ccd4"), 7); }
     { // beta 3.12: the head's neck stands on the body's neck; the pose's head offset still tilts it a little
       const hid = (L.headId || id) + (p.cig === "mouth" && HEADSPEC[(L.headId || id) + "+cig"] ? "+cig" : "");
       // beta 3.33: the head at its own resolution (HK in the fight; the people around keep the small 1x head)
       const HD = headOf(hid, 1, false, view ? view.HK : L.hands ? (L.full ? HK : HK * 0.86) : HK), hx = (p.head[0] - p.neck[0] - 3 * sc) * 0.6, hy = (p.head[1] - p.neck[1] + 11 * sc) * 0.6, a2 = off(neck, 0.5 * U, U);
-      if (p.lie) F.blit(HD.rows, HD.pal, a2[0], a2[1], 1, HD.at, 8); else { const bx2 = Math.round(a2[0] + hx), by2 = Math.round(a2[1] + hy); F.blit(HD.rows, HD.pal, bx2, by2, 0, HD.at, 8); if (HD.ember) ember = [bx2 + HD.ember[0] - HD.at[0], by2 + HD.ember[1] - HD.at[1]]; }
+      if (p.lie || p.rot) F.blit(HD.rows, HD.pal, a2[0], a2[1], p.lie ? 1 : p.rot, HD.at, 8); else { const bx2 = Math.round(a2[0] + hx), by2 = Math.round(a2[1] + hy); F.blit(HD.rows, HD.pal, bx2, by2, 0, HD.at, 8); if (HD.ember) ember = [bx2 + HD.ember[0] - HD.at[0], by2 + HD.ember[1] - HD.at[1]]; }
     }
     arm(sF, T(p.eF), T(p.hF), false);
     const hF = T(p.hF);
@@ -1179,6 +1252,9 @@
     } else if (prop === "cup") { // a takeaway cup
       poly(F, [Q(-2, -8), Q(4, -8), Q(3.5, -1), Q(-1.5, -1)], (x, y) => u32(y < hF[1] - 6.5 * U ? "#2a2a30" : x > hF[0] + 2 * U ? "#d8d4cc" : "#f4f2ec"), 20);
       poly(F, [Q(-1.6, -5.5), Q(3.6, -5.5), Q(3.4, -3.5), Q(-1.4, -3.5)], () => u32("#b07a46"), 21);
+    } else if (prop === "phone") { // beta 3.45: a phone held up, filming: its dark back, a light pixel of its screen's glow
+      poly(F, [Q(-1.5, -7), Q(2.5, -7), Q(2.5, 0), Q(-1.5, 0)], (x, y) => u32(y < hF[1] - 6 * U ? "#5a5a66" : "#24242c"), 20);
+      poly(F, [Q(1.5, -6), Q(2.5, -6), Q(2.5, -4), Q(1.5, -4)], () => u32("#cfe8ff"), 21);
     } else if (prop === "key") {
       blob(F, Q(2, -7), 1.8 * U, 3.4 * U, (nx, ny) => ramp("#ffd23a")[toneOf(nx, ny)], 20);
     } else if (prop === "stack") {
@@ -1201,7 +1277,7 @@
     // beta 3.32 (Daniel: Cristache smokes): the cigarette in the hand when he stands, walks, guards, crouches or jumps
     // (hidden in the fist when he hits, gone when he is hit); in the mouth in the win pose. idleM / walkM are the same
     // frames with it in the mouth, puff the hand brought up to the lips
-    const CIG = (k) => (!smokes ? null : k === "win" ? "mouth" : ["idle", "walk", "crouch", "cblock", "block", "jump", "intro", "dizzy"].includes(k) ? "hand" : null);
+    const CIG = (k) => (!smokes ? null : k === "win" ? "mouth" : ["idle", "walk", "crouch", "cblock", "block", "jump", "jrise", "jfall", "jsquat", "intro", "dizzy"].includes(k) ? "hand" : null);
     const withCig = (p, c) => (c ? Object.assign({}, p, { cig: c }) : p);
     const lazy = (k, list, make) => {
       const arr = [], cache = [];
@@ -1211,12 +1287,13 @@
     const own = Object.assign({}, POSES, STYLE_POSES[id] || {});
     for (const [k, list] of Object.entries(own)) lazy(k, list, (p) => drawFighter(id, withCig(p, CIG(k)), k === "intro" && id === "ion" ? "stack" : null, alt));
     lazy("special", SPECIAL_POSES[id], (p) => drawFighter(id, p, SPECIAL_PROP[id] || null, alt));
+    { const sp = SPECIAL_POSES[id], last = sp[sp.length - 1]; lazy("srec", [mixP(last, own.idle[1], 0.55)], (p) => drawFighter(id, p, SPECIAL_PROP[id] || null, alt)); } // beta 3.45: half way back from the special to the guard
     if (smokes) {
       lazy("idleM", own.idle, (p) => drawFighter(id, withCig(p, "mouth"), null, alt));
       lazy("walkM", own.walk, (p) => drawFighter(id, withCig(p, "mouth"), null, alt));
       lazy("puff", SMOKE_POSES[id] || [], (p) => drawFighter(id, withCig(p, "mouth"), null, alt));
     }
-    const first = ["idle", "intro", "puff", "idleM"], order = ["walk", "block", "punch", "kick", "crouch", "hit", "jump", "special", "cpunch", "ckick", "jpunch", "jkick", "cblock", "fall", "down", "dizzy", "walkM", "win"];
+    const first = ["idle", "intro", "puff", "idleM"], order = ["walk", "block", "punch", "kick", "crouch", "hit", "gut", "jrise", "jump", "jfall", "jsquat", "special", "srec", "cpunch", "ckick", "jpunch", "jkick", "roll", "cblock", "fall", "bounce", "down", "getup", "dizzy", "walkM", "win"];
     BAKEQ.unshift(...jobs.filter(([k]) => first.includes(k)).map(([, fn]) => fn)); // the guard and the intro first, then the rest
     for (const k of order) for (const [k2, fn] of jobs) if (k2 === k) BAKEQ.push(fn);
     for (const [k2, fn] of jobs) if (!first.includes(k2) && !order.includes(k2)) BAKEQ.push(fn);
@@ -1235,135 +1312,264 @@
   const T3 = { A: "010101111101101", B: "110101110101110", C: "011100100100011", D: "110101101101110", E: "111100110100111", F: "111100110100100", G: "011100101101011", H: "101101111101101", I: "111010010010111", K: "101101110101101", L: "100100100100111", M: "101111111101101", N: "110101101101101", O: "010101101101010", P: "110101110100100", R: "110101110101101", S: "011100010001110", T: "111010010010010", U: "101101101101111", V: "101101101101010", W: "101101111111101", Y: "101101010010010", Z: "111001010100111", 0: "111101101101111", 1: "010110010010111", 2: "110001010100111", 3: "110001010001110", 4: "101101111001001", 5: "111100110001110", 6: "011100111101111", 7: "111001010010010", 8: "111101111101111", 9: "111101111001110", ".": "000000000000010", " ": "000000000000000", "-": "000000111000000", "'": "010010000000000" };
   function tiny(ctx, s, x, y, col) { ctx.fillStyle = col; let cx = x; for (const ch of s) { const g2 = T3[ch] || T3[" "]; for (let i = 0; i < 15; i++) if (g2[i] === "1") ctx.fillRect(cx + (i % 3), y + Math.floor(i / 3), 1, 1); cx += 4; } }
   const tinyW = (s) => s.length * 4 - 1;
-  let STAGE = null;
-  const stageStep = () => { stage(); }; // beta 3.36: the 1x street is quick to build (one step)
-  const SKY_TOP = "#9cc4e4", HAZE = "#c8dcea";
-  function stage() {
-    if (STAGE) return STAGE;
+  let STAGE = null, STAGE_GEN = null;
+  // beta 3.45 (Daniel: "towards the SF2 stage feel: more depth, a lively crowd, ambient motion, a punchier palette,
+  // readable behind the fighters"): the street in layers, each scrolling at its own rate as the camera follows the
+  // fight: the sky (still) and its clouds (drifting), the far skyline (0.18), the nearer blocks with the tall one behind
+  // the white wall (0.45), the street's front (0.88: it stands behind the fighters, so it slides a little slower than
+  // they do) and the pavement, scrolled row by row from the street's rate at the wall to the fighters' at their feet and
+  // faster at the kerb (the arcade floors' rowscroll: the joints lean as the camera pans). At the middle of the stage
+  // every layer lines up. The colours: a deeper sky, the plaster warmer, real shadows (under the sign, in the window
+  // recesses, the dark plinth, the wall's base on the pavement), crisp outlines, the white wall toned down a step so a
+  // white tee still reads in front of it. Built a step a frame (STAGE_GEN), so the title never stalls on it
+  const CAM0 = (STAGE_W - W) / 2, PF = 0.88, PAVE_PAD = 16, PAVE_Y = 176;
+  const layerX = (camX, pf) => CAM0 + (camX - CAM0) * pf;
+  const rowPF = (y, pf = PF) => (y <= PAVE_Y ? pf : pf + ((y - PAVE_Y) * (1 - pf)) / 24); // 1 at the fighters' feet (y 200)
+  function* stageGen() {
     const r = (() => { let s2 = 11; return () => ((s2 = (s2 * 16807) % 2147483647) / 2147483647); })();
-    const dith = (ctx, x, y, w, h, c1, c2, f) => { for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { ctx.fillStyle = ((xx + yy) & 1) && f ? c2 : c1; ctx.fillRect(x + xx, y + yy, 1, 1); } };
-    // ---- the sky: a few bands, dithered where they meet
-    // beta 3.33: the stage's layers are drawn at the canvas's pixels (RS times the game's units): the shapes through a
-    // scaled context, the fine work (the dither, the plaster, the glass, the leaves) pixel by pixel at the full size
-    const [sky, s] = mk(W * RS, H * RS);
-    const BANDS = ["#8ab8de", "#96c0e2", "#a4c8e6", "#b2d0ea", "#c0d8ec", "#cfe0ee", "#dce8f0"];
-    { const id = s.createImageData(W * RS, H * RS), d = new Uint32Array(id.data.buffer), B32 = BANDS.map(u32), yy0 = 150 * RS;
-      for (let y = 0; y < H * RS; y++) { const t = (Math.min(y, yy0) / yy0) * (BANDS.length - 1), i = Math.min(BANDS.length - 1, Math.floor(t)), f = t - i; for (let x = 0; x < W * RS; x++) d[y * W * RS + x] = f > 0.5 && ((x + y) & 1) ? B32[Math.min(BANDS.length - 1, i + 1)] : B32[i]; }
-      s.putImageData(id, 0, 0); }
-    // ---- the clouds, on a strip that wraps
-    const CL = ["#dfe7f0", "#d2dcea", "#ffffff", "#f6f8fb", "#eaf0f6"].map(u32), [clouds, c] = mk(768 * RS, 80 * RS), cid = c.createImageData(768 * RS, 80 * RS), cd = new Uint32Array(cid.data.buffer), CW2 = 768 * RS;
-    const cloud = (cx0, cy0, w2) => {
-      const puffs = []; for (let i = 0; i < 6; i++) puffs.push([cx0 - w2 / 2 + (i + 0.5) * (w2 / 6) + (r() - 0.5) * 6, cy0 - r() * 6 - (i > 1 && i < 4 ? 5 : 0), 6 + r() * 6]);
-      for (let Y = Math.floor((cy0 - 26) * RS); Y <= (cy0 + 2) * RS; Y++) for (let X = Math.floor((cx0 - w2 / 2 - 14) * RS); X <= (cx0 + w2 / 2 + 14) * RS; X++) {
-        const x = (X + 0.5) / RS, y = (Y + 0.5) / RS;
-        let inside = false, top = 1e9; for (const [px, py, pr] of puffs) { const d = Math.hypot(x - px, (y - py) * 1.2); if (d <= pr) { inside = true; top = Math.min(top, (y - (py - pr / 1.2)) / pr); } }
-        if (!inside || y > cy0 || Y < 0) continue;
-        cd[Y * CW2 + (((X % CW2) + CW2) % CW2)] = CL[y > cy0 - 3 ? (((X + Y) & 1) ? 0 : 1) : top < 0.35 ? 2 : top < 0.9 ? 3 : ((X + Y) & 1) ? 4 : 3];
+    const S = {}, R = (x, a, b, w, h, c) => { x.fillStyle = c; x.fillRect(a, b, w, h); };
+    const disc = (x, cx, cy, rx, ry, c) => { x.fillStyle = c; for (let yy = Math.floor(cy - ry); yy <= cy + ry; yy++) { const dy = (yy + 0.5 - cy) / ry, hw = rx * Math.sqrt(Math.max(0, 1 - dy * dy)); if (hw < 0.5) continue; const a = Math.round(cx - hw); x.fillRect(a, yy, Math.round(cx + hw) - a, 1); } }; // a filled ellipse, no soft edge
+    const speck = (x, a, b, w, h, n, cols) => { for (let i = 0; i < n; i++) { x.fillStyle = cols[Math.floor(r() * cols.length)]; x.fillRect(a + Math.floor(r() * w), b + Math.floor(r() * h), 1, 1); } };
+    const box = (x, a, b, w, h, c, o = OUT) => { R(x, a - 1, b - 1, w + 2, h + 2, o); R(x, a, b, w, h, c); };
+    // ---- 1. the sky: deep blue at the top to a pale haze at the horizon, in bands dithered where they meet
+    { const [c, x] = mk(W, H), id = x.createImageData(W, H), d = new Uint32Array(id.data.buffer), B = ["#2b68c6", "#3374cb", "#3e80d1", "#4b8dd6", "#5a9adc", "#6ba7e1", "#7fb4e6", "#93c2ea", "#a8ceee", "#bcd9f0", "#cfe3f2"].map(u32), y1 = 160;
+      for (let y = 0; y < H; y++) { const t = (Math.min(y, y1) / y1) * (B.length - 1), i = Math.min(B.length - 1, Math.floor(t)), f = t - i; for (let q = 0; q < W; q++) d[y * W + q] = B[Math.min(B.length - 1, (f > 0.66 || (f > 0.33 && (q + y) & 1)) ? i + 1 : i)]; }
+      x.putImageData(id, 0, 0); S.sky = c; }
+    yield;
+    // ---- 2. the clouds, on a strip that wraps: round tops in the sun, a flat shaded underside
+    { const CL = ["#ffffff", "#f1f6fc", "#dbe6f3", "#c2d3e9", "#a9bfdf"].map(u32), CW2 = 768, [c, x] = mk(CW2, 84), id = x.createImageData(CW2, 84), d = new Uint32Array(id.data.buffer);
+      const cloud = (cx0, cy0, w2) => {
+        const puffs = []; for (let i = 0; i < 7; i++) puffs.push([cx0 - w2 / 2 + (i + 0.5) * (w2 / 7) + (r() - 0.5) * 6, cy0 - r() * 5 - (i > 1 && i < 5 ? 6 : 0), 7 + r() * 7]);
+        for (let y = Math.floor(cy0 - 30); y <= cy0 + 1; y++) for (let X = Math.floor(cx0 - w2 / 2 - 16); X <= cx0 + w2 / 2 + 16; X++) {
+          let top = 1e9, inside = false; for (const [px, py, pr] of puffs) { const dd = Math.hypot(X + 0.5 - px, (y + 0.5 - py) * 1.25); if (dd <= pr) { inside = true; top = Math.min(top, (y + 0.5 - (py - pr / 1.25)) / pr); } }
+          if (!inside || y < 0) continue;
+          const k = y > cy0 - 2 ? 4 : y > cy0 - 5 ? 3 : top < 0.3 ? 0 : top < 0.75 ? 1 : top < 1.15 ? 2 : 3;
+          d[y * CW2 + (((X % CW2) + CW2) % CW2)] = CL[k === 3 && (X + y) & 1 && y <= cy0 - 5 ? 2 : k];
+        }
+      };
+      for (const [x0, y0, w2] of [[70, 34, 96], [262, 22, 58], [420, 50, 120], [620, 28, 76], [726, 60, 44]]) cloud(x0, y0, w2);
+      x.putImageData(id, 0, 0); S.clouds = c; }
+    yield;
+    // ---- 3. the far skyline: blocks of flats, a dome, a crane, in the blue of the distance (0.18)
+    { const SW = 500, [c, x] = mk(SW, H), BODY = "#93b2db", SIDE = "#86a5d2", TOP = "#b2cae8", WIN = "#7f9dcb";
+      for (const [a, w, top] of [[0, 34, 92], [30, 24, 104], [52, 44, 72], [98, 26, 98], [122, 20, 86], [144, 48, 64], [194, 26, 96], [222, 36, 80], [262, 22, 102], [286, 46, 68], [334, 30, 90], [366, 40, 76], [408, 32, 98], [442, 26, 84], [470, 30, 94]]) {
+        R(x, a, top, w, 160 - top, BODY); R(x, a + w - 4, top, 4, 160 - top, SIDE); R(x, a, top, w, 1, TOP);
+        for (let y = top + 4; y < 150; y += 5) for (let q = a + 3; q < a + w - 5; q += 4) if (r() < 0.7) R(x, q, y, 2, 2, WIN);
       }
+      disc(x, 183, 84, 9, 8, BODY); R(x, 174, 84, 18, 20, BODY); disc(x, 181, 81, 3, 3, TOP); R(x, 182, 70, 1, 7, SIDE); R(x, 180, 72, 5, 1, SIDE); // a church's dome and its cross
+      for (let i = 0; i < 40; i++) R(x, 318, 30 + i, 1, 1, SIDE); R(x, 300, 30, 52, 1, SIDE); R(x, 300, 31, 1, 6, SIDE); for (let q = 302; q < 352; q += 3) R(x, q, 31, 1, 2, SIDE); // a tower crane
+      S.sky2 = c; }
+    yield;
+    // ---- 4. the nearer blocks (0.45): a grey block on the left, a brown house roof, the tall beige block of flats that
+    // stands behind the white wall in the street's photo (bands of windows, balconies), trees in front of them
+    { const BW2 = 530, [c, x] = mk(BW2, H), OL = "#5a5048";
+      // the grey block, left
+      box(x, 0, 60, 62, 110, "#bcc0ca", "#6a6e7a"); R(x, 52, 60, 10, 110, "#a2a7b4"); for (let y = 66; y < 160; y += 9) { R(x, 0, y + 5, 52, 1, "#d6d9e0"); for (let q = 4; q < 48; q += 9) R(x, q, y, 5, 4, "#5c6476"); }
+      // the brown house with a pitched roof, behind Two Minutes
+      box(x, 74, 76, 96, 90, "#c89a74", OL); for (let i = 0; i < 12; i++) R(x, 70 + i, 76 - i, 104 - i * 2, 1, i < 2 ? "#7a3a28" : "#a24a30");
+      // the tall beige block (behind the white wall at the middle of the stage)
+      { const a = 236, w = 150, top = 8; box(x, a, top, w, 170 - top, "#e4d0ae", OL); R(x, a + w - 16, top, 16, 170 - top, "#c9b38e"); R(x, a, top, w, 3, "#f2e4c8");
+        for (let y = top + 10; y < 160; y += 14) { R(x, a + 6, y, w - 26, 5, "#6a6a72"); R(x, a + 6, y, w - 26, 1, "#9ab4d0"); R(x, a + 6, y + 5, w - 26, 1, "#f6ead2"); R(x, a + w - 14, y, 10, 5, "#58585e"); for (let q = a + 18; q < a + w - 26; q += 22) R(x, q, y, 1, 5, "#4a4a52"); } }
+      // a second block further right, cooler
+      box(x, 392, 40, 90, 130, "#cfc6b8", OL); R(x, 470, 40, 12, 130, "#b4aa9a"); for (let y = 48; y < 160; y += 10) for (let q = 398; q < 466; q += 12) R(x, q, y, 7, 5, "#6e6a6a");
+      box(x, 486, 70, 44, 100, "#d8b6a0", OL); for (let y = 78; y < 160; y += 10) for (let q = 490; q < 526; q += 9) R(x, q, y, 5, 5, "#7a5e52");
+      // trees at the foot
+      for (const [tx, ty, tr] of [[20, 132, 14], [176, 128, 16], [214, 136, 12], [384, 132, 15], [450, 138, 12]]) { disc(x, tx, ty + 2, tr + 1, tr * 0.8 + 1, "#2c4a26"); disc(x, tx, ty, tr, tr * 0.8, "#4a7a36"); disc(x, tx - tr * 0.3, ty - tr * 0.3, tr * 0.55, tr * 0.42, "#6a9e46"); speck(x, tx - tr, ty - tr, tr * 2, tr * 1.4, 12, ["#86b85a", "#3a6a2c"]); }
+      { const id = x.getImageData(0, 0, BW2, H), d = new Uint32Array(id.data.buffer), hz = [0xb0, 0xc8, 0xe6]; for (let i = 0; i < d.length; i++) { const v = d[i]; if (!(v >>> 24)) continue; d[i] = (0xff000000 | (Math.round(((v >> 16) & 255) * 0.72 + hz[2] * 0.28) << 16) | (Math.round(((v >> 8) & 255) * 0.72 + hz[1] * 0.28) << 8) | Math.round((v & 255) * 0.72 + hz[0] * 0.28)) >>> 0; } x.putImageData(id, 0, 0); } // the haze of the distance over them
+      S.blocks = c; }
+    yield;
+    // ---- 5. the street (it scrolls with the fight at 0.88)
+    const [mid, m] = mk(STAGE_W, H), yG = 176;
+    // a small neighbour on the left: warm yellow plaster, a tiled roof, a window with flowers
+    { const x0 = 0, w2 = 46, top = 92; R(m, x0, top - 11, w2 + 5, 11, "#5a2418"); R(m, x0, top - 10, w2 + 4, 10, "#c4502e"); for (let q = x0; q < x0 + w2 + 4; q += 4) R(m, q, top - 10, 1, 10, "#9a3a22"); R(m, x0, top - 10, w2 + 4, 1, "#e07a50");
+      R(m, x0, top, w2, yG - top, "#f2c55a"); speck(m, x0, top, w2, yG - top, 160, ["#e6b44c", "#f8d478"]); R(m, x0, top, w2, 3, "#c99a3a"); R(m, x0 + w2 - 3, top, 3, yG - top, "#d8a646");
+      box(m, x0 + 10, top + 14, 22, 26, "#5a3a26", "#3a2418"); R(m, x0 + 12, top + 16, 8, 22, "#4f80c0"); R(m, x0 + 22, top + 16, 8, 22, "#4f80c0"); R(m, x0 + 12, top + 16, 3, 9, "#a8d0f0"); R(m, x0 + 22, top + 16, 3, 9, "#a8d0f0");
+      R(m, x0 + 8, top + 40, 26, 4, "#6b4a2e"); for (let i = 0; i < 7; i++) { R(m, x0 + 9 + i * 3.5, top + 37 + (i % 2), 3, 3, i % 2 ? "#ff4a7a" : "#ffd23a"); R(m, x0 + 10 + i * 3.5, top + 40, 2, 1, "#3a8a2a"); }
+      box(m, x0 + 14, yG - 30, 16, 30, "#7a4a30", "#3a2418"); R(m, x0 + 15, yG - 29, 14, 1, "#9a6a46"); R(m, x0 + 26, yG - 16, 2, 2, "#ffd23a"); R(m, x0, yG - 6, w2, 6, "#a8743a"); }
+    // the Two Minutes house: warm plaster in the sun, two floors, its left edge lit and its right in shade, a cornice,
+    // the dark plinth along the bottom (as in the photo)
+    const hx = 46, hw = 200, ht = 22, sxL = hx + 14;
+    R(m, hx - 1, ht - 1, hw + 2, yG - ht + 1, "#6a3a28");
+    R(m, hx, ht, hw, yG - ht, "#e6b48c"); speck(m, hx, ht, hw, yG - ht, 1100, ["#d8a47c", "#efc29e", "#dcaa82"]);
+    R(m, hx, ht, 2, yG - ht, "#f6cfa8"); R(m, hx + hw - 4, ht, 4, yG - ht, "#c48c66"); R(m, hx, ht, hw, 3, "#f6d6b4"); R(m, hx, ht + 3, hw, 2, "#b47e5a");
+    for (const [a, b] of [[hx, sxL], [sxL + 152, hx + hw]]) { R(m, a, 160, b - a, yG - 160, "#7e4032"); R(m, a, 160, b - a, 1, "#a65a44"); speck(m, a, 161, b - a, yG - 161, 40, ["#6e3628", "#8a4a3a"]); }
+    // the upper windows: a recess in shadow, dark brown frames, the sky in the glass with a streak of light, a curtain
+    const win = (x0, y0, w2, h2, curtain) => {
+      R(m, x0 - 2, y0 - 2, w2 + 4, h2 + 2, "#b88058"); R(m, x0, y0, w2, h2, "#3a1e14");
+      for (let y = y0 + 2; y < y0 + h2 - 2; y++) { const k = (y - y0) / h2; R(m, x0 + 2, y, w2 - 4, 1, k < 0.3 ? "#4a7cc0" : k < 0.6 ? "#6496d2" : "#86b2e2"); }
+      for (let i = 0; i < h2 - 4; i++) { const q = x0 + 2 + Math.floor(i * 0.5) + 4; if (q < x0 + w2 - 4) R(m, q, y0 + 2 + i, 2, 1, "#c4e0f6"); }
+      if (curtain) { R(m, x0 + 2, y0 + 2, 5, h2 - 4, "#f2ece0"); for (let y = y0 + 3; y < y0 + h2 - 3; y += 2) R(m, x0 + 4, y, 1, 1, "#d6cec0"); }
+      R(m, x0 + Math.floor(w2 / 2) - 1, y0, 2, h2, "#3a1e14"); R(m, x0, y0 + Math.floor(h2 * 0.38), w2, 2, "#3a1e14");
+      R(m, x0 - 3, y0 + h2, w2 + 6, 2, "#f6dcc0"); R(m, x0 - 3, y0 + h2 + 2, w2 + 6, 1, "#a8724e");
     };
-    for (const [x0, y0, w2] of [[60, 34, 70], [240, 22, 48], [400, 46, 90], [600, 28, 60], [720, 54, 40]]) cloud(x0, y0, w2);
-    c.putImageData(cid, 0, 0);
-    // ---- the far city: grey blocks, a pink one, trees; drawn at half size (soft), in the haze
-    const FW = Math.ceil((W + (STAGE_W - W) * 0.4) / 2) + 2, FH = Math.ceil(H / 2), [far, f] = mk(FW * RS, FH * RS); f.scale(RS, RS);
-    const block = (x0, w2, top, col, win) => { f.fillStyle = col; f.fillRect(x0, top, w2, 90 - top); f.fillStyle = win; for (let y = top + 3; y < 82; y += 5) for (let x = x0 + 2; x < x0 + w2 - 2; x += 4) if (r() < 0.75) f.fillRect(x, y, 2, 2); f.fillStyle = "#d6dde4"; f.fillRect(x0, top, w2, 1); };
-    block(2, 26, 34, "#b8bfc8", "#9aa4b0"); block(34, 18, 46, "#c8b8b8", "#a89898"); block(58, 40, 12, "#c4c9d0", "#a3abb6"); block(104, 22, 40, "#b6bcc4", "#98a0ac"); block(132, 34, 26, "#c9cdd2", "#a8afb8"); block(170, 26, 44, "#c4b2ae", "#a8958f"); block(200, 30, 20, "#bfc5cc", "#a0a8b2");
-    f.fillStyle = "#9fb69a"; for (let i = 0; i < 18; i++) { const tx = (i * 23) % FW, ty = 70 + (i % 3) * 3; f.beginPath(); f.arc(tx, ty, 5 + (i % 3), 0, Math.PI * 2); f.fill(); }
-    { const FW2 = far.width, id2 = f.getImageData(0, 0, FW2, far.height), d2 = new Uint32Array(id2.data.buffer), hz = u32(HAZE); for (let y = 0; y < far.height; y++) for (let x = 0; x < FW2; x++) { const i = y * FW2 + x; if ((d2[i] >>> 24) && ((x + y) & 1) && (y > 20 * RS || (x & 2))) d2[i] = hz; } f.putImageData(id2, 0, 0); } // the haze, one pixel in two
-    // ---- the street (it scrolls with the fight)
-    const [mid, m] = mk(STAGE_W * RS, H * RS); m.scale(RS, RS);
-    const yG = 176;
-    // a small, cute neighbour on the left: yellow plaster, a tiled roof, a window with flowers
-    { const x0 = 0, w2 = 46, top = 92; m.fillStyle = "#b8573c"; m.fillRect(x0, top - 10, w2 + 4, 10); m.fillStyle = "#9a4430"; for (let x = x0; x < x0 + w2 + 4; x += 4) m.fillRect(x, top - 10, 1, 10); m.fillStyle = "#e9cf8a"; m.fillRect(x0, top, w2, yG - top); dith(m, x0, top, w2, 3, "#e9cf8a", "#d8bd76", 1);
-      m.fillStyle = "#5a3a26"; m.fillRect(x0 + 10, top + 14, 22, 26); m.fillStyle = "#a9c6d8"; m.fillRect(x0 + 12, top + 16, 8, 22); m.fillRect(x0 + 22, top + 16, 8, 22); m.fillStyle = "#d8e8f0"; m.fillRect(x0 + 12, top + 16, 3, 8);
-      m.fillStyle = "#6b4a2e"; m.fillRect(x0 + 8, top + 40, 26, 4); for (let i = 0; i < 7; i++) { m.fillStyle = i % 2 ? "#e84a6a" : "#ffd23a"; m.fillRect(x0 + 9 + i * 3.5, top + 37 + (i % 2), 3, 3); m.fillStyle = "#4a8a3a"; m.fillRect(x0 + 10 + i * 3.5, top + 40, 2, 1); }
-      m.fillStyle = "#4a3428"; m.fillRect(x0 + 14, yG - 30, 16, 30); m.fillStyle = "#6a4a36"; m.fillRect(x0 + 15, yG - 29, 14, 29); m.fillStyle = "#ffd23a"; m.fillRect(x0 + 26, yG - 16, 2, 2); }
-    // the Two Minutes house: beige-pink plaster, two floors
-    const hx = 46, hw = 200, ht = 22;
-    m.fillStyle = "#dcc2ae"; m.fillRect(hx, ht, hw, yG - ht);
-    for (let i = 0; i < 900; i++) { m.fillStyle = r() < 0.5 ? "#d2b6a2" : "#e6d0c0"; m.fillRect(hx + Math.floor(r() * hw), ht + Math.floor(r() * (yG - ht)), 1, 1); }
-    m.fillStyle = "#c9ab96"; m.fillRect(hx, ht, hw, 2); m.fillRect(hx + hw - 3, ht, 3, yG - ht);
-    // the upper windows: dark brown frames, the sky in the glass
-    const win = (x0, y0, w2, h2) => { m.fillStyle = "#3e2418"; m.fillRect(x0, y0, w2, h2); m.fillStyle = "#9ab8cc"; m.fillRect(x0 + 2, y0 + 2, w2 - 4, h2 - 4); m.fillStyle = "#c6dbe8"; m.fillRect(x0 + 2, y0 + 2, Math.floor((w2 - 4) / 2), Math.floor((h2 - 4) / 3)); m.fillStyle = "#3e2418"; m.fillRect(x0 + Math.floor(w2 / 2) - 1, y0, 2, h2); m.fillRect(x0, y0 + Math.floor(h2 * 0.38), w2, 2); m.fillStyle = "#b89a86"; m.fillRect(x0 - 2, y0 + h2, w2 + 4, 2); };
-    win(78, 32, 34, 46); win(150, 36, 26, 38);
+    win(78, 32, 34, 46, true); win(150, 36, 26, 38, false);
     // the drainpipe, stickered, at the corner
-    m.fillStyle = "#8a8e96"; m.fillRect(hx + hw - 6, 0, 3, yG); m.fillStyle = "#b6bac2"; m.fillRect(hx + hw - 6, 0, 1, yG);
-    for (let y = 120; y < 170; y += 3) { m.fillStyle = ["#e84a6a", "#ffd23a", "#2fb8f0", "#ffffff", "#28c840"][(y / 3) % 5 | 0]; m.fillRect(hx + hw - 6, y, 3, 2); }
-    // the awning bar over the shopfront, the name on it
-    m.fillStyle = "#3c3d42"; m.fillRect(hx + 4, 88, 168, 11); m.fillStyle = "#56585e"; m.fillRect(hx + 4, 88, 168, 1); m.fillStyle = "rgba(40,24,20,.25)"; m.fillRect(hx + 6, 99, 164, 3);
-    text(m, "TWO MINUTES", hx + 90, 90, "#f4f4f4", { ol: null, al: "c" });
-    // the shopfront: a black frame; the door (the white II' on its glass, a curtain), the big window (shelves, the counter)
-    const sx0 = hx + 14, sw = 152, sy0 = 102;
-    m.fillStyle = "#121214"; m.fillRect(sx0, sy0, sw, yG - sy0);
-    m.fillStyle = "#3a3f46"; m.fillRect(sx0 + 3, sy0 + 3, 38, yG - sy0 - 6);
-    m.fillStyle = "#e9e6de"; m.fillRect(sx0 + 4, sy0 + 4, 12, yG - sy0 - 10); m.fillStyle = "#d4d0c6"; for (let y = sy0 + 4; y < yG - 6; y++) if (y % 3 === 0) m.fillRect(sx0 + 7 + ((y / 3) & 1), y, 1, 1); // the curtain
-    m.fillStyle = "#f4f4f4"; m.fillRect(sx0 + 18, sy0 + 20, 4, 30); m.fillRect(sx0 + 25, sy0 + 20, 4, 30); m.fillRect(sx0 + 32, sy0 + 20, 3, 8); // II'
-    m.fillStyle = "#9a9ca4"; m.fillRect(sx0 + 37, sy0 + 34, 1, 18); // the handle
-    const wx0 = sx0 + 44, ww = sw - 47;
-    m.fillStyle = "#5a4636"; m.fillRect(wx0, sy0 + 3, ww, yG - sy0 - 6); // the room inside, warm
-    m.fillStyle = "#7a5a40"; for (const yy of [sy0 + 18, sy0 + 34]) m.fillRect(wx0 + 2, yy, ww - 4, 2); // shelves
-    for (let i = 0; i < 14; i++) { const bx = wx0 + 4 + i * 7, yy = i < 7 ? sy0 + 11 : sy0 + 27; m.fillStyle = ["#e84a6a", "#28c840", "#2fb8f0", "#ffd23a", "#f4f2ea"][i % 5]; m.fillRect(bx, yy, 5, 7); m.fillStyle = "rgba(0,0,0,.25)"; m.fillRect(bx + 4, yy, 1, 7); }
-    m.fillStyle = "#c9a878"; m.fillRect(wx0 + 2, yG - 24, ww - 4, 4); m.fillStyle = "#8a6a4a"; m.fillRect(wx0 + 2, yG - 20, ww - 4, 14); // the counter
-    m.drawImage(marzocco(), MZ.x, MZ.y, MZ.w, MZ.h); // beta 3.33: the La Marzocco on the counter
-    m.fillStyle = "rgba(255,255,255,.16)"; for (let i = 0; i < 3; i++) { m.beginPath(); m.moveTo(wx0 + 10 + i * 34, sy0 + 3); m.lineTo(wx0 + 22 + i * 34, sy0 + 3); m.lineTo(wx0 + i * 34 - 6, yG - 6); m.lineTo(wx0 + i * 34 - 18, yG - 6); m.fill(); } // reflections
-    m.fillStyle = "#121214"; m.fillRect(wx0 + 50, sy0, 2, yG - sy0);
+    R(m, hx + hw - 6, 0, 3, yG, "#7e828c"); R(m, hx + hw - 6, 0, 1, yG, "#c2c6ce"); R(m, hx + hw - 4, 0, 1, yG, "#5a5e68");
+    for (let y = 120; y < 170; y += 3) R(m, hx + hw - 6, y, 3, 2, ["#ff4a7a", "#ffd23a", "#2fb8f0", "#ffffff", "#28c840"][(y / 3) % 5 | 0]);
+    // the sign bar over the shopfront, the name on it, its shadow on the wall
+    R(m, hx + 3, 87, 170, 13, OUT); R(m, hx + 4, 88, 168, 11, "#2b2c33"); R(m, hx + 4, 88, 168, 1, "#62646e"); R(m, hx + 4, 98, 168, 1, "#1a1a20");
+    R(m, hx + 4, 100, 168, 2, "#b47e5a"); R(m, hx + 6, 102, 164, 1, "#c99068");
+    text(m, "TWO MINUTES", hx + 90, 90, "#f8f8f8", { ol: null, al: "c" });
+    // the shopfront: a black frame; the door (the white II' on its glass, a curtain), the big window (a warm lit room:
+    // the lamp, the shelves, the counter, the La Marzocco)
+    const sx = sxL, sw = 152, sy0 = 102;
+    R(m, sx, sy0, sw, yG - sy0, "#121214");
+    R(m, sx + 3, sy0 + 3, 38, yG - sy0 - 6, "#2e3540");
+    R(m, sx + 4, sy0 + 4, 12, yG - sy0 - 10, "#eeeae0"); for (let y = sy0 + 4; y < yG - 6; y++) if (y % 3 === 0) R(m, sx + 7 + ((y / 3) & 1), y, 1, 1, "#cfc8bc"); R(m, sx + 15, sy0 + 4, 1, yG - sy0 - 10, "#c4bcae"); // the curtain
+    R(m, sx + 18, sy0 + 20, 4, 30, "#f6f6f6"); R(m, sx + 25, sy0 + 20, 4, 30, "#f6f6f6"); R(m, sx + 32, sy0 + 20, 3, 8, "#f6f6f6"); // II'
+    R(m, sx + 37, sy0 + 34, 1, 18, "#a4a6ae"); // the handle
+    const wx0 = sx + 44, ww = sw - 47;
+    R(m, wx0, sy0 + 3, ww, yG - sy0 - 6, "#5e3a26"); R(m, wx0, sy0 + 3, ww, 22, "#7a4c32"); // the room inside, the warm wall
+    for (let i = 0; i < 18; i++) for (let j = 0; j < 9; j++) if ((i + j) % 2 === 0 && Math.hypot(i - 9, j * 1.6) < 9) R(m, wx0 + 21 + i * 2, sy0 + 4 + j, 1, 1, "#c08a4e"); // the lamp's glow on the wall
+    R(m, wx0 + 36, sy0 + 3, 1, 3, "#1a1210"); R(m, wx0 + 33, sy0 + 6, 7, 2, "#1a1210"); R(m, wx0 + 34, sy0 + 8, 5, 1, "#ffe08a"); // the pendant lamp
+    for (const yy of [sy0 + 18, sy0 + 34]) { R(m, wx0 + 2, yy, ww - 4, 2, "#a06c44"); R(m, wx0 + 2, yy, ww - 4, 1, "#c88e5a"); R(m, wx0 + 2, yy + 2, ww - 4, 1, "#3e2418"); } // shelves
+    for (let i = 0; i < 14; i++) { const bx = wx0 + 4 + i * 7, yy = i < 7 ? sy0 + 11 : sy0 + 27, col = ["#ff4a7a", "#28c840", "#2fb8f0", "#ffd23a", "#f6f2ea"][i % 5]; R(m, bx, yy, 5, 7, col); R(m, bx, yy, 5, 1, "#ffffff"); R(m, bx + 4, yy, 1, 7, "#3e2418"); }
+    R(m, wx0 + 2, yG - 24, ww - 4, 4, "#e0b886"); R(m, wx0 + 2, yG - 24, ww - 4, 1, "#f6d6a6"); R(m, wx0 + 2, yG - 20, ww - 4, 14, "#8a5636"); for (let q = wx0 + 10; q < wx0 + ww - 4; q += 16) R(m, q, yG - 19, 1, 12, "#6a3e26"); // the counter
+    m.drawImage(marzocco(), MZ.x, MZ.y, MZ.w, MZ.h);
+    { const id = m.getImageData(wx0, sy0 + 3, ww, yG - sy0 - 6), d = new Uint32Array(id.data.buffer), w3 = ww; // the reflections: bands across the glass, a step lighter, crisp
+      for (let y = 0; y < id.height; y++) for (let q = 0; q < w3; q++) { const u = (q + y * 0.55) % 34; if (u < 7 || (u > 10 && u < 12)) { const v = d[y * w3 + q], k = u < 7 ? 0.2 : 0.12; d[y * w3 + q] = (0xff000000 | (Math.round(((v >> 16) & 255) + (255 - ((v >> 16) & 255)) * k) << 16) | (Math.round(((v >> 8) & 255) + (255 - ((v >> 8) & 255)) * k) << 8) | Math.round((v & 255) + (255 - (v & 255)) * k)) >>> 0; } }
+      m.putImageData(id, wx0, sy0 + 3); }
+    R(m, wx0 + 50, sy0, 2, yG - sy0, "#121214");
     // the wooden step along the shopfront, where people sit
-    m.fillStyle = "#b98a55"; m.fillRect(sx0 + 40, yG - 8, 110, 4); m.fillStyle = "#8a6038"; m.fillRect(sx0 + 40, yG - 4, 110, 4); m.fillStyle = "#d4a870"; m.fillRect(sx0 + 40, yG - 8, 110, 1);
+    R(m, sx + 40, yG - 9, 112, 9, "#3a2416"); R(m, sx + 41, yG - 8, 110, 4, "#c8945a"); R(m, sx + 41, yG - 4, 110, 4, "#8e6038"); R(m, sx + 41, yG - 8, 110, 1, "#e6b47a");
     // the house-number plate, green, by the door: 50A
-    { const px2 = sx0 + sw + 6; m.fillStyle = "#f4f4f4"; m.fillRect(px2, 110, 17, 13); m.fillStyle = "#1e6b43"; m.fillRect(px2 + 1, 111, 15, 11); tiny(m, "50A", px2 + 3, 114, "#f4f4f4"); } // the house number, on a green Bucharest plate
-    // the menu board on the wall by the door
-    m.fillStyle = "#4a3428"; m.fillRect(hx - 1, 136, 17, 30); m.fillStyle = "#2b3130"; m.fillRect(hx, 137, 15, 28);
-    // a tree's branches hanging over from the left, the leaves catching the light
-    { // a tree's branches hanging in from the left, leaves in clusters, the light on top
-      const twig = (x0, y0, x1, y1) => { for (let i = 0; i <= 40; i++) { const t2 = i / 40; m.fillStyle = "#5a4430"; m.fillRect(Math.round(lerp(x0, x1, t2)), Math.round(lerp(y0, y1, t2) + Math.sin(t2 * 3) * 3), 2, 1); } };
-      twig(0, 18, 110, 52); twig(30, 30, 70, 72); twig(60, 38, 140, 70);
-      for (const [cx2, cy2, n2] of [[20, 20, 24], [52, 30, 22], [84, 44, 26], [112, 54, 20], [66, 66, 16], [134, 66, 16], [36, 46, 14]]) for (let i = 0; i < n2; i++) { const a2 = r() * Math.PI * 2, d2 = r() * 10, lx = cx2 + Math.cos(a2) * d2, ly = cy2 + Math.sin(a2) * d2 * 0.7; m.fillStyle = OUT; m.fillRect(lx - 1, ly - 1, 5, 4); m.fillStyle = ly < cy2 ? "#7aa84a" : "#5e8a3c"; m.fillRect(lx, ly, 3, 2); m.fillStyle = "#a6cc6a"; if (ly < cy2 - 2) m.fillRect(lx, ly, 2, 1); }
-    }
-    // the white wall next door: rough plaster, the green enamel street plate, a box, a pipe
+    { const px2 = sx + sw + 6; R(m, px2 - 1, 109, 19, 15, "#5a3424"); R(m, px2, 110, 17, 13, "#f6f6f6"); R(m, px2 + 1, 111, 15, 11, "#16784a"); tiny(m, "50A", px2 + 3, 114, "#f6f6f6"); }
+    // the menu board on the wall by the door, chalk on it
+    R(m, hx - 1, 136, 17, 30, "#4a2c1c"); R(m, hx, 137, 15, 28, "#26302e"); for (let i = 0; i < 7; i++) R(m, hx + 2, 140 + i * 3, 4 + ((i * 5) % 8), 1, i % 3 ? "#d8dcd4" : "#ffd23a");
+    // a tree's branches hanging in from the left (the leaves are their own layer: they move in the wind)
+    { const twig = (x0, y0, x1, y1) => { for (let i = 0; i <= 40; i++) { const t2 = i / 40; R(m, Math.round(lerp(x0, x1, t2)), Math.round(lerp(y0, y1, t2) + Math.sin(t2 * 3) * 3), 2, 1, "#4a3424"); } };
+      twig(0, 18, 110, 52); twig(30, 30, 70, 72); twig(60, 38, 140, 70); }
+    yield;
+    // the white wall next door: rough plaster a step under white, the house's shadow on its left, its coping lit, a
+    // grey base; the green enamel street plate, a box, a pipe
     const wx = hx + hw, wwid = 112;
-    m.fillStyle = "#ecebe5"; m.fillRect(wx, 72, wwid, yG - 72); for (let i = 0; i < 700; i++) { m.fillStyle = r() < 0.5 ? "#dcdbd4" : "#f8f7f2"; m.fillRect(wx + Math.floor(r() * wwid), 72 + Math.floor(r() * (yG - 72)), 1, 1); }
-    m.fillStyle = "#d6d4cc"; m.fillRect(wx, 72, wwid, 2); m.fillRect(wx, yG - 12, wwid, 12);
-    m.fillStyle = "#f4f4f4"; m.fillRect(wx + 44, 110, 34, 15); m.fillStyle = "#1e6b5a"; m.fillRect(wx + 45, 111, 32, 13); tiny(m, "STR.C.", wx + 47, 112, "#f4f4f4"); tiny(m, "ARICESCU", wx + 46, 118, "#f4f4f4");
-    m.fillStyle = "#c9ccd4"; m.fillRect(wx + 84, 132, 9, 12); m.fillStyle = "#9a9ca4"; m.fillRect(wx + 84, 143, 9, 1); m.fillStyle = "#1c1c20"; m.fillRect(wx + 88, 144, 2, 32);
-    // the pavement, the kerb
-    m.fillStyle = "#8c8a86"; m.fillRect(0, yG, STAGE_W, H - yG); m.fillStyle = "#a4a29e"; m.fillRect(0, yG, STAGE_W, 2);
-    for (let y = yG + 4, row = 0; y < H; y += 6 + row, row++) { m.fillStyle = "#7a7874"; m.fillRect(0, y, STAGE_W, 1); const step = 18 + row * 4; for (let x = (row % 2) * (step / 2); x < STAGE_W; x += step) m.fillRect(Math.round(x), y - 5 - row, 1, 5 + row); }
+    R(m, wx, 72, wwid, yG - 72, "#e8e2d4"); speck(m, wx, 72, wwid, yG - 72, 900, ["#d8d0c0", "#f4f0e6", "#dcd4c6"]);
+    R(m, wx, 71, wwid, 2, "#fbf8f0"); R(m, wx, 73, wwid, 2, "#bcb4a6");
+    for (let y = 75; y < yG; y++) for (let q = 0; q < 14; q++) if (q < 8 || (q + y) % 2 === 0 && q < 12 || (q + y) % 4 === 0) R(m, wx + q, y, 1, 1, q < 8 ? "#c4bfc8" : "#cdc8cc"); // the house's shadow, cool
+    R(m, wx, yG - 12, wwid, 12, "#c8bfae"); R(m, wx, yG - 12, wwid, 1, "#ddd6c8"); speck(m, wx, yG - 11, wwid, 11, 90, ["#b8ae9c", "#d2cab8"]);
+    R(m, wx + 43, 109, 36, 17, "#a89e8e"); R(m, wx + 44, 110, 34, 15, "#f6f6f6"); R(m, wx + 45, 111, 32, 13, "#16705c"); tiny(m, "STR.C.", wx + 47, 112, "#f6f6f6"); tiny(m, "ARICESCU", wx + 46, 118, "#f6f6f6");
+    box(m, wx + 84, 132, 9, 12, "#c9ccd4", "#5a5c64"); R(m, wx + 84, 132, 9, 1, "#eef0f4"); R(m, wx + 84, 143, 9, 1, "#9a9ca4"); R(m, wx + 88, 144, 2, 32, "#1c1c20");
     // the steel bin and the black bollard
-    { const bx = sx0 + sw + 4; m.fillStyle = OUT; m.fillRect(bx - 1, 145, 16, yG - 145); m.fillStyle = "#b8bcc4"; m.fillRect(bx, 146, 14, yG - 147); m.fillStyle = "#e4e7ec"; m.fillRect(bx + 2, 148, 2, yG - 152); m.fillStyle = "#2a2a30"; m.fillRect(bx - 1, 143, 16, 4); }
-    { const bx = wx + 26; m.fillStyle = OUT; m.fillRect(bx - 1, 141, 6, 36); m.fillStyle = "#26262c"; m.fillRect(bx, 142, 4, 34); m.fillStyle = "#4a4a52"; m.fillRect(bx, 142, 1, 34); m.fillRect(bx - 2, yG - 2, 8, 2); }
-    // a pink suitcase with a jacket over it
-    { const bx = wx + 52; m.fillStyle = OUT; m.fillRect(bx - 1, 148, 14, 28); m.fillStyle = "#e84a7a"; m.fillRect(bx, 149, 12, 26); m.fillStyle = "#f07a9a"; m.fillRect(bx + 2, 150, 2, 24); m.fillStyle = "#6a6a72"; m.fillRect(bx - 2, 140, 10, 14); m.fillStyle = "#2a2a30"; m.fillRect(bx + 4, 144, 2, 6); }
+    { const bx = sx + sw + 4; R(m, bx - 1, 145, 16, yG - 145, OUT); R(m, bx, 146, 14, yG - 147, "#b0b6c0"); R(m, bx + 2, 148, 2, yG - 152, "#eef2f6"); R(m, bx + 10, 148, 3, yG - 152, "#8a909c"); R(m, bx - 1, 143, 16, 4, "#2a2a30"); }
+    { const bx = wx + 26; R(m, bx - 1, 141, 6, 36, OUT); R(m, bx, 142, 4, 34, "#26262c"); R(m, bx, 142, 1, 34, "#565662"); R(m, bx - 2, yG - 2, 8, 2, OUT); }
+    // the pink suitcase with a jacket over it (from the photo)
+    { const bx = wx + 52; R(m, bx - 1, 148, 14, 28, OUT); R(m, bx, 149, 12, 26, "#ee4a82"); R(m, bx + 2, 150, 2, 24, "#ff8cb6"); R(m, bx + 9, 150, 2, 24, "#c43066"); R(m, bx - 2, 140, 10, 14, "#62626c"); R(m, bx - 2, 140, 10, 1, "#8a8a96"); R(m, bx + 4, 144, 2, 6, "#2a2a30"); }
     // past the wall: a low house with a red roof, a tree
-    { const x0 = wx + wwid - 4; m.fillStyle = "#3e6a34"; m.beginPath(); m.arc(x0 + 8, 104, 18, 0, Math.PI * 2); m.fill(); m.fillStyle = "#5e8a44"; m.beginPath(); m.arc(x0 + 4, 98, 10, 0, Math.PI * 2); m.fill();
-      m.fillStyle = "#e2ddd2"; m.fillRect(x0 + 20, 118, 70, yG - 118); m.fillStyle = "#a8402e"; m.fillRect(x0 + 16, 112, 78, 7); m.fillStyle = "#c4553c"; m.fillRect(x0 + 16, 112, 78, 2);
-      m.fillStyle = "#c98a3a"; m.fillRect(x0 + 34, 126, 16, 12); m.fillStyle = "#f2c47a"; m.fillRect(x0 + 35, 127, 14, 10); m.fillStyle = "#c98a3a"; m.fillRect(x0 + 41, 127, 1, 10);
-      m.fillStyle = "#b8402e"; for (let x = x0 + 56; x < x0 + 90; x += 3) m.fillRect(x, 150, 2, 26); }
+    { const x0 = wx + wwid - 4; disc(m, x0 + 8, 104, 19, 17, "#244a22"); disc(m, x0 + 8, 103, 18, 16, "#3f7a34"); disc(m, x0 + 3, 97, 10, 8, "#62a046"); speck(m, x0 - 8, 88, 32, 28, 40, ["#86c25a", "#2e5a28"]);
+      R(m, x0 + 19, 117, 72, yG - 117, "#5a4a40"); R(m, x0 + 20, 118, 70, yG - 118, "#efe6d6"); R(m, x0 + 16, 111, 78, 8, "#5a2418"); R(m, x0 + 16, 112, 78, 6, "#c4502e"); R(m, x0 + 16, 112, 78, 1, "#e07a50");
+      box(m, x0 + 34, 126, 16, 12, "#f6c87a", "#8a5a2a"); R(m, x0 + 41, 126, 1, 12, "#8a5a2a"); R(m, x0 + 35, 127, 5, 4, "#fff0c0");
+      for (let q = x0 + 56; q < x0 + 90; q += 3) { R(m, q, 150, 2, 26, "#c0402c"); R(m, q, 150, 1, 26, "#e06048"); } }
     // the cream caravan parked in front (a generic retro one, no name on it)
     { const cx0 = 430, cw = 136, cy0 = 112, cb = 166;
       m.fillStyle = OUT; m.beginPath(); m.moveTo(cx0 + 10, cy0 - 1); m.lineTo(cx0 + cw + 1, cy0 - 1); m.lineTo(cx0 + cw + 1, cb + 1); m.lineTo(cx0 - 1, cb + 1); m.lineTo(cx0 - 1, cy0 + 22); m.closePath(); m.fill();
-      m.fillStyle = "#ece2c6"; m.beginPath(); m.moveTo(cx0 + 10, cy0); m.lineTo(cx0 + cw, cy0); m.lineTo(cx0 + cw, cb); m.lineTo(cx0, cb); m.lineTo(cx0, cy0 + 22); m.closePath(); m.fill();
-      m.fillStyle = "#f8f2de"; m.fillRect(cx0 + 12, cy0 + 1, cw - 14, 3);
-      m.fillStyle = "#b07a46"; m.fillRect(cx0, cy0 + 24, cw, 3); m.fillStyle = "#d89a5a"; m.fillRect(cx0, cy0 + 27, cw, 2); m.fillStyle = "#b07a46"; m.fillRect(cx0, cb - 10, cw, 2);
-      m.fillStyle = "#3a3632"; m.fillRect(cx0 + 4, cy0 + 8, 40, 14); m.fillStyle = "#6a6660"; m.fillRect(cx0 + 6, cy0 + 9, 12, 4); // the front window
-      m.fillStyle = "#3a3632"; m.fillRect(cx0 + 96, cy0 + 8, 26, 16); m.fillStyle = "#6a6660"; m.fillRect(cx0 + 98, cy0 + 9, 8, 4);
-      m.fillStyle = "#d8ccb0"; m.fillRect(cx0 + 62, cy0 + 6, 20, cb - cy0 - 10); m.fillStyle = "#b8ac90"; m.fillRect(cx0 + 62, cy0 + 6, 1, cb - cy0 - 10); m.fillStyle = "#8a8070"; m.fillRect(cx0 + 78, cy0 + 30, 2, 4); // the door
-      m.fillStyle = "#c8beb0"; m.fillRect(cx0 + 20, cy0 - 4, 40, 4); // the roof vent
-      m.fillStyle = OUT; m.beginPath(); m.arc(cx0 + 92, cb + 2, 9, 0, Math.PI * 2); m.fill(); m.fillStyle = "#4a4a50"; m.beginPath(); m.arc(cx0 + 92, cb + 2, 4, 0, Math.PI * 2); m.fill(); // the wheel
-      m.fillStyle = "#a8acb4"; m.fillRect(cx0 - 26, cb - 2, 28, 2); m.fillRect(cx0 - 26, cb - 2, 2, 8); m.fillStyle = OUT; m.fillRect(cx0 - 28, cb + 5, 6, 4); } // the drawbar, the jockey wheel
-    // ---- the people around: drawn like the fighters (same puppet), smaller, with a little idle loop each
-    const bake = (id, n) => ({ frames: n.poses.map((p) => drawFighter(id, p, n.prop || null)), cheer: n.cheer ? drawFighter(id, n.cheer, n.prop || null) : null });
-    const npc = NPCS.map((n) => ({ n, own: bake(n.id, n), alt: bake(n.alt, n) }));
-    STAGE = { sky, clouds, far, mid, npc, FW, FH };
-    return STAGE;
+      for (let y = cy0; y < cb; y++) { const a = y < cy0 + 22 ? cx0 + 10 - Math.round(((y - cy0) * 10) / 22) : cx0; R(m, a, y, cx0 + cw - a, 1, y < cy0 + 4 ? "#fbf4e0" : y > cb - 12 ? "#d8ccae" : "#efe4c6"); }
+      R(m, cx0, cy0 + 24, cw, 3, "#a8642e"); R(m, cx0, cy0 + 27, cw, 2, "#e09a54"); R(m, cx0, cb - 10, cw, 2, "#a8642e");
+      R(m, cx0 + 4, cy0 + 8, 40, 14, "#2c2a28"); R(m, cx0 + 6, cy0 + 9, 12, 4, "#6e7884"); // the front window
+      R(m, cx0 + 96, cy0 + 8, 26, 16, "#2c2a28"); R(m, cx0 + 98, cy0 + 9, 8, 4, "#6e7884");
+      R(m, cx0 + 62, cy0 + 6, 20, cb - cy0 - 10, "#ddd0b2"); R(m, cx0 + 62, cy0 + 6, 1, cb - cy0 - 10, "#b0a486"); R(m, cx0 + 78, cy0 + 30, 2, 4, "#7a7060"); // the door
+      R(m, cx0 + 20, cy0 - 4, 40, 4, "#c8beb0"); R(m, cx0 + 20, cy0 - 4, 40, 1, "#e8e0d2"); // the roof vent
+      disc(m, cx0 + 92, cb + 2, 9, 9, OUT); disc(m, cx0 + 92, cb + 2, 4, 4, "#5a5a62"); R(m, cx0 + 91, cb, 2, 2, "#9a9aa4"); // the wheel
+      R(m, cx0 - 26, cb - 2, 28, 2, "#a8acb4"); R(m, cx0 - 26, cb - 2, 2, 8, "#a8acb4"); R(m, cx0 - 28, cb + 5, 6, 4, OUT); } // the drawbar, the jockey wheel
+    S.mid = mid;
+    yield;
+    // ---- 6. the pavement: grey slabs in courses that grow towards us, the joints, the wall's shadow at the back, the
+    // kerb and a strip of the road at the front edge. A texture a little wider than the street, scrolled row by row
+    { const PW = STAGE_W + PAVE_PAD * 2 + 16, PH = H - PAVE_Y, [c, x] = mk(PW, PH);
+      R(x, 0, 0, PW, PH, "#988c7e");
+      let y = 2; const courses = [4, 5, 6, 7]; // the kerb then at y 205, the road from 211
+      for (let k = 0; k < courses.length; k++) { const h = courses[k], step = 20 + k * 5;
+        for (let q = -((k * 13) % step); q < PW; q += step) { const tint = r(); R(x, q, y, step, h, tint < 0.3 ? "#8f8476" : tint > 0.75 ? "#a39888" : "#988c7e"); if (r() < 0.25) R(x, q + 4 + Math.floor(r() * 8), y + 1 + Math.floor(r() * (h - 2)), 2, 1, "#82776a"); R(x, q, y, 1, h, "#62594f"); R(x, q + 1, y, 1, h, "#ada291"); }
+        R(x, 0, y - 1, PW, 1, "#5e564c"); R(x, 0, y, PW, 1, "#b2a694"); y += h + 1; }
+      R(x, 0, 0, PW, 1, "#4e4640"); R(x, 0, 1, PW, 1, "#7a7168"); speck(x, 0, 2, PW, 3, 200, ["#8e857a", "#968d82"]); // the wall's foot in shadow
+      const ky = y - 1; R(x, 0, ky, PW, 1, "#6e675f"); R(x, 0, ky + 1, PW, 2, "#d2cabd"); R(x, 0, ky + 3, PW, 2, "#958d82"); R(x, 0, ky + 5, PW, 1, "#3a3632"); // the kerb
+      for (let q = 0; q < PW; q += 26) R(x, q, ky + 1, 1, 4, "#7e766c");
+      R(x, 0, ky + 6, PW, PH - ky - 6, "#4c4c54"); speck(x, 0, ky + 6, PW, PH - ky - 6, 500, ["#5c5c66", "#3e3e46", "#56565e"]); // the road
+      S.pave = c; S.paveH = PH;
+      m.drawImage(c, PAVE_PAD, 0, STAGE_W, PH, 0, PAVE_Y, STAGE_W, PH); } // the street's own copy, lined up as at the middle of the stage
+    yield;
+    // ---- 7. the leaves (they sway in the wind, see drawAmbient)
+    { const [c, x] = mk(160, 96); // in the street's units, from (0, 4)
+      for (const [cx2, cy2, n2] of [[20, 16, 26], [52, 26, 24], [84, 40, 28], [112, 50, 22], [66, 62, 18], [134, 62, 18], [36, 42, 16]]) for (let i = 0; i < n2; i++) { const a2 = r() * Math.PI * 2, d2 = r() * 10, lx = Math.round(cx2 + Math.cos(a2) * d2), ly = Math.round(cy2 + Math.sin(a2) * d2 * 0.7); R(x, lx - 1, ly - 1, 5, 4, "#1e3418"); R(x, lx, ly, 3, 2, ly < cy2 ? "#6eae3e" : "#4a8432"); if (ly < cy2 - 2) R(x, lx, ly, 2, 1, "#a8dc66"); }
+      S.leaves = c; }
+    STAGE = S;
   }
-  // the backdrop, layer by layer: the sky (still), the clouds (drifting, slow), the far city (soft), the street
-  function drawBackdrop(ctx, camX, t, sy = 0, cups = true) {
+  const stageStep = () => { if (STAGE) return; if (!STAGE_GEN) STAGE_GEN = stageGen(); const r2 = STAGE_GEN.next(); if (r2.done) STAGE_GEN = null; return STAGE ? undefined : "again"; };
+  function stage() { while (!STAGE) stageStep(); return STAGE; }
+  // ---- the people around: drawn like the fighters (same puppet), smaller, each frame baked in a spare moment
+  const CROWD = NPCS.map((n) => ({ n, own: null, alt: null }));
+  function crowdJobs() {
+    const jobs = [];
+    CROWD.forEach((c) => { for (const [k, id] of [["own", c.n.id], ["alt", c.n.alt]]) { if (!id) continue; const n = c.n, list = [...n.poses, n.cheer, n.cheer2, n.ooh], out = new Array(list.length).fill(null); list.forEach((p, i) => jobs.push(() => { out[i] = drawFighter(id, p, n.prop || null); if (out.every(Boolean)) c[k] = { frames: out.slice(0, n.poses.length), cheer: [out[n.poses.length], out[n.poses.length + 1]], ooh: out[n.poses.length + 2] }; })); } });
+    return jobs;
+  }
+  // beta 3.45: the ambient life of the street, drawn each frame from the clock (nothing to bake): the pigeons on the
+  // sign bar (pecking; a big hit sends them up and away, they come back a while later), a few birds crossing the sky now
+  // and then, the steam from the La Marzocco in the window, the leaves in the wind (and one falling now and then), the
+  // shop's flag waving off the corner of the house
+  const AMB = { pig: [{ x: 128, s: 0, t: 0 }, { x: 141, s: 0, t: 0 }, { x: 196, s: 0, t: 0 }], scare: 0, last: 0 };
+  function scarePigeons() { for (const p of AMB.pig) if (p.s === 0) { p.s = 1; p.t = 0; } }
+  const PIG = { // 8x6 maps, facing right: o outline, g grey, l light, n the green-violet neck, k the dark of the wing, e an eye, f the feet
+    sit: ["...oo...", "..oneo..", ".onggoo.", "oggggllo", ".okkggo.", "..f..f.."],
+    peck: ["........", "...ooo..", ".oggnno.", "oggggneo", ".okkggo.", "..f..f.."],
+    up: ["o......o", "ko....ko", ".kg..gk.", "..ognno.", "..oggo..", "...oo..."],
+    down: ["........", "..ognno.", ".oggggo.", "okkggkko", "o..oo..o", "........"] };
+  const PIGC = { o: OUT, g: "#9aa0ae", l: "#c4c8d2", n: "#4e9a7a", k: "#5e6474", e: "#ff8a3a", f: "#d8604a" };
+  function pigeon(ctx, x, y, kind, face) { const m2 = PIG[kind]; for (let j = 0; j < m2.length; j++) for (let i = 0; i < 8; i++) { const ch = m2[j][face < 0 ? 7 - i : i]; if (ch === ".") continue; ctx.fillStyle = PIGC[ch]; ctx.fillRect(x + i, y + j, 1, 1); } }
+  function drawAmbient(ctx, fx, t, sy) {
+    const dt = Math.min(0.1, Math.max(0, t - (AMB.last || t))); AMB.last = t;
+    {
+      // the steam: wisps off the warm cups on top of the machine and out of the right wand, inside the window's glass
+      ctx.save(); ctx.beginPath(); ctx.rect(104 - fx, 105 + sy, 50, 46); ctx.clip();
+      for (let i = 0; i < 10; i++) { const a = (t * (i < 7 ? 0.3 : 0.55) + i / 7) % 1, wand = i >= 7, x0 = wand ? MZ.x + 46 : MZ.x + 8 + i * 5.5, y0 = wand ? MZ.y + 24 : MZ.y + 1, rise = wand ? 26 : 16, x = x0 - fx + Math.sin(a * 6 + i * 1.9) * (0.6 + a * 2.4), y = y0 - a * rise + sy;
+        ctx.globalAlpha = a < 0.3 ? 0.8 : a < 0.65 ? 0.55 : 0.28; ctx.fillStyle = a < 0.4 ? "#f6f6fb" : "#d8dae6"; ctx.fillRect(Math.round(x), Math.round(y), a < 0.3 ? 1 : 2, 1); if (a > 0.4) ctx.fillRect(Math.round(x) + (i & 1 ? 1 : -1), Math.round(y) - 1, 1, 1); }
+      ctx.restore(); ctx.globalAlpha = 1;
+      // the shop's flag on a short pole off the house's corner, black with the white II' of the door, waving in the wind
+      // (each column of cloth lifted on a travelling wave, a lit and a shaded side to each fold); kept clear of the HUD
+      { const px = (x, y, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x - fx), y + sy, 1, 1); };
+        for (let i = 0; i <= 18; i++) { const x = 241 - i * 0.95, y = 70 - i; px(x, Math.round(y), "#2a2c34"); px(x + 1, Math.round(y), "#8e929c"); } // the pole, up and out from the wall
+        ctx.fillStyle = "#2a2c34"; ctx.fillRect(Math.round(240 - fx), 68 + sy, 4, 4); ctx.fillStyle = "#ffd23a"; ctx.fillRect(Math.round(222 - fx), 50 + sy, 2, 2); // the bracket, the gold knob
+        const wave = (c) => Math.sin(t * 6.5 - c * 0.45) * (0.4 + c / 14) * 1.4, NW = 22;
+        for (let c = 0; c < NW; c++) { const x = 223 - c, u = NW - 1 - c, w0 = wave(c), y0 = 52 + Math.round(w0), hgt = c > NW - 4 ? 13 - (c - (NW - 4)) : 13, sl = wave(c + 1) - w0, body = sl > 0.25 ? "#3a3a46" : sl < -0.25 ? "#101014" : "#1e1e24";
+          for (let j = 0; j < hgt; j++) { const logo = j >= 3 && j <= 10 && (u === 6 || u === 7 || u === 10 || u === 11) || (u === 14 && j >= 3 && j <= 5); px(x, y0 + j, j === hgt - 1 ? "#0a0a0e" : logo ? (sl > 0.25 ? "#ffffff" : "#e6e6ea") : body); }
+          px(x, y0 - 1, OUT); px(x, y0 + hgt, OUT); }
+        px(223 - NW, 52 + Math.round(wave(NW)), OUT); }
+      // the leaves, swaying (a pixel each way, two rhythms), and now and then one falling
+      const lx = Math.round(Math.sin(t * 1.3) * 0.8 + Math.sin(t * 3.1) * 0.4), ly = Math.round(Math.sin(t * 1.7 + 1) * 0.6);
+      ctx.drawImage(STAGE.leaves, -fx + lx, 4 + sy + ly);
+      { const k = (t / 5.5) % 1, n = Math.floor(t / 5.5), x0 = 30 + ((n * 37) % 90), x = x0 + k * 40 + Math.sin(k * 14) * 5, y = 50 + k * 128; if (y < 174) { ctx.fillStyle = "#1e3418"; ctx.fillRect(Math.round(x - fx) - 1, Math.round(y + sy), 4, 2); ctx.fillStyle = (Math.floor(k * 14) & 1) ? "#6eae3e" : "#a8dc66"; ctx.fillRect(Math.round(x - fx), Math.round(y + sy), Math.floor(k * 14) & 1 ? 2 : 3, 1); } }
+      // the pigeons on the sign bar
+      for (let i = 0; i < AMB.pig.length; i++) { const q = AMB.pig[i]; q.t += dt;
+        if (q.s === 0) { const pk = Math.floor(t * 2 + i * 1.3) % 5 === 0; pigeon(ctx, Math.round(q.x - fx), 81 + sy, pk ? "peck" : "sit", i === 1 ? -1 : 1); }
+        else if (q.s === 1) { const k = q.t / 2.4, x = q.x - fx - k * (120 + i * 30), y = 81 - k * 110 + Math.sin(k * 9 + i) * 3; if (k >= 1) { q.s = 2; q.t = 0; } else pigeon(ctx, Math.round(x), Math.round(y + sy), Math.floor(q.t * 14) & 1 ? "up" : "down", -1); }
+        else if (q.s === 2 && q.t > 9 + i * 2) { q.s = 3; q.t = 0; }
+        else if (q.s === 3) { const k = Math.min(1, q.t / 2.2), x = q.x - fx + (1 - k) * 140, y = 81 - (1 - k) * (60 + i * 10); pigeon(ctx, Math.round(x), Math.round(y + sy), k < 1 ? (Math.floor(q.t * 14) & 1 ? "up" : "down") : "sit", 1); if (k >= 1) q.s = 0; } }
+    }
+  }
+  // the birds far off: a small flock crossing the sky every half a minute or so, on the skyline's layer
+  function drawBirds(ctx, camX, t, sy) {
+    const k = (t % 28) / 9; if (k > 1) return;
+    for (let i = 0; i < 4; i++) { const x = W + 20 - k * (W + 80) + i * 9 - camX * 0.18 + 17, y = 34 + i * 4 + Math.sin(k * 20 + i) * 2 + sy, up = Math.floor(t * 8 + i) & 1; ctx.fillStyle = "#3a4a6a"; const X = Math.round(x), Y = Math.round(y); if (up) { ctx.fillRect(X, Y, 1, 1); ctx.fillRect(X + 1, Y + 1, 1, 1); ctx.fillRect(X + 2, Y, 1, 1); } else { ctx.fillRect(X, Y + 1, 1, 1); ctx.fillRect(X + 1, Y, 1, 1); ctx.fillRect(X + 2, Y + 1, 1, 1); } }
+  }
+  // the street's layers for a camera (camX: the fighters' camera; flat: the street at the fighters' rate, as the
+  // ending and the splash have it): the skyline, the blocks, the street's front, the pavement row by row
+  function drawStreet(ctx, camX, t, sy = 0, flat = false) {
+    const S = stage(), c2 = clamp(camX, -60, STAGE_W - W + 60), pf = flat ? 1 : PF, fx = Math.round(layerX(camX, pf));
+    ctx.drawImage(S.sky2, -Math.round(layerX(c2, 0.18)), sy);
+    drawBirds(ctx, c2, t, sy);
+    ctx.drawImage(S.blocks, -Math.round(layerX(c2, 0.45)), sy);
+    ctx.drawImage(S.mid, -fx, sy);
+    for (let y = PAVE_Y; y < H; y++) { const o = Math.round(layerX(camX, rowPF(y, pf))) + PAVE_PAD, sx2 = Math.max(0, o), dx = sx2 - o; ctx.drawImage(S.pave, sx2, y - PAVE_Y, W - dx, 1, dx, y + sy, W - dx, 1); } // (the ending's camera stands left of the street: the row starts where the texture does)
+    return fx;
+  }
+  // the backdrop, layer by layer: the sky (still), the clouds (drifting, slow), the street's layers, the life in it
+  function drawBackdrop(ctx, camX, t, sy = 0, cups = true, flat = false) {
     const S = stage();
-    const q = (v) => Math.round(v * RS) / RS; // to the canvas's pixel
     ctx.drawImage(S.sky, 0, 0, W, H);
-    const cxo = q((camX * 0.15 + t * 3) % 768); ctx.drawImage(S.clouds, -cxo, sy, 768, 80); ctx.drawImage(S.clouds, 768 - cxo, sy, 768, 80);
-    ctx.drawImage(S.far, -q(camX * 0.4), 40 + sy, S.FW * 2, S.FH * 2);
-    ctx.drawImage(S.mid, -q(camX), sy, STAGE_W, H);
-    if (cups) drawCups(ctx, MZ.x - q(camX), MZ.y + sy, t, false); // the cups on the machine (the ending rattles its own)
+    const cxo = Math.round((camX * 0.08 + t * 3) % 768); ctx.drawImage(S.clouds, -cxo, sy); ctx.drawImage(S.clouds, 768 - cxo, sy);
+    const fx = drawStreet(ctx, camX, t, sy, flat);
+    if (cups) drawCups(ctx, MZ.x - fx, MZ.y + sy, t, false); // the cups on the machine (the ending rattles its own)
+    drawAmbient(ctx, fx, t, sy, false);
+    return fx;
   }
   // beta 3.31 (Daniel: "park a purple road bike in front of Two Minutes"): a road bike (drop bars, thin wheels) standing
   // on the pavement against the step, under the shop window. Drawn pixel by pixel, outlined like the props; it moves
@@ -1397,23 +1603,26 @@
     line(BB[0], BB[1], BB[0] + 3, BB[1] + 6, OUT, 3, -1); line(BB[0], BB[1], BB[0] + 3, BB[1] + 6, SIL2, 1); x.fillStyle = OUT; x.fillRect(BB[0] + 1, BB[1] + 6, 5, 3); x.fillStyle = "#3a3a42"; x.fillRect(BB[0] + 2, BB[1] + 7, 3, 1);
     return (BIKE = c);
   }
-  function drawBike(ctx, camX, sy = 0) {
-    const bx = BIKE_X - Math.round(camX * RS) / RS, by = BIKE_Y + sy; if (bx < -70 || bx > W) return;
-    ctx.fillStyle = "rgba(20,14,30,.28)"; ctx.fillRect(bx + 3, by + 39, 62, 2); ctx.fillRect(bx + 8, by + 38, 52, 1); // its shadow on the pavement
+  function drawBike(ctx, fx) {
+    const bx = BIKE_X - fx, by = BIKE_Y; if (bx < -70 || bx > W) return;
+    ctx.fillStyle = "rgba(20,14,30,.3)"; ctx.fillRect(bx + 3, by + 39, 62, 2); ctx.fillRect(bx + 8, by + 38, 52, 1); // its shadow on the pavement
     ctx.drawImage(bikeImg(), bx, by, 66, 41);
   }
-  // the bystanders: someone on the step with a cup, two people chatting by the caravan, the barista inside
-  function drawCrowd(ctx, camX, t, cheer) {
-    const S = stage();
-    for (let i = 0; i < S.npc.length; i++) {
-      const { n } = S.npc[i], busy = g && g.f && g.f.some((f) => f.id === NPC_LOOKS[n.id].headId), { frames, cheer: ch } = busy ? S.npc[i].alt : S.npc[i].own;
-      const x = Math.round(n.x - camX), img = cheer && ch ? ch : frames[Math.floor(t * n.rate + i) % frames.length];
-      if (x < -60 || x > W + 60) continue;
-      if (n.clip) { ctx.save(); ctx.beginPath(); ctx.rect(n.clip[0] - camX, n.clip[1], n.clip[2], n.clip[3]); ctx.clip(); }
-      hiDraw(ctx, img, n.x - camX, n.y + (cheer && !ch ? -Math.round(Math.abs(Math.sin(t * 9 + i)) * 4) / RS : 0), n.face, img.ax, img.ay);
+  // the bystanders (fx: where the street's layer stands). beta 3.45 (Daniel: "a crowd that reacts"): they cheer the big
+  // blows, a knock-down and the K.O. (arms up and a fist pumping, hopping, each a beat after the one before), flinch at a
+  // jab, and otherwise go on with their little loops
+  function drawCrowd(ctx, fx, t, cheerE, ooh) {
+    for (let i = 0; i < CROWD.length; i++) {
+      const c = CROWD[i], n = c.n, busy = n.alt && g && g.f && g.f.some((f) => f.id === NPC_LOOKS[n.id].headId), set = busy ? c.alt : c.own;
+      if (!set) continue;
+      const x = n.x - fx; if (x < -60 || x > W + 60) continue;
+      const cheering = cheerE >= ((i * 5) % 11), img = cheering ? set.cheer[Math.floor(t * 5 + i * 0.7) % 2] : ooh ? set.ooh : set.frames[Math.floor(t * n.rate + i) % set.frames.length];
+      const hop = cheering && !n.sits && !n.win ? Math.round(Math.abs(Math.sin(t * 8 + i * 1.1)) * 3) : 0;
+      if (n.clip) { ctx.save(); ctx.beginPath(); ctx.rect(n.clip[0] - fx, n.clip[1], n.clip[2], n.clip[3]); ctx.clip(); }
+      hiDraw(ctx, img, x, n.y - hop, n.face, img.ax, img.ay);
       if (n.clip) ctx.restore();
     }
-    drawBike(ctx, camX); // beta 3.31: the bike stands outside the window, in front of the barista
+    drawBike(ctx, fx); // beta 3.31: the bike stands outside the window, in front of the barista
   }
 
   // ===================== 5. the roster =====================
@@ -1524,7 +1733,7 @@
     const steps = [];
     // 3. Two Minutes at dusk: the street's drawing, in the dusk's colour, its windows lit warm
     steps.push(() => stageStep()); // the street first, a step at a time (beta 3.34)
-    steps.push(() => { const S = stage(), [c, x] = mk(WD, HD), cam = 22; x.drawImage(S.far, 0, 0, S.far.width, S.far.height, -Math.round(cam * 0.4 * RS), 40 * RS, S.FW * 2 * RS, S.FH * 2 * RS); x.drawImage(S.mid, cam * RS, 0, WD, HD, 0, 0, WD, HD);
+    steps.push(() => { const [c, x] = mk(WD, HD), cam = 22; drawStreet(x, cam, 0, 0, true); // beta 3.45: the street's layers, lined up as at its middle
       grade(c, "#2a1a5a", 0.58); x.save(); x.globalCompositeOperation = "lighter"; x.fillStyle = "rgba(255,150,60,.42)";
       for (const [x0, y0, w0, h0] of [[78, 32, 34, 46], [150, 36, 26, 38], [104, 105, 105, 65], [63, 105, 38, 68]]) x.fillRect((x0 - cam) * RS, y0 * RS, w0 * RS, h0 * RS);
       x.fillStyle = "rgba(255,220,150,.22)"; x.fillRect((50 - cam) * RS, 88 * RS, 168 * RS, 11 * RS); x.restore();
@@ -1785,13 +1994,24 @@
   // fighter (y up negative from the feet); hs / bs = the stun on hit / on block; push = the knockback
   const ATK = {
     // beta 3.11: more frames (fr: which drawing shows in the start-up, the hit and the recovery) and the longer reach
-    punch: { su: 5, ac: 3, rc: 10, dmg: 6, box: [16, -82, 54, -62], hs: 15, bs: 9, push: 2.4, frames: "punch", fr: [[0, 1], [2], [3]], sfx: "hit" },
-    kick: { su: 8, ac: 4, rc: 14, dmg: 9, box: [14, -74, 57, -50], hs: 19, bs: 11, push: 3.2, frames: "kick", fr: [[0, 1], [2], [3, 4]], sfx: "heavy" },
-    cpunch: { su: 4, ac: 3, rc: 8, dmg: 5, box: [14, -60, 52, -42], hs: 14, bs: 8, push: 2, frames: "cpunch", fr: [[0], [1], [0]], crouch: true, sfx: "hit" },
-    ckick: { su: 6, ac: 4, rc: 15, dmg: 8, box: [12, -16, 55, 0], hs: 18, bs: 10, push: 2.6, frames: "ckick", fr: [[0], [1], [0]], crouch: true, low: true, kd: true, sfx: "heavy" },
-    jpunch: { su: 3, ac: 10, rc: 0, dmg: 7, box: [12, -76, 50, -50], hs: 16, bs: 9, push: 2.2, frames: "jpunch", air: true, high: true, sfx: "hit" },
-    jkick: { su: 4, ac: 11, rc: 0, dmg: 9, box: [12, -64, 54, -34], hs: 18, bs: 10, push: 2.8, frames: "jkick", air: true, high: true, sfx: "heavy" }
+    // beta 3.45 (the arcade's timing): seq, the drawing shown tick by tick ([drawing, ticks], ...): a short wind-up, the
+    // stretch snapping out on the first active tick and held past the active ones, then the way back to the guard. The
+    // frame data (su, ac, rc), the boxes, the damage and the stuns are as they were: only the drawings are timed anew
+    punch: { su: 5, ac: 3, rc: 10, dmg: 6, box: [16, -82, 54, -62], hs: 15, bs: 9, push: 2.4, frames: "punch", seq: [[0, 3], [1, 1], [2, 6], [3, 4], [4, 4]], sfx: "hit" },
+    kick: { su: 8, ac: 4, rc: 14, dmg: 9, box: [14, -74, 57, -50], hs: 19, bs: 11, push: 3.2, frames: "kick", seq: [[0, 5], [1, 2], [2, 8], [3, 5], [4, 6]], sfx: "heavy" },
+    cpunch: { su: 4, ac: 3, rc: 8, dmg: 5, box: [14, -60, 52, -42], hs: 14, bs: 8, push: 2, frames: "cpunch", seq: [[0, 3], [1, 6], [0, 6]], crouch: true, sfx: "hit" },
+    ckick: { su: 6, ac: 4, rc: 15, dmg: 8, box: [12, -16, 55, 0], hs: 18, bs: 10, push: 2.6, frames: "ckick", seq: [[0, 5], [1, 8], [0, 12]], crouch: true, low: true, kd: true, sfx: "heavy" },
+    jpunch: { su: 3, ac: 10, rc: 0, dmg: 7, box: [12, -76, 50, -50], hs: 16, bs: 9, push: 2.2, frames: "jpunch", seq: [[0, 2], [1, 999]], air: true, high: true, sfx: "hit" },
+    jkick: { su: 4, ac: 11, rc: 0, dmg: 9, box: [12, -64, 54, -34], hs: 18, bs: 10, push: 2.8, frames: "jkick", seq: [[0, 3], [1, 999]], air: true, high: true, sfx: "heavy" }
   };
+  // beta 3.45 (Daniel: "a proper hit-stop"): on a hit both fighters freeze for a few ticks (longer the heavier the
+  // blow), the spark and a shake of the screen scaled to it; on a block a shorter freeze and no shake. Ticks at 60 a
+  // second. Before 3.45: 6 a hit (8 from 9 damage), 4 a block, no shake under 9 damage
+  const HSTOP = { light: 8, heavy: 12, sp: 14, grab: 18, ko: 30 }, BSTOP = { light: 5, heavy: 7, sp: 8, grab: 8 };
+  const SHAKE = { light: 0, heavy: 2, sp: 3, grab: 5, ko: 5 }, SPARK = { light: "spark", heavy: "burst", sp: "sburst", grab: "sburst", ko: "ko" };
+  const tierOf = (def) => (def.grab ? "grab" : def.sp && !def.beans ? "sp" : def.dmg >= 8 ? "heavy" : "light");
+  const IDLE_T = { cristache: 8, steve: 7, ion: 7 }; // beta 3.45: ticks a breath drawing is held (the refs: 6; the calm and the big ones slower)
+  const DOWN_T = 24, RISE_T = 10; // beta 3.45: the bounce (about 12 ticks) + lying + getting up = the 46 ticks lying down before, the same 24 of grace after
   const SPECIAL = {
     daniel: { su: 13, ac: 1, rc: 20, cool: 150, proj: "wave", dmg: 12, speed: 3.4, sfx: "wave", sp: true },
     ion: { su: 13, ac: 1, rc: 20, cool: 150, proj: "espresso", dmg: 11, speed: 3.8, sfx: "espresso", sp: true },
@@ -1810,7 +2030,7 @@
   const GRAV = 0.34, JUMP_V = -6.4, ROUND_TIME = 60; // beta 3.33: the jump a little lower, as the fighters are (about 60 units up)
   function fighter(id, cpu, x, face, alt) {
     const R = ROSTER[id];
-    return { id, R, S: sprites(id, alt), sc: (LOOKS[id].build.sc || 1) * FSC, armor: 0, cpu, x, y: 0, vx: 0, vy: 0, face, hp: 100, trail: 100, st: "idle", t: 0, atk: null, atkHit: false, hs: 0, spCool: 40, spMax: SPECIAL[id].cool, inv: 0, walkT: 0, walkDir: 1, holdBack: false, holdDown: false, ai: { t: 30, plan: null, pt: 0, seen: 0 }, flashT: 0, dz: 0, landT: 0 };
+    return { id, R, S: sprites(id, alt), sc: (LOOKS[id].build.sc || 1) * FSC, armor: 0, cpu, x, y: 0, vx: 0, vy: 0, face, hp: 100, trail: 100, st: "idle", t: 0, atk: null, atkHit: false, hs: 0, spCool: 40, spMax: SPECIAL[id].cool, inv: 0, walkT: 0, walkDir: 1, holdBack: false, holdDown: false, ai: { t: 30, plan: null, pt: 0, seen: 0 }, flashT: 0, dz: 0, landT: 0, jdir: 0, bnc: false, hitK: "head", it: IDLE_T[id] || 6 };
   }
   const onGround = (f) => f.y >= 0;
   const free = (f) => onGround(f) && (f.st === "idle" || f.st === "walk" || f.st === "crouch");
@@ -1834,7 +2054,8 @@
     // I O N comes in with a stack of Two Minutes tees (round 1); then it waits on the pavement behind him
     for (const f of g.f) if (f.id === "ion") { if (g.round === 1) f.st = "intro"; else g.fx.push({ k: "stack", x: f.x - f.face * 30, y: 0, t: 0, life: 1e9 }); } g.phase = "intro"; g.pt = 0; g.time = ROUND_TIME; g.camX = (STAGE_W - W) / 2; g.hitstop = 0; g.shake = 0; g.flash = 0;
   }
-  const spark = (x, y, kind) => g.fx.push({ k: kind || "spark", x, y, t: 0, life: kind === "bspark" ? 8 : kind === "burst" ? 14 : 10 });
+  const SPARK_LIFE = { spark: 9, burst: 13, sburst: 15, ko: 24, bspark: 8, dust: 14, flash: 10 };
+  const spark = (x, y, kind, dir = 0) => g.fx.push({ k: kind || "spark", x, y, t: 0, life: SPARK_LIFE[kind] || 10, dir });
   function startAtk(f, name) {
     const a = ATK[name]; f.atk = a; f.atkHit = false; f.t = 0;
     if (a.air) return; // stays "jump"
@@ -1844,7 +2065,7 @@
   function startSpecial(f) {
     const s = SPECIAL[f.id]; f.atk = s; f.atkHit = false; f.t = 0; f.st = "atk"; f.vx = 0; f.spCool = s.cool;
   }
-  function jump(f, dir) { f.st = "jump"; f.vy = JUMP_V; f.vx = dir * 2.05 * f.R.speed; f.atk = null; f.t = 0; SND.play("jump"); }
+  function jump(f, dir) { f.st = "jump"; f.vy = JUMP_V; f.vx = dir * 2.05 * f.R.speed; f.atk = null; f.t = 0; f.jdir = dir * f.face; f.landT = 0; SND.play("jump"); }
   // one step of a fighter's controls (the player's keys or the CPU's plan, both as the same intent)
   function control(f, o, inp) {
     const fw = f.face > 0 ? inp.r : inp.l, bk = f.face > 0 ? inp.l : inp.r;
@@ -1856,8 +2077,8 @@
       if (inp.u) return jump(f, fw ? f.face : bk ? -f.face : 0);
       if (inp.d) { f.st = "crouch"; f.vx = 0; return; }
       const sp = f.R.speed;
-      if (fw) { f.st = "walk"; f.vx = 1.6 * sp * f.face; f.walkDir = 1; }
-      else if (bk) { f.st = "walk"; f.vx = -1.3 * sp * f.face; f.walkDir = -1; }
+      if (fw) { f.st = "walk"; f.vx = 1.6 * sp * f.face; f.walkDir = sp; }
+      else if (bk) { f.st = "walk"; f.vx = -1.3 * sp * f.face; f.walkDir = -0.82 * sp; } // beta 3.45: the steps' cadence follows the speed, so the feet don't slide
       else { f.st = "idle"; f.vx = 0; }
     } else if (f.st === "jump" && !f.atk) {
       if (inp.pp) startAtk(f, "jpunch"); else if (inp.kp) startAtk(f, "jkick");
@@ -1946,16 +2167,21 @@
     if (f.st === "hit" && f.t >= f.hs) { f.st = "idle"; }
     if (f.st === "block" && f.t >= f.hs) { f.st = f.crouchBlock ? "crouch" : "idle"; }
     if (f.st === "dizzy" && f.t >= f.dz) { f.st = "idle"; }
-    if (f.st === "down" && f.t >= 46 && f.hp > 0) { f.st = "idle"; f.inv = 24; }
+    if (f.st === "down" && f.t >= DOWN_T && f.hp > 0) { f.st = "rise"; f.t = 0; f.vx = 0; } // beta 3.45: getting up (sitting up, a crouch), untouchable as lying was
+    if (f.st === "rise" && f.t >= RISE_T) { f.st = "idle"; f.inv = 24; }
+    if (f.landT > 0) f.landT--;
     if (f.st === "hit" || f.st === "block" || f.st === "dizzy") f.vx *= 0.8;
+    if ((f.st === "hit" || f.st === "block") && onGround(f) && Math.abs(f.vx) > 1.7 && f.t % 4 === 1) g.fx.push({ k: "dust", x: f.x - Math.sign(f.vx) * 7, y: -1, t: 0, life: 12, vx: Math.sign(f.vx) * 0.3 }); // beta 3.45: the slide kicks up a little dust
     // movement
     f.x += f.vx;
     if (!onGround(f) || f.vy < 0) {
       f.vy += GRAV; f.y += f.vy;
       if (f.y >= 0) {
         f.y = 0; f.vy = 0;
-        if (f.st === "fall") { f.st = "down"; f.t = 0; f.vx = 0; g.shake = Math.max(g.shake, 3); SND.play("land"); spark(f.x - f.face * 18, -2, "dust"); }
-        else if (f.st === "jump") { f.st = "idle"; f.atk = null; f.atkDone = false; f.vx = 0; SND.play("land"); }
+        // beta 3.45: a knock-down hits the pavement, bounces once (a shake, dust) and lands for good
+        if (f.st === "fall" && !f.bnc) { f.bnc = true; f.vy = f.hp > 0 ? -2 : -2.6; f.vx *= 0.45; f.y = -1; g.shake = Math.max(g.shake, f.hp > 0 ? 3 : 4); SND.play("land"); spark(f.x - f.face * 16, -2, "dust"); spark(f.x + f.face * 6, -2, "dust"); }
+        else if (f.st === "fall") { f.bnc = false; f.st = "down"; f.t = 0; f.vx = 0; g.shake = Math.max(g.shake, 1.5); spark(f.x - f.face * 20, -2, "dust"); }
+        else if (f.st === "jump") { f.st = "idle"; f.atk = null; f.atkDone = false; f.vx = 0; f.landT = 5; SND.play("land"); } // the squat on landing (only the drawing: he can act at once, as before)
         else if (f.st === "atk" && f.atk?.rise) { f.vx = 0; f.t = Math.max(f.t, f.atk.su + f.atk.ac); SND.play("land"); }
         else if (f.st === "hit") f.vx = 0;
       }
@@ -1964,27 +2190,32 @@
     // face the other one when free
     if (free(f) && Math.abs(o.x - f.x) > 2) f.face = o.x > f.x ? 1 : -1;
   }
+  const lying = (f) => f.st === "down" || f.st === "rise"; // beta 3.45: getting up counts as lying (not pushed, not hit)
   const canBlock = (d) => onGround(d) && d.holdBack && (d.st === "idle" || d.st === "walk" || d.st === "crouch" || d.st === "block");
   function land(a, d, def, px, py, proj) {
-    if (d.st === "down" || d.inv > 0 || d.armor > 0 || (d.st === "fall" && d.hp <= 0)) return false;
+    if (d.st === "down" || d.st === "rise" || d.bnc || d.inv > 0 || d.armor > 0 || (d.st === "fall" && d.hp <= 0)) return false; // beta 3.45: the bounce and the getting up are part of lying down
     if (def.grab && !onGround(d)) return false; // a hug needs both feet on the ground
     const blocked = !def.grab && canBlock(d) && !(def.low && !d.holdDown) && !(def.high && d.holdDown);
-    const away = proj ? Math.sign(proj.vx) : (d.x >= a.x ? 1 : -1);
+    const away = proj ? Math.sign(proj.vx) : (d.x >= a.x ? 1 : -1), tier = tierOf(def);
     if (blocked) {
       d.st = "block"; d.crouchBlock = d.holdDown; d.t = 0; d.hs = def.bs; d.vx = away * def.push * 0.9;
       d.hp = Math.max(1, d.hp - (def.chip || (def.sp ? 2 : 0)));
-      spark(px, py, "bspark"); SND.play("block"); g.hitstop = 4;
+      spark(px, py, "bspark"); SND.play("block"); g.hitstop = BSTOP[tier]; g.hsK = "light"; if (tier === "sp") g.shake = Math.max(g.shake, 1);
       return true;
     }
     const dmg = Math.round(def.dmg * a.R.power * (d.cpu ? 1 : 0.9));
     d.hp = Math.max(0, d.hp - dmg); d.t = 0; d.atk = null; d.atkDone = false;
+    d.hitK = py > d.y - 60 * d.sc ? "gut" : "head"; // beta 3.45: a blow to the body doubles him over, one to the head snaps it back
     if (d.hp <= 0) { d.st = "fall"; d.vy = -4.2; d.vx = away * 2.4; d.y = Math.min(d.y, -1); }
     else if (def.dizzy && onGround(d)) { d.st = "dizzy"; d.dz = def.dizzy; d.vx = away * 1; SND.play("dizzy"); }
-    else if (def.grab) { d.st = "fall"; d.vy = -5; d.vx = away * 3.4; d.y = Math.min(d.y, -1); g.hitstop = 14; g.shake = 6; }
+    else if (def.grab) { d.st = "fall"; d.vy = -5; d.vx = away * 3.4; d.y = Math.min(d.y, -1); }
     else if (def.kd || !onGround(d)) { d.st = "fall"; d.vy = -3.4; d.vx = away * 2; d.y = Math.min(d.y, -1); }
     else { d.st = "hit"; d.hs = def.hs; d.vx = away * def.push; }
-    spark(px, py, dmg >= 9 ? "burst" : "spark"); SND.play(def.sfx === "hit" ? "hit" : "heavy"); g.cheerT = 26; // the street reacts
-    g.hitstop = dmg >= 9 ? 8 : 6; if (dmg >= 9 || def.sp) g.shake = 4;
+    const k = d.hp <= 0 ? "ko" : tier;
+    spark(px, py, SPARK[k], away); SND.play(def.sfx === "hit" ? "hit" : "heavy");
+    g.hitstop = HSTOP[k]; g.hsK = k; g.shake = Math.max(g.shake, SHAKE[k]);
+    if (k !== "light" || d.st === "fall") { g.cheerT = g.cheerT0 = k === "ko" ? 90 : 44; scarePigeons(); } // beta 3.45: the street cheers the big ones (a heavy blow, a special, a knock-down, the K.O.); the pigeons fly off
+    else g.oohT = 16; // and only flinches at a jab
     return true;
   }
   function stepFight(inp) {
@@ -2028,16 +2259,16 @@
     const pbw = 30 * Math.max(a.sc, b.sc), lo = Math.max(18, g.camX + 18), hi = Math.min(STAGE_W - 18, g.camX + W - 18), near = Math.abs(a.y - b.y) < 70;
     const side = a.x < b.x || (a.x === b.x && a.face > 0) ? 1 : -1; // b to the right of a: 1
     if (near && Math.abs(b.x - a.x) < pbw) {
-      const over = pbw - Math.abs(b.x - a.x), ma = a.st === "down" ? 0 : 1, mb = b.st === "down" ? 0 : 1;
+      const over = pbw - Math.abs(b.x - a.x), ma = lying(a) ? 0 : 1, mb = lying(b) ? 0 : 1;
       if (ma && mb) { a.x -= side * over / 2; b.x += side * over / 2; }
       else if (ma || mb) { const f = ma ? a : b, d = Math.min(over, 4); f.x += (f === a ? -side : side) * d; }
     }
     for (const f of g.f) f.x = clamp(f.x, lo, hi);
-    if (near && a.st !== "down" && b.st !== "down" && Math.abs(b.x - a.x) < pbw - 0.01) { // a wall held one back: the other steps aside the rest
+    if (near && !lying(a) && !lying(b) && Math.abs(b.x - a.x) < pbw - 0.01) { // a wall held one back: the other steps aside the rest
       const aWall = a.x <= lo + 0.01 || a.x >= hi - 0.01, bWall = b.x <= lo + 0.01 || b.x >= hi - 0.01;
       if (aWall && !bWall) b.x = clamp(a.x + side * pbw, lo, hi); else if (bWall && !aWall) a.x = clamp(b.x - side * pbw, lo, hi);
     }
-    if (onGround(a) && onGround(b) && a.st !== "down" && b.st !== "down") { const gap = Math.abs(a.x - b.x); stats.minGap = Math.min(stats.minGap ?? 1e9, gap); // for the tests: how close the bodies come
+    if (onGround(a) && onGround(b) && !lying(a) && !lying(b)) { const gap = Math.abs(a.x - b.x); stats.minGap = Math.min(stats.minGap ?? 1e9, gap); // for the tests: how close the bodies come
       if (gapWatch && gap < gapWatch && !g.frozen) { const lo = Math.max(18, g.camX + 18), hi = Math.min(STAGE_W - 18, g.camX + W - 18); GAPLOG.push({ gap: +gap.toFixed(1), pbw: +pbw.toFixed(1), x: [+a.x.toFixed(1), +b.x.toFixed(1)], st: [a.st, b.st], vx: [+a.vx.toFixed(2), +b.vx.toFixed(2)], atk: [a.atk ? Object.keys(ATK).find((n) => ATK[n] === a.atk) || "sp" : null, b.atk ? Object.keys(ATK).find((n) => ATK[n] === b.atk) || "sp" : null], edge: [a.x <= lo + 0.01 ? "L" : a.x >= hi - 0.01 ? "R" : "", b.x <= lo + 0.01 ? "L" : b.x >= hi - 0.01 ? "R" : ""], camX: +g.camX.toFixed(1), lo: +lo.toFixed(1), hi: +hi.toFixed(1) }); if (gapFreeze) g.frozen = true; } }
     const goal = clamp((a.x + b.x) / 2 - W / 2, 0, STAGE_W - W); g.camX += (goal - g.camX) * 0.18;
     for (const f of g.f) stepSmoke(f);
@@ -2115,24 +2346,31 @@
     const S = f.S, t = f.t;
     if (f.st === "atk" || (f.atk && !onGround(f))) {
       const a = f.atk, list = a.sp ? S.special : S[a.frames];
+      if (a.seq) { let k = t - 1; for (const [i, n] of a.seq) { if (k < n) return list[Math.min(list.length - 1, i)]; k -= n; } return list[Math.min(list.length - 1, a.seq[a.seq.length - 1][0])]; } // beta 3.45: the drawings timed tick by tick
       if (list.length === 1 || (!a.fr && a.air)) return list[0];
       const fr = a.fr || [[0], [1], [list.length - 1]], ph = t < a.su ? 0 : t < a.su + a.ac ? 1 : 2, ids = fr[ph];
       if (a.spin && ph === 1) return list[ids[(t >> 3) & 1]];
+      if (ph === 2 && !a.fr && S.srec && t - a.su - a.ac > a.rc * 0.5) return S.srec[0]; // beta 3.45: the second half of a special's recovery, half way back to the guard
       const start = ph === 0 ? 0 : ph === 1 ? a.su : a.su + a.ac, len = ph === 0 ? a.su : ph === 1 ? a.ac : a.rc;
       return list[Math.min(list.length - 1, ids[Math.min(ids.length - 1, Math.floor(((t - start) / Math.max(1, len)) * ids.length))])];
     }
+    if (f.landT > 0 && (f.st === "idle" || f.st === "walk")) return S.jsquat[0]; // beta 3.45: the squat on landing
     switch (f.st) {
       case "walk": { const n = S.walk.length, i = ((Math.floor(f.walkT / 6) % n) + n) % n; return (S.walkM && cigPhase(f) === "mouth" ? S.walkM : S.walk)[i]; }
       case "crouch": return S.crouch[0];
       case "block": return f.crouchBlock ? S.cblock[0] : S.block[0];
-      case "jump": return S.jump[0];
-      case "hit": return S.hit[0];
+      case "jump": { // beta 3.45: the stretch going up, the tuck at the top (or the somersault, forward or back), the legs out coming down
+        if (f.jdir && f.vy > -4.4 && f.vy < 4.4) { const k = clamp(Math.floor(((f.vy + 4.4) / 8.8) * 4), 0, 3); return S.roll[f.jdir > 0 ? k : (4 - k) % 4]; }
+        return f.vy < -3 ? S.jrise[0] : f.vy > 3 ? S.jfall[0] : S.jump[0];
+      }
+      case "hit": { const H = f.hitK === "gut" ? S.gut : S.hit, n = f.hs || 15; return H[t < Math.max(3, Math.round(n * 0.4)) ? 0 : t < n - 4 ? 1 : 2]; } // beta 3.45: the impact (held through the freeze), the recoil, the way back
       case "dizzy": return S.dizzy[Math.floor(t / 12) % 2];
-      case "fall": return S.fall[0];
+      case "fall": return f.bnc ? S.bounce[0] : S.fall[f.vy < 0.6 ? 0 : 1]; // beta 3.45: the launch, the fall, the bounce
       case "down": return S.down[0];
+      case "rise": return S.getup[t < RISE_T / 2 ? 0 : 1];
       case "win": return S.win[Math.floor(t / 14) % 2];
       case "intro": return S.intro[0];
-      default: { if (S.puff) { const ph = cigPhase(f); if (ph === "up" || ph === "down") return S.puff[0]; if (ph === "mouth") return S.idleM[Math.floor(t / 10) % 4]; } return S.idle[Math.floor(t / 10) % 4]; }
+      default: { if (S.puff) { const ph = cigPhase(f); if (ph === "up" || ph === "down") return S.puff[0]; if (ph === "mouth") return S.idleM[Math.floor(t / f.it) % 4]; } return S.idle[Math.floor(t / f.it) % 4]; }
     }
   }
   function drawSprite(ctx, img, x, y, face) {
@@ -2177,6 +2415,41 @@
       ctx.fillStyle = "#6b3f22"; ctx.fillRect(x - d * 10, y + 2, 2, 1); ctx.fillRect(x - d * 16, y, 1, 1);
     }
   }
+  // beta 3.45 (Daniel: "a hit spark scaled to the hit"): the sparks, baked once a size: four drawings, a white-hot core in
+  // a star, the star bursting out (hollow), breaking into shards; yellow to orange for a hit, white to blue for a block.
+  // The radius: a jab 10, a heavy blow 15, a special 18, the K.O. 24, a block 11
+  const SPK = {}, SPK_R = { spark: 10, burst: 15, sburst: 18, ko: 24, bspark: 11 };
+  function sparkFrames(kind) {
+    if (SPK[kind]) return SPK[kind];
+    const R = SPK_R[kind], P = (kind === "bspark" ? ["#ffffff", "#e8f7ff", "#9fdcff", "#4aa8f0", "#2a68c0", "#1c3a80"] : ["#ffffff", "#fff6b8", "#ffd23a", "#ff9d14", "#e0500f", "#9c1c0c"]).map(u32);
+    const specs = [[8, 0.42, 0.8, 0.6, 0, 0], [8, 0.3, 1, 0.66, 0, 0.5], [10, 0.2, 1.14, 0.78, 0.36, 0.25]], out = [];
+    for (let fi = 0; fi < 4; fi++) {
+      const n = Math.ceil(R * 1.35) * 2 + 3, [c, x] = mk(n, n), id = x.createImageData(n, n), d = new Uint32Array(id.data.buffer), cx = n / 2, cy = n / 2;
+      if (fi < 3) {
+        const [N, ri, ro, ro2, hol, tu] = specs[fi], pts = [];
+        for (let i = 0; i < N * 2; i++) { const an = ((i + tu) / (N * 2)) * Math.PI * 2, rr = (i % 2 ? ri : i % 4 === 0 ? ro : ro2) * R; pts.push([cx + Math.cos(an) * rr, cy + Math.sin(an) * rr * 0.86]); }
+        const inP = (px, py) => { let o = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) o = !o; } return o; };
+        const rOf = (q, y) => Math.hypot(q + 0.5 - cx, (y + 0.5 - cy) / 0.86) / R, on = new Uint8Array(n * n);
+        for (let y = 0; y < n; y++) for (let q = 0; q < n; q++) if (inP(q + 0.5, y + 0.5) && rOf(q, y) >= hol) on[y * n + q] = 1;
+        for (let y = 1; y < n - 1; y++) for (let q = 1; q < n - 1; q++) { const i = y * n + q; if (!on[i]) continue; const r = rOf(q, y), edge = !on[i - 1] || !on[i + 1] || !on[i - n] || !on[i + n];
+          let t = fi === 0 ? (r < 0.55 ? 0 : 1) : fi === 1 ? (r < 0.3 ? 0 : r < 0.6 ? 1 : 2) : r < 0.55 ? 1 : r < 0.85 ? 2 : 3;
+          d[i] = P[edge ? Math.min(5, t + (fi === 0 ? 1 : 2)) : t]; }
+      } else for (let i = 0; i < 12; i++) { const an = (i / 12) * Math.PI * 2 + 0.2, rr = R * (1.08 + (i % 3) * 0.14), px = Math.round(cx + Math.cos(an) * rr), py = Math.round(cy + Math.sin(an) * rr * 0.86); for (const [dx, dy, t] of [[0, 0, 2], [1, 0, 3], [0, 1, 3], [1, 1, 4]]) { const q = px + dx, y = py + dy; if (q >= 0 && y >= 0 && q < n && y < n) d[y * n + q] = P[t]; } } // the shards
+      x.putImageData(id, 0, 0); out.push(c);
+    }
+    return (SPK[kind] = out);
+  }
+  let DUST = null;
+  function dustFrames() { // three puffs, each a few round lumps with a lit top and a shaded, outlined bottom, thinning out
+    if (DUST) return DUST;
+    const P = ["#f6efe2", "#e2d6c2", "#c4b49a", "#8a7a64"].map(u32), out = [];
+    for (const [w, h, lumps, thin] of [[9, 5, [[2.5, 3, 2.2], [6, 2.6, 2.6]], 0], [13, 7, [[3, 4.5, 2.8], [7, 3.4, 3.4], [10.5, 4.6, 2.4]], 0], [15, 8, [[3, 5.6, 2.8], [7.5, 4, 3.6], [12, 5.4, 2.6]], 1]]) {
+      const [c, x] = mk(w, h), id = x.createImageData(w, h), d = new Uint32Array(id.data.buffer), inn = (q, y) => lumps.some(([a, b, r]) => (q + 0.5 - a) ** 2 + (y + 0.5 - b) ** 2 <= r * r);
+      for (let y = 0; y < h; y++) for (let q = 0; q < w; q++) { if (!inn(q, y)) continue; if (thin && (q + y) % 2) continue; const edge = !inn(q, y + 1) || !inn(q - 1, y) || !inn(q + 1, y); d[y * w + q] = P[edge && !inn(q, y + 1) ? 3 : !inn(q, y - 1) ? 0 : y > h * 0.6 ? 2 : 1]; }
+      x.putImageData(id, 0, 0); out.push(c);
+    }
+    return (DUST = out);
+  }
   function drawFx(ctx, e, cx) {
     const x = Math.round(e.x - cx), y = Math.round(e.y + FLOOR), k = e.t / e.life;
     if (e.k === "ghost") { ctx.globalAlpha = 0.35 * (1 - k); drawSprite(ctx, e.img, e.x - cx, e.y + FLOOR, e.face); ctx.globalAlpha = 1; return; }
@@ -2184,39 +2457,36 @@
       for (let i = 0; i < 6; i++) { const yy = y - 3 - i * 3; ctx.fillStyle = OUT; ctx.fillRect(x - 11, yy - 1, 22, 4); ctx.fillStyle = i % 2 ? "#ffffff" : "#ecebe6"; ctx.fillRect(x - 10, yy, 20, 3); ctx.fillStyle = "#1c1c22"; for (let q = 0; q < 14; q += 3) ctx.fillRect(x - 8 + q, yy + 1, 2, 1); }
       return;
     }
-    if (e.k === "dust") { ctx.fillStyle = "rgba(220,210,240," + (0.7 * (1 - k)) + ")"; for (let i = 0; i < 5; i++) ctx.fillRect(x - 10 + i * 5, y - 2 - Math.round(k * 6) - (i % 2) * 2, 3, 2); return; }
+    if (e.k === "dust") { const D = dustFrames(), im = D[Math.min(D.length - 1, Math.floor(k * D.length))], dx = Math.round((e.vx || 0) * e.t); ctx.drawImage(im, x + dx - (im.width >> 1), y - im.height + 1 - Math.round(k * 4)); return; } // beta 3.45: puffs of dust, pixel drawn
     if (e.k === "flash") { const r = Math.round(10 + k * 28); ctx.fillStyle = "rgba(255,255,255," + (1 - k) + ")"; for (let a = 0; a < 12; a++) { const an = (a / 12) * Math.PI * 2; ctx.fillRect(x + Math.round(Math.cos(an) * r) - 1, y + Math.round(Math.sin(an) * r * 0.8) - 1, 3, 3); } ctx.fillRect(x - 6, y - 6, 12, 12); return; }
-    const col = e.k === "bspark" ? ["#ffffff", "#7fd8ff"] : ["#ffffff", "#ffe14a", "#ff9d14"], n = e.k === "burst" ? 10 : 8, r = (e.k === "burst" ? 6 : 4) + Math.round(k * (e.k === "burst" ? 16 : 10));
-    for (let i = 0; i < n; i++) {
-      const an = (i / n) * Math.PI * 2 + 0.3;
-      for (let s = 0; s < 3; s++) { ctx.fillStyle = col[Math.min(col.length - 1, s)]; ctx.fillRect(x + Math.round(Math.cos(an) * (r - s * 3)), y + Math.round(Math.sin(an) * (r - s * 3)), 2, 2); }
-    }
-    if (k < 0.4) { ctx.fillStyle = "#ffffff"; ctx.fillRect(x - 3, y - 3, 6, 6); }
+    // beta 3.45: the hit sparks as the arcade's: a white-hot star that bursts and breaks into shards, sized to the blow
+    const F = sparkFrames(SPK_R[e.k] ? e.k : "spark"), fi = Math.min(F.length - 1, Math.floor(k * F.length)), im = F[fi], nd = Math.round((e.dir || 0) * fi);
+    ctx.drawImage(im, x + nd - (im.width >> 1), y - (im.height >> 1));
   }
   // a big line over the fight, on a dark band so it reads over the facade
   function banner(ctx, s, fill, sc, y) { const bh = 7 * sc + 13, q = 1 / RS; ctx.fillStyle = "rgba(14,10,26,.74)"; ctx.fillRect(0, y - 6, W, bh); ctx.fillStyle = "rgba(254,208,18,.75)"; ctx.fillRect(0, y - 6 - q, W, q); ctx.fillRect(0, y - 6 + bh, W, q); ctx.fillStyle = "rgba(254,208,18,.3)"; ctx.fillRect(0, y - 6 - 3 * q, W, q); ctx.fillRect(0, y - 6 + bh + 2 * q, W, q); text(ctx, s, W / 2, y, fill, { sc, sh: 2, al: "c" }); } // beta 3.34: the rules one pixel fine, doubled
   function drawFight(ctx, t) {
-    const sx = g.shake > 0 ? Math.round(rnd(-g.shake, g.shake)) : 0, sy = g.shake > 0 ? Math.round(rnd(-g.shake, g.shake) * 0.6) : 0;
+    // beta 3.45: the shake in the arcade's beat (the screen thrown down and up every other tick, a little sideways), not a random jitter
+    const sn = g.shakeN || 0, sx = g.shake > 0 ? Math.round(g.shake * 0.5) * ((sn >> 2) & 1 ? 1 : -1) : 0, sy = g.shake > 0 ? Math.round(g.shake) * ((sn >> 1) & 1 ? 1 : -1) : 0;
     const cx = Math.round(g.camX) - sx;
-    drawBackdrop(ctx, cx, t, sy);
+    const fx = drawBackdrop(ctx, cx, t, sy);
     if (g.cheerT > 0 && !paused) g.cheerT--;
-    drawCrowd(ctx, cx, t, g.cheerT > 0 || g.phase === "ko" && g.pt > 60 || g.phase === "match");
     ctx.save(); ctx.translate(0, sy);
+    drawCrowd(ctx, fx, t, g.phase === "ko" && g.pt > 30 || g.phase === "match" ? 99 : g.cheerT > 0 ? (g.cheerT0 || 44) - g.cheerT : -1, g.oohT > 0);
     // shadows
     for (const f of g.f) { const w = Math.round((31 * f.sc - Math.min(16, -f.y / 6)) * RS) / RS, x = Math.round((f.x - cx) * RS) / RS; ctx.fillStyle = "rgba(10,6,24,.45)"; ctx.fillRect(x - w / 2, FLOOR - 2, w, 3); ctx.fillRect(x - w / 2 + 2.5, FLOOR - 3, w - 5, 5); ctx.fillRect(x - w / 2 + 6, FLOOR - 3.5, w - 12, 6); } // beta 3.33: rounder, at the canvas's pixels
     for (const e of g.fx) if (e.k === "ghost" || e.k === "stack") drawFx(ctx, e, cx);
     // the one attacking is drawn in front
     const order = g.f[0].st === "atk" ? [g.f[1], g.f[0]] : [g.f[0], g.f[1]];
     for (const f of order) {
-      const jit = (f.st === "hit" || f.st === "block") && g.hitstop > 0 ? (g.hitstop % 2 ? 1 : -1) : 0;
-      if (f.inv > 0 && f.inv % 4 < 2 && f.hp > 0) continue;
+      const jit = (f.st === "hit" || f.st === "block") && g.hitstop > 0 ? (g.hitstop % 2 ? 1 : -1) * (f.st === "hit" && g.hsK !== "light" ? 2 : 1) : 0; // the one hit shakes in the freeze (harder for the heavy blows)
       const spin = f.atk?.spin && f.t >= f.atk.su && f.t < f.atk.su + f.atk.ac && (f.t >> 2) & 1 ? -1 : 1; // beta 3.11: Maria turns round
       drawSprite(ctx, frameOf(f), f.x - cx + jit, FLOOR + f.y, f.face * spin);
       if (f.st === "dizzy") for (let i = 0; i < 3; i++) { const an = t * 5 + (i * Math.PI * 2) / 3, x = Math.round(f.x - cx + Math.cos(an) * 12), y = Math.round(FLOOR + f.y - 100 * f.sc - 2 + Math.sin(an) * 3); ctx.fillStyle = OUT; ctx.fillRect(x - 2, y - 2, 5, 5); ctx.fillStyle = i === 1 ? "#ffffff" : "#ffe14a"; ctx.fillRect(x - 1, y - 1, 3, 3); }
     }
     for (const f of g.f) { // beta 3.32: the smoke, and the lit end glowing now and then
       if (f.smoke) drawSmoke(ctx, f.smoke, cx, FLOOR);
-      const e = f.S.puff && !(f.inv > 0 && f.inv % 4 < 2) ? frameOf(f).ember : null;
+      const e = f.S.puff ? frameOf(f).ember : null;
       if (e && Math.floor(t * 7) % 3 === 0) { const [x, y] = emberAt(f, e); ctx.fillStyle = "#ffe08a"; ctx.fillRect(Math.floor((x - cx) * RS) / RS, Math.floor((y + FLOOR) * RS) / RS, 1 / RS, 1 / RS); }
     }
     for (const p of g.proj) drawProj(ctx, p, cx);
@@ -2342,7 +2612,7 @@
   const END_CAM = -48, END_CAR = 258, END_LOOP = 3.2; // the window at the middle of the picture, the card on its left, the car running out on the right
   function drawEnding(ctx, t) {
     const gy = FLOOR - 4, p = 1 / RS, lt = t % END_LOOP, caught = lt > 2.2, k2 = caught ? (lt - 2.2) / (END_LOOP - 2.2) : 0;
-    drawBackdrop(ctx, END_CAM, t, 0, false);
+    drawBackdrop(ctx, END_CAM, t, 0, false, true); // beta 3.45: the street flat (every layer at the camera's rate), as the ending was laid out
     const mx = MZ.x - END_CAM, my = MZ.y;
     drawCups(ctx, mx, my, t, caught && k2 < 0.6);
     // the left pane pushed open a crack: a dark slit, the glass edge catching the light
@@ -2489,11 +2759,17 @@
         const inp = { l: held.l, r: held.r, u: held.u, d: held.d, pp: pressed.has("p"), kp: pressed.has("k"), sp: pressed.has("s") };
         for (const e of g.fx) e.t++; g.fx = g.fx.filter((e) => e.t < e.life);
         if (g.flash > 0) g.flash--;
-        if (g.shake > 0 && !g.hitstop) g.shake = Math.max(0, g.shake - 0.35);
+        g.shakeN = (g.shakeN || 0) + 1;
+        if (g.shake > 0) g.shake = Math.max(0, g.shake - (g.hitstop ? 0.12 : 0.35)); // beta 3.45: the shake rides through the freeze, then settles
+        if (g.oohT > 0) g.oohT--;
+        // beta 3.45: a button pressed during the freeze is kept for the first tick after it (it was lost before)
+        if (g.ib) { inp.pp = inp.pp || g.ib.pp; inp.kp = inp.kp || g.ib.kp; inp.sp = inp.sp || g.ib.sp; }
+        let ran = false;
         if (g.frozen) {} // for the tests: held on the frame where the bodies came too close
         else if (g.hitstop > 0) g.hitstop--;
         else if (g.slow > 0 && g.slow-- % 3) {} // the K.O. in slow motion
-        else stepFight(inp);
+        else { stepFight(inp); ran = true; }
+        g.ib = ran || g.phase !== "fight" ? null : { pp: inp.pp, kp: inp.kp, sp: inp.sp };
         stepRound(inp);
       }
     }
@@ -2694,7 +2970,7 @@
     // everything is baked before the first frame (a few ms), then the loop: logic in fixed 1/60 s steps
     // beta 3.33: at the start only what the first screen needs (the splash); the street, the busts and the portraits
     // are baked in the spare time of the frames that follow (BAKEQ), the fighters when they are picked
-    { const b0 = performance.now(); splashArt(); stats.bake = Math.round(performance.now() - b0); BAKEQ.push(stageStep, ...FIGHTERS.map((id) => () => bust(id)), ...FIGHTERS.map((id) => () => portrait(id))); wantBig("ion"); } // beta 3.34: and I O N's VS face, the CPU's first choice
+    { const b0 = performance.now(); splashArt(); stats.bake = Math.round(performance.now() - b0); BAKEQ.push(stageStep, ...FIGHTERS.map((id) => () => bust(id)), ...crowdJobs(), ...FIGHTERS.map((id) => () => portrait(id))); wantBig("ion"); } // beta 3.45: the people in the street a frame a job // beta 3.34: and I O N's VS face, the CPU's first choice
     let last = performance.now(), acc = 0;
     stats.t0 = last;
     const loop = (now) => {
@@ -2729,7 +3005,7 @@
     const out = {};
     const ids = Object.keys(LOOKS);
     for (const id of ids) {
-      const S = sprites(id), order = ["idle", "walk", "crouch", "jump", "punch", "kick", "cpunch", "ckick", "jpunch", "jkick", "block", "cblock", "special", "hit", "dizzy", "fall", "down", "win", "intro"];
+      const S = sprites(id), order = ["idle", "walk", "crouch", "jrise", "jump", "jfall", "jsquat", "roll", "punch", "kick", "cpunch", "ckick", "jpunch", "jkick", "block", "cblock", "special", "srec", "hit", "gut", "dizzy", "fall", "bounce", "down", "getup", "win", "intro"];
       const frames = []; for (const k of order) for (const f of S[k]) frames.push([k, f]);
       const cols = 8, rows = Math.ceil(frames.length / cols), [c, x] = mk(cols * CW, rows * (CH + 20));
       x.fillStyle = "#2a2148"; x.fillRect(0, 0, c.width, c.height);
@@ -2757,7 +3033,7 @@
       ["idle", "punch", "kick"].forEach((k, r) => ids.forEach((id, i) => { const S = sprites(id), f = k === "idle" ? S.idle[0] : S[k][2]; cell(x, f, i * 168 + 24 - (OX - 84), r * (CH - 16) - 8); if (r === 0) text(x, ROSTER[id] ? ROSTER[id].name : id.toUpperCase(), i * 168 + 108, 8, "#ffffff", { al: "c", sc: 2 }); }));
       out.lineup = up(c, 2);
     }
-    { const S = stage(), [c, x] = mk(STAGE_W * RS, H * RS); x.setTransform(RS, 0, 0, RS, 0, 0); for (let cx3 = 0; cx3 < STAGE_W; cx3 += W) { x.save(); x.translate(cx3, 0); x.beginPath(); x.rect(0, 0, Math.min(W, STAGE_W - cx3), H); x.clip(); drawBackdrop(x, cx3, 0); drawCrowd(x, cx3, 0, false); x.restore(); } out.stage = up(c, 2); }
+    { const S = stage(), [c, x] = mk(STAGE_W * RS, H * RS); x.setTransform(RS, 0, 0, RS, 0, 0); for (let cx3 = 0; cx3 < STAGE_W; cx3 += W) { x.save(); x.translate(cx3, 0); x.beginPath(); x.rect(0, 0, Math.min(W, STAGE_W - cx3), H); x.clip(); const fx = drawBackdrop(x, cx3, 0, 0, true, true); drawCrowd(x, fx, 0, -1, false); x.restore(); } out.stage = up(c, 2); }
     let [c, x] = screen();
     drawTitle(x, 0); drawTitle(x, 10); out.title = up(c, 2);
     { // beta 3.34: the projectiles and the effects at the canvas's pixels, over the street
@@ -2777,7 +3053,7 @@
     { const g0 = g; g = { result: "win", me: "cristache", cpu: "ion", wins: [2, 1], menu: 0, voucher: { code: "TM-K7QX-1710", date: "17.10.2026  14:32" } }; hits = []; drawResult(x, 0.2); out.voucher = up(c, 2); drawResult(x, 2.15); out["voucher-catch"] = up(c, 2); g = g0; hits = []; }
     { const g0 = g; g = { result: "lose", me: "daniel", cpu: "ion", wins: [1, 2], menu: 0 }; hits = []; drawResult(x, 0.2); out["ending-lose"] = up(c, 2); g = g0; hits = []; }
     { // the HUD over the stage, with the two fighters in their stance
-      drawBackdrop(x, 96, 0); drawCrowd(x, 96, 0, false);
+      drawCrowd(x, drawBackdrop(x, 96, 0), 0, -1, false);
       const A = sprites("daniel").idle[0], B = sprites("ion").idle[0];
       hiDraw(x, A, 140, FLOOR, 1, A.ax, A.ay); hiDraw(x, B, 244, FLOOR, -1, B.ax, B.ay);
       drawHUD(x, { f: [{ R: ROSTER.daniel, hp: 72, trail: 80, spCool: 0, spMax: 1 }, { R: ROSTER.ion, hp: 45, trail: 45, spCool: 0.5, spMax: 1 }], wins: [1, 0], time: 47 }, 0);
