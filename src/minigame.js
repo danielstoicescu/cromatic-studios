@@ -250,7 +250,7 @@
     // Rares: the flashy nod: sleeveless, a gold chain, the key tag, taped ankles, barefoot
     // beta 3.31 (Daniel, likeness): the white tee he wears in both photos (short sleeves, the small print on the chest), the
     // tattoos on the arms, the yellow key tag at the belt
-    rares: { skin: "#ecb593", top: "#f4f2ee", topKind: "printtee", sleeve: "short", tattoo: true, key: true, pants: "#1c1c22", loose: 1.5, belt: "#1c1c22", barefoot: true, ankle: "#f2efe6", glove: "#2fd6f0", build: { arm: 1.08 } },
+    rares: { skin: "#ecb593", top: "#f4f2ee", topKind: "printtee", sleeve: "short", tattoo: true, key: true, pants: "#1c1c22", loose: 1.5, shorts: true, belt: "#1c1c22", barefoot: true, ankle: "#f2efe6", glove: "#2fd6f0", build: { arm: 1.08 } }, // beta 3.38 (Daniel): knee-length shorts, tattoo sleeves on both arms, tattoos on the calves and shins
     iulica: { skin: "#c27f57", top: "#5f6e40", topKind: "tee", sleeve: "short", strap: "#d9cba8", pants: "#2c2c32", shoe: "#3a3a3a", sole: "#e0e0e0", glove: "#b8e02f", build: { sh: 0.98 } },
     maria: { skin: "#ebb597", top: "#f2f0ea", topKind: "oversize", knot: true, sleeve: "short", legs: "skirt", skirt: "#1c1c22", shoe: "#a8b89a", sole: "#6e7c62", glove: "#f0389a", build: { sc: 0.94, sh: 0.84, arm: 0.82, leg: 0.88, waist: 0.86, chest: 0.94 } }, // beta 3.33: a size down
     // Steve: dressed American: a varsity jacket (wool body, cream leather sleeves, a letter on the chest) over a white
@@ -338,6 +338,10 @@
     }
     return 0;
   };
+  // beta 3.38 (Daniel: "Rares, many more tattoos"): tattoos in chunky blocks of ink (a blue-black, with a touch of
+  // red and teal), shaded with the limb they are on, laid on a grid along it (key: a different pattern per limb)
+  const INK = ramp("#3e4766"), INKR = ramp("#c2413a"), INKT = ramp("#2f8f86");
+  const tattoo = (key, t, nx, ny, far) => { const u = Math.floor(t * 6), v = Math.floor((nx + 1) * 2), h = hash2(u * 7 + key * 13, v * 3 + key * 5); if (h < 0.28) return 0; const R = h > 0.91 ? INKR : h > 0.83 ? INKT : INK; return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (R === INK ? 1 : 0), 1, 4)]; };
   // a limb: from a to b, its radius going from r0 to r1 with a swell (the muscle) peaking at "at" along it
   function limb(F, a, b, r0, r1, swell, at, mat, group) {
     const vx = b[0] - a[0], vy = b[1] - a[1], l2 = vx * vx + vy * vy || 1, R = Math.max(r0, r1) + swell, ul = Math.sqrt(l2), ux = vx / ul, uy = vy / ul;
@@ -936,8 +940,8 @@
     const back = (R, nx, ny) => R[Math.min(4, toneOf(nx, ny) + 1)]; // the far side, a tone darker
     const br = p.br || 0; // the breath: the chest a little wider, the shoulders a little higher
     // beta 3.33 (Daniel, arcade proportions): heroic: the shoulders and the chest broader, the waist narrower
-    const wsh = (18 + br * 0.35) * B.sh * sc, len = Math.hypot(neck[0] - hip[0], neck[1] - hip[1]);
-    const sF = off(neck, (7.8 + 3 * tw) * B.sh * sc, 4 * U), sB = off(neck, (-7.6 + 2 * tw) * B.sh * sc, 3 * U);
+    const wsh = (14.2 + br * 0.35) * B.sh * sc, len = Math.hypot(neck[0] - hip[0], neck[1] - hip[1]); // beta 3.38 (Daniel: "a very big torso"): the shoulders, chest and arms back towards the refs'
+    const sF = off(neck, (6.4 + 3 * tw) * B.sh * sc, 4 * U), sB = off(neck, (-6.2 + 2 * tw) * B.sh * sc, 3 * U);
     const lF = off(hip, 3.5 * sc, U), lB = off(hip, -2.5 * sc, U); // beta 3.30: the legs from under the body (no seat sticking out)
     // an arm: the deltoid, the upper arm with the biceps, the forearm, then the glove with its cuff
     const arm = (s, e, h, far) => {
@@ -947,14 +951,14 @@
         if (L.topKind === "varsity" && seg === 1 && t > 0.82) return (far ? back : tone)(ramp(L.top), nx, ny); // the knit cuff
         if (seg === 1 && t > 0.8 && R === SK && !L.hands) return (far ? back : tone)(ramp(WRAP), nx, ny); // the tape up the wrist
         if (L.sleeve === "rolled" && seg === 1 && Math.abs(t - 0.4) < 0.06) return TOP[far ? 4 : 3]; // the rolled cuff
-        if (L.topKind === "fleece" && R === TOP && R === SLV) { const fz = hash2(px * 7.3, py * 5.1); return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (fz > 0.72 ? 1 : fz < 0.12 ? -1 : 0), 0, 4)]; } if (L.tattoo && R === SK && seg === 1 && t > 0.2 && t < 0.8 && hash2(Math.floor(t * 8), Math.floor((nx + 1) * 2.2)) > 0.5) return ramp("#56607e")[clamp(toneOf(nx, ny) + (far ? 1 : 0) + 1, 1, 4)]; // beta 3.32: the tattoos in blocks of ink, shaded with the arm
+        if (L.topKind === "fleece" && R === TOP && R === SLV) { const fz = hash2(px * 7.3, py * 5.1); return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (fz > 0.72 ? 1 : fz < 0.12 ? -1 : 0), 0, 4)]; } if (L.tattoo && R === SK && (seg === 1 ? t > 0.06 && t < 0.8 : t > sleeveTo + 0.04)) { const c = tattoo(seg + (far ? 2 : 0), t, nx, ny, far); if (c) return c; } // beta 3.38: tattoo sleeves, the upper arm below the sleeve and the forearm
         // beta 3.30: the muscle drawn in: the line between biceps and triceps, the deltoid's edge, the forearm's ridge; on a sleeve, the creases at the elbow
         let ex2 = 0;
         if (R === SK) { if (seg === 0 && t > 0.32 && t < 0.86 && Math.abs(nx - 0.05) < 0.12) ex2 = 1; if (seg === 0 && t > 0.24 && t < 0.32 && nx > -0.3) ex2 = 1; if (seg === 1 && t > 0.1 && t < 0.62 && Math.abs(nx + 0.28) < 0.11) ex2 = 1; }
         else ex2 = folds(nx, t, ARM_FOLDS[seg]); // beta 3.32: the creases round the elbow, the folds down the sleeve, each with its lit ridge
         return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + ex2, 0, 4)]; };
-      limb(F, s, e, 6.9 * ar, 4.3 * ar, 1.7 * ar, 0.42, mat(0), g); // a strong upper arm, the deltoid and the biceps (beta 3.33: bigger)
-      limb(F, e, h, 5.3 * ar, 3.7 * ar, 0.9 * ar, 0.28, mat(1), g); // a thick forearm
+      limb(F, s, e, 5.0 * ar, 3.6 * ar, 1.0 * ar, 0.42, mat(0), g); // a strong upper arm, the deltoid and the biceps (beta 3.38: back towards the refs')
+      limb(F, e, h, 4.2 * ar, 3.2 * ar, 0.6 * ar, 0.28, mat(1), g); // the forearm
       const vx = h[0] - e[0], vy = h[1] - e[1], vl = Math.hypot(vx, vy) || 1, ux = vx / vl, uy = vy / vl, gr = 5.9 * Math.min(1.1, sc);
       if (L.hands) blob(F, [h[0] + ux * 0.5 * U, h[1] + uy * 0.5 * U], 3.1 * sc + 0.55 * U, 2.8 * sc + 0.55 * U, (nx, ny) => (far ? back : tone)(SK, nx, ny), g + 10); // a bystander's bare hand
       else { // beta 3.16 (Daniel): a bare fist in plain white hand wraps, for everyone; the knuckles just showing
@@ -981,9 +985,13 @@
         return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + ex2, 0, 4)];
       };
       const thighMat = (nx, ny, t) => (L.cargo && t > 0.45 && t < 0.78 && nx < -0.1 && nx > -0.85 ? R[far ? 4 : t < 0.5 ? 1 : 3] : L.canvas && t > 0.6 && nx > -0.2 && Math.abs(t - 0.62) < 0.03 ? R[far ? 4 : 3] : mat(nx, ny, t)); // the cargo pocket; the canvas trousers' double front
-      const shinMat = (nx, ny, t) => (L.ankle && t > 0.78 ? (far ? back : tone)(ramp(L.ankle), nx, ny) : mat(nx, ny, t, CURX, CURY, true));
-      limb(F, r, k, (6.2 + loose) * lg, (5 + loose) * lg, (bare ? 1.4 : 1) * lg, 0.5, thighMat, g); // solid thighs, the swell mid-way (not at the seat)
-      limb(F, k, [f[0], f[1] - 4 * U], (5 + loose) * lg, (3.4 + loose * (L.hem || 1.2)) * lg, (bare ? 1.3 : 0.6) * lg, 0.28, shinMat, g); // the calf high
+      // beta 3.38: knee-length shorts (Rares): the thigh in the trousers' cloth with a hem at the knee, the shin bare, tattooed
+      const shinSkin = (nx, ny, t) => { if (L.tattoo && t > 0.1 && t < 0.72) { const c = tattoo(4 + (far ? 1 : 0), t, nx, ny, far); if (c) return c; } return SK[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (t > 0.12 && t < 0.55 && Math.abs(nx - 0.3) < 0.12 ? 1 : 0), 0, 4)]; };
+      const shinMat = (nx, ny, t) => (L.ankle && t > 0.78 ? (far ? back : tone)(ramp(L.ankle), nx, ny) : L.shorts ? shinSkin(nx, ny, t) : mat(nx, ny, t, CURX, CURY, true));
+      const thighM = L.shorts ? (nx, ny, t) => (t > 0.9 ? PA[far ? 4 : 3] : thighMat(nx, ny, t)) : thighMat;
+      limb(F, r, k, (6.2 + loose) * lg, (5 + loose) * lg, (bare ? 1.4 : 1) * lg, 0.5, thighM, g); // solid thighs, the swell mid-way (not at the seat)
+      const sl = L.shorts ? 0 : loose; // a bare shin is the leg's own width
+      limb(F, k, [f[0], f[1] - 4 * U], (5 + sl) * lg, (3.4 + sl * (L.hem || 1.2)) * lg, (bare || L.shorts ? 1.3 : 0.6) * lg, 0.28, shinMat, g); // the calf high
       const fq = Math.min(1, B.sc * 1.1) * U * FOOT; // the feet keep to the size of the person (beta 3.33: bigger, as the arcade fighters' are)
       if (L.barefoot) { // a bare foot, the toes forward
         poly(F, [[f[0] - 5 * fq, f[1] - 6 * fq], [f[0] + 3 * fq, f[1] - 5 * fq], [f[0] + 12 * fq, f[1] - 1 * fq], [f[0] + 12 * fq, f[1] + 1 * fq], [f[0] - 5 * fq, f[1] + 1 * fq]], (x, y) => { const u = (x - f[0]) / fq, v = (f[1] - y) / fq; if (u > 7.4 && v < 2.2 && Math.floor((u - 7.4) / 1.25) % 2 === 1) return SK[4]; if (u > 7.4 && v < 0.6) return SK[3]; if (u < -2.5 && v < 2.5) return SK[far ? 4 : 3]; if (Math.abs(u - 1.5) < 0.7 && v > 2.4 && v < 4) return SK[far ? 3 : 2]; return SK[far ? 3 : v > 3.4 ? 1 : 2]; }, g + 10); // the toes (beta 3.33: split, the sole and the heel in shade, the ankle bone)
@@ -1015,7 +1023,7 @@
     };
     // the torso: a V from the shoulders to the waist, then the hips; u across (-1 back .. 1 front), v down (0..1)
     const shape = (v) => {
-      const w0 = wsh * (1 - 0.18 * tw), wc = (16.2 + br * 0.4) * B.chest * sc * (1 - 0.15 * tw), ww = 6.7 * B.waist * sc, wh = 8.4 * Math.max(1, B.waist * 0.92) * sc;
+      const w0 = wsh * (1 - 0.18 * tw), wc = (12.6 + br * 0.4) * B.chest * sc * (1 - 0.15 * tw), ww = 7.2 * B.waist * sc, wh = 8.4 * Math.max(1, B.waist * 0.92) * sc;
       if (v < 0.16) return w0 * (0.5 + 0.5 * Math.sqrt(v / 0.16)); // round shoulders
       if (v < 0.42) return lerp(w0, wc, (v - 0.16) / 0.26);
       if (v < 0.8) return lerp(wc, ww, (v - 0.42) / 0.38);
@@ -1996,7 +2004,7 @@
     // to the other, in the same step; one lying down is not moved, the one standing over him is (a few units a step,
     // so he slides off rather than jumps), so getting up never starts inside the other. The width a touch more (32 units
     // a size, was 30), as the 3.33 bodies are broader: in the clinch only the guards overlap, not the chests
-    const pbw = 32 * Math.max(a.sc, b.sc), lo = Math.max(18, g.camX + 18), hi = Math.min(STAGE_W - 18, g.camX + W - 18), near = Math.abs(a.y - b.y) < 70;
+    const pbw = 30 * Math.max(a.sc, b.sc), lo = Math.max(18, g.camX + 18), hi = Math.min(STAGE_W - 18, g.camX + W - 18), near = Math.abs(a.y - b.y) < 70;
     const side = a.x < b.x || (a.x === b.x && a.face > 0) ? 1 : -1; // b to the right of a: 1
     if (near && Math.abs(b.x - a.x) < pbw) {
       const over = pbw - Math.abs(b.x - a.x), ma = a.st === "down" ? 0 : 1, mb = b.st === "down" ? 0 : 1;
