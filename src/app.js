@@ -1,4 +1,15 @@
 (() => {
+  // r230 (Daniel, frame drops when racing and drifting): the viewport, cached. On a phone (a page with a viewport meta)
+  // every read of innerWidth / innerHeight runs a style and layout pass first if anything changed since the last one;
+  // the map's frame read them ~18 times, between its own writes (the services' tags alone: 8 reads between 4 moves),
+  // so each frame laid the page out again and again: half the time of the long frames on a Pixel at 4x. Every bare
+  // innerWidth / innerHeight in this file is now this pair, refreshed on resize (before any other listener of ours),
+  // on the visual viewport's and an orientation change, and once every 30 frames as a safety net (see frameStep)
+  var innerWidth = window.innerWidth, innerHeight = window.innerHeight;
+  var czViewport = () => { innerWidth = window.innerWidth; innerHeight = window.innerHeight; };
+  window.addEventListener("resize", czViewport);
+  window.addEventListener("orientationchange", czViewport);
+  try { window.visualViewport && window.visualViewport.addEventListener("resize", czViewport); } catch (e) {}
   // r135g: analytics events (sent only after the cookie yes, see build/consent.mjs)
   var czEv = (n, p) => { try { window.czEvent && window.czEvent(n, p || {}); } catch (e) {} };
   var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -34103,12 +34114,15 @@ void main() {
     // r137a (Daniel): the worlds card (and the ride card on the map) open as a popover right under the button that
     // opened them, with a small arrow to it. popAnchor(panel, btn) measures the button and places the panel; a
     // click on the drive's own multiverse button drops the anchor and the card opens where it always did.
+    // r230: the HUD knows when its worlds card is a popover (the Sketchbook filter rule, once a :has() that restyled
+    // the whole document on every text change on the map)
+    const syncPopAt = (panel) => { const h = panel?.parentElement; if (h?.classList.contains("hud")) h.classList.toggle("hud-popat", !!h.querySelector(":scope > .theme-menu.pop-at")); };
     const popAnchor = (panel, btn) => {
       if (!panel) return;
       const r = btn?.getBoundingClientRect();
-      if (!r || !r.width) { panel.classList.remove("pop-at"); panel._popBtn = null; return; }
+      if (!r || !r.width) { panel.classList.remove("pop-at"); panel._popBtn = null; syncPopAt(panel); return; }
       panel._popBtn = btn;
-      panel.classList.add("pop-at");
+      panel.classList.add("pop-at"); syncPopAt(panel);
       const vw = document.documentElement.clientWidth, m = 12, w = Math.min(panel.offsetWidth, vw - 2 * m);
       const cx = r.left + r.width / 2, left = Math.max(m, Math.min(vw - w - m, cx - w / 2));
       panel.style.setProperty("--pop-top", `${Math.round(r.bottom + 12)}px`);
@@ -34119,7 +34133,7 @@ void main() {
     themeBtn.onclick = () => {
       const o = themeMenu.classList.contains("open");
       closeMenus();
-      if (!o) themeMenu.classList.remove("pop-at"); // r137a: the caller re-anchors it under its own button
+      if (!o) { themeMenu.classList.remove("pop-at"); syncPopAt(themeMenu); } // r137a: the caller re-anchors it under its own button
       themeMenu.classList.toggle("open", !o);
       document.body.classList.toggle("menu-open", !o);
       themeBtn.setAttribute("aria-expanded", String(!o));
@@ -34302,6 +34316,11 @@ void main() {
     grab.setAttribute("aria-label", "Expand or collapse the card");
     card.appendChild(grab);
     root.appendChild(card);
+    // r230 (Daniel, frame drops when racing and drifting): the root says when the card is open (.mc-open), for the phone
+    // rules that put the project strip and the drive pins away under it; they were .ui-root:has(> .mapcard:not(.hidden))
+    // ... .poi-rail *, which made every text or node change inside the UI (the drive hint, Nearby's distances, the arms'
+    // pills) restyle the whole UI on phones: ~30 ms a change on a Pixel at 4x, several times a second while driving
+    { const sync = () => root.classList.toggle("mc-open", !card.classList.contains("hidden")); new MutationObserver(sync).observe(card, { attributes: true, attributeFilter: ["class"] }); sync(); }
     const phone = () => window.matchMedia("(max-width: 719px)").matches;
     // r87: an app-grade bottom sheet on phones. Three snaps (peek, open, full); the sheet
     // follows the finger 1:1 anywhere on it, and a flick carries it to the next snap. Content
@@ -37099,8 +37118,8 @@ void main() {
           elBtn._awT = elBtn.textContent.length;
         }
         const half = Math.max(110, elBtn._aw / 2 + 8);
-        const rawX = clamp2((anchorTmp.x * 0.5 + 0.5) * window.innerWidth, half, window.innerWidth - half);
-        const rawY = clamp2((-anchorTmp.y * 0.5 + 0.5) * window.innerHeight, minY ?? 96, maxY ?? window.innerHeight - 110);
+        const rawX = clamp2((anchorTmp.x * 0.5 + 0.5) * innerWidth, half, innerWidth - half); // r230: the cached viewport (a frame's read laid the page out on phones)
+        const rawY = clamp2((-anchorTmp.y * 0.5 + 0.5) * innerHeight, minY ?? 96, maxY ?? innerHeight - 110);
         let st = elBtn._ast;
         if (!st) {
           st = elBtn._ast = { x: rawX, y: rawY, px: -1, py: -1 };
@@ -38623,6 +38642,8 @@ void main() {
       // city running if anything else ever throws mid-frame: the next frame is still asked for, and each distinct error
       // is logged once (not 60 times a second)
       const frameErrs = new Set();
+      // r230: scratch values for frameStep (it made them anew every frame)
+      const plateWP = new Vector3(), sunCols = new Map(), sunColOf = (c) => sunCols.get(c) || sunCols.set(c, new Color(c)).get(c);
       function frame(now) {
         try {
           frameStep(now);
@@ -38632,7 +38653,9 @@ void main() {
           if (!frameErrs.has(k) && frameErrs.size < 20) { frameErrs.add(k); console.error("[cromatic] a frame failed; the city keeps running:", e); }
         }
       }
+      let vpFrames = 0;
       function frameStep(now) {
+        if (++vpFrames % 30 === 0) czViewport(); // r230: the cached viewport's safety net, at the frame's start (nothing written yet)
         if (ONB_MODE && onbPaused) { prevT = now; requestAnimationFrame(frame); return; } // r140: no zone of /onboarding/ on screen
         if (window.czFinale?.hold()) { prevT = now; requestAnimationFrame(frame); return; } // r232b (Daniel, Lottie: the city rests while the finale's paper and clouds hide it all; the loop stays, the 3D work does not; a resize waits for it)
         // r156b: a resolution change asked for outside the frame (the opening's wall and reveal) lands here, and this frame
@@ -39153,7 +39176,7 @@ void main() {
         curSun.el = smooth(curSun.el, sp.el, dt, 1.5);
         curSun.az = smooth(curSun.az, sp.az, dt, 1.5);
         curSun.int = smooth(curSun.int, sp.int, dt, 1.5);
-        curSun.col.lerp(new Color(sp.col), Math.min(1, dt * 1.5));
+        curSun.col.lerp(sunColOf(sp.col), Math.min(1, dt * 1.5)); // r230: the colour parsed once per value, not every frame
         const dark = lum(SCHEMES[state.schemeIdx].bg) < 0.45;
         const baseInt = dark ? 0.85 : 2.1;
         sun.intensity = baseInt * curSun.int;
@@ -39293,16 +39316,17 @@ void main() {
           trail.instanceMatrix.needsUpdate = true;
           trailMat.opacity = 0.55;
         }
-        for (const h of [...worldRefs.heritage, ...worldRefs.streetSigns]) {
+        // r230: one scratch vector, no new array of the two lists every frame
+        for (const list of [worldRefs.heritage, worldRefs.streetSigns]) for (const h of list) {
           const plate = h.userData.plate;
           if (!plate) continue;
-          const wp = new Vector3();
+          const wp = plateWP;
           plate.getWorldPosition(wp);
           plate.rotation.y = Math.atan2(camera.position.x - wp.x, camera.position.z - wp.z) - h.rotation.y;
         }
         for (const p of worldRefs.plots) {
           const b = p.userData.board;
-          const wp = new Vector3();
+          const wp = plateWP;
           b.getWorldPosition(wp);
           b.rotation.y = Math.atan2(camera.position.x - wp.x, camera.position.z - wp.z);
         }
@@ -39478,7 +39502,7 @@ void main() {
           ui.addrCard._ast = null;
           ui.addrCard.style.left = `${Math.round(innerWidth * 0.71)}px`;
           ui.addrCard.style.top = `${Math.round(innerHeight * 0.45)}px`;
-        } else placeAnchor(ui.addrCard, 1040, 260, 7350, nearEnd, isMobile() ? window.innerHeight * 0.34 : void 0);
+        } else placeAnchor(ui.addrCard, 1040, 260, 7350, nearEnd, isMobile() ? innerHeight * 0.34 : void 0); // r230: the cached viewport
         if (state.L > 200) ui.hint.classList.add("gone");
         // the manifesto lives at the spawn point: on while you are there, paused when you leave
         if (kinetic && now > kineticArmedAt && !mapMode) {
@@ -39632,9 +39656,17 @@ void main() {
       // frames with how they were batched (place, visibility, material, geometry), and the first change puts that batch's
       // originals back for good (something that moves, turns to face you or is swapped never stays frozen)
       var STATIC_BUILDERS = new Set(["FourStreets", "StreetProps", "CoffeeStreetAdds", "CoffeeEntrance", "PrintLane", "SteamShop", "OmaShop", "OlariPlaza", "Fork", "Dacia99", "Izakaya", "CasaBerero", "ChapterSigns", "Eliade18", "Romexpo", "StreetShop", "Brasov", "Munitiei5", "Ground"]);
-      var MERGED = null, mergeWatchI = 0;
+      var MERGED = null, mergeWatchI = 0, mergeTries = 0;
       // a baked material's look at batching time (a later change to it puts its parts back)
-      const matSnap = (m) => `${m.color.getHex()}|${m.emissive ? m.emissive.getHex() : ""}|${m.emissiveIntensity}|${m.version}|${m.visible}|${m.opacity}|${m.map ? m.map.uuid : ""}|${m.side}|${m.wireframe}`;
+      // r230 (Daniel, frame drops when racing and drifting): the watch below runs every frame over ~1,600 parts; it built
+      // a string per part (this look, and the geometry's attribute versions joined), some 40% of everything the page
+      // allocated while driving, and the garbage came back as the long collector pauses (100-300 ms) felt as stutters.
+      // The same checks now compare numbers and references in place, allocating nothing
+      const matSnap = (m) => [m.color.getHex(), m.emissive ? m.emissive.getHex() : -1, m.emissiveIntensity, m.version, m.visible, m.opacity, m.map ? m.map.uuid : "", m.side, m.wireframe];
+      const matSame = (m, a) => a[0] === m.color.getHex() && a[1] === (m.emissive ? m.emissive.getHex() : -1) && a[2] === m.emissiveIntensity && a[3] === m.version && a[4] === m.visible && a[5] === m.opacity && a[6] === (m.map ? m.map.uuid : "") && a[7] === m.side && a[8] === m.wireframe;
+      // a geometry's attributes: how many, and the sum of their versions (a version only ever goes up)
+      let geoVerN = 0;
+      const geoVer = (g) => { let v = 0, n = 0; const at = g.attributes; for (const k in at) { v += at[k].version; n++; } geoVerN = n; return v; };
       function mergeStatic() {
         if (MERGED || NO_MERGE) return;
         const W = worldRefs.world; W.updateMatrixWorld(true);
@@ -39687,6 +39719,9 @@ void main() {
           const list = list0.filter((p) => take.get(p.o) === owners.get(p.o));
           if (list.length && (list.length >= 2 || list[0].gr)) jobs.push({ bake: key[0] === "B", list, snaps: list.map((p) => chainSnap(p.o)) });
         }
+        // r230: nothing to batch yet (on Safari, which has no requestIdleCallback, this ran at once, at times before the city
+        // was there to batch, and never again: then no batches on that iPhone, ~1.8x the draw calls in the Street view): again later
+        if (!jobs.length && ++mergeTries < 8) { MERGED = null; setTimeout(mergeStatic, 2000); return; }
         // the geometry is built a slice at a time while the page is idle (a phone needs several hundred ms for all of it),
         // then everything is switched over in one frame (never a batch and its originals drawn together)
         let j = 0;
@@ -39706,13 +39741,15 @@ void main() {
             bm.castShadow = o0.castShadow; bm.receiveShadow = o0.receiveShadow; bm.layers.mask = o0.layers.mask; bm.userData.batch = true;
             bm.matrixAutoUpdate = false; bm.updateMatrix();
             W.add(bm);
-            MERGED.push({ bm, bake: jb.bake, list: jb.list.map((p, i) => ({ p, snap: jb.snaps[i], mat: p.o.material, sm: p.m, geo: p.o.geometry, ver: Object.values(p.o.geometry.attributes).map((x) => x.version).join(), ms: jb.bake ? matSnap(p.m) : null })) });
+            MERGED.push({ bm, bake: jb.bake, list: jb.list.map((p, i) => ({ p, snap: jb.snaps[i], mat: p.o.material, sm: p.m, geo: p.o.geometry, ver: geoVer(p.o.geometry), vn: geoVerN, ms: jb.bake ? matSnap(p.m) : null })) });
           }
           // the batched meshes leave every camera's layers (they stay where they are, watched); a leaf no longer
           // recomputes its world matrix every frame (the watch compares its own place instead)
+          // r230: nor checks its own matrix (r139b's staleness test, ten comparisons for each of ~1,600 of the scene's ~5,300
+          // objects every frame, for meshes no camera draws); the watch reads the place itself, a part put back gets both again
           for (const rec of MERGED) for (const e of rec.list) {
             const o = e.p.o;
-            if (!o.userData.__merged) { o.userData.__merged = { mask: o.layers.mask, mwau: o.matrixWorldAutoUpdate }; o.layers.mask = 0; if (!o.children.length) o.matrixWorldAutoUpdate = false; n0++; }
+            if (!o.userData.__merged) { o.userData.__merged = { mask: o.layers.mask, mwau: o.matrixWorldAutoUpdate, mau: o.matrixAutoUpdate }; o.layers.mask = 0; if (!o.children.length) { o.matrixWorldAutoUpdate = false; o.matrixAutoUpdate = false; } n0++; }
           }
           if (n2C) { nav2CullOff(); n2C = null; } // the street view's far cull rebuilds its list (the batches, not the hidden originals)
           (window.__bootT ||= {}).merge = { meshes: n0, batches: MERGED.length, ms: Math.round(performance.now() - t0) };
@@ -39726,11 +39763,12 @@ void main() {
         for (let q = o; q && q !== W; q = q.parent) a.push(q.position.x, q.position.y, q.position.z, q.quaternion.x, q.quaternion.y, q.quaternion.z, q.quaternion.w, q.scale.x, q.scale.y, q.scale.z, q.visible ? 1 : 0, q.parent === W ? 1 : 0);
         return Float64Array.from(a);
       }
+      const snapD = (x, y) => x - y > 1e-4 || y - x > 1e-4; // r230: one function, not a new closure per level per check
       function snapSame(o, a) {
         const W = worldRefs.world; let i = 0;
         for (let q = o; q && q !== W; q = q.parent) {
           if (i + 12 > a.length) return false;
-          const P = q.position, Q = q.quaternion, S = q.scale, d = (x, y) => x - y > 1e-4 || y - x > 1e-4;
+          const P = q.position, Q = q.quaternion, S = q.scale, d = snapD;
           if (d(P.x, a[i]) || d(P.y, a[i + 1]) || d(P.z, a[i + 2]) || d(Q.x, a[i + 3]) || d(Q.y, a[i + 4]) || d(Q.z, a[i + 5]) || d(Q.w, a[i + 6]) || d(S.x, a[i + 7]) || d(S.y, a[i + 8]) || d(S.z, a[i + 9])) return false;
           if ((q.visible ? 1 : 0) !== a[i + 10] || (q.parent === W ? 1 : 0) !== a[i + 11]) return false;
           i += 12;
@@ -39743,6 +39781,7 @@ void main() {
         {
           for (const p of list) {
             const o = p.o;
+            o.updateMatrix(); // r230: a batched leaf no longer updates its own matrix (see mergeStatic)
             o.updateWorldMatrix(true, false);
             rel.multiplyMatrices(inv, o.matrixWorld);
             const gg = o.geometry.clone();
@@ -39769,7 +39808,7 @@ void main() {
       // without it (a batch left with nothing goes)
       function evict(o, why) {
         const u = o.userData.__merged; if (!u) return;
-        o.layers.mask = u.mask; o.matrixWorldAutoUpdate = u.mwau !== false; delete o.userData.__merged; o.userData.noMerge = true;
+        o.layers.mask = u.mask; o.matrixWorldAutoUpdate = u.mwau !== false; o.matrixAutoUpdate = u.mau !== false; delete o.userData.__merged; o.userData.noMerge = true;
         for (const rec of MERGED.slice()) {
           if (!rec.list.some((e) => e.p.o === o)) continue;
           rec.list = rec.list.filter((e) => e.p.o !== o);
@@ -39793,7 +39832,7 @@ void main() {
             const o = e.p.o;
             if (o.material !== e.mat || o.geometry !== e.geo) bad = [o, "swap"];
             else if (!snapSame(o, e.snap)) bad = [o, "moved"];
-            else if (Object.values(o.geometry.attributes).map((x) => x.version).join() !== e.ver || (e.ms && matSnap(e.sm) !== e.ms)) bad = [o, "changed"];
+            else if (geoVer(o.geometry) !== e.ver || geoVerN !== e.vn || (e.ms && !matSame(e.sm, e.ms))) bad = [o, "changed"];
             if (bad) break;
           }
           if (bad) evict(bad[0], bad[1]); else mergeWatchI++;
@@ -40644,7 +40683,7 @@ void main() {
           const x = (svcProj.x * 0.5 + 0.5) * innerWidth, y = (-svcProj.y * 0.5 + 0.5) * innerHeight;
           const off = svcProj.z > 1 || x < -160 || x > innerWidth + 160 || y < 80 || y > innerHeight + 40;
           if (box._off !== off) { box._off = off; box.classList.toggle("off", off); }
-          if (!off) box.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`;
+          if (!off) { const tx = Math.round(x), ty = Math.round(y); if (box._tx !== tx || box._ty !== ty) { box._tx = tx; box._ty = ty; box.style.transform = `translate3d(${tx}px, ${ty}px, 0)`; } } // r230: only when it moved
         }
       }
       function olariUpdate(dt) {
@@ -41795,18 +41834,21 @@ void main() {
             // beta 2.5 polish: in nav2's street view the pins far off (in its haze) step out: each moving pin restyles and
             // repaints every frame, and a whole city of them cost ~15 fps while driving there
             const svPins = nav2?.on && nav2.camK > 0.6;
+            // r230 (Daniel, frame drops when racing and drifting): each pin keeps one record (no new object per pin per
+            // frame), and a pin that is off screen is no longer restyled: its stem and footprint (--gy, --gw) were set
+            // every frame for every pin within reach, off screen too (behind the street camera their projections jump
+            // about), ~15 restyles a frame for nothing; they are set as a pin comes on, before it shows
             const order = pins.map((p) => {
-              if (svPins && Math.hypot(p.pl.wx - carPos.x, p.pl.wz - carPos.z) > 1300) return { p, x: -9999, y: -9999, z: 2 };
+              const o = p._o || (p._o = { p, x: 0, y: 0, z: 0, gy: 0, gw: 0 });
+              if (svPins && Math.hypot(p.pl.wx - carPos.x, p.pl.wz - carPos.z) > 1300) { o.x = o.y = -9999; o.z = 2; return o; }
               warpV(proj.set(p.pl.wx, 0, p.pl.wz)).project(camera);
               const gx = (proj.x * 0.5 + 0.5) * W, gy = (-proj.y * 0.5 + 0.5) * H;
               warpV(proj.set(p.pl.wx + 34, 0, p.pl.wz)).project(camera);
               const gw = Math.hypot((proj.x * 0.5 + 0.5) * W - gx, (-proj.y * 0.5 + 0.5) * H - gy) * 2;
               warpV(proj.set(p.pl.wx, p.pl.wy, p.pl.wz)).project(camera);
-              const o = { p, x: (proj.x * 0.5 + 0.5) * W, y: (-proj.y * 0.5 + 0.5) * H, z: proj.z };
+              o.x = (proj.x * 0.5 + 0.5) * W; o.y = (-proj.y * 0.5 + 0.5) * H; o.z = proj.z;
               // r130: how far down the ground is, and how wide the footprint, for the pin's stem and tint
-              const gyv = Math.round(Math.max(0, gy - o.y)), gwv = Math.round(Math.min(220, Math.max(26, gw)));
-              if (p.b._gy !== gyv) { p.b._gy = gyv; p.b.style.setProperty("--gy", gyv + "px"); }
-              if (p.b._gw !== gwv) { p.b._gw = gwv; p.b.style.setProperty("--gw", gwv + "px"); }
+              o.gy = Math.round(Math.max(0, gy - o.y)); o.gw = Math.round(Math.min(220, Math.max(26, gw)));
               return o;
             }).sort((a, b) => (b.p.pl === mapNav.place) - (a.p.pl === mapNav.place) || (a.p.pl.chapter ? 1 : 0) - (b.p.pl.chapter ? 1 : 0) || a.y - b.y);
             for (const o of order) {
@@ -41814,19 +41856,21 @@ void main() {
               const off = mapIntro || o.z > 1 || o.x < -80 || o.x > W + 80 || o.y < (o.p.pl === mapNav.place ? 70 : W < 720 ? 190 : 110) || o.y > H + 80;
               if (o.p.b._off !== off) { o.p.b._off = off; o.p.b.classList.toggle("off", off); }
               if (off) continue;
+              if (o.p.b._gy !== o.gy) { o.p.b._gy = o.gy; o.p.b.style.setProperty("--gy", o.gy + "px"); }
+              if (o.p.b._gw !== o.gw) { o.p.b._gw = o.gw; o.p.b.style.setProperty("--gw", o.gw + "px"); }
               // r125: the place you are at keeps the stage: whatever would sit on its label turns into a dot
               const cur = order[0] && order[0].p.pl === mapNav.place ? order[0] : null;
               const onCur = cur && cur !== o && Math.abs(cur.x - o.x) < 190 && Math.abs(cur.y - o.y) < 70;
               const dot = (o.p.pl.tier > zl || onCur) && o.p.pl !== mapNav.place;
               if (o.p.b._dot !== dot) { o.p.b._dot = dot; o.p.b.classList.toggle("dot", dot); }
-              const tf0 = `translate3d(${Math.round(o.x)}px, ${Math.round(o.y)}px, 0)`;
-              if (dot) { if (o.p.b._tf !== tf0) { o.p.b._tf = tf0; o.p.b.style.transform = tf0; } continue; }
-              const wasMini = o.p.b.classList.contains("mini");
+              // r230: the place compared as two whole pixels (a new string per pin per frame only to compare it, before)
+              const tx = Math.round(o.x), ty = Math.round(o.y), b = o.p.b;
+              if (b._tx !== tx || b._ty !== ty) { b._tx = tx; b._ty = ty; b.style.transform = `translate3d(${tx}px, ${ty}px, 0)`; }
+              if (dot) continue;
+              const wasMini = b.classList.contains("mini");
               const crowd = placed.some((q) => Math.abs(q.x - o.x) < (wasMini ? 170 : 140) && Math.abs(q.y - o.y) < (wasMini ? 56 : 42));
-              o.p.b.classList.toggle("mini", compact || crowd);
+              if (wasMini !== (compact || crowd)) b.classList.toggle("mini", compact || crowd);
               if (!crowd) placed.push(o);
-              const tf = `translate3d(${Math.round(o.x)}px, ${Math.round(o.y)}px, 0)`;
-              if (o.p.b._tf !== tf) { o.p.b._tf = tf; o.p.b.style.transform = tf; }
               pinBoxes.push([o.x, o.y]);
             }
             {
@@ -42441,7 +42485,7 @@ void main() {
       // ground meanwhile), so the first frame is the type, not a blank screen
       if (kzLoader) document.body.classList.add("kz-boot");
       const fabricReady = new Promise((res) => {
-        const go = () => { worldRefs.world.userData.buildFabric(); applyScheme(state.schemeIdx); (window.__bootT ||= {}).fabric = Math.round(performance.now()); CZI?.progress(0.5); res(); (window.requestIdleCallback || setTimeout)(mergeStatic, { timeout: 1500 }); }; // r198: then the batches (r223: the loader's progress)
+        const go = () => { worldRefs.world.userData.buildFabric(); applyScheme(state.schemeIdx); (window.__bootT ||= {}).fabric = Math.round(performance.now()); CZI?.progress(0.5); res(); (window.requestIdleCallback || ((f) => setTimeout(f, 1500)))(mergeStatic, { timeout: 1500 }); }; // r198: then the batches (r223: the loader's progress; r230: Safari, with no requestIdleCallback, waits as long as Chrome at most does)
         if (kzLoader) requestAnimationFrame(() => setTimeout(go, 30)); else { go(); }
       });
       Promise.all([fabricReady, Promise.race([Promise.all([document.fonts?.load?.("500 16px CromaticSans"), document.fonts?.load?.("800 16px CromaticSans")]).then(() => document.fonts?.ready), new Promise((r) => setTimeout(r, 1600))])]).then(() => {
