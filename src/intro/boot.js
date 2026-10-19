@@ -12,7 +12,11 @@
    the live map. The reveal unfreezes the map first; the window opens only once the app says the map has drawn a frame
    (mapFrame()): until then the pill keeps its white and breathes (no hole onto an empty canvas). While the city loads the
    pill holds the Cromatic Studios logo (in the opening itself); after 1.5 s of that a caption under it says "brewing the
-   city..." with the city's progress as a coffee line; it goes as soon as the city is ready. */
+   city..." with the city's progress as a coffee line; it goes as soon as the city is ready.
+   beta 3.69 (Daniel: "something to read first, for robots or for people"): the first paint is real text, the opening's
+   own first line ("Nobody remembers a thumbnail.") where the opening draws it, at its size, in its face; the player
+   takes over on its first frame (the opening starts with that line set) and the text goes, still in the page for
+   readers and the largest paint. A returning visitor and reduced motion get the brand line over the pill. */
 (function () {
   var C = window.__CZI_CFG; if (!C) return;
   var q = location.search;
@@ -36,8 +40,17 @@
   /* ---- the stage: the opening's own ground (grid paper at the opening's scale), its canvas, one button ---- */
   var st = document.createElement("div");
   st.id = "czi"; st.className = "czi czi-" + mode;
-  st.setAttribute("role", "img"); st.setAttribute("aria-label", mode === "full" ? LINES : TX.load);
   var cv = document.createElement("canvas"); cv.className = "czi-cv";
+  // (the drawing is an image of the words; the first line is also text, before it)
+  // the text painted first (3.69): the opening's first line, or the brand line over the pill
+  var FT = mode === "full" ? C.first && C.first[ab] : C.brand && C.brand[ab];
+  cv.setAttribute("role", "img"); cv.setAttribute("aria-label", mode === "full" ? (FT ? LINES.replace(/^Nobody remembers a thumbnail\.\s*/, "") : LINES) : TX.load);
+  var ft = null;
+  if (FT) {
+    ft = document.createElement("p"); ft.className = mode === "full" ? "czi-ft czi-first" : "czi-ft czi-brand"; ft.lang = "en";
+    // (a space before each break, so the words do not run together for whoever reads the text rather than sees it)
+    for (var li = 0; li < FT.lines.length; li++) { if (li) ft.appendChild(document.createElement("br")); ft.appendChild(document.createTextNode(FT.lines[li].t + (li < FT.lines.length - 1 ? " " : ""))); }
+  }
   var pill = document.createElement("i"); pill.className = "czi-pill"; // the still pill (reduced motion, and the player's fallback)
   var bt = document.createElement("button"); bt.type = "button"; bt.className = "czi-btn"; bt.disabled = true;
   bt.innerHTML = '<span class="czi-t">' + TX.load + '</span> <b class="czi-p">4%</b>';
@@ -45,7 +58,7 @@
   var cap = document.createElement("div"); cap.className = "czi-cap"; cap.setAttribute("aria-hidden", "true");
   cap.innerHTML = '<span class="czi-ct">' + TX.brew + '<span class="czi-dots"><i>.</i><i>.</i><i>.</i></span></span><span class="czi-fill"><i></i></span>';
   var capFill = cap.querySelector(".czi-fill i");
-  st.appendChild(cv); st.appendChild(pill); st.appendChild(cap); st.appendChild(bt);
+  st.appendChild(cv); st.appendChild(pill); if (ft) st.appendChild(ft); st.appendChild(cap); st.appendChild(bt);
   var ground = function () {
     var vw = innerWidth, vh = innerHeight, k = Math.max(vw / W, vh / H), ox = (vw - W * k) / 2, oy = (vh - H * k) / 2, g = 34 * k, l = Math.max(1, k).toFixed(2);
     st.style.backgroundSize = g + "px " + g + "px";
@@ -56,6 +69,15 @@
     pill.style.width = pw * k + "px"; pill.style.height = ph * k + "px"; pill.style.setProperty("--czr", P[3] * P[2] * k + "px");
     // the caption: under the pill (its breath and its shadow included)
     cap.style.top = Math.round(vh / 2 + (ph * k * 1.03) / 2 + Math.max(18, 0.2 * ph * k)) + "px";
+    // the text: its first baseline where the opening's is (a line box of lead x size, its baseline (half the leading
+    // and the face's ascent) below its top: the face's metrics are set in boot.css, the same on every platform)
+    if (ft) {
+      var f = FT.size * k, L = FT.lead * f, base = (L - (FT.asc + FT.desc) * f) / 2 + FT.asc * f;
+      ft.style.fontSize = f + "px"; ft.style.lineHeight = L + "px";
+      ft.style.top = oy + FT.lines[0].by * k - base + "px";
+      if (FT.center != null) { ft.style.left = ox + "px"; ft.style.width = W * k + "px"; }
+      else ft.style.left = ox + FT.lines[0].x * k + "px";
+    }
   };
   ground();
   (document.body || document.documentElement).appendChild(st);
@@ -141,6 +163,9 @@
     st.classList.add("czi-gone");
     setTimeout(function () { try { anim && anim.destroy(); } catch (e) {} st.remove(); }, 450);
   };
+  // the player has drawn: the first line's text goes (two frames on, when its drawing is on the screen); the brand line
+  // over a returning visitor's pill stays until the window opens
+  var drawn = function () { if (mode !== "full" || !ft) return; requestAnimationFrame(function () { requestAnimationFrame(function () { st.classList.add("czi-drawn"); }); }); };
   // without the player (reduced motion, no Worker, a failed load): the still pill, then a short fade onto the map
   var still = function () {
     failed = true; st.classList.add("czi-still"); armBrew(1500);
@@ -187,7 +212,7 @@
         anim = window.lottie.loadAnimation({ container: st, renderer: "canvas", loop: false, autoplay: false, animationData: data, rendererSettings: { canvas: cv, preserveAspectRatio: "xMidYMid slice", clearCanvas: true, dpr: 1 } });
         anim.addEventListener("complete", onComplete);
         anim.addEventListener("loopComplete", onLoop);
-        anim.addEventListener("enterFrame", function (e) { segFrames++; lastFrameAt = performance.now(); if (phase === "hold") holdT = +e.currentTime || 0; });
+        anim.addEventListener("enterFrame", function (e) { segFrames++; lastFrameAt = performance.now(); if (phase === "hold") holdT = +e.currentTime || 0; if (segFrames === 1) drawn(); });
         var watch = setInterval(function () {
           if (Z.done || phase === "fade" || failed) { clearInterval(watch); return; }
           if (phase === "load" || document.hidden || !segArgs) return;
