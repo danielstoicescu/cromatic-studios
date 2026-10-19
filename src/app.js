@@ -40286,7 +40286,6 @@ void main() {
           cover: (pl) => { try { return window.__coverOf?.(pl.id) || null; } catch { return null; } },
           shot: (pl) => { try { return pl.wx != null ? placeShot(pl) : null; } catch { return null; } },
           brand: (pl) => BRANDC[pl.work || pl.name] || BRANDC[pl.name] || null,
-          gameMark: () => GLOVE_SVG + pixelSVG(["2M2F"]), // beta 3.52 r219: the game's small entry in Nearby
           plaza: { x: OLARI_PLAZA.x, z: OLARI_PLAZA.z, r: OLARI_PLAZA.r, w: BLVD_W, z0: BLVD_Z0 }, // beta 2.92: r185's boulevard and forecourt
           vehicle: () => state.vehicleId, trees: () => TREE_BLOBS, vehAlt: () => Math.max(0, (veh?.group?.position.y || 0) - 2), // beta 2.9: the plane's altitude, for the street camera
           // round 2: the ride's wheel span (half the wheelbase, half the track, in world units), from its own wheels, per ride
@@ -40419,7 +40418,7 @@ void main() {
         { id: "dream", stop: "dream", chapter: true, find: true, h: 70, name: "The Dream", line: "CH.01", c: "#B098C8" },
         { id: "voice", stop: "voice", chapter: true, find: true, h: 70, name: "The Voice", line: "CH.02", c: "#F65342" },
         { id: "world", stop: "world", chapter: true, find: true, h: 70, name: "The World", line: "CH.03", c: "#119BFE" },
-        { id: "hq", chapter: true, br: "A", x: 1010, z: 4262, px: 1010, pz: 4120, h: 280, name: "C\u0103linescu 54", line: "THE ATTIC \xB7 2017", c: "#c0392b", pts: 5, past: true,
+        { id: "hq", chapter: true, br: "A", x: 1010, z: 4262, px: 1010, pz: 4120, h: 280, name: "C\u0103linescu 54", line: "THE ATTIC \xB7 2017", c: "#c0392b", pts: 5, past: true, tagOnly: true, // r235 (Daniel: "Călinescu shouldn't appear as a card, neither in Nearby nor on its own; only if you tap its tag"): no arrival card, no building tap
           desc: "Congrats, you found a blast from the past (2017): the Cromatic Studios attic. The villa with the red mansard, right across the street from Two Minutes; the string of lights still runs from our balcony to their corner." },
         { id: "eliade", chapter: true, x: 1600, z: 6100, px: 1640, pz: 6158, h: 150, name: "Eliade 18", line: "OUR STUDIO \xB7 2019", c: "#F65342", pts: 5, past: true, work: "Eliade 18",
           desc: "Congrats, you found a blast from the past (2019): Eliade Tower, the long grey office slab where Cromatic Studios had a floor. More room, more people, the first proper studio." },
@@ -42049,7 +42048,7 @@ void main() {
           let win = null;
           for (const q of pins) {
             const pl = q.pl;
-            if ((pl.chapter && !pl.past) || pl.wx == null || pl.float || pl.unmarked) continue;
+            if ((pl.chapter && !pl.past) || pl.tagOnly || pl.wx == null || pl.float || pl.unmarked) continue; // r235: tagOnly (Călinescu 54), its tag only
             const g = sc(pl.wx, 0, pl.wz), t = sc(pl.wx, pl.wy || 55, pl.wz), e = sc(pl.wx + 34, 0, pl.wz);
             if (g[2] > 1 || t[2] > 1) continue;
             const half = Math.min(110, Math.max(16, Math.hypot(e[0] - g[0], e[1] - g[1])));
@@ -42086,7 +42085,7 @@ void main() {
           }
           // a tap on a place's building goes there
           let near = null;
-          for (const q of pins) { if (q.pl.chapter && !q.pl.past) continue; const d2 = ((q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2) * (q.pl.tapW || 1); if (d2 < 75 * 75 && (!near || d2 < near.d)) near = { d: d2, pl: q.pl }; } // r168: tapW, a place that wins its shared building
+          for (const q of pins) { if ((q.pl.chapter && !q.pl.past) || q.pl.tagOnly) continue; const d2 = ((q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2) * (q.pl.tapW || 1); if (d2 < 75 * 75 && (!near || d2 < near.d)) near = { d: d2, pl: q.pl }; } // r168: tapW, a place that wins its shared building
           if (near) return mapGo(near.pl);
           for (const q of pins) if (q.pl.chapter && !q.pl.past && (q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2 < 70 * 70) return mapGo(q.pl);
           if (nav2?.on) { const g = nav2.tap(hit.x, hit.z); if (g) tapMark(g[0], g[1]); return; } // nav2: any street of the graph

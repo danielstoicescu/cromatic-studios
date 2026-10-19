@@ -59,12 +59,18 @@ body.n2-card .n2-panel { opacity: 0; translate: 0 14px; pointer-events: none; }
 .n2-strip::-webkit-scrollbar { display: none; }
 .nav2-ui .n2-pc { flex: 0 0 auto; width: 126px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: flex-start; padding: 0; border: 2.5px solid #141414; border-radius: 16px; overflow: hidden; background: var(--pc); color: var(--pt); cursor: pointer; text-align: left; box-shadow: 3px 4px 0 #141414; transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s; }
 .nav2-ui .n2-pc:hover { transform: translateY(-3px) rotate(-1deg); box-shadow: 4px 6px 0 #141414; }
-/* beta 3.52 r219 (Daniel: "in Nearby the game is a small card"): the arcade's entry, a compact chip in the game's colours */
-.nav2-ui .n2-pc.n2-mini { width: 74px; align-self: center; align-items: center; gap: 3px; padding: 8px 0 0; background: #1d1638; color: #FED012; box-shadow: inset 0 0 0 2px #FED012, 2px 3px 0 #141414; }
-.nav2-ui .n2-pc.n2-mini .n2-mk { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.nav2-ui .n2-pc.n2-mini .mf-glove { width: 20px; height: 20px; }
-.nav2-ui .n2-pc.n2-mini .mf-txt { width: 56px; height: 16px; }
-.nav2-ui .n2-pc.n2-mini .n2-dist { margin: 4px 6px 7px; }
+/* r235 (Daniel: "the 2M2F card should be the size of the others"): r219's compact chip is gone, the game's entry is a card like the rest */
+/* r235 (Daniel: "Nearby shouldn't appear right at the beginning, but close to the roundabout; let's take one from each"): closed on
+   the start road (it slides in near the fountain); the first time round it, Daniel's mix in two lines of three (his order, read
+   like a page), each card's arrow on its street's colour, a key of the streets above */
+.n2-panel.n2-wait { opacity: 0; translate: 0 14px; pointer-events: none; }
+.n2-leg { display: flex; flex-wrap: wrap; gap: 5px 4px; margin: -1px 0 8px; }
+.n2-leg .n2-q.sm { margin-left: 0; font-size: 10.5px; }
+.n2-leg i { font: 900 11px/1 system-ui, sans-serif; font-style: normal; } /* (the arrows in the card corners' font: ↑ was a hairline in CromaticSans) */
+.n2-strip.n2-mix { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; }
+.nav2-ui .n2-mix .n2-pc { width: auto; min-width: 0; }
+.n2-mix .n2-pic { height: 64px; }
+.n2-mix .n2-dch { background: var(--dc, #FED012); }
 .n2-pic { position: relative; display: block; width: 100%; height: 78px; background: var(--pc); border-bottom: 2.5px solid #141414; overflow: hidden; }
 .n2-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .n2-ini { position: absolute; inset: 0; display: grid; place-items: center; font: 900 30px/1 CromaticSans, sans-serif; letter-spacing: -.03em; }
