@@ -36379,7 +36379,20 @@ void main() {
       function crayonTextures() {
         if (crayonTex) return crayonTex;
         const R = rng(20261012);
-        const make = (W, H, paint) => {
+        // beta 3.7x (Sketchbook audit, round 2): since the notebook (3.76) only the ring is used (the crayon rings on the
+        // ground, sketchRingsBuild); the pill, card, dot and torn sheet were still drawn, pixel by pixel, on the first switch
+        // into Sketchbook: most of its 120-160 ms freeze on a laptop (280-380 ms in WebKit). A texture not wanted is only
+        // "dry run": its random draws are taken in the same order, so the ring comes out identical. CRAYON_ALL brings them back
+        const CRAYON_ALL = false;
+        const make = (W, H, paint, dry = false) => {
+          if (dry) {
+            const grid = (sx, sy) => { const n = (Math.ceil(W / sx) + 2) * (Math.ceil(H / sy) + 2); for (let i = 0; i < n; i++) R(); };
+            grid(2.3, 0.85); grid(6.5, 2.2); grid(40, 18);
+            for (let i = 0, N = W * H; i < N; i++) R();
+            grid(26, 26);
+            paint(() => {}, W, H);
+            return null;
+          }
           const N = W * H, T = new Float32Array(N), A = new Float32Array(N), S = new Float32Array(N);
           const grid = (sx, sy) => { const gw = Math.ceil(W / sx) + 2, gh = Math.ceil(H / sy) + 2, v = new Float32Array(gw * gh); for (let i = 0; i < v.length; i++) v[i] = R();
             return (x, y) => { const fx = x / sx, fy = y / sy, ix = fx | 0, iy = fy | 0, ax = fx - ix, ay = fy - iy, ux = ax * ax * (3 - 2 * ax), uy = ay * ay * (3 - 2 * ay), o = iy * gw + ix;
@@ -36427,8 +36440,8 @@ void main() {
           }
         };
         crayonTex = {
-          pill: make(640, 200, swatch(640, 200, 11, 15)),
-          card: make(560, 360, swatch(560, 360, 16, 17)),
+          pill: make(640, 200, swatch(640, 200, 11, 15), !CRAYON_ALL),
+          card: make(560, 360, swatch(560, 360, 16, 17), !CRAYON_ALL),
           // a ring: two passes round an ellipse, not quite closed, the radius wandering a little
           ring: make(512, 256, (stroke) => {
             for (let pass = 0; pass < 2; pass++) {
@@ -36438,7 +36451,7 @@ void main() {
             }
           }),
           // a dot: a tight spiral scribble
-          dot: make(72, 72, (stroke) => {
+          dot: !CRAYON_ALL ? null : make(72, 72, (stroke) => {
             const pts = [], ph = R() * 6;
             for (let t = 0; t <= Math.PI * 2 * 3.2; t += 0.08) { const r = 6 + (t / (Math.PI * 2 * 3.2)) * 20; pts.push([36 + Math.cos(t + ph) * r, 36 + Math.sin(t + ph) * r * 0.94]); }
             stroke(pts, 9, 1);
@@ -36446,7 +36459,7 @@ void main() {
         };
         // a torn sheet: a rectangle whose edges were ripped by hand (a ragged walk, deeper on the left where it
         // came off the pad, small fibres along every edge)
-        {
+        if (CRAYON_ALL) {
           const W = 720, H = 440, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
           const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff";
           const edge = (n, amp, deep) => { const o = []; let v = 0; for (let i = 0; i <= n; i++) { v += (R() - 0.5) * amp; v *= 0.86; o.push(v + (R() < 0.08 ? R() * deep : 0)); } return o; };
@@ -36460,8 +36473,8 @@ void main() {
           crayonTex.torn = crayonUrl(cv); // r139b
         }
         const st = document.documentElement.style;
-        st.setProperty("--cr-torn", crayonTex.torn);
-        st.setProperty("--cr-pill", crayonTex.pill); st.setProperty("--cr-card", crayonTex.card); st.setProperty("--cr-ring", crayonTex.ring); st.setProperty("--cr-dot", crayonTex.dot);
+        st.setProperty("--cr-ring", crayonTex.ring);
+        if (CRAYON_ALL) { st.setProperty("--cr-torn", crayonTex.torn); st.setProperty("--cr-pill", crayonTex.pill); st.setProperty("--cr-card", crayonTex.card); st.setProperty("--cr-dot", crayonTex.dot); }
         return crayonTex;
       }
       // beta 2.6 (Daniel): the Multiverse button shows the world you are in: its picker's preview when there is one, else a
