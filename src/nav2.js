@@ -829,7 +829,11 @@
     let panelT = 0;
     function tick(dt, now) {
       if (!H.ready()) return;
-      if (!D.ready) { if (!place()) return; D.ready = true; render(true); H.closures?.(CLOSED); setTimeout(preShots, 1200); setTimeout(() => engineLoops(H.vehicle()), 2500); }
+      if (!D.ready) {
+        if (!place()) return; D.ready = true; render(true); H.closures?.(CLOSED); setTimeout(preShots, 1200); setTimeout(() => engineLoops(H.vehicle()), 2500);
+        // beta 3.xx: the sound's context in the first idle moment (see SND.prep), not in the first key press
+        (window.requestIdleCallback || ((f) => setTimeout(f, 300)))(() => SND.prep(), { timeout: 1500 });
+      }
       if (FREE) return freeTick(dt, now); // round 4: the arcade car
       const L = curL();
       if (D.uturn || D.kturn) {
@@ -1500,6 +1504,10 @@
       sub: { kind: "electric", level: 0.5 },
       plane: { kind: "turbo", level: 0.9 }
     };
+    // beta 3.xx: a hand-back point for the synthesis below (a message, not a timer); it yields once ~25 ms have passed
+    let synT = 0;
+    const synYield = () => new Promise((r) => { const c = new MessageChannel(); c.port1.onmessage = () => { synT = performance.now(); r(); }; c.port2.postMessage(0); });
+    const synPause = () => (performance.now() - synT > 25 ? synYield() : null);
     async function renderEngine(pr, sr) {
       const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!OAC) return null;
       const steps = []; for (let i = 0; i < 6; i++) steps.push(pr.idle * Math.pow(pr.max / pr.idle, i / 5));
@@ -1511,7 +1519,9 @@
         for (let k = 0; k < N; k++) pat.push({ j: (rnd() - 0.5) * 2 * pr.rough * (isIdle && pr.carb ? 2.2 : 1), a: 1 + (((k % (pr.two ? 1 : pr.cyl)) * 0.37) % 0.3 - 0.15) * (pr.rough * 4) + (rnd() - 0.5) * pr.rough * 2, pop: !load && rnd() < 0.06 && rpm > pr.idle * 1.8 });
         const fT = Math.min(2400, Math.max(45, fF * 1.6)), tauT = Math.min(0.03, 2.2 / fF / 3), tauN = Math.min(pr.diesel ? 0.0009 : pr.two ? 0.0022 : 0.0016, 0.4 / fF); // a fast engine's bursts stay shorter than its period (a tone, a scream)
         const amp = load ? 1 : 0.38;
+        synT = performance.now();
         for (let rep2 = 0; rep2 < 2; rep2++) for (let k = 0; k < N; k++) {
+          if (k % 4 === 3) { const w = synPause(); if (w) await w; } // beta 3.xx: in slices
           const p = pat[k], t0 = Math.round((rep2 * N + k + p.j) * T0 * sr); if (t0 < 0 || t0 >= len) continue;
           const A = amp * p.a, n1 = Math.min(len - t0, Math.round(sr * Math.max(tauT * 5, 0.02)));
           for (let i = 0; i < n1; i++) {
@@ -1564,13 +1574,24 @@
       const loop = (buf, rate = 1) => { const n = ctx.createBufferSource(); n.buffer = buf; n.loop = true; n.playbackRate.value = rate; n.start(); return n; };
       const filt = (type, f, q = 0.7) => { const b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b; };
       const gain = (v = 0) => { const g = ctx.createGain(); g.gain.value = v; return g; };
-      function build() {
+      // beta 3.xx: the context and the noise first (makeCtx: what prep makes ahead), the graph with its running sources at
+      // the start (a source started in a context the page may not play yet is one more console warning each)
+      let noiseW = null, noiseB = null, graphMade = false;
+      function makeCtx() {
         const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
         ctx = new AC();
+        noiseW = noiseBuf(2, false); noiseB = noiseBuf(4, true);
+        document.addEventListener("visibilitychange", () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else if (on && started) ctx.resume(); });
+        return true;
+      }
+      function build() {
+        if (!ctx && !makeCtx()) return false;
+        if (graphMade) return true;
+        graphMade = true;
         const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 3; comp.connect(ctx.destination); ctx._comp = comp;
         master = gain(0); master.connect(comp);
         carBus = gain(0.8); cityBus = gain(0.6); carBus.connect(master); cityBus.connect(master);
-        const white = noiseBuf(2, false), brown = noiseBuf(4, true);
+        const white = noiseW, brown = noiseB;
         // the engine (beta 2.9): its own bus; the voice is built per ride (see ENGINES)
         E2 = { g: gain(0), rpm: 820, load: 0, gear: 1, shift: 0, id: null, v: null, cache: new Map(), white };
         E2.g.connect(carBus);
@@ -1588,22 +1609,39 @@
         // beta 2.9 (Daniel): rain where it rains (Night Mode, Sin City), under the city
         C.rain = gain(0); { const rn = loop(white, 0.85), rh = filt("highpass", 900, 0.5), rl = filt("lowpass", 7000, 0.5); rn.connect(rh); rh.connect(rl); rl.connect(C.rain); C.rain.connect(cityBus); }
         const cam = gain(1), cl = ctx.createOscillator(), clg = gain(0.5); cl.frequency.value = 3.1; cl.connect(clg); clg.connect(cam.gain); cl.start(); C.cafe.connect(cam); cam.connect(cityBus);
-        document.addEventListener("visibilitychange", () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else if (on) ctx.resume(); });
         return true;
       }
+      // beta 3.xx (the first drive): the context, made ahead in idle time and held suspended, so the first key only resumes
+      // it. new AudioContext() waits for the audio service: ~0.2 s on a phone, 1.6-19.5 s on a Mac whose audio service
+      // was slow (QA, 19 October), and it was made inside the first key press. Made before a gesture it starts suspended
+      // (the browsers' rule); made after one it would run: it is suspended until the sound starts
+      function prep() {
+        if (ctx || !on) return;
+        const t0 = performance.now();
+        if (!makeCtx()) return;
+        prepMs = Math.round(performance.now() - t0);
+        if (!started) try { ctx.suspend(); } catch (e) {}
+      }
+      let prepMs = null;
       const T = () => ctx.currentTime;
       const ramp = (p, v, k = 0.08) => p.setTargetAtTime(v, T(), k);
       function start() {
-        if (!on || started) return; if (!ctx && !build()) return;
+        if (!on || started) return; if (!build()) return; // (the context is made here only if the key came before the idle time did; the graph is made here)
         started = true; ctx.resume?.(); ramp(master.gain, 0.42, 0.9);
       }
-      const first = () => { start(); if (started) for (const ev of ["pointerdown", "keydown", "touchend"]) window.removeEventListener(ev, first, true); };
+      // beta 3.xx: a touch or key before the context is made (it is made in idle time, see prep) only asks for it then,
+      // and the sound starts at the next one: never a context made inside the press itself
+      let prepQ = false;
+      const first = () => {
+        if (on && !ctx) { if (!prepQ) { prepQ = true; (window.requestIdleCallback || ((f) => setTimeout(f, 30)))(() => { prepQ = false; prep(); }, { timeout: 400 }); } return; }
+        start(); if (started) for (const ev of ["pointerdown", "keydown", "touchend"]) window.removeEventListener(ev, first, true);
+      };
       for (const ev of ["pointerdown", "keydown", "touchend"]) window.addEventListener(ev, first, true);
       const sync = () => { for (const b of btns) { b.classList.toggle("off", !on); b.setAttribute("aria-pressed", String(on)); b.title = on ? "Sound off" : "Sound on"; b.setAttribute("aria-label", b.title); } };
       function toggle() {
         on = !on; try { localStorage.setItem("cz-sound", on ? "on" : "off"); } catch {}
         if (on) { if (!started) start(); else { ctx.resume(); ramp(master.gain, 0.42, 0.4); } }
-        else if (ctx) { ramp(master.gain, 0, 0.12); setTimeout(() => { if (!on) ctx.suspend(); }, 700); }
+        else if (ctx && master) { ramp(master.gain, 0, 0.12); setTimeout(() => { if (!on) ctx.suspend(); }, 700); }
         sync();
       }
       // the engine's voice for a ride: the pre-rendered loops (6 rpm steps x on/off), or live for the electric and the turbine
@@ -1731,11 +1769,12 @@
         if (t > C.hornT) { C.hornT = t + 14 + Math.random() * 26; if (C.hornT > 20) horn(); }
       }
       return {
-        start, toggle, update, thud, bind(b) { btns.add(b); b.addEventListener("click", (e) => { e.stopPropagation(); toggle(); }); sync(); },
+        start, prep, toggle, update, thud, bind(b) { btns.add(b); b.addEventListener("click", (e) => { e.stopPropagation(); toggle(); }); sync(); },
         get on() { return on; }, get running() { return started && on && !!ctx && ctx.state === "running"; }, ctx: () => ctx,
+        state: () => ({ made: !!ctx, state: ctx?.state || null, started, prepMs }), // tests
         info: () => E2 && { id: E2.id, voice: !!E2.v, srcs: E2.v?.srcs?.length || 0, rpm: Math.round(E2.rpm), load: +E2.load.toFixed(2), gear: E2.gear, gain: +E2.g.gain.value.toFixed(3) },
         solo(on2) { soloEng = !!on2; }, // tests: the engine alone
-        stream() { if (!ctx) return null; if (!ctx._dest) { ctx._dest = ctx.createMediaStreamDestination(); ctx._comp.connect(ctx._dest); } return ctx._dest.stream; } // tests: what it sounds like
+        stream() { if (!ctx || !graphMade) return null; if (!ctx._dest) { ctx._dest = ctx.createMediaStreamDestination(); ctx._comp.connect(ctx._dest); } return ctx._dest.stream; } // tests: what it sounds like
       };
     })();
 

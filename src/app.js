@@ -32866,7 +32866,7 @@ void main() {
     g.add(lamps);
     v.revLamps = lamps;
   }
-  var DACIA_PRE = null;
+  var DACIA_PRE = null, COP_PRE = null;
   function buildVehicleBase(id) {
     switch (id) {
       case "f1":
@@ -32879,8 +32879,10 @@ void main() {
         return buildScooter();
       case "foodvan":
         return buildFoodvan();
-      case "cop":
-        return buildDacia1300({ police: true }); // r139e: the Poliția 1310 (was the Cop cruiser, buildCop)
+      case "cop": {
+        const pre = COP_PRE; COP_PRE = null; // beta 3.xx: made beforehand in slices (the ride previews)
+        return pre || buildDacia1300({ police: true }); // r139e: the Poliția 1310 (was the Cop cruiser, buildCop)
+      }
       case "dacia1300": {
         const pre = DACIA_PRE; DACIA_PRE = null; // beta 3.xx: the boot's ride, made beforehand in slices
         return pre || buildDacia1300();
@@ -35901,6 +35903,9 @@ void main() {
         started: false
       };
       var renderer = new WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+      // beta 3.xx (QA 19 October, cause 6): no info-log reads on each program's first use (three's own advice for production:
+      // a read per program, a round trip to the GPU process each); ?debug or ?shadercheck turns them back on
+      renderer.debug.checkShaderErrors = /[?&](debug|shadercheck)\b/.test(location.search);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile() ? 1.8 : 2));
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.shadowMap.enabled = false; // r127: contact shadows instead (see buildContactShadows)
@@ -36363,12 +36368,22 @@ void main() {
         return placeShotCache[key];
       }
       var worldPrevCache = { key: null, urls: [] }, worldPrevBusy = false, worldPrevNow = false; // beta 3.46 r215 (Daniel, QA pass): worldPrevNow = a preview's own scheme switch (not the visitor's)
-      function makeWorldPreviews(onEach) {
+      // beta 3.xx (the Multiverse menu, QA 19 October: its previews made 100-600 ms frames as it opened): a world a step, as
+      // before, but (1) each step runs inside the map's own frame, just before its draw, so the real view is no longer drawn
+      // a second time to cover the preview (the frame's own draw does); (2) the JPEG is encoded off the main thread
+      // (toBlob); (3) the previews of the last place show at once, the new ones replace them as they land; (4) the steps
+      // wait for idle time (not one every frame); (5) after the opening they are made once ahead, while the car stands
+      // still (prewarmWorlds), so the first opening of the menu finds them, and every world's first-time costs (its
+      // textures, its post pass and their programs) are paid then, not as the menu opens
+      var worldPrevJob = null;
+      function makeWorldPreviews(onEach, opts = {}) {
         const key = Math.round(state.L / 600) + (state.branchChosen ? state.branch : "-");
-        if (worldPrevCache.key === key) { worldPrevCache.urls.forEach((u, i) => u && onEach(i, u)); return; }
-        if (worldPrevBusy) return;
+        const have = worldPrevCache.urls || [];
+        have.forEach((u, i) => u && onEach(i, u)); // (the last ones, maybe from a little way back: replaced as the new ones land)
+        if (worldPrevCache.key === key && have.filter(Boolean).length >= SCHEMES.length) return;
+        if (worldPrevBusy) { worldPrevCache.onEach = onEach; return; }
         worldPrevBusy = true;
-        worldPrevCache = { key, urls: [] };
+        worldPrevCache = { key, urls: have.slice(), onEach };
         const pw = 216, ph = 288, pr = renderer.getPixelRatio();
         const pcam = new PerspectiveCamera(40, pw / ph, 10, 45000);
         const out = document.createElement("canvas");
@@ -36376,12 +36391,17 @@ void main() {
         const octx = out.getContext("2d");
         const tgt = new Vector3(), dir = new Vector3();
         let i = 0;
-        const step = () => {
+        const next = () => {
           if (i >= SCHEMES.length) { worldPrevBusy = false; return; }
-          const orig = state.schemeIdx, sch = SCHEMES[i];
+          // the next step: when the page is idle (and the car is not moving, for the warm-up), in the next frame
+          const go = () => { if (opts.still && ((nav2?.on && Math.abs(nav2.speed?.() || 0) > 2) || performance.now() - mapIdleAt < 2000)) return setTimeout(() => (window.requestIdleCallback || setTimeout)(go, { timeout: 2000 }), 600); worldPrevJob = step; }; // (the warm-up: not while the car moves, nor within 2 s of a touch or a key)
+          (window.requestIdleCallback || ((f) => setTimeout(f, 60)))(go, { timeout: opts.still ? 3000 : 250 });
+        };
+        const step = () => {
+          const k = i, orig = state.schemeIdx, sch = SCHEMES[k];
           worldPrevNow = true;
           try {
-            applyScheme(i);
+            applyScheme(k);
             // aim at the road ahead of the car
             dir.copy(camDir);
             tgt.set(carPos.x + dir.x * 260, 20, carPos.z + dir.z * 260);
@@ -36407,22 +36427,29 @@ void main() {
             const H = renderer.domElement.height;
             octx.drawImage(renderer.domElement, 0, H - ph * pr, pw * pr, ph * pr, 0, 0, out.width, out.height);
             veh.group.visible = vis;
-            worldPrevCache.urls[i] = out.toDataURL("image/jpeg", 0.84);
-            onEach(i, worldPrevCache.urls[i]);
+            const cache = worldPrevCache;
+            out.toBlob((bl) => { if (!bl || cache !== worldPrevCache) return; const u = URL.createObjectURL(bl); cache.urls[k] = u; cache.onEach?.(k, u); }, "image/jpeg", 0.84);
           } catch (e) {
           } finally {
             renderer.setScissorTest(false);
             renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
             applyScheme(orig);
             sky.position.copy(camera.position);
-            // repaint the real view at once, so the swap never reaches the screen
-            if (mvK > 0.5) tiltShiftRender(performance.now()); else outline.render(scene, camera);
-            worldPrevNow = false;
+            worldPrevNow = false; // (the frame draws the real view right after this: see frameStep)
           }
           i++;
-          requestAnimationFrame(step);
+          next();
         };
-        requestAnimationFrame(step);
+        next();
+      }
+      // the warm-up (5): once, after the opening, a while after the map has settled
+      // (Sketchbook's own textures first, each in its own idle moment: ~0.1 s each at 4x, its preview step was 0.47 s with them)
+      async function prewarmWorlds() {
+        const quiet = () => !(nav2?.on && Math.abs(nav2.speed?.() || 0) > 2) && performance.now() - mapIdleAt >= 2000;
+        const idle = () => new Promise((r) => { const go = () => (window.requestIdleCallback || ((f) => setTimeout(f, 100)))(() => (quiet() ? r() : setTimeout(go, 600)), { timeout: 3000 }); go(); });
+        for (const f of [crayonTextures, notebookTextures, notebookUI]) { await idle(); try { f(); } catch (e) {} }
+        await idle();
+        try { makeWorldPreviews(() => {}, { still: true }); } catch (e) {}
       }
       function rebuildGolden() {
         scene.remove(golden);
@@ -36483,6 +36510,9 @@ void main() {
           const mainEnv = getEnvMap();
           for (const v of VEHICLES) {
             await idle();
+            // beta 3.xx: the two 1300s (the heaviest rides to make, ~0.2 s at 4x) are made in slices first
+            if (v.id === "dacia1300") DACIA_PRE = await czRun(buildDacia1300Gen());
+            else if (v.id === "cop") COP_PRE = await czRun(buildDacia1300Gen({ police: true }));
             const built = buildVehicle(v.id);
             groups.push(built.group);
             built.group.traverse((o) => { const m = o.material; if (m?.userData?.chrome) { m.envMap = cEnv.texture; m.envMapIntensity = m.userData.envI; } });
@@ -40240,6 +40270,7 @@ void main() {
         }
         if (!routeRing) routeRingInit(); else routeRing.update(now);
         if (ONB_MODE) onbFrame(now); // r140
+        if (worldPrevJob) { const j = worldPrevJob; worldPrevJob = null; try { j(); } catch (e) {} } // beta 3.xx: a Multiverse preview, drawn just before the frame's own draw (which covers it)
         if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sincity") sinCityRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sketch") sketchRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "riso") risoRender(now, camera); else if (mvK > 0.5 && !window.__noPost) tiltShiftRender(now); else if (window.__noPost) renderer.render(scene, camera); else outline.render(scene, camera);
         if (onbSnapReq) { onbSnapReq = false; onbSnap(); } // r141c, r142
         // r226 (Daniel: the final pill opens onto the live map): the loader opens its window only once the map has drawn
@@ -43186,6 +43217,9 @@ void main() {
         kineticStarted = true;
         (window.__bootT ||= {}).ready = Math.round(performance.now());
         window.__bootT.slices = { busy: Math.round(czStat.busy), n: czStat.n, away: Math.round(czStat.away) }; // beta 3.xx: tests
+        // beta 3.xx (the first drive): the sound's context is made while the opening still has its words to play (nothing else
+        // needs the main thread then); otherwise nav2 makes it in its first idle moment on the map (see nav2's SND.prep)
+        try { if (CZI?.phase?.() === "words") (window.requestIdleCallback || ((f) => setTimeout(f, 200)))(() => { try { nav2?.snd?.prep?.(); } catch (e) {} }, { timeout: 1500 }); } catch (e) {}
         introReadyRes?.();
         if (CZI) CZI.ready(); else { mapEndIntro(); kineticLater(); }
       };
@@ -43298,8 +43332,18 @@ void main() {
       // is over and linked in the background
       async function fxLater() {
         await new Promise((r) => setTimeout(r, 1500));
-        if (kzLoader) { try { await czRun(compileGen(null)); } catch (e) {} } // the on-screen variants of everything (the sliced boot made only the map's)
+        if (kzLoader) {
+          try {
+            const progs = await czRun(compileGen(null)); // the on-screen variants of everything (the sliced boot made only the map's)
+            // beta 3.xx (after the opening): each program's first use (three reads its uniforms and attributes then: the first
+            // postcard and the first preview paid it, 0.1-0.25 s at 4x), once it has linked, a few at a time
+            await linkWait(new Set(progs));
+            await czRun((function* () { for (const p of progs) { try { p.getUniforms(); p.getAttributes(); } catch (e) {} yield; } })());
+          } catch (e) {}
+        }
         screenCompiled = true;
+        // the Multiverse menu's previews, made ahead (see makeWorldPreviews)
+        setTimeout(prewarmWorlds, 6000);
       }
       // (beta 3.xx: asked for inside the boot, after a hand-back: document.fonts.load matches the face there and then, ~0.1 s at 4x)
       const fontsWait = () => Promise.race([Promise.all([document.fonts?.load?.("500 16px CromaticSans"), document.fonts?.load?.("800 16px CromaticSans")]).then(() => document.fonts?.ready), new Promise((r) => setTimeout(r, 1600))]);
@@ -43338,6 +43382,8 @@ void main() {
         // beta 3.xx: the jet's boarding walk, which the map's frame made once the page was 4 s old (the first warm frame now),
         // made here, before the compile and the first draws
         if (kzLoader && boardWalk === null) { await czPause(); try { buildBoardWalk(); } catch (e) { boardWalk = false; } }
+        // beta 3.xx: nav2's barriers at the closed streets' mouths, which its first frame on the map made (~75 ms at 4x)
+        if (kzLoader && nav2?.closed) { await czPause(); try { nav2Host().closures?.(nav2.closed()); } catch (e) {} }
         await fontsReady;
         // r127: every shader in the scene is prepared while the intro plays (hidden ones too), so
         // nothing compiles mid-journey; compileAsync uses the parallel compile extension when present
