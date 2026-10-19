@@ -18,6 +18,11 @@
 // copy and the same Sure / No, thanks, the buttons stacked at its right; on the map it sits under the top controls
 // (the views, the sound) instead of over the joystick, the zoom and the place cards at the bottom. The consent logic
 // is unchanged (GA and the OpenAI pixel only after "Sure"); a desktop keeps the card as it was.
+// beta 3.64 (Daniel: "make sure we record everyone", the mini-game): a page that asks in its own way (the game inside
+// the map's frame, where this card never shows) decides through window.czConsent.decide("yes2" | "no"): the same key,
+// the same Consent Mode calls, GA and the pixel only after a yes. Every decision (this card's, czConsent's, or one made
+// in another tab or frame of the site: the storage event) is announced as a "cz-consent" event on window, and a card
+// still open elsewhere (the map's, under the game's frame) closes: the map and the game always agree.
 export function consentSnippet(GA_ID, GTM_ID = "", OAI_PIXEL = "") {
   if (!GA_ID) return "";
   const css = `#cz-ck{position:fixed;left:50%;bottom:16px;z-index:2147483000;box-sizing:border-box;width:min(460px,calc(100vw - 24px));display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:18px 22px 20px;border-radius:24px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;box-shadow:0 14px 40px rgba(13,12,9,.2);font:500 15px/1.4 CromaticSans,"Darker Grotesque",system-ui,sans-serif;transform:translate(-50%,16px);opacity:0;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .45s}
@@ -45,6 +50,7 @@ function get(){try{return localStorage.getItem(K)}catch(e){var m=document.cookie
 function set(v){try{localStorage.setItem(K,v)}catch(e){}document.cookie="cz-consent="+v+";path=/;max-age=15552000;SameSite=Lax"}
 /* beta 3.60 r222c: on the 3D map ("/", English UI) a visitor who reads the website in Romanian gets the card in Romanian (cz-lang, build/footer.mjs) */
 function lsRo(){try{return localStorage.getItem("cz-lang")==="ro"}catch(e){return false}}
+function told(v){try{window.dispatchEvent(new CustomEvent("cz-consent",{detail:v}))}catch(e){}}
 function ga(){if(window.__czGA)return;window.__czGA=1;window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};
 gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"granted"});
 gtag("js",new Date());var go=function(){if(go.d)return;go.d=1;gtag("config",ID,{anonymize_ip:true});var s=document.createElement("script");s.async=1;s.src="https://www.googletagmanager.com/gtag/js?id="+ID;document.head.appendChild(s);
@@ -59,7 +65,9 @@ d.innerHTML='<span class="ck-cup" aria-hidden="true"></span><b>'+(ro?"Un cookie 
 var pl=document.createElement("a");pl.setAttribute("href",ro?"/ro/confidentialitate/":"/privacy/");pl.textContent=ro?"Confidențialitate":"Privacy";d.querySelector("p").appendChild(pl);
 if(force)d.classList.add("ck-ask");
 document.body.appendChild(d);requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add("on")})});
-d.querySelector(".ck-yes").onclick=function(){set("yes2");d.remove();ga();oai()};d.querySelector(".ck-no").onclick=function(){set("no");d.remove()}}
+d.querySelector(".ck-yes").onclick=function(){set("yes2");d.remove();ga();oai();told("yes2")};d.querySelector(".ck-no").onclick=function(){set("no");d.remove();told("no")}}
+window.czConsent={get:get,ro:lsRo,decide:function(v){if(v!=="yes2"&&v!=="no")return;set(v);var c=document.getElementById("cz-ck");if(c)c.remove();if(v==="yes2"&&!ONB){ga();oai()}told(v)}};
+addEventListener("storage",function(e){if(e.key!==K||(e.newValue!=="yes2"&&e.newValue!=="no"))return;var c=document.getElementById("cz-ck");if(c)c.remove();if(e.newValue==="yes2"&&!ONB){ga();oai()}told(e.newValue)});
 document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("[data-cookies]");if(a){e.preventDefault();ask(true)}});
 var ONCE={};function ev(n,p){p=p||{};if(p.once){if(ONCE[p.once])return;ONCE[p.once]=1;delete p.once}if(window.__czGA&&window.gtag)gtag("event",n,p)}window.czEvent=ev;
 document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a,button");if(!a)return;var h=a.getAttribute("href")||"",t=(a.textContent||"").trim().slice(0,60);

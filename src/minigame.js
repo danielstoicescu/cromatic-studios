@@ -74,6 +74,10 @@
     // diagonal, a flat base, so slanted it still reads as a 2 and never as a Z
     "\u2461": "..###..|.##.##.|##...##|....##.|..###..|.##....|#######", "%": "##..#|##.#.|...#.|..#..|.#...|.#.##|#..##", " ": "...|...|...|...|...|...|...",
     "^": "..#..|.###.|#.#.#|..#..|..#..|..#..|..#..", "v": "..#..|..#..|..#..|..#..|#.#.#|.###.|..#..",
+    // beta 3.64: the arrows of the move list (the motions)
+    "\u2190": "...#...|..#....|.#.....|#######|.#.....|..#....|...#...", "\u2192": "...#...|....#..|.....#.|#######|.....#.|....#..|...#...",
+    "\u2193": "..#..|..#..|..#..|..#..|#.#.#|.###.|..#..", "\u2191": "..#..|.###.|#.#.#|..#..|..#..|..#..|..#..",
+    "\u2198": "#......|.#.....|..#....|...#..#|....#.#|.....##|..#####", "\u2199": "......#|.....#.|....#..|#..#...|#.#....|##.....|#####..",
     // beta 3.11: Romanian names: rows above (~ before) and below (~ after) the letter
     "\u0102": "#...#|.###.~.###.|#...#|#...#|#####|#...#|#...#|#...#", "\u0218": ".####|#....|#....|.###.|....#|....#|####.~..#..|.#...",
     "\u021A": "#####|..#..|..#..|..#..|..#..|..#..|..#..~..#..|.#...", "\u00CE": ".###.|.....~###|.#.|.#.|.#.|.#.|.#.|###", "\u00C2": ".#.|#.#~.###.|#...#|#...#|#####|#...#|#...#|#...#"
@@ -260,13 +264,21 @@
     // beta 3.31 (Daniel, likeness): the white tee he wears in both photos (short sleeves, the small print on the chest), the
     // tattoos on the arms, the yellow key tag at the belt
     rares: { skin: "#ecb593", top: "#f4f2ee", topKind: "printtee", sleeve: "cap", tattoo: true, key: true, pants: "#1c1c22", loose: 1.5, shorts: true, belt: "#1c1c22", barefoot: true, ankle: "#f2efe6", glove: "#2fd6f0", build: { arm: 1.08 } }, // beta 3.38 (Daniel): knee-length shorts, tattoo sleeves on both arms, tattoos on the calves and shins
-    iulica: { skin: "#c27f57", top: "#5f6e40", topKind: "tee", sleeve: "short", strap: "#d9cba8", pants: "#2c2c32", shoe: "#3a3a3a", sole: "#e0e0e0", glove: "#b8e02f", build: { sh: 0.98 } },
+    // beta 3.64 (Daniel, Iulica's new photo): an oversized 90s half-zip anorak in dusty aubergine, wide vertical bands of
+    // white and mauve on the body and bands across the sleeves, elastic cuffs, a deep teal funnel collar with the zip and
+    // a cord toggle, a big emblem on the chest (a wreath of red-orange roses and green leaves, three block letters, a
+    // white star, a small rose under it: a generic mark, no brand), a drawstring hem with wooden toggles over the hips;
+    // loose navy nylon track trousers with a seam and a pocket; his red five-finger toe shoes (the shoes' photo) over blue
+    // socks; a phone (his special)
+    iulica: { skin: "#c27f57", top: "#432c3c", topKind: "anorak", stripe: "#efe9e4", stripe2: "#9a7a92", collar: "#1f5a52", sleeve: "long", untuck: 3.6, hemCord: "#a8733e", pants: "#27305a", loose: 1.7, hem: 0.8, cargo: true, seam: true, toes: { upper: "#b0222e", toe: "#f07a2a", strap: "#2a2a30", sock: "#3f8eaa" }, shoe: "#b0222e", sole: "#f07a2a", glove: "#b8e02f", build: { sh: 1.02, chest: 1.06, waist: 1.14, arm: 1.04 } },
     maria: { skin: "#ebb597", top: "#f2f0ea", topKind: "oversize", knot: true, sleeve: "short", legs: "skirt", skirt: "#1c1c22", shoe: "#a8b89a", sole: "#6e7c62", glove: "#f0389a", build: { sc: 0.94, sh: 0.84, arm: 0.82, leg: 0.88, waist: 0.86, chest: 0.94 } }, // beta 3.33: a size down
     // Steve: dressed American: a varsity jacket (wool body, cream leather sleeves, a letter on the chest) over a white
     // tee, jeans, white sneakers; the glasses, the grey hair, the beard, the two metres
     steve: { skin: "#ecb497", top: "#7a1f2a", topKind: "varsity", inner: "#f0f0f0", sleeve: "long", sleeveCol: "#efe6d0", letter: "#efe6d0", pants: "#4a6890", shoe: "#f4f4f6", sole: "#b8b8c4", glove: "#7a4fe0", build: { sh: 1.1, arm: 1.12, leg: 1.1, waist: 1.3, chest: 1.12, sc: 1.14 } },
     dony: { skin: "#efbe9e", top: "#2c3c6c", topKind: "fleece", sleeve: "long", apron: "#b08a5a", pants: "#2e2e36", shoe: "#2a2a2a", sole: "#d8d8d8", glove: "#8a5530", build: { sc: 0.86, arm: 0.96 } },
-    cristian: { skin: "#e9ab84", top: "#7a6c50", topKind: "henley", sleeve: "rolled", belt: "#3a2618", buckle: "#c9a640", pants: "#3e4048", shoe: "#4a3022", sole: "#1a120e", glove: "#2f6fe0", build: {} },
+    // beta 3.64 (Daniel): Cristian in beige, head to toe, in tones that read apart: a light sand henley (its buttons a
+    // shade darker), stone-khaki trousers, a camel belt with the brass buckle, tan suede desert boots on crepe soles
+    cristian: { skin: "#e9ab84", top: "#dac8a6", topKind: "henley", btn: "#9a8260", sleeve: "rolled", belt: "#94602e", buckle: "#c9a640", pants: "#a08a66", shoe: "#c49a62", boots: true, lace: "#7a5a36", sole: "#e4d4b2", glove: "#2f6fe0", build: {} },
     daniel: { skin: "#e7a57d", top: "#1fb0ba", topKind: "tee", sleeve: "short", stripe: "#fed012", belt: "#1c1820", buckle: "#c9ccd4", pants: "#2e3a62", shoe: "#f2f2f6", sole: "#9a9ab0", glove: "#fed012", build: {} },
     // beta 3.55 (Daniel: two new fighters, from their photos). Boomer, the cook (180 cm, sturdy, broad): a red and
     // black buffalo-check flannel shirt with the sleeves rolled, tattoos on the forearms, a royal-blue chef's bib apron
@@ -503,7 +515,11 @@
     dony: [pose({ hip: [-2, -46], neck: [1, -74], head: [4, -85], eF: [10, -58], hF: [6, -50], eB: [-4, -58], hB: [-8, -50], kF: [12, -24], fF: [19, 0], kB: [-11, -23], fB: [-19, 0] }),
       pose({ hip: [-4, -46], neck: [2, -74], head: [7, -84], eF: [12, -60], hF: [8, -52], eB: [-6, -58], hB: [-10, -50], kF: [12, -24], fF: [22, 0], kB: [-14, -22], fB: [-24, 0], tw: 0.3 }),
       pose({ hip: [-1, -47], neck: [3, -75], head: [6, -86], eF: [12, -58], hF: [18, -64], eB: [4, -58], hB: [12, -62] })],
-    iulica: [pose({ hip: [-2, -47], neck: [-3, -75], head: [0, -86], eF: [-6, -60], hF: [-14, -54] }), pose({ hip: [4, -47], neck: [11, -75], head: [14, -85], eF: [24, -76], hF: [36, -84], kF: [16, -25], fF: [24, 0], tw: 0.9 })]
+    // beta 3.64 (Daniel: Iulica's new special, the camera flash; his photo: a phone in his right hand): the phone brought
+    // up at arm's length, the flash (the arm out, leaning in), the phone coming down
+    iulica: [pose({ hip: [-1, -47], neck: [2, -75], head: [5, -86], eF: [14, -70], hF: [24, -78], eB: [4, -60], hB: [10, -53], kF: [12, -25], fF: [19, 0], kB: [-11, -23], fB: [-19, 0], tw: 0.3, prop: "phone" }),
+      pose({ hip: [2, -47], neck: [8, -75], head: [11, -86], eF: [20, -74], hF: [32, -80], eB: [6, -60], hB: [12, -53], kF: [15, -25], fF: [23, 0], kB: [-11, -22], fB: [-21, 0], tw: 0.5, prop: "phone" }),
+      pose({ hip: [1, -47], neck: [5, -75], head: [8, -86], eF: [15, -62], hF: [24, -64], eB: [5, -60], hB: [11, -53], tw: 0.3, prop: "phone" })]
   };
   // beta 3.12: the archetype stances (a nod, not a copy): Cristache low and still like a karateka, the back fist at the
   // hip; Rares bouncing on his toes, fists high; I O N upright and square, the guard tight
@@ -528,7 +544,7 @@
     specDony: { headId: "dony", skin: "#efbe9e", top: "#2a2a30", topKind: "tee", sleeve: "short", apron: "#b08a5a", pants: "#2e2e36", shoe: "#2a2a2a", sole: "#d8d8d8", hands: "bare", build: { sc: SPEC * 0.92 } },
     specMaria: { headId: "maria", skin: "#ebb597", top: "#c9a040", topKind: "tee", sleeve: "long", pants: "#4a6a92", shoe: "#f2f2f2", sole: "#c0c0c8", hands: "bare", build: { sc: SPEC * 0.92, sh: 0.86, arm: 0.84, waist: 0.86 } },
     specSteve: { headId: "steve", skin: "#ecb497", top: "#b8463c", topKind: "plaid", plaid: "#3a1e1c", sleeve: "long", pants: "#4a6890", shoe: "#3a2a22", sole: "#1a120e", hands: "bare", build: { sc: SPEC * 1.14, sh: 1.1, waist: 1.25 } },
-    specIulica: { headId: "iulica", skin: "#c27f57", top: "#e07a2a", topKind: "tee", sleeve: "long", strap: "#d9cba8", pants: "#2c2c32", shoe: "#3a3a3a", sole: "#e0e0e0", hands: "bare", build: { sc: SPEC } },
+    specIulica: { headId: "iulica", skin: "#c27f57", top: "#432c3c", topKind: "anorak", stripe: "#efe9e4", stripe2: "#9a7a92", collar: "#1f5a52", sleeve: "long", untuck: 3.6, pants: "#27305a", loose: 1.4, shoe: "#f2f2f4", sole: "#6e7280", hands: "bare", build: { sc: SPEC, waist: 1.1 } }, // beta 3.64: in his anorak too
     npcSit: { skin: "#e2a882", top: "#232f52", topKind: "vest", sleeve: "long", sleeveCol: "#a8c8e4", pants: "#4a6a92", shoe: "#7ad08a", sole: "#e8e8e8", hands: "bare", build: { sc: SPEC } },
     npcPlaid: { skin: "#e6ae8a", top: "#b8a690", topKind: "plaid", plaid: "#6a5a4a", sleeve: "long", pants: "#2a2a30", shoe: "#2a2a2a", sole: "#e0e0e0", hands: "bare", build: { sc: SPEC } },
     npcBun: { skin: "#e9b08e", top: "#2c3a6a", topKind: "plaid", plaid: "#8aa0c8", sleeve: "long", pants: "#5a7aa0", shoe: "#f2f2f2", sole: "#b0b0b8", hands: "bare", build: { sc: SPEC } },
@@ -565,7 +581,7 @@
     { id: "npcWin", x: 161, y: 101, face: 1, rate: 0.6, clip: [152, 38, 22, 34], poses: [pose(Object.assign({}, STAND, BAR)), pose(Object.assign({}, STAND, BAR, { head: [6, -86] }))], cheer: pose(Object.assign({}, STAND, BAR, { eF: [8, -84], hF: [12, -98] })), cheer2: pose(Object.assign({}, STAND, BAR, { eF: [10, -80], hF: [16, -92] })), ooh: pose(Object.assign({}, STAND, BAR, { eF: [9, -66], hF: [11, -78] })), win: true }
   ];
   const BUST_POSE = pose({ hip: [0, -47], neck: [3, -75], head: [6, -86], eF: [12, -56], hF: [14, -40], eB: [-5, -56], hB: [-7, -40], tw: 0.55 }); // for the portraits: the arms down
-  const SPECIAL_PROP = { coz: "camera", iulica: "tote" }; // beta 3.49: a pose can carry its own (prop: Cristache's horse)
+  const SPECIAL_PROP = { coz: "camera", iulica: "phone" }; // beta 3.64: Iulica's phone, the flash's camera (the tote bag retired) // beta 3.49: a pose can carry its own (prop: Cristache's horse)
   // beta 3.49: the sculpted horse Cristache throws: carved wood on a stone plinth, the grain in its flanks, facing right.
   // o the outline, w the lit wood, m the wood, d its shade, g the grain, e the eye, P/p the plinth, lit and shaded
   const HORSE = (() => { const rows = [
@@ -654,7 +670,7 @@
     // with all the teeth, the eyes shut with it, stubble, the darker skin
     iulica: { skin: "#c27f57", hair: "#16100d", hl: "#2e241e", beard: "#24180f", bhl: "#4c3a2e", rx: 0.96,
       hairline: [9.6, 11], thick: 1.1, back: 19, tex: "shag", crown: [10, 4], lockN: 2.4, curl: 0.2, blobs: [[18, 8.6, 3.8, 1.5], [14.5, 8.9, 2.6, 1.3], [21, 8, 1.4, 2], [7.6, 11, 2.6, 4]],
-      beardKind: "stubble", stubble: 0.5, beardTop: 16, mouth: "biggrin", eyes: "smile" },
+      beardKind: "stubble", stubble: 0.5, beardTop: 16, mouth: "biggrin", eyes: "smile", earring: "#d8dce4" }, // beta 3.64: a small earring (his photo)
     // beta 3.31 (Daniel, likeness): clean-shaven, thin round wire glasses, a little open smile, the olive trucker cap
     // worn backwards, its strap on the forehead
     dony: { skin: "#efbe9e", hair: "#271c16", hl: "#463428", beard: "#7a5a48", rx: 0.96, jaw: 0.94,
@@ -1131,6 +1147,7 @@
         if (seg === 1 && t > 0.8 && R === SK && !L.hands) return (far ? back : tone)(ramp(WRAP), nx, ny); // the tape up the wrist
         if (L.sleeve === "rolled" && seg === 1 && Math.abs(t - 0.4) < 0.06) return TOP[far ? 4 : 3]; // the rolled cuff
         if (L.topKind === "buffalo" && R === SLV && !(L.sleeve === "rolled" && seg === 1 && Math.abs(t - 0.4) < 0.06)) { const cxx = Math.floor(px / 3) & 1, cyy = Math.floor(py / 3) & 1; return ramp(cxx && cyy ? "#1c1416" : cxx || cyy ? "#7a161c" : L.top)[clamp(toneOf(nx, ny) + (far ? 1 : 0), 0, 4)]; } // beta 3.55: Boomer's sleeves in the check
+        if (L.topKind === "anorak" && R === SLV) { const tt = toneOf(nx, ny) + (far ? 1 : 0); if (seg === 1 && t > 0.84) return SLV[clamp(tt + (Math.floor(py) % 2 ? 1 : 0), 0, 4)]; const bd = seg === 0 ? (t > 0.3 && t < 0.42 ? L.stripe : t >= 0.42 && t < 0.52 ? L.stripe2 : null) : t > 0.16 && t < 0.27 ? L.stripe : null; if (bd) return ramp(bd)[clamp(tt, 0, 4)]; } // beta 3.64: Iulica's anorak: bands across the sleeves, the elastic cuffs
         if (L.topKind === "zipknit" && R === SLV) return SLV[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (Math.floor(t * 14) % 2 && seg === 1 && t > 0.82 ? 1 : 0), 0, 4)]; // Caius's knit sleeves, a ribbed cuff
         if (L.topKind === "fleece" && R === TOP && R === SLV) { const fz = hash2(px * 7.3, py * 5.1); return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (fz > 0.72 ? 1 : fz < 0.12 ? -1 : 0), 0, 4)]; } if (L.tattoo && R === SK && (seg === 1 ? t > 0.06 && t < 0.8 : t > sleeveTo + 0.04)) { const c = tattoo(seg + (far ? 2 : 0), t, nx, ny, far, SK[clamp(toneOf(nx, ny) + (far ? 1 : 0), 0, 4)]); if (c) return c; } // beta 3.38: tattoo sleeves, the upper arm below the sleeve and the forearm
         // beta 3.30: the muscle drawn in: the line between biceps and triceps, the deltoid's edge, the forearm's ridge; on a sleeve, the creases at the elbow
@@ -1167,7 +1184,7 @@
         else ex2 = shin ? folds(nx, t, LEG_FOLDS[1]) : folds(nx, t, LEG_FOLDS[0]); // beta 3.32: the folds, a dark line with the lit ridge beside it
         return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + ex2, 0, 4)];
       };
-      const thighMat = (nx, ny, t) => (L.cargo && t > 0.45 && t < 0.78 && nx < -0.1 && nx > -0.85 ? R[far ? 4 : t < 0.5 ? 1 : 3] : L.canvas && t > 0.6 && nx > -0.2 && Math.abs(t - 0.62) < 0.03 ? R[far ? 4 : 3] : mat(nx, ny, t)); // the cargo pocket; the canvas trousers' double front
+      const thighMat = (nx, ny, t) => (L.seam && Math.abs(nx + 0.05) < 0.07 ? R[clamp(toneOf(nx, ny) + (far ? 2 : 1), 0, 4)] : L.cargo && t > 0.45 && t < 0.78 && nx < -0.1 && nx > -0.85 ? R[far ? 4 : t < 0.5 ? 1 : 3] : L.canvas && t > 0.6 && nx > -0.2 && Math.abs(t - 0.62) < 0.03 ? R[far ? 4 : 3] : mat(nx, ny, t)); // the cargo pocket; the canvas trousers' double front
       // beta 3.38: knee-length shorts (Rares): the thigh in the trousers' cloth with a hem at the knee, the shin bare, tattooed
       const shinSkin = (nx, ny, t) => { const base = SK[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (t > 0.12 && t < 0.55 && Math.abs(nx - 0.3) < 0.12 ? 1 : 0), 0, 4)]; if (L.tattoo && t > 0.14 && t < 0.72) { const c = tattoo(4 + (far ? 1 : 0), t, nx, ny, far, base); if (c) return c; } return base; };
       const shinMat = (nx, ny, t) => (L.ankle && t > 0.78 ? (far ? back : tone)(ramp(L.ankle), nx, ny) : L.shorts ? shinSkin(nx, ny, t) : mat(nx, ny, t, CURX, CURY, true));
@@ -1195,6 +1212,21 @@
           if (Math.abs(u) < 2.5) return HC2[far ? 3 : u < 0 ? 1 : 2];
           return UP[far ? 3 : u < 0 ? 1 : 2];
         }, g + 10);
+      } else if (L.toes) { // beta 3.64 (Iulica's shoes, from his photo): five-finger toe shoes: a low red upper, charcoal straps
+        // waving over the instep, the speed-lace with its orange cord locks, a heel tab, the orange sole edge and big toe,
+        // the small toes' pods in charcoal along the front (little bumps on the top edge); mottled blue socks at the ankle
+        const TS = L.toes, sh2 = fq * 1.05, RD = ramp(TS.upper), OR = ramp(TS.toe), BK = ramp(TS.strap), SOCK = ramp(TS.sock);
+        fpoly(F, [[f[0] - 4.4 * sh2, f[1] - 8.8 * sh2], [f[0] + 1.4 * sh2, f[1] - 8.8 * sh2], [f[0] + 2 * sh2, f[1] - 5.4 * sh2], [f[0] - 4.8 * sh2, f[1] - 5.4 * sh2]], (x, y) => SOCK[far ? 3 : hash2(Math.floor(x), Math.floor(y * 1.7)) > 0.55 ? 1 : 2], g + 9);
+        fpoly(F, [[f[0] - 5.4 * sh2, f[1] - 6.4 * sh2], [f[0] + 2.4 * sh2, f[1] - 6.2 * sh2], [f[0] + 7.4 * sh2, f[1] - 3.9 * sh2], [f[0] + 13 * sh2, f[1] - 2.6 * sh2], [f[0] + 13.8 * sh2, f[1] + 0.2 * sh2], [f[0] - 5.4 * sh2, f[1] + 0.9 * sh2]], (x, y) => {
+          const u = (x - f[0]) / sh2, v = (f[1] - y) / sh2;
+          if (v < 0.8) return OR[far ? 4 : u > 0 ? 2 : 3]; // the sole's orange edge
+          if (u > 9.2) { const q = (u - 9.2) / 1.25; if (q % 1 < 0.2 && v > 1.1) return BK[4]; return (q > 2.9 ? OR : BK)[far ? 3 : v > 2 ? 1 : 2]; } // the toes: the big one orange at the front
+          if (u > -0.6 && u < 3.2 && v > 4.5) return Math.floor(x + y) % 3 === 0 ? OR[1] : BK[2]; // the speed-lace, an orange cord lock
+          if (u > 0.5 && u < 8.6 && Math.floor(u * 0.9 - v * 0.75 + 20) % 3 === 0) return BK[far ? 4 : 2]; // the straps
+          if (u < -4.3 && v > 4.4) return BK[far ? 4 : 2]; // the heel tab
+          return RD[far ? 3 : v > 4.4 ? 1 : 2];
+        }, g + 10);
+        for (let i = 0; i < 4; i++) { const c = rp([f[0] + (9.7 + i * 1.2) * sh2, f[1] - (3.1 - i * 0.22) * sh2]); blob(F, c, 0.75 * sh2, 0.75 * sh2, (nx, ny) => (i === 3 ? OR : BK)[far ? 3 : ny < -0.2 ? 1 : 2], g + 10); } // the pods, little bumps on the top edge
       } else if (L.barefoot) { // a bare foot, the toes forward
         fpoly(F, [[f[0] - 5 * fq, f[1] - 6 * fq], [f[0] + 3 * fq, f[1] - 5 * fq], [f[0] + 12 * fq, f[1] - 1 * fq], [f[0] + 12 * fq, f[1] + 1 * fq], [f[0] - 5 * fq, f[1] + 1 * fq]], (x, y) => { const u = (x - f[0]) / fq, v = (f[1] - y) / fq; if (u > 7.4 && v < 2.2 && Math.floor((u - 7.4) / 1.25) % 2 === 1) return SK[4]; if (u > 7.4 && v < 0.6) return SK[3]; if (u < -2.5 && v < 2.5) return SK[far ? 4 : 3]; if (Math.abs(u - 1.5) < 0.7 && v > 2.4 && v < 4) return SK[far ? 3 : 2]; return SK[far ? 3 : v > 3.4 ? 1 : 2]; }, g + 10); // the toes (beta 3.33: split, the sole and the heel in shade, the ankle bone)
         if (L.ankle) flimb(F, [f[0] - 1 * fq, f[1] - 6 * fq], [f[0] - 1 * fq, f[1] - 4 * fq], 3.4 * fq, 3.4 * fq, 0, 0.5, (nx, ny) => (far ? back : tone)(ramp(L.ankle), nx, ny), g + 11);
@@ -1216,7 +1248,7 @@
         }, g + 10);
       } else if (L.boots) { // boots, laced up the ankle
         const sr = ramp(L.shoe);
-        fpoly(F, [[f[0] - 5 * fq, f[1] - 11 * fq], [f[0] + 3 * fq, f[1] - 11 * fq], [f[0] + 4 * fq, f[1] - 5 * fq], [f[0] + 11 * fq, f[1] - 2 * fq], [f[0] + 11 * fq, f[1] + 1 * fq], [f[0] - 5 * fq, f[1] + 1 * fq]], (x, y) => (y > f[1] - 0.6 * fq ? SO : (Math.floor(y) % 2 === 0 && x > f[0] + 1 * fq && x < f[0] + 3.5 * fq && y < f[1] - 4 * fq ? u32("#5a5a62") : sr[far ? 3 : x > f[0] + 3 * fq ? 1 : 2])), g + 10);
+        fpoly(F, [[f[0] - 5 * fq, f[1] - 11 * fq], [f[0] + 3 * fq, f[1] - 11 * fq], [f[0] + 4 * fq, f[1] - 5 * fq], [f[0] + 11 * fq, f[1] - 2 * fq], [f[0] + 11 * fq, f[1] + 1 * fq], [f[0] - 5 * fq, f[1] + 1 * fq]], (x, y) => (y > f[1] - 0.6 * fq ? SO : (Math.floor(y) % 2 === 0 && x > f[0] + 1 * fq && x < f[0] + 3.5 * fq && y < f[1] - 4 * fq ? u32(L.lace || "#5a5a62") : sr[far ? 3 : x > f[0] + 3 * fq ? 1 : 2])), g + 10);
       } else {
         // the shoe, pointing forward, its sole
         const sr = ramp(L.shoe);
@@ -1245,9 +1277,24 @@
       if (L.backMark) { const col = Math.floor((a + 4.5 * cs) / cs), row = Math.floor((d - m0) / cs); if (row >= 0 && row < 8 && col >= 0 && col < 9 && MARK2[row][col] === "#") return t0 >= 3 ? u32("#d6d8e2") : u32(L.backMark); }
       return TOP[Math.min(4, t0 + (v > 0.55 && Math.floor(x * 0.8 + y) % 7 === 0 ? 1 : 0))];
     };
+    // beta 3.64: Iulica's anorak: the body's bands (white, mauve) on the side towards the back and along the front edge,
+    // the emblem on the chest in whole pixels (r rose, g leaf, k the letters' black, w their white, s the star)
+    const ANK_EMB = [".r.g...g.r.", "rg.......gr", "g.kkkkkkk.g", "r.kwkwkwk.r", "g.kkkkkkk.g", "rg...s...gr", ".rg.sss.gr.", "..rg.s.gr..", "....rgr....", ".....r....."];
+    const ANK_COL = { r: "#e2552a", g: "#3f8a3c", k: "#151318", w: "#f4f2ec", s: "#ffffff" };
+    const ankBand = (u) => (u > -0.64 && u < -0.48 ? L.stripe : u >= -0.48 && u < -0.33 ? L.stripe2 : u > 0.8 && u < 0.92 ? L.stripe : null);
+    const ANK_SMALL = [".rgr.", "rg.gr", "g.s.g", ".rgr."]; // for the people further back
+    const ankEmb = (u, v, hw, t2) => { const E = sc < 0.8 ? ANK_SMALL : ANK_EMB, ew = E[0].length, cs = Math.max(1, Math.round(sc)), a = u * hw - (0.3 * shape(0.4) - (ew / 2) * cs), col = Math.floor(a / cs), row = Math.floor((v - 0.22) * len / cs); if (row < 0 || row >= E.length || col < 0 || col >= ew) return 0; const ch = E[row][col]; if (ch === ".") return 0; return ch === "r" || ch === "g" ? ramp(ANK_COL[ch])[t2 >= 3 ? 3 : 2] : u32(ANK_COL[ch]); };
     const torsoMat = (x, y) => {
       if (rear) return rearMat(x, y);
-      const [u, v] = tloc(x, y);
+      const [u, v, hwT] = tloc(x, y);
+      if (L.topKind === "anorak") {
+        const t2 = toneOf(u * 0.85, v < 0.12 ? -0.75 : v < 0.4 ? -0.15 : 0.1);
+        if (v < 0.1 && u > -0.3 && u < 0.95) return Math.abs(u - 0.58) < 0.03 ? u32("#c9ccd4") : ramp(L.collar)[clamp(t2, 0, 4)]; // the collar's foot
+        if (Math.abs(u - 0.58) < 0.025 && v < 0.24) return u32(Math.floor(y) % 2 ? "#a4a8b2" : "#3a3a44"); // the half zip
+        const e = ankEmb(u, v, hwT, t2); if (e) return e;
+        const b = ankBand(u); if (b) return ramp(b)[clamp(t2, 0, 4)];
+        return TOP[clamp(t2 + (v > 0.6 && Math.floor(x * 0.8 + y) % 7 === 0 ? 1 : 0), 0, 4)];
+      }
       let nx = u * 0.85, ny = v < 0.12 ? -0.75 : v < 0.4 ? -0.15 : 0.1;
       // the chest: the pecs, a shadow under them; the waistband at the bottom (beta 3.57: none on a shirt worn out)
       const pec = v > 0.34 && v < 0.39 && u > -0.4 ? 1 : 0;
@@ -1348,7 +1395,7 @@
       }
       if (k === "henley") {
         if (v < 0.11 && u > 0.36 && u < 0.78) return tone(SK, nx, ny);
-        if (u > 0.55 && u < 0.62 && (Math.abs(v - 0.16) < 0.025 || Math.abs(v - 0.25) < 0.025)) return u32("#ece0c4");
+        if (u > 0.55 && u < 0.62 && (Math.abs(v - 0.16) < 0.025 || Math.abs(v - 0.25) < 0.025)) return u32(L.btn || "#ece0c4");
       }
       if (k === "tee" || k === "printtee" || k === "oversize") {
         if (v < (k === "oversize" ? 0.08 : 0.1) && u > 0.36 && u < 0.8) return tone(SK, nx, ny);
@@ -1370,15 +1417,17 @@
     poly(F, tp, torsoMat, 5);
     const sl = p.ball ? 0.45 : 1; // beta 3.45: in the somersault's tuck a skirt or an apron folds with the legs (short), not out like a flag
     if (L.untuck) { // beta 3.57 (Daniel): the shirt worn out over the trousers, its tails over the hips: lower at the front and the back than at the side seam (from behind, lowest in the middle), the front tail lifted by a raised knee, the placket and its buttons down to the hem, a darker hem line
-      const tl = L.untuck * U * sl, kn = clamp((p.kF[1] - p.hip[1]) / (16 * sc), 0.5, 1), cx2 = 1.5 * sc, hwB = hw1 + (rear ? 2.6 : 1.8) * U, hemAt = (u) => tl * (rear ? 1 - 0.16 * u * u : (0.7 + 0.3 * Math.min(1, Math.abs(u + 0.3) / 0.7)) * (u > 0 ? lerp(1, kn, u) : 1));
+      const tl = L.untuck * U * sl, kn = clamp((p.kF[1] - p.hip[1]) / (16 * sc), 0.5, 1), cx2 = 1.5 * sc, hwB = hw1 + (rear ? 2.6 : L.hemCord ? 0.6 : 1.8) * U, hemAt = (u) => L.hemCord ? tl * (u > 0 ? lerp(1, kn, u) : 1) : tl * (rear ? 1 - 0.16 * u * u : (0.7 + 0.3 * Math.min(1, Math.abs(u + 0.3) / 0.7)) * (u > 0 ? lerp(1, kn, u) : 1)); // beta 3.64: an anorak's hem is straight, gathered by its drawstring
       const pts = [off(hip, cx2 - hw1, -3 * U), off(hip, cx2 + hw1, -3 * U)];
       for (let i = 0; i <= 10; i++) { const u = 1 - i / 5; pts.push(off(hip, cx2 + u * hwB, hemAt(u))); }
       poly(F, pts, (x, y) => {
         const [u, v] = tloc(x, y), dn = (v - 1) * len, t2 = toneOf(u * 0.85, 0.2), hm = hemAt(clamp(u * hw1 / hwB, -1, 1));
-        if (dn > hm - 1.2 * U) return TOP[Math.min(4, t2 + 1)]; // the hem
+        if (dn > hm - 1.2 * U) return L.hemCord && Math.floor(x) % 3 === 0 ? u32("#e6e0d6") : TOP[Math.min(4, t2 + 1)]; // the hem (an anorak's: its cord showing through)
+        if (L.topKind === "anorak") { const b = ankBand(u); if (b) return ramp(b)[clamp(t2, 0, 4)]; }
         if (!rear && L.topKind === "workshirt" && Math.abs(u - 0.58) < 0.035) return (Math.floor(y) % 4 === 0) ? u32("#e8e4dc") : TOP[3]; // the placket, its buttons
         return TOP[Math.min(4, t2 + (Math.floor(x + dn * 0.12) % 6 === 0 && dn > -1.5 * U ? 1 : 0))]; // the folds hanging straight down
       }, 5);
+      if (L.hemCord && !rear) for (const uu of [0.4, 0.66]) { const a0 = off(hip, cx2 + uu * hwB, hemAt(uu) - 0.6 * U), bd = off(hip, cx2 + uu * hwB + 0.5 * U, hemAt(uu) + 3.2 * U * sl); limb(F, a0, bd, 0.5 * U, 0.5 * U, 0, 0.5, () => u32("#e6e0d6"), 7); blob(F, bd, 1.3 * U, 1.6 * U, (nx, ny) => ramp(L.hemCord)[toneOf(nx, ny)], 7); } // beta 3.64: the drawstring's wooden toggles
     }
     if (L.legs === "skirt") { const SKR = ramp(L.skirt); poly(F, [off(hip, -hw1 - U, -3 * U), off(hip, hw1 + U, -3 * U), off(hip, hw1 + 6 * U * sl, 15 * U * sl), off(hip, -hw1 - 5 * U * sl, 15 * U * sl)], (x, y) => { const [u] = tloc(x, y); return SKR[u > 0.3 ? 2 : u > -0.4 ? 3 : 4]; }, 6); }
     if (L.apron && L.apronKind === "bib") { const AR = ramp(L.apron); poly(F, [off(hip, -hw1 * 0.5, -3 * U), off(hip, hw1 + 2 * U, -3 * U), off(hip, hw1 + 4 * U, 30 * U * sl), off(hip, -hw1 * 0.5 - 2 * U, 31 * U * sl)], (x, y) => { const [u2] = tloc(x, y); const vv = (y - hip[1]) / (31 * U * sl); return AR[vv > 0.9 ? 4 : u2 > 0.5 ? 1 : u2 > -0.1 ? 2 : 3]; }, 6); } // beta 3.55: the bib apron's skirt to the knee
@@ -1390,6 +1439,11 @@
       // beta 3.33: the head at its own resolution (HK in the fight; the people around keep the small 1x head)
       const HKv = view ? view.HK : L.hands ? (L.full ? HK : HK * 0.86) : HK, HD = rear ? headRear(hid, HKv) : headOf(hid, 1, false, HKv), hx = (p.head[0] - p.neck[0] - 3 * sc) * 0.6, hy = (p.head[1] - p.neck[1] + 11 * sc) * 0.6, a2 = off(neck, 0.5 * U, U);
       if (p.lie || p.rot) F.blit(HD.rows, HD.pal, a2[0], a2[1], p.lie ? 1 : p.rot, HD.at, 8); else { const bx2 = Math.round(a2[0] + hx), by2 = Math.round(a2[1] + hy); F.blit(HD.rows, HD.pal, bx2, by2, 0, HD.at, 8); if (HD.ember) ember = [bx2 + HD.ember[0] - HD.at[0], by2 + HD.ember[1] - HD.at[1]]; }
+    }
+    if (L.collar && !rear) { // beta 3.64: the anorak's funnel collar, high round the neck (over the neck, under the chin): teal, the zip at the front, the cord's toggle
+      const CL = ramp(L.collar);
+      poly(F, [off(neck, -4.4 * sc, 3.2 * U), off(neck, -3.6 * sc, -2.4 * U), off(neck, 5.4 * sc, -2 * U), off(neck, 6.6 * sc, 3.2 * U)], (x, y) => { const dx = (x - neck[0]) * ca + (y - neck[1]) * sa; if (Math.abs(dx - 4.6 * sc) < 0.5 * Math.max(1, sc)) return u32("#c9ccd4"); return CL[clamp(toneOf(clamp((dx - 1) / 6, -1, 1) * 0.85, -0.2), 0, 4)]; }, 9);
+      blob(F, off(neck, 5.6 * sc, 3.6 * U), 0.9 * U, 1.1 * U, () => u32("#e6e0d6"), 9);
     }
     if (!rear) arm(sF, T(p.eF), T(p.hF), false);
     const hF = T(p.hF);
@@ -1425,6 +1479,7 @@
     } else if (prop === "phone") { // beta 3.45: a phone held up, filming: its dark back, a light pixel of its screen's glow
       poly(F, [Q(-1.5, -7), Q(2.5, -7), Q(2.5, 0), Q(-1.5, 0)], (x, y) => u32(y < hF[1] - 6 * U ? "#5a5a66" : "#24242c"), 20);
       poly(F, [Q(1.5, -6), Q(2.5, -6), Q(2.5, -4), Q(1.5, -4)], () => u32("#cfe8ff"), 21);
+      if (id === "iulica" || L.headId === "iulica") poly(F, [Q(1.6, -7.6), Q(3.2, -7.6), Q(3.2, -6.2), Q(1.6, -6.2)], () => u32("#fff6b8"), 22); // beta 3.64: the flash, at the top of its back
     } else if (prop === "key") {
       blob(F, Q(2, -7), 1.8 * U, 3.4 * U, (nx, ny) => ramp("#ffd23a")[toneOf(nx, ny)], 20);
     } else if (prop === "stack") {
@@ -1816,7 +1871,7 @@
     steve: { id: "steve", name: "STEVE", role: "SPECIAL GUEST - OVER TWO METRES", special: "FAST FORWARD", line: "TWO METRES OF GOOD VIBES", speed: 0.76, power: 1.05, fd: { su: 3, rc: 5, air: 1 }, jump: { v: -5.9, g: 0.36 } }, // was speed 0.86, power 1.15
     rares: { id: "rares", name: "RARE\u0218", role: "SPECIAL GUEST", special: "ANCHOR PUNCH", line: "NEVER LOSES HIS KEYS", speed: 1, power: 1 }, // beta 3.49: the flex and the big punch
     dony: { id: "dony", name: "DONY", role: "ROASTS THE COFFEE", special: "LENS LASER", line: "SMALL, QUICK, FRESHLY ROASTED", speed: 1.12, power: 1 }, // beta 3.49: two beams from his glasses (power was 0.92: he won 2% on the bench)
-    iulica: { id: "iulica", name: "IULIC\u0102", role: "CREW", special: "TOTE SWING", line: "BRINGS THE ENERGY INTO THE FRAME", speed: 1.02, power: 1.02 },
+    iulica: { id: "iulica", name: "IULIC\u0102", role: "CREW", special: "CAMERA FLASH", line: "BRINGS THE ENERGY INTO THE FRAME", speed: 1.02, power: 1.02 }, // beta 3.64: the flash (was TOTE SWING)
     maria: { id: "maria", name: "MARIA", role: "SPECIAL GUEST", special: "CURL CYCLONE", line: "SPINS FIRST, ASKS LATER", speed: 1.06, power: 0.92 }, // beta 3.49: speed was 1.1
     // beta 3.55 (Daniel): two more guests
     // beta 3.55 (Daniel): two more guests, put mid-pack on the bench (Caius tall, so his reach is long: a slower walk, lighter blows, a slower CPU; Boomer heavy-handed)
@@ -1877,7 +1932,7 @@
     maria: pose({ hip: [0, -52], neck: [0, -79], head: [3, -90], eF: [18, -72], hF: [30, -76], eB: [-14, -70], hB: [-26, -74], kF: [22, -54], fF: [46, -56], kB: [-4, -26], fB: [-4, 0] }),
     dony: pose({ hip: [0, -47], neck: [5, -75], head: [8, -86], eF: [20, -64], hF: [30, -74], eB: [4, -62], hB: [14, -70], tw: 0.6 }),
     cristian: pose({ hip: [-2, -47], neck: [1, -75], head: [4, -86], eF: [15, -68], hF: [16, -84], eB: [11, -66], hB: [21, -79] }),
-    iulica: pose({ eF: [18, -86], hF: [28, -102], eB: [-10, -86], hB: [-18, -102], tw: 0.7 }),
+    iulica: pose({ eF: [18, -86], hF: [28, -102], eB: [-10, -86], hB: [-18, -102], tw: 0.7, prop: "phone" }), // beta 3.64: filming it all on his phone
     // beta 3.55: the two new guests in the back row: Boomer with the pan on his shoulder, Caius holding up a portafilter
     boomer: Object.assign(pose({ hip: [0, -47], neck: [2, -75], head: [5, -86], eF: [12, -80], hF: [4, -90], eB: [-6, -58], hB: [2, -52], tw: 0.3 }), { prop: "pan" }),
     caius: Object.assign(pose({ hip: [0, -47], neck: [3, -75], head: [6, -86], eF: [16, -76], hF: [20, -92], eB: [-4, -58], hB: [4, -52], tw: 0.4 }), { prop: "portafilter" })
@@ -1967,7 +2022,7 @@
   // the grid's geometry, from GRID: tiles of 36 px faces (the middle of each 64 px portrait)
   // beta 3.55 (eleven fighters and the "?"): the grid 6x2 across the top, the frames a pixel apart as the arcade's;
   // under it the two sides' portraits at either end with the fighter under the cursor between them
-  const TILE = 36, GAP = 1, SEL_Y = 34, PORT_Y = 120;
+  const TILE = 36, GAP = 1, SEL_Y = 34, PORT_Y = 120, MOVES_Y = 175;
   const tilePos = (i) => { const c = i % GRID.cols, r = Math.floor(i / GRID.cols), pitch = TILE + 6 + GAP, gw = GRID.cols * pitch - GAP; return [Math.round((W - gw) / 2) + 3 + c * pitch, SEL_Y + r * pitch]; };
   function face(ctx, id, x, y, size, t, flip) {
     ctx.fillStyle = "#241d3d"; ctx.fillRect(x, y, size, size);
@@ -2011,6 +2066,7 @@
       : (TOUCH ? "TAP THE CPU, TAP AGAIN TO FIGHT - TAP 1P TO GO BACK" : "ARROWS TO CHOOSE - ENTER OR J TO FIGHT - K BACK");
     text(ctx, hint, W / 2, 193, "#ffffff", { al: "c" });
     if (!TOUCH) text(ctx, "ARROWS/WASD MOVE - J PUNCH - K KICK - L SPECIAL", W / 2, 204, "#a99cc8", { al: "c" });
+    if (S === SEL) { button(ctx, W / 2 - 38, MOVES_Y - 2, 76, 13, false); text(ctx, TOUCH ? "MOVES" : "L  MOVES", W / 2, MOVES_Y, "#ffffff", { al: "c", ol: OUT }); } // beta 3.64: the move list of the one under the cursor
   }
   function drawVS(ctx, t, me, k, cpu = "ion") {
     stripes(ctx, t * 3, "#120c24", "#1d1540");
@@ -2147,6 +2203,12 @@
       espresso: () => { hiss(1400, 3, 0.4, 0.32, 0, "bandpass", 4200); tone("square", 880, 440, 0.12, 0.07, 0.05); },
       dash: () => { hiss(1300, 0.7, 0.28, 0.35, 0, "bandpass", 280); tone("square", 180, 90, 0.2, 0.08); },
       flash: () => { tone("square", 2400, 1200, 0.08, 0.1); tone("square", 3200, 3200, 0.05, 0.07, 0.08); hiss(6000, 1, 0.28, 0.3, 0, "highpass"); },
+      // beta 3.64: Iulica's camera: the flash charging (a rising whine), the shutter (two clicks and the pop), the one blinded
+      charge: () => tone("sine", 900, 5200, 0.22, 0.045),
+      combo: () => notes([1046, 1318, 1568], "square", 0.05, 0.05, 0.04), // beta 3.64: a combo of three or more
+      ex: () => { notes([784, 1175, 1568, 2093], "square", 0.06, 0.06, 0.03); hiss(5000, 1, 0.2, 0.12, 0, "highpass"); }, // and an EX special
+      shutter: () => { hiss(3800, 5, 0.025, 0.5); hiss(2300, 5, 0.03, 0.45, 0.06); tone("square", 4400, 4400, 0.03, 0.05, 0.01); hiss(7000, 1, 0.3, 0.3, 0.02, "highpass"); },
+      blinded: () => { tone("square", 1800, 600, 0.3, 0.07); tone("triangle", 2600, 2400, 0.4, 0.05, 0.05); hiss(1100, 1, 0.2, 0.25); },
       dizzy: () => notes([1200, 1500, 1200, 1500], "triangle", 0.07, 0.08, 0.08),
       win: () => notes([523, 659, 784, 659, 784, 1046], "square", 0.14, 0.1, 0.11),
       lose: () => notes([392, 370, 349, 330], "square", 0.22, 0.09, 0.2),
@@ -2259,7 +2321,11 @@
     // Caius throws a portafilter, spinning, at head height; coffee grounds where it lands
     caius: { su: 12, ac: 1, rc: 18, cool: 190, proj: "portafilter", dmg: 9, speed: 4.4, sfx: "throw", hitSfx: "knock", sp: true, chip: 2, seq: [[0, 11], [1, 8], [2, 11]] },
     dony: { su: 14, ac: 16, rc: 18, cool: 170, beam: true, eye: [4, -72], dmg: 12, box: [12, -88, 224, -80], hs: 18, bs: 10, push: 2.6, sfx: "laser", sp: true, chip: 2, seq: [[0, 13], [1, 22], [2, 12]] },
-    iulica: { su: 12, ac: 6, rc: 18, cool: 150, dmg: 13, box: [4, -116, 58, -30], hs: 22, bs: 14, push: 4.2, kd: true, sfx: "tote", sp: true, chip: 2 }
+    // beta 3.64 (Daniel): Iulica's CAMERA FLASH: the camera up to his eye, the flash in the other one's eyes. Whoever
+    // stands facing him within reach (about a third of the screen) is blinded and goes down; it can't be blocked, but a
+    // crouch (under the light) or a jump dodges it, and so does looking the other way. Slow to start (the camera coming
+    // up is the tell), a long recovery; light damage: the point is the knock-down and what follows
+    iulica: { su: 14, ac: 2, rc: 22, cool: 170, eyes: 128, dmg: 9, kd: true, unblock: true, sfx: "shutter", hitSfx: "blinded", sp: true, hstop: 16, seq: [[0, 13], [1, 12], [2, 12]] }
   };
   const GRAV = 0.34, JUMP_V = -6.4, ROUND_TIME = 60; // beta 3.33: the jump a little lower, as the fighters are (about 60 units up)
   function fighter(id, cpu, x, face, alt) {
@@ -2284,32 +2350,88 @@
   }
   function resetRound() {
     g.f = [fighter(g.me, false, STAGE_W / 2 - 64, 1), fighter(g.cpu, true, STAGE_W / 2 + 64, -1, g.cpu === g.me)];
-    g.proj = []; g.fx = [];
+    g.proj = []; g.fx = []; g.combo = null;
     // I O N comes in with a stack of Two Minutes tees (round 1); then it waits on the pavement behind him
     for (const f of g.f) if (f.id === "ion") { if (g.round === 1) f.st = "intro"; else g.fx.push({ k: "stack", x: f.x - f.face * 30, y: 0, t: 0, life: 1e9 }); } g.phase = "intro"; g.pt = 0; g.time = ROUND_TIME; g.camX = (STAGE_W - W) / 2; g.hitstop = 0; g.shake = 0; g.flash = 0;
   }
   const SPARK_LIFE = { spark: 9, burst: 13, sburst: 15, ko: 24, bspark: 8, dust: 14, flash: 10 };
   const spark = (x, y, kind, dir = 0) => g.fx.push({ k: kind || "spark", x, y, t: 0, life: SPARK_LIFE[kind] || 10, dir });
-  function startAtk(f, name) {
-    const a = atkOf(f, name); f.atk = a; f.atkHit = false; f.t = 0;
+  // beta 3.64 (Daniel: "do we have key combos?"): a small combo layer, SF2-flavoured and forgiving:
+  // - chains: a punch or a kick that hits can be followed at once by the next one of the chain, light, light, heavy
+  //   (punch, punch, kick; crouched the same), within CHAIN_WIN ticks after its active ones (a press made just before
+  //   the hit lands is kept); any of them that hits can also be cancelled into the special;
+  // - motions (the player's, on the keys or the stick): down, down-forward, forward + punch (or kick, or the special)
+  //   throws the EX special: about three ticks quicker, a third harder, the thrown things quicker; forward twice
+  //   dashes in, back twice steps back;
+  // - hits that follow one another before the other one has recovered are a combo: "3 HITS!" over the attacker's
+  //   side, each hit after the second a little less (90, 80, then 70%)
+  const CHAIN_RANK = { punch: 1, cpunch: 1, kick: 2, ckick: 2 }, CHAIN_WIN = 12, COMBO_SCALE = [1, 1, 1, 0.9, 0.8, 0.7];
+  const EXS = {};
+  const exOf = (id) => EXS[id] || (EXS[id] = (() => {
+    const s = SPECIAL[id], cut = Math.max(0, Math.min(3, s.su - 4)), o = Object.assign({}, s, { ex: true, su: s.su - cut, dmg: Math.round(s.dmg * 1.3) });
+    if (s.speed) o.speed = s.speed * 1.25; if (s.buff) o.buff = Math.round(s.buff * 1.3); if (s.eyes) o.eyes = Math.round(s.eyes * 1.15); if (s.lob) o.lob = [s.lob[0] * 1.2, s.lob[1], s.lob[2]];
+    if (s.seq) { o.seq = s.seq.map((e) => e.slice()); let left = cut; for (const e of o.seq) { const k = Math.min(left, e[1] - 1); e[1] -= k; left -= k; if (!left) break; } } // the drawings a little quicker to match
+    return o;
+  })());
+  function startAtk(f, name, fresh) {
+    const a = atkOf(f, name); f.atk = a; f.atkHit = false; f.t = 0; f.dashT = 0; f.cbuf = null;
+    if (fresh) { f.chainN = 1; f.chainL = CHAIN_RANK[name] === 1 ? 1 : 0; } // the first of a chain
     if (a.air) return; // stays "jump"
     f.st = "atk"; f.vx = 0;
     SND.play("swing");
   }
-  function startSpecial(f) {
-    const s = SPECIAL[f.id]; f.atk = s; f.atkHit = false; f.t = 0; f.st = "atk"; f.vx = 0; f.spCool = s.cool; f.armorUsed = false; SPUSE[f.cpu ? "cpu" : "p1"]++;
+  function startSpecial(f, ex) {
+    const s = ex ? exOf(f.id) : SPECIAL[f.id]; f.atk = s; f.atkHit = false; f.t = 0; f.st = "atk"; f.vx = 0; f.spCool = s.cool; f.armorUsed = false; f.dashT = 0; f.cbuf = null; SPUSE[f.cpu ? "cpu" : "p1"]++;
+    if (ex) { SPUSE.ex = (SPUSE.ex || 0) + 1; g.fx.push({ k: "expop", x: f.x, y: f.y - 108 * f.sc, t: 0, life: 42 }); SND.play("ex"); } // beta 3.64: the EX special, with a gold "EX"
   }
-  function jump(f, dir) { const J = f.buff > 0 ? null : f.R.jump; f.grav = J ? J.g : GRAV; f.st = "jump"; f.vy = J ? J.v : JUMP_V; f.vx = dir * 2.05 * f.R.speed * (f.buff > 0 ? 1.3 : 1); f.atk = null; f.t = 0; f.jdir = dir * f.face; f.landT = 0; SND.play("jump"); }
+  // the player's stick as the arcade's numbers, seen from the fighter (6 forward, 4 back, 2 down, 3 down-forward, 8 up,
+  // 5 nothing), kept as the changes of the last half second
+  const dirOf = (f, inp) => { const fw = f.face > 0 ? inp.r : inp.l, bk = f.face > 0 ? inp.l : inp.r, h = fw ? 6 : bk ? 4 : 5; return inp.d ? h - 3 : inp.u ? h + 3 : h; };
+  function noteDir(f, inp) { const h = f.hist || (f.hist = []), d = dirOf(f, inp); if (!h.length || h[h.length - 1].d !== d) { h.push({ d, t: g.itick }); if (h.length > 16) h.shift(); } }
+  // down, then forward (down-forward and a moment of nothing between them allowed: a stick's thumb skips), forward now
+  // or let go of at most 8 ticks ago, the down at most 20 ticks ago
+  function qcf(f) {
+    const h = f.hist || [], T = g.itick; let k = h.length - 1;
+    if (k >= 0 && h[k].d === 5 && T - h[k].t <= 8) k--; // let go of a moment before the button: still counts
+    if (k < 0 || h[k].d !== 6) return false;
+    for (let j = k - 1; j >= 0 && T - h[j].t <= 20; j--) { if (h[j].d === 2) return true; if (h[j].d !== 3 && h[j].d !== 5) return false; }
+    return false;
+  }
+  // forward, nothing, forward (or back, nothing, back), quickly, the second one just now
+  function dashed(f) { const h = f.hist || [], n = h.length; if (n < 3) return 0; const c = h[n - 1], b = h[n - 2], a0 = h[n - 3]; if (c.t !== g.itick || b.d !== 5 || a0.d !== c.d || (c.d !== 6 && c.d !== 4) || c.t - b.t > 10 || b.t - a0.t > 12) return 0; return c.d === 6 ? 1 : -1; }
+  function startDash(f, dir) { f.dashT = dir > 0 ? 12 : 10; f.dashV = (dir > 0 ? 4 : -3.4) * f.R.speed * f.face; SND.play("dash"); g.fx.push({ k: "dust", x: f.x - f.face * dir * 10, y: -1, t: 0, life: 12, vx: -f.face * dir * 0.4 }); }
+  // a chain: the next blow (or the special) started over the recovery of one that hit
+  function chainTry(f, inp, human) {
+    const a = f.atk; if (!a || a.air || a.sp) return;
+    const r = CHAIN_RANK[a.name]; if (!r) return;
+    const any = inp.pp || inp.kp || inp.sp;
+    if (!f.atkHit) { if (human && any) f.cbuf = { pp: inp.pp, kp: inp.kp, sp: inp.sp, d: inp.d, at: g.itick }; return; } // pressed a moment early: kept
+    if (f.t > a.su + a.ac + CHAIN_WIN) return;
+    const q = any ? inp : f.cbuf && g.itick - f.cbuf.at <= 10 ? f.cbuf : null; if (!q) return;
+    const ex = human ? qcf(f) : !!(q.sp && f.botEx && Math.random() < f.botEx), n = f.chainN || 1, L = f.chainL || 0;
+    if ((q.sp || ex) && f.spCool <= 0) { // the cancel: the other one's stun stretched (10 ticks at most) so a quick special, or one thrown from up close, still connects
+      startSpecial(f, ex); f.chainN = n + 1; const s2 = f.atk, o = f === g.f[0] ? g.f[1] : g.f[0];
+      if (o.st === "hit" && s2.su <= 16) { const need = s2.su + 2 + (s2.proj && !s2.lob ? Math.max(0, Math.abs(o.x - f.x) - 30) / (s2.speed || 3) : 0); o.hs = Math.max(o.hs, Math.min(o.t + need, o.hs + 10)); }
+      return;
+    }
+    if (q.pp && r === 1 && L < 2 && n < 3) { startAtk(f, q.d ? "cpunch" : "punch"); f.chainN = n + 1; f.chainL = L + 1; return; }
+    if (q.kp && r === 1 && n < 3) { startAtk(f, q.d ? "ckick" : "kick"); f.chainN = n + 1; f.chainL = L; }
+  }
+  function jump(f, dir) { f.dashT = 0; const J = f.buff > 0 ? null : f.R.jump; f.grav = J ? J.g : GRAV; f.st = "jump"; f.vy = J ? J.v : JUMP_V; f.vx = dir * 2.05 * f.R.speed * (f.buff > 0 ? 1.3 : 1); f.atk = null; f.t = 0; f.jdir = dir * f.face; f.landT = 0; SND.play("jump"); }
   // one step of a fighter's controls (the player's keys or the CPU's plan, both as the same intent)
   function control(f, o, inp) {
     const fw = f.face > 0 ? inp.r : inp.l, bk = f.face > 0 ? inp.l : inp.r;
     f.holdBack = !!bk; f.holdDown = !!inp.d;
     if (free(f)) {
-      if (inp.sp && f.spCool <= 0) return startSpecial(f);
-      if (inp.pp) return startAtk(f, inp.d ? "cpunch" : "punch");
-      if (inp.kp) return startAtk(f, inp.d ? "ckick" : "kick");
+      const human = f === g.f[0] && !autoP1, btn = inp.pp || inp.kp || inp.sp; // beta 3.64: the motions are the player's
+      const ex = btn && f.spCool <= 0 && (human ? qcf(f) : !!(inp.sp && f.botEx && Math.random() < f.botEx));
+      if ((inp.sp || ex) && f.spCool <= 0) return startSpecial(f, ex);
+      if (inp.pp) return startAtk(f, inp.d ? "cpunch" : "punch", true);
+      if (inp.kp) return startAtk(f, inp.d ? "ckick" : "kick", true);
       if (inp.u) return jump(f, fw ? f.face : bk ? -f.face : 0);
-      if (inp.d) { f.st = "crouch"; f.vx = 0; return; }
+      if (inp.d) { f.st = "crouch"; f.vx = 0; f.dashT = 0; return; }
+      if (human) { const dd = dashed(f); if (dd) startDash(f, dd); }
+      if (f.dashT > 0) { f.dashT--; f.st = "walk"; f.vx = f.dashV; f.walkDir = Math.sign(f.dashV * f.face) * 1.8; if (f.dashT % 3 === 1) g.fx.push({ k: "ghost", x: f.x, y: f.y, face: f.face, img: frameOf(f), t: 0, life: 9 }); return; } // beta 3.64: the dash
       const sp = f.R.speed * (f.buff > 0 ? 1.65 : 1); // beta 3.49: Steve's FAST FORWARD
       if (fw) { f.st = "walk"; f.vx = 1.6 * sp * f.face; f.walkDir = sp; }
       else if (bk) { f.st = "walk"; f.vx = -1.3 * sp * f.face; f.walkDir = -0.82 * sp; } // beta 3.45: the steps' cadence follows the speed, so the feet don't slide
@@ -2325,24 +2447,31 @@
   // (by round), how often it punishes a missed or blocked attack in its recovery and keeps the pressure on after a hit
   // it landed, how readily it uses its special (sp). AI_BASE is the CPU as it was before 3.49; BOT is the bench's
   // scripted players (an average and a decent human), never used in the game
-  const AI_BASE = { react: 14, jitter: 18, r1: 8, block: [0.38, 0.45, 0.52], punish: 0, follow: 0, sp: 1 };
+  const AI_BASE = { react: 14, jitter: 18, r1: 8, block: [0.38, 0.45, 0.52], punish: 0, follow: 0, sp: 1, chain: 0.12 }; // beta 3.64: chain, how often a blow that hit is followed into the chain
   // beta 3.49, tuned on the bench (fair CPU against CPU, 48 matches a pairing): I O N a little quicker to decide, blocks a
   // little more, punishes and keeps the pressure on now and then; Steve's CPU slower to decide and to block (he feels
   // slow), using FAST FORWARD rarely (think)
-  const AI_PROF = { ion: { react: 14, jitter: 17, r1: 7, block: [0.42, 0.48, 0.54], punish: 0.06, follow: 0.04 }, steve: { react: 16, jitter: 19, block: [0.34, 0.4, 0.46] }, caius: { react: 15, jitter: 18 } }; // beta 3.55: Caius's CPU a beat slower (his reach is long)
-  const BOT = { avg: { react: 16, jitter: 16, r1: 0, block: [0.33, 0.33, 0.33], punish: 0.15, follow: 0.15, sp: 1 }, decent: { react: 12, jitter: 12, r1: 0, block: [0.45, 0.45, 0.45], punish: 0.35, follow: 0.3, sp: 1 } };
+  const AI_PROF = { ion: { react: 14, jitter: 17, r1: 7, block: [0.42, 0.48, 0.54], punish: 0.06, follow: 0.04, chain: 0.04 }, steve: { react: 16, jitter: 19, block: [0.34, 0.4, 0.46] }, caius: { react: 15, jitter: 18, chain: 0.04 }, maria: { chain: 0.04 }, daniel: { chain: 0.06 } }; // beta 3.64: the chains, tuned on the bench (the long-reach and the quick ones chain less) // beta 3.55: Caius's CPU a beat slower (his reach is long)
+  const BOT = { avg: { react: 16, jitter: 16, r1: 0, block: [0.33, 0.33, 0.33], punish: 0.15, follow: 0.15, sp: 1, chain: 0.2, ex: 0.15 }, decent: { react: 12, jitter: 12, r1: 0, block: [0.45, 0.45, 0.45], punish: 0.35, follow: 0.3, sp: 1, chain: 0.55, ex: 0.6 } }; // beta 3.64: the scripted players chain and throw EX specials as players who know the moves would
   let botProf = null;
   function think(f, o, P0) {
     const P = P0 || f.prof || (f.prof = Object.assign({}, AI_BASE, AI_PROF[f.id] || {}));
     const ai = f.ai, d = Math.abs(o.x - f.x), inp = { l: 0, r: 0, u: 0, d: 0, pp: 0, kp: 0, sp: 0 };
     const fwd = f.face > 0 ? "r" : "l", back = f.face > 0 ? "l" : "r";
-    if (cpuHold) return inp; // for the review renders: the CPU stands still
+    if (cpuHold) { if (cpuHold === "crouch") inp.d = 1; else if (cpuHold === "block") { inp[back] = 1; } return inp; } // for the review renders: the CPU stands still (beta 3.64: or crouches, or holds its guard)
+    f.botEx = P.ex || 0; // the bench's scripted players: how often their special is the EX one (the CPU never)
     ai.t--;
+    // beta 3.64: a blow that hit is followed into the chain now and then (P.chain), after a human beat (2 to 6 ticks)
+    if (f.st === "atk" && f.atk && f.atkHit && CHAIN_RANK[f.atk.name]) {
+      if (ai.chainFor !== f.atkId) { ai.chainFor = f.atkId; ai.chain = null; const r = CHAIN_RANK[f.atk.name], n = f.chainN || 1;
+        if (Math.random() < (P.chain || 0)) { const k = f.spCool <= 0 && Math.random() < 0.35 ? "sp" : r === 1 && n < 3 ? ((f.chainL || 0) < 2 && Math.random() < 0.5 ? "pp" : "kp") : f.spCool <= 0 ? "sp" : null; if (k) ai.chain = { k, n: 2 + (Math.random() * 5 | 0), dn: !!f.atk.crouch }; } }
+      if (ai.chain && --ai.chain.n <= 0) { inp[ai.chain.k] = 1; if (ai.chain.dn) inp.d = 1; ai.chain = null; }
+    }
     // a threat: the player's attack starting near, or a projectile coming
     const threatAtk = o.st === "atk" || (o.atk && !onGround(o));
-    if (threatAtk && o.atk && ai.seen !== o.atkId && d < 92) {
+    if (threatAtk && o.atk && ai.seen !== o.atkId && d < (o.atk.eyes ? o.atk.eyes * o.sc : 92)) {
       ai.seen = o.atkId;
-      if (Math.random() < P.block[Math.min(2, g.round - 1)]) ai.plan = { k: "block", low: !!o.atk.low || (o.atk.crouch && Math.random() < 0.7), n: 26 + (Math.random() * 10 | 0) };
+      if (Math.random() < P.block[Math.min(2, g.round - 1)]) ai.plan = { k: "block", low: !!o.atk.low || !!o.atk.eyes || (o.atk.crouch && Math.random() < 0.7), n: 26 + (Math.random() * 10 | 0) }; // beta 3.64: under Iulica's flash (a crouch)
     }
     const pr = g.proj.find((p) => p.owner !== f && Math.sign(f.x - p.x) === Math.sign(p.vx) && Math.abs(f.x - p.x) < 110);
     if (pr && ai.seenP !== pr && free(f)) {
@@ -2374,8 +2503,8 @@
     // beta 3.49: where and how often each special is used: Steve's FAST FORWARD rarely (from the second round, or when
     // he's losing), the horse from mid range, the anchor punch close (more when the other is stuck in a recovery), the
     // laser across the gap at someone standing
-    const spAt = SP.buff ? (g.round >= 2 || f.hp < 60) && d < 170 : SP.proj === "horse" ? d > 66 && d < 175 : SP.launch ? d < 58 * f.sc : SP.dizzy && !SP.flash ? d < 54 * f.sc : SP.beam ? d > 48 && d < 185 && o.st !== "crouch" : SP.proj ? d > 110 : SP.dash || SP.spin ? d > 50 && d < 150 : SP.flash ? d < 95 : d < 72 * f.sc;
-    const spP = SP.buff ? 0.06 : SP.launch || (SP.dizzy && !SP.flash) ? (o.st === "atk" && o.t >= o.atk.su + o.atk.ac ? 0.6 : 0.2) : SP.proj ? 0.35 : 0.3; // beta 3.55: Boomer's pan as Rares's punch: close, mostly as a punish
+    const spAt = SP.eyes ? d > 24 && d < SP.eyes * f.sc * 0.9 && onGround(o) && o.st !== "crouch" && !lying(o) : SP.buff ? (g.round >= 2 || f.hp < 60) && d < 170 : SP.proj === "horse" ? d > 66 && d < 175 : SP.launch ? d < 58 * f.sc : SP.dizzy && !SP.flash ? d < 54 * f.sc : SP.beam ? d > 48 && d < 185 && o.st !== "crouch" : SP.proj ? d > 110 : SP.dash || SP.spin ? d > 50 && d < 150 : SP.flash ? d < 95 : d < 72 * f.sc;
+    const spP = SP.eyes ? (o.st === "block" || o.holdBack ? 0.36 : 0.16) : SP.buff ? 0.06 : SP.launch || (SP.dizzy && !SP.flash) ? (o.st === "atk" && o.t >= o.atk.su + o.atk.ac ? 0.6 : 0.2) : SP.proj ? 0.35 : 0.3; // beta 3.55: Boomer's pan as Rares's punch: close, mostly as a punish
     if (ready && spAt && r < spP * P.sp) { inp.sp = 1; return inp; }
     if (d > 150) {
       if (false) inp.sp = 1;
@@ -2409,11 +2538,14 @@
       if (t === 1) f.atkId = ++atkSeq;
       if (a.sp && t === a.su) {
         SND.play(a.sfx);
-        if (a.lob) g.proj.push({ k: a.proj, x: f.x + f.face * 14, y: f.y - 104 * f.sc, vx: a.lob[0] * f.face, vy: a.lob[1], grav: a.lob[2], owner: f, dmg: a.dmg, t: 0 }); // beta 3.49: the horse, thrown in an arc
-        else if (a.proj) g.proj.push({ k: a.proj, x: f.x + f.face * 30, y: f.y - (a.proj === "wave" ? 56 : 63) * f.sc, vx: a.speed * f.face, owner: f, dmg: a.dmg, t: 0 });
+        if (a.lob) g.proj.push({ k: a.proj, x: f.x + f.face * 14, y: f.y - 104 * f.sc, vx: a.lob[0] * f.face, vy: a.lob[1], grav: a.lob[2], owner: f, dmg: a.dmg, t: 0, ex: !!a.ex }); // beta 3.49: the horse, thrown in an arc
+        else if (a.proj) g.proj.push({ k: a.proj, x: f.x + f.face * 30, y: f.y - (a.proj === "wave" ? 56 : 63) * f.sc, vx: a.speed * f.face, owner: f, dmg: a.dmg, t: 0, ex: !!a.ex });
+        if (a.eyes) { g.flash = 6; g.fx.push({ k: "camflash", x: f.x + f.face * 33 * f.sc, y: f.y - 86 * f.sc, dir: f.face, reach: a.eyes * f.sc, t: 0, life: 12 }); } // beta 3.64: the flash: the screen white, a burst at the lens, a cone of light
         if (a.buff) { f.buff = a.buff; g.fx.push({ k: "turbo", x: f.x, y: f.y - 50 * f.sc, t: 0, life: 18 }); } // beta 3.49: Steve, FAST FORWARD
         if (a.flash) { g.flash = 10; spark(f.x + f.face * 28, f.y - 76 * f.sc, "flash"); }
       }
+      if (a.sp && a.eyes && t === 2) SND.play("charge"); // the flash charging as the camera comes up
+      if (a.ex && t % 3 === 0 && t < a.su + a.ac + 4) g.fx.push({ k: "ghost", x: f.x, y: f.y, face: f.face, img: frameOf(f), t: 0, life: 10, tint: 1 }); // beta 3.64: an EX special leaves a gold trail
       if (a.sp && a.launch && (t === 6 || t === 18)) { g.fx.push({ k: "twinkle", x: f.x + f.face * 12 * f.sc, y: f.y - 88 * f.sc, t: 0, life: 12 }); if (t === 6) SND.play("flex"); } // beta 3.49: the flex, a gleam on the biceps
       if (a.sp && a.beam && t === 4) g.fx.push({ k: "twinkle", x: f.x + f.face * 10 * f.sc, y: f.y - 80 * f.sc, t: 0, life: 10 }); // the glasses catching the light
       if (a.dash) { if (t >= a.su && t < a.su + a.ac && !f.atkHit) f.vx = a.dash * f.face; else f.vx *= 0.7; if (t % 3 === 0 && t >= a.su && t < a.su + a.ac) g.fx.push({ k: "ghost", x: f.x, y: f.y, face: f.face, img: f.S.special[1], t: 0, life: 10 }); }
@@ -2452,7 +2584,8 @@
     if (d.st === "down" || d.st === "rise" || d.bnc || d.inv > 0 || d.armor > 0 || (d.st === "fall" && d.hp <= 0)) return false; // beta 3.45: the bounce and the getting up are part of lying down
     // beta 3.49: Rares in the double-biceps flex shrugs one blow off (it still hurts, 3/4): it doesn't stop the flex
     if (d.st === "atk" && d.atk && d.atk.flexArmor && d.t < d.atk.flexArmor && !d.armorUsed) { d.armorUsed = true; d.hp = Math.max(1, d.hp - Math.round(def.dmg * a.R.power * 0.75)); spark(px, py, "bspark"); SND.play("block"); g.hitstop = 8; g.fx.push({ k: "twinkle", x: d.x, y: d.y - 70 * d.sc, t: 0, life: 10 }); return true; }
-    const blocked = canBlock(d) && !(def.low && !d.holdDown) && !(def.high && d.holdDown);
+    const blocked = !def.unblock && canBlock(d) && !(def.low && !d.holdDown) && !(def.high && d.holdDown); // beta 3.64: Iulica's flash goes through a guard (it is dodged, not blocked)
+    const wasStun = d.st === "hit" || d.st === "fall" || d.st === "dizzy"; // beta 3.64: not recovered from the last one: a combo
     const away = proj ? Math.sign(proj.vx) : (d.x >= a.x ? 1 : -1), tier = tierOf(def);
     if (blocked) {
       d.st = "block"; d.crouchBlock = d.holdDown; d.t = 0; d.hs = def.bs; d.vx = away * def.push * 0.9;
@@ -2460,7 +2593,9 @@
       spark(px, py, "bspark"); SND.play("block"); g.hitstop = BSTOP[tier]; g.hsK = "light"; if (tier === "sp") g.shake = Math.max(g.shake, 1);
       return true;
     }
-    const dmg = Math.round(def.dmg * a.R.power * (d.R.def || 1) * (d.cpu || simFair ? 1 : 0.9)); // beta 3.49: def, the damage a fighter takes
+    d.comboN = wasStun ? (d.comboN || 1) + 1 : 1; d.dashT = 0; d.cbuf = null;
+    const dmg = Math.round(def.dmg * a.R.power * (d.R.def || 1) * (d.cpu || simFair ? 1 : 0.9) * COMBO_SCALE[Math.min(5, d.comboN)]); // beta 3.49: def, the damage a fighter takes. beta 3.64: less for each hit of a long combo
+    if (d.comboN >= 2) { g.combo = { n: d.comboN, side: a === g.f[0] ? 0 : 1, t: 0 }; if (d.comboN >= 3) SND.play("combo"); COMBOS.max = Math.max(COMBOS.max, d.comboN); if (d.comboN === 2) COMBOS[a.cpu ? "cpu" : "p1"]++; }
     d.hp = Math.max(0, d.hp - dmg); d.t = 0; d.atk = null; d.atkDone = false;
     d.hitK = py > d.y - 60 * d.sc ? "gut" : "head"; // beta 3.45: a blow to the body doubles him over, one to the head snaps it back
     if (d.hp <= 0) { d.st = "fall"; d.vy = -4.2; d.vx = away * 2.4; d.y = Math.min(d.y, -1); }
@@ -2479,9 +2614,9 @@
     const [a, b] = g.f, fighting = g.phase === "fight";
     if (fighting) {
       if (autoP1) inp = think(a, b, botProf); // beta 3.33, for the tests: the CPU on both sides (beta 3.49: or a scripted player, botProf)
-      if (free(a) || a.st === "jump") control(a, b, inp); else { a.holdBack = !!(a.face > 0 ? inp.l : inp.r); a.holdDown = !!inp.d; }
+      if (free(a) || a.st === "jump") control(a, b, inp); else { if (a.st === "atk") chainTry(a, inp, !autoP1); a.holdBack = !!(a.face > 0 ? inp.l : inp.r); a.holdDown = !!inp.d; } // beta 3.64: the chains
       const ci = think(b, a);
-      if (free(b) || b.st === "jump") control(b, a, ci); else { b.holdBack = !!(b.face > 0 ? ci.l : ci.r); b.holdDown = !!ci.d; }
+      if (free(b) || b.st === "jump") control(b, a, ci); else { if (b.st === "atk") chainTry(b, ci, false); b.holdBack = !!(b.face > 0 ? ci.l : ci.r); b.holdDown = !!ci.d; }
       // holding back with an attack coming shows the guard
       for (const [f, o] of [[a, b], [b, a]]) if (free(f) && f.holdBack && (o.st === "atk" || (o.atk && !onGround(o)) || g.proj.some((p) => p.owner === o && Math.abs(p.x - f.x) < 70)) && Math.abs(o.x - f.x) < 110) { f.st = "block"; f.crouchBlock = f.holdDown; f.t = 0; f.hs = 6; f.vx = 0; }
     } else {
@@ -2491,6 +2626,11 @@
     // the hits
     for (const [f, o] of [[a, b], [b, a]]) {
       const at = f.atk;
+      if (at && at.eyes && !f.atkHit && f.t >= at.su && f.t < at.su + at.ac) { // beta 3.64: Iulica's flash: whoever stands facing him within reach, not crouched, on the ground
+        const dx = (o.x - f.x) * f.face, ducked = o.st === "crouch" || (o.st === "atk" && o.atk && o.atk.crouch) || (o.st === "block" && o.crouchBlock) || lying(o);
+        if (dx > 0 && dx < at.eyes * f.sc && onGround(o) && !ducked && o.face === -f.face) { f.atkHit = true; if (HITLOG.length < 400) HITLOG.push({ k: "sp", d: Math.round(dx), who: f.id }); if (land(f, o, at, o.x - o.face * 4 * o.sc, o.y - 88 * o.sc)) g.fx.push({ k: "blind", who: o, t: 0, life: 54 }); }
+        continue;
+      }
       if (!at || !at.box || f.atkHit) continue;
       const t = f.t; if (t < at.su || t >= at.su + at.ac) continue;
       const hb = boxOf(f, at.box), hu = hurt(o);
@@ -2504,7 +2644,7 @@
       if (p.vy !== undefined) { p.y += p.vy; p.vy += p.grav || 0.07; if (p.y > -3) { if (p.k === "horse" && !p.bounced) { p.bounced = true; p.y = -3; p.vy = -Math.abs(p.vy) * 0.38; p.vx *= 0.55; spark(p.x, -3, "dust"); SND.play("bonk"); g.shake = Math.max(g.shake, 1.5); } else { p.dead = true; spark(p.x, -3, "dust"); continue; } } }
       const o = p.owner === a ? b : a, hu = hurt(o), pb = [p.x - 9, p.y - 9, p.x + 9, p.y + 9];
       if (p.k === "horse") { pb[0] -= 4; pb[2] += 4; pb[1] -= 6; } // the horse is bigger than a cup
-      if (!p.dead && !p.bounced && overlap(pb, hu) && o.st !== "down") { if (land(p.owner, o, Object.assign({ hs: 20, bs: 12, push: 2.6, sfx: "heavy", sp: true }, SPECIAL[p.owner.id]), p.x, p.y, p)) { p.dead = true; if (p.k === "portafilter") for (let i = 0; i < 5; i++) g.fx.push({ k: "grounds", x: p.x, y: p.y, t: 0, life: 20, vx: (i - 2) * 0.5 + Math.sign(p.vx) * 0.8, vy: -1.6 - (i % 3) * 0.5 }); if (p.k === "horse") { SND.play("bonk"); for (let i = 0; i < 3; i++) g.fx.push({ k: "chip", x: p.x, y: p.y, t: 0, life: 22, vx: (i - 1) * 1.1 + Math.sign(p.vx) * 0.6, vy: -2.4 - i * 0.4 }); } } }
+      if (!p.dead && !p.bounced && overlap(pb, hu) && o.st !== "down") { if (land(p.owner, o, Object.assign({ hs: 20, bs: 12, push: 2.6, sfx: "heavy", sp: true }, p.ex ? exOf(p.owner.id) : SPECIAL[p.owner.id]), p.x, p.y, p)) { p.dead = true; if (p.k === "portafilter") for (let i = 0; i < 5; i++) g.fx.push({ k: "grounds", x: p.x, y: p.y, t: 0, life: 20, vx: (i - 2) * 0.5 + Math.sign(p.vx) * 0.8, vy: -1.6 - (i % 3) * 0.5 }); if (p.k === "horse") { SND.play("bonk"); for (let i = 0; i < 3; i++) g.fx.push({ k: "chip", x: p.x, y: p.y, t: 0, life: 22, vx: (i - 1) * 1.1 + Math.sign(p.vx) * 0.6, vy: -2.4 - i * 0.4 }); } } }
       if (p.x < g.camX - 40 || p.x > g.camX + W + 40) p.dead = true;
     }
     for (const p of g.proj) for (const q of g.proj) if (p !== q && p.owner !== q.owner && !p.dead && !q.dead && Math.abs(p.x - q.x) < 14 && Math.abs(p.y - q.y) < 16) { p.dead = q.dead = true; spark((p.x + q.x) / 2, p.y, "burst"); SND.play("block"); }
@@ -2804,6 +2944,22 @@
   }
   function drawFx(ctx, e, cx) {
     const x = Math.round(e.x - cx), y = Math.round(e.y + FLOOR), k = e.t / e.life;
+    // beta 3.64: Iulica's flash (a cone of white light from the lens to its reach, a burst at the lens), the one it
+    // blinded (stars wheeling round the head, as it goes down), the gold EX over an EX special
+    if (e.k === "camflash") {
+      const a = 1 - k, dir = e.dir, L = Math.round(e.reach);
+      ctx.globalAlpha = 0.5 * a * a; ctx.fillStyle = "#ffffff";
+      for (let i = 4; i < L; i += 2) { const hh = Math.round(2 + i * 0.2); ctx.fillRect(dir > 0 ? x + i : x - i - 2, y - hh, 2, hh * 2); }
+      ctx.globalAlpha = a; ctx.fillStyle = "#ffffff"; const r = Math.round(4 + k * 12);
+      for (let q = 0; q < 8; q++) { const an = (q / 8) * Math.PI * 2, ln = q % 2 ? r * 0.6 : r; for (let j = 2; j < ln; j++) ctx.fillRect(x + Math.round(Math.cos(an) * j), y + Math.round(Math.sin(an) * j), 1, 1); }
+      ctx.fillRect(x - 2, y - 2, 5, 5); ctx.globalAlpha = 1; return;
+    }
+    if (e.k === "blind") {
+      const w = e.who, down = lying(w), air = w.st === "fall", hx = Math.round(w.x - cx - (down ? w.face * 30 : air ? w.face * 16 : 0) * w.sc), hy = Math.round(w.y + FLOOR - (down ? 16 : air ? 76 : 98) * w.sc);
+      for (let i = 0; i < 3; i++) { const an = e.t * 0.2 + i * 2.1, sx = hx + Math.round(Math.cos(an) * 11), sy = hy + Math.round(Math.sin(an) * 3), s3 = (e.t + i * 3) % 8 < 4 ? 2 : 1; ctx.fillStyle = "#fff6b8"; ctx.fillRect(sx - s3, sy, s3 * 2 + 1, 1); ctx.fillRect(sx, sy - s3, 1, s3 * 2 + 1); ctx.fillStyle = "#ffffff"; ctx.fillRect(sx, sy, 1, 1); }
+      return;
+    }
+    if (e.k === "expop") { if (k < 0.8 || e.t % 2) text(ctx, "EX", x, y - Math.round(Math.min(1, k * 4) * 8), ["#ffffff", "#fff6b8", "#ffd23a", "#ffd23a", "#ff9d14", "#ff9d14", "#e8601c"], { sc: 2, al: "c", sh: 1 }); return; }
     if (e.k === "ghost") { ctx.globalAlpha = (e.tint ? 0.5 : 0.35) * (1 - k); drawSprite(ctx, e.tint ? silhouette(e.img) : e.img, e.x - cx, e.y + FLOOR, e.face); ctx.globalAlpha = 1; return; }
     // beta 3.49: FAST FORWARD's burst (a ring of gold and rays), a gleam (the biceps, the glasses), the horse's splinters
     if (e.k === "turbo") { const r = 6 + k * 34; for (let a = 0; a < 16; a++) { const an = (a / 16) * Math.PI * 2; ctx.fillStyle = a % 2 ? "#fff2a0" : "#ffc21a"; ctx.fillRect(x + Math.round(Math.cos(an) * r) - 1, y + Math.round(Math.sin(an) * r * 0.8) - 1, 2, 2); if (a % 4 === 0 && k < 0.6) { ctx.fillStyle = "#ffffff"; for (let j = 0; j < 4; j++) ctx.fillRect(x + Math.round(Math.cos(an) * (r * 0.5 + j * 3)), y + Math.round(Math.sin(an) * (r * 0.5 + j * 3) * 0.8), 1, 1); } } if (k < 0.3) { ctx.fillStyle = "#ffffff"; ctx.fillRect(x - 6, y, 13, 1); ctx.fillRect(x, y - 6, 1, 13); ctx.fillRect(x - 1, y - 1, 3, 3); } return; }
@@ -2870,16 +3026,17 @@
     else if (g.phase === "time" && g.pt < 150) banner(ctx, g.f[0].hp === g.f[1].hp ? "DRAW" : "TIME", GOLD, 6, 78);
     else if (g.phase === "finish" && g.pt >= FIN.hit + 4) { const k = g.pt - FIN.hit - 4; banner(ctx, "ESPRESSO'D!", GOLD, k < 3 ? 6 : 5, 46); if (k > 10) text(ctx, "I O N FINISH", W / 2, 104, ["#ffffff", "#fff6b8", "#ffd23a"], { al: "c", sh: 1 }); if (k > 40 && Math.floor(t * 2) % 2 === 0) text(ctx, TOUCH ? "TAP TO SKIP" : "PRESS ANY KEY", W / 2, 196, "#ffffff", { al: "c" }); }
     else if (g.phase === "match") { banner(ctx, g.result === "win" ? "YOU WIN" : ROSTER[g.cpu].name + " WINS", g.result === "win" ? GOLD : RED, ROSTER[g.cpu].name.length > 6 && g.result !== "win" ? 4 : 5, 70); if (g.perfect && g.result === "win") text(ctx, "PERFECT!", W / 2, 112, "#ffffff", { sc: 2, al: "c" }); }
+    if (g.combo && g.combo.t < 75 && g.phase !== "finish") { const c = g.combo; text(ctx, c.n + " HITS!", c.side ? W - 72 : 72, 44, ["#ffffff", "#fff6b8", "#ffd23a", "#ffd23a", "#ff9d14", "#ff9d14", "#e8601c"], { sc: c.t < 5 ? 3 : 2, al: "c", sh: 1 }); } // beta 3.64: the combo counter, over the attacker's side
     if ((g.phase === "ko" || g.phase === "time") && g.pt > 150 && g.pt < 220) { const [a, b] = g.f; if (a.hp !== b.hp) banner(ctx, (a.hp > b.hp ? a : b).R.name + " WINS THE ROUND", "#ffffff", 2, 86); }
     if (paused) { // beta 3.15 (Daniel): the menu, any time: play on, pick other fighters, or go back to the map
       ctx.fillStyle = "rgba(14,10,26,.78)"; ctx.fillRect(0, 0, W, H); banner(ctx, "PAUSE", GOLD, 4, 46);
       PAUSE_ITEMS.forEach((s2, i) => {
-        const y = 96 + i * 24, on = pmenu === i, w = 170;
+        const y = 86 + i * 23, on = pmenu === i, w = 170;
         button(ctx, W / 2 - w / 2, y - 5, w, 18, on);
         text(ctx, (on ? "> " : "") + s2, W / 2, y, on ? OUT : "#ffffff", { al: "c", ol: on ? null : OUT });
         hit(W / 2 - w / 2, y - 6, w, 20, () => { pmenu = i; pausePick(i); });
       });
-      if (!TOUCH) text(ctx, "P RESUME - ESC FOR THE MAP - UP/DOWN + ENTER", W / 2, 176, "#a99cc8", { al: "c" });
+      if (!TOUCH) text(ctx, "P RESUME - ESC FOR THE MAP - UP/DOWN + ENTER", W / 2, 184, "#a99cc8", { al: "c" });
     }
   }
   // beta 3.16 (Daniel): beat the CPU and win a batch brew on the house at Two Minutes. The win screen is a voucher:
@@ -3102,16 +3259,48 @@
     try { if (window.parent !== window && window.parent.location.origin === location.origin) { window.parent.postMessage({ cz: "gloves-close" }, location.origin); return; } } catch {}
     location.href = "/?map";
   }
-  const PAUSE_ITEMS = ["RESUME", "CHANGE FIGHTERS", "BACK TO MAP"];
+  const PAUSE_ITEMS = ["RESUME", "MOVES", "CHANGE FIGHTERS", "BACK TO MAP"]; // beta 3.64: the move list
   let pmenu = 0;
   function pausePick(i) {
     SND.play("confirm");
     if (i === 0) return setPause(false);
-    if (i === 2) return backToMap(); // beta 3.47 (Daniel, QA G2): from the pause menu it reports "pause", as ESC from the same menu does (the pause was lifted first)
+    if (i === 1) return openMoves(g.me, "pause");
+    if (i === 3) return backToMap(); // beta 3.47 (Daniel, QA G2): from the pause menu it reports "pause", as ESC from the same menu does (the pause was lifted first)
     paused = false; pauseAuto = null;
-    if (i === 1) { TRK.ev("gloves_change_fighters", { from_screen: "pause" }); scene = "select"; SEL.phase = "p1"; g = null; SND.music("menu"); return; } // r211
+    if (i === 2) { TRK.ev("gloves_change_fighters", { from_screen: "pause" }); scene = "select"; SEL.phase = "p1"; g = null; SND.music("menu"); return; } // r211
   }
   function setPause(v, auto) { if (scene !== "game" || !g || g.scene !== "fight" || g.phase === "match") v = false; if (paused === v) return; pauseAuto = v && auto ? TRK.screenNow() : null; paused = v; pmenu = 0; SND.play("pause"); if (paused) for (const k in held) held[k] = 0; }
+  // beta 3.64 (Daniel): the move list, from the pause menu (the fighter in the fight) or the select screen (the one under
+  // the cursor): the special and its EX, the chains, the cancel, the sweep, the dash, the guard, the jump attacks; in
+  // the game's letters at a size that reads on a phone; any button or a tap closes it (back to the pause or the select)
+  let moves = null;
+  const MOVE_TIP = { ion: "A CUP OF ESPRESSO, THROWN ACROSS", cristache: "A WOODEN HORSE IN AN ARC, OVER A CROUCH", rares: "FLEX, THEN SEND THEM FLYING", iulica: "CROUCH OR JUMP TO DODGE THE FLASH", maria: "SPINS IN, HITS ON BOTH SIDES", dony: "TWO BEAMS AT EYE HEIGHT: DUCK THEM", boomer: "THE PAN COMES DOWN: BLOCK IT STANDING", caius: "A PORTAFILTER, THROWN SPINNING", steve: "FOUR SECONDS FASTER THAN ANYONE", cristian: "A DASH ACROSS THAT KNOCKS DOWN", daniel: "A WAVE OF COLOUR, THROWN" };
+  function openMoves(id, from) { moves = { id, from, at: sceneT }; SND.play("confirm"); TRK.ev("gloves_moves_open", { from_screen: from, fighter: id }); }
+  function closeMoves() { moves = null; SND.play("pause"); }
+  function drawMoves(ctx) {
+    ctx.fillStyle = "rgba(14,10,26,.97)"; ctx.fillRect(0, 0, W, H);
+    const R = ROSTER[moves.id], K = !TOUCH, P = K ? "J" : "PUNCH", KK = K ? "K" : "KICK", SP = K ? "L" : "SPECIAL", D = "\u2193", X1 = 22, X2 = 186;
+    text(ctx, (R ? R.name : "ANY FIGHTER") + ": MOVES", W / 2, 7, GOLD, { sc: 2, sh: 1, al: "c" });
+    const rows = [
+      [R ? R.special : "THEIR SPECIAL", SP, R ? MOVE_TIP[moves.id] || "" : "EVERYONE HAS THEIR OWN"],
+      ["EX " + (R ? R.special : "SPECIAL"), D + "\u2198\u2192 + " + P, "QUICKER AND HARDER"],
+      ["CHAIN, ON A HIT", P + ", " + P + ", " + KK],
+      ["LOW CHAIN", D + P + ", " + D + P + ", " + D + KK],
+      ["CANCEL A HIT", (K ? P + "/" + KK : "HIT") + " > " + SP],
+      ["SWEEP", D + " + " + KK],
+      ["DASH / STEP BACK", "\u2192\u2192 / \u2190\u2190"],
+      ["BLOCK / LOW", "HOLD \u2190 / \u2199"],
+      ["JUMP ATTACK", "\u2191 THEN " + P + " OR " + KK]
+    ];
+    let y = 31;
+    for (const [lab, inp, note] of rows) {
+      text(ctx, lab, X1, y, GOLD, {}); text(ctx, inp, X2, y, "#ffffff", {});
+      if (note) { y += 10; text(ctx, note, X1 + 8, y, "#a99cc8", {}); }
+      y += 15;
+    }
+    text(ctx, "\u2192 IS TOWARDS THE OTHER ONE", W / 2, 192, "#7fd8ff", { al: "c" });
+    text(ctx, TOUCH ? "TAP TO CLOSE" : "ANY KEY TO CLOSE", W / 2, 204, "#ffffff", { al: "c" });
+  }
   // the select screen: Player 1 picks, then picks the CPU (I O N first), "?" is any fighter at random
   const SEL = { phase: "p1", p1: 0, cpu: GRID.order.indexOf("ion") };
   function selConfirm() {
@@ -3129,6 +3318,7 @@
       if (P("l")) move(-1); if (P("r")) move(1); if (P("u")) move(-c); if (P("d")) move(c);
       if (P("ok") || P("p")) selConfirm();
       else if (P("k") && SEL.phase === "cpu") { SEL.phase = "p1"; SND.play("pause"); }
+      else if (P("s")) openMoves(GRID.order[SEL[k]], "select"); // beta 3.64: the moves of the one under the cursor
       return;
     }
     if (g && g.scene === "result") {
@@ -3139,6 +3329,7 @@
   }
   function step() {
     sceneT += 1 / 60;
+    if (moves) { if (["ok", "p", "k", "s"].some((k) => pressed.has(k)) && sceneT - moves.at > 0.2) closeMoves(); pressed.clear(); return; } // beta 3.64: the move list over everything (from the pause, the fight is paused)
     TRK.watch(); // r211: a change of screen (cheap: one comparison a frame)
     if (scene !== "game" || !g || g.scene !== "fight") menuInput();
     if (scene === "game" && g) {
@@ -3146,8 +3337,9 @@
       if (g.scene === "vs") { if (g.t > 2.6 || (g.t > 0.8 && (pressed.has("ok") || pressed.has("p")))) { g.scene = "fight"; g.t = 0; } }
       else if (g.scene === "fight" && !paused) {
         const inp = { l: held.l, r: held.r, u: held.u, d: held.d, pp: pressed.has("p"), kp: pressed.has("k"), sp: pressed.has("s") };
+        g.itick = (g.itick || 0) + 1; if (g.f[0] && !autoP1) noteDir(g.f[0], inp); // beta 3.64: the stick's way, every tick (the freezes too), for the motions
         if (g.phase === "finish" && g.pt > 8 && ["ok", "p", "k", "s"].some((k) => pressed.has(k))) { finishDone(); g.scene = "result"; g.menu = 0; g.t = 0; SND.music("menu"); pressed.clear(); return; } // beta 3.49: a key or a tap skips the finisher
-        for (const e of g.fx) e.t++; g.fx = g.fx.filter((e) => e.t < e.life);
+        for (const e of g.fx) e.t++; g.fx = g.fx.filter((e) => e.t < e.life); if (g.combo) g.combo.t++;
         if (g.flash > 0) g.flash--;
         g.shakeN = (g.shakeN || 0) + 1;
         if (g.shake > 0) g.shake = Math.max(0, g.shake - (g.hitstop ? 0.12 : 0.35)); // beta 3.45: the shake rides through the freeze, then settles
@@ -3175,11 +3367,13 @@
       drawSelect(ctx, t, SEL);
       GRID.order.forEach((id, i) => { const [x, y] = tilePos(i); hit(x - 3, y - 3, TILE + 6, TILE + 6, () => { const k = SEL.phase === "p1" ? "p1" : "cpu"; if (SEL[k] === i) pressed.add("ok"); else { SEL[k] = i; SEL.moved = sceneT; SND.play("select"); } }); });
       if (SEL.phase === "cpu") hit(9, PORT_Y - 3, 70, 70, () => { SEL.phase = "p1"; SND.play("pause"); }); // beta 3.55: the 1P portrait, now bottom left
+      hit(W / 2 - 40, MOVES_Y - 4, 80, 17, () => openMoves(GRID.order[SEL[SEL.phase === "p1" ? "p1" : "cpu"]], "select")); // beta 3.64
     } else if (g) {
       if (g.scene === "vs") { drawVS(ctx, g.t, g.me, g.t, g.cpu); hit(0, 0, W, H, () => pressed.add("ok")); }
       else if (g.scene === "fight") { drawFight(ctx, t); if (g.phase === "finish") hit(0, 0, W, H, () => pressed.add("ok")); }
       else drawResult(ctx, t);
     }
+    if (moves) { drawMoves(ctx); hit(0, 0, W, H, () => { if (sceneT - moves.at > 0.2) closeMoves(); }); } // beta 3.64: over everything, a tap closes it
   }
   // the layout: the picture as big as it fits (whole multiples on a laptop), the controls under it on a phone held
   // upright, over its lower corners when held sideways
@@ -3200,6 +3394,7 @@
     cvBox = { left: Math.round((vw - W * sc) / 2), top: Math.round(top), w: Math.round(W * sc), h: Math.round(H * sc) };
     cv.style.width = cvBox.w + "px"; cv.style.height = cvBox.h + "px"; cv.style.left = cvBox.left + "px"; cv.style.top = cvBox.top + "px";
     root.style.setProperty("--cv-bottom", Math.round(top + H * sc) + "px");
+    root.style.setProperty("--cv-left", cvBox.left + "px"); root.style.setProperty("--cv-w", cvBox.w + "px"); // beta 3.64: the consent question sits on the picture
   }
   // the rotate screen: a little phone turning, in the game's pixels
   function drawRotate(t) {
@@ -3276,7 +3471,7 @@
     // gtag("event") straight to GA4 (the site's GA4 runs on gtag, not through GTM: the GTM container has no tags); and,
     // for a GTM setup one day, the same as a plain dataLayer event ("gloves" + gloves_event): harmless while GTM is empty
     const send = (n, p) => { try { if (typeof window.czEvent === "function") window.czEvent(n, p); else if (window.__czGA && window.gtag) window.gtag("event", n, p); (window.dataLayer = window.dataLayer || []).push({ event: "gloves", gloves_event: n, gloves_params: p }); } catch {} };
-    const queue = []; let wait = 0;
+    const queue = []; let wait = 0, pendingOpen = null;
     function ev(n, p = {}) {
       if (!window.__czGA) return; // no yes to analytics: nothing
       if (ready()) return send(n, p);
@@ -3292,8 +3487,12 @@
         const p = { entry_source: src, device: device(), orientation: innerWidth >= innerHeight ? "landscape" : "portrait", in_map: window.parent !== window ? "yes" : "no" };
         if (window.__czGA) return ev("gloves_open", p);
         // opened on its own (a shared link): the consent card asks here; a "Sure" in the first two minutes still counts the visit
-        let n = 0; const t = setInterval(() => { if (window.__czGA) { clearInterval(t); ev("gloves_open", p); } else if (++n > 120) clearInterval(t); }, 1000);
+        // beta 3.64: and whenever a yes comes (the game's own question in the map's frame, the map's card, another tab: the
+        // "cz-consent" event, see consented), the visit is counted then
+        pendingOpen = p;
+        let n = 0; const t = setInterval(() => { if (window.__czGA) { clearInterval(t); this.consented(); } else if (++n > 120) clearInterval(t); }, 1000);
       },
+      consented() { if (window.__czGA && pendingOpen) { const p = pendingOpen; pendingOpen = null; ev("gloves_open", p); } },
       // called every frame: only a change of screen sends anything
       watch() { const sc = scene; if (sc !== prev) { if (prev === "title" && sc === "select") ev("gloves_start", { device: device() }); prev = sc; } },
       pick(me, cpu, rnd) { ev("gloves_pick", { fighter: me, cpu_fighter: cpu, random_pick: rnd ? "yes" : "no" }); },
@@ -3307,6 +3506,33 @@
     };
   })();
   addEventListener("pagehide", () => TRK.exit());
+  // beta 3.64 (Daniel: "make sure we record everyone"): inside the map's frame the site's cookie card never shows (the
+  // map asks), so a visitor who opened the game before answering the map was never counted. Inside the frame, with no
+  // decision stored yet, the title screen now asks itself, in the game's look, with the card's words and its two choices
+  // (Romanian when the site is): window.czConsent (build/consent.mjs, the same key and Consent Mode calls as the card)
+  // keeps the answer where the site does, so the map's card closes with it, and a yes starts GA; then the visit's
+  // gloves_open goes. It never stands in the way: a tap anywhere else starts the game, and it only waits on the title
+  let consentEl = null, consentShown = false;
+  const IN_FRAME = (() => { try { return window.parent !== window || new URLSearchParams(location.search).get("embed") === "1"; } catch { return true; } })();
+  const consentNeeded = () => { try { return IN_FRAME && !!window.czConsent && !window.czConsent.get(); } catch { return false; } };
+  const wrapTxt = (s2, n) => { const out = []; let line = ""; for (const w of s2.split(" ")) { if (line && (line + " " + w).length > n) { out.push(line); line = w; } else line = line ? line + " " + w : w; } if (line) out.push(line); return out; };
+  function buildConsent(up) {
+    let ro = RO; try { ro = ro || (window.czConsent.ro && window.czConsent.ro()); } catch {}
+    const T = ro ? { t: "UN COOKIE LA CAFEA?", p: "STATISTICI DE VIZITARE PRIN GOOGLE ANALYTICS \u0218I M\u0102SURAREA RECLAMELOR, CA S\u0102 \u0218TIM CE MERGE.", y: "DA, SIGUR", n: "NU, MERSI", l: "CONFIDEN\u021AIALITATE", href: "/ro/confidentialitate/", a: "Cookie-uri" }
+      : { t: "A COOKIE WITH YOUR COFFEE?", p: "VISIT STATISTICS WITH GOOGLE ANALYTICS AND AD MEASUREMENT, SO WE KNOW WHAT WORKS.", y: "SURE", n: "NO, THANKS", l: "PRIVACY", href: "/privacy/", a: "Cookies" };
+    const dpr = devicePixelRatio || 1, k = TOUCH ? Math.max(1, Math.round(1.4 * dpr)) / dpr : 2, el = document.createElement("div"); /* whole device pixels */ el.className = "mg-ck"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", T.a);
+    const txt = document.createElement("div"); txt.className = "mg-ck-t"; txt.appendChild(pxText(T.t, "#fed012", k));
+    for (const ln of wrapTxt(T.p, up ? 30 : TOUCH ? 46 : 40)) txt.appendChild(pxText(ln, "#ffffff", k)); // upright (over the rotate screen): narrower lines, the buttons under them
+    const a = document.createElement("a"); a.href = T.href; a.target = "_blank"; a.rel = "noopener"; a.className = "mg-ck-l"; a.textContent = ""; a.setAttribute("aria-label", T.l); a.appendChild(pxText(T.l, "#a99cc8", k)); txt.appendChild(a);
+    const row = document.createElement("div"); row.className = "mg-ck-b";
+    for (const [lab, v, cls] of [[T.y, "yes2", "y"], [T.n, "no", "n"]]) { const b = document.createElement("button"); b.type = "button"; b.className = "mg-ck-" + cls; b.setAttribute("aria-label", lab.charAt(0) + lab.slice(1).toLowerCase()); b.appendChild(pxText(lab, cls === "y" ? "#170f19" : "#ffffff", k)); b.onclick = (e) => { e.stopPropagation(); SND.init(); SND.play(v === "no" ? "pause" : "confirm"); try { window.czConsent.decide(v); } catch {} dropConsent(); }; row.appendChild(b); }
+    el.append(txt, row);
+    for (const ev of ["pointerdown", "touchstart"]) el.addEventListener(ev, (e) => e.stopPropagation(), { passive: true });
+    root.appendChild(el); return el;
+  }
+  function dropConsent() { if (consentEl) { consentEl.remove(); consentEl = null; } consentShown = false; }
+  function syncConsent() { const want = scene === "title" && consentNeeded(), up = root.classList.contains("mg-rot"); if (consentEl && consentEl.up !== up) { consentEl.remove(); consentEl = null; } if (want && !consentEl) { consentEl = buildConsent(up); consentEl.up = up; } if (consentEl && consentEl.hidden !== !want) consentEl.hidden = !want; consentShown = want; }
+  addEventListener("cz-consent", () => { dropConsent(); TRK.consented(); }); // a decision anywhere (here, the map's card, another tab): the question goes, a yes counts the visit
   function mount(el) {
     root = el; root.classList.add("mg");
     TOUCH = matchMedia("(pointer: coarse)").matches || (navigator.maxTouchPoints > 0 && !matchMedia("(pointer: fine)").matches);
@@ -3322,7 +3548,7 @@
     const menu = document.createElement("button"); menu.type = "button"; menu.className = "mg-menu"; menu.setAttribute("aria-label", "Menu");
     menu.innerHTML = '<svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M2 3h12v2H2zM2 7h12v2H2zM2 11h12v2H2z"/></svg>';
     menu.appendChild(pxText("MENU", "#ffffff", 2));
-    menu.onclick = () => { SND.init(); setPause(!paused); menu.blur(); };
+    menu.onclick = () => { SND.init(); if (moves) closeMoves(); else setPause(!paused); menu.blur(); }; // beta 3.64: closes the move list first
     root.appendChild(menu);
     // beta 3.47 (Daniel, QA G3: "no way back to the map on a phone before a fight"): on every other screen (the title,
     // the select, the VS, the result, the rotate screen) the same place holds < MAP, in MENU's style: opened on its own
@@ -3335,21 +3561,23 @@
     // beta 3.47 (QA G4): inside the map's frame (the site's × over the game's top right, or its bottom right while the
     // game is sideways) the CSS keeps the speaker, MENU and MAP clear of both corners
     try { if (window.parent !== window || new URLSearchParams(location.search).get("embed") === "1") root.classList.add("mg-embed"); } catch { root.classList.add("mg-embed"); }
-    if (!TOUCH) { const hint = document.createElement("div"); hint.className = "mg-hint"; hint.appendChild(pxText("ARROWS/WASD MOVE   J/Z PUNCH   K/X KICK   L/C SPECIAL   P PAUSE   ESC MAP", "#a99cc8", 2)); hint.appendChild(pxText("HOLD AWAY TO BLOCK   DOWN+KICK SWEEP   UP JUMP   M SOUND   V SCANLINES", "#6f6496", 2)); root.appendChild(hint); }
+    if (!TOUCH) { const hint = document.createElement("div"); hint.className = "mg-hint"; hint.appendChild(pxText("ARROWS/WASD MOVE   J/Z PUNCH   K/X KICK   L/C SPECIAL   P PAUSE   ESC MAP", "#a99cc8", 2)); hint.appendChild(pxText("HOLD AWAY BLOCK   DOWN+KICK SWEEP   \u2193\u2198\u2192+J EX   \u2192\u2192 DASH   M SOUND   V SCANLINES", "#6f6496", 2)); hint.appendChild(pxText("CHAINS, COMBOS AND EVERYONE'S MOVES: P, THEN MOVES", "#6f6496", 2)); /* beta 3.64 */ root.appendChild(hint); }
     else {
       buildControls();
     }
     // the scanlines: on, unless switched off (V); remembered
     try { if (localStorage.getItem("cz-gloves-crt") === "off") root.classList.add("mg-nocrt"); } catch {}
     addEventListener("keydown", (e) => {
+      if (e.target && e.target.closest && e.target.closest(".mg-ck")) return; // beta 3.64: the keys on the consent question's buttons are theirs
       SND.init();
-      if (e.code === "Escape") { e.preventDefault(); backToMap(); return; }
-      if (e.code === "KeyP") { setPause(!paused); return; }
+      if (e.code === "Escape") { e.preventDefault(); if (moves) closeMoves(); else backToMap(); return; }
+      if (e.code === "KeyP") { if (moves) closeMoves(); else setPause(!paused); return; }
       if (e.code === "KeyM") { SND.toggle(); TRK.ev("gloves_sound_toggle", { sound: SND.on ? "on" : "off" }); return; }
       if (e.code === "KeyV") { const off = root.classList.toggle("mg-nocrt"); try { localStorage.setItem("cz-gloves-crt", off ? "off" : "on"); } catch {} return; }
       const k = KEYMAP[e.code]; if (!k) return;
       e.preventDefault();
-      if (paused) { if (k === "u") pmenu = (pmenu + 2) % 3; else if (k === "d") pmenu = (pmenu + 1) % 3; else if (k === "ok" || k === "p") pausePick(pmenu); if (k === "u" || k === "d") SND.play("select"); return; }
+      if (moves) { if (!e.repeat) press(k); return; } // beta 3.64: the move list takes the keys (any of them closes it)
+      if (paused) { const n = PAUSE_ITEMS.length; if (k === "u") pmenu = (pmenu + n - 1) % n; else if (k === "d") pmenu = (pmenu + 1) % n; else if (k === "ok" || k === "p") pausePick(pmenu); if (k === "u" || k === "d") SND.play("select"); return; }
       if (!e.repeat) press(k);
       if (k === "ok" && g && g.scene === "fight") { /* Enter does nothing in a fight */ }
     });
@@ -3382,6 +3610,7 @@
       draw(now / 1000);
       if (BAKEQ.length) bakeIdle(scene === "game" && g && g.scene === "fight" && g.phase === "fight" ? 3 : 7);
       root.classList.toggle("mg-fight", scene === "game" && !!g && g.scene === "fight" && g.phase !== "match");
+      syncConsent(); // beta 3.64: the game's own consent question, on the title, while it is needed
       if (root.classList.contains("mg-rot")) drawRotate(now / 1000);
       stats.frames++; if (now - stats.t0 >= 1000) { stats.fps = Math.round((stats.frames * 1000) / (now - stats.t0)); stats.frames = 0; stats.t0 = now; }
       requestAnimationFrame(loop);
@@ -3391,9 +3620,9 @@
     try { window.focus(); } catch {}
   }
   // for tests and the review: the state, the frame rate, a shortcut to the end of a round
-  const probe = () => ({ scene: scene === "game" && g ? g.scene : scene, phase: g?.phase, round: g?.round, wins: g?.wins.slice(), hp: g?.f.map((f) => f.hp), st: g?.f.map((f) => f.st), xs: g?.f.map((f) => Math.round(f.x)), ys: g?.f.map((f) => Math.round(f.y)), atk: g?.f.map((f) => (f.atk ? f.atk.name || "sp" : null)), held: Object.assign({}, held), time: g ? Math.ceil(g.time) : null, me: g?.me, cpu: g?.cpu, sel: SEL.p1, selCpu: SEL.cpu, selPhase: SEL.phase, menu: g?.menu, result: g?.result, paused, voucher: g?.voucher?.code || null, sideways: !!SIDEWAYS, rotate: !!(root && root.classList.contains("mg-rot")), fps: stats.fps, maxDt: Math.round(stats.maxDt || 0), sound: SND.on, proj: g ? g.proj.map((p) => p.k) : [], bake: stats.bake, spr: Object.assign({}, stats.spr), lazy: Math.round(stats.lazy), queue: BAKEQ.length, spuse: Object.assign({}, SPUSE), buff: g ? g.f.map((f) => f.buff || 0) : null });
+  const probe = () => ({ scene: scene === "game" && g ? g.scene : scene, phase: g?.phase, round: g?.round, wins: g?.wins.slice(), hp: g?.f.map((f) => f.hp), st: g?.f.map((f) => f.st), xs: g?.f.map((f) => Math.round(f.x)), ys: g?.f.map((f) => Math.round(f.y)), atk: g?.f.map((f) => (f.atk ? f.atk.name || "sp" : null)), held: Object.assign({}, held), time: g ? Math.ceil(g.time) : null, me: g?.me, cpu: g?.cpu, sel: SEL.p1, selCpu: SEL.cpu, selPhase: SEL.phase, menu: g?.menu, result: g?.result, paused, voucher: g?.voucher?.code || null, sideways: !!SIDEWAYS, rotate: !!(root && root.classList.contains("mg-rot")), fps: stats.fps, maxDt: Math.round(stats.maxDt || 0), sound: SND.on, proj: g ? g.proj.map((p) => p.k) : [], bake: stats.bake, spr: Object.assign({}, stats.spr), lazy: Math.round(stats.lazy), queue: BAKEQ.length, spuse: Object.assign({}, SPUSE), combos: Object.assign({}, COMBOS), combo: g?.combo ? g.combo.n : 0, moves: moves ? moves.id : null, consent: consentShown, buff: g ? g.f.map((f) => f.buff || 0) : null });
   const resetMaxDt = () => { stats.maxDt = 0; };
-  let cpuHold = false, autoP1 = false, gapWatch = 0, gapFreeze = false, simFair = false; const SPUSE = { p1: 0, cpu: 0 }; /* the bench: specials used */ const HITLOG = [], GAPLOG = []; // beta 3.32: for the review renders (window.czGloves.hold(true)): the CPU stands in its guard
+  let cpuHold = false, autoP1 = false, gapWatch = 0, gapFreeze = false, simFair = false; const SPUSE = { p1: 0, cpu: 0 }; /* the bench: specials used */ const COMBOS = { p1: 0, cpu: 0, max: 0 }; /* beta 3.64: combos landed (2 hits or more), the longest */ const HITLOG = [], GAPLOG = []; // beta 3.32: for the review renders (window.czGloves.hold(true)): the CPU stands in its guard
   const setHp = (a, b) => { if (g && g.f.length) { g.f[0].hp = g.f[0].trail = a; g.f[1].hp = g.f[1].trail = b; } };
 
   // the art on its own, for review: every sheet as a PNG data URL, scaled with crisp pixels. beta 3.33: the sheets are
@@ -3477,17 +3706,17 @@
     let res;
     try {
       scene = "game"; paused = false; newMatch(me, cpu); g.scene = "fight"; autoP1 = true; botProf = o.p1 && o.p1 !== "cpu" ? BOT[o.p1] : null; simFair = o.fair !== false;
-      let n = 0; SPUSE.p1 = SPUSE.cpu = 0;
+      let n = 0; SPUSE.p1 = SPUSE.cpu = SPUSE.ex = 0; COMBOS.p1 = COMBOS.cpu = COMBOS.max = 0;
       while (g && g.scene !== "result" && n < 60000) { pressed.clear(); if (g.phase === "finish") pressed.add("ok"); step(); n++; }
-      res = { me, cpu, result: g ? g.result : null, wins: g ? g.wins.slice() : null, rounds: g ? g.round : 0, ticks: n, sp: Object.assign({}, SPUSE) };
+      res = { me, cpu, result: g ? g.result : null, wins: g ? g.wins.slice() : null, rounds: g ? g.round : 0, ticks: n, sp: Object.assign({}, SPUSE), combos: Object.assign({}, COMBOS) };
     } finally { Math.random = keep.rnd; scene = keep.scene; g = keep.g; autoP1 = keep.autoP1; botProf = keep.botProf; simFair = keep.simFair; paused = keep.paused; }
     return res;
   }
   const eyeProbe = () => { const out = {}; for (const id of ["dony"]) { const S = sprites(id); S.special.forEach((im, i) => { const x = im.getContext("2d"), d = new Uint32Array(x.getImageData(0, 0, im.width, im.height).data.buffer), G = u32("#fbfdff"), pts = []; for (let k = 0; k < d.length; k++) if (d[k] === G) pts.push([(k % im.width) - im.ax, ((k / im.width) | 0) - im.ay]); out[id + i] = pts; }); } return out; }; // beta 3.49: where Dony's glint is (the laser's origin), for the tuning
   const endingAt = (ts, res = "win") => { while (BAKEQ.length) { const j = BAKEQ.shift(); if (j() === "again") BAKEQ.unshift(j); } RARES_SEQ.forEach((e) => endFrame("rares", e[1], e[2] ? "cup" : null)); const [c, x] = mk(W, H); x.imageSmoothingEnabled = false; const g0 = g, h0 = hits; g = { result: res, me: "daniel", cpu: "ion", wins: [2, 1], menu: 0, voucher: { code: "TM-K7QX-1910", date: "19.10.2026  14:32" } }; const out = ts.map((t) => { hits = []; drawResult(x, t); return c.toDataURL("image/png"); }); g = g0; hits = h0; return out; }; // beta 3.49: the ending at chosen moments, for the review
-  const tune = (o) => { for (const [id, v] of Object.entries(o.roster || {})) Object.assign(ROSTER[id], v); for (const [id, v] of Object.entries(o.ai || {})) AI_PROF[id] = Object.assign(AI_PROF[id] || {}, v); for (const [id, v] of Object.entries(o.special || {})) Object.assign(SPECIAL[id], v); ATKS.clear(); return { roster: ROSTER, ai: AI_PROF }; }; // the bench's knobs (the review only)
+  const tune = (o) => { for (const k in EXS) delete EXS[k]; for (const [id, v] of Object.entries(o.bot || {})) Object.assign(BOT[id], v); for (const [id, v] of Object.entries(o.roster || {})) Object.assign(ROSTER[id], v); for (const [id, v] of Object.entries(o.ai || {})) AI_PROF[id] = Object.assign(AI_PROF[id] || {}, v); for (const [id, v] of Object.entries(o.special || {})) Object.assign(SPECIAL[id], v); ATKS.clear(); return { roster: ROSTER, ai: AI_PROF }; }; // the bench's knobs (the review only)
   window.czGloves = Object.assign(window.czGloves || {}, { sim, eyeProbe, endingAt, tune, mount, exportArt, measure, probe, setHp, resetMaxDt, frame: (id, k, i = 0) => { const f = sprites(id)[k][i]; return f.toDataURL("image/png"); }, endFrame: (id) => endFrame(id).toDataURL("image/png"), // beta 3.57: one baked drawing, for the QA
-hold: (v) => { cpuHold = !!v; }, auto: (v) => { autoP1 = !!v; }, hits: () => HITLOG.splice(0), fxKinds: () => (g ? g.fx.map((e) => e.k) : []), gapWatch: (th, freeze) => { gapWatch = th; gapFreeze = !!freeze; }, gaps: () => GAPLOG.splice(0), unfreeze: () => { if (g) g.frozen = false; }, fxPos: () => (g ? { proj: g.proj.map((p) => [p.k, Math.round((p.x - g.camX) * RS), Math.round((p.y + FLOOR) * RS)]), fx: g.fx.filter((e) => e.k !== "stack" && e.k !== "ghost").map((e) => [e.k, Math.round((e.x - g.camX) * RS), Math.round((e.y + FLOOR) * RS), e.t]) } : null), minGap: () => { const v = stats.minGap; stats.minGap = null; return v == null ? null : Math.round(v * 10) / 10; } });
+hold: (v) => { cpuHold = v === "crouch" || v === "block" ? v : !!v; }, auto: (v) => { autoP1 = !!v; }, hits: () => HITLOG.splice(0), fxKinds: () => (g ? g.fx.map((e) => e.k) : []), gapWatch: (th, freeze) => { gapWatch = th; gapFreeze = !!freeze; }, gaps: () => GAPLOG.splice(0), unfreeze: () => { if (g) g.frozen = false; }, fxPos: () => (g ? { proj: g.proj.map((p) => [p.k, Math.round((p.x - g.camX) * RS), Math.round((p.y + FLOOR) * RS)]), fx: g.fx.filter((e) => e.k !== "stack" && e.k !== "ghost").map((e) => [e.k, Math.round((e.x - g.camX) * RS), Math.round((e.y + FLOOR) * RS), e.t]) } : null), minGap: () => { const v = stats.minGap; stats.minGap = null; return v == null ? null : Math.round(v * 10) / 10; } });
   const auto = () => { const el = document.getElementById("mg"); if (el && !root) mount(el); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", auto); else auto();
 })();
