@@ -43,6 +43,8 @@ var ONB=/[?&]onb(&|$)/.test(location.search);/* r140: the city inside /onboardin
 var EMB=ONB||/[?&]embed=1/.test(location.search)||document.documentElement.classList.contains("embed");
 function get(){try{return localStorage.getItem(K)}catch(e){var m=document.cookie.match(/(?:^|; )cz-consent=(\\w+)/);return m&&m[1]}}
 function set(v){try{localStorage.setItem(K,v)}catch(e){}document.cookie="cz-consent="+v+";path=/;max-age=15552000;SameSite=Lax"}
+/* beta 3.60 r222c: on the 3D map ("/", English UI) a visitor who reads the website in Romanian gets the card in Romanian (cz-lang, build/footer.mjs) */
+function lsRo(){try{return localStorage.getItem("cz-lang")==="ro"}catch(e){return false}}
 function ga(){if(window.__czGA)return;window.__czGA=1;window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};
 gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"granted"});
 gtag("js",new Date());var go=function(){if(go.d)return;go.d=1;gtag("config",ID,{anonymize_ip:true});var s=document.createElement("script");s.async=1;s.src="https://www.googletagmanager.com/gtag/js?id="+ID;document.head.appendChild(s);
@@ -50,7 +52,7 @@ if(GTM){dataLayer.push({"gtm.start":new Date().getTime(),event:"gtm.js"});var g=
 /* visits from the studio's own network are marked internal (GA4 data filter) */
 try{fetch("/api/ctx",{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.internal)gtag("set",{traffic_type:"internal"});go()}).catch(go);setTimeout(go,1200)}catch(e){go()}}
 function oai(){if(!OAI||window.__czOAI)return;window.__czOAI=1;window.oaiq=window.oaiq||function(){(window.oaiq.q=window.oaiq.q||[]).push(arguments)};oaiq("init",{pixelId:OAI});var s=document.createElement("script");s.async=1;s.src="https://bzrcdn.openai.com/sdk/oaiq.min.js";document.head.appendChild(s)}
-function ask(force){if(document.getElementById("cz-ck"))return;var ro=(document.documentElement.lang||"").slice(0,2)==="ro";
+function ask(force){if(document.getElementById("cz-ck"))return;var ro=(document.documentElement.lang||"").slice(0,2)==="ro"||(location.pathname==="/"&&lsRo());
 var d=document.createElement("div");d.id="cz-ck";d.setAttribute("role","dialog");d.setAttribute("aria-label",ro?"Cookie-uri":"Cookies");
 d.innerHTML='<span class="ck-cup" aria-hidden="true"></span><b>'+(ro?"Un cookie la cafea?":"A cookie with your coffee?")+'</b><p>'+(ro?"Statistici de vizitare prin Google Analytics și măsurarea reclamelor, ca să știm ce merge. ":"Visit statistics with Google Analytics and ad measurement, so we know what works. ")+'</p><div class="ck-row"><button type="button" class="ck-yes">'+(ro?"Da, sigur":"Sure")+'</button><button type="button" class="ck-no">'+(ro?"Nu, mersi":"No, thanks")+"</button></div>";
 /* r139c (audit N50): the privacy link is made with DOM calls, so the page source holds no half-built href that crawlers report as a 404 */
