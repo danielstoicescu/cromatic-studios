@@ -14,20 +14,26 @@ Pozele sunt în `design/qa/sketchbook-2026-10-19/`.
 ## Pe scurt
 
 1. **Pe laptop (M4), Sketchbook nu e lent.** Merge la ~60 fps în aproape toate scenele, ca și Cromatic. Un frame costă de vreo 1,3-1,5 ori mai mult decât în Cromatic: 7,2 față de 6,6 ms pe hartă, CPU și GPU împreună.
-2. **Costul suplimentar e în GPU și ține de look:**
+2. **Pe un telefon cu CPU lent, Sketchbook are jumătate din fps-ul Cromatic.** Pe Chromium cu CPU-ul încetinit de 4 ori: 10-26 fps față de 21-45. Fiecare frame cere cu 15-20 ms mai mult CPU:
+   - trecerea de contur, ~5,3 ms: parcurge și decupează din nou toată scena și schimbă materialul a ~4.800 de obiecte;
+   - trecerea de culoare, +3 ms;
+   - restul JS-ului de Sketchbook, ~7 ms.
+
+   Frustum culling-ul ia de 4 ori mai mult (140 față de 35 ms pe secundă). Aici e „neutilizabil"-ul de pe un telefon mai slab.
+3. **Costul suplimentar pe GPU ține de look:**
    - trei treceri în loc de două (scena, conturul de creion, post-procesarea);
    - **5,5 milioane de triunghiuri pe frame** față de 0,9 milioane;
    - **2,2 milioane dintre ele sunt coroanele copacilor** (sfere de 520 de triunghiuri, toate ~4.300 desenate în fiecare trecere, fiindcă un InstancedMesh se decupează doar întreg).
    - Pe un iPhone, cu un GPU de ~3 ori mai slab decât M4-ul, asta înseamnă cam 20-30 ms pe frame (35-50 fps, estimat). Rezoluția adaptivă coboară atunci la 1x, iar liniile de creion se văd moi și pixelate.
-3. **În WebKit (Safari), harta de „reveal" costă ~2,7 ms la fiecare upload, chiar pe M4.** E o pânză 2D de 512², urcată ca textură la fiecare trăsătură: de ~11 ori pe secundă când stai pe loc și de până la ~33 de ori când miști pointerul sau degetul. Rezultatul e o sacadare la câteva frame-uri. În Chromium costul e ~0.
-4. **Prima trecere în Sketchbook îngheață pagina 120-160 ms pe laptop și 280-380 ms în WebKit.** Cauza e `crayonTextures()`, adică pânzele de ceară generate procedural, de câte ori se deschide o vizită. Întoarcerea în Cromatic durează 6-17 ms.
-5. **Stratul de CSS al Sketchbook-ului nu costă nimic măsurabil.** Am cronometrat cu filtre, măști și animații de ceară puse și scoase, pe rând:
+4. **În WebKit (Safari), harta de „reveal" costă ~2,7 ms la fiecare upload, chiar pe M4.** E o pânză 2D de 512², urcată ca textură la fiecare trăsătură: de ~11 ori pe secundă când stai pe loc și de până la ~33 de ori când miști pointerul sau degetul. Rezultatul e o sacadare la câteva frame-uri. În Chromium costul e ~0.
+5. **Prima trecere în Sketchbook îngheață pagina 120-160 ms pe laptop și 280-380 ms în WebKit.** Cauza e `crayonTextures()`, adică pânzele de ceară generate procedural, de câte ori se deschide o vizită. Întoarcerea în Cromatic durează 6-17 ms.
+6. **Stratul de CSS al Sketchbook-ului nu costă nimic măsurabil.** Am cronometrat cu filtre, măști și animații de ceară puse și scoase, pe rând:
    - în Chromium (trace, CPU încetinit de 4 ori), stilul și paint-ul sunt la fel ca în Cromatic;
    - în WebKit, diferențele dintre variante sunt sub zgomot;
    - DOM-ul care se schimbă la fiecare frame (pinii, distanțele din Nearby, săgețile n2) nu are niciun filtru CSS pe el.
 
    Pe un telefon încetinit, firul principal e plin în ambele lumi, din cauze care nu țin de Sketchbook (vezi „În toate lumile").
-6. **„Neutilizabil" e mai ales vizual și pe telefon.** Detaliile sunt mai jos:
+7. **„Neutilizabil" e și vizual, pe telefon mai ales.** Detaliile sunt mai jos:
    - Street view e închis la culoare și cețos;
    - orașul e alb unde nu „ai privit" încă;
    - butoanele principale nu au culoare pe touch;
@@ -35,7 +41,7 @@ Pozele sunt în `design/qa/sketchbook-2026-10-19/`.
    - Multiverse are text alb pe gri.
 
    Toate țin de look și sunt notate pentru revamp, nereparate aici.
-7. **Bug funcțional găsit (în toate lumile), reparat în 3.75:** pe telefon, cardul Two Minutes apărea peste boarding pass, dacă pass-ul se deschidea în cele 1,9 s în care cardul așteaptă după espresso. Poza 05.
+8. **Bug funcțional găsit (în toate lumile), reparat în 3.75:** pe telefon, cardul Two Minutes apărea peste boarding pass, dacă pass-ul se deschidea în cele 1,9 s în care cardul așteaptă după espresso. Poza 05.
 
 ## Pe ce și cum am măsurat
 
@@ -123,7 +129,44 @@ Firul principal (Chromium, CPU încetinit de 4 ori, iPhone, ms pe secundă de sc
 | Hover CTA, Cromatic | 55 | 46 | – | 1005 |
 | Hover CTA, Sketchbook | 46 | 17 | – | 837 |
 
-Pe un telefon lent, firul principal e la limită în ambele lumi. Sketchbook nu adaugă stil sau paint măsurabil.
+Pe un telefon lent, firul principal e la limită în ambele lumi. Sketchbook nu adaugă stil sau paint măsurabil: în plus e JS-ul frame-ului.
+
+CPU pe trecere (Chromium, CPU încetinit de 4 ori, pixel ratio 1,5, p50 în ms; `renderer.render` cronometrat):
+
+| | Trecerea de culoare (cu umbrele) | Trecerea de contur | Post-procesarea | Tot JS-ul din rAF |
+|---|---|---|---|---|
+| Cromatic, hartă | 8,6 | – | 0 | 11,7 |
+| Sketchbook, hartă | 11,6 | 5,3 | 0,1 | 27,5 |
+| Cromatic, condus | 9,9 | – | 0,1 | 27,4 |
+| Sketchbook, condus | 11,0 | 5,2 | 0,1 | 48,5 |
+
+Profilul CPU (aceeași mașină, hartă în repaus, ms pe secundă, self time):
+
+| | Cromatic | Sketchbook |
+|---|---|---|
+| `Frustum.intersectsSphere` | 35 | 140 |
+| `Object3D.updateMatrixWorld` | 91 | 98 |
+| `projectObject` | 39 | 66 |
+| Contur: `traverseVisible`, plus schimbatul și restaurarea materialelor | – | ~95 |
+
+Din cele 2.743 de mesh-uri vizibile, 1.566 nu trec de layer-ul camerei: sunt originalele deja unite în batch-uri (r198) și ce taie n2 în depărtare, rămase `visible` cu `layers.mask = 0`. Trecerea de contur le schimbă oricum materialul la fiecare frame (`traverseVisible` nu se uită la layere), deși nu se desenează. Asta e de reparat în 3.77, dacă look-ul nou păstrează OutlineEffect: obiectele care nu trec de `layers.test` să nu primească material de contur. Rezultatul ar fi identic, cu mult mai puțin CPU.
+
+fps cu pixel ratio blocat la 1,5, pe profilurile de telefon (rundă din aceeași zi; în WebKit, zgomotul de la alți agenți a fost mare: un A/B repetat imediat după a dat 60 fps pe hartă și la pan, în ambele lumi, așa că cifrele WebKit arată tendința, nu nivelul):
+
+| Scena | iPhone WebKit, Cromatic | iPhone WebKit, Sketchbook | Telefon încetinit, Cromatic | Telefon încetinit, Sketchbook |
+|---|---|---|---|---|
+| Hartă în repaus | 59 | 31 | 38 | 26 |
+| Pan și zoom | 60 | 8 | 35 | 19 |
+| Condus cu săgețile | 60 | 15 | 25 | 11 |
+| Drift | 59 | 35 | 25 | 13 |
+| Urmărirea poliției | 59 | 29 | 21 | 10 |
+| Street view la volan | 60 | 44 | 24 | 21 |
+| Card deschis | 60 | 35 | 36 | 16 |
+| Hover pe CTA | 61 | 34 | 45 | 25 |
+| Nearby, condus | 55 | 39 | 32 | 19 |
+| Boarding pass | 58 | 45 | 51 | 46 |
+
+Pe telefonul încetinit, long task-urile din 7 s de pan au însumat 0,6 s în Cromatic și 7,2 s în Sketchbook: practic tot timpul.
 
 Schimbarea lumii (long task la clic):
 
