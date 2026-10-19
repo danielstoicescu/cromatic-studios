@@ -1,7 +1,7 @@
 // lottie-ui piece 3: the map to the website and back, across a navigation (LOCAL): the map's "Normal website" closes
 // into a pill on the paper, /site/ opens out of it; the website's "Take the 3D drive" closes into the pill, the map's
 // loader takes it from there. Screencast (chromium) + timings. DEV=desktop|pixel
-import { ctxFor, waitMap, sleep, closeAll, BASE, cast, castMp4, Q } from "./.x-lui-lib.mjs";
+import { ctxFor, waitMap, sleep, closeAll, BASE, cast, castMp4, Q } from "./lib.mjs";
 const kind = process.env.DEV || "desktop", tag = process.env.TAG || "pill2";
 const { page, log } = await ctxFor(kind, { consent: "yes2" });
 await page.goto(BASE + "/?map", { waitUntil: "domcontentloaded" });

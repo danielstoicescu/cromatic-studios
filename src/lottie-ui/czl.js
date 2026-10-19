@@ -10,7 +10,7 @@
      czL.ro()     the visitor reads the site in Romanian (the page's language, or on the map the language it remembers)
      czL.warm(names) fetches the player and the data ahead of time */
 (function () {
-  if (window.czL) return;
+  if (window.czL || window.__czL === false) return; // (__czL = false: the whole layer off, for an A/B)
   var C = window.__CZL_CFG || {};
   var libP = null, dataP = {};
   var rm = function () { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } };

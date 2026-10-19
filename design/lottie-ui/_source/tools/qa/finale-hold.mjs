@@ -2,7 +2,7 @@
 // second, the main thread's time in animation frames a second (and CDP TaskDuration on chromium), with the pause on and
 // off (window.__czNoHold); then Back to the map: frames drawn before the clouds open (must be > 0), stills of the opening.
 // LOCAL ONLY (fake QA data). DEV=desktop|iphone|pixel
-import { ctxFor, waitMap, shot, sleep, closeAll, BASE, tapSel, openAndFillPass, throttle } from "./.x-lui-lib.mjs";
+import { ctxFor, waitMap, shot, sleep, closeAll, BASE, tapSel, openAndFillPass, throttle } from "./lib.mjs";
 if (!/localhost|127\.0\.0\.1/.test(BASE)) process.exit(1);
 const kind = process.env.DEV || "desktop", tag = process.env.TAG || "hold", phone = kind !== "desktop" && kind !== "laptop";
 const { ctx, page, log } = await ctxFor(kind, { consent: "yes2" });

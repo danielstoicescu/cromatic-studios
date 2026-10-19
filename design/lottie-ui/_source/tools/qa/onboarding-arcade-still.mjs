@@ -1,6 +1,6 @@
 // lottie-ui piece 2: the stills of /onboarding/'s new arcade step (z/drive-4): the live city at the step's camera, alone
 // (for reduced motion, no WebGL, or until the live city is there). DEV=desktop|pixel
-import { ctxFor, sleep, closeAll, BASE } from "./.x-lui-lib.mjs";
+import { ctxFor, sleep, closeAll, BASE } from "./lib.mjs";
 import { createRequire } from "module"; const require = createRequire(import.meta.url);
 const sharp = require("/Users/daniel.stoic/cromatic-lottie-ui/node_modules/sharp");
 const kind = process.env.DEV || "desktop", m = kind !== "desktop";

@@ -1,156 +1,142 @@
 {
- "stamp-en": {
-  "kb": 24.1,
-  "brKb": 2.3,
-  "layers": 14,
-  "frames": 46,
-  "size": "393x214"
- },
- "stamp-ro": {
-  "kb": 24.5,
-  "brKb": 2.3,
-  "layers": 14,
-  "frames": 46,
-  "size": "408x214"
- },
- "finale-desktop": {
-  "kb": 154.3,
-  "brKb": 7.6,
-  "layers": 60,
-  "frames": 247,
-  "size": "1440x900"
- },
- "finale-phone": {
-  "kb": 103.3,
-  "brKb": 5.5,
-  "layers": 46,
-  "frames": 247,
-  "size": "390x844"
- },
- "onb-drive-keys-light": {
-  "kb": 65.4,
-  "brKb": 5.1,
-  "layers": 11,
-  "frames": 330,
-  "size": "420x168"
- },
- "onb-drive-stick-light": {
-  "kb": 60.5,
-  "brKb": 4,
-  "layers": 15,
-  "frames": 330,
-  "size": "420x168"
- },
- "onb-drive-keys-dark": {
-  "kb": 65.4,
-  "brKb": 5.2,
-  "layers": 11,
-  "frames": 330,
-  "size": "420x168"
- },
- "onb-drive-stick-dark": {
-  "kb": 60.5,
-  "brKb": 4,
-  "layers": 15,
-  "frames": 330,
-  "size": "420x168"
- },
- "onb-views-key-light": {
-  "kb": 216.7,
-  "brKb": 13.9,
-  "layers": 13,
-  "frames": 300,
-  "size": "420x168"
- },
- "onb-views-tap-light": {
-  "kb": 215.4,
-  "brKb": 13.8,
-  "layers": 14,
-  "frames": 300,
-  "size": "420x168"
- },
- "onb-views-key-dark": {
-  "kb": 216.7,
-  "brKb": 13.9,
-  "layers": 13,
-  "frames": 300,
-  "size": "420x168"
- },
- "onb-views-tap-dark": {
-  "kb": 215.4,
-  "brKb": 13.8,
-  "layers": 14,
-  "frames": 300,
-  "size": "420x168"
- },
- "onb-places-light": {
-  "kb": 123.8,
-  "brKb": 7.9,
-  "layers": 16,
-  "frames": 330,
-  "size": "420x168"
- },
- "onb-places-dark": {
-  "kb": 123.9,
-  "brKb": 7.9,
-  "layers": 16,
-  "frames": 330,
-  "size": "420x168"
- },
- "onb-worlds-light": {
-  "kb": 99.5,
-  "brKb": 5.1,
-  "layers": 43,
-  "frames": 300,
-  "size": "420x150"
- },
- "onb-game-light-en": {
-  "kb": 80.4,
-  "brKb": 3.6,
-  "layers": 14,
-  "frames": 300,
-  "size": "420x150"
- },
- "onb-game-light-ro": {
-  "kb": 81.1,
-  "brKb": 3.6,
-  "layers": 14,
-  "frames": 300,
-  "size": "420x150"
- },
- "onb-worlds-dark": {
-  "kb": 99.5,
-  "brKb": 5.1,
-  "layers": 43,
-  "frames": 300,
-  "size": "420x150"
- },
- "onb-game-dark-en": {
-  "kb": 80.4,
-  "brKb": 3.6,
-  "layers": 14,
-  "frames": 300,
-  "size": "420x150"
- },
- "onb-game-dark-ro": {
-  "kb": 81.1,
-  "brKb": 3.6,
-  "layers": 14,
-  "frames": 300,
-  "size": "420x150"
- },
- "window-desktop": {
-  "kb": 48.7,
-  "brKb": 1.9,
-  "layers": 5,
-  "frames": 59,
-  "size": "1440x900"
- },
- "window-phone": {
-  "kb": 49.1,
-  "brKb": 1.9,
-  "layers": 5,
-  "frames": 59,
-  "size": "390x844"
- }
+  "stamp-en": {
+    "kb": 24.1,
+    "brKb": 2.3,
+    "layers": 14,
+    "frames": 46,
+    "size": "393x214"
+  },
+  "stamp-ro": {
+    "kb": 24.5,
+    "brKb": 2.3,
+    "layers": 14,
+    "frames": 46,
+    "size": "408x214"
+  },
+  "finale-desktop": {
+    "kb": 154.3,
+    "brKb": 7.6,
+    "layers": 60,
+    "frames": 247,
+    "size": "1440x900"
+  },
+  "finale-phone": {
+    "kb": 103.3,
+    "brKb": 5.5,
+    "layers": 46,
+    "frames": 247,
+    "size": "390x844"
+  },
+  "onb-drive-keys-light": {
+    "kb": 65.4,
+    "brKb": 5.1,
+    "layers": 11,
+    "frames": 330,
+    "size": "420x168"
+  },
+  "onb-drive-stick-light": {
+    "kb": 60.5,
+    "brKb": 4,
+    "layers": 15,
+    "frames": 330,
+    "size": "420x168"
+  },
+  "onb-drive-keys-dark": {
+    "kb": 65.4,
+    "brKb": 5.2,
+    "layers": 11,
+    "frames": 330,
+    "size": "420x168"
+  },
+  "onb-drive-stick-dark": {
+    "kb": 60.5,
+    "brKb": 4,
+    "layers": 15,
+    "frames": 330,
+    "size": "420x168"
+  },
+  "onb-views-key-light": {
+    "kb": 216.7,
+    "brKb": 13.9,
+    "layers": 13,
+    "frames": 300,
+    "size": "420x168"
+  },
+  "onb-views-tap-light": {
+    "kb": 215.4,
+    "brKb": 13.8,
+    "layers": 14,
+    "frames": 300,
+    "size": "420x168"
+  },
+  "onb-views-key-dark": {
+    "kb": 216.7,
+    "brKb": 13.9,
+    "layers": 13,
+    "frames": 300,
+    "size": "420x168"
+  },
+  "onb-views-tap-dark": {
+    "kb": 215.4,
+    "brKb": 13.8,
+    "layers": 14,
+    "frames": 300,
+    "size": "420x168"
+  },
+  "onb-places-light": {
+    "kb": 123.8,
+    "brKb": 7.9,
+    "layers": 16,
+    "frames": 330,
+    "size": "420x168"
+  },
+  "onb-places-dark": {
+    "kb": 123.9,
+    "brKb": 7.9,
+    "layers": 16,
+    "frames": 330,
+    "size": "420x168"
+  },
+  "onb-worlds-light": {
+    "kb": 99.5,
+    "brKb": 5.1,
+    "layers": 43,
+    "frames": 300,
+    "size": "420x150"
+  },
+  "onb-game-light-en": {
+    "kb": 80.4,
+    "brKb": 3.6,
+    "layers": 14,
+    "frames": 300,
+    "size": "420x150"
+  },
+  "onb-game-light-ro": {
+    "kb": 81.1,
+    "brKb": 3.6,
+    "layers": 14,
+    "frames": 300,
+    "size": "420x150"
+  },
+  "onb-worlds-dark": {
+    "kb": 99.5,
+    "brKb": 5.1,
+    "layers": 43,
+    "frames": 300,
+    "size": "420x150"
+  },
+  "onb-game-dark-en": {
+    "kb": 80.4,
+    "brKb": 3.6,
+    "layers": 14,
+    "frames": 300,
+    "size": "420x150"
+  },
+  "onb-game-dark-ro": {
+    "kb": 81.1,
+    "brKb": 3.6,
+    "layers": 14,
+    "frames": 300,
+    "size": "420x150"
+  }
 }

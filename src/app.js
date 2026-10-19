@@ -34428,7 +34428,7 @@ void main() {
       let pushed = false, popping = false, baseUrl = null;
       // r161 (Daniel: share a project): while a case page is open its own address is in the bar (/work/<page>/),
       // so it can be copied or shared, and opening that link serves the page itself, with no city behind it
-      const frameUrl = () => { const f = document.querySelector(".case-frame:not(.hidden)"); return f?._url ? new URL(f._url, location.origin).href : null; };
+      const frameUrl = () => { const f = document.querySelector(".case-frame:not(.hidden)"); return f?._url && !f._czClosing ? new URL(f._url, location.origin).href : null; }; // r235: not while it shrinks back into its pill (Back would put its address back)
       // r126: every panel counts: crew, human, rides, world menu, map card, boarding pass
       const panelsOpen = () => ovOpen() || !!document.querySelector(".crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:not(.hidden), .map-card:not(.hidden)") || document.body.classList.contains("map-boarding") || document.body.classList.contains("hud-world-open");
       const closeAll = () => {
@@ -34442,7 +34442,7 @@ void main() {
       window.__closeAllOverlays = closeAll;
       setInterval(() => {
         const on = panelsOpen();
-        if (on && !pushed) { pushed = true; baseUrl = location.href; try { history.pushState({ czOverlay: 1 }, "", frameUrl() || baseUrl); } catch {} }
+        if (on && !pushed) { pushed = true; popping = false; baseUrl = location.href; try { history.pushState({ czOverlay: 1 }, "", frameUrl() || baseUrl); } catch {} } // r235: a new step is a new step (after a Back that left the place card open, the next page's address never came)
         else if (on && pushed && !popping) { const want = frameUrl() || baseUrl; if (want && location.href !== want) { try { history.replaceState(history.state, "", want); } catch {} } } // r161
         else if (!on && pushed) { pushed = false; if (!popping) { try { if (history.state?.czOverlay) history.back(); } catch {} } popping = false; }
       }, 250);
@@ -34597,6 +34597,10 @@ void main() {
     // the Steam case study page, full screen, closed with a big button top-right
     const caseFrame = el("div", "case-frame hidden");
     caseFrame.innerHTML = `<button class="cf-share" aria-label="Share this project"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg><span>Share</span></button><button class="cf-close" aria-label="Close">\u00D7</button><iframe class="cf-iframe" title="Steam \u2014 Cromatic Studios"></iframe>`;
+    // r235: the page sits in four nested boxes that cut its pill when it grows out of a button (src/lottie-ui/pill.js;
+    // at rest they are the screen and cut nothing). Made here, before the frame has ever loaded a page (moving an iframe
+    // reloads it)
+    { const w = caseFrame.innerHTML; caseFrame.innerHTML = `<div class="cf-w"><div class="cf-w"><div class="cf-w"><div class="cf-w"><div class="cf-in">${w}</div></div></div></div></div>`; }
     root.appendChild(caseFrame);
     // r135c: closing a page really closes it: the frame is swapped for an empty one, so no film keeps playing behind the map
     const blankFrame = () => {
@@ -38930,6 +38934,7 @@ void main() {
       function cityCovered() {
         if (!coverEls) coverEls = [...document.querySelectorAll(".case-frame, .scf-modal")];
         for (const c of coverEls) {
+          if (c._czCover) return true; // r235: a case page growing out of its button (pill.js): the city rests meanwhile, the page loads first
           if (c.classList.contains("hidden") || c.style.opacity || c.style.clipPath) continue;
           if (c.getAnimations().length) continue;
           return true;
