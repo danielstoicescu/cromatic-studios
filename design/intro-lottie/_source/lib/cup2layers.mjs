@@ -238,13 +238,24 @@ function cupLayers(P, S, keys, { design, world, patternLayer = null, still = nul
       ringFill
     ], { p: kk(rk, (e) => S.to([e.cx, e.cy])), r: kk(rk, (e) => r1((-e.rot * 180) / Math.PI)) })
   ];
-  // (the handle drawn once, in a precomp of its own the size and length of this one, placed twice with the two masks)
+  // (the handle drawn once, in a precomp of its own the size and length of this one, placed twice)
+  // 3.7x (the worker's frame, Daniel's phone): the copy in front is there only while the original shows part of the
+  // handle in front (between two keys either of which has it: its mask grows from a point and back); the rest of the
+  // time its mask was a point and it drew nothing, at the cost of a whole handle and a clip. (The copy behind keeps its
+  // mask: under the body unmasked it would show through the body while a cup fades out, each layer see-through)
   if (Cm) {
     const HP = new Comp({ w: S.W, h: S.H, dur: P.op / FPS, nm: `${id} · handle` }); HP.op = P.op;
     HP.shape("handle", handleGroups(), {});
     Cm.assets.push({ id: `${id} · handle`, nm: `${id} · handle`, fr: FPS, layers: HP.layers });
     const pre = { id: `${id} · handle`, w: S.W, h: S.H };
-    preLayer(P, pre, { nm: "handle · in front", masks: [seenMask] });
+    const wins = [];
+    for (let i = 0; i < hk.length; i++) {
+      const on = hk.length === 1 ? !!hk[0].mask : i < hk.length - 1 ? !!(hk[i].mask || hk[i + 1].mask) : !!hk[i].mask;
+      if (!on) continue;
+      const a = hk[i].t, b = i < hk.length - 1 ? hk[i + 1].t : P.op;
+      if (wins.length && wins[wins.length - 1][1] >= a) wins[wins.length - 1][1] = b; else wins.push([a, b]);
+    }
+    for (const [a, b] of wins) preLayer(P, pre, { nm: "handle · in front", masks: [seenMask], ip: Math.max(0, Math.floor(a)), op: Math.min(P.op, Math.ceil(b) + 1) });
     preLayer(P, pre, { nm: "handle", masks: [outsideCup] });
   } else {
     P.shape("handle · in front", handleGroups(), { parent: root, masks: [seenMask] });

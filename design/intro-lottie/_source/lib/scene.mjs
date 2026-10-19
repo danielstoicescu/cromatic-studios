@@ -84,11 +84,17 @@ export function makeScene(T, ab, { dur, nm, camKeys = [[0, [0, 0]]] } = {}) {
   const lines = (lnm, ws, { size = S, color = C.black, inAt, outAt, letterGap = 1, ip = 0, op, dur: d, outDur }) => {
     const byLine = new Map(); ws.forEach((w, i) => { if (!byLine.has(w.line)) byLine.set(w.line, []); byLine.get(w.line).push([w, i]); });
     for (const [li, items] of byLine) {
+      // (3.7x, the worker's frame: a line is a layer only while a letter of it can be seen. Before its first letter
+      // rises it is all below its clip, after its last has gone all above: a layer there still cost its clip and its
+      // letters' keys every frame of the opening, the pill's included)
+      let first = Infinity, last = -Infinity;
       const groups = items.map(([w, i]) => {
         const t0 = inAt(i, w), te = outAt ? outAt(i, w) : null;
+        first = Math.min(first, t0); last = te == null ? Infinity : Math.max(last, te + (w.letters.length - 1) * 0.6 + (outDur ?? 16));
         return group(w.text, w.letters.map((L, j) => letterAt(L, w.lx, w.by, size, color, riseKeys(t0 + j * letterGap, te == null ? null : te + j * 0.6, size, { dur: d, outDur }))));
       });
-      Cm.shape(`${lnm} · line ${li + 1}`, groups, { ip, op: op ?? Cm.op, parent: PT, masks: [lineClip(items.map(([w]) => w), size)] });
+      const lip = Math.max(ip, Math.floor(first) - 1), lop = op ?? (Number.isFinite(last) ? Math.min(Cm.op, Math.ceil(last) + 2) : Cm.op);
+      Cm.shape(`${lnm} · line ${li + 1}`, groups, { ip: lip, op: lop, parent: PT, masks: [lineClip(items.map(([w]) => w), size)] });
     }
   };
   // the slot pill (A2's): its word and colour change like a flip display; it starts as a dot and leaves as one or fades

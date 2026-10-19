@@ -117,7 +117,8 @@ export function buildNineCups2(T, ab) {
   for (const c of byDepth) {
     const isMid = c.n === MID, rank = rankOf(c), P0 = at0(c), Pm = at0(mid);
     const ti = isMid ? tLand : tDeal + rank * 3;
-    const lop = isMid ? tFly + 11 : goAt(c) + 34;
+    // (3.7x: an outer cup's layers end as it has faded, at goAt + 24: they were there, see-through, 10 frames more)
+    const lop = isMid ? tFly + 11 : goAt(c) + 25;
     // the cup's null: its base on the screen, its scale, its turn in the plane (dealt spinning, rocking as it spins)
     const pK = isMid
       ? [[tLand, P0, E.hold], [tCome, P0, [0.5, 0, 0.25, 1]], [tUp + 6, add2(fwdAt, rimOff(k * cupFwd)), E.hold]]

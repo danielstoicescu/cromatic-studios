@@ -19,7 +19,13 @@
    readers and the largest paint. A returning visitor and reduced motion get the brand line over the pill.
    beta 3.77 (Daniel: over the pill the line "reads as an overlap"; on a phone "the right brand" ran edge to edge): that
    line is the pill's headline, one lockup with it: two lines, centred, half the pill's height clear above it, at a size
-   that leaves wide margins (never less than 24 px a side) and is still the largest paint. */
+   that leaves wide margins (never less than 24 px a side) and is still the largest paint.
+   3.7x (QA: "the stutter Daniel felt is mostly the opening"): the page's thread no longer stands between the opening and
+   its frames. The data goes to the worker as bytes (moved, not copied) and is parsed there; the worker starts its first
+   segment as soon as it has built it, with the hold queued behind it (words + hold, or the pill + hold: lottie plays a
+   list of segments back to back, the hold looping), so a busy page (the city's boot) can no longer stop it between
+   segments. The page only decides the end (the window), as before on the map's first frame. A returning visitor loads
+   the pill alone (intro-*-pill.json, 8 KB against 130). On a phone the canvas is at most 1.5x. */
 (function () {
   var C = window.__CZI_CFG; if (!C) return;
   var q = location.search;
@@ -131,11 +137,14 @@
   };
 
   /* ---- the player ---- */
-  // at most 2x, and at most ~3.5 M pixels (a laptop at 2x: ~1.6x; the opening is all flat shapes and still crisp)
-  var dpr = function () { return Math.max(1, Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(3.5e6 / (innerWidth * innerHeight)))); };
+  // at most 2x (1.5x on a phone: QA, the worker's raster), and at most ~3.5 M pixels (a laptop at 2x: ~1.6x; the opening
+  // is all flat shapes and still crisp)
+  var dpr = function () { return Math.max(1, Math.min(window.devicePixelRatio || 1, ab === "phone" ? 1.5 : 2, Math.sqrt(3.5e6 / (innerWidth * innerHeight)))); };
+  M = C.mk && C.mk[ab]; // (the markers come with the page: the opening itself is parsed in the worker)
   var mk = function (n) { return M && M[n]; };
-  var segAt = 0, segFrames = 0, segArgs = null, lastFrameAt = 0;
-  var play = function (a, b, loop) { segArgs = [a, b, loop]; segAt = performance.now(); segFrames = 0; try { anim.setLoop(!!loop); anim.playSegments([a, b], true); } catch (e) {} };
+  var segAt = 0, segFrames = 0, segArgs = null, lastFrameAt = 0, auto = false;
+  // a segment, or a list played back to back (the last one looping if loop)
+  var play = function (segs, loop) { segArgs = [segs, loop]; segAt = performance.now(); segFrames = 0; try { anim.setLoop(!!loop); anim.playSegments(segs, true); } catch (e) {} };
   // r226: a segment asked for before the worker had the animation (its DOMLoaded late, under load: the 2.5 s fallback
   // start) never plays; it is asked for again. A player that stops drawing altogether hands over to the fade
   var reveal = function () {
@@ -149,7 +158,7 @@
     if (phase === "handoff" || phase === "end") return;
     wantOpen = false; clearTimeout(capT); endBrew();
     phase = "handoff"; st.classList.add("czi-opening"); st.classList.remove("czi-can-skip"); bt.disabled = true;
-    var h = mk("handoff"); play(h[0], h[1], false);
+    play(mk("handoff"), false);
   };
   // time to open: the map is unfrozen (the reveal); if it has not drawn yet, the pill breathes (the hold) until it has
   var toHandoff = function () {
@@ -158,7 +167,7 @@
     if (mapShown) { openNow(); return; }
     st.classList.remove("czi-can-skip"); bt.disabled = true;
     wantOpen = true;
-    if (phase !== "hold") { phase = "hold"; holdT = 0; var h = mk("hold"); play(h[0], h[1], true); }
+    if (phase !== "hold") { phase = "hold"; holdT = 0; play(mk("hold"), true); }
     clearTimeout(capT); capT = setTimeout(function () { mapShown = true; tryOpen(true); }, 2500); // a map that never says so: open anyway
   };
   // the hold breathes (its scale 100-103 %): the opening starts from it near its rest, its first or last frames, or at its end
@@ -178,7 +187,7 @@
   };
   // the player has drawn: the first line's text goes (two frames on, when its drawing is on the screen); the brand line
   // over a returning visitor's pill stays until the window opens
-  var drawn = function () { if (mode !== "full" || !ft) return; requestAnimationFrame(function () { requestAnimationFrame(function () { st.classList.add("czi-drawn"); }); }); };
+  var drawn = function () { tm("frame1"); if (mode !== "full" || !ft) return; requestAnimationFrame(function () { requestAnimationFrame(function () { st.classList.add("czi-drawn"); tm("drawn"); }); }); };
   // without the player (reduced motion, no Worker, a failed load): the still pill, then a short fade onto the map
   var still = function () {
     failed = true; st.classList.add("czi-still"); armBrew(1500);
@@ -196,8 +205,15 @@
   };
   var onComplete = function () {
     if (phase === "words" || phase === "short") {
-      if (cityReady) toHandoff(); else { phase = "hold"; var h = mk("hold"); play(h[0], h[1], true); }
+      if (cityReady) toHandoff(); else { phase = "hold"; play(mk("hold"), true); }
     } else if (phase === "handoff") finish();
+  };
+  // the worker went on into the hold by itself (queued): the page only learns it (and opens, if the city is ready)
+  var onSegment = function (e) {
+    var h = mk("hold");
+    if (!e || !h || e.firstFrame !== h[0] || (phase !== "words" && phase !== "short")) return;
+    phase = "hold"; holdT = 0;
+    if (cityReady) toHandoff();
   };
   var onLoop = function () { holdT = 0; if (phase === "hold" && cityReady) { if (wantOpen) tryOpen(true); else toHandoff(); } };
   // the app's bundle runs once the opening (or the returning visitor's pill) is under way: its first long tasks cannot
@@ -209,28 +225,37 @@
     st.classList.add("czi-playing");
     startedOnce = true; for (var i = 0; i < started.length; i++) try { started[i](); } catch (e) {}
     started = [];
-    if (mode === "full") { phase = "words"; var w = mk("words"); play(w[0], w[1], false); armBrew(((w[1] - w[0]) / 60) * 1000 + 1500); }
-    else { phase = "short"; var s = mk("short"); play(s[0], s[1], false); armBrew(((s[1] - s[0]) / 60) * 1000 + 1500); }
+    // (the worker has started them itself, on its own DOMLoaded: here only the page's side of it)
+    var f = mk(mode === "full" ? "words" : "short");
+    phase = mode === "full" ? "words" : "short";
+    if (auto) { segArgs = [[f, mk("hold")], true]; segAt = performance.now(); } else play([f, mk("hold")], true);
+    armBrew(((f[1] - f[0]) / 60) * 1000 + 1500);
   };
   var boot = function () {
-    if (mode === "rm" || typeof Worker === "undefined" || typeof fetch === "undefined") { still(); return; }
+    if (mode === "rm" || typeof Worker === "undefined" || typeof fetch === "undefined" || !M) { still(); return; }
     var data = null, lib = false, tryGo = function () {
       if (!data || !lib || anim || failed) return;
       try {
-        M = data.cromatic && data.cromatic.markers;
-        // the worlds' pictures: one atlas, fetched by the worker (an absolute address: the worker's base is a blob)
-        for (var i = 0; i < data.assets.length; i++) if (data.assets[i].p && !data.assets[i].layers) { data.assets[i].p = location.origin + C.atlas[ab]; data.assets[i].u = ""; data.assets[i].e = 1; }
         var d = dpr(); cv.width = Math.round(innerWidth * d); cv.height = Math.round(innerHeight * d);
         tm("load");
-        anim = window.lottie.loadAnimation({ container: st, renderer: "canvas", loop: false, autoplay: false, animationData: data, rendererSettings: { canvas: cv, preserveAspectRatio: "xMidYMid slice", clearCanvas: true, dpr: 1 } });
+        // the bytes, moved to the worker and parsed there; the worlds' pictures (one atlas, fetched by the worker: an
+        // absolute address, its base is a blob); curves at lottie's "medium" (50 steps, not 150: the steam's trims);
+        // the first segment and the hold behind it, played by the worker as soon as it has built them, without waiting
+        // for the atlas (first seen 5 s in: in WebKit a worker's decode waits on the page's thread)
+        var first = mk(mode === "full" ? "words" : "short");
+        auto = true;
+        anim = window.lottie.loadAnimation({ container: st, renderer: "canvas", loop: false, autoplay: false, animationBuffer: data, rendererSettings: { canvas: cv, preserveAspectRatio: "xMidYMid slice", clearCanvas: true, dpr: 1 },
+          cz: { images: location.origin + C.atlas[ab], lazyImages: true, quality: 50, play: [first, mk("hold")], loop: true } });
+        data = null;
         anim.addEventListener("complete", onComplete);
+        anim.addEventListener("segmentStart", onSegment);
         anim.addEventListener("loopComplete", onLoop);
         anim.addEventListener("enterFrame", function (e) { segFrames++; lastFrameAt = performance.now(); if (phase === "hold") holdT = +e.currentTime || 0; if (segFrames === 1) drawn(); });
         var watch = setInterval(function () {
           if (Z.done || phase === "fade" || failed) { clearInterval(watch); return; }
           if (phase === "load" || document.hidden || !segArgs) return;
           var now = performance.now();
-          if (segFrames === 0 && now - segAt > 2000) play(segArgs[0], segArgs[1], segArgs[2]);
+          if (!auto && segFrames === 0 && now - segAt > 2000) play(segArgs[0], segArgs[1]);
           else if (cityReady && now - Math.max(lastFrameAt, segAt) > 6000) { clearInterval(watch); fadeOut(); }
         }, 500);
         var started2 = false, go = function () { if (!started2) { started2 = true; tm("start"); start(); } };
@@ -238,7 +263,9 @@
         setTimeout(go, 2500); // the event comes from the worker; never wait on it forever
       } catch (e) { still(); }
     };
-    fetch(C.json[ab]).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { tm("json"); data = j; tryGo(); }, still);
+    // (a returning visitor: the pill alone)
+    var url = mode === "full" || !C.pjson || !C.pjson[ab] ? C.json[ab] : C.pjson[ab];
+    fetch(url).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(function (b) { tm("json"); data = b; tryGo(); }, still);
     var s = document.createElement("script"); s.src = C.player; s.async = true;
     s.onload = function () { tm("player"); lib = !!window.lottie; if (!lib) still(); else tryGo(); };
     s.onerror = still;
@@ -268,7 +295,7 @@
     // the words go in a blink; the empty pill is in the middle, and opens (once the map has drawn: until then it breathes)
     // (no timer before the worker is told: the main thread may still be busy with the city)
     st.classList.add("czi-blink");
-    if (!mapShown && phase !== "hold") { phase = "hold"; holdT = 0; var h = mk("hold"); play(h[0], h[1], true); }
+    if (!mapShown && phase !== "hold") { phase = "hold"; holdT = 0; play(mk("hold"), true); }
     toHandoff();
     setTimeout(function () { st.classList.remove("czi-blink"); }, 90);
   };

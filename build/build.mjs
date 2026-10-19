@@ -201,7 +201,7 @@ let introHead = "", introBody = "", LUI_CFG = null;
     const dir = src("intro");
     const put = (name, buf) => { const dot = name.lastIndexOf("."), rel = `assets/${name.slice(0, dot)}.${hash(buf)}${name.slice(dot)}`; writeFileSync(join(pub, rel), buf); return "/" + rel; };
     const player = put("lottie-worker.js", Buffer.from(transformSync(readFileSync(join(dir, "vendor", "lottie_worker.js"), "utf8"), { minify: true, target: "es2017", legalComments: "inline" }).code));
-    const cfg = { player, json: {}, atlas: {}, size: {}, pill: {}, first: {}, brand: {} };
+    const cfg = { player, json: {}, pjson: {}, mk: {}, atlas: {}, size: {}, pill: {}, first: {}, brand: {} };
     for (const ab of ["desktop", "phone"]) {
       const j = JSON.parse(readFileSync(join(dir, `intro-${ab}.json`), "utf8"));
       cfg.atlas[ab] = put(`intro-worlds-${ab}.webp`, readFileSync(join(dir, `worlds-${ab}.webp`)));
@@ -210,6 +210,10 @@ let introHead = "", introBody = "", LUI_CFG = null;
       if (j.cromatic.first) cfg.first[ab] = j.cromatic.first;
       if (j.cromatic.brand) cfg.brand[ab] = j.cromatic.brand;
       cfg.json[ab] = put(`intro-${ab}.json`, Buffer.from(JSON.stringify(j)));
+      // 3.7x: the markers here (the page no longer parses the opening: the worker does), and the returning visitor's
+      // pill alone (build4.mjs pillOnly: its segments' layers, the same frames)
+      cfg.mk[ab] = j.cromatic.markers;
+      try { cfg.pjson[ab] = put(`intro-${ab}-pill.json`, Buffer.from(JSON.stringify(JSON.parse(readFileSync(join(dir, `intro-${ab}-pill.json`), "utf8"))))); } catch (e) {}
     }
     // 3.69: that text's face is the site's own CromaticSans latin file (the same address the site's CSS uses, written by
     // the CromaticSans step below), preloaded so the first paint has it
