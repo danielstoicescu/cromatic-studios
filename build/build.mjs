@@ -34,7 +34,7 @@ const NAV2_JS = (() => { try { return readFileSync(src("nav2.js"), "utf8"); } ca
 const NAV2_CSS = (() => { try { return readFileSync(src("nav2.css"), "utf8"); } catch { return ""; } })();
 // r231 (Daniel, Lottie across the site): the site's Lottie layer (src/lottie-ui): the shared player's host (czl.js), the
 // pieces' host code, their styles; the pieces' JSON (design/lottie-ui/_source) are hashed into /assets below
-const LUI_HOST = ["czl.js", "finale.js", "pill.js"];
+const LUI_HOST = ["czl.js", "finale.js", "pill.js", "micro.js"];
 const LUI_JS = LUI_HOST.map((f) => { try { return readFileSync(join(root, "src", "lottie-ui", f), "utf8"); } catch { return ""; } }).join("\n");
 const LUI_CSS = ["czl.css", "pt.css"].map((f) => { try { return readFileSync(join(root, "src", "lottie-ui", f), "utf8"); } catch { return ""; } }).join("\n");
 // r233 (Daniel, Lottie: the pill transitions): the website's half, inlined first thing in every page's <body> (walkDG)

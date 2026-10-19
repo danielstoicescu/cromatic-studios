@@ -44,3 +44,46 @@ body.czl-clouds .nav2-ui { opacity: 0 !important; pointer-events: none !importan
 .czl-window { z-index: 96; }
 body.czl-win .nav2-ui { opacity: 0 !important; pointer-events: none !important; }
 /* the map to the website: pt.css (shared with every page of the website) */
+
+/* ---- 4 · the small moments (micro.js; the rest here, all CSS) ---- */
+/* "+5 XP": the place's colours, a pill in its outline, the number big; the sparks; the bar's flash as it takes them */
+.czx { position: fixed; left: 0; top: 0; z-index: 200; pointer-events: none; display: inline-flex; align-items: baseline; gap: 3px; margin: -15px 0 0 -30px; padding: 5px 11px 6px 10px;
+  border-radius: 999px; background: var(--pc); color: var(--pt); border: 2px solid #141414; box-shadow: 2px 3px 0 #141414; font: 900 15px/1 CromaticSans, "Google Sans", system-ui, sans-serif; letter-spacing: -.01em; white-space: nowrap; will-change: transform; }
+.czx b { font-weight: 900; font-size: 17px; } .czx i { font-style: normal; font-size: 11px; letter-spacing: .06em; opacity: .85; }
+.czx-sparks { position: fixed; left: 0; top: 0; z-index: 199; pointer-events: none; }
+.czx-sp { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border: 1.5px solid #141414; border-radius: 2px; box-sizing: border-box; }
+.czx-flash { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.9) 70%, rgba(255,243,166,.9)); transform-origin: right center; }
+/* the place cards: they land (a step past, a squash, back), their lines come in one after another; they leave quickly,
+   down and out (the way in stays each layout's own: from the side on a laptop, from below on a phone) */
+@media (prefers-reduced-motion: no-preference) {
+  body .map-card.in:not(.hidden):not(.czl-x) { animation: czCardInL .62s cubic-bezier(.3,1.25,.5,1) both; }
+  body .map-card.cr.in:not(.hidden):not(.czl-x) { animation-name: czCardInR; }
+  body .map-card.in:not(.hidden) .mcd-body > * { animation: czCardLine .46s cubic-bezier(.22,1,.36,1) backwards; }
+  body .map-card.in:not(.hidden) .mcd-body > :nth-child(1) { animation-delay: .1s; } body .map-card.in:not(.hidden) .mcd-body > :nth-child(2) { animation-delay: .15s; }
+  body .map-card.in:not(.hidden) .mcd-body > :nth-child(3) { animation-delay: .2s; } body .map-card.in:not(.hidden) .mcd-body > :nth-child(4) { animation-delay: .25s; }
+  body .map-card.in:not(.hidden) .mcd-body > :nth-child(n+5) { animation-delay: .3s; }
+  body .map-card.in:not(.hidden) .mcd-actions > * { animation: czCardBtn .5s cubic-bezier(.34,1.56,.64,1) .32s backwards; }
+  body .map-card.hidden { transition: opacity .2s ease, transform .24s cubic-bezier(.55,0,.85,.35); }
+  @media (max-width: 720px) { body .map-card.in:not(.hidden):not(.czl-x), body .map-card.cr.in:not(.hidden):not(.czl-x) { animation-name: czCardInB; } }
+}
+@keyframes czCardInL { 0% { opacity: 0; transform: translateX(-30px) scale(.97); } 18% { opacity: 1; } 62% { transform: translateX(4px) scale(1.012, .99); } 100% { opacity: 1; transform: none; } }
+@keyframes czCardInR { 0% { opacity: 0; transform: translateX(30px) scale(.97); } 18% { opacity: 1; } 62% { transform: translateX(-4px) scale(1.012, .99); } 100% { opacity: 1; transform: none; } }
+@keyframes czCardInB { 0% { opacity: 0; transform: translateY(32px) scale(.97); } 18% { opacity: 1; } 62% { transform: translateY(-5px) scale(1.01, .985); } 100% { opacity: 1; transform: none; } }
+@keyframes czCardLine { from { opacity: 0; transform: translateY(10px); } }
+@keyframes czCardBtn { from { opacity: 0; transform: translateY(8px) scale(.9); } }
+/* the 2M2F button: a gleam runs across it now and then (three times, then it rests), and the glove jabs on hover */
+@media (prefers-reduced-motion: no-preference) {
+  .map-top .map-2m2f { position: relative; overflow: hidden; isolation: isolate; }
+  .map-top .map-2m2f::after { content: ""; position: absolute; inset: -2px; z-index: 2; pointer-events: none; background: linear-gradient(105deg, rgba(255,243,166,0) 32%, rgba(255,243,166,.55) 47%, rgba(255,255,255,.75) 50%, rgba(255,243,166,0) 64%); transform: translateX(-130%); animation: cz2m2fGleam 7s ease-in-out 4s 3 both; }
+  .map-top .map-2m2f:hover .mf-glove { animation: czJab .44s cubic-bezier(.3,1.5,.5,1); }
+  .map-top .map-2m2f:hover .mf-txt { animation: czJabHit .44s ease-out; }
+}
+@keyframes cz2m2fGleam { 0%, 80% { transform: translateX(-130%); } 96%, 100% { transform: translateX(130%); } }
+@keyframes czJab { 0% { transform: none; } 32% { transform: translateX(7px) scale(1.2, .84) rotate(-8deg); } 58% { transform: translateX(-2px) scale(.94, 1.06); } 100% { transform: none; } }
+@keyframes czJabHit { 0%, 26% { transform: none; } 38% { transform: translateX(2px) skewX(-6deg); } 60% { transform: translateX(-1px); } 100% { transform: none; } }
+/* Nearby: a place that was not in the list a moment ago comes in (micro.js marks it), one after another */
+@media (prefers-reduced-motion: no-preference) {
+  .nav2-ui .n2-strip > .n2-pc.czx-new { animation: czChipIn .5s cubic-bezier(.34,1.56,.64,1) backwards; }
+}
+@keyframes czChipIn { from { opacity: 0; transform: translateY(14px) scale(.86) rotate(-3deg); } }
+@keyframes czRowIn { from { opacity: 0; transform: translateX(-8px); } }
