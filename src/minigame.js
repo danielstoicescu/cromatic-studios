@@ -250,7 +250,9 @@
     // beta 3.31 (Daniel: "Ion's shoes are proportioned strangely, put him in Asics running shoes"): low, sleek runners
     // the size of everyone's shoes (light grey upper, the crossing side stripes as a nod, no logo, a chunky light
     // midsole), the trousers a little narrower at the hem so the shoe shows
-    ion: { skin: "#dca07a", top: "#22305a", topKind: "workshirt", sleeve: "rolled", pants: "#a07a44", loose: 1.8, hem: 0.7, canvas: true, runner: { upper: "#f2f3f6", stripe: "#1d4fd8", heel: "#1d4fd8", mid: "#fbfaf6" }, shoe: "#f2f3f6", sole: "#3a3a46", glove: "#d8342a", build: { sh: 1.08, arm: 1.06 } },
+    // beta 3.57 (Daniel): the shirt untucked and a little longer, its tails over the hips (untuck: how far below the
+    // waist, in the old fighter's pixels), and on its back the shop's II' in white (the mark only, no words)
+    ion: { skin: "#dca07a", top: "#22305a", topKind: "workshirt", untuck: 6.5, backMark: "#ffffff", sleeve: "rolled", pants: "#a07a44", loose: 1.8, hem: 0.7, canvas: true, runner: { upper: "#f2f3f6", stripe: "#1d4fd8", heel: "#1d4fd8", mid: "#fbfaf6" }, shoe: "#f2f3f6", sole: "#3a3a46", glove: "#d8342a", build: { sh: 1.08, arm: 1.06 } },
     // Cristache: shirtless, grey trousers, the calm karate stance; glasses and a cigarette (on the head)
     // beta 3.31 (Daniel: "Cristache smaller, leaner"): a size down, a narrow chest and waist, slim arms, as in his photos
     cristache: { skin: "#e6aa86", top: "#e6aa86", topKind: "bare", lean: true, smokes: true, sleeve: "none", pants: "#8a8a90", loose: 1.4, barefoot: true, glove: "#28c840", build: { sc: 0.9, sh: 0.86, arm: 0.8, chest: 0.84, waist: 0.82, leg: 0.92 } },
@@ -509,7 +511,10 @@
     // beta 3.32: Cristache wins with the back fist up and the cigarette in his mouth (the face stays clear of the arm)
     cristache: { win: [0, 1].map((d) => pose({ hip: [0, -47 - d], neck: [4, -75 - d], head: [7, -86 - d], eB: [-6, -90 - d], hB: [-3, -106 - d * 2], eF: [13, -58 - d], hF: [22, -54 - d] })), idle: breath(pose({ hip: [0, -43], neck: [6, -71], head: [9, -82], eF: [20, -56], hF: [31, -60], eB: [-1, -50], hB: [5, -44], kF: [16, -21], fF: [27, 0], kB: [-15, -19], fB: [-27, 0] }), 0.6) }, // beta 3.45: the calm one, a slow small breath
     rares: { idle: breath(pose({ eF: [14, -59], hF: [22, -70], eB: [5, -58], hB: [15, -66], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-17, 0] }), 1.4) }, // beta 3.45: bouncing on his toes, the biggest breath
-    ion: { idle: breath(pose({ hip: [0, -48], neck: [3, -77], head: [5, -88], eF: [13, -58], hF: [21, -69], eB: [5, -57], hB: [14, -65], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-16, 0] }), 0.8) }
+    ion: { idle: breath(pose({ hip: [0, -48], neck: [3, -77], head: [5, -88], eF: [13, -58], hF: [21, -69], eB: [5, -57], hB: [14, -65], kF: [11, -25], fF: [17, 0], kB: [-9, -24], fB: [-16, 0] }), 0.8),
+      // beta 3.57 (Daniel: the II' on the back of his shirt): after the fist in the air he turns his back to us, a double
+      // biceps from behind (the elbows out, the fists up by his head), so the shop's mark reads; two drawings, a pump
+      winB: [0, 1].map((d) => pose({ back: 1, br: d, hip: [0, -48], neck: [0, -77 - d], head: [4.6, -88 - d], eF: [26, -76 - d], hF: [25, -91 - d * 2], eB: [-23, -76 - d], hB: [-22, -91 - d * 2], kF: [8, -24], fF: [10, 0], kB: [-5, -24], fB: [-7, 0] })) }
   };
   // beta 3.32: Cristache bringing the cigarette to his lips (the front hand up at the mouth, the back fist at the hip)
   const SMOKE_POSES = { cristache: [pose({ hip: [0, -43], neck: [6, -71], head: [9, -82], eF: [14, -58], hF: [17, -73], eB: [-1, -50], hB: [5, -44], kF: [16, -21], fF: [27, 0], kB: [-15, -19], fB: [-27, 0] })] };
@@ -1031,6 +1036,35 @@
     const rows = []; for (let y = 0; y < H2; y++) { let r = ""; for (let x = 0; x < W2; x++) { const c = out[y * W2 + x]; if (c == null) { r += "."; continue; } if (!keys.has(c)) { const ch = kk < CH.length ? CH[kk] : String.fromCharCode(0x100 + kk); kk++; keys.set(c, ch); pal[ch] = c; } r += keys.get(c); } rows.push(r); }
     return { rows, pal, at: [PX(HEAD_ANCHOR[0]), PX(HEAD_ANCHOR[1])], ember, K };
   }
+  // beta 3.57 (Daniel, I O N's back): the head seen from behind, for a drawing turned away: the hair over the crown and
+  // down to the nape in its own tones (its height at the front showing over the top), both ears, the back of the neck
+  // in shade under the hairline; a full or a boxed beard shows at the corners of the jaw
+  function headRear(id, K) {
+    const key = id + "^" + K; if (HEAD_CACHE[key]) return HEAD_CACHE[key];
+    const P = HEADSPEC[id] || NPC_HEADS[id], cx = 13, cy = 13, rx = 8.7 * (P.rx || 1) * 0.97, ry = 10.6, th = P.thick || 0, nape = Math.min((P.back || 17) + 2.6, 21), jw = Math.min(1.08, P.jaw || 1);
+    const W2 = Math.ceil(HW * K), H2 = Math.ceil(HH * K), GR = Math.max(1, Math.round(K / 3));
+    const SK = ramp(P.skin), HA = ramp(P.hair), BE = ramp(P.beard || P.hair), HC = u32(P.hl || P.hair), HR = [HC, INKMIX(HA[2], HC, 0.5), HA[2], HA[3], HA[4]];
+    const bearded = P.beardKind === "full" || P.beardKind === "boxed", tall = (P.blobs || []).some((b) => b[1] < 4.5);
+    const shade = (nx, ny) => { const nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny)), d = nx * LI[0] + ny * LI[1] + nz * LI[2]; return d > 0.8 ? 0 : d > 0.5 ? 1 : d > 0.15 ? 2 : d > -0.15 ? 3 : 4; };
+    const rows = [], pal = {}, keys = new Map(), CH = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"; let kk = 0;
+    for (let Y = 0; Y < H2; Y++) { let r = ""; for (let X = 0; X < W2; X++) {
+      const fx = (X + 0.5) / K, fy = (Y + 0.5) / K, dx = fx - cx, ax = Math.abs(dx), rl = fy < cy ? rx : rx * jw; let c = null;
+      const inHead = (dx / rl) ** 2 + ((fy - cy) / ry) ** 2 <= 1, nk = ax < 4.6 && fy >= nape - 1 && fy < 29;
+      if (nk) c = SK[fy < nape + 1.4 || ax > 3.4 ? 4 : 3]; // the back of the neck, in the hair's shadow at the top
+      else if (inHead && fy > nape - 1) c = bearded ? BE[clamp(shade(dx / rl, (fy - cy) / ry) + 1, 2, 4)] : SK[clamp(shade(dx / rl, (fy - cy) / ry) + 1, 2, 4)]; // the corners of the jaw
+      const inHair = ((dx / (rx + th)) ** 2 + ((fy - cy) / (ry + th)) ** 2 <= 1 && fy < nape + 0.9 * (1 - ax / rx)) || (tall && (dx / 5.6) ** 2 + ((fy - 2.9) / 2.3) ** 2 <= 1);
+      if (inHair) {
+        let t = shade(dx / (rx + th), (fy - cy) / (ry + th));
+        const n = hash2(Math.floor(X / GR) * 7 + 3, Math.floor(Y / (2 * GR)) * 5 + 1); if (n > 0.8) t = Math.max(0, t - 1); else if (n < 0.14) t = Math.min(4, t + 1); // strands
+        if (fy > nape - 1.6) t = Math.max(t, 3); // short at the nape
+        c = HR[clamp(t, 0, 4)];
+      }
+      if (!P.earHid && !P.fem) for (const sd of [-1, 1]) { const ex = cx + sd * (rx + 0.3); if (((fx - ex) / 1.5) ** 2 + ((fy - 15) / 2.9) ** 2 <= 1 && ax > rx - 0.7) c = SK[Math.abs(fx - ex) < 0.45 && fy > 13.4 && fy < 16 ? 4 : sd < 0 ? 2 : 3]; } // the ears, their backs
+      if (c == null) { r += "."; continue; }
+      if (!keys.has(c)) { const ch = kk < CH.length ? CH[kk] : String.fromCharCode(0x100 + kk); kk++; keys.set(c, ch); pal[ch] = c; } r += keys.get(c);
+    } rows.push(r); }
+    return (HEAD_CACHE[key] = { rows, pal, at: [Math.round(HEAD_ANCHOR[0] * K), Math.round(HEAD_ANCHOR[1] * K)], ember: null, K });
+  }
   // a head made smaller (for the people further back): each new pixel takes the colour most of its block has, but the
   // darks (the outline, the eyes, the brows) win when they are a quarter of it, so the face keeps its features
   function shrinkHead(H0, k) {
@@ -1077,6 +1111,7 @@
     const F = view ? new Fig(view.w, view.h) : new Fig(CW, CH), T = view ? (q) => [q[0] + view.ox, q[1] + view.oy] : (q) => [q[0] + OX, q[1] + OY];
     let ember = null; // beta 3.32: where the cigarette's lit end is in this frame (the smoke rises from it)
     const hip = T(p.hip), neck = T(p.neck), head = T(p.head), tw = p.tw || 0;
+    const rear = !!p.back; // beta 3.57 (Daniel, I O N's back): a drawing turned away from us, the back to the camera
     const ang = Math.atan2(neck[0] - hip[0], -(neck[1] - hip[1])), ca = Math.cos(ang), sa = Math.sin(ang);
     const off = (o, dx, dy) => [o[0] + dx * ca - dy * sa, o[1] + dx * sa + dy * ca];
     const SK = ramp(L.skin), TOP = ramp(L.top), PA = ramp(L.pants || L.skin), GL = ramp(L.glove || L.wrap || "#f4f4f4"), SO = u32(L.sole || "#101014");
@@ -1085,8 +1120,8 @@
     const br = p.br || 0; // the breath: the chest a little wider, the shoulders a little higher
     // beta 3.33 (Daniel, arcade proportions): heroic: the shoulders and the chest broader, the waist narrower
     const wsh = (14.2 + br * 0.35) * B.sh * sc, len = Math.hypot(neck[0] - hip[0], neck[1] - hip[1]); // beta 3.38 (Daniel: "a very big torso"): the shoulders, chest and arms back towards the refs'
-    const sF = off(neck, (6.4 + 3 * tw) * B.sh * sc, 4 * U), sB = off(neck, (-6.2 + 2 * tw) * B.sh * sc, 3 * U);
-    const lF = off(hip, 3.5 * sc, U), lB = off(hip, -2.5 * sc, U); // beta 3.30: the legs from under the body (no seat sticking out)
+    const sF = rear ? off(neck, (1.5 + 11.5 * B.sh) * sc, 4 * U) : off(neck, (6.4 + 3 * tw) * B.sh * sc, 4 * U), sB = rear ? off(neck, (1.5 - 11.5 * B.sh) * sc, 4 * U) : off(neck, (-6.2 + 2 * tw) * B.sh * sc, 3 * U); // from behind: square, the same on both sides
+    const lF = off(hip, (rear ? 5.1 : 3.5) * sc, U), lB = off(hip, (rear ? -2.1 : -2.5) * sc, U); // beta 3.30: the legs from under the body (no seat sticking out)
     // an arm: the deltoid, the upper arm with the biceps, the forearm, then the glove with its cuff
     const arm = (s, e, h, far) => {
       const g = far ? 1 : 2, ar = B.arm * sc * (L.hands && !L.full ? 0.8 : 1), /* beta 3.33: the people around keep everyday arms (beta 3.34: the ending's three keep the fighters') */ sleeveTo = L.sleeve === "long" ? 2 : L.sleeve === "rolled" ? 1.4 : L.sleeve === "gi" ? 1.3 : L.sleeve === "short" ? 0.55 : L.sleeve === "cap" ? 0.3 : -1; // cap (beta 3.38, Rares): a short sleeve, high on the arm, the tattoos showing
@@ -1151,7 +1186,16 @@
       const ur = (x, y) => (ra ? [f[0] + (x - f[0]) * rC + (y - f[1]) * rS, f[1] - (x - f[0]) * rS + (y - f[1]) * rC] : [x, y]);
       const fpoly = (F2, pts, mat, gr) => poly(F2, pts.map(rp), ra ? (x, y) => { const [x2, y2] = ur(x, y); return mat(x2, y2); } : mat, gr);
       const flimb = (F2, a, b, ...rest) => limb(F2, rp(a), rp(b), ...rest);
-      if (L.barefoot) { // a bare foot, the toes forward
+      if (rear) { // beta 3.57: a foot seen from behind: the heel, its outsole, the midsole, the heel counter (an Asics' blue)
+        const RU = L.runner, UP = ramp(RU ? RU.upper : L.shoe || "#2a2a2a"), MD = RU ? ramp(RU.mid) : UP, HC2 = RU ? ramp(RU.heel) : UP, w2 = 4.3 * fq;
+        poly(F, [[f[0] - w2, f[1] - 5.6 * fq], [f[0] - w2 + fq, f[1] - 7.2 * fq], [f[0] + w2 - fq, f[1] - 7.2 * fq], [f[0] + w2, f[1] - 5.6 * fq], [f[0] + w2, f[1] + 0.9 * fq], [f[0] - w2, f[1] + 0.9 * fq]], (x, y) => {
+          const u = (x - f[0]) / fq, v = (f[1] - y) / fq;
+          if (v < 0.7) return (Math.floor(x) % 3 === 0 && v < 0.2) ? SO : ramp(L.sole)[far ? 4 : 3];
+          if (v < 2.5) return MD[far ? 3 : v > 1.9 ? 2 : u < 0 ? 0 : 1];
+          if (Math.abs(u) < 2.5) return HC2[far ? 3 : u < 0 ? 1 : 2];
+          return UP[far ? 3 : u < 0 ? 1 : 2];
+        }, g + 10);
+      } else if (L.barefoot) { // a bare foot, the toes forward
         fpoly(F, [[f[0] - 5 * fq, f[1] - 6 * fq], [f[0] + 3 * fq, f[1] - 5 * fq], [f[0] + 12 * fq, f[1] - 1 * fq], [f[0] + 12 * fq, f[1] + 1 * fq], [f[0] - 5 * fq, f[1] + 1 * fq]], (x, y) => { const u = (x - f[0]) / fq, v = (f[1] - y) / fq; if (u > 7.4 && v < 2.2 && Math.floor((u - 7.4) / 1.25) % 2 === 1) return SK[4]; if (u > 7.4 && v < 0.6) return SK[3]; if (u < -2.5 && v < 2.5) return SK[far ? 4 : 3]; if (Math.abs(u - 1.5) < 0.7 && v > 2.4 && v < 4) return SK[far ? 3 : 2]; return SK[far ? 3 : v > 3.4 ? 1 : 2]; }, g + 10); // the toes (beta 3.33: split, the sole and the heel in shade, the ankle bone)
         if (L.ankle) flimb(F, [f[0] - 1 * fq, f[1] - 6 * fq], [f[0] - 1 * fq, f[1] - 4 * fq], 3.4 * fq, 3.4 * fq, 0, 0.5, (nx, ny) => (far ? back : tone)(ramp(L.ankle), nx, ny), g + 11);
       } else if (L.runner) { // beta 3.31: a running shoe: low heel collar, the toe sloping down, a chunky midsole, the stripes crossing on the side
@@ -1188,12 +1232,26 @@
       return lerp(ww, wh, (v - 0.8) / 0.2);
     };
     const tloc = (x, y) => { const dx = x - neck[0], dy = y - neck[1], s = dx * ca + dy * sa, v = (dx * -sa + dy * ca) / (len || 1); const hw = shape(clamp(v, 0, 1)), cx = 1.5 * sc; return [(s - cx) / hw, v, hw]; };
+    // beta 3.57 (Daniel): the back of the shirt, for a drawing turned away: the collar on the back of the neck, the
+    // yoke's seam, the folds of a loose shirt and, on I O N's, the shop's II' (the mark of the door and the flag, no
+    // words) in white between the shoulder blades, in whole pixels so it reads
+    const MARK2 = ["##..##..#", "##..##..#", "##..##..#", "##..##...", "##..##...", "##..##...", "##..##...", "##..##..."];
+    const rearMat = (x, y) => {
+      const [u, v, hw] = tloc(x, y), t0 = toneOf(u * 0.85, v < 0.12 ? -0.75 : v < 0.4 ? -0.15 : 0.1);
+      if (v > 0.9 && !L.untuck) return PA[Math.abs(u) > 0.7 ? 3 : 2];
+      const a = u * hw, d = v * len, cs = Math.max(1, Math.round(sc)), m0 = Math.round(0.29 * len);
+      if (v < 0.07 && Math.abs(a) < 5.2 * sc) return TOP[v < 0.035 ? 1 : 3]; // the collar
+      if (Math.abs(d - 0.19 * len) < 0.5 * cs && Math.abs(u) < 0.9) return TOP[Math.min(4, t0 + 1)]; // the yoke
+      if (L.backMark) { const col = Math.floor((a + 4.5 * cs) / cs), row = Math.floor((d - m0) / cs); if (row >= 0 && row < 8 && col >= 0 && col < 9 && MARK2[row][col] === "#") return t0 >= 3 ? u32("#d6d8e2") : u32(L.backMark); }
+      return TOP[Math.min(4, t0 + (v > 0.55 && Math.floor(x * 0.8 + y) % 7 === 0 ? 1 : 0))];
+    };
     const torsoMat = (x, y) => {
+      if (rear) return rearMat(x, y);
       const [u, v] = tloc(x, y);
       let nx = u * 0.85, ny = v < 0.12 ? -0.75 : v < 0.4 ? -0.15 : 0.1;
-      // the chest: the pecs, a shadow under them; the waistband at the bottom
+      // the chest: the pecs, a shadow under them; the waistband at the bottom (beta 3.57: none on a shirt worn out)
       const pec = v > 0.34 && v < 0.39 && u > -0.4 ? 1 : 0;
-      if (v > 0.9) return (L.legs === "skirt" ? ramp(L.skirt) : PA)[u < -0.3 ? 3 : 2];
+      if (v > 0.9 && !L.untuck) return (L.legs === "skirt" ? ramp(L.skirt) : PA)[u < -0.3 ? 3 : 2];
       if (L.belt && v > 0.82 && v <= 0.9) { if (L.buckle && u > 0.42 && u < 0.62) return u32(L.buckle); if (L.topKind === "gi" && u > 0.5 && u < 0.62) return u32("#2a2a30"); return ramp(L.belt)[u < -0.3 ? 3 : 2]; }
       if (L.dogtags) { const cu = lerp(0.3, 0.55, clamp(v / 0.3, 0, 1)); if (v > 0.03 && v < 0.3 && Math.abs(u - cu) < 0.05 && (Math.floor(y) % 2 === 0)) return u32("#c9ccd4"); if (v >= 0.3 && v < 0.4 && u > 0.48 && u < 0.64) return u32(v < 0.33 ? "#f0f2f6" : "#9a9ca6"); }
       if (L.chain) { const cv = 0.1 + Math.abs(u - 0.55) * -0.06; if (u > 0.2 && u < 0.85 && Math.abs(v - (0.14 - Math.abs(u - 0.55) * 0.12)) < 0.022) return u32((Math.floor(x) % 2) ? L.chain : "#fff2b0"); }
@@ -1302,8 +1360,8 @@
       return TOP[Math.min(4, toneOf(nx, ny) + pec)];
     };
     // back arm, back leg, front leg, the body (and a skirt), the neck and head, the front arm
-    arm(sB, T(p.eB), T(p.hB), true);
-    leg(lB, T(p.kB), T(p.fB), true);
+    if (rear) { arm(sB, T(p.eB), T(p.hB), false); arm(sF, T(p.eF), T(p.hF), false); } else arm(sB, T(p.eB), T(p.hB), true); // beta 3.57: from behind both arms come out from behind the back, alike
+    leg(lB, T(p.kB), T(p.fB), !rear);
     leg(lF, T(p.kF), T(p.fF), false);
     const hw0 = shape(0), hw1 = shape(1);
     const tp = [];
@@ -1311,6 +1369,17 @@
     for (let i = 10; i >= 0; i--) { const v = i / 10, hw = shape(v); tp.push(off(neck, 1.5 * sc - hw, v * len)); }
     poly(F, tp, torsoMat, 5);
     const sl = p.ball ? 0.45 : 1; // beta 3.45: in the somersault's tuck a skirt or an apron folds with the legs (short), not out like a flag
+    if (L.untuck) { // beta 3.57 (Daniel): the shirt worn out over the trousers, its tails over the hips: lower at the front and the back than at the side seam (from behind, lowest in the middle), the front tail lifted by a raised knee, the placket and its buttons down to the hem, a darker hem line
+      const tl = L.untuck * U * sl, kn = clamp((p.kF[1] - p.hip[1]) / (16 * sc), 0.5, 1), cx2 = 1.5 * sc, hwB = hw1 + (rear ? 2.6 : 1.8) * U, hemAt = (u) => tl * (rear ? 1 - 0.16 * u * u : (0.7 + 0.3 * Math.min(1, Math.abs(u + 0.3) / 0.7)) * (u > 0 ? lerp(1, kn, u) : 1));
+      const pts = [off(hip, cx2 - hw1, -3 * U), off(hip, cx2 + hw1, -3 * U)];
+      for (let i = 0; i <= 10; i++) { const u = 1 - i / 5; pts.push(off(hip, cx2 + u * hwB, hemAt(u))); }
+      poly(F, pts, (x, y) => {
+        const [u, v] = tloc(x, y), dn = (v - 1) * len, t2 = toneOf(u * 0.85, 0.2), hm = hemAt(clamp(u * hw1 / hwB, -1, 1));
+        if (dn > hm - 1.2 * U) return TOP[Math.min(4, t2 + 1)]; // the hem
+        if (!rear && L.topKind === "workshirt" && Math.abs(u - 0.58) < 0.035) return (Math.floor(y) % 4 === 0) ? u32("#e8e4dc") : TOP[3]; // the placket, its buttons
+        return TOP[Math.min(4, t2 + (Math.floor(x + dn * 0.12) % 6 === 0 && dn > -1.5 * U ? 1 : 0))]; // the folds hanging straight down
+      }, 5);
+    }
     if (L.legs === "skirt") { const SKR = ramp(L.skirt); poly(F, [off(hip, -hw1 - U, -3 * U), off(hip, hw1 + U, -3 * U), off(hip, hw1 + 6 * U * sl, 15 * U * sl), off(hip, -hw1 - 5 * U * sl, 15 * U * sl)], (x, y) => { const [u] = tloc(x, y); return SKR[u > 0.3 ? 2 : u > -0.4 ? 3 : 4]; }, 6); }
     if (L.apron && L.apronKind === "bib") { const AR = ramp(L.apron); poly(F, [off(hip, -hw1 * 0.5, -3 * U), off(hip, hw1 + 2 * U, -3 * U), off(hip, hw1 + 4 * U, 30 * U * sl), off(hip, -hw1 * 0.5 - 2 * U, 31 * U * sl)], (x, y) => { const [u2] = tloc(x, y); const vv = (y - hip[1]) / (31 * U * sl); return AR[vv > 0.9 ? 4 : u2 > 0.5 ? 1 : u2 > -0.1 ? 2 : 3]; }, 6); } // beta 3.55: the bib apron's skirt to the knee
     else if (L.apron) { const AR = ramp(L.apron); poly(F, [off(hip, -U, -2 * U), off(hip, hw1 + 2 * U, -2 * U), off(hip, hw1 + 4 * U, 20 * U * sl), off(hip, U, 22 * U * sl)], (x, y) => AR[x > hip[0] + hw1 * 0.5 ? 1 : 2], 6); }
@@ -1319,10 +1388,10 @@
     { // beta 3.12: the head's neck stands on the body's neck; the pose's head offset still tilts it a little
       const hid = (L.headId || id) + (p.cig === "mouth" && HEADSPEC[(L.headId || id) + "+cig"] ? "+cig" : "");
       // beta 3.33: the head at its own resolution (HK in the fight; the people around keep the small 1x head)
-      const HD = headOf(hid, 1, false, view ? view.HK : L.hands ? (L.full ? HK : HK * 0.86) : HK), hx = (p.head[0] - p.neck[0] - 3 * sc) * 0.6, hy = (p.head[1] - p.neck[1] + 11 * sc) * 0.6, a2 = off(neck, 0.5 * U, U);
+      const HKv = view ? view.HK : L.hands ? (L.full ? HK : HK * 0.86) : HK, HD = rear ? headRear(hid, HKv) : headOf(hid, 1, false, HKv), hx = (p.head[0] - p.neck[0] - 3 * sc) * 0.6, hy = (p.head[1] - p.neck[1] + 11 * sc) * 0.6, a2 = off(neck, 0.5 * U, U);
       if (p.lie || p.rot) F.blit(HD.rows, HD.pal, a2[0], a2[1], p.lie ? 1 : p.rot, HD.at, 8); else { const bx2 = Math.round(a2[0] + hx), by2 = Math.round(a2[1] + hy); F.blit(HD.rows, HD.pal, bx2, by2, 0, HD.at, 8); if (HD.ember) ember = [bx2 + HD.ember[0] - HD.at[0], by2 + HD.ember[1] - HD.at[1]]; }
     }
-    arm(sF, T(p.eF), T(p.hF), false);
+    if (!rear) arm(sF, T(p.eF), T(p.hF), false);
     const hF = T(p.hF);
     if (p.cig === "hand" && L.smokes) { // beta 3.32 (Daniel: "the rest of the time he holds it in his hand"): between two fingers of the front hand, the lit end out in front
       const e0 = T(p.eF), vx = hF[0] - e0[0], vy = hF[1] - e0[1], vl = Math.hypot(vx, vy) || 1, ux = vx / vl, uy = vy / vl, fr2 = FIST * Math.min(1.12, B.sc * 1.1) * U, c0 = [hF[0] + ux * U, hF[1] + uy * U];
@@ -1363,6 +1432,7 @@
     }
     const out = F.finish(!view);
     if (!view) { out.ax = OX - out.bx; out.ay = OY - out.by; } // the feet's point in the cropped frame
+    if (rear) out.rear = true; // beta 3.57: drawn the same way round whichever way he faces, so the II' on the back reads
     if (ember) out.ember = ember;
     return out;
   }
@@ -1755,7 +1825,7 @@
   };
   // the select grid: a small config. Both sides pick from it (Player 1, then the CPU); "random" is the "?" tile.
   // I O N stays the CPU's first choice
-  const GRID = { cols: 6, rows: 2, order: ["ion", "cristache", "rares", "iulica", "maria", "caius", "steve", "dony", "cristian", "daniel", "boomer", "random"] }; // beta 3.12 (Daniel): I O N first, the "?" back. beta 3.55: eleven and the "?", 6x2
+  const GRID = { cols: 6, rows: 2, order: ["ion", "cristache", "rares", "iulica", "maria", "dony", "boomer", "caius", "steve", "cristian", "daniel", "random"] }; // beta 3.12 (Daniel): I O N first, the "?" back. beta 3.55: eleven and the "?", 6x2. beta 3.57 (Daniel): Dony ends the top row, Boomer and Caius start the bottom one
   const FIGHTERS = GRID.order.filter((id) => id !== "random");
   const pickRandom = () => FIGHTERS[Math.floor(Math.random() * FIGHTERS.length)];
 
@@ -2576,13 +2646,13 @@
       case "fall": return f.bnc ? S.bounce[0] : S.fall[f.vy < 0.6 ? 0 : 1]; // beta 3.45: the launch, the fall, the bounce
       case "down": return S.down[0];
       case "rise": return S.getup[t < RISE_T / 2 ? 0 : 1];
-      case "win": return S.win[Math.floor(t / 14) % 2];
+      case "win": if (S.winB && t >= 46 && !(g && g.phase === "finish")) return S.winB[Math.floor((t - 46) / 20) % 2]; return S.win[Math.floor(t / 14) % 2]; // beta 3.57: I O N then turns his back (not during his finisher)
       case "intro": return S.intro[0];
       default: { if (S.puff) { const ph = cigPhase(f); if (ph === "up" || ph === "down") return S.puff[0]; if (ph === "mouth") return S.idleM[Math.floor(t / f.it) % 4]; } return S.idle[Math.floor(t / f.it) % 4]; }
     }
   }
   function drawSprite(ctx, img, x, y, face) {
-    hiDraw(ctx, img, x, y, face, img.ax, img.ay); // beta 3.33: at the canvas's pixels, the feet at (x, y)
+    hiDraw(ctx, img, x, y, img.rear ? 1 : face, img.ax, img.ay); // beta 3.33: at the canvas's pixels, the feet at (x, y). beta 3.57: a back is never mirrored (the II' on it)
   }
   // beta 3.49: Dony's LENS LASER: two beams from his glasses, growing out in three ticks, held through the active ticks,
   // stopped where they hit, flickering away in the recovery; a flare at the lenses and one at the end
@@ -2901,7 +2971,9 @@
   // a puff of steam from the wand, the cups rattle on the rail, the car shakes, a puff from the exhaust
   const END_POSES = {
     cristache: pose({ hip: [0, -47], neck: [5, -75], head: [8, -86], eF: [15, -60], hF: [24, -58], eB: [9, -58], hB: [18, -55], kF: [8, -24], fF: [12, 0], kB: [-6, -24], fB: [-10, 0], tw: 0.4 }),
-    ion: pose({ hip: [0, -44], neck: [14, -66], head: [18, -74], eF: [26, -52], hF: [36, -46], eB: [20, -52], hB: [32, -42], kF: [10, -23], fF: [14, 0], kB: [-8, -22], fB: [-14, 0], tw: 0.5 }),
+    // beta 3.57 (Daniel: the II' on his back): I O N with his back to us, leaning over the wing into the engine, his
+    // hands on the wing either side, the head down
+    ion: pose({ back: 1, hip: [0, -46], neck: [1, -71], head: [5.2, -79], eF: [21, -59], hF: [17, -55], eB: [-18, -59], hB: [-14, -55], kF: [8, -23], fF: [10, 0], kB: [-4, -23], fB: [-6, 0] }),
     // beta 3.49 (Daniel: "Rares no longer cheers: he drinks his coffee, puts the cup on the car's roof, picks it up"):
     // the sip (the cup at his lips, the head back a touch), the cup held at his chest, the arm out to the roof (with the
     // cup, or without it once it stands there), waiting (a hand on his hip, the other easy)
@@ -2936,7 +3008,7 @@
     cable([[mx + 45, my + 20], [mx + 47, my + 29], [mx + 50, my + 45], [mx + 57, gy - 1], [mx + 68, gy], [c2[0] - 2, gy - 6], [c2[0], c2[1] + 4], [c2[0], c2[1]]], "#2a2a30");
     for (const [cx, cyy] of [c1, c2]) { const red = cx === c1[0], X = Math.round(cx * RS) / RS, Y = Math.round(cyy * RS) / RS; ctx.fillStyle = OUT; ctx.fillRect(X - 2, Y - 1.5, 4, 3.5); ctx.fillStyle = red ? "#e8301c" : "#3a3a42"; ctx.fillRect(X - 1.5, Y - 1, 3, 1.5); ctx.fillStyle = red ? "#ff8a6e" : "#6a6a74"; ctx.fillRect(X - 1.5, Y - 1, 3, p); ctx.fillStyle = "#c9ccd4"; ctx.fillRect(X - 1.5, Y + 0.5, 1, 1.5); ctx.fillRect(X + 0.5, Y + 0.5, 1, 1.5); } // the clamps: the grip in the cable's colour, the steel jaws
     // the three of them
-    const put3 = (id, x2, face) => { const im = endFrame(id); hiDraw(ctx, im, x2, gy, face, im.ax, im.ay); };
+    const put3 = (id, x2, face) => { const im = endFrame(id); hiDraw(ctx, im, x2, gy, im.rear ? 1 : face, im.ax, im.ay); };
     { // beta 3.49: Rares and his coffee: sip, put it on the roof, wait, pick it up, sip
       const lt2 = t % RARES_LOOP; let cur = RARES_SEQ[0]; for (const e of RARES_SEQ) if (lt2 >= e[0]) cur = e;
       const im = endFrame("rares", cur[1], cur[2] ? "cup" : null); hiDraw(ctx, im, END_CAR + 104, gy, -1, im.ax, im.ay);
@@ -2944,7 +3016,7 @@
         ctx.fillStyle = OUT; ctx.fillRect(cx3 - 3, cy3 - 7, 7, 8); ctx.fillStyle = "#f4f2ec"; ctx.fillRect(cx3 - 2, cy3 - 5, 5, 5); ctx.fillStyle = "#b07a46"; ctx.fillRect(cx3 - 2, cy3 - 3, 5, 2); ctx.fillStyle = "#2a2a30"; ctx.fillRect(cx3 - 2, cy3 - 6, 5, 1); ctx.fillStyle = "#d8d4cc"; ctx.fillRect(cx3 + 2, cy3 - 5, 1, 5);
         const a = (t * 0.7) % 1; ctx.globalAlpha = 0.7 * (1 - a); ctx.fillStyle = "#f4f4fa"; ctx.fillRect(cx3 + Math.round(Math.sin(a * 6) * 1.5), cy3 - 9 - Math.round(a * 8), 1, 2); ctx.globalAlpha = 1; } // a wisp of steam off it
     }
-    put3("ion", END_CAR + 50, -1); put3("cristache", mx + 76, 1);
+    put3("ion", END_CAR + 56, -1); put3("cristache", mx + 76, 1);
     { const im = endFrame("cristache"), e = im.ember; if (e) for (let i = 0; i < 5; i++) { // beta 3.32: and he smokes while they work
       const a = (t * 0.5 + i / 5) % 1, x = mx + 76 + (e[0] - OX) / RS + Math.sin(a * 6 + i) * (1 + a * 3) + a * 3, y = gy + (e[1] - OY) / RS - 2 - a * 26;
       ctx.globalAlpha = a < 0.4 ? 0.85 : a < 0.7 ? 0.55 : 0.3; ctx.fillStyle = a < 0.35 ? "#eeeef4" : a < 0.7 ? "#cfcfdc" : "#a8a8ba"; ctx.fillRect(Math.round(x * RS) / RS, Math.round(y * RS) / RS, a < 0.3 ? p : 2 * p, p); if (a > 0.5) ctx.fillRect(Math.round(x * RS) / RS + p, Math.round(y * RS) / RS - p, p, p);
@@ -3334,8 +3406,8 @@
     const out = {};
     const ids = Object.keys(LOOKS);
     for (const id of ids) {
-      const S = sprites(id), order = ["idle", "walk", "crouch", "jrise", "jump", "jfall", "jsquat", "roll", "punch", "kick", "cpunch", "ckick", "jpunch", "jkick", "block", "cblock", "special", "srec", "hit", "gut", "dizzy", "fall", "bounce", "down", "getup", "win", "intro"];
-      const frames = []; for (const k of order) for (const f of S[k]) frames.push([k, f]);
+      const S = sprites(id), order = ["idle", "walk", "crouch", "jrise", "jump", "jfall", "jsquat", "roll", "punch", "kick", "cpunch", "ckick", "jpunch", "jkick", "block", "cblock", "special", "srec", "hit", "gut", "dizzy", "fall", "bounce", "down", "getup", "win", "winB", "intro"];
+      const frames = []; for (const k of order) for (const f of S[k] || []) frames.push([k, f]);
       const cols = 8, rows = Math.ceil(frames.length / cols), [c, x] = mk(cols * CW, rows * (CH + 20));
       x.fillStyle = "#2a2148"; x.fillRect(0, 0, c.width, c.height);
       frames.forEach(([k, f], i) => { const cx = (i % cols) * CW, cy = Math.floor(i / cols) * (CH + 20); x.fillStyle = "#332a58"; x.fillRect(cx + 1, cy + 1, CW - 2, CH - 2); cell(x, f, cx, cy); text(x, k.toUpperCase(), cx + 3, cy + CH + 4, "#a99cc8", { ol: null, sc: 2 }); });
@@ -3414,7 +3486,8 @@
   const eyeProbe = () => { const out = {}; for (const id of ["dony"]) { const S = sprites(id); S.special.forEach((im, i) => { const x = im.getContext("2d"), d = new Uint32Array(x.getImageData(0, 0, im.width, im.height).data.buffer), G = u32("#fbfdff"), pts = []; for (let k = 0; k < d.length; k++) if (d[k] === G) pts.push([(k % im.width) - im.ax, ((k / im.width) | 0) - im.ay]); out[id + i] = pts; }); } return out; }; // beta 3.49: where Dony's glint is (the laser's origin), for the tuning
   const endingAt = (ts, res = "win") => { while (BAKEQ.length) { const j = BAKEQ.shift(); if (j() === "again") BAKEQ.unshift(j); } RARES_SEQ.forEach((e) => endFrame("rares", e[1], e[2] ? "cup" : null)); const [c, x] = mk(W, H); x.imageSmoothingEnabled = false; const g0 = g, h0 = hits; g = { result: res, me: "daniel", cpu: "ion", wins: [2, 1], menu: 0, voucher: { code: "TM-K7QX-1910", date: "19.10.2026  14:32" } }; const out = ts.map((t) => { hits = []; drawResult(x, t); return c.toDataURL("image/png"); }); g = g0; hits = h0; return out; }; // beta 3.49: the ending at chosen moments, for the review
   const tune = (o) => { for (const [id, v] of Object.entries(o.roster || {})) Object.assign(ROSTER[id], v); for (const [id, v] of Object.entries(o.ai || {})) AI_PROF[id] = Object.assign(AI_PROF[id] || {}, v); for (const [id, v] of Object.entries(o.special || {})) Object.assign(SPECIAL[id], v); ATKS.clear(); return { roster: ROSTER, ai: AI_PROF }; }; // the bench's knobs (the review only)
-  window.czGloves = Object.assign(window.czGloves || {}, { sim, eyeProbe, endingAt, tune, mount, exportArt, measure, probe, setHp, resetMaxDt, hold: (v) => { cpuHold = !!v; }, auto: (v) => { autoP1 = !!v; }, hits: () => HITLOG.splice(0), fxKinds: () => (g ? g.fx.map((e) => e.k) : []), gapWatch: (th, freeze) => { gapWatch = th; gapFreeze = !!freeze; }, gaps: () => GAPLOG.splice(0), unfreeze: () => { if (g) g.frozen = false; }, fxPos: () => (g ? { proj: g.proj.map((p) => [p.k, Math.round((p.x - g.camX) * RS), Math.round((p.y + FLOOR) * RS)]), fx: g.fx.filter((e) => e.k !== "stack" && e.k !== "ghost").map((e) => [e.k, Math.round((e.x - g.camX) * RS), Math.round((e.y + FLOOR) * RS), e.t]) } : null), minGap: () => { const v = stats.minGap; stats.minGap = null; return v == null ? null : Math.round(v * 10) / 10; } });
+  window.czGloves = Object.assign(window.czGloves || {}, { sim, eyeProbe, endingAt, tune, mount, exportArt, measure, probe, setHp, resetMaxDt, frame: (id, k, i = 0) => { const f = sprites(id)[k][i]; return f.toDataURL("image/png"); }, endFrame: (id) => endFrame(id).toDataURL("image/png"), // beta 3.57: one baked drawing, for the QA
+hold: (v) => { cpuHold = !!v; }, auto: (v) => { autoP1 = !!v; }, hits: () => HITLOG.splice(0), fxKinds: () => (g ? g.fx.map((e) => e.k) : []), gapWatch: (th, freeze) => { gapWatch = th; gapFreeze = !!freeze; }, gaps: () => GAPLOG.splice(0), unfreeze: () => { if (g) g.frozen = false; }, fxPos: () => (g ? { proj: g.proj.map((p) => [p.k, Math.round((p.x - g.camX) * RS), Math.round((p.y + FLOOR) * RS)]), fx: g.fx.filter((e) => e.k !== "stack" && e.k !== "ghost").map((e) => [e.k, Math.round((e.x - g.camX) * RS), Math.round((e.y + FLOOR) * RS), e.t]) } : null), minGap: () => { const v = stats.minGap; stats.minGap = null; return v == null ? null : Math.round(v * 10) / 10; } });
   const auto = () => { const el = document.getElementById("mg"); if (el && !root) mount(el); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", auto); else auto();
 })();
