@@ -38660,13 +38660,17 @@ void main() {
               float lum(vec2 uv){ return lumT(texture2D(tD, uv)); }
               float lumL(vec2 uv){ return lumT(textureLod(tD, uv, 0.0)); }
               float depZ(float z){ float ndc = z * 2.0 - 1.0; return (2.0 * near * far) / (far + near - ndc * (far - near)); }
-              float iz(vec2 uv){ return 1.0 / depZ(texture2D(tZ, uv).x); }
+              // 1/depZ(z) is (far + near - ndc (far - near)) / (2 near far): no division per sample (beta 3.7x: 13 depth taps
+              // a pixel, each with two divisions); g_izK = 1 / (2 near far), set once at the top of main
+              float g_izK; float iz(vec2 uv){ return (far + near - (texture2D(tZ, uv).x * 2.0 - 1.0) * (far - near)) * g_izK; }
               vec3 hsv(vec3 c){ vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0); vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
                 vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r)); float d = q.x - min(q.w, q.y); return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + 1e-6)), d / (q.x + 1e-6), q.x); }
               // the notebook's pencils (a hue, the colour it lays down), sampled from the reference; a colour takes the
               // nearest of them by hue, softly
-              vec3 pencilFor(vec3 c, float s, out float fol){
-                float h = hsv(c).x;
+              // beta 3.7x: h is the hue the caller already has; a grey (k = 0) is returned as it is, with no greenery: exactly
+              // what the loop gave it (mix(c, x, 0) = c, fol = 0), without the seven exp()
+              vec3 pencilFor(vec3 c, float s, float h, out float fol){
+                if (smoothstep(0.06, 0.25, s) <= 0.0) { fol = 0.0; return c; }
                 vec3 P[7]; float H[7];
                 H[0] = 0.02; P[0] = vec3(0.78, 0.45, 0.39);  // terracotta (the mushroom caps)
                 H[1] = 0.08; P[1] = vec3(0.84, 0.60, 0.40);  // orange
@@ -38682,9 +38686,10 @@ void main() {
                 return mix(c, acc / max(ws, 1e-4), 0.78 * k);
               }
               // a crease's share along one axis: the second difference of 1/z over the pen's radius (zero on any flat face)
-              float d2(float a, float b, float c, float lo){ return smoothstep(lo, lo * 2.5, abs(a + b - 2.0 * c) / c); }
+              float g_rw; // beta 3.7x: 1 / w11, the c of every call, once a pixel
+              float d2(float a, float b, float c, float lo){ return smoothstep(lo, lo * 2.5, abs(a + b - 2.0 * c) * g_rw); }
               void main(){
-                vec2 px = 1.0 / res;
+                vec2 px = 1.0 / res; g_izK = 0.5 / (near * far);
                 // the pen: about one CSS pixel wide at any pixel density (res is in device pixels)
                 float LR = clamp(res.y / 1000.0, 1.0, 2.2);
                 // a slow, hand-drawn waver on every line: the lines bend a little, they do not shake
@@ -38706,7 +38711,7 @@ void main() {
                 // on its own and then counted: the further a pixel is from an edge, the fewer directions straddle it, so the
                 // line fades out softly on both sides and turns round at its ends and corners (no stair steps)
                 vec2 e = px * LR, h = e * 0.5;
-                float w11 = iz(uv);
+                float w11 = iz(uv); g_rw = 1.0 / w11;
                 float w00 = iz(uv + vec2(-e.x, -e.y)), w10 = iz(uv + vec2(0.0, -e.y)), w20 = iz(uv + vec2(e.x, -e.y));
                 float w01 = iz(uv + vec2(-e.x, 0.0)), w21 = iz(uv + vec2(e.x, 0.0));
                 float w02 = iz(uv + vec2(-e.x, e.y)), w12 = iz(uv + vec2(0.0, e.y)), w22 = iz(uv + vec2(e.x, e.y));
@@ -38758,7 +38763,7 @@ void main() {
                 if (abs(tc.a - 0.25) < 0.03 || sky) amt = 0.0;
                 amt *= 1.0 - ground * (1.0 - smoothstep(0.3, 0.45, lmin)); // the inside of a dark band on the ground: paper
                 float fol;
-                vec3 pen = pencilFor(A, hv.y, fol);
+                vec3 pen = pencilFor(A, hv.y, hv.x, fol);
                 pen = mix(vec3(0.40, 0.41, 0.53), pen, smoothstep(0.04, 0.22, hv.y)); // a grey is graphite, a little indigo
                 pen = max(pen, vec3(0.2)); // never black
                 // the strokes, in world space on the face (its axis from the depth's own normal), sized for the screen. On the
