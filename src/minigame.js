@@ -256,7 +256,7 @@
     // midsole), the trousers a little narrower at the hem so the shoe shows
     // beta 3.57 (Daniel): the shirt untucked and a little longer, its tails over the hips (untuck: how far below the
     // waist, in the old fighter's pixels), and on its back the shop's II' in white (the mark only, no words)
-    ion: { skin: "#dca07a", top: "#22305a", topKind: "workshirt", untuck: 6.5, backMark: "#ffffff", sleeve: "rolled", pants: "#a07a44", loose: 1.8, hem: 0.7, canvas: true, runner: { upper: "#f2f3f6", stripe: "#1d4fd8", heel: "#1d4fd8", mid: "#fbfaf6" }, shoe: "#f2f3f6", sole: "#3a3a46", glove: "#d8342a", build: { sh: 1.08, arm: 1.06 } },
+    ion: { skin: "#dca07a", top: "#22305a", topKind: "workshirt", untuck: 8, evenHem: true, backMark: "#ffffff", sleeve: "rolled", pants: "#a07a44", loose: 1.8, hem: 0.7, canvas: true, runner: { upper: "#f2f3f6", stripe: "#1d4fd8", heel: "#1d4fd8", mid: "#fbfaf6" }, shoe: "#f2f3f6", sole: "#3a3a46", glove: "#d8342a", build: { sh: 1.08, arm: 1.06 } },
     // Cristache: shirtless, grey trousers, the calm karate stance; glasses and a cigarette (on the head)
     // beta 3.31 (Daniel: "Cristache smaller, leaner"): a size down, a narrow chest and waist, slim arms, as in his photos
     cristache: { skin: "#e6aa86", top: "#e6aa86", topKind: "bare", lean: true, smokes: true, sleeve: "none", pants: "#8a8a90", loose: 1.4, barefoot: true, glove: "#28c840", build: { sc: 0.9, sh: 0.86, arm: 0.8, chest: 0.84, waist: 0.82, leg: 0.92 } },
@@ -270,7 +270,7 @@
     // white star, a small rose under it: a generic mark, no brand), a drawstring hem with wooden toggles over the hips;
     // loose navy nylon track trousers with a seam and a pocket; his red five-finger toe shoes (the shoes' photo) over blue
     // socks; a phone (his special)
-    iulica: { skin: "#c27f57", top: "#432c3c", topKind: "anorak", stripe: "#efe9e4", stripe2: "#9a7a92", collar: "#1f5a52", sleeve: "long", untuck: 3.6, hemCord: "#a8733e", pants: "#27305a", loose: 1.7, hem: 0.8, cargo: true, seam: true, toes: { upper: "#b0222e", toe: "#f07a2a", strap: "#2a2a30", sock: "#3f8eaa" }, shoe: "#b0222e", sole: "#f07a2a", glove: "#b8e02f", build: { sh: 1.02, chest: 1.06, waist: 1.14, arm: 1.04 } },
+    iulica: { skin: "#d2936b", top: "#432c3c", topKind: "anorak", stripe: "#efe9e4", stripe2: "#9a7a92", collar: "#1f5a52", sleeve: "long", untuck: 3.6, hemCord: "#a8733e", pants: "#27305a", loose: 2.4, hem: 0.42, cargo: true, seam: true, toes: { upper: "#b0222e", toe: "#f07a2a", strap: "#2a2a30", sock: "#3f8eaa", low: true }, shoe: "#b0222e", sole: "#f07a2a", glove: "#b8e02f", build: { sh: 0.94, chest: 0.96, waist: 1.06, arm: 0.9, leg: 0.8 } }, // beta 3.65 (Daniel): a shade lighter, slimmer under the baggy clothes (thin legs in wide trousers), low toe shoes
     maria: { skin: "#ebb597", top: "#f2f0ea", topKind: "oversize", knot: true, sleeve: "short", legs: "skirt", skirt: "#1c1c22", shoe: "#a8b89a", sole: "#6e7c62", glove: "#f0389a", build: { sc: 0.94, sh: 0.84, arm: 0.82, leg: 0.88, waist: 0.86, chest: 0.94 } }, // beta 3.33: a size down
     // Steve: dressed American: a varsity jacket (wool body, cream leather sleeves, a letter on the chest) over a white
     // tee, jeans, white sneakers; the glasses, the grey hair, the beard, the two metres
@@ -278,8 +278,8 @@
     dony: { skin: "#efbe9e", top: "#2c3c6c", topKind: "fleece", sleeve: "long", apron: "#b08a5a", pants: "#2e2e36", shoe: "#2a2a2a", sole: "#d8d8d8", glove: "#8a5530", build: { sc: 0.86, arm: 0.96 } },
     // beta 3.64 (Daniel): Cristian in beige, head to toe, in tones that read apart: a light sand henley (its buttons a
     // shade darker), stone-khaki trousers, a camel belt with the brass buckle, tan suede desert boots on crepe soles
-    cristian: { skin: "#e9ab84", top: "#dac8a6", topKind: "henley", btn: "#9a8260", sleeve: "rolled", belt: "#94602e", buckle: "#c9a640", pants: "#a08a66", shoe: "#c49a62", boots: true, lace: "#7a5a36", sole: "#e4d4b2", glove: "#2f6fe0", build: {} },
-    daniel: { skin: "#e7a57d", top: "#1fb0ba", topKind: "tee", sleeve: "short", stripe: "#fed012", belt: "#1c1820", buckle: "#c9ccd4", pants: "#2e3a62", shoe: "#f2f2f6", sole: "#9a9ab0", glove: "#fed012", build: {} },
+    cristian: { skin: "#e9ab84", top: "#dac8a6", topKind: "henley", btn: "#9a8260", sleeve: "rolled", belt: "#94602e", buckle: "#c9a640", pants: "#a08a66", shoe: "#c49a62", boots: true, lace: "#7a5a36", sole: "#e4d4b2", glove: "#2f6fe0", build: { sc: 1.08, leg: 1.02 } }, // beta 3.65 (Daniel): 190 cm, as Caius
+    daniel: { skin: "#e7a57d", top: "#1fb0ba", topKind: "tee", sleeve: "short", stripe: "#fed012", belt: "#1c1820", buckle: "#c9ccd4", pants: "#2e3a62", shoe: "#f2f2f6", sole: "#9a9ab0", glove: "#fed012", build: { sc: 1.08, leg: 1.02 } },
     // beta 3.55 (Daniel: two new fighters, from their photos). Boomer, the cook (180 cm, sturdy, broad): a red and
     // black buffalo-check flannel shirt with the sleeves rolled, tattoos on the forearms, a royal-blue chef's bib apron
     // (no show's logo on it: a small pan of our own, in orange), dark trousers. Caius, the barista (190 cm, the tallest
@@ -544,7 +544,7 @@
     specDony: { headId: "dony", skin: "#efbe9e", top: "#2a2a30", topKind: "tee", sleeve: "short", apron: "#b08a5a", pants: "#2e2e36", shoe: "#2a2a2a", sole: "#d8d8d8", hands: "bare", build: { sc: SPEC * 0.92 } },
     specMaria: { headId: "maria", skin: "#ebb597", top: "#c9a040", topKind: "tee", sleeve: "long", pants: "#4a6a92", shoe: "#f2f2f2", sole: "#c0c0c8", hands: "bare", build: { sc: SPEC * 0.92, sh: 0.86, arm: 0.84, waist: 0.86 } },
     specSteve: { headId: "steve", skin: "#ecb497", top: "#b8463c", topKind: "plaid", plaid: "#3a1e1c", sleeve: "long", pants: "#4a6890", shoe: "#3a2a22", sole: "#1a120e", hands: "bare", build: { sc: SPEC * 1.14, sh: 1.1, waist: 1.25 } },
-    specIulica: { headId: "iulica", skin: "#c27f57", top: "#432c3c", topKind: "anorak", stripe: "#efe9e4", stripe2: "#9a7a92", collar: "#1f5a52", sleeve: "long", untuck: 3.6, pants: "#27305a", loose: 1.4, shoe: "#f2f2f4", sole: "#6e7280", hands: "bare", build: { sc: SPEC, waist: 1.1 } }, // beta 3.64: in his anorak too
+    specIulica: { headId: "iulica", skin: "#d2936b", top: "#432c3c", topKind: "anorak", stripe: "#efe9e4", stripe2: "#9a7a92", collar: "#1f5a52", sleeve: "long", untuck: 3.6, pants: "#27305a", loose: 1.4, shoe: "#f2f2f4", sole: "#6e7280", hands: "bare", build: { sc: SPEC, waist: 1.1 } }, // beta 3.64: in his anorak too
     npcSit: { skin: "#e2a882", top: "#232f52", topKind: "vest", sleeve: "long", sleeveCol: "#a8c8e4", pants: "#4a6a92", shoe: "#7ad08a", sole: "#e8e8e8", hands: "bare", build: { sc: SPEC } },
     npcPlaid: { skin: "#e6ae8a", top: "#b8a690", topKind: "plaid", plaid: "#6a5a4a", sleeve: "long", pants: "#2a2a30", shoe: "#2a2a2a", sole: "#e0e0e0", hands: "bare", build: { sc: SPEC } },
     npcBun: { skin: "#e9b08e", top: "#2c3a6a", topKind: "plaid", plaid: "#8aa0c8", sleeve: "long", pants: "#5a7aa0", shoe: "#f2f2f2", sole: "#b0b0b8", hands: "bare", build: { sc: SPEC } },
@@ -637,7 +637,8 @@
     // dark beard along the jaw with the moustache, heavy straight brows, a strong nose
     ion: { skin: "#dca07a", hair: "#191416", hl: "#2c2426", beard: "#1e1617", bhl: "#4a3a36", rx: 1.06, jaw: 1.12, nose: 0.6,
       hairline: [6, 9.5], thick: 0.9, back: 17, tex: "shag", crown: [9, 6], lockN: 2, curl: 0.08, blobs: [[16.5, 2.6, 6, 2.6], [20, 4.4, 2.6, 1.8]],
-      beardKind: "boxed", beardK: 0.32, beardTop: 17, beardDrop: 0.8, mouth: "flat", brows: "heavy" },
+      beardKind: "boxed", beardK: 0.32, beardTop: 17, beardDrop: 0.8, mouth: "flat", brows: "heavy",
+      cyc: { crown: "#1f5fd0", panel: "#f2f2ee", brim: "#f2b41e", stripes: ["#e0302a", "#16161a", "#f6d21e", "#2aa04a", "#3a8ae8"] } }, // beta 3.65 (Daniel): his cycling cap
     // beta 3.31 (Daniel, likeness): the long dark curls fuller, a lock down in front of the ear framing the face, the
     // brows darker
     maria: { skin: "#ebb597", hair: "#24160f", hl: "#4e3424", fem: true, rx: 0.93, jaw: 0.88,
@@ -668,7 +669,7 @@
       beardKind: "stubble", stubble: 0.5, beardTop: 16.5, mustache: "big", mouth: "under", lips: "#d4917c" },
     // beta 3.31 (Daniel, likeness): thick black hair falling forward to the brows and over the ears, the wide grin
     // with all the teeth, the eyes shut with it, stubble, the darker skin
-    iulica: { skin: "#c27f57", hair: "#16100d", hl: "#2e241e", beard: "#24180f", bhl: "#4c3a2e", rx: 0.96,
+    iulica: { skin: "#d2936b", hair: "#16100d", hl: "#2e241e", beard: "#24180f", bhl: "#4c3a2e", rx: 0.96,
       hairline: [9.6, 11], thick: 1.1, back: 19, tex: "shag", crown: [10, 4], lockN: 2.4, curl: 0.2, blobs: [[18, 8.6, 3.8, 1.5], [14.5, 8.9, 2.6, 1.3], [21, 8, 1.4, 2], [7.6, 11, 2.6, 4]],
       beardKind: "stubble", stubble: 0.5, beardTop: 16, mouth: "biggrin", eyes: "smile", earring: "#d8dce4" }, // beta 3.64: a small earring (his photo)
     // beta 3.31 (Daniel, likeness): clean-shaven, thin round wire glasses, a little open smile, the olive trucker cap
@@ -803,7 +804,7 @@
       if (sk && y < hl) return true;
       if (sk && x < 9.2 && y < P.back && (P.earHid || !(x > 5.5 && y > 11.5 && y < 17.5))) return true; // behind the ear (beta 3.32: over it, earHid)
       if (P.back > 20 && x < 10 && y < P.back && x > 3 - (y - 14) * 0.15 && y > 10 && !(x > 6 && y > 11.5 && y < 17.5 && x < 10)) return true; // long at the back
-      for (const [bx, by, brx, bry] of P.blobs || []) if (((x - bx) / brx) ** 2 + ((y - by) / bry) ** 2 <= 1) return true;
+      for (const [bx, by, brx, bry] of P.blobs || []) if (!(P.cyc && by < 6) && ((x - bx) / brx) ** 2 + ((y - by) / bry) ** 2 <= 1) return true; // (beta 3.65: under a cycling cap, not the height on top)
       for (const [x0, y0, x1, y1, w0, w1] of P.locks || []) { const vx = x1 - x0, vy = y1 - y0, q = clamp(((x - x0) * vx + (y - y0) * vy) / (vx * vx + vy * vy), 0, 1), w = lerp(w0, w1, q); if ((x - x0 - vx * q) ** 2 + (y - y0 - vy * q) ** 2 <= w * w) return true; } // beta 3.32: a lock of hair, a tapered stroke
       return false;
     };
@@ -850,6 +851,25 @@
       for (let x = 16; x <= 19; x++) put(x, 7, HA[2]); // hair through the opening
       for (let x = 1; x <= 5; x++) put(x, 8 + (x < 3 ? 1 : 0), CP[x < 3 ? 3 : 2]); // the peak, behind
       put(1, 9, CP[4]); put(2, 9, CP[3]);
+    }
+    // beta 3.65 (Daniel: I O N's cycling cap, from the photo): a cotton cycling cap: the royal-blue crown, the rainbow
+    // stripes running front to back over its top (three or four of them on the small heads, all five on the big ones), a
+    // white panel at the back of the side, the short gold brim flipped up at the front; the hair showing under it at the
+    // side and the back. No maker's words or marks
+    if (P.cyc) {
+      const C = P.cyc, CB = R(C.crown), PN = R(C.panel), BR = R(C.brim), edge = (x) => 8.3 + clamp((18 - x) / 12, 0, 1) * 3.3;
+      const crown = (x, y) => ((x - cx0 - 0.2) / (rx + 0.95)) ** 2 + ((y - cy0 + 0.2) / (ry + 0.95)) ** 2 <= 1 && y < edge(x);
+      const topY = new Int16Array(W2).fill(-1); each((X, Y, fx, fy) => { if (topY[X] < 0 && crown(fx, fy)) topY[X] = Y; });
+      const SW = SMALL ? [C.stripes[0], C.stripes[2], C.stripes[3]] : K < 1.3 ? C.stripes.slice(0, 4) : C.stripes, sw = Math.max(1, Math.round(K * 0.5));
+      each((X, Y, fx, fy) => {
+        if (!crown(fx, fy)) return;
+        const t = clamp(shadeAt(fx, fy, -0.1), 0, 4), si = Math.floor((Y - topY[X]) / sw);
+        if (fx > 6.5 && fx < 20.8 && si >= 1 && si <= SW.length) return putH(X, Y, u32(SW[si - 1])); // the stripes, under the crown's top edge
+        if (fx < 11.6 && fy > cy0 - 4.6) return putH(X, Y, PN[clamp(t - 1, 0, 2)]); // the white panel
+        putH(X, Y, CB[clamp(t, 1, 4)]);
+      });
+      const BRIM = [[19.4, 7.4], [22.2, 6.5], [24.6, 5.5], [25.2, 6.6], [23, 8.3], [20, 9.2]];
+      each((X, Y, fx, fy) => { if (inPoly(BRIM, fx, fy)) putH(X, Y, BR[fy > 8.3 - (fx - 20) * 0.5 ? 3 : 1]); }); // the brim, short, flipped up: its lit top, the edge in shade
     }
     const EW = u32("#f2ece6"), EP = u32("#1c1214"), MO = u32("#5a2220"), TE = u32("#fbf6ee");
     const browC = P.brows === "heavy" || P.brows === "thick" || P.brows === "flat" ? HA[4] : P.browCol ? u32(P.browCol) : HA[3], bY = P.browY || 10;
@@ -1060,7 +1080,7 @@
     const P = HEADSPEC[id] || NPC_HEADS[id], cx = 13, cy = 13, rx = 8.7 * (P.rx || 1) * 0.97, ry = 10.6, th = P.thick || 0, nape = Math.min((P.back || 17) + 2.6, 21), jw = Math.min(1.08, P.jaw || 1);
     const W2 = Math.ceil(HW * K), H2 = Math.ceil(HH * K), GR = Math.max(1, Math.round(K / 3));
     const SK = ramp(P.skin), HA = ramp(P.hair), BE = ramp(P.beard || P.hair), HC = u32(P.hl || P.hair), HR = [HC, INKMIX(HA[2], HC, 0.5), HA[2], HA[3], HA[4]];
-    const bearded = P.beardKind === "full" || P.beardKind === "boxed", tall = (P.blobs || []).some((b) => b[1] < 4.5);
+    const bearded = P.beardKind === "full" || P.beardKind === "boxed", tall = !P.cyc && (P.blobs || []).some((b) => b[1] < 4.5);
     const shade = (nx, ny) => { const nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny)), d = nx * LI[0] + ny * LI[1] + nz * LI[2]; return d > 0.8 ? 0 : d > 0.5 ? 1 : d > 0.15 ? 2 : d > -0.15 ? 3 : 4; };
     const rows = [], pal = {}, keys = new Map(), CH = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"; let kk = 0;
     for (let Y = 0; Y < H2; Y++) { let r = ""; for (let X = 0; X < W2; X++) {
@@ -1074,6 +1094,10 @@
         const n = hash2(Math.floor(X / GR) * 7 + 3, Math.floor(Y / (2 * GR)) * 5 + 1); if (n > 0.8) t = Math.max(0, t - 1); else if (n < 0.14) t = Math.min(4, t + 1); // strands
         if (fy > nape - 1.6) t = Math.max(t, 3); // short at the nape
         c = HR[clamp(t, 0, 4)];
+      }
+      if (P.cyc && ((dx / (rx + th + 0.4)) ** 2 + ((fy - cy) / (ry + th + 0.4)) ** 2 <= 1) && fy < 11.6) { // beta 3.65: the cycling cap from behind: the stripes down the middle, white panels low at the sides, the blue crown
+        const C = P.cyc, sw = Math.max(1, Math.round(K * 0.6)), SW = K < 1.3 ? C.stripes.slice(0, 4) : C.stripes, col = Math.floor((X - Math.round(cx * K)) / sw + SW.length / 2);
+        c = col >= 0 && col < SW.length ? u32(SW[col]) : ax > 4.4 && fy > 8.4 ? ramp(C.panel)[clamp(shade(dx / (rx + th), (fy - cy) / (ry + th)), 1, 4)] : ramp(C.crown)[clamp(shade(dx / (rx + th), (fy - cy) / (ry + th)), 1, 4)];
       }
       if (!P.earHid && !P.fem) for (const sd of [-1, 1]) { const ex = cx + sd * (rx + 0.3); if (((fx - ex) / 1.5) ** 2 + ((fy - 15) / 2.9) ** 2 <= 1 && ax > rx - 0.7) c = SK[Math.abs(fx - ex) < 0.45 && fy > 13.4 && fy < 16 ? 4 : sd < 0 ? 2 : 3]; } // the ears, their backs
       if (c == null) { r += "."; continue; }
@@ -1147,7 +1171,7 @@
         if (seg === 1 && t > 0.8 && R === SK && !L.hands) return (far ? back : tone)(ramp(WRAP), nx, ny); // the tape up the wrist
         if (L.sleeve === "rolled" && seg === 1 && Math.abs(t - 0.4) < 0.06) return TOP[far ? 4 : 3]; // the rolled cuff
         if (L.topKind === "buffalo" && R === SLV && !(L.sleeve === "rolled" && seg === 1 && Math.abs(t - 0.4) < 0.06)) { const cxx = Math.floor(px / 3) & 1, cyy = Math.floor(py / 3) & 1; return ramp(cxx && cyy ? "#1c1416" : cxx || cyy ? "#7a161c" : L.top)[clamp(toneOf(nx, ny) + (far ? 1 : 0), 0, 4)]; } // beta 3.55: Boomer's sleeves in the check
-        if (L.topKind === "anorak" && R === SLV) { const tt = toneOf(nx, ny) + (far ? 1 : 0); if (seg === 1 && t > 0.84) return SLV[clamp(tt + (Math.floor(py) % 2 ? 1 : 0), 0, 4)]; const bd = seg === 0 ? (t > 0.3 && t < 0.42 ? L.stripe : t >= 0.42 && t < 0.52 ? L.stripe2 : null) : t > 0.16 && t < 0.27 ? L.stripe : null; if (bd) return ramp(bd)[clamp(tt, 0, 4)]; } // beta 3.64: Iulica's anorak: bands across the sleeves, the elastic cuffs
+        if (L.topKind === "anorak" && R === SLV) { const tt = toneOf(nx, ny) + (far ? 1 : 0); if (seg === 1 && t > 0.84) return SLV[clamp(tt + (Math.floor(py) % 2 ? 1 : 0), 0, 4)]; const q = ((t + seg * 0.13) * 4.2) % 1, bd = q < 0.28 ? L.stripe : q >= 0.5 && q < 0.74 ? L.stripe2 : null; if (bd) return ramp(bd)[clamp(tt, 0, 4)]; } // beta 3.65: bands all the way down the sleeves // beta 3.64: Iulica's anorak: bands across the sleeves, the elastic cuffs
         if (L.topKind === "zipknit" && R === SLV) return SLV[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (Math.floor(t * 14) % 2 && seg === 1 && t > 0.82 ? 1 : 0), 0, 4)]; // Caius's knit sleeves, a ribbed cuff
         if (L.topKind === "fleece" && R === TOP && R === SLV) { const fz = hash2(px * 7.3, py * 5.1); return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (fz > 0.72 ? 1 : fz < 0.12 ? -1 : 0), 0, 4)]; } if (L.tattoo && R === SK && (seg === 1 ? t > 0.06 && t < 0.8 : t > sleeveTo + 0.04)) { const c = tattoo(seg + (far ? 2 : 0), t, nx, ny, far, SK[clamp(toneOf(nx, ny) + (far ? 1 : 0), 0, 4)]); if (c) return c; } // beta 3.38: tattoo sleeves, the upper arm below the sleeve and the forearm
         // beta 3.30: the muscle drawn in: the line between biceps and triceps, the deltoid's edge, the forearm's ridge; on a sleeve, the creases at the elbow
@@ -1215,16 +1239,17 @@
       } else if (L.toes) { // beta 3.64 (Iulica's shoes, from his photo): five-finger toe shoes: a low red upper, charcoal straps
         // waving over the instep, the speed-lace with its orange cord locks, a heel tab, the orange sole edge and big toe,
         // the small toes' pods in charcoal along the front (little bumps on the top edge); mottled blue socks at the ankle
-        const TS = L.toes, sh2 = fq * 1.05, RD = ramp(TS.upper), OR = ramp(TS.toe), BK = ramp(TS.strap), SOCK = ramp(TS.sock);
-        fpoly(F, [[f[0] - 4.4 * sh2, f[1] - 8.8 * sh2], [f[0] + 1.4 * sh2, f[1] - 8.8 * sh2], [f[0] + 2 * sh2, f[1] - 5.4 * sh2], [f[0] - 4.8 * sh2, f[1] - 5.4 * sh2]], (x, y) => SOCK[far ? 3 : hash2(Math.floor(x), Math.floor(y * 1.7)) > 0.55 ? 1 : 2], g + 9);
-        fpoly(F, [[f[0] - 5.4 * sh2, f[1] - 6.4 * sh2], [f[0] + 2.4 * sh2, f[1] - 6.2 * sh2], [f[0] + 7.4 * sh2, f[1] - 3.9 * sh2], [f[0] + 13 * sh2, f[1] - 2.6 * sh2], [f[0] + 13.8 * sh2, f[1] + 0.2 * sh2], [f[0] - 5.4 * sh2, f[1] + 0.9 * sh2]], (x, y) => {
+        const TS = L.toes, sh2 = fq * 1.05, RD = ramp(TS.upper), OR = ramp(TS.toe), BK = ramp(TS.strap), SOCK = ramp(TS.sock), lo = TS.low ? 1 : 0; // beta 3.65 (Daniel: "lower, not boot-like"): low-cut at the ankle, the sock showing
+        const top = lo ? 4.3 : 6.4, lace = lo ? 3.3 : 4.5;
+        fpoly(F, [[f[0] - 4.2 * sh2, f[1] - (lo ? 7.2 : 8.8) * sh2], [f[0] + 1.2 * sh2, f[1] - (lo ? 7.2 : 8.8) * sh2], [f[0] + 1.8 * sh2, f[1] - (top - 1) * sh2], [f[0] - 4.6 * sh2, f[1] - (top - 1) * sh2]], (x, y) => SOCK[far ? 3 : hash2(Math.floor(x), Math.floor(y * 1.7)) > 0.55 ? 1 : 2], g + 9);
+        fpoly(F, [[f[0] - 5.4 * sh2, f[1] - top * sh2], [f[0] + 2.4 * sh2, f[1] - (top - 0.2) * sh2], [f[0] + 7.4 * sh2, f[1] - (lo ? 3.2 : 3.9) * sh2], [f[0] + 13 * sh2, f[1] - (lo ? 2.4 : 2.6) * sh2], [f[0] + 13.8 * sh2, f[1] + 0.2 * sh2], [f[0] - 5.4 * sh2, f[1] + 0.9 * sh2]], (x, y) => {
           const u = (x - f[0]) / sh2, v = (f[1] - y) / sh2;
           if (v < 0.8) return OR[far ? 4 : u > 0 ? 2 : 3]; // the sole's orange edge
           if (u > 9.2) { const q = (u - 9.2) / 1.25; if (q % 1 < 0.2 && v > 1.1) return BK[4]; return (q > 2.9 ? OR : BK)[far ? 3 : v > 2 ? 1 : 2]; } // the toes: the big one orange at the front
-          if (u > -0.6 && u < 3.2 && v > 4.5) return Math.floor(x + y) % 3 === 0 ? OR[1] : BK[2]; // the speed-lace, an orange cord lock
+          if (u > -0.6 && u < 3.2 && v > lace) return Math.floor(x + y) % 3 === 0 ? OR[1] : BK[2]; // the speed-lace, an orange cord lock
           if (u > 0.5 && u < 8.6 && Math.floor(u * 0.9 - v * 0.75 + 20) % 3 === 0) return BK[far ? 4 : 2]; // the straps
-          if (u < -4.3 && v > 4.4) return BK[far ? 4 : 2]; // the heel tab
-          return RD[far ? 3 : v > 4.4 ? 1 : 2];
+          if (u < -4.3 && v > lace - 0.1) return BK[far ? 4 : 2]; // the heel tab
+          return RD[far ? 3 : v > lace - 0.1 ? 1 : 2];
         }, g + 10);
         for (let i = 0; i < 4; i++) { const c = rp([f[0] + (9.7 + i * 1.2) * sh2, f[1] - (3.1 - i * 0.22) * sh2]); blob(F, c, 0.75 * sh2, 0.75 * sh2, (nx, ny) => (i === 3 ? OR : BK)[far ? 3 : ny < -0.2 ? 1 : 2], g + 10); } // the pods, little bumps on the top edge
       } else if (L.barefoot) { // a bare foot, the toes forward
@@ -1281,9 +1306,9 @@
     // the emblem on the chest in whole pixels (r rose, g leaf, k the letters' black, w their white, s the star)
     const ANK_EMB = [".r.g...g.r.", "rg.......gr", "g.kkkkkkk.g", "r.kwkwkwk.r", "g.kkkkkkk.g", "rg...s...gr", ".rg.sss.gr.", "..rg.s.gr..", "....rgr....", ".....r....."];
     const ANK_COL = { r: "#e2552a", g: "#3f8a3c", k: "#151318", w: "#f4f2ec", s: "#ffffff" };
-    const ankBand = (u) => (u > -0.64 && u < -0.48 ? L.stripe : u >= -0.48 && u < -0.33 ? L.stripe2 : u > 0.8 && u < 0.92 ? L.stripe : null);
+    const ankBand = (u) => { const q = (((u + 1) / 0.24) % 1 + 1) % 1; return q < 0.3 ? L.stripe : q >= 0.46 && q < 0.72 ? L.stripe2 : null; }; // beta 3.65 (Daniel: "more stripes"): a dense rhythm, white, aubergine, mauve, aubergine, all round
     const ANK_SMALL = [".rgr.", "rg.gr", "g.s.g", ".rgr."]; // for the people further back
-    const ankEmb = (u, v, hw, t2) => { const E = sc < 0.8 ? ANK_SMALL : ANK_EMB, ew = E[0].length, cs = Math.max(1, Math.round(sc)), a = u * hw - (0.3 * shape(0.4) - (ew / 2) * cs), col = Math.floor(a / cs), row = Math.floor((v - 0.22) * len / cs); if (row < 0 || row >= E.length || col < 0 || col >= ew) return 0; const ch = E[row][col]; if (ch === ".") return 0; return ch === "r" || ch === "g" ? ramp(ANK_COL[ch])[t2 >= 3 ? 3 : 2] : u32(ANK_COL[ch]); };
+    const ankEmb = (u, v, hw, t2) => { const E = sc < 0.8 ? ANK_SMALL : ANK_EMB, ew = E[0].length, cs = Math.max(1, Math.round(sc)), a = u * hw - (0.3 * shape(0.4) - (ew / 2) * cs), col = Math.floor(a / cs), row = Math.floor((v - 0.22) * len / cs); if (row < 0 || row >= E.length || col < 0 || col >= ew) return 0; const ch = E[row][col]; if (ch === ".") return -1; /* inside the emblem's patch: the plain cloth */ return ch === "r" || ch === "g" ? ramp(ANK_COL[ch])[t2 >= 3 ? 3 : 2] : u32(ANK_COL[ch]); };
     const torsoMat = (x, y) => {
       if (rear) return rearMat(x, y);
       const [u, v, hwT] = tloc(x, y);
@@ -1291,7 +1316,7 @@
         const t2 = toneOf(u * 0.85, v < 0.12 ? -0.75 : v < 0.4 ? -0.15 : 0.1);
         if (v < 0.1 && u > -0.3 && u < 0.95) return Math.abs(u - 0.58) < 0.03 ? u32("#c9ccd4") : ramp(L.collar)[clamp(t2, 0, 4)]; // the collar's foot
         if (Math.abs(u - 0.58) < 0.025 && v < 0.24) return u32(Math.floor(y) % 2 ? "#a4a8b2" : "#3a3a44"); // the half zip
-        const e = ankEmb(u, v, hwT, t2); if (e) return e;
+        const e = ankEmb(u, v, hwT, t2); if (e === -1) return TOP[clamp(t2, 0, 4)]; if (e) return e;
         const b = ankBand(u); if (b) return ramp(b)[clamp(t2, 0, 4)];
         return TOP[clamp(t2 + (v > 0.6 && Math.floor(x * 0.8 + y) % 7 === 0 ? 1 : 0), 0, 4)];
       }
@@ -1417,11 +1442,15 @@
     poly(F, tp, torsoMat, 5);
     const sl = p.ball ? 0.45 : 1; // beta 3.45: in the somersault's tuck a skirt or an apron folds with the legs (short), not out like a flag
     if (L.untuck) { // beta 3.57 (Daniel): the shirt worn out over the trousers, its tails over the hips: lower at the front and the back than at the side seam (from behind, lowest in the middle), the front tail lifted by a raised knee, the placket and its buttons down to the hem, a darker hem line
-      const tl = L.untuck * U * sl, kn = clamp((p.kF[1] - p.hip[1]) / (16 * sc), 0.5, 1), cx2 = 1.5 * sc, hwB = hw1 + (rear ? 2.6 : L.hemCord ? 0.6 : 1.8) * U, hemAt = (u) => L.hemCord ? tl * (u > 0 ? lerp(1, kn, u) : 1) : tl * (rear ? 1 - 0.16 * u * u : (0.7 + 0.3 * Math.min(1, Math.abs(u + 0.3) / 0.7)) * (u > 0 ? lerp(1, kn, u) : 1)); // beta 3.64: an anorak's hem is straight, gathered by its drawstring
-      const pts = [off(hip, cx2 - hw1, -3 * U), off(hip, cx2 + hw1, -3 * U)];
-      for (let i = 0; i <= 10; i++) { const u = 1 - i / 5; pts.push(off(hip, cx2 + u * hwB, hemAt(u))); }
+      const ev = !!L.evenHem, tl = L.untuck * U * (ev ? (p.ball ? 0.75 : 1) : sl), kn = ev ? 1 : clamp((p.kF[1] - p.hip[1]) / (16 * sc), 0.5, 1), cx2 = 1.5 * sc;
+      // beta 3.65 (Daniel: "it must not open at the bottom, his backside showing"): I O N's shirt (evenHem) roomy, hanging
+      // evenly all round in every pose, wide enough behind to cover the seat (the back thigh reaches out behind the waist)
+      const hwB = hw1 + (rear ? (ev ? 3.4 : 2.6) : L.hemCord ? 0.6 : 1.8) * U, hwK = ev && !rear ? hw1 + 4.6 * U : hwB, hwF = ev && !rear ? hw1 + 2.4 * U : hwB;
+      const hemAt = (u) => L.hemCord ? tl * (u > 0 ? lerp(1, kn, u) : 1) : ev ? tl * (rear ? 1 - 0.08 * u * u : 1 - 0.06 * Math.abs(u)) : tl * (rear ? 1 - 0.16 * u * u : (0.7 + 0.3 * Math.min(1, Math.abs(u + 0.3) / 0.7)) * (u > 0 ? lerp(1, kn, u) : 1)); // beta 3.64: an anorak's hem is straight, gathered by its drawstring
+      const pts = [off(hip, cx2 - hw1 - (ev ? 2 * U : 0), -3 * U), off(hip, cx2 + hw1 + (ev ? U : 0), -3 * U)];
+      for (let i = 0; i <= 10; i++) { const u = 1 - i / 5; pts.push(off(hip, cx2 + u * (u > 0 ? hwF : hwK), hemAt(u))); }
       poly(F, pts, (x, y) => {
-        const [u, v] = tloc(x, y), dn = (v - 1) * len, t2 = toneOf(u * 0.85, 0.2), hm = hemAt(clamp(u * hw1 / hwB, -1, 1));
+        const [u, v] = tloc(x, y), dn = (v - 1) * len, t2 = toneOf(u * 0.85, 0.2), hm = hemAt(clamp(u * hw1 / (u > 0 ? hwF : hwK), -1, 1));
         if (dn > hm - 1.2 * U) return L.hemCord && Math.floor(x) % 3 === 0 ? u32("#e6e0d6") : TOP[Math.min(4, t2 + 1)]; // the hem (an anorak's: its cord showing through)
         if (L.topKind === "anorak") { const b = ankBand(u); if (b) return ramp(b)[clamp(t2, 0, 4)]; }
         if (!rear && L.topKind === "workshirt" && Math.abs(u - 0.58) < 0.035) return (Math.floor(y) % 4 === 0) ? u32("#e8e4dc") : TOP[3]; // the placket, its buttons
@@ -1836,6 +1865,81 @@
     line(BB[0], BB[1], BB[0] + 3, BB[1] + 6, OUT, 3, -1); line(BB[0], BB[1], BB[0] + 3, BB[1] + 6, SIL2, 1); x.fillStyle = OUT; x.fillRect(BB[0] + 1, BB[1] + 6, 5, 3); x.fillStyle = "#3a3a42"; x.fillRect(BB[0] + 2, BB[1] + 7, 3, 1);
     return (BIKE = c);
   }
+  // beta 3.65 (Daniel, the photo of the shop's two cats): the two cats that live in front of Two Minutes, on the
+  // pavement under the window, between the step and the bike, a little behind the fighters (never over their feet):
+  // a tortoiseshell tabby (brown, black and ginger in stripes, a ringed tail, no white) and a calico (orange, black and
+  // brown patches, a white chest, muzzle and paws). They sit, blink, swish their tails, groom; now and then one gets up,
+  // walks a few steps along the shop front and sits again. A big blow, a K.O. or I O N's finisher: ears back and a
+  // startled hop; the K.O. and the finisher send one of them running off the screen, back a while later. Their own
+  // dice (not Math.random), so the bench is untouched. In the ending the calico sits by the Dacia's front wheel
+  const CAT_MAP = {
+    sit: ["..E.....E...", "..Ee...eE...", "..HHHHHHH...", ".HHYHHHYHH..", ".HHHHNHHHH..", "..HMMMMMH...", "...HHHHH....", "..BBCCCBB...", ".BBBCCCBBB..", ".BBBCCCBBB..", "BBBBCCCBBBB.", "BBBBCCCBBBB.", "BBBBPCPBBBB.", ".BBBPBPBBB..", "TTTTTTBBB..."],
+    sitUp: ["..E.....E...", "..Ee...eE...", "..HHHHHHH...", ".HHYHHHYHH..", ".HHHHNHHHH..", "..HMMMMMH...", "...HHHHH..TT", "..BBCCCBB..T", ".BBBCCCBBB.T", ".BBBCCCBBBT.", "BBBBCCCBBBT.", "BBBBCCCBBBT.", "BBBBPCPBBBT.", ".BBBPBPBBB..", "...BBBBBB..."],
+    groom: ["............", "..E.....E...", "..Ee...eE...", "..HHHHHHH...", ".HHHHHHHHH..", ".HHHHNHHHH..", "..HMMMMMH...", "..PPHHHHB...", ".BPPCCCBBB..", ".BBBCCCBBB..", "BBBBCCCBBBB.", "BBBBCCCBBBB.", "BBBBPCPBBBB.", ".BBBPBPBBB..", "TTTTTTBBB..."],
+    walk1: ["............E.E.", "............HEHE", "T...........HHYH", "T...........HHHN", ".T.BBBBBBBBBHHM.", "..BBBBBBBBBBBB..", "..BBBBBBBBBBBC..", "...P.P....P.P...", "...P.P....P.P..."],
+    walk2: ["............E.E.", "............HEHE", "T...........HHYH", ".T..........HHHN", "..TBBBBBBBBBHHM.", "..BBBBBBBBBBBB..", "..BBBBBBBBBBBC..", "..P...P..P...P..", ".P.....PP.....P."],
+    hop: ["TT..............", "TT...BBBBBB.....", ".T..BBBBBBBBHHEE", ".TBBBBBBBBBBHHYH", "..BBBBBBBBBBHHHN", "..BBBBBBBBBBBHM.", "..BBBBBBBBBBBC..", "..P.P......P.P..", ".P...P....P...P."]
+  };
+  const CATS = { seed: 7, n: 0, cats: [{ id: 0, home: 117, x: 117, st: "sit", t: 0, nx: 300, face: 1, y: 0, flat: 0, tail: 0 }, { id: 1, home: 132, x: 132, st: "sit", t: 0, nx: 520, face: -1, y: 0, flat: 0, tail: 0 }], scare: 0, IMG: {} };
+  const CAT_Y = 182; // the sitting cats' feet, on the pavement's back rows
+  const crand = () => { CATS.seed = (Math.imul(CATS.seed, 1103515245) + 12345) >>> 0; return CATS.seed / 4294967296; };
+  function catImg(id, fr, blink, flat) {
+    const key = id + fr + (blink ? "b" : "") + (flat ? "f" : ""); if (CATS.IMG[key]) return CATS.IMG[key];
+    let rows = CAT_MAP[fr].map((r) => r.split(""));
+    if (blink) rows = rows.map((r) => r.map((ch) => (ch === "Y" ? "H" : ch)));
+    if (flat && fr.startsWith("sit")) { rows[0] = "............".split(""); rows[1] = ".EE.....EE..".split(""); }
+    const h = rows.length, w = rows[0].length, [c, x] = mk(w + 2, h + 2), d = x.createImageData(w + 2, h + 2), o32 = new Uint32Array(d.data.buffer), oc = u32(OUT);
+    const TAB = { dark: "#2e2016", base: "#7a5a3c", gin: "#b8743a", ear: "#3a2a1e" }, CAL = { or: "#d8822e", bk: "#1e1a18", br: "#7a5434", wh: "#f2efe6" };
+    const col = (ch, X, Y) => {
+      const n = hash2(X * 3 + id * 17, Y * 7 + 3), cell = hash2(Math.floor(X / 2) * 5 + id * 11, Math.floor(Y / 2) * 9 + 1);
+      if (ch === "Y") return "#c8c040"; if (ch === "N") return "#d88a80"; if (ch === "e") return "#c88a78";
+      if (id === 0) { // the tabby: mottled stripes, a ringed tail, no white
+        if (ch === "E") return TAB.ear; if (ch === "M") return "#b8946a"; if (ch === "P") return "#5a3e28";
+        if (ch === "T") return (X + Y) % 2 ? TAB.dark : TAB.base;
+        if (Y % 3 === 1 && n > 0.25) return TAB.dark; return n < 0.22 ? TAB.dark : n < 0.5 ? TAB.gin : TAB.base;
+      }
+      // the calico: big patches, white on the chest, the muzzle, the paws
+      if (ch === "C" || ch === "M" || ch === "P") return CAL.wh;
+      if (ch === "E") return X < w / 2 ? CAL.bk : CAL.or;
+      return cell < 0.36 ? CAL.or : cell < 0.62 ? CAL.bk : cell < 0.78 ? CAL.br : CAL.or;
+    };
+    const put = (X, Y, v) => { o32[(Y + 1) * (w + 2) + X + 1] = v; };
+    for (let Y = 0; Y < h; Y++) for (let X = 0; X < w; X++) { if (rows[Y][X] === ".") continue; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const X2 = X + dx, Y2 = Y + dy; if (X2 < 0 || Y2 < 0 || X2 >= w || Y2 >= h || rows[Y2][X2] === ".") put(X2, Y2, oc); } }
+    for (let Y = 0; Y < h; Y++) for (let X = 0; X < w; X++) { const ch = rows[Y][X]; if (ch !== ".") put(X, Y, u32(col(ch, X, Y))); }
+    x.putImageData(d, 0, 0); c.w = w + 2; c.h = h + 2;
+    return (CATS.IMG[key] = c);
+  }
+  // a step of their lives (from the fight's step, so they keep the game's time)
+  function stepCats(fx) {
+    const C = CATS; C.n++;
+    const lvl = C.scare; C.scare = 0;
+    if (lvl) { let bolted = C.cats.some((c) => c.st === "bolt" || c.st === "away" || c.st === "back"); for (const c of C.cats) { if (c.st === "bolt" || c.st === "away") continue; c.flat = 60; if (lvl >= 2 && !bolted && crand() < 0.75) { c.st = "bolt"; c.t = 0; c.face = -1; bolted = true; } else if (c.st !== "back") { c.st = "hop"; c.t = 0; } } }
+    for (const c of C.cats) {
+      c.t++; if (c.flat > 0) c.flat--;
+      if (c.st === "sit" || c.st === "groom") {
+        if (c.st === "groom" && c.t > 150) { c.st = "sit"; c.t = 0; }
+        if (c.st === "sit" && c.t % 70 === 0) c.tail = crand() < 0.5 ? 1 : 0; // the tail swishing
+        if (--c.nx <= 0) { const r = crand(); c.nx = 360 + Math.floor(crand() * 480);
+          if (r < 0.4) { c.st = "groom"; c.t = 0; }
+          else if (r < 0.75 && !C.cats.some((o) => o !== c && o.st === "walk")) { const to = clamp(c.x + (crand() < 0.5 ? -1 : 1) * (8 + crand() * 14), 112, 138), o = C.cats.find((q) => q !== c); if (!o || o.st === "away" || Math.abs(to - o.x) >= 13) { c.st = "walk"; c.to = to; c.face = to > c.x ? 1 : -1; c.t = 0; } } }
+      } else if (c.st === "walk") { c.x += 0.35 * c.face; if ((c.face > 0 && c.x >= c.to) || (c.face < 0 && c.x <= c.to)) { c.st = "sit"; c.t = 0; c.face = c.id ? -1 : 1; } }
+      else if (c.st === "hop") { c.y = -Math.round(Math.sin(Math.min(1, c.t / 16) * Math.PI) * 6); if (c.t >= 16) { c.st = "sit"; c.t = 0; c.y = 0; } }
+      else if (c.st === "bolt") { c.x -= 2.4; c.y = -Math.round(Math.abs(Math.sin(c.t * 0.5)) * 2); if (c.x < fx - 30) { c.st = "away"; c.t = 0; c.y = 0; c.wait = 480 + Math.floor(crand() * 420); } }
+      else if (c.st === "away") { if (c.t > c.wait) { c.st = "back"; c.t = 0; c.face = 1; c.x = Math.min(c.x, fx - 24); } }
+      else if (c.st === "back") { c.x += 0.5; if (c.x >= c.home) { c.x = c.home; c.st = "sit"; c.t = 0; c.face = c.id ? -1 : 1; } }
+    }
+  }
+  function drawCats(ctx, fx) {
+    for (const c of CATS.cats) {
+      if (c.st === "away") continue;
+      const moving = c.st === "walk" || c.st === "back" || c.st === "bolt", hopping = c.st === "hop";
+      const fr = hopping ? "hop" : moving ? (Math.floor(c.t / (c.st === "bolt" ? 3 : 8)) % 2 ? "walk2" : "walk1") : c.st === "groom" ? "groom" : c.tail ? "sitUp" : "sit";
+      const blink = !moving && !hopping && (CATS.n + c.id * 97) % 260 < 6, img = catImg(c.id, fr, blink || c.st === "groom", c.flat > 0);
+      const x = Math.round(c.x - fx - img.w / 2), y = CAT_Y + c.y - img.h + 1; if (x < -20 || x > W + 4) continue;
+      ctx.fillStyle = "rgba(20,14,30,.3)"; ctx.fillRect(x + 2, CAT_Y, img.w - 4, 1); // its shadow
+      drawFlipped(ctx, img, x, y, img.w, img.h, (moving || hopping) ? c.face < 0 : c.face < 0 && !moving);
+    }
+  }
   function drawBike(ctx, fx) {
     const bx = BIKE_X - fx, by = BIKE_Y; if (bx < -70 || bx > W) return;
     ctx.fillStyle = "rgba(20,14,30,.3)"; ctx.fillRect(bx + 3, by + 39, 62, 2); ctx.fillRect(bx + 8, by + 38, 52, 1); // its shadow on the pavement
@@ -1860,8 +1964,8 @@
 
   // ===================== 5. the roster =====================
   const ROSTER = {
-    daniel: { id: "daniel", name: "DANIEL", role: "FOUNDER - CREATIVE ARCHITECT", special: "COLOR WAVE", line: "PAINTS THE ROOM IN ONE MOVE", speed: 1, power: 1 },
-    cristian: { id: "cristian", name: "CRISTIAN", role: "PARTNER - CEO", special: "DEADLINE DASH", line: "ALWAYS ONE STEP AHEAD", speed: 1.04, power: 0.9 }, // beta 3.49: was 1.08 / 0.95 (he won 78% on the bench)
+    daniel: { id: "daniel", name: "DANIEL", role: "FOUNDER - CREATIVE ARCHITECT", special: "COLOR WAVE", line: "PAINTS THE ROOM IN ONE MOVE", speed: 0.92, power: 0.84 }, /* beta 3.65: 190 cm now (the reach): a step slower, the blows lighter, tuned on the bench */
+    cristian: { id: "cristian", name: "CRISTIAN", role: "PARTNER - CEO", special: "DEADLINE DASH", line: "ALWAYS ONE STEP AHEAD", speed: 0.93, power: 0.75 }, /* beta 3.65: 190 cm (was 1.04 / 0.9) */ // beta 3.49: was 1.08 / 0.95 (he won 78% on the bench)
     ion: { id: "ion", name: "I O N", role: "FOUNDER OF TWO MINUTES", special: "ESPRESSO SHOT", line: "TWO MINUTES IS ALL HE NEEDS", speed: 1, power: 1.04, def: 0.97 }, // beta 3.49: a touch harder (and a sharper CPU: AI_PROF)
     // beta 3.11 (Daniel): the guests (Iulica is on the crew page too)
     cristache: { id: "cristache", name: "CRISTACHE", role: "SPECIAL GUEST", special: "HORSE POWER", line: "A WORK OF ART, THROWN", speed: 1.1, power: 1 }, // beta 3.31: a touch quicker now he is smaller (less reach). beta 3.49: the sculpted horse
@@ -1869,13 +1973,13 @@
     // (fd: ticks added to every attack's start-up and recovery), a heavier jump (lower, falling faster), the blows
     // heavier to make up for it; his special makes him fast for a few seconds
     steve: { id: "steve", name: "STEVE", role: "SPECIAL GUEST - OVER TWO METRES", special: "FAST FORWARD", line: "TWO METRES OF GOOD VIBES", speed: 0.76, power: 1.05, fd: { su: 3, rc: 5, air: 1 }, jump: { v: -5.9, g: 0.36 } }, // was speed 0.86, power 1.15
-    rares: { id: "rares", name: "RARE\u0218", role: "SPECIAL GUEST", special: "ANCHOR PUNCH", line: "NEVER LOSES HIS KEYS", speed: 1, power: 1 }, // beta 3.49: the flex and the big punch
-    dony: { id: "dony", name: "DONY", role: "ROASTS THE COFFEE", special: "LENS LASER", line: "SMALL, QUICK, FRESHLY ROASTED", speed: 1.12, power: 1 }, // beta 3.49: two beams from his glasses (power was 0.92: he won 2% on the bench)
-    iulica: { id: "iulica", name: "IULIC\u0102", role: "CREW", special: "CAMERA FLASH", line: "BRINGS THE ENERGY INTO THE FRAME", speed: 1.02, power: 1.02 }, // beta 3.64: the flash (was TOTE SWING)
+    rares: { id: "rares", name: "RARE\u0218", role: "SPECIAL GUEST", special: "ANCHOR PUNCH", line: "NEVER LOSES HIS KEYS", speed: 1, power: 1.08 }, /* beta 3.65: the CPUs punish now: his slow anchor punch paid for it */ // beta 3.49: the flex and the big punch
+    dony: { id: "dony", name: "DONY", role: "ROASTS THE COFFEE", special: "LENS LASER", line: "SMALL, QUICK, FRESHLY ROASTED", speed: 1.12, power: 1.06 }, /* beta 3.65 */ // beta 3.49: two beams from his glasses (power was 0.92: he won 2% on the bench)
+    iulica: { id: "iulica", name: "IULIC\u0102", role: "CREW", special: "CAMERA FLASH", line: "BRINGS THE ENERGY INTO THE FRAME", speed: 1.02, power: 1.06 }, /* beta 3.65 */ // beta 3.64: the flash (was TOTE SWING)
     maria: { id: "maria", name: "MARIA", role: "SPECIAL GUEST", special: "CURL CYCLONE", line: "SPINS FIRST, ASKS LATER", speed: 1.06, power: 0.92 }, // beta 3.49: speed was 1.1
     // beta 3.55 (Daniel): two more guests
     // beta 3.55 (Daniel): two more guests, put mid-pack on the bench (Caius tall, so his reach is long: a slower walk, lighter blows, a slower CPU; Boomer heavy-handed)
-    boomer: { id: "boomer", name: "BOOMER", role: "SPECIAL GUEST - THE COOK", special: "PAN CLANG", line: "SERVES IT HOT", speed: 1, power: 1.16 },
+    boomer: { id: "boomer", name: "BOOMER", role: "SPECIAL GUEST - THE COOK", special: "PAN CLANG", line: "SERVES IT HOT", speed: 1, power: 1.22 },
     caius: { id: "caius", name: "CAIUS", role: "SPECIAL GUEST - THE BARISTA", special: "PORTAFILTER", line: "PULLS A SHOT, THROWS THE HANDLE", speed: 0.94, power: 0.87 }
   };
   // the select grid: a small config. Both sides pick from it (Player 1, then the CPU); "random" is the "?" tile.
@@ -2205,6 +2309,7 @@
       flash: () => { tone("square", 2400, 1200, 0.08, 0.1); tone("square", 3200, 3200, 0.05, 0.07, 0.08); hiss(6000, 1, 0.28, 0.3, 0, "highpass"); },
       // beta 3.64: Iulica's camera: the flash charging (a rising whine), the shutter (two clicks and the pop), the one blinded
       charge: () => tone("sine", 900, 5200, 0.22, 0.045),
+      superstart: () => { notes([392, 523, 659, 784, 1046], "square", 0.07, 0.06, 0.045); hiss(3000, 0.6, 0.35, 0.2, 0, "bandpass", 9000); }, // beta 3.65: a super coming
       combo: () => notes([1046, 1318, 1568], "square", 0.05, 0.05, 0.04), // beta 3.64: a combo of three or more
       ex: () => { notes([784, 1175, 1568, 2093], "square", 0.06, 0.06, 0.03); hiss(5000, 1, 0.2, 0.12, 0, "highpass"); }, // and an EX special
       shutter: () => { hiss(3800, 5, 0.025, 0.5); hiss(2300, 5, 0.03, 0.45, 0.06); tone("square", 4400, 4400, 0.03, 0.05, 0.01); hiss(7000, 1, 0.3, 0.3, 0.02, "highpass"); },
@@ -2309,7 +2414,7 @@
     cristache: { su: 16, ac: 1, rc: 18, cool: 170, proj: "horse", lob: [3.3, -3.3, 0.2], dmg: 13, kd: true, sfx: "horse", sp: true, chip: 3, seq: [[0, 15], [1, 9], [2, 10]] },
     // Steve: FAST FORWARD: a burst that shoves away anyone next to him (small damage), then 4 s fast (walk x1.65, every
     // attack's start-up -2 and recovery -5 ticks, a full jump), afterimages; a long cooldown, the CPU uses it rarely
-    steve: { su: 14, ac: 3, rc: 12, cool: 720, buff: 240, dmg: 5, box: [-14, -100, 40, 0], hs: 12, bs: 8, push: 4.6, sfx: "turbo", sp: true, seq: [[0, 13], [1, 7], [2, 8]] },
+    steve: { su: 14, ac: 3, rc: 12, cool: 780, buff: 200, /* beta 3.65 (Daniel: "with Steve I beat I O N very easily"): 3.3 s fast, not 4; every 13 s, not 12 */ dmg: 5, box: [-14, -100, 40, 0], hs: 12, bs: 8, push: 4.6, sfx: "turbo", sp: true, seq: [[0, 13], [1, 7], [2, 8]] },
     // Rares flexes (the forearms swell, the anchor shows in his tattoos), then a huge punch that sends the other one flying
     // across the screen (into the screen's edge, a bounce off it); slow to start, a long recovery: a punish, or a gamble
     rares: { su: 22, ac: 4, rc: 22, cool: 190, dmg: 15, box: [16, -88, 62, -56], hs: 22, bs: 14, push: 6, launch: 7.5, kd: true, sfx: "anchor", sp: true, chip: 3, hstop: 18, flexArmor: 12, seq: [[0, 11], [1, 10], [2, 10], [3, 16]] }, // flexArmor: one blow in the first 12 ticks of the flex taken (at 3/4) and shrugged off
@@ -2325,7 +2430,11 @@
     // stands facing him within reach (about a third of the screen) is blinded and goes down; it can't be blocked, but a
     // crouch (under the light) or a jump dodges it, and so does looking the other way. Slow to start (the camera coming
     // up is the tell), a long recovery; light damage: the point is the knock-down and what follows
-    iulica: { su: 14, ac: 2, rc: 22, cool: 170, eyes: 128, dmg: 9, kd: true, unblock: true, sfx: "shutter", hitSfx: "blinded", sp: true, hstop: 16, seq: [[0, 13], [1, 12], [2, 12]] }
+    // beta 3.65 (Daniel: "it does no damage"): the reach was multiplied by the fighter's scale (half a game unit a
+    // pose unit), so it only reached about a sixth of the screen. Now in game units, most of the screen, and a super
+    // move's show: the screen dims as the phone comes up, then a whiteout, a ring of light rushing out, the picture
+    // punching in, the shake, FLASH!
+    iulica: { su: 14, ac: 2, rc: 22, cool: 300, eyes: 300, dmg: 9, kd: true, unblock: true, super: true, sfx: "shutter", hitSfx: "blinded", sp: true, hstop: 20, seq: [[0, 13], [1, 12], [2, 12]] }
   };
   const GRAV = 0.34, JUMP_V = -6.4, ROUND_TIME = 60; // beta 3.33: the jump a little lower, as the fighters are (about 60 units up)
   function fighter(id, cpu, x, face, alt) {
@@ -2447,12 +2556,13 @@
   // (by round), how often it punishes a missed or blocked attack in its recovery and keeps the pressure on after a hit
   // it landed, how readily it uses its special (sp). AI_BASE is the CPU as it was before 3.49; BOT is the bench's
   // scripted players (an average and a decent human), never used in the game
-  const AI_BASE = { react: 14, jitter: 18, r1: 8, block: [0.38, 0.45, 0.52], punish: 0, follow: 0, sp: 1, chain: 0.12 }; // beta 3.64: chain, how often a blow that hit is followed into the chain
+  const AI_BASE = { react: 12, jitter: 16, r1: 8, block: [0.54, 0.6, 0.66], punish: 0.38, follow: 0, sp: 1, chain: 0.12 }; // beta 3.65 (Daniel: "with Steve I beat I O N very easily"): every CPU quicker, blocking more, punishing a whiff, tuned against a human-like player (was react 14, jitter 18, block 0.38-0.52, no punish) // beta 3.64: chain, how often a blow that hit is followed into the chain
   // beta 3.49, tuned on the bench (fair CPU against CPU, 48 matches a pairing): I O N a little quicker to decide, blocks a
   // little more, punishes and keeps the pressure on now and then; Steve's CPU slower to decide and to block (he feels
   // slow), using FAST FORWARD rarely (think)
-  const AI_PROF = { ion: { react: 14, jitter: 17, r1: 7, block: [0.42, 0.48, 0.54], punish: 0.06, follow: 0.04, chain: 0.04 }, steve: { react: 16, jitter: 19, block: [0.34, 0.4, 0.46] }, caius: { react: 15, jitter: 18, chain: 0.04 }, maria: { chain: 0.04 }, daniel: { chain: 0.06 } }; // beta 3.64: the chains, tuned on the bench (the long-reach and the quick ones chain less) // beta 3.55: Caius's CPU a beat slower (his reach is long)
+  const AI_PROF = { ion: { react: 11, jitter: 15, r1: 7, block: [0.57, 0.63, 0.69], punish: 0.46, follow: 0.1, chain: 0.04, adapt: 1 }, caius: { chain: 0.04, react: 14, jitter: 18 }, maria: { chain: 0.04 }, daniel: { chain: 0.06, react: 14, jitter: 17 }, cristian: { react: 14, jitter: 18 }, cristache: { react: 13 } }; // beta 3.65: I O N the sharpest, and the one who adapts fully to a fast opponent (adapt); the per-fighter delays of 3.49-3.65 (Steve's slow CPU, Caius's, Daniel's, Cristian's) folded into the new base
   const BOT = { avg: { react: 16, jitter: 16, r1: 0, block: [0.33, 0.33, 0.33], punish: 0.15, follow: 0.15, sp: 1, chain: 0.2, ex: 0.15 }, decent: { react: 12, jitter: 12, r1: 0, block: [0.45, 0.45, 0.45], punish: 0.35, follow: 0.3, sp: 1, chain: 0.55, ex: 0.6 } }; // beta 3.64: the scripted players chain and throw EX specials as players who know the moves would
+  BOT.human = Object.assign({}, BOT.avg, { spAlways: 1, buffAggro: 1 }); BOT.nosp = Object.assign({}, BOT.avg, { sp: 0 }); // beta 3.65: a human-like player (the special whenever it's ready, Steve rushing in on his FAST FORWARD), and one without the special
   let botProf = null;
   function think(f, o, P0) {
     const P = P0 || f.prof || (f.prof = Object.assign({}, AI_BASE, AI_PROF[f.id] || {}));
@@ -2464,14 +2574,17 @@
     // beta 3.64: a blow that hit is followed into the chain now and then (P.chain), after a human beat (2 to 6 ticks)
     if (f.st === "atk" && f.atk && f.atkHit && CHAIN_RANK[f.atk.name]) {
       if (ai.chainFor !== f.atkId) { ai.chainFor = f.atkId; ai.chain = null; const r = CHAIN_RANK[f.atk.name], n = f.chainN || 1;
-        if (Math.random() < (P.chain || 0)) { const k = f.spCool <= 0 && Math.random() < 0.35 ? "sp" : r === 1 && n < 3 ? ((f.chainL || 0) < 2 && Math.random() < 0.5 ? "pp" : "kp") : f.spCool <= 0 ? "sp" : null; if (k) ai.chain = { k, n: 2 + (Math.random() * 5 | 0), dn: !!f.atk.crouch }; } }
+        if (Math.random() < (P.chain || 0)) { const k = f.spCool <= 0 && P.sp > 0 && Math.random() < 0.35 ? "sp" : r === 1 && n < 3 ? ((f.chainL || 0) < 2 && Math.random() < 0.5 ? "pp" : "kp") : f.spCool <= 0 ? "sp" : null; if (k) ai.chain = { k, n: 2 + (Math.random() * 5 | 0), dn: !!f.atk.crouch }; } }
       if (ai.chain && --ai.chain.n <= 0) { inp[ai.chain.k] = 1; if (ai.chain.dn) inp.d = 1; ai.chain = null; }
     }
+    // beta 3.65 (Daniel: "with Steve I beat I O N very easily"): a fast opponent (FAST FORWARD) is met with a tighter
+    // guard, steps back out of reach and its whiffs punished (P.adapt: I O N fully, the others half)
+    const fast = !P0 && o.buff > 0, ad = fast ? (P.adapt ?? 0.5) : 0;
     // a threat: the player's attack starting near, or a projectile coming
     const threatAtk = o.st === "atk" || (o.atk && !onGround(o));
-    if (threatAtk && o.atk && ai.seen !== o.atkId && d < (o.atk.eyes ? o.atk.eyes * o.sc : 92)) {
+    if (threatAtk && o.atk && ai.seen !== o.atkId && d < (o.atk.eyes ? o.atk.eyes : 92)) {
       ai.seen = o.atkId;
-      if (Math.random() < P.block[Math.min(2, g.round - 1)]) ai.plan = { k: "block", low: !!o.atk.low || !!o.atk.eyes || (o.atk.crouch && Math.random() < 0.7), n: 26 + (Math.random() * 10 | 0) }; // beta 3.64: under Iulica's flash (a crouch)
+      if (Math.random() < P.block[Math.min(2, g.round - 1)] + 0.3 * ad) ai.plan = { k: "block", low: !!o.atk.low || !!o.atk.eyes || (o.atk.crouch && Math.random() < 0.7), n: 26 + (Math.random() * 10 | 0) }; // beta 3.64: under Iulica's flash (a crouch)
     }
     const pr = g.proj.find((p) => p.owner !== f && Math.sign(f.x - p.x) === Math.sign(p.vx) && Math.abs(f.x - p.x) < 110);
     if (pr && ai.seenP !== pr && free(f)) {
@@ -2493,19 +2606,23 @@
     }
     // beta 3.49: a punish (the other's attack missed or was blocked, it is still recovering, in reach) and the pressure
     // kept after a hit landed (straight into another attack): both only for the profiles that have them
-    if (free(f) && !ai.plan && P.punish && o.st === "atk" && o.atk && o.t >= o.atk.su + o.atk.ac && ai.pun !== o.atkId && d < 70 * f.sc) { ai.pun = o.atkId; if (Math.random() < P.punish) { if (d < 54 * f.sc) inp.pp = 1; else inp.kp = 1; return inp; } }
+    if (free(f) && !ai.plan && (P.punish || ad) && o.st === "atk" && o.atk && o.t >= o.atk.su + o.atk.ac && ai.pun !== o.atkId && d < 70 * f.sc) { ai.pun = o.atkId; if (Math.random() < Math.max(P.punish || 0, 0.6 * ad)) { if (d < 54 * f.sc) inp.pp = 1; else inp.kp = 1; return inp; } }
     if (o.hp < (ai.oh ?? o.hp) && o.st === "hit") ai.hitNow = 1; ai.oh = o.hp;
     if (ai.hitNow && free(f)) { ai.hitNow = 0; if (P.follow && d < 74 * f.sc && Math.random() < P.follow) { if (Math.random() < 0.55) inp.pp = 1; else inp.kp = 1; return inp; } }
+    // the bench's human-like players (BOT.human): the special pressed whenever it is ready and makes sense, and with
+    // Steve's FAST FORWARD on, straight in and pressing (beta 3.65)
+    if (P.buffAggro && f.buff > 0 && free(f)) { if (d > 58 * f.sc) { inp[fwd] = 1; return inp; } if (Math.random() < 0.25) { if (Math.random() < 0.55) inp.pp = 1; else inp.kp = 1; } return inp; }
     if (!free(f) || ai.t > 0) return inp;
-    ai.t = P.react + (Math.random() * P.jitter | 0) + (g.round === 1 ? P.r1 : 0);
-    const r = Math.random(), ready = f.spCool <= 0, SP = SPECIAL[f.id], close = 66 * f.sc;
+    ai.t = P.react - Math.round(4 * ad) + (Math.random() * P.jitter | 0) + (g.round === 1 ? P.r1 : 0);
+    const r = Math.random(), ready = f.spCool <= 0 && P.sp > 0, SP = SPECIAL[f.id], close = 66 * f.sc;
+    if (fast && d < 100 && r < 0.5 * ad) { ai.plan = Math.random() < 0.5 ? { k: "walk", dir: -1, n: 16 } : { k: "block", low: false, n: 22 }; return inp; } // beta 3.65: out of the fast one's way
     // beta 3.11: any fighter can be the CPU; each special is used where it works (from afar, mid range, up close)
     // beta 3.49: where and how often each special is used: Steve's FAST FORWARD rarely (from the second round, or when
     // he's losing), the horse from mid range, the anchor punch close (more when the other is stuck in a recovery), the
     // laser across the gap at someone standing
-    const spAt = SP.eyes ? d > 24 && d < SP.eyes * f.sc * 0.9 && onGround(o) && o.st !== "crouch" && !lying(o) : SP.buff ? (g.round >= 2 || f.hp < 60) && d < 170 : SP.proj === "horse" ? d > 66 && d < 175 : SP.launch ? d < 58 * f.sc : SP.dizzy && !SP.flash ? d < 54 * f.sc : SP.beam ? d > 48 && d < 185 && o.st !== "crouch" : SP.proj ? d > 110 : SP.dash || SP.spin ? d > 50 && d < 150 : SP.flash ? d < 95 : d < 72 * f.sc;
-    const spP = SP.eyes ? (o.st === "block" || o.holdBack ? 0.36 : 0.16) : SP.buff ? 0.06 : SP.launch || (SP.dizzy && !SP.flash) ? (o.st === "atk" && o.t >= o.atk.su + o.atk.ac ? 0.6 : 0.2) : SP.proj ? 0.35 : 0.3; // beta 3.55: Boomer's pan as Rares's punch: close, mostly as a punish
-    if (ready && spAt && r < spP * P.sp) { inp.sp = 1; return inp; }
+    const spAt = SP.eyes ? d > 24 && d < SP.eyes * 0.92 && onGround(o) && o.st !== "crouch" && !lying(o) : SP.buff ? (g.round >= 2 || f.hp < 60) && d < 170 : SP.proj === "horse" ? d > 66 && d < 175 : SP.launch ? d < 58 * f.sc : SP.dizzy && !SP.flash ? d < 54 * f.sc : SP.beam ? d > 48 && d < 185 && o.st !== "crouch" : SP.proj ? d > 110 : SP.dash || SP.spin ? d > 50 && d < 150 : SP.flash ? d < 95 : d < 72 * f.sc;
+    const spP = SP.eyes ? (o.st === "block" || o.holdBack ? 0.3 : 0.12) : SP.buff ? 0.06 : SP.launch || (SP.dizzy && !SP.flash) ? (o.st === "atk" && o.t >= o.atk.su + o.atk.ac ? 0.6 : 0.2) : SP.proj ? 0.35 : 0.3; // beta 3.55: Boomer's pan as Rares's punch: close, mostly as a punish
+    if (ready && (P.spAlways ? (SP.buff ? d < 220 : spAt) : spAt && r < spP * P.sp)) { inp.sp = 1; return inp; }
     if (d > 150) {
       if (false) inp.sp = 1;
       else ai.plan = { k: "walk", dir: 1, n: 24 + (Math.random() * 24 | 0) };
@@ -2540,11 +2657,11 @@
         SND.play(a.sfx);
         if (a.lob) g.proj.push({ k: a.proj, x: f.x + f.face * 14, y: f.y - 104 * f.sc, vx: a.lob[0] * f.face, vy: a.lob[1], grav: a.lob[2], owner: f, dmg: a.dmg, t: 0, ex: !!a.ex }); // beta 3.49: the horse, thrown in an arc
         else if (a.proj) g.proj.push({ k: a.proj, x: f.x + f.face * 30, y: f.y - (a.proj === "wave" ? 56 : 63) * f.sc, vx: a.speed * f.face, owner: f, dmg: a.dmg, t: 0, ex: !!a.ex });
-        if (a.eyes) { g.flash = 6; g.fx.push({ k: "camflash", x: f.x + f.face * 33 * f.sc, y: f.y - 86 * f.sc, dir: f.face, reach: a.eyes * f.sc, t: 0, life: 12 }); } // beta 3.64: the flash: the screen white, a burst at the lens, a cone of light
+        if (a.eyes) { const lx = f.x + f.face * 33 * f.sc, ly = f.y - 86 * f.sc; g.flash = 9; g.wo = 3; g.shake = Math.max(g.shake, 6); g.dim = 0; g.punch = { x: lx, y: ly, t: 0 }; g.fx.push({ k: "camflash", x: lx, y: ly, dir: f.face, reach: a.eyes, t: 0, life: 12 }, { k: "shock", x: lx, y: ly, t: 0, life: 24 }, { k: "superpop", x: lx, y: ly, t: 0, life: 46, txt: "FLASH!" }); } // beta 3.65: the super's show // beta 3.64: the flash: the screen white, a burst at the lens, a cone of light
         if (a.buff) { f.buff = a.buff; g.fx.push({ k: "turbo", x: f.x, y: f.y - 50 * f.sc, t: 0, life: 18 }); } // beta 3.49: Steve, FAST FORWARD
         if (a.flash) { g.flash = 10; spark(f.x + f.face * 28, f.y - 76 * f.sc, "flash"); }
       }
-      if (a.sp && a.eyes && t === 2) SND.play("charge"); // the flash charging as the camera comes up
+      if (a.sp && a.eyes && t === 2) { SND.play("charge"); if (a.super) { g.dim = 12; SND.play("superstart"); } } // the flash charging as the camera comes up (beta 3.65: the screen dims: a super)
       if (a.ex && t % 3 === 0 && t < a.su + a.ac + 4) g.fx.push({ k: "ghost", x: f.x, y: f.y, face: f.face, img: frameOf(f), t: 0, life: 10, tint: 1 }); // beta 3.64: an EX special leaves a gold trail
       if (a.sp && a.launch && (t === 6 || t === 18)) { g.fx.push({ k: "twinkle", x: f.x + f.face * 12 * f.sc, y: f.y - 88 * f.sc, t: 0, life: 12 }); if (t === 6) SND.play("flex"); } // beta 3.49: the flex, a gleam on the biceps
       if (a.sp && a.beam && t === 4) g.fx.push({ k: "twinkle", x: f.x + f.face * 10 * f.sc, y: f.y - 80 * f.sc, t: 0, life: 10 }); // the glasses catching the light
@@ -2606,7 +2723,7 @@
     const k = d.hp <= 0 ? "ko" : tier;
     spark(px, py, SPARK[k], away); SND.play(def.hitSfx || (def.sfx === "hit" ? "hit" : "heavy")); // beta 3.55: a special can have its own (the pan's CLANG)
     g.hitstop = Math.max(HSTOP[k], def.hstop || 0); g.hsK = k; g.shake = Math.max(g.shake, SHAKE[k] + (def.launch ? 2 : 0));
-    if (k !== "light" || d.st === "fall") { g.cheerT = g.cheerT0 = k === "ko" ? 90 : 44; scarePigeons(); } // beta 3.45: the street cheers the big ones (a heavy blow, a special, a knock-down, the K.O.); the pigeons fly off
+    if (k !== "light" || d.st === "fall") { g.cheerT = g.cheerT0 = k === "ko" ? 90 : 44; scarePigeons(); CATS.scare = Math.max(CATS.scare, k === "ko" ? 2 : 1); } // beta 3.65: and the cats // beta 3.45: the street cheers the big ones (a heavy blow, a special, a knock-down, the K.O.); the pigeons fly off
     else g.oohT = 16; // and only flinches at a jab
     return true;
   }
@@ -2628,7 +2745,7 @@
       const at = f.atk;
       if (at && at.eyes && !f.atkHit && f.t >= at.su && f.t < at.su + at.ac) { // beta 3.64: Iulica's flash: whoever stands facing him within reach, not crouched, on the ground
         const dx = (o.x - f.x) * f.face, ducked = o.st === "crouch" || (o.st === "atk" && o.atk && o.atk.crouch) || (o.st === "block" && o.crouchBlock) || lying(o);
-        if (dx > 0 && dx < at.eyes * f.sc && onGround(o) && !ducked && o.face === -f.face) { f.atkHit = true; if (HITLOG.length < 400) HITLOG.push({ k: "sp", d: Math.round(dx), who: f.id }); if (land(f, o, at, o.x - o.face * 4 * o.sc, o.y - 88 * o.sc)) g.fx.push({ k: "blind", who: o, t: 0, life: 54 }); }
+        if (dx > 0 && dx < at.eyes && onGround(o) && !ducked && o.face === -f.face) { f.atkHit = true; if (HITLOG.length < 400) HITLOG.push({ k: "sp", d: Math.round(dx), who: f.id }); if (land(f, o, at, o.x - o.face * 4 * o.sc, o.y - 88 * o.sc)) g.fx.push({ k: "blind", who: o, t: 0, life: 54 }); }
         continue;
       }
       if (!at || !at.box || f.atkHit) continue;
@@ -2727,7 +2844,7 @@
       const F = g.fin;
       if (g.pt === FIN.leave) { const wx = MZ.x + MZ.w / 2 - layerX(g.camX, PF) + g.camX; SND.play("steam"); for (let i = 0; i < 10; i++) g.fx.push({ k: "steampuff", x: wx + ((i % 5) - 2) * 9, y: MZ.y + 18 - FLOOR - (i >> 1) * 3, t: 0, life: 22 + (i % 3) * 5, vx: ((i % 5) - 2) * 0.25, vy: -0.4 - (i % 3) * 0.15, big: i % 4 === 0 }); } // the poof as it leaves the window
       if (g.pt === FIN.drop - 14) SND.play("whistle");
-      if (g.pt === FIN.hit) { g.shake = Math.max(g.shake, 7); g.flash = 4; SND.play("clang"); SND.play("steam"); g.cheerT = g.cheerT0 = 120; scarePigeons(); F.flat = true; F.loser.st = "down"; F.loser.vx = 0; F.loser.y = 0;
+      if (g.pt === FIN.hit) { g.shake = Math.max(g.shake, 7); g.flash = 4; SND.play("clang"); SND.play("steam"); g.cheerT = g.cheerT0 = 120; scarePigeons(); CATS.scare = 2; F.flat = true; F.loser.st = "down"; F.loser.vx = 0; F.loser.y = 0;
         for (let i = 0; i < 18; i++) g.fx.push({ k: "steampuff", x: F.x + (i % 2 ? 1 : -1) * (20 + (i >> 1) * 3), y: -4 - (i % 4) * 9, t: 0, life: 36 + (i % 5) * 6, vx: (i % 2 ? 1 : -1) * (0.6 + (i % 3) * 0.4), vy: -0.3 - (i % 4) * 0.14, big: i % 3 === 0 }); for (let i = 0; i < 4; i++) spark(F.x + (i - 1.5) * 16, -2, "dust"); }
       if (g.pt === FIN.lift) SND.play("swing");
       if (g.pt >= FIN.end) finishDone();
@@ -2954,6 +3071,15 @@
       for (let q = 0; q < 8; q++) { const an = (q / 8) * Math.PI * 2, ln = q % 2 ? r * 0.6 : r; for (let j = 2; j < ln; j++) ctx.fillRect(x + Math.round(Math.cos(an) * j), y + Math.round(Math.sin(an) * j), 1, 1); }
       ctx.fillRect(x - 2, y - 2, 5, 5); ctx.globalAlpha = 1; return;
     }
+    if (e.k === "shock") { // beta 3.65: the flash's shockwave: a ring of light rushing out over the whole screen, rays behind it
+      const r = Math.round(6 + k * 430), a = 1 - k;
+      ctx.globalAlpha = Math.min(1, a * 1.4);
+      const nq = Math.max(60, Math.round(r * 3.2));
+      for (const [dr, col] of [[-6, "#3ab8f0"], [-3, "#7fd8ff"], [-1, "#ffd23a"], [1, "#ffffff"], [3, "#fff6b8"]]) { ctx.fillStyle = col; for (let q = 0; q < nq; q++) { const an = (q / nq) * Math.PI * 2; ctx.fillRect(Math.round(x + Math.cos(an) * (r + dr)), Math.round(y + Math.sin(an) * 0.8 * (r + dr)), 2, 2); } }
+      ctx.fillStyle = "#ffffff"; if (k < 0.5) for (let q = 0; q < 16; q++) { const an = (q / 16) * Math.PI * 2 + 0.2; for (let j = r * 0.25; j < r * 0.9; j += 3) ctx.fillRect(Math.round(x + Math.cos(an) * j), Math.round(y + Math.sin(an) * j * 0.8), 1, 1); }
+      ctx.globalAlpha = 1; return;
+    }
+    if (e.k === "superpop") { const sc2 = e.t < 4 ? 5 : 4, yy = 58 - Math.round(Math.min(1, k * 3) * 4); if (k < 0.85 || e.t % 2) text(ctx, e.txt, W / 2, yy, ["#ffffff", "#ffffff", "#fff6b8", "#ffd23a", "#ffd23a", "#ff9d14", "#e8601c"], { sc: sc2, al: "c", sh: 1 }); return; } // FLASH!
     if (e.k === "blind") {
       const w = e.who, down = lying(w), air = w.st === "fall", hx = Math.round(w.x - cx - (down ? w.face * 30 : air ? w.face * 16 : 0) * w.sc), hy = Math.round(w.y + FLOOR - (down ? 16 : air ? 76 : 98) * w.sc);
       for (let i = 0; i < 3; i++) { const an = e.t * 0.2 + i * 2.1, sx = hx + Math.round(Math.cos(an) * 11), sy = hy + Math.round(Math.sin(an) * 3), s3 = (e.t + i * 3) % 8 < 4 ? 2 : 1; ctx.fillStyle = "#fff6b8"; ctx.fillRect(sx - s3, sy, s3 * 2 + 1, 1); ctx.fillRect(sx, sy - s3, 1, s3 * 2 + 1); ctx.fillStyle = "#ffffff"; ctx.fillRect(sx, sy, 1, 1); }
@@ -2988,6 +3114,8 @@
     if (g.cheerT > 0 && !paused) g.cheerT--;
     ctx.save(); ctx.translate(0, sy);
     drawCrowd(ctx, fx, t, g.phase === "ko" && g.pt > 30 || g.phase === "match" ? 99 : g.cheerT > 0 ? (g.cheerT0 || 44) - g.cheerT : -1, g.oohT > 0);
+    drawCats(ctx, fx); // beta 3.65: the shop's two cats (on the street's layer, as the bike and the people)
+    if (g.dim > 0) { ctx.fillStyle = "rgba(10,6,30," + (0.62 * Math.min(1, g.dim / 6)).toFixed(2) + ")"; ctx.fillRect(0, -sy, W, H); } // beta 3.65: a super coming: the street goes dark behind the fighters
     // shadows
     for (const f of g.f) { const w = Math.round((31 * f.sc - Math.min(16, -f.y / 6)) * RS) / RS, x = Math.round((f.x - cx) * RS) / RS; ctx.fillStyle = "rgba(10,6,24,.45)"; ctx.fillRect(x - w / 2, FLOOR - 2, w, 3); ctx.fillRect(x - w / 2 + 2.5, FLOOR - 3, w - 5, 5); ctx.fillRect(x - w / 2 + 6, FLOOR - 3.5, w - 12, 6); } // beta 3.33: rounder, at the canvas's pixels
     for (const e of g.fx) if (e.k === "ghost" || e.k === "stack") drawFx(ctx, e, cx);
@@ -3014,7 +3142,12 @@
     for (const p of g.proj) drawProj(ctx, p, cx);
     for (const e of g.fx) if (e.k !== "ghost" && e.k !== "stack") drawFx(ctx, e, cx);
     ctx.restore();
+    if (g.punch && g.punch.t < 10) { // beta 3.65: the super's impact: the picture punches in towards the flash for a few frames (a radial jolt)
+      const c = ctx.canvas, z = 1 + 0.06 * (1 - g.punch.t / 10), px2 = clamp((g.punch.x - cx) * RS, 0, c.width), py2 = clamp((g.punch.y + FLOOR) * RS, 0, c.height);
+      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(c, px2 - px2 / z, py2 - py2 / z, c.width / z, c.height / z, 0, 0, c.width, c.height); ctx.restore();
+    }
     if (g.flash > 0) { ctx.fillStyle = "rgba(255,255,255," + Math.min(0.75, g.flash / 10) + ")"; ctx.fillRect(0, 0, W, H); }
+    if (g.wo > 0) { ctx.fillStyle = g.wo > 2 ? "#ffffff" : "rgba(255,250,224,.9)"; ctx.fillRect(0, 0, W, H); } // and a whiteout
     drawHUD(ctx, g, t);
     // the banners
     if (g.phase === "intro") {
@@ -3164,6 +3297,7 @@
     cable([[mx + 44, my + 18], [mx + 47, my + 26], [mx + 49, my + 42], [mx + 54, gy - 2], [mx + 64, gy - 1], [c1[0] - 4, gy - 8], [c1[0], c1[1] + 4], [c1[0], c1[1]]], "#e8301c");
     cable([[mx + 45, my + 20], [mx + 47, my + 29], [mx + 50, my + 45], [mx + 57, gy - 1], [mx + 68, gy], [c2[0] - 2, gy - 6], [c2[0], c2[1] + 4], [c2[0], c2[1]]], "#2a2a30");
     for (const [cx, cyy] of [c1, c2]) { const red = cx === c1[0], X = Math.round(cx * RS) / RS, Y = Math.round(cyy * RS) / RS; ctx.fillStyle = OUT; ctx.fillRect(X - 2, Y - 1.5, 4, 3.5); ctx.fillStyle = red ? "#e8301c" : "#3a3a42"; ctx.fillRect(X - 1.5, Y - 1, 3, 1.5); ctx.fillStyle = red ? "#ff8a6e" : "#6a6a74"; ctx.fillRect(X - 1.5, Y - 1, 3, p); ctx.fillStyle = "#c9ccd4"; ctx.fillRect(X - 1.5, Y + 0.5, 1, 1.5); ctx.fillRect(X + 0.5, Y + 0.5, 1, 1.5); } // the clamps: the grip in the cable's colour, the steel jaws
+    { const fr = Math.floor(t / 5) % 4 === 3 ? "groom" : Math.floor(t * 0.8) % 3 === 1 ? "sitUp" : "sit", im = catImg(1, fr, fr === "groom" || Math.floor(t * 60) % 220 < 6); drawFlipped(ctx, im, END_CAR + 22 - im.w / 2, gy - im.h + 1, im.w, im.h, true); } // beta 3.65: the calico, sitting by the Dacia's front wheel
     // the three of them
     const put3 = (id, x2, face) => { const im = endFrame(id); hiDraw(ctx, im, x2, gy, im.rear ? 1 : face, im.ax, im.ay); };
     { // beta 3.49: Rares and his coffee: sip, put it on the roof, wait, pick it up, sip
@@ -3192,7 +3326,19 @@
   function drawResult(ctx, t) {
     drawEnding(ctx, t);
     const win = g.result === "win", cpuN = ROSTER[g.cpu].name, px0 = 4, pw = 148; // beta 3.33: the card on the left, the jump-start at the window on the right
-    if (win) { // the voucher, a cream ticket
+    // beta 3.65 (Daniel): the batch brew is won only by beating I O N (the CPU I O N, with any other fighter: playing
+    // I O N doesn't count, even in the mirror match); any other win is a plain YOU WIN with the dare to beat him
+    let ro = RO; try { ro = ro || (window.czConsent && window.czConsent.ro && window.czConsent.ro()); } catch {}
+    const earned = win && g.cpu === "ion" && g.me !== "ion", dare = g.me === "ion" ? (ro ? ["ALEGE ALT LUPT\u0102TOR", "\u0218I BATE-L PE I O N"] : ["PICK ANOTHER FIGHTER", "AND BEAT I O N"]) : (ro ? ["BATE-L PE I O N", "PENTRU UN BATCH BREW"] : ["BEAT I O N", "TO WIN A BATCH BREW"]);
+    if (win && !earned) {
+      ctx.fillStyle = "rgba(20,15,40,.9)"; ctx.fillRect(px0, 6, pw, 146);
+      text(ctx, "YOU WIN", px0 + pw / 2, 14, GOLD, { sc: 2, sh: 1, al: "c" });
+      text(ctx, cpuN + " IS DOWN", px0 + pw / 2, 40, "#ffffff", { al: "c" });
+      text(ctx, dare[0], px0 + pw / 2, 66, GOLD, { sc: dare[0].length > 12 ? 1 : 2, al: "c" });
+      text(ctx, dare[1], px0 + pw / 2, dare[0].length > 12 ? 80 : 86, "#ffd23a", { al: "c" });
+      if (g.me !== "ion") text(ctx, ro ? "DIN PARTEA CASEI" : "ON THE HOUSE", px0 + pw / 2, 97, "#ffd23a", { al: "c" });
+      text(ctx, g.me === "ion" ? (ro ? "PENTRU UN BATCH BREW" : "FOR A BATCH BREW") : (ro ? "ALEGE CPU: I O N" : "PICK THE CPU I O N"), px0 + pw / 2, 124, "#a99cc8", { al: "c" });
+    } else if (win) { // the voucher, a cream ticket
       if (!g.voucher) { g.voucher = makeVoucher(); if (scene === "game") TRK.voucher(); } // r211 (not for the review renders)
       const v = g.voucher, y0 = 6, h = 146;
       ctx.fillStyle = OUT; ctx.fillRect(px0 - 1, y0 - 1, pw + 2, h + 2); ctx.fillStyle = "#f6efdc"; ctx.fillRect(px0, y0, pw, h);
@@ -3211,8 +3357,8 @@
       text(ctx, cpuN, px0 + pw / 2, 14, RED, { sc: cpuN.length > 7 ? 1 : 2, sh: 1, al: "c" });
       text(ctx, "WINS", px0 + pw / 2, 34, RED, { sc: 2, sh: 1, al: "c" });
       text(ctx, "TRY AGAIN!", px0 + pw / 2, 64, GOLD, { sc: 2, al: "c" });
-      text(ctx, "WIN FOR A BATCH BREW", px0 + pw / 2, 96, "#ffd23a", { al: "c" });
-      text(ctx, "ON THE HOUSE", px0 + pw / 2, 107, "#ffd23a", { al: "c" });
+      const L2 = g.cpu === "ion" && g.me !== "ion" ? ["WIN FOR A BATCH BREW", "ON THE HOUSE"] : dare; // beta 3.65: the brew is for beating I O N
+      text(ctx, L2[0], px0 + pw / 2, 96, "#ffd23a", { al: "c" }); text(ctx, L2[1], px0 + pw / 2, 107, "#ffd23a", { al: "c" });
       text(ctx, g.cpu === "ion" ? "TWO MINUTES WERE ENOUGH." : "ONE MORE COFFEE?", px0 + pw / 2, 128, "#ffffff", { al: "c" });
     }
     const items = ["REMATCH", "CHANGE FIGHTERS", "BACK TO MAP"], mx = px0 + pw / 2, w = pw;
@@ -3337,10 +3483,11 @@
       if (g.scene === "vs") { if (g.t > 2.6 || (g.t > 0.8 && (pressed.has("ok") || pressed.has("p")))) { g.scene = "fight"; g.t = 0; } }
       else if (g.scene === "fight" && !paused) {
         const inp = { l: held.l, r: held.r, u: held.u, d: held.d, pp: pressed.has("p"), kp: pressed.has("k"), sp: pressed.has("s") };
-        g.itick = (g.itick || 0) + 1; if (g.f[0] && !autoP1) noteDir(g.f[0], inp); // beta 3.64: the stick's way, every tick (the freezes too), for the motions
+        g.itick = (g.itick || 0) + 1; if (g.f[0] && !autoP1) noteDir(g.f[0], inp);
+        if (!autoP1) stepCats(Math.round(layerX(g.camX, PF))); // beta 3.65: the cats live with the fight's clock (not in the bench) // beta 3.64: the stick's way, every tick (the freezes too), for the motions
         if (g.phase === "finish" && g.pt > 8 && ["ok", "p", "k", "s"].some((k) => pressed.has(k))) { finishDone(); g.scene = "result"; g.menu = 0; g.t = 0; SND.music("menu"); pressed.clear(); return; } // beta 3.49: a key or a tap skips the finisher
         for (const e of g.fx) e.t++; g.fx = g.fx.filter((e) => e.t < e.life); if (g.combo) g.combo.t++;
-        if (g.flash > 0) g.flash--;
+        if (g.flash > 0) g.flash--; if (g.wo > 0) g.wo--; if (g.dim > 0 && !(g.f.some((f) => f.atk && f.atk.super && f.t < f.atk.su))) g.dim--; if (g.punch && ++g.punch.t > 12) g.punch = null; // beta 3.65: the super's dim, whiteout and punch-in
         g.shakeN = (g.shakeN || 0) + 1;
         if (g.shake > 0) g.shake = Math.max(0, g.shake - (g.hitstop ? 0.12 : 0.35)); // beta 3.45: the shake rides through the freeze, then settles
         if (g.oohT > 0) g.oohT--;
