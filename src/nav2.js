@@ -919,7 +919,7 @@
     function lamps(on) { lampOn = on; H.reverseLamps(on); }
     function hereAt(listed) {
       let best = null;
-      for (const p of PL) { if (listed && p.hide) continue; const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 75 && (!best || d < best.d)) best = { pl: p.pl, d, p }; }
+      for (const p of PL) { if ((listed && p.hide) || p.pl.tagOnly) continue; const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 75 && (!best || d < best.d)) best = { pl: p.pl, d, p }; } // r235: a tag-only place (Călinescu 54) never opens on arrival; driven to from its tag, D.lastArr below keeps it
       // beta 3.01 (Daniel): in front of Two Minutes, Two Minutes (its neighbours Two Min Lab and Călinescu 54 don't take it)
       // beta 3.52 r219 (Daniel: "in the Two Minutes area the card is Two Minutes'; the game's and the Lab's open only from their
       // own tag"): nor the arcade or the Lab when the ride stops right by them; they open when they are the place driven to
@@ -2194,6 +2194,11 @@
     // four cards at most, both kerbs kept in: while each side has places in reach, neither gets more than one card over
     // the other; the cards stay nearest first (ahead before just passed at the same distance)
     const NEAR_BEHIND = 160, NEAR_CAP = 4;
+    // r235 (Daniel, quick fixes: "Nearby shouldn't appear right at the beginning, but close to the roundabout; this first
+    // Nearby gives too many from Medical Avenue, let's take one from each"): the panel stays closed on the start road and
+    // opens as the car comes within NEAR_OPEN of the fountain (or is anywhere past it); the first time round the fountain
+    // it lists Daniel's mix, in his order (MIX); after that, Nearby as before
+    const NEAR_OPEN = 420, MIX = ["w-bepco", "tac", "tm", "scf", "w-clinicasante", "invest"];
     const nearW = (x) => (x.d < 0 ? -x.d * 1.6 : x.d);
     function balance(list, cap) {
       const by = { 1: [], [-1]: [], 0: [] };
@@ -2211,6 +2216,10 @@
     function render(force) {
       if (!D.ready) return;
       const L = curL(), ci = ciOf(L), cur = D.seq[ci], q = quarterAt(H.carPos.x, H.carPos.z), dec = nextDecision(L);
+      // r235: closed at the start; open from the roundabout on (and open for good)
+      if (!D.nearOpen && (Math.hypot(H.carPos.x - H.fork.x, H.carPos.z - H.fork.y) < NEAR_OPEN || q || hereAt(true))) D.nearOpen = true;
+      panel.classList.toggle("n2-wait", !D.nearOpen);
+      if (!D.nearOpen) return;
       const rows = [];
       // ahead: the places still in front of the car on the edges already chosen
       // r201 (Daniel: "sometimes it shows me only the places on one side of the street"): the row used to take only what
@@ -2266,7 +2275,7 @@
           const o2 = [];
           // out along the street only (never back into the ring: a depth-first walk with one "seen" set cut it short)
           const walk = (it, budget, base, depth) => { if (depth > 6) return; const e2 = E[it.e]; for (const p of byEdge.get(it.e) || []) { const s2 = it.dir > 0 ? p.s : e2.len - p.s; if (s2 <= budget) o2.push({ p, d: base + s2 }); } if (e2.len >= budget) return; const m = endNode(it); if (ringNodes.has(m)) return; for (const o3 of N[m].out) if (o3.e !== it.e && E[o3.e].drive && E[o3.e].kind !== "ring" && !ringNodes.has(o3.dir > 0 ? E[o3.e].b : E[o3.e].a)) walk(o3, budget - e2.len, base + e2.len, depth + 1); };
-          walk(o, 700, Math.hypot(N[n].x - H.carPos.x, N[n].z - H.carPos.z), 0);
+          walk(o, D.mixDone ? 700 : 2400, Math.hypot(N[n].x - H.carPos.x, N[n].z - H.carPos.z), 0); // r235: the mix's farther places (Slow Coffee Festival) too
           for (const x of uniq(o2)) { const q2 = x.p.q; if (!q2) continue; const l = byQ.get(q2) || []; const j = l.findIndex((y) => y.p.pl === x.p.pl); if (j < 0) l.push(x); else if (x.d < l[j].d) l[j] = x; byQ.set(q2, l); const dq = dirQ.get(q2); if (!dq || x.d < dq.d) dirQ.set(q2, { a: Math.atan2(nx, nz), d: x.d }); }
         }
         for (const [q2, l] of byQ) {
@@ -2276,33 +2285,46 @@
           rows.push({ k, other: q2, items: l.sort((a2, b2) => a2.d - b2.d).slice(0, 3) });
         }
         rows.sort((a2, b2) => "slr".indexOf(a2.k) - "slr".indexOf(b2.k));
+        // r235: the first time, one row of Daniel's mix in his order (the ways can't group it: they would reorder it); each
+        // card says its way (← ↑ →, ↓ for the arm behind) on its street's colour, a key of the streets heads the row
+        if (!D.mixDone) {
+          const got = new Map();
+          for (const l of byQ.values()) for (const x of l) got.set(x.p.pl.id, x);
+          const items = MIX.map((id) => got.get(id) || ((p) => p && { p, d: Math.hypot(p.ax - H.carPos.x, p.az - H.carPos.z) })(PL.find((y) => y.pl.id === id))).filter(Boolean)
+            .map((x) => { const dq = dirQ.get(x.p.q), a = dq ? wrapA(dq.a - P.h) : 0; return { ...x, g: Math.abs(a) > 2.5 ? "b" : Math.abs(a) < 0.6 ? "s" : a > 0 ? "l" : "r" }; });
+          if (items.length) { rows.length = 0; rows.push({ k: "s", mix: true, other: null, items }); D.mixOn = true; }
+        }
       }
+      if (D.mixOn && !nearFork) D.mixDone = true; // r235: the mix is the first appearance only
       // beta 3.01 (Daniel): at Two Minutes, Nearby lists Two Min Lab, then Călinescu 54 (an exception to the discovery rule)
       // r201: and the mini-game's place, the arcade by the Lab
-      if (here?.pl.id === "tm") { const it = ["lab", "gloves", "hq"].map((id) => PL.find((q) => q.pl.id === id)).filter(Boolean).map((q) => ({ p: q, d: Math.hypot(q.ax - H.carPos.x, q.az - H.carPos.z) })); if (it.length) { rows.length = 0; rows.push({ k: "s", other: null, items: it }); } }
+      // r235 (Daniel: "Călinescu shouldn't appear as a card, neither in Nearby nor on its own; only if you tap its tag"): not Călinescu 54
+      if (here?.pl.id === "tm") { const it = ["lab", "gloves"].map((id) => PL.find((q) => q.pl.id === id)).filter(Boolean).map((q) => ({ p: q, d: Math.hypot(q.ax - H.carPos.x, q.az - H.carPos.z) })); if (it.length) { rows.length = 0; rows.push({ k: "s", other: null, items: it }); } }
       // beta 3.01: on Strada Olari, with nothing of ours in the immediate zone, Nearby names the house ahead (it said
       // "nothing of ours down this way" on the way to it, now that Dacia 99 is not on Olari any more)
       if (!rows.length && !here && (q === "D" || Math.abs(H.carPos.x - 1170) < 60)) { let f = null; for (let k = ci; k < D.seq.length && !f; k++) { const it = D.seq[k], e = E[it.e]; for (const p of byEdge.get(it.e) || []) if (p.pl.stop === "end") { f = { p, d: it.L0 + (it.dir > 0 ? p.s : e.len - p.s) - L }; break; } } if (!f && Math.abs(H.carPos.x - 1170) < 60 && Math.cos(P.h) > 0.7) { const p = PL.find((x) => x.pl.stop === "end"); if (p) f = { p, d: Math.hypot(p.ax - H.carPos.x, p.az - H.carPos.z) }; } /* (at the junction itself the path ahead stops at the turn) */ if (f && f.d > 30 && f.d < 1400) rows.push({ k: "s", other: null, items: [f] }); }
       const auto = D.auto;
       // round 2 (Daniel: "more visual"): the panel is rebuilt only when what it shows changes; the distances update in place
-      const sig = JSON.stringify([q, here?.pl.id, auto ? auto.pl?.id || "tap" : 0, rows.map((r) => [r.k, r.other, !!ex?.[r.k], r.items.map((x) => x.p.pl.id + (x.d < 0 ? "-" : ""))]), D.cardFor?.id && H.cardOpen(), imgV]);
+      const sig = JSON.stringify([q, here?.pl.id, auto ? auto.pl?.id || "tap" : 0, rows.map((r) => [r.k, r.other, !!ex?.[r.k], r.items.map((x) => x.p.pl.id + (x.d < 0 ? "-" : "") + (x.g || ""))]), D.cardFor?.id && H.cardOpen(), imgV]); // r235: + the mix's ways
       const dists = new Map();
       for (const r of rows) for (const x of r.items) dists.set(r.k + ":" + x.p.pl.id, x.d);
       if (!force && sig === panelSig) { updDist(dists, auto); return; }
       panelSig = sig;
       const cols = (pl) => { const b = H.brand?.(pl); const c = b?.c || pl.pin || pl.c || "#FED012"; let t = b?.t || pl.t || "#111"; if (inkLum(c) < 0.25 && inkLum(t) < 0.25) t = "#ffffff"; else if (inkLum(c) > 0.6 && inkLum(t) > 0.6) t = "#141414"; return { c, t }; }; // beta 2.92: a dark name on a dark colour (Olari 9's "you're at") turned white
       const pic = (pl) => { const u = imgOf(pl); const { c, t } = cols(pl); return u ? `<img src="${esc(u)}" alt="" decoding="async" loading="lazy">` : `<span class="n2-ini" style="color:${esc(t)}">${esc(pl.name.replace(/[^A-Za-z0-9 ]/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase())}</span>`; };
-      // beta 3.52 r219 (Daniel: "in Nearby the game is a small card"): the arcade's entry is a compact chip in the game's
-      // colours (the pixel glove and "2M2F"), not a full postcard
-      const mini = (x, k) => { const pl = x.p.pl; return `<button class="n2-pc n2-mini" data-id="${esc(pl.id)}" data-dk="${k}:${esc(pl.id)}" aria-label="${esc(pl.name)}, ${mDist(x.d)}"><span class="n2-mk">${H.gameMark?.() || ""}</span><span class="n2-dist mono">${mDist(x.d)}</span></button>`; };
-      const card = (x, k) => { if (x.p.pl.game) return mini(x, k); const pl = x.p.pl, { c, t } = cols(pl), g = k === "s" && x.sd ? (x.d < 0 ? (x.sd > 0 ? "\u2199" : "\u2198") : (x.sd > 0 ? "\u2196" : "\u2197")) : GLY[k]; return `<button class="n2-pc" data-id="${esc(pl.id)}" data-dk="${k}:${esc(pl.id)}" style="--pc:${esc(c)};--pt:${esc(t)}" aria-label="${esc(pl.name)}, ${mDist(x.d)}${k === "s" && x.sd ? `, on your ${x.sd > 0 ? "left" : "right"}${x.d < 0 ? ", just passed" : ""}` : ""}"><span class="n2-pic">${pic(pl)}<em class="n2-dch">${g}</em></span><b class="n2-nm">${esc(pl.name)}</b><span class="n2-dist mono">${mDist(x.d)}</span></button>`; };
+      // r235 (Daniel: "the 2M2F card should be the size of the others"): the arcade's entry is a postcard like the rest (the
+      // game's title screen on its colours, its name); r219's compact chip is gone. The mix's cards carry their way (x.g)
+      const GLYB = { ...GLY, b: "\u2193" };
+      const card = (x, k) => { const pl = x.p.pl, { c, t } = cols(pl), g = x.g ? GLYB[x.g] : k === "s" && x.sd ? (x.d < 0 ? (x.sd > 0 ? "\u2199" : "\u2198") : (x.sd > 0 ? "\u2196" : "\u2197")) : GLY[k]; return `<button class="n2-pc" data-id="${esc(pl.id)}" data-dk="${k}:${esc(pl.id)}" style="--pc:${esc(c)};--pt:${esc(t)}" aria-label="${esc(pl.name)}, ${mDist(x.d)}${x.g ? `, ${esc(QNAME[x.p.q] || "")}` : ""}${k === "s" && x.sd ? `, on your ${x.sd > 0 ? "left" : "right"}${x.d < 0 ? ", just passed" : ""}` : ""}"><span class="n2-pic">${pic(pl)}<em class="n2-dch"${x.g ? ` style="--dc:${QCOL[x.p.q] || "#FED012"}"` : ""}>${g}</em></span><b class="n2-nm">${esc(pl.name)}</b><span class="n2-dist mono">${mDist(x.d)}</span></button>`; };
       const qpill = (qq) => `<span class="n2-q" style="--qc:${QCOL[qq] || "#FED012"}">${esc(qq ? QNAME[qq] : "Cromatic City")}</span>`;
       let h = `<header>${qpill(q)}<span class="n2-sub mono">${q ? "NEARBY IN THIS QUARTER" : "BETWEEN THE QUARTERS"}</span></header>`;
       if (auto) { const pl = auto.pl && !auto.pl.tap ? auto.pl : null, cc = pl ? cols(pl) : { c: "#FED012", t: "#111" }; h += `<div class="n2-auto" style="--pc:${esc(cc.c)};--pt:${esc(cc.t)}">${pl ? `<span class="n2-pic sm">${pic(pl)}</span>` : ""}<span class="n2-at"><i class="mono">${auto.rev ? "BACKING UP TO" : "DRIVING YOU TO"}</i><b>${esc(pl ? pl.name : "the spot you tapped")}</b><em class="n2-dist mono" data-auto="1">${mDist(autoLeft())}</em></span><button class="n2-take">Take the wheel</button></div>`; }
       if (here && here.pl.stop !== "end" && !(D.cardFor === here.pl && H.cardOpen())) { /* beta 3.0: at Olari 9 the house's own cards are enough (no "Open" banner) */ const { c, t } = cols(here.pl); h += `<button class="n2-here" data-id="${esc(here.pl.id)}" style="--pc:${esc(c)};--pt:${esc(t)}"><span class="n2-pic sm">${pic(here.pl)}</span><span class="n2-at"><i class="mono">YOU'RE AT</i><b>${esc(here.pl.name)}</b></span><em class="n2-open">Open →</em></button>`; }
       for (const r of rows) {
-        const lab = r.k === "s" ? "Ahead" : r.k === "l" ? "Left" : "Right";
-        h += `<div class="n2-row" data-k="${r.k}"><div class="n2-rh"><button class="n2-dir" data-turn="${r.k}" aria-label="${lab}"${r.k === "s" || !ex?.[r.k] ? " disabled" : ""}><span class="n2-g">${GLY[r.k]}</span></button><span class="n2-rt">${lab}${r.other ? ` <span class="n2-q sm" style="--qc:${QCOL[r.other]}">${esc(QNAME[r.other])}</span>` : ""}</span></div><div class="n2-strip">${r.items.map((x) => card(x, r.k)).join("")}</div></div>`;
+        const lab = r.mix ? "The roundabout" : r.k === "s" ? "Ahead" : r.k === "l" ? "Left" : "Right";
+        // r235: the mix's key, its streets in the order of their ways (← ↑ → ↓), each with its way
+        const leg = r.mix ? `<div class="n2-leg">${[...new Map(r.items.map((x) => [x.p.q, x.g]))].sort((a, b) => "lsrb".indexOf(a[1]) - "lsrb".indexOf(b[1])).map(([qq, g]) => `<span class="n2-q sm" style="--qc:${QCOL[qq] || "#FED012"}"><i>${GLYB[g]}</i> ${esc(QNAME[qq] || "")}</span>`).join("")}</div>` : "";
+        h += `<div class="n2-row" data-k="${r.k}"><div class="n2-rh"><button class="n2-dir" data-turn="${r.k}" aria-label="${lab}"${r.k === "s" || !ex?.[r.k] ? " disabled" : ""}><span class="n2-g">${GLY[r.k]}</span></button><span class="n2-rt">${lab}${r.other ? ` <span class="n2-q sm" style="--qc:${QCOL[r.other]}">${esc(QNAME[r.other])}</span>` : ""}</span></div>${leg}<div class="n2-strip${r.mix ? " n2-mix" : ""}">${r.items.map((x) => card(x, r.k)).join("")}</div></div>`;
       }
       if (!rows.length && !here && !auto) h += `<p class="n2-empty">Nothing of ours down this way. Back up with ↓, or tap a place on the map.</p>`;
       panel.innerHTML = h;
