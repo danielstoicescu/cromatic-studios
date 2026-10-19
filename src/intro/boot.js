@@ -2,7 +2,7 @@
    <body> (build/build.mjs): it decides what the visitor sees while the city loads, paints that ground at once, and loads
    the player (lottie-web's worker build: it draws in a Web Worker, so the city's boot on the main thread cannot stall
    it) and the opening (src/intro/intro-{desktop,phone}.json, made by design/intro-lottie/_source).
-     full  · a first visit (or ?intro): the words, then the opening onto the map
+     full  · a first visit (or ?intro, always, even with reduced motion: asked for by name): the words, then the opening onto the map
      short · a returning visitor (the intro was seen in the last 6 h) or ?map: the pill alone, then the same opening
      rm    · prefers-reduced-motion: the pill, still; then a short fade onto the map
    The app (src/app.js) talks to it through window.__czIntro: progress(0..1), ready() when the city is built and drawn,
@@ -16,17 +16,26 @@
    beta 3.69 (Daniel: "something to read first, for robots or for people"): the first paint is real text, the opening's
    own first line ("Nobody remembers a thumbnail.") where the opening draws it, at its size, in its face; the player
    takes over on its first frame (the opening starts with that line set) and the text goes, still in the page for
-   readers and the largest paint. A returning visitor and reduced motion get the brand line over the pill. */
+   readers and the largest paint. A returning visitor and reduced motion get the brand line over the pill.
+   beta 3.77 (Daniel: over the pill the line "reads as an overlap"; on a phone "the right brand" ran edge to edge): that
+   line is the pill's headline, one lockup with it: two lines, centred, half the pill's height clear above it, at a size
+   that leaves wide margins (never less than 24 px a side) and is still the largest paint. */
 (function () {
   var C = window.__CZI_CFG; if (!C) return;
   var q = location.search;
   // the /onboarding/ frame and the drive keep their own boot
   if (/[?&](drive|onb|nointro)\b/.test(q) || window.parent !== window) return;
-  var rm = false; try { rm = matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+  // 3.77: ?intro is the whole opening whatever else holds (Daniel's way to see it again: a returning visitor, reduced motion)
+  var ask = /[?&]intro\b/.test(q);
+  var rm = false; try { rm = !ask && matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
   var seen = 0; try { seen = +localStorage.getItem("cz-intro-at") || 0; } catch (e) {}
-  var full = !/[?&]map\b/.test(q) && (/[?&]intro\b/.test(q) || Date.now() - seen >= 216e5);
+  var full = ask || (!/[?&]map\b/.test(q) && Date.now() - seen >= 216e5);
   if (full) try { localStorage.setItem("cz-intro-at", String(Date.now())); } catch (e) {}
   var mode = rm ? "rm" : full ? "full" : "short";
+  // 3.77: a returning visitor's moment is the lockup alone: the cookie card waits until the map is the page (on a laptop
+  // it waited at the top right, where the headline is). Never longer than 30 s, whatever happens to the opening
+  var de = document.documentElement, ckFree = function () { de.classList.remove("czi-ret"); };
+  if (mode !== "full") { de.classList.add("czi-ret"); setTimeout(ckFree, 30000); }
   var ro = (document.documentElement.lang || "").slice(0, 2) === "ro";
   var TX = ro ? { load: "Construim orașul", skip: "Sari peste", brew: "se prepară orașul" } : { load: "Building the city", skip: "Skip intro", brew: "brewing the city" };
   var LINES = "Nobody remembers a thumbnail. But someone could remember a place, a facade, a brand. Nine worlds over the same streets. One will feel like yours. That's how the right brand feels.";
@@ -72,9 +81,13 @@
     // the text: its first baseline where the opening's is (a line box of lead x size, its baseline (half the leading
     // and the face's ascent) below its top: the face's metrics are set in boot.css, the same on every platform)
     if (ft) {
-      var f = FT.size * k, L = FT.lead * f, base = (L - (FT.asc + FT.desc) * f) / 2 + FT.asc * f;
+      // (3.77: the headline keeps 24 px a side on any screen, set smaller if it must; its last line stays where it is,
+      // half the pill's height over it)
+      var f = FT.size * k, n = FT.lines.length;
+      if (FT.w && FT.w * k > vw - 48) f *= Math.max(0.5, (vw - 48) / (FT.w * k));
+      var L = FT.lead * f, base = (L - (FT.asc + FT.desc) * f) / 2 + FT.asc * f;
       ft.style.fontSize = f + "px"; ft.style.lineHeight = L + "px";
-      ft.style.top = oy + FT.lines[0].by * k - base + "px";
+      ft.style.top = oy + FT.lines[n - 1].by * k - base - (n - 1) * L + "px";
       if (FT.center != null) { ft.style.left = ox + "px"; ft.style.width = W * k + "px"; }
       else ft.style.left = ox + FT.lines[0].x * k + "px";
     }
@@ -160,7 +173,7 @@
     Z.done = true; phase = "end"; cancelAnimationFrame(raf);
     for (var i = 0; i < ends.length; i++) try { ends[i](); } catch (e) {}
     ends = [];
-    st.classList.add("czi-gone");
+    st.classList.add("czi-gone"); ckFree();
     setTimeout(function () { try { anim && anim.destroy(); } catch (e) {} st.remove(); }, 450);
   };
   // the player has drawn: the first line's text goes (two frames on, when its drawing is on the screen); the brand line
