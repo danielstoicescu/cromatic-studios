@@ -12,6 +12,29 @@
   try { window.visualViewport && window.visualViewport.addEventListener("resize", czViewport); } catch (e) {}
   // r135g: analytics events (sent only after the cookie yes, see build/consent.mjs)
   var czEv = (n, p) => { try { window.czEvent && window.czEvent(n, p || {}); } catch (e) {} };
+  // beta 3.xx (the start-up's long tasks, after r230): the city's boot ran as a few long tasks on the main thread (on a
+  // phone at 4x CPU: 4.7 s for the bundle, 1.8 s for the streets and blocks, 2.3 s for the first frame...), so the
+  // opening's start, its Skip and every tap waited on them. Its jobs now run in slices: a job is a generator that yields
+  // between its steps; czRun goes on until the slice has had the thread for czBudget ms, then hands it back (a message,
+  // not a timer: no 4 ms clamp, and other tasks, input and the loader's frames, get their turn) and carries on.
+  var czBudget = 40, czSliceAt = 0;
+  var czYield = () => new Promise((res) => { const ch = new MessageChannel(); ch.port1.onmessage = () => { ch.port1.onmessage = null; res(); }; ch.port2.postMessage(0); });
+  var czDue = () => performance.now() - czSliceAt >= czBudget;
+  // a point where an async job may hand the thread back (only once its slice is used up)
+  var czPause = async () => { if (czDue()) { await czYield(); czSliceAt = performance.now(); } };
+  // a generator job, in slices; resolves with what it returns
+  // (window.__czSlices: the slices' own time and count, and the time between them, for the tests)
+  var czStat = (window.__czSlices = { busy: 0, n: 0, away: 0 });
+  var czRun = async (gen) => {
+    czSliceAt = performance.now();
+    for (;;) {
+      const r = gen.next();
+      if (r.done) { czStat.busy += performance.now() - czSliceAt; return r.value; }
+      if (czDue()) { const t = performance.now(); czStat.busy += t - czSliceAt; czStat.n++; await czYield(); czSliceAt = performance.now(); czStat.away += czSliceAt - t; }
+    }
+  };
+  // the same job, at once (a caller that needs it whole, now)
+  var czDrain = (gen) => { for (;;) { const r = gen.next(); if (r.done) return r.value; } };
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __esm = (fn, res) => function __init() {
     return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
@@ -24712,12 +24735,16 @@ void main() {
   // metalness 1 had nothing to reflect. The chrome gets its own room, drawn without the bend; one per renderer
   // (the ride previews have their own). Only chrome uses it, so paint, glass and the city keep their look.
   var _chromeEnv = null;
-  function makeChromeEnv(r) {
-    const pm = new PMREMGenerator(r), room = new RoomEnvironment(), nc = window.__noCityCull;
+  function chromeEnvRoom() {
+    const room = new RoomEnvironment();
     // a dark floor under the white room: the lower half reflects darker, the horizon band that reads as chrome
     const floor = new Mesh(new PlaneGeometry(40, 40), new MeshBasicMaterial({ color: "#3c3f45" }));
     floor.rotation.x = -Math.PI / 2; floor.position.y = -0.8; room.add(floor);
     noWarp(room);
+    return room;
+  }
+  function makeChromeEnv(r, room = chromeEnvRoom()) {
+    const pm = new PMREMGenerator(r), nc = window.__noCityCull;
     window.__noCityCull = true;
     try { return pm.fromScene(room, 0.04); } finally { window.__noCityCull = nc; room.dispose(); pm.dispose(); }
   }
@@ -24742,15 +24769,29 @@ void main() {
   var CITY_ENV_K = 0.35;
   var CITY_ROOM_GREY = 0.12;
   var _cityK = 1;
-  function makeCityEnv(r) {
-    const pm = new PMREMGenerator(r), room = new RoomEnvironment(), nc = window.__noCityCull;
+  function cityEnvRoom() {
+    const room = new RoomEnvironment();
     if (CITY_REFLECT) {
       // a dark studio with the room's bright panels: glossy streaks on glass and paint without the white room's
       // ambient (its diffuse part lifted every painted surface and washed the city out)
       room.traverse((o) => { if (o.isMesh && o.material.isMeshStandardMaterial) o.material.color.setScalar(CITY_ROOM_GREY); });
-      noWarp(room); window.__noCityCull = true;
+      noWarp(room);
     }
+    return room;
+  }
+  function makeCityEnv(r, room = cityEnvRoom()) {
+    const pm = new PMREMGenerator(r), nc = window.__noCityCull;
+    if (CITY_REFLECT) window.__noCityCull = true;
     try { return pm.fromScene(room, 0.04); } finally { window.__noCityCull = nc; room.dispose(); pm.dispose(); }
+  }
+  // beta 3.xx (start-up): a room's programs, compiled and linked in the background before it is baked (the bake's first
+  // draws blocked on their links: ~0.2-0.4 s at 4x for the two rooms); for the half-float cube target the bake draws into
+  async function envLinked(r, room) {
+    if (!r.extensions?.has?.("KHR_parallel_shader_compile")) return;
+    const cam = new PerspectiveCamera(90, 1, 0.1, 1000), rt = new WebGLRenderTarget(1, 1, { type: HalfFloatType }), prev = r.getRenderTarget(), nc = window.__noCityCull;
+    let p = null;
+    try { window.__noCityCull = true; r.setRenderTarget(rt); p = r.compileAsync(room, cam); } catch (e) {} finally { r.setRenderTarget(prev); window.__noCityCull = nc; }
+    try { if (p) await Promise.race([p, new Promise((res) => setTimeout(res, 3000))]); } catch (e) {} finally { rt.dispose(); }
   }
   function cityTone(root, k) {
     _cityK = k;
@@ -25105,15 +25146,44 @@ void main() {
         if ((cx - x) ** 2 + (cz - z) ** 2 <= r * r && (over || !g[j * W + i])) g[j * W + i] = v;
       }
     };
+    // a street's room: a disk of radius r stamped every <=4 units along it. beta 3.xx (start-up): the same cells, found
+    // per row, only those near the segment, each tested against the stamps nearest it (the closest of evenly spaced
+    // stamps on a line is the one nearest the cell's projection); the same arithmetic per test, so the same grid (checked
+    // against the stamping on 900 random polylines, every cell equal), ~4x faster
     const line = (pts, r, v) => {
+      const r2 = r * r;
       for (let k = 1; k < pts.length; k++) {
         const [ax, az] = pts[k - 1], [bx, bz] = pts[k], L = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(L / 4));
-        for (let s = 0; s <= n; s++) disk(ax + (bx - ax) * s / n, az + (bz - az) * s / n, r, v, true);
+        const dx = bx - ax, dz = bz - az, ex = ax + (bx - ax) * n / n, ez = az + (bz - az) * n / n, l2 = dx * dx + dz * dz;
+        const i0 = Math.max(0, Math.floor((Math.min(ax, ex) - r - CITY_X0) / C) - 1), i1 = Math.min(W - 1, Math.floor((Math.max(ax, ex) + r - CITY_X0) / C) + 1);
+        const j0 = Math.max(0, Math.floor((Math.min(az, ez) - r - CITY_Z0) / C) - 1), j1 = Math.min(H - 1, Math.floor((Math.max(az, ez) + r - CITY_Z0) / C) + 1);
+        for (let j = j0; j <= j1; j++) {
+          const cz = CITY_Z0 + (j + 0.5) * C;
+          let ilo = i0, ihi = i1;
+          if (dz !== 0) {
+            let t0 = (cz - r - az) / dz, t1 = (cz + r - az) / dz; if (t0 > t1) { const q = t0; t0 = t1; t1 = q; }
+            if (t1 < 0 || t0 > 1) { if (Math.abs(cz - az) > r + 1 && Math.abs(cz - ez) > r + 1) continue; }
+            t0 = Math.max(0, t0); t1 = Math.min(1, t1);
+            const xa = ax + dx * t0, xb = ax + dx * t1;
+            ilo = Math.max(i0, Math.floor((Math.min(xa, xb) - r - CITY_X0) / C) - 1); ihi = Math.min(i1, Math.floor((Math.max(xa, xb) + r - CITY_X0) / C) + 1);
+          } else if (Math.abs(cz - az) > r + 1) continue;
+          for (let i = ilo; i <= ihi; i++) {
+            const cx = CITY_X0 + (i + 0.5) * C, sc = l2 > 0 ? (((cx - ax) * dx + (cz - az) * dz) / l2) * n : 0;
+            let s0 = Math.floor(sc) - 1, s1 = Math.floor(sc) + 2;
+            if (s0 < 0) s0 = 0; if (s1 > n) s1 = n;
+            if (s0 > s1) { s0 = sc < 0 ? 0 : n; s1 = s0; }
+            for (let s = s0; s <= s1; s++) { const x = ax + (bx - ax) * s / n, z = az + (bz - az) * s / n; if ((cx - x) ** 2 + (cz - z) ** 2 <= r2) { g[j * W + i] = v; break; } }
+          }
+        }
       }
     };
     return { C, W, H, g, idx, disk, line, at: (x, z) => { const i = idx(x, z); return i < 0 ? 3 : g[i]; } };
   }
-  function cityNet() {
+  function cityNet() { return CITY_NET || czDrain(CITY_NET_GEN || (CITY_NET_GEN = cityNetGen())) || CITY_NET; }
+  // beta 3.xx (start-up slices): the same, yielding inside its long loops (the boot runs it in slices before the road
+  // graph; a call meanwhile finishes the same run at once)
+  var CITY_NET_GEN = null;
+  function* cityNetGen() {
     if (CITY_NET) return CITY_NET;
     const rnd = rng(1918);
     const routes = cityRoutes();
@@ -25164,6 +25234,7 @@ void main() {
     const sgrid = Array.from({ length: GW * GH }, () => []);
     const rAt = (x, z) => (x > -100 && x < 2700 && z > 2200 && z < 8300 ? 175 : 215);
     for (let tries = 0; tries < 26000; tries++) {
+      if (tries % 1500 === 1499) yield;
       const x = CITY_X0 + 40 + rnd() * (CITY_X1 - CITY_X0 - 80), z = CITY_Z0 + 40 + rnd() * (CITY_Z1 - CITY_Z0 - 80), r = rAt(x, z), r2 = r * r;
       let ok = true;
       const gi = Math.floor((x - CITY_X0) / SG), gj = Math.floor((z - CITY_Z0) / SG), rr = Math.ceil(r / SG);
@@ -25175,8 +25246,12 @@ void main() {
       seeds.push([x, z]);
       sgrid[gj * GW + gi].push(x, z);
     }
-    const minor = [];
-    for (const [[ax, az], [bx, bz]] of voronoiEdges(seeds)) {
+    yield;
+    const minor = [], vEdges = voronoiEdges(seeds);
+    yield;
+    let vk = 0;
+    for (const [[ax, az], [bx, bz]] of vEdges) {
+      if (++vk % 120 === 0) yield;
       const L = Math.hypot(bx - ax, bz - az);
       if (L < 46 || L > 700) continue;
       if (ax < CITY_X0 || bx < CITY_X0 || ax > CITY_X1 || bx > CITY_X1 || az < CITY_Z0 || bz < CITY_Z0 || az > CITY_Z1 || bz > CITY_Z1) continue;
@@ -25196,9 +25271,11 @@ void main() {
       for (let s = 0; s <= 6; s++) { const t = s / 6, o = Math.sin(t * Math.PI) * bow; pts.push([ax + (bx - ax) * t + nx * o, az + (bz - az) * t + nz * o]); }
       minor.push({ w: L > 260 ? 28 : 22, pts });
     }
+    yield;
     // the long streets stop short of the landmarks they would cross
     const longs = [];
     for (const s of LONG_STREETS) {
+      yield;
       let run = [];
       const flush = () => { if (run.length > 1) longs.push({ w: s.w, med: s.med, pts: run }); run = []; };
       for (let k = 1; k < s.pts.length; k++) {
@@ -25213,6 +25290,7 @@ void main() {
       flush();
     }
     CITY_NET = { minor, longs, routes, zones, inZone, roadDist };
+    CITY_NET_GEN = null;
     return CITY_NET;
   }
   function initRoadMats() {
@@ -25220,21 +25298,27 @@ void main() {
     mats.roadMajor = mats.roadMajor || new MeshStandardMaterial({ color: "#cfccc0", roughness: 1 });
     mats.roadCasing = mats.roadCasing || new MeshStandardMaterial({ color: "#b9b5a8", roughness: 1 });
   }
-  function buildRoads(parent) {
+  function buildRoads(parent) { return czDrain(buildRoadsGen(parent)); }
+  // beta 3.xx (start-up slices): the same, yielding between streets
+  function* buildRoadsGen(parent) {
     initRoadMats();
     const net = cityNet();
     const group = new Group();
     const v3 = (pts) => pts.map(([x, z]) => new Vector3(x, 0, z));
     // r163 (Adina): the side streets one notch lower (0.35 → 0.25, kerbs 0.22 → 0.12): their asphalt and a boulevard's kerb were
     // only 0.05 apart, and flickered at every junction from far away
-    const minorGeos = net.minor.map((s) => ribbonGeometry(v3(s.pts), s.w, 0.25));
+    const minorGeos = [];
+    for (let i = 0; i < net.minor.length; i++) { const s = net.minor[i]; minorGeos.push(ribbonGeometry(v3(s.pts), s.w, 0.25)); if (i % 8 === 7) yield; }
     const minorMesh = new Mesh(mergeGeometries(minorGeos), mats.roadMinor);
     minorMesh.receiveShadow = true;
     group.add(minorMesh);
+    yield;
     // kerbs: a darker edge under every street, so the blocks read from above
-    const casingGeos = net.minor.map((s) => ribbonGeometry(v3(s.pts), s.w + 5, 0.12));
+    const casingGeos = [];
+    for (let i = 0; i < net.minor.length; i++) { const s = net.minor[i]; casingGeos.push(ribbonGeometry(v3(s.pts), s.w + 5, 0.12)); if (i % 8 === 7) yield; }
     const majorGeos = [], medGeos = [];
     for (const s of net.longs) {
+      yield;
       // densify so curves stay smooth
       const dense = roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]);
       casingGeos.push(ribbonGeometry(v3(dense), s.w + 5, 0.4));
@@ -25242,6 +25326,7 @@ void main() {
       if (s.med) {
         medGeos.push(ribbonGeometry(v3(dense), 9, 0.75));
         for (let k = 3; k < dense.length - 3; k += 3) {
+          if (k % 45 === 0) yield;
           const [mx, mz] = dense[k];
           // r121: no tree where the boulevard crosses one of the drive's roads
           if (net.routes.some((pts) => pts.some(([rx, rz]) => (rx - mx) ** 2 + (rz - mz) ** 2 < 70 * 70))) continue;
@@ -25249,7 +25334,9 @@ void main() {
         }
       }
     }
+    yield;
     const casingMesh = new Mesh(mergeGeometries(casingGeos), mats.roadCasing);
+    yield;
     const majorMesh = new Mesh(mergeGeometries(majorGeos), mats.roadMajor);
     casingMesh.receiveShadow = majorMesh.receiveShadow = true;
     group.add(casingMesh, majorMesh);
@@ -25261,16 +25348,20 @@ void main() {
     }
     parent.add(group);
   }
-  function buildBuildings(parent) {
+  function buildBuildings(parent) { return czDrain(buildBuildingsGen(parent)); }
+  // beta 3.xx (start-up slices): the same, yielding between streets and between tiles
+  function* buildBuildingsGen(parent) {
     const net = cityNet();
     const G = cityGrid();
+    yield;
     // streets first (with their pavements), then the landmarks' room
-    for (const s of net.minor) G.line(s.pts, s.w / 2 + 5, 2);
-    for (const s of net.longs) G.line(roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]), s.w / 2 + 6, 2);
-    for (const pts of net.routes) G.line(pts, ROUTE_W / 2 + 8, 2);
+    for (const s of net.minor) { G.line(s.pts, s.w / 2 + 5, 2); yield; }
+    for (const s of net.longs) { G.line(roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]), s.w / 2 + 6, 2); yield; }
+    for (const pts of net.routes) { G.line(pts, ROUTE_W / 2 + 8, 2); yield; }
     G.line(boulevardPts(), BLVD_W / 2 + 14, 2); // r185: the blocks stand back from the wider boulevard
+    yield;
     // past Olari 9 the drive takes off: the airfield and the ramp keep a wide corridor
-    for (const pts of net.routes) G.line(pts.filter(([, z]) => z > 7480), 130, 3);
+    for (const pts of net.routes) { G.line(pts.filter(([, z]) => z > 7480), 130, 3); yield; }
     for (const z of net.zones) G.disk(z.x, z.y, z.r, 3);
     for (let i = 0; i < G.W; i += 1) for (let j = 0; j < G.H; j += 1) {
       const x = CITY_X0 + (i + 0.5) * G.C, z = CITY_Z0 + (j + 0.5) * G.C;
@@ -25457,22 +25548,26 @@ void main() {
     };
     let seed = 1;
     // the drive's own roads first, so their kerbs are the ones lined most closely
-    for (const pts of net.routes) line(pts.filter(([, z]) => z < 7480), ROUTE_W, "route", seed++ * 97);
-    for (const s of net.longs) line(roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]), s.w, "long", seed++ * 97);
-    for (const s of net.minor) line(s.pts, s.w, "minor", seed++ * 97);
+    for (const pts of net.routes) { line(pts.filter(([, z]) => z < 7480), ROUTE_W, "route", seed++ * 97); yield; }
+    for (const s of net.longs) { line(roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]), s.w, "long", seed++ * 97); yield; }
+    for (const s of net.minor) { line(s.pts, s.w, "minor", seed++ * 97); yield; }
     // courtyards: trees in the open middle of the blocks
     {
       const rnd = rng(5150);
-      for (let z = CITY_Z0 + 20; z < CITY_Z1 - 20; z += 21) for (let x = CITY_X0 + 20; x < CITY_X1 - 20; x += 21) {
-        const tx = x + (rnd() - 0.5) * 14, tz = z + (rnd() - 0.5) * 14;
-        if (G.at(tx, tz)) continue;
-        // inside a block: no street within reach on any side
-        let open = true;
-        for (const [ox, oz] of [[24, 0], [-24, 0], [0, 24], [0, -24]]) if (G.at(tx + ox, tz + oz) === 2) { open = false; break; }
-        if (!open || rnd() > (core(tx, tz) ? 0.2 : 0.09)) continue;
-        CITY_TREES.push({ x: tx, z: tz, s: 0.55 + rnd() * 0.6 });
+      for (let z = CITY_Z0 + 20; z < CITY_Z1 - 20; z += 21) {
+        for (let x = CITY_X0 + 20; x < CITY_X1 - 20; x += 21) {
+          const tx = x + (rnd() - 0.5) * 14, tz = z + (rnd() - 0.5) * 14;
+          if (G.at(tx, tz)) continue;
+          // inside a block: no street within reach on any side
+          let open = true;
+          for (const [ox, oz] of [[24, 0], [-24, 0], [0, 24], [0, -24]]) if (G.at(tx + ox, tz + oz) === 2) { open = false; break; }
+          if (!open || rnd() > (core(tx, tz) ? 0.2 : 0.09)) continue;
+          CITY_TREES.push({ x: tx, z: tz, s: 0.55 + rnd() * 0.6 });
+        }
+        if (z % 210 < 21) yield;
       }
     }
+    yield;
     const toGeo = (B) => {
       const g2 = new BufferGeometry();
       g2.setAttribute("position", new Float32BufferAttribute(B.p, 3));
@@ -25503,6 +25598,7 @@ void main() {
         if (list) { m.userData.def = m.geometry.attributes.color.array.slice(0); mats.cityTiles.push(m); parent.add(m); }
         else mvProps.add(m);
       }
+      yield;
     }
     parent.add(mvProps);
     mats.mvWalls = mats.cityTiles[0];
@@ -26534,9 +26630,11 @@ void main() {
   // rival F1 cars that share the road in the Race Day world: they hold a lane, then swing out
   // to pass you, or drop back as you pass them
   var rivals = [];
-  function buildRivals(parent) {
+  function buildRivals(parent) { return czDrain(buildRivalsGen(parent)); }
+  // beta 3.xx (start-up slices): a car at a time
+  function* buildRivalsGen(parent) {
     const liveries = [["#119BFE", "#ffffff"], ["#111111", "#FED012"], ["#2f9e4f", "#ffffff"]];
-    rivals = liveries.map(([main, second], i) => {
+    const mk = ([main, second], i) => {
       const v = buildVehicleBase("f1");
       v.group.traverse((o) => {
         if (!o.isMesh || !o.material || !o.material.color) return;
@@ -26548,7 +26646,10 @@ void main() {
       const holder = new Group(); holder.add(v.group); holder.visible = false;
       parent.add(holder);
       return { holder, wheels: v.wheels, base: [-420, 260, 640][i], amp: [520, 480, 600][i], w: [0.11, 0.083, 0.067][i], ph: i * 2.1, side: i % 2 ? 1 : -1, spin: 0, lat: 0 };
-    });
+    };
+    const out = [];
+    for (let i = 0; i < liveries.length; i++) { out.push(mk(liveries[i], i)); yield; }
+    rivals = out;
   }
   // ===================== r79: four streets — brand buildings =====================
   // emissive materials that light up after dark (switched with the other shop glows)
@@ -26661,9 +26762,13 @@ void main() {
     parent.add(g);
     return g;
   }
-  function buildContactShadows(parent) {
+  function buildContactShadows(parent) { return czDrain(buildContactShadowsGen(parent)); }
+  // beta 3.xx (start-up slices): the footprints a few landmarks at a time
+  function* buildContactShadowsGen(parent) {
     // every landmark group standing in the world (the city's own blocks already pushed theirs)
-    for (const c of parent.children) if (c.isGroup && c.visible !== false && c.name !== "goldenRoute") footprintOf(c);
+    const kids = parent.children.slice();
+    for (let i = 0; i < kids.length; i++) { const c = kids[i]; if (c.isGroup && c.visible !== false && c.name !== "goldenRoute") footprintOf(c); if (i % 12 === 11) yield; }
+    yield;
     const dirX = -Math.cos(0.55), dirZ = -Math.sin(0.55);
     const soft = (round) => canvasTexture(128, 128, (ctx) => {
       if (round) { const g2 = ctx.createRadialGradient(64, 64, 6, 64, 64, 64); g2.addColorStop(0, "rgba(0,0,0,1)"); g2.addColorStop(0.55, "rgba(0,0,0,.55)"); g2.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = g2; ctx.fillRect(0, 0, 128, 128); return; }
@@ -26692,8 +26797,10 @@ void main() {
       mesh.frustumCulled = false; mesh.renderOrder = -1;
       parent.add(mesh);
     };
-    mk(soft(false), FOOTPRINTS, 0.7);
-    mk(soft(true), TREE_BLOBS, 0.5);
+    const softSq = soft(false); yield;
+    mk(softSq, FOOTPRINTS, 0.7); yield;
+    const softRound = soft(true); yield;
+    mk(softRound, TREE_BLOBS, 0.5);
     window.__fp = [FOOTPRINTS.length, TREE_BLOBS.length];
   }
   // one building per brand, in a few architectural kinds; the front is local +z
@@ -27543,7 +27650,9 @@ void main() {
     EXTRA_KEEPOUT.push({ x: sp.x, y: sp.z, r: 46 });
     return finish(g, parent, sp.x, sp.z);
   }
-  function buildPrintLane(parent) {
+  function buildPrintLane(parent) { return czDrain(buildPrintLaneGen(parent)); }
+  // beta 3.xx (start-up slices): a house at a time
+  function* buildPrintLaneGen(parent) {
     // Sticker Republic: a little yellow house, its front and side plastered with stickers
     const stickers = (ctx, n, seed) => {
       const r = rng(seed), cols = ["#F65342", "#119BFE", "#28C840", "#B098C8", "#ffffff", "#111111", "#ff8ac2", "#ff9a1f"];
@@ -27568,6 +27677,7 @@ void main() {
       ctx.fillStyle = "#e9e6de"; ctx.beginPath(); ctx.moveTo(38, 46); ctx.lineTo(60, 26); ctx.lineTo(56, 52); ctx.fill();
       ctx.restore();
     });
+    yield;
     const srAwn = canvasTexture(256, 32, (ctx) => { for (let i = 0; i < 16; i++) { ctx.fillStyle = i % 2 ? "#111111" : "#FFD21F"; ctx.fillRect(i * 16, 0, 16, 32); } });
     buildLaneHouse(parent, LANE_SR, {
       w: 58, d: 44, h: 33, wall: "#FFD21F", trim: "#ffffff", roof: "#b9532f", shop: "#111111", fence: "#111111",
@@ -27580,6 +27690,7 @@ void main() {
       }
     });
     // Printoteca: white and black, tees on a rail out front in CMYK
+    yield;
     const prAwn = canvasTexture(256, 32, (ctx) => { for (let i = 0; i < 16; i++) { ctx.fillStyle = i % 2 ? "#111111" : "#ffffff"; ctx.fillRect(i * 16, 0, 16, 32); } });
     const prSide = canvasTexture(256, 256, (ctx) => {
       ctx.fillStyle = "#f7f6f2"; ctx.fillRect(0, 0, 256, 256);
@@ -27602,6 +27713,7 @@ void main() {
         });
       }
     });
+    yield;
     // the lane itself: small houses in pastel plaster and red tiles, trees, two lamps
     const rnd = rng(1188), tints = ["#f1d8c4", "#e6dcc8", "#d9e3d4", "#f2e2b8", "#e8cfd4", "#d6dde6"];
     for (const [t, sd] of [[0.14, 1], [0.2, -1], [0.5, 1], [0.38, -1], [0.66, 1]]) {
@@ -27615,6 +27727,7 @@ void main() {
       g.rotation.y = Math.atan2(sp.fx, sp.fz);
       EXTRA_KEEPOUT.push({ x: sp.x, y: sp.z, r: 36 });
       finish(g, parent, sp.x, sp.z);
+      yield;
     }
     const trunkM = new MeshStandardMaterial({ color: "#7a4a22", roughness: 1 }), leafM = new MeshStandardMaterial({ color: "#4f9a4a", roughness: 0.9 });
     for (let i = 0; i < 12; i++) {
@@ -27876,7 +27989,9 @@ void main() {
     { br: "A", name: "UNDE", x: 708, z: 6036, line: "GROCERY", c: "#2b6fd6", t: "#ffffff", page: "unde" }
   ];
   var TAC = { br: "C", name: "The Aesthetic Court", x: 1790, z: 4570, line: "CASA POPORULUI · BUCHAREST", c: "#1a0909", t: "#c89b3c", page: "the-aesthetic-court" };
-  function buildFourStreets(parent) {
+  function buildFourStreets(parent) { return czDrain(buildFourStreetsGen(parent)); }
+  // beta 3.xx (start-up slices): a building at a time
+  function* buildFourStreetsGen(parent) {
     const L = (n) => (n ? { logoAssetto, logoBepco, logoESD, logoUnchain, logoTechventures, logoAltius, logoClinicaSante, logoInvestimental, logoInfinity, logoLongshield, logoVenevo, logoDrK, logoRoutine, logoCoffeenativ, logoBrewzeus, logoArca }[n] : null);
     for (const o of STREET_BRANDS) {
       const o2 = { ...o, logo: L(o.logo), keep: 90 };
@@ -27885,30 +28000,44 @@ void main() {
       else if (o.kind === "energy") buildBepco(parent, o2);
       else if (o.grand) buildParisian(parent, o2); // r176
       else buildBrandBuilding(parent, o2);
+      yield;
     }
     buildFriendsBlocks(parent);
+    yield;
     buildServiceHouses(parent);
+    yield;
     // r121: Kómpus, a lilac coffee shop right after Lapterra (r138e: moved across from OMA, see below)
     // r136d: rebuilt from the real shop front (same spot, same 46 x 34 footprint): buildKompusShop
     // r138e (Daniel): Kómpus is the building across the street from OMA now (east kerb, where the ARTISAN shop
     // stood), half as big again so it holds its own next to OMA; ARTISAN took its old plot after Lapterra
     buildKompusShop(parent, 934, 4560, 1.5);
+    yield;
     EXTRA_KEEPOUT.push({ x: 706, y: 5737, r: 50 });
     buildCourtyard(parent, COURT.x, COURT.z, COURT_BRANDS.map((o) => ({ ...o, logo: L(o.logo) })));
+    yield;
     buildSofmedicaYard(parent);
+    yield;
     casaPoporului = buildCasaPoporului(parent, TAC.x, TAC.z);
+    yield;
     buildArcaResort(parent);
+    yield;
     buildBrandBuilding(parent, { x: 1412, z: 5536, face: "+x", kind: "house", name: "ELITHIA", w: 46, d: 38, h: 28, wall: "#f4a58e", accent: "#d9715a", signBg: "#d9715a", signInk: "#ffffff", keep: 50 });
+    yield;
     buildPainPlaisir(parent, 968, 4815);
+    yield;
     // r121: across the Dacia row from where it was, behind Coffeenativ, its glass line facing the road
     buildPatiline(parent, 1030, 5985);
+    yield;
     buildBrandBuilding(parent, { x: 706, z: 5650, face: "+x", kind: "paris", name: "LAPTERRA", w: 50, d: 40, h: 30, wall: "#7a1f3d", accent: "#c9a227", signBg: "#5c1530", signInk: "#d9b45a", keep: 70 });
+    yield;
     // Coffeenativ: a small black house on the left kerb, where Pastizia used to be
     buildBrandBuilding(parent, { x: 930, z: 5900, face: "-x", kind: "house", name: "COFFEENATIV", logo: logoCoffeenativ, w: 58, d: 44, h: 30, wall: "#151515", accent: "#151515", signBg: "#151515", signInk: "#ffffff" });
+    yield;
     // a skyline for the financial district: unbranded glass towers further down the boulevard
     const rnd = rng(4242);
     for (const [tx, tz, f] of [[2420, 4700, "-x"], [2470, 5100, "-x"], [2420, 5500, "-x"], [2480, 5900, "-x"], [2600, 4900, "-x"], [2620, 5350, "-x"]]) {
       buildBrandBuilding(parent, { x: tx, z: tz, face: f, kind: "tower", name: "", w: 56 + rnd() * 20, d: 50, h: 110 + rnd() * 90, accent: ["#33414f", "#1f8a6a", "#b08d3c"][Math.floor(rnd() * 3)], glass: "#24323f", signBg: "#24323f", signInk: "#24323f", keep: 80 });
+      yield;
     }
   }
   // OMA Coffee, Brașov, from Daniel's photos: warm orange plaster, two tall arched openings in
@@ -28422,11 +28551,15 @@ void main() {
     const t = buildTeslaY(); t.scale.setScalar(0.72); t.rotation.y = Math.PI / 2; t.position.set(909, 0, 5212); parent.add(t);
     const p = buildPorsche911(); p.scale.setScalar(0.72); p.rotation.y = Math.PI / 2; p.position.set(947, 0, 5212); parent.add(p);
   }
-  function buildCoffeeStreetAdds(parent) {
+  function buildCoffeeStreetAdds(parent) { return czDrain(buildCoffeeStreetAddsGen(parent)); }
+  // beta 3.xx (start-up slices)
+  function* buildCoffeeStreetAddsGen(parent) {
     buildArtisanCar(parent);
+    yield;
     // r138e: off the plot across from OMA (Kómpus has it now), onto Kómpus' old one after Lapterra, a size down to fit
     buildStreetShop(parent, { key: "artisanGlow", name: "ARTISAN", label: "coffee gear", x: 706, z: 5737,
       w: 56, h: 50, d: 40, wall: "#797c69", trim: "#efe9dc", glass: "#2a2c24", ink: "#efe9dc", boardInk: "#2a2c24" });
+    yield;
     // Romexpo avenue: a straight road off Coffee Street, lined with hedges and round trees
     const g = new Group();
     const x0 = 850, x1 = 975, zc = 5140, len = x1 - x0, W = 40;
@@ -30963,7 +31096,9 @@ void main() {
     return JET_R;
   }
   function jetLift(z) { return z < -22 ? (-22 - z) * 0.13 : 0; }
-  function buildCromaticJet() {
+  function buildCromaticJet() { return czDrain(buildCromaticJetGen()); }
+  // beta 3.xx (start-up slices): a part of the jet at a time
+  function* buildCromaticJetGen() {
     const g = new Group();
     const env = typeof getEnvMap === "function" ? getEnvMap() : null;
     // r137b: the Cromatic Air livery, take two (Daniel): the brand yellow skin again, a huge black "Cromatic"
@@ -30974,6 +31109,7 @@ void main() {
     const metal = new MeshStandardMaterial({ color: "#cfd3d8", roughness: 0.25, metalness: 0.9, envMap: getChromeEnv(), envMapIntensity: 0.9 }); // r138l: the chrome's room
     const dark = new MeshStandardMaterial({ color: "#1b1d20", roughness: 0.6 });
     const rubber = new MeshStandardMaterial({ color: "#151515", roughness: 0.95 });
+    yield;
     // fuselage: a lathe along z, the tail cone lifted
     const pts = [];
     // beta 3.01: denser towards the round nose tip (an even step left a flat ring at the very front)
@@ -30984,6 +31120,7 @@ void main() {
     for (let i = 0; i < pa.count; i++) { const z = pa.getZ(i); pa.setY(i, pa.getY(i) + jetLift(z)); }
     fg.computeVertexNormals();
     const fus = new Mesh(fg, yellow); fus.position.y = JET_CY; g.add(fus);
+    yield;
     // the side decals: windows, a black cheatline, the oversized wordmark, cockpit glass, the door
     const decal = (side) => {
       const c = document.createElement("canvas"); c.width = 2048; c.height = 512;
@@ -31068,6 +31205,7 @@ void main() {
       return mesh;
     };
     g.add(decal(1), decal(-1));
+    yield;
     // detail: wing-root fairings, leading-edge strips, landing lights, beacons, antennas, APU
     // r138b: the wing sits lower on the slimmer body; the engines are smaller, closer in and a little further forward
     // (EX/EY/EZ: the nacelles' axis and intake), the leading edge swept 33° (LE: its z at a span station)
@@ -31084,6 +31222,7 @@ void main() {
     for (const [y2, z2] of [[JET_CY + JET_R + 0.1, 2], [JET_CY - JET_R - 0.1, 4]]) { const bc = new Mesh(new SphereGeometry(0.6, 10, 8), beaconM); bc.position.set(0, y2, z2); g.add(bc); }
     for (const [y2, z2, h2] of [[JET_CY + JET_R - 0.1, 20, 2], [JET_CY - JET_R + 0.1, -14, -1.6]]) { const an = new Mesh(new BoxGeometry(0.25, Math.abs(h2), 1.3), dark); an.position.set(0, y2 + h2 / 2, z2); an.rotation.x = -0.35 * Math.sign(h2); g.add(an); }
     const apu = new Mesh(new TorusGeometry(0.45, 0.18, 8, 16), dark); apu.position.set(0, JET_CY + jetLift(-58.6), -58.6); g.add(apu);
+    yield;
     // engines: a ring of fan blades and an exhaust cone inside each nacelle
     for (const s2 of [1, -1]) {
       for (let k = 0; k < 18; k++) {
@@ -31100,6 +31239,7 @@ void main() {
       geo.rotateX(-Math.PI / 2); geo.translate(0, -t / 2, 0);
       return new Mesh(geo, mat);
     };
+    yield;
     // wings: low, swept, a little dihedral; black winglets with nav lights
     const navR = new MeshStandardMaterial({ color: "#ff3b30", emissive: new Color("#ff2a1f"), emissiveIntensity: 1.6 });
     const navG = new MeshStandardMaterial({ color: "#34c759", emissive: new Color("#1fd14a"), emissiveIntensity: 1.6 });
@@ -31117,6 +31257,7 @@ void main() {
       // flap-track fairings under the wing
       for (const [f, fz] of [[16, -14.3], [30, -16.6]]) { const ft = new Mesh(new CapsuleGeometry(0.6, 5, 4, 8), dark); ft.rotation.x = Math.PI / 2; ft.position.set(f * s, wingY - 0.9 + f * 0.07, fz); g.add(ft); }
     }
+    yield;
     // the rear engines on pylons (r138b: 82% as wide, 86% as long as the r137b nacelles)
     const nacPts = [[0, 0], [3.2, 0.4], [3.9, 3], [4.0, 12], [3.6, 19], [2.6, 22], [2.2, 22.2]].map(([r, y]) => new Vector2(r * 0.82, y * 0.86));
     for (const s of [1, -1]) {
@@ -31128,10 +31269,12 @@ void main() {
       const band = new Mesh(new CylinderGeometry(3.32, 3.32, 1.9, 28, 1, true), black); band.rotation.x = Math.PI / 2; band.position.set(EX * s, EY, EZ - 6.9); g.add(band);
       const pyl = panel([[0, EZ - 10.3], [6.2 * s, EZ - 8.6], [6.2 * s, EZ - 15.5], [0, EZ - 17.2]], 1.2, yellow, 0.35); pyl.position.y = EY - 0.3; g.add(pyl);
     }
+    yield;
     // exhaust glow, lit for take-off
     const glowM = new MeshBasicMaterial({ color: "#ffb35c", transparent: true, opacity: 0, depthWrite: false });
     glowM.userData.outlineParameters = { visible: false };
     const glows = [1, -1].map((s) => { const gl = new Mesh(new ConeGeometry(1.8, 7.5, 16, 1, true), glowM); gl.rotation.x = Math.PI / 2; gl.position.set(EX * s, EY, EZ - 22.8); g.add(gl); return gl; });
+    yield;
     // the T-tail: a black swept fin with the yellow CSs mark and a small flag, the tailplane on top (r137b)
     const finG = new Group();
     // r138b: a business-jet T-tail, lower and thinner; its side faces are at x = ±1.1 (FIN_X)
@@ -31153,6 +31296,7 @@ void main() {
       return m;
     };
     for (const s of [1, -1]) { const o = new Mesh(new PlaneGeometry(3.6, 2.4), flagM(s < 0)); o.position.set((FIN_X + 0.05) * s, 18.4, -58.3); o.rotation.y = (Math.PI / 2) * s; finG.add(o); }
+    yield;
     // the tail says CSs airlines, in the logo's lettering style
     // r138b: the CSs and the pill were an unlit picture in #FED012 and read as a paler yellow next to the lit,
     // clear-coated body. Now the canvas is only a stencil (white = paint) and the paint is the body's own
@@ -31198,6 +31342,7 @@ void main() {
     finG.add(tailTex(1), tailTex(-1));
     const st = new Mesh(new SphereGeometry(0.6, 10, 8), strobe); st.position.set(0, 23.4, -64.4); finG.add(st);
     finG.position.y = JET_CY + 4.2; g.add(finG);
+    yield;
     // landing gear (r138b: short legs, the jet sits low like a business jet; ww: tyre width, dx: twin spacing)
     const gear = (x, z, h, r, twin, ww = 1.6, dx0 = 1.5) => {
       const leg = new Mesh(new CylinderGeometry(0.42, 0.42, h, 10), metal); leg.position.set(x, r + h / 2, z); g.add(leg);
@@ -31208,6 +31353,7 @@ void main() {
     };
     gear(0, 37, 3.9, 1.1, true, 0.9, 0.9);
     gear(5.4, -4, 4, 1.6, true, 1.1, 1.2); gear(-5.4, -4, 4, 1.6, true, 1.1, 1.2);
+    yield;
     // the airstair on the left, down on a black carpet with yellow edges (r138b: five steps from the lower sill)
     const stair = new Group();
     const stepM = new MeshStandardMaterial({ color: "#2a2b2f", roughness: 0.6, metalness: 0.3 });
@@ -31275,7 +31421,9 @@ void main() {
       parent.add(g);
     }
   }
-  function buildAirfield(parent) {
+  function buildAirfield(parent) { return czDrain(buildAirfieldGen(parent)); }
+  // beta 3.xx (start-up slices): the field, then the jet, then its clouds
+  function* buildAirfieldGen(parent) {
     const g = new Group();
     const z0 = JET_HOME.z - 120, z1 = z0 + 1850, X = JET_HOME.x, W = 64;
     const asphalt = new MeshStandardMaterial({ color: "#3a3b40", roughness: 0.95 });
@@ -31309,9 +31457,11 @@ void main() {
     const sock = new Mesh(new ConeGeometry(2.4, 12, 12, 1, true), new MeshStandardMaterial({ color: "#FED012", side: DoubleSide })); sock.rotation.z = Math.PI / 2 - 0.15; sock.position.set(X - 46, 19, JET_HOME.z + 180); g.add(sock);
     g.traverse((o) => { if (o.isMesh && o.position.y > 2) o.castShadow = true; });
     parent.add(g);
-    const jet = buildCromaticJet();
+    yield;
+    const jet = yield* buildCromaticJetGen();
     jet.group.position.set(X, 0, JET_HOME.z);
     parent.add(jet.group);
+    yield;
     // r136: solid clouds (they were 82% opaque and the city showed through them)
     const cm = new MeshLambertMaterial({ color: "#ffffff", emissive: new Color("#ffffff"), emissiveIntensity: 0.55, flatShading: true, fog: false });
     cm.userData.outlineParameters = { visible: false };
@@ -31343,52 +31493,98 @@ void main() {
     EXTRA_KEEPOUT.push({ x: X + 86, y: JET_HOME.z - 80, r: 90 });
     return jet;
   }
-  function buildWorld(scene, accent) {
+  function buildWorld(scene, accent) { return czDrain(buildWorldGen(scene, accent)); }
+  // beta 3.xx (start-up slices): the same, a builder at a time (the boot runs it with czRun; the heavy builders yield
+  // inside too, see tagG)
+  function* buildWorldGen(scene, accent) {
     const world = new Group();
     // r198: each top-level piece of the world says which builder made it (userData.bld), so mergeStatic() knows which
     // ones it may batch (see STATIC_BUILDERS)
     const tag = (name, f) => { const n0 = world.children.length, r = f(); for (let i = n0; i < world.children.length; i++) world.children[i].userData.bld ??= name; return r; };
+    // the same for a builder that is itself a generator (it yields between its own pieces)
+    const tagG = function* (name, g) { const n0 = world.children.length, r = yield* g; for (let i = n0; i < world.children.length; i++) world.children[i].userData.bld ??= name; return r; };
     tag("Ground", () => buildGround(world));
+    yield;
     initRoadMats();
+    yield;
     // r101: the roundabout (the turnaround) is gone
     tag("Fork", () => buildFork(world));
+    yield;
     tag("Start", () => buildStart(world));
+    yield;
     // the four streets' landmarks go first, so the generic city blocks leave room for them
-    tag("FourStreets", () => buildFourStreets(world));
-    const jet = tag("Airfield", () => buildAirfield(world));
+    yield* tagG("FourStreets", buildFourStreetsGen(world));
+    yield;
+    const jet = yield* tagG("Airfield", buildAirfieldGen(world));
+    yield;
     tag("ChapterSigns", () => buildChapterSigns(world));
+    yield;
     tag("PitLane", () => buildPitLane(world));
-    tag("Rivals", () => buildRivals(world));
+    yield;
+    yield* tagG("Rivals", buildRivalsGen(world));
+    yield;
     tag("Streetlights", () => buildStreetlights(world));
+    yield;
     tag("StreetProps", () => buildStreetProps(world));
+    yield;
     const endHouse = tag("EndHouse", () => buildEndHouse(world));
+    yield;
     tag("OlariPlaza", () => buildOlariPlaza(world)); // r185
     const streetSigns = tag("CoffeeEntrance", () => buildCoffeeEntrance(world));
+    yield;
     tag("Romexpo", () => buildRomexpo(world));
+    yield;
     tag("SteamShop", () => buildSteamShop(world));
+    yield;
     tag("StreetShop", () => buildStreetShop(world, { key: "sipGlow", name: "SIP", label: "coffee & wine", x: 706, z: 4985,
       w: 66, h: 54, d: 46, wall: "#2b2620", trim: "#C9A227", glass: "#1a1712", ink: "#C9A227", boardInk: "#14120c" }));
+    yield;
     // r87, west kerb in the order you pass it: Sip, Tâmpa, then OMA at the foot of the
     // mountain right next to Yoshi Izakaya, Casa Berero, and ARCA at the end
     tag("OmaShop", () => buildOmaShop(world, 706, 4560));
+    yield;
     tag("Izakaya", () => buildIzakaya(world, 706, 5175));
+    yield;
     tag("CasaBerero", () => buildCasaBerero(world, 706, 5480));
+    yield;
     tag("Brasov", () => buildBrasov(world));
-    tag("CoffeeStreetAdds", () => buildCoffeeStreetAdds(world));
-    tag("PrintLane", () => buildPrintLane(world));
+    yield;
+    yield* tagG("CoffeeStreetAdds", buildCoffeeStreetAddsGen(world));
+    yield;
+    yield* tagG("PrintLane", buildPrintLaneGen(world));
+    yield;
     tag("People", () => buildPeople(world));
+    yield;
     tag("Dacia99", () => buildDacia99(world));
+    yield;
     tag("Munitiei5", () => buildMunitiei5(world));
+    yield;
     tag("Eliade18", () => buildEliade18(world));
+    yield;
     const heritage = tag("Heritage", () => buildHeritage(world));
+    yield;
     const plots = tag("Plots", () => buildPlots(world));
+    yield;
     const pois = tag("POIs", () => buildPOIs(world));
+    yield;
     // r118: the city fabric goes last, so it knows every landmark it has to leave room for.
     // r125: and it is built a moment later, once the intro is already playing (see boot)
-    let fabricDone = false;
-    world.userData.buildFabric = () => { if (fabricDone) return; fabricDone = true; world.userData.fabricDone = true; tag("Roads", () => buildRoads(world)); tag("Buildings", () => buildBuildings(world)); tag("Trees", () => buildTrees(world)); tag("ContactShadows", () => buildContactShadows(world)); };
+    // beta 3.xx (start-up slices): a generator too (buildFabricGen; the blocks yield between their tiles), and the world
+    // says it has its fabric (fabricDone, read by the street view's culling) only once all of it is there
+    let fabricStarted = false;
+    world.userData.buildFabricGen = function* () {
+      if (fabricStarted) return; fabricStarted = true;
+      yield* tagG("Roads", buildRoadsGen(world)); yield;
+      yield* tagG("Buildings", buildBuildingsGen(world)); yield;
+      tag("Trees", () => buildTrees(world)); yield;
+      yield* tagG("ContactShadows", buildContactShadowsGen(world));
+      world.userData.fabricDone = true;
+    };
+    world.userData.buildFabric = () => czDrain(world.userData.buildFabricGen());
     const ramp = tag("Ramp", () => buildRamp(world, accent));
+    yield;
     const clouds = tag("Clouds", () => buildClouds(world));
+    yield;
     scene.add(world);
     return { world, heritage, plots, pois, ramp, clouds, endHouse, streetSigns, jet };
   }
@@ -32156,7 +32352,9 @@ void main() {
   // r139e: { police: true } builds the Poliția car (Daniel's photo: a Romanian Police Dacia 1310) on the same body:
   // white with a navy bonnet and doors, POLIȚIA in white, the crest, a roof bar with two blue lamps and a siren horn,
   // the 1310's black grille with four round lamps, black plastic bumpers, black window rubbers, its tail lamps
-  function buildDacia1300(opts = {}) {
+  function buildDacia1300(opts = {}) { return czDrain(buildDacia1300Gen(opts)); }
+  // beta 3.xx (start-up slices): a part of the car at a time (the boot makes the ride and the chaser this way)
+  function* buildDacia1300Gen(opts = {}) {
     const pol = !!opts.police;
     const g = new Group();
     // r138j: re-fitted to photo 18 (wheelbase 51.5 = 2.44 m): the nose face 0.72 m ahead of the front axle, the
@@ -32203,6 +32401,18 @@ void main() {
     const dpZ = (z) => { const e = endT(z); return e && e[0] < 1 ? (-2 * e[1] * e[0] - 8 * e[2] * e[0] ** 7) * e[3] : 0; };
     const warp = (q) => {
       const P = q.attributes.position, N = q.attributes.normal;
+      // beta 3.xx (start-up): plain float attributes are read and written in their arrays (what getX / setX do for them),
+      // the same arithmetic: ~2x faster for the ride's ~0.06 s of it at 4x
+      if (!P.isInterleavedBufferAttribute && !N.isInterleavedBufferAttribute && !P.normalized && !N.normalized && P.itemSize === 3 && N.itemSize === 3) {
+        const pa = P.array, na = N.array;
+        for (let i = 0; i < P.count; i++) {
+          const o = i * 3, x = pa[o], y = pa[o + 1], z = pa[o + 2], u = y - CREASE(z), p = pZ(z), sy = fY(u), s = p * sy, s_y = p * dfY(u), s_z = sy * dpZ(z) - p * dfY(u) * dCREASE(z);
+          pa[o] = x * s;
+          const nx = na[o], X = nx / s, Y = na[o + 1] - x * s_y * nx / s, Z = na[o + 2] - x * s_z * nx / s, l = Math.hypot(X, Y, Z) || 1;
+          na[o] = X / l; na[o + 1] = Y / l; na[o + 2] = Z / l;
+        }
+        return;
+      }
       for (let i = 0; i < P.count; i++) {
         const x = P.getX(i), y = P.getY(i), z = P.getZ(i), u = y - CREASE(z), p = pZ(z), sy = fY(u), s = p * sy, s_y = p * dfY(u), s_z = sy * dpZ(z) - p * dfY(u) * dCREASE(z);
         P.setX(i, x * s);
@@ -32211,20 +32421,29 @@ void main() {
       }
     };
     // the body's big flat sides need vertices to bend: split triangles until no edge spans more than maxL in y/z
+    // beta 3.xx (start-up): the same subdivision, on a pool of doubles instead of an object and five arrays per vertex
+    // (the ride's heaviest step at boot, ~0.17 s at 4x): the same arithmetic in the same order, so the same triangles,
+    // bit for bit (checked against the old one on 11 M vertices), ~4x faster and without the garbage
     const subdivYZ = (geo, maxL) => {
       const g0 = geo.index ? geo.toNonIndexed() : geo, P = g0.attributes.position.array, N = g0.attributes.normal.array, U = g0.attributes.uv.array;
-      const op = [], on = [], ou = [], st = [], m2 = maxL * maxL;
-      const vx = (i) => ({ p: [P[i * 3], P[i * 3 + 1], P[i * 3 + 2]], n: [N[i * 3], N[i * 3 + 1], N[i * 3 + 2]], u: [U[i * 2], U[i * 2 + 1]] });
-      const mid = (a, b) => { const n = a.n.map((v, k) => v + b.n[k]), l = Math.hypot(...n) || 1; return { p: a.p.map((v, k) => (v + b.p[k]) / 2), n: n.map((v) => v / l), u: a.u.map((v, k) => (v + b.u[k]) / 2) }; };
-      const d2 = (a, b) => (a.p[1] - b.p[1]) ** 2 + (a.p[2] - b.p[2]) ** 2;
-      for (let i = 0; i < P.length / 3; i += 3) st.push([vx(i), vx(i + 1), vx(i + 2)]);
+      const m2 = maxL * maxL, nV = P.length / 3;
+      let V = new Float64Array(Math.max(64, Math.ceil(nV) * 16)), nv = 0;
+      const add = (px, py, pz, nx, ny, nz, u, v) => { if (nv * 8 + 8 > V.length) { const W2 = new Float64Array(V.length * 2); W2.set(V); V = W2; } const o = nv * 8; V[o] = px; V[o + 1] = py; V[o + 2] = pz; V[o + 3] = nx; V[o + 4] = ny; V[o + 5] = nz; V[o + 6] = u; V[o + 7] = v; return nv++; };
+      const vx = (i) => add(P[i * 3], P[i * 3 + 1], P[i * 3 + 2], N[i * 3], N[i * 3 + 1], N[i * 3 + 2], U[i * 2], U[i * 2 + 1]);
+      const mid = (a, b) => { const A = a * 8, B = b * 8, n0 = V[A + 3] + V[B + 3], n1 = V[A + 4] + V[B + 4], n2 = V[A + 5] + V[B + 5], l = Math.hypot(n0, n1, n2) || 1; return add((V[A] + V[B]) / 2, (V[A + 1] + V[B + 1]) / 2, (V[A + 2] + V[B + 2]) / 2, n0 / l, n1 / l, n2 / l, (V[A + 6] + V[B + 6]) / 2, (V[A + 7] + V[B + 7]) / 2); };
+      const d2 = (a, b) => (V[a * 8 + 1] - V[b * 8 + 1]) ** 2 + (V[a * 8 + 2] - V[b * 8 + 2]) ** 2;
+      const st = [];
+      let cap = Math.max(96, Math.ceil(nV) * 4), op = new Float32Array(cap * 3), on = new Float32Array(cap * 3), ou = new Float32Array(cap * 2), no = 0;
+      const emit = (v) => { if (no === cap) { cap *= 2; const a = new Float32Array(cap * 3), b = new Float32Array(cap * 3), c = new Float32Array(cap * 2); a.set(op); b.set(on); c.set(ou); op = a; on = b; ou = c; } const o = v * 8; op[no * 3] = V[o]; op[no * 3 + 1] = V[o + 1]; op[no * 3 + 2] = V[o + 2]; on[no * 3] = V[o + 3]; on[no * 3 + 1] = V[o + 4]; on[no * 3 + 2] = V[o + 5]; ou[no * 2] = V[o + 6]; ou[no * 2 + 1] = V[o + 7]; no++; };
+      for (let i = 0; i < nV; i += 3) { const a = vx(i), b = vx(i + 1), c = vx(i + 2); st.push(a, b, c); }
       while (st.length) {
-        const t = st.pop(), e = [d2(t[0], t[1]), d2(t[1], t[2]), d2(t[2], t[0])], k = e.indexOf(Math.max(...e));
-        if (e[k] > m2) { const a = t[k], b = t[(k + 1) % 3], c = t[(k + 2) % 3], m = mid(a, b); st.push([a, m, c], [m, b, c]); }
-        else for (const v of t) { op.push(...v.p); on.push(...v.n); ou.push(...v.u); }
+        const t2 = st.pop(), t1 = st.pop(), t0 = st.pop(), e0 = d2(t0, t1), e1 = d2(t1, t2), e2 = d2(t2, t0), mx = Math.max(e0, e1, e2);
+        const k = e0 === mx ? 0 : e1 === mx ? 1 : e2 === mx ? 2 : -1;
+        if (k >= 0 && (k === 0 ? e0 : k === 1 ? e1 : e2) > m2) { const a = k === 0 ? t0 : k === 1 ? t1 : t2, b = k === 0 ? t1 : k === 1 ? t2 : t0, c = k === 0 ? t2 : k === 1 ? t0 : t1, m = mid(a, b); st.push(a, m, c, m, b, c); }
+        else { emit(t0); emit(t1); emit(t2); }
       }
       const out = new BufferGeometry();
-      out.setAttribute("position", new Float32BufferAttribute(op, 3)); out.setAttribute("normal", new Float32BufferAttribute(on, 3)); out.setAttribute("uv", new Float32BufferAttribute(ou, 2));
+      out.setAttribute("position", new Float32BufferAttribute(op.subarray(0, no * 3), 3)); out.setAttribute("normal", new Float32BufferAttribute(on.subarray(0, no * 3), 3)); out.setAttribute("uv", new Float32BufferAttribute(ou.subarray(0, no * 2), 2));
       return out;
     };
     const parts = new Map();
@@ -32254,6 +32473,7 @@ void main() {
     const poly = (pts) => { const s = new Shape(); s.moveTo(...pts[0]); for (const p of pts.slice(1)) s.lineTo(...p); s.closePath(); return s; };
     const decalQ = (k, w, h, x, y, z, ry = 0, flip = false) => { const q = uvFit(new PlaneGeometry(w, h), A.uv(k, flip)); q.rotateY(ry); q.translate(x, y, z); put(A.mat, q); };
 
+    yield;
     // ---- body below the windows: side profile extruded across the width, wheel arches cut out
     // r138j (Daniel: "the bonnet is too long ... the rear tapered at the tip but not that thick"): measured off
     // photo 18. A short bonnet (about 1 m) falls from the scuttle to a low nose; the waist rises a touch towards
@@ -32306,6 +32526,7 @@ void main() {
     // wipers parked along the screen, on chrome spindles
     for (const x0 of [-13, 1]) { edge([x0, 21.2, 15.6], [x0 + 10, 22.2, 14.87], 0.2, black); add(at(new CylinderGeometry(0.45, 0.45, 0.7, 8), x0, 20.6, 16.2), chrome); }
 
+    yield;
     // ---- inside: black dash and steering wheel, red seats (Daniel: red cushions)
     // r144: everything 2.5 lower with the belt, the dash forward with the screen's foot
     add(at(new BoxGeometry(29.2, 0.12, 40), 0, 21.0, -6.3), black); // floor, level with the waist
@@ -32325,6 +32546,7 @@ void main() {
     for (const sx of [-1, 1]) seat(sx * 6.9, 9.2, -0.2, -4.4, -0.18, [-2.6, 0, 2.6], 4.6); // r144: taller backs
     seat(0, 27, -13.0, -17.6, -0.22, [-10, -6.5, -3, 3, 6.5, 10], 4.2);
 
+    yield;
     // ---- the nose: black grille between square headlamps, chrome surround, the chrome V with the shield
     // r138g: the whole front face is lower and shorter: the grille band sits right under the bonnet's edge
     // r138j: lamps right under the bonnet's edge, a band with the intake and indicators below, the bumper high
@@ -32365,6 +32587,7 @@ void main() {
       for (let i = 0; i < 3; i++) add(at(new BoxGeometry(8.6, 0.22, 0.45), -5.6, 10.25 + i * 0.4, ZF + 0.15), paint);
     }
 
+    yield;
     // ---- chrome bumpers wrapping round the corners, black rubber over-riders, plates
     const bumper = (zc, back, y0) => {
       const b = topBody((s) => {
@@ -32381,6 +32604,7 @@ void main() {
     }
     decalQ("plate", 10.4, 2.7, -1.2, 8.9, ZF + 2.8);
 
+    yield;
     // ---- the tail: wide lamp clusters in chrome, DACIA 1300 on the panel, the plate between the lamps
     // r138j: a slimmer tail: the bumper high, the lamps above it, plate and lettering between the lamps
     for (const sx of [-1, 1]) {
@@ -32396,6 +32620,7 @@ void main() {
     const pipe = [-11, 6.6, ZB - 1.4]; // exhaust tip (r138j: the idle smoke comes out here)
     edge([-11, 6.8, -38], pipe, 0.7, chrome, undefined, 8);
 
+    yield;
     // ---- flanks: chrome waist trim and sill strip, door shut lines, chrome handles, the round wing mirror
     for (const sx of [-1, 1]) {
       if (!pol) { // r139e: the 1310 has no chrome strips on its flanks
@@ -32410,6 +32635,7 @@ void main() {
     add(at(new CylinderGeometry(1.0, 1.0, 0.3, 14), -17.1, 18.0, -33, 0, 0, Math.PI / 2), chrome); // fuel cap
     edge([16.6, 19.9, 13.0], [18.3, 22.1, 12.6], 0.28, trim);
     add(at(new CylinderGeometry(1.55, 1.55, 0.8, 18), 18.5, 22.6, 12.5, Math.PI / 2), trim);
+    yield;
     // r139e: the Poliția livery and roof bar (the navy panels are in the paint's shader, above)
     let beacon = null;
     if (pol) {
@@ -32445,6 +32671,7 @@ void main() {
     }
     const wmats = { rubber: new MeshStandardMaterial({ color: "#161616", roughness: 0.9 }), steel: new MeshStandardMaterial({ color: "#c9cdd2", roughness: 0.34, metalness: 0.35, envMap: getChromeEnv(), envMapIntensity: 0.8, userData: { chrome: true, envI: 0.8 } }), chrome };
     const wheels = [];
+    yield;
     // r138j: 155 SR 13s at the photo's scale (0.29 m: 6.9 here), slightly smaller than before
     for (const [x, z] of [[-13.5, 24.5], [13.5, 24.5], [-13.5, -27], [13.5, -27]]) { const w = dacia1300Wheel(Math.sign(x), wmats); w.scale.setScalar(6.9 / 7.4); w.position.set(x, 6.9, z); wheels.push(w); g.add(w); }
     // where the exhaust ends, through the same pinch as the pipe itself (for the idle smoke, r138j)
@@ -32618,6 +32845,7 @@ void main() {
     g.add(lamps);
     v.revLamps = lamps;
   }
+  var DACIA_PRE = null;
   function buildVehicleBase(id) {
     switch (id) {
       case "f1":
@@ -32632,8 +32860,10 @@ void main() {
         return buildFoodvan();
       case "cop":
         return buildDacia1300({ police: true }); // r139e: the Poliția 1310 (was the Cop cruiser, buildCop)
-      case "dacia1300":
-        return buildDacia1300();
+      case "dacia1300": {
+        const pre = DACIA_PRE; DACIA_PRE = null; // beta 3.xx: the boot's ride, made beforehand in slices
+        return pre || buildDacia1300();
+      }
       case "sub":
         return buildSub();
       default:
@@ -35597,7 +35827,11 @@ void main() {
 
   // src/main.js
   var require_main = __commonJS({
-    "src/main.js"() {
+    // beta 3.xx (start-up slices): the app's body is async: it hands the thread back between its first heavy steps and
+    // while the world is built (czRun). Only the gesture and focus listeners below are in place before the world is,
+    // so nothing of the rest can run half made; the boot's later jobs (the road graph, the streets and blocks, the
+    // compiles, the first draws) are sliced at the end (see kzBoot)
+    async "src/main.js"() {
       init_three_module();
       init_RoomEnvironment();
       init_OutlineEffect();
@@ -35615,6 +35849,8 @@ void main() {
       document.addEventListener("touchmove", (e) => { if (e.touches.length > 1 && !e.target.closest?.("canvas")) e.preventDefault(); }, { passive: false });
       document.addEventListener("focusin", (e) => { if (e.target.matches?.("input, textarea, select")) document.body.classList.add("kb-open"); });
       document.addEventListener("focusout", () => setTimeout(() => { if (!document.activeElement?.matches?.("input, textarea, select")) document.body.classList.remove("kb-open"); }, 250));
+      await czPause(); // (the bundle's own evaluation ends here)
+      var bootBDone = false; // beta 3.xx: the app is all made (the jobs after it may hand the thread back; worldFx / uwFx may be made)
       var state = {
         branch: "A",
         branchChosen: false,
@@ -35643,8 +35879,11 @@ void main() {
       var scene = new Scene();
       var camera = new PerspectiveCamera(46, window.innerWidth / window.innerHeight, 10, 13e3);
       var pmrem = new PMREMGenerator(renderer);
-      setEnvMap(makeCityEnv(renderer).texture); // r138n: drawn without the bend when CITY_REFLECT (was pmrem.fromScene(new RoomEnvironment(), 0.04))
-      _chromeEnv = makeChromeEnv(renderer).texture; // r138l
+      await czPause();
+      { const room = cityEnvRoom(); await envLinked(renderer, room); setEnvMap(makeCityEnv(renderer, room).texture); } // r138n: drawn without the bend when CITY_REFLECT (was pmrem.fromScene(new RoomEnvironment(), 0.04)); beta 3.xx: its programs linked first
+      await czPause();
+      { const room = chromeEnvRoom(); await envLinked(renderer, room); _chromeEnv = makeChromeEnv(renderer, room).texture; } // r138l
+      await czPause();
       var outline = new OutlineEffect(renderer, {
         defaultThickness: 18e-4,
         defaultColor: [0.02, 0.02, 0.02]
@@ -35704,6 +35943,7 @@ void main() {
           farRings.push(m);
         });
       })();
+      await czPause();
       var farClouds = new Group();
       (() => {
         const m = new MeshLambertMaterial({ color: "#ffffff", fog: false, flatShading: true });
@@ -35731,7 +35971,15 @@ void main() {
       })();
       scene.background = new Color("#f2f2f2");
       var route = new Route(state.branch);
-      var worldRefs = buildWorld(scene, "#FED012");
+      await czPause();
+      var worldRefs = await czRun(buildWorldGen(scene, "#FED012")); // beta 3.xx: in slices
+      // beta 3.xx: the map's road graph (nav2), in slices too, from the world's own data, before the rest of the app is
+      // made (the graph was ~a fifth of the bundle's 4.7 s task); czNav2 then takes it as it is
+      if (typeof window.czNav2?.prepare === "function" && !(/[?&]drive\b/.test(location.search) && /[?&]onb\b/.test(location.search))) {
+        try { if (!CITY_NET) await czRun(CITY_NET_GEN || (CITY_NET_GEN = cityNetGen())); } catch (e) {}
+        try { await window.czNav2.prepare({ navNet, cityNet, rounded: (p, r) => roundedPolyline(p, r), fork: FORK_POS, start: ROUTE_MAIN[0] }, czRun); } catch (e) {}
+        await czPause();
+      }
       var golden = buildGoldenRoute(scene, state.branch, "#FED012", false);
       var veh = null;
       var spawnStart = -1;
@@ -35860,9 +36108,30 @@ void main() {
           }
         };
       })();
+      await czPause();
+      DACIA_PRE = await czRun(buildDacia1300Gen()); // beta 3.xx: the ride in slices (setVehicle takes it)
       setVehicle("dacia1300"); // r138j: the 1300 is the default ride
       veh.group.visible = false;
       spawnStart = -1;
+      // beta 3.xx (start-up slices): the ride and the chaser are the app's two heaviest steps after the world (~0.2 s each at
+      // 4x); the thread is handed back around them. Nothing of the app reacts to anything yet (only the gesture and focus
+      // listeners above are in place), so this is still the safe stretch for it
+      await czPause();
+      const copPre = await czRun(buildDacia1300Gen({ police: true })); // beta 3.xx: in slices
+      var copCar = (() => {
+        const v = copPre, g = v.group;
+        if (v.beacon) { v.beacon.lr.removeFromParent(); v.beacon.lb.removeFromParent(); }
+        addRevLamps(v, "cop"); // r212 (Daniel: "the police car is gigantic"): the Patrol ride is measured with its (hidden) reversing lamps and their pool, so the chaser is too, or it came out ~31% bigger than the same car you drive
+        const bb = new Box3().setFromObject(g), sz = bb.getSize(new Vector3());
+        g.scale.setScalar(1.5 * Math.min(0.74, 46 / Math.max(sz.z, 1), 30 / Math.max(sz.x, 1))); // as setVehicle sizes a ride (r124/r133)
+        g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
+        g.visible = false;
+        cityTone(g, _cityK); v.lampGlow?.(isDarkScheme);
+        scene.add(g);
+        const beacons = v.beacon ? [{ material: v.beacon.redM }, { material: v.beacon.blueM }] : [];
+        return { group: g, beacons, lampGlow: v.lampGlow };
+      })();
+      await czPause();
       var startRevealAt = Infinity;
       var kinetic = null, kineticArmedAt = Infinity;
       var mvK = 0;
@@ -36147,6 +36416,7 @@ void main() {
         window.scrollTo({ top: clamp2(L / effectiveTotal(), 0, 1) * maxScroll(), behavior: "instant" });
         state.L = prevL = state.targetL = L;
       }
+      await czPause(); // beta 3.xx: the last point before the app's interface and its listeners exist
       var ui = buildUI(api);
       // r139q: the ride thumbnails, a step at a time. r129 drew all nine in one go: ~1.3 s on an M4 (most of it
       // waiting for the preview context's programs to link, and its two PMREMs), right while the map was being
@@ -36442,7 +36712,7 @@ void main() {
         clearTimeout(worldBtnT);
         worldBtnT = setTimeout(() => (window.requestIdleCallback || setTimeout)(() => {
           try {
-            if (!worldRefs.world.userData.fabricDone) { paintWorldBtn(); return; }
+            if (!worldRefs.world.userData.fabricDone || bootSlicing || !screenCompiled || document.body.classList.contains("kz-intro")) { paintWorldBtn(); return; } // beta 3.xx: not under the opening (a ~0.3 s draw at 4x; the button shows after it)
             const i = state.schemeIdx, u = worldPrevCache.urls?.[i] || placeShot({ id: "__world", wx: FORK_POS.x, wz: FORK_POS.y, wy: 70 });
             if (u) document.querySelectorAll(".map-world").forEach((b) => { b.style.setProperty("--wimg", `url("${u}")`); b.classList.add("has-img"); });
           } catch (e) {}
@@ -36488,10 +36758,12 @@ void main() {
           farRings.forEach((m) => { if (m.userData.mesh) m.userData.mesh.visible = mv; });
           farClouds.visible = mv;
           if (mvFx) mvFx.group.visible = mv;
-          if (typeof uwFx !== "undefined" && uwFx) uwFx.group.visible = s.id === "underwater";
+          if (s.id === "underwater" && !uwFx && bootBDone) uwFx = czDrain(uwFxGen || (uwFxGen = makeUwFxGen())); // beta 3.xx: made when first wanted (or finished at once, if it was being made)
+          if (uwFx) uwFx.group.visible = s.id === "underwater";
           if (casaPoporului) casaPoporului.visible = s.id !== "underwater";
           if (pitLane) pitLane.visible = s.id === "circuit";
-          if (typeof worldFx !== "undefined" && worldFx) worldFx.set(s.id);
+          if (!worldFx && bootBDone && (s.id === "circuit" || s.id === "ghibli" || s.id === "orchid")) worldFx = czDrain(worldFxGen || (worldFxGen = makeWorldFxGen())); // beta 3.xx: made when first wanted
+          if (worldFx) worldFx.set(s.id);
           const skyWorld = s.id === "ghibli" || s.id === "orchid";
           if (skyWorld) {
             sky.visible = true;
@@ -37212,19 +37484,7 @@ void main() {
       // the crest, the roof bar with its two blue lamps and the siren horn), at the size every ride has on the road. Its two
       // point lights stay out (two more lights in the scene would recompile every material the first time it shows); the
       // lamp boxes flash through their emissive, as the stand-in's did. beacons[i].material keeps the old interface
-      var copCar = (() => {
-        const v = buildDacia1300({ police: true }), g = v.group;
-        if (v.beacon) { v.beacon.lr.removeFromParent(); v.beacon.lb.removeFromParent(); }
-        addRevLamps(v, "cop"); // r212 (Daniel: "the police car is gigantic"): the Patrol ride is measured with its (hidden) reversing lamps and their pool, so the chaser is too, or it came out ~31% bigger than the same car you drive
-        const bb = new Box3().setFromObject(g), sz = bb.getSize(new Vector3());
-        g.scale.setScalar(1.5 * Math.min(0.74, 46 / Math.max(sz.z, 1), 30 / Math.max(sz.x, 1))); // as setVehicle sizes a ride (r124/r133)
-        g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
-        g.visible = false;
-        cityTone(g, _cityK); v.lampGlow?.(isDarkScheme);
-        scene.add(g);
-        const beacons = v.beacon ? [{ material: v.beacon.redM }, { material: v.beacon.blueM }] : [];
-        return { group: g, beacons, lampGlow: v.lampGlow };
-      })();
+      // (beta 3.xx: the chaser itself is made earlier, after the ride: see "copCar")
       var crawlLock = () => coffee.phase === "sip1" || coffee.phase === "unload" || coffee.phase === "sip2";
       // ---- Monument Valley extras: only alive in the Monument scheme ----
       var mvFx = (() => {
@@ -37350,7 +37610,8 @@ void main() {
           }
         } };
       })();
-      var uwFx = (() => {
+      var uwFx = null, uwFxGen = null; // beta 3.xx (start-up slices): made after the opening (see fxLater), or when its world is first chosen
+      function* makeUwFxGen() {
         const g = new Group();
         g.visible = SCHEMES[state.schemeIdx].id === "underwater";
         scene.add(g);
@@ -37381,6 +37642,7 @@ void main() {
           g.add(f);
           fishes.push(f);
         }
+        yield;
         // jellyfish: glowing bells, trailing tentacles, pulsing as they rise and sink
         const jellies = [];
         const bellG = new SphereGeometry(10, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2);
@@ -37402,6 +37664,7 @@ void main() {
           g.add(j);
           jellies.push(j);
         }
+        yield;
         // bubbles, instanced
         const BN = 260;
         const bubM = noOutline(new MeshStandardMaterial({ color: "#dff9ff", transparent: true, opacity: 0.42, roughness: 0.05, metalness: 0.2, emissive: new Color("#9fefff"), emissiveIntensity: 0.25, depthWrite: false }));
@@ -37409,6 +37672,7 @@ void main() {
         bubbles.frustumCulled = false;
         const bub = [...Array(BN)].map(() => ({ x: (Math.random() - 0.5) * 1600, y: Math.random() * 420, z: (Math.random() - 0.5) * 1600, v: 18 + Math.random() * 38, s: 0.8 + Math.random() * 2.6, w: Math.random() * 6.28 }));
         g.add(bubbles);
+        yield;
         // kelp along the route: one instanced draw call, swaying in the vertex shader
         const kelpSpots = [];
         {
@@ -37443,6 +37707,7 @@ void main() {
         }
         kelp.frustumCulled = false;
         g.add(kelp);
+        yield;
         // light shafts from the surface
         const rayTex = canvasTexture(64, 256, (ctx) => {
           const gr = ctx.createLinearGradient(0, 0, 0, 256);
@@ -37460,25 +37725,34 @@ void main() {
           g.add(r);
           rays.push(r);
         }
+        yield;
         // caustics dancing on the sea floor
-        const causTex = canvasTexture(256, 256, (ctx) => {
+        // (beta 3.xx: drawn in slices, a few rows at a time: ~0.1 s at 4x in one go; the same picture, as canvasTexture makes it)
+        const causCv = document.createElement("canvas"); causCv.width = causCv.height = 256;
+        {
+          const ctx = causCv.getContext("2d");
           ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 256, 256);
           ctx.strokeStyle = "rgba(190,255,255,.85)"; ctx.lineCap = "round";
           const pts = [...Array(26)].map(() => [Math.random() * 256, Math.random() * 256]);
-          for (let y = 0; y < 256; y += 2) for (let x = 0; x < 256; x += 2) {
-            let d1 = 1e9, d2 = 1e9;
-            for (const [px, py] of pts) for (const ox of [-256, 0, 256]) for (const oy of [-256, 0, 256]) {
-              const d = (x - px - ox) ** 2 + (y - py - oy) ** 2;
-              if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
+          for (let y = 0; y < 256; y += 2) {
+            for (let x = 0; x < 256; x += 2) {
+              let d1 = 1e9, d2 = 1e9;
+              for (const [px, py] of pts) for (const ox of [-256, 0, 256]) for (const oy of [-256, 0, 256]) {
+                const d = (x - px - ox) ** 2 + (y - py - oy) ** 2;
+                if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
+              }
+              const e = Math.sqrt(d2) - Math.sqrt(d1);
+              if (e < 4) { ctx.fillStyle = `rgba(190,255,255,${Math.pow(1 - e / 4, 1.6) * 0.9})`; ctx.fillRect(x, y, 2, 2); }
             }
-            const e = Math.sqrt(d2) - Math.sqrt(d1);
-            if (e < 4) { ctx.fillStyle = `rgba(190,255,255,${Math.pow(1 - e / 4, 1.6) * 0.9})`; ctx.fillRect(x, y, 2, 2); }
+            if (y % 16 === 14) yield;
           }
           // soften, like light through moving water
           const c2 = document.createElement("canvas"); c2.width = c2.height = 256;
           const x2 = c2.getContext("2d"); x2.filter = "blur(1.6px)"; x2.drawImage(ctx.canvas, 0, 0);
           ctx.clearRect(0, 0, 256, 256); ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 256, 256); ctx.drawImage(c2, 0, 0);
-        }, { repeat: [7, 7] });
+        }
+        const causTex = new CanvasTexture(causCv);
+        causTex.colorSpace = SRGBColorSpace; causTex.anisotropy = 4; causTex.wrapS = causTex.wrapT = RepeatWrapping; causTex.repeat.set(7, 7);
         causTex.wrapS = causTex.wrapT = RepeatWrapping;
         const causM = noOutline(new MeshBasicMaterial({ map: causTex, transparent: true, opacity: 0.24, blending: AdditiveBlending, depthWrite: false }));
         const caus = new Mesh(new PlaneGeometry(3200, 3200), causM);
@@ -37486,6 +37760,7 @@ void main() {
         caus.position.y = 2.2;
         caus.renderOrder = 2;
         g.add(caus);
+        yield;
         // marine snow
         const SN = 520;
         const snow = new InstancedMesh(new SphereGeometry(0.9, 4, 3), noOutline(new MeshBasicMaterial({ color: "#d8fbff", transparent: true, opacity: 0.6, depthWrite: false })), SN);
@@ -37495,6 +37770,7 @@ void main() {
         }
         snow.frustumCulled = false;
         g.add(snow);
+        yield;
         // a pineapple house under the sea, facing the first intersection
         {
           const ph = new Group();
@@ -37599,9 +37875,10 @@ void main() {
             snow.position.set(center.x, -((t * 6) % 520) * 0.2, center.z);
           }
         };
-      })();
+      }
       // ---- world layers: Formula 1 circuit, Ghibli countryside, Sakura season ----
-      var worldFx = (() => {
+      var worldFx = null, worldFxGen = null; // beta 3.xx (start-up slices): made after the opening (see fxLater), or when its world is first chosen
+      function* makeWorldFxGen() {
         const noOutline = (m) => { m.userData.outlineParameters = { visible: false }; return m; };
         const rr = rng(6161);
         const P = new Vector3(), T = new Vector3();
@@ -37640,6 +37917,7 @@ void main() {
           };
         };
 
+        yield;
         // ================= FORMULA 1 =================
         const f1 = new Group(); f1.visible = false; scene.add(f1);
         const f1U = { value: 0 };
@@ -37667,6 +37945,7 @@ void main() {
         const tyreGeo = new TorusGeometry(3, 1.6, 6, 12); tyreGeo.rotateX(Math.PI / 2);
         f1.add(inst(tyreGeo, new MeshStandardMaterial({ color: "#1b1b1b", roughness: 0.9 }), tyres, (d, i) => (i % 5 === 0 ? "#e10600" : "#1b1b1b")));
         f1.add(inst(new PlaneGeometry(1, 1).rotateX(-Math.PI / 2), noOutline(new MeshBasicMaterial({ color: "#000000", transparent: true, opacity: 0.22, depthWrite: false })), marks));
+        yield;
         // grandstands with a seated crowd, advertising boards, marshal posts, a DRS board
         const crowd = [], boards = [], posts = [];
         const standM = new MeshStandardMaterial({ color: "#c9d0d8", roughness: 0.8 });
@@ -37741,6 +38020,7 @@ void main() {
           dpole.position.set(dp.x, 6, dp.z);
           f1.add(drs, dpole);
         }
+        yield;
         // start/finish: gantry, five red lights, chequered line, grid slots
         const startLights = [];
         let gantry;
@@ -37791,6 +38071,7 @@ void main() {
             f1.add(pole, flag);
           }
         }
+        yield;
         // the TV helicopter
         const heli = new Group();
         {
@@ -37805,6 +38086,7 @@ void main() {
         }
         var c2crowd;
 
+        yield;
         // ================= GHIBLI =================
         const gh = new Group(); gh.visible = false; scene.add(gh);
         const ghU = { value: 0 };
@@ -37822,9 +38104,11 @@ void main() {
               sp.translate(bx + (rr() - 0.5) * 520 * (1 - t3), 200 + t3 * hgt, bz + (rr() - 0.5) * 520 * (1 - t3));
               geos.push(sp);
             }
+            yield;
           }
           gh.add(new Mesh(mergeGeometries(geos), cm));
         }
+        yield;
         // the giant camphor tree with its shimenawa rope, by the first chapter
         const kodama = [];
         {
@@ -37874,6 +38158,7 @@ void main() {
             kodama.push({ head, ph: rr() * 10 });
           }
         }
+        yield;
         // a roadside shrine: small torii and three Jizō in red bibs
         {
           route.posAt(route.stopL.voice + 180, P); route.tangentAt(route.stopL.voice + 180, T);
@@ -37897,6 +38182,7 @@ void main() {
           g4.rotation.y = Math.atan2(T.x, T.z) + Math.PI / 2;
           gh.add(g4);
         }
+        yield;
         // a countryside bus stop: round sign, small bench, a lone umbrella leaning on it
         {
           route.posAt(route.stopL.world + 120, P); route.tangentAt(route.stopL.world + 120, T);
@@ -37913,6 +38199,7 @@ void main() {
           g5.rotation.y = Math.atan2(T.x, T.z);
           gh.add(g5);
         }
+        yield;
         // laundry drying on a line, fluttering
         const sheetM = new MeshStandardMaterial({ color: "#ffffff", side: DoubleSide, roughness: 0.9 });
         sway(sheetM, 1.1, ghU, "ny");
@@ -37934,6 +38221,7 @@ void main() {
           g6.rotation.y = Math.atan2(T.x, T.z);
           gh.add(g6);
         }
+        yield;
         // rice paddies in the parks, mirror-bright water in green rows
         {
           const padM = new MeshStandardMaterial({ color: "#9fd6e8", roughness: 0.15, metalness: 0.1, emissive: new Color("#bfe9f5"), emissiveIntensity: 0.25 });
@@ -37945,6 +38233,7 @@ void main() {
             for (let r3 = -d / 2 + 8; r3 < d / 2; r3 += 12) { const row = new Mesh(new BoxGeometry(w - 10, 3, 2.4), rowM); row.position.set(pk.x, 3, pk.y + r3); gh.add(row); }
           }
         }
+        yield;
         // soot sprites around the old house by the start, with star candies
         const soots = [];
         {
@@ -37967,6 +38256,7 @@ void main() {
             gh.add(c3);
           }
         }
+        yield;
         // a red seaplane on patrol, and a floating island lost in the clouds
         const seaplane = new Group();
         {
@@ -37993,6 +38283,7 @@ void main() {
           skyIsland.position.set(1250 - 3600, 1500, 5600 + 3800);
           gh.add(skyIsland);
         }
+        yield;
         // grass tufts swaying in the wind along the road, and dust motes in the light
         {
           const tufts = [];
@@ -38009,6 +38300,7 @@ void main() {
         motes.frustumCulled = false;
         gh.add(motes);
 
+        yield;
         // ================= SAKURA =================
         const sk = new Group(); sk.visible = false; scene.add(sk);
         // fluffy blossom puffs on every round tree, and a pink carpet below
@@ -38026,6 +38318,7 @@ void main() {
           sk.add(inst(new IcosahedronGeometry(9, 1), new MeshStandardMaterial({ roughness: 0.85, emissive: new Color("#ff9fc0"), emissiveIntensity: 0.12 }), puffs, (d, i) => PINK[i % PINK.length]));
           sk.add(inst(new CircleGeometry(24, 18).rotateX(-Math.PI / 2), noOutline(new MeshBasicMaterial({ color: "#ffc6da", transparent: true, opacity: 0.7, depthWrite: false })), carpet));
         }
+        yield;
         // torii at the start, stone lanterns along the road, paper-lantern strings
         {
           route.posAt(130, P); route.tangentAt(130, T);
@@ -38067,6 +38360,7 @@ void main() {
             }
           }, 700);
         }
+        yield;
         // hanami: blue tarps with picnickers in the parks
         {
           const tarp = new MeshStandardMaterial({ color: "#3d7fd1", roughness: 0.9 });
@@ -38083,6 +38377,7 @@ void main() {
             }
           }
         }
+        yield;
         // Fuji on the horizon
         {
           const fuji = new Group();
@@ -38094,6 +38389,7 @@ void main() {
           fuji.position.set(1250 + 900, 0, 11300 + 9500);
           sk.add(fuji);
         }
+        yield;
         // petals: falling from the trees, drifting everywhere
         const PN = 700;
         const petalGeo = new PlaneGeometry(3.2, 2.2);
@@ -38144,7 +38440,7 @@ void main() {
             }
           }
         };
-      })();
+      }
       // ---- tilt-shift: renders the Monument world as a miniature diorama ----
       var tilt = null;
       // r130 (after jenamdvacetpet.cz): the opened place in a pool of light; the map drifts round when left alone
@@ -38625,12 +38921,12 @@ void main() {
       // the on-screen ones, so a dozen compiled mid-flight on the first mapGo and ~17 at the jet's take-off, as their
       // buildings came into view (30-80 ms each). Now, when idle after boot, a world switch or a mode switch, every
       // material of the scene (hidden ones too) is compiled for the target in use, hulls included where outlines draw
-      var warmDone = new Set(), warmQueued = false;
+      var warmDone = new Set(), warmQueued = false, bootSlicing = false, screenCompiled = false; // beta 3.xx: screenCompiled, the on-screen variants (fxLater)
       // r141: the compile on its own (all: for the screen and for the render target both, whatever the mode), so
       // /onboarding/ can warm every world and every ride while its city waits out of sight (onbCmd "warm")
       function warmNow(all) {
           const sch = SCHEMES[state.schemeIdx]?.id, key = all ? `${sch}|all` : `${sch}|${mapMode ? "map" : "drive"}`;
-          if (!sch || warmDone.has(key)) return;
+          if (!sch || warmDone.has(key) || (bootSlicing && !all)) return; // beta 3.xx: the sliced boot compiles these itself
           warmDone.add(key);
           const post = sch === "sketch" || sch === "riso" || sch === "sincity", toRT = all || post || mapMode || sch === "monument";
           const hidden = [], prev = renderer.getRenderTarget();
@@ -38650,7 +38946,7 @@ void main() {
           }
       }
       function warmShaders() {
-        if (warmQueued) return;
+        if (warmQueued || bootSlicing) return; // beta 3.xx: not in the middle of the sliced boot (it compiles these itself, in slices)
         warmQueued = true;
         (window.requestIdleCallback || setTimeout)(() => { warmQueued = false; warmNow(); }, { timeout: 2500 });
       }
@@ -38679,14 +38975,14 @@ void main() {
         if (!document.body.classList.contains("kz-boot")) { if (kzWarm.on) { kzWarm.on = false; perf.t = now + 3000; } return false; } // (the frames of the hand-off, two contexts at once, do not drive the resolution)
         if (kzWarm.frames < kzWarm.need) {
           // the first warm frame draws everything, culled or not: every texture and buffer the map can need goes up now
-          if (kzWarm.frames === 0) {
+          if (kzWarm.frames === 0 && !kzWarm.pre) { // beta 3.xx: not after the sliced warm draws (warmDrawGen): all of it is up already
             kzWarm.unc = [];
             scene.traverse((o) => { if (o.frustumCulled && (o.isMesh || o.isSprite || o.isLine || o.isPoints)) { o.frustumCulled = false; kzWarm.unc.push(o); } });
             // the map's post pass (tilt-shift) takes over a moment after the reveal: its targets and programs are used once here,
             // with everything in the frame, so every program it needs is linked and queried now, not then
             try { tiltShiftRender(now); } catch (e) {}
           } else if (kzWarm.unc) { for (const o of kzWarm.unc) o.frustumCulled = true; kzWarm.unc = null; }
-          if (kzWarm.frames === 2) { try { tiltShiftRender(now); } catch (e) {} }
+          if (kzWarm.frames === 2 && !kzWarm.pre) { try { tiltShiftRender(now); } catch (e) {} }
           kzWarm.frames++;
           if (kzWarm.frames >= kzWarm.need) kzWarm.resolve?.();
           return false;
@@ -39215,8 +39511,8 @@ void main() {
         // the cloud ring or the floating islands: with the telephoto camera they filled the screen
         if (!mapMode && SCHEMES[state.schemeIdx].id === "monument") { for (const m of farRings) if (m.userData.mesh) m.userData.mesh.visible = false; farClouds.visible = false; }
         if (mvFx.group.visible) mvFx.update(now * 0.001, window.__lookSm);
-        if (uwFx.group.visible) uwFx.update(now * 0.001, dt, window.__lookSm);
-        worldFx.update(now * 0.001, dt, window.__lookSm);
+        if (uwFx && uwFx.group.visible) uwFx.update(now * 0.001, dt, window.__lookSm);
+        if (worldFx) worldFx.update(now * 0.001, dt, window.__lookSm);
         if (FOUNTAIN && !siteMode) FOUNTAIN.update(now * 0.001);
         farClouds.rotation.y += dt * 0.006;
         const prog = state.L / route.total;
@@ -39734,7 +40030,12 @@ void main() {
       // a geometry's attributes: how many, and the sum of their versions (a version only ever goes up)
       let geoVerN = 0;
       const geoVer = (g) => { let v = 0, n = 0; const at = g.attributes; for (const k in at) { v += at[k].version; n++; } geoVerN = n; return v; };
-      function mergeStatic() {
+      // beta 3.xx (start-up slices): a generator job (czRun): the parts gathered a top-level piece at a time, the batches'
+      // geometry a batch at a time (was: the gathering in one go, ~0.1-0.2 s at 4x, the geometry in idle slices); the boot
+      // runs it before its compile and first draws, so the batches are compiled and drawn under the opening too
+      var mergeRun = null;
+      function mergeStatic() { if (MERGED || NO_MERGE || mergeRun) return mergeRun; mergeRun = czRun(mergeStaticGen()).catch(() => {}).finally(() => { mergeRun = null; }); return mergeRun; }
+      function* mergeStaticGen() {
         if (MERGED || NO_MERGE) return;
         const W = worldRefs.world; W.updateMatrixWorld(true);
         MERGED = [];
@@ -39777,6 +40078,7 @@ void main() {
               (groups.get(k) || groups.set(k, []).get(k)).push({ o, ...sh, T });
             }
           });
+          yield;
         }
         // a lone plain mesh stays as it is; a mesh with several materials goes only when every share of it is batched
         const take = new Map();
@@ -39791,11 +40093,8 @@ void main() {
         if (!jobs.length && ++mergeTries < 8) { MERGED = null; setTimeout(mergeStatic, 2000); return; }
         // the geometry is built a slice at a time while the page is idle (a phone needs several hundred ms for all of it),
         // then everything is switched over in one frame (never a batch and its originals drawn together)
-        let j = 0;
-        const slice = (dl) => {
-          const t1 = performance.now();
-          while (j < jobs.length && (dl?.timeRemaining ? dl.timeRemaining() > 2 : performance.now() - t1 < 8)) { const jb = jobs[j++]; jb.mg = batchGeo(jb.list, jb.bake); }
-          if (j < jobs.length) { (window.requestIdleCallback || setTimeout)(slice, { timeout: 500 }); return; }
+        for (const jb of jobs) { jb.mg = batchGeo(jb.list, jb.bake); yield; }
+        {
           let n0 = 0;
           for (const jb of jobs) {
             if (!jb.mg) continue;
@@ -39820,8 +40119,7 @@ void main() {
           }
           if (n2C) { nav2CullOff(); n2C = null; } // the street view's far cull rebuilds its list (the batches, not the hidden originals)
           (window.__bootT ||= {}).merge = { meshes: n0, batches: MERGED.length, ms: Math.round(performance.now() - t0) };
-        };
-        slice(null);
+        }
       }
       // where a mesh is: its own place, turn, size and visibility, and those of every group above it up to the world
       // group's piece (a flat list of numbers, compared without allocating)
@@ -42518,20 +42816,14 @@ void main() {
       const kzLoader = BOOT_MODE !== "drive";
       // r153: the moment the city is ready (built, its programs linked, its first frames drawn)
       let introReadyRes = null; const introReady = new Promise((r) => (introReadyRes = r));
-      if (kzLoader) {
-        state.started = true;
-        state.visited.add("start");
-        setMapMode(true, { intro: true, open: true }); // r147 (r223: both boots open on the map's first frame, under the loader)
-        ui.hideLoader();
-        CZI?.progress(0.24); // the bundle has run
-        introLoaderHooks();
-      }
+      bootBDone = true;
       let kineticStarted = false;
       // r223: the city is ready: the loader may open onto it (on a page without the loader, the map shows at once)
       const startKinetic = () => {
         if (!kzLoader || kineticStarted) return;
         kineticStarted = true;
         (window.__bootT ||= {}).ready = Math.round(performance.now());
+        window.__bootT.slices = { busy: Math.round(czStat.busy), n: czStat.n, away: Math.round(czStat.away) }; // beta 3.xx: tests
         introReadyRes?.();
         if (CZI) CZI.ready(); else { mapEndIntro(); kineticLater(); }
       };
@@ -42545,7 +42837,9 @@ void main() {
         const rtWarm = new Promise((res) => { const iv = setInterval(() => { if (!warmQueued) { clearInterval(iv); res(); } }, 40); }).then(mk("rt")).then(() => CZI?.progress(0.8));
         // the programs link in parallel on the GPU process: wait until they really are linked (for the screen and for
         // the map's render target), or the first draw of each blocks on the link, after the reveal
-        const linked = (async () => {
+        // beta 3.xx: the sliced boot compiled both already and waited on their links (bootLinked); compileAsync again
+        // (a second full compile pass, ~0.2 s at 4x) only on the boots that did not
+        const linked = bootLinked || (async () => {
           if (!renderer.compileAsync) return;
           try { await renderer.compileAsync(scene, camera); } catch (e) {}
           const rt = new WebGLRenderTarget(1, 1, { type: HalfFloatType }), prev = renderer.getRenderTarget();
@@ -42561,20 +42855,153 @@ void main() {
           setTimeout(go, 0);
         });
       };
-      // r125: the city's streets, blocks and trees are built behind the intro (it plays on an opaque
-      // ground meanwhile), so the first frame is the type, not a blank screen
-      if (kzLoader) document.body.classList.add("kz-boot");
-      const fabricReady = new Promise((res) => {
-        const go = () => { worldRefs.world.userData.buildFabric(); applyScheme(state.schemeIdx); (window.__bootT ||= {}).fabric = Math.round(performance.now()); CZI?.progress(0.5); res(); (window.requestIdleCallback || ((f) => setTimeout(f, 1500)))(mergeStatic, { timeout: 1500 }); }; // r198: then the batches (r223: the loader's progress; r230: Safari, with no requestIdleCallback, waits as long as Chrome at most does)
-        if (kzLoader) requestAnimationFrame(() => setTimeout(go, 30)); else { go(); }
+      // beta 3.xx (start-up slices): the boot's compile, a top-level piece at a time (the world's own pieces one by one),
+      // each with the whole scene's lights as the one-go compile saw them (its hidden pieces shown: the lights in them
+      // count), so the programs are the same ones; for the screen (rt null) or a render target. Returns the programs made
+      // or found (their links are waited on, see linkWait)
+      function* compileGen(rt, roots = null) {
+        const W = worldRefs.world, parts = [], progs = new Set();
+        if (roots) for (const r of roots) parts.push(...(r.children.length ? r.children : [r]));
+        else for (const o of scene.children) { if (o === W) parts.push(...W.children); else parts.push(o); }
+        const hidden = [], lights = [];
+        scene.traverse((o) => { if (!o.visible && (o.isMesh || o.isGroup)) { hidden.push(o); o.visible = true; } });
+        scene.traverseVisible((o) => { if (o.isLight) lights.push(o); });
+        hidden.forEach((o) => (o.visible = false));
+        yield;
+        const prev = renderer.getRenderTarget(), noop = () => {};
+        for (const part of parts) {
+          // the lights, from the list (not a walk of the whole scene for every piece); none twice from the piece itself
+          scene.traverseVisible = (cb) => { for (const l of lights) cb(l); };
+          part.traverseVisible = noop;
+          try {
+            renderer.setRenderTarget(rt || null);
+            for (const m of renderer.compile(part, camera, scene)) { const pr = renderer.properties.get(m).currentProgram; if (pr) progs.add(pr); }
+          } catch (e) {} finally { delete scene.traverseVisible; delete part.traverseVisible; renderer.setRenderTarget(prev); }
+          yield;
+        }
+        return progs;
+      }
+      // the programs' links (they run on the GPU process): polled, never waited on in a draw (a draw on one still linking
+      // blocks the thread until it is done)
+      const linkWait = (progs) => new Promise((res) => {
+        const t0 = performance.now();
+        const chk = () => { for (const p of progs) { try { if (p.isReady()) progs.delete(p); } catch (e) { progs.delete(p); } } if (!progs.size || performance.now() - t0 > 8000) res(); else setTimeout(chk, 12); };
+        chk();
       });
-      Promise.all([fabricReady, Promise.race([Promise.all([document.fonts?.load?.("500 16px CromaticSans"), document.fonts?.load?.("800 16px CromaticSans")]).then(() => document.fonts?.ready), new Promise((r) => setTimeout(r, 1600))])]).then(() => {
+      // the first draws: every visible piece once, on its own (the rest hidden for it), into a small half-float target as
+      // the map draws (its programs), culled or not: its buffers and textures go up to the GPU now, a piece a slice, not
+      // all in the first warm frame (2.3 s at 4x before)
+      function* warmDrawGen() {
+        const W = worldRefs.world, done = new Set(), prev = renderer.getRenderTarget();
+        // the pieces as they are now (the batches, r198, may come in meanwhile: they are pieces too)
+        // (the lights stay on: the programs are made for the lights the frame has)
+        const pieces = () => { const a = []; for (const o of scene.children) { if (o === W) { for (const c of W.children) if (!c.isLight) a.push(c); } else if (!o.isLight) a.push(o); } return a; };
+        // and the pieces hidden now that show as the map opens: the ride (it spawns there) and its spawn's ring and beam
+        const showsSoon = new Set([veh?.group, spawnRing, spawnBeam].filter(Boolean));
+        const rt = new WebGLRenderTarget(64, 64, { type: HalfFloatType });
+        // a few pieces a draw: as many as keep a draw short (most are a few small meshes; a draw has its own fixed cost)
+        let k = 4;
+        const st = ((window.__bootT ||= {}).warm = { draws: 0, ms: 0, pieces: 0, maxMs: 0 });
+        try {
+          for (;;) {
+            const cur = pieces(), take = new Set();
+            for (const o of cur) { if (take.size >= k) break; if (!done.has(o) && (o.visible || showsSoon.has(o)) && o.layers.mask !== 0) take.add(o); }
+            if (!take.size) break;
+            const vis = cur.map((o) => o.visible), unc = [];
+            for (const part of take) {
+              done.add(part);
+              part.traverse((o) => {
+                if (o.frustumCulled && (o.isMesh || o.isSprite || o.isLine || o.isPoints)) { o.frustumCulled = false; unc.push(o); }
+                // the bounds the first culled draw would work out (three does it lazily, on the first frustum test)
+                if (o.isMesh || o.isLine || o.isPoints) { if (o.boundingSphere !== undefined) { if (o.boundingSphere === null && o.computeBoundingSphere) o.computeBoundingSphere(); } else if (o.geometry && o.geometry.boundingSphere === null) o.geometry.computeBoundingSphere(); }
+              });
+            }
+            for (const o of cur) o.visible = take.has(o);
+            const t0 = performance.now();
+            try { renderer.setRenderTarget(rt); renderer.render(scene, camera); } catch (e) {} finally {
+              cur.forEach((o, j) => { o.visible = vis[j]; });
+              for (const o of unc) o.frustumCulled = true;
+              renderer.setRenderTarget(prev);
+            }
+            const dt = performance.now() - t0;
+            st.draws++; st.ms += dt; st.pieces += take.size; st.maxMs = Math.max(st.maxMs, dt);
+            k = dt < czBudget * 0.35 ? Math.min(256, k * 2) : dt > czBudget * 0.7 ? Math.max(1, k >> 1) : k;
+            yield;
+          }
+        } finally { rt.dispose(); }
+      }
+      var bootLinked = null;
+      // beta 3.xx (start-up slices): what no first view needs: the on-screen variants of every program (the map draws into a
+      // render target; a drive, the postcards and the ride previews draw on screen), compiled in slices once the opening
+      // is over and linked in the background
+      async function fxLater() {
+        await new Promise((r) => setTimeout(r, 1500));
+        if (kzLoader) { try { await czRun(compileGen(null)); } catch (e) {} } // the on-screen variants of everything (the sliced boot made only the map's)
+        screenCompiled = true;
+      }
+      // (beta 3.xx: asked for inside the boot, after a hand-back: document.fonts.load matches the face there and then, ~0.1 s at 4x)
+      const fontsWait = () => Promise.race([Promise.all([document.fonts?.load?.("500 16px CromaticSans"), document.fonts?.load?.("800 16px CromaticSans")]).then(() => document.fonts?.ready), new Promise((r) => setTimeout(r, 1600))]);
+      if (CZI) CZI.onEnd(fxLater); else setTimeout(fxLater, 6000);
+      (async () => {
+        let fontsReady = null;
+        if (kzLoader) { await czPause(); fontsReady = fontsWait(); } else fontsReady = fontsWait();
+        if (!kzLoader) { uwFx ||= czDrain(uwFxGen || (uwFxGen = makeUwFxGen())); if (!worldFx) { worldFx = czDrain(worldFxGen || (worldFxGen = makeWorldFxGen())); worldFx.set(SCHEMES[state.schemeIdx].id); } } // (as the app's body made them)
+        if (kzLoader) {
+          bootSlicing = true;
+          // beta 3.xx: the underwater world's sea life and the F1 / Ghibli / Sakura layers (~0.4 s at 4x, in the bundle's task
+          // before), in slices now. They stay at this point of the boot: they are laid along the drive's route as it is
+          // before the map opens (nav2 re-bases it later), and they find the city's trees not yet there (as ever)
+          if (!uwFx) { const v = await czRun(uwFxGen || (uwFxGen = makeUwFxGen())); if (!uwFx && v) uwFx = v; }
+          if (!worldFx) { const v = await czRun(worldFxGen || (worldFxGen = makeWorldFxGen())); if (!worldFx && v) { worldFx = v; worldFx.set(SCHEMES[state.schemeIdx].id); } }
+          state.started = true;
+          state.visited.add("start");
+          await czPause();
+          setMapMode(true, { intro: true, open: true }); // r147 (r223: both boots open on the map's first frame, under the loader)
+          ui.hideLoader();
+          CZI?.progress(0.24); // the bundle has run
+          introLoaderHooks();
+          // beta 3.xx: the ride's measures nav2 asks for in its first drive frame (bounding boxes of every part), now
+          await czPause();
+          try { const h = nav2Host(); h.carLen?.(); h.vehSpan?.(); } catch (e) {}
+          // r125: the city's streets, blocks and trees are built behind the intro (it plays on an opaque
+          // ground meanwhile), so the first frame is the type, not a blank screen
+          document.body.classList.add("kz-boot");
+          await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30)));
+          await czRun(worldRefs.world.userData.buildFabricGen()); // beta 3.xx: in slices
+        } else worldRefs.world.userData.buildFabric();
+        applyScheme(state.schemeIdx); (window.__bootT ||= {}).fabric = Math.round(performance.now()); CZI?.progress(0.5);
+        // r198: then the batches (r223: the loader's progress; r230: Safari, with no requestIdleCallback, waits as long as Chrome
+        // at most does); beta 3.xx: on the sliced boot, at once and before the compile
+        if (kzLoader) { await czPause(); await mergeStatic(); } else (window.requestIdleCallback || ((f) => setTimeout(f, 1500)))(mergeStatic, { timeout: 1500 });
+        // beta 3.xx: the jet's boarding walk, which the map's frame made once the page was 4 s old (the first warm frame now),
+        // made here, before the compile and the first draws
+        if (kzLoader && boardWalk === null) { await czPause(); try { buildBoardWalk(); } catch (e) { boardWalk = false; } }
+        await fontsReady;
         // r127: every shader in the scene is prepared while the intro plays (hidden ones too), so
         // nothing compiles mid-journey; compileAsync uses the parallel compile extension when present
-        const hiddenNow = [];
-        scene.traverse((o) => { if (!o.visible && (o.isMesh || o.isGroup)) { hiddenNow.push(o); o.visible = true; } });
-        try { renderer.compile(scene, camera); } catch {}
-        hiddenNow.forEach((o) => (o.visible = false));
+        if (kzLoader) {
+          // beta 3.xx: in slices, for the map's render target (all the map draws; what warmShaders would do next, when idle,
+          // in one go), then the links waited on, then the first draws a piece at a time. The on-screen variants (a drive,
+          // the postcards) follow after the opening (fxLater)
+          let progs = new Set();
+          const rt = new WebGLRenderTarget(1, 1, { type: HalfFloatType });
+          try { progs = await czRun(compileGen(rt)); } finally { rt.dispose(); }
+          { const sch = SCHEMES[state.schemeIdx]?.id; if (sch && sch !== "sketch" && sch !== "riso" && sch !== "sincity") warmDone.add(`${sch}|${mapMode ? "map" : "drive"}`); } // (warmNow's key: done)
+          (window.__bootT ||= {}).compiled = Math.round(performance.now());
+          bootLinked = linkWait(progs);
+          await bootLinked;
+          (window.__bootT ||= {}).linkedAt = Math.round(performance.now());
+          await czRun(warmDrawGen());
+          kzWarm.pre = true;
+          bootSlicing = false;
+          (window.__bootT ||= {}).drawn = Math.round(performance.now());
+        } else {
+          const hiddenNow = [];
+          scene.traverse((o) => { if (!o.visible && (o.isMesh || o.isGroup)) { hiddenNow.push(o); o.visible = true; } });
+          try { renderer.compile(scene, camera); } catch {}
+          hiddenNow.forEach((o) => (o.visible = false));
+          screenCompiled = true;
+        }
         warmShaders(); // r139b: and, when idle, the variants for the render target the map draws into
         clearInterval(bootT);
         // r129: the vehicle thumbnails render off-screen: not while the intro plays, later, when idle
@@ -42622,7 +43049,7 @@ void main() {
           prevT = t;
           frame(t);
         });
-      });
+      })();
     }
   });
   require_main();
