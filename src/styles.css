@@ -4875,18 +4875,18 @@ body.scheme-sketch .map-card.mcd-game { background: #170f19 !important; border: 
 body.n2-phone.nav2-street .map-card .mcd-fight { min-height: 44px; padding: 7px 10px 9px !important; }
 body.n2-phone.nav2-street .map-card .mcd-fight .mf-glove { display: none; }
 /* beta 3.76: Sketchbook is the notebook (after the hand-drawn chess game on notebook paper Daniel picked): the interface
-   is drawn on the same greige sheet as the city. Thin brown-graphite ink outlines of one weight, a little irregular as a
-   hand draws them; colour only as coloured pencil (a pre-baked hatch, --nb-hatch, used as a static mask); words in a
-   handwriting (Caveat; Playwrite RO, a Romanian school hand, for the titles and notes, like the reference's ballpoint
-   "your move"). No hard ink shadows, no black slabs, no filters on anything that moves. */
+   is drawn on the same sheet as the city. Round 2 (Daniel): the sheet almost white, the ink a dark indigo, and the site's
+   own type (no handwriting fonts), coloured like the pencils (indigo, terracotta). Thin ink outlines of one weight, a
+   little irregular as a hand draws them; colour only as coloured pencil (a pre-baked hatch, --nb-hatch, used as a static
+   mask). No hard ink shadows, no black slabs, no filters on anything that moves. */
 body.scheme-sketch {
-  --nb-paper: #dedacb; --nb-paper2: #e7e4d8; --nb-ink: #3a3629; --nb-ink2: #5d5848;
+  --nb-paper: #fbfaf6; --nb-paper2: #fdfcf9; --nb-ink: #2e3266; --nb-ink2: #5a5f93;
   --nb-blue: #4b4f8f; --nb-red: #bd4f3f; --nb-ochre: #d9a65a; --nb-sage: #8fa877; --nb-terra: #c77868; --nb-sky: #8db2cf;
-  --nb-hand: "Caveat", "Patrick Hand", "Segoe Print", "Comic Sans MS", cursive;
-  --nb-script: "Playwrite RO", "Caveat", cursive;
   --nb-r: 16px 13px 18px 12px / 12px 17px 13px 18px; /* a box drawn by hand: no two corners alike */
   --nb-r2: 999px 950px 999px 920px / 920px 999px 940px 999px;
 }
+/* round 2: a white sheet, so the site's film grain and cinematic vignette (r115) stay off the notebook */
+body.scheme-sketch::before, body.scheme-sketch::after { display: none !important; }
 /* the old graphite UI lets go: no greyscale filters, no wax crayon swatches */
 body.scheme-sketch :is(.map-top, .map-top > *, .map-top img, .map-zoom, .hud, .hud .round-btn, .topbar, .dash, .you, .map-street, .jx-row, .svc-hc, .map-dock-h, .multi-btn, .map-chip .mc-pin, .work-tag, .poi-rail) { filter: none !important; }
 body.scheme-sketch :is(.crew-panel img, .hud img, .map-crew img, .map-card .mcd-img img) { filter: saturate(.78) sepia(.1) !important; } /* static photos only (Nearby's redraw: the audit's no-filter rule) */
@@ -4896,14 +4896,13 @@ body.scheme-sketch :is(.mcd-open, .mcd-ghost, .coffee-btn, .jx-btn, .fe-drive, .
 /* the bones: a piece of the sheet with an ink box round it */
 body.scheme-sketch .map-top, body.scheme-sketch .nav2-ui .n2-panel, body.scheme-sketch .nav2-ui .n2-views, body.scheme-sketch .you,
 body.scheme-sketch .nav2-ui .n2-hint, body.scheme-sketch .xp-log, body.scheme-sketch .n2-toast, body.scheme-sketch .toast {
-  background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: 1px 2px 0 rgba(58,54,41,.18) !important; }
+  background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: 1px 2px 0 rgba(46,50,102,.18) !important; }
 body.scheme-sketch .map-top { border-radius: var(--nb-r2) !important; }
 body.scheme-sketch :is(.map-top > :is(button, a), .nav2-ui .n2-k, .dp-k) { position: relative; isolation: isolate; }
 body.scheme-sketch .map-top > :is(button, a), body.scheme-sketch .map-zoom button, body.scheme-sketch .nav2-ui :is(.n2-k, .n2-snd, .n2-driftb), body.scheme-sketch .dp-k, body.scheme-sketch .dp-where, body.scheme-sketch .hud .round-btn {
-  background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important;
-  font-family: var(--nb-hand) !important; font-weight: 700 !important; letter-spacing: 0 !important; }
-body.scheme-sketch .map-top > :is(button, a) { border-radius: var(--nb-r2) !important; font-size: 19px !important; text-transform: none !important; }
-body.scheme-sketch .map-zoom button, body.scheme-sketch .hud .round-btn { border-radius: 52% 48% 50% 50% / 48% 53% 47% 52% !important; font-size: 22px !important; }
+  background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important; }
+body.scheme-sketch .map-top > :is(button, a) { border-radius: var(--nb-r2) !important; }
+body.scheme-sketch .map-zoom button, body.scheme-sketch .hud .round-btn { border-radius: 52% 48% 50% 50% / 48% 53% 47% 52% !important; }
 /* coloured pencil behind a button: the hatch, in the button's own pencil, a little past its outline as a hand colours in */
 body.scheme-sketch :is(.map-top .map-home, .map-top .map-2m2f, .nav2-ui .n2-k.on, .nav2-ui .n2-k.need, .nav2-ui .n2-views button[aria-pressed="true"], .map-card .mcd-open, .nav2-ui .n2-q, .dp-k.on)::after {
   content: ""; position: absolute; inset: 3px; z-index: -1; pointer-events: none; border-radius: inherit;
@@ -4917,46 +4916,43 @@ body.scheme-sketch .map-top .map-world * { color: var(--nb-ink) !important; text
 body.scheme-sketch .map-top .map-world::before, body.scheme-sketch .map-top .map-world::after { opacity: .0 !important; }
 
 /* the pad, the views, the hint */
-body.scheme-sketch .nav2-ui .n2-k, body.scheme-sketch .dp-k { border-radius: 12px 15px 11px 14px / 14px 11px 15px 12px !important; font-size: 24px !important; }
+body.scheme-sketch .nav2-ui .n2-k, body.scheme-sketch .dp-k { border-radius: 12px 15px 11px 14px / 14px 11px 15px 12px !important; }
 body.scheme-sketch .nav2-ui .n2-k.on, body.scheme-sketch .nav2-ui .n2-k.need { background: var(--nb-paper2) !important; transform: translateY(1px); --nbc: var(--nb-ochre); }
-body.scheme-sketch .nav2-ui .n2-k kbd, body.scheme-sketch .nav2-ui .n2-k i { font-family: var(--nb-hand) !important; border-color: var(--nb-ink2) !important; background: transparent !important; color: var(--nb-ink2) !important; box-shadow: none !important; }
+body.scheme-sketch .nav2-ui .n2-k kbd, body.scheme-sketch .nav2-ui .n2-k i { border-color: var(--nb-ink2) !important; background: transparent !important; color: var(--nb-ink2) !important; box-shadow: none !important; }
 body.scheme-sketch .nav2-ui .n2-views { border-radius: var(--nb-r2) !important; }
-body.scheme-sketch .nav2-ui .n2-views button { position: relative; isolation: isolate; font-family: var(--nb-hand) !important; font-size: 21px !important; font-weight: 700 !important; color: var(--nb-ink) !important; background: transparent !important; border-radius: var(--nb-r2) !important; }
+body.scheme-sketch .nav2-ui .n2-views button { position: relative; isolation: isolate; color: var(--nb-ink) !important; background: transparent !important; border-radius: var(--nb-r2) !important; }
 body.scheme-sketch .nav2-ui .n2-views button[aria-pressed="true"] { --nbc: var(--nb-sky); box-shadow: inset 0 0 0 1.6px var(--nb-ink) !important; }
 body.scheme-sketch .nav2-ui .n2-views button svg { color: var(--nb-ink) !important; }
-body.scheme-sketch .nav2-ui .n2-hint { font-family: var(--nb-hand) !important; font-size: 17px !important; font-weight: 600 !important; letter-spacing: .01em !important; text-transform: none !important; border-radius: var(--nb-r2) !important; }
+body.scheme-sketch .nav2-ui .n2-hint { border-radius: var(--nb-r2) !important; }
 
 /* Nearby: a note on the sheet; the ways in handwriting, the quarters' names in coloured pencil */
 body.scheme-sketch .nav2-ui .n2-panel { border-radius: var(--nb-r) !important; }
-body.scheme-sketch .nav2-ui .n2-panel :is(.n2-rt) { font-family: var(--nb-hand) !important; font-size: 21px !important; font-weight: 700 !important; color: var(--nb-ink) !important; }
-body.scheme-sketch .nav2-ui .n2-sub { font-family: var(--nb-hand) !important; font-size: 15px !important; letter-spacing: .02em !important; text-transform: lowercase; color: var(--nb-red) !important; opacity: 1 !important; font-weight: 600 !important; }
-body.scheme-sketch .nav2-ui .n2-q { position: relative; isolation: isolate; background: transparent !important; color: var(--nb-ink) !important; border: 1.6px solid var(--nb-ink) !important; border-radius: var(--nb-r2) !important;
-  font-family: var(--nb-hand) !important; font-size: 20px !important; font-weight: 700 !important; --nbc: var(--qc); }
+body.scheme-sketch .nav2-ui .n2-panel :is(.n2-rt) { color: var(--nb-ink) !important; }
+body.scheme-sketch .nav2-ui .n2-sub { color: var(--nb-red) !important; opacity: 1 !important; }
+body.scheme-sketch .nav2-ui .n2-q { position: relative; isolation: isolate; background: transparent !important; color: var(--nb-ink) !important; border: 1.6px solid var(--nb-ink) !important; border-radius: var(--nb-r2) !important; --nbc: var(--qc); }
 body.scheme-sketch .nav2-ui .n2-q::after { inset: 2px !important; opacity: .8 !important; }
-body.scheme-sketch .nav2-ui .n2-q.sm { font-size: 16px !important; }
-body.scheme-sketch .nav2-ui .n2-row { border-top: 1.5px dashed rgba(58,54,41,.35) !important; }
+body.scheme-sketch .nav2-ui .n2-row { border-top: 1.5px dashed rgba(46,50,102,.35) !important; }
 body.scheme-sketch .nav2-ui .n2-dir { background: transparent !important; border: 1.6px solid var(--nb-ink) !important; box-shadow: none !important; border-radius: 50% 46% 52% 48% / 47% 52% 48% 53% !important; }
-body.scheme-sketch .nav2-ui .n2-g { color: var(--nb-ink) !important; font-family: var(--nb-hand) !important; font-weight: 700 !important; font-size: 21px !important; }
+body.scheme-sketch .nav2-ui .n2-g { color: var(--nb-ink) !important; }
 body.scheme-sketch .nav2-ui .n2-pc { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.6px solid var(--nb-ink) !important; box-shadow: none !important; border-radius: 12px 14px 11px 15px / 14px 11px 15px 12px !important; }
-body.scheme-sketch .nav2-ui .n2-pc:hover { box-shadow: 1px 2px 0 rgba(58,54,41,.25) !important; }
+body.scheme-sketch .nav2-ui .n2-pc:hover { box-shadow: 1px 2px 0 rgba(46,50,102,.25) !important; }
 body.scheme-sketch .nav2-ui .n2-pc .n2-pic { border-bottom: 1.5px solid var(--nb-ink) !important; }
-body.scheme-sketch .nav2-ui .n2-nm { font-family: var(--nb-hand) !important; font-size: 19px !important; font-weight: 700 !important; line-height: 1 !important; color: var(--nb-blue) !important; }
-body.scheme-sketch .nav2-ui .n2-dist { font-family: var(--nb-hand) !important; font-size: 15px !important; background: transparent !important; color: var(--nb-red) !important; border: 0 !important; box-shadow: none !important; }
-body.scheme-sketch .nav2-ui .n2-dch { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.4px solid var(--nb-ink) !important; box-shadow: none !important; font-style: normal; }
+body.scheme-sketch .nav2-ui .n2-nm { color: var(--nb-blue) !important; }
+body.scheme-sketch .nav2-ui .n2-dist { background: transparent !important; color: var(--nb-red) !important; border: 0 !important; box-shadow: none !important; }
+body.scheme-sketch .nav2-ui .n2-dch { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.4px solid var(--nb-ink) !important; box-shadow: none !important; }
 
 /* the XP and the logo */
 body.scheme-sketch .you { border-radius: var(--nb-r2) !important; }
-body.scheme-sketch .you .you-xp { font-family: var(--nb-hand) !important; font-size: 20px !important; font-weight: 700 !important; background: transparent !important; color: var(--nb-blue) !important; border: 0 !important; box-shadow: none !important; }
-body.scheme-sketch .topbar .brand img { filter: invert(1) sepia(.5) brightness(.28) !important; }
-body.scheme-sketch .cz-build { font-family: var(--nb-hand) !important; font-size: 13px !important; letter-spacing: .02em !important; color: var(--nb-red) !important; text-transform: lowercase; }
+body.scheme-sketch .you .you-xp { background: transparent !important; color: var(--nb-blue) !important; border: 0 !important; box-shadow: none !important; }
+body.scheme-sketch .topbar .brand img { filter: invert(1) brightness(.2) sepia(1) hue-rotate(195deg) saturate(3.2) brightness(1.05) !important; } /* the logo in indigo ink (a static image) */
+body.scheme-sketch .cz-build { color: var(--nb-red) !important; }
 
 /* the places on the map: names in ballpoint on a scrap of the sheet; the brand's dot in coloured pencil */
-body.scheme-sketch .map-pins .map-pin .mp-label { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.5px solid var(--nb-ink) !important; box-shadow: none !important; border-radius: var(--nb-r2) !important;
-  font-family: var(--nb-hand) !important; font-size: 19px !important; font-weight: 700 !important; letter-spacing: 0 !important; }
-body.scheme-sketch .map-pins .map-pin .mp-label b { font-family: var(--nb-hand) !important; font-weight: 700 !important; font-size: 19px !important; letter-spacing: 0 !important; color: var(--nb-ink) !important; }
-body.scheme-sketch .map-pins .map-pin .mp-label .mp-n { font-family: var(--nb-hand) !important; font-style: normal !important; font-weight: 700 !important; font-size: 18px !important; color: var(--nb-red) !important; background: none !important; opacity: 1 !important; }
+body.scheme-sketch .map-pins .map-pin .mp-label { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.5px solid var(--nb-ink) !important; box-shadow: none !important; border-radius: var(--nb-r2) !important; }
+body.scheme-sketch .map-pins .map-pin .mp-label b { color: var(--nb-ink) !important; }
+body.scheme-sketch .map-pins .map-pin .mp-label .mp-n { color: var(--nb-red) !important; background: none !important; opacity: 1 !important; }
 body.scheme-sketch .map-pins .map-pin:nth-child(even) .mp-label .mp-n { color: var(--nb-blue) !important; }
-body.scheme-sketch .map-pins .map-pin .mp-label i, body.scheme-sketch .map-pins .map-pin .mp-label em { font-family: var(--nb-hand) !important; font-style: normal; color: var(--nb-red) !important; font-size: 14px !important; letter-spacing: .02em !important; }
+body.scheme-sketch .map-pins .map-pin .mp-label i, body.scheme-sketch .map-pins .map-pin .mp-label em { color: var(--nb-red) !important; }
 body.scheme-sketch .map-pins .map-pin.chapter .mp-label b { color: var(--nb-blue) !important; }
 body.scheme-sketch .map-pins .map-pin .mp-label::before { width: 12px !important; height: 12px !important; -webkit-mask: var(--nb-hatch) 0 0 / 40px 40px !important; mask: var(--nb-hatch) 0 0 / 40px 40px !important; border-radius: 50% !important; box-shadow: 0 0 0 1.4px var(--nb-ink) !important; background: var(--pc) !important; }
 body.scheme-sketch .map-pins .map-pin .mp-stem { background: var(--nb-ink) !important; width: 1.5px !important; opacity: .8; }
@@ -4964,71 +4960,67 @@ body.scheme-sketch .map-pins .map-pin .mp-stem { background: var(--nb-ink) !impo
 /* the place card: a note in a box on the sheet, its corner folded, the photo taped on */
 body.scheme-sketch .map-card { filter: none !important; }
 body.scheme-sketch .map-card::before { background: var(--nb-paper2) !important; background-image: none !important; -webkit-mask: none !important; mask: none !important; inset: 0 !important;
-  border: 1.8px solid var(--nb-ink); border-radius: 14px 18px 4px 16px / 16px 12px 4px 18px; box-shadow: 1px 2px 0 rgba(58,54,41,.2);
+  border: 1.8px solid var(--nb-ink); border-radius: 14px 18px 4px 16px / 16px 12px 4px 18px; box-shadow: 1px 2px 0 rgba(46,50,102,.2);
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 34px), calc(100% - 34px) 100%, 0 100%); }
 body.scheme-sketch .map-card::after { content: ""; position: absolute; right: 0; bottom: 0; width: 34px; height: 34px; z-index: 0; pointer-events: none; display: block !important;
-  background: linear-gradient(135deg, transparent 0 49%, var(--nb-ink) 49% 51.5%, #d3cfbf 51.5%); clip-path: polygon(0 0, 100% 0, 0 100%); transform: none; }
-body.scheme-sketch .map-card .mcd-title { font-family: var(--nb-script) !important; font-weight: 400 !important; font-size: 26px !important; line-height: 1.25 !important; color: var(--nb-blue) !important; letter-spacing: 0 !important; background: none !important; text-transform: none !important; padding: 0 !important; }
-body.scheme-sketch .map-card .mcd-eyebrow { font-family: var(--nb-hand) !important; font-size: 17px !important; letter-spacing: .02em !important; text-transform: lowercase !important; color: var(--nb-red) !important; font-weight: 700 !important; }
-body.scheme-sketch .map-card p { font-family: var(--nb-hand) !important; font-size: 21px !important; line-height: 1.2 !important; color: var(--nb-ink) !important; font-weight: 500 !important; }
-body.scheme-sketch .map-card :is(.mcd-open, .mcd-ghost, .mcd-fight, .mcd-play) { position: relative; isolation: isolate; background: transparent !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; border-radius: var(--nb-r2) !important; box-shadow: none !important;
-  font-family: var(--nb-hand) !important; font-size: 21px !important; font-weight: 700 !important; letter-spacing: 0 !important; text-transform: none !important; }
+  background: linear-gradient(135deg, transparent 0 49%, var(--nb-ink) 49% 51.5%, #e9e8e2 51.5%); clip-path: polygon(0 0, 100% 0, 0 100%); transform: none; }
+body.scheme-sketch .map-card .mcd-title { color: var(--nb-blue) !important; background: none !important; padding: 0 !important; }
+body.scheme-sketch .map-card .mcd-eyebrow { color: var(--nb-red) !important; }
+body.scheme-sketch .map-card p { color: var(--nb-ink) !important; }
+body.scheme-sketch .map-card :is(.mcd-open, .mcd-ghost, .mcd-fight, .mcd-play) { position: relative; isolation: isolate; background: transparent !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; border-radius: var(--nb-r2) !important; box-shadow: none !important; }
 body.scheme-sketch .map-card .mcd-open { --nbc: var(--nb-ochre); }
 body.scheme-sketch .map-card .mcd-fight { color: var(--nb-red) !important; }
-body.scheme-sketch .map-card .mcd-fight * { color: inherit !important; font-family: inherit !important; text-shadow: none !important; }
-body.scheme-sketch .map-card .mcd-close { border: 1.8px solid var(--nb-ink) !important; color: var(--nb-ink) !important; background: transparent !important; font-family: var(--nb-hand) !important; font-size: 22px !important; }
-body.scheme-sketch .map-card .mcd-img { background: #f3f1e8 !important; box-shadow: 0 1px 0 rgba(58,54,41,.25) !important; border: 1.4px solid var(--nb-ink) !important; }
+body.scheme-sketch .map-card .mcd-fight * { color: inherit !important; text-shadow: none !important; }
+body.scheme-sketch .map-card .mcd-close { border: 1.8px solid var(--nb-ink) !important; color: var(--nb-ink) !important; background: transparent !important; }
+body.scheme-sketch .map-card .mcd-img { background: #ffffff !important; box-shadow: 0 1px 0 rgba(46,50,102,.25) !important; border: 1.4px solid var(--nb-ink) !important; }
 body.scheme-sketch .map-card .mcd-img::before { background: rgba(214,206,170,.75) !important; }
 
 /* the coffee counter, the toasts: notes written on, never black slabs */
-body.scheme-sketch :is(.coffee-card, .cf-card, .xp-pop, .rush-pill, .cop-pill) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: 1px 2px 0 rgba(58,54,41,.2) !important; border-radius: var(--nb-r) !important; }
-body.scheme-sketch :is(.coffee-card, .cf-card, .xp-pop) * { color: var(--nb-ink); font-family: var(--nb-hand); letter-spacing: .01em; }
-body.scheme-sketch :is(.coffee-card, .cf-card) b, body.scheme-sketch :is(.coffee-card, .cf-card) strong { font-family: var(--nb-script); font-weight: 400; color: var(--nb-blue); }
-body.scheme-sketch .n2-toast, body.scheme-sketch .toast { font-family: var(--nb-script) !important; font-weight: 400 !important; font-size: 15px !important; color: var(--nb-blue) !important; border-radius: var(--nb-r) !important; }
+body.scheme-sketch :is(.coffee-card, .cf-card, .xp-pop, .rush-pill, .cop-pill) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: 1px 2px 0 rgba(46,50,102,.2) !important; border-radius: var(--nb-r) !important; }
+body.scheme-sketch :is(.coffee-card, .cf-card, .xp-pop) * { color: var(--nb-ink); }
+body.scheme-sketch :is(.coffee-card, .cf-card) b, body.scheme-sketch :is(.coffee-card, .cf-card) strong { color: var(--nb-blue); }
+body.scheme-sketch .n2-toast, body.scheme-sketch .toast { color: var(--nb-blue) !important; border-radius: var(--nb-r) !important; }
 
 body.scheme-sketch .map-card .mcd-actions .mcd-fight { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; box-shadow: none !important; border: 1.8px solid var(--nb-blue) !important; --nbc: var(--nb-blue); }
 body.scheme-sketch .map-card .mcd-actions .mcd-fight::after { content: ""; position: absolute; inset: 3px; z-index: -1; pointer-events: none; border-radius: inherit; background: var(--nbc); -webkit-mask: var(--nb-hatch) 0 0 / 120px 120px; mask: var(--nb-hatch) 0 0 / 120px 120px; opacity: .55; }
 /* the "you're at" and auto-pilot rows: a note with a pencil swatch of the place's colour, not a slab of it */
 body.scheme-sketch .nav2-ui :is(.n2-here, .n2-auto) { position: relative; isolation: isolate; background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important; border-radius: var(--nb-r) !important; --nbc: var(--pc); }
 body.scheme-sketch .nav2-ui :is(.n2-here, .n2-auto)::after { content: ""; position: absolute; inset: 3px; z-index: -1; pointer-events: none; border-radius: inherit; background: var(--nbc); -webkit-mask: var(--nb-hatch) 0 0 / 120px 120px; mask: var(--nb-hatch) 0 0 / 120px 120px; opacity: .5; }
-body.scheme-sketch .nav2-ui .n2-at i { font-family: var(--nb-hand) !important; font-size: 15px !important; letter-spacing: .02em !important; text-transform: lowercase; color: var(--nb-red) !important; opacity: 1 !important; }
-body.scheme-sketch .nav2-ui .n2-at b { font-family: var(--nb-script) !important; font-weight: 400 !important; font-size: 17px !important; line-height: 1.5 !important; color: var(--nb-blue) !important; }
-body.scheme-sketch .nav2-ui :is(.n2-open, .n2-take) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.6px solid var(--nb-ink) !important; font-family: var(--nb-hand) !important; font-size: 18px !important; font-weight: 700 !important; border-radius: var(--nb-r2) !important; }
+body.scheme-sketch .nav2-ui .n2-at i { color: var(--nb-red) !important; opacity: 1 !important; }
+body.scheme-sketch .nav2-ui .n2-at b { color: var(--nb-blue) !important; }
+body.scheme-sketch .nav2-ui :is(.n2-open, .n2-take) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.6px solid var(--nb-ink) !important; border-radius: var(--nb-r2) !important; }
 body.scheme-sketch .nav2-ui .n2-pic.sm { border: 1.5px solid var(--nb-ink) !important; }
 /* the stick and the drift button (phones) */
-body.scheme-sketch .nav2-ui .n2-ring { background: rgba(231,228,216,.78) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important; }
+body.scheme-sketch .nav2-ui .n2-ring { background: rgba(253,252,249,.82) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important; }
 body.scheme-sketch .nav2-ui .n2-knob { background: var(--nb-paper2) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important; overflow: hidden; }
 body.scheme-sketch .nav2-ui .n2-knob::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--nb-ochre); -webkit-mask: var(--nb-hatch) 0 0 / 60px 60px; mask: var(--nb-hatch) 0 0 / 60px 60px; }
-body.scheme-sketch .nav2-ui .n2-driftb { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important; font-family: var(--nb-hand) !important; font-size: 18px !important; font-weight: 700 !important; letter-spacing: 0 !important; }
+body.scheme-sketch .nav2-ui .n2-driftb { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important; }
 /* the chapters on the map ("The start", "The world"…): a ballpoint note in a box */
 body.scheme-sketch .map-pins .map-pin.find .mp-label, body.scheme-sketch .map-pins .map-pin.find.visited .mp-label { background: var(--nb-paper2) !important; color: var(--nb-blue) !important; }
-body.scheme-sketch .map-pins .map-pin.find .mp-label b { font-family: var(--nb-hand) !important; font-weight: 700 !important; font-size: 20px !important; }
 /* a place with no photo yet keeps its poster's own colours */
 body.scheme-sketch .map-card .mcd-img.mcd-poster { background: var(--nb-paper2) !important; color: var(--nb-blue) !important; position: relative; isolation: isolate; }
 body.scheme-sketch .map-card .mcd-img.mcd-poster::after { content: "" !important; display: block !important; position: absolute; inset: 7px 7px 22px; z-index: -1; pointer-events: none; background: var(--pc); -webkit-mask: var(--nb-hatch) 0 0 / 150px 150px; mask: var(--nb-hatch) 0 0 / 150px 150px; opacity: .6; }
 body.scheme-sketch .map-card .mcd-poster :is(.mcd-pt, .mcd-pl) { color: var(--nb-blue) !important; }
-body.scheme-sketch .map-card .mcd-poster .mcd-pt { font-family: var(--nb-script) !important; font-weight: 400 !important; font-size: 26px !important; line-height: 1.3 !important; letter-spacing: 0 !important; }
-body.scheme-sketch .map-card .mcd-poster .mcd-pl { font-family: var(--nb-hand) !important; font-size: 15px !important; color: var(--nb-red) !important; letter-spacing: .02em !important; opacity: 1 !important; }
+body.scheme-sketch .map-card .mcd-poster .mcd-pl { color: var(--nb-red) !important; opacity: 1 !important; }
 /* Nearby's thumbnails: a photo taped on; until it loads (or for a place without one) the place's colour in pencil, not a flat block */
 body.scheme-sketch .nav2-ui .n2-pc .n2-pic { position: relative; isolation: isolate; background: var(--nb-paper2) !important; }
 body.scheme-sketch .nav2-ui .n2-pc .n2-pic::after { content: ""; position: absolute; inset: 3px; z-index: -1; pointer-events: none; background: var(--pc); -webkit-mask: var(--nb-hatch) 0 0 / 110px 110px; mask: var(--nb-hatch) 0 0 / 110px 110px; opacity: .65; }
 body.scheme-sketch .nav2-ui .n2-pc .n2-pic img { position: relative; z-index: 0; }
-body.scheme-sketch .nav2-ui .n2-ini { color: var(--nb-blue) !important; font-family: var(--nb-script) !important; font-weight: 400 !important; font-size: 22px !important; letter-spacing: 0 !important; }
+body.scheme-sketch .nav2-ui .n2-ini { color: var(--nb-blue) !important; }
 
 /* notes that write themselves on, left to right, like the reference's ballpoint "your move" (one clip, once per note) */
 @keyframes nbWrite { from { clip-path: inset(-30% 100% -30% -4%); } to { clip-path: inset(-30% -4% -30% -4%); } }
 body.scheme-sketch .n2-toast.on, body.scheme-sketch .map-card:not(.hidden) .mcd-title { animation: nbWrite .9s cubic-bezier(.45,.1,.4,1) both; }
 @media (prefers-reduced-motion: reduce) { body.scheme-sketch .n2-toast.on, body.scheme-sketch .map-card:not(.hidden) .mcd-title { animation: none; } }
 /* the XP log, the worlds menu: notes on the sheet too */
-body.scheme-sketch :is(.xp-log, .theme-menu, .veh-menu, .crew-panel) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: 1px 2px 0 rgba(58,54,41,.2) !important; border-radius: var(--nb-r) !important; }
-body.scheme-sketch :is(.xp-log, .theme-menu, .crew-panel) :is(h2, h3, h4, b, strong) { font-family: var(--nb-hand); letter-spacing: 0; }
+body.scheme-sketch :is(.xp-log, .theme-menu, .veh-menu, .crew-panel) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: 1px 2px 0 rgba(46,50,102,.2) !important; border-radius: var(--nb-r) !important; }
 /* the crayon rings on the ground mark the places (r130k): the DOM footprint stays off */
 body.scheme-sketch .map-pins .map-pin .mp-foot { display: none !important; }
 /* the card itself is only its note (::before): no slab of colour, no frame, no hard shadow */
 body.scheme-sketch .map-card { background: transparent !important; border: 0 !important; box-shadow: none !important; overflow: visible !important; border-radius: 0 !important; }
 body.scheme-sketch .map-card .mcd-title { border: 0 !important; box-shadow: none !important; outline: 0 !important; transform: none !important; }
 /* the photo, taped on (a print with a paper border, a strip of tape, a little crooked) */
-body.scheme-sketch .map-card .mcd-img { background: #f1efe6 !important; padding: 7px 7px 22px; margin: 14px 4px 18px 16px; transform: rotate(-2.2deg); box-shadow: 0 1px 0 rgba(58,54,41,.22) !important;
+body.scheme-sketch .map-card .mcd-img { background: #ffffff !important; padding: 7px 7px 22px; margin: 14px 4px 18px 16px; transform: rotate(-2.2deg); box-shadow: 0 1px 0 rgba(46,50,102,.22) !important;
   overflow: visible !important; align-self: flex-start; flex-basis: 40% !important; width: 40% !important; min-height: 0 !important; height: auto; aspect-ratio: 4 / 3.6 !important; }
 body.scheme-sketch .map-card .mcd-img img { border: 0; }
 body.scheme-sketch .map-card .mcd-img::before { content: ""; position: absolute; left: 50%; top: -11px; width: 78px; height: 22px; transform: translateX(-50%) rotate(3deg); z-index: 2;
@@ -5036,24 +5028,20 @@ body.scheme-sketch .map-card .mcd-img::before { content: ""; position: absolute;
 body.scheme-sketch .map-card .mcd-img::after { display: none !important; }
 body.scheme-sketch .map-card::before { content: "" !important; position: absolute; z-index: -1; pointer-events: none; }
 /* the street's own signs (the next exit, the arms at a junction, their arrow caps): handwriting in an ink box */
-body.scheme-sketch .n2-arm { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.6px solid var(--nb-ink) !important; box-shadow: none !important; border-radius: var(--nb-r2) !important;
-  font-family: var(--nb-hand) !important; font-weight: 700 !important; font-size: 19px !important; letter-spacing: 0 !important; }
+body.scheme-sketch .n2-arm { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.6px solid var(--nb-ink) !important; box-shadow: none !important; border-radius: var(--nb-r2) !important; }
 body.scheme-sketch .n2-arm.picked { box-shadow: inset 0 -7px 0 rgba(217,166,90,.5) !important; }
-body.scheme-sketch :is(.n2-cap, .n2-cap.sm, .n2-cap.big, .n2-arm.picked .n2-cap.sm) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.5px solid var(--nb-ink) !important; box-shadow: none !important;
-  font-family: var(--nb-hand) !important; font-weight: 700 !important; border-radius: 50% 46% 52% 48% / 47% 52% 48% 53% !important; }
+body.scheme-sketch :is(.n2-cap, .n2-cap.sm, .n2-cap.big, .n2-arm.picked .n2-cap.sm) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.5px solid var(--nb-ink) !important; box-shadow: none !important; border-radius: 50% 46% 52% 48% / 47% 52% 48% 53% !important; }
 body.scheme-sketch .n2-cap.big { box-shadow: inset 0 0 0 3px var(--nb-paper2), inset 0 0 0 40px rgba(217,166,90,.45) !important; }
 /* pills and headers that carry a solid colour of their own: the cover (the sheet with the strokes cut out) is laid over
    that colour, so it shows only through the strokes: coloured pencil, never a flat block */
 body.scheme-sketch :is(.pill-title .pill, .xl-head, .map-rides .wt-check, .theme-menu .wt-check) { background-image: var(--nb-cover) !important; background-size: 120px 120px !important; background-repeat: repeat !important;
   color: var(--nb-ink) !important; border: 1.6px solid var(--nb-ink) !important; box-shadow: none !important; }
-body.scheme-sketch .pill-title .pill { font-family: var(--nb-hand) !important; font-weight: 700 !important; letter-spacing: 0 !important; border-radius: var(--nb-r2) !important; }
+body.scheme-sketch .pill-title .pill { border-radius: var(--nb-r2) !important; }
 body.scheme-sketch .xl-head { background-color: var(--nb-ochre) !important; border-width: 0 0 1.6px !important; }
-body.scheme-sketch .xl-head :is(b, span) { font-family: var(--nb-hand) !important; font-size: 21px !important; font-weight: 700 !important; text-transform: none !important; }
-body.scheme-sketch .xl-row b { font-family: var(--nb-hand) !important; font-size: 18px !important; font-weight: 700 !important; color: var(--nb-blue); }
-body.scheme-sketch .xl-row i { font-family: var(--nb-hand) !important; font-size: 16px !important; opacity: .85 !important; }
+body.scheme-sketch .xl-row b { color: var(--nb-blue); }
+body.scheme-sketch .xl-row i { opacity: .85 !important; }
 /* the crew, the rides, the worlds: notes on the sheet; the scrims behind them light, and no live blur over the city */
-body.scheme-sketch :is(.crew-panel, .hmodal-backdrop) { background: rgba(214,210,195,.5) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-body.scheme-sketch :is(.crew-box, .map-rides, .hud-menu.theme-menu) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: 1px 2px 0 rgba(58,54,41,.2) !important; border-radius: var(--nb-r) !important; }
-body.scheme-sketch :is(.crew-box, .map-rides, .hud-menu.theme-menu) p { font-family: var(--nb-hand); font-size: 19px; line-height: 1.25; }
-body.scheme-sketch :is(.crew-box, .map-rides, .hud-menu.theme-menu) .mono { font-family: var(--nb-hand) !important; font-size: 15px !important; letter-spacing: .02em !important; text-transform: lowercase; color: var(--nb-red) !important; opacity: 1 !important; }
-body.scheme-sketch .map-x { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; font-family: var(--nb-hand) !important; box-shadow: none !important; }
+body.scheme-sketch :is(.crew-panel, .hmodal-backdrop) { background: rgba(250,249,246,.55) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+body.scheme-sketch :is(.crew-box, .map-rides, .hud-menu.theme-menu) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: 1px 2px 0 rgba(46,50,102,.2) !important; border-radius: var(--nb-r) !important; }
+body.scheme-sketch :is(.crew-box, .map-rides, .hud-menu.theme-menu) .mono { color: var(--nb-red) !important; opacity: 1 !important; }
+body.scheme-sketch .map-x { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important; }

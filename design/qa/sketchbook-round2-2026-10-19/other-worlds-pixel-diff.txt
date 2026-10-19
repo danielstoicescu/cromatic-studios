@@ -1,0 +1,10 @@
+monument-after-sat.jpg         base-vs-new 2.70 0.05%   base-vs-base2 (noise) 2.84 0.11%
+monument-after-street.jpg      base-vs-new 2.90 0.03%   base-vs-base2 (noise) 3.00 0.05%
+monument-fresh-sat.jpg         base-vs-new 2.71 0.00%   base-vs-base2 (noise) 2.57 0.00%
+monument-fresh-street.jpg      base-vs-new 2.91 0.01%   base-vs-base2 (noise) 2.72 0.01%
+nightlife-after-sat.jpg        base-vs-new 83.18 73.23%   base-vs-base2 (noise) 83.03 73.18%
+nightlife-after-street.jpg     base-vs-new 2.78 0.13%   base-vs-base2 (noise) 2.79 0.16%
+nightlife-fresh-sat.jpg        base-vs-new 2.85 0.17%   base-vs-base2 (noise) 2.88 0.17%
+nightlife-fresh-street.jpg     base-vs-new 2.96 0.26%   base-vs-base2 (noise) 2.71 0.12%
+
+base = stack-374 (d32405d), new = this commit, base2 = d32405d again (the run-to-run noise). "after" = captured after a visit to Sketchbook (poles, the Tampa forest, the sun's shadow restored). nightlife-after-sat: the first base capture caught a lightning flash; new vs base2 there: 2.95 0.18%.

@@ -28289,6 +28289,7 @@ void main() {
     };
     place(firs, firGeo, firM, 0.36, 0.375);
     place(beech, beechGeo, beechM, 0.345, 0.36);
+    mats.tampaForest = g.children.filter((o) => o.isInstancedMesh); // beta 3.76 round 2: Sketchbook draws the mountain without its 760 trees (applyScheme)
     // BRASOV: white letters standing on the city-facing slope near the crest, no posts,
     // tight spacing, alternating a little up / down like the real sign
     const letters = "BRASOV".split("");
@@ -30811,6 +30812,8 @@ void main() {
     }
     poles.castShadow = arms.castShadow = true;
     parent.add(poles, arms, heads);
+    // beta 3.76 round 2: Sketchbook draws the street lights as thin pen lines (Daniel: "very thick"); applyScheme swaps these in
+    mats.poleGeo = { poles, arms, heads, poleGeo, armGeo, headGeo, thinPole: new CylinderGeometry(0.22, 0.3, 64, 6).translate(0, 32, 0), thinArm: new BoxGeometry(0.4, 0.4, 24).translate(0, 63, -10), smallHead: new SphereGeometry(1.4, 8, 6).translate(0, 61.6, -20) };
   }
   function makeCloudBlob(rnd) {
     const g = new Group();
@@ -36465,7 +36468,7 @@ void main() {
         const s = SCHEMES[idx];
         warmShaders(); // r139b
         window.__czAmb?.world(s.id);
-        if (s.id === "sketch") try { crayonTextures(); notebookUI(); } catch (e) {} // beta 3.76: and the notebook's handwriting and hatch
+        if (s.id === "sketch") try { crayonTextures(); notebookUI(); } catch (e) {} // beta 3.76: and the notebook's pencil hatch for the interface
         const dark = lum(s.bg) < 0.45;
         isDarkScheme = dark;
         document.body.classList.toggle("dark-ui", dark);
@@ -36535,6 +36538,10 @@ void main() {
         if (mats.buildings && dark) mats.buildings.emissive.set(nightlife ? "#ffb265" : "#ffca6a");
         fillLight.color.set(nightlife ? "#2f66ff" : "#dfe8ff");
         mats.roofs?.color.copy(dark ? mixC(s.bg, "#ffffff", 0.2) : new Color("#ffffff"));
+        mats.pole?.color.set("#3c3a34"); // beta 3.76 round 2: Sketchbook draws the poles white and thin; every other world, as built
+        if (mats.poleGeo) { const P = mats.poleGeo, sk = s.id === "sketch"; P.poles.geometry = sk ? P.thinPole : P.poleGeo; P.arms.geometry = sk ? P.thinArm : P.armGeo; P.heads.geometry = sk ? P.smallHead : P.headGeo; }
+        for (const im of mats.tampaForest || []) im.visible = s.id !== "sketch"; // round 2: in the notebook Tâmpa is one shape, a light wash with a few swirls (its firs were a dense scribble)
+        if (sun.shadow.intensity !== 1) { sun.shadow.intensity = 1; sun.shadow.needsUpdate = true; } // and its shadow comes back (Sketchbook turns it off)
         const orchid = s.id === "orchid";
         mats.canopy?.color.copy(dark ? mixC("#28C840", s.bg, 0.35) : new Color("#ffffff"));
         mats.treeBloom?.(orchid, s.id === "sketch");
@@ -36657,8 +36664,10 @@ void main() {
         if (s.id === "sketch") {
           // beta 3.76: the notebook. The light is flat and even (the same sky above and below, a weak sun for a hint of
           // form; the pass undoes it, see kW), so what reaches the pass is each thing's own colour, and colour becomes
-          // pencil. White is paper: the ground, the streets, the walls. Colour is kept for accents: greenery in sage,
-          // the drive's road in ochre, the kerbs in ink; the places keep their own colours, pencilled
+          // pencil. White is paper: the ground, the streets (the drive's road too, round 2), the walls, the street lights
+          // (drawn as outlines, one ink weight). Colour is kept for accents: greenery in sage, the kerbs in indigo ink; the
+          // places keep their own colours, pencilled. No cast shadows (a shadow is a dark patch the pass would pencil, and
+          // a moving one crawls): the sun's shadow is off here and its map is not redrawn (see sketchRender)
           scene.background = new Color("#ffffff");
           scene.fog.color.set("#ffffff"); scene.fog.near = 6000; scene.fog.far = 30000;
           hemi.color.set("#ffffff"); hemi.groundColor.set("#ffffff"); hemi.intensity = 2.4;
@@ -36666,8 +36675,10 @@ void main() {
           mats.buildings?.color.set("#ffffff"); if (mats.buildings) mats.buildings.emissiveIntensity = 0;
           mats.roofs?.color.set("#e8ab9a"); // terracotta, like the reference's mushroom caps, lightly
           mats.ground?.color.set("#ffffff");
-          mats.roadMinor?.color.set("#ffffff"); mats.roadMajor?.color.set("#ffffff"); mats.roadCasing?.color.set("#4a4637");
-          mats.route?.color.set("#edcf96"); mats.routeCasing?.color.set("#4a4637"); mats.routeDash?.color.set("#ffffff"); // the drive's road: paper with a sparse ochre hatch
+          mats.roadMinor?.color.set("#ffffff"); mats.roadMajor?.color.set("#ffffff"); mats.roadCasing?.color.set("#2e3266");
+          mats.route?.color.set("#ffffff"); mats.routeCasing?.color.set("#2e3266"); mats.routeDash?.color.set("#ffffff"); mats.routeAlt?.color.set("#ffffff"); mats.chevron?.color.set("#ffffff"); // the drive's road: plain paper, an ink edge
+          mats.pole?.color.set("#ffffff");
+          sun.shadow.intensity = 0;
           mats.canopy?.color.set("#ffffff"); mats.bush?.color.set("#a6c98d"); mats.parkMat?.color.set("#c3dbab"); // the trees take a pale sage (treeBloom, pale)
           if (mats.buildings && mats.mvWalls) { mats.buildings.map = notebookTextures().win; mats.buildings.needsUpdate = true; } // the windows, drawn in ink
           mats.island?.color.set("#8dbb6c"); mats.zonePatch?.color.set("#ffffff"); mats.pillar?.color.set("#ffffff");
@@ -38398,73 +38409,74 @@ void main() {
       function notebookTextures() {
         if (nbTex) return nbTex;
         const R = rng(20261019);
-        // the sheet: greige, a soft cloud of tone, fibres, a few creases and one fold
+        // the sheet: almost white (Daniel, round 2: "much whiter"), a whisper of tooth and one faint fold
         const P = document.createElement("canvas"); P.width = P.height = 1024;
         const c = P.getContext("2d");
-        c.fillStyle = "#dcd8c9"; c.fillRect(0, 0, 1024, 1024);
-        for (let i = 0; i < 46; i++) {
-          const x = R() * 1024, y = R() * 1024, r = 120 + R() * 280, g = c.createRadialGradient(x, y, 0, x, y, r), up = R() < 0.6;
-          g.addColorStop(0, up ? "rgba(246,243,232,.13)" : "rgba(170,160,132,.05)"); g.addColorStop(1, "rgba(0,0,0,0)");
+        c.fillStyle = "#fdfcf9"; c.fillRect(0, 0, 1024, 1024);
+        for (let i = 0; i < 26; i++) {
+          const x = R() * 1024, y = R() * 1024, r = 160 + R() * 300, g = c.createRadialGradient(x, y, 0, x, y, r);
+          const k = R() < 0.5 ? "255,255,255" : "200,196,182"; g.addColorStop(0, `rgba(${k},${k[0] === "2" && k[1] === "5" ? 0.5 : 0.035})`); g.addColorStop(1, `rgba(${k},0)`); // fades to its own colour (to black it greys)
           c.fillStyle = g; c.fillRect(x - r, y - r, 2 * r, 2 * r);
         }
         c.lineCap = "round";
-        for (let i = 0; i < 1800; i++) {
-          const x = R() * 1024, y = R() * 1024, a = R() * 6.283, l = 2 + R() * 6;
-          c.strokeStyle = R() < 0.55 ? "rgba(250,248,240,.2)" : "rgba(130,120,96,.07)"; c.lineWidth = 0.6 + R() * 0.5;
+        for (let i = 0; i < 900; i++) {
+          const x = R() * 1024, y = R() * 1024, a = R() * 6.283, l = 2 + R() * 5;
+          c.strokeStyle = "rgba(150,146,130,.045)"; c.lineWidth = 0.6 + R() * 0.4;
           c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); c.stroke();
         }
-        const crease = (x0, y0, x1, y1, bend, k) => { // a soft valley with a light ridge beside it, fading at both ends
-          const pts = []; for (let i = 0; i <= 48; i++) { const t = i / 48, s = Math.sin(t * Math.PI); pts.push([x0 + (x1 - x0) * t - (y1 - y0) * bend * s, y0 + (y1 - y0) * t + (x1 - x0) * bend * s, s]); }
-          for (const [off, col, w] of [[0, `rgba(130,120,96,${0.05 * k})`, 9], [1.3, `rgba(124,114,90,${0.14 * k})`, 2.2], [-1.5, `rgba(252,250,242,${0.36 * k})`, 2]]) {
-            for (let i = 1; i < pts.length; i++) {
-              const [ax, ay, s0] = pts[i - 1], [bx, by] = pts[i], nx = -(by - ay), ny = bx - ax, nl = Math.hypot(nx, ny) || 1;
-              c.globalAlpha = Math.pow(s0, 0.5); c.strokeStyle = col; c.lineWidth = w;
-              c.beginPath(); c.moveTo(ax + nx / nl * off, ay + ny / nl * off); c.lineTo(bx + nx / nl * off, by + ny / nl * off); c.stroke();
-            }
+        { // the fold: a faint valley and its light ridge, fading at both ends
+          const pts = []; for (let i = 0; i <= 48; i++) { const t = i / 48, sn = Math.sin(t * Math.PI); pts.push([-40 + 1104 * t, 330 - 50 * t + 1104 * 0.015 * sn, sn]); }
+          for (const [off, col, w] of [[0, "rgba(150,146,130,.025)", 8], [1.2, "rgba(140,136,120,.05)", 1.8]]) for (let i = 1; i < pts.length; i++) {
+            const [ax, ay, s0] = pts[i - 1], [bx, by] = pts[i];
+            c.globalAlpha = Math.pow(s0, 0.5); c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(ax, ay + off); c.lineTo(bx, by + off); c.stroke();
           }
           c.globalAlpha = 1;
-        };
-        crease(-40, 330, 1064, 280, 0.015, 1.2); // the fold
-        crease(140, 780, 760, 1000, -0.05, 0.7);
-        crease(680, -30, 990, 520, 0.05, 0.65);
-        crease(-20, 620, 340, 1040, 0.04, 0.5);
+        }
         const paper = new CanvasTexture(P); paper.colorSpace = NoColorSpace; paper.generateMipmaps = false; paper.minFilter = LinearFilter; // the canvas's own values go straight to the screen
-        // margin doodles, as on the reference's margins (a sun with a face, a cloud, a rainbow), drawn on
-        // their own sheet: the pass shows them only where nothing of the city is drawn (the sky of the street view, the
-        // paper past the city's edge), never over a street or a house
+        // the sky (Daniel, round 2: "more Van Gogh", The Starry Night as an inspiration, only on nature): a few long
+        // flowing strokes of wind that curl at their ends, a cloud rolled into a spiral, the sun as rings of short strokes.
+        // Drawn on their own sheet; the pass shows them only where nothing of the city is drawn (the street view's sky),
+        // never over a street or a house. Sparse: a handful of strokes, opaque (no beads where segments overlap), each
+        // swelling and thinning along its length like a loaded brush
         const Dd = document.createElement("canvas"); Dd.width = Dd.height = 1024;
         const d = Dd.getContext("2d"); d.lineCap = d.lineJoin = "round";
-        const wob = (x, y, k = 1.4) => [x + (R() - 0.5) * k, y + (R() - 0.5) * k];
-        const ring = (cx, cy, rx, ry, a0 = 0, a1 = 6.283) => { d.beginPath(); for (let t = a0; t <= a1 + 1e-3; t += 0.12) { const [x, y] = wob(cx + Math.cos(t) * rx, cy + Math.sin(t) * ry, 1.1); t === a0 ? d.moveTo(x, y) : d.lineTo(x, y); } d.stroke(); };
-        { // the sun (ochre, a sleepy face, rays)
-          const sx = 712, sy = 318;
-          d.strokeStyle = "rgba(201,150,62,.9)"; d.lineWidth = 3.2; ring(sx, sy, 38, 37);
-          d.lineWidth = 2.6; for (let i = 0; i < 12; i++) { const a = (i / 12) * 6.283 + 0.1; d.beginPath(); d.moveTo(...wob(sx + Math.cos(a) * 50, sy + Math.sin(a) * 50)); d.lineTo(...wob(sx + Math.cos(a) * (66 + (i % 2) * 8), sy + Math.sin(a) * (66 + (i % 2) * 8))); d.stroke(); }
-          d.strokeStyle = "rgba(90,74,52,.85)"; d.lineWidth = 2.2;
-          for (const ex of [-13, 13]) { d.beginPath(); d.arc(sx + ex, sy - 4, 6, 0.15 * Math.PI, 0.85 * Math.PI); d.stroke(); }
-          d.beginPath(); d.arc(sx, sy + 9, 9, 0.2 * Math.PI, 0.8 * Math.PI); d.stroke();
-          d.fillStyle = "rgba(214,120,104,.35)"; for (const ex of [-22, 22]) { d.beginPath(); d.ellipse(sx + ex, sy + 8, 6, 4, 0, 0, 6.283); d.fill(); }
-        }
-        { // a cloud (indigo ballpoint), eyes shut: the outline of a few bumps, then its flat base
-          const cx = 352, cy = 338, bumps = [[-70, 6, 26], [-34, -14, 32], [8, -22, 36], [50, -8, 30], [80, 8, 22]];
-          d.strokeStyle = "rgba(75,79,143,.85)"; d.lineWidth = 2.6; d.beginPath();
-          for (let x = -94; x <= 100; x += 3) {
-            let y = cy + 22;
-            for (const [bx, by, br] of bumps) { const q = br * br - (x - bx) * (x - bx); if (q > 0) y = Math.min(y, cy + by - Math.sqrt(q)); }
-            const [px, py] = wob(cx + x, y, 0.9); x === -94 ? d.moveTo(px, py) : d.lineTo(px, py);
+        const brush = (pts, col, w0) => {
+          d.strokeStyle = col;
+          for (let i = 1; i < pts.length; i++) { const t = i / (pts.length - 1), pr = Math.pow(Math.sin(Math.PI * t), 0.6); d.lineWidth = w0 * (0.35 + 0.65 * pr); d.beginPath(); d.moveTo(pts[i - 1][0], pts[i - 1][1]); d.lineTo(pts[i][0], pts[i][1]); d.stroke(); }
+        };
+        // a curve broken into dashes (the short, rhythmic strokes of the painting), each a little off the curve
+        const dashes = (f, t0, t1, col, w0, dl = 26, gap = 9) => {
+          const dt = 0.002; let t = t0, acc = 0, cur = [f(t0)], draw = R() < 0.85, lim = dl * (0.7 + R() * 0.6);
+          while (t < t1) {
+            t += dt; const q = f(t), pq = cur[cur.length - 1] || q; acc += Math.hypot(q[0] - pq[0], q[1] - pq[1]); cur.push(q);
+            if (acc > (draw ? lim : gap * (0.6 + R() * 0.8))) { if (draw && cur.length > 2) brush(cur, col, w0 * (0.8 + R() * 0.4)); cur = [q]; acc = 0; draw = !draw || R() < 0.15; lim = dl * (0.7 + R() * 0.6); }
           }
-          d.lineTo(...wob(cx - 94, cy + 22)); d.closePath(); d.stroke();
-          d.strokeStyle = "rgba(90,74,52,.8)"; d.lineWidth = 2; for (const ex of [-14, 14]) { d.beginPath(); d.arc(cx + ex, cy + 2, 5, 0.1 * Math.PI, 0.9 * Math.PI); d.stroke(); }
-          d.beginPath(); d.arc(cx, cy + 12, 2.5, 0, 6.283); d.stroke();
+          if (draw && cur.length > 2) brush(cur, col, w0);
+        };
+        const spiral = (cx, cy, r0, r1, turns, a0, sq, dir = 1) => (t) => { const a = a0 + dir * t * turns * 6.283, r = r0 + (r1 - r0) * t; return [cx + Math.cos(a) * r, cy + Math.sin(a) * r * sq]; };
+        { // the wind: two long flowing strokes across the sky, each with a lighter companion, curling in at one end
+          const wind = (y0, amp, ph, xc, cr, dir) => (t) => {
+            if (t < 0.78) { const x = -40 + (xc + 40) * (t / 0.78); return [x, y0 + Math.sin(x * 0.008 + ph) * amp]; }
+            const k = (t - 0.78) / 0.22, a = -Math.PI / 2 * dir + dir * k * 5.2, r = cr * (1 - 0.7 * k), yc = y0 + Math.sin(xc * 0.008 + ph) * amp + cr * dir;
+            return [xc + Math.cos(a) * r, yc + Math.sin(a) * r];
+          };
+          for (const [y0, amp, ph, xc, cr, dir, col, w] of [[262, 16, 0.4, 560, 44, 1, "#7fa6c8", 5], [273, 16, 0.4, 560, 32, 1, "#c4d6e7", 3.6],
+            [398, 12, 2.2, 880, 38, -1, "#4b558f", 4.2], [408, 12, 2.2, 880, 26, -1, "#a9c2da", 3.4]]) dashes(wind(y0, amp, ph, xc, cr, dir), 0, 1, col, w, 150, 6);
         }
-        { // a small rainbow (pastel pencil arcs), low on the left
-          const rx = 905, ry = 470; const cols = ["rgba(205,110,96,.75)", "rgba(222,160,92,.75)", "rgba(222,196,110,.7)", "rgba(140,172,112,.75)", "rgba(126,166,196,.75)", "rgba(150,130,190,.7)"];
-          cols.forEach((col, i) => { d.strokeStyle = col; d.lineWidth = 5; ring(rx, ry, 84 - i * 6.5, 80 - i * 6.5, Math.PI * 1.02, Math.PI * 1.98); });
+        { // a cloud, rolled into a spiral, its tail flowing off to the left
+          dashes(spiral(330, 318, 8, 52, 1.7, 0.2, 0.72, -1), 0, 1, "#4b558f", 3.8, 70, 6);
+          dashes(spiral(330, 318, 16, 62, 1.2, 1.4, 0.72, -1), 0, 1, "#8fb0cf", 3.2, 60, 8);
+          dashes((t) => [296 - 250 * t, 356 + Math.sin(t * 5) * 9], 0, 1, "#a9c2da", 3.4, 120, 8);
+        }
+        { // the sun: a disc of round strokes, two halos of short dashes round it
+          const sx = 690, sy = 300;
+          dashes(spiral(sx, sy, 3, 26, 3.2, R() * 6.283, 1), 0, 1, "#e3a64a", 5.4, 60, 3); // the disc: one tight spiral
+          dashes(spiral(sx, sy, 38, 58, 1.5, R() * 6.283, 1), 0, 1, "#efd383", 4, 44, 12); // the halo: a loose one round it
         }
         const doodles = new CanvasTexture(Dd); doodles.colorSpace = NoColorSpace; doodles.generateMipmaps = false; doodles.minFilter = LinearFilter;
         // the pencil: parallel rows (a hand going back and forth), strokes of varied length and pressure with gaps.
         // R the hatch (leaning like the reference's, bottom left to top right), G a cross layer for the deeper colours,
-        // B the paper's tooth. Tileable: a stroke crossing an edge is drawn again one tile over
+        // B (below) the swirls. Tileable: a stroke crossing an edge is drawn again one tile over
         const N = 256;
         const layer = (ang, gap, len0, w0) => {
           const L = document.createElement("canvas"); L.width = L.height = N; const g = L.getContext("2d");
@@ -38488,10 +38500,26 @@ void main() {
           }
           return g.getImageData(0, 0, N, N).data;
         };
-        const l1 = layer(-1.1, 5.2, 30, 1.8), l2 = layer(-0.38, 6.0, 26, 1.5);
+        // B the swirls for greenery: curling strokes along a flow field that wraps round the tile (so the tile still tiles),
+        // as many as the hatch has strokes (no denser), each a comma that swells and thins
+        const swirl = () => {
+          const L = document.createElement("canvas"); L.width = L.height = N; const g = L.getContext("2d");
+          g.fillStyle = "#000"; g.fillRect(0, 0, N, N); g.lineCap = "round"; g.globalCompositeOperation = "lighter";
+          const T = 6.283 / N, flow = (x, y) => -1.1 + 1.25 * Math.sin(T * x + T * y) + 0.9 * Math.cos(2 * T * y - T * x);
+          for (let k = 0; k < 330; k++) {
+            let x = R() * N, y = R() * N; const len = 14 + R() * 18, v = 160 + R() * 95, w = 1.6 + R() * 0.7, pts = [[x, y]];
+            for (let s2 = 0; s2 < len; s2 += 1.2) { const a = flow(x, y) + s2 * 0.035; x += Math.cos(a) * 1.2; y += Math.sin(a) * 1.2; pts.push([x, y]); }
+            for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) {
+              if (Math.max(...pts.map((q) => q[0])) + ox < -4 || Math.min(...pts.map((q) => q[0])) + ox > N + 4 || Math.max(...pts.map((q) => q[1])) + oy < -4 || Math.min(...pts.map((q) => q[1])) + oy > N + 4) continue;
+              for (let i = 1; i < pts.length; i++) { const t = i / (pts.length - 1), pr = Math.sin(Math.PI * Math.min(1, t * 1.1)); g.strokeStyle = `rgb(${v},${v},${v})`; g.lineWidth = w * (0.45 + 0.6 * pr); g.globalCompositeOperation = "lighten"; g.beginPath(); g.moveTo(pts[i - 1][0] + ox, pts[i - 1][1] + oy); g.lineTo(pts[i][0] + ox, pts[i][1] + oy); g.stroke(); }
+            }
+          }
+          return g.getImageData(0, 0, N, N).data;
+        };
+        const l1 = layer(-1.1, 5.2, 30, 1.8), l2 = layer(-0.38, 6.0, 26, 1.5), l3 = swirl();
         const S = document.createElement("canvas"); S.width = S.height = N;
         const sc = S.getContext("2d"), id = sc.createImageData(N, N);
-        for (let o = 0; o < N * N; o++) { id.data[o * 4] = l1[o * 4]; id.data[o * 4 + 1] = l2[o * 4]; id.data[o * 4 + 2] = 120 + R() * 135; id.data[o * 4 + 3] = 255; }
+        for (let o = 0; o < N * N; o++) { id.data[o * 4] = l1[o * 4]; id.data[o * 4 + 1] = l2[o * 4]; id.data[o * 4 + 2] = l3[o * 4]; id.data[o * 4 + 3] = 255; }
         sc.putImageData(id, 0, 0);
         const pencil = new CanvasTexture(S); pencil.wrapS = pencil.wrapT = RepeatWrapping; pencil.generateMipmaps = true; pencil.minFilter = LinearMipmapLinearFilter;
         // windows: the city's own layout (2 x 2 arched windows a tile, as makeWindowTextureMV), drawn in ink. Its own mip
@@ -38504,7 +38532,7 @@ void main() {
             const x = (40 + cc * 128) * f, y = (22 + r * 128) * f, ww = 48 * f, h = 82 * f;
             w.globalAlpha = k; w.beginPath(); w.moveTo(x, y + h); w.lineTo(x, y + ww / 2); w.arc(x + ww / 2, y + ww / 2, ww / 2, Math.PI, 0); w.lineTo(x + ww, y + h); w.closePath();
             w.fillStyle = "#dde7ee"; w.fill();
-            w.strokeStyle = "#2a2820"; w.lineWidth = Math.max(1, 4.5 * f); w.lineJoin = "round"; w.stroke();
+            w.strokeStyle = "#2e3266"; w.lineWidth = Math.max(1, 4.5 * f); w.lineJoin = "round"; w.stroke();
             w.beginPath(); w.moveTo(x - 7 * f, y + h + 3 * f); w.lineTo(x + ww + 7 * f, y + h + 3 * f); w.lineWidth = Math.max(1, 4 * f); w.stroke();
           }
           return cv;
@@ -38515,15 +38543,12 @@ void main() {
         nbTex = { paper, doodles, pencil, win };
         return nbTex;
       }
-      // the interface's share: the handwriting (loaded the first time the notebook opens, never for the other worlds) and
-      // a coloured-pencil hatch the CSS uses as a static mask (--nb-hatch) behind buttons, chips and swatches
+      // the interface's share: a coloured-pencil hatch the CSS uses as a static mask (--nb-hatch) behind buttons, chips and
+      // swatches. Round 2 (Daniel): no handwriting fonts any more, the site's own type, coloured like the pencils
       var nbUI = false;
       function notebookUI() {
         if (nbUI) return; nbUI = true;
         try {
-          const l = document.createElement("link"); l.rel = "stylesheet";
-          l.href = "https://fonts.googleapis.com/css2?family=Caveat:wght@500..700&family=Playwrite+RO:wght@200..400&display=swap";
-          document.head.appendChild(l);
           const R = rng(4242), N = 240, cv = document.createElement("canvas"); cv.width = cv.height = N;
           const g = cv.getContext("2d"); g.lineCap = "round";
           const ang = -1.1, ca = Math.cos(ang), sa = Math.sin(ang), nx = -sa, ny = ca;
@@ -38544,7 +38569,7 @@ void main() {
           // the cover: the sheet's colour with those strokes cut out of it. Laid as a background image over any element's own
           // solid colour, the colour shows only through the strokes: a coloured-pencil fill, with no pseudo-element
           const cv2 = document.createElement("canvas"); cv2.width = cv2.height = N; const g2 = cv2.getContext("2d");
-          g2.fillStyle = "#e7e4d8"; g2.fillRect(0, 0, N, N); g2.globalCompositeOperation = "destination-out"; g2.drawImage(cv, 0, 0); g2.drawImage(cv, 0, 0);
+          g2.fillStyle = "#fdfcf9"; g2.fillRect(0, 0, N, N); g2.globalCompositeOperation = "destination-out"; g2.drawImage(cv, 0, 0); g2.drawImage(cv, 0, 0);
           document.documentElement.style.setProperty("--nb-cover", crayonUrl(cv2));
         } catch (e) {}
       }
@@ -38586,7 +38611,7 @@ void main() {
                 vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r)); float d = q.x - min(q.w, q.y); return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + 1e-6)), d / (q.x + 1e-6), q.x); }
               // the notebook's pencils (a hue, the colour it lays down), sampled from the reference; a colour takes the
               // nearest of them by hue, softly
-              vec3 pencilFor(vec3 c, float s){
+              vec3 pencilFor(vec3 c, float s, out float fol){
                 float h = hsv(c).x;
                 vec3 P[7]; float H[7];
                 H[0] = 0.02; P[0] = vec3(0.78, 0.45, 0.39);  // terracotta (the mushroom caps)
@@ -38596,38 +38621,51 @@ void main() {
                 H[4] = 0.52; P[4] = vec3(0.50, 0.66, 0.74);  // a pale sky blue (the rainbow)
                 H[5] = 0.66; P[5] = vec3(0.31, 0.32, 0.56);  // indigo, the dark pieces
                 H[6] = 0.88; P[6] = vec3(0.80, 0.52, 0.62);  // a rainbow pink
-                vec3 acc = vec3(0.0); float ws = 0.0;
-                for (int i = 0; i < 7; i++) { float d = abs(h - H[i]); d = min(d, 1.0 - d); float w = exp(-d * d * 260.0); acc += P[i] * w; ws += w; }
-                return mix(c, acc / max(ws, 1e-4), 0.78 * smoothstep(0.06, 0.25, s));
+                vec3 acc = vec3(0.0); float ws = 0.0, wf = 0.0;
+                for (int i = 0; i < 7; i++) { float d = abs(h - H[i]); d = min(d, 1.0 - d); float w = exp(-d * d * 260.0); acc += P[i] * w; ws += w; if (i == 3) wf = w; }
+                float k = smoothstep(0.06, 0.25, s);
+                fol = wf / max(ws, 1e-4) * k; // how much of it is greenery: drawn in swirls, not in hatching
+                return mix(c, acc / max(ws, 1e-4), 0.78 * k);
               }
+              // a crease's share along one axis: the second difference of 1/z over the pen's radius (zero on any flat face)
+              float d2(float a, float b, float c, float lo){ return smoothstep(lo, lo * 2.5, abs(a + b - 2.0 * c) / c); }
               void main(){
                 vec2 px = 1.0 / res;
-                // a calm, hand-drawn waver on every line
-                vec2 wob = (vec2(vn(vUv * 6.0), vn(vUv * 6.0 + 7.7)) - 0.5) * 1.5 * px;
+                // the pen: about one CSS pixel wide at any pixel density (res is in device pixels)
+                float LR = clamp(res.y / 1000.0, 1.0, 2.2);
+                // a slow, hand-drawn waver on every line: the lines bend a little, they do not shake
+                vec2 wob = (vec2(vn(vUv * 4.0), vn(vUv * 4.0 + 7.7)) - 0.5) * 1.4 * LR * px;
                 vec2 uv = vUv + wob;
-                // ink: the thin dark lines (the ink hulls round every shape, poles, lettering). A dark pixel with no light
-                // pixel 3.5 px away along either diagonal is a dark surface, not a line: it is coloured in instead
+                // ink: the thin dark lines (windows, lettering, the kerbs). A dark pixel with no light pixel 3.5 px away
+                // along either diagonal is a dark surface, not a line: it is coloured in instead (on the ground it stays ink)
+                vec2 e1 = px * max(1.0, LR * 0.7);
                 float l = lum(uv);
-                float lR = lum(uv + vec2(px.x, 0.0)), lL = lum(uv - vec2(px.x, 0.0)), lU = lum(uv + vec2(0.0, px.y)), lD = lum(uv - vec2(0.0, px.y));
+                float lR = lum(uv + vec2(e1.x, 0.0)), lL = lum(uv - vec2(e1.x, 0.0)), lU = lum(uv + vec2(0.0, e1.y)), lD = lum(uv - vec2(0.0, e1.y));
                 float lmin = min(l, min(min(lR, lL), min(lU, lD)));
-                float ink = 1.0 - smoothstep(0.22, 0.4, lmin);
+                float ink0 = 1.0 - smoothstep(0.24, 0.42, lmin), ink = ink0;
                 if (ink > 0.0) {
-                  float lf = max(max(lumL(uv + vec2(3.5, 3.5) * px), lumL(uv - vec2(3.5, 3.5) * px)), max(lumL(uv + vec2(3.5, -3.5) * px), lumL(uv - vec2(3.5, -3.5) * px)));
+                  vec2 e3 = 3.5 * LR * px;
+                  float lf = max(max(lumL(uv + e3), lumL(uv - e3)), max(lumL(uv + vec2(e3.x, -e3.y)), lumL(uv - vec2(e3.x, -e3.y))));
                   ink *= smoothstep(0.34, 0.55, lf);
                 }
-                // creases: steps and folds in depth, from the second difference of 1/z (zero on any flat face)
+                // creases: steps and folds in depth. Eight directions at the pen's radius and two at half of it, each saturated
+                // on its own and then counted: the further a pixel is from an edge, the fewer directions straddle it, so the
+                // line fades out softly on both sides and turns round at its ends and corners (no stair steps)
+                vec2 e = px * LR, h = e * 0.5;
                 float w11 = iz(uv);
-                float w00 = iz(uv + vec2(-px.x, -px.y)), w10 = iz(uv + vec2(0.0, -px.y)), w20 = iz(uv + vec2(px.x, -px.y));
-                float w01 = iz(uv + vec2(-px.x, 0.0)), w21 = iz(uv + vec2(px.x, 0.0));
-                float w02 = iz(uv + vec2(-px.x, px.y)), w12 = iz(uv + vec2(0.0, px.y)), w22 = iz(uv + vec2(px.x, px.y));
-                float lap = (abs(w01 + w21 - 2.0 * w11) + abs(w10 + w12 - 2.0 * w11) + 0.5 * abs(w00 + w22 - 2.0 * w11) + 0.5 * abs(w20 + w02 - 2.0 * w11)) / w11;
+                float w00 = iz(uv + vec2(-e.x, -e.y)), w10 = iz(uv + vec2(0.0, -e.y)), w20 = iz(uv + vec2(e.x, -e.y));
+                float w01 = iz(uv + vec2(-e.x, 0.0)), w21 = iz(uv + vec2(e.x, 0.0));
+                float w02 = iz(uv + vec2(-e.x, e.y)), w12 = iz(uv + vec2(0.0, e.y)), w22 = iz(uv + vec2(e.x, e.y));
+                float hL = iz(uv - vec2(h.x, 0.0)), hR = iz(uv + vec2(h.x, 0.0)), hD = iz(uv - vec2(0.0, h.y)), hU = iz(uv + vec2(0.0, h.y));
                 float zr = texture2D(tZ, vUv).x, dd = depZ(zr);
                 // a step's share of the depth shrinks with distance (a tree 40 high seen from 3000 away is a 1-2 % step): the
                 // threshold follows, so from the map's height every house and tree still gets its outline
-                float clo = mix(0.025, 0.006, smoothstep(250.0, 2400.0, dd));
-                float crease = smoothstep(clo, clo * 2.6, lap);
-                // one weight, crisp and dark all the way to the far city (only a touch lighter there)
-                float line = max(ink, crease) * (0.9 + 0.1 * vn(vUv * res * 0.03));
+                float clo = mix(0.025, 0.006, smoothstep(250.0, 2400.0, dd)) * sqrt(LR);
+                float cs = d2(w01, w21, w11, clo) + d2(w10, w12, w11, clo) + 0.75 * (d2(w00, w22, w11, clo) + d2(w20, w02, w11, clo))
+                         + 0.8 * (d2(hL, hR, w11, clo * 0.7) + d2(hD, hU, w11, clo * 0.7));
+                float crease = smoothstep(0.35, 2.3, cs);
+                // one weight, a little pressure along the stroke; only a touch lighter far away
+                float line = max(ink, crease) * (0.86 + 0.14 * vn(vUv * res * 0.02 / LR));
                 line *= 1.0 - 0.18 * smoothstep(dz * 1.6, dz * 3.2, dd);
                 // where the city has been drawn yet (world position from depth, then the reveal map)
                 vec4 ndc = vec4(vUv * 2.0 - 1.0, zr * 2.0 - 1.0, 1.0);
@@ -38638,50 +38676,68 @@ void main() {
                 bool sky = zr >= 0.9999;
                 float shown = full > 0.5 || sky ? 1.0 : smoothstep(0.25, 0.55, rv + edge - 0.15);
                 float band = full > 0.5 ? 0.0 : smoothstep(0.02, 0.4, rv + edge - 0.15) * (1.0 - shown);
-                // the sheet (screen space, cover-fitted, so its creases stay where they are on the screen)
+                // the ground (streets, pavements, parks: street level, facing up; the cars excepted): never hatched. Strokes
+                // laid on the ground are what crawls in a drift and reads as hair from above; it is paper, with a flat wash of
+                // colour, and a dark band on it (a kerb) is drawn as its outline at the pen's weight, its inside left as paper
+                // (a far kerb, thinner than the pen, is one line). The normal from depth is noisy at a grazing angle, so the
+                // test is mostly the height, with a loose normal
+                vec3 nW = cross(dFdx(wp), dFdy(wp));
+                vec3 q0 = (oI0 * vec4(wp, 1.0)).xyz, q1 = (oI1 * vec4(wp, 1.0)).xyz;
+                bool inCar0 = all(greaterThan(q0, oA0)) && all(lessThan(q0, oB0)), inCar1 = all(greaterThan(q1, oA1)) && all(lessThan(q1, oB1));
+                float ground = sky || inCar0 || inCar1 ? 0.0 : step(0.5, abs(nW.y) / max(length(nW), 1e-6)) * step(wp.y, 4.5);
+                float lmax = max(l, max(max(lR, lL), max(lU, lD)));
+                float inkG = ink0 * smoothstep(0.3, 0.5, lmax);
+                ink = mix(ink, inkG, ground);
+                line = mix(line, max(inkG, crease) * 0.95, ground);
+                // the sheet (screen space, cover-fitted, so what little crease it has stays where it is on the screen)
                 float asp = res.x / res.y;
                 vec2 puv = (vUv - 0.5) * (asp > 1.0 ? vec2(1.0, 1.0 / asp) : vec2(asp, 1.0)) * 0.98 + 0.5;
                 vec3 paper = texture2D(tP, puv).rgb;
-                // the margin doodles: only on the empty paper (the street view's sky, the sheet past the city)
+                // the sky's swirls and the sun: only on the empty paper (the street view's sky, the sheet past the city)
                 if (sky && full < 0.5) { vec4 dq = texture2D(tQ, puv); paper = mix(paper, dq.rgb, dq.a * 0.85); }
-                vec2 p = vUv * res;
-                vec4 tz = texture2D(tS, p / 256.0); // the tooth, one texel a pixel
                 // colour: coloured pencil, light, airy and uneven; the paper dominates. How much pencil a colour needs:
                 // its saturation, and a little for darkness (a dark thing is pencilled denser, never filled black)
                 vec4 tc = texture2D(tD, vUv);
                 vec3 A = alb(tc);
                 vec3 hv = hsv(A);
-                float amt = clamp(hv.y * 0.62 + (1.0 - hv.z) * 0.42 - 0.05, 0.0, 0.66);
+                float amt = clamp(hv.y * 0.62 + (1.0 - hv.z) * 0.3 - 0.05, 0.0, 0.62);
                 if (abs(tc.a - 0.25) < 0.03 || sky) amt = 0.0;
-                vec3 pen = pencilFor(A, hv.y);
-                pen = mix(vec3(0.42, 0.40, 0.33), pen, smoothstep(0.04, 0.22, hv.y)); // a grey is graphite, warm
+                amt *= 1.0 - ground * (1.0 - smoothstep(0.3, 0.45, lmin)); // the inside of a dark band on the ground: paper
+                float fol;
+                vec3 pen = pencilFor(A, hv.y, fol);
+                pen = mix(vec3(0.40, 0.41, 0.53), pen, smoothstep(0.04, 0.22, hv.y)); // a grey is graphite, a little indigo
                 pen = max(pen, vec3(0.2)); // never black
                 // the strokes, in world space on the face (its axis from the depth's own normal), sized for the screen. On the
-                // ride and the police car they are laid in the car's own frame, so they stay on its body as it drives (in world
-                // space they would stream over a moving car)
-                vec3 sp = wp, q0 = (oI0 * vec4(wp, 1.0)).xyz, q1 = (oI1 * vec4(wp, 1.0)).xyz;
-                if (all(greaterThan(q0, oA0)) && all(lessThan(q0, oB0))) sp = q0; else if (all(greaterThan(q1, oA1)) && all(lessThan(q1, oB1))) sp = q1;
+                // ride and the police car they are laid in the car's own frame, so they stay on its body as it drives. Greenery
+                // takes the swirls (the tile's third channel: curling strokes along a flow, after Van Gogh), the rest the hatch
+                vec3 sp = inCar0 ? q0 : inCar1 ? q1 : wp;
                 vec3 dx = dFdx(sp), dy = dFdy(sp), an = abs(normalize(cross(dx, dy)));
                 vec2 suv = an.y > max(an.x, an.z) ? sp.xz : an.x > an.z ? sp.zy : sp.xy;
                 float L = log2(max(max(length(dx), length(dy)), 1e-4) * 150.0), L0 = floor(L), fr = L - L0;
                 vec4 s0 = textureLod(tS, suv / exp2(L0), max(0.0, 0.77 - fr)), s1 = textureLod(tS, suv / exp2(L0 + 1.0), 0.0);
-                vec2 st = mix(s0.rg, s1.rg, fr);
-                float c1 = smoothstep(1.12 - amt, 1.22 - amt, st.r);
-                float c2 = smoothstep(1.6 - amt, 1.78 - amt, st.g);
-                float cov = max(c1, c2 * 0.9) * (0.62 + 0.38 * tz.b);
-                vec3 fill = mix(vec3(1.0), pen, clamp(amt * 0.1 + cov * 0.8, 0.0, 0.92));
+                vec3 st = mix(s0.rgb, s1.rgb, fr);
+                amt = mix(amt, min(amt, 0.32), fol); // greenery: never denser than a tree's crown, however dark its green
+                float af = amt + 0.24 * fol; // and a little fuller, so the swirls read
+                float c1 = smoothstep(1.12 - af, 1.22 - af, mix(st.r, st.b * 1.15, fol));
+                float c2 = smoothstep(1.6 - amt, 1.78 - amt, st.g) * (1.0 - fol);
+                float cov = max(c1, c2 * 0.9) * 0.86;
+                vec3 fill = mix(vec3(1.0), pen, clamp(amt * (0.1 + 0.3 * fol) + cov * 0.85, 0.0, 0.92));
+                vec3 wash = mix(vec3(1.0), pen, amt * 0.5 * (0.85 + 0.3 * vn(wp.xz * 0.03))); // world-anchored, low: it never crawls
+                fill = mix(fill, wash, ground);
                 vec3 o = paper * mix(vec3(1.0), fill, shown);
-                // the drawing front: a loose pencil grid on the ground and the lines laid in lightly, before they settle
+                // the drawing front: a loose pencil grid on the ground and the lines laid in lightly, before they settle (the
+                // grid fades where its cells get small on screen, so it never shimmers in the distance)
                 vec2 gq = wp.xz / 140.0 + vec2(vn(wp.zx * 0.004) * 0.18, 0.0);
-                vec2 gd = abs(fract(gq - 0.5) - 0.5) / max(fwidth(gq), vec2(1e-4));
-                float grid = (1.0 - smoothstep(0.0, 1.3, min(gd.x, gd.y))) * step(wp.y, 4.0) * step(zr, 0.9999);
+                vec2 gw = max(fwidth(gq), vec2(1e-4));
+                vec2 gd = abs(fract(gq - 0.5) - 0.5) / gw;
+                float grid = (1.0 - smoothstep(0.0, 1.3, min(gd.x, gd.y))) * step(wp.y, 4.0) * step(zr, 0.9999) * (1.0 - smoothstep(0.06, 0.16, max(gw.x, gw.y)));
                 float g = line * mix(0.03, 1.0, shown);
                 g = max(g, max(grid * 0.26, line * 0.45) * band);
-                if (sky) g = 0.0;
-                vec3 inkC = vec3(0.21, 0.195, 0.15); // brown graphite, like the reference's grid
-                o = mix(o, inkC, clamp(g, 0.0, 1.0) * 0.94);
+                if (sky) g = crease * 0.95; // the sky side of a silhouette is half of its line (only the crease: no ink, no grid)
+                vec3 inkC = vec3(0.17, 0.18, 0.39); // a dark indigo ink, like a ballpoint
+                o = mix(o, inkC, clamp(g, 0.0, 1.0) * 0.92);
                 // crayon decals keep their colour, laid over the paper (multiply)
-                if (abs(tc.a - 0.25) < 0.03) { vec3 cc = pow(clamp(tc.rgb, 0.0, 1.0), vec3(0.4545)); o = mix(o, o * mix(vec3(1.0), cc, 0.9), 0.9 * (0.8 + 0.2 * tz.b)); }
+                if (abs(tc.a - 0.25) < 0.03) { vec3 cc = pow(clamp(tc.rgb, 0.0, 1.0), vec3(0.4545)); o = mix(o, o * mix(vec3(1.0), cc, 0.9), 0.81); }
                 gl_FragColor = vec4(o, 1.0);
                 // beta 3.75 (the audit's contract): the scene's depth goes on screen with the drawing, for the things drawn plain over it (sketchPlainDraw)
                 gl_FragDepth = zr;
@@ -38721,6 +38777,7 @@ void main() {
         const plain = sketchPlainPrep(); // beta 3.75
         { const sy = Math.max(0.2, _nbSun.subVectors(sun.position, sun.target.position).normalize().y); u.kW.value = Math.PI / Math.max(0.3, hemi.intensity + sun.intensity * sy); } // beta 3.76: undoes the notebook's flat light (a white face looking up = white)
         nbCarFrame(veh?.group, u.oI0.value, u.oA0.value, u.oB0.value); nbCarFrame(copCar?.group, u.oI1.value, u.oA1.value, u.oB1.value); // beta 3.76
+        sun.shadow.autoUpdate = false; sun.shadow.needsUpdate = false; // round 2: no cast shadows in the notebook (intensity 0), so no shadow pass either
         renderer.setRenderTarget(sketchFx.rt);
         if (!nbHull) renderer.render(scene, cam); // beta 3.76: the ink can come from the depth folds alone (see nbHull)
         else { outline.skipHull = sketchSkipHull; // beta 3.75: no pencil hull round the plain things, nor round sketchNoHull ones
