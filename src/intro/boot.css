@@ -35,5 +35,22 @@
 .czi.czi-can-skip .czi-btn:hover { transform: translateY(-2px) scale(1.04); background: #FED012; }
 .czi-btn:focus-visible { outline: 3px solid #119BFE; outline-offset: 2px; }
 @keyframes cziPop { 0% { transform: scale(.92); } 60% { transform: scale(1.05); } 100% { transform: none; } }
+/* r226: under the pill while the city takes its time: "brewing the city..." and the progress as a line of coffee. It comes
+   by a delayed animation (boot.js sets --czb: the opening's length + 1.5 s), so it is on time even with a busy main thread */
+.czi-cap { position: absolute; left: 50%; top: 62%; translate: -50% 0; display: flex; flex-direction: column; align-items: center; gap: 9px;
+  font: 700 15px/1 CromaticSans, "Google Sans", system-ui, sans-serif; color: #1d1712; letter-spacing: -.005em; white-space: nowrap; pointer-events: none; opacity: 0; }
+.czi.czi-brewing .czi-cap { animation: cziCapIn .5s cubic-bezier(.22,1,.36,1) var(--czb, 1.5s) both; }
+.czi.czi-brew-off .czi-cap { animation: cziCapOut .25s ease both; }
+@keyframes cziCapIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes cziCapOut { from { opacity: 1; } to { opacity: 0; } }
+.czi-dots i { font-style: normal; opacity: .2; animation: cziDot 1.25s ease-in-out infinite; }
+.czi-dots i:nth-child(2) { animation-delay: .18s; } .czi-dots i:nth-child(3) { animation-delay: .36s; }
+@keyframes cziDot { 0%, 100% { opacity: .2; } 45% { opacity: 1; } }
+.czi-fill { display: block; width: 72px; height: 3px; border-radius: 3px; background: rgba(42,33,24,.13); overflow: hidden; }
+.czi-fill i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #8a5a33, #3a2218); transition: width .35s ease; }
+/* the caption carries the progress meanwhile: the button steps aside (back as "Skip intro" once the city is ready) */
+.czi.czi-brewing:not(.czi-can-skip) .czi-btn { animation: cziBtnOut .3s ease var(--czb, 1.5s) both; }
+@keyframes cziBtnOut { to { opacity: 0; } }
+@media (max-width: 719px) { .czi-cap { font-size: 13px; gap: 7px; } .czi-fill { width: 60px; } }
 @media (max-width: 719px) { .czi-btn { right: 14px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); height: 44px; font-size: 14px; padding: 0 16px; } }
-@media (prefers-reduced-motion: reduce) { .czi, .czi-cv, .czi-btn { transition: none; } .czi.czi-can-skip .czi-btn { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .czi, .czi-cv, .czi-btn { transition: none; } .czi.czi-can-skip .czi-btn { animation: none; } .czi-dots i { animation: none; opacity: 1; } .czi.czi-brewing .czi-cap { animation-duration: .01s; } }

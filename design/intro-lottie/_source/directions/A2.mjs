@@ -14,9 +14,17 @@ import { Comp, group, rect, ellipse, fill, gfill, stroke, trim, rgb, E, prop, pa
 import { C, gridPaper, layout, pillGeom, pillShift, at } from "../lib/kit.mjs";
 import { letterGroup } from "../lib/text.mjs";
 import { setLine } from "../lib/type.mjs";
+import fs from "fs";
+import { fileURLToPath } from "url";
+// r226 (Daniel: "the Cromatic Studios logo in the centre pill while the city loads"): the site's own logo artwork
+// (src/app.js logoPortrait), traced into shapes by tools/trace-logo.py: no font stands in for it
+const LOGO = JSON.parse(fs.readFileSync(fileURLToPath(new URL("../assets/logo.json", import.meta.url)), "utf8"));
 
 // the clock (seconds); HOLD..HAND is a loop whose first and last frames are the same, SHORT is the returning visitor's
-export const TL = { B1: 0.12, B2: 1.62, B3: 3.8, B4: 6.85, HOLD: 8.95, HAND: 10.55, END: 11.45, SHORT: 11.55, SHORT_END: 12.0, COMP: 12.05 };
+// r226: the logo rises into the pill after "feels." (the words end later, HOLD 8.95 -> 9.25, so it is read), and the
+// handoff starts with a dissolve (DISSOLVE): the logo and the pill's white go, the live map shows in the pill, then it opens
+export const TL = { B1: 0.12, B2: 1.62, B3: 3.8, B4: 6.85, HOLD: 9.25, HAND: 10.85, END: 12.15, SHORT: 12.25, SHORT_END: 12.7, COMP: 12.75 };
+const DISSOLVE = 24; // frames (0.4 s)
 export const ARTBOARDS2 = { desktop: { name: "desktop", w: 1280, h: 900 }, phone: { name: "phone", w: 390, h: 844 } };
 export const WORLD_IDS = ["monument", "nightlife", "ghibli", "sketch", "circuit", "orchid", "underwater", "gta2", "riso"];
 const WORLD_NAMES = ["Cromatic", "Night Mode", "Ghib.ly", "Sketchbook", "Race Day", "Sakura", "Underwater", "GTA 2", "Risograph"];
@@ -159,7 +167,8 @@ export function buildA2(T, ab, { atlasPath = "worlds.webp" } = {}) {
   const fc = [fg.cx, fg.cy], gS = ph ? 1.6 : 1.25; // the pill's scale in the middle of the screen
   const ringW = (ph ? 0.08 : 0.064) * S;
   const finalSize = ph ? [H * 2.45, H * 2.3] : [W * 2.3, W * 2.2]; // wider than tall to the end, so the stadium never turns
-  const winSize = [[0, [fg.w, fg.h], E.hold], [tH, [fg.w, fg.h], [0.45, 0, 0.6, 1]], [tH + 8, [fg.w * 0.95, fg.h * 0.95], [0.72, 0, 0.18, 1]], [tEnd - 2, finalSize.map((v) => v / gS)]];
+  const tOpen = tH + DISSOLVE; // the window starts to grow once the logo has dissolved into the map
+  const winSize = [[0, [fg.w, fg.h], E.hold], [tOpen, [fg.w, fg.h], [0.45, 0, 0.6, 1]], [tOpen + 8, [fg.w * 0.95, fg.h * 0.95], [0.72, 0, 0.18, 1]], [tEnd - 2, finalSize.map((v) => v / gS)]];
   const ringOff = (from, to, zeroAt) => [[from, ((from - zeroAt) / loop) * 360, E.linear], [to, ((to - zeroAt) / loop) * 360]];
   const NR = 48;
   const ring = (sizeKeys, center, offKeys, op = 100) => [...Array.from({ length: NR }, (_, i) => group("ring " + i, [rect(sizeKeys, center, 9999), trim((i * 100) / NR, Math.min(100, ((i + 1) * 100) / NR + 0.9), offKeys), stroke(rgb(rainbowAt((i + 0.5) / NR)), ringW, op, { lc: 1, lj: 1 })])), group("ring underlay", [rect(sizeKeys, center, 9999), stroke(rgb(RAINBOW[0]), ringW * 0.98, op, { lc: 1, lj: 1 })])];
@@ -175,16 +184,35 @@ export function buildA2(T, ab, { atlasPath = "worlds.webp" } = {}) {
     a: fc, p: [[tFeels, fc, E.hold], [tGlide, fc, GLIDE], [tGlide + 30, mid]],
     s: clean([[tFeels, [40, 40], E.spring], [tFeels + 24, [100, 100], E.hold], [tGlide, [100, 100], GLIDE], [tGlide + 30, [gS * 100, gS * 100], E.hold], ...pulse])
   } });
-  const bodyO = [[tH, 100, E.linear], [tH + 7, 0]];
+  const bodyO = [[tH, 100, [0.45, 0, 0.35, 1]], [tH + DISSOLVE, 0]];
+  // the logo: rises into the pill as "feels." drops out of it, breathes with it in the hold, dissolves into the map
+  const logoH = 0.64 * fg.h, logoK = (logoH / LOGO.h) * 100, tLogo = tDrop + 12;
+  const logoGroup = (o) => group("logo · Cromatic Studios", [...LOGO.paths.map((q) => path(q)), fill(rgb(C.black), 100, 2)], {
+    a: [LOGO.w / 2, LOGO.h / 2], p: o.p, s: o.s, o: o.o
+  });
+  const logoLift = 0.12 * logoH;
+  const logo = logoGroup({
+    p: [[tLogo, [fc[0], fc[1] + logoLift], RISE], [tLogo + 26, fc]],
+    s: [[tLogo, [logoK * 0.94, logoK * 0.94], RISE], [tLogo + 26, [logoK, logoK], E.hold], [tH, [logoK, logoK], [0.4, 0, 0.3, 1]], [tH + DISSOLVE, [logoK * 1.06, logoK * 1.06]]],
+    o: [[0, 0, E.hold], [tLogo, 0, E.linear], [tLogo + 12, 100, E.hold], [tH, 100, [0.45, 0, 0.35, 1]], [tH + DISSOLVE - 4, 0]]
+  });
   const ringO = [[tEnd - 12, 100, E.linear], [tEnd - 2, 0]];
   Cm.shape("beat 4 · feels. · ring, word, body", [
     feelsLetters,
+    logo,
     ...ring(winSize, fc, ringOff(tFeels, tEnd, tHold), ringO),
     group("body", [...sheen(winSize, fc, fg.w, fg.h, fc[0], fc[1], { light: 0, shade: 0.07 }), rect(winSize, fc, 9999), fill(rgb(C.white))], { o: bodyO })
   ], { parent: feelsRoot, ip: tFeels, op: tEnd + 1, ln: "ck-feels" });
   const feelsElev = [[tFeels, 0.2, E.out], [tFeels + 18, 1, E.hold], [tGlide, 1, E.inOut], [tGlide + 14, 3.2, E.inOut], [tGlide + 28, 0.35, E.out], [tGlide + 40, 1.2, E.hold], [tHold, 1.2, E.inOut], [Math.round((tHold + tH) / 2), 1.55, E.inOut], [tH, 1.2]];
   const fEks = elevKs(feelsElev);
-  Cm.shape("beat 4 · feels. · shadow", pillShadow([fg.w, fg.h], fc), { parent: feelsRoot, ip: tFeels, op: tH + 7, ks: { p: fEks.p.map(([tt, v, ea]) => [tt, [v[0] / gS, v[1] / gS], ea]), o: clean([...fEks.o, [tH, shO(1.2), E.linear], [tH + 6, 0]]) } });
+  // r226 (Daniel: "the map behind the final pill, not the grid"): the pill opens as a hole through every layer onto the live
+  // map; its shadow stays on the paper around the hole (a mask that cuts the window out of it, drawn back by the
+  // shadow's own offset) until the ring goes
+  const shEnd = shOff(1.2).map((v) => v / gS);
+  // the hole opens at the pill's size when the handoff starts (the white still covers it: it dissolves), then grows
+  const holeKeys = (cx, cy, k = 1) => [[0, roundRect(cx, cy, 0, 0, 0), E.hold], [tH - 1, roundRect(cx, cy, 0, 0, 0), E.hold], [tH, roundRect(cx, cy, fg.w * k, fg.h * k, (fg.h * k) / 2), E.hold], ...winSize.filter(([tk]) => tk >= tOpen).map(([tk, s2, e]) => [tk, roundRect(cx, cy, s2[0] * k, s2[1] * k, (s2[1] * k) / 2), e])];
+  const shadowHole = holeKeys(fc[0] - shEnd[0], fc[1] - shEnd[1]).map(([tk, q, e]) => [tk, reversePath(q), e]);
+  Cm.shape("beat 4 · feels. · shadow", pillShadow(winSize, fc), { parent: feelsRoot, ip: tFeels, op: tEnd + 1, ks: { p: fEks.p.map(([tt, v, ea]) => [tt, [v[0] / gS, v[1] / gS], ea]), o: clean([...fEks.o, [tEnd - 12, shO(1.2), E.linear], [tEnd - 2, 0]]) }, masks: [{ inv: true, mode: "a", pt: pathProp(shadowHole), o: prop(100), x: prop(0), nm: "window" }] });
   lines("beat 4 · that's how the right brand", b4.filter((w) => w !== feelsW), { inAt: (i) => t4 + i * 3.5, outAt: (i) => tGlide - 6 + i * 1.5 });
 
   /* ======================= beat 3 · nine worlds ======================= */
@@ -303,20 +331,24 @@ export function buildA2(T, ab, { atlasPath = "worlds.webp" } = {}) {
   lines("beat 1 · nobody remembers a", b1.filter((w) => w !== thumbW), { inAt: (i) => t1 + i * 4, outAt: (i) => t1out + i * 1.5 });
 
   /* ======================= the paper: the key light across it, the grid (it recedes while the worlds are up) ======================= */
-  const keyLight = (nm, ip, op, o = 100) => Cm.shape(nm, [
+  const keyLight = (nm, ip, op, o = 100, masks) => Cm.shape(nm, [
     group("light", [rect([W * 1.2, H * 1.2], mid), gfill({ type: 2, s: [W * 0.12, -H * 0.05], e: [W * 0.95, H * 0.85], stops: [[0, "#ffffff"], [1, "#ffffff"]], alphas: [[0, 0.62], [0.55, 0.12], [1, 0]] })]),
     group("falloff", [rect([W * 1.2, H * 1.2], mid), gfill({ type: 1, s: [W * 0.45, H * 0.4], e: [W, H], stops: [[0, "#3a2c1c"], [1, "#3a2c1c"]], alphas: [[0, 0], [1, 0.07]] })])
-  ], { ip, op, ks: { o } });
-  keyLight("paper · key light", 0, tEnd + 1, [[tH, 100, E.linear], [tEnd - 6, 0]]);
-  const win = winSize.map(([tk, s2, e]) => [tk, roundRect(mid[0], mid[1], s2[0] * gS, s2[1] * gS, (s2[1] * gS) / 2), e]);
-  const winK = [[0, roundRect(mid[0], mid[1], 0, 0, 0), E.hold], [tH - 1, roundRect(mid[0], mid[1], 0, 0, 0), E.hold], ...win.filter(([tk]) => tk >= tH)];
+  ], { ip, op, ks: { o }, masks });
+  // the window: a hole through the paper and its light (an inverted mask; its path runs the other way round from the
+  // canvas renderer's comp rectangle, so the non-zero clip leaves the hole open: the worker's canvas renderer has no
+  // subtract mode, and drew the paper only inside the window, the grid Daniel saw in the final pill)
+  const winK = holeKeys(mid[0], mid[1], gS).map(([tk, q, e]) => [tk, reversePath(q), e]);
+  const hole = () => [{ inv: true, mode: "a", pt: pathProp(winK), o: prop(100), x: prop(0), nm: "window" }];
+  keyLight("paper · key light", 0, tEnd + 1, [[tH, 100, E.linear], [tEnd - 6, 0]], hole());
   const gridO = [[t(TL.B3), 100, E.inOut], [t(TL.B3 + 0.5), 55, E.hold], [t(TL.B4 - 0.2), 55, E.inOut], [t(TL.B4 + 0.3), 100]];
   // the paper bleeds past the edges (the camera moves it) and has the window cut in it (the camera is still by then)
-  gridPaper(Cm, { op: tEnd + 1, parent: PG0, gridO, bleed: 40 * U, masks: [{ inv: false, mode: "s", pt: pathProp(winK), o: prop(100), x: prop(0), nm: "window" }] });
+  gridPaper(Cm, { op: tEnd + 1, parent: PG0, gridO, bleed: 40 * U, masks: hole() });
 
   /* ======================= the short version: the pill alone, popping in, then the hold ======================= */
   const shortRoot = Cm.nul("short · the pill", { ip: tS0, op: tS1 + 1, ks: { a: fc, p: mid, s: [[tS0, [gS * 30, gS * 30], E.spring], [tS1 - 2, [gS * 100, gS * 100]]] } });
   Cm.shape("short · ring, body", [
+    logoGroup({ p: fc, s: [logoK, logoK], o: 100 }),
     ...ring([fg.w, fg.h], fc, ringOff(tS0, tS1 + 1, tS1)),
     group("body", [...sheen([fg.w, fg.h], fc, fg.w, fg.h, fc[0], fc[1], { light: 0, shade: 0.07 }), rect([fg.w, fg.h], fc, 9999), fill(rgb(C.white))])
   ], { parent: shortRoot, ip: tS0, op: tS1 + 1, ln: "ck-short" });
@@ -336,6 +368,8 @@ function rainbowAt(u) {
   const ch = (s) => Math.round((((a >> s) & 255) * (1 - f)) + (((b >> s) & 255) * f));
   return "#" + [16, 8, 0].map((s) => ch(s).toString(16).padStart(2, "0")).join("");
 }
+// a closed bezier path run the other way round (an inverted mask's hole: see the window)
+function reversePath(p) { return { c: p.c, v: [...p.v].reverse(), i: [...p.o].reverse(), o: [...p.i].reverse() }; }
 function valAt(keys, tk) { let v = keys[0][1]; for (const k of keys) if (k[0] <= tk) v = k[1]; return v; }
 function clean(k) {
   const s = [...k].sort((a, b) => a[0] - b[0]);

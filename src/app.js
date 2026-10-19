@@ -38585,6 +38585,7 @@ void main() {
       // loader: that is where the textures, buffers and programs go up to the GPU, and where the adaptive resolution
       // must not read the cost of those uploads as a slow machine
       var kzWarm = { frames: 0, need: 3, resolve: null, on: false };
+      var czMapShown = false; // r226: the loader was told the map has drawn (its window may open)
       var mapFirstSolved = false, camSnapNext = false; // r157: the first frame drawn after a frozen stretch (the boot ground, the cups' fill) puts the camera exactly where it belongs: no glide in from a stale pose
       function introFreeze(now) {
         if (!document.body.classList.contains("kz-boot")) { if (kzWarm.on) { kzWarm.on = false; perf.t = now + 3000; } return false; } // (the frames of the hand-off, two contexts at once, do not drive the resolution)
@@ -39489,6 +39490,9 @@ void main() {
         if (ONB_MODE) onbFrame(now); // r140
         if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sincity") sinCityRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sketch") sketchRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "riso") risoRender(now, camera); else if (mvK > 0.5 && !window.__noPost) tiltShiftRender(now); else if (window.__noPost) renderer.render(scene, camera); else outline.render(scene, camera);
         if (onbSnapReq) { onbSnapReq = false; onbSnap(); } // r141c, r142
+        // r226 (Daniel: the final pill opens onto the live map): the loader opens its window only once the map has drawn
+        // a frame after the reveal (the boot ground is gone: kz-boot); it is told at the next frame, once this one is on screen
+        if (CZI && !czMapShown && !document.body.classList.contains("kz-boot")) { czMapShown = true; requestAnimationFrame(() => { try { CZI.mapFrame?.(); } catch (e) {} }); }
         requestAnimationFrame(frame);
       }
       // ===================== r89/r90: Map Mode =====================

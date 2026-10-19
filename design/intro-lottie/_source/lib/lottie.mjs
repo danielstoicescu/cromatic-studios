@@ -145,9 +145,21 @@ export const keys = (...k) => k;
 // seeded random, so every build is the same
 export function rng(seed = 7) { let s = seed >>> 0; return () => { s = (s + 0x6d2b79f5) >>> 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t ^= t + Math.imul(t ^ (t >>> 7), 61 | t); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
-// a gradient fill: type 1 linear, 2 radial; stops [[pos, "#hex"]], alphas [[pos, 0..1]]; s/e start and end points
-export const gfill = ({ type = 1, s, e, stops, alphas, o = 100 }) => ({
-  ty: "gf", o: prop(o), r: 1, bm: 0,
-  g: { p: stops.length, k: { a: 0, k: [...stops.flatMap(([p, h]) => [p, ...rgb(h).slice(0, 3)]), ...(alphas || []).flatMap(([p, a]) => [p, a])] } },
-  s: prop(s), e: prop(e), t: type, h: prop(0), a: prop(0)
-});
+// a gradient fill: type 1 linear, 2 radial; stops [[pos, "#hex"]], alphas [[pos, 0..1]]; s/e start and end points.
+// The colour and opacity stops are put on the same positions: lottie-web's canvas renderer (the site's worker) applies
+// a gradient's opacity only when the two sets line up ("collapsable"); otherwise it draws it opaque (r226: the paper's
+// key light was an opaque white sheet on the site)
+export const gfill = ({ type = 1, s, e, stops, alphas, o = 100 }) => {
+  if (alphas) [stops, alphas] = alignStops(stops, alphas);
+  return {
+    ty: "gf", o: prop(o), r: 1, bm: 0,
+    g: { p: stops.length, k: { a: 0, k: [...stops.flatMap(([p, h]) => [p, ...rgb(h).slice(0, 3)]), ...(alphas || []).flatMap(([p, a]) => [p, a])] } },
+    s: prop(s), e: prop(e), t: type, h: prop(0), a: prop(0)
+  };
+};
+export function alignStops(stops, alphas) {
+  const pos = [...new Set([...stops.map((x) => x[0]), ...alphas.map((x) => x[0])])].sort((a, b) => a - b);
+  const at = (arr, p, mix) => { if (p <= arr[0][0]) return arr[0][1]; for (let i = 1; i < arr.length; i++) if (p <= arr[i][0]) { const [p0, v0] = arr[i - 1], [p1, v1] = arr[i]; return mix(v0, v1, (p - p0) / (p1 - p0 || 1)); } return arr[arr.length - 1][1]; };
+  const mixHex = (a, b, t) => { const A = parseInt(a.slice(1), 16), B = parseInt(b.slice(1), 16); return "#" + [16, 8, 0].map((sh) => Math.round(((A >> sh) & 255) * (1 - t) + ((B >> sh) & 255) * t).toString(16).padStart(2, "0")).join(""); };
+  return [pos.map((p) => [p, at(stops, p, mixHex)]), pos.map((p) => [p, +at(alphas, p, (x, y, t) => x + (y - x) * t).toFixed(4)])];
+}

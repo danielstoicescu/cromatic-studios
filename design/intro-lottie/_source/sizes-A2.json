@@ -1,18 +1,18 @@
 {
  "desktop": {
-  "json": 502085,
-  "jsonBr": 19426,
+  "json": 535978,
+  "jsonBr": 23542,
   "atlas": 67488,
   "layers": 73,
-  "frames": 723,
-  "markers": "words@0+537 hold@537+96 handoff@633+54 short@693+27"
+  "frames": 765,
+  "markers": "words@0+555 hold@555+96 handoff@651+78 short@735+27"
  },
  "phone": {
-  "json": 495589,
-  "jsonBr": 19490,
+  "json": 529568,
+  "jsonBr": 23669,
   "atlas": 52024,
   "layers": 74,
-  "frames": 723,
-  "markers": "words@0+537 hold@537+96 handoff@633+54 short@693+27"
+  "frames": 765,
+  "markers": "words@0+555 hold@555+96 handoff@651+78 short@735+27"
  }
 }
