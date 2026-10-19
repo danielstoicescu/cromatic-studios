@@ -43,5 +43,10 @@ export function withFooter(html, rel, SITE) {
     if (i < 0) return html;
     out = out.slice(0, i + 7) + `\n<footer class="cz-foot">${inner}</footer>` + out.slice(i + 7);
   }
-  return out.replace(/<\/head>/, `${FOOTER_CSS}\n</head>`);
+  return out.replace(/<\/head>/, `${FOOTER_CSS}\n${langMemo(lang)}\n</head>`);
 }
+// beta 3.60 r222c (Daniel/Adina, P0: "not everything translates when switching language"): every page of the website
+// remembers the language it is read in, for the 3D map ("/" has no Romanian UI of its own; its doors follow this: the case
+// pages open in Romanian, "Normal website" leads to /ro/, the cookie card speaks Romanian). Not inside the map's frame
+// (?embed=1, html.embed): there the map chose the page's language itself
+const langMemo = (lang) => `<script>try{if(!/[?&]embed=1/.test(location.search))localStorage.setItem("cz-lang","${lang}")}catch(e){}</script>`;

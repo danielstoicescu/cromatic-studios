@@ -33427,6 +33427,11 @@ void main() {
   var openScfHook = null;
   var openSteamHook = null;
   var openFrameHook = null;
+  // beta 3.60 r222c (Daniel/Adina, P0: "not everything translates when switching language"): the 3D map has no Romanian UI
+  // of its own, and it had no idea a visitor read the website in Romanian: its case pages opened in English and "Normal
+  // website" led to the English site. Every page of the website now remembers its language (build/footer.mjs, "cz-lang");
+  // the map's doors follow it: case pages in Romanian (openFrameHook), "Normal website" to /ro/ (buildMapUI), the cookie card
+  var MAP_RO = (() => { try { return localStorage.getItem("cz-lang") === "ro"; } catch { return false; } })();
   var gainXPHook = null;
   function projectMedia(name) {
     const M = {
@@ -34618,6 +34623,7 @@ void main() {
     let steamSeen = false;
     // any page of the website, full screen over the map (OMA's brand canvas, …)
     openFrameHook = (url, title) => {
+      if (MAP_RO) url = url.replace(/^\/work\/([^/?#]+)\//, "/ro/proiecte/$1/"); // beta 3.60 r222c: every case page has its Romanian twin
       let fr = caseFrame.querySelector(".cf-iframe");
       if (fr.getAttribute("src") !== url) {
         // a fresh frame each time: navigating a loaded one adds a step to the browser's history,
@@ -41035,6 +41041,7 @@ void main() {
         ui.root.appendChild(box);
         top.querySelector(".map-crew").onclick = () => { welcome(false); openCrew(); };
         top.querySelector(".map-home").onclick = () => { welcome(false); mapGo(MAP_PLACES.find((p) => p.id === "end")); };
+        if (MAP_RO) { const s = top.querySelector(".map-site"); s.href = "/ro/"; s.hreflang = "ro"; s.title = "Aceeași poveste, ca site normal, rapid"; const b = s.querySelector("b"); b.textContent = "Site normal"; b.lang = "ro"; } // beta 3.60 r222c: a Romanian reader's website is /ro/
         if (window.__openGloves && /^https?:$/.test(location.protocol)) top.querySelector(".map-home").after(gameBtn("map-2m2f")); // beta 3.52 r219
 
         // r137a: both cards open as popovers under their buttons (ui.popAnchor); the bar stays above the dimmed map
