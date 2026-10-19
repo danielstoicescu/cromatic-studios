@@ -70,7 +70,7 @@ export const PROJECTS = [
   { name: "Periferisan", cat: "In the Zdrovit yard", c: "#cfcdc8", t: "#3d3c39", poster: "Periferisan", street: "C", small: true, desc: "Periferisan, one of the brands in the Zdrovit yard. By Cromatic Studios." },
   { name: "Help 4 Brain", cat: "Pharma · Product · Marketing", c: "#B098C8", t: "#14120c", poster: "Challenger to leader", img: "m:cs/Cromatic-Studios-Help4brain-1", page: "help-4-brain", street: "C", desc: "Enabling a pharma challenger to become a leader." },
   { name: "Parusan", cat: "In the Zdrovit yard", c: "#cfcdc8", t: "#3d3c39", poster: "Parusan", street: "C", small: true, desc: "Parusan, one of the brands in the Zdrovit yard. By Cromatic Studios." },
-  { name: "Bonylash", cat: "In the Zdrovit yard", c: "#cfcdc8", t: "#3d3c39", poster: "Bonylash", street: "C", small: true, desc: "Bonylash, one of the brands in the Zdrovit yard. By Cromatic Studios." },
+  { name: "Bonilash", cat: "In the Zdrovit yard", c: "#cfcdc8", t: "#3d3c39", poster: "Bonilash", street: "C", small: true, desc: "Bonilash, one of the brands in the Zdrovit yard. By Cromatic Studios." },
   { name: "Litorsal", cat: "In the Zdrovit yard", c: "#cfcdc8", t: "#3d3c39", poster: "Litorsal", street: "C", small: true, desc: "Litorsal, one of the brands in the Zdrovit yard. By Cromatic Studios." },
   { name: "Altius", cat: "Medical", c: "#16a89b", t: "#ffffff", poster: "Altius", img: "m:cs/Cromatic-Studios-Altius-8", page: "altius", street: "C", desc: "Medical brand and digital work by Cromatic Studios." },
   { name: "Zoetis", cat: "Animal health", c: "#f2763b", t: "#2a1205", poster: "Zoetis", street: "C", desc: "Animal health communication by Cromatic Studios." },

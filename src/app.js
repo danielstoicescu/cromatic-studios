@@ -27229,7 +27229,7 @@ void main() {
   }
   // the Zdrovit courtyard: a paved yard with a fountain and trees, small buildings around it
   // the small brands of the Zdrovit yard: one kiosk each round the fountain, room for more
-  var ZDROVIT_YARD = ["Lacalut", "Periferisan", "Help 4 Brain", "Parusan", "Bonylash", "Litorsal"];
+  var ZDROVIT_YARD = ["Lacalut", "Periferisan", "Help 4 Brain", "Parusan", "Bonilash", "Litorsal"];
   // r134: Daniel: the small buildings stand along the edges of the yard, not round the fountain: four along the
   // hedge side (towards Sofmedica), one each side of the gate
   // r176: the beauty shops' side (south) is not left bare now they have moved out: two kiosks there, two on the hedge
@@ -38608,7 +38608,22 @@ void main() {
         }
         return false;
       }
+      // beta 3.59 r222 (Daniel/Adina, P0: "it froze in the same place", on a laptop and on a phone): a frame asks for the
+      // next one only at its end, so one exception anywhere in it ended the render loop for good: the city stood still
+      // while the page around it kept working. The cause is fixed where it was (nav2Cull, below); this watchdog keeps the
+      // city running if anything else ever throws mid-frame: the next frame is still asked for, and each distinct error
+      // is logged once (not 60 times a second)
+      const frameErrs = new Set();
       function frame(now) {
+        try {
+          frameStep(now);
+        } catch (e) {
+          requestAnimationFrame(frame);
+          const k = String((e && e.message) || e);
+          if (!frameErrs.has(k) && frameErrs.size < 20) { frameErrs.add(k); console.error("[cromatic] a frame failed; the city keeps running:", e); }
+        }
+      }
+      function frameStep(now) {
         if (ONB_MODE && onbPaused) { prevT = now; requestAnimationFrame(frame); return; } // r140: no zone of /onboarding/ on screen
         // r156b: a resolution change asked for outside the frame (the opening's wall and reveal) lands here, and this frame
         // draws whatever the half-rate rule says: a resized canvas is blank until it is drawn (a frame of the cream ground)
@@ -39579,13 +39594,18 @@ void main() {
         if (!n2C) {
           n2C = { list: [], on: false }; const c = new Vector3();
           worldRefs.world.updateMatrixWorld(true);
-          worldRefs.world.traverse((o) => { if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !o.geometry?.attributes?.position || o.userData.__merged) return; o.geometry.boundingSphere || o.geometry.computeBoundingSphere(); const r = o.geometry.boundingSphere.radius * o.matrixWorld.getMaxScaleOnAxis(); if (r < 30) n2C.list.push([o, r, false, o.layers.mask]); });
+          worldRefs.world.traverse((o) => { if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !o.geometry?.attributes?.position || o.userData.__merged || o.userData.n2NoCull) return; o.geometry.boundingSphere || o.geometry.computeBoundingSphere(); const r = o.geometry.boundingSphere.radius * o.matrixWorld.getMaxScaleOnAxis(); if (r < 30) n2C.list.push([o, r, false, o.layers.mask]); });
         }
         if (++n2Cf % 8) return;
         n2C.on = true;
         const v = new Vector3();
         for (const it of n2C.list) {
-          const o = it[0]; v.copy(o.geometry.boundingSphere.center).applyMatrix4(o.matrixWorld);
+          // beta 3.59 r222 (P0, the freeze): three.js works a geometry's bounds out lazily, and a listed mesh can be given a
+          // new geometry later (the ring's next-exit arrow was rebuilt for every exit, see exitMark): its boundingSphere was
+          // null here, the frame threw before asking for the next one, and the city froze on the roundabout
+          const o = it[0], g = o.geometry;
+          if (!g.boundingSphere) g.computeBoundingSphere();
+          v.copy(g.boundingSphere.center).applyMatrix4(o.matrixWorld);
           const far = Math.hypot(v.x - carPos.x, v.z - carPos.z) - it[1] > 1500;
           if (far !== it[2]) { if (far) { it[3] = o.layers.mask; o.layers.mask = 0; } else o.layers.mask = it[3]; it[2] = far; }
         }
@@ -39827,7 +39847,7 @@ void main() {
             return (o) => {
               if (!o) { if (fill && fill.visible) fill.visible = ink.visible = false; return; }
               if (!fill) {
-                const mk = (c, ro) => { const m = new Mesh(new BufferGeometry(), new MeshBasicMaterial({ color: c, toneMapped: false, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -8 })); m.renderOrder = ro; m.frustumCulled = false; worldRefs.world.add(m); return m; };
+                const mk = (c, ro) => { const m = new Mesh(new BufferGeometry(), new MeshBasicMaterial({ color: c, toneMapped: false, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -8 })); m.renderOrder = ro; m.frustumCulled = false; m.userData.n2NoCull = true; worldRefs.world.add(m); return m; }; // beta 3.59 r222: never in the street view's far cull (it is always by the car, and its geometry is swapped)
                 ink = mk("#141414", 3); fill = mk("#FED012", 4);
               }
               if (o.key !== key) {
@@ -40647,7 +40667,10 @@ void main() {
         const p = warpV(house.localToWorld(new Vector3(0, 46, 27))).project(camera);
         if (!(p.z < 1)) return;
         const wy = (-p.y * 0.5 + 0.5) * innerHeight;
-        const top = Math.min(...ph.map((e) => e.offsetTop)), bottom = Math.max(...ph.map((e) => e.offsetTop + e.offsetHeight));
+        // beta 3.59 r222 (Daniel/Adina, P0): the close button rides above the photos and went up with them, under the top bar;
+        // the lift now stops where the button is clear of the bar too
+        const x = wrap.querySelector(".olari-x"), xTop = x && x.offsetParent ? x.offsetTop : Infinity;
+        const top = Math.min(xTop, ...ph.map((e) => e.offsetTop)), bottom = Math.max(...ph.map((e) => e.offsetTop + e.offsetHeight));
         const bar = document.querySelector(".map-top")?.getBoundingClientRect().bottom || 110;
         const lift = Math.max(0, Math.min(bottom - (wy - 12), top - (bar + 12)));
         if (lift > 0) wrap.style.setProperty("--ph-lift", `${Math.round(lift)}px`);

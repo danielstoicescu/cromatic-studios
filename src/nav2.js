@@ -1989,6 +1989,7 @@
         if (!api.on || D.streetT < 0.5) return;
         if (phoneStreet()) {
           if (e.clientY < VP.h * 0.45) return; // the upper half stays the map's (taps, the toggle); beta 2.9: a card (compact, right) leaves it free
+          { const cs = getComputedStyle(root); if (cs.visibility === "hidden" || +cs.opacity < 0.05) return; } // beta 3.59 r222 (P0): the controls step aside for a full card (Olari 9, a chapter, the XP log; nav2.css): no unseen stick behind it
           e.stopImmediatePropagation(); e.preventDefault?.();
           st = { id: e.pointerId, x: e.clientX, y: e.clientY };
           stickEl.classList.add("on"); stickEl.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`; stickSet(e);

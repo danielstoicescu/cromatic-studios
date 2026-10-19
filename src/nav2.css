@@ -285,6 +285,9 @@ body.n2-phone .n2-2m2f { display: flex; flex-direction: column; align-items: cen
 body.n2-phone .n2-2m2f .mf-glove { width: 17px; height: 17px; }
 body.n2-phone .n2-2m2f .mf-txt { width: 28px; height: 8px; }
 body.n2-phone .n2-2m2f:focus-visible { outline: 3px solid #2f6bff; outline-offset: 3px; }
+/* beta 3.59 r222 (Daniel): no 2M2F button on phones after all; laptops and tablets keep theirs in the top bar, and on a phone the
+   game is still a tap away on the Two Minutes card and on its own pin */
+body.n2-phone .n2-2m2f { display: none; }
 body.nav2.n2-card .n2-snd { z-index: 26; }
 /* beta 2.9: the labels on one line; the game's own notes (the toast column) under the toggle and its hint; nothing of
    nav2 over the "turn your phone upright" screen */
@@ -327,9 +330,14 @@ body.n2-phone:has(.map-welcome:not(.hidden)) .nav2-ui { opacity: 0 !important; p
 .nav2-ui .n2-views button:not([aria-pressed="true"]) svg { color: #141414; }
 .nav2-ui .n2-k, .nav2-ui .n2-snd:not(.off), .nav2-ui .n2-driftb:not(.on), .n2-guide .n2-skip, .nav2-ui .n2-hint, .nav2-ui .n2-taphint { color: #141414; }
 .nav2-ui .n2-panel { color: #141414; } .nav2-ui .n2-panel :is(.n2-sub, .n2-empty, .n2-rt) { color: #3a3833; }
-/* beta 2.92: at Olari 9 on a phone, the house's photos fan out under the bar's controls, not over them */
-body.n2-phone.olari-open .nav2-ui :is(.n2-views, .n2-snd) { z-index: 31; position: fixed; }
-body.n2-phone.olari-open .nav2-ui .n2-pad { display: none; }
+/* beta 3.59 r222 (Daniel/Adina, P0): at Olari 9 on a phone the house's photos, its address and its contacts have the screen: the
+   stick, DRIFT, the view toggle and the speaker lay over them (beta 2.92 kept the toggle and the speaker on top), so the map's
+   controls step aside while it is open, as they do for the crew, the rides and the worlds; so for the other full cards: a
+   chapter's card and the boarding pass (.mapcard: the resting stick lay over its pills) and the XP log (the toggle and the speaker
+   covered its first lines). A place's card stays compact in the Street view, with the stick free beside it (beta 2.9).
+   visibility, not just opacity: a child with its own pointer-events (the toggle while a card is open, below) would still take taps */
+body.n2-phone.olari-open .nav2-ui, body.n2-phone:has(.xp-log:not(.hidden), .mapcard:not(.hidden)) .nav2-ui { opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
+body:has(.xp-log:not(.hidden)) .nav2-ui .n2-snd { visibility: hidden; } /* beta 3.59 r222: on a laptop the speaker sat on the XP log's count */
 /* beta 3.0: the take-off (and its boarding walk) has the screen to itself */
 body.map-takeoff .nav2-ui, body.map-takeoff .olari-fan, body.map-takeoff .n2-guide { opacity: 0 !important; pointer-events: none !important; transition: opacity .3s; }
 /* beta 3.0: the build label ends where the logo ends (the map's brand has 2 px of padding round its image) */
