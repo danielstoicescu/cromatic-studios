@@ -34431,7 +34431,8 @@ void main() {
       // r126: every panel counts: crew, human, rides, world menu, map card, boarding pass
       const panelsOpen = () => ovOpen() || !!document.querySelector(".crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:not(.hidden), .map-card:not(.hidden)") || document.body.classList.contains("map-boarding") || document.body.classList.contains("hud-world-open");
       const closeAll = () => {
-        for (const q of document.querySelectorAll(".case-frame, .scf-modal, .hmodal-backdrop, .crew-panel, .human-panel, .map-rides")) q.classList.add("hidden");
+        const cfo = document.querySelector(".case-frame:not(.hidden)"), cfa = !!cfo && !!window.__czFrameClose?.(); // r233: Escape and Back close a page into its pill too
+        for (const q of document.querySelectorAll(".case-frame, .scf-modal, .hmodal-backdrop, .crew-panel, .human-panel, .map-rides")) if (!(cfa && q === cfo)) q.classList.add("hidden");
         document.body.classList.remove("modal-open", "scf-open", "human-open", "hud-world-open");
         window.__stopFrames?.();
         document.querySelector(".map-card:not(.hidden) .map-x")?.click();
@@ -34617,7 +34618,11 @@ void main() {
       const sp = btn.querySelector("span"); sp.textContent = "Link copied"; btn.classList.add("done");
       clearTimeout(btn._t); btn._t = setTimeout(() => { sp.textContent = "Share"; btn.classList.remove("done"); }, 1800);
     };
-    const closeFrame = () => { caseFrame._url = null; caseFrame._anim?.cancel(); caseFrame.classList.add("hidden"); document.body.classList.remove("scf-open"); blankFrame(); }; // r137a: _anim = the grow-in from the place card
+    const closeNow = () => { caseFrame.style.removeProperty("visibility"); caseFrame._url = null; caseFrame._anim?.cancel(); caseFrame.classList.add("hidden"); document.body.classList.remove("scf-open"); blankFrame(); }; // r137a: _anim = the grow-in from the place card
+    // r233 (Daniel, Lottie: the pill transitions): a page closes into the intro's pill (the studio's paper comes in round
+    // it), and the pill opens onto the map again; the game has its own way out
+    const closeFrame = () => { if (!caseFrame.classList.contains("hidden") && window.czPill?.close(caseFrame, closeNow)) return; closeNow(); };
+    window.__czFrameClose = () => !caseFrame.classList.contains("hidden") && !!window.czPill?.close(caseFrame, closeNow);
     // a case page inside the map asks for the boarding pass ("Ready for boarding")
     window.addEventListener("message", (e) => {
       if (e.origin !== location.origin || !e.data || e.data.cz !== "boarding") return;
@@ -34625,7 +34630,7 @@ void main() {
       const fr = [...document.querySelectorAll("iframe")].find((f) => f.contentWindow === e.source);
       const ov = fr?.closest(".case-frame, .scf-modal");
       const close = () => {
-        if (!ov || ov === caseFrame) closeFrame();
+        if (!ov || ov === caseFrame) closeNow(); // (the pass's own fade has it: no pill on top)
         else { ov.classList.add("hidden"); document.body.classList.remove("scf-open"); window.__stopFrames?.(); }
         if (ov) for (const k of ["opacity", "transform", "transition"]) ov.style.removeProperty(k);
       };
@@ -34666,10 +34671,13 @@ void main() {
       fr.title = `${title} \u2014 Cromatic Studios`;
       caseFrame.classList.remove("hidden");
       document.body.classList.add("scf-open");
-      r137Grow();
+      grow();
     };
     // r137a (Daniel): opened from the map's place card, the page grows out of the card: it starts as the card's
     // rectangle, see-through, and opens to the full screen as it turns opaque (the card leaves its rect in _from)
+    // r233: or, with the site's pill transitions, as the intro's window does: the map closes into a pill on the studio's
+    // paper, the pill opens onto the page, which has been loading meanwhile (src/lottie-ui/pill.js)
+    const grow = () => { if (window.czPill?.open(caseFrame, r137Grow)) { caseFrame._from = null; return; } r137Grow(); };
     const r137Grow = () => {
       const from = caseFrame._from; caseFrame._from = null;
       if (!from || performance.now() - from.t > 900 || !caseFrame.animate || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -34695,7 +34703,7 @@ void main() {
       if (!fr.srcdoc) fr.srcdoc = steamCaseHtml.split("<\\/script>").join("</" + "script>");
       caseFrame.classList.remove("hidden");
       document.body.classList.add("scf-open");
-      r137Grow(); // r137a
+      grow(); // r137a (r233: the pill)
       steamSeen = true;
     };
     const openSteamFeed = () => {

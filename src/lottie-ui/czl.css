@@ -38,3 +38,9 @@ body.czl-clouds .nav2-ui { opacity: 0 !important; pointer-events: none !importan
 @media (prefers-reduced-motion: reduce) {
   .flight-end.fe-in b, .flight-end.fe-in b .fe-l, .flight-end.fe-in span, .flight-end.fe-in button, .flight-end.fe-out { animation: none; }
 }
+
+/* ---- 3 · the pill transitions (pill.js, pt.css) ---- */
+/* the window over a case page's frame (z 95) and the map's interface */
+.czl-window { z-index: 96; }
+body.czl-win .nav2-ui { opacity: 0 !important; pointer-events: none !important; }
+/* the map to the website: pt.css (shared with every page of the website) */

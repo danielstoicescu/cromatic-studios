@@ -138,5 +138,19 @@
   "layers": 14,
   "frames": 300,
   "size": "420x150"
+ },
+ "window-desktop": {
+  "kb": 48.7,
+  "brKb": 1.9,
+  "layers": 5,
+  "frames": 59,
+  "size": "1440x900"
+ },
+ "window-phone": {
+  "kb": 49.1,
+  "brKb": 1.9,
+  "layers": 5,
+  "frames": 59,
+  "size": "390x844"
  }
 }
