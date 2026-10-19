@@ -1,0 +1,38 @@
+<!doctype html>
+<!-- Cromatic · the site's Lottie layer: a bare stage for the renders. A still of the site under (bg), the piece on top,
+     at the place and size the site gives it (x, y, w in CSS px; or full screen with "slice"), drawn by lottie-web's
+     canvas renderer (the worker build's own renderer, on the main thread here so a frame can be stepped exactly).
+     ?j=<json url>&bg=<image url>&x=&y=&w=&full=1 ; window.go(frame) ; window.layer(html) adds page markup over it -->
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#EEE7EC}
+#bg{position:fixed;inset:0;background:center/cover no-repeat}
+#lot{position:fixed;left:0;top:0}
+#lot canvas{display:block;width:100%;height:100%}
+#dom{position:fixed;inset:0}
+</style></head><body><div id="bg"></div><div id="lot"></div><div id="dom"></div>
+<script>
+const q = new URLSearchParams(location.search);
+if (q.get("bg")) document.getElementById("bg").style.backgroundImage = `url(${q.get("bg")})`;
+const s = document.createElement("script"); s.src = "/design/intro-lottie/_lib/lottie_light_canvas.min.js";
+s.onload = async () => {
+  const data = await (await fetch(q.get("j") + "?" + Date.now())).json();
+  window.data = data;
+  const lot = document.getElementById("lot"), full = q.get("full") === "1";
+  const dpr = devicePixelRatio || 1;
+  let w, h;
+  if (full) { w = innerWidth; h = innerHeight; lot.style.left = "0px"; lot.style.top = "0px"; }
+  else { w = +q.get("w") || data.w; h = w * data.h / data.w; lot.style.left = (+q.get("x") - w / 2) + "px"; lot.style.top = (+q.get("y") - h / 2) + "px"; }
+  lot.style.width = w + "px"; lot.style.height = h + "px";
+  window.anim = lottie.loadAnimation({ container: lot, renderer: "canvas", loop: false, autoplay: false, animationData: data, rendererSettings: { preserveAspectRatio: full ? "xMidYMid slice" : "xMidYMid meet", clearCanvas: true } });
+  anim.addEventListener("DOMLoaded", () => { window.ready = 1; });
+};
+document.head.appendChild(s);
+window.go = (frame) => { anim.goToAndStop(frame, true); };
+window.layer = (html, css) => { const d = document.getElementById("dom"); d.innerHTML = html; if (css) { const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st); } };
+// the page's CSS animations, stepped with the Lottie: every running animation set to t ms after its start
+window.cssAt = (ms) => { for (const a of document.getAnimations()) { a.pause(); a.currentTime = ms; } };
+// or each one from the frame it first appeared on (a class added later starts its own clock there)
+window.cssStep = (clock) => { for (const a of document.getAnimations()) { if (a.__c0 == null) a.__c0 = clock; a.pause(); a.currentTime = ((clock - a.__c0) * 1000) / 60; } };
+window.setBg = (u) => { document.getElementById("bg").style.backgroundImage = `url(${u})`; };
+</script></body></html>

@@ -1,0 +1,38 @@
+/* Cromatic Studios · the site's Lottie layer (r231): the canvases the shared player draws in, and the page's own half of
+   each piece (the parts that are words and buttons stay HTML: they read, translate and take a tap) */
+.czl { position: absolute; pointer-events: none; contain: strict; }
+.czl canvas { display: block; width: 100%; height: 100%; }
+.czl-full { position: fixed; inset: 0; }
+
+/* ---- 1 · the plane finale ---- */
+/* the clouds: over the map and its interface, under the end card (the confetti come from behind it) */
+.czl-finale { z-index: 60; }
+.czl-host { position: relative; }
+.czl-stamp { z-index: 3; }
+/* the stamp, still (reduced motion, or no player): the same green pill, its frame, its check, the word */
+.czl-stamp-still { position: absolute; z-index: 3; display: inline-flex; align-items: center; gap: 10px; height: 56px; padding: 0 22px 0 12px; box-sizing: border-box;
+  transform: translate(-50%, -50%) rotate(-8deg) scale(var(--czs, 1)); border: 3px solid #000; border-radius: 999px; background: #28C840; color: #000;
+  outline: 1.6px solid #000; outline-offset: 5.5px; font: 800 30px/1 CromaticSans, "Google Sans", system-ui, sans-serif; letter-spacing: .02em; white-space: nowrap; pointer-events: none; }
+.czl-stamp-still .czs-ck { width: 32px; height: 32px; border-radius: 50%; background: #000; position: relative; flex: 0 0 auto; }
+.czl-stamp-still .czs-ck::after { content: ""; position: absolute; left: 10px; top: 7px; width: 8px; height: 14px; border: solid #fff; border-width: 0 3.4px 3.4px 0; transform: rotate(40deg); }
+/* the end card comes in with the clouds clearing: the headline's pill lands (a squash, a spring), its letters rise one by
+   one, the line and the buttons follow; it leaves fast when the clouds come back for the way down */
+.flight-end.fe-pol { animation: none; }
+.flight-end.fe-wait { visibility: hidden; }
+.flight-end.fe-pol b { box-shadow: 0 2px 3px -1px rgba(42,33,24,.18), 0 10px 18px -8px rgba(42,33,24,.22), 0 26px 40px -22px rgba(42,33,24,.3); }
+.flight-end.fe-pol b .fe-l { display: inline-block; font-style: normal; }
+.flight-end.fe-in b { animation: feCard .66s cubic-bezier(.3,1.32,.6,1) both; }
+.flight-end.fe-in b .fe-l { animation: feRise .52s cubic-bezier(.18,1.16,.32,1) calc(.1s + var(--i) * 22ms) both; }
+.flight-end.fe-in span { animation: feUp .5s cubic-bezier(.22,1,.36,1) .34s both; }
+.flight-end.fe-in button { animation: feBtn .5s cubic-bezier(.34,1.56,.64,1) .46s both; }
+.flight-end.fe-in button + button { animation-delay: .53s; }
+.flight-end.fe-in button + button + button { animation-delay: .6s; }
+.flight-end.fe-out { animation: feOut .26s cubic-bezier(.55,0,.85,.35) both; pointer-events: none; }
+@keyframes feCard { 0% { transform: translateY(40px) scale(.42) rotate(-12deg); opacity: 0; } 18% { opacity: 1; } 62% { transform: translateY(-4px) scale(1.06, .95) rotate(-1deg); } 80% { transform: scale(.98, 1.02) rotate(-2.4deg); } 100% { transform: rotate(-2deg); } }
+@keyframes feRise { 0% { transform: translateY(.42em) scale(.94, 1.1); opacity: 0; } 30% { opacity: 1; } 100% { transform: none; opacity: 1; } }
+@keyframes feUp { 0% { transform: translateY(16px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+@keyframes feBtn { 0% { transform: translateY(14px) scale(.9); opacity: 0; } 100% { transform: none; opacity: 1; } }
+@keyframes feOut { 0% { opacity: 1; } 100% { transform: translateY(26px) scale(.94); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .flight-end.fe-in b, .flight-end.fe-in b .fe-l, .flight-end.fe-in span, .flight-end.fe-in button, .flight-end.fe-out { animation: none; }
+}

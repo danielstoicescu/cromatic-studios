@@ -1,0 +1,8 @@
+{
+  "name": "cromatic-lottie-ui",
+  "private": true,
+  "type": "module",
+  "description": "Generator for the Cromatic Studios site's Lottie layer (the pieces beyond the intro). It imports the intro's writer and type from design/intro-lottie/_source/lib, whose font libraries resolve from design/node_modules. node build.mjs",
+  "scripts": { "build": "node build.mjs" },
+  "dependencies": { "opentype.js": "2.0.0", "wawoff2": "2.0.1" }
+}

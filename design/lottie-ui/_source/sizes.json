@@ -1,0 +1,30 @@
+{
+ "stamp-en": {
+  "kb": 24.1,
+  "brKb": 2.3,
+  "layers": 14,
+  "frames": 46,
+  "size": "393x214"
+ },
+ "stamp-ro": {
+  "kb": 24.5,
+  "brKb": 2.3,
+  "layers": 14,
+  "frames": 46,
+  "size": "408x214"
+ },
+ "finale-desktop": {
+  "kb": 145,
+  "brKb": 7.1,
+  "layers": 58,
+  "frames": 247,
+  "size": "1440x900"
+ },
+ "finale-phone": {
+  "kb": 96.9,
+  "brKb": 5.2,
+  "layers": 44,
+  "frames": 247,
+  "size": "390x844"
+ }
+}

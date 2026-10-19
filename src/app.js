@@ -33365,6 +33365,7 @@ void main() {
       }
       done.innerHTML = renderPass(t, ok ? "sent" : "fallback");
       wireActions(done, t);
+      if (ok) window.czFinale?.stamp(done); // r231 (Daniel, Lottie: the plane finale): BOARDED lands on the sent pass
       window.__savePass = () => savePass(t);
       if (!ok) {
         const body = [`Hi, I'm ${t.name}.`, "", `Booking: ${t.ref} \xB7 ${t.flight} \xB7 ${t.date}`, `Dreaming about: ${t.dreams.join(", ") || "-"}`, `Business: ${t.biz || "-"} (${t.klass})`, `Timeline: ${t.when || "-"}`, `Email: ${t.email}`, `Phone: ${t.phone || "-"}`, "", t.msg].join("\n");
@@ -35975,6 +35976,7 @@ void main() {
           // on the map, the pass goes in and the jet takes off
           if (mapMode && mapBoarding) {
             clearTimeout(boardTimer); clearInterval(boardTick);
+            window.czFinale?.prepare(); // r231: the clouds and the confetti, ready before wheels up
             let left = 3; // r200 (Daniel, shorter boarding): the sent pass holds 3 s before wheels up (was 6; it can be saved on the end card too)
             const paint = () => {
               const b = document.querySelector(".mapcard.contact .bp-go");
@@ -40219,8 +40221,9 @@ void main() {
           end = el("div", "flight-end", `<b>See you on board.</b><span>Your boarding pass is with us. We write back within one working day.</span><button class="fe-save">\u2B07 Save my boarding pass</button><button class="fe-replay">\u21BB Start over on the map</button><button class="fe-map">Back to the map</button>`);
           end.querySelector(".fe-save").onclick = () => window.__savePass?.();
           if (!window.__savePass) end.querySelector(".fe-save").remove();
+          window.czFinale?.endCard(end); // r231: it comes in as the clouds clear (Romanian for a Romanian visitor)
           document.querySelector(".jet-baam")?.classList.add("hidden");
-          end.querySelector(".fe-replay").onclick = () => { try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?r=" + Date.now().toString(36); };
+          end.querySelector(".fe-replay").onclick = () => { window.czFinale?.down(() => {}); try { history.scrollRestoration = "manual"; } catch {} window.scrollTo(0, 0); location.href = "/?r=" + Date.now().toString(36); };
           // r200 (Daniel, shorter boarding): the clouds stay behind the end card (the city no longer pops in under it
           // at the 6 s mark); "Back to the map" crossfades straight to where the visitor was before the boarding pass
           end.querySelector(".fe-map").onclick = () => {
@@ -40231,6 +40234,7 @@ void main() {
               if (back) mapUI?.camRestore?.(back, true);
               else { mapView.follow = false; mapView.focus = { x: JET_HOME.x - 120, z: JET_HOME.z }; mapView.yawGoal = 0.3; mapView.pitchGoal = 0.98; mapView.lookYGoal = 0; mapView.distGoal = innerWidth < 720 ? 5600 : 4600; mapView.distRate = 1; }
             };
+            if (window.czFinale?.down(go)) return; // r231: down through the clouds onto the map (they rise, the camera lands, they clear)
             if (matchMedia("(prefers-reduced-motion: reduce)").matches) { go(); return; }
             const x = el("div", "jet-xfade"); document.body.appendChild(x);
             requestAnimationFrame(() => x.classList.add("on"));
@@ -40323,6 +40327,7 @@ void main() {
       // a quick crossfade to the clouds: the skip, and the whole take-off with reduced motion
       function jetQuickCut() {
         if (jetFx.xf) return;
+        if (window.czFinale?.up()) { jetFx.xf = { el: el("i"), t: 0, cut: false, clouds: true }; return; } // r231: the skip goes through the clouds too
         const x = el("div", "jet-xfade"); document.body.appendChild(x);
         jetFx.xf = { el: x, t: 0, cut: false };
         requestAnimationFrame(() => x.classList.add("on"));
@@ -40330,7 +40335,7 @@ void main() {
       function jetQuickCutStep(dt) {
         const f = jetFx.xf, jet = worldRefs.jet; if (!f || !jet) return;
         f.t += dt;
-        if (!f.cut && f.t > 0.3) {
+        if (!f.cut && (f.clouds ? window.czFinale?.covered() || f.t > 2.5 : f.t > 0.3)) {
           f.cut = true; jetCineEnd();
           jet.group.visible = false; jet.glowM.opacity = 0; jetFx.speed = 0; jetFx.fov = null;
           jetCloudCover(true, 1);
@@ -40340,7 +40345,7 @@ void main() {
           mapUI.baam();
           f.el.classList.remove("on");
         }
-        if (f.t > 1) { f.el.remove(); jetFx.xf = null; }
+        if (f.t > 1 && f.cut) { f.el.remove(); jetFx.xf = null; }
       }
       // the jet's path from the start of the roll: a hard roll, then a steep climb
       function jetPathAt(T) {
@@ -40468,6 +40473,7 @@ void main() {
             const c = p.c;
             g.position.y = p.y;
             if (g.position.y > 280) jetCloudCover(true, dt);
+            if (g.position.y > 200) window.czFinale?.up(); // r231 (Lottie): the clouds close over the climb
             g.rotation.x = -Math.min(0.42, c * 0.6);
             g.rotation.z = Math.sin(Math.min(1, c / 1.6) * Math.PI) * 0.08;
             jetFx.speed = Math.max(0, 1 - c / 1.6);
@@ -41430,7 +41436,7 @@ void main() {
         const baam = () => {
           baamEl.classList.remove("hidden");
           baamEl.classList.remove("go"); void baamEl.offsetWidth; baamEl.classList.add("go");
-          ui.confetti?.(50, 45); setTimeout(() => ui.confetti?.(35, 55), 280); setTimeout(() => ui.confetti?.(65, 55), 520);
+          if (!window.czFinale?.active()) { ui.confetti?.(50, 45); setTimeout(() => ui.confetti?.(35, 55), 280); setTimeout(() => ui.confetti?.(65, 55), 520); } // r231: the clouds bring their own
           try { if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.([60, 40, 120]); } catch {}
           setTimeout(() => baamEl.classList.add("hidden"), 4600);
         };
