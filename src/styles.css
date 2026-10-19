@@ -2875,7 +2875,7 @@ body.kz-intro .topbar { opacity: 0; pointer-events: none; }
   display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 12px 26px -12px rgba(0,0,0,.5); transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
 .kz-skip:hover { transform: translateY(-2px) scale(1.04); background: #FED012; }
 .kz-skip.hidden { display: none; }
-body.kz-intro .kz-skip { z-index: 2147483002; } /* r184: above the opening's first line (.i4-pre) the page paints, which lets taps through now */
+body.kz-intro .kz-skip { z-index: 2147483002; } /* r184 (r223: the page without the loader): above everything while the intro is up */
 @media (max-width: 719px) { .kz-skip { right: 14px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); height: 44px; font-size: 14px; } }
 
 /* chapters: quiet grey placards with a colour edge, there if you want them */
@@ -3661,21 +3661,6 @@ body.map-mode .wt[data-scheme="gta2"] { display: none; }
 @keyframes svcIn { from { opacity: 0; transform: translateY(18px) scale(.86) rotate(-2deg); } to { opacity: 1; transform: none; } }
 @keyframes svcFloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -5px; } }
 .svc-hc:hover { filter: brightness(1.04); }
-/* r129: the brew before the intro: a Cromatic mug fills up while the city is built. Only transforms and
-   opacity animate, so it runs on the compositor and stays smooth while the main thread is busy */
-.kz-brew { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; align-content: center; gap: 22px; background: #f7f1e6; transition: opacity .45s ease; pointer-events: none; }
-.kz-brew.done { opacity: 0; }
-.kz-brew .kb-cup { position: relative; width: 120px; height: 104px; animation: kbBob 1.4s ease-in-out infinite; will-change: transform; }
-.kz-brew .kb-mug { position: absolute; left: 10px; top: 16px; width: 84px; height: 84px; box-sizing: border-box; border: 2px solid #141414; border-radius: 8px 8px 30px 30px; background: #f5c518; overflow: hidden; }
-.kz-brew .kb-fill { position: absolute; left: 0; right: 0; bottom: 0; height: 100%; background: #6b3a1f; transform: translateY(96%); animation: kbFill 1.15s cubic-bezier(.45,0,.2,1) forwards; will-change: transform; }
-.kz-brew .kb-star { position: absolute; inset: 0; display: grid; place-items: center; font: 600 26px/1 CromaticSans, sans-serif; color: #f7f1e6; mix-blend-mode: normal; }
-.kz-brew .kb-handle { position: absolute; left: 86px; top: 34px; width: 26px; height: 38px; border: 2px solid #141414; border-left: 0; border-radius: 0 20px 20px 0; background: transparent; }
-.kz-brew .kb-steam { position: absolute; top: 0; width: 4px; height: 14px; border-radius: 4px; background: #141414; opacity: 0; animation: kbSteam 1.2s ease-out infinite; }
-.kz-brew .kb-steam:nth-child(1) { left: 36px; } .kz-brew .kb-steam:nth-child(2) { left: 52px; animation-delay: .25s; } .kz-brew .kb-steam:nth-child(3) { left: 68px; animation-delay: .5s; }
-.kz-brew .kb-t { font: 600 11px/1 "JetBrains Mono", monospace; letter-spacing: .22em; text-transform: uppercase; color: #3b2b44; opacity: .7; }
-@keyframes kbFill { to { transform: translateY(18%); } }
-@keyframes kbBob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-6px) rotate(2deg); } }
-@keyframes kbSteam { 0% { opacity: 0; transform: translateY(8px); } 40% { opacity: .55; } 100% { opacity: 0; transform: translateY(-10px); } }
 /* r129: the place card: on the left, tall, the project's best photo on top, a tint of its colour */
 .map-card { background: color-mix(in srgb, var(--pc, #fbf7f2) 12%, #fbf7f2) !important; border: 1px solid #141414 !important; box-shadow: 0 4px 0 #141414, 0 30px 60px -30px rgba(40,20,40,.45) !important; padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; }
 .map-card .mcd-body { padding: 18px 20px 18px; overflow-y: auto; min-height: 0; }
@@ -4124,23 +4109,6 @@ body.scheme-sketch .map-dock-h b { position: relative; z-index: 0; }
 body.scheme-sketch .map-dock-h b::before { content: ""; position: absolute; inset: -5px -9px -4px -8px; z-index: -1; background: #ffd84a; transform: rotate(-2deg);
   -webkit-mask: var(--cr-pill) center / 100% 100% no-repeat; mask: var(--cr-pill) center / 100% 100% no-repeat; }
 body.scheme-sketch .map-street .hw-stripe { height: 8px !important; border-radius: 0 !important; -webkit-mask: var(--cr-pill) center / 100% 100% no-repeat; mask: var(--cr-pill) center / 100% 100% no-repeat; }
-/* r130h: the loading cup is the stage's own yellow cup, turning (a sprite strip of 36 frames) */
-/* r130i: the whole cup with its own soft shadow (frame wide enough not to cut it), turning at the wall's speed
-   (2.8 rad/s, one turn in 2.24 s) and with the wall's tilt; no bobbing, it sits like the cups do */
-.kz-brew .kb-cup.kb-3d { width: 200px; height: 200px; animation: none; }
-.kz-brew .kb-sprite { display: block; width: 200px; height: 200px; background-repeat: no-repeat; background-size: 4800% 100%; animation: kbSpin 2.244s steps(48) infinite; }
-@keyframes kbSpin { to { background-position: -9600px 0; } }
-/* r136c: the brewing cup is the first paint (no star, ever): the 3D cup's own 24-frame strip, inlined into the
-   HTML by build.mjs so it paints before any request; app.js adopts that element as the loader (no swap). Same
-   200px box as before, so "Brewing the city" stays put. */
-.kz-brew .kb-sprite.kb-cs { width: 176px; height: 176px; margin: 12px; background-image: url(/cup-spin.png); background-size: 2400% 100%; animation: none; position: relative; overflow: hidden; }
-/* r139i: the box keeps the strip only for its ::before to inherit; its own first frame is pushed out of the box, or
-   it showed through the turning cup (transparent PNG) as a still handle on the right */
-.kz-brew .kb-sprite.kb-cs { background-repeat: no-repeat; background-position: 0 -9999px; }
-/* r139g: the turning is a transform of the strip, on the compositor: the cup keeps turning while the main thread warms the city */
-.kz-brew .kb-sprite.kb-cs::before { content: ""; position: absolute; left: 0; top: 0; width: 2400%; height: 100%; background-image: inherit; background-size: 100% 100%; background-repeat: no-repeat; animation: kbSpin24 2.244s steps(24) infinite; will-change: transform; }
-@keyframes kbSpin24 { to { transform: translateX(-100%); } }
-@media (prefers-reduced-motion: reduce) { .kz-brew .kb-sprite.kb-cs::before { animation: none; } }
 /* r130k: Sketchbook: the DOM footprint goes (it was drawn over the houses); the crayon rings are on the ground now.
    Crayon swatches are scribbled in when they appear, left to right, and once more when you point at them. The
    pointer is a pencil. */

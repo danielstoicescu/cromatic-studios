@@ -38628,7 +38628,7 @@ void main() {
         // r156b: a resolution change asked for outside the frame (the opening's wall and reveal) lands here, and this frame
         // draws whatever the half-rate rule says: a resized canvas is blank until it is drawn (a frame of the cream ground)
         if (perf.dprPend != null) { renderer.setPixelRatio(perf.dprPend); renderer.setSize(window.innerWidth, window.innerHeight); perf.dprPend = null; onbSkip = true; }
-        if ((ONB_MODE || intro4Wall) && onbHalf && (onbSkip = !onbSkip)) { requestAnimationFrame(frame); return; } // r140: a slow phone: every other frame (the page's own scroll keeps the rest)
+        if (ONB_MODE && onbHalf && (onbSkip = !onbSkip)) { requestAnimationFrame(frame); return; } // r140: a slow phone: every other frame (the page's own scroll keeps the rest)
         if (cityCovered()) { prevT = now; requestAnimationFrame(frame); return; } // r139b
         if (introFreeze(now)) { camSnapNext = true; prevT = now; requestAnimationFrame(frame); return; } // r139g (r157: snap after)
         adaptResolution(now - prevT, now);
@@ -39091,7 +39091,7 @@ void main() {
           // r157 (Daniel: "the camera still turns at the start"): on ?map the first frame was solved before the car stood
           // in its place, and the camera then glided (and the settle nudge swung) into it while the cups let the city
           // through; now the first visible frame is solved again on the real car and the camera is put there at once
-          if (camSnapNext && !mapFirstSolved && BOOT_MODE === "map" && !mapView.follow && !mapNav.moving && !mapNav.place) { mapFirstSolved = true; const v = mapOpeningView(); mapView.tgt.set(v.t[0], 0, v.t[1]); mapView.dist = v.dist; mapView.yaw = v.yaw; mapView.pitch = v.pitch; mapView.distGoal = null; mapView.yawGoal = mapView.pitchGoal = null; mapSettle = 0; }
+          if (camSnapNext && !mapFirstSolved && BOOT_MODE !== "drive" && !mapView.follow && !mapNav.moving && !mapNav.place) { mapFirstSolved = true; const v = mapOpeningView(); mapView.tgt.set(v.t[0], 0, v.t[1]); mapView.dist = v.dist; mapView.yaw = v.yaw; mapView.pitch = v.pitch; mapView.distGoal = null; mapView.yawGoal = mapView.pitchGoal = null; mapSettle = 0; }
           mapSettleTick(); mapUI.update(dt, now); camPos.copy(mapView.pos); camTarget.copy(mapView.tgt);
           if (nav2?.on) nav2.camera(dt, camPos, camTarget); // nav2: the street view, blended with the satellite
         } // r142b: mapSettleTick
@@ -39500,9 +39500,10 @@ void main() {
       // r139p (Daniel: "the intro must not play more than once on the site"): it plays once per visit (6 h); after that,
       // and on every link into the map (?map, the website's "Ready to board" = ?map&boarding), the city opens directly
       var BOOT_BOARD = /[?&]boarding\b/.test(location.search); // r139p: arriving for the boarding pass: no welcome card over it
-      // r142: the new opening (sketch 04 of /onboarding/intro-lab/, the same engine, hosted in the page) plays where the
-      // kinetic intro did: on "/" once per visit, or with ?intro; ?intro=classic keeps the old one
-      var INTRO4 = false, intro4 = null, intro4SnapCb = null, intro4Drop = null, intro4Fin = null, intro4Wall = false;
+      // r223 (Daniel, the Lottie intro): the opening is the site's loader, src/intro/boot.js, inlined first thing in the
+      // page; it decides (first visit or ?intro: the opening; a return within 6 h or ?map: the pill alone; reduced motion:
+      // the pill, still) and this is its handle (null on a page without it: the single-file copy, ?drive)
+      var CZI = window.__czIntro || null;
       // r142b (Daniel): the first frame of the map, wherever it first appears (the opening's end, the cups-only bridge):
       // the car high in the frame with Two Minutes in it too, a little closer than before; on a phone the car sits
       // lower, clear of the welcome sheet. The camera looks north (yaw 0.3, the map's own look), so the car (north of
@@ -39568,8 +39569,7 @@ void main() {
         }
         return { t: [t.x, t.z], dist, yaw, pitch };
       }
-      try { if (BOOT_MODE === "intro") { const t0 = +localStorage.getItem("cz-intro-at") || 0; if (Date.now() - t0 < 6 * 3600e3 && !/[?&]intro\b/.test(location.search)) BOOT_MODE = "map"; else localStorage.setItem("cz-intro-at", String(Date.now())); } } catch {}
-      INTRO4 = BOOT_MODE === "intro" && !/[?&]intro=classic\b/.test(location.search) && typeof window.cromaticIntro4 === "function"; // r142
+      try { if (CZI && BOOT_MODE !== "drive") BOOT_MODE = CZI.mode === "full" ? "intro" : "map"; else if (BOOT_MODE === "intro") { const t0 = +localStorage.getItem("cz-intro-at") || 0; if (Date.now() - t0 < 6 * 3600e3 && !/[?&]intro\b/.test(location.search)) BOOT_MODE = "map"; else localStorage.setItem("cz-intro-at", String(Date.now())); } } catch {} // r223: the loader decided
       // r140: ?onb = the city inside /onboarding/ (a same-origin frame behind the page, driven by it: see onbCmd)
       var ONB_MODE = /[?&]onb\b/.test(location.search) && window.parent !== window, onbPaused = false, onbL = null, onbFrames = 0, onbPush = 1, onbHalf = false, onbSkip = false;
       if (ONB_MODE) document.documentElement.classList.add("onb");
@@ -41062,7 +41062,7 @@ void main() {
           setTimeout(() => rides.classList.add("hidden"), 220);
         };
         document.addEventListener("pointerdown", (e) => { if (!rides.classList.contains("hidden") && !e.target.closest(".map-rides, .map-ride")) rides.classList.add("hidden"); });
-        skip.onclick = () => { window.__czSkipWanted = true; kinetic?.finish?.(); mapEndIntro(); }; // r184: kept, if the intro is not ready to end yet
+        skip.onclick = () => { kinetic?.finish?.(); mapEndIntro(); }; // r223: the page without the loader
         const chips = dock.querySelector(".map-chips");
         // r130o: the bar scrolls sideways with a normal vertical wheel or trackpad gesture too
         // r148 (Daniel): smoothly (a goal the bar glides to), and only while it can still scroll that way (at either
@@ -41897,7 +41897,7 @@ void main() {
           document.body.classList.add("map-mode");
           rebuildGolden();
           mapUI.mark();
-          if (intro) { mapIntro = true; document.body.classList.add("kz-intro"); mapUI.skip.classList.remove("hidden"); document.querySelector(".i4-skip")?.remove(); } // r184: the app's Skip takes over from the page's
+          if (intro) { mapIntro = true; document.body.classList.add("kz-intro"); if (!CZI) mapUI.skip.classList.remove("hidden"); } // r223: the loader has its own Skip
           else { const wt0 = performance.now(); const wl = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - wt0 < 20000) return setTimeout(wl, 250); mapSettle = 90; if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI.welcome(true); }; setTimeout(wl, 1000); } // r139r: after the cups' reveal (r142b: a second, and the view settles on the car)
           try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map") + location.hash); } catch {} // r139p: a plain "/" stays plain
         } else {
@@ -42095,7 +42095,6 @@ void main() {
           if (!onbSnapCv) onbSnapCv = document.createElement("canvas");
           if (onbSnapCv.width !== src.width || onbSnapCv.height !== src.height) { onbSnapCv.width = src.width; onbSnapCv.height = src.height; }
           onbSnapCv.getContext("2d").drawImage(src, 0, 0);
-          if (intro4SnapCb) { const f = intro4SnapCb; intro4SnapCb = null; f(); } // r142
           if (ONB_MODE) window.parent.postMessage({ cz: "onb", ev: "snap" }, location.origin);
         } catch (e) {}
       }
@@ -42315,48 +42314,24 @@ void main() {
         camera.lookAt(onbC);
         camera.updateMatrixWorld();
       }
-      // r142: the opening's host on "/": the city is this page, so the engine's commands land on mapView and the
-      // scheme directly; the snapshot for the dissolve is taken after the draw; the wall of cups is the kinetic's bridge;
-      // the end is mapEndIntro (the welcome card's own rules), the UI having been built behind the wall
-      function intro4Start() {
-        const stage = document.createElement("div"); stage.className = "i4-host"; document.body.appendChild(stage);
-        const host = {
-          stage, reduced: matchMedia("(prefers-reduced-motion: reduce)").matches, isPhone: () => innerWidth < 760, warmBlocking: false,
-          carPos: () => [carPos.x, carPos.z], // the opening ends on the map where the car stands
-          send(o) {
-            if (o.op === "cam") { mapIdleAt = performance.now(); mapNav.moving = false; mapView.follow = false; mapView.focus = null; mapView.yawGoal = mapView.pitchGoal = mapView.distGoal = null; if (Array.isArray(o.t)) mapView.tgt.set(+o.t[0] || 0, 0, +o.t[1] || 0); for (const k of ["dist", "yaw", "pitch"]) if (typeof o[k] === "number") mapView[k] = o[k]; }
-            else if (o.op === "scheme") { const i = SCHEMES.findIndex((x) => x.id === o.id); if (onbWarm && i >= 0) onbWarm.cur = i; if (i >= 0 && i !== state.schemeIdx) { if (worldRefs.world.userData.fabricDone) applyScheme(i); else state.schemeIdx = i; } } // r153: before the city is built, just the choice (fabricReady applies it)
-          },
-          snap: () => new Promise((res) => { intro4SnapCb = () => res(onbSnapCv); onbSnapReq = true; setTimeout(() => { if (intro4SnapCb) { intro4SnapCb = null; res(null); } }, 400); }),
-          ready: introReady, // r153: the city built, linked and drawn (kzWarmStart): the engine holds its dissolve on it
-          warm: () => introReady.then(() => new Promise((res) => onbWarmAll(true, res, true))), // r153: the worlds warm once the city is ready, not under its build
-          // under the wall of cups the city draws every other frame and at fewer pixels: nobody sees it there
-          cups: ({ onDrop } = {}) => new Promise((res) => {
-            intro4Drop = onDrop;
-            let dprWas = null;
-            const wall = (on) => { intro4Wall = on; onbHalf = on; try { if (on) { dprWas = perf.dpr; const cap = Math.max(0.75, Math.min(perf.dpr, Math.sqrt(1.0e6 / (innerWidth * innerHeight)))); if (cap < perf.dpr) { perf.dpr = cap; perf.dprPend = cap; } } else if (dprWas != null && dprWas > perf.dpr) { perf.dpr = dprWas; perf.dprPend = dprWas; perf.t = performance.now() + 4000; } } catch (e) {} }; // r156b: applied in the frame
-            const done = () => { wall(false); res(); };
-            intro4Fin = done;
-            wall(true);
-            if (kinetic?.bridge) kinetic.bridge(); else done();
-            setTimeout(done, 8000);
-          }),
-          // the map's interface laid out once under the opaque ground (one frame, unseen): its reveal behind the wall
-          // then costs a fraction (fonts and pictures already decoded, layers already made)
-          prebuild: () => { try { document.body.classList.remove("kz-intro"); void document.body.offsetHeight; requestAnimationFrame(() => { if (intro4 && !intro4.done) document.body.classList.add("kz-intro"); }); } catch (e) {} },
-          endView: () => mapOpeningView(),
-          // the city shows under the words at no more than ~1.6 M pixels (it moves, nobody counts them); the adaptive
-          // resolution climbs back on its own once the opening is over and the frames prove easy
-          reveal: () => { document.body.classList.remove("kz-boot"); try { const cap = Math.min(perf.dpr, Math.max(1, Math.sqrt(1.6e6 / (innerWidth * innerHeight)))); if (cap < perf.dpr) { perf.dpr = cap; perf.dprPend = cap; perf.t = performance.now() + 20000; } } catch (e) {} }, // r156b: applied in the frame
-          ui: (on) => { if (on) { document.body.classList.remove("kz-intro"); mapUI?.skip.classList.add("hidden"); } },
-          skipView: () => { const v = mapOpeningView(); mapView.tgt.set(v.t[0], 0, v.t[1]); mapView.dist = v.dist; mapView.yaw = v.yaw; mapView.pitch = v.pitch; mapView.distGoal = null; },
-          end: () => { mapEndIntro(); setTimeout(() => stage.remove(), 1200); },
-          skipEnd: () => { introReady.then(() => { document.body.classList.remove("kz-boot"); mapEndIntro(); setTimeout(() => stage.remove(), 1200); }); }, // r153: a skip before the city is ready waits for it
-        };
-        intro4 = window.cromaticIntro4(host, {});
-        if (mapUI?.skip) mapUI.skip.onclick = () => { window.__czSkipWanted = true; intro4.skip(); };
-        intro4.start();
-        if (window.__czSkipWanted) intro4.skip(); // r184: the visitor asked to skip before the intro was running (the page's own Skip, or the app's)
+      // r223 (Daniel): the opening is the loader. It plays from the first paint while the city is built under it, on an
+      // opaque ground (kz-boot: introFreeze draws only the warm-up frames); the app tells it how far the boot is (progress,
+      // at its milestones) and when the city is ready (startKinetic). It says when the map starts to show through its last
+      // pill (reveal: the city draws from then on, at a capped resolution, and comes into focus) and when the map is the
+      // page (end: the map's interface and, a second later, the welcome card)
+      function introLoaderHooks() {
+        if (!CZI) return;
+        CZI.onReveal(() => {
+          document.body.classList.remove("kz-boot");
+          try { const cap = Math.min(perf.dpr, Math.max(1, Math.sqrt(1.6e6 / (innerWidth * innerHeight)))); if (cap < perf.dpr) { perf.dpr = cap; perf.dprPend = cap; perf.t = performance.now() + 20000; } } catch (e) {} // r156b: applied in the frame
+          startEntryPull(); // r155: the map comes into focus as the window opens
+        });
+        CZI.onEnd(() => { mapEndIntro(); kineticLater(); });
+      }
+      // r136c: the cups around the Olari house are the kinetic stage's own 3D cups (sprite strips); with the old intro
+      // gone that stage is no longer built at boot, so it is built once the map is up and the page is idle
+      function kineticLater() {
+        setTimeout(() => (window.requestIdleCallback || setTimeout)(() => { if (!kinetic) { try { kinetic = createKinetic(() => {}, null, { drop: true, lite: innerWidth < 760 }); } catch (e) {} } }, { timeout: 4000 }), 6000);
       }
       if (ONB_MODE) {
         window.__onb = onbCmd;
@@ -42396,57 +42371,27 @@ void main() {
         pct = Math.min(96, pct + 5 + Math.random() * 9);
         ui.setLoaderPct(pct);
       }, 60);
-      // r124: the intro is the loader. On "/" the kinetic type plays at once; on ?map the cups rush
-      // straight in. Either way the wall of cups holds until the world is ready, then lifts off it
+      // r124 (r223): the intro is the loader. The opening (or the pill, on a return) is on screen from the first paint
+      // (src/intro/boot.js); the city is built, linked and drawn under it, and then it opens onto the map
       const kzLoader = BOOT_MODE !== "drive";
-      var brewEl = null;
-      // r139g: the drive's own ending (the cups settle and drop); as the first cup lets go the map starts its pull-out
-      var kzOpts = INTRO4
-        ? { drop: true, lite: innerWidth < 760, settle: 700, obstacles: () => (intro4 ? intro4.obstacles() : []), onDrop: () => { startEntryPull(); try { intro4Drop?.(); } catch (e) {} } } // r142: the opening drives the camera; the standing cup is an obstacle
-        : { drop: true, lite: innerWidth < 760, onDrop: () => { startEntryPull(); if (mapIntro && BOOT_MODE !== "map") mapView.distGoal = innerWidth < 720 ? 6600 : 5400; } }; // r147: the cups-only bridge (?map) keeps the first frame: no pull-out
-      const kzEnd = () => { if (INTRO4 && intro4Fin) { const f = intro4Fin; intro4Fin = null; f(); } else mapEndIntro(); }; // r142
-      // r153: the opening no longer waits for the city: it starts the moment the bundle runs (its first beats are words
-      // on a plain ground) and the city builds, links and draws its first frames under them; this is the moment it is
-      // ready (the same gate that used to hold the whole opening back), which the engine awaits before the dissolve
+      // r153: the moment the city is ready (built, its programs linked, its first frames drawn)
       let introReadyRes = null; const introReady = new Promise((r) => (introReadyRes = r));
       if (kzLoader) {
-        window.__cupsHold = true;
         state.started = true;
         state.visited.add("start");
-        setMapMode(true, { intro: true, open: BOOT_MODE === "map" }); // r147: ?map (the cups-only bridge) opens on the first frame
+        setMapMode(true, { intro: true, open: true }); // r147 (r223: both boots open on the map's first frame, under the loader)
         ui.hideLoader();
-        // r129: a short brew first. One cup (the intro's own) fills up while the city is built and the
-        // shaders compile; the fill is a compositor animation, so it stays smooth while the main thread
-        // works. Then the kinetic type starts on a free thread and never stutters.
-        // r136c: the first paint (build.mjs) already is this cup, turning: the loader adopts that very element,
-        // so there is no swap, no jump and never a star. Only without it (an old cached page) is one made here.
-        try { kinetic = createKinetic(kzEnd, null, kzOpts); } catch (e) {}
-        const bootCup = document.querySelector(".boot.kz-brew");
-        if (bootCup) { bootCup.classList.remove("boot"); brewEl = bootCup; }
-        else {
-          brewEl = document.createElement("div");
-          brewEl.className = "kz-brew";
-          brewEl.innerHTML = `<div class="kb-cup kb-3d"><i class="kb-sprite kb-cs"></i></div><span class="kb-t">Brewing the city</span>`;
-          document.body.appendChild(brewEl);
-        }
-        // r153: the opening starts now (not after the city's warm-up): the page's own first line is already up
-        if (INTRO4 && !matchMedia("(prefers-reduced-motion: reduce)").matches) { try { intro4Start(); } catch (e) { console.error(e); } if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; } }
+        CZI?.progress(0.24); // the bundle has run
+        introLoaderHooks();
       }
-      const brewT0 = performance.now();
       let kineticStarted = false;
+      // r223: the city is ready: the loader may open onto it (on a page without the loader, the map shows at once)
       const startKinetic = () => {
         if (!kzLoader || kineticStarted) return;
-        const wait = 800 - (performance.now() - brewT0);
-        if (wait > 0 && brewEl) { setTimeout(startKinetic, wait); return; }
         kineticStarted = true;
-        // r139p: straight into the map: no cups, no finale (it used to play the cup wall and its fall on every ?map)
-        // r139r: the cups still bridge the loader and the map (no words): they fill the screen and fall to reveal it
-        if (BOOT_MODE === "map" && kinetic?.bridge && !matchMedia("(prefers-reduced-motion: reduce)").matches) { mapUI?.skip.classList.add("hidden"); kinetic.bridge(); if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; } return; }
-        if (BOOT_MODE === "map") { mapEndIntro(); if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; } return; }
-        if (!kinetic) kinetic = createKinetic(kzEnd, null, kzOpts);
-        if (INTRO4) { (window.__bootT ||= {}).ready = Math.round(performance.now()); if (intro4) introReadyRes?.(); else intro4Start(); if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; } return; } // r142 (r153: already running: the city is ready now)
-        kinetic.resume();
-        if (brewEl) { const b = brewEl; b.classList.add("done"); setTimeout(() => b.remove(), 600); brewEl = null; }
+        (window.__bootT ||= {}).ready = Math.round(performance.now());
+        introReadyRes?.();
+        if (CZI) CZI.ready(); else { mapEndIntro(); kineticLater(); }
       };
       // r139g: the intro starts only once everything it needs is ready, all of it behind the loader: the city's first
       // frames are drawn (textures, buffers and programs go up to the GPU there, not under the words: introFreeze),
@@ -42454,8 +42399,8 @@ void main() {
       // visible: a page opened in the background starts from the beginning when it is looked at
       const kzWarmStart = () => {
         const BT = (window.__bootT ||= {}), mk = (k) => () => { BT[k] = Math.round(performance.now()); }; BT.warmStart = Math.round(performance.now()); // r153: tests
-        const framesDrawn = new Promise((res) => { kzWarm.resolve = res; if (kzWarm.frames >= kzWarm.need) res(); }).then(mk("frames"));
-        const rtWarm = new Promise((res) => { const iv = setInterval(() => { if (!warmQueued) { clearInterval(iv); res(); } }, 40); }).then(mk("rt"));
+        const framesDrawn = new Promise((res) => { kzWarm.resolve = res; if (kzWarm.frames >= kzWarm.need) res(); }).then(mk("frames")).then(() => CZI?.progress(0.72)); // r223: the loader's progress
+        const rtWarm = new Promise((res) => { const iv = setInterval(() => { if (!warmQueued) { clearInterval(iv); res(); } }, 40); }).then(mk("rt")).then(() => CZI?.progress(0.8));
         // the programs link in parallel on the GPU process: wait until they really are linked (for the screen and for
         // the map's render target), or the first draw of each blocks on the link, after the reveal
         const linked = (async () => {
@@ -42467,7 +42412,7 @@ void main() {
         // the cups' own stage warms alongside (its porcelain programs link on the GPU process too: a link still running
         // under the words stalls the compositor for as long as it takes)
         const cupsWarm = (async () => { try { await kinetic?.warm?.(); } catch (e) {} })().then(mk("cups"));
-        linked.then(mk("linked"));
+        linked.then(mk("linked")).then(() => CZI?.progress(0.92));
         const timeout = new Promise((res) => setTimeout(res, 5000)).then(mk("timeout"));
         Promise.race([Promise.all([framesDrawn, rtWarm, linked, cupsWarm]), timeout]).then(() => {
           const go = () => { if (document.hidden) { document.addEventListener("visibilitychange", go, { once: true }); return; } startKinetic(); };
@@ -42478,7 +42423,7 @@ void main() {
       // ground meanwhile), so the first frame is the type, not a blank screen
       if (kzLoader) document.body.classList.add("kz-boot");
       const fabricReady = new Promise((res) => {
-        const go = () => { worldRefs.world.userData.buildFabric(); applyScheme(state.schemeIdx); (window.__bootT ||= {}).fabric = Math.round(performance.now()); res(); (window.requestIdleCallback || setTimeout)(mergeStatic, { timeout: 1500 }); }; // r198: then the batches
+        const go = () => { worldRefs.world.userData.buildFabric(); applyScheme(state.schemeIdx); (window.__bootT ||= {}).fabric = Math.round(performance.now()); CZI?.progress(0.5); res(); (window.requestIdleCallback || setTimeout)(mergeStatic, { timeout: 1500 }); }; // r198: then the batches (r223: the loader's progress)
         if (kzLoader) requestAnimationFrame(() => setTimeout(go, 30)); else { go(); }
       });
       Promise.all([fabricReady, Promise.race([Promise.all([document.fonts?.load?.("500 16px CromaticSans"), document.fonts?.load?.("800 16px CromaticSans")]).then(() => document.fonts?.ready), new Promise((r) => setTimeout(r, 1600))])]).then(() => {

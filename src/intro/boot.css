@@ -1,0 +1,39 @@
+/* Cromatic Studios · the opening (r223): the loader's stage, inlined in <head> by build/build.mjs with boot.js.
+   The ground is the opening's own first frame (the paper and its grid at the opening's scale, set by boot.js), so the
+   page paints it at once and the player takes over without a seam. */
+.czi { position: fixed; inset: 0; z-index: 2147482990; overflow: hidden; pointer-events: auto; background-color: #F2F2F2;
+  --czl: 1px; background-image: linear-gradient(90deg, #DCDCDC var(--czl), transparent var(--czl)), linear-gradient(#DCDCDC var(--czl), transparent var(--czl));
+  transition: opacity .6s ease; contain: strict; }
+/* the key light across the paper, as in the opening (the player draws its own on top: the same light, no seam) */
+.czi::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 95% at 12% -5%, rgba(255,255,255,.62) 0%, rgba(255,255,255,.12) 55%, rgba(255,255,255,0) 100%), linear-gradient(135deg, rgba(58,44,28,0) 45%, rgba(58,44,28,.07) 100%); }
+.czi-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; transition: opacity .09s ease; }
+.czi.czi-blink .czi-cv { opacity: 0; }
+/* the window opens in the player's own paper: the page's copy of it goes, so the city (below) shows through */
+.czi.czi-opening { pointer-events: none; background: none; }
+.czi.czi-opening::before { display: none; }
+.czi.czi-opening .czi-btn { opacity: 0; pointer-events: none; }
+.czi.czi-fade { opacity: 0; pointer-events: none; }
+.czi.czi-gone { visibility: hidden; }
+/* the still pill: reduced motion, or the player could not run (the Multiverse button's look, its ring standing still) */
+.czi-pill { position: absolute; left: 50%; top: 50%; translate: -50% -50%; border-radius: 999px; display: none; --czr: 7px;
+  background: linear-gradient(#fff, #fff) padding-box, conic-gradient(from 210deg, #FED012, #28C840, #119BFE, #B098C8, #F65342, #FED012) border-box;
+  border: var(--czr) solid transparent; box-shadow: 0 10px 26px -14px rgba(42,33,24,.45); }
+.czi.czi-still .czi-pill { display: block; }
+.czi.czi-still .czi-cv { display: none; }
+/* one button: the city's progress while it loads, then (first visit) "Skip intro"; the site's own Skip look */
+.czi-btn { position: absolute; right: 22px; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); height: 48px; padding: 0 20px; margin: 0;
+  border-radius: 999px; border: 1px solid #111; background: #fff; color: #111; font: 800 15px/1 CromaticSans, "Google Sans", system-ui, sans-serif;
+  display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 12px 26px -12px rgba(0,0,0,.5); cursor: default; white-space: nowrap;
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1), background-color .2s ease, opacity .3s ease; -webkit-tap-highlight-color: transparent; }
+.czi-btn:disabled { color: #111; opacity: 1; }
+.czi-btn .czi-p { font-variant-numeric: tabular-nums; min-width: 3.2ch; text-align: right; font-weight: 800; }
+.czi-btn .czi-t { font-weight: 700; }
+.czi.czi-loaded:not(.czi-can-skip) .czi-btn { opacity: 0; pointer-events: none; }
+.czi.czi-can-skip .czi-btn { cursor: pointer; animation: cziPop .45s cubic-bezier(.34,1.56,.64,1); }
+.czi.czi-can-skip .czi-btn .czi-t { font-weight: 800; }
+.czi.czi-can-skip .czi-btn:hover { transform: translateY(-2px) scale(1.04); background: #FED012; }
+.czi-btn:focus-visible { outline: 3px solid #119BFE; outline-offset: 2px; }
+@keyframes cziPop { 0% { transform: scale(.92); } 60% { transform: scale(1.05); } 100% { transform: none; } }
+@media (max-width: 719px) { .czi-btn { right: 14px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); height: 44px; font-size: 14px; padding: 0 16px; } }
+@media (prefers-reduced-motion: reduce) { .czi, .czi-cv, .czi-btn { transition: none; } .czi.czi-can-skip .czi-btn { animation: none; } }

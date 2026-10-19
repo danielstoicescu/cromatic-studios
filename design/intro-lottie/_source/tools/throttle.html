@@ -1,0 +1,9 @@
+<!doctype html><meta charset="utf-8"><script>
+const work = `let s=0; const t0=performance.now(); for(let i=0;i<3e7;i++){s+=Math.sqrt(i)} ; postMessage(performance.now()-t0)`;
+window.run = async () => {
+  const t0 = performance.now(); let s = 0; for (let i = 0; i < 3e7; i++) s += Math.sqrt(i); const main = performance.now() - t0;
+  const w = new Worker(URL.createObjectURL(new Blob([work], { type: "text/javascript" })));
+  const worker = await new Promise((r) => (w.onmessage = (e) => r(e.data)));
+  return { main: Math.round(main), worker: Math.round(worker) };
+};
+</script>

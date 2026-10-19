@@ -1,0 +1,18 @@
+{
+ "desktop": {
+  "json": 502085,
+  "jsonBr": 19426,
+  "atlas": 67488,
+  "layers": 73,
+  "frames": 723,
+  "markers": "words@0+537 hold@537+96 handoff@633+54 short@693+27"
+ },
+ "phone": {
+  "json": 495589,
+  "jsonBr": 19490,
+  "atlas": 52024,
+  "layers": 74,
+  "frames": 723,
+  "markers": "words@0+537 hold@537+96 handoff@633+54 short@693+27"
+ }
+}

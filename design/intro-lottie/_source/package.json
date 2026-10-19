@@ -1,0 +1,8 @@
+{
+  "name": "cromatic-intro-lottie",
+  "private": true,
+  "type": "module",
+  "description": "Generator for the Cromatic Studios opening as Lottie (phase 1 prototypes). node build.mjs",
+  "scripts": { "build": "node build.mjs" },
+  "dependencies": { "opentype.js": "2.0.0", "wawoff2": "2.0.1" }
+}

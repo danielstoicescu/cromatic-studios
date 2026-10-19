@@ -1,0 +1,13 @@
+<!doctype html><html><head><style>
+@font-face{font-family:GS;src:url(google-sans-latin.woff2) format("woff2");font-weight:100 900}
+body{margin:0;background:#fff}#a{position:absolute;left:0;top:0;width:1440px;height:400px}
+.t{position:absolute;left:40px;font:600 112px/1 GS;letter-spacing:-.035em;color:rgba(0,0,0,.55);white-space:nowrap;font-kerning:normal}
+</style></head><body><div class="t" id="l1" style="top:0"></div><div class="t" id="l2"></div><div id="a"></div>
+<script src="lottie_svg.min.js"></script><script>
+const l1=document.getElementById("l1"),l2=document.getElementById("l2");l1.textContent="Nobody remembers a thumbnail.";l2.textContent="AVA To Ty That's yours.";
+document.fonts.load("600 112px GS").then(async ()=>{
+ for (const [el,by] of [[l1,150],[l2,150+123.2]]) { el.style.top="0px"; const span=document.createElement("span"); span.style.cssText="display:inline-block;width:1px;height:0;vertical-align:baseline"; el.appendChild(span); const b=span.getBoundingClientRect().top; el.style.top=(by-b)+"px"; }
+ const data=await (await fetch("parity.json")).json();
+ lottie.loadAnimation({container:document.getElementById("a"),renderer:"svg",loop:false,autoplay:false,animationData:data}).addEventListener("DOMLoaded",()=>{window.done=1});
+});
+</script></body></html>

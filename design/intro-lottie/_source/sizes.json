@@ -1,0 +1,56 @@
+{
+ "A/desktop": {
+  "raw": 252608,
+  "gz": 20785,
+  "br": 11332,
+  "layers": 14,
+  "paths": 335,
+  "frames": 600,
+  "markers": "words@0+525 hold@525+24 handoff@549+51"
+ },
+ "A/phone": {
+  "raw": 248039,
+  "gz": 20467,
+  "br": 11193,
+  "layers": 14,
+  "paths": 303,
+  "frames": 600,
+  "markers": "words@0+525 hold@525+24 handoff@549+51"
+ },
+ "B/desktop": {
+  "raw": 283690,
+  "gz": 22812,
+  "br": 12539,
+  "layers": 20,
+  "paths": 309,
+  "frames": 600,
+  "markers": "words@0+507 hold@507+24 handoff@531+69"
+ },
+ "B/phone": {
+  "raw": 283317,
+  "gz": 22810,
+  "br": 12526,
+  "layers": 20,
+  "paths": 309,
+  "frames": 600,
+  "markers": "words@0+507 hold@507+24 handoff@531+69"
+ },
+ "C/desktop": {
+  "raw": 264526,
+  "gz": 21762,
+  "br": 11775,
+  "layers": 18,
+  "paths": 303,
+  "frames": 600,
+  "markers": "words@0+516 hold@516+36 handoff@552+48"
+ },
+ "C/phone": {
+  "raw": 264264,
+  "gz": 21750,
+  "br": 11811,
+  "layers": 18,
+  "paths": 303,
+  "frames": 600,
+  "markers": "words@0+516 hold@516+36 handoff@552+48"
+ }
+}

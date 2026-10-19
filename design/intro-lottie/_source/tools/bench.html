@@ -1,0 +1,54 @@
+<!doctype html>
+<!-- Serve a folder holding: A, B, C (links to design/intro-lottie/*), lottie (lottie-web/build/player), dotlottie (@lottiefiles/dotlottie-web/dist); see tools/bench.mjs -->
+<!-- Cromatic opening (Lottie) · benchmark page: one direction, one player, optional replay of the site's boot long tasks.
+     ?d=A&ab=phone&p=svg|canvas|dl|dlw&jank=desk|p4x -->
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#EEE7EC}#lot{position:fixed;inset:0}#lot svg,#lot canvas{display:block}#cv{position:fixed;inset:0;width:100vw;height:100vh;display:block}</style>
+</head><body><div id="lot"></div><canvas id="cv"></canvas>
+<script type="module">
+const q = new URLSearchParams(location.search);
+const D = q.get("d") || "A", AB = q.get("ab") || "desktop", P = q.get("p") || "svg", J = q.get("jank") || "";
+const R = (window.__bench = { t0: performance.now(), raf: [], frames: [], ev: {}, err: null, jankMs: 0 });
+const mark = (k) => (R.ev[k] = Math.round(performance.now() - R.t0));
+const loadScript = (src) => new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+// the site's own boot, replayed: the long tasks measured on "/" (audit), [seconds after the intro starts, ms]
+const JANK = {
+  desk: [[0.05, 650], [0.9, 330], [1.22, 410], [1.8, 65], [2.04, 130]],
+  p4x: [[0.15, 2155], [2.67, 1042], [3.7, 853], [4.57, 121], [4.7, 109], [4.82, 50], [4.87, 74], [4.95, 63], [5.08, 215], [5.37, 148], [5.59, 146], [5.8, 454], [6.32, 78], [6.41, 147], [6.65, 140]]
+};
+const jank = () => { for (const [t, ms] of JANK[J] || []) setTimeout(() => { const e = performance.now() + ms; while (performance.now() < e) {} R.jankMs += ms; }, t * 1000); };
+let playing = false;
+(function loop(t) { if (playing) R.raf.push(+t.toFixed(2)); requestAnimationFrame(loop); })(performance.now());
+try {
+  const text = await (await fetch(`/${D}/${AB}.json`)).text(); mark("json");
+  const data = JSON.parse(text); mark("parsed"); R.op = data.op; R.fr = data.fr;
+  if (P === "svg" || P === "canvas") {
+    document.getElementById("cv").remove();
+    await loadScript(P === "svg" ? "/lottie/lottie_light.min.js" : "/lottie/lottie_light_canvas.min.js"); mark("player");
+    const anim = lottie.loadAnimation({ container: document.getElementById("lot"), renderer: P, loop: false, autoplay: false, animationData: data, rendererSettings: { preserveAspectRatio: "xMidYMid slice" } });
+    await new Promise((r) => anim.addEventListener("DOMLoaded", r)); mark("loaded");
+    anim.addEventListener("enterFrame", (e) => R.frames.push([+performance.now().toFixed(1), +e.currentTime.toFixed(2)]));
+    const done = new Promise((r) => anim.addEventListener("complete", r));
+    playing = true; mark("play"); jank(); anim.play(); await done; playing = false; mark("done");
+  } else if (P === "lw") {
+    // lottie-web's own worker build: the canvas renderer runs in a Worker on an OffscreenCanvas
+    document.getElementById("cv").remove();
+    await loadScript("/lottie/lottie_worker.min.js"); mark("player");
+    const anim = lottie.loadAnimation({ container: document.getElementById("lot"), renderer: "canvas", loop: false, autoplay: false, animationData: data, rendererSettings: { preserveAspectRatio: "xMidYMid slice", clearCanvas: true } });
+    await new Promise((r) => { anim.addEventListener("DOMLoaded", r); setTimeout(r, 1500); }); mark("loaded");
+    anim.addEventListener("enterFrame", (e) => R.frames.push([+performance.now().toFixed(1), +(+e.currentTime).toFixed(2)]));
+    const done = new Promise((r) => anim.addEventListener("complete", r));
+    playing = true; mark("play"); jank(); anim.play(); await done; playing = false; mark("done");
+  } else {
+    const m = await import("/dotlottie/index.js"); mark("player");
+    const Cls = P === "dlw" ? m.DotLottieWorker : m.DotLottie;
+    Cls.setWasmUrl(location.origin + "/dotlottie/dotlottie-player.wasm");
+    const dl = new Cls({ canvas: document.getElementById("cv"), data: text, autoplay: false, loop: false, layout: { fit: "cover", align: [0.5, 0.5] }, renderConfig: { autoResize: true, devicePixelRatio: devicePixelRatio } });
+    await new Promise((r, j) => { dl.addEventListener("load", r); dl.addEventListener("loadError", (e) => j(new Error("loadError " + (e.error && e.error.message)))); }); mark("loaded");
+    dl.addEventListener("frame", (e) => R.frames.push([+performance.now().toFixed(1), +(+e.currentFrame).toFixed(2)]));
+    const done = new Promise((r) => dl.addEventListener("complete", r));
+    playing = true; mark("play"); jank(); dl.play(); await done; playing = false; mark("done");
+  }
+  R.ok = true;
+} catch (e) { R.err = String(e && (e.stack || e.message) || e); }
+</script></body></html>

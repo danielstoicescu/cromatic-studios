@@ -1,0 +1,38 @@
+[
+ {
+  "id": "monument",
+  "name": "Cromatic"
+ },
+ {
+  "id": "nightlife",
+  "name": "Night Mode"
+ },
+ {
+  "id": "ghibli",
+  "name": "Ghib.ly"
+ },
+ {
+  "id": "sketch",
+  "name": "Sketchbook"
+ },
+ {
+  "id": "circuit",
+  "name": "Race Day"
+ },
+ {
+  "id": "orchid",
+  "name": "Sakura"
+ },
+ {
+  "id": "underwater",
+  "name": "Underwater"
+ },
+ {
+  "id": "gta2",
+  "name": "GTA 2"
+ },
+ {
+  "id": "riso",
+  "name": "Risograph"
+ }
+]

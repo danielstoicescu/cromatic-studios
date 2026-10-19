@@ -1,0 +1,10 @@
+import { Comp, rgb, group } from "/Users/daniel.stoic/cromatic-drive/design/intro-lottie/_source/lib/lottie.mjs";
+import { loadType } from "/Users/daniel.stoic/cromatic-drive/design/intro-lottie/_source/lib/type.mjs";
+import { block, wordGroup } from "/Users/daniel.stoic/cromatic-drive/design/intro-lottie/_source/lib/text.mjs";
+import fs from "fs";
+const T = await loadType();
+const C = new Comp({ w: 1440, h: 400, dur: 1, nm: "parity" });
+const ws = block(T, ["Nobody remembers a thumbnail.", "AVA To Ty That's yours."], { x: 40, y: 150, size: 112, leading: 1.1 });
+C.shape("text", ws.map((w) => wordGroup(T, w, 112, rgb("#d00000"), { wordT: { p: [w.lx, w.by] } })));
+fs.writeFileSync(process.argv[2] + "/parity.json", JSON.stringify(C.json()));
+console.log("ok", ws.lineWidths);

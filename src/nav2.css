@@ -310,6 +310,9 @@ body:is(.modal-open, .scf-open, .map-boarding, .menu-open) .n2-guide { opacity: 
 /* beta 3.48 r217 (Daniel, QA round 2): on a phone the cookie card sat at the top during the opening, over its headline:
    until the map shows it waits at the bottom, just above "Skip intro" */
 @media (max-width: 600px) { body.map-mode.kz-intro #cz-ck { top: auto; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
+/* r223 (Daniel, the Lottie intro): on a laptop the opening's words and pills use the left, the middle and the bottom;
+   the cookie card waits at the top right while it plays (never over the words) */
+@media (min-width: 601px) { body.map-mode.kz-intro #cz-ck, body.map-mode.kz-intro #cz-ck.on { left: auto; right: 22px; top: calc(22px + env(safe-area-inset-top, 0px)); bottom: auto; transform: none; } }
 /* beta 3.46 r215 (Daniel, QA pass): on a first visit the cookie card came up over the welcome card (on a laptop over its
    start buttons, on a phone over its title); it now waits while the welcome card is open and shows once it closes */
 body.nav2:not(.kz-intro):not(.ck-welcome):has(.map-welcome:not(.hidden)) #cz-ck { opacity: 0 !important; pointer-events: none !important; }
