@@ -18,6 +18,8 @@ const s = document.createElement("script"); s.src = "/design/intro-lottie/_lib/l
 s.onload = async () => {
   const data = await (await fetch(q.get("j") + "?" + Date.now())).json();
   window.data = data;
+  // a piece with the worlds' pictures: the intro's atlas (?atlas=url)
+  if (q.get("atlas")) for (const a of data.assets || []) if (a.p) { a.p = q.get("atlas"); a.u = ""; a.e = 0; }
   const lot = document.getElementById("lot"), full = q.get("full") === "1";
   const dpr = devicePixelRatio || 1;
   let w, h;

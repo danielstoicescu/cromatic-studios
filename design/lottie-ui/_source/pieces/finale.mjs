@@ -4,6 +4,7 @@
 //   finale  · the clouds: a deck of clouds the camera climbs through as the jet goes in (markers in, reveal), the
 //             confetti in the brand's shapes behind the end card as the sky clears; and the way back down (down, up)
 import { Comp, group, rect, ellipse, fill, stroke, rgb, E, prop, path, roundRect, pathProp, f, rng, C, clean, RISE, softShadow, shOff, shO, sheen, line, capH, unionOutline, starPath, checkPath, confetti, LILAC, SHADOW, gfill } from "../lib/ui.mjs";
+import { gridPaper } from "../../../intro-lottie/_source/lib/kit.mjs";
 
 /* ======================= the stamp ======================= */
 export const STAMP_TEXT = { en: "BOARDED", ro: "ÎMBARCAT" };
@@ -127,7 +128,15 @@ export function buildFinale(T, ab) {
       group("shadow 1", [...b.shapes(), fill(rgb(SHADOW), 9)], { p: [5 * U, 13 * U] })
     ], { parent: nul, ip: t0, op: t9 + 1 });
   }
+  // r232b (Daniel: "pause the 3D city while the clouds cover the screen"): above the clouds is the studio's own paper (the
+  // intro's ground: its grid and its key light), opaque from the moment the clouds cover the screen on the way up to the
+  // moment they cover it again on the way down; the city under it rests meanwhile (czFinale.hold)
+  Cm.shape("sky · key light", [
+    group("light", [rect([W * 1.2, H * 1.2], [W / 2, H / 2]), gfill({ type: 2, s: [W * 0.12, -H * 0.05], e: [W * 0.95, H * 0.85], stops: [[0, "#ffffff"], [1, "#ffffff"]], alphas: [[0, 0.62], [0.55, 0.12], [1, 0]] })]),
+    group("falloff", [rect([W * 1.2, H * 1.2], [W / 2, H / 2]), gfill({ type: 1, s: [W * 0.45, H * 0.4], e: [W, H], stops: [[0, "#3a2c1c"], [1, "#3a2c1c"]], alphas: [[0, 0], [1, 0.07]] })])
+  ], { ip: FT.IN1, op: FT.DOWN1 });
+  gridPaper(Cm, { ip: FT.IN1, op: FT.DOWN1, nm: "sky · paper", pitch: ph ? 30 : 34 });
   const json = Cm.json();
-  json.cromatic = { piece: "finale", markers: { in: [FT.IN0, FT.IN1], reveal: [FT.IN1, FT.REV1], down: [FT.DOWN0, FT.DOWN1], up: [FT.DOWN1, FT.UP1] }, card: FT.CARD };
+  json.cromatic = { piece: "finale", sky: [FT.IN1, FT.DOWN1], markers: { in: [FT.IN0, FT.IN1], reveal: [FT.IN1, FT.REV1], down: [FT.DOWN0, FT.DOWN1], up: [FT.DOWN1, FT.UP1] }, card: FT.CARD };
   return json;
 }

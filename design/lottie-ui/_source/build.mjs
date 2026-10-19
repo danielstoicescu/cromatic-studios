@@ -8,6 +8,7 @@ import zlib from "zlib";
 import { fileURLToPath } from "url";
 import { loadType } from "./lib/ui.mjs";
 import { buildStamp, buildFinale, FINALE_AB } from "./pieces/finale.mjs";
+import { buildDrive, buildViews, buildPlaces, buildWorlds, buildGame } from "./pieces/onboarding.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const SITE = path.resolve(here, "../../../src/lottie-ui"), DESIGN = path.resolve(here, "..");
@@ -20,7 +21,17 @@ const PIECES = {
     "stamp-ro": () => buildStamp(T, "ro"),
     "finale-desktop": () => buildFinale(T, FINALE_AB.desktop),
     "finale-phone": () => buildFinale(T, FINALE_AB.phone)
-  }
+  },
+  "2-onboarding": Object.fromEntries(["light", "dark"].flatMap((th) => [
+    [`onb-drive-keys-${th}`, () => buildDrive(T, { theme: th, mode: "keys" })],
+    [`onb-drive-stick-${th}`, () => buildDrive(T, { theme: th, mode: "stick" })],
+    [`onb-views-key-${th}`, () => buildViews(T, { theme: th, key: true })],
+    [`onb-views-tap-${th}`, () => buildViews(T, { theme: th, key: false })],
+    [`onb-places-${th}`, () => buildPlaces(T, { theme: th })],
+    [`onb-worlds-${th}`, () => buildWorlds(T, { theme: th })],
+    [`onb-game-${th}-en`, () => buildGame(T, { theme: th, lang: "en" })],
+    [`onb-game-${th}-ro`, () => buildGame(T, { theme: th, lang: "ro" })]
+  ]))
 };
 const sizes = {};
 fs.mkdirSync(SITE, { recursive: true });

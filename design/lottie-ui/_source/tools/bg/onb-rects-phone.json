@@ -1,0 +1,36 @@
+{
+ "drive": {
+  "x": 206,
+  "y": 563.4140625,
+  "w": 346,
+  "name": "Cromatic · onboarding · drive (stick) · light",
+  "th": "light"
+ },
+ "views": {
+  "x": 206,
+  "y": 563.4140625,
+  "w": 346,
+  "name": "Cromatic · onboarding · Street or Bird's eye · light",
+  "th": "light"
+ },
+ "places": {
+  "x": 206,
+  "y": 563.4140625,
+  "w": 346,
+  "name": "Cromatic · onboarding · tap a place · light",
+  "th": "light"
+ },
+ "game": {
+  "x": 206,
+  "y": 555.828125,
+  "w": 346,
+  "name": "Cromatic · onboarding · the arcade · light · en",
+  "th": "light"
+ },
+ "worlds": {
+  "x": 0,
+  "y": 0,
+  "w": 0,
+  "name": null
+ }
+}

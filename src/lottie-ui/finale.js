@@ -73,7 +73,9 @@
   var ready = function () { return !!fin && !L.rm(); };
   var prepare = function () {
     if (L.rm() || finP) return finP;
-    finP = L.mount("finale-" + (phone() ? "phone" : "desktop"), { full: true, cls: "czl-finale" }).then(function (p) { fin = p; return p; });
+    // in the map's interface layer (.ui-root, its own stacking context): over the top bar and the map's buttons, under
+    // the end card (z 61) that comes in with the clouds
+    finP = L.mount("finale-" + (phone() ? "phone" : "desktop"), { full: true, cls: "czl-finale", host: document.querySelector(".ui-root") || document.body }).then(function (p) { fin = p; return p; });
     return finP;
   };
   var reveal = function () {
@@ -107,16 +109,21 @@
     if (L.ro()) el.setAttribute("lang", "ro");
     el.classList.add("fe-pol");
     if (state === "in" || state === "covered") { el.classList.add("fe-wait"); card = el; if (state === "covered") reveal(); }
-    else el.classList.add("fe-in");
+    else { if (state === "reveal" || state === "sky") card = el; el.classList.add("fe-in"); } // (the clouds cleared without it: it comes in on its own)
   };
-  // "Back to the map": false if the app should crossfade as before
+  // "Back to the map": false if the app should crossfade as before. The city wakes up at once (hold() is false from here),
+  // under the paper; the camera lands (cut) once the card has gone, a good half second before the clouds open on it, so
+  // the first frame the visitor sees of the map is a fresh one
   var down = function (cut) {
     if (!ready() || (state !== "sky" && state !== "reveal")) return false;
     state = "down"; clearTimeout(cardT);
     if (card) { card.classList.remove("fe-in"); card.classList.add("fe-out"); }
+    var cutDone = false, doCut = function () { if (cutDone) return; cutDone = true; try { cut(); } catch (e) {} };
+    setTimeout(doCut, 280);
     fin.seg("down").then(function () {
-      try { cut(); } catch (e) {}
+      doCut();
       state = "upout";
+      document.body.classList.remove("czl-clouds"); // (the map's own controls come back as the clouds open)
       return fin.seg("up");
     }).then(function () {
       document.body.classList.remove("czl-clouds");
@@ -125,5 +132,8 @@
     return true;
   };
   var active = function () { return state !== "idle"; };
-  window.czFinale = { stamp: stamp, prepare: prepare, up: up, endCard: endCard, down: down, active: active, ready: ready, covered: function () { return covered; }, state: function () { return state; }, piece: function () { return fin; } };
+  // r232b (Daniel: pause the city under the clouds): true while the paper above the clouds hides the whole map (the
+  // reveal, once the end card is there, and the end card itself); the app skips its 3D work meanwhile, keeping its loop
+  var hold = function () { return (state === "reveal" || state === "sky") && !!card && card.isConnected && card.classList.contains("flight-end") && !window.__czNoHold; };
+  window.czFinale = { stamp: stamp, prepare: prepare, up: up, endCard: endCard, down: down, active: active, ready: ready, covered: function () { return covered; }, hold: hold, state: function () { return state; }, piece: function () { return fin; } };
 })();

@@ -3,7 +3,7 @@
    OffscreenCanvas and the city's work on the main thread cannot make it stutter. On the map the intro has usually loaded
    it already; anywhere else it is fetched once, the first time a piece is needed. The pieces' JSON (made by
    design/lottie-ui/_source) are listed by the build in window.__CZL_CFG = { player, j: { name: url } }.
-     czL.mount(name, { host, w, h, full, fit, cls })  -> Promise<piece | null>  (null: no player, no Worker, no data)
+     czL.mount(name, { host, w, h, full, fit, cls, assets })  -> Promise<piece | null>  (null: no player, no data)
        piece.seg("marker" | [a, b], loop) -> Promise (resolved when the segment ends), piece.last() (its last frame,
        still), piece.destroy(); piece.el is the canvas's wrapper (pointer-events: none)
      czL.rm()     reduced motion is asked for
@@ -50,6 +50,8 @@
     return Promise.all([player(), data(name)]).then(function (r) {
       var lib = r[0], d = r[1];
       if (!lib || !d) return null;
+      // pictures the piece shows (the worlds' previews): fetched by the worker, so an absolute address (its base is a blob)
+      if (o.assets) for (var i = 0; i < (d.assets || []).length; i++) { var a = d.assets[i]; if (a.p && !a.layers && o.assets[a.id]) { a.p = location.origin + o.assets[a.id]; a.u = ""; a.e = 1; } }
       var el = document.createElement("div");
       el.className = "czl" + (o.full ? " czl-full" : "") + (o.cls ? " " + o.cls : "");
       el.setAttribute("aria-hidden", "true");

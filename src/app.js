@@ -38634,6 +38634,7 @@ void main() {
       }
       function frameStep(now) {
         if (ONB_MODE && onbPaused) { prevT = now; requestAnimationFrame(frame); return; } // r140: no zone of /onboarding/ on screen
+        if (window.czFinale?.hold()) { prevT = now; requestAnimationFrame(frame); return; } // r232b (Daniel, Lottie: the city rests while the finale's paper and clouds hide it all; the loop stays, the 3D work does not; a resize waits for it)
         // r156b: a resolution change asked for outside the frame (the opening's wall and reveal) lands here, and this frame
         // draws whatever the half-rate rule says: a resized canvas is blank until it is drawn (a frame of the cream ground)
         if (perf.dprPend != null) { renderer.setPixelRatio(perf.dprPend); renderer.setSize(window.innerWidth, window.innerHeight); perf.dprPend = null; onbSkip = true; }

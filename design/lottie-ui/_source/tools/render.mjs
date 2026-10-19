@@ -7,13 +7,14 @@ import fs from "fs";
 import { execFileSync } from "child_process";
 const o = JSON.parse(process.argv[2]);
 const FF = "/Users/daniel.stoic/Library/Python/3.9/lib/python/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1";
-const VP = { desktop: { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }, phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 }, iphone: { viewport: { width: 390, height: 664 }, deviceScaleFactor: 2 }, pixel: { viewport: { width: 412, height: 915 }, deviceScaleFactor: 2 } }[o.vp || "desktop"];
+const VP = { desktop: { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }, phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 }, iphone: { viewport: { width: 390, height: 664 }, deviceScaleFactor: 2 }, pixel: { viewport: { width: 412, height: 839 }, deviceScaleFactor: 2 } }[o.vp || "desktop"];
 const br = await pw.chromium.launch({ args: ["--use-angle=metal"] });
 const p = await br.newPage(VP);
 p.on("pageerror", (e) => console.log("pageerror", e.message));
-const qs = new URLSearchParams({ j: o.j, ...(o.bg ? { bg: o.bg } : {}), ...(o.full ? { full: "1" } : { x: o.x, y: o.y, w: o.w }) });
+const qs = new URLSearchParams({ j: o.j, ...(o.bg ? { bg: o.bg } : {}), ...(o.atlas ? { atlas: o.atlas } : {}), ...(o.full ? { full: "1" } : { x: o.x, y: o.y, w: o.w }) });
 await p.goto(`http://127.0.0.1:8932/design/lottie-ui/_source/tools/stage.html?${qs}`);
 await p.waitForFunction(() => window.ready, null, { timeout: 15000 });
+await p.waitForTimeout(o.atlas ? 600 : 50); // (the pictures decode)
 if (o.dom) await p.evaluate(({ html, css }) => window.layer(html, css), o.dom);
 const dir = `/tmp/lui-r-${process.pid}`; fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
 let n = 0;

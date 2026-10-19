@@ -7,6 +7,8 @@
 /* ---- 1 · the plane finale ---- */
 /* the clouds: over the map and its interface, under the end card (the confetti come from behind it) */
 .czl-finale { z-index: 60; }
+/* (the map's driving controls sit outside the interface layer, over it: they wait for the clouds to open) */
+body.czl-clouds .nav2-ui { opacity: 0 !important; pointer-events: none !important; }
 .czl-host { position: relative; }
 .czl-stamp { z-index: 3; }
 /* the stamp, still (reduced motion, or no player): the same green pill, its frame, its check, the word */

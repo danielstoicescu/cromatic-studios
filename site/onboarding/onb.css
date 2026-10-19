@@ -957,3 +957,20 @@ html { scroll-behavior: smooth; }
 .zcard kbd.wide { min-width: 86px; font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
 .zcard .kor { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; opacity: .6; }
 @media (max-width: 759px) { .zcard .keys { gap: 8px 10px; margin-top: 16px; } .zcard kbd { min-width: 30px; height: 30px; font-size: 13px; } .zcard kbd.wide { min-width: 72px; } }
+
+/* r232 (Daniel, Lottie: /onboarding/): the explainers in the cards (src/lottie-ui/onb.js draws them with the site's Lottie
+   player, one screen before they come into view). The box keeps its place from the start (no jump when it arrives);
+   the drive card's keys are its stand-in: back only if the animation cannot be drawn (no player: .czl-fail) */
+.czl-x { position: relative; width: 100%; max-width: 420px; aspect-ratio: 420 / 168; margin: 16px 0 2px; }
+.czl-x[data-czl="worlds"], .czl-x[data-czl="game"] { aspect-ratio: 420 / 150; }
+.czl-x .czl { position: absolute; inset: 0; width: 100% !important; height: 100% !important; pointer-events: none; }
+.czl-x .czl canvas { display: block; width: 100%; height: 100%; }
+.czl-on .zcard .keys:has(+ .czl-x:not(.czl-fail)) { display: none; }
+.czl-x.czl-fail { display: none; }
+.z-worlds .czl-worlds { margin: 14px 0 0; max-width: 400px; }
+html:not(.czl-on) .czl-x { display: none; }
+@media (max-width: 759px) {
+  .czl-x { margin: 12px auto 0; }
+  /* the worlds' zone is full on a phone: its explainer stays on laptops and tablets */
+  .z-worlds .czl-worlds { display: none; }
+}
