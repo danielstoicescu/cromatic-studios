@@ -265,7 +265,13 @@
     steve: { skin: "#ecb497", top: "#7a1f2a", topKind: "varsity", inner: "#f0f0f0", sleeve: "long", sleeveCol: "#efe6d0", letter: "#efe6d0", pants: "#4a6890", shoe: "#f4f4f6", sole: "#b8b8c4", glove: "#7a4fe0", build: { sh: 1.1, arm: 1.12, leg: 1.1, waist: 1.3, chest: 1.12, sc: 1.14 } },
     dony: { skin: "#efbe9e", top: "#2c3c6c", topKind: "fleece", sleeve: "long", apron: "#b08a5a", pants: "#2e2e36", shoe: "#2a2a2a", sole: "#d8d8d8", glove: "#8a5530", build: { sc: 0.86, arm: 0.96 } },
     cristian: { skin: "#e9ab84", top: "#7a6c50", topKind: "henley", sleeve: "rolled", belt: "#3a2618", buckle: "#c9a640", pants: "#3e4048", shoe: "#4a3022", sole: "#1a120e", glove: "#2f6fe0", build: {} },
-    daniel: { skin: "#e7a57d", top: "#1fb0ba", topKind: "tee", sleeve: "short", stripe: "#fed012", belt: "#1c1820", buckle: "#c9ccd4", pants: "#2e3a62", shoe: "#f2f2f6", sole: "#9a9ab0", glove: "#fed012", build: {} }
+    daniel: { skin: "#e7a57d", top: "#1fb0ba", topKind: "tee", sleeve: "short", stripe: "#fed012", belt: "#1c1820", buckle: "#c9ccd4", pants: "#2e3a62", shoe: "#f2f2f6", sole: "#9a9ab0", glove: "#fed012", build: {} },
+    // beta 3.55 (Daniel: two new fighters, from their photos). Boomer, the cook (180 cm, sturdy, broad): a red and
+    // black buffalo-check flannel shirt with the sleeves rolled, tattoos on the forearms, a royal-blue chef's bib apron
+    // (no show's logo on it: a small pan of our own, in orange), dark trousers. Caius, the barista (190 cm, the tallest
+    // after Steve): a black ribbed zip knit open at the neck over a white tee, a thin silver pendant, dark trousers
+    boomer: { skin: "#e8b090", top: "#cc2a30", topKind: "buffalo", sleeve: "rolled", tattoo: true, apron: "#2a56c8", apronKind: "bib", apronMark: "#ff8a2a", pants: "#2a2a32", shoe: "#1c1c22", sole: "#3a3a42", glove: "#ff8a2a", build: { sc: 1.0, sh: 1.12, chest: 1.12, waist: 1.24, arm: 1.08, leg: 0.98 } },
+    caius: { skin: "#f0c2a2", top: "#1e1e24", topKind: "zipknit", inner: "#f2f0ea", sleeve: "long", pants: "#26262e", loose: 1.1, shoe: "#f2f2f4", sole: "#c8c8d0", glove: "#c9ccd4", build: { sc: 1.08, sh: 1.0, chest: 0.98, waist: 0.96, leg: 1.04 } }
   };
   // the canvas of one frame: colour, the order things were laid (z) and which form they belong to (group)
   function Fig(w, h) { this.w = w; this.h = h; this.c = new Uint32Array(w * h); this.z = new Uint16Array(w * h); this.g = new Uint8Array(w * h); this.n = 0; }
@@ -482,6 +488,15 @@
       pose({ hip: [-4, -44], neck: [-6, -71], head: [-4, -82], eF: [-4, -60], hF: [-16, -66], eB: [8, -60], hB: [16, -70], kF: [12, -22], fF: [22, 0], kB: [-14, -19], fB: [-24, 0], flex: 1.7, tw: -0.1 }),
       pose({ hip: [8, -46], neck: [18, -73], head: [22, -82], eF: [36, -72], hF: [55, -72], eB: [4, -62], hB: [10, -70], kF: [20, -25], fF: [28, 0], kB: [-12, -20], fB: [-26, 0], flex: 1.7, tw: 1 }),
       pose({ hip: [3, -47], neck: [9, -75], head: [12, -85], eF: [24, -66], hF: [32, -70], eB: [5, -60], hB: [13, -68], tw: 0.5 })],
+    // beta 3.55: Boomer: the pan pulled from behind his hip, raised over his head (leaning back), brought down at head
+    // height (leaning in), back to the guard. Caius: the portafilter drawn back (a side-arm throw), the throw, back
+    boomer: [pose({ hip: [-1, -47], neck: [-1, -75], head: [2, -86], eF: [2, -60], hF: [-8, -54], eB: [-4, -58], hB: [-10, -50], kF: [12, -25], fF: [19, 0], kB: [-11, -23], fB: [-19, 0], prop: "pan" }),
+      pose({ hip: [-3, -48], neck: [-7, -77], head: [-5, -88], eF: [0, -92], hF: [-6, -106], eB: [-10, -64], hB: [-14, -54], kF: [12, -25], fF: [20, 0], kB: [-12, -24], fB: [-21, 0], tw: 0.1, prop: "pan" }),
+      pose({ hip: [5, -45], neck: [15, -70], head: [19, -79], eF: [26, -78], hF: [36, -76], eB: [8, -60], hB: [14, -54], kF: [18, -24], fF: [27, 0], kB: [-12, -20], fB: [-24, 0], tw: 0.9, prop: "pan" }),
+      pose({ hip: [2, -47], neck: [8, -75], head: [11, -85], eF: [20, -64], hF: [26, -60], eB: [6, -60], hB: [12, -64], tw: 0.4, prop: "pan" })],
+    caius: [pose({ hip: [-2, -47], neck: [-4, -75], head: [-1, -86], eF: [-8, -66], hF: [-17, -72], eB: [6, -60], hB: [14, -66], kF: [12, -25], fF: [19, 0], kB: [-11, -23], fB: [-19, 0], tw: -0.1, prop: "portafilter" }),
+      pose({ hip: [4, -46], neck: [12, -74], head: [15, -84], eF: [28, -70], hF: [42, -68], eB: [4, -60], hB: [10, -66], kF: [16, -25], fF: [24, 0], kB: [-12, -21], fB: [-22, 0], tw: 0.9 }),
+      pose({ hip: [2, -47], neck: [7, -75], head: [10, -85], eF: [20, -64], hF: [26, -66], eB: [5, -60], hB: [13, -66], tw: 0.4 })],
     // beta 3.49: the charge (leaning in, fists clenched, the glasses catching the light), the beams (head forward, braced)
     dony: [pose({ hip: [-2, -46], neck: [1, -74], head: [4, -85], eF: [10, -58], hF: [6, -50], eB: [-4, -58], hB: [-8, -50], kF: [12, -24], fF: [19, 0], kB: [-11, -23], fB: [-19, 0] }),
       pose({ hip: [-4, -46], neck: [2, -74], head: [7, -84], eF: [12, -60], hF: [8, -52], eB: [-6, -58], hB: [-10, -50], kF: [12, -24], fF: [22, 0], kB: [-14, -22], fB: [-24, 0], tw: 0.3 }),
@@ -641,7 +656,16 @@
       hairline: [7.5, 10], thick: 0.4, back: 16, tex: "short",
       beardKind: "stubble", stubble: 0.12, beardTop: 17.5, mouth: "open", browCol: "#3a2a22",
       glasses: { kind: "round", wire: true, color: "#4a3e44", lens: [[14, 13.4, 2.7, 2.4], [19.7, 13.4, 1.9, 2.4]], glint: [[15, 12], [20, 12]], bridge: [[17, 13]] },
-      cap: { color: "#6a7040", band: "#8a9058", back: true, mesh: "#4e5432" } }
+      cap: { color: "#6a7040", band: "#8a9058", back: true, mesh: "#4e5432" } },
+    // beta 3.55, from their photos. Boomer: the long dark hair pulled back tight into a high top-knot with a stick through
+    // it, a full thick dark beard falling below the jaw, strong brows, a small hoop in the ear. Caius: blond hair swept
+    // back and to the side with some height, a light ginger-blond stubble beard and moustache, blue eyes, a slight smile
+    boomer: { skin: "#e8b090", hair: "#221610", hl: "#4a3426", beard: "#2a1c14", bhl: "#5a4030", rx: 1.02, jaw: 1.06, nose: 0.5,
+      hairline: [6.2, 9.2], thick: 0.45, back: 15, tex: "slick", bun: [10.5, 2.5, 3.6, 2.5], bunTop: true, bunStick: "#7a5230", earFree: true,
+      beardKind: "full", beardTop: 15.2, beardDrop: 3.4, mouth: "under", lips: "#c47a6a", brows: "heavy", earring: "#e8d8a0" },
+    caius: { skin: "#f0c2a2", hair: "#c8984e", hl: "#f0cf86", beard: "#a06a36", bhl: "#d29c62", rx: 0.98, jaw: 0.97, iris: "#3e78c0",
+      hairline: [6.6, 9.8], thick: 1.5, back: 17, tex: "wavy", blobs: [[13.5, 2.4, 8, 3], [18.5, 3.6, 4.2, 2.5], [7.5, 4.6, 3.4, 3.2]], browCol: "#9e7038",
+      beardKind: "stubble", stubble: 0.62, beardTop: 16.8, mouth: "smirk" } // a short ginger-blond beard, the skin under it
   };
   HEADSPEC["cristache+cig"] = Object.assign({}, HEADSPEC.cristache, { cig: true }); // beta 3.32: the same face, the cigarette in the mouth
   const HEAD_CACHE = {}; let NOPLANES = false;
@@ -703,6 +727,7 @@
         if (!(face(fx, fy) || ((kind === "full" || kind === "boxed" || kind === "fade" || (kind === "goatee" && fx > 15.4 && fx < 20.2)) && inPoly(jawOut, fx, fy)))) return;
         const cheek = (fx < 8.5 ? 10.5 : fx < 14 ? lerp(11.5, 17.2, (fx - 8.5) / 5.5) : 17.6) - lift;
         if (fy < cheek) return;
+        if (P.earFree && fx > 5.4 && fx < 10.2 && fy < 17.6) return; // beta 3.55 (Boomer): the hair pulled back, the ear clear of the beard
         const mouthHole = kind === "boxed" ? fx > 15.6 && fx < 19.4 && fy > 19.4 && fy < 21.6 : fx > 14.6 && fx < 20.4 && fy > 19.4 && fy < 21.6; // beta 3.31: in a boxed beard only the lips show
         if (mouthHole) return;
         if (fx > 20.6 && fy < 19) return; // the nose and the tip of the lip stay skin
@@ -792,7 +817,9 @@
       const c = buf[Y * W2 + X]; if (c == null || !face(fx, fy) || hairIn(fx, fy)) return;
       if (hairIn(fx, fy - 1 / K) && !(P.fem && fx > 17)) putH(X, Y, grain(X, Y, 5, 7) > 0.55 ? HR[3] : mix2(c, SK[4], 0.5));
     });
-    if (P.bun) { const [bx, by, brx, bry] = P.bun; each((X, Y, fx, fy) => { const d = ((fx - bx) / brx) ** 2 + ((fy - by) / bry) ** 2; if (d <= 1 && fy < 6) putH(X, Y, d > 0.55 ? HA[3] : (Math.floor(X / GR) + Math.floor(Y / GR)) % 3 ? HA[2] : HL[1]); }); } // the knot on top
+    if (P.bun) { const [bx, by, brx, bry] = P.bun; each((X, Y, fx, fy) => { const d = ((fx - bx) / brx) ** 2 + ((fy - by) / bry) ** 2; if (d <= 1 && fy < 6) putH(X, Y, P.bunTop ? (fy < by - bry * 0.35 && fx < bx + brx * 0.3 ? HR[1] : d > 0.6 || fy > by + bry * 0.3 ? HA[4] : HA[3]) : d > 0.55 ? HA[3] : (Math.floor(X / GR) + Math.floor(Y / GR)) % 3 ? HA[2] : HL[1]); }); // the knot on top (beta 3.55: a top-knot lit on top, no weave)
+      if (P.bunStick) { const sc2 = u32(P.bunStick); for (let q = -4.2; q <= 3.8; q += 1 / Math.max(1, K)) { const X = Math.floor((bx + q) * K), Y = Math.floor((by - 0.8 - q * 0.5) * K); if (X >= 0 && Y >= 0 && X < W2 && Y < H2) putH(X, Y, q > 3 ? u32("#e8d8b0") : sc2); } } } // beta 3.55 (Boomer): the stick through the knot, its pale end
+    if (P.earring) { const ec = u32(P.earring); put(7.4, 17.2, ec); if (K >= 1.3) put(7.9, 17.8, ec); } // beta 3.55: a small hoop under the lobe
     if (P.grey) each((X, Y) => { const i = Y * W2 + X; if (buf[i] === HA[2] && grain(X, Y, 13, 7) < P.grey) buf[i] = HL[1]; });
     // a cap, worn backwards: the crown over the hair, the strap's opening at the forehead, the peak behind
     if (P.cap) {
@@ -1068,6 +1095,8 @@
         if (L.topKind === "varsity" && seg === 1 && t > 0.82) return (far ? back : tone)(ramp(L.top), nx, ny); // the knit cuff
         if (seg === 1 && t > 0.8 && R === SK && !L.hands) return (far ? back : tone)(ramp(WRAP), nx, ny); // the tape up the wrist
         if (L.sleeve === "rolled" && seg === 1 && Math.abs(t - 0.4) < 0.06) return TOP[far ? 4 : 3]; // the rolled cuff
+        if (L.topKind === "buffalo" && R === SLV && !(L.sleeve === "rolled" && seg === 1 && Math.abs(t - 0.4) < 0.06)) { const cxx = Math.floor(px / 3) & 1, cyy = Math.floor(py / 3) & 1; return ramp(cxx && cyy ? "#1c1416" : cxx || cyy ? "#7a161c" : L.top)[clamp(toneOf(nx, ny) + (far ? 1 : 0), 0, 4)]; } // beta 3.55: Boomer's sleeves in the check
+        if (L.topKind === "zipknit" && R === SLV) return SLV[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (Math.floor(t * 14) % 2 && seg === 1 && t > 0.82 ? 1 : 0), 0, 4)]; // Caius's knit sleeves, a ribbed cuff
         if (L.topKind === "fleece" && R === TOP && R === SLV) { const fz = hash2(px * 7.3, py * 5.1); return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + (fz > 0.72 ? 1 : fz < 0.12 ? -1 : 0), 0, 4)]; } if (L.tattoo && R === SK && (seg === 1 ? t > 0.06 && t < 0.8 : t > sleeveTo + 0.04)) { const c = tattoo(seg + (far ? 2 : 0), t, nx, ny, far, SK[clamp(toneOf(nx, ny) + (far ? 1 : 0), 0, 4)]); if (c) return c; } // beta 3.38: tattoo sleeves, the upper arm below the sleeve and the forearm
         // beta 3.30: the muscle drawn in: the line between biceps and triceps, the deltoid's edge, the forearm's ridge; on a sleeve, the creases at the elbow
         let ex2 = 0;
@@ -1169,9 +1198,24 @@
       if (L.dogtags) { const cu = lerp(0.3, 0.55, clamp(v / 0.3, 0, 1)); if (v > 0.03 && v < 0.3 && Math.abs(u - cu) < 0.05 && (Math.floor(y) % 2 === 0)) return u32("#c9ccd4"); if (v >= 0.3 && v < 0.4 && u > 0.48 && u < 0.64) return u32(v < 0.33 ? "#f0f2f6" : "#9a9ca6"); }
       if (L.chain) { const cv = 0.1 + Math.abs(u - 0.55) * -0.06; if (u > 0.2 && u < 0.85 && Math.abs(v - (0.14 - Math.abs(u - 0.55) * 0.12)) < 0.022) return u32((Math.floor(x) % 2) ? L.chain : "#fff2b0"); }
       if (L.strap && Math.abs(u - lerp(-0.7, 0.9, clamp(v / 0.86, 0, 1))) < 0.14) return ramp(L.strap)[u < -0.3 ? 3 : (Math.floor(y) % 3 ? 1 : 2)]; // the tote bag's strap
-      if (L.apron && u > -0.05 && v > 0.1) return ramp(L.apron)[u < 0.12 ? 3 : Math.min(4, toneOf(nx, ny) + (Math.floor(x * 1.3 + y) % 6 === 0 ? 1 : 0))];
-      if (L.apron && v <= 0.1 && Math.abs(u - 0.25) < 0.08) return ramp(L.apron)[2]; // the neck strap
+      if (L.apronKind === "bib") { // beta 3.55: a bib apron (Boomer's, Caius's): the bib over the chest, the neck strap, a pocket, the straps (Caius), the tie at the waist (Boomer)
+        const AP = ramp(L.apron), inBib = u > -0.32 && v > 0.15 + Math.max(0, 0.4 - u) * 0.0 && (v > 0.3 || (u > 0.02 && u < 0.86));
+        if (L.apronStrap && Math.abs(u - lerp(0.05, -0.5, clamp((v - 0.05) / 0.6, 0, 1))) < 0.07 && v < 0.65) return ramp(L.apronStrap)[u < -0.3 ? 3 : 2];
+        if (v <= 0.16 && Math.abs(u - 0.3) < 0.06 || v <= 0.16 && Math.abs(u - 0.7) < 0.06) return AP[1]; // the neck strap
+        if (L.apronTie && v > 0.78 && v < 0.86 && u < -0.2) return ramp(L.apronTie)[u < -0.6 ? 3 : 1]; // the tie at the back of the waist
+        if (inBib && L.apronMark) { const col = Math.floor((u - 0.36) / 0.06), row = Math.floor((v - 0.27) / 0.035); if (row >= 0 && row < 4 && col >= 0 && col < 6 && [".##...", "####..", "######", ".##..."][row][col] === "#") return ramp(L.apronMark)[row === 0 ? 1 : 2]; } // our own small pan on the bib (no show's logo)
+        if (inBib) { if (u > 0.2 && u < 0.62 && v > 0.52 && v < 0.7) return AP[v < 0.55 ? 4 : Math.min(4, toneOf(nx, ny) + 1)]; return AP[clamp(toneOf(nx, ny) + (Math.abs(u + 0.3) < 0.04 || Math.abs(u - 0.88) < 0.04 ? 1 : 0), 0, 4)]; } // the pocket; the stitched edges
+      }
+      if (L.apron && L.apronKind !== "bib" && u > -0.05 && v > 0.1) return ramp(L.apron)[u < 0.12 ? 3 : Math.min(4, toneOf(nx, ny) + (Math.floor(x * 1.3 + y) % 6 === 0 ? 1 : 0))];
+      if (L.apron && L.apronKind !== "bib" && v <= 0.1 && Math.abs(u - 0.25) < 0.08) return ramp(L.apron)[2]; // the neck strap
       const k = L.topKind;
+      if (k === "buffalo") { // beta 3.55 (Boomer): a buffalo check: black where the bands cross, dark red on the bands, red
+        const t2 = toneOf(nx, ny), cxx = Math.floor(x / 3) & 1, cyy = Math.floor(y / 3) & 1; return ramp(cxx && cyy ? "#1c1416" : cxx || cyy ? "#7a161c" : L.top)[Math.min(4, t2)]; }
+      if (k === "zipknit") { // beta 3.55 (Caius): a black ribbed zip knit, the collar open over a white tee, a silver pendant, the zip
+        if (v < 0.24 && Math.abs(u - 0.56) < 0.2 * (1 - v / 0.24) + 0.03) { if (Math.abs(u - 0.56) < 0.035 && v > 0.13 && v < 0.19) return u32("#e8eaf0"); return ramp(L.inner)[Math.min(4, toneOf(nx * 0.4, ny))]; }
+        if (Math.abs(u - 0.56) < 0.03) return u32(Math.floor(y) % 2 ? "#a4a8b2" : "#6c707a"); // the zip
+        if (v < 0.07 && u > 0.2) return TOP[1]; // the collar's edge
+        return TOP[clamp(toneOf(nx, ny) + (Math.floor(x) % 3 === 0 && toneOf(nx, ny) < 3 ? 1 : 0), 0, 4)]; } // the ribs
       if (k === "plaid") { // a checked shirt: two sets of lines over the base
         const lx2 = Math.floor(x) % 5 === 0, ly2 = Math.floor(y) % 5 === 0, t2 = toneOf(nx, ny);
         if (v < 0.06 && u > 0.34 && u < 0.84) return tone(SK, nx, ny);
@@ -1268,7 +1312,8 @@
     poly(F, tp, torsoMat, 5);
     const sl = p.ball ? 0.45 : 1; // beta 3.45: in the somersault's tuck a skirt or an apron folds with the legs (short), not out like a flag
     if (L.legs === "skirt") { const SKR = ramp(L.skirt); poly(F, [off(hip, -hw1 - U, -3 * U), off(hip, hw1 + U, -3 * U), off(hip, hw1 + 6 * U * sl, 15 * U * sl), off(hip, -hw1 - 5 * U * sl, 15 * U * sl)], (x, y) => { const [u] = tloc(x, y); return SKR[u > 0.3 ? 2 : u > -0.4 ? 3 : 4]; }, 6); }
-    if (L.apron) { const AR = ramp(L.apron); poly(F, [off(hip, -U, -2 * U), off(hip, hw1 + 2 * U, -2 * U), off(hip, hw1 + 4 * U, 20 * U * sl), off(hip, U, 22 * U * sl)], (x, y) => AR[x > hip[0] + hw1 * 0.5 ? 1 : 2], 6); }
+    if (L.apron && L.apronKind === "bib") { const AR = ramp(L.apron); poly(F, [off(hip, -hw1 * 0.5, -3 * U), off(hip, hw1 + 2 * U, -3 * U), off(hip, hw1 + 4 * U, 30 * U * sl), off(hip, -hw1 * 0.5 - 2 * U, 31 * U * sl)], (x, y) => { const [u2] = tloc(x, y); const vv = (y - hip[1]) / (31 * U * sl); return AR[vv > 0.9 ? 4 : u2 > 0.5 ? 1 : u2 > -0.1 ? 2 : 3]; }, 6); } // beta 3.55: the bib apron's skirt to the knee
+    else if (L.apron) { const AR = ramp(L.apron); poly(F, [off(hip, -U, -2 * U), off(hip, hw1 + 2 * U, -2 * U), off(hip, hw1 + 4 * U, 20 * U * sl), off(hip, U, 22 * U * sl)], (x, y) => AR[x > hip[0] + hw1 * 0.5 ? 1 : 2], 6); }
     if (L.knot) { const kp = off(hip, hw1 * 0.75, -5 * U); blob(F, kp, 3.2 * U, 2.6 * U, (nx, ny) => TOP[toneOf(nx, ny)], 7); limb(F, [kp[0], kp[1] + U], [kp[0] + 1.5 * U, kp[1] + 6 * U], 1.6 * U, 1.2 * U, 0, 0.5, (nx, ny) => TOP[toneOf(nx, ny) + 1 > 4 ? 4 : toneOf(nx, ny) + 1], 7); }
     if (L.key) { const k = off(hip, hw1 * 0.6, 4 * U); blob(F, [k[0], k[1] + 6 * U], 1.6 * U, 3.2 * U, (nx, ny) => ramp("#ffd23a")[toneOf(nx, ny)], 7); blob(F, [k[0], k[1] + 1.5 * U], 1.2 * U, 1.4 * U, () => u32("#c9ccd4"), 7); }
     { // beta 3.12: the head's neck stands on the body's neck; the pose's head offset still tilts it a little
@@ -1299,6 +1344,13 @@
     } else if (prop === "cup") { // a takeaway cup
       poly(F, [Q(-2, -8), Q(4, -8), Q(3.5, -1), Q(-1.5, -1)], (x, y) => u32(y < hF[1] - 6.5 * U ? "#2a2a30" : x > hF[0] + 2 * U ? "#d8d4cc" : "#f4f2ec"), 20);
       poly(F, [Q(-1.6, -5.5), Q(3.6, -5.5), Q(3.4, -3.5), Q(-1.4, -3.5)], () => u32("#b07a46"), 21);
+    } else if (prop === "pan" || prop === "portafilter") { // beta 3.55: Boomer's frying pan, Caius's portafilter, held along the forearm
+      const e0 = T(p.eF), vx = hF[0] - e0[0], vy = hF[1] - e0[1], vl = Math.hypot(vx, vy) || 1, ux = vx / vl, uy = vy / vl, pan = prop === "pan";
+      const h0 = [hF[0] + ux * 3 * U, hF[1] + uy * 3 * U], h1 = [hF[0] + ux * (pan ? 11 : 7) * U, hF[1] + uy * (pan ? 11 : 7) * U];
+      limb(F, h0, h1, (pan ? 1.4 : 1.3) * U, (pan ? 1.2 : 1.3) * U, 0, 0.5, (nx, ny) => u32(ny < -0.2 ? "#5a5a66" : "#26262c"), 20); // the handle
+      const c = [h1[0] + ux * (pan ? 9 : 3) * U, h1[1] + uy * (pan ? 9 : 3) * U];
+      if (pan) blob(F, c, 9.2 * U, 9.2 * U, (nx, ny) => { const r = nx * nx + ny * ny; return u32(r > 0.72 ? (ny < 0 ? "#8a8a96" : "#3a3a44") : nx < -0.25 && ny < -0.25 && r < 0.3 ? "#9a9aa8" : r > 0.5 ? "#2a2a32" : "#1c1c22"); }, 21); // cast iron: the rim lit on top, a glint
+      else blob(F, c, 3.2 * U, 2.6 * U, (nx, ny) => u32(ny < -0.3 ? "#f2f4f8" : ny < 0.3 ? "#c4c8d2" : "#8a8e98"), 21); // the chrome basket
     } else if (prop === "horse") { // beta 3.49: Cristache's carved horse, held over his head between his hands
       const hB2 = T(p.hB), mx = (hF[0] + hB2[0]) / 2, my = Math.min(hF[1], hB2[1]); F.blit(HORSE.rows, HORSE.pal, Math.round(mx), Math.round(my - 1 * U), 0, [14, 23], 20);
     } else if (prop === "phone") { // beta 3.45: a phone held up, filming: its dark back, a light pixel of its screen's glow
@@ -1695,11 +1747,15 @@
     rares: { id: "rares", name: "RARE\u0218", role: "SPECIAL GUEST", special: "ANCHOR PUNCH", line: "NEVER LOSES HIS KEYS", speed: 1, power: 1 }, // beta 3.49: the flex and the big punch
     dony: { id: "dony", name: "DONY", role: "ROASTS THE COFFEE", special: "LENS LASER", line: "SMALL, QUICK, FRESHLY ROASTED", speed: 1.12, power: 1 }, // beta 3.49: two beams from his glasses (power was 0.92: he won 2% on the bench)
     iulica: { id: "iulica", name: "IULIC\u0102", role: "CREW", special: "TOTE SWING", line: "BRINGS THE ENERGY INTO THE FRAME", speed: 1.02, power: 1.02 },
-    maria: { id: "maria", name: "MARIA", role: "SPECIAL GUEST", special: "CURL CYCLONE", line: "SPINS FIRST, ASKS LATER", speed: 1.06, power: 0.92 } // beta 3.49: speed was 1.1
+    maria: { id: "maria", name: "MARIA", role: "SPECIAL GUEST", special: "CURL CYCLONE", line: "SPINS FIRST, ASKS LATER", speed: 1.06, power: 0.92 }, // beta 3.49: speed was 1.1
+    // beta 3.55 (Daniel): two more guests
+    // beta 3.55 (Daniel): two more guests, put mid-pack on the bench (Caius tall, so his reach is long: a slower walk, lighter blows, a slower CPU; Boomer heavy-handed)
+    boomer: { id: "boomer", name: "BOOMER", role: "SPECIAL GUEST - THE COOK", special: "PAN CLANG", line: "SERVES IT HOT", speed: 1, power: 1.16 },
+    caius: { id: "caius", name: "CAIUS", role: "SPECIAL GUEST - THE BARISTA", special: "PORTAFILTER", line: "PULLS A SHOT, THROWS THE HANDLE", speed: 0.94, power: 0.87 }
   };
   // the select grid: a small config. Both sides pick from it (Player 1, then the CPU); "random" is the "?" tile.
   // I O N stays the CPU's first choice
-  const GRID = { cols: 5, rows: 2, order: ["ion", "cristache", "rares", "iulica", "maria", "steve", "dony", "cristian", "daniel", "random"] }; // beta 3.12 (Daniel): I O N first, the "?" back
+  const GRID = { cols: 6, rows: 2, order: ["ion", "cristache", "rares", "iulica", "maria", "caius", "steve", "dony", "cristian", "daniel", "boomer", "random"] }; // beta 3.12 (Daniel): I O N first, the "?" back. beta 3.55: eleven and the "?", 6x2
   const FIGHTERS = GRID.order.filter((id) => id !== "random");
   const pickRandom = () => FIGHTERS[Math.floor(Math.random() * FIGHTERS.length)];
 
@@ -1751,10 +1807,13 @@
     maria: pose({ hip: [0, -52], neck: [0, -79], head: [3, -90], eF: [18, -72], hF: [30, -76], eB: [-14, -70], hB: [-26, -74], kF: [22, -54], fF: [46, -56], kB: [-4, -26], fB: [-4, 0] }),
     dony: pose({ hip: [0, -47], neck: [5, -75], head: [8, -86], eF: [20, -64], hF: [30, -74], eB: [4, -62], hB: [14, -70], tw: 0.6 }),
     cristian: pose({ hip: [-2, -47], neck: [1, -75], head: [4, -86], eF: [15, -68], hF: [16, -84], eB: [11, -66], hB: [21, -79] }),
-    iulica: pose({ eF: [18, -86], hF: [28, -102], eB: [-10, -86], hB: [-18, -102], tw: 0.7 })
+    iulica: pose({ eF: [18, -86], hF: [28, -102], eB: [-10, -86], hB: [-18, -102], tw: 0.7 }),
+    // beta 3.55: the two new guests in the back row: Boomer with the pan on his shoulder, Caius holding up a portafilter
+    boomer: Object.assign(pose({ hip: [0, -47], neck: [2, -75], head: [5, -86], eF: [12, -80], hF: [4, -90], eB: [-6, -58], hB: [2, -52], tw: 0.3 }), { prop: "pan" }),
+    caius: Object.assign(pose({ hip: [0, -47], neck: [3, -75], head: [6, -86], eF: [16, -76], hF: [20, -92], eB: [-4, -58], hB: [4, -52], tw: 0.4 }), { prop: "portafilter" })
   };
   // [id, x, feet y (game units), face, size, row (0 back, 1 middle, 2 front)]
-  const KEY_CAST = [["steve", 70, 176, 1, 0.9, 0], ["cristian", 318, 175, -1, 0.88, 0], ["iulica", 268, 172, -1, 0.84, 0], ["daniel", 118, 172, 1, 0.84, 0],
+  const KEY_CAST = [["steve", 70, 176, 1, 0.9, 0], ["cristian", 318, 175, -1, 0.88, 0], ["iulica", 268, 172, -1, 0.84, 0], ["daniel", 118, 172, 1, 0.84, 0], ["boomer", 160, 170, 1, 0.8, 0], ["caius", 226, 171, -1, 0.86, 0],
     ["cristache", 146, 192, 1, 1, 1], ["maria", 250, 194, -1, 1, 1], ["dony", 330, 198, -1, 1, 1], ["rares", 40, 198, 1, 1, 1], ["ion", 192, 214, 1, 1.3, 2]];
   // a rim of light: the figure's own edge (just inside its outline) lit on the side that faces a light
   function rimLight(c, colL, colR, kL = 0.6, kR = 0.55) {
@@ -1806,7 +1865,7 @@
     // 5. the people, back row first; each rimmed (the shop's warm light from the left, the sky's from the right)
     const cast = KEY_CAST.slice().sort((a, b) => a[5] - b[5]);
     for (const [id, gx, gy, face, size, row] of cast) steps.push(() => {
-      const f0 = drawFighter(id, KEY_POSES[id], id === "ion" ? null : null, null, { K: size, HK: HK * size * (row === 2 ? 1.08 : 1), w: Math.round(CW * size), h: Math.round(CH * size), ox: Math.round(OX * size), oy: Math.round(OY * size) });
+      const f0 = drawFighter(id, KEY_POSES[id], KEY_POSES[id].prop || null, null, { K: size, HK: HK * size * (row === 2 ? 1.08 : 1), w: Math.round(CW * size), h: Math.round(CH * size), ox: Math.round(OX * size), oy: Math.round(OY * size) });
       const f = rimLight(f0, row === 2 ? "#ffd27a" : "#ffb070", row === 2 ? "#9fe4ff" : "#c0a0ff", row === 2 ? 0.7 : 0.5, row === 2 ? 0.6 : 0.45);
       if (row === 0) grade(f, "#2a1a5a", 0.42); else if (row === 1) grade(f, "#2a1a5a", 0.16);
       const [c, x] = mk(WD, HD); x.save(); x.translate(Math.round(gx * RS), Math.round(gy * RS)); if (face < 0) x.scale(-1, 1); x.drawImage(f, -Math.round(OX * size), -Math.round(OY * size)); x.restore();
@@ -1836,8 +1895,10 @@
     if (Math.floor(t * 2) % 2 === 0) text(ctx, TOUCH ? COPY.tap : COPY.start, W / 2, 204, GOLD, { sc: 1, al: "c", sh: 1 });
   }
   // the grid's geometry, from GRID: tiles of 36 px faces (the middle of each 64 px portrait)
-  const TILE = 36, GAP = 5;
-  const tilePos = (i) => { const c = i % GRID.cols, r = Math.floor(i / GRID.cols), gw = GRID.cols * (TILE + 4) + (GRID.cols - 1) * GAP; return [Math.round(10 + (222 - gw) / 2) + c * (TILE + 4 + GAP) + 2, 34 + r * (TILE + 4 + GAP) + 2]; };
+  // beta 3.55 (eleven fighters and the "?"): the grid 6x2 across the top, the frames a pixel apart as the arcade's;
+  // under it the two sides' portraits at either end with the fighter under the cursor between them
+  const TILE = 36, GAP = 1, SEL_Y = 34, PORT_Y = 120;
+  const tilePos = (i) => { const c = i % GRID.cols, r = Math.floor(i / GRID.cols), pitch = TILE + 6 + GAP, gw = GRID.cols * pitch - GAP; return [Math.round((W - gw) / 2) + 3 + c * pitch, SEL_Y + r * pitch]; };
   function face(ctx, id, x, y, size, t, flip) {
     ctx.fillStyle = "#241d3d"; ctx.fillRect(x, y, size, size);
     ctx.fillStyle = "#2d2550"; for (let i = 0; i < size; i += 4) ctx.fillRect(x, y + i, size, 2);
@@ -1866,21 +1927,20 @@
     // the cursors' tags
     { const [x, y] = tilePos(S.p1); text(ctx, "1P", x + 2, y - 10 + (S.phase === "p1" ? Math.round(Math.sin(t * 8)) : 0), P1C, {}); }
     if (S.phase === "cpu") { const [x, y] = tilePos(S.cpu); text(ctx, "CPU", x + TILE - 1, y - 10 + Math.round(Math.sin(t * 8)), CPUC, { al: "r" }); }
-    // the two sides, big
-    const id1 = GRID.order[S.p1], id2 = S.phase === "cpu" ? GRID.order[S.cpu] : null;
-    frame(ctx, 238, 34, 64, P1C); face(ctx, id1, 238, 34, 64, t);
-    frame(ctx, 310, 34, 64, CPUC); if (id2) face(ctx, id2, 310, 34, 64, t, true); else { ctx.fillStyle = "#241d3d"; ctx.fillRect(310, 34, 64, 64); text(ctx, "CPU", 342, 62, "#5a4e7a", { al: "c" }); }
-    text(ctx, "VS", 306, 104, RED, { sc: 1, al: "c" });
-    text(ctx, id1 === "random" ? "RANDOM" : ROSTER[id1].name, 270, 104, P1C, { al: "c" });
-    if (id2) text(ctx, id2 === "random" ? "RANDOM" : ROSTER[id2].name, 342, 104, CPUC, { al: "c" });
+    // the two sides, big (beta 3.55: at either end under the grid, the one under the cursor described between them)
+    const id1 = GRID.order[S.p1], id2 = S.phase === "cpu" ? GRID.order[S.cpu] : null, PL = 12, PR = W - 12 - 64;
+    frame(ctx, PL, PORT_Y, 64, P1C); face(ctx, id1, PL, PORT_Y, 64, t);
+    frame(ctx, PR, PORT_Y, 64, CPUC); if (id2) face(ctx, id2, PR, PORT_Y, 64, t, true); else { ctx.fillStyle = "#241d3d"; ctx.fillRect(PR, PORT_Y, 64, 64); text(ctx, "CPU", PR + 32, PORT_Y + 28, "#5a4e7a", { al: "c" }); }
+    const nm = (id) => (id === "random" ? "RANDOM" : ROSTER[id].name);
+    text(ctx, nm(id1), W / 2 - 12, PORT_Y + 2, P1C, { al: "r" }); text(ctx, "VS", W / 2, PORT_Y + 2, RED, { al: "c" }); text(ctx, id2 ? nm(id2) : "?", W / 2 + 12, PORT_Y + 2, CPUC);
     // what the cursor is on
     const cur = S.phase === "p1" ? id1 : id2;
-    if (cur === "random") { text(ctx, "ANY FIGHTER, PICKED AT RANDOM", 12, 128, "#a99cc8"); text(ctx, "FEELING LUCKY?", 12, 142, "#ffffff"); }
-    else { const R = ROSTER[cur]; text(ctx, R.name + " - " + R.role, 12, 128, "#a99cc8"); text(ctx, "SPECIAL: " + R.special, 12, 142, "#ffffff"); text(ctx, R.line, 12, 154, "#7fd8ff"); }
+    if (cur === "random") { text(ctx, "ANY FIGHTER, PICKED AT RANDOM", W / 2, PORT_Y + 18, "#a99cc8", { al: "c" }); text(ctx, "FEELING LUCKY?", W / 2, PORT_Y + 30, "#ffffff", { al: "c" }); }
+    else { const R = ROSTER[cur]; text(ctx, R.role, W / 2, PORT_Y + 18, "#a99cc8", { al: "c" }); text(ctx, "SPECIAL: " + R.special, W / 2, PORT_Y + 30, "#ffffff", { al: "c" }); text(ctx, R.line, W / 2, PORT_Y + 42, "#7fd8ff", { al: "c" }); }
     const hint = S.phase === "p1" ? (TOUCH ? "TAP A FIGHTER, TAP AGAIN TO PICK" : "ARROWS TO CHOOSE - ENTER OR J TO PICK")
       : (TOUCH ? "TAP THE CPU, TAP AGAIN TO FIGHT - TAP 1P TO GO BACK" : "ARROWS TO CHOOSE - ENTER OR J TO FIGHT - K BACK");
-    text(ctx, hint, W / 2, 176, "#ffffff", { al: "c" });
-    if (!TOUCH) text(ctx, "ARROWS/WASD MOVE - J PUNCH - K KICK - L SPECIAL", W / 2, 194, "#a99cc8", { al: "c" });
+    text(ctx, hint, W / 2, 193, "#ffffff", { al: "c" });
+    if (!TOUCH) text(ctx, "ARROWS/WASD MOVE - J PUNCH - K KICK - L SPECIAL", W / 2, 204, "#a99cc8", { al: "c" });
   }
   function drawVS(ctx, t, me, k, cpu = "ion") {
     stripes(ctx, t * 3, "#120c24", "#1d1540");
@@ -1997,6 +2057,11 @@
       whistle: () => tone("triangle", 1900, 260, 1.05, 0.12), // something falling from the sky
       clang: () => { tone("square", 150, 50, 0.45, 0.26); tone("triangle", 1046, 980, 0.6, 0.12); tone("triangle", 1568, 1500, 0.4, 0.06); hiss(520, 0.8, 0.45, 0.6, 0, "lowpass"); }, // a La Marzocco landing
       steam: () => hiss(5200, 0.7, 0.9, 0.28, 0, "highpass", 2200), // and its steam
+      // beta 3.55: Boomer's pan (the swing, the CLANG on a head) and Caius's portafilter (the throw, the knock)
+      pan: () => { hiss(1600, 0.7, 0.2, 0.32, 0, "bandpass", 500); tone("triangle", 330, 180, 0.15, 0.06); },
+      clang2: () => { tone("square", 1318, 1240, 0.42, 0.14); tone("triangle", 1976, 1900, 0.5, 0.1); tone("square", 2637, 2600, 0.25, 0.04); tone("square", 170, 55, 0.22, 0.22); hiss(3200, 2, 0.12, 0.4); },
+      throw: () => { hiss(2800, 0.8, 0.14, 0.26, 0, "highpass"); tone("triangle", 900, 1500, 0.09, 0.05); },
+      knock: () => { tone("triangle", 760, 300, 0.09, 0.32); hiss(2200, 3, 0.05, 0.32); tone("square", 220, 90, 0.08, 0.12); },
       tote: () => { hiss(900, 0.8, 0.32, 0.4, 0, "bandpass", 200); tone("square", 200, 90, 0.25, 0.08); },
       hit: () => { hiss(900, 1.1, 0.12, 0.5); tone("square", 220, 70, 0.1, 0.16); },
       heavy: () => { hiss(600, 1, 0.2, 0.6); tone("square", 160, 45, 0.18, 0.2); tone("triangle", 90, 40, 0.25, 0.3); },
@@ -2118,6 +2183,11 @@
     rares: { su: 22, ac: 4, rc: 22, cool: 190, dmg: 15, box: [16, -88, 62, -56], hs: 22, bs: 14, push: 6, launch: 7.5, kd: true, sfx: "anchor", sp: true, chip: 3, hstop: 18, flexArmor: 12, seq: [[0, 11], [1, 10], [2, 10], [3, 16]] }, // flexArmor: one blow in the first 12 ticks of the flex taken (at 3/4) and shrugged off
     // Dony fires two beams from his glasses: a long thin box at eye height (it reaches about half the screen and passes
     // over a crouch), on for 16 ticks, one hit
+    // beta 3.55: Boomer pulls a frying pan and brings it down on the head: slow, heavy, a CLANG, the other one seeing
+    // stars (dizzy); an overhead (it must be blocked standing)
+    boomer: { su: 20, ac: 4, rc: 22, cool: 190, dmg: 16, box: [10, -106, 52, -62], hs: 22, bs: 14, push: 2, dizzy: 44, high: true, sfx: "pan", hitSfx: "clang2", sp: true, chip: 3, hstop: 20, seq: [[0, 9], [1, 10], [2, 12], [3, 14]] },
+    // Caius throws a portafilter, spinning, at head height; coffee grounds where it lands
+    caius: { su: 12, ac: 1, rc: 18, cool: 190, proj: "portafilter", dmg: 9, speed: 4.4, sfx: "throw", hitSfx: "knock", sp: true, chip: 2, seq: [[0, 11], [1, 8], [2, 11]] },
     dony: { su: 14, ac: 16, rc: 18, cool: 170, beam: true, eye: [4, -72], dmg: 12, box: [12, -88, 224, -80], hs: 18, bs: 10, push: 2.6, sfx: "laser", sp: true, chip: 2, seq: [[0, 13], [1, 22], [2, 12]] },
     iulica: { su: 12, ac: 6, rc: 18, cool: 150, dmg: 13, box: [4, -116, 58, -30], hs: 22, bs: 14, push: 4.2, kd: true, sfx: "tote", sp: true, chip: 2 }
   };
@@ -2189,7 +2259,7 @@
   // beta 3.49, tuned on the bench (fair CPU against CPU, 48 matches a pairing): I O N a little quicker to decide, blocks a
   // little more, punishes and keeps the pressure on now and then; Steve's CPU slower to decide and to block (he feels
   // slow), using FAST FORWARD rarely (think)
-  const AI_PROF = { ion: { react: 14, jitter: 17, r1: 7, block: [0.42, 0.48, 0.54], punish: 0.06, follow: 0.04 }, steve: { react: 16, jitter: 19, block: [0.34, 0.4, 0.46] } };
+  const AI_PROF = { ion: { react: 14, jitter: 17, r1: 7, block: [0.42, 0.48, 0.54], punish: 0.06, follow: 0.04 }, steve: { react: 16, jitter: 19, block: [0.34, 0.4, 0.46] }, caius: { react: 15, jitter: 18 } }; // beta 3.55: Caius's CPU a beat slower (his reach is long)
   const BOT = { avg: { react: 16, jitter: 16, r1: 0, block: [0.33, 0.33, 0.33], punish: 0.15, follow: 0.15, sp: 1 }, decent: { react: 12, jitter: 12, r1: 0, block: [0.45, 0.45, 0.45], punish: 0.35, follow: 0.3, sp: 1 } };
   let botProf = null;
   function think(f, o, P0) {
@@ -2234,8 +2304,8 @@
     // beta 3.49: where and how often each special is used: Steve's FAST FORWARD rarely (from the second round, or when
     // he's losing), the horse from mid range, the anchor punch close (more when the other is stuck in a recovery), the
     // laser across the gap at someone standing
-    const spAt = SP.buff ? (g.round >= 2 || f.hp < 60) && d < 170 : SP.proj === "horse" ? d > 66 && d < 175 : SP.launch ? d < 58 * f.sc : SP.beam ? d > 48 && d < 185 && o.st !== "crouch" : SP.proj ? d > 110 : SP.dash || SP.spin ? d > 50 && d < 150 : SP.flash ? d < 95 : d < 72 * f.sc;
-    const spP = SP.buff ? 0.06 : SP.launch ? (o.st === "atk" && o.t >= o.atk.su + o.atk.ac ? 0.6 : 0.2) : SP.proj ? 0.35 : 0.3;
+    const spAt = SP.buff ? (g.round >= 2 || f.hp < 60) && d < 170 : SP.proj === "horse" ? d > 66 && d < 175 : SP.launch ? d < 58 * f.sc : SP.dizzy && !SP.flash ? d < 54 * f.sc : SP.beam ? d > 48 && d < 185 && o.st !== "crouch" : SP.proj ? d > 110 : SP.dash || SP.spin ? d > 50 && d < 150 : SP.flash ? d < 95 : d < 72 * f.sc;
+    const spP = SP.buff ? 0.06 : SP.launch || (SP.dizzy && !SP.flash) ? (o.st === "atk" && o.t >= o.atk.su + o.atk.ac ? 0.6 : 0.2) : SP.proj ? 0.35 : 0.3; // beta 3.55: Boomer's pan as Rares's punch: close, mostly as a punish
     if (ready && spAt && r < spP * P.sp) { inp.sp = 1; return inp; }
     if (d > 150) {
       if (false) inp.sp = 1;
@@ -2329,7 +2399,7 @@
     else if (def.kd || !onGround(d)) { d.st = "fall"; d.vy = -3.4; d.vx = away * 2; d.y = Math.min(d.y, -1); }
     else { d.st = "hit"; d.hs = def.hs; d.vx = away * def.push; }
     const k = d.hp <= 0 ? "ko" : tier;
-    spark(px, py, SPARK[k], away); SND.play(def.sfx === "hit" ? "hit" : "heavy");
+    spark(px, py, SPARK[k], away); SND.play(def.hitSfx || (def.sfx === "hit" ? "hit" : "heavy")); // beta 3.55: a special can have its own (the pan's CLANG)
     g.hitstop = Math.max(HSTOP[k], def.hstop || 0); g.hsK = k; g.shake = Math.max(g.shake, SHAKE[k] + (def.launch ? 2 : 0));
     if (k !== "light" || d.st === "fall") { g.cheerT = g.cheerT0 = k === "ko" ? 90 : 44; scarePigeons(); } // beta 3.45: the street cheers the big ones (a heavy blow, a special, a knock-down, the K.O.); the pigeons fly off
     else g.oohT = 16; // and only flinches at a jab
@@ -2364,7 +2434,7 @@
       if (p.vy !== undefined) { p.y += p.vy; p.vy += p.grav || 0.07; if (p.y > -3) { if (p.k === "horse" && !p.bounced) { p.bounced = true; p.y = -3; p.vy = -Math.abs(p.vy) * 0.38; p.vx *= 0.55; spark(p.x, -3, "dust"); SND.play("bonk"); g.shake = Math.max(g.shake, 1.5); } else { p.dead = true; spark(p.x, -3, "dust"); continue; } } }
       const o = p.owner === a ? b : a, hu = hurt(o), pb = [p.x - 9, p.y - 9, p.x + 9, p.y + 9];
       if (p.k === "horse") { pb[0] -= 4; pb[2] += 4; pb[1] -= 6; } // the horse is bigger than a cup
-      if (!p.dead && !p.bounced && overlap(pb, hu) && o.st !== "down") { if (land(p.owner, o, Object.assign({ hs: 20, bs: 12, push: 2.6, sfx: "heavy", sp: true }, SPECIAL[p.owner.id]), p.x, p.y, p)) { p.dead = true; if (p.k === "horse") { SND.play("bonk"); for (let i = 0; i < 3; i++) g.fx.push({ k: "chip", x: p.x, y: p.y, t: 0, life: 22, vx: (i - 1) * 1.1 + Math.sign(p.vx) * 0.6, vy: -2.4 - i * 0.4 }); } } }
+      if (!p.dead && !p.bounced && overlap(pb, hu) && o.st !== "down") { if (land(p.owner, o, Object.assign({ hs: 20, bs: 12, push: 2.6, sfx: "heavy", sp: true }, SPECIAL[p.owner.id]), p.x, p.y, p)) { p.dead = true; if (p.k === "portafilter") for (let i = 0; i < 5; i++) g.fx.push({ k: "grounds", x: p.x, y: p.y, t: 0, life: 20, vx: (i - 2) * 0.5 + Math.sign(p.vx) * 0.8, vy: -1.6 - (i % 3) * 0.5 }); if (p.k === "horse") { SND.play("bonk"); for (let i = 0; i < 3; i++) g.fx.push({ k: "chip", x: p.x, y: p.y, t: 0, life: 22, vx: (i - 1) * 1.1 + Math.sign(p.vx) * 0.6, vy: -2.4 - i * 0.4 }); } } }
       if (p.x < g.camX - 40 || p.x > g.camX + W + 40) p.dead = true;
     }
     for (const p of g.proj) for (const q of g.proj) if (p !== q && p.owner !== q.owner && !p.dead && !q.dead && Math.abs(p.x - q.x) < 14 && Math.abs(p.y - q.y) < 16) { p.dead = q.dead = true; spark((p.x + q.x) / 2, p.y, "burst"); SND.play("block"); }
@@ -2580,6 +2650,9 @@
       }
       ctx.fillStyle = "#ffffff"; ctx.fillRect(x + d * 1, y - 3, 1, 6);
       for (let i = 0; i < 4; i++) { ctx.fillStyle = C[(i + (p.t >> 2)) % 3]; ctx.fillRect(x - d * (14 + i * 5) - 1, y + ((i * 7 + p.t) % 15) - 7, 2, 2); }
+    } else if (p.k === "portafilter") { // beta 3.55: Caius's portafilter, spinning (eighth turns), coffee grounds trailing
+      const im = pfImg()[Math.floor(p.t / 2) % 8]; ctx.drawImage(im, x - (im.width >> 1), y - (im.height >> 1));
+      ctx.fillStyle = "#4a2a14"; for (let i = 1; i < 4; i++) ctx.fillRect(x - d * (8 + i * 5), y + ((i * 3 + p.t) % 5) - 2, 1, 1);
     } else if (p.k === "horse") {
       // beta 3.49: Cristache's carved horse, tumbling end over end (quarter turns), a little dust off its plinth
       const H2 = horseImg(), q = Math.floor(p.t / 5) % 4, im = H2[d > 0 ? q : (4 - q) % 4];
@@ -2621,6 +2694,19 @@
     }
     return (SPK[kind] = out);
   }
+  let PF_IMG = null;
+  function pfImg() { // beta 3.55: the portafilter (a chrome basket with its spouts, a black handle) at eight angles, each redrawn pixel by pixel (no soft edge)
+    if (PF_IMG) return PF_IMG;
+    PF_IMG = [];
+    for (let k = 0; k < 8; k++) {
+      const an = (k / 8) * Math.PI * 2, ca = Math.cos(an), sa = Math.sin(an), [c, x] = mk(24, 24), id = x.createImageData(24, 24), d = new Uint32Array(id.data.buffer);
+      const at = (u, v) => { if (Math.hypot(u + 4, v) <= 4.3) return v < -1.4 ? "#f4f6fa" : v < 1.4 ? "#c8ccd6" : "#8a8e9a"; if (u > -0.2 && u < 9.5 && Math.abs(v) < 1.3) return v < 0 ? "#4a4a56" : "#1e1e26"; if (Math.abs(u + 4) < 1 && v > 4 && v < 6) return "#8a8e9a"; return null; };
+      for (let Y = 0; Y < 24; Y++) for (let X = 0; X < 24; X++) { const qx = X + 0.5 - 12, qy = Y + 0.5 - 12, u = qx * ca + qy * sa, v = -qx * sa + qy * ca, col = at(u - 1, v); if (col) d[Y * 24 + X] = u32(col); }
+      const src = d.slice(), oc = u32(OUT); for (let i = 0; i < d.length; i++) if (!(src[i] >>> 24) && [i - 1, i + 1, i - 24, i + 24].some((j) => j >= 0 && j < d.length && (src[j] >>> 24))) d[i] = oc; // its outline
+      x.putImageData(id, 0, 0); PF_IMG.push(c);
+    }
+    return PF_IMG;
+  }
   let HORSE_IMG = null;
   function horseImg() { // beta 3.49: the horse at its own pixels, in four quarter turns (the tumble), no soft edge
     if (HORSE_IMG) return HORSE_IMG;
@@ -2653,6 +2739,7 @@
     if (e.k === "turbo") { const r = 6 + k * 34; for (let a = 0; a < 16; a++) { const an = (a / 16) * Math.PI * 2; ctx.fillStyle = a % 2 ? "#fff2a0" : "#ffc21a"; ctx.fillRect(x + Math.round(Math.cos(an) * r) - 1, y + Math.round(Math.sin(an) * r * 0.8) - 1, 2, 2); if (a % 4 === 0 && k < 0.6) { ctx.fillStyle = "#ffffff"; for (let j = 0; j < 4; j++) ctx.fillRect(x + Math.round(Math.cos(an) * (r * 0.5 + j * 3)), y + Math.round(Math.sin(an) * (r * 0.5 + j * 3) * 0.8), 1, 1); } } if (k < 0.3) { ctx.fillStyle = "#ffffff"; ctx.fillRect(x - 6, y, 13, 1); ctx.fillRect(x, y - 6, 1, 13); ctx.fillRect(x - 1, y - 1, 3, 3); } return; }
     if (e.k === "twinkle") { const s3 = k < 0.5 ? Math.round(1 + k * 8) : Math.round(1 + (1 - k) * 8); ctx.fillStyle = "#fff6b8"; ctx.fillRect(x - s3, y, s3 * 2 + 1, 1); ctx.fillRect(x, y - s3, 1, s3 * 2 + 1); ctx.fillStyle = "#ffffff"; ctx.fillRect(x - 1, y - 1, 3, 3); return; }
     if (e.k === "steampuff") { const px = Math.round(x + e.vx * e.t), py = Math.round(y + e.vy * e.t), r = (e.big ? 4 : 2) + Math.floor(k * (e.big ? 8 : 6)); ctx.globalAlpha = Math.max(0, 0.9 - k * 0.9); ctx.fillStyle = "#f4f6fa"; ctx.fillRect(px - r, py - r + 1, r * 2, r * 2 - 2); ctx.fillRect(px - r + 1, py - r, r * 2 - 2, r * 2); ctx.fillStyle = "#c8ccd8"; ctx.fillRect(px - r + 1, py + r - 1, r * 2 - 2, 1); ctx.globalAlpha = 1; return; } // beta 3.49: the finisher's steam
+    if (e.k === "grounds") { const cx3 = Math.round(x + e.vx * e.t), cy3 = Math.round(y + e.vy * e.t + 0.14 * e.t * e.t); if (cy3 < FLOOR) { ctx.fillStyle = e.t % 4 < 2 ? "#4a2a14" : "#6b3f22"; ctx.fillRect(cx3, cy3, 2, 2); } return; } // beta 3.55: the portafilter's coffee grounds
     if (e.k === "chip") { const cx3 = Math.round(x + e.vx * e.t), cy3 = Math.round(y + e.vy * e.t + 0.16 * e.t * e.t); if (cy3 < FLOOR) { ctx.fillStyle = OUT; ctx.fillRect(cx3 - 1, cy3 - 1, 4, 3); ctx.fillStyle = e.t % 6 < 3 ? "#e2aa66" : "#b8783a"; ctx.fillRect(cx3, cy3, 2, 1); } return; }
     if (e.k === "stack") { // the Two Minutes tees I O N brought, folded, on the pavement
       for (let i = 0; i < 6; i++) { const yy = y - 3 - i * 3; ctx.fillStyle = OUT; ctx.fillRect(x - 11, yy - 1, 22, 4); ctx.fillStyle = i % 2 ? "#ffffff" : "#ecebe6"; ctx.fillRect(x - 10, yy, 20, 3); ctx.fillStyle = "#1c1c22"; for (let q = 0; q < 14; q += 3) ctx.fillRect(x - 8 + q, yy + 1, 2, 1); }
@@ -3015,7 +3102,7 @@
     else if (scene === "select") {
       drawSelect(ctx, t, SEL);
       GRID.order.forEach((id, i) => { const [x, y] = tilePos(i); hit(x - 3, y - 3, TILE + 6, TILE + 6, () => { const k = SEL.phase === "p1" ? "p1" : "cpu"; if (SEL[k] === i) pressed.add("ok"); else { SEL[k] = i; SEL.moved = sceneT; SND.play("select"); } }); });
-      if (SEL.phase === "cpu") hit(235, 31, 70, 70, () => { SEL.phase = "p1"; SND.play("pause"); });
+      if (SEL.phase === "cpu") hit(9, PORT_Y - 3, 70, 70, () => { SEL.phase = "p1"; SND.play("pause"); }); // beta 3.55: the 1P portrait, now bottom left
     } else if (g) {
       if (g.scene === "vs") { drawVS(ctx, g.t, g.me, g.t, g.cpu); hit(0, 0, W, H, () => pressed.add("ok")); }
       else if (g.scene === "fight") { drawFight(ctx, t); if (g.phase === "finish") hit(0, 0, W, H, () => pressed.add("ok")); }
