@@ -59,6 +59,12 @@ body.n2-card .n2-panel { opacity: 0; translate: 0 14px; pointer-events: none; }
 .n2-strip::-webkit-scrollbar { display: none; }
 .nav2-ui .n2-pc { flex: 0 0 auto; width: 126px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: flex-start; padding: 0; border: 2.5px solid #141414; border-radius: 16px; overflow: hidden; background: var(--pc); color: var(--pt); cursor: pointer; text-align: left; box-shadow: 3px 4px 0 #141414; transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s; }
 .nav2-ui .n2-pc:hover { transform: translateY(-3px) rotate(-1deg); box-shadow: 4px 6px 0 #141414; }
+/* beta 3.52 r219 (Daniel: "in Nearby the game is a small card"): the arcade's entry, a compact chip in the game's colours */
+.nav2-ui .n2-pc.n2-mini { width: 74px; align-self: center; align-items: center; gap: 3px; padding: 8px 0 0; background: #1d1638; color: #FED012; box-shadow: inset 0 0 0 2px #FED012, 2px 3px 0 #141414; }
+.nav2-ui .n2-pc.n2-mini .n2-mk { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.nav2-ui .n2-pc.n2-mini .mf-glove { width: 20px; height: 20px; }
+.nav2-ui .n2-pc.n2-mini .mf-txt { width: 56px; height: 16px; }
+.nav2-ui .n2-pc.n2-mini .n2-dist { margin: 4px 6px 7px; }
 .n2-pic { position: relative; display: block; width: 100%; height: 78px; background: var(--pc); border-bottom: 2.5px solid #141414; overflow: hidden; }
 .n2-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .n2-ini { position: absolute; inset: 0; display: grid; place-items: center; font: 900 30px/1 CromaticSans, sans-serif; letter-spacing: -.03em; }
@@ -138,6 +144,10 @@ body.n2-card .n2-panel { opacity: 0; translate: 0 14px; pointer-events: none; }
    let a tap through to the road under them */
 body.map-mode .map-pin { pointer-events: none; }
 body.map-mode .map-pin:not(.off):not(.dot) .mp-label, body.map-mode .map-pin.dot:not(.off) .mp-dot { pointer-events: auto; }
+/* beta 3.52 r219 (Daniel: the Lab and the game open only from their own tag): a place shrunk to its dot sits above its neighbours'
+   labels, the current place's too (.on, 8), so a tap on the dot reaches it (by Two Minutes the arcade's label lay over the Lab's
+   dot and opened the game); a dot is 12 px, it hides next to nothing */
+body.map-mode .map-pins .map-pin.dot:not(.off) { z-index: 9; }
 body.map-mode .map-pin.dot { padding: 0; margin: 0; }
 
 /* beta 2.0: "Go deeper" while the camera parks in front of the building (the case page opens after) */
@@ -202,6 +212,8 @@ body:has(.map-welcome:not(.hidden)) .nav2-ui .n2-panel { opacity: 0; pointer-eve
 /* beta 2.9: phone rules key on body.n2-phone (set by nav2: a narrow screen, or a phone held sideways) */
 body.n2-phone .n2-panel { display: none !important; }
 body.n2-phone:not(.nav2-street) .n2-pad { display: none; }
+/* beta 3.52 r219: nor during the phone's espresso moment at Two Minutes (one thing on screen at a time) */
+body.n2-phone.tm-moment .n2-taphint { display: none !important; }
 /* beta 3.46 r215 (Daniel, QA pass): the tap hint is not shown over the Olari 9 card (it covered its e-mail button on a phone) */
 body.n2-phone:not(.nav2-street):not(.n2-tour):not(.n2-driving-auto):not(.n2-card):not(.olari-open) .n2-taphint { display: block; position: fixed; z-index: 24; right: 12px; bottom: calc(30px + env(safe-area-inset-bottom, 0px)); max-width: 190px; text-align: center; font-size: 10px; letter-spacing: .14em; font-weight: 700; line-height: 1.35; padding: 9px 14px; border-radius: 999px; background: #fff; color: #141414; border: 2px solid #141414; box-shadow: 2px 3px 0 #141414; pointer-events: none; }
 body.n2-phone:not(.nav2-street) .map-zoom { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
@@ -265,6 +277,14 @@ body.n2-phone .n2-cop { top: calc(var(--n2top, 112px) + 150px); } body.n2-phone 
 .n2-snd:hover { background: #FED012; }
 .n2-snd:focus-visible { outline: 3px solid #2f6bff; outline-offset: 3px; }
 body.n2-phone .n2-snd { right: 12px; top: var(--n2top, 112px); }
+/* beta 3.52 r219 (Daniel: the 2M2F button): on a phone the top bar is full, so the game's round button sits on the row below,
+   left of the Street / Bird's eye toggle, the speaker's twin; deep purple, a gold ring, the pixel glove over "2M2F" */
+.n2-2m2f { display: none; }
+body.n2-phone .n2-2m2f { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; position: fixed; z-index: 26; left: 12px; top: var(--n2top, 112px);
+  width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 1.5px solid #141414; background: #1d1638; box-shadow: inset 0 0 0 2px #FED012, 2px 3px 0 #141414; cursor: pointer; }
+body.n2-phone .n2-2m2f .mf-glove { width: 17px; height: 17px; }
+body.n2-phone .n2-2m2f .mf-txt { width: 28px; height: 8px; }
+body.n2-phone .n2-2m2f:focus-visible { outline: 3px solid #2f6bff; outline-offset: 3px; }
 body.nav2.n2-card .n2-snd { z-index: 26; }
 /* beta 2.9: the labels on one line; the game's own notes (the toast column) under the toggle and its hint; nothing of
    nav2 over the "turn your phone upright" screen */

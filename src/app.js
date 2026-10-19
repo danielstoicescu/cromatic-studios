@@ -35506,6 +35506,7 @@ void main() {
       },
       coffeeEnd() {
         // leaving mid-rush used to leave the COFFEE RUSH pill and the vignette on for good
+        document.body.classList.remove("tm-moment"); // beta 3.52 r219: the phone's espresso moment is over
         coffeeCard.classList.add("hidden");
         rushPill.classList.add("hidden");
         rushVig.classList.remove("on");
@@ -36653,6 +36654,15 @@ void main() {
       // r134: Sketchbook rains once per visit, on Medical Avenue, while you drive along it (Daniel), never elsewhere
       var sketchRain = { state: 0, t: 0 };
       var coffee = { phase: "idle", t: 0, served: 0, done: false, sunny: 0 };
+      // beta 3.52 r219 (Daniel, "Two Minutes once and simpler"): the espresso moment plays once per visit (sessionStorage, and
+      // in memory when storage is blocked), the first time the ride reaches Two Minutes; after that it is a place like any
+      // other (no camera scene, no espressos). On a phone it is one short moment and nothing else on screen: the car stops,
+      // one double espresso flies to it, a sip (the +5 XP on the counter), done; no coffee cards, no boxes, no rush, no
+      // life lesson (coffee.short)
+      var tmMoment = { seen: false };
+      var tmMomentSeen = () => { if (tmMoment.seen) return true; try { return sessionStorage.getItem("cz-tm-moment") === "1"; } catch { return false; } };
+      var tmMomentMark = () => { tmMoment.seen = true; try { sessionStorage.setItem("cz-tm-moment", "1"); } catch {} };
+      var tmPhone = () => document.body.classList.contains("n2-phone") || innerWidth < 720;
       var coffeeGroup = new Group();
       scene.add(coffeeGroup);
       var BOX_COLORS = ["#28C840", "#F2A9C4", "#119BFE"];
@@ -39274,8 +39284,8 @@ void main() {
         const nearTM = (state.branch === "A" || mapMode) && carPos.z > 4090 && carPos.z < 4430 && carPos.x > 830 && carPos.x < 1150;
         coffee.near = nearTM;
         if (!coffee.done && coffee.phase === "idle" && nearTM && !mapMode) {
-          coffee.phase = "sip1";
-          coffee.t = 0;
+          if (tmMomentSeen()) coffee.done = true; // beta 3.52 r219: once per visit
+          else { tmMomentMark(); coffee.phase = "sip1"; coffee.t = 0; coffee.short = tmPhone(); document.body.classList.toggle("tm-moment", coffee.short); }
         }
         if (!nearTM && (coffee.phase === "sip1" || coffee.phase === "unload" || coffee.phase === "sip2")) {
           coffee.phase = "idle";
@@ -39285,10 +39295,10 @@ void main() {
         if (coffee.phase !== "idle") {
           coffee.t += dt;
           if (coffee.phase === "sip1") {
-            const want = Math.min(3, 1 + Math.floor(coffee.t / 0.65));
+            const want = coffee.short ? 1 : Math.min(3, 1 + Math.floor(coffee.t / 0.65));
             while (coffee.served < want) {
               const n = ++coffee.served;
-              ui.coffeeServe(n);
+              if (!coffee.short) ui.coffeeServe(n); // beta 3.52 r219: no card on a phone
               gainXP(5, `Double espresso \xD7${n}`, "Two Minutes knows good coffee");
               spawnCup();
               try {
@@ -39296,7 +39306,8 @@ void main() {
               } catch {
               }
             }
-            if (coffee.t > 2.2) {
+            if (coffee.short && coffee.t > 1.8) { coffee.done = true; coffee.phase = "idle"; ui.coffeeEnd(); } // beta 3.52 r219: a phone's moment ends with the sip
+            else if (coffee.t > 2.2) {
               coffee.phase = "unload";
               coffee.t = 0;
               ui.coffeeUnload();
@@ -39778,6 +39789,7 @@ void main() {
           cover: (pl) => { try { return window.__coverOf?.(pl.id) || null; } catch { return null; } },
           shot: (pl) => { try { return pl.wx != null ? placeShot(pl) : null; } catch { return null; } },
           brand: (pl) => BRANDC[pl.work || pl.name] || BRANDC[pl.name] || null,
+          gameMark: () => GLOVE_SVG + pixelSVG(["2M2F"]), // beta 3.52 r219: the game's small entry in Nearby
           plaza: { x: OLARI_PLAZA.x, z: OLARI_PLAZA.z, r: OLARI_PLAZA.r, w: BLVD_W, z0: BLVD_Z0 }, // beta 2.92: r185's boulevard and forecourt
           vehicle: () => state.vehicleId, trees: () => TREE_BLOBS, vehAlt: () => Math.max(0, (veh?.group?.position.y || 0) - 2), // beta 2.9: the plane's altitude, for the street camera
           // round 2: the ride's wheel span (half the wheelbase, half the track, in world units), from its own wheels, per ride
@@ -40680,8 +40692,24 @@ void main() {
         I: "###|.#.|.#.|.#.|.#.|.#.|###", L: "#....|#....|#....|#....|#....|#....|#####", N: "#...#|##..#|#.#.#|#..##|#...#|#...#|#...#",
         O: ".###.|#...#|#...#|#...#|#...#|#...#|.###.", P: "####.|#...#|#...#|####.|#....|#....|#....", R: "####.|#...#|#...#|####.|#.#..|#..#.|#...#",
         T: "#####|..#..|..#..|..#..|..#..|..#..|..#..", U: "#...#|#...#|#...#|#...#|#...#|#...#|.###.", V: "#...#|#...#|#...#|#...#|#...#|.#.#.|..#..",
-        "\u0102": ".#.#.|..#..|.###.|#...#|#####|#...#|#...#", "!": "#|#|#|#|#|.|#", "-": "...|...|...|###|...|...|...", " ": "..|..|..|..|..|..|.."
+        "\u0102": ".#.#.|..#..|.###.|#...#|#####|#...#|#...#", "!": "#|#|#|#|#|.|#", "-": "...|...|...|###|...|...|...", " ": "..|..|..|..|..|..|..",
+        // beta 3.52 r219: for the "2M2F" button (the 2 is the game's own, as on the arcade cabinet)
+        2: "..###..|.##.##.|##...##|....##.|..###..|.##....|#######", M: "#...#|##.##|#.#.#|#.#.#|#...#|#...#|#...#"
       };
+      // beta 3.52 r219 (Daniel: "a 2M2F button in the top bar, after Our house"): the game's own look, deep purple, a gold
+      // ring, the pixel glove and "2M2F" in its pixel letters; it opens the game as the cards do, from=topbar-2m2f (GA4's
+      // entry_source). The map's top bar only tracks what a button leads to, so no click event of its own.
+      // On a phone the bar is full at 360-412 px (five buttons, edge to edge): there it is a round button on the row below,
+      // left of the Street / Bird's eye toggle, the speaker's twin on the right
+      function gameBtn(cls) {
+        const b = document.createElement("button"), ro = /^ro/i.test(document.documentElement.lang || "");
+        b.className = cls; b.type = "button";
+        b.title = ro ? "Joacă 2 Minutes 2 Fight cu I O N" : "Play 2 Minutes 2 Fight w/ I O N";
+        b.setAttribute("aria-label", b.title);
+        b.innerHTML = `${GLOVE_SVG}${pixelSVG(["2M2F"])}`;
+        b.onclick = () => window.__openGloves?.("topbar-2m2f");
+        return b;
+      }
       function fightLines() { return /^ro/i.test(document.documentElement.lang || "") ? ["PROVOAC\u0102-L PE I O N", "LA O LUPT\u0102!"] : ["CHALLENGE I O N", "TO A FIGHT!"]; }
       function fightLabel() { return /^ro/i.test(document.documentElement.lang || "") ? "Provoac\u0103-l pe I O N la o lupt\u0103!" : "Challenge I O N to a fight!"; }
       function pixelSVG(lines) {
@@ -40984,6 +41012,7 @@ void main() {
         ui.root.appendChild(box);
         top.querySelector(".map-crew").onclick = () => { welcome(false); openCrew(); };
         top.querySelector(".map-home").onclick = () => { welcome(false); mapGo(MAP_PLACES.find((p) => p.id === "end")); };
+        if (window.__openGloves && /^https?:$/.test(location.protocol)) top.querySelector(".map-home").after(gameBtn("map-2m2f")); // beta 3.52 r219
 
         // r137a: both cards open as popovers under their buttons (ui.popAnchor); the bar stays above the dimmed map
         // while the worlds card is open, so a tap on any other button in it closes the card first
@@ -41210,7 +41239,7 @@ void main() {
         const arrive = (pl) => {
           if (pl.tap) { markEl.classList.remove("on"); markAt = null; return; }
           clearTimeout(card._deepT); card._deepT = 0;
-          if (pl.tm) { tmBack = camState(); cineIn(pl); } // its scene; the camera comes back after (exactly where it was, r4)
+          if (pl.tm && !tmMomentSeen()) { tmBack = camState(); cineIn(pl); } // its scene; the camera comes back after (exactly where it was, r4); beta 3.52 r219: the first time only
           else if (pl.stop !== "end") cine = null; // Olari 9 keeps its own arrival (olari.cine)
           if (visit(pl)) gainXP(5, pl.name, "Found on the map");
           mark();
@@ -41230,10 +41259,17 @@ void main() {
           }
           if (pl.tm) {
             // Two Minutes: three double espressos, the boxes come down from our old balcony, a fourth, and the rush
-            coffee.done = false; coffee.phase = "sip1"; coffee.t = 0; coffee.served = 0;
-            showCard(pl, "COFFEE STREET \xB7 STR. CONSTANTIN ARICESCU 50A", `<p>${pl.desc}</p>`, `<button class="mcd-open">Dig deeper \u2192</button>`);
-            card.querySelector(".mcd-open").onclick = deep(pl, () => { if (openFrameHook && /^https?:$/.test(location.protocol)) openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); });
-            addFight(pl); // r201
+            const moment = !tmMomentSeen();
+            if (moment) { tmMomentMark(); coffee.done = false; coffee.phase = "sip1"; coffee.t = 0; coffee.served = 0; coffee.short = tmPhone(); document.body.classList.toggle("tm-moment", coffee.short); } // beta 3.52 r219: once per visit, short on a phone (tm-moment: nothing else on screen)
+            const tmCard = () => {
+              showCard(pl, "COFFEE STREET \xB7 STR. CONSTANTIN ARICESCU 50A", `<p>${pl.desc}</p>`, `<button class="mcd-open">Dig deeper \u2192</button>`);
+              card.querySelector(".mcd-open").onclick = deep(pl, () => { if (openFrameHook && /^https?:$/.test(location.protocol)) openFrameHook("/work/two-minutes/?embed=1", "Two Minutes"); });
+              addFight(pl); // r201
+            };
+            // beta 3.52 r219: on a phone the card (half the screen) waits for the espresso moment, so it is seen; it comes up
+            // after the sip, if the ride is still at Two Minutes and nothing else has opened meanwhile
+            if (moment && coffee.short) setTimeout(() => { if (mapMode && coffee.near && card.classList.contains("hidden") && !document.querySelector(".case-frame:not(.hidden)")) tmCard(); }, 1900);
+            else tmCard();
             return;
           }
           // r201 (Daniel): the mini-game's own card: the title screen, the Two Minutes mark in a circle on its corner, the
@@ -41807,7 +41843,7 @@ void main() {
         mapMode = on;
         if (on) {
           if (!mapUI) mapUI = buildMapUI();
-          if (NAV2 && !nav2) nav2 = NAV2(nav2Host()); // nav2
+          if (NAV2 && !nav2) { nav2 = NAV2(nav2Host()); if (window.__openGloves && /^https?:$/.test(location.protocol)) document.querySelector(".nav2-ui")?.append(gameBtn("n2-2m2f")); } // nav2; beta 3.52 r219: the phone's 2M2F button, with the speaker's rules
           nav2?.setActive(true); // nav2
           mapPrev = { scheme: state.schemeIdx, veh: state.vehicleId };
           if (!intro) kinetic?.pause?.();

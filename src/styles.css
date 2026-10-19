@@ -3449,6 +3449,18 @@ body.kz-intro .map-welcome, body.map-boarding .map-welcome { display: none; }
 .map-top .map-home { border: 1px solid #141414 !important; background: #28C840; color: #141414; cursor: pointer; padding: 0 14px 0 10px; }
 .map-top .map-home .mh-ic { font-size: 17px; line-height: 1; }
 @media (max-width: 719px) { .map-top .map-home { height: 38px; padding: 0 9px; } .map-top .map-home b { display: none; } }
+/* beta 3.52 r219 (Daniel: "a 2M2F button after Our house"): the game's own look, deep purple with a gold ring, the pixel glove
+   and "2M2F" in the game's pixel letters (gameBtn in app.js); on a phone it is the round n2-2m2f on the row below (nav2.css) */
+.map-top .map-2m2f { height: 42px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 13px 0 9px; border-radius: 999px; cursor: pointer;
+  border: 1px solid #141414 !important; background: #1d1638; box-shadow: inset 0 0 0 2px #FED012; transition: transform .2s, background .2s; }
+.map-top .map-2m2f:hover { background: #2a1f4a; transform: translateY(-1px); }
+.map-top .map-2m2f:focus-visible { outline: 3px solid #2f6bff; outline-offset: 2px; }
+.map-top .map-2m2f .mf-glove { width: 22px; height: 22px; flex: none; }
+.map-top .map-2m2f .mf-txt { width: 56px; height: 16px; flex: none; }
+body.n2-phone .map-top .map-2m2f, .map-top .map-2m2f[hidden] { display: none; }
+@media (max-width: 719px) { .map-top .map-2m2f { display: none; } }
+@media (min-width: 720px) and (max-width: 1180px) { .map-top .map-2m2f { width: 42px; padding: 0; flex-direction: column; justify-content: center; gap: 2px; } .map-top .map-2m2f .mf-glove { width: 16px; height: 16px; } .map-top .map-2m2f .mf-txt { width: 28px; height: 8px; } } /* round, as Ride and Crew are there */
+@media (prefers-reduced-motion: reduce) { .map-top .map-2m2f { transition: none; } .map-top .map-2m2f:hover { transform: none; } }
 .map-welcome .mw-how { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin: 14px 0 20px; }
 .map-welcome .mw-how span { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
 .map-welcome .mw-how span i { width: 64px; height: 64px; border-radius: 50%; border: 1px solid #141414; background: #FED012; display: grid; place-items: center; font-size: 30px; font-style: normal; box-shadow: 0 2px 0 #141414; }
