@@ -33,7 +33,10 @@
   // are clipped to the part of the city the map shows, cut where they cross, joined where one ends on another (a
   // T-junction), junction points closer than 14 units merged, tiny overshoot stubs pruned, chains of degree 2
   // contracted into one edge; the connected piece that holds the start road is the graph.
-  function buildGraph(H) {
+  function buildGraph(H) { const g = buildGraphGen(H); for (;;) { const r = g.next(); if (r.done) return r.value; } }
+  // beta 3.xx (start-up slices): the same, yielding between its passes and inside the long ones; the app runs it in
+  // slices before it makes nav2 (czNav2.prepare) and the result is the one czNav2 then uses
+  function* buildGraphGen(H) {
     const t0 = performance.now();
     const B = { x0: -280, x1: 2880, z0: 2380, z1: 9640 };
     const raw = [];
@@ -58,9 +61,12 @@
         }
       }
     }
+    yield;
     const net = H.cityNet();
+    yield;
     for (const s of net.longs) raw.push({ pts: H.rounded(s.pts, 160).map(([x, z]) => [x, z]), w: s.w, kind: "long" });
     for (const s of net.minor) raw.push({ pts: s.pts.map(([x, z]) => [x, z]), w: s.w, kind: "minor" });
+    yield;
     // clip to the map's box (Liang-Barsky per segment)
     const clipSeg = (ax, az, bx, bz) => {
       let u0 = 0, u1 = 1;
@@ -91,6 +97,7 @@
       }
       flush();
     }
+    yield;
     // every segment in a coarse grid
     const CS = 90, grid = new Map(), segs = [];
     const gk = (cx, cz) => (cx + 200) * 4000 + (cz + 200);
@@ -121,13 +128,15 @@
         lines[l2].cuts.push({ i: i2, t: u, x: X, z: Z });
         nCross++;
       }
+      yield;
     }
     // T-junctions: a street that ends just short of (or on) another is joined to it
     const ek2 = (p) => Math.round(p[0]) + "," + Math.round(p[1]);
     const ends = new Map();
     for (const L of lines) for (const p of [L.pts[0], L.pts[L.pts.length - 1]]) ends.set(ek2(p), (ends.get(ek2(p)) || 0) + 1);
     let nT = 0;
-    lines.forEach((L, li) => {
+    for (let li = 0; li < lines.length; li++) {
+      const L = lines[li];
       for (const side of [0, 1]) {
         const p = side ? L.pts[L.pts.length - 1] : L.pts[0];
         if (ends.get(ek2(p)) > 1) continue;
@@ -147,7 +156,9 @@
         if (best.d > 0.5) { if (side) L.post = [best.X, best.Z]; else L.pre = [best.X, best.Z]; }
         nT++;
       }
-    });
+      if (li % 16 === 15) yield;
+    }
+    yield;
     // every line as a list of points with its junction points flagged
     const J = []; // junction points: [x, z]
     const lineJ = lines.map((L) => {
@@ -170,6 +181,7 @@
       for (const p of out) if (p.j) { p.ji = J.length; J.push([p.x, p.z]); }
       return out;
     });
+    yield;
     // junction points within 14 units are one node (union-find over a grid)
     const par = J.map((_, i) => i), find = (i) => { while (par[i] !== i) i = par[i] = par[par[i]]; return i; };
     {
@@ -191,6 +203,7 @@
     });
     for (const nd of nodes) { nd.x /= nd.n; nd.z /= nd.n; }
     const nodeOf = (ji) => rootN.get(find(ji));
+    yield;
     // edges: each line split at its junction points
     let edges = [];
     lines.forEach((L, li) => {
@@ -212,6 +225,7 @@
         start = k;
       }
     });
+    yield;
     // the same street twice between the same two nodes (a long street over a drive road): keep one
     {
       const seen = new Map();
@@ -223,6 +237,7 @@
         return true;
       });
     }
+    yield;
     // prune: tiny stubs (a street overshooting the one it meets), then contract the chains of degree 2
     const inc = () => { const l = nodes.map(() => []); edges.forEach((e, i) => { if (!e.dead) { l[e.a].push(i); l[e.b].push(i); } }); return l; };
     for (let pass = 0; pass < 3; pass++) {
@@ -254,6 +269,7 @@
       }
     }
     edges = edges.filter((e) => !e.dead);
+    yield;
     // the connected piece with the start road in it
     let start = 0, sd = Infinity;
     nodes.forEach((nd, i) => { const d = Math.hypot(nd.x - H.start[0], nd.z - H.start[1]); if (d < sd) { sd = d; start = i; } });
@@ -273,10 +289,13 @@
       ed.bends = ed.kind === "ring" ? [] : findBends(ed);
       E.push(ed);
       N[ed.a].out.push({ e: ed.id, dir: 1 }); N[ed.b].out.push({ e: ed.id, dir: -1 });
+      if (E.length % 32 === 0) yield;
     }
+    yield;
     const stats = { nodes: N.length, edges: E.length, junctions: N.filter((n) => n.out.length >= 3).length, deadEnds: N.filter((n) => n.out.length === 1).length,
       km: Math.round(E.reduce((s, e) => s + e.len, 0)), bends: E.reduce((s, e) => s + e.bends.length, 0), crossings: nCross, tees: nT, lines: lines.length,
       byKind: E.reduce((o, e) => ((o[e.kind] = (o[e.kind] || 0) + 1), o), {}), dropped: dropped.length, ms: Math.round(performance.now() - t0) };
+    yield;
     // a grid of the edges' segments for nearest-point queries
     const SG = 120, sgrid = new Map();
     E.forEach((e) => {
@@ -320,8 +339,17 @@
       // nearly all of it lies on one of its polylines (a long avenue merged onto one of them is not)
       const own = [];
       { const { P, adj } = H.navNet(); P.forEach((p, i) => { for (const [j] of adj[i]) if (j > i) own.push([p[0], p[1], P[j][0], P[j][1]]); }); }
-      const onOwn = (x, z) => own.some(([ax, az, bx, bz]) => { const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, t = clamp(((x - ax) * dx + (z - az) * dz) / l2, 0, 1); return Math.hypot(ax + dx * t - x, az + dz * t - z) < 8; });
-      for (const e of E) { if (e.kind === "minor") { e.ours = false; continue; } let k = 0, n = 0; for (let s2 = 0; s2 <= e.len; s2 += 20) { const p = pointAt(e.pts, e.cum, s2); n++; if (onOwn(p[0], p[1])) k++; } e.ours = k / n > 0.9; }
+      // beta 3.xx (start-up): the segments hashed on a grid (each in every cell its box, 8 units out, touches), so a point
+      // tests only those of its own cell: the same answer as testing them all (every segment within 8 units is there),
+      // without ~a quarter of the graph's time
+      const OG = 64, ogrid = new Map();
+      own.forEach(([ax, az, bx, bz], i) => {
+        for (let cx = Math.floor((Math.min(ax, bx) - 8) / OG); cx <= Math.floor((Math.max(ax, bx) + 8) / OG); cx++)
+          for (let cz = Math.floor((Math.min(az, bz) - 8) / OG); cz <= Math.floor((Math.max(az, bz) + 8) / OG); cz++) { const k = gk(cx, cz); let l = ogrid.get(k); if (!l) ogrid.set(k, (l = [])); l.push(i); }
+      });
+      const onOwn = (x, z) => { const l = ogrid.get(gk(Math.floor(x / OG), Math.floor(z / OG))); if (!l) return false; for (let j = 0; j < l.length; j++) { const [ax, az, bx, bz] = own[l[j]]; const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, t = clamp(((x - ax) * dx + (z - az) * dz) / l2, 0, 1); if (Math.hypot(ax + dx * t - x, az + dz * t - z) < 8) return true; } return false; };
+      yield;
+      for (const e of E) { if (e.kind === "minor") { e.ours = false; continue; } let k = 0, n = 0; for (let s2 = 0; s2 <= e.len; s2 += 20) { const p = pointAt(e.pts, e.cum, s2); n++; if (onOwn(p[0], p[1])) k++; } e.ours = k / n > 0.9; if (e.id % 32 === 31) yield; }
       const seen = new Uint8Array(N.length), st = [start2()];
       function start2() { let b = 0, bd = Infinity; N.forEach((n, i) => { if (!n.out.some((o) => E[o.e].ours)) return; const d = Math.hypot(n.x - H.start[0], n.z - H.start[1]); if (d < bd) { bd = d; b = i; } }); return b; }
       seen[st[0]] = 1;
@@ -358,6 +386,9 @@
     return out;
   }
 
+  // beta 3.xx (start-up slices): the app works the graph out first, in slices (run: its slice runner), from the same data
+  let PRE_G = null;
+  const prepare = async (H, run) => { if (run) PRE_G = await run(buildGraphGen(H)); };
   window.czNav2 = function czNav2(H) {
     // the viewport, read on resize only: reading innerWidth in the frame, after the pins have moved, forced a style and
     // layout pass (~3 ms a frame on phones)
@@ -366,7 +397,7 @@
     // beta 2.9: a phone's layout: a narrow screen, or a touch screen held sideways (short)
     const coarse = matchMedia("(hover: none) and (pointer: coarse)").matches;
     const phoneUI = () => VP.w < 720 || (coarse && VP.h < 520);
-    const G = buildGraph(H);
+    const G = PRE_G || buildGraph(H); PRE_G = null; // beta 3.xx: the graph worked out in slices beforehand (prepare)
     const { N, E } = G;
     const reduced = () => H.reduced();
     const dpts = (it) => (it.dir > 0 ? E[it.e].pts : E[it.e].rpts);
@@ -2535,4 +2566,5 @@
     window.__nav2 = api; // for tests
     return api;
   };
+  window.czNav2.prepare = prepare;
 })();
