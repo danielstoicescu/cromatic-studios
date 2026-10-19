@@ -38329,16 +38329,40 @@ void main() {
       // 8 fps like a hand-drawn animation, and the city is drawn only where you have looked: a reveal map in world
       // space (painted around the map's focus, the van and the places you visit), sampled through the depth buffer.
       var sketchFx = null;
-      var sketchReveal = { cv: null, ctx: null, tex: null, last: 0, x0: CITY_X0 - 600, z0: CITY_Z0 - 600, w: CITY_X1 - CITY_X0 + 1200, h: CITY_Z1 - CITY_Z0 + 1200 };
+      // beta 3.7x (Sketchbook audit, round 2): the reveal map is painted on the GPU, into a 512² 8-bit target. It was a 2D
+      // canvas uploaded as a texture after every stroke (about 11 a second standing still, up to ~33 while the pointer or a
+      // finger moves): ~2.7 ms per upload in WebKit even on an M4 (Safari reads the canvas back to upload it), a hitch every
+      // few frames on an iPhone. Same strokes and the same blend: white at alpha a over the sheet (what "lighten" did over
+      // black is plain source-over), the same soft disc (full a inside 15 % of the radius, fading to 0 at the edge), the same
+      // sheet (512², 8-bit, mipmapped as the canvas texture was). Strokes are queued and drawn at the start of the next frame
+      var sketchReveal = { rt: null, q: [], mat: null, sc: null, cam: null, last: 0, x0: CITY_X0 - 600, z0: CITY_Z0 - 600, w: CITY_X1 - CITY_X0 + 1200, h: CITY_Z1 - CITY_Z0 + 1200 };
       function sketchPaint(x, z, r, a = 1) {
         const R = sketchReveal;
-        if (!R.ctx) return;
-        const S = R.cv.width, px = (x - R.x0) / R.w * S, pz = (z - R.z0) / R.h * S, pr = r / R.w * S;
-        const g = R.ctx.createRadialGradient(px, pz, pr * 0.15, px, pz, pr);
-        g.addColorStop(0, `rgba(255,255,255,${a})`); g.addColorStop(1, "rgba(255,255,255,0)");
-        R.ctx.globalCompositeOperation = "lighten";
-        R.ctx.fillStyle = g; R.ctx.beginPath(); R.ctx.arc(px, pz, pr, 0, Math.PI * 2); R.ctx.fill();
-        R.tex.needsUpdate = true;
+        if (!R.rt) return;
+        R.q.push((x - R.x0) / R.w, (z - R.z0) / R.h, r / R.w, a);
+      }
+      function sketchRevealInit() {
+        const R = sketchReveal;
+        R.rt = new WebGLRenderTarget(512, 512, { type: UnsignedByteType, format: RGBAFormat, depthBuffer: false, generateMipmaps: true, minFilter: LinearMipmapLinearFilter, magFilter: LinearFilter });
+        R.mat = new ShaderMaterial({
+          uniforms: { p: { value: new Vector4() } },
+          vertexShader: "uniform vec4 p; varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4((p.xy + position.xy * p.z) * 2.0 - 1.0, 0.0, 1.0); }",
+          fragmentShader: "uniform vec4 p; varying vec2 vUv; void main(){ float d = length(vUv - 0.5) * 2.0; if (d > 1.0) discard; gl_FragColor = vec4(1.0, 1.0, 1.0, p.w * (1.0 - clamp((d - 0.15) / 0.85, 0.0, 1.0))); }",
+          transparent: true, blending: NormalBlending, depthTest: false, depthWrite: false
+        });
+        const m = new Mesh(new PlaneGeometry(2, 2), R.mat); m.frustumCulled = false;
+        R.sc = new Scene(); R.sc.add(m); R.cam = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        const prev = renderer.getRenderTarget(), cc = renderer.getClearColor(new Color()), ca = renderer.getClearAlpha();
+        renderer.setRenderTarget(R.rt); renderer.setClearColor(0x000000, 1); renderer.clear(true, false, false);
+        renderer.setClearColor(cc, ca); renderer.setRenderTarget(prev);
+      }
+      function sketchRevealFlush() {
+        const R = sketchReveal, q = R.q;
+        if (!R.rt || !q.length) return;
+        const prev = renderer.getRenderTarget(), ac = renderer.autoClear, u = R.mat.uniforms.p.value;
+        renderer.setRenderTarget(R.rt); renderer.autoClear = false;
+        try { for (let i = 0; i < q.length; i += 4) { u.set(q[i], q[i + 1], q[i + 2], q[i + 3]); renderer.render(R.sc, R.cam); } }
+        finally { q.length = 0; renderer.autoClear = ac; renderer.setRenderTarget(prev); }
       }
       // r130k: your hand draws too: where the pointer passes over the map, the pencil fills the city in
       var sketchPtr = { x: 0, y: 0, moved: 0 }, _spDir = new Vector3(), _spHit = new Vector3();
@@ -38396,7 +38420,7 @@ void main() {
       }
       function sketchExplore(now) {
         const R = sketchReveal;
-        if (!R.ctx) return;
+        if (!R.rt) return;
         // the pointer draws where it passes (map only; small, soft, a few times a second)
         if (mapMode && now - sketchPtr.moved < 120 && now - (R.ptrT || 0) > 45) {
           R.ptrT = now;
@@ -38763,13 +38787,11 @@ void main() {
         const w = renderer.domElement.width, h = renderer.domElement.height;
         if (!sketchFx) {
           const R = sketchReveal;
-          R.cv = document.createElement("canvas"); R.cv.width = R.cv.height = 512;
-          R.ctx = R.cv.getContext("2d"); R.ctx.fillStyle = "#000"; R.ctx.fillRect(0, 0, 512, 512);
-          R.tex = new CanvasTexture(R.cv); R.tex.flipY = false;
+          sketchRevealInit(); // beta 3.7x (was a 512² canvas, filled black, as a CanvasTexture)
           const rt = new WebGLRenderTarget(w, h, { samples: 0, type: HalfFloatType });
           rt.depthTexture = new DepthTexture(w, h);
           const mat = new ShaderMaterial({
-            uniforms: { tD: { value: rt.texture }, tZ: { value: rt.depthTexture }, tR: { value: R.tex }, res: { value: new Vector2(w, h) }, t: { value: 0 },
+            uniforms: { tD: { value: rt.texture }, tZ: { value: rt.depthTexture }, tR: { value: R.rt.texture }, res: { value: new Vector2(w, h) }, t: { value: 0 },
               pInv: { value: new Matrix4() }, cW: { value: new Matrix4() }, box: { value: new Vector4(R.x0, R.z0, R.w, R.h) }, full: { value: 0 }, near: { value: 1 }, far: { value: 1000 }, dz: { value: 900 } },
             vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
             fragmentShader: NOTEBOOK_FS, // beta 3.76: the notebook (was the graphite pass of r130-r139b)
@@ -38786,6 +38808,7 @@ void main() {
         }
         if (sketchFx.rt.width !== w || sketchFx.rt.height !== h) { sketchFx.rt.setSize(w, h); sketchFx.mat.uniforms.res.value.set(w, h); }
         if (!full) { sketchExplore(now); sketchRingsBuild(); sketchRingsUpdate(Math.min(0.05, (now - (sketchFx.lastT || now)) / 1000)); sketchFx.lastT = now; }
+        sketchRevealFlush(); // beta 3.7x: the strokes queued since the last frame
         const u = sketchFx.mat.uniforms;
         u.t.value = (now * 0.001) % 100; u.full.value = full ? 1 : 0;
         cam.updateMatrixWorld();
