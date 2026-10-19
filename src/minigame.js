@@ -352,6 +352,8 @@
   // the skin (the skin's own tone mixed with the ink, so they read as tattoos and not as patches); a different
   // pattern per limb (key)
   const INK = u32("#3e4c56"), INKB = u32("#16181c");
+  const INKMIX = (c1, c2, k) => { const a = [c1 & 255, (c1 >> 8) & 255, (c1 >> 16) & 255], b = [c2 & 255, (c2 >> 8) & 255, (c2 >> 16) & 255], m = a.map((q, i) => Math.round(q + (b[i] - q) * k)); return (0xff000000 | (m[2] << 16) | (m[1] << 8) | m[0]) >>> 0; };
+  const ANCHOR = ["...#...", "..###..", "...#...", "...#...", "#..#..#", ".#.#.#.", "..###.."]; // beta 3.49: Rares's anchor (a nod, in his own tattoos' petrol grey and black)
   const tattoo = (key, t, nx, ny, far, base) => { const u = Math.floor(t * 9), v = Math.floor((nx + 1) * 2.4), h = hash2(u * 7 + key * 13, v * 3 + key * 5); if (h < 0.58) return 0; const mixc = (c1, c2, k) => { const a = [c1 & 255, (c1 >> 8) & 255, (c1 >> 16) & 255], b = [c2 & 255, (c2 >> 8) & 255, (c2 >> 16) & 255], m = a.map((q, i) => Math.round(q + (b[i] - q) * k)); return (0xff000000 | (m[2] << 16) | (m[1] << 8) | m[0]) >>> 0; }; return h > 0.93 ? mixc(base, INKB, 0.62) : mixc(base, INK, far ? 0.55 : 0.5); };
   // a limb: from a to b, its radius going from r0 to r1 with a swell (the muscle) peaking at "at" along it
   function limb(F, a, b, r0, r1, swell, at, mat, group) {
@@ -466,10 +468,24 @@
     ion: [pose({ hip: [-2, -47], neck: [-2, -75], head: [1, -86], eF: [-6, -72], hF: [-14, -84] }), pose({ hip: [4, -47], neck: [11, -75], head: [14, -85], eF: [26, -72], hF: [38, -76], kF: [16, -25], fF: [24, 0], tw: 0.8 })],
     maria: [KCH, pose({ hip: [0, -52], neck: [0, -79], head: [3, -90], eF: [18, -72], hF: [30, -76], eB: [-14, -70], hB: [-26, -74], kF: [22, -54], fF: [46, -56], kB: [-4, -26], fB: [-4, 0] }),
       pose({ hip: [0, -52], neck: [0, -79], head: [3, -90], eF: [16, -70], hF: [28, -72], eB: [-14, -72], hB: [-26, -76], kF: [16, -42], fF: [24, -30], kB: [-4, -26], fB: [-4, 0] })],
-    cristache: [CROUCH, pose({ hip: [2, -52], neck: [6, -80], head: [8, -91], eF: [12, -98], hF: [14, -114], eB: [-4, -64], hB: [2, -56], kF: [12, -40], fF: [6, -26], kB: [-6, -32], fB: [-12, -18] })],
-    steve: [pose({ hip: [-2, -47], neck: [0, -75], head: [3, -86], eF: [22, -66], hF: [32, -76], eB: [-8, -66], hB: [-16, -78], tw: 0.9 }), pose({ hip: [4, -46], neck: [12, -74], head: [15, -84], eF: [28, -66], hF: [34, -58], eB: [24, -62], hB: [30, -54], kF: [16, -25], fF: [24, 0], tw: 1 })],
-    rares: [pose({ hip: [-2, -47], neck: [-2, -75], head: [1, -86], eF: [-6, -70], hF: [-14, -80] }), pose({ hip: [4, -47], neck: [11, -75], head: [14, -85], eF: [26, -70], hF: [38, -70], kF: [16, -25], fF: [24, 0], tw: 0.8 })],
-    dony: [pose({ hip: [-2, -46], neck: [-3, -74], head: [0, -85], eF: [2, -58], hF: [-6, -50] }), pose({ hip: [4, -46], neck: [11, -74], head: [14, -84], eF: [26, -64], hF: [38, -60], kF: [16, -25], fF: [24, 0], tw: 0.8 })],
+    // beta 3.49: the horse lifted over his head (both hands under it), the throw, the follow-through
+    cristache: [pose({ hip: [-2, -47], neck: [-4, -75], head: [-2, -86], eF: [4, -94], hF: [6, -108], eB: [-8, -92], hB: [-4, -108], kF: [12, -25], fF: [19, 0], kB: [-11, -23], fB: [-19, 0], prop: "horse" }),
+      pose({ hip: [5, -46], neck: [14, -73], head: [18, -83], eF: [28, -80], hF: [42, -86], eB: [8, -62], hB: [2, -54], kF: [18, -25], fF: [26, 0], kB: [-12, -21], fB: [-24, 0], tw: 0.9 }),
+      pose({ hip: [3, -46], neck: [10, -74], head: [13, -84], eF: [24, -62], hF: [34, -58], eB: [6, -60], hB: [12, -56], kF: [16, -25], fF: [24, 0], tw: 0.5 })],
+    // beta 3.49: gathering speed (low, fists clenched at his sides), the burst (arms flung wide, chest out), settling
+    steve: [pose({ hip: [-2, -40], neck: [2, -68], head: [6, -78], eF: [12, -52], hF: [10, -40], eB: [-6, -52], hB: [-10, -40], kF: [14, -21], fF: [22, 0], kB: [-14, -18], fB: [-22, 0] }),
+      pose({ hip: [0, -49], neck: [1, -78], head: [3, -90], eF: [20, -84], hF: [32, -96], eB: [-14, -82], hB: [-26, -94], kF: [12, -25], fF: [22, 0], kB: [-12, -24], fB: [-22, 0], tw: 0.2 }),
+      pose({ hip: [0, -47], neck: [3, -75], head: [6, -86], eF: [16, -66], hF: [24, -74], eB: [2, -64], hB: [10, -70] })],
+    // beta 3.49: the double-biceps flex (the forearms swollen: flex), the punch cocked low and back, the punch at full
+    // stretch with the body behind it, the way back
+    rares: [pose({ hip: [0, -48], neck: [2, -77], head: [5, -88], eF: [18, -76], hF: [16, -92], eB: [-12, -76], hB: [-10, -92], kF: [12, -25], fF: [20, 0], kB: [-11, -24], fB: [-20, 0], flex: 1.7, tw: 0.3 }),
+      pose({ hip: [-4, -44], neck: [-6, -71], head: [-4, -82], eF: [-4, -60], hF: [-16, -66], eB: [8, -60], hB: [16, -70], kF: [12, -22], fF: [22, 0], kB: [-14, -19], fB: [-24, 0], flex: 1.7, tw: -0.1 }),
+      pose({ hip: [8, -46], neck: [18, -73], head: [22, -82], eF: [36, -72], hF: [55, -72], eB: [4, -62], hB: [10, -70], kF: [20, -25], fF: [28, 0], kB: [-12, -20], fB: [-26, 0], flex: 1.7, tw: 1 }),
+      pose({ hip: [3, -47], neck: [9, -75], head: [12, -85], eF: [24, -66], hF: [32, -70], eB: [5, -60], hB: [13, -68], tw: 0.5 })],
+    // beta 3.49: the charge (leaning in, fists clenched, the glasses catching the light), the beams (head forward, braced)
+    dony: [pose({ hip: [-2, -46], neck: [1, -74], head: [4, -85], eF: [10, -58], hF: [6, -50], eB: [-4, -58], hB: [-8, -50], kF: [12, -24], fF: [19, 0], kB: [-11, -23], fB: [-19, 0] }),
+      pose({ hip: [-4, -46], neck: [2, -74], head: [7, -84], eF: [12, -60], hF: [8, -52], eB: [-6, -58], hB: [-10, -50], kF: [12, -24], fF: [22, 0], kB: [-14, -22], fB: [-24, 0], tw: 0.3 }),
+      pose({ hip: [-1, -47], neck: [3, -75], head: [6, -86], eF: [12, -58], hF: [18, -64], eB: [4, -58], hB: [12, -62] })],
     iulica: [pose({ hip: [-2, -47], neck: [-3, -75], head: [0, -86], eF: [-6, -60], hF: [-14, -54] }), pose({ hip: [4, -47], neck: [11, -75], head: [14, -85], eF: [24, -76], hF: [36, -84], kF: [16, -25], fF: [24, 0], tw: 0.9 })]
   };
   // beta 3.12: the archetype stances (a nod, not a copy): Cristache low and still like a karateka, the back fist at the
@@ -529,7 +545,36 @@
     { id: "npcWin", x: 161, y: 101, face: 1, rate: 0.6, clip: [152, 38, 22, 34], poses: [pose(Object.assign({}, STAND, BAR)), pose(Object.assign({}, STAND, BAR, { head: [6, -86] }))], cheer: pose(Object.assign({}, STAND, BAR, { eF: [8, -84], hF: [12, -98] })), cheer2: pose(Object.assign({}, STAND, BAR, { eF: [10, -80], hF: [16, -92] })), ooh: pose(Object.assign({}, STAND, BAR, { eF: [9, -66], hF: [11, -78] })), win: true }
   ];
   const BUST_POSE = pose({ hip: [0, -47], neck: [3, -75], head: [6, -86], eF: [12, -56], hF: [14, -40], eB: [-5, -56], hB: [-7, -40], tw: 0.55 }); // for the portraits: the arms down
-  const SPECIAL_PROP = { coz: "camera", iulica: "tote", rares: "key" };
+  const SPECIAL_PROP = { coz: "camera", iulica: "tote" }; // beta 3.49: a pose can carry its own (prop: Cristache's horse)
+  // beta 3.49: the sculpted horse Cristache throws: carved wood on a stone plinth, the grain in its flanks, facing right.
+  // o the outline, w the lit wood, m the wood, d its shade, g the grain, e the eye, P/p the plinth, lit and shaded
+  const HORSE = (() => { const rows = [
+    "......................oo......",
+    ".....................owwo.....",
+    "....................owwwwoo...",
+    "...................owwmmmwwo..",
+    "..................owwmmemmmwo.",
+    ".................owwmmmmmmmmwo",
+    "................owwmmmmmmddmmo",
+    "...............odwmmmooo.oddo.",
+    "..............odwwmmmo...ooo..",
+    "..oooo.......odwwmmmo.........",
+    ".odddo......odwwmmmmo.........",
+    "odddddo....odwwwmmmmo.........",
+    ".oddddoooooowwwwmmmmo.........",
+    "..oddwwwwwwwwwwmmmmmo.........",
+    "...odmmmmmmmmmmmmmmmo.........",
+    "...odmmgmmmmmgmmmmmdo.........",
+    "...oddmmmgmmmmmgmmddo.........",
+    "....oddmmmmmmmmmmmddo.........",
+    "....omdo.omdo..omdo.omdo......",
+    "....omdo.omdo..omdo.omdo......",
+    "....omdo.omdo..omdo.omdo......",
+    "...oooooooooooooooooooooo.....",
+    "...oPPPPPPPPPPPPPPPPPPPPo.....",
+    "...oppppppppppppppppppppo.....",
+    "...oooooooooooooooooooooo....."], pal = { o: "#3a2010", w: "#e2aa66", m: "#b8783a", d: "#80481e", g: "#8e5426", e: "#1c1214", P: "#b4aaa2", p: "#857a72" };
+    return { rows, pal, w: rows[0].length, h: rows.length }; })();
   // the cell every frame is baked into: 140x142, the feet at (70, 138)
   // beta 3.33: in canvas pixels (twice the game's units); a frame is then cropped to the figure
   const CW = 168, CH = 172, OX = 84, OY = 166; // beta 3.36: back at the game's own pixels
@@ -1029,8 +1074,10 @@
         if (R === SK) { if (seg === 0 && t > 0.32 && t < 0.86 && Math.abs(nx - 0.05) < 0.12) ex2 = 1; if (seg === 0 && t > 0.24 && t < 0.32 && nx > -0.3) ex2 = 1; if (seg === 1 && t > 0.1 && t < 0.62 && Math.abs(nx + 0.28) < 0.11) ex2 = 1; }
         else ex2 = folds(nx, t, ARM_FOLDS[seg]); // beta 3.32: the creases round the elbow, the folds down the sleeve, each with its lit ridge
         return R[clamp(toneOf(nx, ny) + (far ? 1 : 0) + ex2, 0, 4)]; };
-      limb(F, s, e, 4.1 * ar, 3.3 * ar, 0.6 * ar, 0.42, mat(0), g); // a strong upper arm, the deltoid and the biceps (beta 3.38: back towards the refs')
-      limb(F, e, h, 3.6 * ar, 2.9 * ar, 0.4 * ar, 0.28, mat(1), g); // the forearm (beta 3.38: slim, as the refs')
+      // beta 3.49 (Rares's flex): flex swells the biceps a little and the forearm a lot, its bulge towards the wrist
+      const fl = p.flex || 1, mat1 = mat(1), matF = fl > 1 && L.tattoo && !far ? (nx, ny, t, px, py) => { const row = Math.floor(((0.8 - t) / 0.5) * 7), col = Math.floor(((nx + 0.75) / 1.5) * 7); if (row >= 0 && row < 7 && col >= 0 && col < 7) { const base = SK[clamp(toneOf(nx, ny), 0, 4)]; return ANCHOR[row][col] === "#" ? INKMIX(base, row === 0 || row === 6 ? INKB : INK, 0.75) : base; } return mat1(nx, ny, t, px, py); } : mat1;
+      limb(F, s, e, 4.1 * ar * (1 + (fl - 1) * 0.3), 3.3 * ar * (1 + (fl - 1) * 0.3), 0.6 * ar * fl, 0.42, mat(0), g); // a strong upper arm, the deltoid and the biceps (beta 3.38: back towards the refs')
+      limb(F, e, h, 3.6 * ar * (1 + (fl - 1) * 0.45), 2.9 * ar * fl, 0.4 * ar * fl * fl, fl > 1 ? 0.62 : 0.28, matF, g); // the forearm (beta 3.38: slim, as the refs'; flexed: Popeye-sized, his own anchor in his own ink)
       const vx = h[0] - e[0], vy = h[1] - e[1], vl = Math.hypot(vx, vy) || 1, ux = vx / vl, uy = vy / vl, gr = 5.9 * Math.min(1.1, sc);
       if (L.hands) blob(F, [h[0] + ux * 0.5 * U, h[1] + uy * 0.5 * U], 3.1 * sc + 0.55 * U, 2.8 * sc + 0.55 * U, (nx, ny) => (far ? back : tone)(SK, nx, ny), g + 10); // a bystander's bare hand
       else { // beta 3.16 (Daniel): a bare fist in plain white hand wraps, for everyone; the knuckles just showing
@@ -1252,6 +1299,8 @@
     } else if (prop === "cup") { // a takeaway cup
       poly(F, [Q(-2, -8), Q(4, -8), Q(3.5, -1), Q(-1.5, -1)], (x, y) => u32(y < hF[1] - 6.5 * U ? "#2a2a30" : x > hF[0] + 2 * U ? "#d8d4cc" : "#f4f2ec"), 20);
       poly(F, [Q(-1.6, -5.5), Q(3.6, -5.5), Q(3.4, -3.5), Q(-1.4, -3.5)], () => u32("#b07a46"), 21);
+    } else if (prop === "horse") { // beta 3.49: Cristache's carved horse, held over his head between his hands
+      const hB2 = T(p.hB), mx = (hF[0] + hB2[0]) / 2, my = Math.min(hF[1], hB2[1]); F.blit(HORSE.rows, HORSE.pal, Math.round(mx), Math.round(my - 1 * U), 0, [14, 23], 20);
     } else if (prop === "phone") { // beta 3.45: a phone held up, filming: its dark back, a light pixel of its screen's glow
       poly(F, [Q(-1.5, -7), Q(2.5, -7), Q(2.5, 0), Q(-1.5, 0)], (x, y) => u32(y < hF[1] - 6 * U ? "#5a5a66" : "#24242c"), 20);
       poly(F, [Q(1.5, -6), Q(2.5, -6), Q(2.5, -4), Q(1.5, -4)], () => u32("#cfe8ff"), 21);
@@ -1286,7 +1335,7 @@
     };
     const own = Object.assign({}, POSES, STYLE_POSES[id] || {});
     for (const [k, list] of Object.entries(own)) lazy(k, list, (p) => drawFighter(id, withCig(p, CIG(k)), k === "intro" && id === "ion" ? "stack" : null, alt));
-    lazy("special", SPECIAL_POSES[id], (p) => drawFighter(id, p, SPECIAL_PROP[id] || null, alt));
+    lazy("special", SPECIAL_POSES[id], (p) => drawFighter(id, p, p.prop || SPECIAL_PROP[id] || null, alt));
     { const sp = SPECIAL_POSES[id], last = sp[sp.length - 1]; lazy("srec", [mixP(last, own.idle[1], 0.55)], (p) => drawFighter(id, p, SPECIAL_PROP[id] || null, alt)); } // beta 3.45: half way back from the special to the guard
     if (smokes) {
       lazy("idleM", own.idle, (p) => drawFighter(id, withCig(p, "mouth"), null, alt));
@@ -1628,15 +1677,18 @@
   // ===================== 5. the roster =====================
   const ROSTER = {
     daniel: { id: "daniel", name: "DANIEL", role: "FOUNDER - CREATIVE ARCHITECT", special: "COLOR WAVE", line: "PAINTS THE ROOM IN ONE MOVE", speed: 1, power: 1 },
-    cristian: { id: "cristian", name: "CRISTIAN", role: "PARTNER - CEO", special: "DEADLINE DASH", line: "ALWAYS ONE STEP AHEAD", speed: 1.08, power: 0.95 },
-    ion: { id: "ion", name: "I O N", role: "FOUNDER OF TWO MINUTES", special: "ESPRESSO SHOT", line: "TWO MINUTES IS ALL HE NEEDS", speed: 1, power: 1 },
+    cristian: { id: "cristian", name: "CRISTIAN", role: "PARTNER - CEO", special: "DEADLINE DASH", line: "ALWAYS ONE STEP AHEAD", speed: 1.04, power: 0.9 }, // beta 3.49: was 1.08 / 0.95 (he won 78% on the bench)
+    ion: { id: "ion", name: "I O N", role: "FOUNDER OF TWO MINUTES", special: "ESPRESSO SHOT", line: "TWO MINUTES IS ALL HE NEEDS", speed: 1, power: 1.04, def: 0.97 }, // beta 3.49: a touch harder (and a sharper CPU: AI_PROF)
     // beta 3.11 (Daniel): the guests (Iulica is on the crew page too)
-    cristache: { id: "cristache", name: "CRISTACHE", role: "SPECIAL GUEST", special: "HIGH FIVE", line: "ALWAYS REACHING HIGHER", speed: 1.1, power: 1 }, // beta 3.31: a touch quicker now he is smaller (less reach)
-    steve: { id: "steve", name: "STEVE", role: "SPECIAL GUEST - OVER TWO METRES", special: "BEAR HUG", line: "TWO METRES OF GOOD VIBES", speed: 0.86, power: 1.15 },
-    rares: { id: "rares", name: "RARE\u0218", role: "SPECIAL GUEST", special: "KEY BOOMERANG", line: "NEVER LOSES HIS KEYS", speed: 1, power: 1 },
-    dony: { id: "dony", name: "DONY", role: "ROASTS THE COFFEE", special: "BEAN BARRAGE", line: "SMALL, QUICK, FRESHLY ROASTED", speed: 1.12, power: 0.92 },
+    cristache: { id: "cristache", name: "CRISTACHE", role: "SPECIAL GUEST", special: "HORSE POWER", line: "A WORK OF ART, THROWN", speed: 1.1, power: 1 }, // beta 3.31: a touch quicker now he is smaller (less reach). beta 3.49: the sculpted horse
+    // beta 3.49 (Daniel: "Steve is easy to beat and should feel slower"): a slower walk, longer wind-ups and recoveries
+    // (fd: ticks added to every attack's start-up and recovery), a heavier jump (lower, falling faster), the blows
+    // heavier to make up for it; his special makes him fast for a few seconds
+    steve: { id: "steve", name: "STEVE", role: "SPECIAL GUEST - OVER TWO METRES", special: "FAST FORWARD", line: "TWO METRES OF GOOD VIBES", speed: 0.76, power: 1.05, fd: { su: 3, rc: 5, air: 1 }, jump: { v: -5.9, g: 0.36 } }, // was speed 0.86, power 1.15
+    rares: { id: "rares", name: "RARE\u0218", role: "SPECIAL GUEST", special: "ANCHOR PUNCH", line: "NEVER LOSES HIS KEYS", speed: 1, power: 1 }, // beta 3.49: the flex and the big punch
+    dony: { id: "dony", name: "DONY", role: "ROASTS THE COFFEE", special: "LENS LASER", line: "SMALL, QUICK, FRESHLY ROASTED", speed: 1.12, power: 1 }, // beta 3.49: two beams from his glasses (power was 0.92: he won 2% on the bench)
     iulica: { id: "iulica", name: "IULIC\u0102", role: "CREW", special: "TOTE SWING", line: "BRINGS THE ENERGY INTO THE FRAME", speed: 1.02, power: 1.02 },
-    maria: { id: "maria", name: "MARIA", role: "SPECIAL GUEST", special: "CURL CYCLONE", line: "SPINS FIRST, ASKS LATER", speed: 1.1, power: 0.92 }
+    maria: { id: "maria", name: "MARIA", role: "SPECIAL GUEST", special: "CURL CYCLONE", line: "SPINS FIRST, ASKS LATER", speed: 1.06, power: 0.92 } // beta 3.49: speed was 1.1
   };
   // the select grid: a small config. Both sides pick from it (Player 1, then the CPU); "random" is the "?" tile.
   // I O N stays the CPU's first choice
@@ -1885,6 +1937,7 @@
     // the special meters
     const sp = (x, v, flip) => { ctx.fillStyle = OUT; ctx.fillRect(x - 1, 31, 62, 4); ctx.fillStyle = "#2a2148"; ctx.fillRect(x, 32, 60, 2); const w2 = Math.round(60 * clamp(v, 0, 1)); ctx.fillStyle = v >= 1 ? (Math.floor(t * 10) % 2 ? "#7fd8ff" : "#ffffff") : "#3a8fe0"; ctx.fillRect(flip ? x + 60 - w2 : x, 32, w2, 2); };
     sp(12, 1 - a.spCool / a.spMax, false); sp(W - 72, 1 - b.spCool / b.spMax, true);
+    for (const [f, x, flip] of [[a, 12, false], [b, W - 72, true]]) if (f.buff > 0) { const w2 = Math.round(60 * f.buff / SPECIAL.steve.buff); ctx.fillStyle = Math.floor(t * 12) % 2 ? "#ffc21a" : "#fff2a0"; ctx.fillRect(flip ? x + 60 - w2 : x, 32, w2, 2); } // beta 3.49: FAST FORWARD's time left
     // the timer: big, no box
     const tt = String(Math.max(0, Math.ceil(g.time))).padStart(2, "0");
     text(ctx, tt, W / 2, 24, g.time <= 10 ? RED : GOLD, { sc: 2, al: "c", sh: 1 });
@@ -1927,10 +1980,16 @@
     const notes = (list, type, dur, vol, gap) => list.forEach((f, i) => tone(type, f, f, dur, vol, i * gap));
     const SFX = {
       swing: () => hiss(2600, 0.8, 0.07, 0.07, 0, "highpass"),
-      rise: () => { tone("square", 300, 1300, 0.28, 0.09); hiss(2000, 0.8, 0.25, 0.25, 0, "bandpass", 5000); },
-      hug: () => { tone("triangle", 140, 55, 0.35, 0.3); hiss(500, 0.8, 0.3, 0.35, 0, "lowpass"); },
-      key: () => notes([1900, 2500, 1900, 2500], "triangle", 0.05, 0.07, 0.05),
-      beans: () => { for (let i = 0; i < 5; i++) hiss(3200 + i * 300, 3, 0.03, 0.22, i * 0.035, "bandpass"); tone("square", 520, 260, 0.12, 0.06); },
+      // beta 3.49: the new specials and the finisher
+      turbo: () => { notes([440, 660, 880, 1320, 1760], "square", 0.05, 0.07, 0.035); hiss(2600, 0.7, 0.4, 0.3, 0, "bandpass", 9000); }, // FAST FORWARD: a rising run and a rush of air
+      horse: () => { hiss(900, 3, 0.035, 0.35); hiss(700, 3, 0.035, 0.35, 0.08); hiss(2400, 0.7, 0.22, 0.2, 0.14, "bandpass", 500); }, // two hoof clops, then the throw's whoosh
+      bonk: () => { tone("triangle", 520, 190, 0.14, 0.4); hiss(1500, 4, 0.05, 0.4); }, // wood on a head (or the pavement)
+      flex: () => { tone("square", 98, 196, 0.32, 0.08); tone("triangle", 196, 392, 0.3, 0.1, 0.12); }, // the muscles pumping
+      anchor: () => { tone("sawtooth", 150, 38, 0.4, 0.24); hiss(380, 0.8, 0.4, 0.65, 0, "lowpass"); tone("square", 1200, 300, 0.12, 0.08); }, // the big punch
+      laser: () => { tone("sawtooth", 2200, 700, 0.42, 0.07); tone("square", 2600, 1300, 0.42, 0.045, 0.015); hiss(6000, 1, 0.3, 0.12, 0, "highpass"); }, // two beams
+      whistle: () => tone("triangle", 1900, 260, 1.05, 0.12), // something falling from the sky
+      clang: () => { tone("square", 150, 50, 0.45, 0.26); tone("triangle", 1046, 980, 0.6, 0.12); tone("triangle", 1568, 1500, 0.4, 0.06); hiss(520, 0.8, 0.45, 0.6, 0, "lowpass"); }, // a La Marzocco landing
+      steam: () => hiss(5200, 0.7, 0.9, 0.28, 0, "highpass", 2200), // and its steam
       tote: () => { hiss(900, 0.8, 0.32, 0.4, 0, "bandpass", 200); tone("square", 200, 90, 0.25, 0.08); },
       hit: () => { hiss(900, 1.1, 0.12, 0.5); tone("square", 220, 70, 0.1, 0.16); },
       heavy: () => { hiss(600, 1, 0.2, 0.6); tone("square", 160, 45, 0.18, 0.2); tone("triangle", 90, 40, 0.25, 0.3); },
@@ -1997,34 +2056,62 @@
     // beta 3.45 (the arcade's timing): seq, the drawing shown tick by tick ([drawing, ticks], ...): a short wind-up, the
     // stretch snapping out on the first active tick and held past the active ones, then the way back to the guard. The
     // frame data (su, ac, rc), the boxes, the damage and the stuns are as they were: only the drawings are timed anew
-    punch: { su: 5, ac: 3, rc: 10, dmg: 6, box: [16, -82, 54, -62], hs: 15, bs: 9, push: 2.4, frames: "punch", seq: [[0, 3], [1, 1], [2, 6], [3, 4], [4, 4]], sfx: "hit" },
-    kick: { su: 8, ac: 4, rc: 14, dmg: 9, box: [14, -74, 57, -50], hs: 19, bs: 11, push: 3.2, frames: "kick", seq: [[0, 5], [1, 2], [2, 8], [3, 5], [4, 6]], sfx: "heavy" },
-    cpunch: { su: 4, ac: 3, rc: 8, dmg: 5, box: [14, -60, 52, -42], hs: 14, bs: 8, push: 2, frames: "cpunch", seq: [[0, 3], [1, 6], [0, 6]], crouch: true, sfx: "hit" },
-    ckick: { su: 6, ac: 4, rc: 15, dmg: 8, box: [12, -16, 55, 0], hs: 18, bs: 10, push: 2.6, frames: "ckick", seq: [[0, 5], [1, 8], [0, 12]], crouch: true, low: true, kd: true, sfx: "heavy" },
-    jpunch: { su: 3, ac: 10, rc: 0, dmg: 7, box: [12, -76, 50, -50], hs: 16, bs: 9, push: 2.2, frames: "jpunch", seq: [[0, 2], [1, 999]], air: true, high: true, sfx: "hit" },
-    jkick: { su: 4, ac: 11, rc: 0, dmg: 9, box: [12, -64, 54, -34], hs: 18, bs: 10, push: 2.8, frames: "jkick", seq: [[0, 3], [1, 999]], air: true, high: true, sfx: "heavy" }
+    punch: { name: "punch", su: 5, ac: 3, rc: 10, dmg: 6, box: [16, -82, 54, -62], hs: 15, bs: 9, push: 2.4, frames: "punch", seq: [[0, 3], [1, 1], [2, 6], [3, 4], [4, 4]], sfx: "hit" },
+    kick: { name: "kick", su: 8, ac: 4, rc: 14, dmg: 9, box: [14, -74, 57, -50], hs: 19, bs: 11, push: 3.2, frames: "kick", seq: [[0, 5], [1, 2], [2, 8], [3, 5], [4, 6]], sfx: "heavy" },
+    cpunch: { name: "cpunch", su: 4, ac: 3, rc: 8, dmg: 5, box: [14, -60, 52, -42], hs: 14, bs: 8, push: 2, frames: "cpunch", seq: [[0, 3], [1, 6], [0, 6]], crouch: true, sfx: "hit" },
+    ckick: { name: "ckick", su: 6, ac: 4, rc: 15, dmg: 8, box: [12, -16, 55, 0], hs: 18, bs: 10, push: 2.6, frames: "ckick", seq: [[0, 5], [1, 8], [0, 12]], crouch: true, low: true, kd: true, sfx: "heavy" },
+    jpunch: { name: "jpunch", su: 3, ac: 10, rc: 0, dmg: 7, box: [12, -76, 50, -50], hs: 16, bs: 9, push: 2.2, frames: "jpunch", seq: [[0, 2], [1, 999]], air: true, high: true, sfx: "hit" },
+    jkick: { name: "jkick", su: 4, ac: 11, rc: 0, dmg: 9, box: [12, -64, 54, -34], hs: 18, bs: 10, push: 2.8, frames: "jkick", seq: [[0, 3], [1, 999]], air: true, high: true, sfx: "heavy" }
   };
+  // beta 3.49: a fighter's own attack table: the shared one with ticks added to (or taken from) the start-up and the
+  // recovery (fd), the drawings' timing scaled to match (the stretch still snaps out on the first active tick)
+  const ATKS = new Map();
+  const scaleSeq = (seq, n) => { const tot = seq.reduce((a, [, k]) => a + k, 0); if (tot === n || tot <= 0) return seq.map((e) => e.slice()); let acc = 0, done = 0; return seq.map(([i, k], j) => { acc += k; const to = j === seq.length - 1 ? n : Math.max(done + 1, Math.round((acc * n) / tot)); const r = [i, Math.max(1, to - done)]; done += r[1]; return r; }); };
+  function atkTable(fd) {
+    const key = fd ? JSON.stringify(fd) : ""; if (ATKS.has(key)) return ATKS.get(key);
+    const T = {};
+    for (const [nm, a] of Object.entries(ATK)) {
+      if (!fd) { T[nm] = a; continue; }
+      const su = Math.max(2, a.su + (a.air ? fd.air || 0 : fd.su || 0)), rc = a.air ? a.rc : Math.max(3, a.rc + (fd.rc || 0));
+      let k = 0, cut = 0; while (cut < a.seq.length && k + a.seq[cut][1] <= a.su - 1) k += a.seq[cut++][1];
+      T[nm] = Object.assign({}, a, { su, rc, seq: [...scaleSeq(a.seq.slice(0, cut), su - 1), ...scaleSeq(a.seq.slice(cut), a.air ? a.seq.slice(cut).reduce((q, [, n]) => q + n, 0) : a.ac + rc)] });
+    }
+    ATKS.set(key, T); return T;
+  }
+  const BUFF_FD = { su: -2, rc: -5, air: -1 }; // Steve's FAST FORWARD: quicker than anyone while it lasts
+  const atkOf = (f, nm) => atkTable(f.buff > 0 ? BUFF_FD : f.R.fd || null)[nm];
   // beta 3.45 (Daniel: "a proper hit-stop"): on a hit both fighters freeze for a few ticks (longer the heavier the
   // blow), the spark and a shake of the screen scaled to it; on a block a shorter freeze and no shake. Ticks at 60 a
   // second. Before 3.45: 6 a hit (8 from 9 damage), 4 a block, no shake under 9 damage
-  const HSTOP = { light: 8, heavy: 12, sp: 14, grab: 18, ko: 30 }, BSTOP = { light: 5, heavy: 7, sp: 8, grab: 8 };
-  const SHAKE = { light: 0, heavy: 2, sp: 3, grab: 5, ko: 5 }, SPARK = { light: "spark", heavy: "burst", sp: "sburst", grab: "sburst", ko: "ko" };
-  const tierOf = (def) => (def.grab ? "grab" : def.sp && !def.beans ? "sp" : def.dmg >= 8 ? "heavy" : "light");
+  const HSTOP = { light: 8, heavy: 12, sp: 14, ko: 30 }, BSTOP = { light: 5, heavy: 7, sp: 8 };
+  const SHAKE = { light: 0, heavy: 2, sp: 3, ko: 5 }, SPARK = { light: "spark", heavy: "burst", sp: "sburst", ko: "ko" };
+  const tierOf = (def) => (def.sp ? "sp" : def.dmg >= 8 ? "heavy" : "light"); // beta 3.49: Steve's hug (the grab) is gone
   const IDLE_T = { cristache: 8, steve: 7, ion: 7 }; // beta 3.45: ticks a breath drawing is held (the refs: 6; the calm and the big ones slower)
   const DOWN_T = 24, RISE_T = 10; // beta 3.45: the bounce (about 12 ticks) + lying + getting up = the 46 ticks lying down before, the same 24 of grace after
   const SPECIAL = {
     daniel: { su: 13, ac: 1, rc: 20, cool: 150, proj: "wave", dmg: 12, speed: 3.4, sfx: "wave", sp: true },
     ion: { su: 13, ac: 1, rc: 20, cool: 150, proj: "espresso", dmg: 11, speed: 3.8, sfx: "espresso", sp: true },
-    cristian: { su: 7, ac: 16, rc: 16, cool: 150, dash: 5.6, dmg: 13, box: [6, -82, 48, -34], hs: 22, bs: 14, push: 4, sfx: "dash", kd: true, sp: true, chip: 2 },
+    cristian: { su: 12, ac: 12, rc: 16, cool: 220, dash: 5.6, dmg: 10, // beta 3.49: was su 7, ac 16, cool 150, dmg 13
+      box: [6, -82, 48, -34], hs: 22, bs: 14, push: 4, sfx: "dash", kd: true, sp: true, chip: 2 },
     coz: { su: 10, ac: 6, rc: 16, cool: 170, flash: true, dmg: 6, box: [6, -104, 80, -20], hs: 0, bs: 12, push: 1.5, dizzy: 80, sfx: "flash", sp: true },
     // beta 3.11: the guests. Maria spins in (both sides of her hit), Cristache goes up for a high five (it beats a
     // jump), Steve's hug can't be blocked (but only reaches close and leaves him open), Rares's keys come back to
     // him, Iulica swings the tote bag in a wide arc
-    maria: { su: 8, ac: 24, rc: 14, cool: 150, spin: true, dash: 3.6, dmg: 12, box: [-34, -82, 52, -36], hs: 20, bs: 12, push: 3.6, kd: true, sfx: "dash", sp: true, chip: 2, fr: [[0], [1, 2], [0]] },
-    cristache: { su: 5, ac: 16, rc: 14, cool: 150, rise: true, dmg: 13, box: [-4, -128, 36, -50], hs: 20, bs: 12, push: 3, kd: true, sfx: "rise", sp: true, chip: 2, armor: 10 },
-    steve: { su: 11, ac: 5, rc: 24, cool: 160, grab: true, dmg: 16, box: [8, -96, 42, -30], hs: 0, bs: 0, push: 4.5, kd: true, sfx: "hug", sp: true },
-    rares: { su: 12, ac: 1, rc: 18, cool: 160, proj: "key", dmg: 10, speed: 4.2, sfx: "key", sp: true },
-    dony: { su: 11, ac: 1, rc: 18, cool: 150, proj: "bean", beans: 3, dmg: 5, speed: 3.6, sfx: "beans", sp: true, hs: 12, bs: 8, push: 1.6 },
+    maria: { su: 8, ac: 24, rc: 14, cool: 185, spin: true, // beta 3.49: cool was 150
+      dash: 3.6, dmg: 12, box: [-34, -82, 52, -36], hs: 20, bs: 12, push: 3.6, kd: true, sfx: "dash", sp: true, chip: 2, fr: [[0], [1, 2], [0]] },
+    // beta 3.49 (Daniel: new specials for four of them). Each: start-up, active and recovery ticks, a box (or a thrown
+    // thing's), damage in the others' range, the hit-stop of a special, its sound, and how often the CPU uses it (think)
+    // Cristache hurls a carved wooden horse (a lob: it arcs over a crouch, knocks down, bounces off the pavement)
+    cristache: { su: 16, ac: 1, rc: 18, cool: 170, proj: "horse", lob: [3.3, -3.3, 0.2], dmg: 13, kd: true, sfx: "horse", sp: true, chip: 3, seq: [[0, 15], [1, 9], [2, 10]] },
+    // Steve: FAST FORWARD: a burst that shoves away anyone next to him (small damage), then 4 s fast (walk x1.65, every
+    // attack's start-up -2 and recovery -5 ticks, a full jump), afterimages; a long cooldown, the CPU uses it rarely
+    steve: { su: 14, ac: 3, rc: 12, cool: 720, buff: 240, dmg: 5, box: [-14, -100, 40, 0], hs: 12, bs: 8, push: 4.6, sfx: "turbo", sp: true, seq: [[0, 13], [1, 7], [2, 8]] },
+    // Rares flexes (the forearms swell, the anchor shows in his tattoos), then a huge punch that sends the other one flying
+    // across the screen (into the screen's edge, a bounce off it); slow to start, a long recovery: a punish, or a gamble
+    rares: { su: 22, ac: 4, rc: 22, cool: 190, dmg: 15, box: [16, -88, 62, -56], hs: 22, bs: 14, push: 6, launch: 7.5, kd: true, sfx: "anchor", sp: true, chip: 3, hstop: 18, flexArmor: 12, seq: [[0, 11], [1, 10], [2, 10], [3, 16]] }, // flexArmor: one blow in the first 12 ticks of the flex taken (at 3/4) and shrugged off
+    // Dony fires two beams from his glasses: a long thin box at eye height (it reaches about half the screen and passes
+    // over a crouch), on for 16 ticks, one hit
+    dony: { su: 14, ac: 16, rc: 18, cool: 170, beam: true, eye: [4, -72], dmg: 12, box: [12, -88, 224, -80], hs: 18, bs: 10, push: 2.6, sfx: "laser", sp: true, chip: 2, seq: [[0, 13], [1, 22], [2, 12]] },
     iulica: { su: 12, ac: 6, rc: 18, cool: 150, dmg: 13, box: [4, -116, 58, -30], hs: 22, bs: 14, push: 4.2, kd: true, sfx: "tote", sp: true, chip: 2 }
   };
   const GRAV = 0.34, JUMP_V = -6.4, ROUND_TIME = 60; // beta 3.33: the jump a little lower, as the fighters are (about 60 units up)
@@ -2044,7 +2131,7 @@
     TRK.match(); // r211: a match begins (its length, the count for gloves_exit)
     g = { scene: "vs", me, cpu: cpu || "ion", voucher: null, t: 0, round: 1, wins: [0, 0], phase: "intro", pt: 0, time: ROUND_TIME, f: [], proj: [], fx: [], hitstop: 0, shake: 0, flash: 0, camX: (STAGE_W - W) / 2, slow: 0, menu: 0, result: null, perfect: false };
     resetRound();
-    BAKEQ.push(() => carDacia(), ...["cristache", "ion", "rares"].map((id) => () => endFrame(id))); // beta 3.33: the ending's art, in the spare time of the fight
+    BAKEQ.push(() => carDacia(), ...["cristache", "ion"].map((id) => () => endFrame(id)), ...RARES_SEQ.map((e) => () => endFrame("rares", e[1], e[2] ? "cup" : null))); // beta 3.33: the ending's art, in the spare time of the fight
     g.scene = "vs"; g.t = 0;
     SND.play("confirm");
   }
@@ -2057,15 +2144,15 @@
   const SPARK_LIFE = { spark: 9, burst: 13, sburst: 15, ko: 24, bspark: 8, dust: 14, flash: 10 };
   const spark = (x, y, kind, dir = 0) => g.fx.push({ k: kind || "spark", x, y, t: 0, life: SPARK_LIFE[kind] || 10, dir });
   function startAtk(f, name) {
-    const a = ATK[name]; f.atk = a; f.atkHit = false; f.t = 0;
+    const a = atkOf(f, name); f.atk = a; f.atkHit = false; f.t = 0;
     if (a.air) return; // stays "jump"
     f.st = "atk"; f.vx = 0;
     SND.play("swing");
   }
   function startSpecial(f) {
-    const s = SPECIAL[f.id]; f.atk = s; f.atkHit = false; f.t = 0; f.st = "atk"; f.vx = 0; f.spCool = s.cool;
+    const s = SPECIAL[f.id]; f.atk = s; f.atkHit = false; f.t = 0; f.st = "atk"; f.vx = 0; f.spCool = s.cool; f.armorUsed = false; SPUSE[f.cpu ? "cpu" : "p1"]++;
   }
-  function jump(f, dir) { f.st = "jump"; f.vy = JUMP_V; f.vx = dir * 2.05 * f.R.speed; f.atk = null; f.t = 0; f.jdir = dir * f.face; f.landT = 0; SND.play("jump"); }
+  function jump(f, dir) { const J = f.buff > 0 ? null : f.R.jump; f.grav = J ? J.g : GRAV; f.st = "jump"; f.vy = J ? J.v : JUMP_V; f.vx = dir * 2.05 * f.R.speed * (f.buff > 0 ? 1.3 : 1); f.atk = null; f.t = 0; f.jdir = dir * f.face; f.landT = 0; SND.play("jump"); }
   // one step of a fighter's controls (the player's keys or the CPU's plan, both as the same intent)
   function control(f, o, inp) {
     const fw = f.face > 0 ? inp.r : inp.l, bk = f.face > 0 ? inp.l : inp.r;
@@ -2076,7 +2163,7 @@
       if (inp.kp) return startAtk(f, inp.d ? "ckick" : "kick");
       if (inp.u) return jump(f, fw ? f.face : bk ? -f.face : 0);
       if (inp.d) { f.st = "crouch"; f.vx = 0; return; }
-      const sp = f.R.speed;
+      const sp = f.R.speed * (f.buff > 0 ? 1.65 : 1); // beta 3.49: Steve's FAST FORWARD
       if (fw) { f.st = "walk"; f.vx = 1.6 * sp * f.face; f.walkDir = sp; }
       else if (bk) { f.st = "walk"; f.vx = -1.3 * sp * f.face; f.walkDir = -0.82 * sp; } // beta 3.45: the steps' cadence follows the speed, so the feet don't slide
       else { f.st = "idle"; f.vx = 0; }
@@ -2086,7 +2173,20 @@
   }
   // the CPU: I O N. Reads the distance and what you are doing, with a human delay; blocks about half of what it
   // sees coming, throws the espresso from afar, jumps in now and then: a fair fight, a little easier than hard
-  function think(f, o) {
+  // beta 3.49 (Daniel: "I O N should be better than the others, but not by much"): the CPU's character, per fighter: how
+  // fast it decides (react + up to jitter ticks, r1 more in round 1), how often it blocks an attack it sees coming
+  // (by round), how often it punishes a missed or blocked attack in its recovery and keeps the pressure on after a hit
+  // it landed, how readily it uses its special (sp). AI_BASE is the CPU as it was before 3.49; BOT is the bench's
+  // scripted players (an average and a decent human), never used in the game
+  const AI_BASE = { react: 14, jitter: 18, r1: 8, block: [0.38, 0.45, 0.52], punish: 0, follow: 0, sp: 1 };
+  // beta 3.49, tuned on the bench (fair CPU against CPU, 48 matches a pairing): I O N a little quicker to decide, blocks a
+  // little more, punishes and keeps the pressure on now and then; Steve's CPU slower to decide and to block (he feels
+  // slow), using FAST FORWARD rarely (think)
+  const AI_PROF = { ion: { react: 14, jitter: 17, r1: 7, block: [0.42, 0.48, 0.54], punish: 0.06, follow: 0.04 }, steve: { react: 16, jitter: 19, block: [0.34, 0.4, 0.46] } };
+  const BOT = { avg: { react: 16, jitter: 16, r1: 0, block: [0.33, 0.33, 0.33], punish: 0.15, follow: 0.15, sp: 1 }, decent: { react: 12, jitter: 12, r1: 0, block: [0.45, 0.45, 0.45], punish: 0.35, follow: 0.3, sp: 1 } };
+  let botProf = null;
+  function think(f, o, P0) {
+    const P = P0 || f.prof || (f.prof = Object.assign({}, AI_BASE, AI_PROF[f.id] || {}));
     const ai = f.ai, d = Math.abs(o.x - f.x), inp = { l: 0, r: 0, u: 0, d: 0, pp: 0, kp: 0, sp: 0 };
     const fwd = f.face > 0 ? "r" : "l", back = f.face > 0 ? "l" : "r";
     if (cpuHold) return inp; // for the review renders: the CPU stands still
@@ -2095,7 +2195,7 @@
     const threatAtk = o.st === "atk" || (o.atk && !onGround(o));
     if (threatAtk && o.atk && ai.seen !== o.atkId && d < 92) {
       ai.seen = o.atkId;
-      if (Math.random() < (g.round === 1 ? 0.38 : g.round === 2 ? 0.45 : 0.52)) ai.plan = { k: "block", low: !!o.atk.low || (o.atk.crouch && Math.random() < 0.7), n: 26 + (Math.random() * 10 | 0) };
+      if (Math.random() < P.block[Math.min(2, g.round - 1)]) ai.plan = { k: "block", low: !!o.atk.low || (o.atk.crouch && Math.random() < 0.7), n: 26 + (Math.random() * 10 | 0) };
     }
     const pr = g.proj.find((p) => p.owner !== f && Math.sign(f.x - p.x) === Math.sign(p.vx) && Math.abs(f.x - p.x) < 110);
     if (pr && ai.seenP !== pr && free(f)) {
@@ -2103,7 +2203,6 @@
       if (r < 0.4 && Math.abs(f.x - pr.x) > 46) ai.plan = { k: "jumpf", n: 1 };
       else if (r < 0.75) ai.plan = { k: "block", low: false, n: 40 };
     }
-    if (SPECIAL[f.id].rise && f.spCool <= 0 && free(f) && !onGround(o) && d < 80 && Math.random() < 0.08) { inp.sp = 1; return inp; }
     if (!onGround(f)) {
       if (!f.atk && d < 56 && f.vy > -2 && Math.random() < 0.3) inp.kp = 1;
       return inp;
@@ -2116,12 +2215,21 @@
       if (p.k === "jumpb") { inp.u = 1; inp[back] = 1; ai.plan = null; return inp; }
       if (p.k === "wait") { if (--p.n <= 0) ai.plan = null; return inp; }
     }
+    // beta 3.49: a punish (the other's attack missed or was blocked, it is still recovering, in reach) and the pressure
+    // kept after a hit landed (straight into another attack): both only for the profiles that have them
+    if (free(f) && !ai.plan && P.punish && o.st === "atk" && o.atk && o.t >= o.atk.su + o.atk.ac && ai.pun !== o.atkId && d < 70 * f.sc) { ai.pun = o.atkId; if (Math.random() < P.punish) { if (d < 54 * f.sc) inp.pp = 1; else inp.kp = 1; return inp; } }
+    if (o.hp < (ai.oh ?? o.hp) && o.st === "hit") ai.hitNow = 1; ai.oh = o.hp;
+    if (ai.hitNow && free(f)) { ai.hitNow = 0; if (P.follow && d < 74 * f.sc && Math.random() < P.follow) { if (Math.random() < 0.55) inp.pp = 1; else inp.kp = 1; return inp; } }
     if (!free(f) || ai.t > 0) return inp;
-    ai.t = 14 + (Math.random() * 18 | 0) + (g.round === 1 ? 8 : 0);
+    ai.t = P.react + (Math.random() * P.jitter | 0) + (g.round === 1 ? P.r1 : 0);
     const r = Math.random(), ready = f.spCool <= 0, SP = SPECIAL[f.id], close = 66 * f.sc;
     // beta 3.11: any fighter can be the CPU; each special is used where it works (from afar, mid range, up close)
-    const spAt = SP.proj ? d > 110 : SP.dash || SP.spin ? d > 50 && d < 150 : SP.grab ? d < 44 * f.sc : SP.rise ? d < 70 && (!onGround(o) || r < 0.5) : SP.flash ? d < 95 : d < 72 * f.sc;
-    if (ready && spAt && r < (SP.proj ? 0.35 : 0.3)) { inp.sp = 1; return inp; }
+    // beta 3.49: where and how often each special is used: Steve's FAST FORWARD rarely (from the second round, or when
+    // he's losing), the horse from mid range, the anchor punch close (more when the other is stuck in a recovery), the
+    // laser across the gap at someone standing
+    const spAt = SP.buff ? (g.round >= 2 || f.hp < 60) && d < 170 : SP.proj === "horse" ? d > 66 && d < 175 : SP.launch ? d < 58 * f.sc : SP.beam ? d > 48 && d < 185 && o.st !== "crouch" : SP.proj ? d > 110 : SP.dash || SP.spin ? d > 50 && d < 150 : SP.flash ? d < 95 : d < 72 * f.sc;
+    const spP = SP.buff ? 0.06 : SP.launch ? (o.st === "atk" && o.t >= o.atk.su + o.atk.ac ? 0.6 : 0.2) : SP.proj ? 0.35 : 0.3;
+    if (ready && spAt && r < spP * P.sp) { inp.sp = 1; return inp; }
     if (d > 150) {
       if (false) inp.sp = 1;
       else ai.plan = { k: "walk", dir: 1, n: 24 + (Math.random() * 24 | 0) };
@@ -2146,6 +2254,7 @@
     if (f.spCool > 0) f.spCool--;
     if (f.inv > 0) f.inv--;
     if (f.armor > 0) f.armor--;
+    if (f.buff > 0) { f.buff--; if (f.t % 3 === 0 && (f.st === "walk" || f.st === "atk" || f.st === "jump")) g.fx.push({ k: "ghost", x: f.x, y: f.y, face: f.face, img: frameOf(f), t: 0, life: 12, tint: 1 }); } // beta 3.49: FAST FORWARD's afterimages
     if (f.trail > f.hp) f.trail = Math.max(f.hp, f.trail - (f.hs > 0 || f.st === "hit" ? 0 : 0.6));
     // attacks run their course
     if (f.atk) {
@@ -2153,12 +2262,13 @@
       if (t === 1) f.atkId = ++atkSeq;
       if (a.sp && t === a.su) {
         SND.play(a.sfx);
-        if (a.beans) for (let i = 0; i < a.beans; i++) g.proj.push({ k: "bean", x: f.x + f.face * 26, y: f.y - 56 * f.sc, vx: (a.speed + i * 0.5) * f.face, vy: -1.6 + i * 1.1, owner: f, dmg: a.dmg, t: 0, i });
+        if (a.lob) g.proj.push({ k: a.proj, x: f.x + f.face * 14, y: f.y - 104 * f.sc, vx: a.lob[0] * f.face, vy: a.lob[1], grav: a.lob[2], owner: f, dmg: a.dmg, t: 0 }); // beta 3.49: the horse, thrown in an arc
         else if (a.proj) g.proj.push({ k: a.proj, x: f.x + f.face * 30, y: f.y - (a.proj === "wave" ? 56 : 63) * f.sc, vx: a.speed * f.face, owner: f, dmg: a.dmg, t: 0 });
+        if (a.buff) { f.buff = a.buff; g.fx.push({ k: "turbo", x: f.x, y: f.y - 50 * f.sc, t: 0, life: 18 }); } // beta 3.49: Steve, FAST FORWARD
         if (a.flash) { g.flash = 10; spark(f.x + f.face * 28, f.y - 76 * f.sc, "flash"); }
-        if (a.rise) { f.vy = -7.8; f.vx = 1.5 * f.face; f.y = Math.min(f.y, -1); }
-        if (a.armor) f.armor = a.armor;
       }
+      if (a.sp && a.launch && (t === 6 || t === 18)) { g.fx.push({ k: "twinkle", x: f.x + f.face * 12 * f.sc, y: f.y - 88 * f.sc, t: 0, life: 12 }); if (t === 6) SND.play("flex"); } // beta 3.49: the flex, a gleam on the biceps
+      if (a.sp && a.beam && t === 4) g.fx.push({ k: "twinkle", x: f.x + f.face * 10 * f.sc, y: f.y - 80 * f.sc, t: 0, life: 10 }); // the glasses catching the light
       if (a.dash) { if (t >= a.su && t < a.su + a.ac && !f.atkHit) f.vx = a.dash * f.face; else f.vx *= 0.7; if (t % 3 === 0 && t >= a.su && t < a.su + a.ac) g.fx.push({ k: "ghost", x: f.x, y: f.y, face: f.face, img: f.S.special[1], t: 0, life: 10 }); }
       if (!a.air && t >= a.su + a.ac + a.rc && onGround(f)) { f.atk = null; f.st = a.crouch ? "crouch" : "idle"; f.vx = 0; }
       if (a.air && t >= a.su + a.ac) f.atkDone = true;
@@ -2175,14 +2285,13 @@
     // movement
     f.x += f.vx;
     if (!onGround(f) || f.vy < 0) {
-      f.vy += GRAV; f.y += f.vy;
+      f.vy += f.st === "jump" || (f.atk && f.atk.air) ? f.grav || GRAV : GRAV; f.y += f.vy; // beta 3.49: Steve's jump heavier
       if (f.y >= 0) {
         f.y = 0; f.vy = 0;
         // beta 3.45: a knock-down hits the pavement, bounces once (a shake, dust) and lands for good
-        if (f.st === "fall" && !f.bnc) { f.bnc = true; f.vy = f.hp > 0 ? -2 : -2.6; f.vx *= 0.45; f.y = -1; g.shake = Math.max(g.shake, f.hp > 0 ? 3 : 4); SND.play("land"); spark(f.x - f.face * 16, -2, "dust"); spark(f.x + f.face * 6, -2, "dust"); }
+        if (f.st === "fall" && !f.bnc) { f.bnc = true; f.launch = false; f.vy = f.hp > 0 ? -2 : -2.6; f.vx *= 0.45; f.y = -1; g.shake = Math.max(g.shake, f.hp > 0 ? 3 : 4); SND.play("land"); spark(f.x - f.face * 16, -2, "dust"); spark(f.x + f.face * 6, -2, "dust"); }
         else if (f.st === "fall") { f.bnc = false; f.st = "down"; f.t = 0; f.vx = 0; g.shake = Math.max(g.shake, 1.5); spark(f.x - f.face * 20, -2, "dust"); }
         else if (f.st === "jump") { f.st = "idle"; f.atk = null; f.atkDone = false; f.vx = 0; f.landT = 5; SND.play("land"); } // the squat on landing (only the drawing: he can act at once, as before)
-        else if (f.st === "atk" && f.atk?.rise) { f.vx = 0; f.t = Math.max(f.t, f.atk.su + f.atk.ac); SND.play("land"); }
         else if (f.st === "hit") f.vx = 0;
       }
     }
@@ -2194,8 +2303,9 @@
   const canBlock = (d) => onGround(d) && d.holdBack && (d.st === "idle" || d.st === "walk" || d.st === "crouch" || d.st === "block");
   function land(a, d, def, px, py, proj) {
     if (d.st === "down" || d.st === "rise" || d.bnc || d.inv > 0 || d.armor > 0 || (d.st === "fall" && d.hp <= 0)) return false; // beta 3.45: the bounce and the getting up are part of lying down
-    if (def.grab && !onGround(d)) return false; // a hug needs both feet on the ground
-    const blocked = !def.grab && canBlock(d) && !(def.low && !d.holdDown) && !(def.high && d.holdDown);
+    // beta 3.49: Rares in the double-biceps flex shrugs one blow off (it still hurts, 3/4): it doesn't stop the flex
+    if (d.st === "atk" && d.atk && d.atk.flexArmor && d.t < d.atk.flexArmor && !d.armorUsed) { d.armorUsed = true; d.hp = Math.max(1, d.hp - Math.round(def.dmg * a.R.power * 0.75)); spark(px, py, "bspark"); SND.play("block"); g.hitstop = 8; g.fx.push({ k: "twinkle", x: d.x, y: d.y - 70 * d.sc, t: 0, life: 10 }); return true; }
+    const blocked = canBlock(d) && !(def.low && !d.holdDown) && !(def.high && d.holdDown);
     const away = proj ? Math.sign(proj.vx) : (d.x >= a.x ? 1 : -1), tier = tierOf(def);
     if (blocked) {
       d.st = "block"; d.crouchBlock = d.holdDown; d.t = 0; d.hs = def.bs; d.vx = away * def.push * 0.9;
@@ -2203,17 +2313,17 @@
       spark(px, py, "bspark"); SND.play("block"); g.hitstop = BSTOP[tier]; g.hsK = "light"; if (tier === "sp") g.shake = Math.max(g.shake, 1);
       return true;
     }
-    const dmg = Math.round(def.dmg * a.R.power * (d.cpu ? 1 : 0.9));
+    const dmg = Math.round(def.dmg * a.R.power * (d.R.def || 1) * (d.cpu || simFair ? 1 : 0.9)); // beta 3.49: def, the damage a fighter takes
     d.hp = Math.max(0, d.hp - dmg); d.t = 0; d.atk = null; d.atkDone = false;
     d.hitK = py > d.y - 60 * d.sc ? "gut" : "head"; // beta 3.45: a blow to the body doubles him over, one to the head snaps it back
     if (d.hp <= 0) { d.st = "fall"; d.vy = -4.2; d.vx = away * 2.4; d.y = Math.min(d.y, -1); }
     else if (def.dizzy && onGround(d)) { d.st = "dizzy"; d.dz = def.dizzy; d.vx = away * 1; SND.play("dizzy"); }
-    else if (def.grab) { d.st = "fall"; d.vy = -5; d.vx = away * 3.4; d.y = Math.min(d.y, -1); }
+    else if (def.launch && onGround(d)) { d.st = "fall"; d.vy = -3.4; d.vx = away * def.launch; d.y = Math.min(d.y, -1); d.launch = true; } // beta 3.49: Rares's anchor punch: across the screen
     else if (def.kd || !onGround(d)) { d.st = "fall"; d.vy = -3.4; d.vx = away * 2; d.y = Math.min(d.y, -1); }
     else { d.st = "hit"; d.hs = def.hs; d.vx = away * def.push; }
     const k = d.hp <= 0 ? "ko" : tier;
     spark(px, py, SPARK[k], away); SND.play(def.sfx === "hit" ? "hit" : "heavy");
-    g.hitstop = HSTOP[k]; g.hsK = k; g.shake = Math.max(g.shake, SHAKE[k]);
+    g.hitstop = Math.max(HSTOP[k], def.hstop || 0); g.hsK = k; g.shake = Math.max(g.shake, SHAKE[k] + (def.launch ? 2 : 0));
     if (k !== "light" || d.st === "fall") { g.cheerT = g.cheerT0 = k === "ko" ? 90 : 44; scarePigeons(); } // beta 3.45: the street cheers the big ones (a heavy blow, a special, a knock-down, the K.O.); the pigeons fly off
     else g.oohT = 16; // and only flinches at a jab
     return true;
@@ -2221,7 +2331,7 @@
   function stepFight(inp) {
     const [a, b] = g.f, fighting = g.phase === "fight";
     if (fighting) {
-      if (autoP1) inp = think(a, b); // beta 3.33, for the tests: the CPU on both sides
+      if (autoP1) inp = think(a, b, botProf); // beta 3.33, for the tests: the CPU on both sides (beta 3.49: or a scripted player, botProf)
       if (free(a) || a.st === "jump") control(a, b, inp); else { a.holdBack = !!(a.face > 0 ? inp.l : inp.r); a.holdDown = !!inp.d; }
       const ci = think(b, a);
       if (free(b) || b.st === "jump") control(b, a, ci); else { b.holdBack = !!(b.face > 0 ? ci.l : ci.r); b.holdDown = !!ci.d; }
@@ -2237,15 +2347,17 @@
       if (!at || !at.box || f.atkHit) continue;
       const t = f.t; if (t < at.su || t >= at.su + at.ac) continue;
       const hb = boxOf(f, at.box), hu = hurt(o);
-      if (overlap(hb, hu)) { f.atkHit = true; if (HITLOG.length < 400) HITLOG.push({ k: f.atk === SPECIAL[f.id] ? "sp" : Object.keys(ATK).find((n) => ATK[n] === f.atk), d: Math.round(Math.abs(f.x - o.x)), who: f.id }); land(f, o, at, (Math.max(hb[0], hu[0]) + Math.min(hb[2], hu[2])) / 2, (Math.max(hb[1], hu[1]) + Math.min(hb[3], hu[3])) / 2); if (at.dash) f.vx = -f.face * 1.5; }
+      if (overlap(hb, hu)) { f.atkHit = true; if (at.beam) f.beamX = f.face > 0 ? hu[0] : hu[2]; if (HITLOG.length < 400) HITLOG.push({ k: f.atk === SPECIAL[f.id] ? "sp" : f.atk.name, d: Math.round(Math.abs(f.x - o.x)), who: f.id }); land(f, o, at, (Math.max(hb[0], hu[0]) + Math.min(hb[2], hu[2])) / 2, (Math.max(hb[1], hu[1]) + Math.min(hb[3], hu[3])) / 2); if (at.dash) f.vx = -f.face * 1.5; }
     }
     // the projectiles
     for (const p of g.proj) {
       p.x += p.vx; p.t++;
-      if (p.vy !== undefined) { p.y += p.vy; p.vy += 0.07; if (p.y > -3) { p.dead = true; spark(p.x, -3, "dust"); continue; } }
-      if (p.k === "key") { if (!p.back && p.t > 32) { p.back = true; p.vx = -p.vx; } if (p.back && Math.abs(p.x - p.owner.x) < 16) { p.dead = true; continue; } }
+      // beta 3.49: a thrown thing (the horse) falls in an arc; it bounces off the pavement once (harmless after that),
+      // tumbles and is gone on the second touch
+      if (p.vy !== undefined) { p.y += p.vy; p.vy += p.grav || 0.07; if (p.y > -3) { if (p.k === "horse" && !p.bounced) { p.bounced = true; p.y = -3; p.vy = -Math.abs(p.vy) * 0.38; p.vx *= 0.55; spark(p.x, -3, "dust"); SND.play("bonk"); g.shake = Math.max(g.shake, 1.5); } else { p.dead = true; spark(p.x, -3, "dust"); continue; } } }
       const o = p.owner === a ? b : a, hu = hurt(o), pb = [p.x - 9, p.y - 9, p.x + 9, p.y + 9];
-      if (!p.dead && overlap(pb, hu) && o.st !== "down") { if (land(p.owner, o, Object.assign({ hs: 20, bs: 12, push: 2.6, sfx: "heavy", sp: true }, SPECIAL[p.owner.id]), p.x, p.y, p)) p.dead = true; }
+      if (p.k === "horse") { pb[0] -= 4; pb[2] += 4; pb[1] -= 6; } // the horse is bigger than a cup
+      if (!p.dead && !p.bounced && overlap(pb, hu) && o.st !== "down") { if (land(p.owner, o, Object.assign({ hs: 20, bs: 12, push: 2.6, sfx: "heavy", sp: true }, SPECIAL[p.owner.id]), p.x, p.y, p)) { p.dead = true; if (p.k === "horse") { SND.play("bonk"); for (let i = 0; i < 3; i++) g.fx.push({ k: "chip", x: p.x, y: p.y, t: 0, life: 22, vx: (i - 1) * 1.1 + Math.sign(p.vx) * 0.6, vy: -2.4 - i * 0.4 }); } } }
       if (p.x < g.camX - 40 || p.x > g.camX + W + 40) p.dead = true;
     }
     for (const p of g.proj) for (const q of g.proj) if (p !== q && p.owner !== q.owner && !p.dead && !q.dead && Math.abs(p.x - q.x) < 14 && Math.abs(p.y - q.y) < 16) { p.dead = q.dead = true; spark((p.x + q.x) / 2, p.y, "burst"); SND.play("block"); }
@@ -2264,12 +2376,13 @@
       else if (ma || mb) { const f = ma ? a : b, d = Math.min(over, 4); f.x += (f === a ? -side : side) * d; }
     }
     for (const f of g.f) f.x = clamp(f.x, lo, hi);
+    for (const f of g.f) if (f.launch && f.st === "fall" && (f.x <= lo + 0.01 || f.x >= hi - 0.01)) { const s2 = f.x <= lo + 0.01 ? -1 : 1; f.launch = false; f.vx = -s2 * 1.3; f.vy = Math.min(f.vy, -1.6); g.shake = Math.max(g.shake, 4); g.fx.push({ k: "burst", x: f.x + s2 * 10, y: f.y - 46 * f.sc, t: 0, life: 13, dir: -s2 }); SND.play("heavy"); } // beta 3.49: the wall-bounce (the screen's edge, as the arcade's corners)
     if (near && !lying(a) && !lying(b) && Math.abs(b.x - a.x) < pbw - 0.01) { // a wall held one back: the other steps aside the rest
       const aWall = a.x <= lo + 0.01 || a.x >= hi - 0.01, bWall = b.x <= lo + 0.01 || b.x >= hi - 0.01;
       if (aWall && !bWall) b.x = clamp(a.x + side * pbw, lo, hi); else if (bWall && !aWall) a.x = clamp(b.x - side * pbw, lo, hi);
     }
     if (onGround(a) && onGround(b) && !lying(a) && !lying(b)) { const gap = Math.abs(a.x - b.x); stats.minGap = Math.min(stats.minGap ?? 1e9, gap); // for the tests: how close the bodies come
-      if (gapWatch && gap < gapWatch && !g.frozen) { const lo = Math.max(18, g.camX + 18), hi = Math.min(STAGE_W - 18, g.camX + W - 18); GAPLOG.push({ gap: +gap.toFixed(1), pbw: +pbw.toFixed(1), x: [+a.x.toFixed(1), +b.x.toFixed(1)], st: [a.st, b.st], vx: [+a.vx.toFixed(2), +b.vx.toFixed(2)], atk: [a.atk ? Object.keys(ATK).find((n) => ATK[n] === a.atk) || "sp" : null, b.atk ? Object.keys(ATK).find((n) => ATK[n] === b.atk) || "sp" : null], edge: [a.x <= lo + 0.01 ? "L" : a.x >= hi - 0.01 ? "R" : "", b.x <= lo + 0.01 ? "L" : b.x >= hi - 0.01 ? "R" : ""], camX: +g.camX.toFixed(1), lo: +lo.toFixed(1), hi: +hi.toFixed(1) }); if (gapFreeze) g.frozen = true; } }
+      if (gapWatch && gap < gapWatch && !g.frozen) { const lo = Math.max(18, g.camX + 18), hi = Math.min(STAGE_W - 18, g.camX + W - 18); GAPLOG.push({ gap: +gap.toFixed(1), pbw: +pbw.toFixed(1), x: [+a.x.toFixed(1), +b.x.toFixed(1)], st: [a.st, b.st], vx: [+a.vx.toFixed(2), +b.vx.toFixed(2)], atk: [a.atk ? a.atk.name || "sp" : null, b.atk ? b.atk.name || "sp" : null], edge: [a.x <= lo + 0.01 ? "L" : a.x >= hi - 0.01 ? "R" : "", b.x <= lo + 0.01 ? "L" : b.x >= hi - 0.01 ? "R" : ""], camX: +g.camX.toFixed(1), lo: +lo.toFixed(1), hi: +hi.toFixed(1) }); if (gapFreeze) g.frozen = true; } }
     const goal = clamp((a.x + b.x) / 2 - W / 2, 0, STAGE_W - W); g.camX += (goal - g.camX) * 0.18;
     for (const f of g.f) stepSmoke(f);
   }
@@ -2323,10 +2436,24 @@
       const loser = a.hp === b.hp ? null : a.hp < b.hp ? a : b, winner = loser ? (loser === a ? b : a) : null;
       if (g.pt === 120 && winner) { winner.st = "win"; winner.t = 0; winner.vx = 0; winner.atk = null; }
       if (g.pt >= 220) endRound(winner);
+    } else if (g.phase === "finish") { // beta 3.49: I O N's finisher (see FIN)
+      const F = g.fin;
+      if (g.pt === FIN.drop - 14) SND.play("whistle");
+      if (g.pt === FIN.hit) { g.shake = Math.max(g.shake, 7); g.flash = 4; SND.play("clang"); SND.play("steam"); g.cheerT = g.cheerT0 = 120; scarePigeons(); F.flat = true; F.loser.st = "down"; F.loser.vx = 0; F.loser.y = 0;
+        for (let i = 0; i < 18; i++) g.fx.push({ k: "steampuff", x: F.x + (i % 2 ? 1 : -1) * (20 + (i >> 1) * 3), y: -4 - (i % 4) * 9, t: 0, life: 36 + (i % 5) * 6, vx: (i % 2 ? 1 : -1) * (0.6 + (i % 3) * 0.4), vy: -0.3 - (i % 4) * 0.14, big: i % 3 === 0 }); for (let i = 0; i < 4; i++) spark(F.x + (i - 1.5) * 16, -2, "dust"); }
+      if (g.pt === FIN.lift) SND.play("swing");
+      if (g.pt >= FIN.end) finishDone();
     } else if (g.phase === "match") {
-      if (g.pt >= 200) { g.scene = "result"; g.menu = 0; g.t = 0; SND.music("menu"); }
+      if (g.pt >= (g.fin ? 150 : 200)) { g.scene = "result"; g.menu = 0; g.t = 0; SND.music("menu"); }
     }
   }
+  // beta 3.49 (Daniel: I O N's "fatality", our own word for it): when I O N wins the match (the player's or the CPU's)
+  // a La Marzocco drops out of the sky onto the loser, cartoon style: its shadow grows first, it lands with a clang, a
+  // shake and a burst of steam, sits a moment (the cups on its rail rattling), springs back up into the sky and leaves
+  // the loser flat as a pancake, wobbling, a little espresso cup rattling on top. ESPRESSO'D! A tap or a key skips it;
+  // then the result as ever. Ticks from the match's end
+  const FIN = { shadow: 18, drop: 46, hit: 64, lift: 112, gone: 124, end: 236 };
+  function finishDone() { if (g.phase !== "finish") return; g.phase = "match"; g.pt = 0; SND.play(g.result === "win" ? "win" : "lose"); }
   function endRound(winner) {
     const [a] = g.f;
     if (winner) g.wins[winner === a ? 0 : 1]++;
@@ -2334,8 +2461,11 @@
     TRK.round(winner); // r211
     if (g.wins[0] >= 2 || g.wins[1] >= 2 || (!winner && g.round >= 5)) {
       if (!winner && g.round >= 5) g.wins[0] = 2;
-      g.phase = "match"; g.pt = 0; g.result = g.wins[0] >= 2 ? "win" : "lose"; SND.music(null); SND.play(g.result === "win" ? "win" : "lose");
+      g.phase = "match"; g.pt = 0; g.result = g.wins[0] >= 2 ? "win" : "lose"; SND.music(null);
       TRK.matchEnd(); // r211
+      const W2 = g.wins[0] >= 2 ? g.f[0] : g.f[1], L2 = W2 === g.f[0] ? g.f[1] : g.f[0];
+      if (W2.id === "ion") { g.phase = "finish"; g.fin = { winner: W2, loser: L2, x: L2.x - L2.face * (L2.st === "down" ? 14 : 0) * L2.sc, flat: false }; W2.st = "win"; W2.t = 0; W2.vx = 0; W2.atk = null; } // beta 3.49: I O N's finisher first
+      else SND.play(g.result === "win" ? "win" : "lose");
       return;
     }
     g.round++; resetRound();
@@ -2376,6 +2506,59 @@
   function drawSprite(ctx, img, x, y, face) {
     hiDraw(ctx, img, x, y, face, img.ax, img.ay); // beta 3.33: at the canvas's pixels, the feet at (x, y)
   }
+  // beta 3.49: Dony's LENS LASER: two beams from his glasses, growing out in three ticks, held through the active ticks,
+  // stopped where they hit, flickering away in the recovery; a flare at the lenses and one at the end
+  let BIGMZ = null;
+  function bigMarzocco() { // beta 3.49: the finisher's La Marzocco, 64x44 at the game's pixels: steel, red side panels, two gauges, the nameplate, three group heads and their handles, the wands, the drip tray, cups on the rail
+    if (BIGMZ) return BIGMZ;
+    const [c, x] = mk(64, 44), R = (a, b, w, h, col) => { x.fillStyle = col; x.fillRect(a, b, w, h); }, ST = ["#ffffff", "#e8ecf2", "#c8ced8", "#9ea4b2", "#6c7280"], RD = ["#ff7a5a", "#e8402c", "#b8261a", "#7a140e"];
+    for (let i = 0; i < 5; i++) { const cx3 = 8 + i * 11; R(cx3 - 1, 0, 8, 6, OUT); R(cx3, 1, 6, 4, i % 2 ? "#f4f2ec" : "#ffffff"); R(cx3, 1, 6, 1, "#6b3f22"); R(cx3 + 6, 2, 2, 2, OUT); } // the cups on the rail
+    R(0, 6, 64, 4, OUT); R(1, 7, 62, 2, ST[1]); R(1, 7, 62, 1, ST[0]); // the rail
+    R(0, 10, 64, 24, OUT); for (let yy = 11; yy < 33; yy++) R(1, yy, 62, 1, yy === 11 ? ST[0] : yy < 14 ? ST[1] : yy > 28 ? ST[3] : ST[2]); // the body
+    for (const x0 of [1, 56]) { R(x0, 11, 7, 22, RD[2]); R(x0, 11, 7, 1, RD[0]); R(x0 + (x0 === 1 ? 1 : 5), 12, 1, 20, RD[1]); R(x0 + (x0 === 1 ? 6 : 0), 12, 1, 21, RD[3]); }
+    for (const gx of [14, 49]) { R(gx - 3, 12, 7, 6, OUT); R(gx - 2, 13, 5, 4, "#fbfaf4"); R(gx, 14, 1, 2, "#d8342a"); }
+    R(19, 13, 26, 6, OUT); R(20, 14, 24, 4, "#1c1a20"); tiny(x, "LA", 28, 14, "#f2f2f6"); R(11, 20, 42, 8, OUT); R(12, 21, 40, 6, "#1c1a20"); tiny(x, "MARZOCCO", 16, 22, "#f2f2f6");
+    for (const gx of [18, 32, 46]) { R(gx - 4, 28, 9, 5, OUT); R(gx - 3, 28, 7, 2, ST[0]); R(gx - 3, 30, 7, 2, ST[3]); R(gx - 9, 32, 6, 3, OUT); R(gx - 8, 33, 4, 1, "#3a3638"); } // the group heads, the handles
+    for (const [x0, dd] of [[9, -1], [55, 1]]) for (let i = 0; i < 7; i++) R(x0 + (i > 4 ? dd : 0), 28 + i, 1, 1, OUT); // the wands
+    R(0, 34, 64, 6, OUT); for (let xx = 1; xx < 63; xx++) { R(xx, 35, 1, 1, ST[1]); R(xx, 36, 1, 2, xx % 2 ? "#2a2a30" : ST[3]); R(xx, 38, 1, 1, ST[3]); } R(3, 40, 4, 3, OUT); R(57, 40, 4, 3, OUT); // the drip tray, the feet
+    return (BIGMZ = c);
+  }
+  function drawPancake(ctx, f, cx, t) { // the loser flat on the pavement, wobbling, the little cup rattling on top
+    const F = g.fin, im = f.S.down[0], k = g.phase === "finish" ? Math.max(0, g.pt - FIN.gone) : 200, wob = Math.sin(k * 0.5) * Math.max(0, 1 - k / 70), hh = Math.max(5, Math.round(im.height * (0.34 + wob * 0.12))), ww = Math.round(im.width * (1.22 - wob * 0.08));
+    const x = Math.round(f.x - cx - (f.face > 0 ? im.ax * ww / im.width : (im.width - im.ax) * ww / im.width)), y = FLOOR + 1 - hh;
+    ctx.save(); if (f.face < 0) { ctx.translate(x * 2 + ww, 0); ctx.scale(-1, 1); } ctx.drawImage(im, x, y, ww, hh); ctx.restore();
+    if (g.phase === "finish" && g.pt < FIN.gone) return;
+    const jx = Math.floor(t * 18) % 3 === 0 ? 1 : 0, hop = Math.floor(t * 6) % 7 === 0 ? 1 : 0, ccx = Math.round(F.x - cx) + jx, ccy = y - 4 - hop; // the cup
+    ctx.fillStyle = OUT; ctx.fillRect(ccx - 4, ccy + 3, 9, 2); ctx.fillRect(ccx - 3, ccy - 1, 7, 5); ctx.fillRect(ccx + 3, ccy, 2, 3);
+    ctx.fillStyle = "#e8e4dc"; ctx.fillRect(ccx - 3, ccy + 3, 7, 1); ctx.fillStyle = "#ffffff"; ctx.fillRect(ccx - 2, ccy, 5, 3); ctx.fillStyle = "#6b3f22"; ctx.fillRect(ccx - 2, ccy, 5, 1);
+    if (Math.floor(t * 3) % 2) { ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.fillRect(ccx, ccy - 3 - (Math.floor(t * 8) % 3), 1, 2); }
+  }
+  function drawFinish(ctx, cx, t) {
+    const F = g.fin; if (g.phase !== "finish") return;
+    const pt = g.pt, mz = bigMarzocco(), x = Math.round(F.x - cx), gy = FLOOR;
+    if (pt >= FIN.shadow && pt < FIN.gone) { const k = Math.min(1, (pt - FIN.shadow) / (FIN.hit - FIN.shadow)), w = Math.round(8 + k * 58), h = Math.max(2, Math.round(w * 0.12)); ctx.fillStyle = `rgba(10,6,24,${(0.18 + k * 0.4).toFixed(2)})`; ctx.fillRect(x - (w >> 1), gy - (h >> 1), w, h); ctx.fillRect(x - (w >> 1) + 3, gy - (h >> 1) - 1, w - 6, h + 2); } // its shadow, growing
+    let my = null;
+    if (pt >= FIN.drop && pt < FIN.hit) { const k = (pt - FIN.drop) / (FIN.hit - FIN.drop); my = Math.round(lerp(-70, gy - 44, k * k)); ctx.fillStyle = "rgba(255,255,255,.75)"; for (let i = 0; i < 6; i++) ctx.fillRect(x - 28 + i * 11, my - 10 - ((i * 7 + pt * 3) % 18), 1, 8); } // falling, the motion lines over it
+    else if (pt >= FIN.hit && pt < FIN.lift) { const k = pt - FIN.hit; my = gy - 44 - (k < 8 ? Math.round(Math.abs(Math.sin(k * 0.8)) * 4 * (1 - k / 8)) : 0); }
+    else if (pt >= FIN.lift && pt < FIN.gone) { const k = (pt - FIN.lift) / (FIN.gone - FIN.lift); my = Math.round(lerp(gy - 44, -70, k * k)); ctx.fillStyle = "rgba(255,255,255,.75)"; for (let i = 0; i < 6; i++) ctx.fillRect(x - 28 + i * 11, my + 46 + ((i * 7 + pt * 3) % 14), 1, 8); }
+    if (my !== null) { const jx = pt >= FIN.hit + 8 && pt < FIN.lift && Math.floor(t * 20) % 2 ? 1 : 0; ctx.drawImage(mz, x - 32 + jx, my); }
+  }
+  function drawBeam(ctx, f, cx, t) {
+    const a = f.atk; if (!a || !a.beam || f.st !== "atk") return;
+    const t2 = f.t - a.su; if (t2 < 0 || t2 >= a.ac + 5) return;
+    const d = f.face, fade = t2 >= a.ac, xs = Math.round(f.x - cx + d * a.eye[0]), ys = Math.round(FLOOR + f.y + a.eye[1]);
+    let len = Math.min(a.box[2] * f.sc - a.eye[0], (t2 + 1) * 70); if (f.atkHit && f.beamX != null) len = Math.min(len, Math.abs(f.beamX - (f.x + d * a.eye[0])));
+    len = Math.max(0, Math.round(len)); const flick = Math.floor(t * 30) % 2;
+    for (const [ox, oy] of [[0, 0], [3, -4]]) {
+      const x0 = xs + d * ox, y = ys + oy, x1 = d > 0 ? x0 : x0 - len;
+      if (fade) { if ((t2 + ox) % 2) continue; ctx.fillStyle = "#ff3a6a"; ctx.fillRect(x1, y, len, 1); continue; }
+      ctx.fillStyle = "#5a0a24"; ctx.fillRect(x1, y - 2, len, 1); ctx.fillRect(x1, y + 2, len, 1);
+      ctx.fillStyle = "#ff3a6a"; ctx.fillRect(x1, y - 1, len, 3);
+      ctx.fillStyle = flick ? "#ffffff" : "#ffd6e0"; ctx.fillRect(x1, y, len, 1);
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(x0 - 1, y - 1, 3, 3); // the flare at the lens
+      const xe = x0 + d * len; ctx.fillStyle = flick ? "#ffffff" : "#ff8aa4"; ctx.fillRect(xe - 2, y - 2, 5, 5); ctx.fillStyle = "#ffffff"; ctx.fillRect(xe - 1, y - 1, 3, 3); // and at the end
+    }
+  }
   function drawProj(ctx, p, cx) {
     const x = Math.round(p.x - cx), y = Math.round(p.y + FLOOR), d = Math.sign(p.vx);
     if (p.k === "wave") {
@@ -2389,20 +2572,11 @@
       }
       ctx.fillStyle = "#ffffff"; ctx.fillRect(x + d * 1, y - 3, 1, 6);
       for (let i = 0; i < 4; i++) { ctx.fillStyle = C[(i + (p.t >> 2)) % 3]; ctx.fillRect(x - d * (14 + i * 5) - 1, y + ((i * 7 + p.t) % 15) - 7, 2, 2); }
-    } else if (p.k === "bean") {
-      // a roasted coffee bean, turning, with a little smoke
-      const ph = Math.floor((p.t + p.i * 2) / 3) % 2;
-      ctx.fillStyle = OUT; ctx.fillRect(x - 3 - ph, y - 3 + ph, 6 + ph * 2, 6 - ph * 2); ctx.fillStyle = "#6b3f22"; ctx.fillRect(x - 2 - ph, y - 2 + ph, 4 + ph * 2, 4 - ph * 2);
-      ctx.fillStyle = "#2a160c"; if (ph) ctx.fillRect(x - 2, y, 4, 1); else ctx.fillRect(x, y - 2, 1, 4); ctx.fillStyle = "#a8683a"; ctx.fillRect(x - 2 - ph, y - 2 + ph, 1, 1);
-      ctx.fillStyle = "rgba(220,220,230,.5)"; ctx.fillRect(x - Math.sign(p.vx) * 6, y - 3 - (p.t % 4), 2, 2);
-    } else if (p.k === "key") {
-      // Rares's keys: the yellow tag and two keys on a ring, spinning
-      const ph = Math.floor(p.t / 3) % 4, wv = ph % 2 ? 4 : 7, hv = ph % 2 ? 9 : 5;
-      ctx.fillStyle = OUT; ctx.fillRect(x - wv / 2 - 1, y - hv / 2 - 1, wv + 2, hv + 2);
-      ctx.fillStyle = "#ffd23a"; ctx.fillRect(x - wv / 2, y - hv / 2, wv, hv); ctx.fillStyle = "#fff2a0"; ctx.fillRect(x - wv / 2, y - hv / 2, wv, 1);
-      const kx = x + (ph < 2 ? 5 : -6), ky = y + (ph % 3 ? 3 : -3);
-      ctx.fillStyle = OUT; ctx.fillRect(kx - 1, ky - 2, 5, 4); ctx.fillStyle = "#c9ccd4"; ctx.fillRect(kx, ky - 1, 3, 2); ctx.fillRect(kx + 3, ky, 2, 1);
-      ctx.fillStyle = "rgba(255,255,255,.6)"; for (let i = 1; i < 4; i++) ctx.fillRect(x - Math.sign(p.vx) * i * 5, y + ((i + p.t) % 3) - 1, 2, 1);
+    } else if (p.k === "horse") {
+      // beta 3.49: Cristache's carved horse, tumbling end over end (quarter turns), a little dust off its plinth
+      const H2 = horseImg(), q = Math.floor(p.t / 5) % 4, im = H2[d > 0 ? q : (4 - q) % 4];
+      ctx.save(); ctx.translate(x, y); if (d < 0) ctx.scale(-1, 1); ctx.drawImage(im, -(im.width >> 1), -(im.height >> 1)); ctx.restore();
+      if (!p.bounced) { ctx.fillStyle = "rgba(255,255,255,.55)"; for (let i = 1; i < 4; i++) ctx.fillRect(x - d * (10 + i * 5), y + ((i * 5 + p.t) % 9) - 4, 3, 1); }
     } else {
       // the espresso: a little white cup, coffee in it, flying with its steam
       const tilt = Math.floor(p.t / 4) % 2;
@@ -2439,6 +2613,20 @@
     }
     return (SPK[kind] = out);
   }
+  let HORSE_IMG = null;
+  function horseImg() { // beta 3.49: the horse at its own pixels, in four quarter turns (the tumble), no soft edge
+    if (HORSE_IMG) return HORSE_IMG;
+    const [c, x] = mk(HORSE.w, HORSE.h); HORSE.rows.forEach((r, y) => [...r].forEach((ch, i) => { if (ch !== ".") { x.fillStyle = HORSE.pal[ch]; x.fillRect(i, y, 1, 1); } }));
+    HORSE_IMG = [0, 1, 2, 3].map((q) => { const sw = q % 2 ? HORSE.h : HORSE.w, sh = q % 2 ? HORSE.w : HORSE.h, [c2, x2] = mk(sw, sh); x2.translate(sw / 2, sh / 2); x2.rotate((q * Math.PI) / 2); x2.drawImage(c, -HORSE.w / 2, -HORSE.h / 2); return c2; });
+    return HORSE_IMG;
+  }
+  const SIL = new WeakMap();
+  function silhouette(img) { // beta 3.49: FAST FORWARD's afterimage: the frame's shape in gold, its rim lighter
+    if (SIL.has(img)) return SIL.get(img);
+    const [c, x] = mk(img.width, img.height); x.drawImage(img, 0, 0); const id = x.getImageData(0, 0, img.width, img.height), d = new Uint32Array(id.data.buffer), w = img.width, src = d.slice(), G1 = u32("#ffc21a"), G2 = u32("#fff2a0");
+    for (let i = 0; i < d.length; i++) if (src[i] >>> 24) { const y = (i / w) | 0, q = i % w, edge = q === 0 || q === w - 1 || !(src[i - 1] >>> 24) || !(src[i + 1] >>> 24) || y === 0 || !(src[i - w] >>> 24); d[i] = edge ? G2 : G1; }
+    x.putImageData(id, 0, 0); c.ax = img.ax; c.ay = img.ay; SIL.set(img, c); return c;
+  }
   let DUST = null;
   function dustFrames() { // three puffs, each a few round lumps with a lit top and a shaded, outlined bottom, thinning out
     if (DUST) return DUST;
@@ -2452,7 +2640,12 @@
   }
   function drawFx(ctx, e, cx) {
     const x = Math.round(e.x - cx), y = Math.round(e.y + FLOOR), k = e.t / e.life;
-    if (e.k === "ghost") { ctx.globalAlpha = 0.35 * (1 - k); drawSprite(ctx, e.img, e.x - cx, e.y + FLOOR, e.face); ctx.globalAlpha = 1; return; }
+    if (e.k === "ghost") { ctx.globalAlpha = (e.tint ? 0.5 : 0.35) * (1 - k); drawSprite(ctx, e.tint ? silhouette(e.img) : e.img, e.x - cx, e.y + FLOOR, e.face); ctx.globalAlpha = 1; return; }
+    // beta 3.49: FAST FORWARD's burst (a ring of gold and rays), a gleam (the biceps, the glasses), the horse's splinters
+    if (e.k === "turbo") { const r = 6 + k * 34; for (let a = 0; a < 16; a++) { const an = (a / 16) * Math.PI * 2; ctx.fillStyle = a % 2 ? "#fff2a0" : "#ffc21a"; ctx.fillRect(x + Math.round(Math.cos(an) * r) - 1, y + Math.round(Math.sin(an) * r * 0.8) - 1, 2, 2); if (a % 4 === 0 && k < 0.6) { ctx.fillStyle = "#ffffff"; for (let j = 0; j < 4; j++) ctx.fillRect(x + Math.round(Math.cos(an) * (r * 0.5 + j * 3)), y + Math.round(Math.sin(an) * (r * 0.5 + j * 3) * 0.8), 1, 1); } } if (k < 0.3) { ctx.fillStyle = "#ffffff"; ctx.fillRect(x - 6, y, 13, 1); ctx.fillRect(x, y - 6, 1, 13); ctx.fillRect(x - 1, y - 1, 3, 3); } return; }
+    if (e.k === "twinkle") { const s3 = k < 0.5 ? Math.round(1 + k * 8) : Math.round(1 + (1 - k) * 8); ctx.fillStyle = "#fff6b8"; ctx.fillRect(x - s3, y, s3 * 2 + 1, 1); ctx.fillRect(x, y - s3, 1, s3 * 2 + 1); ctx.fillStyle = "#ffffff"; ctx.fillRect(x - 1, y - 1, 3, 3); return; }
+    if (e.k === "steampuff") { const px = Math.round(x + e.vx * e.t), py = Math.round(y + e.vy * e.t), r = (e.big ? 4 : 2) + Math.floor(k * (e.big ? 8 : 6)); ctx.globalAlpha = Math.max(0, 0.9 - k * 0.9); ctx.fillStyle = "#f4f6fa"; ctx.fillRect(px - r, py - r + 1, r * 2, r * 2 - 2); ctx.fillRect(px - r + 1, py - r, r * 2 - 2, r * 2); ctx.fillStyle = "#c8ccd8"; ctx.fillRect(px - r + 1, py + r - 1, r * 2 - 2, 1); ctx.globalAlpha = 1; return; } // beta 3.49: the finisher's steam
+    if (e.k === "chip") { const cx3 = Math.round(x + e.vx * e.t), cy3 = Math.round(y + e.vy * e.t + 0.16 * e.t * e.t); if (cy3 < FLOOR) { ctx.fillStyle = OUT; ctx.fillRect(cx3 - 1, cy3 - 1, 4, 3); ctx.fillStyle = e.t % 6 < 3 ? "#e2aa66" : "#b8783a"; ctx.fillRect(cx3, cy3, 2, 1); } return; }
     if (e.k === "stack") { // the Two Minutes tees I O N brought, folded, on the pavement
       for (let i = 0; i < 6; i++) { const yy = y - 3 - i * 3; ctx.fillStyle = OUT; ctx.fillRect(x - 11, yy - 1, 22, 4); ctx.fillStyle = i % 2 ? "#ffffff" : "#ecebe6"; ctx.fillRect(x - 10, yy, 20, 3); ctx.fillStyle = "#1c1c22"; for (let q = 0; q < 14; q += 3) ctx.fillRect(x - 8 + q, yy + 1, 2, 1); }
       return;
@@ -2476,9 +2669,14 @@
     // shadows
     for (const f of g.f) { const w = Math.round((31 * f.sc - Math.min(16, -f.y / 6)) * RS) / RS, x = Math.round((f.x - cx) * RS) / RS; ctx.fillStyle = "rgba(10,6,24,.45)"; ctx.fillRect(x - w / 2, FLOOR - 2, w, 3); ctx.fillRect(x - w / 2 + 2.5, FLOOR - 3, w - 5, 5); ctx.fillRect(x - w / 2 + 6, FLOOR - 3.5, w - 12, 6); } // beta 3.33: rounder, at the canvas's pixels
     for (const e of g.fx) if (e.k === "ghost" || e.k === "stack") drawFx(ctx, e, cx);
+    // beta 3.49: FAST FORWARD: speed lines streaming off Steve when he moves, gold glints round him
+    for (const f of g.f) if (f.buff > 0) { const bx = f.x - cx, by = FLOOR + f.y;
+      if (Math.abs(f.vx) > 0.3 || f.st === "atk") for (let i = 0; i < 5; i++) { const yy = Math.round(by - (16 + i * 17) * f.sc), ln = 8 + ((i * 7 + Math.floor(t * 30)) % 12), xx = Math.round(bx - Math.sign(f.vx || f.face) * (16 + ((i * 11 + Math.floor(t * 40)) % 18))); ctx.fillStyle = i % 2 ? "#ffffff" : "#fff2a0"; ctx.fillRect(Math.sign(f.vx || f.face) > 0 ? xx - ln : xx, yy, ln, 1); }
+      for (let i = 0; i < 3; i++) { const an = t * 7 + i * 2.1, rr = 18 + (i * 5) % 9; ctx.fillStyle = (Math.floor(t * 16) + i) % 2 ? "#ffc21a" : "#ffffff"; ctx.fillRect(Math.round(bx + Math.cos(an) * rr), Math.round(by - 50 * f.sc + Math.sin(an) * rr * 1.6), 1, 1); } }
     // the one attacking is drawn in front
     const order = g.f[0].st === "atk" ? [g.f[1], g.f[0]] : [g.f[0], g.f[1]];
     for (const f of order) {
+      if (g.fin && g.fin.flat && f === g.fin.loser) { drawPancake(ctx, f, cx, t); continue; } // beta 3.49: flattened by I O N's finisher
       const jit = (f.st === "hit" || f.st === "block") && g.hitstop > 0 ? (g.hitstop % 2 ? 1 : -1) * (f.st === "hit" && g.hsK !== "light" ? 2 : 1) : 0; // the one hit shakes in the freeze (harder for the heavy blows)
       const spin = f.atk?.spin && f.t >= f.atk.su && f.t < f.atk.su + f.atk.ac && (f.t >> 2) & 1 ? -1 : 1; // beta 3.11: Maria turns round
       drawSprite(ctx, frameOf(f), f.x - cx + jit, FLOOR + f.y, f.face * spin);
@@ -2489,6 +2687,8 @@
       const e = f.S.puff ? frameOf(f).ember : null;
       if (e && Math.floor(t * 7) % 3 === 0) { const [x, y] = emberAt(f, e); ctx.fillStyle = "#ffe08a"; ctx.fillRect(Math.floor((x - cx) * RS) / RS, Math.floor((y + FLOOR) * RS) / RS, 1 / RS, 1 / RS); }
     }
+    for (const f of g.f) drawBeam(ctx, f, cx, t);
+    if (g.fin) drawFinish(ctx, cx, t);
     for (const p of g.proj) drawProj(ctx, p, cx);
     for (const e of g.fx) if (e.k !== "ghost" && e.k !== "stack") drawFx(ctx, e, cx);
     ctx.restore();
@@ -2502,6 +2702,7 @@
       if (g.pt >= 64) banner(ctx, "FIGHT!", RED, g.pt < 70 ? 7 : 6, 80); // beta 3.34: the round's name first (it was drawn over for the whole intro in rounds 2+), FIGHT! in the second half
     } else if (g.phase === "ko" && g.pt < 150) banner(ctx, "K.O.", RED, g.pt < 8 ? 9 : 7, 72);
     else if (g.phase === "time" && g.pt < 150) banner(ctx, g.f[0].hp === g.f[1].hp ? "DRAW" : "TIME", GOLD, 6, 78);
+    else if (g.phase === "finish" && g.pt >= FIN.hit + 4) { const k = g.pt - FIN.hit - 4; banner(ctx, "ESPRESSO'D!", GOLD, k < 3 ? 6 : 5, 46); if (k > 10) text(ctx, "I O N FINISH", W / 2, 104, ["#ffffff", "#fff6b8", "#ffd23a"], { al: "c", sh: 1 }); if (k > 40 && Math.floor(t * 2) % 2 === 0) text(ctx, TOUCH ? "TAP TO SKIP" : "PRESS ANY KEY", W / 2, 196, "#ffffff", { al: "c" }); }
     else if (g.phase === "match") { banner(ctx, g.result === "win" ? "YOU WIN" : ROSTER[g.cpu].name + " WINS", g.result === "win" ? GOLD : RED, ROSTER[g.cpu].name.length > 6 && g.result !== "win" ? 4 : 5, 70); if (g.perfect && g.result === "win") text(ctx, "PERFECT!", W / 2, 112, "#ffffff", { sc: 2, al: "c" }); }
     if ((g.phase === "ko" || g.phase === "time") && g.pt > 150 && g.pt < 220) { const [a, b] = g.f; if (a.hp !== b.hp) banner(ctx, (a.hp > b.hp ? a : b).R.name + " WINS THE ROUND", "#ffffff", 2, 86); }
     if (paused) { // beta 3.15 (Daniel): the menu, any time: play on, pick other fighters, or go back to the map
@@ -2605,10 +2806,18 @@
   const END_POSES = {
     cristache: pose({ hip: [0, -47], neck: [5, -75], head: [8, -86], eF: [15, -60], hF: [24, -58], eB: [9, -58], hB: [18, -55], kF: [8, -24], fF: [12, 0], kB: [-6, -24], fB: [-10, 0], tw: 0.4 }),
     ion: pose({ hip: [0, -44], neck: [14, -66], head: [18, -74], eF: [26, -52], hF: [36, -46], eB: [20, -52], hB: [32, -42], kF: [10, -23], fF: [14, 0], kB: [-8, -22], fB: [-14, 0], tw: 0.5 }),
-    rares: pose({ eF: [16, -88], hF: [22, -104], eB: [-6, -88], hB: [-2, -104], kF: [10, -24], fF: [14, 0], kB: [-8, -23], fB: [-14, 0] })
+    // beta 3.49 (Daniel: "Rares no longer cheers: he drinks his coffee, puts the cup on the car's roof, picks it up"):
+    // the sip (the cup at his lips, the head back a touch), the cup held at his chest, the arm out to the roof (with the
+    // cup, or without it once it stands there), waiting (a hand on his hip, the other easy)
+    rares: pose({ hip: [0, -47], neck: [2, -75], head: [3, -86], eF: [11, -63], hF: [12, -76], eB: [-4, -58], hB: [-9, -47], kF: [8, -24], fF: [12, 0], kB: [-6, -24], fB: [-10, 0] }),
+    raresHold: pose({ hip: [0, -47], neck: [2, -75], head: [5, -86], eF: [10, -60], hF: [17, -60], eB: [-4, -58], hB: [-9, -47], kF: [8, -24], fF: [12, 0], kB: [-6, -24], fB: [-10, 0] }),
+    raresReach: pose({ hip: [-1, -47], neck: [4, -75], head: [7, -85], eF: [14, -66], hF: [22, -65], eB: [-4, -58], hB: [-9, -47], kF: [8, -24], fF: [12, 0], kB: [-6, -24], fB: [-10, 0], tw: 0.3 }),
+    raresWait: pose({ hip: [0, -47], neck: [1, -75], head: [4, -86], eF: [8, -58], hF: [9, -45], eB: [-4, -58], hB: [-9, -47], kF: [8, -24], fF: [12, 0], kB: [-6, -24], fB: [-10, 0] })
   };
   const END_FR = {}, END_SC = 0.92; // a size that suits the car
-  const endFrame = (id) => { if (END_FR[id]) return END_FR[id]; const L0 = LOOKS[id]; NPC_LOOKS["end_" + id] = Object.assign({}, L0, { headId: id, hands: "bare", full: true, build: Object.assign({}, L0.build, { sc: END_SC * (L0.build.sc || 1) }) }); return (END_FR[id] = drawFighter("end_" + id, L0.smokes ? Object.assign({}, END_POSES[id], { cig: "mouth" }) : END_POSES[id], null)); };
+  const endFrame = (id, k = id, prop = null) => { const key = k + (prop ? ":" + prop : ""); if (END_FR[key]) return END_FR[key]; const L0 = LOOKS[id]; NPC_LOOKS["end_" + id] = Object.assign({}, L0, { headId: id, hands: "bare", full: true, build: Object.assign({}, L0.build, { sc: END_SC * (L0.build.sc || 1) }) }); return (END_FR[key] = drawFighter("end_" + id, L0.smokes ? Object.assign({}, END_POSES[k], { cig: "mouth" }) : END_POSES[k], prop)); };
+  // Rares's routine, 5.2 s round: [from s, the pose, the cup in his hand]; the cup stands on the roof in between
+  const RARES_LOOP = 5.2, RARES_SEQ = [[0, "rares", 1], [1, "raresHold", 1], [1.4, "raresReach", 1], [1.8, "raresReach", 0], [2.1, "raresWait", 0], [4.2, "raresReach", 0], [4.5, "raresReach", 1], [4.8, "raresHold", 1]];
   const END_CAM = -48, END_CAR = 258, END_LOOP = 3.2; // the window at the middle of the picture, the card on its left, the car running out on the right
   function drawEnding(ctx, t) {
     const gy = FLOOR - 4, p = 1 / RS, lt = t % END_LOOP, caught = lt > 2.2, k2 = caught ? (lt - 2.2) / (END_LOOP - 2.2) : 0;
@@ -2632,7 +2841,14 @@
     for (const [cx, cyy] of [c1, c2]) { const red = cx === c1[0], X = Math.round(cx * RS) / RS, Y = Math.round(cyy * RS) / RS; ctx.fillStyle = OUT; ctx.fillRect(X - 2, Y - 1.5, 4, 3.5); ctx.fillStyle = red ? "#e8301c" : "#3a3a42"; ctx.fillRect(X - 1.5, Y - 1, 3, 1.5); ctx.fillStyle = red ? "#ff8a6e" : "#6a6a74"; ctx.fillRect(X - 1.5, Y - 1, 3, p); ctx.fillStyle = "#c9ccd4"; ctx.fillRect(X - 1.5, Y + 0.5, 1, 1.5); ctx.fillRect(X + 0.5, Y + 0.5, 1, 1.5); } // the clamps: the grip in the cable's colour, the steel jaws
     // the three of them
     const put3 = (id, x2, face) => { const im = endFrame(id); hiDraw(ctx, im, x2, gy, face, im.ax, im.ay); };
-    put3("rares", END_CAR + 104, -1); put3("ion", END_CAR + 50, -1); put3("cristache", mx + 76, 1);
+    { // beta 3.49: Rares and his coffee: sip, put it on the roof, wait, pick it up, sip
+      const lt2 = t % RARES_LOOP; let cur = RARES_SEQ[0]; for (const e of RARES_SEQ) if (lt2 >= e[0]) cur = e;
+      const im = endFrame("rares", cur[1], cur[2] ? "cup" : null); hiDraw(ctx, im, END_CAR + 104, gy, -1, im.ax, im.ay);
+      if (!cur[2]) { const cx3 = END_CAR + 86, cy3 = cy0 + 19 - (caught && k2 < 0.6 && Math.floor(t * 20) % 3 === 0 ? 1 : 0); // on the roof, jumping a little when the engine catches
+        ctx.fillStyle = OUT; ctx.fillRect(cx3 - 3, cy3 - 7, 7, 8); ctx.fillStyle = "#f4f2ec"; ctx.fillRect(cx3 - 2, cy3 - 5, 5, 5); ctx.fillStyle = "#b07a46"; ctx.fillRect(cx3 - 2, cy3 - 3, 5, 2); ctx.fillStyle = "#2a2a30"; ctx.fillRect(cx3 - 2, cy3 - 6, 5, 1); ctx.fillStyle = "#d8d4cc"; ctx.fillRect(cx3 + 2, cy3 - 5, 1, 5);
+        const a = (t * 0.7) % 1; ctx.globalAlpha = 0.7 * (1 - a); ctx.fillStyle = "#f4f4fa"; ctx.fillRect(cx3 + Math.round(Math.sin(a * 6) * 1.5), cy3 - 9 - Math.round(a * 8), 1, 2); ctx.globalAlpha = 1; } // a wisp of steam off it
+    }
+    put3("ion", END_CAR + 50, -1); put3("cristache", mx + 76, 1);
     { const im = endFrame("cristache"), e = im.ember; if (e) for (let i = 0; i < 5; i++) { // beta 3.32: and he smokes while they work
       const a = (t * 0.5 + i / 5) % 1, x = mx + 76 + (e[0] - OX) / RS + Math.sin(a * 6 + i) * (1 + a * 3) + a * 3, y = gy + (e[1] - OY) / RS - 2 - a * 26;
       ctx.globalAlpha = a < 0.4 ? 0.85 : a < 0.7 ? 0.55 : 0.3; ctx.fillStyle = a < 0.35 ? "#eeeef4" : a < 0.7 ? "#cfcfdc" : "#a8a8ba"; ctx.fillRect(Math.round(x * RS) / RS, Math.round(y * RS) / RS, a < 0.3 ? p : 2 * p, p); if (a > 0.5) ctx.fillRect(Math.round(x * RS) / RS + p, Math.round(y * RS) / RS - p, p, p);
@@ -2762,6 +2978,7 @@
       if (g.scene === "vs") { if (g.t > 2.6 || (g.t > 0.8 && (pressed.has("ok") || pressed.has("p")))) { g.scene = "fight"; g.t = 0; } }
       else if (g.scene === "fight" && !paused) {
         const inp = { l: held.l, r: held.r, u: held.u, d: held.d, pp: pressed.has("p"), kp: pressed.has("k"), sp: pressed.has("s") };
+        if (g.phase === "finish" && g.pt > 8 && ["ok", "p", "k", "s"].some((k) => pressed.has(k))) { finishDone(); g.scene = "result"; g.menu = 0; g.t = 0; SND.music("menu"); pressed.clear(); return; } // beta 3.49: a key or a tap skips the finisher
         for (const e of g.fx) e.t++; g.fx = g.fx.filter((e) => e.t < e.life);
         if (g.flash > 0) g.flash--;
         g.shakeN = (g.shakeN || 0) + 1;
@@ -2792,7 +3009,7 @@
       if (SEL.phase === "cpu") hit(235, 31, 70, 70, () => { SEL.phase = "p1"; SND.play("pause"); });
     } else if (g) {
       if (g.scene === "vs") { drawVS(ctx, g.t, g.me, g.t, g.cpu); hit(0, 0, W, H, () => pressed.add("ok")); }
-      else if (g.scene === "fight") drawFight(ctx, t);
+      else if (g.scene === "fight") { drawFight(ctx, t); if (g.phase === "finish") hit(0, 0, W, H, () => pressed.add("ok")); }
       else drawResult(ctx, t);
     }
   }
@@ -3006,9 +3223,9 @@
     try { window.focus(); } catch {}
   }
   // for tests and the review: the state, the frame rate, a shortcut to the end of a round
-  const probe = () => ({ scene: scene === "game" && g ? g.scene : scene, phase: g?.phase, round: g?.round, wins: g?.wins.slice(), hp: g?.f.map((f) => f.hp), st: g?.f.map((f) => f.st), xs: g?.f.map((f) => Math.round(f.x)), ys: g?.f.map((f) => Math.round(f.y)), atk: g?.f.map((f) => (f.atk ? Object.keys(ATK).find((n) => ATK[n] === f.atk) || "sp" : null)), held: Object.assign({}, held), time: g ? Math.ceil(g.time) : null, me: g?.me, cpu: g?.cpu, sel: SEL.p1, selCpu: SEL.cpu, selPhase: SEL.phase, menu: g?.menu, result: g?.result, paused, voucher: g?.voucher?.code || null, sideways: !!SIDEWAYS, rotate: !!(root && root.classList.contains("mg-rot")), fps: stats.fps, maxDt: Math.round(stats.maxDt || 0), sound: SND.on, proj: g ? g.proj.map((p) => p.k) : [], bake: stats.bake, spr: Object.assign({}, stats.spr), lazy: Math.round(stats.lazy), queue: BAKEQ.length });
+  const probe = () => ({ scene: scene === "game" && g ? g.scene : scene, phase: g?.phase, round: g?.round, wins: g?.wins.slice(), hp: g?.f.map((f) => f.hp), st: g?.f.map((f) => f.st), xs: g?.f.map((f) => Math.round(f.x)), ys: g?.f.map((f) => Math.round(f.y)), atk: g?.f.map((f) => (f.atk ? f.atk.name || "sp" : null)), held: Object.assign({}, held), time: g ? Math.ceil(g.time) : null, me: g?.me, cpu: g?.cpu, sel: SEL.p1, selCpu: SEL.cpu, selPhase: SEL.phase, menu: g?.menu, result: g?.result, paused, voucher: g?.voucher?.code || null, sideways: !!SIDEWAYS, rotate: !!(root && root.classList.contains("mg-rot")), fps: stats.fps, maxDt: Math.round(stats.maxDt || 0), sound: SND.on, proj: g ? g.proj.map((p) => p.k) : [], bake: stats.bake, spr: Object.assign({}, stats.spr), lazy: Math.round(stats.lazy), queue: BAKEQ.length, spuse: Object.assign({}, SPUSE), buff: g ? g.f.map((f) => f.buff || 0) : null });
   const resetMaxDt = () => { stats.maxDt = 0; };
-  let cpuHold = false, autoP1 = false, gapWatch = 0, gapFreeze = false; const HITLOG = [], GAPLOG = []; // beta 3.32: for the review renders (window.czGloves.hold(true)): the CPU stands in its guard
+  let cpuHold = false, autoP1 = false, gapWatch = 0, gapFreeze = false, simFair = false; const SPUSE = { p1: 0, cpu: 0 }; /* the bench: specials used */ const HITLOG = [], GAPLOG = []; // beta 3.32: for the review renders (window.czGloves.hold(true)): the CPU stands in its guard
   const setHp = (a, b) => { if (g && g.f.length) { g.f[0].hp = g.f[0].trail = a; g.f[1].hp = g.f[1].trail = b; } };
 
   // the art on its own, for review: every sheet as a PNG data URL, scaled with crisp pixels. beta 3.33: the sheets are
@@ -3054,7 +3271,7 @@
     drawTitle(x, 0); drawTitle(x, 10); out.title = up(c, 2);
     { // beta 3.34: the projectiles and the effects at the canvas's pixels, over the street
       drawBackdrop(x, 96, 0);
-      const ps = [{ k: "espresso", vx: 1, t: 0 }, { k: "espresso", vx: -1, t: 4 }, { k: "bean", vx: 1, t: 0, i: 0 }, { k: "bean", vx: 1, t: 3, i: 0 }, { k: "bean", vx: 1, t: 6, i: 0 }, { k: "key", vx: 1, t: 0 }, { k: "key", vx: 1, t: 3 }, { k: "key", vx: -1, t: 6 }, { k: "wave", vx: 1, t: 0 }, { k: "wave", vx: -1, t: 6 }];
+      const ps = [{ k: "espresso", vx: 1, t: 0 }, { k: "espresso", vx: -1, t: 4 }, { k: "horse", vx: 1, t: 0 }, { k: "horse", vx: 1, t: 5 }, { k: "horse", vx: 1, t: 10 }, { k: "horse", vx: -1, t: 15 }, { k: "wave", vx: 1, t: 0 }, { k: "wave", vx: -1, t: 6 }];
       ps.forEach((q, i) => drawProj(x, Object.assign({ x: 22 + i * 36, y: -120 }, q), 0));
       ["spark", "burst", "bspark"].forEach((k, r) => [0, 2, 4, 6, 8].forEach((tt, i) => drawFx(x, { k, x: 30 + i * 34 + r * 120 - (r ? 0 : 0), y: -70 + r * 0, t: tt, life: k === "burst" ? 14 : 10 }, 0)));
       [0, 3, 6, 9].forEach((tt, i) => drawFx(x, { k: "dust", x: 40 + i * 40, y: -20, t: tt, life: 12 }, 0));
@@ -3084,7 +3301,24 @@
     for (const id of FIGHTERS) { const f = sprites(id).idle[0], HD = headOf(id, 1, false, HK); let top = 1e9, chin = -1; HD.rows.forEach((r, y) => { if (r.replace(/\./g, "").length) top = Math.min(top, y); const fr = r.slice(Math.round(17 * HK), Math.round(23 * HK)); if (fr.replace(/\./g, "").length) chin = y; }); o[id] = { h: f.height, w: f.width, head: chin - top + 1, heads: +(f.height / (chin - top + 1)).toFixed(2) }; }
     return o;
   }
-  window.czGloves = Object.assign(window.czGloves || {}, { mount, exportArt, measure, probe, setHp, resetMaxDt, hold: (v) => { cpuHold = !!v; }, auto: (v) => { autoP1 = !!v; }, hits: () => HITLOG.splice(0), fxKinds: () => (g ? g.fx.map((e) => e.k) : []), gapWatch: (th, freeze) => { gapWatch = th; gapFreeze = !!freeze; }, gaps: () => GAPLOG.splice(0), unfreeze: () => { if (g) g.frozen = false; }, fxPos: () => (g ? { proj: g.proj.map((p) => [p.k, Math.round((p.x - g.camX) * RS), Math.round((p.y + FLOOR) * RS)]), fx: g.fx.filter((e) => e.k !== "stack" && e.k !== "ghost").map((e) => [e.k, Math.round((e.x - g.camX) * RS), Math.round((e.y + FLOOR) * RS), e.t]) } : null), minGap: () => { const v = stats.minGap; stats.minGap = null; return v == null ? null : Math.round(v * 10) / 10; } });
+  // beta 3.49, the balance bench: whole matches run without drawing (the game's own step(), every tick), on a seeded
+  // random; p1: "cpu" (the CPU's brain on both sides), "avg" or "decent" (a scripted player); fair: no 0.9 for the player
+  function sim(me, cpu, o = {}) {
+    const keep = { scene, g, autoP1, botProf, simFair, rnd: Math.random, paused };
+    let s2 = (o.seed || 1) >>> 0; Math.random = () => { s2 = (s2 + 0x6D2B79F5) | 0; let t = Math.imul(s2 ^ (s2 >>> 15), 1 | s2); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    let res;
+    try {
+      scene = "game"; paused = false; newMatch(me, cpu); g.scene = "fight"; autoP1 = true; botProf = o.p1 && o.p1 !== "cpu" ? BOT[o.p1] : null; simFair = o.fair !== false;
+      let n = 0; SPUSE.p1 = SPUSE.cpu = 0;
+      while (g && g.scene !== "result" && n < 60000) { pressed.clear(); if (g.phase === "finish") pressed.add("ok"); step(); n++; }
+      res = { me, cpu, result: g ? g.result : null, wins: g ? g.wins.slice() : null, rounds: g ? g.round : 0, ticks: n, sp: Object.assign({}, SPUSE) };
+    } finally { Math.random = keep.rnd; scene = keep.scene; g = keep.g; autoP1 = keep.autoP1; botProf = keep.botProf; simFair = keep.simFair; paused = keep.paused; }
+    return res;
+  }
+  const eyeProbe = () => { const out = {}; for (const id of ["dony"]) { const S = sprites(id); S.special.forEach((im, i) => { const x = im.getContext("2d"), d = new Uint32Array(x.getImageData(0, 0, im.width, im.height).data.buffer), G = u32("#fbfdff"), pts = []; for (let k = 0; k < d.length; k++) if (d[k] === G) pts.push([(k % im.width) - im.ax, ((k / im.width) | 0) - im.ay]); out[id + i] = pts; }); } return out; }; // beta 3.49: where Dony's glint is (the laser's origin), for the tuning
+  const endingAt = (ts, res = "win") => { while (BAKEQ.length) { const j = BAKEQ.shift(); if (j() === "again") BAKEQ.unshift(j); } RARES_SEQ.forEach((e) => endFrame("rares", e[1], e[2] ? "cup" : null)); const [c, x] = mk(W, H); x.imageSmoothingEnabled = false; const g0 = g, h0 = hits; g = { result: res, me: "daniel", cpu: "ion", wins: [2, 1], menu: 0, voucher: { code: "TM-K7QX-1910", date: "19.10.2026  14:32" } }; const out = ts.map((t) => { hits = []; drawResult(x, t); return c.toDataURL("image/png"); }); g = g0; hits = h0; return out; }; // beta 3.49: the ending at chosen moments, for the review
+  const tune = (o) => { for (const [id, v] of Object.entries(o.roster || {})) Object.assign(ROSTER[id], v); for (const [id, v] of Object.entries(o.ai || {})) AI_PROF[id] = Object.assign(AI_PROF[id] || {}, v); for (const [id, v] of Object.entries(o.special || {})) Object.assign(SPECIAL[id], v); ATKS.clear(); return { roster: ROSTER, ai: AI_PROF }; }; // the bench's knobs (the review only)
+  window.czGloves = Object.assign(window.czGloves || {}, { sim, eyeProbe, endingAt, tune, mount, exportArt, measure, probe, setHp, resetMaxDt, hold: (v) => { cpuHold = !!v; }, auto: (v) => { autoP1 = !!v; }, hits: () => HITLOG.splice(0), fxKinds: () => (g ? g.fx.map((e) => e.k) : []), gapWatch: (th, freeze) => { gapWatch = th; gapFreeze = !!freeze; }, gaps: () => GAPLOG.splice(0), unfreeze: () => { if (g) g.frozen = false; }, fxPos: () => (g ? { proj: g.proj.map((p) => [p.k, Math.round((p.x - g.camX) * RS), Math.round((p.y + FLOOR) * RS)]), fx: g.fx.filter((e) => e.k !== "stack" && e.k !== "ghost").map((e) => [e.k, Math.round((e.x - g.camX) * RS), Math.round((e.y + FLOOR) * RS), e.t]) } : null), minGap: () => { const v = stats.minGap; stats.minGap = null; return v == null ? null : Math.round(v * 10) / 10; } });
   const auto = () => { const el = document.getElementById("mg"); if (el && !root) mount(el); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", auto); else auto();
 })();
