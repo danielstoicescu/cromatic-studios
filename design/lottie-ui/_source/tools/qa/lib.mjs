@@ -85,8 +85,9 @@ export async function cast(page, dir, { q = 70, maxW = 1440, maxH = 900 } = {}) 
 export async function castMp4(frames, out, fps = 60) {
   const fs = await import("fs"), { execFileSync } = await import("child_process");
   const FF = "/Users/daniel.stoic/Library/Python/3.9/lib/python/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1";
+  frames = frames.filter((f) => fs.existsSync(f.file)).sort((a, b) => a.t - b.t);
   if (frames.length < 2) return null;
-  const list = frames.map((f, i) => `file '${f.file}'\nduration ${(((frames[i + 1]?.t ?? f.t + 1 / fps) - f.t)).toFixed(4)}`).join("\n") + `\nfile '${frames.at(-1).file}'`;
+  const list = frames.map((f, i) => `file '${f.file}'\nduration ${Math.max(0.001, (frames[i + 1]?.t ?? f.t + 1 / fps) - f.t).toFixed(4)}`).join("\n") + `\nfile '${frames.at(-1).file}'`;
   const lf = frames[0].file.replace(/f\d+\.jpg$/, "list.txt"); fs.writeFileSync(lf, list);
   execFileSync(FF, ["-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", lf, "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", "-r", String(fps), "-c:v", "libx264", "-crf", "23", "-pix_fmt", "yuv420p", "-movflags", "+faststart", out]);
   fs.rmSync(frames[0].file.replace(/\/f\d+\.jpg$/, ""), { recursive: true, force: true }); // (the disk is shared: the frames go once encoded)

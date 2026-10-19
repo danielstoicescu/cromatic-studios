@@ -1,6 +1,6 @@
 // lottie-ui piece 3: a case page in the map's frame asks for the boarding pass (its ticket's "Begin boarding"): the frame
 // fades as before (no pill on top), the pass comes out (LOCAL)
-import { ctxFor, waitMap, sleep, closeAll, BASE, shot } from "./.x-lui-lib.mjs";
+import { ctxFor, waitMap, sleep, closeAll, BASE, shot } from "./lib.mjs";
 const kind = process.env.DEV || "desktop";
 const { page, log } = await ctxFor(kind, { consent: "yes2" });
 await page.goto(BASE + "/?map", { waitUntil: "domcontentloaded" });
@@ -20,6 +20,6 @@ console.log("frame:", fr && fr.url().replace(BASE, ""));
 await fr.evaluate(() => window.parent.postMessage({ cz: "boarding", rect: { left: 120, top: 260, width: 520, height: 220 } }, location.origin));
 for (let i = 0; i < 30; i++) { await sleep(200); if (await page.evaluate(() => document.body.classList.contains("map-boarding"))) break; }
 await sleep(1500); await shot(page, `pill3-${kind}-pass`);
-console.log("boarding open:", await page.evaluate(() => ({ boarding: document.body.classList.contains("map-boarding"), frameHidden: document.querySelector(".case-frame").classList.contains("hidden"), vis: document.querySelector(".case-frame").style.visibility, window: !!document.querySelector(".czl-window"), form: !!document.querySelector(".cform") })));
+console.log("boarding open:", await page.evaluate(() => ({ boarding: document.body.classList.contains("map-boarding"), frameHidden: document.querySelector(".case-frame").classList.contains("hidden"), vis: document.querySelector(".case-frame").style.visibility, window: !!document.querySelector(".czpf"), form: !!document.querySelector(".cform") })));
 console.log("errors:", log.errs, "bad:", log.bad);
 await closeAll();

@@ -1,6 +1,6 @@
 // lottie-ui piece 2: stills of /onboarding/ at each explainer (the explainer itself hidden) and where its box is, for the
 // frame-exact previews. DEV=desktop|pixel  -> design/lottie-ui/_source/tools/bg/onb-<k>-<ab>.jpg + onb-rects-<ab>.json
-import { ctxFor, sleep, closeAll, BASE } from "./.x-lui-lib.mjs";
+import { ctxFor, sleep, closeAll, BASE } from "./lib.mjs";
 import fs from "fs";
 const kind = process.env.DEV || "desktop", ab = kind === "desktop" ? "desktop" : "phone", OUT = "/Users/daniel.stoic/cromatic-lottie-ui/design/lottie-ui/_source/tools/bg";
 const { page, log } = await ctxFor(kind, { consent: "no" });

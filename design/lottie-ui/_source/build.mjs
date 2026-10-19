@@ -9,7 +9,6 @@ import { fileURLToPath } from "url";
 import { loadType } from "./lib/ui.mjs";
 import { buildStamp, buildFinale, FINALE_AB } from "./pieces/finale.mjs";
 import { buildDrive, buildViews, buildPlaces, buildWorlds, buildGame } from "./pieces/onboarding.mjs";
-import { buildWindow, WINDOW_AB } from "./pieces/window.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const SITE = path.resolve(here, "../../../src/lottie-ui"), DESIGN = path.resolve(here, "..");
@@ -32,8 +31,8 @@ const PIECES = {
     [`onb-worlds-${th}`, () => buildWorlds(T, { theme: th })],
     [`onb-game-${th}-en`, () => buildGame(T, { theme: th, lang: "en" })],
     [`onb-game-${th}-ro`, () => buildGame(T, { theme: th, lang: "ro" })]
-  ])),
-  "3-transitions": { "window-desktop": () => buildWindow(T, WINDOW_AB.desktop), "window-phone": () => buildWindow(T, WINDOW_AB.phone) }
+  ]))
+  // (3-transitions: the case page's window, r233, was replaced by a CSS pill in r235: pieces/window.mjs is kept as a source)
 };
 const sizes = {};
 fs.mkdirSync(SITE, { recursive: true });

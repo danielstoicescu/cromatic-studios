@@ -8,7 +8,7 @@
    Nothing in a frame (a case page opened inside the map), nothing with reduced motion. */
 (function () {
   try {
-    if (window.parent !== window || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.parent !== window || window.__czL === false || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     var mk = function (cls) { var o = document.createElement("div"); o.className = "czpt " + cls; o.setAttribute("aria-hidden", "true"); o.innerHTML = '<i class="czpt-hole"></i><i class="czpt-body"></i><i class="czpt-ring"></i>'; document.body.appendChild(o); return o; };
     var t = +sessionStorage.getItem("cz-pt") || 0;
     sessionStorage.removeItem("cz-pt");
