@@ -289,23 +289,27 @@
       }
     });
     // the nearest point of the graph to (x, z): its edge, arc length from the edge's a, the distance
+    // r230: the best so far kept in locals, one result object made at the end (one per improvement before: a few
+    // hundred small objects a second while driving, from the physics, the assist, the body and the camera)
+    const NOSEG = [];
     const nearest = (x, z, maxD = 400, only = null) => {
-      let best = null;
+      let found = false, be = 0, bs = 0, bd = 0;
       const r = Math.ceil(maxD / SG), cx0 = Math.floor(x / SG), cz0 = Math.floor(z / SG);
       for (let ring = 0; ring <= r; ring++) {
         for (let cx = cx0 - ring; cx <= cx0 + ring; cx++) for (let cz = cz0 - ring; cz <= cz0 + ring; cz++) {
           if (Math.max(Math.abs(cx - cx0), Math.abs(cz - cz0)) !== ring) continue;
-          for (const code of sgrid.get(gk(cx, cz)) || []) {
-            const e = E[Math.floor(code / 4096)], i = code % 4096, a = e.pts[i], b = e.pts[i + 1];
+          const cell = sgrid.get(gk(cx, cz)) || NOSEG;
+          for (let j = 0; j < cell.length; j++) {
+            const code = cell[j], e = E[Math.floor(code / 4096)], i = code % 4096, a = e.pts[i], b = e.pts[i + 1];
             if (only && !only(e)) continue;
             const dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz || 1, t = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / l2, 0, 1);
             const d = Math.hypot(a[0] + dx * t - x, a[1] + dz * t - z);
-            if (!best || d < best.d) best = { e: e.id, s: e.cum[i] + Math.sqrt(l2) * t, d };
+            if (!found || d < bd) { found = true; be = e.id; bs = e.cum[i] + Math.sqrt(l2) * t; bd = d; }
           }
         }
-        if (best && best.d < ring * SG) break;
+        if (found && bd < ring * SG) break;
       }
-      return best && best.d <= maxD ? best : null;
+      return found && bd <= maxD ? { e: be, s: bs, d: bd } : null;
     };
     // round 3 (Daniel: "only the normal roads, no back alleys"): the car drives the drive's own network (the start road,
     // the ring, the three streets, the Dacia row, the lane, the road to Olari 9) and the long avenues; the side streets
@@ -982,18 +986,25 @@
       // beta 2.92 (r185): the forecourt in front of Casa Cromatic is road too (the boulevard ends in it)
       if (H.plaza) add([[H.plaza.x, H.plaza.z - 0.5], [H.plaza.x, H.plaza.z + 0.5]], H.plaza.r - 8);
       // the point (x, z) for a car of radius r: on the road, or pushed back onto it (and the kerb's outward normal)
+      // r230 (Daniel, frame drops when racing and drifting): one result object, reused (the physics asks 6-8 times a
+      // frame and every caller reads it at once): it made a new object or two per call, ~1.3 MB/s of garbage at speed
+      const RES = { hit: false, x: 0, z: 0, nx: 0, nz: 0, lost: false }, NONE = [];
+      const out = (hit, x, z, nx, nz, lost) => { RES.hit = hit; RES.x = x; RES.z = z; RES.nx = nx; RES.nz = nz; RES.lost = lost; return RES; };
       function resolve(x, z, r) {
-        let best = null;
+        let found = false, bSlack = 0, bpx = 0, bpz = 0, bd = 0, blim = 0;
         const cx0 = Math.floor(x / CS), cz0 = Math.floor(z / CS);
-        for (let cx = cx0 - 1; cx <= cx0 + 1; cx++) for (let cz = cz0 - 1; cz <= cz0 + 1; cz++) for (const si of grid.get(gk2(cx, cz)) || []) {
-          const [ax, az, bx, bz, hw] = segs[si], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
-          const t = clamp(((x - ax) * dx + (z - az) * dz) / l2, 0, 1), px = ax + dx * t, pz = az + dz * t, d = Math.hypot(x - px, z - pz), slack = hw - r - d;
-          if (slack >= 0) return { hit: false, x, z };
-          if (!best || slack > best.slack) best = { slack, px, pz, d, lim: hw - r };
+        for (let cx = cx0 - 1; cx <= cx0 + 1; cx++) for (let cz = cz0 - 1; cz <= cz0 + 1; cz++) {
+          const cell = grid.get(gk2(cx, cz)) || NONE;
+          for (let j = 0; j < cell.length; j++) {
+            const sg = segs[cell[j]], ax = sg[0], az = sg[1], dx = sg[2] - ax, dz = sg[3] - az, hw = sg[4], l2 = dx * dx + dz * dz || 1;
+            const t = clamp(((x - ax) * dx + (z - az) * dz) / l2, 0, 1), px = ax + dx * t, pz = az + dz * t, d = Math.hypot(x - px, z - pz), slack = hw - r - d;
+            if (slack >= 0) return out(false, x, z, 0, 0, false);
+            if (!found || slack > bSlack) { found = true; bSlack = slack; bpx = px; bpz = pz; bd = d; blim = hw - r; }
+          }
         }
-        if (!best) return { hit: false, x, z, lost: true };
-        const nx = (x - best.px) / (best.d || 1), nz = (z - best.pz) / (best.d || 1), lim = Math.max(0, best.lim);
-        return { hit: true, x: best.px + nx * lim, z: best.pz + nz * lim, nx, nz };
+        if (!found) return out(false, x, z, 0, 0, true);
+        const nx = (x - bpx) / (bd || 1), nz = (z - bpz) / (bd || 1), lim = Math.max(0, blim);
+        return out(true, bpx + nx * lim, bpz + nz * lim, nx, nz, false);
       }
       return { resolve, segs: segs.length };
     })();
@@ -1077,7 +1088,8 @@
       const nx = c.x + (tgt[0] - c.x) * k, nz = c.z + (tgt[1] - c.z) * k;
       if (Math.hypot(nx - c.x, nz - c.z) > 0.3) c.h += wrapA(Math.atan2(nx - c.x, nz - c.z) - c.h) * (1 - Math.exp(-dt * 8));
       c.x = nx; c.z = nz;
-      if (c.t <= 5) { const left = Math.max(0, 5 - c.t); copEl.querySelector("em").textContent = String(Math.ceil(left)); copEl.style.setProperty("--k", (left / 5).toFixed(3)); }
+      // r230: the countdown's digit and ring written only when they change (a lookup, a new text node and a restyle every frame before)
+      if (c.t <= 5) { const left = Math.max(0, 5 - c.t), n = String(Math.ceil(left)), k = (left / 5).toFixed(2); const em = copEl._em || (copEl._em = copEl.querySelector("em")); if (em.textContent !== n) em.textContent = n; if (copEl._k !== k) { copEl._k = k; copEl.style.setProperty("--k", k); } }
       if (c.t > 6.4) { COP.on = null; H.cop?.(null); return; }
       H.cop?.({ x: c.x, z: c.z, h: c.h, flash: !reduced() });
     }

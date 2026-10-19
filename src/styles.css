@@ -3635,8 +3635,10 @@ body.kz-intro .kz-veil { -webkit-backdrop-filter: none; backdrop-filter: none; }
 @media (max-width: 760px) {
   /* r139b: anchored on the card being a child of .ui-root (the strip may sit deeper, in .poi-col), not body:has(…) with a "*" after
      it: that form made every child-list change anywhere in the page (the speedometer digits) re-style the whole page */
-  .ui-root:has(> .mapcard:not(.hidden)) .poi-rail { opacity: 0; visibility: hidden; }
-  .ui-root:has(> .mapcard:not(.hidden)) .poi-rail, .ui-root:has(> .mapcard:not(.hidden)) .poi-rail * { pointer-events: none !important; }
+  /* r230: and now on a class (.ui-root.mc-open, set by the card's code): .ui-root:has(> .mapcard:not(.hidden)) still made every
+     text or node change inside the UI restyle all of it on phones (~30 ms a change on a Pixel at 4x, while driving) */
+  .ui-root.mc-open .poi-rail { opacity: 0; visibility: hidden; }
+  .ui-root.mc-open .poi-rail, .ui-root.mc-open .poi-rail * { pointer-events: none !important; }
 }
 /* r129: the drive-mode project pills (Artisan, Slow Coffee, Steam, Craft…) have no business on the map:
    on phones the strip (z 22) sat over the boarding pass and a tap on the form opened Artisan */
@@ -4226,7 +4228,7 @@ body:not(.map-mode).menus-top .hud-menu:not(.open) { transform: scale(.94) trans
 @media (max-width: 760px) {
   .drive-pins .map-pin .mp-label { padding: 7px 12px 7px 8px; gap: 6px; }
   .drive-pins .map-pin .mp-label b { font-size: 12.5px; }
-  .ui-root:has(> .mapcard:not(.hidden)) .drive-pins { opacity: 0; visibility: hidden; } /* r139b: see .poi-rail above */
+  .ui-root.mc-open .drive-pins { opacity: 0; visibility: hidden; } /* r139b: see .poi-rail above (r230: a class, not :has()) */
 }
 body.map-mode .drive-pins, body.site-mode .drive-pins { display: none !important; }
 body.menu-open .drive-pins { opacity: 0 !important; pointer-events: none !important; }
@@ -4392,8 +4394,12 @@ body.menu-open .drive-pins { opacity: 0 !important; pointer-events: none !import
 body.menu-open:has(.theme-menu.pop-at.open) .menu-scrim { background: rgba(10,8,4,.18); -webkit-backdrop-filter: none; backdrop-filter: none; }
 body.menu-open:has(.theme-menu.pop-at.open) .map-top { z-index: 49; }
 /* Sketchbook greys the whole HUD with a filter, which would also make it the frame of the fixed popover */
-body.scheme-sketch .hud:has(> .theme-menu.pop-at) { filter: none; }
-body.scheme-sketch .hud:has(> .theme-menu.pop-at) > :not(.theme-menu) { filter: grayscale(1) contrast(.96); }
+/* r230 (Daniel, frame drops when racing and drifting): keyed on a class the menu code sets (.hud-popat), not on
+   .hud:has(> .theme-menu.pop-at) > :not(.theme-menu): with that :has() in the sheet, every text or node change anywhere
+   on the map (the drive hint, Nearby's distances, its rows) restyled the whole document, ~5,200 elements, 6-7 ms on a
+   laptop and several times that on a phone, several times a second while racing and drifting */
+body.scheme-sketch .hud.hud-popat { filter: none; }
+body.scheme-sketch .hud.hud-popat > :not(.theme-menu) { filter: grayscale(1) contrast(.96); }
 @media (max-width: 719px) {
   .hud-menu.theme-menu, .map-rides { width: calc(100vw - 24px) !important; padding: 14px 10px 10px; border-radius: 20px; }
   :is(.theme-menu, .map-rides) .wt-lead { font-size: 16px; }
@@ -4754,6 +4760,7 @@ body:not(.scheme-underwater) .uw-veil i,
 .hud-menu:not(.open) .wt-img::after,
 .map-street.off, .map-pins .map-pin.off .mp-label,
 :is(.svc-house.off, .poi-card.out) svg *,
+body:is(.map-mode, .site-mode) .dpad .dp-where, /* r230: the hidden drive pad's bounce, restyled every frame on the map */
 .scroll-hint.gone,
 .speed-lines:not([style*="opacity"]), .speed-lines[style*="opacity: 0;"],
 body:not(.map-mode):not(.site-mode) .hud > .multi-btn, body:not(.map-mode):not(.site-mode) .hud > .multi-btn::before, body:not(.map-mode):not(.site-mode) .hud > .multi-btn * { animation-play-state: paused !important; }
