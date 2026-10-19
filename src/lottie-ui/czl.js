@@ -4,8 +4,9 @@
    it already; anywhere else it is fetched once, the first time a piece is needed. The pieces' JSON (made by
    design/lottie-ui/_source) are listed by the build in window.__CZL_CFG = { player, j: { name: url } }.
      czL.mount(name, { host, w, h, full, fit, cls, assets })  -> Promise<piece | null>  (null: no player, no data)
-       piece.seg("marker" | [a, b], loop) -> Promise (resolved when the segment ends), piece.last() (its last frame,
-       still), piece.destroy(); piece.el is the canvas's wrapper (pointer-events: none)
+       piece.seg("marker" | [a, b] | a list of them, loop) -> Promise (resolved when the (last) segment ends; a list is
+       queued in the worker), piece.dur(seg) its length in ms, piece.last() (its last frame, still), piece.destroy();
+       piece.el is the canvas's wrapper (pointer-events: none)
      czL.rm()     reduced motion is asked for
      czL.ro()     the visitor reads the site in Romanian (the page's language, or on the map the language it remembers)
      czL.warm(names) fetches the player and the data ahead of time */
@@ -70,17 +71,22 @@
       if (onResize) addEventListener("resize", onResize);
       var piece = {
         el: el, anim: anim, data: d, markers: M, w: w, h: h,
+        // r235b: a list of segments is queued in the worker, which goes from one into the next on its own (between them
+        // the main thread, busy or not, is not asked); the promise resolves when the last one ends
         seg: function (s, loop) {
-          var ab = typeof s === "string" ? M[s] : s;
-          if (!ab || gone) return Promise.resolve();
+          var list = (Array.isArray(s) && typeof s[0] !== "number" ? s : [s]).map(function (x) { return typeof x === "string" ? M[x] : x; }).filter(Boolean);
+          if (!list.length || gone) return Promise.resolve();
+          var n = 0; for (var i = 0; i < list.length; i++) n += list[i][1] - list[i][0];
           return new Promise(function (res) {
             if (waiting) { var p = waiting; waiting = null; p(); }
             if (!loop) waiting = res; else res();
-            try { anim.setLoop(!!loop); anim.playSegments([ab[0], ab[1]], true); } catch (e) { waiting = null; res(); }
-            // the worker says so when a segment ends; never wait on it for ever
-            if (!loop) setTimeout(function () { if (waiting === res) { waiting = null; res(); } }, ((ab[1] - ab[0]) / (d.fr || 60)) * 1000 + 1500);
+            try { anim.setLoop(!!loop); anim.playSegments(list.length > 1 ? list.map(function (ab) { return [ab[0], ab[1]]; }) : [list[0][0], list[0][1]], true); } catch (e) { waiting = null; res(); }
+            // the worker says so when the last one ends; never wait on it for ever
+            if (!loop) setTimeout(function () { if (waiting === res) { waiting = null; res(); } }, (n / (d.fr || 60)) * 1000 + 1500);
           });
         },
+        // a segment's length in ms (for what the page does at a turn, on a timer: the animation does not wait for it)
+        dur: function (s) { var ab = typeof s === "string" ? M[s] : s; return ab ? ((ab[1] - ab[0]) / (d.fr || 60)) * 1000 : 0; },
         at: function (f) { try { anim.goToAndStop(f, true); } catch (e) {} },
         last: function () { try { anim.goToAndStop(d.op - 1, true); } catch (e) {} },
         destroy: function () { if (gone) return; gone = true; if (onResize) removeEventListener("resize", onResize); var w2 = waiting; waiting = null; if (w2) w2(); try { anim.destroy(); } catch (e) {} el.remove(); }

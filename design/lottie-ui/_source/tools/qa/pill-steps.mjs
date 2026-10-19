@@ -1,6 +1,6 @@
 // pill-stab: a frame-exact slow motion of the pill (Chromium): its real animations frozen and stepped, a still each,
 // stitched at 30 fps. Open: the ring's wait, then the grow in 48 steps (480 ms: 1/3 speed at 30 fps... 48 frames = 1.6 s);
-// close in 42 steps. DEV=desktop|pixel OUT=file.mp4
+// close in 30 steps. DEV=desktop|pixel OUT=file.mp4
 import { ctxFor, waitMap, sleep, closeAll, BASE, Q } from "./lib.mjs";
 import fs from "fs";
 import { execFileSync } from "child_process";
@@ -8,7 +8,7 @@ const kind = process.env.DEV || "pixel", FF = "/Users/daniel.stoic/Library/Pytho
 const { page, ctx, log } = await ctxFor(kind, { consent: "yes2" });
 await ctx.addInitScript(() => {
   const A = Element.prototype.animate;
-  Element.prototype.animate = function (k, o) { const a = A.call(this, k, o); try { if (window.__freeze && o && (o.duration === 480 || o.duration === 420)) { a.pause(); a.currentTime = 0; (window.__held = window.__held || []).push(a); } } catch (e) {} return a; };
+  Element.prototype.animate = function (k, o) { const a = A.call(this, k, o); try { if (window.__freeze && o && (o.duration === 480 || o.duration === 300)) { a.pause(); a.currentTime = 0; (window.__held = window.__held || []).push(a); } } catch (e) {} return a; };
   const T = window.setTimeout; window.setTimeout = function (f, ms) { if (window.__freeze && ms === 2000) return 0; return T.apply(this, arguments); }; // (the close's safety net, while it is held)
 });
 await page.goto(BASE + "/?map", { waitUntil: "domcontentloaded" }); await waitMap(page); await sleep(2500);
@@ -27,7 +27,7 @@ await page.evaluate(() => { (window.__held || []).forEach((a) => a.play()); wind
 await sleep(1200); await snap(15);
 await page.evaluate(() => { window.__freeze = 1; window.__held = []; document.querySelector(".case-frame .cf-close").click(); });
 for (let i = 0; i < 300; i++) { if (await page.evaluate(() => document.querySelector(".case-frame").classList.contains("czpf-run") && (window.__held || []).length > 5)) break; await sleep(30); }
-for (let i = 0; i <= 42; i++) await step(i / 42);
+for (let i = 0; i <= 30; i++) await step(i / 30);
 await page.evaluate(() => { (window.__held || []).forEach((a) => a.play()); window.__held = []; window.__freeze = 0; });
 await sleep(150); await snap(); await sleep(250); await snap(12);
 const out = process.env.OUT || `${Q}/steps-${kind}.mp4`;

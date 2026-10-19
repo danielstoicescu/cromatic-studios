@@ -3,7 +3,7 @@
 import { ctxFor, waitMap, sleep, closeAll, BASE, cast, castMp4, Q } from "./lib.mjs";
 const kind = process.env.DEV || "pixel";
 const { page, ctx } = await ctxFor(kind, { consent: "yes2" });
-await ctx.addInitScript(() => { const A = Element.prototype.animate; Element.prototype.animate = function (k, o) { const r = A.call(this, k, o); try { if (Array.isArray(k) && k.length > 10 && this.classList.contains("cf-in")) setTimeout(() => { window.__blk = (window.__blk || 0) + 1; const t = performance.now(); while (performance.now() - t < 300); }, 60); } catch (e) {} return r; }; });
+await ctx.addInitScript(() => { const A = Element.prototype.animate; Element.prototype.animate = function (k, o) { const r = A.call(this, k, o); try { if (Array.isArray(k) && k.length > 10 && this.classList.contains("cf-w") && this.parentElement.classList.contains("case-frame")) setTimeout(() => { window.__blk = (window.__blk || 0) + 1; const t = performance.now(); while (performance.now() - t < 300); }, 60); } catch (e) {} return r; }; });
 await page.goto(BASE + "/?map", { waitUntil: "domcontentloaded" }); await waitMap(page); await sleep(2500);
 await page.evaluate(() => window.__mapGo("steam"));
 for (let i = 0; i < 80; i++) { await sleep(500); if (await page.evaluate(() => !!document.querySelector(".map-card:not(.hidden) .mcd-open"))) break; }

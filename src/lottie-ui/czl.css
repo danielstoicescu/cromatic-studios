@@ -48,7 +48,7 @@ body.czl-clouds .nav2-ui { opacity: 0 !important; pointer-events: none !importan
 .case-frame .cf-w, .case-frame .cf-in { position: absolute; inset: 0; }
 .case-frame.czpf-run { background: transparent; }
 .case-frame.czpf-run .cf-w { right: auto; bottom: auto; width: var(--czsw); height: var(--czsh); overflow: hidden; border-radius: var(--czr); will-change: transform; }
-.case-frame.czpf-run .cf-in { right: auto; bottom: auto; width: var(--czvw); height: var(--czvh); background: #F1F1F1; will-change: transform; }
+.case-frame.czpf-run .cf-in { right: auto; bottom: auto; width: var(--czvw); height: var(--czvh); }
 .czpf { position: fixed; inset: 0; z-index: 95; pointer-events: none; opacity: 0; overflow: hidden; contain: strict; }
 .czpf > i { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
 .czpf .czpf-bar { width: 100px; height: var(--czk); background: linear-gradient(90deg, #F65342, #FED012 22%, #28C840 45%, #119BFE 68%, #B098C8 88%, #F65342); }

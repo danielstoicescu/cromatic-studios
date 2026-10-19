@@ -39354,7 +39354,6 @@ void main() {
       function cityCovered() {
         if (!coverEls) coverEls = [...document.querySelectorAll(".case-frame, .scf-modal")];
         for (const c of coverEls) {
-          if (c._czCover) return true; // r235: a case page growing out of its button (pill.js): the city rests meanwhile, the page loads first
           if (c.classList.contains("hidden") || c.style.opacity || c.style.clipPath) continue;
           if (c.getAnimations().length) continue;
           return true;

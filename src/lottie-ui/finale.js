@@ -120,12 +120,16 @@
     if (card) { card.classList.remove("fe-in"); card.classList.add("fe-out"); }
     var cutDone = false, doCut = function () { if (cutDone) return; cutDone = true; try { cut(); } catch (e) {} };
     setTimeout(doCut, 280);
-    fin.seg("down").then(function () {
+    // down and up in one go, queued in the worker: the city waking up under the clouds cannot hold them at the turn (r235b);
+    // what the page does at the turn is on a timer (late if the main thread is busy, the clouds are not)
+    setTimeout(function () {
+      if (state !== "down") return;
       doCut();
       state = "upout";
       document.body.classList.remove("czl-clouds"); // (the map's own controls come back as the clouds open)
-      return fin.seg("up");
-    }).then(function () {
+    }, fin.dur("down"));
+    fin.seg(["down", "up"]).then(function () {
+      doCut();
       document.body.classList.remove("czl-clouds");
       state = "idle"; card = null; fin.destroy(); fin = null; finP = null;
     });

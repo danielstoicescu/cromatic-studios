@@ -5,14 +5,15 @@
                             it would not be painted at all). Once it is parsed, has its fonts and has painted (at most
                             2.5 s), the button's pill stretches sideways past the screen's sides, then opens up and down
                             past the top and the bottom (480 ms), the page fading in over the first third. The city
-                            rests from the tap (it is about to be covered: the page gets the main thread)
-     close(frame, done)     the reverse: the city draws again under the page, the page closes into a band and the band
-                            into the button, fading as it lands (420 ms); done() then hides it
+                            keeps drawing until the page covers it (then it rests, as under any page)
+     close(frame, done)     the reverse: the city draws again under the page (a frame), the page closes into a band and
+                            the band into the button, fading as it lands (300 ms); done() then hides it
      leave()                the map to the website: the paper closes in round a pill (CSS, at once, nothing to load: the
                             click goes ahead and the next page loads meanwhile); the page that comes opens out of the same
                             pill (src/lottie-ui/pt-site.js, inlined in every page of the website)
    The pill is cut by the frame's four nested boxes (src/app.js), each a little bigger than the screen and rounding one
-   corner, moved by transforms; the page inside is moved back by their sum (exactly: translations add up), and the ring
+   corner, moved by transforms; the page inside (the iframe and its buttons) is moved back by their sum (exactly:
+   translations add up), and the ring
    is two bars and two half rings, moved the same way. All of it is the compositor's (a main thread busy parsing the page
    does not stop it); clip-path, tried first, repainted on every frame. One radius (half the button's height) all the
    way: sideways, then up and down, it is a true pill throughout. No worker, no file to fetch.
@@ -95,20 +96,32 @@
     g.innerHTML = '<i class="czpf-bar"></i><i class="czpf-bar"></i><i class="czpf-cap czpf-l"><b></b></i><i class="czpf-cap czpf-r"><b></b></i>';
     return g;
   };
-  // the parts a run moves: [wrappers x4, the page, top bar, bottom bar, left cap, right cap]
-  var parts = function (frame, ring) { var w = [].slice.call(frame.querySelectorAll(".cf-w")); return w.concat([frame.querySelector(".cf-in")], [].slice.call(ring.children)); };
-  var setAt = function (els, q) { var v = q.w.concat([q.c, q.top, q.bot, q.cl, q.cr]); for (var i = 0; i < els.length; i++) els[i].style.transform = v[i]; };
+  // the parts a run moves: the four boxes; the page's own parts, moved back (the iframe and its two buttons, each on its
+  // own: WebKit drew on at a fraction of its pace for as long as the page stayed open once the box holding the iframe
+  // had been animated, not when the iframe itself is); the ring's two bars and two caps
+  var parts = function (frame, ring) {
+    var g = function (q) { return [].slice.call(frame.querySelectorAll(q)); };
+    return { w: g(".cf-w"), m: g(".cf-in > iframe, .cf-in > .cf-share, .cf-in > .cf-close"), r: [].slice.call(ring.children) };
+  };
+  // the ring's parts where they are while the page loads (they are the only parts given a transform of their own: the
+  // buttons have a transition on theirs, which would take over from the animation)
+  var ringAt = function (c, q) { var v = [q.top, q.bot, q.cl, q.cr]; for (var i = 0; i < c.els.r.length; i++) c.els.r[i].style.transform = v[i]; };
   // one animation per part, its keyframes sampled along the way (straight lines between them: transforms add up, so
-  // the page's own move cancels the boxes' exactly at every frame)
+  // the page's move back cancels the boxes' exactly at every frame)
   var run = function (c, P, from, to, E, D, fade, k) {
-    var els = c.els, n = 24, kf = els.map(function () { return []; }), fk = [];
+    var n = 24, kw = [[], [], [], []], km = [], kr = [[], [], [], []], fk = [];
     for (var i = 0; i <= n; i++) {
-      var u = i / n, q = place(P, P.at(from + (to - from) * E(u)), k), v = q.w.concat([q.c, q.top, q.bot, q.cl, q.cr]);
-      for (var j = 0; j < els.length; j++) kf[j].push({ transform: v[j] });
-      fk.push({ opacity: fade(u) });
+      var q = place(P, P.at(from + (to - from) * E(i / n)), k);
+      for (var j = 0; j < 4; j++) kw[j].push({ transform: q.w[j] });
+      km.push({ transform: q.c });
+      [q.top, q.bot, q.cl, q.cr].forEach(function (t, j) { kr[j].push({ transform: t }); });
+      fk.push({ opacity: fade(i / n) });
     }
-    var as = els.map(function (el, j) { return el.animate(kf[j], { duration: D, easing: "linear", fill: "forwards" }); });
-    as.push(c.frame.animate(fk, { duration: D, easing: "linear", fill: "forwards" }));
+    var o = { duration: D, easing: "linear", fill: "forwards" }, as = [];
+    c.els.w.forEach(function (el, j) { as.push(el.animate(kw[j], o)); });
+    c.els.m.forEach(function (el) { as.push(el.animate(km, o)); });
+    c.els.r.forEach(function (el, j) { as.push(el.animate(kr[j], o)); });
+    as.push(c.frame.animate(fk, o));
     return as;
   };
   // everything a run left on the page goes with it (another open or close, or the page hidden some other way)
@@ -117,10 +130,9 @@
     var c = cur; cur = null;
     c.anims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
     if (c.ring) c.ring.remove();
-    (c.els || []).forEach(function (el) { el.style.removeProperty("transform"); });
+    if (c.els) c.els.r.forEach(function (el) { el.style.removeProperty("transform"); });
     c.frame.classList.remove("czpf-run");
     ["--czsw", "--czsh", "--czr", "--czvw", "--czvh", "pointer-events"].forEach(function (k) { c.frame.style.removeProperty(k); });
-    c.frame._czCover = false;
     document.body.classList.remove("czpf-open", "czpf-close");
   };
   var setup = function (c, P, W, H, k) {
@@ -142,6 +154,8 @@
   var painted = function (d) { try { if (d === true) return true; var P = d.defaultView.performance; return !P.getEntriesByName || P.getEntriesByName("first-contentful-paint").length > 0; } catch (e) { return true; } };
   // two frames (the page or the map drawn once more), or 150 ms if frames do not come (a starved page: never stall on it)
   var raf2 = function (fn) { var done = false, go = function () { if (!done) { done = true; fn(); } }; requestAnimationFrame(function () { requestAnimationFrame(go); }); setTimeout(go, 150); };
+  // one frame (the city drawn once more under the page), or 100 ms
+  var raf1 = function (fn) { var done = false, go = function () { if (!done) { done = true; fn(); } }; requestAnimationFrame(go); setTimeout(go, 100); };
   var open = function (frame, fallback) {
     if (rm() || frame.classList.contains("cf-game") || !frame.animate || !frame.querySelector(".cf-in")) return false;
     clean(); closing = null;
@@ -150,9 +164,8 @@
     setup(c, P, W, H, k);
     // the tap's answer, on its frame: the ring round the button. The page loads meanwhile, whole and all but invisible
     // (1 %: at 0 it would not be drawn at all, and its first drawing would land in the middle of the growing pill)
-    setAt(c.els.slice(5), place(P, P.at(0), k));
-    frame.style.pointerEvents = "none";
-    frame._czCover = true; // (the city rests from here: it is about to be covered, and the page gets the main thread)
+    ringAt(c, place(P, P.at(0), k));
+    frame.style.pointerEvents = "none"; // (the city keeps drawing until the page covers it: the frame animates meanwhile)
     c.anims.push(frame.animate([{ opacity: 0.01 }, { opacity: 0.01 }], { duration: 1, fill: "forwards" }));
     c.anims.push(c.ring.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 140, easing: "ease-out", fill: "forwards" }));
     document.body.classList.add("czpf-open");
@@ -173,8 +186,8 @@
       if (my !== gen) return;
       if (frame.classList.contains("hidden")) { clean(); return; }
       c.anims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
-      // from here the boxes cut the pill (they were the screen while the page drew itself)
-      setAt(c.els, place(P, P.at(0), k));
+      // from here the boxes cut the pill (they were the screen while the page drew itself); the class and the animations
+      // in the same task, so no frame is drawn with one and not the other
       frame.classList.add("czpf-run");
       var D = 480;
       c.anims = run(c, P, 0, 1, EOPEN, D, function (u) { return Math.min(1, u / 0.3); }, k);
@@ -193,23 +206,23 @@
     var fin = false, finish = function () { if (fin) return; fin = true; closing = null; frame._czClosing = false; try { done(); } catch (e) {} };
     frame._czClosing = true; // (its address is no longer the page's: src/app.js, the overlays' history)
     var c = cur = { frame: frame, anims: [] };
-    // the map draws again under the page (an animation on the frame: not "covered" any more), then the pill closes
+    // the city draws again under the page (an animation on the frame: not "covered" any more), then the pill closes
     c.anims.push(frame.animate([{ opacity: 1 }, { opacity: 1 }], { duration: 1, fill: "forwards" }));
     document.body.classList.add("czpf-close");
-    raf2(function () {
+    raf1(function () {
       if (my !== gen) return;
       var dst = asPill(onScreen(cardBtn(), W, H) || middle(W, H)), P = path(dst, W, H, k);
       setup(c, P, W, H, k);
-      setAt(c.els, place(P, P.at(1), k));
+      ringAt(c, place(P, P.at(1), k));
       frame.classList.add("czpf-run");
       c.anims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
-      var D = 420;
+      var D = 300; // (a way out is quicker than a way in)
       c.anims = run(c, P, 1, 0, ECLOSE, D, function (u) { return u < 0.7 ? 1 : Math.max(0, 1 - (u - 0.7) / 0.3); }, k);
       c.anims.push(c.ring.animate([{ opacity: 0 }, { opacity: 1, offset: 0.25 }, { opacity: 1 }], { duration: D, fill: "forwards" }));
       c.anims[0].onfinish = function () {
         if (my !== gen) return;
         finish();
-        var f = c.ring.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: "ease-out", fill: "forwards" });
+        var f = c.ring.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: "ease-out", fill: "forwards" });
         c.anims.push(f);
         f.onfinish = function () { if (cur === c) clean(); };
       };

@@ -2,7 +2,7 @@
 import { ctxFor, waitMap, sleep, closeAll, BASE, browserFor } from "./lib.mjs";
 const kind = process.env.DEV || "pixel";
 const { page, ctx } = await ctxFor(kind, { consent: "yes2" });
-await ctx.addInitScript(() => { const A = Element.prototype.animate; Element.prototype.animate = function (k, o) { try { if (Array.isArray(k) && k.length > 10 && this.classList.contains("cf-in")) performance.mark(o.duration === 480 ? "czpf-grow" : "czpf-shrink"); } catch (e) {} return A.call(this, k, o); }; });
+await ctx.addInitScript(() => { const A = Element.prototype.animate; Element.prototype.animate = function (k, o) { try { if (Array.isArray(k) && k.length > 10 && this.classList.contains("cf-w") && this.parentElement.classList.contains("case-frame")) performance.mark(o.duration === 480 ? "czpf-grow" : "czpf-shrink"); } catch (e) {} return A.call(this, k, o); }; });
 await page.goto(BASE + "/?map", { waitUntil: "domcontentloaded" }); await waitMap(page); await sleep(2500);
 const cdp = await ctx.newCDPSession(page);
 await cdp.send("Network.enable"); await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: 150, downloadThroughput: 4e6 / 8, uploadThroughput: 1e6 / 8 });
@@ -19,7 +19,7 @@ await sleep(1500);
 const ev = JSON.parse((await br.stopTracing()).toString()).traceEvents;
 const tn = {}; for (const e of ev) if (e.ph === "M" && e.name === "thread_name") tn[e.pid + ":" + e.tid] = e.args.name;
 const mk = (n) => ev.find((e) => e.name === n && /user_timing/.test(e.cat));
-for (const [nm, D] of [["czpf-grow", 480], ["czpf-shrink", 420]]) {
+for (const [nm, D] of [["czpf-grow", 480], ["czpf-shrink", 300]]) {
   const m = mk(nm); if (!m) { console.log("no mark", nm); continue; }
   const a = m.ts, b = m.ts + D * 1000, main = m.pid + ":" + m.tid;
   const by = {}; let top = 0, frames = [];
