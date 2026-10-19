@@ -72,3 +72,23 @@ export async function openAndFillPass(page, phone) {
   await sleep(400);
   await page.evaluate(() => document.querySelector(".cform .cf-submit").scrollIntoView({ block: "center" })); await sleep(300);
 }
+// a real-time screencast (chromium, CDP): frames as JPEGs with their timestamps; stop() returns [{t, file}]
+export async function cast(page, dir, { q = 70, maxW = 1440, maxH = 900 } = {}) {
+  const fs = await import("fs"); fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
+  const c = await page.context().newCDPSession(page), frames = []; let n = 0;
+  let on = true;
+  c.on("Page.screencastFrame", async (f) => { if (!on) return; const file = `${dir}/f${String(n++).padStart(5, "0")}.jpg`; try { fs.writeFileSync(file, Buffer.from(f.data, "base64")); } catch (e) { return; } frames.push({ t: f.metadata.timestamp, file }); try { await c.send("Page.screencastFrameAck", { sessionId: f.sessionId }); } catch (e) {} });
+  await c.send("Page.startScreencast", { format: "jpeg", quality: q, maxWidth: maxW, maxHeight: maxH, everyNthFrame: 1 });
+  return { stop: async () => { on = false; try { await c.send("Page.stopScreencast"); } catch (e) {} return frames; } };
+}
+// frames of a cast to a timed MP4 (each frame held until the next one's timestamp)
+export async function castMp4(frames, out, fps = 60) {
+  const fs = await import("fs"), { execFileSync } = await import("child_process");
+  const FF = "/Users/daniel.stoic/Library/Python/3.9/lib/python/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1";
+  if (frames.length < 2) return null;
+  const list = frames.map((f, i) => `file '${f.file}'\nduration ${(((frames[i + 1]?.t ?? f.t + 1 / fps) - f.t)).toFixed(4)}`).join("\n") + `\nfile '${frames.at(-1).file}'`;
+  const lf = frames[0].file.replace(/f\d+\.jpg$/, "list.txt"); fs.writeFileSync(lf, list);
+  execFileSync(FF, ["-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", lf, "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", "-r", String(fps), "-c:v", "libx264", "-crf", "23", "-pix_fmt", "yuv420p", "-movflags", "+faststart", out]);
+  fs.rmSync(frames[0].file.replace(/\/f\d+\.jpg$/, ""), { recursive: true, force: true }); // (the disk is shared: the frames go once encoded)
+  return out;
+}
