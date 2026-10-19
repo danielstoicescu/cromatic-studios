@@ -24953,13 +24953,14 @@ void main() {
         mesh2.setColorAt(i, col.clone().offsetHSL(0, 0, 0.05));
       }
     };
-    const tintAll = (blossom) => {
+    const tintAll = (blossom, pale) => { // beta 3.76: pale = the notebook's sage pencil (light, so the hatch stays airy)
       const rndT = rng(999);
       const paint = (mesh, mesh2, list, hueBase) => {
         for (let i = 0; i < list.length; i++) {
           rndT(); rndT(); // keep the stream aligned with place()
           const l = 0.3 + rndT() * 0.15;
           if (blossom) col.setHSL(0.936 + (i % 5) * 0.008, 0.68, 0.74 + (l - 0.3) * 0.6);
+          else if (pale) col.setHSL(hueBase - 0.1 + (i % 3) * 0.012, 0.5, 0.29 + (l - 0.3) * 0.4); // (HSL in linear light: about #93b56c on screen)
           else col.setHSL(hueBase, 0.62, l);
           mesh.setColorAt(i, col);
           mesh2.setColorAt(i, col.clone().offsetHSL(0, 0, blossom ? 0.04 : 0.05));
@@ -36464,7 +36465,7 @@ void main() {
         const s = SCHEMES[idx];
         warmShaders(); // r139b
         window.__czAmb?.world(s.id);
-        if (s.id === "sketch") try { crayonTextures(); } catch (e) {}
+        if (s.id === "sketch") try { crayonTextures(); notebookUI(); } catch (e) {} // beta 3.76: and the notebook's handwriting and hatch
         const dark = lum(s.bg) < 0.45;
         isDarkScheme = dark;
         document.body.classList.toggle("dark-ui", dark);
@@ -36536,7 +36537,7 @@ void main() {
         mats.roofs?.color.copy(dark ? mixC(s.bg, "#ffffff", 0.2) : new Color("#ffffff"));
         const orchid = s.id === "orchid";
         mats.canopy?.color.copy(dark ? mixC("#28C840", s.bg, 0.35) : new Color("#ffffff"));
-        mats.treeBloom?.(orchid);
+        mats.treeBloom?.(orchid, s.id === "sketch");
         mats.bush?.color.set(orchid ? "#e7a8c8" : "#43a655");
         mats.parkMat?.color.copy(dark ? mixC("#8fdc9d", s.bg, 0.45) : new Color("#8fdc9d"));
         mats.island?.color.copy(dark ? mixC("#54d168", s.bg, 0.4) : new Color("#54d168"));
@@ -36654,17 +36655,24 @@ void main() {
           renderer.toneMappingExposure = 1.0;
         }
         if (s.id === "sketch") {
-          scene.background = new Color("#f6f3ec");
-          scene.fog.color.set("#f6f3ec"); scene.fog.near = 6000; scene.fog.far = 30000;
-          hemi.color.set("#ffffff"); hemi.groundColor.set("#bdbdbd"); hemi.intensity = 1.1;
-          sun.color.set("#ffffff"); sun.intensity = 1.9; fillLight.color.set("#ffffff"); fillLight.intensity = 0.3;
+          // beta 3.76: the notebook. The light is flat and even (the same sky above and below, a weak sun for a hint of
+          // form; the pass undoes it, see kW), so what reaches the pass is each thing's own colour, and colour becomes
+          // pencil. White is paper: the ground, the streets, the walls. Colour is kept for accents: greenery in sage,
+          // the drive's road in ochre, the kerbs in ink; the places keep their own colours, pencilled
+          scene.background = new Color("#ffffff");
+          scene.fog.color.set("#ffffff"); scene.fog.near = 6000; scene.fog.far = 30000;
+          hemi.color.set("#ffffff"); hemi.groundColor.set("#ffffff"); hemi.intensity = 2.4;
+          sun.color.set("#ffffff"); sun.intensity = 0.9; fillLight.color.set("#ffffff"); fillLight.intensity = 0;
           mats.buildings?.color.set("#ffffff"); if (mats.buildings) mats.buildings.emissiveIntensity = 0;
-          mats.roofs?.color.set("#e9e9e9");
+          mats.roofs?.color.set("#e8ab9a"); // terracotta, like the reference's mushroom caps, lightly
           mats.ground?.color.set("#ffffff");
-          mats.roadMinor?.color.set("#f1f1f1"); mats.roadMajor?.color.set("#eeeeee"); mats.roadCasing?.color.set("#9a9a9a");
-          mats.route?.color.set("#cfcfcf"); mats.routeCasing?.color.set("#2a2a2a"); mats.routeDash?.color.set("#ffffff");
-          mats.canopy?.color.set("#f4f4f4"); mats.bush?.color.set("#e2e2e2"); mats.parkMat?.color.set("#f3f3f3");
+          mats.roadMinor?.color.set("#ffffff"); mats.roadMajor?.color.set("#ffffff"); mats.roadCasing?.color.set("#4a4637");
+          mats.route?.color.set("#edcf96"); mats.routeCasing?.color.set("#4a4637"); mats.routeDash?.color.set("#ffffff"); // the drive's road: paper with a sparse ochre hatch
+          mats.canopy?.color.set("#ffffff"); mats.bush?.color.set("#a6c98d"); mats.parkMat?.color.set("#c3dbab"); // the trees take a pale sage (treeBloom, pale)
+          if (mats.buildings && mats.mvWalls) { mats.buildings.map = notebookTextures().win; mats.buildings.needsUpdate = true; } // the windows, drawn in ink
+          mats.island?.color.set("#8dbb6c"); mats.zonePatch?.color.set("#ffffff"); mats.pillar?.color.set("#ffffff");
           renderer.toneMappingExposure = 1.05;
+          window.__nbMats = mats; // tests and tuning
         }
         if (s.id === "underwater") {
           scene.fog.color.set("#0d4a6e");
@@ -38373,6 +38381,311 @@ void main() {
         if (mapMode) { const v = warpV(new Vector3(mapView.tgt.x, 0, mapView.tgt.z)); sketchPaint(v.x, v.z, Math.max(420, mapView.dist * 0.24), 0.16 * dt * 4); }
         else sketchPaint(carPos.x, carPos.z, 560, 0.3 * dt * 4);
       }
+      // ---- beta 3.76: Sketchbook becomes the notebook ----
+      // Daniel (2026-10-19), after a hand-drawn chess game on notebook paper: "exactly this design style: the contrast,
+      // the colours, the colour of the sheet". So: a warm greige sheet (sampled from the reference: #d5d2c3 under its
+      // camera, a touch lighter here) that dominates; thin, slightly wobbly brown-graphite ink lines of one weight;
+      // colour only as coloured pencil with visible strokes, light, airy and uneven, in the reference's few pencils
+      // (terracotta, ochre, sage, a pale sky blue, indigo, a rainbow pink); and an even, bright light: no shadow, no black
+      // area, the contrast is line and colour. The old graphite pass (a depth Sobel for creases, hatching for shade, a grey
+      // vignette) also made the street view "unintelligible, senseless and absurdly dark": the Sobel read the slope of the
+      // ground seen at a grazing angle as one endless crease. Here the creases are the second difference of 1/z, which is
+      // zero on any plane however steep, so a low camera sees a clean street.
+      // Pre-baked textures do the drawing (no extra pass): the sheet and its margin doodles (screen space: the paper does
+      // not move with the city) and a tile of pencil strokes laid in world space on each face (its axis from the depth's
+      // own normal) at a scale that keeps the strokes one size on screen at any zoom (two octaves blended).
+      var nbTex = null, _nbSun = new Vector3();
+      function notebookTextures() {
+        if (nbTex) return nbTex;
+        const R = rng(20261019);
+        // the sheet: greige, a soft cloud of tone, fibres, a few creases and one fold
+        const P = document.createElement("canvas"); P.width = P.height = 1024;
+        const c = P.getContext("2d");
+        c.fillStyle = "#dcd8c9"; c.fillRect(0, 0, 1024, 1024);
+        for (let i = 0; i < 46; i++) {
+          const x = R() * 1024, y = R() * 1024, r = 120 + R() * 280, g = c.createRadialGradient(x, y, 0, x, y, r), up = R() < 0.6;
+          g.addColorStop(0, up ? "rgba(246,243,232,.13)" : "rgba(170,160,132,.05)"); g.addColorStop(1, "rgba(0,0,0,0)");
+          c.fillStyle = g; c.fillRect(x - r, y - r, 2 * r, 2 * r);
+        }
+        c.lineCap = "round";
+        for (let i = 0; i < 1800; i++) {
+          const x = R() * 1024, y = R() * 1024, a = R() * 6.283, l = 2 + R() * 6;
+          c.strokeStyle = R() < 0.55 ? "rgba(250,248,240,.2)" : "rgba(130,120,96,.07)"; c.lineWidth = 0.6 + R() * 0.5;
+          c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); c.stroke();
+        }
+        const crease = (x0, y0, x1, y1, bend, k) => { // a soft valley with a light ridge beside it, fading at both ends
+          const pts = []; for (let i = 0; i <= 48; i++) { const t = i / 48, s = Math.sin(t * Math.PI); pts.push([x0 + (x1 - x0) * t - (y1 - y0) * bend * s, y0 + (y1 - y0) * t + (x1 - x0) * bend * s, s]); }
+          for (const [off, col, w] of [[0, `rgba(130,120,96,${0.05 * k})`, 9], [1.3, `rgba(124,114,90,${0.14 * k})`, 2.2], [-1.5, `rgba(252,250,242,${0.36 * k})`, 2]]) {
+            for (let i = 1; i < pts.length; i++) {
+              const [ax, ay, s0] = pts[i - 1], [bx, by] = pts[i], nx = -(by - ay), ny = bx - ax, nl = Math.hypot(nx, ny) || 1;
+              c.globalAlpha = Math.pow(s0, 0.5); c.strokeStyle = col; c.lineWidth = w;
+              c.beginPath(); c.moveTo(ax + nx / nl * off, ay + ny / nl * off); c.lineTo(bx + nx / nl * off, by + ny / nl * off); c.stroke();
+            }
+          }
+          c.globalAlpha = 1;
+        };
+        crease(-40, 330, 1064, 280, 0.015, 1.2); // the fold
+        crease(140, 780, 760, 1000, -0.05, 0.7);
+        crease(680, -30, 990, 520, 0.05, 0.65);
+        crease(-20, 620, 340, 1040, 0.04, 0.5);
+        const paper = new CanvasTexture(P); paper.colorSpace = NoColorSpace; paper.generateMipmaps = false; paper.minFilter = LinearFilter; // the canvas's own values go straight to the screen
+        // margin doodles, as on the reference's margins (a sun with a face, a cloud, a rainbow), drawn on
+        // their own sheet: the pass shows them only where nothing of the city is drawn (the sky of the street view, the
+        // paper past the city's edge), never over a street or a house
+        const Dd = document.createElement("canvas"); Dd.width = Dd.height = 1024;
+        const d = Dd.getContext("2d"); d.lineCap = d.lineJoin = "round";
+        const wob = (x, y, k = 1.4) => [x + (R() - 0.5) * k, y + (R() - 0.5) * k];
+        const ring = (cx, cy, rx, ry, a0 = 0, a1 = 6.283) => { d.beginPath(); for (let t = a0; t <= a1 + 1e-3; t += 0.12) { const [x, y] = wob(cx + Math.cos(t) * rx, cy + Math.sin(t) * ry, 1.1); t === a0 ? d.moveTo(x, y) : d.lineTo(x, y); } d.stroke(); };
+        { // the sun (ochre, a sleepy face, rays)
+          const sx = 712, sy = 318;
+          d.strokeStyle = "rgba(201,150,62,.9)"; d.lineWidth = 3.2; ring(sx, sy, 38, 37);
+          d.lineWidth = 2.6; for (let i = 0; i < 12; i++) { const a = (i / 12) * 6.283 + 0.1; d.beginPath(); d.moveTo(...wob(sx + Math.cos(a) * 50, sy + Math.sin(a) * 50)); d.lineTo(...wob(sx + Math.cos(a) * (66 + (i % 2) * 8), sy + Math.sin(a) * (66 + (i % 2) * 8))); d.stroke(); }
+          d.strokeStyle = "rgba(90,74,52,.85)"; d.lineWidth = 2.2;
+          for (const ex of [-13, 13]) { d.beginPath(); d.arc(sx + ex, sy - 4, 6, 0.15 * Math.PI, 0.85 * Math.PI); d.stroke(); }
+          d.beginPath(); d.arc(sx, sy + 9, 9, 0.2 * Math.PI, 0.8 * Math.PI); d.stroke();
+          d.fillStyle = "rgba(214,120,104,.35)"; for (const ex of [-22, 22]) { d.beginPath(); d.ellipse(sx + ex, sy + 8, 6, 4, 0, 0, 6.283); d.fill(); }
+        }
+        { // a cloud (indigo ballpoint), eyes shut: the outline of a few bumps, then its flat base
+          const cx = 352, cy = 338, bumps = [[-70, 6, 26], [-34, -14, 32], [8, -22, 36], [50, -8, 30], [80, 8, 22]];
+          d.strokeStyle = "rgba(75,79,143,.85)"; d.lineWidth = 2.6; d.beginPath();
+          for (let x = -94; x <= 100; x += 3) {
+            let y = cy + 22;
+            for (const [bx, by, br] of bumps) { const q = br * br - (x - bx) * (x - bx); if (q > 0) y = Math.min(y, cy + by - Math.sqrt(q)); }
+            const [px, py] = wob(cx + x, y, 0.9); x === -94 ? d.moveTo(px, py) : d.lineTo(px, py);
+          }
+          d.lineTo(...wob(cx - 94, cy + 22)); d.closePath(); d.stroke();
+          d.strokeStyle = "rgba(90,74,52,.8)"; d.lineWidth = 2; for (const ex of [-14, 14]) { d.beginPath(); d.arc(cx + ex, cy + 2, 5, 0.1 * Math.PI, 0.9 * Math.PI); d.stroke(); }
+          d.beginPath(); d.arc(cx, cy + 12, 2.5, 0, 6.283); d.stroke();
+        }
+        { // a small rainbow (pastel pencil arcs), low on the left
+          const rx = 905, ry = 470; const cols = ["rgba(205,110,96,.75)", "rgba(222,160,92,.75)", "rgba(222,196,110,.7)", "rgba(140,172,112,.75)", "rgba(126,166,196,.75)", "rgba(150,130,190,.7)"];
+          cols.forEach((col, i) => { d.strokeStyle = col; d.lineWidth = 5; ring(rx, ry, 84 - i * 6.5, 80 - i * 6.5, Math.PI * 1.02, Math.PI * 1.98); });
+        }
+        const doodles = new CanvasTexture(Dd); doodles.colorSpace = NoColorSpace; doodles.generateMipmaps = false; doodles.minFilter = LinearFilter;
+        // the pencil: parallel rows (a hand going back and forth), strokes of varied length and pressure with gaps.
+        // R the hatch (leaning like the reference's, bottom left to top right), G a cross layer for the deeper colours,
+        // B the paper's tooth. Tileable: a stroke crossing an edge is drawn again one tile over
+        const N = 256;
+        const layer = (ang, gap, len0, w0) => {
+          const L = document.createElement("canvas"); L.width = L.height = N; const g = L.getContext("2d");
+          g.fillStyle = "#000"; g.fillRect(0, 0, N, N); g.lineCap = "round"; g.globalCompositeOperation = "lighter";
+          const ca = Math.cos(ang), sa = Math.sin(ang), nx = -sa, ny = ca;
+          for (let r = -N * 1.5; r < N * 1.5; r += gap * (0.8 + R() * 0.4)) {
+            let s = -N * 1.5 + R() * 20;
+            while (s < N * 1.5) {
+              const l = len0 * (0.5 + R()), gp = 3 + R() * 16, v = 90 + R() * 160, w = w0 * (0.75 + R() * 0.5);
+              const cx = N / 2 + ca * (s + l / 2) + nx * r + (R() - 0.5) * 1.5, cy = N / 2 + sa * (s + l / 2) + ny * r + (R() - 0.5) * 1.5;
+              const a2 = ang + (R() - 0.5) * 0.12, dx = Math.cos(a2) * l / 2, dy = Math.sin(a2) * l / 2;
+              for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) {
+                const x0 = cx + ox - dx, y0 = cy + oy - dy, x1 = cx + ox + dx, y1 = cy + oy + dy;
+                if (Math.max(x0, x1) < -4 || Math.min(x0, x1) > N + 4 || Math.max(y0, y1) < -4 || Math.min(y0, y1) > N + 4) continue;
+                const grd = g.createLinearGradient(x0, y0, x1, y1), k = `${v},${v},${v}`;
+                grd.addColorStop(0, `rgba(${k},.25)`); grd.addColorStop(0.2, `rgb(${k})`); grd.addColorStop(0.85, `rgb(${k})`); grd.addColorStop(1, `rgba(${k},.15)`);
+                g.strokeStyle = grd; g.lineWidth = w; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+              }
+              s += l + gp;
+            }
+          }
+          return g.getImageData(0, 0, N, N).data;
+        };
+        const l1 = layer(-1.1, 5.2, 30, 1.8), l2 = layer(-0.38, 6.0, 26, 1.5);
+        const S = document.createElement("canvas"); S.width = S.height = N;
+        const sc = S.getContext("2d"), id = sc.createImageData(N, N);
+        for (let o = 0; o < N * N; o++) { id.data[o * 4] = l1[o * 4]; id.data[o * 4 + 1] = l2[o * 4]; id.data[o * 4 + 2] = 120 + R() * 135; id.data[o * 4 + 3] = 255; }
+        sc.putImageData(id, 0, 0);
+        const pencil = new CanvasTexture(S); pencil.wrapS = pencil.wrapT = RepeatWrapping; pencil.generateMipmaps = true; pencil.minFilter = LinearMipmapLinearFilter;
+        // windows: the city's own layout (2 x 2 arched windows a tile, as makeWindowTextureMV), drawn in ink. Its own mip
+        // chain: the two finest levels are the drawing, the next one half faded, the rest blank paper, so up close a
+        // window is a crisp ink arch and from the map's height the walls stay paper instead of rows of grey dashes
+        const winLevel = (S2, k) => {
+          const cv = document.createElement("canvas"); cv.width = cv.height = S2; const w = cv.getContext("2d"); const f = S2 / 256;
+          w.fillStyle = "#ffffff"; w.fillRect(0, 0, S2, S2);
+          if (k > 0) for (let r = 0; r < 2; r++) for (let cc = 0; cc < 2; cc++) {
+            const x = (40 + cc * 128) * f, y = (22 + r * 128) * f, ww = 48 * f, h = 82 * f;
+            w.globalAlpha = k; w.beginPath(); w.moveTo(x, y + h); w.lineTo(x, y + ww / 2); w.arc(x + ww / 2, y + ww / 2, ww / 2, Math.PI, 0); w.lineTo(x + ww, y + h); w.closePath();
+            w.fillStyle = "#dde7ee"; w.fill();
+            w.strokeStyle = "#2a2820"; w.lineWidth = Math.max(1, 4.5 * f); w.lineJoin = "round"; w.stroke();
+            w.beginPath(); w.moveTo(x - 7 * f, y + h + 3 * f); w.lineTo(x + ww + 7 * f, y + h + 3 * f); w.lineWidth = Math.max(1, 4 * f); w.stroke();
+          }
+          return cv;
+        };
+        const win = new CanvasTexture(winLevel(256, 1)); win.colorSpace = SRGBColorSpace; win.wrapS = win.wrapT = RepeatWrapping; win.anisotropy = 4;
+        win.mipmaps = [256, 128, 64, 32, 16, 8, 4, 2, 1].map((S2, i) => winLevel(S2, i < 2 ? 1 : i === 2 ? 0.45 : 0));
+        win.generateMipmaps = false; win.minFilter = LinearMipmapLinearFilter;
+        nbTex = { paper, doodles, pencil, win };
+        return nbTex;
+      }
+      // the interface's share: the handwriting (loaded the first time the notebook opens, never for the other worlds) and
+      // a coloured-pencil hatch the CSS uses as a static mask (--nb-hatch) behind buttons, chips and swatches
+      var nbUI = false;
+      function notebookUI() {
+        if (nbUI) return; nbUI = true;
+        try {
+          const l = document.createElement("link"); l.rel = "stylesheet";
+          l.href = "https://fonts.googleapis.com/css2?family=Caveat:wght@500..700&family=Playwrite+RO:wght@200..400&display=swap";
+          document.head.appendChild(l);
+          const R = rng(4242), N = 240, cv = document.createElement("canvas"); cv.width = cv.height = N;
+          const g = cv.getContext("2d"); g.lineCap = "round";
+          const ang = -1.1, ca = Math.cos(ang), sa = Math.sin(ang), nx = -sa, ny = ca;
+          for (let r = -N * 1.5; r < N * 1.5; r += 5.4 * (0.8 + R() * 0.4)) {
+            let s = -N * 1.5 + R() * 20;
+            while (s < N * 1.5) {
+              const ln = 26 * (0.5 + R()), gp = 3 + R() * 12, a = 0.4 + R() * 0.5, w = 1.6 * (0.75 + R() * 0.5);
+              const cx = N / 2 + ca * (s + ln / 2) + nx * r, cy = N / 2 + sa * (s + ln / 2) + ny * r, a2 = ang + (R() - 0.5) * 0.12, dx = Math.cos(a2) * ln / 2, dy = Math.sin(a2) * ln / 2;
+              for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) {
+                const x0 = cx + ox - dx, y0 = cy + oy - dy, x1 = cx + ox + dx, y1 = cy + oy + dy;
+                if (Math.max(x0, x1) < -4 || Math.min(x0, x1) > N + 4 || Math.max(y0, y1) < -4 || Math.min(y0, y1) > N + 4) continue;
+                g.strokeStyle = `rgba(0,0,0,${a})`; g.lineWidth = w; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+              }
+              s += ln + gp;
+            }
+          }
+          document.documentElement.style.setProperty("--nb-hatch", crayonUrl(cv)); // a short blob: URL (see crayonUrl, r139b)
+          // the cover: the sheet's colour with those strokes cut out of it. Laid as a background image over any element's own
+          // solid colour, the colour shows only through the strokes: a coloured-pencil fill, with no pseudo-element
+          const cv2 = document.createElement("canvas"); cv2.width = cv2.height = N; const g2 = cv2.getContext("2d");
+          g2.fillStyle = "#e7e4d8"; g2.fillRect(0, 0, N, N); g2.globalCompositeOperation = "destination-out"; g2.drawImage(cv, 0, 0); g2.drawImage(cv, 0, 0);
+          document.documentElement.style.setProperty("--nb-cover", crayonUrl(cv2));
+        } catch (e) {}
+      }
+      // a car's frame for the pass: world to its own space, and its box there (measured once per car: rides are rebuilt).
+      // Hidden or missing, the box is empty and the pass lays its strokes in world space as everywhere else
+      var _nbBox = new Box3(), _nbM = new Matrix4();
+      function nbCarFrame(g, inv, a, b) {
+        if (!g || !g.visible) { a.set(1, 1, 1); b.set(-1, -1, -1); return; }
+        let bx = g.userData.nbBox;
+        if (!bx) {
+          g.updateMatrixWorld(true); _nbM.copy(g.matrixWorld).invert(); _nbBox.makeEmpty();
+          g.traverse((o) => { if (o.isMesh && o.visible && o.geometry) { if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); _nbBox.union(o.geometry.boundingBox.clone().applyMatrix4(new Matrix4().multiplyMatrices(_nbM, o.matrixWorld))); } });
+          bx = g.userData.nbBox = _nbBox.isEmpty() ? null : _nbBox.clone().expandByScalar(0.6);
+          if (!bx) { a.set(1, 1, 1); b.set(-1, -1, -1); return; }
+        }
+        inv.copy(g.matrixWorld).invert(); a.copy(bx.min); b.copy(bx.max);
+      }
+      // the hull pass (OutlineEffect's second drawing of the scene, for the ink round every shape) is off in the notebook:
+      // the depth folds draw the silhouettes and the folds (their threshold follows the distance), the thin-ink test the
+      // drawn details (windows, lettering, kerbs). Measured with __perfLab.bench on a laptop at 2x: street view 8.8 -> 6.4
+      // ms a frame, bird's eye 8.2 -> 5.0 (Cromatic 6.9 / 7.9), the same drawing; on a phone it was ~5 ms of CPU (the
+      // audit). __perfLab.nbHull(true) brings it back for an A/B
+      var nbHull = false;
+      var NOTEBOOK_FS = `
+              uniform sampler2D tD, tZ, tR, tP, tQ, tS; uniform vec2 res; uniform float t, full, near, far, dz, kW; uniform mat4 pInv, cW; uniform vec4 box; varying vec2 vUv;
+              uniform mat4 oI0, oI1; uniform vec3 oA0, oB0, oA1, oB1; // the ride and the police car: world to their own frame, and their boxes in it
+              float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+              float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+                return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
+              // the colour the city was drawn in, read back to its own colour: the light in the notebook is flat and even,
+              // kW undoes it (a white face looking up comes out white). Crayon decals carry a marker alpha: paper here
+              vec3 alb(vec4 t){ return pow(clamp(t.rgb * kW, 0.0, 1.0), vec3(0.4545)); }
+              float lumT(vec4 t){ if (abs(t.a - 0.25) < 0.03) return 1.0; return dot(alb(t), vec3(0.299, 0.587, 0.114)); }
+              float lum(vec2 uv){ return lumT(texture2D(tD, uv)); }
+              float lumL(vec2 uv){ return lumT(textureLod(tD, uv, 0.0)); }
+              float depZ(float z){ float ndc = z * 2.0 - 1.0; return (2.0 * near * far) / (far + near - ndc * (far - near)); }
+              float iz(vec2 uv){ return 1.0 / depZ(texture2D(tZ, uv).x); }
+              vec3 hsv(vec3 c){ vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0); vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+                vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r)); float d = q.x - min(q.w, q.y); return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + 1e-6)), d / (q.x + 1e-6), q.x); }
+              // the notebook's pencils (a hue, the colour it lays down), sampled from the reference; a colour takes the
+              // nearest of them by hue, softly
+              vec3 pencilFor(vec3 c, float s){
+                float h = hsv(c).x;
+                vec3 P[7]; float H[7];
+                H[0] = 0.02; P[0] = vec3(0.78, 0.45, 0.39);  // terracotta (the mushroom caps)
+                H[1] = 0.08; P[1] = vec3(0.84, 0.60, 0.40);  // orange
+                H[2] = 0.13; P[2] = vec3(0.85, 0.71, 0.40);  // ochre, honey
+                H[3] = 0.28; P[3] = vec3(0.55, 0.66, 0.43);  // sage, the hatched squares
+                H[4] = 0.52; P[4] = vec3(0.50, 0.66, 0.74);  // a pale sky blue (the rainbow)
+                H[5] = 0.66; P[5] = vec3(0.31, 0.32, 0.56);  // indigo, the dark pieces
+                H[6] = 0.88; P[6] = vec3(0.80, 0.52, 0.62);  // a rainbow pink
+                vec3 acc = vec3(0.0); float ws = 0.0;
+                for (int i = 0; i < 7; i++) { float d = abs(h - H[i]); d = min(d, 1.0 - d); float w = exp(-d * d * 260.0); acc += P[i] * w; ws += w; }
+                return mix(c, acc / max(ws, 1e-4), 0.78 * smoothstep(0.06, 0.25, s));
+              }
+              void main(){
+                vec2 px = 1.0 / res;
+                // a calm, hand-drawn waver on every line
+                vec2 wob = (vec2(vn(vUv * 6.0), vn(vUv * 6.0 + 7.7)) - 0.5) * 1.5 * px;
+                vec2 uv = vUv + wob;
+                // ink: the thin dark lines (the ink hulls round every shape, poles, lettering). A dark pixel with no light
+                // pixel 3.5 px away along either diagonal is a dark surface, not a line: it is coloured in instead
+                float l = lum(uv);
+                float lR = lum(uv + vec2(px.x, 0.0)), lL = lum(uv - vec2(px.x, 0.0)), lU = lum(uv + vec2(0.0, px.y)), lD = lum(uv - vec2(0.0, px.y));
+                float lmin = min(l, min(min(lR, lL), min(lU, lD)));
+                float ink = 1.0 - smoothstep(0.22, 0.4, lmin);
+                if (ink > 0.0) {
+                  float lf = max(max(lumL(uv + vec2(3.5, 3.5) * px), lumL(uv - vec2(3.5, 3.5) * px)), max(lumL(uv + vec2(3.5, -3.5) * px), lumL(uv - vec2(3.5, -3.5) * px)));
+                  ink *= smoothstep(0.34, 0.55, lf);
+                }
+                // creases: steps and folds in depth, from the second difference of 1/z (zero on any flat face)
+                float w11 = iz(uv);
+                float w00 = iz(uv + vec2(-px.x, -px.y)), w10 = iz(uv + vec2(0.0, -px.y)), w20 = iz(uv + vec2(px.x, -px.y));
+                float w01 = iz(uv + vec2(-px.x, 0.0)), w21 = iz(uv + vec2(px.x, 0.0));
+                float w02 = iz(uv + vec2(-px.x, px.y)), w12 = iz(uv + vec2(0.0, px.y)), w22 = iz(uv + vec2(px.x, px.y));
+                float lap = (abs(w01 + w21 - 2.0 * w11) + abs(w10 + w12 - 2.0 * w11) + 0.5 * abs(w00 + w22 - 2.0 * w11) + 0.5 * abs(w20 + w02 - 2.0 * w11)) / w11;
+                float zr = texture2D(tZ, vUv).x, dd = depZ(zr);
+                // a step's share of the depth shrinks with distance (a tree 40 high seen from 3000 away is a 1-2 % step): the
+                // threshold follows, so from the map's height every house and tree still gets its outline
+                float clo = mix(0.025, 0.006, smoothstep(250.0, 2400.0, dd));
+                float crease = smoothstep(clo, clo * 2.6, lap);
+                // one weight, crisp and dark all the way to the far city (only a touch lighter there)
+                float line = max(ink, crease) * (0.9 + 0.1 * vn(vUv * res * 0.03));
+                line *= 1.0 - 0.18 * smoothstep(dz * 1.6, dz * 3.2, dd);
+                // where the city has been drawn yet (world position from depth, then the reveal map)
+                vec4 ndc = vec4(vUv * 2.0 - 1.0, zr * 2.0 - 1.0, 1.0);
+                vec4 vp = pInv * ndc; vp /= vp.w;
+                vec3 wp = (cW * vp).xyz;
+                float rv = texture2D(tR, (wp.xz - box.xy) / box.zw).r;
+                float edge = vn(wp.xz * 0.02) * 0.35;
+                bool sky = zr >= 0.9999;
+                float shown = full > 0.5 || sky ? 1.0 : smoothstep(0.25, 0.55, rv + edge - 0.15);
+                float band = full > 0.5 ? 0.0 : smoothstep(0.02, 0.4, rv + edge - 0.15) * (1.0 - shown);
+                // the sheet (screen space, cover-fitted, so its creases stay where they are on the screen)
+                float asp = res.x / res.y;
+                vec2 puv = (vUv - 0.5) * (asp > 1.0 ? vec2(1.0, 1.0 / asp) : vec2(asp, 1.0)) * 0.98 + 0.5;
+                vec3 paper = texture2D(tP, puv).rgb;
+                // the margin doodles: only on the empty paper (the street view's sky, the sheet past the city)
+                if (sky && full < 0.5) { vec4 dq = texture2D(tQ, puv); paper = mix(paper, dq.rgb, dq.a * 0.85); }
+                vec2 p = vUv * res;
+                vec4 tz = texture2D(tS, p / 256.0); // the tooth, one texel a pixel
+                // colour: coloured pencil, light, airy and uneven; the paper dominates. How much pencil a colour needs:
+                // its saturation, and a little for darkness (a dark thing is pencilled denser, never filled black)
+                vec4 tc = texture2D(tD, vUv);
+                vec3 A = alb(tc);
+                vec3 hv = hsv(A);
+                float amt = clamp(hv.y * 0.62 + (1.0 - hv.z) * 0.42 - 0.05, 0.0, 0.66);
+                if (abs(tc.a - 0.25) < 0.03 || sky) amt = 0.0;
+                vec3 pen = pencilFor(A, hv.y);
+                pen = mix(vec3(0.42, 0.40, 0.33), pen, smoothstep(0.04, 0.22, hv.y)); // a grey is graphite, warm
+                pen = max(pen, vec3(0.2)); // never black
+                // the strokes, in world space on the face (its axis from the depth's own normal), sized for the screen. On the
+                // ride and the police car they are laid in the car's own frame, so they stay on its body as it drives (in world
+                // space they would stream over a moving car)
+                vec3 sp = wp, q0 = (oI0 * vec4(wp, 1.0)).xyz, q1 = (oI1 * vec4(wp, 1.0)).xyz;
+                if (all(greaterThan(q0, oA0)) && all(lessThan(q0, oB0))) sp = q0; else if (all(greaterThan(q1, oA1)) && all(lessThan(q1, oB1))) sp = q1;
+                vec3 dx = dFdx(sp), dy = dFdy(sp), an = abs(normalize(cross(dx, dy)));
+                vec2 suv = an.y > max(an.x, an.z) ? sp.xz : an.x > an.z ? sp.zy : sp.xy;
+                float L = log2(max(max(length(dx), length(dy)), 1e-4) * 150.0), L0 = floor(L), fr = L - L0;
+                vec4 s0 = textureLod(tS, suv / exp2(L0), max(0.0, 0.77 - fr)), s1 = textureLod(tS, suv / exp2(L0 + 1.0), 0.0);
+                vec2 st = mix(s0.rg, s1.rg, fr);
+                float c1 = smoothstep(1.12 - amt, 1.22 - amt, st.r);
+                float c2 = smoothstep(1.6 - amt, 1.78 - amt, st.g);
+                float cov = max(c1, c2 * 0.9) * (0.62 + 0.38 * tz.b);
+                vec3 fill = mix(vec3(1.0), pen, clamp(amt * 0.1 + cov * 0.8, 0.0, 0.92));
+                vec3 o = paper * mix(vec3(1.0), fill, shown);
+                // the drawing front: a loose pencil grid on the ground and the lines laid in lightly, before they settle
+                vec2 gq = wp.xz / 140.0 + vec2(vn(wp.zx * 0.004) * 0.18, 0.0);
+                vec2 gd = abs(fract(gq - 0.5) - 0.5) / max(fwidth(gq), vec2(1e-4));
+                float grid = (1.0 - smoothstep(0.0, 1.3, min(gd.x, gd.y))) * step(wp.y, 4.0) * step(zr, 0.9999);
+                float g = line * mix(0.03, 1.0, shown);
+                g = max(g, max(grid * 0.26, line * 0.45) * band);
+                if (sky) g = 0.0;
+                vec3 inkC = vec3(0.21, 0.195, 0.15); // brown graphite, like the reference's grid
+                o = mix(o, inkC, clamp(g, 0.0, 1.0) * 0.94);
+                // crayon decals keep their colour, laid over the paper (multiply)
+                if (abs(tc.a - 0.25) < 0.03) { vec3 cc = pow(clamp(tc.rgb, 0.0, 1.0), vec3(0.4545)); o = mix(o, o * mix(vec3(1.0), cc, 0.9), 0.9 * (0.8 + 0.2 * tz.b)); }
+                gl_FragColor = vec4(o, 1.0);
+                // beta 3.75 (the audit's contract): the scene's depth goes on screen with the drawing, for the things drawn plain over it (sketchPlainDraw)
+                gl_FragDepth = zr;
+              }`;
       function sketchRender(now, cam, full) {
         const w = renderer.domElement.width, h = renderer.domElement.height;
         if (!sketchFx) {
@@ -38386,106 +38699,15 @@ void main() {
             uniforms: { tD: { value: rt.texture }, tZ: { value: rt.depthTexture }, tR: { value: R.tex }, res: { value: new Vector2(w, h) }, t: { value: 0 },
               pInv: { value: new Matrix4() }, cW: { value: new Matrix4() }, box: { value: new Vector4(R.x0, R.z0, R.w, R.h) }, full: { value: 0 }, near: { value: 1 }, far: { value: 1000 }, dz: { value: 900 } },
             vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
-            fragmentShader: `
-              uniform sampler2D tD, tZ, tR; uniform vec2 res; uniform float t, full, near, far, dz; uniform mat4 pInv, cW; uniform vec4 box; varying vec2 vUv;
-              float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-              float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
-                return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
-              // crayon decals carry a marker alpha: to the pencil they are paper
-              float lum(vec2 uv){ vec4 t = texture2D(tD, uv); if (abs(t.a - 0.25) < 0.03) return 1.0; vec3 c = pow(clamp(t.rgb, 0.0, 1.0), vec3(0.4545)); return dot(c, vec3(0.299, 0.587, 0.114)); }
-              float depZ(float z){ float ndc = z * 2.0 - 1.0; return (2.0 * near * far) / (far + near - ndc * (far - near)); }
-              float dep(vec2 uv){ return depZ(texture2D(tZ, uv).x); }
-              // r139b: for the taps inside a branch (no implicit derivatives there; tD has no mips, so the same texel)
-              float lumL(vec2 uv){ vec4 t = textureLod(tD, uv, 0.0); if (abs(t.a - 0.25) < 0.03) return 1.0; vec3 c = pow(clamp(t.rgb, 0.0, 1.0), vec3(0.4545)); return dot(c, vec3(0.299, 0.587, 0.114)); }
-              void main(){
-                float tf = 0.0;
-                vec2 px = 1.0 / res;
-                // r130b: a calm line: a fixed, hand-drawn waver (no boiling)
-                vec2 wob = (vec2(vn(vUv * 7.0), vn(vUv * 7.0 + 7.7)) - 0.5) * 1.2 * px;
-                vec2 uv = vUv + wob;
-                float l = lum(uv);
-                // silhouettes: the ink hulls come out near black. r130f: the mask is softened over a small cross
-                // first, so corners round off like a pencil turning rather than snapping
-                // r139b: the four neighbours are read once (the tone edge below reused two of them by reading again)
-                float lR = lum(uv + vec2(px.x, 0.0)), lL = lum(uv - vec2(px.x, 0.0)), lU = lum(uv + vec2(0.0, px.y)), lD = lum(uv - vec2(0.0, px.y));
-                float lmin = min(l, min(min(lR, lL), min(lU, lD)));
-                float ink0 = 1.0 - smoothstep(0.08, 0.3, lmin);
-                float inkN = (1.0 - smoothstep(0.06, 0.22, lum(uv + vec2(1.4, 0.0) * px))) + (1.0 - smoothstep(0.06, 0.22, lum(uv - vec2(1.4, 0.0) * px)))
-                           + (1.0 - smoothstep(0.06, 0.22, lum(uv + vec2(0.0, 1.4) * px))) + (1.0 - smoothstep(0.06, 0.22, lum(uv - vec2(0.0, 1.4) * px)));
-                float ink = smoothstep(0.16, 0.62, (ink0 * 2.0 + inkN) / 6.0);
-                // creases: a Sobel on log depth
-                float d00 = log(dep(uv + vec2(-px.x, -px.y))), d10 = log(dep(uv + vec2(0.0, -px.y))), d20 = log(dep(uv + vec2(px.x, -px.y)));
-                float d01 = log(dep(uv + vec2(-px.x, 0.0))), d21 = log(dep(uv + vec2(px.x, 0.0)));
-                float d02 = log(dep(uv + vec2(-px.x, px.y))), d12 = log(dep(uv + vec2(0.0, px.y))), d22 = log(dep(uv + vec2(px.x, px.y)));
-                float gx = (d20 + 2.0 * d21 + d22) - (d00 + 2.0 * d01 + d02), gy = (d02 + 2.0 * d12 + d22) - (d00 + 2.0 * d10 + d20);
-                // the step a building makes in log depth shrinks with the camera's distance: the threshold follows it
-                float ca = clamp(22.0 / dz, 0.004, 0.035);
-                float crease = smoothstep(ca, ca * 2.6, length(vec2(gx, gy)));
-                // tone edges: colour changes (windows, doors, road paint) drawn lighter
-                float l1 = lR, l2 = lU;
-                float tone = smoothstep(0.1, 0.2, abs(l1 - l) + abs(l2 - l)) * 0.12;
-                float line = max(ink * 0.82, max(crease * 0.7, tone));
-                // pencil pressure: the stroke swells and thins along its length; a faint second pass beside it
-                float press = 0.68 + 0.32 * vn(vUv * res * 0.045 + 3.0);
-                line *= press;
-                float ghost = (1.0 - smoothstep(0.06, 0.22, lum(uv + vec2(2.2, -1.6) * px))) * 0.18 * vn(vUv * res * 0.09);
-                line = max(line, ghost);
-                // the far city is only suggested: lines thin out with distance
-                float zr = texture2D(tZ, vUv).x; // r139b: read once (it was read again for the reveal below)
-                float dd = depZ(zr);
-                line *= 1.0 - 0.5 * smoothstep(dz * 1.35, dz * 2.8, dd);
-                // hatching in the shade: one direction, then a cross, both a little irregular
-                vec2 p = vUv * res;
-                float sh = 1.0 - smoothstep(0.4, 0.74, l);
-                float hn = vn(p * 0.05) * 3.0;
-                float h1 = smoothstep(0.62, 0.92, abs(fract((p.x + p.y + hn) / 7.0) - 0.5) * 2.0) * smoothstep(0.3, 0.5, sh);
-                float h2 = smoothstep(0.66, 0.95, abs(fract((p.x - p.y + hn) / 6.0) - 0.5) * 2.0) * smoothstep(0.5, 0.75, sh);
-                float hatch = h1 * smoothstep(0.78, 0.95, sh) * 0.22;
-                // graphite grain: the stroke is never solid
-                float grain = 0.72 + 0.28 * vn(p * 0.9);
-                float g = max(line, hatch) * grain;
-                // where has the city been drawn yet? world position from depth, then the reveal map
-                vec4 ndc = vec4(vUv * 2.0 - 1.0, zr * 2.0 - 1.0, 1.0);
-                vec4 vp = pInv * ndc; vp /= vp.w;
-                vec3 wp = (cW * vp).xyz;
-                vec2 ruv = (wp.xz - box.xy) / box.zw;
-                float rv = texture2D(tR, ruv).r;
-                float edge = vn(wp.xz * 0.02 + tf * 0.37) * 0.35;
-                float shown = full > 0.5 || zr >= 0.9999 ? 1.0 : smoothstep(0.25, 0.55, rv + edge - 0.15);
-                // r130k: the drawing front is a sketch in progress: construction lines on the ground (a loose
-                // perspective grid), the edges laid in twice and overshooting, before the clean line settles
-                float band = full > 0.5 ? 0.0 : smoothstep(0.02, 0.4, rv + edge - 0.15) * (1.0 - shown);
-                vec2 gq = wp.xz / 140.0 + vec2(vn(wp.zx * 0.004) * 0.18, 0.0);
-                vec2 gd = abs(fract(gq - 0.5) - 0.5) / max(fwidth(gq), vec2(1e-4));
-                float grid = (1.0 - smoothstep(0.0, 1.3, min(gd.x, gd.y))) * step(wp.y, 4.0) * step(zr, 0.9999);
-                // r139b: the overshooting second stroke only exists on the drawing front (band > 0): read it only there
-                float ghost2 = 0.0;
-                if (band > 0.0) ghost2 = max(1.0 - smoothstep(0.08, 0.3, lumL(uv + vec2(5.0, 1.5) * px)), 1.0 - smoothstep(0.08, 0.3, lumL(uv - vec2(1.5, 5.0) * px)));
-                float wip = max(grid * 0.32, max(ghost2 * 0.4, line * 0.55)) * band * (0.7 + 0.3 * vn(p * 0.6));
-                g *= mix(0.035, 1.0, shown);
-                g = max(g, wip);
-                if (zr >= 0.9999) g = 0.0;
-                // paper: warm white with a slow fibre
-                // r130e: moodier: a warm sheet that falls into cool grey at the edges, soft graphite, a lot of air
-                vec2 q = vUv - 0.5;
-                float vig = smoothstep(0.12, 0.75, length(q * vec2(res.x / res.y, 1.0)));
-                vec3 paper = mix(vec3(0.965, 0.955, 0.93), vec3(0.87, 0.872, 0.875), vig * 0.8) - (vn(p * 0.35) * 0.016 + vn(p * 0.05) * 0.02);
-                vec3 graphite = vec3(0.09, 0.09, 0.11);
-                vec3 o = mix(paper, graphite, clamp(g, 0.0, 1.0) * 0.96);
-                // crayon decals keep their colour, laid over the paper like wax (multiply), grain from their mask
-                vec4 tc = texture2D(tD, vUv);
-                if (abs(tc.a - 0.25) < 0.03) { vec3 cc = pow(clamp(tc.rgb, 0.0, 1.0), vec3(0.4545)); o = mix(o, o * mix(vec3(1.0), cc, 0.92), 0.95 * (0.82 + 0.18 * vn(p * 0.9))); }
-                gl_FragColor = vec4(o, 1.0);
-                // beta 3.75: the scene's depth goes on screen with the drawing, for the things drawn plain over it (sketchPlainDraw)
-                gl_FragDepth = zr;
-              }`,
-            depthTest: true, depthFunc: AlwaysDepth, depthWrite: true // beta 3.75: was depthTest/depthWrite false (no depth written); the colour is the same
+            fragmentShader: NOTEBOOK_FS, // beta 3.76: the notebook (was the graphite pass of r130-r139b)
+            depthTest: true, depthFunc: AlwaysDepth, depthWrite: true // beta 3.75: the pass writes the scene's depth (gl_FragDepth) for the things drawn plain over it
           });
           const quad = new Mesh(new PlaneGeometry(2, 2), mat);
           quad.frustumCulled = false;
           const sc = new Scene(); sc.add(quad);
           sketchFx = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
           window.__sketchFx = sketchFx;
+          { const nb = notebookTextures(); mat.uniforms.tP = { value: nb.paper }; mat.uniforms.tQ = { value: nb.doodles }; mat.uniforms.tS = { value: nb.pencil }; mat.uniforms.kW = { value: 1 }; for (const k of ["oI0", "oI1"]) mat.uniforms[k] = { value: new Matrix4() }; for (const k of ["oA0", "oB0", "oA1", "oB1"]) mat.uniforms[k] = { value: new Vector3() }; } // beta 3.76: the notebook's sheet, doodles and pencil; the cars' frames
           // the first page: a little of the city is already drawn where you are
           if (mapMode) { const v = warpV(new Vector3(mapView.tgt.x, 0, mapView.tgt.z)); sketchPaint(v.x, v.z, 900, 1); } else sketchPaint(carPos.x, carPos.z, 700, 1);
         }
@@ -38497,9 +38719,12 @@ void main() {
         u.pInv.value.copy(cam.projectionMatrixInverse); u.cW.value.copy(cam.matrixWorld); u.near.value = cam.near; u.far.value = cam.far;
         u.dz.value = full ? 900 : mapMode ? mapView.dist : 900;
         const plain = sketchPlainPrep(); // beta 3.75
+        { const sy = Math.max(0.2, _nbSun.subVectors(sun.position, sun.target.position).normalize().y); u.kW.value = Math.PI / Math.max(0.3, hemi.intensity + sun.intensity * sy); } // beta 3.76: undoes the notebook's flat light (a white face looking up = white)
+        nbCarFrame(veh?.group, u.oI0.value, u.oA0.value, u.oB0.value); nbCarFrame(copCar?.group, u.oI1.value, u.oA1.value, u.oB1.value); // beta 3.76
         renderer.setRenderTarget(sketchFx.rt);
-        outline.skipHull = sketchSkipHull; // beta 3.75: no pencil hull round the plain things, nor round sketchNoHull ones
-        try { outline.render(scene, cam); } finally { outline.skipHull = null; }
+        if (!nbHull) renderer.render(scene, cam); // beta 3.76: the ink can come from the depth folds alone (see nbHull)
+        else { outline.skipHull = sketchSkipHull; // beta 3.75: no pencil hull round the plain things, nor round sketchNoHull ones
+        try { outline.render(scene, cam); } finally { outline.skipHull = null; } }
         renderer.setRenderTarget(null);
         renderer.render(sketchFx.sc, sketchFx.cam);
         if (plain) sketchPlainDraw(cam); // beta 3.75
@@ -38518,7 +38743,7 @@ void main() {
       // the scene's lights get that layer enabled as well (layer 0 stays: every other camera and raycaster sees them as
       // before). A root's on-screen shaders are compiled in the background first (compileAsync): until they are ready it
       // is drawn sketched, so the first Sketchbook frame does not stall on them
-      var SKETCH_PLAIN_LAYER = 7, sketchPlainOn = true;
+      var SKETCH_PLAIN_LAYER = 7, sketchPlainOn = false; // beta 3.76: off: in the notebook the ride and the police car are pencil-drawn too (their strokes in their own frame, nbCarFrame); true brings the plain pass back
       var sketchPlainRoots = [() => veh?.group, () => copCar?.group];
       var skPlainLive = [], skPlainFrame = 0, skPlainReady = new WeakMap(), skPlainLightsT = 0, skPlainMats = [];
       function sketchSkipHull(o) { return o.userData.sketchNoHull === true || o.userData.__skPlain === skPlainFrame; }
@@ -39310,6 +39535,7 @@ void main() {
           sun.intensity += 6 * flick;
           hemi.intensity = (lum(SCHEMES[state.schemeIdx].bg) < 0.45 ? 0.35 : 0.75) + 1.6 * flick;
         }
+        if (schemeId === "sketch") { hemi.intensity = 2.4; sun.intensity = 0.9; sun.color.set("#ffffff"); } // beta 3.76: the notebook's light stays flat and even (the weather and the lightning move it elsewhere)
         rainAlpha = smooth(rainAlpha, wantRain ? 1 : 0, dt, 2.5);
         rain.visible = rainAlpha > 0.02;
         (window.__wxNow ||= {}).wx = wx; window.__wxNow.rain = rain.visible; window.__wxNow.bolt = boltActive > 0; // tests: the weather per world
@@ -42210,6 +42436,7 @@ void main() {
           out.sort((a, b) => a - b);
           return { min: +out[0].toFixed(2), med: +out[trials >> 1].toFixed(2) };
         },
+        nbHull(on) { nbHull = !!on; return nbHull; }, // beta 3.76: the notebook with or without OutlineEffect's hull pass (A/B)
         sketchPlain(on) { sketchPlainOn = !!on; return sketchPlainRoots.length; }, // beta 3.75: Sketchbook's plain pass off / on (A/B)
         staticShadows(size = 4096) {
           window.__staticShadow = true;
