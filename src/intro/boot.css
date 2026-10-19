@@ -67,3 +67,5 @@
 @media (max-width: 719px) { .czi-cap { font-size: 13px; gap: 7px; } .czi-fill { width: 60px; } }
 @media (max-width: 719px) { .czi-btn { right: 14px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); height: 44px; font-size: 14px; padding: 0 16px; } }
 @media (prefers-reduced-motion: reduce) { .czi, .czi-cv, .czi-btn { transition: none; } .czi.czi-can-skip .czi-btn { animation: none; } .czi-dots i { animation: none; opacity: 1; } .czi.czi-brewing .czi-cap { animation-duration: .01s; } }
+/* 3.77: a returning visitor (and reduced motion): the cookie card waits until the map is the page (boot.js: html.czi-ret) */
+html.czi-ret #cz-ck { opacity: 0 !important; visibility: hidden; pointer-events: none !important; }

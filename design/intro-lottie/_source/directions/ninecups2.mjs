@@ -255,11 +255,16 @@ export function buildNineCups2(T, ab) {
   const byLine = []; for (const w of b1) { (byLine[w.line] ||= { words: [], x: w.lx, by: w.by }).words.push(w.text); }
   const fm = { asc: +(T.asc / T.upm).toFixed(4), desc: +(-T.desc / T.upm).toFixed(4) }; // (the face's hhea metrics: boot.css sets them as the overrides)
   const first = { size: S, lead: K.LEAD, track: -0.035, ...fm, lines: byLine.map((l) => ({ t: l.words.join(" "), x: +l.x.toFixed(2), by: +l.by.toFixed(2) })) };
-  // a returning visitor's (and reduced motion's) line over the pill: the brand line, centred above it
-  // (on a laptop one line, a size smaller, close over the pill: the cookie card takes the top right corner)
-  const brandLines = ph ? ["That's how", "the right brand", "feels."] : ["That's how the right brand feels."];
-  const pillTop = K.H / 2 - (END.fg.h * END.gS) / 2, BS = ph ? S : S3;
-  const brand = { size: BS, lead: K.LEAD, track: -0.035, ...fm, center: K.W / 2, lines: brandLines.map((t2, i) => ({ t: t2, by: +(pillTop - (ph ? 0.9 : 0.62) * BS - (brandLines.length - 1 - i) * BS * K.LEAD).toFixed(2) })) };
+  // a returning visitor's (and reduced motion's) line: the pill's headline, one lockup with it (3.77, Daniel: over the
+  // pill it "reads as an overlap", and on a phone "the right brand" ran edge to edge). Two lines on every screen (the
+  // opening's own laptop setting), centred, half the pill's height clear above it; a size well inside the screen (the
+  // widest line is kept, w: boot.js holds a 24 px margin on any screen) and still the page's largest paint (on a
+  // 1440 x 900 laptop 68,376 px2 against the map's welcome title, the next largest, at 46,961; on a phone 21-23,000
+  // against the road hint's 4,212)
+  const brandLines = ["That's how the right", "brand feels."];
+  const PH = END.fg.h * END.gS, pillTop = K.H / 2 - PH / 2, BS = ph ? 32 : 52, BL = K.LEAD, lastBy = pillTop - 0.5 * PH;
+  const brand = { size: BS, lead: BL, track: -0.035, ...fm, center: K.W / 2, w: +Math.max(...brandLines.map((l) => setLine(T, l, BS, -0.035).width)).toFixed(2),
+    lines: brandLines.map((t2, i) => ({ t: t2, by: +(lastBy - (brandLines.length - 1 - i) * BS * BL).toFixed(2) })) };
   json.cromatic = { v: 3, concept: "ninecups2", handoff: { kind: "window" }, pill: END.pillMeta, first, brand };
   // 3.69 (Daniel: "a bit fast"): the words about 30 % slower, the cups' beat 25 %, the hold, the opening and the short
   // version as they were (only later): a warp of the whole top level, its loop only shifted (cut where it starts)
