@@ -3705,6 +3705,49 @@
     back.appendChild(pxText("MAP", "#ffffff", 2));
     back.onclick = (e) => { e.stopPropagation(); back.blur(); backToMap(); };
     root.appendChild(back);
+    // beta 3.68 (Daniel: "can the game go full screen, without Safari's bar?"): FULL SCREEN next to < MAP, off the
+    // fight, while the game isn't full screen already. Where the browser allows it (Android, iPad, a computer) it asks
+    // for full screen; an iPhone's Safari lets no page hide its bars, so there it explains Add to Home Screen: the game
+    // has its own icon and manifest (/play/gloves/app.webmanifest) and opens from it full screen, with no bars.
+    // Inside the map's frame on an iPhone it first opens the game on its own (Add to Home Screen takes the page shown)
+    { const fsOK = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+      const installed = () => { try { return navigator.standalone === true || matchMedia("(display-mode: fullscreen), (display-mode: standalone)").matches; } catch { return false; } };
+      const inFrame = root.classList.contains("mg-embed") || (() => { try { return window.parent !== window || new URLSearchParams(location.search).get("embed") === "1"; } catch { return true; } })();
+      const fs = document.createElement("button"); fs.type = "button"; fs.className = "mg-fs"; fs.setAttribute("aria-label", "Full screen");
+      fs.innerHTML = '<svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M1 1h5v2H3v3H1zM10 1h5v5h-2V3h-3zM1 10h2v3h3v2H1zM13 10h2v5h-5v-2h3z"/></svg>';
+      fs.appendChild(pxText("FULL SCREEN", "#ffffff", 2));
+      const sync = () => root.classList.toggle("mg-fs-on", !installed() && !(document.fullscreenElement || document.webkitFullscreenElement));
+      document.addEventListener("fullscreenchange", sync); document.addEventListener("webkitfullscreenchange", sync); sync();
+      let tip = null;
+      const showTip = () => {
+        if (tip) return;
+        tip = document.createElement("div"); tip.className = "mg-fstip"; tip.setAttribute("role", "dialog"); tip.setAttribute("aria-label", "Full screen on an iPhone");
+        const share = '<svg viewBox="0 0 16 16" width="22" height="22" aria-hidden="true" shape-rendering="crispEdges"><path fill="#7fd8ff" d="M7 1h2v1h1v1h1v1h1v1h-2V4H9v7H7V4H6v1H4V4h1V3h1V2h1zM2 7h3v2H4v5h8V9h-1V7h3v9H2z"/></svg>';
+        const row = (n, s, icon) => { const r = document.createElement("div"); r.className = "mg-fstip-r"; r.appendChild(pxText(n, "#fed012", 2)); r.appendChild(pxText(s, "#ffffff", 2)); if (icon) r.insertAdjacentHTML("beforeend", icon); return r; };
+        tip.appendChild(pxText("FULL SCREEN ON AN IPHONE", "#fed012", 3));
+        tip.appendChild(row("1", "IN SAFARI, TAP SHARE", share));
+        tip.appendChild(row("2", "THEN ADD TO HOME SCREEN"));
+        tip.appendChild(row("3", "OPEN 2M2F FROM THE HOME SCREEN"));
+        tip.appendChild(pxText("NO BARS, SIDEWAYS, LIKE AN ARCADE.", "#a99cc8", 2));
+        const ok = document.createElement("button"); ok.type = "button"; ok.className = "mg-fstip-ok"; ok.appendChild(pxText("GOT IT", "#170f19", 2));
+        ok.onclick = (e) => { e.stopPropagation(); tip.remove(); tip = null; };
+        tip.addEventListener("pointerdown", (e) => e.stopPropagation()); tip.appendChild(ok); root.appendChild(tip);
+      };
+      fs.onclick = async (e) => {
+        e.stopPropagation(); fs.blur(); SND.init();
+        if (fsOK) {
+          TRK.ev("gloves_fullscreen", { method: "browser" });
+          try { const el = document.documentElement; await (el.requestFullscreen ? el.requestFullscreen({ navigationUI: "hide" }) : el.webkitRequestFullscreen()); } catch {}
+          if (TOUCH) try { await screen.orientation?.lock?.("landscape"); } catch {}
+          return;
+        }
+        TRK.ev("gloves_fullscreen", { method: inFrame ? "open_page" : "home_screen_tip" });
+        if (inFrame) { try { window.top.location.href = "/play/gloves/?from=fullscreen&fs=1"; return; } catch {} }
+        showTip();
+      };
+      root.appendChild(fs);
+      try { if (!fsOK && !inFrame && new URLSearchParams(location.search).get("fs") === "1") showTip(); } catch {}
+    }
     // beta 3.47 (QA G4): inside the map's frame (the site's × over the game's top right, or its bottom right while the
     // game is sideways) the CSS keeps the speaker, MENU and MAP clear of both corners
     try { if (window.parent !== window || new URLSearchParams(location.search).get("embed") === "1") root.classList.add("mg-embed"); } catch { root.classList.add("mg-embed"); }

@@ -101,3 +101,20 @@ html, body { margin: 0; height: 100%; background: #0b0816; overflow: hidden; ove
 .mg-rot .mg-ck { z-index: 7; left: 50%; top: auto; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); width: max-content; max-width: calc(100vw - 24px); }
 .mg-rot .mg-ck { flex-direction: column; align-items: stretch; }
 .mg-rot .mg-ck-b { flex-direction: row; justify-content: flex-end; }
+
+/* beta 3.68 (Daniel: full screen, no Safari bar): FULL SCREEN after < MAP, off the fight; on an iPhone, Add to Home Screen */
+.mg-fs { position: absolute; top: 18px; left: 196px; z-index: 3; height: 52px; padding: 0 18px 0 14px; border-radius: 26px; border: 0; cursor: pointer; display: none; align-items: center; gap: 8px;
+  background: #121212; color: #fff; box-shadow: 0 0 0 1px #fff, 0 14px 34px -12px rgba(0,0,0,.55); transition: background .2s, color .2s; }
+.mg-fs:hover { background: #FFD147; color: #121212; }
+.mg-fs:hover .mg-lbl { filter: invert(1); }
+.mg-fs-on .mg-fs { display: inline-flex; }
+.mg-fight .mg-fs, .mg-rot .mg-fs { display: none; }
+@media (max-width: 760px) { .mg-fs { top: 12px; left: 184px; } }
+.mg-up .mg-fs, .mg-side .mg-fs { top: 12px; left: 176px; height: 44px; padding: 0 14px 0 12px; }
+.mg.mg-embed.mg-sideways .mg-fs { top: 180px; left: 12px; }
+.mg-fstip { position: absolute; z-index: 8; left: 50%; top: 50%; transform: translate(-50%, -50%); box-sizing: border-box; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow: auto;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px 22px; background: #1b1438; border-radius: 14px; box-shadow: 0 0 0 3px #170f19, 0 0 0 5px #fed012, 0 24px 60px -18px rgba(0,0,0,.7); }
+.mg-fstip-r { display: flex; align-items: center; gap: 12px; }
+.mg-fstip-ok { align-self: flex-end; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; display: grid; place-items: center; background: #fed012; box-shadow: inset 0 0 0 2px #170f19; }
+.mg-fstip-ok:hover { background: #fff27a; }
+.mg-fstip-ok:focus-visible, .mg-fs:focus-visible { outline: 3px solid #7fd8ff; outline-offset: 3px; }
