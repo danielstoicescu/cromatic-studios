@@ -23612,9 +23612,9 @@ void main() {
             renderer.autoClear = this.autoClear;
             renderer.render(scene, camera);
             renderer.autoClear = currentAutoClear;
-            this.renderOutline(scene, camera);
+            this.renderOutline(scene, camera, true); // beta 3.7x: the hull pass reuses what this pass culled
           };
-          this.renderOutline = function(scene, camera) {
+          this.renderOutline = function(scene, camera, culled = false) {
             const currentAutoClear = renderer.autoClear;
             const currentSceneAutoUpdate = scene.matrixWorldAutoUpdate;
             const currentSceneBackground = scene.background;
@@ -23626,10 +23626,27 @@ void main() {
             passId++;
             // beta 3.75: a pass can leave whole subtrees out of the hull: this.skipHull(object) true hides that object for
             // the hull pass only (Sketchbook: the ride and the police car, drawn plain over the sketch). null: as before
-            const skip = this.skipHull, hid = skip ? [] : null;
-            if (!skip) scene.traverseVisible(setOutlineMaterial); // r139b: hidden subtrees are never drawn, so never swapped
-            else { const walk = (o) => { if (o.visible === false) return; if (skip(o)) { o.visible = false; hid.push(o); return; } setOutlineMaterial(o); const ch = o.children; for (let i = 0; i < ch.length; i++) walk(ch[i]); }; walk(scene); }
-            try { renderer.render(scene, camera); } finally { if (hid) for (const o of hid) o.visible = true; }
+            // beta 3.7x (Sketchbook audit, round 2): and only what the camera's layers can draw gets a hull material: on the map
+            // ~1,600 of ~2,700 visible meshes have layers.mask 0 (the originals merged into batches, n2's far cull), never drawn,
+            // yet swapped and restored every frame (r139b's walk was traverseVisible). Children are still walked: a layer is
+            // per object. Same pixels, in every world that draws hulls
+            // beta 3.7x: cull once. Called from render() (culled), the scene was just drawn with the same camera: what that pass
+            // drew (its render list) is exactly what the hull pass would draw again after culling it again. So a renderable
+            // leaf it did not draw is hidden for the hull pass, and what it drew skips the second frustum test (frustumCulled
+            // off for this pass). On the map that is ~1,200 bounding-sphere tests a frame against the city's warped frustum
+            const skip = this.skipHull, hid = [], unc = [], cl = camera.layers;
+            let drawn = null;
+            if (culled && renderer.renderLists) { const L = renderer.renderLists.get(scene, 0); drawn = new Set(); for (const a of [L.opaque, L.transmissive, L.transparent]) for (let i = 0; i < a.length; i++) drawn.add(a[i].object); }
+            const walk = (o) => {
+              if (o.visible === false) return;
+              if (skip && skip(o)) { o.visible = false; hid.push(o); return; }
+              const ch = o.children;
+              if (drawn && ch.length === 0 && (o.isMesh || o.isLine || o.isPoints || o.isSprite) && !drawn.has(o)) { o.visible = false; hid.push(o); return; }
+              if (o.layers.test(cl)) { setOutlineMaterial(o); if (drawn && o.frustumCulled && drawn.has(o)) { o.frustumCulled = false; unc.push(o); } }
+              for (let i = 0; i < ch.length; i++) walk(ch[i]);
+            };
+            walk(scene); // r139b: hidden subtrees are never drawn, so never swapped
+            try { renderer.render(scene, camera); } finally { for (const o of hid) o.visible = true; for (const o of unc) o.frustumCulled = true; }
             for (let i = 0, il = swapped.length; i < il; i++) restoreOriginalMaterial(swapped[i], swappedOBR[i]);
             cleanupCache();
             scene.matrixWorldAutoUpdate = currentSceneAutoUpdate;
@@ -38824,11 +38841,14 @@ void main() {
           r.traverse((o) => o.layers.enable(SKETCH_PLAIN_LAYER));
           skPlainLive.push(r);
         }
-        // the lights must be on the plain layer too (looked for once a second: the city's are added at boot)
+        // the lights must be on the plain layer too (looked for once a second: the city's are added at boot); beta 3.7x: and
+        // the scene's top-level branches that hold one are noted, so the plain pass keeps them
         const now = performance.now();
-        if (skPlainLive.length && now > skPlainLightsT) { skPlainLightsT = now + 1000; scene.traverse((o) => { if (o.isLight) o.layers.enable(SKETCH_PLAIN_LAYER); }); }
+        if (skPlainLive.length && now > skPlainLightsT) { skPlainLightsT = now + 1000; skPlainLightTops.clear(); scene.traverse((o) => { if (o.isLight) { o.layers.enable(SKETCH_PLAIN_LAYER); skPlainLightTops.add(skTop(o)); } }); }
         return skPlainLive.length > 0;
       }
+      var skPlainLightTops = new Set(), skPlainHid = [];
+      function skTop(o) { while (o.parent && o.parent !== scene) o = o.parent; return o; }
       function sketchPlainDraw(cam) {
         const mask = cam.layers.mask, ac = renderer.autoClear, bg = scene.background, au = scene.matrixWorldAutoUpdate, sm = renderer.shadowMap, sa = sm.autoUpdate, sn = sm.needsUpdate;
         // the plain things' materials get a small polygon offset towards the camera for this pass only (a GL state, no recompile)
@@ -38838,7 +38858,13 @@ void main() {
         cam.layers.set(SKETCH_PLAIN_LAYER);
         renderer.autoClear = false; scene.background = null; scene.matrixWorldAutoUpdate = false;
         sm.autoUpdate = false; sm.needsUpdate = false; // the shadow map of the colour pass is reused (it has the ride's shadow in it)
+        // beta 3.7x (Sketchbook audit, round 2): the render walks only the top-level branches that hold a plain root or a light;
+        // the city's (~5,000 objects) step out for this pass, so it is no longer a whole scene walk for a couple dozen meshes
+        // (~3 ms a frame on a slow phone). Matrices are not updated here, so nothing else changes
+        skPlainHid.length = 0;
+        { const keep = new Set(skPlainLightTops); for (const r of skPlainLive) keep.add(skTop(r)); for (const c of scene.children) if (c.visible && !c.isLight && !keep.has(c)) { c.visible = false; skPlainHid.push(c); } }
         try { renderer.render(scene, cam); } finally {
+          for (const c of skPlainHid) c.visible = true;
           cam.layers.mask = mask; renderer.autoClear = ac; scene.background = bg; scene.matrixWorldAutoUpdate = au; sm.autoUpdate = sa; sm.needsUpdate = sn;
           for (const m of skPlainMats) { m.polygonOffset = false; m.polygonOffsetFactor = 0; m.polygonOffsetUnits = 0; }
         }
