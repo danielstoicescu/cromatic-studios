@@ -23613,8 +23613,12 @@ void main() {
             renderer.autoClear = false;
             renderer.shadowMap.enabled = false;
             passId++;
-            scene.traverseVisible(setOutlineMaterial); // r139b: hidden subtrees are never drawn, so never swapped
-            renderer.render(scene, camera);
+            // beta 3.75: a pass can leave whole subtrees out of the hull: this.skipHull(object) true hides that object for
+            // the hull pass only (Sketchbook: the ride and the police car, drawn plain over the sketch). null: as before
+            const skip = this.skipHull, hid = skip ? [] : null;
+            if (!skip) scene.traverseVisible(setOutlineMaterial); // r139b: hidden subtrees are never drawn, so never swapped
+            else { const walk = (o) => { if (o.visible === false) return; if (skip(o)) { o.visible = false; hid.push(o); return; } setOutlineMaterial(o); const ch = o.children; for (let i = 0; i < ch.length; i++) walk(ch[i]); }; walk(scene); }
+            try { renderer.render(scene, camera); } finally { if (hid) for (const o of hid) o.visible = true; }
             for (let i = 0, il = swapped.length; i < il; i++) restoreOriginalMaterial(swapped[i], swappedOBR[i]);
             cleanupCache();
             scene.matrixWorldAutoUpdate = currentSceneAutoUpdate;
@@ -23645,6 +23649,7 @@ void main() {
             renderer.shadowMap.enabled = currentShadowMapEnabled;
           };
           this.autoClear = renderer.autoClear;
+          this.skipHull = null; // beta 3.75: see renderOutline
           this.domElement = renderer.domElement;
           this.shadowMap = renderer.shadowMap;
           this.clear = function(color, depth, stencil) {
@@ -38444,8 +38449,10 @@ void main() {
                 vec4 tc = texture2D(tD, vUv);
                 if (abs(tc.a - 0.25) < 0.03) { vec3 cc = pow(clamp(tc.rgb, 0.0, 1.0), vec3(0.4545)); o = mix(o, o * mix(vec3(1.0), cc, 0.92), 0.95 * (0.82 + 0.18 * vn(p * 0.9))); }
                 gl_FragColor = vec4(o, 1.0);
+                // beta 3.75: the scene's depth goes on screen with the drawing, for the things drawn plain over it (sketchPlainDraw)
+                gl_FragDepth = zr;
               }`,
-            depthTest: false, depthWrite: false
+            depthTest: true, depthFunc: AlwaysDepth, depthWrite: true // beta 3.75: was depthTest/depthWrite false (no depth written); the colour is the same
           });
           const quad = new Mesh(new PlaneGeometry(2, 2), mat);
           quad.frustumCulled = false;
@@ -38462,10 +38469,70 @@ void main() {
         cam.updateMatrixWorld();
         u.pInv.value.copy(cam.projectionMatrixInverse); u.cW.value.copy(cam.matrixWorld); u.near.value = cam.near; u.far.value = cam.far;
         u.dz.value = full ? 900 : mapMode ? mapView.dist : 900;
+        const plain = sketchPlainPrep(); // beta 3.75
         renderer.setRenderTarget(sketchFx.rt);
-        outline.render(scene, cam);
+        outline.skipHull = sketchSkipHull; // beta 3.75: no pencil hull round the plain things, nor round sketchNoHull ones
+        try { outline.render(scene, cam); } finally { outline.skipHull = null; }
         renderer.setRenderTarget(null);
         renderer.render(sketchFx.sc, sketchFx.cam);
+        if (plain) sketchPlainDraw(cam); // beta 3.75
+      }
+      // ---- beta 3.75 (Sketchbook audit; Daniel: "take the filter off the objects that move and have to redraw") ----
+      // Drawn plain over the sketch: the ride and the police car keep their own colours and light in Sketchbook. They are
+      // still in the colour pass (their depth and their shadows are the scene's), the hull pass leaves them out, the post
+      // pass writes the scene's depth back to the screen, and then they are drawn once more, in their own materials,
+      // depth-tested against it (a slope-scaled polygon offset keeps them from z-fighting their own depth). Style-agnostic:
+      //  - sketchPlainRoots: getters of the roots drawn plain (rides are rebuilt, so getters, read every frame)
+      //  - userData.sketchNoHull = true: no pencil hull round that subtree in Sketchbook (small or moving things), drawn sketched
+      //  - sketchPlainOn = false (or __perfLab.sketchPlain(false)) switches the plain pass off: everything sketched, as before
+      //  - a post shader for Sketchbook must keep writing the scene's depth (gl_FragDepth = its depth sample, with depthTest
+      //    on, depthFunc AlwaysDepth, depthWrite on) for the plain pass to be occluded correctly
+      // Other worlds never run this code. The plain pass draws on camera layer SKETCH_PLAIN_LAYER: its roots' meshes and
+      // the scene's lights get that layer enabled as well (layer 0 stays: every other camera and raycaster sees them as
+      // before). A root's on-screen shaders are compiled in the background first (compileAsync): until they are ready it
+      // is drawn sketched, so the first Sketchbook frame does not stall on them
+      var SKETCH_PLAIN_LAYER = 7, sketchPlainOn = true;
+      var sketchPlainRoots = [() => veh?.group, () => copCar?.group];
+      var skPlainLive = [], skPlainFrame = 0, skPlainReady = new WeakMap(), skPlainLightsT = 0, skPlainMats = [];
+      function sketchSkipHull(o) { return o.userData.sketchNoHull === true || o.userData.__skPlain === skPlainFrame; }
+      function sketchPlainPrep() {
+        skPlainFrame++;
+        skPlainLive.length = 0;
+        if (!sketchPlainOn) return false;
+        for (const get of sketchPlainRoots) {
+          const r = get();
+          if (!r || !r.visible) continue;
+          const st = skPlainReady.get(r);
+          if (st !== true) {
+            // its programs for the screen (tone mapping, sRGB) are not linked yet: start that once, draw it sketched meanwhile
+            if (!st && renderer.getRenderTarget() === null) {
+              skPlainReady.set(r, 1);
+              try { renderer.compileAsync(r, camera, scene).then(() => skPlainReady.set(r, true), () => skPlainReady.set(r, true)); } catch (e) { skPlainReady.set(r, true); }
+            }
+            continue;
+          }
+          r.userData.__skPlain = skPlainFrame;
+          r.traverse((o) => o.layers.enable(SKETCH_PLAIN_LAYER));
+          skPlainLive.push(r);
+        }
+        // the lights must be on the plain layer too (looked for once a second: the city's are added at boot)
+        const now = performance.now();
+        if (skPlainLive.length && now > skPlainLightsT) { skPlainLightsT = now + 1000; scene.traverse((o) => { if (o.isLight) o.layers.enable(SKETCH_PLAIN_LAYER); }); }
+        return skPlainLive.length > 0;
+      }
+      function sketchPlainDraw(cam) {
+        const mask = cam.layers.mask, ac = renderer.autoClear, bg = scene.background, au = scene.matrixWorldAutoUpdate, sm = renderer.shadowMap, sa = sm.autoUpdate, sn = sm.needsUpdate;
+        // the plain things' materials get a small polygon offset towards the camera for this pass only (a GL state, no recompile)
+        skPlainMats.length = 0;
+        for (const r of skPlainLive) r.traverseVisible((o) => { if (!o.material) return; for (const m of Array.isArray(o.material) ? o.material : [o.material]) if (!m.polygonOffset && !skPlainMats.includes(m)) skPlainMats.push(m); });
+        for (const m of skPlainMats) { m.polygonOffset = true; m.polygonOffsetFactor = -1; m.polygonOffsetUnits = -2; }
+        cam.layers.set(SKETCH_PLAIN_LAYER);
+        renderer.autoClear = false; scene.background = null; scene.matrixWorldAutoUpdate = false;
+        sm.autoUpdate = false; sm.needsUpdate = false; // the shadow map of the colour pass is reused (it has the ride's shadow in it)
+        try { renderer.render(scene, cam); } finally {
+          cam.layers.mask = mask; renderer.autoClear = ac; scene.background = bg; scene.matrixWorldAutoUpdate = au; sm.autoUpdate = sa; sm.needsUpdate = sn;
+          for (const m of skPlainMats) { m.polygonOffset = false; m.polygonOffsetFactor = 0; m.polygonOffsetUnits = 0; }
+        }
       }
       // ---- r130: Risograph ----
       // A two-drum riso print: the render is split into a fluorescent pink and a medium blue (pink takes what green
@@ -41309,7 +41376,8 @@ void main() {
             };
             // beta 3.52 r219: on a phone the card (half the screen) waits for the espresso moment, so it is seen; it comes up
             // after the sip, if the ride is still at Two Minutes and nothing else has opened meanwhile
-            if (moment && coffee.short) setTimeout(() => { if (mapMode && coffee.near && card.classList.contains("hidden") && !document.querySelector(".case-frame:not(.hidden)")) tmCard(); }, 1900);
+            // beta 3.75 (Sketchbook audit, every world): nor the boarding pass (opened in those 1.9 s, the card came up over it)
+            if (moment && coffee.short) setTimeout(() => { if (mapMode && !mapBoarding && coffee.near && card.classList.contains("hidden") && !document.querySelector(".case-frame:not(.hidden)")) tmCard(); }, 1900);
             else tmCard();
             return;
           }
@@ -42079,6 +42147,18 @@ void main() {
         cache(on) { window.__shadowCache = on; window.__shKey = null; },
         info() { return { ...renderer.info.render, dpr: renderer.getPixelRatio(), sh: [sun.shadow.autoUpdate, sun.shadow.needsUpdate, window.__shKey, sun.shadow.camera.right] }; },
         three() { return { scene, renderer, camera, WebGLRenderTarget }; }, // r139b: for the smoothness harness (scene stats, timings)
+        // beta 3.75 (Sketchbook audit): what one frame of the current world costs to draw, CPU and GPU together, without the
+        // display's 60 Hz in the way: n frames back to back, then a 1-pixel read (it waits for the GPU); the best of a few
+        // trials, so other work on the machine counts least. { min, med } in ms per frame
+        bench(n = 12, trials = 5) {
+          const gl = renderer.getContext(), px = new Uint8Array(4), id = SCHEMES[state.schemeIdx].id, out = [];
+          const draw = () => { const now = performance.now(); if (id === "sketch") sketchRender(now, camera); else if (id === "riso") risoRender(now, camera); else if (id === "sincity") sinCityRender(now, camera); else if (mapMode) tiltShiftRender(now); else renderer.render(scene, camera); };
+          draw(); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+          for (let k = 0; k < trials; k++) { const t0 = performance.now(); for (let i = 0; i < n; i++) draw(); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); out.push((performance.now() - t0) / n); }
+          out.sort((a, b) => a - b);
+          return { min: +out[0].toFixed(2), med: +out[trials >> 1].toFixed(2) };
+        },
+        sketchPlain(on) { sketchPlainOn = !!on; return sketchPlainRoots.length; }, // beta 3.75: Sketchbook's plain pass off / on (A/B)
         staticShadows(size = 4096) {
           window.__staticShadow = true;
           const c = sun.shadow.camera;

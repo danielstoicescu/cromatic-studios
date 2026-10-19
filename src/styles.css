@@ -4121,6 +4121,12 @@ body.scheme-sketch :is(.mcd-open, .mcd-ghost, .coffee-btn, .jx-btn, .fe-drive, .
 body.scheme-sketch .map-pins .map-pin .mp-label::before { transition: transform .25s cubic-bezier(.3,1.6,.5,1); }
 body.scheme-sketch .map-pins .map-pin:hover .mp-label::before { transform: scale(1.35) rotate(-12deg); }
 body.scheme-sketch canvas { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cpath d='M3 25l2.2-6.6L19.6 4a2.4 2.4 0 013.4 0l1 1a2.4 2.4 0 010 3.4L9.6 22.8z' fill='%23fbfaf6' stroke='%23232326' stroke-width='1.4' stroke-linejoin='round'/%3E%3Cpath d='M3 25l2.2-6.6 4.4 4.4z' fill='%23232326'/%3E%3Cpath d='M17.4 6.2l4.4 4.4' stroke='%23232326' stroke-width='1.2'/%3E%3C/svg%3E") 3 25, crosshair; }
+/* beta 3.75 (Sketchbook audit): the DOM side of "drawn plain". Whatever moves or redraws every frame (the map pins, the
+   drive UI: Nearby's distances, the arms, the pad) carries no live CSS filter and no scribble animation in Sketchbook,
+   whatever the Sketchbook rules above or a new look say: a filter there is re-run on every change. Add .sk-plain to any
+   other element (or subtree) to opt it out the same way. Other worlds never match these rules. */
+body.scheme-sketch :is(.sk-plain, .nav2-ui, .map-pins), body.scheme-sketch :is(.sk-plain, .nav2-ui, .map-pins) * { filter: none !important; }
+body.scheme-sketch :is(.sk-plain, .nav2-ui, .map-pins)::before, body.scheme-sketch :is(.sk-plain, .nav2-ui, .map-pins) *::before { animation: none !important; }
 /* r130l: the crossroads signpost at the end of a street: arms pointing each way, a pole down the middle */
 .xr-post { position: fixed; z-index: 24; left: 50%; top: calc(92px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px;
   pointer-events: auto; transition: opacity .45s var(--eoq), transform .55s var(--eoq); }
