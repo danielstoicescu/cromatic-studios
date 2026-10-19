@@ -110,11 +110,17 @@ export function buildA2(T, ab, { atlasPath = "worlds.webp" } = {}) {
     const g = L.map((l) => pillGeom(size, x0 - 0.34 * size, by, l.width));
     const dot = 0.22 * size, c = (q) => [q.cx, q.cy], sz = (q, k = 1) => [q.w * k, q.h * k];
     const t0 = words[0][3];
-    const sizeK = [[t0, start?.size || [dot, dot], E.spring], [t0 + 22, sz(g[0]), E.linear]];
-    const posK = [[t0, start?.pos || c(g[0]), E.spring], [t0 + 22, c(g[0]), E.linear]];
+    // r229: the hand-offs with the flying dots are seamless. It opens from the black dot's landing squash (its outline
+    // included), black (an ink that clears as it grows), and closes into a dot of the flying dot's size, outline
+    // included (the green pill used to appear a frame before the dot landed, next to it; the brand pill closed into a
+    // yellow ring with the black dot springing up inside it)
+    const inner = Math.max(1, dot - SW), squash = [Math.max(1, 1.28 * dot - SW), Math.max(1, 0.76 * dot - SW)];
+    const tg = start ? t0 + 5 : t0; // (one that takes over from another keeps its shape until it has dissolved in)
+    const sizeK = [[tg, start?.size || squash, E.spring], [tg + 22, sz(g[0]), E.linear]];
+    const posK = [[tg, start?.pos || c(g[0]), E.spring], [tg + 22, c(g[0]), E.linear]];
     for (let k = 1; k < words.length; k++) { const tk = words[k][3] + 3; sizeK.push([tk, sz(g[k - 1]), E.spring], [tk + 22, sz(g[k]), E.linear]); posK.push([tk, c(g[k - 1]), E.spring], [tk + 22, c(g[k]), E.linear]); }
     const gl = g[g.length - 1];
-    if (outTo === "dot") sizeK.push([tOut, sz(gl), [0.6, 0, 0.8, 0.2]], [tOut + 12, [dot, dot]]);
+    if (outTo === "dot") sizeK.push([tOut, sz(gl), [0.6, 0, 0.8, 0.2]], [tOut + 12, [inner, inner]]);
     else sizeK.push([tOut, sz(gl), EXIT], [tOut + 14, sz(gl, 0.92)]);
     const sizeKeys = clean(sizeK), posKeys = clean(posK);
     const maxW = Math.max(...g.map((q) => q.w)) + 0.8 * size, slabX = x0 - 0.34 * size + maxW / 2 - 0.4 * size, cy = g[0].cy, hh = g[0].h + 4;
@@ -122,35 +128,46 @@ export function buildA2(T, ab, { atlasPath = "worlds.webp" } = {}) {
     const letters = words.map(([w, , ink, tk], k) => {
       const ti = k === 0 ? tk + 7 : tk + 3, to = k < words.length - 1 ? words[k + 1][3] - 3 : null;
       return group(w, L[k].letters.map((l, j) => letterAt(l, x0, by, size, ink, (b, s) => {
-        const below = [b[0], b[1] + 1.08 * size], above = [b[0], b[1] - 1.1 * size];
+        // r229 (Daniel, "the brand pill is faulty"): a word that leaves goes all the way out of the pill and is gone; it
+        // used to stop 1.1 sizes up, where the descender of "place."'s p still showed inside the pill's top left edge
+        // (a dark notch under the outline of "facade." and "brand.")
+        const below = [b[0], b[1] + 1.08 * size], above = [b[0], b[1] - 1.4 * size];
         const p = [[ti + j * 0.8, below, RISE], [ti + j * 0.8 + 20, b, E.linear]];
-        const o = [[0, 0, E.hold], [ti + j * 0.8, 100, E.linear]];
-        if (to != null) p.push([to + j * 0.4, b, EXIT], [to + j * 0.4 + 10, above]);
-        else if (outTo === "dot") { p.push([tOut - 2 + j * 0.3, b, EXIT], [tOut + 8 + j * 0.3, [b[0], b[1] + 0.2 * size]]); o.push([tOut - 2, 100, E.linear], [tOut + 6, 0]); }
+        const o = [[0, 0, E.hold], [ti + j * 0.8, 100, E.hold]];
+        if (to != null) { p.push([to + j * 0.4, b, EXIT], [to + j * 0.4 + 11, above]); o.push([to + j * 0.4 + 11, 0]); }
+        // r229: the last word leaves through the top like the others (it used to fade where it stood, a muddy olive on the
+        // yellow for a few frames), then the empty pill closes into the dot
+        else if (outTo === "dot") { const te = tOut - 4 + j * 0.4; p.push([te, b, EXIT], [te + 10, above]); o.push([te + 10, 0]); }
         else p.push([tOut + j * 0.4, b, EXIT], [tOut + 12 + j * 0.4, above]);
         return { p: clean(p), o: clean(o), s: [s, s] };
       })));
     });
     const maskKeys = sizeKeys.map(([tk, s2, e]) => { const q = valAt(posKeys, tk); return [tk, roundRect(q[0], q[1], s2[0], s2[1], s2[1] / 2), e]; });
     const fade = outTo === "dot" ? 100 : [[tOut, 100, E.linear], [tOut + 14, 0]];
+    // r229: a pill that takes over from another (yours. from the chosen world) dissolves its colour in over it (it was a
+    // cut, from the picture to the yellow, in one frame)
+    const colourO = start ? clean([[t0 - 1, 0, E.linear], [t0 + 4, 100, E.hold], ...(Array.isArray(fade) ? fade : [])]) : fade;
     const big = g.reduce((a, q) => (q.w > a.w ? q : a), g[0]);
     Cm.shape(`${nm} · outline`, [group("outline", [rect(sizeKeys, posKeys, 9999), stroke(rgb(C.black), SW)], { o: fade })], { ip, op, parent: PO, ln: `ck-${id}` });
-    Cm.shape(`${nm} · word, colour, light`, [...sheen(sizeKeys, posKeys, big.w, big.h, big.cx, big.cy, { light: 0.3, shade: 0.1 }), ...letters, ...slabs], { ip, op, parent: PO, ks: { o: fade }, masks: [{ inv: false, mode: "a", pt: pathProp(maskKeys), o: prop(100), x: prop(0), nm: "pill" }] });
+    const ink = start ? [] : [group("ink (the dot's black)", [rect(sizeKeys, posKeys, 9999), fill(rgb(C.black), [[t0, 100, [0.3, 0.5, 0.6, 1]], [t0 + 5, 0]])])];
+    Cm.shape(`${nm} · word, colour, light`, [...ink, ...sheen(sizeKeys, posKeys, big.w, big.h, big.cx, big.cy, { light: 0.3, shade: 0.1 }), ...letters, ...slabs], { ip, op, parent: PO, ks: { o: colourO }, masks: [{ inv: false, mode: "a", pt: pathProp(maskKeys), o: prop(100), x: prop(0), nm: "pill" }] });
     // the pill's shadow: it lands from the air (contact), hops at each change, lifts as it becomes a dot again
-    const elevK = clean(elev || [[t0, 3, E.out], [t0 + 7, 0.15, E.out], [t0 + 18, 1, E.linear], ...words.slice(1).flatMap(([, , , tk]) => [[tk, 1, E.out], [tk + 6, 1.7, E.inOut], [tk + 16, 1, E.linear]]), ...(outTo === "dot" ? [[tOut, 1, E.in], [tOut + 12, 3]] : [[tOut, 1, E.linear]])]);
+    // (r229: from the dot's contact shadow where it landed; it used to start high, a second shadow off to the side)
+    const elevK = clean(elev || [[t0, 0.1, E.out], [t0 + 18, 1, E.linear], ...words.slice(1).flatMap(([, , , tk]) => [[tk, 1, E.out], [tk + 6, 1.7, E.inOut], [tk + 16, 1, E.linear]]), ...(outTo === "dot" ? [[tOut, 1, E.in], [tOut + 12, 1.2]] : [[tOut, 1, E.linear]])]);
     const eks = elevKs(elevK);
     const shadowO = outTo === "dot" ? eks.o : clean([...eks.o.filter((x) => x[0] < tOut), [tOut, shO(1), E.linear], [tOut + 14, 0]]);
     Cm.shape(`${nm} · shadow`, pillShadow(sizeKeys, posKeys), { ip, op, parent: PO, ks: { p: eks.p, o: shadowO } });
     return { g, last: gl, center: c(gl), dot };
   };
   // a black dot that travels on an arc (split position), high above the paper, and lands with a squash and a contact shadow
-  const flyingDot = (nm, { from, to, tAppear, t0, t1, d, lift = 0.18 * H, ip, op }) => {
+  // (r229: or a little pill of a colour with its outline, d across in all, there at once when it takes over from a pill)
+  const flyingDot = (nm, { from, to, tAppear, t0, t1, d, lift = 0.18 * H, ip, op, pop = true, color = C.black, ring = 0 }) => {
     const top = Math.min(from[1], to[1]) - lift;
     const tm = Math.round(t0 + (t1 - t0) * 0.45);
-    const dotL = Cm.shape(nm, [group("dot", [ellipse([d, d], [0, 0]), fill(rgb(C.black))])], {
+    const dotL = Cm.shape(nm, [group("dot", [ellipse([d - ring, d - ring], [0, 0]), ...(ring ? [stroke(rgb(C.black), ring)] : []), fill(rgb(color))])], {
       ip, op, parent: PO, ks: {
         p: { x: [[t0, from[0], [0.45, 0, 0.35, 1]], [t1, to[0]]], y: [[t0, from[1], [0.2, 0.6, 0.4, 1]], [tm, top, [0.55, 0, 0.8, 0.4]], [t1, to[1]]] },
-        s: [[tAppear, [0, 0], E.spring], [tAppear + 8, [100, 100], E.hold], [t1 - 3, [100, 100], E.out], [t1, [128, 76], E.out], [t1 + 4, [100, 100]]]
+        s: [...(pop ? [[tAppear, [0, 0], E.spring], [tAppear + 8, [100, 100], E.hold]] : [[0, [100, 100], E.hold]]), [t1 - 3, [100, 100], E.out], [t1, [128, 76], E.out], [t1 + 4, [100, 100]]]
       }
     });
     // its shadow, on the paper: far and faint at the top of the arc, tight as it lands
@@ -165,7 +182,7 @@ export function buildA2(T, ab, { atlasPath = "worlds.webp" } = {}) {
   const t4 = t(TL.B4), tFeels = t(TL.B4 + 0.32), tGlide = t(TL.B4 + 1.35), tDrop = t(TL.B4 + 1.7);
   const fX = feelsW.lx + feelsW.x + pillShift(S), fL = setLine(T, "feels.", S, -0.035), fg = pillGeom(S, fX - 0.34 * S, feelsW.by, fL.width);
   const fc = [fg.cx, fg.cy], gS = ph ? 1.6 : 1.25; // the pill's scale in the middle of the screen
-  const ringW = (ph ? 0.08 : 0.064) * S;
+  const ringW = (ph ? 0.05 : 0.04) * S; // r229 (Daniel: "the rainbow outline is too thick"): about 60 % of what it was
   const finalSize = ph ? [H * 2.45, H * 2.3] : [W * 2.3, W * 2.2]; // wider than tall to the end, so the stadium never turns
   const tOpen = tH + DISSOLVE; // the window starts to grow once the logo has dissolved into the map
   const winSize = [[0, [fg.w, fg.h], E.hold], [tOpen, [fg.w, fg.h], [0.45, 0, 0.6, 1]], [tOpen + 8, [fg.w * 0.95, fg.h * 0.95], [0.72, 0, 0.18, 1]], [tEnd - 2, finalSize.map((v) => v / gS)]];
@@ -173,8 +190,8 @@ export function buildA2(T, ab, { atlasPath = "worlds.webp" } = {}) {
   const NR = 48;
   const ring = (sizeKeys, center, offKeys, op = 100) => [...Array.from({ length: NR }, (_, i) => group("ring " + i, [rect(sizeKeys, center, 9999), trim((i * 100) / NR, Math.min(100, ((i + 1) * 100) / NR + 0.9), offKeys), stroke(rgb(rainbowAt((i + 0.5) / NR)), ringW, op, { lc: 1, lj: 1 })])), group("ring underlay", [rect(sizeKeys, center, 9999), stroke(rgb(RAINBOW[0]), ringW * 0.98, op, { lc: 1, lj: 1 })])];
   const feelsLetters = group("feels.", fL.letters.map((l, j) => letterAt(l, fX, feelsW.by, S, C.black, (b, s) => ({
-    p: clean([[tFeels + 6 + j, [b[0], b[1] + 0.42 * S], RISE], [tFeels + 26 + j, b, E.linear], [tDrop + j * 1.4, b, [0.5, 0, 0.9, 0.5]], [tDrop + 14 + j * 1.4, [b[0], b[1] + 0.55 * S]]]),
-    o: clean([[0, 0, E.hold], [tFeels + 6 + j, 0, E.linear], [tFeels + 13 + j, 100, E.linear], [tDrop + 6 + j * 1.4, 100, E.linear], [tDrop + 14 + j * 1.4, 0]]),
+    p: clean([[tFeels + 6 + j, [b[0], b[1] + 0.42 * S], RISE], [tFeels + 26 + j, b, E.linear], [tDrop + j * 1.4, b, [0.5, 0, 0.9, 0.5]], [tDrop + 14 + j * 1.4, [b[0], b[1] + 1.0 * S]]]),
+    o: clean([[0, 0, E.hold], [tFeels + 6 + j, 0, E.linear], [tFeels + 13 + j, 100, E.linear], [tDrop + 9 + j * 1.4, 100, E.linear], [tDrop + 14 + j * 1.4, 0]]),
     r: [[tDrop + j * 1.4, 0, E.in], [tDrop + 14 + j * 1.4, (j % 2 ? 1 : -1) * 14]], s: [s, s]
   }))));
   // the pill: pops in on the line, lifts and glides to the middle (landing past it and settling), breathes in the hold
@@ -186,7 +203,7 @@ export function buildA2(T, ab, { atlasPath = "worlds.webp" } = {}) {
   } });
   const bodyO = [[tH, 100, [0.45, 0, 0.35, 1]], [tH + DISSOLVE, 0]];
   // the logo: rises into the pill as "feels." drops out of it, breathes with it in the hold, dissolves into the map
-  const logoH = 0.64 * fg.h, logoK = (logoH / LOGO.h) * 100, tLogo = tDrop + 12;
+  const logoH = 0.64 * fg.h, logoK = (logoH / LOGO.h) * 100, tLogo = tDrop + 14;
   const logoGroup = (o) => group("logo · Cromatic Studios", [...LOGO.paths.map((q) => path(q)), fill(rgb(C.black), 100, 2)], {
     a: [LOGO.w / 2, LOGO.h / 2], p: o.p, s: o.s, o: o.o
   });
@@ -197,8 +214,11 @@ export function buildA2(T, ab, { atlasPath = "worlds.webp" } = {}) {
     o: [[0, 0, E.hold], [tLogo, 0, E.linear], [tLogo + 12, 100, E.hold], [tH, 100, [0.45, 0, 0.35, 1]], [tH + DISSOLVE - 4, 0]]
   });
   const ringO = [[tEnd - 12, 100, E.linear], [tEnd - 2, 0]];
+  // r229: "feels." in its own layer, clipped to the inside of the ring: it rises into the pill and drops out of it through
+  // the bottom (it used to fall across the ring and out of the pill, grey letters over the rainbow and the paper)
+  const inW = fg.w - ringW, inH = fg.h - ringW;
+  Cm.shape("beat 4 · feels. · word", [feelsLetters], { parent: feelsRoot, ip: tFeels, op: tDrop + 24, masks: [{ inv: false, mode: "a", pt: pathProp(roundRect(fc[0], fc[1], inW, inH, inH / 2)), o: prop(100), x: prop(0), nm: "inside the ring" }] });
   Cm.shape("beat 4 · feels. · ring, word, body", [
-    feelsLetters,
     logo,
     ...ring(winSize, fc, ringOff(tFeels, tEnd, tHold), ringO),
     group("body", [...sheen(winSize, fc, fg.w, fg.h, fc[0], fc[1], { light: 0, shade: 0.07 }), rect(winSize, fc, 9999), fill(rgb(C.white))], { o: bodyO })
@@ -255,7 +275,7 @@ export function buildA2(T, ab, { atlasPath = "worlds.webp" } = {}) {
       ks = {
         p: [[tPick, sc, GLIDE], [tPick + 24, [yp.cx, yp.cy]]],
         s: [[ti, [10, 10], E.spring], [ti + 24, [100, 100], E.hold], [tPick, [100, 100], GLIDE], [tPick + 24, [kY, kY]]],
-        o: [[0, 0, E.hold], [ti, 100, E.hold], [tPick + 22, 100, E.linear], [tPick + 28, 0]]
+        o: [[0, 0, E.hold], [ti, 100, E.hold], [tPick + 25, 100, E.linear], [tPick + 27, 0]] // (r229: under the yellow as it dissolves in)
       };
       elevK = [[ti, 2.2, E.out], [ti + 8, 0.15, E.out], [ti + 20, 1, E.hold], [tPick, 1, E.inOut], [tPick + 10, 3, E.inOut], [tPick + 24, 2.4]];
     } else {
@@ -298,11 +318,11 @@ export function buildA2(T, ab, { atlasPath = "worlds.webp" } = {}) {
   const placeW = b2.find((w) => w.text === "place.");
   const t2 = t(TL.B2), tP = t(TL.B2 + 0.28), tF = t(TL.B2 + 0.93), tB = t(TL.B2 + 1.48), t2out = t(TL.B3 - 0.18);
   const px0 = placeW.lx + placeW.x + pillShift(S);
-  // the brand pill, now a dot, deals the worlds: it flies to the middle of the worlds
+  // the brand pill, now a dot (a little yellow pill, r229), deals the worlds: it flies to the middle of the worlds
   const spGeom = pillGeom(S, px0 - 0.34 * S, placeW.by, setLine(T, "brand.", S, -0.035).width);
-  flyingDot("beat 3 · the dot that deals the worlds", { from: [spGeom.cx, spGeom.cy], to: sc, tAppear: t2out + 11, t0: t2out + 12, t1: tC, d: 0.22 * S, lift: ph ? 0.08 * H : 0.12 * H, ip: t2out + 11, op: tC + 2 });
+  flyingDot("beat 3 · the dot that deals the worlds", { from: [spGeom.cx, spGeom.cy], to: sc, tAppear: t2out + 12, t0: t2out + 12, t1: tC, d: 0.22 * S, lift: ph ? 0.08 * H : 0.12 * H, ip: t2out + 12, op: tC + 2, pop: false, color: C.yellow, ring: SW });
   // the colour has a job: which thing is remembered; the text stays black on every colour (Daniel)
-  const sp = slotPill("beat 2 · place. facade. brand.", { x0: px0, by: placeW.by, words: [["place.", C.green, C.black, tP], ["facade.", C.blue, C.black, tF], ["brand.", C.yellow, C.black, tB]], tOut: t2out, outTo: "dot", ip: tP - 1, op: t2out + 13, id: "word" });
+  const sp = slotPill("beat 2 · place. facade. brand.", { x0: px0, by: placeW.by, words: [["place.", C.green, C.black, tP], ["facade.", C.blue, C.black, tF], ["brand.", C.yellow, C.black, tB]], tOut: t2out, outTo: "dot", ip: tP, op: t2out + 13, id: "word" });
   lines("beat 2 · but someone could remember a", b2.filter((w) => w !== placeW), { inAt: (i) => t2 + (i > 2 ? 10 : 0) + i * 3.5, outAt: (i) => t2out + i * 1.2 });
 
   /* ======================= beat 1 · nobody remembers a thumbnail ======================= */
@@ -311,7 +331,7 @@ export function buildA2(T, ab, { atlasPath = "worlds.webp" } = {}) {
   const t1 = t(TL.B1), tShrink = t(0.95), tCard = t(1.05), tFlip = t(1.4), t1out = t(1.42);
   const k = ph ? 0.42 : 0.34;
   const cx = thumbW.lx + thumbW.x + thumbW.w / 2, cy = thumbW.by - (T.xh / T.upm) * S * 0.5;
-  flyingDot("beat 2 · the dot that becomes the pill", { from: [cx, cy], to: [sp.g[0].cx, sp.g[0].cy], tAppear: tFlip + 5, t0: tFlip + 9, t1: tP, d: sp.dot, lift: ph ? 0.05 * H : 0.08 * H, ip: tFlip + 4, op: tP + 2 });
+  flyingDot("beat 2 · the dot that becomes the pill", { from: [cx, cy], to: [sp.g[0].cx, sp.g[0].cy], tAppear: tFlip + 5, t0: tFlip + 9, t1: tP, d: sp.dot, lift: ph ? 0.05 * H : 0.08 * H, ip: tFlip + 4, op: tP });
   // "thumbnail." shrinks into a small grey card, which flips over and is gone; a dot is what is left of it
   const thumbNull = Cm.nul("beat 1 · thumbnail (camera)", { parent: PO, ks: { a: [cx, cy], p: [cx, cy], s: [[tShrink, [100, 100], [0.6, 0, 0.25, 1]], [tShrink + 18, [k * 100, k * 100], E.hold], [tFlip, [k * 100, k * 100], [0.55, 0, 0.9, 0.4]], [tFlip + 9, [0, k * 100]]] }, op: tFlip + 10 });
   const ti1 = t1 + 3 * 4;
