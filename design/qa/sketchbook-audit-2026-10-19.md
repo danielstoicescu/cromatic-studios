@@ -259,8 +259,53 @@ Celelalte lumi nu rulează nimic din toate acestea. Le-am verificat înainte și
 
 Adică exact zgomotul grain-ului de film, care se schimbă la fiecare frame.
 
+## Runda 2: caietul aprobat (c5f25c6) și ce am schimbat în 3.7x
+
+Am măsurat caietul aprobat de Daniel (c5f25c6) față de Cromatic, apoi am aplicat doar ce nu schimbă desenul. Mac-ul a fost împărțit cu alți agenți, iar load average-ul (pe 1 minut) e notat la fiecare tabel. Scenele sunt trecute pe rând (c5f25c6, apoi build-ul final), câte două runde de fiecare, iar cifrele sunt mediane.
+
+**Cromatic față de Sketchbook, c5f25c6 față de final** (fps, mediană din 2 rulări):
+
+| Scena | Telefon 4×: Cromatic | Telefon 4×: Sketchbook c5f25c6 | Telefon 4×: Sketchbook final | WebKit iPhone: Cromatic | WebKit iPhone: Sketchbook c5f25c6 | WebKit iPhone: Sketchbook final |
+|---|---|---|---|---|---|---|
+| Bird's eye, pe loc | 40 | 45 | 45 | 60 | 60 | 60 |
+| Bird's eye, condus | 48 | 48 | 47 | 59 | 60 | 60 |
+| Bird's eye, drift | 42 | 33 | 40 | 60 | 59 | 60 |
+| Street view, pe loc | 41 | 35 | 41 | 60 | 60 | 60 |
+| Street view, condus | 45 | 35 | 47 | 58 | 60 | 60 |
+| Street view, drift | 43 | 48 | 48 | 59 | 57 | 60 |
+
+- Load average: telefon 6-11, WebKit 8-16, laptop 6-15.
+- Pe laptop, toate scenele merg la 60 fps în ambele lumi. JS-ul din rAF e 3-4 ms în Sketchbook și 3,5-5,4 ms în Cromatic.
+- Pe telefonul încetinit, Cromatic (al cărui cod nu s-a schimbat) variază cu până la 10 fps de la o rulare la alta. Așa că diferențele c5f25c6 → final de pe telefon sunt în zgomot.
+- Concluzia: caietul nu mai e mai greu decât Cromatic. Hull-ul și umbrele au ieșit în runda 2, iar ce rămâne e trecerea de culoare, comună cu Cromatic, plus un singur quad. Pe telefonul încetinit, JS-ul specific Sketchbook-ului e ~8 ms pe secundă.
+
+**Ce am schimbat (4 commit-uri):**
+
+1. **Hull-ul se decupează o singură dată.** Refolosește render list-ul trecerii de culoare, iar materialul de contur ajunge doar la ce trece de layer-ul camerei. În acest build hull-ul rulează doar în Riso. Pixelii 3D din Riso sunt identici. Pe telefonul încetinit, la condus, hull-ul scade de la 8,3 la 3,1 ms CPU pe frame (mediană din 5). Pe loc, pe overview, rămâne la fel.
+2. **Harta de reveal e pictată pe GPU.** Înainte era urcată ca textură de 11-33 de ori pe secundă. În WebKit, un frame al caietului lua ~7 ms cu upload-ul și ~3 ms fără el.
+3. **`crayonTextures()` desenează doar inelul.** Cu 2, prima intrare în Sketchbook (partea sincronă, mediană din 3) scade:
+   - WebKit: de la 653 la 270 ms;
+   - telefonul încetinit: de la 597 la 278 ms;
+   - laptop: de la 225 la 142 ms.
+4. **Trecerea caietului, aceeași aritmetică, mai puține operații.** Fără împărțiri în cele 13 eșantioane de adâncime, fără cele 7 `exp()` pentru gri. Rezultatul e identic bit cu bit cu c5f25c6 (citit înapoi din același frame, în Chromium și WebKit). Pe M4 trecerea e cu 2-7 % mai rapidă la mediană.
+
+**Ce n-am făcut** (fiecare schimbă desenul; e nevoie de acordul lui Daniel):
+
+- **LOD-ul coroanelor:** s-ar vedea în spiralele lor, 0,64 % din pixeli.
+- **Kernelul de 9 eșantioane:** schimbă 0,3-1,2 % din pixeli și nu e mai rapid. Pe M4, trecerea e limitată de aritmetică, nu de citiri.
+- **Trecerea la jumătate de rezoluție pe telefon:** liniile ar ieși mai moi.
+- **Sărirea blocului de culoare unde încă nu s-a desenat nimic:** compilatorul Metal mută `dFdx`/`dFdy` în ramură, iar 0,1-0,5 % din pixeli se schimbă la marginile ei.
+
+**În afara Sketchbook-ului, după 3.73** (telefon încetinit, la condus):
+
+- style-ul și layout-ul forțate scad de la 430-510 la 0,6-0,7 ms pe secundă;
+- plasarea pinilor scade de la ~290 la 1,6-2,4 ms pe secundă.
+
+Amândouă au dispărut.
+
 ## Instrumente
 
 - `window.__perfLab.bench(n, trials)` dă costul unui frame din lumea curentă, CPU și GPU împreună, fără 60 Hz-ul ecranului (`{ min, med }` în ms).
 - `window.__perfLab.sketchPlain(on)` pornește și oprește trecerea plain, pentru A/B.
-- Scripturile Playwright ale auditului (scene, trace, bench, suprapuneri, hit-test) sunt în scratchpad-ul sesiunii, `sk/*.mjs`.
+- Scripturile Playwright ale auditului (scene, trace, bench, suprapuneri, hit-test) sunt în scratchpad-ul sesiunii, `sk/*.mjs`. Runda 2 are în plus `matrix.mjs` (cele șase scene, cu load average-ul), `nbab.mjs` (variante ale trecerii caietului pe același frame: pixeli citiți înapoi și GPU) și `side.mjs` (prima intrare, upload-ul hărții de reveal).
+- Query-urile de timp GPU din Chrome pe Mac (ANGLE peste Metal) numără și lucrul pus în coadă înainte de ele. Fără un `gl.finish()` înaintea fiecăruia, timpul pe trecere nu e de încredere.
