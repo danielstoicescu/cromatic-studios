@@ -1474,10 +1474,16 @@
     for (const yy of [sy0 + 18, sy0 + 34]) { R(m, wx0 + 2, yy, ww - 4, 2, "#a06c44"); R(m, wx0 + 2, yy, ww - 4, 1, "#c88e5a"); R(m, wx0 + 2, yy + 2, ww - 4, 1, "#3e2418"); } // shelves
     for (let i = 0; i < 14; i++) { const bx = wx0 + 4 + i * 7, yy = i < 7 ? sy0 + 11 : sy0 + 27, col = ["#ff4a7a", "#28c840", "#2fb8f0", "#ffd23a", "#f6f2ea"][i % 5]; R(m, bx, yy, 5, 7, col); R(m, bx, yy, 5, 1, "#ffffff"); R(m, bx + 4, yy, 1, 7, "#3e2418"); }
     R(m, wx0 + 2, yG - 24, ww - 4, 4, "#e0b886"); R(m, wx0 + 2, yG - 24, ww - 4, 1, "#f6d6a6"); R(m, wx0 + 2, yG - 20, ww - 4, 14, "#8a5636"); for (let q = wx0 + 10; q < wx0 + ww - 4; q += 16) R(m, q, yG - 19, 1, 12, "#6a3e26"); // the counter
+    // beta 3.51 (Daniel: "two machines during the finisher"): the counter without the machine, kept as a patch (with the
+    // glass's reflections and the mullion as the street has them), laid over the window while the machine is away
+    const [ep, epx] = mk(MZ.w, MZ.h); epx.drawImage(mid, MZ.x, MZ.y, MZ.w, MZ.h, 0, 0, MZ.w, MZ.h);
     m.drawImage(marzocco(), MZ.x, MZ.y, MZ.w, MZ.h);
     { const id = m.getImageData(wx0, sy0 + 3, ww, yG - sy0 - 6), d = new Uint32Array(id.data.buffer), w3 = ww; // the reflections: bands across the glass, a step lighter, crisp
       for (let y = 0; y < id.height; y++) for (let q = 0; q < w3; q++) { const u = (q + y * 0.55) % 34; if (u < 7 || (u > 10 && u < 12)) { const v = d[y * w3 + q], k = u < 7 ? 0.2 : 0.12; d[y * w3 + q] = (0xff000000 | (Math.round(((v >> 16) & 255) + (255 - ((v >> 16) & 255)) * k) << 16) | (Math.round(((v >> 8) & 255) + (255 - ((v >> 8) & 255)) * k) << 8) | Math.round((v & 255) + (255 - (v & 255)) * k)) >>> 0; } }
       m.putImageData(id, wx0, sy0 + 3); }
+    { const id = epx.getImageData(0, 0, MZ.w, MZ.h), d = new Uint32Array(id.data.buffer), w3 = MZ.w, ox = MZ.x - wx0, oy = MZ.y - (sy0 + 3);
+      for (let y = 0; y < id.height; y++) for (let q = 0; q < w3; q++) { const u = (q + ox + (y + oy) * 0.55) % 34; if (u < 7 || (u > 10 && u < 12)) { const v = d[y * w3 + q], k = u < 7 ? 0.2 : 0.12; d[y * w3 + q] = (0xff000000 | (Math.round(((v >> 16) & 255) + (255 - ((v >> 16) & 255)) * k) << 16) | (Math.round(((v >> 8) & 255) + (255 - ((v >> 8) & 255)) * k) << 8) | Math.round((v & 255) + (255 - (v & 255)) * k)) >>> 0; } }
+      epx.putImageData(id, 0, 0); R(epx, wx0 + 50 - MZ.x, 0, 2, MZ.h, "#121214"); S.mzGone = ep; }
     R(m, wx0 + 50, sy0, 2, yG - sy0, "#121214");
     // the wooden step along the shopfront, where people sit
     R(m, sx + 40, yG - 9, 112, 9, "#3a2416"); R(m, sx + 41, yG - 8, 110, 4, "#c8945a"); R(m, sx + 41, yG - 4, 110, 4, "#8e6038"); R(m, sx + 41, yG - 8, 110, 1, "#e6b47a");
@@ -1564,14 +1570,14 @@
     down: ["........", "..ognno.", ".oggggo.", "okkggkko", "o..oo..o", "........"] };
   const PIGC = { o: OUT, g: "#9aa0ae", l: "#c4c8d2", n: "#4e9a7a", k: "#5e6474", e: "#ff8a3a", f: "#d8604a" };
   function pigeon(ctx, x, y, kind, face) { const m2 = PIG[kind]; for (let j = 0; j < m2.length; j++) for (let i = 0; i < 8; i++) { const ch = m2[j][face < 0 ? 7 - i : i]; if (ch === ".") continue; ctx.fillStyle = PIGC[ch]; ctx.fillRect(x + i, y + j, 1, 1); } }
-  function drawAmbient(ctx, fx, t, sy) {
+  function drawAmbient(ctx, fx, t, sy, noMz) {
     const dt = Math.min(0.1, Math.max(0, t - (AMB.last || t))); AMB.last = t;
     {
       // the steam: wisps off the warm cups on top of the machine and out of the right wand, inside the window's glass
-      ctx.save(); ctx.beginPath(); ctx.rect(104 - fx, 105 + sy, 50, 46); ctx.clip();
+      if (!noMz) { ctx.save(); ctx.beginPath(); ctx.rect(104 - fx, 105 + sy, 50, 46); ctx.clip(); // (no steam off an empty counter, beta 3.51)
       for (let i = 0; i < 10; i++) { const a = (t * (i < 7 ? 0.3 : 0.55) + i / 7) % 1, wand = i >= 7, x0 = wand ? MZ.x + 46 : MZ.x + 8 + i * 5.5, y0 = wand ? MZ.y + 24 : MZ.y + 1, rise = wand ? 26 : 16, x = x0 - fx + Math.sin(a * 6 + i * 1.9) * (0.6 + a * 2.4), y = y0 - a * rise + sy;
         ctx.globalAlpha = a < 0.3 ? 0.8 : a < 0.65 ? 0.55 : 0.28; ctx.fillStyle = a < 0.4 ? "#f6f6fb" : "#d8dae6"; ctx.fillRect(Math.round(x), Math.round(y), a < 0.3 ? 1 : 2, 1); if (a > 0.4) ctx.fillRect(Math.round(x) + (i & 1 ? 1 : -1), Math.round(y) - 1, 1, 1); }
-      ctx.restore(); ctx.globalAlpha = 1;
+      ctx.restore(); ctx.globalAlpha = 1; }
       // the shop's flag on a short pole off the house's corner, black with the white II' of the door, waving in the wind
       // (each column of cloth lifted on a travelling wave, a lit and a shaded side to each fold); kept clear of the HUD
       { const px = (x, y, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x - fx), y + sy, 1, 1); };
@@ -1611,13 +1617,14 @@
     return fx;
   }
   // the backdrop, layer by layer: the sky (still), the clouds (drifting, slow), the street's layers, the life in it
-  function drawBackdrop(ctx, camX, t, sy = 0, cups = true, flat = false) {
+  function drawBackdrop(ctx, camX, t, sy = 0, cups = true, flat = false, noMz = false) {
     const S = stage();
     ctx.drawImage(S.sky, 0, 0, W, H);
     const cxo = Math.round((camX * 0.08 + t * 3) % 768); ctx.drawImage(S.clouds, -cxo, sy); ctx.drawImage(S.clouds, 768 - cxo, sy);
     const fx = drawStreet(ctx, camX, t, sy, flat);
-    if (cups) drawCups(ctx, MZ.x - fx, MZ.y + sy, t, false); // the cups on the machine (the ending rattles its own)
-    drawAmbient(ctx, fx, t, sy, false);
+    if (noMz) ctx.drawImage(S.mzGone, MZ.x - fx, MZ.y + sy); // beta 3.51: the La Marzocco away (I O N's finisher took it)
+    else if (cups) drawCups(ctx, MZ.x - fx, MZ.y + sy, t, false); // the cups on the machine (the ending rattles its own)
+    drawAmbient(ctx, fx, t, sy, noMz);
     return fx;
   }
   // beta 3.31 (Daniel: "park a purple road bike in front of Two Minutes"): a road bike (drop bars, thin wheels) standing
@@ -2438,6 +2445,7 @@
       if (g.pt >= 220) endRound(winner);
     } else if (g.phase === "finish") { // beta 3.49: I O N's finisher (see FIN)
       const F = g.fin;
+      if (g.pt === FIN.leave) { const wx = MZ.x + MZ.w / 2 - layerX(g.camX, PF) + g.camX; SND.play("steam"); for (let i = 0; i < 10; i++) g.fx.push({ k: "steampuff", x: wx + ((i % 5) - 2) * 9, y: MZ.y + 18 - FLOOR - (i >> 1) * 3, t: 0, life: 22 + (i % 3) * 5, vx: ((i % 5) - 2) * 0.25, vy: -0.4 - (i % 3) * 0.15, big: i % 4 === 0 }); } // the poof as it leaves the window
       if (g.pt === FIN.drop - 14) SND.play("whistle");
       if (g.pt === FIN.hit) { g.shake = Math.max(g.shake, 7); g.flash = 4; SND.play("clang"); SND.play("steam"); g.cheerT = g.cheerT0 = 120; scarePigeons(); F.flat = true; F.loser.st = "down"; F.loser.vx = 0; F.loser.y = 0;
         for (let i = 0; i < 18; i++) g.fx.push({ k: "steampuff", x: F.x + (i % 2 ? 1 : -1) * (20 + (i >> 1) * 3), y: -4 - (i % 4) * 9, t: 0, life: 36 + (i % 5) * 6, vx: (i % 2 ? 1 : -1) * (0.6 + (i % 3) * 0.4), vy: -0.3 - (i % 4) * 0.14, big: i % 3 === 0 }); for (let i = 0; i < 4; i++) spark(F.x + (i - 1.5) * 16, -2, "dust"); }
@@ -2452,7 +2460,7 @@
   // shake and a burst of steam, sits a moment (the cups on its rail rattling), springs back up into the sky and leaves
   // the loser flat as a pancake, wobbling, a little espresso cup rattling on top. ESPRESSO'D! A tap or a key skips it;
   // then the result as ever. Ticks from the match's end
-  const FIN = { shadow: 18, drop: 46, hit: 64, lift: 112, gone: 124, end: 236 };
+  const FIN = { shadow: 18, flick: 22, leave: 34, drop: 46, hit: 64, lift: 112, gone: 124, end: 236 }; // beta 3.51: the window's machine flickers from flick and is gone (a poof) at leave
   function finishDone() { if (g.phase !== "finish") return; g.phase = "match"; g.pt = 0; SND.play(g.result === "win" ? "win" : "lose"); }
   function endRound(winner) {
     const [a] = g.f;
@@ -2662,7 +2670,8 @@
     // beta 3.45: the shake in the arcade's beat (the screen thrown down and up every other tick, a little sideways), not a random jitter
     const sn = g.shakeN || 0, sx = g.shake > 0 ? Math.round(g.shake * 0.5) * ((sn >> 2) & 1 ? 1 : -1) : 0, sy = g.shake > 0 ? Math.round(g.shake) * ((sn >> 1) & 1 ? 1 : -1) : 0;
     const cx = Math.round(g.camX) - sx;
-    const fx = drawBackdrop(ctx, cx, t, sy);
+    const fin = g.fin && (g.phase === "finish" || g.phase === "match"), gone = fin && (g.phase === "match" || g.pt >= FIN.leave || (g.pt >= FIN.flick && (g.pt >> 1) & 1)); // beta 3.51: the window's La Marzocco flickers and leaves for the finisher
+    const fx = drawBackdrop(ctx, cx, t, sy, true, false, gone);
     if (g.cheerT > 0 && !paused) g.cheerT--;
     ctx.save(); ctx.translate(0, sy);
     drawCrowd(ctx, fx, t, g.phase === "ko" && g.pt > 30 || g.phase === "match" ? 99 : g.cheerT > 0 ? (g.cheerT0 || 44) - g.cheerT : -1, g.oohT > 0);
