@@ -36369,9 +36369,9 @@ void main() {
       }
       var worldPrevCache = { key: null, urls: [] }, worldPrevBusy = false, worldPrevNow = false; // beta 3.46 r215 (Daniel, QA pass): worldPrevNow = a preview's own scheme switch (not the visitor's)
       // beta 3.xx (the Multiverse menu, QA 19 October: its previews made 100-600 ms frames as it opened): a world a step, as
-      // before, but (1) each step runs inside the map's own frame, just before its draw, so the real view is no longer drawn
-      // a second time to cover the preview (the frame's own draw does); (2) the JPEG is encoded off the main thread
-      // (toBlob); (3) the previews of the last place show at once, the new ones replace them as they land; (4) the steps
+      // before, but (1) each step runs inside the map's own frame (beta 3.83: at the start of its work, see frameStep), so
+      // the real view is no longer drawn a second time to cover the preview (the frame's own draw does); (2) the JPEG is
+      // encoded off the main thread (toBlob); (3) the previews of the last place show at once, the new ones replace them as they land; (4) the steps
       // wait for idle time (not one every frame); (5) after the opening they are made once ahead, while the car stands
       // still (prewarmWorlds), so the first opening of the menu finds them, and every world's first-time costs (its
       // textures, its post pass and their programs) are paid then, not as the menu opens
@@ -36384,7 +36384,7 @@ void main() {
         if (worldPrevBusy) { worldPrevCache.onEach = onEach; return; }
         worldPrevBusy = true;
         worldPrevCache = { key, urls: have.slice(), onEach };
-        const pw = 216, ph = 288, pr = renderer.getPixelRatio();
+        const pw = 216, ph = 288;
         const pcam = new PerspectiveCamera(40, pw / ph, 10, 45000);
         const out = document.createElement("canvas");
         out.width = pw * 1.5; out.height = ph * 1.5;
@@ -36424,7 +36424,7 @@ void main() {
             renderer.setViewport(0, 0, pw, ph);
             renderer.setScissor(0, 0, pw, ph);
             if (sch.id === "monument") renderer.render(scene, pcam); else if (sch.id === "sincity") sinCityRender(performance.now(), pcam); else if (sch.id === "sketch") sketchRender(performance.now(), pcam, true); else if (sch.id === "riso") risoRender(performance.now(), pcam); else outline.render(scene, pcam);
-            const H = renderer.domElement.height;
+            const H = renderer.domElement.height, pr = renderer.getPixelRatio(); // beta 3.83: the ratio now (adaptResolution may step it between two steps)
             octx.drawImage(renderer.domElement, 0, H - ph * pr, pw * pr, ph * pr, 0, 0, out.width, out.height);
             veh.group.visible = vis;
             const cache = worldPrevCache;
@@ -36435,7 +36435,7 @@ void main() {
             renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
             applyScheme(orig);
             sky.position.copy(camera.position);
-            worldPrevNow = false; // (the frame draws the real view right after this: see frameStep)
+            worldPrevNow = false; // (the frame sets its own state and draws the real view after this: see frameStep)
           }
           i++;
           next();
@@ -39419,6 +39419,14 @@ void main() {
         if (cityCovered()) { prevT = now; requestAnimationFrame(frame); return; } // r139b
         if (introFreeze(now)) { camSnapNext = true; prevT = now; requestAnimationFrame(frame); return; } // r139g (r157: snap after)
         adaptResolution(now - prevT, now);
+        // beta 3.83 (Daniel: "after the map first loads, a few seconds later, a 1-second blink in which it seems to render
+        // again"): a Multiverse preview step runs here, before the frame sets its state, no longer just before its draw. A
+        // step switches the world and back (applyScheme), and the way back to the Cromatic world shows its far mesas, cloud
+        // ring and floating islands, which the map hides in every frame (mapUI.update): the draw right after the step showed
+        // them, one frame a step, nine steps in 0.4-1 s, once after the opening (the warm-up, prewarmWorlds) and again as the
+        // menu opened (on a phone, the clouds as a haze). Here the frame hides them again before it draws, as when the steps
+        // ran between frames, and its draw still covers the preview (no return before the draw from this point on)
+        if (worldPrevJob) { const j = worldPrevJob; worldPrevJob = null; try { j(); } catch (e) {} }
         const dt = Math.min(0.05, (now - prevT) / 1e3);
         const rawDt = Math.min(0.25, (now - prevT) / 1e3);
         prevT = now;
@@ -40271,7 +40279,6 @@ void main() {
         }
         if (!routeRing) routeRingInit(); else routeRing.update(now);
         if (ONB_MODE) onbFrame(now); // r140
-        if (worldPrevJob) { const j = worldPrevJob; worldPrevJob = null; try { j(); } catch (e) {} } // beta 3.xx: a Multiverse preview, drawn just before the frame's own draw (which covers it)
         if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sincity") sinCityRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sketch") sketchRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "riso") risoRender(now, camera); else if (mvK > 0.5 && !window.__noPost) tiltShiftRender(now); else if (window.__noPost) renderer.render(scene, camera); else outline.render(scene, camera);
         if (onbSnapReq) { onbSnapReq = false; onbSnap(); } // r141c, r142
         // r226 (Daniel: the final pill opens onto the live map): the loader opens its window only once the map has drawn
