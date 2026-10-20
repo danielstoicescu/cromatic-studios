@@ -26268,7 +26268,7 @@ void main() {
       for (const o of [scr, mar]) o.material.userData.outlineParameters = { visible: false };
       arc.rotation.y = Math.PI / 2;
       arc.position.set(652, 0, 4114);
-      arc.name = "gloves-arcade";
+      arc.name = "gloves-arcade"; arc.userData.screen = scr; // TASK-009: the way out of the game starts on this screen (mapUI arcadeOut)
       arc.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
       g.add(arc);
     }
@@ -34879,8 +34879,10 @@ void main() {
     const closeNow = () => { caseFrame.style.removeProperty("visibility"); caseFrame._url = null; caseFrame._anim?.cancel(); caseFrame.classList.add("hidden"); document.body.classList.remove("scf-open"); blankFrame(); }; // r137a: _anim = the grow-in from the place card
     // r233 (Daniel, Lottie: the pill transitions): a page closes into the intro's pill (the studio's paper comes in round
     // it), and the pill opens onto the map again; the game has its own way out
-    const closeFrame = () => { if (!caseFrame.classList.contains("hidden") && window.czPill?.close(caseFrame, closeNow)) return; closeNow(); };
-    window.__czFrameClose = () => !caseFrame.classList.contains("hidden") && !!window.czPill?.close(caseFrame, closeNow);
+    // TASK-009 (Lottie piece 5): the game's way out is its own: its screen breaks into pixels, the camera is on the
+    // arcade cabinet's screen when they clear, and pulls back to Bird's eye (src/lottie-ui/game.js, mapUI arcadeOut)
+    const closeFrame = () => { if (!caseFrame.classList.contains("hidden") && (window.czGame?.close(caseFrame, closeNow) || window.czPill?.close(caseFrame, closeNow))) return; closeNow(); };
+    window.__czFrameClose = () => !caseFrame.classList.contains("hidden") && !!(window.czGame?.close(caseFrame, closeNow) || window.czPill?.close(caseFrame, closeNow));
     // a case page inside the map asks for the boarding pass ("Ready for boarding")
     window.addEventListener("message", (e) => {
       if (e.origin !== location.origin || !e.data || e.data.cz !== "boarding") return;
@@ -34907,7 +34909,7 @@ void main() {
     window.addEventListener("message", (e) => { if (e.origin === location.origin && e.data && e.data.cz === "gloves-close" && !caseFrame.classList.contains("hidden")) closeFrame(); });
     // r211 (Daniel: GA4 on the mini-game): every way in says where it came from (?from=…); the game reports it as
     // entry_source on gloves_open and takes it off its own address straight away
-    window.__openGloves = (from) => openFrameHook?.(`/play/gloves/?${from ? `from=${encodeURIComponent(from)}&` : ""}embed=1`, "2 Minutes 2 Fight w/ I O N"); // beta 3.44: the game's new name (the URL and the gloves_* events keep the old one)
+    window.__openGloves = (from) => { window.__czArcadeKeep?.(); openFrameHook?.(`/play/gloves/?${from ? `from=${encodeURIComponent(from)}&` : ""}embed=1`, "2 Minutes 2 Fight w/ I O N"); }; // beta 3.44: the game's new name (the URL and the gloves_* events keep the old one); TASK-009: the view it was opened from, for the way back
     let steamSeen = false;
     // any page of the website, full screen over the map (OMA's brand canvas, …)
     openFrameHook = (url, title) => {
@@ -34935,7 +34937,8 @@ void main() {
     // rectangle, see-through, and opens to the full screen as it turns opaque (the card leaves its rect in _from)
     // r233: or, with the site's pill transitions, as the intro's window does: the map closes into a pill on the studio's
     // paper, the pill opens onto the page, which has been loading meanwhile (src/lottie-ui/pill.js)
-    const grow = () => { if (window.czPill?.open(caseFrame, r137Grow)) { caseFrame._from = null; return; } r137Grow(); };
+    // TASK-009 (Lottie piece 5): the game comes in through chunky pixels in its own colours (src/lottie-ui/game.js)
+    const grow = () => { if ((caseFrame.classList.contains("cf-game") && window.czGame?.open(caseFrame)) || window.czPill?.open(caseFrame, r137Grow)) { caseFrame._from = null; return; } r137Grow(); };
     const r137Grow = () => {
       const from = caseFrame._from; caseFrame._from = null;
       if (!from || performance.now() - from.t > 900 || !caseFrame.animate || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -40734,7 +40737,7 @@ void main() {
             mesh.castShadow = mesh.receiveShadow = true; mesh.name = "n2-closures";
             worldRefs.world.add(mesh); worldRefs.world.userData.n2cl = mesh;
           },
-          camBusy: () => mapIntro || jetFx.phase !== "idle" || document.body.classList.contains("kz-intro"), jetCine: () => !!jetFx.cine,
+          camBusy: () => mapIntro || jetFx.phase !== "idle" || document.body.classList.contains("kz-intro") || !!mapUI?.arcOn?.(), jetCine: () => !!jetFx.cine, // (TASK-009: and the pull-back out of the game)
           ready: () => mapMode && !mapIntro && !!mapUI && spawnStart < 0 && jetFx.phase === "idle" && !mapBoarding && !document.body.classList.contains("kz-intro"),
           overlay: () => { const c = document.body.classList; return c.contains("modal-open") || c.contains("scf-open") || !!document.querySelector(".case-frame:not(.hidden)"); },
           follow() { mapView.follow = true; mapView.focus = null; mapView.vx = mapView.vz = 0; mapUI?.cineStop(); if (mapView.pitch < 0.8) mapView.pitchGoal = 0.98; if (mapView.dist < 1800 && !mapView.distGoal) mapView.distGoal = innerWidth < 720 ? 2900 : 2500; }, // beta 2.0: out of a parking pose too
@@ -42255,6 +42258,68 @@ void main() {
           cineTo({ yaw: b.yaw, pitch: b.pitch, dist: b.dist, lookY: b.lookY, fx: b.tgt[0], fz: b.tgt[1], after: fin }, 1.2);
         };
         let tmBack = null; // beta 2.0: the view before Two Minutes' scene, given back when it ends
+        // TASK-009 (Daniel, Lottie piece 5: "exiting the game, the camera zooms out from the map's arcade cabinet screen to
+        // Bird's eye", and "keep it cheap"): out of the game the camera starts square on the cabinet's screen, so close
+        // that its pixels fill the view, and pulls back and up to Bird's eye: to the view the visitor had before the game
+        // (the one before "Go deeper"'s parking shot, or the one the game was opened from). One eased path of the map's own
+        // camera (no new object, no pass, nothing kept): log distance on a smootherstep, the turn and the tilt a beat later,
+        // the target last. A hand on the map (drag, pinch, wheel, the zoom buttons) stops it where it is. The pins, the
+        // place card and the tap mark step aside while the camera is that close and come back as it settles (the street
+        // names are off below 3300 anyway); the worlds' preview warm-up waits for it to land
+        let arc = null, arcBack = null, arcSoft = false;
+        // (the classes go on the few elements that step aside, not on the page's body: a class on the body restyles everything)
+        const arcEls = () => [pinsEl, card, markEl, ...document.querySelectorAll(".svc-house")];
+        const arcCls = (add, rm) => { for (const e of arcEls()) { if (!e) continue; if (rm) e.classList.remove(rm); if (add) e.classList.add(add); } };
+        const sst = (u) => { u = Math.min(1, Math.max(0, u)); return u * u * u * (u * (u * 6 - 15) + 10); };
+        const arcFin = (b) => { if (b.follow) { mapView.follow = true; mapView.focus = null; } else mapView.focus = b.focus || { x: b.tgt[0], z: b.tgt[1] }; };
+        const arcStop = (hand) => {
+          if (!arc) return;
+          const a = arc; arc = null;
+          arcCls("czg-back", "czg-cab"); setTimeout(() => { if (!arc) arcCls(null, "czg-back"); }, 700); // (czg-back: they fade back in)
+          if (hand) { if (mapView.dist < MAP_MIND) { arcSoft = true; mapView.distGoal = MAP_MIND; } } else arcFin(a.b);
+        };
+        const arcadeOut = () => {
+          const b = camSave || arcBack; camSave = null; arcBack = null;
+          const scr = scene.getObjectByName("gloves-arcade")?.userData.screen;
+          if (!mapMode) return false;
+          if (!scr || jetFx.phase !== "idle" || mapBoarding || matchMedia("(prefers-reduced-motion: reduce)").matches) { if (b) camRestore(b); return false; }
+          scr.updateWorldMatrix(true, false);
+          const c = new Vector3().setFromMatrixPosition(scr.matrixWorld), n = new Vector3(0, 0, 1).transformDirection(scr.matrixWorld);
+          // close enough that the screen covers the view (its 4:3 against the window's shape), through the map's own lens
+          const th = Math.tan((16 * Math.PI) / 360), sw = scr.geometry.parameters.width, sh = scr.geometry.parameters.height; // (the map's lens settled, 16°: the street view's is wider and is let go of here)
+          const d0 = Math.min(sh / 2 / th, sw / 2 / (th * camera.aspect)) * 0.97;
+          const e = b || camState(), bird = e.pitch >= 0.75, phone = innerWidth < 720;
+          const to = { x: e.tgt[0], y: bird ? e.lookY || 0 : 0, z: e.tgt[1], d: bird ? e.dist : Math.max(e.dist, phone ? 2900 : 2500), yaw: e.yaw, pitch: bird ? e.pitch : 0.98 };
+          let yaw0 = Math.atan2(n.x, n.z); while (to.yaw - yaw0 > Math.PI) yaw0 += Math.PI * 2; while (to.yaw - yaw0 < -Math.PI) yaw0 -= Math.PI * 2;
+          arc = { t: 0, dur: phone ? 2.2 : 2.4, f: { x: c.x, y: c.y, z: c.z, d: d0, yaw: yaw0, pitch: Math.asin(Math.max(-0.5, Math.min(0.5, n.y))) }, to, b: e };
+          arc.k3 = Math.min(0.8, Math.max(0.3, Math.log(450 / d0) / Math.log(Math.max(to.d, 900) / d0))); // (the share of the zoom, in log, before the target moves)
+          cine = null; tmBack = null; arcSoft = false; mapSettle = 0;
+          mapView.follow = false; mapView.focus = null; mapView.distGoal = mapView.yawGoal = mapView.pitchGoal = null; mapView.vx = mapView.vz = 0;
+          if (nav2?.on) { nav2.D.streetT = 0; nav2.D.lax = nav2.D.laz = 0; } // (the street view's blend and its look-ahead would pull the camera off the screen)
+          arcCls("czg-cab", "czg-back");
+          arcStep(0);
+          return true;
+        };
+        const arcStep = (dt) => {
+          if (!arc) return;
+          const a = arc, f = a.f, g = a.to;
+          a.t += dt;
+          // the target (and the height looked at) stays on the cabinet until the camera is a few hundred units out, then
+          // glides to the view's own (a move of the target that close would throw the cabinet off the screen)
+          const u = Math.min(1, a.t / a.dur), e1 = sst(u), e2 = sst((u - 0.12) / 0.78), e3 = sst((e1 - a.k3) / (1 - a.k3));
+          mapView.dist = Math.exp(Math.log(f.d) + (Math.log(g.d) - Math.log(f.d)) * e1);
+          mapView.yaw = f.yaw + (g.yaw - f.yaw) * e2;
+          mapView.pitch = f.pitch + (g.pitch - f.pitch) * e2;
+          mapView.tgt.x = f.x + (g.x - f.x) * e3; mapView.tgt.z = f.z + (g.z - f.z) * e3;
+          mapView.lookY = mapView.lookYGoal = f.y + (g.y - f.y) * e3;
+          camSnapNext = true; // (the path is eased here: the camera's own damping would only lag behind it)
+          mapIdleAt = performance.now(); // (the map is not idle while it flies: the worlds' preview warm-up waits, ~0.1-0.4 s a step on a slow phone)
+          if (u > 0.8) a.pins = true; // (the pins are placed again, still out of sight: one restyle, as it slows down)
+          if (u > 0.92 && !a.back) { a.back = true; arcCls("czg-back", "czg-cab"); } // (then they fade back in)
+          if (u >= 1) arcStop(false);
+        };
+        window.__czArcadeKeep = () => { arcBack = camState(); };
+        window.__czArcadeOut = () => arcadeOut();
         const baam = () => {
           baamEl.classList.remove("hidden");
           baamEl.classList.remove("go"); void baamEl.offsetWidth; baamEl.classList.add("go");
@@ -42272,6 +42337,7 @@ void main() {
           }
           mapView.distGoal = null;
           if (cine && cine.t < cine.dur) cine = null;
+          arcStop(true); // TASK-009
           // r155 (Daniel): one button turns the map by an eighth, eased round the current target; it stays where it turned
           if (z === "rot") { mapIdleAt = performance.now(); mapSettle = 0; cine = null; mapView.focus = null; /* r166: round the middle of the screen, no pull back to a parked place */ const st = Math.PI / 4; if (matchMedia("(prefers-reduced-motion: reduce)").matches) { mapView.yaw += st; mapView.yawGoal = null; } else mapView.yawGoal = (mapView.yawGoal ?? mapView.yaw) + st; return; }
           if (z === "in") mapView.distGoal = Math.max(MAP_MIND, mapView.dist / 1.4);
@@ -42334,7 +42400,7 @@ void main() {
         // screen; a flick glides on. A drag lets go of the car and of a parked place's framing (◎ follows the car again),
         // and nothing pulls the view back to a fixed point
         let downAt = null, grab = null, twist0 = 0, yaw0 = 0, rotDrag = null;
-        const handCam = () => { mapView.direct = performance.now(); mapSettle = 0; cine = null; mapView.distGoal = null; mapView.yawGoal = null; mapView.focus = null; };
+        const handCam = () => { mapView.direct = performance.now(); mapSettle = 0; cine = null; mapView.distGoal = null; mapView.yawGoal = null; mapView.focus = null; arcStop(true); };
         const letGo = () => { mapView.follow = false; handCam(); if (mapNav.moving) mapNav.hand = true; }; // (no arrival shot then: see cineIn, olariOpen)
         const usable = (g) => !!g && Math.hypot(g.x - mapView.tgt.x, g.z - mapView.tgt.z) < mapView.dist * 1.6;
         // move the target so the ground point g sits under the screen point (sx, sy)
@@ -42478,6 +42544,7 @@ void main() {
           e.preventDefault();
           mapView.distGoal = null;
           if (cine && cine.t < cine.dur) cine = null;
+          arcStop(true); // TASK-009
           // r164: the zoom goes where the cursor is (it lets go of the car), except while you drive, when it stays on the car
           if (mapView.follow && !(nav2?.on && nav2.moving())) { mapView.follow = false; mapView.focus = null; }
           zoomAt(e.clientX, e.clientY, mapView.dist, Math.min(mapMaxD(), Math.max(MAP_MIND, mapView.dist * Math.exp(clamp2(e.deltaY, -120, 120) * (e.ctrlKey ? 0.006 : 0.0012)))));
@@ -42517,7 +42584,7 @@ void main() {
           return [0, (topY + botY) / 2 - H / 2];
         };
         return {
-          box, mark, arrive, find, hideCard, baam, skip, paintRides, cineOut, cineStop, welcome, camState, camRestore,
+          box, mark, arrive, find, hideCard, baam, skip, paintRides, cineOut, cineStop, welcome, camState, camRestore, arcOn: () => !!arc,
           update(dt, now) {
             mapStep();
             // beta 2.0: Two Minutes' scene over (or never started): the camera eases back to the view the player had, on the car
@@ -42529,6 +42596,7 @@ void main() {
               if (open) camSave.seen = true;
               else if (camSave.seen || (card.classList.contains("hidden") && !card._deepT)) { const b = camSave; camSave = null; camRestore(b); }
             }
+            arcStep(dt); // TASK-009: out of the game, the pull-back from the arcade cabinet's screen
             cineStep(dt);
             guideStep(dt); // r139h
             nearbyTick(now); // r164
@@ -42548,7 +42616,8 @@ void main() {
             if (mapView.pitchGoal != null) { mapView.pitch += (mapView.pitchGoal - mapView.pitch) * ka; if (Math.abs(mapView.pitchGoal - mapView.pitch) < 1e-3) mapView.pitchGoal = null; }
             // depth precision: from this far up a near plane of 10 made the road layers flicker
             if (!(mapView.dist > 0) || !isFinite(mapView.dist)) mapView.dist = 4600;
-            if (jetFx.phase === "idle") mapView.dist = clamp2(mapView.dist, 700, mapMaxD() + 400);
+            if (arcSoft && mapView.dist >= 700) arcSoft = false;
+            if (jetFx.phase === "idle" && !arc) mapView.dist = clamp2(mapView.dist, arcSoft ? Math.min(700, mapView.dist) : 700, mapMaxD() + 400); // (TASK-009: the cabinet's close-up is far nearer; a hand that stopped it there is not jolted out)
             if (!isFinite(mapView.tgt.x) || !isFinite(mapView.tgt.z)) mapView.tgt.set(1300, 0, 5000);
             const nNear = Math.max(10, mapView.dist * 0.32), nFar = mapView.dist * 3 + 6000;
             if (Math.abs(camera.near - nNear) > 1 || Math.abs(camera.far - nFar) > 10) { camera.near = nNear; camera.far = nFar; camera.updateProjectionMatrix(); }
@@ -42620,7 +42689,9 @@ void main() {
             // frame), and a pin that is off screen is no longer restyled: its stem and footprint (--gy, --gw) were set
             // every frame for every pin within reach, off screen too (behind the street camera their projections jump
             // about), ~15 restyles a frame for nothing; they are set as a pin comes on, before it shows
-            const order = pins.map((p) => {
+            // TASK-009: not while the camera pulls back from the arcade cabinet: they are out of sight, and every frame of a
+            // zoom moves and restyles dozens of them for nothing; they are placed again, still unseen, as it slows down
+            const order = arc && !arc.pins ? [] : pins.map((p) => {
               const o = p._o || (p._o = { p, x: 0, y: 0, z: 0, gy: 0, gw: 0 });
               if (svPins && Math.hypot(p.pl.wx - carPos.x, p.pl.wz - carPos.z) > 1300) { o.x = o.y = -9999; o.z = 2; return o; }
               warpV(proj.set(p.pl.wx, 0, p.pl.wz)).project(camera);

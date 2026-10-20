@@ -127,3 +127,13 @@ body.scheme-sketch .czx-flash { background: linear-gradient(90deg, rgba(217,166,
 .map-welcome .mw-how span i { position: relative; }
 .czw-ic { left: 50%; top: 50%; translate: -50% -50%; }
 .map-welcome .mw-how i.czw-on svg { visibility: hidden; }
+/* ---- 5 · into the arcade game and back out (game.js, TASK-009) ---- */
+/* the pixels: over the game's frame (95) and the map's interface; drawn a canvas pixel a CSS pixel, scaled up unsmoothed */
+.czl-game { z-index: 9300; }
+.czl-game canvas { image-rendering: pixelated; }
+/* the camera's pull-back from the arcade cabinet's screen (src/app.js arcadeOut): while it is that close the pins, the
+   place card and the tap mark step aside (the class is theirs, not the body's: no restyle of the whole page); they fade
+   back as it settles */
+:is(.map-pins, .svc-house, .tap-mark).czg-cab { opacity: 0 !important; pointer-events: none !important; }
+html body .map-card.czg-cab { opacity: 0 !important; pointer-events: none !important; }
+:is(.map-pins, .svc-house, .tap-mark).czg-back { transition: opacity .5s ease; }
