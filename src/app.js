@@ -35,6 +35,23 @@
   };
   // the same job, at once (a caller that needs it whole, now)
   var czDrain = (gen) => { for (;;) { const r = gen.next(); if (r.done) return r.value; } };
+  // TASK-014 (perf-rest): a canvas encoded as a PNG off the page's thread: its pixels handed over as an ImageBitmap to a small
+  // worker that draws them on an OffscreenCanvas and encodes there. Resolves with the Blob (same pixels as toDataURL's PNG);
+  // rejects where that is not available (the callers fall back to toDataURL)
+  var czPngW = null, czPngN = 0, czPngWait = new Map();
+  var czPngOff = (cv) => new Promise((res, rej) => {
+    if (typeof OffscreenCanvas === "undefined" || typeof createImageBitmap === "undefined" || typeof Worker === "undefined") { rej(new Error("no offscreen")); return; }
+    try {
+      if (!czPngW) {
+        const src = 'onmessage=async(e)=>{const{id,bm}=e.data;try{const c=new OffscreenCanvas(bm.width,bm.height);c.getContext("2d").drawImage(bm,0,0);if(bm.close)bm.close();postMessage({id,b:await c.convertToBlob({type:"image/png"})})}catch(err){postMessage({id,err:String(err)})}}';
+        czPngW = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })));
+        czPngW.onmessage = (e) => { const f = czPngWait.get(e.data.id); czPngWait.delete(e.data.id); if (f) { if (e.data.b) f[0](e.data.b); else f[1](new Error(e.data.err)); } };
+        czPngW.onerror = () => { for (const f of czPngWait.values()) f[1](new Error("png worker")); czPngWait.clear(); czPngW = null; };
+      }
+      const id = ++czPngN; czPngWait.set(id, [res, rej]);
+      createImageBitmap(cv).then((bm) => czPngW.postMessage({ id, bm }, [bm]), (e) => { czPngWait.delete(id); rej(e); });
+    } catch (e) { rej(e); }
+  });
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __esm = (fn, res) => function __init() {
     return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
@@ -28812,7 +28829,10 @@ void main() {
   };
   // r139g: opts.drop: the drive's ending (the cups settle, then drop out of frame under gravity, staggered; onDrop fires as the
   // first one lets go so the map can start its pull-out). Without it (the website's hero) the ending is as before.
-  function createKinetic(onFinale, preBurst, opts) {
+  // TASK-014 (perf-rest): the stage is a job in slices (czRun) for the map's late build of it (kineticLater, in idle time);
+  // createKinetic() makes it at once, as before, for the boots that need it there and then (czDrain). Only yields added
+  function createKinetic(onFinale, preBurst, opts) { return czDrain(createKineticGen(onFinale, preBurst, opts)); }
+  function* createKineticGen(onFinale, preBurst, opts) {
     opts = opts || {};
     const C = { y: "#FED012", b: "#119BFE", g: "#28C840", r: "#F65342", l: "#B098C8" };
     // r141: opts.beats (only /onboarding/intro-lab/ passes it): other words, same stage. A beat with veil "none" lifts
@@ -28833,6 +28853,7 @@ void main() {
       <div class="kz-fx"></div><div class="kz-flash"></div>
       <div class="kz-eyebrow mono">CH.00 / WHAT WE BRING TO THE TABLE</div><div class="kz-block"></div><div class="kz-dots"></div>`;
     document.body.appendChild(stage);
+    yield;
     const $ = (q) => stage.querySelector(q);
     const block = $(".kz-block"), dots = $(".kz-dots"), veils = $(".kz-veils"), marq = $(".kz-marq"), fx = $(".kz-fx"), flash = $(".kz-flash");
     const coffee = $(".kz-coffee"), liquid = $(".kz-liquid"), crema = $(".kz-crema"), shine = $(".kz-shine"), surf = $(".kz-surf"), hl = $(".kz-hl"), bubbles = $(".kz-bubbles");
@@ -29040,7 +29061,8 @@ void main() {
       const imp = pouring ? 18 * Math.exp(-Math.pow((x - W() / 2) / 70, 2)) * (0.6 + 0.4 * Math.sin(t2 * 9)) : 0;
       return base + 9 * Math.sin(x * k * 2.1 + t2 * 1.9) + 5 * Math.sin(x * k * 5.3 - t2 * 2.7) + 2.5 * Math.sin(x * k * 11 + t2 * 4.1) + imp;
     };
-    const cremaTex = (() => {
+    yield;
+    const cremaTex = yield* (function* () {
       const cv = document.createElement("canvas"); cv.width = 512; cv.height = 128;
       const g2 = cv.getContext("2d");
       const grd = g2.createLinearGradient(0, 0, 0, 128);
@@ -29048,6 +29070,7 @@ void main() {
       g2.fillStyle = grd; g2.fillRect(0, 0, 512, 128);
       // tiger striping + micro-bubbles of a real crema
       for (let i = 0; i < 900; i++) {
+        if (i % 300 === 299) yield;
         const x = R(512), y = R(80), r2 = 0.6 + R(2.4);
         g2.fillStyle = `rgba(${R(1) > 0.5 ? "250,224,186" : "88,42,14"},${0.12 + R(0.25)})`;
         g2.beginPath(); g2.arc(x, y, r2, 0, 7); g2.fill();
@@ -29058,8 +29081,10 @@ void main() {
         for (let k2 = 0; k2 < 6; k2++) { x += 18 + R(30); y += R(10) - 5; g2.lineTo(x, y); }
         g2.stroke();
       }
+      yield;
       return cv.toDataURL();
     })();
+    yield;
     crema.style.backgroundImage = `url(${cremaTex})`;
     const renderCoffee = (now) => {
       const t2 = (now - cfT0) / 1000;
@@ -29355,29 +29380,60 @@ void main() {
       };
       const heroY = () => -half()[1] * 0.64;
       const hold = (fn) => { if (!window.__cupsHold) fn(); else { const iv = setInterval(() => { if (!window.__cupsHold) { clearInterval(iv); fn(); } }, 100); } };
-      return {
-        clear,
-        // r130h: the loading cup is this stage's own yellow cup, spinning on its axis: rendered once into a
-        // sprite strip before the city is built, so the boot animation stays on the compositor
-        // r136c: any of the five designs (ci), for the cups that float around the Olari house
-        sprite(frames = 48, px = 200, ci = 0) {
-          init();
-          const dpr = R3.getPixelRatio();
-          R3.setSize(px, px, false); cam.aspect = 1; cam.updateProjectionMatrix();
-          const z0 = cam.position.z; cam.position.z = 14;
-          const c = make(ci, new Vector3(0, -0.9, 0), new Vector3(0, -0.9, 0), { k: 5, s0: 1.15, s: 1.15 });
-          c.g.visible = true; c.g.scale.setScalar(1.15); c.g.position.set(0, -0.9, 0);
-          const out = document.createElement("canvas"); out.width = px * frames; out.height = px;
-          const ctx = out.getContext("2d");
+      // the strip of one design turning on its axis, a frame a step (TASK-014: sprite() drains it at once, strip() in slices)
+      let stripWarm = null;
+      function* spriteGen(frames, px, ci) {
+        init();
+        const dpr = R3.getPixelRatio();
+        R3.setSize(px, px, false); cam.aspect = 1; cam.updateProjectionMatrix();
+        const z0 = cam.position.z; cam.position.z = 14;
+        const c = make(ci, new Vector3(0, -0.9, 0), new Vector3(0, -0.9, 0), { k: 5, s0: 1.15, s: 1.15 });
+        c.g.visible = true; c.g.scale.setScalar(1.15); c.g.position.set(0, -0.9, 0);
+        const out = document.createElement("canvas"); out.width = px * frames; out.height = px;
+        const ctx = out.getContext("2d");
+        try {
           for (let i = 0; i < frames; i++) {
             c.spinner.rotation.y = (i / frames) * Math.PI * 2;
             if (typeof noWarp === "function") noWarp(sc);
             window.__noCityCull = true; R3.render(sc, cam); window.__noCityCull = false;
             ctx.drawImage(R3.domElement, 0, 0, px * dpr, px * dpr, i * px, 0, px, px);
+            if (!running) yield; // (the stage on screen meanwhile: the rest at once)
           }
+        } finally {
           sc.remove(c.g); cups = cups.filter((q) => q !== c);
           cam.position.z = z0; R3.clear(); size();
-          return out.toDataURL("image/png");
+        }
+        return out;
+      }
+      return {
+        clear,
+        // r130h: the loading cup is this stage's own yellow cup, spinning on its axis: rendered once into a
+        // sprite strip before the city is built, so the boot animation stays on the compositor
+        // r136c: any of the five designs (ci), for the cups that float around the Olari house
+        sprite(frames = 48, px = 200, ci = 0) { return czDrain(spriteGen(frames, px, ci)).toDataURL("image/png"); },
+        // TASK-014 (perf-rest): the same strip in slices, for the cups round the Olari house (each strip was one 60-170 ms
+        // task at 4x CPU, the first with the stage's own renderer, room and programs): the stage made in a slice, its programs
+        // compiled and linked in the background (compileAsync, as the warm-up), a frame a step, the PNG encoded in a worker
+        // (czPngOff: the same pixels; canvas.toBlob encodes in the page's idle time, and the map leaves it next to none: 1.4 s
+        // for one strip here). While the stage is on screen (the drive's intro playing) it is made at once, as before
+        async strip(frames = 48, px = 200, ci = 0) {
+          if (running) return this.sprite(frames, px, ci);
+          await this.warmLater();
+          if (running) return this.sprite(frames, px, ci);
+          const out = await czRun(spriteGen(frames, px, ci));
+          try { return URL.createObjectURL(await czPngOff(out)); } catch (e) { return out.toDataURL("image/png"); }
+        },
+        // TASK-014: the stage made and its programs linked ahead, in slices (the drive's intro: before its first cup comes)
+        warmLater() {
+          return stripWarm || (stripWarm = (async () => {
+            await czRun((function* () { yield; init(); })());
+            if (running) return;
+            const made = [0, 1, 2, 3, 4].map((ci) => make(ci, new Vector3(), new Vector3(), { s0: 1, s: 1, delay: 1e12 })); // (hidden: their time never comes)
+            if (typeof noWarp === "function") noWarp(sc);
+            try { if (R3.compileAsync) await R3.compileAsync(sc, cam); } catch (e) {}
+            for (const c of made) sc.remove(c.g);
+            cups = cups.filter((q) => !made.includes(q));
+          })().catch(() => {}));
         },
         one() {
           start();
@@ -29517,6 +29573,7 @@ void main() {
       cupsL.innerHTML = "";
     };
     // coffee thrown at the lens: drops stick to the glass, the big ones slide and leave a trail
+    yield;
     const lensLayer = document.createElement("div");
     lensLayer.className = "kz-lens-layer";
     document.body.appendChild(lensLayer);
@@ -29699,6 +29756,8 @@ void main() {
       },
       get busy() { return finishing; },
       cupSprite(frames, px, ci) { return cups3.sprite(frames, px, ci); },
+      cupStrip(frames, px, ci) { return cups3.strip(frames, px, ci); }, // TASK-014: in slices (a promise of its URL)
+      warmLater() { try { return cups3.warmLater(); } catch (e) {} }, // TASK-014
       warm() { try { return cups3.warm(); } catch (e) {} }, // r139g
       pause() {
         if (finishing) return;
@@ -36175,7 +36234,7 @@ void main() {
       })();
       await czPause();
       var startRevealAt = Infinity;
-      var kinetic = null, kineticArmedAt = Infinity;
+      var kinetic = null, kineticArmedAt = Infinity, kineticJob = null; // TASK-014: kineticJob, the map's stage being made in slices
       var mvK = 0;
       var povK = 0, povYaw = 0, povYawT = 0, povLastKey = 0, povGyroWas = false;
       var povKeys = { l: false, r: false }, povHidCar = false; var povLen = 45, povLenFor = null; // r139k
@@ -36286,6 +36345,11 @@ void main() {
           applyScheme((state.schemeIdx + 1) % SCHEMES.length);
         },
         setScheme(i) {
+          // TASK-014 (perf-rest): a switch into Sketchbook before its textures are made (the warm-up after the opening makes
+          // them, in slices) makes them in slices first, then switches (the menu has closed; the city keeps drawing meanwhile:
+          // ~0.25 s at 4x CPU, ~60 ms on a laptop, where the old one-go switch froze the page for as long). A later choice wins
+          if (SCHEMES[i]?.id === "sketch" && !ONB_MODE) { const prep = sketchPrep(true); if (prep) { const tok = ++schemeTok; prep.then(() => { if (tok === schemeTok) api.setScheme(i); }); return; } }
+          schemeTok++;
           applyScheme(i);
           // every environment comes with its own vehicle
           const vid = ENV_VEH[SCHEMES[i].id];
@@ -36399,6 +36463,8 @@ void main() {
           if (i >= SCHEMES.length) { worldPrevBusy = false; return; }
           // the next step: when the page is idle (and the car is not moving, for the warm-up), in the next frame
           const go = () => { if (opts.still && ((nav2?.on && Math.abs(nav2.speed?.() || 0) > 2) || performance.now() - mapIdleAt < 2000)) return setTimeout(() => (window.requestIdleCallback || setTimeout)(go, { timeout: 2000 }), 600); worldPrevJob = step; }; // (the warm-up: not while the car moves, nor within 2 s of a touch or a key)
+          const prep = SCHEMES[i].id === "sketch" ? sketchPrep() : null; // TASK-014: Sketchbook's textures first, in slices
+          if (prep) { prep.then(() => (window.requestIdleCallback || ((f) => setTimeout(f, 60)))(go, { timeout: opts.still ? 3000 : 250 })); return; }
           (window.requestIdleCallback || ((f) => setTimeout(f, 60)))(go, { timeout: opts.still ? 3000 : 250 });
         };
         const step = () => {
@@ -36448,10 +36514,96 @@ void main() {
       }
       // the warm-up (5): once, after the opening, a while after the map has settled
       // (Sketchbook's own textures first, each in its own idle moment: ~0.1 s each at 4x, its preview step was 0.47 s with them)
+      // TASK-014 (perf-rest): what Sketchbook does the first time it is shown, ahead and in slices: its textures (the crayon
+      // ring, the notebook's sheet, pencil and windows, the interface's hatch), then its GPU side (sketchProgsGen: the pass
+      // and the reveal map made, their textures uploaded, the crayon rings built, the programs it draws with compiled and
+      // linked in the background, their uniforms read). The warm-up after the opening runs these in idle moments; a switch
+      // that comes before it runs what is left (sketchPrep, then the switch). Short slices (czRunShort: 20 ms), so that a
+      // step that cannot be cut (an image encode, a texture upload) still leaves the task under 50 ms at 4x CPU
+      var schemeTok = 0, sketchPrepRun = null, sketchProgsJob = null, sketchProgsDone = false;
+      var czRunShort = async (gen, ms = 20) => { await czYield(); let t0 = performance.now(); for (;;) { const r = gen.next(); if (r.done) return r.value; if (performance.now() - t0 >= ms) { await czYield(); t0 = performance.now(); } } };
+      var sketchMs = 20; // (40 while a visitor waits for the switch: fewer frames between the slices, the world comes sooner)
+      var SKETCH_JOBS = [
+        () => crayonTex || czRunShort(crayonJob || (crayonJob = crayonTexturesGen()), sketchMs),
+        () => nbTex || czRunShort(nbTexJob || (nbTexJob = notebookTexturesGen()), sketchMs),
+        () => nbUI || czRunShort(nbUIJob || (nbUIJob = notebookUIGen()), sketchMs),
+        () => sketchProgsDone || sketchProgs()
+      ];
+      // the programs: the buildings and the roofs as Sketchbook draws them (no vertex colours, the ink windows), compiled on
+      // their own objects for the target the city draws into, and flipped back in the same step (no frame sees them); the
+      // pass (on screen), the reveal map (into its own target) and the rings (into the city's); then the links waited on off
+      // the thread and each program's first-use reads (its uniforms) done a step each. What a switch then still compiles in
+      // its first frame is only what this did not foresee (as before: compiled when first drawn)
+      function* sketchProgsGen() {
+        const progs = new Set(), add = (ms) => { for (const m of ms) { const pr = renderer.properties.get(m).currentProgram; if (pr) progs.add(pr); } };
+        if (SCHEMES[state.schemeIdx]?.id === "sketch") return progs; // (on screen already: its first frame made them)
+        sketchFxInit(); yield;
+        for (const t of [nbTex.paper, nbTex.pencil, nbTex.win]) { try { renderer.initTexture(t); } catch (e) {} yield; }
+        sketchRingsBuild(); yield;
+        const prev = renderer.getRenderTarget(), R = sketchReveal;
+        try { renderer.setRenderTarget(null); add(renderer.compile(sketchFx.sc, sketchFx.cam)); } catch (e) {} finally { renderer.setRenderTarget(prev); }
+        yield;
+        try { renderer.setRenderTarget(R.rt); add(renderer.compile(R.sc, R.cam)); } catch (e) {} finally { renderer.setRenderTarget(prev); }
+        yield;
+        // the lights as the scene's own compile sees them (hidden pieces shown for it, as compileGen)
+        const hidden = [], lights = [];
+        scene.traverse((o) => { if (!o.visible && (o.isMesh || o.isGroup)) { hidden.push(o); o.visible = true; } });
+        scene.traverseVisible((o) => { if (o.isLight) lights.push(o); });
+        hidden.forEach((o) => (o.visible = false));
+        if (sketchRings) {
+          scene.traverseVisible = (cb) => { for (const l of lights) cb(l); };
+          try { renderer.setRenderTarget(sketchFx.rt); add(renderer.compile({ traverse: (cb) => sketchRings.g.traverse(cb), traverseVisible() {} }, camera, scene)); } catch (e) {} finally { delete scene.traverseVisible; renderer.setRenderTarget(prev); }
+          yield;
+        }
+        const B = mats.buildings, Rf = mats.roofs, flip = [B, Rf].filter((m) => m && m.vertexColors);
+        if (flip.length) {
+          const objs = [];
+          scene.traverse((o) => { const m = o.material; if (m && (Array.isArray(m) ? m.some((x) => flip.includes(x)) : flip.includes(m))) objs.push(o); });
+          yield;
+          const winMap = B && B.vertexColors && mats.mvWalls ? nbTex.win : null;
+          for (let i = 0; i < objs.length; i += 48) {
+            const part = objs.slice(i, i + 48), map0 = B?.map;
+            for (const m of flip) { m.vertexColors = false; m.needsUpdate = true; }
+            if (winMap) B.map = winMap;
+            scene.traverseVisible = (cb) => { for (const l of lights) cb(l); };
+            const each = (cb) => { for (const o of part) { cb(o); for (const m of Array.isArray(o.material) ? o.material : [o.material]) if (flip.includes(m)) add([m]); } }; // (each object's own program: instanced or not)
+            try { renderer.setRenderTarget(sketchFx.rt); renderer.compile({ traverse: each, traverseVisible() {} }, camera, scene); }
+            catch (e) {} finally {
+              delete scene.traverseVisible; renderer.setRenderTarget(prev);
+              if (winMap) B.map = map0;
+              for (const m of flip) { m.vertexColors = true; m.needsUpdate = true; }
+            }
+            yield;
+          }
+        }
+        return progs;
+      }
+      function sketchProgs() {
+        return sketchProgsJob || (sketchProgsJob = (async () => {
+          try {
+            const progs = await czRunShort(sketchProgsGen(), sketchMs);
+            const list = [...progs];
+            await linkWait(new Set(progs), sketchMs > 20 ? 250 : 8000);
+            await czRunShort((function* () { for (const p of list) { try { if (sketchMs > 20 && !p.isReady()) continue; p.getUniforms(); p.getAttributes(); } catch (e) {} yield; } })(), sketchMs); // (not one still linking when a visitor waits: its first draw reads it)
+          } catch (e) {}
+          sketchProgsDone = true;
+        })());
+      }
+      function sketchPrep(urgent) {
+        if (crayonTex && nbTex && nbUI && sketchProgsDone) return null;
+        if (urgent) sketchMs = 40;
+        return sketchPrepRun || (sketchPrepRun = (async () => { for (const f of SKETCH_JOBS) { try { await f(); } catch (e) {} } await czYield(); })().finally(() => { sketchPrepRun = null; }));
+      }
+      var sketchWarmRun = null;
+      function sketchWarmSoon() {
+        const quiet = () => !(nav2?.on && Math.abs(nav2.speed?.() || 0) > 2) && performance.now() - mapIdleAt >= 2000;
+        const idle = () => new Promise((r) => { const go = () => (window.requestIdleCallback || ((f) => setTimeout(f, 100)))(() => (quiet() ? r() : setTimeout(go, 600)), { timeout: 3000 }); go(); });
+        return sketchWarmRun || (sketchWarmRun = (async () => { for (const f of SKETCH_JOBS) { await idle(); try { await f(); } catch (e) {} } })());
+      }
       async function prewarmWorlds() {
         const quiet = () => !(nav2?.on && Math.abs(nav2.speed?.() || 0) > 2) && performance.now() - mapIdleAt >= 2000;
         const idle = () => new Promise((r) => { const go = () => (window.requestIdleCallback || ((f) => setTimeout(f, 100)))(() => (quiet() ? r() : setTimeout(go, 600)), { timeout: 3000 }); go(); });
-        for (const f of [crayonTextures, notebookTextures, notebookUI]) { await idle(); try { f(); } catch (e) {} }
+        await sketchWarmSoon(); // TASK-014: in slices (started right after the opening's compile), no longer one task each
         await idle();
         try { makeWorldPreviews(() => {}, { still: true }); } catch (e) {}
       }
@@ -36684,7 +36836,16 @@ void main() {
           return `url(${URL.createObjectURL(new Blob([u8], { type: "image/png" }))})`;
         } catch { return `url(${d})`; }
       }
-      function crayonTextures() {
+      // TASK-014 (perf-rest, Sketchbook's first switch): the same textures as a job in slices (czRun), so the warm-up after the
+      // opening and a switch into Sketchbook that comes before it no longer freeze for them (~90 ms at 4x CPU in one go). One
+      // job, shared: crayonTextures() (a caller that needs them now) finishes it where it stands (czDrain). Same random draws in
+      // the same order (a stroke draws none: the painters' points are taken first, then each stroke is stamped, in order), so
+      // the same pixels. The ring's CSS variable waits for the switch itself (nbVarsFlush): set here it cost the page a full
+      // style recalc in the warm-up, for a rule that only Sketchbook has
+      var crayonJob = null, nbVars = {};
+      function nbVarsFlush() { const st = document.documentElement.style; for (const k in nbVars) st.setProperty(k, nbVars[k]); nbVars = {}; }
+      function crayonTextures() { return crayonTex || czDrain(crayonJob || (crayonJob = crayonTexturesGen())) || crayonTex; }
+      function* crayonTexturesGen() {
         if (crayonTex) return crayonTex;
         const R = rng(20261012);
         // beta 3.7x (Sketchbook audit, round 2): since the notebook (3.76) only the ring is used (the crayon rings on the
@@ -36692,12 +36853,13 @@ void main() {
         // into Sketchbook: most of its 120-160 ms freeze on a laptop (280-380 ms in WebKit). A texture not wanted is only
         // "dry run": its random draws are taken in the same order, so the ring comes out identical. CRAYON_ALL brings them back
         const CRAYON_ALL = false;
-        const make = (W, H, paint, dry = false) => {
+        function* make(W, H, paint, dry = false) {
           if (dry) {
-            const grid = (sx, sy) => { const n = (Math.ceil(W / sx) + 2) * (Math.ceil(H / sy) + 2); for (let i = 0; i < n; i++) R(); };
-            grid(2.3, 0.85); grid(6.5, 2.2); grid(40, 18);
-            for (let i = 0, N = W * H; i < N; i++) R();
-            grid(26, 26);
+            const draws = (n) => { for (let i = 0; i < n; i++) R(); }, gn = (sx, sy) => (Math.ceil(W / sx) + 2) * (Math.ceil(H / sy) + 2);
+            draws(gn(2.3, 0.85)); draws(gn(6.5, 2.2)); draws(gn(40, 18));
+            yield;
+            for (let i = 0, N = W * H; i < N; i += 65536) { draws(Math.min(65536, N - i)); yield; }
+            draws(gn(26, 26));
             paint(() => {}, W, H);
             return null;
           }
@@ -36706,15 +36868,17 @@ void main() {
             return (x, y) => { const fx = x / sx, fy = y / sy, ix = fx | 0, iy = fy | 0, ax = fx - ix, ay = fy - iy, ux = ax * ax * (3 - 2 * ax), uy = ay * ay * (3 - 2 * ay), o = iy * gw + ix;
               return (v[o] * (1 - ux) + v[o + 1] * ux) * (1 - uy) + (v[o + gw] * (1 - ux) + v[o + gw + 1] * ux) * uy; }; };
           const g1 = grid(2.3, 0.85), g2 = grid(6.5, 2.2), g3 = grid(40, 18);
-          for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) T[y * W + x] = g1(x, y) * 0.5 + g2(x, y) * 0.24 + g3(x, y) * 0.08 + R() * 0.18;
+          yield;
+          for (let y = 0; y < H; y++) { for (let x = 0; x < W; x++) T[y * W + x] = g1(x, y) * 0.5 + g2(x, y) * 0.24 + g3(x, y) * 0.08 + R() * 0.18; if ((y & 15) === 15) yield; }
           const pres = grid(26, 26);
           // one stroke along a polyline of [x, y], brush radius w, base pressure p0, lifting at both ends
-          const stroke = (pts, w, p0) => {
+          function* stroke(pts, w, p0) {
             S.fill(0);
             let len = 0; const L = [0]; for (let i = 1; i < pts.length; i++) { len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); L.push(len); }
             const lift = Math.min(len * 0.22, 46);
             for (let i = 1, d = 0; i < pts.length; i++) {
               const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], sl = L[i] - L[i - 1];
+              if ((i & 7) === 0) yield;
               for (let s2 = 0; s2 < sl; s2 += 1.2) {
                 const k = s2 / (sl || 1), cx = x0 + (x1 - x0) * k, cy = y0 + (y1 - y0) * k, at = L[i - 1] + s2;
                 const end = Math.min(1, at / lift, (len - at) / lift);
@@ -36729,15 +36893,21 @@ void main() {
                   }
               }
             }
+            yield;
             for (let o = 0; o < N; o++) { const c = S[o]; if (!c) continue; let dep = (c * 0.92 - T[o] + 0.1) / 0.17; if (dep <= 0) continue; if (dep > 1) dep = 1; dep *= 0.5 + 0.5 * c; A[o] = 1 - (1 - A[o]) * (1 - dep); }
-          };
-          paint(stroke, W, H);
+            yield;
+          }
+          // the painter's points first (its random draws), then the strokes, in order
+          const calls = [];
+          paint((pts, w, p0) => { calls.push([pts, w, p0]); }, W, H);
+          for (const c of calls) yield* stroke(...c);
           const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
           const ctx = cv.getContext("2d"), id = ctx.createImageData(W, H);
           for (let o = 0; o < N; o++) { id.data[o * 4] = id.data[o * 4 + 1] = id.data[o * 4 + 2] = 255; id.data[o * 4 + 3] = Math.min(255, A[o] * 268); }
           ctx.putImageData(id, 0, 0);
+          yield;
           return crayonUrl(cv);
-        };
+        }
         // a swatch: back-and-forth horizontal passes, each a little tilted and wavy, ends uneven
         const swatch = (W, H, rows, w) => (stroke) => {
           for (let k = 0; k < rows; k++) {
@@ -36747,11 +36917,11 @@ void main() {
             stroke(k % 2 ? pts.reverse() : pts, w * (0.85 + R() * 0.3), 0.8 + R() * 0.18);
           }
         };
-        crayonTex = {
-          pill: make(640, 200, swatch(640, 200, 11, 15), !CRAYON_ALL),
-          card: make(560, 360, swatch(560, 360, 16, 17), !CRAYON_ALL),
+        const tex = {
+          pill: yield* make(640, 200, swatch(640, 200, 11, 15), !CRAYON_ALL),
+          card: yield* make(560, 360, swatch(560, 360, 16, 17), !CRAYON_ALL),
           // a ring: two passes round an ellipse, not quite closed, the radius wandering a little
-          ring: make(512, 256, (stroke) => {
+          ring: yield* make(512, 256, (stroke) => {
             for (let pass = 0; pass < 2; pass++) {
               const a0 = R() * 6.28, span = Math.PI * 2 + 0.25 + R() * 0.3, pts = [], ph = R() * 6;
               for (let t = 0; t <= span; t += 0.02) { const j = 1 + Math.sin(t * 3 + ph) * 0.012 + pass * 0.015; pts.push([256 + Math.cos(a0 + t) * 228 * j, 128 + Math.sin(a0 + t) * 106 * j]); }
@@ -36759,12 +36929,13 @@ void main() {
             }
           }),
           // a dot: a tight spiral scribble
-          dot: !CRAYON_ALL ? null : make(72, 72, (stroke) => {
+          dot: !CRAYON_ALL ? null : yield* make(72, 72, (stroke) => {
             const pts = [], ph = R() * 6;
             for (let t = 0; t <= Math.PI * 2 * 3.2; t += 0.08) { const r = 6 + (t / (Math.PI * 2 * 3.2)) * 20; pts.push([36 + Math.cos(t + ph) * r, 36 + Math.sin(t + ph) * r * 0.94]); }
             stroke(pts, 9, 1);
           })
         };
+        crayonTex = tex;
         // a torn sheet: a rectangle whose edges were ripped by hand (a ragged walk, deeper on the left where it
         // came off the pad, small fibres along every edge)
         if (CRAYON_ALL) {
@@ -36780,9 +36951,8 @@ void main() {
           ctx.closePath(); ctx.fill();
           crayonTex.torn = crayonUrl(cv); // r139b
         }
-        const st = document.documentElement.style;
-        st.setProperty("--cr-ring", crayonTex.ring);
-        if (CRAYON_ALL) { st.setProperty("--cr-torn", crayonTex.torn); st.setProperty("--cr-pill", crayonTex.pill); st.setProperty("--cr-card", crayonTex.card); st.setProperty("--cr-dot", crayonTex.dot); }
+        nbVars["--cr-ring"] = crayonTex.ring; // (set on the switch: nbVarsFlush)
+        if (CRAYON_ALL) Object.assign(nbVars, { "--cr-torn": crayonTex.torn, "--cr-pill": crayonTex.pill, "--cr-card": crayonTex.card, "--cr-dot": crayonTex.dot });
         return crayonTex;
       }
       // beta 2.6 (Daniel): the Multiverse button shows the world you are in: its picker's preview when there is one, else a
@@ -36806,7 +36976,7 @@ void main() {
         const s = SCHEMES[idx];
         warmShaders(); // r139b
         window.__czAmb?.world(s.id);
-        if (s.id === "sketch") try { crayonTextures(); notebookUI(); } catch (e) {} // beta 3.76: and the notebook's pencil hatch for the interface
+        if (s.id === "sketch") try { crayonTextures(); notebookUI(); nbVarsFlush(); } catch (e) {} // beta 3.76: and the notebook's pencil hatch for the interface (TASK-014: its CSS variables set here, with the switch's own style recalc)
         const dark = lum(s.bg) < 0.45;
         isDarkScheme = dark;
         document.body.classList.toggle("dark-ui", dark);
@@ -38919,7 +39089,11 @@ void main() {
       // a job's own time between its yields (the tests read it: window.__sketchFx.sky.busy)
       function* nbTimed(g, o) { o.busy = 0; for (;;) { const t = performance.now(), r = g.next(); o.busy += performance.now() - t; if (r.done) return r.value; yield; } }
       var nbTex = null, _nbSun = new Vector3();
-      function notebookTextures() {
+      // TASK-014 (perf-rest): a job in slices too (~80 ms at 4x CPU in one go), one job shared with the callers that need it
+      // now (czDrain). The same draws, in the same order: only yields between them
+      var nbTexJob = null;
+      function notebookTextures() { return nbTex || czDrain(nbTexJob || (nbTexJob = notebookTexturesGen())) || nbTex; }
+      function* notebookTexturesGen() {
         if (nbTex) return nbTex;
         const R = rng(20261019);
         // the sheet: almost white (Daniel, round 2: "much whiter"), a whisper of tooth and one faint fold
@@ -38931,8 +39105,10 @@ void main() {
           const k = R() < 0.5 ? "255,255,255" : "200,196,182"; g.addColorStop(0, `rgba(${k},${k[0] === "2" && k[1] === "5" ? 0.5 : 0.035})`); g.addColorStop(1, `rgba(${k},0)`); // fades to its own colour (to black it greys)
           c.fillStyle = g; c.fillRect(x - r, y - r, 2 * r, 2 * r);
         }
+        yield;
         c.lineCap = "round";
         for (let i = 0; i < 900; i++) {
+          if (i % 150 === 149) yield;
           const x = R() * 1024, y = R() * 1024, a = R() * 6.283, l = 2 + R() * 5;
           c.strokeStyle = "rgba(150,146,130,.045)"; c.lineWidth = 0.6 + R() * 0.4;
           c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); c.stroke();
@@ -38945,16 +39121,19 @@ void main() {
           }
           c.globalAlpha = 1;
         }
+        yield;
         const paper = new CanvasTexture(P); paper.colorSpace = NoColorSpace; paper.generateMipmaps = false; paper.minFilter = LinearFilter; // the canvas's own values go straight to the screen
         // the pencil: parallel rows (a hand going back and forth), strokes of varied length and pressure with gaps.
         // R the hatch (leaning like the reference's, bottom left to top right), G a cross layer for the deeper colours,
         // B (below) the swirls. Tileable: a stroke crossing an edge is drawn again one tile over
         const N = 256;
-        const layer = (ang, gap, len0, w0) => {
+        function* layer(ang, gap, len0, w0) {
           const L = document.createElement("canvas"); L.width = L.height = N; const g = L.getContext("2d");
           g.fillStyle = "#000"; g.fillRect(0, 0, N, N); g.lineCap = "round"; g.globalCompositeOperation = "lighter";
           const ca = Math.cos(ang), sa = Math.sin(ang), nx = -sa, ny = ca;
+          let rows = 0;
           for (let r = -N * 1.5; r < N * 1.5; r += gap * (0.8 + R() * 0.4)) {
+            if ((++rows & 7) === 0) yield;
             let s = -N * 1.5 + R() * 20;
             while (s < N * 1.5) {
               const l = len0 * (0.5 + R()), gp = 3 + R() * 16, v = 90 + R() * 160, w = w0 * (0.75 + R() * 0.5);
@@ -38970,15 +39149,17 @@ void main() {
               s += l + gp;
             }
           }
+          yield;
           return g.getImageData(0, 0, N, N).data;
-        };
+        }
         // B the swirls for greenery: curling strokes along a flow field that wraps round the tile (so the tile still tiles),
         // as many as the hatch has strokes (no denser), each a comma that swells and thins
-        const swirl = () => {
+        function* swirl() {
           const L = document.createElement("canvas"); L.width = L.height = N; const g = L.getContext("2d");
           g.fillStyle = "#000"; g.fillRect(0, 0, N, N); g.lineCap = "round"; g.globalCompositeOperation = "lighter";
           const T = 6.283 / N, flow = (x, y) => -1.1 + 1.25 * Math.sin(T * x + T * y) + 0.9 * Math.cos(2 * T * y - T * x);
           for (let k = 0; k < 330; k++) {
+            if (k % 40 === 39) yield;
             let x = R() * N, y = R() * N; const len = 14 + R() * 18, v = 160 + R() * 95, w = 1.6 + R() * 0.7, pts = [[x, y]];
             for (let s2 = 0; s2 < len; s2 += 1.2) { const a = flow(x, y) + s2 * 0.035; x += Math.cos(a) * 1.2; y += Math.sin(a) * 1.2; pts.push([x, y]); }
             for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) {
@@ -38986,13 +39167,16 @@ void main() {
               for (let i = 1; i < pts.length; i++) { const t = i / (pts.length - 1), pr = Math.sin(Math.PI * Math.min(1, t * 1.1)); g.strokeStyle = `rgb(${v},${v},${v})`; g.lineWidth = w * (0.45 + 0.6 * pr); g.globalCompositeOperation = "lighten"; g.beginPath(); g.moveTo(pts[i - 1][0] + ox, pts[i - 1][1] + oy); g.lineTo(pts[i][0] + ox, pts[i][1] + oy); g.stroke(); }
             }
           }
+          yield;
           return g.getImageData(0, 0, N, N).data;
-        };
-        const l1 = layer(-1.1, 5.2, 30, 1.8), l2 = layer(-0.38, 6.0, 26, 1.5), l3 = swirl();
+        }
+        const l1 = yield* layer(-1.1, 5.2, 30, 1.8), l2 = yield* layer(-0.38, 6.0, 26, 1.5), l3 = yield* swirl();
+        yield;
         const S = document.createElement("canvas"); S.width = S.height = N;
         const sc = S.getContext("2d"), id = sc.createImageData(N, N);
         for (let o = 0; o < N * N; o++) { id.data[o * 4] = l1[o * 4]; id.data[o * 4 + 1] = l2[o * 4]; id.data[o * 4 + 2] = l3[o * 4]; id.data[o * 4 + 3] = 255; }
         sc.putImageData(id, 0, 0);
+        yield;
         const pencil = new CanvasTexture(S); pencil.wrapS = pencil.wrapT = RepeatWrapping; pencil.generateMipmaps = true; pencil.minFilter = LinearMipmapLinearFilter;
         // windows: the city's own layout (2 x 2 arched windows a tile, as makeWindowTextureMV), drawn in ink. Its own mip
         // chain: the two finest levels are the drawing, the next one half faded, the rest blank paper, so up close a
@@ -39009,6 +39193,7 @@ void main() {
           }
           return cv;
         };
+        yield;
         const win = new CanvasTexture(winLevel(256, 1)); win.colorSpace = SRGBColorSpace; win.wrapS = win.wrapT = RepeatWrapping; win.anisotropy = 4;
         win.mipmaps = [256, 128, 64, 32, 16, 8, 4, 2, 1].map((S2, i) => winLevel(S2, i < 2 ? 1 : i === 2 ? 0.45 : 0));
         win.generateMipmaps = false; win.minFilter = LinearMipmapLinearFilter;
@@ -39017,14 +39202,18 @@ void main() {
       }
       // the interface's share: a coloured-pencil hatch the CSS uses as a static mask (--nb-hatch) behind buttons, chips and
       // swatches. Round 2 (Daniel): no handwriting fonts any more, the site's own type, coloured like the pencils
-      var nbUI = false;
-      function notebookUI() {
-        if (nbUI) return; nbUI = true;
+      // TASK-014 (perf-rest): a job in slices (~30 ms at 4x CPU), its two CSS variables set on the switch (nbVarsFlush)
+      var nbUI = false, nbUIJob = null;
+      function notebookUI() { if (!nbUI) czDrain(nbUIJob || (nbUIJob = notebookUIGen())); }
+      function* notebookUIGen() {
+        if (nbUI) return;
         try {
           const R = rng(4242), N = 240, cv = document.createElement("canvas"); cv.width = cv.height = N;
           const g = cv.getContext("2d"); g.lineCap = "round";
           const ang = -1.1, ca = Math.cos(ang), sa = Math.sin(ang), nx = -sa, ny = ca;
+          let rows = 0;
           for (let r = -N * 1.5; r < N * 1.5; r += 5.4 * (0.8 + R() * 0.4)) {
+            if ((++rows & 15) === 0) yield;
             let s = -N * 1.5 + R() * 20;
             while (s < N * 1.5) {
               const ln = 26 * (0.5 + R()), gp = 3 + R() * 12, a = 0.4 + R() * 0.5, w = 1.6 * (0.75 + R() * 0.5);
@@ -39037,13 +39226,16 @@ void main() {
               s += ln + gp;
             }
           }
-          document.documentElement.style.setProperty("--nb-hatch", crayonUrl(cv)); // a short blob: URL (see crayonUrl, r139b)
+          yield;
+          nbVars["--nb-hatch"] = crayonUrl(cv); // a short blob: URL (see crayonUrl, r139b)
+          yield;
           // the cover: the sheet's colour with those strokes cut out of it. Laid as a background image over any element's own
           // solid colour, the colour shows only through the strokes: a coloured-pencil fill, with no pseudo-element
           const cv2 = document.createElement("canvas"); cv2.width = cv2.height = N; const g2 = cv2.getContext("2d");
           g2.fillStyle = "#fdfcf9"; g2.fillRect(0, 0, N, N); g2.globalCompositeOperation = "destination-out"; g2.drawImage(cv, 0, 0); g2.drawImage(cv, 0, 0);
-          document.documentElement.style.setProperty("--nb-cover", crayonUrl(cv2));
+          nbVars["--nb-cover"] = crayonUrl(cv2);
         } catch (e) {}
+        nbUI = true;
       }
       // a car's frame for the pass: world to its own space, and its box there (measured once per car: rides are rebuilt).
       // Hidden or missing, the box is empty and the pass lays its strokes in world space as everywhere else
@@ -39258,9 +39450,12 @@ void main() {
                 // beta 3.75 (the audit's contract): the scene's depth goes on screen with the drawing, for the things drawn plain over it (sketchPlainDraw)
                 gl_FragDepth = zr;
               }`;
-      function sketchRender(now, cam, full) {
+      // TASK-014 (perf-rest): the pass is made by sketchFxInit (the first sketchRender, as before, or Sketchbook's warm-up
+      // ahead of a first switch); its first page (a little of the city drawn where you are) still waits for its first draw
+      function sketchFxInit() {
+        if (sketchFx) return;
         const w = renderer.domElement.width, h = renderer.domElement.height;
-        if (!sketchFx) {
+        {
           const R = sketchReveal;
           sketchRevealInit(); // beta 3.7x (was a 512² canvas, filled black, as a CanvasTexture)
           const rt = new WebGLRenderTarget(w, h, { samples: 0, type: HalfFloatType });
@@ -39278,6 +39473,14 @@ void main() {
           sketchFx = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
           window.__sketchFx = sketchFx;
           { const nb = notebookTextures(); mat.uniforms.tP = { value: nb.paper }; mat.uniforms.tK = { value: null }; mat.uniforms.skyR = { value: new Vector2() }; mat.uniforms.skyM = { value: new Matrix3() }; mat.uniforms.tS = { value: nb.pencil }; mat.uniforms.kW = { value: 1 }; for (const k of ["oI0", "oI1"]) mat.uniforms[k] = { value: new Matrix4() }; for (const k of ["oA0", "oB0", "oA1", "oB1"]) mat.uniforms[k] = { value: new Vector3() }; } // beta 3.76: the notebook's sheet, doodles and pencil; the cars' frames
+          sketchFx.page = true;
+        }
+      }
+      function sketchRender(now, cam, full) {
+        const w = renderer.domElement.width, h = renderer.domElement.height;
+        if (!sketchFx) sketchFxInit();
+        if (sketchFx.page) {
+          sketchFx.page = false;
           // the first page: a little of the city is already drawn where you are
           if (mapMode) { const v = warpV(new Vector3(mapView.tgt.x, 0, mapView.tgt.z)); sketchPaint(v.x, v.z, 900, 1); } else sketchPaint(carPos.x, carPos.z, 700, 1);
         }
@@ -39292,7 +39495,7 @@ void main() {
           let d = yaw - S.yaw; d -= 6.2831853 * Math.round(d / 6.2831853); S.acc += d; S.yaw = yaw;
           // made in slices the first time the notebook is really on screen (not for the Multiverse's previews), then drawn
           // in over 0.4 s (at once with reduced motion); until then the sky is plain paper
-          if (!S.job) S.job = czRun(nbTimed(nbSkyGen(), S)).then((px) => { const t = new DataTexture(px, NB_SKY.W, NB_SKY.H, RGBAFormat, UnsignedByteType, UVMapping, RepeatWrapping, ClampToEdgeWrapping, LinearFilter, LinearFilter); t.needsUpdate = true; u.tK.value = t; S.at = performance.now(); }, () => {});
+          if (!S.job) S.job = czYield().then(() => czRun(nbTimed(nbSkyGen(), S))).then((px) => { const t = new DataTexture(px, NB_SKY.W, NB_SKY.H, RGBAFormat, UnsignedByteType, UVMapping, RepeatWrapping, ClampToEdgeWrapping, LinearFilter, LinearFilter); t.needsUpdate = true; u.tK.value = t; S.at = performance.now(); }, () => {});
           u.skyR.value.set(S.acc, !S.at ? 0 : nbSkyStill.matches ? 1 : Math.min(1, (now - S.at) / 400));
           // a pixel's ray: the inverse projection of (x, y, far) is linear in x, y (w does not change across the screen), then the camera's turn
           const p = cam.projectionMatrixInverse.elements, w = p[11] + p[15];
@@ -39475,10 +39678,29 @@ void main() {
             rt?.dispose();
           }
       }
+      // TASK-014 (perf-rest, Sketchbook's first switch): after a switch the same compile runs in slices, a top-level piece at
+      // a time with the whole scene's lights (compileGen, as the sliced boot: the same programs), instead of one 120-190 ms
+      // task at 4x CPU. The outline hull variants are compiled only for a world that draws them: Sketchbook draws none
+      // unless its hull pass is on (nbHull), and their compile alone was ~70 ms of that task
+      async function warmLater() {
+        const sch = SCHEMES[state.schemeIdx]?.id, key = `${sch}|${mapMode ? "map" : "drive"}`;
+        if (!sch || warmDone.has(key) || bootSlicing) return;
+        warmDone.add(key);
+        const post = sch === "sketch" || sch === "riso" || sch === "sincity", toRT = post || mapMode || sch === "monument";
+        const rt = toRT ? new WebGLRenderTarget(1, 1, { type: HalfFloatType }) : null;
+        try {
+          await czRun(compileGen(rt));
+          if ((post && (sch !== "sketch" || nbHull)) || (!toRT && sch !== "monument")) { // (hidden things shown for it, as warmNow)
+            const prev = renderer.getRenderTarget(), hidden = [];
+            scene.traverse((o) => { if (!o.visible && (o.isMesh || o.isGroup)) { hidden.push(o); o.visible = true; } });
+            try { renderer.setRenderTarget(rt); outline.compileOutline(scene, camera); } finally { hidden.forEach((o) => (o.visible = false)); renderer.setRenderTarget(prev); }
+          }
+        } catch (e) {} finally { rt?.dispose(); }
+      }
       function warmShaders() {
         if (warmQueued || bootSlicing) return; // beta 3.xx: not in the middle of the sliced boot (it compiles these itself, in slices)
         warmQueued = true;
-        (window.requestIdleCallback || setTimeout)(() => { warmQueued = false; warmNow(); }, { timeout: 2500 });
+        (window.requestIdleCallback || setTimeout)(() => { warmLater().finally(() => { warmQueued = false; }); }, { timeout: 2500 }); // TASK-014: in slices (was warmNow at once)
       }
       var perf = { avg: 16, t: 0, dpr: Math.min(window.devicePixelRatio, isMobile() ? 1.5 : 2) };
       function adaptResolution(rawMs, now) {
@@ -41472,6 +41694,17 @@ void main() {
         // without the kinetic stage: the same yellow cup, from its 24-frame strip
         return olariStrips[ci] || { u: "/cup-spin.png", n: 24 };
       }
+      // TASK-014 (perf-rest): the same strips, made in slices one after another (kinetic.cupStrip) from the moment the house
+      // opens (the camera's way down and the cards' landing give them the time), so laying the cups out no longer freezes
+      // the page (60-170 ms a strip at 4x CPU). A promise of the strip; olariStrip() stays for a caller that needs it now
+      var olariStripQ = Promise.resolve(), olariStripP = {};
+      function olariStripLater(ci) {
+        if (olariStrips[ci] !== undefined || !kinetic?.cupStrip) return Promise.resolve(olariStrip(ci));
+        return olariStripP[ci] || (olariStripP[ci] = (olariStripQ = olariStripQ.then(async () => {
+          if (olariStrips[ci] !== undefined) return;
+          try { const u = await kinetic.cupStrip(36, 220, ci); if (olariStrips[ci] === undefined) olariStrips[ci] = { u, n: 36 }; } catch (e) { if (olariStrips[ci] === undefined) olariStrips[ci] = null; }
+        })).then(() => olariStrip(ci)));
+      }
       function olariCupsSoon(wrap) {
         if (olari.cards !== wrap || wrap.classList.contains("gone")) return;
         // the cards may still wait for the camera (r132): lay out once they are on screen and have landed
@@ -41519,15 +41752,15 @@ void main() {
           c.style.cssText = `left:${p.x}px;top:${p.y}px;width:${p.sz}px;height:${p.sz}px;--d:${(i * 0.12).toFixed(2)}s;--t:${(2.6 + (i * 0.7) % 1.6).toFixed(2)}s`;
           box.appendChild(c);
           // one cup at a time: each design's strip renders once, every later layout reuses it
-          const paint = () => {
+          const paint = (st) => {
             if (!c.isConnected) return;
-            const st = olariStrip(OLARI_DESIGNS[i % OLARI_DESIGNS.length]), sp = c.firstChild;
+            const sp = c.firstChild;
             sp.style.backgroundImage = `url(${st.u})`;
             sp.style.backgroundSize = `${st.n * 100}% 100%`;
             c.classList.add("on");
             if (!still) sp.animate([{ backgroundPosition: "0 0" }, { backgroundPosition: `${-p.sz * st.n}px 0` }], { duration: 2000 + ((i * 370) % 900), iterations: Infinity, easing: `steps(${st.n})`, direction: i % 3 === 2 ? "reverse" : "normal", delay: -((t0 + i * 517) % 2000) });
           };
-          setTimeout(paint, i * 90);
+          setTimeout(() => olariStripLater(OLARI_DESIGNS[i % OLARI_DESIGNS.length]).then(paint), i * 90); // TASK-014: the strip made in slices (ready by now, mostly)
         });
       }
       addEventListener("resize", () => { clearTimeout(olariCupsT); olariCupsT = setTimeout(() => { if (olari.cards?.classList.contains("go")) olariCups(olari.cards); }, 220); });
@@ -41561,6 +41794,7 @@ void main() {
         wrap.prepend(x);
         olari.cards = wrap;
         olari.t = 0;
+        for (const ci of OLARI_DESIGNS) olariStripLater(ci); // TASK-014: the cups' strips, in slices, while the camera comes down
         // r132: the cards wait for the camera to come down in front of the house
         const show = () => { if (olari.cards !== wrap || wrap.classList.contains("gone")) return; ui.root.appendChild(wrap); document.body.classList.add("olari-open"); requestAnimationFrame(() => olariLiftPhotos(wrap, worldRefs.endHouse)); };
         if (cineOn) setTimeout(show, nav2?.on ? (nav2.camK > 0.5 ? 300 : 1500) : 3600); else show(); // beta 2.92: on nav2's map the house's cards come up as you pull in (the street view has no arrival shot)
@@ -43443,7 +43677,7 @@ void main() {
       // r136c: the cups around the Olari house are the kinetic stage's own 3D cups (sprite strips); with the old intro
       // gone that stage is no longer built at boot, so it is built once the map is up and the page is idle
       function kineticLater() {
-        setTimeout(() => (window.requestIdleCallback || setTimeout)(() => { if (!kinetic) { try { kinetic = createKinetic(() => {}, null, { drop: true, lite: innerWidth < 760 }); } catch (e) {} } }, { timeout: 4000 }), 6000);
+        setTimeout(() => (window.requestIdleCallback || setTimeout)(() => { if (!kinetic && !kineticJob) kineticJob = czRun(createKineticGen(() => {}, null, { drop: true, lite: innerWidth < 760 })).then((k) => { if (!kinetic) kinetic = k; }, () => {}); }, { timeout: 4000 }), 6000); // TASK-014: made in slices (czRun)
       }
       if (ONB_MODE) {
         window.__onb = onbCmd;
@@ -43558,9 +43792,9 @@ void main() {
       }
       // the programs' links (they run on the GPU process): polled, never waited on in a draw (a draw on one still linking
       // blocks the thread until it is done)
-      const linkWait = (progs) => new Promise((res) => {
+      const linkWait = (progs, cap = 8000) => new Promise((res) => { // (TASK-014: cap, a visitor waiting on Sketchbook's switch waits less)
         const t0 = performance.now();
-        const chk = () => { for (const p of progs) { try { if (p.isReady()) progs.delete(p); } catch (e) { progs.delete(p); } } if (!progs.size || performance.now() - t0 > 8000) res(); else setTimeout(chk, 12); };
+        const chk = () => { for (const p of progs) { try { if (p.isReady()) progs.delete(p); } catch (e) { progs.delete(p); } } if (!progs.size || performance.now() - t0 > cap) res(); else setTimeout(chk, 12); };
         chk();
       });
       // the first draws: every visible piece once, on its own (the rest hidden for it), into a small half-float target as
@@ -43622,6 +43856,7 @@ void main() {
         }
         screenCompiled = true;
         // the Multiverse menu's previews, made ahead (see makeWorldPreviews)
+        sketchWarmSoon(); // TASK-014: Sketchbook's first-time work first, in quiet moments, so a switch soon after the opening finds it done
         setTimeout(prewarmWorlds, 6000);
       }
       // (beta 3.xx: asked for inside the boot, after a hand-back: document.fonts.load matches the face there and then, ~0.1 s at 4x)
@@ -43711,6 +43946,7 @@ void main() {
             setMapMode(true, { intro: true });
             kinetic = createKinetic(() => mapEndIntro(), null);
             kinetic.resume();
+            kinetic.warmLater?.(); // TASK-014: its porcelain (renderer, room, programs) in slices, before the first cup comes
             return;
           }
           // ?drive&nointro: straight onto the road, no kinetic type
@@ -43730,6 +43966,7 @@ void main() {
             siteKzAt = performance.now();
           });
           kineticArmedAt = performance.now() + 900;
+          kinetic.warmLater?.(); // TASK-014: its porcelain in slices, before the first cup (it was made in the frame that first showed one)
         }, 350);
         camera.position.set(1345, 860, 1660);
         requestAnimationFrame((t) => {
