@@ -2018,11 +2018,20 @@
     const copEl = root.querySelector(".n2-cop");
     // beta 2.9 (Daniel's phone): the phone layout's class, and the top bar's real bottom (the brand, the bar, the XP pill),
     // measured, so the toggle, the hint and the speaker sit under it with 8 px clear, on any phone, either way round
+    // TASK-014 (perf-rest, layout shift): under the opening the map's bar is not shown, so the toggle took the logo's bottom
+    // (54 px) and, up to 0.7 s after the map came up (the poll), dropped 66 px to the bar's: a layout shift on every first
+    // visit on a phone. The bar is watched now (a ResizeObserver: as it shows, hides or changes size), and the toggle and the
+    // speaker stay invisible on the map (n2-topok, nav2.css) until the bar has been measured on screen; then they show in
+    // their place, the frame after (or after 2 s with no bar: a map with its bar away). The poll stays, for the bars made later
+    let topRO = null, topOk = false, topWait = 0; const topSeen = new WeakSet();
+    try { topRO = new ResizeObserver(() => phoneLayout()); } catch (e) {}
+    const topOkNow = () => { if (topOk) return; topOk = true; clearTimeout(topWait); requestAnimationFrame(() => root.classList.add("n2-topok")); };
     function phoneLayout() {
       const ph = phoneUI(); document.body.classList.toggle("n2-phone", ph);
       if (!ph) return;
-      let b = 0; for (const sel of [".map-top", ".you", ".brand"]) for (const e of document.querySelectorAll(sel)) { const r = e.getBoundingClientRect(); if (r.width > 0 && r.height > 0 && r.top < VP.h * 0.4) b = Math.max(b, r.bottom); }
+      let b = 0, bar = false; for (const sel of [".map-top", ".you", ".brand"]) for (const e of document.querySelectorAll(sel)) { if (topRO && !topSeen.has(e)) { topSeen.add(e); topRO.observe(e); } const r = e.getBoundingClientRect(); if (r.width > 0 && r.height > 0 && r.top < VP.h * 0.4) { b = Math.max(b, r.bottom); if (sel === ".map-top" && !e.classList.contains("drive-top")) bar = true; } }
       const v = Math.round((b || 104) + 8) + "px", de = document.documentElement; if (de.style.getPropertyValue("--n2top") !== v) de.style.setProperty("--n2top", v);
+      if (!topOk) { if (bar || !topRO) topOkNow(); else if (!topWait && views.getClientRects().length) topWait = setTimeout(topOkNow, 2000); }
     }
     phoneLayout(); setInterval(phoneLayout, 700); addEventListener("resize", () => setTimeout(phoneLayout, 60));
     SND.bind(root.querySelector(".n2-snd"));
