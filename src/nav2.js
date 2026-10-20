@@ -816,10 +816,13 @@
       }
       return null;
     }
-    function arrive(pl) {
+    // beta 3.80 (Daniel): how the card came: "crawl" (the car slowed past or stopped by the place: it opened on its own) or
+    // asked for (a pin, a tag, Nearby, a building, the "here" banner: the auto-pilot drove there). See cardAway
+    function arrive(pl, how) {
       D.arrT = performance.now();
       D.lastArr = pl;
       D.cardFor = pl;
+      D.cardAuto = how === "crawl"; D.fastT = 0;
       H.arrive(pl);
       if (D.streetT > 0.5 || !H.wantsCine()) H.cineStop();
       render(true);
@@ -941,9 +944,9 @@
         render(true);
       } else if (!D.auto && D.v === 0 && Math.abs(D.C - Lc) < 3 && !D.keys.d) {
         const here = hereAt();
-        if (here && here.pl !== D.lastArr) arrive(here.pl);
+        if (here && here.pl !== D.lastArr && !H.cardBusy?.()) arrive(here.pl, "crawl"); // beta 3.80: not under the boarding pass, a case page, the espresso moment
       }
-      if (D.lastArr) { const p = PL.find((q) => q.pl === D.lastArr); if (p && Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az) > 200) { D.lastArr = null; if (D.cardFor) { H.hideCard(); D.cardFor = null; } if (!D.auto) { H.mapNav.place = null; H.mark(); } } }
+      cardAway(H.carPos.x, H.carPos.z, dt, Math.abs(D.v));
       ui(Lc, dec);
       arms(Lc, dec);
       tutTick();
@@ -952,6 +955,22 @@
     }
     let lampOn = false;
     function lamps(on) { lampOn = on; H.reverseLamps(on); }
+    // beta 3.80 (Daniel: "the police didn't come"): a card that opened on its own (crawling past a place) goes once the car
+    // drives on: 110 from the place, or half a second at a third of top speed; the place stays "just visited" until 200
+    // away (it does not open again at once if the car slows there). A card that was asked for stays while it is read,
+    // until the car is well away (320; was 200 for every card). Never while the boarding pass, a case page or Two Minutes'
+    // espresso moment is on (H.cardBusy)
+    function cardAway(x, z, dt, speed) {
+      if (!D.lastArr) return;
+      const p = PL.find((q) => q.pl === D.lastArr); if (!p) return;
+      const d = Math.hypot(x - p.ax, z - p.az), busy = !!H.cardBusy?.();
+      const close = () => { H.hideCard(); D.cardFor = null; if (!D.auto) { H.mapNav.place = null; H.mark(); } };
+      if (D.cardFor && D.cardAuto && !busy) {
+        D.fastT = speed > VMAX_F * 0.3 ? (D.fastT || 0) + dt : 0;
+        if (d > 110 || D.fastT > 0.5) close();
+      }
+      if (d > (D.cardAuto ? 200 : 320) && !(busy && D.cardFor)) { D.lastArr = null; if (D.cardFor) close(); else if (!D.auto) { H.mapNav.place = null; H.mark(); } }
+    }
     function hereAt(listed) {
       let best = null;
       for (const p of PL) { if ((listed && p.hide) || p.pl.tagOnly) continue; const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 75 && (!best || d < best.d)) best = { pl: p.pl, d, p }; } // r235: a tag-only place (Călinescu 54) never opens on arrival; driven to from its tag, D.lastArr below keeps it
@@ -1103,7 +1122,7 @@
       const now = performance.now(), fx = Math.sin(P.h), fz = Math.cos(P.h);
       COP.trail.push([P.x, P.z]); if (COP.trail.length > 400) COP.trail.shift();
       const behind = (dist) => { let acc = 0; for (let i = COP.trail.length - 1; i > 0; i--) { const a = COP.trail[i], b = COP.trail[i - 1]; acc += Math.hypot(a[0] - b[0], a[1] - b[1]); if (acc >= dist) return b; } return COP.trail[0] || [P.x - fx * dist, P.z - fz * dist]; };
-      const ok = !D.auto && TUT.i < 0 && !H.cardOpen();
+      const ok = !D.auto && TUT.i < 0 && !H.overlay?.() && !document.body.classList.contains("map-boarding"); // beta 3.80: an open place card no longer holds it
       if (!COP.on) {
         if (D.drift && Math.hypot(P.u, P.w) > VMAX_F * 0.42 && ok) COP.log.push([now, dt]);
         while (COP.log.length && now - COP.log[0][0] > 8000) COP.log.shift();
@@ -1451,9 +1470,9 @@
         if (syncT <= 0) { syncT = 0.2; syncGraph(false); }
         else D.vL = locate(P.x, P.z, D.vL, 80);
         // arrivals: slowly past (or stopped at) a place opens its card
-        if (Math.abs(P.u) < 14) { const here = hereAt(); if (here && here.pl !== D.lastArr) arrive(here.pl); }
+        if (Math.abs(P.u) < 14) { const here = hereAt(); if (here && here.pl !== D.lastArr && !H.cardBusy?.()) arrive(here.pl, "crawl"); }
       }
-      if (D.lastArr) { const p = PL.find((q) => q.pl === D.lastArr); if (p && Math.hypot(P.x - p.ax, P.z - p.az) > 200) { D.lastArr = null; if (D.cardFor) { H.hideCard(); D.cardFor = null; } if (!D.auto) { H.mapNav.place = null; H.mark(); } } }
+      cardAway(P.x, P.z, dt, Math.abs(P.u));
       const dec = nextDecision(curL());
       freeUI();
       arms(curL(), dec);
@@ -2599,6 +2618,7 @@
       place: (id) => H.places.find((p) => p.id === id),
       pl: () => PL.map((p) => ({ id: p.pl.id, name: p.pl.name, x: p.x, z: p.z, bx: p.pl.px ?? p.x, bz: p.pl.pz ?? p.z, e: p.e, s: Math.round(p.s), ax: Math.round(p.ax), az: Math.round(p.az), q: p.q, hide: p.hide })), // r201: tests (Nearby balance)
       rows: () => [...panel.querySelectorAll(".n2-pc")].map((b) => b.dataset.dk), // r201: tests
+      vmax: VMAX_F, // beta 3.80: the drive model's top speed (the km/h dial on the map)
       copNow: () => { COP.log.push([performance.now(), 5]); }, // r201: tests (the chase without four seconds of drifting by script)
       state: () => { const L = curL(), dec = nextDecision(L); return { v: Math.round(D.v), L: Math.round(L), car: [Math.round(H.carPos.x), Math.round(H.carPos.z)], dec: dec && { type: dec.type, in: Math.round(dec.L - L), ex: dec.ex && { l: !!dec.ex.l, s: !!dec.ex.s, r: !!dec.ex.r }, side: dec.side }, auto: D.auto && (D.auto.pl?.id || "tap"), q: quarterAt(H.carPos.x, H.carPos.z), hint: hintEl.textContent, card: H.cardOpen(), keys: { ...D.keys }, yaw: +H.mapView.yaw.toFixed(2), hd: +H.heading().toFixed(2) }; }
     };

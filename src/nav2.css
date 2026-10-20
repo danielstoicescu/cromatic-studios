@@ -356,3 +356,51 @@ body.map-takeoff .nav2-ui, body.map-takeoff .olari-fan, body.map-takeoff .n2-gui
    inside the screen, centred under the views, at any width from 360 px */
 body.n2-phone .nav2-ui .n2-pad { width: max-content; max-width: calc(100vw - 32px); } /* (at left: 50% it was held to half the screen) */
 body.n2-phone .nav2-ui .n2-hint { white-space: normal; text-wrap: balance; max-width: min(310px, calc(100vw - 32px)); line-height: 1.45; box-sizing: border-box; }
+
+/* beta 3.80 (Daniel: "kilometrajul"): the dashboard's km/h dial, back while driving the map, in nav2's look (white, a
+   firm ink outline and a hard shadow, like the keys and the view toggle; the yellow of the ↑ key on its arc). It shows
+   while the car moves and fades a moment after it stops (app.js mapDialTick). Laptop: left of the arrow keys, its foot on
+   theirs (clear of the centred view toggle, Nearby at the left, the zoom and the speaker at the right); on a narrower
+   screen (a tablet) it stands above the keys and steps aside while a card is open. Phone: bottom centre, between the
+   stick's corner and DRIFT (bottom left in Bird's eye, where the "tap the road" pill has the right); away while a card is
+   up (the phone's cards sit at the bottom), a menu is open or the espresso moment plays; held sideways, the "turn it
+   upright" card has the screen */
+.map-dial { position: fixed; z-index: 21; right: calc(22px + var(--padw, 188px) / 2 + 94px + 18px); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); width: 96px; height: 96px;
+  pointer-events: none; opacity: 0; translate: 0 10px; transition: opacity .35s ease, translate .35s ease; }
+.map-dial.on { opacity: 1; translate: 0 0; }
+body:not(.map-mode) .map-dial, body.map-boarding .map-dial, body.map-takeoff .map-dial, body.menu-open .map-dial, body.tm-moment .map-dial, body.olari-open .map-dial,
+body:has(.crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:not(.hidden), .theme-menu.open, .xp-log:not(.hidden), .mapcard:not(.hidden), .map-welcome:not(.hidden)) .map-dial { opacity: 0 !important; } /* as the drive's own controls step aside (above) */
+.map-dial .dash-dial { position: absolute; inset: 0; right: auto; top: auto; bottom: auto; width: 100%; height: 100%; box-sizing: border-box;
+  background: #fff; border: 2.5px solid #141414; box-shadow: 3px 4px 0 #141414; animation: none !important; }
+.map-dial .rr { display: none !important; }
+.map-dial .dd-arc { stroke: #FED012; stroke-width: 7; }
+.map-dial .dd-red { stroke-width: 7; }
+.map-dial .dd-ticks { display: block; }
+.map-dial .dd-ticks line { stroke: #141414; }
+.map-dial .dd-needle line { stroke: #141414; stroke-width: 3.5; } /* ink: the red is the redline's */
+.map-dial .dd-num { top: 29px; font-size: 30px; color: #141414; }
+.map-dial .dd-num.d3 { top: 32px; font-size: 25px; }
+.map-dial .dd-unit { top: 61px; right: 0; font-size: 8.5px; letter-spacing: .08em; color: #6d6a63; }
+.map-dial.redline .dash-dial { border-color: #F65342; }
+.map-dial.redline .dd-num { color: #F65342; }
+@media (max-width: 1159px) and (min-width: 720px) {
+  .map-dial { right: calc(22px + var(--padw, 188px) / 2 - 48px); bottom: calc(22px + var(--padh, 160px) + 14px + env(safe-area-inset-bottom, 0px)); }
+  body.n2-card .map-dial, body:has(.map-card:not(.hidden)) .map-dial { opacity: 0 !important; } /* a card (either corner) reaches the pad's height here: the dial steps aside while one is open */
+}
+body.n2-phone .map-dial { right: auto; left: 50%; translate: -50% 10px; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); width: 72px; height: 72px; }
+body.n2-phone .map-dial.on { translate: -50% 0; }
+body.n2-phone.n2-card .map-dial, body.n2-phone:has(.map-card:not(.hidden)) .map-dial { opacity: 0 !important; } /* a card has the bottom */
+body.n2-phone:not(.nav2-street) .map-dial { left: calc(16px + env(safe-area-inset-left, 0px)); translate: 0 10px; } /* Bird's eye on a phone: no stick, the "tap the road" pill sits bottom right */
+body.n2-phone:not(.nav2-street) .map-dial.on { translate: 0 0; }
+body.n2-phone .map-dial .dash-dial { border-width: 2px; box-shadow: 2px 3px 0 #141414; }
+body.n2-phone .map-dial .dd-ticks { display: none; }
+body.n2-phone .map-dial .dd-num { top: 21px; font-size: 22px; }
+body.n2-phone .map-dial .dd-num.d3 { top: 23px; font-size: 19px; }
+body.n2-phone .map-dial .dd-unit { top: 46px; font-size: 7px; }
+@media (orientation: landscape) and (pointer: coarse) and (max-height: 520px) { .map-dial { display: none !important; } } /* a phone held sideways: the "turn it upright" card */
+@media (prefers-reduced-motion: reduce) { .map-dial { transition: opacity .2s ease; translate: none !important; } body.n2-phone .map-dial { translate: -50% 0 !important; } body.n2-phone:not(.nav2-street) .map-dial { translate: none !important; } }
+/* Sketchbook: the notebook's bones (a piece of the sheet, an ink line round it, the pencil's ochre on the arc) */
+body.scheme-sketch .map-dial .dash-dial { background: var(--nb-paper2) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: 1px 2px 0 rgba(46,50,102,.18) !important; border-radius: 52% 48% 50% 50% / 48% 53% 47% 52% !important; }
+body.scheme-sketch .map-dial .dd-arc { stroke: var(--nb-ochre); }
+body.scheme-sketch .map-dial :is(.dd-num, .dd-unit) { color: var(--nb-ink) !important; }
+body.scheme-sketch .map-dial :is(.dd-ticks, .dd-needle) line { stroke: var(--nb-ink); }
