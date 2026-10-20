@@ -42381,7 +42381,7 @@ void main() {
           let win = null;
           for (const q of pins) {
             const pl = q.pl;
-            if ((pl.chapter && !pl.past) || pl.tagOnly || pl.wx == null || pl.float || pl.unmarked) continue; // r235: tagOnly (Călinescu 54), its tag only
+            if ((pl.chapter && !pl.past) || pl.wx == null || pl.float || pl.unmarked) continue; // r235: tagOnly (Călinescu 54) never in Nearby nor on its own; 3.79 (Daniel: "and on the building"): its building opens it too
             const g = sc(pl.wx, 0, pl.wz), t = sc(pl.wx, pl.wy || 55, pl.wz), e = sc(pl.wx + 34, 0, pl.wz);
             if (g[2] > 1 || t[2] > 1) continue;
             const half = Math.min(110, Math.max(16, Math.hypot(e[0] - g[0], e[1] - g[1])));
@@ -42418,7 +42418,7 @@ void main() {
           }
           // a tap on a place's building goes there
           let near = null;
-          for (const q of pins) { if ((q.pl.chapter && !q.pl.past) || q.pl.tagOnly) continue; const d2 = ((q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2) * (q.pl.tapW || 1); if (d2 < 75 * 75 && (!near || d2 < near.d)) near = { d: d2, pl: q.pl }; } // r168: tapW, a place that wins its shared building
+          for (const q of pins) { if (q.pl.chapter && !q.pl.past) continue; /* 3.79: a tap on Călinescu 54's building opens it too */ const d2 = ((q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2) * (q.pl.tapW || 1); if (d2 < 75 * 75 && (!near || d2 < near.d)) near = { d: d2, pl: q.pl }; } // r168: tapW, a place that wins its shared building
           if (near) return mapGo(near.pl);
           for (const q of pins) if (q.pl.chapter && !q.pl.past && (q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2 < 70 * 70) return mapGo(q.pl);
           if (nav2?.on) { const g = nav2.tap(hit.x, hit.z); if (g) tapMark(g[0], g[1]); return; } // nav2: any street of the graph

@@ -41,7 +41,11 @@
   // 3.77: a returning visitor's moment is the lockup alone: the cookie card waits until the map is the page (on a laptop
   // it waited at the top right, where the headline is). Never longer than 30 s, whatever happens to the opening
   var de = document.documentElement, ckFree = function () { de.classList.remove("czi-ret"); };
-  if (mode !== "full") { de.classList.add("czi-ret"); setTimeout(ckFree, 30000); }
+  // 3.79 (Daniel: "yes, on the phone"): on a phone the first visit's opening waits for it too (the card sat over the
+  // rhombus's bottom cups); a laptop's first visit keeps the card during the opening. Released when the opening is gone
+  // (czi-gone below), or after 30 s (45 s for a phone's full opening, which runs longer on a slow phone)
+  var phoneFull = mode === "full" && innerWidth < innerHeight;
+  if (mode !== "full" || phoneFull) { de.classList.add("czi-ret"); setTimeout(ckFree, phoneFull ? 45000 : 30000); }
   var ro = (document.documentElement.lang || "").slice(0, 2) === "ro";
   var TX = ro ? { load: "Construim orașul", skip: "Sari peste", brew: "se prepară orașul" } : { load: "Building the city", skip: "Skip intro", brew: "brewing the city" };
   var LINES = "Nobody remembers a thumbnail. But someone could remember a place, a facade, a brand. Nine worlds over the same streets. One will feel like yours. That's how the right brand feels.";
