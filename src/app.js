@@ -38790,9 +38790,134 @@ void main() {
       // vignette) also made the street view "unintelligible, senseless and absurdly dark": the Sobel read the slope of the
       // ground seen at a grazing angle as one endless crease. Here the creases are the second difference of 1/z, which is
       // zero on any plane however steep, so a low camera sees a clean street.
-      // Pre-baked textures do the drawing (no extra pass): the sheet and its margin doodles (screen space: the paper does
-      // not move with the city) and a tile of pencil strokes laid in world space on each face (its axis from the depth's
-      // own normal) at a scale that keeps the strokes one size on screen at any zoom (two octaves blended).
+      // Pre-baked textures do the drawing (no extra pass): the sheet (screen space: the paper does not move with the city),
+      // the sky (beta 3.86: a band round the viewer, see nbSkyGen) and a tile of pencil strokes laid in world space on
+      // each face (its axis from the depth's own normal) at a scale that keeps the strokes one size on screen at any zoom
+      // (two octaves blended).
+      //
+      // beta 3.86: the sky, in the city's own hand (Daniel, 2026-10-20: "bring the shapes in the sky closer to the style the
+      // houses and the rest of the environment are drawn in"). Round 2's sky was painted: loaded brush strokes in blue and
+      // ochre, thick, tapering, opaque, on a picture glued to the screen. Now it is drawn the way a house is: closed shapes with the one
+      // indigo ink line round them (the pass's own line: the pen's weight, its waver and pressure) and coloured pencil inside
+      // (the pass's own stroke tile and pencils: the trees' curling strokes in the pale sky blue for the clouds, the car's
+      // straight hatch in ochre for the sun), the curls, the wind and the sun's rays as plain ink lines.
+      // It is a band round the viewer, not a picture on the screen: x the azimuth (all the way round), y tan(elevation) from
+      // the horizon to ~38°, so the sky turns with the street when the camera does, and the strokes stay on their cloud.
+      // What is baked is distances, in degrees of sky, as bytes (one 2 MB texture, no canvas): R the shapes' fill (signed),
+      // GB the offset to the nearest point of a line, A that line's distance; the pass draws a line where a distance is
+      // under the pen's half-width in pixels, so it stays one weight and crisp at any size. A thin line can't be a distance
+      // alone: filtered between texels its V flattens and the line breaks up wherever it runs between them; the offset
+      // filters exactly (it is linear on either side of a line and round its ends), and where two lines are near (inside a
+      // curl) the plain distance keeps it from meeting itself at zero. Designed in degrees, (azimuth, elevation): azimuth 0 =
+      // +z, growing to the right, about where the street view looks at the start (the sun is over the road there). Made in
+      // slices once the notebook is first really on screen, ~8-10 ms on a laptop, ~20 ms at 4x CPU (round 2's canvas sky
+      // took ~54 / 76 ms on its own, at the switch or when the Multiverse's preview was made). On the GPU the pass costs
+      // what it did (the sky's work is at its end, only on sky pixels): +0.07 ms at 2880x1800, the noise of a laptop
+      var nbSkyStill = matchMedia("(prefers-reduced-motion: reduce)"), _nbSkyM = new Matrix3(); // the sky appears at once
+      var NB_SKY = { W: 2048, H: 256, VM: 0.786, S: 0.3, sun: [3, 15.5, 2.4] }; // VM: tan(elevation) at the top row; S: the distance range stored, in degrees; sun: azimuth, elevation, radius (the pass pencils it in ochre)
+      function* nbSkyGen() { // a job in slices (czRun): it yields between its shapes
+        const { W, H, VM, S } = NB_SKY, R = rng(20261020), D2R = Math.PI / 180, XA = 360 / W, N = W * H, kS = 127.5 / S;
+        const px = new Uint8Array(N * 4).fill(255), best = new Float32Array(N).fill(1e9); // 255: nothing near
+        const rowE = new Float32Array(H), rowC = new Float32Array(H);
+        for (let y = 0; y < H; y++) { const e = Math.atan((y + 0.5) / H * VM); rowE[y] = e / D2R; rowC[y] = Math.cos(e); }
+        const tx = (a) => (a / 360 + 0.5) * W, ty = (e) => Math.tan((e > 0 ? e : 0) * D2R) / VM * H;
+        const X0 = (a) => Math.floor(tx(a) - S * 1.4 / XA) - 1, X1 = (a) => Math.ceil(tx(a) + S * 1.4 / XA) + 1, Y0 = (e) => Math.max(0, Math.floor(ty(e - S)) - 1), Y1 = (e) => Math.min(H - 1, Math.ceil(ty(e + S)) + 1);
+        // ink lines: segments [a0, e0, a1, e1]
+        const segs = [];
+        const line = (pts) => { for (let i = 1; i < pts.length; i++) segs.push(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]); };
+        // local [u, v] in degrees round a centre -> [azimuth, elevation]
+        const at = (ac, ec) => (u, v) => [ac + u / Math.cos((ec + v) * D2R), ec + v];
+        // a spiral: from radius r0 at angle t0 round (u0, v0), turning `turns` times (dir +1 = anticlockwise), to radius r1
+        const spiral = (P, u0, v0, r0, r1, t0, turns, dir) => { const out = [], n = Math.ceil(turns * 28); for (let i = 0; i <= n; i++) { const k = i / n, t = t0 + dir * k * turns * 6.2832, r = r0 + (r1 - r0) * k; out.push(P(u0 + Math.cos(t) * r, v0 + Math.sin(t) * r)); } return out; };
+        // a filled shape: sd(u, v) in degrees round its centre, over a box of half-sizes (hu, hv)
+        const fill = (ac, ec, hu, hv, sd) => {
+          const ha = hu / Math.cos((ec + hv) * D2R), x0 = X0(ac - ha), x1 = X1(ac + ha), y0 = Y0(ec - hv), y1 = Y1(ec + hv);
+          for (let y = y0; y <= y1; y++) {
+            const c = rowC[y], v = rowE[y] - ec;
+            for (let x = x0; x <= x1; x++) {
+              const d = sd(((x + 0.5) * XA - 180 - ac) * c, v), o = ((((x % W) + W) % W) + y * W) * 4;
+              const b = d >= S ? 255 : d <= -S ? 0 : (127.5 + d * kS + 0.5) | 0;
+              if (b < px[o]) px[o] = b;
+            }
+          }
+        };
+        // a cloud: a row of round bumps on a flat bottom, the middle ones the tallest, the cusps a little rounded (the pen's
+        // turn); its outline is drawn by the pass from the fill. curl: a spiral rolled in at one end (round 2's cloud)
+        const cloud = (ac, ec, w, h, curl) => {
+          const n = Math.max(3, Math.round(w / (h * 0.95))), B = [];
+          for (let i = 0; i < n; i++) {
+            const t = (i + 0.5) / n, s = Math.sin(Math.PI * t), top = -h / 2 + h * (0.5 + 0.5 * s) * (0.92 + 0.16 * R()), r = h * (0.27 + 0.3 * s) * (0.9 + 0.2 * R());
+            B.push((t - 0.5) * (w - h * 0.62) + (R() - 0.5) * h * 0.12, top - r, r);
+          }
+          const u0 = B[0], u1 = B[(n - 1) * 3], base = -h / 2, kc = h * 0.06, kb = h * 0.16, bv = base + h * 0.22, br = h * 0.24;
+          fill(ac, ec, w * 0.52, h * 0.56, (u, v) => {
+            let d = 1e9;
+            for (let i = 0; i < B.length; i += 3) { const du = u - B[i], dv = v - B[i + 1], b = Math.sqrt(du * du + dv * dv) - B[i + 2], hh = 0.5 + 0.5 * (d - b) / kc, k = hh < 0 ? 0 : hh > 1 ? 1 : hh; d = d + (b - d) * k - kc * k * (1 - k); }
+            { const q = u < u0 ? u0 : u > u1 ? u1 : u, du = u - q, dv = v - bv, b = Math.sqrt(du * du + dv * dv) - br, hh = 0.5 + 0.5 * (d - b) / kc, k = hh < 0 ? 0 : hh > 1 ? 1 : hh; d = d + (b - d) * k - kc * k * (1 - k); } // the belly under the bumps
+            { const b = base - v, hh = 0.5 + 0.5 * (d - b) / kb, k = hh < 0 ? 0 : hh > 1 ? 1 : hh; d = b + (d - b) * k + kb * k * (1 - k); } // the flat bottom, its corners rounded (a smooth max)
+            return d;
+          });
+          if (curl) { const i = curl > 0 ? (n - 1) * 3 : 0, r = B[i + 2]; line(spiral(at(ac, ec), B[i] - curl * r * 0.08, B[i + 1] - r * 0.05, r * 0.62, Math.max(0.36, r * 0.12), curl > 0 ? Math.PI * 0.95 : 0.05, 1.15, curl > 0 ? -1 : 1)); }
+        };
+        // wind: a long line with a slow wave, rolling up into a curl at its end (dir +1: over the top), and a shorter one beside it
+        const wind = (a0, a1, e0, amp, ph, cr, dir) => {
+          const len = a1 - a0, y = (a) => { const t = (a - a0) / len; return e0 + amp * Math.sin(ph + t * 5.2) * Math.sin(Math.PI * Math.min(1, t * 1.6)); }, pts = [];
+          for (let i = 0; i <= 40; i++) { const a = a0 + len * i / 40; pts.push([a, y(a)]); }
+          line(pts.concat(spiral(at(a1, e0), 0, y(a1) - e0 + dir * cr, cr, cr * 0.32, -dir * Math.PI / 2, 1.05, dir)));
+          const pb = [], b0 = a0 + len * 0.22, b1 = a1 - len * 0.18, off = -dir * cr * 0.75;
+          for (let i = 0; i <= 24; i++) { const a = b0 + (b1 - b0) * i / 24; pb.push([a, y(a) + off]); }
+          line(pb);
+        };
+        // the sun: a round, slightly freehand disc, and a ring of short rays, long and short in turn
+        const sun = (ac, ec, r) => {
+          const p1 = R() * 6.28, p2 = R() * 6.28;
+          fill(ac, ec, r * 1.1, r * 1.1, (u, v) => { const th = Math.atan2(v, u); return Math.sqrt(u * u + v * v) - r * (1 + 0.025 * Math.sin(3 * th + p1) + 0.015 * Math.sin(5 * th + p2)); });
+          const P = at(ac, ec), n = 12;
+          for (let i = 0; i < n; i++) {
+            const th = (i / n) * 6.2832 + 0.2 + (R() - 0.5) * 0.12, r0 = r * 1.32, r1 = r0 + r * (i % 2 ? 0.42 : 0.7) * (0.9 + 0.2 * R());
+            line([P(Math.cos(th) * r0, Math.sin(th) * r0), P(Math.cos(th) * r1, Math.sin(th) * r1)]);
+          }
+        };
+        // a small bird (a pen's "v": two arcs)
+        const bird = (ac, ec, s) => { const P = at(ac, ec), arc = (sg) => { const o = []; for (let i = 0; i <= 8; i++) { const t = i / 8; o.push(P(sg * s * t, s * 0.55 * Math.sin(Math.PI * t * 0.9) - s * 0.25 * t)); } return o; }; line(arc(-1)); line(arc(1)); };
+        // the sky, all the way round (the start's view is about -58..42 of azimuth on a laptop, -27..11 on a phone; the top
+        // bar covers it from ~28° up on a laptop, from ~20° on a phone)
+        sun(...NB_SKY.sun); yield;
+        bird(11.5, 19.8, 0.65); bird(14.5, 18.7, 0.48);
+        cloud(-17, 12, 16, 5, -1); yield;
+        wind(-76, -36, 17.5, 0.8, 0.3, 1.5, 1);
+        cloud(30, 10, 10, 3.5, 0); yield;
+        wind(45, 85, 17, 0.7, 1.9, 1.3, -1);
+        cloud(100, 14, 16, 5, 1); yield;
+        cloud(132, 9.5, 9, 3.2, 0);
+        wind(145, 190, 17.5, 0.8, 0.9, 1.5, 1);
+        cloud(175, 13, 17, 5.2, -1); yield;
+        cloud(-145, 11, 11, 3.6, 0);
+        wind(-130, -95, 17.5, 0.8, 2.6, 1.4, -1);
+        cloud(-82, 14.5, 15, 4.8, 1); yield;
+        // the lines, segment by segment over their own boxes, in the local metric (an azimuth step shrinks with the cosine of
+        // the elevation): the nearest point's offset, clamped to S, and its distance
+        for (let s = 0; s < segs.length; s += 4) {
+          if (s % 320 === 316) yield;
+          const pa = segs[s], pe = segs[s + 1], qa = segs[s + 2], qe = segs[s + 3];
+          const x0 = X0(pa < qa ? pa : qa), x1 = X1(pa > qa ? pa : qa), y0 = Y0(pe < qe ? pe : qe), y1 = Y1(pe > qe ? pe : qe);
+          for (let y = y0; y <= y1; y++) {
+            const c = rowC[y], e = rowE[y], ay = pe - e, dy = qe - pe;
+            for (let x = x0; x <= x1; x++) {
+              const a = (x + 0.5) * XA - 180, ax = (pa - a) * c, dx = (qa - pa) * c;
+              let t = -(ax * dx + ay * dy) / (dx * dx + dy * dy || 1); t = t < 0 ? 0 : t > 1 ? 1 : t;
+              const ox = ax + dx * t, oy = ay + dy * t, d = Math.sqrt(ox * ox + oy * oy), i = (((x % W) + W) % W) + y * W;
+              if (d >= best[i]) continue;
+              best[i] = d;
+              const k = d > S ? S / d : 1, o = i * 4;
+              px[o + 1] = (127.5 + ox * k * kS + 0.5) | 0; px[o + 2] = (127.5 + oy * k * kS + 0.5) | 0; px[o + 3] = d >= S ? 255 : (d * 2 * kS + 0.5) | 0;
+            }
+          }
+        }
+        return px;
+      }
+      // a job's own time between its yields (the tests read it: window.__sketchFx.sky.busy)
+      function* nbTimed(g, o) { o.busy = 0; for (;;) { const t = performance.now(), r = g.next(); o.busy += performance.now() - t; if (r.done) return r.value; yield; } }
       var nbTex = null, _nbSun = new Vector3();
       function notebookTextures() {
         if (nbTex) return nbTex;
@@ -38821,47 +38946,6 @@ void main() {
           c.globalAlpha = 1;
         }
         const paper = new CanvasTexture(P); paper.colorSpace = NoColorSpace; paper.generateMipmaps = false; paper.minFilter = LinearFilter; // the canvas's own values go straight to the screen
-        // the sky (Daniel, round 2: "more Van Gogh", The Starry Night as an inspiration, only on nature): a few long
-        // flowing strokes of wind that curl at their ends, a cloud rolled into a spiral, the sun as rings of short strokes.
-        // Drawn on their own sheet; the pass shows them only where nothing of the city is drawn (the street view's sky),
-        // never over a street or a house. Sparse: a handful of strokes, opaque (no beads where segments overlap), each
-        // swelling and thinning along its length like a loaded brush
-        const Dd = document.createElement("canvas"); Dd.width = Dd.height = 1024;
-        const d = Dd.getContext("2d"); d.lineCap = d.lineJoin = "round";
-        const brush = (pts, col, w0) => {
-          d.strokeStyle = col;
-          for (let i = 1; i < pts.length; i++) { const t = i / (pts.length - 1), pr = Math.pow(Math.sin(Math.PI * t), 0.6); d.lineWidth = w0 * (0.35 + 0.65 * pr); d.beginPath(); d.moveTo(pts[i - 1][0], pts[i - 1][1]); d.lineTo(pts[i][0], pts[i][1]); d.stroke(); }
-        };
-        // a curve broken into dashes (the short, rhythmic strokes of the painting), each a little off the curve
-        const dashes = (f, t0, t1, col, w0, dl = 26, gap = 9) => {
-          const dt = 0.002; let t = t0, acc = 0, cur = [f(t0)], draw = R() < 0.85, lim = dl * (0.7 + R() * 0.6);
-          while (t < t1) {
-            t += dt; const q = f(t), pq = cur[cur.length - 1] || q; acc += Math.hypot(q[0] - pq[0], q[1] - pq[1]); cur.push(q);
-            if (acc > (draw ? lim : gap * (0.6 + R() * 0.8))) { if (draw && cur.length > 2) brush(cur, col, w0 * (0.8 + R() * 0.4)); cur = [q]; acc = 0; draw = !draw || R() < 0.15; lim = dl * (0.7 + R() * 0.6); }
-          }
-          if (draw && cur.length > 2) brush(cur, col, w0);
-        };
-        const spiral = (cx, cy, r0, r1, turns, a0, sq, dir = 1) => (t) => { const a = a0 + dir * t * turns * 6.283, r = r0 + (r1 - r0) * t; return [cx + Math.cos(a) * r, cy + Math.sin(a) * r * sq]; };
-        { // the wind: two long flowing strokes across the sky, each with a lighter companion, curling in at one end
-          const wind = (y0, amp, ph, xc, cr, dir) => (t) => {
-            if (t < 0.78) { const x = -40 + (xc + 40) * (t / 0.78); return [x, y0 + Math.sin(x * 0.008 + ph) * amp]; }
-            const k = (t - 0.78) / 0.22, a = -Math.PI / 2 * dir + dir * k * 5.2, r = cr * (1 - 0.7 * k), yc = y0 + Math.sin(xc * 0.008 + ph) * amp + cr * dir;
-            return [xc + Math.cos(a) * r, yc + Math.sin(a) * r];
-          };
-          for (const [y0, amp, ph, xc, cr, dir, col, w] of [[262, 16, 0.4, 560, 44, 1, "#7fa6c8", 5], [273, 16, 0.4, 560, 32, 1, "#c4d6e7", 3.6],
-            [398, 12, 2.2, 880, 38, -1, "#4b558f", 4.2], [408, 12, 2.2, 880, 26, -1, "#a9c2da", 3.4]]) dashes(wind(y0, amp, ph, xc, cr, dir), 0, 1, col, w, 150, 6);
-        }
-        { // a cloud, rolled into a spiral, its tail flowing off to the left
-          dashes(spiral(330, 318, 8, 52, 1.7, 0.2, 0.72, -1), 0, 1, "#4b558f", 3.8, 70, 6);
-          dashes(spiral(330, 318, 16, 62, 1.2, 1.4, 0.72, -1), 0, 1, "#8fb0cf", 3.2, 60, 8);
-          dashes((t) => [296 - 250 * t, 356 + Math.sin(t * 5) * 9], 0, 1, "#a9c2da", 3.4, 120, 8);
-        }
-        { // the sun: a disc of round strokes, two halos of short dashes round it
-          const sx = 690, sy = 300;
-          dashes(spiral(sx, sy, 3, 26, 3.2, R() * 6.283, 1), 0, 1, "#e3a64a", 5.4, 60, 3); // the disc: one tight spiral
-          dashes(spiral(sx, sy, 38, 58, 1.5, R() * 6.283, 1), 0, 1, "#efd383", 4, 44, 12); // the halo: a loose one round it
-        }
-        const doodles = new CanvasTexture(Dd); doodles.colorSpace = NoColorSpace; doodles.generateMipmaps = false; doodles.minFilter = LinearFilter;
         // the pencil: parallel rows (a hand going back and forth), strokes of varied length and pressure with gaps.
         // R the hatch (leaning like the reference's, bottom left to top right), G a cross layer for the deeper colours,
         // B (below) the swirls. Tileable: a stroke crossing an edge is drawn again one tile over
@@ -38928,7 +39012,7 @@ void main() {
         const win = new CanvasTexture(winLevel(256, 1)); win.colorSpace = SRGBColorSpace; win.wrapS = win.wrapT = RepeatWrapping; win.anisotropy = 4;
         win.mipmaps = [256, 128, 64, 32, 16, 8, 4, 2, 1].map((S2, i) => winLevel(S2, i < 2 ? 1 : i === 2 ? 0.45 : 0));
         win.generateMipmaps = false; win.minFilter = LinearMipmapLinearFilter;
-        nbTex = { paper, doodles, pencil, win };
+        nbTex = { paper, pencil, win }; // beta 3.86: the sky is made apart, in slices, once it is first in view (nbSkyGen)
         return nbTex;
       }
       // the interface's share: a coloured-pencil hatch the CSS uses as a static mask (--nb-hatch) behind buttons, chips and
@@ -38982,7 +39066,12 @@ void main() {
       // audit). __perfLab.nbHull(true) brings it back for an A/B
       var nbHull = false;
       var NOTEBOOK_FS = `
-              uniform sampler2D tD, tZ, tR, tP, tQ, tS; uniform vec2 res; uniform float t, full, near, far, dz, kW; uniform mat4 pInv, cW; uniform vec4 box; varying vec2 vUv;
+              uniform sampler2D tD, tZ, tR, tP, tK, tS; uniform vec2 res; uniform float t, full, near, far, dz, kW; uniform mat4 pInv, cW; uniform vec4 box; varying vec2 vUv;
+              uniform vec2 skyR; uniform mat3 skyM; // beta 3.86: the camera's yaw (unwrapped, radians), how far the sky is drawn in (0..1); screen (NDC x, y, 1) to a world ray
+              const float SKY_VM = ${NB_SKY.VM.toFixed(4)}, SKY_S = ${NB_SKY.S.toFixed(4)}, SKY_TX = ${(0.7 * 360 / NB_SKY.W).toFixed(4)}; // the sky's band: tan(elevation) at its top row, the distance range baked and 0.7 texel (degrees)
+              const vec3 SKY_SUN = vec3(${(NB_SKY.sun[0] * Math.PI / 180).toFixed(4)}, ${Math.tan(NB_SKY.sun[1] * Math.PI / 180).toFixed(4)}, ${(NB_SKY.sun[2] * 1.3 * Math.PI / 180).toFixed(4)}); // where the sun is (azimuth, tan(elevation)) and how near is in it (radians)
+              const float SKY_AMT_C = 0.2, SKY_AMT_S = 0.42; // how much pencil: a cloud like a tree's pale crown, the sun like the ochre car
+              const vec3 PEN_BLUE = vec3(0.50, 0.66, 0.74), PEN_OCHRE = vec3(0.85, 0.71, 0.40); // two of the notebook's pencils (pencilFor)
               uniform mat4 oI0, oI1; uniform vec3 oA0, oB0, oA1, oB1; // the ride and the police car: world to their own frame, and their boxes in it
               float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
               float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -39008,9 +39097,9 @@ void main() {
                 vec3 P[7]; float H[7];
                 H[0] = 0.02; P[0] = vec3(0.78, 0.45, 0.39);  // terracotta (the mushroom caps)
                 H[1] = 0.08; P[1] = vec3(0.84, 0.60, 0.40);  // orange
-                H[2] = 0.13; P[2] = vec3(0.85, 0.71, 0.40);  // ochre, honey
+                H[2] = 0.13; P[2] = PEN_OCHRE;               // ochre, honey
                 H[3] = 0.28; P[3] = vec3(0.55, 0.66, 0.43);  // sage, the hatched squares
-                H[4] = 0.52; P[4] = vec3(0.50, 0.66, 0.74);  // a pale sky blue (the rainbow)
+                H[4] = 0.52; P[4] = PEN_BLUE;                // a pale sky blue (the rainbow)
                 H[5] = 0.66; P[5] = vec3(0.31, 0.32, 0.56);  // indigo, the dark pieces
                 H[6] = 0.88; P[6] = vec3(0.80, 0.52, 0.62);  // a rainbow pink
                 vec3 acc = vec3(0.0); float ws = 0.0, wf = 0.0;
@@ -39018,6 +39107,23 @@ void main() {
                 float k = smoothstep(0.06, 0.25, s);
                 fol = wf / max(ws, 1e-4) * k; // how much of it is greenery: drawn in swirls, not in hatching
                 return mix(c, acc / max(ws, 1e-4), 0.78 * k);
+              }
+              // the stroke tile at uv on a face (world units), a pixel being foot there: two octaves blended, so the strokes
+              // stay one size on screen at any distance
+              vec3 strokesAt(vec2 suv, float foot){
+                float L = log2(max(foot, 1e-4) * 150.0), L0 = floor(L), fr = L - L0;
+                vec4 s0 = textureLod(tS, suv / exp2(L0), max(0.0, 0.77 - fr)), s1 = textureLod(tS, suv / exp2(L0 + 1.0), 0.0);
+                return mix(s0.rgb, s1.rgb, fr);
+              }
+              // coloured pencil over a face: st the stroke tile here (R the hatch, G its cross layer, B the swirls), pen the
+              // pencil, amt how much (0..0.62), fol how much of it is greenery (the swirls instead of the hatch). The city and,
+              // beta 3.86, the sky are filled by this one hand
+              vec3 pencilFill(vec3 st, vec3 pen, float amt, float fol){
+                float af = amt + 0.24 * fol; // and a little fuller, so the swirls read
+                float c1 = smoothstep(1.12 - af, 1.22 - af, mix(st.r, st.b * 1.15, fol));
+                float c2 = smoothstep(1.6 - amt, 1.78 - amt, st.g) * (1.0 - fol);
+                float cov = max(c1, c2 * 0.9) * 0.86;
+                return mix(vec3(1.0), pen, clamp(amt * (0.1 + 0.3 * fol) + cov * 0.85, 0.0, 0.92));
               }
               // a crease's share along one axis: the second difference of 1/z over the pen's radius (zero on any flat face)
               float g_rw; // beta 3.7x: 1 / w11, the c of every call, once a pixel
@@ -39058,7 +39164,7 @@ void main() {
                          + 0.8 * (d2(hL, hR, w11, clo * 0.7) + d2(hD, hU, w11, clo * 0.7));
                 float crease = smoothstep(0.35, 2.3, cs);
                 // one weight, a little pressure along the stroke; only a touch lighter far away
-                float line = max(ink, crease) * (0.86 + 0.14 * vn(vUv * res * 0.02 / LR));
+                float prs = 0.86 + 0.14 * vn(vUv * res * 0.02 / LR), line = max(ink, crease) * prs;
                 line *= 1.0 - 0.18 * smoothstep(dz * 1.6, dz * 3.2, dd);
                 // where the city has been drawn yet (world position from depth, then the reveal map)
                 vec4 ndc = vec4(vUv * 2.0 - 1.0, zr * 2.0 - 1.0, 1.0);
@@ -39086,8 +39192,6 @@ void main() {
                 float asp = res.x / res.y;
                 vec2 puv = (vUv - 0.5) * (asp > 1.0 ? vec2(1.0, 1.0 / asp) : vec2(asp, 1.0)) * 0.98 + 0.5;
                 vec3 paper = texture2D(tP, puv).rgb;
-                // the sky's swirls and the sun: only on the empty paper (the street view's sky, the sheet past the city)
-                if (sky && full < 0.5) { vec4 dq = texture2D(tQ, puv); paper = mix(paper, dq.rgb, dq.a * 0.85); }
                 // colour: coloured pencil, light, airy and uneven; the paper dominates. How much pencil a colour needs:
                 // its saturation, and a little for darkness (a dark thing is pencilled denser, never filled black)
                 vec4 tc = texture2D(tD, vUv);
@@ -39106,15 +39210,9 @@ void main() {
                 vec3 sp = inCar0 ? q0 : inCar1 ? q1 : wp;
                 vec3 dx = dFdx(sp), dy = dFdy(sp), an = abs(normalize(cross(dx, dy)));
                 vec2 suv = an.y > max(an.x, an.z) ? sp.xz : an.x > an.z ? sp.zy : sp.xy;
-                float L = log2(max(max(length(dx), length(dy)), 1e-4) * 150.0), L0 = floor(L), fr = L - L0;
-                vec4 s0 = textureLod(tS, suv / exp2(L0), max(0.0, 0.77 - fr)), s1 = textureLod(tS, suv / exp2(L0 + 1.0), 0.0);
-                vec3 st = mix(s0.rgb, s1.rgb, fr);
+                vec3 st = strokesAt(suv, max(length(dx), length(dy)));
                 amt = mix(amt, min(amt, 0.32), fol); // greenery: never denser than a tree's crown, however dark its green
-                float af = amt + 0.24 * fol; // and a little fuller, so the swirls read
-                float c1 = smoothstep(1.12 - af, 1.22 - af, mix(st.r, st.b * 1.15, fol));
-                float c2 = smoothstep(1.6 - amt, 1.78 - amt, st.g) * (1.0 - fol);
-                float cov = max(c1, c2 * 0.9) * 0.86;
-                vec3 fill = mix(vec3(1.0), pen, clamp(amt * (0.1 + 0.3 * fol) + cov * 0.85, 0.0, 0.92));
+                vec3 fill = pencilFill(st, pen, amt, fol);
                 vec3 wash = mix(vec3(1.0), pen, amt * 0.5 * (0.85 + 0.3 * vn(wp.xz * 0.03))); // world-anchored, low: it never crawls
                 fill = mix(fill, wash, ground);
                 vec3 o = paper * mix(vec3(1.0), fill, shown);
@@ -39127,6 +39225,31 @@ void main() {
                 float g = line * mix(0.03, 1.0, shown);
                 g = max(g, max(grid * 0.26, line * 0.45) * band);
                 if (sky) g = crease * 0.95; // the sky side of a silhouette is half of its line (only the crease: no ink, no grid)
+                // beta 3.86: the sky, drawn as the city is (nbSkyGen): where this pixel's ray points on the band round the
+                // viewer and the distances baked there, in pixels. Only on the empty paper (never over a street or a house),
+                // and only there is any of it worked out, at the end (no derivatives: the size of a pixel on the sky is the
+                // camera's own; the sheet and the strokes are read at explicit levels)
+                if (sky && full < 0.5 && skyR.y > 0.0) {
+                  vec3 r = normalize(skyM * vec3((vUv + wob) * 2.0 - 1.0, 1.0)); // the ray, with the lines' waver (as the city's)
+                  float hz = max(length(r.xz), 1e-3), tv = r.y / hz; // tan(elevation)
+                  if (tv > 0.0 && tv < SKY_VM) { // only the band has anything drawn on it
+                    float ct = max(dot(r, -cW[2].xyz), 0.1), pa = pInv[1][1] / res.y * (ct * ct + ct), ppd = 0.0174533 / pa; // a pixel, in radians (cos²/f along the radius, cos/f across); pixels a degree
+                    float az = atan(-r.x, r.z) - skyR.x; az = skyR.x + az - 6.2831853 * floor(az / 6.2831853 + 0.5); // the azimuth, unwrapped round the camera's: no seam on screen
+                    vec4 q = textureLod(tK, vec2(fract(az / 6.2831853 + 0.5), tv / SKY_VM), 0.0);
+                    // a shape's edge: its signed distance; a line: from the offset (exact when filtered), never under its plain
+                    // distance less the most filtering takes off it (where two lines are near, their offsets meet at zero)
+                    float kC = (q.r - 0.5) * 2.0 * SKY_S * ppd, kL = max(length(q.gb - 0.5) * 2.0, q.a - SKY_TX / SKY_S) * SKY_S * ppd;
+                    float inC = 1.0 - smoothstep(-0.5, 0.5, kC);
+                    if (inC > 0.0) { // inside: the clouds in the pale blue with the trees' curling strokes, the sun in ochre with the car's hatch
+                      float sa = az - SKY_SUN.x; sa -= 6.2831853 * floor(sa / 6.2831853 + 0.5);
+                      bool sunP = length(vec2(sa * hz, tv - SKY_SUN.y)) < SKY_SUN.z;
+                      vec3 sf = pencilFill(strokesAt(vec2(az, r.y), pa / hz), sunP ? PEN_OCHRE : PEN_BLUE, sunP ? SKY_AMT_S : SKY_AMT_C, sunP ? 0.0 : 1.0); // its strokes stay on it as the sky turns
+                      o *= mix(vec3(1.0), sf, inC * skyR.y); // (skyR.y: drawn in)
+                    }
+                    // the lines, at the pen's weight (a crease is solid over about a pen's radius each side) and with its pressure
+                    g = max(g, (1.0 - smoothstep(LR - 0.5, LR + 0.5, min(abs(kC), kL))) * skyR.y * prs);
+                  }
+                }
                 vec3 inkC = vec3(0.17, 0.18, 0.39); // a dark indigo ink, like a ballpoint
                 o = mix(o, inkC, clamp(g, 0.0, 1.0) * 0.92);
                 // crayon decals keep their colour, laid over the paper (multiply)
@@ -39154,7 +39277,7 @@ void main() {
           const sc = new Scene(); sc.add(quad);
           sketchFx = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
           window.__sketchFx = sketchFx;
-          { const nb = notebookTextures(); mat.uniforms.tP = { value: nb.paper }; mat.uniforms.tQ = { value: nb.doodles }; mat.uniforms.tS = { value: nb.pencil }; mat.uniforms.kW = { value: 1 }; for (const k of ["oI0", "oI1"]) mat.uniforms[k] = { value: new Matrix4() }; for (const k of ["oA0", "oB0", "oA1", "oB1"]) mat.uniforms[k] = { value: new Vector3() }; } // beta 3.76: the notebook's sheet, doodles and pencil; the cars' frames
+          { const nb = notebookTextures(); mat.uniforms.tP = { value: nb.paper }; mat.uniforms.tK = { value: null }; mat.uniforms.skyR = { value: new Vector2() }; mat.uniforms.skyM = { value: new Matrix3() }; mat.uniforms.tS = { value: nb.pencil }; mat.uniforms.kW = { value: 1 }; for (const k of ["oI0", "oI1"]) mat.uniforms[k] = { value: new Matrix4() }; for (const k of ["oA0", "oB0", "oA1", "oB1"]) mat.uniforms[k] = { value: new Vector3() }; } // beta 3.76: the notebook's sheet, doodles and pencil; the cars' frames
           // the first page: a little of the city is already drawn where you are
           if (mapMode) { const v = warpV(new Vector3(mapView.tgt.x, 0, mapView.tgt.z)); sketchPaint(v.x, v.z, 900, 1); } else sketchPaint(carPos.x, carPos.z, 700, 1);
         }
@@ -39164,6 +39287,18 @@ void main() {
         const u = sketchFx.mat.uniforms;
         u.t.value = (now * 0.001) % 100; u.full.value = full ? 1 : 0;
         cam.updateMatrixWorld();
+        if (!full) { // beta 3.86: the sky turns with the camera (its yaw, unwrapped, so the strokes never jump)
+          const e = cam.matrixWorld.elements, yaw = Math.atan2(e[8], -e[10]), S = sketchFx.sky || (sketchFx.sky = { yaw, acc: yaw, at: 0 });
+          let d = yaw - S.yaw; d -= 6.2831853 * Math.round(d / 6.2831853); S.acc += d; S.yaw = yaw;
+          // made in slices the first time the notebook is really on screen (not for the Multiverse's previews), then drawn
+          // in over 0.4 s (at once with reduced motion); until then the sky is plain paper
+          if (!S.job) S.job = czRun(nbTimed(nbSkyGen(), S)).then((px) => { const t = new DataTexture(px, NB_SKY.W, NB_SKY.H, RGBAFormat, UnsignedByteType, UVMapping, RepeatWrapping, ClampToEdgeWrapping, LinearFilter, LinearFilter); t.needsUpdate = true; u.tK.value = t; S.at = performance.now(); }, () => {});
+          u.skyR.value.set(S.acc, !S.at ? 0 : nbSkyStill.matches ? 1 : Math.min(1, (now - S.at) / 400));
+          // a pixel's ray: the inverse projection of (x, y, far) is linear in x, y (w does not change across the screen), then the camera's turn
+          const p = cam.projectionMatrixInverse.elements, w = p[11] + p[15];
+          _nbSkyM.set(p[0], p[4], p[8] + p[12], p[1], p[5], p[9] + p[13], p[2], p[6], p[10] + p[14]).multiplyScalar(1 / w);
+          u.skyM.value.setFromMatrix4(cam.matrixWorld).multiply(_nbSkyM);
+        }
         u.pInv.value.copy(cam.projectionMatrixInverse); u.cW.value.copy(cam.matrixWorld); u.near.value = cam.near; u.far.value = cam.far;
         u.dz.value = full ? 900 : mapMode ? mapView.dist : 900;
         const plain = sketchPlainPrep(); // beta 3.75
