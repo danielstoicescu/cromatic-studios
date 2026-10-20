@@ -41968,6 +41968,7 @@ void main() {
         const flyPin = (pl, pts) => {
           const from = pins.find((q) => q.pl === pl)?.b.getBoundingClientRect(), to = document.querySelector(".topbar .you")?.getBoundingClientRect();
           if (!from || !to || !from.width) return;
+          if (window.czMicro?.xpFly(from, to, pts, pl.pin || pl.c, pl.t || "#fff")) return; // r234 (Daniel, Lottie: the small moments): it pops off the pin, flies an arc, the bar takes it
           const f = el("span", "xp-fly", `+${pts} XP`);
           f.style.setProperty("--pc", pl.pin || pl.c); f.style.setProperty("--pt", pl.t || "#fff");
           document.body.appendChild(f);
