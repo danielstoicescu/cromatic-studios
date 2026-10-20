@@ -41615,7 +41615,7 @@ void main() {
           mwIc(`<path d="M12 6.6C10.4 5.4 8.2 4.9 4 5v12.6c4.2-.1 6.4.4 8 1.6 1.6-1.2 3.8-1.7 8-1.6V5c-4.2-.1-6.4.4-8 1.6z"/><path d="M12 6.6v12.6"/>`),
           mwIc(`<path d="M5 10h11v4a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11.2h1.4a2.4 2.4 0 0 1 0 4.8H16"/><path d="M8.6 3.6c-.7.9.7 1.7 0 2.6M12.2 3.6c-.7.9.7 1.7 0 2.6"/>`)
         ];
-        const welcomeEl = el("div", "map-welcome hidden", `<button class="mw-x" aria-label="Close">\u00D7</button><b class="mw-t" role="heading" aria-level="2">Welcome to Cromatic City</b>
+        const welcomeEl = el("div", "map-welcome hidden", `<button class="mw-x" aria-label="Close">\u00D7</button><b class="mw-t" role="heading" aria-level="2">${["Welcome", "to", "Cromatic", "City"].map((w, i) => `<span class="mw-w" style="--i:${i}">${w}</span>`).join(" ")}</b>
           <div class="mw-how">
             <span><i>${MW_IC[1]}</i><b>Drive it yourself</b></span><em>\u2192</em>
             <span><i>${MW_IC[0]}</i><b>Or tap a place</b></span><em>\u2192</em>
@@ -41628,13 +41628,27 @@ void main() {
             <button data-go="invest" style="--wc:#119BFE"><b>Fintech Boulevard</b><i>Investimental, Assetto, Bepco</i></button>
             <button data-go="tac" style="--wc:#F28BA8"><b>Medical Avenue</b><i>The Aesthetic Court, Zdrovit, Elithia</i></button>
             <button data-go="end" style="--wc:#FED012"><b>Olari 9 \u00B7 the studio</b><i>Come by, say hi</i></button>
-          </div><button class="mw-free mw-go">Drive it yourself \u2191</button><button class="mw-drive mw-tap">Or help me set my first direction \u2192</button>`); // beta 2.0 r3 (Daniel): drive first, then tap
+          </div><button class="mw-free mw-go">Drive it yourself <span class="mw-arr" aria-hidden="true">\u2191</span></button><button class="mw-drive mw-tap">Or help me set my first direction \u2192</button>`); // beta 2.0 r3 (Daniel): drive first, then tap
+        // TASK-007 (Daniel: "the old onboarding, not Lottie"): the title's words land one by one, the steps are Lottie
+        // explainers (src/lottie-ui/welcome.js), the streets are dealt in, "Drive it yourself" gets a nudge; the card opens
+        // out of the intro's last pill and folds away when it goes. The arrow reads as part of the label (aria-hidden: the
+        // button says "Drive it yourself")
         // r128: the content scrolls inside .mw-in, so the X can sit half outside the card without being clipped
         { const mwIn = document.createElement("div"); mwIn.className = "mw-in"; for (const n of [...welcomeEl.childNodes]) if (!n.classList?.contains("mw-x")) mwIn.append(n); welcomeEl.append(mwIn); }
         // r139s (Daniel: "the onboarding window should not show more than once in a session"): once per visit
-        const welcome = (on) => {
-          if (on) { try { if (Date.now() - (+localStorage.getItem("cz-welcome-at") || 0) < 6 * 3600e3) return; localStorage.setItem("cz-welcome-at", String(Date.now())); } catch {} } // a visit = 6 h, like the intro, across tabs
-          welcomeEl.classList.toggle("hidden", !on);
+        const welcomeSeen = () => { try { return Date.now() - (+localStorage.getItem("cz-welcome-at") || 0) < 6 * 3600e3; } catch { return false; } }; // a visit = 6 h, like the intro, across tabs
+        const welcomeRM = matchMedia("(prefers-reduced-motion: reduce)");
+        // TASK-007: gone for good once it has folded away (its Lottie pieces with it)
+        const welcomeOff = () => { clearTimeout(welcome._out); welcomeEl.classList.add("hidden"); welcomeEl.classList.remove("mw-play", "mw-out", "mw-morph", "mw-shell"); window.czWelcome?.close(welcomeEl); };
+        const welcome = (on, force) => { // (force: tests, window.__welcome: past the once-a-visit rule)
+          if (on) { if (!force && welcomeSeen()) return; try { localStorage.setItem("cz-welcome-at", String(Date.now())); } catch {} }
+          else if (welcomeEl.classList.contains("hidden") || welcomeEl.classList.contains("mw-out")) return; // (closed, or folding away)
+          clearTimeout(welcome._out);
+          if (on) {
+            welcomeEl.classList.remove("hidden", "mw-out", "mw-play", "mw-morph", "mw-shell");
+            if (!window.czWelcome?.open(welcomeEl)) welcomeEl.classList.add("mw-play"); // (the CSS entrance on its own: no Lottie layer, reduced motion)
+          } else if (welcomeRM.matches) welcomeOff();
+          else { welcomeEl.classList.add("mw-out"); welcome._out = setTimeout(welcomeOff, 250); } // it folds away fast (the action under it has already begun)
           // beta 3.48 r217 (Daniel, QA round 2): the cookie card waits while the welcome card is open (r215), but not forever:
           // after 20 s it comes up anyway, at the top, and the welcome card moves down under it (nothing of it covered)
           clearTimeout(welcome._ck); document.body.classList.remove("ck-welcome");
@@ -41645,6 +41659,9 @@ void main() {
             document.body.classList.add("ck-welcome");
           }, 20000);
         };
+        // TASK-007: its Lottie pieces are fetched while the intro plays (in idle time), only when the card will show
+        if (!BOOT_BOARD && !ONB_MODE && !welcomeSeen()) (window.requestIdleCallback || setTimeout)(() => window.czWelcome?.warm(), { timeout: 4000 });
+        window.__welcome = (on = true) => welcome(on, true); // (tests)
         // a hand over the street in front of the van: tap here, the van drives there
         const hintEl = el("div", "tap-hint hidden", `<span class="th-ring"></span><span class="th-hand">\u{1F446}</span><b>Tap the street to drive</b>`);
         let hintAt = null;
