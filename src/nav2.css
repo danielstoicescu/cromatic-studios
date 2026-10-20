@@ -88,6 +88,16 @@ body.n2-card .n2-panel { opacity: 0; translate: 0 14px; pointer-events: none; }
 .n2-take { flex: 0 0 auto; height: 32px; padding: 0 12px; border-radius: 999px; border: 2px solid #141414; background: #fff; color: #141414 !important; font-weight: 800 !important; font-size: 13px !important; cursor: pointer; }
 .n2-empty { margin: 4px 2px 2px; font-size: 13px; opacity: .7; line-height: 1.4; }
 
+/* TASK-014 (perf-rest, layout shift): on a laptop the drive hint's words change (HOLD ↑ TO DRIVE, ROUNDABOUT · PICK YOUR
+   EXIT ← ↑ →...) and the pad took the hint's width, so the arrow keys, centred under it, slid ~76 px left and back with no
+   input. The pad is as wide as the keys now; a wider hint runs out to the left from the keys' right edge (where the wide pad
+   put it: right-to-left, its auto margins give way at the right), a narrower one stays centred over them */
+@media (min-width: 720px) {
+  body:not(.n2-phone) .nav2-ui .n2-pad { width: calc(3 * var(--k, 58px) + 14px); direction: rtl; }
+  body:not(.n2-phone) .nav2-ui .n2-pad > * { direction: ltr; }
+  body:not(.n2-phone) .nav2-ui .n2-pad > .n2-hint { margin-inline: auto; flex: none; direction: rtl; unicode-bidi: plaintext; } /* (its own start is its right edge, where it grows from; its words still read left to right) */
+}
+
 /* ---- the toast ---- */
 .n2-toast { position: fixed; z-index: 30; left: 50%; top: calc(100px + env(safe-area-inset-top, 0px)); translate: -50% -8px; opacity: 0; pointer-events: none; padding: 9px 16px; border-radius: 999px; background: #111; color: #fff; font: 700 14px/1.2 CromaticSans, system-ui, sans-serif; transition: opacity .3s, translate .3s; white-space: nowrap; }
 .n2-toast.on { opacity: 1; translate: -50% 0; }
@@ -234,6 +244,13 @@ body.nav2 .map-top .map-world.has-img b { color: #fff; text-shadow: 0 1px 2px rg
 body.n2-phone .map-ride .mr-th.ready { width: 46px !important; height: 30px; flex: 0 0 46px; }
 body.n2-phone .map-top .map-world.has-img { min-width: 88px; padding: 0 8px; }
 body.n2-phone .map-top .map-world.has-img b { font-size: 11.5px; letter-spacing: -.01em; }
+/* TASK-014 (perf-rest, layout shift): the Ride and Multiverse buttons hold, from the start, the size they take once their
+   pictures come (the ride's thumbnail, the world's postcard, 1-6 s into the map), so the bar's other buttons no longer slide
+   sideways when they do (the ride's icon keeps its size inside the box) */
+body.nav2 .map-ride .mr-th:not(.ready) { width: 50px !important; height: 33px; flex: 0 0 50px; margin: 0 -4px 0 -4px; background-size: 30px 20px; }
+body.n2-phone .map-ride .mr-th:not(.ready) { width: 46px !important; height: 30px; flex: 0 0 46px; }
+body.nav2 .map-top .map-world:not(.has-img) { justify-content: center; min-width: 128px; }
+body.n2-phone .map-top .map-world:not(.has-img) { min-width: 88px; }
 
 /* beta 2.7 (Daniel): phones have no arrows any more: the Street view is driven with a floating stick in the lower half
    (cream ring, black outline, yellow knob) and a DRIFT button; the Street / Satellite toggle sits at the top, under the bar */
@@ -242,6 +259,8 @@ body.n2-phone .map-top .map-world.has-img b { font-size: 11.5px; letter-spacing:
    hint under it and the speaker at its right; the stick has the lower half; a card in the Street view is compact, at the
    bottom right, so the stick stays free */
 body.n2-phone .n2-keys { display: none !important; }
+/* TASK-014 (perf-rest, layout shift): not shown until the bar they sit under has been measured on screen (nav2.js phoneLayout) */
+body.n2-phone .nav2-ui:not(.n2-topok) :is(.n2-views, .n2-snd) { visibility: hidden; }
 body.n2-phone .nav2-ui .n2-views { top: var(--n2top, 112px); bottom: auto; left: 50%; right: auto; translate: -50% 0; flex-direction: row; border-radius: 999px; }
 body.n2-phone .nav2-ui .n2-views button { height: 44px; padding: 0 14px 0 11px; font-size: 13px; border-radius: 999px; }
 body.n2-phone .nav2-ui .n2-pad { top: calc(var(--n2top, 112px) + 64px); bottom: auto; right: auto; left: 50%; translate: -50% 0; }

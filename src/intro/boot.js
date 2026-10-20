@@ -53,6 +53,19 @@
   var W = C.size[ab][0], H = C.size[ab][1];
   var Z = window.__czIntro = { mode: mode, ab: ab, done: false, isReady: false, t0: performance.now(), tm: {} };
   var tm = function (k) { if (Z.tm[k] == null) Z.tm[k] = Math.round(performance.now()); };
+  // TASK-014 (perf-rest): the app's bundle waits for the opening's data and player (build/build.mjs: the head no longer
+  // preloads it when the opening plays): released once both are in (a return's pill: once its data is in), or the opening
+  // cannot play, or after 6 s at the latest. On a slow line its 0.4 MB were shared with them and the opening started
+  // seconds late; the bundle runs only after the opening's start anyway (the script at the end of <body>)
+  var appOk = false, appQ = [];
+  Z.appReady = function (fn) { if (appOk) fn(); else appQ.push(fn); };
+  var appGo = function () {
+    if (appOk) return; appOk = true; tm("app");
+    try { window.__cziAppGo && window.__cziAppGo(); } catch (e) {}
+    for (var i = 0; i < appQ.length; i++) try { appQ[i](); } catch (e) {}
+    appQ = [];
+  };
+  setTimeout(appGo, 6000);
   var reveals = [], ends = [], cityReady = false, phase = "load", anim = null, M = null, pct = 0, want = 0.04, raf = 0, failed = false;
   var revealed = false, mapShown = false, wantOpen = false, holdT = 0, capT = 0;
 
@@ -194,6 +207,7 @@
   var drawn = function () { tm("frame1"); if (mode !== "full" || !ft) return; requestAnimationFrame(function () { requestAnimationFrame(function () { st.classList.add("czi-drawn"); tm("drawn"); }); }); };
   // without the player (reduced motion, no Worker, a failed load): the still pill, then a short fade onto the map
   var still = function () {
+    appGo();
     failed = true; st.classList.add("czi-still"); armBrew(1500);
     startedOnce = true; for (var i = 0; i < started.length; i++) try { started[i](); } catch (e) {}
     started = [];
@@ -238,6 +252,7 @@
   var boot = function () {
     if (mode === "rm" || typeof Worker === "undefined" || typeof fetch === "undefined" || !M) { still(); return; }
     var data = null, lib = false, tryGo = function () {
+      if (data && lib) appGo();
       if (!data || !lib || anim || failed) return;
       try {
         var d = dpr(); cv.width = Math.round(innerWidth * d); cv.height = Math.round(innerHeight * d);
@@ -269,7 +284,9 @@
     };
     // (a returning visitor: the pill alone)
     var url = mode === "full" || !C.pjson || !C.pjson[ab] ? C.json[ab] : C.pjson[ab];
-    fetch(url).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(function (b) { tm("json"); data = b; tryGo(); }, still);
+    // TASK-014: taken from the head's request when there is one for the same file (build/build.mjs, INTRO_HEAD_FETCH: off)
+    var pre = window.__cziPre; window.__cziPre = null;
+    (pre && pre.url === url ? pre.p : fetch(url).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); })).then(function (b) { tm("json"); data = b; if (mode !== "full") appGo(); tryGo(); }, still); // (a return's pill: the map waits for the city, so the bundle goes as soon as the pill's 8 KB are in)
     var s = document.createElement("script"); s.src = C.player; s.async = true;
     s.onload = function () { tm("player"); lib = !!window.lottie; if (!lib) still(); else tryGo(); };
     s.onerror = still;
