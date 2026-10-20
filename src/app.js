@@ -41636,7 +41636,9 @@ void main() {
         // r128: the content scrolls inside .mw-in, so the X can sit half outside the card without being clipped
         { const mwIn = document.createElement("div"); mwIn.className = "mw-in"; for (const n of [...welcomeEl.childNodes]) if (!n.classList?.contains("mw-x")) mwIn.append(n); welcomeEl.append(mwIn); }
         // r139s (Daniel: "the onboarding window should not show more than once in a session"): once per visit
-        const welcomeSeen = () => { try { return Date.now() - (+localStorage.getItem("cz-welcome-at") || 0) < 6 * 3600e3; } catch { return false; } }; // a visit = 6 h, like the intro, across tabs
+        // r245 (Daniel could not get it back to review it, a hard refresh keeps localStorage): ?welcome shows it again
+        const WELCOME_ASK = /[?&]welcome\b/.test(location.search);
+        const welcomeSeen = () => { if (WELCOME_ASK) return false; try { return Date.now() - (+localStorage.getItem("cz-welcome-at") || 0) < 6 * 3600e3; } catch { return false; } }; // a visit = 6 h, like the intro, across tabs
         const welcomeRM = matchMedia("(prefers-reduced-motion: reduce)");
         // TASK-007: gone for good once it has folded away (its Lottie pieces with it)
         const welcomeOff = () => { clearTimeout(welcome._out); welcomeEl.classList.add("hidden"); welcomeEl.classList.remove("mw-play", "mw-out", "mw-morph", "mw-shell"); window.czWelcome?.close(welcomeEl); };
