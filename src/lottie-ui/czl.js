@@ -3,10 +3,11 @@
    OffscreenCanvas and the city's work on the main thread cannot make it stutter. On the map the intro has usually loaded
    it already; anywhere else it is fetched once, the first time a piece is needed. The pieces' JSON (made by
    design/lottie-ui/_source) are listed by the build in window.__CZL_CFG = { player, j: { name: url } }.
-     czL.mount(name, { host, w, h, full, fit, cls, assets, patch, cz })  -> Promise<piece | null>  (null: no player, no data)
+     czL.mount(name, { host, w, h, full, fit, cls, assets, patch, cz, k })  -> Promise<piece | null>  (null: no player, no data)
        (patch(data) -> the data this mount plays, made from the shared copy (which it must not change): the welcome card's
        opening is fitted to the card; cz: the worker's own start (cz.play: the segments it plays as soon as it has built
-       the piece, without waiting for the page's thread; cz.loop))
+       the piece, without waiting for the page's thread; cz.loop); k: the canvas's pixels a CSS pixel (TASK-009: the
+       game's square pixels are drawn at 1 and scaled up unsmoothed; by default the screen's own, at most 2 and ~3.5 M))
        piece.seg("marker" | [a, b] | a list of them, loop) -> Promise (resolved when the (last) segment ends; a list is
        queued in the worker), piece.dur(seg) its length in ms, piece.last() (its last frame, still), piece.destroy();
        piece.el is the canvas's wrapper (pointer-events: none)
@@ -62,7 +63,7 @@
       el.setAttribute("aria-hidden", "true");
       var w = o.full ? innerWidth : o.w || d.w, h = o.full ? innerHeight : o.h || (w * d.h) / d.w;
       if (!o.full) { el.style.width = w + "px"; el.style.height = h + "px"; }
-      var cv = document.createElement("canvas"), k = dpr(w, h);
+      var cv = document.createElement("canvas"), k = o.k || dpr(w, h);
       cv.width = Math.round(w * k); cv.height = Math.round(h * k);
       el.appendChild(cv);
       (o.host || document.body).appendChild(el);
@@ -71,7 +72,7 @@
       var anim = lib.loadAnimation({ container: el, renderer: "canvas", loop: false, autoplay: false, animationData: d, rendererSettings: { canvas: cv, preserveAspectRatio: o.fit || (o.full ? "xMidYMid slice" : "xMidYMid meet"), clearCanvas: true, dpr: 1 }, cz: o.cz });
       var waiting = null, gone = false;
       anim.addEventListener("complete", function () { var w2 = waiting; waiting = null; if (w2) w2(); });
-      var onResize = o.full ? function () { var k2 = dpr(innerWidth, innerHeight); try { anim.resize(Math.round(innerWidth * k2), Math.round(innerHeight * k2)); } catch (e) {} } : null;
+      var onResize = o.full ? function () { var k2 = o.k || dpr(innerWidth, innerHeight); try { anim.resize(Math.round(innerWidth * k2), Math.round(innerHeight * k2)); } catch (e) {} } : null;
       if (onResize) addEventListener("resize", onResize);
       var piece = {
         el: el, anim: anim, data: d, markers: M, w: w, h: h,
