@@ -5135,3 +5135,32 @@ body.scheme-sketch .map-welcome .mw-free::after { border-color: var(--nb-ink); }
 body.scheme-sketch .map-welcome .mw-drive { color: var(--nb-blue); }
 body.scheme-sketch .map-welcome .mw-x { background: var(--nb-paper2); color: var(--nb-ink); border: 1.8px solid var(--nb-ink); box-shadow: none; border-radius: 52% 48% 50% 50% / 48% 53% 47% 52%; }
 body.scheme-sketch .map-welcome .mw-x:hover, body.scheme-sketch .map-welcome .mw-x:focus-visible { background: var(--nb-paper2); box-shadow: 1px 2px 0 rgba(46,50,102,.2); }
+/* TASK-043 (the map at rest): what kept moving while nothing happened now moves on the compositor, or stops.
+   - the Multiverse rings: the gradient sat still and its start angle (--mbA) was animated, a repaint of the button in
+     every frame, forever; now a square of the same gradient turns (rotate) under the button's clip, same look and speed
+   - the game pad's live dot: a ring that scales and fades instead of an animated box-shadow
+   - the sun in the XP bar: its glow moves onto the turning star, so the bar no longer re-filters it every frame
+   - with reduced motion, the floating label, the pin's dot, the theme cards' shimmer, the card entrance and the sun rest */
+.multi-btn, .map-world { overflow: hidden; }
+.multi-btn::before, .map-world::before, .map-top .map-world::before {
+  inset: auto; left: 50%; top: 50%; width: 160%; height: auto; aspect-ratio: 1; border-radius: 0; filter: none; translate: -50% -50%;
+  background: conic-gradient(#FED012, #28C840, #119BFE, #B098C8, #F65342, #FED012); animation: mbTurn 3.2s linear infinite; will-change: transform; }
+.map-top .map-world::before { animation-duration: 6s; }
+.multi-btn:hover::before, .map-world:hover::before, .map-top .map-world:hover::before { animation-duration: 3s; }
+@keyframes mbTurn { to { rotate: 360deg; } }
+body.scheme-sketch .map-top .map-world::before { animation: none; }
+.dp-h { position: relative; }
+.dp-h::before { animation: none; }
+.dp-h::after { content: ""; position: absolute; left: 0; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: rgba(40,200,64,.4); pointer-events: none; animation: dpRing 1.6s ease-out infinite; will-change: transform, opacity; }
+@keyframes dpRing { from { transform: scale(1); opacity: 1; } to { transform: scale(2.4); opacity: 0; } }
+body:is(.map-mode, .site-mode) .dp-h::after, html.onb .dp-h::after, body.kz-intro .dp-h::after { animation: none; } /* the pad is hidden there */
+.you-sun { filter: none; }
+.you-sun svg { filter: drop-shadow(0 0 4px rgba(254,208,18,.8)); will-change: transform; }
+@media (prefers-reduced-motion: reduce) {
+  .multi-btn::before, .map-world::before, .map-top .map-world::before, .dp-h::after, .you-sun svg,
+  .map-pin.float .mp-label, .map-pins .map-pin.on .mp-label::before, .map-pins .map-pin.visited.on .mp-label::before, .wt-img::after { animation: none; }
+  .map-card.in:not(.hidden), .map-card.cr.in:not(.hidden) { animation-duration: .01s; }
+}
+/* audit 3.86 (a11y): the welcome card takes focus itself (no ring; Tab goes on to ×); "Where to next?" shows its focus */
+.map-welcome:focus { outline: none; }
+.dp-where:focus-visible { outline: 3px solid #119BFE; outline-offset: 2px; }
