@@ -146,7 +146,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   const DOMAIN_OF = {
     "Investimental": "ux", "Assetto": "ux", "The Aesthetic Court": "ux", "Craft Coffee": "ux", "ESD": "ux", "Techventures Bank": "ux", "Elithia": "ux",
     "Venevo": "ux", "Witanalytica": "ux", "Printoteca": "ux", "Artisan Coffee Gear": "ux", "Altius": "ux",
-    "Yoshi Izakaya": "growth", "Help 4 Brain": "growth", "Zoetis": "growth", "Echo School": "growth", "Coffeenativ": "growth", "Sticker Republic": "growth",
+    "Yoshi Izakaya": "growth", "Help 4 Brain": "growth", "Zoetis": "growth", "Echo School": "growth", "Coffeenativ": "growth", "Sticker Republic": "growth", "Litorsal": "growth", "Lacalut": "growth",
     "Pain Plaisir": "video", "Clinica Sante": "video", "Patiline": "video"
   };
   // sizes that tile six columns: a big square with two wides beside it, a tall one with two longs, a row of
