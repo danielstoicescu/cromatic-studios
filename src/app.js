@@ -39511,6 +39511,7 @@ void main() {
           window.__spd = { f, lag: Math.round(state.targetL - state.L) };
           const red = f >= 200 / 240 && state.vehicleId !== "cop";
           if (!mapMode) ui.dash.speed(f, vs.max, vs.unit, red); // beta 2.5: the dash is hidden on the map (no hidden DOM writes per frame)
+          else if (mapDial) mapDialTick(now, vs); // beta 3.80: the dial on the map (only while it shows)
           redHold = red && !siteMode ? redHold + dt : 0;
           if (xpPending && xpPending.kind === "msg" && now - xpPending.t > 4000) xpCommit(true);
         }
@@ -40739,6 +40740,8 @@ void main() {
           arrive(pl) { mapNav.place = pl; mapUI?.arrive(pl); mapUI?.mark(); },
           cineStop: () => mapUI?.cineStop(), hideCard: () => mapUI?.hideCard(), mark: () => mapUI?.mark(), welcome: (on) => mapUI?.welcome(on),
           cardOpen: () => !!document.querySelector(".map-card:not(.hidden)") || document.body.classList.contains("map-at-stop"),
+          // beta 3.80: nav2 leaves an open card alone while the boarding pass, a case page or Two Minutes' espresso moment is on
+          cardBusy: () => mapBoarding || document.body.classList.contains("map-boarding") || !!document.querySelector(".case-frame:not(.hidden)") || (coffee.phase !== "idle" && coffee.near),
           wantsCine: () => innerWidth >= 720, isPhone: () => innerWidth < 720,
           reduced: () => (nav2RM ||= matchMedia("(prefers-reduced-motion: reduce)")).matches // one live query (a new one per call cost ms a frame on phones)
         };
@@ -41965,6 +41968,7 @@ void main() {
         const flyPin = (pl, pts) => {
           const from = pins.find((q) => q.pl === pl)?.b.getBoundingClientRect(), to = document.querySelector(".topbar .you")?.getBoundingClientRect();
           if (!from || !to || !from.width) return;
+          if (window.czMicro?.xpFly(from, to, pts, pl.pin || pl.c, pl.t || "#fff")) return; // r234 (Daniel, Lottie: the small moments): it pops off the pin, flies an arc, the bar takes it
           const f = el("span", "xp-fly", `+${pts} XP`);
           f.style.setProperty("--pc", pl.pin || pl.c); f.style.setProperty("--pt", pl.t || "#fff");
           document.body.appendChild(f);
@@ -42675,8 +42679,40 @@ void main() {
         if (action) czEv("onboarding_step", { step: "drive_scroll", action });
       }
       // r164: the drive guide's scroll instructions are gone with the scroll drive (nav2 has its own tutorial)
+      // beta 3.80 (Daniel: "kilometrajul", the km/h dial, back while driving the map): the dashboard's own dial (its arc,
+      // ticks, needle and digits, ui.dash.speed) moves into a corner of its own on the map and back to the dashboard off it.
+      // It shows while the car moves and fades a moment after it stops; the speed is the drive model's (nav2: |u| over its top
+      // speed, on the ride's own scale: the 1300's 144 km/h is the model's 460 u/s, ~40 m/s); its place keeps clear of the
+      // pad, the stick, DRIFT, the view toggle, Nearby, the cards and the speaker (nav2.css)
+      var mapDial = null, mapDialOn = false, mapDialAt = -1e9, mapDialRed = false;
+      function mapDialSet(on) {
+        const dial = document.querySelector(".dash-dial"); if (!dial) return;
+        if (!mapDial) {
+          mapDial = el("div", "map-dial"); mapDial.setAttribute("aria-hidden", "true"); (document.querySelector(".dash")?.parentElement || document.body).appendChild(mapDial); // (beside the dashboard: under the "turn your phone upright" card)
+        }
+        if (on) { if (dial.parentElement !== mapDial) mapDial.appendChild(dial); }
+        else { const dash = document.querySelector(".dash"); if (dash && dial.parentElement !== dash) dash.appendChild(dial); mapDial.classList.remove("on"); mapDialOn = false; }
+      }
+      let mapDialRO = null;
+      function mapDialTick(now, vs) {
+        const ready = !!(nav2?.on && nav2.D?.ready), u = ready ? Math.abs(nav2.speed?.() || 0) : 0, f = u / (nav2?.vmax || 460);
+        // the arrow keys sit centred under the drive hint, whose width follows its words: the dial keeps beside them from the
+        // pad's own size (a ResizeObserver, once nav2's pad exists: no layout read of ours), as CSS variables (nav2.css)
+        if (!mapDialRO && ready && window.ResizeObserver) {
+          const pad = document.querySelector(".nav2-ui .n2-pad");
+          if (pad) (mapDialRO = new ResizeObserver((es) => { for (const e of es) { const b = e.borderBoxSize?.[0], w = b ? b.inlineSize : e.contentRect.width, h = b ? b.blockSize : e.contentRect.height; mapDial.style.setProperty("--padw", Math.round(w) + "px"); mapDial.style.setProperty("--padh", Math.round(h) + "px"); } })).observe(pad);
+        }
+        if (u > 10) mapDialAt = now;
+        const want = ready && now - mapDialAt < 1600 && !mapIntro && !mapBoarding && jetFx.phase === "idle" && !document.body.classList.contains("kz-intro");
+        if (want !== mapDialOn) { mapDialOn = want; mapDial.classList.toggle("on", want); }
+        if (!want) return;
+        const red = f >= 200 / 240 && state.vehicleId !== "cop";
+        ui.dash.speed(Math.min(f, 1.5), vs.max, vs.unit, red);
+        if (red !== mapDialRed) { mapDialRed = red; mapDial.classList.toggle("redline", red); }
+      }
       function setMapMode(on, { intro = false, open = false } = {}) { // r147: open = the map as the site opens on it (?map, ?map&boarding): the first frame, no pull-out
         if (on === mapMode) return;
+        mapDialSet(on); // beta 3.80
         if (!ONB_MODE && !intro && !open) setTimeout(() => ui.modeFlash?.(on ? "map" : "drive"), on ? 300 : 450); // r156
         if (on) ui.whereShow?.(false);
         driveGuideEnd(); // r139i
