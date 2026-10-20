@@ -201,5 +201,61 @@
     "layers": 5,
     "frames": 34,
     "size": "704x704"
+  },
+  "game-wide-en": {
+    "kb": 230.1,
+    "brKb": 7.1,
+    "layers": 3,
+    "frames": 125,
+    "size": "1440x900"
+  },
+  "game-wide-ro": {
+    "kb": 225.3,
+    "brKb": 7,
+    "layers": 3,
+    "frames": 125,
+    "size": "1440x900"
+  },
+  "game-wide-sketch-en": {
+    "kb": 271.6,
+    "brKb": 6.7,
+    "layers": 2,
+    "frames": 125,
+    "size": "1440x900"
+  },
+  "game-wide-sketch-ro": {
+    "kb": 266.9,
+    "brKb": 6.6,
+    "layers": 2,
+    "frames": 125,
+    "size": "1440x900"
+  },
+  "game-tall-en": {
+    "kb": 232.5,
+    "brKb": 5.7,
+    "layers": 3,
+    "frames": 125,
+    "size": "390x840"
+  },
+  "game-tall-ro": {
+    "kb": 227.8,
+    "brKb": 5.5,
+    "layers": 3,
+    "frames": 125,
+    "size": "390x840"
+  },
+  "game-tall-sketch-en": {
+    "kb": 274,
+    "brKb": 5.6,
+    "layers": 2,
+    "frames": 125,
+    "size": "390x840"
+  },
+  "game-tall-sketch-ro": {
+    "kb": 269.3,
+    "brKb": 5.5,
+    "layers": 2,
+    "frames": 125,
+    "size": "390x840"
   }
 }
