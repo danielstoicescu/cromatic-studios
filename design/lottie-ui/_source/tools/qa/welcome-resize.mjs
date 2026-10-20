@@ -1,0 +1,12 @@
+import { ctxFor, closeAll, sleep, BASE } from "./welcome-lib.mjs";
+const { page, ctx, log } = await ctxFor("desktop", { ls: { "cz-consent": "no", "cz-intro-at": String(Date.now()) } });
+await page.goto(BASE + "/?map");
+await page.waitForSelector(".map-welcome:not(.hidden)", { timeout: 90000 });
+await sleep(2000);
+const m = () => page.evaluate(() => ({ tiles: [...document.querySelectorAll(".map-welcome .mw-how i")].map((i) => i.offsetWidth), canv: [...document.querySelectorAll(".map-welcome .czw-ic")].map((c) => c.offsetWidth), st: window.czWelcome.state().st }));
+const a = await m();
+await page.setViewportSize({ width: 390, height: 760 }); await sleep(1500);
+const b = await m();
+await sleep(5000); const c = await m();
+console.log(JSON.stringify({ a, b, c, errs: log.errs }));
+await ctx.close(); await closeAll();

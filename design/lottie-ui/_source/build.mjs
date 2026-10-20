@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import { loadType } from "./lib/ui.mjs";
 import { buildStamp, buildFinale, FINALE_AB } from "./pieces/finale.mjs";
 import { buildDrive, buildViews, buildPlaces, buildWorlds, buildGame } from "./pieces/onboarding.mjs";
+import { WPAL, buildWDrive, buildWTap, buildWWork, buildWHi, buildWOpen } from "./pieces/welcome.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const SITE = path.resolve(here, "../../../src/lottie-ui"), DESIGN = path.resolve(here, "..");
@@ -31,7 +32,18 @@ const PIECES = {
     [`onb-worlds-${th}`, () => buildWorlds(T, { theme: th })],
     [`onb-game-${th}-en`, () => buildGame(T, { theme: th, lang: "en" })],
     [`onb-game-${th}-ro`, () => buildGame(T, { theme: th, lang: "ro" })]
-  ]))
+  ])),
+  // 4 · the map's welcome card (TASK-007): the four steps' explainers (the card's light paper, and Sketchbook's notebook)
+  // and its opening out of the intro's pill
+  "4-welcome": {
+    ...Object.fromEntries(["light", "sketch"].flatMap((th) => [
+      [`welcome-drive-${th}`, () => buildWDrive(T, WPAL[th])],
+      [`welcome-tap-${th}`, () => buildWTap(T, WPAL[th])],
+      [`welcome-work-${th}`, () => buildWWork(T, WPAL[th])],
+      [`welcome-hi-${th}`, () => buildWHi(T, WPAL[th])]
+    ])),
+    "welcome-open": () => buildWOpen()
+  }
   // (3-transitions: the case page's window, r233, was replaced by a CSS pill in r235: pieces/window.mjs is kept as a source)
 };
 const sizes = {};

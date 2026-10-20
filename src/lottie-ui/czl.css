@@ -64,3 +64,15 @@ html body.nav2.map-mode.czpf-close .nav2-ui { display: block !important; animati
 @keyframes czpfOut { to { opacity: 0; } }
 @keyframes czpfIn { from { opacity: 0; } }
 /* the map to the website: pt.css (shared with every page of the website) */
+
+/* ---- 4 · the map's welcome card (welcome.js; its entrance: styles.css, TASK-007) ---- */
+/* the opening: the canvas round the card (its shadows reach past it), under its words; while the pill becomes the card the
+   card's own paper, line and shadow wait (.mw-shell), and its words until the card is nearly open (.mw-play) */
+.czw-open { left: var(--czwx, -72px); top: var(--czwy, -72px); z-index: -1; }
+.map-welcome.mw-shell { background-color: transparent !important; border-color: transparent !important; box-shadow: none !important; }
+.map-welcome.mw-shell:not(.mw-play) > :is(.mw-in, .mw-x) { visibility: hidden; }
+/* the steps: each explainer over its circle, a little bigger than it (it pops out of it); the line icon stays as the
+   stand-in until the piece is drawn */
+.map-welcome .mw-how span i { position: relative; }
+.czw-ic { left: 50%; top: 50%; translate: -50% -50%; }
+.map-welcome .mw-how i.czw-on svg { visibility: hidden; }
