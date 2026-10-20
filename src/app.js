@@ -25951,58 +25951,50 @@ void main() {
     parent.add(g);
     EXTRA_KEEPOUT.push({ x: FORK_POS.x, y: FORK_POS.y, r: 120 });
   }
-  function enamelStreetSign(text) {
-    const g = new Group();
-    const pole = new Mesh(new CylinderGeometry(1.6, 1.6, 56, 8), new MeshStandardMaterial({ color: "#4a453d", roughness: 0.8 }));
-    pole.position.y = 28;
-    pole.castShadow = true;
-    const tex = canvasTexture(512, 128, (ctx) => {
-      ctx.fillStyle = "#1E6B43";
-      ctx.beginPath();
-      ctx.roundRect(4, 4, 504, 120, 14);
-      ctx.fill();
-      ctx.strokeStyle = "#fbfaf5";
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.roundRect(14, 14, 484, 100, 10);
-      ctx.stroke();
-      ctx.fillStyle = "#fbfaf5";
-      ctx.textAlign = "center";
-      ctx.font = "700 46px CromaticSans, sans-serif";
-      ctx.fillText(text, 256, 80, 460);
-    });
-    const plate = new Mesh(new BoxGeometry(58, 15, 1.6), new MeshStandardMaterial({ color: "#1E6B43", roughness: 0.5 }));
-    const face = new Mesh(new PlaneGeometry(58, 15), new MeshBasicMaterial({ map: tex }));
-    face.position.z = 0.9;
-    const plateG = new Group();
-    plateG.add(plate, face);
-    plateG.position.y = 52;
-    g.add(pole, plateG);
-    g.userData.plate = plateG;
-    return g;
-  }
   // beta 3.01 (Daniel: "Str. Olari: its text is partly covered"; the enamel sign's post ran through the middle of its plate):
   // a Bucharest street plate: deep blue enamel, a white rim, STRADA small above the name, on a post beside it (the plate
-  // hangs off the post's side on two brackets, so nothing crosses the letters), readable both ways
-  function bucharestStreetSign(name, kind = "STRADA") {
+  // hangs off the post's side on two brackets, so nothing crosses the letters), readable both ways.
+  // beta 3.84 (Daniel: the Aricescu 50A sign smaller, fixed, in the Olari sign's design): the same plate can be wider for
+  // a longer name (w; the letters keep their size), carry the house number on a small plate of its own under it, on the
+  // post, the way Bucharest numbers its houses (num), and come smaller as a whole (size). Str. Olari is built as before
+  function bucharestStreetSign(name, kind = "STRADA", { w = 48, num = "", size = 1 } = {}) {
     const g = new Group();
     const postM = new MeshStandardMaterial({ color: "#2b2d33", roughness: 0.6, metalness: 0.3 });
     const post = new Mesh(new CylinderGeometry(1.5, 1.8, 62, 10), postM); post.position.y = 31; post.castShadow = true;
     const cap = new Mesh(new SphereGeometry(2.2, 12, 8), postM); cap.position.y = 62.5;
-    const tex = canvasTexture(640, 220, (c) => {
-      c.fillStyle = "#1c4c9c"; c.beginPath(); c.roundRect(0, 0, 640, 220, 26); c.fill();
-      c.strokeStyle = "#ffffff"; c.lineWidth = 9; c.beginPath(); c.roundRect(16, 16, 608, 188, 16); c.stroke();
+    const cw = Math.round(640 * w / 48); // the canvas keeps the plate's proportions
+    const tex = canvasTexture(cw, 220, (c) => {
+      c.fillStyle = "#1c4c9c"; c.beginPath(); c.roundRect(0, 0, cw, 220, 26); c.fill();
+      c.strokeStyle = "#ffffff"; c.lineWidth = 9; c.beginPath(); c.roundRect(16, 16, cw - 32, 188, 16); c.stroke();
       c.fillStyle = "#ffffff"; c.textAlign = "center";
-      c.font = "700 34px CromaticSans, sans-serif"; c.fillText(kind.split("").join(" "), 320, 76);
-      c.font = "800 92px CromaticSans, sans-serif"; c.fillText(name.toUpperCase(), 320, 170, 560);
+      c.font = "700 34px CromaticSans, sans-serif"; c.fillText(kind.split("").join(" "), cw / 2, 76);
+      c.font = "800 92px CromaticSans, sans-serif"; c.fillText(name.toUpperCase(), cw / 2, 170, cw - 80);
     });
-    const plate = new Mesh(new BoxGeometry(48, 16.5, 1.4), new MeshStandardMaterial({ color: "#1c4c9c", roughness: 0.35, metalness: 0.1 }));
+    const plateM = new MeshStandardMaterial({ color: "#1c4c9c", roughness: 0.35, metalness: 0.1 });
+    const plate = new Mesh(new BoxGeometry(w, 16.5, 1.4), plateM);
     const fm = new MeshBasicMaterial({ map: tex });
-    const f1 = new Mesh(new PlaneGeometry(48, 16.5), fm); f1.position.z = 0.75;
-    const f2 = new Mesh(new PlaneGeometry(48, 16.5), fm); f2.position.z = -0.75; f2.rotation.y = Math.PI;
-    const pg = new Group(); pg.add(plate, f1, f2); pg.position.set(26.5, 50, 0); // beside the post
+    const f1 = new Mesh(new PlaneGeometry(w, 16.5), fm); f1.position.z = 0.75;
+    const f2 = new Mesh(new PlaneGeometry(w, 16.5), fm); f2.position.z = -0.75; f2.rotation.y = Math.PI;
+    const pg = new Group(); pg.add(plate, f1, f2); pg.position.set(2.5 + w / 2, 50, 0); // beside the post
     for (const y of [56, 44]) { const br = new Mesh(new BoxGeometry(3.5, 1.2, 1.2), postM); br.position.set(2.4, y, 0); g.add(br); }
+    if (num) {
+      const nw = 15, nh = 9.5;
+      const nt = canvasTexture(300, 190, (c) => {
+        c.fillStyle = "#1c4c9c"; c.beginPath(); c.roundRect(0, 0, 300, 190, 24); c.fill();
+        c.strokeStyle = "#ffffff"; c.lineWidth = 9; c.beginPath(); c.roundRect(15, 15, 270, 160, 14); c.stroke();
+        c.fillStyle = "#ffffff"; c.textAlign = "center";
+        c.font = "800 112px CromaticSans, sans-serif"; c.fillText(num.toUpperCase(), 150, 136, 236);
+      });
+      const nm = new MeshBasicMaterial({ map: nt });
+      const n1 = new Mesh(new PlaneGeometry(nw, nh), nm); n1.position.z = 0.75;
+      const n2 = new Mesh(new PlaneGeometry(nw, nh), nm); n2.position.z = -0.75; n2.rotation.y = Math.PI;
+      const ng = new Group(); ng.add(new Mesh(new BoxGeometry(nw, nh, 1.4), plateM), n1, n2);
+      ng.position.set(2.5 + nw / 2, 50 - 16.5 / 2 - 1.8 - nh / 2, 0); // under the name, on the post's side
+      const br = new Mesh(new BoxGeometry(3.5, 1.2, 1.2), postM); br.position.set(2.4, ng.position.y, 0);
+      g.add(ng, br);
+    }
     g.add(post, cap, pg);
+    if (size !== 1) g.scale.setScalar(size);
     return g;
   }
   function buildCoffeeEntrance(parent) {
@@ -26280,8 +26272,17 @@ void main() {
       arc.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
       g.add(arc);
     }
-    const signTM = enamelStreetSign("Str. C. Aricescu 50A");
-    signTM.position.set(752, 0, 4180);
+    // beta 3.84 (Daniel: "the Aricescu 50A sign in front of Two Minutes smaller and fixed, it should not turn any more;
+    // its design closer to the new one at the end of Str. Olari"): the green enamel plate that turned to face the camera
+    // every frame (the post ran through its letters) is now a Bucharest street plate in the Olari sign's design, STRADA
+    // over C. ARICESCU, with 50A on a house-number plate under it, at 0.7 of the Olari sign's size. It stands still, a
+    // little nearer the corner (was 752, 4180: from the road in it stood behind the corner's street tree), turned to the
+    // corner so both of its faces read: the map's own view sees it ~34° off square, the Two Minutes arrival shot ~28°,
+    // the Street view coming in ~48°
+    const signTM = bucharestStreetSign("C. Aricescu", "STRADA", { w: 54, num: "50A", size: 0.7 });
+    signTM.position.set(790, 0, 4222);
+    signTM.rotation.y = 0.66 + Math.PI; // (the plate on the post's south-west side, out from behind the corner's street tree)
+    signTM.name = "aricescu-sign";
     g.add(signTM);
     mats.festoon = new MeshStandardMaterial({
       color: "#fff0c4",
@@ -26314,7 +26315,7 @@ void main() {
     }
     g.add(bulbs);
     parent.add(g);
-    return [signTM];
+    return []; // beta 3.84: no sign turns to face the camera here any more (the list is worldRefs.streetSigns, turned each frame)
   }
   function wheel3() {
     const g = new Group();
