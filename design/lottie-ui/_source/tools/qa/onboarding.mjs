@@ -1,7 +1,7 @@
 // lottie-ui piece 2: /onboarding/'s explainers on the real page: lazy (nothing fetched before its card is near), mounted,
 // playing while on screen, paused off it, the theme of its card, console clean. DEV=desktop|pixel|iphone RO=1 RM=1 THR=4
-import { ctxFor, sleep, closeAll, BASE, shot, throttle } from "./.x-lui-lib.mjs";
-import { fpsArm, fpsRead } from "./.x-lui-fps.mjs";
+import { ctxFor, sleep, closeAll, BASE, shot, throttle } from "./lib.mjs";
+import { fpsArm, fpsRead } from "./fps.mjs";
 const kind = process.env.DEV || "desktop", tag = process.env.TAG || "onb1", path = process.env.RO ? "/ro/onboarding/" : "/onboarding/";
 const { page, log } = await ctxFor(kind, { consent: "no", extra: process.env.RM ? { reducedMotion: "reduce" } : {} });
 const reqs = []; page.on("request", (r) => { const u = r.url(); if (/lottie-|czl-onb|intro-worlds/.test(u)) reqs.push([Date.now(), u.replace(/^https?:\/\/[^/]+/, "").replace(/\.[0-9a-f]{10}\./, ".")]); });

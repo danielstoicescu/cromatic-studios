@@ -1,0 +1,16 @@
+desk-monument-sat-start.jpg                before-vs-after 2.89 0.18%   before-vs-before2 (noise) 2.92 0.12%
+desk-monument-street-1-start.jpg           before-vs-after 3.36 0.15%   before-vs-before2 (noise) 3.26 0.08%
+desk-monument-street-2-two-minutes.jpg     before-vs-after 2.28 0.07%   before-vs-before2 (noise) 2.33 0.05%
+desk-monument-street-3-coffee-street.jpg   before-vs-after 3.35 0.10%   before-vs-before2 (noise) 3.41 0.08%
+desk-monument-street-4-medical-ave.jpg     before-vs-after 3.70 0.10%   before-vs-before2 (noise) 3.57 0.12%
+desk-monument-street-5-fintech-blvd.jpg    before-vs-after 3.47 0.27%   before-vs-before2 (noise) 3.51 0.24%
+desk-monument-street-6-dacia-row.jpg       before-vs-after 3.57 0.09%   before-vs-before2 (noise) 4.28 0.63%
+desk-monument-street-driving.jpg           before-vs-after 14.09 11.73%   before-vs-before2 (noise) 16.36 14.47%
+desk-nightlife-sat-start.jpg               before-vs-after 2.97 0.14%   before-vs-before2 (noise) 70.18 76.65%
+desk-nightlife-street-1-start.jpg          before-vs-after 2.87 0.18%   before-vs-before2 (noise) 2.83 0.15%
+desk-nightlife-street-2-two-minutes.jpg    before-vs-after 90.79 88.00%   before-vs-before2 (noise) 11.71 0.19%
+desk-nightlife-street-3-coffee-street.jpg  before-vs-after 2.91 0.12%   before-vs-before2 (noise) 2.91 0.12%
+desk-nightlife-street-4-medical-ave.jpg    before-vs-after 3.02 0.17%   before-vs-before2 (noise) 3.07 0.20%
+desk-nightlife-street-5-fintech-blvd.jpg   before-vs-after 2.96 0.16%   before-vs-before2 (noise) 2.89 0.14%
+desk-nightlife-street-6-dacia-row.jpg      before-vs-after 2.58 0.02%   before-vs-before2 (noise) 2.57 0.01%
+desk-nightlife-street-driving.jpg          before-vs-after 12.35 8.15%   before-vs-before2 (noise) 10.20 6.49%

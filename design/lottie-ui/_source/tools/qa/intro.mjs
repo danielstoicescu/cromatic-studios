@@ -1,6 +1,6 @@
 // lottie-ui: the intro still plays as before (a first visit, fresh storage): time to the map, the player loaded once,
 // czL there, console clean. DEV=desktop|iphone|pixel
-import { ctxFor, waitMap, sleep, closeAll, BASE, shot } from "./.x-lui-lib.mjs";
+import { ctxFor, waitMap, sleep, closeAll, BASE, shot } from "./lib.mjs";
 const kind = process.env.DEV || "desktop";
 const { page, log } = await ctxFor(kind, { ls: "fresh" });
 const t0 = Date.now();

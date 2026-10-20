@@ -1,6 +1,6 @@
 // lottie-ui: quick regression on the map (LOCAL): a place card opens and closes, the game opens in its frame and
 // closes, Go deeper opens a case page in the frame and closes; console clean. DEV=desktop|iphone|pixel
-import { ctxFor, waitMap, sleep, closeAll, BASE, shot, gameFrame, vis } from "./.x-lui-lib.mjs";
+import { ctxFor, waitMap, sleep, closeAll, BASE, shot, gameFrame, vis } from "./lib.mjs";
 const kind = process.env.DEV || "desktop", tag = process.env.TAG || "reg";
 const { page, log } = await ctxFor(kind, { consent: "yes2" });
 await page.goto(BASE + "/?map", { waitUntil: "domcontentloaded" });

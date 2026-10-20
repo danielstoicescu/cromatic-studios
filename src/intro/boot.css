@@ -15,6 +15,19 @@
 .czi.czi-opening .czi-btn { opacity: 0; pointer-events: none; }
 .czi.czi-fade { opacity: 0; pointer-events: none; }
 .czi.czi-gone { visibility: hidden; }
+/* 3.69: the first paint is text: the opening's first line where it draws it (or the brand line over a returning visitor's
+   pill), the opening's own face (CromaticSans = Google Sans SemiBold, the site's file, preloaded), its hhea metrics as the
+   overrides so its baseline sits the same in every browser; boot.js sets its size and place */
+@font-face { font-family: 'CziSans'; font-style: normal; font-weight: 700; font-display: block; src: url(%%CZI_FONT%%) format('woff2');
+  ascent-override: 96.6%; descent-override: 28.6%; line-gap-override: 0%; unicode-range: U+0000-00FF, U+2018-201D; }
+.czi-ft { position: absolute; margin: 0; padding: 0; color: #000; font-family: 'CziSans', CromaticSans, system-ui, sans-serif; font-weight: 700;
+  letter-spacing: -.035em; white-space: pre; font-kerning: normal; font-variant-ligatures: none; pointer-events: none; z-index: 1;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; } /* (no macOS stem darkening: as heavy as the drawing's fill) */
+.czi-brand { text-align: center; transition: opacity .35s ease; }
+.czi.czi-drawn .czi-first { opacity: 0; }
+.czi.czi-opening .czi-brand, .czi.czi-fade .czi-brand { opacity: 0; }
+.czi-first { transition: opacity .3s ease; }
+.czi.czi-playing .czi-first { transition: none; }
 /* the still pill: reduced motion, or the player could not run (the Multiverse button's look, its ring standing still) */
 .czi-pill { position: absolute; left: 50%; top: 50%; translate: -50% -50%; border-radius: 999px; display: none; --czr: 7px;
   background: linear-gradient(#fff, #fff) padding-box, conic-gradient(from 210deg, #FED012, #28C840, #119BFE, #B098C8, #F65342, #FED012) border-box;
@@ -54,3 +67,5 @@
 @media (max-width: 719px) { .czi-cap { font-size: 13px; gap: 7px; } .czi-fill { width: 60px; } }
 @media (max-width: 719px) { .czi-btn { right: 14px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); height: 44px; font-size: 14px; padding: 0 16px; } }
 @media (prefers-reduced-motion: reduce) { .czi, .czi-cv, .czi-btn { transition: none; } .czi.czi-can-skip .czi-btn { animation: none; } .czi-dots i { animation: none; opacity: 1; } .czi.czi-brewing .czi-cap { animation-duration: .01s; } }
+/* 3.77: a returning visitor (and reduced motion): the cookie card waits until the map is the page (boot.js: html.czi-ret) */
+html.czi-ret #cz-ck { opacity: 0 !important; visibility: hidden; pointer-events: none !important; }

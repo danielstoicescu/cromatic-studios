@@ -4041,17 +4041,7 @@ body.map-boarding .topbar .you { visibility: hidden; }
 /* r130d: the mono line opens ABOVE the pill (below it, it sat across the stem that holds the label) */
 .map-pins .map-pin .mp-label i { top: auto !important; bottom: 100% !important; margin: 0 0 5px !important; transform: translateY(5px); }
 .map-pins .map-pin:hover .mp-label i, .map-pins .map-pin.on .mp-label i { transform: none; }
-/* r130e: Sketchbook is quiet everywhere: the interface goes graphite too (photos in the cards keep their colour) */
-body.scheme-sketch .map-top, body.scheme-sketch .map-zoom,
-body.scheme-sketch .hud, body.scheme-sketch .topbar, body.scheme-sketch .dash, body.scheme-sketch .map-street,
-body.scheme-sketch .jx-row, body.scheme-sketch .svc-hc, body.scheme-sketch .crew-panel img { filter: grayscale(1) contrast(.96); }
-/* r130f: in Sketchbook the brands keep a drop of colour: watercolour dots, pale and soft-edged */
-body.scheme-sketch .map-pins .map-pin .mp-label::before, body.scheme-sketch .map-chip .mc-dot {
-  background: color-mix(in srgb, var(--pc) 48%, #fff) !important; box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--pc) 18%, transparent), inset 0 0 0 1px rgba(23, 22, 26, .1) !important; }
-body.scheme-sketch .map-pins .map-pin .mp-dot { background: color-mix(in srgb, var(--pc) 42%, #fff) !important; border-color: #232326 !important; }
-body.scheme-sketch .map-pins .map-pin.dot .mp-dot { box-shadow: 0 0 0 3px color-mix(in srgb, var(--pc) 16%, transparent) !important; }
-body.scheme-sketch .map-chip .mc-pin, body.scheme-sketch .work-tag, body.scheme-sketch .poi-rail { filter: saturate(.5) brightness(1.08) contrast(.92); }
-body.scheme-sketch .map-pins .map-pin .mp-foot { opacity: .22 !important; }
+/* beta 3.76: the Sketchbook interface (r130e-r130l: graphite, wax crayon, a torn maths pad) is replaced by the notebook, at the end of this file */
 body.scheme-sketch .topbar .brand, body.scheme-riso .topbar .brand { mix-blend-mode: normal !important; }
 body.scheme-sketch .topbar .brand img, body.scheme-riso .topbar .brand img { filter: invert(1) brightness(.22) !important; }
 /* r130h: the place card lives in a bottom corner (the side away from the place), not over the scene */
@@ -4064,64 +4054,6 @@ body.scheme-sketch .topbar .brand img, body.scheme-riso .topbar .brand img { fil
   .map-card.cr.in:not(.hidden) { animation-name: mcdInR; }
   @keyframes mcdInR { from { opacity: 0; transform: translateX(24px) scale(.98); } to { opacity: 1; transform: none; } }
 }
-/* r130i: Sketchbook. The bones stay graphite (bars, round buttons, zoom, speedo, XP); colour lives on the brands and
-   the calls to action, in wax crayon. The crayon is procedural (crayonTextures() in app.js): horizontal strokes with
-   varying pressure, pigment caught only on the tooth of the paper, ragged natural ends. Buttons keep their pill and a
-   plain black pencil outline; the colour is scribbled behind it and spills past it. Rings round the houses are a
-   crayon line only. */
-body.scheme-sketch .map-top, body.scheme-sketch .hud .round-btn, body.scheme-sketch .map-zoom, body.scheme-sketch .dash, body.scheme-sketch .you,
-body.scheme-sketch .map-dock-h, body.scheme-sketch .jx-row, body.scheme-sketch .map-street, body.scheme-sketch .multi-btn { filter: grayscale(1) contrast(.96); }
-body.scheme-sketch .map-top:has(.map-home) { filter: none; }
-body.scheme-sketch .map-top > *:not(.map-home), body.scheme-sketch .map-top img { filter: grayscale(1); }
-body.scheme-sketch .crew-panel img, body.scheme-sketch .hud img { filter: grayscale(1); }
-body.scheme-sketch :is(.mcd-open, .mcd-ghost, .coffee-btn, .jx-btn, .fe-drive, .fe-save, .cf-chip.on, .tap-hint, .map-top .map-home) {
-  position: relative; isolation: isolate; overflow: visible; border: 0 !important; border-radius: 999px !important; box-shadow: none !important;
-  outline: 2px solid #232326 !important; outline-offset: -1px;
-  background-image: none !important; -webkit-background-clip: text !important; background-clip: text !important; }
-body.scheme-sketch :is(.mcd-open, .mcd-ghost, .coffee-btn, .jx-btn, .fe-drive, .fe-save, .cf-chip.on, .tap-hint, .map-top .map-home)::before {
-  content: ""; position: absolute; inset: -7px -13px -6px -11px; z-index: -1; pointer-events: none; border: 0; border-radius: 0; opacity: 1; transform: rotate(-.8deg);
-  background-color: inherit; background-image: none;
-  -webkit-mask: var(--cr-pill) center / 100% 100% no-repeat; mask: var(--cr-pill) center / 100% 100% no-repeat; }
-body.scheme-sketch :is(.svc-hc, .work-tag) {
-  position: relative; isolation: isolate; overflow: visible; border: 0 !important; box-shadow: none !important; outline: 2px solid #232326 !important; outline-offset: -1px;
-  background-image: none !important; -webkit-background-clip: text !important; background-clip: text !important; }
-body.scheme-sketch :is(.svc-hc, .work-tag)::before {
-  content: ""; position: absolute; inset: -9px -14px -8px -12px; z-index: -1; pointer-events: none; border: 0; border-radius: 0; opacity: 1; transform: rotate(-.5deg);
-  background-color: inherit; -webkit-mask: var(--cr-card) center / 100% 100% no-repeat; mask: var(--cr-card) center / 100% 100% no-repeat; }
-body.scheme-sketch .map-card .mcd-title {
-  position: relative; isolation: isolate; border: 0 !important; box-shadow: none !important; outline: 0 !important; transform: none !important;
-  background-image: none !important; -webkit-background-clip: text !important; background-clip: text !important; }
-body.scheme-sketch .map-card .mcd-title::before {
-  content: ""; position: absolute; inset: -6px -14px -4px -10px; z-index: -1; pointer-events: none; background-color: inherit; transform: rotate(-1deg);
-  -webkit-mask: var(--cr-pill) center / 100% 100% no-repeat; mask: var(--cr-pill) center / 100% 100% no-repeat; }
-/* brand dots: a small crayon blob */
-body.scheme-sketch .map-pins .map-pin .mp-label::before, body.scheme-sketch .map-chip .mc-dot, body.scheme-sketch .map-pins .map-pin .mp-dot {
-  background: var(--pc) !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; width: 13px; height: 13px;
-  -webkit-mask: var(--cr-dot) center / 100% 100% no-repeat; mask: var(--cr-dot) center / 100% 100% no-repeat; animation: none !important; }
-body.scheme-sketch .map-pins .map-pin.visited .mp-label::before { background-image: none !important; }
-body.scheme-sketch .map-pins .map-pin.on .mp-label { box-shadow: 0 0 0 2px var(--pc) !important; }
-/* the footprint: a crayon ring round the house, no fill */
-body.scheme-sketch .map-pins .map-pin .mp-foot { background: var(--pc) !important; border-radius: 0 !important; mix-blend-mode: multiply !important; opacity: .72 !important;
-  -webkit-mask: var(--cr-ring) center / 100% 100% no-repeat; mask: var(--cr-ring) center / 100% 100% no-repeat; }
-body.scheme-sketch .map-pins .map-pin.on .mp-foot, body.scheme-sketch .map-pins .map-pin:hover .mp-foot { opacity: 1 !important; }
-body.scheme-sketch .map-pins .map-pin .mp-foot::after { display: none; }
-body.scheme-sketch .map-pins .map-pin .mp-label, body.scheme-sketch .map-street, body.scheme-sketch .map-card, body.scheme-sketch .map-dock { border-color: #232326 !important; }
-/* annotations: a yellow crayon highlight behind the count, a crayon stripe on the street signs */
-body.scheme-sketch .map-dock-h b { position: relative; z-index: 0; }
-body.scheme-sketch .map-dock-h b::before { content: ""; position: absolute; inset: -5px -9px -4px -8px; z-index: -1; background: #ffd84a; transform: rotate(-2deg);
-  -webkit-mask: var(--cr-pill) center / 100% 100% no-repeat; mask: var(--cr-pill) center / 100% 100% no-repeat; }
-body.scheme-sketch .map-street .hw-stripe { height: 8px !important; border-radius: 0 !important; -webkit-mask: var(--cr-pill) center / 100% 100% no-repeat; mask: var(--cr-pill) center / 100% 100% no-repeat; }
-/* r130k: Sketchbook: the DOM footprint goes (it was drawn over the houses); the crayon rings are on the ground now.
-   Crayon swatches are scribbled in when they appear, left to right, and once more when you point at them. The
-   pointer is a pencil. */
-body.scheme-sketch .map-pins .map-pin .mp-foot { display: none !important; }
-@keyframes crIn { from { clip-path: inset(-30% 100% -30% -12%); } 70% { clip-path: inset(-30% -4% -30% -12%); } to { clip-path: inset(-30% -12% -30% -12%); } }
-@keyframes crIn2 { from { clip-path: inset(-30% 100% -30% -12%); } to { clip-path: inset(-30% -12% -30% -12%); } }
-body.scheme-sketch :is(.mcd-open, .mcd-ghost, .coffee-btn, .jx-btn, .fe-drive, .fe-save, .cf-chip.on, .tap-hint, .map-top .map-home, .svc-hc, .work-tag, .map-card .mcd-title)::before,
-body.scheme-sketch .map-dock-h b::before { animation: crIn .62s cubic-bezier(.55,.05,.35,1) both; }
-body.scheme-sketch :is(.mcd-open, .mcd-ghost, .coffee-btn, .jx-btn, .fe-drive, .fe-save, .map-top .map-home, .svc-hc, .work-tag):hover::before { animation: crIn2 .42s cubic-bezier(.55,.05,.35,1) both; }
-body.scheme-sketch .map-pins .map-pin .mp-label::before { transition: transform .25s cubic-bezier(.3,1.6,.5,1); }
-body.scheme-sketch .map-pins .map-pin:hover .mp-label::before { transform: scale(1.35) rotate(-12deg); }
 body.scheme-sketch canvas { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cpath d='M3 25l2.2-6.6L19.6 4a2.4 2.4 0 013.4 0l1 1a2.4 2.4 0 010 3.4L9.6 22.8z' fill='%23fbfaf6' stroke='%23232326' stroke-width='1.4' stroke-linejoin='round'/%3E%3Cpath d='M3 25l2.2-6.6 4.4 4.4z' fill='%23232326'/%3E%3Cpath d='M17.4 6.2l4.4 4.4' stroke='%23232326' stroke-width='1.2'/%3E%3C/svg%3E") 3 25, crosshair; }
 /* beta 3.75 (Sketchbook audit): the DOM side of "drawn plain". Whatever moves or redraws every frame (the map pins, the
    drive UI: Nearby's distances, the arms, the pad) carries no live CSS filter and no scribble animation in Sketchbook,
@@ -4154,31 +4086,6 @@ body.scheme-sketch :is(.sk-plain, .nav2-ui, .map-pins)::before, body.scheme-sket
 .poi-cta { padding: 9px 20px !important; white-space: nowrap; }
 .mcd-open { padding: 0 26px !important; white-space: nowrap; min-width: max-content; }
 @media (max-width: 760px) { .poi-cta { padding: 7px 16px !important; } }
-/* r130l: Sketchbook place card: a piece torn off a maths pad, no colour of its own. The photo is taped on the left,
-   the title is a crayon swatch, the text is pencil, the CTA is a pencil pill that gets coloured in with a yellow
-   crayon when you point at it; close is a pencil circle */
-body.scheme-sketch .map-card { background: transparent !important; border: 0 !important; box-shadow: none !important; overflow: visible !important; border-radius: 0 !important;
-  filter: drop-shadow(0 10px 14px rgba(35,35,38,.22)) drop-shadow(0 1px 1px rgba(35,35,38,.25)); }
-body.scheme-sketch .map-card::before { content: ""; position: absolute; inset: -8px -10px -10px -12px; z-index: -1; pointer-events: none;
-  background-color: #fbfaf4;
-  background-image: linear-gradient(rgba(64,110,180,.2) 1px, transparent 1px), linear-gradient(90deg, rgba(64,110,180,.2) 1px, transparent 1px),
-    linear-gradient(90deg, transparent 54px, rgba(214,70,70,.35) 54px, rgba(214,70,70,.35) 55.5px, transparent 55.5px);
-  background-size: 16px 16px, 16px 16px, 100% 100%;
-  -webkit-mask: var(--cr-torn) center / 100% 100% no-repeat; mask: var(--cr-torn) center / 100% 100% no-repeat; }
-body.scheme-sketch .map-card .mcd-img { border: 0 !important; background: #fff !important; padding: 7px 7px 22px; margin: 14px 4px 18px 16px; transform: rotate(-2.2deg);
-  box-shadow: 0 6px 14px -6px rgba(0,0,0,.35); overflow: visible !important; align-self: flex-start; flex-basis: 40% !important; width: 40% !important; min-height: 0 !important; height: auto; aspect-ratio: 4 / 3.6 !important; }
-body.scheme-sketch .map-card .mcd-img img { border: 0; }
-body.scheme-sketch .map-card .mcd-img::before { content: ""; position: absolute; left: 50%; top: -11px; width: 78px; height: 24px; transform: translateX(-50%) rotate(3deg); z-index: 2;
-  background: rgba(240,234,214,.78); box-shadow: 0 1px 2px rgba(0,0,0,.12); -webkit-mask: var(--cr-pill) center / 100% 100% no-repeat; mask: var(--cr-pill) center / 100% 100% no-repeat; }
-body.scheme-sketch .map-card .mcd-img::after { display: none !important; }
-body.scheme-sketch .map-card .mcd-body { color: #232326; }
-body.scheme-sketch .map-card p { color: #2c2c30 !important; }
-body.scheme-sketch .map-card .mcd-eyebrow { color: #6a6965 !important; }
-body.scheme-sketch .map-card .mcd-open { background-color: #ffd84a !important; color: #232326 !important; }
-body.scheme-sketch .map-card .mcd-open::before { opacity: 0; animation: none !important; }
-body.scheme-sketch .map-card .mcd-open:hover::before { opacity: 1; animation: crIn2 .45s cubic-bezier(.55,.05,.35,1) both !important; }
-body.scheme-sketch .map-card .mcd-close { background: transparent !important; border: 1.5px solid #232326 !important; box-shadow: none !important; color: #232326 !important; border-radius: 47% 53% 50% 50% / 52% 48% 52% 48% !important; transform: rotate(-4deg); }
-body.scheme-sketch .map-card .mcd-close:hover { background: rgba(35,35,38,.06) !important; }
 /* r130n: no map snapshots: a place with no photo yet shows a poster in its own colours */
 .map-card .mcd-poster { display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; padding: 18px !important; background: var(--pc) !important; color: var(--pt); }
 .map-card .mcd-pt { font: 800 clamp(26px, 3vw, 38px)/.95 CromaticSans, sans-serif; letter-spacing: -.02em; }
@@ -4399,7 +4306,7 @@ body.menu-open:has(.theme-menu.pop-at.open) .map-top { z-index: 49; }
    on the map (the drive hint, Nearby's distances, its rows) restyled the whole document, ~5,200 elements, 6-7 ms on a
    laptop and several times that on a phone, several times a second while racing and drifting */
 body.scheme-sketch .hud.hud-popat { filter: none; }
-body.scheme-sketch .hud.hud-popat > :not(.theme-menu) { filter: grayscale(1) contrast(.96); }
+/* beta 3.76: the notebook greys nothing out (the r130 graphite UI is gone): no filter on the HUD's other buttons either */
 @media (max-width: 719px) {
   .hud-menu.theme-menu, .map-rides { width: calc(100vw - 24px) !important; padding: 14px 10px 10px; border-radius: 20px; }
   :is(.theme-menu, .map-rides) .wt-lead { font-size: 16px; }
@@ -4920,7 +4827,6 @@ body:not(.site-mode) .topbar .cz-build { color: #ffffff; mix-blend-mode: differe
 .map-card .mcd-actions.mcd-two { flex-wrap: wrap; }
 .map-card .mcd-actions.mcd-two .mcd-play { order: -1; flex: 1 0 100%; background: #C6402E; border-color: #C6402E !important; color: #fff; }
 .map-card .mcd-actions.mcd-two .mcd-play:hover { background: #FED012; border-color: #FED012 !important; color: #121212; }
-body.scheme-sketch .map-card .mcd-actions.mcd-two .mcd-play { background-color: #C6402E !important; color: #fff !important; }
 .coffee-btn.lab-play { background: #C6402E; color: #fff; }
 .case-frame.cf-game, .case-frame.cf-game .cf-iframe { background: #0b0816; }
 .case-frame.cf-game .cf-share { display: none; }
@@ -4945,8 +4851,6 @@ body:has(.case-frame.cf-game:not(.hidden)) .rotate-lock { display: none !importa
 @media (prefers-reduced-motion: reduce) { .mcd-fight .mf-glove { animation: none; } }
 .map-card .mcd-actions.mcd-solo .mcd-fight { flex: 1 1 auto; order: 0; }
 .map-card .mcd-actions.mcd-solo { flex-wrap: nowrap; }
-body.scheme-sketch .map-card .mcd-actions .mcd-fight { background-color: #1d1638 !important; color: #FED012 !important; }
-body.scheme-sketch .map-card .mcd-actions .mcd-fight::before { display: none !important; }
 /* the game's own card: its night-purple, the title screen, the Two Minutes mark in a white circle on the picture's corner */
 .map-card.mcd-game { background: #170f19 !important; color: #f3eefe; }
 .map-card.mcd-game .mcd-body .mcd-eyebrow { color: #a99cc8 !important; opacity: 1; }
@@ -4970,3 +4874,174 @@ body.scheme-sketch .map-card.mcd-game { background: #170f19 !important; border: 
 /* the phone's compact Street card (r179): the words take the whole button, no glove */
 body.n2-phone.nav2-street .map-card .mcd-fight { min-height: 44px; padding: 7px 10px 9px !important; }
 body.n2-phone.nav2-street .map-card .mcd-fight .mf-glove { display: none; }
+/* beta 3.76: Sketchbook is the notebook (after the hand-drawn chess game on notebook paper Daniel picked): the interface
+   is drawn on the same sheet as the city. Round 2 (Daniel): the sheet almost white, the ink a dark indigo, and the site's
+   own type (no handwriting fonts), coloured like the pencils (indigo, terracotta). Thin ink outlines of one weight, a
+   little irregular as a hand draws them; colour only as coloured pencil (a pre-baked hatch, --nb-hatch, used as a static
+   mask). No hard ink shadows, no black slabs, no filters on anything that moves. */
+body.scheme-sketch {
+  --nb-paper: #fbfaf6; --nb-paper2: #fdfcf9; --nb-ink: #2e3266; --nb-ink2: #5a5f93;
+  --nb-blue: #4b4f8f; --nb-red: #bd4f3f; --nb-ochre: #d9a65a; --nb-sage: #8fa877; --nb-terra: #c77868; --nb-sky: #8db2cf;
+  --nb-r: 16px 13px 18px 12px / 12px 17px 13px 18px; /* a box drawn by hand: no two corners alike */
+  --nb-r2: 999px 950px 999px 920px / 920px 999px 940px 999px;
+}
+/* round 2: a white sheet, so the site's film grain and cinematic vignette (r115) stay off the notebook */
+body.scheme-sketch::before, body.scheme-sketch::after { display: none !important; }
+/* the old graphite UI lets go: no greyscale filters, no wax crayon swatches */
+body.scheme-sketch :is(.map-top, .map-top > *, .map-top img, .map-zoom, .hud, .hud .round-btn, .topbar, .dash, .you, .map-street, .jx-row, .svc-hc, .map-dock-h, .multi-btn, .map-chip .mc-pin, .work-tag, .poi-rail) { filter: none !important; }
+body.scheme-sketch :is(.crew-panel img, .hud img, .map-crew img, .map-card .mcd-img img) { filter: saturate(.78) sepia(.1) !important; } /* static photos only (Nearby's redraw: the audit's no-filter rule) */
+body.scheme-sketch :is(.mcd-open, .mcd-ghost, .coffee-btn, .jx-btn, .fe-drive, .fe-save, .cf-chip.on, .tap-hint, .map-top .map-home, .svc-hc, .work-tag, .map-card .mcd-title, .map-dock-h b)::before { content: none !important; animation: none !important; }
+body.scheme-sketch :is(.mcd-open, .mcd-ghost, .coffee-btn, .jx-btn, .fe-drive, .fe-save, .cf-chip.on, .tap-hint, .map-top .map-home, .svc-hc, .work-tag, .map-card .mcd-title) { outline: 0 !important; -webkit-background-clip: border-box !important; background-clip: border-box !important; }
+
+/* the bones: a piece of the sheet with an ink box round it */
+body.scheme-sketch .map-top, body.scheme-sketch .nav2-ui .n2-panel, body.scheme-sketch .nav2-ui .n2-views, body.scheme-sketch .you,
+body.scheme-sketch .nav2-ui .n2-hint, body.scheme-sketch .xp-log, body.scheme-sketch .n2-toast, body.scheme-sketch .toast {
+  background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: 1px 2px 0 rgba(46,50,102,.18) !important; }
+body.scheme-sketch .map-top { border-radius: var(--nb-r2) !important; }
+body.scheme-sketch :is(.map-top > :is(button, a), .nav2-ui .n2-k, .dp-k) { position: relative; isolation: isolate; }
+body.scheme-sketch .map-top > :is(button, a), body.scheme-sketch .map-zoom button, body.scheme-sketch .nav2-ui :is(.n2-k, .n2-snd, .n2-driftb), body.scheme-sketch .dp-k, body.scheme-sketch .dp-where, body.scheme-sketch .hud .round-btn {
+  background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important; }
+body.scheme-sketch .map-top > :is(button, a) { border-radius: var(--nb-r2) !important; }
+body.scheme-sketch .map-zoom button, body.scheme-sketch .hud .round-btn { border-radius: 52% 48% 50% 50% / 48% 53% 47% 52% !important; }
+/* coloured pencil behind a button: the hatch, in the button's own pencil, a little past its outline as a hand colours in */
+body.scheme-sketch :is(.map-top .map-home, .map-top .map-2m2f, .nav2-ui .n2-k.on, .nav2-ui .n2-k.need, .nav2-ui .n2-views button[aria-pressed="true"], .map-card .mcd-open, .nav2-ui .n2-q, .dp-k.on)::after {
+  content: ""; position: absolute; inset: 3px; z-index: -1; pointer-events: none; border-radius: inherit;
+  background: var(--nbc, var(--nb-ochre)); -webkit-mask: var(--nb-hatch) 0 0 / 120px 120px; mask: var(--nb-hatch) 0 0 / 120px 120px; opacity: .7; }
+body.scheme-sketch .map-top .map-home { --nbc: var(--nb-sage); }
+body.scheme-sketch .map-top .map-2m2f { --nbc: var(--nb-terra); }
+body.scheme-sketch .map-top .map-2m2f * { filter: none !important; }
+body.scheme-sketch .map-top :is(.map-home, .map-2m2f) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; }
+body.scheme-sketch .map-top .map-world { background-image: none !important; color: var(--nb-ink) !important; text-shadow: none !important; }
+body.scheme-sketch .map-top .map-world * { color: var(--nb-ink) !important; text-shadow: none !important; -webkit-text-stroke: 0 !important; }
+body.scheme-sketch .map-top .map-world::before, body.scheme-sketch .map-top .map-world::after { opacity: .0 !important; }
+
+/* the pad, the views, the hint */
+body.scheme-sketch .nav2-ui .n2-k, body.scheme-sketch .dp-k { border-radius: 12px 15px 11px 14px / 14px 11px 15px 12px !important; }
+body.scheme-sketch .nav2-ui .n2-k.on, body.scheme-sketch .nav2-ui .n2-k.need { background: var(--nb-paper2) !important; transform: translateY(1px); --nbc: var(--nb-ochre); }
+body.scheme-sketch .nav2-ui .n2-k kbd, body.scheme-sketch .nav2-ui .n2-k i { border-color: var(--nb-ink2) !important; background: transparent !important; color: var(--nb-ink2) !important; box-shadow: none !important; }
+body.scheme-sketch .nav2-ui .n2-views { border-radius: var(--nb-r2) !important; }
+body.scheme-sketch .nav2-ui .n2-views button { position: relative; isolation: isolate; color: var(--nb-ink) !important; background: transparent !important; border-radius: var(--nb-r2) !important; }
+body.scheme-sketch .nav2-ui .n2-views button[aria-pressed="true"] { --nbc: var(--nb-sky); box-shadow: inset 0 0 0 1.6px var(--nb-ink) !important; }
+body.scheme-sketch .nav2-ui .n2-views button svg { color: var(--nb-ink) !important; }
+body.scheme-sketch .nav2-ui .n2-hint { border-radius: var(--nb-r2) !important; }
+
+/* Nearby: a note on the sheet; the ways in handwriting, the quarters' names in coloured pencil */
+body.scheme-sketch .nav2-ui .n2-panel { border-radius: var(--nb-r) !important; }
+body.scheme-sketch .nav2-ui .n2-panel :is(.n2-rt) { color: var(--nb-ink) !important; }
+body.scheme-sketch .nav2-ui .n2-sub { color: var(--nb-red) !important; opacity: 1 !important; }
+body.scheme-sketch .nav2-ui .n2-q { position: relative; isolation: isolate; background: transparent !important; color: var(--nb-ink) !important; border: 1.6px solid var(--nb-ink) !important; border-radius: var(--nb-r2) !important; --nbc: var(--qc); }
+body.scheme-sketch .nav2-ui .n2-q::after { inset: 2px !important; opacity: .8 !important; }
+body.scheme-sketch .nav2-ui .n2-row { border-top: 1.5px dashed rgba(46,50,102,.35) !important; }
+body.scheme-sketch .nav2-ui .n2-dir { background: transparent !important; border: 1.6px solid var(--nb-ink) !important; box-shadow: none !important; border-radius: 50% 46% 52% 48% / 47% 52% 48% 53% !important; }
+body.scheme-sketch .nav2-ui .n2-g { color: var(--nb-ink) !important; }
+body.scheme-sketch .nav2-ui .n2-pc { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.6px solid var(--nb-ink) !important; box-shadow: none !important; border-radius: 12px 14px 11px 15px / 14px 11px 15px 12px !important; }
+body.scheme-sketch .nav2-ui .n2-pc:hover { box-shadow: 1px 2px 0 rgba(46,50,102,.25) !important; }
+body.scheme-sketch .nav2-ui .n2-pc .n2-pic { border-bottom: 1.5px solid var(--nb-ink) !important; }
+body.scheme-sketch .nav2-ui .n2-nm { color: var(--nb-blue) !important; }
+body.scheme-sketch .nav2-ui .n2-dist { background: transparent !important; color: var(--nb-red) !important; border: 0 !important; box-shadow: none !important; }
+body.scheme-sketch .nav2-ui .n2-dch { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.4px solid var(--nb-ink) !important; box-shadow: none !important; }
+
+/* the XP and the logo */
+body.scheme-sketch .you { border-radius: var(--nb-r2) !important; }
+body.scheme-sketch .you .you-xp { background: transparent !important; color: var(--nb-blue) !important; border: 0 !important; box-shadow: none !important; }
+body.scheme-sketch .topbar .brand img { filter: invert(1) brightness(.2) sepia(1) hue-rotate(195deg) saturate(3.2) brightness(1.05) !important; } /* the logo in indigo ink (a static image) */
+body.scheme-sketch .cz-build { color: var(--nb-red) !important; }
+
+/* the places on the map: names in ballpoint on a scrap of the sheet; the brand's dot in coloured pencil */
+body.scheme-sketch .map-pins .map-pin .mp-label { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.5px solid var(--nb-ink) !important; box-shadow: none !important; border-radius: var(--nb-r2) !important; }
+body.scheme-sketch .map-pins .map-pin .mp-label b { color: var(--nb-ink) !important; }
+body.scheme-sketch .map-pins .map-pin .mp-label .mp-n { color: var(--nb-red) !important; background: none !important; opacity: 1 !important; }
+body.scheme-sketch .map-pins .map-pin:nth-child(even) .mp-label .mp-n { color: var(--nb-blue) !important; }
+body.scheme-sketch .map-pins .map-pin .mp-label i, body.scheme-sketch .map-pins .map-pin .mp-label em { color: var(--nb-red) !important; }
+body.scheme-sketch .map-pins .map-pin.chapter .mp-label b { color: var(--nb-blue) !important; }
+body.scheme-sketch .map-pins .map-pin .mp-label::before { width: 12px !important; height: 12px !important; -webkit-mask: var(--nb-hatch) 0 0 / 40px 40px !important; mask: var(--nb-hatch) 0 0 / 40px 40px !important; border-radius: 50% !important; box-shadow: 0 0 0 1.4px var(--nb-ink) !important; background: var(--pc) !important; }
+body.scheme-sketch .map-pins .map-pin .mp-stem { background: var(--nb-ink) !important; width: 1.5px !important; opacity: .8; }
+
+/* the place card: a note in a box on the sheet, its corner folded, the photo taped on */
+body.scheme-sketch .map-card { filter: none !important; }
+body.scheme-sketch .map-card::before { background: var(--nb-paper2) !important; background-image: none !important; -webkit-mask: none !important; mask: none !important; inset: 0 !important;
+  border: 1.8px solid var(--nb-ink); border-radius: 14px 18px 4px 16px / 16px 12px 4px 18px; box-shadow: 1px 2px 0 rgba(46,50,102,.2);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 34px), calc(100% - 34px) 100%, 0 100%); }
+body.scheme-sketch .map-card::after { content: ""; position: absolute; right: 0; bottom: 0; width: 34px; height: 34px; z-index: 0; pointer-events: none; display: block !important;
+  background: linear-gradient(135deg, transparent 0 49%, var(--nb-ink) 49% 51.5%, #e9e8e2 51.5%); clip-path: polygon(0 0, 100% 0, 0 100%); transform: none; }
+body.scheme-sketch .map-card .mcd-title { color: var(--nb-blue) !important; background: none !important; padding: 0 !important; }
+body.scheme-sketch .map-card .mcd-eyebrow { color: var(--nb-red) !important; }
+body.scheme-sketch .map-card p { color: var(--nb-ink) !important; }
+body.scheme-sketch .map-card :is(.mcd-open, .mcd-ghost, .mcd-fight, .mcd-play) { position: relative; isolation: isolate; background: transparent !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; border-radius: var(--nb-r2) !important; box-shadow: none !important; }
+body.scheme-sketch .map-card .mcd-open { --nbc: var(--nb-ochre); }
+body.scheme-sketch .map-card .mcd-fight { color: var(--nb-red) !important; }
+body.scheme-sketch .map-card .mcd-fight * { color: inherit !important; text-shadow: none !important; }
+body.scheme-sketch .map-card .mcd-close { border: 1.8px solid var(--nb-ink) !important; color: var(--nb-ink) !important; background: transparent !important; }
+body.scheme-sketch .map-card .mcd-img { background: #ffffff !important; box-shadow: 0 1px 0 rgba(46,50,102,.25) !important; border: 1.4px solid var(--nb-ink) !important; }
+body.scheme-sketch .map-card .mcd-img::before { background: rgba(214,206,170,.75) !important; }
+
+/* the coffee counter, the toasts: notes written on, never black slabs */
+body.scheme-sketch :is(.coffee-card, .cf-card, .xp-pop, .rush-pill, .cop-pill) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: 1px 2px 0 rgba(46,50,102,.2) !important; border-radius: var(--nb-r) !important; }
+body.scheme-sketch :is(.coffee-card, .cf-card, .xp-pop) * { color: var(--nb-ink); }
+body.scheme-sketch :is(.coffee-card, .cf-card) b, body.scheme-sketch :is(.coffee-card, .cf-card) strong { color: var(--nb-blue); }
+body.scheme-sketch .n2-toast, body.scheme-sketch .toast { color: var(--nb-blue) !important; border-radius: var(--nb-r) !important; }
+
+body.scheme-sketch .map-card .mcd-actions .mcd-fight { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; box-shadow: none !important; border: 1.8px solid var(--nb-blue) !important; --nbc: var(--nb-blue); }
+body.scheme-sketch .map-card .mcd-actions .mcd-fight::after { content: ""; position: absolute; inset: 3px; z-index: -1; pointer-events: none; border-radius: inherit; background: var(--nbc); -webkit-mask: var(--nb-hatch) 0 0 / 120px 120px; mask: var(--nb-hatch) 0 0 / 120px 120px; opacity: .55; }
+/* the "you're at" and auto-pilot rows: a note with a pencil swatch of the place's colour, not a slab of it */
+body.scheme-sketch .nav2-ui :is(.n2-here, .n2-auto) { position: relative; isolation: isolate; background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important; border-radius: var(--nb-r) !important; --nbc: var(--pc); }
+body.scheme-sketch .nav2-ui :is(.n2-here, .n2-auto)::after { content: ""; position: absolute; inset: 3px; z-index: -1; pointer-events: none; border-radius: inherit; background: var(--nbc); -webkit-mask: var(--nb-hatch) 0 0 / 120px 120px; mask: var(--nb-hatch) 0 0 / 120px 120px; opacity: .5; }
+body.scheme-sketch .nav2-ui .n2-at i { color: var(--nb-red) !important; opacity: 1 !important; }
+body.scheme-sketch .nav2-ui .n2-at b { color: var(--nb-blue) !important; }
+body.scheme-sketch .nav2-ui :is(.n2-open, .n2-take) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.6px solid var(--nb-ink) !important; border-radius: var(--nb-r2) !important; }
+body.scheme-sketch .nav2-ui .n2-pic.sm { border: 1.5px solid var(--nb-ink) !important; }
+/* the stick and the drift button (phones) */
+body.scheme-sketch .nav2-ui .n2-ring { background: rgba(253,252,249,.82) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important; }
+body.scheme-sketch .nav2-ui .n2-knob { background: var(--nb-paper2) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important; overflow: hidden; }
+body.scheme-sketch .nav2-ui .n2-knob::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--nb-ochre); -webkit-mask: var(--nb-hatch) 0 0 / 60px 60px; mask: var(--nb-hatch) 0 0 / 60px 60px; }
+body.scheme-sketch .nav2-ui .n2-driftb { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important; }
+/* the chapters on the map ("The start", "The world"…): a ballpoint note in a box */
+body.scheme-sketch .map-pins .map-pin.find .mp-label, body.scheme-sketch .map-pins .map-pin.find.visited .mp-label { background: var(--nb-paper2) !important; color: var(--nb-blue) !important; }
+/* a place with no photo yet keeps its poster's own colours */
+body.scheme-sketch .map-card .mcd-img.mcd-poster { background: var(--nb-paper2) !important; color: var(--nb-blue) !important; position: relative; isolation: isolate; }
+body.scheme-sketch .map-card .mcd-img.mcd-poster::after { content: "" !important; display: block !important; position: absolute; inset: 7px 7px 22px; z-index: -1; pointer-events: none; background: var(--pc); -webkit-mask: var(--nb-hatch) 0 0 / 150px 150px; mask: var(--nb-hatch) 0 0 / 150px 150px; opacity: .6; }
+body.scheme-sketch .map-card .mcd-poster :is(.mcd-pt, .mcd-pl) { color: var(--nb-blue) !important; }
+body.scheme-sketch .map-card .mcd-poster .mcd-pl { color: var(--nb-red) !important; opacity: 1 !important; }
+/* Nearby's thumbnails: a photo taped on; until it loads (or for a place without one) the place's colour in pencil, not a flat block */
+body.scheme-sketch .nav2-ui .n2-pc .n2-pic { position: relative; isolation: isolate; background: var(--nb-paper2) !important; }
+body.scheme-sketch .nav2-ui .n2-pc .n2-pic::after { content: ""; position: absolute; inset: 3px; z-index: -1; pointer-events: none; background: var(--pc); -webkit-mask: var(--nb-hatch) 0 0 / 110px 110px; mask: var(--nb-hatch) 0 0 / 110px 110px; opacity: .65; }
+body.scheme-sketch .nav2-ui .n2-pc .n2-pic img { position: relative; z-index: 0; }
+body.scheme-sketch .nav2-ui .n2-ini { color: var(--nb-blue) !important; }
+
+/* notes that write themselves on, left to right, like the reference's ballpoint "your move" (one clip, once per note) */
+@keyframes nbWrite { from { clip-path: inset(-30% 100% -30% -4%); } to { clip-path: inset(-30% -4% -30% -4%); } }
+body.scheme-sketch .n2-toast.on, body.scheme-sketch .map-card:not(.hidden) .mcd-title { animation: nbWrite .9s cubic-bezier(.45,.1,.4,1) both; }
+@media (prefers-reduced-motion: reduce) { body.scheme-sketch .n2-toast.on, body.scheme-sketch .map-card:not(.hidden) .mcd-title { animation: none; } }
+/* the XP log, the worlds menu: notes on the sheet too */
+body.scheme-sketch :is(.xp-log, .theme-menu, .veh-menu, .crew-panel) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: 1px 2px 0 rgba(46,50,102,.2) !important; border-radius: var(--nb-r) !important; }
+/* the crayon rings on the ground mark the places (r130k): the DOM footprint stays off */
+body.scheme-sketch .map-pins .map-pin .mp-foot { display: none !important; }
+/* the card itself is only its note (::before): no slab of colour, no frame, no hard shadow */
+body.scheme-sketch .map-card { background: transparent !important; border: 0 !important; box-shadow: none !important; overflow: visible !important; border-radius: 0 !important; }
+body.scheme-sketch .map-card .mcd-title { border: 0 !important; box-shadow: none !important; outline: 0 !important; transform: none !important; }
+/* the photo, taped on (a print with a paper border, a strip of tape, a little crooked) */
+body.scheme-sketch .map-card .mcd-img { background: #ffffff !important; padding: 7px 7px 22px; margin: 14px 4px 18px 16px; transform: rotate(-2.2deg); box-shadow: 0 1px 0 rgba(46,50,102,.22) !important;
+  overflow: visible !important; align-self: flex-start; flex-basis: 40% !important; width: 40% !important; min-height: 0 !important; height: auto; aspect-ratio: 4 / 3.6 !important; }
+body.scheme-sketch .map-card .mcd-img img { border: 0; }
+body.scheme-sketch .map-card .mcd-img::before { content: ""; position: absolute; left: 50%; top: -11px; width: 78px; height: 22px; transform: translateX(-50%) rotate(3deg); z-index: 2;
+  background: rgba(214,206,170,.72) !important; clip-path: polygon(2% 12%, 98% 0, 100% 88%, 3% 100%, 0 52%); }
+body.scheme-sketch .map-card .mcd-img::after { display: none !important; }
+body.scheme-sketch .map-card::before { content: "" !important; position: absolute; z-index: -1; pointer-events: none; }
+/* the street's own signs (the next exit, the arms at a junction, their arrow caps): handwriting in an ink box */
+body.scheme-sketch .n2-arm { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.6px solid var(--nb-ink) !important; box-shadow: none !important; border-radius: var(--nb-r2) !important; }
+body.scheme-sketch .n2-arm.picked { box-shadow: inset 0 -7px 0 rgba(217,166,90,.5) !important; }
+body.scheme-sketch :is(.n2-cap, .n2-cap.sm, .n2-cap.big, .n2-arm.picked .n2-cap.sm) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.5px solid var(--nb-ink) !important; box-shadow: none !important; border-radius: 50% 46% 52% 48% / 47% 52% 48% 53% !important; }
+body.scheme-sketch .n2-cap.big { box-shadow: inset 0 0 0 3px var(--nb-paper2), inset 0 0 0 40px rgba(217,166,90,.45) !important; }
+/* pills and headers that carry a solid colour of their own: the cover (the sheet with the strokes cut out) is laid over
+   that colour, so it shows only through the strokes: coloured pencil, never a flat block */
+body.scheme-sketch :is(.pill-title .pill, .xl-head, .map-rides .wt-check, .theme-menu .wt-check) { background-image: var(--nb-cover) !important; background-size: 120px 120px !important; background-repeat: repeat !important;
+  color: var(--nb-ink) !important; border: 1.6px solid var(--nb-ink) !important; box-shadow: none !important; }
+body.scheme-sketch .pill-title .pill { border-radius: var(--nb-r2) !important; }
+body.scheme-sketch .xl-head { background-color: var(--nb-ochre) !important; border-width: 0 0 1.6px !important; }
+body.scheme-sketch .xl-row b { color: var(--nb-blue); }
+body.scheme-sketch .xl-row i { opacity: .85 !important; }
+/* the crew, the rides, the worlds: notes on the sheet; the scrims behind them light, and no live blur over the city */
+body.scheme-sketch :is(.crew-panel, .hmodal-backdrop) { background: rgba(250,249,246,.55) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+body.scheme-sketch :is(.crew-box, .map-rides, .hud-menu.theme-menu) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: 1px 2px 0 rgba(46,50,102,.2) !important; border-radius: var(--nb-r) !important; }
+body.scheme-sketch :is(.crew-box, .map-rides, .hud-menu.theme-menu) .mono { color: var(--nb-red) !important; opacity: 1 !important; }
+body.scheme-sketch .map-x { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important; }

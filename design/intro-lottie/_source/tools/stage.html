@@ -18,8 +18,10 @@ s.onload = async () => {
   const data = await (await fetch(`../../${D}/${AB}.json?${Date.now()}`)).json();
   window.data = data;
   city.style.width = data.w + "px"; city.style.height = data.h + "px";
-  window.anim = lottie.loadAnimation({ container: document.getElementById("lot"), renderer: R, loop: false, autoplay: false, animationData: JSON.parse(JSON.stringify(data)), assetsPath: `../../${D}/`, rendererSettings: { preserveAspectRatio: "xMidYMid slice", progressiveLoad: false } });
-  anim.addEventListener("DOMLoaded", () => { window.ready = 1; window.meta = { op: data.op, fr: data.fr, markers: data.markers }; });
+  window.anim = lottie.loadAnimation({ container: document.getElementById("lot"), renderer: R, loop: false, autoplay: false, animationData: JSON.parse(JSON.stringify(data)), assetsPath: `../../${D}/`, rendererSettings: { preserveAspectRatio: "xMidYMid slice", progressiveLoad: false, clearCanvas: true } });
+  const onReady = () => { window.ready = 1; window.meta = { op: data.op, fr: data.fr, markers: data.markers }; };
+  anim.addEventListener("DOMLoaded", onReady);
+  if (anim.isLoaded) onReady(); // (with no images to load, it may be loaded before the listener is attached)
   anim.addEventListener("enterFrame", (e) => { city.style.transform = cromaticHandoff.cityTransform(data, e.currentTime, innerWidth, innerHeight); });
 };
 document.head.appendChild(s);

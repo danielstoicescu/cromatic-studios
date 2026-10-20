@@ -46,6 +46,12 @@ export function prop(v) {
   return { a: 1, k };
 }
 function isKeys(v) { return v.every((k) => Array.isArray(k) && typeof k[0] === "number" && k.length >= 2 && k.length <= 3 && (k[2] === undefined || typeof k[2] === "string" || Array.isArray(k[2]))); }
+// a time remap (seconds): as prop(), but to 1e-5 s (prop's 1/100 would be most of a frame: a loop would not close)
+export function tmProp(v) {
+  if (!Array.isArray(v)) return { a: 0, k: v };
+  const keys = [...v].sort((a, b) => a[0] - b[0]);
+  return { a: 1, k: keys.map(([t, val, ease], i) => { const key = { t, s: [Math.round(val * 1e5) / 1e5] }; if (i < keys.length - 1) { if (ease === "hold") key.h = 1; else { const [x1, y1, x2, y2] = ease || E.inOut; key.o = { x: [x1], y: [y1] }; key.i = { x: [x2], y: [y2] }; } } return key; }) };
+}
 // keys for a shape path: [[t, pathObj, ease?]]
 export function pathProp(keys) {
   if (!Array.isArray(keys)) return { a: 0, k: keys };

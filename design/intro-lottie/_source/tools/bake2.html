@@ -1,0 +1,136 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:transparent}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.min.js"}}</script></head><body>
+<script type="module">
+// Nine cups v2 · the bake page (served from the repo root: node_modules/three is three r169, the bundle's own REVISION).
+// The ORIGINAL intro cup (src/app.js at 13e8689, createKinetic -> cups3: geometry, MeshStandardMaterial roughness .2,
+// RoomEnvironment, the hemisphere, key and rim lights, ACES, the old camera's lens FOV 30) rendered as tiles of the wall,
+// one cup per tile, in passes:
+//   beauty  the original look (designs 0-4 are the original five exactly; 5-8 new, in their grammar)
+//   handle  the handle where it is seen (white), all that hides it black: the visible handle, with exact occlusion
+//   body / open / coffee / all   flat masks of the outer body, the opening (lip, inside, coffee), the coffee, the cup
+// window.tile({ design, X, Y, tilt, yaw, cx, cy, half, px, pass, Zc, ycam, solid }) -> PNG data URL (px x px; the tile
+// shows the wall square centred at (cx, cy), 2 half wall units across, as the camera at (0, ycam, Zc) sees it)
+// window.frame({ cups: [{ design, X, Y, tilt, yaw }], w, h, Zc, ycam, k, ox, oy, bg }) -> a whole frame (studies)
+import * as T from "three";
+import { RoomEnvironment } from "/node_modules/three/examples/jsm/environments/RoomEnvironment.js";
+const R3 = new T.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
+R3.setPixelRatio(1);
+R3.toneMapping = T.ACESFilmicToneMapping;
+R3.outputColorSpace = T.SRGBColorSpace;
+document.body.appendChild(R3.domElement);
+const pm = new T.PMREMGenerator(R3);
+const envTex = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+const mkScene = () => {
+  const s = new T.Scene(); s.environment = envTex;
+  const hemi = new T.HemisphereLight("#ffffff", "#d8d0c4", 0.55);
+  const key = new T.DirectionalLight("#fff5e6", 1.7); key.position.set(-6, 11, 12);
+  const rim = new T.DirectionalLight("#dfe9ff", 0.6); rim.position.set(8, 4, -6);
+  s.add(hemi, key, rim); s.userData.lights = [hemi, key, rim];
+  return s;
+};
+const V = (a2) => a2.map(([x, y]) => new T.Vector2(x, y));
+const outerGeo = new T.LatheGeometry(V([[0, 0.03], [1.12, 0.03], [1.2, 0], [1.3, 0.05], [1.36, 0.2], [1.39, 0.6], [1.42, 1.3], [1.44, 1.9], [1.44, 1.99]]), 72);
+const innerGeo = new T.LatheGeometry(V([[1.44, 1.99], [1.42, 2.05], [1.37, 2.07], [1.32, 2.03], [1.31, 1.9], [1.29, 1.3], [1.26, 0.6], [1.2, 0.3], [1.02, 0.2], [0, 0.18]]), 72);
+const handleGeo = new T.TorusGeometry(0.5, 0.15, 20, 40);
+handleGeo.translate(1.43 + 0.47 + 0.05, 1.1, 0); // (v2: 0.05 further out; the original's ring poked through the inner wall)
+const liqGeo = new T.CircleGeometry(1.265, 56);
+liqGeo.rotateX(-Math.PI / 2);
+const canvasTexture = (w, h, draw) => { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; return t; };
+const stdM = (o) => new T.MeshStandardMaterial({ roughness: 0.2, metalness: 0, envMapIntensity: 1.05, ...o });
+const WHITE = "#f8f6f1";
+// LatheGeometry's v -> the outer profile (by point index, as it interpolates)
+const OUTER = [[0, 0.03], [1.12, 0.03], [1.2, 0], [1.3, 0.05], [1.36, 0.2], [1.39, 0.6], [1.42, 1.3], [1.44, 1.9], [1.44, 1.99]];
+const outerAtV = (v) => { const n = OUTER.length - 1, x = Math.max(0, Math.min(n, v * n)), j = Math.min(n - 1, Math.floor(x)), f = x - j; const a = OUTER[j], b = OUTER[j + 1]; return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; };
+const TAU = Math.PI * 2;
+// the new patterns, in the cup's own space (as lib/cup2geo.mjs defines them): drawn into the texture by inverse mapping
+const CUPPAT = {
+  dots: (th, y) => { for (const [yy, off] of [[1.62, 0], [1.06, 0.5], [0.5, 0]]) { const k = Math.round((th / TAU) * 16 - off), th0 = ((k + off) / 16) * TAU; if (Math.hypot((th - th0) * 1.42, y - yy) <= 0.13) return true; } return false; },
+  bands: (th, y) => [[1.62, 1.78], [1.22, 1.38], [0.82, 0.98]].some(([a, b]) => y >= a && y <= b),
+  dipped: (th, y) => y <= 0.95
+};
+const cupTex = (fn, col) => canvasTexture(1024, 256, (ctx) => {
+  // (the canvas is sRGB: the colours as hex components, not three's linear working space)
+  const hx = (h) => { const n = parseInt(h.slice(1), 16); return { r: ((n >> 16) & 255) / 255, g: ((n >> 8) & 255) / 255, b: (n & 255) / 255 }; };
+  const im = ctx.createImageData(1024, 256), c = hx(col), w = hx(WHITE), SS = 3;
+  for (let py = 0; py < 256; py++) for (let px = 0; px < 1024; px++) {
+    let hit = 0;
+    for (let a = 0; a < SS; a++) for (let b = 0; b < SS; b++) { const u = (px + (a + 0.5) / SS) / 1024, v = 1 - (py + (b + 0.5) / SS) / 256; const [, y] = outerAtV(v); if (fn(u * TAU, y)) hit++; }
+    const f = hit / (SS * SS), i = (py * 1024 + px) * 4;
+    im.data[i] = Math.round((w.r + (c.r - w.r) * f) * 255); im.data[i + 1] = Math.round((w.g + (c.g - w.g) * f) * 255); im.data[i + 2] = Math.round((w.b + (c.b - w.b) * f) * 255); im.data[i + 3] = 255;
+  }
+  ctx.putImageData(im, 0, 0);
+});
+const PAT = {
+  zig: (col) => canvasTexture(1024, 256, (ctx) => { ctx.fillStyle = WHITE; ctx.fillRect(0, 0, 1024, 256); ctx.strokeStyle = col; ctx.lineWidth = 13; ctx.lineJoin = "miter"; for (let r2 = 0; r2 < 6; r2++) { const y = 34 + r2 * 34; ctx.beginPath(); for (let x = 0; x <= 1024; x += 32) ctx.lineTo(x, y + ((x / 32) % 2 ? -11 : 11)); ctx.stroke(); } }),
+  stripes: (col) => canvasTexture(1024, 256, (ctx) => { ctx.fillStyle = WHITE; ctx.fillRect(0, 0, 1024, 256); ctx.fillStyle = col; for (let x = 0; x < 1024; x += 64) ctx.fillRect(x + 16, 40, 30, 216); }),
+  dots: (col) => cupTex(CUPPAT.dots, col), bands: (col) => cupTex(CUPPAT.bands, col), dipped: (col) => cupTex(CUPPAT.dipped, col)
+};
+// the nine designs: 0-4 the original five exactly (src/app.js DESIGNS), 5-8 new ones in their grammar
+const DESIGNS = [
+  { name: "yellow", outer: { color: "#f5c518" }, inner: WHITE, handle: "#e0a90a" },
+  { name: "blue inside", outer: { color: WHITE }, inner: "#2f7fd8", handle: "#2f7fd8" },
+  { name: "zigzag", outer: { pat: "zig", col: "#f2c200" }, inner: WHITE, handle: "#b8bdc3" },
+  { name: "stripes", outer: { pat: "stripes", col: "#8ec1ea" }, inner: WHITE, handle: "#8ec1ea" },
+  { name: "pink", outer: { color: "#f4a3c4" }, inner: WHITE, handle: "#e0679a" },
+  { name: "dots", outer: { pat: "dots", col: "#f65342" }, inner: WHITE, handle: "#f65342" },
+  { name: "lilac", outer: { color: "#b098c8" }, inner: WHITE, handle: "#8f74ad" },
+  { name: "bands", outer: { pat: "bands", col: "#119bfe" }, inner: WHITE, handle: "#119bfe" },
+  { name: "dipped", outer: { pat: "dipped", col: "#28c840" }, inner: WHITE, handle: "#f8f6f1" }
+];
+const mats = new Map();
+const matsFor = (d, solidCol) => {
+  const k = d + ":" + (solidCol || "");
+  if (mats.has(k)) return mats.get(k);
+  const D = DESIGNS[d];
+  const outer = solidCol ? stdM({ color: solidCol }) : D.outer.pat ? stdM({ map: PAT[D.outer.pat](D.outer.col) }) : stdM({ color: D.outer.color });
+  const m = { outer, inner: stdM({ color: solidCol || D.inner }), handle: stdM({ color: solidCol || D.handle }) };
+  mats.set(k, m); return m;
+};
+const crema = canvasTexture(256, 256, (ctx) => { const g = ctx.createRadialGradient(128, 128, 10, 128, 128, 128); g.addColorStop(0, "#140803"); g.addColorStop(0.72, "#1c0c05"); g.addColorStop(0.9, "#3a1c0a"); g.addColorStop(1, "#5a2f12"); ctx.fillStyle = g; ctx.fillRect(0, 0, 256, 256); });
+const liqM = new T.MeshStandardMaterial({ map: crema, roughness: 0.04, metalness: 0, envMapIntensity: 1.5 });
+const basic = (c) => new T.MeshBasicMaterial({ color: c, toneMapped: false });
+const W1 = basic("#ffffff"), B0 = basic("#000000");
+const shadowTex = canvasTexture(128, 128, (ctx) => { const gg = ctx.createRadialGradient(64, 64, 2, 64, 64, 62); gg.addColorStop(0, "rgba(20,14,8,.34)"); gg.addColorStop(1, "rgba(20,14,8,0)"); ctx.fillStyle = gg; ctx.fillRect(0, 0, 128, 128); });
+// a cup, as make() built it: G (position) > tilt (rotation.x) > spinner (rotation.y: body, inside, handle) + liq (coffee)
+const makeCup = (s, withShadow) => {
+  const G = new T.Group(), Tl = new T.Group(), Sp = new T.Group(), Lq = new T.Group();
+  const o = new T.Mesh(outerGeo), n = new T.Mesh(innerGeo), h = new T.Mesh(handleGeo), l = new T.Mesh(liqGeo, liqM);
+  Sp.add(o, n, h); Lq.position.y = 1.18; Lq.add(l); Tl.add(Sp, Lq);
+  if (withShadow) { const sh = new T.Mesh(new T.PlaneGeometry(5.2, 5.2), new T.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false })); sh.rotation.x = -Math.PI / 2; sh.position.y = -0.02; Tl.add(sh); }
+  G.add(Tl); s.add(G);
+  return { G, Tl, Sp, o, n, h, l };
+};
+const sc = mkScene(), one = makeCup(sc, false);
+const cam = new T.PerspectiveCamera(30, 1, 0.1, 600);
+// the camera's frame as a window: k px per wall unit, the window's top-left in the full frame
+const look = (w, h, k, Zc, ycam, ox, oy) => {
+  const fh = k * 2 * Zc * Math.tan((15 * Math.PI) / 180), fw = fh * (w / h);
+  cam.position.set(0, ycam, Zc); cam.fov = 30; cam.aspect = w / h;
+  cam.setViewOffset(fw, fh, fw / 2 + ox * k - w / 2, fh / 2 - (oy - ycam) * k - h / 2, w, h);
+  cam.updateProjectionMatrix();
+};
+window.tile = ({ design = 0, X = 0, Y = 0, tilt = 0.52, yaw = 0, cx = 0, cy = 1, half = 2.6, px = 512, pass = "beauty", Zc = 50, ycam = 0, solid = null }) => {
+  one.G.position.set(X, Y, 0); one.Tl.rotation.x = tilt; one.Sp.rotation.y = yaw;
+  const M = matsFor(design, solid);
+  const P = { beauty: [M.outer, M.inner, M.handle, liqM], handle: [B0, B0, W1, B0], body: [W1, B0, B0, B0], open: [B0, W1, B0, W1], coffee: [B0, B0, B0, W1], all: [W1, W1, W1, W1] }[pass];
+  one.o.material = P[0]; one.n.material = P[1]; one.h.material = P[2]; one.l.material = P[3];
+  const isB = pass === "beauty";
+  sc.environment = isB ? envTex : null; sc.userData.lights.forEach((l) => (l.visible = isB));
+  R3.toneMapping = isB ? T.ACESFilmicToneMapping : T.NoToneMapping;
+  look(px, px, px / (2 * half), Zc, ycam, cx, cy);
+  R3.setSize(px, px, false); R3.setClearColor(0x000000, 0);
+  R3.render(sc, cam);
+  return R3.domElement.toDataURL("image/png");
+};
+const sc2 = mkScene(), pool = [];
+window.frame = ({ cups, w = 1280, h = 900, Zc = 50, ycam = 0, k = 40, bg = "#f2f2f2", ox = 0, oy = 0, shadow = true }) => {
+  pool.forEach((c) => (c.G.visible = false));
+  cups.forEach((c, i) => { const P = pool[i] || (pool[i] = makeCup(sc2, true)); P.G.visible = true; P.G.position.set(c.X, c.Y, c.Z || 0); P.G.scale.setScalar(c.s || 1); P.Tl.rotation.x = c.tilt ?? 0.52; P.Sp.rotation.y = c.yaw || 0; const M = matsFor(c.design, null); P.o.material = M.outer; P.n.material = M.inner; P.h.material = M.handle; P.l.material = liqM; P.Tl.children[2] && (P.Tl.children[2].visible = shadow); });
+  look(w, h, k, Zc, ycam, ox, oy);
+  R3.setSize(w, h, false); R3.toneMapping = T.ACESFilmicToneMapping; R3.setClearColor(new T.Color(bg), bg === "none" ? 0 : 1);
+  R3.render(sc2, cam);
+  return R3.domElement.toDataURL("image/png");
+};
+window.DESIGNS = DESIGNS;
+window.ready = true;
+</script></body></html>

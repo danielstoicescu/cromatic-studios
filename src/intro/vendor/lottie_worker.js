@@ -3,6 +3,10 @@
  *  1. images in the worker: there is no <img> in a Worker, so image assets are fetched and decoded as ImageBitmaps
  *     (createImgData), and the animation waits for them as it waits for <img> loads;
  *  2. the canvas image layer draws its picture once it is decoded (CVImageElement createContent/renderInnerContent).
+ *  3. (3.7x, the opening's start and its stalls) loadAnimation takes the data as bytes (animationBuffer, an ArrayBuffer,
+ *     transferred) and the worker parses it: nothing of it is parsed or copied on the page's thread. And params.cz: the
+ *     image assets' address (images), the curve quality (quality: lottie.setQuality), segments to play as soon as
+ *     the animation is built (play, loop), with no round trip to the page, and lazyImages: not waiting for pictures.
  */
 (typeof navigator !== "undefined") && (function(root, factory) {
     if (typeof define === "function" && define.amd) {
@@ -1717,11 +1721,17 @@
       if (typeof document === 'object' && document && document._isProxy && typeof createImageBitmap === 'function' && typeof fetch === 'function') {
         var self = this;
         var obw = { img: null, assetData: assetData };
+        // cz-patch 3: lazy (params.cz.lazyImages): the animation does not wait for its pictures (patch 2 draws each once
+        // decoded). In WebKit a worker's image decode waits on the page's thread: a busy page held the opening's start
+        var lazy = !!globalThis.__czLazyImages;
+        if (lazy) {
+          Promise.resolve().then(function () { self._imageLoaded(); });
+        }
         fetch(path).then(function (r) { return r.blob(); }).then(function (b) { return createImageBitmap(b); }).then(function (bmp) {
           obw.img = bmp;
-          self._imageLoaded();
+          if (!lazy) self._imageLoaded();
         }, function () {
-          self._imageLoaded();
+          if (!lazy) self._imageLoaded();
         });
         return obw;
       }
@@ -20521,6 +20531,27 @@
 
     function loadAnimation(payload) {
       var params = payload.params;
+      // cz-patch 3: the data as bytes, parsed here; its pictures' address, the curve quality, the first segments
+      var cz = params.cz || null;
+      delete params.cz;
+      if (params.animationBuffer) {
+        params.animationData = JSON.parse(new TextDecoder().decode(params.animationBuffer));
+        delete params.animationBuffer;
+      }
+      if (cz && cz.quality) {
+        lottie.setQuality(cz.quality);
+      }
+      globalThis.__czLazyImages = !!(cz && cz.lazyImages);
+      if (cz && cz.images && params.animationData && params.animationData.assets) {
+        var czAs = params.animationData.assets;
+        for (var czI = 0; czI < czAs.length; czI += 1) {
+          if (czAs[czI].p && !czAs[czI].layers) {
+            czAs[czI].p = cz.images;
+            czAs[czI].u = '';
+            czAs[czI].e = 1;
+          }
+        }
+      }
       var wrapper;
       var animation;
       var elements = [];
@@ -20632,6 +20663,12 @@
           },
         });
       });
+      if (cz && cz.play) {
+        animation.addEventListener('DOMLoaded', function () {
+          animation.setLoop(!!cz.loop);
+          animation.playSegments(cz.play, true);
+        });
+      }
       animations[payload.id] = {
         animation: animation,
         events: {},
@@ -20954,7 +20991,7 @@ var lottie = (function () {
         }
         delete paramsCopy.wrapper;
       }
-      if (paramsCopy.animationData) {
+      if (paramsCopy.animationData || paramsCopy.animationBuffer) { // cz-patch 3
         resolve(paramsCopy);
       } else if (paramsCopy.path) {
         fetch(paramsCopy.path)
@@ -21196,6 +21233,9 @@ var lottie = (function () {
           }
         }
         animations[animationId] = animation;
+        if (animationParams.animationBuffer) {
+          transferedObjects.push(animationParams.animationBuffer); // cz-patch 3: moved, not copied
+        }
         workerInstance.postMessage({
           type: 'load',
           payload: {

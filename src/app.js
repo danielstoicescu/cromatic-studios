@@ -12,6 +12,29 @@
   try { window.visualViewport && window.visualViewport.addEventListener("resize", czViewport); } catch (e) {}
   // r135g: analytics events (sent only after the cookie yes, see build/consent.mjs)
   var czEv = (n, p) => { try { window.czEvent && window.czEvent(n, p || {}); } catch (e) {} };
+  // beta 3.xx (the start-up's long tasks, after r230): the city's boot ran as a few long tasks on the main thread (on a
+  // phone at 4x CPU: 4.7 s for the bundle, 1.8 s for the streets and blocks, 2.3 s for the first frame...), so the
+  // opening's start, its Skip and every tap waited on them. Its jobs now run in slices: a job is a generator that yields
+  // between its steps; czRun goes on until the slice has had the thread for czBudget ms, then hands it back (a message,
+  // not a timer: no 4 ms clamp, and other tasks, input and the loader's frames, get their turn) and carries on.
+  var czBudget = 40, czSliceAt = 0;
+  var czYield = () => new Promise((res) => { const ch = new MessageChannel(); ch.port1.onmessage = () => { ch.port1.onmessage = null; res(); }; ch.port2.postMessage(0); });
+  var czDue = () => performance.now() - czSliceAt >= czBudget;
+  // a point where an async job may hand the thread back (only once its slice is used up)
+  var czPause = async () => { if (czDue()) { await czYield(); czSliceAt = performance.now(); } };
+  // a generator job, in slices; resolves with what it returns
+  // (window.__czSlices: the slices' own time and count, and the time between them, for the tests)
+  var czStat = (window.__czSlices = { busy: 0, n: 0, away: 0 });
+  var czRun = async (gen) => {
+    czSliceAt = performance.now();
+    for (;;) {
+      const r = gen.next();
+      if (r.done) { czStat.busy += performance.now() - czSliceAt; return r.value; }
+      if (czDue()) { const t = performance.now(); czStat.busy += t - czSliceAt; czStat.n++; await czYield(); czSliceAt = performance.now(); czStat.away += czSliceAt - t; }
+    }
+  };
+  // the same job, at once (a caller that needs it whole, now)
+  var czDrain = (gen) => { for (;;) { const r = gen.next(); if (r.done) return r.value; } };
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __esm = (fn, res) => function __init() {
     return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
@@ -23612,9 +23635,9 @@ void main() {
             renderer.autoClear = this.autoClear;
             renderer.render(scene, camera);
             renderer.autoClear = currentAutoClear;
-            this.renderOutline(scene, camera);
+            this.renderOutline(scene, camera, true); // beta 3.7x: the hull pass reuses what this pass culled
           };
-          this.renderOutline = function(scene, camera) {
+          this.renderOutline = function(scene, camera, culled = false) {
             const currentAutoClear = renderer.autoClear;
             const currentSceneAutoUpdate = scene.matrixWorldAutoUpdate;
             const currentSceneBackground = scene.background;
@@ -23626,10 +23649,27 @@ void main() {
             passId++;
             // beta 3.75: a pass can leave whole subtrees out of the hull: this.skipHull(object) true hides that object for
             // the hull pass only (Sketchbook: the ride and the police car, drawn plain over the sketch). null: as before
-            const skip = this.skipHull, hid = skip ? [] : null;
-            if (!skip) scene.traverseVisible(setOutlineMaterial); // r139b: hidden subtrees are never drawn, so never swapped
-            else { const walk = (o) => { if (o.visible === false) return; if (skip(o)) { o.visible = false; hid.push(o); return; } setOutlineMaterial(o); const ch = o.children; for (let i = 0; i < ch.length; i++) walk(ch[i]); }; walk(scene); }
-            try { renderer.render(scene, camera); } finally { if (hid) for (const o of hid) o.visible = true; }
+            // beta 3.7x (Sketchbook audit, round 2): and only what the camera's layers can draw gets a hull material: on the map
+            // ~1,600 of ~2,700 visible meshes have layers.mask 0 (the originals merged into batches, n2's far cull), never drawn,
+            // yet swapped and restored every frame (r139b's walk was traverseVisible). Children are still walked: a layer is
+            // per object. Same pixels, in every world that draws hulls
+            // beta 3.7x: cull once. Called from render() (culled), the scene was just drawn with the same camera: what that pass
+            // drew (its render list) is exactly what the hull pass would draw again after culling it again. So a renderable
+            // leaf it did not draw is hidden for the hull pass, and what it drew skips the second frustum test (frustumCulled
+            // off for this pass). On the map that is ~1,200 bounding-sphere tests a frame against the city's warped frustum
+            const skip = this.skipHull, hid = [], unc = [], cl = camera.layers;
+            let drawn = null;
+            if (culled && renderer.renderLists) { const L = renderer.renderLists.get(scene, 0); drawn = new Set(); for (const a of [L.opaque, L.transmissive, L.transparent]) for (let i = 0; i < a.length; i++) drawn.add(a[i].object); }
+            const walk = (o) => {
+              if (o.visible === false) return;
+              if (skip && skip(o)) { o.visible = false; hid.push(o); return; }
+              const ch = o.children;
+              if (drawn && ch.length === 0 && (o.isMesh || o.isLine || o.isPoints || o.isSprite) && !drawn.has(o)) { o.visible = false; hid.push(o); return; }
+              if (o.layers.test(cl)) { setOutlineMaterial(o); if (drawn && o.frustumCulled && drawn.has(o)) { o.frustumCulled = false; unc.push(o); } }
+              for (let i = 0; i < ch.length; i++) walk(ch[i]);
+            };
+            walk(scene); // r139b: hidden subtrees are never drawn, so never swapped
+            try { renderer.render(scene, camera); } finally { for (const o of hid) o.visible = true; for (const o of unc) o.frustumCulled = true; }
             for (let i = 0, il = swapped.length; i < il; i++) restoreOriginalMaterial(swapped[i], swappedOBR[i]);
             cleanupCache();
             scene.matrixWorldAutoUpdate = currentSceneAutoUpdate;
@@ -24712,12 +24752,16 @@ void main() {
   // metalness 1 had nothing to reflect. The chrome gets its own room, drawn without the bend; one per renderer
   // (the ride previews have their own). Only chrome uses it, so paint, glass and the city keep their look.
   var _chromeEnv = null;
-  function makeChromeEnv(r) {
-    const pm = new PMREMGenerator(r), room = new RoomEnvironment(), nc = window.__noCityCull;
+  function chromeEnvRoom() {
+    const room = new RoomEnvironment();
     // a dark floor under the white room: the lower half reflects darker, the horizon band that reads as chrome
     const floor = new Mesh(new PlaneGeometry(40, 40), new MeshBasicMaterial({ color: "#3c3f45" }));
     floor.rotation.x = -Math.PI / 2; floor.position.y = -0.8; room.add(floor);
     noWarp(room);
+    return room;
+  }
+  function makeChromeEnv(r, room = chromeEnvRoom()) {
+    const pm = new PMREMGenerator(r), nc = window.__noCityCull;
     window.__noCityCull = true;
     try { return pm.fromScene(room, 0.04); } finally { window.__noCityCull = nc; room.dispose(); pm.dispose(); }
   }
@@ -24742,15 +24786,29 @@ void main() {
   var CITY_ENV_K = 0.35;
   var CITY_ROOM_GREY = 0.12;
   var _cityK = 1;
-  function makeCityEnv(r) {
-    const pm = new PMREMGenerator(r), room = new RoomEnvironment(), nc = window.__noCityCull;
+  function cityEnvRoom() {
+    const room = new RoomEnvironment();
     if (CITY_REFLECT) {
       // a dark studio with the room's bright panels: glossy streaks on glass and paint without the white room's
       // ambient (its diffuse part lifted every painted surface and washed the city out)
       room.traverse((o) => { if (o.isMesh && o.material.isMeshStandardMaterial) o.material.color.setScalar(CITY_ROOM_GREY); });
-      noWarp(room); window.__noCityCull = true;
+      noWarp(room);
     }
+    return room;
+  }
+  function makeCityEnv(r, room = cityEnvRoom()) {
+    const pm = new PMREMGenerator(r), nc = window.__noCityCull;
+    if (CITY_REFLECT) window.__noCityCull = true;
     try { return pm.fromScene(room, 0.04); } finally { window.__noCityCull = nc; room.dispose(); pm.dispose(); }
+  }
+  // beta 3.xx (start-up): a room's programs, compiled and linked in the background before it is baked (the bake's first
+  // draws blocked on their links: ~0.2-0.4 s at 4x for the two rooms); for the half-float cube target the bake draws into
+  async function envLinked(r, room) {
+    if (!r.extensions?.has?.("KHR_parallel_shader_compile")) return;
+    const cam = new PerspectiveCamera(90, 1, 0.1, 1000), rt = new WebGLRenderTarget(1, 1, { type: HalfFloatType }), prev = r.getRenderTarget(), nc = window.__noCityCull;
+    let p = null;
+    try { window.__noCityCull = true; r.setRenderTarget(rt); p = r.compileAsync(room, cam); } catch (e) {} finally { r.setRenderTarget(prev); window.__noCityCull = nc; }
+    try { if (p) await Promise.race([p, new Promise((res) => setTimeout(res, 3000))]); } catch (e) {} finally { rt.dispose(); }
   }
   function cityTone(root, k) {
     _cityK = k;
@@ -24953,13 +25011,14 @@ void main() {
         mesh2.setColorAt(i, col.clone().offsetHSL(0, 0, 0.05));
       }
     };
-    const tintAll = (blossom) => {
+    const tintAll = (blossom, pale) => { // beta 3.76: pale = the notebook's sage pencil (light, so the hatch stays airy)
       const rndT = rng(999);
       const paint = (mesh, mesh2, list, hueBase) => {
         for (let i = 0; i < list.length; i++) {
           rndT(); rndT(); // keep the stream aligned with place()
           const l = 0.3 + rndT() * 0.15;
           if (blossom) col.setHSL(0.936 + (i % 5) * 0.008, 0.68, 0.74 + (l - 0.3) * 0.6);
+          else if (pale) col.setHSL(hueBase - 0.1 + (i % 3) * 0.012, 0.5, 0.29 + (l - 0.3) * 0.4); // (HSL in linear light: about #93b56c on screen)
           else col.setHSL(hueBase, 0.62, l);
           mesh.setColorAt(i, col);
           mesh2.setColorAt(i, col.clone().offsetHSL(0, 0, blossom ? 0.04 : 0.05));
@@ -25105,15 +25164,44 @@ void main() {
         if ((cx - x) ** 2 + (cz - z) ** 2 <= r * r && (over || !g[j * W + i])) g[j * W + i] = v;
       }
     };
+    // a street's room: a disk of radius r stamped every <=4 units along it. beta 3.xx (start-up): the same cells, found
+    // per row, only those near the segment, each tested against the stamps nearest it (the closest of evenly spaced
+    // stamps on a line is the one nearest the cell's projection); the same arithmetic per test, so the same grid (checked
+    // against the stamping on 900 random polylines, every cell equal), ~4x faster
     const line = (pts, r, v) => {
+      const r2 = r * r;
       for (let k = 1; k < pts.length; k++) {
         const [ax, az] = pts[k - 1], [bx, bz] = pts[k], L = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(L / 4));
-        for (let s = 0; s <= n; s++) disk(ax + (bx - ax) * s / n, az + (bz - az) * s / n, r, v, true);
+        const dx = bx - ax, dz = bz - az, ex = ax + (bx - ax) * n / n, ez = az + (bz - az) * n / n, l2 = dx * dx + dz * dz;
+        const i0 = Math.max(0, Math.floor((Math.min(ax, ex) - r - CITY_X0) / C) - 1), i1 = Math.min(W - 1, Math.floor((Math.max(ax, ex) + r - CITY_X0) / C) + 1);
+        const j0 = Math.max(0, Math.floor((Math.min(az, ez) - r - CITY_Z0) / C) - 1), j1 = Math.min(H - 1, Math.floor((Math.max(az, ez) + r - CITY_Z0) / C) + 1);
+        for (let j = j0; j <= j1; j++) {
+          const cz = CITY_Z0 + (j + 0.5) * C;
+          let ilo = i0, ihi = i1;
+          if (dz !== 0) {
+            let t0 = (cz - r - az) / dz, t1 = (cz + r - az) / dz; if (t0 > t1) { const q = t0; t0 = t1; t1 = q; }
+            if (t1 < 0 || t0 > 1) { if (Math.abs(cz - az) > r + 1 && Math.abs(cz - ez) > r + 1) continue; }
+            t0 = Math.max(0, t0); t1 = Math.min(1, t1);
+            const xa = ax + dx * t0, xb = ax + dx * t1;
+            ilo = Math.max(i0, Math.floor((Math.min(xa, xb) - r - CITY_X0) / C) - 1); ihi = Math.min(i1, Math.floor((Math.max(xa, xb) + r - CITY_X0) / C) + 1);
+          } else if (Math.abs(cz - az) > r + 1) continue;
+          for (let i = ilo; i <= ihi; i++) {
+            const cx = CITY_X0 + (i + 0.5) * C, sc = l2 > 0 ? (((cx - ax) * dx + (cz - az) * dz) / l2) * n : 0;
+            let s0 = Math.floor(sc) - 1, s1 = Math.floor(sc) + 2;
+            if (s0 < 0) s0 = 0; if (s1 > n) s1 = n;
+            if (s0 > s1) { s0 = sc < 0 ? 0 : n; s1 = s0; }
+            for (let s = s0; s <= s1; s++) { const x = ax + (bx - ax) * s / n, z = az + (bz - az) * s / n; if ((cx - x) ** 2 + (cz - z) ** 2 <= r2) { g[j * W + i] = v; break; } }
+          }
+        }
       }
     };
     return { C, W, H, g, idx, disk, line, at: (x, z) => { const i = idx(x, z); return i < 0 ? 3 : g[i]; } };
   }
-  function cityNet() {
+  function cityNet() { return CITY_NET || czDrain(CITY_NET_GEN || (CITY_NET_GEN = cityNetGen())) || CITY_NET; }
+  // beta 3.xx (start-up slices): the same, yielding inside its long loops (the boot runs it in slices before the road
+  // graph; a call meanwhile finishes the same run at once)
+  var CITY_NET_GEN = null;
+  function* cityNetGen() {
     if (CITY_NET) return CITY_NET;
     const rnd = rng(1918);
     const routes = cityRoutes();
@@ -25164,6 +25252,7 @@ void main() {
     const sgrid = Array.from({ length: GW * GH }, () => []);
     const rAt = (x, z) => (x > -100 && x < 2700 && z > 2200 && z < 8300 ? 175 : 215);
     for (let tries = 0; tries < 26000; tries++) {
+      if (tries % 1500 === 1499) yield;
       const x = CITY_X0 + 40 + rnd() * (CITY_X1 - CITY_X0 - 80), z = CITY_Z0 + 40 + rnd() * (CITY_Z1 - CITY_Z0 - 80), r = rAt(x, z), r2 = r * r;
       let ok = true;
       const gi = Math.floor((x - CITY_X0) / SG), gj = Math.floor((z - CITY_Z0) / SG), rr = Math.ceil(r / SG);
@@ -25175,8 +25264,12 @@ void main() {
       seeds.push([x, z]);
       sgrid[gj * GW + gi].push(x, z);
     }
-    const minor = [];
-    for (const [[ax, az], [bx, bz]] of voronoiEdges(seeds)) {
+    yield;
+    const minor = [], vEdges = voronoiEdges(seeds);
+    yield;
+    let vk = 0;
+    for (const [[ax, az], [bx, bz]] of vEdges) {
+      if (++vk % 120 === 0) yield;
       const L = Math.hypot(bx - ax, bz - az);
       if (L < 46 || L > 700) continue;
       if (ax < CITY_X0 || bx < CITY_X0 || ax > CITY_X1 || bx > CITY_X1 || az < CITY_Z0 || bz < CITY_Z0 || az > CITY_Z1 || bz > CITY_Z1) continue;
@@ -25196,9 +25289,11 @@ void main() {
       for (let s = 0; s <= 6; s++) { const t = s / 6, o = Math.sin(t * Math.PI) * bow; pts.push([ax + (bx - ax) * t + nx * o, az + (bz - az) * t + nz * o]); }
       minor.push({ w: L > 260 ? 28 : 22, pts });
     }
+    yield;
     // the long streets stop short of the landmarks they would cross
     const longs = [];
     for (const s of LONG_STREETS) {
+      yield;
       let run = [];
       const flush = () => { if (run.length > 1) longs.push({ w: s.w, med: s.med, pts: run }); run = []; };
       for (let k = 1; k < s.pts.length; k++) {
@@ -25213,6 +25308,7 @@ void main() {
       flush();
     }
     CITY_NET = { minor, longs, routes, zones, inZone, roadDist };
+    CITY_NET_GEN = null;
     return CITY_NET;
   }
   function initRoadMats() {
@@ -25220,21 +25316,27 @@ void main() {
     mats.roadMajor = mats.roadMajor || new MeshStandardMaterial({ color: "#cfccc0", roughness: 1 });
     mats.roadCasing = mats.roadCasing || new MeshStandardMaterial({ color: "#b9b5a8", roughness: 1 });
   }
-  function buildRoads(parent) {
+  function buildRoads(parent) { return czDrain(buildRoadsGen(parent)); }
+  // beta 3.xx (start-up slices): the same, yielding between streets
+  function* buildRoadsGen(parent) {
     initRoadMats();
     const net = cityNet();
     const group = new Group();
     const v3 = (pts) => pts.map(([x, z]) => new Vector3(x, 0, z));
     // r163 (Adina): the side streets one notch lower (0.35 → 0.25, kerbs 0.22 → 0.12): their asphalt and a boulevard's kerb were
     // only 0.05 apart, and flickered at every junction from far away
-    const minorGeos = net.minor.map((s) => ribbonGeometry(v3(s.pts), s.w, 0.25));
+    const minorGeos = [];
+    for (let i = 0; i < net.minor.length; i++) { const s = net.minor[i]; minorGeos.push(ribbonGeometry(v3(s.pts), s.w, 0.25)); if (i % 8 === 7) yield; }
     const minorMesh = new Mesh(mergeGeometries(minorGeos), mats.roadMinor);
     minorMesh.receiveShadow = true;
     group.add(minorMesh);
+    yield;
     // kerbs: a darker edge under every street, so the blocks read from above
-    const casingGeos = net.minor.map((s) => ribbonGeometry(v3(s.pts), s.w + 5, 0.12));
+    const casingGeos = [];
+    for (let i = 0; i < net.minor.length; i++) { const s = net.minor[i]; casingGeos.push(ribbonGeometry(v3(s.pts), s.w + 5, 0.12)); if (i % 8 === 7) yield; }
     const majorGeos = [], medGeos = [];
     for (const s of net.longs) {
+      yield;
       // densify so curves stay smooth
       const dense = roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]);
       casingGeos.push(ribbonGeometry(v3(dense), s.w + 5, 0.4));
@@ -25242,6 +25344,7 @@ void main() {
       if (s.med) {
         medGeos.push(ribbonGeometry(v3(dense), 9, 0.75));
         for (let k = 3; k < dense.length - 3; k += 3) {
+          if (k % 45 === 0) yield;
           const [mx, mz] = dense[k];
           // r121: no tree where the boulevard crosses one of the drive's roads
           if (net.routes.some((pts) => pts.some(([rx, rz]) => (rx - mx) ** 2 + (rz - mz) ** 2 < 70 * 70))) continue;
@@ -25249,7 +25352,9 @@ void main() {
         }
       }
     }
+    yield;
     const casingMesh = new Mesh(mergeGeometries(casingGeos), mats.roadCasing);
+    yield;
     const majorMesh = new Mesh(mergeGeometries(majorGeos), mats.roadMajor);
     casingMesh.receiveShadow = majorMesh.receiveShadow = true;
     group.add(casingMesh, majorMesh);
@@ -25261,16 +25366,20 @@ void main() {
     }
     parent.add(group);
   }
-  function buildBuildings(parent) {
+  function buildBuildings(parent) { return czDrain(buildBuildingsGen(parent)); }
+  // beta 3.xx (start-up slices): the same, yielding between streets and between tiles
+  function* buildBuildingsGen(parent) {
     const net = cityNet();
     const G = cityGrid();
+    yield;
     // streets first (with their pavements), then the landmarks' room
-    for (const s of net.minor) G.line(s.pts, s.w / 2 + 5, 2);
-    for (const s of net.longs) G.line(roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]), s.w / 2 + 6, 2);
-    for (const pts of net.routes) G.line(pts, ROUTE_W / 2 + 8, 2);
+    for (const s of net.minor) { G.line(s.pts, s.w / 2 + 5, 2); yield; }
+    for (const s of net.longs) { G.line(roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]), s.w / 2 + 6, 2); yield; }
+    for (const pts of net.routes) { G.line(pts, ROUTE_W / 2 + 8, 2); yield; }
     G.line(boulevardPts(), BLVD_W / 2 + 14, 2); // r185: the blocks stand back from the wider boulevard
+    yield;
     // past Olari 9 the drive takes off: the airfield and the ramp keep a wide corridor
-    for (const pts of net.routes) G.line(pts.filter(([, z]) => z > 7480), 130, 3);
+    for (const pts of net.routes) { G.line(pts.filter(([, z]) => z > 7480), 130, 3); yield; }
     for (const z of net.zones) G.disk(z.x, z.y, z.r, 3);
     for (let i = 0; i < G.W; i += 1) for (let j = 0; j < G.H; j += 1) {
       const x = CITY_X0 + (i + 0.5) * G.C, z = CITY_Z0 + (j + 0.5) * G.C;
@@ -25457,22 +25566,26 @@ void main() {
     };
     let seed = 1;
     // the drive's own roads first, so their kerbs are the ones lined most closely
-    for (const pts of net.routes) line(pts.filter(([, z]) => z < 7480), ROUTE_W, "route", seed++ * 97);
-    for (const s of net.longs) line(roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]), s.w, "long", seed++ * 97);
-    for (const s of net.minor) line(s.pts, s.w, "minor", seed++ * 97);
+    for (const pts of net.routes) { line(pts.filter(([, z]) => z < 7480), ROUTE_W, "route", seed++ * 97); yield; }
+    for (const s of net.longs) { line(roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]), s.w, "long", seed++ * 97); yield; }
+    for (const s of net.minor) { line(s.pts, s.w, "minor", seed++ * 97); yield; }
     // courtyards: trees in the open middle of the blocks
     {
       const rnd = rng(5150);
-      for (let z = CITY_Z0 + 20; z < CITY_Z1 - 20; z += 21) for (let x = CITY_X0 + 20; x < CITY_X1 - 20; x += 21) {
-        const tx = x + (rnd() - 0.5) * 14, tz = z + (rnd() - 0.5) * 14;
-        if (G.at(tx, tz)) continue;
-        // inside a block: no street within reach on any side
-        let open = true;
-        for (const [ox, oz] of [[24, 0], [-24, 0], [0, 24], [0, -24]]) if (G.at(tx + ox, tz + oz) === 2) { open = false; break; }
-        if (!open || rnd() > (core(tx, tz) ? 0.2 : 0.09)) continue;
-        CITY_TREES.push({ x: tx, z: tz, s: 0.55 + rnd() * 0.6 });
+      for (let z = CITY_Z0 + 20; z < CITY_Z1 - 20; z += 21) {
+        for (let x = CITY_X0 + 20; x < CITY_X1 - 20; x += 21) {
+          const tx = x + (rnd() - 0.5) * 14, tz = z + (rnd() - 0.5) * 14;
+          if (G.at(tx, tz)) continue;
+          // inside a block: no street within reach on any side
+          let open = true;
+          for (const [ox, oz] of [[24, 0], [-24, 0], [0, 24], [0, -24]]) if (G.at(tx + ox, tz + oz) === 2) { open = false; break; }
+          if (!open || rnd() > (core(tx, tz) ? 0.2 : 0.09)) continue;
+          CITY_TREES.push({ x: tx, z: tz, s: 0.55 + rnd() * 0.6 });
+        }
+        if (z % 210 < 21) yield;
       }
     }
+    yield;
     const toGeo = (B) => {
       const g2 = new BufferGeometry();
       g2.setAttribute("position", new Float32BufferAttribute(B.p, 3));
@@ -25503,6 +25616,7 @@ void main() {
         if (list) { m.userData.def = m.geometry.attributes.color.array.slice(0); mats.cityTiles.push(m); parent.add(m); }
         else mvProps.add(m);
       }
+      yield;
     }
     parent.add(mvProps);
     mats.mvWalls = mats.cityTiles[0];
@@ -26534,9 +26648,11 @@ void main() {
   // rival F1 cars that share the road in the Race Day world: they hold a lane, then swing out
   // to pass you, or drop back as you pass them
   var rivals = [];
-  function buildRivals(parent) {
+  function buildRivals(parent) { return czDrain(buildRivalsGen(parent)); }
+  // beta 3.xx (start-up slices): a car at a time
+  function* buildRivalsGen(parent) {
     const liveries = [["#119BFE", "#ffffff"], ["#111111", "#FED012"], ["#2f9e4f", "#ffffff"]];
-    rivals = liveries.map(([main, second], i) => {
+    const mk = ([main, second], i) => {
       const v = buildVehicleBase("f1");
       v.group.traverse((o) => {
         if (!o.isMesh || !o.material || !o.material.color) return;
@@ -26548,7 +26664,10 @@ void main() {
       const holder = new Group(); holder.add(v.group); holder.visible = false;
       parent.add(holder);
       return { holder, wheels: v.wheels, base: [-420, 260, 640][i], amp: [520, 480, 600][i], w: [0.11, 0.083, 0.067][i], ph: i * 2.1, side: i % 2 ? 1 : -1, spin: 0, lat: 0 };
-    });
+    };
+    const out = [];
+    for (let i = 0; i < liveries.length; i++) { out.push(mk(liveries[i], i)); yield; }
+    rivals = out;
   }
   // ===================== r79: four streets — brand buildings =====================
   // emissive materials that light up after dark (switched with the other shop glows)
@@ -26661,9 +26780,13 @@ void main() {
     parent.add(g);
     return g;
   }
-  function buildContactShadows(parent) {
+  function buildContactShadows(parent) { return czDrain(buildContactShadowsGen(parent)); }
+  // beta 3.xx (start-up slices): the footprints a few landmarks at a time
+  function* buildContactShadowsGen(parent) {
     // every landmark group standing in the world (the city's own blocks already pushed theirs)
-    for (const c of parent.children) if (c.isGroup && c.visible !== false && c.name !== "goldenRoute") footprintOf(c);
+    const kids = parent.children.slice();
+    for (let i = 0; i < kids.length; i++) { const c = kids[i]; if (c.isGroup && c.visible !== false && c.name !== "goldenRoute") footprintOf(c); if (i % 12 === 11) yield; }
+    yield;
     const dirX = -Math.cos(0.55), dirZ = -Math.sin(0.55);
     const soft = (round) => canvasTexture(128, 128, (ctx) => {
       if (round) { const g2 = ctx.createRadialGradient(64, 64, 6, 64, 64, 64); g2.addColorStop(0, "rgba(0,0,0,1)"); g2.addColorStop(0.55, "rgba(0,0,0,.55)"); g2.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = g2; ctx.fillRect(0, 0, 128, 128); return; }
@@ -26692,8 +26815,10 @@ void main() {
       mesh.frustumCulled = false; mesh.renderOrder = -1;
       parent.add(mesh);
     };
-    mk(soft(false), FOOTPRINTS, 0.7);
-    mk(soft(true), TREE_BLOBS, 0.5);
+    const softSq = soft(false); yield;
+    mk(softSq, FOOTPRINTS, 0.7); yield;
+    const softRound = soft(true); yield;
+    mk(softRound, TREE_BLOBS, 0.5);
     window.__fp = [FOOTPRINTS.length, TREE_BLOBS.length];
   }
   // one building per brand, in a few architectural kinds; the front is local +z
@@ -27543,7 +27668,9 @@ void main() {
     EXTRA_KEEPOUT.push({ x: sp.x, y: sp.z, r: 46 });
     return finish(g, parent, sp.x, sp.z);
   }
-  function buildPrintLane(parent) {
+  function buildPrintLane(parent) { return czDrain(buildPrintLaneGen(parent)); }
+  // beta 3.xx (start-up slices): a house at a time
+  function* buildPrintLaneGen(parent) {
     // Sticker Republic: a little yellow house, its front and side plastered with stickers
     const stickers = (ctx, n, seed) => {
       const r = rng(seed), cols = ["#F65342", "#119BFE", "#28C840", "#B098C8", "#ffffff", "#111111", "#ff8ac2", "#ff9a1f"];
@@ -27568,6 +27695,7 @@ void main() {
       ctx.fillStyle = "#e9e6de"; ctx.beginPath(); ctx.moveTo(38, 46); ctx.lineTo(60, 26); ctx.lineTo(56, 52); ctx.fill();
       ctx.restore();
     });
+    yield;
     const srAwn = canvasTexture(256, 32, (ctx) => { for (let i = 0; i < 16; i++) { ctx.fillStyle = i % 2 ? "#111111" : "#FFD21F"; ctx.fillRect(i * 16, 0, 16, 32); } });
     buildLaneHouse(parent, LANE_SR, {
       w: 58, d: 44, h: 33, wall: "#FFD21F", trim: "#ffffff", roof: "#b9532f", shop: "#111111", fence: "#111111",
@@ -27580,6 +27708,7 @@ void main() {
       }
     });
     // Printoteca: white and black, tees on a rail out front in CMYK
+    yield;
     const prAwn = canvasTexture(256, 32, (ctx) => { for (let i = 0; i < 16; i++) { ctx.fillStyle = i % 2 ? "#111111" : "#ffffff"; ctx.fillRect(i * 16, 0, 16, 32); } });
     const prSide = canvasTexture(256, 256, (ctx) => {
       ctx.fillStyle = "#f7f6f2"; ctx.fillRect(0, 0, 256, 256);
@@ -27602,6 +27731,7 @@ void main() {
         });
       }
     });
+    yield;
     // the lane itself: small houses in pastel plaster and red tiles, trees, two lamps
     const rnd = rng(1188), tints = ["#f1d8c4", "#e6dcc8", "#d9e3d4", "#f2e2b8", "#e8cfd4", "#d6dde6"];
     for (const [t, sd] of [[0.14, 1], [0.2, -1], [0.5, 1], [0.38, -1], [0.66, 1]]) {
@@ -27615,6 +27745,7 @@ void main() {
       g.rotation.y = Math.atan2(sp.fx, sp.fz);
       EXTRA_KEEPOUT.push({ x: sp.x, y: sp.z, r: 36 });
       finish(g, parent, sp.x, sp.z);
+      yield;
     }
     const trunkM = new MeshStandardMaterial({ color: "#7a4a22", roughness: 1 }), leafM = new MeshStandardMaterial({ color: "#4f9a4a", roughness: 0.9 });
     for (let i = 0; i < 12; i++) {
@@ -27876,7 +28007,9 @@ void main() {
     { br: "A", name: "UNDE", x: 708, z: 6036, line: "GROCERY", c: "#2b6fd6", t: "#ffffff", page: "unde" }
   ];
   var TAC = { br: "C", name: "The Aesthetic Court", x: 1790, z: 4570, line: "CASA POPORULUI · BUCHAREST", c: "#1a0909", t: "#c89b3c", page: "the-aesthetic-court" };
-  function buildFourStreets(parent) {
+  function buildFourStreets(parent) { return czDrain(buildFourStreetsGen(parent)); }
+  // beta 3.xx (start-up slices): a building at a time
+  function* buildFourStreetsGen(parent) {
     const L = (n) => (n ? { logoAssetto, logoBepco, logoESD, logoUnchain, logoTechventures, logoAltius, logoClinicaSante, logoInvestimental, logoInfinity, logoLongshield, logoVenevo, logoDrK, logoRoutine, logoCoffeenativ, logoBrewzeus, logoArca }[n] : null);
     for (const o of STREET_BRANDS) {
       const o2 = { ...o, logo: L(o.logo), keep: 90 };
@@ -27885,30 +28018,44 @@ void main() {
       else if (o.kind === "energy") buildBepco(parent, o2);
       else if (o.grand) buildParisian(parent, o2); // r176
       else buildBrandBuilding(parent, o2);
+      yield;
     }
     buildFriendsBlocks(parent);
+    yield;
     buildServiceHouses(parent);
+    yield;
     // r121: Kómpus, a lilac coffee shop right after Lapterra (r138e: moved across from OMA, see below)
     // r136d: rebuilt from the real shop front (same spot, same 46 x 34 footprint): buildKompusShop
     // r138e (Daniel): Kómpus is the building across the street from OMA now (east kerb, where the ARTISAN shop
     // stood), half as big again so it holds its own next to OMA; ARTISAN took its old plot after Lapterra
     buildKompusShop(parent, 934, 4560, 1.5);
+    yield;
     EXTRA_KEEPOUT.push({ x: 706, y: 5737, r: 50 });
     buildCourtyard(parent, COURT.x, COURT.z, COURT_BRANDS.map((o) => ({ ...o, logo: L(o.logo) })));
+    yield;
     buildSofmedicaYard(parent);
+    yield;
     casaPoporului = buildCasaPoporului(parent, TAC.x, TAC.z);
+    yield;
     buildArcaResort(parent);
+    yield;
     buildBrandBuilding(parent, { x: 1412, z: 5536, face: "+x", kind: "house", name: "ELITHIA", w: 46, d: 38, h: 28, wall: "#f4a58e", accent: "#d9715a", signBg: "#d9715a", signInk: "#ffffff", keep: 50 });
+    yield;
     buildPainPlaisir(parent, 968, 4815);
+    yield;
     // r121: across the Dacia row from where it was, behind Coffeenativ, its glass line facing the road
     buildPatiline(parent, 1030, 5985);
+    yield;
     buildBrandBuilding(parent, { x: 706, z: 5650, face: "+x", kind: "paris", name: "LAPTERRA", w: 50, d: 40, h: 30, wall: "#7a1f3d", accent: "#c9a227", signBg: "#5c1530", signInk: "#d9b45a", keep: 70 });
+    yield;
     // Coffeenativ: a small black house on the left kerb, where Pastizia used to be
     buildBrandBuilding(parent, { x: 930, z: 5900, face: "-x", kind: "house", name: "COFFEENATIV", logo: logoCoffeenativ, w: 58, d: 44, h: 30, wall: "#151515", accent: "#151515", signBg: "#151515", signInk: "#ffffff" });
+    yield;
     // a skyline for the financial district: unbranded glass towers further down the boulevard
     const rnd = rng(4242);
     for (const [tx, tz, f] of [[2420, 4700, "-x"], [2470, 5100, "-x"], [2420, 5500, "-x"], [2480, 5900, "-x"], [2600, 4900, "-x"], [2620, 5350, "-x"]]) {
       buildBrandBuilding(parent, { x: tx, z: tz, face: f, kind: "tower", name: "", w: 56 + rnd() * 20, d: 50, h: 110 + rnd() * 90, accent: ["#33414f", "#1f8a6a", "#b08d3c"][Math.floor(rnd() * 3)], glass: "#24323f", signBg: "#24323f", signInk: "#24323f", keep: 80 });
+      yield;
     }
   }
   // OMA Coffee, Brașov, from Daniel's photos: warm orange plaster, two tall arched openings in
@@ -28288,6 +28435,7 @@ void main() {
     };
     place(firs, firGeo, firM, 0.36, 0.375);
     place(beech, beechGeo, beechM, 0.345, 0.36);
+    mats.tampaForest = g.children.filter((o) => o.isInstancedMesh); // beta 3.76 round 2: Sketchbook draws the mountain without its 760 trees (applyScheme)
     // BRASOV: white letters standing on the city-facing slope near the crest, no posts,
     // tight spacing, alternating a little up / down like the real sign
     const letters = "BRASOV".split("");
@@ -28422,11 +28570,15 @@ void main() {
     const t = buildTeslaY(); t.scale.setScalar(0.72); t.rotation.y = Math.PI / 2; t.position.set(909, 0, 5212); parent.add(t);
     const p = buildPorsche911(); p.scale.setScalar(0.72); p.rotation.y = Math.PI / 2; p.position.set(947, 0, 5212); parent.add(p);
   }
-  function buildCoffeeStreetAdds(parent) {
+  function buildCoffeeStreetAdds(parent) { return czDrain(buildCoffeeStreetAddsGen(parent)); }
+  // beta 3.xx (start-up slices)
+  function* buildCoffeeStreetAddsGen(parent) {
     buildArtisanCar(parent);
+    yield;
     // r138e: off the plot across from OMA (Kómpus has it now), onto Kómpus' old one after Lapterra, a size down to fit
     buildStreetShop(parent, { key: "artisanGlow", name: "ARTISAN", label: "coffee gear", x: 706, z: 5737,
       w: 56, h: 50, d: 40, wall: "#797c69", trim: "#efe9dc", glass: "#2a2c24", ink: "#efe9dc", boardInk: "#2a2c24" });
+    yield;
     // Romexpo avenue: a straight road off Coffee Street, lined with hedges and round trees
     const g = new Group();
     const x0 = 850, x1 = 975, zc = 5140, len = x1 - x0, W = 40;
@@ -30810,6 +30962,8 @@ void main() {
     }
     poles.castShadow = arms.castShadow = true;
     parent.add(poles, arms, heads);
+    // beta 3.76 round 2: Sketchbook draws the street lights as thin pen lines (Daniel: "very thick"); applyScheme swaps these in
+    mats.poleGeo = { poles, arms, heads, poleGeo, armGeo, headGeo, thinPole: new CylinderGeometry(0.22, 0.3, 64, 6).translate(0, 32, 0), thinArm: new BoxGeometry(0.4, 0.4, 24).translate(0, 63, -10), smallHead: new SphereGeometry(1.4, 8, 6).translate(0, 61.6, -20) };
   }
   function makeCloudBlob(rnd) {
     const g = new Group();
@@ -30963,7 +31117,9 @@ void main() {
     return JET_R;
   }
   function jetLift(z) { return z < -22 ? (-22 - z) * 0.13 : 0; }
-  function buildCromaticJet() {
+  function buildCromaticJet() { return czDrain(buildCromaticJetGen()); }
+  // beta 3.xx (start-up slices): a part of the jet at a time
+  function* buildCromaticJetGen() {
     const g = new Group();
     const env = typeof getEnvMap === "function" ? getEnvMap() : null;
     // r137b: the Cromatic Air livery, take two (Daniel): the brand yellow skin again, a huge black "Cromatic"
@@ -30974,6 +31130,7 @@ void main() {
     const metal = new MeshStandardMaterial({ color: "#cfd3d8", roughness: 0.25, metalness: 0.9, envMap: getChromeEnv(), envMapIntensity: 0.9 }); // r138l: the chrome's room
     const dark = new MeshStandardMaterial({ color: "#1b1d20", roughness: 0.6 });
     const rubber = new MeshStandardMaterial({ color: "#151515", roughness: 0.95 });
+    yield;
     // fuselage: a lathe along z, the tail cone lifted
     const pts = [];
     // beta 3.01: denser towards the round nose tip (an even step left a flat ring at the very front)
@@ -30984,6 +31141,7 @@ void main() {
     for (let i = 0; i < pa.count; i++) { const z = pa.getZ(i); pa.setY(i, pa.getY(i) + jetLift(z)); }
     fg.computeVertexNormals();
     const fus = new Mesh(fg, yellow); fus.position.y = JET_CY; g.add(fus);
+    yield;
     // the side decals: windows, a black cheatline, the oversized wordmark, cockpit glass, the door
     const decal = (side) => {
       const c = document.createElement("canvas"); c.width = 2048; c.height = 512;
@@ -31068,6 +31226,7 @@ void main() {
       return mesh;
     };
     g.add(decal(1), decal(-1));
+    yield;
     // detail: wing-root fairings, leading-edge strips, landing lights, beacons, antennas, APU
     // r138b: the wing sits lower on the slimmer body; the engines are smaller, closer in and a little further forward
     // (EX/EY/EZ: the nacelles' axis and intake), the leading edge swept 33° (LE: its z at a span station)
@@ -31084,6 +31243,7 @@ void main() {
     for (const [y2, z2] of [[JET_CY + JET_R + 0.1, 2], [JET_CY - JET_R - 0.1, 4]]) { const bc = new Mesh(new SphereGeometry(0.6, 10, 8), beaconM); bc.position.set(0, y2, z2); g.add(bc); }
     for (const [y2, z2, h2] of [[JET_CY + JET_R - 0.1, 20, 2], [JET_CY - JET_R + 0.1, -14, -1.6]]) { const an = new Mesh(new BoxGeometry(0.25, Math.abs(h2), 1.3), dark); an.position.set(0, y2 + h2 / 2, z2); an.rotation.x = -0.35 * Math.sign(h2); g.add(an); }
     const apu = new Mesh(new TorusGeometry(0.45, 0.18, 8, 16), dark); apu.position.set(0, JET_CY + jetLift(-58.6), -58.6); g.add(apu);
+    yield;
     // engines: a ring of fan blades and an exhaust cone inside each nacelle
     for (const s2 of [1, -1]) {
       for (let k = 0; k < 18; k++) {
@@ -31100,6 +31260,7 @@ void main() {
       geo.rotateX(-Math.PI / 2); geo.translate(0, -t / 2, 0);
       return new Mesh(geo, mat);
     };
+    yield;
     // wings: low, swept, a little dihedral; black winglets with nav lights
     const navR = new MeshStandardMaterial({ color: "#ff3b30", emissive: new Color("#ff2a1f"), emissiveIntensity: 1.6 });
     const navG = new MeshStandardMaterial({ color: "#34c759", emissive: new Color("#1fd14a"), emissiveIntensity: 1.6 });
@@ -31117,6 +31278,7 @@ void main() {
       // flap-track fairings under the wing
       for (const [f, fz] of [[16, -14.3], [30, -16.6]]) { const ft = new Mesh(new CapsuleGeometry(0.6, 5, 4, 8), dark); ft.rotation.x = Math.PI / 2; ft.position.set(f * s, wingY - 0.9 + f * 0.07, fz); g.add(ft); }
     }
+    yield;
     // the rear engines on pylons (r138b: 82% as wide, 86% as long as the r137b nacelles)
     const nacPts = [[0, 0], [3.2, 0.4], [3.9, 3], [4.0, 12], [3.6, 19], [2.6, 22], [2.2, 22.2]].map(([r, y]) => new Vector2(r * 0.82, y * 0.86));
     for (const s of [1, -1]) {
@@ -31128,10 +31290,12 @@ void main() {
       const band = new Mesh(new CylinderGeometry(3.32, 3.32, 1.9, 28, 1, true), black); band.rotation.x = Math.PI / 2; band.position.set(EX * s, EY, EZ - 6.9); g.add(band);
       const pyl = panel([[0, EZ - 10.3], [6.2 * s, EZ - 8.6], [6.2 * s, EZ - 15.5], [0, EZ - 17.2]], 1.2, yellow, 0.35); pyl.position.y = EY - 0.3; g.add(pyl);
     }
+    yield;
     // exhaust glow, lit for take-off
     const glowM = new MeshBasicMaterial({ color: "#ffb35c", transparent: true, opacity: 0, depthWrite: false });
     glowM.userData.outlineParameters = { visible: false };
     const glows = [1, -1].map((s) => { const gl = new Mesh(new ConeGeometry(1.8, 7.5, 16, 1, true), glowM); gl.rotation.x = Math.PI / 2; gl.position.set(EX * s, EY, EZ - 22.8); g.add(gl); return gl; });
+    yield;
     // the T-tail: a black swept fin with the yellow CSs mark and a small flag, the tailplane on top (r137b)
     const finG = new Group();
     // r138b: a business-jet T-tail, lower and thinner; its side faces are at x = ±1.1 (FIN_X)
@@ -31153,6 +31317,7 @@ void main() {
       return m;
     };
     for (const s of [1, -1]) { const o = new Mesh(new PlaneGeometry(3.6, 2.4), flagM(s < 0)); o.position.set((FIN_X + 0.05) * s, 18.4, -58.3); o.rotation.y = (Math.PI / 2) * s; finG.add(o); }
+    yield;
     // the tail says CSs airlines, in the logo's lettering style
     // r138b: the CSs and the pill were an unlit picture in #FED012 and read as a paler yellow next to the lit,
     // clear-coated body. Now the canvas is only a stencil (white = paint) and the paint is the body's own
@@ -31198,6 +31363,7 @@ void main() {
     finG.add(tailTex(1), tailTex(-1));
     const st = new Mesh(new SphereGeometry(0.6, 10, 8), strobe); st.position.set(0, 23.4, -64.4); finG.add(st);
     finG.position.y = JET_CY + 4.2; g.add(finG);
+    yield;
     // landing gear (r138b: short legs, the jet sits low like a business jet; ww: tyre width, dx: twin spacing)
     const gear = (x, z, h, r, twin, ww = 1.6, dx0 = 1.5) => {
       const leg = new Mesh(new CylinderGeometry(0.42, 0.42, h, 10), metal); leg.position.set(x, r + h / 2, z); g.add(leg);
@@ -31208,6 +31374,7 @@ void main() {
     };
     gear(0, 37, 3.9, 1.1, true, 0.9, 0.9);
     gear(5.4, -4, 4, 1.6, true, 1.1, 1.2); gear(-5.4, -4, 4, 1.6, true, 1.1, 1.2);
+    yield;
     // the airstair on the left, down on a black carpet with yellow edges (r138b: five steps from the lower sill)
     const stair = new Group();
     const stepM = new MeshStandardMaterial({ color: "#2a2b2f", roughness: 0.6, metalness: 0.3 });
@@ -31275,7 +31442,9 @@ void main() {
       parent.add(g);
     }
   }
-  function buildAirfield(parent) {
+  function buildAirfield(parent) { return czDrain(buildAirfieldGen(parent)); }
+  // beta 3.xx (start-up slices): the field, then the jet, then its clouds
+  function* buildAirfieldGen(parent) {
     const g = new Group();
     const z0 = JET_HOME.z - 120, z1 = z0 + 1850, X = JET_HOME.x, W = 64;
     const asphalt = new MeshStandardMaterial({ color: "#3a3b40", roughness: 0.95 });
@@ -31309,9 +31478,11 @@ void main() {
     const sock = new Mesh(new ConeGeometry(2.4, 12, 12, 1, true), new MeshStandardMaterial({ color: "#FED012", side: DoubleSide })); sock.rotation.z = Math.PI / 2 - 0.15; sock.position.set(X - 46, 19, JET_HOME.z + 180); g.add(sock);
     g.traverse((o) => { if (o.isMesh && o.position.y > 2) o.castShadow = true; });
     parent.add(g);
-    const jet = buildCromaticJet();
+    yield;
+    const jet = yield* buildCromaticJetGen();
     jet.group.position.set(X, 0, JET_HOME.z);
     parent.add(jet.group);
+    yield;
     // r136: solid clouds (they were 82% opaque and the city showed through them)
     const cm = new MeshLambertMaterial({ color: "#ffffff", emissive: new Color("#ffffff"), emissiveIntensity: 0.55, flatShading: true, fog: false });
     cm.userData.outlineParameters = { visible: false };
@@ -31343,52 +31514,98 @@ void main() {
     EXTRA_KEEPOUT.push({ x: X + 86, y: JET_HOME.z - 80, r: 90 });
     return jet;
   }
-  function buildWorld(scene, accent) {
+  function buildWorld(scene, accent) { return czDrain(buildWorldGen(scene, accent)); }
+  // beta 3.xx (start-up slices): the same, a builder at a time (the boot runs it with czRun; the heavy builders yield
+  // inside too, see tagG)
+  function* buildWorldGen(scene, accent) {
     const world = new Group();
     // r198: each top-level piece of the world says which builder made it (userData.bld), so mergeStatic() knows which
     // ones it may batch (see STATIC_BUILDERS)
     const tag = (name, f) => { const n0 = world.children.length, r = f(); for (let i = n0; i < world.children.length; i++) world.children[i].userData.bld ??= name; return r; };
+    // the same for a builder that is itself a generator (it yields between its own pieces)
+    const tagG = function* (name, g) { const n0 = world.children.length, r = yield* g; for (let i = n0; i < world.children.length; i++) world.children[i].userData.bld ??= name; return r; };
     tag("Ground", () => buildGround(world));
+    yield;
     initRoadMats();
+    yield;
     // r101: the roundabout (the turnaround) is gone
     tag("Fork", () => buildFork(world));
+    yield;
     tag("Start", () => buildStart(world));
+    yield;
     // the four streets' landmarks go first, so the generic city blocks leave room for them
-    tag("FourStreets", () => buildFourStreets(world));
-    const jet = tag("Airfield", () => buildAirfield(world));
+    yield* tagG("FourStreets", buildFourStreetsGen(world));
+    yield;
+    const jet = yield* tagG("Airfield", buildAirfieldGen(world));
+    yield;
     tag("ChapterSigns", () => buildChapterSigns(world));
+    yield;
     tag("PitLane", () => buildPitLane(world));
-    tag("Rivals", () => buildRivals(world));
+    yield;
+    yield* tagG("Rivals", buildRivalsGen(world));
+    yield;
     tag("Streetlights", () => buildStreetlights(world));
+    yield;
     tag("StreetProps", () => buildStreetProps(world));
+    yield;
     const endHouse = tag("EndHouse", () => buildEndHouse(world));
+    yield;
     tag("OlariPlaza", () => buildOlariPlaza(world)); // r185
     const streetSigns = tag("CoffeeEntrance", () => buildCoffeeEntrance(world));
+    yield;
     tag("Romexpo", () => buildRomexpo(world));
+    yield;
     tag("SteamShop", () => buildSteamShop(world));
+    yield;
     tag("StreetShop", () => buildStreetShop(world, { key: "sipGlow", name: "SIP", label: "coffee & wine", x: 706, z: 4985,
       w: 66, h: 54, d: 46, wall: "#2b2620", trim: "#C9A227", glass: "#1a1712", ink: "#C9A227", boardInk: "#14120c" }));
+    yield;
     // r87, west kerb in the order you pass it: Sip, Tâmpa, then OMA at the foot of the
     // mountain right next to Yoshi Izakaya, Casa Berero, and ARCA at the end
     tag("OmaShop", () => buildOmaShop(world, 706, 4560));
+    yield;
     tag("Izakaya", () => buildIzakaya(world, 706, 5175));
+    yield;
     tag("CasaBerero", () => buildCasaBerero(world, 706, 5480));
+    yield;
     tag("Brasov", () => buildBrasov(world));
-    tag("CoffeeStreetAdds", () => buildCoffeeStreetAdds(world));
-    tag("PrintLane", () => buildPrintLane(world));
+    yield;
+    yield* tagG("CoffeeStreetAdds", buildCoffeeStreetAddsGen(world));
+    yield;
+    yield* tagG("PrintLane", buildPrintLaneGen(world));
+    yield;
     tag("People", () => buildPeople(world));
+    yield;
     tag("Dacia99", () => buildDacia99(world));
+    yield;
     tag("Munitiei5", () => buildMunitiei5(world));
+    yield;
     tag("Eliade18", () => buildEliade18(world));
+    yield;
     const heritage = tag("Heritage", () => buildHeritage(world));
+    yield;
     const plots = tag("Plots", () => buildPlots(world));
+    yield;
     const pois = tag("POIs", () => buildPOIs(world));
+    yield;
     // r118: the city fabric goes last, so it knows every landmark it has to leave room for.
     // r125: and it is built a moment later, once the intro is already playing (see boot)
-    let fabricDone = false;
-    world.userData.buildFabric = () => { if (fabricDone) return; fabricDone = true; world.userData.fabricDone = true; tag("Roads", () => buildRoads(world)); tag("Buildings", () => buildBuildings(world)); tag("Trees", () => buildTrees(world)); tag("ContactShadows", () => buildContactShadows(world)); };
+    // beta 3.xx (start-up slices): a generator too (buildFabricGen; the blocks yield between their tiles), and the world
+    // says it has its fabric (fabricDone, read by the street view's culling) only once all of it is there
+    let fabricStarted = false;
+    world.userData.buildFabricGen = function* () {
+      if (fabricStarted) return; fabricStarted = true;
+      yield* tagG("Roads", buildRoadsGen(world)); yield;
+      yield* tagG("Buildings", buildBuildingsGen(world)); yield;
+      tag("Trees", () => buildTrees(world)); yield;
+      yield* tagG("ContactShadows", buildContactShadowsGen(world));
+      world.userData.fabricDone = true;
+    };
+    world.userData.buildFabric = () => czDrain(world.userData.buildFabricGen());
     const ramp = tag("Ramp", () => buildRamp(world, accent));
+    yield;
     const clouds = tag("Clouds", () => buildClouds(world));
+    yield;
     scene.add(world);
     return { world, heritage, plots, pois, ramp, clouds, endHouse, streetSigns, jet };
   }
@@ -32156,7 +32373,9 @@ void main() {
   // r139e: { police: true } builds the Poliția car (Daniel's photo: a Romanian Police Dacia 1310) on the same body:
   // white with a navy bonnet and doors, POLIȚIA in white, the crest, a roof bar with two blue lamps and a siren horn,
   // the 1310's black grille with four round lamps, black plastic bumpers, black window rubbers, its tail lamps
-  function buildDacia1300(opts = {}) {
+  function buildDacia1300(opts = {}) { return czDrain(buildDacia1300Gen(opts)); }
+  // beta 3.xx (start-up slices): a part of the car at a time (the boot makes the ride and the chaser this way)
+  function* buildDacia1300Gen(opts = {}) {
     const pol = !!opts.police;
     const g = new Group();
     // r138j: re-fitted to photo 18 (wheelbase 51.5 = 2.44 m): the nose face 0.72 m ahead of the front axle, the
@@ -32203,6 +32422,18 @@ void main() {
     const dpZ = (z) => { const e = endT(z); return e && e[0] < 1 ? (-2 * e[1] * e[0] - 8 * e[2] * e[0] ** 7) * e[3] : 0; };
     const warp = (q) => {
       const P = q.attributes.position, N = q.attributes.normal;
+      // beta 3.xx (start-up): plain float attributes are read and written in their arrays (what getX / setX do for them),
+      // the same arithmetic: ~2x faster for the ride's ~0.06 s of it at 4x
+      if (!P.isInterleavedBufferAttribute && !N.isInterleavedBufferAttribute && !P.normalized && !N.normalized && P.itemSize === 3 && N.itemSize === 3) {
+        const pa = P.array, na = N.array;
+        for (let i = 0; i < P.count; i++) {
+          const o = i * 3, x = pa[o], y = pa[o + 1], z = pa[o + 2], u = y - CREASE(z), p = pZ(z), sy = fY(u), s = p * sy, s_y = p * dfY(u), s_z = sy * dpZ(z) - p * dfY(u) * dCREASE(z);
+          pa[o] = x * s;
+          const nx = na[o], X = nx / s, Y = na[o + 1] - x * s_y * nx / s, Z = na[o + 2] - x * s_z * nx / s, l = Math.hypot(X, Y, Z) || 1;
+          na[o] = X / l; na[o + 1] = Y / l; na[o + 2] = Z / l;
+        }
+        return;
+      }
       for (let i = 0; i < P.count; i++) {
         const x = P.getX(i), y = P.getY(i), z = P.getZ(i), u = y - CREASE(z), p = pZ(z), sy = fY(u), s = p * sy, s_y = p * dfY(u), s_z = sy * dpZ(z) - p * dfY(u) * dCREASE(z);
         P.setX(i, x * s);
@@ -32211,20 +32442,29 @@ void main() {
       }
     };
     // the body's big flat sides need vertices to bend: split triangles until no edge spans more than maxL in y/z
+    // beta 3.xx (start-up): the same subdivision, on a pool of doubles instead of an object and five arrays per vertex
+    // (the ride's heaviest step at boot, ~0.17 s at 4x): the same arithmetic in the same order, so the same triangles,
+    // bit for bit (checked against the old one on 11 M vertices), ~4x faster and without the garbage
     const subdivYZ = (geo, maxL) => {
       const g0 = geo.index ? geo.toNonIndexed() : geo, P = g0.attributes.position.array, N = g0.attributes.normal.array, U = g0.attributes.uv.array;
-      const op = [], on = [], ou = [], st = [], m2 = maxL * maxL;
-      const vx = (i) => ({ p: [P[i * 3], P[i * 3 + 1], P[i * 3 + 2]], n: [N[i * 3], N[i * 3 + 1], N[i * 3 + 2]], u: [U[i * 2], U[i * 2 + 1]] });
-      const mid = (a, b) => { const n = a.n.map((v, k) => v + b.n[k]), l = Math.hypot(...n) || 1; return { p: a.p.map((v, k) => (v + b.p[k]) / 2), n: n.map((v) => v / l), u: a.u.map((v, k) => (v + b.u[k]) / 2) }; };
-      const d2 = (a, b) => (a.p[1] - b.p[1]) ** 2 + (a.p[2] - b.p[2]) ** 2;
-      for (let i = 0; i < P.length / 3; i += 3) st.push([vx(i), vx(i + 1), vx(i + 2)]);
+      const m2 = maxL * maxL, nV = P.length / 3;
+      let V = new Float64Array(Math.max(64, Math.ceil(nV) * 16)), nv = 0;
+      const add = (px, py, pz, nx, ny, nz, u, v) => { if (nv * 8 + 8 > V.length) { const W2 = new Float64Array(V.length * 2); W2.set(V); V = W2; } const o = nv * 8; V[o] = px; V[o + 1] = py; V[o + 2] = pz; V[o + 3] = nx; V[o + 4] = ny; V[o + 5] = nz; V[o + 6] = u; V[o + 7] = v; return nv++; };
+      const vx = (i) => add(P[i * 3], P[i * 3 + 1], P[i * 3 + 2], N[i * 3], N[i * 3 + 1], N[i * 3 + 2], U[i * 2], U[i * 2 + 1]);
+      const mid = (a, b) => { const A = a * 8, B = b * 8, n0 = V[A + 3] + V[B + 3], n1 = V[A + 4] + V[B + 4], n2 = V[A + 5] + V[B + 5], l = Math.hypot(n0, n1, n2) || 1; return add((V[A] + V[B]) / 2, (V[A + 1] + V[B + 1]) / 2, (V[A + 2] + V[B + 2]) / 2, n0 / l, n1 / l, n2 / l, (V[A + 6] + V[B + 6]) / 2, (V[A + 7] + V[B + 7]) / 2); };
+      const d2 = (a, b) => (V[a * 8 + 1] - V[b * 8 + 1]) ** 2 + (V[a * 8 + 2] - V[b * 8 + 2]) ** 2;
+      const st = [];
+      let cap = Math.max(96, Math.ceil(nV) * 4), op = new Float32Array(cap * 3), on = new Float32Array(cap * 3), ou = new Float32Array(cap * 2), no = 0;
+      const emit = (v) => { if (no === cap) { cap *= 2; const a = new Float32Array(cap * 3), b = new Float32Array(cap * 3), c = new Float32Array(cap * 2); a.set(op); b.set(on); c.set(ou); op = a; on = b; ou = c; } const o = v * 8; op[no * 3] = V[o]; op[no * 3 + 1] = V[o + 1]; op[no * 3 + 2] = V[o + 2]; on[no * 3] = V[o + 3]; on[no * 3 + 1] = V[o + 4]; on[no * 3 + 2] = V[o + 5]; ou[no * 2] = V[o + 6]; ou[no * 2 + 1] = V[o + 7]; no++; };
+      for (let i = 0; i < nV; i += 3) { const a = vx(i), b = vx(i + 1), c = vx(i + 2); st.push(a, b, c); }
       while (st.length) {
-        const t = st.pop(), e = [d2(t[0], t[1]), d2(t[1], t[2]), d2(t[2], t[0])], k = e.indexOf(Math.max(...e));
-        if (e[k] > m2) { const a = t[k], b = t[(k + 1) % 3], c = t[(k + 2) % 3], m = mid(a, b); st.push([a, m, c], [m, b, c]); }
-        else for (const v of t) { op.push(...v.p); on.push(...v.n); ou.push(...v.u); }
+        const t2 = st.pop(), t1 = st.pop(), t0 = st.pop(), e0 = d2(t0, t1), e1 = d2(t1, t2), e2 = d2(t2, t0), mx = Math.max(e0, e1, e2);
+        const k = e0 === mx ? 0 : e1 === mx ? 1 : e2 === mx ? 2 : -1;
+        if (k >= 0 && (k === 0 ? e0 : k === 1 ? e1 : e2) > m2) { const a = k === 0 ? t0 : k === 1 ? t1 : t2, b = k === 0 ? t1 : k === 1 ? t2 : t0, c = k === 0 ? t2 : k === 1 ? t0 : t1, m = mid(a, b); st.push(a, m, c, m, b, c); }
+        else { emit(t0); emit(t1); emit(t2); }
       }
       const out = new BufferGeometry();
-      out.setAttribute("position", new Float32BufferAttribute(op, 3)); out.setAttribute("normal", new Float32BufferAttribute(on, 3)); out.setAttribute("uv", new Float32BufferAttribute(ou, 2));
+      out.setAttribute("position", new Float32BufferAttribute(op.subarray(0, no * 3), 3)); out.setAttribute("normal", new Float32BufferAttribute(on.subarray(0, no * 3), 3)); out.setAttribute("uv", new Float32BufferAttribute(ou.subarray(0, no * 2), 2));
       return out;
     };
     const parts = new Map();
@@ -32254,6 +32494,7 @@ void main() {
     const poly = (pts) => { const s = new Shape(); s.moveTo(...pts[0]); for (const p of pts.slice(1)) s.lineTo(...p); s.closePath(); return s; };
     const decalQ = (k, w, h, x, y, z, ry = 0, flip = false) => { const q = uvFit(new PlaneGeometry(w, h), A.uv(k, flip)); q.rotateY(ry); q.translate(x, y, z); put(A.mat, q); };
 
+    yield;
     // ---- body below the windows: side profile extruded across the width, wheel arches cut out
     // r138j (Daniel: "the bonnet is too long ... the rear tapered at the tip but not that thick"): measured off
     // photo 18. A short bonnet (about 1 m) falls from the scuttle to a low nose; the waist rises a touch towards
@@ -32306,6 +32547,7 @@ void main() {
     // wipers parked along the screen, on chrome spindles
     for (const x0 of [-13, 1]) { edge([x0, 21.2, 15.6], [x0 + 10, 22.2, 14.87], 0.2, black); add(at(new CylinderGeometry(0.45, 0.45, 0.7, 8), x0, 20.6, 16.2), chrome); }
 
+    yield;
     // ---- inside: black dash and steering wheel, red seats (Daniel: red cushions)
     // r144: everything 2.5 lower with the belt, the dash forward with the screen's foot
     add(at(new BoxGeometry(29.2, 0.12, 40), 0, 21.0, -6.3), black); // floor, level with the waist
@@ -32325,6 +32567,7 @@ void main() {
     for (const sx of [-1, 1]) seat(sx * 6.9, 9.2, -0.2, -4.4, -0.18, [-2.6, 0, 2.6], 4.6); // r144: taller backs
     seat(0, 27, -13.0, -17.6, -0.22, [-10, -6.5, -3, 3, 6.5, 10], 4.2);
 
+    yield;
     // ---- the nose: black grille between square headlamps, chrome surround, the chrome V with the shield
     // r138g: the whole front face is lower and shorter: the grille band sits right under the bonnet's edge
     // r138j: lamps right under the bonnet's edge, a band with the intake and indicators below, the bumper high
@@ -32365,6 +32608,7 @@ void main() {
       for (let i = 0; i < 3; i++) add(at(new BoxGeometry(8.6, 0.22, 0.45), -5.6, 10.25 + i * 0.4, ZF + 0.15), paint);
     }
 
+    yield;
     // ---- chrome bumpers wrapping round the corners, black rubber over-riders, plates
     const bumper = (zc, back, y0) => {
       const b = topBody((s) => {
@@ -32381,6 +32625,7 @@ void main() {
     }
     decalQ("plate", 10.4, 2.7, -1.2, 8.9, ZF + 2.8);
 
+    yield;
     // ---- the tail: wide lamp clusters in chrome, DACIA 1300 on the panel, the plate between the lamps
     // r138j: a slimmer tail: the bumper high, the lamps above it, plate and lettering between the lamps
     for (const sx of [-1, 1]) {
@@ -32396,6 +32641,7 @@ void main() {
     const pipe = [-11, 6.6, ZB - 1.4]; // exhaust tip (r138j: the idle smoke comes out here)
     edge([-11, 6.8, -38], pipe, 0.7, chrome, undefined, 8);
 
+    yield;
     // ---- flanks: chrome waist trim and sill strip, door shut lines, chrome handles, the round wing mirror
     for (const sx of [-1, 1]) {
       if (!pol) { // r139e: the 1310 has no chrome strips on its flanks
@@ -32410,6 +32656,7 @@ void main() {
     add(at(new CylinderGeometry(1.0, 1.0, 0.3, 14), -17.1, 18.0, -33, 0, 0, Math.PI / 2), chrome); // fuel cap
     edge([16.6, 19.9, 13.0], [18.3, 22.1, 12.6], 0.28, trim);
     add(at(new CylinderGeometry(1.55, 1.55, 0.8, 18), 18.5, 22.6, 12.5, Math.PI / 2), trim);
+    yield;
     // r139e: the Poliția livery and roof bar (the navy panels are in the paint's shader, above)
     let beacon = null;
     if (pol) {
@@ -32445,6 +32692,7 @@ void main() {
     }
     const wmats = { rubber: new MeshStandardMaterial({ color: "#161616", roughness: 0.9 }), steel: new MeshStandardMaterial({ color: "#c9cdd2", roughness: 0.34, metalness: 0.35, envMap: getChromeEnv(), envMapIntensity: 0.8, userData: { chrome: true, envI: 0.8 } }), chrome };
     const wheels = [];
+    yield;
     // r138j: 155 SR 13s at the photo's scale (0.29 m: 6.9 here), slightly smaller than before
     for (const [x, z] of [[-13.5, 24.5], [13.5, 24.5], [-13.5, -27], [13.5, -27]]) { const w = dacia1300Wheel(Math.sign(x), wmats); w.scale.setScalar(6.9 / 7.4); w.position.set(x, 6.9, z); wheels.push(w); g.add(w); }
     // where the exhaust ends, through the same pinch as the pipe itself (for the idle smoke, r138j)
@@ -32618,6 +32866,7 @@ void main() {
     g.add(lamps);
     v.revLamps = lamps;
   }
+  var DACIA_PRE = null, COP_PRE = null;
   function buildVehicleBase(id) {
     switch (id) {
       case "f1":
@@ -32630,10 +32879,14 @@ void main() {
         return buildScooter();
       case "foodvan":
         return buildFoodvan();
-      case "cop":
-        return buildDacia1300({ police: true }); // r139e: the Poliția 1310 (was the Cop cruiser, buildCop)
-      case "dacia1300":
-        return buildDacia1300();
+      case "cop": {
+        const pre = COP_PRE; COP_PRE = null; // beta 3.xx: made beforehand in slices (the ride previews)
+        return pre || buildDacia1300({ police: true }); // r139e: the Poliția 1310 (was the Cop cruiser, buildCop)
+      }
+      case "dacia1300": {
+        const pre = DACIA_PRE; DACIA_PRE = null; // beta 3.xx: the boot's ride, made beforehand in slices
+        return pre || buildDacia1300();
+      }
       case "sub":
         return buildSub();
       default:
@@ -34427,11 +34680,12 @@ void main() {
       let pushed = false, popping = false, baseUrl = null;
       // r161 (Daniel: share a project): while a case page is open its own address is in the bar (/work/<page>/),
       // so it can be copied or shared, and opening that link serves the page itself, with no city behind it
-      const frameUrl = () => { const f = document.querySelector(".case-frame:not(.hidden)"); return f?._url ? new URL(f._url, location.origin).href : null; };
+      const frameUrl = () => { const f = document.querySelector(".case-frame:not(.hidden)"); return f?._url && !f._czClosing ? new URL(f._url, location.origin).href : null; }; // r235: not while it shrinks back into its pill (Back would put its address back)
       // r126: every panel counts: crew, human, rides, world menu, map card, boarding pass
       const panelsOpen = () => ovOpen() || !!document.querySelector(".crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:not(.hidden), .map-card:not(.hidden)") || document.body.classList.contains("map-boarding") || document.body.classList.contains("hud-world-open");
       const closeAll = () => {
-        for (const q of document.querySelectorAll(".case-frame, .scf-modal, .hmodal-backdrop, .crew-panel, .human-panel, .map-rides")) q.classList.add("hidden");
+        const cfo = document.querySelector(".case-frame:not(.hidden)"), cfa = !!cfo && !!window.__czFrameClose?.(); // r233: Escape and Back close a page into its pill too
+        for (const q of document.querySelectorAll(".case-frame, .scf-modal, .hmodal-backdrop, .crew-panel, .human-panel, .map-rides")) if (!(cfa && q === cfo)) q.classList.add("hidden");
         document.body.classList.remove("modal-open", "scf-open", "human-open", "hud-world-open");
         window.__stopFrames?.();
         document.querySelector(".map-card:not(.hidden) .map-x")?.click();
@@ -34440,7 +34694,7 @@ void main() {
       window.__closeAllOverlays = closeAll;
       setInterval(() => {
         const on = panelsOpen();
-        if (on && !pushed) { pushed = true; baseUrl = location.href; try { history.pushState({ czOverlay: 1 }, "", frameUrl() || baseUrl); } catch {} }
+        if (on && !pushed) { pushed = true; popping = false; baseUrl = location.href; try { history.pushState({ czOverlay: 1 }, "", frameUrl() || baseUrl); } catch {} } // r235: a new step is a new step (after a Back that left the place card open, the next page's address never came)
         else if (on && pushed && !popping) { const want = frameUrl() || baseUrl; if (want && location.href !== want) { try { history.replaceState(history.state, "", want); } catch {} } } // r161
         else if (!on && pushed) { pushed = false; if (!popping) { try { if (history.state?.czOverlay) history.back(); } catch {} } popping = false; }
       }, 250);
@@ -34595,6 +34849,10 @@ void main() {
     // the Steam case study page, full screen, closed with a big button top-right
     const caseFrame = el("div", "case-frame hidden");
     caseFrame.innerHTML = `<button class="cf-share" aria-label="Share this project"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg><span>Share</span></button><button class="cf-close" aria-label="Close">\u00D7</button><iframe class="cf-iframe" title="Steam \u2014 Cromatic Studios"></iframe>`;
+    // r235: the page sits in four nested boxes that cut its pill when it grows out of a button (src/lottie-ui/pill.js;
+    // at rest they are the screen and cut nothing). Made here, before the frame has ever loaded a page (moving an iframe
+    // reloads it)
+    { const w = caseFrame.innerHTML; caseFrame.innerHTML = `<div class="cf-w"><div class="cf-w"><div class="cf-w"><div class="cf-w"><div class="cf-in">${w}</div></div></div></div></div>`; }
     root.appendChild(caseFrame);
     // r135c: closing a page really closes it: the frame is swapped for an empty one, so no film keeps playing behind the map
     const blankFrame = () => {
@@ -34617,7 +34875,11 @@ void main() {
       const sp = btn.querySelector("span"); sp.textContent = "Link copied"; btn.classList.add("done");
       clearTimeout(btn._t); btn._t = setTimeout(() => { sp.textContent = "Share"; btn.classList.remove("done"); }, 1800);
     };
-    const closeFrame = () => { caseFrame._url = null; caseFrame._anim?.cancel(); caseFrame.classList.add("hidden"); document.body.classList.remove("scf-open"); blankFrame(); }; // r137a: _anim = the grow-in from the place card
+    const closeNow = () => { caseFrame.style.removeProperty("visibility"); caseFrame._url = null; caseFrame._anim?.cancel(); caseFrame.classList.add("hidden"); document.body.classList.remove("scf-open"); blankFrame(); }; // r137a: _anim = the grow-in from the place card
+    // r233 (Daniel, Lottie: the pill transitions): a page closes into the intro's pill (the studio's paper comes in round
+    // it), and the pill opens onto the map again; the game has its own way out
+    const closeFrame = () => { if (!caseFrame.classList.contains("hidden") && window.czPill?.close(caseFrame, closeNow)) return; closeNow(); };
+    window.__czFrameClose = () => !caseFrame.classList.contains("hidden") && !!window.czPill?.close(caseFrame, closeNow);
     // a case page inside the map asks for the boarding pass ("Ready for boarding")
     window.addEventListener("message", (e) => {
       if (e.origin !== location.origin || !e.data || e.data.cz !== "boarding") return;
@@ -34625,7 +34887,7 @@ void main() {
       const fr = [...document.querySelectorAll("iframe")].find((f) => f.contentWindow === e.source);
       const ov = fr?.closest(".case-frame, .scf-modal");
       const close = () => {
-        if (!ov || ov === caseFrame) closeFrame();
+        if (!ov || ov === caseFrame) closeNow(); // (the pass's own fade has it: no pill on top)
         else { ov.classList.add("hidden"); document.body.classList.remove("scf-open"); window.__stopFrames?.(); }
         if (ov) for (const k of ["opacity", "transform", "transition"]) ov.style.removeProperty(k);
       };
@@ -34666,10 +34928,13 @@ void main() {
       fr.title = `${title} \u2014 Cromatic Studios`;
       caseFrame.classList.remove("hidden");
       document.body.classList.add("scf-open");
-      r137Grow();
+      grow();
     };
     // r137a (Daniel): opened from the map's place card, the page grows out of the card: it starts as the card's
     // rectangle, see-through, and opens to the full screen as it turns opaque (the card leaves its rect in _from)
+    // r233: or, with the site's pill transitions, as the intro's window does: the map closes into a pill on the studio's
+    // paper, the pill opens onto the page, which has been loading meanwhile (src/lottie-ui/pill.js)
+    const grow = () => { if (window.czPill?.open(caseFrame, r137Grow)) { caseFrame._from = null; return; } r137Grow(); };
     const r137Grow = () => {
       const from = caseFrame._from; caseFrame._from = null;
       if (!from || performance.now() - from.t > 900 || !caseFrame.animate || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -34695,7 +34960,7 @@ void main() {
       if (!fr.srcdoc) fr.srcdoc = steamCaseHtml.split("<\\/script>").join("</" + "script>");
       caseFrame.classList.remove("hidden");
       document.body.classList.add("scf-open");
-      r137Grow(); // r137a
+      grow(); // r137a (r233: the pill)
       steamSeen = true;
     };
     const openSteamFeed = () => {
@@ -35597,7 +35862,11 @@ void main() {
 
   // src/main.js
   var require_main = __commonJS({
-    "src/main.js"() {
+    // beta 3.xx (start-up slices): the app's body is async: it hands the thread back between its first heavy steps and
+    // while the world is built (czRun). Only the gesture and focus listeners below are in place before the world is,
+    // so nothing of the rest can run half made; the boot's later jobs (the road graph, the streets and blocks, the
+    // compiles, the first draws) are sliced at the end (see kzBoot)
+    async "src/main.js"() {
       init_three_module();
       init_RoomEnvironment();
       init_OutlineEffect();
@@ -35615,6 +35884,8 @@ void main() {
       document.addEventListener("touchmove", (e) => { if (e.touches.length > 1 && !e.target.closest?.("canvas")) e.preventDefault(); }, { passive: false });
       document.addEventListener("focusin", (e) => { if (e.target.matches?.("input, textarea, select")) document.body.classList.add("kb-open"); });
       document.addEventListener("focusout", () => setTimeout(() => { if (!document.activeElement?.matches?.("input, textarea, select")) document.body.classList.remove("kb-open"); }, 250));
+      await czPause(); // (the bundle's own evaluation ends here)
+      var bootBDone = false; // beta 3.xx: the app is all made (the jobs after it may hand the thread back; worldFx / uwFx may be made)
       var state = {
         branch: "A",
         branchChosen: false,
@@ -35632,6 +35903,9 @@ void main() {
         started: false
       };
       var renderer = new WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+      // beta 3.xx (QA 19 October, cause 6): no info-log reads on each program's first use (three's own advice for production:
+      // a read per program, a round trip to the GPU process each); ?debug or ?shadercheck turns them back on
+      renderer.debug.checkShaderErrors = /[?&](debug|shadercheck)\b/.test(location.search);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile() ? 1.8 : 2));
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.shadowMap.enabled = false; // r127: contact shadows instead (see buildContactShadows)
@@ -35643,8 +35917,11 @@ void main() {
       var scene = new Scene();
       var camera = new PerspectiveCamera(46, window.innerWidth / window.innerHeight, 10, 13e3);
       var pmrem = new PMREMGenerator(renderer);
-      setEnvMap(makeCityEnv(renderer).texture); // r138n: drawn without the bend when CITY_REFLECT (was pmrem.fromScene(new RoomEnvironment(), 0.04))
-      _chromeEnv = makeChromeEnv(renderer).texture; // r138l
+      await czPause();
+      { const room = cityEnvRoom(); await envLinked(renderer, room); setEnvMap(makeCityEnv(renderer, room).texture); } // r138n: drawn without the bend when CITY_REFLECT (was pmrem.fromScene(new RoomEnvironment(), 0.04)); beta 3.xx: its programs linked first
+      await czPause();
+      { const room = chromeEnvRoom(); await envLinked(renderer, room); _chromeEnv = makeChromeEnv(renderer, room).texture; } // r138l
+      await czPause();
       var outline = new OutlineEffect(renderer, {
         defaultThickness: 18e-4,
         defaultColor: [0.02, 0.02, 0.02]
@@ -35704,6 +35981,7 @@ void main() {
           farRings.push(m);
         });
       })();
+      await czPause();
       var farClouds = new Group();
       (() => {
         const m = new MeshLambertMaterial({ color: "#ffffff", fog: false, flatShading: true });
@@ -35731,7 +36009,15 @@ void main() {
       })();
       scene.background = new Color("#f2f2f2");
       var route = new Route(state.branch);
-      var worldRefs = buildWorld(scene, "#FED012");
+      await czPause();
+      var worldRefs = await czRun(buildWorldGen(scene, "#FED012")); // beta 3.xx: in slices
+      // beta 3.xx: the map's road graph (nav2), in slices too, from the world's own data, before the rest of the app is
+      // made (the graph was ~a fifth of the bundle's 4.7 s task); czNav2 then takes it as it is
+      if (typeof window.czNav2?.prepare === "function" && !(/[?&]drive\b/.test(location.search) && /[?&]onb\b/.test(location.search))) {
+        try { if (!CITY_NET) await czRun(CITY_NET_GEN || (CITY_NET_GEN = cityNetGen())); } catch (e) {}
+        try { await window.czNav2.prepare({ navNet, cityNet, rounded: (p, r) => roundedPolyline(p, r), fork: FORK_POS, start: ROUTE_MAIN[0] }, czRun); } catch (e) {}
+        await czPause();
+      }
       var golden = buildGoldenRoute(scene, state.branch, "#FED012", false);
       var veh = null;
       var spawnStart = -1;
@@ -35860,9 +36146,30 @@ void main() {
           }
         };
       })();
+      await czPause();
+      DACIA_PRE = await czRun(buildDacia1300Gen()); // beta 3.xx: the ride in slices (setVehicle takes it)
       setVehicle("dacia1300"); // r138j: the 1300 is the default ride
       veh.group.visible = false;
       spawnStart = -1;
+      // beta 3.xx (start-up slices): the ride and the chaser are the app's two heaviest steps after the world (~0.2 s each at
+      // 4x); the thread is handed back around them. Nothing of the app reacts to anything yet (only the gesture and focus
+      // listeners above are in place), so this is still the safe stretch for it
+      await czPause();
+      const copPre = await czRun(buildDacia1300Gen({ police: true })); // beta 3.xx: in slices
+      var copCar = (() => {
+        const v = copPre, g = v.group;
+        if (v.beacon) { v.beacon.lr.removeFromParent(); v.beacon.lb.removeFromParent(); }
+        addRevLamps(v, "cop"); // r212 (Daniel: "the police car is gigantic"): the Patrol ride is measured with its (hidden) reversing lamps and their pool, so the chaser is too, or it came out ~31% bigger than the same car you drive
+        const bb = new Box3().setFromObject(g), sz = bb.getSize(new Vector3());
+        g.scale.setScalar(1.5 * Math.min(0.74, 46 / Math.max(sz.z, 1), 30 / Math.max(sz.x, 1))); // as setVehicle sizes a ride (r124/r133)
+        g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
+        g.visible = false;
+        cityTone(g, _cityK); v.lampGlow?.(isDarkScheme);
+        scene.add(g);
+        const beacons = v.beacon ? [{ material: v.beacon.redM }, { material: v.beacon.blueM }] : [];
+        return { group: g, beacons, lampGlow: v.lampGlow };
+      })();
+      await czPause();
       var startRevealAt = Infinity;
       var kinetic = null, kineticArmedAt = Infinity;
       var mvK = 0;
@@ -36061,12 +36368,22 @@ void main() {
         return placeShotCache[key];
       }
       var worldPrevCache = { key: null, urls: [] }, worldPrevBusy = false, worldPrevNow = false; // beta 3.46 r215 (Daniel, QA pass): worldPrevNow = a preview's own scheme switch (not the visitor's)
-      function makeWorldPreviews(onEach) {
+      // beta 3.xx (the Multiverse menu, QA 19 October: its previews made 100-600 ms frames as it opened): a world a step, as
+      // before, but (1) each step runs inside the map's own frame, just before its draw, so the real view is no longer drawn
+      // a second time to cover the preview (the frame's own draw does); (2) the JPEG is encoded off the main thread
+      // (toBlob); (3) the previews of the last place show at once, the new ones replace them as they land; (4) the steps
+      // wait for idle time (not one every frame); (5) after the opening they are made once ahead, while the car stands
+      // still (prewarmWorlds), so the first opening of the menu finds them, and every world's first-time costs (its
+      // textures, its post pass and their programs) are paid then, not as the menu opens
+      var worldPrevJob = null;
+      function makeWorldPreviews(onEach, opts = {}) {
         const key = Math.round(state.L / 600) + (state.branchChosen ? state.branch : "-");
-        if (worldPrevCache.key === key) { worldPrevCache.urls.forEach((u, i) => u && onEach(i, u)); return; }
-        if (worldPrevBusy) return;
+        const have = worldPrevCache.urls || [];
+        have.forEach((u, i) => u && onEach(i, u)); // (the last ones, maybe from a little way back: replaced as the new ones land)
+        if (worldPrevCache.key === key && have.filter(Boolean).length >= SCHEMES.length) return;
+        if (worldPrevBusy) { worldPrevCache.onEach = onEach; return; }
         worldPrevBusy = true;
-        worldPrevCache = { key, urls: [] };
+        worldPrevCache = { key, urls: have.slice(), onEach };
         const pw = 216, ph = 288, pr = renderer.getPixelRatio();
         const pcam = new PerspectiveCamera(40, pw / ph, 10, 45000);
         const out = document.createElement("canvas");
@@ -36074,12 +36391,17 @@ void main() {
         const octx = out.getContext("2d");
         const tgt = new Vector3(), dir = new Vector3();
         let i = 0;
-        const step = () => {
+        const next = () => {
           if (i >= SCHEMES.length) { worldPrevBusy = false; return; }
-          const orig = state.schemeIdx, sch = SCHEMES[i];
+          // the next step: when the page is idle (and the car is not moving, for the warm-up), in the next frame
+          const go = () => { if (opts.still && ((nav2?.on && Math.abs(nav2.speed?.() || 0) > 2) || performance.now() - mapIdleAt < 2000)) return setTimeout(() => (window.requestIdleCallback || setTimeout)(go, { timeout: 2000 }), 600); worldPrevJob = step; }; // (the warm-up: not while the car moves, nor within 2 s of a touch or a key)
+          (window.requestIdleCallback || ((f) => setTimeout(f, 60)))(go, { timeout: opts.still ? 3000 : 250 });
+        };
+        const step = () => {
+          const k = i, orig = state.schemeIdx, sch = SCHEMES[k];
           worldPrevNow = true;
           try {
-            applyScheme(i);
+            applyScheme(k);
             // aim at the road ahead of the car
             dir.copy(camDir);
             tgt.set(carPos.x + dir.x * 260, 20, carPos.z + dir.z * 260);
@@ -36105,22 +36427,29 @@ void main() {
             const H = renderer.domElement.height;
             octx.drawImage(renderer.domElement, 0, H - ph * pr, pw * pr, ph * pr, 0, 0, out.width, out.height);
             veh.group.visible = vis;
-            worldPrevCache.urls[i] = out.toDataURL("image/jpeg", 0.84);
-            onEach(i, worldPrevCache.urls[i]);
+            const cache = worldPrevCache;
+            out.toBlob((bl) => { if (!bl || cache !== worldPrevCache) return; const u = URL.createObjectURL(bl); cache.urls[k] = u; cache.onEach?.(k, u); }, "image/jpeg", 0.84);
           } catch (e) {
           } finally {
             renderer.setScissorTest(false);
             renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
             applyScheme(orig);
             sky.position.copy(camera.position);
-            // repaint the real view at once, so the swap never reaches the screen
-            if (mvK > 0.5) tiltShiftRender(performance.now()); else outline.render(scene, camera);
-            worldPrevNow = false;
+            worldPrevNow = false; // (the frame draws the real view right after this: see frameStep)
           }
           i++;
-          requestAnimationFrame(step);
+          next();
         };
-        requestAnimationFrame(step);
+        next();
+      }
+      // the warm-up (5): once, after the opening, a while after the map has settled
+      // (Sketchbook's own textures first, each in its own idle moment: ~0.1 s each at 4x, its preview step was 0.47 s with them)
+      async function prewarmWorlds() {
+        const quiet = () => !(nav2?.on && Math.abs(nav2.speed?.() || 0) > 2) && performance.now() - mapIdleAt >= 2000;
+        const idle = () => new Promise((r) => { const go = () => (window.requestIdleCallback || ((f) => setTimeout(f, 100)))(() => (quiet() ? r() : setTimeout(go, 600)), { timeout: 3000 }); go(); });
+        for (const f of [crayonTextures, notebookTextures, notebookUI]) { await idle(); try { f(); } catch (e) {} }
+        await idle();
+        try { makeWorldPreviews(() => {}, { still: true }); } catch (e) {}
       }
       function rebuildGolden() {
         scene.remove(golden);
@@ -36147,6 +36476,7 @@ void main() {
         window.scrollTo({ top: clamp2(L / effectiveTotal(), 0, 1) * maxScroll(), behavior: "instant" });
         state.L = prevL = state.targetL = L;
       }
+      await czPause(); // beta 3.xx: the last point before the app's interface and its listeners exist
       var ui = buildUI(api);
       // r139q: the ride thumbnails, a step at a time. r129 drew all nine in one go: ~1.3 s on an M4 (most of it
       // waiting for the preview context's programs to link, and its two PMREMs), right while the map was being
@@ -36180,6 +36510,9 @@ void main() {
           const mainEnv = getEnvMap();
           for (const v of VEHICLES) {
             await idle();
+            // beta 3.xx: the two 1300s (the heaviest rides to make, ~0.2 s at 4x) are made in slices first
+            if (v.id === "dacia1300") DACIA_PRE = await czRun(buildDacia1300Gen());
+            else if (v.id === "cop") COP_PRE = await czRun(buildDacia1300Gen({ police: true }));
             const built = buildVehicle(v.id);
             groups.push(built.group);
             built.group.traverse((o) => { const m = o.material; if (m?.userData?.chrome) { m.envMap = cEnv.texture; m.envMapIntensity = m.userData.envI; } });
@@ -36350,7 +36683,20 @@ void main() {
       function crayonTextures() {
         if (crayonTex) return crayonTex;
         const R = rng(20261012);
-        const make = (W, H, paint) => {
+        // beta 3.7x (Sketchbook audit, round 2): since the notebook (3.76) only the ring is used (the crayon rings on the
+        // ground, sketchRingsBuild); the pill, card, dot and torn sheet were still drawn, pixel by pixel, on the first switch
+        // into Sketchbook: most of its 120-160 ms freeze on a laptop (280-380 ms in WebKit). A texture not wanted is only
+        // "dry run": its random draws are taken in the same order, so the ring comes out identical. CRAYON_ALL brings them back
+        const CRAYON_ALL = false;
+        const make = (W, H, paint, dry = false) => {
+          if (dry) {
+            const grid = (sx, sy) => { const n = (Math.ceil(W / sx) + 2) * (Math.ceil(H / sy) + 2); for (let i = 0; i < n; i++) R(); };
+            grid(2.3, 0.85); grid(6.5, 2.2); grid(40, 18);
+            for (let i = 0, N = W * H; i < N; i++) R();
+            grid(26, 26);
+            paint(() => {}, W, H);
+            return null;
+          }
           const N = W * H, T = new Float32Array(N), A = new Float32Array(N), S = new Float32Array(N);
           const grid = (sx, sy) => { const gw = Math.ceil(W / sx) + 2, gh = Math.ceil(H / sy) + 2, v = new Float32Array(gw * gh); for (let i = 0; i < v.length; i++) v[i] = R();
             return (x, y) => { const fx = x / sx, fy = y / sy, ix = fx | 0, iy = fy | 0, ax = fx - ix, ay = fy - iy, ux = ax * ax * (3 - 2 * ax), uy = ay * ay * (3 - 2 * ay), o = iy * gw + ix;
@@ -36398,8 +36744,8 @@ void main() {
           }
         };
         crayonTex = {
-          pill: make(640, 200, swatch(640, 200, 11, 15)),
-          card: make(560, 360, swatch(560, 360, 16, 17)),
+          pill: make(640, 200, swatch(640, 200, 11, 15), !CRAYON_ALL),
+          card: make(560, 360, swatch(560, 360, 16, 17), !CRAYON_ALL),
           // a ring: two passes round an ellipse, not quite closed, the radius wandering a little
           ring: make(512, 256, (stroke) => {
             for (let pass = 0; pass < 2; pass++) {
@@ -36409,7 +36755,7 @@ void main() {
             }
           }),
           // a dot: a tight spiral scribble
-          dot: make(72, 72, (stroke) => {
+          dot: !CRAYON_ALL ? null : make(72, 72, (stroke) => {
             const pts = [], ph = R() * 6;
             for (let t = 0; t <= Math.PI * 2 * 3.2; t += 0.08) { const r = 6 + (t / (Math.PI * 2 * 3.2)) * 20; pts.push([36 + Math.cos(t + ph) * r, 36 + Math.sin(t + ph) * r * 0.94]); }
             stroke(pts, 9, 1);
@@ -36417,7 +36763,7 @@ void main() {
         };
         // a torn sheet: a rectangle whose edges were ripped by hand (a ragged walk, deeper on the left where it
         // came off the pad, small fibres along every edge)
-        {
+        if (CRAYON_ALL) {
           const W = 720, H = 440, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
           const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff";
           const edge = (n, amp, deep) => { const o = []; let v = 0; for (let i = 0; i <= n; i++) { v += (R() - 0.5) * amp; v *= 0.86; o.push(v + (R() < 0.08 ? R() * deep : 0)); } return o; };
@@ -36431,8 +36777,8 @@ void main() {
           crayonTex.torn = crayonUrl(cv); // r139b
         }
         const st = document.documentElement.style;
-        st.setProperty("--cr-torn", crayonTex.torn);
-        st.setProperty("--cr-pill", crayonTex.pill); st.setProperty("--cr-card", crayonTex.card); st.setProperty("--cr-ring", crayonTex.ring); st.setProperty("--cr-dot", crayonTex.dot);
+        st.setProperty("--cr-ring", crayonTex.ring);
+        if (CRAYON_ALL) { st.setProperty("--cr-torn", crayonTex.torn); st.setProperty("--cr-pill", crayonTex.pill); st.setProperty("--cr-card", crayonTex.card); st.setProperty("--cr-dot", crayonTex.dot); }
         return crayonTex;
       }
       // beta 2.6 (Daniel): the Multiverse button shows the world you are in: its picker's preview when there is one, else a
@@ -36442,7 +36788,7 @@ void main() {
         clearTimeout(worldBtnT);
         worldBtnT = setTimeout(() => (window.requestIdleCallback || setTimeout)(() => {
           try {
-            if (!worldRefs.world.userData.fabricDone) { paintWorldBtn(); return; }
+            if (!worldRefs.world.userData.fabricDone || bootSlicing || !screenCompiled || document.body.classList.contains("kz-intro")) { paintWorldBtn(); return; } // beta 3.xx: not under the opening (a ~0.3 s draw at 4x; the button shows after it)
             const i = state.schemeIdx, u = worldPrevCache.urls?.[i] || placeShot({ id: "__world", wx: FORK_POS.x, wz: FORK_POS.y, wy: 70 });
             if (u) document.querySelectorAll(".map-world").forEach((b) => { b.style.setProperty("--wimg", `url("${u}")`); b.classList.add("has-img"); });
           } catch (e) {}
@@ -36456,7 +36802,7 @@ void main() {
         const s = SCHEMES[idx];
         warmShaders(); // r139b
         window.__czAmb?.world(s.id);
-        if (s.id === "sketch") try { crayonTextures(); } catch (e) {}
+        if (s.id === "sketch") try { crayonTextures(); notebookUI(); } catch (e) {} // beta 3.76: and the notebook's pencil hatch for the interface
         const dark = lum(s.bg) < 0.45;
         isDarkScheme = dark;
         document.body.classList.toggle("dark-ui", dark);
@@ -36488,10 +36834,12 @@ void main() {
           farRings.forEach((m) => { if (m.userData.mesh) m.userData.mesh.visible = mv; });
           farClouds.visible = mv;
           if (mvFx) mvFx.group.visible = mv;
-          if (typeof uwFx !== "undefined" && uwFx) uwFx.group.visible = s.id === "underwater";
+          if (s.id === "underwater" && !uwFx && bootBDone) uwFx = czDrain(uwFxGen || (uwFxGen = makeUwFxGen())); // beta 3.xx: made when first wanted (or finished at once, if it was being made)
+          if (uwFx) uwFx.group.visible = s.id === "underwater";
           if (casaPoporului) casaPoporului.visible = s.id !== "underwater";
           if (pitLane) pitLane.visible = s.id === "circuit";
-          if (typeof worldFx !== "undefined" && worldFx) worldFx.set(s.id);
+          if (!worldFx && bootBDone && (s.id === "circuit" || s.id === "ghibli" || s.id === "orchid")) worldFx = czDrain(worldFxGen || (worldFxGen = makeWorldFxGen())); // beta 3.xx: made when first wanted
+          if (worldFx) worldFx.set(s.id);
           const skyWorld = s.id === "ghibli" || s.id === "orchid";
           if (skyWorld) {
             sky.visible = true;
@@ -36526,9 +36874,13 @@ void main() {
         if (mats.buildings && dark) mats.buildings.emissive.set(nightlife ? "#ffb265" : "#ffca6a");
         fillLight.color.set(nightlife ? "#2f66ff" : "#dfe8ff");
         mats.roofs?.color.copy(dark ? mixC(s.bg, "#ffffff", 0.2) : new Color("#ffffff"));
+        mats.pole?.color.set("#3c3a34"); // beta 3.76 round 2: Sketchbook draws the poles white and thin; every other world, as built
+        if (mats.poleGeo) { const P = mats.poleGeo, sk = s.id === "sketch"; P.poles.geometry = sk ? P.thinPole : P.poleGeo; P.arms.geometry = sk ? P.thinArm : P.armGeo; P.heads.geometry = sk ? P.smallHead : P.headGeo; }
+        for (const im of mats.tampaForest || []) im.visible = s.id !== "sketch"; // round 2: in the notebook Tâmpa is one shape, a light wash with a few swirls (its firs were a dense scribble)
+        if (sun.shadow.intensity !== 1) { sun.shadow.intensity = 1; sun.shadow.needsUpdate = true; } // and its shadow comes back (Sketchbook turns it off)
         const orchid = s.id === "orchid";
         mats.canopy?.color.copy(dark ? mixC("#28C840", s.bg, 0.35) : new Color("#ffffff"));
-        mats.treeBloom?.(orchid);
+        mats.treeBloom?.(orchid, s.id === "sketch");
         mats.bush?.color.set(orchid ? "#e7a8c8" : "#43a655");
         mats.parkMat?.color.copy(dark ? mixC("#8fdc9d", s.bg, 0.45) : new Color("#8fdc9d"));
         mats.island?.color.copy(dark ? mixC("#54d168", s.bg, 0.4) : new Color("#54d168"));
@@ -36646,17 +36998,28 @@ void main() {
           renderer.toneMappingExposure = 1.0;
         }
         if (s.id === "sketch") {
-          scene.background = new Color("#f6f3ec");
-          scene.fog.color.set("#f6f3ec"); scene.fog.near = 6000; scene.fog.far = 30000;
-          hemi.color.set("#ffffff"); hemi.groundColor.set("#bdbdbd"); hemi.intensity = 1.1;
-          sun.color.set("#ffffff"); sun.intensity = 1.9; fillLight.color.set("#ffffff"); fillLight.intensity = 0.3;
+          // beta 3.76: the notebook. The light is flat and even (the same sky above and below, a weak sun for a hint of
+          // form; the pass undoes it, see kW), so what reaches the pass is each thing's own colour, and colour becomes
+          // pencil. White is paper: the ground, the streets (the drive's road too, round 2), the walls, the street lights
+          // (drawn as outlines, one ink weight). Colour is kept for accents: greenery in sage, the kerbs in indigo ink; the
+          // places keep their own colours, pencilled. No cast shadows (a shadow is a dark patch the pass would pencil, and
+          // a moving one crawls): the sun's shadow is off here and its map is not redrawn (see sketchRender)
+          scene.background = new Color("#ffffff");
+          scene.fog.color.set("#ffffff"); scene.fog.near = 6000; scene.fog.far = 30000;
+          hemi.color.set("#ffffff"); hemi.groundColor.set("#ffffff"); hemi.intensity = 2.4;
+          sun.color.set("#ffffff"); sun.intensity = 0.9; fillLight.color.set("#ffffff"); fillLight.intensity = 0;
           mats.buildings?.color.set("#ffffff"); if (mats.buildings) mats.buildings.emissiveIntensity = 0;
-          mats.roofs?.color.set("#e9e9e9");
+          mats.roofs?.color.set("#e8ab9a"); // terracotta, like the reference's mushroom caps, lightly
           mats.ground?.color.set("#ffffff");
-          mats.roadMinor?.color.set("#f1f1f1"); mats.roadMajor?.color.set("#eeeeee"); mats.roadCasing?.color.set("#9a9a9a");
-          mats.route?.color.set("#cfcfcf"); mats.routeCasing?.color.set("#2a2a2a"); mats.routeDash?.color.set("#ffffff");
-          mats.canopy?.color.set("#f4f4f4"); mats.bush?.color.set("#e2e2e2"); mats.parkMat?.color.set("#f3f3f3");
+          mats.roadMinor?.color.set("#ffffff"); mats.roadMajor?.color.set("#ffffff"); mats.roadCasing?.color.set("#2e3266");
+          mats.route?.color.set("#ffffff"); mats.routeCasing?.color.set("#2e3266"); mats.routeDash?.color.set("#ffffff"); mats.routeAlt?.color.set("#ffffff"); mats.chevron?.color.set("#ffffff"); // the drive's road: plain paper, an ink edge
+          mats.pole?.color.set("#ffffff");
+          sun.shadow.intensity = 0;
+          mats.canopy?.color.set("#ffffff"); mats.bush?.color.set("#a6c98d"); mats.parkMat?.color.set("#c3dbab"); // the trees take a pale sage (treeBloom, pale)
+          if (mats.buildings && mats.mvWalls) { mats.buildings.map = notebookTextures().win; mats.buildings.needsUpdate = true; } // the windows, drawn in ink
+          mats.island?.color.set("#8dbb6c"); mats.zonePatch?.color.set("#ffffff"); mats.pillar?.color.set("#ffffff");
           renderer.toneMappingExposure = 1.05;
+          window.__nbMats = mats; // tests and tuning
         }
         if (s.id === "underwater") {
           scene.fog.color.set("#0d4a6e");
@@ -37212,19 +37575,7 @@ void main() {
       // the crest, the roof bar with its two blue lamps and the siren horn), at the size every ride has on the road. Its two
       // point lights stay out (two more lights in the scene would recompile every material the first time it shows); the
       // lamp boxes flash through their emissive, as the stand-in's did. beacons[i].material keeps the old interface
-      var copCar = (() => {
-        const v = buildDacia1300({ police: true }), g = v.group;
-        if (v.beacon) { v.beacon.lr.removeFromParent(); v.beacon.lb.removeFromParent(); }
-        addRevLamps(v, "cop"); // r212 (Daniel: "the police car is gigantic"): the Patrol ride is measured with its (hidden) reversing lamps and their pool, so the chaser is too, or it came out ~31% bigger than the same car you drive
-        const bb = new Box3().setFromObject(g), sz = bb.getSize(new Vector3());
-        g.scale.setScalar(1.5 * Math.min(0.74, 46 / Math.max(sz.z, 1), 30 / Math.max(sz.x, 1))); // as setVehicle sizes a ride (r124/r133)
-        g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
-        g.visible = false;
-        cityTone(g, _cityK); v.lampGlow?.(isDarkScheme);
-        scene.add(g);
-        const beacons = v.beacon ? [{ material: v.beacon.redM }, { material: v.beacon.blueM }] : [];
-        return { group: g, beacons, lampGlow: v.lampGlow };
-      })();
+      // (beta 3.xx: the chaser itself is made earlier, after the ride: see "copCar")
       var crawlLock = () => coffee.phase === "sip1" || coffee.phase === "unload" || coffee.phase === "sip2";
       // ---- Monument Valley extras: only alive in the Monument scheme ----
       var mvFx = (() => {
@@ -37350,7 +37701,8 @@ void main() {
           }
         } };
       })();
-      var uwFx = (() => {
+      var uwFx = null, uwFxGen = null; // beta 3.xx (start-up slices): made after the opening (see fxLater), or when its world is first chosen
+      function* makeUwFxGen() {
         const g = new Group();
         g.visible = SCHEMES[state.schemeIdx].id === "underwater";
         scene.add(g);
@@ -37381,6 +37733,7 @@ void main() {
           g.add(f);
           fishes.push(f);
         }
+        yield;
         // jellyfish: glowing bells, trailing tentacles, pulsing as they rise and sink
         const jellies = [];
         const bellG = new SphereGeometry(10, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2);
@@ -37402,6 +37755,7 @@ void main() {
           g.add(j);
           jellies.push(j);
         }
+        yield;
         // bubbles, instanced
         const BN = 260;
         const bubM = noOutline(new MeshStandardMaterial({ color: "#dff9ff", transparent: true, opacity: 0.42, roughness: 0.05, metalness: 0.2, emissive: new Color("#9fefff"), emissiveIntensity: 0.25, depthWrite: false }));
@@ -37409,6 +37763,7 @@ void main() {
         bubbles.frustumCulled = false;
         const bub = [...Array(BN)].map(() => ({ x: (Math.random() - 0.5) * 1600, y: Math.random() * 420, z: (Math.random() - 0.5) * 1600, v: 18 + Math.random() * 38, s: 0.8 + Math.random() * 2.6, w: Math.random() * 6.28 }));
         g.add(bubbles);
+        yield;
         // kelp along the route: one instanced draw call, swaying in the vertex shader
         const kelpSpots = [];
         {
@@ -37443,6 +37798,7 @@ void main() {
         }
         kelp.frustumCulled = false;
         g.add(kelp);
+        yield;
         // light shafts from the surface
         const rayTex = canvasTexture(64, 256, (ctx) => {
           const gr = ctx.createLinearGradient(0, 0, 0, 256);
@@ -37460,25 +37816,34 @@ void main() {
           g.add(r);
           rays.push(r);
         }
+        yield;
         // caustics dancing on the sea floor
-        const causTex = canvasTexture(256, 256, (ctx) => {
+        // (beta 3.xx: drawn in slices, a few rows at a time: ~0.1 s at 4x in one go; the same picture, as canvasTexture makes it)
+        const causCv = document.createElement("canvas"); causCv.width = causCv.height = 256;
+        {
+          const ctx = causCv.getContext("2d");
           ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 256, 256);
           ctx.strokeStyle = "rgba(190,255,255,.85)"; ctx.lineCap = "round";
           const pts = [...Array(26)].map(() => [Math.random() * 256, Math.random() * 256]);
-          for (let y = 0; y < 256; y += 2) for (let x = 0; x < 256; x += 2) {
-            let d1 = 1e9, d2 = 1e9;
-            for (const [px, py] of pts) for (const ox of [-256, 0, 256]) for (const oy of [-256, 0, 256]) {
-              const d = (x - px - ox) ** 2 + (y - py - oy) ** 2;
-              if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
+          for (let y = 0; y < 256; y += 2) {
+            for (let x = 0; x < 256; x += 2) {
+              let d1 = 1e9, d2 = 1e9;
+              for (const [px, py] of pts) for (const ox of [-256, 0, 256]) for (const oy of [-256, 0, 256]) {
+                const d = (x - px - ox) ** 2 + (y - py - oy) ** 2;
+                if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
+              }
+              const e = Math.sqrt(d2) - Math.sqrt(d1);
+              if (e < 4) { ctx.fillStyle = `rgba(190,255,255,${Math.pow(1 - e / 4, 1.6) * 0.9})`; ctx.fillRect(x, y, 2, 2); }
             }
-            const e = Math.sqrt(d2) - Math.sqrt(d1);
-            if (e < 4) { ctx.fillStyle = `rgba(190,255,255,${Math.pow(1 - e / 4, 1.6) * 0.9})`; ctx.fillRect(x, y, 2, 2); }
+            if (y % 16 === 14) yield;
           }
           // soften, like light through moving water
           const c2 = document.createElement("canvas"); c2.width = c2.height = 256;
           const x2 = c2.getContext("2d"); x2.filter = "blur(1.6px)"; x2.drawImage(ctx.canvas, 0, 0);
           ctx.clearRect(0, 0, 256, 256); ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 256, 256); ctx.drawImage(c2, 0, 0);
-        }, { repeat: [7, 7] });
+        }
+        const causTex = new CanvasTexture(causCv);
+        causTex.colorSpace = SRGBColorSpace; causTex.anisotropy = 4; causTex.wrapS = causTex.wrapT = RepeatWrapping; causTex.repeat.set(7, 7);
         causTex.wrapS = causTex.wrapT = RepeatWrapping;
         const causM = noOutline(new MeshBasicMaterial({ map: causTex, transparent: true, opacity: 0.24, blending: AdditiveBlending, depthWrite: false }));
         const caus = new Mesh(new PlaneGeometry(3200, 3200), causM);
@@ -37486,6 +37851,7 @@ void main() {
         caus.position.y = 2.2;
         caus.renderOrder = 2;
         g.add(caus);
+        yield;
         // marine snow
         const SN = 520;
         const snow = new InstancedMesh(new SphereGeometry(0.9, 4, 3), noOutline(new MeshBasicMaterial({ color: "#d8fbff", transparent: true, opacity: 0.6, depthWrite: false })), SN);
@@ -37495,6 +37861,7 @@ void main() {
         }
         snow.frustumCulled = false;
         g.add(snow);
+        yield;
         // a pineapple house under the sea, facing the first intersection
         {
           const ph = new Group();
@@ -37599,9 +37966,10 @@ void main() {
             snow.position.set(center.x, -((t * 6) % 520) * 0.2, center.z);
           }
         };
-      })();
+      }
       // ---- world layers: Formula 1 circuit, Ghibli countryside, Sakura season ----
-      var worldFx = (() => {
+      var worldFx = null, worldFxGen = null; // beta 3.xx (start-up slices): made after the opening (see fxLater), or when its world is first chosen
+      function* makeWorldFxGen() {
         const noOutline = (m) => { m.userData.outlineParameters = { visible: false }; return m; };
         const rr = rng(6161);
         const P = new Vector3(), T = new Vector3();
@@ -37640,6 +38008,7 @@ void main() {
           };
         };
 
+        yield;
         // ================= FORMULA 1 =================
         const f1 = new Group(); f1.visible = false; scene.add(f1);
         const f1U = { value: 0 };
@@ -37667,6 +38036,7 @@ void main() {
         const tyreGeo = new TorusGeometry(3, 1.6, 6, 12); tyreGeo.rotateX(Math.PI / 2);
         f1.add(inst(tyreGeo, new MeshStandardMaterial({ color: "#1b1b1b", roughness: 0.9 }), tyres, (d, i) => (i % 5 === 0 ? "#e10600" : "#1b1b1b")));
         f1.add(inst(new PlaneGeometry(1, 1).rotateX(-Math.PI / 2), noOutline(new MeshBasicMaterial({ color: "#000000", transparent: true, opacity: 0.22, depthWrite: false })), marks));
+        yield;
         // grandstands with a seated crowd, advertising boards, marshal posts, a DRS board
         const crowd = [], boards = [], posts = [];
         const standM = new MeshStandardMaterial({ color: "#c9d0d8", roughness: 0.8 });
@@ -37741,6 +38111,7 @@ void main() {
           dpole.position.set(dp.x, 6, dp.z);
           f1.add(drs, dpole);
         }
+        yield;
         // start/finish: gantry, five red lights, chequered line, grid slots
         const startLights = [];
         let gantry;
@@ -37791,6 +38162,7 @@ void main() {
             f1.add(pole, flag);
           }
         }
+        yield;
         // the TV helicopter
         const heli = new Group();
         {
@@ -37805,6 +38177,7 @@ void main() {
         }
         var c2crowd;
 
+        yield;
         // ================= GHIBLI =================
         const gh = new Group(); gh.visible = false; scene.add(gh);
         const ghU = { value: 0 };
@@ -37822,9 +38195,11 @@ void main() {
               sp.translate(bx + (rr() - 0.5) * 520 * (1 - t3), 200 + t3 * hgt, bz + (rr() - 0.5) * 520 * (1 - t3));
               geos.push(sp);
             }
+            yield;
           }
           gh.add(new Mesh(mergeGeometries(geos), cm));
         }
+        yield;
         // the giant camphor tree with its shimenawa rope, by the first chapter
         const kodama = [];
         {
@@ -37874,6 +38249,7 @@ void main() {
             kodama.push({ head, ph: rr() * 10 });
           }
         }
+        yield;
         // a roadside shrine: small torii and three Jizō in red bibs
         {
           route.posAt(route.stopL.voice + 180, P); route.tangentAt(route.stopL.voice + 180, T);
@@ -37897,6 +38273,7 @@ void main() {
           g4.rotation.y = Math.atan2(T.x, T.z) + Math.PI / 2;
           gh.add(g4);
         }
+        yield;
         // a countryside bus stop: round sign, small bench, a lone umbrella leaning on it
         {
           route.posAt(route.stopL.world + 120, P); route.tangentAt(route.stopL.world + 120, T);
@@ -37913,6 +38290,7 @@ void main() {
           g5.rotation.y = Math.atan2(T.x, T.z);
           gh.add(g5);
         }
+        yield;
         // laundry drying on a line, fluttering
         const sheetM = new MeshStandardMaterial({ color: "#ffffff", side: DoubleSide, roughness: 0.9 });
         sway(sheetM, 1.1, ghU, "ny");
@@ -37934,6 +38312,7 @@ void main() {
           g6.rotation.y = Math.atan2(T.x, T.z);
           gh.add(g6);
         }
+        yield;
         // rice paddies in the parks, mirror-bright water in green rows
         {
           const padM = new MeshStandardMaterial({ color: "#9fd6e8", roughness: 0.15, metalness: 0.1, emissive: new Color("#bfe9f5"), emissiveIntensity: 0.25 });
@@ -37945,6 +38324,7 @@ void main() {
             for (let r3 = -d / 2 + 8; r3 < d / 2; r3 += 12) { const row = new Mesh(new BoxGeometry(w - 10, 3, 2.4), rowM); row.position.set(pk.x, 3, pk.y + r3); gh.add(row); }
           }
         }
+        yield;
         // soot sprites around the old house by the start, with star candies
         const soots = [];
         {
@@ -37967,6 +38347,7 @@ void main() {
             gh.add(c3);
           }
         }
+        yield;
         // a red seaplane on patrol, and a floating island lost in the clouds
         const seaplane = new Group();
         {
@@ -37993,6 +38374,7 @@ void main() {
           skyIsland.position.set(1250 - 3600, 1500, 5600 + 3800);
           gh.add(skyIsland);
         }
+        yield;
         // grass tufts swaying in the wind along the road, and dust motes in the light
         {
           const tufts = [];
@@ -38009,6 +38391,7 @@ void main() {
         motes.frustumCulled = false;
         gh.add(motes);
 
+        yield;
         // ================= SAKURA =================
         const sk = new Group(); sk.visible = false; scene.add(sk);
         // fluffy blossom puffs on every round tree, and a pink carpet below
@@ -38026,6 +38409,7 @@ void main() {
           sk.add(inst(new IcosahedronGeometry(9, 1), new MeshStandardMaterial({ roughness: 0.85, emissive: new Color("#ff9fc0"), emissiveIntensity: 0.12 }), puffs, (d, i) => PINK[i % PINK.length]));
           sk.add(inst(new CircleGeometry(24, 18).rotateX(-Math.PI / 2), noOutline(new MeshBasicMaterial({ color: "#ffc6da", transparent: true, opacity: 0.7, depthWrite: false })), carpet));
         }
+        yield;
         // torii at the start, stone lanterns along the road, paper-lantern strings
         {
           route.posAt(130, P); route.tangentAt(130, T);
@@ -38067,6 +38451,7 @@ void main() {
             }
           }, 700);
         }
+        yield;
         // hanami: blue tarps with picnickers in the parks
         {
           const tarp = new MeshStandardMaterial({ color: "#3d7fd1", roughness: 0.9 });
@@ -38083,6 +38468,7 @@ void main() {
             }
           }
         }
+        yield;
         // Fuji on the horizon
         {
           const fuji = new Group();
@@ -38094,6 +38480,7 @@ void main() {
           fuji.position.set(1250 + 900, 0, 11300 + 9500);
           sk.add(fuji);
         }
+        yield;
         // petals: falling from the trees, drifting everywhere
         const PN = 700;
         const petalGeo = new PlaneGeometry(3.2, 2.2);
@@ -38144,7 +38531,7 @@ void main() {
             }
           }
         };
-      })();
+      }
       // ---- tilt-shift: renders the Monument world as a miniature diorama ----
       var tilt = null;
       // r130 (after jenamdvacetpet.cz): the opened place in a pool of light; the map drifts round when left alone
@@ -38285,16 +38672,40 @@ void main() {
       // 8 fps like a hand-drawn animation, and the city is drawn only where you have looked: a reveal map in world
       // space (painted around the map's focus, the van and the places you visit), sampled through the depth buffer.
       var sketchFx = null;
-      var sketchReveal = { cv: null, ctx: null, tex: null, last: 0, x0: CITY_X0 - 600, z0: CITY_Z0 - 600, w: CITY_X1 - CITY_X0 + 1200, h: CITY_Z1 - CITY_Z0 + 1200 };
+      // beta 3.7x (Sketchbook audit, round 2): the reveal map is painted on the GPU, into a 512² 8-bit target. It was a 2D
+      // canvas uploaded as a texture after every stroke (about 11 a second standing still, up to ~33 while the pointer or a
+      // finger moves): ~2.7 ms per upload in WebKit even on an M4 (Safari reads the canvas back to upload it), a hitch every
+      // few frames on an iPhone. Same strokes and the same blend: white at alpha a over the sheet (what "lighten" did over
+      // black is plain source-over), the same soft disc (full a inside 15 % of the radius, fading to 0 at the edge), the same
+      // sheet (512², 8-bit, mipmapped as the canvas texture was). Strokes are queued and drawn at the start of the next frame
+      var sketchReveal = { rt: null, q: [], mat: null, sc: null, cam: null, last: 0, x0: CITY_X0 - 600, z0: CITY_Z0 - 600, w: CITY_X1 - CITY_X0 + 1200, h: CITY_Z1 - CITY_Z0 + 1200 };
       function sketchPaint(x, z, r, a = 1) {
         const R = sketchReveal;
-        if (!R.ctx) return;
-        const S = R.cv.width, px = (x - R.x0) / R.w * S, pz = (z - R.z0) / R.h * S, pr = r / R.w * S;
-        const g = R.ctx.createRadialGradient(px, pz, pr * 0.15, px, pz, pr);
-        g.addColorStop(0, `rgba(255,255,255,${a})`); g.addColorStop(1, "rgba(255,255,255,0)");
-        R.ctx.globalCompositeOperation = "lighten";
-        R.ctx.fillStyle = g; R.ctx.beginPath(); R.ctx.arc(px, pz, pr, 0, Math.PI * 2); R.ctx.fill();
-        R.tex.needsUpdate = true;
+        if (!R.rt) return;
+        R.q.push((x - R.x0) / R.w, (z - R.z0) / R.h, r / R.w, a);
+      }
+      function sketchRevealInit() {
+        const R = sketchReveal;
+        R.rt = new WebGLRenderTarget(512, 512, { type: UnsignedByteType, format: RGBAFormat, depthBuffer: false, generateMipmaps: true, minFilter: LinearMipmapLinearFilter, magFilter: LinearFilter });
+        R.mat = new ShaderMaterial({
+          uniforms: { p: { value: new Vector4() } },
+          vertexShader: "uniform vec4 p; varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4((p.xy + position.xy * p.z) * 2.0 - 1.0, 0.0, 1.0); }",
+          fragmentShader: "uniform vec4 p; varying vec2 vUv; void main(){ float d = length(vUv - 0.5) * 2.0; if (d > 1.0) discard; gl_FragColor = vec4(1.0, 1.0, 1.0, p.w * (1.0 - clamp((d - 0.15) / 0.85, 0.0, 1.0))); }",
+          transparent: true, blending: NormalBlending, depthTest: false, depthWrite: false
+        });
+        const m = new Mesh(new PlaneGeometry(2, 2), R.mat); m.frustumCulled = false;
+        R.sc = new Scene(); R.sc.add(m); R.cam = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        const prev = renderer.getRenderTarget(), cc = renderer.getClearColor(new Color()), ca = renderer.getClearAlpha();
+        renderer.setRenderTarget(R.rt); renderer.setClearColor(0x000000, 1); renderer.clear(true, false, false);
+        renderer.setClearColor(cc, ca); renderer.setRenderTarget(prev);
+      }
+      function sketchRevealFlush() {
+        const R = sketchReveal, q = R.q;
+        if (!R.rt || !q.length) return;
+        const prev = renderer.getRenderTarget(), ac = renderer.autoClear, u = R.mat.uniforms.p.value;
+        renderer.setRenderTarget(R.rt); renderer.autoClear = false;
+        try { for (let i = 0; i < q.length; i += 4) { u.set(q[i], q[i + 1], q[i + 2], q[i + 3]); renderer.render(R.sc, R.cam); } }
+        finally { q.length = 0; renderer.autoClear = ac; renderer.setRenderTarget(prev); }
       }
       // r130k: your hand draws too: where the pointer passes over the map, the pencil fills the city in
       var sketchPtr = { x: 0, y: 0, moved: 0 }, _spDir = new Vector3(), _spHit = new Vector3();
@@ -38352,7 +38763,7 @@ void main() {
       }
       function sketchExplore(now) {
         const R = sketchReveal;
-        if (!R.ctx) return;
+        if (!R.rt) return;
         // the pointer draws where it passes (map only; small, soft, a few times a second)
         if (mapMode && now - sketchPtr.moved < 120 && now - (R.ptrT || 0) > 45) {
           R.ptrT = now;
@@ -38365,133 +38776,400 @@ void main() {
         if (mapMode) { const v = warpV(new Vector3(mapView.tgt.x, 0, mapView.tgt.z)); sketchPaint(v.x, v.z, Math.max(420, mapView.dist * 0.24), 0.16 * dt * 4); }
         else sketchPaint(carPos.x, carPos.z, 560, 0.3 * dt * 4);
       }
+      // ---- beta 3.76: Sketchbook becomes the notebook ----
+      // Daniel (2026-10-19), after a hand-drawn chess game on notebook paper: "exactly this design style: the contrast,
+      // the colours, the colour of the sheet". So: a warm greige sheet (sampled from the reference: #d5d2c3 under its
+      // camera, a touch lighter here) that dominates; thin, slightly wobbly brown-graphite ink lines of one weight;
+      // colour only as coloured pencil with visible strokes, light, airy and uneven, in the reference's few pencils
+      // (terracotta, ochre, sage, a pale sky blue, indigo, a rainbow pink); and an even, bright light: no shadow, no black
+      // area, the contrast is line and colour. The old graphite pass (a depth Sobel for creases, hatching for shade, a grey
+      // vignette) also made the street view "unintelligible, senseless and absurdly dark": the Sobel read the slope of the
+      // ground seen at a grazing angle as one endless crease. Here the creases are the second difference of 1/z, which is
+      // zero on any plane however steep, so a low camera sees a clean street.
+      // Pre-baked textures do the drawing (no extra pass): the sheet and its margin doodles (screen space: the paper does
+      // not move with the city) and a tile of pencil strokes laid in world space on each face (its axis from the depth's
+      // own normal) at a scale that keeps the strokes one size on screen at any zoom (two octaves blended).
+      var nbTex = null, _nbSun = new Vector3();
+      function notebookTextures() {
+        if (nbTex) return nbTex;
+        const R = rng(20261019);
+        // the sheet: almost white (Daniel, round 2: "much whiter"), a whisper of tooth and one faint fold
+        const P = document.createElement("canvas"); P.width = P.height = 1024;
+        const c = P.getContext("2d");
+        c.fillStyle = "#fdfcf9"; c.fillRect(0, 0, 1024, 1024);
+        for (let i = 0; i < 26; i++) {
+          const x = R() * 1024, y = R() * 1024, r = 160 + R() * 300, g = c.createRadialGradient(x, y, 0, x, y, r);
+          const k = R() < 0.5 ? "255,255,255" : "200,196,182"; g.addColorStop(0, `rgba(${k},${k[0] === "2" && k[1] === "5" ? 0.5 : 0.035})`); g.addColorStop(1, `rgba(${k},0)`); // fades to its own colour (to black it greys)
+          c.fillStyle = g; c.fillRect(x - r, y - r, 2 * r, 2 * r);
+        }
+        c.lineCap = "round";
+        for (let i = 0; i < 900; i++) {
+          const x = R() * 1024, y = R() * 1024, a = R() * 6.283, l = 2 + R() * 5;
+          c.strokeStyle = "rgba(150,146,130,.045)"; c.lineWidth = 0.6 + R() * 0.4;
+          c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); c.stroke();
+        }
+        { // the fold: a faint valley and its light ridge, fading at both ends
+          const pts = []; for (let i = 0; i <= 48; i++) { const t = i / 48, sn = Math.sin(t * Math.PI); pts.push([-40 + 1104 * t, 330 - 50 * t + 1104 * 0.015 * sn, sn]); }
+          for (const [off, col, w] of [[0, "rgba(150,146,130,.025)", 8], [1.2, "rgba(140,136,120,.05)", 1.8]]) for (let i = 1; i < pts.length; i++) {
+            const [ax, ay, s0] = pts[i - 1], [bx, by] = pts[i];
+            c.globalAlpha = Math.pow(s0, 0.5); c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(ax, ay + off); c.lineTo(bx, by + off); c.stroke();
+          }
+          c.globalAlpha = 1;
+        }
+        const paper = new CanvasTexture(P); paper.colorSpace = NoColorSpace; paper.generateMipmaps = false; paper.minFilter = LinearFilter; // the canvas's own values go straight to the screen
+        // the sky (Daniel, round 2: "more Van Gogh", The Starry Night as an inspiration, only on nature): a few long
+        // flowing strokes of wind that curl at their ends, a cloud rolled into a spiral, the sun as rings of short strokes.
+        // Drawn on their own sheet; the pass shows them only where nothing of the city is drawn (the street view's sky),
+        // never over a street or a house. Sparse: a handful of strokes, opaque (no beads where segments overlap), each
+        // swelling and thinning along its length like a loaded brush
+        const Dd = document.createElement("canvas"); Dd.width = Dd.height = 1024;
+        const d = Dd.getContext("2d"); d.lineCap = d.lineJoin = "round";
+        const brush = (pts, col, w0) => {
+          d.strokeStyle = col;
+          for (let i = 1; i < pts.length; i++) { const t = i / (pts.length - 1), pr = Math.pow(Math.sin(Math.PI * t), 0.6); d.lineWidth = w0 * (0.35 + 0.65 * pr); d.beginPath(); d.moveTo(pts[i - 1][0], pts[i - 1][1]); d.lineTo(pts[i][0], pts[i][1]); d.stroke(); }
+        };
+        // a curve broken into dashes (the short, rhythmic strokes of the painting), each a little off the curve
+        const dashes = (f, t0, t1, col, w0, dl = 26, gap = 9) => {
+          const dt = 0.002; let t = t0, acc = 0, cur = [f(t0)], draw = R() < 0.85, lim = dl * (0.7 + R() * 0.6);
+          while (t < t1) {
+            t += dt; const q = f(t), pq = cur[cur.length - 1] || q; acc += Math.hypot(q[0] - pq[0], q[1] - pq[1]); cur.push(q);
+            if (acc > (draw ? lim : gap * (0.6 + R() * 0.8))) { if (draw && cur.length > 2) brush(cur, col, w0 * (0.8 + R() * 0.4)); cur = [q]; acc = 0; draw = !draw || R() < 0.15; lim = dl * (0.7 + R() * 0.6); }
+          }
+          if (draw && cur.length > 2) brush(cur, col, w0);
+        };
+        const spiral = (cx, cy, r0, r1, turns, a0, sq, dir = 1) => (t) => { const a = a0 + dir * t * turns * 6.283, r = r0 + (r1 - r0) * t; return [cx + Math.cos(a) * r, cy + Math.sin(a) * r * sq]; };
+        { // the wind: two long flowing strokes across the sky, each with a lighter companion, curling in at one end
+          const wind = (y0, amp, ph, xc, cr, dir) => (t) => {
+            if (t < 0.78) { const x = -40 + (xc + 40) * (t / 0.78); return [x, y0 + Math.sin(x * 0.008 + ph) * amp]; }
+            const k = (t - 0.78) / 0.22, a = -Math.PI / 2 * dir + dir * k * 5.2, r = cr * (1 - 0.7 * k), yc = y0 + Math.sin(xc * 0.008 + ph) * amp + cr * dir;
+            return [xc + Math.cos(a) * r, yc + Math.sin(a) * r];
+          };
+          for (const [y0, amp, ph, xc, cr, dir, col, w] of [[262, 16, 0.4, 560, 44, 1, "#7fa6c8", 5], [273, 16, 0.4, 560, 32, 1, "#c4d6e7", 3.6],
+            [398, 12, 2.2, 880, 38, -1, "#4b558f", 4.2], [408, 12, 2.2, 880, 26, -1, "#a9c2da", 3.4]]) dashes(wind(y0, amp, ph, xc, cr, dir), 0, 1, col, w, 150, 6);
+        }
+        { // a cloud, rolled into a spiral, its tail flowing off to the left
+          dashes(spiral(330, 318, 8, 52, 1.7, 0.2, 0.72, -1), 0, 1, "#4b558f", 3.8, 70, 6);
+          dashes(spiral(330, 318, 16, 62, 1.2, 1.4, 0.72, -1), 0, 1, "#8fb0cf", 3.2, 60, 8);
+          dashes((t) => [296 - 250 * t, 356 + Math.sin(t * 5) * 9], 0, 1, "#a9c2da", 3.4, 120, 8);
+        }
+        { // the sun: a disc of round strokes, two halos of short dashes round it
+          const sx = 690, sy = 300;
+          dashes(spiral(sx, sy, 3, 26, 3.2, R() * 6.283, 1), 0, 1, "#e3a64a", 5.4, 60, 3); // the disc: one tight spiral
+          dashes(spiral(sx, sy, 38, 58, 1.5, R() * 6.283, 1), 0, 1, "#efd383", 4, 44, 12); // the halo: a loose one round it
+        }
+        const doodles = new CanvasTexture(Dd); doodles.colorSpace = NoColorSpace; doodles.generateMipmaps = false; doodles.minFilter = LinearFilter;
+        // the pencil: parallel rows (a hand going back and forth), strokes of varied length and pressure with gaps.
+        // R the hatch (leaning like the reference's, bottom left to top right), G a cross layer for the deeper colours,
+        // B (below) the swirls. Tileable: a stroke crossing an edge is drawn again one tile over
+        const N = 256;
+        const layer = (ang, gap, len0, w0) => {
+          const L = document.createElement("canvas"); L.width = L.height = N; const g = L.getContext("2d");
+          g.fillStyle = "#000"; g.fillRect(0, 0, N, N); g.lineCap = "round"; g.globalCompositeOperation = "lighter";
+          const ca = Math.cos(ang), sa = Math.sin(ang), nx = -sa, ny = ca;
+          for (let r = -N * 1.5; r < N * 1.5; r += gap * (0.8 + R() * 0.4)) {
+            let s = -N * 1.5 + R() * 20;
+            while (s < N * 1.5) {
+              const l = len0 * (0.5 + R()), gp = 3 + R() * 16, v = 90 + R() * 160, w = w0 * (0.75 + R() * 0.5);
+              const cx = N / 2 + ca * (s + l / 2) + nx * r + (R() - 0.5) * 1.5, cy = N / 2 + sa * (s + l / 2) + ny * r + (R() - 0.5) * 1.5;
+              const a2 = ang + (R() - 0.5) * 0.12, dx = Math.cos(a2) * l / 2, dy = Math.sin(a2) * l / 2;
+              for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) {
+                const x0 = cx + ox - dx, y0 = cy + oy - dy, x1 = cx + ox + dx, y1 = cy + oy + dy;
+                if (Math.max(x0, x1) < -4 || Math.min(x0, x1) > N + 4 || Math.max(y0, y1) < -4 || Math.min(y0, y1) > N + 4) continue;
+                const grd = g.createLinearGradient(x0, y0, x1, y1), k = `${v},${v},${v}`;
+                grd.addColorStop(0, `rgba(${k},.25)`); grd.addColorStop(0.2, `rgb(${k})`); grd.addColorStop(0.85, `rgb(${k})`); grd.addColorStop(1, `rgba(${k},.15)`);
+                g.strokeStyle = grd; g.lineWidth = w; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+              }
+              s += l + gp;
+            }
+          }
+          return g.getImageData(0, 0, N, N).data;
+        };
+        // B the swirls for greenery: curling strokes along a flow field that wraps round the tile (so the tile still tiles),
+        // as many as the hatch has strokes (no denser), each a comma that swells and thins
+        const swirl = () => {
+          const L = document.createElement("canvas"); L.width = L.height = N; const g = L.getContext("2d");
+          g.fillStyle = "#000"; g.fillRect(0, 0, N, N); g.lineCap = "round"; g.globalCompositeOperation = "lighter";
+          const T = 6.283 / N, flow = (x, y) => -1.1 + 1.25 * Math.sin(T * x + T * y) + 0.9 * Math.cos(2 * T * y - T * x);
+          for (let k = 0; k < 330; k++) {
+            let x = R() * N, y = R() * N; const len = 14 + R() * 18, v = 160 + R() * 95, w = 1.6 + R() * 0.7, pts = [[x, y]];
+            for (let s2 = 0; s2 < len; s2 += 1.2) { const a = flow(x, y) + s2 * 0.035; x += Math.cos(a) * 1.2; y += Math.sin(a) * 1.2; pts.push([x, y]); }
+            for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) {
+              if (Math.max(...pts.map((q) => q[0])) + ox < -4 || Math.min(...pts.map((q) => q[0])) + ox > N + 4 || Math.max(...pts.map((q) => q[1])) + oy < -4 || Math.min(...pts.map((q) => q[1])) + oy > N + 4) continue;
+              for (let i = 1; i < pts.length; i++) { const t = i / (pts.length - 1), pr = Math.sin(Math.PI * Math.min(1, t * 1.1)); g.strokeStyle = `rgb(${v},${v},${v})`; g.lineWidth = w * (0.45 + 0.6 * pr); g.globalCompositeOperation = "lighten"; g.beginPath(); g.moveTo(pts[i - 1][0] + ox, pts[i - 1][1] + oy); g.lineTo(pts[i][0] + ox, pts[i][1] + oy); g.stroke(); }
+            }
+          }
+          return g.getImageData(0, 0, N, N).data;
+        };
+        const l1 = layer(-1.1, 5.2, 30, 1.8), l2 = layer(-0.38, 6.0, 26, 1.5), l3 = swirl();
+        const S = document.createElement("canvas"); S.width = S.height = N;
+        const sc = S.getContext("2d"), id = sc.createImageData(N, N);
+        for (let o = 0; o < N * N; o++) { id.data[o * 4] = l1[o * 4]; id.data[o * 4 + 1] = l2[o * 4]; id.data[o * 4 + 2] = l3[o * 4]; id.data[o * 4 + 3] = 255; }
+        sc.putImageData(id, 0, 0);
+        const pencil = new CanvasTexture(S); pencil.wrapS = pencil.wrapT = RepeatWrapping; pencil.generateMipmaps = true; pencil.minFilter = LinearMipmapLinearFilter;
+        // windows: the city's own layout (2 x 2 arched windows a tile, as makeWindowTextureMV), drawn in ink. Its own mip
+        // chain: the two finest levels are the drawing, the next one half faded, the rest blank paper, so up close a
+        // window is a crisp ink arch and from the map's height the walls stay paper instead of rows of grey dashes
+        const winLevel = (S2, k) => {
+          const cv = document.createElement("canvas"); cv.width = cv.height = S2; const w = cv.getContext("2d"); const f = S2 / 256;
+          w.fillStyle = "#ffffff"; w.fillRect(0, 0, S2, S2);
+          if (k > 0) for (let r = 0; r < 2; r++) for (let cc = 0; cc < 2; cc++) {
+            const x = (40 + cc * 128) * f, y = (22 + r * 128) * f, ww = 48 * f, h = 82 * f;
+            w.globalAlpha = k; w.beginPath(); w.moveTo(x, y + h); w.lineTo(x, y + ww / 2); w.arc(x + ww / 2, y + ww / 2, ww / 2, Math.PI, 0); w.lineTo(x + ww, y + h); w.closePath();
+            w.fillStyle = "#dde7ee"; w.fill();
+            w.strokeStyle = "#2e3266"; w.lineWidth = Math.max(1, 4.5 * f); w.lineJoin = "round"; w.stroke();
+            w.beginPath(); w.moveTo(x - 7 * f, y + h + 3 * f); w.lineTo(x + ww + 7 * f, y + h + 3 * f); w.lineWidth = Math.max(1, 4 * f); w.stroke();
+          }
+          return cv;
+        };
+        const win = new CanvasTexture(winLevel(256, 1)); win.colorSpace = SRGBColorSpace; win.wrapS = win.wrapT = RepeatWrapping; win.anisotropy = 4;
+        win.mipmaps = [256, 128, 64, 32, 16, 8, 4, 2, 1].map((S2, i) => winLevel(S2, i < 2 ? 1 : i === 2 ? 0.45 : 0));
+        win.generateMipmaps = false; win.minFilter = LinearMipmapLinearFilter;
+        nbTex = { paper, doodles, pencil, win };
+        return nbTex;
+      }
+      // the interface's share: a coloured-pencil hatch the CSS uses as a static mask (--nb-hatch) behind buttons, chips and
+      // swatches. Round 2 (Daniel): no handwriting fonts any more, the site's own type, coloured like the pencils
+      var nbUI = false;
+      function notebookUI() {
+        if (nbUI) return; nbUI = true;
+        try {
+          const R = rng(4242), N = 240, cv = document.createElement("canvas"); cv.width = cv.height = N;
+          const g = cv.getContext("2d"); g.lineCap = "round";
+          const ang = -1.1, ca = Math.cos(ang), sa = Math.sin(ang), nx = -sa, ny = ca;
+          for (let r = -N * 1.5; r < N * 1.5; r += 5.4 * (0.8 + R() * 0.4)) {
+            let s = -N * 1.5 + R() * 20;
+            while (s < N * 1.5) {
+              const ln = 26 * (0.5 + R()), gp = 3 + R() * 12, a = 0.4 + R() * 0.5, w = 1.6 * (0.75 + R() * 0.5);
+              const cx = N / 2 + ca * (s + ln / 2) + nx * r, cy = N / 2 + sa * (s + ln / 2) + ny * r, a2 = ang + (R() - 0.5) * 0.12, dx = Math.cos(a2) * ln / 2, dy = Math.sin(a2) * ln / 2;
+              for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) {
+                const x0 = cx + ox - dx, y0 = cy + oy - dy, x1 = cx + ox + dx, y1 = cy + oy + dy;
+                if (Math.max(x0, x1) < -4 || Math.min(x0, x1) > N + 4 || Math.max(y0, y1) < -4 || Math.min(y0, y1) > N + 4) continue;
+                g.strokeStyle = `rgba(0,0,0,${a})`; g.lineWidth = w; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+              }
+              s += ln + gp;
+            }
+          }
+          document.documentElement.style.setProperty("--nb-hatch", crayonUrl(cv)); // a short blob: URL (see crayonUrl, r139b)
+          // the cover: the sheet's colour with those strokes cut out of it. Laid as a background image over any element's own
+          // solid colour, the colour shows only through the strokes: a coloured-pencil fill, with no pseudo-element
+          const cv2 = document.createElement("canvas"); cv2.width = cv2.height = N; const g2 = cv2.getContext("2d");
+          g2.fillStyle = "#fdfcf9"; g2.fillRect(0, 0, N, N); g2.globalCompositeOperation = "destination-out"; g2.drawImage(cv, 0, 0); g2.drawImage(cv, 0, 0);
+          document.documentElement.style.setProperty("--nb-cover", crayonUrl(cv2));
+        } catch (e) {}
+      }
+      // a car's frame for the pass: world to its own space, and its box there (measured once per car: rides are rebuilt).
+      // Hidden or missing, the box is empty and the pass lays its strokes in world space as everywhere else
+      var _nbBox = new Box3(), _nbM = new Matrix4();
+      function nbCarFrame(g, inv, a, b) {
+        if (!g || !g.visible) { a.set(1, 1, 1); b.set(-1, -1, -1); return; }
+        let bx = g.userData.nbBox;
+        if (!bx) {
+          g.updateMatrixWorld(true); _nbM.copy(g.matrixWorld).invert(); _nbBox.makeEmpty();
+          g.traverse((o) => { if (o.isMesh && o.visible && o.geometry) { if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); _nbBox.union(o.geometry.boundingBox.clone().applyMatrix4(new Matrix4().multiplyMatrices(_nbM, o.matrixWorld))); } });
+          bx = g.userData.nbBox = _nbBox.isEmpty() ? null : _nbBox.clone().expandByScalar(0.6);
+          if (!bx) { a.set(1, 1, 1); b.set(-1, -1, -1); return; }
+        }
+        inv.copy(g.matrixWorld).invert(); a.copy(bx.min); b.copy(bx.max);
+      }
+      // the hull pass (OutlineEffect's second drawing of the scene, for the ink round every shape) is off in the notebook:
+      // the depth folds draw the silhouettes and the folds (their threshold follows the distance), the thin-ink test the
+      // drawn details (windows, lettering, kerbs). Measured with __perfLab.bench on a laptop at 2x: street view 8.8 -> 6.4
+      // ms a frame, bird's eye 8.2 -> 5.0 (Cromatic 6.9 / 7.9), the same drawing; on a phone it was ~5 ms of CPU (the
+      // audit). __perfLab.nbHull(true) brings it back for an A/B
+      var nbHull = false;
+      var NOTEBOOK_FS = `
+              uniform sampler2D tD, tZ, tR, tP, tQ, tS; uniform vec2 res; uniform float t, full, near, far, dz, kW; uniform mat4 pInv, cW; uniform vec4 box; varying vec2 vUv;
+              uniform mat4 oI0, oI1; uniform vec3 oA0, oB0, oA1, oB1; // the ride and the police car: world to their own frame, and their boxes in it
+              float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+              float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+                return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
+              // the colour the city was drawn in, read back to its own colour: the light in the notebook is flat and even,
+              // kW undoes it (a white face looking up comes out white). Crayon decals carry a marker alpha: paper here
+              vec3 alb(vec4 t){ return pow(clamp(t.rgb * kW, 0.0, 1.0), vec3(0.4545)); }
+              float lumT(vec4 t){ if (abs(t.a - 0.25) < 0.03) return 1.0; return dot(alb(t), vec3(0.299, 0.587, 0.114)); }
+              float lum(vec2 uv){ return lumT(texture2D(tD, uv)); }
+              float lumL(vec2 uv){ return lumT(textureLod(tD, uv, 0.0)); }
+              float depZ(float z){ float ndc = z * 2.0 - 1.0; return (2.0 * near * far) / (far + near - ndc * (far - near)); }
+              // 1/depZ(z) is (far + near - ndc (far - near)) / (2 near far): no division per sample (beta 3.7x: 13 depth taps
+              // a pixel, each with two divisions); g_izK = 1 / (2 near far), set once at the top of main
+              float g_izK; float iz(vec2 uv){ return (far + near - (texture2D(tZ, uv).x * 2.0 - 1.0) * (far - near)) * g_izK; }
+              vec3 hsv(vec3 c){ vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0); vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+                vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r)); float d = q.x - min(q.w, q.y); return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + 1e-6)), d / (q.x + 1e-6), q.x); }
+              // the notebook's pencils (a hue, the colour it lays down), sampled from the reference; a colour takes the
+              // nearest of them by hue, softly
+              // beta 3.7x: h is the hue the caller already has; a grey (k = 0) is returned as it is, with no greenery: exactly
+              // what the loop gave it (mix(c, x, 0) = c, fol = 0), without the seven exp()
+              vec3 pencilFor(vec3 c, float s, float h, out float fol){
+                if (smoothstep(0.06, 0.25, s) <= 0.0) { fol = 0.0; return c; }
+                vec3 P[7]; float H[7];
+                H[0] = 0.02; P[0] = vec3(0.78, 0.45, 0.39);  // terracotta (the mushroom caps)
+                H[1] = 0.08; P[1] = vec3(0.84, 0.60, 0.40);  // orange
+                H[2] = 0.13; P[2] = vec3(0.85, 0.71, 0.40);  // ochre, honey
+                H[3] = 0.28; P[3] = vec3(0.55, 0.66, 0.43);  // sage, the hatched squares
+                H[4] = 0.52; P[4] = vec3(0.50, 0.66, 0.74);  // a pale sky blue (the rainbow)
+                H[5] = 0.66; P[5] = vec3(0.31, 0.32, 0.56);  // indigo, the dark pieces
+                H[6] = 0.88; P[6] = vec3(0.80, 0.52, 0.62);  // a rainbow pink
+                vec3 acc = vec3(0.0); float ws = 0.0, wf = 0.0;
+                for (int i = 0; i < 7; i++) { float d = abs(h - H[i]); d = min(d, 1.0 - d); float w = exp(-d * d * 260.0); acc += P[i] * w; ws += w; if (i == 3) wf = w; }
+                float k = smoothstep(0.06, 0.25, s);
+                fol = wf / max(ws, 1e-4) * k; // how much of it is greenery: drawn in swirls, not in hatching
+                return mix(c, acc / max(ws, 1e-4), 0.78 * k);
+              }
+              // a crease's share along one axis: the second difference of 1/z over the pen's radius (zero on any flat face)
+              float g_rw; // beta 3.7x: 1 / w11, the c of every call, once a pixel
+              float d2(float a, float b, float c, float lo){ return smoothstep(lo, lo * 2.5, abs(a + b - 2.0 * c) * g_rw); }
+              void main(){
+                vec2 px = 1.0 / res; g_izK = 0.5 / (near * far);
+                // the pen: about one CSS pixel wide at any pixel density (res is in device pixels)
+                float LR = clamp(res.y / 1000.0, 1.0, 2.2);
+                // a slow, hand-drawn waver on every line: the lines bend a little, they do not shake
+                vec2 wob = (vec2(vn(vUv * 4.0), vn(vUv * 4.0 + 7.7)) - 0.5) * 1.4 * LR * px;
+                vec2 uv = vUv + wob;
+                // ink: the thin dark lines (windows, lettering, the kerbs). A dark pixel with no light pixel 3.5 px away
+                // along either diagonal is a dark surface, not a line: it is coloured in instead (on the ground it stays ink)
+                vec2 e1 = px * max(1.0, LR * 0.7);
+                float l = lum(uv);
+                float lR = lum(uv + vec2(e1.x, 0.0)), lL = lum(uv - vec2(e1.x, 0.0)), lU = lum(uv + vec2(0.0, e1.y)), lD = lum(uv - vec2(0.0, e1.y));
+                float lmin = min(l, min(min(lR, lL), min(lU, lD)));
+                float ink0 = 1.0 - smoothstep(0.24, 0.42, lmin), ink = ink0;
+                if (ink > 0.0) {
+                  vec2 e3 = 3.5 * LR * px;
+                  float lf = max(max(lumL(uv + e3), lumL(uv - e3)), max(lumL(uv + vec2(e3.x, -e3.y)), lumL(uv - vec2(e3.x, -e3.y))));
+                  ink *= smoothstep(0.34, 0.55, lf);
+                }
+                // creases: steps and folds in depth. Eight directions at the pen's radius and two at half of it, each saturated
+                // on its own and then counted: the further a pixel is from an edge, the fewer directions straddle it, so the
+                // line fades out softly on both sides and turns round at its ends and corners (no stair steps)
+                vec2 e = px * LR, h = e * 0.5;
+                float w11 = iz(uv); g_rw = 1.0 / w11;
+                float w00 = iz(uv + vec2(-e.x, -e.y)), w10 = iz(uv + vec2(0.0, -e.y)), w20 = iz(uv + vec2(e.x, -e.y));
+                float w01 = iz(uv + vec2(-e.x, 0.0)), w21 = iz(uv + vec2(e.x, 0.0));
+                float w02 = iz(uv + vec2(-e.x, e.y)), w12 = iz(uv + vec2(0.0, e.y)), w22 = iz(uv + vec2(e.x, e.y));
+                float hL = iz(uv - vec2(h.x, 0.0)), hR = iz(uv + vec2(h.x, 0.0)), hD = iz(uv - vec2(0.0, h.y)), hU = iz(uv + vec2(0.0, h.y));
+                float zr = texture2D(tZ, vUv).x, dd = depZ(zr);
+                // a step's share of the depth shrinks with distance (a tree 40 high seen from 3000 away is a 1-2 % step): the
+                // threshold follows, so from the map's height every house and tree still gets its outline
+                float clo = mix(0.025, 0.006, smoothstep(250.0, 2400.0, dd)) * sqrt(LR);
+                float cs = d2(w01, w21, w11, clo) + d2(w10, w12, w11, clo) + 0.75 * (d2(w00, w22, w11, clo) + d2(w20, w02, w11, clo))
+                         + 0.8 * (d2(hL, hR, w11, clo * 0.7) + d2(hD, hU, w11, clo * 0.7));
+                float crease = smoothstep(0.35, 2.3, cs);
+                // one weight, a little pressure along the stroke; only a touch lighter far away
+                float line = max(ink, crease) * (0.86 + 0.14 * vn(vUv * res * 0.02 / LR));
+                line *= 1.0 - 0.18 * smoothstep(dz * 1.6, dz * 3.2, dd);
+                // where the city has been drawn yet (world position from depth, then the reveal map)
+                vec4 ndc = vec4(vUv * 2.0 - 1.0, zr * 2.0 - 1.0, 1.0);
+                vec4 vp = pInv * ndc; vp /= vp.w;
+                vec3 wp = (cW * vp).xyz;
+                float rv = texture2D(tR, (wp.xz - box.xy) / box.zw).r;
+                float edge = vn(wp.xz * 0.02) * 0.35;
+                bool sky = zr >= 0.9999;
+                float shown = full > 0.5 || sky ? 1.0 : smoothstep(0.25, 0.55, rv + edge - 0.15);
+                float band = full > 0.5 ? 0.0 : smoothstep(0.02, 0.4, rv + edge - 0.15) * (1.0 - shown);
+                // the ground (streets, pavements, parks: street level, facing up; the cars excepted): never hatched. Strokes
+                // laid on the ground are what crawls in a drift and reads as hair from above; it is paper, with a flat wash of
+                // colour, and a dark band on it (a kerb) is drawn as its outline at the pen's weight, its inside left as paper
+                // (a far kerb, thinner than the pen, is one line). The normal from depth is noisy at a grazing angle, so the
+                // test is mostly the height, with a loose normal
+                vec3 nW = cross(dFdx(wp), dFdy(wp));
+                vec3 q0 = (oI0 * vec4(wp, 1.0)).xyz, q1 = (oI1 * vec4(wp, 1.0)).xyz;
+                bool inCar0 = all(greaterThan(q0, oA0)) && all(lessThan(q0, oB0)), inCar1 = all(greaterThan(q1, oA1)) && all(lessThan(q1, oB1));
+                float ground = sky || inCar0 || inCar1 ? 0.0 : step(0.5, abs(nW.y) / max(length(nW), 1e-6)) * step(wp.y, 4.5);
+                float lmax = max(l, max(max(lR, lL), max(lU, lD)));
+                float inkG = ink0 * smoothstep(0.3, 0.5, lmax);
+                ink = mix(ink, inkG, ground);
+                line = mix(line, max(inkG, crease) * 0.95, ground);
+                // the sheet (screen space, cover-fitted, so what little crease it has stays where it is on the screen)
+                float asp = res.x / res.y;
+                vec2 puv = (vUv - 0.5) * (asp > 1.0 ? vec2(1.0, 1.0 / asp) : vec2(asp, 1.0)) * 0.98 + 0.5;
+                vec3 paper = texture2D(tP, puv).rgb;
+                // the sky's swirls and the sun: only on the empty paper (the street view's sky, the sheet past the city)
+                if (sky && full < 0.5) { vec4 dq = texture2D(tQ, puv); paper = mix(paper, dq.rgb, dq.a * 0.85); }
+                // colour: coloured pencil, light, airy and uneven; the paper dominates. How much pencil a colour needs:
+                // its saturation, and a little for darkness (a dark thing is pencilled denser, never filled black)
+                vec4 tc = texture2D(tD, vUv);
+                vec3 A = alb(tc);
+                vec3 hv = hsv(A);
+                float amt = clamp(hv.y * 0.62 + (1.0 - hv.z) * 0.3 - 0.05, 0.0, 0.62);
+                if (abs(tc.a - 0.25) < 0.03 || sky) amt = 0.0;
+                amt *= 1.0 - ground * (1.0 - smoothstep(0.3, 0.45, lmin)); // the inside of a dark band on the ground: paper
+                float fol;
+                vec3 pen = pencilFor(A, hv.y, hv.x, fol);
+                pen = mix(vec3(0.40, 0.41, 0.53), pen, smoothstep(0.04, 0.22, hv.y)); // a grey is graphite, a little indigo
+                pen = max(pen, vec3(0.2)); // never black
+                // the strokes, in world space on the face (its axis from the depth's own normal), sized for the screen. On the
+                // ride and the police car they are laid in the car's own frame, so they stay on its body as it drives. Greenery
+                // takes the swirls (the tile's third channel: curling strokes along a flow, after Van Gogh), the rest the hatch
+                vec3 sp = inCar0 ? q0 : inCar1 ? q1 : wp;
+                vec3 dx = dFdx(sp), dy = dFdy(sp), an = abs(normalize(cross(dx, dy)));
+                vec2 suv = an.y > max(an.x, an.z) ? sp.xz : an.x > an.z ? sp.zy : sp.xy;
+                float L = log2(max(max(length(dx), length(dy)), 1e-4) * 150.0), L0 = floor(L), fr = L - L0;
+                vec4 s0 = textureLod(tS, suv / exp2(L0), max(0.0, 0.77 - fr)), s1 = textureLod(tS, suv / exp2(L0 + 1.0), 0.0);
+                vec3 st = mix(s0.rgb, s1.rgb, fr);
+                amt = mix(amt, min(amt, 0.32), fol); // greenery: never denser than a tree's crown, however dark its green
+                float af = amt + 0.24 * fol; // and a little fuller, so the swirls read
+                float c1 = smoothstep(1.12 - af, 1.22 - af, mix(st.r, st.b * 1.15, fol));
+                float c2 = smoothstep(1.6 - amt, 1.78 - amt, st.g) * (1.0 - fol);
+                float cov = max(c1, c2 * 0.9) * 0.86;
+                vec3 fill = mix(vec3(1.0), pen, clamp(amt * (0.1 + 0.3 * fol) + cov * 0.85, 0.0, 0.92));
+                vec3 wash = mix(vec3(1.0), pen, amt * 0.5 * (0.85 + 0.3 * vn(wp.xz * 0.03))); // world-anchored, low: it never crawls
+                fill = mix(fill, wash, ground);
+                vec3 o = paper * mix(vec3(1.0), fill, shown);
+                // the drawing front: a loose pencil grid on the ground and the lines laid in lightly, before they settle (the
+                // grid fades where its cells get small on screen, so it never shimmers in the distance)
+                vec2 gq = wp.xz / 140.0 + vec2(vn(wp.zx * 0.004) * 0.18, 0.0);
+                vec2 gw = max(fwidth(gq), vec2(1e-4));
+                vec2 gd = abs(fract(gq - 0.5) - 0.5) / gw;
+                float grid = (1.0 - smoothstep(0.0, 1.3, min(gd.x, gd.y))) * step(wp.y, 4.0) * step(zr, 0.9999) * (1.0 - smoothstep(0.06, 0.16, max(gw.x, gw.y)));
+                float g = line * mix(0.03, 1.0, shown);
+                g = max(g, max(grid * 0.26, line * 0.45) * band);
+                if (sky) g = crease * 0.95; // the sky side of a silhouette is half of its line (only the crease: no ink, no grid)
+                vec3 inkC = vec3(0.17, 0.18, 0.39); // a dark indigo ink, like a ballpoint
+                o = mix(o, inkC, clamp(g, 0.0, 1.0) * 0.92);
+                // crayon decals keep their colour, laid over the paper (multiply)
+                if (abs(tc.a - 0.25) < 0.03) { vec3 cc = pow(clamp(tc.rgb, 0.0, 1.0), vec3(0.4545)); o = mix(o, o * mix(vec3(1.0), cc, 0.9), 0.81); }
+                gl_FragColor = vec4(o, 1.0);
+                // beta 3.75 (the audit's contract): the scene's depth goes on screen with the drawing, for the things drawn plain over it (sketchPlainDraw)
+                gl_FragDepth = zr;
+              }`;
       function sketchRender(now, cam, full) {
         const w = renderer.domElement.width, h = renderer.domElement.height;
         if (!sketchFx) {
           const R = sketchReveal;
-          R.cv = document.createElement("canvas"); R.cv.width = R.cv.height = 512;
-          R.ctx = R.cv.getContext("2d"); R.ctx.fillStyle = "#000"; R.ctx.fillRect(0, 0, 512, 512);
-          R.tex = new CanvasTexture(R.cv); R.tex.flipY = false;
+          sketchRevealInit(); // beta 3.7x (was a 512² canvas, filled black, as a CanvasTexture)
           const rt = new WebGLRenderTarget(w, h, { samples: 0, type: HalfFloatType });
           rt.depthTexture = new DepthTexture(w, h);
           const mat = new ShaderMaterial({
-            uniforms: { tD: { value: rt.texture }, tZ: { value: rt.depthTexture }, tR: { value: R.tex }, res: { value: new Vector2(w, h) }, t: { value: 0 },
+            uniforms: { tD: { value: rt.texture }, tZ: { value: rt.depthTexture }, tR: { value: R.rt.texture }, res: { value: new Vector2(w, h) }, t: { value: 0 },
               pInv: { value: new Matrix4() }, cW: { value: new Matrix4() }, box: { value: new Vector4(R.x0, R.z0, R.w, R.h) }, full: { value: 0 }, near: { value: 1 }, far: { value: 1000 }, dz: { value: 900 } },
             vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
-            fragmentShader: `
-              uniform sampler2D tD, tZ, tR; uniform vec2 res; uniform float t, full, near, far, dz; uniform mat4 pInv, cW; uniform vec4 box; varying vec2 vUv;
-              float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-              float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
-                return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
-              // crayon decals carry a marker alpha: to the pencil they are paper
-              float lum(vec2 uv){ vec4 t = texture2D(tD, uv); if (abs(t.a - 0.25) < 0.03) return 1.0; vec3 c = pow(clamp(t.rgb, 0.0, 1.0), vec3(0.4545)); return dot(c, vec3(0.299, 0.587, 0.114)); }
-              float depZ(float z){ float ndc = z * 2.0 - 1.0; return (2.0 * near * far) / (far + near - ndc * (far - near)); }
-              float dep(vec2 uv){ return depZ(texture2D(tZ, uv).x); }
-              // r139b: for the taps inside a branch (no implicit derivatives there; tD has no mips, so the same texel)
-              float lumL(vec2 uv){ vec4 t = textureLod(tD, uv, 0.0); if (abs(t.a - 0.25) < 0.03) return 1.0; vec3 c = pow(clamp(t.rgb, 0.0, 1.0), vec3(0.4545)); return dot(c, vec3(0.299, 0.587, 0.114)); }
-              void main(){
-                float tf = 0.0;
-                vec2 px = 1.0 / res;
-                // r130b: a calm line: a fixed, hand-drawn waver (no boiling)
-                vec2 wob = (vec2(vn(vUv * 7.0), vn(vUv * 7.0 + 7.7)) - 0.5) * 1.2 * px;
-                vec2 uv = vUv + wob;
-                float l = lum(uv);
-                // silhouettes: the ink hulls come out near black. r130f: the mask is softened over a small cross
-                // first, so corners round off like a pencil turning rather than snapping
-                // r139b: the four neighbours are read once (the tone edge below reused two of them by reading again)
-                float lR = lum(uv + vec2(px.x, 0.0)), lL = lum(uv - vec2(px.x, 0.0)), lU = lum(uv + vec2(0.0, px.y)), lD = lum(uv - vec2(0.0, px.y));
-                float lmin = min(l, min(min(lR, lL), min(lU, lD)));
-                float ink0 = 1.0 - smoothstep(0.08, 0.3, lmin);
-                float inkN = (1.0 - smoothstep(0.06, 0.22, lum(uv + vec2(1.4, 0.0) * px))) + (1.0 - smoothstep(0.06, 0.22, lum(uv - vec2(1.4, 0.0) * px)))
-                           + (1.0 - smoothstep(0.06, 0.22, lum(uv + vec2(0.0, 1.4) * px))) + (1.0 - smoothstep(0.06, 0.22, lum(uv - vec2(0.0, 1.4) * px)));
-                float ink = smoothstep(0.16, 0.62, (ink0 * 2.0 + inkN) / 6.0);
-                // creases: a Sobel on log depth
-                float d00 = log(dep(uv + vec2(-px.x, -px.y))), d10 = log(dep(uv + vec2(0.0, -px.y))), d20 = log(dep(uv + vec2(px.x, -px.y)));
-                float d01 = log(dep(uv + vec2(-px.x, 0.0))), d21 = log(dep(uv + vec2(px.x, 0.0)));
-                float d02 = log(dep(uv + vec2(-px.x, px.y))), d12 = log(dep(uv + vec2(0.0, px.y))), d22 = log(dep(uv + vec2(px.x, px.y)));
-                float gx = (d20 + 2.0 * d21 + d22) - (d00 + 2.0 * d01 + d02), gy = (d02 + 2.0 * d12 + d22) - (d00 + 2.0 * d10 + d20);
-                // the step a building makes in log depth shrinks with the camera's distance: the threshold follows it
-                float ca = clamp(22.0 / dz, 0.004, 0.035);
-                float crease = smoothstep(ca, ca * 2.6, length(vec2(gx, gy)));
-                // tone edges: colour changes (windows, doors, road paint) drawn lighter
-                float l1 = lR, l2 = lU;
-                float tone = smoothstep(0.1, 0.2, abs(l1 - l) + abs(l2 - l)) * 0.12;
-                float line = max(ink * 0.82, max(crease * 0.7, tone));
-                // pencil pressure: the stroke swells and thins along its length; a faint second pass beside it
-                float press = 0.68 + 0.32 * vn(vUv * res * 0.045 + 3.0);
-                line *= press;
-                float ghost = (1.0 - smoothstep(0.06, 0.22, lum(uv + vec2(2.2, -1.6) * px))) * 0.18 * vn(vUv * res * 0.09);
-                line = max(line, ghost);
-                // the far city is only suggested: lines thin out with distance
-                float zr = texture2D(tZ, vUv).x; // r139b: read once (it was read again for the reveal below)
-                float dd = depZ(zr);
-                line *= 1.0 - 0.5 * smoothstep(dz * 1.35, dz * 2.8, dd);
-                // hatching in the shade: one direction, then a cross, both a little irregular
-                vec2 p = vUv * res;
-                float sh = 1.0 - smoothstep(0.4, 0.74, l);
-                float hn = vn(p * 0.05) * 3.0;
-                float h1 = smoothstep(0.62, 0.92, abs(fract((p.x + p.y + hn) / 7.0) - 0.5) * 2.0) * smoothstep(0.3, 0.5, sh);
-                float h2 = smoothstep(0.66, 0.95, abs(fract((p.x - p.y + hn) / 6.0) - 0.5) * 2.0) * smoothstep(0.5, 0.75, sh);
-                float hatch = h1 * smoothstep(0.78, 0.95, sh) * 0.22;
-                // graphite grain: the stroke is never solid
-                float grain = 0.72 + 0.28 * vn(p * 0.9);
-                float g = max(line, hatch) * grain;
-                // where has the city been drawn yet? world position from depth, then the reveal map
-                vec4 ndc = vec4(vUv * 2.0 - 1.0, zr * 2.0 - 1.0, 1.0);
-                vec4 vp = pInv * ndc; vp /= vp.w;
-                vec3 wp = (cW * vp).xyz;
-                vec2 ruv = (wp.xz - box.xy) / box.zw;
-                float rv = texture2D(tR, ruv).r;
-                float edge = vn(wp.xz * 0.02 + tf * 0.37) * 0.35;
-                float shown = full > 0.5 || zr >= 0.9999 ? 1.0 : smoothstep(0.25, 0.55, rv + edge - 0.15);
-                // r130k: the drawing front is a sketch in progress: construction lines on the ground (a loose
-                // perspective grid), the edges laid in twice and overshooting, before the clean line settles
-                float band = full > 0.5 ? 0.0 : smoothstep(0.02, 0.4, rv + edge - 0.15) * (1.0 - shown);
-                vec2 gq = wp.xz / 140.0 + vec2(vn(wp.zx * 0.004) * 0.18, 0.0);
-                vec2 gd = abs(fract(gq - 0.5) - 0.5) / max(fwidth(gq), vec2(1e-4));
-                float grid = (1.0 - smoothstep(0.0, 1.3, min(gd.x, gd.y))) * step(wp.y, 4.0) * step(zr, 0.9999);
-                // r139b: the overshooting second stroke only exists on the drawing front (band > 0): read it only there
-                float ghost2 = 0.0;
-                if (band > 0.0) ghost2 = max(1.0 - smoothstep(0.08, 0.3, lumL(uv + vec2(5.0, 1.5) * px)), 1.0 - smoothstep(0.08, 0.3, lumL(uv - vec2(1.5, 5.0) * px)));
-                float wip = max(grid * 0.32, max(ghost2 * 0.4, line * 0.55)) * band * (0.7 + 0.3 * vn(p * 0.6));
-                g *= mix(0.035, 1.0, shown);
-                g = max(g, wip);
-                if (zr >= 0.9999) g = 0.0;
-                // paper: warm white with a slow fibre
-                // r130e: moodier: a warm sheet that falls into cool grey at the edges, soft graphite, a lot of air
-                vec2 q = vUv - 0.5;
-                float vig = smoothstep(0.12, 0.75, length(q * vec2(res.x / res.y, 1.0)));
-                vec3 paper = mix(vec3(0.965, 0.955, 0.93), vec3(0.87, 0.872, 0.875), vig * 0.8) - (vn(p * 0.35) * 0.016 + vn(p * 0.05) * 0.02);
-                vec3 graphite = vec3(0.09, 0.09, 0.11);
-                vec3 o = mix(paper, graphite, clamp(g, 0.0, 1.0) * 0.96);
-                // crayon decals keep their colour, laid over the paper like wax (multiply), grain from their mask
-                vec4 tc = texture2D(tD, vUv);
-                if (abs(tc.a - 0.25) < 0.03) { vec3 cc = pow(clamp(tc.rgb, 0.0, 1.0), vec3(0.4545)); o = mix(o, o * mix(vec3(1.0), cc, 0.92), 0.95 * (0.82 + 0.18 * vn(p * 0.9))); }
-                gl_FragColor = vec4(o, 1.0);
-                // beta 3.75: the scene's depth goes on screen with the drawing, for the things drawn plain over it (sketchPlainDraw)
-                gl_FragDepth = zr;
-              }`,
-            depthTest: true, depthFunc: AlwaysDepth, depthWrite: true // beta 3.75: was depthTest/depthWrite false (no depth written); the colour is the same
+            fragmentShader: NOTEBOOK_FS, // beta 3.76: the notebook (was the graphite pass of r130-r139b)
+            depthTest: true, depthFunc: AlwaysDepth, depthWrite: true // beta 3.75: the pass writes the scene's depth (gl_FragDepth) for the things drawn plain over it
           });
           const quad = new Mesh(new PlaneGeometry(2, 2), mat);
           quad.frustumCulled = false;
           const sc = new Scene(); sc.add(quad);
           sketchFx = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
           window.__sketchFx = sketchFx;
+          { const nb = notebookTextures(); mat.uniforms.tP = { value: nb.paper }; mat.uniforms.tQ = { value: nb.doodles }; mat.uniforms.tS = { value: nb.pencil }; mat.uniforms.kW = { value: 1 }; for (const k of ["oI0", "oI1"]) mat.uniforms[k] = { value: new Matrix4() }; for (const k of ["oA0", "oB0", "oA1", "oB1"]) mat.uniforms[k] = { value: new Vector3() }; } // beta 3.76: the notebook's sheet, doodles and pencil; the cars' frames
           // the first page: a little of the city is already drawn where you are
           if (mapMode) { const v = warpV(new Vector3(mapView.tgt.x, 0, mapView.tgt.z)); sketchPaint(v.x, v.z, 900, 1); } else sketchPaint(carPos.x, carPos.z, 700, 1);
         }
         if (sketchFx.rt.width !== w || sketchFx.rt.height !== h) { sketchFx.rt.setSize(w, h); sketchFx.mat.uniforms.res.value.set(w, h); }
         if (!full) { sketchExplore(now); sketchRingsBuild(); sketchRingsUpdate(Math.min(0.05, (now - (sketchFx.lastT || now)) / 1000)); sketchFx.lastT = now; }
+        sketchRevealFlush(); // beta 3.7x: the strokes queued since the last frame
         const u = sketchFx.mat.uniforms;
         u.t.value = (now * 0.001) % 100; u.full.value = full ? 1 : 0;
         cam.updateMatrixWorld();
         u.pInv.value.copy(cam.projectionMatrixInverse); u.cW.value.copy(cam.matrixWorld); u.near.value = cam.near; u.far.value = cam.far;
         u.dz.value = full ? 900 : mapMode ? mapView.dist : 900;
         const plain = sketchPlainPrep(); // beta 3.75
+        { const sy = Math.max(0.2, _nbSun.subVectors(sun.position, sun.target.position).normalize().y); u.kW.value = Math.PI / Math.max(0.3, hemi.intensity + sun.intensity * sy); } // beta 3.76: undoes the notebook's flat light (a white face looking up = white)
+        nbCarFrame(veh?.group, u.oI0.value, u.oA0.value, u.oB0.value); nbCarFrame(copCar?.group, u.oI1.value, u.oA1.value, u.oB1.value); // beta 3.76
+        sun.shadow.autoUpdate = false; sun.shadow.needsUpdate = false; // round 2: no cast shadows in the notebook (intensity 0), so no shadow pass either
         renderer.setRenderTarget(sketchFx.rt);
-        outline.skipHull = sketchSkipHull; // beta 3.75: no pencil hull round the plain things, nor round sketchNoHull ones
-        try { outline.render(scene, cam); } finally { outline.skipHull = null; }
+        if (!nbHull) renderer.render(scene, cam); // beta 3.76: the ink can come from the depth folds alone (see nbHull)
+        else { outline.skipHull = sketchSkipHull; // beta 3.75: no pencil hull round the plain things, nor round sketchNoHull ones
+        try { outline.render(scene, cam); } finally { outline.skipHull = null; } }
         renderer.setRenderTarget(null);
         renderer.render(sketchFx.sc, sketchFx.cam);
         if (plain) sketchPlainDraw(cam); // beta 3.75
@@ -38510,7 +39188,7 @@ void main() {
       // the scene's lights get that layer enabled as well (layer 0 stays: every other camera and raycaster sees them as
       // before). A root's on-screen shaders are compiled in the background first (compileAsync): until they are ready it
       // is drawn sketched, so the first Sketchbook frame does not stall on them
-      var SKETCH_PLAIN_LAYER = 7, sketchPlainOn = true;
+      var SKETCH_PLAIN_LAYER = 7, sketchPlainOn = false; // beta 3.76: off: in the notebook the ride and the police car are pencil-drawn too (their strokes in their own frame, nbCarFrame); true brings the plain pass back
       var sketchPlainRoots = [() => veh?.group, () => copCar?.group];
       var skPlainLive = [], skPlainFrame = 0, skPlainReady = new WeakMap(), skPlainLightsT = 0, skPlainMats = [];
       function sketchSkipHull(o) { return o.userData.sketchNoHull === true || o.userData.__skPlain === skPlainFrame; }
@@ -38534,11 +39212,14 @@ void main() {
           r.traverse((o) => o.layers.enable(SKETCH_PLAIN_LAYER));
           skPlainLive.push(r);
         }
-        // the lights must be on the plain layer too (looked for once a second: the city's are added at boot)
+        // the lights must be on the plain layer too (looked for once a second: the city's are added at boot); beta 3.7x: and
+        // the scene's top-level branches that hold one are noted, so the plain pass keeps them
         const now = performance.now();
-        if (skPlainLive.length && now > skPlainLightsT) { skPlainLightsT = now + 1000; scene.traverse((o) => { if (o.isLight) o.layers.enable(SKETCH_PLAIN_LAYER); }); }
+        if (skPlainLive.length && now > skPlainLightsT) { skPlainLightsT = now + 1000; skPlainLightTops.clear(); scene.traverse((o) => { if (o.isLight) { o.layers.enable(SKETCH_PLAIN_LAYER); skPlainLightTops.add(skTop(o)); } }); }
         return skPlainLive.length > 0;
       }
+      var skPlainLightTops = new Set(), skPlainHid = [];
+      function skTop(o) { while (o.parent && o.parent !== scene) o = o.parent; return o; }
       function sketchPlainDraw(cam) {
         const mask = cam.layers.mask, ac = renderer.autoClear, bg = scene.background, au = scene.matrixWorldAutoUpdate, sm = renderer.shadowMap, sa = sm.autoUpdate, sn = sm.needsUpdate;
         // the plain things' materials get a small polygon offset towards the camera for this pass only (a GL state, no recompile)
@@ -38548,7 +39229,13 @@ void main() {
         cam.layers.set(SKETCH_PLAIN_LAYER);
         renderer.autoClear = false; scene.background = null; scene.matrixWorldAutoUpdate = false;
         sm.autoUpdate = false; sm.needsUpdate = false; // the shadow map of the colour pass is reused (it has the ride's shadow in it)
+        // beta 3.7x (Sketchbook audit, round 2): the render walks only the top-level branches that hold a plain root or a light;
+        // the city's (~5,000 objects) step out for this pass, so it is no longer a whole scene walk for a couple dozen meshes
+        // (~3 ms a frame on a slow phone). Matrices are not updated here, so nothing else changes
+        skPlainHid.length = 0;
+        { const keep = new Set(skPlainLightTops); for (const r of skPlainLive) keep.add(skTop(r)); for (const c of scene.children) if (c.visible && !c.isLight && !keep.has(c)) { c.visible = false; skPlainHid.push(c); } }
         try { renderer.render(scene, cam); } finally {
+          for (const c of skPlainHid) c.visible = true;
           cam.layers.mask = mask; renderer.autoClear = ac; scene.background = bg; scene.matrixWorldAutoUpdate = au; sm.autoUpdate = sa; sm.needsUpdate = sn;
           for (const m of skPlainMats) { m.polygonOffset = false; m.polygonOffsetFactor = 0; m.polygonOffsetUnits = 0; }
         }
@@ -38625,12 +39312,12 @@ void main() {
       // the on-screen ones, so a dozen compiled mid-flight on the first mapGo and ~17 at the jet's take-off, as their
       // buildings came into view (30-80 ms each). Now, when idle after boot, a world switch or a mode switch, every
       // material of the scene (hidden ones too) is compiled for the target in use, hulls included where outlines draw
-      var warmDone = new Set(), warmQueued = false;
+      var warmDone = new Set(), warmQueued = false, bootSlicing = false, screenCompiled = false; // beta 3.xx: screenCompiled, the on-screen variants (fxLater)
       // r141: the compile on its own (all: for the screen and for the render target both, whatever the mode), so
       // /onboarding/ can warm every world and every ride while its city waits out of sight (onbCmd "warm")
       function warmNow(all) {
           const sch = SCHEMES[state.schemeIdx]?.id, key = all ? `${sch}|all` : `${sch}|${mapMode ? "map" : "drive"}`;
-          if (!sch || warmDone.has(key)) return;
+          if (!sch || warmDone.has(key) || (bootSlicing && !all)) return; // beta 3.xx: the sliced boot compiles these itself
           warmDone.add(key);
           const post = sch === "sketch" || sch === "riso" || sch === "sincity", toRT = all || post || mapMode || sch === "monument";
           const hidden = [], prev = renderer.getRenderTarget();
@@ -38650,7 +39337,7 @@ void main() {
           }
       }
       function warmShaders() {
-        if (warmQueued) return;
+        if (warmQueued || bootSlicing) return; // beta 3.xx: not in the middle of the sliced boot (it compiles these itself, in slices)
         warmQueued = true;
         (window.requestIdleCallback || setTimeout)(() => { warmQueued = false; warmNow(); }, { timeout: 2500 });
       }
@@ -38679,14 +39366,14 @@ void main() {
         if (!document.body.classList.contains("kz-boot")) { if (kzWarm.on) { kzWarm.on = false; perf.t = now + 3000; } return false; } // (the frames of the hand-off, two contexts at once, do not drive the resolution)
         if (kzWarm.frames < kzWarm.need) {
           // the first warm frame draws everything, culled or not: every texture and buffer the map can need goes up now
-          if (kzWarm.frames === 0) {
+          if (kzWarm.frames === 0 && !kzWarm.pre) { // beta 3.xx: not after the sliced warm draws (warmDrawGen): all of it is up already
             kzWarm.unc = [];
             scene.traverse((o) => { if (o.frustumCulled && (o.isMesh || o.isSprite || o.isLine || o.isPoints)) { o.frustumCulled = false; kzWarm.unc.push(o); } });
             // the map's post pass (tilt-shift) takes over a moment after the reveal: its targets and programs are used once here,
             // with everything in the frame, so every program it needs is linked and queried now, not then
             try { tiltShiftRender(now); } catch (e) {}
           } else if (kzWarm.unc) { for (const o of kzWarm.unc) o.frustumCulled = true; kzWarm.unc = null; }
-          if (kzWarm.frames === 2) { try { tiltShiftRender(now); } catch (e) {} }
+          if (kzWarm.frames === 2 && !kzWarm.pre) { try { tiltShiftRender(now); } catch (e) {} }
           kzWarm.frames++;
           if (kzWarm.frames >= kzWarm.need) kzWarm.resolve?.();
           return false;
@@ -39215,8 +39902,8 @@ void main() {
         // the cloud ring or the floating islands: with the telephoto camera they filled the screen
         if (!mapMode && SCHEMES[state.schemeIdx].id === "monument") { for (const m of farRings) if (m.userData.mesh) m.userData.mesh.visible = false; farClouds.visible = false; }
         if (mvFx.group.visible) mvFx.update(now * 0.001, window.__lookSm);
-        if (uwFx.group.visible) uwFx.update(now * 0.001, dt, window.__lookSm);
-        worldFx.update(now * 0.001, dt, window.__lookSm);
+        if (uwFx && uwFx.group.visible) uwFx.update(now * 0.001, dt, window.__lookSm);
+        if (worldFx) worldFx.update(now * 0.001, dt, window.__lookSm);
         if (FOUNTAIN && !siteMode) FOUNTAIN.update(now * 0.001);
         farClouds.rotation.y += dt * 0.006;
         const prog = state.L / route.total;
@@ -39302,6 +39989,7 @@ void main() {
           sun.intensity += 6 * flick;
           hemi.intensity = (lum(SCHEMES[state.schemeIdx].bg) < 0.45 ? 0.35 : 0.75) + 1.6 * flick;
         }
+        if (schemeId === "sketch") { hemi.intensity = 2.4; sun.intensity = 0.9; sun.color.set("#ffffff"); } // beta 3.76: the notebook's light stays flat and even (the weather and the lightning move it elsewhere)
         rainAlpha = smooth(rainAlpha, wantRain ? 1 : 0, dt, 2.5);
         rain.visible = rainAlpha > 0.02;
         (window.__wxNow ||= {}).wx = wx; window.__wxNow.rain = rain.visible; window.__wxNow.bolt = boltActive > 0; // tests: the weather per world
@@ -39582,6 +40270,7 @@ void main() {
         }
         if (!routeRing) routeRingInit(); else routeRing.update(now);
         if (ONB_MODE) onbFrame(now); // r140
+        if (worldPrevJob) { const j = worldPrevJob; worldPrevJob = null; try { j(); } catch (e) {} } // beta 3.xx: a Multiverse preview, drawn just before the frame's own draw (which covers it)
         if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sincity") sinCityRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sketch") sketchRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "riso") risoRender(now, camera); else if (mvK > 0.5 && !window.__noPost) tiltShiftRender(now); else if (window.__noPost) renderer.render(scene, camera); else outline.render(scene, camera);
         if (onbSnapReq) { onbSnapReq = false; onbSnap(); } // r141c, r142
         // r226 (Daniel: the final pill opens onto the live map): the loader opens its window only once the map has drawn
@@ -39734,7 +40423,12 @@ void main() {
       // a geometry's attributes: how many, and the sum of their versions (a version only ever goes up)
       let geoVerN = 0;
       const geoVer = (g) => { let v = 0, n = 0; const at = g.attributes; for (const k in at) { v += at[k].version; n++; } geoVerN = n; return v; };
-      function mergeStatic() {
+      // beta 3.xx (start-up slices): a generator job (czRun): the parts gathered a top-level piece at a time, the batches'
+      // geometry a batch at a time (was: the gathering in one go, ~0.1-0.2 s at 4x, the geometry in idle slices); the boot
+      // runs it before its compile and first draws, so the batches are compiled and drawn under the opening too
+      var mergeRun = null;
+      function mergeStatic() { if (MERGED || NO_MERGE || mergeRun) return mergeRun; mergeRun = czRun(mergeStaticGen()).catch(() => {}).finally(() => { mergeRun = null; }); return mergeRun; }
+      function* mergeStaticGen() {
         if (MERGED || NO_MERGE) return;
         const W = worldRefs.world; W.updateMatrixWorld(true);
         MERGED = [];
@@ -39777,6 +40471,7 @@ void main() {
               (groups.get(k) || groups.set(k, []).get(k)).push({ o, ...sh, T });
             }
           });
+          yield;
         }
         // a lone plain mesh stays as it is; a mesh with several materials goes only when every share of it is batched
         const take = new Map();
@@ -39791,11 +40486,8 @@ void main() {
         if (!jobs.length && ++mergeTries < 8) { MERGED = null; setTimeout(mergeStatic, 2000); return; }
         // the geometry is built a slice at a time while the page is idle (a phone needs several hundred ms for all of it),
         // then everything is switched over in one frame (never a batch and its originals drawn together)
-        let j = 0;
-        const slice = (dl) => {
-          const t1 = performance.now();
-          while (j < jobs.length && (dl?.timeRemaining ? dl.timeRemaining() > 2 : performance.now() - t1 < 8)) { const jb = jobs[j++]; jb.mg = batchGeo(jb.list, jb.bake); }
-          if (j < jobs.length) { (window.requestIdleCallback || setTimeout)(slice, { timeout: 500 }); return; }
+        for (const jb of jobs) { jb.mg = batchGeo(jb.list, jb.bake); yield; }
+        {
           let n0 = 0;
           for (const jb of jobs) {
             if (!jb.mg) continue;
@@ -39820,8 +40512,7 @@ void main() {
           }
           if (n2C) { nav2CullOff(); n2C = null; } // the street view's far cull rebuilds its list (the batches, not the hidden originals)
           (window.__bootT ||= {}).merge = { meshes: n0, batches: MERGED.length, ms: Math.round(performance.now() - t0) };
-        };
-        slice(null);
+        }
       }
       // where a mesh is: its own place, turn, size and visibility, and those of every group above it up to the world
       // group's piece (a flat list of numbers, compared without allocating)
@@ -39928,7 +40619,6 @@ void main() {
           cover: (pl) => { try { return window.__coverOf?.(pl.id) || null; } catch { return null; } },
           shot: (pl) => { try { return pl.wx != null ? placeShot(pl) : null; } catch { return null; } },
           brand: (pl) => BRANDC[pl.work || pl.name] || BRANDC[pl.name] || null,
-          gameMark: () => GLOVE_SVG + pixelSVG(["2M2F"]), // beta 3.52 r219: the game's small entry in Nearby
           plaza: { x: OLARI_PLAZA.x, z: OLARI_PLAZA.z, r: OLARI_PLAZA.r, w: BLVD_W, z0: BLVD_Z0 }, // beta 2.92: r185's boulevard and forecourt
           vehicle: () => state.vehicleId, trees: () => TREE_BLOBS, vehAlt: () => Math.max(0, (veh?.group?.position.y || 0) - 2), // beta 2.9: the plane's altitude, for the street camera
           // round 2: the ride's wheel span (half the wheelbase, half the track, in world units), from its own wheels, per ride
@@ -40061,7 +40751,7 @@ void main() {
         { id: "dream", stop: "dream", chapter: true, find: true, h: 70, name: "The Dream", line: "CH.01", c: "#B098C8" },
         { id: "voice", stop: "voice", chapter: true, find: true, h: 70, name: "The Voice", line: "CH.02", c: "#F65342" },
         { id: "world", stop: "world", chapter: true, find: true, h: 70, name: "The World", line: "CH.03", c: "#119BFE" },
-        { id: "hq", chapter: true, br: "A", x: 1010, z: 4262, px: 1010, pz: 4120, h: 280, name: "C\u0103linescu 54", line: "THE ATTIC \xB7 2017", c: "#c0392b", pts: 5, past: true,
+        { id: "hq", chapter: true, br: "A", x: 1010, z: 4262, px: 1010, pz: 4120, h: 280, name: "C\u0103linescu 54", line: "THE ATTIC \xB7 2017", c: "#c0392b", pts: 5, past: true, tagOnly: true, // r235 (Daniel: "Călinescu shouldn't appear as a card, neither in Nearby nor on its own; only if you tap its tag"): no arrival card, no building tap
           desc: "Congrats, you found a blast from the past (2017): the Cromatic Studios attic. The villa with the red mansard, right across the street from Two Minutes; the string of lights still runs from our balcony to their corner." },
         { id: "eliade", chapter: true, x: 1600, z: 6100, px: 1640, pz: 6158, h: 150, name: "Eliade 18", line: "OUR STUDIO \xB7 2019", c: "#F65342", pts: 5, past: true, work: "Eliade 18",
           desc: "Congrats, you found a blast from the past (2019): Eliade Tower, the long grey office slab where Cromatic Studios had a floor. More room, more people, the first proper studio." },
@@ -41691,7 +42381,7 @@ void main() {
           let win = null;
           for (const q of pins) {
             const pl = q.pl;
-            if ((pl.chapter && !pl.past) || pl.wx == null || pl.float || pl.unmarked) continue;
+            if ((pl.chapter && !pl.past) || pl.wx == null || pl.float || pl.unmarked) continue; // r235: tagOnly (Călinescu 54) never in Nearby nor on its own; 3.79 (Daniel: "and on the building"): its building opens it too
             const g = sc(pl.wx, 0, pl.wz), t = sc(pl.wx, pl.wy || 55, pl.wz), e = sc(pl.wx + 34, 0, pl.wz);
             if (g[2] > 1 || t[2] > 1) continue;
             const half = Math.min(110, Math.max(16, Math.hypot(e[0] - g[0], e[1] - g[1])));
@@ -41728,7 +42418,7 @@ void main() {
           }
           // a tap on a place's building goes there
           let near = null;
-          for (const q of pins) { if (q.pl.chapter && !q.pl.past) continue; const d2 = ((q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2) * (q.pl.tapW || 1); if (d2 < 75 * 75 && (!near || d2 < near.d)) near = { d: d2, pl: q.pl }; } // r168: tapW, a place that wins its shared building
+          for (const q of pins) { if (q.pl.chapter && !q.pl.past) continue; /* 3.79: a tap on Călinescu 54's building opens it too */ const d2 = ((q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2) * (q.pl.tapW || 1); if (d2 < 75 * 75 && (!near || d2 < near.d)) near = { d: d2, pl: q.pl }; } // r168: tapW, a place that wins its shared building
           if (near) return mapGo(near.pl);
           for (const q of pins) if (q.pl.chapter && !q.pl.past && (q.pl.wx - hit.x) ** 2 + (q.pl.wz - hit.z) ** 2 < 70 * 70) return mapGo(q.pl);
           if (nav2?.on) { const g = nav2.tap(hit.x, hit.z); if (g) tapMark(g[0], g[1]); return; } // nav2: any street of the graph
@@ -42202,6 +42892,7 @@ void main() {
           out.sort((a, b) => a - b);
           return { min: +out[0].toFixed(2), med: +out[trials >> 1].toFixed(2) };
         },
+        nbHull(on) { nbHull = !!on; return nbHull; }, // beta 3.76: the notebook with or without OutlineEffect's hull pass (A/B)
         sketchPlain(on) { sketchPlainOn = !!on; return sketchPlainRoots.length; }, // beta 3.75: Sketchbook's plain pass off / on (A/B)
         staticShadows(size = 4096) {
           window.__staticShadow = true;
@@ -42518,20 +43209,17 @@ void main() {
       const kzLoader = BOOT_MODE !== "drive";
       // r153: the moment the city is ready (built, its programs linked, its first frames drawn)
       let introReadyRes = null; const introReady = new Promise((r) => (introReadyRes = r));
-      if (kzLoader) {
-        state.started = true;
-        state.visited.add("start");
-        setMapMode(true, { intro: true, open: true }); // r147 (r223: both boots open on the map's first frame, under the loader)
-        ui.hideLoader();
-        CZI?.progress(0.24); // the bundle has run
-        introLoaderHooks();
-      }
+      bootBDone = true;
       let kineticStarted = false;
       // r223: the city is ready: the loader may open onto it (on a page without the loader, the map shows at once)
       const startKinetic = () => {
         if (!kzLoader || kineticStarted) return;
         kineticStarted = true;
         (window.__bootT ||= {}).ready = Math.round(performance.now());
+        window.__bootT.slices = { busy: Math.round(czStat.busy), n: czStat.n, away: Math.round(czStat.away) }; // beta 3.xx: tests
+        // beta 3.xx (the first drive): the sound's context is made while the opening still has its words to play (nothing else
+        // needs the main thread then); otherwise nav2 makes it in its first idle moment on the map (see nav2's SND.prep)
+        try { if (CZI?.phase?.() === "words") (window.requestIdleCallback || ((f) => setTimeout(f, 200)))(() => { try { nav2?.snd?.prep?.(); } catch (e) {} }, { timeout: 1500 }); } catch (e) {}
         introReadyRes?.();
         if (CZI) CZI.ready(); else { mapEndIntro(); kineticLater(); }
       };
@@ -42545,7 +43233,9 @@ void main() {
         const rtWarm = new Promise((res) => { const iv = setInterval(() => { if (!warmQueued) { clearInterval(iv); res(); } }, 40); }).then(mk("rt")).then(() => CZI?.progress(0.8));
         // the programs link in parallel on the GPU process: wait until they really are linked (for the screen and for
         // the map's render target), or the first draw of each blocks on the link, after the reveal
-        const linked = (async () => {
+        // beta 3.xx: the sliced boot compiled both already and waited on their links (bootLinked); compileAsync again
+        // (a second full compile pass, ~0.2 s at 4x) only on the boots that did not
+        const linked = bootLinked || (async () => {
           if (!renderer.compileAsync) return;
           try { await renderer.compileAsync(scene, camera); } catch (e) {}
           const rt = new WebGLRenderTarget(1, 1, { type: HalfFloatType }), prev = renderer.getRenderTarget();
@@ -42561,20 +43251,165 @@ void main() {
           setTimeout(go, 0);
         });
       };
-      // r125: the city's streets, blocks and trees are built behind the intro (it plays on an opaque
-      // ground meanwhile), so the first frame is the type, not a blank screen
-      if (kzLoader) document.body.classList.add("kz-boot");
-      const fabricReady = new Promise((res) => {
-        const go = () => { worldRefs.world.userData.buildFabric(); applyScheme(state.schemeIdx); (window.__bootT ||= {}).fabric = Math.round(performance.now()); CZI?.progress(0.5); res(); (window.requestIdleCallback || ((f) => setTimeout(f, 1500)))(mergeStatic, { timeout: 1500 }); }; // r198: then the batches (r223: the loader's progress; r230: Safari, with no requestIdleCallback, waits as long as Chrome at most does)
-        if (kzLoader) requestAnimationFrame(() => setTimeout(go, 30)); else { go(); }
+      // beta 3.xx (start-up slices): the boot's compile, a top-level piece at a time (the world's own pieces one by one),
+      // each with the whole scene's lights as the one-go compile saw them (its hidden pieces shown: the lights in them
+      // count), so the programs are the same ones; for the screen (rt null) or a render target. Returns the programs made
+      // or found (their links are waited on, see linkWait)
+      function* compileGen(rt, roots = null) {
+        const W = worldRefs.world, parts = [], progs = new Set();
+        if (roots) for (const r of roots) parts.push(...(r.children.length ? r.children : [r]));
+        else for (const o of scene.children) { if (o === W) parts.push(...W.children); else parts.push(o); }
+        const hidden = [], lights = [];
+        scene.traverse((o) => { if (!o.visible && (o.isMesh || o.isGroup)) { hidden.push(o); o.visible = true; } });
+        scene.traverseVisible((o) => { if (o.isLight) lights.push(o); });
+        hidden.forEach((o) => (o.visible = false));
+        yield;
+        const prev = renderer.getRenderTarget(), noop = () => {};
+        for (const part of parts) {
+          // the lights, from the list (not a walk of the whole scene for every piece); none twice from the piece itself
+          scene.traverseVisible = (cb) => { for (const l of lights) cb(l); };
+          part.traverseVisible = noop;
+          try {
+            renderer.setRenderTarget(rt || null);
+            for (const m of renderer.compile(part, camera, scene)) { const pr = renderer.properties.get(m).currentProgram; if (pr) progs.add(pr); }
+          } catch (e) {} finally { delete scene.traverseVisible; delete part.traverseVisible; renderer.setRenderTarget(prev); }
+          yield;
+        }
+        return progs;
+      }
+      // the programs' links (they run on the GPU process): polled, never waited on in a draw (a draw on one still linking
+      // blocks the thread until it is done)
+      const linkWait = (progs) => new Promise((res) => {
+        const t0 = performance.now();
+        const chk = () => { for (const p of progs) { try { if (p.isReady()) progs.delete(p); } catch (e) { progs.delete(p); } } if (!progs.size || performance.now() - t0 > 8000) res(); else setTimeout(chk, 12); };
+        chk();
       });
-      Promise.all([fabricReady, Promise.race([Promise.all([document.fonts?.load?.("500 16px CromaticSans"), document.fonts?.load?.("800 16px CromaticSans")]).then(() => document.fonts?.ready), new Promise((r) => setTimeout(r, 1600))])]).then(() => {
+      // the first draws: every visible piece once, on its own (the rest hidden for it), into a small half-float target as
+      // the map draws (its programs), culled or not: its buffers and textures go up to the GPU now, a piece a slice, not
+      // all in the first warm frame (2.3 s at 4x before)
+      function* warmDrawGen() {
+        const W = worldRefs.world, done = new Set(), prev = renderer.getRenderTarget();
+        // the pieces as they are now (the batches, r198, may come in meanwhile: they are pieces too)
+        // (the lights stay on: the programs are made for the lights the frame has)
+        const pieces = () => { const a = []; for (const o of scene.children) { if (o === W) { for (const c of W.children) if (!c.isLight) a.push(c); } else if (!o.isLight) a.push(o); } return a; };
+        // and the pieces hidden now that show as the map opens: the ride (it spawns there) and its spawn's ring and beam
+        const showsSoon = new Set([veh?.group, spawnRing, spawnBeam].filter(Boolean));
+        const rt = new WebGLRenderTarget(64, 64, { type: HalfFloatType });
+        // a few pieces a draw: as many as keep a draw short (most are a few small meshes; a draw has its own fixed cost)
+        let k = 4;
+        const st = ((window.__bootT ||= {}).warm = { draws: 0, ms: 0, pieces: 0, maxMs: 0 });
+        try {
+          for (;;) {
+            const cur = pieces(), take = new Set();
+            for (const o of cur) { if (take.size >= k) break; if (!done.has(o) && (o.visible || showsSoon.has(o)) && o.layers.mask !== 0) take.add(o); }
+            if (!take.size) break;
+            const vis = cur.map((o) => o.visible), unc = [];
+            for (const part of take) {
+              done.add(part);
+              part.traverse((o) => {
+                if (o.frustumCulled && (o.isMesh || o.isSprite || o.isLine || o.isPoints)) { o.frustumCulled = false; unc.push(o); }
+                // the bounds the first culled draw would work out (three does it lazily, on the first frustum test)
+                if (o.isMesh || o.isLine || o.isPoints) { if (o.boundingSphere !== undefined) { if (o.boundingSphere === null && o.computeBoundingSphere) o.computeBoundingSphere(); } else if (o.geometry && o.geometry.boundingSphere === null) o.geometry.computeBoundingSphere(); }
+              });
+            }
+            for (const o of cur) o.visible = take.has(o);
+            const t0 = performance.now();
+            try { renderer.setRenderTarget(rt); renderer.render(scene, camera); } catch (e) {} finally {
+              cur.forEach((o, j) => { o.visible = vis[j]; });
+              for (const o of unc) o.frustumCulled = true;
+              renderer.setRenderTarget(prev);
+            }
+            const dt = performance.now() - t0;
+            st.draws++; st.ms += dt; st.pieces += take.size; st.maxMs = Math.max(st.maxMs, dt);
+            k = dt < czBudget * 0.35 ? Math.min(256, k * 2) : dt > czBudget * 0.7 ? Math.max(1, k >> 1) : k;
+            yield;
+          }
+        } finally { rt.dispose(); }
+      }
+      var bootLinked = null;
+      // beta 3.xx (start-up slices): what no first view needs: the on-screen variants of every program (the map draws into a
+      // render target; a drive, the postcards and the ride previews draw on screen), compiled in slices once the opening
+      // is over and linked in the background
+      async function fxLater() {
+        await new Promise((r) => setTimeout(r, 1500));
+        if (kzLoader) {
+          try {
+            const progs = await czRun(compileGen(null)); // the on-screen variants of everything (the sliced boot made only the map's)
+            // beta 3.xx (after the opening): each program's first use (three reads its uniforms and attributes then: the first
+            // postcard and the first preview paid it, 0.1-0.25 s at 4x), once it has linked, a few at a time
+            await linkWait(new Set(progs));
+            await czRun((function* () { for (const p of progs) { try { p.getUniforms(); p.getAttributes(); } catch (e) {} yield; } })());
+          } catch (e) {}
+        }
+        screenCompiled = true;
+        // the Multiverse menu's previews, made ahead (see makeWorldPreviews)
+        setTimeout(prewarmWorlds, 6000);
+      }
+      // (beta 3.xx: asked for inside the boot, after a hand-back: document.fonts.load matches the face there and then, ~0.1 s at 4x)
+      const fontsWait = () => Promise.race([Promise.all([document.fonts?.load?.("500 16px CromaticSans"), document.fonts?.load?.("800 16px CromaticSans")]).then(() => document.fonts?.ready), new Promise((r) => setTimeout(r, 1600))]);
+      if (CZI) CZI.onEnd(fxLater); else setTimeout(fxLater, 6000);
+      (async () => {
+        let fontsReady = null;
+        if (kzLoader) { await czPause(); fontsReady = fontsWait(); } else fontsReady = fontsWait();
+        if (!kzLoader) { uwFx ||= czDrain(uwFxGen || (uwFxGen = makeUwFxGen())); if (!worldFx) { worldFx = czDrain(worldFxGen || (worldFxGen = makeWorldFxGen())); worldFx.set(SCHEMES[state.schemeIdx].id); } } // (as the app's body made them)
+        if (kzLoader) {
+          bootSlicing = true;
+          // beta 3.xx: the underwater world's sea life and the F1 / Ghibli / Sakura layers (~0.4 s at 4x, in the bundle's task
+          // before), in slices now. They stay at this point of the boot: they are laid along the drive's route as it is
+          // before the map opens (nav2 re-bases it later), and they find the city's trees not yet there (as ever)
+          if (!uwFx) { const v = await czRun(uwFxGen || (uwFxGen = makeUwFxGen())); if (!uwFx && v) uwFx = v; }
+          if (!worldFx) { const v = await czRun(worldFxGen || (worldFxGen = makeWorldFxGen())); if (!worldFx && v) { worldFx = v; worldFx.set(SCHEMES[state.schemeIdx].id); } }
+          state.started = true;
+          state.visited.add("start");
+          await czPause();
+          setMapMode(true, { intro: true, open: true }); // r147 (r223: both boots open on the map's first frame, under the loader)
+          ui.hideLoader();
+          CZI?.progress(0.24); // the bundle has run
+          introLoaderHooks();
+          // beta 3.xx: the ride's measures nav2 asks for in its first drive frame (bounding boxes of every part), now
+          await czPause();
+          try { const h = nav2Host(); h.carLen?.(); h.vehSpan?.(); } catch (e) {}
+          // r125: the city's streets, blocks and trees are built behind the intro (it plays on an opaque
+          // ground meanwhile), so the first frame is the type, not a blank screen
+          document.body.classList.add("kz-boot");
+          await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30)));
+          await czRun(worldRefs.world.userData.buildFabricGen()); // beta 3.xx: in slices
+        } else worldRefs.world.userData.buildFabric();
+        applyScheme(state.schemeIdx); (window.__bootT ||= {}).fabric = Math.round(performance.now()); CZI?.progress(0.5);
+        // r198: then the batches (r223: the loader's progress; r230: Safari, with no requestIdleCallback, waits as long as Chrome
+        // at most does); beta 3.xx: on the sliced boot, at once and before the compile
+        if (kzLoader) { await czPause(); await mergeStatic(); } else (window.requestIdleCallback || ((f) => setTimeout(f, 1500)))(mergeStatic, { timeout: 1500 });
+        // beta 3.xx: the jet's boarding walk, which the map's frame made once the page was 4 s old (the first warm frame now),
+        // made here, before the compile and the first draws
+        if (kzLoader && boardWalk === null) { await czPause(); try { buildBoardWalk(); } catch (e) { boardWalk = false; } }
+        // beta 3.xx: nav2's barriers at the closed streets' mouths, which its first frame on the map made (~75 ms at 4x)
+        if (kzLoader && nav2?.closed) { await czPause(); try { nav2Host().closures?.(nav2.closed()); } catch (e) {} }
+        await fontsReady;
         // r127: every shader in the scene is prepared while the intro plays (hidden ones too), so
         // nothing compiles mid-journey; compileAsync uses the parallel compile extension when present
-        const hiddenNow = [];
-        scene.traverse((o) => { if (!o.visible && (o.isMesh || o.isGroup)) { hiddenNow.push(o); o.visible = true; } });
-        try { renderer.compile(scene, camera); } catch {}
-        hiddenNow.forEach((o) => (o.visible = false));
+        if (kzLoader) {
+          // beta 3.xx: in slices, for the map's render target (all the map draws; what warmShaders would do next, when idle,
+          // in one go), then the links waited on, then the first draws a piece at a time. The on-screen variants (a drive,
+          // the postcards) follow after the opening (fxLater)
+          let progs = new Set();
+          const rt = new WebGLRenderTarget(1, 1, { type: HalfFloatType });
+          try { progs = await czRun(compileGen(rt)); } finally { rt.dispose(); }
+          { const sch = SCHEMES[state.schemeIdx]?.id; if (sch && sch !== "sketch" && sch !== "riso" && sch !== "sincity") warmDone.add(`${sch}|${mapMode ? "map" : "drive"}`); } // (warmNow's key: done)
+          (window.__bootT ||= {}).compiled = Math.round(performance.now());
+          bootLinked = linkWait(progs);
+          await bootLinked;
+          (window.__bootT ||= {}).linkedAt = Math.round(performance.now());
+          await czRun(warmDrawGen());
+          kzWarm.pre = true;
+          bootSlicing = false;
+          (window.__bootT ||= {}).drawn = Math.round(performance.now());
+        } else {
+          const hiddenNow = [];
+          scene.traverse((o) => { if (!o.visible && (o.isMesh || o.isGroup)) { hiddenNow.push(o); o.visible = true; } });
+          try { renderer.compile(scene, camera); } catch {}
+          hiddenNow.forEach((o) => (o.visible = false));
+          screenCompiled = true;
+        }
         warmShaders(); // r139b: and, when idle, the variants for the render target the map draws into
         clearInterval(bootT);
         // r129: the vehicle thumbnails render off-screen: not while the intro plays, later, when idle
@@ -42622,7 +43457,7 @@ void main() {
           prevT = t;
           frame(t);
         });
-      });
+      })();
     }
   });
   require_main();

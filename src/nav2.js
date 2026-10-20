@@ -33,7 +33,10 @@
   // are clipped to the part of the city the map shows, cut where they cross, joined where one ends on another (a
   // T-junction), junction points closer than 14 units merged, tiny overshoot stubs pruned, chains of degree 2
   // contracted into one edge; the connected piece that holds the start road is the graph.
-  function buildGraph(H) {
+  function buildGraph(H) { const g = buildGraphGen(H); for (;;) { const r = g.next(); if (r.done) return r.value; } }
+  // beta 3.xx (start-up slices): the same, yielding between its passes and inside the long ones; the app runs it in
+  // slices before it makes nav2 (czNav2.prepare) and the result is the one czNav2 then uses
+  function* buildGraphGen(H) {
     const t0 = performance.now();
     const B = { x0: -280, x1: 2880, z0: 2380, z1: 9640 };
     const raw = [];
@@ -58,9 +61,12 @@
         }
       }
     }
+    yield;
     const net = H.cityNet();
+    yield;
     for (const s of net.longs) raw.push({ pts: H.rounded(s.pts, 160).map(([x, z]) => [x, z]), w: s.w, kind: "long" });
     for (const s of net.minor) raw.push({ pts: s.pts.map(([x, z]) => [x, z]), w: s.w, kind: "minor" });
+    yield;
     // clip to the map's box (Liang-Barsky per segment)
     const clipSeg = (ax, az, bx, bz) => {
       let u0 = 0, u1 = 1;
@@ -91,6 +97,7 @@
       }
       flush();
     }
+    yield;
     // every segment in a coarse grid
     const CS = 90, grid = new Map(), segs = [];
     const gk = (cx, cz) => (cx + 200) * 4000 + (cz + 200);
@@ -121,13 +128,15 @@
         lines[l2].cuts.push({ i: i2, t: u, x: X, z: Z });
         nCross++;
       }
+      yield;
     }
     // T-junctions: a street that ends just short of (or on) another is joined to it
     const ek2 = (p) => Math.round(p[0]) + "," + Math.round(p[1]);
     const ends = new Map();
     for (const L of lines) for (const p of [L.pts[0], L.pts[L.pts.length - 1]]) ends.set(ek2(p), (ends.get(ek2(p)) || 0) + 1);
     let nT = 0;
-    lines.forEach((L, li) => {
+    for (let li = 0; li < lines.length; li++) {
+      const L = lines[li];
       for (const side of [0, 1]) {
         const p = side ? L.pts[L.pts.length - 1] : L.pts[0];
         if (ends.get(ek2(p)) > 1) continue;
@@ -147,7 +156,9 @@
         if (best.d > 0.5) { if (side) L.post = [best.X, best.Z]; else L.pre = [best.X, best.Z]; }
         nT++;
       }
-    });
+      if (li % 16 === 15) yield;
+    }
+    yield;
     // every line as a list of points with its junction points flagged
     const J = []; // junction points: [x, z]
     const lineJ = lines.map((L) => {
@@ -170,6 +181,7 @@
       for (const p of out) if (p.j) { p.ji = J.length; J.push([p.x, p.z]); }
       return out;
     });
+    yield;
     // junction points within 14 units are one node (union-find over a grid)
     const par = J.map((_, i) => i), find = (i) => { while (par[i] !== i) i = par[i] = par[par[i]]; return i; };
     {
@@ -191,6 +203,7 @@
     });
     for (const nd of nodes) { nd.x /= nd.n; nd.z /= nd.n; }
     const nodeOf = (ji) => rootN.get(find(ji));
+    yield;
     // edges: each line split at its junction points
     let edges = [];
     lines.forEach((L, li) => {
@@ -212,6 +225,7 @@
         start = k;
       }
     });
+    yield;
     // the same street twice between the same two nodes (a long street over a drive road): keep one
     {
       const seen = new Map();
@@ -223,6 +237,7 @@
         return true;
       });
     }
+    yield;
     // prune: tiny stubs (a street overshooting the one it meets), then contract the chains of degree 2
     const inc = () => { const l = nodes.map(() => []); edges.forEach((e, i) => { if (!e.dead) { l[e.a].push(i); l[e.b].push(i); } }); return l; };
     for (let pass = 0; pass < 3; pass++) {
@@ -254,6 +269,7 @@
       }
     }
     edges = edges.filter((e) => !e.dead);
+    yield;
     // the connected piece with the start road in it
     let start = 0, sd = Infinity;
     nodes.forEach((nd, i) => { const d = Math.hypot(nd.x - H.start[0], nd.z - H.start[1]); if (d < sd) { sd = d; start = i; } });
@@ -273,10 +289,13 @@
       ed.bends = ed.kind === "ring" ? [] : findBends(ed);
       E.push(ed);
       N[ed.a].out.push({ e: ed.id, dir: 1 }); N[ed.b].out.push({ e: ed.id, dir: -1 });
+      if (E.length % 32 === 0) yield;
     }
+    yield;
     const stats = { nodes: N.length, edges: E.length, junctions: N.filter((n) => n.out.length >= 3).length, deadEnds: N.filter((n) => n.out.length === 1).length,
       km: Math.round(E.reduce((s, e) => s + e.len, 0)), bends: E.reduce((s, e) => s + e.bends.length, 0), crossings: nCross, tees: nT, lines: lines.length,
       byKind: E.reduce((o, e) => ((o[e.kind] = (o[e.kind] || 0) + 1), o), {}), dropped: dropped.length, ms: Math.round(performance.now() - t0) };
+    yield;
     // a grid of the edges' segments for nearest-point queries
     const SG = 120, sgrid = new Map();
     E.forEach((e) => {
@@ -320,8 +339,17 @@
       // nearly all of it lies on one of its polylines (a long avenue merged onto one of them is not)
       const own = [];
       { const { P, adj } = H.navNet(); P.forEach((p, i) => { for (const [j] of adj[i]) if (j > i) own.push([p[0], p[1], P[j][0], P[j][1]]); }); }
-      const onOwn = (x, z) => own.some(([ax, az, bx, bz]) => { const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, t = clamp(((x - ax) * dx + (z - az) * dz) / l2, 0, 1); return Math.hypot(ax + dx * t - x, az + dz * t - z) < 8; });
-      for (const e of E) { if (e.kind === "minor") { e.ours = false; continue; } let k = 0, n = 0; for (let s2 = 0; s2 <= e.len; s2 += 20) { const p = pointAt(e.pts, e.cum, s2); n++; if (onOwn(p[0], p[1])) k++; } e.ours = k / n > 0.9; }
+      // beta 3.xx (start-up): the segments hashed on a grid (each in every cell its box, 8 units out, touches), so a point
+      // tests only those of its own cell: the same answer as testing them all (every segment within 8 units is there),
+      // without ~a quarter of the graph's time
+      const OG = 64, ogrid = new Map();
+      own.forEach(([ax, az, bx, bz], i) => {
+        for (let cx = Math.floor((Math.min(ax, bx) - 8) / OG); cx <= Math.floor((Math.max(ax, bx) + 8) / OG); cx++)
+          for (let cz = Math.floor((Math.min(az, bz) - 8) / OG); cz <= Math.floor((Math.max(az, bz) + 8) / OG); cz++) { const k = gk(cx, cz); let l = ogrid.get(k); if (!l) ogrid.set(k, (l = [])); l.push(i); }
+      });
+      const onOwn = (x, z) => { const l = ogrid.get(gk(Math.floor(x / OG), Math.floor(z / OG))); if (!l) return false; for (let j = 0; j < l.length; j++) { const [ax, az, bx, bz] = own[l[j]]; const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, t = clamp(((x - ax) * dx + (z - az) * dz) / l2, 0, 1); if (Math.hypot(ax + dx * t - x, az + dz * t - z) < 8) return true; } return false; };
+      yield;
+      for (const e of E) { if (e.kind === "minor") { e.ours = false; continue; } let k = 0, n = 0; for (let s2 = 0; s2 <= e.len; s2 += 20) { const p = pointAt(e.pts, e.cum, s2); n++; if (onOwn(p[0], p[1])) k++; } e.ours = k / n > 0.9; if (e.id % 32 === 31) yield; }
       const seen = new Uint8Array(N.length), st = [start2()];
       function start2() { let b = 0, bd = Infinity; N.forEach((n, i) => { if (!n.out.some((o) => E[o.e].ours)) return; const d = Math.hypot(n.x - H.start[0], n.z - H.start[1]); if (d < bd) { bd = d; b = i; } }); return b; }
       seen[st[0]] = 1;
@@ -358,6 +386,9 @@
     return out;
   }
 
+  // beta 3.xx (start-up slices): the app works the graph out first, in slices (run: its slice runner), from the same data
+  let PRE_G = null;
+  const prepare = async (H, run) => { if (run) PRE_G = await run(buildGraphGen(H)); };
   window.czNav2 = function czNav2(H) {
     // the viewport, read on resize only: reading innerWidth in the frame, after the pins have moved, forced a style and
     // layout pass (~3 ms a frame on phones)
@@ -366,7 +397,7 @@
     // beta 2.9: a phone's layout: a narrow screen, or a touch screen held sideways (short)
     const coarse = matchMedia("(hover: none) and (pointer: coarse)").matches;
     const phoneUI = () => VP.w < 720 || (coarse && VP.h < 520);
-    const G = buildGraph(H);
+    const G = PRE_G || buildGraph(H); PRE_G = null; // beta 3.xx: the graph worked out in slices beforehand (prepare)
     const { N, E } = G;
     const reduced = () => H.reduced();
     const dpts = (it) => (it.dir > 0 ? E[it.e].pts : E[it.e].rpts);
@@ -798,7 +829,11 @@
     let panelT = 0;
     function tick(dt, now) {
       if (!H.ready()) return;
-      if (!D.ready) { if (!place()) return; D.ready = true; render(true); H.closures?.(CLOSED); setTimeout(preShots, 1200); setTimeout(() => engineLoops(H.vehicle()), 2500); }
+      if (!D.ready) {
+        if (!place()) return; D.ready = true; render(true); H.closures?.(CLOSED); setTimeout(preShots, 1200); setTimeout(() => engineLoops(H.vehicle()), 2500);
+        // beta 3.xx: the sound's context in the first idle moment (see SND.prep), not in the first key press
+        (window.requestIdleCallback || ((f) => setTimeout(f, 300)))(() => SND.prep(), { timeout: 1500 });
+      }
       if (FREE) return freeTick(dt, now); // round 4: the arcade car
       const L = curL();
       if (D.uturn || D.kturn) {
@@ -919,7 +954,7 @@
     function lamps(on) { lampOn = on; H.reverseLamps(on); }
     function hereAt(listed) {
       let best = null;
-      for (const p of PL) { if (listed && p.hide) continue; const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 75 && (!best || d < best.d)) best = { pl: p.pl, d, p }; }
+      for (const p of PL) { if ((listed && p.hide) || p.pl.tagOnly) continue; const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 75 && (!best || d < best.d)) best = { pl: p.pl, d, p }; } // r235: a tag-only place (Călinescu 54) never opens on arrival; driven to from its tag, D.lastArr below keeps it
       // beta 3.01 (Daniel): in front of Two Minutes, Two Minutes (its neighbours Two Min Lab and Călinescu 54 don't take it)
       // beta 3.52 r219 (Daniel: "in the Two Minutes area the card is Two Minutes'; the game's and the Lab's open only from their
       // own tag"): nor the arcade or the Lab when the ride stops right by them; they open when they are the place driven to
@@ -1469,6 +1504,10 @@
       sub: { kind: "electric", level: 0.5 },
       plane: { kind: "turbo", level: 0.9 }
     };
+    // beta 3.xx: a hand-back point for the synthesis below (a message, not a timer); it yields once ~25 ms have passed
+    let synT = 0;
+    const synYield = () => new Promise((r) => { const c = new MessageChannel(); c.port1.onmessage = () => { synT = performance.now(); r(); }; c.port2.postMessage(0); });
+    const synPause = () => (performance.now() - synT > 25 ? synYield() : null);
     async function renderEngine(pr, sr) {
       const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!OAC) return null;
       const steps = []; for (let i = 0; i < 6; i++) steps.push(pr.idle * Math.pow(pr.max / pr.idle, i / 5));
@@ -1480,7 +1519,9 @@
         for (let k = 0; k < N; k++) pat.push({ j: (rnd() - 0.5) * 2 * pr.rough * (isIdle && pr.carb ? 2.2 : 1), a: 1 + (((k % (pr.two ? 1 : pr.cyl)) * 0.37) % 0.3 - 0.15) * (pr.rough * 4) + (rnd() - 0.5) * pr.rough * 2, pop: !load && rnd() < 0.06 && rpm > pr.idle * 1.8 });
         const fT = Math.min(2400, Math.max(45, fF * 1.6)), tauT = Math.min(0.03, 2.2 / fF / 3), tauN = Math.min(pr.diesel ? 0.0009 : pr.two ? 0.0022 : 0.0016, 0.4 / fF); // a fast engine's bursts stay shorter than its period (a tone, a scream)
         const amp = load ? 1 : 0.38;
+        synT = performance.now();
         for (let rep2 = 0; rep2 < 2; rep2++) for (let k = 0; k < N; k++) {
+          if (k % 4 === 3) { const w = synPause(); if (w) await w; } // beta 3.xx: in slices
           const p = pat[k], t0 = Math.round((rep2 * N + k + p.j) * T0 * sr); if (t0 < 0 || t0 >= len) continue;
           const A = amp * p.a, n1 = Math.min(len - t0, Math.round(sr * Math.max(tauT * 5, 0.02)));
           for (let i = 0; i < n1; i++) {
@@ -1533,13 +1574,24 @@
       const loop = (buf, rate = 1) => { const n = ctx.createBufferSource(); n.buffer = buf; n.loop = true; n.playbackRate.value = rate; n.start(); return n; };
       const filt = (type, f, q = 0.7) => { const b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b; };
       const gain = (v = 0) => { const g = ctx.createGain(); g.gain.value = v; return g; };
-      function build() {
+      // beta 3.xx: the context and the noise first (makeCtx: what prep makes ahead), the graph with its running sources at
+      // the start (a source started in a context the page may not play yet is one more console warning each)
+      let noiseW = null, noiseB = null, graphMade = false;
+      function makeCtx() {
         const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
         ctx = new AC();
+        noiseW = noiseBuf(2, false); noiseB = noiseBuf(4, true);
+        document.addEventListener("visibilitychange", () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else if (on && started) ctx.resume(); });
+        return true;
+      }
+      function build() {
+        if (!ctx && !makeCtx()) return false;
+        if (graphMade) return true;
+        graphMade = true;
         const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 3; comp.connect(ctx.destination); ctx._comp = comp;
         master = gain(0); master.connect(comp);
         carBus = gain(0.8); cityBus = gain(0.6); carBus.connect(master); cityBus.connect(master);
-        const white = noiseBuf(2, false), brown = noiseBuf(4, true);
+        const white = noiseW, brown = noiseB;
         // the engine (beta 2.9): its own bus; the voice is built per ride (see ENGINES)
         E2 = { g: gain(0), rpm: 820, load: 0, gear: 1, shift: 0, id: null, v: null, cache: new Map(), white };
         E2.g.connect(carBus);
@@ -1557,22 +1609,39 @@
         // beta 2.9 (Daniel): rain where it rains (Night Mode, Sin City), under the city
         C.rain = gain(0); { const rn = loop(white, 0.85), rh = filt("highpass", 900, 0.5), rl = filt("lowpass", 7000, 0.5); rn.connect(rh); rh.connect(rl); rl.connect(C.rain); C.rain.connect(cityBus); }
         const cam = gain(1), cl = ctx.createOscillator(), clg = gain(0.5); cl.frequency.value = 3.1; cl.connect(clg); clg.connect(cam.gain); cl.start(); C.cafe.connect(cam); cam.connect(cityBus);
-        document.addEventListener("visibilitychange", () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else if (on) ctx.resume(); });
         return true;
       }
+      // beta 3.xx (the first drive): the context, made ahead in idle time and held suspended, so the first key only resumes
+      // it. new AudioContext() waits for the audio service: ~0.2 s on a phone, 1.6-19.5 s on a Mac whose audio service
+      // was slow (QA, 19 October), and it was made inside the first key press. Made before a gesture it starts suspended
+      // (the browsers' rule); made after one it would run: it is suspended until the sound starts
+      function prep() {
+        if (ctx || !on) return;
+        const t0 = performance.now();
+        if (!makeCtx()) return;
+        prepMs = Math.round(performance.now() - t0);
+        if (!started) try { ctx.suspend(); } catch (e) {}
+      }
+      let prepMs = null;
       const T = () => ctx.currentTime;
       const ramp = (p, v, k = 0.08) => p.setTargetAtTime(v, T(), k);
       function start() {
-        if (!on || started) return; if (!ctx && !build()) return;
+        if (!on || started) return; if (!build()) return; // (the context is made here only if the key came before the idle time did; the graph is made here)
         started = true; ctx.resume?.(); ramp(master.gain, 0.42, 0.9);
       }
-      const first = () => { start(); if (started) for (const ev of ["pointerdown", "keydown", "touchend"]) window.removeEventListener(ev, first, true); };
+      // beta 3.xx: a touch or key before the context is made (it is made in idle time, see prep) only asks for it then,
+      // and the sound starts at the next one: never a context made inside the press itself
+      let prepQ = false;
+      const first = () => {
+        if (on && !ctx) { if (!prepQ) { prepQ = true; (window.requestIdleCallback || ((f) => setTimeout(f, 30)))(() => { prepQ = false; prep(); }, { timeout: 400 }); } return; }
+        start(); if (started) for (const ev of ["pointerdown", "keydown", "touchend"]) window.removeEventListener(ev, first, true);
+      };
       for (const ev of ["pointerdown", "keydown", "touchend"]) window.addEventListener(ev, first, true);
       const sync = () => { for (const b of btns) { b.classList.toggle("off", !on); b.setAttribute("aria-pressed", String(on)); b.title = on ? "Sound off" : "Sound on"; b.setAttribute("aria-label", b.title); } };
       function toggle() {
         on = !on; try { localStorage.setItem("cz-sound", on ? "on" : "off"); } catch {}
         if (on) { if (!started) start(); else { ctx.resume(); ramp(master.gain, 0.42, 0.4); } }
-        else if (ctx) { ramp(master.gain, 0, 0.12); setTimeout(() => { if (!on) ctx.suspend(); }, 700); }
+        else if (ctx && master) { ramp(master.gain, 0, 0.12); setTimeout(() => { if (!on) ctx.suspend(); }, 700); }
         sync();
       }
       // the engine's voice for a ride: the pre-rendered loops (6 rpm steps x on/off), or live for the electric and the turbine
@@ -1700,11 +1769,12 @@
         if (t > C.hornT) { C.hornT = t + 14 + Math.random() * 26; if (C.hornT > 20) horn(); }
       }
       return {
-        start, toggle, update, thud, bind(b) { btns.add(b); b.addEventListener("click", (e) => { e.stopPropagation(); toggle(); }); sync(); },
+        start, prep, toggle, update, thud, bind(b) { btns.add(b); b.addEventListener("click", (e) => { e.stopPropagation(); toggle(); }); sync(); },
         get on() { return on; }, get running() { return started && on && !!ctx && ctx.state === "running"; }, ctx: () => ctx,
+        state: () => ({ made: !!ctx, state: ctx?.state || null, started, prepMs }), // tests
         info: () => E2 && { id: E2.id, voice: !!E2.v, srcs: E2.v?.srcs?.length || 0, rpm: Math.round(E2.rpm), load: +E2.load.toFixed(2), gear: E2.gear, gain: +E2.g.gain.value.toFixed(3) },
         solo(on2) { soloEng = !!on2; }, // tests: the engine alone
-        stream() { if (!ctx) return null; if (!ctx._dest) { ctx._dest = ctx.createMediaStreamDestination(); ctx._comp.connect(ctx._dest); } return ctx._dest.stream; } // tests: what it sounds like
+        stream() { if (!ctx || !graphMade) return null; if (!ctx._dest) { ctx._dest = ctx.createMediaStreamDestination(); ctx._comp.connect(ctx._dest); } return ctx._dest.stream; } // tests: what it sounds like
       };
     })();
 
@@ -2194,6 +2264,11 @@
     // four cards at most, both kerbs kept in: while each side has places in reach, neither gets more than one card over
     // the other; the cards stay nearest first (ahead before just passed at the same distance)
     const NEAR_BEHIND = 160, NEAR_CAP = 4;
+    // r235 (Daniel, quick fixes: "Nearby shouldn't appear right at the beginning, but close to the roundabout; this first
+    // Nearby gives too many from Medical Avenue, let's take one from each"): the panel stays closed on the start road and
+    // opens as the car comes within NEAR_OPEN of the fountain (or is anywhere past it); the first time round the fountain
+    // it lists Daniel's mix, in his order (MIX); after that, Nearby as before
+    const NEAR_OPEN = 420, MIX = ["w-bepco", "tac", "tm", "scf", "w-clinicasante", "invest"];
     const nearW = (x) => (x.d < 0 ? -x.d * 1.6 : x.d);
     function balance(list, cap) {
       const by = { 1: [], [-1]: [], 0: [] };
@@ -2211,6 +2286,10 @@
     function render(force) {
       if (!D.ready) return;
       const L = curL(), ci = ciOf(L), cur = D.seq[ci], q = quarterAt(H.carPos.x, H.carPos.z), dec = nextDecision(L);
+      // r235: closed at the start; open from the roundabout on (and open for good)
+      if (!D.nearOpen && (Math.hypot(H.carPos.x - H.fork.x, H.carPos.z - H.fork.y) < NEAR_OPEN || q || hereAt(true))) D.nearOpen = true;
+      panel.classList.toggle("n2-wait", !D.nearOpen);
+      if (!D.nearOpen) return;
       const rows = [];
       // ahead: the places still in front of the car on the edges already chosen
       // r201 (Daniel: "sometimes it shows me only the places on one side of the street"): the row used to take only what
@@ -2266,7 +2345,7 @@
           const o2 = [];
           // out along the street only (never back into the ring: a depth-first walk with one "seen" set cut it short)
           const walk = (it, budget, base, depth) => { if (depth > 6) return; const e2 = E[it.e]; for (const p of byEdge.get(it.e) || []) { const s2 = it.dir > 0 ? p.s : e2.len - p.s; if (s2 <= budget) o2.push({ p, d: base + s2 }); } if (e2.len >= budget) return; const m = endNode(it); if (ringNodes.has(m)) return; for (const o3 of N[m].out) if (o3.e !== it.e && E[o3.e].drive && E[o3.e].kind !== "ring" && !ringNodes.has(o3.dir > 0 ? E[o3.e].b : E[o3.e].a)) walk(o3, budget - e2.len, base + e2.len, depth + 1); };
-          walk(o, 700, Math.hypot(N[n].x - H.carPos.x, N[n].z - H.carPos.z), 0);
+          walk(o, D.mixDone ? 700 : 2400, Math.hypot(N[n].x - H.carPos.x, N[n].z - H.carPos.z), 0); // r235: the mix's farther places (Slow Coffee Festival) too
           for (const x of uniq(o2)) { const q2 = x.p.q; if (!q2) continue; const l = byQ.get(q2) || []; const j = l.findIndex((y) => y.p.pl === x.p.pl); if (j < 0) l.push(x); else if (x.d < l[j].d) l[j] = x; byQ.set(q2, l); const dq = dirQ.get(q2); if (!dq || x.d < dq.d) dirQ.set(q2, { a: Math.atan2(nx, nz), d: x.d }); }
         }
         for (const [q2, l] of byQ) {
@@ -2276,33 +2355,46 @@
           rows.push({ k, other: q2, items: l.sort((a2, b2) => a2.d - b2.d).slice(0, 3) });
         }
         rows.sort((a2, b2) => "slr".indexOf(a2.k) - "slr".indexOf(b2.k));
+        // r235: the first time, one row of Daniel's mix in his order (the ways can't group it: they would reorder it); each
+        // card says its way (← ↑ →, ↓ for the arm behind) on its street's colour, a key of the streets heads the row
+        if (!D.mixDone) {
+          const got = new Map();
+          for (const l of byQ.values()) for (const x of l) got.set(x.p.pl.id, x);
+          const items = MIX.map((id) => got.get(id) || ((p) => p && { p, d: Math.hypot(p.ax - H.carPos.x, p.az - H.carPos.z) })(PL.find((y) => y.pl.id === id))).filter(Boolean)
+            .map((x) => { const dq = dirQ.get(x.p.q), a = dq ? wrapA(dq.a - P.h) : 0; return { ...x, g: Math.abs(a) > 2.5 ? "b" : Math.abs(a) < 0.6 ? "s" : a > 0 ? "l" : "r" }; });
+          if (items.length) { rows.length = 0; rows.push({ k: "s", mix: true, other: null, items }); D.mixOn = true; }
+        }
       }
+      if (D.mixOn && !nearFork) D.mixDone = true; // r235: the mix is the first appearance only
       // beta 3.01 (Daniel): at Two Minutes, Nearby lists Two Min Lab, then Călinescu 54 (an exception to the discovery rule)
       // r201: and the mini-game's place, the arcade by the Lab
-      if (here?.pl.id === "tm") { const it = ["lab", "gloves", "hq"].map((id) => PL.find((q) => q.pl.id === id)).filter(Boolean).map((q) => ({ p: q, d: Math.hypot(q.ax - H.carPos.x, q.az - H.carPos.z) })); if (it.length) { rows.length = 0; rows.push({ k: "s", other: null, items: it }); } }
+      // r235 (Daniel: "Călinescu shouldn't appear as a card, neither in Nearby nor on its own; only if you tap its tag"): not Călinescu 54
+      if (here?.pl.id === "tm") { const it = ["lab", "gloves"].map((id) => PL.find((q) => q.pl.id === id)).filter(Boolean).map((q) => ({ p: q, d: Math.hypot(q.ax - H.carPos.x, q.az - H.carPos.z) })); if (it.length) { rows.length = 0; rows.push({ k: "s", other: null, items: it }); } }
       // beta 3.01: on Strada Olari, with nothing of ours in the immediate zone, Nearby names the house ahead (it said
       // "nothing of ours down this way" on the way to it, now that Dacia 99 is not on Olari any more)
       if (!rows.length && !here && (q === "D" || Math.abs(H.carPos.x - 1170) < 60)) { let f = null; for (let k = ci; k < D.seq.length && !f; k++) { const it = D.seq[k], e = E[it.e]; for (const p of byEdge.get(it.e) || []) if (p.pl.stop === "end") { f = { p, d: it.L0 + (it.dir > 0 ? p.s : e.len - p.s) - L }; break; } } if (!f && Math.abs(H.carPos.x - 1170) < 60 && Math.cos(P.h) > 0.7) { const p = PL.find((x) => x.pl.stop === "end"); if (p) f = { p, d: Math.hypot(p.ax - H.carPos.x, p.az - H.carPos.z) }; } /* (at the junction itself the path ahead stops at the turn) */ if (f && f.d > 30 && f.d < 1400) rows.push({ k: "s", other: null, items: [f] }); }
       const auto = D.auto;
       // round 2 (Daniel: "more visual"): the panel is rebuilt only when what it shows changes; the distances update in place
-      const sig = JSON.stringify([q, here?.pl.id, auto ? auto.pl?.id || "tap" : 0, rows.map((r) => [r.k, r.other, !!ex?.[r.k], r.items.map((x) => x.p.pl.id + (x.d < 0 ? "-" : ""))]), D.cardFor?.id && H.cardOpen(), imgV]);
+      const sig = JSON.stringify([q, here?.pl.id, auto ? auto.pl?.id || "tap" : 0, rows.map((r) => [r.k, r.other, !!ex?.[r.k], r.items.map((x) => x.p.pl.id + (x.d < 0 ? "-" : "") + (x.g || ""))]), D.cardFor?.id && H.cardOpen(), imgV]); // r235: + the mix's ways
       const dists = new Map();
       for (const r of rows) for (const x of r.items) dists.set(r.k + ":" + x.p.pl.id, x.d);
       if (!force && sig === panelSig) { updDist(dists, auto); return; }
       panelSig = sig;
       const cols = (pl) => { const b = H.brand?.(pl); const c = b?.c || pl.pin || pl.c || "#FED012"; let t = b?.t || pl.t || "#111"; if (inkLum(c) < 0.25 && inkLum(t) < 0.25) t = "#ffffff"; else if (inkLum(c) > 0.6 && inkLum(t) > 0.6) t = "#141414"; return { c, t }; }; // beta 2.92: a dark name on a dark colour (Olari 9's "you're at") turned white
       const pic = (pl) => { const u = imgOf(pl); const { c, t } = cols(pl); return u ? `<img src="${esc(u)}" alt="" decoding="async" loading="lazy">` : `<span class="n2-ini" style="color:${esc(t)}">${esc(pl.name.replace(/[^A-Za-z0-9 ]/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase())}</span>`; };
-      // beta 3.52 r219 (Daniel: "in Nearby the game is a small card"): the arcade's entry is a compact chip in the game's
-      // colours (the pixel glove and "2M2F"), not a full postcard
-      const mini = (x, k) => { const pl = x.p.pl; return `<button class="n2-pc n2-mini" data-id="${esc(pl.id)}" data-dk="${k}:${esc(pl.id)}" aria-label="${esc(pl.name)}, ${mDist(x.d)}"><span class="n2-mk">${H.gameMark?.() || ""}</span><span class="n2-dist mono">${mDist(x.d)}</span></button>`; };
-      const card = (x, k) => { if (x.p.pl.game) return mini(x, k); const pl = x.p.pl, { c, t } = cols(pl), g = k === "s" && x.sd ? (x.d < 0 ? (x.sd > 0 ? "\u2199" : "\u2198") : (x.sd > 0 ? "\u2196" : "\u2197")) : GLY[k]; return `<button class="n2-pc" data-id="${esc(pl.id)}" data-dk="${k}:${esc(pl.id)}" style="--pc:${esc(c)};--pt:${esc(t)}" aria-label="${esc(pl.name)}, ${mDist(x.d)}${k === "s" && x.sd ? `, on your ${x.sd > 0 ? "left" : "right"}${x.d < 0 ? ", just passed" : ""}` : ""}"><span class="n2-pic">${pic(pl)}<em class="n2-dch">${g}</em></span><b class="n2-nm">${esc(pl.name)}</b><span class="n2-dist mono">${mDist(x.d)}</span></button>`; };
+      // r235 (Daniel: "the 2M2F card should be the size of the others"): the arcade's entry is a postcard like the rest (the
+      // game's title screen on its colours, its name); r219's compact chip is gone. The mix's cards carry their way (x.g)
+      const GLYB = { ...GLY, b: "\u2193" };
+      const card = (x, k) => { const pl = x.p.pl, { c, t } = cols(pl), g = x.g ? GLYB[x.g] : k === "s" && x.sd ? (x.d < 0 ? (x.sd > 0 ? "\u2199" : "\u2198") : (x.sd > 0 ? "\u2196" : "\u2197")) : GLY[k]; return `<button class="n2-pc" data-id="${esc(pl.id)}" data-dk="${k}:${esc(pl.id)}" style="--pc:${esc(c)};--pt:${esc(t)}" aria-label="${esc(pl.name)}, ${mDist(x.d)}${x.g ? `, ${esc(QNAME[x.p.q] || "")}` : ""}${k === "s" && x.sd ? `, on your ${x.sd > 0 ? "left" : "right"}${x.d < 0 ? ", just passed" : ""}` : ""}"><span class="n2-pic">${pic(pl)}<em class="n2-dch"${x.g ? ` style="--dc:${QCOL[x.p.q] || "#FED012"}"` : ""}>${g}</em></span><b class="n2-nm">${esc(pl.name)}</b><span class="n2-dist mono">${mDist(x.d)}</span></button>`; };
       const qpill = (qq) => `<span class="n2-q" style="--qc:${QCOL[qq] || "#FED012"}">${esc(qq ? QNAME[qq] : "Cromatic City")}</span>`;
       let h = `<header>${qpill(q)}<span class="n2-sub mono">${q ? "NEARBY IN THIS QUARTER" : "BETWEEN THE QUARTERS"}</span></header>`;
       if (auto) { const pl = auto.pl && !auto.pl.tap ? auto.pl : null, cc = pl ? cols(pl) : { c: "#FED012", t: "#111" }; h += `<div class="n2-auto" style="--pc:${esc(cc.c)};--pt:${esc(cc.t)}">${pl ? `<span class="n2-pic sm">${pic(pl)}</span>` : ""}<span class="n2-at"><i class="mono">${auto.rev ? "BACKING UP TO" : "DRIVING YOU TO"}</i><b>${esc(pl ? pl.name : "the spot you tapped")}</b><em class="n2-dist mono" data-auto="1">${mDist(autoLeft())}</em></span><button class="n2-take">Take the wheel</button></div>`; }
       if (here && here.pl.stop !== "end" && !(D.cardFor === here.pl && H.cardOpen())) { /* beta 3.0: at Olari 9 the house's own cards are enough (no "Open" banner) */ const { c, t } = cols(here.pl); h += `<button class="n2-here" data-id="${esc(here.pl.id)}" style="--pc:${esc(c)};--pt:${esc(t)}"><span class="n2-pic sm">${pic(here.pl)}</span><span class="n2-at"><i class="mono">YOU'RE AT</i><b>${esc(here.pl.name)}</b></span><em class="n2-open">Open →</em></button>`; }
       for (const r of rows) {
-        const lab = r.k === "s" ? "Ahead" : r.k === "l" ? "Left" : "Right";
-        h += `<div class="n2-row" data-k="${r.k}"><div class="n2-rh"><button class="n2-dir" data-turn="${r.k}" aria-label="${lab}"${r.k === "s" || !ex?.[r.k] ? " disabled" : ""}><span class="n2-g">${GLY[r.k]}</span></button><span class="n2-rt">${lab}${r.other ? ` <span class="n2-q sm" style="--qc:${QCOL[r.other]}">${esc(QNAME[r.other])}</span>` : ""}</span></div><div class="n2-strip">${r.items.map((x) => card(x, r.k)).join("")}</div></div>`;
+        const lab = r.mix ? "The roundabout" : r.k === "s" ? "Ahead" : r.k === "l" ? "Left" : "Right";
+        // r235: the mix's key, its streets in the order of their ways (← ↑ → ↓), each with its way
+        const leg = r.mix ? `<div class="n2-leg">${[...new Map(r.items.map((x) => [x.p.q, x.g]))].sort((a, b) => "lsrb".indexOf(a[1]) - "lsrb".indexOf(b[1])).map(([qq, g]) => `<span class="n2-q sm" style="--qc:${QCOL[qq] || "#FED012"}"><i>${GLYB[g]}</i> ${esc(QNAME[qq] || "")}</span>`).join("")}</div>` : "";
+        h += `<div class="n2-row" data-k="${r.k}"><div class="n2-rh"><button class="n2-dir" data-turn="${r.k}" aria-label="${lab}"${r.k === "s" || !ex?.[r.k] ? " disabled" : ""}><span class="n2-g">${GLY[r.k]}</span></button><span class="n2-rt">${lab}${r.other ? ` <span class="n2-q sm" style="--qc:${QCOL[r.other]}">${esc(QNAME[r.other])}</span>` : ""}</span></div>${leg}<div class="n2-strip${r.mix ? " n2-mix" : ""}">${r.items.map((x) => card(x, r.k)).join("")}</div></div>`;
       }
       if (!rows.length && !here && !auto) h += `<p class="n2-empty">Nothing of ours down this way. Back up with ↓, or tap a place on the map.</p>`;
       panel.innerHTML = h;
@@ -2513,4 +2605,5 @@
     window.__nav2 = api; // for tests
     return api;
   };
+  window.czNav2.prepare = prepare;
 })();

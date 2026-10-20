@@ -38,3 +38,29 @@ body.czl-clouds .nav2-ui { opacity: 0 !important; pointer-events: none !importan
 @media (prefers-reduced-motion: reduce) {
   .flight-end.fe-in b, .flight-end.fe-in b .fe-l, .flight-end.fe-in span, .flight-end.fe-in button, .flight-end.fe-out { animation: none; }
 }
+
+/* ---- 3 · the pill transitions (pill.js, pt.css) ---- */
+/* the window over a case page's frame (z 95) and the map's interface */
+/* r235: the case page's pill (pill.js). At rest the frame's four boxes are the screen and cut nothing; while it runs
+   (.czpf-run) each is a little bigger than the screen, rounds one corner, and is moved (transforms only, the
+   compositor's) so the four cut a pill; the page inside is moved back and stays still. The Multiverse's ring round it
+   is two bars and two half rings, moved the same way, under the page (same layer, earlier in the page) */
+.case-frame .cf-w, .case-frame .cf-in { position: absolute; inset: 0; }
+.case-frame.czpf-run { background: transparent; }
+.case-frame.czpf-run .cf-w { right: auto; bottom: auto; width: var(--czsw); height: var(--czsh); overflow: hidden; border-radius: var(--czr); will-change: transform; }
+.case-frame.czpf-run .cf-in { right: auto; bottom: auto; width: var(--czvw); height: var(--czvh); }
+.czpf { position: fixed; inset: 0; z-index: 95; pointer-events: none; opacity: 0; overflow: hidden; contain: strict; }
+.czpf > i { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.czpf .czpf-bar { width: 100px; height: var(--czk); background: linear-gradient(90deg, #F65342, #FED012 22%, #28C840 45%, #119BFE 68%, #B098C8 88%, #F65342); }
+.czpf .czpf-cap { width: calc(var(--czr) + var(--czk)); height: calc(2 * (var(--czr) + var(--czk))); overflow: hidden; }
+.czpf .czpf-cap b { position: absolute; top: 0; width: calc(2 * (var(--czr) + var(--czk))); height: 100%; box-sizing: border-box; border-radius: 50%; border: var(--czk) solid transparent;
+  background: conic-gradient(from 210deg, #FED012, #28C840, #119BFE, #B098C8, #F65342, #FED012) border-box;
+  -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.czpf .czpf-l b { left: 0; } .czpf .czpf-r b { right: 0; }
+/* the map's driving controls fade out as a page grows out of its button and back in as it shrinks into it (they would
+   otherwise go and come back at once: a case page on screen hides them) */
+html body.nav2.map-mode.czpf-open .nav2-ui { display: block !important; pointer-events: none !important; animation: czpfOut .2s ease both; }
+html body.nav2.map-mode.czpf-close .nav2-ui { display: block !important; animation: czpfIn .26s ease .12s both; }
+@keyframes czpfOut { to { opacity: 0; } }
+@keyframes czpfIn { from { opacity: 0; } }
+/* the map to the website: pt.css (shared with every page of the website) */

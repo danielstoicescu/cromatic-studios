@@ -1,0 +1,23 @@
+/* Cromatic Studios · the pill transitions between the map and the website (r233): the studio's paper closing in round a
+   pill window (a hole whose shadow is the paper), the Multiverse's ring round it; opening out of it on the other side */
+.czpt { position: fixed; inset: 0; z-index: 2147483000; pointer-events: none; overflow: hidden; contain: strict; }
+.czpt i { position: absolute; left: 50%; top: 50%; width: clamp(170px, 24vw, 340px); aspect-ratio: 1 / .36; translate: -50% -50%; border-radius: 999px; will-change: transform; }
+.czpt-hole { box-shadow: 0 0 0 100vmax #F2F2F2; }
+/* the pill's white body: it fills as the paper lands (the map's side), and dissolves onto the page (the page's side) */
+.czpt-body { background: #fff; box-shadow: inset -10px -12px 18px -10px rgba(0,0,0,.06); }
+.czpt-ring { box-sizing: border-box; border: 6px solid transparent; background: conic-gradient(from 210deg, #FED012, #28C840, #119BFE, #B098C8, #F65342, #FED012) border-box;
+  -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.czpt-leave i { animation: czptClose .42s cubic-bezier(.22,1,.36,1) both; }
+.czpt-leave .czpt-body { animation: czptClose .42s cubic-bezier(.22,1,.36,1) both, czptBodyIn .42s ease both; }
+.czpt-leave .czpt-ring { animation: czptClose .42s cubic-bezier(.22,1,.36,1) both, czptRingIn .42s ease both; }
+.czpt-arrive i { animation: czptOpen .6s cubic-bezier(.72,0,.18,1) .2s both; }
+.czpt-arrive .czpt-body { animation: czptBodyOut .2s ease both; }
+.czpt-arrive .czpt-ring { animation: czptOpen .6s cubic-bezier(.72,0,.18,1) .2s both, czptRingOut .32s ease .2s both; }
+@keyframes czptClose { from { transform: scale(14, 36); } to { transform: none; } }
+@keyframes czptOpen { from { transform: none; } to { transform: scale(14, 36); } }
+@keyframes czptRingIn { 0%, 40% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes czptBodyIn { 0%, 62% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes czptBodyOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes czptRingOut { from { opacity: 1; } to { opacity: 0; } }
+@media (max-width: 719px) { .czpt i { width: clamp(170px, 62vw, 340px); } .czpt-ring { border-width: 4px; } }
+@media (prefers-reduced-motion: reduce) { .czpt { display: none; } }

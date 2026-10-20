@@ -1,9 +1,9 @@
 // lottie-ui piece 1 (the plane finale), on the real site: send the pass (fake QA data, LOCAL ONLY), the stamp, the walk,
 // the climb into the clouds, the end card, Back to the map through the clouds. Records a video (CDP screencast) and logs
 // the timeline, the POST and the console. DEV=desktop|iphone|pixel  THR=4 (CPU throttle, chromium)  SKIP=1 (tap to skip)
-import { ctxFor, waitMap, shot, sleep, closeAll, BASE, tapSel, openAndFillPass, throttle, Q } from "./.x-lui-lib.mjs";
+import { ctxFor, waitMap, shot, sleep, closeAll, BASE, tapSel, openAndFillPass, throttle, Q } from "./lib.mjs";
 import fs from "fs";
-import { fpsArm, fpsRead } from "./.x-lui-fps.mjs";
+import { fpsArm, fpsRead } from "./fps.mjs";
 if (!/localhost|127\.0\.0\.1/.test(BASE)) { console.log("local only"); process.exit(1); }
 const kind = process.env.DEV || "desktop", tag = process.env.TAG || "f1", phone = kind !== "desktop" && kind !== "laptop";
 const vdir = `${Q}/vid-${tag}-${kind}`; fs.rmSync(vdir, { recursive: true, force: true });
