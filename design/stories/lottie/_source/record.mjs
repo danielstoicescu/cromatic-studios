@@ -17,7 +17,7 @@ await p.goto(`http://127.0.0.1:8963/design/stories/lottie/_source/stage.html?s=$
 await p.waitForFunction(() => window.ready, null, { timeout: 60000 });
 await p.waitForTimeout(400);
 const op = await p.evaluate(() => window.anim.totalFrames);
-const dir = `/private/tmp/claude-501/-Users-daniel-stoic/307623b0-7c3c-4b30-b2d7-c12e0dda2036/scratchpad/stl/frames-${name}`;
+const dir = `/private/tmp/claude-501/-Users-daniel-stoic/307623b0-7c3c-4b30-b2d7-c12e0dda2036/scratchpad/stl/frames-${name}-${process.pid}`; // (its own folder: two recorders of one story must not share it)
 fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
 const frames = only || Array.from({ length: Math.floor(op / STEP) }, (_, i) => i * STEP);
 let n = 0; const t0 = Date.now();

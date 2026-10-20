@@ -85,7 +85,7 @@ function monoLine(text, size, color, x, by, { tracking = 0.12 } = {}) {
 /* ======================= the studio's type: a headline with one word in a yellow pill ======================= */
 // lines: [[text, emphWord|null], ...]; x: left, y: first baseline; letters rise in (the house rise, with its overshoot),
 // the pill pops (a spring) a beat before its word; at tOut the words leave upward, the pill shrinks away
-function headline(Cm, { lines, x, y, size = 100, lead = 1.04, t0, tOut, color = C.black, pillFill = C.yellow, nm = "headline", gap = 1.1, ip = 0, op }) {
+function headline(Cm, { lines, x, y, size = 100, lead = 1.04, t0, tOut, color = C.black, pillFill = C.yellow, pillInk = C.black, nm = "headline", gap = 1.1, ip = 0, op }) {
   const sw = Math.max(3, size * 0.055), padX = 0.3 * size, ph = 1.12 * size, space = 0.26 * size;
   const letters = [], pills = []; let n = 0;
   lines.forEach(([text, emph], li) => {
@@ -97,7 +97,7 @@ function headline(Cm, { lines, x, y, size = 100, lead = 1.04, t0, tOut, color = 
       const core = isE ? emph : word;
       if (isE) cx += padX;
       const tw = n * gap;
-      const L = line(T, core, size, color, cx, by, { tracking: -0.03, keys: (b, s, j) => wordKeys(b, s, t0 + tw + j * gap, size, tOut == null ? null : tOut + Math.round(n * 0.6)) });
+      const L = line(T, core, size, isE ? pillInk : color, cx, by, { tracking: -0.03, keys: (b, s, j) => wordKeys(b, s, t0 + tw + j * gap, size, tOut == null ? null : tOut + Math.round(n * 0.6)) });
       letters.push(...L.groups);
       if (isE) {
         const pw = L.width + padX * 2, pcx = cx - padX + pw / 2, pcy = by - 0.36 * size, tp = t0 + tw - 5;
@@ -371,10 +371,11 @@ function storyB(lang) {
 }
 
 /* ======================= write ======================= */
+export { W, H, K, T, MONO, clamp, lerp, smooth, easeOut, easeInOut, ramp, bake, addSkew, monoLine, headline, label, mark, pin, clouds, glow, sweep, sun, vignette, endCard };
 const sizes = {};
-for (const lang of ["en", "ro"]) for (const [k, fn] of [["a", storyA], ["b", storyB]]) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) for (const lang of ["en", "ro"]) for (const [k, fn] of [["a", storyA], ["b", storyB]]) {
   const j = fn(lang), s = JSON.stringify(j), file = path.join(OUT, `story-${k}-${lang}.json`);
   fs.writeFileSync(file, s);
   sizes[`story-${k}-${lang}`] = { kb: +(s.length / 1024).toFixed(1), layers: j.layers.length, frames: j.op, images: j.assets.length };
 }
-console.table(sizes);
+if (Object.keys(sizes).length) console.table(sizes);

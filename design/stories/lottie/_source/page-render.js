@@ -147,5 +147,58 @@
     v.group.updateMatrixWorld(true);
     return true;
   }
-  window.__R = { shot, plan, layer, project, setCam, park, W };
+  // TASK-058 · a car alone, as it moves: its picture at subframes of a frame (a 180-degree shutter), only the part of
+  // the frame it covers (a lens offset on that rectangle), averaged on a 2D canvas (premultiplied: 'lighter' at 1/n).
+  // poses: [{ x, y, z, yaw, beat }], who: "car" (the ride) | "cop"; returns { url, rect: [x, y, w, h] } in frame px
+  function carShot(o, who, poses, { margin = 16 } = {}) {
+    if (!PLAN) throw new Error("plan first");
+    const v = who === "cop" ? S.cop() : S.veh(), g = v.group;
+    const save0 = { p: g.position.clone(), q: g.quaternion.clone(), vis: g.visible };
+    const s = save(); setCam(o);
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    const corners = (bb) => { const out = []; for (const xx of [bb.min.x, bb.max.x]) for (const yy of [bb.min.y, bb.max.y]) for (const zz of [bb.min.z, bb.max.z]) out.push(new V(xx, yy, zz)); return out; };
+    const place = (q) => { g.visible = true; g.position.set(q.x, q.y, q.z); g.rotation.set(0, q.yaw, 0); g.updateMatrixWorld(true); if (who === "cop" && v.beacons?.length) { const off = q.beat === 2; v.beacons[0].material.emissiveIntensity = off || q.beat ? 0.15 : 2.8; v.beacons[1].material.emissiveIntensity = off || !q.beat ? 0.15 : 2.8; } };
+    for (const q of poses) {
+      place(q);
+      let bb = null; g.traverse((m) => { if (m.isMesh && m.visible && m.geometry) { if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); const b = m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld); bb = bb ? bb.union(b) : b; } });
+      // (a corner behind the lens, or one projected far off: the car is at the lens; take the whole frame)
+      for (const c of corners(bb)) { const w = S.warpV(c).project(camera); const px = (w.x * 0.5 + 0.5) * o.w, py = (-w.y * 0.5 + 0.5) * o.h; if (w.z > 1 || w.z < -1 || Math.abs(px) > 4 * o.w || Math.abs(py) > 4 * o.h) { x0 = y0 = -1e9; x1 = y1 = 1e9; continue; } x0 = Math.min(x0, px); y0 = Math.min(y0, py); x1 = Math.max(x1, px); y1 = Math.max(y1, py); }
+    }
+    restore(s);
+    x0 = Math.max(0, Math.floor(x0 - margin)); y0 = Math.max(0, Math.floor(y0 - margin)); x1 = Math.min(o.w, Math.ceil(x1 + margin)); y1 = Math.min(o.h, Math.ceil(y1 + margin));
+    if (x1 - x0 < 4 || y1 - y0 < 4) { g.position.copy(save0.p); g.quaternion.copy(save0.q); g.visible = save0.vis; return null; }
+    const rw = x1 - x0, rh = y1 - y0, acc = document.createElement("canvas"); acc.width = rw; acc.height = rh;
+    const cx = acc.getContext("2d"); cx.globalCompositeOperation = "lighter"; cx.globalAlpha = 1 / poses.length;
+    const sh = o.shift || [0, 0];
+    try {
+      for (const q of poses) {
+        place(q);
+        // the frame's lens shift, then the rectangle: setCam's offset is (-sx*w, -sy*h); this one adds (x0, y0)
+        const oo = { ...o, shift: null, sub: [o.w, o.h, -sh[0] * o.w + x0, -sh[1] * o.h + y0, rw, rh] };
+        layerSub(oo, [who], rw, rh, () => cx.drawImage(R.domElement, 0, 0)); // (before the canvas is sized back: that clears it)
+      }
+    } finally { g.position.copy(save0.p); g.quaternion.copy(save0.q); g.visible = save0.vis; }
+    return { url: acc.toDataURL("image/png"), rect: [x0, y0, rw, rh] };
+  }
+  // layer() on a part of the frame (o.sub: the view offset's arguments), at the canvas size of that part
+  function layerSub(o, keep, rw, rh, after) {
+    const K = new Set(keep), hidden = [], arrays = [];
+    for (const [x, nm] of PLAN.meshes) if (!K.has(nm) && x.visible) { x.visible = false; hidden.push(x); }
+    for (const [x, lab] of PLAN.inst) { if (x.visible) { x.visible = false; hidden.push(x); } }
+    const s = save();
+    try {
+      R.setPixelRatio(1); R.setSize(rw, rh, false);
+      setCam({ ...o, w: o.sub[0], h: o.sub[1] });
+      camera.setViewOffset(...o.sub); camera.updateProjectionMatrix();
+      S.sun.shadow.autoUpdate = false; S.sun.shadow.needsUpdate = false;
+      scene.background = null; R.setClearColor(0x000000, 0);
+      R.setRenderTarget(null); R.render(scene, camera);
+      after?.();
+    } finally {
+      for (const x of hidden) x.visible = true;
+      R.setClearColor(s.cc, s.ca); scene.background = s.bg; S.sun.shadow.autoUpdate = s.sh[0];
+      restore(s); R.setPixelRatio(s.pr); R.setSize(s.size[0], s.size[1], false);
+    }
+  }
+  window.__R = { shot, plan, layer, project, setCam, park, W, carShot };
 })();
