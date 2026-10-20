@@ -34138,7 +34138,7 @@ void main() {
     root.appendChild(header);
     // r165 (Daniel): under the logo, small and faint, the build that is live (the label comes from the page's
     // <meta name="cz-build">, written by build/build.mjs)
-    { const bl = document.querySelector('meta[name="cz-build"]')?.content; if (bl) header.querySelector(".brand").appendChild(el("span", "cz-build", `${bl} build`)); }
+    { const bl = document.querySelector('meta[name="cz-build"]')?.content; if (bl) { const sp = el("span", "cz-build", `${bl} build`); sp.setAttribute("aria-hidden", "true"); header.querySelector(".brand").appendChild(sp); } } // (audit 3.86: not part of the logo's name)
     header.querySelector(".brand").onclick = (e) => {
       e.preventDefault();
       api.jumpTo("start");
@@ -35015,19 +35015,19 @@ void main() {
       <section class="scf-strip"><img src="${sVH2}" alt=""><img src="${sVH3}" alt=""></section>
       <section class="scf-year"><img class="scf-yr" src="${sY21}" alt="2021">
         <p>The first face of the festival \u2014 hand-drawn, warm, a little rebellious. The festival grew bigger and more ambitious every year. And so did its looks.</p>
-        <div class="scf-posters"><img src="${sP21a}"><img src="${sP21b}"><img src="${sP21c}"></div>
+        <div class="scf-posters"><img src="${sP21a}" alt=""><img src="${sP21b}" alt=""><img src="${sP21c}" alt=""></div>
       </section>
       <section class="scf-year"><img class="scf-yr" src="${sY22}" alt="2022">
         <p>Bolder type, brighter colour \u2014 a poster system that could shout from any wall in Bucharest.</p>
-        <div class="scf-posters"><img src="${sP22a}"><img src="${sP22b}"><img src="${sP22c}"></div>
+        <div class="scf-posters"><img src="${sP22a}" alt=""><img src="${sP22b}" alt=""><img src="${sP22c}" alt=""></div>
       </section>
       <section class="scf-year"><img class="scf-yr" src="${sY23}" alt="2023">
         <p>The system matures: layouts breathe, illustration and photography start talking to each other.</p>
-        <div class="scf-posters"><img src="${sP23a}"><img src="${s23f}"><img src="${s23d}"></div>
+        <div class="scf-posters"><img src="${sP23a}" alt=""><img src="${s23f}" alt=""><img src="${s23d}" alt=""></div>
       </section>
       <section class="scf-year"><img class="scf-yr scf-24" src="${s24A}" alt="2024">
         <p>Four editions in, the brand could stretch across posters, merch, digital and the venue itself.</p>
-        <div class="scf-posters"><img src="${sP24a}"><img src="${sP24b}"></div>
+        <div class="scf-posters"><img src="${sP24a}" alt=""><img src="${sP24b}" alt=""></div>
       </section>
       <section class="scf-chapter">
         <h2>After four years of building and learning, we\u2019re entering a <em>new chapter</em>.</h2>
@@ -35042,8 +35042,8 @@ void main() {
         </div>
         <p>A palette that speaks of slow mornings, shared conversations and the ritual of brewing \u2014
         the sensory world of coffee, community and slowness.</p>
-        <div class="scf-posters"><img src="${sP25a}"><img src="${sP25b}"><img src="${sP25c}"></div>
-        <div class="scf-icons"><img src="${sIc1}"><img src="${sIc2}"><img src="${sIc3}"></div>
+        <div class="scf-posters"><img src="${sP25a}" alt=""><img src="${sP25b}" alt=""><img src="${sP25c}" alt=""></div>
+        <div class="scf-icons"><img src="${sIc1}" alt=""><img src="${sIc2}" alt=""><img src="${sIc3}" alt=""></div>
       </section>
       <section class="scf-end">
         <p class="mono">BRAND \u00B7 POSTERS \u00B7 MERCH \u00B7 DIGITAL \u00B7 SPATIAL \u00B7 BY CROMATIC STUDIOS</p>
@@ -40304,6 +40304,9 @@ void main() {
       var BOOT_MODE = /[?&]drive\b/.test(location.search) ? "drive" : /[?&]map\b/.test(location.search) ? "map" : "intro";
       // r139p (Daniel: "the intro must not play more than once on the site"): it plays once per visit (6 h); after that,
       // and on every link into the map (?map, the website's "Ready to board" = ?map&boarding), the city opens directly
+      // audit 3.86 (a11y): the text version stays for screen readers (browse mode reads its links), but its links leave the Tab
+      // order while the city runs: 52 invisible stops came before the logo and the map's bar (without scripts it is the page)
+      document.querySelectorAll("#text-version a[href], #text-version button").forEach((a) => { a.tabIndex = -1; });
       var BOOT_BOARD = /[?&]boarding\b/.test(location.search); // r139p: arriving for the boarding pass: no welcome card over it
       // r223 (Daniel, the Lottie intro): the opening is the site's loader, src/intro/boot.js, inlined first thing in the
       // page; it decides (first visit or ?intro: the opening; a return within 6 h or ?map: the pill alone; reduced motion:
@@ -41626,7 +41629,7 @@ void main() {
           mwIc(`<path d="M12 6.6C10.4 5.4 8.2 4.9 4 5v12.6c4.2-.1 6.4.4 8 1.6 1.6-1.2 3.8-1.7 8-1.6V5c-4.2-.1-6.4.4-8 1.6z"/><path d="M12 6.6v12.6"/>`),
           mwIc(`<path d="M5 10h11v4a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11.2h1.4a2.4 2.4 0 0 1 0 4.8H16"/><path d="M8.6 3.6c-.7.9.7 1.7 0 2.6M12.2 3.6c-.7.9.7 1.7 0 2.6"/>`)
         ];
-        const welcomeEl = el("div", "map-welcome hidden", `<button class="mw-x" aria-label="Close">\u00D7</button><b class="mw-t" role="heading" aria-level="2">${["Welcome", "to", "Cromatic", "City"].map((w, i) => `<span class="mw-w" style="--i:${i}">${w}</span>`).join(" ")}</b>
+        const welcomeEl = el("div", "map-welcome hidden", `<button class="mw-x" aria-label="Close">\u00D7</button><b class="mw-t" id="mw-t" role="heading" aria-level="2">${["Welcome", "to", "Cromatic", "City"].map((w, i) => `<span class="mw-w" style="--i:${i}">${w}</span>`).join(" ")}</b>
           <div class="mw-how">
             <span><i>${MW_IC[1]}</i><b>Drive it yourself</b></span><em>\u2192</em>
             <span><i>${MW_IC[0]}</i><b>Or tap a place</b></span><em>\u2192</em>
@@ -41645,6 +41648,8 @@ void main() {
         // out of the intro's last pill and folds away when it goes. The arrow reads as part of the label (aria-hidden: the
         // button says "Drive it yourself")
         // r128: the content scrolls inside .mw-in, so the X can sit half outside the card without being clipped
+        // audit 3.86 (a11y): a dialog, named by its title; not modal (the map under it stays live, a tap there closes it)
+        welcomeEl.setAttribute("role", "dialog"); welcomeEl.setAttribute("aria-labelledby", "mw-t"); welcomeEl.tabIndex = -1;
         { const mwIn = document.createElement("div"); mwIn.className = "mw-in"; for (const n of [...welcomeEl.childNodes]) if (!n.classList?.contains("mw-x")) mwIn.append(n); welcomeEl.append(mwIn); }
         // r139s (Daniel: "the onboarding window should not show more than once in a session"): once per visit
         // r245 (Daniel could not get it back to review it, a hard refresh keeps localStorage): ?welcome shows it again
@@ -41652,7 +41657,7 @@ void main() {
         const welcomeSeen = () => { if (WELCOME_ASK) return false; try { return Date.now() - (+localStorage.getItem("cz-welcome-at") || 0) < 6 * 3600e3; } catch { return false; } }; // a visit = 6 h, like the intro, across tabs
         const welcomeRM = matchMedia("(prefers-reduced-motion: reduce)");
         // TASK-007: gone for good once it has folded away (its Lottie pieces with it)
-        const welcomeOff = () => { clearTimeout(welcome._out); welcomeEl.classList.add("hidden"); welcomeEl.classList.remove("mw-play", "mw-out", "mw-morph", "mw-shell"); window.czWelcome?.close(welcomeEl); };
+        const welcomeOff = () => { clearTimeout(welcome._out); const had = welcomeEl.contains(document.activeElement); welcomeEl.classList.add("hidden"); welcomeEl.classList.remove("mw-play", "mw-out", "mw-morph", "mw-shell"); window.czWelcome?.close(welcomeEl); if (had) (welcome._from?.isConnected ? welcome._from : document.body).focus?.({ preventScroll: true }); };
         const welcome = (on, force) => { // (force: tests, window.__welcome: past the once-a-visit rule)
           if (on) { if (!force && welcomeSeen()) return; try { localStorage.setItem("cz-welcome-at", String(Date.now())); } catch {} }
           else if (welcomeEl.classList.contains("hidden") || welcomeEl.classList.contains("mw-out")) return; // (closed, or folding away)
@@ -41660,6 +41665,10 @@ void main() {
           if (on) {
             welcomeEl.classList.remove("hidden", "mw-out", "mw-play", "mw-morph", "mw-shell");
             if (!window.czWelcome?.open(welcomeEl)) welcomeEl.classList.add("mw-play"); // (the CSS entrance on its own: no Lottie layer, reduced motion)
+            // audit 3.86 (a11y): the keyboard starts inside the card (the card itself takes focus, no ring: Tab reaches ×), unless
+            // something else already holds focus; it goes back there when the card closes
+            const ae = document.activeElement; welcome._from = ae && ae !== document.body ? ae : null;
+            if (!welcome._from) requestAnimationFrame(() => { if (!welcomeEl.classList.contains("hidden")) welcomeEl.focus({ preventScroll: true }); });
           } else if (welcomeRM.matches) welcomeOff();
           else { welcomeEl.classList.add("mw-out"); welcome._out = setTimeout(welcomeOff, 250); } // it folds away fast (the action under it has already begun)
           // beta 3.48 r217 (Daniel, QA round 2): the cookie card waits while the welcome card is open (r215), but not forever:
@@ -41675,6 +41684,7 @@ void main() {
         // TASK-007: its Lottie pieces are fetched while the intro plays (in idle time), only when the card will show
         if (!BOOT_BOARD && !ONB_MODE && !welcomeSeen()) (window.requestIdleCallback || setTimeout)(() => window.czWelcome?.warm(), { timeout: 4000 });
         window.__welcome = (on = true) => welcome(on, true); // (tests)
+        welcomeEl.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); welcome(false); guideStart(); } }); // (as ×)
         // a hand over the street in front of the van: tap here, the van drives there
         const hintEl = el("div", "tap-hint hidden", `<span class="th-ring"></span><span class="th-hand">\u{1F446}</span><b>Tap the street to drive</b>`);
         let hintAt = null;

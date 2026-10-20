@@ -5161,3 +5161,6 @@ body:is(.map-mode, .site-mode) .dp-h::after, html.onb .dp-h::after, body.kz-intr
   .map-pin.float .mp-label, .map-pins .map-pin.on .mp-label::before, .map-pins .map-pin.visited.on .mp-label::before, .wt-img::after { animation: none; }
   .map-card.in:not(.hidden), .map-card.cr.in:not(.hidden) { animation-duration: .01s; }
 }
+/* audit 3.86 (a11y): the welcome card takes focus itself (no ring; Tab goes on to ×); "Where to next?" shows its focus */
+.map-welcome:focus { outline: none; }
+.dp-where:focus-visible { outline: 3px solid #119BFE; outline-offset: 2px; }
