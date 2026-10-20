@@ -3392,9 +3392,8 @@ body.map-boarding .map-zoom, body.kb-open .map-zoom { display: none !important; 
 /* r123: welcome on the map: where do you want to go? */
 .map-welcome { position: fixed; z-index: 30; left: 50%; top: 50%; translate: -50% -50%; width: min(560px, calc(100vw - 32px)); box-sizing: border-box;
   background: #fbf7f2; color: #141414; border: 1px solid #141414; border-radius: 26px; padding: 26px 24px 20px; box-shadow: 0 5px 0 #141414, 0 30px 60px -20px rgba(40,20,40,.5);
-  pointer-events: auto; animation: mwIn .5s cubic-bezier(.2,.9,.3,1.2) both; }
+  pointer-events: auto; } /* (TASK-007: its entrance is .mw-play's, below) */
 .map-welcome.hidden { display: none; }
-@keyframes mwIn { from { opacity: 0; transform: translateY(18px) scale(.96); } }
 .map-welcome .mw-k { display: block; font-size: 10px; letter-spacing: .18em; opacity: .6; }
 .map-welcome .mw-t { display: block; font: 900 clamp(26px, 4vw, 34px)/1.05 CromaticSans, sans-serif; margin: 6px 0 16px; }
 .map-welcome .mw-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -4334,7 +4333,7 @@ body.scheme-sketch .hud.hud-popat { filter: none; }
   font: 900 clamp(34px, min(4.4vw, 6.2vh), 58px)/.95 CromaticSans, CromaticSans, sans-serif; letter-spacing: -.04em; color: #FED012;
   -webkit-text-stroke: 2.5px #141414; paint-order: stroke fill; text-shadow: 4px 4px 0 #141414; transform: rotate(-3deg); }
 .map-welcome .mw-how { margin: 0 0 24px; }
-.map-welcome .mw-how span:nth-of-type(n) i { width: 58px; height: 58px; background: #ECE9E4; border: 1px solid #141414; box-shadow: none; color: #141414; font-size: 0; }
+.map-welcome .mw-how span:nth-of-type(n) i { width: 64px; height: 64px; background: #ECE9E4; border: 1px solid #141414; box-shadow: none; color: #141414; font-size: 0; }
 .map-welcome .mw-how span i svg { display: block; width: 26px; height: 26px; }
 .map-welcome .mw-how b { font: 800 13.5px/1.15 CromaticSans, sans-serif; }
 .map-welcome .mw-how em { margin-top: -24px; opacity: .3; }
@@ -4342,7 +4341,7 @@ body.scheme-sketch .hud.hud-popat { filter: none; }
   .map-welcome { padding: 30px 16px 16px; }
   .map-welcome .mw-t { font-size: 32px; -webkit-text-stroke-width: 2px; text-shadow: 3px 3px 0 #141414; margin-bottom: 18px; }
   .map-welcome .mw-how { margin: 0 0 16px; }
-  .map-welcome .mw-how span:nth-of-type(n) i { width: 46px; height: 46px; }
+  .map-welcome .mw-how span:nth-of-type(n) i { width: 48px; height: 48px; } /* (TASK-007: 64 / 48, room for the explainers) */
   .map-welcome .mw-how span i svg { width: 22px; height: 22px; }
   .map-welcome .mw-how b { font-size: 11.5px; }
 }
@@ -4379,17 +4378,81 @@ body.scheme-sketch .theme-menu .wt-img img { filter: none; } /* r137a: the previ
 body:not(.scheme-sketch) .map-card .mcd-body { color: #141414; }
 body:not(.scheme-sketch) .map-card .mcd-body :is(p, .mcd-eyebrow, .mcd-svc) { color: #141414; }
 
-/* r138m (Daniel): the four steps of the welcome card pop in quickly, one after another, each time the card opens */
-.map-welcome:not(.hidden) .mw-how span, .map-welcome:not(.hidden) .mw-how em { animation: mwStep .42s cubic-bezier(.34,1.56,.64,1) both; }
-.map-welcome:not(.hidden) .mw-how > :nth-child(1) { animation-delay: .08s; }
-.map-welcome:not(.hidden) .mw-how > :nth-child(2) { animation-delay: .16s; }
-.map-welcome:not(.hidden) .mw-how > :nth-child(3) { animation-delay: .22s; }
-.map-welcome:not(.hidden) .mw-how > :nth-child(4) { animation-delay: .30s; }
-.map-welcome:not(.hidden) .mw-how > :nth-child(5) { animation-delay: .36s; }
-.map-welcome:not(.hidden) .mw-how > :nth-child(6) { animation-delay: .44s; }
-.map-welcome:not(.hidden) .mw-how > :nth-child(7) { animation-delay: .50s; }
+/* TASK-007 (Daniel: "the old onboarding, not Lottie"): the card's entrance, every time it opens (.mw-play, set by the
+   app or by src/lottie-ui/welcome.js). With the Lottie opening (.mw-morph: the intro's pill stretches into the card, in the
+   worker) the words wait for the card to be nearly open (--mw0 .36 s); without it the card itself springs in (mwCard).
+   The title lands word by word with the house bounce (a drop, a squash, a settle); the steps pop in (r138m) and their
+   explainers play in turn (welcome.js); the four streets are dealt from the middle of their grid like the Multiverse's
+   worlds; "Drive it yourself" pops up last and, a moment later, nudges once (a hop, its arrow, a ring). It folds away fast
+   when it goes (.mw-out). Transforms and opacity only (the compositor's: the city's busy thread cannot hold them); the
+   buttons' own hover transform stays theirs (the entrances use the separate translate / scale / rotate properties) */
+.map-welcome { --mw0: .12s; }
+.map-welcome.mw-morph { --mw0: .36s; }
+.map-welcome .mw-t .mw-w { display: inline-block; transform-origin: 50% 88%; }
+.map-welcome .mw-free .mw-arr { display: inline-block; }
+.map-welcome .mw-free { position: relative; }
+.map-welcome .mw-free::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; border: 2px solid #141414; opacity: 0; pointer-events: none; }
+.map-welcome .mw-opts button:nth-child(1) { --dx: 54%; --dy: 56%; --r0: -11deg; --i: 0; }
+.map-welcome .mw-opts button:nth-child(2) { --dx: -54%; --dy: 56%; --r0: 9deg; --i: 1; }
+.map-welcome .mw-opts button:nth-child(3) { --dx: 54%; --dy: -56%; --r0: 7deg; --i: 2; }
+.map-welcome .mw-opts button:nth-child(4) { --dx: -54%; --dy: -56%; --r0: -8deg; --i: 3; }
+@media (prefers-reduced-motion: no-preference) {
+  .map-welcome.mw-play:not(.mw-morph) { animation: mwCard .52s cubic-bezier(.3,1.32,.6,1) both; }
+  .map-welcome.mw-play .mw-x { animation: mwX .5s cubic-bezier(.34,1.56,.64,1) calc(var(--mw0) + .04s) backwards; }
+  .map-welcome.mw-play .mw-t .mw-w { animation: mwWord .66s cubic-bezier(.3,.7,.4,1) calc(var(--mw0) + var(--i) * 75ms) backwards; }
+  .map-welcome.mw-play .mw-how > * { animation: mwStep .42s cubic-bezier(.34,1.56,.64,1) backwards; }
+  .map-welcome.mw-play .mw-how > :nth-child(1) { animation-delay: calc(var(--mw0) + .08s); }
+  .map-welcome.mw-play .mw-how > :nth-child(2) { animation-delay: calc(var(--mw0) + .12s); }
+  .map-welcome.mw-play .mw-how > :nth-child(3) { animation-delay: calc(var(--mw0) + .15s); }
+  .map-welcome.mw-play .mw-how > :nth-child(4) { animation-delay: calc(var(--mw0) + .19s); }
+  .map-welcome.mw-play .mw-how > :nth-child(5) { animation-delay: calc(var(--mw0) + .22s); }
+  .map-welcome.mw-play .mw-how > :nth-child(6) { animation-delay: calc(var(--mw0) + .26s); }
+  .map-welcome.mw-play .mw-how > :nth-child(7) { animation-delay: calc(var(--mw0) + .29s); }
+  .map-welcome.mw-play .mw-q { animation: mwUp .4s cubic-bezier(.22,1,.36,1) calc(var(--mw0) + .36s) backwards; }
+  .map-welcome.mw-play .mw-opts button { animation: mwDeal .58s cubic-bezier(.22,1.12,.32,1) calc(var(--mw0) + .42s + var(--i) * 60ms) backwards; }
+  .map-welcome.mw-play .mw-free { animation: mwPop .5s cubic-bezier(.34,1.56,.64,1) calc(var(--mw0) + .74s) backwards, mwCue 1.15s cubic-bezier(.3,0,.3,1) calc(var(--mw0) + 3s); }
+  .map-welcome.mw-play .mw-free .mw-arr { animation: mwArr 1.15s cubic-bezier(.3,0,.3,1) calc(var(--mw0) + 3s); }
+  .map-welcome.mw-play .mw-free::after { animation: mwRing 1.15s cubic-bezier(.2,.7,.3,1) calc(var(--mw0) + 3s); }
+  .map-welcome.mw-play .mw-drive { animation: mwUp .4s cubic-bezier(.22,1,.36,1) calc(var(--mw0) + .84s) backwards; }
+  .map-welcome.mw-out { animation: mwFold .24s cubic-bezier(.55,0,.85,.35) both !important; transform-origin: 50% 100%; pointer-events: none; }
+}
+.map-welcome.mw-out { pointer-events: none; }
+@keyframes mwCard { 0% { opacity: 0; transform: translateY(26px) scale(.86) rotate(-1.5deg); } 35% { opacity: 1; } 72% { transform: translateY(-3px) scale(1.012); } 100% { opacity: 1; transform: none; } }
+@keyframes mwX { 0% { opacity: 0; scale: .3; rotate: -120deg; } 40% { opacity: 1; } 100% { scale: 1; rotate: 0deg; } }
+@keyframes mwWord { 0% { opacity: 0; transform: translateY(-.62em) scale(.88, 1.14) rotate(-5deg); } 28% { opacity: 1; } 56% { transform: translateY(.05em) scale(1.06, .88); } 78% { transform: translateY(-.03em) scale(.98, 1.03); } 100% { opacity: 1; transform: none; } }
 @keyframes mwStep { from { opacity: 0; transform: translateY(10px) scale(.7); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .map-welcome .mw-how span, .map-welcome .mw-how em { animation: none !important; } }
+@keyframes mwUp { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
+@keyframes mwDeal { 0% { opacity: 0; translate: var(--dx) var(--dy); scale: .38; rotate: var(--r0); } 22% { opacity: 1; } 100% { opacity: 1; translate: 0 0; scale: 1; rotate: 0deg; } }
+@keyframes mwPop { 0% { opacity: 0; translate: 0 12px; scale: .55; } 100% { opacity: 1; translate: 0 0; scale: 1; } }
+@keyframes mwCue { 0%, 56%, 100% { translate: 0 0; scale: 1; } 12% { translate: 0 -6px; scale: 1.05 .96; } 26% { translate: 0 0; scale: .97 1.03; } 38% { translate: 0 -3px; scale: 1.02; } }
+@keyframes mwArr { 0%, 56%, 100% { translate: 0 0; } 12% { translate: 0 -4px; } 26% { translate: 0 1px; } 38% { translate: 0 -3px; } }
+@keyframes mwRing { 0% { opacity: 0; scale: 1; } 10% { opacity: .6; scale: 1; } 70% { opacity: 0; scale: 1.12 1.5; } 100% { opacity: 0; scale: 1.12 1.5; } }
+@keyframes mwFold { 0% { opacity: 1; } 100% { opacity: 0; transform: perspective(900px) translateY(24px) rotateX(58deg) scale(.9); } }
+/* TASK-007: short phones (Daniel: everything fits): under ~650 px of height the card's breathing tightens (the title a
+   size down, the steps' circles 44, the streets' tabs and the buttons a little slimmer), so "Drive it yourself" is on
+   screen without scrolling (360 x 640: it scrolled 21 px; the iPhone 13's 664 keeps its own sizes); under 600 px (an
+   iPhone SE, 320 x 568) the card also rises over the top bar, which steps aside while it is open */
+@media (max-width: 520px) and (max-height: 650px) {
+  .map-welcome { padding: 26px 14px 12px; }
+  .map-welcome .mw-in { padding-top: 4px; }
+  .map-welcome .mw-t { font-size: 27px; margin-bottom: 12px; -webkit-text-stroke-width: 1.5px; text-shadow: 2px 2px 0 #141414; }
+  .map-welcome .mw-how { margin: 0 0 10px; }
+  .map-welcome .mw-how span { gap: 5px; }
+  .map-welcome .mw-how span:nth-of-type(n) i { width: 44px; height: 44px; }
+  .map-welcome .mw-how b { font-size: 11px; }
+  .map-welcome .mw-q { font-size: 14px; margin-bottom: 6px; }
+  .map-welcome .mw-opts { gap: 6px; }
+  .map-welcome .mw-opts button { padding: 7px 8px 7px 14px; gap: 2px; }
+  .map-welcome .mw-opts b { font-size: 12.5px; }
+  .map-welcome .mw-free { margin-top: 9px; padding: 10px 18px; }
+  .map-welcome .mw-drive { padding: 11px 12px 9px; }
+}
+@media (max-width: 520px) and (max-height: 600px) {
+  .map-welcome { top: calc(78px + env(safe-area-inset-top, 0px)); }
+  body.n2-phone .map-welcome { max-height: calc(100vh - 88px - env(safe-area-inset-top, 0px)); max-height: calc(100dvh - 88px - env(safe-area-inset-top, 0px)); }
+  body:has(.map-welcome:not(.hidden)) .map-top { opacity: 0; pointer-events: none; }
+  .map-welcome .mw-opts i { font-size: 10px; }
+}
 
 /* ================= r138k (Daniel): the boarding pass form covers the whole screen, top to bottom, no scrolling;
    bigger fields, two columns on a computer, a compact stack on a phone; no progress bar glued under the button: the
@@ -5045,3 +5108,30 @@ body.scheme-sketch :is(.crew-panel, .hmodal-backdrop) { background: rgba(250,249
 body.scheme-sketch :is(.crew-box, .map-rides, .hud-menu.theme-menu) { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: 1px 2px 0 rgba(46,50,102,.2) !important; border-radius: var(--nb-r) !important; }
 body.scheme-sketch :is(.crew-box, .map-rides, .hud-menu.theme-menu) .mono { color: var(--nb-red) !important; opacity: 1 !important; }
 body.scheme-sketch .map-x { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: none !important; }
+/* TASK-007: the welcome card on the notebook. A piece of the sheet with an ink box round it (a box drawn by hand); the
+   title in ochre pencil with an ink line (no hard slab under it); the steps' circles drawn in ink, their explainers in the
+   notebook's own ink and pencils (welcome-*-sketch); the four streets as sheet-coloured tabs, each with a pencil stripe of
+   its colour; "Drive it yourself" hatched in ochre; no hard ink shadows anywhere */
+body.scheme-sketch .map-welcome { background: var(--nb-paper2) !important; color: var(--nb-ink) !important; border: 1.8px solid var(--nb-ink) !important; border-radius: var(--nb-r) !important; box-shadow: 1px 2px 0 rgba(46,50,102,.2), 0 24px 50px -24px rgba(46,50,102,.28) !important; }
+body.scheme-sketch .map-welcome .mw-t { color: var(--nb-ochre); -webkit-text-stroke: 1.8px var(--nb-ink); text-shadow: 2px 3px 0 rgba(46,50,102,.16); }
+body.scheme-sketch .map-welcome .mw-how span:nth-of-type(n) i { background: transparent; border: 1.6px solid var(--nb-ink); border-radius: 50% 46% 52% 48% / 47% 52% 48% 53%; color: var(--nb-ink); }
+body.scheme-sketch .map-welcome .mw-how em { color: var(--nb-red); opacity: .75; }
+body.scheme-sketch .map-welcome .mw-q { color: var(--nb-blue); }
+body.scheme-sketch .map-welcome .mw-opts [data-go="tm"] { --wc: var(--nb-sage) !important; } /* (!important: over the buttons' own inline colour) */
+body.scheme-sketch .map-welcome .mw-opts [data-go="invest"] { --wc: var(--nb-sky) !important; }
+body.scheme-sketch .map-welcome .mw-opts [data-go="tac"] { --wc: var(--nb-terra) !important; }
+body.scheme-sketch .map-welcome .mw-opts [data-go="end"] { --wc: var(--nb-ochre) !important; }
+body.scheme-sketch .map-welcome .mw-opts button { position: relative; isolation: isolate; background: var(--nb-paper2); border: 1.6px solid var(--nb-ink); border-radius: var(--nb-r); box-shadow: none; }
+body.scheme-sketch .map-welcome .mw-opts button::before { content: ""; position: absolute; left: 4px; top: 4px; bottom: 4px; width: 11px; z-index: -1; pointer-events: none; border-radius: 9px 5px 8px 6px;
+  background: var(--wc); -webkit-mask: var(--nb-hatch) 0 0 / 60px 60px; mask: var(--nb-hatch) 0 0 / 60px 60px; opacity: .85; }
+body.scheme-sketch .map-welcome .mw-opts button:hover { background: color-mix(in srgb, var(--wc) 12%, var(--nb-paper2)); }
+body.scheme-sketch .map-welcome .mw-opts b { color: var(--nb-ink); }
+body.scheme-sketch .map-welcome .mw-opts i { color: var(--nb-red); opacity: 1; }
+body.scheme-sketch .map-welcome .mw-free { isolation: isolate; background: var(--nb-paper2); color: var(--nb-ink); border: 1.8px solid var(--nb-ink); border-radius: var(--nb-r2); box-shadow: none; }
+body.scheme-sketch .map-welcome .mw-free::before { content: ""; position: absolute; inset: 3px; z-index: -1; pointer-events: none; border-radius: inherit;
+  background: var(--nb-ochre); -webkit-mask: var(--nb-hatch) 0 0 / 120px 120px; mask: var(--nb-hatch) 0 0 / 120px 120px; opacity: .7; }
+body.scheme-sketch .map-welcome .mw-free:hover, body.scheme-sketch .map-welcome .mw-free:focus-visible { background: var(--nb-paper2); box-shadow: 1px 2px 0 rgba(46,50,102,.2); }
+body.scheme-sketch .map-welcome .mw-free::after { border-color: var(--nb-ink); }
+body.scheme-sketch .map-welcome .mw-drive { color: var(--nb-blue); }
+body.scheme-sketch .map-welcome .mw-x { background: var(--nb-paper2); color: var(--nb-ink); border: 1.8px solid var(--nb-ink); box-shadow: none; border-radius: 52% 48% 50% 50% / 48% 53% 47% 52%; }
+body.scheme-sketch .map-welcome .mw-x:hover, body.scheme-sketch .map-welcome .mw-x:focus-visible { background: var(--nb-paper2); box-shadow: 1px 2px 0 rgba(46,50,102,.2); }

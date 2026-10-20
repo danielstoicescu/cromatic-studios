@@ -1,0 +1,38 @@
+<!doctype html>
+<!-- Cromatic · lottie-ui · the welcome card's four step explainers side by side, each in its grey circle as on the card
+     (the circle 64 px, the piece 80 px over it), magnified ?k= times (default 3), stepped exactly: window.go(frame) or
+     window.go([f0, f1, f2, f3]). ?th=light|sketch -->
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+html,body{margin:0;height:100%;background:#fbf7f2;font:800 13px/1.15 "Google Sans",system-ui,sans-serif;color:#141414}
+body.sketch{background:#fdfcf9;color:#2e3266}
+.row{display:flex;gap:calc(26px * var(--k));padding:calc(14px * var(--k));align-items:flex-start}
+.st{display:flex;flex-direction:column;align-items:center;gap:calc(8px * var(--k))}
+.c{position:relative;width:calc(64px * var(--k));height:calc(64px * var(--k));border-radius:50%;background:#ECE9E4;box-shadow:inset 0 0 0 var(--k) #141414}
+body.sketch .c{background:transparent;box-shadow:inset 0 0 0 calc(1.6px * var(--k)) #2e3266}
+.c .lot{position:absolute;left:50%;top:50%;width:calc(80px * var(--k));height:calc(80px * var(--k));translate:-50% -50%}
+.c canvas{display:block;width:100%;height:100%}
+b{font-size:calc(13.5px * var(--k))}
+</style></head><body><div class="row"></div>
+<script>
+const q = new URLSearchParams(location.search), k = +(q.get("k") || 3), th = q.get("th") || "light";
+document.body.style.setProperty("--k", k); if (th === "sketch") document.body.classList.add("sketch");
+const N = [["drive", "Drive it yourself"], ["tap", "Or tap a place"], ["work", "See the work"], ["hi", "Say hi"]];
+const row = document.querySelector(".row");
+const s = document.createElement("script"); s.src = "/design/intro-lottie/_lib/lottie_light_canvas.min.js";
+s.onload = async () => {
+  window.anims = [];
+  let n = 0;
+  for (const [id, label] of N) {
+    const st = document.createElement("div"); st.className = "st"; st.innerHTML = `<div class="c"><div class="lot"></div></div><b>${label}</b>`; row.appendChild(st);
+    const data = await (await fetch(`/src/lottie-ui/welcome-${id}-${th}.json?${Date.now()}`)).json();
+    const a = lottie.loadAnimation({ container: st.querySelector(".lot"), renderer: "canvas", loop: false, autoplay: false, animationData: data, rendererSettings: { preserveAspectRatio: "xMidYMid meet", clearCanvas: true } });
+    a.addEventListener("DOMLoaded", () => { if (++n === N.length) window.ready = 1; });
+    a.cz = data.cromatic; window.anims.push(a);
+  }
+};
+document.head.appendChild(s);
+// one frame for all, or one each; past its end a piece holds its last frame
+window.go = (f) => window.anims.forEach((a, i) => { const fr = Array.isArray(f) ? f[i] : f; a.goToAndStop(Math.min(fr, a.totalFrames - 1), true); });
+window.cssAt = () => {};
+</script></body></html>

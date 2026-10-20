@@ -3,7 +3,10 @@
    OffscreenCanvas and the city's work on the main thread cannot make it stutter. On the map the intro has usually loaded
    it already; anywhere else it is fetched once, the first time a piece is needed. The pieces' JSON (made by
    design/lottie-ui/_source) are listed by the build in window.__CZL_CFG = { player, j: { name: url } }.
-     czL.mount(name, { host, w, h, full, fit, cls, assets })  -> Promise<piece | null>  (null: no player, no data)
+     czL.mount(name, { host, w, h, full, fit, cls, assets, patch, cz })  -> Promise<piece | null>  (null: no player, no data)
+       (patch(data) -> the data this mount plays, made from the shared copy (which it must not change): the welcome card's
+       opening is fitted to the card; cz: the worker's own start (cz.play: the segments it plays as soon as it has built
+       the piece, without waiting for the page's thread; cz.loop))
        piece.seg("marker" | [a, b] | a list of them, loop) -> Promise (resolved when the (last) segment ends; a list is
        queued in the worker), piece.dur(seg) its length in ms, piece.last() (its last frame, still), piece.destroy();
        piece.el is the canvas's wrapper (pointer-events: none)
@@ -51,6 +54,7 @@
     return Promise.all([player(), data(name)]).then(function (r) {
       var lib = r[0], d = r[1];
       if (!lib || !d) return null;
+      if (o.patch) { try { d = o.patch(d); } catch (e) { return null; } if (!d) return null; }
       // pictures the piece shows (the worlds' previews): fetched by the worker, so an absolute address (its base is a blob)
       if (o.assets) for (var i = 0; i < (d.assets || []).length; i++) { var a = d.assets[i]; if (a.p && !a.layers && o.assets[a.id]) { a.p = location.origin + o.assets[a.id]; a.u = ""; a.e = 1; } }
       var el = document.createElement("div");
@@ -64,7 +68,7 @@
       (o.host || document.body).appendChild(el);
       var M = {}; (d.markers || []).forEach(function (m) { M[m.cm] = [m.tm, m.tm + m.dr]; });
       // the worker gets its own copy of the data (it is posted): one fetch serves every mount
-      var anim = lib.loadAnimation({ container: el, renderer: "canvas", loop: false, autoplay: false, animationData: d, rendererSettings: { canvas: cv, preserveAspectRatio: o.fit || (o.full ? "xMidYMid slice" : "xMidYMid meet"), clearCanvas: true, dpr: 1 } });
+      var anim = lib.loadAnimation({ container: el, renderer: "canvas", loop: false, autoplay: false, animationData: d, rendererSettings: { canvas: cv, preserveAspectRatio: o.fit || (o.full ? "xMidYMid slice" : "xMidYMid meet"), clearCanvas: true, dpr: 1 }, cz: o.cz });
       var waiting = null, gone = false;
       anim.addEventListener("complete", function () { var w2 = waiting; waiting = null; if (w2) w2(); });
       var onResize = o.full ? function () { var k2 = dpr(innerWidth, innerHeight); try { anim.resize(Math.round(innerWidth * k2), Math.round(innerHeight * k2)); } catch (e) {} } : null;
