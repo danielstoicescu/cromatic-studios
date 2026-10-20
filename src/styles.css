@@ -5164,3 +5164,37 @@ body:is(.map-mode, .site-mode) .dp-h::after, html.onb .dp-h::after, body.kz-intr
 /* audit 3.86 (a11y): the welcome card takes focus itself (no ring; Tab goes on to ×); "Where to next?" shows its focus */
 .map-welcome:focus { outline: none; }
 .dp-where:focus-visible { outline: 3px solid #119BFE; outline-offset: 2px; }
+
+/* ---- WORLDS PROTOTYPE (style frames for Daniel; opened only by ?world=interbelic | ?world=blueprint, no Multiverse tile) ----
+   A first direction for each world's interface, not its theme: the bones recoloured with tokens, the static icons toned.
+   A real build themes each piece as Sketchbook does (and keeps filters off anything that moves) */
+body.scheme-interbelic { --ib-paper: #efe6d2; --ib-ink: #2b2017; --ib-red: #8f2a22; --ib-ochre: #b98a35; --ib-green: #2f5a3e; }
+body.scheme-interbelic::after { display: none !important; } /* the grain is in the print (tiltShiftRender, ib) */
+body.scheme-interbelic::before { background: radial-gradient(ellipse 78% 72% at 50% 50%, transparent 60%, rgba(43,32,23,.28) 100%) !important; }
+/* the bones: cream card with an art-deco double keyline */
+body.scheme-interbelic :is(.map-top, .you, .nav2-ui .n2-views, .nav2-ui .n2-hint, .nav2-ui .n2-taphint) { background: var(--ib-paper) !important; color: var(--ib-ink) !important; border-color: var(--ib-ink) !important; box-shadow: inset 0 0 0 3px var(--ib-paper), inset 0 0 0 4px rgba(43,32,23,.5), 0 2px 0 rgba(43,32,23,.25) !important; }
+body.scheme-interbelic :is(.map-top > *, .map-zoom, .hud, .you .you-xp, .nav2-ui .n2-snd, .nav2-ui .n2-keys) { filter: sepia(.62) saturate(.78) contrast(.97); } /* static: toned like a hand-tinted print */
+body.scheme-interbelic .map-pin .mp-label { background: var(--ib-paper) !important; color: var(--ib-ink) !important; border-color: rgba(43,32,23,.6) !important; letter-spacing: .07em; text-transform: uppercase; font-size: 11px; }
+body.scheme-interbelic .map-card { background: var(--ib-paper) !important; color: var(--ib-ink) !important; box-shadow: inset 0 0 0 4px var(--ib-paper), inset 0 0 0 5px rgba(43,32,23,.5), 0 18px 40px rgba(43,32,23,.3) !important; }
+body.scheme-interbelic .map-card .mcd-img img { filter: sepia(.7) saturate(.7) contrast(1.05); }
+
+body.scheme-blueprint { --bp-sheet: #123d6e; --bp-line: #e3f2ff; --bp-dim: rgba(227,242,255,.5); --bp-box: rgba(13,46,88,.86); }
+/* the sheet's rulers (ticks every 10 px, a long one every 100) along its top and left edges */
+body.scheme-blueprint::before { background:
+  repeating-linear-gradient(90deg, var(--bp-line) 0 1px, transparent 1px 100px) 0 0 / 100% 13px no-repeat,
+  repeating-linear-gradient(90deg, var(--bp-dim) 0 1px, transparent 1px 10px) 0 0 / 100% 6px no-repeat,
+  repeating-linear-gradient(180deg, var(--bp-line) 0 1px, transparent 1px 100px) 0 0 / 13px 100% no-repeat,
+  repeating-linear-gradient(180deg, var(--bp-dim) 0 1px, transparent 1px 10px) 0 0 / 6px 100% no-repeat !important; }
+/* the title block, in the site's mono */
+body.scheme-blueprint::after { content: "CROMATIC STUDIOS  \2014  PLAN OF THE CITY\A SHEET 01 / 01      SCALE 1 : 2000\A BUCURE\0218TI  44\00B0 26\2032 N  26\00B0 06\2032 E\A DRAWN BY CS        REV. 3.88" !important;
+  inset: 94px auto auto 22px !important; width: auto !important; height: auto !important; opacity: 1 !important; mix-blend-mode: normal !important; animation: none !important;
+  background: var(--bp-box) !important; border: 1px solid var(--bp-dim); outline: 1px solid var(--bp-dim); outline-offset: 3px; padding: 9px 14px; white-space: pre;
+  font: 500 9.5px/1.75 "JetBrains Mono", monospace; letter-spacing: .12em; color: var(--bp-line); }
+body.scheme-blueprint :is(.map-top, .you, .nav2-ui .n2-views, .nav2-ui .n2-hint, .nav2-ui .n2-taphint, .map-card) { background: var(--bp-box) !important; color: var(--bp-line) !important; border: 1px solid var(--bp-dim) !important; box-shadow: none !important; }
+body.scheme-blueprint :is(.map-top > *, .map-zoom button, .hud .round-btn, .nav2-ui .n2-snd, .nav2-ui .n2-k) { background: transparent !important; color: var(--bp-line) !important; border: 1px solid var(--bp-dim) !important; box-shadow: none !important; }
+body.scheme-blueprint :is(.map-top, .map-zoom, .hud, .you, .nav2-ui .n2-snd, .nav2-ui .n2-keys, .nav2-ui .n2-views) :is(img, svg, i) { filter: grayscale(1) brightness(1.8); }
+body.scheme-blueprint .map-pin .mp-label { background: var(--bp-box) !important; color: var(--bp-line) !important; border: 1px solid var(--bp-dim) !important; box-shadow: none !important; font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .06em; }
+body.scheme-blueprint .map-card :is(p, .mcd-eyebrow, .mcd-svc, .mcd-body, h2, h3, b) { color: var(--bp-line) !important; }
+body.scheme-blueprint .map-card .mcd-img img { filter: grayscale(1) contrast(1.1) brightness(.95) sepia(1) hue-rotate(170deg) saturate(1.6); }
+body.scheme-blueprint .map-card :is(.mcd-title, .mcd-open) { background: transparent !important; color: var(--bp-line) !important; border: 1px solid var(--bp-line) !important; box-shadow: none !important; }
+@media (max-width: 760px) { body.scheme-blueprint::after { display: none !important; } }
