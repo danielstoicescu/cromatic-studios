@@ -27388,12 +27388,17 @@ void main() {
   }
   // the Zdrovit courtyard: a paved yard with a fountain and trees, small buildings around it
   // the small brands of the Zdrovit yard: one kiosk each round the fountain, room for more
-  var ZDROVIT_YARD = ["Lacalut", "Periferisan", "Help 4 Brain", "Parusan", "Bonilash", "Litorsal"];
+  var ZDROVIT_YARD = ["Lacalut", "Periferisan", "Help 4 Brain", "Parusan", "Bonilash", "Litorsal", "Maximag"]; // TASK-064: + Maximag
+  // TASK-064: a kiosk may wear its brand's colours, taken from the real artwork (Maximag: the navy of the logo, the red
+  // of its Bisglicinat tag, a white sign with navy letters); the others keep the Zdrovit red roof and the grey sign
+  var YARD_LOOK = { Maximag: { roof: "#091D61", band: "#D71E3E", signBg: "#ffffff", signInk: "#091D61" } };
   // r134: Daniel: the small buildings stand along the edges of the yard, not round the fountain: four along the
   // hedge side (towards Sofmedica), one each side of the gate
   // r176: the beauty shops' side (south) is not left bare now they have moved out: two kiosks there, two on the hedge
   // side, one each side of the gate
-  var YARD_EDGE = [[1690, 5006], [1790, 5006], [1690, 5205], [1790, 5205], [1590, 5012], [1590, 5150]];
+  // TASK-064: Maximag takes the yard's south-east corner, the third kiosk on the south side, clear of the trees and of
+  // the Zdrovit house (its south wall is at z ~5105)
+  var YARD_EDGE = [[1690, 5006], [1790, 5006], [1690, 5205], [1790, 5205], [1590, 5012], [1590, 5150], [1870, 5205]];
   var YARD_SLOTS = YARD_EDGE.length;
   const yardSlotOf = (k) => k;
   function yardSpot(i) { return YARD_EDGE[i % YARD_EDGE.length]; }
@@ -27411,8 +27416,10 @@ void main() {
         const k = new Group();
         const base = new Mesh(new BoxGeometry(16, used ? 11 : 2, 12), kM[used ? 0 : 1]); base.position.y = used ? 5.5 : 1; k.add(base);
         if (used) {
-          const roof = new Mesh(new BoxGeometry(19, 1.4, 15), new MeshStandardMaterial({ color: "#e30613", roughness: 0.6 })); roof.position.y = 11.7; k.add(roof);
-          const sg = signBoard({ name: ZDROVIT_YARD[k0], signBg: "#ecebe7", signInk: "#3d3c39" }, 15, 3.2); sg.position.set(0, 8.4, 6.2); k.add(sg);
+          const look = YARD_LOOK[ZDROVIT_YARD[k0]] || {};
+          const roof = new Mesh(new BoxGeometry(19, 1.4, 15), new MeshStandardMaterial({ color: look.roof || "#e30613", roughness: 0.6 })); roof.position.y = 11.7; k.add(roof);
+          if (look.band) { const band = new Mesh(new BoxGeometry(16.6, 1, 12.6), new MeshStandardMaterial({ color: look.band, roughness: 0.6 })); band.position.y = 10.5; k.add(band); /* the red fascia, between the sign (top 10) and the roof */ }
+          const sg = signBoard({ name: ZDROVIT_YARD[k0], signBg: look.signBg || "#ecebe7", signInk: look.signInk || "#3d3c39" }, 15, 3.2); sg.position.set(0, 8.4, 6.2); k.add(sg);
         }
         k.position.set(kx, 0, kz); k.rotation.y = kx < 1600 ? Math.PI / 2 : kz > cz ? Math.PI : 0; g.add(k); // (r176: the south ones face the yard too)
       }
@@ -28007,7 +28014,7 @@ void main() {
     // r177 (Daniel): the brand the code called "Jesse J" (Daniel wrote "Jessie J") is Tracy J
     { br: "C", name: "Tracy J", x: 1574, z: 5950, face: "-x", kind: "la", w: 42, d: 32, h: 21, wall: "#d8efe6", accent: "#62c6a6", c: "#62c6a6", t: "#0c2a20", line: "BEAUTY \xB7 LOS ANGELES", desc: "The Core of a skincare brand with a joyous voice, its visual identity, packaging and brand universe." } // r179: as on its case page
   ];
-  // the Zdrovit courtyard (Medical Avenue, east side): Zdrovit and its six brands' kiosks around a yard
+  // the Zdrovit courtyard (Medical Avenue, east side): Zdrovit and its seven brands' kiosks around a yard
   // (r176: Routine Paris, Darya Hope and Jesse J moved out to their own plots, see STREET_BRANDS)
   var COURT = { x: 1720, z: 5070 };
   var COURT_BRANDS = [
@@ -35597,6 +35604,7 @@ void main() {
       "Echo School": "echo-school", // r159
       "Darya Hope": "darya-hope", "Tracy J": "tracy-j", // r179: their case pages, from the Core decks
       "Litorsal": "litorsal", "Lacalut": "lacalut", // TASK-026: the first two of the Zdrovit yard
+      "Maximag": "maximag", // TASK-064: its own page, and its own kiosk in the yard
       "Steam": "steam", "Steam Coffee Shop": "steam", "OMA Coffee": "oma-coffee", "Antila": "antila", "UNDE": "unde", "UND\xC9": "unde" };
     window.__casePage = (brand) => (WORK_PAGES[brand] && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname) ? WORK_PAGES[brand] : null);
     const withPage = (brand, onClick) => () => { const pg = window.__casePage(brand); if (pg && openFrameHook) return openFrameHook(`/work/${pg}/?embed=1`, brand); return onClick?.(); };
@@ -35661,7 +35669,7 @@ void main() {
       modalBack.appendChild(m);
       openModal();
     };
-    const COURT_TAG = { br: "C", name: "Zdrovit", x: COURT.x - 150, z: COURT.z, line: "7 BRANDS AROUND A YARD", c: "#e30613", t: "#ffffff" };
+    const COURT_TAG = { br: "C", name: "Zdrovit", x: COURT.x - 150, z: COURT.z, line: "8 BRANDS AROUND A YARD" /* TASK-064: + Maximag */, c: "#e30613", t: "#ffffff" };
     const workTags = [...STREET_BRANDS, COURT_TAG, TAC, ...COFFEE_ADDS, ...LANE_BRANDS].map((b) => {
       BRANDC[b.name] = BRANDC[b.name] || { c: b.c, t: b.t };
       // brands with a case page on the website open it full screen (offline copies fall back to the card)

@@ -979,6 +979,9 @@
       // own tag"): nor the arcade or the Lab when the ride stops right by them; they open when they are the place driven to
       // (their pin, their tag or their Nearby entry: D.lastArr below)
       { const tmP = PL.find((q) => q.pl.id === "tm"); if (tmP && Math.hypot(H.carPos.x - tmP.ax, H.carPos.z - tmP.az) < 90 && !(best && best.pl.id === "tm")) best = { pl: tmP.pl, d: Math.hypot(H.carPos.x - tmP.ax, H.carPos.z - tmP.az), p: tmP }; }
+      // TASK-064: a small place (the Zdrovit yard's kiosks) has no kerb in PL, so the car parked for it found Toskani MED,
+      // across the avenue, "here" and swapped the card; the kiosk driven to now stays "here" while the car is by its road point
+      if (!listed && D.lastArr?.small) { const x = D.lastArr.x ?? D.lastArr.px, z = D.lastArr.z ?? D.lastArr.pz; if (x != null && Math.hypot(H.carPos.x - x, H.carPos.z - z) < 110) return { pl: D.lastArr, d: 0, p: null }; }
       // beta 2.6: the place you just arrived at stays "here" (two places can share a stretch of kerb: Dacia 99 read as Echo School)
       if (D.lastArr) { const p = PL.find((q) => q.pl === D.lastArr && !(listed && q.hide)); if (p) { const d = Math.hypot(H.carPos.x - p.ax, H.carPos.z - p.az); if (d < 110) return { pl: p.pl, d, p }; } }
       return best;

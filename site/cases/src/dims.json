@@ -4394,24 +4394,59 @@
 462,
 46588
 ],
-"m:lacalut/maximag-wedge": [
-1440,
-1080,
-71022
-],
-"m:lacalut/maximag-launcher": [
-1600,
-1333,
-182015
-],
 "m:lacalut/lg-film-poster": [
 1280,
 330,
 55321
 ],
-"m:lacalut/maximag-film-poster": [
+"m:maximag/launcher": [
+1600,
+1333,
+182015
+],
+"m:maximag/wedge": [
+1440,
+1080,
+71022
+],
+"m:maximag/banner": [
+1600,
+413,
+140010
+],
+"m:maximag/film-poster": [
 1280,
 330,
 54477
+],
+"m:maximag/box": [
+790,
+1190,
+104346
+],
+"m:maximag/still-forest": [
+882,
+496,
+92402
+],
+"m:maximag/still-list": [
+882,
+496,
+95464
+],
+"m:maximag/still-day": [
+882,
+496,
+126039
+],
+"m:maximag/still-box-in": [
+882,
+496,
+49029
+],
+"m:maximag/still-smile": [
+882,
+496,
+97990
 ]
 }
