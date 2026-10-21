@@ -34910,7 +34910,7 @@ void main() {
       <section class="scf-hero">
         <img class="scf-slow" src="${sAsset20}" alt="SLOW">
         <span class="eyebrow">SLOW COFFEE FESTIVAL \u00B7 BRAND UNIVERSE \u00B7 BY CROMATIC STUDIOS</span>
-        <h1>For five years, we\u2019ve been shaping the face of <em>Slow Coffee Festival</em>.</h1>
+        <h2>For five years, we\u2019ve been shaping the face of <em>Slow Coffee Festival</em>.</h2>
         <p>Not just a logo and a poster, but a positioning and a visual language that connects with people.
         For us, branding is more than design \u2014 it\u2019s <b>meaning</b>, a <b>voice</b> and a <b>vibe made visible</b>.
         A way to turn values into graphics, and graphics into something you actually feel.</p>
