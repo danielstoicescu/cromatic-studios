@@ -130,5 +130,78 @@ export const PREVOMIT = {
   related: RELATED
 };
 
+export const SLABOFICAT = {
+  slug: "slaboficat",
+  name: "Slaboficat",
+  tagline: "slaboficat.ro: a one-page product site for a liver supplement that starts with the liver itself, glowing.",
+  desc: "Slaboficat Slim: slaboficat.ro, the one-page product site for a liver supplement, on desktop and phone. By Cromatic Studios, Bucharest.",
+  title: "The liver, lit up.",
+  accent: { bg: "#6A4FD0", fg: "#ffffff", ink: "#2c10a3" },
+  info: ["Liver supplement, Slaboficat Slim", "Romania · Zdrovit portfolio", "Landing page, desktop and mobile"],
+  cover: { img: m("slaboficat/hero") },
+  og: m("slaboficat/hero"),
+  hero: { img: m("slaboficat/hero"), alt: "slaboficat.ro in a browser window and on a phone: a glowing orange liver inside a blue body, the Slaboficat Slim box and three lines on a violet band" },
+  problem: {
+    h: "Two subjects, one box",
+    p: [
+      "Slaboficat Slim is a food supplement from Zdrovit, in capsules. The site puts its case as a question: “Vrei să ai grijă de ficat și în același timp să menții o greutate optimă a corpului?”",
+      "That is two subjects in one box. The <strong>liver</strong>, which you never see, and your figure, which you see every day.",
+      "The page has to show the first one before it can talk about the second."
+    ]
+  },
+  solution: {
+    h: "Start with the organ",
+    p: "The page opens on the liver itself, glowing orange inside a blue body, with the box beside it and three lines on a violet band. Then it explains what the liver does, brings in the Slim formula, lists the ingredients one by one and ends with tips for the liver and the figure. Violet runs through all of it, from the menu to the order button.",
+    stat: "10",
+    statText: "tips for the liver and the figure, in one list beside a strip of photos, from a lemon to a tape measure"
+  },
+  chapters: [
+    {
+      pillar: "product",
+      pills: ["One", "page"],
+      text: "The menu runs Funcțiile ficatului, SLABOFICAT Slim, Sfaturi, Media, Comandă, Contact. The hero puts the glowing liver on the left and the box on the right, over a violet band with three lines, from “Ajută la regenerarea hepatică” to “Susține sănătatea ficatului”, and an “Află mai multe >>” link. A sentence in bold violet follows, “Ficatul este unul dintre cele mai mari organe din corp…”. Below come the liver's functions, the Slim formula, the ingredients, how to take it, the tips and the order button, above the Zdrovit address.",
+      deliverables: ["Landing page", "UX/UI design", "Desktop and mobile", "Navigation"],
+      media: [
+        siteBlock("slaboficat", "slaboficat.ro", { cap: "slaboficat.ro from the first screen to the footer, on desktop and phone." }),
+        shot("slaboficat", "tips", "Sfaturi pentru ficat și siluetă!: ten tips in a list with violet bullets, beside a strip of photos of a lemon, a pepper, carrots, a tomato and a tape measure", "Ten tips for the liver and the figure")
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["The", "liver"],
+      text: "The product story, the way the site tells it. Three of the liver's functions get a heading each: stocare, secretorie și excretorie, metabolică. Beside them a violet panel draws the liver in a ring, with six lines out to what it does, from Sinteza aminoacizilor to Neutralizarea toxinelor. Then the turn to the figure: SLABOFICAT Slim, a woman with a tape measure round her waist, the box at her side and the site's question. The ingredients follow one per row, each with its picture: Fructele de Armurariu, Colina, Curcuma longa, Piper-negru and Cromul. A violet band gives the dose and the pack in the site's words, “Adulți: 1-2 capsule pe zi, înainte de masă” and “30 capsule”.",
+      deliverables: ["Product story", "Infographic", "Ingredients", "Usage"],
+      media: [
+        shot("slaboficat", "functions", "The liver's functions: Funcția de stocare, Funcția secretorie și excretorie and Funcția metabolică in violet headings, beside a violet panel with the liver in a ring and six functions around it", "Three functions in words, six in a drawing"),
+        shot("slaboficat", "slim", "SLABOFICAT Slim: a woman in white with a tape measure round her waist, two Slaboficat Slim boxes in front of her, and the product text on the right", "The turn to the figure: SLABOFICAT Slim"),
+        shot("slaboficat", "ingredients", "Ingrediente: Fructele de Armurariu with a thistle flower, Colina with its molecule, Curcuma longa and Piper-negru with their pictures, one row each", "The ingredients, one row and one picture each")
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["On a", "phone"],
+      text: "On a phone the logo moves to the centre with the menu icon under it, and the three lines sit under the liver, above “Află mai multe >>”. The violet panel of functions fills the width. Each ingredient gets a block of its own, picture first, and the tips keep their photos, faded behind the text.",
+      deliverables: ["Mobile layout", "One column"],
+      media: [
+        {
+          rail: ["Four", "screens"],
+          items: [
+            shot("slaboficat", "phone-hero", "The first screen on a phone: the Slaboficat Slim logo, the menu icon, the liver and three lines on violet, Află mai multe and the sentence about the liver"),
+            shot("slaboficat", "phone-functions", "The violet panel of the liver's functions on a phone, and SLABOFICAT Slim below it"),
+            shot("slaboficat", "phone-ingredients", "Ingrediente on a phone: Fructele de Armurariu with a thistle flower and its paragraph, then Colina"),
+            shot("slaboficat", "phone-tips", "Sfaturi pentru ficat și siluetă! on a phone, the tips over faded photos of fruit and vegetables")
+          ],
+          cap: "The liver, its functions, the ingredients and the tips, at 390 px wide"
+        }
+      ]
+    },
+    ...spotChapter("slaboficat")
+  ],
+  result: {
+    text: "The organ first, then the box: a liver supplement's page, violet from the menu to the order button."
+  },
+  related: RELATED
+};
+
 // every Zdrovit brand page of the second half, in the order they were made
-export const ZDROVIT_WEB_B = [PREVOMIT];
+export const ZDROVIT_WEB_B = [PREVOMIT, SLABOFICAT];
