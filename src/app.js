@@ -30483,7 +30483,7 @@ void main() {
       // from the front the house hides most of it)
       const back = new Sprite(new SpriteMaterial({ map: haloTex, color: "#ffffff", transparent: true, opacity: 0.4, blending: AdditiveBlending, depthWrite: false, fog: false }));
       back.material.userData.outlineParameters = { visible: false };
-      back.position.set(x * 1.5, 36, -F - 12); back.scale.set(120, 110, 1);
+      back.position.set(x * 1.4, 34, -F - 22); back.scale.set(120, 110, 1); // (well off the back wall: seen from behind it lies over the wall's lower half, a glow round it)
       for (const o of [halo, shaft, pool, back]) { o.frustumCulled = false; o.renderOrder = 3; fxG.add(o); }
       return { halo, shaft, pool, back, glass: glass[i], col: new Color() };
     });
@@ -30510,7 +30510,7 @@ void main() {
         fxG.visible = true;
         // seen from behind the house the halo fades (the house hides the rest): the windows face +x
         cv.copy(cam.position).sub(sph.center).normalize();
-        const face = 0.4 + 0.6 * ss(-0.35, 0.55, cv.x), rear = 0.22 + 0.38 * ss(0.3, -0.6, cv.x); // (the back glow: some always, more from behind)
+        const face = 0.4 + 0.6 * ss(-0.35, 0.55, cv.x), rear = 0.22 + 0.48 * ss(0.3, -0.6, cv.x); // (the back glow: some always, more from behind)
         const still = rm.matches;
         wins.forEach((w, i) => {
           const h = still ? HW_HOLD[i] : i === 0 ? colAt(now, 0, 3) : colAt(now, 0.5, 0);
