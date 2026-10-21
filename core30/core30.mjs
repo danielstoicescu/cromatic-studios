@@ -67,7 +67,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     for (const f of files) {
       try {
         const c = JSON.parse(await readFile(join(configDir, f), "utf8"));
-        out[c.id] = { token: c.access?.token ?? "", name: c.client?.name, contact: c.client?.contact, email: c.client?.email ?? "", file: join(configDir, f) };
+        out[c.id] = { token: c.access?.token ?? "", emailMode: c.access?.email === "optional" ? "optional" : "required", name: c.client?.name, contact: c.client?.contact, email: c.client?.email ?? "", file: join(configDir, f) };
       } catch (e) { console.error("[core30] bad config", f, e.message); }
     }
     if (registry) { try { const r = JSON.parse(await readFile(registry, "utf8")); for (const [id, x] of Object.entries(r)) out[id] = { ...(out[id] ?? {}), ...x }; } catch { /* no registry */ } }
@@ -134,7 +134,8 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     if (!c) return [404, { ok: false, error: "client" }];
     if (c.token && p.token !== c.token) return [403, { ok: false, error: "token" }];
     const email = String(p.email ?? "").trim().toLowerCase();
-    if (!EMAIL.test(email) || email.length > 200) return [422, { ok: false, error: "email" }];
+    // an empty email is a valid start only where the edition says so (blank); a given email must be a real one
+    if (email ? !EMAIL.test(email) || email.length > 200 : c.emailMode !== "optional") return [422, { ok: false, error: "email" }];
     const id = safe(p.clientId);
     const dir = join(dataDir, id);
     await mkdir(dir, { recursive: true });
@@ -142,11 +143,11 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const meta = await readMeta(dir);
     const firstStart = !meta.startedAt;
     meta.startedAt ??= now;
-    meta.startedBy ??= email;
-    meta.starts = [...(meta.starts ?? []), { at: now, email }].slice(-20); // every device or restart, newest last
+    if (email) meta.startedBy ??= email;
+    meta.starts = [...(meta.starts ?? []), email ? { at: now, email } : { at: now }].slice(-20); // every device or restart, newest last
     await atomicWrite(join(dir, "meta.json"), JSON.stringify(meta));
-    await appendLog(dir, { at: now, type: "start", email });
-    if (firstStart) await mail(`[The Core 3.0] ${c.contact || email} a început · ${c.name ?? id}`, `<p><b>${esc(email)}</b> a început The Core 3.0 pentru <b>${esc(c.name ?? id)}</b>, la ${esc(now)}. Fiecare modificare se salvează în ${esc(dir)}.</p>`);
+    await appendLog(dir, email ? { at: now, type: "start", email } : { at: now, type: "start" });
+    if (firstStart && email) await mail(`[The Core 3.0] ${c.contact || email} a început · ${c.name ?? id}`, `<p><b>${esc(email)}</b> a început The Core 3.0 pentru <b>${esc(c.name ?? id)}</b>, la ${esc(now)}. Fiecare modificare se salvează în ${esc(dir)}.</p>`);
     return [200, { ok: true, at: now }];
   }
 
@@ -219,7 +220,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       at: e.at, type: e.type,
       ...(e.module ? { module: e.module.id, title: e.module.title, n: e.module.n, total: e.module.total } : {}),
       ...(e.format ? { format: e.format } : {}),
-      ...(e.type === "start" ? { email: e.email } : {}),
+      ...(e.type === "start" && e.email ? { email: e.email } : {}),
     }));
     const doneIds = new Set(log.filter((e) => e.type === "step").map((e) => e.module));
     const lastStep = [...log].reverse().find((e) => e.type === "step" || e.type === "skip") ?? null;
