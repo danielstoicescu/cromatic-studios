@@ -23679,7 +23679,7 @@ void main() {
             if (culled && renderer.renderLists) { const L = renderer.renderLists.get(scene, 0); drawn = new Set(); for (const a of [L.opaque, L.transmissive, L.transparent]) for (let i = 0; i < a.length; i++) drawn.add(a[i].object); }
             const walk = (o) => {
               if (o.visible === false) return;
-              if (skip && skip(o)) { o.visible = false; hid.push(o); return; }
+              if ((skip && skip(o)) || o.userData.noHull === true) { o.visible = false; hid.push(o); return; } // TASK-098: noHull, a subtree with no hull in any world (light, not matter)
               const ch = o.children;
               if (drawn && ch.length === 0 && (o.isMesh || o.isLine || o.isPoints || o.isSprite) && !drawn.has(o)) { o.visible = false; hid.push(o); return; }
               if (o.layers.test(cl)) { setOutlineMaterial(o); if (drawn && o.frustumCulled && drawn.has(o)) { o.frustumCulled = false; unc.push(o); } }
@@ -30369,10 +30369,13 @@ void main() {
     for (const x of [6, 24]) { const a = arch(13, 17, new MeshStandardMaterial({ color: "#2c2a28", roughness: 0.8 })); a.position.set(x, 0, F + 0.1); g.add(a); const r = archRing(13, 17, 2.4, stoneM); r.position.set(x, 0, F); g.add(r); }
     box(W + 1, 1.2, 1.4, whiteM, 0, 20.4, F + 0.6);
     // first floor: two big arched windows, white mouldings, shutters half down, little columns
+    // TASK-098: each window its own glass (the colours of the night: houseWindowGlow); the loggia keeps glassM
+    const winGlass = [], winShutters = [];
     for (const x of [-15, 15]) {
-      const gl = arch(20, 19, glassM); gl.position.set(x, 23, F + 0.05); g.add(gl);
+      const gm = glassM.clone(); winGlass.push(gm);
+      const gl = arch(20, 19, gm); gl.position.set(x, 23, F + 0.05); g.add(gl);
       const ring = archRing(20, 19, 2.6, whiteM); ring.position.set(x, 23, F + 0.1); g.add(ring);
-      const sh = new Mesh(new BoxGeometry(19, 9, 0.6), shutterM); sh.position.set(x, 33.5, F + 1.7); g.add(sh);
+      const sh = new Mesh(new BoxGeometry(19, 9, 0.6), shutterM); sh.position.set(x, 33.5, F + 1.7); g.add(sh); winShutters.push(sh);
       col(x - 11.5, 23, 13, F + 1.2); col(x + 11.5, 23, 13, F + 1.2);
     }
     // top floor: trefoil-ish arched loggia with columns, projecting lattice balcony
@@ -30403,8 +30406,87 @@ void main() {
     g.scale.set(2.3, 2.3, 2.3);
     g.rotation.y = Math.PI / 2;
     g.position.set(1005, 3, 7350);
+    mats.houseWin = houseWindowGlow(g, winGlass, winShutters, F);
     parent.add(g);
     return g;
+  }
+  // TASK-098 (Daniel: at night, in the story and live on the site, the house's two arched windows change colour, as if a
+  // diffused light came from inside and left the house, very vibrant but lost in fog; the two windows never alike: one
+  // green, one orange, blue, red, magenta...): in the dark worlds (applyScheme's dark: Night Mode, Underwater, GTA 2) the
+  // two first-floor windows of Olari 9 glow from inside, each its own colour, cross-fading round a palette (4 s a colour,
+  // the two windows half a step apart: never the same colour, not even mid-fade, see HW_HUES), the shutters rolled up.
+  // The light spills out as into fog: a halo (a sprite: a tight core and a long soft tail), a shaft that widens and fades
+  // out over the forecourt, a pool on the paving. Six small additive draws, no light, no post pass; drawn and animated
+  // only in a dark world with the house on screen (and not at all while the tab is hidden: no frames); reduced motion
+  // holds one pair (green, orange). By day nothing of it is drawn and the windows are as before
+  var HW_HUES = [135, 28, 225, 356, 310, 188, 50]; // green, orange, blue, red, magenta, cyan, yellow
+  var HW_STEP = 4000, HW_FADE = 1800;
+  function houseWindowGlow(g, glass, shutters, F) {
+    const fxG = new Group(); fxG.name = "houseWinFx"; fxG.visible = false; fxG.userData.noHull = true; // (the hull pass would ink the shaft's rims and draw the halos twice)
+    const radial = (prof) => canvasTexture(128, 128, (ctx, w, h) => {
+      const im = ctx.createImageData(w, h), d = im.data;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * 4, a = prof((x + 0.5) / w, (y + 0.5) / h); d[i] = d[i + 1] = d[i + 2] = 255; d[i + 3] = Math.round(255 * Math.max(0, Math.min(1, a))); }
+      ctx.putImageData(im, 0, 0);
+    });
+    const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+    // the halo: a bright core, a wider glow and a long faint tail (light in fog), to nothing at the edge
+    const haloTex = radial((u, v) => { const r = Math.hypot(u - 0.5, v - 0.5) * 2; return (0.8 * Math.exp(-((r / 0.11) ** 2)) + 0.42 * Math.exp(-((r / 0.3) ** 2)) + 0.2 * (1 - r) ** 2.2) * (1 - ss(0.8, 1, r)); });
+    const add = (map, opacity) => { const m = new MeshBasicMaterial({ map, color: "#ffffff", transparent: true, opacity, blending: AdditiveBlending, depthWrite: false, fog: false, side: DoubleSide }); m.userData.outlineParameters = { visible: false }; return m; };
+    // the shaft: an open cone from the window's opening out and down over the paving, wider; drawn as a volume (each
+    // face by how squarely it is seen: its silhouette melts away, no hard sides) that fades out along its length
+    const L = 60, N0 = [0, 32.5, F + 0.6], N1 = [0, 13, F + L];
+    const shaftGeo = new CylinderGeometry(9.5, 25, Math.hypot(N1[1] - N0[1], L), 20, 1, true); // (its top, the narrow end, at the window; uv.y 1 there, 0 at the far rim: clamped in the shader, a pow of a hair
+    // under 0 is a NaN, which the half-float target and the blur after it spread into black dashes along the rim)
+    const shaftQ = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), new Vector3(0, N0[1] - N1[1], N0[2] - N1[2]).normalize());
+    const shaftM = () => { const m = new ShaderMaterial({
+      uniforms: { color: { value: new Color() }, opacity: { value: 0.55 } }, transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide,
+      vertexShader: "#include <common>\nvarying vec3 vN; varying vec3 vV; varying float vA; void main(){ vA = uv.y; vec4 w = modelMatrix * vec4(position, 1.0); w.xz = cityWarp(w.xz); vec4 mv = viewMatrix * w; vV = -mv.xyz; vN = normalMatrix * normal; gl_Position = projectionMatrix * mv; }",
+      fragmentShader: "uniform vec3 color; uniform float opacity; varying vec3 vN; varying vec3 vV; varying float vA; void main(){ float f = abs(dot(normalize(vN), normalize(vV))); float a = clamp(vA, 0.0, 1.0); float k = f * f * a * sqrt(a) * opacity; gl_FragColor = vec4(color * k, 1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}"
+    }); m.userData.outlineParameters = { visible: false }; return m; };
+    const poolGeo = new PlaneGeometry(1, 1); poolGeo.rotateX(-Math.PI / 2);
+    const wins = [-15, 15].map((x, i) => {
+      const halo = new Sprite(new SpriteMaterial({ map: haloTex, color: "#ffffff", transparent: true, opacity: 1, blending: AdditiveBlending, depthWrite: false, fog: false }));
+      halo.material.userData.outlineParameters = { visible: false };
+      halo.position.set(x, 33, F + 8); halo.scale.set(96, 96, 1);
+      const shaft = new Mesh(shaftGeo, shaftM()); shaft.position.set(x, (N0[1] + N1[1]) / 2, (N0[2] + N1[2]) / 2); shaft.quaternion.copy(shaftQ);
+      const pool = new Mesh(poolGeo, add(haloTex, 0.75)); pool.position.set(x * 1.25, 0.3, F + 24); pool.scale.set(54, 1, 44);
+      for (const o of [halo, shaft, pool]) { o.frustumCulled = false; o.renderOrder = 3; fxG.add(o); }
+      return { halo, shaft, pool, glass: glass[i], col: new Color() };
+    });
+    g.add(fxG);
+    const rm = matchMedia("(prefers-reduced-motion: reduce)"), fr = new Frustum(), m4 = new Matrix4(), hv = new Vector3(), cv = new Vector3();
+    const sph = new Sphere(warpV(new Vector3(g.position.x, 60, g.position.z)), 300); // the house and its glow, in the bent world
+    const hue = (h0, h1, k) => { let d = ((h1 - h0 + 540) % 360) - 180; return (((h0 + d * k) % 360) + 360) % 360; };
+    const colAt = (t, off, idx0) => { // a colour of the cycle at time t (ms): held, then a cross-fade round the hue wheel to the next
+      const s = t / HW_STEP + off, a = Math.floor(s), f = (s - a) * HW_STEP, k = ss(HW_STEP - HW_FADE, HW_STEP, f), n = HW_HUES.length;
+      return hue(HW_HUES[(((a + idx0) % n) + n) % n], HW_HUES[(((a + idx0 + 1) % n) + n) % n], k);
+    };
+    let dark = false;
+    return {
+      group: fxG,
+      setDark(on) {
+        dark = on; fxG.visible = false;
+        for (const sh of shutters) { sh.scale.y = on ? 0.25 : 1; sh.position.y = on ? 40 : 33.5; } // rolled up at night
+        for (const w of wins) { w.glass.emissiveIntensity = on ? 1.05 : 0; if (!on) w.glass.emissive.set("#ffcf8a"); }
+      },
+      update(now, cam) {
+        if (!dark) return;
+        m4.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); fr.setFromProjectionMatrix(m4);
+        if (!fr.intersectsSphere(sph)) { fxG.visible = false; return; }
+        fxG.visible = true;
+        // seen from behind the house the halo fades (the house hides the rest): the windows face +x
+        cv.copy(cam.position).sub(sph.center).normalize();
+        const face = 0.3 + 0.7 * ss(-0.35, 0.55, cv.x);
+        const still = rm.matches;
+        wins.forEach((w, i) => {
+          const h = still ? HW_HUES[i] : i === 0 ? colAt(now, 0, 0) : colAt(now, 0.5, 3);
+          w.col.setHSL(h / 360, 1, 0.5, SRGBColorSpace);
+          w.glass.emissive.copy(w.col);
+          w.halo.material.color.copy(w.col); w.halo.material.opacity = 0.72 * face;
+          w.shaft.material.uniforms.color.value.copy(w.col); w.pool.material.color.copy(w.col);
+        });
+      }
+    };
   }
   // r185: the arrival at Olari 9 (see BLVD_W, OLARI_PLAZA): the forecourt, paved in the ring's colour, joined to the
   // boulevard by two fillets (the road widens into it); the casing runs round it; a gateway over its mouth with the
@@ -37036,6 +37118,7 @@ void main() {
         if (mats.yoshiGlow) mats.yoshiGlow.emissiveIntensity = dark ? 1 : 0;
         if (mats.yoshiLantern) mats.yoshiLantern.emissiveIntensity = dark ? 2.2 : 0.15;
         for (const [m, k] of STREET_GLOW) m.emissiveIntensity = dark ? k : 0;
+        mats.houseWin?.setDark(dark); // TASK-098: the house's windows, in colour at night
         if (mats.omaGlow) mats.omaGlow.emissiveIntensity = dark ? 1 : 0;
         if (mats.bereroGlow) mats.bereroGlow.emissiveIntensity = dark ? 1 : 0;
         for (const k of ["artisanGlow", "pastiziaGlow", "blankAGlow", "blankBGlow"]) if (mats[k]) mats[k].emissiveIntensity = dark ? 1 : 0;
@@ -40333,6 +40416,7 @@ void main() {
         if (mvFx.group.visible) mvFx.update(now * 0.001, window.__lookSm);
         if (uwFx && uwFx.group.visible) uwFx.update(now * 0.001, dt, window.__lookSm);
         if (worldFx) worldFx.update(now * 0.001, dt, window.__lookSm);
+        mats.houseWin?.update(now, camera); // TASK-098
         if (FOUNTAIN && !siteMode) FOUNTAIN.update(now * 0.001);
         farClouds.rotation.y += dt * 0.006;
         const prog = state.L / route.total;
