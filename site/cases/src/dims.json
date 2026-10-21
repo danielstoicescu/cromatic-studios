@@ -4278,5 +4278,140 @@
 1920,
 1080,
 115354
+],
+"m:litorsal/heat-billboard": [
+1600,
+1200,
+266715
+],
+"m:litorsal/heat-packs": [
+1600,
+1200,
+275821
+],
+"m:litorsal/heat-first": [
+1600,
+1200,
+250290
+],
+"m:litorsal/heat-tall": [
+1100,
+1634,
+252725
+],
+"m:litorsal/heat-6x3": [
+1600,
+838,
+179910
+],
+"m:litorsal/heat-250x110": [
+1600,
+800,
+160272
+],
+"m:litorsal/vibe-banner": [
+1600,
+641,
+104507
+],
+"m:litorsal/vibe-metro": [
+1600,
+1067,
+153287
+],
+"m:litorsal/vibe-metro-wide": [
+1600,
+800,
+133672
+],
+"m:litorsal/vibe-metro-tall": [
+900,
+2025,
+170768
+],
+"m:litorsal/vibe-metro-portrait": [
+900,
+1621,
+134327
+],
+"m:litorsal/family-poster": [
+1600,
+1076,
+211076
+],
+"m:litorsal/family-portrait": [
+900,
+1606,
+163193
+],
+"m:litorsal/family-sky": [
+1600,
+811,
+155299
+],
+"m:litorsal/family-navy": [
+1600,
+811,
+153937
+],
+"m:litorsal/family-blue": [
+1600,
+811,
+156171
+],
+"m:litorsal/tubes": [
+1600,
+1022,
+150721
+],
+"m:litorsal/boxes": [
+1600,
+978,
+178722
+],
+"m:lacalut/lg-banner": [
+1600,
+412,
+75210
+],
+"m:lacalut/lg-launcher": [
+1200,
+1000,
+127380
+],
+"m:lacalut/lg-wedge": [
+1440,
+1080,
+76026
+],
+"m:lacalut/portrait": [
+1600,
+893,
+94218
+],
+"m:lacalut/tube": [
+1600,
+462,
+46588
+],
+"m:lacalut/maximag-wedge": [
+1440,
+1080,
+71022
+],
+"m:lacalut/maximag-launcher": [
+1600,
+1333,
+182015
+],
+"m:lacalut/lg-film-poster": [
+1280,
+330,
+55321
+],
+"m:lacalut/maximag-film-poster": [
+1280,
+330,
+54477
 ]
 }

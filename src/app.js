@@ -35596,6 +35596,7 @@ void main() {
       // known here too, so every card that asks "is there a page?" gets the built one, with the shared ending
       "Echo School": "echo-school", // r159
       "Darya Hope": "darya-hope", "Tracy J": "tracy-j", // r179: their case pages, from the Core decks
+      "Litorsal": "litorsal", "Lacalut": "lacalut", // TASK-026: the first two of the Zdrovit yard
       "Steam": "steam", "Steam Coffee Shop": "steam", "OMA Coffee": "oma-coffee", "Antila": "antila", "UNDE": "unde", "UND\xC9": "unde" };
     window.__casePage = (brand) => (WORK_PAGES[brand] && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname) ? WORK_PAGES[brand] : null);
     const withPage = (brand, onClick) => () => { const pg = window.__casePage(brand); if (pg && openFrameHook) return openFrameHook(`/work/${pg}/?embed=1`, brand); return onClick?.(); };
