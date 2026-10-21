@@ -1,0 +1,18 @@
+{
+ "_": "TASK-076 (second half, Mira): the Lacalut website chapter, lacalut.ro (the home page, a long one: the phone scroll is 430 wide so it stays under WebP's 16383 px; its older product sub-sites, /white/, /aktiv/, /kids/, are another design and are not shown). Captures in ~/cromatic-ops/refs/zdrovit-pages/lacalut-web/shots. Crops in capture px (desktop 2880 wide, phone 780 wide). Every name starts with web- (the page's LG pictures share site/media/lacalut/).",
+ "label": "lacalut.ro",
+ "field": ["#fbe6e7", "#c9202d"],
+ "shots": "../lacalut-web/shots",
+ "out": {
+  "web-scroll": { "kind": "plain", "src": "desktop-full.png", "width": 1200, "q": 72 },
+  "web-scroll-phone": { "kind": "plain", "src": "phone-full.png", "width": 430, "q": 74 },
+  "web-menu": { "kind": "browser", "src": "desktop-menu-ingrijire.png", "crop": [0, 0, 2880, 1300] },
+  "web-pure": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 2930, 2880, 1640] },
+  "web-range": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 4540, 2880, 2640] },
+  "web-kids": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 12332, 2880, 2000] },
+  "web-phone-hero": { "kind": "phone", "src": "phone-full.png", "y": 0 },
+  "web-phone-pure": { "kind": "phone", "src": "phone-full.png", "y": 3346 },
+  "web-phone-mouthwash": { "kind": "phone", "src": "phone-full.png", "y": 12038 },
+  "web-phone-kids": { "kind": "phone", "src": "phone-full.png", "y": 20044 }
+ }
+}
