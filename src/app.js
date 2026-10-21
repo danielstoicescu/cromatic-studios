@@ -25041,7 +25041,11 @@ void main() {
         mesh2.setColorAt(i, col.clone().offsetHSL(0, 0, 0.05));
       }
     };
+    let tinted = null; // TASK-060: the tint the trees have now ("blossom|pale"): a world switch to the same tint repaints nothing
     const tintAll = (blossom, pale) => { // beta 3.76: pale = the notebook's sage pencil (light, so the hatch stays airy)
+      const tk = !!blossom + "|" + !!pale; // (the same seed every time: the same colours; ~10-45 ms at 4x CPU for the thousands of trees, paid by every switch and every Multiverse preview step twice)
+      if (tk === tinted) return;
+      tinted = tk;
       const rndT = rng(999);
       const paint = (mesh, mesh2, list, hueBase) => {
         for (let i = 0; i < list.length; i++) {
@@ -25643,7 +25647,7 @@ void main() {
         const m = new Mesh(toGeo(B), mat);
         // phones: the city's own blocks skip the shadow pass (the landmarks keep theirs)
         m.castShadow = !window.matchMedia("(max-width: 719px)").matches; m.receiveShadow = list;
-        if (list) { m.userData.def = m.geometry.attributes.color.array.slice(0); mats.cityTiles.push(m); parent.add(m); }
+        if (list) { m.userData.colorDef = m.geometry.attributes.color; mats.cityTiles.push(m); parent.add(m); } // TASK-060: the city's own colours, kept as they are (was a copy of the array, to copy back)
         else mvProps.add(m);
       }
       yield;
@@ -34447,7 +34451,7 @@ void main() {
     });
     const setWorldPreview = (i, url) => {
       const im = themeRows[i]?.querySelector(".wt-img img");
-      if (!im) return;
+      if (!im || im.getAttribute("src") === url) return; // TASK-060: an opening of the menu with the same picture sets nothing (no reload, no restyle)
       im.src = url;
       im.hidden = false;
       themeRows[i].classList.add("ready");
@@ -36370,12 +36374,13 @@ void main() {
           applyScheme((state.schemeIdx + 1) % SCHEMES.length);
         },
         setScheme(i) {
+          worldSetAt = performance.now();
           // TASK-014 (perf-rest): a switch into Sketchbook before its textures are made (the warm-up after the opening makes
           // them, in slices) makes them in slices first, then switches (the menu has closed; the city keeps drawing meanwhile:
           // ~0.25 s at 4x CPU, ~60 ms on a laptop, where the old one-go switch froze the page for as long). A later choice wins
           if (SCHEMES[i]?.id === "sketch" && !ONB_MODE) { const prep = sketchPrep(true); if (prep) { const tok = ++schemeTok; prep.then(() => { if (tok === schemeTok) api.setScheme(i); }); return; } }
           schemeTok++;
-          applyScheme(i);
+          applyScheme(i, true); // TASK-060: the page's colours a frame later (schemePageLater)
           // every environment comes with its own vehicle
           const vid = ENV_VEH[SCHEMES[i].id];
           if (vid && vid !== state.vehicleId) { state._vehAuto = true; try { api.setVehicle(vid); } finally { state._vehAuto = false; } }
@@ -36415,7 +36420,7 @@ void main() {
           xpAnnounce(m.pts, m.title, m.learn, "msg", "contact");
           setTimeout(() => { if (xpPending && xpPending.stopId === "contact") xpCommit(true); }, 400);
         },
-        worldPreviews(onEach) { makeWorldPreviews(onEach); },
+        worldPreviews(onEach) { makeWorldPreviews(onEach); if (!ONB_MODE) sketchPrep(); }, // TASK-060 (9): the menu is open, Sketchbook gets ready (in slices; nothing when it is)
         stepChapter(dir) {
           const order = STOPS.filter((s) => s.id !== "contact" || state.secretOpen);
           const i = order.findIndex((s) => s.id === state.stopId);
@@ -36461,6 +36466,7 @@ void main() {
         return placeShotCache[key];
       }
       var worldPrevCache = { key: null, urls: [] }, worldPrevBusy = false, worldPrevNow = false; // beta 3.46 r215 (Daniel, QA pass): worldPrevNow = a preview's own scheme switch (not the visitor's)
+      var worldSetAt = -1e9; // TASK-060: when a visitor last chose a world (the previews wait 5 s after it)
       // beta 3.xx (the Multiverse menu, QA 19 October: its previews made 100-600 ms frames as it opened): a world a step, as
       // before, but (1) each step runs inside the map's own frame (beta 3.83: at the start of its work, see frameStep), so
       // the real view is no longer drawn a second time to cover the preview (the frame's own draw does); (2) the JPEG is
@@ -36468,15 +36474,25 @@ void main() {
       // wait for idle time (not one every frame); (5) after the opening they are made once ahead, while the car stands
       // still (prewarmWorlds), so the first opening of the menu finds them, and every world's first-time costs (its
       // textures, its post pass and their programs) are paid then, not as the menu opens
+      // TASK-060 (perf-menu, QA 20 October: the menu cost ~1.1-1.2 s of main thread at 4x CPU every time it opened, and the
+      // first switch to Sketchbook from it 1.17 s in 8 pieces): (6) each picture keeps the place it was made for (keys), a
+      // new round makes only the worlds whose picture is not from here, so an opening finds them made and draws none; (7) a
+      // step switches only the 3D side (see applyScheme: no page restyle, no sound), and the walks that change nothing are
+      // left out; (8) the steps run at the menu's pace only while it is open: once it closes (a world picked, or not), the
+      // rest wait for quiet moments as the warm-up does, so a switch from the menu is no longer followed by eight preview
+      // steps of 150-320 ms; (9) the menu opening starts Sketchbook's own preparation (sketchPrep, slices), the world a
+      // visitor is about to choose
       var worldPrevJob = null;
-      function makeWorldPreviews(onEach, opts = {}) {
+      function makeWorldPreviews(onEach) {
         const key = Math.round(state.L / 600) + (state.branchChosen ? state.branch : "-");
-        const have = worldPrevCache.urls || [];
+        const have = worldPrevCache.urls || [], keys = worldPrevCache.keys || [];
         have.forEach((u, i) => u && onEach(i, u)); // (the last ones, maybe from a little way back: replaced as the new ones land)
-        if (worldPrevCache.key === key && have.filter(Boolean).length >= SCHEMES.filter((s) => !s.proto).length) return;
+        const fresh = (k) => !!worldPrevCache.urls?.[k] && worldPrevCache.keys?.[k] === key;
+        const done = (k) => SCHEMES[k].proto || fresh(k); // (worlds prototype: no tile, no preview)
+        if (SCHEMES.every((_, k) => done(k))) return;
         if (worldPrevBusy) { worldPrevCache.onEach = onEach; return; }
         worldPrevBusy = true;
-        worldPrevCache = { key, urls: have.slice(), onEach };
+        worldPrevCache = { key, urls: have.slice(), keys: keys.slice(), onEach };
         const pw = 216, ph = 288;
         const pcam = new PerspectiveCamera(40, pw / ph, 10, 45000);
         const out = document.createElement("canvas");
@@ -36484,15 +36500,21 @@ void main() {
         const octx = out.getContext("2d");
         const tgt = new Vector3(), dir = new Vector3();
         let i = 0;
+        const still = () => !ui?.themeMenu?.classList.contains("open"); // (8: the warm-up's pace, unless the menu is open: then the menu's, warm-up or not)
+        // (the warm-up: not while the car moves, nor within 2 s of a touch or a key; (8) nor within 5 s of a world chosen)
+        const quiet = () => !(nav2?.on && Math.abs(nav2.speed?.() || 0) > 2) && performance.now() - mapIdleAt >= 2000 && performance.now() - worldSetAt >= 5000;
+        // the next step: when the page is idle (and quiet, for the warm-up), in the next frame
+        const go = () => { if (still() && !quiet()) return setTimeout(() => (window.requestIdleCallback || setTimeout)(go, { timeout: 2000 }), 600); worldPrevJob = step; };
         const next = () => {
+          while (i < SCHEMES.length && done(i)) i++; // (6)
           if (i >= SCHEMES.length) { worldPrevBusy = false; return; }
-          // the next step: when the page is idle (and the car is not moving, for the warm-up), in the next frame
-          const go = () => { if (opts.still && ((nav2?.on && Math.abs(nav2.speed?.() || 0) > 2) || performance.now() - mapIdleAt < 2000)) return setTimeout(() => (window.requestIdleCallback || setTimeout)(go, { timeout: 2000 }), 600); worldPrevJob = step; }; // (the warm-up: not while the car moves, nor within 2 s of a touch or a key)
           const prep = SCHEMES[i].id === "sketch" ? sketchPrep() : null; // TASK-014: Sketchbook's textures first, in slices
-          if (prep) { prep.then(() => (window.requestIdleCallback || ((f) => setTimeout(f, 60)))(go, { timeout: opts.still ? 3000 : 250 })); return; }
-          (window.requestIdleCallback || ((f) => setTimeout(f, 60)))(go, { timeout: opts.still ? 3000 : 250 });
+          const wait = () => (window.requestIdleCallback || ((f) => setTimeout(f, 60)))(go, { timeout: still() ? 3000 : 250 });
+          if (prep) { prep.then(wait); return; }
+          wait();
         };
         const step = () => {
+          if (still() && !quiet()) { go(); return; } // (8: asked for at the menu's pace, and the menu has closed since, or a touch came: later)
           const k = i, orig = state.schemeIdx, sch = SCHEMES[k];
           if (sch.proto) { i++; next(); return; } // worlds prototype: no tile, no preview
           worldPrevNow = true;
@@ -36524,7 +36546,7 @@ void main() {
             octx.drawImage(renderer.domElement, 0, H - ph * pr, pw * pr, ph * pr, 0, 0, out.width, out.height);
             veh.group.visible = vis;
             const cache = worldPrevCache;
-            out.toBlob((bl) => { if (!bl || cache !== worldPrevCache) return; const u = URL.createObjectURL(bl); cache.urls[k] = u; cache.onEach?.(k, u); }, "image/jpeg", 0.84);
+            out.toBlob((bl) => { if (!bl || cache !== worldPrevCache) return; const u = URL.createObjectURL(bl); cache.urls[k] = u; cache.keys[k] = key; cache.onEach?.(k, u); }, "image/jpeg", 0.84);
           } catch (e) {
           } finally {
             renderer.setScissorTest(false);
@@ -36631,7 +36653,7 @@ void main() {
         const idle = () => new Promise((r) => { const go = () => (window.requestIdleCallback || ((f) => setTimeout(f, 100)))(() => (quiet() ? r() : setTimeout(go, 600)), { timeout: 3000 }); go(); });
         await sketchWarmSoon(); // TASK-014: in slices (started right after the opening's compile), no longer one task each
         await idle();
-        try { makeWorldPreviews(() => {}, { still: true }); } catch (e) {}
+        try { makeWorldPreviews(() => {}); } catch (e) {} // (at the warm-up's pace while the menu is closed: see makeWorldPreviews (8))
       }
       function rebuildGolden() {
         scene.remove(golden);
@@ -37051,34 +37073,56 @@ void main() {
           } else if (o.userData.mp0) o.material = o.userData.mp0;
         });
       }
-      function applyScheme(idx) {
-        paintWorldBtn();
-        if (state.schemeIdx != null && state.schemeIdx !== idx && !onbWarm && !worldPrevNow) czEv("world_change", { world: SCHEMES[idx]?.id }); // r141: not the warm-up
-        // beta 3.46 r215 (Daniel, QA pass): nor the Multiverse card's previews, which ran every world and back (16 world_change per opening)
-        state.schemeIdx = idx;
-        const s = SCHEMES[idx];
-        warmShaders(); // r139b
-        window.__czAmb?.world(s.id);
-        if (s.id === "sketch") try { crayonTextures(); notebookUI(); nbVarsFlush(); } catch (e) {} // beta 3.76: and the notebook's pencil hatch for the interface (TASK-014: its CSS variables set here, with the switch's own style recalc)
-        const nb = s.id === "sketch" || s.id === "blueprint"; // worlds prototype: Blueprint is the notebook's machinery, printed in reverse
-        // worlds prototype: the blueprint's sheet is dark (a dark interface), its city is lit as the notebook's by day
-        const uiDark = lum(s.bg) < 0.45, dark = uiDark && s.id !== "blueprint";
-        isDarkScheme = dark;
+      // the page's side of the world in state.schemeIdx: the body's world classes, the colour variables on :root (TASK-014:
+      // the notebook's too), the world's name. A style recalc of the whole page follows (~800 elements on a phone's map)
+      function schemePage() {
+        const s = SCHEMES[state.schemeIdx], uiDark = lum(s.bg) < 0.45; // (worlds prototype: Blueprint's interface is dark, its city lit by day: see applyScheme)
+        if (s.id === "sketch") try { nbVarsFlush(); } catch (e) {}
         document.body.classList.toggle("dark-ui", uiDark);
         document.body.className = document.body.className.replace(/\bscheme-[\w-]+/g, "").trim();
         document.body.classList.add(`scheme-${s.id}`);
-        if (scene.fog) { scene.fog.near = s.id === "nightlife" ? 1100 : 900; scene.fog.far = s.id === "nightlife" ? 5200 : 4200; }
-        if (veh?.beams) veh.beams.visible = dark;
-        veh?.lampGlow?.(dark); // r138f
-        copCar?.lampGlow?.(dark); // r201: the chaser is the 1310 now, its lamps too
-        chromeTone(scene, dark ? 0.4 : 1); // r138l: the chrome's studio room, dimmed at night
-        cityTone(scene, dark ? 0.3 : 1); // r138n: and the city's reflections (low ambient at night: less, or paint glows)
         const cs = document.documentElement.style;
         cs.setProperty("--bg", s.bg);
         cs.setProperty("--fg", s.fg);
         cs.setProperty("--accent", s.ac);
         cs.setProperty("--card-bg", uiDark ? mixC(s.bg, "#ffffff", 0.07).getStyle() : mixC(s.bg, "#ffffff", 0.5).getStyle());
         ui.setThemeName(s.n);
+      }
+      // TASK-060: a visitor's switch (api.setScheme) draws the new world in the next frame and gives the page its colours
+      // right after that frame, in a task of its own with its restyle (one frame later: ~20-40 ms on a slow phone), where
+      // the restyle and the new world's first frame were one piece. The world it applies is the one chosen last
+      var schemePageT = 0;
+      function schemePageLater() {
+        if (schemePageT) return;
+        schemePageT = requestAnimationFrame(() => setTimeout(function schemePageRun() { schemePageT = 0; schemePage(); void document.body.offsetWidth; }, 0));
+      }
+      function applyScheme(idx, pageLater) {
+        // TASK-060 (perf-menu): a Multiverse preview's switch (worldPrevNow: to a world and back, inside one frame) is the 3D
+        // side only. The page's side (the body's world classes, the colour variables on :root, the world's name, the
+        // world button's picture, the ambient sound, the compile ahead) gave every preview step a style recalc of the whole
+        // page (and the sound its world twice); none of it is in the picture
+        const page = !worldPrevNow;
+        if (page) paintWorldBtn();
+        const pageNow = page && !pageLater;
+        if (state.schemeIdx != null && state.schemeIdx !== idx && !onbWarm && !worldPrevNow) czEv("world_change", { world: SCHEMES[idx]?.id }); // r141: not the warm-up
+        // beta 3.46 r215 (Daniel, QA pass): nor the Multiverse card's previews, which ran every world and back (16 world_change per opening)
+        state.schemeIdx = idx;
+        const s = SCHEMES[idx];
+        if (page) warmShaders(); // r139b
+        if (page) window.__czAmb?.world(s.id);
+        if (s.id === "sketch") try { crayonTextures(); notebookUI(); } catch (e) {} // beta 3.76: and the notebook's pencil hatch for the interface (its CSS variables: schemePage)
+        const nb = s.id === "sketch" || s.id === "blueprint"; // worlds prototype: Blueprint is the notebook's machinery, printed in reverse
+        // worlds prototype: the blueprint's sheet is dark (a dark interface: schemePage), its city is lit as the notebook's by day
+        const dark = lum(s.bg) < 0.45 && s.id !== "blueprint";
+        isDarkScheme = dark;
+        if (pageNow) schemePage(); else if (page) schemePageLater();
+        if (scene.fog) { scene.fog.near = s.id === "nightlife" ? 1100 : 900; scene.fog.far = s.id === "nightlife" ? 5200 : 4200; }
+        if (veh?.beams) veh.beams.visible = dark;
+        veh?.lampGlow?.(dark); // r138f
+        copCar?.lampGlow?.(dark); // r201: the chaser is the 1310 now, its lamps too
+        // (a preview step leaves the two scene walks out when their value does not change: light world to light world)
+        if (page || _chromeK !== (dark ? 0.4 : 1)) chromeTone(scene, dark ? 0.4 : 1); // r138l: the chrome's studio room, dimmed at night
+        if (page || _cityK !== (dark ? 0.3 : 1)) cityTone(scene, dark ? 0.3 : 1); // r138n: and the city's reflections (low ambient at night: less, or paint glows)
         scene.background = new Color(s.bg);
         const mv = s.id === "monument";
         {
@@ -37111,11 +37155,15 @@ void main() {
           scene.fog.far = mv ? 34000 : s.id === "nightlife" ? 5200 : 4200;
           if (mats.mvWalls) {
             const pastel = mv || s.id === "sincity" || s.id === "riso" || s.id === "interbelic"; // worlds prototype: the pastel city reads as varied stucco and stone in sepia
-            for (const m of mats.cityTiles) { const a = m.geometry.attributes; a.color.array.set(pastel ? a.colorMV.array : m.userData.def); a.color.needsUpdate = true; }
+            // TASK-060: the city's tile colours, pastel or its own: the geometry draws the one attribute or the other (both
+            // already on the GPU: every attribute of a geometry is uploaded) where it copied one array into the other and
+            // uploaded it again, both ways, on every switch and every preview step; only when the palette changes; the
+            // windows' map and its program check only when the map changes
+            if (mats.tilesPastel !== pastel) { mats.tilesPastel = pastel; for (const m of mats.cityTiles) { const g = m.geometry; g.setAttribute("color", pastel ? g.attributes.colorMV : m.userData.colorDef); } }
             mats.mvProps.visible = mv;
             if (!mats.winMV) { mats.winDef = mats.buildings.map; mats.winMV = makeWindowTextureMV(); mats.winMV.wrapS = mats.winMV.wrapT = RepeatWrapping; }
-            mats.buildings.map = pastel ? mats.winMV : mats.winDef;
-            mats.buildings.needsUpdate = true;
+            const wm = pastel ? mats.winMV : mats.winDef;
+            if (mats.buildings.map !== wm) { mats.buildings.map = wm; mats.buildings.needsUpdate = true; }
           }
         }
         mats.ground?.color.copy(mixC(s.bg, s.fg, dark ? 0.1 : 0.07));
@@ -37227,21 +37275,10 @@ void main() {
         if (typeof sketchRings !== "undefined" && sketchRings) sketchRings.g.visible = s.id === "sketch";
         // r130f: Sketchbook draws a heavier pencil: the ink hull round everything is thicker (the default 18e-4 is
         // under a pixel from the map's height and antialiases away); the parameters are read every render
-        {
-          const want = nb ? 21e-4 : void 0;
-          if (scene.userData.sketchHull !== want) {
-            scene.userData.sketchHull = want;
-            scene.traverse((o) => {
-              if (!o.material) return;
-              for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
-                const op = m.userData.outlineParameters;
-                if (op && op.visible === false) continue;
-                if (want === void 0) { if (op) delete op.thickness; }
-                else m.userData.outlineParameters = { ...(op || {}), thickness: want };
-              }
-            });
-          }
-        }
+        // TASK-060: only while Sketchbook draws the hull at all (nbHull, off since beta 3.76: its ink comes from the depth
+        // folds): without it the thickness is read by no draw, and the two walks of the whole scene (~15-30 ms at 4x CPU)
+        // were paid by every switch into and out of Sketchbook and by every preview step from or to it
+        sketchHullSync();
         // Sketchbook draws with light only: the city's own colours go (a shader recompile, once per switch)
         for (const m of [mats.buildings, mats.roofs]) { const vc = !nb && !(m === mats.roofs && s.id === "interbelic"); if (m && m.vertexColors !== vc) { m.vertexColors = vc; m.needsUpdate = true; } } // worlds prototype: Interbelic's roofs in one tone
         protoRoadMaps(s.id); // worlds prototype: cobbles (Interbelic), dashed kerbs (Blueprint), nothing elsewhere
@@ -37318,6 +37355,20 @@ void main() {
           mats.roadMinor?.color.set("#6f9aa8"); mats.roadMajor?.color.set("#5d8a9a"); mats.roadCasing?.color.set("#23485a");
           renderer.toneMappingExposure = 1.2;
         }
+      }
+      function sketchHullSync() {
+        const id = SCHEMES[state.schemeIdx]?.id, want = (id === "sketch" || id === "blueprint") && nbHull ? 21e-4 : void 0; // (worlds prototype: Blueprint draws with the notebook's pass)
+        if (scene.userData.sketchHull === want) return;
+        scene.userData.sketchHull = want;
+        scene.traverse((o) => {
+          if (!o.material) return;
+          for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+            const op = m.userData.outlineParameters;
+            if (op && op.visible === false) continue;
+            if (want === void 0) { if (op) delete op.thickness; }
+            else m.userData.outlineParameters = { ...(op || {}), thickness: want };
+          }
+        });
       }
       applyScheme(Math.max(0, SCHEMES.findIndex((x) => x.id === PROTO_WORLD))); // worlds prototype: the drive opens in it too
       var RAIN_N = 500;
@@ -43267,11 +43318,18 @@ void main() {
               o.gy = Math.round(Math.max(0, gy - o.y)); o.gw = Math.round(Math.min(220, Math.max(26, gw)));
               return o;
             }).sort((a, b) => (b.p.pl === mapNav.place) - (a.p.pl === mapNav.place) || (a.p.pl.chapter ? 1 : 0) - (b.p.pl.chapter ? 1 : 0) || a.y - b.y);
+            const tNow = performance.now();
             for (const o of order) {
               // pins never slide under the top bar (phones: under the map bar either)
               const off = mapIntro || o.z > 1 || o.x < -80 || o.x > W + 80 || o.y < (o.p.pl === mapNav.place ? 70 : W < 720 ? 190 : 110) || o.y > H + 80;
-              if (o.p.b._off !== off) { o.p.b._off = off; o.p.b.classList.toggle("off", off); }
-              if (off) continue;
+              const pb = o.p.b;
+              if (pb._off !== off) { pb._off = off; pb.classList.toggle("off", off); pb._offAt = tNow; if (!off && pb._cv) { pb._cv = false; pb.classList.remove("cv"); } }
+              // TASK-060: a pin out of sight for a while (faded out) is set aside: moved off the screen with its contents left
+              // unrendered (.cv: content-visibility auto, so still read by screen readers and reachable by Tab). On a phone's
+              // map 58 of the 61 pins are out of sight, ~440 of the page's ~920 styled elements: every restyle of the whole
+              // page (a world switch, the menu's opening) styled them too. It comes back as it comes on screen, in the same
+              // frame (its place set below)
+              if (off) { if (!pb._cv && tNow - pb._offAt > 700) { pb._cv = true; pb.classList.add("cv"); pb._tx = pb._ty = null; pb.style.transform = "translate3d(-9999px, -9999px, 0)"; } continue; }
               if (o.p.b._gy !== o.gy) { o.p.b._gy = o.gy; o.p.b.style.setProperty("--gy", o.gy + "px"); }
               if (o.p.b._gw !== o.gw) { o.p.b._gw = o.gw; o.p.b.style.setProperty("--gw", o.gw + "px"); }
               // r125: the place you are at keeps the stage: whatever would sit on its label turns into a dot
@@ -43583,7 +43641,7 @@ void main() {
           out.sort((a, b) => a - b);
           return { min: +out[0].toFixed(2), med: +out[trials >> 1].toFixed(2) };
         },
-        nbHull(on) { nbHull = !!on; return nbHull; }, // beta 3.76: the notebook with or without OutlineEffect's hull pass (A/B)
+        nbHull(on) { nbHull = !!on; sketchHullSync(); return nbHull; }, // beta 3.76: the notebook with or without OutlineEffect's hull pass (A/B) (TASK-060: its thickness follows)
         sketchPlain(on) { sketchPlainOn = !!on; return sketchPlainRoots.length; }, // beta 3.75: Sketchbook's plain pass off / on (A/B)
         staticShadows(size = 4096) {
           window.__staticShadow = true;

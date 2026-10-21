@@ -3746,6 +3746,9 @@ body.map-mode .wt[data-scheme="gta2"] { display: none; }
 .map-pins .map-pin:hover { z-index: 7; }
 .map-pins .map-pin.on { z-index: 8; }
 .map-pins .map-pin.off { opacity: 0; pointer-events: none; }
+/* TASK-060: a pin out of sight for a while is moved off the screen (app.js) and its contents are skipped by every restyle
+   (auto, not hidden: screen readers still read them, Tab still reaches them) */
+.map-pins .map-pin.off.cv { content-visibility: auto; }
 /* r166 (Daniel): only the visible pill (zoomed out, the dot) takes a press; the stem, the footprint and the space beside
    them let it through to the road. touch-action: none: a drag that starts on a label pans the map (see mapDown) */
 .map-pins:not(.drive-pins) .map-pin { pointer-events: none; }
