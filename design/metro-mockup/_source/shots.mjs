@@ -2,10 +2,13 @@
 // pos in metres (the station's frame: see scene/station.js), yaw in degrees (0: looking down -z), hfov in degrees,
 // shift: the lens shift in frames (y > 0 shows more of what is below the horizon), focus in metres, fstop.
 export const TRACKZ = -3.12, HW = 1.4;
+// the station's look: "warm" (v2: white enamel, an orange band, warm light, daylight from an entrance; the v2 car)
+export const STYLE = "warm";
 export const INSIDE = { x: 1.85, y: 1.62, z: 0 }; // the camera inside the banner car, car-local
 export const SHOTS = {
-  platform: { W: 1920, H: 1080, cam: { pos: [0, 1.68, 4.5], yaw: -7, hfov: 56, aspect: 16 / 9, shift: [0, 0.13], focus: 10.3, fstop: 2.0 }, shadowX: 1.5 },
-  train: { W: 1920, H: 1080, cam: { pos: [0, 1.6, 4.5], yaw: 0, hfov: 58, aspect: 16 / 9, shift: [0, 0.056], focus: 6.22, fstop: 2.8 }, shadowX: 0 },
+  // v2 (Daniel: closer, at most two hero panels, the poster dominates): the landscape poster and the portrait beside it
+  platform: { W: 1920, H: 1080, cam: { pos: [0.55, 1.55, 0.6], yaw: -3, hfov: 50, aspect: 16 / 9, shift: [0, 0.06], focus: 6.3, fstop: 2.0 }, shadowX: 0.85, dev: { expo: 0.7, sat: 1.0, contrast: 1.08, glare: 0.035, wb: [1.0, 1.0, 0.99] } },
+  train: { W: 1920, H: 1080, cam: { pos: [0, 1.6, 4.5], yaw: 0, hfov: 58, aspect: 16 / 9, shift: [0, 0.056], focus: 6.22, fstop: 2.8 }, shadowX: 0, dev: { expo: 0.88, sat: 1.06, contrast: 1.05, glare: 0.04, wb: [1.015, 1.0, 0.98] } },
   inside: { W: 1080, H: 1350, cam: { pos: [INSIDE.x, INSIDE.y, TRACKZ + INSIDE.z], yaw: 180, hfov: 64, aspect: 1080 / 1350, shift: [0, 0.12], focus: 1.32, fstop: 2.8 }, dev: { expo: 0.62 } }
 };
 // a level camera's numbers: focal length in px, the horizon's row, the column of the camera's axis

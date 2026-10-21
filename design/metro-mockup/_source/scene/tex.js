@@ -169,3 +169,48 @@ export function brushed({ px = 512, seed = 21, base = "#9a9da0", streak = 0.25 }
   overlay(rx, greyTile(128, { P: 4, oct: 3, seed }, {}), { op: "lighter", a: 0.12, seed });
   return { map: c, rough: rc };
 }
+
+// ---------- v2 (TASK-062, Daniel: brighter, warmer, a modern station) ----------
+// enamel wall panels: warm white, large format, thin grey joints, a little tone per panel; one canvas for the wall
+export function enamel({ W, H, px = 4608, pw = 1.2, ph = 0.6, seed = 7, base = "#ecebe7" } = {}) {
+  const r = rng(seed), k = px / W, hp = Math.round(H * k), c = canvas(px, hp), x = c.getContext("2d");
+  x.fillStyle = base; x.fillRect(0, 0, px, hp);
+  const cols = Math.ceil(W / pw), rows = Math.ceil(H / ph);
+  const cl = greyTile(256, { P: 3, oct: 4, seed: seed + 1 }, { lo: 0.9, hi: 1 });
+  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+    const X = i * pw * k, Y = hp - (j + 1) * ph * k;
+    x.save(); x.beginPath(); x.rect(X, Y, pw * k, ph * k); x.clip();
+    x.fillStyle = hex(base, 0.955 + r() * 0.05); x.fillRect(X, Y, pw * k, ph * k);
+    overlay(x, cl, { op: "multiply", a: 0.4, x: X, y: Y, w: pw * k, h: ph * k, seed: seed * 31 + i * 3 + j, scale: 2 });
+    x.restore();
+  }
+  x.fillStyle = "rgba(96,92,86,0.85)";
+  for (let i = 0; i <= cols; i++) x.fillRect(i * pw * k - 1, 0, 2, hp);
+  for (let j = 0; j <= rows; j++) x.fillRect(0, hp - j * ph * k - 1, px, 2);
+  // a faint grime at the foot, nothing more: the station is kept clean
+  const g = x.createLinearGradient(0, hp, 0, hp - 0.8 * k); g.addColorStop(0, "rgba(90,80,66,0.18)"); g.addColorStop(1, "rgba(90,80,66,0)");
+  x.fillStyle = g; x.fillRect(0, 0, px, hp);
+  const rc = canvas(px >> 2, hp >> 2), rx = rc.getContext("2d");
+  rx.fillStyle = "rgb(0,48,0)"; rx.fillRect(0, 0, rc.width, rc.height);
+  rx.fillStyle = "rgb(0,200,0)";
+  for (let i = 0; i <= cols; i++) rx.fillRect((i * pw * k) / 4 - 0.6, 0, 1.2, rc.height);
+  for (let j = 0; j <= rows; j++) rx.fillRect(0, (hp - j * ph * k) / 4 - 0.6, rc.width, 1.2);
+  return { map: c, rough: rc, k };
+}
+// glass accent panels (the station's colour), with joints every pw m
+export function accent({ px = 2048, span = 4.8, pw = 1.2, seed = 4, base = "#e8762a" } = {}) {
+  const r = rng(seed), c = canvas(px, 128), x = c.getContext("2d"), k = px / span;
+  for (let i = 0; i < span / pw; i++) { const g = x.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, hex(base, 1.06)); g.addColorStop(1, hex(base, 0.9 + r() * 0.05)); x.fillStyle = g; x.fillRect(i * pw * k, 0, pw * k, 128); }
+  x.fillStyle = "rgba(60,30,10,0.6)"; for (let i = 0; i <= span / pw; i++) x.fillRect(i * pw * k - 1.5, 0, 3, 128);
+  return { map: c };
+}
+// a normal map (tangent space, +y up) from a height canvas; s: strength
+export function normalFrom(hc, s = 2) {
+  const w = hc.width, h = hc.height, src = hc.getContext("2d").getImageData(0, 0, w, h).data, c = canvas(w, h), x = c.getContext("2d"), im = x.createImageData(w, h), d = im.data;
+  const H = (i, j) => src[(Math.min(h - 1, Math.max(0, j)) * w + Math.min(w - 1, Math.max(0, i))) * 4] / 255;
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const nx = (H(i - 1, j) - H(i + 1, j)) * s, ny = (H(i, j + 1) - H(i, j - 1)) * s, l = Math.hypot(nx, ny, 1), o = (j * w + i) * 4;
+    d[o] = (nx / l * 0.5 + 0.5) * 255; d[o + 1] = (ny / l * 0.5 + 0.5) * 255; d[o + 2] = (1 / l * 0.5 + 0.5) * 255; d[o + 3] = 255;
+  }
+  x.putImageData(im, 0, 0); return c;
+}

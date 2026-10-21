@@ -21,13 +21,12 @@
     var w = it.f.clientWidth, h = it.f.clientHeight, set = w * Math.min(window.devicePixelRatio || 1, 2) > 1100 ? "s2" : "s1";
     var assets = (A[it.name] || {})[set];
     if (!assets || !w || !h) return;
-    Z.mount(it.name + "-" + set, { host: it.f, w: w, h: h, assets: assets, cls: "czl-metro" }).then(function (p) {
+    // (the piece is ready once its pictures are in: up to 20 s for them on a slow line, not the mount's usual 2.5 s)
+    Z.mount(it.name + "-" + set, { host: it.f, w: w, h: h, assets: assets, cls: "czl-metro", wait: 20000 }).then(function (p) {
       if (!p) return;
       it.p = p;
-      // the canvas fades in over the still once the piece has drawn its pictures
-      var on = false, show = function () { if (on) return; on = true; p.el.classList.add("on"); };
-      try { p.anim.addEventListener("loaded_images", show); } catch (e) {}
-      setTimeout(show, 1500);
+      // the canvas fades in over the still (its pictures are in: the worker waited for them)
+      requestAnimationFrame(function () { p.el.classList.add("on"); });
       try { p.anim.setLoop(true); p.anim.goToAndPlay(it.at, true); } catch (e) {}
       play(it);
     });
