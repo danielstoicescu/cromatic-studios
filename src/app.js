@@ -34554,7 +34554,7 @@ void main() {
     const WORLD_VEH = { underwater: "sub", default: "dacia1300", monument: "dacia1300", ghibli: "dacia1300", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "dacia1300", orchid: "scooter", sincity: "cop", sketch: "dacia1300", riso: "scooter" }; // r138f, r138j: the 1300 where the van was the default
     const wtGrid = el("div", "wt-grid");
     themeMenu.appendChild(wtGrid);
-    const WORLD_SUB = { underwater: "Submarine, fish, floating things", default: "The city, as it is", monument: "Our city, as a pastel diorama", ghibli: "Hand-painted countryside", nightlife: "Orange & blue, a light drizzle", gta2: "Bonus \u00B7 drive mode \u00B7 top-down, retro", circuit: "Race day on the circuit", magma: "Lava tones", orchid: "Petals everywhere", sincity: "Black, white and one red", sketch: "Pencil on paper, drawn as you explore", riso: "Two inks, slightly off-register" };
+    const WORLD_SUB = { underwater: "Submarine, fish, floating things", default: "The city, as it is", monument: "Our city, as a pastel diorama", ghibli: "Hand-painted countryside", nightlife: "Orange & blue, a light drizzle", gta2: "Bonus \u00B7 drive mode \u00B7 top-down, retro", circuit: "Race day on the circuit", magma: "Lava tones", orchid: "Petals everywhere", sincity: "Black, white and one red", sketch: "Ink and crayon, drawn where you look", riso: "Two inks, slightly off-register" };
     const themeRows = {};
     SCHEMES.forEach((s, i) => {
       if (s.proto) return; // worlds prototype: opened by URL only, no tile yet

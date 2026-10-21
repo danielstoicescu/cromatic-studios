@@ -826,7 +826,7 @@ if (CLIPPED.length) console.warn(`[seo] description cut mid-sentence on ${CLIPPE
     fintech: ["The fintech towers at dusk in the Cromatic Studios 3D city", "Turnurile fintech la apus, în orașul 3D Cromatic Studios"],
     night: ["The Cromatic Studios 3D city of Bucharest in Night Mode", "Orașul 3D al Bucureștiului de la Cromatic Studios, în Night Mode"],
     // beta 3.995 (TASK-010): the Sketchbook card redrawn in the notebook look (src/og/sketchbook-*.jpg; the graphite sketch-*.jpg are gone)
-    sketchbook: ["The Cromatic Studios 3D city drawn in Sketchbook mode, ink and crayon on a notebook page", "Orașul 3D Cromatic Studios desenat în modul Sketchbook, cu tuș și creioane colorate pe o pagină de caiet"],
+    sketchbook: ["The Cromatic Studios 3D city drawn in Sketchbook mode, ink and crayon on a notebook page", "Orașul 3D Cromatic Studios desenat în modul Sketchbook, cu tuș și creioane cerate pe o pagină de caiet"],
   };
   const at = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
   const urls = new Map();
