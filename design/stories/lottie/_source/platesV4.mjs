@@ -7,7 +7,7 @@ import path from "path";
 import sharp from "/Users/daniel.stoic/cromatic-drive/node_modules/sharp/lib/index.js";
 const RAW = process.env.RAW || "/private/tmp/claude-501/-Users-daniel-stoic/8f3b4503-769c-4f86-ba4b-8e36528128b3/scratchpad/stl4/raw";
 const here = path.dirname(new URL(import.meta.url).pathname), OUT = path.resolve(here, "../images");
-const which = process.argv[2] || "ab";
+const which = process.argv[2] || "ab", SITE = process.env.SITE || "/private/tmp/claude-501/-Users-daniel-stoic/8f3b4503-769c-4f86-ba4b-8e36528128b3/scratchpad/site-map2.png";
 const rgba = async (f) => { const { data, info } = await sharp(f).ensureAlpha().raw().toBuffer({ resolveWithObject: true }); return { data, w: info.width, h: info.height }; };
 function dilate(a, w, h, r) {
   const t = new Uint8Array(a.length), o = new Uint8Array(a.length);
@@ -70,4 +70,20 @@ if (which.includes("b")) {
   }
   fs.writeFileSync(path.join(here, "platesB4.json"), JSON.stringify({ plates, shots: { "b4-street": numbers("b4-street") } }));
   console.log("plates B4", Object.keys(plates).length, Object.values(plates).reduce((s, m) => s + m.kb, 0), "KB");
+}
+
+// A v4 by Daniel's storyboard (round 2): the drone strip, the ride from above, OMA, the dome, the drive away, the site
+if (which.includes("5")) {
+  const plates = {}, write = makeWriter(plates), drive = [];
+  const R5 = RAW + "/a5";
+  await write("a5-strip", await rgba(`${R5}/strip.png`), { opaque: true, crop: false, q: 84 });
+  const J = JSON.parse(fs.readFileSync(`${RAW}/a5.json`, "utf8"));
+  await write("a5-ride", await rgba(`${R5}/ride.png`), { at: [J.ride[0], J.ride[1]], q: 86 });
+  for (const n of ["oma", "scf"]) await write(`a5-${n}`, await rgba(`${R5}/${n}.png`), { opaque: true, crop: false, q: 84 });
+  await write("a5-drive-plate", await rgba(`${R5}/drive-plate.png`), { opaque: true, crop: false, q: 84 });
+  for (let i = 0; i < J.drive.length; i++) { const r = J.drive[i]; drive.push(r ? await write(`a5-drive-car-${String(i).padStart(3, "0")}`, await rgba(`${R5}/drive-car-${String(i).padStart(3, "0")}.png`), { at: [r[0], r[1]], q: 82 }) : null); }
+  // the site itself (a screenshot of cromaticstudios.com's map at a phone's size, 1080 x 1920)
+  await write("a5-site", await rgba(SITE), { opaque: true, crop: false, q: 88 });
+  fs.writeFileSync(path.join(here, "platesA5.json"), JSON.stringify({ plates, drive }));
+  console.log("plates A5", Object.keys(plates).length, Object.values(plates).reduce((s, m) => s + m.kb, 0), "KB");
 }

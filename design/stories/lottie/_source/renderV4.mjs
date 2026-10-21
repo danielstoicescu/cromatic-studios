@@ -4,16 +4,17 @@
 //   JOB=a4 node renderV4.mjs         A's overhead (two lenses, ground and what stands on it) and the boot shot
 //   JOB=b4 node renderV4.mjs         B's street in the nine worlds (WORLDS=... to redo some), as renderB2.mjs
 import fs from "fs";
-import { SHOTS4, A4, bootCar4 } from "./shots4.mjs";
+import { SHOTS4, A4, bootCar4, A5, driveCar } from "./shots4.mjs";
 const job = process.env.JOB, RAW = process.env.RAW || "/private/tmp/claude-501/-Users-daniel-stoic/8f3b4503-769c-4f86-ba4b-8e36528128b3/scratchpad/stl4/raw";
 fs.mkdirSync(RAW, { recursive: true });
 const D = new URL(".", import.meta.url).pathname;
 const WORLDS = (process.env.WORLDS || "monument,nightlife,underwater,circuit,sketch,orchid,gta2,riso,ghibli").split(",");
+const frames5 = []; for (let i = 0; i <= Math.round(A5.boot.dur * 30); i++) { const t = i / 30; frames5.push(Array.from({ length: 4 }, (_, j) => driveCar(t - 1 / 120 + ((j + 0.5) / 4) / 60))); }
 const frames = []; for (let i = 0; i <= Math.round(A4.boot.dur * 30); i++) { const t = i / 30; frames.push(Array.from({ length: 4 }, (_, j) => bootCar4(t - 1 / 120 + ((j + 0.5) / 4) / 60))); }
 const head = `
 const H = await import("${D}lib-harness.mjs?" + Date.now());
 await H.inject(p, true);
-const RAW = "${RAW}", S4 = ${JSON.stringify(SHOTS4)}, A4 = ${JSON.stringify(A4)};
+const RAW = "${RAW}", S4 = ${JSON.stringify(SHOTS4)}, A4 = ${JSON.stringify(A4)}, A5 = ${JSON.stringify(A5)};
 const save = (url, f) => { fs.writeFileSync(f, Buffer.from(url.split(",")[1], "base64")); return f; };
 const scheme = async (w) => { const cur = await p.evaluate(() => window.__story.schemes[window.__story.state.schemeIdx].id); if (cur !== w) { await p.evaluate((w) => window.__scheme(w), w); await p.waitForTimeout(6500); } await p.evaluate(() => { window.__story.state.weatherOn = false; }); };
 const bulbs = () => p.evaluate(() => { const S = window.__story, out = []; S.scene.traverse((x) => { if (x.isInstancedMesh && x.count === 13 && x.material.emissive && x.material.emissive.getHexString() === "ffca6a") { const m = new S.camera.matrixWorld.constructor(), V = S.camera.position.constructor; for (let i = 0; i < x.count; i++) { x.getMatrixAt(i, m); m.premultiply(x.matrixWorld); out.push(new V().setFromMatrixPosition(m).toArray()); } } }); return out; });
@@ -85,6 +86,28 @@ await p.evaluate(() => window.__scheme("monument")); await p.waitForTimeout(3000
 return out;
 `
 };
+JOBS.a5 = `
+const force = "for (let o = x; o; o = o.parent) { if (o === window.__story.veh().group) return 'car'; if (o === window.__story.cop().group) return 'cop'; } return null;";
+const frames = ${JSON.stringify(frames5)}, out = {};
+fs.mkdirSync(RAW + "/a5", { recursive: true });
+const full = async (name, o) => { await H.aim(p, o, 2500); const u = await p.evaluate((o) => { const R = window.__R; R.park([9000, null, 9000, 0]); try { R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); return R.shot({ ...o, keepBg: true }); } finally { R.park(null); } }, o); save(u, RAW + "/a5/" + name + ".png"); };
+// the strip straight down (no ride), then the ride alone from straight above it
+await full("strip", A5.strip);
+{ const o = { ...A5.ride, forceSrc: force }; await H.aim(p, o, 1500);
+  const r = await p.evaluate(({ o, q }) => { const R = window.__R; R.park([9000, null, 9000, 0]); try { R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); return R.carShot(o, "car", [q]); } finally { R.park(null); } }, { o, q: A5.ridePose });
+  save(r.url, RAW + "/a5/ride.png"); out.ride = r.rect; }
+await full("oma", A5.oma);
+await full("scf", A5.scf);
+{ const o = { ...A5.boot, forceSrc: force, occlude: true };
+  await H.aim(p, o, 2500);
+  const plate = await p.evaluate((o) => { const R = window.__R; R.park([9000, null, 9000, 0]); try { R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); return R.shot({ ...o, keepBg: true }); } finally { R.park(null); } }, o);
+  save(plate, RAW + "/a5/drive-plate.png");
+  out.drive = [];
+  for (let i = 0; i < frames.length; i++) { const r = await p.evaluate(({ o, sub }) => window.__R.carShot(o, "car", sub), { o, sub: frames[i] }); if (r) save(r.url, RAW + "/a5/drive-car-" + String(i).padStart(3, "0") + ".png"); out.drive.push(r ? r.rect : null); }
+}
+fs.writeFileSync(RAW + "/a5.json", JSON.stringify(out));
+return { ride: out.ride, drive: out.drive.filter(Boolean).length };
+`;
 if (!JOBS[job]) throw new Error("JOB=street|a4|b4");
 const t0 = Date.now();
 const r = await fetch("http://localhost:8962/", { method: "POST", body: head + JOBS[job] });
