@@ -76,7 +76,7 @@ export const INDUSTRIES = [
     streetName: "Medical Avenue",
     title: "Healthcare, clinic & pharma branding in Bucharest",
     desc: "Brand strategy, websites, TV ads and content for clinics, pharma and aesthetic medicine. Elithia, Clinica Sante, Toskani MED and Help4Brain.", // r136: under 155 characters
-    eyebrow: "Medical Avenue · 12 case studies", // TASK-064: was still 9 (TASK-026 added two, Maximag one)
+    eyebrow: "Medical Avenue · 12 case studies", // TASK-064: was still 9 (TASK-026 added two, Maximag one); TASK-074: 8 cards + the 4 Zdrovit brands' pages (the work section counts them the same way)
     h1: "Healthcare brands that feel like care.",
     lead: "Cromatic Studios builds brands, websites, films and content for clinics, laboratories, pharma and aesthetic medicine, in Romania and abroad. Precise for the doctor. Calm for the patient.",
     intro: [
@@ -92,7 +92,7 @@ export const INDUSTRIES = [
       { t: "Medical congresses", p: "The Aesthetic Court put botulinum toxin on trial at the Palace of the Parliament. Its website follows the courtroom, from the charge and the bench of experts to the order of proceedings, the jury's live vote and the verdict." },
       { t: "Repositioning for established players", p: "ALTIUS got a new strategy, a refreshed wordmark with its orange arrow, teal gradients, icons for every product area and a website for vets. We stayed on as its long-term partner for video content, including Vets Congress." }
     ],
-    cases: ["elithia", "clinica-sante", "toskani-med", "help-4-brain", "the-aesthetic-court", "altius", "routine-paris", "darya-hope", "tracy-j", "litorsal", "lacalut", "maximag"], // r179: + Darya Hope, Tracy J; TASK-026: + Litorsal, Lacalut; TASK-064: + Maximag
+    cases: ["elithia", "clinica-sante", "toskani-med", "the-aesthetic-court", "altius", "routine-paris", "darya-hope", "tracy-j"], /* TASK-074 (Daniel): the Zdrovit brands (Help 4 Brain, Litorsal, Lacalut, Maximag) are reached from the Zdrovit row, not as cards here; the count (eyebrow, 12) still includes them */ // r179: + Darya Hope, Tracy J; TASK-026: + Litorsal, Lacalut; TASK-064: + Maximag
     faq: [
       ["Who does branding for clinics in Bucharest?", "Cromatic Studios, an independent creative studio at Strada Olari 9, Bucharest. Our medical work includes Elithia, a women's health clinic, Clinica Sante, a national network of medical laboratories, ALTIUS in veterinary pharma distribution, Help4Brain by Zdrovit and Toskani MED, an aesthetic medicine company in Barcelona."],
       ["Can you make a TV ad for a clinic or laboratory?", "Yes. For Clinica Sante we made a TV spot that, in under a minute, puts forward what the laboratories stand for: precision and up-to-date technology, more than 30 years of experience, fair prices and national coverage. It closes on the line “Recomandată de medici, parafată de pacienți”."],
@@ -287,7 +287,8 @@ export const SERVICE_PAGES = [
       { t: "The shoot", p: "Photo and video together when it makes sense, in the shop, the atelier, the clinic or the studio. We shoot for every format the campaign needs, from a TV spot to a vertical reel." },
       { t: "Post and delivery", p: "Editing, animation, post production and sound design, in house. Then the cuts for TV, web and social, sized and ready to publish." }
     ],
-    cases: ["clinica-sante", "help-4-brain", "pain-plaisir", "routine-paris", "bepco", "altius", "steam", "casa-berero", "yoshi-izakaya", "two-minutes"],
+    // TASK-074 (Daniel): Help 4 Brain, a Zdrovit brand, has no portfolio card of its own (it is on the Zdrovit card); its page stays linked from the text
+    cases: ["clinica-sante", "pain-plaisir", "routine-paris", "bepco", "altius", "steam", "casa-berero", "yoshi-izakaya", "two-minutes"],
     faq: [
       ["Do you produce TV ads in Romania?", "Yes. We made a TV spot for Clinica Sante, a national network of medical laboratories, and a TV commercial for Help4Brain, a nootropic produced by Zdrovit. Video production, photography, post production and sound design all happen in house at Cromatic Studios in Bucharest."],
       ["Can you shoot product photography for food and drink?", "Yes. We shot the Anemone pastry and a Christmas table for Pain Plaisir, COMM and UNITY cans and a red crate of craft beers for Berero, the dishes and the bar at Yoshi Izakaya, and a full season of guests and baristas at Steam Coffee Shop."],
@@ -328,7 +329,8 @@ export const SERVICE_PAGES = [
       { t: "Make", p: "We shoot, design and edit in house. Photo and video sessions, reels, carousels, stories and key visuals, all in the brand's own voice." },
       { t: "Run and grow", p: "We publish, run the ad campaigns, talk with the community and watch what works, then adjust the plan as the crowd grows." }
     ],
-    cases: ["steam", "help-4-brain", "yoshi-izakaya", "printoteca", "sticker-republic", "echo-school", "sip-coffee-wine", "routine-paris", "elithia", "casa-berero"], // r159: + Echo School
+    // TASK-074: Help 4 Brain out of the cards, as above
+    cases: ["steam", "yoshi-izakaya", "printoteca", "sticker-republic", "echo-school", "sip-coffee-wine", "routine-paris", "elithia", "casa-berero"], // r159: + Echo School
     faq: [
       ["Do you manage social media for restaurants and coffee shops?", "Yes. Steam got a content strategy, photo, video, social media management, stories and in-store posters. Yoshi Izakaya got a content strategy, events, ad campaigns and photography shot in the restaurant. Sip Coffee & Wine opened with a social media launch and an opening campaign."],
       ["Do you do social media for pharma and healthcare?", "Yes. Help4Brain, a nootropic produced by Zdrovit, launched on social media with education at the centre, reels with experts and creators, influencer marketing and a TV commercial. Elithia, a women's health clinic, posts calm, clear content in its own voice, from the first check-up to breast screening."],

@@ -44,6 +44,10 @@ const content = readFileSync(src("content.html"), "utf8").replace(/<!--[\s\S]*?-
 // r223 (Daniel, the Lottie intro): the first paint is the opening's own ground (src/intro/boot.js + boot.css, inlined
 // below); the brewing cup (r136c) and the opening's first line painted from the HTML (r153, .i4-pre) are gone with
 // the old intro
+// TASK-074 (Daniel, 21 Oct): the Zdrovit brands have no portfolio card (not in PROJECTS) but some have a case page: as
+// projects of Medical Avenue for the pages' own SEO, their "On the same street" ending, the home page's JSON-LD and llms.txt
+const ZB_PROJ = (DATA.ZDROVIT_BRANDS || []).filter((b) => b.page).map((b) => ({ name: b.name, cat: b.cat || "Zdrovit · Beauty & Supplement Park", desc: b.desc || b.line, page: b.page, street: "C", zdrovit: true }));
+const PROJ_ALL = [...DATA.PROJECTS, ...ZB_PROJ];
 // the text version's portfolio, from site/data.mjs (every case study linked, grouped by street)
 const homeWork = () => {
   const e = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
@@ -51,7 +55,8 @@ const homeWork = () => {
   return Object.entries(DATA.STREETS).map(([k, [street]]) => {
     const list = DATA.PROJECTS.filter((p) => p.street === k && !p.small && !p.wip && !(p.page && seen.has(p.page)) && (p.page ? seen.add(p.page) : true));
     if (!list.length) return "";
-    return `    <h3>${e(street)}</h3>\n    <ul>\n${list.map((p) => `      <li>${p.page ? `<a href="/work/${p.page}/"><strong>${e(p.name)}</strong></a>` : `<strong>${e(p.name)}</strong>`} (${e(p.cat.toLowerCase())}): ${e(p.desc)}</li>`).join("\n")}\n    </ul>`;
+    const zd = (p) => (p.name === "Zdrovit" && DATA.ZDROVIT_BRANDS?.length ? ` Its brands: ${DATA.ZDROVIT_BRANDS.map((b) => (b.page ? `<a href="/work/${b.page}/">${e(b.name)}</a>` : e(b.name))).join(", ")}.` : ""); // TASK-074
+    return `    <h3>${e(street)}</h3>\n    <ul>\n${list.map((p) => `      <li>${p.page ? `<a href="/work/${p.page}/"><strong>${e(p.name)}</strong></a>` : `<strong>${e(p.name)}</strong>`} (${e(p.cat.toLowerCase())}): ${e(p.desc)}${zd(p)}</li>`).join("\n")}\n    </ul>`;
   }).filter(Boolean).join("\n");
 };
 const hash = (buf) => createHash("sha1").update(buf).digest("hex").slice(0, 10);
@@ -250,7 +255,7 @@ writeFileSync(join(pub, jsName), jsOut);
 writeFileSync(join(pub, cssName), cssOut);
 const html = `${head.replaceAll("%%SITE_URL%%", SITE_URL).replace(/(<meta name="viewport"[^>]*>)/, (m) => (introEarly ? `${m}\n${introEarly}` : m)).replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\n?/, "").replace(/<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*">/, GF_CSS ? `<style>${GF_CSS}</style>` : "$&")}<link rel="stylesheet" href="${cssName}">
 ${introEarly ? "" : `<link rel="preload" href="${jsName}" as="script">`}
-${jsonLd(SITE_URL, DATA.PROJECTS, SAME_AS)}
+${jsonLd(SITE_URL, PROJ_ALL, SAME_AS)}
 ${introHead}
 </head><body><!--email_off-->
 ${introBody}
@@ -558,7 +563,7 @@ const escH = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").repla
 // the map (Eliade 18, RDW 2023) takes the street of the industry page that writes about it, and the cards and
 // industry links of the whole map when none does. hasRelated is no longer used: those blocks are taken out (caseEnd).
 const hubLinks = (slug, hasRelated) => {
-  const proj0 = DATA.PROJECTS.find((x) => x.page === slug);
+  const proj0 = PROJ_ALL.find((x) => x.page === slug); // TASK-074: + the Zdrovit brands' pages (Medical Avenue)
   const ind = proj0 ? (HUBS_DATA.INDUSTRIES || []).find((x) => x.street === proj0.street) : (HUBS_DATA.INDUSTRIES || []).find((x) => (x.cases || []).includes(slug) || JSON.stringify(x).includes(`/work/${slug}/`));
   const proj = proj0 || { page: slug, street: ind ? ind.street : null };
   const svcs = (HUBS_DATA.SERVICE_PAGES || []).filter((x) => (x.cases || []).includes(slug));
@@ -603,7 +608,7 @@ const page = (path, raw) => {
   if (GF_CSS) raw = raw.replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\n?/, "").replace(/<link rel="preload" as="style" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"[^>]*>\n?<noscript><link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"><\/noscript>/, `<style>${GF_CSS}</style>`);
   const text = pageText(raw);
   const lastmod = LASTMOD.get(p, text, srcOf(path));
-  const project = DATA.PROJECTS.find((x) => x.page === slug);
+  const project = PROJ_ALL.find((x) => x.page === slug); // TASK-074: + the Zdrovit brands' pages
   const r = seoPage(raw, { path: p, SITE: SITE_URL, project, media: mediaDims, lastmod, wp: wpLocal, dg: { ...DG, cs: CS_CSS } });
   // r139c: the films a visitor can play on the page, as VideoObject in its JSON-LD
   const html = videoSources(videoLd(wpMirror(r.html), { path: p, SITE: SITE_URL, pub, name: project?.name || r.title.split(/ · |: /)[0] })); // beta 3.48 r217: + the MP4 twins
@@ -693,7 +698,7 @@ const caseSlugs = [];
   }
 }
 // r130: map places with a real photo of their own (no case page cover, or a better one)
-for (const [id, k] of Object.entries({ steam: "m:cs/Steam-Cromaticstudios-1", lab: "m:places/two-min-lab" /* TASK-061: the stacked TWO MIN LAB lockup (the brand's own 10-years artwork) on a 4:3 sheet; the 3:1 banner showed only "MIN" in the card */, gloves: "m:tm/gloves-title" /* r201: the mini-game's title screen */, "w-lapterra": "m:places/lapterra", "zb-litorsal": "m:places/litorsal", "zb-lacalut": "m:places/lacalut", "zb-maximag": "m:maximag/box" /* TASK-064: the pack shot; TASK-074: keys of their own (they were the yard kiosks y-5, y-0, y-6; Zdrovit is one place now) */, zdrovit: "m:places/zdrovit-park" /* TASK-074 (Daniel): the park itself from the map (the arch, the carousel, the wheel), no one brand's product; was the Maximag pack shot */, "w-printoteca": "m:places/printoteca", "w-zoetis": "m:places/zoetis", "w-clinicadrk": "m:places/drk", "w-sofmedica": "m:places/sofmedica", "w-medcity": "m:places/medcity", "w-stickerrepublic": "m:places/sticker", echo: "m:echo-school/cover" /* r161: a photo from the school, students laughing at an industry talk, no type (Daniel picked it) */, end: "m:vibe/from-the-stairs", scf: "m:places/scf-poster", oma: "m:places/oma", "w-venevo": "m:places/venevo", "w-witanalytica": "m:places/witanalitica", friends: "m:rdw-2023/rdw-004" })) {
+for (const [id, k] of Object.entries({ steam: "m:cs/Steam-Cromaticstudios-1", lab: "m:places/two-min-lab" /* TASK-061: the stacked TWO MIN LAB lockup (the brand's own 10-years artwork) on a 4:3 sheet; the 3:1 banner showed only "MIN" in the card */, gloves: "m:tm/gloves-title" /* r201: the mini-game's title screen */, "w-lapterra": "m:places/lapterra", zdrovit: "m:places/zdrovit-park" /* TASK-074 (Daniel): the park itself from the map (the arch, the carousel, the wheel), no one brand's product; was the Maximag pack shot */, "w-printoteca": "m:places/printoteca", "w-zoetis": "m:places/zoetis", "w-clinicadrk": "m:places/drk", "w-sofmedica": "m:places/sofmedica", "w-medcity": "m:places/medcity", "w-stickerrepublic": "m:places/sticker", echo: "m:echo-school/cover" /* r161: a photo from the school, students laughing at an industry talk, no type (Daniel picked it) */, end: "m:vibe/from-the-stairs", scf: "m:places/scf-poster", oma: "m:places/oma", "w-venevo": "m:places/venevo", "w-witanalytica": "m:places/witanalitica", friends: "m:rdw-2023/rdw-004" })) {
   const a = mediaMap.get(k);
   if (a) COVERS["place:" + id] = a.src; else console.warn(`[build] covers: missing ${k}`);
 }
@@ -785,7 +790,7 @@ const roPaths = [];
   if (onbRo) roSet.add(onbRo.path); // r139c
   for (const p of ["/site/", ...hubPaths, ...workPaths, ...(onbRo ? ["/onboarding/"] : [])]) { const rp = roPath(p); if (rp && roSet.has(rp)) { const alt = [["en", p], ["ro", rp], ["x-default", p]]; pairs.set(p, alt); pairs.set(rp, alt); } }
   writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, order.map((e) => ({ ...e, alt: pairs.get(e.path) }))));
-  writeFileSync(join(pub, "llms.txt"), llmsTxt(SITE_URL, { ...DATA, SAME_AS }, { ...PAGES, ...(onb ? { "/onboarding/": onb } : {}), ...(onbRo ? { [onbRo.path]: onbRo } : {}) }));
+  writeFileSync(join(pub, "llms.txt"), llmsTxt(SITE_URL, { ...DATA, PROJECTS: PROJ_ALL, SAME_AS }, { ...PAGES, ...(onb ? { "/onboarding/": onb } : {}), ...(onbRo ? { [onbRo.path]: onbRo } : {}) }));
   writeFileSync(join(pub, "llms-full.txt"), llmsFull(SITE_URL, order));
   LASTMOD.save();
 }
