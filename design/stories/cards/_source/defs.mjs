@@ -35,7 +35,7 @@ export const CARDS = [
     ] }],
     // the third state: the card glides to the middle of the frame (Daniel: "text more centred")
     moves: [{ state: 2, to: { centreX: 540, top: 420 } }],
-    timing: { in: "steam+2", lineStagger: 4, pillIn: "steam+12", swaps: ["oma+3", "scf+3"], out: "scf.end-8" },
+    timing: { in: "steam+2", lineStagger: 4, pillIn: "steam+12", swaps: ["oma+3", "scf+3"], out: "scf.end-14" },
     mocks: [{ state: 0, at: "steam+40" }, { state: 1, at: "oma+30" }, { state: 2, at: "scf+32" }],
     notes: "One card over three shots: it never leaves between them, the pill rolls at each cut (3 frames after the whip). Line break: Daniel's 'Every brand has its own / [place]' set on three lines so the block stays compact and the pill word reads big; the two-line break needs the type at 80 px."
   },

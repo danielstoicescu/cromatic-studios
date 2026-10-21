@@ -194,7 +194,7 @@
     "oma+3",
     "scf+3"
    ],
-   "out": "scf.end-8"
+   "out": "scf.end-14"
   },
   "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
   "frames": {
@@ -208,25 +208,25 @@
       "out": 217,
       "frames": {
        "in": 14,
-       "out": 10
+       "out": 7
       },
-      "hold": 127
+      "hold": 120
      },
      {
       "id": "a2-l1",
       "text": "Every brand",
       "in": 80,
-      "out": 212,
+      "out": 206,
       "motion": "lineIn / lineOut",
-      "hold": 120
+      "hold": 114
      },
      {
       "id": "a2-l2",
       "text": "has its own",
       "in": 84,
-      "out": 213,
+      "out": 207,
       "motion": "lineIn / lineOut",
-      "hold": 117
+      "hold": 111
      },
      {
       "id": "a2-l3-pill-0",
@@ -248,9 +248,9 @@
       "id": "a2-l3-pill-2",
       "word": "building.",
       "in": 177,
-      "out": 214,
+      "out": 208,
       "motion": "pillSwap",
-      "hold": 37
+      "hold": 31
      }
     ]
    }

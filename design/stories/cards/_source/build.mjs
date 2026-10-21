@@ -24,7 +24,7 @@ function frames(card, clockName) {
   const tOut = c(tm.out);
   for (const B of card.layout.blocks || []) {
     const bi = card.layout.blocks.indexOf(B), tIn = c(tm.in) + (tm.blockStagger || 0) * bi, smash = (tm.smash || []).includes(B.id);
-    if (B.aplat) out.elements.push({ id: B.id + "-aplat", in: tIn, out: tOut + 3, frames: { in: TOKENS.motion.aplatIn.frames, out: 10 }, hold: tOut + 3 - tIn - 14 });
+    if (B.aplat) out.elements.push({ id: B.id + "-aplat", in: tIn, out: tOut + 9, frames: { in: TOKENS.motion.aplatIn.frames, out: 7 }, hold: tOut + 2 - tIn - 14 });
     B.lines.forEach((L, i) => {
       const ti = tIn + (tm.lineStagger || 0) * i + (B.aplat ? 4 : 0), to = smash ? tOut : tOut - (B.lines.length - 1 - i);
       if (L.text) out.elements.push({ id: L.id, text: L.text, in: ti, out: to, motion: smash ? "smashCut" : "lineIn / lineOut", hold: to - ti - (smash ? 0 : TOKENS.motion.lineIn.frames) });
