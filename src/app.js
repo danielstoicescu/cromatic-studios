@@ -27268,57 +27268,212 @@ void main() {
     EXTRA_KEEPOUT.push({ x, y: z, r: 80 });
     return finish(g, parent, x, z);
   }
-  // the Zdrovit courtyard: a paved yard with a fountain and trees, small buildings around it
-  // the small brands of the Zdrovit yard: one kiosk each round the fountain, room for more
-  var ZDROVIT_YARD = ["Lacalut", "Periferisan", "Help 4 Brain", "Parusan", "Bonilash", "Litorsal", "Maximag"]; // TASK-064: + Maximag
-  // TASK-064: a kiosk may wear its brand's colours, taken from the real artwork (Maximag: the navy of the logo, the red
-  // of its Bisglicinat tag, a white sign with navy letters); the others keep the Zdrovit red roof and the grey sign
-  var YARD_LOOK = { Maximag: { roof: "#091D61", band: "#D71E3E", signBg: "#ffffff", signInk: "#091D61" } };
-  // r134: Daniel: the small buildings stand along the edges of the yard, not round the fountain: four along the
-  // hedge side (towards Sofmedica), one each side of the gate
-  // r176: the beauty shops' side (south) is not left bare now they have moved out: two kiosks there, two on the hedge
-  // side, one each side of the gate
-  // TASK-064: Maximag takes the yard's south-east corner, the third kiosk on the south side, clear of the trees and of
-  // the Zdrovit house (its south wall is at z ~5105)
-  var YARD_EDGE = [[1690, 5006], [1790, 5006], [1690, 5205], [1790, 5205], [1590, 5012], [1590, 5150], [1870, 5205]];
-  var YARD_SLOTS = YARD_EDGE.length;
-  const yardSlotOf = (k) => k;
-  function yardSpot(i) { return YARD_EDGE[i % YARD_EDGE.length]; }
-  function buildCourtyard(parent, cx, cz, list) {
+  // TASK-074 (Daniel, 21 Oct): Zdrovit is ONE place now, the "Beauty & Supplement Park": an amusement park where the
+  // yard of kiosks was (a big ZDROVIT arch on the avenue, a Ferris wheel, a carousel, a little roller coaster with a
+  // loop, booths and bunting). Its brands are not on the map one by one: the Zdrovit card lists them all
+  // (ZDROVIT_BRANDS, filled in by build/build.mjs from site/data.mjs; a brand with a case page opens it)
+  var ZDROVIT_BRANDS = [];
+  var ZDROVIT_PARK = { x: 1830, z: 5070 }; // the Ferris wheel, where the place's pin stands
+  // the brand list (the map's Zdrovit card, the drive's Zdrovit panel): the brands with a case page first, then A to Z;
+  // one with a page is a button (data-zb = its name, data-pg = its slug), the others show their one line
+  function zdrovitListHTML(cls) {
+    const ro = /^ro/i.test(document.documentElement.lang || ""), esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+    const list = ZDROVIT_BRANDS.slice().sort((a, b) => (a.page ? 0 : 1) - (b.page ? 0 : 1) || a.name.localeCompare(b.name));
+    return `<ul class="zd-list ${cls || ""}" aria-label="${ro ? "Brandurile din parc" : "The brands in the park"}">${list.map((b) => {
+      const line = esc((ro && b.ro) || b.line || "");
+      return b.page
+        ? `<li><button class="zd-b pg" data-zb="${esc(b.name)}" data-pg="${esc(b.page)}"><b>${esc(b.name)}</b><i>${line}</i><span class="zd-go">${ro ? "Studiu de caz" : "Case study"} <span aria-hidden="true">\u2192</span></span></button></li>`
+        : `<li><div class="zd-b"><b>${esc(b.name)}</b><i>${line}</i></div></li>`;
+    }).join("")}</ul>`;
+  }
+  // the park's static parts are plain meshes: the start-up batcher (mergeStatic, builder "FourStreets") folds them into a
+  // few draws; the wheel and the carousel turn (marked noMerge, drawn as themselves: four meshes and one instanced)
+  function buildCourtyard(parent, cx, cz) {
     const g = new Group();
-    // the gate on the avenue side, white pillars and a red ZDROVIT lintel
-    { const gm = new MeshStandardMaterial({ color: "#f4f2ec", roughness: 0.8 });
-      for (const dz of [-28, 28]) { const pl = new Mesh(new BoxGeometry(6, 26, 6), gm); pl.position.set(cx - 168, 13, cz + dz); g.add(pl); }
-      const lint = signBoard({ name: "ZDROVIT", signBg: "#e30613", signInk: "#ffffff" }, 62, 9); lint.position.set(cx - 168, 27, cz); lint.rotation.y = -Math.PI / 2; g.add(lint);
-      const path = new Mesh(new BoxGeometry(60, 0.9, 46), new MeshStandardMaterial({ color: "#d8cfbd", roughness: 1 })); path.position.set(cx - 150, 0.45, cz); g.add(path); }
-    { const kM = [new MeshStandardMaterial({ color: "#f4f2ec", roughness: 0.8 }), new MeshStandardMaterial({ color: "#d9d6cf", roughness: 0.8 })];
-      for (let i = 0; i < YARD_SLOTS; i++) {
-        const [kx, kz] = yardSpot(i), k0 = [...Array(ZDROVIT_YARD.length).keys()].find((q) => yardSlotOf(q) === i), used = k0 != null;
-        if (!used) continue;
-        const k = new Group();
-        const base = new Mesh(new BoxGeometry(16, used ? 11 : 2, 12), kM[used ? 0 : 1]); base.position.y = used ? 5.5 : 1; k.add(base);
-        if (used) {
-          const look = YARD_LOOK[ZDROVIT_YARD[k0]] || {};
-          const roof = new Mesh(new BoxGeometry(19, 1.4, 15), new MeshStandardMaterial({ color: look.roof || "#e30613", roughness: 0.6 })); roof.position.y = 11.7; k.add(roof);
-          if (look.band) { const band = new Mesh(new BoxGeometry(16.6, 1, 12.6), new MeshStandardMaterial({ color: look.band, roughness: 0.6 })); band.position.y = 10.5; k.add(band); /* the red fascia, between the sign (top 10) and the roof */ }
-          const sg = signBoard({ name: ZDROVIT_YARD[k0], signBg: look.signBg || "#ecebe7", signInk: look.signInk || "#3d3c39" }, 15, 3.2); sg.position.set(0, 8.4, 6.2); k.add(sg);
-        }
-        k.position.set(kx, 0, kz); k.rotation.y = kx < 1600 ? Math.PI / 2 : kz > cz ? Math.PI : 0; g.add(k); // (r176: the south ones face the yard too)
+    const M = (c, o = {}) => new MeshStandardMaterial({ color: c, roughness: 0.75, ...o });
+    const add = (geo, mat, x, y, z, ry = 0) => { const m = new Mesh(geo, mat); m.position.set(x, y, z); m.rotation.y = ry; g.add(m); return m; };
+    // one geometry from many parts, each with its colour in its vertices (for the parts that turn)
+    const part = (geo, color, mx) => { geo.applyMatrix4(mx); const c = new Color(color), n = geo.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; } geo.setAttribute("color", new BufferAttribute(a, 3)); return geo; };
+    const mx = (x, y, z, rx = 0, ry = 0, rz = 0, s = 1) => new Matrix4().compose(new Vector3(x, y, z), new Quaternion().setFromEuler(new Euler(rx, ry, rz)), new Vector3(s, s, s));
+    const white = M("#f4f2ec"), red = M("#e30613", { roughness: 0.6 }), path = M("#d8cfbd", { roughness: 1 }), lawn = M("#7cc472", { roughness: 1 });
+    const FUN = ["#e30613", "#FED012", "#119BFE", "#28C840", "#F28BA8", "#B098C8", "#F58D42"];
+    // the ground: the old yard's paving, a path from the arch to the wheel, a round plaza for the carousel, the
+    // coaster's lawn
+    const pave = add(new BoxGeometry(340, 0.8, 370), M("#e7e0d2", { roughness: 1 }), cx, 0.4, cz); pave.receiveShadow = true;
+    add(new BoxGeometry(250, 0.9, 26), path, 1675, 0.85, cz);
+    add(new CylinderGeometry(46, 46, 0.95, 40), path, 1690, 0.9, cz);
+    { const l = add(new CylinderGeometry(1, 1, 1, 40), lawn, 1730, 0.9, 5192); l.scale.set(98, 1.1, 24); }
+    for (const [lx, lz, r] of [[1598, 5012, 24], [1590, 5136, 20]]) add(new CylinderGeometry(r, r, 1.1, 28), lawn, lx, 0.9, lz);
+    // the arch on the avenue: two striped towers, the name big, "Beauty & Supplement Park" under it
+    {
+      const ax = cx - 164;
+      for (const dz of [-38, 38]) {
+        add(new BoxGeometry(11, 40, 11), white, ax, 20, cz + dz);
+        for (let k = 0; k < 4; k++) add(new BoxGeometry(11.6, 2.4, 11.6), red, ax, 6 + k * 9, cz + dz);
+        add(new ConeGeometry(9, 14, 4), red, ax, 47, cz + dz, Math.PI / 4);
+        add(new CylinderGeometry(0.35, 0.35, 10, 5), white, ax, 58, cz + dz);
+        add(new BoxGeometry(0.4, 4, 7), M(dz < 0 ? "#FED012" : "#119BFE"), ax, 61, cz + dz + 3.6);
       }
+      const tex = canvasTexture(768, 256, (ctx, w, h) => {
+        ctx.fillStyle = "#e30613"; ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, h * 0.7, w, h * 0.3);
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillStyle = "#ffffff"; ctx.font = "800 142px CromaticSans, sans-serif"; ctx.fillText("ZDROVIT", w / 2, h * 0.37);
+        ctx.fillStyle = "#e30613"; let fs = 46; ctx.font = `800 ${fs}px CromaticSans, sans-serif`;
+        while (ctx.measureText("Beauty & Supplement Park").width > w - 60 && fs > 20) { fs -= 2; ctx.font = `800 ${fs}px CromaticSans, sans-serif`; }
+        ctx.fillText("Beauty & Supplement Park", w / 2, h * 0.855);
+      });
+      const sm = new MeshStandardMaterial({ map: tex, roughness: 0.5, emissive: new Color("#ffffff"), emissiveMap: tex, emissiveIntensity: 0 });
+      STREET_GLOW.push([sm, 0.55]);
+      const sign = new Mesh(new BoxGeometry(69, 23, 1.6), [red, red, red, red, sm, sm]); sign.position.set(ax, 33, cz); sign.rotation.y = -Math.PI / 2; g.add(sign);
     }
-    const pave = new Mesh(new BoxGeometry(340, 0.8, 370), new MeshStandardMaterial({ color: "#e7e0d2", roughness: 1 }));
-    pave.position.set(cx, 0.4, cz); pave.receiveShadow = true; g.add(pave);
-    const grass = new Mesh(new CylinderGeometry(50, 50, 1.2, 32), new MeshStandardMaterial({ color: "#7cc472", roughness: 1 }));
-    grass.position.set(cx, 0.8, cz); g.add(grass);
-    const basin = new Mesh(new CylinderGeometry(14, 15, 3, 24), new MeshStandardMaterial({ color: "#d9d2c3", roughness: 0.9 })); basin.position.set(cx, 1.5, cz);
-    const water = new Mesh(new CylinderGeometry(12, 12, 0.6, 24), new MeshStandardMaterial({ color: "#7fc8e8", roughness: 0.15, metalness: 0.2 })); water.position.set(cx, 3, cz);
-    const jet = new Mesh(new CylinderGeometry(0.8, 1.6, 9, 8), new MeshStandardMaterial({ color: "#d8f1ff", transparent: true, opacity: 0.8 })); jet.position.set(cx, 7, cz);
-    g.add(basin, water, jet);
-    const crownM = new MeshStandardMaterial({ color: "#4fae5c", roughness: 0.9, flatShading: true }), trunkM = new MeshStandardMaterial({ color: "#7a5a3a" });
-    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; const tx = cx + Math.cos(a + 0.26) * 112, tz = cz + Math.sin(a + 0.26) * 118; const tr = new Mesh(new CylinderGeometry(1.2, 1.6, 10, 6), trunkM); tr.position.set(tx, 5, tz); const cr = new Mesh(new IcosahedronGeometry(7.5, 1), crownM); cr.position.set(tx, 15, tz); g.add(tr, cr); }
-    g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+    // booths: white stalls with a coloured roof and awning, along the path and along the hedge
+    {
+      const booth = (x, z, ry, c) => {
+        const b = new Group(); b.position.set(x, 0, z); b.rotation.y = ry; g.add(b);
+        const cm = M(c, { roughness: 0.6 });
+        const p = (geo, m, y, zz, rx = 0) => { const q = new Mesh(geo, m); q.position.set(0, y, zz); q.rotation.x = rx; b.add(q); };
+        p(new BoxGeometry(13, 9, 9), white, 4.5, 0);
+        p(new BoxGeometry(13.4, 2, 1), cm, 4.2, 4.8);
+        p(new BoxGeometry(15, 1.2, 11), cm, 9.6, 0);
+        p(new BoxGeometry(14, 0.6, 5.5), cm, 8.1, 6.6, 0.42);
+        p(new ConeGeometry(1.8, 3.4, 4), cm, 12, 0);
+      };
+      let k = 0;
+      for (const x of [1588, 1624]) { booth(x, cz - 28, 0, FUN[k++ % 7]); booth(x, cz + 28, Math.PI, FUN[k++ % 7]); }
+      for (let i = 0; i < 6; i++) booth(1662 + i * 36, 5012, 0, FUN[k++ % 7]);
+    }
+    // trees round the edge
+    { const crownM = M("#4fae5c", { roughness: 0.9, flatShading: true }), trunkM = M("#7a5a3a");
+      for (const [tx, tz] of [[1572, 5000], [1574, 5246], [1650, 5122], [1752, 5124], [1882, 5130], [1884, 5244], [1882, 5004]]) { add(new CylinderGeometry(1.2, 1.6, 10, 6), trunkM, tx, 5, tz); add(new IcosahedronGeometry(7.5, 1), crownM, tx, 15, tz); } }
+    // the roller coaster: an oval with two hills and a loop, a red square rail on white posts, a station with three cars
+    {
+      const C0 = new Vector3(1730, 0, 5192), RX = 122, RZ = 38, pts = [], oval = [];
+      const gau = (a, c, w) => { let d = Math.abs(a - c) % (Math.PI * 2); if (d > Math.PI) d = Math.PI * 2 - d; return Math.exp(-(d * d) / (2 * w * w)); };
+      const N = 96, loopAt = Math.PI / 2, LR = 15;
+      for (let i = 0; i < N; i++) {
+        const a = (i / N) * Math.PI * 2;
+        const p = new Vector3(C0.x + RX * Math.cos(a), 7 + 30 * gau(a, 0.05, 0.42) + 15 * gau(a, Math.PI, 0.38), C0.z + RZ * Math.sin(a));
+        pts.push(p); oval.push(p);
+        if (i === N / 4) { // the loop, on the south straight (going west): round once, sideways a little so the rail clears itself
+          for (let j = 1; j < 24; j++) { const f = (j / 24) * Math.PI * 2; pts.push(new Vector3(p.x - LR * Math.sin(f), p.y + LR * (1 - Math.cos(f)), p.z + 4.5 * Math.sin(f / 2))); }
+        }
+      }
+      const rails = [], posts = [], up = new Vector3(0, 1, 0), d = new Vector3(), q = new Quaternion();
+      for (let i = 0; i < pts.length; i++) {
+        const a = pts[i], b = pts[(i + 1) % pts.length]; d.subVectors(b, a); const L = d.length(); if (L < 0.01) continue;
+        q.setFromUnitVectors(up, d.clone().normalize());
+        const geo = new CylinderGeometry(1.7, 1.7, L + 1.2, 4); geo.applyMatrix4(new Matrix4().compose(a.clone().add(b).multiplyScalar(0.5), q, new Vector3(1, 1, 1))); rails.push(geo);
+        if (i % 4 === 0 && a.y > 3 && (i < N / 4 || i > N / 4 + 23)) { const pg = new CylinderGeometry(0.7, 0.9, a.y, 5); pg.translate(a.x, a.y / 2, a.z); posts.push(pg); }
+      }
+      // (the loop stands on its own: the oval's post under its foot holds it)
+      const rail = new Mesh(mergeGeometries(rails, false), red); g.add(rail);
+      const post = new Mesh(mergeGeometries(posts.map((x) => x.index ? x.toNonIndexed() : x), false), white); g.add(post);
+      // the station on the north straight, its three cars waiting
+      const st = oval[(N * 3) / 4]; // the north straight, low, by the plaza
+      for (const [sx, sz] of [[-16, -7], [16, -7], [-16, 7], [16, 7]]) add(new BoxGeometry(1.4, 16, 1.4), white, st.x + sx, 8, st.z + sz);
+      add(new BoxGeometry(38, 1.6, 20), red, st.x, 16.5, st.z);
+      add(new BoxGeometry(36, 3, 14), white, st.x, 1.6, st.z - 2);
+      for (let c = 0; c < 3; c++) add(new BoxGeometry(7, 3.4, 5), M(["#FED012", "#119BFE", "#28C840"][c], { roughness: 0.5 }), st.x - 9 + c * 9, st.y + 2.6, st.z);
+    }
+    // bunting round the plaza: eight poles, strings that sag, little triangles in the park's colours (one mesh)
+    {
+      const P = [], cxp = 1690, R = 52;
+      for (let i = 0; i < 8; i++) { const a = (i + 0.5) / 8 * Math.PI * 2; P.push(new Vector3(cxp + R * Math.cos(a), 19, cz + R * Math.sin(a))); add(new CylinderGeometry(0.5, 0.6, 19, 5), white, P[i].x, 9.5, P[i].z); }
+      const pos = [], col = [], cc = new Color(), seg = [];
+      const string = (A, B, sag) => {
+        const n = Math.max(4, Math.round(A.distanceTo(B) / 4.5));
+        let prev = A.clone();
+        for (let j = 1; j <= n; j++) {
+          const t = j / n, p = A.clone().lerp(B, t); p.y -= sag * 4 * t * (1 - t);
+          const m = prev.clone().add(p).multiplyScalar(0.5);
+          seg.push([prev.clone(), p.clone()]);
+          if (j < n) { cc.set(FUN[(j + seg.length) % 7]); const s = 1.7; const dir = p.clone().sub(prev).normalize();
+            const a0 = m.clone().addScaledVector(dir, -s), a1 = m.clone().addScaledVector(dir, s), a2 = m.clone(); a2.y -= 3.4;
+            for (const v of [a0, a1, a2]) { pos.push(v.x, v.y, v.z); col.push(cc.r, cc.g, cc.b); } }
+          prev = p;
+        }
+      };
+      for (let i = 0; i < 8; i++) string(P[i], P[(i + 1) % 8], 3.5);
+      // and from the arch's towers in, over the path
+      string(new Vector3(cx - 164, 38, cz - 38), P[4], 6); string(new Vector3(cx - 164, 38, cz + 38), P[3], 6);
+      const fg = new BufferGeometry(); fg.setAttribute("position", new BufferAttribute(new Float32Array(pos), 3)); fg.setAttribute("color", new BufferAttribute(new Float32Array(col), 3)); fg.computeVertexNormals();
+      const flags = new Mesh(fg, new MeshStandardMaterial({ vertexColors: true, side: DoubleSide, roughness: 0.8 })); flags.castShadow = false; flags.userData.noShadow = true; g.add(flags);
+      const lines = seg.map(([a, b]) => { const geo = new BoxGeometry(0.25, 0.25, a.distanceTo(b) + 0.2); geo.applyMatrix4(new Matrix4().lookAt(a, b, new Vector3(0, 1, 0)).setPosition(a.clone().add(b).multiplyScalar(0.5))); return geo; });
+      g.add(new Mesh(mergeGeometries(lines, false), M("#3d3c39")));
+    }
+    // balloons by the arch
+    for (const [bx, by, bz, c] of [[1570, 30, 5022, "#e30613"], [1567, 33, 5026, "#FED012"], [1572, 34, 5019, "#119BFE"], [1566, 28, 5118, "#28C840"], [1570, 31, 5114, "#F28BA8"]]) { add(new SphereGeometry(2.6, 10, 8), M(c, { roughness: 0.35 }), bx, by, bz); add(new CylinderGeometry(0.12, 0.12, by - 2, 3), M("#3d3c39"), bx, (by - 2) / 2, bz); }
+    // the carousel: a white drum; on it, turning, the floor, the poles and horses and a striped roof
+    const spin = [];
+    {
+      const X = 1690, Z = cz;
+      add(new CylinderGeometry(23, 24, 2.6, 28), white, X, 1.3, Z);
+      const top = new Group(); top.position.set(X, 0, Z); g.add(top);
+      const parts = [
+        part(new CylinderGeometry(21, 21, 1, 28), "#F28BA8", mx(0, 3.1, 0)),
+        part(new CylinderGeometry(3, 3, 24, 10), "#FED012", mx(0, 14, 0)),
+        part(new CylinderGeometry(25.5, 25.5, 3, 28, 1, true), "#e30613", mx(0, 23, 0)),
+        part(new SphereGeometry(2.4, 10, 8), "#FED012", mx(0, 37, 0))
+      ];
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2, px = Math.cos(a) * 15.5, pz = Math.sin(a) * 15.5, hy = 8 + (i % 2) * 2.4, c = FUN[(i + 1) % 7];
+        parts.push(part(new CylinderGeometry(0.45, 0.45, 19, 5), "#f4f2ec", mx(px, 13, pz)));
+        parts.push(part(new BoxGeometry(2.4, 3, 7), c, mx(px, hy, pz, 0, -a, 0)));
+        parts.push(part(new BoxGeometry(2, 3.4, 2.2), c, mx(px + Math.sin(a) * 3.6, hy + 2.4, pz - Math.cos(a) * 3.6, 0, -a, 0)));
+      }
+      const body = new Mesh(mergeGeometries(parts.map((x) => (x.index ? x.toNonIndexed() : x)), false), new MeshStandardMaterial({ vertexColors: true, roughness: 0.6 }));
+      top.add(body);
+      const stripes = canvasTexture(256, 32, (ctx, w, h) => { for (let k = 0; k < 16; k++) { ctx.fillStyle = k % 2 ? "#ffffff" : "#e30613"; ctx.fillRect((k * w) / 16, 0, w / 16 + 1, h); } });
+      const roof = new Mesh(new ConeGeometry(27, 12, 32, 1, true), new MeshStandardMaterial({ map: stripes, roughness: 0.6, side: DoubleSide }));
+      roof.position.y = 30.5; top.add(roof);
+      top.name = "zdCarousel"; spin.push(top);
+    }
+    // the Ferris wheel, where the Zdrovit house stood: two A-frames, a rim with spokes, twelve gondolas that hang level
+    // (turned 0.6 rad towards the south-west, so its face reads from the avenue, from the map's usual three-quarter view
+    // and from above; flat to the avenue it was a line from the south)
+    const wheel = new Group(), WX = ZDROVIT_PARK.x, WZ = cz, HUB = 55, WR = 42, NG = 12, PSI = 0.6, wb = new Group();
+    wb.position.set(WX, 0, WZ); wb.rotation.y = PSI; g.add(wb);
+    {
+      const wadd = (geo, mat, x, y, z) => { const m = new Mesh(geo, mat); m.position.set(x, y, z); wb.add(m); return m; };
+      wadd(new BoxGeometry(46, 3, 34), white, 0, 1.5, 0);
+      for (const sx of [-7, 7]) for (const sz of [-1, 1]) {
+        const a = new Vector3(sx, 0, sz * 30), b = new Vector3(sx, HUB, 0), L = a.distanceTo(b);
+        const leg = new Mesh(new CylinderGeometry(1.1, 1.5, L, 6), white); leg.position.copy(a).add(b).multiplyScalar(0.5);
+        leg.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), b.clone().sub(a).normalize()); wb.add(leg);
+      }
+      wadd(new CylinderGeometry(1.2, 1.2, 16, 8), white, 0, HUB, 0).rotation.z = Math.PI / 2;
+      wheel.position.set(0, HUB, 0); wb.add(wheel);
+      const parts = [part(new TorusGeometry(WR, 1.2, 6, 48), "#e30613", mx(0, 0, 0, 0, Math.PI / 2, 0)), part(new TorusGeometry(WR * 0.62, 0.7, 5, 36), "#ffffff", mx(0, 0, 0, 0, Math.PI / 2, 0)), part(new CylinderGeometry(3.4, 3.4, 5, 12), "#FED012", mx(0, 0, 0, 0, 0, Math.PI / 2))];
+      for (let i = 0; i < NG; i++) { const a = (i / NG) * Math.PI * 2; parts.push(part(new BoxGeometry(0.6, WR, 0.6), "#ffffff", mx(0, Math.cos(a) * WR / 2, Math.sin(a) * WR / 2, a, 0, 0))); }
+      wheel.add(new Mesh(mergeGeometries(parts.map((x) => (x.index ? x.toNonIndexed() : x)), false), new MeshStandardMaterial({ vertexColors: true, roughness: 0.6 })));
+      wheel.name = "zdWheel"; spin.push(wheel);
+    }
+    const gGeo = mergeGeometries([new BoxGeometry(5, 5.4, 6).toNonIndexed(), (() => { const r = new BoxGeometry(6.4, 1, 7.4).toNonIndexed(); r.translate(0, 3.4, 0); return r; })()], false);
+    gGeo.translate(0, -4.2, 0); // hangs under its pin on the rim
+    const gond = new InstancedMesh(gGeo, new MeshStandardMaterial({ roughness: 0.55 }), NG);
+    for (let i = 0; i < NG; i++) gond.setColorAt(i, new Color(FUN[i % 7]));
+    g.add(gond);
+    const o3 = new Object3D(), placeG = (rot) => { for (let i = 0; i < NG; i++) { const a = (i / NG) * Math.PI * 2 + rot; const r = Math.sin(a) * WR; o3.position.set(WX + Math.sin(PSI) * r, HUB + Math.cos(a) * WR, WZ + Math.cos(PSI) * r); o3.rotation.y = PSI; o3.updateMatrix(); gond.setMatrixAt(i, o3.matrix); } gond.instanceMatrix.needsUpdate = true; };
+    placeG(0); gond.frustumCulled = false; gond.computeBoundingSphere?.();
+    g.traverse((m) => { if (m.isMesh) { m.castShadow = !m.userData.noShadow; m.receiveShadow = true; } });
+    for (const s of spin) s.traverse((m) => { m.userData.noMerge = true; });
+    gond.userData.noMerge = true;
     parent.add(g);
-    for (const o of list) buildBrandBuilding(parent, o);
+    // TASK-074: the wheel and the carousel turn slowly, only while the park is on screen, and not at all with reduced motion
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!still) {
+      const fr = new Frustum(), pm = new Matrix4(), sph = new Sphere(new Vector3(1730, 40, 5110), 230), c0 = new Vector3(1730, 40, 5110);
+      BAKERY_ANIM.push((t, cam) => {
+        if (!cam) return;
+        sph.center.copy(c0); warpV(sph.center);
+        pm.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); fr.setFromProjectionMatrix(pm);
+        if (!fr.intersectsSphere(sph)) return;
+        const rot = t * 0.09;
+        wheel.rotation.x = rot; placeG(rot);
+        spin[0].rotation.y = -t * 0.32;
+      });
+    }
     EXTRA_KEEPOUT.push({ x: cx, y: cz, r: 200 });
   }
 
@@ -27896,11 +28051,13 @@ void main() {
     // r177 (Daniel): the brand the code called "Jesse J" (Daniel wrote "Jessie J") is Tracy J
     { br: "C", name: "Tracy J", x: 1574, z: 5950, face: "-x", kind: "la", w: 42, d: 32, h: 21, wall: "#d8efe6", accent: "#62c6a6", c: "#62c6a6", t: "#0c2a20", line: "BEAUTY \xB7 LOS ANGELES", desc: "The Core of a skincare brand with a joyous voice, its visual identity, packaging and brand universe." } // r179: as on its case page
   ];
-  // the Zdrovit courtyard (Medical Avenue, east side): Zdrovit and its seven brands' kiosks around a yard
+  // the Zdrovit courtyard (Medical Avenue, east side)
   // (r176: Routine Paris, Darya Hope and Jesse J moved out to their own plots, see STREET_BRANDS)
+  // TASK-074: the courtyard is the Zdrovit Beauty & Supplement Park (buildCourtyard); the Zdrovit house is gone (the
+  // Ferris wheel stands there), this entry stays as the name the drive and the friends list know
   var COURT = { x: 1720, z: 5070 };
   var COURT_BRANDS = [
-    { br: "C", name: "Zdrovit", x: 1860, z: 5070, face: "-x", kind: "house", w: 70, d: 48, h: 84, wall: "#f2f7f1", accent: "#e30613", c: "#e30613", t: "#ffffff", line: "HEALTH" }
+    { br: "C", name: "Zdrovit", x: 1830, z: 5070, c: "#e30613", t: "#ffffff", line: "BEAUTY & SUPPLEMENT PARK" }
   ];
   // Coffee Street additions
   var COFFEE_ADDS = [
@@ -27937,7 +28094,7 @@ void main() {
     buildKompusShop(parent, 934, 4560, 1.5);
     yield;
     EXTRA_KEEPOUT.push({ x: 706, y: 5737, r: 50 });
-    buildCourtyard(parent, COURT.x, COURT.z, COURT_BRANDS.map((o) => ({ ...o, logo: L(o.logo) })));
+    buildCourtyard(parent, COURT.x, COURT.z); // TASK-074: the Zdrovit park
     yield;
     buildSofmedicaYard(parent);
     yield;
@@ -35444,6 +35601,7 @@ void main() {
       "Litorsal": "litorsal", "Lacalut": "lacalut", // TASK-026: the first two of the Zdrovit yard
       "Maximag": "maximag", // TASK-064: its own page, and its own kiosk in the yard
       "Steam": "steam", "Steam Coffee Shop": "steam", "OMA Coffee": "oma-coffee", "Antila": "antila", "UNDE": "unde", "UND\xC9": "unde" };
+    for (const b of ZDROVIT_BRANDS) if (b.page && !WORK_PAGES[b.name]) WORK_PAGES[b.name] = b.page; // TASK-074: a Zdrovit brand's page comes from its data
     window.__casePage = (brand) => (WORK_PAGES[brand] && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname) ? WORK_PAGES[brand] : null);
     const withPage = (brand, onClick) => () => { const pg = window.__casePage(brand); if (pg && openFrameHook) return openFrameHook(`/work/${pg}/?embed=1`, brand); return onClick?.(); };
     const mkTag = (brand, name, line, cta, onClick0, extra = "") => {
@@ -35492,28 +35650,28 @@ void main() {
     // r79: a card for every brand on the four streets, shown while you pass its building
     const knownProject = (n) => [...PROJECTS_A1, ...PROJECTS_A2, ...PROJECTS_B1, ...PROJECTS_B2].find((p) => p.name === n || (n === "Routine Paris" && p.name === "Routine Paris"));
     const projOf = (b) => knownProject(b.name) || { name: b.name, cat: b.line.replace(/ · /g, " \u00B7 "), poster: b.name, accent: b.c, desc: b.desc || "By Cromatic Studios. The full case study is coming soon." };
-    // the courtyard's eight brands share one card, which opens a panel with all of them
+    // the courtyard's brands share one card, which opens a panel with all of them
+    // TASK-074: the Zdrovit Beauty & Supplement Park: the same list as the map's Zdrovit card (zdrovitListHTML)
     const openCourt = () => {
       modalBack.innerHTML = "";
       const m = el("div", "hmodal court-modal");
       m.setAttribute("role", "dialog");
-      m.innerHTML = `<div class="hm-info wide"><span class="eyebrow">MEDICAL AVENUE \u00B7 THE COURTYARD</span><span class="hm-name drop1" style="background:#e30613;color:#fff">Zdrovit</span>
-        <p>Seven brands around one yard: health and clinics, from Bucharest to Barcelona.</p>
-        <div class="court-grid">${COURT_BRANDS.map((b, i) => `<button class="court-b" data-i="${i}" style="--cc:${b.c};--ct:${b.t}"><b>${b.name}</b><span class="mono">${b.line}</span></button>`).join("")}${ZDROVIT_YARD.map((n) => `<button class="court-b yard-b" data-n="${n}" style="--cc:#cfcdc8;--ct:#3d3c39"><b>${n}</b><span class="mono">IN THE YARD</span></button>`).join("")}</div></div>`;
-      m.querySelectorAll(".court-b").forEach((btn) => { if (btn.dataset.n) { btn.onclick = () => { const pg = window.__casePage(btn.dataset.n); if (pg && openFrameHook) { closeModal(); openFrameHook(`/work/${pg}/?embed=1`, btn.dataset.n); } }; return; } btn.onclick = () => { const b0 = COURT_BRANDS[+btn.dataset.i], pg = window.__casePage(b0.name); if (pg && openFrameHook) { closeModal(); openFrameHook(`/work/${pg}/?embed=1`, b0.name); } else openProjectHook?.(projOf(b0)); }; });
+      m.innerHTML = `<div class="hm-info wide"><span class="eyebrow">MEDICAL AVENUE \u00B7 BEAUTY &amp; SUPPLEMENT PARK</span><span class="hm-name drop1" style="background:#e30613;color:#fff">Zdrovit</span>
+        <p>${ZDROVIT_BRANDS.length} brands in one park. The ones with a case study open it.</p>${zdrovitListHTML("zd-modal")}</div>`;
+      m.querySelectorAll(".zd-b.pg").forEach((btn) => { btn.onclick = () => { const pg = window.__casePage(btn.dataset.zb) || btn.dataset.pg; if (pg && openFrameHook && /^https?:$/.test(location.protocol)) { closeModal(); openFrameHook(`/work/${pg}/?embed=1`, btn.dataset.zb); } }; });
       const close = el("button", "hm-close mono", "CLOSE \u00D7");
       close.onclick = closeModal;
       m.querySelector(".hm-info").appendChild(close);
       modalBack.appendChild(m);
       openModal();
     };
-    const COURT_TAG = { br: "C", name: "Zdrovit", x: COURT.x - 150, z: COURT.z, line: "8 BRANDS AROUND A YARD" /* TASK-064: + Maximag */, c: "#e30613", t: "#ffffff" };
+    const COURT_TAG = { br: "C", name: "Zdrovit", x: COURT.x - 150, z: COURT.z, line: "BEAUTY & SUPPLEMENT PARK" /* TASK-074 */, c: "#e30613", t: "#ffffff" };
     const workTags = [...STREET_BRANDS, COURT_TAG, TAC, ...COFFEE_ADDS, ...LANE_BRANDS].map((b) => {
       BRANDC[b.name] = BRANDC[b.name] || { c: b.c, t: b.t };
       // brands with a case page on the website open it full screen (offline copies fall back to the card)
       if (!b.page && window.__casePage(b.name)) b.page = window.__casePage(b.name);
       const onlinePage = b.page && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname);
-      const t = mkTag(b.name, b.name.toUpperCase(), b.line, b === COURT_TAG ? "See the yard \u2192" : b.wip ? "Work in progress" : ctaFor(b.name), () => (b.wip ? null : b === COURT_TAG ? openCourt() : onlinePage && openFrameHook ? openFrameHook(`/work/${b.page}/?embed=1`, b.name) : openProjectHook?.(projOf(b))), "work-tag");
+      const t = mkTag(b.name, b.name.toUpperCase(), b.line, b === COURT_TAG ? `See the ${ZDROVIT_BRANDS.length} brands \u2192` : b.wip ? "Work in progress" : ctaFor(b.name), () => (b.wip ? null : b === COURT_TAG ? openCourt() : onlinePage && openFrameHook ? openFrameHook(`/work/${b.page}/?embed=1`, b.name) : openProjectHook?.(projOf(b))), "work-tag");
       t._st = b;
       return t;
     });
@@ -40454,7 +40612,7 @@ void main() {
         }
         // the low clouds of the drive's flight would sit right over the airfield on the map
         worldRefs.clouds.visible = !mapMode;
-        for (const f of BAKERY_ANIM) f(now * 0.001);
+        for (const f of BAKERY_ANIM) f(now * 0.001, camera); // TASK-074: + the camera (the Zdrovit park turns only on screen)
         for (const c of worldRefs.clouds.children) {
           c.position.x += Math.sin(now * 18e-5 * c.userData.drift) * 0.12;
         }
@@ -41195,7 +41353,9 @@ void main() {
         { id: "unde", br: "A", x: 708, z: 6036, h: 50, name: "UND\xC9", line: "GROCERY \xB7 SIGNAGE", c: "#2b6fd6", t: "#ffffff", work: "UNDE", desc: "ARCA's grocery stores: a hand-drawn basket and three formats, Market, Store and Concept." },
         { id: "invest", br: "B", x: 2205, z: 4500, h: 170, name: "Investimental", line: "FINTECH \xB7 UX \xB7 UI", c: "#119BFE", t: "#ffffff", work: "Investimental" },
         { id: "tac", br: "C", x: 1500, z: 4570, px: 1775, pz: 4570, h: 128, /* r139e: the re-massed palace is lower */ name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
-        { id: "zdrovit", br: "C", x: 1860, z: 5070, h: 96, name: "Zdrovit", line: "A YARD OF BRANDS", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health and clinic brands, from Bucharest to Barcelona." }, // r176: the beauty and perfume brands have their own plots now
+        // TASK-074: one place, the Beauty & Supplement Park; its pin on the Ferris wheel; the card lists the brands (no case
+        // page of its own; noCover: the card shows the park's red poster, not one brand's picture)
+        { id: "zdrovit", br: "C", x: ZDROVIT_PARK.x, z: ZDROVIT_PARK.z, h: 104, name: "Zdrovit", line: "BEAUTY & SUPPLEMENT PARK", c: "#e30613", t: "#ffffff", work: "Zdrovit", park: true, noCover: true, desc: "Beauty & Supplement Park: the Zdrovit brands Cromatic Studios works for, in one place." },
         { id: "end", stop: "end", name: "Cromatic Studios House", line: "STR. OLARI 9 \xB7 COME BY", c: "#ffffff", t: "#111111", pin: "#111111" },
         { id: "jet", x: 1250, z: JET_WALK_Z, px: JET_HOME.x, pz: JET_HOME.z, h: 28 /* r138b: the smaller jet's fin top */, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", board: true, unmarked: true }
       ];
@@ -41204,7 +41364,7 @@ void main() {
         const have = new Set(MAP_PLACES.map((p) => (p.work || p.name).toLowerCase()));
         const add = (o) => { if (have.has(o.name.toLowerCase())) return; have.add(o.name.toLowerCase()); MAP_PLACES.splice(MAP_PLACES.length - 2, 0, o); };
         for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, street: b.lane ? "D" : b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.pinH || (b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60), name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
-        ZDROVIT_YARD.forEach((n, i) => { const [x, z] = yardSpot(yardSlotOf(i)); add({ id: "y-" + i, br: "C", x: 1500, z, px: x, pz: z, h: 22, name: n, line: "IN THE ZDROVIT YARD", c: "#cfcdc8", t: "#3d3c39", small: true, desc: `${n}, one of the brands in the Zdrovit yard. By Cromatic Studios.` }); });
+        // TASK-074: the Zdrovit yard's kiosks (y-0 .. y-6) are gone: Zdrovit is one place, its card lists the brands
         add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Berero", line: "BRAND \xB7 LABELS \xB7 MERCH", c: "#111111", t: "#ffffff", act: "bereroTag" });
         add({ id: "echo", x: 1035, z: 6110, px: 1035, pz: 6177, h: 110, tapW: 0.45 /* r168 (Daniel: "Echo School is hard to press, it matters more than Dacia 99"): it wins the building's taps, and shows as a card from afar (TIER1) */, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", desc: "Two years of Instagram for a School of Technology, Digital Arts & Videogames in Bucharest: posts, stories, carousels, reels and campaigns." }); // r159: the case page is live
         add({ id: "friends", stop: "merge", px: 1365, pz: 6400, h: 150, float: true, name: "+50 Other Clients", line: "HUNDREDS OF PROJECTS \xB7 THOUSANDS OF DELIVERABLES", c: "#d9d7d2", t: "#1a1a1a" });
@@ -42453,7 +42613,7 @@ void main() {
         if (/^https?:$/.test(location.protocol)) fetch("/covers.json").then((r) => r.ok ? r.json() : {}).then((j) => { COVERS = j; }).catch(() => {});
         window.__coverOf = (id) => { const pl = MAP_PLACES.find((q) => q.id === id); return pl ? coverOf(pl) : null; };
         const coverOf = (pl) => {
-          if (!COVERS) return null;
+          if (!COVERS || pl.noCover) return null; // TASK-074
           // r130: a real photo first (a place's own, then its case page's cover)
           if (COVERS["place:" + pl.id]) return COVERS["place:" + pl.id];
           for (const n of [pl.work, pl.name]) if (n && COVERS["name:" + n.toLowerCase()]) return COVERS["name:" + n.toLowerCase()];
@@ -42466,7 +42626,7 @@ void main() {
           const cov = coverOf(pl);
           const shot = !cov;
           card.style.setProperty("--pc", pl.c); card.style.setProperty("--pt", pl.t || "#fff");
-          card.classList.add("has-img"); card.classList.toggle("shot", shot); card.classList.remove("mcd-game"); // r201: only the game's card is dressed as the game
+          card.classList.add("has-img"); card.classList.toggle("shot", shot); card.classList.remove("mcd-game", "mcd-zd"); // TASK-074: + the Zdrovit list card; r201: only the game's card is dressed as the game
           // r130h: the card sits in a bottom corner, on the side away from the place, so the scene stays clear
           { const pv = warpV(new Vector3(pl.wx, 0, pl.wz)).project(camera); const right = pv.x < 0; card.classList.toggle("cr", right); card.classList.toggle("cl", !right); }
           card.innerHTML = `<figure class="mcd-img${cov ? "" : " mcd-poster"}">${cov ? `<img src="${cov}" alt="" decoding="async">` : `<span class="mcd-pt">${pl.name}</span><i class="mcd-pl mono">${pl.line || ""}</i>`}</figure><div class="mcd-body"><span class="mcd-eyebrow mono">${eyebrow}</span><b class="mcd-title" style="--pc:${pl.c};--pt:${pl.t || "#fff"}">${pl.name}</b>${body}
@@ -42574,6 +42734,16 @@ void main() {
             card.classList.add("mcd-game");
             card.querySelector(".mcd-img")?.insertAdjacentHTML("beforeend", `<span class="mg-tm" aria-hidden="true"><img src="${twoMinMark}" alt=""></span>`);
             addFight(pl, true);
+            return;
+          }
+          // TASK-074: Zdrovit, the Beauty & Supplement Park: its card is the list of its brands; one with a case page opens it
+          if (pl.park) {
+            const ro = /^ro/i.test(document.documentElement.lang || "");
+            showCard(pl, MAP_STREET[pl.street || pl.br], `<span class="zd-kind mono">Beauty &amp; Supplement Park</span><p>${ro ? `${ZDROVIT_BRANDS.length} branduri într-un parc. Cele cu un studiu de caz îl deschid.` : `${ZDROVIT_BRANDS.length} brands in one park. The ones with a case study open it.`}</p>${zdrovitListHTML("zd-card")}`, "");
+            card.classList.add("mcd-zd");
+            card.querySelectorAll(".zd-b.pg").forEach((btn) => {
+              btn.onclick = () => { const pg = window.__casePage?.(btn.dataset.zb) || btn.dataset.pg; if (!pg || !openFrameHook || !/^https?:$/.test(location.protocol)) return; const cf = document.querySelector(".case-frame"); if (cf) cf._from = { r: btn.getBoundingClientRect(), t: performance.now() }; openFrameHook(`/work/${pg}/?embed=1`, btn.dataset.zb); };
+            });
             return;
           }
           const pr = projectOf(pl.name);
