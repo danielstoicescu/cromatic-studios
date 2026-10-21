@@ -1,0 +1,19 @@
+{
+ "_": "TASK-076: optisomn.ro. Crops in capture px (desktop 2880 wide, phone 780 wide).",
+ "label": "optisomn.ro",
+ "field": ["#2f4fb0", "#0a1240"],
+ "out": {
+  "hero": {"kind": "hero", "desktop": {"src": "desktop-full.png"}, "phone": {"src": "phone-hero.png"}},
+  "site-scroll": {"kind": "plain", "src": "desktop-full.png", "width": 1200, "q": 72},
+  "site-scroll-phone": {"kind": "plain", "src": "phone-full.png", "width": 585, "q": 70},
+  "insomnia": {"kind": "browser", "src": "section-02.png", "crop": [0, 0, 2880, 1194]},
+  "rules": {"kind": "browser", "src": "desktop-full.png", "crop": [0, 2866, 2880, 1584]},
+  "formula": {"kind": "browser", "src": "section-03.png", "crop": [0, 0, 2880, 2290]},
+  "jelly": {"kind": "browser", "src": "section-04.png", "crop": [0, 0, 2880, 2018]},
+  "rest": {"kind": "browser", "src": "section-05.png", "crop": [0, 0, 2880, 1354]},
+  "phone-hero": {"kind": "phone", "src": "phone-hero.png", "y": 0},
+  "phone-insomnia": {"kind": "phone", "src": "phone-full.png", "y": 2450},
+  "phone-rules": {"kind": "phone", "src": "phone-full.png", "y": 4100},
+  "phone-jelly": {"kind": "phone", "src": "phone-full.png", "y": 15200}
+ }
+}

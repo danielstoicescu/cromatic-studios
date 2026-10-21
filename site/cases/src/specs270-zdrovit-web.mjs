@@ -358,8 +358,58 @@ export const LACIUM = web({
   related: ["glucopil", "gripovit", "aspasia"]
 });
 
+export const OPTISOMN = web({
+  slug: "optisomn", name: "Optisomn", label: "optisomn.ro",
+  title: "Goodnight, in navy.",
+  tagline: "The product site for Optisomn, a range of sleep supplements: a night sky, the rules of a good night and four products.",
+  desc: "Optisomn: optisomn.ro, the one-page product site for a range of sleep supplements in the Zdrovit portfolio, on desktop and phone. By Cromatic Studios, Bucharest.",
+  accent: { bg: "#14215e", fg: "#ffffff", ink: "#3a6fd8" },
+  info: ["Sleep supplements, Optisomn", "Romania · Zdrovit portfolio", "Landing page, desktop and mobile"],
+  heroAlt: "optisomn.ro in a browser window and on a phone: the Optisomn range among clouds in a night sky, and Noapte Bună! in pale yellow",
+  problem: {
+    h: "Sleep, on a page",
+    p: [
+      "Optisomn is a range of sleep supplements from Zdrovit, built round melatonin: Optisomn tablets, Optisomn vise plăcute, cherry-flavoured jellies and a spray.",
+      "Each product has its own dose and its own plant extracts. The site keeps them apart and keeps the page quiet, the way the subject asks for.",
+      "It starts with sleep itself: why it matters, what insomnia does, and a few rules for a better night."
+    ]
+  },
+  solution: {
+    h: "A night sky, scrolled",
+    p: "The page is a night sky: deep blues, clouds, a few stars and Noapte Bună! in pale yellow. Ingredient doses are set in a handwritten script beside small drawings of a moon and a pillow, and each product sits in its own blue field.",
+    stat: "4",
+    statText: "products in one range: tablets, vise plăcute, cherry jellies and a spray"
+  },
+  page: {
+    text: "The menu runs Tulburări ale somnului, Optisomn®, Comandă, Contact. The hero lines up the range among clouds, with Noapte Bună! and five ingredients on a curve below: melatonină, passiflora, hamei, magneziu, vitamina B6. Then the page talks about sleep, insomnia and seven rules for a restful night, before each product gets its field. It ends on Somn odihnitor and a Cumpără acum button.",
+    shots: [["rules", "Pentru a obține un somn odihnitor, trebuie urmate câteva reguli: seven rules, each under a blue icon", "Seven rules for a restful night"]]
+  },
+  story: {
+    pills: ["Four", "products"],
+    text: "Insomnia gets a dark field of its own, with a sleepless woman and the effects of a bad night beside yellow marks. Then each product gets a blue field with its pack, its ingredients in script and a yellow line with the dose. Optisomn lists 5 mg melatonin, 250 mg passiflora, 125 mg hops, 60 mg magnesium and 3 mg vitamin B6. The jellies change to 1 mg melatonin with hops, chamomile and vitamin B6, under a bowl of cherries.",
+    deliverables: ["Insomnia section", "Product fields", "Ingredient script"],
+    media: [
+      ["insomnia", "Insomnia: a woman awake in bed on a dark blue field, and six effects of a bad night beside yellow marks", "Insomnia, in the darkest field on the page"],
+      ["formula", "Optisomn on a blue field: the pack, then 5 mg melatonină, 250 mg passiflora, 125 mg hamei, 60 mg magneziu and 3 mg vitamina B6 in script, each beside a small drawing", "Optisomn: five ingredients, the doses in script"],
+      ["jelly", "Optisomn jeleuri, aromă de cireșe: the jar and cherries, then 1 mg melatonină, 125 mg hamei, 30 mg mușețel and 0,7 mg vitamina B6 in script", "The cherry jellies"]
+    ]
+  },
+  phone: {
+    text: "On a phone the night sky narrows to a column. The range and Noapte Bună! open the page, the rules come one icon at a time, and each product keeps its blue field and its script.",
+    shots: [
+      ["phone-hero", "The first screen on a phone: the range in the clouds, Noapte Bună! and the five ingredients as a list"],
+      ["phone-insomnia", "Insomnia on a phone: a sleepless woman and the effects beside yellow marks"],
+      ["phone-rules", "The rules for a restful night on a phone, each under a blue icon"],
+      ["phone-jelly", "The cherry jellies on a phone: the jar, Optisomn® jeleuri and 1 mg melatonină in script"]
+    ],
+    cap: "The first screen, insomnia, the rules and the jellies, at 390 px wide"
+  },
+  result: "Four sleep products, told in the colours of the night sky.",
+  related: ["gripovit", "periferisan", "aspasia"]
+});
+
 // a chapter added to a page that already exists, by its slug (gen.mjs applies it): none yet
 export const EXTEND = {};
 
 // every Zdrovit brand page built from its product site, in the order they were made
-export const ZDROVIT_WEB = [ASPASIA, BONILASH, GLUCOPIL, GRIPOVIT, LACIUM];
+export const ZDROVIT_WEB = [ASPASIA, BONILASH, GLUCOPIL, GRIPOVIT, LACIUM, OPTISOMN];
