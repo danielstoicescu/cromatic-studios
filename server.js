@@ -369,6 +369,85 @@ function legacy(req, res) {
   return false;
 }
 
+// TASK-051: the Content-Security-Policy reports (the policy itself, in Report-Only, comes with the next change)
+// POST /api/csp-report: application/csp-report (report-uri: Firefox; Safari's report-to body comes with this type
+// too) or application/reports+json (report-to: Chrome). One compact line per violation: the time, the page's path,
+// the directive, the blocked origin (no query strings, no IPs; the IP only counts requests, in memory). 16 KB per
+// request, 30 requests per IP per 5 minutes, the file stops growing at 20 MB.
+const CSP_FILE = "cromatic-csp-reports.jsonl";
+const CSP_DIRS = LEADS_DIRS.filter((d) => d !== APP_DIR); // never inside the release folder
+const cspHits = new Map();
+const cspLimited = (ip) => {
+  const now = Date.now();
+  if (cspHits.size > 5000) for (const [k, v] of cspHits) if (now - v[v.length - 1] > 5 * 60e3) cspHits.delete(k);
+  const list = (cspHits.get(ip) || []).filter((t) => now - t < 5 * 60e3);
+  list.push(now);
+  cspHits.set(ip, list);
+  return list.length > 30;
+};
+const cspOrigin = (u) => {
+  u = String(u || "").trim();
+  if (!u) return "";
+  if (/^(inline|eval|wasm-eval|self|trusted-types-\w+)$/.test(u)) return u;
+  const s = /^([a-z][a-z0-9+.-]*):/i.exec(u);
+  if (s && /^(data|blob|about|filesystem|mediastream)$/i.test(s[1])) return s[1].toLowerCase();
+  try { const x = new URL(u); return x.origin !== "null" ? x.origin : x.protocol.replace(":", ""); } catch { return u.replace(/[^\w.-]/g, "").slice(0, 40) || "?"; }
+};
+const cspPath = (u) => { try { return new URL(String(u || ""), "http://x").pathname.slice(0, 200); } catch { return ""; } };
+function cspLine(r) {
+  if (!r || typeof r !== "object") return null;
+  const blocked = cspOrigin(r.blockedURL ?? r["blocked-uri"]);
+  const src = String(r.sourceFile ?? r["source-file"] ?? "");
+  // browser extensions inject their own scripts and styles: their reports say nothing about our pages
+  if (/^(chrome|moz|safari(-web)?|ms-browser)-extension/i.test(blocked + " " + src)) return null;
+  return {
+    t: new Date().toISOString(),
+    doc: cspPath(r.documentURL ?? r["document-uri"]),
+    dir: String(r.effectiveDirective ?? r["effective-directive"] ?? r["violated-directive"] ?? "").split(" ")[0].slice(0, 40),
+    blocked
+  };
+}
+async function cspReport(req, res) {
+  const ip = String(req.headers["cf-connecting-ip"] || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
+  const type = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
+  if (!/^application\/(csp-report|reports\+json|json)$/.test(type)) { res.writeHead(415); return res.end(); }
+  if (Number(req.headers["content-length"]) > 16384) { res.writeHead(413, { Connection: "close" }); return res.end(); }
+  let body = "";
+  for await (const chunk of req) { body += chunk; if (body.length > 16384) { res.writeHead(413, { Connection: "close" }); res.end(); return req.destroy(); } }
+  if (cspLimited(ip)) { res.writeHead(429); return res.end(); }
+  let j;
+  try { j = JSON.parse(body); } catch { res.writeHead(400); return res.end(); }
+  // report-uri: {"csp-report": {...}}; report-to: [{type: "csp-violation", body: {...}}] (Chrome), one such object (Safari)
+  const list = (Array.isArray(j) ? j : [j]).map((x) => x && (x["csp-report"] || (x.type === "csp-violation" ? x.body : null)));
+  const lines = list.slice(0, 20).map(cspLine).filter(Boolean).map((x) => JSON.stringify(x) + "\n").join("");
+  if (lines) {
+    for (const d of CSP_DIRS) {
+      try {
+        const p = join(d, CSP_FILE);
+        if ((statOr(p)?.size || 0) > 20e6) break;
+        mkdirSync(d, { recursive: true }); appendFileSync(p, lines, { mode: 0o600 }); break;
+      } catch {}
+    }
+  }
+  res.writeHead(204, { "Cache-Control": "no-store" });
+  res.end();
+}
+// GET /api/csp-report?key=<LEADS_KEY>: counts per directive, blocked origin and page (off unless LEADS_KEY is set)
+function cspSummary(req, res) {
+  const key = new URL(req.url, "http://x").searchParams.get("key") || "";
+  if (!process.env.LEADS_KEY || key.length < 16 || key !== process.env.LEADS_KEY) { res.writeHead(404); return res.end(); }
+  const n = {}; let total = 0, first = null, last = null;
+  for (const d of CSP_DIRS) {
+    let s; try { s = readFileSync(join(d, CSP_FILE), "utf8"); } catch { continue; }
+    for (const l of s.split("\n")) {
+      let x; try { x = JSON.parse(l); } catch { continue; }
+      const k = `${x.dir} ${x.blocked} ${x.doc}`; n[k] = (n[k] || 0) + 1; total++; first = first || x.t; last = x.t;
+    }
+    break;
+  }
+  return send(res, 200, { total, first, last, top: Object.entries(n).sort((a, b) => b[1] - a[1]).slice(0, 200) });
+}
+
 // r136 (N45): how to report a security problem (RFC 9116); valid for a year from the server's start
 const SECURITY_TXT = `Contact: mailto:hi@cromaticstudios.com
 Expires: ${new Date(Date.now() + 365 * 864e5).toISOString().replace(/\.\d{3}Z$/, ".000Z")}
@@ -388,6 +467,9 @@ http.createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=86400", "X-Content-Type-Options": "nosniff" });
     return res.end(req.method === "HEAD" ? undefined : SECURITY_TXT);
   }
+  // TASK-051: the CSP reports, on every host (beta's pages report to beta's own address)
+  if (req.url === "/api/csp-report" && req.method === "POST") return void cspReport(req, res).catch(() => { if (!res.headersSent) { res.writeHead(400); res.end(); } });
+  if (req.url.startsWith("/api/csp-report?") && req.method === "GET") return cspSummary(req, res);
   const host = String(req.headers.host || "").toLowerCase().split(":")[0];
   // r169: beta 2.0 answers on its own host only, before any rule of the live site
   if (BETA_HOSTS.has(host)) {
