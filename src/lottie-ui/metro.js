@@ -13,10 +13,6 @@
   try { A = JSON.parse(document.getElementById("czl-assets").textContent); } catch (e) { return; }
   var mq = null; try { mq = matchMedia("(prefers-reduced-motion: reduce)"); } catch (e) {}
   var rm = function () { return !!(mq && mq.matches); };
-  // TASK-070: the carriage comes in two variants for Daniel to choose from: ?metro=wave (A, the default: the waves in the
-  // ad's colours) or ?metro=chill (B, the calm one). Same pictures, another piece.
-  var variant = ""; try { variant = (new URLSearchParams(location.search).get("metro") || "").toLowerCase(); } catch (e) {}
-  var piece = function (name) { return name === "metro-inside" && variant === "chill" ? "metro-inside-chill" : name; };
   var items = frames.map(function (f) { var it = { f: f, name: f.getAttribute("data-czl"), at: +f.getAttribute("data-czl-at") || 0, p: null, busy: false, vis: false }; f._czl = it; return it; }); // (f._czl: for the QA scripts)
   var play = function (it) { if (!it.p) return; try { if (it.vis && !document.hidden && !rm()) it.p.anim.play(); else it.p.anim.pause(); } catch (e) {} };
   var mount = function (it) {
@@ -26,7 +22,7 @@
     var assets = (A[it.name] || {})[set];
     if (!assets || !w || !h) return;
     // (the piece is ready once its pictures are in: up to 20 s for them on a slow line, not the mount's usual 2.5 s)
-    Z.mount(piece(it.name) + "-" + set, { host: it.f, w: w, h: h, assets: assets, cls: "czl-metro", wait: 20000 }).then(function (p) {
+    Z.mount(it.name + "-" + set, { host: it.f, w: w, h: h, assets: assets, cls: "czl-metro", wait: 20000 }).then(function (p) {
       if (!p) return;
       it.p = p;
       // the canvas fades in over the still (its pictures are in: the worker waited for them)
