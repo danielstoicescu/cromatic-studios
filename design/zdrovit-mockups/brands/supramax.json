@@ -1,0 +1,18 @@
+{
+ "_": "TASK-076 (second half, Mira): Supramax articulații, supramax.ro. Crops in capture px (desktop 2880 wide, phone 780 wide). The joint-problems section (with its population figure) and the FAQ's study lines are not cropped on their own; they stay in the scrolling frames, as on the site.",
+ "label": "supramax.ro",
+ "field": ["#ffe2c4", "#f39a3d"],
+ "out": {
+  "hero": { "kind": "hero", "desktop": { "src": "desktop-full.png" }, "phone": { "src": "phone-full.png" } },
+  "site-scroll": { "kind": "plain", "src": "desktop-full.png", "width": 1200, "q": 72 },
+  "site-scroll-phone": { "kind": "plain", "src": "phone-full.png", "width": 500, "q": 72 },
+  "collagen": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 2140, 2880, 940] },
+  "range": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 3120, 2880, 1860] },
+  "gel": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 6200, 2880, 1240] },
+  "benefits": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 8560, 2880, 1520] },
+  "phone-hero": { "kind": "phone", "src": "phone-full.png", "y": 0 },
+  "phone-collagen": { "kind": "phone", "src": "phone-full.png", "y": 1440 },
+  "phone-range": { "kind": "phone", "src": "phone-full.png", "y": 2790 },
+  "phone-benefits": { "kind": "phone", "src": "phone-full.png", "y": 14895 }
+ }
+}
