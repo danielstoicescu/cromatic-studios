@@ -585,6 +585,6 @@
       b.addEventListener("focus", () => place(b));
     });
     addEventListener("pageshow", () => wins.forEach((b) => b.classList.remove("peek")));
-    addEventListener("load", () => setTimeout(() => { const im = new Image(); im.src = M + "map-window.webp"; }, 1200), { once: true });
+    addEventListener("load", () => setTimeout(() => root.classList.add("map-win"), 1200), { once: true }); // TASK-053: the CSS fetches the picture (once)
   }
 })();

@@ -474,8 +474,14 @@ mark { background: var(--y); color: var(--ink); border-radius: 6px; padding: 0 .
 .see-map::before {
   background:
     radial-gradient(ellipse 58% 62% at 50% 52%, rgba(251,250,245,.62), rgba(251,250,245,.22) 58%, rgba(251,250,245,0) 100%) center / 100% 100% no-repeat,
-    url(media/map-window.webp) var(--bx) var(--by) / max(190%, 560px) auto no-repeat, #ecebe7;
+    none var(--bx) var(--by) / max(190%, 560px) auto no-repeat, #ecebe7;
   transform: scale(1.12); transition: opacity .4s ease, transform .9s var(--eoq), background-position .6s var(--eoq);
+}
+/* TASK-053: the picture is asked for once: after load (onb.js puts .map-win on the root, 1.2 s after it) or the moment a
+   window opens before that. (The hidden window used to fetch it at first paint and onb.js's preload after load: two
+   downloads whenever the cache does not serve the second) */
+.map-win .see-map::before, .see-map:is(:hover, :focus-visible, :active)::before, .see-map.peek::before {
+  background-image: radial-gradient(ellipse 58% 62% at 50% 52%, rgba(251,250,245,.62), rgba(251,250,245,.22) 58%, rgba(251,250,245,0) 100%), url(media/map-window.webp);
 }
 .see-map::after {
   padding: 4px; background: rgba(255,255,255,.34); backdrop-filter: blur(5px) saturate(1.5); -webkit-backdrop-filter: blur(5px) saturate(1.5);
