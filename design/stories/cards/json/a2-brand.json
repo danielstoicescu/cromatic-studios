@@ -25,7 +25,11 @@
    {
     "kind": "block",
     "id": "a2",
-    "place": "tl",
+    "place": {
+     "x": 540,
+     "align": "center",
+     "top": 400
+    },
     "ink": "#0D0C09",
     "lines": [
      {
@@ -36,14 +40,14 @@
       "tracking": -0.04,
       "lead": 1,
       "ink": "#0D0C09",
-      "align": "left",
+      "align": "center",
       "text": "Every brand",
-      "x": 132,
-      "baseline": 429.1,
+      "x": 235.7,
+      "baseline": 483.1,
       "width": 608.7,
       "box": {
-       "x": 132,
-       "y": 340.9,
+       "x": 235.7,
+       "y": 394.9,
        "w": 608.7,
        "h": 116
       }
@@ -56,14 +60,14 @@
       "tracking": -0.04,
       "lead": 1,
       "ink": "#0D0C09",
-      "align": "left",
+      "align": "center",
       "text": "has its own",
-      "x": 132,
-      "baseline": 545.1,
+      "x": 259.5,
+      "baseline": 599.1,
       "width": 561.1,
       "box": {
-       "x": 132,
-       "y": 456.9,
+       "x": 259.5,
+       "y": 510.9,
        "w": 561.1,
        "h": 91.6
       }
@@ -80,8 +84,8 @@
      "tilt": -2,
      "states": [
       {
-       "x": 80,
-       "y": 300,
+       "x": 183.7,
+       "y": 354,
        "w": 712.7,
        "h": 302
       }
@@ -93,9 +97,9 @@
     "kind": "block",
     "id": "a2-word",
     "place": {
-     "x": 120,
+     "x": 223.7,
      "align": "left",
-     "top": 587.404
+     "top": 641.404
     },
     "ink": "#0D0C09",
     "lines": [
@@ -109,12 +113,12 @@
       "ink": "#0D0C09",
       "align": "left",
       "text": "",
-      "x": 120,
-      "baseline": 670.5,
+      "x": 223.7,
+      "baseline": 724.5,
       "width": 0,
       "box": {
-       "x": 120,
-       "y": 582.3,
+       "x": 223.7,
+       "y": 636.3,
        "w": 510.2,
        "h": 116
       },
@@ -122,8 +126,8 @@
        "id": "a2-word-l1-pill",
        "fill": "#FFFFFF",
        "ink": "#0D0C09",
-       "left": 120,
-       "cy": 629.3,
+       "left": 223.7,
+       "cy": 683.3,
        "h": 134.6,
        "keyline": 5.2,
        "shadow": [
@@ -131,25 +135,25 @@
         7.5
        ],
        "tilt": -3,
-       "wordX": 159.4,
+       "wordX": 263.1,
        "states": [
         {
          "word": "place.",
          "wordW": 303.8,
          "w": 382.7,
-         "cx": 311.4
+         "cx": 415.1
         },
         {
          "word": "facade.",
          "wordW": 377.7,
          "w": 456.6,
-         "cx": 348.3
+         "cx": 452
         },
         {
          "word": "building.",
          "wordW": 431.3,
          "w": 510.2,
-         "cx": 375.1
+         "cx": 478.8
         }
        ]
       }
@@ -161,19 +165,6 @@
      "dx": 40,
      "gap": -40
     }
-   }
-  ],
-  "moves": [
-   {
-    "state": 2,
-    "to": {
-     "centreX": 540,
-     "top": 420
-    },
-    "offset": [
-     104,
-     120
-    ]
    }
   ]
  },

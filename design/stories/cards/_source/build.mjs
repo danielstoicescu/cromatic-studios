@@ -124,7 +124,8 @@ export function layout(def) {
       L.blocks.push({ ...layBlock(bd, ink), behindRide: !!b.behindRide, ...(b.attach ? { attach: b.attach } : {}) });
     }
   }
-  if (def.tags) L.tags = def.tags.map(layTag);
+  // (C6: a tag can sit right after another, 14 px of air between their plates: { after: "<id>" })
+  if (def.tags) { L.tags = []; for (const t of def.tags) { const prev = t.after ? L.tags.find((q) => q.id === t.after) : null; L.tags.push(layTag(prev ? { ...t, x: prev.plate.x + prev.plate.w + 14 } : t)); } }
   if (def.url) { L.url = layUrl(); if (def.url.continues) L.url.continues = def.url.continues; }
   if (def.id.endsWith("end")) L.black = true;
   // a move: everything on the card (blocks, aplat, pills) goes together; the offset centres their union in state k

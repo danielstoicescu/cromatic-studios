@@ -203,6 +203,31 @@ await p.evaluate(() => window.__scheme("monument")); await p.waitForTimeout(3000
 return out;
 `;
 }
+{
+  // ---- C6: the radio-cassette in the 1300's dashboard (cassetteDash.js), placed far from the city, its own lights;
+  // the camera close on the deck, a slow push; captured per frame (30 a second)
+  const DASH = fs.readFileSync(new URL("./cassetteDash.js", import.meta.url), "utf8"), at = [1500, 420, 4260]; // (high over the roundabout: inside the sky, out of the warp)
+  const cam = (t) => { const u = Math.min(1, t / 2.2), e = u * u * (3 - 2 * u); return { raw: true, pos: [at[0] + 9 - 4 * e, at[1] + 13 - 4 * e, at[2] + 78 - 22 * e], tgt: [at[0] + 0.6, at[1] + 4.2, at[2] + 9.2], fov: 34, level: false, w: 2160, h: 3840 }; };
+  const fr = []; for (let i = 0; i <= Math.round(2.2 * 30); i++) fr.push({ t: i / 30, cam: cam(i / 30) });
+  JOBS.c6dash = `
+await scheme("nightlife");
+const fr = ${JSON.stringify(fr)}, at = ${JSON.stringify(at)}, only = ${JSON.stringify(process.env.FR ? process.env.FR.split(",").map(Number) : null)};
+fs.mkdirSync(RAW + "/c6dash", { recursive: true });
+await p.evaluate(({ src, at }) => { const S = window.__story; if (S.dash) { S.dash.group.parent.remove(S.dash.group); S.dash = null; } const K = S.K3 || {}; if (!S.K3) { K.Mesh = S.sky.constructor; K.Group = S.veh().group.constructor; K.Color = S.sun.color.constructor; S.scene.traverse((x) => { if (x.geometry && !K[x.geometry.type]) K[x.geometry.type] = x.geometry.constructor; const m = x.material && (Array.isArray(x.material) ? x.material[0] : x.material); if (m && !K[m.type]) K[m.type] = m.constructor; if (m && m.map && m.map.isCanvasTexture && !K.CanvasTexture) K.CanvasTexture = m.map.constructor; }); S.K3 = K; }
+  if (!K.CanvasTexture) S.scene.traverse((x) => { const m = x.material && (Array.isArray(x.material) ? x.material[0] : x.material); if (!K.CanvasTexture && m && m.map && m.map.isCanvasTexture) K.CanvasTexture = m.map.constructor; });
+  K.DirectionalLight = S.sun.constructor; if (!K.CircleGeometry) { const c = S.sky.geometry.constructor; K.CircleGeometry = function (r, n) { return new K.CylinderGeometry(r, r, 0.01, n).rotateX(Math.PI / 2); }; }
+  const D = new Function(src + "; return makeDash;")()(K); D.group.position.set(at[0], at[1], at[2]); D.group.traverse((m) => { if (m.isMesh) for (const mt of [].concat(m.material)) { mt.defines = { ...(mt.defines || {}), NO_CITY_WARP: "" }; mt.needsUpdate = true; } }); S.scene.add(D.group); S.dash = D; }, { src: ${JSON.stringify(DASH)}, at }); // (out of the city's warp: far away it bends everything; the camera raw too)
+await H.aim(p, fr[0].cam, 1500);
+for (let i = 0; i < fr.length; i++) {
+  if (only && !only.includes(i)) continue;
+  const o = fr[i].cam;
+  const u = await p.evaluate(({ o, t }) => { const S = window.__story, R = window.__R; S.dash.pose(t); R.park([9000, null, 9000, 0]); try { R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); return R.shot({ ...o, keepBg: true }); } finally { R.park(null); } }, { o, t: fr[i].t });
+  save(u, RAW + "/c6dash/d-" + String(i).padStart(3, "0") + ".png");
+}
+await p.evaluate(() => { const S = window.__story; if (S.dash) { S.dash.group.parent.remove(S.dash.group); S.dash = null; } });
+return fr.length;
+`;
+}
 if (!JOBS[job]) throw new Error("JOB=" + Object.keys(JOBS).join("|"));
 const t0 = Date.now();
 const r = await fetch("http://localhost:8962/", { method: "POST", body: head + JOBS[job] });

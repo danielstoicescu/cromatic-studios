@@ -34,12 +34,13 @@ export const CARDS = [
   {
     id: "a2-brand", story: "A", beat: "Every brand / has its own + its own pill: [place] -> [facade] (OMA) -> [building] (Slow Coffee, centred)", shots: ["steam", "oma", "scf"], scene: "the yellow aplat carries the two lines (any frame)", ink: "ink",
     blocks: [
-      { id: "a2", place: "tl", aplat: { fill: Y }, lines: [{ text: "Every brand", style: "title" }, { text: "has its own", style: "title" }] },
+      // (A6 fix, Daniel: "the text at Slow Coffee moves strangely": the card no longer glides to the centre on the third
+      // shot; it stands centred from the first, fixed on the screen, and only its pill swaps)
+      { id: "a2", place: { x: 540, align: "center", top: 400 }, aplat: { fill: Y }, lines: [{ text: "Every brand", style: "title" }, { text: "has its own", style: "title" }] },
       // the pill is its own element: pinned under the block's bottom-left corner, overlapping it a little
       { id: "a2-word", attach: { to: "a2", dx: 40, gap: -40 }, lines: [{ text: "", style: "title", pill: { words: ["place.", "facade.", "building."], fill: WH } }] }
     ],
     // the third state: the card and its pill glide to the middle of the frame together (Daniel: "text more centred")
-    moves: [{ state: 2, to: { centreX: 540, top: 420 } }],
     timing: { in: "steam+2", lineStagger: 4, pillIn: "steam+14", swaps: ["oma+3", "scf+3"], out: "scf.end-14" },
     mocks: [{ state: 0, at: "steam+40" }, { state: 1, at: "oma+30" }, { state: 2, at: "scf+32" }],
     notes: "Daniel's break: 'Every brand / has its own' on the aplat (title, 116), and the word in a pill of its own, white, pinned 40 px in from the block's left edge and overlapping its bottom by 40 px. The pill swaps (left end fixed) at each cut, 3 frames after the whip; the block never changes size. One card over three shots, no re-entry."
@@ -73,7 +74,8 @@ export const CARDS = [
   /* ============================== story C ============================== */
   {
     id: "c1-olari", story: "C", beat: "Olari 9 · 9:11 (a map tag at the start)", shots: ["olari"], scene: "night", ink: "ink",
-    tags: [{ id: "c1-tag", text: "Olari 9 · 9:11", x: 80, top: 286 }],
+    // (C6, Daniel: the address and the time in two pills, so the 9 of the address does not run into the 9 of the clock)
+    tags: [{ id: "c1-tag", text: "Olari 9", x: 80, top: 286 }, { id: "c1-time", text: "9:11", after: "c1-tag", top: 286 }],
     timing: { in: "olari+8", out: "olari.end-10" },
     mocks: [{ state: 0, at: "olari+50" }],
     notes: "Replaces the typed slug and the big 'Olari 9.': the place is told by its tag, like on the map."
@@ -105,7 +107,7 @@ export const CARDS = [
   {
     id: "c5-slow", story: "C", beat: "You should take it (small, in the sky over the dome) + SLOW (big, on the dark plaza under it, long hold)", shots: ["scf"], scene: "night", ink: "paper",
     blocks: [
-      { id: "c5a", place: { x: 540, align: "center", top: 330 }, lines: [{ text: "You should take it", style: "lead" }] },
+      { id: "c5a", place: { x: 540, align: "center", top: 330 }, lines: [{ text: "Take it", style: "lead" }] }, // (C6: Daniel, only "Take it")
       { id: "c5b", place: { x: 540, align: "center", base: 1530 }, lines: [{ text: "SLOW", style: "hero" }], behindRide: true }
     ],
     timing: { in: "scf+1", blockStagger: 10, out: "scf.end-4", smash: ["c5b"] },
@@ -121,7 +123,7 @@ export const CARDS = [
   },
   {
     id: "c7-fintech", story: "C", beat: "Fintech Blvd · 11:11 (a map tag)", shots: ["fintech"], scene: "night", ink: "ink",
-    tags: [{ id: "c7-tag", text: "Fintech Blvd · 11:11", x: 80, top: 286 }],
+    tags: [{ id: "c7-tag", text: "Fintech Blvd", x: 80, top: 286 }, { id: "c7-time", text: "11:11", after: "c7-tag", top: 286 }],
     timing: { in: "fintech+12", out: "fintech+66" },
     mocks: [{ state: 0, at: "fintech+40" }],
     notes: "Replaces the big super 'Fintech Blvd.' and its 08/08 chip."

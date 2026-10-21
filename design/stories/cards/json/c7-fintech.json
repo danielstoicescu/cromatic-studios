@@ -23,14 +23,14 @@
    {
     "kind": "tag",
     "id": "c7-tag",
-    "text": "Fintech Blvd · 11:11",
+    "text": "Fintech Blvd",
     "size": 44,
     "tracking": -0.01,
     "ink": "#0D0C09",
     "plate": {
      "x": 80,
      "y": 286,
-     "w": 464.4,
+     "w": 343.9,
      "h": 84,
      "r": 42,
      "fill": "#FFFFFF",
@@ -62,7 +62,53 @@
     "box": {
      "x": 80,
      "y": 286,
-     "w": 464.4,
+     "w": 343.9,
+     "h": 102
+    }
+   },
+   {
+    "kind": "tag",
+    "id": "c7-time",
+    "text": "11:11",
+    "size": 44,
+    "tracking": -0.01,
+    "ink": "#0D0C09",
+    "plate": {
+     "x": 437.9,
+     "y": 286,
+     "w": 185.8,
+     "h": 84,
+     "r": 42,
+     "fill": "#FFFFFF",
+     "keyline": 4,
+     "shadow": [
+      0,
+      7
+     ]
+    },
+    "dot": {
+     "cx": 474.9,
+     "cy": 328,
+     "d": 22,
+     "fill": "#FED012",
+     "keyline": 3.5
+    },
+    "textX": 501.9,
+    "baseline": 343.6,
+    "pointer": {
+     "x": 483.9,
+     "y": 370,
+     "w": 30,
+     "h": 18,
+     "tip": [
+      483.9,
+      388
+     ]
+    },
+    "box": {
+     "x": 437.9,
+     "y": 286,
+     "w": 185.8,
      "h": 102
     }
    }
@@ -87,7 +133,15 @@
     "elements": [
      {
       "id": "c7-tag",
-      "text": "Fintech Blvd · 11:11",
+      "text": "Fintech Blvd",
+      "in": 407,
+      "out": 461,
+      "motion": "tagIn / tagOut",
+      "hold": 45
+     },
+     {
+      "id": "c7-time",
+      "text": "11:11",
       "in": 407,
       "out": 461,
       "motion": "tagIn / tagOut",
@@ -101,7 +155,15 @@
     "elements": [
      {
       "id": "c7-tag",
-      "text": "Fintech Blvd · 11:11",
+      "text": "Fintech Blvd",
+      "in": 531,
+      "out": 585,
+      "motion": "tagIn / tagOut",
+      "hold": 45
+     },
+     {
+      "id": "c7-time",
+      "text": "11:11",
       "in": 531,
       "out": 585,
       "motion": "tagIn / tagOut",

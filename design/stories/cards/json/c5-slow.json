@@ -39,14 +39,14 @@
       "lead": 1.1,
       "ink": "#FBFAF5",
       "align": "center",
-      "text": "You should take it",
-      "x": 304.6,
+      "text": "Take it",
+      "x": 453.5,
       "baseline": 373,
-      "width": 470.9,
+      "width": 172.9,
       "box": {
-       "x": 304.6,
+       "x": 453.5,
        "y": 327.4,
-       "w": 470.9,
+       "w": 172.9,
        "h": 47.4
       }
      }
@@ -111,7 +111,7 @@
     "elements": [
      {
       "id": "c5a-l1",
-      "text": "You should take it",
+      "text": "Take it",
       "in": 263,
       "out": 286,
       "motion": "lineIn / lineOut",
@@ -133,7 +133,7 @@
     "elements": [
      {
       "id": "c5a-l1",
-      "text": "You should take it",
+      "text": "Take it",
       "in": 331,
       "out": 410,
       "motion": "lineIn / lineOut",

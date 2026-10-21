@@ -28,7 +28,9 @@
   function setCam(o) {
     const p = o.raw ? new V(...o.pos) : W(o.pos), t = o.raw ? new V(...o.tgt) : W(o.tgt);
     if (o.level) t.y = p.y;
-    camera.position.copy(p); camera.up.set(0, 1, 0);
+    // (TASK-065g fix: a camera looking straight down took its yaw from the tiny horizontal offset between pos and tgt,
+    // so a few units of drift spun the picture ("the camera jumps"); o.up fixes the screen's up for such shots)
+    camera.position.copy(p); if (o.up) camera.up.set(o.up[0], o.up[1], o.up[2]); else camera.up.set(0, 1, 0);
     camera.lookAt(t);
     if (o.roll) camera.rotateZ(o.roll);
     camera.fov = o.fov || 40; camera.near = o.near || 2; camera.far = o.far || 30000; camera.aspect = o.w / o.h;

@@ -15,7 +15,8 @@ const L3 = (a, b, t) => a.map((v, i) => lerp(v, b[i], t));
 const W = 2160, H = 3840, YV = 1.73;
 const overCar = (t) => ({ x: 842, y: YV, z: 5478 + 62 * t, yaw: 0, lights: 0 });
 export const A6 = {
-  over: { dur: 2.55, car: overCar, cam: (t) => { const c = overCar(t); return { pos: [842 + 4 * Math.sin(t * 0.7), 300, c.z + 18], tgt: [842, 0, c.z + 18.5], fov: 52, roll: lerp(-0.07, 0.05, sm(clamp(t / 2.55))), level: false, w: W, h: H }; } },
+  // (fix: pos and tgt drift together and the screen's up is fixed: a near-vertical lookAt spun with the drift)
+  over: { dur: 2.55, car: overCar, cam: (t) => { const c = overCar(t), dx = 4 * Math.sin(t * 0.7); return { pos: [842 + dx, 300, c.z + 18], tgt: [842 + dx, 0, c.z + 18], up: [0, 0, 1], fov: 52, roll: lerp(-0.07, 0.05, sm(clamp(t / 2.55))), level: false, w: W, h: H }; } },
   steam: { dur: 1.95, park: [842, null, 5545, 0], cam: (t) => { const u = sm(clamp(t / 1.95)); return { pos: L3([786, 9, 5436], [800, 10.5, 5452], u), tgt: L3([940, 15, 5640], [952, 18, 5636], u), fov: 60, shift: [0, 0.13], level: true, w: W, h: H }; } },
   oma: { dur: 2.25, room: true, cam: (t) => { const u = sm(clamp(t / 2.25)); return { pos: L3([892, 13.5, 4602], [882, 12.5, 4594], u), tgt: L3([620, 44, 4579], [622, 42, 4577], u), fov: lerp(73.7, 71, u), shift: [0, 0.0833], level: true, w: W, h: H }; } },
   scf: { dur: 1.9, cam: (t) => { const u = sm(clamp(t / 1.9)); return { pos: L3([1528, 168, 4690], [1462, 150, 4728], u), tgt: L3([1100, 30, 5300], [1098, 28, 5296], u), fov: 55, level: false, w: W, h: H }; } },
