@@ -113,6 +113,17 @@ for (const [k, J] of Object.entries(jobs)) {
 return res;
 `;
 }
+// ---- D2: the Fintech skyline from the west, wide (the frame pans across it), and where the map's tags go
+JOBS.d2b = `
+await scheme("monument");
+const o = { pos: [1350, 55, 4840], tgt: [2100, 80, 4840], fov: 62, shift: [0, 0.06], level: true, w: 3456, h: 3840 };
+const tags = ${JSON.stringify({ Assetto: [2215, 92, 4760], Investimental: [2205, 120, 4500], Venevo: [1988, 70, 5160], Longshield: [1988, 96, 4880], "Infinity Capital": [1988, 90, 4600] })};
+await plate("d2-skyline-wide", o);
+const r = await p.evaluate(({ o, pts }) => window.__R.project(o, pts), { o, pts: Object.values(tags) });
+const out = { o, tags: Object.fromEntries(Object.keys(tags).map((k, i) => [k, r.pts[i]])) };
+fs.writeFileSync(RAW + "/d2-skyline-wide.json", JSON.stringify(out));
+return out.tags;
+`;
 if (!JOBS[job]) throw new Error("JOB=" + Object.keys(JOBS).join("|"));
 const t0 = Date.now();
 const r = await fetch("http://localhost:8962/", { method: "POST", body: head + JOBS[job] });
