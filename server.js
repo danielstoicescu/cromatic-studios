@@ -11,6 +11,7 @@ import zlib from "node:zlib";
 import { createHash } from "node:crypto";
 import nodemailer from "nodemailer";
 import { passHtml, passText } from "./mail-template.js";
+import { createCore30 } from "./core30/core30.mjs";
 
 const APP_DIR = dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.PUBLIC_DIR || join(APP_DIR, "public");
@@ -60,6 +61,20 @@ const transport = process.env.SMTP_HOST
     })
   : nodemailer.createTransport({ jsonTransport: true });
 if (!process.env.SMTP_HOST) console.warn("[mail] SMTP_HOST is not set: emails are logged, not sent.");
+
+// r267: The Core 3.0, the brand discovery tool, at /thecore30/<respondent>?t=<token> plus its API (core30/README.md).
+// Answers are kept outside the release folder, like the leads, so a deploy never wipes them.
+const CORE30_DATA = process.env.CORE30_DATA || [join(APP_DIR, "..", "..", "shared", "core30"), join(process.env.HOME || APP_DIR, "core30-data"), join(APP_DIR, "core30-data")]
+  .find((d) => { try { mkdirSync(d, { recursive: true }); return true; } catch { return false; } });
+const core30 = createCore30({
+  dataDir: CORE30_DATA,
+  distDir: join(APP_DIR, "core30", "www"),
+  configDir: join(APP_DIR, "core30", "configs"),
+  transport, mailTo: MAIL_TO, mailFrom: MAIL_FROM,
+  adminKey: process.env.CORE30_ADMIN_KEY || process.env.LEADS_KEY,
+});
+const isCore30 = (u) => u === "/thecore30" || u.startsWith("/thecore30/") || u.startsWith("/thecore30?") || u.startsWith("/api/core30/");
+console.log(`[core30] answers in ${CORE30_DATA}`);
 
 // a gentle rate limit: 5 passes per address per 15 minutes
 const hits = new Map();
@@ -377,6 +392,7 @@ http.createServer((req, res) => {
   // r169: beta 2.0 answers on its own host only, before any rule of the live site
   if (BETA_HOSTS.has(host)) {
     if (/"scheme":"http"/.test(String(req.headers["cf-visitor"] || ""))) { res.writeHead(301, { Location: `https://${host}${req.url}` }); return res.end(); }
+    if (isCore30(req.url)) return void core30(req, res).catch(() => send(res, 500, { ok: false }));
     if (req.url === "/api/boarding" && req.method === "POST") return void boarding(req, res, "[beta 2.0]").catch(() => send(res, 500, { ok: false }));
     if (req.url === "/api/ctx") return send(res, 200, { internal: false });
     if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405); return res.end(); }
@@ -392,6 +408,7 @@ http.createServer((req, res) => {
     res.writeHead(301, { Location: `https://${otherHost ? PRIMARY_HOST : req.headers.host}${to}` });
     return res.end();
   }
+  if (isCore30(req.url)) return void core30(req, res).catch(() => send(res, 500, { ok: false }));
   if ((req.method === "GET" || req.method === "HEAD") && legacy(req, res)) return;
   // the saved messages, for the studio only: GET /api/leads?key=<LEADS_KEY> (off unless LEADS_KEY is set)
   // r135h: is this visit from the studio itself (Olari 9)? GA4 then tags it traffic_type=internal and filters it out

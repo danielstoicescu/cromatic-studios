@@ -1,0 +1,2021 @@
+{
+ "id": "simplu21",
+ "version": "2026-10-21",
+ "client": {
+  "name": "SIMPLU.21",
+  "contact": "Alina",
+  "tagline": "LIVE CLOSER."
+ },
+ "access": {
+  "token": "1tLo4D4I_CeL"
+ },
+ "submit": {
+  "endpoint": "/api/core30",
+  "email": "hi@cromaticstudios.com"
+ },
+ "intro": {
+  "hello": "Salut, Alina.",
+  "lead": "Ăsta e primul pas din The Core 3.0, felul în care Cromatic scrie strategia unui brand. Tu răspunzi aici, în ritmul tău. Apoi ne vedem în studio, la o cafea, pentru un workshop de 90 de minute, și transformăm răspunsurile în strategie.",
+  "promise": [
+   "Nu pornești de la o pagină albă. Îți arătăm ce ai scris deja și tu decizi ce rămâne.",
+   "Salvăm automat, pe dispozitivul ăsta. Poți închide oricând și reiei exact de unde ai rămas.",
+   "Când ce spui și ce alegi nu se potrivesc, nu e o greșeală. E exact materialul bun pentru workshop."
+  ],
+  "minutes": "45–60 de minute, în două sau trei reprize"
+ },
+ "modules": [
+  {
+   "id": "m01",
+   "title": [
+    "Ce ai spus",
+    "deja"
+   ],
+   "short": "Ce ai spus deja",
+   "minutes": 6,
+   "why": "Ai scris deja lucruri foarte bune. Le trecem prin sită: ce păstrăm, ce ajustăm, ce lăsăm în urmă.",
+   "items": [
+    {
+     "id": "m01.core",
+     "kind": "verdict",
+     "label": "Ideea centrală",
+     "source": "Core idea",
+     "quote": "Life is better when what matters is closer."
+    },
+    {
+     "id": "m01.tagline",
+     "kind": "verdict",
+     "label": "Semnătura",
+     "source": "Tagline",
+     "quote": "LIVE CLOSER."
+    },
+    {
+     "id": "m01.purpose",
+     "kind": "verdict",
+     "label": "Scopul",
+     "source": "Purpose",
+     "quote": "Bring people closer to what matters."
+    },
+    {
+     "id": "m01.principle",
+     "kind": "verdict",
+     "label": "Principiul de produs",
+     "source": "Product principle",
+     "quote": "Connection is the product."
+    },
+    {
+     "id": "m01.tech",
+     "kind": "verdict",
+     "label": "Rolul tehnologiei",
+     "source": "Founder advantage",
+     "quote": "TECHNOLOGY FINDS. HUMANS CONNECT."
+    },
+    {
+     "id": "m01.lang",
+     "kind": "choice",
+     "label": "În ce limbă vorbește brandul, în primul rând?",
+     "why": true,
+     "options": [
+      {
+       "id": "ro",
+       "label": "Română",
+       "desc": "Brandul e de aici și vorbește ca aici."
+      },
+      {
+       "id": "en",
+       "label": "Engleză",
+       "desc": "Expați, diaspora, un public care trăiește în engleză."
+      },
+      {
+       "id": "mix",
+       "label": "Amândouă",
+       "desc": "Semnătura în engleză, conversația în română."
+      }
+     ]
+    },
+    {
+     "id": "m01.21",
+     "kind": "choice",
+     "label": "Ce înseamnă „21” pentru tine?",
+     "multi": true,
+     "other": true,
+     "help": "Alege tot ce se aplică. E un activ de brand și vrem să știm cât greutate duce.",
+     "options": [
+      {
+       "id": "case",
+       "label": "Cele 21 de case din Râșnov"
+      },
+      {
+       "id": "first",
+       "label": "The First 21, primii membri"
+      },
+      {
+       "id": "zile",
+       "label": "Experiențele de 21 de zile"
+      },
+      {
+       "id": "secol",
+       "label": "Secolul 21, un fel nou de a trăi"
+      }
+     ]
+    },
+    {
+     "id": "m01.21c",
+     "kind": "scale",
+     "label": "Cât de central e „21”?",
+     "pairs": [
+      {
+       "id": "c",
+       "left": "Un detaliu în nume",
+       "right": "Inima brandului"
+      }
+     ]
+    }
+   ],
+   "facilitator": [
+    "Ce a schimbat-o pe „ajustez”: forma sau ideea?",
+    "Dacă LIVE CLOSER. ar dispărea mâine, ce ar rămâne?"
+   ]
+  },
+  {
+   "id": "m02",
+   "title": [
+    "Tu, în",
+    "poveste"
+   ],
+   "short": "Fondatoarea",
+   "minutes": 7,
+   "why": "Avantajul SIMPLU.21 ești tu: felul în care pricepi oamenii și îi legi între ei. Vrem povestea, nu CV-ul.",
+   "items": [
+    {
+     "id": "m02.why",
+     "kind": "text",
+     "multiline": true,
+     "label": "De ce acum?",
+     "help": "Ce s-a schimbat ca să revii în antreprenoriat?",
+     "placeholder": "Scrie cum ai spune-o la o cafea."
+    },
+    {
+     "id": "m02.story",
+     "kind": "text",
+     "multiline": true,
+     "label": "O poveste reală în care ai legat oameni de un loc și a contat.",
+     "help": "O casă, o comunitate, o întâlnire. Poate deveni povestea de brand, așa că păstrează detaliile mici.",
+     "placeholder": "Era o seară de…"
+    },
+    {
+     "id": "m02.visible",
+     "kind": "scale",
+     "label": "Cât de vizibilă vrei să fii în brand?",
+     "pairs": [
+      {
+       "id": "v",
+       "left": "Brand de fondator, fața mea",
+       "right": "Brand instituțional, eu în spate"
+      }
+     ]
+    },
+    {
+     "id": "m02.super",
+     "kind": "text",
+     "optional": true,
+     "label": "Ce fac oamenii mai bine după ce te-au cunoscut?",
+     "placeholder": "Un lucru, cât mai concret."
+    }
+   ],
+   "facilitator": [
+    "Ce parte din poveste ar spune altcineva despre Alina, nu ea despre ea?"
+   ]
+  },
+  {
+   "id": "m03",
+   "title": [
+    "Oamenii",
+    "tăi"
+   ],
+   "short": "Oamenii",
+   "minutes": 8,
+   "why": "Primii 21 de oameni decid cum arată brandul pentru toți ceilalți. Hai să-i vedem la față.",
+   "items": [
+    {
+     "id": "m03.profiles",
+     "kind": "profiles",
+     "noun": "profil",
+     "min": 2,
+     "max": 3,
+     "label": "Cine sunt primii 21? Desenează 2 sau 3 profiluri.",
+     "help": "Gândește-te la oameni reali pe care îi cunoști. Schimbă-le doar numele.",
+     "fields": [
+      {
+       "id": "nume",
+       "label": "Cine e",
+       "placeholder": "Ioana, 34, arhitectă"
+      },
+      {
+       "id": "etapa",
+       "label": "Etapa de viață",
+       "placeholder": "Primul copil pe drum, vrea curte"
+      },
+      {
+       "id": "cauta",
+       "label": "Ce caută",
+       "multiline": true,
+       "placeholder": "Un cartier unde să știe vecinii pe nume"
+      },
+      {
+       "id": "frustreaza",
+       "label": "Ce o frustrează azi",
+       "multiline": true,
+       "placeholder": "Anunțuri care arată la fel, agenți care nu ascultă"
+      }
+     ]
+    },
+    {
+     "id": "m03.refuse",
+     "kind": "choice",
+     "multi": true,
+     "max": 3,
+     "other": true,
+     "why": true,
+     "label": "Pe cine refuzi?",
+     "help": "Până la 3. Un brand clar știe și pentru cine nu e.",
+     "options": [
+      {
+       "id": "randament",
+       "label": "Investitorul care vrea doar randament"
+      },
+      {
+       "id": "pret",
+       "label": "Cine caută cel mai mic preț, orice ar fi"
+      },
+      {
+       "id": "lista",
+       "label": "Cine vrea doar o listă de anunțuri"
+      },
+      {
+       "id": "singur",
+       "label": "Cine nu vrea să cunoască pe nimeni"
+      },
+      {
+       "id": "graba",
+       "label": "Cine vrea totul în 48 de ore"
+      }
+     ]
+    },
+    {
+     "id": "m03.journey",
+     "kind": "rank",
+     "label": "Trage pașii în ordinea în care contează pentru clientul tău tipic.",
+     "help": "Sus e ce contează cel mai mult.",
+     "options": [
+      {
+       "id": "people",
+       "label": "PEOPLE",
+       "desc": "Lângă cine vrei să trăiești?"
+      },
+      {
+       "id": "life",
+       "label": "LIFE",
+       "desc": "Cum vrei să trăiești?"
+      },
+      {
+       "id": "place",
+       "label": "PLACE",
+       "desc": "Ce zone ți se potrivesc?"
+      },
+      {
+       "id": "home",
+       "label": "HOME",
+       "desc": "Ce case pot funcționa?"
+      },
+      {
+       "id": "community",
+       "label": "COMMUNITY",
+       "desc": "Ce e în jurul tău?"
+      },
+      {
+       "id": "connection",
+       "label": "CONNECTION",
+       "desc": "Cine și ce poate intra în viața ta?"
+      }
+     ]
+    }
+   ],
+   "facilitator": [
+    "Care dintre profiluri plătește facturile în primul an? Care face brandul iubit?"
+   ]
+  },
+  {
+   "id": "m04",
+   "title": [
+    "Locul tău",
+    "pe hartă"
+   ],
+   "short": "Poziționare",
+   "minutes": 10,
+   "why": "Poziționarea e locul pe care îl ocupi în mintea cuiva. Dacă nu-l alegi tu, ți-l alege piața.",
+   "items": [
+    {
+     "id": "m04.category",
+     "kind": "choice",
+     "other": true,
+     "label": "Cum îi explici SIMPLU.21 cuiva la o cafea, în 10 secunde?",
+     "options": [
+      {
+       "id": "a",
+       "label": "O agenție imobiliară care începe cu oamenii, nu cu anunțurile."
+      },
+      {
+       "id": "b",
+       "label": "O comunitate care te ajută să-ți găsești locul. Și casa din el."
+      },
+      {
+       "id": "c",
+       "label": "Un consultant de viață și de cartier, cu case în portofoliu."
+      }
+     ]
+    },
+    {
+     "id": "m04.alts",
+     "kind": "matrix",
+     "label": "Ce folosesc oamenii azi în locul tău?",
+     "help": "Pentru fiecare: ce face bine și unde pierde. Două rânduri sunt destule.",
+     "rows": [
+      {
+       "id": "portaluri",
+       "label": "Portalurile",
+       "desc": "Imobiliare.ro, Storia"
+      },
+      {
+       "id": "clasice",
+       "label": "Agențiile clasice"
+      },
+      {
+       "id": "boutique",
+       "label": "Agenții boutique"
+      },
+      {
+       "id": "prieteni",
+       "label": "Prieteni și recomandări"
+      },
+      {
+       "id": "nimic",
+       "label": "Nimic",
+       "desc": "Se descurcă singuri"
+      }
+     ],
+     "cols": [
+      {
+       "id": "bine",
+       "label": "Ce fac bine",
+       "placeholder": "Volum, viteză…"
+      },
+      {
+       "id": "pierd",
+       "label": "Unde pierd",
+       "placeholder": "Nu știu nimic despre tine…"
+      }
+     ]
+    },
+    {
+     "id": "m04.builder",
+     "kind": "builder",
+     "label": "Construiește fraza de poziționare.",
+     "help": "Completează golurile sau atinge o sugestie. Fraza se scrie pe măsură ce lucrezi.",
+     "template": "Pentru {cine}, care {nevoie}, SIMPLU.21 este {categorie} care {beneficiu}, spre deosebire de {alternativa}, pentru că {dovada}.",
+     "slots": [
+      {
+       "id": "cine",
+       "label": "Pentru cine",
+       "placeholder": "oamenii care se mută cu gândul la viață",
+       "suggestions": [
+        "familiile tinere din București",
+        "profesioniștii care se întorc acasă",
+        "oamenii care vor să trăiască aproape de ai lor"
+       ]
+      },
+      {
+       "id": "nevoie",
+       "label": "Ce nevoie au",
+       "placeholder": "vor un loc, nu doar o adresă",
+       "suggestions": [
+        "vor un loc, nu doar o adresă",
+        "nu știu ce cartier li se potrivește",
+        "vor să cunoască oameni ca ei"
+       ]
+      },
+      {
+       "id": "categorie",
+       "label": "Ce este SIMPLU.21",
+       "placeholder": "o comunitate cu advisory imobiliar",
+       "suggestions": [
+        "o comunitate cu advisory imobiliar",
+        "un consultant de viață și de cartier",
+        "o agenție care începe cu oamenii"
+       ]
+      },
+      {
+       "id": "beneficiu",
+       "label": "Beneficiul principal",
+       "placeholder": "te pune lângă oamenii și locurile potrivite",
+       "suggestions": [
+        "te pune lângă oamenii și locurile potrivite",
+        "îți găsește casa după felul în care trăiești"
+       ]
+      },
+      {
+       "id": "alternativa",
+       "label": "Spre deosebire de",
+       "placeholder": "portalurile care îți arată doar anunțuri",
+       "suggestions": [
+        "portalurile care îți arată doar anunțuri",
+        "agențiile care vând metri pătrați"
+       ]
+      },
+      {
+       "id": "dovada",
+       "label": "Pentru că (dovada)",
+       "placeholder": "fondatoarea a legat oameni de locuri toată viața",
+       "suggestions": [
+        "fondatoarea a legat oameni de locuri toată viața",
+        "fiecare client e cunoscut înainte de prima vizionare"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "m04.xfactor",
+     "kind": "text",
+     "label": "X factor: ce poți promite tu și nimeni altcineva?",
+     "help": "Un singur lucru. Dacă îl poate spune și un portal, nu e el.",
+     "placeholder": "Noi…"
+    },
+    {
+     "id": "m04.sliders",
+     "kind": "scale",
+     "label": "Trage fiecare cursor unde stai azi.",
+     "pairs": [
+      {
+       "id": "re",
+       "left": "Real estate cu comunitate",
+       "right": "Comunitate cu real estate"
+      },
+      {
+       "id": "geo",
+       "left": "Bucureștean",
+       "right": "România întreagă"
+      },
+      {
+       "id": "pret",
+       "left": "Accesibil",
+       "right": "Premium"
+      },
+      {
+       "id": "oferta",
+       "left": "Curatoriat, puțin și ales",
+       "right": "Ofertă largă"
+      }
+     ]
+    }
+   ],
+   "facilitator": [
+    "Fraza de poziționare trece testul cafenelei? Citește-o cu voce tare.",
+    "X factor-ul se poate dovedi în prima lună?"
+   ]
+  },
+  {
+   "id": "m05",
+   "title": [
+    "Dacă ar fi",
+    "un om"
+   ],
+   "short": "Personalitate",
+   "minutes": 5,
+   "why": "Dacă SIMPLU.21 ar fi un om, cum l-ai recunoaște din colțul camerei? Nu există răspuns corect, doar unul sincer.",
+   "items": [
+    {
+     "id": "m05.sliders",
+     "kind": "scale",
+     "label": "Trage fiecare cursor spre cuvântul care îl descrie mai bine.",
+     "pairs": [
+      {
+       "id": "calm",
+       "left": "Calm",
+       "right": "Energic"
+      },
+      {
+       "id": "cald",
+       "left": "Cald",
+       "right": "Rafinat"
+      },
+      {
+       "id": "jucaus",
+       "left": "Jucăuș",
+       "right": "Serios"
+      },
+      {
+       "id": "discret",
+       "left": "Discret",
+       "right": "Expresiv"
+      },
+      {
+       "id": "comunitar",
+       "left": "Comunitar",
+       "right": "Exclusivist"
+      },
+      {
+       "id": "traditional",
+       "left": "Tradițional",
+       "right": "Contemporan"
+      },
+      {
+       "id": "intuitiv",
+       "left": "Intuitiv",
+       "right": "Riguros"
+      },
+      {
+       "id": "local",
+       "left": "Local",
+       "right": "Cosmopolit"
+      }
+     ]
+    },
+    {
+     "id": "m05.table",
+     "kind": "text",
+     "multiline": true,
+     "label": "Dacă SIMPLU.21 ar sta la o masă lungă, cum s-ar purta?",
+     "placeholder": "Ar fi cea care…"
+    }
+   ]
+  },
+  {
+   "id": "m06",
+   "title": [
+    "Arhetipul",
+    "tău"
+   ],
+   "short": "Arhetip",
+   "minutes": 9,
+   "why": "Arhetipul e arbitrul deciziilor de design. Două arhetipuri și un procent, ca să știm cine conduce și cine colorează.",
+   "items": [
+    {
+     "id": "m06.arch",
+     "kind": "archetype",
+     "label": "Wizard-ul de arhetip",
+     "help": "Trei pași: alegi din instinct, ordonezi, apoi răspunzi la zece dileme. La final vezi combinația ta.",
+     "archetypes": [
+      {
+       "id": "innocent",
+       "name": "Innocent",
+       "quadrant": "independenta",
+       "color": "#FED012",
+       "motto": "Viața poate fi simplă și bună.",
+       "line": "Optimist, onest, fără ascunzișuri. Vede binele înaintea problemei și îi face pe oameni să respire mai ușor.",
+       "desire": "să trăiască simplu și liniștit, cu lucruri bune în jur",
+       "fear": "să greșească, să complice, să fie pedepsit pentru o alegere",
+       "gift": "încredere și prospețime",
+       "traits": [
+        "onest",
+        "luminos",
+        "simplu",
+        "optimist"
+       ],
+       "asBrand": "promite că decizia e ușoară și că totul va fi bine. Nicio literă mică.",
+       "example": "Dove, Innocent Drinks, Coca-Cola",
+       "lead": "Brandul promite simplitate și liniște. Oamenii vin la tine pentru că nu complici nimic.",
+       "accent": "o lumină blândă și o promisiune de onestitate, care fac restul mai ușor de crezut",
+       "voice": "propoziții scurte, cuvinte simple, zero jargon",
+       "visual": "mult aer, lumină, culori curate, forme blânde",
+       "experience": "pași puțini și clari, fără surprize la final",
+       "risk": "poate părea naiv sau prea dulce dacă nu are dovezi concrete în spate"
+      },
+      {
+       "id": "explorer",
+       "name": "Explorer",
+       "quadrant": "independenta",
+       "color": "#28C840",
+       "motto": "Nu mă închide într-o cutie.",
+       "line": "Curios, neliniștit în sensul bun, mereu cu un drum în cap. Caută locul unde se simte cel mai viu.",
+       "desire": "libertatea de a descoperi cine e prin locurile prin care trece",
+       "fear": "să rămână prins, să se plictisească, să trăiască o viață care nu e a lui",
+       "gift": "autenticitate și curaj de a pleca",
+       "traits": [
+        "curios",
+        "liber",
+        "autentic",
+        "aventuros"
+       ],
+       "asBrand": "te scoate din rutină și îți arată un loc la care nu te gândeai.",
+       "example": "Patagonia, The North Face, Jeep",
+       "lead": "Brandul e o invitație la drum. Oamenii vin pentru libertatea de a alege altfel.",
+       "accent": "curiozitate și poftă de locuri noi, care țin brandul în mișcare",
+       "voice": "verbe de mișcare, întrebări deschise, ton de prieten care a fost deja acolo",
+       "visual": "orizonturi, natură, texturi reale, hărți",
+       "experience": "descoperire ghidată, trasee, recomandări care surprind",
+       "risk": "poate părea nestatornic, greu de legat de o casă și de rădăcini"
+      },
+      {
+       "id": "sage",
+       "name": "Sage",
+       "quadrant": "independenta",
+       "color": "#119BFE",
+       "motto": "Adevărul te eliberează.",
+       "line": "Calm, documentat, cu răbdare de profesor bun. Ajută oamenii să vadă limpede înainte să decidă.",
+       "desire": "să înțeleagă lumea și să-i ajute și pe alții să o înțeleagă",
+       "fear": "să fie păcălit, să se înșele, să vorbească fără să știe",
+       "gift": "claritate și înțelepciune",
+       "traits": [
+        "lucid",
+        "expert",
+        "calm",
+        "riguros"
+       ],
+       "asBrand": "e ghidul care a făcut temele. Îți explică, nu îți vinde.",
+       "example": "TED, Google, The Economist",
+       "lead": "Brandul e ghidul care știe. Oamenii vin pentru claritate într-o decizie mare.",
+       "accent": "argumente, date și o calmă siguranță a celui care a făcut temele",
+       "voice": "explicativ, precis, cu exemple concrete",
+       "visual": "ordine, tipografie atentă, hărți și date puse frumos",
+       "experience": "consultanță, ghiduri, comparații oneste",
+       "risk": "poate deveni rece sau profesoral, prea mult cap și prea puțină inimă"
+      },
+      {
+       "id": "hero",
+       "name": "Hero",
+       "quadrant": "maiestrie",
+       "color": "#F65342",
+       "motto": "Unde e voință, e și drum.",
+       "line": "Curajos, disciplinat, făcut pentru mize mari. Face lucrurile grele să pară posibile și îi împinge pe alții mai departe.",
+       "desire": "să-și dovedească valoarea printr-un act de curaj",
+       "fear": "slăbiciunea, să renunțe, să fie învins",
+       "gift": "competență și determinare",
+       "traits": [
+        "curajos",
+        "puternic",
+        "direct",
+        "ambițios"
+       ],
+       "asBrand": "te ajută să câștigi o luptă care contează pentru tine.",
+       "example": "Nike, FedEx, Duracell",
+       "lead": "Brandul e despre a reuși. Oamenii vin pentru că îi ajuți să câștige o miză mare.",
+       "accent": "energie și determinare, un pic de adrenalină în plus",
+       "voice": "imperativ, direct, despre rezultate",
+       "visual": "contrast puternic, diagonale, mișcare",
+       "experience": "obiective clare, progres vizibil, momente de victorie",
+       "risk": "poate părea agresiv sau competitiv acolo unde oamenii caută căldură"
+      },
+      {
+       "id": "rebel",
+       "name": "Rebel",
+       "quadrant": "maiestrie",
+       "color": "#F65342",
+       "motto": "Regulile sunt făcute ca să fie încălcate.",
+       "line": "Nonconformist, sincer până la incomod. Spune ce alții doar gândesc și construiește alternativa.",
+       "desire": "să schimbe ce nu mai funcționează, chiar dacă deranjează",
+       "fear": "să fie neputincios, banal, înghițit de sistem",
+       "gift": "libertate radicală și curaj de a spune nu",
+       "traits": [
+        "provocator",
+        "liber",
+        "sincer",
+        "radical"
+       ],
+       "asBrand": "e împotriva felului în care se fac lucrurile azi în industrie.",
+       "example": "Harley-Davidson, Liquid Death, Virgin",
+       "lead": "Brandul e împotriva felului în care se fac lucrurile azi. Oamenii vin pentru că s-au săturat.",
+       "accent": "o margine ascuțită și curajul de a numi problema din industrie",
+       "voice": "provocator, ironic, fără politețuri inutile",
+       "visual": "tipografie mare, contrast, gesturi neașteptate",
+       "experience": "o alternativă clară la sistem, cu regulile ei",
+       "risk": "poate speria exact oamenii care caută încredere și siguranță"
+      },
+      {
+       "id": "magician",
+       "name": "Magician",
+       "quadrant": "maiestrie",
+       "color": "#B098C8",
+       "motto": "Fac să se întâmple.",
+       "line": "Vizionar, carismatic, atent la momentul în care totul se leagă. Transformă o dorință vagă într-o realitate.",
+       "desire": "să înțeleagă cum funcționează lumea și să o transforme",
+       "fear": "consecințele neprevăzute, magia care se întoarce împotriva lui",
+       "gift": "transformare și momente de uimire",
+       "traits": [
+        "vizionar",
+        "carismatic",
+        "intuitiv",
+        "transformator"
+       ],
+       "asBrand": "promite momentul în care totul se potrivește, ca prin farmec.",
+       "example": "Disney, Dyson, Polaroid",
+       "lead": "Brandul promite o transformare. Oamenii vin pentru momentul în care totul se leagă.",
+       "accent": "un strop de uimire, sentimentul că se întâmplă ceva special",
+       "voice": "evocator, despre ce devine posibil",
+       "visual": "lumină, momente de reveal, detalii care surprind",
+       "experience": "potriviri care par magice, momente de wow bine regizate",
+       "risk": "poate promite prea mult; magia fără dovezi pare truc"
+      },
+      {
+       "id": "everyman",
+       "name": "Everyman",
+       "quadrant": "apartenenta",
+       "color": "#28C840",
+       "motto": "Toți oamenii sunt egali.",
+       "line": "Prietenos, realist, fără ifose. Vecinul pe care te bazezi, care vorbește ca tine și îți ține ușa deschisă.",
+       "desire": "să aparțină, să fie acceptat așa cum e",
+       "fear": "să fie lăsat pe dinafară, să pară că se crede mai mult decât e",
+       "gift": "empatie, realism și lipsă de pretenții",
+       "traits": [
+        "accesibil",
+        "cald",
+        "de încredere",
+        "practic"
+       ],
+       "asBrand": "e unul dintre noi. Te face să te simți printre ai tăi.",
+       "example": "IKEA, Dacia, Lidl",
+       "lead": "Brandul e al tuturor. Oamenii vin pentru că se simt printre ai lor.",
+       "accent": "căldură de vecin și o ușă mereu deschisă",
+       "voice": "conversațional, cald, la „tu”",
+       "visual": "oameni reali, culori prietenoase, nimic pretențios",
+       "experience": "accesibil, fără bariere, comunitate deschisă",
+       "risk": "poate părea banal, greu de diferențiat sau de cerut preț pe el"
+      },
+      {
+       "id": "lover",
+       "name": "Lover",
+       "quadrant": "apartenenta",
+       "color": "#F65342",
+       "motto": "Tu ești singurul.",
+       "line": "Senzorial, cald, atent la detalii. Creează apropiere și îi face pe oameni să se simtă doriți și văzuți.",
+       "desire": "intimitate, apropiere, relații care contează",
+       "fear": "să fie singur, nedorit, neiubit",
+       "gift": "pasiune, recunoștință, atenție la frumos",
+       "traits": [
+        "intim",
+        "senzorial",
+        "pasional",
+        "atent"
+       ],
+       "asBrand": "e despre felul în care te simți: aproape, ales, acasă.",
+       "example": "Chanel, Godiva, Aperol",
+       "lead": "Brandul e despre apropiere și plăcere. Oamenii vin pentru felul în care îi face să se simtă.",
+       "accent": "căldură, senzorial și atenția la detaliile care fac un loc să fie al tău",
+       "voice": "senzorial, intim, la persoana a doua",
+       "visual": "texturi, lumină caldă, apropiere, detalii",
+       "experience": "atenție personală, ritualuri, momente pe care le ții minte",
+       "risk": "poate aluneca în prea dulce sau exclusivist; lângă dating, atenție la ambiguitate"
+      },
+      {
+       "id": "jester",
+       "name": "Jester",
+       "quadrant": "apartenenta",
+       "color": "#FED012",
+       "motto": "Trăim o singură dată.",
+       "line": "Jucăuș, spontan, cu umor bun. Ușurează momentele grele și îi adună pe oameni în jurul unei glume.",
+       "desire": "să trăiască în prezent, cu bucurie și joacă",
+       "fear": "plictiseala, să-i plictisească pe alții",
+       "gift": "bucurie, ușurință, perspectivă",
+       "traits": [
+        "amuzant",
+        "spontan",
+        "ireverențios",
+        "jucăuș"
+       ],
+       "asBrand": "face drumul mai distractiv decât destinația.",
+       "example": "M&M's, Old Spice, Ben & Jerry's",
+       "lead": "Brandul e bucurie. Oamenii vin pentru că e mai distractiv cu tine.",
+       "accent": "umor și joacă, care fac brandul mai ușor de iubit",
+       "voice": "jucăuș, cu poante, surprinzător",
+       "visual": "culoare, personaje, ilustrație",
+       "experience": "joc, gamification, evenimente memorabile",
+       "risk": "poate submina încrederea într-o decizie mare, cum e o casă"
+      },
+      {
+       "id": "caregiver",
+       "name": "Caregiver",
+       "quadrant": "stabilitate",
+       "color": "#119BFE",
+       "motto": "Nu ești singur în asta.",
+       "line": "Generos, protector, cu răbdare infinită. Are grijă de oameni cum ar avea de familie și nu-i lasă singuri.",
+       "desire": "să-i protejeze și să-i ajute pe ceilalți",
+       "fear": "egoismul, nerecunoștința, să nu poată ajuta",
+       "gift": "compasiune și generozitate",
+       "traits": [
+        "grijuliu",
+        "generos",
+        "răbdător",
+        "protector"
+       ],
+       "asBrand": "e mâna sigură care te ține de la prima întrebare până la cheie.",
+       "example": "Volvo, UNICEF, Johnson & Johnson",
+       "lead": "Brandul e mâna sigură. Oamenii vin pentru că știu că cineva are grijă de ei.",
+       "accent": "grijă și siguranță, sentimentul că nu ești singur în decizie",
+       "voice": "cald, liniștitor, empatic",
+       "visual": "forme rotunde, culori calde și calme, oameni împreună",
+       "experience": "însoțire de la cap la coadă, disponibilitate, răbdare",
+       "risk": "poate părea prea moale sau protector, fără personalitate proprie"
+      },
+      {
+       "id": "creator",
+       "name": "Creator",
+       "quadrant": "stabilitate",
+       "color": "#B098C8",
+       "motto": "Dacă poți să-ți imaginezi, poți să construiești.",
+       "line": "Imaginativ, perfecționist, mândru de meșteșug. Vede ce nu există încă și îl construiește cu grijă.",
+       "desire": "să creeze ceva cu valoare durabilă",
+       "fear": "mediocritatea, o viziune executată prost",
+       "gift": "imaginație și meșteșug",
+       "traits": [
+        "inventiv",
+        "vizionar",
+        "atent la detalii",
+        "expresiv"
+       ],
+       "asBrand": "construiește ceva ce n-a mai existat și te invită să creezi împreună.",
+       "example": "LEGO, Apple, Adobe",
+       "lead": "Brandul construiește ceva nou. Oamenii vin pentru viziune și pentru felul în care e făcut.",
+       "accent": "grijă de meșteșug și o viziune care se vede în detalii",
+       "voice": "vizionar, precis cu detaliile, mândru de lucrul bine făcut",
+       "visual": "sisteme, design atent, schițe, proces la vedere",
+       "experience": "co-creație, curatoriat, lucruri făcute pe măsură",
+       "risk": "poate deveni perfecționist sau prea concentrat pe sine"
+      },
+      {
+       "id": "ruler",
+       "name": "Ruler",
+       "quadrant": "stabilitate",
+       "color": "#0d0c09",
+       "motto": "Standardul e promisiunea.",
+       "line": "Sigur pe el, organizat, cu standarde înalte. Creează ordine, ia decizii și stabilește regula jocului.",
+       "desire": "control, stabilitate, o comunitate prosperă și bine condusă",
+       "fear": "haosul, să fie răsturnat, să piardă controlul",
+       "gift": "responsabilitate și leadership",
+       "traits": [
+        "sigur",
+        "exigent",
+        "elegant",
+        "responsabil"
+       ],
+       "asBrand": "e standardul. Selecția strictă e chiar promisiunea.",
+       "example": "Rolex, Mercedes-Benz, American Express",
+       "lead": "Brandul e standardul. Oamenii vin pentru calitate, ordine și statut.",
+       "accent": "rigoare și un standard înalt, care dau încredere",
+       "voice": "sigur, sobru, puțin și bine spus",
+       "visual": "simetrie, materiale nobile, puțină culoare",
+       "experience": "selecție strictă, acces premium, proces impecabil",
+       "risk": "poate părea rece, distant sau exclusivist"
+      }
+     ],
+     "examples": {
+      "labels": [
+       {
+        "id": "headline",
+        "label": "Ar spune"
+       },
+       {
+        "id": "listing",
+        "label": "Un anunț de casă"
+       },
+       {
+        "id": "experience",
+        "label": "O experiență"
+       },
+       {
+        "id": "site",
+        "label": "Primul ecran al site-ului"
+       },
+       {
+        "id": "never",
+        "label": "Nu ar face niciodată"
+       }
+      ],
+      "by": {
+       "innocent": {
+        "headline": "Casa potrivită, fără bătăi de cap.",
+        "listing": "Trei camere luminoase, o curte mică, vecini liniștiți. Tot ce trebuie, nimic în plus.",
+        "experience": "O sâmbătă de casă deschisă, cu cafea și răspunsuri simple la orice întrebare.",
+        "site": "O singură întrebare, „Cum vrei să trăiești?”, și trei case potrivite sub ea.",
+        "never": "Să folosească jargon imobiliar sau să ascundă un cost."
+       },
+       "explorer": {
+        "headline": "Găsește-ți locul. Poate nu e unde credeai.",
+        "listing": "La 30 de minute de oraș și la 3 de pădure. Pentru cine vrea să iasă din curte direct pe potecă.",
+        "experience": "Un weekend de explorat Râșnovul, cu un ghid local și prânz la o fermă.",
+        "site": "Living Map în prim-plan: cartiere și locuri de descoperit înainte de case.",
+        "never": "Să vândă tuturor aceeași casă în același cartier."
+       },
+       "sage": {
+        "headline": "Înainte de casă, află cum se trăiește acolo.",
+        "listing": "3 camere în Cotroceni. Școala la 400 m, 52 dB seara pe stradă, prețul pe mp cu 6% sub media zonei.",
+        "experience": "Un atelier de 90 de minute: cum alegi cartierul, nu doar casa. Cu date și hărți.",
+        "site": "Ghidul de cartiere, cu comparații oneste și date verificate.",
+        "never": "Să promită ceva ce nu poate dovedi."
+       },
+       "hero": {
+        "headline": "Casa ta, în 21 de zile. Ne ținem de cuvânt.",
+        "listing": "Ultima casă din Laguna Forest la prețul de lansare. Hai s-o facem a ta.",
+        "experience": "Provocarea de 21 de zile: de la „nu știu ce vreau” la cheia în mână.",
+        "site": "Un plan pas cu pas, cu progresul la vedere, de la prima întâlnire la mutare.",
+        "never": "Să lase un client blocat, fără răspuns."
+       },
+       "rebel": {
+        "headline": "Agențiile vând metri pătrați. Noi nu.",
+        "listing": "Fără „zonă exclusivistă”, fără „oportunitate unică”. O casă bună, spusă pe nume.",
+        "experience": "O seară anti-portal: povești de la oameni care s-au săturat de anunțuri copiate.",
+        "site": "Un manifest despre ce e stricat în imobiliare și cum facem altfel.",
+        "never": "Să vorbească în limbajul pieței pe care o critică."
+       },
+       "magician": {
+        "headline": "Spune-ne cum vrei să trăiești. Restul se leagă.",
+        "listing": "Imaginează-ți duminica aici: piața la colț, prietenii la două străzi, masa întinsă în curte.",
+        "experience": "Potrivirile The First 21: oameni care nu se cunoșteau și acum sunt vecini.",
+        "site": "Un quiz de stil de viață care, la final, devine o hartă doar a ta.",
+        "never": "Să promită o potrivire pe care nu o poate livra."
+       },
+       "everyman": {
+        "headline": "Oameni ca tine, case ca lumea.",
+        "listing": "Casă de familie, curte pentru câine, vecini care te salută. Fără ifose.",
+        "experience": "Grătarul de cartier, deschis oricui, cu copii și câini cu tot.",
+        "site": "Povești de la clienți reali, cu pozele făcute chiar de ei.",
+        "never": "Să se dea mare sau să facă pe cineva să se simtă mic."
+       },
+       "lover": {
+        "headline": "Trăiește mai aproape de ce iubești.",
+        "listing": "Lumina de după-amiază pe parchetul de stejar. Un balcon făcut pentru două cafele.",
+        "experience": "O cină pentru 12 oameni care nu se cunosc, cu mâncare bună și conversații până târziu.",
+        "site": "Imagini calde, texturi, povești de oameni care și-au găsit locul.",
+        "never": "Să amestece ambiguu dating-ul cu vânzarea unei case."
+       },
+       "jester": {
+        "headline": "Mutarea poate fi și distractivă. Serios.",
+        "listing": "Bucătăria are loc pentru tot: oale, oameni și dansuri proaste la 2 noaptea.",
+        "experience": "Quiz night de cartier, cu echipe de vecini și premii absurde.",
+        "site": "Microcopy cu umor și un joc „găsește-ți vecinul ideal”.",
+        "never": "Să glumească despre bani, contracte sau decizii grele."
+       },
+       "caregiver": {
+        "headline": "Nu ești singur în cea mai mare decizie a ta.",
+        "listing": "Casă pentru o familie care crește. Te ajutăm cu creditul, cu mutarea și cu școala.",
+        "experience": "Prima lună după mutare: cineva te prezintă vecinilor și locurilor din jur.",
+        "site": "„Cum te putem ajuta?” și un om real care îți răspunde în aceeași zi.",
+        "never": "Să dispară după ce s-a semnat contractul."
+       },
+       "creator": {
+        "headline": "Construim împreună felul în care vrei să trăiești.",
+        "listing": "Casă din 1936, renovată cu grijă: ușile originale, ferestrele noi, detaliile la vedere.",
+        "experience": "Atelier de co-design pentru comunitatea de 21 de case din Râșnov.",
+        "site": "Procesul la vedere: schițe, hărți, alegeri, cum se construiește comunitatea.",
+        "never": "Să livreze ceva generic, făcut pe bandă."
+       },
+       "ruler": {
+        "headline": "21 de case. Alese una câte una.",
+        "listing": "Vilă în Primăverii, din selecția SIMPLU.21. Vizionări doar cu programare.",
+        "experience": "O seară privată pentru membrii The First 21, pe invitație.",
+        "site": "Un portofoliu mic, curatoriat strict, cu standardele publicate.",
+        "never": "Să accepte orice ofertă doar ca să aibă volum."
+       }
+      }
+     },
+     "questions": [
+      {
+       "id": "q1",
+       "q": "Ce vrei să simtă omul după prima întâlnire?",
+       "a": {
+        "label": "Că e pe mâini bune.",
+        "archetypes": [
+         "caregiver",
+         "ruler"
+        ]
+       },
+       "b": {
+        "label": "Că i s-a deschis o ușă nouă.",
+        "archetypes": [
+         "explorer",
+         "magician"
+        ]
+       }
+      },
+      {
+       "id": "q2",
+       "q": "Când piața face zgomot, SIMPLU.21…",
+       "a": {
+        "label": "explică liniștit ce contează.",
+        "archetypes": [
+         "sage",
+         "innocent"
+        ]
+       },
+       "b": {
+        "label": "spune ce nu merge în industrie.",
+        "archetypes": [
+         "rebel",
+         "hero"
+        ]
+       }
+      },
+      {
+       "id": "q3",
+       "q": "Masa lungă ideală e…",
+       "a": {
+        "label": "caldă, cu oameni care se simt ca acasă.",
+        "archetypes": [
+         "everyman",
+         "caregiver"
+        ]
+       },
+       "b": {
+        "label": "aleasă, cu oameni care te inspiră.",
+        "archetypes": [
+         "ruler",
+         "creator"
+        ]
+       }
+      },
+      {
+       "id": "q4",
+       "q": "Un client ezită. Tu…",
+       "a": {
+        "label": "îi dai timp și informație.",
+        "archetypes": [
+         "sage",
+         "caregiver"
+        ]
+       },
+       "b": {
+        "label": "îi arăți cum ar arăta viața lui acolo.",
+        "archetypes": [
+         "magician",
+         "lover"
+        ]
+       }
+      },
+      {
+       "id": "q5",
+       "q": "Ce te supără mai tare la imobiliare azi?",
+       "a": {
+        "label": "Lipsa de grijă față de om.",
+        "archetypes": [
+         "caregiver",
+         "everyman"
+        ]
+       },
+       "b": {
+        "label": "Lipsa de imaginație.",
+        "archetypes": [
+         "creator",
+         "rebel"
+        ]
+       }
+      },
+      {
+       "id": "q6",
+       "q": "Umorul în brand?",
+       "a": {
+        "label": "Da. Ne luăm munca în serios, nu pe noi.",
+        "archetypes": [
+         "jester",
+         "everyman"
+        ]
+       },
+       "b": {
+        "label": "Puțin. Preferăm eleganța discretă.",
+        "archetypes": [
+         "ruler",
+         "sage"
+        ]
+       }
+      },
+      {
+       "id": "q7",
+       "q": "Creștere: ce alegi?",
+       "a": {
+        "label": "21 de oameni potriviți.",
+        "archetypes": [
+         "lover",
+         "creator"
+        ]
+       },
+       "b": {
+        "label": "O comunitate deschisă oricui.",
+        "archetypes": [
+         "everyman",
+         "innocent"
+        ]
+       }
+      },
+      {
+       "id": "q8",
+       "q": "Drumul spre casa potrivită e…",
+       "a": {
+        "label": "o aventură.",
+        "archetypes": [
+         "explorer",
+         "hero"
+        ]
+       },
+       "b": {
+        "label": "un proces liniștit, bine ghidat.",
+        "archetypes": [
+         "caregiver",
+         "sage"
+        ]
+       }
+      },
+      {
+       "id": "q9",
+       "q": "SIMPLU.21 construiește…",
+       "a": {
+        "label": "ceva ce n-a mai existat în România.",
+        "archetypes": [
+         "creator",
+         "magician"
+        ]
+       },
+       "b": {
+        "label": "ceva ce oamenii recunosc imediat ca fiind al lor.",
+        "archetypes": [
+         "everyman",
+         "innocent"
+        ]
+       }
+      },
+      {
+       "id": "q10",
+       "q": "Promisiunea de fond:",
+       "a": {
+        "label": "Viața poate fi mai simplă.",
+        "archetypes": [
+         "innocent",
+         "explorer"
+        ]
+       },
+       "b": {
+        "label": "Viața poate fi mai plină de oameni.",
+        "archetypes": [
+         "lover",
+         "jester"
+        ]
+       }
+      }
+     ]
+    }
+   ],
+   "facilitator": [
+    "Dacă alegerea declarată diferă de cea din dileme: care dintre ele e brandul de azi și care e brandul dorit?"
+   ]
+  },
+  {
+   "id": "m07",
+   "title": [
+    "Valorile"
+   ],
+   "short": "Valori",
+   "minutes": 6,
+   "why": "Valorile sunt promisiuni pe care le ții și când te costă. Le alegem prin eliminare, ca să rămână doar cele adevărate.",
+   "items": [
+    {
+     "id": "m07.values",
+     "kind": "values",
+     "label": "Opt, apoi cinci, apoi trei.",
+     "help": "Trage valorile în coș. Poți adăuga și una a ta.",
+     "pool": [
+      "apropiere",
+      "încredere",
+      "generozitate",
+      "autenticitate",
+      "curiozitate",
+      "apartenență",
+      "discreție",
+      "simplitate",
+      "grijă",
+      "libertate",
+      "curaj",
+      "calitate",
+      "transparență",
+      "respect",
+      "bucurie",
+      "echilibru",
+      "răbdare",
+      "deschidere",
+      "comunitate",
+      "empatie",
+      "responsabilitate",
+      "onestitate",
+      "rădăcini",
+      "frumusețe",
+      "ospitalitate",
+      "intimitate",
+      "inițiativă",
+      "claritate",
+      "consecvență",
+      "sustenabilitate",
+      "joacă",
+      "recunoștință"
+     ],
+     "steps": [
+      8,
+      5,
+      3
+     ],
+     "always": "În practică, noi întotdeauna…",
+     "never": "…și niciodată…"
+    }
+   ],
+   "facilitator": [
+    "Pentru fiecare valoare din top 3: când v-a costat ceva să o țineți?"
+   ]
+  },
+  {
+   "id": "m08",
+   "title": [
+    "Ce oferi,",
+    "ce simt"
+   ],
+   "short": "Atribute",
+   "minutes": 5,
+   "why": "Atributele raționale spun ce primește omul. Cele emoționale spun cu ce rămâne. Ne trebuie amândouă.",
+   "items": [
+    {
+     "id": "m08.rational",
+     "kind": "sort",
+     "custom": true,
+     "label": "Trei atribute raționale. Ce oferă SIMPLU.21?",
+     "buckets": [
+      {
+       "id": "top",
+       "label": "Top 3 raționale",
+       "max": 3,
+       "color": "#119BFE"
+      }
+     ],
+     "pool": [
+      "curatoriat",
+      "cunoaștere locală",
+      "advisory imobiliar",
+      "rețea de oameni",
+      "potrivire după stil de viață",
+      "discreție",
+      "însoțire de la cap la coadă",
+      "oferte off-market",
+      "comunitate activă",
+      "experiențe de 21 de zile",
+      "transparență în tranzacție",
+      "rapiditate"
+     ],
+     "icons": {
+      "curatoriat": "🎯",
+      "cunoaștere locală": "🗺️",
+      "advisory imobiliar": "🏡",
+      "rețea de oameni": "🤝",
+      "potrivire după stil de viață": "🧩",
+      "discreție": "🤫",
+      "însoțire de la cap la coadă": "🧭",
+      "oferte off-market": "🔐",
+      "comunitate activă": "👥",
+      "experiențe de 21 de zile": "📅",
+      "transparență în tranzacție": "🔍",
+      "rapiditate": "⚡"
+     }
+    },
+    {
+     "id": "m08.emotional",
+     "kind": "sort",
+     "custom": true,
+     "label": "Trei atribute emoționale. Ce simte omul?",
+     "buckets": [
+      {
+       "id": "top",
+       "label": "Top 3 emoționale",
+       "max": 3,
+       "color": "#F65342"
+      }
+     ],
+     "pool": [
+      "liniștit",
+      "văzut",
+      "acasă",
+      "conectat",
+      "în siguranță",
+      "inspirat",
+      "curios",
+      "ales",
+      "liber",
+      "ușurat",
+      "entuziasmat",
+      "parte din ceva"
+     ],
+     "icons": {
+      "liniștit": "😌",
+      "văzut": "👀",
+      "acasă": "🏠",
+      "conectat": "🔗",
+      "în siguranță": "🛡️",
+      "inspirat": "✨",
+      "curios": "🤔",
+      "ales": "💛",
+      "liber": "🕊️",
+      "ușurat": "😮‍💨",
+      "entuziasmat": "🤩",
+      "parte din ceva": "🫶"
+     }
+    },
+    {
+     "id": "m08.after",
+     "kind": "text",
+     "label": "Ce vrei să spună cineva despre SIMPLU.21 după prima întâlnire?",
+     "placeholder": "„N-am mai întâlnit pe cineva care…”"
+    }
+   ]
+  },
+  {
+   "id": "m09",
+   "title": [
+    "Vocea"
+   ],
+   "short": "Voce",
+   "minutes": 6,
+   "why": "Vocea e cum suni când nu ești în cameră. Alege din instinct, fără să cântărești prea mult.",
+   "items": [
+    {
+     "id": "m09.listing",
+     "kind": "ab",
+     "label": "Un anunț de casă. Care sună a SIMPLU.21?",
+     "a": {
+      "id": "a",
+      "label": "Casă 4 camere, 140 mp, Pipera, curte 300 mp, aproape de școli. Programează o vizionare."
+     },
+     "b": {
+      "id": "b",
+      "label": "Dimineața, soarele trece prin bucătărie și ajunge până la masa din curte. Patru camere, 140 mp, la zece minute de două școli bune. Vino s-o vezi de aproape."
+     }
+    },
+    {
+     "id": "m09.welcome",
+     "kind": "ab",
+     "label": "Un mesaj de bun venit în comunitate.",
+     "a": {
+      "id": "a",
+      "label": "Bine ai venit în comunitatea SIMPLU.21! Îți mulțumim pentru înscriere. Vei primi în curând detalii despre evenimente."
+     },
+     "b": {
+      "id": "b",
+      "label": "Salut, Ana. Ne bucurăm că ești aici. Joi seara e masă lungă în Cotroceni, 12 oameni, două locuri libere. Ți-l păstrăm pe unul?"
+     }
+    },
+    {
+     "id": "m09.price",
+     "kind": "ab",
+     "label": "Cineva întreabă „cât costă?”.",
+     "a": {
+      "id": "a",
+      "label": "Serviciile de consultanță pornesc de la 2% din valoarea tranzacției, conform contractului."
+     },
+     "b": {
+      "id": "b",
+      "label": "Direct: 2% din valoarea casei, și doar dacă o găsim. Prima cafea e din partea noastră."
+     }
+    },
+    {
+     "id": "m09.social",
+     "kind": "ab",
+     "label": "O postare despre Râșnov.",
+     "a": {
+      "id": "a",
+      "label": "Râșnov. 21 de case, o singură comunitate. Viziunea SIMPLU.21 prinde contur."
+     },
+     "b": {
+      "id": "b",
+      "label": "Ce-ar fi dacă vecinii tăi ar fi oamenii pe care i-ai invita oricum la cină?"
+     }
+    },
+    {
+     "id": "m09.words",
+     "kind": "sort",
+     "custom": true,
+     "label": "Așa da, așa nu. Trage cuvintele în coșul lor.",
+     "help": "Trei cuvinte pe care brandul le folosește și trei pe care nu le-ar folosi niciodată.",
+     "buckets": [
+      {
+       "id": "da",
+       "label": "Așa da",
+       "max": 3,
+       "color": "#28C840"
+      },
+      {
+       "id": "nu",
+       "label": "Așa nu",
+       "max": 3,
+       "color": "#F65342"
+      }
+     ],
+     "pool": [
+      "acasă",
+      "aproape",
+      "vecini",
+      "masă lungă",
+      "cartier",
+      "oameni",
+      "rădăcini",
+      "stil de viață",
+      "lux",
+      "exclusivist",
+      "investiție",
+      "randament",
+      "oportunitate",
+      "deal",
+      "imobil",
+      "premium",
+      "match",
+      "comunitate"
+     ]
+    },
+    {
+     "id": "m09.tu",
+     "kind": "choice",
+     "label": "Tu sau dumneavoastră?",
+     "options": [
+      {
+       "id": "tu",
+       "label": "Tu, mereu",
+       "desc": "Și în contracte, și pe Instagram."
+      },
+      {
+       "id": "tu-exceptii",
+       "label": "Tu, cu excepții",
+       "desc": "Dumneavoastră în acte și cu oamenii care o preferă."
+      },
+      {
+       "id": "dvs",
+       "label": "Dumneavoastră",
+       "desc": "Distanță respectuoasă, peste tot."
+      },
+      {
+       "id": "canal",
+       "label": "Depinde de canal",
+       "desc": "Social la tu, site și email la dumneavoastră."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m10",
+   "title": [
+    "Cum se",
+    "vede"
+   ],
+   "short": "Direcție vizuală",
+   "minutes": 7,
+   "why": "Fără poze de stoc și fără case desenate. Doar culori, litere, texturi și ritm, ca să alegi senzația, nu clișeul.",
+   "items": [
+    {
+     "id": "m10.pairs",
+     "kind": "visual",
+     "label": "Din fiecare pereche, ce simți mai aproape?",
+     "pairs": [
+      {
+       "id": "pal1",
+       "label": "Paletă",
+       "a": {
+        "id": "a",
+        "label": "Pământ cald",
+        "swatch": {
+         "type": "palette",
+         "colors": [
+          "#C4693F",
+          "#E2B868",
+          "#F3E9D6",
+          "#6E7B4E"
+         ]
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Calm răcoros",
+        "swatch": {
+         "type": "palette",
+         "colors": [
+          "#9DB2A6",
+          "#5D7186",
+          "#E7ECEB",
+          "#22303B"
+         ]
+        }
+       }
+      },
+      {
+       "id": "pal2",
+       "label": "Intensitate",
+       "a": {
+        "id": "a",
+        "label": "Luminos, saturat",
+        "swatch": {
+         "type": "palette",
+         "colors": [
+          "#FF6A3D",
+          "#FFC43D",
+          "#1FB5A6",
+          "#2747A5"
+         ]
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Liniștit, stins",
+        "swatch": {
+         "type": "palette",
+         "colors": [
+          "#B9A99A",
+          "#D8CFC4",
+          "#8A9690",
+          "#4A4744"
+         ]
+        }
+       }
+      },
+      {
+       "id": "type1",
+       "label": "Litera",
+       "a": {
+        "id": "a",
+        "label": "Serif editorial",
+        "swatch": {
+         "type": "type",
+         "font": "serif",
+         "sample": "Live closer."
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Sans geometric",
+        "swatch": {
+         "type": "type",
+         "font": "geo",
+         "sample": "Live closer.",
+         "weight": 800
+        }
+       }
+      },
+      {
+       "id": "type2",
+       "label": "Caracter",
+       "a": {
+        "id": "a",
+        "label": "Clasic, gravat",
+        "swatch": {
+         "type": "type",
+         "font": "classic",
+         "sample": "Simplu 21",
+         "weight": 600
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Contemporan, ușor",
+        "swatch": {
+         "type": "type",
+         "font": "grotesk",
+         "sample": "simplu 21",
+         "weight": 500
+        }
+       }
+      },
+      {
+       "id": "tex",
+       "label": "Textură",
+       "a": {
+        "id": "a",
+        "label": "Hârtie, in, granulat",
+        "swatch": {
+         "type": "texture",
+         "texture": "linen"
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Neted, plat, digital",
+        "swatch": {
+         "type": "texture",
+         "texture": "flat"
+        }
+       }
+      },
+      {
+       "id": "dens",
+       "label": "Densitate",
+       "a": {
+        "id": "a",
+        "label": "Aerisit",
+        "swatch": {
+         "type": "density",
+         "level": "airy"
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Bogat",
+        "swatch": {
+         "type": "density",
+         "level": "rich"
+        }
+       }
+      },
+      {
+       "id": "shape",
+       "label": "Forme",
+       "a": {
+        "id": "a",
+        "label": "Organic",
+        "swatch": {
+         "type": "shape",
+         "shape": "organic"
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Geometric",
+        "swatch": {
+         "type": "shape",
+         "shape": "geometric"
+        }
+       }
+      },
+      {
+       "id": "ritm",
+       "label": "Ritm",
+       "a": {
+        "id": "a",
+        "label": "Liniștit, aliniat",
+        "swatch": {
+         "type": "rhythm",
+         "level": "calm"
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Jucăuș, decalat",
+        "swatch": {
+         "type": "rhythm",
+         "level": "playful"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": "m10.refs",
+     "kind": "refs",
+     "max": 6,
+     "optional": true,
+     "label": "Ai referințe ale tale? Până la șase.",
+     "help": "Imagini sau link-uri, orice domeniu. Spune-ne ce îți place la fiecare."
+    },
+    {
+     "id": "m10.not",
+     "kind": "choice",
+     "multi": true,
+     "other": true,
+     "label": "Cu ce NU vrei să semene?",
+     "options": [
+      {
+       "id": "cheia",
+       "label": "Cheia aurie"
+      },
+      {
+       "id": "casa",
+       "label": "Silueta de casă cu acoperiș"
+      },
+      {
+       "id": "pin",
+       "label": "Pin-ul de hartă"
+      },
+      {
+       "id": "albastru",
+       "label": "Albastrul corporate de bancă"
+      },
+      {
+       "id": "auriu",
+       "label": "Auriu pe negru, lux de catalog"
+      },
+      {
+       "id": "stock",
+       "label": "Familii zâmbitoare din stoc"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m11",
+   "title": [
+    "Arhitectura",
+    "brandului"
+   ],
+   "short": "Arhitectură",
+   "minutes": 7,
+   "why": "SIMPLU.21 are multe camere. Decidem ce deschidem primul și ce ține ușa închisă deocamdată.",
+   "items": [
+    {
+     "id": "m11.pillars",
+     "kind": "rank",
+     "label": "Ordonează pilonii după prioritatea din primele 12 luni.",
+     "options": [
+      {
+       "id": "live",
+       "label": "LIVE",
+       "desc": "Real estate, Living Map, relocare, servicii pentru casă"
+      },
+      {
+       "id": "discover",
+       "label": "DISCOVER",
+       "desc": "Cafea, mâncare, natură, cultură, mișcare, coworking"
+      },
+      {
+       "id": "connect",
+       "label": "CONNECT",
+       "desc": "Prieteni, vecini, activități, conexiuni profesionale, dating opt-in"
+      },
+      {
+       "id": "belong",
+       "label": "BELONG",
+       "desc": "Grupuri, evenimente, mese lungi, ateliere, experiențe de 21 de zile"
+      }
+     ]
+    },
+    {
+     "id": "m11.dating",
+     "kind": "choice",
+     "why": true,
+     "discuss": true,
+     "label": "Componenta de dating (adulți, opt-in): unde stă?",
+     "help": "Decizie importantă pentru încrederea pe partea de real estate. Vrem poziția ta explicit.",
+     "options": [
+      {
+       "id": "same",
+       "label": "Sub același brand",
+       "desc": "SIMPLU.21 leagă oameni, inclusiv așa."
+      },
+      {
+       "id": "sub",
+       "label": "Sub-brand separat",
+       "desc": "Familie comună, nume și ton separate."
+      },
+      {
+       "id": "later",
+       "label": "Amânată",
+       "desc": "Revenim după ce real estate-ul are tracțiune."
+      }
+     ]
+    },
+    {
+     "id": "m11.vision",
+     "kind": "choice",
+     "why": true,
+     "label": "Hub-ul din București și comunitatea de 21 de case din Râșnov: le arătăm de la început?",
+     "options": [
+      {
+       "id": "now",
+       "label": "Da, ca viziune",
+       "desc": "Oamenii cumpără direcția."
+      },
+      {
+       "id": "teaser",
+       "label": "Ca teaser",
+       "desc": "Le pomenim, fără promisiuni și termene."
+      },
+      {
+       "id": "later",
+       "label": "Mai târziu",
+       "desc": "Întâi dovedim partea de azi."
+      }
+     ]
+    }
+   ],
+   "facilitator": [
+    "Ce s-ar întâmpla cu încrederea unui cumpărător dacă găsește dating-ul în același meniu?"
+   ]
+  },
+  {
+   "id": "m12",
+   "title": [
+    "Site-ul",
+    "și restul"
+   ],
+   "short": "Website & practic",
+   "minutes": 8,
+   "why": "Primul site nu trebuie să facă tot. Trebuie să facă bine trei lucruri în primele trei luni.",
+   "items": [
+    {
+     "id": "m12.site",
+     "kind": "rank",
+     "label": "Ce trebuie să facă site-ul în primele 3 luni? Ordonează.",
+     "options": [
+      {
+       "id": "oferte",
+       "label": "Prezintă oferte imobiliare"
+      },
+      {
+       "id": "leads",
+       "label": "Captează lead-uri"
+      },
+      {
+       "id": "viziune",
+       "label": "Explică viziunea"
+      },
+      {
+       "id": "map",
+       "label": "Living Map, versiune simplă"
+      },
+      {
+       "id": "first21",
+       "label": "Aplicația pentru The First 21"
+      },
+      {
+       "id": "poveste",
+       "label": "Povestea fondatoarei"
+      }
+     ]
+    },
+    {
+     "id": "m12.listings",
+     "kind": "text",
+     "multiline": true,
+     "label": "Ce oferte vor fi pe site la lansare, câte și de unde vin?",
+     "placeholder": "Ex.: Laguna Forest, 10 case, exclusivitate…"
+    },
+    {
+     "id": "m12.handles",
+     "kind": "text",
+     "label": "Domeniu și conturi sociale deja deținute",
+     "placeholder": "simplu21.ro, @simplu21…"
+    },
+    {
+     "id": "m12.deadline",
+     "kind": "text",
+     "label": "Termene: când trebuie să fie gata?",
+     "placeholder": "Lansare în…"
+    },
+    {
+     "id": "m12.kpi",
+     "kind": "list",
+     "count": 3,
+     "label": "Cum arată succesul în 6 luni? Trei indicatori.",
+     "placeholder": "Ex.: 10 case vândute în Laguna Forest"
+    },
+    {
+     "id": "m12.mine",
+     "kind": "text",
+     "multiline": true,
+     "label": "Ce te-ar face să spui „ăsta e brandul meu”?",
+     "placeholder": "Când o să văd…"
+    }
+   ]
+  }
+ ],
+ "workshop": {
+  "minutes": 90,
+  "agenda": [
+   {
+    "id": "w0",
+    "title": "Cafeaua și regulile",
+    "minutes": 5,
+    "modules": [],
+    "goal": "Ce facem azi, ce iese la final: The Core, arhetipul mix și profilurile."
+   },
+   {
+    "id": "w1",
+    "title": "Fundația",
+    "minutes": 15,
+    "modules": [
+     "m01",
+     "m02"
+    ],
+    "goal": "Ce păstrăm din ce ai spus deja. Cât de mult ești tu brandul."
+   },
+   {
+    "id": "w2",
+    "title": "Oameni și poziționare",
+    "minutes": 15,
+    "modules": [
+     "m03",
+     "m04"
+    ],
+    "goal": "Primii 21, pe cine refuzăm, fraza de poziționare și X factor-ul."
+   },
+   {
+    "id": "w3",
+    "title": "Personalitate și arhetip",
+    "minutes": 15,
+    "modules": [
+     "m05",
+     "m06"
+    ],
+    "goal": "Două arhetipuri și un procent. Arbitrul deciziilor de design."
+   },
+   {
+    "id": "w4",
+    "title": "Valori și atribute",
+    "minutes": 12,
+    "modules": [
+     "m07",
+     "m08"
+    ],
+    "goal": "Votăm. Trei valori cu „întotdeauna / niciodată”, atribute 3 + 3."
+   },
+   {
+    "id": "w5",
+    "title": "Voce și vizual",
+    "minutes": 10,
+    "modules": [
+     "m09",
+     "m10"
+    ],
+    "goal": "Cum sună și cum se simte. Ce evităm cu orice preț."
+   },
+   {
+    "id": "w6",
+    "title": "Arhitectură și site",
+    "minutes": 10,
+    "modules": [
+     "m11",
+     "m12"
+    ],
+    "goal": "Ordinea pilonilor, decizia pe dating, ce face site-ul în 3 luni."
+   },
+   {
+    "id": "w7",
+    "title": "Scriem The Core",
+    "minutes": 8,
+    "modules": [],
+    "goal": "O frază. Ce oferi, cui, în ce cultură, cu ce voce, ce le dă, cum se simt."
+   }
+  ],
+  "core": [
+   {
+    "id": "ofera",
+    "label": "Ce oferi",
+    "hint": "categoria, spusă simplu",
+    "from": [
+     "m04.category",
+     "m04.builder"
+    ]
+   },
+   {
+    "id": "cui",
+    "label": "Cui",
+    "hint": "primii 21, nu toată lumea",
+    "from": [
+     "m03.profiles",
+     "m04.builder"
+    ]
+   },
+   {
+    "id": "cultura",
+    "label": "În ce cultură",
+    "hint": "locul, ritmul, valorile",
+    "from": [
+     "m07.values",
+     "m01.lang"
+    ]
+   },
+   {
+    "id": "voce",
+    "label": "Cu ce voce",
+    "hint": "trei cuvinte despre cum suni",
+    "from": [
+     "m09.words",
+     "m05.sliders"
+    ]
+   },
+   {
+    "id": "impact",
+    "label": "Ce le dă",
+    "hint": "beneficiul concret",
+    "from": [
+     "m04.builder",
+     "m08.rational"
+    ]
+   },
+   {
+    "id": "simt",
+    "label": "Cum se simt",
+    "hint": "emoția cu care rămân",
+    "from": [
+     "m08.emotional",
+     "m08.after"
+    ]
+   },
+   {
+    "id": "x",
+    "label": "X factor",
+    "hint": "ce promiți și alții nu pot",
+    "from": [
+     "m04.xfactor"
+    ]
+   }
+  ]
+ },
+ "done": {
+  "title": "Gata. Ne vedem la o cafea.",
+  "body": "Am primit tot. Citim cu atenție, pregătim întrebările și te așteptăm în studio la workshop, în Olari 9. Cafeaua e din partea noastră."
+ }
+}

@@ -1,0 +1,502 @@
+{
+ "id": "demo",
+ "version": "2026-10-21",
+ "client": {
+  "name": "Atelier Nord",
+  "contact": "Radu"
+ },
+ "submit": {
+  "endpoint": "/api/core30",
+  "email": "hi@cromaticstudios.com"
+ },
+ "intro": {
+  "hello": "Salut, Radu.",
+  "lead": "Un atelier de ceramică din Cluj, înainte de primul lui brand. Câteva întrebări, apoi o cafea împreună.",
+  "promise": [
+   "Salvăm automat.",
+   "Poți sări peste orice și reveni."
+  ],
+  "minutes": "15 minute"
+ },
+ "modules": [
+  {
+   "id": "a1",
+   "title": [
+    "Atelierul"
+   ],
+   "short": "Atelierul",
+   "minutes": 4,
+   "why": "Începem cu ce faci cu mâinile.",
+   "items": [
+    {
+     "id": "a1.what",
+     "kind": "text",
+     "label": "Ce iese din atelier într-o săptămână bună?",
+     "multiline": true
+    },
+    {
+     "id": "a1.vibe",
+     "kind": "scale",
+     "label": "Unde stai?",
+     "pairs": [
+      {
+       "id": "calm",
+       "left": "Calm",
+       "right": "Energic"
+      },
+      {
+       "id": "cald",
+       "left": "Cald",
+       "right": "Rafinat"
+      },
+      {
+       "id": "jucaus",
+       "left": "Jucăuș",
+       "right": "Serios"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "a2",
+   "title": [
+    "Arhetipul"
+   ],
+   "short": "Arhetip",
+   "minutes": 6,
+   "why": "Cine conduce și cine colorează.",
+   "items": [
+    {
+     "id": "a2.arch",
+     "kind": "archetype",
+     "label": "Wizard-ul de arhetip",
+     "archetypes": [
+      {
+       "id": "innocent",
+       "name": "Innocent",
+       "quadrant": "independenta",
+       "color": "#FED012",
+       "motto": "Viața poate fi simplă și bună.",
+       "line": "Optimist, onest, fără ascunzișuri. Vede binele înaintea problemei și îi face pe oameni să respire mai ușor.",
+       "desire": "să trăiască simplu și liniștit, cu lucruri bune în jur",
+       "fear": "să greșească, să complice, să fie pedepsit pentru o alegere",
+       "gift": "încredere și prospețime",
+       "traits": [
+        "onest",
+        "luminos",
+        "simplu",
+        "optimist"
+       ],
+       "asBrand": "promite că decizia e ușoară și că totul va fi bine. Nicio literă mică.",
+       "example": "Dove, Innocent Drinks, Coca-Cola",
+       "lead": "Brandul promite simplitate și liniște. Oamenii vin la tine pentru că nu complici nimic.",
+       "accent": "o lumină blândă și o promisiune de onestitate, care fac restul mai ușor de crezut",
+       "voice": "propoziții scurte, cuvinte simple, zero jargon",
+       "visual": "mult aer, lumină, culori curate, forme blânde",
+       "experience": "pași puțini și clari, fără surprize la final",
+       "risk": "poate părea naiv sau prea dulce dacă nu are dovezi concrete în spate"
+      },
+      {
+       "id": "explorer",
+       "name": "Explorer",
+       "quadrant": "independenta",
+       "color": "#28C840",
+       "motto": "Nu mă închide într-o cutie.",
+       "line": "Curios, neliniștit în sensul bun, mereu cu un drum în cap. Caută locul unde se simte cel mai viu.",
+       "desire": "libertatea de a descoperi cine e prin locurile prin care trece",
+       "fear": "să rămână prins, să se plictisească, să trăiască o viață care nu e a lui",
+       "gift": "autenticitate și curaj de a pleca",
+       "traits": [
+        "curios",
+        "liber",
+        "autentic",
+        "aventuros"
+       ],
+       "asBrand": "te scoate din rutină și îți arată un loc la care nu te gândeai.",
+       "example": "Patagonia, The North Face, Jeep",
+       "lead": "Brandul e o invitație la drum. Oamenii vin pentru libertatea de a alege altfel.",
+       "accent": "curiozitate și poftă de locuri noi, care țin brandul în mișcare",
+       "voice": "verbe de mișcare, întrebări deschise, ton de prieten care a fost deja acolo",
+       "visual": "orizonturi, natură, texturi reale, hărți",
+       "experience": "descoperire ghidată, trasee, recomandări care surprind",
+       "risk": "poate părea nestatornic, greu de legat de o casă și de rădăcini"
+      },
+      {
+       "id": "sage",
+       "name": "Sage",
+       "quadrant": "independenta",
+       "color": "#119BFE",
+       "motto": "Adevărul te eliberează.",
+       "line": "Calm, documentat, cu răbdare de profesor bun. Ajută oamenii să vadă limpede înainte să decidă.",
+       "desire": "să înțeleagă lumea și să-i ajute și pe alții să o înțeleagă",
+       "fear": "să fie păcălit, să se înșele, să vorbească fără să știe",
+       "gift": "claritate și înțelepciune",
+       "traits": [
+        "lucid",
+        "expert",
+        "calm",
+        "riguros"
+       ],
+       "asBrand": "e ghidul care a făcut temele. Îți explică, nu îți vinde.",
+       "example": "TED, Google, The Economist",
+       "lead": "Brandul e ghidul care știe. Oamenii vin pentru claritate într-o decizie mare.",
+       "accent": "argumente, date și o calmă siguranță a celui care a făcut temele",
+       "voice": "explicativ, precis, cu exemple concrete",
+       "visual": "ordine, tipografie atentă, hărți și date puse frumos",
+       "experience": "consultanță, ghiduri, comparații oneste",
+       "risk": "poate deveni rece sau profesoral, prea mult cap și prea puțină inimă"
+      },
+      {
+       "id": "hero",
+       "name": "Hero",
+       "quadrant": "maiestrie",
+       "color": "#F65342",
+       "motto": "Unde e voință, e și drum.",
+       "line": "Curajos, disciplinat, făcut pentru mize mari. Face lucrurile grele să pară posibile și îi împinge pe alții mai departe.",
+       "desire": "să-și dovedească valoarea printr-un act de curaj",
+       "fear": "slăbiciunea, să renunțe, să fie învins",
+       "gift": "competență și determinare",
+       "traits": [
+        "curajos",
+        "puternic",
+        "direct",
+        "ambițios"
+       ],
+       "asBrand": "te ajută să câștigi o luptă care contează pentru tine.",
+       "example": "Nike, FedEx, Duracell",
+       "lead": "Brandul e despre a reuși. Oamenii vin pentru că îi ajuți să câștige o miză mare.",
+       "accent": "energie și determinare, un pic de adrenalină în plus",
+       "voice": "imperativ, direct, despre rezultate",
+       "visual": "contrast puternic, diagonale, mișcare",
+       "experience": "obiective clare, progres vizibil, momente de victorie",
+       "risk": "poate părea agresiv sau competitiv acolo unde oamenii caută căldură"
+      },
+      {
+       "id": "rebel",
+       "name": "Rebel",
+       "quadrant": "maiestrie",
+       "color": "#F65342",
+       "motto": "Regulile sunt făcute ca să fie încălcate.",
+       "line": "Nonconformist, sincer până la incomod. Spune ce alții doar gândesc și construiește alternativa.",
+       "desire": "să schimbe ce nu mai funcționează, chiar dacă deranjează",
+       "fear": "să fie neputincios, banal, înghițit de sistem",
+       "gift": "libertate radicală și curaj de a spune nu",
+       "traits": [
+        "provocator",
+        "liber",
+        "sincer",
+        "radical"
+       ],
+       "asBrand": "e împotriva felului în care se fac lucrurile azi în industrie.",
+       "example": "Harley-Davidson, Liquid Death, Virgin",
+       "lead": "Brandul e împotriva felului în care se fac lucrurile azi. Oamenii vin pentru că s-au săturat.",
+       "accent": "o margine ascuțită și curajul de a numi problema din industrie",
+       "voice": "provocator, ironic, fără politețuri inutile",
+       "visual": "tipografie mare, contrast, gesturi neașteptate",
+       "experience": "o alternativă clară la sistem, cu regulile ei",
+       "risk": "poate speria exact oamenii care caută încredere și siguranță"
+      },
+      {
+       "id": "magician",
+       "name": "Magician",
+       "quadrant": "maiestrie",
+       "color": "#B098C8",
+       "motto": "Fac să se întâmple.",
+       "line": "Vizionar, carismatic, atent la momentul în care totul se leagă. Transformă o dorință vagă într-o realitate.",
+       "desire": "să înțeleagă cum funcționează lumea și să o transforme",
+       "fear": "consecințele neprevăzute, magia care se întoarce împotriva lui",
+       "gift": "transformare și momente de uimire",
+       "traits": [
+        "vizionar",
+        "carismatic",
+        "intuitiv",
+        "transformator"
+       ],
+       "asBrand": "promite momentul în care totul se potrivește, ca prin farmec.",
+       "example": "Disney, Dyson, Polaroid",
+       "lead": "Brandul promite o transformare. Oamenii vin pentru momentul în care totul se leagă.",
+       "accent": "un strop de uimire, sentimentul că se întâmplă ceva special",
+       "voice": "evocator, despre ce devine posibil",
+       "visual": "lumină, momente de reveal, detalii care surprind",
+       "experience": "potriviri care par magice, momente de wow bine regizate",
+       "risk": "poate promite prea mult; magia fără dovezi pare truc"
+      },
+      {
+       "id": "everyman",
+       "name": "Everyman",
+       "quadrant": "apartenenta",
+       "color": "#28C840",
+       "motto": "Toți oamenii sunt egali.",
+       "line": "Prietenos, realist, fără ifose. Vecinul pe care te bazezi, care vorbește ca tine și îți ține ușa deschisă.",
+       "desire": "să aparțină, să fie acceptat așa cum e",
+       "fear": "să fie lăsat pe dinafară, să pară că se crede mai mult decât e",
+       "gift": "empatie, realism și lipsă de pretenții",
+       "traits": [
+        "accesibil",
+        "cald",
+        "de încredere",
+        "practic"
+       ],
+       "asBrand": "e unul dintre noi. Te face să te simți printre ai tăi.",
+       "example": "IKEA, Dacia, Lidl",
+       "lead": "Brandul e al tuturor. Oamenii vin pentru că se simt printre ai lor.",
+       "accent": "căldură de vecin și o ușă mereu deschisă",
+       "voice": "conversațional, cald, la „tu”",
+       "visual": "oameni reali, culori prietenoase, nimic pretențios",
+       "experience": "accesibil, fără bariere, comunitate deschisă",
+       "risk": "poate părea banal, greu de diferențiat sau de cerut preț pe el"
+      },
+      {
+       "id": "lover",
+       "name": "Lover",
+       "quadrant": "apartenenta",
+       "color": "#F65342",
+       "motto": "Tu ești singurul.",
+       "line": "Senzorial, cald, atent la detalii. Creează apropiere și îi face pe oameni să se simtă doriți și văzuți.",
+       "desire": "intimitate, apropiere, relații care contează",
+       "fear": "să fie singur, nedorit, neiubit",
+       "gift": "pasiune, recunoștință, atenție la frumos",
+       "traits": [
+        "intim",
+        "senzorial",
+        "pasional",
+        "atent"
+       ],
+       "asBrand": "e despre felul în care te simți: aproape, ales, acasă.",
+       "example": "Chanel, Godiva, Aperol",
+       "lead": "Brandul e despre apropiere și plăcere. Oamenii vin pentru felul în care îi face să se simtă.",
+       "accent": "căldură, senzorial și atenția la detaliile care fac un loc să fie al tău",
+       "voice": "senzorial, intim, la persoana a doua",
+       "visual": "texturi, lumină caldă, apropiere, detalii",
+       "experience": "atenție personală, ritualuri, momente pe care le ții minte",
+       "risk": "poate aluneca în prea dulce sau exclusivist; lângă dating, atenție la ambiguitate"
+      },
+      {
+       "id": "jester",
+       "name": "Jester",
+       "quadrant": "apartenenta",
+       "color": "#FED012",
+       "motto": "Trăim o singură dată.",
+       "line": "Jucăuș, spontan, cu umor bun. Ușurează momentele grele și îi adună pe oameni în jurul unei glume.",
+       "desire": "să trăiască în prezent, cu bucurie și joacă",
+       "fear": "plictiseala, să-i plictisească pe alții",
+       "gift": "bucurie, ușurință, perspectivă",
+       "traits": [
+        "amuzant",
+        "spontan",
+        "ireverențios",
+        "jucăuș"
+       ],
+       "asBrand": "face drumul mai distractiv decât destinația.",
+       "example": "M&M's, Old Spice, Ben & Jerry's",
+       "lead": "Brandul e bucurie. Oamenii vin pentru că e mai distractiv cu tine.",
+       "accent": "umor și joacă, care fac brandul mai ușor de iubit",
+       "voice": "jucăuș, cu poante, surprinzător",
+       "visual": "culoare, personaje, ilustrație",
+       "experience": "joc, gamification, evenimente memorabile",
+       "risk": "poate submina încrederea într-o decizie mare, cum e o casă"
+      },
+      {
+       "id": "caregiver",
+       "name": "Caregiver",
+       "quadrant": "stabilitate",
+       "color": "#119BFE",
+       "motto": "Nu ești singur în asta.",
+       "line": "Generos, protector, cu răbdare infinită. Are grijă de oameni cum ar avea de familie și nu-i lasă singuri.",
+       "desire": "să-i protejeze și să-i ajute pe ceilalți",
+       "fear": "egoismul, nerecunoștința, să nu poată ajuta",
+       "gift": "compasiune și generozitate",
+       "traits": [
+        "grijuliu",
+        "generos",
+        "răbdător",
+        "protector"
+       ],
+       "asBrand": "e mâna sigură care te ține de la prima întrebare până la cheie.",
+       "example": "Volvo, UNICEF, Johnson & Johnson",
+       "lead": "Brandul e mâna sigură. Oamenii vin pentru că știu că cineva are grijă de ei.",
+       "accent": "grijă și siguranță, sentimentul că nu ești singur în decizie",
+       "voice": "cald, liniștitor, empatic",
+       "visual": "forme rotunde, culori calde și calme, oameni împreună",
+       "experience": "însoțire de la cap la coadă, disponibilitate, răbdare",
+       "risk": "poate părea prea moale sau protector, fără personalitate proprie"
+      },
+      {
+       "id": "creator",
+       "name": "Creator",
+       "quadrant": "stabilitate",
+       "color": "#B098C8",
+       "motto": "Dacă poți să-ți imaginezi, poți să construiești.",
+       "line": "Imaginativ, perfecționist, mândru de meșteșug. Vede ce nu există încă și îl construiește cu grijă.",
+       "desire": "să creeze ceva cu valoare durabilă",
+       "fear": "mediocritatea, o viziune executată prost",
+       "gift": "imaginație și meșteșug",
+       "traits": [
+        "inventiv",
+        "vizionar",
+        "atent la detalii",
+        "expresiv"
+       ],
+       "asBrand": "construiește ceva ce n-a mai existat și te invită să creezi împreună.",
+       "example": "LEGO, Apple, Adobe",
+       "lead": "Brandul construiește ceva nou. Oamenii vin pentru viziune și pentru felul în care e făcut.",
+       "accent": "grijă de meșteșug și o viziune care se vede în detalii",
+       "voice": "vizionar, precis cu detaliile, mândru de lucrul bine făcut",
+       "visual": "sisteme, design atent, schițe, proces la vedere",
+       "experience": "co-creație, curatoriat, lucruri făcute pe măsură",
+       "risk": "poate deveni perfecționist sau prea concentrat pe sine"
+      },
+      {
+       "id": "ruler",
+       "name": "Ruler",
+       "quadrant": "stabilitate",
+       "color": "#0d0c09",
+       "motto": "Standardul e promisiunea.",
+       "line": "Sigur pe el, organizat, cu standarde înalte. Creează ordine, ia decizii și stabilește regula jocului.",
+       "desire": "control, stabilitate, o comunitate prosperă și bine condusă",
+       "fear": "haosul, să fie răsturnat, să piardă controlul",
+       "gift": "responsabilitate și leadership",
+       "traits": [
+        "sigur",
+        "exigent",
+        "elegant",
+        "responsabil"
+       ],
+       "asBrand": "e standardul. Selecția strictă e chiar promisiunea.",
+       "example": "Rolex, Mercedes-Benz, American Express",
+       "lead": "Brandul e standardul. Oamenii vin pentru calitate, ordine și statut.",
+       "accent": "rigoare și un standard înalt, care dau încredere",
+       "voice": "sigur, sobru, puțin și bine spus",
+       "visual": "simetrie, materiale nobile, puțină culoare",
+       "experience": "selecție strictă, acces premium, proces impecabil",
+       "risk": "poate părea rece, distant sau exclusivist"
+      }
+     ],
+     "questions": [
+      {
+       "id": "q1",
+       "q": "O cană e…",
+       "a": {
+        "label": "un obiect bine făcut.",
+        "archetypes": [
+         "creator",
+         "ruler"
+        ]
+       },
+       "b": {
+        "label": "un ritual de dimineață.",
+        "archetypes": [
+         "lover",
+         "innocent"
+        ]
+       }
+      },
+      {
+       "id": "q2",
+       "q": "Clientul ideal…",
+       "a": {
+        "label": "vrea să știe cum e făcută.",
+        "archetypes": [
+         "sage",
+         "creator"
+        ]
+       },
+       "b": {
+        "label": "vrea să se simtă bine cu ea.",
+        "archetypes": [
+         "everyman",
+         "caregiver"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "a3",
+   "title": [
+    "Valori"
+   ],
+   "short": "Valori",
+   "minutes": 5,
+   "why": "Prin eliminare.",
+   "items": [
+    {
+     "id": "a3.values",
+     "kind": "values",
+     "label": "Cinci, trei, două.",
+     "pool": [
+      "apropiere",
+      "încredere",
+      "generozitate",
+      "autenticitate",
+      "curiozitate",
+      "apartenență",
+      "discreție",
+      "simplitate",
+      "grijă",
+      "libertate",
+      "curaj",
+      "calitate",
+      "transparență",
+      "respect",
+      "bucurie",
+      "echilibru"
+     ],
+     "steps": [
+      5,
+      3,
+      2
+     ],
+     "always": "Întotdeauna…",
+     "never": "Niciodată…"
+    }
+   ]
+  }
+ ],
+ "workshop": {
+  "minutes": 45,
+  "agenda": [
+   {
+    "id": "w1",
+    "title": "Atelierul",
+    "minutes": 20,
+    "modules": [
+     "a1",
+     "a2"
+    ],
+    "goal": "Cine e Atelier Nord."
+   },
+   {
+    "id": "w2",
+    "title": "The Core",
+    "minutes": 25,
+    "modules": [
+     "a3"
+    ],
+    "goal": "O frază."
+   }
+  ],
+  "core": [
+   {
+    "id": "ofera",
+    "label": "Ce oferi",
+    "hint": "",
+    "from": [
+     "a1.what"
+    ]
+   },
+   {
+    "id": "simt",
+    "label": "Cum se simt",
+    "hint": ""
+   }
+  ]
+ },
+ "done": {
+  "title": "Mulțumim, Radu.",
+  "body": "Ne auzim curând."
+ }
+}
