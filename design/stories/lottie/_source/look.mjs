@@ -13,7 +13,7 @@ const want = o.scheme || "monument";
 if (cur !== want) { await p.evaluate((w) => window.__scheme(w), want); await p.waitForTimeout(6500); }
 await p.evaluate(() => { const S = window.__story; S.state.weatherOn = false; });
 await H.aim(p, o, o.wait || 1500);
-const url = await p.evaluate((o) => { const R = window.__R; R.park(o.park || [9000, null, 9000, 0]); try { R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); return R.shot({ ...o, keepBg: true, ...(o.mode ? { mode: o.mode } : {}) }); } finally { R.park(null); } }, o);
+const url = await p.evaluate((o) => { const R = window.__R, FC = window.__story.farClouds, fv = FC && FC.visible; if (FC && o.noClouds !== false) FC.visible = false; R.park(o.park || [9000, null, 9000, 0]); try { R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); return R.shot({ ...o, keepBg: true, ...(o.mode ? { mode: o.mode } : {}) }); } finally { R.park(null); if (FC) FC.visible = fv; } }, o);
 return url;
 `;
 const r = await fetch("http://localhost:8962/", { method: "POST", body });

@@ -9,7 +9,7 @@ const SHOTS = { ...S2, ...S4 };
 const RAW = process.env.RAW || "/private/tmp/claude-501/-Users-daniel-stoic/8f3b4503-769c-4f86-ba4b-8e36528128b3/scratchpad/stl4/rawC4";
 fs.mkdirSync(RAW, { recursive: true });
 const D = new URL(".", import.meta.url).pathname, FPS = 30, SUB = 4, SHUT = 1 / 60;
-const want = process.env.EXTRA === "only" ? [] : process.env.SHOT ? process.env.SHOT.split(",") : ORDER;
+const want = process.env.EXTRA && !process.env.SHOT ? [] : process.env.SHOT ? process.env.SHOT.split(",") : ORDER;
 const jobs = {};
 for (const k of want) {
   const S = SHOTS[k], cam = S.cam, w = Math.round((2160 * (cam.wide || 1)) / 2) * 2;
@@ -60,11 +60,10 @@ if (${JSON.stringify((process.env.EXTRA || "water,cup").includes("water"))}) {
   await H.aim(p, o, 2500);
   fs.mkdirSync(RAW + "/water", { recursive: true });
   await p.evaluate((o) => { const R = window.__R; R.park([9000, null, 9000, 0]); R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); }, o);
-  const t0 = Date.now();
+  // (the jets driven frame by frame: the fountain's own update at t = 100 + i / 30 s, then the shot, in one task)
   for (let i = 0; i < n; i++) {
-    const u = await p.evaluate(({ o, box }) => { const R = window.__R; R.park([9000, null, 9000, 0]); try { const c = document.createElement("canvas"); const full = R.shot({ ...o, keepBg: true }); return full; } finally { R.park(null); } }, { o, box });
+    const u = await p.evaluate(({ o, t }) => { const S = window.__story, R = window.__R; R.park([9000, null, 9000, 0]); try { S.fountain().update(t); return R.shot({ ...o, keepBg: true }); } finally { R.park(null); } }, { o, t: 100 + i / 30 });
     save(u, RAW + "/water/w-" + String(i).padStart(3, "0") + ".png");
-    const wait = Math.max(0, (i + 1) * 33.3 - (Date.now() - t0)); await p.waitForTimeout(wait);
   }
   res.water = n;
 }

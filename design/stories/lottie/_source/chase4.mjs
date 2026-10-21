@@ -14,15 +14,15 @@ export const SHOTS = {
   palace4: {
     cam: { pos: [1600, 5, 4570], tgt: [1775, 40, 4570], fov: 64, shift: [0, 0.1], level: true },
     dur: 1.5,
-    yellow: (t) => ({ x: 1650, y: YV, z: 4440 + 230 * (t - 0.2), yaw: 0, lights: 1 })
+    yellow: (t) => ({ x: 1715, y: YV, z: 4470 + 200 * (t - 0.2), yaw: 0, lights: 1 })
   },
   berero: {
-    cam: { pos: [860, 4, 5450], tgt: [706, 14, 5490], fov: 52, shift: [0, 0.1], level: true },
+    cam: { pos: [935, 4, 5440], tgt: [706, 14, 5490], fov: 42, shift: [0, 0.1], level: true },
     dur: 1.35,
-    yellow: (t) => ({ x: 836, y: YV, z: 5330 + 240 * (t - 0.15), yaw: 0, lights: 1 })
+    yellow: (t) => ({ x: 826, y: YV, z: 5360 + 240 * (t - 0.15), yaw: 0, lights: 1 })
   },
   cup: {
-    cam: { pos: [858, 8.6, 4371], tgt: [858, 5.2, 4346], fov: 46, level: false },
+    cam: { pos: [878, 22, 4392], tgt: [858, 11, 4336], fov: 42, level: false },
     dur: 2.0,
     park: [858, null, 4340, 0]
   },
@@ -42,7 +42,7 @@ export const SHOTS = {
       if (tt < 0) return null;
       const zb = z0 + v * tb, z = tt < tb ? z0 + v * tt : zb + v * (Math.min(tt, tb + td) - tb) - (v / (2 * td)) * (Math.min(tt, tb + td) - tb) ** 2;
       const k = sm(clamp((tt - tb) / td));
-      return { x: lerp(2060, 2054, k), y: YC, z, yaw: -0.05 * k, lights: 1, beat: beatAt(t) };
+      return { x: lerp(2050, 2040, k), y: YC, z, yaw: -0.12 * k, lights: 1, beat: beatAt(t) };
     }
   }
 };
