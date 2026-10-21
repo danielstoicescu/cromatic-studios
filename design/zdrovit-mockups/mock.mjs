@@ -128,7 +128,11 @@ for (const [name, o] of Object.entries(B.out)) {
     continue;
   }
   if (o.kind === "plain") {
-    info = await sharp(path.join(SHOTS, o.src)).resize({ width: o.width }).flatten({ background: "#fff" }).jpeg({ quality: o.q || 78, mozjpeg: true, progressive: true }).toFile(dst);
+    // (WebP stops at 16383 px: a long page is cut at the bottom, at 16000 px once resized; the footer goes first)
+    const img = sharp(path.join(SHOTS, o.src)), meta = await img.metadata();
+    const maxSrc = Math.floor(16000 * meta.width / o.width);
+    if (meta.height > maxSrc) { img.extract({ left: 0, top: 0, width: meta.width, height: maxSrc }); console.log(`  (${name}: cut at ${maxSrc} of ${meta.height} capture px)`); }
+    info = await img.resize({ width: o.width }).flatten({ background: "#fff" }).jpeg({ quality: o.q || 78, mozjpeg: true, progressive: true }).toFile(dst);
   } else {
     const [png, w] = await KINDS[o.kind](page, o);
     if (PREVIEW) fs.writeFileSync(path.join(PREVIEW, name + ".png"), png);

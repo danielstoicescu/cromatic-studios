@@ -36,7 +36,7 @@ const siteBlock = (slug, label, { alt, altPhone, head = ["The", "landing page"],
 //   aspasia: { r: 1.778, seconds: 20, text: "<what the spot shows, scene by scene>", alt: "<the spot, in one line>",
 //              cap: "<a caption>" }
 // and add the new strings' Romanian to site/i18n/ro.json (the build lists them in ro.missing.json).
-export const SPOTS = { aspasia: null };
+export const SPOTS = { aspasia: null, bonilash: null, glucopil: null, gripovit: null, lacium: null, optisomn: null, parasoftin: null, periferisan: null, "help-4-brain": null };
 const spotChapter = (slug) => {
   const s = SPOTS[slug];
   if (!s) return [];
@@ -129,6 +129,35 @@ export const ASPASIA = {
   },
   related: ["litorsal", "maximag", "help-4-brain"]
 };
+
+// ---- the next pages: one builder, the same three chapters as Aspasia (the page, the product as the site tells it, the
+// phone) and the spot slot; a brand fills in its copy and the names of its mockups (design/zdrovit-mockups/brands)
+const web = (o) => {
+  const s = o.slug, sh = (x) => (Array.isArray(x) ? shot(s, ...x) : x.row ? { ...x, row: x.row.map(sh) } : x);
+  return {
+    slug: s, name: o.name, tagline: o.tagline, desc: o.desc, title: o.title, accent: o.accent, info: o.info,
+    cover: { img: m(`${s}/hero`) }, og: m(`${s}/hero`), hero: { img: m(`${s}/hero`), alt: o.heroAlt },
+    problem: o.problem, solution: o.solution,
+    chapters: [
+      {
+        pillar: "product", pills: ["One", "page"], text: o.page.text,
+        deliverables: o.page.deliverables || ["Landing page", "UX/UI design", "Desktop and mobile", "Navigation"],
+        media: [siteBlock(s, o.label, { cap: `${o.label}, top to bottom, on desktop and phone.` }), ...(o.page.shots || []).map(sh)]
+      },
+      { pillar: "product", pills: o.story.pills, text: o.story.text, deliverables: o.story.deliverables, media: o.story.media.map(sh) },
+      {
+        pillar: "product", pills: ["On a", "phone"], text: o.phone.text, deliverables: o.phone.deliverables || ["Mobile layout", "One column"],
+        media: [{ rail: ["Four", "screens"], items: o.phone.shots.map(sh), cap: o.phone.cap }]
+      },
+      ...spotChapter(s)
+    ],
+    result: { text: o.result },
+    related: o.related
+  };
+};
+
+// a chapter added to a page that already exists, by its slug (gen.mjs applies it): none yet
+export const EXTEND = {};
 
 // every Zdrovit brand page built from its product site, in the order they were made
 export const ZDROVIT_WEB = [ASPASIA];
