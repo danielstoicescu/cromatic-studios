@@ -9,7 +9,10 @@
 //   1. design/zdrovit-mockups/brands/<slug>.json: which captures, which crops (copy aspasia.json, move the crops)
 //   2. node design/zdrovit-mockups/mock.mjs <slug>: site/media/<slug>/*.jpg and their sizes in dims.json
 //   3. a spec below with web(<slug>, ...) and the helpers, three chapters (the page, the product, the phone)
-//   4. add it to ZDROVIT_WEB, its PROJECTS entry (site/data.mjs), hubs.mjs (Medical Avenue), seo-pages.mjs, ro.json
+//   4. add it to ZDROVIT_WEB, its SEO title to build/seo-pages.mjs, its Romanian to site/i18n/ro.json; its slug goes in
+//      ZDROVIT_BRANDS (site/data.mjs, at merge). Daniel, 21 Oct: no Zdrovit brand gets a portfolio card of its own
+//      (no PROJECTS entry, no hub case), the pages are reached from the Zdrovit card; no link out to the brand's site;
+//      no year; the client's own figures on the site may be shown, in the site's own wording.
 const m = (p) => "m:" + p;
 
 // the helpers: the mockup names are the ones in brands/<slug>.json
@@ -17,7 +20,7 @@ const shot = (slug, name, alt, cap) => ({ img: m(`${slug}/${name}`), alt, ...(ca
 // the page's own scrolling device frames (gen.mjs "site" block): the desktop and phone captures, resized
 const siteBlock = (slug, label, { alt, altPhone, head = ["The", "landing page"], cap } = {}) => ({
   site: {
-    label, href: `https://${label}/`,
+    label, // (no href: Daniel, 21 Oct, the Zdrovit pages do not link out to the brands' sites)
     d: { img: m(`${slug}/site-scroll`), scroll: true, alt: alt || `The ${label} page, scrolling` },
     m: { img: m(`${slug}/site-scroll-phone`), scroll: true, alt: altPhone || `The ${label} page on a phone, scrolling` }
   },
@@ -124,7 +127,6 @@ export const ASPASIA = {
   result: {
     text: "One product, one page: the reasons, the formula and the order button, in the colours of the box."
   },
-  link: { href: "https://aspasiabeauty.ro/", label: "Visit aspasiabeauty.ro" },
   related: ["litorsal", "maximag", "help-4-brain"]
 };
 
