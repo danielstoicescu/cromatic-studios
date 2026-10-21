@@ -1520,7 +1520,10 @@
       cop: { kind: "ice", cyl: 4, idle: 850, max: 5800, gears: [0, 100, 200, 300, 410], thump: 1.0, noise: 0.62, pipe: 3.0, fb: 0.55, muf: 1700, body: 120, rough: 0.07, carb: 1, level: 1.2 },
       groovy: { kind: "ice", cyl: 4, idle: 750, max: 4200, diesel: 1, gears: [0, 80, 160, 250, 360], thump: 1.1, noise: 0.5, pipe: 3.8, fb: 0.5, muf: 1100, body: 95, rough: 0.06, level: 1 },
       foodvan: { kind: "ice", cyl: 6, idle: 620, max: 3200, diesel: 1, gears: [0, 70, 140, 220, 320], thump: 1.25, noise: 0.45, pipe: 4.6, fb: 0.5, muf: 900, body: 80, rough: 0.05, level: 1.05 },
-      monopoly: { kind: "ice", cyl: 6, idle: 600, max: 4600, gears: [0, 110, 220, 340], thump: 0.9, noise: 0.35, pipe: 3.4, fb: 0.62, muf: 1200, body: 105, rough: 0.025, level: 0.9 },
+      // TASK-109 (Daniel: "the Monopoly car's engine should sound much thicker"): the same rpm and gears, a big slow
+      // 1930s six: fired lower (pk), every other cylinder a little stronger (lope: a burble at half the firing rate) with a
+      // sine under it there (sub), a low thump (tk, tf), a long pipe, a dark muffler and a low body with a shelf under it
+      monopoly: { kind: "ice", cyl: 6, idle: 600, max: 4600, gears: [0, 110, 220, 340], thump: 1.15, noise: 0.22, pipe: 5.2, fb: 0.64, muf: 950, body: 85, bodyQ: 1.1, bodyG: 8, shelf: 3, rough: 0.03, level: 1.2, pk: 0.85, tk: 1.25, tf: 36, lope: 0.2, sub: 0.14, hp: 30 },
       f1: { kind: "ice", cyl: 10, idle: 4000, max: 18000, gears: [0, 60, 110, 160, 210, 260, 320, 400], thump: 0.7, noise: 0.9, pipe: 1.3, fb: 0.45, muf: 5200, body: 300, rough: 0.02, level: 0.85 },
       scooter: { kind: "ice", cyl: 1, two: 1, idle: 1900, max: 9000, gears: [0], thump: 0.6, noise: 1.0, pipe: 1.9, fb: 0.6, muf: 3200, body: 260, rough: 0.05, level: 0.75 },
       sub: { kind: "electric", level: 0.5 },
@@ -1533,13 +1536,13 @@
     async function renderEngine(pr, sr) {
       const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!OAC) return null;
       const steps = []; for (let i = 0; i < 6; i++) steps.push(pr.idle * Math.pow(pr.max / pr.idle, i / 5));
-      const fire = (rpm) => (rpm / 60) * (pr.two ? 1 : pr.cyl / 2);
+      const fire = (rpm) => (rpm / 60) * (pr.two ? 1 : pr.cyl / 2) * (pr.pk || 1);
       const one = async (rpm, load, isIdle) => {
-        const fF = fire(rpm), T0 = 1 / fF, N = Math.max(8, Math.round(0.7 * fF)), L = Math.round(N * T0 * sr), pre = L, len = pre + L;
+        const fF = fire(rpm), T0 = 1 / fF, N = Math.max(8, Math.round(0.7 * fF / (pr.lope ? 2 : 1)) * (pr.lope ? 2 : 1)), L = Math.round(N * T0 * sr), pre = L, len = pre + L; // (an even count with a lope: the loop holds whole pairs)
         const raw = new Float32Array(len), pat = [];
         let seed = Math.round(rpm * 7 + load * 13 + 1); const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-        for (let k = 0; k < N; k++) pat.push({ j: (rnd() - 0.5) * 2 * pr.rough * (isIdle && pr.carb ? 2.2 : 1), a: 1 + (((k % (pr.two ? 1 : pr.cyl)) * 0.37) % 0.3 - 0.15) * (pr.rough * 4) + (rnd() - 0.5) * pr.rough * 2, pop: !load && rnd() < 0.06 && rpm > pr.idle * 1.8 });
-        const fT = Math.min(2400, Math.max(45, fF * 1.6)), tauT = Math.min(0.03, 2.2 / fF / 3), tauN = Math.min(pr.diesel ? 0.0009 : pr.two ? 0.0022 : 0.0016, 0.4 / fF); // a fast engine's bursts stay shorter than its period (a tone, a scream)
+        for (let k = 0; k < N; k++) pat.push({ j: (rnd() - 0.5) * 2 * pr.rough * (isIdle && pr.carb ? 2.2 : 1), a: 1 + (((k % (pr.two ? 1 : pr.cyl)) * 0.37) % 0.3 - 0.15) * (pr.rough * 4) + (rnd() - 0.5) * pr.rough * 2 + (pr.lope ? (k % 2 ? -pr.lope : pr.lope) : 0), pop: !load && rnd() < 0.06 && rpm > pr.idle * 1.8 });
+        const fT = Math.min(2400, Math.max(pr.tf || 45, fF * (pr.tk || 1.6))), tauT = Math.min(0.03, 2.2 / fF / 3), tauN = Math.min(pr.diesel ? 0.0009 : pr.two ? 0.0022 : 0.0016, 0.4 / fF); // a fast engine's bursts stay shorter than its period (a tone, a scream)
         const amp = load ? 1 : 0.38;
         synT = performance.now();
         for (let rep2 = 0; rep2 < 2; rep2++) for (let k = 0; k < N; k++) {
@@ -1555,6 +1558,8 @@
             raw[t0 + i] += v;
           }
         }
+        // a deep engine's rumble: a sine at half the firing rate, in time with the lope (whole cycles over the loop)
+        if (pr.sub) for (let i = 0; i < len; i++) raw[i] += pr.sub * amp * Math.sin(Math.PI * fF * (i / sr));
         // the intake, on the throttle: noise breathing at the firing rate
         if (load) for (let i = 0; i < len; i++) { const ph = (i / sr) * fF; raw[i] += 0.12 * (rnd() * 2 - 1) * (0.5 + 0.5 * Math.sin(2 * Math.PI * ph)) * Math.min(1, rpm / pr.max + 0.2); }
         // mechanical clatter at idle (valves, an old engine's ticking)
@@ -1565,9 +1570,10 @@
         const src = oc.createBufferSource(); src.buffer = b;
         const sum = oc.createGain(); src.connect(sum);
         const muf = oc.createBiquadFilter(); muf.type = "lowpass"; muf.frequency.value = pr.muf * (load ? 1 : 0.75); muf.Q.value = 0.8;
-        const body = oc.createBiquadFilter(); body.type = "peaking"; body.frequency.value = pr.body; body.Q.value = 1.4; body.gain.value = 7;
-        const hp = oc.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 35;
-        sum.connect(muf); muf.connect(body); body.connect(hp); hp.connect(oc.destination);
+        const body = oc.createBiquadFilter(); body.type = "peaking"; body.frequency.value = pr.body; body.Q.value = pr.bodyQ || 1.4; body.gain.value = pr.bodyG || 7;
+        const hp = oc.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = pr.hp || 35;
+        const shelf = oc.createBiquadFilter(); shelf.type = "lowshelf"; shelf.frequency.value = 140; shelf.gain.value = pr.shelf || 0;
+        sum.connect(muf); muf.connect(body); body.connect(shelf); shelf.connect(hp); hp.connect(oc.destination);
         src.start();
         const out = await oc.startRendering(), d = out.getChannelData(0).slice(pre, pre + L);
         let rms = 0; for (let i = 0; i < d.length; i++) rms += d[i] * d[i]; rms = Math.sqrt(rms / d.length) || 1;
