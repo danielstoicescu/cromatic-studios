@@ -1,7 +1,7 @@
 // Renders the lo-fi website: /site/ (home) and /work/<slug>/ (case pages). Plain HTML, a small
 // stylesheet and a few lines of script; no WebGL. `A(name)` resolves an asset variable from
 // src/app.js to { src, w, h } (src is root-relative, e.g. /assets/abc.png).
-import { NAV, CHAPTERS, SERVICES, PROJECTS, STREETS, CLIENT_BADGES, FRIENDS, CREW, CREW_INFO, CREW_COLORS, CREW_PHOTOS, CREW_FACE_VARS, FORM, CASES, CANVASES, OFFICES } from "./data.mjs";
+import { NAV, CHAPTERS, SERVICES, PROJECTS, ZDROVIT_BRANDS, STREETS, CLIENT_BADGES, FRIENDS, CREW, CREW_INFO, CREW_COLORS, CREW_PHOTOS, CREW_FACE_VARS, FORM, CASES, CANVASES, OFFICES } from "./data.mjs";
 import { STUDIO, FAQ, studioNode } from "../build/seo.mjs";
 import { SAME_AS, clip } from "../build/seo-pages.mjs";
 const HUBS = await import("./hubs.mjs").catch(() => ({}));
@@ -152,7 +152,17 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   // sizes that tile six columns: a big square with two wides beside it, a tall one with two longs, a row of
   // three small, a long and a small, two halves; then again
   const SIZES = ["xl", "m", "m", "t", "w", "w", "s", "s", "s", "w", "s", "m", "m"];
-  const MAP_ID = { "Two Min Lab": "lab", "Steam Coffee Shop": "steam", "Zdrovit": "zdrovit", "Lacalut": "y-0", "Litorsal": "y-5", "Maximag": "y-6" };
+  // TASK-074: Lacalut, Litorsal and Maximag are no longer kiosks on the map (Zdrovit is one place now); their pictures keep
+  // their own keys in covers.json
+  const MAP_ID = { "Two Min Lab": "lab", "Steam Coffee Shop": "steam", "Zdrovit": "zdrovit", "Lacalut": "zb-lacalut", "Litorsal": "zb-litorsal", "Maximag": "zb-maximag" };
+  // TASK-074: the brands in the Zdrovit park that have no card of their own in the portfolio, as one row (a brand with a
+  // case page but no PROJECTS entry links to it)
+  const zdRow = () => {
+    const own = new Set(PROJECTS.map((p) => p.name)), list = ZDROVIT_BRANDS.filter((b) => !own.has(b.name));
+    if (!list.length) return "";
+    const st = "--bc:#cfcdc8;--bt:#3d3c39";
+    return `<div class="psmall"><span class="mono ps-h">In Zdrovit · Beauty &amp; Supplement Park</span>${list.map((b) => b.page ? `<a class="ps" href="/work/${b.page}/" style="${st}"><b>${esc(b.name)}</b><i class="mono">${esc(b.line)}</i></a>` : `<span class="ps" style="${st}"><b>${esc(b.name)}</b><i class="mono">${esc(b.line)}</i></span>`).join("")}</div>`;
+  };
   const placeId = (name) => "w-" + name.replace(/\W+/g, "").toLowerCase();
   const coverFor = (p, covers) => (MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]]) || covers["place:" + placeId(p.name)] || (p.page && covers[p.page]) || null;
   const bentoCard = (p, i, covers) => {
@@ -174,12 +184,12 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     const list = PROJECTS.filter((p) => !p.small && (DOMAIN_OF[p.name] || "brand") === d.k)
       .map((p) => ({ p, w: (p.page ? 2 : 0) + (p.img || p.vid || coverFor(p, covers) ? 1 : 0) }))
       .sort((a, b) => b.w - a.w).map((x) => x.p);
-    const small = d.k === "brand" ? PROJECTS.filter((p) => p.small) : [];
+    const small = d.k === "brand";
     return `<div class="dom" style="--dc:${d.c}">
       <h3 class="dom-h">${d.plus ? `<b class="dom-plus mono">+1</b> ` : ""}<span class="dom-sw"></span>${esc(d.t)} <i class="mono">${list.length} projects</i></h3>
       <p class="dom-lead">${esc(d.lead)}</p>
       <div class="bento">${list.map((p, i) => bentoCard(p, i, covers)).join("")}</div>
-      ${small.length ? `<div class="psmall"><span class="mono ps-h">In the Zdrovit yard</span>${small.map((p) => `<span class="ps" style="--bc:${p.c};--bt:${p.t}"><b>${esc(p.name)}</b><i class="mono">${esc(p.cat)}</i></span>`).join("")}</div>` : ""}
+      ${small ? zdRow() : ""}
     </div>`;
   }).join("");
   // r131: the portfolio by industry, the way the map lays it out in streets; each street opens its own page. TASK-071
@@ -198,7 +208,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       .map((p) => ({ p, w: (p.page ? 2 : 0) + (p.img || p.vid || coverFor(p, covers) ? 1 : 0) }))
       .sort((a, b) => b.w - a.w).map((x) => x.p);
     if (!list.length) return "";
-    const small = PROJECTS.filter((p) => p.small && p.street === k);
+    const small = k === "C"; // TASK-074: the Zdrovit park is on Medical Avenue
     const ind = industryOf(k), info = STREET_INFO[k] || { t: "", lead: "" };
     const n = new Set(list.filter((p) => p.page).map((p) => p.page)).size;
     return `<div class="dom dom-street" id="street-${k.toLowerCase()}" style="--dc:${col};--dt:${STREET_INK[k] || "#fff"}">
@@ -211,7 +221,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
         <p class="sh-count"><b>${n}</b> <span class="mono">case ${n === 1 ? "study" : "studies"}</span></p>
       </div>
       <div class="bento">${list.map((p, i) => bentoCard(p, i, covers)).join("")}</div>
-      ${small.length ? `<div class="psmall"><span class="mono ps-h">In the Zdrovit yard</span>${small.map((p) => `<span class="ps" style="--bc:${p.c};--bt:${p.t}"><b>${esc(p.name)}</b><i class="mono">${esc(p.cat)}</i></span>`).join("")}</div>` : ""}
+      ${small ? zdRow() : ""}
     </div>`;
   }).join("");
   const SVC_LINKS = { "Branding & Design": ["brand-strategy", "brand-identity"], "Video Production": ["video-production"], "UX & UI Design": ["websites-apps"], "Growth & Content": ["social-media-content"] };
@@ -576,6 +586,7 @@ ${header(false)}
   <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono">${esc(street)} · ${d.cases.length} case studies</p>
     <h2 class="ptitle">${pill("The work", col, -1.5)}</h2>${hubCases(d.cases, covers, col)}
     ${(() => { const more = PROJECTS.filter((p) => p.street === d.street && !p.page); return more.length ? `<p class="friends"><span class="mono">Also on ${esc(street)}</span> ${more.map((p) => `<span class="fpill">${esc(p.name)}</span>`).join("")}</p>` : ""; })()}
+    ${d.street === "C" ? zdRow() : "" /* TASK-074: the brands in the Zdrovit park (they were pills above as yard kiosks) */}
   </div></section>
   ${svc.length ? `<section class="sec"><div class="wrap"><p class="eyebrow mono">How we can help</p><div class="hub-links">${svc.map((x) => `<a href="/services/${x.slug}/"><b>${esc(x.name)}</b><span>${esc(x.lead)}</span><i>→</i></a>`).join("")}</div></div></section>` : ""}
   ${hubFaq(d.faq)}

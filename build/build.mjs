@@ -102,6 +102,12 @@ const lazy = (text) => text.replace(/<img src=/g, "<img loading=lazy decoding=as
 const named = new Map();
 for (const m of js.matchAll(/([A-Za-z_$][\w$]*)\s*=\s*"data:((?:image|video)\/[a-z0-9+.-]+);base64,([A-Za-z0-9+/=]+)"/g)) named.set(m[1], m[3]);
 let jsOut = NAV2_JS + "\n" + LUI_JS + "\n" + lazy(extract(js)); // nav2, r231 the Lottie layer
+// TASK-074: the brands of the Zdrovit park come from site/data.mjs (one list for the map, the drive and the website)
+{
+  const before = jsOut.length;
+  jsOut = jsOut.replace("var ZDROVIT_BRANDS = [];", () => `var ZDROVIT_BRANDS = ${JSON.stringify(DATA.ZDROVIT_BRANDS || []).replace(/[\u0080-\uffff]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"))};`);
+  if (jsOut.length === before) console.warn("[build] ZDROVIT_BRANDS not found in app.js (the Zdrovit card lists no brands)");
+}
 // r139a: the map opens Steam's built page (/work/steam/?embed=1) like every other case page; the page kept as a string
 // in app.js is read from the source below (page "work/steam") and is only the fallback of the single-file copy, so the
 // production bundle ships it empty (~57 KB less)
@@ -687,7 +693,7 @@ const caseSlugs = [];
   }
 }
 // r130: map places with a real photo of their own (no case page cover, or a better one)
-for (const [id, k] of Object.entries({ steam: "m:cs/Steam-Cromaticstudios-1", lab: "m:places/two-min-lab" /* TASK-061: the stacked TWO MIN LAB lockup (the brand's own 10-years artwork) on a 4:3 sheet; the 3:1 banner showed only "MIN" in the card */, gloves: "m:tm/gloves-title" /* r201: the mini-game's title screen */, "w-lapterra": "m:places/lapterra", "y-5": "m:places/litorsal", "y-0": "m:places/lacalut", "y-6": "m:maximag/box" /* TASK-064: the pack shot */, zdrovit: "m:places/zdrovit", "w-printoteca": "m:places/printoteca", "w-zoetis": "m:places/zoetis", "w-clinicadrk": "m:places/drk", "w-sofmedica": "m:places/sofmedica", "w-medcity": "m:places/medcity", "w-stickerrepublic": "m:places/sticker", echo: "m:echo-school/cover" /* r161: a photo from the school, students laughing at an industry talk, no type (Daniel picked it) */, end: "m:vibe/from-the-stairs", scf: "m:places/scf-poster", oma: "m:places/oma", "w-venevo": "m:places/venevo", "w-witanalytica": "m:places/witanalitica", friends: "m:rdw-2023/rdw-004" })) {
+for (const [id, k] of Object.entries({ steam: "m:cs/Steam-Cromaticstudios-1", lab: "m:places/two-min-lab" /* TASK-061: the stacked TWO MIN LAB lockup (the brand's own 10-years artwork) on a 4:3 sheet; the 3:1 banner showed only "MIN" in the card */, gloves: "m:tm/gloves-title" /* r201: the mini-game's title screen */, "w-lapterra": "m:places/lapterra", "zb-litorsal": "m:places/litorsal", "zb-lacalut": "m:places/lacalut", "zb-maximag": "m:maximag/box" /* TASK-064: the pack shot; TASK-074: keys of their own (they were the yard kiosks y-5, y-0, y-6; Zdrovit is one place now) */, zdrovit: "m:places/zdrovit", "w-printoteca": "m:places/printoteca", "w-zoetis": "m:places/zoetis", "w-clinicadrk": "m:places/drk", "w-sofmedica": "m:places/sofmedica", "w-medcity": "m:places/medcity", "w-stickerrepublic": "m:places/sticker", echo: "m:echo-school/cover" /* r161: a photo from the school, students laughing at an industry talk, no type (Daniel picked it) */, end: "m:vibe/from-the-stairs", scf: "m:places/scf-poster", oma: "m:places/oma", "w-venevo": "m:places/venevo", "w-witanalytica": "m:places/witanalitica", friends: "m:rdw-2023/rdw-004" })) {
   const a = mediaMap.get(k);
   if (a) COVERS["place:" + id] = a.src; else console.warn(`[build] covers: missing ${k}`);
 }
