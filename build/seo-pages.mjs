@@ -47,6 +47,7 @@ export const WORK_TITLES = {
   "supramax": "Supramax articulații: product site for a joint-care range",
   "vizik": "Vizik: product site for three eye drops, three colours",
   "vizimel": "Vizimel: product site for an eye supplement",
+  "ochisan": "OchiSan: product site for an eyelid ointment",
   "litorsal": "Litorsal: billboards & posters for an electrolyte brand",
   "lacalut": "Lacalut White & Repair: Smart TV ads & motion",
   "maximag": "Maximag Bisglicinat: Smart TV ads & motion",
