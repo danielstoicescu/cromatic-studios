@@ -4914,9 +4914,64 @@
 1463,
 116304
 ],
+"m:help-4-brain/hero": [
+1600,
+900,
+91696
+],
+"m:help-4-brain/site-scroll": [
+1200,
+5980,
+459535
+],
+"m:help-4-brain/site-scroll-phone": [
+585,
+15773,
+570319
+],
+"m:help-4-brain/healthy": [
+1600,
+781,
+76820
+],
+"m:help-4-brain/bacopa": [
+1600,
+1174,
+163133
+],
+"m:help-4-brain/facts": [
+1600,
+878,
+145821
+],
+"m:help-4-brain/phone-hero": [
+900,
+1463,
+89210
+],
+"m:help-4-brain/phone-bacopa": [
+900,
+1463,
+121568
+],
+"m:help-4-brain/phone-tablet": [
+900,
+1463,
+80640
+],
+"m:help-4-brain/phone-facts": [
+900,
+1463,
+99023
+],
 "m:lacium/phone-flora": [
 900,
 1463,
 147888
+],
+"m:help-4-brain/ingredients": [
+1600,
+944,
+108496
 ]
 }

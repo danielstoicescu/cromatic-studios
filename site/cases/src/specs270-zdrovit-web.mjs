@@ -508,8 +508,43 @@ export const PERIFERISAN = web({
   related: ["glucopil", "help-4-brain", "optisomn"]
 });
 
-// a chapter added to a page that already exists, by its slug (gen.mjs applies it): none yet
-export const EXTEND = {};
+// Help 4 Brain already has a page (specs.mjs); its landing page as it stands now is one more chapter at the end of it
+// (gen.mjs applies EXTEND to the page with that slug)
+const h4b = (n, alt, cap) => shot("help-4-brain", n, alt, cap);
+export const EXTEND = {
+  "help-4-brain": (P) => ({
+    ...P,
+    chapters: [...P.chapters, {
+      pillar: "product",
+      pills: ["The", "landing page"],
+      text: "help4brain.ro is one long landing page in deep blue. The menu runs Bacopa monnieri, Help4Brain®, Comandă, Blog, Contact. MEMORIA opens it: a blue brain with two short notes on how memory works. Then Creier sănătos, a brain drawn with what keeps it healthy on both sides, Bacopa monnieri with three cards, the main ingredients beside the box, and a set of Curiozități despre creier cards.",
+      deliverables: ["Landing page", "UX/UI design", "Desktop and mobile"],
+      media: [
+        h4b("hero", "help4brain.ro in a browser window and on a phone: the Help4Brain logo, the menu and MEMORIA over a blue brain", "help4brain.ro on desktop and phone"),
+        {
+          rail: ["Section by", "section"],
+          items: [
+            h4b("healthy", "Creier sănătos: a blue brain with what keeps it healthy listed on both sides"),
+            h4b("bacopa", "Bacopa monnieri: the plant in flower on blue, and three white cards on what it does"),
+            h4b("ingredients", "Ingrediente principale: the Help4Brain box beside a timeline of ingredients, from Bacopa monnieri to acid pantotenic"),
+            h4b("facts", "Curiozități despre creier: cards on multitasking, neurons, cholesterol and the 10% myth")
+          ],
+          cap: "A healthy brain, Bacopa monnieri, the ingredients and the curiosities"
+        },
+        {
+          rail: ["Four", "screens"],
+          items: [
+            h4b("phone-hero", "The first screen on a phone: the logo, the menu icon and the first note about memory"),
+            h4b("phone-bacopa", "Bacopa monnieri on a phone, with the first of its three cards"),
+            h4b("phone-tablet", "The box and Ce conține un comprimat? on a phone, with the table of what one tablet holds"),
+            h4b("phone-facts", "Curiozități despre creier on a phone: the multitasking card")
+          ],
+          cap: "The first screen, Bacopa monnieri, one tablet and the curiosities, at 390 px wide"
+        }
+      ]
+    }, ...spotChapter("help-4-brain")]
+  })
+};
 
 // every Zdrovit brand page built from its product site, in the order they were made
 export const ZDROVIT_WEB = [ASPASIA, BONILASH, GLUCOPIL, GRIPOVIT, LACIUM, OPTISOMN, PARASOFTIN, PERIFERISAN];
