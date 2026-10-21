@@ -58,7 +58,7 @@ const files = {};
 for (const f of fs.readdirSync(media)) if (/^g-.*-s[12]\.webp$/.test(f)) fs.rmSync(path.join(media, f));
 for (const [id, buf] of Object.entries(raw)) {
   const m = await sharp(buf).metadata();
-  for (const [set, k] of [["s1", 0.5], ["s2", 1]]) {
+  for (const [set, k] of [["s1", 0.8], ["s2", 1]]) { // (s1 at 0.8, not the metro pieces' 0.5: this frame is half a row wide, ~470 px on a laptop, ~940 device px)
     const w = Math.round(m.width * k), h = Math.round(m.height * k), f = path.join(media, `${id}-${set}.webp`);
     await put(sharp(buf).resize({ width: w, height: h }).webp({ quality: set === "s1" ? 78 : 80, alphaQuality: 90, effort: 6 }), f);
     (files[set] ||= {})[id] = { w, h, k };
