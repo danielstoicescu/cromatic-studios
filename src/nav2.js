@@ -1590,6 +1590,37 @@
     // the rendered loops, kept per ride (they need no AudioContext: rendered ahead, before the first touch)
     const ENG_CACHE = new Map(), ENG_PEND = new Map();
     const engineLoops = (id) => { const pr = ENGINES[id] || ENGINES.dacia1300; if (pr.kind !== "ice") return Promise.resolve(null); if (ENG_CACHE.has(id)) return Promise.resolve(ENG_CACHE.get(id)); if (!ENG_PEND.has(id)) ENG_PEND.set(id, renderEngine(pr, 32000).then((d) => { ENG_CACHE.set(id, d); return d; }).catch(() => null)); return ENG_PEND.get(id); };
+    // TASK-109 (Daniel: "the rain should be more pleasant, like a white noise, not so annoying"): it was white noise
+    // high-passed at 900 Hz, a hiss of everything up to 7 kHz from a 2 s loop. Now a soft bed: pink noise (each octave as
+    // loud as the next, the way steady rain sounds from indoors), two long loops that never line up (one a side, the
+    // seams crossfaded), the highs rolled off from 2.2 kHz and gently again from 5 kHz, the rumble under 160 Hz cut, and a
+    // swell of a few percent over about fifteen seconds so it breathes. No drops, no clicks; out: where it plays, bufs: the
+    // two loops (made ahead, in idle time, with the context: see makeCtx)
+    function pinkLoop(ac, sec) {
+      const sr = ac.sampleRate, F = Math.floor(sr * 0.5), n = Math.floor(sr * sec) + F, raw = new Float32Array(n);
+      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+      for (let i = 0; i < n; i++) { // Paul Kellet's pink filter
+        const w = Math.random() * 2 - 1;
+        b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759; b2 = 0.969 * b2 + w * 0.153852; b3 = 0.8665 * b3 + w * 0.3104856;
+        b4 = 0.55 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.016898; raw[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11; b6 = w * 0.115926;
+      }
+      const b = ac.createBuffer(1, n - F, sr), d = b.getChannelData(0);
+      for (let i = 0; i < n - F; i++) d[i] = raw[i];
+      for (let i = 0; i < F; i++) { const k = (i / F) * Math.PI / 2; d[i] = raw[i] * Math.sin(k) + raw[n - F + i] * Math.cos(k); } // the seam, equal power
+      return b;
+    }
+    const pinkPair = (ac) => [pinkLoop(ac, 7.3), pinkLoop(ac, 9.1)];
+    function rainBed(ac, out, bufs = pinkPair(ac)) {
+      const mix = ac.createChannelMerger(2), srcs = [];
+      bufs.forEach((buf, ch) => { const s = ac.createBufferSource(); s.buffer = buf; s.loop = true; s.connect(mix, 0, ch); s.start(); srcs.push(s); });
+      const hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 160; hp.Q.value = 0.5;
+      const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2200; lp.Q.value = 0.5;
+      const lp2 = ac.createBiquadFilter(); lp2.type = "lowpass"; lp2.frequency.value = 5000; lp2.Q.value = 0.5;
+      const swell = ac.createGain(), lfo = ac.createOscillator(), lfoG = ac.createGain(); lfo.frequency.value = 0.065; lfoG.gain.value = 0.06; lfo.connect(lfoG); lfoG.connect(swell.gain); lfo.start(); srcs.push(lfo);
+      mix.connect(hp); hp.connect(lp); lp.connect(lp2); lp2.connect(swell); swell.connect(out);
+      return srcs;
+    }
+    const RAIN_LEVEL = 0.25, RAIN_FADE = 2; // its level under the city, and the fade's time constant (s): in and out over several seconds
     const SND = (() => {
       let on = true, ctx = null, master = null, carBus = null, cityBus = null, E2 = null, C = null, started = false, out = 1, cafe = 0;
       try { on = localStorage.getItem("cz-sound") !== "off"; } catch {}
@@ -1604,11 +1635,11 @@
       const gain = (v = 0) => { const g = ctx.createGain(); g.gain.value = v; return g; };
       // beta 3.xx: the context and the noise first (makeCtx: what prep makes ahead), the graph with its running sources at
       // the start (a source started in a context the page may not play yet is one more console warning each)
-      let noiseW = null, noiseB = null, graphMade = false;
+      let noiseW = null, noiseB = null, noiseP = null, graphMade = false;
       function makeCtx() {
         const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
         ctx = new AC();
-        noiseW = noiseBuf(2, false); noiseB = noiseBuf(4, true);
+        noiseW = noiseBuf(2, false); noiseB = noiseBuf(4, true); noiseP = pinkPair(ctx); // TASK-109: the rain's two loops
         document.addEventListener("visibilitychange", () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else if (on && started) ctx.resume(); });
         return true;
       }
@@ -1635,7 +1666,7 @@
         const wn = loop(white, 0.5); wn.connect(C.windBp); C.windBp.connect(C.wind); C.wind.connect(cityBus);
         const cn = loop(brown, 2.2); for (const [f, q] of [[480, 3], [1100, 4], [2300, 5]]) { const b = filt("bandpass", f, q); cn.connect(b); b.connect(C.cafe); }
         // beta 2.9 (Daniel): rain where it rains (Night Mode, Sin City), under the city
-        C.rain = gain(0); { const rn = loop(white, 0.85), rh = filt("highpass", 900, 0.5), rl = filt("lowpass", 7000, 0.5); rn.connect(rh); rh.connect(rl); rl.connect(C.rain); C.rain.connect(cityBus); }
+        C.rain = gain(0); rainBed(ctx, C.rain, noiseP); C.rain.connect(cityBus); // TASK-109: a soft pink-noise bed (see rainBed)
         const cam = gain(1), cl = ctx.createOscillator(), clg = gain(0.5); cl.frequency.value = 3.1; cl.connect(clg); clg.connect(cam.gain); cl.start(); C.cafe.connect(cam); cam.connect(cityBus);
         return true;
       }
@@ -1791,7 +1822,7 @@
         ramp(C.hum.gain, 0.32 * edge, 0.6); ramp(C.wind.gain, (0.04 + 0.04 * Math.sin(performance.now() / 7300)) * (1.2 - 0.6 * edge), 0.8);
         ramp(C.windBp.frequency, 500 + 300 * Math.sin(performance.now() / 5100), 0.8);
         ramp(C.cafe.gain, clamp(1 - dTm / 420, 0, 1) * 0.16, 0.6);
-        { const w2 = window.__wxNow || {}; ramp(C.rain.gain, w2.rain ? 0.11 : 0, 0.8); if (w2.bolt && !boltWas) thunder(); boltWas = !!w2.bolt; }
+        { const w2 = window.__wxNow || {}; ramp(C.rain.gain, w2.rain ? RAIN_LEVEL : 0, RAIN_FADE); if (w2.bolt && !boltWas) thunder(); boltWas = !!w2.bolt; }
         const t = T();
         if (t > C.birdT) { C.birdT = t + 2.5 + Math.random() * 6; if (!red || true) chirp(); }
         if (t > C.hornT) { C.hornT = t + 14 + Math.random() * 26; if (C.hornT > 20) horn(); }
