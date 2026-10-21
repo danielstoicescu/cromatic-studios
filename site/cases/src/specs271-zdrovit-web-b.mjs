@@ -203,5 +203,84 @@ export const SLABOFICAT = {
   related: RELATED
 };
 
+export const SUPRAMAX = {
+  slug: "supramax",
+  name: "Supramax",
+  tagline: "supramax.ro: one product site for a whole joint-care range, from collagen sachets to a spray.",
+  desc: "Supramax articulații: supramax.ro, the product site for a collagen range for joints, six products on one page, on desktop and phone. By Cromatic Studios, Bucharest.",
+  title: "Mobility, made younger.",
+  accent: { bg: "#F39A3D", fg: "#2b1606", ink: "#b8560a" },
+  info: ["Joint supplements, Supramax articulații", "Romania · Zdrovit portfolio", "Product site, desktop and mobile"],
+  cover: { img: m("supramax/hero") },
+  og: m("supramax/hero"),
+  hero: { img: m("supramax/hero"), alt: "supramax.ro in a browser window and on a phone: a white-haired woman stretching on a wooden deck, the line Întinerește-ți mobilitatea! and the orange Supramax articulații box with peach flavour" },
+  problem: {
+    h: "One brand, six formats",
+    p: [
+      "Supramax articulații is a Zdrovit range for joints, built around hydrolysed collagen. It comes as sachets in three versions, as vials you drink, as a gel and as a spray.",
+      "Each one is taken or used in its own way, and each has its own list of ingredients. One site has to explain all six without burying any of them.",
+      "Before any of the boxes, it has to explain the word printed on most of them: <strong>colagen</strong>."
+    ]
+  },
+  solution: {
+    h: "Orange on white, and people moving",
+    p: "The page runs in the box's orange on white. It opens with “Întinerește-ți mobilitatea!” over a woman stretching on a wooden deck, explains collagen beside a man holding his knee, then lines up the products, each with its own column of ticks and an orange “Cumpără acum” button. A couple out Nordic walking leads into how collagen works, in three steps. Joint problems and the questions close the page.",
+    stat: "6",
+    statText: "products on one page: three kinds of sachets, the DIRECT vials, the mobil gel and the ACUT spray"
+  },
+  chapters: [
+    {
+      pillar: "product",
+      pills: ["One", "page"],
+      text: "The menu runs SUPRAMAX, Comandă, Probleme articulare, Întrebări, Blog, Contact. The hero sets a white-haired woman stretching beside the peach-flavour box under “Întinerește-ți mobilitatea!”. Collagen comes next, in two paragraphs and an orange box, then a line on what Supramax articulații contains, with an orange arrow between two circles of bone tissue. After the products, an orange panel lists what the site says Supramax does for cartilage, beside a couple Nordic walking, and three numbered steps follow: Absorbția, Distribuția, Stimularea. The joint problems and six questions in orange tiles end the page.",
+      deliverables: ["Product site", "UX/UI design", "Desktop and mobile", "FAQ"],
+      media: [
+        siteBlock("supramax", "supramax.ro", { head: ["The", "product site"], cap: "supramax.ro from the first screen to the footer, on desktop and phone." }),
+        {
+          rail: ["Section by", "section"],
+          items: [
+            shot("supramax", "collagen", "SUPRAMAX articulații conține hidrolizat de colagen: the line in large type, an orange arrow between two circles of bone tissue, and two paragraphs below"),
+            shot("supramax", "benefits", "An orange panel with three ticked lines about cartilage beside a photo of an older couple Nordic walking in a park, and Hidrolizatul de colagen acționează în 3 etape below: Absorbția, Distribuția, Stimularea")
+          ],
+          cap: "Collagen, explained before the boxes, and the three steps"
+        }
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["The", "range"],
+      text: "The products, the way the site lines them up. Under “Doză mare de colagen” three sachet boxes stand side by side, plain, peach and osteo, each over its own column: an orange disc for “10 g colagen hidrolizat per plic”, ticks and letters for what else is inside, and “30 plicuri”. A grey band says what Supramax does not contain and how to take it. Then the DIRECT vials, the mobil gel and the ACUT spray, each with its own paragraph, its own column of ticks, its directions in a grey box and an orange button.",
+      deliverables: ["Product range", "Ingredient columns", "Usage"],
+      media: [
+        shot("supramax", "range", "Doză mare de colagen: three Supramax articulații boxes, plain, peach and osteo, each above a column of orange discs and ticks, with Cumpără acum buttons and a grey band of what the product does not contain", "Three sachet boxes, three columns"),
+        shot("supramax", "gel", "SUPRAMAX articulații mobil gel: the tube on an orange swoosh, a column of ticks from extract de tătăneasă to 100 ml, the directions in a grey box and a Cumpără acum button", "The mobil gel, with its own column and directions")
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["On a", "phone"],
+      text: "On a phone the page keeps its order in one column. The hero shrinks to a band at the top and the collagen paragraphs follow, the orange box still under them. The three sachet boxes stack one above another, each with its column and button, and the orange benefits panel moves under the Nordic walking photo.",
+      deliverables: ["Mobile layout", "One column"],
+      media: [
+        {
+          rail: ["Four", "screens"],
+          items: [
+            shot("supramax", "phone-hero", "The first screen on a phone: the Supramax articulații logo, the menu icon, the hero band and the collagen paragraphs with the orange box"),
+            shot("supramax", "phone-collagen", "The collagen line on a phone, the arrow between the circles of bone tissue and the paragraphs below"),
+            shot("supramax", "phone-range", "Doză mare de colagen on a phone: the first sachet box, its column and the Cumpără acum button, the peach box below"),
+            shot("supramax", "phone-benefits", "The Nordic walking photo on a phone, the orange panel under it and the first of the three steps")
+          ],
+          cap: "The hero, collagen, the range and the three steps, at 390 px wide"
+        }
+      ]
+    },
+    ...spotChapter("supramax")
+  ],
+  result: {
+    text: "Six products, one page, in the box's orange: collagen explained first, then every format with its own column."
+  },
+  related: RELATED
+};
+
 // every Zdrovit brand page of the second half, in the order they were made
-export const ZDROVIT_WEB_B = [PREVOMIT, SLABOFICAT];
+export const ZDROVIT_WEB_B = [PREVOMIT, SLABOFICAT, SUPRAMAX];
