@@ -1,6 +1,11 @@
 {
  "id": "demo",
  "version": "2026-10-21",
+ "edition": {
+  "kind": "custom",
+  "basedOn": "blank@0.72",
+  "note": "fictional test client"
+ },
  "client": {
   "name": "Atelier Nord",
   "contact": "Radu"

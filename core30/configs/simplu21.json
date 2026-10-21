@@ -1,6 +1,11 @@
 {
  "id": "simplu21",
  "version": "2026-10-21",
+ "edition": {
+  "kind": "custom",
+  "basedOn": "blank@0.72",
+  "note": "real estate + community; pre-filled from the Master Overview"
+ },
  "client": {
   "name": "SIMPLU.21",
   "contact": "Alina",
