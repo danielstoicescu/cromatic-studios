@@ -4309,26 +4309,6 @@
 800,
 160272
 ],
-"m:litorsal/vibe-banner": [
-1600,
-641,
-104507
-],
-"m:litorsal/vibe-metro": [
-1600,
-1067,
-153287
-],
-"m:litorsal/vibe-metro-wide": [
-1600,
-800,
-133672
-],
-"m:litorsal/vibe-metro-tall": [
-900,
-2025,
-170768
-],
 "m:litorsal/vibe-metro-portrait": [
 900,
 1621,
@@ -4462,6 +4442,16 @@
 "m:metro/inside-still": [
 1080,
 1350,
-105364
+92535
+],
+"m:ooh/gable-still": [
+1080,
+1350,
+184410
+],
+"m:ooh/gable-wide-still": [
+1620,
+1080,
+207999
 ]
 }

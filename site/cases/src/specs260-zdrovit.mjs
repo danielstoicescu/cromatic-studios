@@ -4,6 +4,7 @@
 // piece ran, so the copy describes the work and its formats only. (TASK-062: Daniel, 2026-10-21, on the Super vibe
 // posters: they ran in the metro, in the stations, inside the cars beside the doors and on the cars.)
 import { METRO } from "./metro-assets.mjs";
+import { OOH } from "./ooh-assets.mjs";
 const m = (p) => "m:" + p;
 
 export const LITORSAL = {
@@ -39,27 +40,17 @@ export const LITORSAL = {
     {
       pillar: "marketing",
       pills: ["Super", "vibe"],
-      text: "The city line: “Hidratare corectă pentru un super vibe.” A hand holds the tube up on flat yellow, the way you hold it on your way out. The layout comes in landscape and portrait for the metro, and in a 2 x 0.8 m banner. Below, the posters where they ran, as animated mockups: on the platform, by the doors, on the train.",
+      text: "The city line: “Hidratare corectă pentru un super vibe.” A hand holds the tube up on flat yellow, the way you hold it on your way out. The layout comes in landscape and portrait for the metro, and in a 2 x 0.8 m banner. Below, the posters where they ran, as animated mockups: on the train, on the platform, by the doors.",
       deliverables: ["Metro posters", "Banner", "Landscape and portrait", "Animated mockups"],
       // TASK-062: three animated mockups (design/metro-mockup: our own 3D station, carriage and train, the real artwork,
-      // played by the site's Lottie layer), then the posters as printed
+      // played by the site's Lottie layer). TASK-093 (Daniel): the moving train first; the posters-as-printed rail is gone.
       media: [
-        { czl: "metro-platform", img: m("metro/platform-still"), alt: "Animated mockup: the landscape and portrait posters in lit frames on a metro station's track wall, people passing in front", cap: "Animated mockup: on the platform" },
-        { row: [
-          { full: true, czl: "metro-inside", img: m("metro/inside-still"), alt: "Animated mockup: inside a metro car, the portrait poster on the panel beside the doors, while the train leaves the station, runs through the tunnel and pulls in again" },
-          { full: true, img: m("litorsal/vibe-metro-portrait"), alt: "The portrait metro poster: the headline on top, the hand with the tube below" }
-        ], wrap: true, cap: "In the carriage, beside the doors, and the 50 x 90 cm poster itself" },
         { czl: "metro-train", at: 300, img: m("metro/train-still"), alt: "Animated mockup: a metro train pulls into the station with the wide poster on the side of a car, opens and closes its doors, and pulls out", cap: "On the train, as a wrap" },
-        {
-          rail: ["As", "printed"],
-          items: [
-            { img: m("litorsal/vibe-metro"), alt: "The landscape metro poster: the hand with the tube on the left, the headline on the right" },
-            { img: m("litorsal/vibe-metro-wide"), alt: "A wide yellow metro poster: the hand with the Litorsal tube, the headline Hidratare corectă pentru un super vibe and a QR code" },
-            { img: m("litorsal/vibe-metro-tall"), alt: "The tall metro poster: the headline on top, the hand with the tube below" },
-            { img: m("litorsal/vibe-banner"), alt: "Yellow banner: a hand holding a Litorsal tube, the headline Hidratare corectă pentru un super vibe and a QR code" }
-          ],
-          cap: "60 x 40, 80 x 40 and 40 x 90 cm for the metro, and the 2 x 0.8 m banner"
-        }
+        { czl: "metro-platform", img: m("metro/platform-still"), alt: "Animated mockup: the landscape and portrait posters in lit frames on a metro station's track wall, the light of a passing train sliding across their glass", cap: "Animated mockup: on the platform" },
+        { row: [
+          { full: true, czl: "metro-inside", img: m("metro/inside-still"), alt: "Animated mockup: inside a metro car, the portrait poster on the panel beside the doors; the doors open on the platform's warm light, then the train leaves, runs through the tunnel and pulls in again" },
+          { full: true, img: m("litorsal/vibe-metro-portrait"), alt: "The portrait metro poster: the headline on top, the hand with the tube below" }
+        ], wrap: true, cap: "In the carriage, beside the doors, and the 50 x 90 cm poster itself" }
       ]
     },
     {
@@ -86,10 +77,18 @@ export const LITORSAL = {
     {
       pillar: "marketing",
       pills: ["Căldură", "mare"],
-      text: "The summer line, the billboard at the top of this page: “Căldură mare, Litorsal îți dă hidratare!” The tubes stand in a row in front of the sun and a splash of water. Four icons explain the product at a glance: efficient hydration, electrolytes restored, energy, support for the body. One layout, redrawn for six billboard sizes, from 6 x 3 m to 1 x 1.5 m.",
-      deliverables: ["Key visual", "Billboards", "Six formats", "Icons"],
+      text: "The summer line, the billboard at the top of this page: “Căldură mare, Litorsal îți dă hidratare!” The tubes stand in a row in front of the sun and a splash of water. Four icons explain the product at a glance: efficient hydration, electrolytes restored, energy, support for the body. One layout, redrawn for six billboard sizes, from 6 x 3 m to 1 x 1.5 m. Below, a mockup of how it reads in the street: on a block's gable, as a tram goes by.",
+      deliverables: ["Key visual", "Billboards", "Six formats", "Icons", "Street mockup"],
+      // TASK-069 (Daniel: "mockups with Litorsal's other campaign, on OOH, street banners in Bucharest, as cinematic as
+      // possible"): a street scene of our own (design/ooh-mockup: built and rendered in 3D, the campaign's real layout on
+      // the banner, nothing else's), then the layouts as made. A mockup, not a record of where it ran. (TASK-093: the
+      // boulevard billboard and the tram stop citylight are off the page; their scenes stay in design/ooh-mockup.)
       // (the 3.2 x 2.4 m billboard, heat-billboard, is left out: it is the hero's picture again; it stays the page's cover)
+      // TASK-093 (Daniel): the gable on its own full-width line, the summer line's highlight: wide (3:2) from 641 px up,
+      // its 4:5 cut on phones (one or the other is display:none: it never loads or mounts)
       media: [
+        { czl: "ooh-gable-wide", at: 320, hideSm: true, img: m("ooh/gable-wide-still"), alt: "Animated mockup: the portrait layout as a mesh banner on the blind gable of a block of flats, a tram passing below", cap: "Animated mockup: the portrait layout as a mesh banner on a block's gable, as a tram goes by" },
+        { czl: "ooh-gable", at: 283, onlySm: true, img: m("ooh/gable-still"), alt: "Animated mockup: the portrait layout as a mesh banner on the blind gable of a block of flats, a tram passing below", cap: "Animated mockup: the portrait layout as a mesh banner on a block's gable, as a tram goes by" },
         { row: [
           { img: m("litorsal/heat-packs"), alt: "The same billboard with Litorsal boxes in place of the tubes, Junior on the right" },
           { img: m("litorsal/heat-tall"), alt: "The portrait version, 1 x 1.5 m: headline on top, the icons in a grid, the tubes below" }
@@ -105,7 +104,7 @@ export const LITORSAL = {
     text: "One product in three lines, and one system that keeps its shape from a 6 x 3 m billboard to a 60 x 40 cm poster."
   },
   related: ["lacalut", "help-4-brain", "clinica-sante"],
-  czl: METRO // (the mockups' pictures: written into the page as #czl-assets, the build swaps in their hashed addresses)
+  czl: { ...METRO, ...OOH } // (the mockups' pictures: written into the page as #czl-assets, the build swaps in their hashed addresses)
 };
 
 // The range chapter, off the Litorsal page since TASK-062 (Daniel's order: hero, the yellow lines, the heat formats, the

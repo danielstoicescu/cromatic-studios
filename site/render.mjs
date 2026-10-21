@@ -146,7 +146,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   const DOMAIN_OF = {
     "Investimental": "ux", "Assetto": "ux", "The Aesthetic Court": "ux", "Craft Coffee": "ux", "ESD": "ux", "Techventures Bank": "ux", "Elithia": "ux",
     "Venevo": "ux", "Witanalytica": "ux", "Printoteca": "ux", "Artisan Coffee Gear": "ux", "Altius": "ux",
-    "Yoshi Izakaya": "growth", "Help 4 Brain": "growth", "Zoetis": "growth", "Echo School": "growth", "Coffeenativ": "growth", "Sticker Republic": "growth", "Litorsal": "growth", "Lacalut": "growth", "Maximag": "growth",
+    "Yoshi Izakaya": "growth", "Help 4 Brain": "growth", "Zoetis": "growth", "Echo School": "growth", "Sticker Republic": "growth", "Litorsal": "growth", "Lacalut": "growth", "Maximag": "growth",
     "Pain Plaisir": "video", "Clinica Sante": "video", "Patiline": "video"
   };
   // sizes that tile six columns: a big square with two wides beside it, a tall one with two longs, a row of
@@ -182,7 +182,10 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       ${small.length ? `<div class="psmall"><span class="mono ps-h">In the Zdrovit yard</span>${small.map((p) => `<span class="ps" style="--bc:${p.c};--bt:${p.t}"><b>${esc(p.name)}</b><i class="mono">${esc(p.cat)}</i></span>`).join("")}</div>` : ""}
     </div>`;
   }).join("");
-  // r131: the portfolio by industry, the way the map lays it out in streets; each street opens its own page
+  // r131: the portfolio by industry, the way the map lays it out in streets; each street opens its own page. TASK-071
+  // (beta 4.0, Daniel: "radius prea mic, fonturile prea înghesuite"): each street opens on a card in the welcome card's
+  // line (cream paper, the ink keyline, a hard shadow, a generous radius), its sign hung on it in the street's colour,
+  // then the industry, the lead, the way in and the count on a disc in the street's colour
   const STREET_INFO = {
     A: { t: "Specialty coffee, food & drink", lead: "Where we grew up: coffee shops, roasters, a festival, bakeries, a craft beer, a charcuterie and a caviar farm." },
     B: { t: "Banks, investments, fintech, energy & tech", lead: "Banks, brokers, investment groups, a fintech festival, an energy company and a school of technology and digital arts, made clear and human." },
@@ -199,8 +202,14 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     const ind = industryOf(k), info = STREET_INFO[k] || { t: "", lead: "" };
     const n = new Set(list.filter((p) => p.page).map((p) => p.page)).size;
     return `<div class="dom dom-street" id="street-${k.toLowerCase()}" style="--dc:${col};--dt:${STREET_INK[k] || "#fff"}">
-      <h3 class="dom-h street-sign"><span class="ss-name">${esc(street)}</span> <small class="dom-ind">${esc(info.t)}</small> <i class="mono">${n} case ${n === 1 ? "study" : "studies"}</i></h3>
-      <p class="dom-lead">${esc(info.lead)}${ind ? ` <a class="dom-more" href="/industries/${ind.slug}/">${esc(info.t)}: the whole street →</a>` : ""}</p>
+      <div class="street-head">
+        <div class="sh-main">
+          <h3 class="sh-title"><span class="street-sign"><span class="ss-name">${esc(street)}</span></span> <span class="sh-sub">${esc(info.t)}</span></h3>
+          <p class="sh-lead">${esc(info.lead)}</p>
+          ${ind ? `<a class="sh-more" href="/industries/${ind.slug}/" aria-label="${esc(info.t)}: the whole street"><span>The whole street</span> <i aria-hidden="true">→</i></a>` : ""}
+        </div>
+        <p class="sh-count"><b>${n}</b> <span class="mono">case ${n === 1 ? "study" : "studies"}</span></p>
+      </div>
       <div class="bento">${list.map((p, i) => bentoCard(p, i, covers)).join("")}</div>
       ${small.length ? `<div class="psmall"><span class="mono ps-h">In the Zdrovit yard</span>${small.map((p) => `<span class="ps" style="--bc:${p.c};--bt:${p.t}"><b>${esc(p.name)}</b><i class="mono">${esc(p.cat)}</i></span>`).join("")}</div>` : ""}
     </div>`;
@@ -263,7 +272,8 @@ ${header(true)}
       <p class="sec-lead">Two Minutes has been our client and our neighbour for a decade. On the drive we always stop here: four double espressos, and the coffee boxes fly down from the Cromatic mansard to the shelf.</p>
     </div>
     ${coffee ? `<div class="road-scene road-lottie" data-czl-js="${coffee.js}" data-czl-player="${coffee.player}" data-czl-wide="${coffee.wide}" data-czl-tall="${coffee.tall}">
-      <div class="rl-art" role="img" aria-label="The coffee stop, drawn: four double espressos on the Two Minutes sill, and the coffee boxes flying from the Cromatic mansard to the shelf"><picture class="rl-still"><source media="(max-width: 700px)" srcset="${coffee.still.tall.src}" width="${coffee.still.tall.w}" height="${coffee.still.tall.h}"><img src="${coffee.still.wide.src}" width="${coffee.still.wide.w}" height="${coffee.still.wide.h}" alt="" fetchpriority="low" decoding="async"></picture></div>
+      <div class="rl-art" role="img" aria-label="The coffee stop, drawn: four double espressos on the Two Minutes sill, the coffee boxes flying from the Cromatic mansard to the shelf and onto the yellow Dacia, the arcade cabinet by the door and a caravan parked on the right"><picture class="rl-still"><source media="(max-width: 700px)" srcset="${coffee.still.tall.src}" width="${coffee.still.tall.w}" height="${coffee.still.tall.h}"><img src="${coffee.still.wide.src}" width="${coffee.still.wide.w}" height="${coffee.still.wide.h}" alt="" fetchpriority="low" decoding="async"></picture></div>
+      <a class="rl-game" href="/play/gloves/" aria-label="Play the arcade: 2 Minutes 2 Fight w/ I O N, in front of Two Minutes"><span class="rlg-tag"><i class="rlg-coin" aria-hidden="true"></i><span>Play the arcade</span></span></a>
       <button class="rl-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>
     </div>
     <div class="road-foot"><a class="rs-cta" href="/work/two-minutes/">Two Minutes, the case →</a><a class="rs-drive" href="/">Drive it yourself →</a></div>` : `<div class="road-scene road-video">

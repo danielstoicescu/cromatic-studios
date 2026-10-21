@@ -9,6 +9,7 @@ import fs from "fs";
 import path from "path";
 import { Comp, bake, group, rect, ell, fill, gfill, maskRect, path as shp, pathKeys, rgb, BM, QIN, QOUT } from "./lot.mjs";
 import { SHOTS, camPx, proj, NEAR, AR, WALLZ } from "./shots.mjs";
+import { rng } from "../../intro-lottie/_source/lib/lottie.mjs";
 
 const here = path.dirname(new URL(import.meta.url).pathname), root = path.resolve(here, "../../..");
 const PL = JSON.parse(fs.readFileSync(path.join(here, "plates.json"), "utf8"));
@@ -95,37 +96,54 @@ function train(set) {
 }
 
 // ---------- shot 2: inside the banner car, by the doors and the poster ----------
-// It pulls out of the station, runs the tunnel (lamps streak past the windows and sweep the car), pulls into the
-// station again, stops with a small sway, opens and closes its doors. The station outside is two strips (the
-// platform near, the far wall) at their own depths, sharp and blurred; the tunnel is drawn (vectors).
+// TASK-093 (Daniel): no colours on the opening doors, no waves: the doors open soon after the stop, the platform seen
+// through them in a noticeably warmer light than the car, calm (the TASK-070 B variant's camera and ride; its dust,
+// its warm glow into the car and A's waves are gone, and so is the ?metro switch). The station outside is two strips
+// (the platform near, the far wall) at their own depths, sharp and blurred; the tunnel is drawn (vectors).
+const LIN = [0, 0, 1, 1];
+const lin = (kf) => kf.map(([t, v], i, a) => (i < a.length - 1 ? [t, v, LIN] : [t, v]));
 function inside(set) {
   const S = SHOTS.inside, P = camPx("inside"), I = PL.inside, W = S.W, H = S.H;
-  const T1 = 1.0, Td = 4.5, Ttun = 9.0, Ta = 4.5, Tst = Ttun + Ta, Tdo = Tst + 0.6, Tdc = Tdo + 3.2, END = Tdc + 0.7 + 0.8, L = 35;
+  // the timeline (s): the stop is at 0 (the loop's seam); doors open at Tdo over Tdd, close at Tdc; the train leaves at
+  // T1 (accelerating over Td to the tunnel's speed), runs the tunnel until Ttun and brakes over Ta into the station
+  const T = { Tdo: 0.4, Tdd: 1.0, Tdc: 9.2, T1: 10.9, Td: 4.5, Ttun: 17.6, Ta: 4.5, L: 35 };
+  const { Tdo, Tdd, Tdc, T1, Td, Ttun, Ta, L } = T, END = Ttun + Ta;
   const op = sec(END), Cm = new Comp({ w: W, h: H, op, fr: FPS, nm: "metro-inside" });
   const ids = ["i-int", "i-refl", "i-leaf-a", "i-leaf-b", "i-near-sharp", "i-near-blur", "i-far", "i-far-blur"];
   const A = Object.fromEntries(ids.map((id) => [id, asset(Cm, set, id)]));
-  // the train's own offset through the station (m): out (accelerating), then back in from the other end (braking)
-  const off = (t) => { const s = t / FPS; if (s < T1) return 0; if (s < T1 + Td) return L * ((s - T1) / Td) ** 2; if (s < Ttun) return L + (2 * L / Td) * (s - T1 - Td); if (s < Tst) return -L * (1 - (s - Ttun) / Ta) ** 2; return 0; };
-  const v = (t) => { const s = t / FPS; if (s < T1) return 0; if (s < T1 + Td) return (2 * L / Td) * ((s - T1) / Td); if (s < Ttun) return 2 * L / Td; if (s < Tst) return (2 * L / Ta) * (1 - (s - Ttun) / Ta); return 0; };
-  const inStation = (t) => { const s = t / FPS; return s < T1 + Td * 0.98 || s > Ttun + 0.02; };
   const vmax = 2 * L / Td;
-  vignette(Cm, W, H, 0.46);
-  // the camera: the car's rocking (with speed), the jolt of the stop
-  const SW = (t) => { const s = t / FPS, k = v(t) / vmax, j = s > Tst && s < Tst + 1.2 ? Math.exp(-(s - Tst) * 4) * Math.sin((s - Tst) * 11) : 0;
-    return { r: 0.14 * k * Math.sin(s * 4.1) + 0.05 * k * Math.sin(s * 9.7) - 0.12 * j, x: -5 * j + 1.2 * k * Math.sin(s * 6.3), y: 1.4 * k * Math.sin(s * 7.9 + 1) + 0.8 * k * Math.sin(s * 17) }; };
+  // the train's own offset through the station (m): out (accelerating), the tunnel, back in from the other end (braking)
+  const off = (t) => { const s = t / FPS; if (s < T1) return 0; if (s < T1 + Td) return L * ((s - T1) / Td) ** 2; if (s < Ttun) return L + vmax * (s - T1 - Td); return -L * (1 - (s - Ttun) / Ta) ** 2; };
+  const v = (t) => { const s = t / FPS; if (s < T1) return 0; if (s < T1 + Td) return vmax * ((s - T1) / Td); if (s < Ttun) return vmax; return vmax * (1 - (s - Ttun) / Ta); };
+  const inStation = (t) => { const s = t / FPS; return s < T1 + Td * 0.98 || s > Ttun + 0.02; };
+  vignette(Cm, W, H, 0.3);
+  // the camera: the car's rocking (with speed, soft), the settling of the stop (at the seam: over the first second)
+  const SW = (t) => {
+    const s = t / FPS, k = v(t) / vmax * 0.55, j = s < 1.2 ? Math.exp(-s * 4) * Math.sin(s * 11) * 0.25 : 0;
+    return { r: 0.14 * k * Math.sin(s * 4.1) + 0.05 * k * Math.sin(s * 9.7) - 0.12 * j, x: -5 * j + 1.2 * k * Math.sin(s * 6.3), y: 1.4 * k * Math.sin(s * 7.9 + 1) + 0.8 * k * Math.sin(s * 17) };
+  };
   const cam = Cm.nul("camera (the car)", { ks: { a: [W / 2, H / 2], p: bake(0, op, (t) => { const q = SW(t); return [W / 2 + q.x, H / 2 + q.y]; }, 3, 1e-3, 0.6), r: bake(0, op, (t) => SW(t).r, 3, 1e-3, 0.025), s: [101.2, 101.2] } });
+  const door = [300, 760]; // (the doorway's middle, px)
+
   // the tunnel's lamps: the light of each one sweeps the car as it passes (a soft band, screen)
   const lampEvery = 12 / vmax, lamps = []; for (let s = T1 + Td + 0.35; s < Ttun - 0.1; s += lampEvery) lamps.push(s);
   const sweepW = W * 0.9;
   Cm.shape("lamp light on the car", lamps.map((s0, i) => group("sweep " + i, [rect(sweepW, H * 2, 0, 0), gfill({ type: 1, s: [-sweepW / 2, 0], e: [sweepW / 2, 0], stops: [[0, "#ffd9a0"], [0.5, "#ffd9a0"], [1, "#ffd9a0"]], alphas: [[0, 0], [0.5, 1], [1, 0]] })],
-    { p: { kf: [[sec(s0 - 0.25), [-sweepW, H / 2]], [sec(s0 + 0.25), [W + sweepW, H / 2]]] }, r: 18 })), { parent: cam, bm: "screen", ks: { o: 13 } });
+    { p: { kf: [[sec(s0 - 0.25), [-sweepW, H / 2]], [sec(s0 + 0.25), [W + sweepW, H / 2]]] } })), { parent: cam, bm: "screen", ks: { o: 8 } });
   // the windows' reflection of the car: strong in the dark tunnel, gone in the lit station
-  const reflO = (t) => { const s = t / FPS; return 6 + 46 * (ramp(s, T1 + Td - 0.9, T1 + Td + 0.2) * (1 - ramp(s, Ttun - 0.3, Ttun + 0.9))); };
+  const reflO = (t) => { const s = t / FPS; return 6 + 34 * (ramp(s, T1 + Td - 0.9, T1 + Td + 0.2) * (1 - ramp(s, Ttun - 0.3, Ttun + 0.9))); };
   Cm.imgLayer("windows' reflection", "i-refl", { parent: cam, bm: "screen", ks: { o: bake(0, op, reflO, 2, 1e-3, 0.4) } });
   Cm.imgLayer("interior", "i-int", { parent: cam });
-  // the leaves (pocket doors: they slide behind the panels)
-  const open = (t) => (t >= sec(Tdc + 0.7) ? 0 : t >= sec(Tdc) ? 1 - ramp(t, sec(Tdc), sec(Tdc + 0.7)) : ramp(t, sec(Tdo), sec(Tdo + 0.7)));
+  // the leaves (pocket doors: they slide behind the panels, on a soft ease)
+  const E2 = (t, a, b) => (1 - Math.cos(Math.PI * clamp((t - a) / (b - a)))) / 2;
+  const open = (t) => (t >= sec(Tdc + Tdd) ? 0 : t >= sec(Tdc) ? 1 - E2(t, sec(Tdc), sec(Tdc + Tdd)) : E2(t, sec(Tdo), sec(Tdo + Tdd)));
   for (const [id, dir] of [["i-leaf-a", 1], ["i-leaf-b", -1]]) { const a = A[id], dx = 0.64 * (P.f / 1.4) * dir; Cm.imgLayer("leaf " + id.slice(-1), id, { parent: cam, ks: { p: bake(0, op, (t) => [a.x + dx * open(t), a.y], 1) } }); }
+  // the platform's light, warmer than the car's: over the station outside only (under the car's interior and the leaves:
+  // what shows through the doorway and the windows), while the car is in the station; a multiply that takes the blue
+  // out, a screen that gives the warmth back its light
+  const warmK = (t) => { const s = t / FPS; return 1 - ramp(s, T1 + Td * 0.8, T1 + Td * 0.98) + ramp(s, Ttun - 0.2, Ttun + 0.6); };
+  Cm.shape("the platform's warm light · multiply", [group("w", [rect(W * 1.4, H * 1.4, W / 2, H / 2), fill("#ffdfb2", 100)])], { parent: cam, bm: "multiply", ks: { o: bake(0, op, (t) => Math.round(100 * warmK(t)), 2, 1e-3, 0.5) } });
+  Cm.shape("the platform's warm light · screen", [group("w", [rect(W * 1.4, H * 1.4, W / 2, H / 2), fill("#ffa255", 100)])], { parent: cam, bm: "screen", ks: { o: bake(0, op, (t) => Math.round(24 * warmK(t)), 2, 1e-3, 0.5) } });
   // the station outside: near (the platform) and far (the far wall), sharp at rest, blurred when moving
   const wSharp = (t) => clamp((3 - v(t)) / 3);
   const strip = (id, o) => Cm.imgLayer(id, id, { parent: cam, ks: { p: bake(0, op, (t) => [A[id].x + off(t) * A[id].pxm, A[id].y], 1, 1e-3, 0.4), o } });
@@ -139,44 +157,22 @@ function inside(set) {
   Cm.shape("tunnel lamps", lamps.map((s0, i) => group("lamp " + i, [
     ell(streak + 40, 30, 0, 0), gfill({ type: 2, s: [0, 0], e: [streak / 2 + 20, 0], stops: [[0, "#fff6e4"], [0.4, "#ffd79a"], [1, "#ffb860"]], alphas: [[0, 1], [0.4, 0.9], [1, 0]] }),
     ell(streak * 3, 260, 0, 0), gfill({ type: 2, s: [0, 0], e: [streak * 1.5, 0], stops: [[0, "#ffc27a"], [1, "#ffc27a"]], alphas: [[0, 0.35], [1, 0]] })],
-    { p: { kf: [[sec(s0 - 0.12), [-W * 0.6, lampY]], [sec(s0 + 0.12), [W * 1.6, lampY]]] } })), { parent: cam, ks: { o: bake(0, op, (t) => (inStation(t) ? 0 : 100), 1) } });
+    { p: { kf: [[sec(s0 - 0.12), [-W * 0.6, lampY]], [sec(s0 + 0.12), [W * 1.6, lampY]]] } })), { parent: cam, ks: { o: bake(0, op, (t) => (inStation(t) ? 0 : 70), 1) } });
   const cables = [0.55, 0.62, 0.7, 0.78, 2.15, 2.22].map((y, i) => group("cable " + i, [rect(W * 1.4, 3 + (i % 3), W / 2, P.horizon - (y - S.cam.pos[1]) * pxmT), fill(i < 4 ? "#2a2b2c" : "#1f2021", 100)]));
   Cm.shape("tunnel wall", [...cables, group("wall", [rect(W * 1.4, H * 1.4, W / 2, H / 2), gfill({ type: 1, s: [0, 0], e: [0, H], stops: [[0, "#121314"], [0.45, "#1a1b1c"], [1, "#0d0d0e"]] })])], { parent: cam });
   Cm.marker("loop", 0, op);
   return Cm.json();
 }
 
-// ---------- shot 1: the platform: the far wall's posters, passers-by, a slow breath of the camera ----------
+// ---------- shot 1: the platform: the far wall's posters, a slow breath of the camera ----------
 function platform(set) {
   const S = SHOTS.platform, P = camPx("platform"), PP = PL.platform, W = S.W, H = S.H, END = 12, op = sec(END);
   const Cm = new Comp({ w: W, h: H, op, fr: FPS, nm: "metro-platform" });
   asset(Cm, set, "p-bg");
   vignette(Cm, W, H, 0.4);
   const cam = drift(Cm, W, H, { s: 1.4, px: 6, py: 2 });
-  const th = (S.cam.yaw * Math.PI) / 180;
-  // passers-by: [walker, z, dir, v, enter (s)]
-  const WALK = [[0, -0.55, 1, 1.5, 1.0], [1, -1.15, -1, 1.35, 4.6], [2, -0.85, 1, 1.25, 8.6]];
-  // each walker: one walk cycle (6 poses) as a precomp, played on a loop by a time remap (a saw: two keys a step),
-  // carried across the frame by a null; and again flipped about the feet, faint: the floor's reflection
-  for (const [w, z, dir, vv, t0] of WALK) {
-    const fr = Array.from({ length: 6 }, (_, f) => `p-w${w}-${f}`).filter((id) => PP[id]);
-    if (!fr.length) continue;
-    fr.forEach((id) => asset(Cm, set, id));
-    const depth = (S.cam.pos[2] - z) * Math.cos(th), pxm = P.f / depth, foot = PP[fr[0]].foot;
-    const wmax = Math.max(...fr.map((id) => PP[id].s2.w / PP[id].s2.k));
-    const x0 = dir > 0 ? -wmax / 2 - 40 : W + wmax / 2 + 40, x1 = dir > 0 ? W + wmax / 2 + 40 : -wmax / 2 - 40;
-    const dur = Math.abs(x1 - x0) / (vv * pxm), f0 = sec(t0), f1 = Math.min(op - 1, sec(t0 + dur));
-    const PER = Math.round(1.08 * FPS), cyc = "cycle-" + w;
-    const layers = [], PAD = 1600; Cm.assets.push({ id: cyc, layers });
-    const padN = Cm.nul("pad", { into: layers, ks: { p: [PAD, PAD] } }); // (a precomp clips to its box: the poses sit PAD px in)
-    fr.forEach((id, j) => Cm.imgLayer(`pose ${j}`, id, { into: layers, parent: padN, ip: Math.round((j * PER) / fr.length), op: Math.round(((j + 1) * PER) / fr.length), ks: { p: [PP[id].x - foot[0], PP[id].y] } }));
-    const tmK = []; for (let t = f0; t < f1; t += PER) { tmK.push([t, 0]); tmK.push([Math.min(f1, t + PER - 1), (PER - 1) / FPS, "hold"]); }
-    const walker = Cm.nul("walker " + w, { parent: cam, ip: f0, op: f1, ks: { p: { kf: [[f0, [x0, 0]], [f1, [x0 + (x1 - x0) * ((f1 - f0) / sec(dur)), 0]]] } } });
-    const inst = (nm, parent, o = {}) => { const L = Cm.base(0, nm, { parent, ip: f0, op: f1, ...o, ks: { ...(o.ks || {}), a: [PAD, PAD] } }); L.refId = cyc; L.w = W + 2 * PAD; L.h = H + 2 * PAD; L.tm = { a: 1, k: tmK.map(([t, v, e], i) => { const k = { t, s: [v] }; if (i < tmK.length - 1) { if (e === "hold") k.h = 1; else { k.o = { x: [0], y: [0] }; k.i = { x: [1], y: [1] }; } } return k; }) }; return Cm.add(L); };
-    const mirror = Cm.nul("walker " + w + " · mirror", { parent: walker, ip: f0, op: f1, ks: { a: [0, foot[1]], p: [0, foot[1]], s: [100, -100] } });
-    inst("passer-by " + w, walker);
-    inst("passer-by " + w + " · reflected", mirror, { ks: { o: 20 } });
-  }
+  // (TASK-070, Daniel: the hooded passers-by read as ghosts. They are gone: the frame is the posters, still, with the
+  // camera's slow breath and the light of a train on the other track sliding across the frames' glass)
   // a train passes on the other track, behind us: its lit windows slide across the frames' glass (a reflection, faint)
   const quads = NEAR.map((f) => { const h = f.w / AR[f.kind], y0 = f.yTop - h, z = WALLZ + 0.107; return [[f.x - f.w / 2, f.yTop], [f.x + f.w / 2, f.yTop], [f.x + f.w / 2, y0], [f.x - f.w / 2, y0]].map(([x, y]) => proj("platform", [x, y, z]).slice(0, 2)); })
     .filter((q) => q.some(([x]) => x > -50 && x < W + 50));
@@ -190,6 +186,7 @@ function platform(set) {
   return Cm.json();
 }
 
+// (TASK-093: one carriage again, the calm one; the TASK-070 variants and the ?metro switch are gone)
 const BUILDERS = { train, inside, platform };
 const which = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(BUILDERS);
 for (const shot of which) {

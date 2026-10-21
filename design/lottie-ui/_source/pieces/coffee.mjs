@@ -1,17 +1,24 @@
 // 6 · the website's coffee stop (TASK-067, Daniel: "acolo unde este scena de la Two Min, să avem o animație cu Lottie,
 // care să se încarce instant"). The drive's coffee stop, drawn as a street elevation in the studio's line: the Cromatic
 // villa with the red mansard (Strada George Călinescu 54) across from Two Minutes (Strada Constantin Aricescu 50A), the
-// festoon between them, the drive's van at the kerb. The Two Minutes marks are the real artwork, traced from the box's
+// festoon between them, the yellow Dacia at the kerb. The Two Minutes marks are the real artwork, traced from the box's
 // print file (~/Clienti/Two Min/04_Livrabile-finale/CU_TWOMIN_165x165x55_BxNo#101515_BTG24112025A.pdf: the stacked
 // TWO MIN and the II' sign, pieces/tm-marks.json); the boxes are the shop's green, pink and blue.
+// TASK-071 (beta 4.0, Daniel: "hai să punem Dacia galbenă", "plantează jocul arcade acolo, în fața Two Minutes",
+// "asigură-te că e și rulota, în dreapta"): the van is the map's yellow Dacia 1300 (src/app.js buildDacia1300: Dacia
+// yellow, chrome bumpers with black over-riders, the chrome side trim, red seats) with a roof rack for the boxes; the
+// map's arcade cabinet of "2 Minutes 2 Fight w/ I O N" (deep purple, the gold side trims, the three buttons, the game's
+// pixel 2M2F on its marquee, two little fighters boxing on its screen) stands on the pavement at the shop's left; the
+// map's caravan (cream, its tan stripe, one axle, the hitch) is parked on the right, and rocks a hair as the Dacia goes by.
 // One loop of 13 s that starts and ends on the same frame, the still (the website paints that frame as SVG with its
-// HTML: lib/still.mjs; reduced motion keeps it):
-//   0.0 s  the four double espressos on the sill, steam rising, the festoon breathing
-//   1.5 s  the cups are drunk, one after another; the top shelf's three boxes hop onto the van's roof
-//   3.9 s  the van pulls away (its nose lifts, the wheels roll with the road)
+// HTML: lib/still.mjs; reduced motion keeps it); the website plays it on a loop while it is on screen:
+//   0.0 s  the four double espressos on the sill, steam rising, the festoon breathing, the fight on the arcade's screen
+//   1.5 s  the cups are drunk, one after another; the top shelf's three boxes hop onto the Dacia's roof rack
+//   3.9 s  the Dacia pulls away (its nose lifts, the wheels roll with the road), past the caravan
 //   5.6 s  three new boxes leave the mansard's window, one by one, and land on the shelf (a squash, a settle)
-//   7.8 s  the van comes back round and stops (its nose dips); 10 s: four doubles again, the counter 1, 2, 3, 4
-// Two cuts: wide (1280 x 720, laptops) and tall (720 x 900, phones). No words: only digits and the client's marks.
+//   7.8 s  the Dacia comes back round and stops (its nose dips); 10 s: four doubles again, the counter 1, 2, 3, 4
+// Two cuts: wide (1280 x 720, laptops) and tall (720 x 840, phones: the street a little smaller, so the cabinet and the
+// caravan are in it too). No words: only digits and the client's and the game's marks.
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -21,20 +28,23 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const MARKS = JSON.parse(fs.readFileSync(path.join(here, "tm-marks.json"), "utf8"));
 
 export const CAB = {
-  wide: { name: "wide", w: 1280, h: 720, sw: 2.1, ground: 566, kerb: 598, lane: 664, villa: [86, 1], shop: [766, 1], park: 598, vanY: 692, sun: [1158, 112], clouds: [[318, 104, 1], [700, 66, 0.78]],
-    sky: [[0, 300, 92, 210], [452, 562, 260, 230], [560, 700, 330, 300], [1146, 1280, 250, 268], [1210, 1280, 196, 330]] },
-  // the phone's cut: closer, the villa half out of the frame on the left (its mansard and its door in), the shop whole
-  tall: { name: "tall", w: 720, h: 840, sw: 3, ground: 592, kerb: 626, lane: 716, villa: [-118, 1], shop: [300, 1], park: 352, vanY: 800, sun: [622, 92], clouds: [[150, 96, 0.8], [436, 52, 0.62]],
-    sky: [[192, 312, 330], [652, 720, 290]] }
+  // villa / shop / arcade / caravan: [x, scale]; car: the Dacia's scale; park: where it stands (its centre)
+  wide: { name: "wide", w: 1280, h: 720, sw: 2.1, ground: 566, kerb: 598, lane: 664, villa: [56, 1], shop: [690, 1], arcade: [656, 1], caravan: [1188, 0.82], car: 1, park: 560, vanY: 692, sun: [1158, 112], clouds: [[300, 104, 1], [640, 62, 0.78]],
+    sky: [[0, 250, 92, 210], [420, 532, 260, 230], [530, 664, 330, 300], [1084, 1200, 250, 268], [1170, 1280, 196, 330]] },
+  // the phone's cut: closer, the villa half out of the frame on the left (its mansard and its door in), the arcade, the
+  // shop whole, the caravan's front half coming in from the right (its hitch, its window)
+  tall: { name: "tall", w: 720, h: 840, sw: 3, ground: 616, kerb: 650, lane: 734, villa: [-114, 0.86], shop: [236, 0.86], arcade: [207, 0.86], caravan: [700, 0.8], car: 0.86, park: 352, vanY: 810, sun: [628, 96], clouds: [[150, 104, 0.8], [436, 60, 0.62]],
+    sky: [[140, 250, 300], [500, 604, 372], [600, 720, 262]] }
 };
-
 const T = 780; // the loop, frames at 60 a second
 const INK = "#0d0c09", PAPER = "#FFFFFF";
 const PAL = {
   sky: "#EAF2F6", ground: "#EFE7DD", kerbTop: "#F7F1EA", road: "#E0907E", dash: "#FFFFFF",
   wall: "#F6EBDC", roof: C.coral, room: "#4A3426", glass: "#C9E2EF", frame: "#FFFFFF", door: C.green, step: "#E2D6C6", lit: C.yellow,
   shopUp: "#F2B4A3", shopFront: "#141414", warm: "#FFE7B4", warmDoor: "#FFD27A", wood: "#C98A55", awnA: "#E1251B", awnB: "#FFFFFF",
-  van: "#2FB3A8", vanRoof: "#FFFFFF", stripe: C.yellow, tyre: "#1d1b17", hub: "#FFFFFF",
+  dacia: "#F6BC0C", chrome: "#D9DDE2", seat: "#C8171B", tyre: "#1d1b17", hub: "#FFFFFF",
+  arc: "#2a1f4a", arcDeep: "#1d1638", arcPanel: "#3a2f6a", arcDusk: "#5a2a6a", arcSun: "#e0622a", arcGold: "#FED012",
+  cvBody: "#F2EEE2", cvRoof: "#E4DDCC", cvStripe: "#B98A54", cvDoor: "#EAE3D2",
   bulb: "#FFE27A", halo: C.yellow, cup: "#FFFFFF", cupBand: "#E1251B", badge: C.yellow,
   boxes: ["#2F9E4F", "#F2A9C4", "#119BFE"], blocks: ["#C3B6E2", "#F8D3B4", "#F4C9C2", "#C3B6E2", "#F8D3B4"]
 };
@@ -145,27 +155,100 @@ function shop(sw) {
   return items;
 }
 
-/* ======================= the van (facing right, standing on 0, 0, 236 long) ======================= */
-function vanBody(sw) {
+/* ======================= the Dacia (the map's yellow 1300, facing right, standing on 0, 0, 240 long) =======================
+   Its bones as on the map (src/app.js buildDacia1300: the 1300 re-fitted to its photo, a 2.44 m wheelbase, the nose 0.72 m
+   ahead of the front axle, the tail 0.92 m behind the rear one): the long bonnet and boot, the upright glasshouse on thin
+   pillars, chrome bumpers with black rubber over-riders, the chrome trim along the side, red seats behind the glass; a
+   roof rack (the boxes ride on it) */
+const AXF = 78, AXB = -65, WR = 18; // the axles, the wheels' radius
+function daciaBody(sw) {
   return [
-    group("lamps", [ellipse([12, 12], [106, -44]), ink(sw * 0.8), solid(C.yellow), rect([6, 14], [-114, -46], 2), ink(sw * 0.8), solid(C.coral)]),
-    group("bumpers", [rect([30, 9], [104, -27], 4), rect([26, 9], [-108, -27], 4), solid(INK)]),
-    group("arches", [ellipse([58, 58], [-70, -22]), ellipse([58, 58], [70, -22]), solid(INK)]),
-    group("handle", [rect([14, 4], [-8, -56], 2), solid(INK)]),
-    group("windows", [
-      rect([42, 32], [-76, -82], 6), rect([42, 32], [-24, -82], 6), ink(sw), solid(PAL.glass),
-      shp({ c: true, v: [[22, -98], [78, -98], [104, -66], [22, -66]], i: [[0, 0], [-4, 0], [0, 0], [0, 0]], o: [[0, 0], [4, 2], [0, 0], [0, 0]] }), ink(sw), solid(PAL.glass)
+    group("lamps", [rect([6, 11], [117.5, -42], 2), ink(sw * 0.8), solid("#FFF3C2"), rect([6, 12], [-117.5, -41], 2), ink(sw * 0.8), solid("#E1251B")]),
+    group("over-riders", [rect([5, 13], [104, -24], 2), rect([5, 13], [-104, -24], 2), solid(INK)]),
+    group("bumpers", [rect([34, 8], [110, -24], 4), rect([34, 8], [-110, -24], 4), ink(sw * 0.8), solid(PAL.chrome)]),
+    group("arches", [ellipse([50, 50], [AXF, -WR]), ellipse([50, 50], [AXB, -WR]), solid(INK)]),
+    group("handles", [rect([11, 3.5], [-18, -46], 1.5), rect([11, 3.5], [36, -46], 1.5), solid(INK)]),
+    group("doors", [shp(poly([[-60, -54], [-60, -40]], false)), shp(poly([[-6, -54], [-6, -16]], false)), shp(poly([[48, -54], [48, -42]], false)), ink(sw * 0.6, 60)]),
+    group("trim", [rect([228, 3.5], [0, -36], 1.5), ink(sw * 0.45), solid(PAL.chrome)]),
+    group("rack", [rect([96, 4.5], [-9, -91.5], 2), ink(sw * 0.8), solid(PAL.chrome), ...[-48, -9, 30].map((x) => rect([3.5, 8], [x, -87], 1)), ink(sw * 0.6), solid(PAL.chrome)]),
+    group("seats", [rect([11, 10], [-30, -60], 3), rect([10, 12], [22, -61], 3), ink(sw * 0.5), solid(PAL.seat)]),
+    group("glass", [
+      shp(poly([[-54, -56], [-38, -79], [-10, -79], [-10, -56]])), shp(poly([[-2, -56], [-2, -79], [18, -79], [40, -56]])), ink(sw * 0.9), solid(PAL.glass)
     ]),
-    group("stripe", [rect([234, 12], [-3, -48]), ink(sw * 0.8), solid(PAL.stripe)]),
-    group("roof", [rect([170, 12], [-12, -114], 5), ink(sw), solid(PAL.vanRoof)]),
-    rect([236, 88], [-3, -64], 24), ink(sw), solid(PAL.van)
+    group("cabin", [shp(poly([[-64, -54], [-42, -84], [22, -84], [52, -54]])), ink(sw), solid(PAL.dacia)]),
+    rect([240, 42], [0, -35], 12), ink(sw), solid(PAL.dacia)
   ];
 }
-const wheel = (sw) => [
-  group("spokes", [shp(poly([[0, -9], [0, 9]], false)), shp(poly([[-7.8, 4.5], [7.8, -4.5]], false)), shp(poly([[-7.8, -4.5], [7.8, 4.5]], false)), ink(sw * 0.8)]),
-  group("hub", [ellipse([20, 20], [0, 0]), ink(sw * 0.8), solid(PAL.hub)]),
-  ellipse([44, 44], [0, 0]), ink(sw), solid(PAL.tyre)
+const daciaWheel = (sw) => [
+  group("nuts", [...[0, 1, 2, 3].map((k) => ellipse([3.2, 3.2], [Math.cos((k * Math.PI) / 2) * 7.5, Math.sin((k * Math.PI) / 2) * 7.5])), solid(INK)]),
+  group("cap", [ellipse([10, 10], [0, 0]), ink(sw * 0.6), solid(PAL.hub)]),
+  group("rim", [ellipse([24, 24], [0, 0]), ink(sw * 0.8), solid(PAL.chrome)]),
+  ellipse([WR * 2, WR * 2], [0, 0]), ink(sw), solid(PAL.tyre)
 ];
+
+/* ======================= the arcade cabinet (the map's, r201: front on, standing on 0, 0, 62 wide, 113 tall) ======================= */
+// the game's own pixel letters (src/app.js FIGHT_GLYPHS, the 2 as on the cabinet) and its colours, row by row
+const GLYPH = { 2: "..###..|.##.##.|##...##|....##.|..###..|.##....|#######", M: "#...#|##.##|#.#.#|#.#.#|#...#|#...#|#...#", F: "#####|#....|#....|####.|#....|#....|#...." };
+const GLYPH_ROW = ["#FFF3A6", "#FED012", "#FED012", "#FFB21A", "#FF9A1F", "#FF7A1F", "#F65342"];
+function pixelWord(word, cx, cy, c) {
+  const rows = [...word].map((ch) => GLYPH[ch].split("|")), W = rows.reduce((w, r) => w + r[0].length + 1, -1);
+  const x0 = cx - (W * c) / 2, y0 = cy - (7 * c) / 2, byRow = GLYPH_ROW.map(() => []), sh = [];
+  let x = x0;
+  for (const r of rows) { r.forEach((row, ry) => { for (let rx = 0; rx < row.length; rx++) if (row[rx] === "#") { byRow[ry].push(rect([c, c], [x + (rx + 0.5) * c, y0 + (ry + 0.5) * c])); sh.push(rect([c, c], [x + (rx + 1) * c, y0 + (ry + 1) * c])); } }); x += (r[0].length + 1) * c; }
+  return [...byRow.map((rs, i) => group("row " + i, [...rs, solid(GLYPH_ROW[i])])), group("shade", [...sh, solid("#7a1a2a")])];
+}
+const SCR = { x0: -21, x1: 21, y0: -91, y1: -59 }; // the screen
+function arcadeBody(sw) {
+  const sc = (y0, y1, col) => rect([SCR.x1 - SCR.x0, y1 - y0], [0, (y0 + y1) / 2]), dusk = [[-91, -80, PAL.arcDeep], [-80, -69, PAL.arcDusk], [-69, -59, PAL.arcSun]];
+  return [
+    group("marquee", [...pixelWord("2M2F", 0, -104.5, 1.7), rect([64, 19], [0, -104.5], 3.5), ink(sw), solid(PAL.arcDeep)]),
+    group("floor", [rect([SCR.x1 - SCR.x0, 3], [0, -60.5]), solid(PAL.arcDeep)]),
+    group("bars", [rect([15, 2.2], [-11.5, -87.5], 1), rect([15, 2.2], [11.5, -87.5], 1), solid(PAL.arcGold)]),
+    ...dusk.map(([a, b, col]) => group("screen", [sc(a, b), solid(col)])),
+    group("bezel", [rect([50, 40], [0, -75], 5), ink(sw), solid(INK)]),
+    group("stick", [ellipse([7, 7], [-15, -60]), ink(sw * 0.7), solid("#F65342"), shp(poly([[-15, -57], [-15, -50]], false)), ink(sw * 0.9)]),
+    group("buttons", [ellipse([5.5, 5.5], [0, -49.5]), solid("#F65342"), ellipse([5.5, 5.5], [9, -49.5]), solid(PAL.arcGold), ellipse([5.5, 5.5], [18, -49.5]), solid("#119BFE")]),
+    group("panel", [rect([64, 9], [0, -49], 3), ink(sw), solid(PAL.arcPanel)]),
+    group("coin door", [rect([3.5, 8], [-4.5, -28], 1), rect([3.5, 8], [4.5, -28], 1), solid(PAL.arcDeep), rect([22, 24], [0, -27], 3), ink(sw * 0.8), solid(PAL.arcPanel)]),
+    group("kick", [rect([58, 9], [0, -4.5], 2), ink(sw), solid(INK)]),
+    group("trims", [rect([5.5, 96], [-28, -50], 2), rect([5.5, 96], [28, -50], 2), ink(sw * 0.8), solid(PAL.arcGold)]),
+    rect([56, 104], [0, -52], 4), ink(sw), solid(PAL.arc)
+  ];
+}
+// the two fighters on its screen (7 x 8 cells, facing each other): the crew in blue, I O N in his yellow, red gloves
+const FIGHTER = {
+  idle: ["..HH...", "..HH...", ".BBBGG.", ".BBB...", "..BB...", "..LL...", ".L..L..", ".L..L.."],
+  hit: ["..HH...", "..HH...", ".BBBBGG", ".BBB...", "..BB...", "..LL...", ".L..L..", ".L..L.."]
+};
+function fighter(rows, body, mirror, c = 1.5) {
+  const col = { H: "#FFD8CF", B: body, G: "#F65342", L: "#F3EEFE" }, by = {};
+  const x0 = mirror ? 13 - 7 * c : -13, y0 = -62 - 8 * c;
+  rows.forEach((row, ry) => { [...row].forEach((ch, rx) => { if (!col[ch]) return; const x = mirror ? 6 - rx : rx; (by[ch] = by[ch] || []).push(rect([c + 0.05, c + 0.05], [x0 + (x + 0.5) * c, y0 + (ry + 0.5) * c])); }); });
+  return Object.entries(by).map(([k, rs]) => group(k, [...rs, solid(col[k])]));
+}
+
+/* ======================= the caravan (the map's, facing left: its hitch towards the shop; standing on 0, 0) ======================= */
+function caravanShapes(sw) {
+  return [
+    group("steady", [shp(poly([[84, -26], [88, 0]], false)), ink(sw)]),
+    group("jockey", [ellipse([12, 12], [-128, -6]), ink(sw * 0.8), solid(PAL.tyre), rect([4.5, 24], [-128, -23], 1.5), ink(sw * 0.8), solid(PAL.chrome)]),
+    group("cover", [rect([22, 15], [-113, -40], 4), ink(sw * 0.8), solid(PAL.cvRoof)]),
+    group("hitch", [shp(poly([[-98, -40], [-142, -30], [-98, -26]], false)), ink(sw), ellipse([9, 9], [-143, -30]), ink(sw * 0.8), solid(INK)]),
+    group("wheel", [ellipse([10, 10], [8, -20]), ink(sw * 0.6), solid(PAL.hub), ellipse([26, 26], [8, -20]), ink(sw * 0.8), solid(PAL.chrome), ellipse([40, 40], [8, -20]), ink(sw), solid(PAL.tyre)]),
+    group("arch", [ellipse([50, 50], [8, -20]), solid(INK)]),
+    group("step", [rect([30, 6], [42, -21], 2), ink(sw * 0.8), solid(PAL.chrome)]),
+    group("handle", [rect([3.5, 11], [53, -62], 1.5), solid(INK)]),
+    group("porthole", [ellipse([16, 16], [42, -92]), ink(sw * 0.9), solid(PAL.glass)]),
+    group("door", [rect([34, 80], [42, -67], 7), ink(sw), solid(PAL.cvDoor)]),
+    group("back window", [rect([22, 24], [80, -90], 6), ink(sw * 0.9), solid(PAL.glass)]),
+    group("curtains", [rect([11, 30], [-80, -88], 3), rect([11, 30], [-36, -88], 3), ink(sw * 0.6), solid(PAL.awnA)]),
+    group("window", [shp(poly([[-58, -105], [-58, -71]], false)), ink(sw * 0.6, 60), rect([60, 34], [-58, -88], 9), ink(sw), solid(PAL.warm)]),
+    group("stripe", [rect([194, 11], [0, -46]), ink(sw * 0.8), solid(PAL.cvStripe)]),
+    group("vent", [rect([30, 8], [26, -131], 2.5), ink(sw * 0.8), solid(PAL.cvRoof)]),
+    group("roof line", [shp(poly([[-78, -112], [78, -112]], false)), ink(sw * 0.6, 45)]),
+    rect([200, 102], [0, -76], 32), ink(sw), solid(PAL.cvBody)
+  ];
+}
 
 /* ======================= the cups, the steam, the counter ======================= */
 function cupShapes(sw) {
@@ -256,18 +339,18 @@ export function buildCoffee(Ty, L) {
     ], { ip: t2, op: t2 + 18, ks: { p: land } });
   }
 
-  // ---- the van: parked, loaded, away, back ----
-  const R = 22, deg = 180 / Math.PI, park = L.park, away = L.w + 160, from = -170;
+  // ---- the Dacia: parked, loaded, away, back ----
+  const ck = L.car, deg = 180 / Math.PI, park = L.park, away = L.w + 170 * ck, from = -170 * ck;
   const xK = clean([[0, park, E.hold], [252, park, ACC], [338, away, E.hold], [470, from, DEC], [566, park + 10, E.inOut], [580, park, E.hold], [T, park]]);
-  const van = Cm.nul("van", { ks: { p: { x: xK, y: L.vanY } } });
-  // the top shelf's boxes, which leave with the van: on the shelf (in the van's frame: it stands still till 252), hop
-  // onto its roof, ride away. Over the van, under the cups
-  const ROOF = [[-46, -120], [-6, -120], [-26, -150]];
-  const give = []; for (let j = 0; j < 3; j++) { const tl = 156 + 22 * j + 30; give.push([tl + 1, [100, 100], E.out], [tl + 4, [101, 96.5], E.out], [tl + 14, [100, 100], E.hold]); }
-  const body = Cm.nul("van · body", { parent: van, ks: { s: clean([[0, [100, 100], E.hold], ...give, [T, [100, 100]]]), r: clean([[0, 0, E.hold], [250, 0, E.inOut], [264, -2.6, E.inOut], [300, -0.8, E.inOut], [338, 0, E.hold], [556, 0, E.inOut], [570, 3, E.inOut], [580, -1.2, E.inOut], [592, 0, E.hold], [T, 0]]) } });
+  const van = Cm.nul("dacia", { ks: { p: { x: xK, y: L.vanY }, s: [100 * ck, 100 * ck] } });
+  // the top shelf's boxes, which leave with the car: on the shelf (in the car's frame: it stands still till 252), hop
+  // onto its roof rack, ride away. Over the car, under the cups
+  const ROOF = [[-28, -94], [10, -94], [-9, -124]];
+  const give = []; for (let j = 0; j < 3; j++) { const tl = 156 + 22 * j + 30; give.push([tl + 1, [100, 100], E.out], [tl + 4, [101, 96], E.out], [tl + 14, [100, 100], E.hold]); }
+  const body = Cm.nul("dacia · body", { parent: van, ks: { s: clean([[0, [100, 100], E.hold], ...give, [T, [100, 100]]]), r: clean([[0, 0, E.hold], [250, 0, E.inOut], [264, -2.4, E.inOut], [300, -0.8, E.inOut], [338, 0, E.hold], [556, 0, E.inOut], [570, 2.8, E.inOut], [580, -1.1, E.inOut], [592, 0, E.hold], [T, 0]]) } });
   for (let j = 0; j < 3; j++) {
-    const shelf = S(SLOT(j), SHELF_Y), from0 = [shelf[0] - park, shelf[1] - L.vanY], to = ROOF[j];
-    const t0 = 156 + 22 * j, t1 = t0 + 30, s0 = 100 * sk, sR = 100;
+    const shelf = S(SLOT(j), SHELF_Y), from0 = [(shelf[0] - park) / ck, (shelf[1] - L.vanY) / ck], to = ROOF[j];
+    const t0 = 156 + 22 * j, t1 = t0 + 30, s0 = (100 * sk) / ck, sR = 100;
     const pk = Math.min(from0[1], to[1]) - 44;
     Cm.shape(`leaving box · ${j + 1}`, [group("box", boxShapes(PAL.boxes[j], SW / sk))], {
       parent: body, op: 344,
@@ -278,22 +361,41 @@ export function buildCoffee(Ty, L) {
       }
     });
   }
-  // the wheels roll with the road: their turn is the distance over the radius, on the same keys as the van
-  const wK = xK.map(([t, x, e]) => [t, ((x - park) / R) * deg, e]);
-  for (const wx of [70, -70]) Cm.shape(`van · wheel ${wx > 0 ? "front" : "back"}`, [group("wheel", wheel(SW))], { parent: body, ks: { p: [wx, -22], r: clean(wK) } });
-  Cm.shape("van · body", [group("van", vanBody(SW))], { parent: body });
+  // the wheels roll with the road: their turn is the distance over the radius, on the same keys as the car
+  const wK = xK.map(([t, x, e]) => [t, ((x - park) / (WR * ck)) * deg, e]);
+  for (const wx of [AXF, AXB]) Cm.shape(`dacia · wheel ${wx > 0 ? "front" : "back"}`, [group("wheel", daciaWheel(SW / ck))], { parent: body, ks: { p: [wx, -WR], r: clean(wK) } });
+  Cm.shape("dacia · body", [group("dacia", daciaBody(SW / ck))], { parent: body });
   // two puffs as it pulls away, left behind in the street
   for (let n = 0; n < 2; n++) {
-    const t0 = 254 + n * 12, p0 = [park - 122, L.vanY - 26];
-    Cm.shape(`van · puff ${n + 1}`, [group("puff", [ellipse([16, 14], [0, 0]), ink(SW * 0.8), solid(PAPER)])], {
+    const t0 = 254 + n * 12, p0 = [park - 124 * ck, L.vanY - 16 * ck];
+    Cm.shape(`dacia · puff ${n + 1}`, [group("puff", [ellipse([16, 14], [0, 0]), ink(SW * 0.8), solid(PAPER)])], {
       ip: t0, op: t0 + 34,
       ks: { p: clean([[t0, p0, E.out], [t0 + 34, [p0[0] - 46 - n * 14, p0[1] - 18]]]), s: clean([[t0, [30, 30], E.out], [t0 + 34, [150, 150]]]), o: clean([[t0, 100, E.hold], [t0 + 18, 100, E.linear], [t0 + 34, 0]]) }
     });
   }
-  Cm.shape("van · shadow", [group("shadow", [ellipse([236, 14], [0, 0]), solid(INK, 16)])], { parent: van });
+  Cm.shape("dacia · shadow", [group("shadow", [ellipse([244, 14], [0, 0]), solid(INK, 16)])], { parent: van });
+
+  // ---- the arcade cabinet of "2 Minutes 2 Fight w/ I O N" on the pavement at the shop's left (the map's, r201): the
+  // fight on its screen (a jab each way, every second), its coin slots and its marquee breathing ----
+  const [ax, ak] = L.arcade, AP = { p: [ax, G], s: [100 * ak, 100 * ak] }, swA = SW / ak, FP = 60;
+  const blink = (on0, on1) => { const k = [[0, 0, E.hold]]; for (let t = 0; t < T; t += FP) k.push([t + on0, 100, E.hold], [t + on1, 0, E.hold]); k.push([T, 0]); return clean(k); };
+  const idleO = (on0, on1) => { const k = [[0, 100, E.hold]]; for (let t = 0; t < T; t += FP) k.push([t + on0, 0, E.hold], [t + on1, 100, E.hold]); k.push([T, 100]); return clean(k); };
+  Cm.shape("arcade · jab (crew)", [group("f", fighter(FIGHTER.hit, "#119BFE", false))], { ks: { ...AP, o: blink(14, 22) } });
+  Cm.shape("arcade · guard (crew)", [group("f", fighter(FIGHTER.idle, "#119BFE", false))], { ks: { ...AP, o: idleO(14, 22) } });
+  Cm.shape("arcade · jab (I O N)", [group("f", fighter(FIGHTER.hit, PAL.arcGold, true))], { ks: { ...AP, o: blink(38, 46) } });
+  Cm.shape("arcade · guard (I O N)", [group("f", fighter(FIGHTER.idle, PAL.arcGold, true))], { ks: { ...AP, o: idleO(38, 46) } });
+  Cm.shape("arcade · coin lights", [group("lights", [rect([3.5, 8], [-4.5, -28], 1), rect([3.5, 8], [4.5, -28], 1), solid("#FF9A1F")], { o: periodic((u) => 15 + 85 * (0.5 + 0.5 * Math.cos(2 * Math.PI * u)), 78, { step: 6 }) })], { ks: AP });
+  Cm.shape("arcade", [group("cabinet", arcadeBody(swA))], { ks: AP });
+  Cm.shape("arcade · shadow", [group("shadow", [ellipse([70, 8], [0, 0]), solid(INK, 14)])], { ks: AP });
+
+  // ---- the caravan, on the right (the map's, by Two Minutes): it rocks a hair as the Dacia goes by ----
+  const [cx, cvk] = L.caravan, pass = 252 + 86 * Math.sqrt(Math.max(0, Math.min(1, (cx - 150 * cvk - park) / (away - park))));
+  const tr0 = Math.round(Math.min(330, pass));
+  Cm.shape("caravan", [group("caravan", caravanShapes(SW / cvk), { a: [8, 0], p: [8, 0], r: clean([[0, 0, E.hold], [tr0, 0, E.inOut], [tr0 + 7, -0.9, E.inOut], [tr0 + 18, 0.55, E.inOut], [tr0 + 30, -0.2, E.inOut], [tr0 + 40, 0, E.hold], [T, 0]]) })], { ks: { p: [cx, G], s: [100 * cvk, 100 * cvk] } });
+  Cm.shape("caravan · shadow", [group("shadow", [ellipse([236, 10], [-20, 0]), solid(INK, 12)])], { ks: { p: [cx, G], s: [100 * cvk, 100 * cvk] } });
 
   // ---- the festoon between the villa's eave and the shop's corner: the bulbs glow in a slow wave ----
-  const a = V(338, -306), b = S(-6, -328), sag = L.name === "tall" ? 34 : 50, NB = L.name === "tall" ? 5 : 8;
+  const a = V(338, -306), b = S(-6, -328), NB = Math.max(2, Math.round((b[0] - a[0]) / 36)), sag = NB < 4 ? 18 : 50;
   const at = (u) => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u + sag * 4 * u * (1 - u)];
   const mid = at(0.5);
   const wire = shp({ c: false, v: [a, b], o: [[(mid[0] - a[0]) * 0.66, (mid[1] + sag - a[1]) * 0.66], [0, 0]], i: [[0, 0], [(mid[0] - b[0]) * 0.66, (mid[1] + sag - b[1]) * 0.66]] });

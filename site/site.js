@@ -218,16 +218,14 @@
   }
 
   // ---- TASK-067: the coffee stop, drawn. The still (an SVG picture) is the page's; the Lottie (the map's player, in a worker) draws
-  // over it from the same frame once the section is near and the page has loaded, plays while the section is on screen
-  // (and the tab is), rests on that frame after three turns, starts again when it comes back into view; never with
-  // reduced motion. The round button pauses and plays it ----
+  // over it from the same frame once the section is near and the page has loaded, and plays while the section is on screen
+  // (and the tab is); never with reduced motion. TASK-071 (beta 4.0, Daniel): it loops for as long as it is on screen (no
+  // more resting after three turns). The round button pauses and plays it ----
   const rl = d.querySelector(".road-lottie");
   if (rl && !reduced && window.__czL !== false && "IntersectionObserver" in window && typeof Worker !== "undefined") {
     const ds = rl.dataset, pp = rl.querySelector(".rl-pp"), mqT = matchMedia("(max-width: 700px)");
-    const TURN = 13000, TURNS = 3;
-    // playing: the worker is drawing; resting: told to stop at the end of its turn (done once it has)
-    let piece = null, kind = "", busy = false, wanted = false, near = false, paused = false, auto = false, playing = false, started = false, resting = false, done = false, played = 0, since = 0, restT = 0;
-    // the button says what it does next: pause while it plays, play once it is paused or has rested
+    let piece = null, kind = "", busy = false, wanted = false, near = false, paused = false, playing = false, started = false;
+    // the button says what it does next: pause while it plays, play once it is paused
     const btn = (on) => { pp.setAttribute("aria-pressed", String(on)); pp.setAttribute("aria-label", on ? (RO ? "Pornește animația" : "Play the animation") : (RO ? "Oprește animația" : "Pause the animation")); };
     const load = () => (window.czL ? Promise.resolve() : new Promise((res) => {
       const C = (window.__CZL_CFG = window.__CZL_CFG || {});
@@ -235,22 +233,14 @@
       C.j["site-coffee-wide"] = ds.czlWide; C.j["site-coffee-tall"] = ds.czlTall;
       const s = d.createElement("script"); s.src = ds.czlJs; s.async = true; s.onload = s.onerror = () => res(); d.head.appendChild(s);
     }));
-    const stopClock = () => { if (since) { played += performance.now() - since; since = 0; } clearTimeout(restT); };
-    const startClock = () => { if (resting) return; since = performance.now(); clearTimeout(restT); restT = setTimeout(rest, Math.max(0, TURN * TURNS - played)); };
-    // after three turns the worker plays to the end of the turn it is in and stops there: on the still
-    function rest() { stopClock(); if (!piece) return; resting = true; try { piece.anim.setLoop(false); } catch (e) {} }
-    const fresh = () => { played = 0; resting = done = false; started = true; piece.seg([0, piece.data.op], true); };
     const sync = () => {
       if (!piece) return;
       const go = near && !paused && !d.hidden;
       if (go && !playing) {
-        if (resting && done) { if (!fresh.armed) return; fresh.armed = false; fresh(); }
-        else if (!started) fresh();
+        if (!started) { started = true; piece.seg([0, piece.data.op], true); }
         else piece.anim.play();
-        playing = true; startClock();
-      } else if (!go && playing) { playing = false; stopClock(); piece.anim.pause(); }
-      // once it has rested on its own, it starts again when the section comes back on screen (or the button asks)
-      if (!near && done && auto) { auto = paused = false; btn(false); fresh.armed = true; }
+        playing = true;
+      } else if (!go && playing) { playing = false; piece.anim.pause(); }
     };
     const mount = async () => {
       if (busy) return;
@@ -258,13 +248,12 @@
       await load();
       const want = mqT.matches ? "tall" : "wide";
       if (!window.czL || (piece && kind === want)) { busy = false; return; }
-      if (piece) { piece.destroy(); piece = null; playing = started = resting = done = false; stopClock(); played = since = 0; }
+      if (piece) { piece.destroy(); piece = null; playing = started = false; }
       const r = rl.getBoundingClientRect();
       const p = await window.czL.mount("site-coffee-" + want, { host: rl, w: Math.max(1, r.width), h: Math.max(1, r.height), cls: "rl-czl" });
       busy = false;
       if (!p) return;
       piece = p; kind = want;
-      p.anim.addEventListener?.("complete", () => { if (resting) { done = true; playing = false; auto = paused = true; btn(true); } });
       p.at(0);
       pp.hidden = false;
       sync();
@@ -277,12 +266,7 @@
     new IntersectionObserver((es) => { near = es.some((e) => e.isIntersecting); sync(); }, { threshold: 0.15 }).observe(rl);
     d.addEventListener("visibilitychange", sync);
     mqT.addEventListener?.("change", () => { if (piece) mount(); });
-    pp.addEventListener("click", () => {
-      paused = !paused; auto = false;
-      btn(paused);
-      if (!paused && done) fresh.armed = true;
-      sync();
-    });
+    pp.addEventListener("click", () => { paused = !paused; btn(paused); sync(); });
   }
 
   // a thin reading progress bar

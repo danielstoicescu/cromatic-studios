@@ -403,7 +403,9 @@ html:not(.embed) .page{padding-top:64px}
 .film{background:#0d0c09;border-color:#0d0c09}
 .film-frame{position:relative;width:min(100%,calc((100svh - 2 * var(--gutter) - 4px) * 16 / 9));aspect-ratio:16/9;margin-inline:auto}
 .film-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+figure.only-sm{display:none}
 @media (max-width:640px){
+  figure.only-sm{display:block}
   .row--wrap-sm>figure{flex-basis:calc(50% - var(--gutter) / 2)}
   .row--wrap-sm>figure.full-sm{flex-basis:100%}
   .hero-row{flex-wrap:wrap}
@@ -512,7 +514,7 @@ html:not(.embed) .page{padding-top:64px}
     <div class="chapter-side">
       <div>
         <span class="pill-title"><span class="pill pill--marketing">Super</span><span class="pill pill--accent">vibe</span></span>
-        <p class="chapter-text">The city line: “Hidratare corectă pentru un super vibe.” A hand holds the tube up on flat yellow, the way you hold it on your way out. The layout comes in landscape and portrait for the metro, and in a 2 x 0.8 m banner. Below, the posters where they ran, as animated mockups: on the platform, by the doors, on the train.</p>
+        <p class="chapter-text">The city line: “Hidratare corectă pentru un super vibe.” A hand holds the tube up on flat yellow, the way you hold it on your way out. The layout comes in landscape and portrait for the metro, and in a 2 x 0.8 m banner. Below, the posters where they ran, as animated mockups: on the train, on the platform, by the doors.</p>
         <ul class="deliverables">
           <li>Metro posters</li>
           <li>Banner</li>
@@ -523,44 +525,23 @@ html:not(.embed) .page{padding-top:64px}
     </div>
     <div class="chapter-media">
 <figure style="--r:1.778">
-  <div class="frame" data-czl="metro-platform"><img src="m:metro/platform-still" alt="Animated mockup: the landscape and portrait posters in lit frames on a metro station's track wall, people passing in front" width="1600" height="900" loading="lazy" decoding="async"></div>
+  <div class="frame" data-czl="metro-train" data-czl-at="300"><img src="m:metro/train-still" alt="Animated mockup: a metro train pulls into the station with the wide poster on the side of a car, opens and closes its doors, and pulls out" width="1600" height="900" loading="lazy" decoding="async"></div>
+  <figcaption>On the train, as a wrap</figcaption>
+</figure>
+<figure style="--r:1.778">
+  <div class="frame" data-czl="metro-platform"><img src="m:metro/platform-still" alt="Animated mockup: the landscape and portrait posters in lit frames on a metro station's track wall, the light of a passing train sliding across their glass" width="1600" height="900" loading="lazy" decoding="async"></div>
   <figcaption>Animated mockup: on the platform</figcaption>
 </figure>
 <div class="stack">
 <div class="row row--wrap-sm">
 <figure class="full-sm" style="--r:0.8">
-  <div class="frame" data-czl="metro-inside"><img src="m:metro/inside-still" alt="Animated mockup: inside a metro car, the portrait poster on the panel beside the doors, while the train leaves the station, runs through the tunnel and pulls in again" width="1080" height="1350" loading="lazy" decoding="async"></div>
+  <div class="frame" data-czl="metro-inside"><img src="m:metro/inside-still" alt="Animated mockup: inside a metro car, the portrait poster on the panel beside the doors; the doors open on the platform's warm light, then the train leaves, runs through the tunnel and pulls in again" width="1080" height="1350" loading="lazy" decoding="async"></div>
 </figure>
 <figure class="full-sm" style="--r:0.555">
   <div class="frame"><img src="m:litorsal/vibe-metro-portrait" alt="The portrait metro poster: the headline on top, the hand with the tube below" width="900" height="1621" loading="lazy" decoding="async"></div>
 </figure>
 </div>
 <figcaption>In the carriage, beside the doors, and the 50 x 90 cm poster itself</figcaption>
-</div>
-<figure style="--r:1.778">
-  <div class="frame" data-czl="metro-train" data-czl-at="300"><img src="m:metro/train-still" alt="Animated mockup: a metro train pulls into the station with the wide poster on the side of a car, opens and closes its doors, and pulls out" width="1600" height="900" loading="lazy" decoding="async"></div>
-  <figcaption>On the train, as a wrap</figcaption>
-</figure>
-<div class="rail bleed" data-rail>
-  <div class="rail-head">
-    <h4><span class="pill" style="--rot:-9deg">As</span><span class="pill" style="--rot:9deg">printed</span></h4>
-    <div class="rail-btns"><button type="button" data-prev aria-label="Previous: As printed">←</button><button type="button" data-next aria-label="Next: As printed">→</button></div>
-  </div>
-  <div class="track" tabindex="0" aria-label="As printed, scroll horizontally">
-<figure style="--r:1.5">
-  <div class="frame"><img src="m:litorsal/vibe-metro" alt="The landscape metro poster: the hand with the tube on the left, the headline on the right" width="1600" height="1067" loading="lazy" decoding="async"></div>
-</figure>
-<figure style="--r:2">
-  <div class="frame"><img src="m:litorsal/vibe-metro-wide" alt="A wide yellow metro poster: the hand with the Litorsal tube, the headline Hidratare corectă pentru un super vibe and a QR code" width="1600" height="800" loading="lazy" decoding="async"></div>
-</figure>
-<figure style="--r:0.444">
-  <div class="frame"><img src="m:litorsal/vibe-metro-tall" alt="The tall metro poster: the headline on top, the hand with the tube below" width="900" height="2025" loading="lazy" decoding="async"></div>
-</figure>
-<figure style="--r:2.496">
-  <div class="frame"><img src="m:litorsal/vibe-banner" alt="Yellow banner: a hand holding a Litorsal tube, the headline Hidratare corectă pentru un super vibe and a QR code" width="1600" height="641" loading="lazy" decoding="async"></div>
-</figure>
-  </div>
-  <figcaption class="rail-cap">60 x 40, 80 x 40 and 40 x 90 cm for the metro, and the 2 x 0.8 m banner</figcaption>
 </div>
     </div>
   </section>
@@ -609,16 +590,25 @@ html:not(.embed) .page{padding-top:64px}
     <div class="chapter-side">
       <div>
         <span class="pill-title"><span class="pill pill--marketing">Căldură</span><span class="pill pill--accent">mare</span></span>
-        <p class="chapter-text">The summer line, the billboard at the top of this page: “Căldură mare, Litorsal îți dă hidratare!” The tubes stand in a row in front of the sun and a splash of water. Four icons explain the product at a glance: efficient hydration, electrolytes restored, energy, support for the body. One layout, redrawn for six billboard sizes, from 6 x 3 m to 1 x 1.5 m.</p>
+        <p class="chapter-text">The summer line, the billboard at the top of this page: “Căldură mare, Litorsal îți dă hidratare!” The tubes stand in a row in front of the sun and a splash of water. Four icons explain the product at a glance: efficient hydration, electrolytes restored, energy, support for the body. One layout, redrawn for six billboard sizes, from 6 x 3 m to 1 x 1.5 m. Below, a mockup of how it reads in the street: on a block's gable, as a tram goes by.</p>
         <ul class="deliverables">
           <li>Key visual</li>
           <li>Billboards</li>
           <li>Six formats</li>
           <li>Icons</li>
+          <li>Street mockup</li>
         </ul>
       </div>
     </div>
     <div class="chapter-media">
+<figure class="hide-sm" style="--r:1.5">
+  <div class="frame" data-czl="ooh-gable-wide" data-czl-at="320"><img src="m:ooh/gable-wide-still" alt="Animated mockup: the portrait layout as a mesh banner on the blind gable of a block of flats, a tram passing below" width="1620" height="1080" loading="lazy" decoding="async"></div>
+  <figcaption>Animated mockup: the portrait layout as a mesh banner on a block's gable, as a tram goes by</figcaption>
+</figure>
+<figure class="only-sm" style="--r:0.8">
+  <div class="frame" data-czl="ooh-gable" data-czl-at="283"><img src="m:ooh/gable-still" alt="Animated mockup: the portrait layout as a mesh banner on the blind gable of a block of flats, a tram passing below" width="1080" height="1350" loading="lazy" decoding="async"></div>
+  <figcaption>Animated mockup: the portrait layout as a mesh banner on a block's gable, as a tram goes by</figcaption>
+</figure>
 <div class="stack">
 <div class="row">
 <figure style="--r:1.333">
@@ -691,7 +681,7 @@ html:not(.embed) .page{padding-top:64px}
 
 </main>
 
-<script type="application/json" id="czl-assets">{"metro-platform":{"s1":{"p-bg":"m:metro/p-bg-s1","p-w0-0":"m:metro/p-w0-0-s1","p-w0-1":"m:metro/p-w0-1-s1","p-w0-2":"m:metro/p-w0-2-s1","p-w0-3":"m:metro/p-w0-3-s1","p-w0-4":"m:metro/p-w0-4-s1","p-w0-5":"m:metro/p-w0-5-s1","p-w1-0":"m:metro/p-w1-0-s1","p-w1-1":"m:metro/p-w1-1-s1","p-w1-2":"m:metro/p-w1-2-s1","p-w1-3":"m:metro/p-w1-3-s1","p-w1-4":"m:metro/p-w1-4-s1","p-w1-5":"m:metro/p-w1-5-s1","p-w2-0":"m:metro/p-w2-0-s1","p-w2-1":"m:metro/p-w2-1-s1","p-w2-2":"m:metro/p-w2-2-s1","p-w2-3":"m:metro/p-w2-3-s1","p-w2-4":"m:metro/p-w2-4-s1","p-w2-5":"m:metro/p-w2-5-s1"},"s2":{"p-bg":"m:metro/p-bg-s2","p-w0-0":"m:metro/p-w0-0-s2","p-w0-1":"m:metro/p-w0-1-s2","p-w0-2":"m:metro/p-w0-2-s2","p-w0-3":"m:metro/p-w0-3-s2","p-w0-4":"m:metro/p-w0-4-s2","p-w0-5":"m:metro/p-w0-5-s2","p-w1-0":"m:metro/p-w1-0-s2","p-w1-1":"m:metro/p-w1-1-s2","p-w1-2":"m:metro/p-w1-2-s2","p-w1-3":"m:metro/p-w1-3-s2","p-w1-4":"m:metro/p-w1-4-s2","p-w1-5":"m:metro/p-w1-5-s2","p-w2-0":"m:metro/p-w2-0-s2","p-w2-1":"m:metro/p-w2-1-s2","p-w2-2":"m:metro/p-w2-2-s2","p-w2-3":"m:metro/p-w2-3-s2","p-w2-4":"m:metro/p-w2-4-s2","p-w2-5":"m:metro/p-w2-5-s2"}},"metro-train":{"s1":{"t-bg":"m:metro/t-bg-s1","t-fg":"m:metro/t-fg-s1","t-car-wrap-sharp":"m:metro/t-car-wrap-sharp-s1","t-car-wrap-b1":"m:metro/t-car-wrap-b1-s1","t-car-wrap-b2":"m:metro/t-car-wrap-b2-s1","t-car-plain-b1":"m:metro/t-car-plain-b1-s1","t-car-plain-b2":"m:metro/t-car-plain-b2-s1","t-leaf-la":"m:metro/t-leaf-la-s1","t-leaf-lb":"m:metro/t-leaf-lb-s1","t-leaf-ra":"m:metro/t-leaf-ra-s1","t-leaf-rb":"m:metro/t-leaf-rb-s1"},"s2":{"t-bg":"m:metro/t-bg-s2","t-fg":"m:metro/t-fg-s2","t-car-wrap-sharp":"m:metro/t-car-wrap-sharp-s2","t-car-wrap-b1":"m:metro/t-car-wrap-b1-s2","t-car-wrap-b2":"m:metro/t-car-wrap-b2-s2","t-car-plain-b1":"m:metro/t-car-plain-b1-s2","t-car-plain-b2":"m:metro/t-car-plain-b2-s2","t-leaf-la":"m:metro/t-leaf-la-s2","t-leaf-lb":"m:metro/t-leaf-lb-s2","t-leaf-ra":"m:metro/t-leaf-ra-s2","t-leaf-rb":"m:metro/t-leaf-rb-s2"}},"metro-inside":{"s1":{"i-int":"m:metro/i-int-s1","i-refl":"m:metro/i-refl-s1","i-leaf-a":"m:metro/i-leaf-a-s1","i-leaf-b":"m:metro/i-leaf-b-s1","i-near-sharp":"m:metro/i-near-sharp-s1","i-near-blur":"m:metro/i-near-blur-s1","i-far":"m:metro/i-far-s1","i-far-blur":"m:metro/i-far-blur-s1"},"s2":{"i-int":"m:metro/i-int-s2","i-refl":"m:metro/i-refl-s2","i-leaf-a":"m:metro/i-leaf-a-s2","i-leaf-b":"m:metro/i-leaf-b-s2","i-near-sharp":"m:metro/i-near-sharp-s2","i-near-blur":"m:metro/i-near-blur-s2","i-far":"m:metro/i-far-s2","i-far-blur":"m:metro/i-far-blur-s2"}}}</script>
+<script type="application/json" id="czl-assets">{"metro-platform":{"s1":{"p-bg":"m:metro/p-bg-s1"},"s2":{"p-bg":"m:metro/p-bg-s2"}},"metro-train":{"s1":{"t-bg":"m:metro/t-bg-s1","t-fg":"m:metro/t-fg-s1","t-car-wrap-sharp":"m:metro/t-car-wrap-sharp-s1","t-car-wrap-b1":"m:metro/t-car-wrap-b1-s1","t-car-wrap-b2":"m:metro/t-car-wrap-b2-s1","t-car-plain-b1":"m:metro/t-car-plain-b1-s1","t-car-plain-b2":"m:metro/t-car-plain-b2-s1","t-leaf-la":"m:metro/t-leaf-la-s1","t-leaf-lb":"m:metro/t-leaf-lb-s1","t-leaf-ra":"m:metro/t-leaf-ra-s1","t-leaf-rb":"m:metro/t-leaf-rb-s1"},"s2":{"t-bg":"m:metro/t-bg-s2","t-fg":"m:metro/t-fg-s2","t-car-wrap-sharp":"m:metro/t-car-wrap-sharp-s2","t-car-wrap-b1":"m:metro/t-car-wrap-b1-s2","t-car-wrap-b2":"m:metro/t-car-wrap-b2-s2","t-car-plain-b1":"m:metro/t-car-plain-b1-s2","t-car-plain-b2":"m:metro/t-car-plain-b2-s2","t-leaf-la":"m:metro/t-leaf-la-s2","t-leaf-lb":"m:metro/t-leaf-lb-s2","t-leaf-ra":"m:metro/t-leaf-ra-s2","t-leaf-rb":"m:metro/t-leaf-rb-s2"}},"metro-inside":{"s1":{"i-int":"m:metro/i-int-s1","i-refl":"m:metro/i-refl-s1","i-leaf-a":"m:metro/i-leaf-a-s1","i-leaf-b":"m:metro/i-leaf-b-s1","i-near-sharp":"m:metro/i-near-sharp-s1","i-near-blur":"m:metro/i-near-blur-s1","i-far":"m:metro/i-far-s1","i-far-blur":"m:metro/i-far-blur-s1"},"s2":{"i-int":"m:metro/i-int-s2","i-refl":"m:metro/i-refl-s2","i-leaf-a":"m:metro/i-leaf-a-s2","i-leaf-b":"m:metro/i-leaf-b-s2","i-near-sharp":"m:metro/i-near-sharp-s2","i-near-blur":"m:metro/i-near-blur-s2","i-far":"m:metro/i-far-s2","i-far-blur":"m:metro/i-far-blur-s2"}},"ooh-gable":{"s1":{"g-bg":"m:ooh/g-bg-s1","g-fg":"m:ooh/g-fg-s1","g-tram":"m:ooh/g-tram-s1"},"s2":{"g-bg":"m:ooh/g-bg-s2","g-fg":"m:ooh/g-fg-s2","g-tram":"m:ooh/g-tram-s2"}},"ooh-gable-wide":{"s1":{"gw-bg":"m:ooh/gw-bg-s1","gw-fg":"m:ooh/gw-fg-s1","gw-tram":"m:ooh/gw-tram-s1"},"s2":{"gw-bg":"m:ooh/gw-bg-s2","gw-fg":"m:ooh/gw-fg-s2","gw-tram":"m:ooh/gw-tram-s2"}}}</script>
 <script>
 // carousels: prev/next buttons
 document.querySelectorAll('[data-rail]').forEach(rail=>{

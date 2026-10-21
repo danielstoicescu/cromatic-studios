@@ -795,12 +795,6 @@ a.bcard:is(:hover, :focus-visible) .bc-name::after { animation: bcGo .6s var(--e
 
 /* the portfolio streets: green road signs, like on the map */
 .dom-street { margin-top: 72px; }
-.street-sign { display: inline-flex !important; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 14px 22px 15px; border-radius: 16px; background: var(--dc); color: var(--dt); border: 2px solid var(--ink); outline: 3px solid var(--dt); outline-offset: -8px; box-shadow: 0 5px 0 var(--ink); }
-.street-sign .ss-name { font-weight: 900; font-size: clamp(26px, 3vw, 40px); letter-spacing: -.02em; }
-.street-sign .dom-ind { color: inherit; opacity: .9; font-size: 16px; }
-.street-sign i { margin-left: 0 !important; color: inherit; opacity: .85 !important; }
-.street-sign .dom-sw { display: none; }
-.dom-street .dom-lead { margin-top: 16px; font-size: 17px; }
 .streets-nav a { box-shadow: 0 3px 0 var(--ink); }
 
 /* the road between two sections */
@@ -843,7 +837,7 @@ a.bcard:is(:hover, :focus-visible) .bc-name::after { animation: bcGo .6s var(--e
 .logo-card img { width: 100%; max-width: 170px; max-height: 78px; }
 @media (max-width: 700px) { .logo-card img { max-width: 124px; max-height: 58px; } }
 .dom-more { white-space: normal; display: inline-block; }
-@media (max-width: 700px) { .cup-title { --cs: 64px; top: -6px; right: 0; } .cup-contact { --cs: 76px; top: -34px; } .street-sign { padding: 12px 16px; } .stats { padding: 34px 0; } }
+@media (max-width: 700px) { .cup-title { --cs: 64px; top: -6px; right: 0; } .cup-contact { --cs: 76px; top: -34px; } .stats { padding: 34px 0; } }
 .photos figcaption { display: none; }
 /* r134: the brand canvas fills the screen top to bottom (Daniel: no margins above and below); the hint and the progress
    bar float over its lower edge */
@@ -961,15 +955,6 @@ html.embed .cv-stage { height: 100vh; height: 100svh; }
 .streets-nav a:hover .dom-sw { rotate: -14deg; }
 .streets-nav a[aria-current] .dom-sw { background: #fff; scale: .8; }
 .dom-street { scroll-margin-top: 150px; }
-.street-sign { transform-origin: 22% 0; }
-.js .dom-street .street-sign { transition: opacity .5s var(--eoq), transform .95s var(--bounce); }
-.js .dom-street:not(.in) .street-sign { opacity: 0; transform: translateY(-16px) rotate(-3deg); }
-.js .dom-street .dom-lead { transition: opacity .6s var(--eoq) .12s, transform .8s var(--eoq) .12s; }
-.js .dom-street:not(.in) .dom-lead { opacity: 0; transform: translateY(10px); }
-.dom-street .dom-more { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 6px 14px 7px; border: var(--line); border-radius: 17px; background: #fff; color: var(--ink);
-  font-size: 15px; line-height: 1.25; text-decoration: none; box-shadow: 0 2px 0 var(--ink); translate: 0 0; transition: translate .45s var(--bounce), box-shadow .45s var(--bounce), background .25s var(--eoq); }
-.dom-street .dom-more:hover { background: var(--dc); translate: 0 -2px; box-shadow: 0 4px 0 var(--ink); }
-.dom-street .dom-more:active { translate: 0 1px; box-shadow: 0 1px 0 var(--ink); }
 /* the Zdrovit yard's small ones: little pills that tip when the pointer is on them */
 .psmall .ps { box-shadow: 0 2px 0 var(--ink); transition: rotate .5s var(--bounce), translate .5s var(--bounce); }
 .psmall .ps:hover { rotate: -1.5deg; translate: 0 -2px; }
@@ -980,9 +965,8 @@ html.embed .cv-stage { height: 100vh; height: 100svh; }
   .streets-nav::-webkit-scrollbar { display: none; }
   .streets-nav a { flex: 0 0 auto; white-space: nowrap; }
   .dom-street { scroll-margin-top: 130px; }
-  .dom-street .dom-more { font-size: 14px; }
 }
-@media (prefers-reduced-motion: reduce) { .js .dom-street .street-sign, .js .dom-street .dom-lead, .js .bento .bcard { opacity: 1 !important; transform: none !important; } }
+@media (prefers-reduced-motion: reduce) { .js .bento .bcard { opacity: 1 !important; transform: none !important; } }
 
 /* ---- TASK-067: the coffee stop, drawn (the site's Lottie layer: design/lottie-ui/_source/pieces/coffee.mjs) ----
    The first frame is a small SVG asked for with the page (wide, and a closer tall cut on phones), so the scene is there
@@ -1011,3 +995,86 @@ html.embed .cv-stage { height: 100vh; height: 100svh; }
   .rl-pp { left: 10px; bottom: 10px; width: 36px; height: 36px; }
   .road-foot .rs-cta, .road-foot .rs-drive { font-size: 13px; padding: 10px 13px; }
 }
+
+/* ---- TASK-071 (beta 4.0, Daniel: "radius prea mic, fonturile prea înghesuite de margini; mult mai vizual, cu ierarhie,
+   cu tipografia Cromatic Studios, ca în Lottie-ul de la început"): each portfolio street opens on a card in the map's
+   welcome card's line: cream paper, the ink keyline, a hard shadow, a 30px radius and room to breathe (34 / 28 like the
+   card). The street's sign hangs on its top edge in the street's colour (a 22px radius, an inner keyline, like the city's own plates),
+   tilted like the card's title; under it the industry (800), the lead (500, ink at 78%), the way in on a pill in the
+   street's colour, and the count on a disc in the street's colour. As the street comes into view the sign swings in on
+   the house bounce and the disc pops; pointing at the card straightens the sign and turns the disc a little ---- */
+.dom-street { margin-top: 96px; scroll-margin-top: 210px; }
+.street-head { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 24px 40px; margin: 0 0 28px;
+  padding: 58px clamp(26px, 3.4vw, 44px) clamp(26px, 3vw, 36px); background: color-mix(in srgb, var(--dc) 7%, #fbf7f2); border: var(--line); border-radius: 30px; box-shadow: 0 5px 0 var(--ink); }
+.sh-main { min-width: 0; }
+.sh-title { margin: 0; font: inherit; letter-spacing: 0; }
+.street-head .street-sign { position: absolute; left: clamp(20px, 3vw, 38px); top: 0; translate: 0 -50%; display: inline-flex; align-items: center; padding: 14px 34px 15px; border-radius: 22px;
+  background: var(--dc); color: var(--dt); border: 2px solid var(--ink); box-shadow: 0 5px 0 var(--ink); rotate: -2.5deg; transform-origin: 30% 0; }
+.street-head .street-sign::before { content: ""; position: absolute; inset: 6px; border: 2.5px solid var(--dt); border-radius: 16px; pointer-events: none; }
+.street-head .ss-name { font: 900 clamp(30px, 3.6vw, 48px)/1 var(--f); letter-spacing: -.035em; white-space: nowrap; }
+.sh-sub { display: block; margin: 8px 0 0; font: 800 clamp(22px, 2.4vw, 34px)/1.12 var(--f); letter-spacing: -.02em; text-wrap: balance; }
+.sh-lead { margin: 14px 0 0; max-width: 62ch; font: 500 clamp(17px, 1.45vw, 20px)/1.42 var(--f); color: color-mix(in srgb, var(--ink) 78%, transparent); text-wrap: pretty; }
+.sh-more { display: inline-flex; align-items: center; gap: 10px; margin-top: 22px; padding: 13px 22px 14px; border: var(--line); border-radius: 999px; background: var(--dc); color: var(--dt);
+  font: 800 15px/1 var(--f); text-decoration: none; box-shadow: 0 2px 0 var(--ink); transition: translate .45s var(--bounce), box-shadow .45s var(--bounce); }
+.sh-more i { font-style: normal; display: inline-block; transition: translate .45s var(--bounce); }
+.sh-more:hover, .sh-more:focus-visible { translate: 0 -2px; box-shadow: 0 4px 0 var(--ink); }
+.sh-more:is(:hover, :focus-visible) i { translate: 4px 0; }
+.sh-more:active { translate: 0 1px; box-shadow: 0 1px 0 var(--ink); transition-duration: .1s; }
+.sh-more:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.sh-count { display: grid; justify-items: center; gap: 10px; margin: 0; }
+.sh-count b { display: grid; place-items: center; width: 104px; height: 104px; border-radius: 50%; background: var(--dc); color: var(--dt); border: var(--line); box-shadow: 0 4px 0 var(--ink);
+  font: 900 44px/1 var(--f); letter-spacing: -.04em; transition: rotate .6s var(--bounce); }
+.sh-count .mono { font-size: 10.5px; letter-spacing: .18em; color: var(--muted); }
+@media (hover: hover) and (pointer: fine) {
+  .street-head .street-sign { transition: rotate .7s var(--bounce); }
+  .street-head:hover .street-sign { rotate: -.8deg; }
+  .street-head:hover .sh-count b { rotate: -10deg; }
+}
+/* coming into view (site.js adds .in): the sign swings in from its top corner, the words rise, the disc pops */
+.js .dom-street .street-sign { transition: opacity .45s var(--eoq), transform .95s var(--bounce), rotate .7s var(--bounce); }
+.js .dom-street:not(.in) .street-sign { opacity: 0; transform: translateY(-14px) rotate(-6deg); }
+.js .dom-street :is(.sh-sub, .sh-lead, .sh-more) { transition: opacity .6s var(--eoq) var(--d, .1s), transform .8s var(--eoq) var(--d, .1s), translate .45s var(--bounce), box-shadow .45s var(--bounce); }
+.js .dom-street .sh-lead { --d: .16s; } .js .dom-street .sh-more { --d: .22s; }
+.js .dom-street:not(.in) :is(.sh-sub, .sh-lead, .sh-more) { opacity: 0; transform: translateY(10px); }
+.js .dom-street .sh-count b { transition: transform .8s var(--bounce) .28s, opacity .3s var(--eoq) .28s, rotate .6s var(--bounce); }
+.js .dom-street:not(.in) .sh-count b { opacity: 0; transform: scale(.4); }
+@media (max-width: 700px) {
+  .dom-street { margin-top: 76px; scroll-margin-top: 170px; }
+  .street-head { grid-template-columns: 1fr; padding: 50px 22px 24px; border-radius: 26px; gap: 0; }
+  .street-head .street-sign { left: 16px; padding: 11px 24px 12px; border-radius: 18px; max-width: calc(100% - 32px); }
+  .street-head .street-sign::before { inset: 5px; border-width: 2px; border-radius: 13px; }
+    .street-head .ss-name { font-size: clamp(25px, 7.4vw, 32px); }
+  .sh-sub { margin-top: 4px; padding-right: 76px; min-height: 64px; display: flex; align-items: center; font-size: 21px; }
+  .sh-lead { font-size: 17px; }
+  .sh-more { margin-top: 18px; font-size: 14.5px; padding: 12px 18px 13px; }
+  .sh-count { position: absolute; right: 18px; top: 40px; gap: 6px; }
+  .sh-count b { width: 64px; height: 64px; font-size: 28px; box-shadow: 0 3px 0 var(--ink); }
+  .sh-count .mono { font-size: 9px; letter-spacing: .14em; }
+}
+@media (prefers-reduced-motion: reduce) { .js .dom-street :is(.street-sign, .sh-sub, .sh-lead, .sh-more, .sh-count b) { opacity: 1 !important; transform: none !important; } }
+
+/* ---- TASK-071: the arcade cabinet in front of Two Minutes opens the game ("2 Minutes 2 Fight w/ I O N", /play/gloves/).
+   A link over the cabinet (its place in each cut of the scene), with a tag above it (on a laptop it reaches left, off the
+   TWO MIN mark) in the cabinet's purple and gold and
+   its coin, which turns now and then; pointing at it lifts the tag and spins the coin. Over the still and the canvas
+   alike (it is the page's, there at once) ---- */
+.rl-game { --gx: 51.25%; --gy: 62.8%; --gw: 4.9%; --gh: 15.8%; position: absolute; z-index: 2; left: var(--gx); top: var(--gy); width: var(--gw); height: var(--gh); translate: -50% 0;
+  border-radius: 6px; text-decoration: none; color: #FED012; -webkit-tap-highlight-color: transparent; }
+.rlg-tag { --tx: calc(-100% + 34px); --tl: calc(100% - 34px); position: absolute; left: 50%; bottom: calc(100% + 13px); translate: var(--tx) 0; display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px 10px 10px; white-space: nowrap;
+  background: #2a1f4a; border: var(--line); border-radius: 999px; box-shadow: 0 3px 0 var(--ink); font: 800 14px/1 var(--f); letter-spacing: .01em;
+  transition: translate .45s var(--bounce), box-shadow .45s var(--bounce); }
+.rlg-tag::after { content: ""; position: absolute; left: var(--tl); top: 100%; width: 10px; height: 10px; margin: -5px 0 0 -5px; background: #2a1f4a; border: solid var(--ink); border-width: 0 1px 1px 0; rotate: 45deg; }
+.rlg-coin { flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle, #FED012 0 3px, #FFB21A 3.5px 4.5px, #FED012 5px); border: 1px solid var(--ink); animation: rlgCoin 5s var(--eoq) 1.2s infinite; }
+@keyframes rlgCoin { 0%, 84% { transform: rotateY(0); } 100% { transform: rotateY(360deg); } }
+.rl-game:is(:hover, :focus-visible) .rlg-tag { translate: var(--tx) -3px; box-shadow: 0 6px 0 var(--ink); }
+.rl-game:is(:hover, :focus-visible) .rlg-coin { animation: rlgSpin .7s var(--bounce); }
+@keyframes rlgSpin { from { transform: rotateY(0); } to { transform: rotateY(540deg); } }
+.rl-game:focus-visible { outline: 2px dashed var(--ink); outline-offset: 3px; }
+.rl-game:focus-visible .rlg-tag { outline: 3px solid var(--ink); outline-offset: 3px; }
+.rl-game:active .rlg-tag { translate: var(--tx) 1px; box-shadow: 0 1px 0 var(--ink); transition-duration: .1s; }
+@media (max-width: 700px) {
+  .rl-game { --gx: 28.75%; --gy: 61.8%; --gw: 7.4%; --gh: 11.6%; }
+  .rlg-tag { --tx: -50%; --tl: 50%; font-size: 12.5px; padding: 7px 12px 8px 8px; gap: 6px; bottom: calc(100% + 11px); }
+  .rlg-coin { width: 15px; height: 15px; }
+}
+@media (prefers-reduced-motion: reduce) { .rlg-coin { animation: none !important; } }
