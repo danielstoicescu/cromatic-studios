@@ -11,6 +11,8 @@ import { buildStamp, buildFinale, FINALE_AB } from "./pieces/finale.mjs";
 import { buildDrive, buildViews, buildPlaces, buildWorlds, buildGame } from "./pieces/onboarding.mjs";
 import { WPAL, buildWDrive, buildWTap, buildWWork, buildWHi, buildWOpen } from "./pieces/welcome.mjs";
 import { GAB, GPAL, buildGamePx } from "./pieces/game.mjs";
+import { CAB, buildCoffee } from "./pieces/coffee.mjs";
+import { stillSvg } from "./lib/still.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const SITE = path.resolve(here, "../../../src/lottie-ui"), DESIGN = path.resolve(here, "..");
@@ -47,7 +49,10 @@ const PIECES = {
   },
   // 5 · into the arcade game and back out (TASK-009): the screen into chunky pixels and out of them, wide and tall, in the
   // game's dusk and in Sketchbook's notebook
-  "5-game": Object.fromEntries(["wide", "tall"].flatMap((ab) => ["light", "sketch"].flatMap((th) => ["en", "ro"].map((lang) => [`game-${ab}${th === "sketch" ? "-sketch" : ""}-${lang}`, () => buildGamePx(GAB[ab], GPAL[th], lang)]))))
+  "5-game": Object.fromEntries(["wide", "tall"].flatMap((ab) => ["light", "sketch"].flatMap((th) => ["en", "ro"].map((lang) => [`game-${ab}${th === "sketch" ? "-sketch" : ""}-${lang}`, () => buildGamePx(GAB[ab], GPAL[th], lang)])))),
+  // 6 · the website's coffee stop (TASK-067): the drive's Two Minutes scene, wide and tall; each with its first frame as
+  // SVG (<name>.svg next to the JSON), which the website paints with its HTML (site/render.mjs)
+  "6-site": Object.fromEntries(["wide", "tall"].map((ab) => [`site-coffee-${ab}`, () => buildCoffee(T, CAB[ab])]))
   // (3-transitions: the case page's window, r233, was replaced by a CSS pill in r235: pieces/window.mjs is kept as a source)
 };
 const sizes = {};
@@ -57,6 +62,7 @@ for (const [dir, items] of Object.entries(PIECES)) {
   for (const [name, make] of Object.entries(items)) {
     const j = make(), s = JSON.stringify(j);
     fs.writeFileSync(path.join(SITE, name + ".json"), s);
+    if (dir === "6-site") fs.writeFileSync(path.join(SITE, name + ".svg"), stillSvg(j, { frame: 0 }));
     sizes[name] = { kb: +(s.length / 1024).toFixed(1), brKb: +(zlib.brotliCompressSync(Buffer.from(s)).length / 1024).toFixed(1), layers: j.layers.length, frames: j.op, size: `${j.w}x${j.h}` };
   }
 }
