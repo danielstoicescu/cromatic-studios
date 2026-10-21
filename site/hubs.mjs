@@ -287,8 +287,8 @@ export const SERVICE_PAGES = [
       { t: "The shoot", p: "Photo and video together when it makes sense, in the shop, the atelier, the clinic or the studio. We shoot for every format the campaign needs, from a TV spot to a vertical reel." },
       { t: "Post and delivery", p: "Editing, animation, post production and sound design, in house. Then the cuts for TV, web and social, sized and ready to publish." }
     ],
-    // TASK-074 (Daniel): Help 4 Brain, a Zdrovit brand, has no portfolio card of its own (it is on the Zdrovit card); its page stays linked from the text
-    cases: ["clinica-sante", "pain-plaisir", "routine-paris", "bepco", "altius", "steam", "casa-berero", "yoshi-izakaya", "two-minutes"],
+    // TASK-074 (Daniel): Help 4 Brain keeps its card on the service pages (not in the portfolio, where it is on the Zdrovit card)
+    cases: ["clinica-sante", "help-4-brain", "pain-plaisir", "routine-paris", "bepco", "altius", "steam", "casa-berero", "yoshi-izakaya", "two-minutes"],
     faq: [
       ["Do you produce TV ads in Romania?", "Yes. We made a TV spot for Clinica Sante, a national network of medical laboratories, and a TV commercial for Help4Brain, a nootropic produced by Zdrovit. Video production, photography, post production and sound design all happen in house at Cromatic Studios in Bucharest."],
       ["Can you shoot product photography for food and drink?", "Yes. We shot the Anemone pastry and a Christmas table for Pain Plaisir, COMM and UNITY cans and a red crate of craft beers for Berero, the dishes and the bar at Yoshi Izakaya, and a full season of guests and baristas at Steam Coffee Shop."],
@@ -329,8 +329,8 @@ export const SERVICE_PAGES = [
       { t: "Make", p: "We shoot, design and edit in house. Photo and video sessions, reels, carousels, stories and key visuals, all in the brand's own voice." },
       { t: "Run and grow", p: "We publish, run the ad campaigns, talk with the community and watch what works, then adjust the plan as the crowd grows." }
     ],
-    // TASK-074: Help 4 Brain out of the cards, as above
-    cases: ["steam", "yoshi-izakaya", "printoteca", "sticker-republic", "echo-school", "sip-coffee-wine", "routine-paris", "elithia", "casa-berero"], // r159: + Echo School
+    // TASK-074: Help 4 Brain keeps its card here too, as above
+    cases: ["steam", "help-4-brain", "yoshi-izakaya", "printoteca", "sticker-republic", "echo-school", "sip-coffee-wine", "routine-paris", "elithia", "casa-berero"], // r159: + Echo School
     faq: [
       ["Do you manage social media for restaurants and coffee shops?", "Yes. Steam got a content strategy, photo, video, social media management, stories and in-store posters. Yoshi Izakaya got a content strategy, events, ad campaigns and photography shot in the restaurant. Sip Coffee & Wine opened with a social media launch and an opening campaign."],
       ["Do you do social media for pharma and healthcare?", "Yes. Help4Brain, a nootropic produced by Zdrovit, launched on social media with education at the centre, reels with experts and creators, influencer marketing and a TV commercial. Elithia, a women's health clinic, posts calm, clear content in its own voice, from the first check-up to breast screening."],

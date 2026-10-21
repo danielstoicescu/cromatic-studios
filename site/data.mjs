@@ -85,7 +85,7 @@ export const ZDROVIT_BRANDS = [
   { name: "Lacalut", page: "lacalut", line: "Oral care", ro: "Îngrijire orală", cat: "Smart TV ads · Motion", desc: "Lacalut White & Repair on LG Smart TV home screens: three still formats and a 15-second banner in motion." },
   { name: "Litorsal", page: "litorsal", line: "Electrolytes and minerals", ro: "Electroliți și minerale", cat: "Billboards · Posters · Product visuals", desc: "Three campaign lines for an electrolyte tube, from a 6 x 3 m billboard to a metro poster." },
   { name: "Maximag", page: "maximag", line: "Magnesium bisglycinate", ro: "Magneziu bisglicinat", cat: "Smart TV ads · Motion", desc: "Maximag Bisglicinat on LG Smart TV home screens: three still formats and a 15-second banner with a short story in it." },
-  { name: "Help 4 Brain", page: "help-4-brain", line: "A nootropic", ro: "Un nootropic", cat: "Pharma · Product · Marketing", desc: "Enabling a pharma challenger to become a leader." },
+  { name: "Help 4 Brain", page: "help-4-brain", line: "A nootropic", ro: "Un nootropic", cat: "Pharma · Product · Marketing", desc: "Enabling a pharma challenger to become a leader.", c: "#B098C8", t: "#14120c", poster: "Challenger to leader", img: "m:cs/Cromatic-Studios-Help4brain-1" /* its card on the service pages, as it was */ },
   { name: "Aspasia", line: "Collagen for skin, hair and nails", ro: "Colagen pentru piele, păr și unghii" },
   { name: "Bonilash", line: "Lash and brow serum", ro: "Ser pentru gene și sprâncene" },
   { name: "Glucopil", line: "Blood sugar, with plant extracts", ro: "Glicemie, cu extracte din plante" },
