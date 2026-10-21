@@ -470,5 +470,85 @@ export const VIZIMEL = {
   related: RELATED
 };
 
+export const OCHISAN = {
+  slug: "ochisan",
+  name: "OchiSan",
+  tagline: "ochisan.ro: an eyelid ointment's product site, built from rounded tiles in lilac and white.",
+  desc: "OchiSan: ochisan.ro, the product site for an eyelid ointment, explaining the stye and the chalazion before the tube, on desktop and phone. By Cromatic Studios, Bucharest.",
+  title: "Comfort for the eyelids.",
+  accent: { bg: "#B57DB7", fg: "#ffffff", ink: "#7a3f7d" },
+  info: ["Eyelid ointment, OchiSan", "Romania · Zdrovit portfolio", "Product site, desktop and mobile"],
+  cover: { img: m("ochisan/hero") },
+  og: m("ochisan/hero"),
+  hero: { img: m("ochisan/hero"), alt: "ochisan.ro in a browser window and on a phone: a lilac menu bar, a grid of rounded tiles with eyes and the OCHI SAN logo, and the line Pentru confortul ochilor tăi" },
+  problem: {
+    h: "Two conditions that look alike",
+    p: [
+      "OchiSan is a medical device from Zdrovit: an ointment for the eyelids that, in the site's words, “nu conține conservanți”. The site says what it is for: it “ajută la ameliorarea simptomelor precum mâncărimea pielii pleoapelor, durerea și inflamarea acestora legate de apariția orjeletului extern și a șalazionului”.",
+      "The two look alike. The site gives the stye its everyday name, ulcior, and warns that a stye can turn into a chalazion if the infection lasts.",
+      "So the page explains both conditions before it shows the <strong>tube</strong>."
+    ]
+  },
+  solution: {
+    h: "Rounded tiles, lilac and white",
+    p: "The page is built from rounded tiles, like the logo: some filled in lilac, some outlined in a thin line, the photos cut to the same corners. The stye gets its own block, then its causes, its two kinds and a warning, then the chalazion in the same system. Only then come the tube, its three ingredients and three drawn steps for using it.",
+    stat: "3",
+    statText: "drawn steps for using the ointment, one tile each, from cleaning the eyelid to the direction of the massage"
+  },
+  chapters: [
+    {
+      pillar: "product",
+      pills: ["Two", "conditions"],
+      text: "A lilac bar holds the menu: Orjelet, Șalazion, OchiSan®, Comandă, Contact. The hero is a grid of rounded tiles, a plain lilac one, a blue eye, two faces split down the middle and the OCHI SAN logo, beside the line “Pentru confortul ochilor tăi”. A drawn woman rubbing her eye opens the explanation. Then “ORJELET” in large white capitals over a photo of a stye, its causes, its two kinds, Extern and Intern, and a warning with a large exclamation mark. “ȘALAZION” follows in the same tiles.",
+      deliverables: ["Product site", "UX/UI design", "Desktop and mobile", "Navigation"],
+      media: [
+        siteBlock("ochisan", "ochisan.ro", { head: ["The", "product site"], cap: "ochisan.ro from the first screen to the footer, on desktop and phone." }),
+        {
+          rail: ["Section by", "section"],
+          items: [
+            shot("ochisan", "stye", "ORJELET in large white capitals over a photo of an eye with a stye on the lower lid, beside three rounded text tiles, one filled in lilac"),
+            shot("ochisan", "chalazion", "ȘALAZION in large white capitals over a photo of a closed eyelid, three text tiles on the left and three more below, Extern among them")
+          ],
+          cap: "The stye and the chalazion, in the same rounded tiles"
+        }
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["The", "ointment"],
+      text: "The product, the way the site brings it in. A full-width lilac band sets the OchiSan box beside its description and a “Cumpără” button. “Formula inovatoare a trei ingrediente conținute în unguent” shows each ingredient in a photo tile with a lilac label: ulei de Manuka, miere de Manuka, extract uleios organic de scorțișoară. “Instrucțiuni de utilizare” draws the use in three numbered tiles, a woman in fine line in each: cleaning the eyelid, a little ointment, and the direction of the massage.",
+      deliverables: ["Product band", "Ingredients", "Illustrated instructions"],
+      media: [
+        shot("ochisan", "product", "A lilac band with the OchiSan box, unguent pentru utilizare pe pleoape, fără conservanți, the product text and a Cumpără button", "The box, on a lilac band of its own"),
+        shot("ochisan", "ingredients", "Formula inovatoare a trei ingrediente: three rounded photo tiles, Manuka flowers, a honey dipper over a jar of Manuka honey and cinnamon sticks, each with a lilac label", "Three ingredients, three photo tiles"),
+        shot("ochisan", "steps", "Instrucțiuni de utilizare: three numbered outlined tiles, each with a line drawing of a woman's face, cleaning the eyelid, applying the ointment and the direction of the massage", "Three steps, drawn in a fine line")
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["On a", "phone"],
+      text: "On a phone the menu folds into a lilac bar with one icon, and the tile grid of the hero sits above the line. Each condition becomes a column of tiles, the Extern and Intern cards show a photo of each kind, and the three steps stack in their outlined tiles.",
+      deliverables: ["Mobile layout", "One column"],
+      media: [
+        {
+          rail: ["Four", "screens"],
+          items: [
+            shot("ochisan", "phone-hero", "The first screen on a phone: the lilac menu bar, the tile grid with the OCHI SAN logo and the line Pentru confortul ochilor tăi"),
+            shot("ochisan", "phone-stye", "ORJELET on a phone: the photo of the stye and the first text tiles below it"),
+            shot("ochisan", "phone-types", "Extern on a phone: the line, a photo of an external stye and the paragraph, Intern starting on lilac below"),
+            shot("ochisan", "phone-steps", "Instrucțiuni de utilizare on a phone: the numbered tiles with their line drawings, one under another")
+          ],
+          cap: "The hero, the stye, its two kinds and the steps, at 390 px wide"
+        }
+      ]
+    },
+    ...spotChapter("ochisan")
+  ],
+  result: {
+    text: "Two conditions explained first, then the tube: an eyelid ointment's page in rounded lilac tiles."
+  },
+  related: RELATED
+};
+
 // every Zdrovit brand page of the second half, in the order they were made
-export const ZDROVIT_WEB_B = [PREVOMIT, SLABOFICAT, SUPRAMAX, VIZIK, VIZIMEL];
+export const ZDROVIT_WEB_B = [PREVOMIT, SLABOFICAT, SUPRAMAX, VIZIK, VIZIMEL, OCHISAN];
