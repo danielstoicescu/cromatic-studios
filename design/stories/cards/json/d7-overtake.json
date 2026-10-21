@@ -23,11 +23,7 @@
    {
     "kind": "block",
     "id": "d7",
-    "place": {
-     "x": 540,
-     "align": "center",
-     "base": 1180
-    },
+    "place": "tl",
     "ink": "#FBFAF5",
     "lines": [
      {
@@ -38,14 +34,14 @@
       "tracking": -0.045,
       "lead": 0.94,
       "ink": "#FBFAF5",
-      "align": "center",
+      "align": "left",
       "text": "Overtake.",
-      "x": 175.8,
-      "baseline": 1180,
+      "x": 80,
+      "baseline": 420.3,
       "width": 728.4,
       "box": {
-       "x": 175.8,
-       "y": 1052.3,
+       "x": 80,
+       "y": 292.6,
        "w": 728.4,
        "h": 132.7
       }
