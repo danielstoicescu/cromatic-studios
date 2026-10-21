@@ -88,7 +88,7 @@ function fig(it, { cls = "", eager = false } = {}) {
   <div class="frame${fit}"${bg}${czl}>${inner(it, eager)}</div>${it.cap ? `\n  <figcaption>${it.cap}</figcaption>` : ""}
 </figure>`;
 }
-const titlePills = (words) => `<h4>${words.map((w, i) => `<span class="pill" style="--rot:${i % 2 ? 4 + ((w.length * 3) % 8) : -5 - ((w.length * 2) % 7)}deg">${w}</span>`).join("")}</h4>`;
+const titlePills = (words) => `<h4>${words.map((w, i) => `<span class="pill" style="--rot:${i % 2 ? 4 + ((w.length * 3) % 8) : -5 - ((w.length * 2) % 7)}deg">${w}</span>`).join(" ")}</h4>`; // (a space between the pills: flex items, so it is not drawn, but the title reads as words, not "Thewebsite")
 let railN = 0;
 function row(items, cap, wrap = false) {
   // on phones a wide row would shrink to slivers: landscape items take a line each, the rest go two by two
@@ -384,7 +384,7 @@ ${pr.media.map(block).join("\n")}
     h.push(`  <section class="card chapter chapter--${pl.cls}" id="${cid}" aria-label="${pl.aria}">
     <div class="chapter-side">
       <div>
-        <span class="pill-title"><span class="pill pill--${pl.cls}">${words[0]}</span><span class="pill pill--accent">${words[1]}</span></span>
+        <span class="pill-title"><span class="pill pill--${pl.cls}">${words[0]}</span> <span class="pill pill--accent">${words[1]}</span></span>
         <p class="chapter-text">${c.text}</p>
         <ul class="deliverables">
 ${c.deliverables.map((d) => `          <li>${d}</li>`).join("\n")}
