@@ -56,10 +56,11 @@ const BUILD = {
     g.trees = new THREE.Group(); S.add(g.trees);
     const r = rng(9);
     for (let x = -380; x <= 70; x += 9 + r() * 2) for (const z of [-13.0, 13.2]) {
-      if (z < 0 && x > -14 && x < 16) continue; // (the billboard's own clearing)
+      if (z < 0 && x > -21 && x < 16) continue; // (the billboard's own clearing)
       const d = Math.hypot(x - 25, z + 8), per = d < 40 ? 130 : d < 120 ? 75 : 45;
       g.trees.add(C.linden({ x: x + (r() - 0.5) * 1.5, z: z + (r() - 0.5) * 0.6, h: 11 + r() * 4, seed: 100 + Math.round(x * 3 + z), leafSeed: 81 + (Math.round(x) % 3 + 3) % 3, per }));
     }
+    g.trees.add(C.linden({ x: 17, z: -12.6, h: 10.5, seed: 777, leafSeed: 82, per: 170, cx: 1.8, cz: -0.5 })); // (the one that frames the shot on the right)
     S.add(C.catenary({ x0: -420, x1: 140, poles: Array.from({ length: 18 }, (_, i) => 12 - i * 30), poleZ: [-3.3, 3.3], tracks: STREET.tracks, extra: [[[-420, 8.4, -11.6], [140, 8.4, -11.6], 0.008], [[-420, 8.2, 11.6], [140, 8.2, 11.6], 0.008]] }));
     S.add(C.lamps(Array.from({ length: 16 }, (_, i) => [[52 - i * 28, -11.1, 1], [24 - i * 28, 11.1, -1]]).flat().filter(([x, z]) => !(z < 0 && Math.abs(x) < 12))));
     g.tram = C.tram({ L: 31 }); g.tram.rotation.y = 0; g.tram.position.set(-60, 0.16, STREET.tracks[1]); g.tram.visible = false; S.add(g.tram);
@@ -79,6 +80,8 @@ const BUILD = {
     for (const [x, z, h, s] of [[-4, -13.2, 13, 1], [-14, -13.2, 12, 2], [-24, -13.2, 14, 3], [36, -13.2, 12.5, 4], [46, -13.2, 13.5, 6], [-34, -13.2, 12, 7], [7, -13.4, 12.5, 8], [27, -13.0, 13, 9]]) g.trees.add(C.linden({ x, z, h, seed: 400 + s, leafSeed: 81 + (s % 3), per: 170 }));
     S.add(C.catenary({ x0: -160, x1: 160, poles: [-38, -8, 22, 52], poleZ: [-3.3, 3.3], tracks: STREET.tracks, extra: [[[-160, 8.6, -11.4], [160, 8.2, -11.4], 0.009]] }));
     S.add(C.lamps([[-12, -11.1, 1], [20, -11.1, 1], [8, 11.1, -1]]));
+    // (the near side's poles again, flagged: the layer that goes over the passing tram)
+    g.fg = C.catenary({ x0: -160, x1: 160, poles: [-38, -8, 22, 52], poleZ: [3.3], tracks: [], wires: false }); g.fg.traverse((m) => (m.userData.fg = true)); S.add(g.fg);
     g.tram = C.tram({ L: 31 }); g.tram.position.set(0, 0.16, STREET.tracks[1]); g.tram.visible = false; S.add(g.tram);
   },
   async shelter(st, S) {
@@ -118,6 +121,11 @@ export async function layer(o) {
   // the whole frame
   if (o.layer === "bg" && o.tramX != null && g.tram) { g.tram.visible = true; g.tram.position.x = o.tramX; }
   if (o.layer === "bg") { const url = await shoot({ ...job, cam: cam(sh, o.cam || {}) }); return { url, ...stats() }; }
+  // what stands in front of the tram (flagged userData.fg), alone, over a transparent background
+  if (o.layer === "fg") {
+    const hid = []; st.scene.traverse((m) => { if ((m.isMesh || m.isLine) && m.visible && !m.userData.fg) { hid.push(m); m.visible = false; } });
+    try { const url = await shoot({ ...job, alpha: true, cam: cam(sh, o.cam || {}) }); return { url, ...stats() }; } finally { hid.forEach((m) => (m.visible = true)); }
+  }
   // a passing tram as a strip: alone (with its shadow on a catcher), centred at x = 0, blurred by a motion of `blur` m
   if (o.layer === "tram") {
     const tr = g.tram, keep = []; st.scene.traverse((m) => { if ((m.isMesh || m.isLine) && !isIn(m, tr) && m.visible) { keep.push(m); } });
