@@ -9,7 +9,8 @@
   "contact": ""
  },
  "access": {
-  "token": "L_DroAR6YcVt"
+  "token": "L_DroAR6YcVt",
+  "email": "optional"
  },
  "submit": {
   "endpoint": "/api/core30",
