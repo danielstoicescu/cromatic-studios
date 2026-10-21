@@ -206,8 +206,60 @@ export const BONILASH = web({
   related: ["aspasia", "parasoftin", "lacium"]
 });
 
+export const GLUCOPIL = web({
+  slug: "glucopil", name: "Glucopil", label: "glucopil.ro",
+  title: "Blood sugar, explained.",
+  tagline: "The product site for Glucopil, a blood sugar supplement: high and low blood sugar explained before the box appears.",
+  desc: "Glucopil: glucopil.ro, the one-page product site for a blood sugar supplement in the Zdrovit portfolio, on desktop and phone. By Cromatic Studios, Bucharest.",
+  accent: { bg: "#A9C9DD", fg: "#0d2f5c", ink: "#1f6aa5" },
+  info: ["Blood sugar supplement, Glucopil", "Romania · Zdrovit portfolio", "Landing page, desktop and mobile"],
+  heroAlt: "glucopil.ro in a browser window and on a phone: an older woman and a younger one sharing cake, beside the line Soluția avansată în menținerea optimă a nivelului de glicemie",
+  problem: {
+    h: "A number most people never see",
+    p: [
+      "Glucopil is a food supplement from Zdrovit for keeping blood sugar within normal limits. It comes as tablets, one taken twice a day.",
+      "Blood sugar is easy to ignore until it runs too high or too low. The site starts there: what glicemia is, and what each extreme feels like.",
+      "Only then does it show the box, the plants inside and how to take it."
+    ]
+  },
+  solution: {
+    h: "Two colours for two conditions",
+    p: "The page runs on a calm blue and a soft green. Hiperglicemia gets a blue card and hipoglicemia a green one, each with a photo, a short explanation and its list of symptoms, and each closes on the advice to see a doctor. The plants get three round photos on the same two colours.",
+    stat: "3",
+    statText: "plants in the formula, each with a round photo and its story: gymnema, fenugreek, white mulberry"
+  },
+  page: {
+    text: "The menu runs Glicemia, Ingrediente principale, Glucopil®, Comandă, Contact. The hero puts two women and a slice of cake beside the line “Soluția avansată în menținerea optimă a nivelului de glicemie” and a Cumpără button. Below it the page explains glicemia, then the two conditions, the ingredients, how to take it and the warnings, and closes on the Zdrovit address beside a drawing of a woman among leaves.",
+    shots: [["usage", "Mod de utilizare: a man pouring a glass of water, the daily dose and a blue Atenționări! card", "How to take it, and the warnings in a blue card"]]
+  },
+  story: {
+    pills: ["High", "and low"],
+    text: "Hiperglicemia and hipoglicemia sit one after the other, in the same layout and different colours, so the two read as a pair. Each card explains the condition in a few lines and lists its symptoms, from thirst and tiredness to trembling and hunger. Then the ingredients: gymnema leaf, fenugreek seed and white mulberry leaf, with chromium and B vitamins, each plant with a round photo and a few lines on where it comes from.",
+    deliverables: ["Condition cards", "Symptom lists", "Ingredient cards"],
+    media: [
+      { row: [
+        ["hyper", "Hiperglicemia: a blue card with a photo of a tired woman and a list of symptoms"],
+        ["hypo", "Hipoglicemia: a green card with a photo of a woman at an open fridge and a list of symptoms"]
+      ], cap: "Hiperglicemia in blue, hipoglicemia in green" },
+      ["ingredients", "Three round photos, gymnema leaves, fenugreek seeds and white mulberries, above cards in green and blue, and a Cumpără Glucopil® button", "The three plants, each with its story"]
+    ]
+  },
+  phone: {
+    text: "On a phone the photo goes first and the line follows under it. The two condition cards keep their colours and list their symptoms one under the other, the ingredients come one after another, and the dose sits above the blue card of warnings.",
+    shots: [
+      ["phone-hero", "The first screen on a phone: the photo of the two women, then the line and the text"],
+      ["phone-hyper", "Hiperglicemia on a phone: the blue card with a photo and the symptoms"],
+      ["phone-ingredients", "Ingrediente on a phone: gymnema, fenugreek, white mulberry, chromium and B vitamins, in green type"],
+      ["phone-usage", "Mod de utilizare and the blue Atenționări! card on a phone"]
+    ],
+    cap: "The first screen, a condition card, the ingredients and the dose, at 390 px wide"
+  },
+  result: "A page that explains high and low blood sugar first, then shows what is in the tablet and how to take it.",
+  related: ["periferisan", "help-4-brain", "lacium"]
+});
+
 // a chapter added to a page that already exists, by its slug (gen.mjs applies it): none yet
 export const EXTEND = {};
 
 // every Zdrovit brand page built from its product site, in the order they were made
-export const ZDROVIT_WEB = [ASPASIA, BONILASH];
+export const ZDROVIT_WEB = [ASPASIA, BONILASH, GLUCOPIL];

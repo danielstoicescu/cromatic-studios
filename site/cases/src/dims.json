@@ -4568,5 +4568,60 @@
     900,
     1463,
     104872
+  ],
+  "m:glucopil/hero": [
+    1600,
+    900,
+    140535
+  ],
+  "m:glucopil/site-scroll": [
+    1200,
+    5580,
+    456309
+  ],
+  "m:glucopil/site-scroll-phone": [
+    585,
+    14783,
+    710402
+  ],
+  "m:glucopil/hyper": [
+    1600,
+    736,
+    78756
+  ],
+  "m:glucopil/hypo": [
+    1600,
+    810,
+    89818
+  ],
+  "m:glucopil/ingredients": [
+    1600,
+    958,
+    129874
+  ],
+  "m:glucopil/usage": [
+    1600,
+    1328,
+    178433
+  ],
+  "m:glucopil/phone-hero": [
+    900,
+    1463,
+    104919
+  ],
+  "m:glucopil/phone-hyper": [
+    900,
+    1463,
+    92651
+  ],
+  "m:glucopil/phone-ingredients": [
+    900,
+    1463,
+    110604
+  ],
+  "m:glucopil/phone-usage": [
+    900,
+    1463,
+    98287
   ]
 }
