@@ -624,7 +624,7 @@ a.pcard:hover .pc-media { transform: none; }
    chip at the top. On hover or focus: the card lifts on the house bounce, the picture drifts a hair away from the
    pointer (site.js sets --mx, --my), the pill tips, the arrow runs through its circle, the brief opens on a paper note
    under the pill. Pressed, it sits down on its shadow. They deal in as their street comes into view (site.js: .bento.in),
-   one after another, a slight turn settling. Transforms, opacity and clip-path only; nothing moves with reduced motion */
+   one after another, a slight turn settling. Transforms and opacity only (the compositor's); nothing moves with reduced motion */
 .bento { --sc: var(--dc, var(--y)); display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: 170px; grid-auto-flow: dense; gap: 18px; }
 .bcard { position: relative; overflow: hidden; border: var(--line); border-radius: var(--rad); background: var(--bc); color: var(--bt); text-decoration: none; isolation: isolate;
   grid-column: span 2; grid-row: span 1; box-shadow: 0 3px 0 var(--ink); translate: 0 0;
@@ -645,55 +645,49 @@ a.bcard:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1.06; }
   transition: translate .6s var(--bounce); }
 a.bcard:hover .bc-poster { translate: 0 -3px; }
 /* the category: a chip at the top, shown on hover and focus (and at rest on the big cards of a touch screen) */
-.bc-top { position: absolute; left: 12px; right: 12px; top: 12px; display: flex; pointer-events: none; }
-.bc-cat { max-width: 100%; padding: 5px 9px 4px; border: var(--line); border-radius: 999px; background: var(--paper); color: var(--ink); font-size: 9.5px; letter-spacing: .12em; line-height: 1.2;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; translate: 0 -8px; transition: opacity .25s var(--eoq), translate .5s var(--bounce); }
+.bc-cat { position: absolute; left: 12px; top: 12px; max-width: calc(100% - 24px); padding: 5px 9px 4px; border: var(--line); border-radius: 999px; background: var(--paper); color: var(--ink);
+  font-size: 9.5px; letter-spacing: .12em; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+  opacity: 0; translate: 0 -8px; transition: opacity .25s var(--eoq), translate .5s var(--bounce); }
 .bcard:is(:hover, :focus-visible) .bc-cat { opacity: 1; translate: 0 0; transition-delay: .04s; }
-/* the name on its pill, and the way in */
-.bc-body { position: absolute; left: 0; right: 0; bottom: 0; display: grid; justify-items: start; padding: 12px; }
-.bc-tag { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: 10px; max-width: 100%; min-height: 40px; padding: 5px 5px 5px 15px; border: var(--line); border-radius: 999px;
-  background: #fff; color: var(--ink); box-shadow: 0 2px 0 var(--ink); transform-origin: 12% 100%; transition: rotate .55s var(--bounce), translate .55s var(--bounce); }
-article.bcard .bc-tag { padding-right: 15px; }
-.bc-name { font: 800 clamp(15px, 1.2vw, 18px)/1.12 var(--f); letter-spacing: -.012em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-bottom: 1px; }
-.bc-go { flex: 0 0 auto; position: relative; width: 28px; height: 28px; border: var(--line); border-radius: 50%; background: var(--sc); overflow: hidden; font-style: normal; transition: background .3s, scale .45s var(--bounce); }
-.bc-go::before, .bc-go::after { content: "→"; position: absolute; inset: 0; display: grid; place-items: center; font: 800 15px/1 var(--f); color: var(--ink); transition: translate .45s var(--eoq); }
-.bc-go::after { translate: -120% 0; }
-a.bcard:is(:hover, :focus-visible) .bc-tag { rotate: -1.6deg; translate: 0 -2px; }
-a.bcard:is(:hover, :focus-visible) .bc-go::before { translate: 120% 0; }
-a.bcard:is(:hover, :focus-visible) .bc-go::after { translate: 0 0; transition-delay: .06s; }
-a.bcard:active .bc-go { scale: .9; }
-/* the note under the pill: the brief, and "Read the case" (it opens on the grid's 0fr -> 1fr: no measuring) */
-.bc-more { display: grid; grid-template-rows: 0fr; width: 100%; transition: grid-template-rows .5s var(--eoq); }
-.bc-note { min-height: 0; overflow: hidden; display: grid; gap: 4px; margin-top: 0; padding: 0 14px; border-radius: 16px; background: var(--paper); color: var(--ink);
-  box-shadow: inset 0 0 0 1px transparent; opacity: 0; transition: opacity .3s var(--eoq), margin .5s var(--eoq), padding .5s var(--eoq), box-shadow .3s; }
-.bc-desc { font-size: 14px; line-height: 1.38; color: #2e2c27; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+/* the name on its pill; its way in is the pill's own circle (::after), the arrow running through it on hover */
+.bc-body { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: flex-start; padding: 12px; }
+.bc-name { position: relative; z-index: 2; display: block; max-width: 100%; padding: 10px 46px 10px 15px; border: var(--line); border-radius: 999px; background: #fff; color: var(--ink);
+  box-shadow: 0 2px 0 var(--ink); font: 800 clamp(15px, 1.2vw, 18px)/1.12 var(--f); letter-spacing: -.012em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transform-origin: 12% 100%; transition: rotate .55s var(--bounce), translate .55s var(--bounce); }
+article.bcard .bc-name { padding-right: 15px; }
+a.bcard .bc-name::after { content: ""; position: absolute; right: 5px; top: 50%; width: 28px; height: 28px; margin-top: -14px; box-sizing: border-box; border: var(--line); border-radius: 50%;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 8h10.5M9 3.6 13.4 8 9 12.4' fill='none' stroke='%230d0c09' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") 50% 50% / 14px 14px no-repeat, var(--sc); }
+a.bcard:is(:hover, :focus-visible) .bc-name { rotate: -1.6deg; translate: 0 -2px; }
+a.bcard:is(:hover, :focus-visible) .bc-name::after { animation: bcGo .6s var(--eoq) .05s; }
+@keyframes bcGo { 0% { background-position: 50% 50%, 0 0; } 44% { background-position: 280% 50%, 0 0; } 45% { background-position: -180% 50%, 0 0; } 100% { background-position: 50% 50%, 0 0; } }
+/* the note under the pill: the brief, and "Read the case" */
+.bc-note { display: grid; gap: 4px; width: 100%; max-height: 0; margin-top: 0; padding: 0 14px; overflow: hidden; border-radius: 16px; background: var(--paper); color: var(--ink); font-size: 14px;
+  opacity: 0; box-shadow: inset 0 0 0 1px transparent; transition: max-height .5s var(--eoq), margin .5s var(--eoq), padding .5s var(--eoq), opacity .3s var(--eoq), box-shadow .3s; }
+.bc-desc { line-height: 1.38; color: #2e2c27; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .bc-cta { font: 700 10.5px/1.3 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
 .bc-cta i { font-style: normal; display: inline-block; transition: translate .45s var(--bounce); }
 @media (hover: hover) {
-  .bcard:is(:hover, :focus-visible) .bc-more { grid-template-rows: 1fr; }
-  .bcard:is(:hover, :focus-visible) .bc-note { opacity: 1; margin-top: 8px; padding: 11px 14px 12px; box-shadow: inset 0 0 0 1px var(--ink), 0 2px 0 var(--ink); }
+  .bcard:is(:hover, :focus-visible) .bc-note { max-height: 8em; margin-top: 8px; padding: 11px 14px 12px; opacity: 1; box-shadow: inset 0 0 0 1px var(--ink), 0 2px 0 var(--ink); }
   a.bcard:is(:hover, :focus-visible) .bc-cta i { translate: 4px 0; }
-  /* a card one row high: two lines of the brief, and the note takes the chip's place (it would meet the pill) */
+  /* a card one row high: two lines of the brief, and the note takes the chip's place (they would meet) */
   .bcard:is(.b-s, .b-m, .b-w) .bc-desc { -webkit-line-clamp: 2; }
-  .bcard:is(.b-s, .b-m, .b-w) .bc-top { display: none; }
+  .bcard:is(.b-s, .b-m, .b-w) .bc-cat { display: none; }
 }
 @media (hover: none) { .bcard:is(.b-xl, .b-t, .b-w) .bc-cat { opacity: 1; translate: 0 0; } }
 .ps-h { display: block; width: 100%; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .6; margin-bottom: 4px; }
 /* dealt in as the street comes into view */
 .js .bento:not(.in) .bcard { opacity: 0; transform: translateY(28px) rotate(calc(var(--rr, 1) * 1.4deg)); }
-.js .bento:not(.in) .bc-media { clip-path: inset(9% 7% 9% 7% round 18px); }
 .js .bento .bcard:nth-child(even) { --rr: -1; }
 .js .bento .bcard { transition: opacity .6s var(--eoq), transform .95s var(--bounce), translate .5s var(--bounce), box-shadow .5s var(--bounce);
   transition-delay: calc(min(var(--i, 0), 9) * 65ms), calc(min(var(--i, 0), 9) * 65ms), 0s, 0s; }
-.js .bento .bc-media { transition: clip-path 1.15s var(--eoq) calc(min(var(--i, 0), 9) * 65ms); }
 @media (max-width: 1000px) { .bento { grid-template-columns: repeat(4, 1fr); grid-auto-rows: 160px; } .bcard.b-xl, .bcard.b-w { grid-column: span 4; } .bcard.b-m, .bcard.b-s, .bcard.b-t { grid-column: span 2; } }
 @media (max-width: 600px) {
   .bento { grid-template-columns: 1fr 1fr; grid-auto-rows: 150px; gap: 12px; }
   .bcard, .bcard.b-m, .bcard.b-s { grid-column: span 1; } .bcard.b-xl, .bcard.b-w { grid-column: span 2; } .bcard.b-t { grid-column: span 1; grid-row: span 2; }
-  .bc-body { padding: 8px; } .bc-top { left: 8px; right: 8px; top: 8px; }
-  .bc-tag { min-height: 34px; gap: 6px; padding: 4px 4px 4px 11px; } .bc-name { font-size: 14px; } .bc-go { width: 24px; height: 24px; } .bc-go::before, .bc-go::after { font-size: 13px; }
+  .bc-body { padding: 8px; } .bc-cat { left: 8px; top: 8px; max-width: calc(100% - 16px); }
+  .bc-name { font-size: 14px; padding: 8px 36px 8px 11px; } a.bcard .bc-name::after { width: 24px; height: 24px; margin-top: -12px; right: 4px; background-size: 12px 12px, auto; }
   .bcard:not(.b-xl):not(.b-w) .bc-cat { display: none; }
-  .bc-more { display: none; }
+  .bc-note { display: none; }
   .bc-poster { inset: 12px 12px auto; font-size: 19px; }
 }
 /* r130o: a tall piece on the left, its words on the right */
@@ -981,22 +975,21 @@ html.embed .cv-stage { height: 100vh; height: 100svh; }
 .psmall .ps:hover { rotate: -1.5deg; translate: 0 -2px; }
 @media (max-width: 860px) { .streets-nav { top: 64px; } }
 @media (max-width: 700px) {
-  /* one line that slides sideways */
-  .streets-nav { flex-wrap: nowrap; overflow-x: auto; margin-inline: -20px; padding: 10px 20px; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 16px), transparent); mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 16px), transparent); }
+  /* one line that slides sideways; no blur under it on a phone (a solid band, cheaper to scroll) */
+  .streets-nav { -webkit-backdrop-filter: none; backdrop-filter: none; border-image: conic-gradient(color-mix(in srgb, var(--alt) 96%, transparent) 0 0) fill 0 / / 0 100vw; flex-wrap: nowrap; overflow-x: auto; margin-inline: -20px; padding: 10px 20px; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 16px), transparent); mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 16px), transparent); }
   .streets-nav::-webkit-scrollbar { display: none; }
   .streets-nav a { flex: 0 0 auto; white-space: nowrap; }
   .dom-street { scroll-margin-top: 130px; }
   .dom-street .dom-more { font-size: 14px; }
 }
-@media (prefers-reduced-motion: reduce) { .js .dom-street .street-sign, .js .dom-street .dom-lead, .js .bento .bcard { opacity: 1 !important; transform: none !important; } .js .bento .bc-media { clip-path: none !important; } }
+@media (prefers-reduced-motion: reduce) { .js .dom-street .street-sign, .js .dom-street .dom-lead, .js .bento .bcard { opacity: 1 !important; transform: none !important; } }
 
 /* ---- TASK-067: the coffee stop, drawn (the site's Lottie layer: design/lottie-ui/_source/pieces/coffee.mjs) ----
-   The first frame is SVG in the page (wide, and a closer tall cut on phones), so the scene is there with the HTML; the
-   Lottie, drawn in a worker, comes over it from the same frame once the section is near, plays while it is on screen
-   and rests on that frame after three turns. The round button pauses it (shown once it plays). */
+   The first frame is a small SVG asked for with the page (wide, and a closer tall cut on phones), so the scene is there
+   long before the section is; the Lottie, drawn in a worker, comes over it from the same frame once the section is near,
+   plays while it is on screen and rests on that frame after three turns. The round button pauses it (shown once it plays). */
 .road-scene.road-lottie { height: auto; aspect-ratio: 1280 / 720; background: #EAF2F6; contain: layout paint; }
-.rl-art, .rl-still, .rl-still svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.rl-tall { display: none; }
+.rl-art, .rl-still, .rl-still img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .road-lottie .czl { position: absolute; inset: 0; z-index: 1; width: 100% !important; height: 100% !important; pointer-events: none; contain: strict; }
 .road-lottie .czl canvas { display: block; width: 100%; height: 100%; }
 .rl-pp { position: absolute; left: 14px; bottom: 14px; z-index: 2; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border: var(--line); border-radius: 50%; background: #fff; color: var(--ink);
@@ -1015,7 +1008,6 @@ html.embed .cv-stage { height: 100vh; height: 100svh; }
 .road-foot :is(.rs-cta, .rs-drive):active { translate: 0 1px; box-shadow: 0 1px 0 var(--ink); }
 @media (max-width: 700px) {
   .road-scene.road-lottie { aspect-ratio: 720 / 840; }
-  .rl-wide { display: none; } .rl-tall { display: block; }
   .rl-pp { left: 10px; bottom: 10px; width: 36px; height: 36px; }
   .road-foot .rs-cta, .road-foot .rs-drive { font-size: 13px; padding: 10px 13px; }
 }

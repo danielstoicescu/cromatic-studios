@@ -159,13 +159,13 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     const own = MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]];
     const media = own ? `<img src="${own}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : p.vid ? vid(p.vid, p.img) : p.img ? img(p.img, p.name) : (() => { const u = coverFor(p, covers); return u ? `<img src="${u}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : ""; })();
     const size = SIZES[i % SIZES.length];
-    // TASK-067: the name on a pill at the bottom (its way in, a circle in the street's colour, for a case), the category on
-    // a chip at the top, the brief and "Read the case" on a paper note that opens under the pill (site.css)
+    // TASK-067: the name on a pill at the bottom (for a case, its way in: a circle in the street's colour, drawn by the
+    // pill itself), the category on a chip at the top, the brief and "Read the case" on a paper note that opens under the
+    // pill (site.css). One element more than before per card: the note
     const inner = `${media ? `<span class="bc-media">${media}</span>` : `<span class="bc-poster">${esc(p.poster)}</span>`}
-      <span class="bc-top"><span class="bc-cat mono">${esc(p.cat)}</span></span>
-      <span class="bc-body"><span class="bc-tag"><span class="bc-name">${esc(p.name)}</span>${p.page ? `<i class="bc-go" aria-hidden="true"></i>` : ""}</span>
-      <span class="bc-more"><span class="bc-note"><span class="bc-desc">${esc(p.desc)}</span>
-      ${p.page ? `<span class="bc-cta">Read the case <i>→</i></span>` : p.wip ? `<span class="bc-cta mono">Work in progress</span>` : ""}</span></span></span>`;
+      <span class="bc-cat mono">${esc(p.cat)}</span>
+      <span class="bc-body"><span class="bc-name">${esc(p.name)}</span><span class="bc-note"><span class="bc-desc">${esc(p.desc)}</span>
+      ${p.page ? `<span class="bc-cta">Read the case <i>→</i></span>` : p.wip ? `<span class="bc-cta mono">Work in progress</span>` : ""}</span></span>`;
     const cls = `bcard b-${size}${media ? " has-media" : ""}`;
     const st = `--bc:${p.c};--bt:${p.t};--i:${i}`;
     return p.page ? `<a class="${cls}" href="/work/${p.page}/" style="${st}">${inner}</a>` : `<article class="${cls}" style="${st}">${inner}</article>`;
@@ -263,7 +263,7 @@ ${header(true)}
       <p class="sec-lead">Two Minutes has been our client and our neighbour for a decade. On the drive we always stop here: four double espressos, and the coffee boxes fly down from the Cromatic mansard to the shelf.</p>
     </div>
     ${coffee ? `<div class="road-scene road-lottie" data-czl-js="${coffee.js}" data-czl-player="${coffee.player}" data-czl-wide="${coffee.wide}" data-czl-tall="${coffee.tall}">
-      <div class="rl-art" role="img" aria-label="The coffee stop, drawn: four double espressos on the Two Minutes sill, and the coffee boxes flying from the Cromatic mansard to the shelf"><div class="rl-still rl-wide">${coffee.still.wide}</div><div class="rl-still rl-tall">${coffee.still.tall}</div></div>
+      <div class="rl-art" role="img" aria-label="The coffee stop, drawn: four double espressos on the Two Minutes sill, and the coffee boxes flying from the Cromatic mansard to the shelf"><picture class="rl-still"><source media="(max-width: 700px)" srcset="${coffee.still.tall.src}" width="${coffee.still.tall.w}" height="${coffee.still.tall.h}"><img src="${coffee.still.wide.src}" width="${coffee.still.wide.w}" height="${coffee.still.wide.h}" alt="" fetchpriority="low" decoding="async"></picture></div>
       <button class="rl-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>
     </div>
     <div class="road-foot"><a class="rs-cta" href="/work/two-minutes/">Two Minutes, the case →</a><a class="rs-drive" href="/">Drive it yourself →</a></div>` : `<div class="road-scene road-video">
