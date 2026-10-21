@@ -1,0 +1,18 @@
+{
+ "_": "TASK-076: glucopil.ro. Crops in capture px (desktop 2880 wide, phone 780 wide).",
+ "label": "glucopil.ro",
+ "field": ["#e8f2f9", "#9cc3dc"],
+ "out": {
+  "hero": {"kind": "hero", "desktop": {"src": "desktop-full.png"}, "phone": {"src": "phone-hero.png"}},
+  "site-scroll": {"kind": "plain", "src": "desktop-full.png", "width": 1200, "q": 72},
+  "site-scroll-phone": {"kind": "plain", "src": "phone-full.png", "width": 585, "q": 70},
+  "hyper": {"kind": "browser", "src": "section-02.png", "crop": [0, 0, 2880, 1060]},
+  "hypo": {"kind": "browser", "src": "section-03.png", "crop": [0, 0, 2880, 1206]},
+  "ingredients": {"kind": "browser", "src": "desktop-full.png", "crop": [0, 7168, 2880, 1500]},
+  "usage": {"kind": "browser", "src": "section-05.png", "crop": [0, 0, 2880, 2232]},
+  "phone-hero": {"kind": "phone", "src": "phone-full.png", "y": 0},
+  "phone-hyper": {"kind": "phone", "src": "phone-full.png", "y": 3700},
+  "phone-ingredients": {"kind": "phone", "src": "phone-full.png", "y": 8250},
+  "phone-usage": {"kind": "phone", "src": "phone-full.png", "y": 14300}
+ }
+}

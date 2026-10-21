@@ -47,6 +47,7 @@ export const WORK_TITLES = {
   "maximag": "Maximag Bisglicinat: Smart TV ads & motion",
   "aspasia": "Aspasia Collagen Beauty: one-page product website",
   "bonilash": "Bonilash: product website for lash and brow serums",
+  "glucopil": "Glucopil: one-page product website, blood sugar",
   "routine-paris": "Routine Paris: daily ritual brand identity",
   "help-4-brain": "Help4Brain: pharma product & marketing",
   "altius": "Altius: medical brand & digital",
