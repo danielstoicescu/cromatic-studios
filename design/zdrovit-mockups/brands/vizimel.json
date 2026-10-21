@@ -1,0 +1,18 @@
+{
+ "_": "TASK-076 (second half, Mira): Vizimel, vizimel.ro. Web only: no medical presentation (Daniel), no pack or leaflet files (authorship of the pack unconfirmed), only what the site shows. Crops in capture px (desktop 2880 wide, phone 780 wide). phone-full-v2.png is a fresh phone capture (21 Oct, cookies declined, the consent widget hidden): the first one caught the sticky header over the hero. The clinical lines (the reasons block, the 25% card, the closing band) are not cropped on their own; they stay in the scrolling frames, as on the site.",
+ "label": "vizimel.ro",
+ "field": ["#fff7c2", "#f0db2a"],
+ "out": {
+  "hero": { "kind": "hero", "desktop": { "src": "desktop-full.png" }, "phone": { "src": "phone-full-v2.png" } },
+  "site-scroll": { "kind": "plain", "src": "desktop-full.png", "width": 1200, "q": 72 },
+  "site-scroll-phone": { "kind": "plain", "src": "phone-full-v2.png", "width": 480, "q": 74 },
+  "mechanisms": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 3620, 2880, 1320] },
+  "ingredients": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 5180, 2880, 1240] },
+  "advantages": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 7360, 2880, 1100] },
+  "conditions": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 10780, 2880, 1320] },
+  "phone-hero": { "kind": "phone", "src": "phone-full-v2.png", "y": 0 },
+  "phone-mechanisms": { "kind": "phone", "src": "phone-full-v2.png", "y": 4320 },
+  "phone-ingredients": { "kind": "phone", "src": "phone-full-v2.png", "y": 7440 },
+  "phone-advantages": { "kind": "phone", "src": "phone-full-v2.png", "y": 13140 }
+ }
+}
