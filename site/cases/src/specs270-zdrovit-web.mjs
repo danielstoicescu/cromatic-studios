@@ -408,8 +408,58 @@ export const OPTISOMN = web({
   related: ["gripovit", "periferisan", "aspasia"]
 });
 
+export const PARASOFTIN = web({
+  slug: "parasoftin", name: "Parasoftin", label: "parasoftin.ro",
+  title: "One range, one colour per product.",
+  tagline: "The product site for Parasoftin, a foot care range: four products, each with a colour of its own.",
+  desc: "Parasoftin: parasoftin.ro, the one-page product site for a foot care range in the Zdrovit portfolio, on desktop and phone. By Cromatic Studios, Bucharest.",
+  accent: { bg: "#D6B8E6", fg: "#33195f", ink: "#5b2d9a" },
+  info: ["Foot care, Parasoftin", "Romania · Zdrovit portfolio", "Landing page, desktop and mobile"],
+  heroAlt: "parasoftin.ro in a browser window and on a phone: four Parasoftin packs fanned out beside bare feet on lilac, and the line Gama completă pentru îngrijirea corectă a picioarelor!",
+  problem: {
+    h: "Four products, one shelf",
+    p: [
+      "Parasoftin is a foot care range from Zdrovit: exfoliating socks, a regenerating mask, a hydrating mask and Parasoftin® Silk, a heel cream.",
+      "On a shelf the packs sit close together. The site gives each one its own space: what it does, who it is for and a button to order.",
+      "Then it talks about feet: ingrown nails, corns, cracks and calluses, and a list of tips."
+    ]
+  },
+  solution: {
+    h: "A colour for each pack",
+    p: "Every product section takes its colour from the pack: peach for the regenerating mask, green for the hydrating one, pink and purple for the socks. The hero brings them together on lilac, fanned out beside a pair of bare feet, and soft waves separate one section from the next.",
+    stat: "4",
+    statText: "products, each with its own section: the socks, two masks and a heel cream"
+  },
+  page: {
+    text: "The menu is short: Gamă, Afecțiuni, Contact and a purple Comandă button. The hero fans out the four packs beside bare feet on lilac, under “Gama completă pentru îngrijirea corectă a picioarelor!”. Each product follows with a headline of what it does, from “Soluția pentru tălpi fine!” to “Elimină calusurile și pielea aspră!”. Afecțiuni ale picioarelor, four common problems and Tips & tricks close the page.",
+    shots: [["conditions", "Afecțiuni ale picioarelor: a short text on lilac beside a photo of a hand on a foot", "Afecțiuni ale picioarelor"]]
+  },
+  story: {
+    pills: ["One colour", "each"],
+    text: "Each product section repeats one pattern: a headline with the benefit, the product name, two or three lines on what it does, a list of who it is for, and two buttons, Află mai multe and Cumpără acum. The colour changes with the pack, so the regenerating mask reads peach and the hydrating mask reads green at a glance.",
+    deliverables: ["Product sections", "Colour per product"],
+    media: [
+      ["socks", "Soluția pentru tălpi fine!: the Parasoftin exfoliating socks pack between the text and a list of what they do", "The exfoliating socks"],
+      ["regen", "Regenerează și redă aspectul sănătos al pielii picioarelor!: the regenerating mask on peach", "The regenerating mask, on peach"],
+      ["hydrating", "Hidratează pielea picioarelor!: the hydrating mask on green", "The hydrating mask, on green"]
+    ]
+  },
+  phone: {
+    text: "On a phone the packs come first and the headline under them. Each product section keeps its colour, sets the pack between the text and the list, and ends on a purple Cumpără acum button.",
+    shots: [
+      ["phone-hero", "The first screen on a phone: the four packs on lilac and the headline"],
+      ["phone-socks", "The exfoliating socks on a phone: the headline, Află mai multe and the pack"],
+      ["phone-regen", "The regenerating mask on a phone, on peach"],
+      ["phone-hydrating", "The hydrating mask on a phone, on green"]
+    ],
+    cap: "The first screen and three of the products, at 390 px wide"
+  },
+  result: "Four foot care products, each easy to find by its colour.",
+  related: ["bonilash", "aspasia", "optisomn"]
+});
+
 // a chapter added to a page that already exists, by its slug (gen.mjs applies it): none yet
 export const EXTEND = {};
 
 // every Zdrovit brand page built from its product site, in the order they were made
-export const ZDROVIT_WEB = [ASPASIA, BONILASH, GLUCOPIL, GRIPOVIT, LACIUM, OPTISOMN];
+export const ZDROVIT_WEB = [ASPASIA, BONILASH, GLUCOPIL, GRIPOVIT, LACIUM, OPTISOMN, PARASOFTIN];
