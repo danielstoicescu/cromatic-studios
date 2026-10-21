@@ -14,7 +14,7 @@
 /* Layout: the Cromatic "Middleman offer" treatment (light, simplified, in colour). Grid paper ground, white cards,
    black ink keylines, Lexend for everything that speaks, JetBrains Mono for everything that reads as data.
    Colour is a code, never decoration: green = open / clear / works, coral = taken / blocked / against,
-   yellow = the one thing to look at (the eight, the active tab, the decision), blue = watch / pending / to read,
+   yellow = the one thing to look at (the eight, the active tab, the decision), blue = watch / pending / to read / probably,
    purple = a variant. Text on any colour is black. */
 :root{
   --cx-blue:#48A8EF;--cx-yellow:#F8D13B;--cx-green:#4CC462;--cx-coral:#F27261;--cx-purple:#AE76E6;
@@ -93,6 +93,7 @@ em{font-style:italic;font-weight:900;}
 .chip--g{background:var(--cx-green);}
 .chip--c{background:var(--cx-coral);}
 .chip--y{background:var(--cx-yellow);}
+.chip--p{background:var(--cx-purple);}
 .sec--dark .chip{background:var(--white);color:var(--ink);}
 
 /* cards */
@@ -243,13 +244,12 @@ em{font-style:italic;font-weight:900;}
 .dom--ok .dom__status{background:var(--cx-green);}
 .dom--taken .dom__status{background:var(--cx-coral);}
 .dom--ask .dom__status{background:var(--cx-yellow);}
-.dom--var .dom__status{background:var(--cx-purple);}
-.dom__url{font-family:var(--fm);font-weight:700;font-size:clamp(1rem,1.8vw,1.22rem);letter-spacing:-.01em;line-height:1.2;word-break:break-all;display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap;}
-.dom__price{font-family:var(--fd);font-weight:900;font-size:19px;letter-spacing:-.03em;word-break:normal;}
+.dom--maybe .dom__status{background:var(--cx-blue);}
+.dom__url{font-family:var(--fm);font-weight:700;font-size:clamp(1rem,1.8vw,1.22rem);letter-spacing:-.01em;line-height:1.2;word-break:normal;overflow-wrap:break-word;hyphens:none;display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap;}
+.dom__price{font-family:var(--fd);font-weight:900;font-size:19px;letter-spacing:-.03em;}
 .dom__note{font-size:14.5px;line-height:1.5;}
-.dom--var{grid-column:1/-1;}
-.dom--var .chips{gap:6px;}
-.dom--var .chip{font-size:10px;padding:4px 10px;letter-spacing:.06em;text-transform:none;}
+.chips--dom{gap:6px;}
+.chips--dom .chip{font-size:10.5px;padding:4px 11px;letter-spacing:.04em;text-transform:none;}
 
 /* rooms sketch */
 .rooms{display:grid;gap:18px;margin-top:26px;}
@@ -451,6 +451,58 @@ footer{background:var(--ink);color:var(--paper);padding:44px 0 40px;}
   </div>
 </section>
 
+<!-- 5b. THE VARIANT -->
+<section id="s-ag8" data-nav="ag8">
+  <div class="wrap">
+    <span class="chip chip--p rv"><svg class="ico"><use href="#i-eight"/></svg> A variant to weigh · not a third candidate</span>
+    <h2 class="h1 rv" style="margin-top:.9rem">ag8.<br>The same turn, one letter shorter.</h2>
+    <p class="lead rv" style="margin-top:1rem">The quarter-turn 8 stays; the e goes. What is left in front of it is Ag, the chemical symbol for silver: the silver age, silver hair, a quiet nod to longevity without saying age. It works best under age8, as the monogram, the handle, the short mark on a stamp or a favicon. Or as the name itself, if the room wants the most compact form.</p>
+    <div class="grid g2" style="margin-top:1.4rem">
+      <div class="card rv" data-d="1">
+        <span class="klabel kl--ok"><svg class="ico"><use href="#i-check"/></svg> What works</span>
+        <ul class="slist">
+          <li><svg class="ico"><use href="#i-check"/></svg><span><b>Three characters.</b> One fewer than age8, and the 8 still carries the whole logo brief.</span></li>
+          <li><svg class="ico"><use href="#i-check"/></svg><span><b>The register is clean.</b> A word search for AG8 across all classes returns nothing. The numbers are below.</span></li>
+          <li><svg class="ico"><use href="#i-check"/></svg><span><b>A second layer.</b> The silver reading is something age8 does not have: longevity hinted at, never stated.</span></li>
+        </ul>
+      </div>
+      <div class="card rv" data-d="2">
+        <span class="klabel kl--no"><svg class="ico"><use href="#i-alert"/></svg> Where the resistance is</span>
+        <ul class="slist">
+          <li><svg class="ico"><use href="#i-x"/></svg><span><b>The category leaves the door.</b> Without the word age, the name reads like a code, A-G-8, until someone explains it.</span></li>
+          <li><svg class="ico"><use href="#i-x"/></svg><span><b>AG is a company suffix.</b> In Germany and Switzerland it means Aktiengesellschaft, so AG8 can look like a corporate entity rather than a club.</span></li>
+          <li><svg class="ico"><use href="#i-x"/></svg><span><b>The pronunciation forks.</b> A-ge-opt or ei-dji-eit. The same fix as age8: pick one spoken form and teach it.</span></li>
+          <li><svg class="ico"><use href="#i-x"/></svg><span><b>Most domains are taken.</b> .com, .net, .eu, .club, .one and .app are all registered. .ro and .fit are open.</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="clr-stats rv">
+      <div class="tc tc--g"><i><svg class="ico"><use href="#i-search"/></svg> AG8 · word search · all classes</i><b><span data-count="0">0</span> results</b><span>Nothing in the 27 offices, EUTM or WIPO. The method holds: the same word search for LONGEVITY in 41/43/44 returns 586.</span></div>
+      <div class="tc"><i><svg class="ico"><use href="#i-search"/></svg> AG 8 · word search</i><b><span data-count="4">0</span> results</b><span>All expired German marks where AG is the company suffix, 8sens biognostic AG and 11-8-40 Voice-Commerce AG among them. <em>None relevant.</em></span></div>
+      <div class="tc tc--m"><i><svg class="ico"><use href="#i-eye"/></svg> ag8 · contains · EU, 41/43/44</i><b><span data-count="985">0</span> results</b><span>First page read: fragment matches only, nothing identical. For comparison, AGE8 as a word search, all classes: no results.</span></div>
+    </div>
+    <div class="card rv" style="margin-top:1rem">
+      <span class="klabel"><svg class="ico"><use href="#i-globe"/></svg> Domains · WHOIS / RDAP · 21 October 2026</span>
+      <div class="chips chips--dom" style="margin-top:.8rem">
+        <span class="chip chip--g">ag8.ro open</span>
+        <span class="chip chip--g">ag8.fit open</span>
+        <span class="chip chip--y">ag8.life probably open, no registry record</span>
+        <span class="chip chip--c">ag8.com since 2000</span>
+        <span class="chip chip--c">ag8.net since 2012</span>
+        <span class="chip chip--c">ag8.eu registered</span>
+        <span class="chip chip--c">ag8.club since June 2026</span>
+        <span class="chip chip--c">ag8.one since 2024</span>
+        <span class="chip chip--c">ag8.app registered</span>
+      </div>
+    </div>
+    <div class="card card--ink rv" style="margin-top:1rem">
+      <span class="klabel"><svg class="ico"><use href="#i-eye"/></svg> Where it fits</span>
+      <p class="body" style="margin-top:.55rem">A variant to weigh, not a recommendation and not a third candidate. The natural place for ag8 is <strong>under</strong> age8: the stamp, the favicon, the social handle, the mark that fits where four characters do not. If the room wants the most compact form as the name itself, the register allows it; the category on the door and the domains are the price.</p>
+    </div>
+    <p class="tiny rv" style="margin-top:.8rem">Read manually from TMview (EU territory, 27 offices plus EUTM and WIPO) and from WHOIS/RDAP on 21 October 2026. A snapshot, not legal advice.</p>
+  </div>
+</section>
+
 <!-- 6. DOMAINS -->
 <section id="s-domains" data-nav="Domains" class="sec--sand">
   <div class="wrap">
@@ -471,7 +523,7 @@ footer{background:var(--ink);color:var(--paper);padding:44px 0 40px;}
       <div class="dom dom--ok">
         <span class="dom__status"><svg class="ico"><use href="#i-check"/></svg> Available</span>
         <b class="dom__url">age8.eu <span class="dom__price">€0.01</span></b>
-        <span class="dom__note">One cent for the first year on a three year term, EU residency required. Take it for the franchise map alone.</span>
+        <span class="dom__note">One cent for the first year on a three year term, EU residency required. Confirmed available in the EURid WHOIS on 21 October. Take it for the franchise map alone.</span>
       </div>
       <div class="dom dom--ok">
         <span class="dom__status"><svg class="ico"><use href="#i-check"/></svg> Available</span>
@@ -480,13 +532,18 @@ footer{background:var(--ink);color:var(--paper);padding:44px 0 40px;}
       </div>
       <div class="dom dom--ok">
         <span class="dom__status"><svg class="ico"><use href="#i-check"/></svg> Available</span>
-        <b class="dom__url">age8.app · .org · .today <span class="dom__price">€14.26 · €8.49 · €3.55</span></b>
+        <b class="dom__url">age8.app · .org · .today <span class="dom__price">€14.26 · €8.49 · €3.55</span></b>
         <span class="dom__note">The app domain matters the day a booking app exists. The rest are cheap fence posts.</span>
       </div>
       <div class="dom dom--ok">
         <span class="dom__status"><svg class="ico"><use href="#i-check"/></svg> Available</span>
-        <b class="dom__url">age8.space · .site <span class="dom__price">€0.88 each</span></b>
+        <b class="dom__url">age8.space · .site <span class="dom__price">€0.88 each</span></b>
         <span class="dom__note">Under a euro together. Buy them so nobody else does, point them home, forget them.</span>
+      </div>
+      <div class="dom dom--maybe">
+        <span class="dom__status"><svg class="ico"><use href="#i-search"/></svg> Probably open</span>
+        <b class="dom__url">age8.life</b>
+        <span class="dom__note">No registry record in the 21 October check, so probably free. Confirm at the registrar before counting on it.</span>
       </div>
       <div class="dom dom--ask">
         <span class="dom__status"><svg class="ico"><use href="#i-alert"/></svg> Registered · to clarify</span>
@@ -500,22 +557,8 @@ footer{background:var(--ink);color:var(--paper);padding:44px 0 40px;}
       </div>
       <div class="dom dom--taken">
         <span class="dom__status"><svg class="ico"><use href="#i-x"/></svg> Registered</span>
-        <b class="dom__url">age8.club · .net</b>
+        <b class="dom__url">age8.club · .net</b>
         <span class="dom__note">The extension that matched ReFrame so well is taken: age8.club was registered in December 2025, age8.net in April 2026 (WHOIS, 21 October). Neither goes in the basket.</span>
-      </div>
-      <div class="dom dom--var">
-        <span class="dom__status"><svg class="ico"><use href="#i-eye"/></svg> Spelling variant</span>
-        <b class="dom__url">ag8</b>
-        <div class="chips">
-          <span class="chip chip--g">ag8.ro open</span>
-          <span class="chip chip--g">ag8.fit open</span>
-          <span class="chip chip--c">ag8.com registered since 2000</span>
-          <span class="chip chip--c">ag8.net registered</span>
-          <span class="chip chip--c">ag8.club registered June 2026</span>
-          <span class="chip chip--c">ag8.one registered</span>
-          <span class="chip chip--c">ag8.app registered</span>
-        </div>
-        <span class="dom__note">The same name without the e. TMview, EU, classes 41, 43 and 44, contains-search, 21 October 2026: 985 results, none identical to AG8 on the first page, only fragment matches. A variant worth keeping in view, not a recommendation.</span>
       </div>
     </div>
     <p class="tiny rv" style="margin-top:.8rem">Prices as shown by the registrar on 21 October 2026, first year, promotional. Renewals run at the struck-through rates, so budget on those, not on the teaser.</p>
@@ -747,17 +790,17 @@ footer{background:var(--ink);color:var(--paper);padding:44px 0 40px;}
       </div>
       <div class="dom dom--ok">
         <span class="dom__status"><svg class="ico"><use href="#i-check"/></svg> Available</span>
-        <b class="dom__url">longevit8.eu · .net <span class="dom__price">€0.01 each</span></b>
-        <span class="dom__note">A cent apiece on three-year terms, .eu with residency conditions. The franchise map and the defensive twin, both for pocket change.</span>
+        <b class="dom__url">longevit8.eu · .net <span class="dom__price">€0.01 each</span></b>
+        <span class="dom__note">A cent apiece on three-year terms, .eu with residency conditions; the .eu confirmed available in the EURid WHOIS on 21 October. The franchise map and the defensive twin, both for pocket change.</span>
       </div>
       <div class="dom dom--ok">
         <span class="dom__status"><svg class="ico"><use href="#i-check"/></svg> Available</span>
-        <b class="dom__url">longevit8.club · .life <span class="dom__price">€4.45 · €3.56</span></b>
+        <b class="dom__url">longevit8.club · .life <span class="dom__price">€4.45 · €3.56</span></b>
         <span class="dom__note">Club is the category word this brand actually is; life is the word the 8 keeps promising. Both belong in the basket.</span>
       </div>
       <div class="dom dom--ok">
         <span class="dom__status"><svg class="ico"><use href="#i-check"/></svg> Available</span>
-        <b class="dom__url">longevit8.space · .site · .today <span class="dom__price">€0.88 · €0.88 · €3.55</span></b>
+        <b class="dom__url">longevit8.space · .site · .today <span class="dom__price">€0.88 · €0.88 · €3.55</span></b>
         <span class="dom__note">Fence posts. Buy them so nobody else does, point them home, forget them.</span>
       </div>
       <div class="dom dom--ok">
