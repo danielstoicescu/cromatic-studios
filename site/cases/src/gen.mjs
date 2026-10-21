@@ -78,17 +78,21 @@ function fig(it, { cls = "", eager = false } = {}) {
   const c = [cls, it.full ? "full-sm" : "", it.hideSm ? "hide-sm" : ""].filter(Boolean).join(" ");
   const fit = it.contain ? ` frame--contain` : "";
   const bg = it.bg ? ` style="--frame-bg:${it.bg}"` : "";
+  // TASK-062: a Lottie piece (it.czl: its name in src/lottie-ui) over its still (it.img); the page's script mounts it when
+  // the frame comes near and plays it only while it is on screen; with reduced motion the still stays
+  const czl = it.czl ? ` data-czl="${it.czl}"${it.at ? ` data-czl-at="${it.at}"` : ""}` : "";
   return `<figure${c ? ` class="${c}"` : ""} style="--r:${r4(ratio(it))}"${it.fixed ? " data-fixed-ratio" : ""}>
-  <div class="frame${fit}"${bg}>${inner(it, eager)}</div>${it.cap ? `\n  <figcaption>${it.cap}</figcaption>` : ""}
+  <div class="frame${fit}"${bg}${czl}>${inner(it, eager)}</div>${it.cap ? `\n  <figcaption>${it.cap}</figcaption>` : ""}
 </figure>`;
 }
 const titlePills = (words) => `<h4>${words.map((w, i) => `<span class="pill" style="--rot:${i % 2 ? 4 + ((w.length * 3) % 8) : -5 - ((w.length * 2) % 7)}deg">${w}</span>`).join("")}</h4>`;
 let railN = 0;
-function row(items, cap) {
+function row(items, cap, wrap = false) {
   // on phones a wide row would shrink to slivers: landscape items take a line each, the rest go two by two
+  // (wrap: the row breaks on phones anyway, its full items taking a line each: TASK-062, a mockup next to its poster)
   const rs = items.map(ratio);
   const sum = rs.reduce((a, b) => a + b, 0);
-  const crowded = items.length >= 3 && sum > 1.6 || items.length === 2 && sum > 2.6;
+  const crowded = wrap || items.length >= 3 && sum > 1.6 || items.length === 2 && sum > 2.6;
   const figs = items.map((it, i) => fig({ ...it, full: it.full || (crowded && rs[i] > 1.15) }));
   const body = `<div class="row${crowded ? " row--wrap-sm" : ""}">\n${figs.join("\n")}\n</div>`;
   return cap ? `<div class="stack">\n${body}\n<figcaption>${cap}</figcaption>\n</div>` : body;
@@ -117,7 +121,7 @@ function block(b) {
   // r135: a page's own markup (animated illustration blocks), with an optional caption
   if (b.raw) return b.cap ? `<div class="stack">\n${b.raw}\n<figcaption>${b.cap}</figcaption>\n</div>` : b.raw;
   if (b.img || b.video) return fig(b);
-  if (b.row) return row(b.row, b.cap);
+  if (b.row) return row(b.row, b.cap, b.wrap);
   if (b.mix) return mix(b);
   if (b.rail) {
     railN++;
@@ -219,6 +223,9 @@ function page(P, all) {
 .quote blockquote p{color:var(--accent-ink)}
 .frame{background:var(--frame-bg)}
 .frame--contain img{object-fit:contain}
+.frame[data-czl] .czl{position:absolute;inset:0;width:100%!important;height:100%!important;opacity:0;transition:opacity .6s ease;pointer-events:none;contain:strict}
+.frame[data-czl] .czl.on{opacity:1}
+.frame[data-czl] .czl canvas{display:block;width:100%;height:100%}
 .frame::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1.5px rgba(18,18,18,.1);pointer-events:none}
 .to-result b.is-text{font-size:var(--fs-lead)}
 .cs-back{position:fixed;left:14px;top:14px;z-index:9999;padding:10px 16px;border-radius:999px;background:#FED012;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none}
@@ -428,7 +435,7 @@ ${rel.map((q) => `          <article class="proj">
 
 </main>
 
-<script>${STEAM_JS}
+${P.czl ? `<script type="application/json" id="czl-assets">${JSON.stringify(P.czl)}</script>\n` : ""}<script>${STEAM_JS}
 // hero parallax: the first image drifts a little slower than the page
 (function(){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
