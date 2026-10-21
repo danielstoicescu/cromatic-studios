@@ -1,7 +1,7 @@
 // Builds the site from src/.
 //   node build/build.mjs            -> public/  (production: assets split out, hashed, cache-friendly)
 //   node build/build.mjs --single F -> F       (one self-contained HTML file, for local viewing)
-import { readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import zlib from "node:zlib";
 import { readdirSync, statSync } from "node:fs";
@@ -87,10 +87,35 @@ for (const [rel, buf] of gfAssets) writeFileSync(join(pub, rel), buf);
 const EXT = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif", "image/svg+xml": "svg", "video/mp4": "mp4", "video/webm": "webm" };
 let n = 0, bytes = 0;
 const seen = new Map();
+// TASK-053 (audit 3.86): two PNGs of the bundle that the map page fetches with the page (the Slow Coffee window's SLOW
+// mark and its 2023 badge, ~73 KB each) ship as lossless WebP: the same pixels, about half the bytes. As the pages' WebP
+// copies (images.mjs), they are made with sharp on the studio's machine and kept in site/.img-cache by content hash
+// (<sha1 12>-ll.webp); the server only copies them. Listed by the PNG's own content hash (its old asset name)
+const BUNDLE_WEBP = new Set(["2def44f1a5", "93d1d808f4"]);
+const webpOf = new Map(); // base64 of a listed PNG -> its WebP
+{
+  const cacheDir = join(root, "site", ".img-cache");
+  let sharp = null;
+  for (const m of js.matchAll(/data:image\/png;base64,([A-Za-z0-9+/=]+)/g)) {
+    if (webpOf.has(m[1])) continue;
+    const png = Buffer.from(m[1], "base64");
+    if (!BUNDLE_WEBP.has(hash(png))) continue;
+    const cached = join(cacheDir, `${createHash("sha1").update(png).digest("hex").slice(0, 12)}-ll.webp`);
+    if (!existsSync(cached)) {
+      if (sharp === null) try { sharp = (await import("sharp")).default; } catch { sharp = false; }
+      if (!sharp) { console.warn(`[build] ${hash(png)}.png: no WebP in site/.img-cache and no sharp here, the PNG ships`); continue; }
+      mkdirSync(cacheDir, { recursive: true });
+      await sharp(png).webp({ lossless: true, effort: 6 }).toFile(cached);
+    }
+    const webp = readFileSync(cached);
+    if (webp.length < png.length) webpOf.set(m[1], webp);
+  }
+}
 const extract = (text) => text.replace(/data:(image\/(?:png|jpeg|webp|gif|svg\+xml)|video\/(?:mp4|webm));base64,([A-Za-z0-9+/=]+)/g, (m, mime, b64) => {
   if (seen.has(b64)) return seen.get(b64);
-  const buf = Buffer.from(b64, "base64");
-  const name = `assets/${hash(buf)}.${EXT[mime]}`;
+  const webp = mime === "image/png" && webpOf.get(b64);
+  const buf = webp || Buffer.from(b64, "base64");
+  const name = `assets/${hash(buf)}.${webp ? "webp" : EXT[mime]}`;
   writeFileSync(join(pub, name), buf);
   seen.set(b64, name);
   n++; bytes += buf.length;
