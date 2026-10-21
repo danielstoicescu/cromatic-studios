@@ -10,21 +10,22 @@ export const T_END = 1.5 + 9 * 1.15; // (when the end shot starts)
 export function car(t) {
   const zEnd = Z0 + V * T_END;
   if (t < T_END) return { x: X, y: YV, z: Z0 + V * t, yaw: 0, lights: 1 };
-  const u = clamp((t - T_END) / 1.6), s = V * 1.6 * (u - 0.5 * u * u); // (constant deceleration to a stop)
-  return { x: lerp(X, 1172, sm(u)), y: YV, z: zEnd + s, yaw: 0.28 * Math.sin(Math.PI * u), lights: 1 };
+  // (into the plaza and to a stop in front of the house, easing out over 2 s)
+  const u = clamp((t - T_END) / 2.0), e = 1 - (1 - u) * (1 - u);
+  return { x: lerp(X, 1192, sm(u)), y: YV, z: zEnd + 140 * e, yaw: 0.35 * Math.sin(Math.PI * Math.min(1, u * 1.2)), lights: 1 };
 }
 const W = 2160, H = 3840;
 // the shots: [world, from, to (s), camera(t, the ride's pose)]
 export const SEG = [
-  ["monument", 0, 1.5, (t) => { const u = sm(clamp(t / 1.5)); return { pos: [1178, lerp(48, 40, u), lerp(6214, 6224, u)], tgt: [1114, lerp(50, 40, u), 6212], fov: lerp(30, 40, u), level: true }; }, "sign"],
-  ["monument", 1.5, 2.65, (t, c) => ({ pos: [c.x - 36, 4, c.z + 2], tgt: [c.x, 6, c.z + 12], fov: 58, shift: [0, 0.1], level: true }), "track"],
+  ["monument", 0, 1.5, (t) => { const u = sm(clamp(t / 1.5)); return { pos: [1210, lerp(47, 36, u), lerp(6209.5, 6222, u)], tgt: [1114, lerp(49, 34, u), lerp(6209.5, 6214, u)], fov: lerp(34, 50, u), level: true }; }, "sign"],
+  ["monument", 1.5, 2.65, (t, c) => ({ pos: [c.x - 74, 5, c.z - 6], tgt: [c.x, 7, c.z + 10], fov: 50, shift: [0, 0.1], level: true }), "track"],
   ["nightlife", 2.65, 3.8, () => ({ pos: [1171, 3, Z0 + V * 3.9], tgt: [1150, 6, Z0 + V * 3.9 - 90], fov: 56, shift: [0, 0.1], level: true }), "pass"],
   ["underwater", 3.8, 4.95, (t, c) => ({ pos: [c.x + 12, 46, c.z - 84], tgt: [c.x, 4, c.z + 40], fov: 56, level: false }), "high"],
   ["circuit", 4.95, 6.1, (t, c) => ({ pos: [c.x - 8, 4, c.z + 72], tgt: [c.x, 5, c.z], fov: 50, shift: [0, 0.1], level: true }), "front"],
   ["sketch", 6.1, 7.25, (t, c) => ({ pos: [c.x + 92, 26, c.z + 18], tgt: [c.x, 8, c.z + 8], fov: 52, level: false }), "side", "sketch"],
-  ["orchid", 7.25, 8.4, () => ({ pos: [1120, 3, Z0 + V * 8.5], tgt: [1146, 6, Z0 + V * 8.5 - 90], fov: 56, shift: [0, 0.1], level: true }), "pass"],
+  ["orchid", 7.25, 8.4, () => ({ pos: [1131, 2.5, Z0 + V * 8.45], tgt: [1148, 5, Z0 + V * 8.45 - 70], fov: 50, shift: [0, 0.1], level: true }), "pass"],
   ["gta2", 8.4, 9.55, (t, c) => ({ pos: [c.x, 170, c.z + 24], tgt: [c.x, 0, c.z + 24.5], fov: 54, level: false }), "top"],
-  ["riso", 9.55, 10.7, (t, c) => ({ pos: [c.x + 30, 5, c.z + 52], tgt: [c.x, 6, c.z], fov: 54, shift: [0, 0.1], level: true }), "three-quarter", "riso"],
+  ["riso", 9.55, 10.7, (t, c) => ({ pos: [c.x + 15, 4, c.z + 26], tgt: [c.x, 5, c.z], fov: 50, shift: [0, 0.1], level: true }), "three-quarter", "riso"],
   ["ghibli", 10.7, 11.85, (t, c) => { const u = sm(clamp((t - 10.7) / 1.15)); return { pos: [c.x - 22, lerp(8, 46, u), c.z - 64], tgt: [1105, lerp(16, 30, u), 7320], fov: 56, level: false }; }, "crane"],
   ["monument", 11.85, 14.0, (t) => { const u = sm(clamp((t - 11.85) / 2.15)); return { pos: [lerp(1300, 1290, u), 7, 7330], tgt: [1060, 28, 7330], fov: 76, shift: [0, 0.1], level: true }; }, "house"]
 ].map(([world, a, b, cam, kind, mode]) => ({ world, a, b, kind, mode: mode || null, cam: (t) => ({ ...cam(t, car(t)), w: W, h: H }) }));

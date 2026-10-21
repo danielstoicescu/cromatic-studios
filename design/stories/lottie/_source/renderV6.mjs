@@ -7,6 +7,7 @@
 import fs from "fs";
 import { D3 } from "./shotsD3.mjs";
 import { A6 } from "./shotsA6.mjs";
+import { SEG as B7SEG, car as b7car } from "./shotsB7.mjs";
 import { omaArches } from "./shots5.mjs";
 const job = process.env.JOB, RAW = (process.env.RAW || "/private/tmp/claude-501/-Users-daniel-stoic/8f3b4503-769c-4f86-ba4b-8e36528128b3/scratchpad/stl4/raw") + "/v6";
 fs.mkdirSync(RAW, { recursive: true });
@@ -171,6 +172,35 @@ for (const k of only) {
   fs.writeFileSync(RAW + "/a6.json", JSON.stringify(out));
 }
 return Object.fromEntries(Object.entries(out).map(([k, v]) => [k, v.cams.length]));
+`;
+}
+{
+  // ---- B7: Str. Olari, the ride driving up it, a shot per world (the world's own ride), captured per frame
+  const segs = B7SEG.map((S, k) => { const fr = []; for (let t = S.a; t < S.b - 1e-6; t += 1 / 30) fr.push({ t: +t.toFixed(4), cam: S.cam(t), car: b7car(t) }); return { k, world: S.world, mode: S.mode, kind: S.kind, frames: fr }; });
+  JOBS.b7 = `
+const segs = ${JSON.stringify(segs)}, only = ${JSON.stringify(process.env.SEGS ? process.env.SEGS.split(",").map(Number) : null)};
+fs.mkdirSync(RAW + "/b7", { recursive: true });
+const out = fs.existsSync(RAW + "/b7.json") ? JSON.parse(fs.readFileSync(RAW + "/b7.json", "utf8")) : {};
+for (const S of segs) {
+  if (only && !only.includes(S.k)) continue;
+  const cur = await p.evaluate(() => window.__story.schemes[window.__story.state.schemeIdx].id);
+  if (cur !== S.world) { await p.evaluate((w) => window.__scheme(w), S.world); await p.waitForTimeout(6500); }
+  await p.evaluate(() => { window.__story.state.weatherOn = false; });
+  await H.aim(p, S.frames[0].cam, 2500);
+  const veh = await p.evaluate(() => window.__story.state.vehicleId);
+  for (let i = 0; i < S.frames.length; i++) {
+    const F0 = S.frames[i], o = F0.cam, q = F0.car;
+    const u = await p.evaluate(async ({ o, q, mode }) => { window.__cam(o.pos, o.tgt); window.__camSnap(); const S = window.__story, R = window.__R, FC = S.farClouds, fv = FC && FC.visible; if (FC) FC.visible = false;
+      if (mode === "sketch") { for (const p0 of [[q.x, 0, q.z], o.tgt, [q.x, 0, q.z + 60]]) { const v = R.W(p0); S.sketchPaint(v.x, v.z, 900, 1); } }
+      R.park([q.x, q.y, q.z, q.yaw]); S.veh().beams && (S.veh().beams.visible = true);
+      try { R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); return R.shot({ ...o, keepBg: true, ...(mode ? { mode } : {}) }); } finally { R.park(null); if (FC) FC.visible = fv; } }, { o, q, mode: S.mode });
+    save(u, RAW + "/b7/s" + String(S.k).padStart(2, "0") + "-" + String(i).padStart(3, "0") + ".png");
+  }
+  out[S.k] = { world: S.world, veh, n: S.frames.length };
+  fs.writeFileSync(RAW + "/b7.json", JSON.stringify(out));
+}
+await p.evaluate(() => window.__scheme("monument")); await p.waitForTimeout(3000);
+return out;
 `;
 }
 if (!JOBS[job]) throw new Error("JOB=" + Object.keys(JOBS).join("|"));
