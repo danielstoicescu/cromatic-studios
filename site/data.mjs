@@ -97,7 +97,7 @@ export const ZDROVIT_BRANDS = [
   { name: "OchiSan", line: "Eyelid ointment", ro: "Unguent pentru pleoape" },
   { name: "Optisomn", line: "Sleep, with melatonin", ro: "Somn, cu melatonină" },
   { name: "Parasoftin", line: "Foot care", ro: "Îngrijirea picioarelor" },
-  { name: "Periferisan", line: "Nervous system support", ro: "Sprijin pentru sistemul nervos" },
+  { name: "Periferisan", line: "Peripheral nervous system support: numbness, tingling", ro: "Suport pentru sistemul nervos periferic: amorțeală, furnicături" },
   { name: "Prevomit", line: "Nausea and travel sickness", ro: "Greață și rău de călătorie" },
   { name: "Slaboficat", line: "Slimming", ro: "Slăbire" },
   { name: "Supramax", line: "Joints", ro: "Articulații" },
