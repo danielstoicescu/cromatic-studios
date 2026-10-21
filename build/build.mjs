@@ -815,8 +815,8 @@ if (CLIPPED.length) console.warn(`[seo] description cut mid-sentence on ${CLIPPE
 // keep their own covers (above).
 {
   const SHOT = { "/": "city-jet", "/site/": "city-jet", "/onboarding/": "dacia", "/team/": "olari-night",
-    "/industries/coffee-food-drink/": "dacia", "/industries/finance-fintech/": "fintech", "/industries/healthcare/": "night", "/industries/print-merch/": "sketch",
-    "/services/brand-strategy/": "city-jet", "/services/brand-identity/": "sketch", "/services/websites-apps/": "fintech", "/services/social-media-content/": "dacia", "/services/video-production/": "night" };
+    "/industries/coffee-food-drink/": "dacia", "/industries/finance-fintech/": "fintech", "/industries/healthcare/": "night", "/industries/print-merch/": "sketchbook",
+    "/services/brand-strategy/": "city-jet", "/services/brand-identity/": "sketchbook", "/services/websites-apps/": "fintech", "/services/social-media-content/": "dacia", "/services/video-production/": "night" };
   for (const d of HUBS_DATA.INDUSTRIES || []) SHOT[`/industries/${d.slug}/`] ||= "night";
   for (const d of HUBS_DATA.SERVICE_PAGES || []) SHOT[`/services/${d.slug}/`] ||= "city-jet";
   const ALT = {
@@ -825,7 +825,8 @@ if (CLIPPED.length) console.warn(`[seo] description cut mid-sentence on ${CLIPPE
     "olari-night": ["Strada Olari 9, the Cromatic Studios house, at night in the 3D city", "Strada Olari 9, casa Cromatic Studios, noaptea, în orașul 3D"],
     fintech: ["The fintech towers at dusk in the Cromatic Studios 3D city", "Turnurile fintech la apus, în orașul 3D Cromatic Studios"],
     night: ["The Cromatic Studios 3D city of Bucharest in Night Mode", "Orașul 3D al Bucureștiului de la Cromatic Studios, în Night Mode"],
-    sketch: ["The Cromatic Studios 3D city drawn in Sketchbook mode", "Orașul 3D Cromatic Studios desenat în modul Sketchbook"],
+    // beta 3.995 (TASK-010): the Sketchbook card redrawn in the notebook look (src/og/sketchbook-*.jpg; the graphite sketch-*.jpg are gone)
+    sketchbook: ["The Cromatic Studios 3D city drawn in Sketchbook mode, ink and crayon on a notebook page", "Orașul 3D Cromatic Studios desenat în modul Sketchbook, cu tuș și creioane colorate pe o pagină de caiet"],
   };
   const at = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
   const urls = new Map();
