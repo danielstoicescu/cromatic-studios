@@ -4623,5 +4623,60 @@
     900,
     1463,
     98287
+  ],
+  "m:gripovit/hero": [
+    1600,
+    900,
+    172695
+  ],
+  "m:gripovit/site-scroll": [
+    1200,
+    5578,
+    593135
+  ],
+  "m:gripovit/site-scroll-phone": [
+    585,
+    16000,
+    833207
+  ],
+  "m:gripovit/symptoms": [
+    1600,
+    828,
+    113287
+  ],
+  "m:gripovit/treatment": [
+    1600,
+    742,
+    97807
+  ],
+  "m:gripovit/range": [
+    1600,
+    1564,
+    234607
+  ],
+  "m:gripovit/tips": [
+    1600,
+    499,
+    61311
+  ],
+  "m:gripovit/phone-hero": [
+    900,
+    1463,
+    111318
+  ],
+  "m:gripovit/phone-symptoms": [
+    900,
+    1463,
+    83510
+  ],
+  "m:gripovit/phone-range": [
+    900,
+    1463,
+    88034
+  ],
+  "m:gripovit/phone-tips": [
+    900,
+    1463,
+    135748
   ]
 }
