@@ -1,0 +1,18 @@
+{
+ "_": "TASK-076: lacium.ro. Crops in capture px (desktop 2880 wide, phone 780 wide).",
+ "label": "lacium.ro",
+ "field": ["#e3f4fd", "#94cdef"],
+ "out": {
+  "hero": {"kind": "hero", "desktop": {"src": "desktop-full.png"}, "phone": {"src": "phone-hero.png"}},
+  "site-scroll": {"kind": "plain", "src": "desktop-full.png", "width": 1200, "q": 72},
+  "site-scroll-phone": {"kind": "plain", "src": "phone-full.png", "width": 585, "q": 70},
+  "advantages": {"kind": "browser", "src": "section-02.png", "crop": [0, 0, 2880, 996]},
+  "strains": {"kind": "browser", "src": "section-03.png", "crop": [0, 0, 2880, 1542]},
+  "bacteria": {"kind": "browser", "src": "section-05.png", "crop": [0, 0, 2880, 1766]},
+  "order": {"kind": "browser", "src": "desktop-full.png", "crop": [0, 11262, 2880, 824]},
+  "phone-hero": {"kind": "phone", "src": "phone-full.png", "y": 0},
+  "phone-advantages": {"kind": "phone", "src": "phone-full.png", "y": 3150},
+  "phone-flora": {"kind": "phone", "src": "phone-full.png", "y": 10000},
+  "phone-bacteria": {"kind": "phone", "src": "phone-full.png", "y": 13050}
+ }
+}

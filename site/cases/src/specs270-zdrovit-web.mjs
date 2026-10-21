@@ -308,8 +308,58 @@ export const GRIPOVIT = web({
   related: ["optisomn", "lacium", "litorsal"]
 });
 
+export const LACIUM = web({
+  slug: "lacium", name: "Lacium", label: "lacium.ro",
+  title: "Nine strains, one capsule.",
+  tagline: "The product site for Lacium, a probiotic: five advantages, nine strains round a drawn gut, and good bacteria explained.",
+  desc: "Lacium: lacium.ro, the one-page product site for a probiotic in the Zdrovit portfolio, on desktop and phone. By Cromatic Studios, Bucharest.",
+  accent: { bg: "#BFE3F7", fg: "#173a7a", ink: "#d9661a" },
+  info: ["Probiotic, Lacium", "Romania · Zdrovit portfolio", "Landing page, desktop and mobile"],
+  heroAlt: "lacium.ro in a browser window and on a phone: the orange Lacium box on a field of blue bacteria, with five claims in white tags",
+  problem: {
+    h: "Probiotics are not all the same",
+    p: [
+      "Lacium is a probiotic from Zdrovit, one capsule a day, with Lacium Junior for children.",
+      "The site starts from its own argument: the number of good bacteria and the number of strains matter. Lacium has <strong>9 strains</strong> of live cultures, plus inulin.",
+      "The page makes those numbers easy to follow for someone who has never heard of a strain."
+    ]
+  },
+  solution: {
+    h: "Orange box, blue bacteria",
+    p: "The hero sets the orange box on a field of blue bacteria, with the five claims in white tags beside it, each with its own small icon. Below, the five advantages each get a band, and the nine strains are named round a drawing of the gut.",
+    stat: "5",
+    statText: "advantages, one band each: bacteria, strains, stability, inulin, one capsule a day"
+  },
+  page: {
+    text: "The menu runs LACIUM®, Flora intestinală, Bacteriile bune, Comandă, Contact. The hero lists the claims in five tags, from “50 miliarde UFC* într-o singură capsulă” to “Administrare facilă – 1 capsulă pe zi”. Then the product, the five advantages, the intestinal flora, the good bacteria and the order block.",
+    shots: [["order", "COMANDĂ: the Lacium and Lacium Junior boxes beside a Cumpără acum button", "The order block"]]
+  },
+  story: {
+    pills: ["Nine", "strains"],
+    text: "Each advantage gets a band of its own, numbered one to five. The strains band is the centre of the page: nine names round a drawing of the gut, four Lactobacillus on one side, three Bifidobacterium and two more on the other. The text says why both families are there: Lactobacillus live mostly in the small intestine, Bifidobacterium in the colon. Further down, Bacteriile bune explains what probiotics are and what they do, in two columns under a band of drawn bacteria.",
+    deliverables: ["Advantage bands", "Strain diagram", "Explainers"],
+    media: [
+      ["advantages", "5 avantaje ale utilizării Lacium®: the Lacium and Lacium Junior boxes on peach, and a Cumpără acum button", "The five advantages open on peach, with both boxes"],
+      ["strains", "Avantajul 2: the nine strains named round an illustrated gut, Lactobacillus on the left, Bifidobacterium, Lactococcus and Streptococcus on the right", "The nine strains, round a drawn gut"],
+      ["bacteria", "Bacteriile bune, cunoscute și sub denumirea de probiotice: a blue band of drawn bacteria above two columns of text", "Bacteriile bune, under a band of drawn bacteria"]
+    ]
+  },
+  phone: {
+    text: "On a phone the box comes first, with its Cumpără acum button, and the five claims stack under it as tags. The advantages run one band after another, and the explanations keep their full length.",
+    shots: [
+      ["phone-hero", "The first screen on a phone: the menu icon, the Lacium box, a Cumpără acum button and the claims as tags"],
+      ["phone-advantages", "5 avantaje on a phone: the heading, a Cumpără acum button, the two boxes and Avantajul 1"],
+      ["phone-flora", "Flora intestinală on a phone: a yellow band, a photo of balanced stones and the text"],
+      ["phone-bacteria", "Bacteriile bune on a phone, under a band of drawn bacteria"]
+    ],
+    cap: "The first screen, the advantages, the flora and the good bacteria, at 390 px wide"
+  },
+  result: "A probiotic's numbers, made readable: five advantages, nine strains you can count, one capsule a day.",
+  related: ["glucopil", "gripovit", "aspasia"]
+});
+
 // a chapter added to a page that already exists, by its slug (gen.mjs applies it): none yet
 export const EXTEND = {};
 
 // every Zdrovit brand page built from its product site, in the order they were made
-export const ZDROVIT_WEB = [ASPASIA, BONILASH, GLUCOPIL, GRIPOVIT];
+export const ZDROVIT_WEB = [ASPASIA, BONILASH, GLUCOPIL, GRIPOVIT, LACIUM];
