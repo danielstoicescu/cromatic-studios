@@ -1,0 +1,17 @@
+<!doctype html>
+<!-- Cromatic · stories in Lottie (TASK-057; story D's copy, TASK-066): a bare stage for the renders and the previews. The story drawn by
+     lottie-web's canvas renderer (the build the site's pieces use), full screen, stepped frame by frame by the
+     recorder (window.go). ?s=<story json, relative to this page's folder's parent>&play=1 plays it in real time -->
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#111}#lot{position:fixed;inset:0}#lot canvas{display:block;width:100%!important;height:100%!important}</style>
+</head><body><div id="lot"></div>
+<script src="/design/intro-lottie/_lib/lottie_light_canvas.min.js"></script>
+<script>
+const q = new URLSearchParams(location.search);
+const anim = lottie.loadAnimation({ container: document.getElementById("lot"), renderer: "canvas", loop: !!q.get("play"), autoplay: !!q.get("play"), path: "/design/stories/lottie/story-d/" + (q.get("s") || "story-d-en.json"), rendererSettings: { preserveAspectRatio: "xMidYMid meet", clearCanvas: true } });
+window.anim = anim;
+const smoothHigh = () => { try { const c = anim.renderer.canvasContext; c.imageSmoothingEnabled = true; c.imageSmoothingQuality = "high"; } catch (e) {} };
+anim.addEventListener("DOMLoaded", smoothHigh);
+anim.addEventListener("loaded_images", () => { window.ready = 1; });
+window.go = (fr) => { smoothHigh(); anim.goToAndStop(fr, true); };
+</script></body></html>
