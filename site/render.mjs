@@ -238,6 +238,18 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     // r143 (Daniel): the first fold is no longer the kinetic cups. It is the city, Coffee Street, under the words of the
     // drive's opening (site/onboarding/intro-lab/engine.js): the pill turns place → facade → brand once, then rests
     const hc = heroCity;
+    // TASK-106 (Daniel: "a very cool animated banner that takes you to the map"): a muted loop of the city from the
+    // Lottie stories (Steam by day, OMA, the Aesthetic Court, Steam by night, the fountain, the Fintech Blvd drift),
+    // a landscape cut for screens and the stories' own 9:16 for phones. The still above stays the poster and the LCP:
+    // site.js gives the video its sources only after load, only while the hero is on screen, never with reduced motion,
+    // Save-Data or a 2g connection. The whole card goes to the map (.hc-hit); the buttons keep their own links.
+    const heroVideo = () => {
+      const v = (n) => A(`m:hero/${n}`);
+      const dm = v("drive-d"), dw = v("drive-d-av1"), mm = v("drive-m"), mw = v("drive-m-av1");
+      if (!dm || !mm) return "";
+      return `<video class="hc-vid" muted loop playsinline preload="none" disablepictureinpicture aria-hidden="true" tabindex="-1" data-d="${dm.src}"${dw ? ` data-dw="${dw.src}"` : ""} data-m="${mm.src}"${mw ? ` data-mw="${mw.src}"` : ""}></video>
+    <button class="hc-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>`;
+    };
     const preload = hc ? `<link rel="preload" as="image" href="${hc.m.src}" media="(max-width: 700px)" fetchpriority="high">
 <link rel="preload" as="image" href="${hc.d.src}" media="(min-width: 701px)" fetchpriority="high">` : "";
     return `${head({ title: SITE_TITLE, desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, film and content for indie brands, startups and established firms.", path: "/site/", ld, preload })}
@@ -246,7 +258,9 @@ ${header(true)}
   <section class="hero hero-city" aria-labelledby="hc-h">
    <div class="hc-card">
     ${hc ? `<picture class="hc-pic"><source media="(max-width: 700px)" srcset="${hc.m.src}" width="${hc.m.w}" height="${hc.m.h}"><img src="${hc.d.src}" width="${hc.d.w}" height="${hc.d.h}" alt="Coffee Street in the 3D city of Bucharest, the vintage yellow ride outside Two Min Lab" fetchpriority="high" decoding="async"></picture>` : ""}
+    ${heroVideo()}
     <i class="hc-shade" aria-hidden="true"></i>
+    <a class="hc-hit" href="/" tabindex="-1" aria-hidden="true"></a>
     <div class="wrap hc-in">
       <p class="eyebrow mono">Cromatic Studios · Bucharest · Since 2014</p>
       <h1 class="hc-h" id="hc-h"><span class="hc-k">Nobody remembers a thumbnail.</span> <span class="hc-big">But someone could remember a <span class="pill hc-morph"><span>place.</span><span aria-hidden="true">facade.</span><span aria-hidden="true">brand.</span></span></span></h1>

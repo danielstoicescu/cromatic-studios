@@ -275,6 +275,29 @@
     const sp = () => bar.style.setProperty("--sp", (scrollY / Math.max(1, d.documentElement.scrollHeight - innerHeight)).toFixed(4));
     addEventListener("scroll", sp, { passive: true }); sp();
   }
+  // TASK-106: the hero's loop of the city. The still stays the poster (and the LCP): the video gets its sources only
+  // after load, once the hero is on screen; never with reduced motion, Save-Data or a 2g connection. Paused off
+  // screen, in a background tab, or by its button; it fades in over the still once it plays.
+  const hv = d.querySelector(".hc-vid");
+  if (hv) {
+    const cn = navigator.connection || {}, slow = cn.saveData || /(^|-)2g$/.test(cn.effectiveType || "");
+    const pp = d.querySelector(".hc-pp"), card = hv.closest(".hc-card"), mq = matchMedia("(max-width: 700px)");
+    if (!reduced && !slow && pp && card && "IntersectionObserver" in window) {
+      let seen = false, loaded = false, paused = false;
+      const set = () => {
+        const s = hv.dataset, m = mq.matches;
+        hv.innerHTML = [[m ? s.mw : s.dw, 'video/webm; codecs="av01.0.08M.08"'], [m ? s.m : s.d, "video/mp4"]].filter((x) => x[0]).map(([u, t]) => `<source src="${u}" type='${t}'>`).join("");
+        hv.load();
+      };
+      const sync = () => { if (!loaded) return; if (seen && !paused && !d.hidden) hv.play().catch(() => {}); else hv.pause(); };
+      const start = () => { if (loaded) return; loaded = true; hv.addEventListener("playing", () => { hv.classList.add("on"); pp.hidden = false; }, { once: true }); set(); };
+      const go = () => setTimeout(() => new IntersectionObserver((es) => { seen = es.some((e) => e.isIntersecting); if (seen) start(); sync(); }, { threshold: 0.2 }).observe(card), 300);
+      if (d.readyState === "complete") go(); else addEventListener("load", go, { once: true });
+      d.addEventListener("visibilitychange", sync);
+      mq.addEventListener?.("change", () => { if (loaded) { set(); sync(); } });
+      pp.addEventListener("click", () => { paused = !paused; pp.setAttribute("aria-pressed", String(paused)); pp.setAttribute("aria-label", paused ? (RO ? "Pornește animația" : "Play the animation") : (RO ? "Oprește animația" : "Pause the animation")); sync(); });
+    }
+  }
   // cards tilt a little towards the pointer
   if (matchMedia("(hover: hover)").matches && !reduced) d.querySelectorAll(".chap, .svc").forEach((c) => {
     c.addEventListener("pointermove", (e) => { const r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; c.style.transform = `perspective(700px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translateY(-4px)`; });
