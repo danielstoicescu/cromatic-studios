@@ -30414,7 +30414,7 @@ void main() {
   }
   // r110: Strada Olari 9 as it stands: a grey neo-Romanian villa. Rusticated stone ground floor
   // with round-arched doors, a pebble-dash first floor with two big arched windows in white
-  // mouldings (brown roller shutters, little white columns), a narrower top floor with a trefoil
+  // mouldings (little white columns; TASK-098: no shutters), a narrower top floor with a trefoil
   // arched loggia over a lattice balcony, deep tiled hip roofs with wide eaves, and ivy on the
   // right. children[1] is the top roof: it lifts off when the services come out.
   function buildEndHouse(parent) {
@@ -30524,9 +30524,9 @@ void main() {
     for (const x of [6, 24]) { const a = arch(13, 17, new MeshStandardMaterial({ color: "#2c2a28", roughness: 0.8 })); a.position.set(x, 0, F + 0.1); g.add(a); const r = archRing(13, 17, 2.4, stoneM); r.position.set(x, 0, F); g.add(r); }
     box(W + 1, 1.2, 1.4, whiteM, 0, 20.4, F + 0.6);
     // first floor: two big arched windows, white mouldings, little columns
-    // TASK-098: each window its own glass (the colours of the night: houseWindowGlow), white curtains and a string of
-    // fairy lights behind it (its map); round 2 (Daniel): no shutters, day or night (they hid half of each arch); the
-    // loggia keeps glassM
+    // TASK-098: each window its own glass (the colours of the night: houseWindowGlow), a lit room and white curtains
+    // behind it (round 3: drawn in the glass's shader, no fairy lights); round 2 (Daniel): no shutters, day or night (they
+    // hid half of each arch); the loggia keeps glassM
     const winGlass = [];
     for (const x of [-15, 15]) {
       const gm = glassM.clone(); winGlass.push(gm);
@@ -30575,9 +30575,8 @@ void main() {
   // out over the forecourt, a pool on the paving, and a softer glow behind the house (round 2, Daniel: it should read
   // from the back and the sides too). Eight small additive draws, no light, no post pass; drawn and animated only in a
   // dark world with the house on screen (and not at all while the tab is hidden: no frames); reduced motion holds one
-  // pair (green, orange). Round 2 (Daniel): no shutters, day or night; behind the glass white curtains, tied back, and a
-  // string of little coloured bulbs (the glass's map; the bulbs' glow one more additive draw for both windows): by day a
-  // detail, at night inside the colour (the curtains catch it: the emissive map). By day the rest is not drawn
+  // pair (green, orange). Round 2 (Daniel): no shutters, day or night; behind the glass white curtains, tied back (round 3:
+  // a lit room behind them and no fairy lights, see below). By day the rest is not drawn
   // round 2 (Daniel: no cyan): six colours in the wheel's order, so a cross-fade passes no other colour of the cycle on
   // its way; the two windows half a step out of phase and two to three colours apart at every moment: never alike
   var HW_HUES = [356, 28, 50, 135, 225, 310]; // red, orange, yellow, green, blue, magenta
@@ -30593,46 +30592,135 @@ void main() {
     const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
     // the halo: a bright core, a wider glow and a long faint tail (light in fog), to nothing at the edge
     const haloTex = radial((u, v) => { const r = Math.hypot(u - 0.5, v - 0.5) * 2; return (0.8 * Math.exp(-((r / 0.11) ** 2)) + 0.42 * Math.exp(-((r / 0.3) ** 2)) + 0.2 * (1 - r) ** 2.2) * (1 - ss(0.8, 1, r)); });
-    // round 2: the window seen through the glass (u across the arch's 20 units, v up its 19): a dim room, white
-    // curtains tied back to the sides, a swag of fairy lights across the top. kind 0: the glass's colour map; 1: its
-    // emissive map (how much of the night's colour each part gives: the curtains most, the room less); 2: the bulbs' glow
-    const BULBS = ["#ff4a4a", "#ffd84a", "#55ff7a", "#4aa8ff", "#ff5ee6", "#ff9a3d"];
-    const winTex = (kind) => canvasTexture(128, 128, (ctx, w, h) => {
+    // TASK-098 round 3 (Daniel: "light from inside, from behind the windows, coloured at night and sunny by day; the
+    // shutters, if they still show at all, gone; no fairy lights at the window: real lights, bulbs inside the house"):
+    // behind each glass a lit room, drawn in the glass's own shader (interior mapping: the view ray from the pane is run
+    // into a box room behind it, no geometry, no light): plastered walls, a wooden floor with a rug, a picture on the
+    // back wall, a sideboard with a table lamp, and a pendant lamp hanging from the ceiling, its bulb seen under the
+    // shade. The two rooms are mirrored (the lamps on opposite sides). At night the pendant fills the room with the
+    // window's colour of the moment (houseWindowGlow's cycle, no cyan) and the table lamp adds a warm pool; the walls,
+    // the floor and the curtains catch it, falling off with distance. By day the room is lit softly by the daylight
+    // from the window (a patch of sun on the floor), and the glass shows the day: a warm sky reflection (Fresnel) and
+    // two bands of sun glare. The white curtains stay, thin and translucent: lit from behind at night, white by day.
+    // The fairy lights (their swag and the bulb glows) are gone
+    const curtTex = canvasTexture(128, 128, (ctx, w, h) => { // the curtains, alpha = cloth (u across the arch's 20 units, v up its 19)
       const X = (u) => u * w, Y = (v) => (1 - v) * h;
-      if (kind === 0) { const gr = ctx.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "#262b33"); gr.addColorStop(1, "#3a3f47"); ctx.fillStyle = gr; ctx.fillRect(0, 0, w, h); }
-      else if (kind === 1) { ctx.fillStyle = "#b8b8b8"; ctx.fillRect(0, 0, w, h); }
-      else ctx.clearRect(0, 0, w, h);
-      if (kind < 2) for (const sd of [-1, 1]) { // the curtains: from the top corner, gathered at a tie-back, falling to the sill
+      ctx.clearRect(0, 0, w, h);
+      for (const sd of [-1, 1]) {
         const e = sd < 0 ? 0 : 1, o = (u) => (sd < 0 ? u : 1 - u);
-        ctx.beginPath(); ctx.moveTo(X(e), Y(1)); ctx.lineTo(X(o(0.4)), Y(1));
-        ctx.bezierCurveTo(X(o(0.34)), Y(0.7), X(o(0.16)), Y(0.5), X(o(0.12)), Y(0.42));
-        ctx.bezierCurveTo(X(o(0.17)), Y(0.3), X(o(0.22)), Y(0.12), X(o(0.24)), Y(0)); ctx.lineTo(X(e), Y(0)); ctx.closePath();
-        ctx.fillStyle = kind ? "#ffffff" : "#efebe2"; ctx.fill();
-        ctx.save(); ctx.clip(); ctx.strokeStyle = kind ? "rgba(0,0,0,.14)" : "rgba(120,110,95,.35)"; ctx.lineWidth = 2.2;
-        for (let k = 1; k < 5; k++) { const f = k / 5; ctx.beginPath(); ctx.moveTo(X(o(0.4 * f)), Y(1)); ctx.quadraticCurveTo(X(o(0.12 * f + 0.02)), Y(0.5), X(o(0.11 * f)), Y(0.42)); ctx.lineTo(X(o(0.22 * f)), Y(0)); ctx.stroke(); }
+        ctx.beginPath(); ctx.moveTo(X(e), Y(1)); ctx.lineTo(X(o(0.36)), Y(1));
+        ctx.bezierCurveTo(X(o(0.3)), Y(0.7), X(o(0.15)), Y(0.5), X(o(0.11)), Y(0.42));
+        ctx.bezierCurveTo(X(o(0.16)), Y(0.3), X(o(0.2)), Y(0.12), X(o(0.22)), Y(0)); ctx.lineTo(X(e), Y(0)); ctx.closePath();
+        ctx.fillStyle = "rgba(255,255,255,0.78)"; ctx.fill();
+        ctx.save(); ctx.clip(); ctx.strokeStyle = "rgba(150,150,150,.5)"; ctx.lineWidth = 2.4; // the folds (darker in the colour channel)
+        for (let k = 1; k < 5; k++) { const f = k / 5; ctx.beginPath(); ctx.moveTo(X(o(0.36 * f)), Y(1)); ctx.quadraticCurveTo(X(o(0.11 * f + 0.02)), Y(0.5), X(o(0.1 * f)), Y(0.42)); ctx.lineTo(X(o(0.2 * f)), Y(0)); ctx.stroke(); }
         ctx.restore();
-        ctx.fillStyle = kind ? "#dddddd" : "#c9b48a"; ctx.fillRect(X(o(0.13)) - 3, Y(0.44), 6, 5); // the tie-back
-      }
-      // the fairy lights: a swag across the top, little bulbs in turn
-      const bx = (k) => 0.1 + 0.8 * k / 10, by = (u) => 0.74 - 0.13 * Math.sin(Math.PI * (u - 0.1) / 0.8);
-      if (kind === 0) { ctx.strokeStyle = "rgba(20,20,20,.7)"; ctx.lineWidth = 1; ctx.beginPath(); for (let k = 0; k <= 40; k++) { const u = 0.1 + 0.8 * k / 40; k ? ctx.lineTo(X(u), Y(by(u))) : ctx.moveTo(X(u), Y(by(u))); } ctx.stroke(); }
-      for (let k = 0; k <= 10; k++) {
-        const u = bx(k), v = by(u) - 0.025, c = BULBS[k % BULBS.length];
-        if (kind === 2) { const gr = ctx.createRadialGradient(X(u), Y(v), 0, X(u), Y(v), 9); gr.addColorStop(0, c); gr.addColorStop(0.3, c); gr.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = gr; ctx.fillRect(X(u) - 9, Y(v) - 9, 18, 18); }
-        else { ctx.fillStyle = kind ? "#ffffff" : c; ctx.beginPath(); ctx.arc(X(u), Y(v), 2.4, 0, Math.PI * 2); ctx.fill(); }
+        ctx.fillStyle = "rgba(205,190,160,1)"; ctx.fillRect(X(o(0.12)) - 3, Y(0.44), 6, 5); // the tie-back
       }
     });
-    const tMap = winTex(0), tEm = winTex(1);
-    for (const t of [tMap, tEm]) { t.repeat.set(1 / 20, 1 / 19); t.offset.set(0.5, 0); } // (the arch's front face has its shape's coordinates for uv: x -10..10, y 0..19)
-    for (const m of glass) { m.color.set("#ffffff"); m.map = tMap; m.emissiveMap = tEm; m.roughness = 0.35; m.metalness = 0.15; }
-    const bulbs = (() => { // both windows' bulb glows, one mesh, just in front of the glass inside the mouldings
-      const pos = [], uv = [], idx = [];
-      for (const x of [-15, 15]) { const b = pos.length / 3; pos.push(x - 10, 23, F + 1.35, x + 10, 23, F + 1.35, x + 10, 42, F + 1.35, x - 10, 42, F + 1.35); uv.push(0, 0, 1, 0, 1, 1, 0, 1); idx.push(b, b + 1, b + 2, b, b + 2, b + 3); }
-      const geo = new BufferGeometry(); geo.setAttribute("position", new Float32BufferAttribute(pos, 3)); geo.setAttribute("uv", new Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
-      const m = new Mesh(geo, new MeshBasicMaterial({ map: winTex(2), transparent: true, opacity: 0.4, blending: AdditiveBlending, depthWrite: false, fog: false }));
-      m.material.userData.outlineParameters = { visible: false }; m.userData.noHull = true; m.userData.noMerge = true; m.renderOrder = 3; m.castShadow = m.receiveShadow = false;
-      g.add(m); return m;
-    })();
+    curtTex.colorSpace = NoColorSpace;
+    const ROOM_VS = "varying vec3 vHwL; varying vec3 vHwR;\n";
+    const ROOM_FS = `uniform float uNight; uniform vec3 uLight; uniform float uSide; uniform sampler2D uCurt;
+varying vec3 vHwL; varying vec3 vHwR;
+// the entry of a ray into a box (t, or 1e9), and the face's normal
+float hwBox(vec3 ro, vec3 rd, vec3 b0, vec3 b1, out vec3 n) {
+  vec3 ird = 1.0 / rd, t0 = (b0 - ro) * ird, t1 = (b1 - ro) * ird, tn3 = min(t0, t1), tf3 = max(t0, t1);
+  float tn = max(max(tn3.x, tn3.y), tn3.z), tf = min(min(tf3.x, tf3.y), tf3.z);
+  if (tf < max(tn, 0.0) || tn < 0.0) return 1e9;
+  n = tn == tn3.x ? vec3(-sign(rd.x), 0.0, 0.0) : tn == tn3.y ? vec3(0.0, -sign(rd.y), 0.0) : vec3(0.0, 0.0, -sign(rd.z));
+  return tn;
+}
+float hwSph(vec3 ro, vec3 rd, vec3 c, float r, out float t2) {
+  vec3 oc = ro - c; float b = dot(oc, rd), q = dot(oc, oc) - r * r, h = b * b - q;
+  if (h < 0.0) { t2 = 1e9; return 1e9; } h = sqrt(h); t2 = -b + h; return -b - h;
+}
+// the light a point of the room gets from a lamp (colour, place, strength, reach), with a little wrap
+vec3 hwLamp(vec3 p, vec3 n, vec3 lp, vec3 lc, float k, float reach) {
+  vec3 d = lp - p; float l2 = dot(d, d), nl = clamp((dot(n, d * inversesqrt(l2)) + 0.25) / 1.25, 0.0, 1.0);
+  return lc * k * nl / (1.0 + l2 / (reach * reach));
+}
+vec3 hwRoom(vec2 pane, vec3 rd, out float curt) {
+  // the room behind the arch (the glass's own units: x -10..10 across, y 0..19 up, its pane at z 1.2)
+  const float Z0 = 1.2, RD = 21.0, RW = 13.5, Y0 = -1.5, Y1 = 21.5;
+  vec3 ro = vec3(pane, Z0); rd.z = min(rd.z, -0.03); rd = normalize(rd);
+  float s = uSide; // the second window's room is the first one mirrored
+  vec3 rs = vec3(rd.x * s, rd.y, rd.z), os = vec3(ro.x * s, ro.y, ro.z);
+  // the walls
+  vec3 ird = 1.0 / rs, tw3 = (vec3(rs.x > 0.0 ? RW : -RW, rs.y > 0.0 ? Y1 : Y0, Z0 - RD) - os) * ird;
+  float t = min(min(tw3.x, tw3.y), tw3.z); vec3 n; vec3 alb; float kind = 0.0;
+  if (t == tw3.x) { n = vec3(-sign(rs.x), 0.0, 0.0); kind = 1.0; } else if (t == tw3.y) { n = vec3(0.0, -sign(rs.y), 0.0); kind = rs.y < 0.0 ? 2.0 : 3.0; } else { n = vec3(0.0, 0.0, 1.0); kind = 4.0; }
+  // the furniture: a sideboard on the back wall's left, a table lamp on it, the pendant hanging in the middle
+  vec3 nb; float tb = hwBox(os, rs, vec3(-12.5, Y0, Z0 - RD), vec3(-3.0, 4.2, Z0 - RD + 5.0), nb);
+  if (tb < t) { t = tb; n = nb; kind = 5.0; }
+  vec3 LT = vec3(-8.6, 8.4, Z0 - RD + 2.6), LP = vec3(2.2, 14.6, Z0 - 10.5);
+  float t2, ts = hwSph(os, rs, LT, 1.9, t2); // the table lamp's shade (a squat globe of cloth)
+  vec3 hs = os + rs * ts; if (ts < t && abs(hs.y - LT.y) < 1.3) { t = ts; n = normalize(hs - LT); kind = 6.0; }
+  vec3 nbs; float tbs = hwBox(os, rs, vec3(LT.x - 0.35, 4.2, LT.z - 0.35), vec3(LT.x + 0.35, LT.y - 1.2, LT.z + 0.35), nbs); // its stem
+  if (tbs < t) { t = tbs; n = nbs; kind = 7.0; }
+  float tp = hwSph(os, rs, LP + vec3(0.0, 1.3, 0.0), 2.7, t2); vec3 hp = os + rs * tp; // the pendant's shade: a dome, open below
+  if (tp < t && hp.y > LP.y + 0.7) { t = tp; n = normalize(hp - LP - vec3(0.0, 1.3, 0.0)); kind = 8.0; }
+  else { vec3 hp2 = os + rs * t2; if (t2 < t && hp2.y > LP.y + 0.7) { t = t2; n = -normalize(hp2 - LP - vec3(0.0, 1.3, 0.0)); kind = 9.0; } }
+  float tq = hwSph(os, rs, LP, 0.75, t2); bool bulb = tq < t; // the bulb under it
+  // its cord: the ray's nearest pass by the vertical line over the shade
+  vec2 dxz = rs.xz; float a2 = dot(dxz, dxz), tc = a2 > 1e-5 ? dot(LP.xz - os.xz, dxz) / a2 : 0.0; vec3 hc = os + rs * tc;
+  bool cord = tc > 0.0 && tc < t && hc.y > LP.y + 3.8 && hc.y < Y1 && length(hc.xz - LP.xz) < 0.13;
+  vec3 h = os + rs * t;
+  // the colours of the room
+  if (kind == 2.0) { float pl = fract(h.x / 2.6 + 0.37 * floor(h.z / 7.0)); alb = mix(vec3(0.33, 0.19, 0.1), vec3(0.42, 0.26, 0.14), smoothstep(0.0, 0.08, pl) * (1.0 - smoothstep(0.92, 1.0, pl)));
+    vec2 rg = abs(h.xz - vec2(1.5, Z0 - 10.0)) - vec2(7.5, 5.5); if (max(rg.x, rg.y) < 0.0) alb = max(rg.x, rg.y) > -0.8 ? vec3(0.62, 0.56, 0.44) : vec3(0.52, 0.16, 0.14); } // planks, a rug with a border
+  else if (kind == 3.0) alb = vec3(0.86, 0.85, 0.82);
+  else if (kind == 4.0) { alb = vec3(0.8, 0.74, 0.64); vec2 pf = abs(h.xy - vec2(3.5, 10.5)) - vec2(4.2, 3.0); if (max(pf.x, pf.y) < 0.0) alb = max(pf.x, pf.y) > -0.6 ? vec3(0.25, 0.18, 0.12) : mix(vec3(0.2, 0.42, 0.55), vec3(0.85, 0.6, 0.3), step(h.y, 10.0) * 0.8); } // a framed picture
+  else if (kind == 1.0) alb = vec3(0.76, 0.7, 0.6);
+  else if (kind == 5.0) alb = n.z > 0.5 ? vec3(0.3, 0.17, 0.09) : vec3(0.24, 0.13, 0.07);
+  else if (kind == 7.0) alb = vec3(0.6, 0.5, 0.3);
+  else alb = vec3(0.92, 0.9, 0.84);
+  // lit: at night by the two lamps (the pendant in the window's colour, the table lamp warm), by day by the window
+  vec3 warm = vec3(1.0, 0.62, 0.3), lc = mix(uLight, uLight * 0.7 + warm * 0.3, 0.25);
+  vec3 eN = hwLamp(h, n, LP - vec3(0.0, 0.3, 0.0), lc, (h.y > LP.y + 1.0 && kind != 8.0) ? 0.22 : 1.05, 8.0) + hwLamp(h, n, LT, warm, 0.95, 4.5) + (lc * 0.05 + warm * 0.02);
+  float win = exp(-(Z0 - h.z) / 11.0);
+  vec3 eD = vec3(1.0, 0.93, 0.82) * (0.16 + 0.75 * win * (0.6 + 0.4 * max(n.z, 0.0)));
+  if (kind == 2.0 && abs(h.x - 2.0 + 0.4 * (Z0 - h.z)) < 6.0 && h.z > Z0 - 9.0) eD *= 2.1; // a patch of sun on the floor
+  vec3 col = alb * mix(eD * 0.55, eN, uNight);
+  if (kind == 6.0) col = mix(vec3(0.85, 0.8, 0.7) * eD * 0.6, warm * 1.5, uNight); // the table lamp's shade, lit inside
+  if (kind == 9.0) col = mix(vec3(0.5) * eD, lc * 1.8, uNight); // the pendant's shade seen from below: bright inside
+  if (kind == 8.0) col = mix(vec3(0.22, 0.24, 0.2) * eD, lc * 0.3, uNight);
+  if (bulb) col = mix(vec3(0.9, 0.88, 0.8) * 0.6, vec3(1.6, 1.5, 1.35) + lc * 0.4, uNight);
+  if (cord) col = vec3(0.05);
+  // a soft bloom round the bulb and the table lamp in the room's air, at night
+  vec3 tpb = LP - os; float dpb = length(tpb - rs * max(dot(tpb, rs), 0.0)), tpl = dot(LT - os, rs); float dlt = length((LT - os) - rs * max(tpl, 0.0));
+  col += uNight * (lc * 0.3 * exp(-dpb * dpb / 5.0) + warm * 0.22 * exp(-dlt * dlt / 4.0));
+  curt = 0.0;
+  return col;
+}
+`;
+    for (const [i, m] of glass.entries()) {
+      m.map = null; m.emissiveMap = null; m.color.set("#0b0c0e"); m.emissive.set("#000000"); m.emissiveIntensity = 1; m.roughness = 0.14; m.metalness = 0.0;
+      const U = { uNight: { value: 0 }, uLight: { value: new Color("#ffb060") }, uSide: { value: i === 0 ? 1 : -1 }, uCurt: { value: curtTex } };
+      m.userData.room = U;
+      m.onBeforeCompile = (sh) => {
+        Object.assign(sh.uniforms, U);
+        sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\n" + ROOM_VS)
+          .replace("#include <project_vertex>", "#include <project_vertex>\n{ vHwL = transformed; vec4 hw = modelMatrix * vec4(transformed, 1.0); hw.xz = cityWarp(hw.xz); vHwR = inverse(mat3(modelMatrix)) * (hw.xyz - cameraPosition); }");
+        sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\n" + ROOM_FS)
+          .replace("#include <map_fragment>", `#include <map_fragment>
+  vec3 hwRd = normalize(vHwR); float hwCt; vec3 hwIn = hwRoom(vHwL.xy, hwRd, hwCt);
+  vec4 hwC = texture2D(uCurt, vec2(vHwL.x / 20.0 + 0.5, vHwL.y / 19.0)); float hwA = hwC.a;
+  // the glass: a warm sky in it by day (more at a grazing look), two bands of sun glare; at night only a little
+  float hwCos = clamp(-hwRd.z, 0.0, 1.0), hwF = 0.04 + 0.96 * pow(1.0 - hwCos, 5.0);
+  float hwRy = reflect(hwRd, vec3(0.0, 0.0, 1.0)).y;
+  vec3 hwSky = mix(vec3(1.0, 0.84, 0.62), vec3(0.78, 0.86, 1.0), clamp(hwRy * 1.4 + 0.3, 0.0, 1.0));
+  float hwG = vHwL.x * 0.55 + vHwL.y * 0.85 - 9.0 + 3.0 * uSide;
+  float hwGl = 0.16 * exp(-pow(hwG / 1.8, 2.0)) + 0.09 * exp(-pow((hwG - 4.5) / 0.7, 2.0));
+  vec3 hwCurtN = (uLight * 0.62 + vec3(1.0, 0.62, 0.3) * 0.22) * (0.7 + 0.3 * hwC.r); // the curtains, lit from behind
+  vec3 hwRoomE = mix(hwIn, hwCurtN * uNight + hwIn * 0.25 * (1.0 - uNight), hwA * 0.9);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.84, 0.8) * (0.72 + 0.28 * hwC.r), hwA * (1.0 - uNight) * 0.6);
+  vec3 hwRefl = (1.0 - uNight * 0.9) * (hwSky * (0.025 + 0.5 * hwF) + vec3(1.0, 0.9, 0.72) * hwGl) * (1.0 - hwA * 0.5);
+  vec3 hwEmit = hwRoomE * mix(0.75, 0.85, uNight) * (1.0 - hwF * 0.6) + hwRefl;`)
+          .replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\n  totalEmissiveRadiance += hwEmit;");
+      };
+      m.customProgramCacheKey = () => "hwRoom1";
+      m.needsUpdate = true;
+    }
     const add = (map, opacity) => { const m = new MeshBasicMaterial({ map, color: "#ffffff", transparent: true, opacity, blending: AdditiveBlending, depthWrite: false, fog: false, side: DoubleSide }); m.userData.outlineParameters = { visible: false }; return m; };
     // the shaft: an open cone from the window's opening out and down over the paving, wider; drawn as a volume (each
     // face by how squarely it is seen: its silhouette melts away, no hard sides) that fades out along its length
@@ -30674,8 +30762,7 @@ void main() {
       group: fxG,
       setDark(on) {
         dark = on; fxG.visible = false;
-        bulbs.material.opacity = on ? 0.85 : 0.4; // the fairy lights: a faint glow by day, bright inside the colour at night
-        for (const w of wins) { w.glass.emissiveIntensity = on ? 1.05 : 0; if (!on) w.glass.emissive.set("#ffcf8a"); }
+        for (const w of wins) { const U = w.glass.userData.room; U.uNight.value = on ? 1 : 0; if (!on) U.uLight.value.set("#ffb060"); } // round 3: the rooms behind the glass, lit or by day
       },
       update(now, cam) {
         if (!dark) return;
@@ -30689,8 +30776,8 @@ void main() {
         wins.forEach((w, i) => {
           const h = still ? HW_HOLD[i] : i === 0 ? colAt(now, 0, 3) : colAt(now, 0.5, 0);
           w.col.setHSL(h / 360, 1, 0.5, SRGBColorSpace);
-          w.glass.emissive.copy(w.col);
-          w.halo.material.color.copy(w.col); w.halo.material.opacity = 0.72 * face;
+          w.glass.userData.room.uLight.value.copy(w.col); // round 3: the pendant's colour
+          w.halo.material.color.copy(w.col); w.halo.material.opacity = 0.52 * face; // round 3: a little less, so the room shows through it
           w.back.material.color.copy(w.col); w.back.material.opacity = rear;
           w.shaft.material.uniforms.color.value.copy(w.col); w.pool.material.color.copy(w.col);
         });
