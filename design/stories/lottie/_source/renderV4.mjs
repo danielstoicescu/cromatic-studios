@@ -72,10 +72,11 @@ for (const w of worlds) {
   const mode = w === "sketch" ? "sketch" : w === "riso" ? "riso" : null;
   await H.aim(p, o0, 2500);
   if (w === "sketch") { await p.evaluate((o) => { const S = window.__story; for (const q of [o.tgt, o.pos]) { const v = window.__R.W(q); S.sketchPaint(v.x, v.z, 3000, 1); } }, o0); await p.waitForTimeout(3500); }
-  const r = await p.evaluate(({ o, L, mode }) => { const R = window.__R; R.park([9000, null, 9000, 0]);
+  // (the frontal house shot is wide: the near cloud bank would fill its sky; it is left out)
+  const r = await p.evaluate(({ o, L, mode }) => { const R = window.__R, FC = window.__story.farClouds, fcv = FC && FC.visible; if (FC) FC.visible = false; R.park([9000, null, 9000, 0]);
     try { const c = R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); const urls = { full: R.shot({ ...o, keepBg: true, ...(mode ? { mode } : {}) }) };
       for (const [nm, keep, ov] of L) { urls[nm] = R.layer({ ...o, ...(ov || {}) }, keep); if (mode) urls[nm + "-post"] = R.layer({ ...o, ...(ov || {}), mode }, keep); }
-      return { c, urls }; } finally { R.park(null); } }, { o: o0, L, mode });
+      return { c, urls }; } finally { R.park(null); if (FC) FC.visible = fcv; } }, { o: o0, L, mode });
   fs.mkdirSync(RAW + "/b4", { recursive: true });
   for (const [k, u] of Object.entries(r.urls)) save(u, RAW + "/b4/" + w + "-" + k + ".png");
   out[w] = r.c.count;

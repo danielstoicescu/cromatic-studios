@@ -1,7 +1,7 @@
 // Cromatic · stories in Lottie · v4 (TASK-065c, Daniel: "Two Minutes is used too much"): the new places of stories A and
 // B, in the city's logical coordinates (the map's x, z; y up). The same kinds of cameras as v2/v3, somewhere else.
 //   A · "Cromatic City": the coffee street (Steam Coffee Shop, Craft Coffee, the Steam truck) instead of Aricescu
-//   B · one street, nine worlds: Strada Olari, under the Cromatic Studios House's gate, instead of the Aricescu corner
+//   B · one street, nine worlds: the Cromatic Studios House on Strada Olari, frontal, instead of the Aricescu corner
 // (C keeps its overhead drift through the Two Minutes corner: Daniel's one exception; D has no Two Minutes shot.)
 import { STORY, K, OVER } from "./shots.mjs";
 const street = (o) => ({ level: true, w: Math.round(STORY.w * K * OVER / 2) * 2, h: STORY.h * K, ...o });
@@ -11,11 +11,11 @@ export const SHOTS4 = {
   "a4-street": street({ pos: [790, 9, 5440], tgt: [945, 14, 5640], fov: 60, shift: [0, 0.13], park: [842, null, 5545, 0],
     cuts: [["near", 150], ["mid", 560], ["far", 1e9]], skyD: 6000,
     pins: { sign: [905, 22, 5600], tower: [960, 90, 5650], car: [842, 12, 5545] } }),
-  // B · on Strada Olari, by the kerb: the gate's banner (CROMATIC STUDIOS HOUSE · STR. OLARI 9 · COME BY) across the
-  // street, the festoon under it, the house's arches on the right, the town behind
-  "b4-street": street({ pos: [1215, 6, 7040], tgt: [1150, 20, 7290], fov: 46, shift: [0, 0.16], noMesa: true,
+  // B · (Daniel, round 2: "a frontal camera on the house") the Cromatic Studios House square on: the two arched windows
+  // under the green roof, the arcade below, the plaza in front, a cypress and the town at its sides
+  "b4-street": street({ pos: [1290, 7, 7330], tgt: [1060, 28, 7330], fov: 76, shift: [0, 0.1], noMesa: true,
     cuts: [["near", 125], ["mid", 340], ["far", 1e9]], skyD: 6000,
-    pins: { sign: [1170, 30, 7220] } })
+    pins: { windows: [1075, 40, 7330] } })
 };
 // A · the overhead straight down on the coffee district (two lenses: the crash zoom), and the low shot behind the
 // ride's boot on the coffee street, the street ahead; the ride pulls away north
