@@ -5,6 +5,8 @@
 //   JOB=b4 node renderV4.mjs         B's street in the nine worlds (WORLDS=... to redo some), as renderB2.mjs
 import fs from "fs";
 import { SHOTS4, A4, bootCar4, A5, driveCar } from "./shots4.mjs";
+import { D2 } from "./shotsD2.mjs";
+import { SHOTS as C2 } from "./chase2.mjs";
 const job = process.env.JOB, RAW = process.env.RAW || "/private/tmp/claude-501/-Users-daniel-stoic/8f3b4503-769c-4f86-ba4b-8e36528128b3/scratchpad/stl4/raw";
 fs.mkdirSync(RAW, { recursive: true });
 const D = new URL(".", import.meta.url).pathname;
@@ -108,6 +110,42 @@ await full("scf", A5.scf);
 fs.writeFileSync(RAW + "/a5.json", JSON.stringify(out));
 return { ride: out.ride, drive: out.drive.filter(Boolean).length };
 `;
+{
+  // story D2's shots (shotsD2.mjs): the drift (slow motion, heavy blur), the skyline (and its tags' anchors), Steam by
+  // day, the F1 through the Two Minutes corner at night, the fountain's water for D's end
+  const dr = D2.drift, nF = Math.round(dr.dur * 30), drFrames = [];
+  for (let i = 0; i <= nF; i++) { const ta = (i / 30) * dr.slow; drFrames.push(Array.from({ length: dr.sub }, (_, j) => dr.pose(Math.max(0, ta + ((j + 0.5) / dr.sub - 0.5) * dr.shutter)))); }
+  const sipFrames = []; for (let i = 0; i <= Math.round(1.4 * 30); i++) { const t = i / 30; sipFrames.push(Array.from({ length: 4 }, (_, j) => C2.corner.yellow(t - 1 / 120 + ((j + 0.5) / 4) / 60))); }
+  JOBS.d2 = `
+const D2 = ${JSON.stringify({ drift: { cam: D2.drift.cam }, skyline: D2.skyline, steam: D2.steam, sip: { cam: D2.sip.cam }, endWater: D2.endWater })}, drFrames = ${JSON.stringify(drFrames)}, sipFrames = ${JSON.stringify(sipFrames)}, out = fs.existsSync(RAW + "/d2.json") ? JSON.parse(fs.readFileSync(RAW + "/d2.json", "utf8")) : {};
+const only = ${JSON.stringify((process.env.D2 || "drift,skyline,steam,sip,water").split(","))};
+const force = "for (let o = x; o; o = o.parent) { if (o === window.__story.veh().group) return 'car'; if (o === window.__story.cop().group) return 'cop'; } return null;";
+fs.mkdirSync(RAW + "/d2", { recursive: true });
+const plate = async (name, o) => { await H.aim(p, o, 2500); const u = await p.evaluate((o) => { const R = window.__R, FC = window.__story.farClouds, fv = FC && FC.visible; if (FC) FC.visible = false; R.park([9000, null, 9000, 0]); try { R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); return R.shot({ ...o, keepBg: true }); } finally { R.park(null); if (FC) FC.visible = fv; } }, o); save(u, RAW + "/d2/" + name + ".png"); };
+const sprites = async (name, o, frames, { key = false } = {}) => { const rects = []; if (key) await p.evaluate((o) => window.__R.keyLight(o, true), o); try { for (let i = 0; i < frames.length; i++) { const r = await p.evaluate(({ o, sub }) => { const S = window.__story; S.veh().beams && (S.veh().beams.visible = true); return window.__R.carShot(o, "car", sub); }, { o, sub: frames[i] }); if (r) save(r.url, RAW + "/d2/" + name + "-" + String(i).padStart(3, "0") + ".png"); rects.push(r ? r.rect : null); } } finally { if (key) await p.evaluate(() => window.__R.keyLight(null, false)); } return rects; };
+if (only.includes("drift")) { const o = { ...D2.drift.cam, forceSrc: force, occlude: true }; await plate("drift-plate", o); out.drift = await sprites("drift", o, drFrames); }
+if (only.includes("skyline")) { const o = D2.skyline.cam; await plate("skyline-plate", o); const names = Object.keys(D2.skyline.tags); const r = await p.evaluate(({ o, pts }) => window.__R.project(o, pts), { o, pts: names.map((n) => D2.skyline.tags[n]) }); out.tags = Object.fromEntries(names.map((n, i) => [n, r.pts[i]])); }
+if (only.includes("steam")) await plate("steam-plate", D2.steam.cam);
+if (only.includes("sip") || only.includes("water")) { await p.evaluate(() => window.__scheme("nightlife")); await p.waitForTimeout(6500); await p.evaluate(() => { window.__story.state.weatherOn = false; }); }
+if (only.includes("sip")) { await p.evaluate(() => window.__api.setVehicle("f1")); await p.waitForTimeout(1500); const o = { ...D2.sip.cam, forceSrc: force, occlude: true }; await plate("sip-plate", o); out.sip = await sprites("sip", o, sipFrames, { key: true }); await p.evaluate(() => window.__api.setVehicle("dacia1300")); await p.waitForTimeout(800); }
+if (only.includes("water")) {
+  const o = D2.endWater.cam, n = ${Math.round(D2.endWater.dur * 30) + 1};
+  await H.aim(p, o, 2500);
+  await p.evaluate((o) => { const R = window.__R; R.park([9000, null, 9000, 0]); R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); R.park(null); }, o);
+  // (the box where the water moves: two moments compared, in the page)
+  const box = ${JSON.stringify([520, 1500, 1140, 900])};
+  for (let i = 0; i < n; i++) {
+    const u = await p.evaluate(async ({ o, t, box }) => { const S = window.__story, R = window.__R; R.park([9000, null, 9000, 0]); let url; try { S.fountain().update(t); url = R.shot({ ...o, keepBg: true }); } finally { R.park(null); }
+      const im = new Image(); im.src = url; await im.decode(); const c = document.createElement("canvas"); c.width = box[2]; c.height = box[3]; c.getContext("2d").drawImage(im, box[0], box[1], box[2], box[3], 0, 0, box[2], box[3]); return c.toDataURL("image/png"); }, { o, t: 200 + i / 30, box });
+    save(u, RAW + "/d2/water-" + String(i).padStart(3, "0") + ".png");
+  }
+  out.waterBox = box; out.water = n;
+}
+await p.evaluate(() => window.__scheme("monument")); await p.waitForTimeout(2500);
+fs.writeFileSync(RAW + "/d2.json", JSON.stringify(out));
+return { drift: out.drift && out.drift.filter(Boolean).length, tags: out.tags, sip: out.sip && out.sip.filter(Boolean).length, water: out.water };
+`;
+}
 if (!JOBS[job]) throw new Error("JOB=street|a4|b4");
 const t0 = Date.now();
 const r = await fetch("http://localhost:8962/", { method: "POST", body: head + JOBS[job] });
