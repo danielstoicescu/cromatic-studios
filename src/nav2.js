@@ -1903,8 +1903,9 @@
       const shake = (amt) => { if (amt > 0.05 && !reduced()) { camPos.x += (Math.random() - 0.5) * amt; camPos.y += (Math.random() - 0.5) * amt; camPos.z += (Math.random() - 0.5) * amt; } };
       if (k < 1e-4) { shake(FX.bump * H.mapView.dist * 0.006); return; }
       // beta 2.9 (Daniel): small rides are framed like the car (the scooter's length reads long: its stem), the plane from
-      // further back and higher, at its own altitude
-      const vid = H.vehicle(), vk = vid === "scooter" ? 0.82 : vid === "plane" ? 1.12 : vid === "sub" ? 1.1 : 1, alt = H.vehAlt?.() || 0;
+      // further back and higher, at its own altitude. TASK-109: the scooter at its real size is short (its length is the
+      // 24 floor of carLen) and tall for it: the camera sits close and a little higher (vu), over its bar, onto its deck
+      const vid = H.vehicle(), vk = vid === "scooter" ? 0.9 : vid === "plane" ? 1.12 : vid === "sub" ? 1.1 : 1, vu = vid === "scooter" ? 0.2 : 0, alt = H.vehAlt?.() || 0;
       const cp = { x: H.carPos.x, y: (H.carPos.y || 0) + alt, z: H.carPos.z }, len = H.carLen() * vk * (VP.w < VP.h ? 1.7 : 1.18), f = [Math.sin(D.camH), Math.cos(D.camH)]; // polish: a little further back on a laptop (the car filled the frame)
       // the camera stays over the road: where the spot behind the car is not road (a dead end's end, a turn), it comes
       // in closer and a little higher, so it never sits inside a tree or a wall
@@ -1926,7 +1927,7 @@
       D.camUp += ((D.kturn || D.uturn || D.v < -0.5 ? 1 : 0) - D.camUp) * (1 - Math.exp(-dt * 2.5));
       D.camLag += ((reduced() ? 0 : Math.min(1, Math.max(0, D.v) / VMAX)) - D.camLag) * (1 - Math.exp(-dt * 1.6));
       const back = len * 0.92 * D.camPull * (1 - 0.35 * D.camUp) * (1 + 0.16 * D.camLag);
-      const eye = V3(cp.x - f[0] * back, Math.max(cp.y + len * (0.36 + 0.3 * (1 - D.camPull) + 0.7 * D.camUp), D.camOver + 8), cp.z - f[1] * back);
+      const eye = V3(cp.x - f[0] * back, Math.max(cp.y + len * (0.36 + vu + 0.3 * (1 - D.camPull) + 0.7 * D.camUp), D.camOver + 8), cp.z - f[1] * back);
       const ahead = len * 1.3 * (1 - 0.8 * D.camUp); // in a manoeuvre the camera looks at the car itself
       const look = V3(cp.x + f[0] * ahead, cp.y + len * 0.2, cp.z + f[1] * ahead);
       // blend on the orbit (target, yaw, pitch, the height the frame shows, lens), so the car stays in frame throughout
