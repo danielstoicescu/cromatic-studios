@@ -1,0 +1,127 @@
+{
+ "id": "a3-drive",
+ "story": "A",
+ "beat": "Take your drive.",
+ "shots": [
+  "drive"
+ ],
+ "scene": "dusk street, the road at the bottom",
+ "textColour": "#FBFAF5",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "a3",
+    "place": "bl",
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "a3-l1",
+      "style": "headline",
+      "size": 168,
+      "tracking": -0.045,
+      "lead": 0.94,
+      "ink": "#FBFAF5",
+      "align": "left",
+      "text": "Take your",
+      "x": 80,
+      "baseline": 1372.1,
+      "width": 699.7,
+      "box": {
+       "x": 80,
+       "y": 1244.4,
+       "w": 699.7,
+       "h": 168
+      }
+     },
+     {
+      "kind": "line",
+      "id": "a3-l2",
+      "style": "headline",
+      "size": 168,
+      "tracking": -0.045,
+      "lead": 0.94,
+      "ink": "#FBFAF5",
+      "align": "left",
+      "text": "drive.",
+      "x": 80,
+      "baseline": 1530,
+      "width": 409.6,
+      "box": {
+       "x": 80,
+       "y": 1402.3,
+       "w": 409.6,
+       "h": 132.7
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "drive+11",
+   "lineStagger": 5,
+   "out": "drive+151"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "A_v4": {
+    "clock": "A_v4",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "a3-l1",
+      "text": "Take your",
+      "in": 231,
+      "out": 370,
+      "motion": "lineIn / lineOut",
+      "hold": 127
+     },
+     {
+      "id": "a3-l2",
+      "text": "drive.",
+      "in": 236,
+      "out": 371,
+      "motion": "lineIn / lineOut",
+      "hold": 123
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "drive+70"
+  }
+ ],
+ "notes": "All paper: 'drive.' is no longer yellow.",
+ "files": {
+  "outlined": [
+   "svg/outlined/a3-drive.svg"
+  ],
+  "live": [
+   "svg/live/a3-drive.svg"
+  ]
+ }
+}

@@ -1,0 +1,158 @@
+{
+ "id": "c4-fountain",
+ "story": "C",
+ "beat": "Down to earth, / up for fun. (the fountain, split across corners, long hold)",
+ "shots": [
+  "fountain"
+ ],
+ "scene": "night (the lit water in the middle)",
+ "textColour": "#FBFAF5",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "c4a",
+    "place": "tl",
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "c4a-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#FBFAF5",
+      "align": "left",
+      "text": "Down to earth,",
+      "x": 80,
+      "baseline": 383.1,
+      "width": 751.3,
+      "box": {
+       "x": 80,
+       "y": 294.9,
+       "w": 751.3,
+       "h": 116
+      }
+     }
+    ],
+    "behindRide": false
+   },
+   {
+    "kind": "block",
+    "id": "c4b",
+    "place": "br",
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "c4b-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#FBFAF5",
+      "align": "right",
+      "text": "up for fun.",
+      "x": 480.4,
+      "baseline": 1530,
+      "width": 519.6,
+      "box": {
+       "x": 480.4,
+       "y": 1441.8,
+       "w": 519.6,
+       "h": 116
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "fountain+4",
+   "blockStagger": 8,
+   "out": "fountain.end-8"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "C_v4": {
+    "clock": "C_v4",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "c4a-l1",
+      "text": "Down to earth,",
+      "in": 214,
+      "out": 254,
+      "motion": "lineIn / lineOut",
+      "hold": 28
+     },
+     {
+      "id": "c4b-l1",
+      "text": "up for fun.",
+      "in": 222,
+      "out": 254,
+      "motion": "lineIn / lineOut",
+      "hold": 20
+     }
+    ]
+   },
+   "C_long": {
+    "clock": "C_long",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "c4a-l1",
+      "text": "Down to earth,",
+      "in": 229,
+      "out": 322,
+      "motion": "lineIn / lineOut",
+      "hold": 81
+     },
+     {
+      "id": "c4b-l1",
+      "text": "up for fun.",
+      "in": 237,
+      "out": 322,
+      "motion": "lineIn / lineOut",
+      "hold": 73
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "fountain+27"
+  }
+ ],
+ "notes": "Top left, then bottom right: the water sits between them. Needs the long clock (C_long: 105 frames) for its hold; on v4 it holds 26 frames.",
+ "files": {
+  "outlined": [
+   "svg/outlined/c4-fountain.svg"
+  ],
+  "live": [
+   "svg/live/c4-fountain.svg"
+  ]
+ }
+}
