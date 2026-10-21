@@ -217,7 +217,7 @@
     links.forEach((a, id) => { const el = d.getElementById(id); if (el) io4.observe(el); });
   }
 
-  // ---- TASK-067: the coffee stop, drawn. The SVG still is the page's; the Lottie (the map's player, in a worker) draws
+  // ---- TASK-067: the coffee stop, drawn. The still (an SVG picture) is the page's; the Lottie (the map's player, in a worker) draws
   // over it from the same frame once the section is near and the page has loaded, plays while the section is on screen
   // (and the tab is), rests on that frame after three turns, starts again when it comes back into view; never with
   // reduced motion. The round button pauses and plays it ----
@@ -269,9 +269,11 @@
       pp.hidden = false;
       sync();
     };
-    // fetched once the page has loaded and the section is within a screen and a half
-    const ready = new Promise((res) => { const g = () => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(res, 120))); if (d.readyState === "complete") g(); else addEventListener("load", g, { once: true }); });
-    new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting) && !wanted) { wanted = true; ready.then(mount); } }, { rootMargin: "150% 0px" }).observe(rl);
+    // fetched once the page has loaded, the section is within about half a screen and the page is idle (the still covers
+    // the wait: it is the very frame the piece starts on)
+    const idle = (f) => (window.requestIdleCallback ? requestIdleCallback(f, { timeout: 1200 }) : setTimeout(f, 60));
+    const ready = new Promise((res) => { const g = () => requestAnimationFrame(() => idle(res)); if (d.readyState === "complete") g(); else addEventListener("load", g, { once: true }); });
+    new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting) && !wanted) { wanted = true; ready.then(mount); } }, { rootMargin: "60% 0px" }).observe(rl);
     new IntersectionObserver((es) => { near = es.some((e) => e.isIntersecting); sync(); }, { threshold: 0.15 }).observe(rl);
     d.addEventListener("visibilitychange", sync);
     mqT.addEventListener?.("change", () => { if (piece) mount(); });

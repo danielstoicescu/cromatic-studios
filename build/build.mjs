@@ -398,8 +398,9 @@ const canvases = {};
   }
 }
 // TASK-067 (Daniel: the Two Minutes scene as a Lottie that loads at once): the coffee stop on /site/ and /ro/ is the drive's
-// scene drawn by the site's Lottie layer (design/lottie-ui/_source/pieces/coffee.mjs, wide and tall). Its first frame comes
-// as SVG with the HTML (src/lottie-ui/site-coffee-*.svg), so it is on screen with the page; the player (the map's own,
+// scene drawn by the site's Lottie layer (design/lottie-ui/_source/pieces/coffee.mjs, wide and tall). Its first frame is an
+// SVG (src/lottie-ui/site-coffee-*.svg, ~4 KB compressed), asked for with the page at low priority, so it is on screen long
+// before the section is (inline it cost the first paint ~12 ms of parsing on every visit); the player (the map's own,
 // shared and cached), its host (czl.js, one small hashed file) and the piece are fetched by site.js only when the section
 // comes near, after the page has loaded, and draw over the still from that same frame
 let coffee = null;
@@ -409,7 +410,8 @@ try {
   if (LUI_CFG && LUI_CFG.j["site-coffee-wide"] && LUI_CFG.j["site-coffee-tall"]) {
     const code = Buffer.from(transformSync(lu("czl.js"), { minify: true, target: "es2017", legalComments: "none" }).code);
     const rel = `assets/czl-site.${hash(code)}.js`; writeFileSync(join(pub, rel), code);
-    coffee = { js: "/" + rel, player: LUI_CFG.player, wide: LUI_CFG.j["site-coffee-wide"], tall: LUI_CFG.j["site-coffee-tall"], still: { wide: lu("site-coffee-wide.svg"), tall: lu("site-coffee-tall.svg") } };
+    const still = (ab) => { const svg = Buffer.from(lu(`site-coffee-${ab}.svg`)), r = `assets/site-coffee-${ab}.${hash(svg)}.svg`; writeFileSync(join(pub, r), svg); const vb = /viewBox="0 0 (\d+) (\d+)"/.exec(svg.toString()); return { src: "/" + r, w: +vb[1], h: +vb[2] }; };
+    coffee = { js: "/" + rel, player: LUI_CFG.player, wide: LUI_CFG.j["site-coffee-wide"], tall: LUI_CFG.j["site-coffee-tall"], still: { wide: still("wide"), tall: still("tall") } };
   }
 } catch (e) { console.warn("[build] the coffee stop's Lottie skipped (the film stays):", e.message); }
 const R = makeRender({ SITE: SITE_URL, A, cssHref: "/" + siteCssName, jsHref: "/" + siteJsName, fonts: FONTS, kz, heroCity, canvases, coffee });

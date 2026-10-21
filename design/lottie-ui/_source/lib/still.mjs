@@ -54,18 +54,23 @@ function trMat(t, f) {
 const matStr = (m) => (m.every((v, i) => Math.abs(v - I[i]) < 1e-6) ? "" : ` transform="matrix(${m.map(R).join(" ")})"`);
 
 /* ---------- shapes as path data, through a matrix ---------- */
+// (relative after the first point, from the rounded absolute points: tenths, so no drift)
+const T10 = (v) => Math.round(v * 10);
+const num = (k) => { const v = k / 10; return String(v).replace(/^(-?)0\./, "$1."); };
 function bezD(p, m) {
   const v = p.v, n = v.length;
   if (!n) return "";
-  const P = (q) => app(m, q).map(R).join(" ");
-  let d = `M${P(v[0])}`;
+  const A = (q) => app(m, q).map(T10);
+  let [x, y] = A(v[0]);
+  let d = `M${num(x)} ${num(y)}`;
+  const rel = (q) => { const [a, b] = A(q); return [a - x, b - y, a, b]; };
   const segs = p.c ? n : n - 1;
   for (let k = 0; k < segs; k++) {
     const a = v[k], b = v[(k + 1) % n], o = p.o[k] || [0, 0], i = p.i[(k + 1) % n] || [0, 0];
-    if (!o[0] && !o[1] && !i[0] && !i[1]) d += `L${P(b)}`;
-    else d += `C${P([a[0] + o[0], a[1] + o[1]])} ${P([b[0] + i[0], b[1] + i[1]])} ${P(b)}`;
+    if (!o[0] && !o[1] && !i[0] && !i[1]) { const [dx, dy, ax, ay] = rel(b); d += `l${num(dx)} ${num(dy)}`; x = ax; y = ay; }
+    else { const [c1x, c1y] = rel([a[0] + o[0], a[1] + o[1]]), [c2x, c2y] = rel([b[0] + i[0], b[1] + i[1]]), [dx, dy, ax, ay] = rel(b); d += `c${num(c1x)} ${num(c1y)} ${num(c2x)} ${num(c2y)} ${num(dx)} ${num(dy)}`; x = ax; y = ay; }
   }
-  return d + (p.c ? "Z" : "");
+  return d.replace(/ -/g, "-") + (p.c ? "Z" : "");
 }
 function rectPath(size, pos, rr) {
   const [w, h] = size, [cx, cy] = pos, r = Math.max(0, Math.min(rr || 0, w / 2, h / 2)), k = 0.5523 * r, x0 = cx - w / 2, x1 = cx + w / 2, y0 = cy - h / 2, y1 = cy + h / 2;
@@ -137,7 +142,8 @@ function drawStyles(list, f) {
 
 function strokeAttrs(rec, f) {
   const it = rec.it, k = Math.sqrt(Math.abs(rec.M[0] * rec.M[3] - rec.M[1] * rec.M[2])), w = R((val(it.w, f) || 0) * k);
-  return ` stroke="${hex(val(it.c, f))}" stroke-width="${w}"${it.lc === 1 ? "" : ` stroke-linecap="${it.lc === 3 ? "square" : "round"}"`}${it.lj === 1 ? "" : ` stroke-linejoin="${it.lj === 3 ? "bevel" : "round"}"`}`;
+  // (round caps and joins are the svg's own, set once on it)
+  return ` stroke="${hex(val(it.c, f))}" stroke-width="${w}"${it.lc === 2 ? "" : ` stroke-linecap="${it.lc === 3 ? "square" : "butt"}"`}${it.lj === 2 ? "" : ` stroke-linejoin="${it.lj === 3 ? "bevel" : "miter"}"`}`;
 }
 export function stillSvg(J, { frame = 0, cls = "", label = "" } = {}) {
   const f = frame, byInd = new Map(J.layers.map((L) => [L.ind, L]));
@@ -155,5 +161,5 @@ export function stillSvg(J, { frame = 0, cls = "", label = "" } = {}) {
     if (!inner) continue;
     body += `<g${matStr(layerMat(L))}${o < 0.999 ? ` opacity="${R(o)}"` : ""}>${inner}</g>`;
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${J.w} ${J.h}" preserveAspectRatio="xMidYMid meet"${cls ? ` class="${cls}"` : ""}${label ? ` role="img" aria-label="${label}"` : ' aria-hidden="true" focusable="false"'}>${body}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${J.w} ${J.h}" preserveAspectRatio="xMidYMid meet" stroke-linecap="round" stroke-linejoin="round"${cls ? ` class="${cls}"` : ""}${label ? ` role="img" aria-label="${label}"` : ' aria-hidden="true" focusable="false"'}>${body}</svg>`;
 }
