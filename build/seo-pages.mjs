@@ -43,6 +43,7 @@ export const WORK_TITLES = {
   "the-aesthetic-court": "The Aesthetic Court: medical congress website",
   "toskani-med": "Toskani MED: aesthetic medicine brand & packaging",
   "prevomit": "Prevomit: product site for a motion sickness range", // TASK-076 (second half): Zdrovit product sites, case page only (no portfolio card)
+  "slaboficat": "Slaboficat Slim: one-page product site for a liver supplement",
   "litorsal": "Litorsal: billboards & posters for an electrolyte brand",
   "lacalut": "Lacalut White & Repair: Smart TV ads & motion",
   "maximag": "Maximag Bisglicinat: Smart TV ads & motion",
