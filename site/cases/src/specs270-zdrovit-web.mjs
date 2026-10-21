@@ -458,8 +458,58 @@ export const PARASOFTIN = web({
   related: ["bonilash", "aspasia", "optisomn"]
 });
 
+export const PERIFERISAN = web({
+  slug: "periferisan", name: "Periferisan", label: "periferisan.ro",
+  title: "Nerves, mapped.",
+  tagline: "The product site for Periferisan, a range for the peripheral nervous system: the nerves explained, then two supplements and a gel.",
+  desc: "Periferisan: periferisan.ro, the product site for a range for the peripheral nervous system in the Zdrovit portfolio, on desktop and phone. By Cromatic Studios, Bucharest.",
+  accent: { bg: "#3FA2DC", fg: "#ffffff", ink: "#1b5fa0" },
+  info: ["Peripheral nervous system support, Periferisan", "Romania · Zdrovit portfolio", "Landing page, desktop and mobile"],
+  heroAlt: "periferisan.ro in a browser window and on a phone: the Periferisan GLYCO plus box and three round photos marked Dureri, Amorțeală and Furnicături",
+  problem: {
+    h: "A system most people can't name",
+    p: [
+      "Periferisan is a range from Zdrovit for the peripheral nervous system: Periferisan® GLYCO plus, Periferisan® capsules and Periferisan® gel.",
+      "Few people know what the peripheral nervous system is, but many know the pain, numbness and tingling the site talks about. It starts from those three words.",
+      "Then it explains the nerves, neuropathy and the main ingredient, uridine 5-monophosphate (UMP), before the products."
+    ]
+  },
+  solution: {
+    h: "Three words, three circles",
+    p: "The hero names the symptoms first, Dureri, Amorțeală and Furnicături, each on a round photo beside the GLYCO plus box. The page keeps to white and one strong blue, with large circles in the corners, molecule drawings for the ingredients and a button colour for each product: blue, yellow and red.",
+    stat: "3",
+    statText: "products in the range: GLYCO plus, the capsules and the gel"
+  },
+  page: {
+    text: "The menu runs Sistemul periferic, Neuropatia, Gama Periferisan®, Întrebări frecvente, Contact, with a red Comandă button. The page is long: an overview of the peripheral nervous system, the neurons, myelin and peripheral neuropathy, then the range, a section for each product with its ingredients and how to take it, and the questions at the end.",
+    shots: [["faq", "Întrebări frecvente despre gama Periferisan®: the first question open, four more closed", "The questions, at the end of the page"]]
+  },
+  story: {
+    pills: ["The", "range"],
+    text: "The range opens on a drawing of the UMP molecule, the ingredient the products share. GLYCO plus adds alpha-lipoic acid, with 600 mg ALA and 100 mg UMP in blue badges. The capsules carry 60 mg UMP in a red badge, and the gel gets a section of its own: what it does for the skin, and how to massage it in.",
+    deliverables: ["Product sections", "Ingredient diagrams", "Dose badges"],
+    media: [
+      ["range", "Gama pentru sistemul nervos periferic: a short list beside a circle with the UMP molecule, Uridină 5-monofosfat", "The range, and the molecule the products share"],
+      ["glyco", "Periferisan GLYCO Plus: the box, three icons and two badges, 600 mg ALA and 100 mg UMP", "GLYCO plus: 600 mg ALA, 100 mg UMP"],
+      ["gel", "Periferisan, gel de îngrijire: the yellow tube and a short text", "The gel, in a section of its own"]
+    ]
+  },
+  phone: {
+    text: "On a phone the line and the box come first, with the symptom circles under them. Each product keeps its badges and its button, and the long explanations run in a single column.",
+    shots: [
+      ["phone-hero", "The first screen on a phone: Suport pentru sistemul nervos periferic, the GLYCO plus box and two of the symptom circles"],
+      ["phone-range", "Gama pentru sistemul nervos periferic on a phone, with the list and the UMP molecule"],
+      ["phone-glyco", "GLYCO Plus on a phone: the box, the 600 mg ALA and 100 mg UMP badges and three icons"],
+      ["phone-gel", "The gel on a phone: Periferisan gel de îngrijire, the tube and the first effects"]
+    ],
+    cap: "The first screen, the range, GLYCO plus and the gel, at 390 px wide"
+  },
+  result: "The symptoms named first, the nerves explained, then the range.",
+  related: ["glucopil", "help-4-brain", "optisomn"]
+});
+
 // a chapter added to a page that already exists, by its slug (gen.mjs applies it): none yet
 export const EXTEND = {};
 
 // every Zdrovit brand page built from its product site, in the order they were made
-export const ZDROVIT_WEB = [ASPASIA, BONILASH, GLUCOPIL, GRIPOVIT, LACIUM, OPTISOMN, PARASOFTIN];
+export const ZDROVIT_WEB = [ASPASIA, BONILASH, GLUCOPIL, GRIPOVIT, LACIUM, OPTISOMN, PARASOFTIN, PERIFERISAN];

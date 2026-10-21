@@ -4848,5 +4848,65 @@
     900,
     1463,
     93530
+  ],
+  "m:periferisan/hero": [
+    1600,
+    900,
+    116731
+  ],
+  "m:periferisan/site-scroll": [
+    1200,
+    10313,
+    722724
+  ],
+  "m:periferisan/site-scroll-phone": [
+    585,
+    16000,
+    755862
+  ],
+  "m:periferisan/range": [
+    1600,
+    968,
+    83534
+  ],
+  "m:periferisan/glyco": [
+    1600,
+    934,
+    71203
+  ],
+  "m:periferisan/capsules": [
+    1600,
+    839,
+    71052
+  ],
+  "m:periferisan/gel": [
+    1600,
+    746,
+    65744
+  ],
+  "m:periferisan/faq": [
+    1600,
+    812,
+    64484
+  ],
+  "m:periferisan/phone-hero": [
+    900,
+    1463,
+    94040
+  ],
+  "m:periferisan/phone-range": [
+    900,
+    1463,
+    89237
+  ],
+  "m:periferisan/phone-glyco": [
+    900,
+    1463,
+    99319
+  ],
+  "m:periferisan/phone-gel": [
+    900,
+    1463,
+    116304
   ]
 }

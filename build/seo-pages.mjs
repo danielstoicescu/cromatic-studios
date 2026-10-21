@@ -52,6 +52,7 @@ export const WORK_TITLES = {
   "lacium": "Lacium: one-page product website for a probiotic",
   "optisomn": "Optisomn: one-page product website, sleep",
   "parasoftin": "Parasoftin: one-page product website, foot care",
+  "periferisan": "Periferisan: product website, peripheral nerves",
   "routine-paris": "Routine Paris: daily ritual brand identity",
   "help-4-brain": "Help4Brain: pharma product & marketing",
   "altius": "Altius: medical brand & digital",
