@@ -1,0 +1,26 @@
+{
+ "_": "TASK-076 (second half, Mira): Vizik, vizik.ro (the chooser) and its three pages: /alergii-oculare/ (allergy/), /ochi-iritati-si-rosii/ (red/), /ochi-uscati-si-obositi/ (blue/). Crops in capture px (desktop 2880 wide, phone 780 wide). The desktop captures caught the tear-film layers panel mid-animation (faded), so it is not cropped on its own; it stays in the scrolling frames.",
+ "label": "vizik.ro",
+ "field": ["#e6e9f5", "#8e99cc"],
+ "out": {
+  "hero": { "kind": "hero", "desktop": { "src": "desktop-full.png" }, "phone": { "src": "allergy/phone-full.png" } },
+  "chooser": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 0, 2880, 1800] },
+  "phone-door-red": { "kind": "phone", "src": "phone-full.png", "y": 0 },
+  "phone-door-green": { "kind": "phone", "src": "phone-full.png", "y": 1690 },
+  "phone-door-blue": { "kind": "phone", "src": "phone-full.png", "y": 3400 },
+  "site-scroll": { "kind": "plain", "src": "allergy/desktop-full.png", "width": 1200, "q": 72 },
+  "site-scroll-phone": { "kind": "plain", "src": "allergy/phone-full.png", "width": 585, "q": 70 },
+  "allergy-hero": { "kind": "browser", "src": "allergy/desktop-full.png", "crop": [0, 0, 2880, 1760] },
+  "red-hero": { "kind": "browser", "src": "red/desktop-full.png", "crop": [0, 0, 2880, 1760] },
+  "blue-hero": { "kind": "browser", "src": "blue/desktop-full.png", "crop": [0, 0, 2880, 1760] },
+  "tears": { "kind": "browser", "src": "allergy/desktop-full.png", "crop": [240, 3480, 2400, 1240] },
+  "allergy-product": { "kind": "browser", "src": "allergy/desktop-full.png", "crop": [0, 6680, 2880, 1680] },
+  "red-product": { "kind": "browser", "src": "red/desktop-full.png", "crop": [0, 6140, 2880, 1590] },
+  "blue-product": { "kind": "browser", "src": "blue/desktop-full.png", "crop": [0, 6120, 2880, 1680] },
+  "lenses": { "kind": "browser", "src": "red/desktop-full.png", "crop": [0, 9000, 2880, 1100] },
+  "phone-allergy": { "kind": "phone", "src": "allergy/phone-full.png", "y": 0 },
+  "phone-layers": { "kind": "phone", "src": "allergy/phone-full.png", "y": 2820 },
+  "phone-red": { "kind": "phone", "src": "red/phone-full.png", "y": 0 },
+  "phone-blue": { "kind": "phone", "src": "blue/phone-full.png", "y": 0 }
+ }
+}

@@ -45,6 +45,7 @@ export const WORK_TITLES = {
   "prevomit": "Prevomit: product site for a motion sickness range", // TASK-076 (second half): Zdrovit product sites, case page only (no portfolio card)
   "slaboficat": "Slaboficat Slim: one-page product site for a liver supplement",
   "supramax": "Supramax articulații: product site for a joint-care range",
+  "vizik": "Vizik: product site for three eye drops, three colours",
   "litorsal": "Litorsal: billboards & posters for an electrolyte brand",
   "lacalut": "Lacalut White & Repair: Smart TV ads & motion",
   "maximag": "Maximag Bisglicinat: Smart TV ads & motion",

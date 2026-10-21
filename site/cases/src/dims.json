@@ -5143,5 +5143,100 @@
     900,
     1463,
     103975
+  ],
+  "m:vizik/hero": [
+    1600,
+    900,
+    122452
+  ],
+  "m:vizik/chooser": [
+    1600,
+    1110,
+    130473
+  ],
+  "m:vizik/phone-door-red": [
+    900,
+    1463,
+    75972
+  ],
+  "m:vizik/phone-door-green": [
+    900,
+    1463,
+    95550
+  ],
+  "m:vizik/phone-door-blue": [
+    900,
+    1463,
+    100147
+  ],
+  "m:vizik/site-scroll": [
+    1200,
+    4414,
+    269744
+  ],
+  "m:vizik/site-scroll-phone": [
+    585,
+    13437,
+    422168
+  ],
+  "m:vizik/allergy-hero": [
+    1600,
+    1090,
+    148959
+  ],
+  "m:vizik/red-hero": [
+    1600,
+    1090,
+    154066
+  ],
+  "m:vizik/blue-hero": [
+    1600,
+    1090,
+    158456
+  ],
+  "m:vizik/tears": [
+    1600,
+    952,
+    73241
+  ],
+  "m:vizik/allergy-product": [
+    1600,
+    1049,
+    74637
+  ],
+  "m:vizik/red-product": [
+    1600,
+    1004,
+    81060
+  ],
+  "m:vizik/blue-product": [
+    1600,
+    1049,
+    90349
+  ],
+  "m:vizik/lenses": [
+    1600,
+    756,
+    75063
+  ],
+  "m:vizik/phone-allergy": [
+    900,
+    1463,
+    89202
+  ],
+  "m:vizik/phone-layers": [
+    900,
+    1463,
+    56983
+  ],
+  "m:vizik/phone-red": [
+    900,
+    1463,
+    92093
+  ],
+  "m:vizik/phone-blue": [
+    900,
+    1463,
+    95966
   ]
 }
