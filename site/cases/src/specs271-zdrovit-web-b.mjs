@@ -389,5 +389,86 @@ export const VIZIK = {
   related: RELATED
 };
 
+// Vizimel: web only (Daniel: its medical presentation is never shown; the pack and leaflet files stay out too,
+// since who designed the pack is not confirmed). The box appears only as the site shows it.
+export const VIZIMEL = {
+  slug: "vizimel",
+  name: "Vizimel",
+  tagline: "vizimel.ro: the product site for an eye supplement, in the navy and yellow of its box.",
+  desc: "Vizimel: vizimel.ro, the product site for an eye supplement with lutein, meso-zeaxanthin and zeaxanthin, on desktop and phone. By Cromatic Studios, Bucharest.",
+  title: "Five ingredients, one tablet a day.",
+  accent: { bg: "#F2DF2E", fg: "#1c1f6b", ink: "#2a2f8f" },
+  info: ["Eye supplement, Vizimel", "Romania · Zdrovit portfolio", "Product site, desktop and mobile"],
+  cover: { img: m("vizimel/hero") },
+  og: m("vizimel/hero"),
+  hero: { img: m("vizimel/hero"), alt: "vizimel.ro in a browser window and on a phone: the navy Vizimel box with a drawn eye, the line VIZIMEL® Protecție completă pentru sănătatea ochilor and a yellow Comandă VIZIMEL® button" },
+  problem: {
+    h: "A formula with long names",
+    p: [
+      "Vizimel is a food supplement from Zdrovit, for the eyes. Its box prints the formula on the front: luteină 24 mg, mezo-zeaxantină 10 mg, zeaxantină 4,8 mg, vitamina D, vitamina B2.",
+      "Three of those names are carotenoids few people could explain.",
+      "The site has to make the formula <strong>readable</strong>: what each ingredient is, what it is for, how to take the tablet and who it is for."
+    ]
+  },
+  solution: {
+    h: "Navy and yellow, in cards",
+    p: "The page takes the box's colours: a navy hero with the box at full height, yellow for the buttons and the highlights. Everything after it is cut into cards, each saying one thing: four for the ways the site says the formula works, five for the ingredients, six for who it is for, three for the eye conditions.",
+    stat: "5",
+    statText: "ingredients, one card each, every card with its dose in a navy pill, from 24 mg of lutein to 1,4 mg of vitamin B2"
+  },
+  chapters: [
+    {
+      pillar: "product",
+      pills: ["One", "page"],
+      text: "The menu runs VIZIMEL®, Formula VIZIMEL®, Afecțiuni oculare, Dovezi clinice, Blog, FAQs, with a yellow “Comandă acum” at the end. The hero sets the line “VIZIMEL® Protecție completă pentru sănătatea ochilor” beside the 120-tablet box, with three pills for the carotenoids and two buttons, “Comandă VIZIMEL®” and “Descoperă formula”. A yellow band opens the cards, with “Fără gluten” and “Fără lactoză” in two navy tiles. After the formula and the people it is for, three cards name eye conditions, a navy band repeats the order button, and the contact cards close the page.",
+      deliverables: ["Product site", "UX/UI design", "Desktop and mobile", "Cards"],
+      media: [
+        siteBlock("vizimel", "vizimel.ro", { head: ["The", "product site"], cap: "vizimel.ro from the first screen to the footer, on desktop and phone." }),
+        {
+          rail: ["Section by", "section"],
+          items: [
+            shot("vizimel", "mechanisms", "A yellow band, VIZIMEL® susține sănătatea ochilor prin 4 mecanisme de acțiune sinergice, with Fără gluten and Fără lactoză in navy tiles, over four white cards with round icons"),
+            shot("vizimel", "conditions", "Afecțiuni oculare: two paragraphs and three cards with yellow round icons, Degenerescența maculară, Retinopatia diabetică and Oboseala oculară digitală")
+          ],
+          cap: "The yellow band with its four cards, and the eye conditions"
+        }
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["The", "formula"],
+      text: "The formula, the way the site lays it out. “Fiecare ingredient cu rol precis” puts five cards in a row, each with a small icon, its dose in a navy pill, the name, its role in a word or two, a short paragraph and an “Află mai multe” link. “Mod de utilizare” gives the dose in one line beside a drawn tablet: “1 comprimat pe zi, preferabil în timpul mesei”. “Avantajele formulei VIZIMEL®” follows in four tiles, each with a yellow tick.",
+      deliverables: ["Ingredient cards", "Usage", "Benefit tiles"],
+      media: [
+        shot("vizimel", "ingredients", "Fiecare ingredient cu rol precis: five cards with yellow top edges, Luteină, Mezo-zeaxantină, Zeaxantină, Vitamina D and Vitamina B2, each with an icon and its dose in a navy pill", "Five ingredients, five cards, each with its dose"),
+        shot("vizimel", "advantages", "Avantajele formulei VIZIMEL®: four grey tiles with yellow ticks, Protecție antioxidantă completă, Susținerea pigmentului macular, Reducerea oboselii oculare and Suport pentru vedere pe termen lung, and a Descoperă mai multe button", "Four benefits, one tick each")
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["On a", "phone"],
+      text: "On a phone the hero stacks the line, the box, the paragraph, the pills and both buttons. The cards fall into one column, the ingredient cards keep their dose pills top right, and the benefit tiles stack under a yellow underline.",
+      deliverables: ["Mobile layout", "One column"],
+      media: [
+        {
+          rail: ["Four", "screens"],
+          items: [
+            shot("vizimel", "phone-hero", "The first screen on a phone: the Vizimel logo, the menu icon, the line, the navy box and the start of the paragraph"),
+            shot("vizimel", "phone-mechanisms", "The yellow band on a phone with Fără gluten and Fără lactoză, and the first cards below it"),
+            shot("vizimel", "phone-ingredients", "Fiecare ingredient cu rol precis on a phone: the Luteină card with its 24 mg pill"),
+            shot("vizimel", "phone-advantages", "Avantajele formulei VIZIMEL® on a phone: four tiles with yellow ticks, one under another")
+          ],
+          cap: "The hero, the yellow band, the ingredients and the benefits, at 390 px wide"
+        }
+      ]
+    },
+    ...spotChapter("vizimel")
+  ],
+  result: {
+    text: "A formula with long names, made readable: one card per ingredient, in the navy and yellow of the box."
+  },
+  related: RELATED
+};
+
 // every Zdrovit brand page of the second half, in the order they were made
-export const ZDROVIT_WEB_B = [PREVOMIT, SLABOFICAT, SUPRAMAX, VIZIK];
+export const ZDROVIT_WEB_B = [PREVOMIT, SLABOFICAT, SUPRAMAX, VIZIK, VIZIMEL];
