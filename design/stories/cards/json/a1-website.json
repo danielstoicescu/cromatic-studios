@@ -5,7 +5,7 @@
  "shots": [
   "over"
  ],
- "scene": "light (the street from above: pavement and road)",
+ "scene": "the street from above (A6: on the aplat)",
  "textColour": "#0D0C09",
  "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
  "canvas": {
@@ -29,73 +29,97 @@
      {
       "kind": "line",
       "id": "a1-l1",
-      "style": "title",
-      "size": 116,
-      "tracking": -0.04,
-      "lead": 1,
+      "style": "line",
+      "size": 88,
+      "tracking": -0.035,
+      "lead": 1.06,
       "ink": "#0D0C09",
       "align": "left",
       "text": "Our new website",
-      "x": 80,
-      "baseline": 383.1,
-      "width": 861.1,
+      "x": 132,
+      "baseline": 409,
+      "width": 659.4,
       "box": {
-       "x": 80,
-       "y": 294.9,
-       "w": 861.1,
-       "h": 91.6
+       "x": 132,
+       "y": 342.1,
+       "w": 659.4,
+       "h": 69.5
       }
      },
      {
       "kind": "line",
       "id": "a1-l2",
-      "style": "title",
-      "size": 116,
-      "tracking": -0.04,
-      "lead": 1,
+      "style": "line",
+      "size": 88,
+      "tracking": -0.035,
+      "lead": 1.06,
       "ink": "#0D0C09",
       "align": "left",
       "text": "is a",
-      "x": 80,
-      "baseline": 522.3,
-      "width": 163.1,
+      "x": 132,
+      "baseline": 519.9,
+      "width": 125,
       "box": {
-       "x": 80,
-       "y": 434.1,
-       "w": 718,
-       "h": 116
+       "x": 132,
+       "y": 453,
+       "w": 549.2,
+       "h": 88
       },
       "pill": {
        "id": "a1-l2-pill",
-       "fill": "#FED012",
+       "fill": "#FFFFFF",
        "ink": "#0D0C09",
-       "left": 270.9,
-       "cy": 481.1,
-       "h": 134.6,
-       "keyline": 5.2,
+       "left": 278.2,
+       "cy": 488.6,
+       "h": 102.1,
+       "keyline": 4,
        "shadow": [
-        3.5,
-        7.5
+        2.6,
+        5.7
        ],
        "tilt": -3,
-       "wordX": 310.4,
+       "wordX": 308.1,
        "states": [
         {
          "word": "city.",
-         "wordW": 210.3,
-         "w": 289.2,
-         "cx": 415.5
+         "wordW": 161.3,
+         "w": 221.1,
+         "cx": 388.7
         },
         {
          "word": "diorama.",
-         "wordW": 448.2,
-         "w": 527.1,
-         "cx": 534.5
+         "wordW": 343.1,
+         "w": 403,
+         "cx": 479.7
         }
        ]
       }
      }
     ],
+    "aplat": {
+     "fill": "#FED012",
+     "radius": 30,
+     "keyline": 5,
+     "shadow": [
+      0,
+      12
+     ],
+     "tilt": -2,
+     "states": [
+      {
+       "x": 80,
+       "y": 300,
+       "w": 763.4,
+       "h": 295.4
+      },
+      {
+       "x": 80,
+       "y": 300,
+       "w": 763.4,
+       "h": 295.4
+      }
+     ]
+    },
     "behindRide": false
    }
   ]
@@ -127,20 +151,30 @@
     "fps": 30,
     "elements": [
      {
+      "id": "a1-aplat",
+      "in": 3,
+      "out": 75,
+      "frames": {
+       "in": 14,
+       "out": 7
+      },
+      "hold": 51
+     },
+     {
       "id": "a1-l1",
       "text": "Our new website",
-      "in": 3,
+      "in": 7,
       "out": 65,
       "motion": "lineIn / lineOut",
-      "hold": 50
+      "hold": 46
      },
      {
       "id": "a1-l2",
       "text": "is a",
-      "in": 8,
+      "in": 12,
       "out": 66,
       "motion": "lineIn / lineOut",
-      "hold": 46
+      "hold": 42
      },
      {
       "id": "a1-l2-pill-0",

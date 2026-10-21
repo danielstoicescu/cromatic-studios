@@ -21,10 +21,11 @@ export const CLOCKS = {
 export const CARDS = [
   /* ============================== story A ============================== */
   {
-    id: "a1-website", story: "A", beat: "Our new website / is a [city] -> [diorama]", shots: ["over"], scene: "light (the street from above: pavement and road)", ink: "ink",
-    blocks: [{ id: "a1", place: "tl", lines: [
-      { text: "Our new website", style: "title" },
-      { text: "is a", style: "title", pill: { words: ["city.", "diorama."], fill: Y } }
+    id: "a1-website", story: "A", beat: "Our new website / is a [city] -> [diorama]", shots: ["over"], scene: "the street from above (A6: on the aplat)", ink: "ink",
+    // (A6, Daniel: "hard to read, the frame is too dark for ink": on the yellow aplat, ink, its pill white)
+    blocks: [{ id: "a1", place: "tl", aplat: { fill: Y }, lines: [
+      { text: "Our new website", style: "line" },
+      { text: "is a", style: "line", pill: { words: ["city.", "diorama."], fill: WH } }
     ] }],
     timing: { in: "over+3", lineStagger: 5, pillIn: "over+14", swaps: ["over+40"], out: "over.end-10" },
     mocks: [{ state: 0, at: "over+28" }, { state: 1, at: "over+58" }],

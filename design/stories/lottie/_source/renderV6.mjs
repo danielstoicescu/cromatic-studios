@@ -6,6 +6,8 @@
 //   JOB=d3 [D3=drift,skyline,overtake] node renderV6.mjs
 import fs from "fs";
 import { D3 } from "./shotsD3.mjs";
+import { A6 } from "./shotsA6.mjs";
+import { omaArches } from "./shots5.mjs";
 const job = process.env.JOB, RAW = (process.env.RAW || "/private/tmp/claude-501/-Users-daniel-stoic/8f3b4503-769c-4f86-ba4b-8e36528128b3/scratchpad/stl4/raw") + "/v6";
 fs.mkdirSync(RAW, { recursive: true });
 const D = new URL(".", import.meta.url).pathname, HALL = fs.readFileSync(new URL("../../../../src/buildings/printoteca-hall.js", import.meta.url), "utf8").replace(/^export /m, "");
@@ -98,16 +100,17 @@ return { drift: out.drift && out.drift.filter(Boolean).length, tags: out.tags, o
 }
 // ---- B6: one street, nine worlds, a camera of its own for each world round the house on Olari, the world's own ride
 // parked in frame (the map's ENV_VEH: Night Mode's Monopoly car, Underwater's sub, Race Day's F1, Sakura's and
-// Risograph's scooter, GTA 2's patrol, the Dacia elsewhere). Rendered from the stories-b5-house build (Toma's windows)
+// Risograph's scooter, GTA 2's patrol, the Dacia elsewhere). Rendered from the stories-b5-house build (Toma's windows;
+// v2: Radu's rides, TASK-109: the scooter at its real size, the F1's flat slicks, so the scooters stand nearer the lens)
 const B6 = {
   monument: { cam: { pos: [1290, 7, 7330], tgt: [1060, 28, 7330], fov: 76, shift: [0, 0.1], level: true }, park: [1222, null, 7318, 1.57] },
   nightlife: { cam: { pos: [1330, 4, 7180], tgt: [1075, 30, 7330], fov: 58, shift: [0, 0.08], level: true }, park: [1205, null, 7262, -2.2] },
   underwater: { cam: { pos: [1300, 40, 7425], tgt: [1075, 26, 7330], fov: 60, shift: [0, 0.04], level: true }, park: [1185, null, 7365, 2.6] },
   circuit: { cam: { pos: [1300, 3, 7385], tgt: [1075, 26, 7322], fov: 60, shift: [0, 0.1], level: true }, park: [1190, null, 7345, 0] },
   sketch: { cam: { pos: [1330, 70, 7250], tgt: [1075, 18, 7330], fov: 58, level: false }, park: [1175, null, 7300, 0.9], mode: "sketch" },
-  orchid: { cam: { pos: [1270, 6, 7425], tgt: [1075, 30, 7322], fov: 60, shift: [0, 0.08], level: true }, park: [1160, null, 7350, 2.2] },
+  orchid: { cam: { pos: [1270, 6, 7425], tgt: [1075, 30, 7322], fov: 60, shift: [0, 0.08], level: true }, park: [1236, null, 7412, 2.9] },
   gta2: { cam: { pos: [1230, 150, 7330], tgt: [1100, 0, 7330], fov: 56, level: false }, park: [1150, null, 7292, 0.4] },
-  riso: { cam: { pos: [1300, 5, 7250], tgt: [1075, 32, 7335], fov: 62, shift: [0, 0.1], level: true }, park: [1185, null, 7300, 2.4], mode: "riso" },
+  riso: { cam: { pos: [1300, 5, 7250], tgt: [1075, 32, 7335], fov: 62, shift: [0, 0.1], level: true }, park: [1256, null, 7262, 0.6], mode: "riso" },
   ghibli: { cam: { pos: [1405, 20, 7280], tgt: [1075, 40, 7330], fov: 60, shift: [0, 0.06], level: true }, park: [1262, null, 7288, -1.3] }
 };
 JOBS.b6 = `
@@ -127,6 +130,49 @@ await p.evaluate(() => window.__scheme("monument")); await p.waitForTimeout(3000
 fs.writeFileSync(RAW + "/b6.json", JSON.stringify(out));
 return out;
 `;
+{
+  // ---- A6: every shot captured from the map per frame (30 a second), the camera moving; with the ride in it, the ride
+  // alone too (its matte) and the camera's numbers (for the composite of a better car); OMA's room behind its glass
+  const ROOM = fs.readFileSync(new URL("./omaRoom.js", import.meta.url), "utf8");
+  const shots = {};
+  for (const [k, S] of Object.entries(A6)) { const n = Math.round(S.dur * 30), fr = []; for (let i = 0; i <= n; i++) { const t = i / 30; fr.push({ t, cam: S.cam(t), car: S.car ? [S.car(t - 1 / 120), S.car(t + 1 / 120)] : null }); } shots[k] = { frames: fr, park: S.park || null, room: !!S.room }; }
+  JOBS.a6 = `
+await scheme("monument"); await vehicle("dacia1300");
+const shots = ${JSON.stringify(shots)}, only = ${JSON.stringify((process.env.SHOT || Object.keys(A6).join(",")).split(","))}, arches = ${JSON.stringify(omaArches())};
+fs.mkdirSync(RAW + "/a6", { recursive: true });
+const out = fs.existsSync(RAW + "/a6.json") ? JSON.parse(fs.readFileSync(RAW + "/a6.json", "utf8")) : {};
+// OMA's room, in OMA's frame (made once)
+await p.evaluate((src) => { const S = window.__story; if (S.omaRoom) return; const K = S.K3 || {}; if (!S.K3) { K.Mesh = S.sky.constructor; K.Group = S.veh().group.constructor; K.Color = S.sun.color.constructor; S.scene.traverse((x) => { if (x.geometry && !K[x.geometry.type]) K[x.geometry.type] = x.geometry.constructor; const m = x.material && (Array.isArray(x.material) ? x.material[0] : x.material); if (m && !K[m.type]) K[m.type] = m.constructor; }); S.K3 = K; }
+  K.DirectionalLight = S.sun.constructor;
+  const R = new Function(src + "; return makeOmaRoom;")()(K); R.group.position.set(706, 0, 4560); R.group.rotation.y = Math.PI / 2; R.group.visible = false; S.scene.add(R.group); S.omaRoom = R; }, ${JSON.stringify(ROOM)});
+for (const k of only) {
+  const sh = shots[k], rec = { cams: [], car: [], arches: [] };
+  if (k === "oma") await p.evaluate(() => { const m = window.__story.mats.omaGlow; m.userData.keep = { c: m.color.getHex(), e: m.emissive.getHex(), ei: m.emissiveIntensity, me: m.metalness, ro: m.roughness, env: m.envMapIntensity }; m.color.setHex(0x3a2412); m.emissive.setHex(0xffb35c); m.emissiveIntensity = 0.62; m.metalness = 0; m.roughness = 1; m.envMapIntensity = 0; m.needsUpdate = true; });
+  await H.aim(p, sh.frames[0].cam, 2500);
+  for (let i = 0; i < sh.frames.length; i++) {
+    const F0 = sh.frames[i], o = { ...F0.cam, forceSrc: force, occlude: true };
+    const r = await p.evaluate(({ o, park, car, room, t }) => { window.__cam(o.pos, o.tgt); window.__camSnap(); const S = window.__story, R = window.__R, FC = S.farClouds, fv = FC && FC.visible; if (FC) FC.visible = false;
+      try {
+        R.park(park || [9000, null, 9000, 0]); if (S.omaRoom) S.omaRoom.group.visible = false;
+        R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); const plate = R.shot({ ...o, keepBg: true });
+        R.park(null); let carImg = null; if (car) { S.veh().beams && (S.veh().beams.visible = !!car[0].lights); carImg = R.carShot(o, "car", car); }
+        let roomImg = null; if (room) { S.omaRoom.pose(t); S.omaRoom.group.visible = true; roomImg = R.layer(o, []); S.omaRoom.group.visible = false; }
+        return { plate, car: carImg, room: roomImg };
+      } finally { R.park(null); if (FC) FC.visible = fv; if (S.omaRoom) S.omaRoom.group.visible = false; } }, { o, park: sh.park, car: F0.car, room: sh.room, t: F0.t });
+    const n = String(i).padStart(3, "0");
+    save(r.plate, RAW + "/a6/" + k + "-plate-" + n + ".png");
+    if (r.car) save(r.car.url, RAW + "/a6/" + k + "-car-" + n + ".png");
+    if (r.room) save(r.room, RAW + "/a6/" + k + "-room-" + n + ".png");
+    rec.cams.push(F0.cam); rec.car.push(r.car ? r.car.rect : null);
+    if (sh.room) rec.arches.push((await p.evaluate(({ o, pts }) => window.__R.project(o, pts.flat()), { o: F0.cam, pts: arches })).pts);
+  }
+  if (k === "oma") await p.evaluate(() => { const m = window.__story.mats.omaGlow, q = m.userData.keep; m.color.setHex(q.c); m.emissive.setHex(q.e); m.emissiveIntensity = q.ei; m.metalness = q.me; m.roughness = q.ro; m.envMapIntensity = q.env; m.needsUpdate = true; });
+  out[k] = rec;
+  fs.writeFileSync(RAW + "/a6.json", JSON.stringify(out));
+}
+return Object.fromEntries(Object.entries(out).map(([k, v]) => [k, v.cams.length]));
+`;
+}
 if (!JOBS[job]) throw new Error("JOB=" + Object.keys(JOBS).join("|"));
 const t0 = Date.now();
 const r = await fetch("http://localhost:8962/", { method: "POST", body: head + JOBS[job] });
