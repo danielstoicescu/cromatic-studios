@@ -32256,9 +32256,22 @@ void main() {
   function carWheel({ r = 9, w = 6.4, rim = "#d9dadc", rimR = 0.6, cap = "chrome", tyre = "#191919", spokes = 0, whitewall = false, slick = false } = {}) {
     const g = new Group(), spin = new Group();
     const rubber = new MeshStandardMaterial({ color: tyre, roughness: slick ? 0.55 : 0.92 });
-    const core = new Mesh(new CylinderGeometry(r - 1.4, r - 1.4, w, 28), rubber); core.rotation.z = Math.PI / 2; spin.add(core);
-    const tr = Math.min(2.6, w / 2.4);
-    for (const sx of [-1, 1]) { const wall = new Mesh(new TorusGeometry(r - tr, tr, 12, 32), rubber); wall.rotation.y = Math.PI / 2; wall.position.x = sx * (w / 2 - tr); spin.add(wall); }
+    if (slick) {
+      // TASK-109 (Daniel: "the F1's tyres should be flat, they have two raised bands on the sides"): a wide tyre was a
+      // core 1.4 under the radius between two round sidewalls that reached it, a dip in the middle; a slick is one lathe:
+      // the sidewall from the rim, a small rounded shoulder, a flat tread across the full width
+      const sh = Math.min(1.6, w * 0.16), ri = r * rimR - 0.3, n = 6, pts = [new Vector2(ri, -w / 2 + 0.5), new Vector2(r - sh - 0.6, -w / 2 + 0.05)];
+      for (let i = 0; i <= n; i++) { const a = (i / n) * Math.PI / 2; pts.push(new Vector2(r - sh + sh * Math.sin(a), -w / 2 + sh - sh * Math.cos(a))); }
+      for (let i = n; i >= 0; i--) { const a = (i / n) * Math.PI / 2; pts.push(new Vector2(r - sh + sh * Math.sin(a), w / 2 - sh + sh * Math.cos(a))); }
+      pts.push(new Vector2(r - sh - 0.6, w / 2 - 0.05), new Vector2(ri, w / 2 - 0.5));
+      const geo = new LatheGeometry(pts, 40); geo.rotateZ(-Math.PI / 2);
+      rubber.side = DoubleSide;
+      spin.add(new Mesh(geo, rubber));
+    } else {
+      const core = new Mesh(new CylinderGeometry(r - 1.4, r - 1.4, w, 28), rubber); core.rotation.z = Math.PI / 2; spin.add(core);
+      const tr = Math.min(2.6, w / 2.4);
+      for (const sx of [-1, 1]) { const wall = new Mesh(new TorusGeometry(r - tr, tr, 12, 32), rubber); wall.rotation.y = Math.PI / 2; wall.position.x = sx * (w / 2 - tr); spin.add(wall); }
+    }
     if (whitewall) for (const sx of [-1, 1]) { const ww = new Mesh(new TorusGeometry(r * 0.72, r * 0.09, 8, 28), M("#f6f4ee", { roughness: 0.6 })); ww.rotation.y = Math.PI / 2; ww.position.x = sx * (w / 2 + 0.05); spin.add(ww); }
     const rimM = rim === "chrome" ? chromeM() : M(rim, { roughness: 0.35, metalness: 0.4 });
     const rimMesh = new Mesh(new CylinderGeometry(r * rimR, r * rimR, w + 0.4, 28), rimM); rimMesh.rotation.z = Math.PI / 2; spin.add(rimMesh);
