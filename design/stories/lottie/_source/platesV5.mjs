@@ -115,3 +115,12 @@ if (which.includes("b")) {
   fs.writeFileSync(path.join(here, "platesB5.json"), JSON.stringify({ plates }));
   console.log("plates B5", Object.keys(plates).length, Object.values(plates).reduce((s, m) => s + m.kb, 0), "KB");
 }
+
+// ---- B v6 (TASK-065e): one plate per world, its own camera round the house on Olari, the world's ride in it
+// (renderV6.mjs JOB=b6, from the stories-b5-house build): b6-<world>.webp, platesB6.json
+if (which.includes("6")) {
+  const plates = {}, write = makeWriter(plates), R6 = (process.env.RAW || "/private/tmp/claude-501/-Users-daniel-stoic/8f3b4503-769c-4f86-ba4b-8e36528128b3/scratchpad/stl4/raw") + "/v6/b6";
+  for (const w of ["monument", "nightlife", "underwater", "circuit", "sketch", "orchid", "gta2", "riso", "ghibli"]) await write(`b6-${w}`, await rgba(`${R6}/${w}.png`), { opaque: true, crop: false, q: 84 });
+  fs.writeFileSync(path.join(here, "platesB6.json"), JSON.stringify({ plates }));
+  console.log("plates B6", Object.keys(plates).length, Object.values(plates).reduce((s, m) => s + m.kb, 0), "KB");
+}

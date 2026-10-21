@@ -96,6 +96,37 @@ fs.writeFileSync(RAW + "/d3.json", JSON.stringify(out));
 return { drift: out.drift && out.drift.filter(Boolean).length, tags: out.tags, overtake: out.overtake && Object.fromEntries(Object.entries(out.overtake).map(([k, v]) => [k, v.filter(Boolean).length])) };
 `;
 }
+// ---- B6: one street, nine worlds, a camera of its own for each world round the house on Olari, the world's own ride
+// parked in frame (the map's ENV_VEH: Night Mode's Monopoly car, Underwater's sub, Race Day's F1, Sakura's and
+// Risograph's scooter, GTA 2's patrol, the Dacia elsewhere). Rendered from the stories-b5-house build (Toma's windows)
+const B6 = {
+  monument: { cam: { pos: [1290, 7, 7330], tgt: [1060, 28, 7330], fov: 76, shift: [0, 0.1], level: true }, park: [1222, null, 7318, 1.57] },
+  nightlife: { cam: { pos: [1330, 4, 7180], tgt: [1075, 30, 7330], fov: 58, shift: [0, 0.08], level: true }, park: [1205, null, 7262, -2.2] },
+  underwater: { cam: { pos: [1300, 40, 7425], tgt: [1075, 26, 7330], fov: 60, shift: [0, 0.04], level: true }, park: [1185, null, 7365, 2.6] },
+  circuit: { cam: { pos: [1300, 3, 7385], tgt: [1075, 26, 7322], fov: 60, shift: [0, 0.1], level: true }, park: [1190, null, 7345, 0] },
+  sketch: { cam: { pos: [1330, 70, 7250], tgt: [1075, 18, 7330], fov: 58, level: false }, park: [1175, null, 7300, 0.9], mode: "sketch" },
+  orchid: { cam: { pos: [1270, 6, 7425], tgt: [1075, 30, 7322], fov: 60, shift: [0, 0.08], level: true }, park: [1160, null, 7350, 2.2] },
+  gta2: { cam: { pos: [1230, 150, 7330], tgt: [1100, 0, 7330], fov: 56, level: false }, park: [1150, null, 7292, 0.4] },
+  riso: { cam: { pos: [1300, 5, 7250], tgt: [1075, 32, 7335], fov: 62, shift: [0, 0.1], level: true }, park: [1185, null, 7300, 2.4], mode: "riso" },
+  ghibli: { cam: { pos: [1405, 20, 7280], tgt: [1075, 40, 7330], fov: 60, shift: [0, 0.06], level: true }, park: [1262, null, 7288, -1.3] }
+};
+JOBS.b6 = `
+const B6 = ${JSON.stringify(B6)}, only = ${JSON.stringify((process.env.WORLDS || Object.keys(B6).join(",")).split(","))}, out = {};
+fs.mkdirSync(RAW + "/b6", { recursive: true });
+for (const w of only) {
+  const W0 = B6[w], o = { ...W0.cam, w: 2160, h: 3840 };
+  await p.evaluate((w) => window.__scheme(w), w); await p.waitForTimeout(6500);
+  await p.evaluate(() => { window.__story.state.weatherOn = false; });
+  await H.aim(p, o, 2500);
+  if (w === "sketch") { await p.evaluate((o) => { const S = window.__story; for (const q of [o.tgt, o.pos, [1170, 0, 7320]]) { const v = window.__R.W(q); S.sketchPaint(v.x, v.z, 3000, 1); } }, o); await p.waitForTimeout(3500); }
+  const r = await p.evaluate(({ o, park, mode }) => { const S = window.__story, R = window.__R, FC = S.farClouds, fv = FC && FC.visible; if (FC) FC.visible = false; R.park(park); S.veh().beams && (S.veh().beams.visible = true);
+    try { R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); return { url: R.shot({ ...o, keepBg: true, ...(mode ? { mode } : {}) }), veh: S.state.vehicleId }; } finally { R.park(null); if (FC) FC.visible = fv; } }, { o, park: W0.park, mode: W0.mode || null });
+  save(r.url, RAW + "/b6/" + w + ".png"); out[w] = r.veh;
+}
+await p.evaluate(() => window.__scheme("monument")); await p.waitForTimeout(3000);
+fs.writeFileSync(RAW + "/b6.json", JSON.stringify(out));
+return out;
+`;
 if (!JOBS[job]) throw new Error("JOB=" + Object.keys(JOBS).join("|"));
 const t0 = Date.now();
 const r = await fetch("http://localhost:8962/", { method: "POST", body: head + JOBS[job] });

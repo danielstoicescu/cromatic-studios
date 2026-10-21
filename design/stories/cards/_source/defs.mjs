@@ -194,8 +194,8 @@ export const CARDS = [
   /* ============================== story B5 (Lia, from Iris's system) ============================== */
   {
     id: "b1-street", story: "B", beat: "Same street. / New [lights.] -> [tide.] -> [lap.] -> [paper.] -> [bloom.] -> [rules.] -> [ink.] -> [magic.] (one card over the nine worlds, on the plaza)", shots: ["monument", "nightlife", "underwater", "circuit", "sketch", "orchid", "gta2", "riso", "ghibli"], scene: "any world (Sketchbook is white): the yellow aplat carries it", ink: "ink",
-    // (v5: on the plaza under the house, not over its roof)
-    blocks: [{ id: "b1", place: { x: 132, align: "left", base: 1400 }, aplat: { fill: Y }, lines: [{ text: "Same street.", style: "title" }, { text: "New", style: "title", pill: { words: ["lights.", "tide.", "lap.", "paper.", "bloom.", "rules.", "ink.", "magic."], fill: WH } }] }],
+    // (v5: on the plaza under the house, not over its roof; v6: smaller and lower, the rides stand on the plaza)
+    blocks: [{ id: "b1", place: { x: 132, align: "left", base: 1470 }, aplat: { fill: Y }, lines: [{ text: "Same street.", style: "line" }, { text: "New", style: "line", pill: { words: ["lights.", "tide.", "lap.", "paper.", "bloom.", "rules.", "ink.", "magic."], fill: WH } }] }],
     timing: { in: "monument+8", lineStagger: 52, pillIn: "nightlife+7", swaps: ["underwater+8", "circuit+4", "sketch+22", "orchid+0", "gta2+0", "riso+0", "ghibli+0"], out: "ghibli.end-6" }
   },
   { id: "b2-monument", story: "B", beat: "the world's name as the map's tag: Cromatic", shots: ["monument"], scene: "any", ink: "ink", tags: [{ id: "b2-monument-tag", text: "Cromatic", x: 80, top: 286 }], timing: { in: "monument+13", out: "monument+48" } },
