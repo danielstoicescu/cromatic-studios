@@ -8,7 +8,7 @@ import { readFileSync, readdirSync, statSync, appendFileSync, mkdirSync, createR
 import { join, extname, dirname, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import zlib from "node:zlib";
-import { createHash } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 import nodemailer from "nodemailer";
 import { passHtml, passText } from "./mail-template.js";
 import { createCore30 } from "./core30/core30.mjs";
@@ -487,6 +487,51 @@ function cspSummary(req, res) {
   }
   return send(res, 200, { total, first, last, top: Object.entries(n).sort((a, b) => b[1] - a[1]).slice(0, 200) });
 }
+// TASK-107: GET /api/csp-report/summary with "Authorization: Bearer <CSP_STATS_KEY>" (its own key, never LEADS_KEY;
+// compared in constant time; no key set or a wrong one: 404). Aggregates only, for the Cromatic Ops dashboard: totals
+// (24 h, 7 d, all), the top directives, blocked origins and pages with count, firstSeen and lastSeen, and every
+// blocked origin with its firstSeen (the "new source" alert). Our own test reports (example.com/.net/.org, RFC 2606)
+// are left out and only counted; reports the browser makes about itself (Google Translate) are marked noise.
+// CSP_SINCE: the day the current policy went live; a policy change starts the 14-day clock for enforcing again.
+const CSP_SINCE = "2026-10-21";
+const CSP_IGNORE = /^https?:\/\/([a-z0-9-]+\.)*example\.(com|net|org)(:\d+)?$/i;
+const CSP_NOISE = /^https:\/\/(translate\.googleapis\.com|translate\.google\.com|translate-pa\.googleapis\.com)$/i;
+const sha = (x) => createHash("sha256").update(String(x)).digest();
+const keyOk = (got, want) => !!want && want.length >= 16 && timingSafeEqual(sha(got), sha(want));
+function cspStats(req, res) {
+  const auth = /^Bearer\s+(\S+)$/i.exec(String(req.headers.authorization || ""));
+  if (!keyOk(auth ? auth[1] : "", String(process.env.CSP_STATS_KEY || "").trim())) { res.writeHead(404); return res.end(); }
+  const now = Date.now(), H24 = now - 864e5, D7 = now - 7 * 864e5, D14 = now - 14 * 864e5;
+  const totals = { h24: 0, d7: 0, all: 0 }, real = { h24: 0, d7: 0, d14: 0, all: 0 };
+  const dirs = new Map(), origins = new Map(), pages = new Map();
+  let ignored = 0, first = null, last = null, lastReal = null;
+  const add = (m, k, t) => { const e = m.get(k); if (e) { e.count++; if (t < e.firstSeen) e.firstSeen = t; if (t > e.lastSeen) e.lastSeen = t; } else m.set(k, { key: k, count: 1, firstSeen: t, lastSeen: t }); };
+  for (const d of CSP_DIRS) {
+    let s; try { s = readFileSync(join(d, CSP_FILE), "utf8"); } catch { continue; }
+    for (const l of s.split("\n")) {
+      let x; try { x = JSON.parse(l); } catch { continue; }
+      const t = String(x.t || ""), ms = Date.parse(t);
+      if (!ms) continue;
+      const blocked = String(x.blocked || "?");
+      if (CSP_IGNORE.test(blocked)) { ignored++; continue; }
+      totals.all++; if (ms >= D7) totals.d7++; if (ms >= H24) totals.h24++;
+      if (!first || t < first) first = t; if (!last || t > last) last = t;
+      if (!CSP_NOISE.test(blocked)) { real.all++; if (ms >= D14) real.d14++; if (ms >= D7) real.d7++; if (ms >= H24) real.h24++; if (!lastReal || t > lastReal) lastReal = t; }
+      add(dirs, String(x.dir || "?"), t); add(origins, blocked, t); add(pages, String(x.doc || "?"), t);
+    }
+    break;
+  }
+  const top = (m, n = 20) => [...m.values()].sort((a, b) => b.count - a.count || (a.lastSeen < b.lastSeen ? 1 : -1)).slice(0, n);
+  const all = [...origins.values()].sort((a, b) => (a.firstSeen < b.firstSeen ? 1 : -1));
+  res.setHeader("X-Robots-Tag", "noindex");
+  return send(res, 200, {
+    ok: true, generatedAt: new Date(now).toISOString(), policy: { mode: "report-only", since: CSP_SINCE },
+    totals, real, ignored, firstReport: first, lastReport: last, lastRealReport: lastReal,
+    top: { directives: top(dirs), origins: top(origins).map((o) => ({ ...o, noise: CSP_NOISE.test(o.key) })), pages: top(pages) },
+    origins: all.slice(0, 1000).map((o) => ({ origin: o.key, firstSeen: o.firstSeen, lastSeen: o.lastSeen, count: o.count, noise: CSP_NOISE.test(o.key) })),
+    originsTotal: all.length
+  });
+}
 
 // r136 (N45): how to report a security problem (RFC 9116); valid for a year from the server's start
 const SECURITY_TXT = `Contact: mailto:hi@cromaticstudios.com
@@ -510,6 +555,7 @@ http.createServer((req, res) => {
   // TASK-051: the CSP reports, on every host (beta's pages report to beta's own address)
   if (req.url === "/api/csp-report" && req.method === "POST") return void cspReport(req, res).catch(() => { if (!res.headersSent) { res.writeHead(400); res.end(); } });
   if (req.url.startsWith("/api/csp-report?") && req.method === "GET") return cspSummary(req, res);
+  if ((req.url === "/api/csp-report/summary" || req.url.startsWith("/api/csp-report/summary?")) && req.method === "GET") return cspStats(req, res);
   withCsp(req, res);
   const host = String(req.headers.host || "").toLowerCase().split(":")[0];
   // r169: beta 2.0 answers on its own host only, before any rule of the live site
