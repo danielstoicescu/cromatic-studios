@@ -4,6 +4,7 @@
 // piece ran, so the copy describes the work and its formats only. (TASK-062: Daniel, 2026-10-21, on the Super vibe
 // posters: they ran in the metro, in the stations, inside the cars beside the doors and on the cars.)
 import { METRO } from "./metro-assets.mjs";
+import { OOH } from "./ooh-assets.mjs";
 const m = (p) => "m:" + p;
 
 export const LITORSAL = {
@@ -86,18 +87,24 @@ export const LITORSAL = {
     {
       pillar: "marketing",
       pills: ["Căldură", "mare"],
-      text: "The summer line, the billboard at the top of this page: “Căldură mare, Litorsal îți dă hidratare!” The tubes stand in a row in front of the sun and a splash of water. Four icons explain the product at a glance: efficient hydration, electrolytes restored, energy, support for the body. One layout, redrawn for six billboard sizes, from 6 x 3 m to 1 x 1.5 m.",
-      deliverables: ["Key visual", "Billboards", "Six formats", "Icons"],
+      text: "The summer line, the billboard at the top of this page: “Căldură mare, Litorsal îți dă hidratare!” The tubes stand in a row in front of the sun and a splash of water. Four icons explain the product at a glance: efficient hydration, electrolytes restored, energy, support for the body. One layout, redrawn for six billboard sizes, from 6 x 3 m to 1 x 1.5 m. Below, three mockups of how it reads in the street: on a boulevard, on a block's gable, at a tram stop.",
+      deliverables: ["Key visual", "Billboards", "Six formats", "Icons", "Street mockups"],
+      // TASK-069 (Daniel: "mockups with Litorsal's other campaign, on OOH, street banners in Bucharest, as cinematic as
+      // possible"): three street scenes of our own (design/ooh-mockup: built and rendered in 3D, the campaign's real
+      // layouts on the boards, nothing else's), then the layouts as made. Mockups, not a record of where it ran.
       // (the 3.2 x 2.4 m billboard, heat-billboard, is left out: it is the hero's picture again; it stays the page's cover)
       media: [
+        { img: m("ooh/boulevard"), alt: "Mockup: the 6 x 3 m billboard on a monopole by a Bucharest boulevard, blocks of flats and lindens behind it, a summer afternoon", cap: "Mockup: the 6 x 3 m billboard on a boulevard" },
+        { row: [
+          { full: true, czl: "ooh-gable", at: 283, img: m("ooh/gable-still"), alt: "Animated mockup: the portrait layout as a mesh banner on the blind gable of a block of flats, a tram passing below" },
+          { full: true, img: m("litorsal/heat-tall"), alt: "The portrait version, 1 x 1.5 m: headline on top, the icons in a grid, the tubes below" }
+        ], wrap: true, cap: "Animated mockup: the portrait layout as a mesh banner on a block's gable, and the 1 x 1.5 m layout itself" },
+        { img: m("ooh/shelter"), alt: "Mockup: the portrait layout in a backlit citylight at a tram stop's shelter, the boulevard behind it in the low evening sun", cap: "Mockup: in a citylight at a tram stop, toward evening" },
         { row: [
           { img: m("litorsal/heat-packs"), alt: "The same billboard with Litorsal boxes in place of the tubes, Junior on the right" },
-          { img: m("litorsal/heat-tall"), alt: "The portrait version, 1 x 1.5 m: headline on top, the icons in a grid, the tubes below" }
-        ], cap: "With the boxes, and in portrait, 1 x 1.5 m" },
-        { row: [
-          { img: m("litorsal/heat-250x110"), alt: "The 2.5 x 1.1 m version, the tubes moved to the right of the headline" },
           { img: m("litorsal/heat-first"), alt: "An earlier layout with round badges for electrolytes and minerals and five tubes, Senior included" }
-        ], cap: "A long strip, 2.5 x 1.1 m, and an earlier layout with round badges" }
+        ], cap: "With the boxes, and an earlier layout with round badges" },
+        { img: m("litorsal/heat-250x110"), alt: "The 2.5 x 1.1 m version, the tubes moved to the right of the headline", cap: "A long strip, 2.5 x 1.1 m" }
       ]
     }
   ],
@@ -105,7 +112,7 @@ export const LITORSAL = {
     text: "One product in three lines, and one system that keeps its shape from a 6 x 3 m billboard to a 60 x 40 cm poster."
   },
   related: ["lacalut", "help-4-brain", "clinica-sante"],
-  czl: METRO // (the mockups' pictures: written into the page as #czl-assets, the build swaps in their hashed addresses)
+  czl: { ...METRO, ...OOH } // (the mockups' pictures: written into the page as #czl-assets, the build swaps in their hashed addresses)
 };
 
 // The range chapter, off the Litorsal page since TASK-062 (Daniel's order: hero, the yellow lines, the heat formats, the

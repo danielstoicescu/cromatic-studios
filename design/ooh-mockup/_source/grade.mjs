@@ -13,14 +13,15 @@ const LOOK = {
 };
 export async function grade(inp, { width, shot = "boulevard", look = {} } = {}) {
   const L = { ...LOOK[shot], ...look };
-  let img = sharp(inp).removeAlpha();
+  // (alpha: a layer over the plate, its alpha kept; the vignette is then the piece's own layer)
+  let img = sharp(inp); if (!look.alpha) img = img.removeAlpha(); else img = img.ensureAlpha();
   if (width) img = img.resize({ width, kernel: "lanczos3" });
   const { data, info } = await img.raw().toBuffer({ resolveWithObject: true });
-  const { width: W, height: H, channels: C } = info, r = rng(4242);
-  const out = Buffer.alloc(W * H * 3);
+  const { width: W, height: H, channels: C } = info, r = rng(look.seed || 4242), OC = look.alpha ? 4 : 3;
+  const out = Buffer.alloc(W * H * OC);
   const S = (x) => x - (L.curve * Math.sin(2 * Math.PI * x)) / (2 * Math.PI); // (steeper in the mids by 1 + curve)
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const i = (y * W + x) * C, o = (y * W + x) * 3;
+    const i = (y * W + x) * C, o = (y * W + x) * OC;
     let R = data[i] / 255, G = data[i + 1] / 255, B = data[i + 2] / 255;
     // dry the greens: a pixel greener than both its red and blue goes toward olive
     const gx = G - Math.max(R, B);
@@ -37,8 +38,9 @@ export async function grade(inp, { width, shot = "boulevard", look = {} } = {}) 
     out[o] = Math.max(0, Math.min(255, Math.round((R * vg + n) * 255)));
     out[o + 1] = Math.max(0, Math.min(255, Math.round((G * vg + n) * 255)));
     out[o + 2] = Math.max(0, Math.min(255, Math.round((B * vg + n) * 255)));
+    if (OC === 4) out[o + 3] = data[i + 3];
   }
-  return sharp(out, { raw: { width: W, height: H, channels: 3 } });
+  return sharp(out, { raw: { width: W, height: H, channels: OC } });
 }
 if (process.argv[1] && process.argv[1].endsWith("grade.mjs")) {
   const [inp, outp, w, shot] = process.argv.slice(2);
