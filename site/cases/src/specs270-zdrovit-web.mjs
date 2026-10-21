@@ -156,8 +156,58 @@ const web = (o) => {
   };
 };
 
+export const BONILASH = web({
+  slug: "bonilash", name: "Bonilash", label: "bonilash.ro",
+  title: "Lashes, close up.",
+  tagline: "The product site for Bonilash, a lash serum and a brow serum: a pink home page, a page for each serum and a blog.",
+  desc: "Bonilash: bonilash.ro, the product site for a lash serum and a brow serum in the Zdrovit portfolio, on desktop and phone. By Cromatic Studios, Bucharest.",
+  accent: { bg: "#F2D3DC", fg: "#4a1c2c", ink: "#a4506b" },
+  info: ["Lash and brow serums, Bonilash", "Romania · Zdrovit portfolio", "Product website, desktop and mobile"],
+  heroAlt: "bonilash.ro in a browser window and on a phone: a woman holding the lash serum, beside the line Seruri gene și sprâncene - Inovație pentru regenerare vizibilă",
+  problem: {
+    h: "Two serums, one slim tube each",
+    p: [
+      "Bonilash makes two serums, one for lashes and one for brows. Each comes in a slim tube with a fine applicator.",
+      "Both go on in the evening, on clean skin, and the site is plain about time: the first results take weeks. It puts that next to the products, the reviews and the safety advice.",
+      "bonilash.ro has a home page, a page for each serum and a blog, all reached from the menu."
+    ]
+  },
+  solution: {
+    h: "Pink, white and the product up close",
+    p: "The site takes its colours from the packs: soft pink fields, a lot of white and a deep rose for headings and buttons. The serums lie flat on pink, and the hero slides through portraits of a woman with the tube in her hand, each with the line “Gene cu până la 25% mai lungi”.",
+    stat: "2",
+    statText: "serums, one for lashes and one for brows, each with its own page"
+  },
+  page: {
+    text: "The menu runs Acasă, Produse, Blog, Contact, with Bonilash® gene and Bonilash® sprâncene under Produse and a Comandă button at the end. The home page opens with the name, the line “Seruri gene și sprâncene - Inovație pentru regenerare vizibilă” and the portrait slider. Then come the two serums, the specialist articles, the reviews, an Instagram strip, the safety tips and the questions.",
+    deliverables: ["Product website", "UX/UI design", "Desktop and mobile", "Product pages", "Blog"],
+    shots: [["reviews", "Articole de specialitate with a close-up of an eye, and Recenzii Bonilash®: a slider of customer reviews", "The articles, then the reviews"]]
+  },
+  story: {
+    pills: ["Two", "serums"],
+    text: "Each serum gets a pink card with a product shot, a short promise in the site's words and two buttons, Comandă and Vezi detalii produs. The lash serum leads with “până la 25% mai lungi”, the brow serum with results “după doar 12 săptămâni de utilizare”. Further down, a strip of product photos opens the safety tips, listed one by one: keep it out of the eye, not on the lower lashes, only on clean skin, and no results overnight.",
+    deliverables: ["Product cards", "Safety tips", "Reviews"],
+    media: [
+      ["products", "The two serums: three silver tubes on pink beside the lash serum's name, three gold tubes on pink beside the brow serum's", "The lash serum and the brow serum, each on its pink card"],
+      ["tips", "A strip of five product photos above Bonilash® - Sfaturi pentru utilizare în siguranță, a list of safety tips beside a round portrait", "The safety tips, under a strip of product photos"]
+    ]
+  },
+  phone: {
+    text: "On a phone the menu folds behind one icon and the page stacks into a single column: the name and the line first, then the portrait slider, then each serum as a pink photo above its name and its two buttons. The safety tips keep their full wording.",
+    shots: [
+      ["phone-hero", "The first screen on a phone: the logo, the menu icon, Bonilash® and the line in rose"],
+      ["phone-lashes", "The lash serum on a phone: three silver tubes on pink, then its name and the 25% line"],
+      ["phone-brows", "The brow serum on a phone: its name, the 12-week line, two buttons and three gold tubes on pink"],
+      ["phone-tips", "The safety tips on a phone, in a single column"]
+    ],
+    cap: "The first screen, the two serums and the safety tips, at 390 px wide"
+  },
+  result: "Two serums, one pink site: the products, the reviews and the safety tips, in the colours of the pack.",
+  related: ["aspasia", "parasoftin", "lacium"]
+});
+
 // a chapter added to a page that already exists, by its slug (gen.mjs applies it): none yet
 export const EXTEND = {};
 
 // every Zdrovit brand page built from its product site, in the order they were made
-export const ZDROVIT_WEB = [ASPASIA];
+export const ZDROVIT_WEB = [ASPASIA, BONILASH];

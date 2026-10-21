@@ -4518,5 +4518,55 @@
     900,
     1463,
     99159
+  ],
+  "m:bonilash/hero": [
+    1600,
+    900,
+    118776
+  ],
+  "m:bonilash/site-scroll": [
+    1200,
+    3944,
+    251900
+  ],
+  "m:bonilash/site-scroll-phone": [
+    585,
+    12146,
+    410129
+  ],
+  "m:bonilash/products": [
+    1600,
+    1110,
+    91933
+  ],
+  "m:bonilash/reviews": [
+    1600,
+    1110,
+    92800
+  ],
+  "m:bonilash/tips": [
+    1600,
+    1110,
+    146909
+  ],
+  "m:bonilash/phone-hero": [
+    900,
+    1463,
+    86794
+  ],
+  "m:bonilash/phone-lashes": [
+    900,
+    1463,
+    69567
+  ],
+  "m:bonilash/phone-brows": [
+    900,
+    1463,
+    68419
+  ],
+  "m:bonilash/phone-tips": [
+    900,
+    1463,
+    104872
   ]
 }
