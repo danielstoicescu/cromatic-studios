@@ -30435,8 +30435,9 @@ void main() {
     // the shaft: an open cone from the window's opening out and down over the paving, wider; drawn as a volume (each
     // face by how squarely it is seen: its silhouette melts away, no hard sides) that fades out along its length
     const L = 60, N0 = [0, 32.5, F + 0.6], N1 = [0, 13, F + L];
-    const shaftGeo = new CylinderGeometry(9.5, 25, Math.hypot(N1[1] - N0[1], L), 20, 1, true); // (its top, the narrow end, at the window; uv.y 1 there, 0 at the far rim: clamped in the shader, a pow of a hair
-    // under 0 is a NaN, which the half-float target and the blur after it spread into black dashes along the rim)
+    // (its top, the narrow end, at the window: uv.y 1 there, 0 at the far rim; clamped in the shader: a pow of a hair under
+    // 0 is a NaN, which the half-float target and the blur after it spread into black dashes along the rim)
+    const shaftGeo = new CylinderGeometry(9.5, 25, Math.hypot(N1[1] - N0[1], L), 20, 1, true);
     const shaftQ = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), new Vector3(0, N0[1] - N1[1], N0[2] - N1[2]).normalize());
     const shaftM = () => { const m = new ShaderMaterial({
       uniforms: { color: { value: new Color() }, opacity: { value: 0.55 } }, transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide,
@@ -30454,7 +30455,7 @@ void main() {
       return { halo, shaft, pool, glass: glass[i], col: new Color() };
     });
     g.add(fxG);
-    const rm = matchMedia("(prefers-reduced-motion: reduce)"), fr = new Frustum(), m4 = new Matrix4(), hv = new Vector3(), cv = new Vector3();
+    const rm = matchMedia("(prefers-reduced-motion: reduce)"), fr = new Frustum(), m4 = new Matrix4(), cv = new Vector3();
     const sph = new Sphere(warpV(new Vector3(g.position.x, 60, g.position.z)), 300); // the house and its glow, in the bent world
     const hue = (h0, h1, k) => { let d = ((h1 - h0 + 540) % 360) - 180; return (((h0 + d * k) % 360) + 360) % 360; };
     const colAt = (t, off, idx0) => { // a colour of the cycle at time t (ms): held, then a cross-fade round the hue wheel to the next
