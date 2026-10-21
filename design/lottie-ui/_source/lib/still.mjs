@@ -51,7 +51,9 @@ function trMat(t, f) {
   const o = vec(m, [-a[0], -a[1]]);
   return [m[0], m[1], m[2], m[3], p[0] + o[0], p[1] + o[1]];
 }
-const matStr = (m) => (m.every((v, i) => Math.abs(v - I[i]) < 1e-6) ? "" : ` transform="matrix(${m.map(R).join(" ")})"`);
+// (the turn and the scale to four places, the move to a tenth: a scale of 0.82 rounded to a tenth was drawn at 0.8)
+const R4 = (v) => Math.round(v * 1e4) / 1e4;
+const matStr = (m) => (m.every((v, i) => Math.abs(v - I[i]) < 1e-6) ? "" : ` transform="matrix(${m.map((v, i) => (i < 4 ? R4(v) : R(v))).join(" ")})"`);
 
 /* ---------- shapes as path data, through a matrix ---------- */
 // (relative after the first point, from the rounded absolute points: tenths, so no drift)
