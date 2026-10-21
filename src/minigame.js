@@ -3361,7 +3361,7 @@
       text(ctx, L2[0], px0 + pw / 2, 96, "#ffd23a", { al: "c" }); text(ctx, L2[1], px0 + pw / 2, 107, "#ffd23a", { al: "c" });
       text(ctx, g.cpu === "ion" ? "TWO MINUTES WERE ENOUGH." : "ONE MORE COFFEE?", px0 + pw / 2, 128, "#ffffff", { al: "c" });
     }
-    const items = ["REMATCH", "CHANGE FIGHTERS", "BACK TO MAP"], mx = px0 + pw / 2, w = pw;
+    const items = ["REMATCH", "CHANGE FIGHTERS", BACK_URL ? "BACK" : "BACK TO MAP"], mx = px0 + pw / 2, w = pw;
     items.forEach((s2, i) => {
       const y = 160 + i * 19, on = g.menu === i;
       button(ctx, mx - w / 2, y - 4, w, 15, on);
@@ -3398,14 +3398,27 @@
   // (or the hidden page) brings on can't change what gloves_exit reports; pauseAuto: the screen a pause the player didn't
   // ask for (focus lost, page hidden, phone turned upright) interrupted
   let leavingFrom = null, pauseAuto = null;
+  // TASK-094 add-on (Daniel): the way out goes back where the player came from. Opened from the normal website (/site/,
+  // /ro/, a hub, a case page: a same-origin referrer that is not the map at / nor this page) it returns there, and the
+  // button says < BACK (< ÎNAPOI in Romanian); inside the map's frame (or ?embed=1), from the map, a direct visit or the
+  // home-screen app (no same-origin referrer) it is the map as before: the frame closes, or /?map
+  const BACK_URL = (() => {
+    try {
+      if (window.parent !== window || new URLSearchParams(location.search).get("embed") === "1" || !document.referrer) return null;
+      const r = new URL(document.referrer);
+      if (r.origin !== location.origin || r.pathname === "/" || r.pathname === "/index.html" || /^\/play\//.test(r.pathname)) return null;
+      return r.pathname + r.search;
+    } catch { return null; }
+  })();
+  const BACK_WORD = BACK_URL ? (RO ? "\u00CENAPOI" : "BACK") : "MAP";
   function backToMap() {
     const from = TRK.screenNow(); if (!leavingFrom) leavingFrom = from;
-    TRK.ev("gloves_back_to_map", { from_screen: from }); // r211
+    TRK.ev("gloves_back_to_map", { from_screen: from, to: BACK_URL ? "site" : "map" }); // r211; TASK-094: where to
     SND.music(null); unlockLandscape();
     try { if (window.parent !== window && window.parent.location.origin === location.origin) { window.parent.postMessage({ cz: "gloves-close" }, location.origin); return; } } catch {}
-    location.href = "/?map";
+    location.href = BACK_URL || "/?map";
   }
-  const PAUSE_ITEMS = ["RESUME", "MOVES", "CHANGE FIGHTERS", "BACK TO MAP"]; // beta 3.64: the move list
+  const PAUSE_ITEMS = ["RESUME", "MOVES", "CHANGE FIGHTERS", BACK_URL ? "BACK" : "BACK TO MAP"]; // beta 3.64: the move list
   let pmenu = 0;
   function pausePick(i) {
     SND.play("confirm");
@@ -3700,9 +3713,10 @@
     // beta 3.47 (Daniel, QA G3: "no way back to the map on a phone before a fight"): on every other screen (the title,
     // the select, the VS, the result, the rotate screen) the same place holds < MAP, in MENU's style: opened on its own
     // it goes to the map (/?map), inside the map's frame it closes the frame, as ESC and BACK TO MAP do
-    const back = document.createElement("button"); back.type = "button"; back.className = "mg-back"; back.setAttribute("aria-label", "Back to the map");
+    const back = document.createElement("button"); back.type = "button"; back.className = "mg-back"; back.setAttribute("aria-label", BACK_URL ? (RO ? "\u00CEnapoi" : "Back") : "Back to the map");
     back.innerHTML = '<svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M6 3h2v2H6zM4 5h2v2H4zM2 7h12v2H2zM4 9h2v2H4zM6 11h2v2H6z"/></svg>';
-    back.appendChild(pxText("MAP", "#ffffff", 2));
+    back.appendChild(pxText(BACK_WORD, "#ffffff", 2));
+    if (BACK_URL) { const lw = (s) => parseFloat(pxText(s, "#ffffff", 2).style.width) || 0; root.style.setProperty("--mg-back-x", Math.max(0, lw(BACK_WORD) - lw("MAP")) + "px"); } // TASK-094: FULL SCREEN moves over for the longer word
     back.onclick = (e) => { e.stopPropagation(); back.blur(); backToMap(); };
     root.appendChild(back);
     // beta 3.68 (Daniel: "can the game go full screen, without Safari's bar?"): FULL SCREEN next to < MAP, off the
@@ -3751,7 +3765,7 @@
     // beta 3.47 (QA G4): inside the map's frame (the site's × over the game's top right, or its bottom right while the
     // game is sideways) the CSS keeps the speaker, MENU and MAP clear of both corners
     try { if (window.parent !== window || new URLSearchParams(location.search).get("embed") === "1") root.classList.add("mg-embed"); } catch { root.classList.add("mg-embed"); }
-    if (!TOUCH) { const hint = document.createElement("div"); hint.className = "mg-hint"; hint.appendChild(pxText("ARROWS/WASD MOVE   J/Z PUNCH   K/X KICK   L/C SPECIAL   P PAUSE   ESC MAP", "#a99cc8", 2)); hint.appendChild(pxText("HOLD AWAY BLOCK   DOWN+KICK SWEEP   \u2193\u2198\u2192+J EX   \u2192\u2192 DASH   M SOUND   V SCANLINES", "#6f6496", 2)); hint.appendChild(pxText("CHAINS, COMBOS AND EVERYONE'S MOVES: P, THEN MOVES", "#6f6496", 2)); /* beta 3.64 */ root.appendChild(hint); }
+    if (!TOUCH) { const hint = document.createElement("div"); hint.className = "mg-hint"; hint.appendChild(pxText("ARROWS/WASD MOVE   J/Z PUNCH   K/X KICK   L/C SPECIAL   P PAUSE   ESC " + (BACK_URL ? "BACK" : "MAP"), "#a99cc8", 2)); hint.appendChild(pxText("HOLD AWAY BLOCK   DOWN+KICK SWEEP   \u2193\u2198\u2192+J EX   \u2192\u2192 DASH   M SOUND   V SCANLINES", "#6f6496", 2)); hint.appendChild(pxText("CHAINS, COMBOS AND EVERYONE'S MOVES: P, THEN MOVES", "#6f6496", 2)); /* beta 3.64 */ root.appendChild(hint); }
     else {
       buildControls();
     }
