@@ -4733,5 +4733,65 @@
     900,
     1463,
     147888
+  ],
+  "m:optisomn/hero": [
+    1600,
+    900,
+    183811
+  ],
+  "m:optisomn/site-scroll": [
+    1200,
+    6899,
+    757013
+  ],
+  "m:optisomn/site-scroll-phone": [
+    585,
+    16000,
+    897229
+  ],
+  "m:optisomn/insomnia": [
+    1600,
+    804,
+    89096
+  ],
+  "m:optisomn/rules": [
+    1600,
+    1001,
+    91458
+  ],
+  "m:optisomn/formula": [
+    1600,
+    1358,
+    241789
+  ],
+  "m:optisomn/jelly": [
+    1600,
+    1220,
+    208325
+  ],
+  "m:optisomn/rest": [
+    1600,
+    885,
+    97004
+  ],
+  "m:optisomn/phone-hero": [
+    900,
+    1463,
+    100670
+  ],
+  "m:optisomn/phone-insomnia": [
+    900,
+    1463,
+    100863
+  ],
+  "m:optisomn/phone-rules": [
+    900,
+    1463,
+    56686
+  ],
+  "m:optisomn/phone-jelly": [
+    900,
+    1463,
+    139362
   ]
 }

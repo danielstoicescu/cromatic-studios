@@ -50,6 +50,7 @@ export const WORK_TITLES = {
   "glucopil": "Glucopil: one-page product website, blood sugar",
   "gripovit": "Gripovit: one-page product website, colds and flu",
   "lacium": "Lacium: one-page product website for a probiotic",
+  "optisomn": "Optisomn: one-page product website, sleep",
   "routine-paris": "Routine Paris: daily ritual brand identity",
   "help-4-brain": "Help4Brain: pharma product & marketing",
   "altius": "Altius: medical brand & digital",
