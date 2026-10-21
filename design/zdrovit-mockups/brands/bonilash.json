@@ -1,0 +1,17 @@
+{
+ "_": "TASK-076: bonilash.ro. Crops in capture px (desktop 2880 wide, phone 780 wide).",
+ "label": "bonilash.ro",
+ "field": ["#fbeaf0", "#e7b3c3"],
+ "out": {
+  "hero": {"kind": "hero", "desktop": {"src": "desktop-hero.png"}, "phone": {"src": "phone-hero.png"}},
+  "site-scroll": {"kind": "plain", "src": "desktop-full.png", "width": 1200, "q": 72},
+  "site-scroll-phone": {"kind": "plain", "src": "phone-full.png", "width": 585, "q": 70},
+  "products": {"kind": "browser", "src": "section-02.png", "crop": [0, 0, 2880, 1800]},
+  "reviews": {"kind": "browser", "src": "desktop-full.png", "crop": [0, 3712, 2880, 1800]},
+  "tips": {"kind": "browser", "src": "section-04.png", "crop": [0, 0, 2880, 1800]},
+  "phone-hero": {"kind": "phone", "src": "phone-hero.png", "y": 0},
+  "phone-lashes": {"kind": "phone", "src": "phone-full.png", "y": 2600},
+  "phone-brows": {"kind": "phone", "src": "phone-full.png", "y": 4150},
+  "phone-tips": {"kind": "phone", "src": "phone-full.png", "y": 9350}
+ }
+}
