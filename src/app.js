@@ -32950,24 +32950,61 @@ void main() {
   }
 
   // ---------- E-scooter: aluminium deck, folding stem, hub motor ----------
+  // TASK-109 (Daniel: "the scooter is absurdly big: much smaller, almost 1:1 with the car, a little bigger than normal,
+  // but realistic"): modelled in real centimetres on a commuter e-scooter (about 113 long, 118 to the bar, a 43 bar,
+  // 8.5" tyres, the battery in the deck, a front hub motor, a rear disc) and kept out of the "every ride the same size"
+  // rule: it rides at the 1300's own scale (the 1300's 4.35 m read 53.8 on the road: 12.4 a metre) times SCOOTER_K,
+  // a touch over real so it still reads on the map
+  var SCOOTER_K = 1.2, SCOOTER_S = 12.4 / 100 * SCOOTER_K;
   function buildScooter() {
     const g = new Group();
-    const alu = M("#c9ccd1", { metalness: 0.6, roughness: 0.35 }), ink = M(INK);
-    const deck = topBody(rrDraw(12, 44, 4), 3.6, ink, 6.5, 1.2); g.add(deck);
-    const grip = topBody(rrDraw(10, 36, 3.5), 0.6, M("#2b2b2b", { roughness: 0.95 }), 10.2, 0.2); grip.position.z = -2; g.add(grip);
-    const batt = topBody(rrDraw(8, 26, 2.5), 2.6, M("#FED012"), 3.8, 0.8); g.add(batt);
-    g.add(rod([0, 10, 21], [0, 46, 25], 1.8, alu), rod([0, 10, 21], [0, 6, 26], 1.6, alu));
-    g.add(rod([-13, 46, 25], [13, 46, 25], 1.4, ink));
-    for (const sx of [-1, 1]) { const gp = new Mesh(new CylinderGeometry(1.9, 1.9, 6, 12), M("#F65342", { roughness: 0.8 })); gp.rotation.z = Math.PI / 2; gp.position.set(sx * 11, 46, 25); g.add(gp); }
-    const disp = topBody(rrDraw(5, 3, 1), 1, M("#111"), 46.4, 0.3); disp.position.z = 24; g.add(disp);
-    const light = roundLamp(2.2, "#fff3c4", "#FED012", 0.7); light.position.set(0, 38, 24.6); g.add(light);
-    for (const z of [26, -22]) { const f = new Mesh(new TorusGeometry(7.4, 1.1, 8, 20, Math.PI), ink); f.rotation.y = Math.PI / 2; f.position.set(0, 6.5, z); g.add(f); }
-    const tail = roundLamp(1.4, "#a3121a", "#ff2a2a", 0.5); tail.position.set(0, 9, -24.5); tail.rotation.y = Math.PI; g.add(tail);
-    g.add(rod([-5, 7, -10], [-9, 1, -14], 0.6, alu));
+    const alu = M("#c9ccd1", { metalness: 0.6, roughness: 0.35 }), dark = M("#26282c", { metalness: 0.3, roughness: 0.55 }), ink = M(INK), rubber = M("#151515", { roughness: 0.95 }), yel = M("#FED012");
+    const FZ = 44, RZ = -42, WR = 11; // front and rear axles (a 86 wheelbase), the wheels' radius
+    // the deck: an aluminium slab with the battery inside it, a grip mat on top, a yellow line along each side
+    const deck = sideBody((s) => { s.moveTo(-28, 7.5); s.lineTo(26, 7.5); s.quadraticCurveTo(30, 7.5, 30, 10.5); s.lineTo(30, 12.5); s.lineTo(-28, 12.5); s.quadraticCurveTo(-31, 12.5, -31, 10); s.quadraticCurveTo(-31, 7.5, -28, 7.5); }, 15.5, alu, 1.4, 10);
+    g.add(deck);
+    const mat = topBody(rrDraw(13, 50, 2.5), 0.5, rubber, 12.6, 0.2); mat.position.z = -1.5; g.add(mat);
+    for (const sx of [-1, 1]) { const ln = new Mesh(new BoxGeometry(0.3, 1.1, 46), yel); ln.position.set(sx * 7.8, 10, -1); g.add(ln); }
+    const tray = topBody(rrDraw(12, 48, 3), 1.2, dark, 6.4, 0.4); tray.position.z = -1; g.add(tray);
+    // the neck: from the deck's nose up to the head tube, the folding latch on it
+    const neck = sideBody((s) => { s.moveTo(22, 7.5); s.lineTo(31, 7.5); s.lineTo(42, 19); s.lineTo(42, 25); s.lineTo(37.5, 25); s.lineTo(24, 12.5); s.lineTo(22, 12.5); }, 7, alu, 1, 8);
+    g.add(neck);
+    const latch = new Mesh(new BoxGeometry(5.6, 2.2, 4.5), dark); latch.position.set(0, 18.5, 36.5); latch.rotation.x = -0.8; g.add(latch);
+    // the rear: swingarm plates to the axle, the mudguard over the wheel with the brake lamp in its tail, a disc brake
+    for (const sx of [-1, 1]) g.add(rod([sx * 3.6, 10, -27], [sx * 3.6, WR, RZ], 1, alu));
+    const guard = (cz, r, w, a0, a1) => { const m = new Mesh(new CylinderGeometry(r, r, w, 22, 1, true, a0, a1 - a0), ink); m.material.side = DoubleSide; m.rotation.z = Math.PI / 2; m.position.set(0, WR, cz); return m; };
+    g.add(guard(RZ, WR + 1.6, 6.4, Math.PI * 0.38, Math.PI * 1.06));
+    const tail = new Mesh(new BoxGeometry(4.2, 1.4, 1), new MeshPhysicalMaterial({ color: "#a3121a", emissive: new Color("#ff2a2a"), emissiveIntensity: 0.6, roughness: 0.1, clearcoat: 1 })); tail.position.set(0, 14.3, RZ - 11.9); tail.rotation.x = -0.35; g.add(tail);
+    // the folding kickstand, tucked up under the deck's left side
+    g.add(rod([-6.8, 7.2, -4], [-6.8, 6.6, -19], 0.55, dark));
+    // the steering: fork, head tube, stem, the T bar with its grips, levers, bell, display and headlamp (veh.steer turns
+    // with the front wheel about the same axis). The stem rakes back towards the rider, about 9 degrees
+    const steer = new Group(); steer.position.z = FZ; g.add(steer);
+    const P = (x, y, z) => [x, y, z - FZ];
+    const axisZ = (y) => FZ - 16 * (y - WR) / 99; // the steering axis: from the front axle up to the bar
+    for (const sx of [-1, 1]) steer.add(rod(P(sx * 3.7, WR, FZ), P(sx * 3.7, 24, axisZ(24)), 0.9, dark));
+    const crown = new Mesh(new BoxGeometry(9.2, 2.4, 4), dark); crown.position.set(0, 24.5, axisZ(24.5) - FZ); crown.rotation.x = 0.16; steer.add(crown);
+    steer.add(rod(P(0, 23.5, axisZ(23.5)), P(0, 33, axisZ(33)), 2.6, alu, 16));
+    steer.add(rod(P(0, 32, axisZ(32)), P(0, 106, axisZ(106)), 1.9, alu, 16));
+    const clampT = new Mesh(new BoxGeometry(5, 3.4, 4.6), dark); clampT.position.set(0, 107.5, axisZ(107.5) - FZ); steer.add(clampT);
+    const barZ = axisZ(108) - FZ;
+    steer.add(rod([-21.5, 108, barZ], [21.5, 108, barZ], 1.1, ink, 12));
+    for (const sx of [-1, 1]) { const gp = new Mesh(new CylinderGeometry(1.6, 1.6, 11, 14), rubber); gp.rotation.z = Math.PI / 2; gp.position.set(sx * 16.5, 108, barZ); steer.add(gp); }
+    steer.add(rod([-12.5, 108.4, barZ + 1], [-17.5, 107.2, barZ + 6.2], 0.45, dark, 6)); // the brake lever
+    const thr = new Mesh(new BoxGeometry(1.6, 2.6, 0.6), dark); thr.position.set(9.5, 107.3, barZ + 1.6); steer.add(thr);
+    const bell = new Mesh(new SphereGeometry(1.4, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), chromeM()); bell.position.set(-9, 109, barZ); steer.add(bell);
+    const disp = topBody(rrDraw(6.4, 4.6, 1.2), 1.6, M("#111"), 109, 0.4); disp.position.z = barZ; steer.add(disp);
+    const scr = new Mesh(new PlaneGeometry(4.2, 2.4), new MeshBasicMaterial({ color: "#7fe0ff", toneMapped: false })); scr.rotation.x = -Math.PI / 2 + 0.35; scr.position.set(0, 110.75, barZ + 0.2); scr.material.userData.outlineParameters = { visible: false }; steer.add(scr);
+    const lampY = 99, lampZ = axisZ(lampY) + 2.1;
+    const light = roundLamp(1.9, "#fff3c4", "#FED012", 0.8); light.position.set(0, lampY, lampZ - FZ); light.rotation.x = 0.16; steer.add(light);
+    steer.add(guard(0, WR + 1.4, 6.2, -Math.PI * 0.06, Math.PI * 0.58)); // the front mudguard
     const wheels = [];
-    for (const z of [26, -22]) { const w = carWheel({ r: 6, w: 3.6, rim: "#2b2b2b", rimR: 0.62, cap: "#FED012" }); w.position.set(0, 6, z); wheels.push(w); g.add(w); }
+    for (const z of [FZ, RZ]) { const w = carWheel({ r: WR, w: 5.4, rim: "#2b2b2b", rimR: 0.6, cap: "#FED012" }); w.position.set(0, WR, z); wheels.push(w); g.add(w); }
+    { const hub = new Mesh(new CylinderGeometry(WR * 0.46, WR * 0.46, 6.6, 22), dark); hub.rotation.z = Math.PI / 2; wheels[0].children[0].add(hub); } // the hub motor
+    { const disc = new Mesh(new CylinderGeometry(6, 6, 0.35, 24), M("#b9bcc2", { metalness: 0.8, roughness: 0.3 })); disc.rotation.z = Math.PI / 2; disc.position.x = 3.4; wheels[1].children[0].add(disc); }
     shadowAll(g);
-    return { group: g, wheels, kind: "car" };
+    // fixedS: its scale on the road (not fitted to the others' length); beam: the headlamp's cone, sized for that scale
+    return { group: g, wheels, kind: "car", steer, fixedS: SCOOTER_S, beam: { p: [0, lampY, lampZ], k: 2.1, tilt: 0.35 } };
   }
 
   // ---------- Kompus truck: a step van in the Kompus wrap, serving hatch and awning ----------
@@ -36283,10 +36320,11 @@ void main() {
           depthWrite: false
         });
         beamM.userData.outlineParameters = { visible: false };
-        const beamSpots = id === "scooter" ? [[0, 38.6, 21.6 + 35]] : [[-bb.max.x * 0.55, 18, bb.max.z + 33], [bb.max.x * 0.55, 18, bb.max.z + 33]];
+        // TASK-109: a ride with one headlamp names it (veh.beam: where, how big for its scale, how far down it points)
+        const bk = veh.beam?.k || 1, beamSpots = veh.beam ? [[veh.beam.p[0], veh.beam.p[1], veh.beam.p[2] + 35 * bk]] : [[-bb.max.x * 0.55, 18, bb.max.z + 33], [bb.max.x * 0.55, 18, bb.max.z + 33]];
         for (const [sx, sy, sz] of beamSpots) {
-          const cone = new Mesh(new ConeGeometry(13, 70, 12, 1, true), beamM);
-          cone.rotation.x = -Math.PI / 2 - 0.06;
+          const cone = new Mesh(new ConeGeometry(13 * bk, 70 * bk, 12, 1, true), beamM);
+          cone.rotation.x = -Math.PI / 2 - (veh.beam?.tilt ?? 0.06);
           cone.position.set(sx, sy, sz);
           beams.add(cone);
         }
@@ -36299,7 +36337,7 @@ void main() {
         // r124: every ride the same size on the road: about 40 long, about 26 wide at most
         {
           const sz = bb.getSize(new Vector3()), len = Math.max(sz.z, 1), wid = Math.max(sz.x, 1);
-          VEH_S = 1.5 * Math.min(0.74, 46 / len, 30 / wid); // r129: every vehicle 25% bigger; r133: and 20% more (Daniel)
+          VEH_S = veh.fixedS || 1.5 * Math.min(0.74, 46 / len, 30 / wid); // r129: every vehicle 25% bigger; r133: and 20% more (Daniel); TASK-109: the scooter at its real size (fixedS)
           window.__vehSize = [id, Math.round(sz.x), Math.round(sz.y), Math.round(sz.z), +VEH_S.toFixed(2)];
         }
         veh.group.scale.setScalar(VEH_S);
@@ -38008,7 +38046,7 @@ void main() {
         cop: { yaw: 9, roll: 2.4e-4, rollMax: 0.13, rollW: 7, rollZ: 0.55, pitch: 2.2, pitchMax: 0.05, pitchW: 8, wb: 51.5, heave: 1 },
         monopoly: { yaw: 11, roll: 1.6e-4, rollMax: 0.1, rollW: 9, rollZ: 0.6, pitch: 1.6, pitchMax: 0.04, pitchW: 10, wb: 44, heave: 0.8 },
         f1: { yaw: 14, roll: 0.9e-4, rollMax: 0.05, rollW: 13, rollZ: 0.75, pitch: 0.9, pitchMax: 0.025, pitchW: 14, wb: 60, heave: 0.4 },
-        scooter: { yaw: 12, roll: 4.4e-4, rollMax: 0.26, rollW: 8, rollZ: 0.7, pitch: 1.5, pitchMax: 0.04, pitchW: 10, wb: 30, heave: 0.7 },
+        scooter: { yaw: 12, roll: 4.4e-4, rollMax: 0.26, rollW: 8, rollZ: 0.7, pitch: 1.5, pitchMax: 0.04, pitchW: 10, wb: 16, heave: 0.3 }, // TASK-109: its wheelbase and its suspension's travel at its real size
         groovy: { yaw: 7, roll: 3.2e-4, rollMax: 0.15, rollW: 5, rollZ: 0.45, pitch: 3, pitchMax: 0.06, pitchW: 6, wb: 56, heave: 1.3 },
         foodvan: { yaw: 6, roll: 3.6e-4, rollMax: 0.16, rollW: 4.5, rollZ: 0.42, pitch: 3.2, pitchMax: 0.065, pitchW: 5.5, wb: 56, heave: 1.4 },
         sub: { yaw: 3.5, roll: 2e-4, rollMax: 0.12, rollW: 2.2, rollZ: 0.5, pitch: 2, pitchMax: 0.05, pitchW: 2.5, wb: 0, heave: 0 },
@@ -40404,6 +40442,7 @@ void main() {
         if (mo.wb && veh.kind !== "plane") {
           moSpring("st", "stv", clamp2(Math.atan(mo.wb * MO.kap) * 1.2, -0.4, 0.4), 16, 0.85, dt);
           for (const w of veh.wheels) if (w.position.z > 3) w.rotation.y = MO.st;
+          if (veh.steer) veh.steer.rotation.y = MO.st; // TASK-109: the scooter's bar and stem turn with its front wheel
         }
         smoke.tick(dt, !siteMode && !flying && spawnStart < 0 && SCHEMES[state.schemeIdx].id !== "underwater"); // r138j: idle exhaust (not while it drops in)
         if (veh.prop) veh.prop.rotation.z += dt * (18 + state.speed * 0.4);
