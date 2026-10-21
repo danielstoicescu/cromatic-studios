@@ -30280,8 +30280,6 @@ void main() {
     const stoneM = new MeshStandardMaterial({ map: stoneTex, roughness: 0.95 });
     const whiteM = new MeshStandardMaterial({ color: "#eeece6", roughness: 0.7 });
     const woodM = new MeshStandardMaterial({ color: "#6b3f26", roughness: 0.75 });
-    const shutterTex = canvasTexture(64, 128, (ctx) => { ctx.fillStyle = "#5e3b27"; ctx.fillRect(0, 0, 64, 128); ctx.fillStyle = "#47291a"; for (let y = 0; y < 128; y += 6) ctx.fillRect(0, y, 64, 2); });
-    const shutterM = new MeshStandardMaterial({ map: shutterTex, roughness: 0.8 });
     const glassM = new MeshStandardMaterial({ color: "#2a2f35", roughness: 0.2, metalness: 0.3, emissive: "#ffcf8a", emissiveIntensity: 0 });
     STREET_GLOW.push([glassM, 0.9]);
     const box = (w, h, d, m, x, y, z) => { const o = new Mesh(new BoxGeometry(w, h, d), m); o.position.set(x, y, z); g.add(o); return o; };
@@ -30368,14 +30366,15 @@ void main() {
     { const d = arch(12, 17, woodM); d.position.set(-22, 0, F + 0.1); g.add(d); const r = archRing(12, 17, 2.2, stoneM); r.position.set(-22, 0, F); g.add(r); }
     for (const x of [6, 24]) { const a = arch(13, 17, new MeshStandardMaterial({ color: "#2c2a28", roughness: 0.8 })); a.position.set(x, 0, F + 0.1); g.add(a); const r = archRing(13, 17, 2.4, stoneM); r.position.set(x, 0, F); g.add(r); }
     box(W + 1, 1.2, 1.4, whiteM, 0, 20.4, F + 0.6);
-    // first floor: two big arched windows, white mouldings, shutters half down, little columns
-    // TASK-098: each window its own glass (the colours of the night: houseWindowGlow); the loggia keeps glassM
-    const winGlass = [], winShutters = [];
+    // first floor: two big arched windows, white mouldings, little columns
+    // TASK-098: each window its own glass (the colours of the night: houseWindowGlow), white curtains and a string of
+    // fairy lights behind it (its map); round 2 (Daniel): no shutters, day or night (they hid half of each arch); the
+    // loggia keeps glassM
+    const winGlass = [];
     for (const x of [-15, 15]) {
       const gm = glassM.clone(); winGlass.push(gm);
-      const gl = arch(20, 19, gm); gl.position.set(x, 23, F + 0.05); g.add(gl);
+      const gl = arch(20, 19, gm); gl.position.set(x, 23, F + 0.05); gl.userData.noMerge = true; g.add(gl); // (its material changes every night frame: never baked into a batch)
       const ring = archRing(20, 19, 2.6, whiteM); ring.position.set(x, 23, F + 0.1); g.add(ring);
-      const sh = new Mesh(new BoxGeometry(19, 9, 0.6), shutterM); sh.position.set(x, 33.5, F + 1.7); g.add(sh); winShutters.push(sh);
       col(x - 11.5, 23, 13, F + 1.2); col(x + 11.5, 23, 13, F + 1.2);
     }
     // top floor: trefoil-ish arched loggia with columns, projecting lattice balcony
@@ -30406,7 +30405,7 @@ void main() {
     g.scale.set(2.3, 2.3, 2.3);
     g.rotation.y = Math.PI / 2;
     g.position.set(1005, 3, 7350);
-    mats.houseWin = houseWindowGlow(g, winGlass, winShutters, F);
+    mats.houseWin = houseWindowGlow(g, winGlass, F);
     parent.add(g);
     return g;
   }
@@ -30414,14 +30413,20 @@ void main() {
   // diffused light came from inside and left the house, very vibrant but lost in fog; the two windows never alike: one
   // green, one orange, blue, red, magenta...): in the dark worlds (applyScheme's dark: Night Mode, Underwater, GTA 2) the
   // two first-floor windows of Olari 9 glow from inside, each its own colour, cross-fading round a palette (4 s a colour,
-  // the two windows half a step apart: never the same colour, not even mid-fade, see HW_HUES), the shutters rolled up.
+  // the two windows half a step apart: never the same colour, not even mid-fade, see HW_HUES).
   // The light spills out as into fog: a halo (a sprite: a tight core and a long soft tail), a shaft that widens and fades
-  // out over the forecourt, a pool on the paving. Six small additive draws, no light, no post pass; drawn and animated
-  // only in a dark world with the house on screen (and not at all while the tab is hidden: no frames); reduced motion
-  // holds one pair (green, orange). By day nothing of it is drawn and the windows are as before
-  var HW_HUES = [135, 28, 225, 356, 310, 188, 50]; // green, orange, blue, red, magenta, cyan, yellow
+  // out over the forecourt, a pool on the paving, and a softer glow behind the house (round 2, Daniel: it should read
+  // from the back and the sides too). Eight small additive draws, no light, no post pass; drawn and animated only in a
+  // dark world with the house on screen (and not at all while the tab is hidden: no frames); reduced motion holds one
+  // pair (green, orange). Round 2 (Daniel): no shutters, day or night; behind the glass white curtains, tied back, and a
+  // string of little coloured bulbs (the glass's map; the bulbs' glow one more additive draw for both windows): by day a
+  // detail, at night inside the colour (the curtains catch it: the emissive map). By day the rest is not drawn
+  // round 2 (Daniel: no cyan): six colours in the wheel's order, so a cross-fade passes no other colour of the cycle on
+  // its way; the two windows half a step out of phase and two to three colours apart at every moment: never alike
+  var HW_HUES = [356, 28, 50, 135, 225, 310]; // red, orange, yellow, green, blue, magenta
+  var HW_HOLD = [135, 28]; // reduced motion: green and orange
   var HW_STEP = 4000, HW_FADE = 1800;
-  function houseWindowGlow(g, glass, shutters, F) {
+  function houseWindowGlow(g, glass, F) {
     const fxG = new Group(); fxG.name = "houseWinFx"; fxG.visible = false; fxG.userData.noHull = true; // (the hull pass would ink the shaft's rims and draw the halos twice)
     const radial = (prof) => canvasTexture(128, 128, (ctx, w, h) => {
       const im = ctx.createImageData(w, h), d = im.data;
@@ -30431,6 +30436,46 @@ void main() {
     const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
     // the halo: a bright core, a wider glow and a long faint tail (light in fog), to nothing at the edge
     const haloTex = radial((u, v) => { const r = Math.hypot(u - 0.5, v - 0.5) * 2; return (0.8 * Math.exp(-((r / 0.11) ** 2)) + 0.42 * Math.exp(-((r / 0.3) ** 2)) + 0.2 * (1 - r) ** 2.2) * (1 - ss(0.8, 1, r)); });
+    // round 2: the window seen through the glass (u across the arch's 20 units, v up its 19): a dim room, white
+    // curtains tied back to the sides, a swag of fairy lights across the top. kind 0: the glass's colour map; 1: its
+    // emissive map (how much of the night's colour each part gives: the curtains most, the room less); 2: the bulbs' glow
+    const BULBS = ["#ff4a4a", "#ffd84a", "#55ff7a", "#4aa8ff", "#ff5ee6", "#ff9a3d"];
+    const winTex = (kind) => canvasTexture(128, 128, (ctx, w, h) => {
+      const X = (u) => u * w, Y = (v) => (1 - v) * h;
+      if (kind === 0) { const gr = ctx.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "#262b33"); gr.addColorStop(1, "#3a3f47"); ctx.fillStyle = gr; ctx.fillRect(0, 0, w, h); }
+      else if (kind === 1) { ctx.fillStyle = "#b8b8b8"; ctx.fillRect(0, 0, w, h); }
+      else ctx.clearRect(0, 0, w, h);
+      if (kind < 2) for (const sd of [-1, 1]) { // the curtains: from the top corner, gathered at a tie-back, falling to the sill
+        const e = sd < 0 ? 0 : 1, o = (u) => (sd < 0 ? u : 1 - u);
+        ctx.beginPath(); ctx.moveTo(X(e), Y(1)); ctx.lineTo(X(o(0.4)), Y(1));
+        ctx.bezierCurveTo(X(o(0.34)), Y(0.7), X(o(0.16)), Y(0.5), X(o(0.12)), Y(0.42));
+        ctx.bezierCurveTo(X(o(0.17)), Y(0.3), X(o(0.22)), Y(0.12), X(o(0.24)), Y(0)); ctx.lineTo(X(e), Y(0)); ctx.closePath();
+        ctx.fillStyle = kind ? "#ffffff" : "#efebe2"; ctx.fill();
+        ctx.save(); ctx.clip(); ctx.strokeStyle = kind ? "rgba(0,0,0,.14)" : "rgba(120,110,95,.35)"; ctx.lineWidth = 2.2;
+        for (let k = 1; k < 5; k++) { const f = k / 5; ctx.beginPath(); ctx.moveTo(X(o(0.4 * f)), Y(1)); ctx.quadraticCurveTo(X(o(0.12 * f + 0.02)), Y(0.5), X(o(0.11 * f)), Y(0.42)); ctx.lineTo(X(o(0.22 * f)), Y(0)); ctx.stroke(); }
+        ctx.restore();
+        ctx.fillStyle = kind ? "#dddddd" : "#c9b48a"; ctx.fillRect(X(o(0.13)) - 3, Y(0.44), 6, 5); // the tie-back
+      }
+      // the fairy lights: a swag across the top, little bulbs in turn
+      const bx = (k) => 0.1 + 0.8 * k / 10, by = (u) => 0.74 - 0.13 * Math.sin(Math.PI * (u - 0.1) / 0.8);
+      if (kind === 0) { ctx.strokeStyle = "rgba(20,20,20,.7)"; ctx.lineWidth = 1; ctx.beginPath(); for (let k = 0; k <= 40; k++) { const u = 0.1 + 0.8 * k / 40; k ? ctx.lineTo(X(u), Y(by(u))) : ctx.moveTo(X(u), Y(by(u))); } ctx.stroke(); }
+      for (let k = 0; k <= 10; k++) {
+        const u = bx(k), v = by(u) - 0.025, c = BULBS[k % BULBS.length];
+        if (kind === 2) { const gr = ctx.createRadialGradient(X(u), Y(v), 0, X(u), Y(v), 9); gr.addColorStop(0, c); gr.addColorStop(0.3, c); gr.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = gr; ctx.fillRect(X(u) - 9, Y(v) - 9, 18, 18); }
+        else { ctx.fillStyle = kind ? "#ffffff" : c; ctx.beginPath(); ctx.arc(X(u), Y(v), 2.4, 0, Math.PI * 2); ctx.fill(); }
+      }
+    });
+    const tMap = winTex(0), tEm = winTex(1);
+    for (const t of [tMap, tEm]) { t.repeat.set(1 / 20, 1 / 19); t.offset.set(0.5, 0); } // (the arch's front face has its shape's coordinates for uv: x -10..10, y 0..19)
+    for (const m of glass) { m.color.set("#ffffff"); m.map = tMap; m.emissiveMap = tEm; m.roughness = 0.35; m.metalness = 0.15; }
+    const bulbs = (() => { // both windows' bulb glows, one mesh, just in front of the glass inside the mouldings
+      const pos = [], uv = [], idx = [];
+      for (const x of [-15, 15]) { const b = pos.length / 3; pos.push(x - 10, 23, F + 1.35, x + 10, 23, F + 1.35, x + 10, 42, F + 1.35, x - 10, 42, F + 1.35); uv.push(0, 0, 1, 0, 1, 1, 0, 1); idx.push(b, b + 1, b + 2, b, b + 2, b + 3); }
+      const geo = new BufferGeometry(); geo.setAttribute("position", new Float32BufferAttribute(pos, 3)); geo.setAttribute("uv", new Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
+      const m = new Mesh(geo, new MeshBasicMaterial({ map: winTex(2), transparent: true, opacity: 0.4, blending: AdditiveBlending, depthWrite: false, fog: false }));
+      m.material.userData.outlineParameters = { visible: false }; m.userData.noHull = true; m.userData.noMerge = true; m.renderOrder = 3; m.castShadow = m.receiveShadow = false;
+      g.add(m); return m;
+    })();
     const add = (map, opacity) => { const m = new MeshBasicMaterial({ map, color: "#ffffff", transparent: true, opacity, blending: AdditiveBlending, depthWrite: false, fog: false, side: DoubleSide }); m.userData.outlineParameters = { visible: false }; return m; };
     // the shaft: an open cone from the window's opening out and down over the paving, wider; drawn as a volume (each
     // face by how squarely it is seen: its silhouette melts away, no hard sides) that fades out along its length
@@ -30451,8 +30496,13 @@ void main() {
       halo.position.set(x, 33, F + 8); halo.scale.set(96, 96, 1);
       const shaft = new Mesh(shaftGeo, shaftM()); shaft.position.set(x, (N0[1] + N1[1]) / 2, (N0[2] + N1[2]) / 2); shaft.quaternion.copy(shaftQ);
       const pool = new Mesh(poolGeo, add(haloTex, 0.75)); pool.position.set(x * 1.25, 0.3, F + 24); pool.scale.set(54, 1, 44);
-      for (const o of [halo, shaft, pool]) { o.frustumCulled = false; o.renderOrder = 3; fxG.add(o); }
-      return { halo, shaft, pool, glass: glass[i], col: new Color() };
+      // round 2: behind the house, a wider, softer glow of the same colour (it reads from the back and round the sides;
+      // from the front the house hides most of it)
+      const back = new Sprite(new SpriteMaterial({ map: haloTex, color: "#ffffff", transparent: true, opacity: 0.4, blending: AdditiveBlending, depthWrite: false, fog: false }));
+      back.material.userData.outlineParameters = { visible: false };
+      back.position.set(x * 1.5, 36, -F - 12); back.scale.set(120, 110, 1);
+      for (const o of [halo, shaft, pool, back]) { o.frustumCulled = false; o.renderOrder = 3; fxG.add(o); }
+      return { halo, shaft, pool, back, glass: glass[i], col: new Color() };
     });
     g.add(fxG);
     const rm = matchMedia("(prefers-reduced-motion: reduce)"), fr = new Frustum(), m4 = new Matrix4(), cv = new Vector3();
@@ -30467,7 +30517,7 @@ void main() {
       group: fxG,
       setDark(on) {
         dark = on; fxG.visible = false;
-        for (const sh of shutters) { sh.scale.y = on ? 0.25 : 1; sh.position.y = on ? 40 : 33.5; } // rolled up at night
+        bulbs.material.opacity = on ? 0.85 : 0.4; // the fairy lights: a faint glow by day, bright inside the colour at night
         for (const w of wins) { w.glass.emissiveIntensity = on ? 1.05 : 0; if (!on) w.glass.emissive.set("#ffcf8a"); }
       },
       update(now, cam) {
@@ -30477,13 +30527,14 @@ void main() {
         fxG.visible = true;
         // seen from behind the house the halo fades (the house hides the rest): the windows face +x
         cv.copy(cam.position).sub(sph.center).normalize();
-        const face = 0.3 + 0.7 * ss(-0.35, 0.55, cv.x);
+        const face = 0.4 + 0.6 * ss(-0.35, 0.55, cv.x), rear = 0.22 + 0.38 * ss(0.3, -0.6, cv.x); // (the back glow: some always, more from behind)
         const still = rm.matches;
         wins.forEach((w, i) => {
-          const h = still ? HW_HUES[i] : i === 0 ? colAt(now, 0, 0) : colAt(now, 0.5, 3);
+          const h = still ? HW_HOLD[i] : i === 0 ? colAt(now, 0, 3) : colAt(now, 0.5, 0);
           w.col.setHSL(h / 360, 1, 0.5, SRGBColorSpace);
           w.glass.emissive.copy(w.col);
           w.halo.material.color.copy(w.col); w.halo.material.opacity = 0.72 * face;
+          w.back.material.color.copy(w.col); w.back.material.opacity = rear;
           w.shaft.material.uniforms.color.value.copy(w.col); w.pool.material.color.copy(w.col);
         });
       }
