@@ -39827,18 +39827,30 @@ void main() {
           sketchFx.page = true;
         }
       }
+      // TASK-096: full = a picture drawn into a corner of the canvas (a Multiverse preview, a place's postcard). Its colour
+      // pass goes into a target of that corner's own size (prt), so the pass reads it a pixel for a pixel. It went into the
+      // screen-sized target, with res the screen's: the pass, run over the small corner, read its lines (one or two of the
+      // screen's pixels wide) every 6-13 pixels, and the ink came out broken, in dashes, the crayon in specks
+      var _skVp = new Vector4();
       function sketchRender(now, cam, full) {
-        const w = renderer.domElement.width, h = renderer.domElement.height;
+        let w = renderer.domElement.width, h = renderer.domElement.height;
         if (!sketchFx) sketchFxInit();
         if (sketchFx.page) {
           sketchFx.page = false;
           // the first page: a little of the city is already drawn where you are
           if (mapMode) { const v = warpV(new Vector3(mapView.tgt.x, 0, mapView.tgt.z)); sketchPaint(v.x, v.z, 900, 1); } else sketchPaint(carPos.x, carPos.z, 700, 1);
         }
-        if (sketchFx.rt.width !== w || sketchFx.rt.height !== h) { sketchFx.rt.setSize(w, h); sketchFx.mat.uniforms.res.value.set(w, h); }
+        let rt = sketchFx.rt;
+        if (full) { // TASK-096 (the corner, in device pixels: the viewport the caller set, the screen being the target)
+          renderer.getCurrentViewport(_skVp); w = Math.max(1, Math.round(_skVp.z)); h = Math.max(1, Math.round(_skVp.w));
+          if (!sketchFx.prt) { sketchFx.prt = new WebGLRenderTarget(w, h, { samples: 0, type: HalfFloatType }); sketchFx.prt.depthTexture = new DepthTexture(w, h); }
+          rt = sketchFx.prt;
+        }
+        if (rt.width !== w || rt.height !== h) rt.setSize(w, h);
         if (!full) { sketchExplore(now); sketchRingsBuild(); sketchRingsUpdate(Math.min(0.05, (now - (sketchFx.lastT || now)) / 1000)); sketchFx.lastT = now; }
         sketchRevealFlush(); // beta 3.7x: the strokes queued since the last frame
         const u = sketchFx.mat.uniforms;
+        u.tD.value = rt.texture; u.tZ.value = rt.depthTexture; u.res.value.set(w, h); // TASK-096
         u.t.value = (now * 0.001) % 100; u.full.value = full ? 1 : 0;
         u.bp.value = SCHEMES[state.schemeIdx].id === "blueprint" ? 1 : 0; // worlds prototype: the notebook printed as a blueprint
         cam.updateMatrixWorld();
@@ -39860,7 +39872,7 @@ void main() {
         { const sy = Math.max(0.2, _nbSun.subVectors(sun.position, sun.target.position).normalize().y); u.kW.value = Math.PI / Math.max(0.3, hemi.intensity + sun.intensity * sy); } // beta 3.76: undoes the notebook's flat light (a white face looking up = white)
         nbCarFrame(veh?.group, u.oI0.value, u.oA0.value, u.oB0.value); nbCarFrame(copCar?.group, u.oI1.value, u.oA1.value, u.oB1.value); // beta 3.76
         sun.shadow.autoUpdate = false; sun.shadow.needsUpdate = false; // round 2: no cast shadows in the notebook (intensity 0), so no shadow pass either
-        renderer.setRenderTarget(sketchFx.rt);
+        renderer.setRenderTarget(rt);
         if (!nbHull) renderer.render(scene, cam); // beta 3.76: the ink can come from the depth folds alone (see nbHull)
         else { outline.skipHull = sketchSkipHull; // beta 3.75: no pencil hull round the plain things, nor round sketchNoHull ones
         try { outline.render(scene, cam); } finally { outline.skipHull = null; } }
