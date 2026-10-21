@@ -369,7 +369,47 @@ function legacy(req, res) {
   return false;
 }
 
-// TASK-051: the Content-Security-Policy reports (the policy itself, in Report-Only, comes with the next change)
+// TASK-051: Content-Security-Policy, in Report-Only for now: browsers only REPORT what the policy would block, they
+// block nothing. Sent on every HTML response of every host (live, beta, The Core); the reports land in a jsonl file
+// next to the leads backup. The header name is fixed on purpose (no env switch): enforcing is a code change.
+const CSP_POLICY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://bzrcdn.openai.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com https://i.ytimg.com",
+  "media-src 'self' blob:",
+  "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://bzr.openai.com https://bzrcdn.openai.com",
+  "frame-src 'self' https://www.youtube-nocookie.com",
+  "worker-src 'self' blob:",
+  "child-src 'self' blob:",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'self'",
+  "upgrade-insecure-requests",
+  "report-uri /api/csp-report",
+  "report-to csp"
+];
+// browsers ignore these two in a report-only policy and print a console error on every page for them (Chrome for
+// upgrade-insecure-requests, Safari for frame-ancestors; X-Frame-Options already stops framing): they join the
+// header the day it enforces
+const CSP_ENFORCE_ONLY = ["frame-ancestors 'self'", "upgrade-insecure-requests"];
+const CSP = CSP_POLICY.filter((d) => !CSP_ENFORCE_ONLY.includes(d)).join("; ");
+// the old WordPress media pages (/wp-content/uploads/*.html) are not ours to vouch for: no policy there
+const withCsp = (req, res) => {
+  if (req.url.startsWith("/wp-content/uploads/")) return;
+  const wh = res.writeHead;
+  res.writeHead = function (code, a, b) {
+    const h = a && typeof a === "object" ? a : b && typeof b === "object" ? b : null;
+    if (h && /^text\/html/i.test(String(h["Content-Type"] || ""))) {
+      h["Content-Security-Policy-Report-Only"] = CSP;
+      h["Reporting-Endpoints"] = 'csp="/api/csp-report"';
+    }
+    return wh.apply(this, arguments);
+  };
+};
 // POST /api/csp-report: application/csp-report (report-uri: Firefox; Safari's report-to body comes with this type
 // too) or application/reports+json (report-to: Chrome). One compact line per violation: the time, the page's path,
 // the directive, the blocked origin (no query strings, no IPs; the IP only counts requests, in memory). 16 KB per
@@ -470,6 +510,7 @@ http.createServer((req, res) => {
   // TASK-051: the CSP reports, on every host (beta's pages report to beta's own address)
   if (req.url === "/api/csp-report" && req.method === "POST") return void cspReport(req, res).catch(() => { if (!res.headersSent) { res.writeHead(400); res.end(); } });
   if (req.url.startsWith("/api/csp-report?") && req.method === "GET") return cspSummary(req, res);
+  withCsp(req, res);
   const host = String(req.headers.host || "").toLowerCase().split(":")[0];
   // r169: beta 2.0 answers on its own host only, before any rule of the live site
   if (BETA_HOSTS.has(host)) {
