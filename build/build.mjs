@@ -797,6 +797,9 @@ const roPaths = [];
   const roSet = new Set(roPaths), pairs = new Map();
   if (onbRo) roSet.add(onbRo.path); // r139c
   for (const p of ["/site/", ...hubPaths, ...workPaths, ...(onbRo ? ["/onboarding/"] : [])]) { const rp = roPath(p); if (rp && roSet.has(rp)) { const alt = [["en", p], ["ro", rp], ["x-default", p]]; pairs.set(p, alt); pairs.set(rp, alt); } }
+  // TASK-053: the home (the map, in English) names the Romanian website as its Romanian version, as its <head> does
+  // (src/head.html); /ro/ keeps /site/ as its English twin
+  if (roSet.has("/ro/")) pairs.set("/", [["en", "/"], ["ro", "/ro/"], ["x-default", "/"]]);
   writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, order.map((e) => ({ ...e, alt: pairs.get(e.path) }))));
   writeFileSync(join(pub, "llms.txt"), llmsTxt(SITE_URL, { ...DATA, PROJECTS: PROJ_ALL, SAME_AS }, { ...PAGES, ...(onb ? { "/onboarding/": onb } : {}), ...(onbRo ? { [onbRo.path]: onbRo } : {}) }));
   writeFileSync(join(pub, "llms-full.txt"), llmsFull(SITE_URL, order));
