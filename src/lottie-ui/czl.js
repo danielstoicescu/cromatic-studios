@@ -3,7 +3,7 @@
    OffscreenCanvas and the city's work on the main thread cannot make it stutter. On the map the intro has usually loaded
    it already; anywhere else it is fetched once, the first time a piece is needed. The pieces' JSON (made by
    design/lottie-ui/_source) are listed by the build in window.__CZL_CFG = { player, j: { name: url } }.
-     czL.mount(name, { host, w, h, full, fit, cls, assets, patch, cz, k })  -> Promise<piece | null>  (null: no player, no data)
+     czL.mount(name, { host, w, h, full, fit, cls, assets, patch, cz, k, wait })  -> Promise<piece | null>  (null: no player, no data)
        (patch(data) -> the data this mount plays, made from the shared copy (which it must not change): the welcome card's
        opening is fitted to the card; cz: the worker's own start (cz.play: the segments it plays as soon as it has built
        the piece, without waiting for the page's thread; cz.loop); k: the canvas's pixels a CSS pixel (TASK-009: the
@@ -99,8 +99,9 @@
       return new Promise(function (res) {
         var ok = false, go = function () { if (ok) return; ok = true; res(piece); };
         anim.addEventListener("DOMLoaded", go);
-        // the event comes from the worker: without it in 2.5 s the piece is given up (and the page goes on without it)
-        setTimeout(function () { if (!ok) { ok = true; piece.destroy(); res(null); } }, 2500);
+        // the event comes from the worker: without it in 2.5 s the piece is given up (and the page goes on without it);
+        // o.wait: longer, for a piece that waits for its pictures (TASK-062: the case pages' photographic mockups)
+        setTimeout(function () { if (!ok) { ok = true; piece.destroy(); res(null); } }, o.wait || 2500);
       });
     }).catch(function () { return null; });
   };

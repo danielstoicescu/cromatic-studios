@@ -155,7 +155,7 @@ function platform(set) {
   const cam = drift(Cm, W, H, { s: 1.4, px: 6, py: 2 });
   const th = (S.cam.yaw * Math.PI) / 180;
   // passers-by: [walker, z, dir, v, enter (s)]
-  const WALK = [[0, 1.6, 1, 1.45, 0.5], [1, 0.9, -1, 1.3, 4.0], [2, 1.3, 1, 1.2, 7.6]];
+  const WALK = [[0, -0.55, 1, 1.5, 1.0], [1, -1.15, -1, 1.35, 4.6], [2, -0.85, 1, 1.25, 8.6]];
   // each walker: one walk cycle (6 poses) as a precomp, played on a loop by a time remap (a saw: two keys a step),
   // carried across the frame by a null; and again flipped about the feet, faint: the floor's reflection
   for (const [w, z, dir, vv, t0] of WALK) {

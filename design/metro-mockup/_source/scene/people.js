@@ -43,7 +43,7 @@ export function person(o = {}) {
   const shoulders = new THREE.Mesh(new THREE.SphereGeometry(0.205 * k, 16, 10), coat); shoulders.scale.set(0.62, 0.42, 1.3); shoulders.position.y = sh; shoulders.castShadow = true; P.add(shoulders);
   const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.05 * k, 0.055 * k, 0.12 * k, 10), skin); neck.position.y = sh + 0.07 * k; P.add(neck);
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.105 * k, 18, 14), skin); head.scale.set(1.0, 1.18, 0.92); head.position.y = sh + 0.22 * k; head.castShadow = true; P.add(head);
-  const hcap = new THREE.Mesh(new THREE.SphereGeometry(0.112 * k, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), o.hood ? coat : hair); hcap.scale.set(1.04, 1.18, 0.96); hcap.position.y = sh + 0.235 * k; hcap.rotation.z = 0.25; P.add(hcap);
+  const hcap = new THREE.Mesh(new THREE.SphereGeometry(0.112 * k, 18, 12, 0, Math.PI * 2, 0, Math.PI * (o.hood ? 0.78 : 0.55)), o.hood ? coat : hair); hcap.scale.set(1.04, 1.18, 0.96); hcap.position.y = sh + 0.235 * k; hcap.rotation.z = 0.25; P.add(hcap); // (a hood, or a knit cap, covers most of the head)
   for (const s of [-1, 1]) {
     const up = limb(0.31 * k, 0.055 * k, 0.048 * k, coat); up.position.set(0, sh - 0.03 * k, s * 0.235 * k); P.add(up);
     const fo = limb(0.28 * k, 0.046 * k, 0.04 * k, coat); fo.position.y = -0.31 * k; up.add(fo);

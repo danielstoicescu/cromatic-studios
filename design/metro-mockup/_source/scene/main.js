@@ -6,7 +6,7 @@ import { renderer, makeCam, shoot, project, stats, Mirror, mirrorize, DEG } from
 import { buildStation, envFrom, EDGEZ, TRACKZ, WALLZ, CZ, PW } from "./station.js";
 import { buildTrain, carLights, CAR, GAP, HW, DOORS, LEAF_W, WINDOWS, SILL, WTOP } from "./train.js";
 import { person, CROWD } from "./people.js";
-import { SHOTS, INSIDE, NEAR, FAR } from "../shots.mjs";
+import { SHOTS, INSIDE, NEAR, FAR, STYLE } from "../shots.mjs";
 export { SHOTS, INSIDE };
 export { THREE };
 
@@ -17,9 +17,9 @@ const DEV = { expo: 1, glare: 0.05, contrast: 1.08, sat: 1.05, curve: "neutral" 
 let WD = null;
 async function world() {
   if (WD) return WD;
-  const st = await buildStation({ W: 1920, H: 1080, frames: NEAR.map((f) => ({ ...f })), farFrames: FAR.map((f) => ({ ...f })), posterK: 1, shadowX: 0 });
+  const st = await buildStation({ W: 1920, H: 1080, frames: NEAR.map((f) => ({ ...f })), farFrames: FAR.map((f) => ({ ...f })), posterK: 1, shadowX: SHOTS.platform.shadowX ?? 0, style: STYLE });
   st.stationObjs = st.scene.children.filter((c) => c !== st.trainSlot);
-  const train = await buildTrain({ n: 5, wrapCar: 2, k: 1 });
+  const train = await buildTrain({ n: 5, wrapCar: 2, k: 1, v2: STYLE === "warm" });
   train.userData.cars.forEach((c, i) => { if (i >= 1 && i <= 3) carLights(c, st.lights, { shadows: 0 }); });
   st.trainSlot.add(train); st.train = train;
   // passengers on board (they ride with their car): seated on the benches, one or two standing
@@ -85,8 +85,8 @@ function waiting(st, on) {
 
 // ---------- passengers ----------
 const crowd = {};
-function getPerson(st, i) { if (!crowd[i]) { crowd[i] = person(CROWD[i]); st.people.add(crowd[i]); } return crowd[i]; }
-function onlyPeople(st, list) { for (const k in crowd) crowd[k].visible = list.includes(+k); }
+function getPerson(st, i, hood) { const key = hood ? i + "h" : i; if (!crowd[key]) { crowd[key] = person(hood ? { ...CROWD[i], hood: true } : CROWD[i]); st.people.add(crowd[key]); } return crowd[key]; }
+function onlyPeople(st, list) { for (const k in crowd) crowd[k].visible = list.includes(k) || list.includes(+k); }
 // the floor as a shadow catcher for a passenger's layer
 let catcher = null;
 function shadowCatcher(st, on) {
@@ -114,6 +114,8 @@ export async function layer(o) {
   if (!st.envs[envKey]) { show(st, { station: true, train: envKey === "inside" }); if (st.waiting) st.waiting.visible = false; }
   if (envKey === "inside") env(st, "inside", [INSIDE.x, 1.6, TRACKZ]); else env(st, "platform", [0, 1.6, 1.5]);
   const scale = o.scale ?? 2, n = o.n ?? 256;
+  // the station's posters are unlit, in their own colours: 1/expo of this shot (the Neutral curve passes them through)
+  { const pk = 1 / ((sh.dev && sh.dev.expo) || 1); st.scene.traverse((m) => { if (m.isMesh && m.userData.poster && m.material.isMeshBasicMaterial) m.material.color.setScalar(pk); }); }
   const W = Math.round(sh.W * scale), H = Math.round(sh.H * scale);
   st.train.userData.doorsOpen?.(0);
   if (catcher) catcher.visible = false;
@@ -128,8 +130,8 @@ export async function layer(o) {
   if (o.layer === "walker") {
     show(st, { station: false, people: true });
     shadowCatcher(st, true);
-    onlyPeople(st, [o.i]);
-    const P = getPerson(st, o.i), cam = sh.cam, yaw = (cam.yaw || 0) * DEG;
+    onlyPeople(st, [o.hood ? o.i + "h" : o.i]);
+    const P = getPerson(st, o.i, o.hood), cam = sh.cam, yaw = (cam.yaw || 0) * DEG;
     const ax = [Math.cos(yaw), 0, -Math.sin(yaw)]; // (the camera's right, on the floor)
     const period = o.period || 1.06, shutter = o.shutter || 1 / 20;
     const base = [o.x0 ?? cam.pos[0] + ax[0] * 0, 0, o.z];

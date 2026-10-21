@@ -8,8 +8,10 @@ export const JOBS = {
   platform: [
     { name: "p-bg", shot: "platform", layer: "bg", scale: S(2), n: N(256) },
     // (a long shutter and a wide aperture: they pass as soft, smeared shapes, the way a slow exposure sees people)
-    ...[[0, 1.6, 1, 1.45], [2, 0.9, -1, 1.3], [4, 1.3, 1, 1.2]].flatMap(([i, z, dir, v], w) =>
-      Array.from({ length: 6 }, (_, f) => ({ name: `p-w${w}-${f}`, shot: "platform", layer: "walker", i, z, dir, v, f, F: 6, period: 1.08, shutter: 1 / 6, fstop: 1.4, scale: S(2), n: N(192) })))
+    // (v2: the camera stands nearer the edge; they pass between it and the yellow line)
+    // (so near the lens a bare head reads as a blob: hoods and knit caps)
+    ...[[0, -0.55, 1, 1.5], [2, -1.15, -1, 1.35], [4, -0.85, 1, 1.25]].flatMap(([i, z, dir, v], w) =>
+      Array.from({ length: 6 }, (_, f) => ({ name: `p-w${w}-${f}`, shot: "platform", layer: "walker", i, z, dir, v, f, F: 6, hood: true, period: 1.08, shutter: 1 / 6, fstop: 1.4, scale: S(2), n: N(192) })))
   ],
   // shot 3: the train pulling in: the station, the cars as strips (sharp with open doorways; two motion blurs), leaves
   train: [
@@ -19,9 +21,7 @@ export const JOBS = {
     { name: "t-car-wrap-b2", shot: "train", layer: "car", kind: "wrap", doors: "closed", blur: 0.16, res: 0.35, n: N(96) },
     { name: "t-car-plain-b1", shot: "train", layer: "car", kind: "plain", doors: "closed", blur: 0.06, res: 0.5, n: N(96) },
     { name: "t-car-plain-b2", shot: "train", layer: "car", kind: "plain", doors: "closed", blur: 0.16, res: 0.35, n: N(96) },
-    ...[[-2.45, -1], [-2.45, 1], [2.45, -1], [2.45, 1]].map(([door, s]) => ({ name: `t-leaf-${door > 0 ? "r" : "l"}${s > 0 ? "b" : "a"}`, shot: "train", layer: "leaf3", door, s, scale: S(2), n: N(96) })),
-    // a woman waiting, out of focus at the left edge, her back to us
-    { name: "t-person", shot: "train", layer: "person", i: 1, x: -1.3, z: 2.6, ry: Math.PI / 2, fstop: 2.0, scale: S(2), n: N(160) }
+    ...[[-2.45, -1], [-2.45, 1], [2.45, -1], [2.45, 1]].map(([door, s]) => ({ name: `t-leaf-${door > 0 ? "r" : "l"}${s > 0 ? "b" : "a"}`, shot: "train", layer: "leaf3", door, s, scale: S(2), n: N(96) }))
   ],
   // shot 2: inside the banner car: its interior (openings as alpha), the leaves beside the poster, the windows'
   // reflection, the station outside as strips (the platform near, the far wall), each sharp and blurred by motion
