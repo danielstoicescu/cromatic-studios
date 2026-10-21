@@ -146,13 +146,13 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   const DOMAIN_OF = {
     "Investimental": "ux", "Assetto": "ux", "The Aesthetic Court": "ux", "Craft Coffee": "ux", "ESD": "ux", "Techventures Bank": "ux", "Elithia": "ux",
     "Venevo": "ux", "Witanalytica": "ux", "Printoteca": "ux", "Artisan Coffee Gear": "ux", "Altius": "ux",
-    "Yoshi Izakaya": "growth", "Help 4 Brain": "growth", "Zoetis": "growth", "Echo School": "growth", "Coffeenativ": "growth", "Sticker Republic": "growth", "Litorsal": "growth", "Lacalut": "growth",
+    "Yoshi Izakaya": "growth", "Help 4 Brain": "growth", "Zoetis": "growth", "Echo School": "growth", "Coffeenativ": "growth", "Sticker Republic": "growth", "Litorsal": "growth", "Lacalut": "growth", "Maximag": "growth",
     "Pain Plaisir": "video", "Clinica Sante": "video", "Patiline": "video"
   };
   // sizes that tile six columns: a big square with two wides beside it, a tall one with two longs, a row of
   // three small, a long and a small, two halves; then again
   const SIZES = ["xl", "m", "m", "t", "w", "w", "s", "s", "s", "w", "s", "m", "m"];
-  const MAP_ID = { "Two Min Lab": "lab", "Steam Coffee Shop": "steam", "Zdrovit": "zdrovit", "Lacalut": "y-0", "Litorsal": "y-5" };
+  const MAP_ID = { "Two Min Lab": "lab", "Steam Coffee Shop": "steam", "Zdrovit": "zdrovit", "Lacalut": "y-0", "Litorsal": "y-5", "Maximag": "y-6" };
   const placeId = (name) => "w-" + name.replace(/\W+/g, "").toLowerCase();
   const coverFor = (p, covers) => (MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]]) || covers["place:" + placeId(p.name)] || (p.page && covers[p.page]) || null;
   const bentoCard = (p, i, covers) => {

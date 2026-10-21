@@ -106,7 +106,7 @@ export const LACALUT = {
   slug: "lacalut",
   name: "Lacalut",
   tagline: "Lacalut White & Repair on LG Smart TV home screens: three still formats and a 15-second banner in motion.",
-  desc: "Lacalut White & Repair: Smart TV ads for LG home screens, a 15-second animated banner and the same set for Maximag Bisglicinat, in the Zdrovit portfolio. By Cromatic Studios, 2026.",
+  desc: "Lacalut White & Repair: Smart TV ads for LG home screens and a 15-second animated banner, in the Zdrovit portfolio. By Cromatic Studios, 2026.",
   title: "Double benefit, on the home screen.",
   accent: { bg: "#E30C2C", fg: "#ffffff", ink: "#c10a25" },
   info: ["Toothpaste, Lacalut White & Repair", "Romania · 2026", "Smart TV ads, motion"],
@@ -149,24 +149,11 @@ export const LACALUT = {
       media: [
         { video: m("lacalut/lg-film"), poster: m("lacalut/lg-film-poster"), r: R_LG, alt: "The animated Lacalut banner: logo and line on the left, the woman with the tube in the middle, QR code and lacalut.ro on the right", cap: "15 seconds, on loop" }
       ]
-    },
-    {
-      pillar: "marketing",
-      pills: ["Same", "system"],
-      text: "The same set of formats went to Maximag Bisglicinat, a magnesium supplement from the same client. Same grid, same split, its own colours, navy, red and white, and its own line: “Agitație: OFF. Relaxare: ON.”",
-      deliverables: ["Home launcher", "Wedge", "Animated banner"],
-      media: [
-        { row: [
-          { img: m("lacalut/maximag-launcher"), alt: "The Maximag Bisglicinat home launcher: the box, 1000 mg magneziu bisglicinat in a bubble, Fără lactoză and Fără gluten on red" },
-          { img: m("lacalut/maximag-wedge"), alt: "The Maximag wedge: a slanted card with the box and the claims" }
-        ] },
-        { video: m("lacalut/maximag-film"), poster: m("lacalut/maximag-film-poster"), r: R_LG, alt: "The animated Maximag banner: a man walks through a supermarket, the line Agitație: OFF, Relaxare: ON, the box and a QR code", cap: "Maximag Bisglicinat, 15 seconds" }
-      ]
     }
   ],
   result: {
-    text: "One picture, cut into every format the screen asks for, and the same system carried over to a second brand.",
+    text: "One picture, cut into every format the screen asks for, still and in motion.",
     media: [{ img: m("lacalut/tube"), alt: "The Lacalut White & Repair tube" }]
   },
-  related: ["litorsal", "help-4-brain", "clinica-sante"]
+  related: ["maximag", "litorsal", "help-4-brain"] // TASK-064: Maximag has its own page now
 };
