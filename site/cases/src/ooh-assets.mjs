@@ -11,5 +11,17 @@ export const OOH = {
    "g-fg": "m:ooh/g-fg-s2",
    "g-tram": "m:ooh/g-tram-s2"
   }
+ },
+ "ooh-gable-wide": {
+  "s1": {
+   "gw-bg": "m:ooh/gw-bg-s1",
+   "gw-fg": "m:ooh/gw-fg-s1",
+   "gw-tram": "m:ooh/gw-tram-s1"
+  },
+  "s2": {
+   "gw-bg": "m:ooh/gw-bg-s2",
+   "gw-fg": "m:ooh/gw-fg-s2",
+   "gw-tram": "m:ooh/gw-tram-s2"
+  }
  }
 };

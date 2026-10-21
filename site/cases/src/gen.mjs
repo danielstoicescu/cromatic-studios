@@ -75,7 +75,7 @@ function inner(it, eager) {
   return `<img src="${url(it.img)}" alt="${esc(it.alt || "")}"${wh} ${eager ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async">`;
 }
 function fig(it, { cls = "", eager = false } = {}) {
-  const c = [cls, it.full ? "full-sm" : "", it.hideSm ? "hide-sm" : ""].filter(Boolean).join(" ");
+  const c = [cls, it.full ? "full-sm" : "", it.hideSm ? "hide-sm" : "", it.onlySm ? "only-sm" : ""].filter(Boolean).join(" "); // (only-sm, TASK-093: a phone cut of a piece shown wide elsewhere)
   const fit = it.contain ? ` frame--contain` : "";
   const bg = it.bg ? ` style="--frame-bg:${it.bg}"` : "";
   // TASK-062: a Lottie piece (it.czl: its name in src/lottie-ui) over its still (it.img); the page's script mounts it when
@@ -247,7 +247,9 @@ html:not(.embed) .page{padding-top:64px}
 .film{background:#0d0c09;border-color:#0d0c09}
 .film-frame{position:relative;width:min(100%,calc((100svh - 2 * var(--gutter) - 4px) * 16 / 9));aspect-ratio:16/9;margin-inline:auto}
 .film-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+figure.only-sm{display:none}
 @media (max-width:640px){
+  figure.only-sm{display:block}
   .row--wrap-sm>figure{flex-basis:calc(50% - var(--gutter) / 2)}
   .row--wrap-sm>figure.full-sm{flex-basis:100%}
   .hero-row{flex-wrap:wrap}
