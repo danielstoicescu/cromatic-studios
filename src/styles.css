@@ -2648,13 +2648,26 @@ body.site-mode .topbar .site-btn { position: static; }
 }
 /* desktop: the police shield next to the dial only for the cop car's beacon, not for a chase */
 .dash[data-cop="chase"] .dash-cop { display: none !important; }
-/* the Zdrovit courtyard panel */
-.court-modal .court-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 14px 0 6px; }
-.court-b { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 16px; border: 1px solid var(--st-ink); background: var(--cc); color: var(--ct); transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
-.court-b b { font: 900 16px/1.1 CromaticSans, CromaticSans, sans-serif; }
-.court-b .mono { font-size: 9px; letter-spacing: .1em; opacity: .85; }
-.court-b:hover, .court-b:focus-visible { transform: translateY(-3px) rotate(-1deg); }
-@media (max-width: 760px) { .court-modal .court-grid { grid-template-columns: 1fr 1fr; } .court-b b { font-size: 14px; } }
+/* TASK-074: the Zdrovit Beauty & Supplement Park: its brands as a list of small cards (the map's Zdrovit card, the drive's
+   Zdrovit panel); a brand with a case page is a red button that opens it, the others show their one line */
+.zd-kind { display: inline-block; margin: 8px 0 6px; padding: 5px 10px 4px; border-radius: 999px; border: 1px solid var(--st-ink, #111); background: #fff; color: #e30613; font-size: 9.5px; letter-spacing: .12em; font-weight: 700; text-transform: uppercase; }
+.zd-list { list-style: none; margin: 10px 0 4px; padding: 2px 6px 2px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-height: 232px; overflow-y: auto; overscroll-behavior: contain; pointer-events: auto; scrollbar-width: thin; }
+.zd-list li { margin: 0; min-width: 0; display: flex; }
+.zd-b { all: unset; box-sizing: border-box; display: flex; flex-direction: column; gap: 3px; width: 100%; padding: 8px 10px 9px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--st-ink, #111) 28%, transparent); background: color-mix(in srgb, #ffffff 72%, transparent); color: #1a1a1a; }
+.zd-b b { font: 800 14px/1.1 CromaticSans, CromaticSans, sans-serif; overflow-wrap: anywhere; }
+.zd-b i { font-style: normal; font-size: 11.5px; line-height: 1.25; opacity: .72; }
+.zd-b.pg { cursor: pointer; background: #e30613; color: #ffffff; border-color: var(--st-ink, #111); transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
+.zd-b.pg i { opacity: .9; }
+.zd-go { margin-top: auto; padding-top: 5px; font: 800 11px/1 CromaticSans, CromaticSans, sans-serif; }
+.zd-b.pg:is(:hover, :focus-visible) { transform: translateY(-2px); }
+.zd-b.pg:focus-visible { outline: 2px solid var(--accent, #FED012); outline-offset: 2px; }
+.map-card.mcd-zd .mcd-body p { margin: 0 0 2px !important; font-size: 14px !important; }
+.map-card.mcd-zd :is(.mcd-title, .zd-kind) { align-self: flex-start; max-width: 100%; }
+.court-modal .zd-modal { grid-template-columns: repeat(3, 1fr); max-height: min(52vh, 420px); margin-top: 14px; }
+/* the Zdrovit card has no picture (Zdrovit has no case page, one brand's photo would speak for all): the list takes the room */
+.map-card.mcd-zd .mcd-img { display: none !important; }
+@media (min-width: 721px) { .map-card.mcd-zd .zd-list { grid-template-columns: repeat(3, 1fr); max-height: 262px; } }
+@media (max-width: 720px) { .zd-list { max-height: 31vh; } .court-modal .zd-modal { grid-template-columns: 1fr 1fr; } }
 
 .case-frame .cf-close { box-shadow: 0 0 0 1px #ffffff, 0 14px 34px -12px rgba(0,0,0,.55); }
 /* ---- r81: the street choice as motorway signs ---- */
