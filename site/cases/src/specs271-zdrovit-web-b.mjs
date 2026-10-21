@@ -550,5 +550,39 @@ export const OCHISAN = {
   related: RELATED
 };
 
+// The Lacalut website chapter (the order log's "Website Lacalut"): lacalut.ro, the home page as it stands now, one more
+// chapter at the end of the Lacalut page (specs260-zdrovit.mjs adds it after the LG chapters, which stay as they are).
+// The site's older product sub-sites (/white/, /aktiv/, /kids/ ...) are another design and are not shown.
+const lw = (n, alt, cap) => shot("lacalut", n, alt, cap);
+export const LACALUT_WEB = {
+  pillar: "product",
+  pills: ["The", "website"],
+  text: "lacalut.ro brings the whole range onto one page. A red bar holds the menu, two ways into the same products: Produse, by kind, and Îngrijire orală, by need, each need pointing to its line, from “Gingii sănătoase” to LACALUT® aktiv, down to “COPII” and LACALUT® KIDS. The page opens on “Experiență de peste 100 de ani în îngrijirea orală” beside a family photo. Then the products, in red bands: Pastă de dinți, with the new LACALUT® PURE in a frame of its own, Apă de gură, Cremă adezivă, Accesorii. Every product sits on the same grey card, the need in blue above the name in red. “Gama pentru copii” closes the page on a white field of drawn teeth, tubes and brushes.",
+  deliverables: ["Website", "UX/UI design", "Desktop and mobile", "Navigation"],
+  media: [
+    siteBlock("lacalut", "lacalut.ro", { name: "web-scroll", head: ["The", "home page"], cap: "lacalut.ro from the first screen to the footer, on desktop and phone." }),
+    {
+      rail: ["Section by", "section"],
+      items: [
+        lw("web-menu", "The Îngrijire orală menu open: nine needs, each with an arrow to its line, from Gingii sănătoase to LACALUT® aktiv to COPII to LACALUT® KIDS"),
+        lw("web-pure", "PRODUSE, then the red Pastă de dinți band and LACALUT® PURE in a red frame marked NOU: three tubes, Herbal, White and Calcium, on grey cards"),
+        lw("web-range", "The toothpastes: LACALUT® aktiv on a wide card, then six cards in a grid, sensitive, white, protecție anticarie, flora, multi-effect and black & white"),
+        lw("web-kids", "Gama pentru copii: a boy brushing his teeth beside the logo, on a white field of drawn teeth and tubes, then LACALUT® Baby, 0-2 years, with its toothpaste and brushes")
+      ],
+      cap: "The menu by need, LACALUT® PURE, the toothpastes and the children's range"
+    },
+    {
+      rail: ["Four", "screens"],
+      items: [
+        lw("web-phone-hero", "The first screen on a phone: the logo, the menu icon, the line in red and black and the family photo"),
+        lw("web-phone-pure", "PRODUSE on a phone: the Pastă de dinți band, a Comandă acum button and the LACALUT® PURE frame"),
+        lw("web-phone-mouthwash", "Apă de gură on a phone: four bottles of LACALUT® apă micelară on a grey card"),
+        lw("web-phone-kids", "Gama pentru copii on a phone: the boy with his toothbrush, the logo and LACALUT® Baby")
+      ],
+      cap: "The first screen, the toothpastes, the mouthwashes and the children's range, at 390 px wide"
+    }
+  ]
+};
+
 // every Zdrovit brand page of the second half, in the order they were made
 export const ZDROVIT_WEB_B = [PREVOMIT, SLABOFICAT, SUPRAMAX, VIZIK, VIZIMEL, OCHISAN];

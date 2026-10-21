@@ -5,6 +5,7 @@
 // posters: they ran in the metro, in the stations, inside the cars beside the doors and on the cars.)
 import { METRO } from "./metro-assets.mjs";
 import { OOH } from "./ooh-assets.mjs";
+import { LACALUT_WEB } from "./specs271-zdrovit-web-b.mjs"; // TASK-076: the Lacalut website chapter (Mira)
 const m = (p) => "m:" + p;
 
 export const LITORSAL = {
@@ -168,7 +169,8 @@ export const LACALUT = {
       media: [
         { video: m("lacalut/lg-film"), poster: m("lacalut/lg-film-poster"), r: R_LG, alt: "The animated Lacalut banner: logo and line on the left, the woman with the tube in the middle, QR code and lacalut.ro on the right", cap: "15 seconds, on loop" }
       ]
-    }
+    },
+    LACALUT_WEB // TASK-076: lacalut.ro, the website (specs271-zdrovit-web-b.mjs)
   ],
   result: {
     text: "One picture, cut into every format the screen asks for, still and in motion.",
