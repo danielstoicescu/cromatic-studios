@@ -77,7 +77,7 @@ export const PROJECTS = [
   { name: "Printoteca", cat: "Print on demand", c: "#ffffff", t: "#111111", poster: "Printed one by one", street: "D", desc: "Print on demand with no minimum orders: tees and hoodies printed one by one, for anyone who wants to sell their own.", page: "printoteca" }
 ];
 
-// TASK-074 (Daniel, 21 Oct): Zdrovit is ONE place, the Beauty & Supplement Park (no case page of its own); these are the
+// TASK-074 (Daniel, 21 Oct): Zdrovit is ONE place (Parusan is not in it: Daniel, 21 Oct, "out completely"), the Beauty & Supplement Park (no case page of its own); these are the
 // brands in it, the ones Cromatic delivered for. One list for the map's Zdrovit card, the drive's Zdrovit panel (both
 // built from it by build/build.mjs) and the website's "In Zdrovit" row. Fields: name; line = one factual line (EN), ro =
 // the same in Romanian (the map; the website's Romanian comes from site/i18n/ro.json); page = the slug of its case page
@@ -97,7 +97,6 @@ export const ZDROVIT_BRANDS = [
   { name: "OchiSan", line: "Eyelid ointment", ro: "Unguent pentru pleoape" },
   { name: "Optisomn", line: "Sleep, with melatonin", ro: "Somn, cu melatonină" },
   { name: "Parasoftin", line: "Foot care", ro: "Îngrijirea picioarelor" },
-  { name: "Parusan", line: "Hair care, against hair loss", ro: "Îngrijirea părului, împotriva căderii" },
   { name: "Periferisan", line: "Nervous system support", ro: "Sprijin pentru sistemul nervos" },
   { name: "Prevomit", line: "Nausea and travel sickness", ro: "Greață și rău de călătorie" },
   { name: "Slaboficat", line: "Slimming", ro: "Slăbire" },
