@@ -1,0 +1,185 @@
+{
+ "id": "e6-foodvan",
+ "story": "E",
+ "beat": "Kompus truck: Comes with a sandwich.",
+ "shots": [
+  "r6"
+ ],
+ "scene": "paper",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "e6",
+    "place": "bl",
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "e6-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "Comes with",
+      "x": 80,
+      "baseline": 1414,
+      "width": 607.8,
+      "box": {
+       "x": 80,
+       "y": 1325.8,
+       "w": 607.8,
+       "h": 91.6
+      }
+     },
+     {
+      "kind": "line",
+      "id": "e6-l2",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "a sandwich.",
+      "x": 80,
+      "baseline": 1530,
+      "width": 594.7,
+      "box": {
+       "x": 80,
+       "y": 1441.8,
+       "w": 594.7,
+       "h": 91.6
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ],
+  "tags": [
+   {
+    "kind": "tag",
+    "id": "e6-tag",
+    "text": "Kompus truck",
+    "size": 44,
+    "tracking": -0.01,
+    "ink": "#0D0C09",
+    "plate": {
+     "x": 349.4,
+     "y": 422,
+     "w": 381.1,
+     "h": 84,
+     "r": 42,
+     "fill": "#FFFFFF",
+     "keyline": 4,
+     "shadow": [
+      0,
+      7
+     ]
+    },
+    "dot": {
+     "cx": 386.4,
+     "cy": 464,
+     "d": 22,
+     "fill": "#FED012",
+     "keyline": 3.5
+    },
+    "textX": 413.4,
+    "baseline": 479.6,
+    "pointer": {
+     "x": 540,
+     "y": 506,
+     "w": 30,
+     "h": 18,
+     "tip": [
+      540,
+      524
+     ]
+    },
+    "box": {
+     "x": 349.4,
+     "y": 422,
+     "w": 381.1,
+     "h": 102
+    }
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "tagIn": "r6+1",
+   "in": "r6+3",
+   "lineStagger": 3,
+   "out": "r6.end-0",
+   "cutOut": true
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "E1": {
+    "clock": "E1",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "e6-l1",
+      "text": "Comes with",
+      "in": 318,
+      "out": 359,
+      "motion": "lineIn / lineOut",
+      "hold": 29
+     },
+     {
+      "id": "e6-l2",
+      "text": "a sandwich.",
+      "in": 321,
+      "out": 360,
+      "motion": "lineIn / lineOut",
+      "hold": 27
+     },
+     {
+      "id": "e6-tag",
+      "text": "Kompus truck",
+      "in": 318,
+      "out": 360,
+      "motion": "tagIn / tagOut",
+      "hold": 33
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "r6+34"
+  }
+ ],
+ "notes": "Tag and line in at the cut, both go with the next cut (no exits: 1.5 s a ride). The tag is pinned over the ride, its pointer just above the ride's box.",
+ "files": {
+  "outlined": [
+   "svg/outlined/e6-foodvan.svg"
+  ],
+  "live": [
+   "svg/live/e6-foodvan.svg"
+  ]
+ }
+}

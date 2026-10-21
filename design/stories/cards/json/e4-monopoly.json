@@ -1,0 +1,185 @@
+{
+ "id": "e4-monopoly",
+ "story": "E",
+ "beat": "Chrome racer: Passed Go. Kept going.",
+ "shots": [
+  "r4"
+ ],
+ "scene": "paper",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "e4",
+    "place": "bl",
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "e4-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "Passed Go.",
+      "x": 80,
+      "baseline": 1414,
+      "width": 566.7,
+      "box": {
+       "x": 80,
+       "y": 1325.8,
+       "w": 566.7,
+       "h": 91.6
+      }
+     },
+     {
+      "kind": "line",
+      "id": "e4-l2",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "Kept going.",
+      "x": 80,
+      "baseline": 1530,
+      "width": 580.2,
+      "box": {
+       "x": 80,
+       "y": 1441.8,
+       "w": 580.2,
+       "h": 116
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ],
+  "tags": [
+   {
+    "kind": "tag",
+    "id": "e4-tag",
+    "text": "Chrome racer",
+    "size": 44,
+    "tracking": -0.01,
+    "ink": "#0D0C09",
+    "plate": {
+     "x": 351,
+     "y": 663,
+     "w": 378.1,
+     "h": 84,
+     "r": 42,
+     "fill": "#FFFFFF",
+     "keyline": 4,
+     "shadow": [
+      0,
+      7
+     ]
+    },
+    "dot": {
+     "cx": 388,
+     "cy": 705,
+     "d": 22,
+     "fill": "#FED012",
+     "keyline": 3.5
+    },
+    "textX": 415,
+    "baseline": 720.6,
+    "pointer": {
+     "x": 540,
+     "y": 747,
+     "w": 30,
+     "h": 18,
+     "tip": [
+      540,
+      765
+     ]
+    },
+    "box": {
+     "x": 351,
+     "y": 663,
+     "w": 378.1,
+     "h": 102
+    }
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "tagIn": "r4+1",
+   "in": "r4+3",
+   "lineStagger": 3,
+   "out": "r4.end-0",
+   "cutOut": true
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "E1": {
+    "clock": "E1",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "e4-l1",
+      "text": "Passed Go.",
+      "in": 228,
+      "out": 269,
+      "motion": "lineIn / lineOut",
+      "hold": 29
+     },
+     {
+      "id": "e4-l2",
+      "text": "Kept going.",
+      "in": 231,
+      "out": 270,
+      "motion": "lineIn / lineOut",
+      "hold": 27
+     },
+     {
+      "id": "e4-tag",
+      "text": "Chrome racer",
+      "in": 228,
+      "out": 270,
+      "motion": "tagIn / tagOut",
+      "hold": 33
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "r4+34"
+  }
+ ],
+ "notes": "Tag and line in at the cut, both go with the next cut (no exits: 1.5 s a ride). The tag is pinned over the ride, its pointer just above the ride's box.",
+ "files": {
+  "outlined": [
+   "svg/outlined/e4-monopoly.svg"
+  ],
+  "live": [
+   "svg/live/e4-monopoly.svg"
+  ]
+ }
+}

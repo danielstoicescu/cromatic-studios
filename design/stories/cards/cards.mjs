@@ -33,7 +33,8 @@ export function cue(s, T60) {
 const keys = (k) => { const c = clean(k); return c.length > 1 ? c : c[0][1]; };
 
 /* ---------- a line: its letters rise out of the baseline (a mask), and go up out of it ---------- */
-function line(Cm, T, L, { tIn, tOut, parent, smash = false, nm }) {
+// cutOut: the line stays whole until tOut and goes with the cut (no exit: story E's rides, 1.5 s each)
+function line(Cm, T, L, { tIn, tOut, parent, smash = false, cutOut = false, nm }) {
   const S = L.size, lt = setLine(T, L.text, S, L.tracking), n = lt.letters.length, up = 1.08 * S;
   const st = 1.2, dur = 24, outDur = 14, outSt = 0.7;
   const groups = lt.letters.map((l, j) => letterGroup(T, { ...l, x: L.x + l.x }, S, rgb(L.ink), {
@@ -41,12 +42,13 @@ function line(Cm, T, L, { tIn, tOut, parent, smash = false, nm }) {
       const at = [b[0], b[1] + L.baseline];
       if (smash) return { p: at, s: [s, s] };
       const ti = tIn + Math.round(j * st), to = tOut + Math.round(j * outSt);
+      if (cutOut) return { p: [[ti, [at[0], at[1] + up], EXPO], [ti + dur, at]], s: [s, s], o: [[0, 0, E.hold], [ti, 100]] };
       return { p: [[ti, [at[0], at[1] + up], EXPO], [ti + dur, at, E.hold], [to, at, SNAP], [to + outDur, [at[0], at[1] - up]]], s: [s, s], o: [[0, 0, E.hold], [ti, 100, E.hold], [to + outDur, 0]] };
     }
   }));
   const top = L.baseline - 1.0 * S, bot = L.baseline + 0.3 * S, pad = 0.25 * S;
   const masks = smash ? undefined : [{ inv: false, mode: "a", pt: pathProp(poly([[L.x - pad, top], [L.x + L.width + pad, top], [L.x + L.width + pad, bot], [L.x - pad, bot]])), o: prop(100), x: prop(0), nm: "baseline" }];
-  const op = smash ? tOut : tOut + Math.round(n * outSt) + outDur + 1;
+  const op = smash || cutOut ? tOut : tOut + Math.round(n * outSt) + outDur + 1;
   return Cm.shape(nm, groups, { parent, ip: tIn, op, masks });
 }
 
@@ -93,7 +95,7 @@ function aplatCard(Cm, A, { tIn, tOut, swaps = [], nm, parent }) {
 }
 
 /* ---------- a map tag: lands on its pointer ---------- */
-function tag(Cm, T, G, { tIn, tOut, nm }) {
+function tag(Cm, T, G, { tIn, tOut, nm, cutOut = false }) {
   const lt = setLine(T, G.text, G.size, G.tracking), pl = G.plate, d = G.dot, po = G.pointer, ink = rgb("#0D0C09");
   // the pointer joins the plate: its fill covers the plate's keyline, its two sides are drawn on top
   const tri = (dx, dy) => poly([[po.x - po.w / 2 + dx, po.y - pl.keyline + dy], [po.x + po.w / 2 + dx, po.y - pl.keyline + dy], [po.x + dx, po.y + po.h + dy]]);
@@ -105,7 +107,7 @@ function tag(Cm, T, G, { tIn, tOut, nm }) {
     group("pointer", [shp(tri(0, 0)), fill(rgb(pl.fill))]),
     group("plate", [rect([pl.w, pl.h], [pl.x + pl.w / 2, pl.y + pl.h / 2], pl.r), stroke(ink, pl.keyline), fill(rgb(pl.fill))]),
     group("shadow", [rect([pl.w, pl.h], [pl.x + pl.w / 2 + pl.shadow[0], pl.y + pl.h / 2 + pl.shadow[1]], pl.r), shp(tri(pl.shadow[0], pl.shadow[1])), fill(ink)])
-  ], { ip: tIn, op: tOut + 14, ks: { a: po.tip, p: po.tip, s: [[tIn, [40, 40], BOUNCE], [tIn + 18, [100, 100], E.hold], [tOut, [100, 100], SNAP], [tOut + 12, [0, 0]]], o: [[tIn, 0, E.linear], [tIn + 4, 100]] } });
+  ], { ip: tIn, op: cutOut ? tOut : tOut + 14, ks: { a: po.tip, p: po.tip, s: cutOut ? [[tIn, [40, 40], BOUNCE], [tIn + 18, [100, 100]]] : [[tIn, [40, 40], BOUNCE], [tIn + 18, [100, 100], E.hold], [tOut, [100, 100], SNAP], [tOut + 12, [0, 0]]], o: [[tIn, 0, E.linear], [tIn + 4, 100]] } });
 }
 
 /* ---------- cromaticstudios.com: in with the house bounce, then (on black) the soft settle ---------- */
@@ -136,7 +138,7 @@ export function drawCard(Cm, spec, T60, { T = spec.__T, black = true } = {}) {
     url(Cm, T, spec.layout.url, { tIn: c(tm.urlIn), settle, tEnd: Math.max(tEnd, cont) });
     if (black) { const b0 = spec.continuedBy ? c(spec.continuedBy.black) : tm.black ? c(tm.black) : null; if (b0 != null) Cm.shape(`${spec.id} · black`, [group("b", [rect([1120, 1960], [540, 960]), fill(rgb("#000000"))])], { ip: b0, op: Math.max(tEnd, cont), ks: { o: [[b0, 0, E.inOut], [b0 + 22, 100]] } }); }
   }
-  for (const G of spec.layout.tags || []) tag(Cm, T, G, { tIn: c(tm.in), tOut, nm: `${spec.id} · ${G.text}` });
+  for (const G of spec.layout.tags || []) tag(Cm, T, G, { tIn: c(tm.tagIn || tm.in), tOut, cutOut: !!tm.cutOut, nm: `${spec.id} · ${G.text}` });
   // a card that moves (A's building: to the middle) moves as one: a null carries all its blocks
   let mover;
   if ((spec.layout.moves || []).length) {
@@ -154,7 +156,7 @@ export function drawCard(Cm, spec, T60, { T = spec.__T, black = true } = {}) {
     if (B.aplat) { ap = aplatCard(Cm, B.aplat, { tIn, tOut, swaps, nm: B.id, parent: mover }); parent = ap.card; }
     B.lines.forEach((L, i) => {
       const ti = tIn + 2 * (tm.lineStagger || 0) * i + (B.aplat ? 8 : 0), to = smash ? tOut : tOut - 2 * (B.lines.length - 1 - i);
-      if (L.text) line(Cm, T, L, { tIn: smash ? tIn : ti, tOut: to, parent, smash, nm: `${B.id} · ${L.text}` });
+      if (L.text) line(Cm, T, L, { tIn: smash ? tIn : ti, tOut: tm.cutOut ? tOut : to, parent, smash, cutOut: !!tm.cutOut, nm: `${B.id} · ${L.text}` });
       if (L.pill) pill(Cm, T, L, { tIn: tm.pillIn ? c(tm.pillIn) : ti + 8, swaps, tOut: to, parent, nm: `${B.id} · pill` });
     });
     if (ap) ap.draw();

@@ -132,13 +132,15 @@ export function layLine(def, x, baseline, align, ink) {
 export function layTag(def) {
   const G = TOKENS.tag, t = setText(def.text, "tag");
   const w = G.padL + G.dot + G.dotGap + t.width + G.padR, h = G.height;
-  const x = def.align === "right" ? def.x - w : def.x, top = def.top;
+  // pin: "centre" puts the pointer in the plate's middle, over x (a tag pinned to a ride); tip: the pointer's tip y
+  const centre = def.pin === "centre", x = centre ? def.x - w / 2 : def.align === "right" ? def.x - w : def.x;
+  const top = def.tip != null ? def.tip - h - G.pointer.h : def.top, px = centre ? def.x : x + G.pointer.x;
   return {
     kind: "tag", id: def.id, text: def.text, size: G.size, tracking: TOKENS.type.tag.tracking, ink: G.ink,
     plate: { x: r1(x), y: r1(top), w: r1(w), h, r: h / 2, fill: G.plate, keyline: G.keyline, shadow: G.shadow },
     dot: { cx: r1(x + G.padL + G.dot / 2), cy: r1(top + h / 2), d: G.dot, fill: G.dotFill, keyline: G.dotKeyline },
     textX: r1(x + G.padL + G.dot + G.dotGap), baseline: r1(top + h / 2 + 0.355 * G.size),
-    pointer: { x: r1(x + G.pointer.x), y: r1(top + h), w: G.pointer.w, h: G.pointer.h, tip: [r1(x + G.pointer.x), r1(top + h + G.pointer.h)] },
+    pointer: { x: r1(px), y: r1(top + h), w: G.pointer.w, h: G.pointer.h, tip: [r1(px), r1(top + h + G.pointer.h)] },
     box: { x: r1(x), y: r1(top), w: r1(w), h: h + G.pointer.h }
   };
 }

@@ -1,0 +1,13 @@
+<!doctype html>
+<!-- story E: the cards' Lottie on a transparent stage (the rides go under it in compose.mjs). ?s=<json in ../> -->
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}#lot{position:fixed;inset:0}#lot canvas{display:block;width:100%!important;height:100%!important}</style>
+</head><body><div id="lot"></div>
+<script src="/design/intro-lottie/_lib/lottie_light_canvas.min.js"></script>
+<script>
+const q = new URLSearchParams(location.search);
+const anim = lottie.loadAnimation({ container: document.getElementById("lot"), renderer: "canvas", loop: false, autoplay: false, path: "/design/stories/vehicles/" + (q.get("s") || "story-e1-cards.json"), rendererSettings: { preserveAspectRatio: "xMidYMid meet", clearCanvas: true } });
+const smooth = () => { try { const c = anim.renderer.canvasContext; c.imageSmoothingEnabled = true; c.imageSmoothingQuality = "high"; } catch (e) {} };
+anim.addEventListener("DOMLoaded", () => { smooth(); window.ready = 1; });
+window.go = (fr) => { smooth(); anim.goToAndStop(fr, true); };
+</script></body></html>

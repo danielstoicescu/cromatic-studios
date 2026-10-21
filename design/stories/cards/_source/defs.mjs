@@ -4,6 +4,7 @@
 // retimed clock Daniel's long holds need (the fountain and SLOW). cards.mjs resolves cues against whichever clock the
 // story build passes it, at 60 fps.
 const Y = "#FED012", WH = "#FFFFFF";
+import fs from "fs";
 
 export const CLOCKS = {
   // story A v4 (buildA5.mjs SP, /2)
@@ -17,6 +18,52 @@ export const CLOCKS = {
   B5: { monument: [0, 61], nightlife: [59, 122], underwater: [107, 165], circuit: [167, 249], sketch: [209, 283], orchid: [280, 293], gta2: [292, 305], riso: [304, 317], ghibli: [316, 338], end: [337, 480] },
   D2: { site: [0, 105], drift: [105, 243], skyline: [243, 303], steam: [303, 400], page: [367, 452], r1: [452, 470], r2: [470, 497], r3: [497, 515], r4: [515, 542], r5: [542, 562], sip: [562, 604], r8: [604, 631], r9: [631, 653], fount: [653, 750], end: [750, 820] }
 };
+
+/* ============================== story E: the rides (TASK-111) ============================== */
+// Mira's copy (~/cromatic-ops/refs/stories-lottie/vehicles/copy.md), both variants; Daniel picks: change E_VARIANT.
+// "/" breaks a line; typographic apostrophes. The tags are the site's own garage names (VEHICLES, origin/stack-44): the first ride is "1300".
+export const E_VARIANT = "A";
+export const E_COPY = {
+  A: { open: ["Today you’re", "a"], pills: ["driver.", "pilot.", "captain."], lines: ["Everyone’s dad / had one.", "Solves cases. / Ours, mostly.", "Fastest route / to coffee.", "Passed Go. / Kept going.", "Parks anywhere. / Sorry.", "Comes with / a sandwich.", "Now you do / the chasing.", "Traffic? / Fly over it.", "Bucharest finally / got a sea."], lead: "Go on, pick one." },
+  B: { open: ["See the city", "by"], pills: ["road.", "air.", "sea."], lines: ["Where every / drive starts.", "Knows where / the cases are.", "Race day, / every day.", "Polished / to a mirror.", "The quiet / way round.", "Coffee and bites, / on wheels.", "Keeps the / speed honest.", "Above the / rooftops.", "Same streets, / underwater."], lead: "Which one / would you take?" }
+};
+export const E_RIDES = [["dacia1300", "1300"], ["groovy", "Mystery van"], ["f1", "Classic Formula"], ["monopoly", "Chrome racer"], ["scooter", "E-scooter"], ["foodvan", "Kompus truck"], ["cop", "Patrol"], ["plane", "Cropduster"], ["sub", "Yellow submarine"]];
+// story E's clock (30 fps): the opening's three teaser rides, nine rides of 1.5 s, the lead-in, the end (vehicles/_source/shots.mjs)
+CLOCKS.E1 = { t1: [0, 30], t2: [30, 60], t3: [60, 90], ...Object.fromEntries(E_RIDES.map((r, k) => [`r${k + 1}`, [90 + 45 * k, 135 + 45 * k]])), leadin: [495, 540], end: [540, 600] };
+// where each ride sits on screen (measured by the render, vehicles/_source/rides.json): the tag's pointer just above it
+function rideTops() {
+  try { const m = JSON.parse(fs.readFileSync(new URL("../../vehicles/_source/rides.json", import.meta.url), "utf8")); return Object.fromEntries(m.map((x) => [x.id, x.box])); } catch { return {}; }
+}
+function STORY_E() {
+  const c = E_COPY[E_VARIANT], tops = rideTops(), split = (t) => t.split(" / ");
+  const out = [{
+    id: "e0-opening", story: "E", beat: `${c.open.join(" / ")} [${c.pills.join("] -> [")}] over three teaser rides (1300, Cropduster, Yellow submarine)`, shots: ["t1", "t2", "t3"], scene: "paper (the rides on the site's paper)", ink: "ink",
+    blocks: [{ id: "e0", place: "tl", lines: [{ text: c.open[0], style: "title" }, { text: c.open[1], style: "title", pill: { words: c.pills, fill: Y } }] }],
+    timing: { in: "t1+2", lineStagger: 4, pillIn: "t1+10", swaps: ["t2+3", "t3+3"], out: "t3.end-8" },
+    mocks: [{ state: 0, at: "t1+24" }, { state: 1, at: "t2+20" }, { state: 2, at: "t3+18" }],
+    notes: "The pill swaps 3 frames after each cut (the house rule), the word for the ride under it."
+  }];
+  E_RIDES.forEach(([ride, name], k) => {
+    const id = `r${k + 1}`, box = tops[id], tip = box ? Math.max(330, Math.round(box.y - 26)) : 760;
+    out.push({
+      id: `e${k + 1}-${ride}`, story: "E", beat: `${name}: ${c.lines[k].replace(" / ", " ")}`, shots: [id], scene: "paper", ink: "ink",
+      tags: [{ id: `e${k + 1}-tag`, text: name, x: 540, pin: "centre", tip }],
+      blocks: [{ id: `e${k + 1}`, place: "bl", lines: split(c.lines[k]).map((t) => ({ text: t, style: "title" })) }],
+      timing: { tagIn: `${id}+1`, in: `${id}+3`, lineStagger: 3, out: `${id}.end-0`, cutOut: true },
+      mocks: [{ state: 0, at: `${id}+34` }],
+      notes: "Tag and line in at the cut, both go with the next cut (no exits: 1.5 s a ride). The tag is pinned over the ride, its pointer just above the ride's box."
+    });
+  });
+  out.push({
+    id: "e10-leadin", story: "E", beat: `${c.lead.replace(" / ", " ")} + the pill, then black under it`, shots: ["leadin", "end"], scene: "paper, then black", ink: "ink",
+    blocks: [{ id: "e10", place: { x: 540, align: "center", base: 880 }, lines: split(c.lead).map((t) => ({ text: t, style: "line" })) }],
+    url: {},
+    timing: { in: "leadin+2", lineStagger: 4, urlIn: "leadin+8", out: "end-6" },
+    mocks: [{ state: 0, at: "leadin+40" }]
+  });
+  out.push({ id: "e11-end", story: "E", beat: "end: black comes under the same pill", shots: ["end"], scene: "black", ink: "ink", url: { continues: "e10-leadin" }, timing: { black: "end+0", settle: "end+29", out: "end.end-0" }, mocks: [{ state: 0, at: "end.end-4" }] });
+  return out;
+}
 
 export const CARDS = [
   /* ============================== story A ============================== */
@@ -209,4 +256,8 @@ export const CARDS = [
   { id: "b2-ghibli", story: "B", beat: "the world's name as the map's tag: Ghib.ly", shots: ["ghibli"], scene: "any", ink: "ink", tags: [{ id: "b2-ghibli-tag", text: "Ghib.ly", x: 80, top: 286 }], timing: { in: "ghibli+0", out: "ghibli+19" } },
   { id: "b3-end", story: "B", beat: "Nine worlds. / One street. (back on Cromatic, its light plaza)", shots: ["end"], scene: "light (Cromatic by day)", ink: "ink", blocks: [{ id: "b3", place: "bl", lines: [{ text: "Nine worlds.", style: "headline" }, { text: "One street.", style: "headline" }] }], timing: { in: "end+5", lineStagger: 6, out: "end+70" } },
   { id: "b4-end", story: "B", beat: "end: the pill centred, black under it (as in A, C, D)", shots: ["end"], scene: "black", ink: "ink", url: {}, timing: { urlIn: "end+64", black: "end+82", settle: "end+111", out: "end.end-0" } }
+,
+  ...STORY_E()
 ];
+
+

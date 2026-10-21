@@ -1,0 +1,185 @@
+{
+ "id": "e9-sub",
+ "story": "E",
+ "beat": "Yellow submarine: Bucharest finally got a sea.",
+ "shots": [
+  "r9"
+ ],
+ "scene": "paper",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "e9",
+    "place": "bl",
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "e9-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "Bucharest finally",
+      "x": 80,
+      "baseline": 1414,
+      "width": 833.2,
+      "box": {
+       "x": 80,
+       "y": 1325.8,
+       "w": 833.2,
+       "h": 116
+      }
+     },
+     {
+      "kind": "line",
+      "id": "e9-l2",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "got a sea.",
+      "x": 80,
+      "baseline": 1530,
+      "width": 482.8,
+      "box": {
+       "x": 80,
+       "y": 1441.8,
+       "w": 482.8,
+       "h": 116
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ],
+  "tags": [
+   {
+    "kind": "tag",
+    "id": "e9-tag",
+    "text": "Yellow submarine",
+    "size": 44,
+    "tracking": -0.01,
+    "ink": "#0D0C09",
+    "plate": {
+     "x": 314.4,
+     "y": 368,
+     "w": 451.3,
+     "h": 84,
+     "r": 42,
+     "fill": "#FFFFFF",
+     "keyline": 4,
+     "shadow": [
+      0,
+      7
+     ]
+    },
+    "dot": {
+     "cx": 351.4,
+     "cy": 410,
+     "d": 22,
+     "fill": "#FED012",
+     "keyline": 3.5
+    },
+    "textX": 378.4,
+    "baseline": 425.6,
+    "pointer": {
+     "x": 540,
+     "y": 452,
+     "w": 30,
+     "h": 18,
+     "tip": [
+      540,
+      470
+     ]
+    },
+    "box": {
+     "x": 314.4,
+     "y": 368,
+     "w": 451.3,
+     "h": 102
+    }
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "tagIn": "r9+1",
+   "in": "r9+3",
+   "lineStagger": 3,
+   "out": "r9.end-0",
+   "cutOut": true
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "E1": {
+    "clock": "E1",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "e9-l1",
+      "text": "Bucharest finally",
+      "in": 453,
+      "out": 494,
+      "motion": "lineIn / lineOut",
+      "hold": 29
+     },
+     {
+      "id": "e9-l2",
+      "text": "got a sea.",
+      "in": 456,
+      "out": 495,
+      "motion": "lineIn / lineOut",
+      "hold": 27
+     },
+     {
+      "id": "e9-tag",
+      "text": "Yellow submarine",
+      "in": 453,
+      "out": 495,
+      "motion": "tagIn / tagOut",
+      "hold": 33
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "r9+34"
+  }
+ ],
+ "notes": "Tag and line in at the cut, both go with the next cut (no exits: 1.5 s a ride). The tag is pinned over the ride, its pointer just above the ride's box.",
+ "files": {
+  "outlined": [
+   "svg/outlined/e9-sub.svg"
+  ],
+  "live": [
+   "svg/live/e9-sub.svg"
+  ]
+ }
+}
