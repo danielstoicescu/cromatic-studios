@@ -1,0 +1,384 @@
+{
+ "id": "b1-street",
+ "story": "B",
+ "beat": "Same street. / New [lights.] -> [tide.] -> [lap.] -> [paper.] -> [bloom.] -> [rules.] -> [ink.] -> [magic.] (one card over the nine worlds, on the plaza)",
+ "shots": [
+  "monument",
+  "nightlife",
+  "underwater",
+  "circuit",
+  "sketch",
+  "orchid",
+  "gta2",
+  "riso",
+  "ghibli"
+ ],
+ "scene": "any world (Sketchbook is white): the yellow aplat carries it",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "b1",
+    "place": {
+     "x": 132,
+     "align": "left",
+     "base": 1400
+    },
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "b1-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "Same street.",
+      "x": 132,
+      "baseline": 1260.8,
+      "width": 637,
+      "box": {
+       "x": 132,
+       "y": 1172.6,
+       "w": 637,
+       "h": 91.6
+      }
+     },
+     {
+      "kind": "line",
+      "id": "b1-l2",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "New",
+      "x": 132,
+      "baseline": 1400,
+      "width": 237.6,
+      "box": {
+       "x": 132,
+       "y": 1311.8,
+       "w": 698.4,
+       "h": 116
+      },
+      "pill": {
+       "id": "b1-l2-pill",
+       "fill": "#FFFFFF",
+       "ink": "#0D0C09",
+       "left": 397.4,
+       "cy": 1358.8,
+       "h": 134.6,
+       "keyline": 5.2,
+       "shadow": [
+        3.5,
+        7.5
+       ],
+       "tilt": -3,
+       "wordX": 436.8,
+       "states": [
+        {
+         "word": "lights.",
+         "wordW": 300.9,
+         "w": 379.8,
+         "cx": 587.3
+        },
+        {
+         "word": "tide.",
+         "wordW": 227.1,
+         "w": 306,
+         "cx": 550.4
+        },
+        {
+         "word": "lap.",
+         "wordW": 180.5,
+         "w": 259.4,
+         "cx": 527.1
+        },
+        {
+         "word": "paper.",
+         "wordW": 320.5,
+         "w": 399.4,
+         "cx": 597.1
+        },
+        {
+         "word": "bloom.",
+         "wordW": 354.1,
+         "w": 433,
+         "cx": 613.9
+        },
+        {
+         "word": "rules.",
+         "wordW": 276.7,
+         "w": 355.5,
+         "cx": 575.2
+        },
+        {
+         "word": "ink.",
+         "wordW": 177.2,
+         "w": 256.1,
+         "cx": 525.5
+        },
+        {
+         "word": "magic.",
+         "wordW": 341.5,
+         "w": 420.4,
+         "cx": 607.6
+        }
+       ]
+      }
+     }
+    ],
+    "aplat": {
+     "fill": "#FED012",
+     "radius": 30,
+     "keyline": 5,
+     "shadow": [
+      0,
+      12
+     ],
+     "tilt": -2,
+     "states": [
+      {
+       "x": 80,
+       "y": 1131.7,
+       "w": 752.7,
+       "h": 351.9
+      },
+      {
+       "x": 80,
+       "y": 1131.7,
+       "w": 741,
+       "h": 351.9
+      },
+      {
+       "x": 80,
+       "y": 1131.7,
+       "w": 741,
+       "h": 351.9
+      },
+      {
+       "x": 80,
+       "y": 1131.7,
+       "w": 772.3,
+       "h": 351.9
+      },
+      {
+       "x": 80,
+       "y": 1131.7,
+       "w": 805.9,
+       "h": 351.9
+      },
+      {
+       "x": 80,
+       "y": 1131.7,
+       "w": 741,
+       "h": 351.9
+      },
+      {
+       "x": 80,
+       "y": 1131.7,
+       "w": 741,
+       "h": 351.9
+      },
+      {
+       "x": 80,
+       "y": 1131.7,
+       "w": 793.3,
+       "h": 351.9
+      }
+     ]
+    },
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "lights"
+  },
+  {
+   "index": 1,
+   "label": "tide"
+  },
+  {
+   "index": 2,
+   "label": "lap"
+  },
+  {
+   "index": 3,
+   "label": "paper"
+  },
+  {
+   "index": 4,
+   "label": "bloom"
+  },
+  {
+   "index": 5,
+   "label": "rules"
+  },
+  {
+   "index": 6,
+   "label": "ink"
+  },
+  {
+   "index": 7,
+   "label": "magic"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "monument+8",
+   "lineStagger": 52,
+   "pillIn": "nightlife+7",
+   "swaps": [
+    "underwater+8",
+    "circuit+4",
+    "sketch+22",
+    "orchid+0",
+    "gta2+0",
+    "riso+0",
+    "ghibli+0"
+   ],
+   "out": "ghibli.end-6"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "B5": {
+    "clock": "B5",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "b1-aplat",
+      "in": 8,
+      "out": 341,
+      "frames": {
+       "in": 14,
+       "out": 7
+      },
+      "hold": 312
+     },
+     {
+      "id": "b1-l1",
+      "text": "Same street.",
+      "in": 12,
+      "out": 331,
+      "motion": "lineIn / lineOut",
+      "hold": 307
+     },
+     {
+      "id": "b1-l2",
+      "text": "New",
+      "in": 64,
+      "out": 332,
+      "motion": "lineIn / lineOut",
+      "hold": 256
+     },
+     {
+      "id": "b1-l2-pill-0",
+      "word": "lights.",
+      "in": 66,
+      "out": 115,
+      "motion": "pillIn",
+      "hold": 49
+     },
+     {
+      "id": "b1-l2-pill-1",
+      "word": "tide.",
+      "in": 115,
+      "out": 171,
+      "motion": "pillSwap",
+      "hold": 56
+     },
+     {
+      "id": "b1-l2-pill-2",
+      "word": "lap.",
+      "in": 171,
+      "out": 231,
+      "motion": "pillSwap",
+      "hold": 60
+     },
+     {
+      "id": "b1-l2-pill-3",
+      "word": "paper.",
+      "in": 231,
+      "out": 280,
+      "motion": "pillSwap",
+      "hold": 49
+     },
+     {
+      "id": "b1-l2-pill-4",
+      "word": "bloom.",
+      "in": 280,
+      "out": 292,
+      "motion": "pillSwap",
+      "hold": 12
+     },
+     {
+      "id": "b1-l2-pill-5",
+      "word": "rules.",
+      "in": 292,
+      "out": 304,
+      "motion": "pillSwap",
+      "hold": 12
+     },
+     {
+      "id": "b1-l2-pill-6",
+      "word": "ink.",
+      "in": 304,
+      "out": 316,
+      "motion": "pillSwap",
+      "hold": 12
+     },
+     {
+      "id": "b1-l2-pill-7",
+      "word": "magic.",
+      "in": 316,
+      "out": 332,
+      "motion": "pillSwap",
+      "hold": 16
+     }
+    ]
+   }
+  }
+ },
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/b1-street-lights.svg",
+   "svg/outlined/b1-street-tide.svg",
+   "svg/outlined/b1-street-lap.svg",
+   "svg/outlined/b1-street-paper.svg",
+   "svg/outlined/b1-street-bloom.svg",
+   "svg/outlined/b1-street-rules.svg",
+   "svg/outlined/b1-street-ink.svg",
+   "svg/outlined/b1-street-magic.svg"
+  ],
+  "live": [
+   "svg/live/b1-street-lights.svg",
+   "svg/live/b1-street-tide.svg",
+   "svg/live/b1-street-lap.svg",
+   "svg/live/b1-street-paper.svg",
+   "svg/live/b1-street-bloom.svg",
+   "svg/live/b1-street-rules.svg",
+   "svg/live/b1-street-ink.svg",
+   "svg/live/b1-street-magic.svg"
+  ]
+ }
+}

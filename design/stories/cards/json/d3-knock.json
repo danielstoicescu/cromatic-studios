@@ -1,0 +1,127 @@
+{
+ "id": "d3-knock",
+ "story": "D",
+ "beat": "Knock / knock. (each word on its tap, over Steam's place card)",
+ "shots": [
+  "steam"
+ ],
+ "scene": "Steam, dimmed under the card",
+ "textColour": "#FBFAF5",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "d3",
+    "place": "tl",
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "d3-l1",
+      "style": "headline",
+      "size": 168,
+      "tracking": -0.045,
+      "lead": 0.94,
+      "ink": "#FBFAF5",
+      "align": "left",
+      "text": "Knock",
+      "x": 80,
+      "baseline": 420.3,
+      "width": 468.6,
+      "box": {
+       "x": 80,
+       "y": 292.6,
+       "w": 468.6,
+       "h": 132.7
+      }
+     },
+     {
+      "kind": "line",
+      "id": "d3-l2",
+      "style": "headline",
+      "size": 168,
+      "tracking": -0.045,
+      "lead": 0.94,
+      "ink": "#FBFAF5",
+      "align": "left",
+      "text": "knock.",
+      "x": 80,
+      "baseline": 578.2,
+      "width": 485.5,
+      "box": {
+       "x": 80,
+       "y": 450.5,
+       "w": 485.5,
+       "h": 132.7
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "steam+46",
+   "lineStagger": 8,
+   "out": "page-6"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "D2": {
+    "clock": "D2",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "d3-l1",
+      "text": "Knock",
+      "in": 349,
+      "out": 360,
+      "motion": "lineIn / lineOut",
+      "hold": -1
+     },
+     {
+      "id": "d3-l2",
+      "text": "knock.",
+      "in": 357,
+      "out": 361,
+      "motion": "lineIn / lineOut",
+      "hold": -8
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "steam+64"
+  }
+ ],
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/d3-knock.svg"
+  ],
+  "live": [
+   "svg/live/d3-knock.svg"
+  ]
+ }
+}

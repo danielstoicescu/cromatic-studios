@@ -1,0 +1,121 @@
+{
+ "id": "d10-sip",
+ "story": "D",
+ "beat": "Sip through. (the F1 through the Two Minutes corner)",
+ "shots": [
+  "sip"
+ ],
+ "scene": "night, from above",
+ "textColour": "#FBFAF5",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "d10",
+    "place": "tr",
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "d10-l1",
+      "style": "headline",
+      "size": 168,
+      "tracking": -0.045,
+      "lead": 0.94,
+      "ink": "#FBFAF5",
+      "align": "right",
+      "text": "Sip",
+      "x": 773,
+      "baseline": 420.3,
+      "width": 227,
+      "box": {
+       "x": 773,
+       "y": 292.6,
+       "w": 227,
+       "h": 168
+      }
+     },
+     {
+      "kind": "line",
+      "id": "d10-l2",
+      "style": "headline",
+      "size": 168,
+      "tracking": -0.045,
+      "lead": 0.94,
+      "ink": "#FBFAF5",
+      "align": "right",
+      "text": "through.",
+      "x": 372.2,
+      "baseline": 578.2,
+      "width": 627.8,
+      "box": {
+       "x": 372.2,
+       "y": 450.5,
+       "w": 627.8,
+       "h": 168
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "sip+3",
+   "lineStagger": 4,
+   "out": "sip.end-9"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "D2": {
+    "clock": "D2",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "d10-l1",
+      "text": "Sip",
+      "in": 565,
+      "out": 594,
+      "motion": "lineIn / lineOut",
+      "hold": 17
+     },
+     {
+      "id": "d10-l2",
+      "text": "through.",
+      "in": 569,
+      "out": 595,
+      "motion": "lineIn / lineOut",
+      "hold": 14
+     }
+    ]
+   }
+  }
+ },
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/d10-sip.svg"
+  ],
+  "live": [
+   "svg/live/d10-sip.svg"
+  ]
+ }
+}

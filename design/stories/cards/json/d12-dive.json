@@ -1,0 +1,96 @@
+{
+ "id": "d12-dive",
+ "story": "D",
+ "beat": "Dive. (a bit slower)",
+ "shots": [
+  "r9"
+ ],
+ "scene": "under water",
+ "textColour": "#FBFAF5",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "d12",
+    "place": {
+     "x": 540,
+     "align": "center",
+     "base": 1530
+    },
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "d12-l1",
+      "style": "hero",
+      "size": 336,
+      "tracking": -0.05,
+      "lead": 0.92,
+      "ink": "#FBFAF5",
+      "align": "center",
+      "text": "Dive.",
+      "x": 177,
+      "baseline": 1530,
+      "width": 726.1,
+      "box": {
+       "x": 177,
+       "y": 1274.6,
+       "w": 726.1,
+       "h": 265.4
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "r9+2",
+   "out": "r9.end-8"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "D2": {
+    "clock": "D2",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "d12-l1",
+      "text": "Dive.",
+      "in": 633,
+      "out": 645,
+      "motion": "lineIn / lineOut",
+      "hold": 0
+     }
+    ]
+   }
+  }
+ },
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/d12-dive.svg"
+  ],
+  "live": [
+   "svg/live/d12-dive.svg"
+  ]
+ }
+}

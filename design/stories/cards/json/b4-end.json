@@ -1,0 +1,88 @@
+{
+ "id": "b4-end",
+ "story": "B",
+ "beat": "end: the pill centred, black under it (as in A, C, D)",
+ "shots": [
+  "end"
+ ],
+ "scene": "black",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "url": {
+   "kind": "url",
+   "id": "url",
+   "text": "cromaticstudios.com",
+   "size": 64,
+   "tracking": -0.02,
+   "ink": "#0D0C09",
+   "fill": "#FED012",
+   "centre": [
+    540,
+    1000
+   ],
+   "w": 694.4,
+   "h": 102.4,
+   "textX": 232.8,
+   "baseline": 1023,
+   "keyline": 6,
+   "shadow": [
+    10,
+    14
+   ],
+   "tilt": -6
+  },
+  "black": true
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "urlIn": "end+64",
+   "black": "end+82",
+   "settle": "end+111",
+   "out": "end.end-0"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "B5": {
+    "clock": "B5",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "url",
+      "text": "cromaticstudios.com",
+      "in": 401,
+      "black": 419,
+      "settle": 448,
+      "out": 480,
+      "motion": "urlIn, then urlSettle on black"
+     }
+    ]
+   }
+  }
+ },
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/b4-end.svg"
+  ],
+  "live": [
+   "svg/live/b4-end.svg"
+  ]
+ }
+}

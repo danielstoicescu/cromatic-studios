@@ -1,0 +1,109 @@
+{
+ "id": "b2-sketch",
+ "story": "B",
+ "beat": "the world's name as the map's tag: Sketchbook",
+ "shots": [
+  "sketch"
+ ],
+ "scene": "any",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "tags": [
+   {
+    "kind": "tag",
+    "id": "b2-sketch-tag",
+    "text": "Sketchbook",
+    "size": 44,
+    "tracking": -0.01,
+    "ink": "#0D0C09",
+    "plate": {
+     "x": 80,
+     "y": 286,
+     "w": 337.3,
+     "h": 84,
+     "r": 42,
+     "fill": "#FFFFFF",
+     "keyline": 4,
+     "shadow": [
+      0,
+      7
+     ]
+    },
+    "dot": {
+     "cx": 117,
+     "cy": 328,
+     "d": 22,
+     "fill": "#FED012",
+     "keyline": 3.5
+    },
+    "textX": 144,
+    "baseline": 343.6,
+    "pointer": {
+     "x": 126,
+     "y": 370,
+     "w": 30,
+     "h": 18,
+     "tip": [
+      126,
+      388
+     ]
+    },
+    "box": {
+     "x": 80,
+     "y": 286,
+     "w": 337.3,
+     "h": 102
+    }
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "sketch+17",
+   "out": "sketch+67"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "B5": {
+    "clock": "B5",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "b2-sketch-tag",
+      "text": "Sketchbook",
+      "in": 226,
+      "out": 276,
+      "motion": "tagIn / tagOut",
+      "hold": 41
+     }
+    ]
+   }
+  }
+ },
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/b2-sketch.svg"
+  ],
+  "live": [
+   "svg/live/b2-sketch.svg"
+  ]
+ }
+}

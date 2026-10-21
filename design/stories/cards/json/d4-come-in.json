@@ -1,0 +1,130 @@
+{
+ "id": "d4-come-in",
+ "story": "D",
+ "beat": "Come in. (Steam's case page, opened)",
+ "shots": [
+  "page"
+ ],
+ "scene": "the case page (white, busy): on the aplat",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "d4",
+    "place": {
+     "x": 132,
+     "align": "left",
+     "base": 1470
+    },
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "d4-l1",
+      "style": "headline",
+      "size": 168,
+      "tracking": -0.045,
+      "lead": 0.94,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "Come in.",
+      "x": 132,
+      "baseline": 1470,
+      "width": 645,
+      "box": {
+       "x": 132,
+       "y": 1342.3,
+       "w": 645,
+       "h": 132.7
+      }
+     }
+    ],
+    "aplat": {
+     "fill": "#FED012",
+     "radius": 30,
+     "keyline": 5,
+     "shadow": [
+      0,
+      12
+     ],
+     "tilt": -2,
+     "states": [
+      {
+       "x": 80,
+       "y": 1303.7,
+       "w": 749,
+       "h": 226.4
+      }
+     ]
+    },
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "page+17",
+   "out": "page+34"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "D2": {
+    "clock": "D2",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "d4-aplat",
+      "in": 384,
+      "out": 410,
+      "frames": {
+       "in": 14,
+       "out": 7
+      },
+      "hold": 5
+     },
+     {
+      "id": "d4-l1",
+      "text": "Come in.",
+      "in": 388,
+      "out": 401,
+      "motion": "lineIn / lineOut",
+      "hold": 1
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "page+30"
+  }
+ ],
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/d4-come-in.svg"
+  ],
+  "live": [
+   "svg/live/d4-come-in.svg"
+  ]
+ }
+}

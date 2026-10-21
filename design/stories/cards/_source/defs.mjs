@@ -11,7 +11,11 @@ export const CLOCKS = {
   // story C v4 (buildC4.mjs T, /2)
   C_v4: { olari: [0, 81], palace: [81, 126], steam: [126, 170], berero: [170, 210], fountain: [210, 262], scf: [262, 290], corner: [290, 332], cup: [332, 395], fintech: [395, 546], end: [546, 615] },
   // story C retimed (the proposal): the Aesthetic Court 2 s (two lines to read), the fountain 3.5 s, SLOW 2.8 s, the rest as v4, shifted
-  C_long: { olari: [0, 81], palace: [81, 141], steam: [141, 185], berero: [185, 225], fountain: [225, 330], scf: [330, 414], corner: [414, 456], cup: [456, 519], fintech: [519, 670], end: [670, 739] }
+  C_long: { olari: [0, 81], palace: [81, 141], steam: [141, 185], berero: [185, 225], fountain: [225, 330], scf: [330, 414], corner: [414, 456], cup: [456, 519], fintech: [519, 670], end: [670, 739] },
+  // story D2 (Lia, TASK-065d: Daniel's "around the city" storyboard; build-d2.mjs T2, /2)
+  // story B5 (Lia, TASK-065d: one street, nine worlds; buildB5.mjs SPAN, /2)
+  B5: { monument: [0, 61], nightlife: [59, 122], underwater: [107, 165], circuit: [167, 249], sketch: [209, 283], orchid: [280, 293], gta2: [292, 305], riso: [304, 317], ghibli: [316, 338], end: [337, 480] },
+  D2: { site: [0, 105], drift: [105, 243], skyline: [243, 303], steam: [303, 400], page: [367, 452], r1: [452, 470], r2: [470, 497], r3: [497, 515], r4: [515, 542], r5: [542, 562], sip: [562, 604], r8: [604, 631], r9: [631, 653], fount: [653, 750], end: [750, 820] }
 };
 
 export const CARDS = [
@@ -141,5 +145,68 @@ export const CARDS = [
     timing: { black: "end+0", settle: "end+29", out: "end.end-0" },
     mocks: [{ state: 0, at: "end.end-4" }],
     notes: "The same pill as c9 (no second entrance): black fades in under it over 11 frames, then the soft settle."
-  }
+  },
+  /* ============================== story D2 (Lia, from Iris's system: the same tokens, corners and motion) ============================== */
+  {
+    id: "d1-portfolio", story: "D", beat: "Our portfolio / is not only + its own pill [scrollable.] (over the site, scrolled)", shots: ["site"], scene: "the site (light, busy): the yellow aplat carries it", ink: "ink",
+    blocks: [
+      { id: "d1", place: "tl", aplat: { fill: Y }, lines: [{ text: "Our portfolio", style: "title" }, { text: "is not only", style: "title" }] },
+      { id: "d1-word", attach: { to: "d1", dx: 40, gap: -40 }, lines: [{ text: "", style: "title", pill: { words: ["scrollable."], fill: WH } }] }
+    ],
+    timing: { in: "site+6", lineStagger: 4, pillIn: "site+18", out: "site.end-12" }, mocks: [{ state: 0, at: "site+60" }]
+  },
+  {
+    id: "d2-corner", story: "D", beat: "Every brand / gets its + [corner.] (the drift out of Printoteca) -> [skyline.] (Fintech) -> [facade.] (Steam)", shots: ["drift", "skyline", "steam"], scene: "any: the yellow aplat carries it", ink: "ink",
+    blocks: [
+      { id: "d2", place: "tl", aplat: { fill: Y }, lines: [{ text: "Every brand", style: "title" }, { text: "gets its", style: "title" }] },
+      { id: "d2-word", attach: { to: "d2", dx: 40, gap: -40 }, lines: [{ text: "", style: "title", pill: { words: ["corner.", "skyline.", "facade."], fill: WH } }] }
+    ],
+    timing: { in: "drift+30", lineStagger: 4, pillIn: "drift+42", swaps: ["skyline+3", "steam+3"], out: "steam+30" }, mocks: [{ state: 0, at: "drift+80" }, { state: 1, at: "skyline+30" }, { state: 2, at: "steam+20" }]
+  },
+  {
+    id: "d3-knock", story: "D", beat: "Knock / knock. (each word on its tap, over Steam's place card)", shots: ["steam"], scene: "Steam, dimmed under the card", ink: "paper",
+    blocks: [{ id: "d3", place: "tl", lines: [{ text: "Knock", style: "headline" }, { text: "knock.", style: "headline" }] }],
+    timing: { in: "steam+46", lineStagger: 8, out: "page-6" }, mocks: [{ state: 0, at: "steam+64" }]
+  },
+  {
+    id: "d4-come-in", story: "D", beat: "Come in. (Steam's case page, opened)", shots: ["page"], scene: "the case page (white, busy): on the aplat", ink: "ink",
+    // (on the yellow aplat: the page under it is all words and pictures, no calm corner)
+    blocks: [{ id: "d4", place: { x: 132, align: "left", base: 1470 }, aplat: { fill: Y }, lines: [{ text: "Come in.", style: "headline" }] }],
+    timing: { in: "page+17", out: "page+34" }, mocks: [{ state: 0, at: "page+30" }]
+  },
+  { id: "d5-drive", story: "D", beat: "Drive.", shots: ["r1"], scene: "night", ink: "paper", blocks: [{ id: "d5", place: "bl", lines: [{ text: "Drive.", style: "headline" }] }], timing: { in: "r1+1", out: "r1.end-7" } },
+  { id: "d6-snoop", story: "D", beat: "Snoop. (slower)", shots: ["r2"], scene: "night", ink: "paper", blocks: [{ id: "d6", place: "tr", lines: [{ text: "Snoop.", style: "headline" }] }], timing: { in: "r2+2", out: "r2.end-8" } },
+  { id: "d7-overtake", story: "D", beat: "Overtake.", shots: ["r3"], scene: "night", ink: "paper", blocks: [{ id: "d7", place: { x: 540, align: "center", base: 1180 }, lines: [{ text: "Overtake.", style: "headline" }] }], timing: { in: "r3+1", out: "r3.end-7" } },
+  { id: "d8-pass-go", story: "D", beat: "Pass Go. (slower, and the board's arrow: an object, drawn by the story)", shots: ["r4"], scene: "night, under the Court's lights", ink: "paper", blocks: [{ id: "d8", place: "bl", lines: [{ text: "Pass Go.", style: "headline" }] }], timing: { in: "r4+2", out: "r4.end-8" } },
+  { id: "d9-fly-high", story: "D", beat: "Fly high.", shots: ["r5"], scene: "night sky", ink: "paper", blocks: [{ id: "d9", place: "tl", lines: [{ text: "Fly high.", style: "headline" }] }], timing: { in: "r5+2", out: "r5.end-7" } },
+  { id: "d10-sip", story: "D", beat: "Sip through. (the F1 through the Two Minutes corner)", shots: ["sip"], scene: "night, from above", ink: "paper", blocks: [{ id: "d10", place: "tr", lines: [{ text: "Sip", style: "headline" }, { text: "through.", style: "headline" }] }], timing: { in: "sip+3", lineStagger: 4, out: "sip.end-9" } },
+  { id: "d11-pulled-over", story: "D", beat: "Avoid being / pulled over. (slower)", shots: ["r8"], scene: "night, the patrol's lamps", ink: "paper", blocks: [{ id: "d11", place: "tl", lines: [{ text: "Avoid being", style: "title" }, { text: "pulled over.", style: "title" }] }], timing: { in: "r8+2", lineStagger: 4, out: "r8.end-9" } },
+  { id: "d12-dive", story: "D", beat: "Dive. (a bit slower)", shots: ["r9"], scene: "under water", ink: "paper", blocks: [{ id: "d12", place: { x: 540, align: "center", base: 1530 }, lines: [{ text: "Dive.", style: "hero" }] }], timing: { in: "r9+2", out: "r9.end-8" } },
+  {
+    id: "d13-around", story: "D", beat: "See you around / your corner. (the fountain, split across corners)", shots: ["fount"], scene: "night (the lit water in the middle)", ink: "paper",
+    blocks: [{ id: "d13a", place: "tl", lines: [{ text: "See you around", style: "title" }] }, { id: "d13b", place: "br", lines: [{ text: "your corner.", style: "title" }] }],
+    timing: { in: "fount+6", blockStagger: 10, out: "fount.end-12" }, mocks: [{ state: 0, at: "fount+50" }]
+  },
+  {
+    id: "d14-end", story: "D", beat: "end: black, only the cromaticstudios.com pill, centred (as in A and C)", shots: ["end"], scene: "black", ink: "ink",
+    url: {}, timing: { urlIn: "end-30", black: "end+0", settle: "end+29", out: "end.end-0" }, mocks: [{ state: 0, at: "end.end-4" }]
+  },
+  /* ============================== story B5 (Lia, from Iris's system) ============================== */
+  {
+    id: "b1-street", story: "B", beat: "Same street. / New [lights.] -> [tide.] -> [lap.] -> [paper.] -> [bloom.] -> [rules.] -> [ink.] -> [magic.] (one card over the nine worlds, on the plaza)", shots: ["monument", "nightlife", "underwater", "circuit", "sketch", "orchid", "gta2", "riso", "ghibli"], scene: "any world (Sketchbook is white): the yellow aplat carries it", ink: "ink",
+    // (v5: on the plaza under the house, not over its roof)
+    blocks: [{ id: "b1", place: { x: 132, align: "left", base: 1400 }, aplat: { fill: Y }, lines: [{ text: "Same street.", style: "title" }, { text: "New", style: "title", pill: { words: ["lights.", "tide.", "lap.", "paper.", "bloom.", "rules.", "ink.", "magic."], fill: WH } }] }],
+    timing: { in: "monument+8", lineStagger: 52, pillIn: "nightlife+7", swaps: ["underwater+8", "circuit+4", "sketch+22", "orchid+0", "gta2+0", "riso+0", "ghibli+0"], out: "ghibli.end-6" }
+  },
+  { id: "b2-monument", story: "B", beat: "the world's name as the map's tag: Cromatic", shots: ["monument"], scene: "any", ink: "ink", tags: [{ id: "b2-monument-tag", text: "Cromatic", x: 80, top: 286 }], timing: { in: "monument+13", out: "monument+48" } },
+  { id: "b2-nightlife", story: "B", beat: "the world's name as the map's tag: Night Mode", shots: ["nightlife"], scene: "any", ink: "ink", tags: [{ id: "b2-nightlife-tag", text: "Night Mode", x: 80, top: 286 }], timing: { in: "nightlife+5", out: "nightlife+43" } },
+  { id: "b2-underwater", story: "B", beat: "the world's name as the map's tag: Underwater", shots: ["underwater"], scene: "any", ink: "ink", tags: [{ id: "b2-underwater-tag", text: "Underwater", x: 80, top: 286 }], timing: { in: "underwater+16", out: "underwater+52" } },
+  { id: "b2-circuit", story: "B", beat: "the world's name as the map's tag: Race Day", shots: ["circuit"], scene: "any", ink: "ink", tags: [{ id: "b2-circuit-tag", text: "Race Day", x: 80, top: 286 }], timing: { in: "circuit+6", out: "circuit+38" } },
+  { id: "b2-sketch", story: "B", beat: "the world's name as the map's tag: Sketchbook", shots: ["sketch"], scene: "any", ink: "ink", tags: [{ id: "b2-sketch-tag", text: "Sketchbook", x: 80, top: 286 }], timing: { in: "sketch+17", out: "sketch+67" } },
+  { id: "b2-orchid", story: "B", beat: "the world's name as the map's tag: Sakura", shots: ["orchid"], scene: "any", ink: "ink", tags: [{ id: "b2-orchid-tag", text: "Sakura", x: 80, top: 286 }], timing: { in: "orchid+0", out: "orchid+12" } },
+  { id: "b2-gta2", story: "B", beat: "the world's name as the map's tag: GTA 2", shots: ["gta2"], scene: "any", ink: "ink", tags: [{ id: "b2-gta2-tag", text: "GTA 2", x: 80, top: 286 }], timing: { in: "gta2+0", out: "gta2+12" } },
+  { id: "b2-riso", story: "B", beat: "the world's name as the map's tag: Risograph", shots: ["riso"], scene: "any", ink: "ink", tags: [{ id: "b2-riso-tag", text: "Risograph", x: 80, top: 286 }], timing: { in: "riso+0", out: "riso+12" } },
+  { id: "b2-ghibli", story: "B", beat: "the world's name as the map's tag: Ghib.ly", shots: ["ghibli"], scene: "any", ink: "ink", tags: [{ id: "b2-ghibli-tag", text: "Ghib.ly", x: 80, top: 286 }], timing: { in: "ghibli+0", out: "ghibli+19" } },
+  { id: "b3-end", story: "B", beat: "Nine worlds. / One street. (back on Cromatic, its light plaza)", shots: ["end"], scene: "light (Cromatic by day)", ink: "ink", blocks: [{ id: "b3", place: "bl", lines: [{ text: "Nine worlds.", style: "headline" }, { text: "One street.", style: "headline" }] }], timing: { in: "end+5", lineStagger: 6, out: "end+70" } },
+  { id: "b4-end", story: "B", beat: "end: the pill centred, black under it (as in A, C, D)", shots: ["end"], scene: "black", ink: "ink", url: {}, timing: { urlIn: "end+64", black: "end+82", settle: "end+111", out: "end.end-0" } }
 ];

@@ -1,0 +1,92 @@
+{
+ "id": "d8-pass-go",
+ "story": "D",
+ "beat": "Pass Go. (slower, and the board's arrow: an object, drawn by the story)",
+ "shots": [
+  "r4"
+ ],
+ "scene": "night, under the Court's lights",
+ "textColour": "#FBFAF5",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "d8",
+    "place": "bl",
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "d8-l1",
+      "style": "headline",
+      "size": 168,
+      "tracking": -0.045,
+      "lead": 0.94,
+      "ink": "#FBFAF5",
+      "align": "left",
+      "text": "Pass Go.",
+      "x": 80,
+      "baseline": 1530,
+      "width": 626.8,
+      "box": {
+       "x": 80,
+       "y": 1402.3,
+       "w": 626.8,
+       "h": 132.7
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "r4+2",
+   "out": "r4.end-8"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "D2": {
+    "clock": "D2",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "d8-l1",
+      "text": "Pass Go.",
+      "in": 517,
+      "out": 534,
+      "motion": "lineIn / lineOut",
+      "hold": 5
+     }
+    ]
+   }
+  }
+ },
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/d8-pass-go.svg"
+  ],
+  "live": [
+   "svg/live/d8-pass-go.svg"
+  ]
+ }
+}

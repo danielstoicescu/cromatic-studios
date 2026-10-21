@@ -13,7 +13,7 @@ fs.mkdirSync(OUT, { recursive: true });
 const br = await pw.chromium.launch({ args: ["--use-angle=metal", "--ignore-gpu-blocklist"] });
 const p = await br.newPage({ viewport: { width: 1080, height: 1920 }, deviceScaleFactor: SS });
 p.on("pageerror", (e) => console.log("pageerror", e.message));
-await p.goto(`http://127.0.0.1:8993/design/stories/lottie/story-d/_source/stage.html?s=${name}.json`);
+await p.goto(`http://127.0.0.1:${process.env.STAGE_PORT || 8993}/design/stories/lottie/story-d/_source/stage.html?s=${name}.json`);
 await p.waitForFunction(() => window.ready, null, { timeout: 60000 });
 await p.waitForTimeout(400);
 const op = await p.evaluate(() => window.anim.totalFrames);

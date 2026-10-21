@@ -1,0 +1,96 @@
+{
+ "id": "d7-overtake",
+ "story": "D",
+ "beat": "Overtake.",
+ "shots": [
+  "r3"
+ ],
+ "scene": "night",
+ "textColour": "#FBFAF5",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "d7",
+    "place": {
+     "x": 540,
+     "align": "center",
+     "base": 1180
+    },
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "d7-l1",
+      "style": "headline",
+      "size": 168,
+      "tracking": -0.045,
+      "lead": 0.94,
+      "ink": "#FBFAF5",
+      "align": "center",
+      "text": "Overtake.",
+      "x": 175.8,
+      "baseline": 1180,
+      "width": 728.4,
+      "box": {
+       "x": 175.8,
+       "y": 1052.3,
+       "w": 728.4,
+       "h": 132.7
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "r3+1",
+   "out": "r3.end-7"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "D2": {
+    "clock": "D2",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "d7-l1",
+      "text": "Overtake.",
+      "in": 498,
+      "out": 508,
+      "motion": "lineIn / lineOut",
+      "hold": -2
+     }
+    ]
+   }
+  }
+ },
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/d7-overtake.svg"
+  ],
+  "live": [
+   "svg/live/d7-overtake.svg"
+  ]
+ }
+}

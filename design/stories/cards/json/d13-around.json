@@ -1,0 +1,136 @@
+{
+ "id": "d13-around",
+ "story": "D",
+ "beat": "See you around / your corner. (the fountain, split across corners)",
+ "shots": [
+  "fount"
+ ],
+ "scene": "night (the lit water in the middle)",
+ "textColour": "#FBFAF5",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "d13a",
+    "place": "tl",
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "d13a-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#FBFAF5",
+      "align": "left",
+      "text": "See you around",
+      "x": 80,
+      "baseline": 383.1,
+      "width": 783.3,
+      "box": {
+       "x": 80,
+       "y": 294.9,
+       "w": 783.3,
+       "h": 116
+      }
+     }
+    ],
+    "behindRide": false
+   },
+   {
+    "kind": "block",
+    "id": "d13b",
+    "place": "br",
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "d13b-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#FBFAF5",
+      "align": "right",
+      "text": "your corner.",
+      "x": 390.5,
+      "baseline": 1530,
+      "width": 609.5,
+      "box": {
+       "x": 390.5,
+       "y": 1441.8,
+       "w": 609.5,
+       "h": 116
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "fount+6",
+   "blockStagger": 10,
+   "out": "fount.end-12"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "D2": {
+    "clock": "D2",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "d13a-l1",
+      "text": "See you around",
+      "in": 659,
+      "out": 738,
+      "motion": "lineIn / lineOut",
+      "hold": 67
+     },
+     {
+      "id": "d13b-l1",
+      "text": "your corner.",
+      "in": 669,
+      "out": 738,
+      "motion": "lineIn / lineOut",
+      "hold": 57
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "fount+50"
+  }
+ ],
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/d13-around.svg"
+  ],
+  "live": [
+   "svg/live/d13-around.svg"
+  ]
+ }
+}

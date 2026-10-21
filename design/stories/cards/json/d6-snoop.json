@@ -1,0 +1,92 @@
+{
+ "id": "d6-snoop",
+ "story": "D",
+ "beat": "Snoop. (slower)",
+ "shots": [
+  "r2"
+ ],
+ "scene": "night",
+ "textColour": "#FBFAF5",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "d6",
+    "place": "tr",
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "d6-l1",
+      "style": "headline",
+      "size": 168,
+      "tracking": -0.045,
+      "lead": 0.94,
+      "ink": "#FBFAF5",
+      "align": "right",
+      "text": "Snoop.",
+      "x": 490.8,
+      "baseline": 420.3,
+      "width": 509.2,
+      "box": {
+       "x": 490.8,
+       "y": 292.6,
+       "w": 509.2,
+       "h": 168
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "r2+2",
+   "out": "r2.end-8"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "D2": {
+    "clock": "D2",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "d6-l1",
+      "text": "Snoop.",
+      "in": 472,
+      "out": 489,
+      "motion": "lineIn / lineOut",
+      "hold": 5
+     }
+    ]
+   }
+  }
+ },
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/d6-snoop.svg"
+  ],
+  "live": [
+   "svg/live/d6-snoop.svg"
+  ]
+ }
+}

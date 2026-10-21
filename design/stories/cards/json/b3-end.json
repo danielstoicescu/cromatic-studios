@@ -1,0 +1,122 @@
+{
+ "id": "b3-end",
+ "story": "B",
+ "beat": "Nine worlds. / One street. (back on Cromatic, its light plaza)",
+ "shots": [
+  "end"
+ ],
+ "scene": "light (Cromatic by day)",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "b3",
+    "place": "bl",
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "b3-l1",
+      "style": "headline",
+      "size": 168,
+      "tracking": -0.045,
+      "lead": 0.94,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "Nine worlds.",
+      "x": 80,
+      "baseline": 1372.1,
+      "width": 897.1,
+      "box": {
+       "x": 80,
+       "y": 1244.4,
+       "w": 897.1,
+       "h": 132.7
+      }
+     },
+     {
+      "kind": "line",
+      "id": "b3-l2",
+      "style": "headline",
+      "size": 168,
+      "tracking": -0.045,
+      "lead": 0.94,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "One street.",
+      "x": 80,
+      "baseline": 1530,
+      "width": 819,
+      "box": {
+       "x": 80,
+       "y": 1402.3,
+       "w": 819,
+       "h": 132.7
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ],
+  "black": true
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "end+5",
+   "lineStagger": 6,
+   "out": "end+70"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "B5": {
+    "clock": "B5",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "b3-l1",
+      "text": "Nine worlds.",
+      "in": 342,
+      "out": 406,
+      "motion": "lineIn / lineOut",
+      "hold": 52
+     },
+     {
+      "id": "b3-l2",
+      "text": "One street.",
+      "in": 348,
+      "out": 407,
+      "motion": "lineIn / lineOut",
+      "hold": 47
+     }
+    ]
+   }
+  }
+ },
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/b3-end.svg"
+  ],
+  "live": [
+   "svg/live/b3-end.svg"
+  ]
+ }
+}
