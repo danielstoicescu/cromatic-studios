@@ -81,7 +81,7 @@
   "cues": {
    "in": "palace+4",
    "lineStagger": 8,
-   "out": "palace.end-6"
+   "out": "palace.end-10"
   },
   "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
   "frames": {
@@ -93,17 +93,17 @@
       "id": "c2-l1",
       "text": "City landmarks.",
       "in": 85,
-      "out": 119,
+      "out": 115,
       "motion": "lineIn / lineOut",
-      "hold": 22
+      "hold": 18
      },
      {
       "id": "c2-l2",
       "text": "Event locations.",
       "in": 93,
-      "out": 120,
+      "out": 116,
       "motion": "lineIn / lineOut",
-      "hold": 15
+      "hold": 11
      }
     ]
    },
@@ -115,17 +115,17 @@
       "id": "c2-l1",
       "text": "City landmarks.",
       "in": 85,
-      "out": 134,
+      "out": 130,
       "motion": "lineIn / lineOut",
-      "hold": 37
+      "hold": 33
      },
      {
       "id": "c2-l2",
       "text": "Event locations.",
       "in": 93,
-      "out": 135,
+      "out": 131,
       "motion": "lineIn / lineOut",
-      "hold": 30
+      "hold": 26
      }
     ]
    }

@@ -1,13 +1,13 @@
 {
  "id": "a2-brand",
  "story": "A",
- "beat": "Every brand has its own / [place] -> [facade] (OMA) -> [building] (Slow Coffee, centred)",
+ "beat": "Every brand / has its own + its own pill: [place] -> [facade] (OMA) -> [building] (Slow Coffee, centred)",
  "shots": [
   "steam",
   "oma",
   "scf"
  ],
- "scene": "the yellow aplat carries it (any frame)",
+ "scene": "the yellow aplat carries the two lines (any frame)",
  "textColour": "#0D0C09",
  "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
  "canvas": {
@@ -67,61 +67,6 @@
        "w": 561.1,
        "h": 91.6
       }
-     },
-     {
-      "kind": "line",
-      "id": "a2-l3",
-      "style": "title",
-      "size": 116,
-      "tracking": -0.04,
-      "lead": 1,
-      "ink": "#0D0C09",
-      "align": "left",
-      "text": "",
-      "x": 132,
-      "baseline": 684.3,
-      "width": 0,
-      "box": {
-       "x": 132,
-       "y": 596.1,
-       "w": 510.2,
-       "h": 116
-      },
-      "pill": {
-       "id": "a2-l3-pill",
-       "fill": "#FFFFFF",
-       "ink": "#0D0C09",
-       "left": 132,
-       "cy": 643.1,
-       "h": 134.6,
-       "keyline": 5.2,
-       "shadow": [
-        3.5,
-        7.5
-       ],
-       "tilt": -3,
-       "wordX": 171.4,
-       "states": [
-        {
-         "word": "place.",
-         "wordW": 303.8,
-         "w": 382.7,
-         "cx": 323.4
-        },
-        {
-         "word": "facade.",
-         "wordW": 377.7,
-         "w": 456.6,
-         "cx": 360.3
-        },
-        {
-         "word": "building.",
-         "wordW": 431.3,
-         "w": 510.2,
-         "cx": 387.1
-        }
-       ]
-      }
      }
     ],
     "aplat": {
@@ -138,23 +83,84 @@
        "x": 80,
        "y": 300,
        "w": 712.7,
-       "h": 467.9
-      },
-      {
-       "x": 80,
-       "y": 300,
-       "w": 712.7,
-       "h": 467.9
-      },
-      {
-       "x": 80,
-       "y": 300,
-       "w": 712.7,
-       "h": 467.9
+       "h": 302
       }
      ]
     },
     "behindRide": false
+   },
+   {
+    "kind": "block",
+    "id": "a2-word",
+    "place": {
+     "x": 120,
+     "align": "left",
+     "top": 587.404
+    },
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "a2-word-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "",
+      "x": 120,
+      "baseline": 670.5,
+      "width": 0,
+      "box": {
+       "x": 120,
+       "y": 582.3,
+       "w": 510.2,
+       "h": 116
+      },
+      "pill": {
+       "id": "a2-word-l1-pill",
+       "fill": "#FFFFFF",
+       "ink": "#0D0C09",
+       "left": 120,
+       "cy": 629.3,
+       "h": 134.6,
+       "keyline": 5.2,
+       "shadow": [
+        3.5,
+        7.5
+       ],
+       "tilt": -3,
+       "wordX": 159.4,
+       "states": [
+        {
+         "word": "place.",
+         "wordW": 303.8,
+         "w": 382.7,
+         "cx": 311.4
+        },
+        {
+         "word": "facade.",
+         "wordW": 377.7,
+         "w": 456.6,
+         "cx": 348.3
+        },
+        {
+         "word": "building.",
+         "wordW": 431.3,
+         "w": 510.2,
+         "cx": 375.1
+        }
+       ]
+      }
+     }
+    ],
+    "behindRide": false,
+    "attach": {
+     "to": "a2",
+     "dx": 40,
+     "gap": -40
+    }
    }
   ],
   "moves": [
@@ -189,7 +195,7 @@
   "cues": {
    "in": "steam+2",
    "lineStagger": 4,
-   "pillIn": "steam+12",
+   "pillIn": "steam+14",
    "swaps": [
     "oma+3",
     "scf+3"
@@ -216,28 +222,28 @@
       "id": "a2-l1",
       "text": "Every brand",
       "in": 80,
-      "out": 206,
+      "out": 207,
       "motion": "lineIn / lineOut",
-      "hold": 114
+      "hold": 115
      },
      {
       "id": "a2-l2",
       "text": "has its own",
       "in": 84,
-      "out": 207,
+      "out": 208,
       "motion": "lineIn / lineOut",
-      "hold": 111
+      "hold": 112
      },
      {
-      "id": "a2-l3-pill-0",
+      "id": "a2-word-l1-pill-0",
       "word": "place.",
-      "in": 86,
+      "in": 88,
       "out": 132,
       "motion": "pillIn",
-      "hold": 46
+      "hold": 44
      },
      {
-      "id": "a2-l3-pill-1",
+      "id": "a2-word-l1-pill-1",
       "word": "facade.",
       "in": 132,
       "out": 177,
@@ -245,7 +251,7 @@
       "hold": 45
      },
      {
-      "id": "a2-l3-pill-2",
+      "id": "a2-word-l1-pill-2",
       "word": "building.",
       "in": 177,
       "out": 208,
@@ -270,7 +276,7 @@
    "at": "scf+32"
   }
  ],
- "notes": "One card over three shots: it never leaves between them, the pill rolls at each cut (3 frames after the whip). Line break: Daniel's 'Every brand has its own / [place]' set on three lines so the block stays compact and the pill word reads big; the two-line break needs the type at 80 px.",
+ "notes": "Daniel's break: 'Every brand / has its own' on the aplat (title, 116), and the word in a pill of its own, white, pinned 40 px in from the block's left edge and overlapping its bottom by 40 px. The pill swaps (left end fixed) at each cut, 3 frames after the whip; the block never changes size. One card over three shots, no re-entry.",
  "files": {
   "outlined": [
    "svg/outlined/a2-brand-place.svg",
