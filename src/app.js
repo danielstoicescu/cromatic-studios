@@ -41508,7 +41508,9 @@ void main() {
         { id: "tac", br: "C", x: 1500, z: 4570, px: 1775, pz: 4570, h: 128, /* r139e: the re-massed palace is lower */ name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
         // TASK-074: one place, the Beauty & Supplement Park; its pin on the Ferris wheel; the card lists the brands (no case
         // page of its own; noCover: the card shows the park's red poster, not one brand's picture)
-        { id: "zdrovit", br: "C", x: ZDROVIT_PARK.x, z: ZDROVIT_PARK.z, h: 104, name: "Zdrovit", line: "BEAUTY & SUPPLEMENT PARK", c: "#e30613", t: "#ffffff", work: "Zdrovit", park: true, noCover: true, desc: "Beauty & Supplement Park: the Zdrovit brands Cromatic Studios works for, in one place." },
+        // Daniel (21 Oct): it is entered from Medical Avenue: x, z = the avenue at the arch (where the car stops and the
+        // nearest road is found: from the wheel it was a street of the Fintech Boulevard quarter); px, pz = the pin, on the wheel
+        { id: "zdrovit", br: "C", street: "C", x: 1500, z: ZDROVIT_PARK.z, px: ZDROVIT_PARK.x, pz: ZDROVIT_PARK.z, h: 104, name: "Zdrovit", line: "BEAUTY & SUPPLEMENT PARK", c: "#e30613", t: "#ffffff", work: "Zdrovit", park: true, noCover: true, desc: "Beauty & Supplement Park: the Zdrovit brands Cromatic Studios works for, in one place." },
         { id: "end", stop: "end", name: "Cromatic Studios House", line: "STR. OLARI 9 \xB7 COME BY", c: "#ffffff", t: "#111111", pin: "#111111" },
         { id: "jet", x: 1250, z: JET_WALK_Z, px: JET_HOME.x, pz: JET_HOME.z, h: 28 /* r138b: the smaller jet's fin top */, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", board: true, unmarked: true }
       ];
