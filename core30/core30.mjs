@@ -2,6 +2,7 @@
 //
 //   GET  /thecore30/<client>?t=<token>      the tool (dist/, built with base /thecore30/)
 //   POST /api/core30/start                   the respondent left their email on the intro: the session starts here
+//   POST /api/core30/event                   the step log: a module completed, a "sari, revin", an export (no mail)
 //   POST /api/core30/draft                   every change, debounced by the browser (+ a beacon on page close)
 //   POST /api/core30/submit                  "Trimite la Cromatic": final copy + emails
 //   GET  /api/core30/<client>/config?t=…     that respondent's questionnaire, only with the right token
@@ -12,7 +13,7 @@
 // (the last write of that hour), submits are append-only and never overwritten. Emails go to the studio
 // on the first draft (someone started) and on every submit, with the full JSON attached.
 
-import { mkdir, readFile, rename, writeFile, readdir } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile, readdir, appendFile } from "node:fs/promises";
 import { existsSync, createReadStream, statSync } from "node:fs";
 import { join, extname, normalize } from "node:path";
 
@@ -27,13 +28,24 @@ const readBody = (req) => new Promise((ok, bad) => {
 });
 const send = (res, code, obj) => { res.writeHead(code, { "Content-Type": "application/json", "Cache-Control": "no-store" }); res.end(JSON.stringify(obj)); };
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const lockKey = (body) => { try { return String(JSON.parse(body).clientId ?? "").replace(/[^a-z0-9_-]/gi, "").slice(0, 64); } catch { return ""; } };
 const safe = (s) => String(s || "").replace(/[^a-z0-9_-]/gi, "").slice(0, 64);
 const stamp = () => new Date().toISOString().replace(/[:.]/g, "-");
 
+let tmpN = 0;
 async function atomicWrite(file, data) {
-  const tmp = `${file}.${process.pid}.tmp`;
+  const tmp = `${file}.${process.pid}.${++tmpN}.${Math.random().toString(36).slice(2, 8)}.tmp`; // unique: parallel writes never share a temp file
   await writeFile(tmp, data);
   await rename(tmp, file);
+}
+
+// one queue per client: start, drafts, submits and steps read-modify-write meta.json and the log in order
+const queues = new Map();
+function withLock(key, fn) {
+  const prev = queues.get(key) ?? Promise.resolve();
+  const run = prev.then(fn, fn);
+  queues.set(key, run.catch(() => {}));
+  return run;
 }
 
 /**
@@ -80,7 +92,6 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     await mkdir(join(dir, "history"), { recursive: true });
     await mkdir(join(dir, "submits"), { recursive: true });
     const now = new Date().toISOString();
-    const first = !existsSync(join(dir, "latest.json"));
     const record = JSON.stringify({ receivedAt: now, kind, ...p }, null, 1);
 
     await atomicWrite(join(dir, "latest.json"), record);
@@ -93,6 +104,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     await atomicWrite(join(dir, "meta.json"), JSON.stringify(meta));
     await atomicWrite(join(dir, "history", `${now.slice(0, 13)}.json`), record); // one per hour
     if (kind === "submit") {
+      await appendLog(dir, { at: now, type: "submit" });
       const file = `submit-${stamp()}.json`;
       await writeFile(join(dir, "submits", file), record, { flag: "wx" }); // never overwrite
       const r = p.export?.readable ?? {};
@@ -103,8 +115,6 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       if (EMAIL.test(to)) {
         try { await transport?.sendMail({ from: mailFrom, to, subject: "Am primit The Core 3.0", html: `<p>Salut${c.contact ? `, ${esc(c.contact)}` : ""}. Am primit tot ce ai completat. Citim cu atenție și ne vedem în studio, la o cafea, pentru workshop.</p><p>Cromatic Studios · Str. Olari 9, București</p>` }); } catch (e) { console.error("[core30] confirm failed", e.message); }
       }
-    } else if (first && !meta.startedAt) {
-      await mail(`[The Core 3.0] ${c.contact ?? id} a început`, `<p>${esc(c.contact ?? "")} (${esc(c.name ?? id)}) a început să completeze The Core 3.0. Salvăm fiecare modificare în ${esc(dir)}.</p>`);
     }
     return [200, { ok: true, at: now }];
   }
@@ -135,8 +145,47 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     meta.startedBy ??= email;
     meta.starts = [...(meta.starts ?? []), { at: now, email }].slice(-20); // every device or restart, newest last
     await atomicWrite(join(dir, "meta.json"), JSON.stringify(meta));
-    if (firstStart) await mail(`[The Core 3.0] ${c.contact || email} a început`, `<p><b>${esc(email)}</b> a început The Core 3.0 pentru <b>${esc(c.name ?? id)}</b>, la ${esc(now)}. Fiecare modificare se salvează în ${esc(dir)}.</p>`);
+    await appendLog(dir, { at: now, type: "start", email });
+    if (firstStart) await mail(`[The Core 3.0] ${c.contact || email} a început · ${c.name ?? id}`, `<p><b>${esc(email)}</b> a început The Core 3.0 pentru <b>${esc(c.name ?? id)}</b>, la ${esc(now)}. Fiecare modificare se salvează în ${esc(dir)}.</p>`);
     return [200, { ok: true, at: now }];
+  }
+
+  // the step log: one JSON line per event, appended, never rewritten or trimmed
+  const logFile = (dir) => join(dir, "log.jsonl");
+  async function appendLog(dir, entry) { await appendFile(logFile(dir), JSON.stringify(entry) + "\n"); }
+  async function readLog(dir) {
+    try { return (await readFile(logFile(dir), "utf8")).split("\n").filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean); }
+    catch { return []; }
+  }
+
+  /** steps from the browser; titles and positions come from the config on disk, not from the browser */
+  async function events(body) {
+    let p;
+    try { p = JSON.parse(body); } catch { return [400, { ok: false, error: "json" }]; }
+    const c = (await clients())[safe(p.clientId)];
+    if (!c?.file) return [404, { ok: false, error: "client" }];
+    if (c.token && p.token !== c.token) return [403, { ok: false, error: "token" }];
+    const cfg = JSON.parse(await readFile(c.file, "utf8"));
+    const mods = cfg.modules ?? [];
+    const dir = join(dataDir, safe(p.clientId));
+    await mkdir(dir, { recursive: true });
+    const seen = new Set((await readLog(dir)).map((e) => e.id).filter(Boolean));
+    const now = new Date().toISOString();
+    let added = 0;
+    for (const e of (Array.isArray(p.events) ? p.events : []).slice(0, 50)) {
+      const eid = String(e.id ?? "").slice(0, 64);
+      if (!eid || seen.has(eid) || !["step", "skip", "export"].includes(e.type)) continue;
+      const entry = { at: now, clientAt: typeof e.at === "string" ? e.at.slice(0, 40) : null, id: eid, type: e.type };
+      if (e.type === "export") entry.format = e.format === "pdf" ? "pdf" : "json";
+      else {
+        const i = mods.findIndex((m) => m.id === e.moduleId);
+        if (i < 0) continue;
+        entry.module = { id: mods[i].id, title: mods[i].short, n: i + 1, total: mods.length };
+      }
+      await appendLog(dir, entry);
+      seen.add(eid); added++;
+    }
+    return [200, { ok: true, added }];
   }
 
   async function readMeta(dir) {
@@ -164,12 +213,23 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     if (c.token && t !== c.token) return [403, { ok: false }];
     const dir = join(dataDir, safe(id));
     const m = existsSync(dir) ? await readMeta(dir) : {};
+    const total = (c.file ? JSON.parse(await readFile(c.file, "utf8")).modules?.length : 0) ?? 0;
+    // the card's back: hours and titles only, never answers
+    const log = (await readLog(dir)).map((e) => ({
+      at: e.at, type: e.type,
+      ...(e.module ? { module: e.module.id, title: e.module.title, n: e.module.n, total: e.module.total } : {}),
+      ...(e.format ? { format: e.format } : {}),
+      ...(e.type === "start" ? { email: e.email } : {}),
+    }));
+    const doneIds = new Set(log.filter((e) => e.type === "step").map((e) => e.module));
+    const lastStep = [...log].reverse().find((e) => e.type === "step" || e.type === "skip") ?? null;
     return [200, {
       ok: true, id: safe(id),
       started: !!(m.startedAt || m.firstDraftAt),
       startedAt: m.startedAt ?? null, startedBy: m.startedBy ?? null,
       firstDraftAt: m.firstDraftAt ?? null, lastSaveAt: m.lastSaveAt ?? null, saves: m.saves ?? 0,
       submits: m.submits ?? 0, lastSubmitAt: m.lastSubmitAt ?? null,
+      progress: { done: doneIds.size, total }, lastStep, log,
     }];
   }
 
@@ -196,9 +256,11 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     if (p === "/thecore30" || p.startsWith("/thecore30/")) { serveTool(req, res, p); return true; }
     if (!p.startsWith("/api/core30/")) return false;
     try {
-      if (req.method === "POST" && p === "/api/core30/start") { const [code, out] = await start(await readBody(req)); send(res, code, out); return true; }
+      if (req.method === "POST" && p === "/api/core30/event") { const body = await readBody(req); const [code, out] = await withLock(lockKey(body), () => events(body)); send(res, code, out); return true; }
+      if (req.method === "POST" && p === "/api/core30/start") { const body = await readBody(req); const [code, out] = await withLock(lockKey(body), () => start(body)); send(res, code, out); return true; }
       if (req.method === "POST" && (p === "/api/core30/draft" || p === "/api/core30/submit")) {
-        const [code, out] = await store(p.endsWith("submit") ? "submit" : "draft", await readBody(req));
+        const body = await readBody(req);
+        const [code, out] = await withLock(lockKey(body), () => store(p.endsWith("submit") ? "submit" : "draft", body));
         send(res, code, out); return true;
       }
       const c = p.match(/^\/api\/core30\/([a-z0-9_-]+)\/config$/i);
