@@ -1,0 +1,21 @@
+{
+ "_": "TASK-076 (second half, Mira): Prevomit, prevomit.ro (the chooser), /kids and /adulti. Crops in capture px (desktop 2880 wide, phone 780 wide). kids/desktop-scroll.png and kids/phone-scroll.png are the full captures without the Media band, whose embedded spot does not load in a capture (an empty blue field). No photos from Drive: the site only.",
+ "label": "prevomit.ro",
+ "field": ["#e3f1b8", "#8fc23f"],
+ "out": {
+  "hero": { "kind": "hero", "desktop": { "src": "kids/desktop-full.png" }, "phone": { "src": "kids/phone-full.png", "y": 300 } },
+  "chooser": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 0, 2880, 1800] },
+  "site-scroll": { "kind": "plain", "src": "kids/desktop-scroll.png", "width": 1200, "q": 72 },
+  "site-scroll-phone": { "kind": "plain", "src": "kids/phone-scroll.png", "width": 585, "q": 70 },
+  "kids-symptoms": { "kind": "browser", "src": "kids/desktop-full.png", "crop": [140, 1806, 2600, 1010] },
+  "kids-games": { "kind": "browser", "src": "kids/desktop-full.png", "crop": [140, 4330, 2600, 1850] },
+  "kids-packs": { "kind": "browser", "src": "kids/desktop-full.png", "crop": [140, 6180, 2600, 1860] },
+  "adults-hero": { "kind": "browser", "src": "adulti/desktop-full.png", "crop": [0, 0, 2880, 1028] },
+  "adults-morning": { "kind": "browser", "src": "adulti/desktop-full.png", "crop": [0, 3000, 2880, 1192] },
+  "adults-icons": { "kind": "browser", "src": "adulti/desktop-full.png", "crop": [0, 5600, 2880, 1046] },
+  "phone-kids": { "kind": "phone", "src": "kids/phone-full.png", "y": 300 },
+  "phone-symptoms": { "kind": "phone", "src": "kids/phone-full.png", "y": 3300 },
+  "phone-games": { "kind": "phone", "src": "kids/phone-full.png", "y": 6930 },
+  "phone-adults": { "kind": "phone", "src": "adulti/phone-full.png", "y": 0 }
+ }
+}
