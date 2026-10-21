@@ -65,7 +65,7 @@ export const CARDS = [
   {
     id: "c2-landmarks", story: "C", beat: "City landmarks. / Event locations. (The Aesthetic Court)", shots: ["palace"], scene: "night (burgundy)", ink: "paper",
     blocks: [{ id: "c2", place: "bl", lines: [{ text: "City landmarks.", style: "title" }, { text: "Event locations.", style: "title" }] }],
-    timing: { in: "palace+4", lineStagger: 8, out: "palace.end-6" },
+    timing: { in: "palace+4", lineStagger: 8, out: "palace.end-10" },
     mocks: [{ state: 0, at: "palace+32" }],
     notes: "Two statements, one size, one colour: the second is no longer small and yellow."
   },
