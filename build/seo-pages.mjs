@@ -45,6 +45,7 @@ export const WORK_TITLES = {
   "litorsal": "Litorsal: billboards & posters for an electrolyte brand",
   "lacalut": "Lacalut White & Repair: Smart TV ads & motion",
   "maximag": "Maximag Bisglicinat: Smart TV ads & motion",
+  "aspasia": "Aspasia Collagen Beauty: one-page product website",
   "routine-paris": "Routine Paris: daily ritual brand identity",
   "help-4-brain": "Help4Brain: pharma product & marketing",
   "altius": "Altius: medical brand & digital",
