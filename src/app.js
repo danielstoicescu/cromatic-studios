@@ -23753,6 +23753,7 @@ void main() {
   });
 
   // src/data.js
+  var PROTO_SCHEMES, PROTO_WORLD = null; // worlds prototype (see SCHEMES)
   var ARCHIVED_SCHEMES, ROUTE_MAIN, ROUTE_A, ROUTE_B, ROUTE_C, ROUTE_D, ROUTE_MERGE, ROUTE_SECRET, ROUNDABOUT, FORK_POS, RAMP_Y, STOPS, STOP_META, CARD_SIDE, PROJECTS_A1, PROJECTS_A2, PROJECTS_B1, PROJECTS_B2, FRIEND_PILLS, CREW, CREW_PHOTOS, SERVICES, HERITAGE, PARKS, POIS, AREA_LABELS, STREET_LABELS, CITY_ZONES, MAJOR_STREETS, SCHEMES, VEHICLES, FORM_DREAMS, FORM_BIZ, FORM_TIMES, CARD_COPY, PILL_COLORS, CREW_COLORS;
   var init_data = __esm({
     "src/data.js"() {
@@ -24030,6 +24031,18 @@ void main() {
         { id: "magma", n: "Magma", bg: "#171210", fg: "#fbede4", ac: "#ff4d1c" }];
       // an archived world comes back on demand: ?world=magma (or sincity, default) adds it to the menu
       try { const w = new URLSearchParams(location.search).get("world"), a = ARCHIVED_SCHEMES.find((x) => x.id === w); if (a && !SCHEMES.some((x) => x.id === w)) SCHEMES.push(a); } catch {}
+      // WORLDS PROTOTYPE (style frames for Daniel, not a release): two proposed worlds, opened only by URL
+      // (?world=interbelic, ?world=blueprint). They join SCHEMES (applyScheme works by index) but are flagged proto:
+      // no Multiverse tile, no preview, and the city opens straight in them (setMapMode picks PROTO_WORLD over Cromatic).
+      //  - interbelic: Bucharest in the 1930s, an archive photograph (palette + warm low light + cobbles, and the map's
+      //    own tilt-shift pass graded to sepia / silver gelatin with three period accents kept: see tiltShiftRender, ib)
+      //  - blueprint: the Sketchbook's notebook pass printed in reverse (Prussian blue sheet, pale cyan lines, faint
+      //    hatching, a world grid, dashed kerbs): see NOTEBOOK_FS, bp; it shares every "sketch" scene switch (isNb)
+      PROTO_SCHEMES = [
+        { id: "interbelic", n: "Interbelic", proto: true, bg: "#e6dac2", fg: "#2b2017", ac: "#9c2f26" },
+        { id: "blueprint", n: "Blueprint", proto: true, bg: "#123d6e", fg: "#e8f4ff", ac: "#9fdcff" }
+      ];
+      try { const w = new URLSearchParams(location.search).get("world"), a = PROTO_SCHEMES.find((x) => x.id === w); if (a && !SCHEMES.some((x) => x.id === w)) { SCHEMES.push(a); PROTO_WORLD = w; } } catch {}
       VEHICLES = [
         // r138j (Daniel): the 1300 is the default ride, first in every list (r138f: it replaced the lava buggy)
         { id: "dacia1300", label: "1300" },
@@ -32146,6 +32159,7 @@ void main() {
       s.lineTo(4, 23.5); s.lineTo(2, 20.5); s.lineTo(-15, 20.5); s.lineTo(-17, 23.5); s.quadraticCurveTo(-32, 23.5, -40, 15); s.quadraticCurveTo(-41, 10, -36, 10);
     }, W, c, 3.2);
     g.add(body);
+    body.traverse((o) => { o.userData.mp = "body"; }); // worlds prototype: the parts Interbelic repaints (monoPeriod)
     // flowing mudguards (extruded ring sectors) and running boards
     const guard = (cz, front) => {
       const sh = new Shape(); const R = 12.6, r = 11; const a0 = front ? 0.05 : 0.2, a1 = front ? Math.PI - 0.2 : Math.PI - 0.05;
@@ -32154,8 +32168,8 @@ void main() {
       geo.rotateY(-Math.PI / 2); geo.translate(3, 0, 0);
       return geo;
     };
-    for (const sx of [-1, 1]) for (const [cz, f] of [[24, true], [-20, false]]) { const m = new Mesh(guard(cz, f), c); m.position.x = sx * 13.5; g.add(m); }
-    for (const sx of [-1, 1]) { const rb = topBody(rrDraw(5.5, 22, 1.5), 2, c, 6.8, 0.7); rb.position.set(sx * 13.5, 0, 2); g.add(rb); }
+    for (const sx of [-1, 1]) for (const [cz, f] of [[24, true], [-20, false]]) { const m = new Mesh(guard(cz, f), c); m.position.x = sx * 13.5; m.userData.mp = "trim"; g.add(m); }
+    for (const sx of [-1, 1]) { const rb = topBody(rrDraw(5.5, 22, 1.5), 2, c, 6.8, 0.7); rb.position.set(sx * 13.5, 0, 2); rb.traverse((o) => { o.userData.mp = "trim"; }); g.add(rb); }
     // radiator grille with vertical bars, big bowl lamps on stalks
     const gr = topBody(rrDraw(12, 2, 1), 13, c, 9, 0.8); gr.position.z = 36; g.add(gr);
     for (let i = -5; i <= 5; i++) { const bar = new Mesh(new BoxGeometry(0.5, 10, 0.6), M("#2a2c30")); bar.position.set(i * 1.05, 16, 37.4); g.add(bar); }
@@ -32164,6 +32178,7 @@ void main() {
     const frame = topBody(rrDraw(15, 1, 0.4), 7, c, 23, 0.4); frame.position.z = 5; frame.rotation.x = -0.25; g.add(frame);
     const scr = new Mesh(new ShapeGeometry(rrShape(13, 5.5, 1), 4), glassM()); scr.position.set(0, 26.8, 5.6); scr.rotation.x = -0.25; g.add(scr);
     const seat = sideBody((s) => { s.moveTo(-15, 20); s.lineTo(-6, 20); s.lineTo(-6, 22); s.lineTo(-13, 22); s.lineTo(-15, 29); s.lineTo(-17, 29); s.lineTo(-17, 20); }, 16, c, 1.2);
+    seat.traverse((o) => { o.userData.mp = "seat"; });
     g.add(seat);
     const st = new Mesh(new TorusGeometry(3.3, 0.45, 8, 22), M("#1c1c1c")); st.position.set(-3.5, 24.5, -1.5); st.rotation.x = -0.9; g.add(st, rod([-3.5, 22, 1], [-3.5, 24.5, -1.5], 0.4, c));
     for (let i = 0; i < 3; i++) { const p = rod([-11.5, 15, 18 - i * 5], [-15.5, 12, 13 - i * 5], 1, c); g.add(p); }
@@ -34405,6 +34420,7 @@ void main() {
     const WORLD_SUB = { underwater: "Submarine, fish, floating things", default: "The city, as it is", monument: "Our city, as a pastel diorama", ghibli: "Hand-painted countryside", nightlife: "Orange & blue, a light drizzle", gta2: "Bonus \u00B7 drive mode \u00B7 top-down, retro", circuit: "Race day on the circuit", magma: "Lava tones", orchid: "Petals everywhere", sincity: "Black, white and one red", sketch: "Pencil on paper, drawn as you explore", riso: "Two inks, slightly off-register" };
     const themeRows = {};
     SCHEMES.forEach((s, i) => {
+      if (s.proto) return; // worlds prototype: opened by URL only, no tile yet
       const b = el("button", "wt", `
       <span class="wt-img" style="--wbg:${s.bg};--wac:${s.ac};--wfg:${s.fg}"><img alt="" hidden></span>
       <span class="wt-veh" data-veh="${WORLD_VEH[s.id] || ""}"></span>
@@ -36422,7 +36438,7 @@ void main() {
           renderer.setScissorTest(true);
           renderer.setViewport(0, 0, pw / pr, ph / pr);
           renderer.setScissor(0, 0, pw / pr, ph / pr);
-          if (sch.id === "monument") renderer.render(scene, pcam); else if (sch.id === "sincity") sinCityRender(performance.now(), pcam); else if (sch.id === "sketch") sketchRender(performance.now(), pcam, true); else if (sch.id === "riso") risoRender(performance.now(), pcam); else outline.render(scene, pcam);
+          if (sch.id === "monument") renderer.render(scene, pcam); else if (sch.id === "sincity") sinCityRender(performance.now(), pcam); else if (sch.id === "sketch" || sch.id === "blueprint") sketchRender(performance.now(), pcam, true); else if (sch.id === "riso") risoRender(performance.now(), pcam); else outline.render(scene, pcam);
           const H = renderer.domElement.height;
           out.getContext("2d").drawImage(renderer.domElement, 0, H - ph, pw, ph, 0, 0, pw, ph);
           placeShotCache[key] = out.toDataURL("image/jpeg", 0.86);
@@ -36432,7 +36448,7 @@ void main() {
           renderer.setScissorTest(false);
           renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
           sky.position.copy(camera.position);
-          if (sch.id === "sincity") sinCityRender(performance.now(), camera); else if (sch.id === "sketch") sketchRender(performance.now(), camera); else if (sch.id === "riso") risoRender(performance.now(), camera); else if (mvK > 0.5) tiltShiftRender(performance.now()); else outline.render(scene, camera);
+          if (sch.id === "sincity") sinCityRender(performance.now(), camera); else if (sch.id === "sketch" || sch.id === "blueprint") sketchRender(performance.now(), camera); else if (sch.id === "interbelic") tiltShiftRender(performance.now()); else if (sch.id === "riso") risoRender(performance.now(), camera); else if (mvK > 0.5) tiltShiftRender(performance.now()); else outline.render(scene, camera);
         }
         return placeShotCache[key];
       }
@@ -36449,7 +36465,7 @@ void main() {
         const key = Math.round(state.L / 600) + (state.branchChosen ? state.branch : "-");
         const have = worldPrevCache.urls || [];
         have.forEach((u, i) => u && onEach(i, u)); // (the last ones, maybe from a little way back: replaced as the new ones land)
-        if (worldPrevCache.key === key && have.filter(Boolean).length >= SCHEMES.length) return;
+        if (worldPrevCache.key === key && have.filter(Boolean).length >= SCHEMES.filter((s) => !s.proto).length) return;
         if (worldPrevBusy) { worldPrevCache.onEach = onEach; return; }
         worldPrevBusy = true;
         worldPrevCache = { key, urls: have.slice(), onEach };
@@ -36470,6 +36486,7 @@ void main() {
         };
         const step = () => {
           const k = i, orig = state.schemeIdx, sch = SCHEMES[k];
+          if (sch.proto) { i++; next(); return; } // worlds prototype: no tile, no preview
           worldPrevNow = true;
           try {
             applyScheme(k);
@@ -36494,7 +36511,7 @@ void main() {
             renderer.setScissorTest(true);
             renderer.setViewport(0, 0, pw, ph);
             renderer.setScissor(0, 0, pw, ph);
-            if (sch.id === "monument") renderer.render(scene, pcam); else if (sch.id === "sincity") sinCityRender(performance.now(), pcam); else if (sch.id === "sketch") sketchRender(performance.now(), pcam, true); else if (sch.id === "riso") risoRender(performance.now(), pcam); else outline.render(scene, pcam);
+            if (sch.id === "monument") renderer.render(scene, pcam); else if (sch.id === "sincity") sinCityRender(performance.now(), pcam); else if (sch.id === "sketch" || sch.id === "blueprint") sketchRender(performance.now(), pcam, true); else if (sch.id === "riso") risoRender(performance.now(), pcam); else outline.render(scene, pcam);
             const H = renderer.domElement.height, pr = renderer.getPixelRatio(); // beta 3.83: the ratio now (adaptResolution may step it between two steps)
             octx.drawImage(renderer.domElement, 0, H - ph * pr, pw * pr, ph * pr, 0, 0, out.width, out.height);
             veh.group.visible = vis;
@@ -36969,6 +36986,63 @@ void main() {
           } catch (e) {}
         }, { timeout: 1500 }), 700);
       }
+      // ---- WORLDS PROTOTYPE (style frames): the two proposed worlds' few textures and the roadster's period paint ----
+      // Interbelic: granite setts on the streets (the ribbons' uv: u across the street, v along it in street widths, so a
+      // sett keeps its size along any street; ~16 across the drive's road, about a car's width in 5). Blueprint: the kerbs
+      // cut into dashes (an alpha map along the street, alpha-tested), so the pass draws them as construction lines.
+      // Made once, on first use (~2 ms); the materials recompile once per switch, as the notebook's vertex colours do
+      var protoTexC = null;
+      function protoTex() {
+        if (protoTexC) return protoTexC;
+        const R = rng(19341930), N = 256, cv = document.createElement("canvas"); cv.width = cv.height = N;
+        const g = cv.getContext("2d");
+        g.fillStyle = "#6b6257"; g.fillRect(0, 0, N, N); // the joints
+        const rows = 8, h = N / rows;
+        for (let r = 0; r < rows; r++) {
+          const off = r % 2 ? h * 0.5 : 0, cols = 8;
+          for (let k = -1; k <= cols; k++) {
+            const x = off + k * (N / cols), w = N / cols, l = 158 + R() * 48, wm = (R() - 0.5) * 3;
+            const gr = g.createLinearGradient(x, r * h, x + w, r * h + h); // a worn top: lighter up-left, darker down-right
+            gr.addColorStop(0, `rgb(${l + 16},${l + 12},${l + 6})`); gr.addColorStop(1, `rgb(${l - 18},${l - 21},${l - 26})`);
+            g.fillStyle = gr; g.beginPath(); g.roundRect(x + 2.2 + wm, r * h + 2.2, w - 4.4, h - 4.4, 7); g.fill();
+            for (let s = 0; s < 6; s++) { g.fillStyle = `rgba(${R() < 0.5 ? "255,250,240" : "40,34,28"},${0.05 + R() * 0.08})`; g.beginPath(); g.arc(x + 5 + R() * (w - 10), r * h + 5 + R() * (h - 10), 1 + R() * 2.4, 0, 6.283); g.fill(); }
+          }
+        }
+        const cob = new CanvasTexture(cv); cob.colorSpace = SRGBColorSpace; cob.wrapS = cob.wrapT = RepeatWrapping; cob.repeat.set(3, 3); cob.anisotropy = 4;
+        const cobS = cob.clone(); cobS.repeat.set(1.5, 1.5); cobS.needsUpdate = true; // the side streets: the same setts on a narrower street
+        const dv = document.createElement("canvas"); dv.width = 4; dv.height = 64;
+        const dg = dv.getContext("2d"); dg.fillStyle = "#000"; dg.fillRect(0, 0, 4, 64); dg.fillStyle = "#fff"; dg.fillRect(0, 0, 4, 38); // a dash, a gap
+        const dash = new CanvasTexture(dv); dash.wrapS = dash.wrapT = RepeatWrapping; dash.repeat.set(1, 1.6); dash.magFilter = NearestFilter;
+        return (protoTexC = { cob, cobS, dash });
+      }
+      function protoRoadMaps(id) {
+        const want = id === "interbelic" ? "cob" : id === "blueprint" ? "dash" : "";
+        const T = want ? protoTex() : null;
+        window.__protoMats = mats; // tests (rcheck: the live worlds come back as they were)
+        for (const [m, k] of [[mats.route, "cob"], [mats.roadMajor, "cob"], [mats.roadMinor, "cobS"]]) {
+          if (!m || (m.userData.protoMap || "") === (want === "cob" ? k : "")) continue;
+          m.userData.protoMap = want === "cob" ? k : ""; m.map = want === "cob" ? T[k] : null; m.needsUpdate = true;
+        }
+        for (const m of [mats.roadCasing, mats.routeCasing]) {
+          if (!m || (m.userData.protoMap || "") === (want === "dash" ? "dash" : "")) continue;
+          m.userData.protoMap = want === "dash" ? "dash" : ""; m.alphaMap = want === "dash" ? T.dash : null; m.alphaTest = want === "dash" ? 0.5 : 0; m.needsUpdate = true;
+        }
+      }
+      // the Monopoly token is a 1930s roadster: in Interbelic it is lacquered in tram red and cream (body red, wings and
+      // running boards cream, an oxblood seat), its chrome kept for the grille, lamps and wheels (buildMonopoly tags the parts)
+      var monoPaint = null;
+      function monoPeriod(g, on) {
+        if (!g) return;
+        g.traverse((o) => {
+          const k = o.userData && o.userData.mp;
+          if (!k || !o.isMesh) return;
+          if (on) {
+            monoPaint ||= { body: new MeshStandardMaterial({ color: "#a8221a", roughness: 0.32, metalness: 0.1 }), trim: new MeshStandardMaterial({ color: "#efe2c6", roughness: 0.45, metalness: 0.05 }), seat: new MeshStandardMaterial({ color: "#4a2a1c", roughness: 0.75 }) };
+            if (!o.userData.mp0) o.userData.mp0 = o.material;
+            o.material = monoPaint[k];
+          } else if (o.userData.mp0) o.material = o.userData.mp0;
+        });
+      }
       function applyScheme(idx) {
         paintWorldBtn();
         if (state.schemeIdx != null && state.schemeIdx !== idx && !onbWarm && !worldPrevNow) czEv("world_change", { world: SCHEMES[idx]?.id }); // r141: not the warm-up
@@ -36978,9 +37052,11 @@ void main() {
         warmShaders(); // r139b
         window.__czAmb?.world(s.id);
         if (s.id === "sketch") try { crayonTextures(); notebookUI(); nbVarsFlush(); } catch (e) {} // beta 3.76: and the notebook's pencil hatch for the interface (TASK-014: its CSS variables set here, with the switch's own style recalc)
-        const dark = lum(s.bg) < 0.45;
+        const nb = s.id === "sketch" || s.id === "blueprint"; // worlds prototype: Blueprint is the notebook's machinery, printed in reverse
+        // worlds prototype: the blueprint's sheet is dark (a dark interface), its city is lit as the notebook's by day
+        const uiDark = lum(s.bg) < 0.45, dark = uiDark && s.id !== "blueprint";
         isDarkScheme = dark;
-        document.body.classList.toggle("dark-ui", dark);
+        document.body.classList.toggle("dark-ui", uiDark);
         document.body.className = document.body.className.replace(/\bscheme-[\w-]+/g, "").trim();
         document.body.classList.add(`scheme-${s.id}`);
         if (scene.fog) { scene.fog.near = s.id === "nightlife" ? 1100 : 900; scene.fog.far = s.id === "nightlife" ? 5200 : 4200; }
@@ -36993,7 +37069,7 @@ void main() {
         cs.setProperty("--bg", s.bg);
         cs.setProperty("--fg", s.fg);
         cs.setProperty("--accent", s.ac);
-        cs.setProperty("--card-bg", dark ? mixC(s.bg, "#ffffff", 0.07).getStyle() : mixC(s.bg, "#ffffff", 0.5).getStyle());
+        cs.setProperty("--card-bg", uiDark ? mixC(s.bg, "#ffffff", 0.07).getStyle() : mixC(s.bg, "#ffffff", 0.5).getStyle());
         ui.setThemeName(s.n);
         scene.background = new Color(s.bg);
         const mv = s.id === "monument";
@@ -37026,7 +37102,7 @@ void main() {
           scene.fog.near = mv ? 9000 : s.id === "nightlife" ? 1100 : 900;
           scene.fog.far = mv ? 34000 : s.id === "nightlife" ? 5200 : 4200;
           if (mats.mvWalls) {
-            const pastel = mv || s.id === "sincity" || s.id === "riso";
+            const pastel = mv || s.id === "sincity" || s.id === "riso" || s.id === "interbelic"; // worlds prototype: the pastel city reads as varied stucco and stone in sepia
             for (const m of mats.cityTiles) { const a = m.geometry.attributes; a.color.array.set(pastel ? a.colorMV.array : m.userData.def); a.color.needsUpdate = true; }
             mats.mvProps.visible = mv;
             if (!mats.winMV) { mats.winDef = mats.buildings.map; mats.winMV = makeWindowTextureMV(); mats.winMV.wrapS = mats.winMV.wrapT = RepeatWrapping; }
@@ -37050,12 +37126,12 @@ void main() {
         fillLight.color.set(nightlife ? "#2f66ff" : "#dfe8ff");
         mats.roofs?.color.copy(dark ? mixC(s.bg, "#ffffff", 0.2) : new Color("#ffffff"));
         mats.pole?.color.set("#3c3a34"); // beta 3.76 round 2: Sketchbook draws the poles white and thin; every other world, as built
-        if (mats.poleGeo) { const P = mats.poleGeo, sk = s.id === "sketch"; P.poles.geometry = sk ? P.thinPole : P.poleGeo; P.arms.geometry = sk ? P.thinArm : P.armGeo; P.heads.geometry = sk ? P.smallHead : P.headGeo; }
-        for (const im of mats.tampaForest || []) im.visible = s.id !== "sketch"; // round 2: in the notebook Tâmpa is one shape, a light wash with a few swirls (its firs were a dense scribble)
+        if (mats.poleGeo) { const P = mats.poleGeo, sk = nb; P.poles.geometry = sk ? P.thinPole : P.poleGeo; P.arms.geometry = sk ? P.thinArm : P.armGeo; P.heads.geometry = sk ? P.smallHead : P.headGeo; }
+        for (const im of mats.tampaForest || []) im.visible = !nb; // round 2: in the notebook Tâmpa is one shape, a light wash with a few swirls (its firs were a dense scribble)
         if (sun.shadow.intensity !== 1) { sun.shadow.intensity = 1; sun.shadow.needsUpdate = true; } // and its shadow comes back (Sketchbook turns it off)
         const orchid = s.id === "orchid";
         mats.canopy?.color.copy(dark ? mixC("#28C840", s.bg, 0.35) : new Color("#ffffff"));
-        mats.treeBloom?.(orchid, s.id === "sketch");
+        mats.treeBloom?.(orchid, nb);
         mats.bush?.color.set(orchid ? "#e7a8c8" : "#43a655");
         mats.parkMat?.color.copy(dark ? mixC("#8fdc9d", s.bg, 0.45) : new Color("#8fdc9d"));
         mats.island?.color.copy(dark ? mixC("#54d168", s.bg, 0.4) : new Color("#54d168"));
@@ -37139,12 +37215,12 @@ void main() {
           mats.canopy?.color.set("#262626"); mats.bush?.color.set("#1e1e1e"); mats.parkMat?.color.set("#141414");
           renderer.toneMappingExposure = 1.1;
         }
-        mats.treeSketch?.(s.id === "sketch");
+        mats.treeSketch?.(nb);
         if (typeof sketchRings !== "undefined" && sketchRings) sketchRings.g.visible = s.id === "sketch";
         // r130f: Sketchbook draws a heavier pencil: the ink hull round everything is thicker (the default 18e-4 is
         // under a pixel from the map's height and antialiases away); the parameters are read every render
         {
-          const want = s.id === "sketch" ? 21e-4 : void 0;
+          const want = nb ? 21e-4 : void 0;
           if (scene.userData.sketchHull !== want) {
             scene.userData.sketchHull = want;
             scene.traverse((o) => {
@@ -37159,7 +37235,9 @@ void main() {
           }
         }
         // Sketchbook draws with light only: the city's own colours go (a shader recompile, once per switch)
-        for (const m of [mats.buildings, mats.roofs]) if (m && m.vertexColors === (s.id === "sketch")) { m.vertexColors = s.id !== "sketch"; m.needsUpdate = true; }
+        for (const m of [mats.buildings, mats.roofs]) { const vc = !nb && !(m === mats.roofs && s.id === "interbelic"); if (m && m.vertexColors !== vc) { m.vertexColors = vc; m.needsUpdate = true; } } // worlds prototype: Interbelic's roofs in one tone
+        protoRoadMaps(s.id); // worlds prototype: cobbles (Interbelic), dashed kerbs (Blueprint), nothing elsewhere
+        if (veh?.group) monoPeriod(veh.group, s.id === "interbelic");
         if (s.id === "riso") {
           scene.fog.color.set("#f3eee3"); scene.fog.near = 6000; scene.fog.far = 30000;
           hemi.color.set("#ffffff"); hemi.groundColor.set("#c9c2d8"); hemi.intensity = 0.95;
@@ -37172,7 +37250,7 @@ void main() {
           mats.canopy?.color.set("#9fb8ff"); mats.parkMat?.color.set("#c5d3ff");
           renderer.toneMappingExposure = 1.0;
         }
-        if (s.id === "sketch") {
+        if (nb) {
           // beta 3.76: the notebook. The light is flat and even (the same sky above and below, a weak sun for a hint of
           // form; the pass undoes it, see kW), so what reaches the pass is each thing's own colour, and colour becomes
           // pencil. White is paper: the ground, the streets (the drive's road too, round 2), the walls, the street lights
@@ -37195,6 +37273,33 @@ void main() {
           mats.island?.color.set("#8dbb6c"); mats.zonePatch?.color.set("#ffffff"); mats.pillar?.color.set("#ffffff");
           renderer.toneMappingExposure = 1.05;
           window.__nbMats = mats; // tests and tuning
+          if (s.id === "blueprint") {
+            // worlds prototype: the same notebook scene; the pass prints it in reverse (NOTEBOOK_FS, bp). The kerbs are the
+            // dashed construction lines (protoRoadMaps cuts them), the drive's lane dashes become its centre line
+            mats.routeDash?.color.set("#2e3266");
+            mats.parkMat?.color.set("#ffffff"); mats.island?.color.set("#ffffff");
+          }
+        }
+        if (s.id === "interbelic") {
+          // worlds prototype: Bucharest in the 1930s, as an archive photograph. Everything is lit and coloured plainly; the
+          // print is made by the map's own lens pass (tiltShiftRender, ib: sepia / silver gelatin, three period accents kept,
+          // grain and a gentle vignette). Stucco and limestone (the pastel city, varied in tone), darker zinc and tile roofs,
+          // granite setts, cast-iron lamp posts with a little gas-lamp warmth, a warm low sun with long shadows and a pale,
+          // burnt-out sky (orthochromatic film), a soft haze in the street view
+          sky.visible = true;
+          skyMat.uniforms.top.value.set("#d9d2c4"); skyMat.uniforms.mid.value.set("#efe8da"); skyMat.uniforms.hor.value.set("#f6f0e4");
+          scene.fog.color.set("#e6dcc8"); scene.fog.near = 900; scene.fog.far = 5200;
+          hemi.color.set("#fff0d8"); hemi.groundColor.set("#8a7b68"); hemi.intensity = 0.62;
+          sun.color.set("#ffdcae"); sun.intensity = 2.8; fillLight.color.set("#c8d0e4"); fillLight.intensity = 0.22;
+          mats.ground?.color.set("#d9cfbd");
+          mats.roadMinor?.color.set("#d6ccbb"); mats.roadMajor?.color.set("#d2c8b6"); mats.roadCasing?.color.set("#857a6a");
+          mats.route?.color.set("#cdc2b0"); mats.routeCasing?.color.set("#6f6455"); mats.routeDash?.color.set("#3a342c"); mats.routeAlt?.color.set("#c9bfae"); // the drive's street: setts, a granite kerb; its lane dashes read as tram rails
+          mats.roofs?.color.set("#8f877d"); // zinc and old tile: one tone (the pastel roofs' corals read as tram red in the print)
+          mats.pole?.color.set("#2a2826");
+          if (mats.lampHead) mats.lampHead.emissiveIntensity = 0.9; // gas-lamp warmth, by day
+          mats.canopy?.color.set("#ffffff"); mats.bush?.color.set("#357a34"); mats.parkMat?.color.set("#5a8f45"); // the hedges and the parks: the deep green, hand-tinted
+          mats.zonePatch?.color.set("#d3c8b4"); mats.pillar?.color.set("#d9cfbd");
+          renderer.toneMappingExposure = 1.1;
         }
         if (s.id === "underwater") {
           scene.fog.color.set("#0d4a6e");
@@ -37206,7 +37311,7 @@ void main() {
           renderer.toneMappingExposure = 1.2;
         }
       }
-      applyScheme(0);
+      applyScheme(Math.max(0, SCHEMES.findIndex((x) => x.id === PROTO_WORLD))); // worlds prototype: the drive opens in it too
       var RAIN_N = 500;
       var rainGeo = new PlaneGeometry(0.9, 20);
       var rainMat = new MeshBasicMaterial({ color: "#9db6d0", transparent: true, opacity: 0.55, side: DoubleSide });
@@ -37307,6 +37412,7 @@ void main() {
         sunset: { el: 0.42, az: 2.2, col: "#ffc98c", int: 1.05 }
       };
       var curSun = { el: 0.9, az: 0.55, col: new Color("#fff4dc"), int: 1 };
+      var IB_SUN = { el: 0.6, az: 0.8, col: "#ffdcae", int: 1 }; // worlds prototype
       var lastGoodScroll = 0;
       // while anything sits over the map (a modal, a case page, a full-screen frame) the car is
       // parked: the page's scroll position is held, whatever scrolls inside the overlay
@@ -37737,7 +37843,7 @@ void main() {
       const _tA = new Vector3(), _tB = new Vector3(); // r139e: _tB for the curvature
       var beaconOn = false, beaconBlinkUntil = 0, copMode = "";
       // r138j: the 1300 where the van used to be the default; worlds with their own ride keep it
-      var ENV_VEH = { default: "dacia1300", monument: "dacia1300", ghibli: "dacia1300", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "dacia1300", orchid: "scooter", underwater: "sub", sincity: "cop", sketch: "dacia1300", riso: "scooter" };
+      var ENV_VEH = { default: "dacia1300", monument: "dacia1300", ghibli: "dacia1300", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "dacia1300", orchid: "scooter", underwater: "sub", sincity: "cop", sketch: "dacia1300", riso: "scooter", interbelic: "monopoly", blueprint: "dacia1300" }; // worlds prototype: the 1930s roadster (the Monopoly token) repainted, see monoPeriod
       var camYaw = null, camDir = new Vector3(0, 0, 1), chA = new Vector3(), chB = new Vector3(), planeRev = 0;
       var VEH_SPEED = {
         groovy: { max: 130, unit: "KM/H" }, f1: { max: 340, unit: "KM/H" }, monopoly: { max: 260, unit: "KM/H" },
@@ -38717,11 +38823,30 @@ void main() {
         if (!tilt) {
           const rt = new WebGLRenderTarget(w, h, { samples: 2, type: HalfFloatType });
           const mat = new ShaderMaterial({
-            uniforms: { gk: { value: 1 }, tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, amt: { value: 7 }, focus: { value: 0.46 }, band: { value: 0.1 }, t: { value: 0 }, zb: { value: 0 }, ep: { value: new Vector2(0, 0) } },
+            uniforms: { gk: { value: 1 }, ib: { value: 0 }, tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, amt: { value: 7 }, focus: { value: 0.46 }, band: { value: 0.1 }, t: { value: 0 }, zb: { value: 0 }, ep: { value: new Vector2(0, 0) } },
             vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
             fragmentShader: `
-              uniform sampler2D tD; uniform vec2 res; uniform float amt, focus, band, t, zb, gk; uniform vec2 ep; varying vec2 vUv;
+              uniform sampler2D tD; uniform vec2 res; uniform float amt, focus, band, t, zb, gk, ib; uniform vec2 ep; varying vec2 vUv;
               ${isMobile() ? "#define TAPS 6\n#define LITE 1" : "#define TAPS 12"}
+              // WORLDS PROTOTYPE, Interbelic: the frame printed as a 1930s archive photograph, on screen colours (after the
+              // tone mapping). A silver-gelatin sepia (a gentle S, lifted blacks, rolled highlights: deep warm brown to cream),
+              // and three period accents that survive muted, as if hand-tinted: tram red, poster ochre, deep green (only a
+              // strong colour near one of those hues keeps any of it). A warm vignette; the grain and a faint exposure flicker
+              // are added after, at 18 frames a second, like old film. A few multiplies per pixel: no new pass, no new taps
+              vec3 ibGrade(vec3 s, vec2 q){
+                float l = dot(s, vec3(0.299, 0.587, 0.114));
+                float mx = max(s.r, max(s.g, s.b)), ch = mx - min(s.r, min(s.g, s.b)), sat = ch / max(mx, 1e-4), hu = 0.0;
+                if (ch > 1e-4) { if (mx == s.r) hu = mod((s.g - s.b) / ch, 6.0); else if (mx == s.g) hu = (s.b - s.r) / ch + 2.0; else hu = (s.r - s.g) / ch + 4.0; hu /= 6.0; }
+                float tt = clamp(l * 1.06, 0.0, 1.0); tt = mix(tt, tt * tt * (3.0 - 2.0 * tt), 0.9); tt = 0.05 + 0.9 * tt;
+                vec3 tone = tt < 0.5 ? mix(vec3(0.15, 0.115, 0.09), vec3(0.56, 0.5, 0.42), tt * 2.0) : mix(vec3(0.56, 0.5, 0.42), vec3(0.97, 0.945, 0.885), tt * 2.0 - 1.0);
+                float dR = min(abs(hu - 0.995), 1.0 - abs(hu - 0.995)), dO = abs(hu - 0.115), dG = abs(hu - 0.36);
+                float wR = exp(-dR * dR * 260.0), wO = exp(-dO * dO * 320.0), wG = exp(-dG * dG * 90.0), ws = wR + wO + wG;
+                vec3 pc = (wR * vec3(0.62, 0.17, 0.13) + wO * vec3(0.80, 0.58, 0.21) + wG * vec3(0.21, 0.37, 0.25)) / max(ws, 1e-4);
+                float keep = clamp(wR * smoothstep(0.5, 0.72, sat) + wO * smoothstep(0.55, 0.78, sat) + wG * smoothstep(0.42, 0.68, sat), 0.0, 1.0) * smoothstep(0.12, 0.3, mx);
+                vec3 o = mix(tone, pc * (0.5 + 0.95 * tt), keep * 0.82);
+                float v = smoothstep(0.08, 0.8, dot(q, q) * 2.3);
+                return mix(o, o * vec3(0.6, 0.5, 0.4), v * 0.6);
+              }
               void main(){
                 float dy = abs(vUv.y - focus);
                 float r = amt * smoothstep(band, band + 0.42, dy);
@@ -38770,6 +38895,15 @@ void main() {
                 gl_FragColor = vec4(c, 1.0);
                 #include <tonemapping_fragment>
                 #include <colorspace_fragment>
+                if (ib > 0.5) { // worlds prototype: Interbelic (ibGrade)
+                  vec3 o = ibGrade(gl_FragColor.rgb, q);
+                  float tf2 = floor(t * 18.0), lo = dot(o, vec3(0.333));
+                  vec2 gq = floor(vUv * res / 1.35);
+                  float m1 = fract(sin(dot(gq + vec2(tf2 * 5.31, tf2 * 2.17), vec2(12.9898, 78.233))) * 43758.5453), m2 = fract(sin(dot(gq + vec2(tf2 * 1.13, tf2 * 7.77), vec2(39.346, 11.135))) * 24634.6345);
+                  o += (m1 + m2 - 1.0) * 0.052 * (0.4 + 0.6 * (1.0 - abs(lo - 0.5) * 2.0));
+                  o *= 1.0 + 0.018 * (fract(sin(tf2 * 91.7) * 4375.85) - 0.5);
+                  gl_FragColor.rgb = o;
+                }
               }`,
             depthTest: false, depthWrite: false
           });
@@ -38782,6 +38916,7 @@ void main() {
         tilt.mat.uniforms.amt.value = 4.2 * renderer.getPixelRatio() * (mapMode && nav2?.on ? Math.max(0, 1 - 1.1 * nav2.camK) : 1); // nav2: no miniature blur in the street view (beta 2.5: one tap per pixel there, ~+5 fps)
         tilt.mat.uniforms.band.value = 0.16;
         tilt.mat.uniforms.gk.value = SCHEMES[state.schemeIdx].id === "nightlife" ? 0.35 : 1; // beta 2.9 (Daniel): the night's grain, much lighter
+        { const ib = SCHEMES[state.schemeIdx].id === "interbelic"; tilt.mat.uniforms.ib.value = ib ? 1 : 0; if (ib) { tilt.mat.uniforms.gk.value = 0; tilt.mat.uniforms.amt.value *= mapMode ? 0.7 : 0.25; } } // worlds prototype: its own grain (after the grade), a softer miniature
         tilt.mat.uniforms.t.value = (now * 0.001) % 100;
         tilt.mat.uniforms.zb.value = mapMode ? mapView.zoomBlur || 0 : 0;
         if (entryPull) { const u = (now - entryPull.t0) / 1000, e = 1 - Math.pow(1 - Math.min(1, Math.max(0, u)), 3); if (u >= 1) { entryPull = null; tilt.mat.uniforms.ep.value.set(0, 0); } else tilt.mat.uniforms.ep.value.set(-0.08 + 1.3 * e, 16 * renderer.getPixelRatio() * (1 - 0.5 * e)); } // r155
@@ -39259,7 +39394,7 @@ void main() {
       // audit). __perfLab.nbHull(true) brings it back for an A/B
       var nbHull = false;
       var NOTEBOOK_FS = `
-              uniform sampler2D tD, tZ, tR, tP, tK, tS; uniform vec2 res; uniform float t, full, near, far, dz, kW; uniform mat4 pInv, cW; uniform vec4 box; varying vec2 vUv;
+              uniform sampler2D tD, tZ, tR, tP, tK, tS; uniform vec2 res; uniform float t, full, near, far, dz, kW, bp; uniform mat4 pInv, cW; uniform vec4 box; varying vec2 vUv; // bp: worlds prototype, Blueprint
               uniform vec2 skyR; uniform mat3 skyM; // beta 3.86: the camera's yaw (unwrapped, radians), how far the sky is drawn in (0..1); screen (NDC x, y, 1) to a world ray
               const float SKY_VM = ${NB_SKY.VM.toFixed(4)}, SKY_S = ${NB_SKY.S.toFixed(4)}, SKY_TX = ${(0.7 * 360 / NB_SKY.W).toFixed(4)}; // the sky's band: tan(elevation) at its top row, the distance range baked and 0.7 texel (degrees)
               const vec3 SKY_SUN = vec3(${(NB_SKY.sun[0] * Math.PI / 180).toFixed(4)}, ${Math.tan(NB_SKY.sun[1] * Math.PI / 180).toFixed(4)}, ${(NB_SKY.sun[2] * 1.3 * Math.PI / 180).toFixed(4)}); // where the sun is (azimuth, tan(elevation)) and how near is in it (radians)
@@ -39366,7 +39501,7 @@ void main() {
                 float rv = texture2D(tR, (wp.xz - box.xy) / box.zw).r;
                 float edge = vn(wp.xz * 0.02) * 0.35;
                 bool sky = zr >= 0.9999;
-                float shown = full > 0.5 || sky ? 1.0 : smoothstep(0.25, 0.55, rv + edge - 0.15);
+                float shown = full > 0.5 || sky || bp > 0.5 ? 1.0 : smoothstep(0.25, 0.55, rv + edge - 0.15); // (the blueprint is drawn whole)
                 float band = full > 0.5 ? 0.0 : smoothstep(0.02, 0.4, rv + edge - 0.15) * (1.0 - shown);
                 // the ground (streets, pavements, parks: street level, facing up; the cars excepted): never hatched. Strokes
                 // laid on the ground are what crawls in a drift and reads as hair from above; it is paper, with a flat wash of
@@ -39447,6 +39582,36 @@ void main() {
                 o = mix(o, inkC, clamp(g, 0.0, 1.0) * 0.92);
                 // crayon decals keep their colour, laid over the paper (multiply)
                 if (abs(tc.a - 0.25) < 0.03) { vec3 cc = pow(clamp(tc.rgb, 0.0, 1.0), vec3(0.4545)); o = mix(o, o * mix(vec3(1.0), cc, 0.9), 0.81); }
+                if (bp > 0.5) {
+                  // WORLDS PROTOTYPE, Blueprint: the same drawing (its lines g: silhouettes, folds, the kerbs, the sky's shapes),
+                  // printed in reverse. The sheet is a deep Prussian blue, its dye a little uneven and lighter in the middle; the
+                  // lines are a pale cyan white; the faces are hatched faintly by how far they turn from a fixed light (one ink:
+                  // not by their colour), greenery in the notebook's swirls; the ground carries the architect's grid in world
+                  // space (fine every 40, heavier every 200, faded where it would get dense); the sky, the sheet's own faint
+                  // grid. Its cost is the notebook's: a few more multiplies, the same taps
+                  vec2 sv = (vUv - 0.5) * vec2(asp, 1.0);
+                  float dye = vn(sv * 2.6 + 3.1) * 0.55 + vn(sv * 9.0 + 1.7) * 0.3 + (paper.r - 0.985) * 5.0;
+                  vec3 ob = vec3(0.066, 0.215, 0.41) * (0.9 + 0.17 * dye) * (1.0 - dot(sv, sv) * 0.32);
+                  vec3 bl = vec3(0.87, 0.955, 1.0);
+                  if (!sky) {
+                    vec3 nN = normalize(nW);
+                    float shd = 0.5 - 0.5 * dot(nN, normalize(vec3(-0.45, 0.75, -0.5)));
+                    float ha = (0.02 + 0.3 * smoothstep(0.3, 0.9, shd) + 0.12 * fol) * (1.0 - ground);
+                    float hs = smoothstep(1.12 - ha, 1.22 - ha, mix(st.r, st.b * 1.15, fol));
+                    float hx = smoothstep(1.62 - ha, 1.8 - ha, st.g) * (1.0 - fol) * step(0.62, shd);
+                    ob = mix(ob, bl, (0.035 + 0.05 * shd + hs * 0.18 + hx * 0.09) * (1.0 - ground)); // a faint wash too: a house stands off the ground
+                    vec2 q1 = wp.xz / 40.0, f1 = max(fwidth(q1), vec2(1e-4)), d1 = abs(fract(q1 - 0.5) - 0.5) / f1;
+                    vec2 q5 = wp.xz / 200.0, f5 = max(fwidth(q5), vec2(1e-4)), d5 = abs(fract(q5 - 0.5) - 0.5) / f5;
+                    float gr1 = (1.0 - smoothstep(0.0, 1.0, min(d1.x, d1.y))) * (1.0 - smoothstep(0.06, 0.2, max(f1.x, f1.y)));
+                    float gr5 = (1.0 - smoothstep(0.0, 1.2, min(d5.x, d5.y))) * (1.0 - smoothstep(0.12, 0.35, max(f5.x, f5.y)));
+                    ob = mix(ob, bl, (gr1 * 0.1 + gr5 * 0.22) * step(wp.y, 4.0));
+                  } else {
+                    vec2 sg = vUv * res / (24.0 * LR), sd = abs(fract(sg - 0.5) - 0.5) * 24.0;
+                    ob = mix(ob, bl, (1.0 - smoothstep(0.0, 1.0, min(sd.x, sd.y))) * 0.07);
+                  }
+                  if (inCar0) ob = mix(ob, bl, 0.2); // the ride: a pale wash, so it reads on the plan (the one thing that moves)
+                  o = mix(ob, bl, clamp(g, 0.0, 1.0) * (sky ? 0.7 : 0.93)); // the sky's shapes a little lighter: a note in the margin
+                }
                 gl_FragColor = vec4(o, 1.0);
                 // beta 3.75 (the audit's contract): the scene's depth goes on screen with the drawing, for the things drawn plain over it (sketchPlainDraw)
                 gl_FragDepth = zr;
@@ -39463,7 +39628,7 @@ void main() {
           rt.depthTexture = new DepthTexture(w, h);
           const mat = new ShaderMaterial({
             uniforms: { tD: { value: rt.texture }, tZ: { value: rt.depthTexture }, tR: { value: R.rt.texture }, res: { value: new Vector2(w, h) }, t: { value: 0 },
-              pInv: { value: new Matrix4() }, cW: { value: new Matrix4() }, box: { value: new Vector4(R.x0, R.z0, R.w, R.h) }, full: { value: 0 }, near: { value: 1 }, far: { value: 1000 }, dz: { value: 900 } },
+              pInv: { value: new Matrix4() }, cW: { value: new Matrix4() }, box: { value: new Vector4(R.x0, R.z0, R.w, R.h) }, full: { value: 0 }, near: { value: 1 }, far: { value: 1000 }, dz: { value: 900 }, bp: { value: 0 } },
             vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
             fragmentShader: NOTEBOOK_FS, // beta 3.76: the notebook (was the graphite pass of r130-r139b)
             depthTest: true, depthFunc: AlwaysDepth, depthWrite: true // beta 3.75: the pass writes the scene's depth (gl_FragDepth) for the things drawn plain over it
@@ -39490,6 +39655,7 @@ void main() {
         sketchRevealFlush(); // beta 3.7x: the strokes queued since the last frame
         const u = sketchFx.mat.uniforms;
         u.t.value = (now * 0.001) % 100; u.full.value = full ? 1 : 0;
+        u.bp.value = SCHEMES[state.schemeIdx].id === "blueprint" ? 1 : 0; // worlds prototype: the notebook printed as a blueprint
         cam.updateMatrixWorld();
         if (!full) { // beta 3.86: the sky turns with the camera (its yaw, unwrapped, so the strokes never jump)
           const e = cam.matrixWorld.elements, yaw = Math.atan2(e[8], -e[10]), S = sketchFx.sky || (sketchFx.sky = { yaw, acc: yaw, at: 0 });
@@ -39662,7 +39828,7 @@ void main() {
           const sch = SCHEMES[state.schemeIdx]?.id, key = all ? `${sch}|all` : `${sch}|${mapMode ? "map" : "drive"}`;
           if (!sch || warmDone.has(key) || (bootSlicing && !all)) return; // beta 3.xx: the sliced boot compiles these itself
           warmDone.add(key);
-          const post = sch === "sketch" || sch === "riso" || sch === "sincity", toRT = all || post || mapMode || sch === "monument";
+          const post = sch === "sketch" || sch === "blueprint" || sch === "interbelic" || sch === "riso" || sch === "sincity", toRT = all || post || mapMode || sch === "monument";
           const hidden = [], prev = renderer.getRenderTarget();
           const rt = toRT ? new WebGLRenderTarget(1, 1, { type: HalfFloatType }) : null;
           scene.traverse((o) => { if (!o.visible && (o.isMesh || o.isGroup)) { hidden.push(o); o.visible = true; } });
@@ -40297,7 +40463,7 @@ void main() {
         // Monument Valley never rains: the weather only moves the sun between noon and dusk
         if (schemeId === "monument" && wx !== "sun") wx = "sunset";
         if (schemeId === "underwater") wx = "sun";
-        const sp = sunPresets[wx];
+        const sp = schemeId === "interbelic" ? IB_SUN : sunPresets[wx]; // worlds prototype: Interbelic is always a low afternoon sun (long shadows)
         curSun.el = smooth(curSun.el, sp.el, dt, 1.5);
         curSun.az = smooth(curSun.az, sp.az, dt, 1.5);
         curSun.int = smooth(curSun.int, sp.int, dt, 1.5);
@@ -40360,7 +40526,8 @@ void main() {
           sun.intensity += 6 * flick;
           hemi.intensity = (lum(SCHEMES[state.schemeIdx].bg) < 0.45 ? 0.35 : 0.75) + 1.6 * flick;
         }
-        if (schemeId === "sketch") { hemi.intensity = 2.4; sun.intensity = 0.9; sun.color.set("#ffffff"); } // beta 3.76: the notebook's light stays flat and even (the weather and the lightning move it elsewhere)
+        if (schemeId === "sketch" || schemeId === "blueprint") { hemi.intensity = 2.4; sun.intensity = 0.9; sun.color.set("#ffffff"); }
+        if (schemeId === "interbelic") { hemi.intensity = 0.62; sun.intensity = 2.8 * curSun.int; sun.color.set("#ffdcae"); } // worlds prototype: a warm afternoon sun // beta 3.76: the notebook's light stays flat and even (the weather and the lightning move it elsewhere)
         rainAlpha = smooth(rainAlpha, wantRain ? 1 : 0, dt, 2.5);
         rain.visible = rainAlpha > 0.02;
         (window.__wxNow ||= {}).wx = wx; window.__wxNow.rain = rain.visible; window.__wxNow.bolt = boltActive > 0; // tests: the weather per world
@@ -40392,7 +40559,8 @@ void main() {
         if (schemeId === "monument") { fogNear = 9000; fogFar = 34000; }
         if (schemeId === "underwater") { fogNear = 380; fogFar = 3400; }
         if (schemeId === "sincity") { fogNear = 1800; fogFar = 7000; }
-        if (schemeId === "sketch" || schemeId === "riso") { fogNear = 6000; fogFar = 30000; }
+        if (schemeId === "sketch" || schemeId === "blueprint" || schemeId === "riso") { fogNear = 6000; fogFar = 30000; }
+        if (schemeId === "interbelic") { fogNear = 900; fogFar = 5200; } // worlds prototype: a soft haze (the street view brings it closer, as everywhere)
         if (schemeId === "ghibli" || schemeId === "orchid") { fogNear = 1400; fogFar = 9000; }
         // the map looks from far above: fog starts past the ground, in every world (underwater keeps a little haze)
         if (mapMode) { const k = schemeId === "underwater" ? 0.75 : 1.15; fogNear = Math.max(fogNear, mapView.dist * k); fogFar = Math.max(fogFar, mapView.dist * (schemeId === "underwater" ? 2.2 : 3.2)); }
@@ -40641,7 +40809,7 @@ void main() {
         }
         if (!routeRing) routeRingInit(); else routeRing.update(now);
         if (ONB_MODE) onbFrame(now); // r140
-        if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sincity") sinCityRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sketch") sketchRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "riso") risoRender(now, camera); else if (mvK > 0.5 && !window.__noPost) tiltShiftRender(now); else if (window.__noPost) renderer.render(scene, camera); else outline.render(scene, camera);
+        if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sincity") sinCityRender(now, camera); else if (!window.__noPost && (SCHEMES[state.schemeIdx].id === "sketch" || SCHEMES[state.schemeIdx].id === "blueprint")) sketchRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "interbelic") tiltShiftRender(now); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "riso") risoRender(now, camera); else if (mvK > 0.5 && !window.__noPost) tiltShiftRender(now); else if (window.__noPost) renderer.render(scene, camera); else outline.render(scene, camera);
         if (onbSnapReq) { onbSnapReq = false; onbSnap(); } // r141c, r142
         // r226 (Daniel: the final pill opens onto the live map): the loader opens its window only once the map has drawn
         // a frame after the reveal (the boot ground is gone: kz-boot); it is told at the next frame, once this one is on screen
@@ -43211,9 +43379,10 @@ void main() {
           // the flight and the secret road are not on the map: land at Olari 9
           if (state.L > route.stopL.end + 600) { state.L = prevL = route.stopL.end; }
           state.started = true;
-          const mi = SCHEMES.findIndex((x) => x.id === "monument");
+          const mi = SCHEMES.findIndex((x) => x.id === (PROTO_WORLD || "monument")); // worlds prototype: ?world=interbelic|blueprint opens in it
           if (mi >= 0 && state.schemeIdx !== mi) applyScheme(mi);
-          if (state.vehicleId !== "dacia1300") { state._vehAuto = true; try { api.setVehicle("dacia1300"); } finally { state._vehAuto = false; } } // r138j: the default ride (was the van)
+          const mapRide = (PROTO_WORLD && ENV_VEH[PROTO_WORLD]) || "dacia1300";
+          if (state.vehicleId !== mapRide) { state._vehAuto = true; try { api.setVehicle(mapRide); } finally { state._vehAuto = false; } } // r138j: the default ride (was the van)
           veh.group.visible = true;
           // r157: on a desktop the map's first frame has the car a little way up the start road (as in Daniel's reference)
           if ((open || intro) && state.L < 50) { state.L = prevL = state.targetL = MAP_START_L; } // beta 3.0: phones too (the same first frame)
@@ -43233,7 +43402,7 @@ void main() {
           mapUI.mark();
           if (intro) { mapIntro = true; document.body.classList.add("kz-intro"); if (!CZI) mapUI.skip.classList.remove("hidden"); } // r223: the loader has its own Skip
           else { const wt0 = performance.now(); const wl = () => { if ((document.body.classList.contains("kz-boot") || kinetic?.busy) && performance.now() - wt0 < 20000) return setTimeout(wl, 250); mapSettle = 90; if (mapMode && !mapIntro && !mapNav.moving && !mapNav.place && !mapBoarding && !BOOT_BOARD) mapUI.welcome(true); }; setTimeout(wl, 1000); } // r139r: after the cups' reveal (r142b: a second, and the view settles on the car)
-          try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map") + location.hash); } catch {} // r139p: a plain "/" stays plain
+          try { history.replaceState(null, "", location.pathname + (BOOT_MODE === "intro" || !location.search ? "" : "?map" + (PROTO_WORLD ? "&world=" + PROTO_WORLD : "")) + location.hash); } catch {} // r139p: a plain "/" stays plain (worlds prototype: the world stays in the address, for a reload)
         } else {
           nav2?.setActive(false); // nav2
           mapEndIntro();
@@ -43400,7 +43569,7 @@ void main() {
         // trials, so other work on the machine counts least. { min, med } in ms per frame
         bench(n = 12, trials = 5) {
           const gl = renderer.getContext(), px = new Uint8Array(4), id = SCHEMES[state.schemeIdx].id, out = [];
-          const draw = () => { const now = performance.now(); if (id === "sketch") sketchRender(now, camera); else if (id === "riso") risoRender(now, camera); else if (id === "sincity") sinCityRender(now, camera); else if (mapMode) tiltShiftRender(now); else renderer.render(scene, camera); };
+          const draw = () => { const now = performance.now(); if (id === "sketch" || id === "blueprint") sketchRender(now, camera); else if (id === "interbelic") tiltShiftRender(now); else if (id === "riso") risoRender(now, camera); else if (id === "sincity") sinCityRender(now, camera); else if (mapMode) tiltShiftRender(now); else renderer.render(scene, camera); };
           draw(); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
           for (let k = 0; k < trials; k++) { const t0 = performance.now(); for (let i = 0; i < n; i++) draw(); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); out.push((performance.now() - t0) / n); }
           out.sort((a, b) => a - b);
@@ -43909,7 +44078,7 @@ void main() {
           let progs = new Set();
           const rt = new WebGLRenderTarget(1, 1, { type: HalfFloatType });
           try { progs = await czRun(compileGen(rt)); } finally { rt.dispose(); }
-          { const sch = SCHEMES[state.schemeIdx]?.id; if (sch && sch !== "sketch" && sch !== "riso" && sch !== "sincity") warmDone.add(`${sch}|${mapMode ? "map" : "drive"}`); } // (warmNow's key: done)
+          { const sch = SCHEMES[state.schemeIdx]?.id; if (sch && sch !== "sketch" && sch !== "blueprint" && sch !== "riso" && sch !== "sincity") warmDone.add(`${sch}|${mapMode ? "map" : "drive"}`); } // (warmNow's key: done)
           (window.__bootT ||= {}).compiled = Math.round(performance.now());
           bootLinked = linkWait(progs);
           await bootLinked;
