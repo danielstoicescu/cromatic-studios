@@ -282,5 +282,112 @@ export const SUPRAMAX = {
   related: RELATED
 };
 
+export const VIZIK = {
+  slug: "vizik",
+  name: "Vizik",
+  tagline: "vizik.ro: one eye, three colours, three pages. Eye drops you pick by how your eyes feel.",
+  desc: "Vizik: vizik.ro, a chooser and three product pages for a family of eye drops, one colour per problem, on desktop and phone. By Cromatic Studios, Bucharest.",
+  title: "One eye, three colours.",
+  accent: { bg: "#5A5FD6", fg: "#ffffff", ink: "#2f3aa8" },
+  info: ["Eye drops, Vizik", "Romania · Zdrovit portfolio", "Product site, four pages, desktop and mobile"],
+  cover: { img: m("vizik/hero") },
+  og: m("vizik/hero"),
+  hero: { img: m("vizik/hero"), alt: "vizik.ro in a browser window: one eye under three colour panels, red, green and blue, each with its line and an Află mai multe button; on a phone, the Vizik Allergy page with a green eye, the box and the bottle" },
+  problem: {
+    h: "Three problems, three bottles",
+    p: [
+      "Vizik is a family of eye drops from Zdrovit, in three versions. Each one is named for what it is for, in the site's words: “alergiilor oculare”, “ochi iritați și roșii”, “ochi uscați și obosiți”.",
+      "The three boxes share a logo, a bottle and a layout. The problems they answer do not, and someone with sore eyes is looking for one of them, not for all three.",
+      "So vizik.ro starts with the eyes, not the product, and lets the visitor say which <strong>kind</strong> of trouble they have."
+    ]
+  },
+  solution: {
+    h: "A colour for each problem",
+    p: "The home page lays three colour panels over one close-up of an eye: red for irritated, green for allergies, blue for dry and tired. Two of them speak in the visitor's voice, “Ochii mei sunt…”. Each panel opens a page of its own, built on the same frame and dressed in its colour, from the line under the logo to the footer, and each page's menu links to the other two.",
+    stat: "3",
+    statText: "pages on one frame, one per problem, each in its own colour"
+  },
+  chapters: [
+    {
+      pillar: "product",
+      pills: ["Three", "doors"],
+      text: "vizik.ro is a single screen. One eye fills it, under three vertical panels in red, green and blue, with the Vizik logo in white over the middle one. Each panel carries a line and an “Află mai multe” button: “Ochii mei sunt iritați și roșii”, “Împotriva alergiilor oculare”, “Ochii mei sunt uscați și obosiți”. On a phone the panels stack, one screen each, and the eye shows through all three.",
+      deliverables: ["Home page", "Chooser", "UX/UI design"],
+      media: [
+        shot("vizik", "chooser", "The vizik.ro home page: one close-up eye under three panels, red, green and blue, the Vizik logo in white, and a line and an Află mai multe button on each panel", "The home page: pick a colour, pick a problem"),
+        {
+          rail: ["Three", "panels"],
+          items: [
+            shot("vizik", "phone-door-red", "The red panel on a phone: the Vizik logo, Ochii mei sunt iritați și roșii and an Află mai multe button over the eye"),
+            shot("vizik", "phone-door-green", "The green panel on a phone: Împotriva alergiilor oculare and an Află mai multe button over the eye"),
+            shot("vizik", "phone-door-blue", "The blue panel on a phone: Ochii mei sunt uscați și obosiți and an Află mai multe button over the eye")
+          ],
+          cap: "On a phone the three panels stack, one screen each"
+        }
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["One", "frame"],
+      text: "Behind each door, the same page in a different colour. A close-up eye sets the problem: pollen-green for allergies, red veins for irritation, a cracked surface for dryness. The box and the bottle stand beside a line in the page's colour, over three icons, “Fără conservanți”, “Sistem steril”, “Utilizare 12 luni de la deschidere”, and a turquoise drop points down to the structure of the tear film. Then the condition, its symptoms and causes in an accordion, the product with its formula, the ingredients, the directions and the order button.",
+      deliverables: ["Product pages", "Page template", "Desktop and mobile", "Accordion"],
+      media: [
+        siteBlock("vizik", "vizik.ro", { alt: "The vizik.ro/alergii-oculare/ page, scrolling: the green eye and the Vizik Allergy box, the tear film on dark blue, the condition, the product and the green footer", altPhone: "The vizik.ro/alergii-oculare/ page on a phone, scrolling", head: ["The", "Allergy page"], cap: "The Allergy page from the first screen to the footer, on desktop and phone." }),
+        {
+          rail: ["Three", "eyes"],
+          items: [
+            shot("vizik", "allergy-hero", "The Allergy page hero: a close-up eye with a green, pollen-like iris, the Vizik Allergy box and bottle, Împotriva alergiilor oculare in green and three green icons"),
+            shot("vizik", "red-hero", "The red page hero: a bloodshot eye, the Vizik box for irritated and red eyes, Împotriva ochilor iritați și roșii in red and three red icons"),
+            shot("vizik", "blue-hero", "The blue page hero: an eye with a cracked, dry surface, the Vizik box for dry and tired eyes, Împotriva ochilor uscați și obosiți in blue and three blue icons")
+          ],
+          cap: "Allergy, red and blue: one frame, three eyes, three colours"
+        }
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["Inside a", "page"],
+      text: "The middle of each page explains before it sells. The tear film gets a dark blue section: why tears matter, its three layers, and four things it does, each with a line icon and a green tick. Then each product has a band in its own colour, with the box and bottle on one side and the formula in large capitals on the other, from “Hialuronat de sodiu 0.15%” to “Dexpantenol”, over four icons. The red and blue pages add a section on contact lenses.",
+      deliverables: ["Product story", "Icons", "Product bands"],
+      media: [
+        shot("vizik", "tears", "Filmul lacrimal servește 4 scopuri importante: four white eye icons with green ticks on dark blue, and a green band below, Multe organe pot fi afectate de reacții alergice", "The tear film's four jobs, one icon each"),
+        {
+          rail: ["Three", "formulas"],
+          items: [
+            shot("vizik", "allergy-product", "The Vizik Allergy band in green: the box and bottle, Hialuronat de sodiu 0.15%, Ectoină 2% and four icons"),
+            shot("vizik", "red-product", "The red band: the Vizik box and bottle for irritated and red eyes, Dexpantenol, Carbomer and four icons"),
+            shot("vizik", "blue-product", "The blue band: the Vizik box and bottle for dry and tired eyes, Hialuronat de sodiu 0.15%, Dexpantenol 2% and four icons")
+          ],
+          cap: "Each product in its own colour, its formula in large capitals"
+        },
+        shot("vizik", "lenses", "VIZIK și lentilele de contact: a paragraph on contact lenses, a red round icon of a lens and a drop, and a contact lens in water on the right", "Contact lenses, on the red and blue pages")
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["On a", "phone"],
+      text: "On a phone each page keeps its order. The line moves above the eye, the three icons line up down the right-hand side, and the box and bottle sit at the bottom of the first screen. The tear film's three layers stack as three numbered circles, one under another.",
+      deliverables: ["Mobile layout", "One column"],
+      media: [
+        {
+          rail: ["Four", "screens"],
+          items: [
+            shot("vizik", "phone-allergy", "The Allergy page on a phone: the Vizik logo, Împotriva alergiilor oculare, the green eye, the box, the bottle and three icons"),
+            shot("vizik", "phone-layers", "Cele 3 straturi ale filmului lacrimal on a phone: three numbered circles on blue, each with a line"),
+            shot("vizik", "phone-red", "The red page on a phone: the Vizik logo, Împotriva ochilor iritați și roșii, the bloodshot eye, the box, the bottle and three icons"),
+            shot("vizik", "phone-blue", "The blue page on a phone: the Vizik logo, Împotriva ochilor uscați și obosiți, the dry eye, the box, the bottle and three icons")
+          ],
+          cap: "Allergy, the tear film, red and blue, at 390 px wide"
+        }
+      ]
+    },
+    ...spotChapter("vizik")
+  ],
+  result: {
+    text: "One eye, three colours: you pick the page by how your eyes feel, and every page keeps its colour to the footer."
+  },
+  related: RELATED
+};
+
 // every Zdrovit brand page of the second half, in the order they were made
-export const ZDROVIT_WEB_B = [PREVOMIT, SLABOFICAT, SUPRAMAX];
+export const ZDROVIT_WEB_B = [PREVOMIT, SLABOFICAT, SUPRAMAX, VIZIK];
