@@ -1,0 +1,190 @@
+{
+ "id": "c3-coffee",
+ "story": "C",
+ "beat": "Night coffee hopping. (Steam, held through Casa Berero)",
+ "shots": [
+  "steam",
+  "berero"
+ ],
+ "scene": "night",
+ "textColour": "#FBFAF5",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "c3",
+    "place": "br",
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "c3-l1",
+      "style": "headline",
+      "size": 168,
+      "tracking": -0.045,
+      "lead": 0.94,
+      "ink": "#FBFAF5",
+      "align": "right",
+      "text": "Night",
+      "x": 598.6,
+      "baseline": 1214.2,
+      "width": 401.4,
+      "box": {
+       "x": 598.6,
+       "y": 1086.5,
+       "w": 401.4,
+       "h": 168
+      }
+     },
+     {
+      "kind": "line",
+      "id": "c3-l2",
+      "style": "headline",
+      "size": 168,
+      "tracking": -0.045,
+      "lead": 0.94,
+      "ink": "#FBFAF5",
+      "align": "right",
+      "text": "coffee",
+      "x": 525.9,
+      "baseline": 1372.1,
+      "width": 474.1,
+      "box": {
+       "x": 525.9,
+       "y": 1244.4,
+       "w": 474.1,
+       "h": 132.7
+      }
+     },
+     {
+      "kind": "line",
+      "id": "c3-l3",
+      "style": "headline",
+      "size": 168,
+      "tracking": -0.045,
+      "lead": 0.94,
+      "ink": "#FBFAF5",
+      "align": "right",
+      "text": "hopping.",
+      "x": 354.2,
+      "baseline": 1530,
+      "width": 645.8,
+      "box": {
+       "x": 354.2,
+       "y": 1402.3,
+       "w": 645.8,
+       "h": 168
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "steam+4",
+   "lineStagger": 4,
+   "out": "berero.end-6"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "C_v4": {
+    "clock": "C_v4",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "c3-l1",
+      "text": "Night",
+      "in": 130,
+      "out": 202,
+      "motion": "lineIn / lineOut",
+      "hold": 60
+     },
+     {
+      "id": "c3-l2",
+      "text": "coffee",
+      "in": 134,
+      "out": 203,
+      "motion": "lineIn / lineOut",
+      "hold": 57
+     },
+     {
+      "id": "c3-l3",
+      "text": "hopping.",
+      "in": 138,
+      "out": 204,
+      "motion": "lineIn / lineOut",
+      "hold": 54
+     }
+    ]
+   },
+   "C_long": {
+    "clock": "C_long",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "c3-l1",
+      "text": "Night",
+      "in": 145,
+      "out": 217,
+      "motion": "lineIn / lineOut",
+      "hold": 60
+     },
+     {
+      "id": "c3-l2",
+      "text": "coffee",
+      "in": 149,
+      "out": 218,
+      "motion": "lineIn / lineOut",
+      "hold": 57
+     },
+     {
+      "id": "c3-l3",
+      "text": "hopping.",
+      "in": 153,
+      "out": 219,
+      "motion": "lineIn / lineOut",
+      "hold": 54
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "steam+26"
+  },
+  {
+   "state": 0,
+   "at": "berero+22"
+  }
+ ],
+ "notes": "In once on Steam, stays put across the cut to Casa Berero (no re-entry), out before the fountain.",
+ "files": {
+  "outlined": [
+   "svg/outlined/c3-coffee.svg"
+  ],
+  "live": [
+   "svg/live/c3-coffee.svg"
+  ]
+ }
+}

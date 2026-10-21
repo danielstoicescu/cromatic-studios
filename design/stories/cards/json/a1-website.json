@@ -1,0 +1,186 @@
+{
+ "id": "a1-website",
+ "story": "A",
+ "beat": "Our new website / is a [city] -> [diorama]",
+ "shots": [
+  "over"
+ ],
+ "scene": "light (the street from above: pavement and road)",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "a1",
+    "place": "tl",
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "a1-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "Our new website",
+      "x": 80,
+      "baseline": 383.1,
+      "width": 861.1,
+      "box": {
+       "x": 80,
+       "y": 294.9,
+       "w": 861.1,
+       "h": 91.6
+      }
+     },
+     {
+      "kind": "line",
+      "id": "a1-l2",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "is a",
+      "x": 80,
+      "baseline": 522.3,
+      "width": 163.1,
+      "box": {
+       "x": 80,
+       "y": 434.1,
+       "w": 718,
+       "h": 116
+      },
+      "pill": {
+       "id": "a1-l2-pill",
+       "fill": "#FED012",
+       "ink": "#0D0C09",
+       "left": 270.9,
+       "cy": 481.1,
+       "h": 134.6,
+       "keyline": 5.2,
+       "shadow": [
+        3.5,
+        7.5
+       ],
+       "tilt": -3,
+       "wordX": 310.4,
+       "states": [
+        {
+         "word": "city.",
+         "wordW": 210.3,
+         "w": 289.2,
+         "cx": 415.5
+        },
+        {
+         "word": "diorama.",
+         "wordW": 448.2,
+         "w": 527.1,
+         "cx": 534.5
+        }
+       ]
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "city"
+  },
+  {
+   "index": 1,
+   "label": "diorama"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "over+3",
+   "lineStagger": 5,
+   "pillIn": "over+14",
+   "swaps": [
+    "over+40"
+   ],
+   "out": "over.end-10"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "A_v4": {
+    "clock": "A_v4",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "a1-l1",
+      "text": "Our new website",
+      "in": 3,
+      "out": 65,
+      "motion": "lineIn / lineOut",
+      "hold": 50
+     },
+     {
+      "id": "a1-l2",
+      "text": "is a",
+      "in": 8,
+      "out": 66,
+      "motion": "lineIn / lineOut",
+      "hold": 46
+     },
+     {
+      "id": "a1-l2-pill-0",
+      "word": "city.",
+      "in": 14,
+      "out": 40,
+      "motion": "pillIn",
+      "hold": 26
+     },
+     {
+      "id": "a1-l2-pill-1",
+      "word": "diorama.",
+      "in": 40,
+      "out": 66,
+      "motion": "pillSwap",
+      "hold": 26
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "over+28"
+  },
+  {
+   "state": 1,
+   "at": "over+58"
+  }
+ ],
+ "notes": "Ink on this frame: the drone shot is light (grey pavement, the salmon road). The pill stays yellow through the swap; only its width and its word change.",
+ "files": {
+  "outlined": [
+   "svg/outlined/a1-website-city.svg",
+   "svg/outlined/a1-website-diorama.svg"
+  ],
+  "live": [
+   "svg/live/a1-website-city.svg",
+   "svg/live/a1-website-diorama.svg"
+  ]
+ }
+}

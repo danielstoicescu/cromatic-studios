@@ -1,0 +1,129 @@
+{
+ "id": "c1-olari",
+ "story": "C",
+ "beat": "Olari 9 · 9:11 (a map tag at the start)",
+ "shots": [
+  "olari"
+ ],
+ "scene": "night",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "tags": [
+   {
+    "kind": "tag",
+    "id": "c1-tag",
+    "text": "Olari 9 · 9:11",
+    "size": 44,
+    "tracking": -0.01,
+    "ink": "#0D0C09",
+    "plate": {
+     "x": 80,
+     "y": 286,
+     "w": 335.5,
+     "h": 84,
+     "r": 42,
+     "fill": "#FFFFFF",
+     "keyline": 4,
+     "shadow": [
+      0,
+      7
+     ]
+    },
+    "dot": {
+     "cx": 117,
+     "cy": 328,
+     "d": 22,
+     "fill": "#FED012",
+     "keyline": 3.5
+    },
+    "textX": 144,
+    "baseline": 343.6,
+    "pointer": {
+     "x": 126,
+     "y": 370,
+     "w": 30,
+     "h": 18,
+     "tip": [
+      126,
+      388
+     ]
+    },
+    "box": {
+     "x": 80,
+     "y": 286,
+     "w": 335.5,
+     "h": 102
+    }
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "olari+8",
+   "out": "olari.end-10"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "C_v4": {
+    "clock": "C_v4",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "c1-tag",
+      "text": "Olari 9 · 9:11",
+      "in": 8,
+      "out": 71,
+      "motion": "tagIn / tagOut",
+      "hold": 54
+     }
+    ]
+   },
+   "C_long": {
+    "clock": "C_long",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "c1-tag",
+      "text": "Olari 9 · 9:11",
+      "in": 8,
+      "out": 71,
+      "motion": "tagIn / tagOut",
+      "hold": 54
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "olari+50"
+  }
+ ],
+ "notes": "Replaces the typed slug and the big 'Olari 9.': the place is told by its tag, like on the map.",
+ "files": {
+  "outlined": [
+   "svg/outlined/c1-olari.svg"
+  ],
+  "live": [
+   "svg/live/c1-olari.svg"
+  ]
+ }
+}

@@ -1,0 +1,169 @@
+{
+ "id": "c5-slow",
+ "story": "C",
+ "beat": "You should take it (small, in the sky over the dome) + SLOW (big, on the dark plaza under it, long hold)",
+ "shots": [
+  "scf"
+ ],
+ "scene": "night",
+ "textColour": "#FBFAF5",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "c5a",
+    "place": {
+     "x": 540,
+     "align": "center",
+     "top": 330
+    },
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "c5a-l1",
+      "style": "lead",
+      "size": 60,
+      "tracking": -0.025,
+      "lead": 1.1,
+      "ink": "#FBFAF5",
+      "align": "center",
+      "text": "You should take it",
+      "x": 304.6,
+      "baseline": 373,
+      "width": 470.9,
+      "box": {
+       "x": 304.6,
+       "y": 327.4,
+       "w": 470.9,
+       "h": 47.4
+      }
+     }
+    ],
+    "behindRide": false
+   },
+   {
+    "kind": "block",
+    "id": "c5b",
+    "place": {
+     "x": 540,
+     "align": "center",
+     "base": 1530
+    },
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "c5b-l1",
+      "style": "hero",
+      "size": 336,
+      "tracking": -0.05,
+      "lead": 0.92,
+      "ink": "#FBFAF5",
+      "align": "center",
+      "text": "SLOW",
+      "x": 83.5,
+      "baseline": 1530,
+      "width": 912.9,
+      "box": {
+       "x": 83.5,
+       "y": 1274.6,
+       "w": 912.9,
+       "h": 265.4
+      }
+     }
+    ],
+    "behindRide": true
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "scf+1",
+   "blockStagger": 10,
+   "out": "scf.end-4",
+   "smash": [
+    "c5b"
+   ]
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "C_v4": {
+    "clock": "C_v4",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "c5a-l1",
+      "text": "You should take it",
+      "in": 263,
+      "out": 286,
+      "motion": "lineIn / lineOut",
+      "hold": 11
+     },
+     {
+      "id": "c5b-l1",
+      "text": "SLOW",
+      "in": 273,
+      "out": 286,
+      "motion": "smashCut",
+      "hold": 13
+     }
+    ]
+   },
+   "C_long": {
+    "clock": "C_long",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "c5a-l1",
+      "text": "You should take it",
+      "in": 331,
+      "out": 410,
+      "motion": "lineIn / lineOut",
+      "hold": 67
+     },
+     {
+      "id": "c5b-l1",
+      "text": "SLOW",
+      "in": 341,
+      "out": 410,
+      "motion": "smashCut",
+      "hold": 69
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "scf+22"
+  }
+ ],
+ "notes": "The sentence frames the building: the small line in the sky above the dome, 'SLOW' on the dark plaza below it (on the dome's lit ribs, as in v4, it lost its contrast). 'SLOW' is smash-cut (on and off with the frame) and is still drawn behind the ride's layers, so the car passes in front if it crosses it. Long hold: C_long gives the shot 84 frames.",
+ "files": {
+  "outlined": [
+   "svg/outlined/c5-slow.svg"
+  ],
+  "live": [
+   "svg/live/c5-slow.svg"
+  ]
+ }
+}

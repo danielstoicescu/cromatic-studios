@@ -1,0 +1,154 @@
+{
+ "id": "c6-two-minutes",
+ "story": "C",
+ "beat": "You always have / two minutes.",
+ "shots": [
+  "corner",
+  "cup"
+ ],
+ "scene": "night (the corner from above, then the windscreen)",
+ "textColour": "#FBFAF5",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "c6",
+    "place": "tl",
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "c6-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#FBFAF5",
+      "align": "left",
+      "text": "You always have",
+      "x": 80,
+      "baseline": 383.1,
+      "width": 821.4,
+      "box": {
+       "x": 80,
+       "y": 294.9,
+       "w": 821.4,
+       "h": 116
+      }
+     },
+     {
+      "kind": "line",
+      "id": "c6-l2",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#FBFAF5",
+      "align": "left",
+      "text": "two minutes.",
+      "x": 80,
+      "baseline": 499.1,
+      "width": 657,
+      "box": {
+       "x": 80,
+       "y": 410.9,
+       "w": 657,
+       "h": 91.6
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "corner+2",
+   "lineStagger": 5,
+   "out": "cup.end-10"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "C_v4": {
+    "clock": "C_v4",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "c6-l1",
+      "text": "You always have",
+      "in": 292,
+      "out": 384,
+      "motion": "lineIn / lineOut",
+      "hold": 80
+     },
+     {
+      "id": "c6-l2",
+      "text": "two minutes.",
+      "in": 297,
+      "out": 385,
+      "motion": "lineIn / lineOut",
+      "hold": 76
+     }
+    ]
+   },
+   "C_long": {
+    "clock": "C_long",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "c6-l1",
+      "text": "You always have",
+      "in": 416,
+      "out": 508,
+      "motion": "lineIn / lineOut",
+      "hold": 80
+     },
+     {
+      "id": "c6-l2",
+      "text": "two minutes.",
+      "in": 421,
+      "out": 509,
+      "motion": "lineIn / lineOut",
+      "hold": 76
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "corner+30"
+  },
+  {
+   "state": 0,
+   "at": "cup+40"
+  }
+ ],
+ "notes": "All paper: 'two minutes.' is no longer yellow. Held across the cut to the coffee on the windscreen.",
+ "files": {
+  "outlined": [
+   "svg/outlined/c6-two-minutes.svg"
+  ],
+  "live": [
+   "svg/live/c6-two-minutes.svg"
+  ]
+ }
+}
