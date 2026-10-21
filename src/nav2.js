@@ -2226,22 +2226,47 @@
         }
       }
       const sig = ["l", "s", "r"].map((k) => (show[k] ? show[k].e + ":" + show[k].dir : "-")).join("|") + (picked || "");
+      if (sig !== armSig) {
+        armSig = sig;
+        for (const k of ["l", "s", "r"]) {
+          const o = show[k], el = armEls[k];
+          if (!o) continue;
+          el.classList.toggle("picked", picked === k);
+          el._nm = armName(o); el._ks = ""; // the content is written below, once it is known whether a twin joins it
+        }
+      }
+      // TASK-061 (QA: two "Medical Avenue" pills on top of each other in Street view): a far junction's ways land close
+      // together on screen. Two ways to the same place that touch become one pill with both keys; any others that touch
+      // stack, the farther one above the nearer
+      const pos = {};
       for (const k of ["l", "s", "r"]) {
         const el = armEls[k], o = show[k];
         if (!o) { if (!el.classList.contains("off")) el.classList.add("off"); continue; }
         const e = E[o.e], pts = o.dir > 0 ? e.pts : e.rpts, cum = o.dir > 0 ? e.cum : e.rcum, p = pointAt(pts, cum, Math.min(e.len * 0.6, o.via ? 70 : 90));
         const v = H.project(p[0], 28, p[1]);
         if (v.z > 1 || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1) { el.classList.add("off"); continue; }
-        el.classList.remove("off");
-        el.style.transform = `translate3d(${((v.x * 0.5 + 0.5) * VP.w).toFixed(1)}px, ${((-v.y * 0.5 + 0.5) * VP.h).toFixed(1)}px, 0) translate(-50%, -100%)`;
+        pos[k] = { x: (v.x * 0.5 + 0.5) * VP.w, y: (-v.y * 0.5 + 0.5) * VP.h, ks: [k] };
       }
-      if (sig === armSig) return;
-      armSig = sig;
-      for (const k of ["l", "s", "r"]) {
-        const o = show[k], el = armEls[k];
-        if (!o) continue;
-        el.classList.toggle("picked", picked === k);
-        el.innerHTML = FREE ? `<i class="n2-sg">${GLY[k]}</i><span>${esc(armName(o))}</span>` : `<b class="n2-cap sm">${GLY[k]}</b><span>${esc(armName(o))}</span>`;
+      const pillW = (k, n) => (n || 1) * 22 + 34 + (armEls[k]._nm || "").length * 8; // a close guess (13-14px bold), no layout read per frame
+      const hit = (a, ka, b, kb) => Math.abs(a.x - b.x) < (pillW(ka, a.ks.length) + pillW(kb, b.ks.length)) / 2 + 6 && Math.abs(a.y - b.y) < 34;
+      const vis = Object.keys(pos);
+      for (let i = 0; i < vis.length; i++) for (let j = i + 1; j < vis.length; j++) {
+        const a = vis[i], b = vis[j];
+        if (!pos[a] || !pos[b] || armEls[a]._nm !== armEls[b]._nm || !hit(pos[a], a, pos[b], b)) continue;
+        pos[a] = { x: (pos[a].x + pos[b].x) / 2, y: Math.max(pos[a].y, pos[b].y), ks: [...pos[a].ks, ...pos[b].ks] };
+        delete pos[b]; armEls[b].classList.add("off");
+      }
+      const order = Object.keys(pos).sort((a, b) => pos[b].y - pos[a].y), placed = [];
+      for (const k of order) {
+        const q = pos[k];
+        for (let n = 0; n < 3 && placed.some((k2) => hit(q, k, pos[k2], k2)); n++) q.y = Math.min(...placed.filter((k2) => hit(q, k, pos[k2], k2)).map((k2) => pos[k2].y)) - 36;
+        placed.push(k);
+      }
+      for (const k of order) {
+        const el = armEls[k], q = pos[k], ks = q.ks.join("");
+        el.classList.remove("off");
+        if (el._ks !== ks) { el._ks = ks; el.innerHTML = FREE ? `${q.ks.map((x) => `<i class="n2-sg">${GLY[x]}</i>`).join("")}<span>${esc(el._nm)}</span>` : `${q.ks.map((x) => `<b class="n2-cap sm">${GLY[x]}</b>`).join("")}<span>${esc(el._nm)}</span>`; }
+        el.style.transform = `translate3d(${q.x.toFixed(1)}px, ${q.y.toFixed(1)}px, 0) translate(-50%, -100%)`;
       }
     }
     // the pad: only what does something here lights up; the hint says what is next
