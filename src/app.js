@@ -25002,8 +25002,6 @@ void main() {
       }
     }
     for (const t of CITY_TREES) spots.push(t);
-    // TASK-094: a small grove on the empty plot at the end of Coffee Street (930, 5900), where a brand house stood
-    for (const [ox, oz, s] of [[-12, -18, 1.05], [20, 4, 1.2], [-6, 26, 0.85], [26, -30, 0.9], [-26, 6, 0.75]]) spots.push({ x: 930 + ox, z: 5900 + oz, s });
     for (let i = spots.length - 1; i >= 0; i--) if (!boardClear(spots[i].x, spots[i].z)) spots.splice(i, 1); // beta 3.01
     for (let i = spots.length - 1; i >= 0; i--) { const sp = spots[i], v = CITY_NET?.at?.(sp.x, sp.z); if (v === 1 || (v === 2 && !sp.med) || (!sp.med && CITY_NET?.roadDist && CITY_NET.roadDist(sp.x, sp.z) < 8)) spots.splice(i, 1); }
     for (const t of spots) TREE_BLOBS.push({ x: t.x, z: t.z, w: 22 * t.s, d: 22 * t.s, h: 30 * t.s });
@@ -25605,6 +25603,21 @@ void main() {
     for (const pts of net.routes) { line(pts.filter(([, z]) => z < 7480), ROUTE_W, "route", seed++ * 97); yield; }
     for (const s of net.longs) { line(roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]), s.w, "long", seed++ * 97); yield; }
     for (const s of net.minor) { line(s.pts, s.w, "minor", seed++ * 97); yield; }
+    // TASK-099 (Daniel): Patiline's corner (930, 5900, where Coffee Street turns towards Dacia 99) reads as a small
+    // cluster: the street's hold is lifted only in these boxes (the inside of the bend, Patiline's own room kept) and
+    // the city lines that kerb with its own houses, Patiline's old plot by the Dacia road included
+    {
+      const box2 = PATI_CORNER.boxes, inBox = (x, z) => box2.some(([x0, x1, z0, z1]) => x >= x0 && x <= x1 && z >= z0 && z <= z1), freed = [];
+      for (let j = 0; j < G.H; j++) for (let i = 0; i < G.W; i++) {
+        const x = CITY_X0 + (i + 0.5) * G.C, z = CITY_Z0 + (j + 0.5) * G.C, k = j * G.W + i;
+        if (G.g[k] === 3 && inBox(x, z) && Math.hypot(x - 930, z - 5900) > 86) { G.g[k] = 0; freed.push(k); }
+      }
+      // the drive's own road from just north of Patiline round the bend to Dacia 99 (one unbroken stretch of it)
+      const R0 = net.routes[0] || [], i0 = R0.findIndex(([x, z]) => x > 800 && x < 860 && z > 5750 && z < 5800), bend = [];
+      for (let i = Math.max(0, i0); i0 >= 0 && i < R0.length && R0[i][0] < 1140 && R0[i][1] < 6110 && R0[i][1] > 5740; i++) bend.push(R0[i]);
+      if (bend.length > 1) line(bend, ROUTE_W, "route", PATI_CORNER.seed);
+      for (const k of freed) if (!G.g[k]) G.g[k] = 3; // what no house took is held again (the courtyard trees below see the grid as before)
+    }
     // courtyards: trees in the open middle of the blocks
     {
       const rnd = rng(5150);
@@ -27238,7 +27251,9 @@ void main() {
   }
   // r116: Patiline, an industrial bakery: corrugated silver sheds with red trim, and a long glass
   // front where you watch the line: dough in, croissants and loaves riding the belt into the oven
-  function buildPatiline(parent, x, z) {
+  // TASK-099: where the city may build round Patiline's corner (x0, x1, z0, z1), and the seed of its houses
+  var PATI_CORNER = { boxes: [[856, 925, 5755, 5845], [856, 990, 5955, 6072], [960, 1140, 5985, 6072]], seed: 4099 };
+  function buildPatiline(parent, x, z, ry = 0) {
     const g = new Group();
     const corr = canvasTexture(128, 64, (ctx) => { ctx.fillStyle = "#c9ced3"; ctx.fillRect(0, 0, 128, 64); for (let i = 0; i < 128; i += 8) { ctx.fillStyle = "#aeb4ba"; ctx.fillRect(i, 0, 3, 64); } }, { repeat: [8, 2] });
     const silver = new MeshStandardMaterial({ map: corr, roughness: 0.45, metalness: 0.55, envMap: typeof getEnvMap === "function" ? getEnvMap() : null, envMapIntensity: 0.5 });
@@ -27264,7 +27279,7 @@ void main() {
       arm.rotation.z = Math.sin(t * 2.2) * 0.5;
     });
     const sign = signBoard({ name: "PATILINE", signBg: "#d71920", signInk: "#ffffff" }, 46, 10); sign.position.set(-10, 27, D / 2 + 0.8); g.add(sign);
-    g.rotation.y = 0;
+    g.rotation.y = ry; // TASK-099: turned to face Coffee Street on its new plot
     EXTRA_KEEPOUT.push({ x, y: z, r: 80 });
     return finish(g, parent, x, z);
   }
@@ -27906,7 +27921,7 @@ void main() {
   var COFFEE_ADDS = [
     { br: "A", name: "Pain Plaisir", x: 900, z: 4815, px: 968, pz: 4815, line: "VIDEO \xB7 PHOTO \xB7 PRODUCT DESIGN", c: "#ffffff", t: "#111111", desc: "A French-style bakery with a real oven at its heart. We made their video production, the photo shootings and the product design." },
     { br: "A", name: "Lapterra", x: 760, z: 5650, px: 706, pz: 5650, line: "PATISSERIE \xB7 WORK IN PROGRESS", c: "#6e1633", t: "#d9b45a", wip: true, desc: "A cosy patisserie, in the making. Work in progress: more soon." },
-    { br: "A", name: "Patiline", x: 1030, z: 6030, px: 1030, pz: 5985, line: "DISTRIBUTION WEB \xB7 PHOTO \xB7 REBRANDING", c: "#d71920", t: "#ffffff", desc: "Industrial bread and croissants, made by machines you can watch. We built their distribution website and website, shot their own-production bakery range, and rebranded Patiline Bakery." },
+    { br: "A", name: "Patiline", x: 880, z: 5900, px: 930, pz: 5900, line: "DISTRIBUTION WEB \xB7 PHOTO \xB7 REBRANDING", c: "#d71920", t: "#ffffff", desc: "Industrial bread and croissants, made by machines you can watch. We built their distribution website and website, shot their own-production bakery range, and rebranded Patiline Bakery." },
     { br: "A", name: "K\xF3mpus", x: 880, z: 4560, px: 934, pz: 4560, line: "COFFEE SHOP \xB7 BRAND", c: "#B098C8", t: "#1a1420", desc: "Differentiating a coffee shop in the market by enabling the founder\u2019s vision: a brand built around Kómpus\u2019 own patterns and voice." },
     { br: "A", name: "ARCA Resort", logo: "logoArca", x: 560, z: 5930, line: "RESORT · TENNIS · POND", c: "#7a1f2b", t: "#ffffff", page: "arca-resort" },
     { br: "A", name: "Antila", x: 440, z: 6040, line: "CHARCUTERIE FARM", c: "#F2C200", t: "#1a1405", page: "antila" },
@@ -27950,7 +27965,9 @@ void main() {
     buildPainPlaisir(parent, 968, 4815);
     yield;
     // r121: across the Dacia row from where it was, its glass line facing the road
-    buildPatiline(parent, 1030, 5985);
+    // TASK-099 (Daniel): moved up to the corner of Coffee Street (930, 5900), its glass line facing the street (west);
+    // its old plot by the Dacia road is the city's houses now (buildBuildingsGen, PATI_CORNER)
+    buildPatiline(parent, 930, 5900, -Math.PI / 2);
     yield;
     buildBrandBuilding(parent, { x: 706, z: 5650, face: "+x", kind: "paris", name: "LAPTERRA", w: 50, d: 40, h: 30, wall: "#7a1f3d", accent: "#c9a227", signBg: "#5c1530", signInk: "#d9b45a", keep: 70 });
     yield;
