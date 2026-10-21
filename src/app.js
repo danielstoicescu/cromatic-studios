@@ -30697,6 +30697,218 @@ void main() {
       }
     };
   }
+  // TASK-110 (Daniel: "at night some traffic lights would be interesting at the exits of Medical Street, Olari and The
+  // Shortest Shortcut, their lights diffusing into the night and the rain"): three signals, one where each of those
+  // streets meets the Dacia row, on the right-hand kerb of the traffic leaving it, the head facing that traffic. A
+  // Bucharest signal: a grey pole on a cast base, a black three-lamp head (300 mm lamps, red over amber over green) with a
+  // visor over each lamp, on a black backboard with a white rim. They run red, green, amber at an unhurried pace, each
+  // junction out of step with the others (decor: nothing stops for them; the car and the police drive as before).
+  // By day only the lamp that is on is lit. In the dark worlds (applyScheme's dark: Night Mode, Underwater, GTA 2, Sin City)
+  // the lit lamp glows: a halo in the night air (a tight core, a wide glow, a long faint tail), a pool of its colour on the
+  // asphalt in front of the pole and, where it rains, a larger, softer halo and the lamp's reflection drawn out on the wet
+  // road as a long streak towards the viewer (where the mirror image of the lamp meets the road, from the camera's height).
+  // Cost: no light. The poles and heads are one mesh (vertex colours; the batching pass may fold it into its cell), the
+  // nine lamps one instanced draw, the glows one instanced additive draw (halo, pool, streak per signal: nine quads, only
+  // in a dark world and only with the junctions on screen). The colours change only when a lamp switches (a 0.12 s fade,
+  // like a warm lamp), and only with the junctions on screen; with reduced motion the cycle runs at half speed (the
+  // lights are information, not decoration, so they keep changing)
+  // the places: map coordinates (before the city's warp), read off the roads as nav2 drives them (its road mask): each pole a
+  // few units clear of the drivable edge, before the mouth (see TL_SPOTS' notes)
+  var TL_SPOTS = [
+    // Medical Avenue, southbound into the Dacia row: the west kerb (mask edge x 1470), 12 short of the row (its edge z 6070)
+    { id: "medical", x: 1462, z: 6058, fx: 0, fz: -1, off: 0 },
+    // The Shortest Shortcut, coming down to the row: its north-west kerb (mask edge x 1311 at z 6004), facing up the lane
+    { id: "lane", x: 1302, z: 6004, fx: Math.SQRT1_2, fz: -Math.SQRT1_2, off: 7.2 },
+    // Strada Olari (the boulevard up from the house), northbound into the row: the east kerb (edge x 1211), past the flare
+    { id: "olari", x: 1219, z: 6176, fx: 0, fz: 1, off: 13.6 }
+  ];
+  for (const s of TL_SPOTS) EXTRA_KEEPOUT.push({ x: s.x, y: s.z, r: 12 }); // (no block, tree or prop on the pole)
+  // the cycle (s): red, then green, then amber; each signal starts `off` seconds into it
+  var TL_RED = 10, TL_GREEN = 8.5, TL_AMBER = 2.6, TL_T = TL_RED + TL_GREEN + TL_AMBER, TL_FADE = 0.12;
+  var TL_HEAD_Y = 42, TL_LAMP_DY = 5.6, TL_LAMP_Z = 6.66, TL_LAMP_R = 2.25;
+  function buildTrafficLights(parent) {
+    const g = new Group(); g.name = "trafficLights";
+    // ---- the hardware: one geometry, vertex coloured ----
+    const parts = [];
+    const COL = { pole: "#5b5f63", base: "#3d4043", head: "#1d2023", board: "#141618", rim: "#ece9df" };
+    const put = (geo, col, x, y, z, rx = 0) => { if (rx) geo.rotateX(rx); geo.translate(x, y, z); const c = new Color(col), n = geo.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; } geo.setAttribute("color", new Float32BufferAttribute(a, 3)); parts.push(geo); };
+    // a visor: the upper part of a short tube round a lamp, open at the front, a little longer on top; both faces drawn
+    // (its inside is seen from below), as an indexed strip with uv (for the merge)
+    const visor = (cy) => {
+      const pos = [], nor = [], uv = [], idx = [], R = 2.8, N = 12, a0 = -0.28, a1 = Math.PI + 0.28;
+      for (let side = 0; side < 2; side++) {
+        const b = pos.length / 3;
+        for (let i = 0; i <= N; i++) {
+          const a = a0 + (a1 - a0) * i / N, cx = Math.cos(a), cy2 = Math.sin(a), L = 2.4 + 1.5 * Math.max(0, cy2); // longer over the top
+          const s = side ? -1 : 1;
+          pos.push(cx * R, cy + cy2 * R, TL_LAMP_Z - 0.4, cx * R, cy + cy2 * R - 0.35 * L / 3.9, TL_LAMP_Z - 0.4 + L);
+          nor.push(cx * s, cy2 * s, 0, cx * s, cy2 * s, 0); uv.push(i / N, 0, i / N, 1);
+        }
+        for (let i = 0; i < N; i++) { const p = b + i * 2; if (side) idx.push(p, p + 2, p + 1, p + 1, p + 2, p + 3); else idx.push(p, p + 1, p + 2, p + 1, p + 3, p + 2); }
+      }
+      const geo = new BufferGeometry(); geo.setAttribute("position", new Float32BufferAttribute(pos, 3)); geo.setAttribute("normal", new Float32BufferAttribute(nor, 3)); geo.setAttribute("uv", new Float32BufferAttribute(uv, 2)); geo.setIndex(idx);
+      return geo;
+    };
+    const one = () => {
+      parts.length = 0;
+      put(new CylinderGeometry(1.9, 2.3, 2.6, 10), COL.base, 0, 1.3, 0);
+      put(new CylinderGeometry(0.85, 1.0, TL_HEAD_Y + 8, 8), COL.pole, 0, (TL_HEAD_Y + 8) / 2, 0);
+      put(new SphereGeometry(1.05, 8, 5), COL.pole, 0, TL_HEAD_Y + 8, 0);
+      for (const y of [TL_HEAD_Y - 6, TL_HEAD_Y + 6]) put(new BoxGeometry(1.3, 1.3, 2.4), COL.head, 0, y, 1.3);
+      put(new BoxGeometry(11.8, 22.6, 0.35), COL.rim, 0, TL_HEAD_Y, 1.9); // the backboard's white rim (wide enough to read past the ink outline)
+      put(new BoxGeometry(9.7, 20.5, 0.4), COL.board, 0, TL_HEAD_Y, 2.2);
+      put(new BoxGeometry(6.4, 17.8, 4.2), COL.head, 0, TL_HEAD_Y, 4.5); // the head
+      put(new BoxGeometry(6.9, 0.7, 4.7), COL.head, 0, TL_HEAD_Y + 9.2, 4.5); // its cap
+      for (const k of [1, 0, -1]) put(visor(TL_HEAD_Y + k * TL_LAMP_DY), COL.head, 0, 0, 0);
+      return mergeGeometries(parts);
+    };
+    const unit = one(), all = [], q = new Quaternion(), m4 = new Matrix4(), up = new Vector3(0, 1, 0);
+    for (const s of TL_SPOTS) { q.setFromAxisAngle(up, Math.atan2(s.fx, s.fz)); m4.compose(new Vector3(s.x, 0, s.z), q, new Vector3(1, 1, 1)); all.push(unit.clone().applyMatrix4(m4)); }
+    const hw = new Mesh(mergeGeometries(all), new MeshStandardMaterial({ color: "#ffffff", vertexColors: true, roughness: 0.62, metalness: 0.2 }));
+    hw.castShadow = true; hw.receiveShadow = true; hw.name = "trafficLightPoles"; hw.userData.noMerge = true; // (one draw already; a batch would bake its vertex colours over)
+    g.add(hw);
+    // ---- the lamps: nine discs, one instanced draw, their colour per instance ----
+    const lensTex = canvasTexture(64, 64, (ctx, w, h) => { // a lens: brighter in the middle, a ring of facets, a darker rim
+      const gr = ctx.createRadialGradient(w * 0.46, h * 0.42, 0, w / 2, h / 2, w / 2); gr.addColorStop(0, "#ffffff"); gr.addColorStop(0.55, "#e6e6e6"); gr.addColorStop(0.86, "#b4b4b4"); gr.addColorStop(1, "#7a7a7a");
+      ctx.fillStyle = gr; ctx.fillRect(0, 0, w, h); ctx.strokeStyle = "rgba(0,0,0,.08)"; ctx.lineWidth = 1.2; for (const r of [9, 17, 25]) { ctx.beginPath(); ctx.arc(w / 2, h / 2, r, 0, Math.PI * 2); ctx.stroke(); }
+    });
+    const lampM = new MeshBasicMaterial({ color: "#ffffff", map: lensTex });
+    lampM.userData.outlineParameters = { visible: false }; // (a flat disc: no ink hull round it)
+    const lamps = new InstancedMesh(new CircleGeometry(TL_LAMP_R, 20), lampM, TL_SPOTS.length * 3);
+    lamps.name = "trafficLamps"; lamps.frustumCulled = false; lamps.castShadow = lamps.receiveShadow = false;
+    const LAMP = [new Color("#ff2b1c"), new Color("#ffad0a"), new Color("#18f09a")]; // red, amber, green (an LED's blue-green)
+    const OFF = LAMP.map((c) => c.clone().multiplyScalar(0.07).add(new Color(0.012, 0.012, 0.012)));
+    TL_SPOTS.forEach((s, i) => {
+      q.setFromAxisAngle(up, Math.atan2(s.fx, s.fz));
+      for (let k = 0; k < 3; k++) { m4.compose(new Vector3(0, TL_HEAD_Y + (1 - k) * TL_LAMP_DY, TL_LAMP_Z).applyQuaternion(q).add(new Vector3(s.x, 0, s.z)), q, new Vector3(1, 1, 1)); lamps.setMatrixAt(i * 3 + k, m4); lamps.setColorAt(i * 3 + k, OFF[k]); }
+    });
+    g.add(lamps);
+    // ---- the glows (dark worlds): per signal a halo (billboard), a pool on the asphalt and the wet road's streak ----
+    const NF = TL_SPOTS.length * 3, fxGeo = new PlaneGeometry(1, 1);
+    const aP = new Float32Array(NF * 3), aC = new Float32Array(NF * 3), aK = new Float32Array(NF * 4), aD = new Float32Array(NF * 2);
+    TL_SPOTS.forEach((s, i) => { for (let k = 0; k < 3; k++) { const j = i * 3 + k; aP.set([s.x, 0, s.z], j * 3); aD.set([s.fx, s.fz], j * 2); aK[j * 4] = k; } });
+    const atP = new InstancedBufferAttribute(aP, 3), atC = new InstancedBufferAttribute(aC, 3), atK = new InstancedBufferAttribute(aK, 4), atD = new InstancedBufferAttribute(aD, 2);
+    fxGeo.setAttribute("iP", atP); fxGeo.setAttribute("iC", atC); fxGeo.setAttribute("iK", atK); fxGeo.setAttribute("iD", atD);
+    const fxM = new ShaderMaterial({
+      uniforms: { camW: { value: new Vector3() }, rain: { value: 0 }, t: { value: 0 } },
+      transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide,
+      vertexShader: `#include <common>
+uniform vec3 camW; uniform float rain;
+attribute vec3 iP; attribute vec3 iC; attribute vec4 iK; attribute vec2 iD;
+varying vec2 vUv; varying vec3 vC; varying float vA; varying float vM;
+void main(){
+  vUv = uv; vC = iC; vM = iK.x; vA = iK.z;
+  vec4 w = modelMatrix * vec4(iP, 1.0); w.xz = cityWarp(w.xz);
+  vec2 f = iD; vec3 toC = camW - w.xyz;
+  if (iK.x < 0.5) {
+    // the halo: round the lit lamp, a little in front of its lens and nearer the camera than the head (never cut by it);
+    // seen from behind the signal only a faint glow of it
+    w.xz += f * 1.6;
+    float face = 0.22 + 0.78 * smoothstep(-0.35, 0.55, dot(normalize(toC), vec3(f.x, 0.0, f.y)));
+    vA *= face;
+    vec4 mv = viewMatrix * w; mv.xyz += normalize(-mv.xyz) * 5.0; mv.xy += position.xy * iK.y;
+    gl_Position = projectionMatrix * mv;
+  } else {
+    vec2 g0 = w.xz, dir, side; float len;
+    if (iK.x < 1.5) { // the pool: on the road in front of the pole, longer along the way the lamp looks
+      dir = f; len = iK.w; g0 += f * (len * 0.5 + 2.0) + vec2(-f.y, f.x) * 12.0; // (towards the road: the kerb is on the lamp's right)
+    } else {          // the streak: where the lamp's mirror image meets the road, drawn out towards the viewer
+      vec2 d = toC.xz; float dl = max(length(d), 1.0); dir = d / dl;
+      float hl = iP.y, hc = max(toC.y + w.y, 2.0);
+      g0 += d * (hl / (hl + hc)); len = iK.w; g0 += dir * len * 0.18;
+      vA *= smoothstep(-0.1, 0.6, dot(dir, f)); // a mirror image of the lens: only where the lamp looks towards the viewer
+    }
+    side = vec2(-dir.y, dir.x);
+    vec2 p = g0 + side * position.x * iK.y + dir * position.y * len;
+    gl_Position = projectionMatrix * viewMatrix * vec4(p.x, 1.9, p.y, 1.0);
+  }
+}`,
+      fragmentShader: `uniform float rain; uniform float t;
+varying vec2 vUv; varying vec3 vC; varying float vA; varying float vM;
+void main(){
+  vec2 q = vUv - 0.5; float a;
+  if (vM < 0.5) {
+    float r = length(q) * 2.0;
+    // dry: a bright core, a glow, a faint tail; in the rain the core spreads and the tail grows (light in wet air)
+    float core = mix(0.7, 0.42, rain) * exp(-pow(r / mix(0.08, 0.11, rain), 2.0));
+    float glow = mix(0.34, 0.36, rain) * exp(-pow(r / mix(0.24, 0.34, rain), 2.0));
+    float tail = mix(0.12, 0.22, rain) * pow(max(0.0, 1.0 - r), 2.2);
+    a = (core + glow + tail) * (1.0 - smoothstep(0.82, 1.0, r));
+  } else if (vM < 1.5) {
+    float r = length(q) * 2.0; a = 0.7 * exp(-pow(r / 0.48, 2.0)) * (1.0 - smoothstep(0.75, 1.0, r));
+  } else {
+    // a broken, shimmering streak: soft across, tapering at both ends, the wet road's ripples along it
+    float across = exp(-pow(q.x / 0.22, 2.0)), along = smoothstep(-0.5, -0.32, q.y) * (1.0 - smoothstep(0.05, 0.5, q.y));
+    float rip = 0.72 + 0.28 * sin(q.y * 46.0 + t * 2.1) * sin(q.y * 17.0 - t * 1.3 + q.x * 9.0);
+    a = across * along * rip;
+  }
+  gl_FragColor = vec4(vC * a * vA, 1.0);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}`
+    });
+    fxM.userData.outlineParameters = { visible: false };
+    const fx = new InstancedMesh(fxGeo, fxM, NF);
+    fx.name = "trafficGlow"; fx.frustumCulled = false; fx.visible = false; fx.renderOrder = 3; fx.castShadow = fx.receiveShadow = false;
+    fx.userData.noHull = true; fx.userData.noMerge = true; fx.userData.sketchNoHull = true;
+    g.add(fx);
+    parent.add(g);
+    // ---- the cycle ----
+    const rm = matchMedia("(prefers-reduced-motion: reduce)"), fr = new Frustum(), pm = new Matrix4();
+    let cx = 0, cz = 0; for (const s of TL_SPOTS) { cx += s.x / TL_SPOTS.length; cz += s.z / TL_SPOTS.length; }
+    const sph = new Sphere(warpV(new Vector3(cx, 30, cz)), 330);
+    const st = TL_SPOTS.map(() => ({ on: -1, prev: -1, at: -1e9 })), tmpC = new Color();
+    let dark = false, clock = 0, lastNow = 0;
+    const phase = (tt) => { const u = ((tt % TL_T) + TL_T) % TL_T; return u < TL_RED ? 0 : u < TL_RED + TL_GREEN ? 2 : 1; }; // lamp index: 0 red, 1 amber, 2 green
+    const api = {
+      group: g, spots: TL_SPOTS,
+      setDark(on) { dark = on; fx.visible = false; },
+      state: () => st.map((s) => ["red", "amber", "green"][s.on]),
+      update(now, cam, rainK = 0) {
+        const dt = Math.min(0.25, Math.max(0, (now - (lastNow || now)) / 1000)); lastNow = now;
+        clock += dt * (rm.matches ? 0.5 : 1); // reduced motion: the same cycle, at half the pace
+        pm.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); fr.setFromProjectionMatrix(pm);
+        const seen = fr.intersectsSphere(sph);
+        lamps.visible = seen;
+        if (!seen) { fx.visible = false; return; }
+        let dirty = false;
+        TL_SPOTS.forEach((s, i) => {
+          const S = st[i], ph = phase(clock + s.off);
+          if (ph !== S.on) { S.prev = S.on; S.on = ph; S.at = clock; }
+          const k = Math.min(1, (clock - S.at) / TL_FADE);
+          if (k < 1 || S.drawn !== S.on) {
+            for (let l = 0; l < 3; l++) {
+              const lit = l === S.on ? k : l === S.prev ? 1 - k : 0;
+              tmpC.copy(OFF[l]).lerp(LAMP[l], lit); lamps.setColorAt(i * 3 + l, tmpC);
+            }
+            if (k >= 1) S.drawn = S.on;
+            dirty = true;
+          }
+        });
+        if (dirty) lamps.instanceColor.needsUpdate = true;
+        const glow = dark; // (Underwater too: lamps under water read well, the glow a little cloudy)
+        fx.visible = glow;
+        if (!glow) return;
+        const r = Math.max(0, Math.min(1, rainK));
+        fxM.uniforms.camW.value.copy(cam.position); fxM.uniforms.rain.value = r; fxM.uniforms.t.value = (now * 0.001) % 1000;
+        TL_SPOTS.forEach((s, i) => {
+          const S = st[i], k = Math.min(1, (clock - S.at) / TL_FADE), c = LAMP[S.on];
+          const lampY = TL_HEAD_Y + (1 - S.on) * TL_LAMP_DY;
+          for (let m = 0; m < 3; m++) {
+            const j = i * 3 + m;
+            aP[j * 3 + 1] = lampY;
+            aC[j * 3] = c.r; aC[j * 3 + 1] = c.g; aC[j * 3 + 2] = c.b;
+            if (m === 0) { aK[j * 4 + 1] = 46 + 16 * r; aK[j * 4 + 2] = (0.8 + 0.1 * r) * k; }
+            else if (m === 1) { aK[j * 4 + 1] = 38 + 6 * r; aK[j * 4 + 3] = 46 + 8 * r; aK[j * 4 + 2] = (0.32 + 0.16 * r) * k; }
+            else { aK[j * 4 + 1] = 8 + 3 * (1 - r); aK[j * 4 + 3] = 30 + 120 * r; aK[j * 4 + 2] = 0.75 * r * k; }
+          }
+        });
+        atP.needsUpdate = atC.needsUpdate = atK.needsUpdate = true;
+      }
+    };
+    mats.trafficLights = api;
+    return g;
+  }
   // r185: the arrival at Olari 9 (see BLVD_W, OLARI_PLAZA): the forecourt, paved in the ring's colour, joined to the
   // boulevard by two fillets (the road widens into it); the casing runs round it; a gateway over its mouth with the
   // house's name on both faces (readable on the way in); festoons strung across the last stretch; three planted trees
@@ -31762,6 +31974,7 @@ void main() {
     const endHouse = tag("EndHouse", () => buildEndHouse(world));
     yield;
     tag("OlariPlaza", () => buildOlariPlaza(world)); // r185
+    tag("TrafficLights", () => buildTrafficLights(world)); // TASK-110
     const streetSigns = tag("CoffeeEntrance", () => buildCoffeeEntrance(world));
     yield;
     tag("Romexpo", () => buildRomexpo(world));
@@ -37380,6 +37593,7 @@ void main() {
         if (mats.yoshiLantern) mats.yoshiLantern.emissiveIntensity = dark ? 2.2 : 0.15;
         for (const [m, k] of STREET_GLOW) m.emissiveIntensity = dark ? k : 0;
         mats.houseWin?.setDark(dark); // TASK-098: the house's windows, in colour at night
+        mats.trafficLights?.setDark(dark); // TASK-110: the signals' glow after dark
         if (mats.omaGlow) mats.omaGlow.emissiveIntensity = dark ? 1 : 0;
         if (mats.bereroGlow) mats.bereroGlow.emissiveIntensity = dark ? 1 : 0;
         for (const k of ["artisanGlow", "pastiziaGlow", "blankAGlow", "blankBGlow"]) if (mats[k]) mats[k].emissiveIntensity = dark ? 1 : 0;
@@ -40780,6 +40994,7 @@ void main() {
         if (schemeId === "interbelic") { hemi.intensity = 0.62; sun.intensity = 2.8 * curSun.int; sun.color.set("#ffdcae"); } // worlds prototype: a warm afternoon sun // beta 3.76: the notebook's light stays flat and even (the weather and the lightning move it elsewhere)
         rainAlpha = smooth(rainAlpha, wantRain ? 1 : 0, dt, 2.5);
         rain.visible = rainAlpha > 0.02;
+        mats.trafficLights?.update(now, camera, rainAlpha); // TASK-110 (the rain makes the halos softer and the road wet)
         (window.__wxNow ||= {}).wx = wx; window.__wxNow.rain = rain.visible; window.__wxNow.bolt = boltActive > 0; // tests: the weather per world
         if (rain.visible) {
           // r129: Night Mode keeps a light drizzle, not a downpour
@@ -41202,7 +41417,7 @@ void main() {
       // same vertices. The originals stay where they are, out of every camera's layers; a watch compares them every few
       // frames with how they were batched (place, visibility, material, geometry), and the first change puts that batch's
       // originals back for good (something that moves, turns to face you or is swapped never stays frozen)
-      var STATIC_BUILDERS = new Set(["FourStreets", "StreetProps", "CoffeeStreetAdds", "CoffeeEntrance", "PrintLane", "SteamShop", "OmaShop", "OlariPlaza", "Fork", "Dacia99", "Izakaya", "CasaBerero", "ChapterSigns", "Eliade18", "Romexpo", "StreetShop", "Brasov", "Munitiei5", "Ground"]);
+      var STATIC_BUILDERS = new Set(["FourStreets", "StreetProps", "CoffeeStreetAdds", "CoffeeEntrance", "PrintLane", "SteamShop", "OmaShop", "OlariPlaza", "TrafficLights", "Fork", "Dacia99", "Izakaya", "CasaBerero", "ChapterSigns", "Eliade18", "Romexpo", "StreetShop", "Brasov", "Munitiei5", "Ground"]);
       var MERGED = null, mergeWatchI = 0, mergeTries = 0;
       // a baked material's look at batching time (a later change to it puts its parts back)
       // r230 (Daniel, frame drops when racing and drifting): the watch below runs every frame over ~1,600 parts; it built
@@ -43863,6 +44078,7 @@ void main() {
       window.__setL = (L) => { state.L = prevL = state.targetL = L; mapNav.targetL = L; }; // r157: tests // r157: tests (the solver measures a camera that is already there)
       window.__mapSet = (d, x, z) => { mapView.dist = d; mapView.distGoal = null; mapView.follow = false; mapView.tgt.set(x, 0, z); };
       window.__api = api;
+      window.__tl = () => mats.trafficLights?.state(); // TASK-110: tests (each signal's lamp: medical, lane, olari)
       window.__xp = () => ({ pts: state.points, log: xpLog.map((e) => e.title + " +" + e.pts), pending: xpPending && xpPending.title, collected: [...xpCollected], chosen: state.branchChosen, branch: state.branch, card: currentCardStop, veh: state.vehicleId });
       window.__scheme = (id) => api.setScheme(SCHEMES.findIndex((x) => x.id === id));
       // ---- r140: /onboarding/ drives the city ----
