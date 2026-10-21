@@ -27109,20 +27109,7 @@ void main() {
     const stairGeos = [];
     for (let k = 0; k < 7; k++) { const st = new BoxGeometry(5, 12.6 - k * 1.8, 132 + k * 10); st.translate(PX - 25 - 5 - k * 5, (12.6 - k * 1.8) / 2, 0); stairGeos.push(st); }
     g.add(new Mesh(mergeGeometries(stairGeos), stone));
-    // the court's banners between the portico and the corner pavilions
-    const banTex = canvasTexture(128, 384, (ctx) => {
-      ctx.fillStyle = "#1a0909"; ctx.fillRect(0, 0, 128, 384);
-      ctx.strokeStyle = "#c89b3c"; ctx.lineWidth = 4; ctx.strokeRect(8, 8, 112, 368);
-      ctx.fillStyle = "#f4f0ea"; ctx.textAlign = "center";
-      ["THE", "AESTHETICS", "COURT"].forEach((w2, i) => { ctx.font = `600 ${i === 1 ? 17 : 24}px 'Cinzel', Georgia, serif`; ctx.fillText(w2, 64, 120 + i * 44); });
-      ctx.fillStyle = "#c89b3c"; ctx.font = "700 11px CromaticSans, sans-serif"; ctx.fillText("ONE TRIAL", 64, 286); ctx.fillText("ONE VERDICT", 64, 304);
-    });
-    const banM = new MeshStandardMaterial({ map: banTex, emissiveMap: banTex, emissive: new Color("#ffffff"), emissiveIntensity: 0, roughness: 0.7 });
-    STREET_GLOW.push([banM, 0.45]);
-    // r139e: on the front beside the portico and on the risalits, merged into one mesh
-    const banGeos = [];
-    for (const [bx, bz] of [[-119.6, -56], [-123.6, -73], [-119.6, 56], [-123.6, 73]]) { const b2 = new PlaneGeometry(13, 40); b2.rotateY(-Math.PI / 2); b2.translate(bx, 36, bz); banGeos.push(b2); }
-    g.add(new Mesh(mergeGeometries(banGeos), banM));
+    // TASK-114: the court's banners that hung on the front (its name lettered on the palace) are gone: see tacCourtSet
     // the esplanade: paving, two lawns with fountains, and lamps along the walk
     const pave = new Mesh(new BoxGeometry(92, 0.8, 300), new MeshStandardMaterial({ color: "#e4ddce", roughness: 1 }));
     pave.position.set(-210, 0.4, 0); g.add(pave);
@@ -27146,34 +27133,20 @@ void main() {
     }
     g.add(new Mesh(mergeGeometries(lampGeos), new MeshStandardMaterial({ color: "#2b2d31", roughness: 0.5, metalness: 0.4 })));
     mats.festoon = mats.festoon || new MeshStandardMaterial({ color: "#fff0c4", emissive: "#ffca6a", emissiveIntensity: 0.1 });
-    g.add(new Mesh(mergeGeometries(globeGeos), mats.festoon));
     // r121: the way in to The Aesthetic Court: a burgundy carpet from Medical Avenue across the
-    // esplanade to the portico, gold stanchions, and a gate on the avenue's kerb with the court's name
+    // esplanade to the portico, gold stanchions along it. TASK-114: the black gate lettered with the name and the name
+    // over the portico are gone; the court's set for its one day stands here instead (tacCourtSet)
     {
       const carpetM = new MeshStandardMaterial({ color: "#6e1420", roughness: 0.85 }), goldM = new MeshStandardMaterial({ color: "#c89b3c", roughness: 0.35, metalness: 0.6 });
       const gx0 = -392, gx1 = -150, cw = 22; // r181: the gate and the carpet on the kerb, no longer on the avenue (gx0 was -408: 7 into the asphalt)
-      const carpet = new Mesh(new BoxGeometry(gx1 - gx0, 1.2, cw), carpetM); carpet.position.set((gx0 + gx1) / 2, 1.4, 0); g.add(carpet);
-      // r139e: the stanchions, the gate's posts and its caps each merged into one mesh
-      const gold = [], posts = [];
+      const carpet = [new BoxGeometry(gx1 - gx0, 1.2, cw).translate((gx0 + gx1) / 2, 1.4, 0)];
+      // r139e: the stanchions merged into one mesh
+      const gold = [];
       for (const sz of [-1, 1]) for (let x2 = gx0 + 10; x2 < gx1; x2 += 22) gold.push(new CylinderGeometry(0.9, 1.2, 9, 8).translate(x2, 5.5, sz * (cw / 2 + 3)));
-      for (const sz of [-1, 1]) { posts.push(new BoxGeometry(6, 46, 6).translate(gx0 + 4, 23, sz * 22)); gold.push(new BoxGeometry(8, 3, 8).toNonIndexed().translate(gx0 + 4, 47.5, sz * 22)); }
-      g.add(new Mesh(mergeGeometries(gold.map((q) => q.index ? q.toNonIndexed() : q)), goldM), new Mesh(mergeGeometries(posts), new MeshStandardMaterial({ color: "#1a0909", roughness: 0.6 })));
-      const gate = new Group();
-      const lintelTex = canvasTexture(512, 128, (ctx) => {
-        ctx.fillStyle = "#1a0909"; ctx.fillRect(0, 0, 512, 128); ctx.strokeStyle = "#c89b3c"; ctx.lineWidth = 6; ctx.strokeRect(8, 8, 496, 112);
-        // r139e: the name shrinks until it fits (in the fallback serif it ran off both ends)
-        ctx.fillStyle = "#f4f0ea"; ctx.textAlign = "center";
-        for (let fs = 44; fs >= 24; fs -= 2) { ctx.font = `600 ${fs}px 'Cinzel', Georgia, serif`; if (ctx.measureText("THE AESTHETIC COURT").width <= 468) break; }
-        ctx.fillText("THE AESTHETIC COURT", 256, 66);
-        ctx.fillStyle = "#c89b3c"; ctx.font = "700 20px CromaticSans, sans-serif"; ctx.fillText("ENTRANCE \u00B7 ONE TRIAL, ONE VERDICT", 256, 100);
-      });
-      const lintM = new MeshStandardMaterial({ map: lintelTex, emissiveMap: lintelTex, emissive: new Color("#ffffff"), emissiveIntensity: 0, roughness: 0.6 });
-      STREET_GLOW.push([lintM, 0.5]);
-      const lintel = new Mesh(new BoxGeometry(5, 16, 50), [lintM, lintM, goldM, goldM, goldM, goldM]); lintel.position.set(0, 40, 0); gate.add(lintel);
-      gate.position.set(gx0 + 4, 0, 0); g.add(gate);
-      // a big name over the portico, so the court reads from across the city
-      const big = new Mesh(new BoxGeometry(2, 14, 92), [lintM, lintM, goldM, goldM, goldM, goldM]); big.position.set(PX - 29, 72, 0); g.add(big);
+      tacCourtSet(g, { PX, gx0, gold, bulbs: globeGeos, carpet });
+      g.add(new Mesh(tacMerge(gold), goldM), new Mesh(tacMerge(carpet), carpetM));
     }
+    g.add(new Mesh(tacMerge(globeGeos), mats.festoon));
     // r139e: the palace's buckets, one mesh per material
     for (const k in BK) {
       const q = BK[k], geo = new BufferGeometry();
@@ -27187,6 +27160,293 @@ void main() {
     return finish(g, parent, x, z);
   }
 
+  // TASK-114 (Daniel): The Aesthetic Court is one day at the palace, not the palace's tenant. Nothing is lettered on the
+  // building any more (the banners on its front, the name over the portico, the black gate are gone): the court arrives
+  // as a set built for the day, standing in front of the portico, and its name is its REAL lockup, from
+  // theaestheticscourt.com: the site's own SVG of the hanging scales (TAC_MARK, drawn here as vectors, and built in gold
+  // over the carpet) and its word in Cormorant SC 500, rendered from the site's lockups (the stacked hero lockup and the
+  // one-line nav lockup) into two small pictures whose two inks are coded red and green, recoloured here (gold, cotton).
+  // The set: a truss portal on the esplanade hung with burgundy velvet tied back over the carpet, the scales hanging
+  // in it; velvet tied back between the portico's columns; the judges' bench up the stair, the jury's pews either side
+  // of the carpet; light stands, festoons of bulbs, feather flags along the carpet, a truss gate on the kerb. At night
+  // the bulbs and the signs light up, the stands throw beams onto the portico and a warm wash comes up the columns: all
+  // emissive or additive, no lights. One mesh per material: velvet, truss, black kit, walnut, signs (one atlas), the
+  // palace's gold and bulbs, and the night's beams and glows (one each, shown only after dark).
+  var TAC_LOCKUP = "data:image/png;base64,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"; // the stacked lockup (scales over THE / AESTHETICS / COURT): the scales red, the word green
+  var TAC_NAV = "data:image/png;base64,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"; // the nav lockup's word on one line: THE red (gold on the site), AESTHETICS COURT green (cotton)
+  var TAC_MARK = { box: [300, 340], left: { x: 100, y: 150, drop: 82, rx: 30 }, right: { x: 190, y: 192, drop: 90, rx: 34 }, beam: "M100 150 C118 145 140 139 152 152 C164 165 176 180 190 192", pole: "M150 12 C157 12 158 32 156 56 L154 152 L148 152 L146 56 C144 32 143 12 150 12 Z", hookL: "M100 150 C93 148 90 140 95 136", hookR: "M190 192 C197 194 200 202 195 206" };
+  var TAC_GOLD = "#cba478", TAC_COTTON = "#f4f0e6";
+  // the atlas's regions [x, y, w, h] in its 1024 px: a tall banner, a roundel, the one-line lockup, the scales alone
+  var TAC_UV = { flag: [0, 0, 384, 1024], disc: [384, 0, 640, 640], line: [384, 640, 640, 128], mark: [384, 768, 640, 256] };
+  function tacMark2D(ctx, x, y, w, ink) {
+    const M = TAC_MARK, s = w / M.box[0];
+    ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.fillStyle = ctx.strokeStyle = ink; ctx.lineCap = "round";
+    ctx.fill(new Path2D(M.pole));
+    ctx.lineWidth = 6.5; ctx.stroke(new Path2D(M.beam)); ctx.lineWidth = 4; ctx.stroke(new Path2D(M.hookL)); ctx.stroke(new Path2D(M.hookR));
+    for (const p of [M.left, M.right]) {
+      const py = p.y + p.drop;
+      ctx.globalAlpha = 0.8; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.rx * 0.86, py); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + p.rx * 0.86, py); ctx.stroke();
+      ctx.globalAlpha = 0.92; ctx.fill(new Path2D(`M${p.x - p.rx} ${py} A${p.rx} ${p.rx * 0.62} 0 0 0 ${p.x + p.rx} ${py} Z`));
+      ctx.globalAlpha = 1; ctx.beginPath(); ctx.ellipse(p.x, py, p.rx, p.rx * 0.26, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+  var TAC_ATLAS = null;
+  function tacAtlas() {
+    if (TAC_ATLAS) return TAC_ATLAS;
+    const c = document.createElement("canvas"); c.width = c.height = 1024;
+    const ctx = c.getContext("2d");
+    const wine = ([x, y, w, h]) => { const gr = ctx.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, "#3b1020"); gr.addColorStop(1, "#210812"); ctx.fillStyle = gr; ctx.fillRect(x, y, w, h); };
+    const keyline = ([x, y, w, h], i, a = 0.6) => { ctx.strokeStyle = TAC_GOLD; ctx.globalAlpha = a; ctx.lineWidth = 3; ctx.strokeRect(x + i, y + i, w - 2 * i, h - 2 * i); ctx.globalAlpha = 1; };
+    for (const k in TAC_UV) wine(TAC_UV[k]);
+    keyline(TAC_UV.flag, 18); keyline(TAC_UV.flag, 30, 0.3); keyline(TAC_UV.line, 10, 0.45); keyline(TAC_UV.mark, 14, 0.45);
+    { const [x, y, w] = TAC_UV.disc, cx = x + w / 2, cy = y + w / 2; ctx.strokeStyle = TAC_GOLD; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(cx, cy, w / 2 - 14, 0, Math.PI * 2); ctx.stroke(); ctx.lineWidth = 3; ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.arc(cx, cy, w / 2 - 34, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1; }
+    // the scales alone (the bench's front): the site's mark between two gold rules
+    { const [x, y, w, h] = TAC_UV.mark, mw = 150; tacMark2D(ctx, x + (w - mw) / 2, y + 20, mw, TAC_GOLD); ctx.fillStyle = TAC_GOLD; ctx.globalAlpha = 0.7; ctx.fillRect(x + 60, y + h / 2 + 8, 170, 3); ctx.fillRect(x + w - 230, y + h / 2 + 8, 170, 3); ctx.globalAlpha = 1; }
+    const t = new CanvasTexture(c); t.colorSpace = SRGBColorSpace; t.anisotropy = 4;
+    // the lockups' pictures, each ink recoloured: red -> gold, green -> cotton
+    const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const inks = (im) => {
+      const tc = document.createElement("canvas"); tc.width = im.width; tc.height = im.height;
+      const x = tc.getContext("2d"); x.drawImage(im, 0, 0);
+      const d = x.getImageData(0, 0, im.width, im.height), p = d.data, G = rgb(TAC_GOLD), C = rgb(TAC_COTTON);
+      for (let i = 0; i < p.length; i += 4) { const k = p[i] > p[i + 1] ? G : C; p[i] = k[0]; p[i + 1] = k[1]; p[i + 2] = k[2]; }
+      x.putImageData(d, 0, 0); return tc;
+    };
+    const load = (src, draw) => { const im = new Image(); im.onload = () => { try { draw(inks(im)); t.needsUpdate = true; } catch {} }; im.src = src; };
+    load(TAC_LOCKUP, (L) => {
+      const put = ([x, y, w, h], lw, dy = 0) => { const lh = lw * L.height / L.width; ctx.drawImage(L, x + (w - lw) / 2, y + (h - lh) / 2 + dy, lw, lh); };
+      put(TAC_UV.flag, 300, -150);
+      put(TAC_UV.disc, 400, 6);
+    });
+    load(TAC_NAV, (N) => {
+      // the nav lockup: the scales (52 px on the site) beside the word (16 px, the gap 13 px), centred on the line
+      const [x, y, w, h] = TAC_UV.line, mh = 96, mw = mh * TAC_MARK.box[0] / TAC_MARK.box[1], ww = 430, wh = ww * N.height / N.width, gap = mw * 13 / 52;
+      const x0 = x + (w - (mw + gap + ww)) / 2;
+      tacMark2D(ctx, x0, y + (h - mh) / 2, mw, TAC_GOLD);
+      ctx.drawImage(N, x0 + mw + gap, y + (h - wh) / 2 + 4, ww, wh);
+    });
+    return (TAC_ATLAS = t);
+  }
+  // a quad of the atlas's region `r`, w x h, facing -x (the avenue), centred on (x, y, z); back: a second face to +x,
+  // the two faces t either side of x (a board's half thickness)
+  function tacSign(out, r, w, h, x, y, z, back = false, t = 0.05) {
+    const [rx, ry, rw, rh] = TAC_UV[r];
+    for (const sd of back ? [-1, 1] : [-1]) {
+      const q = r === "disc" ? new CircleGeometry(w / 2, 40) : new PlaneGeometry(w, h), uv = q.attributes.uv; // (a roundel: a disc)
+      for (let i = 0; i < uv.count; i++) { const u = sd < 0 ? uv.getX(i) : 1 - uv.getX(i); uv.setXY(i, (rx + u * rw) / 1024, 1 - (ry + (1 - uv.getY(i)) * rh) / 1024); }
+      q.rotateY(sd < 0 ? -Math.PI / 2 : Math.PI / 2); q.translate(x + sd * t, y, z); out.push(q);
+    }
+  }
+  // a rod from a to b ([x, y, z]), radius r, n sides (a truss chord, a stand's leg, a festoon's wire)
+  var _tacQ = null, _tacUp = null;
+  function tacRod(out, a, b, r, n = 5) {
+    _tacQ = _tacQ || new Quaternion(); _tacUp = _tacUp || new Vector3(0, 1, 0);
+    const d = new Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]), L = d.length();
+    if (L < 1e-4) return;
+    const geo = new CylinderGeometry(r, r, L, n, 1, true);
+    _tacQ.setFromUnitVectors(_tacUp, d.multiplyScalar(1 / L));
+    geo.applyMatrix4(new Matrix4().compose(new Vector3((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2), _tacQ, new Vector3(1, 1, 1)));
+    out.push(geo);
+  }
+  // a box truss (s x s) from a to b along one axis: four chords and the zig-zag lacing on each face
+  function tacTruss(out, a, b, s = 4.4) {
+    const ax = a[0] !== b[0] ? 0 : a[1] !== b[1] ? 1 : 2, L = Math.abs(b[ax] - a[ax]), dir = Math.sign(b[ax] - a[ax]);
+    const o1 = (ax + 1) % 3, o2 = (ax + 2) % 3, h = s / 2;
+    const P = (t, u, v) => { const p = a.slice(); p[ax] += dir * t; p[o1] += u; p[o2] += v; return p; };
+    const corners = [[-h, -h], [h, -h], [h, h], [-h, h]];
+    for (const [u, v] of corners) tacRod(out, P(0, u, v), P(L, u, v), 0.34, 6);
+    const n = Math.max(1, Math.round(L / s));
+    for (let i = 0; i < n; i++) {
+      const t0 = i * L / n, t1 = (i + 1) * L / n;
+      for (let f = 0; f < 4; f++) { const c0 = corners[f], c1 = corners[(f + 1) % 4], z = i % 2 ? [c0, c1] : [c1, c0]; tacRod(out, P(t0, z[0][0], z[0][1]), P(t1, z[1][0], z[1][1]), 0.17, 4); }
+    }
+  }
+  // a velvet drape hanging in the y-z plane at x (the folds stand out towards -x), from z0 to z1 and from yTop to yBot:
+  // `pleats` folds `amp` deep; tie (-1 / +1): drawn at tieY towards the z0 / z1 side by tk; sag: the hem's swag (a valance).
+  // Its colours are the velvet's: the crests catch the light, the valleys go dark, the hem and the head a shade deeper
+  function tacDrape(out, { x, z0, z1, yTop, yBot, pleats, amp, tie = 0, tieY = 0, tk = 0.72, sag = 0 }) {
+    const nu = Math.max(10, pleats * 6), nv = sag ? 5 : 16, H = yTop - yBot;
+    const pos = [], col = [], uv = [], idx = [];
+    const lo = new Color("#2a0611"), mid = new Color("#6e172c"), hi = new Color("#b8465a"), c = new Color();
+    const tv = tie ? Math.min(0.92, Math.max(0.08, (yTop - tieY) / H)) : 0, zt = tie > 0 ? z1 : z0;
+    for (let j = 0; j <= nv; j++) {
+      const v = j / nv;
+      // how far the cloth is drawn to the tie: nothing at the rod, tk at the tie, a little less below it (it flares out)
+      const p = !tie ? 0 : v <= tv ? tk * Math.pow(Math.sin((v / tv) * Math.PI / 2), 1.5) : tk * (1 - 0.5 * Math.pow((v - tv) / (1 - tv), 1.2));
+      for (let i = 0; i <= nu; i++) {
+        const u = i / nu, s = Math.sin(u * pleats * Math.PI * 2 + 0.6 * Math.sin(v * 3.1 + u * 7));
+        let z = z0 + (z1 - z0) * u; z += (zt - z) * p;
+        const a = amp * (0.6 + 1.7 * p + 0.2 * v) * (0.85 + 0.3 * Math.sin(u * 13.7));
+        const y = yTop - v * H - (sag ? sag * Math.sin(Math.PI * u) * v : 0);
+        pos.push(x - a * (0.5 + 0.5 * s), y, z);
+        const k = 0.5 + 0.5 * s;
+        c.copy(lo).lerp(mid, Math.min(1, k * 1.5)); if (k > 0.6) c.lerp(hi, ((k - 0.6) / 0.4) * (0.55 + 0.35 * p));
+        if (v < 0.06 || v > 0.94) c.multiplyScalar(0.7);
+        col.push(c.r, c.g, c.b); uv.push(u, 1 - v);
+      }
+    }
+    for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) { const a = j * (nu + 1) + i, b = a + 1, d = a + nu + 1, e = d + 1; idx.push(a, d, b, b, d, e); }
+    const g = new BufferGeometry();
+    g.setAttribute("position", new Float32BufferAttribute(pos, 3)); g.setAttribute("normal", new Float32BufferAttribute(new Float32Array(pos.length), 3));
+    g.setAttribute("color", new Float32BufferAttribute(col, 3)); g.setAttribute("uv", new Float32BufferAttribute(uv, 2));
+    g.setIndex(idx); g.computeVertexNormals(); out.push(g);
+  }
+  // a geometry given one flat vertex colour (the velvet bucket's boxes: cushions, chair backs)
+  function tacPaint(geo, hex) { const c = new Color(hex), n = geo.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; } geo.setAttribute("color", new BufferAttribute(a, 3)); return geo; }
+  function tacMerge(list) { return mergeGeometries(list.map((q) => (q.index ? q.toNonIndexed() : q))); }
+  // the set; g is the palace (local units, its front facing -x), PX the portico's line, gx0 the kerb, gold / bulbs the
+  // palace's own lists (merged with its stanchions and its lamps' globes), carpet the carpet's
+  function tacCourtSet(g, { PX, gx0, gold, bulbs, carpet }) {
+    _tacQ = _tacQ || new Quaternion(); _tacUp = _tacUp || new Vector3(0, 1, 0);
+    const V = { velvet: [], alu: [], kit: [], wood: [], sign: [], beam: [], glow: [] };
+    const glowAt = (x, y, z, size, hex) => V.glow.push([x, y, z, size, hex]);
+    const bulb = (x, y, z, r = 0.75) => { bulbs.push(new SphereGeometry(r, 6, 4).translate(x, y, z)); glowAt(x, y, z, 3.4, "#ffc978"); };
+    // a festoon of bulbs from a to b, sagging by sag, n bulbs
+    const festoon = (a, b, sag, n) => {
+      let prev = null;
+      for (let i = 0; i <= n; i++) {
+        const t = i / n, p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t - sag * 4 * t * (1 - t), a[2] + (b[2] - a[2]) * t];
+        if (prev) tacRod(V.kit, prev, p, 0.12, 3);
+        if (i > 0 && i < n) bulb(p[0], p[1] - 0.9, p[2]);
+        prev = p;
+      }
+    };
+    const QX = -236, QZ = 48, QH = 74;
+    // THE PORTAL on the esplanade, astride the carpet: two truss towers, a truss header with the court's line, velvet
+    // tied back to the towers, a velvet valance, a string of bulbs, the scales hanging over the carpet
+    for (const s of [-1, 1]) {
+      tacTruss(V.alu, [QX, 0.8, s * QZ], [QX, QH, s * QZ], 5);
+      V.kit.push(new BoxGeometry(8, 1.2, 8).translate(QX, 1.4, s * QZ)); // the towers' base plates
+      tacDrape(V.velvet, { x: QX - 3.4, z0: s < 0 ? -QZ + 2.5 : 9, z1: s < 0 ? -9 : QZ - 2.5, yTop: QH - 6, yBot: 0.9, pleats: 8, amp: 1.7, tie: s, tieY: 20, tk: 0.62 }); // drawn open over the carpet
+      gold.push(new TorusGeometry(1.5, 0.45, 5, 10).rotateY(Math.PI / 2).translate(QX - 4.6, 20, s * (QZ - 6.5))); // the tie-backs
+      tacSign(V.sign, "flag", 4.6, 12.3, QX - 2.9, QH - 30, s * QZ, true); // the court's banner on each tower
+    }
+    tacTruss(V.alu, [QX, QH - 2.5, -QZ - 2.5], [QX, QH - 2.5, QZ + 2.5], 5);
+    tacDrape(V.velvet, { x: QX - 3.2, z0: -QZ + 2, z1: QZ - 2, yTop: QH - 5, yBot: QH - 10, pleats: 22, amp: 0.9, sag: 3.2 });
+    tacSign(V.sign, "line", 62, 12.4, QX - 3, QH + 6.6, 0);
+    V.alu.push(new BoxGeometry(0.6, 13.4, 64).translate(QX - 2.6, QH + 6.6, 0)); // the sign's frame
+    festoon([QX - 7.5, QH - 9.5, -QZ + 3], [QX - 7.5, QH - 9.5, QZ - 3], 6, 18);
+    // the scales, the site's mark built in gold, hanging from the header over the carpet (its z is the mark's x: seen
+    // from the avenue it reads the right way round)
+    {
+      const M = TAC_MARK, k = 0.15, top = QH - 5, Z = (sx) => (sx - 150) * k, Y = (sy) => top - (sy - 12) * k, X = QX - 1;
+      const num = (s) => s.match(/-?\d+(\.\d+)?/g).map(Number);
+      const cubic = (q, r) => { let prev = null; for (let i = 0; i <= 10; i++) { const t = i / 10, m = 1 - t, sx = m * m * m * q[0] + 3 * m * m * t * q[2] + 3 * m * t * t * q[4] + t * t * t * q[6], sy = m * m * m * q[1] + 3 * m * m * t * q[3] + 3 * m * t * t * q[5] + t * t * t * q[7], p = [X, Y(sy), Z(sx)]; if (prev) tacRod(gold, prev, p, r, 6); prev = p; } };
+      const b = num(M.beam); cubic(b.slice(0, 8), 3.25 * k); cubic(b.slice(6, 14), 3.25 * k);
+      cubic(num(M.hookL), 2 * k); cubic(num(M.hookR), 2 * k);
+      gold.push(new LatheGeometry([[0.01, 0], [6 * k, 4 * k], [7 * k, 20 * k], [5 * k, 44 * k], [3 * k, 140 * k], [0.01, 141 * k]].map(([r2, h2]) => new Vector2(r2, h2)), 8).rotateX(Math.PI).translate(X, Y(12), Z(150)));
+      for (const p of [M.left, M.right]) {
+        const hx = X, hy = Y(p.y), hz = Z(p.x), py = Y(p.y + p.drop), R = p.rx * k;
+        for (let i = 0; i < 3; i++) { const a = i * Math.PI * 2 / 3 + 0.5; tacRod(gold, [hx, hy, hz], [hx + Math.cos(a) * R * 0.86, py, hz + Math.sin(a) * R * 0.86], 0.09, 3); }
+        gold.push(new SphereGeometry(R, 14, 5, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2).scale(1, 0.62, 1).translate(hx, py, hz));
+        gold.push(new CylinderGeometry(R, R, 0.3, 14).translate(hx, py, hz));
+      }
+    }
+    // the carpet runs on up the stair, to the foot of the bench
+    for (let s2 = 2; s2 < 7; s2++) carpet.push(new BoxGeometry(5.2, 0.5, 22).translate(PX - 30 - s2 * 5, 12.6 - s2 * 1.8 + 0.25, 0));
+    // THE BENCH up the stair, in front of the portico: a walnut dais over the top steps, the bench with the scales on
+    // its front, three high-backed velvet chairs; the lectern either side
+    V.wood.push(new BoxGeometry(14, 7, 40).translate(-156, 12.5, 0));
+    V.wood.push(new BoxGeometry(9, 11, 32).translate(-157.5, 21.5, 0));
+    V.kit.push(new BoxGeometry(11, 0.9, 34).translate(-157.5, 27.4, 0)); // the bench's top
+    gold.push(new BoxGeometry(0.3, 0.6, 32).translate(-162.1, 25.6, 0), new BoxGeometry(0.3, 0.6, 32).translate(-162.1, 17.4, 0));
+    tacSign(V.sign, "mark", 19, 7.6, -162.2, 21.5, 0);
+    for (const cz of [-9, 0, 9]) { V.velvet.push(tacPaint(new BoxGeometry(1.6, cz ? 17 : 20, 6).translate(-150.6, 16 + (cz ? 8.5 : 10), cz), "#4a0f1d")); gold.push(new BoxGeometry(1.8, 0.7, 6.4).translate(-150.6, 16 + (cz ? 17 : 20), cz)); }
+    for (const s of [-1, 1]) { V.wood.push(new BoxGeometry(4.5, 10.2, 7).translate(-157, 15.9, s * 28)); V.kit.push(new BoxGeometry(5.2, 0.6, 7.6).translate(-157, 21.3, s * 28)); }
+    // THE VELVET in the portico: a curtain behind the colonnade, from the entablature to the floor, parted behind the
+    // bench and tied back; through the columns the porch reads burgundy, the doors show in the opening
+    for (const s of [-1, 1]) tacDrape(V.velvet, { x: PX - 12.5, z0: s < 0 ? -51 : 1, z1: s < 0 ? -1 : 51, yTop: 53.7, yBot: 16.1, pleats: 15, amp: 1.25, tie: s, tieY: 26, tk: 0.42 });
+    tacDrape(V.velvet, { x: PX - 12.8, z0: -52, z1: 52, yTop: 53.7, yBot: 49.4, pleats: 30, amp: 0.7, sag: 1.4 });
+    // THE JURY: three rows of walnut pews either side of the carpet, velvet cushions, facing the bench
+    for (const s of [-1, 1]) for (let r = 0; r < 3; r++) {
+      const px = -226 + r * 11, pz = s * 22.5;
+      V.wood.push(new BoxGeometry(3.4, 0.8, 15).translate(px, 4.4, pz), new BoxGeometry(0.8, 5.2, 15).translate(px - 2, 7.4, pz));
+      for (const e of [-1, 1]) V.wood.push(new BoxGeometry(3.8, 4.4, 0.7).translate(px, 2.2 + 0.8, pz + e * 7.3));
+      V.velvet.push(tacPaint(new BoxGeometry(3, 0.6, 14.4).translate(px + 0.1, 5.1, pz), "#5a1224"));
+    }
+    // LIGHT STANDS at the foot of the stair, each a tripod, a mast and a bar of two par cans aimed up at the portico;
+    // at night their beams reach the columns
+    const aim = [PX - 16, 40, 0];
+    for (const [sx, sz] of [[-194, -44], [-194, 44], [-190, -64], [-190, 64], [-249, -24], [-249, 24]]) {
+      const top = sx < -200 ? 22 : 18;
+      for (let i = 0; i < 3; i++) { const a = i * Math.PI * 2 / 3; tacRod(V.kit, [sx + Math.cos(a) * 3.2, 0.8, sz + Math.sin(a) * 3.2], [sx, 6, sz], 0.16, 4); }
+      tacRod(V.kit, [sx, 6, sz], [sx, top, sz], 0.22, 5);
+      tacRod(V.kit, [sx, top, sz - 2.4], [sx, top, sz + 2.4], 0.18, 4);
+      for (const dz of [-1.6, 1.6]) {
+        const p = [sx, top + 0.9, sz + dz], tgt = sx < -200 ? [QX - 3, QH + 6, sz * 0.9] : [aim[0], aim[1], sz * 0.55 + dz * 3];
+        const d = new Vector3(tgt[0] - p[0], tgt[1] - p[1], tgt[2] - p[2]).normalize();
+        tacRod(V.kit, [p[0] - d.x * 1.3, p[1] - d.y * 1.3, p[2] - d.z * 1.3], [p[0] + d.x * 1.3, p[1] + d.y * 1.3, p[2] + d.z * 1.3], 0.95, 8);
+        const lens = [p[0] + d.x * 1.35, p[1] + d.y * 1.35, p[2] + d.z * 1.35];
+        bulbs.push(new SphereGeometry(0.8, 6, 4).translate(lens[0], lens[1], lens[2]));
+        glowAt(lens[0], lens[1], lens[2], 5, "#ffd9a0");
+        // the beam: an open cone from the lens towards the target, bright at the lens, gone at the far end
+        const L = Math.hypot(tgt[0] - lens[0], tgt[1] - lens[1], tgt[2] - lens[2]) * (sx < -200 ? 0.55 : 1.02);
+        const cone = new CylinderGeometry(sx < -200 ? 4 : 8.5, 0.8, L, 12, 1, true);
+        const n = cone.attributes.position.count, cc = new Float32Array(n * 3), warm = new Color(sx < -200 ? "#ffcf96" : "#ff9a6a");
+        for (let i = 0; i < n; i++) { const yy = cone.attributes.position.getY(i), f = yy > 0 ? 0 : sx < -200 ? 0.045 : 0.085; cc[i * 3] = warm.r * f; cc[i * 3 + 1] = warm.g * f; cc[i * 3 + 2] = warm.b * f; }
+        cone.setAttribute("color", new BufferAttribute(cc, 3)); cone.deleteAttribute("uv"); cone.deleteAttribute("normal");
+        _tacQ.setFromUnitVectors(_tacUp, d);
+        cone.applyMatrix4(new Matrix4().compose(new Vector3(lens[0] + d.x * L / 2, lens[1] + d.y * L / 2, lens[2] + d.z * L / 2), _tacQ, new Vector3(1, 1, 1)));
+        V.beam.push(cone);
+      }
+    }
+    // festoons from the portal's towers down to the stands at the stair's foot, over the jury
+    for (const s of [-1, 1]) { festoon([QX + 2.5, QH - 14, s * (QZ - 2)], [-194, 18, s * 44], 5, 14); festoon([QX + 2.5, QH - 26, s * (QZ - 2)], [-190, 18, s * 64], 4, 12); }
+    // FEATHER FLAGS along the carpet, from the kerb to the portal, the court's banner on both faces
+    for (let fx = gx0 + 34; fx < QX - 20; fx += 33) for (const s of [-1, 1]) {
+      tacRod(V.kit, [fx, 0.8, s * 19], [fx, 27, s * 19], 0.22, 5);
+      tacSign(V.sign, "flag", 6.6, 17.6, fx - 0.4, 17.4, s * 19 + s * 3.5, true);
+    }
+    // THE GATE on the kerb: a truss arch with the court's line (was a black gate lettered with the name)
+    for (const s of [-1, 1]) { tacTruss(V.alu, [gx0 + 4, 0.8, s * 23], [gx0 + 4, 44, s * 23], 4); V.kit.push(new BoxGeometry(7, 1, 7).translate(gx0 + 4, 1.3, s * 23)); }
+    tacTruss(V.alu, [gx0 + 4, 42, -25], [gx0 + 4, 42, 25], 4);
+    V.alu.push(new BoxGeometry(0.6, 9.6, 46).translate(gx0 + 1.6, 35, 0));
+    tacSign(V.sign, "line", 44, 8.8, gx0 + 1.6, 35, 0, true, 0.36); // both faces: the way in and the way out
+    festoon([gx0 + 1.4, 43, -23], [gx0 + 1.4, 43, 23], 4, 10);
+    // THE NIGHT: the portico washed warm from below (two additive sheets in front of the columns and on the risalit),
+    // and every bulb and lens with a glow; one mesh each, shown after dark only
+    {
+      const wash = (x, y0, y1, z0, z1, hex, k) => { const q = new PlaneGeometry(z1 - z0, y1 - y0, 8, 2); q.rotateY(-Math.PI / 2); q.translate(x, (y0 + y1) / 2, (z0 + z1) / 2); q.deleteAttribute("uv"); q.deleteAttribute("normal"); const P = q.attributes.position, n = P.count, cc = new Float32Array(n * 3), c = new Color(hex); for (let i = 0; i < n; i++) { const v = (P.getY(i) - y0) / (y1 - y0), u = (P.getZ(i) - z0) / (z1 - z0), f = k * Math.pow(1 - v, 1.6) * Math.pow(Math.sin(Math.PI * u), 0.8); cc[i * 3] = c.r * f; cc[i * 3 + 1] = c.g * f; cc[i * 3 + 2] = c.b * f; } q.setAttribute("color", new BufferAttribute(cc, 3)); V.beam.push(q); };
+      wash(PX - 31, 13, 70, -58, 58, "#ff7a5c", 0.26);
+      wash(PX - 2, 60, 100, -44, 44, "#ffb27a", 0.16);
+    }
+    const night = new Group(); night.visible = false;
+    const beamM = new MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, fog: false, toneMapped: false });
+    beamM.userData.outlineParameters = { visible: false };
+    const beams = new Mesh(tacMerge(V.beam), beamM); beams.castShadow = beams.receiveShadow = false; beams.userData.noMerge = true; night.add(beams);
+    {
+      // the glows: camera-facing quads, all in one mesh (a billboard in the vertex shader)
+      const n = V.glow.length, P = new Float32Array(n * 12), Cn = new Float32Array(n * 8), S = new Float32Array(n * 4), T = new Float32Array(n * 12), I = [];
+      const c = new Color();
+      V.glow.forEach(([x, y, z, s, hex], i) => {
+        c.set(hex);
+        [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([a, b], j) => { P.set([x, y, z], i * 12 + j * 3); Cn.set([a, b], i * 8 + j * 2); S[i * 4 + j] = s; T.set([c.r, c.g, c.b], i * 12 + j * 3); });
+        I.push(i * 4, i * 4 + 1, i * 4 + 2, i * 4, i * 4 + 2, i * 4 + 3);
+      });
+      const gg = new BufferGeometry();
+      gg.setAttribute("position", new BufferAttribute(P, 3)); gg.setAttribute("corner", new BufferAttribute(Cn, 2)); gg.setAttribute("size", new BufferAttribute(S, 1)); gg.setAttribute("tint", new BufferAttribute(T, 3)); gg.setIndex(I);
+      gg.computeBoundingSphere(); gg.boundingSphere.radius += 12;
+      const glowM = new ShaderMaterial({
+        vertexShader: "#include <common>\nattribute vec2 corner; attribute float size; attribute vec3 tint; varying vec2 vC; varying vec3 vT; void main() { vC = corner; vT = tint; vec4 w = modelMatrix * vec4(position, 1.0); w.xz = cityWarp(w.xz); vec4 mv = viewMatrix * w; mv.xy += corner * size; gl_Position = projectionMatrix * mv; }",
+        fragmentShader: "varying vec2 vC; varying vec3 vT; void main() { float d = length(vC); float a = pow(max(0.0, 1.0 - d), 2.4) + 0.5 * pow(max(0.0, 1.0 - d * 2.6), 3.0); gl_FragColor = vec4(vT * a, 1.0); }",
+        transparent: true, depthWrite: false, blending: AdditiveBlending
+      });
+      glowM.userData.outlineParameters = { visible: false };
+      const glow = new Mesh(gg, glowM); glow.castShadow = glow.receiveShadow = false; glow.userData.noMerge = true; night.add(glow);
+    }
+    g.add(night);
+    // after dark (the streets' signs switch with STREET_GLOW): the night group shows
+    STREET_GLOW.push([{ isTacNight: true, set emissiveIntensity(v) { night.visible = v > 0; }, get emissiveIntensity() { return night.visible ? 1 : 0; } }, 1]);
+    // the day's materials, one mesh each
+    const velvetM = new MeshStandardMaterial({ color: "#ffffff", vertexColors: true, roughness: 0.94, side: DoubleSide });
+    const aluM = new MeshStandardMaterial({ color: "#c9ccd0", roughness: 0.38, metalness: 0.7 });
+    const kitM = new MeshStandardMaterial({ color: "#1b1a1d", roughness: 0.6, metalness: 0.2 });
+    const woodM = new MeshStandardMaterial({ color: "#4b2a1c", roughness: 0.55 });
+    const signM = new MeshStandardMaterial({ map: tacAtlas(), emissiveMap: tacAtlas(), emissive: new Color("#ffffff"), emissiveIntensity: 0, roughness: 0.75 });
+    STREET_GLOW.push([signM, 0.6]);
+    for (const [k, m] of [["velvet", velvetM], ["alu", aluM], ["kit", kitM], ["wood", woodM], ["sign", signM]]) if (V[k].length) g.add(new Mesh(tacMerge(V[k]), m));
+  }
   // r134: Pain Plaisir as it really stands (Daniel's photos): a shop on the ground floor of a pale block, a black-framed
   // glass front full of bread and warm light, a white fascia with the hand-lettered wordmark, a black canopy with a
   // string of globe bulbs, the round yellow blade sign, pink granite steps, an A-board and a terrace of white tables
