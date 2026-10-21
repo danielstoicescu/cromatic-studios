@@ -4688,5 +4688,60 @@
 900,
 1463,
 135748
+],
+"m:lacium/hero": [
+1600,
+900,
+193587
+],
+"m:lacium/site-scroll": [
+1200,
+5279,
+673665
+],
+"m:lacium/site-scroll-phone": [
+585,
+12651,
+782852
+],
+"m:lacium/advantages": [
+1600,
+704,
+103532
+],
+"m:lacium/strains": [
+1600,
+980,
+161483
+],
+"m:lacium/bacteria": [
+1600,
+1093,
+208616
+],
+"m:lacium/order": [
+1600,
+617,
+74653
+],
+"m:lacium/phone-hero": [
+900,
+1463,
+118033
+],
+"m:lacium/phone-advantages": [
+900,
+1463,
+125515
+],
+"m:lacium/phone-bacteria": [
+900,
+1463,
+159498
+],
+"m:lacium/phone-flora": [
+900,
+1463,
+147888
 ]
 }
