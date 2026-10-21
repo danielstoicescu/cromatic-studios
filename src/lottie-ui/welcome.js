@@ -136,6 +136,10 @@
   document.addEventListener("visibilitychange", onVis);
   // a new size for the circles (a phone turned, a window resized across the card's breakpoints): drawn again at it, at rest
   var rt = 0;
+  var redraw = function (s) {
+    s.p.forEach(function (p, i) { if (p) { p.destroy(); s.p[i] = null; s.st[i] = s.st[i] && "rest"; s.tiles[i].classList.remove("czw-on"); } });
+    mountSteps(s);
+  };
   addEventListener("resize", function () {
     clearTimeout(rt);
     rt = setTimeout(function () {
@@ -143,10 +147,12 @@
       var now = s.tiles.map(function (t) { return t.offsetWidth; });
       if (now.every(function (v, i) { return v === s.sizes[i]; })) return;
       s.sizes = now;
-      s.p.forEach(function (p, i) { if (p) { p.destroy(); s.p[i] = null; s.st[i] = s.st[i] && "rest"; s.tiles[i].classList.remove("czw-on"); } });
-      mountSteps(s);
+      redraw(s);
     }, 300);
   });
+  // the world changed under the open card (Multiverse -> Sketchbook, or back): its steps drawn again in that world's
+  // ink, at rest (TASK-059: they stayed in colour on the notebook)
+  var onScheme = function () { var s = S; if (!s || !s.tiles || sketch() === s.sk) return; s.sk = sketch(); redraw(s); };
 
   /* ---- open, close ---- */
   var close = function () {
@@ -154,6 +160,7 @@
     S = null; s.gone = true;
     s.t.forEach(clearTimeout);
     try { s.io && s.io.disconnect(); } catch (e) {}
+    try { s.mo && s.mo.disconnect(); } catch (e) {}
     s.p.forEach(function (p) { if (p) p.destroy(); });
     if (s.open) s.open.destroy();
     [].forEach.call(s.el.querySelectorAll(".czw-on"), function (t) { t.classList.remove("czw-on"); });
@@ -169,6 +176,7 @@
     close();
     var s = S = { el: el, p: [null, null, null, null], st: ["", "", "", ""], hov: -1, foc: -1, t: [], pend: [], gone: false, open: null, started: false, rm: L.rm(), sk: sketch(), vis: true, seen: true, base: 120, t0: 0 };
     listen(el);
+    if ("MutationObserver" in window) { s.mo = new MutationObserver(onScheme); s.mo.observe(document.body, { attributes: true, attributeFilter: ["class"] }); }
     if ("IntersectionObserver" in window) { s.io = new IntersectionObserver(function (es) { var e = es[es.length - 1]; s.seen = e.isIntersecting; onVis(); }); s.io.observe(el); }
     var r = el.getBoundingClientRect();
     measureSteps(s);
@@ -199,6 +207,6 @@
     warm: function () { var sk = sketch(); L.warm(KINDS.map(function (k) { return nameOf(k, sk); }).concat(sk || L.rm() ? [] : ["welcome-open"])); },
     open: open,
     close: close,
-    state: function () { var s = S; return s ? { st: s.st.slice(), on: s.p.map(function (p) { return !!p; }), open: !!s.open, morph: s.el.classList.contains("mw-morph") } : null; } // (tests)
+    state: function () { var s = S; return s ? { st: s.st.slice(), on: s.p.map(function (p) { return !!p; }), sk: s.sk, open: !!s.open, morph: s.el.classList.contains("mw-morph") } : null; } // (tests)
   };
 })();

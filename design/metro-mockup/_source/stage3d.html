@@ -1,0 +1,10 @@
+<!doctype html>
+<!-- Cromatic · metro mockups (TASK-062): the 3D stage. The scenes (scene/*.js) are built and rendered here by
+     render.mjs (Playwright, the real GPU), one layer at a time, as PNG data URLs. LOCAL ONLY. -->
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#222}canvas{display:block;max-width:100vw;height:auto}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import * as M from "./scene/main.js";
+window.M = M; window.ready = 1;
+</script></body></html>

@@ -13,7 +13,7 @@ const strip = (h) => String(h).replace(/<[^>]+>/g, "");
 const STAR = `<span class="cupspin cup-btn" aria-hidden="true"></span>`;
 
 // r143: `kz` (the kinetic cups bundle) no longer plays on /site/; `heroCity` is the still of the city its first fold stands on
-export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz, heroCity = null, canvases = {} }) {
+export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz, heroCity = null, canvases = {}, coffee = null }) {
   const img = (name, alt = "", cls = "", eager = false) => {
     const a = A(name);
     if (!a) return "";
@@ -146,24 +146,29 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   const DOMAIN_OF = {
     "Investimental": "ux", "Assetto": "ux", "The Aesthetic Court": "ux", "Craft Coffee": "ux", "ESD": "ux", "Techventures Bank": "ux", "Elithia": "ux",
     "Venevo": "ux", "Witanalytica": "ux", "Printoteca": "ux", "Artisan Coffee Gear": "ux", "Altius": "ux",
-    "Yoshi Izakaya": "growth", "Help 4 Brain": "growth", "Zoetis": "growth", "Echo School": "growth", "Coffeenativ": "growth", "Sticker Republic": "growth", "Litorsal": "growth", "Lacalut": "growth",
+    "Yoshi Izakaya": "growth", "Help 4 Brain": "growth", "Zoetis": "growth", "Echo School": "growth", "Coffeenativ": "growth", "Sticker Republic": "growth", "Litorsal": "growth", "Lacalut": "growth", "Maximag": "growth",
     "Pain Plaisir": "video", "Clinica Sante": "video", "Patiline": "video"
   };
   // sizes that tile six columns: a big square with two wides beside it, a tall one with two longs, a row of
   // three small, a long and a small, two halves; then again
   const SIZES = ["xl", "m", "m", "t", "w", "w", "s", "s", "s", "w", "s", "m", "m"];
-  const MAP_ID = { "Two Min Lab": "lab", "Steam Coffee Shop": "steam", "Zdrovit": "zdrovit", "Lacalut": "y-0", "Litorsal": "y-5" };
+  const MAP_ID = { "Two Min Lab": "lab", "Steam Coffee Shop": "steam", "Zdrovit": "zdrovit", "Lacalut": "y-0", "Litorsal": "y-5", "Maximag": "y-6" };
   const placeId = (name) => "w-" + name.replace(/\W+/g, "").toLowerCase();
   const coverFor = (p, covers) => (MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]]) || covers["place:" + placeId(p.name)] || (p.page && covers[p.page]) || null;
   const bentoCard = (p, i, covers) => {
     const own = MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]];
     const media = own ? `<img src="${own}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : p.vid ? vid(p.vid, p.img) : p.img ? img(p.img, p.name) : (() => { const u = coverFor(p, covers); return u ? `<img src="${u}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : ""; })();
     const size = SIZES[i % SIZES.length];
+    // TASK-067: the name on a pill at the bottom (for a case, its way in: a circle in the street's colour, drawn by the
+    // pill itself), the category on a chip at the top, the brief and "Read the case" on a paper note that opens under the
+    // pill (site.css). One element more than before per card: the note
     const inner = `${media ? `<span class="bc-media">${media}</span>` : `<span class="bc-poster">${esc(p.poster)}</span>`}
-      <span class="bc-body"><span class="bc-cat mono">${esc(p.cat)}</span><span class="bc-name">${esc(p.name)}</span><span class="bc-desc">${esc(p.desc)}</span>
-      ${p.page ? `<span class="bc-cta">Read the case <i>→</i></span>` : p.wip ? `<span class="bc-cta mono">Work in progress</span>` : ""}</span>`;
+      <span class="bc-cat mono">${esc(p.cat)}</span>
+      <span class="bc-body"><span class="bc-name">${esc(p.name)}</span><span class="bc-note"><span class="bc-desc">${esc(p.desc)}</span>
+      ${p.page ? `<span class="bc-cta">Read the case <i>→</i></span>` : p.wip ? `<span class="bc-cta mono">Work in progress</span>` : ""}</span></span>`;
     const cls = `bcard b-${size}${media ? " has-media" : ""}`;
-    return p.page ? `<a class="${cls}" href="/work/${p.page}/" style="--bc:${p.c};--bt:${p.t}">${inner}</a>` : `<article class="${cls}" style="--bc:${p.c};--bt:${p.t}">${inner}</article>`;
+    const st = `--bc:${p.c};--bt:${p.t};--i:${i}`;
+    return p.page ? `<a class="${cls}" href="/work/${p.page}/" style="${st}">${inner}</a>` : `<article class="${cls}" style="${st}">${inner}</article>`;
   };
   const workByDomain = (covers) => DOMAINS.map((d) => {
     const list = PROJECTS.filter((p) => !p.small && (DOMAIN_OF[p.name] || "brand") === d.k)
@@ -257,12 +262,16 @@ ${header(true)}
       <h2 class="ptitle">${pill("The coffee", "#FED012", -1.5)} ${pill("stop", "#F2A9C4", 1)}</h2>
       <p class="sec-lead">Two Minutes has been our client and our neighbour for a decade. On the drive we always stop here: four double espressos, and the coffee boxes fly down from the Cromatic mansard to the shelf.</p>
     </div>
-    <div class="road-scene road-video">
+    ${coffee ? `<div class="road-scene road-lottie" data-czl-js="${coffee.js}" data-czl-player="${coffee.player}" data-czl-wide="${coffee.wide}" data-czl-tall="${coffee.tall}">
+      <div class="rl-art" role="img" aria-label="The coffee stop, drawn: four double espressos on the Two Minutes sill, and the coffee boxes flying from the Cromatic mansard to the shelf"><picture class="rl-still"><source media="(max-width: 700px)" srcset="${coffee.still.tall.src}" width="${coffee.still.tall.w}" height="${coffee.still.tall.h}"><img src="${coffee.still.wide.src}" width="${coffee.still.wide.w}" height="${coffee.still.wide.h}" alt="" fetchpriority="low" decoding="async"></picture></div>
+      <button class="rl-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>
+    </div>
+    <div class="road-foot"><a class="rs-cta" href="/work/two-minutes/">Two Minutes, the case →</a><a class="rs-drive" href="/">Drive it yourself →</a></div>` : `<div class="road-scene road-video">
       ${vid("m:tm/coffee-stop", "m:tm/coffee-stop-poster")}
       <span class="rv-tag mono">Filmed in the 3D drive · Strada Constantin Aricescu 50A</span>
       <a class="rs-cta" href="/work/two-minutes/">Two Minutes, the case →</a>
       <a class="rs-drive" href="/">Drive it yourself →</a>
-    </div>
+    </div>`}
   </section>
 
   <section id="what" class="sec">
@@ -522,7 +531,7 @@ ${footer}`;
   ] });
   const faqLd = (path, faq) => ({ "@type": "FAQPage", "@id": `${SITE}${path}#faq`, mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: strip(q), acceptedAnswer: { "@type": "Answer", text: strip(a) } })) });
   const listLd = (path, slugs, name) => ({ "@type": "ItemList", "@id": `${SITE}${path}#work`, name, itemListElement: slugs.map((sl, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}/work/${sl}/`, name: byPage(sl)?.name || sl })) });
-  const hubCases = (slugs, covers) => `<div class="bento">${slugs.map(byPage).filter(Boolean).map((p, i) => bentoCard(p, i, covers)).join("")}</div>`;
+  const hubCases = (slugs, covers, col) => `<div class="bento"${col ? ` style="--dc:${col}"` : ""}>${slugs.map(byPage).filter(Boolean).map((p, i) => bentoCard(p, i, covers)).join("")}</div>`;
   const hubFaq = (faq) => `<section class="sec" id="faq"><div class="wrap faq"><div><p class="eyebrow mono">Good questions</p><h2 class="ptitle">${pill("Before", "#FED012", -1.5)} ${pill("the coffee", "#F65342", 1)}</h2></div>
       <div class="qa">${faq.map(([q, a], i) => `<details${i === 0 ? " open" : ""}><summary>${q}</summary><p>${a}</p></details>`).join("")}</div></div></section>`;
   const hubEnd = `<section class="c-end"><div class="wrap">
@@ -555,7 +564,7 @@ ${header(false)}
   <section class="wrap c2-lead hub-intro">${d.intro.map((x) => `<p>${x}</p>`).join("")}</section>
   <section class="sec"><div class="wrap"><h2 class="eyebrow mono">What we do on ${esc(street)}</h2>${cards(d.offer, col)}</div></section>
   <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono">${esc(street)} · ${d.cases.length} case studies</p>
-    <h2 class="ptitle">${pill("The work", col, -1.5)}</h2>${hubCases(d.cases, covers)}
+    <h2 class="ptitle">${pill("The work", col, -1.5)}</h2>${hubCases(d.cases, covers, col)}
     ${(() => { const more = PROJECTS.filter((p) => p.street === d.street && !p.page); return more.length ? `<p class="friends"><span class="mono">Also on ${esc(street)}</span> ${more.map((p) => `<span class="fpill">${esc(p.name)}</span>`).join("")}</p>` : ""; })()}
   </div></section>
   ${svc.length ? `<section class="sec"><div class="wrap"><p class="eyebrow mono">How we can help</p><div class="hub-links">${svc.map((x) => `<a href="/services/${x.slug}/"><b>${esc(x.name)}</b><span>${esc(x.lead)}</span><i>→</i></a>`).join("")}</div></div></section>` : ""}
@@ -585,7 +594,7 @@ ${header(false)}
     <div class="chapters">${d.process.map((x, i) => `<article class="chap" style="--cc:${["#28C840", "#B098C8", "#119BFE", "#F65342"][i % 4]}"><span class="chap-k mono">${String(i + 1).padStart(2, "0")}</span><h3>${esc(x.t)}</h3><p>${x.p}</p></article>`).join("")}</div>
   </div></section>
   <section class="sec" id="work"><div class="wrap"><p class="eyebrow mono">${esc(d.name)} · ${d.cases.length} case studies</p>
-    <h2 class="ptitle">${pill("The work", col, -1.5)}</h2>${hubCases(d.cases, covers)}</div></section>
+    <h2 class="ptitle">${pill("The work", col, -1.5)}</h2>${hubCases(d.cases, covers, col)}</div></section>
   ${inds.length ? `<section class="sec sec-alt"><div class="wrap"><p class="eyebrow mono">Industries we know from the inside</p><div class="hub-links">${inds.map((x) => `<a href="/industries/${x.slug}/"><b>${esc(x.streetName)}</b><span>${esc(x.lead)}</span><i>→</i></a>`).join("")}</div></div></section>` : ""}
   ${hubFaq(d.faq)}
   <section class="sec"><div class="wrap"><p class="eyebrow mono">Other services</p><div class="more">${SERVICE_PAGES.filter((x) => x.slug !== slug).map((o) => `<a href="/services/${o.slug}/" style="--bc:#FED012;--bt:#111">${esc(o.name)} <i>→</i></a>`).join("")}</div></div></section>

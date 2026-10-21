@@ -23,7 +23,7 @@
     }), { rootMargin: "200px 0px" });
     vids.forEach((v) => io.observe(v));
     // gentle reveal
-    const rv = [...d.querySelectorAll(".chap, .pcard, .bcard, .svc, .tl li, .qa details, .cblock, .photos figure")];
+    const rv = [...d.querySelectorAll(".chap, .pcard, .svc, .tl li, .qa details, .cblock, .photos figure")]; // (TASK-067: the bento's cards deal in on their own, below)
     const io2 = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io2.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });
     rv.forEach((el, i) => { el.classList.add("rv"); el.style.transitionDelay = `${(i % 3) * 70}ms`; io2.observe(el); });
   } else vids.forEach((v) => { v.src = v.dataset.src; });
@@ -187,6 +187,104 @@
       }
     });
   }
+  // ---- TASK-067: the portfolio's streets and cards ----
+  // a street's sign swings in and its cards are dealt as it comes into view (site.css: .dom-street.in, .bento.in)
+  const deal = [...d.querySelectorAll(".bento, .dom-street")];
+  if (deal.length) {
+    if (reduced || !("IntersectionObserver" in window)) deal.forEach((el) => el.classList.add("in"));
+    else {
+      const io3 = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io3.unobserve(e.target); } }), { rootMargin: "0px 0px -12% 0px" });
+      deal.forEach((el) => io3.observe(el));
+    }
+  }
+  // the picture in a card drifts a hair away from the pointer (--mx, --my: -0.5 .. 0.5; the card's CSS eases it)
+  if (matchMedia("(hover: hover)").matches && !reduced) d.querySelectorAll("a.bcard.has-media").forEach((c) => {
+    let raf = 0, ev = null;
+    c.addEventListener("pointermove", (e) => { ev = e; if (!raf) raf = requestAnimationFrame(() => { raf = 0; const r = c.getBoundingClientRect(); c.style.setProperty("--mx", ((ev.clientX - r.left) / r.width - 0.5).toFixed(3)); c.style.setProperty("--my", ((ev.clientY - r.top) / r.height - 0.5).toFixed(3)); }); });
+    c.addEventListener("pointerleave", () => { c.style.removeProperty("--mx"); c.style.removeProperty("--my"); });
+  });
+  // the streets' switcher lights the street on screen (and, on a phone, slides it into view)
+  const snav = d.querySelector(".streets-nav");
+  if (snav && "IntersectionObserver" in window) {
+    const links = new Map([...snav.querySelectorAll('a[href^="#street-"]')].map((a) => [a.getAttribute("href").slice(1), a]));
+    const io4 = new IntersectionObserver((es) => es.forEach((e) => {
+      const a = links.get(e.target.id);
+      if (!a || !e.isIntersecting) return;
+      links.forEach((x) => x.removeAttribute("aria-current"));
+      a.setAttribute("aria-current", "location");
+      if (snav.scrollWidth > snav.clientWidth + 4) snav.scrollTo({ left: Math.max(0, a.offsetLeft - 20), behavior: reduced ? "auto" : "smooth" });
+    }), { rootMargin: "-38% 0px -58% 0px" });
+    links.forEach((a, id) => { const el = d.getElementById(id); if (el) io4.observe(el); });
+  }
+
+  // ---- TASK-067: the coffee stop, drawn. The still (an SVG picture) is the page's; the Lottie (the map's player, in a worker) draws
+  // over it from the same frame once the section is near and the page has loaded, plays while the section is on screen
+  // (and the tab is), rests on that frame after three turns, starts again when it comes back into view; never with
+  // reduced motion. The round button pauses and plays it ----
+  const rl = d.querySelector(".road-lottie");
+  if (rl && !reduced && window.__czL !== false && "IntersectionObserver" in window && typeof Worker !== "undefined") {
+    const ds = rl.dataset, pp = rl.querySelector(".rl-pp"), mqT = matchMedia("(max-width: 700px)");
+    const TURN = 13000, TURNS = 3;
+    // playing: the worker is drawing; resting: told to stop at the end of its turn (done once it has)
+    let piece = null, kind = "", busy = false, wanted = false, near = false, paused = false, auto = false, playing = false, started = false, resting = false, done = false, played = 0, since = 0, restT = 0;
+    // the button says what it does next: pause while it plays, play once it is paused or has rested
+    const btn = (on) => { pp.setAttribute("aria-pressed", String(on)); pp.setAttribute("aria-label", on ? (RO ? "Pornește animația" : "Play the animation") : (RO ? "Oprește animația" : "Pause the animation")); };
+    const load = () => (window.czL ? Promise.resolve() : new Promise((res) => {
+      const C = (window.__CZL_CFG = window.__CZL_CFG || {});
+      C.player = C.player || ds.czlPlayer; C.j = C.j || {};
+      C.j["site-coffee-wide"] = ds.czlWide; C.j["site-coffee-tall"] = ds.czlTall;
+      const s = d.createElement("script"); s.src = ds.czlJs; s.async = true; s.onload = s.onerror = () => res(); d.head.appendChild(s);
+    }));
+    const stopClock = () => { if (since) { played += performance.now() - since; since = 0; } clearTimeout(restT); };
+    const startClock = () => { if (resting) return; since = performance.now(); clearTimeout(restT); restT = setTimeout(rest, Math.max(0, TURN * TURNS - played)); };
+    // after three turns the worker plays to the end of the turn it is in and stops there: on the still
+    function rest() { stopClock(); if (!piece) return; resting = true; try { piece.anim.setLoop(false); } catch (e) {} }
+    const fresh = () => { played = 0; resting = done = false; started = true; piece.seg([0, piece.data.op], true); };
+    const sync = () => {
+      if (!piece) return;
+      const go = near && !paused && !d.hidden;
+      if (go && !playing) {
+        if (resting && done) { if (!fresh.armed) return; fresh.armed = false; fresh(); }
+        else if (!started) fresh();
+        else piece.anim.play();
+        playing = true; startClock();
+      } else if (!go && playing) { playing = false; stopClock(); piece.anim.pause(); }
+      // once it has rested on its own, it starts again when the section comes back on screen (or the button asks)
+      if (!near && done && auto) { auto = paused = false; btn(false); fresh.armed = true; }
+    };
+    const mount = async () => {
+      if (busy) return;
+      busy = true;
+      await load();
+      const want = mqT.matches ? "tall" : "wide";
+      if (!window.czL || (piece && kind === want)) { busy = false; return; }
+      if (piece) { piece.destroy(); piece = null; playing = started = resting = done = false; stopClock(); played = since = 0; }
+      const r = rl.getBoundingClientRect();
+      const p = await window.czL.mount("site-coffee-" + want, { host: rl, w: Math.max(1, r.width), h: Math.max(1, r.height), cls: "rl-czl" });
+      busy = false;
+      if (!p) return;
+      piece = p; kind = want;
+      p.anim.addEventListener?.("complete", () => { if (resting) { done = true; playing = false; auto = paused = true; btn(true); } });
+      p.at(0);
+      pp.hidden = false;
+      sync();
+    };
+    // fetched once the page has loaded, the section is within about half a screen and the page is idle (the still covers
+    // the wait: it is the very frame the piece starts on)
+    const idle = (f) => (window.requestIdleCallback ? requestIdleCallback(f, { timeout: 1200 }) : setTimeout(f, 60));
+    const ready = new Promise((res) => { const g = () => requestAnimationFrame(() => idle(res)); if (d.readyState === "complete") g(); else addEventListener("load", g, { once: true }); });
+    new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting) && !wanted) { wanted = true; ready.then(mount); } }, { rootMargin: "60% 0px" }).observe(rl);
+    new IntersectionObserver((es) => { near = es.some((e) => e.isIntersecting); sync(); }, { threshold: 0.15 }).observe(rl);
+    d.addEventListener("visibilitychange", sync);
+    mqT.addEventListener?.("change", () => { if (piece) mount(); });
+    pp.addEventListener("click", () => {
+      paused = !paused; auto = false;
+      btn(paused);
+      if (!paused && done) fresh.armed = true;
+      sync();
+    });
+  }
+
   // a thin reading progress bar
   if (d.querySelector(".hero-city")) { // r143
     const bar = d.createElement("div"); bar.className = "scroll-prog"; d.body.appendChild(bar);

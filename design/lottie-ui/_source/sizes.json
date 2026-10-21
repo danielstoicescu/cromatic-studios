@@ -257,5 +257,19 @@
     "layers": 2,
     "frames": 125,
     "size": "390x840"
+  },
+  "site-coffee-wide": {
+    "kb": 184.3,
+    "brKb": 9,
+    "layers": 38,
+    "frames": 780,
+    "size": "1280x720"
+  },
+  "site-coffee-tall": {
+    "kb": 164.5,
+    "brKb": 8.4,
+    "layers": 38,
+    "frames": 780,
+    "size": "720x840"
   }
 }

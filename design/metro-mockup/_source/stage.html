@@ -1,0 +1,16 @@
+<!doctype html>
+<!-- Cromatic · metro mockups (TASK-062): the Lottie stage, for previews and the recorder. ?j=<json url>&play=1
+     (lottie-web's canvas renderer, the same renderer the site's worker player runs). LOCAL ONLY. -->
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#111}#lot{position:fixed;inset:0}#lot canvas{display:block;width:100%!important;height:100%!important}</style>
+</head><body><div id="lot"></div>
+<script src="/design/intro-lottie/_lib/lottie_light_canvas.min.js"></script>
+<script>
+const q = new URLSearchParams(location.search);
+const anim = lottie.loadAnimation({ container: document.getElementById("lot"), renderer: "canvas", loop: !!q.get("play"), autoplay: !!q.get("play"), path: q.get("j"), rendererSettings: { preserveAspectRatio: "xMidYMid meet", clearCanvas: true } });
+window.anim = anim;
+const smoothHigh = () => { try { const c = anim.renderer.canvasContext; c.imageSmoothingEnabled = true; c.imageSmoothingQuality = "high"; } catch (e) {} };
+anim.addEventListener("DOMLoaded", smoothHigh);
+anim.addEventListener("loaded_images", () => { window.ready = 1; });
+window.go = (fr) => { smoothHigh(); anim.goToAndStop(fr, true); };
+</script></body></html>
