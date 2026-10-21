@@ -48,6 +48,7 @@ export const WORK_TITLES = {
   "aspasia": "Aspasia Collagen Beauty: one-page product website",
   "bonilash": "Bonilash: product website for lash and brow serums",
   "glucopil": "Glucopil: one-page product website, blood sugar",
+  "gripovit": "Gripovit: one-page product website, colds and flu",
   "routine-paris": "Routine Paris: daily ritual brand identity",
   "help-4-brain": "Help4Brain: pharma product & marketing",
   "altius": "Altius: medical brand & digital",

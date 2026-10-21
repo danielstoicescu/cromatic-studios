@@ -258,8 +258,58 @@ export const GLUCOPIL = web({
   related: ["periferisan", "help-4-brain", "lacium"]
 });
 
+export const GRIPOVIT = web({
+  slug: "gripovit", name: "Gripovit", label: "gripovit.ro",
+  title: "Cold or flu?",
+  tagline: "The product site for Gripovit, a range of cold and flu sachets: how to tell the two apart, then the box for each.",
+  desc: "Gripovit: gripovit.ro, the one-page product site for a range of cold and flu sachets in the Zdrovit portfolio, on desktop and phone. By Cromatic Studios, Bucharest.",
+  accent: { bg: "#6E5BC6", fg: "#ffffff", ink: "#4b39a8" },
+  info: ["Cold and flu sachets, Gripovit", "Romania · Zdrovit portfolio", "Landing page, desktop and mobile"],
+  heroAlt: "gripovit.ro in a browser window and on a phone: a laughing family and the Gripovit MAX C boxes on the desktop, a mother and daughter on the phone, under the line Susține organismul în stările de răceală și gripă",
+  problem: {
+    h: "Two illnesses that look alike",
+    p: [
+      "Gripovit is a range of sachets from Zdrovit for colds and flu: Gripovit® MAX C, MAX C Hot Lemon, MAX C Ghimbir și miere, and Gripovit® JUNIOR for children.",
+      "A cold and the flu share many symptoms. The site opens with the difference: how each one starts, how long it lasts and what causes it.",
+      "Advice comes next, then the boxes."
+    ]
+  },
+  solution: {
+    h: "Purple, with an orange circle",
+    p: "The page uses the purple of the boxes, with orange for warmth. Cold and flu stand side by side as two circles, orange and purple, each with its symptoms and how long they last. Treatment and prevention tips follow, each with a small round icon or a photo.",
+    stat: "4",
+    statText: "products in the range, each with its own section: what it does, what is in it, how to take it"
+  },
+  page: {
+    text: "The menu runs Răceală și gripă, Gripovit®, Sfaturi, Comandă, Contact. The hero is a slider of families at home with a Gripovit box, under the line “Susține organismul în stările de răceală și gripă”. Below, the page moves from information to symptoms, causes, treatment and prevention, then to the range, a section of tips for a strong immune system and the order block.",
+    shots: [["tips", "SFATURI pentru un SISTEM IMUNITAR puternic, in white on a purple band with line drawings of a thermometer and a stethoscope", "The tips open on a purple band"]]
+  },
+  story: {
+    pills: ["Cold", "or flu"],
+    text: "Simptome puts the two side by side: an orange circle for the cold, with symptoms that build over about 48 hours and last 3 to 10 days, and a purple one for the flu, which starts fast, with fever and chills, and lasts 7 to 14 days. Tratament lists what helps, each tip with an orange icon. The range follows on an orange banner, and each box gets its own section: what it does, what is in it and how to take it.",
+    deliverables: ["Symptom comparison", "Treatment tips", "Product sections"],
+    media: [
+      ["symptoms", "Simptome: a woman holding her head beside two circles, Răceală in orange and Gripă in purple, each listing its symptoms", "Simptome: the cold in orange, the flu in purple"],
+      ["treatment", "Tratament: a girl with a mug beside four tips, each with an orange icon", "Tratament: four tips, four orange icons"],
+      ["range", "An orange banner with honey and lemon, the row of adult packs, then Gripovit® MAX C Hot Lemon with Acțiune, Ingrediente, Mod de utilizare and Comandă", "The range banner, then Gripovit® MAX C Hot Lemon: what it does, what is in it, how to take it"]
+    ]
+  },
+  phone: {
+    text: "On a phone the slider shows the MAX C boxes with a NOU badge. The two circles stack one above the other, the prevention tips run as a column of photos, and the range turns into a grid of small packs above each box.",
+    shots: [
+      ["phone-hero", "The first screen on a phone: a laughing family, the MAX C boxes with a NOU badge and the line"],
+      ["phone-symptoms", "Simptome on a phone: the cold's orange circle above the flu's purple one"],
+      ["phone-range", "The range on a phone: the Adulți grid of packs, then the MAX C Hot Lemon boxes"],
+      ["phone-tips", "The SFATURI band on a phone, then a photo of breakfast and O alimentație corectă"]
+    ],
+    cap: "The first screen, the symptoms, the range and the tips, at 390 px wide"
+  },
+  result: "A page that helps you tell a cold from the flu, then shows the box for each.",
+  related: ["optisomn", "lacium", "litorsal"]
+});
+
 // a chapter added to a page that already exists, by its slug (gen.mjs applies it): none yet
 export const EXTEND = {};
 
 // every Zdrovit brand page built from its product site, in the order they were made
-export const ZDROVIT_WEB = [ASPASIA, BONILASH, GLUCOPIL];
+export const ZDROVIT_WEB = [ASPASIA, BONILASH, GLUCOPIL, GRIPOVIT];
