@@ -73,7 +73,7 @@ function blockSvg(mode, B, k, offset = [0, 0]) {
     s += `<g id="${B.id}-card" transform="translate(${f1(offset[0])} ${f1(offset[1])}) rotate(${A.tilt} ${f1(piv.x)} ${f1(piv.y)})">` +
       `<rect id="${B.id}-aplat-shadow" x="${f1(a.x + A.shadow[0])}" y="${f1(a.y + A.shadow[1])}" width="${a.w}" height="${a.h}" rx="${A.radius}" fill="${INK}"/>` +
       `<rect id="${B.id}-aplat" x="${a.x}" y="${a.y}" width="${a.w}" height="${a.h}" rx="${A.radius}" fill="${A.fill}" stroke="${INK}" stroke-width="${A.keyline}"/>` + lines + `</g>`;
-  } else s += `<g id="${B.id}">${lines}</g>`;
+  } else s += `<g id="${B.id}"${offset[0] || offset[1] ? ` transform="translate(${f1(offset[0])} ${f1(offset[1])})"` : ""}>${lines}</g>`;
   return s;
 }
 function tagSvg(mode, G) {
@@ -100,7 +100,7 @@ export function svg(card, k, mode, { bg } = {}) {
   if (L.black) body += `<rect id="black" width="${W}" height="${H}" fill="#000000"/>`;
   if (L.url) body += urlSvg(mode, L.url);
   for (const G of L.tags || []) body += tagSvg(mode, G);
-  for (const B of L.blocks || []) body += blockSvg(mode, B, k, B.aplat ? off : [0, 0]);
+  for (const B of L.blocks || []) body += blockSvg(mode, B, k, off);
   const font = mode === "text" ? `<defs><style>@font-face{font-family:'Google Sans';font-weight:600;src:local('Google Sans'),url('../../../../../site/fonts/google-sans-latin.woff2') format('woff2')}</style></defs>` : "";
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><title>${esc(card.id)} · ${esc(card.states[k].label)}</title>${font}${body}</svg>\n`;
 }
@@ -109,13 +109,36 @@ export function svg(card, k, mode, { bg } = {}) {
 export function layout(def) {
   const ink = HEX(def.ink);
   const L = {};
-  if (def.blocks) L.blocks = def.blocks.map((b) => ({ ...layBlock(b, ink), behindRide: !!b.behindRide }));
+  if (def.blocks) {
+    L.blocks = [];
+    for (const b of def.blocks) {
+      let bd = b;
+      if (b.attach) {
+        // a block pinned to another: its pill's top at the other's bottom + gap (negative: it overlaps), x = its left + dx
+        const tg = L.blocks.find((q) => q.id === b.attach.to), P = TOKENS.pill, S = TOKENS.type[b.lines[0].style].size;
+        const bottom = tg.aplat ? tg.aplat.states[0].y + tg.aplat.states[0].h : Math.max(...tg.lines.map((l) => l.box.y + l.box.h));
+        const left = tg.aplat ? tg.aplat.states[0].x : Math.min(...tg.lines.map((l) => l.x));
+        const pillTop = bottom + b.attach.gap, cap = (S * T.cap) / T.upm;
+        bd = { ...b, place: { x: left + b.attach.dx, align: "left", top: pillTop + (P.height / 2 + P.centreFromBaseline) * S - cap } };
+      }
+      L.blocks.push({ ...layBlock(bd, ink), behindRide: !!b.behindRide, ...(b.attach ? { attach: b.attach } : {}) });
+    }
+  }
   if (def.tags) L.tags = def.tags.map(layTag);
   if (def.url) { L.url = layUrl(); if (def.url.continues) L.url.continues = def.url.continues; }
   if (def.id.endsWith("end")) L.black = true;
+  // a move: everything on the card (blocks, aplat, pills) goes together; the offset centres their union in state k
   if (def.moves) L.moves = def.moves.map((m) => {
-    const A = L.blocks[0].aplat, a = A.states[m.state];
-    return { state: m.state, to: m.to, offset: [Math.round(m.to.centreX - a.w / 2 - a.x), Math.round(m.to.top - a.y)] };
+    const k = m.state, bx = [];
+    for (const B of L.blocks) {
+      if (B.aplat) { const a = B.aplat.states[Math.min(k, B.aplat.states.length - 1)]; bx.push([a.x, a.y, a.x + a.w, a.y + a.h]); }
+      for (const l of B.lines) {
+        if (l.text) bx.push([l.box.x, l.box.y, l.box.x + l.box.w, l.box.y + l.box.h]);
+        if (l.pill) { const q = l.pill.states[Math.min(k, l.pill.states.length - 1)]; bx.push([l.pill.left, l.pill.cy - l.pill.h / 2, l.pill.left + q.w, l.pill.cy + l.pill.h / 2]); }
+      }
+    }
+    const x0 = Math.min(...bx.map((b) => b[0])), x1 = Math.max(...bx.map((b) => b[2])), y0 = Math.min(...bx.map((b) => b[1]));
+    return { state: k, to: m.to, offset: [Math.round(m.to.centreX - (x0 + x1) / 2), Math.round(m.to.top - y0)] };
   });
   // the states: the pill's words (one state if none)
   const pl = (L.blocks || []).flatMap((b) => b.lines).find((l) => l.pill);
@@ -127,7 +150,7 @@ const all = [];
 for (const def of CARDS) {
   const { L, states } = layout(def);
   const card = {
-    id: def.id, story: def.story, beat: def.beat, shots: def.shots, scene: def.scene,
+    id: def.id, story: def.story, ...(def.variantOf ? { variantOf: def.variantOf } : {}), beat: def.beat, shots: def.shots, scene: def.scene,
     textColour: HEX(def.ink), rule: TOKENS.rule,
     canvas: { w: W, h: H, safe: TOKENS.safe }, layout: L, states,
     timing: { cues: def.timing, note: "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does." },

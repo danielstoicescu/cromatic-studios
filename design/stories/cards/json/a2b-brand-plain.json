@@ -1,0 +1,265 @@
+{
+ "id": "a2b-brand-plain",
+ "story": "A",
+ "variantOf": "a2-brand",
+ "beat": "the same without the aplat: paper lines, the yellow pill under them",
+ "shots": [
+  "steam",
+  "oma",
+  "scf"
+ ],
+ "scene": "dusk street",
+ "textColour": "#FBFAF5",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "a2b",
+    "place": "tl",
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "a2b-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#FBFAF5",
+      "align": "left",
+      "text": "Every brand",
+      "x": 80,
+      "baseline": 383.1,
+      "width": 608.7,
+      "box": {
+       "x": 80,
+       "y": 294.9,
+       "w": 608.7,
+       "h": 116
+      }
+     },
+     {
+      "kind": "line",
+      "id": "a2b-l2",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#FBFAF5",
+      "align": "left",
+      "text": "has its own",
+      "x": 80,
+      "baseline": 499.1,
+      "width": 561.1,
+      "box": {
+       "x": 80,
+       "y": 410.9,
+       "w": 561.1,
+       "h": 91.6
+      }
+     }
+    ],
+    "behindRide": false
+   },
+   {
+    "kind": "block",
+    "id": "a2b-word",
+    "place": {
+     "x": 80,
+     "align": "left",
+     "top": 549.904
+    },
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "a2b-word-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#FBFAF5",
+      "align": "left",
+      "text": "",
+      "x": 80,
+      "baseline": 633,
+      "width": 0,
+      "box": {
+       "x": 80,
+       "y": 544.8,
+       "w": 510.2,
+       "h": 116
+      },
+      "pill": {
+       "id": "a2b-word-l1-pill",
+       "fill": "#FED012",
+       "ink": "#0D0C09",
+       "left": 80,
+       "cy": 591.8,
+       "h": 134.6,
+       "keyline": 5.2,
+       "shadow": [
+        3.5,
+        7.5
+       ],
+       "tilt": -3,
+       "wordX": 119.4,
+       "states": [
+        {
+         "word": "place.",
+         "wordW": 303.8,
+         "w": 382.7,
+         "cx": 271.4
+        },
+        {
+         "word": "facade.",
+         "wordW": 377.7,
+         "w": 456.6,
+         "cx": 308.3
+        },
+        {
+         "word": "building.",
+         "wordW": 431.3,
+         "w": 510.2,
+         "cx": 335.1
+        }
+       ]
+      }
+     }
+    ],
+    "behindRide": false,
+    "attach": {
+     "to": "a2b",
+     "dx": 0,
+     "gap": 22
+    }
+   }
+  ],
+  "moves": [
+   {
+    "state": 2,
+    "to": {
+     "centreX": 540,
+     "top": 420
+    },
+    "offset": [
+     156,
+     125
+    ]
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "place"
+  },
+  {
+   "index": 1,
+   "label": "facade"
+  },
+  {
+   "index": 2,
+   "label": "building"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "steam+2",
+   "lineStagger": 4,
+   "pillIn": "steam+12",
+   "swaps": [
+    "oma+3",
+    "scf+3"
+   ],
+   "out": "scf.end-14"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "A_v4": {
+    "clock": "A_v4",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "a2b-l1",
+      "text": "Every brand",
+      "in": 76,
+      "out": 207,
+      "motion": "lineIn / lineOut",
+      "hold": 119
+     },
+     {
+      "id": "a2b-l2",
+      "text": "has its own",
+      "in": 80,
+      "out": 208,
+      "motion": "lineIn / lineOut",
+      "hold": 116
+     },
+     {
+      "id": "a2b-word-l1-pill-0",
+      "word": "place.",
+      "in": 86,
+      "out": 132,
+      "motion": "pillIn",
+      "hold": 46
+     },
+     {
+      "id": "a2b-word-l1-pill-1",
+      "word": "facade.",
+      "in": 132,
+      "out": 177,
+      "motion": "pillSwap",
+      "hold": 45
+     },
+     {
+      "id": "a2b-word-l1-pill-2",
+      "word": "building.",
+      "in": 177,
+      "out": 208,
+      "motion": "pillSwap",
+      "hold": 31
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "steam+40"
+  },
+  {
+   "state": 1,
+   "at": "oma+30"
+  },
+  {
+   "state": 2,
+   "at": "scf+32"
+  }
+ ],
+ "notes": "The alternative to a2-brand (draw one or the other): no block, the two lines in paper straight on the street, the pill yellow under them.",
+ "files": {
+  "outlined": [
+   "svg/outlined/a2b-brand-plain-place.svg",
+   "svg/outlined/a2b-brand-plain-facade.svg",
+   "svg/outlined/a2b-brand-plain-building.svg"
+  ],
+  "live": [
+   "svg/live/a2b-brand-plain-place.svg",
+   "svg/live/a2b-brand-plain-facade.svg",
+   "svg/live/a2b-brand-plain-building.svg"
+  ]
+ }
+}

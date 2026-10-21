@@ -110,11 +110,12 @@ Holds: a line stays at least 18 frames plus 1 frame per character. The fountain 
 | Card | Where | What |
 |---|---|---|
 | a1-website | top left, ink, title | `Our new website / is a [city.]` then the pill rolls to `[diorama.]` (frame 40) |
-| a2-brand | yellow aplat, top left, ink, title | `Every brand / has its own / [place.]` (Steam) `-> [facade.]` (OMA) `-> [building.]` (Slow Coffee: the card glides to the centre, top 420). One card over the three shots, no re-entry |
+| a2-brand | yellow aplat, top left, ink, title | `Every brand / has its own` on the aplat (Daniel's break, 116 px), and the word in **its own pill**: white, pinned 40 px in from the block's left edge, overlapping its bottom by 40 px, drawn over it. The pill swaps `[place.]` (Steam) `-> [facade.]` (OMA) `-> [building.]` (Slow Coffee) with the same rule (left end fixed, width rolls, word rises); the block never changes size. For `building` the block and its pill glide together to the centre (top 420). One card over the three shots, no re-entry |
+| a2b-brand-plain | top left, paper, title | the alternative (`variantOf: a2-brand`, draw one or the other): the same two lines in paper straight on the street, the yellow pill 22 px under them. Mocked next to a2; the aplat version reads better over Steam's windows, so a2-brand is the one to use |
 | a3-drive | bottom left, paper, headline | `Take your / drive.`, all paper |
 | a4-end | centre | the pill at (540, 1000) over the site's last frame, then black under it, then the settle |
 
-Line break: Daniel's `Every brand has its own / [place]` is set on three lines so the block stays compact and the pill word reads big. On two lines the type has to drop to 80 px.
+A card's later blocks draw over its earlier ones (the pill over the aplat). A card with a move moves as one: `drawCard` hangs all its blocks on a null.
 
 ### Story C
 
@@ -159,7 +160,7 @@ Every cue is relative to its shot, so the cards follow the clock: pass the new s
 - `svg/live/<card>[-state].svg`: the same with live text (Google Sans 600; the @font-face points at the repo's font).
 - `cards.mjs`: the cards as Lottie layers, for the story builds (`loadCards`, `drawCard`, `moveLayers`).
 - `_source/`: `system.mjs` (the tokens and the layout), `defs.mjs` (the copy, the corners, the cues, the clocks), `build.mjs` (writes json/ and svg/), `mocks.mjs` (the cards drawn into Lia's v4 stories and rendered by lottie-web).
-- Mocks (not in the repo): `~/cromatic-ops/refs/stories-lottie/cards/mocks/` (a frame per card and state, `sheet-a.jpg`, `sheet-c.jpg`) and `preview/` (the two stories recorded with the cards).
+- Mocks (not in the repo): `~/cromatic-ops/refs/stories-lottie/cards/mocks/` (a frame per card and state, `sheet-a.jpg` with the a2b variant at its end, `sheet-c.jpg`) and `preview/` (the two stories recorded with the cards).
 
 ## 11. Plugging the cards into the stories (Lia)
 
@@ -175,6 +176,6 @@ drawCard(Cm, K.card("c9-drive"), T);
 ```
 
 1. In `buildC4.mjs` take out `superTitle`, every `reveal` / `typed` / `chip` / `shade` for the words, `urlPill` and `the end · black`; draw the cards as above. `T` is your 60 fps span map, unchanged. For the long holds, change `T` to the `C_long` spans x2 and give the fountain (the water loops frame by frame) and the Slow Coffee shot (hold on the dome after the ride has passed) their extra length.
-2. In `buildA5.mjs` take out both `swapLine` calls, the yellow block, the `drive ·` reveals and scrim, `urlPill` and `the end · black`; draw `a1-website`, `a2-brand`, `a3-drive` where the words were and `a4-end` at the urlPill line, with `SP` as the span map.
+2. In `buildA5.mjs` take out both `swapLine` calls, the yellow block, the `drive ·` reveals and scrim, `urlPill` and `the end · black`; draw `a1-website`, `a2-brand`, `a3-drive` where the words were (never `a2b-brand-plain` as well: it is a2's variant) and `a4-end` at the urlPill line, with `SP` as the span map.
 3. Nothing new to install: `cards.mjs` uses design/lottie-ui's `ui.mjs` and the intro's `type.mjs` (Google Sans 600 from site/fonts). Changing copy, a corner or a cue: edit `_source/defs.mjs`, run `node build.mjs` in `_source`; the JSON and SVGs follow and so does `drawCard`.
 4. The cards were tried in your v4 JSONs (`mocks.mjs`: your word layers out, `drawCard` in, rendered on your stage): they build and render. Story D and B use the same tokens; new cards go in `defs.mjs`.

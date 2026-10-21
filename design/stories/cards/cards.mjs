@@ -79,13 +79,10 @@ function pill(Cm, T, L, { tIn, swaps = [], tOut, parent, nm }) {
 }
 
 /* ---------- the aplat: a null carries the card (its tilt, its swing in, its moves); the block under the words ---------- */
-function aplatCard(Cm, A, { tIn, tOut, moves = [], swaps = [], nm }) {
+function aplatCard(Cm, A, { tIn, tOut, swaps = [], nm, parent }) {
   const s0 = A.states[0], piv = [s0.x, s0.y];
-  const offAt = (k) => { const m = moves.filter((q) => q.state <= k).pop(); return m ? m.offset : [0, 0]; };
-  const pK = [[tIn, [piv[0], piv[1] - 24], BOUNCE], [tIn + 28, piv, E.hold]];
-  for (const m of moves) { const t = swaps[m.state - 1]; pK.push([t - 2, [piv[0] + offAt(m.state - 1)[0], piv[1] + offAt(m.state - 1)[1]], GLIDE], [t + 22, [piv[0] + m.offset[0], piv[1] + m.offset[1]], E.hold]); }
-  pK.push([tOut + 6, pK[pK.length - 1][1]]);
-  const card = Cm.nul(`${nm} · card`, { ip: tIn, op: tOut + 40, ks: { a: piv, p: keys(pK), r: [[tIn, A.tilt - 5, BOUNCE], [tIn + 28, A.tilt]], s: [[tIn, [92, 92], BOUNCE], [tIn + 28, [100, 100], E.hold], [tOut + 4, [100, 100], SNAP], [tOut + 18, [0, 0]]] } });
+  const pK = [[tIn, [piv[0], piv[1] - 24], BOUNCE], [tIn + 28, piv]];
+  const card = Cm.nul(`${nm} · card`, { parent, ip: tIn, op: tOut + 40, ks: { a: piv, p: keys(pK), r: [[tIn, A.tilt - 5, BOUNCE], [tIn + 28, A.tilt]], s: [[tIn, [92, 92], BOUNCE], [tIn + 28, [100, 100], E.hold], [tOut + 4, [100, 100], SNAP], [tOut + 18, [0, 0]]] } });
   // the block's size per state (the words' widest, plus the padding)
   const sz = [[tIn, [s0.w, s0.h], E.hold]], ct = [[tIn, [s0.x + s0.w / 2, s0.y + s0.h / 2], E.hold]];
   swaps.forEach((t, k) => { const a = A.states[Math.min(k, A.states.length - 1)], b = A.states[Math.min(k + 1, A.states.length - 1)]; sz.push([t - 2, [a.w, a.h], EXPO], [t + 14, [b.w, b.h], E.hold]); ct.push([t - 2, [a.x + a.w / 2, a.y + a.h / 2], EXPO], [t + 14, [b.x + b.w / 2, b.y + b.h / 2], E.hold]); });
@@ -140,11 +137,21 @@ export function drawCard(Cm, spec, T60, { T = spec.__T, black = true } = {}) {
     if (black) { const b0 = spec.continuedBy ? c(spec.continuedBy.black) : tm.black ? c(tm.black) : null; if (b0 != null) Cm.shape(`${spec.id} · black`, [group("b", [rect([1120, 1960], [540, 960]), fill(rgb("#000000"))])], { ip: b0, op: Math.max(tEnd, cont), ks: { o: [[b0, 0, E.inOut], [b0 + 22, 100]] } }); }
   }
   for (const G of spec.layout.tags || []) tag(Cm, T, G, { tIn: c(tm.in), tOut, nm: `${spec.id} · ${G.text}` });
-  (spec.layout.blocks || []).forEach((B, bi) => {
+  // a card that moves (A's building: to the middle) moves as one: a null carries all its blocks
+  let mover;
+  if ((spec.layout.moves || []).length) {
+    const mk = [[c(tm.in), [0, 0], E.hold]]; let prev = [0, 0];
+    for (const m of spec.layout.moves) { const t = swaps[m.state - 1]; mk.push([t - 2, prev, GLIDE], [t + 22, m.offset, E.hold]); prev = m.offset; }
+    mover = Cm.nul(`${spec.id} · mover`, { ip: c(tm.in), op: tOut + 60, ks: { p: keys(mk) } });
+  }
+  // later blocks on top (as in the SVGs): drawn first, since Cm.shape stacks each new layer under the last
+  const blocks = spec.layout.blocks || [];
+  [...blocks].reverse().forEach((B) => {
+    const bi = blocks.indexOf(B);
     const tIn = c(tm.in) + 2 * (tm.blockStagger || 0) * bi, smash = (tm.smash || []).includes(B.id);
     const nB = Cm.layers.length;
-    let parent, ap;
-    if (B.aplat) { ap = aplatCard(Cm, B.aplat, { tIn, tOut, swaps, moves: spec.layout.moves || [], nm: B.id }); parent = ap.card; }
+    let parent = mover, ap;
+    if (B.aplat) { ap = aplatCard(Cm, B.aplat, { tIn, tOut, swaps, nm: B.id, parent: mover }); parent = ap.card; }
     B.lines.forEach((L, i) => {
       const ti = tIn + 2 * (tm.lineStagger || 0) * i + (B.aplat ? 8 : 0), to = smash ? tOut : tOut - 2 * (B.lines.length - 1 - i);
       if (L.text) line(Cm, T, L, { tIn: smash ? tIn : ti, tOut: to, parent, smash, nm: `${B.id} · ${L.text}` });

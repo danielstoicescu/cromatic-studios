@@ -27,17 +27,28 @@ export const CARDS = [
     notes: "Ink on this frame: the drone shot is light (grey pavement, the salmon road). The pill stays yellow through the swap; only its width and its word change."
   },
   {
-    id: "a2-brand", story: "A", beat: "Every brand has its own / [place] -> [facade] (OMA) -> [building] (Slow Coffee, centred)", shots: ["steam", "oma", "scf"], scene: "the yellow aplat carries it (any frame)", ink: "ink",
-    blocks: [{ id: "a2", place: "tl", aplat: { fill: Y }, lines: [
-      { text: "Every brand", style: "title" },
-      { text: "has its own", style: "title" },
-      { text: "", style: "title", pill: { words: ["place.", "facade.", "building."], fill: WH } }
-    ] }],
-    // the third state: the card glides to the middle of the frame (Daniel: "text more centred")
+    id: "a2-brand", story: "A", beat: "Every brand / has its own + its own pill: [place] -> [facade] (OMA) -> [building] (Slow Coffee, centred)", shots: ["steam", "oma", "scf"], scene: "the yellow aplat carries the two lines (any frame)", ink: "ink",
+    blocks: [
+      { id: "a2", place: "tl", aplat: { fill: Y }, lines: [{ text: "Every brand", style: "title" }, { text: "has its own", style: "title" }] },
+      // the pill is its own element: pinned under the block's bottom-left corner, overlapping it a little
+      { id: "a2-word", attach: { to: "a2", dx: 40, gap: -40 }, lines: [{ text: "", style: "title", pill: { words: ["place.", "facade.", "building."], fill: WH } }] }
+    ],
+    // the third state: the card and its pill glide to the middle of the frame together (Daniel: "text more centred")
+    moves: [{ state: 2, to: { centreX: 540, top: 420 } }],
+    timing: { in: "steam+2", lineStagger: 4, pillIn: "steam+14", swaps: ["oma+3", "scf+3"], out: "scf.end-14" },
+    mocks: [{ state: 0, at: "steam+40" }, { state: 1, at: "oma+30" }, { state: 2, at: "scf+32" }],
+    notes: "Daniel's break: 'Every brand / has its own' on the aplat (title, 116), and the word in a pill of its own, white, pinned 40 px in from the block's left edge and overlapping its bottom by 40 px. The pill swaps (left end fixed) at each cut, 3 frames after the whip; the block never changes size. One card over three shots, no re-entry."
+  },
+  {
+    id: "a2b-brand-plain", variantOf: "a2-brand", story: "A", beat: "the same without the aplat: paper lines, the yellow pill under them", shots: ["steam", "oma", "scf"], scene: "dusk street", ink: "paper",
+    blocks: [
+      { id: "a2b", place: "tl", lines: [{ text: "Every brand", style: "title" }, { text: "has its own", style: "title" }] },
+      { id: "a2b-word", attach: { to: "a2b", dx: 0, gap: 22 }, lines: [{ text: "", style: "title", pill: { words: ["place.", "facade.", "building."], fill: Y } }] }
+    ],
     moves: [{ state: 2, to: { centreX: 540, top: 420 } }],
     timing: { in: "steam+2", lineStagger: 4, pillIn: "steam+12", swaps: ["oma+3", "scf+3"], out: "scf.end-14" },
     mocks: [{ state: 0, at: "steam+40" }, { state: 1, at: "oma+30" }, { state: 2, at: "scf+32" }],
-    notes: "One card over three shots: it never leaves between them, the pill rolls at each cut (3 frames after the whip). Line break: Daniel's 'Every brand has its own / [place]' set on three lines so the block stays compact and the pill word reads big; the two-line break needs the type at 80 px."
+    notes: "The alternative to a2-brand (draw one or the other): no block, the two lines in paper straight on the street, the pill yellow under them."
   },
   {
     id: "a3-drive", story: "A", beat: "Take your drive.", shots: ["drive"], scene: "dusk street, the road at the bottom", ink: "paper",
