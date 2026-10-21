@@ -43190,7 +43190,7 @@ void main() {
       window.__api = api;
       // TASK-057 (branch stories-lottie only, never shipped): the Lottie stories' renders reach the engine's own passes,
       // behind ?story: the scene, the renderer and camera, the sun, Sketchbook's notebook pass and its brush, the ride
-      if (/[?&]story\b/.test(location.search + ((performance.getEntriesByType("navigation")[0] || {}).name || ""))) window.__story = { scene, renderer, camera, sun, hemi, sky, farClouds, sketchRender, sketchPaint, sketchRevealFlush, veh: () => veh, carPos, mapView, warpV, merged: () => MERGED, schemes: SCHEMES, state, cop: () => copCar, host: () => nav2Host(), mats }; // (TASK-058: the chaser, the road's smoke and marks, the night's lamps)
+      if (/[?&]story\b/.test(location.search + ((performance.getEntriesByType("navigation")[0] || {}).name || ""))) window.__story = { scene, renderer, camera, sun, hemi, sky, farClouds, sketchRender, sketchPaint, sketchRevealFlush, veh: () => veh, carPos, mapView, warpV, merged: () => MERGED, schemes: SCHEMES, state, cop: () => copCar, host: () => nav2Host(), mats, risoRender, places: () => MAP_PLACES }; // (TASK-065: the Risograph world's own pass, the places) // (TASK-058: the chaser, the road's smoke and marks, the night's lamps)
       window.__xp = () => ({ pts: state.points, log: xpLog.map((e) => e.title + " +" + e.pts), pending: xpPending && xpPending.title, collected: [...xpCollected], chosen: state.branchChosen, branch: state.branch, card: currentCardStop, veh: state.vehicleId });
       window.__scheme = (id) => api.setScheme(SCHEMES.findIndex((x) => x.id === id));
       // ---- r140: /onboarding/ drives the city ----

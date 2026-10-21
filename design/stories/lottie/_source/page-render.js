@@ -125,6 +125,7 @@
       S.sun.shadow.autoUpdate = false; S.sun.shadow.needsUpdate = !!o.shadowUpdate;
       if (!o.keepBg) { scene.background = null; R.setClearColor(0x000000, 0); }
       if (o.mode === "sketch") S.sketchRender(performance.now(), camera, !!o.full);
+      else if (o.mode === "riso") S.risoRender(performance.now(), camera);
       else { R.setRenderTarget(null); R.render(scene, camera); }
       return R.domElement.toDataURL("image/png");
     } finally {
@@ -157,7 +158,7 @@
     const s = save(); setCam(o);
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     const corners = (bb) => { const out = []; for (const xx of [bb.min.x, bb.max.x]) for (const yy of [bb.min.y, bb.max.y]) for (const zz of [bb.min.z, bb.max.z]) out.push(new V(xx, yy, zz)); return out; };
-    const place = (q) => { g.visible = true; g.position.set(q.x, q.y, q.z); g.rotation.set(0, q.yaw, 0); g.updateMatrixWorld(true); if (who === "cop" && v.beacons?.length) { const off = q.beat === 2; v.beacons[0].material.emissiveIntensity = off || q.beat ? 0.15 : 2.8; v.beacons[1].material.emissiveIntensity = off || !q.beat ? 0.15 : 2.8; } };
+    const place = (q) => { g.visible = true; g.position.set(q.x, q.y, q.z); g.rotation.set(0, q.yaw, 0); if (q.lights != null) { v.lampGlow?.(!!q.lights); if (v.beams) v.beams.visible = !!q.lights; } if (q.pitch) g.rotateX(q.pitch); if (q.roll) g.rotateZ(q.roll); g.updateMatrixWorld(true); if (who === "cop" && v.beacons?.length) { const off = q.beat === 2; v.beacons[0].material.emissiveIntensity = off || q.beat ? 0.15 : 2.8; v.beacons[1].material.emissiveIntensity = off || !q.beat ? 0.15 : 2.8; } };
     for (const q of poses) {
       place(q);
       let bb = null; g.traverse((m) => { if (m.isMesh && m.visible && m.geometry) { if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); const b = m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld); bb = bb ? bb.union(b) : b; } });
@@ -175,7 +176,7 @@
         place(q);
         // the frame's lens shift, then the rectangle: setCam's offset is (-sx*w, -sy*h); this one adds (x0, y0)
         const oo = { ...o, shift: null, sub: [o.w, o.h, -sh[0] * o.w + x0, -sh[1] * o.h + y0, rw, rh] };
-        layerSub(oo, [who], rw, rh, () => cx.drawImage(R.domElement, 0, 0)); // (before the canvas is sized back: that clears it)
+        (o.occlude ? occludedSub : layerSub)(oo, [who], rw, rh, () => cx.drawImage(R.domElement, 0, 0)); // (before the canvas is sized back: that clears it)
       }
     } finally { g.position.copy(save0.p); g.quaternion.copy(save0.q); g.visible = save0.vis; }
     return { url: acc.toDataURL("image/png"), rect: [x0, y0, rw, rh] };
@@ -200,5 +201,51 @@
       restore(s); R.setPixelRatio(s.pr); R.setSize(s.size[0], s.size[1], false);
     }
   }
-  window.__R = { shot, plan, layer, project, setCam, park, W, carShot };
+  // TASK-065 · the car behind what stands in front of it: the scene's depth first (every opaque thing, no colour: an
+  // override material that writes depth only), then the car alone over it, depth-tested
+  let DEPTH = null;
+  function occludedSub(o, keep, rw, rh, after) {
+    if (!DEPTH) { let C0 = null; scene.traverse((x) => { if (!C0 && x.material && x.material.type === "MeshBasicMaterial") C0 = x.material.constructor; }); DEPTH = new C0({ colorWrite: false }); }
+    const K = new Set(keep), hidden = [], s = save(), ac = R.autoClear;
+    try {
+      R.setPixelRatio(1); R.setSize(rw, rh, false);
+      setCam({ ...o, w: o.sub[0], h: o.sub[1] }); camera.setViewOffset(...o.sub); camera.updateProjectionMatrix();
+      S.sun.shadow.autoUpdate = false; S.sun.shadow.needsUpdate = false;
+      scene.background = null; R.setClearColor(0x000000, 0); R.setRenderTarget(null);
+      // pass 1: the depth of everything opaque (the sky's sphere and see-through things left out)
+      scene.traverse((x) => { if (x.isMesh && x.visible && (x === S.sky || (x.material && (Array.isArray(x.material) ? x.material[0] : x.material).transparent))) { x.visible = false; hidden.push(x); } });
+      scene.overrideMaterial = DEPTH; R.render(scene, camera); scene.overrideMaterial = null;
+      for (const x of hidden) x.visible = true; hidden.length = 0;
+      // pass 2: only the car, over that depth
+      for (const [x, nm] of PLAN.meshes) if (!K.has(nm) && x.visible) { x.visible = false; hidden.push(x); }
+      for (const [x] of PLAN.inst) if (x.visible) { x.visible = false; hidden.push(x); }
+      R.autoClear = false; R.clearColor(); R.render(scene, camera); R.autoClear = ac;
+      after?.();
+    } finally {
+      scene.overrideMaterial = null; R.autoClear = ac;
+      for (const x of hidden) x.visible = true;
+      R.setClearColor(s.cc, s.ca); scene.background = s.bg; S.sun.shadow.autoUpdate = s.sh[0];
+      restore(s); R.setPixelRatio(s.pr); R.setSize(s.size[0], s.size[1], false);
+    }
+  }
+  // a world's own look on a shot (Risograph has a pass of its own; Sketchbook's is in shot())
+  function shotWorld(o) {
+    if (o.mode !== "riso") return shot(o);
+    const s = save();
+    try { R.setPixelRatio(1); R.setSize(o.w, o.h, false); setCam(o); S.sun.shadow.autoUpdate = false; S.sun.shadow.needsUpdate = false; S.risoRender(performance.now(), camera); return R.domElement.toDataURL("image/png"); }
+    finally { S.sun.shadow.autoUpdate = s.sh[0]; restore(s); R.setPixelRatio(s.pr); R.setSize(s.size[0], s.size[1], false); }
+  }
+  // TASK-065 · a key light on the cars at night (a warm light from above the lens, a little to its left): added for
+  // their renders only (the street's plate is drawn without it), so the yellow ride reads yellow under the blue night
+  let KEY = null;
+  function keyLight(o, on) {
+    if (KEY) { scene.remove(KEY); scene.remove(KEY.target); KEY = null; }
+    if (!on) return;
+    const p = W(o.pos), t = W(o.tgt), fx = t.x - p.x, fz = t.z - p.z, n = Math.hypot(fx, fz) || 1;
+    KEY = new S.sun.constructor(o.keyColor || "#ffe2b8", o.key || 1.7);
+    KEY.castShadow = false;
+    KEY.position.set(p.x - (fz / n) * 60 - (fx / n) * 20, p.y + 90, p.z + (fx / n) * 60 - (fz / n) * 20);
+    KEY.target.position.copy(t); scene.add(KEY); scene.add(KEY.target); KEY.updateMatrixWorld(true); KEY.target.updateMatrixWorld(true);
+  }
+  window.__R = { shot, plan, layer, project, setCam, park, W, carShot, shotWorld, keyLight };
 })();
