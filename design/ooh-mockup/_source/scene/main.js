@@ -18,6 +18,7 @@ const STREET = {
 };
 const W = {};
 async function world(name) {
+  name = SHOTS[name].scene || name; // (a shot of another shot's world: gableWide)
   if (W[name]) return W[name];
   RectAreaLightUniformsLib.init();
   const sh = SHOTS[name], L = sh.light, S = new THREE.Scene(), Rr = renderer();
@@ -79,7 +80,8 @@ const BUILD = {
     g.trees = new THREE.Group(); S.add(g.trees);
     for (const [x, z, h, s] of [[-4, -13.2, 13, 1], [-14, -13.2, 12, 2], [-24, -13.2, 14, 3], [36, -13.2, 12.5, 4], [46, -13.2, 13.5, 6], [-34, -13.2, 12, 7], [7, -13.4, 12.5, 8], [27, -13.0, 13, 9]]) g.trees.add(C.linden({ x, z, h, seed: 400 + s, leafSeed: 81 + (s % 3), per: 170 }));
     S.add(C.catenary({ x0: -160, x1: 160, poles: [-38, -8, 22, 52], poleZ: [-3.3, 3.3], tracks: STREET.tracks, extra: [[[-160, 8.6, -11.4], [160, 8.2, -11.4], 0.009]] }));
-    S.add(C.lamps([[-12, -11.1, 1], [20, -11.1, 1], [8, 11.1, -1]]));
+    S.add(C.lamps([[-12, -11.1, 1], [20, -11.1, 1]]));
+    const nearLamp = C.lamps([[8, 11.1, -1]]); nearLamp.userData.fg = true; S.add(nearLamp); // (in front of the tram: the wide shot sees it)
     // (the near side's poles again, flagged: the layer that goes over the passing tram)
     g.fg = C.catenary({ x0: -160, x1: 160, poles: [-38, -8, 22, 52], poleZ: [3.3], tracks: [], wires: false }); g.fg.traverse((m) => (m.userData.fg = true)); S.add(g.fg);
     g.tram = C.tram({ L: 31 }); g.tram.position.set(0, 0.16, STREET.tracks[1]); g.tram.visible = false; S.add(g.tram);
@@ -117,7 +119,7 @@ export async function layer(o) {
   const Wp = Math.round(sh.W * scale), Hp = Math.round(sh.H * scale);
   const g = st.groups;
   if (g.tram) g.tram.visible = false;
-  const job = { scene: st.scene, W: Wp, H: Hp, n, mirror: [], perSample: st.perSample, dev: { ...(sh.dev || {}), ...(o.dev || {}) } };
+  const job = { scene: st.scene, W: Wp, H: Hp, n, mirror: [], perSample: st.perSample, dev: { ...(sh.dev || SHOTS[sh.scene]?.dev || {}), ...(o.dev || {}) } };
   // the whole frame
   if (o.layer === "bg" && o.tramX != null && g.tram) { g.tram.visible = true; g.tram.position.x = o.tramX; }
   if (o.layer === "bg") { const url = await shoot({ ...job, cam: cam(sh, o.cam || {}) }); return { url, ...stats() }; }

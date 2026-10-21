@@ -12,6 +12,9 @@ export const SHOTS = {
   gable: { W: 1080, H: 1350, cam: { pos: [16, 1.6, 22], yaw: 0, hfov: 37, aspect: 1080 / 1350, shift: [0, -0.4], focus: 44, fstop: 5.6 },
     light: { sun: [0.45, 0.8, 0.4], sunCol: [1.0, 0.95, 0.88], sunI: 8.5, zenith: [0.07, 0.2, 0.62], horizon: [0.62, 0.72, 0.84], glow: [1.0, 0.95, 0.85], ground: [0.32, 0.3, 0.27], bounce: [0.3, 0.27, 0.23], haze: [0.62, 0.7, 0.8], hazeD: 0.003, envK: 1.0, box: [60, 60], focus: [15, 0, -20] },
     dev: { expo: 0.52, contrast: 1.08, sat: 1.05, glare: 0.04, curve: "neutral" } },
+  // 2w (TASK-093): the gable again, wide (3:2) for a full-width line on wide screens: the same world and light, the camera
+  // a little to the left and a wider lens, the tram crossing the whole frame
+  gableWide: { scene: "gable", W: 1620, H: 1080, cam: { pos: [13, 1.6, 22], yaw: 0, hfov: 63.4, aspect: 1620 / 1080, shift: [0, -0.415], focus: 44, fstop: 5.6 } },
   // 3: the citylight at a tram stop's shelter, the sun low behind the blocks (the shelter in shade, the panel glowing)
   shelter: { W: 1920, H: 1080, cam: { pos: [-10.5, 1.4, 11.8], yaw: -86, hfov: 44, aspect: 16 / 9, shift: [0, -0.06], focus: 8.9, fstop: 2.2 },
     light: { sun: [0.95, 0.1, -0.27], sunCol: [1.0, 0.68, 0.42], sunI: 6.0, zenith: [0.14, 0.24, 0.5], horizon: [0.95, 0.72, 0.5], glow: [1.0, 0.62, 0.32], ground: [0.26, 0.22, 0.2], bounce: [0.26, 0.2, 0.16], haze: [0.78, 0.62, 0.5], hazeD: 0.006, envK: 1.0, box: [70, 50], focus: [0, 0, -5], glow2: 1.2 },
