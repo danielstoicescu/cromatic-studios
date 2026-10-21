@@ -104,3 +104,14 @@ if (which.includes("c")) {
   fs.writeFileSync(path.join(here, "platesC5.json"), JSON.stringify({ plates, shots }));
   console.log("plates C5", Object.keys(plates).length, Object.values(plates).reduce((s, m) => s + m.kb, 0), "KB");
 }
+
+// ---- B v5: the night world re-rendered with the house's new windows (Toma's house-windows: no shutters, white
+// curtains and small lights, the glow at the back), from the stories-b5-house build (renderV4.mjs JOB=b4
+// WORLDS=nightlife RAW=.../rawB5): its five layers as b5-nightlife-*
+if (which.includes("b")) {
+  const plates = {}, write = makeWriter(plates), RB = process.env.RAWB || "/private/tmp/claude-501/-Users-daniel-stoic/8f3b4503-769c-4f86-ba4b-8e36528128b3/scratchpad/stl4/rawB5/b4";
+  // (and the other two dark worlds, where the windows glow too: Underwater, GTA 2)
+  for (const w of ["nightlife", "underwater", "gta2"]) for (const l of ["sky", "far", "mid", "near", "ground"]) await write(`b5-${w}-${l}`, await rgba(`${RB}/${w}-${l}.png`), { crop: l !== "sky", opaque: l === "sky" });
+  fs.writeFileSync(path.join(here, "platesB5.json"), JSON.stringify({ plates }));
+  console.log("plates B5", Object.keys(plates).length, Object.values(plates).reduce((s, m) => s + m.kb, 0), "KB");
+}
