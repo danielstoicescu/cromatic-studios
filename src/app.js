@@ -26436,143 +26436,6 @@ void main() {
     g.traverse((o) => { if (o.isMesh && o !== plaza) o.castShadow = true; });
     parent.add(g);
   }
-  var CAR_LIVERY = [
-    { n: "TWO MINUTES", c: "#1a1a1a", t: "#ffffff", sub: "COFFEE SHOP" },
-    { n: "STEAM", c: "#2f9e4f", t: "#ffffff", sub: "COFFEE" },
-    { n: "CRAFT", c: "#119BFE", t: "#ffffff", sub: "COFFEE EQUIPMENT" },
-    { n: "ARTISAN", c: "#797c69", t: "#f2f0e8", sub: "COFFEE GEAR" },
-    { n: "SLOW", c: "#5B4B9E", t: "#ffffff", sub: "COFFEE FESTIVAL" },
-    { n: "K\u00D3MPUS", c: "#B098C8", t: "#1a1420", sub: "COFFEE" },
-    { n: "SIP", c: "#C9A227", t: "#14120c", sub: "COFFEE & WINE" }
-  ];
-  function carDoorTexture(l) {
-    return canvasTexture(512, 256, (ctx) => {
-      ctx.fillStyle = l.c;
-      ctx.fillRect(0, 0, 512, 256);
-      ctx.fillStyle = l.t;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.font = "800 78px CromaticSans, sans-serif";
-      ctx.fillText(l.n, 256, 108);
-      ctx.font = "700 27px CromaticSans, sans-serif";
-      ctx.globalAlpha = 0.75;
-      ctx.fillText(l.sub, 256, 162);
-      ctx.globalAlpha = 1;
-      ctx.strokeStyle = l.t;
-      ctx.lineWidth = 5;
-      ctx.globalAlpha = 0.55;
-      ctx.beginPath(); ctx.moveTo(150, 196); ctx.lineTo(362, 196); ctx.stroke();
-      ctx.globalAlpha = 1;
-    });
-  }
-  function buildParkedCar(l, tint) {
-    const car = new Group();
-    // the same room reflection the chrome racer uses gives the paint a real clearcoat
-    const env = typeof getEnvMap === "function" ? getEnvMap() : null;
-    const paint = new MeshStandardMaterial({ color: tint, roughness: 0.28, metalness: 0.42, envMap: env, envMapIntensity: 0.9 });
-    const dark = new MeshStandardMaterial({ color: new Color(tint).multiplyScalar(0.45), roughness: 0.5, metalness: 0.2 });
-    const glass = new MeshStandardMaterial({ color: "#1d2c38", roughness: 0.1, metalness: 0.55, transparent: true, opacity: 0.88, envMap: env, envMapIntensity: 1.1 });
-    const chrome = new MeshStandardMaterial({ color: "#cfd4d8", roughness: 0.18, metalness: 1, envMap: getChromeEnv(), envMapIntensity: 1.2 }); // r138l
-    const rubber = new MeshStandardMaterial({ color: "#16181a", roughness: 0.95 });
-    // lower body, slightly tapered front and rear
-    const sill = new Mesh(new BoxGeometry(19.4, 5.2, 43), paint);
-    sill.position.y = 7.2;
-    const shoulder = new Mesh(new BoxGeometry(19.8, 4.4, 40), paint);
-    shoulder.position.y = 11.4;
-    const hood = new Mesh(new BoxGeometry(18.4, 2.6, 12.5), paint);
-    hood.position.set(0, 13.4, 14.4);
-    hood.rotation.x = -0.055;
-    const trunk = new Mesh(new BoxGeometry(18.6, 2.6, 10), paint);
-    trunk.position.set(0, 13.5, -15.4);
-    trunk.rotation.x = 0.05;
-    const nose = new Mesh(new BoxGeometry(18.2, 4.6, 3.4), paint);
-    nose.position.set(0, 10.4, 21.4);
-    const tail = new Mesh(new BoxGeometry(18.4, 4.8, 3.2), paint);
-    tail.position.set(0, 10.6, -21.3);
-    car.add(sill, shoulder, hood, trunk, nose, tail);
-    // greenhouse: raked windscreen, cabin, rear glass
-    const cabin = new Mesh(new BoxGeometry(16.4, 7.4, 17.5), paint);
-    cabin.position.set(0, 17.6, -2.4);
-    const roof = new Mesh(new BoxGeometry(15.6, 1.5, 16.4), dark);
-    roof.position.set(0, 21.6, -2.6);
-    const wind = new Mesh(new BoxGeometry(15.9, 8.2, 1.3), glass);
-    wind.position.set(0, 17.4, 6.6);
-    wind.rotation.x = 0.5;
-    const rear = new Mesh(new BoxGeometry(15.7, 7.2, 1.3), glass);
-    rear.position.set(0, 17.6, -11.4);
-    rear.rotation.x = -0.36;
-    car.add(cabin, roof, wind, rear);
-    for (const sx of [-8.5, 8.5]) {
-      const side = new Mesh(new BoxGeometry(0.7, 5.6, 15.4), glass);
-      side.position.set(sx, 18.4, -2.6);
-      car.add(side);
-      const mirror = new Mesh(new BoxGeometry(2.6, 1.7, 1.5), dark);
-      mirror.position.set(sx * 1.18, 17.2, 5.4);
-      car.add(mirror);
-    }
-    // arches and wheels
-    for (const [wx, wz] of [[-8.7, 13.4], [8.7, 13.4], [-8.7, -13.4], [8.7, -13.4]]) {
-      // a painted fender flare rather than a dark blob
-      const arch = new Mesh(new CylinderGeometry(6.1, 6.1, 1, 18, 1, false, 0, Math.PI), paint);
-      arch.rotation.z = Math.PI / 2;
-      arch.position.set(wx * 1.12, 6.2, wz);
-      const tyre = new Mesh(new CylinderGeometry(5, 5, 3.3, 20), rubber);
-      tyre.rotation.z = Math.PI / 2;
-      tyre.position.set(wx, 5, wz);
-      const rim = new Mesh(new CylinderGeometry(2.9, 2.9, 3.5, 14), chrome);
-      rim.rotation.z = Math.PI / 2;
-      rim.position.set(wx, 5, wz);
-      car.add(arch, tyre, rim);
-    }
-    // beltline crease under the side glass, door handles, a roof aerial
-    for (const sx of [-9.75, 9.75]) {
-      const belt = new Mesh(new BoxGeometry(0.5, 0.7, 30), chrome);
-      belt.position.set(sx, 14.2, -1.5);
-      car.add(belt);
-      for (const hz of [3.2, -6.4]) {
-        const handle = new Mesh(new BoxGeometry(0.6, 0.9, 3.2), chrome);
-        handle.position.set(sx * 1.03, 12.6, hz);
-        car.add(handle);
-      }
-    }
-    const aerial = new Mesh(new CylinderGeometry(0.18, 0.18, 6, 6), rubber);
-    aerial.position.set(-5, 24.4, -9.5);
-    aerial.rotation.x = 0.35;
-    car.add(aerial);
-    // grille, lamps, bumpers, plate
-    const grille = new Mesh(new BoxGeometry(12.6, 2.6, 0.9), rubber);
-    grille.position.set(0, 11.2, 23.1);
-    const bumpF = new Mesh(new BoxGeometry(18.8, 2.6, 1.6), dark);
-    bumpF.position.set(0, 7.6, 22.9);
-    const bumpR = new Mesh(new BoxGeometry(18.9, 2.7, 1.6), dark);
-    bumpR.position.set(0, 7.7, -22.7);
-    const plate = new Mesh(new PlaneGeometry(7.4, 2.2), chrome);
-    plate.position.set(0, 8.6, 23.3);
-    car.add(grille, bumpF, bumpR, plate);
-    mats.carLamp = mats.carLamp || new MeshStandardMaterial({ color: "#fff3d0", emissive: "#ffd98a", emissiveIntensity: 0, roughness: 0.25 });
-    mats.carTail = mats.carTail || new MeshStandardMaterial({ color: "#8c1f18", emissive: "#ff3b2b", emissiveIntensity: 0, roughness: 0.3 });
-    for (const sx of [-6.6, 6.6]) {
-      const lamp = new Mesh(new BoxGeometry(4.4, 2.1, 0.9), mats.carLamp);
-      lamp.position.set(sx, 12.1, 23.05);
-      const tl = new Mesh(new BoxGeometry(4.2, 2.3, 0.9), mats.carTail);
-      tl.position.set(sx, 12.2, -22.85);
-      car.add(lamp, tl);
-    }
-    // the brand, on both doors
-    if (l) {
-      const tex = carDoorTexture(l);
-      const dm = new MeshStandardMaterial({ map: tex, roughness: 0.42, metalness: 0.05 });
-      for (const sx of [-9.95, 9.95]) {
-        const decal = new Mesh(new PlaneGeometry(15.5, 7.75), dm);
-        decal.rotation.y = sx > 0 ? Math.PI / 2 : -Math.PI / 2;
-        decal.position.set(sx, 10.4, -1.4);
-        decal.renderOrder = 2;
-        car.add(decal);
-      }
-    }
-    car.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-    return car;
-  }
   function buildStreetShop(parent, o) {
     const g = new Group();
     const body = new Mesh(new BoxGeometry(o.w, o.h, o.d), new MeshStandardMaterial({ color: o.wall, roughness: 0.85 }));
@@ -30883,48 +30746,6 @@ void main() {
       kg.traverse((o) => { if (o.isMesh) o.castShadow = true; });
       parent.add(kg);
     }
-    // parked cars generated along the whole route
-    const genSpots = [];
-    let cAcc = 260;
-    for (let i = 1; i < flat.length; i++) {
-      const [x, z] = flat[i], [px2, pz2] = flat[i - 1];
-      cAcc += Math.hypot(x - px2, z - pz2);
-      if (cAcc < 470) continue;
-      cAcc = 0;
-      const dx = x - px2, dz = z - pz2, l = Math.hypot(dx, dz) || 1;
-      const nx = -dz / l, nz = dx / l;
-      const side = rnd() > 0.5 ? 1 : -1;
-      const cx = x + nx * side * (ROAD_W / 2 + 16), cz = z + nz * side * (ROAD_W / 2 + 16);
-      if ((cx - ROUNDABOUT.x) ** 2 + (cz - ROUNDABOUT.y) ** 2 < 340 ** 2) continue;
-      if ((cx - FORK_POS.x) ** 2 + (cz - FORK_POS.y) ** 2 < 280 ** 2) continue;
-      if (cx > 700 && cx < 1160 && cz > 4040 && cz < 4470) continue;
-      if (cx > 1000 && cz > 5980 && cz < 6620) continue;
-      if (cx > 800 && cx < 1000 && cz > 4940 && cz < 5340) continue;
-      // no cars on the kerb in front of OMA and the mountain
-      if (cx > 640 && cx < 800 && cz > 4300 && cz < 4900) continue;
-      if (cz > 8700) continue;
-      let ok = true;
-      for (const q of STOPS) if ((cx - q.x) ** 2 + (cz - q.y) ** 2 < 190 ** 2) { ok = false; break; }
-      if (ok) genSpots.push({ x: cx, z: cz, ry: Math.atan2(dx, dz), c: ["#c8524a", "#5a7d9c", "#dfd8c8", "#57715a", "#b8b3a6", "#8c6d9c", "#d99a3d"][genSpots.length % 7] });
-    }
-    const carSpots = [
-      ...genSpots,
-      { x: 905, z: 4212, ry: Math.PI / 2, c: "#c8524a" },
-      // Călinescu, by the HQ
-      // Aricescu, past Two Minutes
-      { x: 1224, z: 6260, ry: 0, c: "#dfd8c8" },
-      // by the Dacia 99 palace
-      // Strada Muniției
-      { x: 700, z: 7785, ry: 0.2, c: "#b8b3a6" }
-      // near The Crew
-    ];
-    carSpots.forEach((s, i) => {
-      const l = CAR_LIVERY[i % CAR_LIVERY.length];
-      const car = buildParkedCar(l, l.c);
-      car.rotation.y = s.ry;
-      car.position.set(s.x, 0, s.z);
-      parent.add(car);
-    });
   }
   function buildRamp(parent, accent) {
     const g = new Group();
@@ -37195,8 +37016,6 @@ void main() {
         if (mats.romexpo) mats.romexpo.emissiveIntensity = dark ? nightlife ? 1.8 : 1.3 : 0;
         if (mats.steamGlow) mats.steamGlow.emissiveIntensity = dark ? 0.9 : 0;
         if (mats.sipGlow) mats.sipGlow.emissiveIntensity = dark ? 1 : 0;
-        if (mats.carLamp) mats.carLamp.emissiveIntensity = dark ? 1.5 : 0;
-        if (mats.carTail) mats.carTail.emissiveIntensity = dark ? 1.8 : 0;
         if (mats.yoshiGlow) mats.yoshiGlow.emissiveIntensity = dark ? 1 : 0;
         if (mats.yoshiLantern) mats.yoshiLantern.emissiveIntensity = dark ? 2.2 : 0.15;
         for (const [m, k] of STREET_GLOW) m.emissiveIntensity = dark ? k : 0;
