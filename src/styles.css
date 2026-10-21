@@ -3985,9 +3985,13 @@ body.map-boarding .topbar .you { visibility: hidden; }
 @media (max-width: 719px) and (max-height: 780px) { .mapcard.contact { zoom: .9; } }
 @media (max-width: 719px) and (max-height: 700px) { .mapcard.contact { zoom: .8; } }
 /* r130b: numbered places: a quiet mono index before the name, on the pin and in the bar */
-.map-pins .map-pin .mp-label .mp-n { font: 500 8.5px/1 "JetBrains Mono", monospace; font-style: normal; letter-spacing: .02em; color: #9a978f; margin: 0 -2px 0 -1px; }
+/* TASK-053 (audit 3.86): the index was #9a978f, 2.9:1 on the white pill at 8.5 px (1.6:1 visited, at .6); now the same warm
+   grey darkened to the lightest shade that keeps 4.5:1 on every pill it sits on (white or sand at .94, over a light or a
+   dark city, Interbelic's paper), a visited place's index at full strength (its sand pill and ticked dot say visited), and
+   Blueprint's navy box a pale blue of its own (the light-on-dark of its lines) */
+.map-pins .map-pin .mp-label .mp-n { font: 500 8.5px/1 "JetBrains Mono", monospace; font-style: normal; letter-spacing: .02em; color: #66645e; margin: 0 -2px 0 -1px; }
 .map-pins .map-pin.on .mp-label .mp-n { color: var(--ink); }
-.map-pins .map-pin.visited .mp-label .mp-n { opacity: .6; }
+body.scheme-blueprint .map-pins .map-pin:not(.float):not(.on) .mp-label .mp-n { color: #a9c4e0; }
 .map-pins .map-pin.mini .mp-label .mp-n { font-size: 7.5px; }
 .map-chip .mc-n { font: 500 9px/1 "JetBrains Mono", monospace; font-style: normal; opacity: .5; margin-right: 6px; letter-spacing: .02em; }
 .map-chip.visited .mc-n { opacity: .3; }
