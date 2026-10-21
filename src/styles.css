@@ -1242,10 +1242,10 @@ body.dark-ui .brand img { filter: invert(1); }
 .scf-hero { text-align: center; padding-top: 90px !important; }
 .scf-hero .eyebrow { color: #E9C878; }
 .scf-slow { width: min(260px, 56vw); margin: 0 auto 26px; display: block; background: #F3EBDD; border-radius: 26px; padding: 22px; }
-.scf-hero h1 {
+.scf-hero h2 { /* TASK-053: an h2 (the page's one h1 is the text version's); the same look as the h1 it was */
   font: 800 clamp(26px, 4.6vw, 46px)/1.12 CromaticSans, sans-serif; letter-spacing: -.03em; margin: 14px 0;
 }
-.scf-hero h1 em { font-style: normal; color: #E9C878; }
+.scf-hero h2 em { font-style: normal; color: #E9C878; }
 .scf-hero p { font-size: 15.5px; line-height: 1.65; opacity: .85; max-width: 640px; margin: 0 auto; }
 .scf-hero p b { color: #E9C878; font-weight: 700; }
 .scf-years { display: inline-block; margin-top: 18px; font-size: 12px; letter-spacing: .18em; color: #E9C878; }
