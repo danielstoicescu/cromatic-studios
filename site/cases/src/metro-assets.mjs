@@ -2,46 +2,10 @@
 export const METRO = {
  "metro-platform": {
   "s1": {
-   "p-bg": "m:metro/p-bg-s1",
-   "p-w0-0": "m:metro/p-w0-0-s1",
-   "p-w0-1": "m:metro/p-w0-1-s1",
-   "p-w0-2": "m:metro/p-w0-2-s1",
-   "p-w0-3": "m:metro/p-w0-3-s1",
-   "p-w0-4": "m:metro/p-w0-4-s1",
-   "p-w0-5": "m:metro/p-w0-5-s1",
-   "p-w1-0": "m:metro/p-w1-0-s1",
-   "p-w1-1": "m:metro/p-w1-1-s1",
-   "p-w1-2": "m:metro/p-w1-2-s1",
-   "p-w1-3": "m:metro/p-w1-3-s1",
-   "p-w1-4": "m:metro/p-w1-4-s1",
-   "p-w1-5": "m:metro/p-w1-5-s1",
-   "p-w2-0": "m:metro/p-w2-0-s1",
-   "p-w2-1": "m:metro/p-w2-1-s1",
-   "p-w2-2": "m:metro/p-w2-2-s1",
-   "p-w2-3": "m:metro/p-w2-3-s1",
-   "p-w2-4": "m:metro/p-w2-4-s1",
-   "p-w2-5": "m:metro/p-w2-5-s1"
+   "p-bg": "m:metro/p-bg-s1"
   },
   "s2": {
-   "p-bg": "m:metro/p-bg-s2",
-   "p-w0-0": "m:metro/p-w0-0-s2",
-   "p-w0-1": "m:metro/p-w0-1-s2",
-   "p-w0-2": "m:metro/p-w0-2-s2",
-   "p-w0-3": "m:metro/p-w0-3-s2",
-   "p-w0-4": "m:metro/p-w0-4-s2",
-   "p-w0-5": "m:metro/p-w0-5-s2",
-   "p-w1-0": "m:metro/p-w1-0-s2",
-   "p-w1-1": "m:metro/p-w1-1-s2",
-   "p-w1-2": "m:metro/p-w1-2-s2",
-   "p-w1-3": "m:metro/p-w1-3-s2",
-   "p-w1-4": "m:metro/p-w1-4-s2",
-   "p-w1-5": "m:metro/p-w1-5-s2",
-   "p-w2-0": "m:metro/p-w2-0-s2",
-   "p-w2-1": "m:metro/p-w2-1-s2",
-   "p-w2-2": "m:metro/p-w2-2-s2",
-   "p-w2-3": "m:metro/p-w2-3-s2",
-   "p-w2-4": "m:metro/p-w2-4-s2",
-   "p-w2-5": "m:metro/p-w2-5-s2"
+   "p-bg": "m:metro/p-bg-s2"
   }
  },
  "metro-train": {

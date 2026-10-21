@@ -44,9 +44,9 @@ export const LITORSAL = {
       // TASK-062: three animated mockups (design/metro-mockup: our own 3D station, carriage and train, the real artwork,
       // played by the site's Lottie layer), then the posters as printed
       media: [
-        { czl: "metro-platform", img: m("metro/platform-still"), alt: "Animated mockup: the landscape and portrait posters in lit frames on a metro station's track wall, people passing in front", cap: "Animated mockup: on the platform" },
+        { czl: "metro-platform", img: m("metro/platform-still"), alt: "Animated mockup: the landscape and portrait posters in lit frames on a metro station's track wall, the light of a passing train sliding across their glass", cap: "Animated mockup: on the platform" },
         { row: [
-          { full: true, czl: "metro-inside", img: m("metro/inside-still"), alt: "Animated mockup: inside a metro car, the portrait poster on the panel beside the doors, while the train leaves the station, runs through the tunnel and pulls in again" },
+          { full: true, czl: "metro-inside", img: m("metro/inside-still"), alt: "Animated mockup: inside a metro car, the portrait poster on the panel beside the doors; the doors open and waves in the poster's yellow, cyan and blue wash over the car, then the train leaves, runs through the tunnel and pulls in again" },
           { full: true, img: m("litorsal/vibe-metro-portrait"), alt: "The portrait metro poster: the headline on top, the hand with the tube below" }
         ], wrap: true, cap: "In the carriage, beside the doors, and the 50 x 90 cm poster itself" },
         { czl: "metro-train", at: 300, img: m("metro/train-still"), alt: "Animated mockup: a metro train pulls into the station with the wide poster on the side of a car, opens and closes its doors, and pulls out", cap: "On the train, as a wrap" },
