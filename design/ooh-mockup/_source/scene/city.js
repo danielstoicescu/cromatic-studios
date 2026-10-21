@@ -220,7 +220,7 @@ export function catenary(o) {
   for (const x of o.poles) { wg.push(rod([x, 7.2, o.poleZ[0]], [x, 6.95, (o.poleZ[0] + o.poleZ[1]) / 2], 0.009, 4), rod([x, 6.95, (o.poleZ[0] + o.poleZ[1]) / 2], [x, 7.2, o.poleZ[1]], 0.009, 4)); }
   for (const z of o.tracks) for (const dz of [0, 0.0]) { wg.push(rod([o.x0, 6.3, z + dz], [o.x1, 6.3, z + dz], 0.007, 4)); wg.push(rod([o.x0, 6.75, z], [o.x1, 6.75, z], 0.006, 4)); for (let x = o.x0; x < o.x1; x += 4.5) wg.push(rod([x, 6.3, z], [x, 6.75, z], 0.003, 3)); }
   for (const g of o.extra || []) wg.push(rod(g[0], g[1], g[2] || 0.006, 4)); // (other cables across: phone lines, the trolleybus feeders)
-  G.add(merged(pg, pole)); const wm = merged(wg, wire); wm.castShadow = true; G.add(wm);
+  G.add(merged(pg, pole)); if (o.wires !== false) { const wm = merged(wg, wire); wm.castShadow = true; G.add(wm); }
   return G;
 }
 // ---------- street lamps: a pole with a curved arm and a flat head ----------
@@ -234,8 +234,8 @@ export function lamps(list) {
 // glazed doors, a rounded roof edge with the equipment boxes, the pantograph on the middle section ----------
 export function tram(o = {}) {
   const G = new THREE.Group(), L = o.L || 30, sec = 3, sl = L / sec, Hh = 3.4, w = 2.4;
-  const paint = std({ color: 0xece6d6, roughness: 0.3, metalness: 0.05, envMapIntensity: 1.1 }), red = std({ color: 0x8e2a24, roughness: 0.4, metalness: 0.1 }), glass = std({ color: 0x0e1215, roughness: 0.04, envMapIntensity: 1.8 }), dark = std({ color: 0x1d1f21, roughness: 0.7 }), roofM = std({ color: 0xb9b6ae, roughness: 0.55, metalness: 0.3 }), grey = std({ color: 0x55585b, roughness: 0.5, metalness: 0.4 }), bellow = std({ color: 0x232425, roughness: 0.9 });
-  const pg = [], rg = [], gg = [], dg = [], tg = [], gr = [], bl = [];
+  const paint = std({ color: 0xece6d6, roughness: 0.3, metalness: 0.05, envMapIntensity: 1.1 }), red = std({ color: 0x8e2a24, roughness: 0.4, metalness: 0.1 }), glass = std({ color: 0x1a2329, roughness: 0.04, envMapIntensity: 1.6, transparent: true, opacity: 0.42, depthWrite: false }), doorG = std({ color: 0x252d33, roughness: 0.08, envMapIntensity: 1.6 }), inWall = std({ color: 0x77736c, roughness: 0.8 }), seat = std({ color: 0x2c3a4a, roughness: 0.7 }), seen = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.62, 0.7, 0.76) }), dark = std({ color: 0x1d1f21, roughness: 0.7 }), roofM = std({ color: 0xb9b6ae, roughness: 0.55, metalness: 0.3 }), grey = std({ color: 0x55585b, roughness: 0.5, metalness: 0.4 }), bellow = std({ color: 0x232425, roughness: 0.9 });
+  const pg = [], rg = [], gg = [], dg = [], tg = [], gr = [], bl = [], dgl = [], iw = [], sg = [], sn = [];
   for (let s = 0; s < sec; s++) {
     const x0 = -L / 2 + s * sl + 0.2, x1 = x0 + sl - 0.4, cx = (x0 + x1) / 2, len = x1 - x0;
     // the body: below the windows, above them (to the roof's round), the roof's rounded edge as two bevels
@@ -244,10 +244,15 @@ export function tram(o = {}) {
     rg.push(bgeo(len + 0.01, 0.42, w + 0.02, cx, 0.5, 0));
     gr.push(bgeo(len - 0.6, 0.06, w + 0.03, cx, 0.72, 0));
     // the window band: glass behind, pillars in the body colour; doors (two per section) glazed full height
-    gg.push(bgeo(len - 0.1, 1.2, w - 0.02, cx, 2.02, 0));
+    // (the window band is hollow: thin glass both sides, the car's inside behind it: the far side's wall, its windows
+    // showing the street's light, the seats' backs)
+    for (const zs of [1, -1]) gg.push(bgeo(len - 0.1, 1.2, 0.02, cx, 2.02, zs * (w / 2 - 0.02)));
+    iw.push(bgeo(len - 0.1, 1.05, 0.04, cx, 0.88, 0), bgeo(len - 0.1, 0.3, w - 0.1, cx, 2.77, 0));
+    sn.push(bgeo(len - 0.2, 1.1, 0.02, cx, 2.02, -w / 2 + 0.08));
+    for (let px = x0 + 0.6; px < x1 - 0.4; px += 0.85) for (const zs of [0.55, -0.55]) sg.push(bgeo(0.1, 0.62, 0.42, px, 1.62, zs));
     const doors = [cx - len * 0.28, cx + len * 0.28];
-    for (const dx of doors) { gg.push(bgeo(1.3, 2.3, w + 0.03, dx, 1.55, 0)); dg.push(bgeo(0.06, 2.3, w + 0.05, dx, 1.55, 0), bgeo(1.4, 0.08, w + 0.05, dx, 2.72, 0), bgeo(0.08, 2.3, w + 0.05, dx - 0.69, 1.55, 0), bgeo(0.08, 2.3, w + 0.05, dx + 0.69, 1.55, 0)); }
-    for (let px = x0 + 0.1; px <= x1 - 0.05; px += 1.25) if (!doors.some((d) => Math.abs(px - d) < 0.8)) pg.push(bgeo(0.14, 1.22, w + 0.01, px, 2.02, 0));
+    for (const dx of doors) { dgl.push(bgeo(1.3, 2.3, w + 0.03, dx, 1.55, 0)); dg.push(bgeo(0.06, 2.3, w + 0.05, dx, 1.55, 0), bgeo(1.4, 0.08, w + 0.05, dx, 2.72, 0), bgeo(0.08, 2.3, w + 0.05, dx - 0.69, 1.55, 0), bgeo(0.08, 2.3, w + 0.05, dx + 0.69, 1.55, 0)); }
+    for (let px = x0 + 0.1; px <= x1 - 0.05; px += 1.25) if (!doors.some((d) => Math.abs(px - d) < 0.8)) for (const zs of [1, -1]) { pg.push(bgeo(0.14, 1.22, 0.06, px, 2.02, zs * (w / 2 - 0.03))); iw.push(bgeo(0.14, 1.1, 0.03, px, 2.02, -w / 2 + 0.1)); }
     tg.push(bgeo(len * 0.45, 0.32, 1.5, cx, Hh + 0.16, 0), bgeo(len * 0.2, 0.22, 1.2, cx + len * 0.32, Hh + 0.1, 0));
     if (s < sec - 1) bl.push(bgeo(0.42, 2.7, w - 0.3, x1 + 0.2, 1.75, 0));
   }
@@ -259,7 +264,7 @@ export function tram(o = {}) {
   }
   // the pantograph on the middle section
   tg.push(rod([-0.6, Hh + 0.32, 0], [0.4, Hh + 1.3, 0], 0.03, 4), rod([0.4, Hh + 1.3, 0], [-0.3, Hh + 2.55, 0], 0.025, 4), bgeo(0.12, 0.05, 1.6, -0.3, Hh + 2.6, 0));
-  G.add(merged(pg, paint), merged(rg, red), merged(gg, glass, { cast: true }), merged(dg, dark), merged(tg, roofM), merged(gr, grey), merged(bl, bellow));
+  G.add(merged(pg, paint), merged(rg, red), merged(gg, glass, { cast: false }), merged(dgl, doorG), merged(dg, dark), merged(tg, roofM), merged(gr, grey), merged(bl, bellow), merged(iw, inWall), merged(sg, seat), merged(sn, seen, { cast: false }));
   // inside: the lit ceiling (seen through the glass, warm), seat backs, the bogies' shadow under the skirt
   const lit = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.1, 1.0, 0.85) }); G.add(merged([bgeo(L - 1, 0.05, 0.6, 0, Hh - 0.62, 0)], lit, { cast: false }));
   G.add(merged([bgeo(L - 2, 0.3, w - 0.3, 0, 0.18, 0)], dark));
