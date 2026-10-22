@@ -7,7 +7,9 @@ const D = D5.zoom.dur;
 let CAR = null, UNRIDE = null, UNDRESS = null;
 export default {
   name: "zoom", size: [2160, 3840], fps: 30, duration: D, shutter: 0.5,
-  camera: cameraPath({ keys: keysOf(D5.zoom.cam, D) }), cameraLimits: { maxTurn: 12, maxTurnJump: 6, maxFlip: 12 },
+  // (D7: the move down stays higher through its middle, so it no longer grazes the block by the road; no pins are on
+// screen in this shot, so the camera is ours to change: the height on a slower curve, the same ends)
+camera: cameraPath({ keys: keysOf((t) => { const c = D5.zoom.cam(t), u = Math.min(1, Math.max(0, t / D)), h0 = c.pos[1], hk = Math.exp(Math.log(742) + (Math.log(8) - Math.log(742)) * Math.pow(u, 1.8)); return { ...c, pos: [c.pos[0], Math.max(h0, Math.min(hk, h0 + 140)), c.pos[2]] }; }, D) }), cameraLimits: { maxTurn: 12, maxTurnJump: 6, maxFlip: 12 },
   lens: { fstop: 8, scale: 1.45 },
   ...GOLDEN,
   shadow: { ext: 1200, domeExt: 1200 },
