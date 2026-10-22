@@ -119,7 +119,9 @@ export function layout(def) {
         const bottom = tg.aplat ? tg.aplat.states[0].y + tg.aplat.states[0].h : Math.max(...tg.lines.map((l) => l.box.y + l.box.h));
         const left = tg.aplat ? tg.aplat.states[0].x : Math.min(...tg.lines.map((l) => l.x));
         const pillTop = bottom + b.attach.gap, cap = (S * T.cap) / T.upm;
-        bd = { ...b, place: { x: left + b.attach.dx, align: "left", top: pillTop + (P.height / 2 + P.centreFromBaseline) * S - cap } };
+        // (align "center": the pill centred under the block; its width is the first word's)
+        const cx = tg.aplat ? tg.aplat.states[0].x + tg.aplat.states[0].w / 2 : null;
+        bd = { ...b, place: b.attach.align === "center" ? { x: cx, align: "center", top: pillTop + (P.height / 2 + P.centreFromBaseline) * S - cap } : { x: left + b.attach.dx, align: "left", top: pillTop + (P.height / 2 + P.centreFromBaseline) * S - cap } };
       }
       L.blocks.push({ ...layBlock(bd, ink), behindRide: !!b.behindRide, ...(b.attach ? { attach: b.attach } : {}) });
     }
@@ -157,7 +159,7 @@ for (const def of CARDS) {
     mocks: def.mocks, notes: def.notes || ""
   };
   if (def.url && !def.url.continues) { const nx = CARDS.find((d) => d.url && d.url.continues === def.id); if (nx) card.continuedBy = { black: nx.timing.black, settle: nx.timing.settle, out: nx.timing.out }; }
-  const clocks = def.story === "A" ? ["A_v4"] : def.story === "D" ? ["D2"] : def.story === "B" ? ["B5"] : ["C_v4", "C_long"];
+  const clocks = def.story === "A" ? ["A_v4"] : def.story === "D" ? (/^d1[5-9]/.test(def.id) ? ["D5"] : ["D2"]) : def.story === "B" ? ["B5"] : ["C_v4", "C_long"];
   card.timing.frames = Object.fromEntries(clocks.map((k) => [k, frames(card, k)]));
   card.files = { outlined: states.map((s) => `svg/outlined/${def.id}${states.length > 1 ? "-" + s.label : ""}.svg`), live: states.map((s) => `svg/live/${def.id}${states.length > 1 ? "-" + s.label : ""}.svg`) };
   states.forEach((s, k) => {

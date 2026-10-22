@@ -1,0 +1,229 @@
+{
+ "id": "d15-portfolio",
+ "story": "D",
+ "beat": "Our portfolio / is not only + [scrollable.], centred: the block swings in, the lines rise, the pill comes last and the word lands (over the site's grid, scrolled slowly)",
+ "shots": [
+  "site"
+ ],
+ "scene": "the site (light, busy): the yellow aplat carries it",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "d15",
+    "place": {
+     "x": 540,
+     "align": "center",
+     "top": 690
+    },
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "d15-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "center",
+      "text": "Our portfolio",
+      "x": 209.6,
+      "baseline": 773.1,
+      "width": 660.7,
+      "box": {
+       "x": 209.6,
+       "y": 684.9,
+       "w": 660.7,
+       "h": 116
+      }
+     },
+     {
+      "kind": "line",
+      "id": "d15-l2",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "center",
+      "text": "is not only",
+      "x": 286.1,
+      "baseline": 889.1,
+      "width": 507.7,
+      "box": {
+       "x": 286.1,
+       "y": 800.9,
+       "w": 507.7,
+       "h": 116
+      }
+     }
+    ],
+    "aplat": {
+     "fill": "#FED012",
+     "radius": 30,
+     "keyline": 5,
+     "shadow": [
+      0,
+      12
+     ],
+     "tilt": -1.5,
+     "states": [
+      {
+       "x": 157.6,
+       "y": 644,
+       "w": 764.7,
+       "h": 302
+      }
+     ]
+    },
+    "behindRide": false
+   },
+   {
+    "kind": "block",
+    "id": "d15-word",
+    "place": {
+     "x": 539.95,
+     "align": "center",
+     "top": 931.404
+    },
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "d15-word-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "center",
+      "text": "",
+      "x": 244.8,
+      "baseline": 1014.5,
+      "width": 0,
+      "box": {
+       "x": 244.8,
+       "y": 926.3,
+       "w": 590.4,
+       "h": 116
+      },
+      "pill": {
+       "id": "d15-word-l1-pill",
+       "fill": "#FFFFFF",
+       "ink": "#0D0C09",
+       "left": 244.8,
+       "cy": 973.3,
+       "h": 134.6,
+       "keyline": 5.2,
+       "shadow": [
+        3.5,
+        7.5
+       ],
+       "tilt": -3,
+       "wordX": 284.2,
+       "states": [
+        {
+         "word": "scrollable.",
+         "wordW": 511.6,
+         "w": 590.4,
+         "cx": 540
+        }
+       ]
+      }
+     }
+    ],
+    "behindRide": false,
+    "attach": {
+     "to": "d15",
+     "align": "center",
+     "gap": -40
+    }
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "scrollable"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "site+8",
+   "lineStagger": 8,
+   "pillIn": "site+34",
+   "out": "site.end-14"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "D5": {
+    "clock": "D5",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "d15-aplat",
+      "in": 8,
+      "out": 115,
+      "frames": {
+       "in": 14,
+       "out": 7
+      },
+      "hold": 86
+     },
+     {
+      "id": "d15-l1",
+      "text": "Our portfolio",
+      "in": 12,
+      "out": 105,
+      "motion": "lineIn / lineOut",
+      "hold": 81
+     },
+     {
+      "id": "d15-l2",
+      "text": "is not only",
+      "in": 20,
+      "out": 106,
+      "motion": "lineIn / lineOut",
+      "hold": 74
+     },
+     {
+      "id": "d15-word-l1-pill-0",
+      "word": "scrollable.",
+      "in": 34,
+      "out": 106,
+      "motion": "pillIn",
+      "hold": 72
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "site+70"
+  }
+ ],
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/d15-portfolio.svg"
+  ],
+  "live": [
+   "svg/live/d15-portfolio.svg"
+  ]
+ }
+}
