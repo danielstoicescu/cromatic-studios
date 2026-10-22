@@ -458,7 +458,6 @@ ${header(false)}
 <main id="main" class="case${d.theme ? " theme-" + d.theme : ""}" style="--bc:${d.c};--bt:${d.t}">
   <section class="c-hero c2-hero">
     <div class="wrap">
-      <nav class="crumbs mono" aria-label="Breadcrumb"><a href="/site/">Cromatic Studios</a> / <a href="/site/#work">Work</a> / <span>${esc(d.name)}</span></nav>
       <p class="eyebrow mono">${esc(d.eyebrow)}</p>
       <h1 class="c2-title">${esc(d.title).split(" ").map((w, k) => `<span class="w" style="--k:${k}">${w}</span>`).join(" ")}</h1>
       <div class="c2-row">
@@ -516,7 +515,6 @@ ${header(false)}
 <main id="main" class="case cv-page" style="--bc:${d.c};--bt:${d.t}">
   <section class="c-hero cv-hero">
     <div class="wrap">
-      <nav class="crumbs mono" aria-label="Breadcrumb"><a href="/site/">Cromatic Studios</a> / <a href="/site/#work">Work</a> / <span>${esc(d.name)}</span></nav>
       <p class="eyebrow mono">${esc(d.eyebrow)}</p>
       <h1>${esc(d.title)}</h1>
       <p class="lead">${esc(d.lead)}</p>
@@ -556,7 +554,7 @@ ${footer}`;
   }
   // ---- r131: industry hubs (one per street), service pages, the team ----
   const byPage = (slug) => PROJECTS.find((p) => p.page === slug);
-  const hubCrumbs = (mid, name) => `<nav class="crumbs mono" aria-label="Breadcrumb"><a href="/site/">Cromatic Studios</a> / ${mid} / <span>${esc(name)}</span></nav>`;
+  // TASK-120 (Daniel): no visible breadcrumb under the header (it only repeated the logo); the BreadcrumbList in hubLd stays for search
   const hubLd = (path, title, desc, crumbs, extra = []) => ({ "@context": "https://schema.org", "@graph": [
     { "@type": "WebPage", "@id": `${SITE}${path}`, url: `${SITE}${path}`, name: title, description: desc, isPartOf: { "@id": `${SITE}/#website` }, about: { "@id": `${SITE}/#studio` }, inLanguage: "en" },
     ...extra,
@@ -574,8 +572,8 @@ ${footer}`;
       <p><a class="btn btn-y" href="/site/#contact">${STAR}<span>Start a project</span></a></p>
       <p class="c-direct"><a href="mailto:${STUDIO.email}">${STUDIO.email}</a> · <a href="tel:+40728978068">${STUDIO.phone}</a> · Strada Olari 9, Bucharest</p>
     </div></section>`;
-  const hubHero = (crumbs, eyebrow, h1, lead, col) => `<section class="c-hero c2-hero hub-hero">
-    <div class="wrap">${crumbs}
+  const hubHero = (eyebrow, h1, lead, col) => `<section class="c-hero c2-hero hub-hero">
+    <div class="wrap">
       <p class="eyebrow mono">${esc(eyebrow)}</p>
       <h1 class="c2-title">${esc(h1).split(" ").map((w, k) => `<span class="w" style="--k:${k}">${w}</span>`).join(" ")}</h1>
       <p class="lead hub-lead">${lead}</p>
@@ -595,7 +593,7 @@ ${footer}`;
     return `${head({ title, desc: d.desc, path, ld })}
 ${header(false)}
 <main id="main" class="case hub" style="--bc:${col};--bt:#111">
-  ${hubHero(hubCrumbs(`<a href="/site/#work">Industries</a>`, street), d.eyebrow, d.h1, d.lead, col)}
+  ${hubHero(d.eyebrow, d.h1, d.lead, col)}
   <section class="wrap c2-lead hub-intro">${d.intro.map((x) => `<p>${x}</p>`).join("")}</section>
   <section class="sec"><div class="wrap"><h2 class="eyebrow mono">What we do on ${esc(street)}</h2>${cards(d.offer, col)}</div></section>
   <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono">${esc(street)} · ${d.cases.length + (d.street === "C" ? zdPages().length : 0)} case studies</p>
@@ -623,7 +621,7 @@ ${footer}`;
     return `${head({ title, desc: d.desc, path, ld })}
 ${header(false)}
 <main id="main" class="case hub" style="--bc:${col};--bt:#111">
-  ${hubHero(hubCrumbs(`<a href="/site/#services">Services</a>`, d.name), d.eyebrow, d.h1, d.lead, col)}
+  ${hubHero(d.eyebrow, d.h1, d.lead, col)}
   <section class="wrap c2-lead hub-intro">${d.intro.map((x) => `<p>${x}</p>`).join("")}</section>
   <section class="sec"><div class="wrap"><h2 class="eyebrow mono">What it includes</h2>${cards(d.includes, col)}</div></section>
   <section class="sec sec-alt"><div class="wrap"><h2 class="eyebrow mono">How we work</h2>
@@ -648,7 +646,7 @@ ${footer}`;
     return `${head({ title, desc, path, ld })}
 ${header(false)}
 <main id="main" class="case hub" style="--bc:#B098C8;--bt:#111">
-  ${hubHero(hubCrumbs(`<a href="/site/#studio">Studio</a>`, "Team"), "The crew · Bucharest · since 2014", "Brilliant humans, one coffee at a time", "An independent creative studio in Bucharest. We discover AI every day, and we still believe in the collective power of brilliant humans.", "#B098C8")}
+  ${hubHero("The crew · Bucharest · since 2014", "Brilliant humans, one coffee at a time", "An independent creative studio in Bucharest. We discover AI every day, and we still believe in the collective power of brilliant humans.", "#B098C8")}
   <section class="wrap c2-lead hub-intro">
     <p>Cromatic Studios started in <strong>2014</strong> with two people and a company name written on a napkin. It was founded by <strong>Daniel Stoicescu</strong>, who is still the studio's creative architect. Today the studio is led by two partners, who are also brothers: <strong>Daniel Stoicescu</strong>, the founder, and <strong>Cristian Stoicescu</strong>, the CEO.</p>
     <p>Strategy, identity, websites, film and content are made here, under one roof, for indie founders, startups and established companies.</p>
@@ -693,7 +691,7 @@ ${footer}`;
 ${header(false)}
 <main id="main" class="case hub legal-page" style="--bc:#FED012;--bt:#111">
   <section class="c-hero c2-hero hub-hero">
-    <div class="wrap">${hubCrumbs(`<a href="/site/#contact">Studio</a>`, "Privacy")}
+    <div class="wrap">
       <p class="eyebrow mono">Privacy policy · updated 14 October 2026</p>
       <h1 class="c2-title">${"Your data, plainly".split(" ").map((w, k) => `<span class="w" style="--k:${k}">${w}</span>`).join(" ")}</h1>
       <p class="lead hub-lead">What happens to what you tell us, in plain words. Short version: we use it to answer you, and nothing else.</p>
