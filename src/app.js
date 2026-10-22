@@ -24052,7 +24052,7 @@ void main() {
         { id: "plane", label: "Cropduster" },
         { id: "scooter", label: "E-scooter" },
         { id: "foodvan", label: "Kompus truck" },
-        { id: "cop", label: "Patrol" }, // r139e: the Romanian Police 1310 (id kept for analytics); r139j: named Patrol (Daniel)
+        { id: "cop", label: "Polite Patrol" }, // r139e: the Romanian Police 1310 (id kept for analytics); r139j: named Patrol (Daniel); TASK-115: Polite Patrol, POLITE on the doors
         { id: "sub", label: "Yellow submarine" }
       ];
       FORM_DREAMS = ["Branding", "Website / App", "Video", "Growth & Social", "Not sure yet"];
@@ -24365,6 +24365,11 @@ void main() {
   // places that must stay clear of the generic city blocks (filled by the street builders)
   // r134: Daniel: no block on Medical Avenue between the Zdrovit gate and Altius (in front of the yard, right of the gate)
   var EXTRA_KEEPOUT = [{ x: 1548, y: 5224, r: 48 }];
+  // TASK-116 (Daniel): Casa Berero's front, from its facade (706 + 25) to the road's kerb, along the house and a little
+  // past it: no street tree, street light or grass tuft stands here, so its sign and the delivery at its door are
+  // seen whole from the road
+  var BERERO_FRONT = { x0: 728, x1: 806, z0: 5420, z1: 5540 };
+  function inBereroFront(x, z) { const B = BERERO_FRONT; return x > B.x0 && x < B.x1 && z > B.z0 && z < B.z1; }
   // r185 (Daniel: "make it much clearer when you arrive at Olari 9, so you don't drive past it; the world wider, the
   // entrance more inviting, not made of crumbs from the other roads; the boulevard wider"): the way from the Dacia row
   // to the Cromatic Studios House is one boulevard, 1.4 times a street (BLVD_W), straight down from the row (flared into
@@ -25004,7 +25009,10 @@ void main() {
     for (const t of CITY_TREES) spots.push(t);
     for (let i = spots.length - 1; i >= 0; i--) if (!boardClear(spots[i].x, spots[i].z)) spots.splice(i, 1); // beta 3.01
     for (let i = spots.length - 1; i >= 0; i--) { const sp = spots[i], v = CITY_NET?.at?.(sp.x, sp.z); if (v === 1 || (v === 2 && !sp.med) || (!sp.med && CITY_NET?.roadDist && CITY_NET.roadDist(sp.x, sp.z) < 8)) spots.splice(i, 1); }
-    for (const t of spots) TREE_BLOBS.push({ x: t.x, z: t.z, w: 22 * t.s, d: 22 * t.s, h: 30 * t.s });
+    // TASK-116: the trees in front of Casa Berero are kept in the list at no size (taken out, they would shift every
+    // other tree's kind and random turn and shade across the city)
+    for (const t of spots) if (inBereroFront(t.x, t.z)) t.s = 0;
+    for (const t of spots) if (t.s > 0) TREE_BLOBS.push({ x: t.x, z: t.z, w: 22 * t.s, d: 22 * t.s, h: 30 * t.s });
     const round = spots.filter((_, i) => i % 4 !== 3);
     const conif = spots.filter((_, i) => i % 4 === 3);
     const trunkGeo = new CylinderGeometry(2.4, 3.2, 16, 6);
@@ -31824,6 +31832,7 @@ void main(){
       if ((x - ROUNDABOUT.x) ** 2 + (z - ROUNDABOUT.y) ** 2 < 280 ** 2) continue;
       if ((x - FORK_POS.x) ** 2 + (z - FORK_POS.y) ** 2 < 200 ** 2) continue;
       if (z > OLARI_PLAZA.z - OLARI_PLAZA.r - 40) continue; // r185: none in the forecourt, nor along the road on past the house
+      if (inBereroFront(x + nx * side * (ROAD_W / 2 + 16), z + nz * side * (ROAD_W / 2 + 16))) continue; // TASK-116: not in front of Casa Berero
       spots.push({ x: x + nx * side * (ROAD_W / 2 + 16), z: z + nz * side * (ROAD_W / 2 + 16), side, dirx: nx * side, dirz: nz * side });
     }
     const poleGeo = new CylinderGeometry(1.8, 2.4, 64, 6);
@@ -33230,8 +33239,8 @@ void main(){
       // POLIȚIA in white block capitals, for the doors and the bonnet
       [x, y, w, h] = R.word;
       ctx.save(); ctx.fillStyle = "#ffffff"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; try { ctx.letterSpacing = "6px"; } catch {}
-      for (let fs = 104; fs >= 60; fs -= 4) { ctx.font = `800 ${fs}px CromaticSans, Arial, sans-serif`; if (ctx.measureText("POLIȚIA").width <= w - 24) break; }
-      ctx.fillText("POLIȚIA", x + w / 2, y + h / 2 - 6); ctx.restore();
+      for (let fs = 104; fs >= 60; fs -= 4) { ctx.font = `800 ${fs}px CromaticSans, Arial, sans-serif`; if (ctx.measureText("POLITE").width <= w - 24) break; }
+      ctx.fillText("POLITE", x + w / 2, y + h / 2 - 6); ctx.restore(); // TASK-115 (Daniel): POLITE, not POLIȚIA (no trouble with the authorities)
       // the crest: a white shield outline with a star and an eagle's wings
       [x, y, w, h] = R.crest;
       ctx.save(); ctx.translate(x + w / 2, y + 10); ctx.strokeStyle = "#ffffff"; ctx.fillStyle = "#ffffff"; ctx.lineWidth = 7;
@@ -39572,7 +39581,7 @@ void main(){
         // grass tufts swaying in the wind along the road, and dust motes in the light
         {
           const tufts = [];
-          along(40, (L, p, t) => { if (p.y > 5) return; for (const s2 of [-1, 1]) { const g7 = side(p, t, ROUTE_W / 2 + 10 + rr() * 60, s2); tufts.push({ x: g7.x, z: g7.z, ry: rr() * 6.28, s: 0.7 + rr() * 0.9 }); } });
+          along(40, (L, p, t) => { if (p.y > 5) return; for (const s2 of [-1, 1]) { const g7 = side(p, t, ROUTE_W / 2 + 10 + rr() * 60, s2); if (!inBereroFront(g7.x, g7.z)) tufts.push({ x: g7.x, z: g7.z, ry: rr() * 6.28, s: 0.7 + rr() * 0.9 }); } });
           const tuftGeo = new ConeGeometry(3.4, 12, 5, 3);
           tuftGeo.translate(0, 6, 0);
           const tuftM = new MeshStandardMaterial({ color: "#7cc15a", roughness: 0.9 });
