@@ -26,13 +26,15 @@ const name = (f) => `${OUT}/f${String(f).padStart(5, "0")}.png`;
 async function passFrames(ride, dzOf, n, tag) {
   await setVeh(p, ride);
   await aim(p, { ...TURN, a: PASS.a, e: PASS.e, R: PASS.R, ty: PASS.ty, dz: 0, pr: 4 }); await p.waitForTimeout(900);
+  await p.evaluate(() => { window.__fx = null; });
   const out = [];
   for (let f = 0; f < n; f++) {
     if (dzOf(f) == null) { out.push(null); continue; }
     let acc = null, info = null;
     for (let j = 0; j < PASS.sub; j++) {
       const ff = f + ((j + 0.5) / PASS.sub - 0.5) * (PASS.shutter ?? 1), dz = dzOf(Math.max(0, ff)) ?? dzOf(f), sh = PASS.shake(f);
-      await p.evaluate(({ dz, sh, j }) => { window.__turn.dz = dz; window.__turn.dx = sh * Math.sin(j * 2.1 + dz); window.__turn.ty = 12 + sh * 0.6 * Math.cos(j * 1.7 + dz); }, { dz, sh, j }); await frame();
+      const fx = PASS.fx ? PASS.fx(tag, Math.max(0, ff)) : null;
+      await p.evaluate(({ dz, sh, j, ty, fx }) => { window.__turn.dz = dz; window.__turn.dx = sh * Math.sin(j * 2.1 + dz); window.__turn.ty = ty + sh * 0.6 * Math.cos(j * 1.7 + dz); window.__fx = fx; }, { dz, sh, j, ty: PASS.ty, fx }); await frame();
       const g = await grab(); info = g.info; if (!acc) acc = new Float32Array(g.data.length); for (let q = 0; q < acc.length; q++) acc[q] += g.data[q];
     }
     const buf = Buffer.alloc(acc.length); for (let q = 0; q < acc.length; q++) buf[q] = Math.round(acc[q] / PASS.sub);
@@ -64,6 +66,7 @@ for (const s of SHOTS) {
     console.log(s.id, "pass", JSON.stringify(box));
     continue;
   }
+  await p.evaluate(() => { window.__fx = null; });
   await setVeh(p, s.ride);
   await aim(p, { ...TURN, a: s.a[0], ty: Array.isArray(s.ty) ? s.ty[0] : s.ty ?? TURN.ty, dz: 0, dx: 0, pr: 4 }); await p.waitForTimeout(900);
   let box = null;
@@ -71,6 +74,9 @@ for (const s of SHOTS) {
     const u = n > 1 ? i / (n - 1) : 0, a = s.a[0] + (s.a[1] - s.a[0]) * (s.kind === "follow" ? u * u * (3 - 2 * u) : u);
     // (ty: a number or [from, to]; bob: a climb and a dive in frame, for the plane)
     const ty0 = Array.isArray(s.ty) ? s.ty[0] + (s.ty[1] - s.ty[0]) * (u * u * (3 - 2 * u)) : s.ty ?? TURN.ty, ty = s.bob ? ty0 + s.bob * Math.sin(u * Math.PI * 2) : ty0;
+    // (E4: the Patrol following drives in place: its wheels, a bob, its beacons)
+    const fx = s.beacon ? { spin: -i * 3.5, lift: 0.12 * Math.sin(i * 2.3), pitch: 0.005 * Math.sin(i * 1.7), beacon: Math.floor((i * 1000) / 30 / 190) % 2 } : null;
+    await p.evaluate((fx) => { window.__fx = fx; }, fx);
     await p.evaluate(({ a, i, follow, ty }) => { window.__turn.a = a; window.__turn.ty = ty; if (follow) { window.__turn.dx = 0.5 * Math.sin(i * 0.21); window.__turn.ty = ty + 0.35 * Math.sin(i * 0.37); } }, { a, i, follow: s.kind === "follow", ty }); await frame();
     if (i === Math.floor(n / 2)) box = await boxNow();
     await p.screenshot({ path: name(s.t[0] + i) });

@@ -1,0 +1,218 @@
+{
+ "id": "v4-0-opening",
+ "story": "E",
+ "beat": "Today you’re / a [driver.] (the 1300) -> [pilot.] (the Cropduster, yellow) -> [pilot.] red (the F1: the colour only, on the cut)",
+ "shots": [
+  "t1",
+  "t2",
+  "t3"
+ ],
+ "scene": "paper",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "e4o",
+    "place": "tl",
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "e4o-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "Today you’re",
+      "x": 80,
+      "baseline": 383.1,
+      "width": 640.6,
+      "box": {
+       "x": 80,
+       "y": 294.9,
+       "w": 640.6,
+       "h": 116
+      }
+     },
+     {
+      "kind": "line",
+      "id": "e4o-l2",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "a",
+      "x": 80,
+      "baseline": 522.3,
+      "width": 64.1,
+      "box": {
+       "x": 80,
+       "y": 434.1,
+       "w": 488.8,
+       "h": 116
+      },
+      "pill": {
+       "id": "e4o-l2-pill",
+       "fill": "#FED012",
+       "fills": [
+        "#FED012",
+        "#FED012",
+        "#D7362C"
+       ],
+       "ink": "#0D0C09",
+       "left": 172,
+       "cy": 481.1,
+       "h": 134.6,
+       "keyline": 5.2,
+       "shadow": [
+        3.5,
+        7.5
+       ],
+       "tilt": -3,
+       "wordX": 211.4,
+       "states": [
+        {
+         "word": "driver.",
+         "wordW": 318,
+         "w": 396.8,
+         "cx": 370.4
+        },
+        {
+         "word": "pilot.",
+         "wordW": 252.1,
+         "w": 330.9,
+         "cx": 337.4
+        },
+        {
+         "word": "pilot.",
+         "wordW": 252.1,
+         "w": 330.9,
+         "cx": 337.4
+        }
+       ]
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "driver"
+  },
+  {
+   "index": 1,
+   "label": "pilot"
+  },
+  {
+   "index": 2,
+   "label": "pilot-3"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "t1+2",
+   "lineStagger": 4,
+   "pillIn": "t1+10",
+   "swaps": [
+    "t2+3",
+    "t3+0"
+   ],
+   "out": "t3.end-8"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "E4": {
+    "clock": "E4",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "e4o-l1",
+      "text": "Today you’re",
+      "in": 2,
+      "out": 105,
+      "motion": "lineIn / lineOut",
+      "hold": 91
+     },
+     {
+      "id": "e4o-l2",
+      "text": "a",
+      "in": 6,
+      "out": 106,
+      "motion": "lineIn / lineOut",
+      "hold": 88
+     },
+     {
+      "id": "e4o-l2-pill-0",
+      "word": "driver.",
+      "in": 10,
+      "out": 39,
+      "motion": "pillIn",
+      "hold": 29
+     },
+     {
+      "id": "e4o-l2-pill-1",
+      "word": "pilot.",
+      "in": 39,
+      "out": 78,
+      "motion": "pillSwap",
+      "hold": 39
+     },
+     {
+      "id": "e4o-l2-pill-2",
+      "word": "pilot.",
+      "in": 78,
+      "out": 106,
+      "motion": "pillSwap",
+      "hold": 28
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "t1+26"
+  },
+  {
+   "state": 1,
+   "at": "t2+30"
+  },
+  {
+   "state": 2,
+   "at": "t3+24"
+  }
+ ],
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/v4-0-opening-driver.svg",
+   "svg/outlined/v4-0-opening-pilot.svg",
+   "svg/outlined/v4-0-opening-pilot-3.svg"
+  ],
+  "live": [
+   "svg/live/v4-0-opening-driver.svg",
+   "svg/live/v4-0-opening-pilot.svg",
+   "svg/live/v4-0-opening-pilot-3.svg"
+  ]
+ }
+}

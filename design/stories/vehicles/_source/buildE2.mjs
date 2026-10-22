@@ -10,7 +10,7 @@ import { Comp, group, fill, gfill, rgb, E, prop, path as shp, ellipse } from "..
 import { loadCards, drawCard } from "../../cards/cards.mjs";
 import { CLOCKS } from "../../cards/_source/defs.mjs";
 // (ST=e3: E3's clock, cards (v3-) and rides; the same petals)
-const ST = process.env.ST || "e2", { F } = await import(ST === "e3" ? "./shotsE3.mjs" : "./shotsE2.mjs"), CK = ST === "e3" ? "E3" : "E2", PRE = ST === "e3" ? "v3-" : "v2-";
+const ST = process.env.ST || "e2", { F } = await import(`./shots${ST.toUpperCase()}.mjs`), CK = ST.toUpperCase(), PRE = "v" + ST.slice(1) + "-";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const K = await loadCards();

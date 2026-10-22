@@ -72,7 +72,17 @@ export async function aim(p, o) {
           }
         }
         // the map's ink line: the app's own OutlineEffect (window.__noPost makes the app hand us the plain draw)
-        if (hid) { try { if (window.__outline && window.__turn.outline !== false) { window.__inOutline = true; try { return window.__outline.render(sc, cam); } finally { window.__inOutline = false; } } return orig(sc, cam); } finally { window.__isoShow(hid); } }
+        // (E4: window.__fx: the ride driving in place: its wheels' spin, a pitch and a lift of the body, the Patrol's
+        // beacons; put back after the draw)
+        let fxBack = null; const FX = window.__fx, V0 = window.__vehG && window.__vehG();
+        if (hid && FX && V0) {
+          const g = V0.group; fxBack = { rx: g.rotation.x, y: g.position.y };
+          if (FX.spin != null) (V0.wheels || []).forEach((w) => w.children.forEach((c) => (c.rotation.x = FX.spin)));
+          g.rotation.x += FX.pitch || 0; g.position.y += FX.lift || 0; g.updateMatrixWorld(true);
+          if (V0.beacon && FX.beacon != null) { const on = FX.beacon; V0.beacon.redM.emissiveIntensity = on === 0 ? 4 : 0.2; V0.beacon.blueM.emissiveIntensity = on === 1 ? 4 : 0.2; V0.beacon.lr.intensity = on === 0 ? 6 : 0; V0.beacon.lb.intensity = on === 1 ? 6 : 0; }
+        }
+        const fxRestore = () => { if (fxBack) { const g = V0.group; g.rotation.x = fxBack.rx; g.position.y = fxBack.y; g.updateMatrixWorld(true); } };
+        if (hid) { try { if (window.__outline && window.__turn.outline !== false) { window.__inOutline = true; try { return window.__outline.render(sc, cam); } finally { window.__inOutline = false; } } return orig(sc, cam); } finally { window.__isoShow(hid); fxRestore(); } }
         return orig(sc, cam);
       };
       r.__wrapped = true;
