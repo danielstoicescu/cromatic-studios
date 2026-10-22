@@ -22,6 +22,7 @@ const bgOf = (f) => {
   }
   return null;
 };
+const bgImg = async (f) => sharp(f).resize(1080, 1920).removeAlpha();
 const br = await pw.chromium.launch({ args: ["--use-angle=metal", "--ignore-gpu-blocklist"] });
 const p = await br.newPage({ viewport: { width: 1080, height: 1920 } });
 p.on("pageerror", (e) => console.log("pageerror", e.message));
@@ -30,7 +31,7 @@ await p.waitForFunction(() => window.ready, null, { timeout: 180000 });
 await p.waitForTimeout(500);
 const t0 = Date.now(); let n = 0;
 // (PEEK=f,f,...: only those story frames (60 fps), as JPGs in OUT, for a look)
-if (process.env.PEEK) { for (const f of process.env.PEEK.split(",").map(Number)) { await p.evaluate((f) => window.go(f), f); const top = await p.screenshot({ omitBackground: true }), bg = bgOf(f); await (bg ? sharp(bg).resize(1080, 1920).removeAlpha().composite([{ input: top }]) : sharp(top).flatten({ background: "#000000" })).jpeg({ quality: 85 }).toFile(path.join(OUT, `peek-${f}.jpg`)); } await br.close(); process.exit(0); }
+if (process.env.PEEK) { for (const f of process.env.PEEK.split(",").map(Number)) { await p.evaluate((f) => window.go(f), f); const top = await p.screenshot({ omitBackground: true }), bg = bgOf(f); await (bg ? (await bgImg(bg)).composite([{ input: top }]) : sharp(top).flatten({ background: "#000000" })).jpeg({ quality: 85 }).toFile(path.join(OUT, `peek-${f}.jpg`)); } await br.close(); process.exit(0); }
 // (SHEET=1: only the contact sheet's frames, then the sheet: a look before the whole render)
 const SHEET = !!process.env.SHEET;
 const PICKS = (C, nn) => [["Our portfolio", C.site, 0.7], ["The map, from high", C.bird, 0.3], ["The cards", C.bird, 0.62], ["Down to Steam", C.zoom, 0.55], ["At Steam", C.zoom, 0.99], ["Knock knock.", C.steam, 0.62], ["Come in.", [790, 850], 0.8], ["The green T-shirt", [850, 1140], 0.2], ["The brand manual", [850, 1140], 0.45], ["Ne știm de la Steam", [850, 1140], 0.97], ["Closed into its pill", [1140, 1176], 0.6], ["Drive.", C.r1, 0.6], ["Snoop.", C.r2, 0.6], ["Overtake.", C.r3, 0.6], ["Pass Go. (the TAC pop-up)", C.r4, 0.6], ["Fly high.", C.r5, 0.6], ["Sip through.", C.sip, 0.6], ["Dive.", C.r9, 0.6], ["Avoid being pulled over.", C.r8, 0.6], ["See you around.", C.fount, 0.6], ["Black, the pill", C.end, 0.9]].map(([l, [a, b], u]) => [l, Math.min(nn - 1, Math.round((a + (b - a) * u) / 2))]);
@@ -39,7 +40,7 @@ for (let f = 0; f < F; f += 2, n++) {
   if (want && !want.has(n)) continue;
   await p.evaluate((f) => window.go(f), f);
   const top = await p.screenshot({ omitBackground: true }), bg = bgOf(f), o = path.join(TMP, `f${String(n).padStart(5, "0")}.png`);
-  if (bg) await sharp(bg).resize(1080, 1920).removeAlpha().composite([{ input: top }]).png({ compressionLevel: 1 }).toFile(o);
+  if (bg) await (await bgImg(bg)).composite([{ input: top }]).png({ compressionLevel: 1 }).toFile(o);
   else await sharp(top).flatten({ background: "#000000" }).png({ compressionLevel: 1 }).toFile(o);
 }
 await br.close();

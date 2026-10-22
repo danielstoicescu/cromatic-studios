@@ -167,18 +167,21 @@ function story() {
   // ---------- 4c (D5) · the page closes into its pill (the site's own close: the opening backwards), onto the street.
   // Its last frame (the real scroll under the Lottie stops on "Ne știm de la Steam") is the picture the pill closes on.
   {
-    const ui0 = S["ui2-en"], [bx, by, bw, bh] = ui0.btnPx, R0 = bh / 2, kk = 3 * pageDPR, L1 = -(R0 + kk + 6), R1 = W + R0 + kk + 6, T3 = -48 * pageDPR, B2 = H + 48 * pageDPR;
+    // (into a pill in the middle of the frame: the place card that held the pill is gone by now, so the pill is drawn
+    // where the eye is, at the size of the card's button)
+    const ui0 = S["ui2-en"], bw = ui0.btnPx[2], bh = ui0.btnPx[3], bx = (W - bw) / 2, by = H * 0.6 - bh / 2, R0 = bh / 2, kk = 3 * pageDPR, L1 = -(R0 + kk + 40), R1 = W + R0 + kk + 40, T3 = -48 * pageDPR - 40, B2 = H + 48 * pageDPR + 40;
     const d1 = Math.max(bx - L1, R1 - (bx + bw)), d2 = Math.max(by - T3, B2 - (by + bh)), cut = d1 / (d1 + d2);
     const edges = (u) => u <= cut ? { l: bx + (L1 - bx) * (u / cut), r: bx + bw + (R1 - bx - bw) * (u / cut), t: by, b: by + bh } : (() => { const f = (u - cut) / (1 - cut); return { l: L1, r: R1, t: by + (T3 - by) * f, b: by + bh + (B2 - by - bh) * f }; })();
     const [c0, c1] = CLOSE, ECL = (x) => 1 - (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), uOf = (t) => ECL(clamp((t - c0) / (c1 - c0)));
     const pk = []; for (let t = c0; t <= c1; t++) { const e = edges(uOf(t)); pk.push([t, roundRect((e.l + e.r) / 2, (e.t + e.b) / 2, Math.max(2, e.r - e.l), Math.max(2, e.b - e.t), R0), E.linear]); }
     pk[pk.length - 1] = [pk[pk.length - 1][0], pk[pk.length - 1][1]];
     const ringStops = [[0, "#F65342"], [0.22, "#FED012"], [0.45, "#28C840"], [0.68, "#119BFE"], [0.88, "#B098C8"], [1, "#F65342"]];
-    const gs = { ty: "gs", o: prop([[c0, 0, E.linear], [c0 + 10, 100, E.hold], [c1 - 4, 100, E.linear], [c1, 0]]), w: prop(kk * 2), g: { p: ringStops.length, k: { a: 0, k: ringStops.flatMap(([q, h]) => [q, ...rgb(h).slice(0, 3)]) } }, s: prop([0, H / 2]), e: prop([W, H / 2]), t: 1, lc: 2, lj: 2, ml: 4, bm: 0, h: prop(0), a: prop(0), nm: "ring" };
+    // (the ring only once the page is a pill-sized band: never on the frame's edge)
+    const gs = { ty: "gs", o: prop([[c0, 0, E.hold], [c0 + Math.round((c1 - c0) * 0.45), 0, E.linear], [c0 + Math.round((c1 - c0) * 0.6), 100, E.hold], [c1 - 3, 100, E.linear], [c1, 0]]), w: prop(kk * 2), g: { p: ringStops.length, k: { a: 0, k: ringStops.flatMap(([q, h]) => [q, ...rgb(h).slice(0, 3)]) } }, s: prop([0, H / 2]), e: prop([W, H / 2]), t: 1, lc: 2, lj: 2, ml: 4, bm: 0, h: prop(0), a: prop(0), nm: "ring" };
     Cm.shape("close · ring", [group("ring", [shp(pk), gs])], { ip: c0, op: c1 + 1 });
     Cm.shape("close · matte", [group("pill", [shp(pk), fill(rgb("#ffffff"))])], { ip: c0, op: c1 + 1, td: true });
     const pg = img("d5-page-last", null, { ip: c0, op: c1 + 1, nm: "close · the page" }); pg.tt = 1;
-    pg.ks.o = prop(bake(c0, c1, (t) => ({ o: 100 * clamp(uOf(t) / 0.25) })).o);
+    pg.ks.o = prop(bake(c0, c1, (t) => ({ o: 100 * clamp(uOf(t) / 0.08) })).o);
   }
   flicker(Cm, { amt: 3 });
   vignette(Cm, { a: 0.28, inner: 0.6, op: T2.end[0] + 30 });
