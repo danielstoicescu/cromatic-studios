@@ -108,3 +108,10 @@ body.photo-on canvas.gl { touch-action: none; }
 .map-top .map-photo:hover { background: var(--accent, #FED012); }
 @media (max-width: 1180px) { .map-top .map-photo b { display: none; } .map-top .map-photo { padding: 0 8px !important; } }
 @media (max-width: 719px) { .map-top .map-photo { height: 38px; } }
+/* the phone's sheet folded to its tabs (the frame takes the screen), the shutter just over it */
+.pm-touchui.pm-fold .pm-pane { display: none; }
+.pm-touchui.pm-fold .pm-tabs { margin-bottom: 0; }
+.pm-touchui.pm-fold .pm-bottom { top: auto; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+.pm-touchui .pm-sheet .pm-btn b { display: inline; }
+.pm-touchui .pm-sheet .pm-btn { height: 44px; padding: 0 18px; }
+.pm-touchui .pm-sheet img { max-height: calc(100vh - 210px); }

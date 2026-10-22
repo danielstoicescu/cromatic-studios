@@ -41864,7 +41864,7 @@ void main(){
       function photoMode() {
         if (photo || typeof window.czPhoto !== "function") return photo;
         photo = window.czPhoto({
-          camera, renderer,
+          camera, renderer, scene,
           car: () => (veh && veh.group && veh.group.visible !== false ? veh.group : null),
           canEnter: () => mapMode && !siteMode && !!veh && !document.body.classList.contains("kz-boot"),
           warp: (v) => warpV(v), unwarp: (v) => unwarpV(v), footprints: () => FOOTPRINTS.concat(TREE_BLOBS.map((t) => ({ ...t, tree: true }))), // (buildings: never between the camera and the car; trees: never round the camera)

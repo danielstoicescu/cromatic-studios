@@ -37,7 +37,7 @@
     let on = false, R0 = 30, T = new V3(), carY = 0, heading = 0, near = [], saved = null, fmt = FORMATS[0], tilt = true;
     const shift = { x: 0, y: 0 };
     let effDist = 3, lastT = 0, dragging = false, worldBusy = false, world0 = 0, lastShot = null, panelHidden = false, needSnap = true;
-    const DEF = () => ({ yaw: 0.72, pitch: 0.2, dist: 3.1, fov: 34, roll: 0 });
+    const DEF = () => ({ yaw: 0.72, pitch: 0.2, dist: coarse() ? 4.4 : 3.1, fov: 34, roll: 0 });
 
     // ---------- the car: where it stands, its size, which way it faces ----------
     function measureCar() {
@@ -62,8 +62,48 @@
       // the buildings that could stand between the camera and the car (logical footprints near it)
       const reach = R0 * LIM.dist[1] * 1.3 + 60;
       near = app.footprints().filter((b) => Math.hypot(b.x - c.x, b.z - c.z) < reach + Math.max(b.w, b.d));
+      collectNear(c, reach);
       return true;
     }
+    // ---- nothing stands round the lens: the instanced things near the car (trees, lamps, benches, bushes) whose
+    // bounds the camera enters are folded away while it is there, and put back when it leaves (or on exit)
+    let inst = [];
+    function collectNear(c, reach) {
+      restoreAll(); inst = [];
+      const m4 = new camera.matrixWorld.constructor(), p = new V3();
+      app.scene.traverse((o) => {
+        if (!o.isInstancedMesh || !o.visible || !o.geometry || o.count < 2) return;
+        if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+        const bs = o.geometry.boundingSphere, arr = o.instanceMatrix.array;
+        for (let i = 0; i < o.count; i++) {
+          m4.fromArray(arr, i * 16).premultiply(o.matrixWorld);
+          const sc = Math.cbrt(Math.abs(m4.determinant())); if (!(sc > 0)) continue;
+          p.copy(bs.center).applyMatrix4(m4);
+          if (Math.hypot(p.x - c.x, p.z - c.z) > reach) continue;
+          if (p.y < 3 || bs.radius * sc > 70) continue; // (only standing things: no road tiles, no big blocks)
+          inst.push({ o, i, c: p.clone(), r: bs.radius * sc, saved: null });
+        }
+      });
+    }
+    const _cl = new V3(), _ct = new V3(), _sg = new V3(), _w = new V3();
+    // (and whatever stands between the lens and the car: a tree's crown in front of the ride is folded away, the way a
+    // game fades what hides its hero; the buildings never get there: the camera comes in front of them instead)
+    function segDist(pt) { _sg.subVectors(_ct, _cl); const L2 = _sg.lengthSq() || 1; const u = Math.max(0, Math.min(1, _w.subVectors(pt, _cl).dot(_sg) / L2)); return _w.copy(_cl).addScaledVector(_sg, u).distanceTo(pt); }
+    function clearLens() {
+      _cl.copy(camera.position); app.unwarp(_cl); _ct.copy(T); app.unwarp(_ct);
+      const touched = new Set();
+      const fold = new Set();
+      for (const it of inst) if (_cl.distanceTo(it.c) < it.r * 0.95 + 2 || segDist(it.c) < it.r * 0.72) fold.add(it);
+      // (a tree goes whole: its trunk with its crown, whatever instanced mesh each is drawn by)
+      if (fold.size) for (const it of inst) if (!fold.has(it)) for (const f of fold) if (Math.hypot(it.c.x - f.c.x, it.c.z - f.c.z) < 4) { fold.add(it); break; }
+      for (const it of inst) {
+        const inside = fold.has(it);
+        if (inside && !it.saved) { const a = it.o.instanceMatrix.array; it.saved = a.slice(it.i * 16, it.i * 16 + 16); for (let k = 0; k < 16; k++) a[it.i * 16 + k] = 0; touched.add(it.o); }
+        else if (!inside && it.saved) { it.o.instanceMatrix.array.set(it.saved, it.i * 16); it.saved = null; touched.add(it.o); }
+      }
+      for (const o of touched) o.instanceMatrix.needsUpdate = true;
+    }
+    function restoreAll() { const touched = new Set(); for (const it of inst) if (it.saved) { it.o.instanceMatrix.array.set(it.saved, it.i * 16); it.saved = null; touched.add(it.o); } for (const o of touched) o.instanceMatrix.needsUpdate = true; }
     // is a point (bent coordinates) inside a building, or under the street?
     const _u = new V3();
     function blocked(q, margin, trees) {
@@ -71,10 +111,12 @@
       _u.copy(q); app.unwarp(_u);
       for (const b of near) {
         if (b.tree && !trees) continue;
-        if (_u.y > b.h + margin) continue;
+        // (a tree's footprint is its shadow's: the crown above it is wider and taller)
+        const k = b.tree ? 1.55 : 1, hk = b.tree ? 1.7 : 1;
+        if (_u.y > b.h * hk + margin) continue;
         const dx = _u.x - b.x, dz = _u.z - b.z, c = Math.cos(b.ang || 0), s = Math.sin(b.ang || 0);
         const lx = dx * c - dz * s, lz = dx * s + dz * c;
-        if (Math.abs(lx) < b.w / 2 + margin && Math.abs(lz) < b.d / 2 + margin) return true;
+        if (Math.abs(lx) < (b.w * k) / 2 + margin && Math.abs(lz) < (b.d * k) / 2 + margin) return true;
       }
       return false;
     }
@@ -91,8 +133,7 @@
         if (blocked(_q, margin, false)) { lim = Math.max(LIM.dist[0] * 0.92, ok - 0.06); break; }
         ok = d;
       }
-      for (let d = lim; d > LIM.dist[0]; d -= 0.05) { _q.copy(T).addScaledVector(dir, d * R0); if (!blocked(_q, margin, true)) return d; }
-      return Math.max(LIM.dist[0] * 0.92, Math.min(lim, LIM.dist[0]));
+      return lim; // (trees round the lens are folded away instead: clearLens)
     }
     const dirOf = (yaw, pitch) => { const a = heading + Math.PI + yaw; return new V3(Math.sin(a) * Math.cos(pitch), Math.sin(pitch), Math.cos(a) * Math.cos(pitch)); };
 
@@ -125,6 +166,7 @@
       const gx = innerWidth / 2 - (guide.x + guide.w / 2), gy = innerHeight / 2 - (guide.y + guide.h / 2), ke = 1 - Math.exp(-dt * 9);
       shift.x = lerp(shift.x, gx, ke); shift.y = lerp(shift.y, gy, ke);
       place(camera, dir, effDist, P.fov, P.roll);
+      clearLens();
       syncSliders();
     }
     function place(cam, dir, d, fov, roll) {
@@ -221,7 +263,14 @@
     }
     $(".pm-reset").addEventListener("click", () => { Object.assign(G, DEF()); VEL.yaw = VEL.pitch = 0; live("Camera reset"); });
     $(".pm-tilt").addEventListener("change", (e) => { tilt = e.target.checked; app.setTilt(tilt ? 1 : 0); });
-    for (const t of $$(".pm-tab")) t.addEventListener("click", () => { for (const u of $$(".pm-tab")) u.setAttribute("aria-selected", String(u === t)); for (const p of $$(".pm-pane")) p.hidden = p.dataset.pane !== t.dataset.tab; });
+    for (const t of $$(".pm-tab")) t.addEventListener("click", () => {
+      const touch = root.classList.contains("pm-touchui"), was = t.getAttribute("aria-selected") === "true" && !root.classList.contains("pm-fold");
+      if (touch && was) { setFold(true); return; }
+      for (const u of $$(".pm-tab")) u.setAttribute("aria-selected", String(u === t)); for (const p of $$(".pm-pane")) p.hidden = p.dataset.pane !== t.dataset.tab;
+      if (touch) setFold(false);
+    });
+    // (on a phone the sheet starts folded to its tabs: the frame gets the screen; a tab unfolds it)
+    function setFold(v) { root.classList.toggle("pm-fold", v); for (const t of $$(".pm-tab")) t.setAttribute("aria-expanded", String(!v && t.getAttribute("aria-selected") === "true")); requestAnimationFrame(layoutGuide); }
     for (const b of $$(".pm-chip")) b.addEventListener("click", () => setFormat(b.dataset.f));
     function setFormat(id) { fmt = FORMATS.find((f) => f.id === id) || FORMATS[0]; for (const b of $$(".pm-chip")) b.setAttribute("aria-checked", String(b.dataset.f === fmt.id)); layoutGuide(); live(`Format ${fmt.label}, ${fmt.hint}`); }
     for (const b of $$(".pm-world")) b.addEventListener("click", () => setWorld(+b.dataset.i));
@@ -407,7 +456,7 @@
       { let d = G.yaw - P.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); G.yaw = P.yaw + d; }
       effDist = P.dist; needSnap = false; shift.x = shift.y = 0;
       app.onEnter(); app.setTilt(tilt ? 1 : 0);
-      document.body.classList.add("photo-on"); root.hidden = false; root.classList.toggle("pm-touchui", coarse());
+      document.body.classList.add("photo-on"); root.hidden = false; root.classList.toggle("pm-touchui", coarse()); root.classList.toggle("pm-fold", coarse());
       setFormat(coarse() ? "9:16" : fmt.id); markWorld(); layoutGuide(); setClean(false);
       keyHook = { down: onKey, up: onKeyUp }; addEventListener("resize", layoutGuide);
       setTimeout(() => $(".pm-shutter").focus({ preventScroll: true }), 50);
@@ -416,7 +465,7 @@
     }
     async function exit() {
       if (!on) return;
-      on = false; closeSheet(); held.clear(); pts.clear(); dragging = false;
+      on = false; closeSheet(); held.clear(); pts.clear(); dragging = false; restoreAll();
       keyHook = null; removeEventListener("resize", layoutGuide);
       root.hidden = true; document.body.classList.remove("photo-on");
       camera.clearViewOffset(); camera.aspect = innerWidth / innerHeight;
