@@ -7,7 +7,7 @@ import { execFileSync } from "child_process";
 import pw from "/Users/daniel.stoic/node_modules/playwright/index.mjs";
 import sharp from "/Users/daniel.stoic/cromatic-drive/node_modules/sharp/lib/index.js";
 // (STORY=e2: E2's shots, cards and names)
-const ST = process.env.STORY || "e1", { SHOTS, F } = await import(ST === "e5" || ST === "e6" ? "./shotsE5.mjs" : ST === "e4" ? "./shotsE4.mjs" : ST === "e3" ? "./shotsE3.mjs" : ST === "e2" ? "./shotsE2.mjs" : "./shots.mjs");
+const ST = process.env.STORY || "e1", { SHOTS, F } = await import(ST === "e5" || ST === "e6" || ST === "e7" ? "./shotsE5.mjs" : ST === "e4" ? "./shotsE4.mjs" : ST === "e3" ? "./shotsE3.mjs" : ST === "e2" ? "./shotsE2.mjs" : "./shots.mjs");
 const FF = "/Users/daniel.stoic/Library/Python/3.9/lib/python/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1";
 const [RIDES, OUT, posterAt = "520"] = process.argv.slice(2);
 const TMP = path.join(OUT, "_frames"); fs.rmSync(TMP, { recursive: true, force: true }); fs.mkdirSync(TMP, { recursive: true });

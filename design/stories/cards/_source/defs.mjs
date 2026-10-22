@@ -158,7 +158,8 @@ function STORY_E4() {
 }
 
 CLOCKS.E5 = E5_CLOCK;
-CLOCKS.E6 = E5_CLOCK; // (E6: E5's clock and cards over Radu's re-rendered chase: v6-, rides-e6.json)
+CLOCKS.E6 = E5_CLOCK;
+CLOCKS.E7 = E5_CLOCK; // (E7: the same, over Radu's chase v3: the Patrol facing straight from ~56) // (E6: E5's clock and cards over Radu's re-rendered chase: v6-, rides-e6.json)
 function STORY_E5(n = 5) {
   const c = E2_COPY, split = (t) => t.split(" / ");
   let boxes = {}; try { boxes = Object.fromEntries(JSON.parse(fs.readFileSync(new URL(`../../vehicles/_source/rides-e${n}.json`, import.meta.url), "utf8")).map((x) => [x.id, x.box])); } catch {}
@@ -379,7 +380,8 @@ export const CARDS = [
   ...STORY_E3(),
   ...STORY_E4(),
   ...STORY_E5(),
-  ...STORY_E5(6)
+  ...STORY_E5(6),
+  ...STORY_E5(7)
 ];
 
 
