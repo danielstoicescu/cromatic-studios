@@ -19,13 +19,16 @@ import { ECHO } from "./specs159-echo.mjs"; // r159: Echo School, a feed of its 
 import { DARYA, TRACY } from "./specs179-core.mjs"; // r179: Darya Hope and Tracy J, from their Core decks
 import { LITORSAL, LACALUT } from "./specs260-zdrovit.mjs"; // TASK-026: two brands from the Zdrovit yard
 import { MAXIMAG } from "./specs264-maximag.mjs"; // TASK-064: Maximag, out of the Lacalut page onto its own
+import { ZDROVIT_WEB, EXTEND } from "./specs270-zdrovit-web.mjs"; // TASK-076: the Zdrovit brands' product sites, Aspasia first
+import { ZDROVIT_WEB_B } from "./specs271-zdrovit-web-b.mjs"; // TASK-076, second half (Mira): Prevomit, Slaboficat, Supramax, Vizik, Vizimel, OchiSan
 import { existsSync } from "node:fs";
 // r129: rebuilt pages replace the older spec with the same slug
 const OVERRIDES = [UNCHAIN];
 try { const p = new URL("./specs129-craft.mjs", import.meta.url); if (existsSync(p)) OVERRIDES.push((await import(p)).CRAFT); } catch (e) { console.warn("craft spec", e.message); }
 // r135: Infinity Capital, rebuilt from the deck's Direction 2 (slides 30-46), with its own animated blocks
 try { const p = new URL("./specs135-infinity.mjs", import.meta.url); if (existsSync(p)) OVERRIDES.push((await import(p)).INFINITY); } catch (e) { console.warn("infinity spec", e.message); }
-const PAGES = [...PAGES0, ...PAGES128, ...STUDIO_PAGES, TOSKANI, VENEVO, PRINTOTECA, STICKER, ECHO, DARYA, TRACY, LITORSAL, LACALUT, MAXIMAG].map((p) => OVERRIDES.find((o) => o && o.slug === p.slug) || p);
+const PAGES = [...PAGES0, ...PAGES128, ...STUDIO_PAGES, TOSKANI, VENEVO, PRINTOTECA, STICKER, ECHO, DARYA, TRACY, LITORSAL, LACALUT, MAXIMAG, ...ZDROVIT_WEB, ...ZDROVIT_WEB_B].map((p) => OVERRIDES.find((o) => o && o.slug === p.slug) || p)
+  .map((p) => (EXTEND[p.slug] ? EXTEND[p.slug](p) : p)); // TASK-076: a chapter added to an existing page (Help 4 Brain's landing page)
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..", "..", "..");
@@ -85,7 +88,7 @@ function fig(it, { cls = "", eager = false } = {}) {
   <div class="frame${fit}"${bg}${czl}>${inner(it, eager)}</div>${it.cap ? `\n  <figcaption>${it.cap}</figcaption>` : ""}
 </figure>`;
 }
-const titlePills = (words) => `<h4>${words.map((w, i) => `<span class="pill" style="--rot:${i % 2 ? 4 + ((w.length * 3) % 8) : -5 - ((w.length * 2) % 7)}deg">${w}</span>`).join("")}</h4>`;
+const titlePills = (words) => `<h4>${words.map((w, i) => `<span class="pill" style="--rot:${i % 2 ? 4 + ((w.length * 3) % 8) : -5 - ((w.length * 2) % 7)}deg">${w}</span>`).join(" ")}</h4>`; // (a space between the pills: flex items, so it is not drawn, but the title reads as words, not "Thewebsite")
 let railN = 0;
 function row(items, cap, wrap = false) {
   // on phones a wide row would shrink to slivers: landscape items take a line each, the rest go two by two
@@ -381,7 +384,7 @@ ${pr.media.map(block).join("\n")}
     h.push(`  <section class="card chapter chapter--${pl.cls}" id="${cid}" aria-label="${pl.aria}">
     <div class="chapter-side">
       <div>
-        <span class="pill-title"><span class="pill pill--${pl.cls}">${words[0]}</span><span class="pill pill--accent">${words[1]}</span></span>
+        <span class="pill-title"><span class="pill pill--${pl.cls}">${words[0]}</span> <span class="pill pill--accent">${words[1]}</span></span>
         <p class="chapter-text">${c.text}</p>
         <ul class="deliverables">
 ${c.deliverables.map((d) => `          <li>${d}</li>`).join("\n")}

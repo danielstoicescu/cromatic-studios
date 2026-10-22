@@ -1,7 +1,7 @@
 // Renders the lo-fi website: /site/ (home) and /work/<slug>/ (case pages). Plain HTML, a small
 // stylesheet and a few lines of script; no WebGL. `A(name)` resolves an asset variable from
 // src/app.js to { src, w, h } (src is root-relative, e.g. /assets/abc.png).
-import { NAV, CHAPTERS, SERVICES, PROJECTS, STREETS, CLIENT_BADGES, FRIENDS, CREW, CREW_INFO, CREW_COLORS, CREW_PHOTOS, CREW_FACE_VARS, FORM, CASES, CANVASES, OFFICES } from "./data.mjs";
+import { NAV, CHAPTERS, SERVICES, PROJECTS, ZDROVIT_BRANDS, STREETS, CLIENT_BADGES, FRIENDS, CREW, CREW_INFO, CREW_COLORS, CREW_PHOTOS, CREW_FACE_VARS, FORM, CASES, CANVASES, OFFICES } from "./data.mjs";
 import { STUDIO, FAQ, studioNode } from "../build/seo.mjs";
 import { SAME_AS, clip } from "../build/seo-pages.mjs";
 const HUBS = await import("./hubs.mjs").catch(() => ({}));
@@ -152,7 +152,16 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   // sizes that tile six columns: a big square with two wides beside it, a tall one with two longs, a row of
   // three small, a long and a small, two halves; then again
   const SIZES = ["xl", "m", "m", "t", "w", "w", "s", "s", "s", "w", "s", "m", "m"];
-  const MAP_ID = { "Two Min Lab": "lab", "Steam Coffee Shop": "steam", "Zdrovit": "zdrovit", "Lacalut": "y-0", "Litorsal": "y-5", "Maximag": "y-6" };
+  const MAP_ID = { "Two Min Lab": "lab", "Steam Coffee Shop": "steam", "Zdrovit": "zdrovit" };
+  // TASK-074 (Daniel, 21 Oct): every Zdrovit brand is on the Zdrovit card only (no portfolio card of its own): one row of
+  // all of them, under Medical Avenue; a brand with a case page is red and links to it (the map's card does the same)
+  const zdPages = () => ZDROVIT_BRANDS.filter((b) => b.page).map((b) => b.page);
+  const zdRow = () => {
+    const list = ZDROVIT_BRANDS.slice().sort((a, b) => (a.page ? 0 : 1) - (b.page ? 0 : 1) || a.name.localeCompare(b.name));
+    if (!list.length) return "";
+    const st = "--bc:#cfcdc8;--bt:#3d3c39", stp = "--bc:#e30613;--bt:#ffffff;text-decoration:none";
+    return `<div class="psmall"><span class="mono ps-h">In Zdrovit · Beauty &amp; Supplement Park</span>${list.map((b) => b.page ? `<a class="ps" href="/work/${b.page}/" style="${stp}"><b>${esc(b.name)}</b><i class="mono">${esc(b.line)}</i><i class="mono">Case study →</i></a>` : `<span class="ps" style="${st}"><b>${esc(b.name)}</b><i class="mono">${esc(b.line)}</i></span>`).join("")}</div>`;
+  };
   const placeId = (name) => "w-" + name.replace(/\W+/g, "").toLowerCase();
   const coverFor = (p, covers) => (MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]]) || covers["place:" + placeId(p.name)] || (p.page && covers[p.page]) || null;
   const bentoCard = (p, i, covers) => {
@@ -174,12 +183,12 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     const list = PROJECTS.filter((p) => !p.small && (DOMAIN_OF[p.name] || "brand") === d.k)
       .map((p) => ({ p, w: (p.page ? 2 : 0) + (p.img || p.vid || coverFor(p, covers) ? 1 : 0) }))
       .sort((a, b) => b.w - a.w).map((x) => x.p);
-    const small = d.k === "brand" ? PROJECTS.filter((p) => p.small) : [];
+    const small = d.k === "brand";
     return `<div class="dom" style="--dc:${d.c}">
       <h3 class="dom-h">${d.plus ? `<b class="dom-plus mono">+1</b> ` : ""}<span class="dom-sw"></span>${esc(d.t)} <i class="mono">${list.length} projects</i></h3>
       <p class="dom-lead">${esc(d.lead)}</p>
       <div class="bento">${list.map((p, i) => bentoCard(p, i, covers)).join("")}</div>
-      ${small.length ? `<div class="psmall"><span class="mono ps-h">In the Zdrovit yard</span>${small.map((p) => `<span class="ps" style="--bc:${p.c};--bt:${p.t}"><b>${esc(p.name)}</b><i class="mono">${esc(p.cat)}</i></span>`).join("")}</div>` : ""}
+      ${small ? zdRow() : ""}
     </div>`;
   }).join("");
   // r131: the portfolio by industry, the way the map lays it out in streets; each street opens its own page. TASK-071
@@ -198,9 +207,9 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       .map((p) => ({ p, w: (p.page ? 2 : 0) + (p.img || p.vid || coverFor(p, covers) ? 1 : 0) }))
       .sort((a, b) => b.w - a.w).map((x) => x.p);
     if (!list.length) return "";
-    const small = PROJECTS.filter((p) => p.small && p.street === k);
+    const small = k === "C"; // TASK-074: the Zdrovit park is on Medical Avenue
     const ind = industryOf(k), info = STREET_INFO[k] || { t: "", lead: "" };
-    const n = new Set(list.filter((p) => p.page).map((p) => p.page)).size;
+    const n = new Set([...list.filter((p) => p.page).map((p) => p.page), ...(small ? zdPages() : [])]).size; // TASK-074: + the Zdrovit brands' case pages (reached from the Zdrovit row)
     return `<div class="dom dom-street" id="street-${k.toLowerCase()}" style="--dc:${col};--dt:${STREET_INK[k] || "#fff"}">
       <div class="street-head">
         <div class="sh-main">
@@ -211,7 +220,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
         <p class="sh-count"><b>${n}</b> <span class="mono">case ${n === 1 ? "study" : "studies"}</span></p>
       </div>
       <div class="bento">${list.map((p, i) => bentoCard(p, i, covers)).join("")}</div>
-      ${small.length ? `<div class="psmall"><span class="mono ps-h">In the Zdrovit yard</span>${small.map((p) => `<span class="ps" style="--bc:${p.c};--bt:${p.t}"><b>${esc(p.name)}</b><i class="mono">${esc(p.cat)}</i></span>`).join("")}</div>` : ""}
+      ${small ? zdRow() : ""}
     </div>`;
   }).join("");
   const SVC_LINKS = { "Branding & Design": ["brand-strategy", "brand-identity"], "Video Production": ["video-production"], "UX & UI Design": ["websites-apps"], "Growth & Content": ["social-media-content"] };
@@ -229,6 +238,18 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     // r143 (Daniel): the first fold is no longer the kinetic cups. It is the city, Coffee Street, under the words of the
     // drive's opening (site/onboarding/intro-lab/engine.js): the pill turns place → facade → brand once, then rests
     const hc = heroCity;
+    // TASK-106 (Daniel: "a very cool animated banner that takes you to the map"): a muted loop of the city from the
+    // Lottie stories (Steam by day, OMA, the Aesthetic Court, Steam by night, the fountain, the Fintech Blvd drift),
+    // a landscape cut for screens and the stories' own 9:16 for phones. The still above stays the poster and the LCP:
+    // site.js gives the video its sources only after load, only while the hero is on screen, never with reduced motion,
+    // Save-Data or a 2g connection. The whole card goes to the map (.hc-hit); the buttons keep their own links.
+    const heroVideo = () => {
+      const v = (n) => A(`m:hero/${n}`);
+      const dm = v("drive-d"), dw = v("drive-d-av1"), mm = v("drive-m"), mw = v("drive-m-av1");
+      if (!dm || !mm) return "";
+      return `<video class="hc-vid" muted loop playsinline preload="none" disablepictureinpicture aria-hidden="true" tabindex="-1" data-d="${dm.src}"${dw ? ` data-dw="${dw.src}"` : ""} data-m="${mm.src}"${mw ? ` data-mw="${mw.src}"` : ""}></video>
+    <button class="hc-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>`;
+    };
     const preload = hc ? `<link rel="preload" as="image" href="${hc.m.src}" media="(max-width: 700px)" fetchpriority="high">
 <link rel="preload" as="image" href="${hc.d.src}" media="(min-width: 701px)" fetchpriority="high">` : "";
     return `${head({ title: SITE_TITLE, desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, film and content for indie brands, startups and established firms.", path: "/site/", ld, preload })}
@@ -237,7 +258,9 @@ ${header(true)}
   <section class="hero hero-city" aria-labelledby="hc-h">
    <div class="hc-card">
     ${hc ? `<picture class="hc-pic"><source media="(max-width: 700px)" srcset="${hc.m.src}" width="${hc.m.w}" height="${hc.m.h}"><img src="${hc.d.src}" width="${hc.d.w}" height="${hc.d.h}" alt="Coffee Street in the 3D city of Bucharest, the vintage yellow ride outside Two Min Lab" fetchpriority="high" decoding="async"></picture>` : ""}
+    ${heroVideo()}
     <i class="hc-shade" aria-hidden="true"></i>
+    <a class="hc-hit" href="/" tabindex="-1" aria-hidden="true"></a>
     <div class="wrap hc-in">
       <p class="eyebrow mono">Cromatic Studios · Bucharest · Since 2014</p>
       <h1 class="hc-h" id="hc-h"><span class="hc-k">Nobody remembers a thumbnail.</span> <span class="hc-big">But someone could remember a <span class="pill hc-morph"><span>place.</span><span aria-hidden="true">facade.</span><span aria-hidden="true">brand.</span></span></span></h1>
@@ -540,8 +563,10 @@ ${footer}`;
     { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Cromatic Studios", item: `${SITE}/site/` }, ...crumbs.map(([n, u], i) => ({ "@type": "ListItem", position: i + 2, name: n, item: SITE + u }))] }
   ] });
   const faqLd = (path, faq) => ({ "@type": "FAQPage", "@id": `${SITE}${path}#faq`, mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: strip(q), acceptedAnswer: { "@type": "Answer", text: strip(a) } })) });
-  const listLd = (path, slugs, name) => ({ "@type": "ItemList", "@id": `${SITE}${path}#work`, name, itemListElement: slugs.map((sl, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}/work/${sl}/`, name: byPage(sl)?.name || sl })) });
-  const hubCases = (slugs, covers, col) => `<div class="bento"${col ? ` style="--dc:${col}"` : ""}>${slugs.map(byPage).filter(Boolean).map((p, i) => bentoCard(p, i, covers)).join("")}</div>`;
+  const listLd = (path, slugs, name) => ({ "@type": "ItemList", "@id": `${SITE}${path}#work`, name, itemListElement: slugs.map((sl, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}/work/${sl}/`, name: byPage(sl)?.name || ZDROVIT_BRANDS.find((b) => b.page === sl)?.name || sl })) });
+  // TASK-074: a Zdrovit brand's case page has no portfolio entry; a service page that names it still shows its card
+  const zdProj = (slug) => { const b = ZDROVIT_BRANDS.find((x) => x.page === slug); return b ? { name: b.name, cat: b.cat || "Zdrovit · Beauty & Supplement Park", desc: b.desc || b.line, page: b.page, c: b.c || "#e30613", t: b.t || "#ffffff", poster: b.poster || b.name, img: b.img } : null; };
+  const hubCases = (slugs, covers, col) => `<div class="bento"${col ? ` style="--dc:${col}"` : ""}>${slugs.map((sl) => byPage(sl) || zdProj(sl)).filter(Boolean).map((p, i) => bentoCard(p, i, covers)).join("")}</div>`;
   const hubFaq = (faq) => `<section class="sec" id="faq"><div class="wrap faq"><div><p class="eyebrow mono">Good questions</p><h2 class="ptitle">${pill("Before", "#FED012", -1.5)} ${pill("the coffee", "#F65342", 1)}</h2></div>
       <div class="qa">${faq.map(([q, a], i) => `<details${i === 0 ? " open" : ""}><summary>${q}</summary><p>${a}</p></details>`).join("")}</div></div></section>`;
   const hubEnd = `<section class="c-end"><div class="wrap">
@@ -566,16 +591,17 @@ ${footer}`;
     const others = INDUSTRIES.filter((x) => x.slug !== slug);
     const ld = hubLd(path, title, d.desc, [["Industries", "/site/#work"], [street, path]], [
       { "@type": "Service", "@id": `${SITE}${path}#service`, name: d.title, serviceType: "Branding and design", provider: { "@id": `${SITE}/#studio` }, areaServed: { "@type": "Country", name: "Romania" }, audience: { "@type": "BusinessAudience", name: STREET_INFO[d.street]?.t || street } },
-      listLd(path, d.cases, `${street}: case studies`), faqLd(path, d.faq)]);
+      listLd(path, [...d.cases, ...(d.street === "C" ? zdPages() : [])], `${street}: case studies`), faqLd(path, d.faq)]);
     return `${head({ title, desc: d.desc, path, ld })}
 ${header(false)}
 <main id="main" class="case hub" style="--bc:${col};--bt:#111">
   ${hubHero(hubCrumbs(`<a href="/site/#work">Industries</a>`, street), d.eyebrow, d.h1, d.lead, col)}
   <section class="wrap c2-lead hub-intro">${d.intro.map((x) => `<p>${x}</p>`).join("")}</section>
   <section class="sec"><div class="wrap"><h2 class="eyebrow mono">What we do on ${esc(street)}</h2>${cards(d.offer, col)}</div></section>
-  <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono">${esc(street)} · ${d.cases.length} case studies</p>
+  <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono">${esc(street)} · ${d.cases.length + (d.street === "C" ? zdPages().length : 0)} case studies</p>
     <h2 class="ptitle">${pill("The work", col, -1.5)}</h2>${hubCases(d.cases, covers, col)}
     ${(() => { const more = PROJECTS.filter((p) => p.street === d.street && !p.page); return more.length ? `<p class="friends"><span class="mono">Also on ${esc(street)}</span> ${more.map((p) => `<span class="fpill">${esc(p.name)}</span>`).join("")}</p>` : ""; })()}
+    ${d.street === "C" ? zdRow() : "" /* TASK-074: the brands in the Zdrovit park (they were pills above as yard kiosks) */}
   </div></section>
   ${svc.length ? `<section class="sec"><div class="wrap"><p class="eyebrow mono">How we can help</p><div class="hub-links">${svc.map((x) => `<a href="/services/${x.slug}/"><b>${esc(x.name)}</b><span>${esc(x.lead)}</span><i>→</i></a>`).join("")}</div></div></section>` : ""}
   ${hubFaq(d.faq)}

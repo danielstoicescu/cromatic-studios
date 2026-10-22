@@ -23679,7 +23679,7 @@ void main() {
             if (culled && renderer.renderLists) { const L = renderer.renderLists.get(scene, 0); drawn = new Set(); for (const a of [L.opaque, L.transmissive, L.transparent]) for (let i = 0; i < a.length; i++) drawn.add(a[i].object); }
             const walk = (o) => {
               if (o.visible === false) return;
-              if (skip && skip(o)) { o.visible = false; hid.push(o); return; }
+              if ((skip && skip(o)) || o.userData.noHull === true) { o.visible = false; hid.push(o); return; } // TASK-098: noHull, a subtree with no hull in any world (light, not matter)
               const ch = o.children;
               if (drawn && ch.length === 0 && (o.isMesh || o.isLine || o.isPoints || o.isSprite) && !drawn.has(o)) { o.visible = false; hid.push(o); return; }
               if (o.layers.test(cl)) { setOutlineMaterial(o); if (drawn && o.frustumCulled && drawn.has(o)) { o.frustumCulled = false; unc.push(o); } }
@@ -25002,8 +25002,6 @@ void main() {
       }
     }
     for (const t of CITY_TREES) spots.push(t);
-    // TASK-094: a small grove on the empty plot at the end of Coffee Street (930, 5900), where a brand house stood
-    for (const [ox, oz, s] of [[-12, -18, 1.05], [20, 4, 1.2], [-6, 26, 0.85], [26, -30, 0.9], [-26, 6, 0.75]]) spots.push({ x: 930 + ox, z: 5900 + oz, s });
     for (let i = spots.length - 1; i >= 0; i--) if (!boardClear(spots[i].x, spots[i].z)) spots.splice(i, 1); // beta 3.01
     for (let i = spots.length - 1; i >= 0; i--) { const sp = spots[i], v = CITY_NET?.at?.(sp.x, sp.z); if (v === 1 || (v === 2 && !sp.med) || (!sp.med && CITY_NET?.roadDist && CITY_NET.roadDist(sp.x, sp.z) < 8)) spots.splice(i, 1); }
     for (const t of spots) TREE_BLOBS.push({ x: t.x, z: t.z, w: 22 * t.s, d: 22 * t.s, h: 30 * t.s });
@@ -25605,6 +25603,21 @@ void main() {
     for (const pts of net.routes) { line(pts.filter(([, z]) => z < 7480), ROUTE_W, "route", seed++ * 97); yield; }
     for (const s of net.longs) { line(roundedPolyline(s.pts, 160).map(([x, z]) => [x, z]), s.w, "long", seed++ * 97); yield; }
     for (const s of net.minor) { line(s.pts, s.w, "minor", seed++ * 97); yield; }
+    // TASK-099 (Daniel): Patiline's corner (930, 5900, where Coffee Street turns towards Dacia 99) reads as a small
+    // cluster: the street's hold is lifted only in these boxes (the inside of the bend, Patiline's own room kept) and
+    // the city lines that kerb with its own houses, Patiline's old plot by the Dacia road included
+    {
+      const box2 = PATI_CORNER.boxes, inBox = (x, z) => box2.some(([x0, x1, z0, z1]) => x >= x0 && x <= x1 && z >= z0 && z <= z1), freed = [];
+      for (let j = 0; j < G.H; j++) for (let i = 0; i < G.W; i++) {
+        const x = CITY_X0 + (i + 0.5) * G.C, z = CITY_Z0 + (j + 0.5) * G.C, k = j * G.W + i;
+        if (G.g[k] === 3 && inBox(x, z) && Math.hypot(x - 930, z - 5900) > 86) { G.g[k] = 0; freed.push(k); }
+      }
+      // the drive's own road from just north of Patiline round the bend to Dacia 99 (one unbroken stretch of it)
+      const R0 = net.routes[0] || [], i0 = R0.findIndex(([x, z]) => x > 800 && x < 860 && z > 5750 && z < 5800), bend = [];
+      for (let i = Math.max(0, i0); i0 >= 0 && i < R0.length && R0[i][0] < 1140 && R0[i][1] < 6110 && R0[i][1] > 5740; i++) bend.push(R0[i]);
+      if (bend.length > 1) line(bend, ROUTE_W, "route", PATI_CORNER.seed);
+      for (const k of freed) if (!G.g[k]) G.g[k] = 3; // what no house took is held again (the courtyard trees below see the grid as before)
+    }
     // courtyards: trees in the open middle of the blocks
     {
       const rnd = rng(5150);
@@ -27096,20 +27109,7 @@ void main() {
     const stairGeos = [];
     for (let k = 0; k < 7; k++) { const st = new BoxGeometry(5, 12.6 - k * 1.8, 132 + k * 10); st.translate(PX - 25 - 5 - k * 5, (12.6 - k * 1.8) / 2, 0); stairGeos.push(st); }
     g.add(new Mesh(mergeGeometries(stairGeos), stone));
-    // the court's banners between the portico and the corner pavilions
-    const banTex = canvasTexture(128, 384, (ctx) => {
-      ctx.fillStyle = "#1a0909"; ctx.fillRect(0, 0, 128, 384);
-      ctx.strokeStyle = "#c89b3c"; ctx.lineWidth = 4; ctx.strokeRect(8, 8, 112, 368);
-      ctx.fillStyle = "#f4f0ea"; ctx.textAlign = "center";
-      ["THE", "AESTHETICS", "COURT"].forEach((w2, i) => { ctx.font = `600 ${i === 1 ? 17 : 24}px 'Cinzel', Georgia, serif`; ctx.fillText(w2, 64, 120 + i * 44); });
-      ctx.fillStyle = "#c89b3c"; ctx.font = "700 11px CromaticSans, sans-serif"; ctx.fillText("ONE TRIAL", 64, 286); ctx.fillText("ONE VERDICT", 64, 304);
-    });
-    const banM = new MeshStandardMaterial({ map: banTex, emissiveMap: banTex, emissive: new Color("#ffffff"), emissiveIntensity: 0, roughness: 0.7 });
-    STREET_GLOW.push([banM, 0.45]);
-    // r139e: on the front beside the portico and on the risalits, merged into one mesh
-    const banGeos = [];
-    for (const [bx, bz] of [[-119.6, -56], [-123.6, -73], [-119.6, 56], [-123.6, 73]]) { const b2 = new PlaneGeometry(13, 40); b2.rotateY(-Math.PI / 2); b2.translate(bx, 36, bz); banGeos.push(b2); }
-    g.add(new Mesh(mergeGeometries(banGeos), banM));
+    // TASK-114: the court's banners that hung on the front (its name lettered on the palace) are gone: see tacCourtSet
     // the esplanade: paving, two lawns with fountains, and lamps along the walk
     const pave = new Mesh(new BoxGeometry(92, 0.8, 300), new MeshStandardMaterial({ color: "#e4ddce", roughness: 1 }));
     pave.position.set(-210, 0.4, 0); g.add(pave);
@@ -27133,34 +27133,20 @@ void main() {
     }
     g.add(new Mesh(mergeGeometries(lampGeos), new MeshStandardMaterial({ color: "#2b2d31", roughness: 0.5, metalness: 0.4 })));
     mats.festoon = mats.festoon || new MeshStandardMaterial({ color: "#fff0c4", emissive: "#ffca6a", emissiveIntensity: 0.1 });
-    g.add(new Mesh(mergeGeometries(globeGeos), mats.festoon));
     // r121: the way in to The Aesthetic Court: a burgundy carpet from Medical Avenue across the
-    // esplanade to the portico, gold stanchions, and a gate on the avenue's kerb with the court's name
+    // esplanade to the portico, gold stanchions along it. TASK-114: the black gate lettered with the name and the name
+    // over the portico are gone; the court's set for its one day stands here instead (tacCourtSet)
     {
       const carpetM = new MeshStandardMaterial({ color: "#6e1420", roughness: 0.85 }), goldM = new MeshStandardMaterial({ color: "#c89b3c", roughness: 0.35, metalness: 0.6 });
       const gx0 = -392, gx1 = -150, cw = 22; // r181: the gate and the carpet on the kerb, no longer on the avenue (gx0 was -408: 7 into the asphalt)
-      const carpet = new Mesh(new BoxGeometry(gx1 - gx0, 1.2, cw), carpetM); carpet.position.set((gx0 + gx1) / 2, 1.4, 0); g.add(carpet);
-      // r139e: the stanchions, the gate's posts and its caps each merged into one mesh
-      const gold = [], posts = [];
+      const carpet = [new BoxGeometry(gx1 - gx0, 1.2, cw).translate((gx0 + gx1) / 2, 1.4, 0)];
+      // r139e: the stanchions merged into one mesh
+      const gold = [];
       for (const sz of [-1, 1]) for (let x2 = gx0 + 10; x2 < gx1; x2 += 22) gold.push(new CylinderGeometry(0.9, 1.2, 9, 8).translate(x2, 5.5, sz * (cw / 2 + 3)));
-      for (const sz of [-1, 1]) { posts.push(new BoxGeometry(6, 46, 6).translate(gx0 + 4, 23, sz * 22)); gold.push(new BoxGeometry(8, 3, 8).toNonIndexed().translate(gx0 + 4, 47.5, sz * 22)); }
-      g.add(new Mesh(mergeGeometries(gold.map((q) => q.index ? q.toNonIndexed() : q)), goldM), new Mesh(mergeGeometries(posts), new MeshStandardMaterial({ color: "#1a0909", roughness: 0.6 })));
-      const gate = new Group();
-      const lintelTex = canvasTexture(512, 128, (ctx) => {
-        ctx.fillStyle = "#1a0909"; ctx.fillRect(0, 0, 512, 128); ctx.strokeStyle = "#c89b3c"; ctx.lineWidth = 6; ctx.strokeRect(8, 8, 496, 112);
-        // r139e: the name shrinks until it fits (in the fallback serif it ran off both ends)
-        ctx.fillStyle = "#f4f0ea"; ctx.textAlign = "center";
-        for (let fs = 44; fs >= 24; fs -= 2) { ctx.font = `600 ${fs}px 'Cinzel', Georgia, serif`; if (ctx.measureText("THE AESTHETIC COURT").width <= 468) break; }
-        ctx.fillText("THE AESTHETIC COURT", 256, 66);
-        ctx.fillStyle = "#c89b3c"; ctx.font = "700 20px CromaticSans, sans-serif"; ctx.fillText("ENTRANCE \u00B7 ONE TRIAL, ONE VERDICT", 256, 100);
-      });
-      const lintM = new MeshStandardMaterial({ map: lintelTex, emissiveMap: lintelTex, emissive: new Color("#ffffff"), emissiveIntensity: 0, roughness: 0.6 });
-      STREET_GLOW.push([lintM, 0.5]);
-      const lintel = new Mesh(new BoxGeometry(5, 16, 50), [lintM, lintM, goldM, goldM, goldM, goldM]); lintel.position.set(0, 40, 0); gate.add(lintel);
-      gate.position.set(gx0 + 4, 0, 0); g.add(gate);
-      // a big name over the portico, so the court reads from across the city
-      const big = new Mesh(new BoxGeometry(2, 14, 92), [lintM, lintM, goldM, goldM, goldM, goldM]); big.position.set(PX - 29, 72, 0); g.add(big);
+      tacCourtSet(g, { PX, gx0, gold, bulbs: globeGeos, carpet });
+      g.add(new Mesh(tacMerge(gold), goldM), new Mesh(tacMerge(carpet), carpetM));
     }
+    g.add(new Mesh(tacMerge(globeGeos), mats.festoon));
     // r139e: the palace's buckets, one mesh per material
     for (const k in BK) {
       const q = BK[k], geo = new BufferGeometry();
@@ -27174,6 +27160,293 @@ void main() {
     return finish(g, parent, x, z);
   }
 
+  // TASK-114 (Daniel): The Aesthetic Court is one day at the palace, not the palace's tenant. Nothing is lettered on the
+  // building any more (the banners on its front, the name over the portico, the black gate are gone): the court arrives
+  // as a set built for the day, standing in front of the portico, and its name is its REAL lockup, from
+  // theaestheticscourt.com: the site's own SVG of the hanging scales (TAC_MARK, drawn here as vectors, and built in gold
+  // over the carpet) and its word in Cormorant SC 500, rendered from the site's lockups (the stacked hero lockup and the
+  // one-line nav lockup) into two small pictures whose two inks are coded red and green, recoloured here (gold, cotton).
+  // The set: a truss portal on the esplanade hung with burgundy velvet tied back over the carpet, the scales hanging
+  // in it; velvet tied back between the portico's columns; the judges' bench up the stair, the jury's pews either side
+  // of the carpet; light stands, festoons of bulbs, feather flags along the carpet, a truss gate on the kerb. At night
+  // the bulbs and the signs light up, the stands throw beams onto the portico and a warm wash comes up the columns: all
+  // emissive or additive, no lights. One mesh per material: velvet, truss, black kit, walnut, signs (one atlas), the
+  // palace's gold and bulbs, and the night's beams and glows (one each, shown only after dark).
+  var TAC_LOCKUP = "data:image/png;base64,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"; // the stacked lockup (scales over THE / AESTHETICS / COURT): the scales red, the word green
+  var TAC_NAV = "data:image/png;base64,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"; // the nav lockup's word on one line: THE red (gold on the site), AESTHETICS COURT green (cotton)
+  var TAC_MARK = { box: [300, 340], left: { x: 100, y: 150, drop: 82, rx: 30 }, right: { x: 190, y: 192, drop: 90, rx: 34 }, beam: "M100 150 C118 145 140 139 152 152 C164 165 176 180 190 192", pole: "M150 12 C157 12 158 32 156 56 L154 152 L148 152 L146 56 C144 32 143 12 150 12 Z", hookL: "M100 150 C93 148 90 140 95 136", hookR: "M190 192 C197 194 200 202 195 206" };
+  var TAC_GOLD = "#cba478", TAC_COTTON = "#f4f0e6";
+  // the atlas's regions [x, y, w, h] in its 1024 px: a tall banner, a roundel, the one-line lockup, the scales alone
+  var TAC_UV = { flag: [0, 0, 384, 1024], disc: [384, 0, 640, 640], line: [384, 640, 640, 128], mark: [384, 768, 640, 256] };
+  function tacMark2D(ctx, x, y, w, ink) {
+    const M = TAC_MARK, s = w / M.box[0];
+    ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.fillStyle = ctx.strokeStyle = ink; ctx.lineCap = "round";
+    ctx.fill(new Path2D(M.pole));
+    ctx.lineWidth = 6.5; ctx.stroke(new Path2D(M.beam)); ctx.lineWidth = 4; ctx.stroke(new Path2D(M.hookL)); ctx.stroke(new Path2D(M.hookR));
+    for (const p of [M.left, M.right]) {
+      const py = p.y + p.drop;
+      ctx.globalAlpha = 0.8; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.rx * 0.86, py); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + p.rx * 0.86, py); ctx.stroke();
+      ctx.globalAlpha = 0.92; ctx.fill(new Path2D(`M${p.x - p.rx} ${py} A${p.rx} ${p.rx * 0.62} 0 0 0 ${p.x + p.rx} ${py} Z`));
+      ctx.globalAlpha = 1; ctx.beginPath(); ctx.ellipse(p.x, py, p.rx, p.rx * 0.26, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+  var TAC_ATLAS = null;
+  function tacAtlas() {
+    if (TAC_ATLAS) return TAC_ATLAS;
+    const c = document.createElement("canvas"); c.width = c.height = 1024;
+    const ctx = c.getContext("2d");
+    const wine = ([x, y, w, h]) => { const gr = ctx.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, "#3b1020"); gr.addColorStop(1, "#210812"); ctx.fillStyle = gr; ctx.fillRect(x, y, w, h); };
+    const keyline = ([x, y, w, h], i, a = 0.6) => { ctx.strokeStyle = TAC_GOLD; ctx.globalAlpha = a; ctx.lineWidth = 3; ctx.strokeRect(x + i, y + i, w - 2 * i, h - 2 * i); ctx.globalAlpha = 1; };
+    for (const k in TAC_UV) wine(TAC_UV[k]);
+    keyline(TAC_UV.flag, 18); keyline(TAC_UV.flag, 30, 0.3); keyline(TAC_UV.line, 10, 0.45); keyline(TAC_UV.mark, 14, 0.45);
+    { const [x, y, w] = TAC_UV.disc, cx = x + w / 2, cy = y + w / 2; ctx.strokeStyle = TAC_GOLD; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(cx, cy, w / 2 - 14, 0, Math.PI * 2); ctx.stroke(); ctx.lineWidth = 3; ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.arc(cx, cy, w / 2 - 34, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1; }
+    // the scales alone (the bench's front): the site's mark between two gold rules
+    { const [x, y, w, h] = TAC_UV.mark, mw = 150; tacMark2D(ctx, x + (w - mw) / 2, y + 20, mw, TAC_GOLD); ctx.fillStyle = TAC_GOLD; ctx.globalAlpha = 0.7; ctx.fillRect(x + 60, y + h / 2 + 8, 170, 3); ctx.fillRect(x + w - 230, y + h / 2 + 8, 170, 3); ctx.globalAlpha = 1; }
+    const t = new CanvasTexture(c); t.colorSpace = SRGBColorSpace; t.anisotropy = 4;
+    // the lockups' pictures, each ink recoloured: red -> gold, green -> cotton
+    const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const inks = (im) => {
+      const tc = document.createElement("canvas"); tc.width = im.width; tc.height = im.height;
+      const x = tc.getContext("2d"); x.drawImage(im, 0, 0);
+      const d = x.getImageData(0, 0, im.width, im.height), p = d.data, G = rgb(TAC_GOLD), C = rgb(TAC_COTTON);
+      for (let i = 0; i < p.length; i += 4) { const k = p[i] > p[i + 1] ? G : C; p[i] = k[0]; p[i + 1] = k[1]; p[i + 2] = k[2]; }
+      x.putImageData(d, 0, 0); return tc;
+    };
+    const load = (src, draw) => { const im = new Image(); im.onload = () => { try { draw(inks(im)); t.needsUpdate = true; } catch {} }; im.src = src; };
+    load(TAC_LOCKUP, (L) => {
+      const put = ([x, y, w, h], lw, dy = 0) => { const lh = lw * L.height / L.width; ctx.drawImage(L, x + (w - lw) / 2, y + (h - lh) / 2 + dy, lw, lh); };
+      put(TAC_UV.flag, 300, -150);
+      put(TAC_UV.disc, 400, 6);
+    });
+    load(TAC_NAV, (N) => {
+      // the nav lockup: the scales (52 px on the site) beside the word (16 px, the gap 13 px), centred on the line
+      const [x, y, w, h] = TAC_UV.line, mh = 96, mw = mh * TAC_MARK.box[0] / TAC_MARK.box[1], ww = 430, wh = ww * N.height / N.width, gap = mw * 13 / 52;
+      const x0 = x + (w - (mw + gap + ww)) / 2;
+      tacMark2D(ctx, x0, y + (h - mh) / 2, mw, TAC_GOLD);
+      ctx.drawImage(N, x0 + mw + gap, y + (h - wh) / 2 + 4, ww, wh);
+    });
+    return (TAC_ATLAS = t);
+  }
+  // a quad of the atlas's region `r`, w x h, facing -x (the avenue), centred on (x, y, z); back: a second face to +x,
+  // the two faces t either side of x (a board's half thickness)
+  function tacSign(out, r, w, h, x, y, z, back = false, t = 0.05) {
+    const [rx, ry, rw, rh] = TAC_UV[r];
+    for (const sd of back ? [-1, 1] : [-1]) {
+      const q = r === "disc" ? new CircleGeometry(w / 2, 40) : new PlaneGeometry(w, h), uv = q.attributes.uv; // (a roundel: a disc)
+      for (let i = 0; i < uv.count; i++) { const u = sd < 0 ? uv.getX(i) : 1 - uv.getX(i); uv.setXY(i, (rx + u * rw) / 1024, 1 - (ry + (1 - uv.getY(i)) * rh) / 1024); }
+      q.rotateY(sd < 0 ? -Math.PI / 2 : Math.PI / 2); q.translate(x + sd * t, y, z); out.push(q);
+    }
+  }
+  // a rod from a to b ([x, y, z]), radius r, n sides (a truss chord, a stand's leg, a festoon's wire)
+  var _tacQ = null, _tacUp = null;
+  function tacRod(out, a, b, r, n = 5) {
+    _tacQ = _tacQ || new Quaternion(); _tacUp = _tacUp || new Vector3(0, 1, 0);
+    const d = new Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]), L = d.length();
+    if (L < 1e-4) return;
+    const geo = new CylinderGeometry(r, r, L, n, 1, true);
+    _tacQ.setFromUnitVectors(_tacUp, d.multiplyScalar(1 / L));
+    geo.applyMatrix4(new Matrix4().compose(new Vector3((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2), _tacQ, new Vector3(1, 1, 1)));
+    out.push(geo);
+  }
+  // a box truss (s x s) from a to b along one axis: four chords and the zig-zag lacing on each face
+  function tacTruss(out, a, b, s = 4.4) {
+    const ax = a[0] !== b[0] ? 0 : a[1] !== b[1] ? 1 : 2, L = Math.abs(b[ax] - a[ax]), dir = Math.sign(b[ax] - a[ax]);
+    const o1 = (ax + 1) % 3, o2 = (ax + 2) % 3, h = s / 2;
+    const P = (t, u, v) => { const p = a.slice(); p[ax] += dir * t; p[o1] += u; p[o2] += v; return p; };
+    const corners = [[-h, -h], [h, -h], [h, h], [-h, h]];
+    for (const [u, v] of corners) tacRod(out, P(0, u, v), P(L, u, v), 0.34, 6);
+    const n = Math.max(1, Math.round(L / s));
+    for (let i = 0; i < n; i++) {
+      const t0 = i * L / n, t1 = (i + 1) * L / n;
+      for (let f = 0; f < 4; f++) { const c0 = corners[f], c1 = corners[(f + 1) % 4], z = i % 2 ? [c0, c1] : [c1, c0]; tacRod(out, P(t0, z[0][0], z[0][1]), P(t1, z[1][0], z[1][1]), 0.17, 4); }
+    }
+  }
+  // a velvet drape hanging in the y-z plane at x (the folds stand out towards -x), from z0 to z1 and from yTop to yBot:
+  // `pleats` folds `amp` deep; tie (-1 / +1): drawn at tieY towards the z0 / z1 side by tk; sag: the hem's swag (a valance).
+  // Its colours are the velvet's: the crests catch the light, the valleys go dark, the hem and the head a shade deeper
+  function tacDrape(out, { x, z0, z1, yTop, yBot, pleats, amp, tie = 0, tieY = 0, tk = 0.72, sag = 0 }) {
+    const nu = Math.max(10, pleats * 6), nv = sag ? 5 : 16, H = yTop - yBot;
+    const pos = [], col = [], uv = [], idx = [];
+    const lo = new Color("#2a0611"), mid = new Color("#6e172c"), hi = new Color("#b8465a"), c = new Color();
+    const tv = tie ? Math.min(0.92, Math.max(0.08, (yTop - tieY) / H)) : 0, zt = tie > 0 ? z1 : z0;
+    for (let j = 0; j <= nv; j++) {
+      const v = j / nv;
+      // how far the cloth is drawn to the tie: nothing at the rod, tk at the tie, a little less below it (it flares out)
+      const p = !tie ? 0 : v <= tv ? tk * Math.pow(Math.sin((v / tv) * Math.PI / 2), 1.5) : tk * (1 - 0.5 * Math.pow((v - tv) / (1 - tv), 1.2));
+      for (let i = 0; i <= nu; i++) {
+        const u = i / nu, s = Math.sin(u * pleats * Math.PI * 2 + 0.6 * Math.sin(v * 3.1 + u * 7));
+        let z = z0 + (z1 - z0) * u; z += (zt - z) * p;
+        const a = amp * (0.6 + 1.7 * p + 0.2 * v) * (0.85 + 0.3 * Math.sin(u * 13.7));
+        const y = yTop - v * H - (sag ? sag * Math.sin(Math.PI * u) * v : 0);
+        pos.push(x - a * (0.5 + 0.5 * s), y, z);
+        const k = 0.5 + 0.5 * s;
+        c.copy(lo).lerp(mid, Math.min(1, k * 1.5)); if (k > 0.6) c.lerp(hi, ((k - 0.6) / 0.4) * (0.55 + 0.35 * p));
+        if (v < 0.06 || v > 0.94) c.multiplyScalar(0.7);
+        col.push(c.r, c.g, c.b); uv.push(u, 1 - v);
+      }
+    }
+    for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) { const a = j * (nu + 1) + i, b = a + 1, d = a + nu + 1, e = d + 1; idx.push(a, d, b, b, d, e); }
+    const g = new BufferGeometry();
+    g.setAttribute("position", new Float32BufferAttribute(pos, 3)); g.setAttribute("normal", new Float32BufferAttribute(new Float32Array(pos.length), 3));
+    g.setAttribute("color", new Float32BufferAttribute(col, 3)); g.setAttribute("uv", new Float32BufferAttribute(uv, 2));
+    g.setIndex(idx); g.computeVertexNormals(); out.push(g);
+  }
+  // a geometry given one flat vertex colour (the velvet bucket's boxes: cushions, chair backs)
+  function tacPaint(geo, hex) { const c = new Color(hex), n = geo.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; } geo.setAttribute("color", new BufferAttribute(a, 3)); return geo; }
+  function tacMerge(list) { return mergeGeometries(list.map((q) => (q.index ? q.toNonIndexed() : q))); }
+  // the set; g is the palace (local units, its front facing -x), PX the portico's line, gx0 the kerb, gold / bulbs the
+  // palace's own lists (merged with its stanchions and its lamps' globes), carpet the carpet's
+  function tacCourtSet(g, { PX, gx0, gold, bulbs, carpet }) {
+    _tacQ = _tacQ || new Quaternion(); _tacUp = _tacUp || new Vector3(0, 1, 0);
+    const V = { velvet: [], alu: [], kit: [], wood: [], sign: [], beam: [], glow: [] };
+    const glowAt = (x, y, z, size, hex) => V.glow.push([x, y, z, size, hex]);
+    const bulb = (x, y, z, r = 0.75) => { bulbs.push(new SphereGeometry(r, 6, 4).translate(x, y, z)); glowAt(x, y, z, 3.4, "#ffc978"); };
+    // a festoon of bulbs from a to b, sagging by sag, n bulbs
+    const festoon = (a, b, sag, n) => {
+      let prev = null;
+      for (let i = 0; i <= n; i++) {
+        const t = i / n, p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t - sag * 4 * t * (1 - t), a[2] + (b[2] - a[2]) * t];
+        if (prev) tacRod(V.kit, prev, p, 0.12, 3);
+        if (i > 0 && i < n) bulb(p[0], p[1] - 0.9, p[2]);
+        prev = p;
+      }
+    };
+    const QX = -236, QZ = 48, QH = 74;
+    // THE PORTAL on the esplanade, astride the carpet: two truss towers, a truss header with the court's line, velvet
+    // tied back to the towers, a velvet valance, a string of bulbs, the scales hanging over the carpet
+    for (const s of [-1, 1]) {
+      tacTruss(V.alu, [QX, 0.8, s * QZ], [QX, QH, s * QZ], 5);
+      V.kit.push(new BoxGeometry(8, 1.2, 8).translate(QX, 1.4, s * QZ)); // the towers' base plates
+      tacDrape(V.velvet, { x: QX - 3.4, z0: s < 0 ? -QZ + 2.5 : 9, z1: s < 0 ? -9 : QZ - 2.5, yTop: QH - 6, yBot: 0.9, pleats: 8, amp: 1.7, tie: s, tieY: 20, tk: 0.62 }); // drawn open over the carpet
+      gold.push(new TorusGeometry(1.5, 0.45, 5, 10).rotateY(Math.PI / 2).translate(QX - 4.6, 20, s * (QZ - 6.5))); // the tie-backs
+      tacSign(V.sign, "flag", 4.6, 12.3, QX - 2.9, QH - 30, s * QZ, true); // the court's banner on each tower
+    }
+    tacTruss(V.alu, [QX, QH - 2.5, -QZ - 2.5], [QX, QH - 2.5, QZ + 2.5], 5);
+    tacDrape(V.velvet, { x: QX - 3.2, z0: -QZ + 2, z1: QZ - 2, yTop: QH - 5, yBot: QH - 10, pleats: 22, amp: 0.9, sag: 3.2 });
+    tacSign(V.sign, "line", 62, 12.4, QX - 3, QH + 6.6, 0);
+    V.alu.push(new BoxGeometry(0.6, 13.4, 64).translate(QX - 2.6, QH + 6.6, 0)); // the sign's frame
+    festoon([QX - 7.5, QH - 9.5, -QZ + 3], [QX - 7.5, QH - 9.5, QZ - 3], 6, 18);
+    // the scales, the site's mark built in gold, hanging from the header over the carpet (its z is the mark's x: seen
+    // from the avenue it reads the right way round)
+    {
+      const M = TAC_MARK, k = 0.15, top = QH - 5, Z = (sx) => (sx - 150) * k, Y = (sy) => top - (sy - 12) * k, X = QX - 1;
+      const num = (s) => s.match(/-?\d+(\.\d+)?/g).map(Number);
+      const cubic = (q, r) => { let prev = null; for (let i = 0; i <= 10; i++) { const t = i / 10, m = 1 - t, sx = m * m * m * q[0] + 3 * m * m * t * q[2] + 3 * m * t * t * q[4] + t * t * t * q[6], sy = m * m * m * q[1] + 3 * m * m * t * q[3] + 3 * m * t * t * q[5] + t * t * t * q[7], p = [X, Y(sy), Z(sx)]; if (prev) tacRod(gold, prev, p, r, 6); prev = p; } };
+      const b = num(M.beam); cubic(b.slice(0, 8), 3.25 * k); cubic(b.slice(6, 14), 3.25 * k);
+      cubic(num(M.hookL), 2 * k); cubic(num(M.hookR), 2 * k);
+      gold.push(new LatheGeometry([[0.01, 0], [6 * k, 4 * k], [7 * k, 20 * k], [5 * k, 44 * k], [3 * k, 140 * k], [0.01, 141 * k]].map(([r2, h2]) => new Vector2(r2, h2)), 8).rotateX(Math.PI).translate(X, Y(12), Z(150)));
+      for (const p of [M.left, M.right]) {
+        const hx = X, hy = Y(p.y), hz = Z(p.x), py = Y(p.y + p.drop), R = p.rx * k;
+        for (let i = 0; i < 3; i++) { const a = i * Math.PI * 2 / 3 + 0.5; tacRod(gold, [hx, hy, hz], [hx + Math.cos(a) * R * 0.86, py, hz + Math.sin(a) * R * 0.86], 0.09, 3); }
+        gold.push(new SphereGeometry(R, 14, 5, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2).scale(1, 0.62, 1).translate(hx, py, hz));
+        gold.push(new CylinderGeometry(R, R, 0.3, 14).translate(hx, py, hz));
+      }
+    }
+    // the carpet runs on up the stair, to the foot of the bench
+    for (let s2 = 2; s2 < 7; s2++) carpet.push(new BoxGeometry(5.2, 0.5, 22).translate(PX - 30 - s2 * 5, 12.6 - s2 * 1.8 + 0.25, 0));
+    // THE BENCH up the stair, in front of the portico: a walnut dais over the top steps, the bench with the scales on
+    // its front, three high-backed velvet chairs; the lectern either side
+    V.wood.push(new BoxGeometry(14, 7, 40).translate(-156, 12.5, 0));
+    V.wood.push(new BoxGeometry(9, 11, 32).translate(-157.5, 21.5, 0));
+    V.kit.push(new BoxGeometry(11, 0.9, 34).translate(-157.5, 27.4, 0)); // the bench's top
+    gold.push(new BoxGeometry(0.3, 0.6, 32).translate(-162.1, 25.6, 0), new BoxGeometry(0.3, 0.6, 32).translate(-162.1, 17.4, 0));
+    tacSign(V.sign, "mark", 19, 7.6, -162.2, 21.5, 0);
+    for (const cz of [-9, 0, 9]) { V.velvet.push(tacPaint(new BoxGeometry(1.6, cz ? 17 : 20, 6).translate(-150.6, 16 + (cz ? 8.5 : 10), cz), "#4a0f1d")); gold.push(new BoxGeometry(1.8, 0.7, 6.4).translate(-150.6, 16 + (cz ? 17 : 20), cz)); }
+    for (const s of [-1, 1]) { V.wood.push(new BoxGeometry(4.5, 10.2, 7).translate(-157, 15.9, s * 28)); V.kit.push(new BoxGeometry(5.2, 0.6, 7.6).translate(-157, 21.3, s * 28)); }
+    // THE VELVET in the portico: a curtain behind the colonnade, from the entablature to the floor, parted behind the
+    // bench and tied back; through the columns the porch reads burgundy, the doors show in the opening
+    for (const s of [-1, 1]) tacDrape(V.velvet, { x: PX - 12.5, z0: s < 0 ? -51 : 1, z1: s < 0 ? -1 : 51, yTop: 53.7, yBot: 16.1, pleats: 15, amp: 1.25, tie: s, tieY: 26, tk: 0.42 });
+    tacDrape(V.velvet, { x: PX - 12.8, z0: -52, z1: 52, yTop: 53.7, yBot: 49.4, pleats: 30, amp: 0.7, sag: 1.4 });
+    // THE JURY: three rows of walnut pews either side of the carpet, velvet cushions, facing the bench
+    for (const s of [-1, 1]) for (let r = 0; r < 3; r++) {
+      const px = -226 + r * 11, pz = s * 22.5;
+      V.wood.push(new BoxGeometry(3.4, 0.8, 15).translate(px, 4.4, pz), new BoxGeometry(0.8, 5.2, 15).translate(px - 2, 7.4, pz));
+      for (const e of [-1, 1]) V.wood.push(new BoxGeometry(3.8, 4.4, 0.7).translate(px, 2.2 + 0.8, pz + e * 7.3));
+      V.velvet.push(tacPaint(new BoxGeometry(3, 0.6, 14.4).translate(px + 0.1, 5.1, pz), "#5a1224"));
+    }
+    // LIGHT STANDS at the foot of the stair, each a tripod, a mast and a bar of two par cans aimed up at the portico;
+    // at night their beams reach the columns
+    const aim = [PX - 16, 40, 0];
+    for (const [sx, sz] of [[-194, -44], [-194, 44], [-190, -64], [-190, 64], [-249, -24], [-249, 24]]) {
+      const top = sx < -200 ? 22 : 18;
+      for (let i = 0; i < 3; i++) { const a = i * Math.PI * 2 / 3; tacRod(V.kit, [sx + Math.cos(a) * 3.2, 0.8, sz + Math.sin(a) * 3.2], [sx, 6, sz], 0.16, 4); }
+      tacRod(V.kit, [sx, 6, sz], [sx, top, sz], 0.22, 5);
+      tacRod(V.kit, [sx, top, sz - 2.4], [sx, top, sz + 2.4], 0.18, 4);
+      for (const dz of [-1.6, 1.6]) {
+        const p = [sx, top + 0.9, sz + dz], tgt = sx < -200 ? [QX - 3, QH + 6, sz * 0.9] : [aim[0], aim[1], sz * 0.55 + dz * 3];
+        const d = new Vector3(tgt[0] - p[0], tgt[1] - p[1], tgt[2] - p[2]).normalize();
+        tacRod(V.kit, [p[0] - d.x * 1.3, p[1] - d.y * 1.3, p[2] - d.z * 1.3], [p[0] + d.x * 1.3, p[1] + d.y * 1.3, p[2] + d.z * 1.3], 0.95, 8);
+        const lens = [p[0] + d.x * 1.35, p[1] + d.y * 1.35, p[2] + d.z * 1.35];
+        bulbs.push(new SphereGeometry(0.8, 6, 4).translate(lens[0], lens[1], lens[2]));
+        glowAt(lens[0], lens[1], lens[2], 5, "#ffd9a0");
+        // the beam: an open cone from the lens towards the target, bright at the lens, gone at the far end
+        const L = Math.hypot(tgt[0] - lens[0], tgt[1] - lens[1], tgt[2] - lens[2]) * (sx < -200 ? 0.55 : 1.02);
+        const cone = new CylinderGeometry(sx < -200 ? 4 : 8.5, 0.8, L, 12, 1, true);
+        const n = cone.attributes.position.count, cc = new Float32Array(n * 3), warm = new Color(sx < -200 ? "#ffcf96" : "#ff9a6a");
+        for (let i = 0; i < n; i++) { const yy = cone.attributes.position.getY(i), f = yy > 0 ? 0 : sx < -200 ? 0.045 : 0.085; cc[i * 3] = warm.r * f; cc[i * 3 + 1] = warm.g * f; cc[i * 3 + 2] = warm.b * f; }
+        cone.setAttribute("color", new BufferAttribute(cc, 3)); cone.deleteAttribute("uv"); cone.deleteAttribute("normal");
+        _tacQ.setFromUnitVectors(_tacUp, d);
+        cone.applyMatrix4(new Matrix4().compose(new Vector3(lens[0] + d.x * L / 2, lens[1] + d.y * L / 2, lens[2] + d.z * L / 2), _tacQ, new Vector3(1, 1, 1)));
+        V.beam.push(cone);
+      }
+    }
+    // festoons from the portal's towers down to the stands at the stair's foot, over the jury
+    for (const s of [-1, 1]) { festoon([QX + 2.5, QH - 14, s * (QZ - 2)], [-194, 18, s * 44], 5, 14); festoon([QX + 2.5, QH - 26, s * (QZ - 2)], [-190, 18, s * 64], 4, 12); }
+    // FEATHER FLAGS along the carpet, from the kerb to the portal, the court's banner on both faces
+    for (let fx = gx0 + 34; fx < QX - 20; fx += 33) for (const s of [-1, 1]) {
+      tacRod(V.kit, [fx, 0.8, s * 19], [fx, 27, s * 19], 0.22, 5);
+      tacSign(V.sign, "flag", 6.6, 17.6, fx - 0.4, 17.4, s * 19 + s * 3.5, true);
+    }
+    // THE GATE on the kerb: a truss arch with the court's line (was a black gate lettered with the name)
+    for (const s of [-1, 1]) { tacTruss(V.alu, [gx0 + 4, 0.8, s * 23], [gx0 + 4, 44, s * 23], 4); V.kit.push(new BoxGeometry(7, 1, 7).translate(gx0 + 4, 1.3, s * 23)); }
+    tacTruss(V.alu, [gx0 + 4, 42, -25], [gx0 + 4, 42, 25], 4);
+    V.alu.push(new BoxGeometry(0.6, 9.6, 46).translate(gx0 + 1.6, 35, 0));
+    tacSign(V.sign, "line", 44, 8.8, gx0 + 1.6, 35, 0, true, 0.36); // both faces: the way in and the way out
+    festoon([gx0 + 1.4, 43, -23], [gx0 + 1.4, 43, 23], 4, 10);
+    // THE NIGHT: the portico washed warm from below (two additive sheets in front of the columns and on the risalit),
+    // and every bulb and lens with a glow; one mesh each, shown after dark only
+    {
+      const wash = (x, y0, y1, z0, z1, hex, k) => { const q = new PlaneGeometry(z1 - z0, y1 - y0, 8, 2); q.rotateY(-Math.PI / 2); q.translate(x, (y0 + y1) / 2, (z0 + z1) / 2); q.deleteAttribute("uv"); q.deleteAttribute("normal"); const P = q.attributes.position, n = P.count, cc = new Float32Array(n * 3), c = new Color(hex); for (let i = 0; i < n; i++) { const v = (P.getY(i) - y0) / (y1 - y0), u = (P.getZ(i) - z0) / (z1 - z0), f = k * Math.pow(1 - v, 1.6) * Math.pow(Math.sin(Math.PI * u), 0.8); cc[i * 3] = c.r * f; cc[i * 3 + 1] = c.g * f; cc[i * 3 + 2] = c.b * f; } q.setAttribute("color", new BufferAttribute(cc, 3)); V.beam.push(q); };
+      wash(PX - 31, 13, 70, -58, 58, "#ff7a5c", 0.26);
+      wash(PX - 2, 60, 100, -44, 44, "#ffb27a", 0.16);
+    }
+    const night = new Group(); night.visible = false;
+    const beamM = new MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, fog: false, toneMapped: false });
+    beamM.userData.outlineParameters = { visible: false };
+    const beams = new Mesh(tacMerge(V.beam), beamM); beams.castShadow = beams.receiveShadow = false; beams.userData.noMerge = true; night.add(beams);
+    {
+      // the glows: camera-facing quads, all in one mesh (a billboard in the vertex shader)
+      const n = V.glow.length, P = new Float32Array(n * 12), Cn = new Float32Array(n * 8), S = new Float32Array(n * 4), T = new Float32Array(n * 12), I = [];
+      const c = new Color();
+      V.glow.forEach(([x, y, z, s, hex], i) => {
+        c.set(hex);
+        [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([a, b], j) => { P.set([x, y, z], i * 12 + j * 3); Cn.set([a, b], i * 8 + j * 2); S[i * 4 + j] = s; T.set([c.r, c.g, c.b], i * 12 + j * 3); });
+        I.push(i * 4, i * 4 + 1, i * 4 + 2, i * 4, i * 4 + 2, i * 4 + 3);
+      });
+      const gg = new BufferGeometry();
+      gg.setAttribute("position", new BufferAttribute(P, 3)); gg.setAttribute("corner", new BufferAttribute(Cn, 2)); gg.setAttribute("size", new BufferAttribute(S, 1)); gg.setAttribute("tint", new BufferAttribute(T, 3)); gg.setIndex(I);
+      gg.computeBoundingSphere(); gg.boundingSphere.radius += 12;
+      const glowM = new ShaderMaterial({
+        vertexShader: "#include <common>\nattribute vec2 corner; attribute float size; attribute vec3 tint; varying vec2 vC; varying vec3 vT; void main() { vC = corner; vT = tint; vec4 w = modelMatrix * vec4(position, 1.0); w.xz = cityWarp(w.xz); vec4 mv = viewMatrix * w; mv.xy += corner * size; gl_Position = projectionMatrix * mv; }",
+        fragmentShader: "varying vec2 vC; varying vec3 vT; void main() { float d = length(vC); float a = pow(max(0.0, 1.0 - d), 2.4) + 0.5 * pow(max(0.0, 1.0 - d * 2.6), 3.0); gl_FragColor = vec4(vT * a, 1.0); }",
+        transparent: true, depthWrite: false, blending: AdditiveBlending
+      });
+      glowM.userData.outlineParameters = { visible: false };
+      const glow = new Mesh(gg, glowM); glow.castShadow = glow.receiveShadow = false; glow.userData.noMerge = true; night.add(glow);
+    }
+    g.add(night);
+    // after dark (the streets' signs switch with STREET_GLOW): the night group shows
+    STREET_GLOW.push([{ isTacNight: true, set emissiveIntensity(v) { night.visible = v > 0; }, get emissiveIntensity() { return night.visible ? 1 : 0; } }, 1]);
+    // the day's materials, one mesh each
+    const velvetM = new MeshStandardMaterial({ color: "#ffffff", vertexColors: true, roughness: 0.94, side: DoubleSide });
+    const aluM = new MeshStandardMaterial({ color: "#c9ccd0", roughness: 0.38, metalness: 0.7 });
+    const kitM = new MeshStandardMaterial({ color: "#1b1a1d", roughness: 0.6, metalness: 0.2 });
+    const woodM = new MeshStandardMaterial({ color: "#4b2a1c", roughness: 0.55 });
+    const signM = new MeshStandardMaterial({ map: tacAtlas(), emissiveMap: tacAtlas(), emissive: new Color("#ffffff"), emissiveIntensity: 0, roughness: 0.75 });
+    STREET_GLOW.push([signM, 0.6]);
+    for (const [k, m] of [["velvet", velvetM], ["alu", aluM], ["kit", kitM], ["wood", woodM], ["sign", signM]]) if (V[k].length) g.add(new Mesh(tacMerge(V[k]), m));
+  }
   // r134: Pain Plaisir as it really stands (Daniel's photos): a shop on the ground floor of a pale block, a black-framed
   // glass front full of bread and warm light, a white fascia with the hand-lettered wordmark, a black canopy with a
   // string of globe bulbs, the round yellow blade sign, pink granite steps, an A-board and a terrace of white tables
@@ -27238,7 +27511,9 @@ void main() {
   }
   // r116: Patiline, an industrial bakery: corrugated silver sheds with red trim, and a long glass
   // front where you watch the line: dough in, croissants and loaves riding the belt into the oven
-  function buildPatiline(parent, x, z) {
+  // TASK-099: where the city may build round Patiline's corner (x0, x1, z0, z1), and the seed of its houses
+  var PATI_CORNER = { boxes: [[856, 925, 5755, 5845], [856, 990, 5955, 6072], [960, 1140, 5985, 6072]], seed: 4099 };
+  function buildPatiline(parent, x, z, ry = 0) {
     const g = new Group();
     const corr = canvasTexture(128, 64, (ctx) => { ctx.fillStyle = "#c9ced3"; ctx.fillRect(0, 0, 128, 64); for (let i = 0; i < 128; i += 8) { ctx.fillStyle = "#aeb4ba"; ctx.fillRect(i, 0, 3, 64); } }, { repeat: [8, 2] });
     const silver = new MeshStandardMaterial({ map: corr, roughness: 0.45, metalness: 0.55, envMap: typeof getEnvMap === "function" ? getEnvMap() : null, envMapIntensity: 0.5 });
@@ -27264,61 +27539,216 @@ void main() {
       arm.rotation.z = Math.sin(t * 2.2) * 0.5;
     });
     const sign = signBoard({ name: "PATILINE", signBg: "#d71920", signInk: "#ffffff" }, 46, 10); sign.position.set(-10, 27, D / 2 + 0.8); g.add(sign);
-    g.rotation.y = 0;
+    g.rotation.y = ry; // TASK-099: turned to face Coffee Street on its new plot
     EXTRA_KEEPOUT.push({ x, y: z, r: 80 });
     return finish(g, parent, x, z);
   }
-  // the Zdrovit courtyard: a paved yard with a fountain and trees, small buildings around it
-  // the small brands of the Zdrovit yard: one kiosk each round the fountain, room for more
-  var ZDROVIT_YARD = ["Lacalut", "Periferisan", "Help 4 Brain", "Parusan", "Bonilash", "Litorsal", "Maximag"]; // TASK-064: + Maximag
-  // TASK-064: a kiosk may wear its brand's colours, taken from the real artwork (Maximag: the navy of the logo, the red
-  // of its Bisglicinat tag, a white sign with navy letters); the others keep the Zdrovit red roof and the grey sign
-  var YARD_LOOK = { Maximag: { roof: "#091D61", band: "#D71E3E", signBg: "#ffffff", signInk: "#091D61" } };
-  // r134: Daniel: the small buildings stand along the edges of the yard, not round the fountain: four along the
-  // hedge side (towards Sofmedica), one each side of the gate
-  // r176: the beauty shops' side (south) is not left bare now they have moved out: two kiosks there, two on the hedge
-  // side, one each side of the gate
-  // TASK-064: Maximag takes the yard's south-east corner, the third kiosk on the south side, clear of the trees and of
-  // the Zdrovit house (its south wall is at z ~5105)
-  var YARD_EDGE = [[1690, 5006], [1790, 5006], [1690, 5205], [1790, 5205], [1590, 5012], [1590, 5150], [1870, 5205]];
-  var YARD_SLOTS = YARD_EDGE.length;
-  const yardSlotOf = (k) => k;
-  function yardSpot(i) { return YARD_EDGE[i % YARD_EDGE.length]; }
-  function buildCourtyard(parent, cx, cz, list) {
+  // TASK-074 (Daniel, 21 Oct): Zdrovit is ONE place now, the "Beauty & Supplement Park": an amusement park where the
+  // yard of kiosks was (a big ZDROVIT arch on the avenue, a Ferris wheel, a carousel, a little roller coaster with a
+  // loop, booths and bunting). Its brands are not on the map one by one: the Zdrovit card lists them all
+  // (ZDROVIT_BRANDS, filled in by build/build.mjs from site/data.mjs; a brand with a case page opens it)
+  var ZDROVIT_BRANDS = [];
+  var ZDROVIT_PARK = { x: 1830, z: 5070 }; // the Ferris wheel, where the place's pin stands
+  // the brand list (the map's Zdrovit card, the drive's Zdrovit panel): the brands with a case page first, then A to Z;
+  // one with a page is a button (data-zb = its name, data-pg = its slug), the others show their one line
+  function zdrovitListHTML(cls) {
+    const ro = /^ro/i.test(document.documentElement.lang || ""), esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+    const list = ZDROVIT_BRANDS.slice().sort((a, b) => (a.page ? 0 : 1) - (b.page ? 0 : 1) || a.name.localeCompare(b.name));
+    return `<ul class="zd-list ${cls || ""}" aria-label="${ro ? "Brandurile din parc" : "The brands in the park"}">${list.map((b) => {
+      const line = esc((ro && b.ro) || b.line || "");
+      return b.page
+        ? `<li><button class="zd-b pg" data-zb="${esc(b.name)}" data-pg="${esc(b.page)}"><b>${esc(b.name)}</b><i>${line}</i><span class="zd-go">${ro ? "Studiu de caz" : "Case study"} <span aria-hidden="true">\u2192</span></span></button></li>`
+        : `<li><div class="zd-b"><b>${esc(b.name)}</b><i>${line}</i></div></li>`;
+    }).join("")}</ul>`;
+  }
+  // the park's static parts are plain meshes: the start-up batcher (mergeStatic, builder "FourStreets") folds them into a
+  // few draws; the wheel and the carousel turn (marked noMerge, drawn as themselves: four meshes and one instanced)
+  function buildCourtyard(parent, cx, cz) {
     const g = new Group();
-    // the gate on the avenue side, white pillars and a red ZDROVIT lintel
-    { const gm = new MeshStandardMaterial({ color: "#f4f2ec", roughness: 0.8 });
-      for (const dz of [-28, 28]) { const pl = new Mesh(new BoxGeometry(6, 26, 6), gm); pl.position.set(cx - 168, 13, cz + dz); g.add(pl); }
-      const lint = signBoard({ name: "ZDROVIT", signBg: "#e30613", signInk: "#ffffff" }, 62, 9); lint.position.set(cx - 168, 27, cz); lint.rotation.y = -Math.PI / 2; g.add(lint);
-      const path = new Mesh(new BoxGeometry(60, 0.9, 46), new MeshStandardMaterial({ color: "#d8cfbd", roughness: 1 })); path.position.set(cx - 150, 0.45, cz); g.add(path); }
-    { const kM = [new MeshStandardMaterial({ color: "#f4f2ec", roughness: 0.8 }), new MeshStandardMaterial({ color: "#d9d6cf", roughness: 0.8 })];
-      for (let i = 0; i < YARD_SLOTS; i++) {
-        const [kx, kz] = yardSpot(i), k0 = [...Array(ZDROVIT_YARD.length).keys()].find((q) => yardSlotOf(q) === i), used = k0 != null;
-        if (!used) continue;
-        const k = new Group();
-        const base = new Mesh(new BoxGeometry(16, used ? 11 : 2, 12), kM[used ? 0 : 1]); base.position.y = used ? 5.5 : 1; k.add(base);
-        if (used) {
-          const look = YARD_LOOK[ZDROVIT_YARD[k0]] || {};
-          const roof = new Mesh(new BoxGeometry(19, 1.4, 15), new MeshStandardMaterial({ color: look.roof || "#e30613", roughness: 0.6 })); roof.position.y = 11.7; k.add(roof);
-          if (look.band) { const band = new Mesh(new BoxGeometry(16.6, 1, 12.6), new MeshStandardMaterial({ color: look.band, roughness: 0.6 })); band.position.y = 10.5; k.add(band); /* the red fascia, between the sign (top 10) and the roof */ }
-          const sg = signBoard({ name: ZDROVIT_YARD[k0], signBg: look.signBg || "#ecebe7", signInk: look.signInk || "#3d3c39" }, 15, 3.2); sg.position.set(0, 8.4, 6.2); k.add(sg);
-        }
-        k.position.set(kx, 0, kz); k.rotation.y = kx < 1600 ? Math.PI / 2 : kz > cz ? Math.PI : 0; g.add(k); // (r176: the south ones face the yard too)
+    const M = (c, o = {}) => new MeshStandardMaterial({ color: c, roughness: 0.75, ...o });
+    const add = (geo, mat, x, y, z, ry = 0) => { const m = new Mesh(geo, mat); m.position.set(x, y, z); m.rotation.y = ry; g.add(m); return m; };
+    // one geometry from many parts, each with its colour in its vertices (for the parts that turn)
+    const part = (geo, color, mx) => { geo.applyMatrix4(mx); const c = new Color(color), n = geo.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; } geo.setAttribute("color", new BufferAttribute(a, 3)); return geo; };
+    const mx = (x, y, z, rx = 0, ry = 0, rz = 0, s = 1) => new Matrix4().compose(new Vector3(x, y, z), new Quaternion().setFromEuler(new Euler(rx, ry, rz)), new Vector3(s, s, s));
+    const white = M("#f4f2ec"), red = M("#e30613", { roughness: 0.6 }), path = M("#d8cfbd", { roughness: 1 }), lawn = M("#7cc472", { roughness: 1 });
+    const FUN = ["#e30613", "#FED012", "#119BFE", "#28C840", "#F28BA8", "#B098C8", "#F58D42"];
+    // the ground: the old yard's paving, a path from the arch to the wheel, a round plaza for the carousel, the
+    // coaster's lawn
+    const pave = add(new BoxGeometry(340, 0.8, 370), M("#e7e0d2", { roughness: 1 }), cx, 0.4, cz); pave.receiveShadow = true;
+    add(new BoxGeometry(250, 0.9, 26), path, 1675, 0.85, cz);
+    add(new CylinderGeometry(46, 46, 0.95, 40), path, 1690, 0.9, cz);
+    { const l = add(new CylinderGeometry(1, 1, 1, 40), lawn, 1730, 0.9, 5192); l.scale.set(98, 1.1, 24); }
+    for (const [lx, lz, r] of [[1598, 5012, 24], [1590, 5136, 20]]) add(new CylinderGeometry(r, r, 1.1, 28), lawn, lx, 0.9, lz);
+    // the arch on the avenue: two striped towers, the name big, "Beauty & Supplement Park" under it
+    {
+      const ax = cx - 164;
+      for (const dz of [-38, 38]) {
+        add(new BoxGeometry(11, 40, 11), white, ax, 20, cz + dz);
+        for (let k = 0; k < 4; k++) add(new BoxGeometry(11.6, 2.4, 11.6), red, ax, 6 + k * 9, cz + dz);
+        add(new ConeGeometry(9, 14, 4), red, ax, 47, cz + dz, Math.PI / 4);
+        add(new CylinderGeometry(0.35, 0.35, 10, 5), white, ax, 58, cz + dz);
+        add(new BoxGeometry(0.4, 4, 7), M(dz < 0 ? "#FED012" : "#119BFE"), ax, 61, cz + dz + 3.6);
       }
+      const tex = canvasTexture(768, 256, (ctx, w, h) => {
+        ctx.fillStyle = "#e30613"; ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, h * 0.7, w, h * 0.3);
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillStyle = "#ffffff"; ctx.font = "800 142px CromaticSans, sans-serif"; ctx.fillText("ZDROVIT", w / 2, h * 0.37);
+        ctx.fillStyle = "#e30613"; let fs = 46; ctx.font = `800 ${fs}px CromaticSans, sans-serif`;
+        while (ctx.measureText("Beauty & Supplement Park").width > w - 60 && fs > 20) { fs -= 2; ctx.font = `800 ${fs}px CromaticSans, sans-serif`; }
+        ctx.fillText("Beauty & Supplement Park", w / 2, h * 0.855);
+      });
+      const sm = new MeshStandardMaterial({ map: tex, roughness: 0.5, emissive: new Color("#ffffff"), emissiveMap: tex, emissiveIntensity: 0 });
+      STREET_GLOW.push([sm, 0.55]);
+      const sign = new Mesh(new BoxGeometry(69, 23, 1.6), [red, red, red, red, sm, sm]); sign.position.set(ax, 33, cz); sign.rotation.y = -Math.PI / 2; g.add(sign);
     }
-    const pave = new Mesh(new BoxGeometry(340, 0.8, 370), new MeshStandardMaterial({ color: "#e7e0d2", roughness: 1 }));
-    pave.position.set(cx, 0.4, cz); pave.receiveShadow = true; g.add(pave);
-    const grass = new Mesh(new CylinderGeometry(50, 50, 1.2, 32), new MeshStandardMaterial({ color: "#7cc472", roughness: 1 }));
-    grass.position.set(cx, 0.8, cz); g.add(grass);
-    const basin = new Mesh(new CylinderGeometry(14, 15, 3, 24), new MeshStandardMaterial({ color: "#d9d2c3", roughness: 0.9 })); basin.position.set(cx, 1.5, cz);
-    const water = new Mesh(new CylinderGeometry(12, 12, 0.6, 24), new MeshStandardMaterial({ color: "#7fc8e8", roughness: 0.15, metalness: 0.2 })); water.position.set(cx, 3, cz);
-    const jet = new Mesh(new CylinderGeometry(0.8, 1.6, 9, 8), new MeshStandardMaterial({ color: "#d8f1ff", transparent: true, opacity: 0.8 })); jet.position.set(cx, 7, cz);
-    g.add(basin, water, jet);
-    const crownM = new MeshStandardMaterial({ color: "#4fae5c", roughness: 0.9, flatShading: true }), trunkM = new MeshStandardMaterial({ color: "#7a5a3a" });
-    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; const tx = cx + Math.cos(a + 0.26) * 112, tz = cz + Math.sin(a + 0.26) * 118; const tr = new Mesh(new CylinderGeometry(1.2, 1.6, 10, 6), trunkM); tr.position.set(tx, 5, tz); const cr = new Mesh(new IcosahedronGeometry(7.5, 1), crownM); cr.position.set(tx, 15, tz); g.add(tr, cr); }
-    g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+    // booths: white stalls with a coloured roof and awning, along the path and along the hedge
+    {
+      const booth = (x, z, ry, c) => {
+        const b = new Group(); b.position.set(x, 0, z); b.rotation.y = ry; g.add(b);
+        const cm = M(c, { roughness: 0.6 });
+        const p = (geo, m, y, zz, rx = 0) => { const q = new Mesh(geo, m); q.position.set(0, y, zz); q.rotation.x = rx; b.add(q); };
+        p(new BoxGeometry(13, 9, 9), white, 4.5, 0);
+        p(new BoxGeometry(13.4, 2, 1), cm, 4.2, 4.8);
+        p(new BoxGeometry(15, 1.2, 11), cm, 9.6, 0);
+        p(new BoxGeometry(14, 0.6, 5.5), cm, 8.1, 6.6, 0.42);
+        p(new ConeGeometry(1.8, 3.4, 4), cm, 12, 0);
+      };
+      let k = 0;
+      for (const x of [1588, 1624]) { booth(x, cz - 28, 0, FUN[k++ % 7]); booth(x, cz + 28, Math.PI, FUN[k++ % 7]); }
+      for (let i = 0; i < 6; i++) booth(1662 + i * 36, 5012, 0, FUN[k++ % 7]);
+    }
+    // trees round the edge
+    { const crownM = M("#4fae5c", { roughness: 0.9, flatShading: true }), trunkM = M("#7a5a3a");
+      for (const [tx, tz] of [[1572, 5000], [1574, 5246], [1650, 5122], [1752, 5124], [1882, 5130], [1884, 5244], [1882, 5004]]) { add(new CylinderGeometry(1.2, 1.6, 10, 6), trunkM, tx, 5, tz); add(new IcosahedronGeometry(7.5, 1), crownM, tx, 15, tz); } }
+    // the roller coaster: an oval with two hills and a loop, a red square rail on white posts, a station with three cars
+    {
+      const C0 = new Vector3(1730, 0, 5192), RX = 122, RZ = 38, pts = [], oval = [];
+      const gau = (a, c, w) => { let d = Math.abs(a - c) % (Math.PI * 2); if (d > Math.PI) d = Math.PI * 2 - d; return Math.exp(-(d * d) / (2 * w * w)); };
+      const N = 96, loopAt = Math.PI / 2, LR = 15;
+      for (let i = 0; i < N; i++) {
+        const a = (i / N) * Math.PI * 2;
+        const p = new Vector3(C0.x + RX * Math.cos(a), 7 + 30 * gau(a, 0.05, 0.42) + 15 * gau(a, Math.PI, 0.38), C0.z + RZ * Math.sin(a));
+        pts.push(p); oval.push(p);
+        if (i === N / 4) { // the loop, on the south straight (going west): round once, sideways a little so the rail clears itself
+          for (let j = 1; j < 24; j++) { const f = (j / 24) * Math.PI * 2; pts.push(new Vector3(p.x - LR * Math.sin(f), p.y + LR * (1 - Math.cos(f)), p.z + 4.5 * Math.sin(f / 2))); }
+        }
+      }
+      const rails = [], posts = [], up = new Vector3(0, 1, 0), d = new Vector3(), q = new Quaternion();
+      for (let i = 0; i < pts.length; i++) {
+        const a = pts[i], b = pts[(i + 1) % pts.length]; d.subVectors(b, a); const L = d.length(); if (L < 0.01) continue;
+        q.setFromUnitVectors(up, d.clone().normalize());
+        const geo = new CylinderGeometry(1.7, 1.7, L + 1.2, 4); geo.applyMatrix4(new Matrix4().compose(a.clone().add(b).multiplyScalar(0.5), q, new Vector3(1, 1, 1))); rails.push(geo);
+        if (i % 4 === 0 && a.y > 3 && (i < N / 4 || i > N / 4 + 23)) { const pg = new CylinderGeometry(0.7, 0.9, a.y, 5); pg.translate(a.x, a.y / 2, a.z); posts.push(pg); }
+      }
+      // (the loop stands on its own: the oval's post under its foot holds it)
+      const rail = new Mesh(mergeGeometries(rails, false), red); g.add(rail);
+      const post = new Mesh(mergeGeometries(posts.map((x) => x.index ? x.toNonIndexed() : x), false), white); g.add(post);
+      // the station on the north straight, its three cars waiting
+      const st = oval[(N * 3) / 4]; // the north straight, low, by the plaza
+      for (const [sx, sz] of [[-16, -7], [16, -7], [-16, 7], [16, 7]]) add(new BoxGeometry(1.4, 16, 1.4), white, st.x + sx, 8, st.z + sz);
+      add(new BoxGeometry(38, 1.6, 20), red, st.x, 16.5, st.z);
+      add(new BoxGeometry(36, 3, 14), white, st.x, 1.6, st.z - 2);
+      for (let c = 0; c < 3; c++) add(new BoxGeometry(7, 3.4, 5), M(["#FED012", "#119BFE", "#28C840"][c], { roughness: 0.5 }), st.x - 9 + c * 9, st.y + 2.6, st.z);
+    }
+    // bunting round the plaza: eight poles, strings that sag, little triangles in the park's colours (one mesh)
+    {
+      const P = [], cxp = 1690, R = 52;
+      for (let i = 0; i < 8; i++) { const a = (i + 0.5) / 8 * Math.PI * 2; P.push(new Vector3(cxp + R * Math.cos(a), 19, cz + R * Math.sin(a))); add(new CylinderGeometry(0.5, 0.6, 19, 5), white, P[i].x, 9.5, P[i].z); }
+      const pos = [], col = [], cc = new Color(), seg = [];
+      const string = (A, B, sag) => {
+        const n = Math.max(4, Math.round(A.distanceTo(B) / 4.5));
+        let prev = A.clone();
+        for (let j = 1; j <= n; j++) {
+          const t = j / n, p = A.clone().lerp(B, t); p.y -= sag * 4 * t * (1 - t);
+          const m = prev.clone().add(p).multiplyScalar(0.5);
+          seg.push([prev.clone(), p.clone()]);
+          if (j < n) { cc.set(FUN[(j + seg.length) % 7]); const s = 1.7; const dir = p.clone().sub(prev).normalize();
+            const a0 = m.clone().addScaledVector(dir, -s), a1 = m.clone().addScaledVector(dir, s), a2 = m.clone(); a2.y -= 3.4;
+            for (const v of [a0, a1, a2]) { pos.push(v.x, v.y, v.z); col.push(cc.r, cc.g, cc.b); } }
+          prev = p;
+        }
+      };
+      for (let i = 0; i < 8; i++) string(P[i], P[(i + 1) % 8], 3.5);
+      // and from the arch's towers in, over the path
+      string(new Vector3(cx - 164, 38, cz - 38), P[4], 6); string(new Vector3(cx - 164, 38, cz + 38), P[3], 6);
+      const fg = new BufferGeometry(); fg.setAttribute("position", new BufferAttribute(new Float32Array(pos), 3)); fg.setAttribute("color", new BufferAttribute(new Float32Array(col), 3)); fg.computeVertexNormals();
+      const flags = new Mesh(fg, new MeshStandardMaterial({ vertexColors: true, side: DoubleSide, roughness: 0.8 })); flags.castShadow = false; flags.userData.noShadow = true; g.add(flags);
+      const lines = seg.map(([a, b]) => { const geo = new BoxGeometry(0.25, 0.25, a.distanceTo(b) + 0.2); geo.applyMatrix4(new Matrix4().lookAt(a, b, new Vector3(0, 1, 0)).setPosition(a.clone().add(b).multiplyScalar(0.5))); return geo; });
+      g.add(new Mesh(mergeGeometries(lines, false), M("#3d3c39")));
+    }
+    // balloons by the arch
+    for (const [bx, by, bz, c] of [[1570, 30, 5022, "#e30613"], [1567, 33, 5026, "#FED012"], [1572, 34, 5019, "#119BFE"], [1566, 28, 5118, "#28C840"], [1570, 31, 5114, "#F28BA8"]]) { add(new SphereGeometry(2.6, 10, 8), M(c, { roughness: 0.35 }), bx, by, bz); add(new CylinderGeometry(0.12, 0.12, by - 2, 3), M("#3d3c39"), bx, (by - 2) / 2, bz); }
+    // the carousel: a white drum; on it, turning, the floor, the poles and horses and a striped roof
+    const spin = [];
+    {
+      const X = 1690, Z = cz;
+      add(new CylinderGeometry(23, 24, 2.6, 28), white, X, 1.3, Z);
+      const top = new Group(); top.position.set(X, 0, Z); g.add(top);
+      const parts = [
+        part(new CylinderGeometry(21, 21, 1, 28), "#F28BA8", mx(0, 3.1, 0)),
+        part(new CylinderGeometry(3, 3, 24, 10), "#FED012", mx(0, 14, 0)),
+        part(new CylinderGeometry(25.5, 25.5, 3, 28, 1, true), "#e30613", mx(0, 23, 0)),
+        part(new SphereGeometry(2.4, 10, 8), "#FED012", mx(0, 37, 0))
+      ];
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2, px = Math.cos(a) * 15.5, pz = Math.sin(a) * 15.5, hy = 8 + (i % 2) * 2.4, c = FUN[(i + 1) % 7];
+        parts.push(part(new CylinderGeometry(0.45, 0.45, 19, 5), "#f4f2ec", mx(px, 13, pz)));
+        parts.push(part(new BoxGeometry(2.4, 3, 7), c, mx(px, hy, pz, 0, -a, 0)));
+        parts.push(part(new BoxGeometry(2, 3.4, 2.2), c, mx(px + Math.sin(a) * 3.6, hy + 2.4, pz - Math.cos(a) * 3.6, 0, -a, 0)));
+      }
+      const body = new Mesh(mergeGeometries(parts.map((x) => (x.index ? x.toNonIndexed() : x)), false), new MeshStandardMaterial({ vertexColors: true, roughness: 0.6 }));
+      top.add(body);
+      const stripes = canvasTexture(256, 32, (ctx, w, h) => { for (let k = 0; k < 16; k++) { ctx.fillStyle = k % 2 ? "#ffffff" : "#e30613"; ctx.fillRect((k * w) / 16, 0, w / 16 + 1, h); } });
+      const roof = new Mesh(new ConeGeometry(27, 12, 32, 1, true), new MeshStandardMaterial({ map: stripes, roughness: 0.6, side: DoubleSide }));
+      roof.position.y = 30.5; top.add(roof);
+      top.name = "zdCarousel"; spin.push(top);
+    }
+    // the Ferris wheel, where the Zdrovit house stood: two A-frames, a rim with spokes, twelve gondolas that hang level
+    // (turned 0.6 rad towards the south-west, so its face reads from the avenue, from the map's usual three-quarter view
+    // and from above; flat to the avenue it was a line from the south)
+    const wheel = new Group(), WX = ZDROVIT_PARK.x, WZ = cz, HUB = 55, WR = 42, NG = 12, PSI = 0.6, wb = new Group();
+    wb.position.set(WX, 0, WZ); wb.rotation.y = PSI; g.add(wb);
+    {
+      const wadd = (geo, mat, x, y, z) => { const m = new Mesh(geo, mat); m.position.set(x, y, z); wb.add(m); return m; };
+      wadd(new BoxGeometry(46, 3, 34), white, 0, 1.5, 0);
+      for (const sx of [-7, 7]) for (const sz of [-1, 1]) {
+        const a = new Vector3(sx, 0, sz * 30), b = new Vector3(sx, HUB, 0), L = a.distanceTo(b);
+        const leg = new Mesh(new CylinderGeometry(1.1, 1.5, L, 6), white); leg.position.copy(a).add(b).multiplyScalar(0.5);
+        leg.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), b.clone().sub(a).normalize()); wb.add(leg);
+      }
+      wadd(new CylinderGeometry(1.2, 1.2, 16, 8), white, 0, HUB, 0).rotation.z = Math.PI / 2;
+      wheel.position.set(0, HUB, 0); wb.add(wheel);
+      const parts = [part(new TorusGeometry(WR, 1.2, 6, 48), "#e30613", mx(0, 0, 0, 0, Math.PI / 2, 0)), part(new TorusGeometry(WR * 0.62, 0.7, 5, 36), "#ffffff", mx(0, 0, 0, 0, Math.PI / 2, 0)), part(new CylinderGeometry(3.4, 3.4, 5, 12), "#FED012", mx(0, 0, 0, 0, 0, Math.PI / 2))];
+      for (let i = 0; i < NG; i++) { const a = (i / NG) * Math.PI * 2; parts.push(part(new BoxGeometry(0.6, WR, 0.6), "#ffffff", mx(0, Math.cos(a) * WR / 2, Math.sin(a) * WR / 2, a, 0, 0))); }
+      wheel.add(new Mesh(mergeGeometries(parts.map((x) => (x.index ? x.toNonIndexed() : x)), false), new MeshStandardMaterial({ vertexColors: true, roughness: 0.6 })));
+      wheel.name = "zdWheel"; spin.push(wheel);
+    }
+    const gGeo = mergeGeometries([new BoxGeometry(5, 5.4, 6).toNonIndexed(), (() => { const r = new BoxGeometry(6.4, 1, 7.4).toNonIndexed(); r.translate(0, 3.4, 0); return r; })()], false);
+    gGeo.translate(0, -4.2, 0); // hangs under its pin on the rim
+    const gond = new InstancedMesh(gGeo, new MeshStandardMaterial({ roughness: 0.55 }), NG);
+    for (let i = 0; i < NG; i++) gond.setColorAt(i, new Color(FUN[i % 7]));
+    g.add(gond);
+    const o3 = new Object3D(), placeG = (rot) => { for (let i = 0; i < NG; i++) { const a = (i / NG) * Math.PI * 2 + rot; const r = Math.sin(a) * WR; o3.position.set(WX + Math.sin(PSI) * r, HUB + Math.cos(a) * WR, WZ + Math.cos(PSI) * r); o3.rotation.y = PSI; o3.updateMatrix(); gond.setMatrixAt(i, o3.matrix); } gond.instanceMatrix.needsUpdate = true; };
+    placeG(0); gond.frustumCulled = false; gond.computeBoundingSphere?.();
+    g.traverse((m) => { if (m.isMesh) { m.castShadow = !m.userData.noShadow; m.receiveShadow = true; } });
+    for (const s of spin) s.traverse((m) => { m.userData.noMerge = true; });
+    gond.userData.noMerge = true;
     parent.add(g);
-    for (const o of list) buildBrandBuilding(parent, o);
+    // TASK-074: the wheel and the carousel turn slowly, only while the park is on screen, and not at all with reduced motion
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!still) {
+      const fr = new Frustum(), pm = new Matrix4(), sph = new Sphere(new Vector3(1730, 40, 5110), 230), c0 = new Vector3(1730, 40, 5110);
+      BAKERY_ANIM.push((t, cam) => {
+        if (!cam) return;
+        sph.center.copy(c0); warpV(sph.center);
+        pm.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); fr.setFromProjectionMatrix(pm);
+        if (!fr.intersectsSphere(sph)) return;
+        const rot = t * 0.09;
+        wheel.rotation.x = rot; placeG(rot);
+        spin[0].rotation.y = -t * 0.32;
+      });
+    }
     EXTRA_KEEPOUT.push({ x: cx, y: cz, r: 200 });
   }
 
@@ -27896,17 +28326,19 @@ void main() {
     // r177 (Daniel): the brand the code called "Jesse J" (Daniel wrote "Jessie J") is Tracy J
     { br: "C", name: "Tracy J", x: 1574, z: 5950, face: "-x", kind: "la", w: 42, d: 32, h: 21, wall: "#d8efe6", accent: "#62c6a6", c: "#62c6a6", t: "#0c2a20", line: "BEAUTY \xB7 LOS ANGELES", desc: "The Core of a skincare brand with a joyous voice, its visual identity, packaging and brand universe." } // r179: as on its case page
   ];
-  // the Zdrovit courtyard (Medical Avenue, east side): Zdrovit and its seven brands' kiosks around a yard
+  // the Zdrovit courtyard (Medical Avenue, east side)
   // (r176: Routine Paris, Darya Hope and Jesse J moved out to their own plots, see STREET_BRANDS)
+  // TASK-074: the courtyard is the Zdrovit Beauty & Supplement Park (buildCourtyard); the Zdrovit house is gone (the
+  // Ferris wheel stands there), this entry stays as the name the drive and the friends list know
   var COURT = { x: 1720, z: 5070 };
   var COURT_BRANDS = [
-    { br: "C", name: "Zdrovit", x: 1860, z: 5070, face: "-x", kind: "house", w: 70, d: 48, h: 84, wall: "#f2f7f1", accent: "#e30613", c: "#e30613", t: "#ffffff", line: "HEALTH" }
+    { br: "C", name: "Zdrovit", x: 1830, z: 5070, c: "#e30613", t: "#ffffff", line: "BEAUTY & SUPPLEMENT PARK" }
   ];
   // Coffee Street additions
   var COFFEE_ADDS = [
     { br: "A", name: "Pain Plaisir", x: 900, z: 4815, px: 968, pz: 4815, line: "VIDEO \xB7 PHOTO \xB7 PRODUCT DESIGN", c: "#ffffff", t: "#111111", desc: "A French-style bakery with a real oven at its heart. We made their video production, the photo shootings and the product design." },
     { br: "A", name: "Lapterra", x: 760, z: 5650, px: 706, pz: 5650, line: "PATISSERIE \xB7 WORK IN PROGRESS", c: "#6e1633", t: "#d9b45a", wip: true, desc: "A cosy patisserie, in the making. Work in progress: more soon." },
-    { br: "A", name: "Patiline", x: 1030, z: 6030, px: 1030, pz: 5985, line: "DISTRIBUTION WEB \xB7 PHOTO \xB7 REBRANDING", c: "#d71920", t: "#ffffff", desc: "Industrial bread and croissants, made by machines you can watch. We built their distribution website and website, shot their own-production bakery range, and rebranded Patiline Bakery." },
+    { br: "A", name: "Patiline", x: 880, z: 5900, px: 930, pz: 5900, line: "DISTRIBUTION WEB \xB7 PHOTO \xB7 REBRANDING", c: "#d71920", t: "#ffffff", desc: "Industrial bread and croissants, made by machines you can watch. We built their distribution website and website, shot their own-production bakery range, and rebranded Patiline Bakery." },
     { br: "A", name: "K\xF3mpus", x: 880, z: 4560, px: 934, pz: 4560, line: "COFFEE SHOP \xB7 BRAND", c: "#B098C8", t: "#1a1420", desc: "Differentiating a coffee shop in the market by enabling the founder\u2019s vision: a brand built around Kómpus\u2019 own patterns and voice." },
     { br: "A", name: "ARCA Resort", logo: "logoArca", x: 560, z: 5930, line: "RESORT · TENNIS · POND", c: "#7a1f2b", t: "#ffffff", page: "arca-resort" },
     { br: "A", name: "Antila", x: 440, z: 6040, line: "CHARCUTERIE FARM", c: "#F2C200", t: "#1a1405", page: "antila" },
@@ -27937,7 +28369,7 @@ void main() {
     buildKompusShop(parent, 934, 4560, 1.5);
     yield;
     EXTRA_KEEPOUT.push({ x: 706, y: 5737, r: 50 });
-    buildCourtyard(parent, COURT.x, COURT.z, COURT_BRANDS.map((o) => ({ ...o, logo: L(o.logo) })));
+    buildCourtyard(parent, COURT.x, COURT.z); // TASK-074: the Zdrovit park
     yield;
     buildSofmedicaYard(parent);
     yield;
@@ -27950,7 +28382,9 @@ void main() {
     buildPainPlaisir(parent, 968, 4815);
     yield;
     // r121: across the Dacia row from where it was, its glass line facing the road
-    buildPatiline(parent, 1030, 5985);
+    // TASK-099 (Daniel): moved up to the corner of Coffee Street (930, 5900), its glass line facing the street (west);
+    // its old plot by the Dacia road is the city's houses now (buildBuildingsGen, PATI_CORNER)
+    buildPatiline(parent, 930, 5900, -Math.PI / 2);
     yield;
     buildBrandBuilding(parent, { x: 706, z: 5650, face: "+x", kind: "paris", name: "LAPTERRA", w: 50, d: 40, h: 30, wall: "#7a1f3d", accent: "#c9a227", signBg: "#5c1530", signInk: "#d9b45a", keep: 70 });
     yield;
@@ -28195,6 +28629,51 @@ void main() {
     g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
     parent.add(g);
   }
+  // TASK-116: Berero's logo, traced from the file Daniel sent (refs/berero-116/logo: trace.py, clean.py), in its own px
+  var BERERO_LOGO = { box: [451.64, 71.07], d: "M38.23 70.94 L1.48 70.94 L0.06 70.57 L0.06 1.78 L0.48 0.22 L38.73 0.22 L42.23 1.33 L48.05 4.41 L51.44 7.41 L54.46 12.03 L55.47 16.66 L55.47 22.49 L52.48 27.03 L47.34 30.66 L48.98 31.81 L55.35 34.29 L59.23 37.37 L61.35 40.08 L63.52 45.53 L63.52 53.94 L60.53 60.78 L55.37 65.91 L52.23 67.92 L46.48 69.87 Z M134.98 70.94 L79.91 70.94 L79.91 0.22 L134.85 0.22 L135.84 0.41 L135.84 13.28 L135.23 14.86 L96.6 14.86 L95.8 14.66 L95.51 15.91 L95.51 27.28 L95.85 28.04 L126.1 28.04 L127.23 28.28 L127.53 28.91 L127.53 41.41 L126.85 42.51 L95.98 42.51 L95.51 43.91 L95.51 56.03 L96.48 56.48 L135.17 56.48 L135.84 57.78 L135.84 70.16 Z M196.98 70.94 L185.63 50.41 L183.98 49.57 L167.98 49.57 L167.56 50.91 L167.56 70.66 L165.98 70.94 L152.04 70.94 L152.04 0.22 L192.1 0.22 L196.85 1.28 L201.6 3.32 L207.35 7.48 L209.64 10.28 L212.48 15.33 L213.72 21.28 L213.72 29.78 L212.37 34.66 L209.45 39.66 L205.35 43.82 L200.76 46.78 L213.4 70.16 L213.23 70.94 Z M284.23 70.94 L230.48 70.94 L229.16 70.66 L229.16 1.78 L229.47 0.22 L283.98 0.22 L285.45 0.41 L285.45 13.28 L284.85 14.86 L246.35 14.86 L245.1 14.76 L244.87 15.91 L244.87 28.04 L275.73 28.04 L276.83 28.91 L276.83 41.41 L276.35 42.51 L245.85 42.51 L244.87 43.78 L244.87 55.91 L246.35 56.48 L284.73 56.48 L285.45 57.66 L285.45 70.16 L285.23 70.8 Z M362.23 70.94 L346.54 70.94 L335.48 50.98 L334.35 49.77 L332.98 49.57 L318.48 49.57 L316.86 49.94 L316.86 70.94 L301.58 70.94 L301.58 1.16 L301.85 0.22 L342.1 0.22 L346.48 1.32 L351.23 3.37 L357.6 8.29 L360.59 12.41 L363.38 19.78 L363.38 29.66 L360.36 37.78 L357.29 41.66 L350.32 46.66 L362.48 69.29 L362.98 70.66 Z M450.35 70.94 L379.48 70.94 L378.31 70.66 L378.31 0.41 L379.48 0.22 L451.51 0.22 L451.51 70.03 L451.35 70.86 Z M34.07 26.08 L37.36 24.78 L39.46 21.28 L39.46 18.91 L38.35 16.78 L36.95 15.41 L33.6 14.86 L17.35 14.86 L15.98 14.78 L15.98 26.08 Z M190.6 35.09 L194.35 32.99 L197.38 29.53 L198.4 24.41 L197.59 20.66 L196.3 18.41 L192.41 15.41 L188.35 14.86 L167.98 14.86 L167.56 15.91 L167.56 35.09 Z M435.4 54.91 L435.86 54.28 L435.86 16.91 L435.43 14.86 L395.48 14.86 L394.31 15.78 L394.01 16.91 L394.01 54.91 Z M340.23 35.09 L344.23 32.79 L347.27 28.53 L347.78 25.41 L347.78 22.53 L345.35 18.82 L338.35 14.86 L318.35 14.86 L317.1 16.73 L316.86 17.78 L316.86 35.09 Z M39.51 56.48 L42.3 55.91 L45.4 53.91 L47.28 50.28 L47.28 46.41 L45.59 43.28 L44.23 42.24 L38.85 40.55 L17.35 40.55 L15.98 41.09 L15.98 55.28 L16.23 56.48 Z" };
+  // TASK-116: the trays' atlas (1024 x 512): 6 x 5 cells of a tray's long side (170 x 100), one beer each: the printed
+  // tray below, the cans above it through the shrink wrap, a sheen across; cell 29 is the cans' tops seen from above.
+  // The beers are made up (a style, a colour): no real brands
+  var BERERO_ATLAS = null;
+  function bereroCrateAtlas() {
+    if (BERERO_ATLAS) return BERERO_ATLAS;
+    const BEERS = [["LAGER", "#f2c230", "#1d3b8f"], ["PILS", "#2f8f4e", "#f4f1e6"], ["IPA", "#e8663a", "#1b1b1b"], ["STOUT", "#1c1714", "#d9b26f"], ["WEISS", "#f6e7b0", "#2b5fa8"], ["AMBER", "#b8562a", "#fff1d6"],
+      ["SOUR", "#e64f8c", "#fff5fa"], ["PALE ALE", "#7fb6d9", "#0e2a44"], ["RADLER", "#ffd23f", "#e2421f"], ["DUNKEL", "#4a2c1d", "#f0c27a"], ["HELLES", "#f9f3dc", "#b3261e"], ["PORTER", "#2b2b3a", "#e6e1d3"],
+      ["SAISON", "#9dc06b", "#26331a"], ["BOCK", "#7a1f2b", "#f6d58e"], ["RED ALE", "#c8322b", "#fbeee0"], ["NEIPA", "#f4a93b", "#3a2a7a"], ["GOSE", "#5fc7b8", "#0f3b36"], ["BLONDE", "#f7dc6f", "#6b3f12"]];
+    const c = document.createElement("canvas"); c.width = 1024; c.height = 512;
+    const ctx = c.getContext("2d");
+    const CW = 1024 / 6, CH = 100;
+    BEERS.forEach(([name, col, ink], i) => {
+      const x = (i % 6) * CW, y = Math.floor(i / 6) * CH;
+      ctx.save(); ctx.beginPath(); ctx.rect(x, y, CW, CH); ctx.clip();
+      // the cans through the wrap: six bodies in the beer's colour, a band of its ink, silver at the shoulders
+      ctx.fillStyle = "#3c3f44"; ctx.fillRect(x, y, CW, CH);
+      for (let k = 0; k < 6; k++) {
+        const cx = x + 4 + k * (CW - 8) / 6, cw = (CW - 8) / 6 - 2;
+        ctx.fillStyle = col; ctx.fillRect(cx, y + 6, cw, 58);
+        ctx.fillStyle = ink; ctx.fillRect(cx, y + 24, cw, 10);
+        ctx.fillStyle = "#c9ccd1"; ctx.fillRect(cx, y + 2, cw, 5);
+        ctx.fillStyle = "rgba(255,255,255,.28)"; ctx.fillRect(cx + 2, y + 8, 3, 54);
+      }
+      // the printed tray: the beer's colour, its style in its ink, a rule
+      ctx.fillStyle = col; ctx.fillRect(x, y + 60, CW, 40);
+      ctx.fillStyle = ink; ctx.fillRect(x + 8, y + 64, CW - 16, 2);
+      ctx.font = "800 22px CromaticSans, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      let fs = 22; while (ctx.measureText(name).width > CW - 20 && fs > 12) { fs -= 2; ctx.font = `800 ${fs}px CromaticSans, sans-serif`; }
+      ctx.fillText(name, x + CW / 2, y + 82);
+      ctx.font = "700 9px CromaticSans, sans-serif"; ctx.fillText("24 × 500 ML", x + CW / 2, y + 96);
+      // the shrink wrap's sheen and its seam
+      const sh = ctx.createLinearGradient(x, y, x + CW, y + CH); sh.addColorStop(0, "rgba(255,255,255,0)"); sh.addColorStop(0.42, "rgba(255,255,255,.22)"); sh.addColorStop(0.5, "rgba(255,255,255,0)"); sh.addColorStop(1, "rgba(255,255,255,.08)");
+      ctx.fillStyle = sh; ctx.fillRect(x, y, CW, CH);
+      ctx.restore();
+    });
+    // cell 29: the tops, a 6 x 4 grid of can ends under the wrap
+    { const x = (29 % 6) * CW, y = Math.floor(29 / 6) * CH; ctx.fillStyle = "#2a2c30"; ctx.fillRect(x, y, CW, CH);
+      for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) { const cx = x + 14 + k * (CW - 28) / 5, cy = y + 13 + r * 24.5; ctx.fillStyle = "#b9bdc3"; ctx.beginPath(); ctx.arc(cx, cy, 11, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#8d9197"; ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillStyle = "rgba(255,255,255,.12)"; ctx.fillRect(x, y, CW, CH); }
+    const t = new CanvasTexture(c); t.colorSpace = SRGBColorSpace; t.anisotropy = 4;
+    return (BERERO_ATLAS = t);
+  }
   // Casa Berero: an old Bucharest house, one storey on a stone plinth, cream plaster gone a
   // little grey, tall shuttered windows, an arched door up three steps and a terracotta hip roof
   function buildCasaBerero(parent, x, z) {
@@ -28243,16 +28722,80 @@ void main() {
     const chim = new Mesh(new BoxGeometry(5, 12, 5), new MeshStandardMaterial({ color: "#d9c9ab", roughness: 1 }));
     chim.position.set(-W / 4, H + 18, -D / 6);
     g.add(roof, chim);
-    // a black enamel plaque with the name, over the door
-    const plaqueTex = canvasTexture(512, 128, (ctx) => {
-      ctx.fillStyle = "#111111"; ctx.fillRect(0, 0, 512, 128);
-      ctx.strokeStyle = "#f2f2ee"; ctx.lineWidth = 6; ctx.strokeRect(10, 10, 492, 108);
-      ctx.fillStyle = "#f2f2ee"; ctx.font = "800 58px CromaticSans, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("BERERO", 256, 66); // r138e (Daniel): just "Berero"
-    });
-    const plaque = new Mesh(new BoxGeometry(26, 6.5, 1), new MeshStandardMaterial({ map: plaqueTex, roughness: 0.4 }));
-    plaque.position.set(0, H + 0.5, D / 2 + 0.9);
-    g.add(plaque);
+    // TASK-116 (Daniel): the house's sign is Berero's own logo now (was "BERERO" set in our sans on an enamel plaque):
+    // the file Daniel sent (white on black, the last O a square) traced to a vector (BERERO_LOGO, in the logo's own
+    // pixels; the straight runs snapped, the bowls of B and R as drawn), on a black plate standing off the wall on two
+    // brackets, its letters lit after dark (STREET_GLOW)
+    {
+      const [LW, LH] = BERERO_LOGO.box, PW = 30, PH = 6.4, T = 1.1;
+      const tex = canvasTexture(1024, Math.round(1024 * PH / PW), (ctx, w, h) => {
+        ctx.fillStyle = "#0b0b0b"; ctx.fillRect(0, 0, w, h);
+        const s = (w * 0.86) / LW; ctx.save(); ctx.translate((w - LW * s) / 2, (h - LH * s) / 2); ctx.scale(s, s);
+        ctx.fillStyle = "#ffffff"; ctx.fill(new Path2D(BERERO_LOGO.d), "evenodd"); ctx.restore();
+      });
+      const glowTex = canvasTexture(512, Math.round(512 * PH / PW), (ctx, w, h) => {
+        ctx.fillStyle = "#000000"; ctx.fillRect(0, 0, w, h);
+        const s = (w * 0.86) / LW; ctx.save(); ctx.translate((w - LW * s) / 2, (h - LH * s) / 2); ctx.scale(s, s);
+        ctx.fillStyle = "#fff6e6"; ctx.fill(new Path2D(BERERO_LOGO.d), "evenodd"); ctx.restore();
+      });
+      const faceM = new MeshStandardMaterial({ map: tex, emissiveMap: glowTex, emissive: new Color("#ffffff"), emissiveIntensity: 0, roughness: 0.45, metalness: 0.1 });
+      const edgeM = new MeshStandardMaterial({ color: "#141414", roughness: 0.5, metalness: 0.3 });
+      STREET_GLOW.push([faceM, 1.15]);
+      const plate = new Mesh(new BoxGeometry(PW, PH, T), [edgeM, edgeM, edgeM, edgeM, faceM, edgeM]);
+      plate.position.set(0, H + 0.4, D / 2 + 1.4 + T / 2);
+      g.add(plate);
+      for (const bx of [-PW / 2 + 3, PW / 2 - 3]) { const br = new Mesh(new BoxGeometry(1, 1, 1.6), edgeM); br.position.set(bx, H + 0.4, D / 2 + 0.8); g.add(br); }
+    }
+    // TASK-116: a delivery left at the door: four stacks of shrink-wrapped trays of 500 ml cans (6, 4, 3 and 5, two of
+    // them on a pallet), a different beer in every tray (made-up styles, no real brands: bereroCrateAtlas), stacked
+    // a little out of true, and a hand pallet truck left by the pallet. All the trays are one mesh (each tray's faces
+    // mapped to its cell of one small atlas), the pallet and the truck two more; they stand on the house's own
+    // forecourt, between its front and the pavement
+    {
+      const A = bereroCrateAtlas(), rnd = rng(116), CW = 3.4, CH = 2.05, CD = 2.3;
+      const cell = (i) => [(i % 6) * 170.67 / 1024, Math.floor(i / 6) * 100 / 512, 170.67 / 1024, 100 / 512];
+      const trays = [];
+      const tray = (lab, x, y, z, ry) => {
+        const b = new BoxGeometry(CW, CH, CD), uv = b.attributes.uv, [cx, cy, cw, ch] = cell(lab), [tx, ty, tw, th] = cell(29);
+        // the faces: +x, -x (the short ends: half the label), +y, -y (the cans' tops through the wrap), +z, -z (the label)
+        for (let f = 0; f < 6; f++) for (let k = 0; k < 4; k++) {
+          const i = f * 4 + k, u = uv.getX(i), v = uv.getY(i);
+          if (f === 2 || f === 3) uv.setXY(i, tx + u * tw, 1 - (ty + (1 - v) * th));
+          else if (f < 2) uv.setXY(i, cx + (0.25 + u * 0.5) * cw, 1 - (cy + (1 - v) * ch));
+          else uv.setXY(i, cx + u * cw, 1 - (cy + (1 - v) * ch));
+        }
+        b.rotateY(ry); b.translate(x, y + CH / 2, z); trays.push(b);
+      };
+      let lab = 0;
+      // [count, x, z, base]: two stacks on the pallet left of the steps, two on the ground right of them
+      const PAL = 1.5;
+      for (const [n, sx, sz, base] of [[6, -24.2, D / 2 + 5.2, PAL], [4, -20.6, D / 2 + 5.4, PAL], [3, 15.4, D / 2 + 4.4, 0], [5, 19.2, D / 2 + 4.8, 0]]) {
+        for (let k = 0; k < n; k++) tray(lab++ % 18, sx + (rnd() - 0.5) * 0.35, base + k * CH, sz + (rnd() - 0.5) * 0.3, (rnd() - 0.5) * 0.1 + (k === n - 1 ? (rnd() - 0.5) * 0.16 : 0));
+      }
+      const trayM = new MeshStandardMaterial({ map: A, roughness: 0.32, metalness: 0.05 });
+      g.add(new Mesh(mergeGeometries(trays), trayM));
+      // the pallet (three bearers, a deck of boards) and the truck: two forks, the pump, a long handle, its wheels
+      const wood = [], steel = [];
+      for (const dz of [-1.7, 0, 1.7]) wood.push(new BoxGeometry(8, 0.7, 0.9).translate(-22.4, 0.35, D / 2 + 5.3 + dz));
+      for (let k = 0; k < 6; k++) wood.push(new BoxGeometry(1.1, 0.8, 4.4).translate(-26 + k * 1.45, 1.1, D / 2 + 5.3));
+      const jx = -11.6, jz = D / 2 + 9.6; // the truck, left at an angle in front of the pallet
+      const jack = [];
+      for (const dz of [-1.05, 1.05]) jack.push(new BoxGeometry(6.4, 0.45, 0.85).translate(jx - 3.6, 0.42, jz + dz));
+      jack.push(new BoxGeometry(1.6, 1.3, 3.2).translate(jx, 0.95, jz));
+      jack.push(new CylinderGeometry(0.42, 0.42, 2.6, 8).translate(jx + 0.2, 2.6, jz));
+      { const h = new CylinderGeometry(0.16, 0.16, 6.4, 6); h.rotateZ(-0.42); h.translate(jx + 1.55, 5.6, jz); jack.push(h); const loop = new TorusGeometry(0.75, 0.15, 5, 12); loop.rotateY(Math.PI / 2); loop.translate(jx + 2.95, 8.6, jz); jack.push(loop); }
+      for (const dz of [-0.9, 0.9]) steel.push(new CylinderGeometry(0.55, 0.55, 0.45, 10).rotateX(Math.PI / 2).translate(jx + 0.3, 0.55, jz + dz));
+      for (const dz of [-1.05, 1.05]) steel.push(new CylinderGeometry(0.22, 0.22, 0.6, 8).rotateX(Math.PI / 2).translate(jx - 6.4, 0.22, jz + dz));
+      const jackG = mergeGeometries(jack.map((q) => (q.index ? q.toNonIndexed() : q)));
+      jackG.rotateY(0.38);
+      const steelG = mergeGeometries(steel.map((q) => (q.index ? q.toNonIndexed() : q))); steelG.rotateY(0.38);
+      // (turned about the house's centre: put back in front of the pallet)
+      const back = new Vector3(jx, 0, jz).applyAxisAngle(new Vector3(0, 1, 0), 0.38).sub(new Vector3(jx, 0, jz));
+      jackG.translate(-back.x, 0, -back.z); steelG.translate(-back.x, 0, -back.z);
+      g.add(new Mesh(mergeGeometries(wood), new MeshStandardMaterial({ color: "#c9a06a", roughness: 0.9 })),
+        new Mesh(jackG, new MeshStandardMaterial({ color: "#d8261f", roughness: 0.5, metalness: 0.3 })),
+        new Mesh(steelG, new MeshStandardMaterial({ color: "#202124", roughness: 0.6 })));
+    }
     g.rotation.y = x < 820 ? Math.PI / 2 : -Math.PI / 2;
     g.position.set(x, 0, z);
     g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
@@ -30240,7 +30783,7 @@ void main() {
   }
   // r110: Strada Olari 9 as it stands: a grey neo-Romanian villa. Rusticated stone ground floor
   // with round-arched doors, a pebble-dash first floor with two big arched windows in white
-  // mouldings (brown roller shutters, little white columns), a narrower top floor with a trefoil
+  // mouldings (little white columns; TASK-098: no shutters), a narrower top floor with a trefoil
   // arched loggia over a lattice balcony, deep tiled hip roofs with wide eaves, and ivy on the
   // right. children[1] is the top roof: it lifts off when the services come out.
   function buildEndHouse(parent) {
@@ -30263,8 +30806,6 @@ void main() {
     const stoneM = new MeshStandardMaterial({ map: stoneTex, roughness: 0.95 });
     const whiteM = new MeshStandardMaterial({ color: "#eeece6", roughness: 0.7 });
     const woodM = new MeshStandardMaterial({ color: "#6b3f26", roughness: 0.75 });
-    const shutterTex = canvasTexture(64, 128, (ctx) => { ctx.fillStyle = "#5e3b27"; ctx.fillRect(0, 0, 64, 128); ctx.fillStyle = "#47291a"; for (let y = 0; y < 128; y += 6) ctx.fillRect(0, y, 64, 2); });
-    const shutterM = new MeshStandardMaterial({ map: shutterTex, roughness: 0.8 });
     const glassM = new MeshStandardMaterial({ color: "#2a2f35", roughness: 0.2, metalness: 0.3, emissive: "#ffcf8a", emissiveIntensity: 0 });
     STREET_GLOW.push([glassM, 0.9]);
     const box = (w, h, d, m, x, y, z) => { const o = new Mesh(new BoxGeometry(w, h, d), m); o.position.set(x, y, z); g.add(o); return o; };
@@ -30351,11 +30892,15 @@ void main() {
     { const d = arch(12, 17, woodM); d.position.set(-22, 0, F + 0.1); g.add(d); const r = archRing(12, 17, 2.2, stoneM); r.position.set(-22, 0, F); g.add(r); }
     for (const x of [6, 24]) { const a = arch(13, 17, new MeshStandardMaterial({ color: "#2c2a28", roughness: 0.8 })); a.position.set(x, 0, F + 0.1); g.add(a); const r = archRing(13, 17, 2.4, stoneM); r.position.set(x, 0, F); g.add(r); }
     box(W + 1, 1.2, 1.4, whiteM, 0, 20.4, F + 0.6);
-    // first floor: two big arched windows, white mouldings, shutters half down, little columns
+    // first floor: two big arched windows, white mouldings, little columns
+    // TASK-098: each window its own glass (the colours of the night: houseWindowGlow), a lit room and white curtains
+    // behind it (round 3: drawn in the glass's shader, no fairy lights); round 2 (Daniel): no shutters, day or night (they
+    // hid half of each arch); the loggia keeps glassM
+    const winGlass = [];
     for (const x of [-15, 15]) {
-      const gl = arch(20, 19, glassM); gl.position.set(x, 23, F + 0.05); g.add(gl);
+      const gm = glassM.clone(); winGlass.push(gm);
+      const gl = arch(20, 19, gm); gl.position.set(x, 23, F + 0.05); gl.userData.noMerge = true; g.add(gl); // (its material changes every night frame: never baked into a batch)
       const ring = archRing(20, 19, 2.6, whiteM); ring.position.set(x, 23, F + 0.1); g.add(ring);
-      const sh = new Mesh(new BoxGeometry(19, 9, 0.6), shutterM); sh.position.set(x, 33.5, F + 1.7); g.add(sh);
       col(x - 11.5, 23, 13, F + 1.2); col(x + 11.5, 23, 13, F + 1.2);
     }
     // top floor: trefoil-ish arched loggia with columns, projecting lattice balcony
@@ -30386,7 +30931,445 @@ void main() {
     g.scale.set(2.3, 2.3, 2.3);
     g.rotation.y = Math.PI / 2;
     g.position.set(1005, 3, 7350);
+    mats.houseWin = houseWindowGlow(g, winGlass, F);
     parent.add(g);
+    return g;
+  }
+  // TASK-098 (Daniel: at night, in the story and live on the site, the house's two arched windows change colour, as if a
+  // diffused light came from inside and left the house, very vibrant but lost in fog; the two windows never alike: one
+  // green, one orange, blue, red, magenta...): in the dark worlds (applyScheme's dark: Night Mode, Underwater, GTA 2) the
+  // two first-floor windows of Olari 9 glow from inside, each its own colour, cross-fading round a palette (4 s a colour,
+  // the two windows half a step apart: never the same colour, not even mid-fade, see HW_HUES).
+  // The light spills out as into fog: a halo (a sprite: a tight core and a long soft tail), a shaft that widens and fades
+  // out over the forecourt, a pool on the paving, and a softer glow behind the house (round 2, Daniel: it should read
+  // from the back and the sides too). Eight small additive draws, no light, no post pass; drawn and animated only in a
+  // dark world with the house on screen (and not at all while the tab is hidden: no frames); reduced motion holds one
+  // pair (green, orange). Round 2 (Daniel): no shutters, day or night; behind the glass white curtains, tied back (round 3:
+  // a lit room behind them and no fairy lights, see below). By day the rest is not drawn
+  // round 2 (Daniel: no cyan): six colours in the wheel's order, so a cross-fade passes no other colour of the cycle on
+  // its way; the two windows half a step out of phase and two to three colours apart at every moment: never alike
+  var HW_HUES = [356, 28, 50, 135, 225, 310]; // red, orange, yellow, green, blue, magenta
+  var HW_HOLD = [135, 28]; // reduced motion: green and orange
+  var HW_STEP = 4000, HW_FADE = 1800;
+  function houseWindowGlow(g, glass, F) {
+    const fxG = new Group(); fxG.name = "houseWinFx"; fxG.visible = false; fxG.userData.noHull = true; // (the hull pass would ink the shaft's rims and draw the halos twice)
+    const radial = (prof) => canvasTexture(128, 128, (ctx, w, h) => {
+      const im = ctx.createImageData(w, h), d = im.data;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * 4, a = prof((x + 0.5) / w, (y + 0.5) / h); d[i] = d[i + 1] = d[i + 2] = 255; d[i + 3] = Math.round(255 * Math.max(0, Math.min(1, a))); }
+      ctx.putImageData(im, 0, 0);
+    });
+    const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+    // the halo: a bright core, a wider glow and a long faint tail (light in fog), to nothing at the edge
+    const haloTex = radial((u, v) => { const r = Math.hypot(u - 0.5, v - 0.5) * 2; return (0.8 * Math.exp(-((r / 0.11) ** 2)) + 0.42 * Math.exp(-((r / 0.3) ** 2)) + 0.2 * (1 - r) ** 2.2) * (1 - ss(0.8, 1, r)); });
+    // round 4 (Daniel: realistic, the coloured light stays in the room and comes out softly; the glow round the window
+    // small and weak, never a tint over the screen): the halos a tight glow with no long tail, a fraction of the old
+    // size, and fading out as the camera comes near (under ~25 m it is almost gone: the room is the light)
+    const haloTight = radial((u, v) => { const r = Math.hypot(u - 0.5, v - 0.5) * 2; return (0.55 * Math.exp(-((r / 0.2) ** 2)) + 0.3 * Math.exp(-((r / 0.42) ** 2))) * (1 - ss(0.7, 1, r)); });
+    // TASK-098 round 3 (Daniel: "light from inside, from behind the windows, coloured at night and sunny by day; the
+    // shutters, if they still show at all, gone; no fairy lights at the window: real lights, bulbs inside the house"):
+    // behind each glass a lit room, drawn in the glass's own shader (interior mapping: the view ray from the pane is run
+    // into a box room behind it, no geometry, no light): plastered walls, a wooden floor with a rug, a picture on the
+    // back wall, a sideboard with a table lamp, and a pendant lamp hanging from the ceiling, its bulb seen under the
+    // shade. The two rooms are mirrored (the lamps on opposite sides). At night the pendant fills the room with the
+    // window's colour of the moment (houseWindowGlow's cycle, no cyan) and the table lamp adds a warm pool; the walls,
+    // the floor and the curtains catch it, falling off with distance. By day the room is lit softly by the daylight
+    // from the window (a patch of sun on the floor), and the glass shows the day: a warm sky reflection (Fresnel) and
+    // two bands of sun glare. The white curtains stay, thin and translucent: lit from behind at night, white by day.
+    // The fairy lights (their swag and the bulb glows) are gone
+    const curtTex = canvasTexture(128, 128, (ctx, w, h) => { // the curtains, alpha = cloth (u across the arch's 20 units, v up its 19)
+      const X = (u) => u * w, Y = (v) => (1 - v) * h;
+      ctx.clearRect(0, 0, w, h);
+      for (const sd of [-1, 1]) {
+        const e = sd < 0 ? 0 : 1, o = (u) => (sd < 0 ? u : 1 - u);
+        ctx.beginPath(); ctx.moveTo(X(e), Y(1)); ctx.lineTo(X(o(0.36)), Y(1));
+        ctx.bezierCurveTo(X(o(0.3)), Y(0.7), X(o(0.15)), Y(0.5), X(o(0.11)), Y(0.42));
+        ctx.bezierCurveTo(X(o(0.16)), Y(0.3), X(o(0.2)), Y(0.12), X(o(0.22)), Y(0)); ctx.lineTo(X(e), Y(0)); ctx.closePath();
+        ctx.fillStyle = "rgba(255,255,255,0.78)"; ctx.fill();
+        ctx.save(); ctx.clip(); ctx.strokeStyle = "rgba(150,150,150,.5)"; ctx.lineWidth = 2.4; // the folds (darker in the colour channel)
+        for (let k = 1; k < 5; k++) { const f = k / 5; ctx.beginPath(); ctx.moveTo(X(o(0.36 * f)), Y(1)); ctx.quadraticCurveTo(X(o(0.11 * f + 0.02)), Y(0.5), X(o(0.1 * f)), Y(0.42)); ctx.lineTo(X(o(0.2 * f)), Y(0)); ctx.stroke(); }
+        ctx.restore();
+        ctx.fillStyle = "rgba(205,190,160,1)"; ctx.fillRect(X(o(0.12)) - 3, Y(0.44), 6, 5); // the tie-back
+      }
+    });
+    curtTex.colorSpace = NoColorSpace;
+    const ROOM_VS = "varying vec3 vHwL; varying vec3 vHwR;\n";
+    const ROOM_FS = `uniform float uNight; uniform vec3 uLight; uniform float uSide; uniform sampler2D uCurt;
+varying vec3 vHwL; varying vec3 vHwR;
+// the entry of a ray into a box (t, or 1e9), and the face's normal
+float hwBox(vec3 ro, vec3 rd, vec3 b0, vec3 b1, out vec3 n) {
+  vec3 ird = 1.0 / rd, t0 = (b0 - ro) * ird, t1 = (b1 - ro) * ird, tn3 = min(t0, t1), tf3 = max(t0, t1);
+  float tn = max(max(tn3.x, tn3.y), tn3.z), tf = min(min(tf3.x, tf3.y), tf3.z);
+  if (tf < max(tn, 0.0) || tn < 0.0) return 1e9;
+  n = tn == tn3.x ? vec3(-sign(rd.x), 0.0, 0.0) : tn == tn3.y ? vec3(0.0, -sign(rd.y), 0.0) : vec3(0.0, 0.0, -sign(rd.z));
+  return tn;
+}
+float hwSph(vec3 ro, vec3 rd, vec3 c, float r, out float t2) {
+  vec3 oc = ro - c; float b = dot(oc, rd), q = dot(oc, oc) - r * r, h = b * b - q;
+  if (h < 0.0) { t2 = 1e9; return 1e9; } h = sqrt(h); t2 = -b + h; return -b - h;
+}
+// the light a point of the room gets from a lamp (colour, place, strength, reach), with a little wrap
+vec3 hwLamp(vec3 p, vec3 n, vec3 lp, vec3 lc, float k, float reach) {
+  vec3 d = lp - p; float l2 = dot(d, d), nl = clamp((dot(n, d * inversesqrt(l2)) + 0.25) / 1.25, 0.0, 1.0);
+  return lc * k * nl / (1.0 + l2 / (reach * reach));
+}
+vec3 hwRoom(vec2 pane, vec3 rd, out float curt) {
+  // the room behind the arch (the glass's own units: x -10..10 across, y 0..19 up, its pane at z 1.2)
+  const float Z0 = 1.2, RD = 21.0, RW = 13.5, Y0 = -1.5, Y1 = 21.5;
+  vec3 ro = vec3(pane, Z0); rd.z = min(rd.z, -0.03); rd = normalize(rd);
+  float s = uSide; // the second window's room is the first one mirrored
+  vec3 rs = vec3(rd.x * s, rd.y, rd.z), os = vec3(ro.x * s, ro.y, ro.z);
+  // the walls
+  vec3 ird = 1.0 / rs, tw3 = (vec3(rs.x > 0.0 ? RW : -RW, rs.y > 0.0 ? Y1 : Y0, Z0 - RD) - os) * ird;
+  float t = min(min(tw3.x, tw3.y), tw3.z); vec3 n; vec3 alb; float kind = 0.0;
+  if (t == tw3.x) { n = vec3(-sign(rs.x), 0.0, 0.0); kind = 1.0; } else if (t == tw3.y) { n = vec3(0.0, -sign(rs.y), 0.0); kind = rs.y < 0.0 ? 2.0 : 3.0; } else { n = vec3(0.0, 0.0, 1.0); kind = 4.0; }
+  // the furniture: a sideboard on the back wall's left, a table lamp on it, the pendant hanging in the middle
+  vec3 nb; float tb = hwBox(os, rs, vec3(-12.5, Y0, Z0 - RD), vec3(-3.0, 4.2, Z0 - RD + 5.0), nb);
+  if (tb < t) { t = tb; n = nb; kind = 5.0; }
+  vec3 LT = vec3(-8.6, 8.4, Z0 - RD + 2.6), LP = vec3(2.2, 14.6, Z0 - 10.5);
+  float t2, ts = hwSph(os, rs, LT, 1.9, t2); // the table lamp's shade (a squat globe of cloth)
+  vec3 hs = os + rs * ts; if (ts < t && abs(hs.y - LT.y) < 1.3) { t = ts; n = normalize(hs - LT); kind = 6.0; }
+  vec3 nbs; float tbs = hwBox(os, rs, vec3(LT.x - 0.35, 4.2, LT.z - 0.35), vec3(LT.x + 0.35, LT.y - 1.2, LT.z + 0.35), nbs); // its stem
+  if (tbs < t) { t = tbs; n = nbs; kind = 7.0; }
+  float tp = hwSph(os, rs, LP + vec3(0.0, 1.3, 0.0), 2.7, t2); vec3 hp = os + rs * tp; // the pendant's shade: a dome, open below
+  if (tp < t && hp.y > LP.y + 0.7) { t = tp; n = normalize(hp - LP - vec3(0.0, 1.3, 0.0)); kind = 8.0; }
+  else { vec3 hp2 = os + rs * t2; if (t2 < t && hp2.y > LP.y + 0.7) { t = t2; n = -normalize(hp2 - LP - vec3(0.0, 1.3, 0.0)); kind = 9.0; } }
+  float tq = hwSph(os, rs, LP, 0.75, t2); bool bulb = tq < t; // the bulb under it
+  // its cord: the ray's nearest pass by the vertical line over the shade
+  vec2 dxz = rs.xz; float a2 = dot(dxz, dxz), tc = a2 > 1e-5 ? dot(LP.xz - os.xz, dxz) / a2 : 0.0; vec3 hc = os + rs * tc;
+  bool cord = tc > 0.0 && tc < t && hc.y > LP.y + 3.8 && hc.y < Y1 && length(hc.xz - LP.xz) < 0.13;
+  vec3 h = os + rs * t;
+  // the colours of the room
+  if (kind == 2.0) { float pl = fract(h.x / 2.6 + 0.37 * floor(h.z / 7.0)); alb = mix(vec3(0.33, 0.19, 0.1), vec3(0.42, 0.26, 0.14), smoothstep(0.0, 0.08, pl) * (1.0 - smoothstep(0.92, 1.0, pl)));
+    vec2 rg = abs(h.xz - vec2(1.5, Z0 - 10.0)) - vec2(7.5, 5.5); if (max(rg.x, rg.y) < 0.0) alb = max(rg.x, rg.y) > -0.8 ? vec3(0.62, 0.56, 0.44) : vec3(0.52, 0.16, 0.14); } // planks, a rug with a border
+  else if (kind == 3.0) alb = vec3(0.86, 0.85, 0.82);
+  else if (kind == 4.0) { alb = vec3(0.8, 0.74, 0.64); vec2 pf = abs(h.xy - vec2(3.5, 10.5)) - vec2(4.2, 3.0); if (max(pf.x, pf.y) < 0.0) alb = max(pf.x, pf.y) > -0.6 ? vec3(0.25, 0.18, 0.12) : mix(vec3(0.2, 0.42, 0.55), vec3(0.85, 0.6, 0.3), step(h.y, 10.0) * 0.8); } // a framed picture
+  else if (kind == 1.0) alb = vec3(0.76, 0.7, 0.6);
+  else if (kind == 5.0) alb = n.z > 0.5 ? vec3(0.3, 0.17, 0.09) : vec3(0.24, 0.13, 0.07);
+  else if (kind == 7.0) alb = vec3(0.6, 0.5, 0.3);
+  else alb = vec3(0.92, 0.9, 0.84);
+  // lit: at night by the two lamps (the pendant in the window's colour, the table lamp warm), by day by the window
+  vec3 warm = vec3(1.0, 0.62, 0.3), lc = mix(uLight, uLight * 0.7 + warm * 0.3, 0.25);
+  vec3 eN = hwLamp(h, n, LP - vec3(0.0, 0.3, 0.0), lc, (h.y > LP.y + 1.0 && kind != 8.0) ? 0.22 : 1.05, 8.0) + hwLamp(h, n, LT, warm, 0.95, 4.5) + (lc * 0.05 + warm * 0.02);
+  float win = exp(-(Z0 - h.z) / 11.0);
+  vec3 eD = vec3(1.0, 0.93, 0.82) * (0.16 + 0.75 * win * (0.6 + 0.4 * max(n.z, 0.0)));
+  if (kind == 2.0 && abs(h.x - 2.0 + 0.4 * (Z0 - h.z)) < 6.0 && h.z > Z0 - 9.0) eD *= 2.1; // a patch of sun on the floor
+  vec3 col = alb * mix(eD * 0.55, eN, uNight);
+  if (kind == 6.0) col = mix(vec3(0.85, 0.8, 0.7) * eD * 0.6, warm * 1.5, uNight); // the table lamp's shade, lit inside
+  if (kind == 9.0) col = mix(vec3(0.5) * eD, lc * 1.8, uNight); // the pendant's shade seen from below: bright inside
+  if (kind == 8.0) col = mix(vec3(0.22, 0.24, 0.2) * eD, lc * 0.3, uNight);
+  if (bulb) col = mix(vec3(0.9, 0.88, 0.8) * 0.6, vec3(1.6, 1.5, 1.35) + lc * 0.4, uNight);
+  if (cord) col = vec3(0.05);
+  // a soft bloom round the bulb and the table lamp in the room's air, at night
+  vec3 tpb = LP - os; float dpb = length(tpb - rs * max(dot(tpb, rs), 0.0)), tpl = dot(LT - os, rs); float dlt = length((LT - os) - rs * max(tpl, 0.0));
+  col += uNight * (lc * 0.3 * exp(-dpb * dpb / 5.0) + warm * 0.22 * exp(-dlt * dlt / 4.0));
+  curt = 0.0;
+  return col;
+}
+`;
+    for (const [i, m] of glass.entries()) {
+      m.map = null; m.emissiveMap = null; m.color.set("#0b0c0e"); m.emissive.set("#000000"); m.emissiveIntensity = 1; m.roughness = 0.14; m.metalness = 0.0;
+      const U = { uNight: { value: 0 }, uLight: { value: new Color("#ffb060") }, uSide: { value: i === 0 ? 1 : -1 }, uCurt: { value: curtTex } };
+      m.userData.room = U;
+      m.onBeforeCompile = (sh) => {
+        Object.assign(sh.uniforms, U);
+        sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\n" + ROOM_VS)
+          .replace("#include <project_vertex>", "#include <project_vertex>\n{ vHwL = transformed; vec4 hw = modelMatrix * vec4(transformed, 1.0); hw.xz = cityWarp(hw.xz); vHwR = inverse(mat3(modelMatrix)) * (hw.xyz - cameraPosition); }");
+        sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\n" + ROOM_FS)
+          .replace("#include <map_fragment>", `#include <map_fragment>
+  vec3 hwRd = normalize(vHwR); float hwCt; vec3 hwIn = hwRoom(vHwL.xy, hwRd, hwCt);
+  vec4 hwC = texture2D(uCurt, vec2(vHwL.x / 20.0 + 0.5, vHwL.y / 19.0)); float hwA = hwC.a;
+  // the glass: a warm sky in it by day (more at a grazing look), two bands of sun glare; at night only a little
+  float hwCos = clamp(-hwRd.z, 0.0, 1.0), hwF = 0.04 + 0.96 * pow(1.0 - hwCos, 5.0);
+  float hwRy = reflect(hwRd, vec3(0.0, 0.0, 1.0)).y;
+  vec3 hwSky = mix(vec3(1.0, 0.84, 0.62), vec3(0.78, 0.86, 1.0), clamp(hwRy * 1.4 + 0.3, 0.0, 1.0));
+  float hwG = vHwL.x * 0.55 + vHwL.y * 0.85 - 9.0 + 3.0 * uSide;
+  float hwGl = 0.16 * exp(-pow(hwG / 1.8, 2.0)) + 0.09 * exp(-pow((hwG - 4.5) / 0.7, 2.0));
+  vec3 hwCurtN = (uLight * 0.62 + vec3(1.0, 0.62, 0.3) * 0.22) * (0.7 + 0.3 * hwC.r); // the curtains, lit from behind
+  vec3 hwRoomE = mix(hwIn, hwCurtN * uNight + hwIn * 0.25 * (1.0 - uNight), hwA * 0.9);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.84, 0.8) * (0.72 + 0.28 * hwC.r), hwA * (1.0 - uNight) * 0.6);
+  vec3 hwRefl = (1.0 - uNight * 0.9) * (hwSky * (0.025 + 0.5 * hwF) + vec3(1.0, 0.9, 0.72) * hwGl) * (1.0 - hwA * 0.5);
+  vec3 hwEmit = hwRoomE * mix(0.75, 0.85, uNight) * (1.0 - hwF * 0.6) + hwRefl;`)
+          .replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\n  totalEmissiveRadiance += hwEmit;");
+      };
+      m.customProgramCacheKey = () => "hwRoom1";
+      m.needsUpdate = true;
+    }
+    const add = (map, opacity) => { const m = new MeshBasicMaterial({ map, color: "#ffffff", transparent: true, opacity, blending: AdditiveBlending, depthWrite: false, fog: false, side: DoubleSide }); m.userData.outlineParameters = { visible: false }; return m; };
+    // the shaft: an open cone from the window's opening out and down over the paving, wider; drawn as a volume (each
+    // face by how squarely it is seen: its silhouette melts away, no hard sides) that fades out along its length
+    const L = 60, N0 = [0, 32.5, F + 0.6], N1 = [0, 13, F + L];
+    // (its top, the narrow end, at the window: uv.y 1 there, 0 at the far rim; clamped in the shader: a pow of a hair under
+    // 0 is a NaN, which the half-float target and the blur after it spread into black dashes along the rim)
+    const shaftGeo = new CylinderGeometry(9.5, 25, Math.hypot(N1[1] - N0[1], L), 20, 1, true);
+    const shaftQ = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), new Vector3(0, N0[1] - N1[1], N0[2] - N1[2]).normalize());
+    const shaftM = () => { const m = new ShaderMaterial({
+      uniforms: { color: { value: new Color() }, opacity: { value: 0.55 } }, transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide,
+      vertexShader: "#include <common>\nvarying vec3 vN; varying vec3 vV; varying float vA; void main(){ vA = uv.y; vec4 w = modelMatrix * vec4(position, 1.0); w.xz = cityWarp(w.xz); vec4 mv = viewMatrix * w; vV = -mv.xyz; vN = normalMatrix * normal; gl_Position = projectionMatrix * mv; }",
+      fragmentShader: "uniform vec3 color; uniform float opacity; varying vec3 vN; varying vec3 vV; varying float vA; void main(){ float f = abs(dot(normalize(vN), normalize(vV))); float a = clamp(vA, 0.0, 1.0); float k = f * f * a * sqrt(a) * opacity; gl_FragColor = vec4(color * k, 1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}"
+    }); m.userData.outlineParameters = { visible: false }; return m; };
+    const poolGeo = new PlaneGeometry(1, 1); poolGeo.rotateX(-Math.PI / 2);
+    const wins = [-15, 15].map((x, i) => {
+      const halo = new Sprite(new SpriteMaterial({ map: haloTight, color: "#ffffff", transparent: true, opacity: 1, blending: AdditiveBlending, depthWrite: false, fog: false }));
+      halo.material.userData.outlineParameters = { visible: false };
+      halo.position.set(x, 33, F + 6); halo.scale.set(32, 32, 1); // round 4: was 96 (220 in the world)
+      const shaft = new Mesh(shaftGeo, shaftM()); shaft.position.set(x, (N0[1] + N1[1]) / 2, (N0[2] + N1[2]) / 2); shaft.quaternion.copy(shaftQ);
+      const pool = new Mesh(poolGeo, add(haloTex, 0.4)); pool.position.set(x * 1.25, 0.3, F + 24); pool.scale.set(54, 1, 44);
+      // round 2: behind the house, a wider, softer glow of the same colour (it reads from the back and round the sides;
+      // from the front the house hides most of it)
+      const back = new Sprite(new SpriteMaterial({ map: haloTight, color: "#ffffff", transparent: true, opacity: 0.4, blending: AdditiveBlending, depthWrite: false, fog: false }));
+      back.material.userData.outlineParameters = { visible: false };
+      back.position.set(x * 1.4, 34, -F - 22); back.scale.set(64, 58, 1); // round 4: was 120 x 110 // (well off the back wall: seen from behind it lies over the wall's lower half, a glow round it)
+      for (const o of [halo, shaft, pool, back]) { o.frustumCulled = false; o.renderOrder = 3; fxG.add(o); }
+      return { halo, shaft, pool, back, glass: glass[i], col: new Color(), wp: new Vector3() };
+    });
+    g.add(fxG);
+    const rm = matchMedia("(prefers-reduced-motion: reduce)"), fr = new Frustum(), m4 = new Matrix4(), cv = new Vector3();
+    const sph = new Sphere(warpV(new Vector3(g.position.x, 60, g.position.z)), 300); // the house and its glow, in the bent world
+    const hue = (h0, h1, k) => { let d = ((h1 - h0 + 540) % 360) - 180; return (((h0 + d * k) % 360) + 360) % 360; };
+    const colAt = (t, off, idx0) => { // a colour of the cycle at time t (ms): held, then a cross-fade round the hue wheel to the next
+      const s = t / HW_STEP + off, a = Math.floor(s), f = (s - a) * HW_STEP, k = ss(HW_STEP - HW_FADE, HW_STEP, f), n = HW_HUES.length;
+      return hue(HW_HUES[(((a + idx0) % n) + n) % n], HW_HUES[(((a + idx0 + 1) % n) + n) % n], k);
+    };
+    let dark = false;
+    return {
+      group: fxG,
+      setDark(on) {
+        dark = on; fxG.visible = false;
+        for (const w of wins) { const U = w.glass.userData.room; U.uNight.value = on ? 1 : 0; if (!on) U.uLight.value.set("#ffb060"); } // round 3: the rooms behind the glass, lit or by day
+      },
+      update(now, cam) {
+        if (!dark) return;
+        m4.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); fr.setFromProjectionMatrix(m4);
+        if (!fr.intersectsSphere(sph)) { fxG.visible = false; return; }
+        fxG.visible = true;
+        // seen from behind the house the halo fades (the house hides the rest): the windows face +x
+        cv.copy(cam.position).sub(sph.center).normalize();
+        const face = 0.4 + 0.6 * ss(-0.35, 0.55, cv.x), rear = 0.22 + 0.48 * ss(0.3, -0.6, cv.x); // (the back glow: some always, more from behind)
+        const still = rm.matches;
+        wins.forEach((w, i) => {
+          const h = still ? HW_HOLD[i] : i === 0 ? colAt(now, 0, 3) : colAt(now, 0.5, 0);
+          w.col.setHSL(h / 360, 0.62, 0.56, SRGBColorSpace); // round 4: a lamp behind a coloured shade, not a pure hue
+          w.glass.userData.room.uLight.value.copy(w.col); // round 3: the pendant's colour
+          // round 4: every glow fades out as the camera comes near the window (the room carries the light then)
+          w.wp.set(w.halo.position.x, w.halo.position.y, w.halo.position.z).applyMatrix4(g.matrixWorld); warpV(w.wp);
+          const near = 0.12 + 0.88 * ss(70, 300, cam.position.distanceTo(w.wp));
+          w.halo.material.color.copy(w.col); w.halo.material.opacity = 0.34 * face * near;
+          w.back.material.color.copy(w.col); w.back.material.opacity = rear * 0.6 * (0.3 + 0.7 * near);
+          w.shaft.material.uniforms.color.value.copy(w.col); w.shaft.material.uniforms.opacity.value = 0.2 * near; w.pool.material.color.copy(w.col);
+        });
+      }
+    };
+  }
+  // TASK-110 (Daniel: "at night some traffic lights would be interesting at the exits of Medical Street, Olari and The
+  // Shortest Shortcut, their lights diffusing into the night and the rain"): three signals, one where each of those
+  // streets meets the Dacia row, on the right-hand kerb of the traffic leaving it, the head facing that traffic. A
+  // Bucharest signal: a grey pole on a cast base, a black three-lamp head (300 mm lamps, red over amber over green) with a
+  // visor over each lamp, on a black backboard with a white rim. They run red, green, amber at an unhurried pace, each
+  // junction out of step with the others (decor: nothing stops for them; the car and the police drive as before).
+  // By day only the lamp that is on is lit. In the dark worlds (applyScheme's dark: Night Mode, Underwater, GTA 2, Sin City)
+  // the lit lamp glows: a halo in the night air (a tight core, a wide glow, a long faint tail), a pool of its colour on the
+  // asphalt in front of the pole and, where it rains, a larger, softer halo and the lamp's reflection drawn out on the wet
+  // road as a long streak towards the viewer (where the mirror image of the lamp meets the road, from the camera's height).
+  // Cost: no light. The poles and heads are one mesh (vertex colours; the batching pass may fold it into its cell), the
+  // nine lamps one instanced draw, the glows one instanced additive draw (halo, pool, streak per signal: nine quads, only
+  // in a dark world and only with the junctions on screen). The colours change only when a lamp switches (a 0.12 s fade,
+  // like a warm lamp), and only with the junctions on screen; with reduced motion the cycle runs at half speed (the
+  // lights are information, not decoration, so they keep changing)
+  // the places: map coordinates (before the city's warp), read off the roads as nav2 drives them (its road mask): each pole a
+  // few units clear of the drivable edge, before the mouth (see TL_SPOTS' notes)
+  var TL_SPOTS = [
+    // Medical Avenue, southbound into the Dacia row: the west kerb (mask edge x 1470), 12 short of the row (its edge z 6070)
+    { id: "medical", x: 1462, z: 6058, fx: 0, fz: -1, off: 0 },
+    // The Shortest Shortcut, coming down to the row: its north-west kerb (mask edge x 1311 at z 6004), facing up the lane
+    { id: "lane", x: 1302, z: 6004, fx: Math.SQRT1_2, fz: -Math.SQRT1_2, off: 7.2 },
+    // Strada Olari (the boulevard up from the house), northbound into the row: the east kerb (edge x 1211), past the flare
+    { id: "olari", x: 1219, z: 6176, fx: 0, fz: 1, off: 13.6 }
+  ];
+  for (const s of TL_SPOTS) EXTRA_KEEPOUT.push({ x: s.x, y: s.z, r: 12 }); // (no block, tree or prop on the pole)
+  // the cycle (s): red, then green, then amber; each signal starts `off` seconds into it
+  var TL_RED = 10, TL_GREEN = 8.5, TL_AMBER = 2.6, TL_T = TL_RED + TL_GREEN + TL_AMBER, TL_FADE = 0.12;
+  var TL_HEAD_Y = 42, TL_LAMP_DY = 5.6, TL_LAMP_Z = 6.66, TL_LAMP_R = 2.25;
+  function buildTrafficLights(parent) {
+    const g = new Group(); g.name = "trafficLights";
+    // ---- the hardware: one geometry, vertex coloured ----
+    const parts = [];
+    const COL = { pole: "#5b5f63", base: "#3d4043", head: "#1d2023", board: "#141618", rim: "#ece9df" };
+    const put = (geo, col, x, y, z, rx = 0) => { if (rx) geo.rotateX(rx); geo.translate(x, y, z); const c = new Color(col), n = geo.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; } geo.setAttribute("color", new Float32BufferAttribute(a, 3)); parts.push(geo); };
+    // a visor: the upper part of a short tube round a lamp, open at the front, a little longer on top; both faces drawn
+    // (its inside is seen from below), as an indexed strip with uv (for the merge)
+    const visor = (cy) => {
+      const pos = [], nor = [], uv = [], idx = [], R = 2.8, N = 12, a0 = -0.28, a1 = Math.PI + 0.28;
+      for (let side = 0; side < 2; side++) {
+        const b = pos.length / 3;
+        for (let i = 0; i <= N; i++) {
+          const a = a0 + (a1 - a0) * i / N, cx = Math.cos(a), cy2 = Math.sin(a), L = 2.4 + 1.5 * Math.max(0, cy2); // longer over the top
+          const s = side ? -1 : 1;
+          pos.push(cx * R, cy + cy2 * R, TL_LAMP_Z - 0.4, cx * R, cy + cy2 * R - 0.35 * L / 3.9, TL_LAMP_Z - 0.4 + L);
+          nor.push(cx * s, cy2 * s, 0, cx * s, cy2 * s, 0); uv.push(i / N, 0, i / N, 1);
+        }
+        for (let i = 0; i < N; i++) { const p = b + i * 2; if (side) idx.push(p, p + 2, p + 1, p + 1, p + 2, p + 3); else idx.push(p, p + 1, p + 2, p + 1, p + 3, p + 2); }
+      }
+      const geo = new BufferGeometry(); geo.setAttribute("position", new Float32BufferAttribute(pos, 3)); geo.setAttribute("normal", new Float32BufferAttribute(nor, 3)); geo.setAttribute("uv", new Float32BufferAttribute(uv, 2)); geo.setIndex(idx);
+      return geo;
+    };
+    const one = () => {
+      parts.length = 0;
+      put(new CylinderGeometry(1.9, 2.3, 2.6, 10), COL.base, 0, 1.3, 0);
+      put(new CylinderGeometry(0.85, 1.0, TL_HEAD_Y + 8, 8), COL.pole, 0, (TL_HEAD_Y + 8) / 2, 0);
+      put(new SphereGeometry(1.05, 8, 5), COL.pole, 0, TL_HEAD_Y + 8, 0);
+      for (const y of [TL_HEAD_Y - 6, TL_HEAD_Y + 6]) put(new BoxGeometry(1.3, 1.3, 2.4), COL.head, 0, y, 1.3);
+      put(new BoxGeometry(11.8, 22.6, 0.35), COL.rim, 0, TL_HEAD_Y, 1.9); // the backboard's white rim (wide enough to read past the ink outline)
+      put(new BoxGeometry(9.7, 20.5, 0.4), COL.board, 0, TL_HEAD_Y, 2.2);
+      put(new BoxGeometry(6.4, 17.8, 4.2), COL.head, 0, TL_HEAD_Y, 4.5); // the head
+      put(new BoxGeometry(6.9, 0.7, 4.7), COL.head, 0, TL_HEAD_Y + 9.2, 4.5); // its cap
+      for (const k of [1, 0, -1]) put(visor(TL_HEAD_Y + k * TL_LAMP_DY), COL.head, 0, 0, 0);
+      return mergeGeometries(parts);
+    };
+    const unit = one(), all = [], q = new Quaternion(), m4 = new Matrix4(), up = new Vector3(0, 1, 0);
+    for (const s of TL_SPOTS) { q.setFromAxisAngle(up, Math.atan2(s.fx, s.fz)); m4.compose(new Vector3(s.x, 0, s.z), q, new Vector3(1, 1, 1)); all.push(unit.clone().applyMatrix4(m4)); }
+    const hw = new Mesh(mergeGeometries(all), new MeshStandardMaterial({ color: "#ffffff", vertexColors: true, roughness: 0.62, metalness: 0.2 }));
+    hw.castShadow = true; hw.receiveShadow = true; hw.name = "trafficLightPoles"; hw.userData.noMerge = true; // (one draw already; a batch would bake its vertex colours over)
+    g.add(hw);
+    // ---- the lamps: nine discs, one instanced draw, their colour per instance ----
+    const lensTex = canvasTexture(64, 64, (ctx, w, h) => { // a lens: brighter in the middle, a ring of facets, a darker rim
+      const gr = ctx.createRadialGradient(w * 0.46, h * 0.42, 0, w / 2, h / 2, w / 2); gr.addColorStop(0, "#ffffff"); gr.addColorStop(0.55, "#e6e6e6"); gr.addColorStop(0.86, "#b4b4b4"); gr.addColorStop(1, "#7a7a7a");
+      ctx.fillStyle = gr; ctx.fillRect(0, 0, w, h); ctx.strokeStyle = "rgba(0,0,0,.08)"; ctx.lineWidth = 1.2; for (const r of [9, 17, 25]) { ctx.beginPath(); ctx.arc(w / 2, h / 2, r, 0, Math.PI * 2); ctx.stroke(); }
+    });
+    const lampM = new MeshBasicMaterial({ color: "#ffffff", map: lensTex });
+    lampM.userData.outlineParameters = { visible: false }; // (a flat disc: no ink hull round it)
+    const lamps = new InstancedMesh(new CircleGeometry(TL_LAMP_R, 20), lampM, TL_SPOTS.length * 3);
+    lamps.name = "trafficLamps"; lamps.frustumCulled = false; lamps.castShadow = lamps.receiveShadow = false;
+    const LAMP = [new Color("#ff2b1c"), new Color("#ffad0a"), new Color("#18f09a")]; // red, amber, green (an LED's blue-green)
+    const OFF = LAMP.map((c) => c.clone().multiplyScalar(0.07).add(new Color(0.012, 0.012, 0.012)));
+    TL_SPOTS.forEach((s, i) => {
+      q.setFromAxisAngle(up, Math.atan2(s.fx, s.fz));
+      for (let k = 0; k < 3; k++) { m4.compose(new Vector3(0, TL_HEAD_Y + (1 - k) * TL_LAMP_DY, TL_LAMP_Z).applyQuaternion(q).add(new Vector3(s.x, 0, s.z)), q, new Vector3(1, 1, 1)); lamps.setMatrixAt(i * 3 + k, m4); lamps.setColorAt(i * 3 + k, OFF[k]); }
+    });
+    g.add(lamps);
+    // ---- the glows (dark worlds): per signal a halo (billboard), a pool on the asphalt and the wet road's streak ----
+    const NF = TL_SPOTS.length * 3, fxGeo = new PlaneGeometry(1, 1);
+    const aP = new Float32Array(NF * 3), aC = new Float32Array(NF * 3), aK = new Float32Array(NF * 4), aD = new Float32Array(NF * 2);
+    TL_SPOTS.forEach((s, i) => { for (let k = 0; k < 3; k++) { const j = i * 3 + k; aP.set([s.x, 0, s.z], j * 3); aD.set([s.fx, s.fz], j * 2); aK[j * 4] = k; } });
+    const atP = new InstancedBufferAttribute(aP, 3), atC = new InstancedBufferAttribute(aC, 3), atK = new InstancedBufferAttribute(aK, 4), atD = new InstancedBufferAttribute(aD, 2);
+    fxGeo.setAttribute("iP", atP); fxGeo.setAttribute("iC", atC); fxGeo.setAttribute("iK", atK); fxGeo.setAttribute("iD", atD);
+    const fxM = new ShaderMaterial({
+      uniforms: { camW: { value: new Vector3() }, rain: { value: 0 }, t: { value: 0 } },
+      transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide,
+      vertexShader: `#include <common>
+uniform vec3 camW; uniform float rain;
+attribute vec3 iP; attribute vec3 iC; attribute vec4 iK; attribute vec2 iD;
+varying vec2 vUv; varying vec3 vC; varying float vA; varying float vM;
+void main(){
+  vUv = uv; vC = iC; vM = iK.x; vA = iK.z;
+  vec4 w = modelMatrix * vec4(iP, 1.0); w.xz = cityWarp(w.xz);
+  vec2 f = iD; vec3 toC = camW - w.xyz;
+  if (iK.x < 0.5) {
+    // the halo: round the lit lamp, a little in front of its lens and nearer the camera than the head (never cut by it);
+    // seen from behind the signal only a faint glow of it
+    w.xz += f * 1.6;
+    float face = 0.22 + 0.78 * smoothstep(-0.35, 0.55, dot(normalize(toC), vec3(f.x, 0.0, f.y)));
+    // round 2: fades out as the camera comes near (under ~3 m almost nothing: the lamp itself is the light then)
+    vA *= face * (0.1 + 0.9 * smoothstep(30.0, 170.0, length(toC)));
+    vec4 mv = viewMatrix * w; mv.xyz += normalize(-mv.xyz) * 5.0; mv.xy += position.xy * iK.y;
+    gl_Position = projectionMatrix * mv;
+  } else {
+    vec2 g0 = w.xz, dir, side; float len;
+    if (iK.x < 1.5) { // the pool: on the road in front of the pole, longer along the way the lamp looks
+      dir = f; len = iK.w; g0 += f * (len * 0.5 + 2.0) + vec2(-f.y, f.x) * 12.0; // (towards the road: the kerb is on the lamp's right)
+    } else {          // the streak: where the lamp's mirror image meets the road, drawn out towards the viewer
+      vec2 d = toC.xz; float dl = max(length(d), 1.0); dir = d / dl;
+      float hl = iP.y, hc = max(toC.y + w.y, 2.0);
+      g0 += d * (hl / (hl + hc)); len = iK.w; g0 += dir * len * 0.18;
+      vA *= smoothstep(-0.1, 0.6, dot(dir, f)); // a mirror image of the lens: only where the lamp looks towards the viewer
+    }
+    side = vec2(-dir.y, dir.x);
+    vec2 p = g0 + side * position.x * iK.y + dir * position.y * len;
+    gl_Position = projectionMatrix * viewMatrix * vec4(p.x, 1.9, p.y, 1.0);
+  }
+}`,
+      fragmentShader: `uniform float rain; uniform float t;
+varying vec2 vUv; varying vec3 vC; varying float vA; varying float vM;
+void main(){
+  vec2 q = vUv - 0.5; float a;
+  if (vM < 0.5) {
+    float r = length(q) * 2.0;
+    // round 2: a glow that falls off with the square of the distance from the lamp (1 / (1 + (r/r0)^2), less its value at
+    // the rim), within a small radius in the world; in the rain r0 is wider and the glow softer (light in wet air)
+    float r0 = mix(0.1, 0.16, rain), e = 1.0 / (1.0 + 1.0 / (r0 * r0));
+    a = mix(0.9, 0.7, rain) * max(0.0, 1.0 / (1.0 + (r * r) / (r0 * r0)) - e) / (1.0 - e) * (1.0 - smoothstep(0.75, 1.0, r));
+  } else if (vM < 1.5) {
+    float r = length(q) * 2.0; a = 0.7 * exp(-pow(r / 0.48, 2.0)) * (1.0 - smoothstep(0.75, 1.0, r));
+  } else {
+    // a broken, shimmering streak: soft across, tapering at both ends, the wet road's ripples along it
+    float across = exp(-pow(q.x / 0.22, 2.0)), along = smoothstep(-0.5, -0.32, q.y) * (1.0 - smoothstep(0.05, 0.5, q.y));
+    float rip = 0.72 + 0.28 * sin(q.y * 46.0 + t * 2.1) * sin(q.y * 17.0 - t * 1.3 + q.x * 9.0);
+    a = across * along * rip;
+  }
+  gl_FragColor = vec4(vC * a * vA, 1.0);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}`
+    });
+    fxM.userData.outlineParameters = { visible: false };
+    const fx = new InstancedMesh(fxGeo, fxM, NF);
+    fx.name = "trafficGlow"; fx.frustumCulled = false; fx.visible = false; fx.renderOrder = 3; fx.castShadow = fx.receiveShadow = false;
+    fx.userData.noHull = true; fx.userData.noMerge = true; fx.userData.sketchNoHull = true;
+    g.add(fx);
+    parent.add(g);
+    // ---- the cycle ----
+    const rm = matchMedia("(prefers-reduced-motion: reduce)"), fr = new Frustum(), pm = new Matrix4();
+    let cx = 0, cz = 0; for (const s of TL_SPOTS) { cx += s.x / TL_SPOTS.length; cz += s.z / TL_SPOTS.length; }
+    const sph = new Sphere(warpV(new Vector3(cx, 30, cz)), 330);
+    const st = TL_SPOTS.map(() => ({ on: -1, prev: -1, at: -1e9 })), tmpC = new Color();
+    let dark = false, clock = 0, lastNow = 0;
+    const phase = (tt) => { const u = ((tt % TL_T) + TL_T) % TL_T; return u < TL_RED ? 0 : u < TL_RED + TL_GREEN ? 2 : 1; }; // lamp index: 0 red, 1 amber, 2 green
+    const api = {
+      group: g, spots: TL_SPOTS,
+      setDark(on) { dark = on; fx.visible = false; },
+      state: () => st.map((s) => ["red", "amber", "green"][s.on]),
+      update(now, cam, rainK = 0) {
+        const dt = Math.min(0.25, Math.max(0, (now - (lastNow || now)) / 1000)); lastNow = now;
+        clock += dt * (rm.matches ? 0.5 : 1); // reduced motion: the same cycle, at half the pace
+        pm.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); fr.setFromProjectionMatrix(pm);
+        const seen = fr.intersectsSphere(sph);
+        lamps.visible = seen;
+        if (!seen) { fx.visible = false; return; }
+        let dirty = false;
+        TL_SPOTS.forEach((s, i) => {
+          const S = st[i], ph = phase(clock + s.off);
+          if (ph !== S.on) { S.prev = S.on; S.on = ph; S.at = clock; }
+          const k = Math.min(1, (clock - S.at) / TL_FADE);
+          if (k < 1 || S.drawn !== S.on) {
+            for (let l = 0; l < 3; l++) {
+              const lit = l === S.on ? k : l === S.prev ? 1 - k : 0;
+              tmpC.copy(OFF[l]).lerp(LAMP[l], lit); lamps.setColorAt(i * 3 + l, tmpC);
+            }
+            if (k >= 1) S.drawn = S.on;
+            dirty = true;
+          }
+        });
+        if (dirty) lamps.instanceColor.needsUpdate = true;
+        const glow = dark; // (Underwater too: lamps under water read well, the glow a little cloudy)
+        fx.visible = glow;
+        if (!glow) return;
+        const r = Math.max(0, Math.min(1, rainK));
+        fxM.uniforms.camW.value.copy(cam.position); fxM.uniforms.rain.value = r; fxM.uniforms.t.value = (now * 0.001) % 1000;
+        TL_SPOTS.forEach((s, i) => {
+          const S = st[i], k = Math.min(1, (clock - S.at) / TL_FADE), c = LAMP[S.on];
+          const lampY = TL_HEAD_Y + (1 - S.on) * TL_LAMP_DY;
+          for (let m = 0; m < 3; m++) {
+            const j = i * 3 + m;
+            aP[j * 3 + 1] = lampY;
+            aC[j * 3] = c.r; aC[j * 3 + 1] = c.g; aC[j * 3 + 2] = c.b;
+            if (m === 0) { aK[j * 4 + 1] = 24 + 10 * r; aK[j * 4 + 2] = (0.85 + 0.1 * r) * k; } // round 2: 24 units across dry (2 m), 34 in the rain (was 46 / 62)
+            else if (m === 1) { aK[j * 4 + 1] = 38 + 6 * r; aK[j * 4 + 3] = 46 + 8 * r; aK[j * 4 + 2] = (0.32 + 0.16 * r) * k; }
+            else { aK[j * 4 + 1] = 8 + 3 * (1 - r); aK[j * 4 + 3] = 30 + 120 * r; aK[j * 4 + 2] = 0.75 * r * k; }
+          }
+        });
+        atP.needsUpdate = atC.needsUpdate = atK.needsUpdate = true;
+      }
+    };
+    mats.trafficLights = api;
     return g;
   }
   // r185: the arrival at Olari 9 (see BLVD_W, OLARI_PLAZA): the forecourt, paved in the ring's colour, joined to the
@@ -31454,6 +32437,7 @@ void main() {
     const endHouse = tag("EndHouse", () => buildEndHouse(world));
     yield;
     tag("OlariPlaza", () => buildOlariPlaza(world)); // r185
+    tag("TrafficLights", () => buildTrafficLights(world)); // TASK-110
     const streetSigns = tag("CoffeeEntrance", () => buildCoffeeEntrance(world));
     yield;
     tag("Romexpo", () => buildRomexpo(world));
@@ -31948,9 +32932,22 @@ void main() {
   function carWheel({ r = 9, w = 6.4, rim = "#d9dadc", rimR = 0.6, cap = "chrome", tyre = "#191919", spokes = 0, whitewall = false, slick = false } = {}) {
     const g = new Group(), spin = new Group();
     const rubber = new MeshStandardMaterial({ color: tyre, roughness: slick ? 0.55 : 0.92 });
-    const core = new Mesh(new CylinderGeometry(r - 1.4, r - 1.4, w, 28), rubber); core.rotation.z = Math.PI / 2; spin.add(core);
-    const tr = Math.min(2.6, w / 2.4);
-    for (const sx of [-1, 1]) { const wall = new Mesh(new TorusGeometry(r - tr, tr, 12, 32), rubber); wall.rotation.y = Math.PI / 2; wall.position.x = sx * (w / 2 - tr); spin.add(wall); }
+    if (slick) {
+      // TASK-109 (Daniel: "the F1's tyres should be flat, they have two raised bands on the sides"): a wide tyre was a
+      // core 1.4 under the radius between two round sidewalls that reached it, a dip in the middle; a slick is one lathe:
+      // the sidewall from the rim, a small rounded shoulder, a flat tread across the full width
+      const sh = Math.min(1.6, w * 0.16), ri = r * rimR - 0.3, n = 6, pts = [new Vector2(ri, -w / 2 + 0.5), new Vector2(r - sh - 0.6, -w / 2 + 0.05)];
+      for (let i = 0; i <= n; i++) { const a = (i / n) * Math.PI / 2; pts.push(new Vector2(r - sh + sh * Math.sin(a), -w / 2 + sh - sh * Math.cos(a))); }
+      for (let i = n; i >= 0; i--) { const a = (i / n) * Math.PI / 2; pts.push(new Vector2(r - sh + sh * Math.sin(a), w / 2 - sh + sh * Math.cos(a))); }
+      pts.push(new Vector2(r - sh - 0.6, w / 2 - 0.05), new Vector2(ri, w / 2 - 0.5));
+      const geo = new LatheGeometry(pts, 40); geo.rotateZ(-Math.PI / 2);
+      rubber.side = DoubleSide;
+      spin.add(new Mesh(geo, rubber));
+    } else {
+      const core = new Mesh(new CylinderGeometry(r - 1.4, r - 1.4, w, 28), rubber); core.rotation.z = Math.PI / 2; spin.add(core);
+      const tr = Math.min(2.6, w / 2.4);
+      for (const sx of [-1, 1]) { const wall = new Mesh(new TorusGeometry(r - tr, tr, 12, 32), rubber); wall.rotation.y = Math.PI / 2; wall.position.x = sx * (w / 2 - tr); spin.add(wall); }
+    }
     if (whitewall) for (const sx of [-1, 1]) { const ww = new Mesh(new TorusGeometry(r * 0.72, r * 0.09, 8, 28), M("#f6f4ee", { roughness: 0.6 })); ww.rotation.y = Math.PI / 2; ww.position.x = sx * (w / 2 + 0.05); spin.add(ww); }
     const rimM = rim === "chrome" ? chromeM() : M(rim, { roughness: 0.35, metalness: 0.4 });
     const rimMesh = new Mesh(new CylinderGeometry(r * rimR, r * rimR, w + 0.4, 28), rimM); rimMesh.rotation.z = Math.PI / 2; spin.add(rimMesh);
@@ -32642,24 +33639,61 @@ void main() {
   }
 
   // ---------- E-scooter: aluminium deck, folding stem, hub motor ----------
+  // TASK-109 (Daniel: "the scooter is absurdly big: much smaller, almost 1:1 with the car, a little bigger than normal,
+  // but realistic"): modelled in real centimetres on a commuter e-scooter (about 113 long, 118 to the bar, a 43 bar,
+  // 8.5" tyres, the battery in the deck, a front hub motor, a rear disc) and kept out of the "every ride the same size"
+  // rule: it rides at the 1300's own scale (the 1300's 4.35 m read 53.8 on the road: 12.4 a metre) times SCOOTER_K,
+  // a touch over real so it still reads on the map
+  var SCOOTER_K = 1.2, SCOOTER_S = 12.4 / 100 * SCOOTER_K;
   function buildScooter() {
     const g = new Group();
-    const alu = M("#c9ccd1", { metalness: 0.6, roughness: 0.35 }), ink = M(INK);
-    const deck = topBody(rrDraw(12, 44, 4), 3.6, ink, 6.5, 1.2); g.add(deck);
-    const grip = topBody(rrDraw(10, 36, 3.5), 0.6, M("#2b2b2b", { roughness: 0.95 }), 10.2, 0.2); grip.position.z = -2; g.add(grip);
-    const batt = topBody(rrDraw(8, 26, 2.5), 2.6, M("#FED012"), 3.8, 0.8); g.add(batt);
-    g.add(rod([0, 10, 21], [0, 46, 25], 1.8, alu), rod([0, 10, 21], [0, 6, 26], 1.6, alu));
-    g.add(rod([-13, 46, 25], [13, 46, 25], 1.4, ink));
-    for (const sx of [-1, 1]) { const gp = new Mesh(new CylinderGeometry(1.9, 1.9, 6, 12), M("#F65342", { roughness: 0.8 })); gp.rotation.z = Math.PI / 2; gp.position.set(sx * 11, 46, 25); g.add(gp); }
-    const disp = topBody(rrDraw(5, 3, 1), 1, M("#111"), 46.4, 0.3); disp.position.z = 24; g.add(disp);
-    const light = roundLamp(2.2, "#fff3c4", "#FED012", 0.7); light.position.set(0, 38, 24.6); g.add(light);
-    for (const z of [26, -22]) { const f = new Mesh(new TorusGeometry(7.4, 1.1, 8, 20, Math.PI), ink); f.rotation.y = Math.PI / 2; f.position.set(0, 6.5, z); g.add(f); }
-    const tail = roundLamp(1.4, "#a3121a", "#ff2a2a", 0.5); tail.position.set(0, 9, -24.5); tail.rotation.y = Math.PI; g.add(tail);
-    g.add(rod([-5, 7, -10], [-9, 1, -14], 0.6, alu));
+    const alu = M("#c9ccd1", { metalness: 0.6, roughness: 0.35 }), dark = M("#26282c", { metalness: 0.3, roughness: 0.55 }), ink = M(INK), rubber = M("#151515", { roughness: 0.95 }), yel = M("#FED012");
+    const FZ = 44, RZ = -42, WR = 11; // front and rear axles (a 86 wheelbase), the wheels' radius
+    // the deck: an aluminium slab with the battery inside it, a grip mat on top, a yellow line along each side
+    const deck = sideBody((s) => { s.moveTo(-28, 7.5); s.lineTo(26, 7.5); s.quadraticCurveTo(30, 7.5, 30, 10.5); s.lineTo(30, 12.5); s.lineTo(-28, 12.5); s.quadraticCurveTo(-31, 12.5, -31, 10); s.quadraticCurveTo(-31, 7.5, -28, 7.5); }, 15.5, alu, 1.4, 10);
+    g.add(deck);
+    const mat = topBody(rrDraw(13, 50, 2.5), 0.5, rubber, 12.6, 0.2); mat.position.z = -1.5; g.add(mat);
+    for (const sx of [-1, 1]) { const ln = new Mesh(new BoxGeometry(0.3, 1.1, 46), yel); ln.position.set(sx * 7.8, 10, -1); g.add(ln); }
+    const tray = topBody(rrDraw(12, 48, 3), 1.2, dark, 6.4, 0.4); tray.position.z = -1; g.add(tray);
+    // the neck: from the deck's nose up to the head tube, the folding latch on it
+    const neck = sideBody((s) => { s.moveTo(22, 7.5); s.lineTo(31, 7.5); s.lineTo(42, 19); s.lineTo(42, 25); s.lineTo(37.5, 25); s.lineTo(24, 12.5); s.lineTo(22, 12.5); }, 7, alu, 1, 8);
+    g.add(neck);
+    const latch = new Mesh(new BoxGeometry(5.6, 2.2, 4.5), dark); latch.position.set(0, 18.5, 36.5); latch.rotation.x = -0.8; g.add(latch);
+    // the rear: swingarm plates to the axle, the mudguard over the wheel with the brake lamp in its tail, a disc brake
+    for (const sx of [-1, 1]) g.add(rod([sx * 3.6, 10, -27], [sx * 3.6, WR, RZ], 1, alu));
+    const guard = (cz, r, w, a0, a1) => { const m = new Mesh(new CylinderGeometry(r, r, w, 22, 1, true, a0, a1 - a0), ink); m.material.side = DoubleSide; m.rotation.z = Math.PI / 2; m.position.set(0, WR, cz); return m; };
+    g.add(guard(RZ, WR + 1.6, 6.4, Math.PI * 0.38, Math.PI * 1.06));
+    const tail = new Mesh(new BoxGeometry(4.2, 1.4, 1), new MeshPhysicalMaterial({ color: "#a3121a", emissive: new Color("#ff2a2a"), emissiveIntensity: 0.6, roughness: 0.1, clearcoat: 1 })); tail.position.set(0, 14.3, RZ - 11.9); tail.rotation.x = -0.35; g.add(tail);
+    // the folding kickstand, tucked up under the deck's left side
+    g.add(rod([-6.8, 7.2, -4], [-6.8, 6.6, -19], 0.55, dark));
+    // the steering: fork, head tube, stem, the T bar with its grips, levers, bell, display and headlamp (veh.steer turns
+    // with the front wheel about the same axis). The stem rakes back towards the rider, about 9 degrees
+    const steer = new Group(); steer.position.z = FZ; g.add(steer);
+    const P = (x, y, z) => [x, y, z - FZ];
+    const axisZ = (y) => FZ - 16 * (y - WR) / 99; // the steering axis: from the front axle up to the bar
+    for (const sx of [-1, 1]) steer.add(rod(P(sx * 3.7, WR, FZ), P(sx * 3.7, 24, axisZ(24)), 0.9, dark));
+    const crown = new Mesh(new BoxGeometry(9.2, 2.4, 4), dark); crown.position.set(0, 24.5, axisZ(24.5) - FZ); crown.rotation.x = 0.16; steer.add(crown);
+    steer.add(rod(P(0, 23.5, axisZ(23.5)), P(0, 33, axisZ(33)), 2.6, alu, 16));
+    steer.add(rod(P(0, 32, axisZ(32)), P(0, 106, axisZ(106)), 1.9, alu, 16));
+    const clampT = new Mesh(new BoxGeometry(5, 3.4, 4.6), dark); clampT.position.set(0, 107.5, axisZ(107.5) - FZ); steer.add(clampT);
+    const barZ = axisZ(108) - FZ;
+    steer.add(rod([-21.5, 108, barZ], [21.5, 108, barZ], 1.1, ink, 12));
+    for (const sx of [-1, 1]) { const gp = new Mesh(new CylinderGeometry(1.6, 1.6, 11, 14), rubber); gp.rotation.z = Math.PI / 2; gp.position.set(sx * 16.5, 108, barZ); steer.add(gp); }
+    steer.add(rod([-12.5, 108.4, barZ + 1], [-17.5, 107.2, barZ + 6.2], 0.45, dark, 6)); // the brake lever
+    const thr = new Mesh(new BoxGeometry(1.6, 2.6, 0.6), dark); thr.position.set(9.5, 107.3, barZ + 1.6); steer.add(thr);
+    const bell = new Mesh(new SphereGeometry(1.4, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), chromeM()); bell.position.set(-9, 109, barZ); steer.add(bell);
+    const disp = topBody(rrDraw(6.4, 4.6, 1.2), 1.6, M("#111"), 109, 0.4); disp.position.z = barZ; steer.add(disp);
+    const scr = new Mesh(new PlaneGeometry(4.2, 2.4), new MeshBasicMaterial({ color: "#7fe0ff", toneMapped: false })); scr.rotation.x = -Math.PI / 2 + 0.35; scr.position.set(0, 110.75, barZ + 0.2); scr.material.userData.outlineParameters = { visible: false }; steer.add(scr);
+    const lampY = 99, lampZ = axisZ(lampY) + 2.1;
+    const light = roundLamp(1.9, "#fff3c4", "#FED012", 0.8); light.position.set(0, lampY, lampZ - FZ); light.rotation.x = 0.16; steer.add(light);
+    steer.add(guard(0, WR + 1.4, 6.2, -Math.PI * 0.06, Math.PI * 0.58)); // the front mudguard
     const wheels = [];
-    for (const z of [26, -22]) { const w = carWheel({ r: 6, w: 3.6, rim: "#2b2b2b", rimR: 0.62, cap: "#FED012" }); w.position.set(0, 6, z); wheels.push(w); g.add(w); }
+    for (const z of [FZ, RZ]) { const w = carWheel({ r: WR, w: 5.4, rim: "#2b2b2b", rimR: 0.6, cap: "#FED012" }); w.position.set(0, WR, z); wheels.push(w); g.add(w); }
+    { const hub = new Mesh(new CylinderGeometry(WR * 0.46, WR * 0.46, 6.6, 22), dark); hub.rotation.z = Math.PI / 2; wheels[0].children[0].add(hub); } // the hub motor
+    { const disc = new Mesh(new CylinderGeometry(6, 6, 0.35, 24), M("#b9bcc2", { metalness: 0.8, roughness: 0.3 })); disc.rotation.z = Math.PI / 2; disc.position.x = 3.4; wheels[1].children[0].add(disc); }
     shadowAll(g);
-    return { group: g, wheels, kind: "car" };
+    // fixedS: its scale on the road (not fitted to the others' length); beam: the headlamp's cone, sized for that scale
+    return { group: g, wheels, kind: "car", steer, fixedS: SCOOTER_S, beam: { p: [0, lampY, lampZ], k: 2.1, tilt: 0.35 } };
   }
 
   // ---------- Kompus truck: a step van in the Kompus wrap, serving hatch and awning ----------
@@ -34246,7 +35280,7 @@ void main() {
     const WORLD_VEH = { underwater: "sub", default: "dacia1300", monument: "dacia1300", ghibli: "dacia1300", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "dacia1300", orchid: "scooter", sincity: "cop", sketch: "dacia1300", riso: "scooter" }; // r138f, r138j: the 1300 where the van was the default
     const wtGrid = el("div", "wt-grid");
     themeMenu.appendChild(wtGrid);
-    const WORLD_SUB = { underwater: "Submarine, fish, floating things", default: "The city, as it is", monument: "Our city, as a pastel diorama", ghibli: "Hand-painted countryside", nightlife: "Orange & blue, a light drizzle", gta2: "Bonus \u00B7 drive mode \u00B7 top-down, retro", circuit: "Race day on the circuit", magma: "Lava tones", orchid: "Petals everywhere", sincity: "Black, white and one red", sketch: "Pencil on paper, drawn as you explore", riso: "Two inks, slightly off-register" };
+    const WORLD_SUB = { underwater: "Submarine, fish, floating things", default: "The city, as it is", monument: "Our city, as a pastel diorama", ghibli: "Hand-painted countryside", nightlife: "Orange & blue, a light drizzle", gta2: "Bonus \u00B7 drive mode \u00B7 top-down, retro", circuit: "Race day on the circuit", magma: "Lava tones", orchid: "Petals everywhere", sincity: "Black, white and one red", sketch: "Ink and crayon, drawn where you look", riso: "Two inks, slightly off-register" };
     const themeRows = {};
     SCHEMES.forEach((s, i) => {
       if (s.proto) return; // worlds prototype: opened by URL only, no tile yet
@@ -34910,7 +35944,7 @@ void main() {
       <section class="scf-hero">
         <img class="scf-slow" src="${sAsset20}" alt="SLOW">
         <span class="eyebrow">SLOW COFFEE FESTIVAL \u00B7 BRAND UNIVERSE \u00B7 BY CROMATIC STUDIOS</span>
-        <h1>For five years, we\u2019ve been shaping the face of <em>Slow Coffee Festival</em>.</h1>
+        <h2>For five years, we\u2019ve been shaping the face of <em>Slow Coffee Festival</em>.</h2>
         <p>Not just a logo and a poster, but a positioning and a visual language that connects with people.
         For us, branding is more than design \u2014 it\u2019s <b>meaning</b>, a <b>voice</b> and a <b>vibe made visible</b>.
         A way to turn values into graphics, and graphics into something you actually feel.</p>
@@ -35444,6 +36478,7 @@ void main() {
       "Litorsal": "litorsal", "Lacalut": "lacalut", // TASK-026: the first two of the Zdrovit yard
       "Maximag": "maximag", // TASK-064: its own page, and its own kiosk in the yard
       "Steam": "steam", "Steam Coffee Shop": "steam", "OMA Coffee": "oma-coffee", "Antila": "antila", "UNDE": "unde", "UND\xC9": "unde" };
+    for (const b of ZDROVIT_BRANDS) if (b.page && !WORK_PAGES[b.name]) WORK_PAGES[b.name] = b.page; // TASK-074: a Zdrovit brand's page comes from its data
     window.__casePage = (brand) => (WORK_PAGES[brand] && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname) ? WORK_PAGES[brand] : null);
     const withPage = (brand, onClick) => () => { const pg = window.__casePage(brand); if (pg && openFrameHook) return openFrameHook(`/work/${pg}/?embed=1`, brand); return onClick?.(); };
     const mkTag = (brand, name, line, cta, onClick0, extra = "") => {
@@ -35492,28 +36527,28 @@ void main() {
     // r79: a card for every brand on the four streets, shown while you pass its building
     const knownProject = (n) => [...PROJECTS_A1, ...PROJECTS_A2, ...PROJECTS_B1, ...PROJECTS_B2].find((p) => p.name === n || (n === "Routine Paris" && p.name === "Routine Paris"));
     const projOf = (b) => knownProject(b.name) || { name: b.name, cat: b.line.replace(/ · /g, " \u00B7 "), poster: b.name, accent: b.c, desc: b.desc || "By Cromatic Studios. The full case study is coming soon." };
-    // the courtyard's eight brands share one card, which opens a panel with all of them
+    // the courtyard's brands share one card, which opens a panel with all of them
+    // TASK-074: the Zdrovit Beauty & Supplement Park: the same list as the map's Zdrovit card (zdrovitListHTML)
     const openCourt = () => {
       modalBack.innerHTML = "";
       const m = el("div", "hmodal court-modal");
       m.setAttribute("role", "dialog");
-      m.innerHTML = `<div class="hm-info wide"><span class="eyebrow">MEDICAL AVENUE \u00B7 THE COURTYARD</span><span class="hm-name drop1" style="background:#e30613;color:#fff">Zdrovit</span>
-        <p>Seven brands around one yard: health and clinics, from Bucharest to Barcelona.</p>
-        <div class="court-grid">${COURT_BRANDS.map((b, i) => `<button class="court-b" data-i="${i}" style="--cc:${b.c};--ct:${b.t}"><b>${b.name}</b><span class="mono">${b.line}</span></button>`).join("")}${ZDROVIT_YARD.map((n) => `<button class="court-b yard-b" data-n="${n}" style="--cc:#cfcdc8;--ct:#3d3c39"><b>${n}</b><span class="mono">IN THE YARD</span></button>`).join("")}</div></div>`;
-      m.querySelectorAll(".court-b").forEach((btn) => { if (btn.dataset.n) { btn.onclick = () => { const pg = window.__casePage(btn.dataset.n); if (pg && openFrameHook) { closeModal(); openFrameHook(`/work/${pg}/?embed=1`, btn.dataset.n); } }; return; } btn.onclick = () => { const b0 = COURT_BRANDS[+btn.dataset.i], pg = window.__casePage(b0.name); if (pg && openFrameHook) { closeModal(); openFrameHook(`/work/${pg}/?embed=1`, b0.name); } else openProjectHook?.(projOf(b0)); }; });
+      m.innerHTML = `<div class="hm-info wide"><span class="eyebrow">MEDICAL AVENUE \u00B7 BEAUTY &amp; SUPPLEMENT PARK</span><span class="hm-name drop1" style="background:#e30613;color:#fff">Zdrovit</span>
+        <p>${ZDROVIT_BRANDS.length} brands in one park. The ones with a case study open it.</p>${zdrovitListHTML("zd-modal")}</div>`;
+      m.querySelectorAll(".zd-b.pg").forEach((btn) => { btn.onclick = () => { const pg = window.__casePage(btn.dataset.zb) || btn.dataset.pg; if (pg && openFrameHook && /^https?:$/.test(location.protocol)) { closeModal(); openFrameHook(`/work/${pg}/?embed=1`, btn.dataset.zb); } }; });
       const close = el("button", "hm-close mono", "CLOSE \u00D7");
       close.onclick = closeModal;
       m.querySelector(".hm-info").appendChild(close);
       modalBack.appendChild(m);
       openModal();
     };
-    const COURT_TAG = { br: "C", name: "Zdrovit", x: COURT.x - 150, z: COURT.z, line: "8 BRANDS AROUND A YARD" /* TASK-064: + Maximag */, c: "#e30613", t: "#ffffff" };
+    const COURT_TAG = { br: "C", name: "Zdrovit", x: COURT.x - 150, z: COURT.z, line: "BEAUTY & SUPPLEMENT PARK" /* TASK-074 */, c: "#e30613", t: "#ffffff" };
     const workTags = [...STREET_BRANDS, COURT_TAG, TAC, ...COFFEE_ADDS, ...LANE_BRANDS].map((b) => {
       BRANDC[b.name] = BRANDC[b.name] || { c: b.c, t: b.t };
       // brands with a case page on the website open it full screen (offline copies fall back to the card)
       if (!b.page && window.__casePage(b.name)) b.page = window.__casePage(b.name);
       const onlinePage = b.page && /^https?:$/.test(location.protocol) && !/claude|claudeusercontent/.test(location.hostname);
-      const t = mkTag(b.name, b.name.toUpperCase(), b.line, b === COURT_TAG ? "See the yard \u2192" : b.wip ? "Work in progress" : ctaFor(b.name), () => (b.wip ? null : b === COURT_TAG ? openCourt() : onlinePage && openFrameHook ? openFrameHook(`/work/${b.page}/?embed=1`, b.name) : openProjectHook?.(projOf(b))), "work-tag");
+      const t = mkTag(b.name, b.name.toUpperCase(), b.line, b === COURT_TAG ? `See the ${ZDROVIT_BRANDS.length} brands \u2192` : b.wip ? "Work in progress" : ctaFor(b.name), () => (b.wip ? null : b === COURT_TAG ? openCourt() : onlinePage && openFrameHook ? openFrameHook(`/work/${b.page}/?embed=1`, b.name) : openProjectHook?.(projOf(b))), "work-tag");
       t._st = b;
       return t;
     });
@@ -35974,10 +37009,11 @@ void main() {
           depthWrite: false
         });
         beamM.userData.outlineParameters = { visible: false };
-        const beamSpots = id === "scooter" ? [[0, 38.6, 21.6 + 35]] : [[-bb.max.x * 0.55, 18, bb.max.z + 33], [bb.max.x * 0.55, 18, bb.max.z + 33]];
+        // TASK-109: a ride with one headlamp names it (veh.beam: where, how big for its scale, how far down it points)
+        const bk = veh.beam?.k || 1, beamSpots = veh.beam ? [[veh.beam.p[0], veh.beam.p[1], veh.beam.p[2] + 35 * bk]] : [[-bb.max.x * 0.55, 18, bb.max.z + 33], [bb.max.x * 0.55, 18, bb.max.z + 33]];
         for (const [sx, sy, sz] of beamSpots) {
-          const cone = new Mesh(new ConeGeometry(13, 70, 12, 1, true), beamM);
-          cone.rotation.x = -Math.PI / 2 - 0.06;
+          const cone = new Mesh(new ConeGeometry(13 * bk, 70 * bk, 12, 1, true), beamM);
+          cone.rotation.x = -Math.PI / 2 - (veh.beam?.tilt ?? 0.06);
           cone.position.set(sx, sy, sz);
           beams.add(cone);
         }
@@ -35990,7 +37026,7 @@ void main() {
         // r124: every ride the same size on the road: about 40 long, about 26 wide at most
         {
           const sz = bb.getSize(new Vector3()), len = Math.max(sz.z, 1), wid = Math.max(sz.x, 1);
-          VEH_S = 1.5 * Math.min(0.74, 46 / len, 30 / wid); // r129: every vehicle 25% bigger; r133: and 20% more (Daniel)
+          VEH_S = veh.fixedS || 1.5 * Math.min(0.74, 46 / len, 30 / wid); // r129: every vehicle 25% bigger; r133: and 20% more (Daniel); TASK-109: the scooter at its real size (fixedS)
           window.__vehSize = [id, Math.round(sz.x), Math.round(sz.y), Math.round(sz.z), +VEH_S.toFixed(2)];
         }
         veh.group.scale.setScalar(VEH_S);
@@ -37019,6 +38055,8 @@ void main() {
         if (mats.yoshiGlow) mats.yoshiGlow.emissiveIntensity = dark ? 1 : 0;
         if (mats.yoshiLantern) mats.yoshiLantern.emissiveIntensity = dark ? 2.2 : 0.15;
         for (const [m, k] of STREET_GLOW) m.emissiveIntensity = dark ? k : 0;
+        mats.houseWin?.setDark(dark); // TASK-098: the house's windows, in colour at night
+        mats.trafficLights?.setDark(dark); // TASK-110: the signals' glow after dark
         if (mats.omaGlow) mats.omaGlow.emissiveIntensity = dark ? 1 : 0;
         if (mats.bereroGlow) mats.bereroGlow.emissiveIntensity = dark ? 1 : 0;
         for (const k of ["artisanGlow", "pastiziaGlow", "blankAGlow", "blankBGlow"]) if (mats[k]) mats[k].emissiveIntensity = dark ? 1 : 0;
@@ -37698,7 +38736,7 @@ void main() {
         cop: { yaw: 9, roll: 2.4e-4, rollMax: 0.13, rollW: 7, rollZ: 0.55, pitch: 2.2, pitchMax: 0.05, pitchW: 8, wb: 51.5, heave: 1 },
         monopoly: { yaw: 11, roll: 1.6e-4, rollMax: 0.1, rollW: 9, rollZ: 0.6, pitch: 1.6, pitchMax: 0.04, pitchW: 10, wb: 44, heave: 0.8 },
         f1: { yaw: 14, roll: 0.9e-4, rollMax: 0.05, rollW: 13, rollZ: 0.75, pitch: 0.9, pitchMax: 0.025, pitchW: 14, wb: 60, heave: 0.4 },
-        scooter: { yaw: 12, roll: 4.4e-4, rollMax: 0.26, rollW: 8, rollZ: 0.7, pitch: 1.5, pitchMax: 0.04, pitchW: 10, wb: 30, heave: 0.7 },
+        scooter: { yaw: 12, roll: 4.4e-4, rollMax: 0.26, rollW: 8, rollZ: 0.7, pitch: 1.5, pitchMax: 0.04, pitchW: 10, wb: 16, heave: 0.3 }, // TASK-109: its wheelbase and its suspension's travel at its real size
         groovy: { yaw: 7, roll: 3.2e-4, rollMax: 0.15, rollW: 5, rollZ: 0.45, pitch: 3, pitchMax: 0.06, pitchW: 6, wb: 56, heave: 1.3 },
         foodvan: { yaw: 6, roll: 3.6e-4, rollMax: 0.16, rollW: 4.5, rollZ: 0.42, pitch: 3.2, pitchMax: 0.065, pitchW: 5.5, wb: 56, heave: 1.4 },
         sub: { yaw: 3.5, roll: 2e-4, rollMax: 0.12, rollW: 2.2, rollZ: 0.5, pitch: 2, pitchMax: 0.05, pitchW: 2.5, wb: 0, heave: 0 },
@@ -39517,18 +40555,30 @@ void main() {
           sketchFx.page = true;
         }
       }
+      // TASK-096: full = a picture drawn into a corner of the canvas (a Multiverse preview, a place's postcard). Its colour
+      // pass goes into a target of that corner's own size (prt), so the pass reads it a pixel for a pixel. It went into the
+      // screen-sized target, with res the screen's: the pass, run over the small corner, read its lines (one or two of the
+      // screen's pixels wide) every 6-13 pixels, and the ink came out broken, in dashes, the crayon in specks
+      var _skVp = new Vector4();
       function sketchRender(now, cam, full) {
-        const w = renderer.domElement.width, h = renderer.domElement.height;
+        let w = renderer.domElement.width, h = renderer.domElement.height;
         if (!sketchFx) sketchFxInit();
         if (sketchFx.page) {
           sketchFx.page = false;
           // the first page: a little of the city is already drawn where you are
           if (mapMode) { const v = warpV(new Vector3(mapView.tgt.x, 0, mapView.tgt.z)); sketchPaint(v.x, v.z, 900, 1); } else sketchPaint(carPos.x, carPos.z, 700, 1);
         }
-        if (sketchFx.rt.width !== w || sketchFx.rt.height !== h) { sketchFx.rt.setSize(w, h); sketchFx.mat.uniforms.res.value.set(w, h); }
+        let rt = sketchFx.rt;
+        if (full) { // TASK-096 (the corner, in device pixels: the viewport the caller set, the screen being the target)
+          renderer.getCurrentViewport(_skVp); w = Math.max(1, Math.round(_skVp.z)); h = Math.max(1, Math.round(_skVp.w));
+          if (!sketchFx.prt) { sketchFx.prt = new WebGLRenderTarget(w, h, { samples: 0, type: HalfFloatType }); sketchFx.prt.depthTexture = new DepthTexture(w, h); }
+          rt = sketchFx.prt;
+        }
+        if (rt.width !== w || rt.height !== h) rt.setSize(w, h);
         if (!full) { sketchExplore(now); sketchRingsBuild(); sketchRingsUpdate(Math.min(0.05, (now - (sketchFx.lastT || now)) / 1000)); sketchFx.lastT = now; }
         sketchRevealFlush(); // beta 3.7x: the strokes queued since the last frame
         const u = sketchFx.mat.uniforms;
+        u.tD.value = rt.texture; u.tZ.value = rt.depthTexture; u.res.value.set(w, h); // TASK-096
         u.t.value = (now * 0.001) % 100; u.full.value = full ? 1 : 0;
         u.bp.value = SCHEMES[state.schemeIdx].id === "blueprint" ? 1 : 0; // worlds prototype: the notebook printed as a blueprint
         cam.updateMatrixWorld();
@@ -39550,7 +40600,7 @@ void main() {
         { const sy = Math.max(0.2, _nbSun.subVectors(sun.position, sun.target.position).normalize().y); u.kW.value = Math.PI / Math.max(0.3, hemi.intensity + sun.intensity * sy); } // beta 3.76: undoes the notebook's flat light (a white face looking up = white)
         nbCarFrame(veh?.group, u.oI0.value, u.oA0.value, u.oB0.value); nbCarFrame(copCar?.group, u.oI1.value, u.oA1.value, u.oB1.value); // beta 3.76
         sun.shadow.autoUpdate = false; sun.shadow.needsUpdate = false; // round 2: no cast shadows in the notebook (intensity 0), so no shadow pass either
-        renderer.setRenderTarget(sketchFx.rt);
+        renderer.setRenderTarget(rt);
         if (!nbHull) renderer.render(scene, cam); // beta 3.76: the ink can come from the depth folds alone (see nbHull)
         else { outline.skipHull = sketchSkipHull; // beta 3.75: no pencil hull round the plain things, nor round sketchNoHull ones
         try { outline.render(scene, cam); } finally { outline.skipHull = null; } }
@@ -40094,6 +41144,7 @@ void main() {
         if (mo.wb && veh.kind !== "plane") {
           moSpring("st", "stv", clamp2(Math.atan(mo.wb * MO.kap) * 1.2, -0.4, 0.4), 16, 0.85, dt);
           for (const w of veh.wheels) if (w.position.z > 3) w.rotation.y = MO.st;
+          if (veh.steer) veh.steer.rotation.y = MO.st; // TASK-109: the scooter's bar and stem turn with its front wheel
         }
         smoke.tick(dt, !siteMode && !flying && spawnStart < 0 && SCHEMES[state.schemeIdx].id !== "underwater"); // r138j: idle exhaust (not while it drops in)
         if (veh.prop) veh.prop.rotation.z += dt * (18 + state.speed * 0.4);
@@ -40316,6 +41367,7 @@ void main() {
         if (mvFx.group.visible) mvFx.update(now * 0.001, window.__lookSm);
         if (uwFx && uwFx.group.visible) uwFx.update(now * 0.001, dt, window.__lookSm);
         if (worldFx) worldFx.update(now * 0.001, dt, window.__lookSm);
+        mats.houseWin?.update(now, camera); // TASK-098
         if (FOUNTAIN && !siteMode) FOUNTAIN.update(now * 0.001);
         farClouds.rotation.y += dt * 0.006;
         const prog = state.L / route.total;
@@ -40405,6 +41457,7 @@ void main() {
         if (schemeId === "interbelic") { hemi.intensity = 0.62; sun.intensity = 2.8 * curSun.int; sun.color.set("#ffdcae"); } // worlds prototype: a warm afternoon sun // beta 3.76: the notebook's light stays flat and even (the weather and the lightning move it elsewhere)
         rainAlpha = smooth(rainAlpha, wantRain ? 1 : 0, dt, 2.5);
         rain.visible = rainAlpha > 0.02;
+        mats.trafficLights?.update(now, camera, rainAlpha); // TASK-110 (the rain makes the halos softer and the road wet)
         (window.__wxNow ||= {}).wx = wx; window.__wxNow.rain = rain.visible; window.__wxNow.bolt = boltActive > 0; // tests: the weather per world
         if (rain.visible) {
           // r129: Night Mode keeps a light drizzle, not a downpour
@@ -40454,7 +41507,7 @@ void main() {
         }
         // the low clouds of the drive's flight would sit right over the airfield on the map
         worldRefs.clouds.visible = !mapMode;
-        for (const f of BAKERY_ANIM) f(now * 0.001);
+        for (const f of BAKERY_ANIM) f(now * 0.001, camera); // TASK-074: + the camera (the Zdrovit park turns only on screen)
         for (const c of worldRefs.clouds.children) {
           c.position.x += Math.sin(now * 18e-5 * c.userData.drift) * 0.12;
         }
@@ -40827,7 +41880,7 @@ void main() {
       // same vertices. The originals stay where they are, out of every camera's layers; a watch compares them every few
       // frames with how they were batched (place, visibility, material, geometry), and the first change puts that batch's
       // originals back for good (something that moves, turns to face you or is swapped never stays frozen)
-      var STATIC_BUILDERS = new Set(["FourStreets", "StreetProps", "CoffeeStreetAdds", "CoffeeEntrance", "PrintLane", "SteamShop", "OmaShop", "OlariPlaza", "Fork", "Dacia99", "Izakaya", "CasaBerero", "ChapterSigns", "Eliade18", "Romexpo", "StreetShop", "Brasov", "Munitiei5", "Ground"]);
+      var STATIC_BUILDERS = new Set(["FourStreets", "StreetProps", "CoffeeStreetAdds", "CoffeeEntrance", "PrintLane", "SteamShop", "OmaShop", "OlariPlaza", "TrafficLights", "Fork", "Dacia99", "Izakaya", "CasaBerero", "ChapterSigns", "Eliade18", "Romexpo", "StreetShop", "Brasov", "Munitiei5", "Ground"]);
       var MERGED = null, mergeWatchI = 0, mergeTries = 0;
       // a baked material's look at batching time (a later change to it puts its parts back)
       // r230 (Daniel, frame drops when racing and drifting): the watch below runs every frame over ~1,600 parts; it built
@@ -41195,7 +42248,11 @@ void main() {
         { id: "unde", br: "A", x: 708, z: 6036, h: 50, name: "UND\xC9", line: "GROCERY \xB7 SIGNAGE", c: "#2b6fd6", t: "#ffffff", work: "UNDE", desc: "ARCA's grocery stores: a hand-drawn basket and three formats, Market, Store and Concept." },
         { id: "invest", br: "B", x: 2205, z: 4500, h: 170, name: "Investimental", line: "FINTECH \xB7 UX \xB7 UI", c: "#119BFE", t: "#ffffff", work: "Investimental" },
         { id: "tac", br: "C", x: 1500, z: 4570, px: 1775, pz: 4570, h: 128, /* r139e: the re-massed palace is lower */ name: "The Aesthetic Court", line: "CASA POPORULUI \xB7 BUCHAREST", c: "#1a0909", t: "#c89b3c", work: "The Aesthetic Court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and its website built as the trial itself." },
-        { id: "zdrovit", br: "C", x: 1860, z: 5070, h: 96, name: "Zdrovit", line: "A YARD OF BRANDS", c: "#e30613", t: "#ffffff", work: "Zdrovit", desc: "A courtyard of health and clinic brands, from Bucharest to Barcelona." }, // r176: the beauty and perfume brands have their own plots now
+        // TASK-074: one place, the Beauty & Supplement Park; its pin on the Ferris wheel; the card lists the brands (no case
+        // page of its own; noCover: the card shows the park's red poster, not one brand's picture)
+        // Daniel (21 Oct): it is entered from Medical Avenue: x, z = the avenue at the arch (where the car stops and the
+        // nearest road is found: from the wheel it was a street of the Fintech Boulevard quarter); px, pz = the pin, on the wheel
+        { id: "zdrovit", br: "C", street: "C", x: 1500, z: ZDROVIT_PARK.z, px: ZDROVIT_PARK.x, pz: ZDROVIT_PARK.z, h: 104, name: "Zdrovit", line: "BEAUTY & SUPPLEMENT PARK", c: "#e30613", t: "#ffffff", work: "Zdrovit", park: true, noCover: true, desc: "Beauty & Supplement Park: the Zdrovit brands Cromatic Studios works for, in one place." },
         { id: "end", stop: "end", name: "Cromatic Studios House", line: "STR. OLARI 9 \xB7 COME BY", c: "#ffffff", t: "#111111", pin: "#111111" },
         { id: "jet", x: 1250, z: JET_WALK_Z, px: JET_HOME.x, pz: JET_HOME.z, h: 28 /* r138b: the smaller jet's fin top */, name: "Cromatic Jet", line: "BOARD \xB7 SAY HI", c: "#FED012", t: "#111111", board: true, unmarked: true }
       ];
@@ -41204,7 +42261,7 @@ void main() {
         const have = new Set(MAP_PLACES.map((p) => (p.work || p.name).toLowerCase()));
         const add = (o) => { if (have.has(o.name.toLowerCase())) return; have.add(o.name.toLowerCase()); MAP_PLACES.splice(MAP_PLACES.length - 2, 0, o); };
         for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, street: b.lane ? "D" : b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.pinH || (b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60), name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
-        ZDROVIT_YARD.forEach((n, i) => { const [x, z] = yardSpot(yardSlotOf(i)); add({ id: "y-" + i, br: "C", x: 1500, z, px: x, pz: z, h: 22, name: n, line: "IN THE ZDROVIT YARD", c: "#cfcdc8", t: "#3d3c39", small: true, desc: `${n}, one of the brands in the Zdrovit yard. By Cromatic Studios.` }); });
+        // TASK-074: the Zdrovit yard's kiosks (y-0 .. y-6) are gone: Zdrovit is one place, its card lists the brands
         add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Berero", line: "BRAND \xB7 LABELS \xB7 MERCH", c: "#111111", t: "#ffffff", act: "bereroTag" });
         add({ id: "echo", x: 1035, z: 6110, px: 1035, pz: 6177, h: 110, tapW: 0.45 /* r168 (Daniel: "Echo School is hard to press, it matters more than Dacia 99"): it wins the building's taps, and shows as a card from afar (TIER1) */, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", desc: "Two years of Instagram for a School of Technology, Digital Arts & Videogames in Bucharest: posts, stories, carousels, reels and campaigns." }); // r159: the case page is live
         add({ id: "friends", stop: "merge", px: 1365, pz: 6400, h: 150, float: true, name: "+50 Other Clients", line: "HUNDREDS OF PROJECTS \xB7 THOUSANDS OF DELIVERABLES", c: "#d9d7d2", t: "#1a1a1a" });
@@ -42453,7 +43510,7 @@ void main() {
         if (/^https?:$/.test(location.protocol)) fetch("/covers.json").then((r) => r.ok ? r.json() : {}).then((j) => { COVERS = j; }).catch(() => {});
         window.__coverOf = (id) => { const pl = MAP_PLACES.find((q) => q.id === id); return pl ? coverOf(pl) : null; };
         const coverOf = (pl) => {
-          if (!COVERS) return null;
+          if (!COVERS || pl.noCover) return null; // TASK-074
           // r130: a real photo first (a place's own, then its case page's cover)
           if (COVERS["place:" + pl.id]) return COVERS["place:" + pl.id];
           for (const n of [pl.work, pl.name]) if (n && COVERS["name:" + n.toLowerCase()]) return COVERS["name:" + n.toLowerCase()];
@@ -42466,7 +43523,7 @@ void main() {
           const cov = coverOf(pl);
           const shot = !cov;
           card.style.setProperty("--pc", pl.c); card.style.setProperty("--pt", pl.t || "#fff");
-          card.classList.add("has-img"); card.classList.toggle("shot", shot); card.classList.remove("mcd-game"); // r201: only the game's card is dressed as the game
+          card.classList.add("has-img"); card.classList.toggle("shot", shot); card.classList.remove("mcd-game", "mcd-zd"); // TASK-074: + the Zdrovit list card; r201: only the game's card is dressed as the game
           // r130h: the card sits in a bottom corner, on the side away from the place, so the scene stays clear
           { const pv = warpV(new Vector3(pl.wx, 0, pl.wz)).project(camera); const right = pv.x < 0; card.classList.toggle("cr", right); card.classList.toggle("cl", !right); }
           card.innerHTML = `<figure class="mcd-img${cov ? "" : " mcd-poster"}">${cov ? `<img src="${cov}" alt="" decoding="async">` : `<span class="mcd-pt">${pl.name}</span><i class="mcd-pl mono">${pl.line || ""}</i>`}</figure><div class="mcd-body"><span class="mcd-eyebrow mono">${eyebrow}</span><b class="mcd-title" style="--pc:${pl.c};--pt:${pl.t || "#fff"}">${pl.name}</b>${body}
@@ -42574,6 +43631,16 @@ void main() {
             card.classList.add("mcd-game");
             card.querySelector(".mcd-img")?.insertAdjacentHTML("beforeend", `<span class="mg-tm" aria-hidden="true"><img src="${twoMinMark}" alt=""></span>`);
             addFight(pl, true);
+            return;
+          }
+          // TASK-074: Zdrovit, the Beauty & Supplement Park: its card is the list of its brands; one with a case page opens it
+          if (pl.park) {
+            const ro = /^ro/i.test(document.documentElement.lang || "");
+            showCard(pl, MAP_STREET[pl.street || pl.br], `<span class="zd-kind mono">Beauty &amp; Supplement Park</span><p>${ro ? `${ZDROVIT_BRANDS.length} branduri într-un parc. Cele cu un studiu de caz îl deschid.` : `${ZDROVIT_BRANDS.length} brands in one park. The ones with a case study open it.`}</p>${zdrovitListHTML("zd-card")}`, "");
+            card.classList.add("mcd-zd");
+            card.querySelectorAll(".zd-b.pg").forEach((btn) => {
+              btn.onclick = () => { const pg = window.__casePage?.(btn.dataset.zb) || btn.dataset.pg; if (!pg || !openFrameHook || !/^https?:$/.test(location.protocol)) return; const cf = document.querySelector(".case-frame"); if (cf) cf._from = { r: btn.getBoundingClientRect(), t: performance.now() }; openFrameHook(`/work/${pg}/?embed=1`, btn.dataset.zb); };
+            });
             return;
           }
           const pr = projectOf(pl.name);
@@ -43474,6 +44541,7 @@ void main() {
       window.__setL = (L) => { state.L = prevL = state.targetL = L; mapNav.targetL = L; }; // r157: tests // r157: tests (the solver measures a camera that is already there)
       window.__mapSet = (d, x, z) => { mapView.dist = d; mapView.distGoal = null; mapView.follow = false; mapView.tgt.set(x, 0, z); };
       window.__api = api;
+      window.__tl = () => mats.trafficLights?.state(); // TASK-110: tests (each signal's lamp: medical, lane, olari)
       window.__xp = () => ({ pts: state.points, log: xpLog.map((e) => e.title + " +" + e.pts), pending: xpPending && xpPending.title, collected: [...xpCollected], chosen: state.branchChosen, branch: state.branch, card: currentCardStop, veh: state.vehicleId });
       window.__scheme = (id) => api.setScheme(SCHEMES.findIndex((x) => x.id === id));
       // ---- r140: /onboarding/ drives the city ----

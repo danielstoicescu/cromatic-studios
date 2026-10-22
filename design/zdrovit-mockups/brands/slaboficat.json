@@ -1,0 +1,18 @@
+{
+ "_": "TASK-076 (second half, Mira): Slaboficat Slim, slaboficat.ro. Crops in capture px (desktop 2880 wide, phone 780 wide). desktop-scroll.png and phone-scroll.png are the full captures without the Media band, whose embedded spot does not load in a capture (an empty violet field). The contraindications band is not cropped on its own (it stays in the scrolling frames, as on the site).",
+ "label": "slaboficat.ro",
+ "field": ["#d8d0f6", "#6a4fd0"],
+ "out": {
+  "hero": { "kind": "hero", "desktop": { "src": "desktop-full.png" }, "phone": { "src": "phone-full.png" } },
+  "site-scroll": { "kind": "plain", "src": "desktop-scroll.png", "width": 1200, "q": 72 },
+  "site-scroll-phone": { "kind": "plain", "src": "phone-scroll.png", "width": 585, "q": 70 },
+  "functions": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 1660, 2880, 1580] },
+  "slim": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 3300, 2880, 960] },
+  "ingredients": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 4250, 2880, 1780] },
+  "tips": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 7000, 2880, 1810] },
+  "phone-hero": { "kind": "phone", "src": "phone-full.png", "y": 0 },
+  "phone-functions": { "kind": "phone", "src": "phone-full.png", "y": 2800 },
+  "phone-ingredients": { "kind": "phone", "src": "phone-full.png", "y": 4560 },
+  "phone-tips": { "kind": "phone", "src": "phone-full.png", "y": 9600 }
+ }
+}

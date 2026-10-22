@@ -57,7 +57,7 @@ export const PROJECTS = [
   { name: "Techventures Bank", cat: "Rebranding · Website", c: "#1D2A42", t: "#ffffff", poster: "Techventures", street: "B", page: "techventures-bank", desc: "The first entrepreneurial bank in Romania, refreshed: silver wings, landscapes in navy and a website with a human approach to banking." },
   { name: "Clinica Sante", cat: "Clinic · Brand · Film", c: "#2f9e4f", t: "#ffffff", poster: "Health is not an option", img: "m:cs/Clinica-Sante", page: "clinica-sante", street: "C", desc: "Recommended by doctors, signed off by patients: the Clinica Sante TV film and brand work." },
   { name: "The Aesthetic Court", cat: "Website · UX · UI", c: "#1a0909", t: "#c89b3c", poster: "Toxin on trial", img: "m:tac/d-hero", page: "the-aesthetic-court", desc: "A medical congress staged as a courtroom at the Palace of the Parliament, and a website built as the trial itself.", street: "C" },
-  { name: "Zdrovit", cat: "Health · A yard of brands", c: "#e30613", t: "#ffffff", poster: "Zdrovit", street: "C", desc: "A courtyard of health and clinic brands, from Bucharest to Barcelona." },
+  { name: "Zdrovit", cat: "Beauty & Supplement Park", c: "#e30613", t: "#ffffff", poster: "Zdrovit", street: "C", desc: "Beauty & Supplement Park: the Zdrovit brands Cromatic Studios works for, in one place." }, // TASK-074: one place on the map, its brands in ZDROVIT_BRANDS below
   { name: "Sofmedica", cat: "Medical · A yard with a clinic", c: "#2b6fd6", t: "#ffffff", poster: "Sofmedica", street: "C", desc: "Sofmedica, with a small yard of its own and Medcity, the clinic, inside it. By Cromatic Studios." },
   { name: "Medcity", cat: "Clinic · In the Sofmedica yard", c: "#18a39b", t: "#ffffff", poster: "Medcity", street: "C", desc: "Medcity, the clinic inside the Sofmedica yard. By Cromatic Studios." },
   { name: "Clinica Dr. K", cat: "Aesthetics medical center", c: "#b88a6e", t: "#ffffff", poster: "Clinica Dr. K", street: "C", desc: "Clinica Dr. K, an aesthetics medical center on Medical Avenue. By Cromatic Studios." },
@@ -65,19 +65,42 @@ export const PROJECTS = [
   { name: "Darya Hope", cat: "Brand strategy · Social media · Packaging", c: "#f08fb0", t: "#2a0f17", poster: "Science based skincare", img: "m:darya-hope/rescue-bottles", page: "darya-hope", street: "C", desc: "The Core of a science based skincare brand, ideas for its social media and the Rescue Drops packaging." }, // r179: its case page
   { name: "Tracy J", cat: "Brand strategy · Identity · Packaging", c: "#62c6a6", t: "#0c2a20", poster: "Get your glow on!", img: "m:tracy-j/jar-pink", page: "tracy-j", street: "C", desc: "The Core of a skincare brand with a joyous voice, its visual identity, packaging and brand universe." }, // r179: its case page
   { name: "Routine Paris", cat: "Brand · Identity", c: "#28C840", t: "#0e0e0e", poster: "Make it a ritual", img: "routineCoverImg", vid: "routineCoverVid", badge: "bRoutine", page: "routine-paris", desc: "A daily ritual brand with a Parisian address and an indie heart. Built to be part of somebody's morning, every morning.", street: "C" },
-  { name: "Lacalut", cat: "Smart TV ads · Motion", c: "#E30C2C", t: "#ffffff", poster: "Double benefit", img: "m:lacalut/lg-launcher", page: "lacalut", street: "C", desc: "Lacalut White & Repair on LG Smart TV home screens: three still formats and a 15-second banner in motion." }, // TASK-026: its case page
-  { name: "Maximag", cat: "Smart TV ads · Motion", c: "#091D61", t: "#ffffff", poster: "A busy aisle, switched off", img: "m:maximag/launcher", page: "maximag", street: "C", desc: "Maximag Bisglicinat on LG Smart TV home screens: three still formats and a 15-second banner with a short story in it." }, // TASK-064: its case page, and a kiosk in the Zdrovit yard
-  { name: "Periferisan", cat: "In the Zdrovit yard", c: "#cfcdc8", t: "#3d3c39", poster: "Periferisan", street: "C", small: true, desc: "Periferisan, one of the brands in the Zdrovit yard. By Cromatic Studios." },
-  { name: "Help 4 Brain", cat: "Pharma · Product · Marketing", c: "#B098C8", t: "#14120c", poster: "Challenger to leader", img: "m:cs/Cromatic-Studios-Help4brain-1", page: "help-4-brain", street: "C", desc: "Enabling a pharma challenger to become a leader." },
-  { name: "Parusan", cat: "In the Zdrovit yard", c: "#cfcdc8", t: "#3d3c39", poster: "Parusan", street: "C", small: true, desc: "Parusan, one of the brands in the Zdrovit yard. By Cromatic Studios." },
-  { name: "Bonilash", cat: "In the Zdrovit yard", c: "#cfcdc8", t: "#3d3c39", poster: "Bonilash", street: "C", small: true, desc: "Bonilash, one of the brands in the Zdrovit yard. By Cromatic Studios." },
-  { name: "Litorsal", cat: "Billboards · Posters · Product visuals", c: "#FFD100", t: "#1b2a6b", poster: "One tube, every format", img: "m:litorsal/heat-billboard", page: "litorsal", street: "C", desc: "Three campaign lines for an electrolyte tube, from a 6 x 3 m billboard to a metro poster." }, // TASK-026: its case page
   { name: "Altius", cat: "Medical", c: "#16a89b", t: "#ffffff", poster: "Altius", img: "m:cs/Cromatic-Studios-Altius-8", page: "altius", street: "C", desc: "Medical brand and digital work by Cromatic Studios." },
   { name: "Zoetis", cat: "Animal health", c: "#f2763b", t: "#2a1205", poster: "Zoetis", street: "C", desc: "Animal health communication by Cromatic Studios." },
   { name: "Elithia", cat: "Medical", c: "#f08a70", t: "#2a0f08", poster: "Joyful motherhood", img: "m:cs/Elithia-Cromaticstudios-homepage", page: "elithia", street: "C", desc: "Making motherhood a soothing, joyful experience: brand, website and content for a women's health clinic." },
   { name: "Echo School", cat: "Social media · Instagram", c: "#7b4fd6", t: "#ffffff", poster: "From gamer to creator", img: "m:echo-school/cover", page: "echo-school", street: "B", desc: "Two years of Instagram for a School of Technology, Digital Arts & Videogames in Bucharest: posts, stories, carousels, reels and campaigns." }, // r159: the case page is live
   { name: "Sticker Republic", cat: "Stickers · Print", c: "#FFD21F", t: "#111111", poster: "Stick it", street: "D", desc: "Stickers for everything and everyone: the little yellow house on the lane, plastered with its own work.", page: "sticker-republic" },
   { name: "Printoteca", cat: "Print on demand", c: "#ffffff", t: "#111111", poster: "Printed one by one", street: "D", desc: "Print on demand with no minimum orders: tees and hoodies printed one by one, for anyone who wants to sell their own.", page: "printoteca" }
+];
+
+// TASK-074 (Daniel, 21 Oct): Zdrovit is ONE place (Parusan is not in it: Daniel, 21 Oct, "out completely"), the Beauty & Supplement Park (no case page of its own); these are the
+// brands in it, the ones Cromatic delivered for. One list for the map's Zdrovit card, the drive's Zdrovit panel (both
+// built from it by build/build.mjs) and the website's "In Zdrovit" row. Fields: name; line = one factual line (EN), ro =
+// the same in Romanian (the map; the website's Romanian comes from site/i18n/ro.json); page = the slug of its case page
+// (/work/<slug>/), when it has one: add it here and the brand opens its page everywhere; site = the official product
+// website Cromatic made (later; not shown yet). Daniel (21 Oct): no Zdrovit brand has a portfolio card of its own (not
+// in PROJECTS): they are all on the Zdrovit card; cat and desc (a brand with a page) feed its case page's SEO, the
+// "On the same street" ending and llms.txt.
+export const ZDROVIT_BRANDS = [
+  { name: "Lacalut", page: "lacalut", line: "Oral care", ro: "Îngrijire orală", cat: "Smart TV ads · Motion", desc: "Lacalut White & Repair on LG Smart TV home screens: three still formats and a 15-second banner in motion." },
+  { name: "Litorsal", page: "litorsal", line: "Electrolytes and minerals", ro: "Electroliți și minerale", cat: "Billboards · Posters · Product visuals", desc: "Three campaign lines for an electrolyte tube, from a 6 x 3 m billboard to a metro poster." },
+  { name: "Maximag", page: "maximag", line: "Magnesium bisglycinate", ro: "Magneziu bisglicinat", cat: "Smart TV ads · Motion", desc: "Maximag Bisglicinat on LG Smart TV home screens: three still formats and a 15-second banner with a short story in it." },
+  { name: "Help 4 Brain", page: "help-4-brain", line: "A nootropic", ro: "Un nootropic", cat: "Pharma · Product · Marketing", desc: "Enabling a pharma challenger to become a leader.", c: "#B098C8", t: "#14120c", poster: "Challenger to leader", img: "m:cs/Cromatic-Studios-Help4brain-1" /* its card on the service pages, as it was */ },
+  { name: "Aspasia", page: "aspasia", line: "Collagen for skin, hair and nails", ro: "Colagen pentru piele, păr și unghii" },
+  { name: "Bonilash", page: "bonilash", line: "Lash and brow serum", ro: "Ser pentru gene și sprâncene" },
+  { name: "Glucopil", page: "glucopil", line: "Blood sugar, with plant extracts", ro: "Glicemie, cu extracte din plante" },
+  { name: "Gripovit", page: "gripovit", line: "Cold and flu sachets", ro: "Plicuri pentru răceală și gripă" },
+  { name: "Intimohelp", line: "Intimate hygiene", ro: "Igienă intimă" },
+  { name: "Lacium", page: "lacium", line: "Probiotics", ro: "Probiotice" },
+  { name: "OchiSan", page: "ochisan", line: "Eyelid ointment", ro: "Unguent pentru pleoape" },
+  { name: "Optisomn", page: "optisomn", line: "Sleep, with melatonin", ro: "Somn, cu melatonină" },
+  { name: "Parasoftin", page: "parasoftin", line: "Foot care", ro: "Îngrijirea picioarelor" },
+  { name: "Periferisan", page: "periferisan", line: "Peripheral nervous system support: numbness, tingling", ro: "Suport pentru sistemul nervos periferic: amorțeală, furnicături" },
+  { name: "Prevomit", page: "prevomit", line: "Nausea and travel sickness", ro: "Greață și rău de călătorie" },
+  { name: "Slaboficat", page: "slaboficat", line: "Slimming", ro: "Slăbire" },
+  { name: "Supramax", page: "supramax", line: "Joints", ro: "Articulații" },
+  { name: "Vizik", page: "vizik", line: "Eye drops", ro: "Picături pentru ochi" },
+  { name: "Vizimel", page: "vizimel", line: "Eyes: lutein and zeaxanthin", ro: "Ochi: luteină și zeaxantină" }
 ];
 
 export const CLIENT_BADGES = ["bScf", "bTm", "bSteam", "bRoutine", "bInvestimental", "bKompus", "bYoshi", "bAssetto", "bCargus"];

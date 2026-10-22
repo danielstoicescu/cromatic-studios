@@ -1,0 +1,20 @@
+{
+ "_": "TASK-076: Aspasia Collagen Beauty, aspasiabeauty.ro. Crops in capture px (desktop 2880 wide, phone 780 wide). section-04 (the study figures) is left out on purpose: Mira's inventory, unless Zdrovit clears the claims.",
+ "label": "aspasiabeauty.ro",
+ "field": ["#bfeaee", "#6cc8d2"],
+ "out": {
+  "hero": { "kind": "hero", "desktop": { "src": "desktop-full.png" }, "phone": { "src": "phone-hero.png" } },
+  "site-scroll": { "kind": "plain", "src": "desktop-full.png", "width": 1200, "q": 72 },
+  "site-scroll-phone": { "kind": "plain", "src": "phone-full.png", "width": 585, "q": 70 },
+  "why": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 1360, 2880, 1560] },
+  "pack": { "kind": "browser", "src": "section-02.png", "crop": [0, 0, 2880, 1160] },
+  "formula": { "kind": "browser", "src": "section-03.png", "crop": [0, 0, 2880, 1286] },
+  "faq": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 6346, 2880, 1316] },
+  "blog": { "kind": "browser", "src": "section-05.png", "crop": [0, 0, 2880, 896] },
+  "order": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 10614, 2880, 1000] },
+  "phone-hero": { "kind": "phone", "src": "phone-full.png", "y": 0 },
+  "phone-pack": { "kind": "phone", "src": "phone-full.png", "y": 5300 },
+  "phone-formula": { "kind": "phone", "src": "phone-full.png", "y": 7330 },
+  "phone-faq": { "kind": "phone", "src": "phone-full.png", "y": 10975 }
+ }
+}

@@ -1520,7 +1520,10 @@
       cop: { kind: "ice", cyl: 4, idle: 850, max: 5800, gears: [0, 100, 200, 300, 410], thump: 1.0, noise: 0.62, pipe: 3.0, fb: 0.55, muf: 1700, body: 120, rough: 0.07, carb: 1, level: 1.2 },
       groovy: { kind: "ice", cyl: 4, idle: 750, max: 4200, diesel: 1, gears: [0, 80, 160, 250, 360], thump: 1.1, noise: 0.5, pipe: 3.8, fb: 0.5, muf: 1100, body: 95, rough: 0.06, level: 1 },
       foodvan: { kind: "ice", cyl: 6, idle: 620, max: 3200, diesel: 1, gears: [0, 70, 140, 220, 320], thump: 1.25, noise: 0.45, pipe: 4.6, fb: 0.5, muf: 900, body: 80, rough: 0.05, level: 1.05 },
-      monopoly: { kind: "ice", cyl: 6, idle: 600, max: 4600, gears: [0, 110, 220, 340], thump: 0.9, noise: 0.35, pipe: 3.4, fb: 0.62, muf: 1200, body: 105, rough: 0.025, level: 0.9 },
+      // TASK-109 (Daniel: "the Monopoly car's engine should sound much thicker"): the same rpm and gears, a big slow
+      // 1930s six: fired lower (pk), every other cylinder a little stronger (lope: a burble at half the firing rate) with a
+      // sine under it there (sub), a low thump (tk, tf), a long pipe, a dark muffler and a low body with a shelf under it
+      monopoly: { kind: "ice", cyl: 6, idle: 600, max: 4600, gears: [0, 110, 220, 340], thump: 1.15, noise: 0.22, pipe: 5.2, fb: 0.64, muf: 950, body: 85, bodyQ: 1.1, bodyG: 8, shelf: 3, rough: 0.03, level: 1.2, pk: 0.85, tk: 1.25, tf: 36, lope: 0.2, sub: 0.14, hp: 30 },
       f1: { kind: "ice", cyl: 10, idle: 4000, max: 18000, gears: [0, 60, 110, 160, 210, 260, 320, 400], thump: 0.7, noise: 0.9, pipe: 1.3, fb: 0.45, muf: 5200, body: 300, rough: 0.02, level: 0.85 },
       scooter: { kind: "ice", cyl: 1, two: 1, idle: 1900, max: 9000, gears: [0], thump: 0.6, noise: 1.0, pipe: 1.9, fb: 0.6, muf: 3200, body: 260, rough: 0.05, level: 0.75 },
       sub: { kind: "electric", level: 0.5 },
@@ -1533,13 +1536,13 @@
     async function renderEngine(pr, sr) {
       const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!OAC) return null;
       const steps = []; for (let i = 0; i < 6; i++) steps.push(pr.idle * Math.pow(pr.max / pr.idle, i / 5));
-      const fire = (rpm) => (rpm / 60) * (pr.two ? 1 : pr.cyl / 2);
+      const fire = (rpm) => (rpm / 60) * (pr.two ? 1 : pr.cyl / 2) * (pr.pk || 1);
       const one = async (rpm, load, isIdle) => {
-        const fF = fire(rpm), T0 = 1 / fF, N = Math.max(8, Math.round(0.7 * fF)), L = Math.round(N * T0 * sr), pre = L, len = pre + L;
+        const fF = fire(rpm), T0 = 1 / fF, N = Math.max(8, Math.round(0.7 * fF / (pr.lope ? 2 : 1)) * (pr.lope ? 2 : 1)), L = Math.round(N * T0 * sr), pre = L, len = pre + L; // (an even count with a lope: the loop holds whole pairs)
         const raw = new Float32Array(len), pat = [];
         let seed = Math.round(rpm * 7 + load * 13 + 1); const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-        for (let k = 0; k < N; k++) pat.push({ j: (rnd() - 0.5) * 2 * pr.rough * (isIdle && pr.carb ? 2.2 : 1), a: 1 + (((k % (pr.two ? 1 : pr.cyl)) * 0.37) % 0.3 - 0.15) * (pr.rough * 4) + (rnd() - 0.5) * pr.rough * 2, pop: !load && rnd() < 0.06 && rpm > pr.idle * 1.8 });
-        const fT = Math.min(2400, Math.max(45, fF * 1.6)), tauT = Math.min(0.03, 2.2 / fF / 3), tauN = Math.min(pr.diesel ? 0.0009 : pr.two ? 0.0022 : 0.0016, 0.4 / fF); // a fast engine's bursts stay shorter than its period (a tone, a scream)
+        for (let k = 0; k < N; k++) pat.push({ j: (rnd() - 0.5) * 2 * pr.rough * (isIdle && pr.carb ? 2.2 : 1), a: 1 + (((k % (pr.two ? 1 : pr.cyl)) * 0.37) % 0.3 - 0.15) * (pr.rough * 4) + (rnd() - 0.5) * pr.rough * 2 + (pr.lope ? (k % 2 ? -pr.lope : pr.lope) : 0), pop: !load && rnd() < 0.06 && rpm > pr.idle * 1.8 });
+        const fT = Math.min(2400, Math.max(pr.tf || 45, fF * (pr.tk || 1.6))), tauT = Math.min(0.03, 2.2 / fF / 3), tauN = Math.min(pr.diesel ? 0.0009 : pr.two ? 0.0022 : 0.0016, 0.4 / fF); // a fast engine's bursts stay shorter than its period (a tone, a scream)
         const amp = load ? 1 : 0.38;
         synT = performance.now();
         for (let rep2 = 0; rep2 < 2; rep2++) for (let k = 0; k < N; k++) {
@@ -1555,6 +1558,8 @@
             raw[t0 + i] += v;
           }
         }
+        // a deep engine's rumble: a sine at half the firing rate, in time with the lope (whole cycles over the loop)
+        if (pr.sub) for (let i = 0; i < len; i++) raw[i] += pr.sub * amp * Math.sin(Math.PI * fF * (i / sr));
         // the intake, on the throttle: noise breathing at the firing rate
         if (load) for (let i = 0; i < len; i++) { const ph = (i / sr) * fF; raw[i] += 0.12 * (rnd() * 2 - 1) * (0.5 + 0.5 * Math.sin(2 * Math.PI * ph)) * Math.min(1, rpm / pr.max + 0.2); }
         // mechanical clatter at idle (valves, an old engine's ticking)
@@ -1565,9 +1570,10 @@
         const src = oc.createBufferSource(); src.buffer = b;
         const sum = oc.createGain(); src.connect(sum);
         const muf = oc.createBiquadFilter(); muf.type = "lowpass"; muf.frequency.value = pr.muf * (load ? 1 : 0.75); muf.Q.value = 0.8;
-        const body = oc.createBiquadFilter(); body.type = "peaking"; body.frequency.value = pr.body; body.Q.value = 1.4; body.gain.value = 7;
-        const hp = oc.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 35;
-        sum.connect(muf); muf.connect(body); body.connect(hp); hp.connect(oc.destination);
+        const body = oc.createBiquadFilter(); body.type = "peaking"; body.frequency.value = pr.body; body.Q.value = pr.bodyQ || 1.4; body.gain.value = pr.bodyG || 7;
+        const hp = oc.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = pr.hp || 35;
+        const shelf = oc.createBiquadFilter(); shelf.type = "lowshelf"; shelf.frequency.value = 140; shelf.gain.value = pr.shelf || 0;
+        sum.connect(muf); muf.connect(body); body.connect(shelf); shelf.connect(hp); hp.connect(oc.destination);
         src.start();
         const out = await oc.startRendering(), d = out.getChannelData(0).slice(pre, pre + L);
         let rms = 0; for (let i = 0; i < d.length; i++) rms += d[i] * d[i]; rms = Math.sqrt(rms / d.length) || 1;
@@ -1584,6 +1590,37 @@
     // the rendered loops, kept per ride (they need no AudioContext: rendered ahead, before the first touch)
     const ENG_CACHE = new Map(), ENG_PEND = new Map();
     const engineLoops = (id) => { const pr = ENGINES[id] || ENGINES.dacia1300; if (pr.kind !== "ice") return Promise.resolve(null); if (ENG_CACHE.has(id)) return Promise.resolve(ENG_CACHE.get(id)); if (!ENG_PEND.has(id)) ENG_PEND.set(id, renderEngine(pr, 32000).then((d) => { ENG_CACHE.set(id, d); return d; }).catch(() => null)); return ENG_PEND.get(id); };
+    // TASK-109 (Daniel: "the rain should be more pleasant, like a white noise, not so annoying"): it was white noise
+    // high-passed at 900 Hz, a hiss of everything up to 7 kHz from a 2 s loop. Now a soft bed: pink noise (each octave as
+    // loud as the next, the way steady rain sounds from indoors), two long loops that never line up (one a side, the
+    // seams crossfaded), the highs rolled off from 2.2 kHz and gently again from 5 kHz, the rumble under 160 Hz cut, and a
+    // swell of a few percent over about fifteen seconds so it breathes. No drops, no clicks; out: where it plays, bufs: the
+    // two loops (made ahead, in idle time, with the context: see makeCtx)
+    function pinkLoop(ac, sec) {
+      const sr = ac.sampleRate, F = Math.floor(sr * 0.5), n = Math.floor(sr * sec) + F, raw = new Float32Array(n);
+      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+      for (let i = 0; i < n; i++) { // Paul Kellet's pink filter
+        const w = Math.random() * 2 - 1;
+        b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759; b2 = 0.969 * b2 + w * 0.153852; b3 = 0.8665 * b3 + w * 0.3104856;
+        b4 = 0.55 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.016898; raw[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11; b6 = w * 0.115926;
+      }
+      const b = ac.createBuffer(1, n - F, sr), d = b.getChannelData(0);
+      for (let i = 0; i < n - F; i++) d[i] = raw[i];
+      for (let i = 0; i < F; i++) { const k = (i / F) * Math.PI / 2; d[i] = raw[i] * Math.sin(k) + raw[n - F + i] * Math.cos(k); } // the seam, equal power
+      return b;
+    }
+    const pinkPair = (ac) => [pinkLoop(ac, 7.3), pinkLoop(ac, 9.1)];
+    function rainBed(ac, out, bufs = pinkPair(ac)) {
+      const mix = ac.createChannelMerger(2), srcs = [];
+      bufs.forEach((buf, ch) => { const s = ac.createBufferSource(); s.buffer = buf; s.loop = true; s.connect(mix, 0, ch); s.start(); srcs.push(s); });
+      const hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 160; hp.Q.value = 0.5;
+      const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2200; lp.Q.value = 0.5;
+      const lp2 = ac.createBiquadFilter(); lp2.type = "lowpass"; lp2.frequency.value = 5000; lp2.Q.value = 0.5;
+      const swell = ac.createGain(), lfo = ac.createOscillator(), lfoG = ac.createGain(); lfo.frequency.value = 0.065; lfoG.gain.value = 0.06; lfo.connect(lfoG); lfoG.connect(swell.gain); lfo.start(); srcs.push(lfo);
+      mix.connect(hp); hp.connect(lp); lp.connect(lp2); lp2.connect(swell); swell.connect(out);
+      return srcs;
+    }
+    const RAIN_LEVEL = 0.25, RAIN_FADE = 2; // its level under the city, and the fade's time constant (s): in and out over several seconds
     const SND = (() => {
       let on = true, ctx = null, master = null, carBus = null, cityBus = null, E2 = null, C = null, started = false, out = 1, cafe = 0;
       try { on = localStorage.getItem("cz-sound") !== "off"; } catch {}
@@ -1598,11 +1635,11 @@
       const gain = (v = 0) => { const g = ctx.createGain(); g.gain.value = v; return g; };
       // beta 3.xx: the context and the noise first (makeCtx: what prep makes ahead), the graph with its running sources at
       // the start (a source started in a context the page may not play yet is one more console warning each)
-      let noiseW = null, noiseB = null, graphMade = false;
+      let noiseW = null, noiseB = null, noiseP = null, graphMade = false;
       function makeCtx() {
         const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
         ctx = new AC();
-        noiseW = noiseBuf(2, false); noiseB = noiseBuf(4, true);
+        noiseW = noiseBuf(2, false); noiseB = noiseBuf(4, true); noiseP = pinkPair(ctx); // TASK-109: the rain's two loops
         document.addEventListener("visibilitychange", () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else if (on && started) ctx.resume(); });
         return true;
       }
@@ -1629,7 +1666,7 @@
         const wn = loop(white, 0.5); wn.connect(C.windBp); C.windBp.connect(C.wind); C.wind.connect(cityBus);
         const cn = loop(brown, 2.2); for (const [f, q] of [[480, 3], [1100, 4], [2300, 5]]) { const b = filt("bandpass", f, q); cn.connect(b); b.connect(C.cafe); }
         // beta 2.9 (Daniel): rain where it rains (Night Mode, Sin City), under the city
-        C.rain = gain(0); { const rn = loop(white, 0.85), rh = filt("highpass", 900, 0.5), rl = filt("lowpass", 7000, 0.5); rn.connect(rh); rh.connect(rl); rl.connect(C.rain); C.rain.connect(cityBus); }
+        C.rain = gain(0); rainBed(ctx, C.rain, noiseP); C.rain.connect(cityBus); // TASK-109: a soft pink-noise bed (see rainBed)
         const cam = gain(1), cl = ctx.createOscillator(), clg = gain(0.5); cl.frequency.value = 3.1; cl.connect(clg); clg.connect(cam.gain); cl.start(); C.cafe.connect(cam); cam.connect(cityBus);
         return true;
       }
@@ -1785,7 +1822,7 @@
         ramp(C.hum.gain, 0.32 * edge, 0.6); ramp(C.wind.gain, (0.04 + 0.04 * Math.sin(performance.now() / 7300)) * (1.2 - 0.6 * edge), 0.8);
         ramp(C.windBp.frequency, 500 + 300 * Math.sin(performance.now() / 5100), 0.8);
         ramp(C.cafe.gain, clamp(1 - dTm / 420, 0, 1) * 0.16, 0.6);
-        { const w2 = window.__wxNow || {}; ramp(C.rain.gain, w2.rain ? 0.11 : 0, 0.8); if (w2.bolt && !boltWas) thunder(); boltWas = !!w2.bolt; }
+        { const w2 = window.__wxNow || {}; ramp(C.rain.gain, w2.rain ? RAIN_LEVEL : 0, RAIN_FADE); if (w2.bolt && !boltWas) thunder(); boltWas = !!w2.bolt; }
         const t = T();
         if (t > C.birdT) { C.birdT = t + 2.5 + Math.random() * 6; if (!red || true) chirp(); }
         if (t > C.hornT) { C.hornT = t + 14 + Math.random() * 26; if (C.hornT > 20) horn(); }
@@ -1903,8 +1940,9 @@
       const shake = (amt) => { if (amt > 0.05 && !reduced()) { camPos.x += (Math.random() - 0.5) * amt; camPos.y += (Math.random() - 0.5) * amt; camPos.z += (Math.random() - 0.5) * amt; } };
       if (k < 1e-4) { shake(FX.bump * H.mapView.dist * 0.006); return; }
       // beta 2.9 (Daniel): small rides are framed like the car (the scooter's length reads long: its stem), the plane from
-      // further back and higher, at its own altitude
-      const vid = H.vehicle(), vk = vid === "scooter" ? 0.82 : vid === "plane" ? 1.12 : vid === "sub" ? 1.1 : 1, alt = H.vehAlt?.() || 0;
+      // further back and higher, at its own altitude. TASK-109: the scooter at its real size is short (its length is the
+      // 24 floor of carLen) and tall for it: the camera sits close and a little higher (vu), over its bar, onto its deck
+      const vid = H.vehicle(), vk = vid === "scooter" ? 0.9 : vid === "plane" ? 1.12 : vid === "sub" ? 1.1 : 1, vu = vid === "scooter" ? 0.2 : 0, alt = H.vehAlt?.() || 0;
       const cp = { x: H.carPos.x, y: (H.carPos.y || 0) + alt, z: H.carPos.z }, len = H.carLen() * vk * (VP.w < VP.h ? 1.7 : 1.18), f = [Math.sin(D.camH), Math.cos(D.camH)]; // polish: a little further back on a laptop (the car filled the frame)
       // the camera stays over the road: where the spot behind the car is not road (a dead end's end, a turn), it comes
       // in closer and a little higher, so it never sits inside a tree or a wall
@@ -1926,7 +1964,7 @@
       D.camUp += ((D.kturn || D.uturn || D.v < -0.5 ? 1 : 0) - D.camUp) * (1 - Math.exp(-dt * 2.5));
       D.camLag += ((reduced() ? 0 : Math.min(1, Math.max(0, D.v) / VMAX)) - D.camLag) * (1 - Math.exp(-dt * 1.6));
       const back = len * 0.92 * D.camPull * (1 - 0.35 * D.camUp) * (1 + 0.16 * D.camLag);
-      const eye = V3(cp.x - f[0] * back, Math.max(cp.y + len * (0.36 + 0.3 * (1 - D.camPull) + 0.7 * D.camUp), D.camOver + 8), cp.z - f[1] * back);
+      const eye = V3(cp.x - f[0] * back, Math.max(cp.y + len * (0.36 + vu + 0.3 * (1 - D.camPull) + 0.7 * D.camUp), D.camOver + 8), cp.z - f[1] * back);
       const ahead = len * 1.3 * (1 - 0.8 * D.camUp); // in a manoeuvre the camera looks at the car itself
       const look = V3(cp.x + f[0] * ahead, cp.y + len * 0.2, cp.z + f[1] * ahead);
       // blend on the orbit (target, yaw, pitch, the height the frame shows, lens), so the car stays in frame throughout

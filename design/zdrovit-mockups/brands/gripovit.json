@@ -1,0 +1,18 @@
+{
+ "_": "TASK-076: gripovit.ro. Crops in capture px (desktop 2880 wide, phone 780 wide).",
+ "label": "gripovit.ro",
+ "field": ["#b3a6ec", "#5a45c0"],
+ "out": {
+  "hero": {"kind": "hero", "desktop": {"src": "desktop-full.png"}, "phone": {"src": "phone-hero.png"}},
+  "site-scroll": {"kind": "plain", "src": "desktop-full.png", "width": 1200, "q": 72},
+  "site-scroll-phone": {"kind": "plain", "src": "phone-full.png", "width": 585, "q": 70},
+  "symptoms": {"kind": "browser", "src": "section-02.png", "crop": [0, 0, 2880, 1242]},
+  "treatment": {"kind": "browser", "src": "section-03.png", "crop": [0, 0, 2880, 1072]},
+  "range": {"kind": "browser", "src": "desktop-full.png", "crop": [0, 6942, 2880, 2698]},
+  "tips": {"kind": "browser", "src": "section-05.png", "crop": [0, 0, 2880, 592]},
+  "phone-hero": {"kind": "phone", "src": "phone-full.png", "y": 0},
+  "phone-symptoms": {"kind": "phone", "src": "phone-full.png", "y": 2550},
+  "phone-range": {"kind": "phone", "src": "phone-full.png", "y": 12400},
+  "phone-tips": {"kind": "phone", "src": "phone-full.png", "y": 16550}
+ }
+}

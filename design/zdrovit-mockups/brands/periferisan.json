@@ -1,0 +1,19 @@
+{
+ "_": "TASK-076: periferisan.ro. Crops in capture px (desktop 2880 wide, phone 780 wide).",
+ "label": "periferisan.ro",
+ "field": ["#dceff9", "#46a5dd"],
+ "out": {
+  "hero": {"kind": "hero", "desktop": {"src": "desktop-full.png"}, "phone": {"src": "phone-hero.png"}},
+  "site-scroll": {"kind": "plain", "src": "desktop-full.png", "width": 1200, "q": 72},
+  "site-scroll-phone": {"kind": "plain", "src": "phone-full.png", "width": 585, "q": 70},
+  "range": {"kind": "browser", "src": "section-02.png", "crop": [0, 0, 2880, 1520]},
+  "glyco": {"kind": "browser", "src": "desktop-full.png", "crop": [0, 10706, 2880, 1452]},
+  "capsules": {"kind": "browser", "src": "section-04.png", "crop": [0, 0, 2880, 1264]},
+  "gel": {"kind": "browser", "src": "section-05.png", "crop": [0, 0, 2880, 1080]},
+  "faq": {"kind": "browser", "src": "desktop-full.png", "crop": [0, 22650, 2880, 1210]},
+  "phone-hero": {"kind": "phone", "src": "phone-hero.png", "y": 0},
+  "phone-range": {"kind": "phone", "src": "phone-full.png", "y": 10350},
+  "phone-glyco": {"kind": "phone", "src": "phone-full.png", "y": 17300},
+  "phone-gel": {"kind": "phone", "src": "phone-full.png", "y": 29000}
+ }
+}

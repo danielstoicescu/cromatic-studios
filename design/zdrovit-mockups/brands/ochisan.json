@@ -1,0 +1,19 @@
+{
+ "_": "TASK-076 (second half, Mira): OchiSan, ochisan.ro. Crops in capture px (desktop 2880 wide, phone 780 wide). The contraindications block is not cropped on its own; it stays in the scrolling frames, as on the site. The Extern / Intern cards show their photos only on the phone capture, so they appear as a phone screen.",
+ "label": "ochisan.ro",
+ "field": ["#f3e6f3", "#b57db7"],
+ "out": {
+  "hero": { "kind": "hero", "desktop": { "src": "desktop-full.png" }, "phone": { "src": "phone-full.png" } },
+  "site-scroll": { "kind": "plain", "src": "desktop-full.png", "width": 1200, "q": 72 },
+  "site-scroll-phone": { "kind": "plain", "src": "phone-full.png", "width": 500, "q": 72 },
+  "stye": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 3000, 2880, 1300] },
+  "chalazion": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 7900, 2880, 1860] },
+  "product": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 10000, 2880, 1680] },
+  "ingredients": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 11800, 2880, 1600] },
+  "steps": { "kind": "browser", "src": "desktop-full.png", "crop": [0, 13290, 2880, 2250] },
+  "phone-hero": { "kind": "phone", "src": "phone-full.png", "y": 0 },
+  "phone-stye": { "kind": "phone", "src": "phone-full.png", "y": 3090 },
+  "phone-types": { "kind": "phone", "src": "phone-full.png", "y": 7710 },
+  "phone-steps": { "kind": "phone", "src": "phone-full.png", "y": 18400 }
+ }
+}

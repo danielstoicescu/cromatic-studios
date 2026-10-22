@@ -492,6 +492,23 @@ html.embed .crumbs { display: none; }
 .hc-card { position: relative; isolation: isolate; width: min(1480px, 100% - 28px); margin-inline: auto; min-height: calc(100vh - 72px - 28px); min-height: calc(100svh - 72px - 28px);
   display: flex; flex-direction: column; justify-content: flex-end; border: 1px solid var(--ink); border-radius: 30px; overflow: hidden; background: #4a3f3a; color: var(--paper); }
 .hc-pic, .hc-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+/* TASK-106: the city in motion over the still (site.js loads it after the page, only on screen). The whole card is a
+   way into the map (.hc-hit); the words let the click through, their links and buttons keep theirs */
+.hc-vid { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; opacity: 0; transition: opacity .9s var(--eoq); pointer-events: none; }
+.hc-vid.on { opacity: 1; }
+.hc-card:has(.hc-vid.on) .hc-shade { background-color: rgba(13,12,9,.2); transition: background-color .9s var(--eoq); } /* a flat tint under the veil: the moving city stays behind the words */
+.hc-hit { position: absolute; inset: 0; z-index: 0; cursor: pointer; }
+.hero-city .hc-in { position: relative; z-index: 1; pointer-events: none; }
+.hero-city .hc-in :is(a, button) { pointer-events: auto; }
+.hc-card:has(.hc-hit:hover) .hc-btns .btn-y { translate: 0 -2px; box-shadow: 0 5px 0 var(--ink); }
+.hc-pp { position: absolute; right: 20px; top: 20px; z-index: 2; width: 42px; height: 42px; padding: 0; display: grid; place-items: center; border: var(--line); border-radius: 50%; background: var(--paper); color: var(--ink); cursor: pointer; box-shadow: 0 2px 0 var(--ink); transition: translate .45s var(--bounce), box-shadow .45s var(--bounce); }
+.hc-pp[hidden] { display: none; }
+.hc-pp:hover { translate: 0 -2px; box-shadow: 0 4px 0 var(--ink); }
+.hc-pp:active { translate: 0 1px; box-shadow: 0 1px 0 var(--ink); }
+.hc-pp:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
+.hc-pp i { width: 12px; height: 14px; border-left: 4px solid var(--ink); border-right: 4px solid var(--ink); box-sizing: border-box; }
+.hc-pp[aria-pressed="true"] i { width: 0; height: 0; margin-left: 4px; border-right: 0; border-left: 12px solid var(--ink); border-top: 7.5px solid transparent; border-bottom: 7.5px solid transparent; }
+@media (prefers-reduced-motion: reduce) { .hc-vid, .hc-pp { display: none !important; } }
 .hc-shade { position: absolute; inset: 0; z-index: -1; background: radial-gradient(110% 95% at 18% 92%, rgba(13,12,9,.76), rgba(13,12,9,.14) 66%), linear-gradient(90deg, rgba(13,12,9,.48), transparent 62%), linear-gradient(0deg, rgba(13,12,9,.5), transparent 46%); }
 .hc-in { padding: clamp(110px, 14vh, 170px) 0 clamp(40px, 7vh, 72px); }
 .hero-city .eyebrow { color: rgba(251,250,245,.74); }
@@ -540,6 +557,7 @@ html.embed .crumbs { display: none; }
   .hc-btns { margin-top: 20px; gap: 10px; }
   .hc-btns .btn { width: 100%; justify-content: center; }
   .hc-note { right: auto; left: 14px; bottom: auto; top: 14px; font-size: 14px; padding: 7px 14px 8px 8px; }
+  .hc-pp { right: 14px; top: 72px; width: 38px; height: 38px; }
   .hc-note .cupspin { --cs: 32px; }
 }
 

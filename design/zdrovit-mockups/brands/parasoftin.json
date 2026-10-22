@@ -1,0 +1,18 @@
+{
+ "_": "TASK-076: parasoftin.ro. Crops in capture px (desktop 2880 wide, phone 780 wide).",
+ "label": "parasoftin.ro",
+ "field": ["#f1e6f8", "#cda6e2"],
+ "out": {
+  "hero": {"kind": "hero", "desktop": {"src": "desktop-full.png"}, "phone": {"src": "phone-hero.png"}},
+  "site-scroll": {"kind": "plain", "src": "desktop-full.png", "width": 1200, "q": 72},
+  "site-scroll-phone": {"kind": "plain", "src": "phone-full.png", "width": 585, "q": 70},
+  "socks": {"kind": "browser", "src": "desktop-full.png", "crop": [0, 1780, 2880, 1308]},
+  "regen": {"kind": "browser", "src": "section-02.png", "crop": [0, 0, 2880, 1278]},
+  "hydrating": {"kind": "browser", "src": "section-03.png", "crop": [0, 0, 2880, 1410]},
+  "conditions": {"kind": "browser", "src": "section-04.png", "crop": [0, 0, 2880, 894]},
+  "phone-hero": {"kind": "phone", "src": "phone-hero.png", "y": 0},
+  "phone-socks": {"kind": "phone", "src": "phone-full.png", "y": 1650},
+  "phone-regen": {"kind": "phone", "src": "phone-full.png", "y": 4150},
+  "phone-hydrating": {"kind": "phone", "src": "phone-full.png", "y": 6550}
+ }
+}

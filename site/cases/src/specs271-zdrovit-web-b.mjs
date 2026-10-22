@@ -1,0 +1,588 @@
+// TASK-076, second half (Mira): more Zdrovit brands' product sites, one case page per brand, on the recipe of the
+// Aspasia pilot (site/cases/src/specs270-zdrovit-web.mjs, Ina): Prevomit, Slaboficat, Supramax, Vizik, Vizimel,
+// OchiSan; and the Lacalut website chapter (LACALUT_WEB, added to the Lacalut page in specs260-zdrovit.mjs).
+// Daniel, 21 Oct: every Zdrovit brand's official product site is Cromatic's work; the pages show those sites only.
+// Rules for every page here: built from Mira's captures (~/cromatic-ops/refs/zdrovit-pages/shots/), the site's own
+// words and figures quoted as they appear, never restated as facts; no year, no results, no campaign facts; no link
+// out to the brand's site (no "Visit" button, no href on the device frames); no portfolio card (PROJECTS, hubs):
+// the Zdrovit card links the pages by slug. Each page keeps the TV spot slot (SPOTS_B, null until Daniel sends a
+// full production). Vizimel: its medical presentation is never shown.
+// The mockups: design/zdrovit-mockups/brands/<slug>.json, then node design/zdrovit-mockups/mock.mjs <slug>.
+const m = (p) => "m:" + p;
+
+// the helpers, as in specs270 (not exported there): the mockup names are the ones in brands/<slug>.json
+const shot = (slug, name, alt, cap) => ({ img: m(`${slug}/${name}`), alt, ...(cap ? { cap } : {}) });
+// the page's own scrolling device frames (gen.mjs "site" block), with no href: no link out to the brand's site
+const siteBlock = (slug, label, { alt, altPhone, head = ["The", "landing page"], cap, name = "site-scroll" } = {}) => ({
+  site: {
+    label,
+    d: { img: m(`${slug}/${name}`), scroll: true, alt: alt || `The ${label} page, scrolling` },
+    m: { img: m(`${slug}/${name}-phone`), scroll: true, alt: altPhone || `The ${label} page on a phone, scrolling` }
+  },
+  head, ...(cap ? { cap } : {})
+});
+
+// The TV spot slot, as in specs270 (Daniel, 21 Oct: only full productions, no cuts or adaptations; he sends the
+// files). An entry stays null until its spot is in site/media/<slug>/; then the page gets an "On TV" chapter after
+// the web chapters. To fill one: { "spot": { "kind": "film", "src": "<the MP4>", "at": <poster second> } } in
+// brands/<slug>.json, node mock.mjs <slug> spot, then e.g.
+//   prevomit: { r: 1.778, seconds: 25, text: "<what the spot shows>", alt: "<the spot, in one line>", cap: "<a caption>" }
+// and the new strings' Romanian in site/i18n/ro.json (the build lists them in ro.missing.json).
+export const SPOTS_B = { prevomit: null, slaboficat: null, supramax: null, vizik: null, vizimel: null, ochisan: null };
+const spotChapter = (slug) => {
+  const s = SPOTS_B[slug];
+  if (!s) return [];
+  return [{
+    pillar: "video",
+    pills: s.pills || ["On", "TV"],
+    text: s.text,
+    deliverables: s.deliverables || ["TV spot", ...(s.seconds ? [`${s.seconds} seconds`] : [])],
+    media: [{ video: m(`${slug}/${s.file || "spot"}`), poster: m(`${slug}/${s.file || "spot"}-poster`), r: s.r || 1.778, manual: true, alt: s.alt, ...(s.cap ? { cap: s.cap } : {}) }]
+  }];
+};
+const RELATED = ["litorsal", "lacalut", "maximag"]; // (the shared ending replaces the rail; gen.mjs still asks for one)
+
+export const PREVOMIT = {
+  slug: "prevomit",
+  name: "Prevomit",
+  tagline: "prevomit.ro: a road for children who get car-sick, a calmer page for grown-ups, and a door to each.",
+  desc: "Prevomit: prevomit.ro, a product site with a road-map page for children who get car-sick and a page for adults, on desktop and phone. By Cromatic Studios, Bucharest.",
+  title: "Travel without worry.",
+  accent: { bg: "#8FC23F", fg: "#10293d", ink: "#3f7a12" },
+  info: ["Motion sickness supplements, Prevomit", "Romania · Zdrovit portfolio", "Product site, desktop and mobile"],
+  cover: { img: m("prevomit/hero") },
+  og: m("prevomit/hero"),
+  hero: { img: m("prevomit/hero"), alt: "prevomit.ro/kids in a browser window and on a phone: a yellow car on a winding road, the line Călătorește fără griji! and a box of Prevomit Kids lollipops on green" },
+  problem: {
+    h: "Two kinds of nausea",
+    p: [
+      "Prevomit is a range of food supplements from Zdrovit, built around ginger extract. The site says what it is for in its own words: products that “ajută împotriva stărilor de greață și a vărsăturilor și reduc disconfortul cauzat de răul de mișcare și altitudine”.",
+      "The range speaks to <strong>two</strong> audiences. Children who get car-sick, with lollipops, gummies and tablets for different ages. And adults: motion sickness on the road, and morning sickness in pregnancy.",
+      "A parent packing for a long drive and a pregnant woman at breakfast are not reading the same page. prevomit.ro gives each of them one."
+    ]
+  },
+  solution: {
+    h: "A chooser, then a road",
+    p: "The home page is a single screen split in two: adults on the left in green, children on the right in blue, each half with its own photo and its own boxes. The children's page is a road that winds from the first screen to the footer, with a yellow car at the top. The adults' page drops the road and keeps the product's green and orange.",
+    stat: "8",
+    statText: "car games on the children's page, one card each, from “10 întrebări” to “Cuvintele”"
+  },
+  chapters: [
+    {
+      pillar: "product",
+      pills: ["The", "road"],
+      text: "The children's page is drawn as a road. A yellow car sets off under “Călătorește fără griji!” beside a box of Prevomit Kids lollipops, and the road carries you past everything below. Răul de mișcare explains what motion sickness is and who gets it. Eight illustrated tiles name the symptoms, from Greață to Anxietate. A list of tips for prevention ends with a boy asleep on a neck pillow. Then the games for the car, the three products for children, and a closing band where a car and a bus meet at the order button.",
+      deliverables: ["Product site", "Illustration", "UX/UI design", "Desktop and mobile"],
+      media: [
+        siteBlock("prevomit", "prevomit.ro", { alt: "The prevomit.ro/kids page, scrolling: the road from the yellow car at the top to a car and a bus at the bottom", altPhone: "The prevomit.ro/kids page on a phone, scrolling", head: ["The", "children's page"], cap: "prevomit.ro/kids from the first screen to the footer, on desktop and phone." }),
+        {
+          rail: ["Along the", "road"],
+          items: [
+            shot("prevomit", "kids-symptoms", "Simptome: eight illustrated tiles, Stare generală de rău, Vărsături, Greață, Paloare, Roșeață, Transpirație, Amețeală and Anxietate, on green beside the road"),
+            shot("prevomit", "kids-games", "Jocuri: eight coloured cards with a game for the car on each, from 10 întrebări to Cuvintele, a monkey, a radio and a duck among them"),
+            shot("prevomit", "kids-packs", "The Prevomit block on light blue: a paragraph on ginger extract, then Prevomit Kids with two lollipop boxes on the road and four lines with icons")
+          ],
+          cap: "The symptoms, the games for the car and the products"
+        }
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["Two", "doors"],
+      text: "prevomit.ro opens on one screen with two doors. On the left, green, a pregnant woman and the Prevomit Adulți box. On the right, blue, a girl in a car seat and the children's range: Kids lollipops, Junior tablets and a jar of gummies. Behind the adults' door the page is quieter: “Bucură-te de orice drum fără grețuri!” over a woman resting on a sofa, four round portraits of travellers, one by a plane window, one in a diving mask, a section on morning sickness, and an orange band of three icons for what the product is for.",
+      deliverables: ["Home page", "Adults' page", "Icon band", "Ingredients"],
+      media: [
+        shot("prevomit", "chooser", "The prevomit.ro home page: the Prevomit logo on navy, a pregnant woman on green on the left with the Prevomit Adulți box, a girl in a car seat on blue on the right with the Kids, Junior and gummy packs, and an orange band across both", "The home page: adults on the left, children on the right"),
+        {
+          rail: ["The adults'", "page"],
+          items: [
+            shot("prevomit", "adults-hero", "The adults' page hero: a woman resting on a white sofa, the Prevomit logo, the line Bucură-te de orice drum fără grețuri!, the Prevomit Adulți box and an orange Comandă acum button"),
+            shot("prevomit", "adults-morning", "Grețurile matinale: a pregnant woman with a hand over her mouth, sitting on a bed, and the section's text on white"),
+            shot("prevomit", "adults-icons", "The orange band: three white rings with line icons, a pregnant woman, the intestines and a car, over Grețuri în timpul sarcinii, Disconfort digestiv and Rău de mișcare")
+          ],
+          cap: "The hero, morning sickness and the three uses, in the box's green and orange"
+        }
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["On a", "phone"],
+      text: "On a phone both pages fold into one column. The road shrinks to one bend under the first screen, the symptom tiles stack two by two, and the game cards line up one under another. The adults' page keeps its photo, its line and the orange “Comandă acum” button on the first screen.",
+      deliverables: ["Mobile layout", "One column"],
+      media: [
+        {
+          rail: ["Four", "screens"],
+          items: [
+            shot("prevomit", "phone-kids", "The children's page on a phone: Călătorește fără griji! on green, a box of Prevomit Kids lollipops and a bend of the road"),
+            shot("prevomit", "phone-symptoms", "Simptome on a phone: the illustrated tiles two by two"),
+            shot("prevomit", "phone-games", "Jocuri on a phone: the game cards one under another, 10 întrebări first"),
+            shot("prevomit", "phone-adults", "The adults' page on a phone: the woman on the sofa, the line, the orange Comandă acum button and the Prevomit Adulți box")
+          ],
+          cap: "The road, the symptoms, the games and the adults' page, at 390 px wide"
+        }
+      ]
+    },
+    ...spotChapter("prevomit")
+  ],
+  result: {
+    text: "Two audiences, two pages: a road for the children's trip, a quieter page for the grown-ups."
+  },
+  related: RELATED
+};
+
+export const SLABOFICAT = {
+  slug: "slaboficat",
+  name: "Slaboficat",
+  tagline: "slaboficat.ro: a one-page product site for a liver supplement that starts with the liver itself, glowing.",
+  desc: "Slaboficat Slim: slaboficat.ro, the one-page product site for a liver supplement, on desktop and phone. By Cromatic Studios, Bucharest.",
+  title: "The liver, lit up.",
+  accent: { bg: "#6A4FD0", fg: "#ffffff", ink: "#2c10a3" },
+  info: ["Liver supplement, Slaboficat Slim", "Romania · Zdrovit portfolio", "Landing page, desktop and mobile"],
+  cover: { img: m("slaboficat/hero") },
+  og: m("slaboficat/hero"),
+  hero: { img: m("slaboficat/hero"), alt: "slaboficat.ro in a browser window and on a phone: a glowing orange liver inside a blue body, the Slaboficat Slim box and three lines on a violet band" },
+  problem: {
+    h: "Two subjects, one box",
+    p: [
+      "Slaboficat Slim is a food supplement from Zdrovit, in capsules. The site puts its case as a question: “Vrei să ai grijă de ficat și în același timp să menții o greutate optimă a corpului?”",
+      "That is two subjects in one box. The <strong>liver</strong>, which you never see, and your figure, which you see every day.",
+      "The page has to show the first one before it can talk about the second."
+    ]
+  },
+  solution: {
+    h: "Start with the organ",
+    p: "The page opens on the liver itself, glowing orange inside a blue body, with the box beside it and three lines on a violet band. Then it explains what the liver does, brings in the Slim formula, lists the ingredients one by one and ends with tips for the liver and the figure. Violet runs through all of it, from the menu to the order button.",
+    stat: "10",
+    statText: "tips for the liver and the figure, in one list beside a strip of photos, from a lemon to a tape measure"
+  },
+  chapters: [
+    {
+      pillar: "product",
+      pills: ["One", "page"],
+      text: "The menu runs Funcțiile ficatului, SLABOFICAT Slim, Sfaturi, Media, Comandă, Contact. The hero puts the glowing liver on the left and the box on the right, over a violet band with three lines, from “Ajută la regenerarea hepatică” to “Susține sănătatea ficatului”, and an “Află mai multe >>” link. A sentence in bold violet follows, “Ficatul este unul dintre cele mai mari organe din corp…”. Below come the liver's functions, the Slim formula, the ingredients, how to take it, the tips and the order button, above the Zdrovit address.",
+      deliverables: ["Landing page", "UX/UI design", "Desktop and mobile", "Navigation"],
+      media: [
+        siteBlock("slaboficat", "slaboficat.ro", { cap: "slaboficat.ro from the first screen to the footer, on desktop and phone." }),
+        shot("slaboficat", "tips", "Sfaturi pentru ficat și siluetă!: ten tips in a list with violet bullets, beside a strip of photos of a lemon, a pepper, carrots, a tomato and a tape measure", "Ten tips for the liver and the figure")
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["The", "liver"],
+      text: "The product story, the way the site tells it. Three of the liver's functions get a heading each: stocare, secretorie și excretorie, metabolică. Beside them a violet panel draws the liver in a ring, with six lines out to what it does, from Sinteza aminoacizilor to Neutralizarea toxinelor. Then the turn to the figure: SLABOFICAT Slim, a woman with a tape measure round her waist, the box at her side and the site's question. The ingredients follow one per row, each with its picture: Fructele de Armurariu, Colina, Curcuma longa, Piper-negru and Cromul. A violet band gives the dose and the pack in the site's words, “Adulți: 1-2 capsule pe zi, înainte de masă” and “30 capsule”.",
+      deliverables: ["Product story", "Infographic", "Ingredients", "Usage"],
+      media: [
+        shot("slaboficat", "functions", "The liver's functions: Funcția de stocare, Funcția secretorie și excretorie and Funcția metabolică in violet headings, beside a violet panel with the liver in a ring and six functions around it", "Three functions in words, six in a drawing"),
+        shot("slaboficat", "slim", "SLABOFICAT Slim: a woman in white with a tape measure round her waist, two Slaboficat Slim boxes in front of her, and the product text on the right", "The turn to the figure: SLABOFICAT Slim"),
+        shot("slaboficat", "ingredients", "Ingrediente: Fructele de Armurariu with a thistle flower, Colina with its molecule, Curcuma longa and Piper-negru with their pictures, one row each", "The ingredients, one row and one picture each")
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["On a", "phone"],
+      text: "On a phone the logo moves to the centre with the menu icon under it, and the three lines sit under the liver, above “Află mai multe >>”. The violet panel of functions fills the width. Each ingredient gets a block of its own, picture first, and the tips keep their photos, faded behind the text.",
+      deliverables: ["Mobile layout", "One column"],
+      media: [
+        {
+          rail: ["Four", "screens"],
+          items: [
+            shot("slaboficat", "phone-hero", "The first screen on a phone: the Slaboficat Slim logo, the menu icon, the liver and three lines on violet, Află mai multe and the sentence about the liver"),
+            shot("slaboficat", "phone-functions", "The violet panel of the liver's functions on a phone, and SLABOFICAT Slim below it"),
+            shot("slaboficat", "phone-ingredients", "Ingrediente on a phone: Fructele de Armurariu with a thistle flower and its paragraph, then Colina"),
+            shot("slaboficat", "phone-tips", "Sfaturi pentru ficat și siluetă! on a phone, the tips over faded photos of fruit and vegetables")
+          ],
+          cap: "The liver, its functions, the ingredients and the tips, at 390 px wide"
+        }
+      ]
+    },
+    ...spotChapter("slaboficat")
+  ],
+  result: {
+    text: "The organ first, then the box: a liver supplement's page, violet from the menu to the order button."
+  },
+  related: RELATED
+};
+
+export const SUPRAMAX = {
+  slug: "supramax",
+  name: "Supramax",
+  tagline: "supramax.ro: one product site for a whole joint-care range, from collagen sachets to a spray.",
+  desc: "Supramax articulații: supramax.ro, the product site for a collagen range for joints, six products on one page, on desktop and phone. By Cromatic Studios, Bucharest.",
+  title: "Mobility, made younger.",
+  accent: { bg: "#F39A3D", fg: "#2b1606", ink: "#b8560a" },
+  info: ["Joint supplements, Supramax articulații", "Romania · Zdrovit portfolio", "Product site, desktop and mobile"],
+  cover: { img: m("supramax/hero") },
+  og: m("supramax/hero"),
+  hero: { img: m("supramax/hero"), alt: "supramax.ro in a browser window and on a phone: a white-haired woman stretching on a wooden deck, the line Întinerește-ți mobilitatea! and the orange Supramax articulații box with peach flavour" },
+  problem: {
+    h: "One brand, six formats",
+    p: [
+      "Supramax articulații is a Zdrovit range for joints, built around hydrolysed collagen. It comes as sachets in three versions, as vials you drink, as a gel and as a spray.",
+      "Each one is taken or used in its own way, and each has its own list of ingredients. One site has to explain all six without burying any of them.",
+      "Before any of the boxes, it has to explain the word printed on most of them: <strong>colagen</strong>."
+    ]
+  },
+  solution: {
+    h: "Orange on white, and people moving",
+    p: "The page runs in the box's orange on white. It opens with “Întinerește-ți mobilitatea!” over a woman stretching on a wooden deck, explains collagen beside a man holding his knee, then lines up the products, each with its own column of ticks and an orange “Cumpără acum” button. A couple out Nordic walking leads into how collagen works, in three steps. Joint problems and the questions close the page.",
+    stat: "6",
+    statText: "products on one page: three kinds of sachets, the DIRECT vials, the mobil gel and the ACUT spray"
+  },
+  chapters: [
+    {
+      pillar: "product",
+      pills: ["One", "page"],
+      text: "The menu runs SUPRAMAX, Comandă, Probleme articulare, Întrebări, Blog, Contact. The hero sets a white-haired woman stretching beside the peach-flavour box under “Întinerește-ți mobilitatea!”. Collagen comes next, in two paragraphs and an orange box, then a line on what Supramax articulații contains, with an orange arrow between two circles of bone tissue. After the products, an orange panel lists what the site says Supramax does for cartilage, beside a couple Nordic walking, and three numbered steps follow: Absorbția, Distribuția, Stimularea. The joint problems and six questions in orange tiles end the page.",
+      deliverables: ["Product site", "UX/UI design", "Desktop and mobile", "FAQ"],
+      media: [
+        siteBlock("supramax", "supramax.ro", { head: ["The", "product site"], cap: "supramax.ro from the first screen to the footer, on desktop and phone." }),
+        {
+          rail: ["Section by", "section"],
+          items: [
+            shot("supramax", "collagen", "SUPRAMAX articulații conține hidrolizat de colagen: the line in large type, an orange arrow between two circles of bone tissue, and two paragraphs below"),
+            shot("supramax", "benefits", "An orange panel with three ticked lines about cartilage beside a photo of an older couple Nordic walking in a park, and Hidrolizatul de colagen acționează în 3 etape below: Absorbția, Distribuția, Stimularea")
+          ],
+          cap: "Collagen, explained before the boxes, and the three steps"
+        }
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["The", "range"],
+      text: "The products, the way the site lines them up. Under “Doză mare de colagen” three sachet boxes stand side by side, plain, peach and osteo, each over its own column: an orange disc for “10 g colagen hidrolizat per plic”, ticks and letters for what else is inside, and “30 plicuri”. A grey band says what Supramax does not contain and how to take it. Then the DIRECT vials, the mobil gel and the ACUT spray, each with its own paragraph, its own column of ticks, its directions in a grey box and an orange button.",
+      deliverables: ["Product range", "Ingredient columns", "Usage"],
+      media: [
+        shot("supramax", "range", "Doză mare de colagen: three Supramax articulații boxes, plain, peach and osteo, each above a column of orange discs and ticks, with Cumpără acum buttons and a grey band of what the product does not contain", "Three sachet boxes, three columns"),
+        shot("supramax", "gel", "SUPRAMAX articulații mobil gel: the tube on an orange swoosh, a column of ticks from extract de tătăneasă to 100 ml, the directions in a grey box and a Cumpără acum button", "The mobil gel, with its own column and directions")
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["On a", "phone"],
+      text: "On a phone the page keeps its order in one column. The hero shrinks to a band at the top and the collagen paragraphs follow, the orange box still under them. The three sachet boxes stack one above another, each with its column and button, and the orange benefits panel moves under the Nordic walking photo.",
+      deliverables: ["Mobile layout", "One column"],
+      media: [
+        {
+          rail: ["Four", "screens"],
+          items: [
+            shot("supramax", "phone-hero", "The first screen on a phone: the Supramax articulații logo, the menu icon, the hero band and the collagen paragraphs with the orange box"),
+            shot("supramax", "phone-collagen", "The collagen line on a phone, the arrow between the circles of bone tissue and the paragraphs below"),
+            shot("supramax", "phone-range", "Doză mare de colagen on a phone: the first sachet box, its column and the Cumpără acum button, the peach box below"),
+            shot("supramax", "phone-benefits", "The Nordic walking photo on a phone, the orange panel under it and the first of the three steps")
+          ],
+          cap: "The hero, collagen, the range and the three steps, at 390 px wide"
+        }
+      ]
+    },
+    ...spotChapter("supramax")
+  ],
+  result: {
+    text: "Six products, one page, in the box's orange: collagen explained first, then every format with its own column."
+  },
+  related: RELATED
+};
+
+export const VIZIK = {
+  slug: "vizik",
+  name: "Vizik",
+  tagline: "vizik.ro: one eye, three colours, three pages. Eye drops you pick by how your eyes feel.",
+  desc: "Vizik: vizik.ro, a chooser and three product pages for a family of eye drops, one colour per problem, on desktop and phone. By Cromatic Studios, Bucharest.",
+  title: "One eye, three colours.",
+  accent: { bg: "#5A5FD6", fg: "#ffffff", ink: "#2f3aa8" },
+  info: ["Eye drops, Vizik", "Romania · Zdrovit portfolio", "Product site, four pages, desktop and mobile"],
+  cover: { img: m("vizik/hero") },
+  og: m("vizik/hero"),
+  hero: { img: m("vizik/hero"), alt: "vizik.ro in a browser window: one eye under three colour panels, red, green and blue, each with its line and an Află mai multe button; on a phone, the Vizik Allergy page with a green eye, the box and the bottle" },
+  problem: {
+    h: "Three problems, three bottles",
+    p: [
+      "Vizik is a family of eye drops from Zdrovit, in three versions. Each one is named for what it is for, in the site's words: “alergiilor oculare”, “ochi iritați și roșii”, “ochi uscați și obosiți”.",
+      "The three boxes share a logo, a bottle and a layout. The problems they answer do not, and someone with sore eyes is looking for one of them, not for all three.",
+      "So vizik.ro starts with the eyes, not the product, and lets the visitor say which <strong>kind</strong> of trouble they have."
+    ]
+  },
+  solution: {
+    h: "A colour for each problem",
+    p: "The home page lays three colour panels over one close-up of an eye: red for irritated, green for allergies, blue for dry and tired. Two of them speak in the visitor's voice, “Ochii mei sunt…”. Each panel opens a page of its own, built on the same frame and dressed in its colour, from the line under the logo to the footer, and each page's menu links to the other two.",
+    stat: "3",
+    statText: "pages on one frame, one per problem, each in its own colour"
+  },
+  chapters: [
+    {
+      pillar: "product",
+      pills: ["Three", "doors"],
+      text: "vizik.ro is a single screen. One eye fills it, under three vertical panels in red, green and blue, with the Vizik logo in white over the middle one. Each panel carries a line and an “Află mai multe” button: “Ochii mei sunt iritați și roșii”, “Împotriva alergiilor oculare”, “Ochii mei sunt uscați și obosiți”. On a phone the panels stack, one screen each, and the eye shows through all three.",
+      deliverables: ["Home page", "Chooser", "UX/UI design"],
+      media: [
+        shot("vizik", "chooser", "The vizik.ro home page: one close-up eye under three panels, red, green and blue, the Vizik logo in white, and a line and an Află mai multe button on each panel", "The home page: pick a colour, pick a problem"),
+        {
+          rail: ["Three", "panels"],
+          items: [
+            shot("vizik", "phone-door-red", "The red panel on a phone: the Vizik logo, Ochii mei sunt iritați și roșii and an Află mai multe button over the eye"),
+            shot("vizik", "phone-door-green", "The green panel on a phone: Împotriva alergiilor oculare and an Află mai multe button over the eye"),
+            shot("vizik", "phone-door-blue", "The blue panel on a phone: Ochii mei sunt uscați și obosiți and an Află mai multe button over the eye")
+          ],
+          cap: "On a phone the three panels stack, one screen each"
+        }
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["One", "frame"],
+      text: "Behind each door, the same page in a different colour. A close-up eye sets the problem: pollen-green for allergies, red veins for irritation, a cracked surface for dryness. The box and the bottle stand beside a line in the page's colour, over three icons, “Fără conservanți”, “Sistem steril”, “Utilizare 12 luni de la deschidere”, and a turquoise drop points down to the structure of the tear film. Then the condition, its symptoms and causes in an accordion, the product with its formula, the ingredients, the directions and the order button.",
+      deliverables: ["Product pages", "Page template", "Desktop and mobile", "Accordion"],
+      media: [
+        siteBlock("vizik", "vizik.ro", { alt: "The vizik.ro/alergii-oculare/ page, scrolling: the green eye and the Vizik Allergy box, the tear film on dark blue, the condition, the product and the green footer", altPhone: "The vizik.ro/alergii-oculare/ page on a phone, scrolling", head: ["The", "Allergy page"], cap: "The Allergy page from the first screen to the footer, on desktop and phone." }),
+        {
+          rail: ["Three", "eyes"],
+          items: [
+            shot("vizik", "allergy-hero", "The Allergy page hero: a close-up eye with a green, pollen-like iris, the Vizik Allergy box and bottle, Împotriva alergiilor oculare in green and three green icons"),
+            shot("vizik", "red-hero", "The red page hero: a bloodshot eye, the Vizik box for irritated and red eyes, Împotriva ochilor iritați și roșii in red and three red icons"),
+            shot("vizik", "blue-hero", "The blue page hero: an eye with a cracked, dry surface, the Vizik box for dry and tired eyes, Împotriva ochilor uscați și obosiți in blue and three blue icons")
+          ],
+          cap: "Allergy, red and blue: one frame, three eyes, three colours"
+        }
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["Inside a", "page"],
+      text: "The middle of each page explains before it sells. The tear film gets a dark blue section: why tears matter, its three layers, and four things it does, each with a line icon and a green tick. Then each product has a band in its own colour, with the box and bottle on one side and the formula in large capitals on the other, from “Hialuronat de sodiu 0.15%” to “Dexpantenol”, over four icons. The red and blue pages add a section on contact lenses.",
+      deliverables: ["Product story", "Icons", "Product bands"],
+      media: [
+        shot("vizik", "tears", "Filmul lacrimal servește 4 scopuri importante: four white eye icons with green ticks on dark blue, and a green band below, Multe organe pot fi afectate de reacții alergice", "The tear film's four jobs, one icon each"),
+        {
+          rail: ["Three", "formulas"],
+          items: [
+            shot("vizik", "allergy-product", "The Vizik Allergy band in green: the box and bottle, Hialuronat de sodiu 0.15%, Ectoină 2% and four icons"),
+            shot("vizik", "red-product", "The red band: the Vizik box and bottle for irritated and red eyes, Dexpantenol, Carbomer and four icons"),
+            shot("vizik", "blue-product", "The blue band: the Vizik box and bottle for dry and tired eyes, Hialuronat de sodiu 0.15%, Dexpantenol 2% and four icons")
+          ],
+          cap: "Each product in its own colour, its formula in large capitals"
+        },
+        shot("vizik", "lenses", "VIZIK și lentilele de contact: a paragraph on contact lenses, a red round icon of a lens and a drop, and a contact lens in water on the right", "Contact lenses, on the red and blue pages")
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["On a", "phone"],
+      text: "On a phone each page keeps its order. The line moves above the eye, the three icons line up down the right-hand side, and the box and bottle sit at the bottom of the first screen. The tear film's three layers stack as three numbered circles, one under another.",
+      deliverables: ["Mobile layout", "One column"],
+      media: [
+        {
+          rail: ["Four", "screens"],
+          items: [
+            shot("vizik", "phone-allergy", "The Allergy page on a phone: the Vizik logo, Împotriva alergiilor oculare, the green eye, the box, the bottle and three icons"),
+            shot("vizik", "phone-layers", "Cele 3 straturi ale filmului lacrimal on a phone: three numbered circles on blue, each with a line"),
+            shot("vizik", "phone-red", "The red page on a phone: the Vizik logo, Împotriva ochilor iritați și roșii, the bloodshot eye, the box, the bottle and three icons"),
+            shot("vizik", "phone-blue", "The blue page on a phone: the Vizik logo, Împotriva ochilor uscați și obosiți, the dry eye, the box, the bottle and three icons")
+          ],
+          cap: "Allergy, the tear film, red and blue, at 390 px wide"
+        }
+      ]
+    },
+    ...spotChapter("vizik")
+  ],
+  result: {
+    text: "One eye, three colours: you pick the page by how your eyes feel, and every page keeps its colour to the footer."
+  },
+  related: RELATED
+};
+
+// Vizimel: web only (Daniel: its medical presentation is never shown; the pack and leaflet files stay out too,
+// since who designed the pack is not confirmed). The box appears only as the site shows it.
+export const VIZIMEL = {
+  slug: "vizimel",
+  name: "Vizimel",
+  tagline: "vizimel.ro: the product site for an eye supplement, in the navy and yellow of its box.",
+  desc: "Vizimel: vizimel.ro, the product site for an eye supplement with lutein, meso-zeaxanthin and zeaxanthin, on desktop and phone. By Cromatic Studios, Bucharest.",
+  title: "Five ingredients, one tablet a day.",
+  accent: { bg: "#F2DF2E", fg: "#1c1f6b", ink: "#2a2f8f" },
+  info: ["Eye supplement, Vizimel", "Romania · Zdrovit portfolio", "Product site, desktop and mobile"],
+  cover: { img: m("vizimel/hero") },
+  og: m("vizimel/hero"),
+  hero: { img: m("vizimel/hero"), alt: "vizimel.ro in a browser window and on a phone: the navy Vizimel box with a drawn eye, the line VIZIMEL® Protecție completă pentru sănătatea ochilor and a yellow Comandă VIZIMEL® button" },
+  problem: {
+    h: "A formula with long names",
+    p: [
+      "Vizimel is a food supplement from Zdrovit, for the eyes. Its box prints the formula on the front: luteină 24 mg, mezo-zeaxantină 10 mg, zeaxantină 4,8 mg, vitamina D, vitamina B2.",
+      "Three of those names are carotenoids few people could explain.",
+      "The site has to make the formula <strong>readable</strong>: what each ingredient is, what it is for, how to take the tablet and who it is for."
+    ]
+  },
+  solution: {
+    h: "Navy and yellow, in cards",
+    p: "The page takes the box's colours: a navy hero with the box at full height, yellow for the buttons and the highlights. Everything after it is cut into cards, each saying one thing: four for the ways the site says the formula works, five for the ingredients, six for who it is for, three for the eye conditions.",
+    stat: "5",
+    statText: "ingredients, one card each, every card with its dose in a navy pill, from 24 mg of lutein to 1,4 mg of vitamin B2"
+  },
+  chapters: [
+    {
+      pillar: "product",
+      pills: ["One", "page"],
+      text: "The menu runs VIZIMEL®, Formula VIZIMEL®, Afecțiuni oculare, Dovezi clinice, Blog, FAQs, with a yellow “Comandă acum” at the end. The hero sets the line “VIZIMEL® Protecție completă pentru sănătatea ochilor” beside the 120-tablet box, with three pills for the carotenoids and two buttons, “Comandă VIZIMEL®” and “Descoperă formula”. A yellow band opens the cards, with “Fără gluten” and “Fără lactoză” in two navy tiles. After the formula and the people it is for, three cards name eye conditions, a navy band repeats the order button, and the contact cards close the page.",
+      deliverables: ["Product site", "UX/UI design", "Desktop and mobile", "Cards"],
+      media: [
+        siteBlock("vizimel", "vizimel.ro", { head: ["The", "product site"], cap: "vizimel.ro from the first screen to the footer, on desktop and phone." }),
+        {
+          rail: ["Section by", "section"],
+          items: [
+            shot("vizimel", "mechanisms", "A yellow band, VIZIMEL® susține sănătatea ochilor prin 4 mecanisme de acțiune sinergice, with Fără gluten and Fără lactoză in navy tiles, over four white cards with round icons"),
+            shot("vizimel", "conditions", "Afecțiuni oculare: two paragraphs and three cards with yellow round icons, Degenerescența maculară, Retinopatia diabetică and Oboseala oculară digitală")
+          ],
+          cap: "The yellow band with its four cards, and the eye conditions"
+        }
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["The", "formula"],
+      text: "The formula, the way the site lays it out. “Fiecare ingredient cu rol precis” puts five cards in a row, each with a small icon, its dose in a navy pill, the name, its role in a word or two, a short paragraph and an “Află mai multe” link. “Mod de utilizare” gives the dose in one line beside a drawn tablet: “1 comprimat pe zi, preferabil în timpul mesei”. “Avantajele formulei VIZIMEL®” follows in four tiles, each with a yellow tick.",
+      deliverables: ["Ingredient cards", "Usage", "Benefit tiles"],
+      media: [
+        shot("vizimel", "ingredients", "Fiecare ingredient cu rol precis: five cards with yellow top edges, Luteină, Mezo-zeaxantină, Zeaxantină, Vitamina D and Vitamina B2, each with an icon and its dose in a navy pill", "Five ingredients, five cards, each with its dose"),
+        shot("vizimel", "advantages", "Avantajele formulei VIZIMEL®: four grey tiles with yellow ticks, Protecție antioxidantă completă, Susținerea pigmentului macular, Reducerea oboselii oculare and Suport pentru vedere pe termen lung, and a Descoperă mai multe button", "Four benefits, one tick each")
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["On a", "phone"],
+      text: "On a phone the hero stacks the line, the box, the paragraph, the pills and both buttons. The cards fall into one column, the ingredient cards keep their dose pills top right, and the benefit tiles stack under a yellow underline.",
+      deliverables: ["Mobile layout", "One column"],
+      media: [
+        {
+          rail: ["Four", "screens"],
+          items: [
+            shot("vizimel", "phone-hero", "The first screen on a phone: the Vizimel logo, the menu icon, the line, the navy box and the start of the paragraph"),
+            shot("vizimel", "phone-mechanisms", "The yellow band on a phone with Fără gluten and Fără lactoză, and the first cards below it"),
+            shot("vizimel", "phone-ingredients", "Fiecare ingredient cu rol precis on a phone: the Luteină card with its 24 mg pill"),
+            shot("vizimel", "phone-advantages", "Avantajele formulei VIZIMEL® on a phone: four tiles with yellow ticks, one under another")
+          ],
+          cap: "The hero, the yellow band, the ingredients and the benefits, at 390 px wide"
+        }
+      ]
+    },
+    ...spotChapter("vizimel")
+  ],
+  result: {
+    text: "A formula with long names, made readable: one card per ingredient, in the navy and yellow of the box."
+  },
+  related: RELATED
+};
+
+export const OCHISAN = {
+  slug: "ochisan",
+  name: "OchiSan",
+  tagline: "ochisan.ro: an eyelid ointment's product site, built from rounded tiles in lilac and white.",
+  desc: "OchiSan: ochisan.ro, the product site for an eyelid ointment, explaining the stye and the chalazion before the tube, on desktop and phone. By Cromatic Studios, Bucharest.",
+  title: "Comfort for the eyelids.",
+  accent: { bg: "#B57DB7", fg: "#ffffff", ink: "#7a3f7d" },
+  info: ["Eyelid ointment, OchiSan", "Romania · Zdrovit portfolio", "Product site, desktop and mobile"],
+  cover: { img: m("ochisan/hero") },
+  og: m("ochisan/hero"),
+  hero: { img: m("ochisan/hero"), alt: "ochisan.ro in a browser window and on a phone: a lilac menu bar, a grid of rounded tiles with eyes and the OCHI SAN logo, and the line Pentru confortul ochilor tăi" },
+  problem: {
+    h: "Two conditions that look alike",
+    p: [
+      "OchiSan is a medical device from Zdrovit: an ointment for the eyelids that, in the site's words, “nu conține conservanți”. The site says what it is for: it “ajută la ameliorarea simptomelor precum mâncărimea pielii pleoapelor, durerea și inflamarea acestora legate de apariția orjeletului extern și a șalazionului”.",
+      "The two look alike. The site gives the stye its everyday name, ulcior, and warns that a stye can turn into a chalazion if the infection lasts.",
+      "So the page explains both conditions before it shows the <strong>tube</strong>."
+    ]
+  },
+  solution: {
+    h: "Rounded tiles, lilac and white",
+    p: "The page is built from rounded tiles, like the logo: some filled in lilac, some outlined in a thin line, the photos cut to the same corners. The stye gets its own block, then its causes, its two kinds and a warning, then the chalazion in the same system. Only then come the tube, its three ingredients and three drawn steps for using it.",
+    stat: "3",
+    statText: "drawn steps for using the ointment, one tile each, from cleaning the eyelid to the direction of the massage"
+  },
+  chapters: [
+    {
+      pillar: "product",
+      pills: ["Two", "conditions"],
+      text: "A lilac bar holds the menu: Orjelet, Șalazion, OchiSan®, Comandă, Contact. The hero is a grid of rounded tiles, a plain lilac one, a blue eye, two faces split down the middle and the OCHI SAN logo, beside the line “Pentru confortul ochilor tăi”. A drawn woman rubbing her eye opens the explanation. Then “ORJELET” in large white capitals over a photo of a stye, its causes, its two kinds, Extern and Intern, and a warning with a large exclamation mark. “ȘALAZION” follows in the same tiles.",
+      deliverables: ["Product site", "UX/UI design", "Desktop and mobile", "Navigation"],
+      media: [
+        siteBlock("ochisan", "ochisan.ro", { head: ["The", "product site"], cap: "ochisan.ro from the first screen to the footer, on desktop and phone." }),
+        {
+          rail: ["Section by", "section"],
+          items: [
+            shot("ochisan", "stye", "ORJELET in large white capitals over a photo of an eye with a stye on the lower lid, beside three rounded text tiles, one filled in lilac"),
+            shot("ochisan", "chalazion", "ȘALAZION in large white capitals over a photo of a closed eyelid, three text tiles on the left and three more below, Extern among them")
+          ],
+          cap: "The stye and the chalazion, in the same rounded tiles"
+        }
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["The", "ointment"],
+      text: "The product, the way the site brings it in. A full-width lilac band sets the OchiSan box beside its description and a “Cumpără” button. “Formula inovatoare a trei ingrediente conținute în unguent” shows each ingredient in a photo tile with a lilac label: ulei de Manuka, miere de Manuka, extract uleios organic de scorțișoară. “Instrucțiuni de utilizare” draws the use in three numbered tiles, a woman in fine line in each: cleaning the eyelid, a little ointment, and the direction of the massage.",
+      deliverables: ["Product band", "Ingredients", "Illustrated instructions"],
+      media: [
+        shot("ochisan", "product", "A lilac band with the OchiSan box, unguent pentru utilizare pe pleoape, fără conservanți, the product text and a Cumpără button", "The box, on a lilac band of its own"),
+        shot("ochisan", "ingredients", "Formula inovatoare a trei ingrediente: three rounded photo tiles, Manuka flowers, a honey dipper over a jar of Manuka honey and cinnamon sticks, each with a lilac label", "Three ingredients, three photo tiles"),
+        shot("ochisan", "steps", "Instrucțiuni de utilizare: three numbered outlined tiles, each with a line drawing of a woman's face, cleaning the eyelid, applying the ointment and the direction of the massage", "Three steps, drawn in a fine line")
+      ]
+    },
+    {
+      pillar: "product",
+      pills: ["On a", "phone"],
+      text: "On a phone the menu folds into a lilac bar with one icon, and the tile grid of the hero sits above the line. Each condition becomes a column of tiles, the Extern and Intern cards show a photo of each kind, and the three steps stack in their outlined tiles.",
+      deliverables: ["Mobile layout", "One column"],
+      media: [
+        {
+          rail: ["Four", "screens"],
+          items: [
+            shot("ochisan", "phone-hero", "The first screen on a phone: the lilac menu bar, the tile grid with the OCHI SAN logo and the line Pentru confortul ochilor tăi"),
+            shot("ochisan", "phone-stye", "ORJELET on a phone: the photo of the stye and the first text tiles below it"),
+            shot("ochisan", "phone-types", "Extern on a phone: the line, a photo of an external stye and the paragraph, Intern starting on lilac below"),
+            shot("ochisan", "phone-steps", "Instrucțiuni de utilizare on a phone: the numbered tiles with their line drawings, one under another")
+          ],
+          cap: "The hero, the stye, its two kinds and the steps, at 390 px wide"
+        }
+      ]
+    },
+    ...spotChapter("ochisan")
+  ],
+  result: {
+    text: "Two conditions explained first, then the tube: an eyelid ointment's page in rounded lilac tiles."
+  },
+  related: RELATED
+};
+
+// The Lacalut website chapter (the order log's "Website Lacalut"): lacalut.ro, the home page as it stands now, one more
+// chapter at the end of the Lacalut page (specs260-zdrovit.mjs adds it after the LG chapters, which stay as they are).
+// The site's older product sub-sites (/white/, /aktiv/, /kids/ ...) are another design and are not shown.
+const lw = (n, alt, cap) => shot("lacalut", n, alt, cap);
+export const LACALUT_WEB = {
+  pillar: "product",
+  pills: ["The", "website"],
+  text: "lacalut.ro brings the whole range onto one page. A red bar holds the menu, two ways into the same products: Produse, by kind, and Îngrijire orală, by need, each need pointing to its line, from “Gingii sănătoase” to LACALUT® aktiv, down to “COPII” and LACALUT® KIDS. The page opens on “Experiență de peste 100 de ani în îngrijirea orală” beside a family photo. Then the products, in red bands: Pastă de dinți, with the new LACALUT® PURE in a frame of its own, Apă de gură, Cremă adezivă, Accesorii. Every product sits on the same grey card, the need in blue above the name in red. “Gama pentru copii” closes the page on a white field of drawn teeth, tubes and brushes.",
+  deliverables: ["Website", "UX/UI design", "Desktop and mobile", "Navigation"],
+  media: [
+    siteBlock("lacalut", "lacalut.ro", { name: "web-scroll", head: ["The", "home page"], cap: "lacalut.ro from the first screen to the footer, on desktop and phone." }),
+    {
+      rail: ["Section by", "section"],
+      items: [
+        lw("web-menu", "The Îngrijire orală menu open: nine needs, each with an arrow to its line, from Gingii sănătoase to LACALUT® aktiv to COPII to LACALUT® KIDS"),
+        lw("web-pure", "PRODUSE, then the red Pastă de dinți band and LACALUT® PURE in a red frame marked NOU: three tubes, Herbal, White and Calcium, on grey cards"),
+        lw("web-range", "The toothpastes: LACALUT® aktiv on a wide card, then six cards in a grid, sensitive, white, protecție anticarie, flora, multi-effect and black & white"),
+        lw("web-kids", "Gama pentru copii: a boy brushing his teeth beside the logo, on a white field of drawn teeth and tubes, then LACALUT® Baby, 0-2 years, with its toothpaste and brushes")
+      ],
+      cap: "The menu by need, LACALUT® PURE, the toothpastes and the children's range"
+    },
+    {
+      rail: ["Four", "screens"],
+      items: [
+        lw("web-phone-hero", "The first screen on a phone: the logo, the menu icon, the line in red and black and the family photo"),
+        lw("web-phone-pure", "PRODUSE on a phone: the Pastă de dinți band, a Comandă acum button and the LACALUT® PURE frame"),
+        lw("web-phone-mouthwash", "Apă de gură on a phone: four bottles of LACALUT® apă micelară on a grey card"),
+        lw("web-phone-kids", "Gama pentru copii on a phone: the boy with his toothbrush, the logo and LACALUT® Baby")
+      ],
+      cap: "The first screen, the toothpastes, the mouthwashes and the children's range, at 390 px wide"
+    }
+  ]
+};
+
+// every Zdrovit brand page of the second half, in the order they were made
+export const ZDROVIT_WEB_B = [PREVOMIT, SLABOFICAT, SUPRAMAX, VIZIK, VIZIMEL, OCHISAN];
