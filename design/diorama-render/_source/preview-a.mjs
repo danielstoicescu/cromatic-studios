@@ -1,4 +1,5 @@
-// Cromatic · diorama renders (TASK-118): the diorama preview of story A's first four shots, with the real cards on top.
+// Cromatic · diorama renders (TASK-118): story A7 (A in diorama, all of it) or the A preview: the diorama frames with the
+// real cards on top. A7: node _source/preview-a.mjs <outDir> a7   (frames in out/a7 at 2x, scaled to 1080 here)
 // The cards are Iris's and Lia's (design/stories/cards, read from the stories-lottie worktree, untouched): built into a
 // cards-only Lottie on A6's spans, drawn by lottie-web's canvas renderer on a transparent page, frame by frame (every
 // other frame of the 60 fps Lottie), then laid over the diorama frames (out/a6d/<shot>-NNNN.png), encoded.
@@ -9,18 +10,21 @@ import { spawnSync } from "child_process";
 import pw from "/Users/daniel.stoic/node_modules/playwright/index.mjs";
 import sharp from "/Users/daniel.stoic/cromatic-drive/node_modules/sharp/lib/index.js";
 const STL = "/Users/daniel.stoic/cromatic-stories-lottie", HERE = path.resolve(new URL("..", import.meta.url).pathname);
-const OUT = process.argv[2] || "/Users/daniel.stoic/cromatic-ops/refs/diorama-render/preview-a";
+const OUT = process.argv[2] || "/Users/daniel.stoic/cromatic-ops/refs/diorama-render/preview-a", A7 = process.argv[3] === "a7", SRC = path.join(HERE, A7 ? "out/a7" : "out/a6d");
 const FF = "/Users/daniel.stoic/node_modules/@ffmpeg-installer/darwin-arm64/ffmpeg";
 const { Comp } = await import(`${STL}/design/lottie-ui/_source/lib/ui.mjs`);
 const { loadCards, drawCard } = await import(`${STL}/design/stories/cards/cards.mjs`);
-const SP = { over: [0, 152], steam: [152, 268], oma: [268, 402], scf: [402, 516] }, F = 516;
+const SP = A7 ? { over: [0, 152], steam: [152, 268], oma: [268, 402], scf: [402, 516], drive: [516, 858], end: [830, 960] } : { over: [0, 152], steam: [152, 268], oma: [268, 402], scf: [402, 516] }, F = A7 ? 960 : 516;
 const KC = await loadCards();
-const card = (id) => { const { __T, ...src } = KC.card(id), c = JSON.parse(JSON.stringify(src)); c.__T = KC.T; return c; };
+const card = (id, t) => { const { __T, ...src } = KC.card(id), c = JSON.parse(JSON.stringify(src)); c.__T = KC.T; if (t) Object.assign(c.timing.cues, t); return c; };
 const Cm = new Comp({ w: 1080, h: 1920, dur: F / 60, nm: "story A in diorama · the cards" });
+// (as buildA-v6.mjs: the end card first, then the words; a3 out at drive+116, the address in at end-30)
+if (A7) drawCard(Cm, card("a4-end", { urlIn: "end-30" }), SP);
 for (const id of ["a1-website", "a2-brand"]) drawCard(Cm, card(id), SP);
+if (A7) drawCard(Cm, card("a3-drive", { out: "drive+116" }), SP);
 const J = Cm.json();
-fs.mkdirSync(path.join(HERE, "out/a6d/cards"), { recursive: true });
-fs.writeFileSync(path.join(HERE, "out/a6d/cards.json"), JSON.stringify(J));
+fs.mkdirSync(path.join(SRC, "cards"), { recursive: true });
+fs.writeFileSync(path.join(SRC, "cards.json"), JSON.stringify(J));
 console.log("cards", J.layers.length, "layers,", (J.assets || []).length, "assets");
 // the cards, transparent, 30 fps
 const br = await pw.chromium.launch({ args: ["--use-angle=metal", "--ignore-gpu-blocklist"] });
@@ -29,18 +33,19 @@ await p.route("http://cards.local/**", (r) => { const u = new URL(r.request().ur
 await p.goto("http://cards.local/");
 await p.waitForFunction(() => window.ready, null, { timeout: 60000 }); await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(300);
 const n = F / 2;
-for (let i = 0; i < n; i++) { await p.evaluate((f) => window.go(f), i * 2); await p.screenshot({ path: path.join(HERE, `out/a6d/cards/c${String(i).padStart(4, "0")}.png`), omitBackground: true }); }
+for (let i = 0; i < n; i++) { await p.evaluate((f) => window.go(f), i * 2); await p.screenshot({ path: path.join(SRC, `cards/c${String(i).padStart(4, "0")}.png`), omitBackground: true }); }
 await br.close();
 // over the diorama frames
-const shots = [["over", 76], ["steam", 58], ["oma", 67], ["scf", 57]], comp = path.join(HERE, "out/a6d/comp");
+const shots = [["over", 76], ["steam", 58], ["oma", 67], ["scf", 57], ...(A7 ? [["drive", 171], ["black", 51]] : [])], comp = path.join(SRC, "comp");
 fs.mkdirSync(comp, { recursive: true });
 let k = 0;
 for (const [s, cnt] of shots) for (let i = 0; i < cnt; i++, k++) {
-  const base = path.join(HERE, `out/a6d/${s}-${String(i).padStart(4, "0")}.png`), c = path.join(HERE, `out/a6d/cards/c${String(k).padStart(4, "0")}.png`);
-  await sharp(base).composite(fs.existsSync(c) ? [{ input: c }] : []).png().toFile(path.join(comp, `f${String(k).padStart(4, "0")}.png`));
+  const base = s === "black" ? sharp({ create: { width: 1080, height: 1920, channels: 3, background: "#000000" } }).png() : sharp(path.join(SRC, `${s}-${String(i).padStart(4, "0")}.png`)).resize(1080, 1920, { kernel: "lanczos3" });
+  const c = path.join(SRC, `cards/c${String(k).padStart(4, "0")}.png`), under = await base.png().toBuffer();
+  await sharp(under).composite(fs.existsSync(c) ? [{ input: c }] : []).png().toFile(path.join(comp, `f${String(k).padStart(4, "0")}.png`));
 }
 fs.mkdirSync(OUT, { recursive: true });
-const mp4 = path.join(OUT, "a6-diorama-draft.mp4");
+const mp4 = path.join(OUT, A7 ? "story-a7-en.mp4" : "a6-diorama-draft.mp4");
 const r = spawnSync(FF, ["-y", "-v", "error", "-framerate", "30", "-i", path.join(comp, "f%04d.png"), "-c:v", "libx264", "-preset", "slow", "-crf", "16", "-pix_fmt", "yuv420p", "-profile:v", "high", "-movflags", "+faststart", mp4], { stdio: "inherit" });
 if (r.status) process.exit(r.status);
 // the contact sheet: every 8th frame, 270 x 480 tiles, the shot's name under each row's first
