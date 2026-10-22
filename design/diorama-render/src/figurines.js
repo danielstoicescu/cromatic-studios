@@ -92,13 +92,18 @@ export function figurine(K, o = {}) {
   const head = joint("head", neck, 0, 1.45, 0.1);
   ball(1.72, skin, head, 0, 1.75, 0, 0.86, 1.06, 0.98, 22);
   ball(1.2, skin, head, 0, 0.95, 0.38, 0.86, 0.85, 0.92, 18); // the jaw
-  const nose = mesh(new K.ConeGeometry(0.26, 0.62, 8), skin, head, 0, 1.55, 1.68); nose.rotation.x = Math.PI / 2;
+  // the face, sculpted then painted (a 1:22 figure's, not a 1:87's): a nose with a bridge, cheekbones, lips, a chin,
+  // the eyes painted white with a dark iris, the brows
+  { const n = ball(1, skin, head, 0, 1.5, 1.62, 0.3, 0.46, 0.4, 12); n.rotation.x = -0.25; ball(1, skin, head, 0, 1.92, 1.52, 0.2, 0.42, 0.22, 10); }
+  for (const sd of [-1, 1]) ball(1, skin, head, sd * 0.78, 1.38, 1.18, 0.42, 0.34, 0.36, 10);
+  ball(1, skin, head, 0, 0.52, 1.02, 0.5, 0.32, 0.34, 10);
   for (const sd of [-1, 1]) {
     ball(1, skin, head, sd * 1.5, 1.6, 0.05, 0.22, 0.42, 0.32, 10); // ears
-    ball(0.13, M("#1d1a1a", 0.3), head, sd * 0.55, 1.95, 1.52, 1, 0.8, 0.6, 8); // eyes
+    ball(1, M("#f4efe6", 0.35), head, sd * 0.55, 1.95, 1.44, 0.26, 0.17, 0.12, 10); // the eyes: white, the iris over it
+    ball(1, M(o.eyes || "#2a1d16", 0.25), head, sd * 0.55, 1.94, 1.54, 0.12, 0.13, 0.06, 8);
     const brow = mesh(new K.BoxGeometry(0.62, 0.13, 0.2), hairM, head, sd * 0.56, 2.32, 1.55); brow.rotation.z = sd * -0.08;
   }
-  const mouth = mesh(new K.BoxGeometry(0.62, 0.1, 0.15), M("#9a4b45", 0.5), head, 0, 0.95, 1.5);
+  { const lip = M(o.lips || (f ? "#b4544e" : "#9e5a50"), 0.45); const u = mesh(new K.CapsuleGeometry(0.11, 0.42, 4, 8), lip, head, 0, 1.02, 1.42); u.rotation.z = Math.PI / 2; const l = mesh(new K.CapsuleGeometry(0.12, 0.36, 4, 8), lip, head, 0, 0.86, 1.38); l.rotation.z = Math.PI / 2; }
   if (o.glasses) { for (const sd of [-1, 1]) { const gl = mesh(new K.TorusGeometry(0.36, 0.06, 6, 14), M("#1b1b1b", 0.3), head, sd * 0.56, 1.95, 1.66); } mesh(new K.BoxGeometry(0.4, 0.06, 0.06), M("#1b1b1b", 0.3), head, 0, 1.98, 1.68); }
   const hs = o.hairStyle || (f ? "bob" : "short");
   if (hs !== "bald") {
@@ -125,8 +130,10 @@ export function figurine(K, o = {}) {
     const fore = limb(el, 4.4, 0.86, 0.62, o.shortSleeves && !jackM ? skin : sleeveM);
     if (!o.shortSleeves || jackM) { const cuff = new K.CylinderGeometry(0.66, 0.66, 0.5, 12, 1, true); mesh(cuff, skin, el, 0, -4.4, 0); }
     const hand = joint(side < 0 ? "handL" : "handR", el, 0, -4.9, 0.05);
-    ball(0.62, skin, hand, 0, -0.35, 0, 0.82, 1.15, 0.5, 12);
-    const th = mesh(new K.CapsuleGeometry(0.18, 0.55, 4, 8), skin, hand, side * -0.45, -0.1, 0.25); th.rotation.z = side * 0.5;
+    // a hand: the palm, four fingers a little curled, the thumb across
+    ball(0.6, skin, hand, 0, -0.25, 0, 0.8, 0.85, 0.42, 12);
+    for (let k = 0; k < 4; k++) { const fx = (k - 1.5) * 0.24, fl = [0.62, 0.72, 0.68, 0.52][k]; const fg = mesh(new K.CapsuleGeometry(0.105, fl, 4, 8), skin, hand, fx, -0.78 - fl / 2, 0.06); fg.rotation.x = 0.28; }
+    const th = mesh(new K.CapsuleGeometry(0.13, 0.5, 4, 8), skin, hand, side * -0.42, -0.35, 0.22); th.rotation.z = side * 0.65; th.rotation.x = 0.4;
   }
   // ---- what they hold
   const cupM = M("#f6f1e8", 0.3);

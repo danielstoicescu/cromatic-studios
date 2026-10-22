@@ -98,7 +98,9 @@ export function buildOmaSet(ctx, o = {}) {
     inner.add(L); lights.push(L);
   }
   // a soft fill from just inside the glass, back into the room (the faces of the figurines, not only their backs)
-  { const F = new K.PointLight("#ffd2a0", (o.lampI ?? 900) * 0.45, 120, 2); F.position.set(4, 40, 17); F.castShadow = false; inner.add(F); lights.push(F); }
+  { const F = new K.PointLight("#ffd2a0", (o.lampI ?? 900) * 0.8, 120, 2); F.position.set(4, 40, 17); F.castShadow = false; inner.add(F); lights.push(F); }
+  // and a low key from the left arch's side, on the figurines' faces (the barista, the customer, the table)
+  { const F = new K.PointLight("#ffe0b8", (o.lampI ?? 900) * 0.5, 90, 2); F.position.set(-12, 26, 16); F.castShadow = false; inner.add(F); lights.push(F); }
   // the floor upstairs is lived in: its two small windows warm behind their curtains
   oma.traverse((c) => { if (c.isMesh && c.geometry.type === "BoxGeometry" && Math.abs(c.geometry.parameters.width - 9.6) < 0.01 && Math.abs(c.geometry.parameters.height - 6.8) < 0.01) { const m = c.material.clone(); m.color.set("#3a2a20"); m.emissive = new K.Color("#ff9a4a"); m.emissiveIntensity = 0.5; m.metalness = 0; m.roughness = 0.8; undo.push([c, c.material]); c.material = m; } });
   // ---- the figurines (each posed once; local +z faces the street; the street's lens is out at local (-190, 256))
