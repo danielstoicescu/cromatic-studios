@@ -90,7 +90,7 @@ function mapTag(name, parent, at, zoom, tIn, tOut, right = false) {
 // them; three place cards open one after another over their pins; as the camera falls they go, Steam's last
 const PIN_IDS = ["steam", "berero", "yoshi", "artisan", "scf", "sip", "oma", "tac"], CARD_SEQ = [["berero", 36], ["scf", 92], ["yoshi", 148]];
 function pinsAndCards() {
-  const D5 = S.d5, PS = 0.4, CS = 0.5;
+  const D5 = S.d5, PS = 0.62, CS = 0.26;
   const at = (shot, i, id) => { const q = D5.pinsAt[shot]?.[i]?.[id]; return q ? [q[0] / 2, q[1] / 2, q[2]] : null; };
   // a story frame (60) -> [shot, capture index]
   const where = (f) => (f < T2.zoom[0] ? ["bird", Math.round((f - T2.bird[0]) / 2)] : ["zoom", Math.min(D5.pinsAt.zoom.length - 1, Math.round((f - T2.zoom[0]) / 2))]);
@@ -99,7 +99,9 @@ function pinsAndCards() {
   CARD_SEQ.forEach(([id, d], n) => {
     const C0 = D5.cards[id], P0 = D5.pins[id]; if (!C0 || !P0) return;
     const tIn = a + d, tOut = n < CARD_SEQ.length - 1 ? a + CARD_SEQ[n + 1][1] - 4 : b0 - 6, w = C0.w * CS, h = C0.h * CS, lift = P0.anchor[1] * PS + 24;
-    const k = bake(tIn, tOut + 14, (f) => { const [sh, i] = where(f), q = at(sh, i, id) || [W / 2, H * 0.7]; return { p: [clamp(q[0], 70 + w / 2, W - 70 - w / 2), Math.max(760 + h, q[1] - lift)] }; }, 2);
+    // (the card low in the frame, where the map's sheet would open, leaning towards its pin; the pin answers with a ring)
+    const k = bake(tIn, tOut + 14, (f) => { const [sh, i] = where(f), q = at(sh, i, id) || [W / 2, H * 0.7]; return { p: [clamp(lerp(W / 2, q[0], 0.35), 90 + w / 2, W - 90 - w / 2), 1560] }; }, 2);
+    { const [sh, i] = where(tIn), q = at(sh, i, id); if (q) Cm.shape(`pin ring · ${id}`, [group("ring", [ellipse([120, 120], [0, 0]), stroke(rgb("#ffffff"), [[tIn, 8, E.out], [tIn + 22, 1]], [[tIn, 95, E.linear], [tIn + 22, 0]])], { s: [[tIn, [40, 40], E.out], [tIn + 22, [260, 260]]] })], { ip: tIn, op: tIn + 23, ks: { p: [q[0], q[1]] } }); }
     const cn = Cm.nul(`card · ${id} · place`, { ip: tIn, op: tOut + 15, ks: { p: k.p } });
     const L = img(C0.img, cn, { ip: tIn, op: tOut + 14, p: [0, 0], nm: `place card · ${id}` });
     const sK = [[tIn, [100 * CS * 0.6, 100 * CS * 0.6], [0.34, 1.56, 0.64, 1]], [tIn + 18, [100 * CS, 100 * CS], E.hold], [tOut, [100 * CS, 100 * CS], [0.7, 0, 0.84, 0]], [tOut + 12, [100 * CS * 0.5, 100 * CS * 0.5]]], oK = [[tIn, 0, E.linear], [tIn + 5, 100, E.hold], [tOut + 6, 100, E.linear], [tOut + 12, 0]];
@@ -109,11 +111,13 @@ function pinsAndCards() {
   const pinLayers = [];
   PIN_IDS.forEach((id, n) => {
     const P0 = D5.pins[id]; if (!P0) return;
-    const tIn = a + 10 + n * 7, tOut = id === "steam" ? b0 + 120 : b0 + 14 + n * 2, end = tOut + 12;
+    let tIn = a + 10 + n * 7; const tOut = id === "steam" ? b0 + 120 : b0 + 14 + n * 2, end = tOut + 12;
+    const onScreen = (f) => { const [sh, i] = where(f), q = at(sh, i, id); return q && q[2] < 1 && q[0] > -200 && q[0] < W + 200 && q[1] > 200 && q[1] < H - 240; };
+    // (Steam's pin is off the frame from high: it lands as the move down brings it in)
+    if (id === "steam") { let f = a; while (f < tOut && !onScreen(f)) f += 2; if (f >= tOut - 20) return; tIn = Math.max(tIn, f); }
+    else if (!onScreen(tIn + 20)) return;
     // (where it is, every 2 frames; off the frame or behind: it stays where it was last seen, hidden)
     const k = bake(tIn, end, (f) => { const [sh, i] = where(f), q = at(sh, i, id); return { p: q ? [q[0], q[1]] : [-999, -999] }; }, 2);
-    const onScreen = (f) => { const [sh, i] = where(f), q = at(sh, i, id); return q && q[2] < 1 && q[0] > -200 && q[0] < W + 200 && q[1] > 200 && q[1] < H - 240; };
-    if (!onScreen(tIn + 20)) return;
     const pn = Cm.nul(`pin · ${id} · place`, { ip: tIn, op: end + 1, ks: { p: k.p } });
     const L = img(P0.img, pn, { ip: tIn, op: end, p: [0, 0], nm: `pin · ${id}` });
     L.ks.a = prop(P0.anchor); L.ks.s = prop([[tIn, [0, 0], [0.34, 1.56, 0.64, 1]], [tIn + 16, [100 * PS, 100 * PS], E.hold], [tOut, [100 * PS, 100 * PS], [0.7, 0, 0.84, 0]], [end, [0, 0]]]);
@@ -139,7 +143,7 @@ function story() {
   }, WV);
   N.r1 = rideCam("r1", { inDir: [-1, 0], snap: 1.0, push: 1.06 });
   N.r2 = rideCam("r2", { snap: 1.12, r0: -5, r1: -2, dolly: [150, -150], sn: 12 });
-  N.r4 = rideCam("r4", { snap: 1.3, sn: 10, push: 1.03, outDir: [-1, 0] });
+  N.r4 = rideCam("r4", { snap: 1.06, sn: 14, push: 1.05, outDir: [-1, 0] });
   N.r5 = rideCam("r5", { inDir: [-1, 0], snap: 1.0, push: 1.05, r0: 0, r1: 8 });
   N.sip = rideCam("sip", { snap: 1.08, push: 1.1, r0: -4, r1: 6 });
   N.r8 = rideCam("r8", { snap: 1.25, sn: 10, push: 1.03, shake: 7 });
@@ -159,7 +163,7 @@ function story() {
   clip(drawCard(Cm, card("d16-map"), T2), "bird");
   clip(drawCard(Cm, card("d3-knock"), T2), "steam");
   clip(drawCard(Cm, card("d4-come-in"), T2), "page");
-  for (const [id, shot] of [["d5-drive", "r1"], ["d6-snoop", "r2"], ["d7-overtake", "r3"], ["d8-pass-go", "r4"], ["d9-fly-high", "r5"], ["d10-sip", "sip"], ["d11-pulled-over", "r8"], ["d12-dive", "r9"], ["d17-around", "fount"]]) clip(drawCard(Cm, card(id), T2), shot);
+  for (const [id, shot] of [["d5-drive", "r1"], ["d6-snoop", "r2"], ["d7-overtake", "r3"], ["d18-pass-go", "r4"], ["d9-fly-high", "r5"], ["d10-sip", "sip"], ["d11-pulled-over", "r8"], ["d12-dive", "r9"], ["d17-around", "fount"]]) clip(drawCard(Cm, card(id), T2), shot);
   // ---------- 4c (D5) · the page closes into its pill (the site's own close: the opening backwards), onto the street.
   // Its last frame (the real scroll under the Lottie stops on "Ne știm de la Steam") is the picture the pill closes on.
   {
@@ -273,7 +277,8 @@ function story() {
     smearLayer(id, a, null); plate(id);
   }
   // r4 · the chrome racer under the Court's lights (Pass Go., slower)
-  { const id = "r4", [a, b] = T2[id]; ride(id); smearLayer(id, null, b, "h"); plate(id); }
+  // (D5: The Aesthetic Court as the one-day pop-up, Ilinca's TASK-114: the plate with the racer in it, a slow push)
+  { const id = "r4"; img("d5-r4-L0", N[id], { ip: T2[id][0], op: T2[id][1], nm: "r4 · the pop-up, the racer" }); }
   // r3 · Overtake. (v3): head on down Fintech Boulevard at night, the yellow ride steady, the F1 up behind it, out and
   // past it: each car frame by frame, the nearer one on top in each frame
   {

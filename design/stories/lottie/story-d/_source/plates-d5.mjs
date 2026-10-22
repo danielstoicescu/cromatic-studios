@@ -53,6 +53,9 @@ for (const id of Object.keys(ui.pins)) {
 }
 const cards = {};
 for (const id of Object.keys(ui.cards)) { const nm = `d5-card-${id}`, src = `${UI}/card-${id}.png`, m = await sharp(src).metadata(); await sharp(src).webp({ quality: 90, alphaQuality: 100 }).toFile(`${IMG}/${nm}.webp`); meta[nm] = { file: nm + ".webp", x: 0, y: 0, w: m.width, h: m.height }; cards[id] = { img: nm, w: m.width, h: m.height }; }
+// Pass Go. at The Aesthetic Court's pop-up (Ilinca's TASK-114, tac-popup-114 with the stories' render hook, a scratch
+// build): one plate at 2x with the chrome racer parked in it (j-tac in the harness; the file made by hand from it)
+if (fs.existsSync(`${IMG}/d5-r4-L0.webp`)) meta["d5-r4-L0"] = { file: "d5-r4-L0.webp", x: 0, y: 0, w: 2160, h: 3840 };
 const stp = JSON.parse(fs.readFileSync(`${STEAM}/plan.json`, "utf8"));
 nums.d5 = { frames, pins, cards, pinsAt: { bird: J.bird && J.bird.pins, zoom: J.zoom && J.zoom.pins, steam: J.steam && J.steam.pins }, steamPlan: stp };
 fs.writeFileSync(path.join(here, "platesD5.json"), JSON.stringify({ plates: meta, shots: nums }));

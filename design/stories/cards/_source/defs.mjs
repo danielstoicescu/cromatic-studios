@@ -206,8 +206,9 @@ export const CARDS = [
   {
     id: "d16-map", story: "D", beat: "Every brand / in our portfolio / is on this + [map.] (Daniel's line; the bird's eye with the map's pins and place cards)", shots: ["bird"], scene: "the city from high (light): the yellow aplat carries it", ink: "ink",
     blocks: [
-      { id: "d16", place: "tl", aplat: { fill: Y }, lines: [{ text: "Every brand", style: "title" }, { text: "in our portfolio", style: "title" }, { text: "is on this", style: "title" }] },
-      { id: "d16-word", attach: { to: "d16", dx: 40, gap: -40 }, lines: [{ text: "", style: "title", pill: { words: ["map."], fill: WH } }] }
+      // (line size: the block stays small over the city, the pins show round it)
+      { id: "d16", place: "tl", aplat: { fill: Y }, lines: [{ text: "Every brand", style: "line" }, { text: "in our portfolio", style: "line" }, { text: "is on this", style: "line" }] },
+      { id: "d16-word", attach: { to: "d16", dx: 36, gap: -34 }, lines: [{ text: "", style: "line", pill: { words: ["map."], fill: WH } }] }
     ],
     timing: { in: "bird+6", lineStagger: 6, pillIn: "bird+30", out: "bird.end-10" }, mocks: [{ state: 0, at: "bird+80" }]
   },
@@ -216,6 +217,7 @@ export const CARDS = [
     blocks: [{ id: "d17", place: { x: 900, align: "right", base: 1480 }, lines: [{ text: "See you", style: "headline" }, { text: "around.", style: "headline" }] }],
     timing: { in: "fount+8", lineStagger: 6, out: "fount.end-10" }, mocks: [{ state: 0, at: "fount+60" }]
   },
+  { id: "d18-pass-go", story: "D", beat: "Pass Go. (D5: top left, in the night sky over the pop-up; the racer fills the bottom)", shots: ["r4"], scene: "night, the Court's pop-up", ink: "paper", blocks: [{ id: "d18", place: "tl", lines: [{ text: "Pass Go.", style: "headline" }] }], timing: { in: "r4+2", out: "r4.end-8" } },
   /* ============================== story B5 (Lia, from Iris's system) ============================== */
   {
     id: "b1-street", story: "B", beat: "Same street. / New [lights.] -> [tide.] -> [lap.] -> [paper.] -> [bloom.] -> [rules.] -> [ink.] -> [magic.] (one card over the nine worlds, on the plaza)", shots: ["monument", "nightlife", "underwater", "circuit", "sketch", "orchid", "gta2", "riso", "ghibli"], scene: "any world (Sketchbook is white): the yellow aplat carries it", ink: "ink",
