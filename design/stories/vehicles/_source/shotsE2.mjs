@@ -13,7 +13,7 @@ export const SEQ = [
   { id: "chrome", ride: "monopoly", dur: 45, a: [0.42, 1.04], on: true },
   { id: "scooter", ride: "scooter", dur: 66, a: [0.86, 0.94], on: true, petals: true }, // (all but still: the petals do the moving)
   { id: "rush", ride: "dacia1300", dur: 60, on: true, kind: "pass" }, // (the 1300 through the frame, the Patrol up behind it)
-  { id: "patrol", ride: "cop", dur: 60, a: [1.3, 1.05], on: true, kind: "follow" },
+  { id: "patrol", ride: "cop", dur: 60, a: [1.3, 1.05], ty: 8, on: true, kind: "follow" }, // (a little higher: the lines under it)
   // (not in Daniel's E2 sequence; kept, with their E1 lines, to come back)
   { id: "f1", ride: "f1", dur: 45, a: [0.42, 1.04], on: false },
   { id: "foodvan", ride: "foodvan", dur: 45, a: [0.42, 1.04], on: false },

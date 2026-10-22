@@ -68,7 +68,7 @@ for (const s of SHOTS) {
   let box = null;
   for (let i = 0; i < n; i++) {
     const u = n > 1 ? i / (n - 1) : 0, a = s.a[0] + (s.a[1] - s.a[0]) * (s.kind === "follow" ? u * u * (3 - 2 * u) : u);
-    await p.evaluate(({ a, i, follow }) => { window.__turn.a = a; if (follow) { window.__turn.dx = 0.5 * Math.sin(i * 0.21); window.__turn.ty = 14 + 0.35 * Math.sin(i * 0.37); } }, { a, i, follow: s.kind === "follow" }); await frame();
+    await p.evaluate(({ a, i, follow, ty }) => { window.__turn.a = a; if (follow) { window.__turn.dx = 0.5 * Math.sin(i * 0.21); window.__turn.ty = ty + 0.35 * Math.sin(i * 0.37); } }, { a, i, follow: s.kind === "follow", ty: s.ty ?? TURN.ty }); await frame();
     if (i === Math.floor(n / 2)) box = await boxNow();
     await p.screenshot({ path: name(s.t[0] + i) });
   }

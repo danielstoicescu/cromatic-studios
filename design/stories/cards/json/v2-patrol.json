@@ -29,61 +29,41 @@
      {
       "kind": "line",
       "id": "e2patrol-l1",
-      "style": "title",
-      "size": 116,
-      "tracking": -0.04,
-      "lead": 1,
+      "style": "line",
+      "size": 88,
+      "tracking": -0.035,
+      "lead": 1.06,
       "ink": "#0D0C09",
       "align": "left",
       "text": "Keepin’ it safe.",
       "x": 80,
-      "baseline": 1298,
-      "width": 723.4,
+      "baseline": 1436.7,
+      "width": 555.4,
       "box": {
        "x": 80,
-       "y": 1209.8,
-       "w": 723.4,
-       "h": 116
+       "y": 1369.8,
+       "w": 555.4,
+       "h": 88
       }
      },
      {
       "kind": "line",
       "id": "e2patrol-l2",
-      "style": "title",
-      "size": 116,
-      "tracking": -0.04,
-      "lead": 1,
+      "style": "line",
+      "size": 88,
+      "tracking": -0.035,
+      "lead": 1.06,
       "ink": "#0D0C09",
       "align": "left",
-      "text": "Or, you do",
-      "x": 80,
-      "baseline": 1414,
-      "width": 521,
-      "box": {
-       "x": 80,
-       "y": 1325.8,
-       "w": 521,
-       "h": 116
-      }
-     },
-     {
-      "kind": "line",
-      "id": "e2patrol-l3",
-      "style": "title",
-      "size": 116,
-      "tracking": -0.04,
-      "lead": 1,
-      "ink": "#0D0C09",
-      "align": "left",
-      "text": "the chasing.",
+      "text": "Or, you do the chasing.",
       "x": 80,
       "baseline": 1530,
-      "width": 612.5,
+      "width": 883,
       "box": {
        "x": 80,
-       "y": 1441.8,
-       "w": 612.5,
-       "h": 116
+       "y": 1463.1,
+       "w": 883,
+       "h": 88
       }
      }
     ],
@@ -100,7 +80,7 @@
     "ink": "#0D0C09",
     "plate": {
      "x": 371,
-     "y": 658,
+     "y": 561,
      "w": 338,
      "h": 84,
      "r": 42,
@@ -113,26 +93,26 @@
     },
     "dot": {
      "cx": 408,
-     "cy": 700,
+     "cy": 603,
      "d": 22,
      "fill": "#FED012",
      "keyline": 3.5
     },
     "textX": 435,
-    "baseline": 715.6,
+    "baseline": 618.6,
     "pointer": {
      "x": 540,
-     "y": 742,
+     "y": 645,
      "w": 30,
      "h": 18,
      "tip": [
       540,
-      760
+      663
      ]
     },
     "box": {
      "x": 371,
-     "y": 658,
+     "y": 561,
      "w": 338,
      "h": 102
     }
@@ -163,25 +143,17 @@
       "id": "e2patrol-l1",
       "text": "Keepin’ it safe.",
       "in": 291,
-      "out": 346,
+      "out": 347,
       "motion": "lineIn / lineOut",
-      "hold": 43
+      "hold": 44
      },
      {
       "id": "e2patrol-l2",
-      "text": "Or, you do",
+      "text": "Or, you do the chasing.",
       "in": 294,
-      "out": 347,
-      "motion": "lineIn / lineOut",
-      "hold": 41
-     },
-     {
-      "id": "e2patrol-l3",
-      "text": "the chasing.",
-      "in": 297,
       "out": 348,
       "motion": "lineIn / lineOut",
-      "hold": 39
+      "hold": 42
      },
      {
       "id": "v2-patrol-tag",

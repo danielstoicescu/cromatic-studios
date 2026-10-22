@@ -78,7 +78,7 @@ export const E2_COPY = {
     chrome: ["Chrome racer", "Pass Go. / And keep going."],
     scooter: ["E-scooter", "Ride in the middle / of the streets."],
     rush: [null, "Don\u2019t rush. / They\u2019re", "polite."],
-    patrol: ["Polite Patrol", "Keepin\u2019 it safe. / Or, you do / the chasing."],
+    patrol: ["Polite Patrol", "Keepin\u2019 it safe. / Or, you do the chasing.", null, "line"],
     f1: ["Classic Formula", "Fastest route / to coffee."], foodvan: ["Kompus truck", "Comes with / a sandwich."], plane: ["Cropduster", "Traffic? / Fly over it."], sub: ["Yellow submarine", "Bucharest finally / got a sea."]
   },
   lead: "Go on, pick one."
@@ -93,10 +93,10 @@ function STORY_E2() {
   }];
   for (const sq of E2_SEQ) {
     if (sq.kind === "open" || sq.on === false) continue;
-    const [tag, line, pillWord] = c.rides[sq.id], id = sq.id, box = boxes[id], tip = box ? Math.max(330, Math.round(box.y - 26)) : 760, lines = split(line);
+    const [tag, line, pillWord, style = "title"] = c.rides[sq.id], id = sq.id, box = boxes[id], tip = box ? Math.max(330, Math.round(box.y - 26)) : 760, lines = split(line);
     const card = { id: `v2-${id}`, story: "E", beat: `${tag || "(no tag)"}: ${line.replace(/ \/ /g, " ")}${pillWord ? " [" + pillWord + "]" : ""}`, shots: [id], scene: "paper", ink: "ink" };
     if (tag) card.tags = [{ id: `v2-${id}-tag`, text: tag, x: 540, pin: "centre", tip }];
-    card.blocks = [{ id: `e2${id}`, place: "bl", lines: lines.map((t, k) => ({ text: t, style: "title", ...(pillWord && k === lines.length - 1 ? { pill: { words: [pillWord], fill: "#FED012" } } : {}) })) }];
+    card.blocks = [{ id: `e2${id}`, place: "bl", lines: lines.map((t, k) => ({ text: t, style, ...(pillWord && k === lines.length - 1 ? { pill: { words: [pillWord], fill: "#FED012" } } : {}) })) }];
     card.timing = sq.kind === "pass" ? { in: `${id}+14`, lineStagger: 4, pillIn: `${id}+24`, out: `${id}.end-6` } : { tagIn: `${id}+1`, in: `${id}+3`, lineStagger: 3, out: `${id}.end-0`, cutOut: true };
     card.mocks = [{ state: 0, at: `${id}.end-10` }];
     out.push(card);
