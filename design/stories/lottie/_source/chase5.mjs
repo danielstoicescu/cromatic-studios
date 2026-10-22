@@ -12,6 +12,7 @@
 //   ftAway    Fintech Boulevard from above and behind: the ride racing away up the boulevard
 //   (then chase4's fintech4: head on, the drift, the police)
 import { SHOTS as S2 } from "./chase2.mjs";
+import { SHOTS as S4 } from "./chase4.mjs";
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v)), sm = (t) => t * t * (3 - 2 * t), lerp = (a, b, t) => a + (b - a) * t;
 const YV = 1.73, SCALE = 0.5702479338842975;
 // ---- the slowed drift: screen time -> action time (a ramp down to 0.12x, held, back up to 1x)
@@ -53,7 +54,8 @@ export const SHOTS = {
     pose: (t) => { const ta = sideTa(t), q = S2.corner.yellow(ta), cup = cupAt(ta, q); return { ...q, ...(cup ? { cup } : {}) }; }
   },
   ftPass: { cam: { pos: [2040, 3, 4700], tgt: [2075, 6, 4640], fov: 62, shift: [0, 0.08], level: true }, dur: 1.0, yellow: fint(4470) },
-  ftAway: { cam: { pos: [2062, 60, 4300], tgt: [2068, 0, 4640], fov: 55, level: false }, dur: 1.0, yellow: fint(4300) }
+  ftAway: { cam: { pos: [2062, 60, 4300], tgt: [2068, 0, 4640], fov: 55, level: false }, dur: 1.0, yellow: fint(4300) },
+  berero6: S4.berero6 // (C6: Casa Berero square on, berero-116 + berero-clear)
 };
 export const ORDER5 = ["palace5", "sidewin", "ftPass", "ftAway"];
 // Steam's blade sign (logical): the bracket's foot on the wall at the fascia's gap (x 950, z 5638), 12 out over the

@@ -113,6 +113,20 @@ for (const [k, J] of Object.entries(jobs)) {
 return res;
 `;
 }
+// ---- C6 (TASK-065i): the kept shots' plates again from the 4.4 render build (stories-render-44: Toma's windows, the
+// traffic lights, the Aesthetic Court pop-up, Casa Berero), their cameras as before: PLATES='{"olari":{o},...}'
+JOBS.c6plates = `
+await scheme("nightlife");
+const list = ${process.env.PLATES || "{}"}, res = {};
+for (const [k, o0] of Object.entries(list)) {
+  const o = { ...o0, forceSrc: force, occlude: true };
+  await H.aim(p, o, 2200);
+  const pl = await p.evaluate(({ o }) => { const S = window.__story, R = window.__R; S.cop().group.visible = true; R.park([9000, null, 9000, 0]); S.cop().group.position.set(9200, 1.7, 9200); S.cop().group.updateMatrixWorld(true);
+    try { R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); return R.shot({ ...o, keepBg: true }); } finally { R.park(null); S.cop().group.visible = false; } }, { o });
+  save(pl, RAW + "/c6-" + k + "-plate.png"); res[k] = 1;
+}
+return res;
+`;
 // ---- D2: the Fintech skyline from the west, wide (the frame pans across it), and where the map's tags go
 JOBS.d2b = `
 await scheme("monument");

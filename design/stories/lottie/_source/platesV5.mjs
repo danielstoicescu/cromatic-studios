@@ -85,24 +85,32 @@ if (which.includes("c")) {
       const r = J.sprites.yellow[i]; if (!r) { out.push(null); continue; }
       const f = `${RAW}/c5-${k}-yellow-${String(i).padStart(3, "0")}.png`, h = crypto.createHash("sha1").update(fs.readFileSync(f)).digest("hex") + r.join(",");
       if (seen.has(h)) { out.push(seen.get(h)); continue; }
-      const nm = await write(`c5-${k}-yellow-${String(i).padStart(3, "0")}`, await rgba(f), { at: [r[0], r[1]], q: 82 }); seen.set(h, nm); out.push(nm);
+      const nm = await write(`${PF}-${k}-yellow-${String(i).padStart(3, "0")}`, await rgba(f), { at: [r[0], r[1]], q: 82 }); seen.set(h, nm); out.push(nm);
     }
     return { o: J.o, sprites: { yellow: out, cop: [] } };
   }
   const only = process.env.SHOT ? process.env.SHOT.split(",") : ["palace5", "steam", "sidewin", "ftPass", "ftAway"];
-  const prev = fs.existsSync(path.join(here, "platesC5.json")) ? JSON.parse(fs.readFileSync(path.join(here, "platesC5.json"), "utf8")) : { plates: {}, shots: {} };
+  const PJ = process.env.PJSON || "platesC5.json", PF = process.env.PFX || "c5"; // (C6: PFX=c6 PJSON=platesC6.json)
+  const prev = fs.existsSync(path.join(here, PJ)) ? JSON.parse(fs.readFileSync(path.join(here, PJ), "utf8")) : { plates: {}, shots: {} };
   Object.assign(plates, prev.plates); Object.assign(shots, prev.shots);
+  // (C6: the kept shots' plates only, renderV5 JOB=c6plates, with the bloom their first plates had)
+  const PLATE_ONLY = { olari: { thr: 0.8, k: 0.5, k2: 0.25 }, scf: { thr: 0.8, k: 0.5, k2: 0.25 }, corner: { thr: 0.8, k: 0.5, k2: 0.25 }, fountain: { thr: 0.62, k: 1.1, k2: 0.5, tint: [1, 0.92, 0.8] }, fintech4: { thr: 0.78, k: 0.6, k2: 0.3 } };
+  for (const k of (process.env.PLATES_ONLY || "").split(",").filter(Boolean)) {
+    const p = await bloom(await rgba(`${RAW}/c6-${k}-plate.png`), PLATE_ONLY[k]);
+    shots[k] = { plate: await write(`${PF}-${k}-plate`, p, { opaque: true, crop: false, q: 84 }) }; console.log(k, "plate");
+  }
   for (const k of only) {
     let p = await rgba(`${RAW}/c5-${k}-plate.png`);
     if (k === "palace5") p = await bloom(warmStone(p), { thr: 0.78, k: 0.55, k2: 0.25, tint: [1, 0.9, 0.74] });
     else if (k === "steam") p = await bloom(p, { thr: 0.8, k: 0.5, k2: 0.22 });
+    else if (k === "berero6") p = await bloom(p, { thr: 0.7, k: 1.0, k2: 0.45, tint: [1, 0.9, 0.74] });
     else p = await bloom(p, { thr: 0.8, k: 0.5, k2: 0.25 });
-    const plate = await write(`c5-${k}-plate`, p, { opaque: true, crop: false, q: 84 });
+    const plate = await write(`${PF}-${k}-plate`, p, { opaque: true, crop: false, q: 84 });
     shots[k] = k === "steam" ? { plate } : { ...(await sprites(k)), plate };
     console.log(k, shots[k].sprites ? shots[k].sprites.yellow.filter(Boolean).length : "");
   }
-  fs.writeFileSync(path.join(here, "platesC5.json"), JSON.stringify({ plates, shots }));
-  console.log("plates C5", Object.keys(plates).length, Object.values(plates).reduce((s, m) => s + m.kb, 0), "KB");
+  fs.writeFileSync(path.join(here, PJ), JSON.stringify({ plates, shots }));
+  console.log("plates", PJ, Object.keys(plates).length, Object.values(plates).reduce((s, m) => s + m.kb, 0), "KB");
 }
 
 // ---- B v5: the night world re-rendered with the house's new windows (Toma's house-windows: no shutters, white
