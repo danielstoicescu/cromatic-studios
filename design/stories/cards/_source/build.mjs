@@ -77,6 +77,7 @@ function blockSvg(mode, B, k, offset = [0, 0]) {
   return s;
 }
 function tagSvg(mode, G) {
+  if (G.clock) { const p = G.plate; return `<g id="${G.id}">` + `<rect id="${G.id}-shadow" x="${f1(p.x + p.shadow[0])}" y="${f1(p.y + p.shadow[1])}" width="${p.w}" height="${p.h}" rx="${p.r}" fill="${INK}"/>` + `<rect id="${G.id}-plate" x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="${p.r}" fill="${p.fill}" stroke="${p.line || INK}" stroke-width="${p.keyline}"/>` + words(mode, G.text, G.size, G.tracking, G.textX, G.baseline, G.ink, `${G.id}-text`) + `</g>`; }
   const p = G.plate, d = G.dot, po = G.pointer, tri = (dx, dy) => `M${f1(po.x - po.w / 2 + dx)} ${f1(po.y - p.keyline + dy)}L${f1(po.x + dx)} ${f1(po.y + po.h + dy)}L${f1(po.x + po.w / 2 + dx)} ${f1(po.y - p.keyline + dy)}Z`;
   const side = `M${f1(po.x - po.w / 2)} ${f1(po.y)}L${f1(po.x)} ${f1(po.y + po.h)}L${f1(po.x + po.w / 2)} ${f1(po.y)}`;
   return `<g id="${G.id}">` +

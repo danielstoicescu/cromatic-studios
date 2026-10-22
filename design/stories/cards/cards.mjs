@@ -94,6 +94,7 @@ function aplatCard(Cm, A, { tIn, tOut, swaps = [], nm, parent }) {
 
 /* ---------- a map tag: lands on its pointer ---------- */
 function tag(Cm, T, G, { tIn, tOut, nm }) {
+  if (G.clock) return clockTag(Cm, T, G, { tIn, tOut, nm });
   const lt = setLine(T, G.text, G.size, G.tracking), pl = G.plate, d = G.dot, po = G.pointer, ink = rgb("#0D0C09");
   // the pointer joins the plate: its fill covers the plate's keyline, its two sides are drawn on top
   const tri = (dx, dy) => poly([[po.x - po.w / 2 + dx, po.y - pl.keyline + dy], [po.x + po.w / 2 + dx, po.y - pl.keyline + dy], [po.x + dx, po.y + po.h + dy]]);
@@ -106,6 +107,17 @@ function tag(Cm, T, G, { tIn, tOut, nm }) {
     group("plate", [rect([pl.w, pl.h], [pl.x + pl.w / 2, pl.y + pl.h / 2], pl.r), stroke(ink, pl.keyline), fill(rgb(pl.fill))]),
     group("shadow", [rect([pl.w, pl.h], [pl.x + pl.w / 2 + pl.shadow[0], pl.y + pl.h / 2 + pl.shadow[1]], pl.r), shp(tri(pl.shadow[0], pl.shadow[1])), fill(ink)])
   ], { ip: tIn, op: tOut + 14, ks: { a: po.tip, p: po.tip, s: [[tIn, [40, 40], BOUNCE], [tIn + 18, [100, 100], E.hold], [tOut, [100, 100], SNAP], [tOut + 12, [0, 0]]], o: [[tIn, 0, E.linear], [tIn + 4, 100]] } });
+}
+
+/* ---------- the clock pill (C7): no pointer, inverted, lands about its bottom middle; the ":" blinks 1 Hz, hard ---------- */
+function clockTag(Cm, T, G, { tIn, tOut, nm }) {
+  const lt = setLine(T, G.text, G.size, G.tracking), pl = G.plate, ink = rgb("#0D0C09"), end = tOut + 14, B = G.blink || { period: 60, on: 30 };
+  const blink = []; for (let f = tIn, on = true; f < end; f += on ? B.on : B.period - B.on, on = !on) blink.push([f, on ? 100 : 0, E.hold]);
+  Cm.shape(nm, [
+    group("text", lt.letters.map((l) => letterGroup(T, { ...l, x: G.textX + l.x }, G.size, rgb(G.ink), { extra: (b, s) => ({ p: [b[0], b[1] + G.baseline], s: [s, s], ...(l.ch === ":" ? { o: blink } : {}) }) }))),
+    group("plate", [rect([pl.w, pl.h], [pl.x + pl.w / 2, pl.y + pl.h / 2], pl.r), stroke(rgb(pl.line || "#0D0C09"), pl.keyline), fill(rgb(pl.fill))]),
+    group("shadow", [rect([pl.w, pl.h], [pl.x + pl.w / 2 + pl.shadow[0], pl.y + pl.h / 2 + pl.shadow[1]], pl.r), fill(ink)])
+  ], { ip: tIn, op: end, ks: { a: G.anchor, p: G.anchor, s: [[tIn, [40, 40], BOUNCE], [tIn + 18, [100, 100], E.hold], [tOut, [100, 100], SNAP], [tOut + 12, [0, 0]]], o: [[tIn, 0, E.linear], [tIn + 4, 100]] } });
 }
 
 /* ---------- cromaticstudios.com: in with the house bounce, then (on black) the soft settle ---------- */

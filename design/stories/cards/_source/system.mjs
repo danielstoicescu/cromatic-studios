@@ -46,7 +46,9 @@ export const TOKENS = {
     note: "The block and everything on it turn together about the block's top-left corner. The text on it is ink; a pill on it is white." },
   // a map tag: a small plate pinned to the place, a yellow location dot, the name and the time
   tag: { size: 44, height: 84, padL: 26, dot: 22, dotGap: 16, padR: 32, keyline: 4, dotKeyline: 3.5, shadow: [0, 7], pointer: { x: 46, w: 30, h: 18 }, plate: "#FFFFFF", ink: "#0D0C09", dotFill: "#FED012",
-    note: "Name · time, one line, never more than ~22 characters. Straight (no tilt): it is information, not a title." },
+    note: "Name · time, one line, never more than ~22 characters. Straight (no tilt): it is information, not a title.",
+    // (C7, Daniel: the time is its own pill: no pointer, a perfect pill, inverted, its ":" blinking at 1 Hz, hard on/off)
+    clock: { plate: "#0D0C09", ink: "#FFFFFF", line: "#FFFFFF", padX: 30, blink: { period: 60, on: 30 }, note: "Any tag whose text is a time (9:11, 11:11), or { clock: true }. Only the location tag keeps the pointer." } },
   url: { text: "cromaticstudios.com", size: 64, padX: 0.625, height: 1.6, keyline: 6, shadow: [10, 14], tilt: -6, centre: [540, 1000], fill: "#FED012", ink: "#0D0C09",
     note: "The end card: alone on black, centred, in every story. It never moves when the screen goes black." },
   // motion, at 30 fps (x2 for the 60 fps Lottie comps); transforms and opacity only
@@ -131,6 +133,12 @@ export function layLine(def, x, baseline, align, ink) {
 
 export function layTag(def) {
   const G = TOKENS.tag, t = setText(def.text, "tag");
+  if (def.clock ?? /^\d{1,2}:\d{2}$/.test(def.text)) { // the clock pill: no dot, no pointer, ink plate, white figures
+    const C = G.clock, w = C.padX * 2 + t.width, h = G.height, x = def.align === "right" ? def.x - w : def.x, top = def.top;
+    return { kind: "tag", clock: true, blink: C.blink, id: def.id, text: def.text, size: G.size, tracking: TOKENS.type.tag.tracking, ink: C.ink,
+      plate: { x: r1(x), y: r1(top), w: r1(w), h, r: h / 2, fill: C.plate, line: C.line, keyline: G.keyline, shadow: G.shadow }, // (inverted: the keyline white too, so it holds on the night)
+      textX: r1(x + C.padX), baseline: r1(top + h / 2 + 0.355 * G.size), anchor: [r1(x + w / 2), r1(top + h)], box: { x: r1(x), y: r1(top), w: r1(w), h } };
+  }
   const w = G.padL + G.dot + G.dotGap + t.width + G.padR, h = G.height;
   const x = def.align === "right" ? def.x - w : def.x, top = def.top;
   return {

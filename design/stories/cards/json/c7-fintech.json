@@ -68,48 +68,41 @@
    },
    {
     "kind": "tag",
+    "clock": true,
+    "blink": {
+     "period": 60,
+     "on": 30
+    },
     "id": "c7-time",
     "text": "11:11",
     "size": 44,
     "tracking": -0.01,
-    "ink": "#0D0C09",
+    "ink": "#FFFFFF",
     "plate": {
      "x": 437.9,
      "y": 286,
-     "w": 185.8,
+     "w": 149.8,
      "h": 84,
      "r": 42,
-     "fill": "#FFFFFF",
+     "fill": "#0D0C09",
+     "line": "#FFFFFF",
      "keyline": 4,
      "shadow": [
       0,
       7
      ]
     },
-    "dot": {
-     "cx": 474.9,
-     "cy": 328,
-     "d": 22,
-     "fill": "#FED012",
-     "keyline": 3.5
-    },
-    "textX": 501.9,
+    "textX": 467.9,
     "baseline": 343.6,
-    "pointer": {
-     "x": 483.9,
-     "y": 370,
-     "w": 30,
-     "h": 18,
-     "tip": [
-      483.9,
-      388
-     ]
-    },
+    "anchor": [
+     512.8,
+     370
+    ],
     "box": {
      "x": 437.9,
      "y": 286,
-     "w": 185.8,
-     "h": 102
+     "w": 149.8,
+     "h": 84
     }
    }
   ]
