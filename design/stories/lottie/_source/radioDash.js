@@ -96,12 +96,14 @@ function makeDash(K) {
   [-5.4, -0.15, 5.1].forEach((sx, i) => box(0.9, 0.75, 0.55, M("#6f6b66", { roughness: 0.4, metalness: 0.4 }), sx + [-1.2, 1.6, 0.4][i], -2.8, 9.5));
   box(10, 2.6, 0.5, M("#2c2925", { roughness: 0.5, metalness: 0.3 }), 0, -7.6, 9.1); box(8.6, 0.5, 0.6, M("#8a8680", { metalness: 0.5, roughness: 0.5 }), 0, -6.6, 9.3); // (the ashtray, its chrome pull)
   // ---- the two auxiliary gauges over the stereo (rev counter, oil pressure): needles at rest till the engine catches
-  const gaugeT = (label, marks) => tex(256, 256, (c) => { c.translate(128, 128); c.rotate(-Math.PI / 2); c.translate(-128, -128); c.fillStyle = "#0d0d0f"; c.beginPath(); c.arc(128, 128, 126, 0, 7); c.fill(); c.strokeStyle = "#e9e3d3"; c.lineWidth = 4; for (let i = 0; i <= marks; i++) { const a = Math.PI * (0.75 + 1.5 * i / marks); c.beginPath(); c.moveTo(128 + Math.cos(a) * 100, 128 + Math.sin(a) * 100); c.lineTo(128 + Math.cos(a) * (i % 2 ? 88 : 80), 128 + Math.sin(a) * (i % 2 ? 88 : 80)); c.stroke(); } c.fillStyle = "#e9e3d3"; c.font = "700 28px CromaticSans, sans-serif"; c.textAlign = "center"; c.fillText(label, 128, 190); });
+  // (C7, Daniel: the two gauges are Berero's two beers, COMM and UNITY: each dial in its can's colour, the word in the
+  // labels' condensed black capitals; sampled from the case's labels: COMM lager yellow, UNITY IPA green)
+  const gaugeT = (label, marks, face = "#0d0d0f", ink = "#e9e3d3") => tex(512, 512, (c) => { c.scale(2, 2); c.translate(128, 128); c.rotate(-Math.PI / 2); c.translate(-128, -128); /* (the cap's uv runs a quarter turn round) */ c.fillStyle = face; c.beginPath(); c.arc(128, 128, 126, 0, 7); c.fill(); c.strokeStyle = ink; c.lineWidth = 5; for (let i = 0; i <= marks; i++) { const a = Math.PI * (0.75 + 1.5 * i / marks); c.beginPath(); c.moveTo(128 + Math.cos(a) * 104, 128 + Math.sin(a) * 104); c.lineTo(128 + Math.cos(a) * (i % 2 ? 90 : 80), 128 + Math.sin(a) * (i % 2 ? 90 : 80)); c.stroke(); } c.fillStyle = ink; c.textAlign = "center"; c.save(); c.translate(128, 196); c.scale(0.62, 1); c.font = "900 50px CromaticSans, 'Arial Narrow', sans-serif"; c.fillText(label, 0, 0); c.restore(); c.beginPath(); c.arc(128, 128, 9, 0, 7); c.fill(); });
   const gFace = [], gNeedle = [];
-  [["RPM x1000", 8, -4.2], ["ULEI", 6, 4.2]].forEach(([lab, mk, gx]) => {
+  [["COMM", 8, -4.2, "#F5EC0A", "#0D0C09"], ["UNITY", 6, 4.2, "#4CAF4C", "#0D0C09"]].forEach(([lab, mk, gx, faceC, inkC]) => {
     const pod = new K.Group(); pod.position.set(gx, 14.6, 7.6); g.add(pod);
     const rim = new K.Mesh(new K.CylinderGeometry(3.3, 3.3, 1.6, 40), M("#cfd2d6", { metalness: 0.6, roughness: 0.3 })); rim.rotation.x = Math.PI / 2; pod.add(rim);
-    const gt = gaugeT(lab, mk), fm = new K.MeshStandardMaterial({ map: gt, emissiveMap: gt, emissive: new K.Color("#9fd0ff"), emissiveIntensity: 0, roughness: 0.4 });
+    const gt = gaugeT(lab, mk, faceC, inkC), fm = new K.MeshStandardMaterial({ map: gt, emissiveMap: gt, emissive: new K.Color("#ffffff"), emissiveIntensity: 0, roughness: 0.4 });
     const face = new K.Mesh(new K.CylinderGeometry(2.9, 2.9, 0.2, 40), fm); face.rotation.x = Math.PI / 2; face.position.z = 0.75; pod.add(face); gFace.push(fm);
     const nd = new K.Group(); nd.position.z = 0.95; pod.add(nd); const bar = new K.Mesh(new K.BoxGeometry(0.16, 2.3, 0.1), new K.MeshStandardMaterial({ color: "#ff5a1f", emissive: new K.Color("#ff5a1f"), emissiveIntensity: 0.6 })); bar.position.y = 1.1; nd.add(bar); gNeedle.push(nd);
   });
@@ -126,7 +128,7 @@ function makeDash(K) {
     const k = t - CUE.engine, rest = Math.PI * 0.75; // (the needle's rest: the dial's start, lower left; it turns clockwise)
     const jump = (target) => k <= 0 ? 0 : target * (1 - Math.exp(-k * 7) * Math.cos(k * 22));
     gNeedle[0].rotation.z = rest - jump(1.15); gNeedle[1].rotation.z = rest - jump(1.7);
-    const flick = k < 0 ? 0 : k < 0.04 ? 1 : k < 0.08 ? 0.15 : 1; gFace.forEach((m) => { m.emissiveIntensity = 0.55 * flick; });
+    const flick = k < 0 ? 0 : k < 0.04 ? 1 : k < 0.08 ? 0.15 : 1; gFace.forEach((m) => { m.emissiveIntensity = 0.28 * flick; });
     // the radio: the backlight up in 0.1 s; the segment test; the text stepping in a cell at a time
     const on = sm(cl((t - CUE.displayOn) / 0.1));
     let txt = "", test = false;
