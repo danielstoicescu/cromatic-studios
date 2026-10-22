@@ -30,19 +30,36 @@ function bend(c) {
   const rot = (v) => { if (s < 1e-9) return v; const k = axis.clone().divideScalar(s), a = Math.atan2(s, co); return v.clone().multiplyScalar(Math.cos(a)).add(new V3().crossVectors(k, v).multiplyScalar(Math.sin(a))).add(k.clone().multiplyScalar(k.dot(v) * (1 - Math.cos(a)))); };
   const right = rot(new V3(...c.right)).normalize(), up = rot(new V3(...c.up)).normalize();
   const fp = c.focusPt ? W(c.focusPt) : null, focus = fp ? Math.max(1, fp.clone().sub(p).dot(fwd)) : c.focus;
-  return { pos: p, fwd, right, up, fov: c.fov, focus, shift: c.shift || null };
+  return { pos: p, fwd, right, up, fov: c.fov, focus, shift: c.shift || null, plane: c.plane ? c.plane.map((q) => W(q)) : null };
 }
-// lens: { ax, ay } the point on the aperture (world units, in the camera's right/up), { jx, jy } a sub-pixel offset
+// lens: { ax, ay } the point on the aperture (world units, in the camera's right/up), { jx, jy } a sub-pixel offset.
+// The plane that stays sharp is the plane at the focus distance, square to the view; or, with b.plane (three points in
+// the bent world), any plane: a tilted lens (Scheimpflug). For a camera moved by t on its aperture, the points of the
+// plane n.X = d (in the pinhole's camera space) project where the pinhole puts them when the view coordinates Y = X - t
+// are first mapped by A: A Y = Y + t (n.Y)/d + t (n.t)/d (exact on the plane, close to identity off it). A goes into
+// the projection only, so the lighting still sees the moved camera's true positions.
+const _A = new K.Matrix4(), _J = new K.Matrix4(), _P = new K.Matrix4();
 function placeCamera(b, w, h, lens = { ax: 0, ay: 0, jx: 0, jy: 0 }, near = 1.5, far = 30000) {
   camera.position.copy(b.pos).addScaledVector(b.right, lens.ax).addScaledVector(b.up, lens.ay);
   _m.makeBasis(b.right, b.up, b.fwd.clone().negate()); camera.quaternion.setFromRotationMatrix(_m);
   camera.fov = b.fov; camera.aspect = w / h; camera.near = near; camera.far = far; camera.zoom = 1;
   if (b.shift) camera.setViewOffset(w, h, -b.shift[0] * w, -b.shift[1] * h, w, h); else camera.clearViewOffset();
   camera.updateProjectionMatrix();
-  const e = camera.projectionMatrix.elements;
-  // the thin lens: the plane at the focus distance projects where the pinhole would put it
-  e[8] += (-e[0] * lens.ax) / b.focus + (2 * lens.jx) / w;
-  e[9] += (-e[5] * lens.ay) / b.focus + (2 * lens.jy) / h;
+  // the plane of focus in the pinhole's camera space: n (unit), d (its distance, > 0)
+  let n = [0, 0, -1], d = b.focus;
+  if (b.plane) {
+    const [a, c2, e2] = b.plane, nw = new V3().subVectors(c2, a).cross(new V3().subVectors(e2, a)).normalize(), q = a.clone().sub(b.pos);
+    n = [nw.dot(b.right), nw.dot(b.up), -nw.dot(b.fwd)]; d = q.dot(nw);
+    if (d < 0) { n = n.map((v) => -v); d = -d; }
+    d = Math.max(d, 1);
+  }
+  const t = [lens.ax, lens.ay, 0], nt = n[0] * t[0] + n[1] * t[1];
+  _A.set(1 + (t[0] * n[0]) / d, (t[0] * n[1]) / d, (t[0] * n[2]) / d, (t[0] * nt) / d,
+         (t[1] * n[0]) / d, 1 + (t[1] * n[1]) / d, (t[1] * n[2]) / d, (t[1] * nt) / d,
+         0, 0, 1, 0, 0, 0, 0, 1);
+  _J.set(1, 0, 0, (2 * lens.jx) / w, 0, 1, 0, (2 * lens.jy) / h, 0, 0, 1, 0, 0, 0, 0, 1);
+  _P.copy(camera.projectionMatrix);
+  camera.projectionMatrix.copy(_J).multiply(_P).multiply(_A);
   camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
   camera.updateMatrixWorld(true);
 }

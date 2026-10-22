@@ -34,7 +34,7 @@ function subCams(f, N) {
     const ts = t + (sh / fps) * ((i + halton(i + 1, 23)) / N - 0.5);
     const c = SHOT.camera.at(Math.max(SHOT.camera.t0, Math.min(SHOT.camera.t1, ts)));
     const L = lensOf({ ...c, fstop: lens.fstop ?? c.fstop }, { scale: lens.scale ?? 1.45 });
-    out.push({ ...c, aperture: lens.pinhole ? 0 : L.aperture, shift: SHOT.shift || null, ts });
+    out.push({ ...c, aperture: lens.pinhole ? 0 : L.aperture, shift: SHOT.shift || null, plane: lens.plane || null, ts });
   }
   return out;
 }

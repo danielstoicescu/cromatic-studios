@@ -20,8 +20,8 @@ const TYPES = { ".js": "text/javascript", ".mjs": "text/javascript", ".json": "a
 const br = await pw.chromium.launch({ headless: !process.env.HEADED, args: ["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist", "--enable-unsafe-webgpu", "--disable-gpu-watchdog", "--disable-renderer-backgrounding", "--disable-background-timer-throttling", "--disable-backgrounding-occluded-windows"] });
 const ctx = await br.newContext({ viewport: { width: VW, height: VH }, deviceScaleFactor: 1 });
 await ctx.route(/google-analytics|analytics\.google|googletagmanager|doubleclick|facebook|openai/, (r) => r.fulfill({ status: 204, body: "" }));
-let APP = null;
-if (process.env.DEV) await ctx.route(/\/assets\/app\.[0-9a-f]+\.js$/, async (r) => { APP = APP || (await devApp(ROOT)); r.fulfill({ status: 200, body: APP, headers: { "content-type": "text/javascript" } }); });
+let APP = null, APPT = 0; // (made again whenever src/app.js changes: the next page load gets the working copy)
+if (process.env.DEV) await ctx.route(/\/assets\/app\.[0-9a-f]+\.js$/, async (r) => { const t = fs.statSync(path.join(ROOT, "src/app.js")).mtimeMs; if (!APP || t !== APPT) { APP = await devApp(ROOT); APPT = t; } r.fulfill({ status: 200, body: APP, headers: { "content-type": "text/javascript" } }); });
 // (three's examples import the bare "three": pointed at the served module, so they load without an import map)
 const serve = (dir) => (r) => { const u = decodeURIComponent(new URL(r.request().url()).pathname).replace(/^\/__\w+\//, ""), f = path.join(dir, u); if (!f.startsWith(dir) || !fs.existsSync(f)) return r.fulfill({ status: 404, body: "404" }); let body = fs.readFileSync(f); if (/\.m?js$/.test(f)) body = body.toString("utf8").replace(/from\s*(['"])three\1/g, 'from "/__three/build/three.module.js"'); r.fulfill({ status: 200, body, headers: { "content-type": TYPES[path.extname(f)] || "application/octet-stream", "cache-control": "no-store" } }); };
 await ctx.route(/\/__dr\//, serve(HERE));
