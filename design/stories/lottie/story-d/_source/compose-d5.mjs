@@ -10,7 +10,8 @@ import sharp from "/Users/daniel.stoic/cromatic-drive/node_modules/sharp/lib/ind
 const FF = "/Users/daniel.stoic/Library/Python/3.9/lib/python/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1";
 const here = path.dirname(new URL(import.meta.url).pathname), FR = path.resolve(here, "../../frames/d5");
 const [OUT, posterAt = "300"] = process.argv.slice(2), TMP = path.join(OUT, "_d5frames");
-fs.rmSync(TMP, { recursive: true, force: true }); fs.mkdirSync(TMP, { recursive: true });
+// (RESUME=1: keep the frames already made, make the rest)
+if (!process.env.RESUME) fs.rmSync(TMP, { recursive: true, force: true }); fs.mkdirSync(TMP, { recursive: true });
 const J = JSON.parse(fs.readFileSync(path.resolve(here, "../story-d5-en.json"), "utf8")), BG = J.cromatic.bg, F = J.op;
 const list = (k) => fs.readdirSync(FR).filter((f) => f.startsWith(k + "-")).sort();
 const FRS = Object.fromEntries(["site", "bird", "zoom", "steam", "page"].map((k) => [k, list(k)]));
@@ -38,6 +39,7 @@ const PICKS = (C, nn) => [["Our portfolio", C.site, 0.7], ["The map, from high",
 const want = SHEET ? new Set(PICKS(J.cromatic.cuts, Math.ceil(F / 2)).map((x) => x[1])) : null;
 for (let f = 0; f < F; f += 2, n++) {
   if (want && !want.has(n)) continue;
+  if (process.env.RESUME && fs.existsSync(path.join(TMP, `f${String(n).padStart(5, "0")}.png`)) && n < Math.ceil(F / 2) - 1) continue;
   await p.evaluate((f) => window.go(f), f);
   const top = await p.screenshot({ omitBackground: true }), bg = bgOf(f), o = path.join(TMP, `f${String(n).padStart(5, "0")}.png`);
   if (bg) await (await bgImg(bg)).composite([{ input: top }]).png({ compressionLevel: 1 }).toFile(o);
