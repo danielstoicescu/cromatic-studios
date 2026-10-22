@@ -33,5 +33,5 @@ export default {
     put({ sex: "f", h: 27.5, skin: "#8d5a3c", hair: "#0f0b08", hairStyle: "long", top: "#f3d36a", bottom: "#24304a", pose: "phone" }, 936, 5678, -Math.PI / 2);
     SIGNL = new K.PointLight("#ffd9a8", 2600, 160, 2); SIGNL.position.copy(S.warpV(new K.Vector3(905, 44, 5612))); S.scene.add(SIGNL);
   },
-  dispose() { CAR && CAR.dispose(); UNRIDE && UNRIDE(); if (SIGN) SIGN[0].material.color.copy(SIGN[1]); SIGNL && SIGNL.parent.remove(SIGNL); UNDRESS && UNDRESS(); FIGS && FIGS.parent.remove(FIGS); }
+  dispose() { CAR && CAR.dispose(); UNRIDE && UNRIDE(); if (SIGN) SIGN[0].material.color.copy(SIGN[1]); SIGNL && SIGNL.parent?.remove(SIGNL); UNDRESS && UNDRESS(); FIGS && FIGS.parent?.remove(FIGS); }
 };

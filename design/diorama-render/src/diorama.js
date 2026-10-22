@@ -178,7 +178,7 @@ function teardown() {
   Object.assign(sun.shadow.camera, { left: sv.sun.cam.l, right: sv.sun.cam.r, top: sv.sun.cam.t, bottom: sv.sun.cam.b, near: sv.sun.cam.n, far: sv.sun.cam.f }); sun.shadow.camera.updateProjectionMatrix();
   R.shadowMap.enabled = sv.sm.on; R.shadowMap.type = sv.sm.type; R.shadowMap.autoUpdate = sv.sm.auto;
   if (sv.fog && scene.fog) { scene.fog.color.copy(sv.fog.c); scene.fog.near = sv.fog.n; scene.fog.far = sv.fog.f; }
-  scene.background = sv.bg; S.sky.visible = sv.sky.vis; for (const [k, v] of Object.entries(sv.sky.u)) { const u = S.sky.material.uniforms[k]; if (u.value.copy) u.value.copy(v); else u.value = v; }
+  scene.background = sv.bg; S.sky.visible = sv.sky.vis; for (const [k, v] of Object.entries(sv.sky.u)) { const u = S.sky.material.uniforms[k]; if (!u) continue; if (u.value && u.value.copy) u.value.copy(v); else u.value = v; }
   if (S.farClouds && sv.fc != null) S.farClouds.visible = sv.fc;
   if (dome) dome.visible = false;
   for (const l of extraLights) l.parent && l.parent.remove(l); extraLights = [];

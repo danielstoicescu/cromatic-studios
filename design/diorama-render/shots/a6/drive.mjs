@@ -36,5 +36,5 @@ export default {
     for (const [x, y, z] of heads) { const L = new K.PointLight("#ffc27a", 1500, 105, 2); L.position.copy(S.warpV(new K.Vector3(x, y - 6, z))); L.castShadow = false; LAMPS.add(L); }
   },
   pose(t) { const s = S0(Math.max(0, t)); CAR.place(842, 1.2, 5545 + s, 0, s); KEY.position.copy(this._S.warpV(new this._K.Vector3(826, 30, 5545 + s - 34))); KEY.updateMatrixWorld(true); },
-  dispose() { CAR && CAR.dispose(); UNRIDE && UNRIDE(); KEY && KEY.parent && KEY.parent.remove(KEY); UNSKY && UNSKY(); LAMPS && LAMPS.parent.remove(LAMPS); if (HEADM) { HEADM[0].emissive.copy(HEADM[1]); HEADM[0].emissiveIntensity = HEADM[2]; } }
+  dispose() { CAR && CAR.dispose(); UNRIDE && UNRIDE(); KEY && KEY.parent && KEY.parent?.remove(KEY); UNSKY && UNSKY(); LAMPS && LAMPS.parent?.remove(LAMPS); if (HEADM) { HEADM[0].emissive.copy(HEADM[1]); HEADM[0].emissiveIntensity = HEADM[2]; } }
 };

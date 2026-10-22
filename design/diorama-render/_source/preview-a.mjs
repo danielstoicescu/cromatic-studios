@@ -10,7 +10,7 @@ import { spawnSync } from "child_process";
 import pw from "/Users/daniel.stoic/node_modules/playwright/index.mjs";
 import sharp from "/Users/daniel.stoic/cromatic-drive/node_modules/sharp/lib/index.js";
 const STL = "/Users/daniel.stoic/cromatic-stories-lottie", HERE = path.resolve(new URL("..", import.meta.url).pathname);
-const OUT = process.argv[2] || "/Users/daniel.stoic/cromatic-ops/refs/diorama-render/preview-a", A7 = process.argv[3] === "a7", SRC = path.join(HERE, A7 ? "out/a7" : "out/a6d");
+const OUT = process.argv[2] || "/Users/daniel.stoic/cromatic-ops/refs/diorama-render/preview-a", A8 = process.argv[3] === "a8", A7 = process.argv[3] === "a7" || A8, SRC = path.join(HERE, A7 ? "out/a7" : "out/a6d");
 const FF = "/Users/daniel.stoic/node_modules/@ffmpeg-installer/darwin-arm64/ffmpeg";
 const { Comp } = await import(`${STL}/design/lottie-ui/_source/lib/ui.mjs`);
 const { loadCards, drawCard } = await import(`${STL}/design/stories/cards/cards.mjs`);
@@ -21,7 +21,13 @@ const Cm = new Comp({ w: 1080, h: 1920, dur: F / 60, nm: "story A in diorama · 
 // (as buildA-v6.mjs: the end card first, then the words; a3 out at drive+116, the address in at end-30)
 if (A7) drawCard(Cm, card("a4-end", { urlIn: "end-30" }), SP);
 for (const id of ["a1-website", "a2-brand"]) drawCard(Cm, card(id), SP);
-if (A7) drawCard(Cm, card("a3-drive", { out: "drive+116" }), SP);
+if (A7) {
+  const a3 = card("a3-drive", { out: "drive+116" });
+  // A8 (Daniel): "Take your drive." up on the evening sky, the large free area, in the top-left corner by Iris's rules
+  // (first line's cap height at y 300, x 80): the block moves up as one, its type, colour and timing unchanged
+  if (A8) { const b = a3.layout.blocks[0], L1 = b.lines[0], dy = 300 + L1.size * 0.71 - L1.baseline; b.place = "tl"; for (const L of b.lines) { L.baseline += dy; L.box.y += dy; } }
+  drawCard(Cm, a3, SP);
+}
 const J = Cm.json();
 fs.mkdirSync(path.join(SRC, "cards"), { recursive: true });
 fs.writeFileSync(path.join(SRC, "cards.json"), JSON.stringify(J));
@@ -45,7 +51,7 @@ for (const [s, cnt] of shots) for (let i = 0; i < cnt; i++, k++) {
   await sharp(under).composite(fs.existsSync(c) ? [{ input: c }] : []).png().toFile(path.join(comp, `f${String(k).padStart(4, "0")}.png`));
 }
 fs.mkdirSync(OUT, { recursive: true });
-const mp4 = path.join(OUT, A7 ? "story-a7-en.mp4" : "a6-diorama-draft.mp4");
+const mp4 = path.join(OUT, A8 ? "story-a8-en.mp4" : A7 ? "story-a7-en.mp4" : "a6-diorama-draft.mp4");
 const r = spawnSync(FF, ["-y", "-v", "error", "-framerate", "30", "-i", path.join(comp, "f%04d.png"), "-c:v", "libx264", "-preset", "slow", "-crf", "16", "-pix_fmt", "yuv420p", "-profile:v", "high", "-movflags", "+faststart", mp4], { stdio: "inherit" });
 if (r.status) process.exit(r.status);
 // the contact sheet: every 8th frame, 270 x 480 tiles, the shot's name under each row's first

@@ -64,6 +64,6 @@ export async function heroCar(ctx, { lights = false, scale = 15 } = {}) {
       g.position.set(x, y, z); g.rotation.set(0, yaw, 0); if (roll != null) for (const w of wheels) w.rotation.x = roll / scale / 0.292; g.updateMatrixWorld(true);
       [-0.55, 0.55].forEach((sx, k) => { const b = beams[k]; b.position.copy(S.warpV(loc(sx, 0.62, 2.0))); b.target.position.copy(S.warpV(loc(sx * 1.6, 0, 14))); b.updateMatrixWorld(true); b.target.updateMatrixWorld(true); });
     },
-    dispose() { g.parent && g.parent.remove(g); for (const b of beams) { b.parent && b.parent.remove(b); b.target.parent && b.target.parent.remove(b.target); } }
+    dispose() { g.parent && g.parent?.remove(g); for (const b of beams) { b.parent && b.parent?.remove(b); b.target.parent && b.target.parent?.remove(b.target); } }
   };
 }

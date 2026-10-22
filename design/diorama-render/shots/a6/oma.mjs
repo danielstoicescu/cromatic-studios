@@ -24,5 +24,5 @@ export default {
     SET = buildOmaSet(ctx, { lampI: 680, glassOpacity: 0.1, glassRefl: 0.6 });
     LAMP = new K.PointLight("#ffc98a", 5200, 260, 2); LAMP.position.copy(S.warpV(new K.Vector3(770, 46, 4702))); LAMP.castShadow = true; LAMP.shadow.mapSize.set(512, 512); LAMP.shadow.camera.near = 1; LAMP.shadow.camera.far = 170; LAMP.shadow.bias = -0.001; LAMP.shadow.normalBias = 0.3; S.scene.add(LAMP);
   },
-  dispose() { UNDRESS && UNDRESS(); LAMP && LAMP.parent.remove(LAMP); SET && SET.dispose(); window.__perfLab && window.__perfLab.merge(true); UNRIDE && UNRIDE(); }
+  dispose() { UNDRESS && UNDRESS(); LAMP && LAMP.parent?.remove(LAMP); SET && SET.dispose(); window.__perfLab && window.__perfLab.merge(true); UNRIDE && UNRIDE(); }
 };
