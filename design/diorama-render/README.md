@@ -18,8 +18,8 @@ The float sum then goes through bloom, exposure, a tone curve (Khronos **Neutral
 map is not a plain three.js scene: the city's bend lives in the three bundle's own shader chunks, the colours swap per world,
 and the sky, clouds and windows are custom shaders. A path tracer would need a lossy copy of the whole city (warp baked into
 millions of vertices, instances expanded) at minutes per 2x frame. The accumulation renderer keeps every pixel of the real map
-and gets the look that matters for a model: DOF, soft sun, sky occlusion and motion blur. It runs at **~6–10 s per 2x frame**
-(Slow Coffee) and **~25–40 s** (OMA at night, with 4 shadow-casting lamps) on the M4.
+and gets the look that matters for a model: DOF, soft sun, sky occlusion and motion blur. It runs at **~7 s per 2x frame**
+(Slow Coffee) and **~18 s** (OMA at night, with 3 shadow-casting lamps) on the M4, at 128 samples and 2160 x 3840.
 
 Nothing here changes the site. The renderer is injected into the page by the harness. `src/app.js` only hands the map's three
 classes and footprints to `window.__story`, behind `?story`.
