@@ -39835,7 +39835,7 @@ void main(){
           tilt = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
         }
         if (tilt.rt.width !== w || tilt.rt.height !== h) { tilt.rt.setSize(w, h); tilt.mat.uniforms.res.value.set(w, h); }
-        tilt.mat.uniforms.amt.value = 4.2 * renderer.getPixelRatio() * (mapMode && nav2?.on ? Math.max(0, 1 - 1.1 * nav2.camK) : 1); // nav2: no miniature blur in the street view (beta 2.5: one tap per pixel there, ~+5 fps)
+        tilt.mat.uniforms.amt.value = photoTiltK * photoCapK * 4.2 * renderer.getPixelRatio() * (mapMode && nav2?.on ? Math.max(0, 1 - 1.1 * nav2.camK) : 1); // nav2: no miniature blur in the street view (beta 2.5: one tap per pixel there, ~+5 fps)
         tilt.mat.uniforms.band.value = 0.16;
         tilt.mat.uniforms.gk.value = SCHEMES[state.schemeIdx].id === "nightlife" ? 0.35 : 1; // beta 2.9 (Daniel): the night's grain, much lighter
         { const ib = SCHEMES[state.schemeIdx].id === "interbelic"; tilt.mat.uniforms.ib.value = ib ? 1 : 0; if (ib) { tilt.mat.uniforms.gk.value = 0; tilt.mat.uniforms.amt.value *= mapMode ? 0.7 : 0.25; } } // worlds prototype: its own grain (after the grade), a softer miniature
@@ -40860,6 +40860,10 @@ void main(){
       const frameErrs = new Set();
       // r230: scratch values for frameStep (it made them anew every frame)
       const plateWP = new Vector3(), sunCols = new Map(), sunColOf = (c) => sunCols.get(c) || sunCols.set(c, new Color(c)).get(c);
+      // TASK-119: the frame's draw (the world's own post), callable at another size by the photo mode
+      function drawWorld(now) {
+        if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sincity") sinCityRender(now, camera); else if (!window.__noPost && (SCHEMES[state.schemeIdx].id === "sketch" || SCHEMES[state.schemeIdx].id === "blueprint")) sketchRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "interbelic") tiltShiftRender(now); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "riso") risoRender(now, camera); else if (mvK > 0.5 && !window.__noPost) tiltShiftRender(now); else if (window.__noPost) renderer.render(scene, camera); else outline.render(scene, camera);
+      }
       function frame(now) {
         try {
           frameStep(now);
@@ -40915,6 +40919,7 @@ void main(){
         nav2Cull(); // beta 2.5: the street view skips the small things far off in its haze
         mergeWatch(); // r198
         if (mapMode) state.targetL = mapNav.targetL;
+        if (photo?.on) { state.targetL = state.L; MO.Lv = 0; } // TASK-119: the ride holds still for its portrait
         else if (ONB_MODE && onbL != null) state.targetL = onbL; // r140: the page's scroll is the road
         const nearDacia = state.L > route.stopL.merge - 1500 && state.L < route.stopL.merge - 250;
         const crawl = (coffee.near && !coffee.done && (!mapMode || mapNav.place?.tm)) || (nearDacia && !mapMode);
@@ -41746,7 +41751,8 @@ void main(){
         }
         if (!routeRing) routeRingInit(); else routeRing.update(now);
         if (ONB_MODE) onbFrame(now); // r140
-        if (!window.__noPost && SCHEMES[state.schemeIdx].id === "sincity") sinCityRender(now, camera); else if (!window.__noPost && (SCHEMES[state.schemeIdx].id === "sketch" || SCHEMES[state.schemeIdx].id === "blueprint")) sketchRender(now, camera); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "interbelic") tiltShiftRender(now); else if (!window.__noPost && SCHEMES[state.schemeIdx].id === "riso") risoRender(now, camera); else if (mvK > 0.5 && !window.__noPost) tiltShiftRender(now); else if (window.__noPost) renderer.render(scene, camera); else outline.render(scene, camera);
+        if (photo?.on) photo.frame(now); // TASK-119: the photo mode's camera, round the ride
+        drawWorld(now);
         if (onbSnapReq) { onbSnapReq = false; onbSnap(); } // r141c, r142
         // r226 (Daniel: the final pill opens onto the live map): the loader opens its window only once the map has drawn
         // a frame after the reveal (the boot ground is gone: kz-boot); it is told at the next frame, once this one is on screen
@@ -41853,6 +41859,27 @@ void main(){
       var mapNav = { targetL: 0, legs: [], place: null, moving: false };
       // nav2: you drive the city's whole road graph with the arrows, a street and a satellite view, a Waze-style panel
       // (src/nav2.js); r160: the site's only 3D mode
+      // TASK-119: the photo mode (src/photo.js, behind ?photo): made on first use, its hooks into the city here
+      var photo = null, photoTiltK = 1, photoCapK = 1;
+      function photoMode() {
+        if (photo || typeof window.czPhoto !== "function") return photo;
+        photo = window.czPhoto({
+          camera, renderer,
+          car: () => (veh && veh.group && veh.group.visible !== false ? veh.group : null),
+          canEnter: () => mapMode && !siteMode && !!veh && !document.body.classList.contains("kz-boot"),
+          warp: (v) => warpV(v), unwarp: (v) => unwarpV(v), footprints: () => FOOTPRINTS.concat(TREE_BLOBS), // (buildings and trees: the camera stays out of both)
+          worlds: () => SCHEMES.map((w, i) => ({ i, id: w.id, n: w.n, bg: w.bg, ac: w.ac })),
+          worldIdx: () => state.schemeIdx, worldId: () => SCHEMES[state.schemeIdx].id, isMap: () => mapMode,
+          setWorld: async (i) => { if (SCHEMES[i]?.id === "sketch") { const pr = sketchPrep(true); if (pr) await pr; } applyScheme(i); await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); },
+          draw: (now) => drawWorld(now),
+          setTilt: (k) => { photoTiltK = k; }, setCapK: (k) => { photoCapK = k; },
+          onEnter: () => { photo._police = police.next; police.next = Infinity; if (police.active) police.until = performance.now(); },
+          onExit: () => { police.next = Math.max(performance.now() + 8000, photo._police || 0); camSnapNext = true; }
+        });
+        return photo;
+      }
+      document.addEventListener("click", (e) => { if (e.target.closest?.(".map-photo")) { e.preventDefault(); photoMode()?.enter(); } });
+      addEventListener("keydown", (e) => { if ((e.key === "p" || e.key === "P") && !e.metaKey && !e.ctrlKey && !e.altKey && typeof window.czPhoto === "function" && !/INPUT|TEXTAREA|SELECT/.test(e.target?.tagName || "") && mapMode && !photo?.on) { if (photoMode()?.enter()) e.preventDefault(); } });
       var NAV2 = typeof window.czNav2 === "function" ? window.czNav2 : null, nav2 = null; // r164: always (the ?nav=v2 flag of the prototype is no longer needed)
       var nav2RM = null, nav2Cop = false; // beta 2.7: nav2 drives the police car itself (its drift cooldown)
       // beta 2.5 polish: in the street view ~60% of the draw calls were small things (props, little houses' parts) more than
@@ -43090,7 +43117,7 @@ void main(){
         const faces = CREW.slice(0, 4).map((n, i) => `<i style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}">${CREW_FACES[n] ? `<img src="${CREW_FACES[n]}" alt="">` : n.slice(0, 1)}</i>`).join("");
         const top = el("div", "map-top", `<span class="map-title"><i class="mono">CROMATIC WORLD</i><b>Pick a place</b></span>
           <button class="map-ride" title="Choose your ride"><span class="mr-ic mr-th" aria-hidden="true"></span><b>Ride</b></button>
-          <button class="map-world" title="Choose your world"><span class="mb-orb">${MB_ORB}</span><b>Multiverse</b></button>
+          <button class="map-world" title="Choose your world"><span class="mb-orb">${MB_ORB}</span><b>Multiverse</b></button>${typeof window.czPhoto === "function" ? `<button class="map-photo" title="Photo mode (P)" aria-label="Photo mode"><span class="mp-ic" aria-hidden="true"></span><b>Photo</b></button>` : ""}
           <button class="map-crew" title="The crew you travel with"><span class="mcw-faces">${faces}</span><b>Crew</b></button>
           <button class="map-home" title="Cromatic Studios House, Str. Olari 9"><span class="mh-ic">\u{1F3E0}</span><b>Our house</b></button>
           <a class="map-site" href="/site/" title="The same story as a normal, fast website"><span class="ms-ic" aria-hidden="true"><i></i><i></i><i></i></span><b>Normal website</b></a>`);
