@@ -208,7 +208,7 @@ return out;
   // the camera close on the deck, a slow push; captured per frame (30 a second)
   const DASH = fs.readFileSync(new URL(process.env.DECK === "cassette" ? "./cassetteDash.js" : "./radioDash.js", import.meta.url), "utf8") /* (v2: the single-DIN stereo; DECK=cassette for v1) */, at = [1500, 420, 4260]; // (high over the roundabout: inside the sky, out of the warp)
   const cam = (t) => { const u = Math.min(1, t / 2.2), e = u * u * (3 - 2 * u); const k = t - 0.45, sh = k > 0 && k < 0.35 ? 0.22 * Math.exp(-k * 9) : 0, jx = sh * Math.sin(t * 157), jy = sh * Math.cos(t * 131); // (the engine catching: a tiny shudder of the frame)
-    return { raw: true, pos: [at[0] + 9 - 4 * e + jx, at[1] + 15 - 4 * e + jy, at[2] + 82 - 22 * e], tgt: [at[0] + 0.6 + jx * 0.5, at[1] + 7.5 + jy * 0.5, at[2] + 9.2], fov: 36, level: false, w: 2160, h: 3840 }; };
+    return { raw: true, pos: [at[0] + 4 - 2 * e + jx, at[1] + 12 - 2.5 * e + jy, at[2] + 88 - 16 * e], tgt: [at[0] + 0.2 + jx * 0.5, at[1] + 6.2 + jy * 0.5, at[2] + 9.2], fov: 36, level: false, w: 2160, h: 3840 }; };
   const fr = []; for (let i = 0; i <= Math.round(2.2 * 30); i++) fr.push({ t: i / 30, cam: cam(i / 30) });
   JOBS.c6dash = `
 await scheme("nightlife");

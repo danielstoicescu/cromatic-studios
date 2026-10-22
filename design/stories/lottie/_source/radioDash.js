@@ -11,7 +11,8 @@ function makeDash(K) {
   const tex = (w, h, draw) => { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new K.CanvasTexture(c); t.colorSpace = "srgb"; t.anisotropy = 8; t.__c = c; return t; };
   const box = (w, h, d, m, x, y, z, parent = g) => { const b = new K.Mesh(new K.BoxGeometry(w, h, d), m); b.position.set(x, y, z); parent.add(b); return b; };
   const cyl = (r, h, m, x, y, z, seg = 48, parent = g) => { const c = new K.Mesh(new K.CylinderGeometry(r, r, h, seg), m); c.rotation.x = Math.PI / 2; c.position.set(x, y, z); parent.add(c); return c; };
-  const ICE = "#7fd4ff", BLUE = "#1f9bff";
+  const ICE = "#5cc8ff", BLUE = "#1f9bff";
+  const faces = (front, side) => [side, side, side, side, front, side]; // (a box's materials: its printing on the front only)
   // ---- the dashboard: padded dark vinyl, the console below it, the 1300's wood-grain strip, the vents
   const vinyl = M("#1b1714", { roughness: 0.85 }), plastic = M("#26221f", { roughness: 0.55 });
   const woodT = tex(512, 64, (c, w, h) => { const gr = c.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "#5a3520"); gr.addColorStop(1, "#3c2212"); c.fillStyle = gr; c.fillRect(0, 0, w, h); for (let i = 0; i < 40; i++) { c.strokeStyle = `rgba(${30 + (i % 3) * 20},${16 + (i % 4) * 6},8,0.35)`; c.lineWidth = 1 + (i % 2); c.beginPath(); c.moveTo(0, (i * 7) % h); c.bezierCurveTo(w * 0.3, ((i * 13) % h), w * 0.6, ((i * 5) % h), w, ((i * 11) % h)); c.stroke(); } });
@@ -42,7 +43,7 @@ function makeDash(K) {
   };
   const faceT = tex(2000, 580, facePaint(false)), faceG = tex(2000, 580, facePaint(true));
   const faceM = new K.MeshStandardMaterial({ map: faceT, emissiveMap: faceG, emissive: new K.Color("#ffffff"), emissiveIntensity: 0, roughness: 0.78, metalness: 0.05 });
-  box(20.2, 5.8, 0.6, faceM, 0, 0, 0, R);
+  box(20.2, 5.8, 0.6, faces(faceM, M("#0a0b0c", { roughness: 0.8 })), 0, 0, 0, R);
   // the knob: an icy blue light ring, the chrome ring, the black cap (with a fine grip ring)
   const KX = -6.05, KY = 0.15;
   const ringM = new K.MeshStandardMaterial({ color: "#0b2236", emissive: new K.Color(ICE), emissiveIntensity: 0, roughness: 0.3 });
@@ -55,21 +56,22 @@ function makeDash(K) {
   const DW = 9.4, DH = 2.3, DXc = 1.75, DYc = 1.25;
   const dispT = tex(1880, 460, () => {}), dc = dispT.__c.getContext("2d");
   const dispM = new K.MeshStandardMaterial({ map: dispT, emissiveMap: dispT, emissive: new K.Color("#ffffff"), emissiveIntensity: 1, roughness: 0.12, metalness: 0.1 });
-  box(DW, DH, 0.06, dispM, DXc, DYc, 0.32, R);
+  box(DW, DH, 0.06, faces(dispM, M("#020203")), DXc, DYc, 0.32, R);
   // 14 segments: a top, b/c right, d bottom, e/f left, g/h the middle halves, i/l the centre verticals, j k m n the diagonals
   const SEG = { a: [[0, 0], [1, 0]], b: [[1, 0], [1, 0.5]], c: [[1, 0.5], [1, 1]], d: [[0, 1], [1, 1]], e: [[0, 0.5], [0, 1]], f: [[0, 0], [0, 0.5]], g: [[0, 0.5], [0.5, 0.5]], h: [[0.5, 0.5], [1, 0.5]], i: [[0.5, 0], [0.5, 0.5]], l: [[0.5, 0.5], [0.5, 1]], j: [[0, 0], [0.5, 0.5]], k: [[1, 0], [0.5, 0.5]], m: [[0.5, 0.5], [0, 1]], n: [[0.5, 0.5], [1, 1]] };
-  const GL = { C: "adef", R: "abefghn", O: "abcdef", M: "bcefjk", A: "abcefgh", T: "ail", I: "adil", F: "aefg", "1": "bck", "0": "abcdefkm", "4": "bcfgh", "8": "abcdefgh", " ": "" };
-  const CELLS = 17, PITCH = 82, CW = 52, CH = 190, X0 = 70, Y0 = 135;
+  const GL = { C: "adef", R: "abefghn", O: "abcdef", M: "bcefjk", A: "abcefgh", T: "ail", I: "adil", F: "aefg", "1": "il", "0": "abcdef", "4": "bcfgh", "8": "abcdefgh", " ": "" };
+  const CELLS = 16, PITCH = 82, CW = 52, CH = 190, X0 = 70, Y0 = 135;
   const drawDisp = (light, text, test, st) => {
     dc.fillStyle = "#020305"; dc.fillRect(0, 0, 1880, 460); if (light <= 0) { dispT.needsUpdate = true; return; }
     const bg = dc.createLinearGradient(0, 0, 0, 460); bg.addColorStop(0, `rgba(10,40,70,${0.9 * light})`); bg.addColorStop(1, `rgba(4,18,36,${0.9 * light})`); dc.fillStyle = bg; dc.fillRect(0, 0, 1880, 460);
     const seg = (x, y, s, on) => { const [[x1, y1], [x2, y2]] = SEG[s], sh = 0.1; const ax = x + CW * (x1 + (x2 - x1) * sh), ay = y + CH * (y1 + (y2 - y1) * sh), bx = x + CW * (x2 - (x2 - x1) * sh), by = y + CH * (y2 - (y2 - y1) * sh); dc.strokeStyle = on ? `rgba(225,246,255,${light})` : `rgba(120,190,235,${0.07 * light})`; dc.lineWidth = 12; dc.lineCap = "round"; dc.beginPath(); dc.moveTo(ax - (y1 === y2 ? 0 : 0), ay); dc.lineTo(bx, by); dc.stroke(); };
+    const cells = []; for (const ch of text) { if (ch === "." && cells.length) cells[cells.length - 1][1] = true; else cells.push([ch, false]); } // (the point sits in its digit's cell)
     for (const pass of [0, 1]) { // (0: the unlit segments' ghosts, 1: the lit ones, with their glow)
       if (pass) { dc.shadowColor = ICE; dc.shadowBlur = 22; } else dc.shadowBlur = 0;
       for (let k = 0; k < CELLS; k++) {
-        const x = X0 + k * PITCH, ch = text[k] || " ", lit = test ? "abcdefghijklmn" : (GL[ch] ?? "");
+        const x = X0 + k * PITCH, ch = cells[k] ? cells[k][0] : " ", lit = test ? "abcdefghijklmn" : (GL[ch] ?? "");
         for (const s of Object.keys(SEG)) { const on = lit.includes(s); if (on === !!pass) seg(x + (1 - (CH * 0.5 - 0) / CH) * 0, Y0, s, on); }
-        const dot = test || ch === "." ; if (pass === (dot ? 1 : 0)) { dc.fillStyle = dot ? `rgba(225,246,255,${light})` : `rgba(120,190,235,${0.07 * light})`; dc.beginPath(); dc.arc(x + CW + 15, Y0 + CH, 8, 0, 7); dc.fill(); }
+        const dot = test || !!(cells[k] && cells[k][1]); if (pass === (dot ? 1 : 0)) { dc.fillStyle = dot ? `rgba(225,246,255,${light})` : `rgba(120,190,235,${0.07 * light})`; dc.beginPath(); dc.arc(x + CW + 15, Y0 + CH, 8, 0, 7); dc.fill(); }
       }
     }
     // the stereo / signal icons, top right: on when the station is in
@@ -80,14 +82,19 @@ function makeDash(K) {
   const btnLabels = ["|◀◀", "▶▶|", "1 ▶II", "2 SCN", "3 RPT", "4 RDM", "5 DIR-", "6 DIR+", "DISP"];
   const btnPaint = (glow) => (c, w, h) => { c.fillStyle = glow ? "#000" : "#0a0b0d"; c.fillRect(0, 0, w, h); const bw = w / 9; btnLabels.forEach((s, i) => { if (!glow) { const gr = c.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "#2b2d31"); gr.addColorStop(1, "#151619"); c.fillStyle = gr; rr(c, i * bw + 5, 6, bw - 10, h - 12, 10); c.fill(); } c.fillStyle = glow ? BLUE : "#3e7fb3"; c.font = "800 30px CromaticSans, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(s, i * bw + bw / 2, h / 2 + 2); }); };
   const btnM = new K.MeshStandardMaterial({ map: tex(1080, 64, btnPaint(false)), emissiveMap: tex(1080, 64, btnPaint(true)), emissive: new K.Color("#ffffff"), emissiveIntensity: 0, roughness: 0.55 });
-  box(10.4, 0.62, 0.22, btnM, 1.75, -1.3, 0.38, R);
+  box(10.4, 0.62, 0.22, faces(btnM, M("#1a1b1e", { roughness: 0.6 })), 1.75, -1.3, 0.38, R);
   // the blue strip under the buttons, its ends turning up
   const stripM = new K.MeshStandardMaterial({ color: "#071a2b", emissive: new K.Color(BLUE), emissiveIntensity: 0, roughness: 0.3 });
-  box(13.6, 0.13, 0.12, stripM, 0.9, -2.1, 0.34, R);
-  for (const [sx, a] of [[-6.15, -0.55], [7.95, 0.55]]) { const e = box(1.2, 0.13, 0.12, stripM, sx, -1.85, 0.34, R); e.rotation.z = a; }
+  box(11.2, 0.13, 0.12, stripM, 2.15, -2.1, 0.34, R);
+  for (const [sx, a] of [[-3.95, -0.55], [8.25, 0.55]]) { const e = box(1.2, 0.13, 0.12, stripM, sx, -1.85, 0.34, R); e.rotation.z = a; }
   // USB (a vertical port) and AUX on the right
   box(0.62, 1.45, 0.08, M("#000", { roughness: 0.4 }), 7.95, 1.3, 0.32, R); box(0.36, 1.05, 0.1, M("#9aa1a8", { metalness: 0.8, roughness: 0.3 }), 7.95, 1.3, 0.3, R); box(0.18, 0.8, 0.12, M("#1a3c66"), 7.95, 1.3, 0.33, R);
   cyl(0.36, 0.08, M("#1a1b1e", { metalness: 0.5, roughness: 0.3 }), 8.75, -1.55, 0.32, 32, R); cyl(0.17, 0.1, M("#000"), 8.75, -1.55, 0.34, 24, R);
+  // ---- below the stereo, the 1300's heater panel (three sliders, the fan) and the ashtray: the console is not bare
+  const heatT = tex(1600, 300, (c, w, h) => { c.fillStyle = "#151311"; c.fillRect(0, 0, w, h); c.strokeStyle = "rgba(255,255,255,0.08)"; c.lineWidth = 4; c.strokeRect(8, 8, w - 16, h - 16); c.fillStyle = "#b9b2a6"; c.font = "700 34px CromaticSans, sans-serif"; c.textAlign = "center"; ["AER", "CALD", "DIRECTIE"].forEach((s, i) => { const x = 260 + i * 420; c.fillStyle = "#050505"; c.fillRect(x - 160, 120, 320, 22); c.fillStyle = "#b9b2a6"; c.fillText(s, x, 230); c.fillText("●", x - 180, 140); c.fillText("○", x + 180, 140); }); c.fillStyle = "#3a6ea8"; c.fillRect(470, 230 - 28, 0, 0); });
+  box(16, 3, 0.4, faces(M("#ffffff", { map: heatT, roughness: 0.7 }), M("#151311")), 0, -3.2, 9.15);
+  [-5.4, -0.15, 5.1].forEach((sx, i) => box(0.9, 0.75, 0.55, M("#6f6b66", { roughness: 0.4, metalness: 0.4 }), sx + [-1.2, 1.6, 0.4][i], -2.8, 9.5));
+  box(10, 2.6, 0.5, M("#2c2925", { roughness: 0.5, metalness: 0.3 }), 0, -7.6, 9.1); box(8.6, 0.5, 0.6, M("#8a8680", { metalness: 0.5, roughness: 0.5 }), 0, -6.6, 9.3); // (the ashtray, its chrome pull)
   // ---- the two auxiliary gauges over the stereo (rev counter, oil pressure): needles at rest till the engine catches
   const gaugeT = (label, marks) => tex(256, 256, (c) => { c.translate(128, 128); c.rotate(-Math.PI / 2); c.translate(-128, -128); c.fillStyle = "#0d0d0f"; c.beginPath(); c.arc(128, 128, 126, 0, 7); c.fill(); c.strokeStyle = "#e9e3d3"; c.lineWidth = 4; for (let i = 0; i <= marks; i++) { const a = Math.PI * (0.75 + 1.5 * i / marks); c.beginPath(); c.moveTo(128 + Math.cos(a) * 100, 128 + Math.sin(a) * 100); c.lineTo(128 + Math.cos(a) * (i % 2 ? 88 : 80), 128 + Math.sin(a) * (i % 2 ? 88 : 80)); c.stroke(); } c.fillStyle = "#e9e3d3"; c.font = "700 28px CromaticSans, sans-serif"; c.textAlign = "center"; c.fillText(label, 128, 190); });
   const gFace = [], gNeedle = [];
@@ -106,7 +113,7 @@ function makeDash(K) {
   const fill = new K.DirectionalLight("#9fb2ff", 0.55); fill.position.set(-30, 60, 80); fill.target.position.set(0, 0, 0); g.add(fill, fill.target);
   const key = new K.DirectionalLight("#ffe2b8", 0.75); key.position.set(25, 25, 60); key.target.position.set(0, 2, 8); g.add(key, key.target);
   const glow = new K.DirectionalLight(BLUE, 0); glow.position.set(0, -14, 30); glow.target.position.set(0, 4, 0); g.add(glow, glow.target);
-  g.traverse((m) => { if (m.isMesh) { m.castShadow = false; m.receiveShadow = false; } });
+  g.traverse((m) => { if (m.isMesh) { m.castShadow = false; m.receiveShadow = false; m.frustumCulled = false; } }); // (no culling: small parts far out over the city got culled mid-shot)
   const sm = (x) => x * x * (3 - 2 * x), cl = (v) => Math.max(0, Math.min(1, v));
   // the cues (s, from the video's start = this shot's; the cut to Olari at 2.2), on Sorin's radio sound (power
   // click, tuning static, the station locking) and his beat grid (sound/_work/c6-pulse-cues-draft.json, 86.49 bpm):
@@ -116,7 +123,7 @@ function makeDash(K) {
   const CUE = { engine: 0.45, displayOn: 0.85, textIn: 0.92, settled: 1.10, station: 1.10, pulse: 1.10, cut: 2.2, kicks: [[1.4688, 0.6], [2.1625, 0.6], [2.8563, 0.6], [3.55, 1]] };
   const TEXT = "CROMATIC FM 101.4";
   return { group: g, cues: CUE, pose(t) {
-    const k = t - CUE.engine, rest = Math.PI * 1.25;
+    const k = t - CUE.engine, rest = Math.PI * 0.75; // (the needle's rest: the dial's start, lower left; it turns clockwise)
     const jump = (target) => k <= 0 ? 0 : target * (1 - Math.exp(-k * 7) * Math.cos(k * 22));
     gNeedle[0].rotation.z = rest - jump(1.15); gNeedle[1].rotation.z = rest - jump(1.7);
     const flick = k < 0 ? 0 : k < 0.04 ? 1 : k < 0.08 ? 0.15 : 1; gFace.forEach((m) => { m.emissiveIntensity = 0.55 * flick; });
@@ -130,7 +137,7 @@ function makeDash(K) {
     // a slow breath from the lock, and a swell on each kick (quick up, a long soft fall), never off
     let pulse = 0; if (t >= CUE.pulse) { const br = sm(cl((t - CUE.pulse) / 0.3)); pulse = 0.18 * br * (0.5 - 0.5 * Math.cos(2 * Math.PI * (t - CUE.kicks[0][0]) / (60 / 86.486) + Math.PI)); for (const [kt, ks] of CUE.kicks) { const d = t - kt; if (d > -0.03 && d < 0.9) pulse += ks * (d < 0 ? sm((d + 0.03) / 0.03) : Math.exp(-d * 5)); } }
     const lvl = on * (0.6 + 0.55 * Math.min(1.2, pulse));
-    ringM.emissiveIntensity = 2.2 * lvl; stripM.emissiveIntensity = 2.0 * lvl; halo.material.opacity = 0.22 * lvl; faceM.emissiveIntensity = 1.1 * on; btnM.emissiveIntensity = 1.1 * on; glow.intensity = 0.55 * lvl;
+    ringM.emissiveIntensity = 1.5 * lvl; stripM.emissiveIntensity = 2.0 * lvl; halo.material.opacity = 0.22 * lvl; faceM.emissiveIntensity = 1.1 * on; btnM.emissiveIntensity = 1.1 * on; glow.intensity = 0.55 * lvl;
     g.updateMatrixWorld(true);
   } };
 }
