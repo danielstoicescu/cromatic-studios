@@ -2050,7 +2050,7 @@
       <div class="n2-toast" role="status"></div>
       <div class="n2-taphint mono" aria-hidden="true">TAP THE ROAD TO DRIVE THERE</div>
       <button class="n2-snd" aria-pressed="true" title="Sound off" aria-label="Sound off"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z" fill="currentColor"/><path class="w1" d="M15.2 9.2a4 4 0 0 1 0 5.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="w2" d="M17.8 6.8a7.4 7.4 0 0 1 0 10.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M15.5 9.5l5 5m0-5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-      <div class="n2-cop" role="status" aria-live="polite"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15" class="n2-cop-bg"/><circle cx="18" cy="18" r="15" class="n2-cop-ring"/></svg><b>POLICE · SLOW DOWN</b><em class="mono">5</em></div>
+      <div class="n2-cop" role="status" aria-live="polite"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15" class="n2-cop-bg"/><circle cx="18" cy="18" r="15" class="n2-cop-ring"/></svg><b>POLITE · SLOW DOWN</b><em class="mono">5</em></div>
       <div class="n2-stick" aria-hidden="true"><span class="n2-ring"></span><span class="n2-knob"></span></div>
       <button class="n2-driftb mono" aria-label="Drift (hold)">DRIFT</button>
       <div class="n2-arms" aria-hidden="true"><span class="n2-arm" data-k="l"></span><span class="n2-arm" data-k="s"></span><span class="n2-arm" data-k="r"></span><span class="n2-arm n2-next off"></span></div>`;

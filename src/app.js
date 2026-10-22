@@ -24052,7 +24052,7 @@ void main() {
         { id: "plane", label: "Cropduster" },
         { id: "scooter", label: "E-scooter" },
         { id: "foodvan", label: "Kompus truck" },
-        { id: "cop", label: "Patrol" }, // r139e: the Romanian Police 1310 (id kept for analytics); r139j: named Patrol (Daniel)
+        { id: "cop", label: "Polite Patrol" }, // r139e: the Romanian Police 1310 (id kept for analytics); r139j: named Patrol (Daniel); TASK-115: Polite Patrol, POLITE on the doors
         { id: "sub", label: "Yellow submarine" }
       ];
       FORM_DREAMS = ["Branding", "Website / App", "Video", "Growth & Social", "Not sure yet"];
@@ -33230,8 +33230,8 @@ void main(){
       // POLIȚIA in white block capitals, for the doors and the bonnet
       [x, y, w, h] = R.word;
       ctx.save(); ctx.fillStyle = "#ffffff"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; try { ctx.letterSpacing = "6px"; } catch {}
-      for (let fs = 104; fs >= 60; fs -= 4) { ctx.font = `800 ${fs}px CromaticSans, Arial, sans-serif`; if (ctx.measureText("POLIȚIA").width <= w - 24) break; }
-      ctx.fillText("POLIȚIA", x + w / 2, y + h / 2 - 6); ctx.restore();
+      for (let fs = 104; fs >= 60; fs -= 4) { ctx.font = `800 ${fs}px CromaticSans, Arial, sans-serif`; if (ctx.measureText("POLITE").width <= w - 24) break; }
+      ctx.fillText("POLITE", x + w / 2, y + h / 2 - 6); ctx.restore(); // TASK-115 (Daniel): POLITE, not POLIȚIA (no trouble with the authorities)
       // the crest: a white shield outline with a star and an eagle's wings
       [x, y, w, h] = R.crest;
       ctx.save(); ctx.translate(x + w / 2, y + 10); ctx.strokeStyle = "#ffffff"; ctx.fillStyle = "#ffffff"; ctx.lineWidth = 7;
