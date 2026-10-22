@@ -5,12 +5,12 @@
 //   node post.mjs <in> <out> [--tilt] [--amt 0.7]      or as a module: post(inBuf|file, { tilt, amt }) -> PNG buffer
 import fs from "fs";
 import sharp from "/Users/daniel.stoic/cromatic-drive/node_modules/sharp/lib/index.js";
-const CUBE = new URL("./luts/cromatic-night.cube", import.meta.url).pathname;
-let LUT = null, N = 0;
-function load() { if (LUT) return; const v = []; for (const ln of fs.readFileSync(CUBE, "utf8").split("\n")) { const t = ln.trim(); if (!t || t[0] === "#" || /^[A-Z]/.test(t)) { const m = t.match(/^LUT_3D_SIZE\s+(\d+)/); if (m) N = +m[1]; continue; } const p = t.split(/\s+/).map(Number); if (p.length === 3) v.push(p); } LUT = new Float32Array(v.flat()); }
+// (B8: lut "diorama" = Vera's day grade, luts/cromatic-diorama.cube; "night" the default)
+const CUBES = {}; let LUT = null, N = 0;
+function load(name = "night") { if (CUBES[name]) { ({ LUT, N } = CUBES[name]); return; } const CUBE = new URL(`./luts/cromatic-${name}.cube`, import.meta.url).pathname; const v = []; for (const ln of fs.readFileSync(CUBE, "utf8").split("\n")) { const t = ln.trim(); if (!t || t[0] === "#" || /^[A-Z]/.test(t)) { const m = t.match(/^LUT_3D_SIZE\s+(\d+)/); if (m) N = +m[1]; continue; } const p = t.split(/\s+/).map(Number); if (p.length === 3) v.push(p); } LUT = new Float32Array(v.flat()); CUBES[name] = { LUT, N }; }
 // a 256-step table per channel would lose the cross-talk: trilinear on the cube, cached per 6-bit colour
-export async function post(input, { tilt = false, amt = 0.7, blur = 9 } = {}) {
-  load();
+export async function post(input, { tilt = false, amt = 0.7, blur = 9, lut = "night" } = {}) {
+  load(lut);
   const img = sharp(input).ensureAlpha(), { data, info } = await img.raw().toBuffer({ resolveWithObject: true });
   const cache = new Map(), n1 = N - 1, at = (r, g, b) => (r + g * N + b * N * N) * 3;
   for (let i = 0; i < data.length; i += 4) {

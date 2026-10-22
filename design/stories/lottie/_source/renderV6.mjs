@@ -8,6 +8,7 @@ import fs from "fs";
 import { D3 } from "./shotsD3.mjs";
 import { A6 } from "./shotsA6.mjs";
 import { SEG as B7SEG, car as b7car } from "./shotsB7.mjs";
+import { SEG as B8SEG, car as b8car } from "./shotsB8.mjs";
 import { C8A } from "./shotsC8.mjs";
 import { omaArches } from "./shots5.mjs";
 const job = process.env.JOB, RAW = (process.env.RAW || "/private/tmp/claude-501/-Users-daniel-stoic/8f3b4503-769c-4f86-ba4b-8e36528128b3/scratchpad/stl4/raw") + "/v6";
@@ -201,6 +202,38 @@ for (const S of segs) {
   fs.writeFileSync(RAW + "/b7.json", JSON.stringify(out));
 }
 await p.evaluate(() => window.__scheme("monument")); await p.waitForTimeout(3000);
+return out;
+`;
+}
+{
+  // ---- B8 (TASK-065j): B7 more cinematic and warmer (shotsB8.mjs): b8page.js's warm key, the house without curtains and
+  // lit warm, the ride's nose dipping at the stop; per frame (30 a second). SEGS=0,9 limits the shots; T=0.5,1.2 (story
+  // seconds) renders only the frames at those times (the contact sheet's keys)
+  const want = process.env.T ? process.env.T.split(",").map(Number) : null;
+  const segs = B8SEG.map((S, k) => { const fr = []; for (let i = 0, t = S.a; t < S.b - 1e-6; i++, t = S.a + i / 30) { if (!want || want.some((w) => Math.abs(w - t) < 1 / 60)) fr.push({ i, t: +t.toFixed(4), cam: S.cam(t), car: b8car(t) }); } return { k, world: S.world, mode: S.mode, kind: S.kind, warm: S.warm, key: S.key, house: S.house, frames: fr }; }).filter((S) => S.frames.length);
+  JOBS.b8 = `
+const segs = ${JSON.stringify(segs)}, only = ${JSON.stringify(process.env.SEGS ? process.env.SEGS.split(",").map(Number) : null)};
+await p.addScriptTag({ content: fs.readFileSync("${D}b8page.js", "utf8") });
+fs.mkdirSync(RAW + "/b8", { recursive: true });
+const out = {};
+for (const S of segs) {
+  if (only && !only.includes(S.k)) continue;
+  const cur = await p.evaluate(() => window.__story.schemes[window.__story.state.schemeIdx].id);
+  if (cur !== S.world) { await p.evaluate((w) => window.__scheme(w), S.world); await p.waitForTimeout(6500); }
+  await p.evaluate(() => { window.__story.state.weatherOn = false; });
+  await H.aim(p, S.frames[0].cam, 2500);
+  for (const F0 of S.frames) {
+    const o = F0.cam, q = F0.car;
+    const u = await p.evaluate(async ({ o, q, S0 }) => { window.__cam(o.pos, o.tgt); window.__camSnap(); const S = window.__story, R = window.__R, B = window.__b8, FC = S.farClouds, fv = FC && FC.visible; if (FC) FC.visible = false;
+      if (S0.mode === "sketch") { for (const p0 of [[q.x, 0, q.z], o.tgt, [q.x, 0, q.z + 60]]) { const v = R.W(p0); S.sketchPaint(v.x, v.z, 900, 1); } }
+      R.park([q.x, q.y, q.z, q.yaw]); B.pitch(q.pitch || 0); S.veh().beams && (S.veh().beams.visible = true);
+      B.warm(true, S0.warm); B.house(!!S0.house, S0.house); R.keyLight({ ...o, keyColor: "#ffc48e", key: S0.key }, true);
+      try { R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); return R.shot({ ...o, keepBg: true, ...(S0.mode ? { mode: S0.mode } : {}) }); }
+      finally { B.warm(false); B.house(false); R.keyLight(null, false); S.veh().group.rotation.order = "XYZ"; R.park(null); if (FC) FC.visible = fv; } }, { o, q, S0: { mode: S.mode, warm: S.warm, key: S.key, house: S.house } });
+    save(u, RAW + "/b8/s" + String(S.k).padStart(2, "0") + "-" + String(F0.i).padStart(3, "0") + ".png");
+  }
+  out[S.k] = { world: S.world, n: S.frames.length };
+}
 return out;
 `;
 }
