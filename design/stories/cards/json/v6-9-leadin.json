@@ -1,0 +1,141 @@
+{
+ "id": "v6-9-leadin",
+ "story": "E",
+ "beat": "Pick your ride. + the pill, then black under it",
+ "shots": [
+  "leadin",
+  "end"
+ ],
+ "scene": "paper, then black",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "e6l",
+    "place": {
+     "x": 540,
+     "align": "center",
+     "base": 880
+    },
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "e6l-l1",
+      "style": "line",
+      "size": 88,
+      "tracking": -0.035,
+      "lead": 1.06,
+      "ink": "#0D0C09",
+      "align": "center",
+      "text": "Pick your ride.",
+      "x": 267.7,
+      "baseline": 880,
+      "width": 544.5,
+      "box": {
+       "x": 267.7,
+       "y": 813.1,
+       "w": 544.5,
+       "h": 88
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ],
+  "url": {
+   "kind": "url",
+   "id": "url",
+   "text": "cromaticstudios.com",
+   "size": 64,
+   "tracking": -0.02,
+   "ink": "#0D0C09",
+   "fill": "#FED012",
+   "centre": [
+    540,
+    1000
+   ],
+   "w": 694.4,
+   "h": 102.4,
+   "textX": 232.8,
+   "baseline": 1023,
+   "keyline": 6,
+   "shadow": [
+    10,
+    14
+   ],
+   "tilt": -6
+  }
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "leadin+2",
+   "urlIn": "leadin+8",
+   "out": "end-6"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "E6": {
+    "clock": "E6",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "e6l-l1",
+      "text": "Pick your ride.",
+      "in": 407,
+      "out": 444,
+      "motion": "lineIn / lineOut",
+      "hold": 25
+     },
+     {
+      "id": "url",
+      "text": "cromaticstudios.com",
+      "in": 413,
+      "black": 450,
+      "settle": 479,
+      "out": 510,
+      "motion": "urlIn, then urlSettle on black"
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "leadin+40"
+  }
+ ],
+ "notes": "",
+ "continuedBy": {
+  "black": "end+0",
+  "settle": "end+29",
+  "out": "end.end-0"
+ },
+ "files": {
+  "outlined": [
+   "svg/outlined/v6-9-leadin.svg"
+  ],
+  "live": [
+   "svg/live/v6-9-leadin.svg"
+  ]
+ }
+}

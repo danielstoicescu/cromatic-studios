@@ -1,0 +1,159 @@
+{
+ "id": "v6-rush",
+ "story": "E",
+ "beat": "(no tag): Don’t rush. They’re [polite.]",
+ "shots": [
+  "rush"
+ ],
+ "scene": "paper",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "e6rush",
+    "place": "bl",
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "e6rush-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "Don’t rush.",
+      "x": 80,
+      "baseline": 1390.8,
+      "width": 546.9,
+      "box": {
+       "x": 80,
+       "y": 1302.6,
+       "w": 546.9,
+       "h": 91.6
+      }
+     },
+     {
+      "kind": "line",
+      "id": "e6rush-l2",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "They’re",
+      "x": 80,
+      "baseline": 1530,
+      "width": 375.5,
+      "box": {
+       "x": 80,
+       "y": 1441.8,
+       "w": 796.1,
+       "h": 116
+      },
+      "pill": {
+       "id": "e6rush-l2-pill",
+       "fill": "#FED012",
+       "ink": "#0D0C09",
+       "left": 483.3,
+       "cy": 1488.8,
+       "h": 134.6,
+       "keyline": 5.2,
+       "shadow": [
+        3.5,
+        7.5
+       ],
+       "tilt": -3,
+       "wordX": 522.8,
+       "states": [
+        {
+         "word": "polite.",
+         "wordW": 313.9,
+         "w": 392.8,
+         "cx": 679.7
+        }
+       ]
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "polite"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "rush+12",
+   "lineStagger": 4,
+   "pillIn": "rush+22",
+   "out": "rush.end-6"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "E6": {
+    "clock": "E6",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "e6rush-l1",
+      "text": "Don’t rush.",
+      "in": 282,
+      "out": 326,
+      "motion": "lineIn / lineOut",
+      "hold": 32
+     },
+     {
+      "id": "e6rush-l2",
+      "text": "They’re",
+      "in": 286,
+      "out": 327,
+      "motion": "lineIn / lineOut",
+      "hold": 29
+     },
+     {
+      "id": "e6rush-l2-pill-0",
+      "word": "polite.",
+      "in": 292,
+      "out": 327,
+      "motion": "pillIn",
+      "hold": 35
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "rush.end-10"
+  }
+ ],
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/v6-rush.svg"
+  ],
+  "live": [
+   "svg/live/v6-rush.svg"
+  ]
+ }
+}
