@@ -125,8 +125,8 @@ function storyC2(lang) {
   // ---- top: Iris's end (c9: "Drive it for yourself." over the pill; c10: black under the same pill, the settle), the
   // grain; then her cards c1-c8 where the words were (over the shots, under the grain)
   const card = (id, t) => { const { __T, ...src } = KC.card(id), cc = JSON.parse(JSON.stringify(src)); cc.__T = KC.T; if (t) Object.assign(cc.timing.cues, t); return cc; };
-  const bt = (k, n) => `${k}+${Math.round(n * B * 60)}`; // (n beats after a cut)
-  drawCard(Cm, card("c9-drive", { in: bt("ft4", 5), urlIn: `ft4+${Math.round(5 * B * 60) + 5}` }), TC);
+  const bt = (k, n) => `${k}+${Math.round(n * B * 30)}`; // (n beats after a cut; the cards count 30 a second)
+  drawCard(Cm, card("c9-drive", { in: bt("ft4", 5), urlIn: `ft4+${Math.round(5 * B * 30) + 3}` }), TC);
   grain(Cm, asset, { o: 34, F });
   // (Daniel: no word may leak into the next shot: a card's layers end at its last shot's cut, and its out starts early
   // enough to be over by then)
