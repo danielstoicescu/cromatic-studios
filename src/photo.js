@@ -7,6 +7,13 @@
 (() => {
   "use strict";
   try { if (/[?&]photo\b/.test(location.search)) sessionStorage.setItem("cz-photo", "1"); } catch (e) {}
+  // the keys: taken in the capture phase from the very start (before the map's and the street drive's own listeners
+  // exist), handed to the photo mode while it is on, so an arrow framing a photo never drives the car
+  let keyHook = null;
+  if (/[?&]photo\b/.test(location.search) || (() => { try { return sessionStorage.getItem("cz-photo") === "1"; } catch (e) { return false; } })()) {
+    addEventListener("keydown", (e) => keyHook && keyHook.down(e), true);
+    addEventListener("keyup", (e) => keyHook && keyHook.up(e), true);
+  }
   const FLAG = (() => { try { return /[?&]photo\b/.test(location.search) || sessionStorage.getItem("cz-photo") === "1"; } catch (e) { return /[?&]photo\b/.test(location.search); } })();
   const FORMATS = [
     { id: "9:16", w: 1080, h: 1920, label: "9:16", hint: "Story" },
@@ -402,7 +409,7 @@
       app.onEnter(); app.setTilt(tilt ? 1 : 0);
       document.body.classList.add("photo-on"); root.hidden = false; root.classList.toggle("pm-touchui", coarse());
       setFormat(coarse() ? "9:16" : fmt.id); markWorld(); layoutGuide(); setClean(false);
-      addEventListener("keydown", onKey, true); addEventListener("keyup", onKeyUp, true); addEventListener("resize", layoutGuide);
+      keyHook = { down: onKey, up: onKeyUp }; addEventListener("resize", layoutGuide);
       setTimeout(() => $(".pm-shutter").focus({ preventScroll: true }), 50);
       live("Photo mode. Drag to move round the ride; Space takes the photo.");
       return true;
@@ -410,7 +417,7 @@
     async function exit() {
       if (!on) return;
       on = false; closeSheet(); held.clear(); pts.clear(); dragging = false;
-      removeEventListener("keydown", onKey, true); removeEventListener("keyup", onKeyUp, true); removeEventListener("resize", layoutGuide);
+      keyHook = null; removeEventListener("resize", layoutGuide);
       root.hidden = true; document.body.classList.remove("photo-on");
       camera.clearViewOffset(); camera.aspect = innerWidth / innerHeight;
       camera.near = saved.near; camera.far = saved.far; camera.fov = saved.fov; camera.updateProjectionMatrix();

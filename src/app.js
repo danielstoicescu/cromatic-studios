@@ -40915,7 +40915,7 @@ void main(){
             if (now - (state.floorFix || 0) > 120) { state.floorFix = now; window.scrollTo({ top: clamp2(state.floorL / effectiveTotal(), 0, 1) * maxScroll(), behavior: "instant" }); }
           }
         }
-        if (nav2?.on && mapMode) nav2.tick(dt, now); // nav2: the arrows (or its auto-pilot) set mapNav.targetL
+        if (nav2?.on && mapMode && !photo?.on) nav2.tick(dt, now); // (TASK-119: the street drive rests while a photo is framed) // nav2: the arrows (or its auto-pilot) set mapNav.targetL
         nav2Cull(); // beta 2.5: the street view skips the small things far off in its haze
         mergeWatch(); // r198
         if (mapMode) state.targetL = mapNav.targetL;
