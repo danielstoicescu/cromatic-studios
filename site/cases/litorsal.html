@@ -389,6 +389,7 @@ html.embed .cs-back{display:none}
 html:not(.embed) .page{padding-top:64px}
 .rail-cap{margin-top:var(--caption-gap);padding-inline:var(--media-pad)}
 .hero-media figure:only-child .frame{max-height:min(78svh,820px)}
+.hero-media figure:only-child .frame[data-czl]{max-height:none} /* TASK-121: a Lottie hero (Litorsal's metro train) keeps its own ratio, so the canvas fits the frame exactly */
 .hero-row{display:flex;gap:var(--gutter)}
 .hero-row>figure{flex:var(--r) 1 0;min-width:0}
 /* a full-page capture, scrolled slowly inside the device frame */
@@ -451,6 +452,7 @@ figure.only-sm{display:none}
 .hero-media .frame>img,.hero-media .frame>video{scale:1.04;translate:0 var(--py,0px);will-change:scale,translate,filter;animation:hero-settle 1.6s cubic-bezier(.16,1,.3,1) .12s both}
 @keyframes hero-wipe{from{clip-path:inset(100% 0 0 0 round 24px)}to{clip-path:inset(0 0 0 0 round 24px)}}
 @keyframes hero-settle{from{scale:1.12;filter:blur(10px) brightness(1.25)}to{scale:1.04;filter:none}}
+.hero-media .frame[data-czl]>img{scale:1;translate:none;animation:none;will-change:auto} /* (and its still sits still: the canvas fades in over it without a jump) */
 @media (prefers-reduced-motion:reduce){
   .screen--scroll img{animation:none}
   .hero-media .frame,.film-frame,.hero-media .frame>img,.hero-media .frame>video{animation:none;clip-path:none;scale:1;translate:none}
@@ -481,8 +483,8 @@ figure.only-sm{display:none}
         </div>
       </div>
       <div class="hero-media">
-        <figure style="--r:1.909">
-  <div class="frame"><img src="m:litorsal/heat-6x3" alt="Billboard: Căldură mare, Litorsal îți dă hidratare! Four Litorsal tubes in front of the sun and splashing water, four icons and a QR code" width="1600" height="838" fetchpriority="high" decoding="async"></div>
+        <figure style="--r:1.778">
+  <div class="frame" data-czl="metro-train" data-czl-at="300"><img src="m:metro/train-still" alt="Animated mockup: a metro train pulls into the station with the wide poster on the side of a car, opens and closes its doors, and pulls out" width="1600" height="900" fetchpriority="high" decoding="async"></div>
 </figure>
       </div>
     </div>
@@ -514,7 +516,7 @@ figure.only-sm{display:none}
     <div class="chapter-side">
       <div>
         <span class="pill-title"><span class="pill pill--marketing">Super</span> <span class="pill pill--accent">vibe</span></span>
-        <p class="chapter-text">The city line: “Hidratare corectă pentru un super vibe.” A hand holds the tube up on flat yellow, the way you hold it on your way out. The layout comes in landscape and portrait for the metro, and in a 2 x 0.8 m banner. Below, the posters where they ran, as animated mockups: on the train, on the platform, by the doors.</p>
+        <p class="chapter-text">The city line: “Hidratare corectă pentru un super vibe.” A hand holds the tube up on flat yellow, the way you hold it on your way out. The layout comes in landscape and portrait for the metro, and in a 2 x 0.8 m banner. The train at the top of this page carries the wide one as a wrap; below, the other places it ran, as animated mockups: on the platform, by the doors.</p>
         <ul class="deliverables">
           <li>Metro posters</li>
           <li>Banner</li>
@@ -524,10 +526,6 @@ figure.only-sm{display:none}
       </div>
     </div>
     <div class="chapter-media">
-<figure style="--r:1.778">
-  <div class="frame" data-czl="metro-train" data-czl-at="300"><img src="m:metro/train-still" alt="Animated mockup: a metro train pulls into the station with the wide poster on the side of a car, opens and closes its doors, and pulls out" width="1600" height="900" loading="lazy" decoding="async"></div>
-  <figcaption>On the train, as a wrap</figcaption>
-</figure>
 <figure style="--r:1.778">
   <div class="frame" data-czl="metro-platform"><img src="m:metro/platform-still" alt="Animated mockup: the landscape and portrait posters in lit frames on a metro station's track wall, the light of a passing train sliding across their glass" width="1600" height="900" loading="lazy" decoding="async"></div>
   <figcaption>Animated mockup: on the platform</figcaption>
@@ -590,7 +588,7 @@ figure.only-sm{display:none}
     <div class="chapter-side">
       <div>
         <span class="pill-title"><span class="pill pill--marketing">Căldură</span> <span class="pill pill--accent">mare</span></span>
-        <p class="chapter-text">The summer line, the billboard at the top of this page: “Căldură mare, Litorsal îți dă hidratare!” The tubes stand in a row in front of the sun and a splash of water. Four icons explain the product at a glance: efficient hydration, electrolytes restored, energy, support for the body. One layout, redrawn for six billboard sizes, from 6 x 3 m to 1 x 1.5 m. Below, a mockup of how it reads in the street: on a block's gable, as a tram goes by.</p>
+        <p class="chapter-text">The summer line: “Căldură mare, Litorsal îți dă hidratare!” The tubes stand in a row in front of the sun and a splash of water. Four icons explain the product at a glance: efficient hydration, electrolytes restored, energy, support for the body. One layout, redrawn for six billboard sizes, from 6 x 3 m to 1 x 1.5 m. Below, the 6 x 3 m billboard, then a mockup of how it reads in the street: on a block's gable, as a tram goes by.</p>
         <ul class="deliverables">
           <li>Key visual</li>
           <li>Billboards</li>
@@ -601,6 +599,10 @@ figure.only-sm{display:none}
       </div>
     </div>
     <div class="chapter-media">
+<figure style="--r:1.909">
+  <div class="frame"><img src="m:litorsal/heat-6x3" alt="Billboard: Căldură mare, Litorsal îți dă hidratare! Four Litorsal tubes in front of the sun and splashing water, four icons and a QR code" width="1600" height="838" loading="lazy" decoding="async"></div>
+  <figcaption>The key visual on the 6 x 3 m billboard</figcaption>
+</figure>
 <figure class="hide-sm" style="--r:1.5">
   <div class="frame" data-czl="ooh-gable-wide" data-czl-at="320"><img src="m:ooh/gable-wide-still" alt="Animated mockup: the portrait layout as a mesh banner on the blind gable of a block of flats, a tram passing below" width="1620" height="1080" loading="lazy" decoding="async"></div>
   <figcaption>Animated mockup: the portrait layout as a mesh banner on a block's gable, as a tram goes by</figcaption>
@@ -650,7 +652,7 @@ figure.only-sm{display:none}
             <figure style="--r:1.778" data-fixed-ratio><div class="frame"><img src="m:lacalut/lg-launcher" alt="" width="1200" height="1000" loading="lazy" decoding="async"></div></figure>
             <h3>Lacalut</h3>
             <p>Lacalut White & Repair on LG Smart TV home screens: three still formats and a 15-second banner in motion.</p>
-            <ul class="pills"><li><span class="pill pill--marketing">Growth &amp; Content</span></li><li><span class="pill pill--video">Photo &amp; Video</span></li></ul>
+            <ul class="pills"><li><span class="pill pill--marketing">Growth &amp; Content</span></li><li><span class="pill pill--video">Photo &amp; Video</span></li><li><span class="pill pill--product">Product Design</span></li></ul>
             <a class="cover" href="/work/lacalut/" aria-label="Lacalut case study"></a>
           </article>
           <article class="proj">

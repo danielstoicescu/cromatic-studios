@@ -75,6 +75,7 @@ const core30 = createCore30({
 });
 const isCore30 = (u) => u === "/thecore30" || u.startsWith("/thecore30/") || u.startsWith("/thecore30?") || u.startsWith("/api/core30/");
 console.log(`[core30] answers in ${CORE30_DATA}`);
+console.log(`[core30] admin key from ${process.env.CORE30_ADMIN_KEY ? "CORE30_ADMIN_KEY" : process.env.LEADS_KEY ? "LEADS_KEY" : "nowhere"}`); // names the source, never the value
 
 // a gentle rate limit: 5 passes per address per 15 minutes
 const hits = new Map();
