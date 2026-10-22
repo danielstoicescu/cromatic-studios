@@ -207,7 +207,8 @@ return out;
   // ---- C6: the radio-cassette in the 1300's dashboard (cassetteDash.js), placed far from the city, its own lights;
   // the camera close on the deck, a slow push; captured per frame (30 a second)
   const DASH = fs.readFileSync(new URL("./cassetteDash.js", import.meta.url), "utf8"), at = [1500, 420, 4260]; // (high over the roundabout: inside the sky, out of the warp)
-  const cam = (t) => { const u = Math.min(1, t / 2.2), e = u * u * (3 - 2 * u); return { raw: true, pos: [at[0] + 9 - 4 * e, at[1] + 13 - 4 * e, at[2] + 78 - 22 * e], tgt: [at[0] + 0.6, at[1] + 4.2, at[2] + 9.2], fov: 34, level: false, w: 2160, h: 3840 }; };
+  const cam = (t) => { const u = Math.min(1, t / 2.2), e = u * u * (3 - 2 * u); const k = t - 0.45, sh = k > 0 && k < 0.35 ? 0.22 * Math.exp(-k * 9) : 0, jx = sh * Math.sin(t * 157), jy = sh * Math.cos(t * 131); // (the engine catching: a tiny shudder of the frame)
+    return { raw: true, pos: [at[0] + 9 - 4 * e + jx, at[1] + 15 - 4 * e + jy, at[2] + 82 - 22 * e], tgt: [at[0] + 0.6 + jx * 0.5, at[1] + 7.5 + jy * 0.5, at[2] + 9.2], fov: 36, level: false, w: 2160, h: 3840 }; };
   const fr = []; for (let i = 0; i <= Math.round(2.2 * 30); i++) fr.push({ t: i / 30, cam: cam(i / 30) });
   JOBS.c6dash = `
 await scheme("nightlife");

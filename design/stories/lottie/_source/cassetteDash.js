@@ -48,6 +48,17 @@ function makeDash(K) {
   // the knobs: knurled, at the ends; the red STEREO lamp
   for (const [kx, ky] of [[-9.0, -0.4], [8.6, 0.6]]) { const kb = cyl(0.85, 1.4, M("#1b1b1b", { roughness: 0.4 }), kx, ky, 1.0, 40, R); kb.rotation.x = Math.PI / 2; const cap = cyl(0.55, 0.2, chrome, kx, ky, 1.75, 32, R); cap.rotation.x = Math.PI / 2; }
   const lamp = new K.Mesh(new K.SphereGeometry(0.18, 12, 10), new K.MeshStandardMaterial({ color: "#5a1010", emissive: new K.Color("#ff2a1a"), emissiveIntensity: 0 })); lamp.position.set(4.3, 1.6, 0.45); R.add(lamp);
+  // ---- the two auxiliary gauges over the deck (the rev counter, the oil pressure): their faces lit, their needles at
+  // rest until the engine catches (C6: Daniel, "the engine starts in this shot")
+  const gaugeT = (label, marks) => tex(256, 256, (c, w, h) => { c.translate(128, 128); c.rotate(-Math.PI / 2); c.translate(-128, -128); /* (the cap's uv runs a quarter turn round) */ c.fillStyle = "#0d0d0f"; c.beginPath(); c.arc(128, 128, 126, 0, 7); c.fill(); c.strokeStyle = "#e9e3d3"; c.lineWidth = 4; for (let i = 0; i <= marks; i++) { const a = Math.PI * (0.75 + 1.5 * i / marks); c.beginPath(); c.moveTo(128 + Math.cos(a) * 100, 128 + Math.sin(a) * 100); c.lineTo(128 + Math.cos(a) * (i % 2 ? 88 : 80), 128 + Math.sin(a) * (i % 2 ? 88 : 80)); c.stroke(); } c.fillStyle = "#e9e3d3"; c.font = "700 28px CromaticSans, sans-serif"; c.textAlign = "center"; c.fillText(label, 128, 190); });
+  const gFace = [], gNeedle = [];
+  [["RPM x1000", 8, -4.2], ["ULEI", 6, 4.2]].forEach(([lab, mk, gx]) => {
+    const pod = new K.Group(); pod.position.set(gx, 14.6, 7.6); g.add(pod);
+    const rim = new K.Mesh(new K.CylinderGeometry(3.3, 3.3, 1.6, 40), M("#cfd2d6", { metalness: 0.6, roughness: 0.3 })); rim.rotation.x = Math.PI / 2; pod.add(rim);
+    const fm = new K.MeshStandardMaterial({ map: gaugeT(lab, mk), emissiveMap: gaugeT(lab, mk), emissive: new K.Color("#9fd0ff"), emissiveIntensity: 0, roughness: 0.4 });
+    const face = new K.Mesh(new K.CylinderGeometry(2.9, 2.9, 0.2, 40), fm); face.rotation.x = Math.PI / 2; face.position.z = 0.75; pod.add(face); gFace.push(fm);
+    const nd = new K.Group(); nd.position.z = 0.95; pod.add(nd); const bar = new K.Mesh(new K.BoxGeometry(0.16, 2.3, 0.1), new K.MeshStandardMaterial({ color: "#ff5a1f", emissive: new K.Color("#ff5a1f"), emissiveIntensity: 0.6 })); bar.position.y = 1.1; nd.add(bar); nd.rotation.z = Math.PI * 0.75 - Math.PI / 2 + 0.0; gNeedle.push(nd);
+  });
   // ---- the windscreen behind: the night street's lights, out of focus (soft discs), and the bonnet's line
   const bokehM = (c) => new K.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.55, depthWrite: false });
   for (let i = 0; i < 14; i++) { const d = new K.Mesh(new K.CircleGeometry(2 + (i % 4), 24), bokehM(i % 3 ? "#ffcf8a" : "#ff9e5a")); d.position.set(-70 + i * 11, 34 + (i % 5) * 6, -110 - (i % 3) * 20); g.add(d); }
@@ -59,14 +70,19 @@ function makeDash(K) {
   g.traverse((m) => { if (m.isMesh) { m.castShadow = false; m.receiveShadow = false; } });
   const sm = (x) => x * x * (3 - 2 * x), cl = (v) => Math.max(0, Math.min(1, v));
   return { group: g, pose(t) {
-    // 0 - 0.55 s: the cassette slides in from the right and down into the slot; 0.75: PLAY goes down; 0.82: the lamps
-    // come on; then the reels turn, the needle settles on the station
-    const ins = sm(cl(t / 0.55));
+    // the engine (Sorin: the starter, then the engine catching, 0 - 0.5 s): at 0.45 the needles jump to idle (an
+    // overshoot that settles), the gauges' lamps flicker once and stay on
+    const E0 = 0.45, k = t - E0, rest = Math.PI * 1.25; // (the needle's rest: the dial's start, lower left)
+    const jump = (target) => k <= 0 ? 0 : target * (1 - Math.exp(-k * 7) * Math.cos(k * 22));
+    gNeedle[0].rotation.z = rest - jump(1.15); gNeedle[1].rotation.z = rest - jump(1.7);
+    const flick = k < 0 ? 0 : k < 0.04 ? 1 : k < 0.08 ? 0.15 : 1; gFace.forEach((m) => { m.emissiveIntensity = 0.55 * flick; });
+    // then the cassette, 0.2 s later than C6's first cut: in 0.2 - 0.75 s, PLAY at 0.92, the lamps 1.0, the reels 1.06
+    const T0 = 0.2, ins = sm(cl((t - T0) / 0.55));
     C.position.set(-3.6 + 14 * (1 - ins), -0.5 + 6 * (1 - ins) ** 2, 0.18 + 1.4 * (1 - ins) - 0.1 * ins); C.rotation.z = 0.35 * (1 - ins); C.visible = true;
-    const press = sm(cl((t - 0.72) / 0.1)); keys[2].position.z = 0.9 - 0.7 * press; keys[2].position.y = -1.75 - 0.12 * press;
-    const on = sm(cl((t - 0.8) / 0.25)); scaleM.emissiveIntensity = 0.05 + 1.25 * on; lamp.material.emissiveIntensity = 2.4 * on; glow.intensity = 0.4 * on; needle.material.emissiveIntensity = 0.2 + 1.2 * on;
-    needle.position.x = -4 + 3.2 * sm(cl((t - 0.85) / 0.9));
-    const spin = Math.max(0, t - 0.86) * 9.5; hubs[0].rotation.z = -spin; hubs[1].rotation.z = -spin * 1.35;
+    const press = sm(cl((t - 0.92) / 0.1)); keys[2].position.z = 0.9 - 0.7 * press; keys[2].position.y = -2.2 - 0.12 * press;
+    const on = sm(cl((t - 1.0) / 0.25)); scaleM.emissiveIntensity = 0.05 + 1.25 * on; lamp.material.emissiveIntensity = 2.4 * on; glow.intensity = 0.4 * on; needle.material.emissiveIntensity = 0.2 + 1.2 * on;
+    needle.position.x = -4 + 3.2 * sm(cl((t - 1.05) / 0.9));
+    const spin = Math.max(0, t - 1.06) * 9.5; hubs[0].rotation.z = -spin; hubs[1].rotation.z = -spin * 1.35;
     g.updateMatrixWorld(true);
   } };
 }
