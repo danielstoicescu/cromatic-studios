@@ -2,8 +2,8 @@
 // POST / with a JS body (an async function body: p = the page, fs, log) -> its return value as JSON. LOCAL ONLY.
 //   BASE=http://localhost:8796 PORT=8797 [DEV=1] [HEADED=1] node harness.mjs
 // DEV=1 serves src/app.js fresh (devapp.mjs) in place of the built bundle, so the map's working copy is rendered
-// without a full build. /__dr/... serves this folder, /__three/... three's ES modules (examples too), /__hero/...
-// Radu's hero car (TASK-112, ~/cromatic-herocar/design/hero-car/src) when it is there.
+// without a full build. /__dr/... serves this folder, /__three/... three's ES modules (examples too: the bare "three"
+// they import is rewritten to the served build). Radu's hero car is vendored in vendor/ (TASK-112, hero-car e819e62).
 // The page's clock is virtual once the renders start (__vclock.freeze()): performance.now() and the frame callbacks
 // only move when a render asks (__vclock.tick(dt)), so the city's own motion (water, traffic, the fountain) follows the
 // story's time, never the time a frame took to render.
@@ -15,7 +15,6 @@ import { devApp } from "./devapp.mjs";
 const HERE = path.resolve(new URL("..", import.meta.url).pathname), ROOT = path.resolve(HERE, "../..");
 const BASE = process.env.BASE || "http://localhost:8796", PORT = +process.env.PORT || 8797;
 const VW = +process.env.VW || 1080, VH = +process.env.VH || 1920;
-const HERO = process.env.HERO_DIR || "/Users/daniel.stoic/cromatic-herocar/design/hero-car/src";
 const THREE_DIR = [path.join(HERE, "node_modules/three"), path.join(ROOT, "node_modules/three")].find((d) => fs.existsSync(d));
 const TYPES = { ".js": "text/javascript", ".mjs": "text/javascript", ".json": "application/json", ".png": "image/png", ".cube": "text/plain", ".bin": "application/octet-stream" };
 const br = await pw.chromium.launch({ headless: !process.env.HEADED, args: ["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist", "--enable-unsafe-webgpu", "--disable-gpu-watchdog", "--disable-renderer-backgrounding", "--disable-background-timer-throttling", "--disable-backgrounding-occluded-windows"] });
@@ -23,10 +22,10 @@ const ctx = await br.newContext({ viewport: { width: VW, height: VH }, deviceSca
 await ctx.route(/google-analytics|analytics\.google|googletagmanager|doubleclick|facebook|openai/, (r) => r.fulfill({ status: 204, body: "" }));
 let APP = null;
 if (process.env.DEV) await ctx.route(/\/assets\/app\.[0-9a-f]+\.js$/, async (r) => { APP = APP || (await devApp(ROOT)); r.fulfill({ status: 200, body: APP, headers: { "content-type": "text/javascript" } }); });
-const serve = (dir) => (r) => { const u = decodeURIComponent(new URL(r.request().url()).pathname).replace(/^\/__\w+\//, ""), f = path.join(dir, u); if (!f.startsWith(dir) || !fs.existsSync(f)) return r.fulfill({ status: 404, body: "404" }); r.fulfill({ status: 200, body: fs.readFileSync(f), headers: { "content-type": TYPES[path.extname(f)] || "application/octet-stream", "cache-control": "no-store" } }); };
+// (three's examples import the bare "three": pointed at the served module, so they load without an import map)
+const serve = (dir) => (r) => { const u = decodeURIComponent(new URL(r.request().url()).pathname).replace(/^\/__\w+\//, ""), f = path.join(dir, u); if (!f.startsWith(dir) || !fs.existsSync(f)) return r.fulfill({ status: 404, body: "404" }); let body = fs.readFileSync(f); if (/\.m?js$/.test(f)) body = body.toString("utf8").replace(/from\s*(['"])three\1/g, 'from "/__three/build/three.module.js"'); r.fulfill({ status: 200, body, headers: { "content-type": TYPES[path.extname(f)] || "application/octet-stream", "cache-control": "no-store" } }); };
 await ctx.route(/\/__dr\//, serve(HERE));
 await ctx.route(/\/__three\//, serve(THREE_DIR));
-await ctx.route(/\/__hero\//, serve(HERO));
 await ctx.addInitScript(() => {
   const pre = { "cz-drive-guide": "2", "cz-welcome-at": String(Date.now()), "cz-map-guide": "1", "cz-intro-at": String(Date.now()), "cz-consent": "no", "cz-sound": "0" };
   try { for (const k in pre) localStorage.setItem(k, pre[k]); } catch {}
@@ -50,8 +49,10 @@ p.on("pageerror", (e) => logs.push("pageerror " + e.message));
 p.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") logs.push(m.type() + " " + m.text().slice(0, 300)); });
 const t0 = Date.now();
 await p.goto(BASE + (process.env.PATH0 || "/?map&story"), { waitUntil: "domcontentloaded" });
-await p.waitForFunction(() => window.__nav2 && window.__nav2.D && window.__nav2.D.ready && window.__story, null, { timeout: 240000 });
-await p.waitForTimeout(3000);
+// (the city keeps building for a while after the map is ready: its blob shadows (__fp) and its batches come last, and
+// the clock must not be frozen before that)
+await p.waitForFunction(() => window.__nav2 && window.__nav2.D && window.__nav2.D.ready && window.__story && window.__fp && (window.__story.merged() || []).length, null, { timeout: 240000 });
+await p.waitForTimeout(12000);
 const gpu = await p.evaluate(() => { const gl = window.__story.renderer.getContext(), d = gl.getExtension("WEBGL_debug_renderer_info"); return { renderer: d ? gl.getParameter(d.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER), maxTex: gl.getParameter(gl.MAX_TEXTURE_SIZE), floatBlend: !!gl.getExtension("EXT_float_blend"), cbf: !!gl.getExtension("EXT_color_buffer_float") }; });
 console.log("ready", ((Date.now() - t0) / 1000).toFixed(1) + "s", JSON.stringify(gpu));
 const AsyncFn = Object.getPrototypeOf(async function () {}).constructor;

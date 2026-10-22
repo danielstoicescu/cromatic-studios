@@ -3,7 +3,7 @@
 // the move carried on to 3.5 s, never stopping). Tilt-shift: the dome sharp, the city behind and the street in front
 // falling off as they would on a model filmed with a real lens.
 import { cameraPath } from "../src/camera.js";
-const DOME = [1100, 26, 5300];
+const DOME = [1192, 34, 5172]; // the near face of the dome (its centre is ~160 further: the face would blur)
 export default {
   name: "slow",
   size: [2160, 3840], fps: 30, duration: 3.5, shutter: 0.5,
@@ -14,14 +14,14 @@ export default {
       { t: 3.5, pos: [1461, 148, 4737], look: [1098, 28, 5296], fov: 53, focus: DOME }
     ]
   }),
-  lens: { fstop: 2.8, scale: 1.45 }, // the model at 1:87 (a map unit is 0.69 mm of model)
+  lens: { fstop: 3.5, scale: 1.45 }, // the model at 1:87 (a map unit is 0.69 mm of model)
   look: {
-    sky: { top: "#6f86d6", mid: "#d9b6d0", hor: "#ffcfae" },
+    sky: { top: "#5f7ee0", mid: "#d8afd6", hor: "#ffc9a0" },
     fog: { color: "#e7cdd6", near: 1600, far: 9000 },
     bounce: "#c79a80", bounceK: 0.3, domeK: 0.4, domeSunGlow: 0.8,
     tone: 0.06, minRough: 0.7, bump: 0.03
   },
-  sun: { az: 81, el: 16, color: "#ffc890", intensity: 3.6, radius: 1.6 },
+  sun: { az: 78, el: 19, color: "#ffcfa0", intensity: 3.7, radius: 1.5 },
   shadow: { centre: [1100, 0, 5250], ext: 900 },
-  post: { exposure: 1.0, bloomK: 0.05, bloomThr: 1.0, vig: 0.24, grain: 0.022, lut: "cromatic-diorama", sat: 1.3, power: 1.18 }
+  post: { tonemap: "neutral", exposure: 1.05, bloomK: 0.05, bloomThr: 1.0, vig: 0.24, grain: 0.022, lut: "cromatic-diorama", sat: 1.08, power: 1.12 }
 };
