@@ -206,7 +206,7 @@ return out;
 {
   // ---- C6: the radio-cassette in the 1300's dashboard (cassetteDash.js), placed far from the city, its own lights;
   // the camera close on the deck, a slow push; captured per frame (30 a second)
-  const DASH = fs.readFileSync(new URL("./cassetteDash.js", import.meta.url), "utf8"), at = [1500, 420, 4260]; // (high over the roundabout: inside the sky, out of the warp)
+  const DASH = fs.readFileSync(new URL(process.env.DECK === "cassette" ? "./cassetteDash.js" : "./radioDash.js", import.meta.url), "utf8") /* (v2: the single-DIN stereo; DECK=cassette for v1) */, at = [1500, 420, 4260]; // (high over the roundabout: inside the sky, out of the warp)
   const cam = (t) => { const u = Math.min(1, t / 2.2), e = u * u * (3 - 2 * u); const k = t - 0.45, sh = k > 0 && k < 0.35 ? 0.22 * Math.exp(-k * 9) : 0, jx = sh * Math.sin(t * 157), jy = sh * Math.cos(t * 131); // (the engine catching: a tiny shudder of the frame)
     return { raw: true, pos: [at[0] + 9 - 4 * e + jx, at[1] + 15 - 4 * e + jy, at[2] + 82 - 22 * e], tgt: [at[0] + 0.6 + jx * 0.5, at[1] + 7.5 + jy * 0.5, at[2] + 9.2], fov: 36, level: false, w: 2160, h: 3840 }; };
   const fr = []; for (let i = 0; i <= Math.round(2.2 * 30); i++) fr.push({ t: i / 30, cam: cam(i / 30) });
@@ -223,7 +223,7 @@ for (let i = 0; i < fr.length; i++) {
   if (only && !only.includes(i)) continue;
   const o = fr[i].cam;
   const u = await p.evaluate(({ o, t }) => { const S = window.__story, R = window.__R; S.dash.pose(t); R.park([9000, null, 9000, 0]); try { R.plan(o); R.shot({ ...o, keepBg: true, shadowUpdate: true }); return R.shot({ ...o, keepBg: true }); } finally { R.park(null); } }, { o, t: fr[i].t });
-  save(u, RAW + "/c6dash/d-" + String(i).padStart(3, "0") + ".png");
+  save(u, RAW + "/c6dash/${process.env.DECK === 'cassette' ? 'd-' : 'r-'}" + String(i).padStart(3, "0") + ".png");
 }
 await p.evaluate(() => { const S = window.__story; if (S.dash) { S.dash.group.parent.remove(S.dash.group); S.dash = null; } });
 return fr.length;

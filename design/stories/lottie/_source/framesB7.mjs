@@ -3,7 +3,7 @@
 import fs from "fs";
 import path from "path";
 import sharp from "/Users/daniel.stoic/cromatic-drive/node_modules/sharp/lib/index.js";
-const R = "/private/tmp/claude-501/-Users-daniel-stoic/8f3b4503-769c-4f86-ba4b-8e36528128b3/scratchpad/stl4/raw/v6/b7";
+const R = (process.env.RAW || "/private/tmp/claude-501/-Users-daniel-stoic/8f3b4503-769c-4f86-ba4b-8e36528128b3/scratchpad/stl4/raw") + "/v6/b7";
 const here = path.dirname(new URL(import.meta.url).pathname), OUT = path.resolve(here, "../frames/b7");
 fs.mkdirSync(OUT, { recursive: true });
 const only = process.argv[2] ? process.argv[2].split(",").map(Number) : null, idx = fs.existsSync(path.join(OUT, "index.json")) ? JSON.parse(fs.readFileSync(path.join(OUT, "index.json"), "utf8")) : {};
