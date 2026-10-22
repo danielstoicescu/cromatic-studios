@@ -30852,6 +30852,10 @@ void main() {
     const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
     // the halo: a bright core, a wider glow and a long faint tail (light in fog), to nothing at the edge
     const haloTex = radial((u, v) => { const r = Math.hypot(u - 0.5, v - 0.5) * 2; return (0.8 * Math.exp(-((r / 0.11) ** 2)) + 0.42 * Math.exp(-((r / 0.3) ** 2)) + 0.2 * (1 - r) ** 2.2) * (1 - ss(0.8, 1, r)); });
+    // round 4 (Daniel: realistic, the coloured light stays in the room and comes out softly; the glow round the window
+    // small and weak, never a tint over the screen): the halos a tight glow with no long tail, a fraction of the old
+    // size, and fading out as the camera comes near (under ~25 m it is almost gone: the room is the light)
+    const haloTight = radial((u, v) => { const r = Math.hypot(u - 0.5, v - 0.5) * 2; return (0.55 * Math.exp(-((r / 0.2) ** 2)) + 0.3 * Math.exp(-((r / 0.42) ** 2))) * (1 - ss(0.7, 1, r)); });
     // TASK-098 round 3 (Daniel: "light from inside, from behind the windows, coloured at night and sunny by day; the
     // shutters, if they still show at all, gone; no fairy lights at the window: real lights, bulbs inside the house"):
     // behind each glass a lit room, drawn in the glass's own shader (interior mapping: the view ray from the pane is run
@@ -30996,18 +31000,18 @@ vec3 hwRoom(vec2 pane, vec3 rd, out float curt) {
     }); m.userData.outlineParameters = { visible: false }; return m; };
     const poolGeo = new PlaneGeometry(1, 1); poolGeo.rotateX(-Math.PI / 2);
     const wins = [-15, 15].map((x, i) => {
-      const halo = new Sprite(new SpriteMaterial({ map: haloTex, color: "#ffffff", transparent: true, opacity: 1, blending: AdditiveBlending, depthWrite: false, fog: false }));
+      const halo = new Sprite(new SpriteMaterial({ map: haloTight, color: "#ffffff", transparent: true, opacity: 1, blending: AdditiveBlending, depthWrite: false, fog: false }));
       halo.material.userData.outlineParameters = { visible: false };
-      halo.position.set(x, 33, F + 8); halo.scale.set(96, 96, 1);
+      halo.position.set(x, 33, F + 6); halo.scale.set(32, 32, 1); // round 4: was 96 (220 in the world)
       const shaft = new Mesh(shaftGeo, shaftM()); shaft.position.set(x, (N0[1] + N1[1]) / 2, (N0[2] + N1[2]) / 2); shaft.quaternion.copy(shaftQ);
-      const pool = new Mesh(poolGeo, add(haloTex, 0.75)); pool.position.set(x * 1.25, 0.3, F + 24); pool.scale.set(54, 1, 44);
+      const pool = new Mesh(poolGeo, add(haloTex, 0.4)); pool.position.set(x * 1.25, 0.3, F + 24); pool.scale.set(54, 1, 44);
       // round 2: behind the house, a wider, softer glow of the same colour (it reads from the back and round the sides;
       // from the front the house hides most of it)
-      const back = new Sprite(new SpriteMaterial({ map: haloTex, color: "#ffffff", transparent: true, opacity: 0.4, blending: AdditiveBlending, depthWrite: false, fog: false }));
+      const back = new Sprite(new SpriteMaterial({ map: haloTight, color: "#ffffff", transparent: true, opacity: 0.4, blending: AdditiveBlending, depthWrite: false, fog: false }));
       back.material.userData.outlineParameters = { visible: false };
-      back.position.set(x * 1.4, 34, -F - 22); back.scale.set(120, 110, 1); // (well off the back wall: seen from behind it lies over the wall's lower half, a glow round it)
+      back.position.set(x * 1.4, 34, -F - 22); back.scale.set(64, 58, 1); // round 4: was 120 x 110 // (well off the back wall: seen from behind it lies over the wall's lower half, a glow round it)
       for (const o of [halo, shaft, pool, back]) { o.frustumCulled = false; o.renderOrder = 3; fxG.add(o); }
-      return { halo, shaft, pool, back, glass: glass[i], col: new Color() };
+      return { halo, shaft, pool, back, glass: glass[i], col: new Color(), wp: new Vector3() };
     });
     g.add(fxG);
     const rm = matchMedia("(prefers-reduced-motion: reduce)"), fr = new Frustum(), m4 = new Matrix4(), cv = new Vector3();
@@ -31035,11 +31039,14 @@ vec3 hwRoom(vec2 pane, vec3 rd, out float curt) {
         const still = rm.matches;
         wins.forEach((w, i) => {
           const h = still ? HW_HOLD[i] : i === 0 ? colAt(now, 0, 3) : colAt(now, 0.5, 0);
-          w.col.setHSL(h / 360, 1, 0.5, SRGBColorSpace);
+          w.col.setHSL(h / 360, 0.62, 0.56, SRGBColorSpace); // round 4: a lamp behind a coloured shade, not a pure hue
           w.glass.userData.room.uLight.value.copy(w.col); // round 3: the pendant's colour
-          w.halo.material.color.copy(w.col); w.halo.material.opacity = 0.52 * face; // round 3: a little less, so the room shows through it
-          w.back.material.color.copy(w.col); w.back.material.opacity = rear;
-          w.shaft.material.uniforms.color.value.copy(w.col); w.pool.material.color.copy(w.col);
+          // round 4: every glow fades out as the camera comes near the window (the room carries the light then)
+          w.wp.set(w.halo.position.x, w.halo.position.y, w.halo.position.z).applyMatrix4(g.matrixWorld); warpV(w.wp);
+          const near = 0.12 + 0.88 * ss(70, 300, cam.position.distanceTo(w.wp));
+          w.halo.material.color.copy(w.col); w.halo.material.opacity = 0.34 * face * near;
+          w.back.material.color.copy(w.col); w.back.material.opacity = rear * 0.6 * (0.3 + 0.7 * near);
+          w.shaft.material.uniforms.color.value.copy(w.col); w.shaft.material.uniforms.opacity.value = 0.2 * near; w.pool.material.color.copy(w.col);
         });
       }
     };
@@ -31152,7 +31159,8 @@ void main(){
     // seen from behind the signal only a faint glow of it
     w.xz += f * 1.6;
     float face = 0.22 + 0.78 * smoothstep(-0.35, 0.55, dot(normalize(toC), vec3(f.x, 0.0, f.y)));
-    vA *= face;
+    // round 2: fades out as the camera comes near (under ~3 m almost nothing: the lamp itself is the light then)
+    vA *= face * (0.1 + 0.9 * smoothstep(30.0, 170.0, length(toC)));
     vec4 mv = viewMatrix * w; mv.xyz += normalize(-mv.xyz) * 5.0; mv.xy += position.xy * iK.y;
     gl_Position = projectionMatrix * mv;
   } else {
@@ -31176,11 +31184,10 @@ void main(){
   vec2 q = vUv - 0.5; float a;
   if (vM < 0.5) {
     float r = length(q) * 2.0;
-    // dry: a bright core, a glow, a faint tail; in the rain the core spreads and the tail grows (light in wet air)
-    float core = mix(0.7, 0.42, rain) * exp(-pow(r / mix(0.08, 0.11, rain), 2.0));
-    float glow = mix(0.34, 0.36, rain) * exp(-pow(r / mix(0.24, 0.34, rain), 2.0));
-    float tail = mix(0.12, 0.22, rain) * pow(max(0.0, 1.0 - r), 2.2);
-    a = (core + glow + tail) * (1.0 - smoothstep(0.82, 1.0, r));
+    // round 2: a glow that falls off with the square of the distance from the lamp (1 / (1 + (r/r0)^2), less its value at
+    // the rim), within a small radius in the world; in the rain r0 is wider and the glow softer (light in wet air)
+    float r0 = mix(0.1, 0.16, rain), e = 1.0 / (1.0 + 1.0 / (r0 * r0));
+    a = mix(0.9, 0.7, rain) * max(0.0, 1.0 / (1.0 + (r * r) / (r0 * r0)) - e) / (1.0 - e) * (1.0 - smoothstep(0.75, 1.0, r));
   } else if (vM < 1.5) {
     float r = length(q) * 2.0; a = 0.7 * exp(-pow(r / 0.48, 2.0)) * (1.0 - smoothstep(0.75, 1.0, r));
   } else {
@@ -31245,7 +31252,7 @@ void main(){
             const j = i * 3 + m;
             aP[j * 3 + 1] = lampY;
             aC[j * 3] = c.r; aC[j * 3 + 1] = c.g; aC[j * 3 + 2] = c.b;
-            if (m === 0) { aK[j * 4 + 1] = 46 + 16 * r; aK[j * 4 + 2] = (0.8 + 0.1 * r) * k; }
+            if (m === 0) { aK[j * 4 + 1] = 24 + 10 * r; aK[j * 4 + 2] = (0.85 + 0.1 * r) * k; } // round 2: 24 units across dry (2 m), 34 in the rain (was 46 / 62)
             else if (m === 1) { aK[j * 4 + 1] = 38 + 6 * r; aK[j * 4 + 3] = 46 + 8 * r; aK[j * 4 + 2] = (0.32 + 0.16 * r) * k; }
             else { aK[j * 4 + 1] = 8 + 3 * (1 - r); aK[j * 4 + 3] = 30 + 120 * r; aK[j * 4 + 2] = 0.75 * r * k; }
           }
