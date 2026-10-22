@@ -1,7 +1,7 @@
 {
  "id": "d19-map",
  "story": "D",
- "beat": "Every brand / from our portfolio / is on this + [map.] (D6: on its own, once the pins and the two cards are gone)",
+ "beat": "Every brand / from our portfolio + [is on this map.] (D6: on its own, once the pins and the two cards are gone)",
  "shots": [
   "bird",
   "zoom"
@@ -66,26 +66,6 @@
        "w": 692.3,
        "h": 88
       }
-     },
-     {
-      "kind": "line",
-      "id": "d19-l3",
-      "style": "line",
-      "size": 88,
-      "tracking": -0.035,
-      "lead": 1.06,
-      "ink": "#0D0C09",
-      "align": "left",
-      "text": "is on this",
-      "x": 132,
-      "baseline": 595.6,
-      "width": 336,
-      "box": {
-       "x": 132,
-       "y": 528.7,
-       "w": 336,
-       "h": 69.5
-      }
      }
     ],
     "aplat": {
@@ -102,7 +82,7 @@
        "x": 80,
        "y": 300,
        "w": 796.3,
-       "h": 350.9
+       "h": 257.6
       }
      ]
     },
@@ -114,7 +94,7 @@
     "place": {
      "x": 116,
      "align": "left",
-     "top": 636.1719999999999
+     "top": 542.872
     },
     "ink": "#0D0C09",
     "lines": [
@@ -129,12 +109,12 @@
       "align": "left",
       "text": "",
       "x": 116,
-      "baseline": 699.2,
+      "baseline": 605.9,
       "width": 0,
       "box": {
        "x": 116,
-       "y": 632.3,
-       "w": 255.6,
+       "y": 539,
+       "w": 606,
        "h": 88
       },
       "pill": {
@@ -142,7 +122,7 @@
        "fill": "#FFFFFF",
        "ink": "#0D0C09",
        "left": 116,
-       "cy": 667.9,
+       "cy": 574.6,
        "h": 102.1,
        "keyline": 4,
        "shadow": [
@@ -153,10 +133,10 @@
        "wordX": 145.9,
        "states": [
         {
-         "word": "map.",
-         "wordW": 195.8,
-         "w": 255.6,
-         "cx": 243.8
+         "word": "is on this map.",
+         "wordW": 546.1,
+         "w": 606,
+         "cx": 419
         }
        ]
       }
@@ -174,7 +154,7 @@
  "states": [
   {
    "index": 0,
-   "label": "map"
+   "label": "is on this map"
   }
  ],
  "timing": {
@@ -204,29 +184,21 @@
       "id": "d19-l1",
       "text": "Every brand",
       "in": 186,
-      "out": 242,
+      "out": 243,
       "motion": "lineIn / lineOut",
-      "hold": 44
+      "hold": 45
      },
      {
       "id": "d19-l2",
       "text": "from our portfolio",
       "in": 191,
-      "out": 243,
-      "motion": "lineIn / lineOut",
-      "hold": 40
-     },
-     {
-      "id": "d19-l3",
-      "text": "is on this",
-      "in": 196,
       "out": 244,
       "motion": "lineIn / lineOut",
-      "hold": 36
+      "hold": 41
      },
      {
       "id": "d19-word-l1-pill-0",
-      "word": "map.",
+      "word": "is on this map.",
       "in": 200,
       "out": 244,
       "motion": "pillIn",

@@ -221,10 +221,11 @@ export const CARDS = [
   { id: "d18-pass-go", story: "D", beat: "Pass Go. (D5: top left, in the night sky over the pop-up; the racer fills the bottom)", shots: ["r4"], scene: "night, the Court's pop-up", ink: "paper", blocks: [{ id: "d18", place: "tl", lines: [{ text: "Pass Go.", style: "headline" }] }], timing: { in: "r4+2", out: "r4.end-8" } },
   /* ============================== story D6 (Iris, TASK-115b: Daniel's notes on D5) ============================== */
   {
-    id: "d19-map", story: "D", beat: "Every brand / from our portfolio / is on this + [map.] (D6: on its own, once the pins and the two cards are gone)", shots: ["bird", "zoom"], scene: "the city from high: the yellow aplat carries it", ink: "ink",
+    id: "d19-map", story: "D", beat: "Every brand / from our portfolio + [is on this map.] (D6: on its own, once the pins and the two cards are gone)", shots: ["bird", "zoom"], scene: "the city from high: the yellow aplat carries it", ink: "ink",
     blocks: [
-      { id: "d19", place: "tl", aplat: { fill: Y }, lines: [{ text: "Every brand", style: "line" }, { text: "from our portfolio", style: "line" }, { text: "is on this", style: "line" }] },
-      { id: "d19-word", attach: { to: "d19", dx: 36, gap: -34 }, lines: [{ text: "", style: "line", pill: { words: ["map."], fill: WH } }] }
+      // (Daniel: the line in two: the block, and the whole "is on this map." in a pill of its own under it)
+      { id: "d19", place: "tl", aplat: { fill: Y }, lines: [{ text: "Every brand", style: "line" }, { text: "from our portfolio", style: "line" }] },
+      { id: "d19-word", attach: { to: "d19", dx: 36, gap: -34 }, lines: [{ text: "", style: "line", pill: { words: ["is on this map."], fill: WH } }] }
     ],
     timing: { in: "bird+62", lineStagger: 5, pillIn: "bird+80", out: "zoom+16" }, mocks: [{ state: 0, at: "bird+100" }]
   },
