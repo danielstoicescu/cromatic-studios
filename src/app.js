@@ -41867,7 +41867,7 @@ void main(){
           camera, renderer,
           car: () => (veh && veh.group && veh.group.visible !== false ? veh.group : null),
           canEnter: () => mapMode && !siteMode && !!veh && !document.body.classList.contains("kz-boot"),
-          warp: (v) => warpV(v), unwarp: (v) => unwarpV(v), footprints: () => FOOTPRINTS.concat(TREE_BLOBS), // (buildings and trees: the camera stays out of both)
+          warp: (v) => warpV(v), unwarp: (v) => unwarpV(v), footprints: () => FOOTPRINTS.concat(TREE_BLOBS.map((t) => ({ ...t, tree: true }))), // (buildings: never between the camera and the car; trees: never round the camera)
           worlds: () => SCHEMES.map((w, i) => ({ i, id: w.id, n: w.n, bg: w.bg, ac: w.ac })),
           worldIdx: () => state.schemeIdx, worldId: () => SCHEMES[state.schemeIdx].id, isMap: () => mapMode,
           setWorld: async (i) => { if (SCHEMES[i]?.id === "sketch") { const pr = sketchPrep(true); if (pr) await pr; } applyScheme(i); await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); },

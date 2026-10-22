@@ -59,10 +59,11 @@
     }
     // is a point (bent coordinates) inside a building, or under the street?
     const _u = new V3();
-    function blocked(q, margin) {
+    function blocked(q, margin, trees) {
       if (q.y < carY + 0.9) return true;
       _u.copy(q); app.unwarp(_u);
       for (const b of near) {
+        if (b.tree && !trees) continue;
         if (_u.y > b.h + margin) continue;
         const dx = _u.x - b.x, dz = _u.z - b.z, c = Math.cos(b.ang || 0), s = Math.sin(b.ang || 0);
         const lx = dx * c - dz * s, lz = dx * s + dz * c;
@@ -74,14 +75,17 @@
     const _q = new V3();
     function freeDist(dir, want) {
       const steps = 40, margin = R0 * 0.08;
-      let ok = 0;
+      // a building between the camera and the car: the camera comes in front of it. A tree only matters where the
+      // camera itself is (a trunk in front is the visitor's composition to change; the lens inside a crown is not)
+      let ok = 0, lim = want;
       for (let i = 1; i <= steps; i++) {
         const d = (want * i) / steps;
         _q.copy(T).addScaledVector(dir, d * R0);
-        if (blocked(_q, margin)) return Math.max(LIM.dist[0] * 0.92, ok - 0.06);
+        if (blocked(_q, margin, false)) { lim = Math.max(LIM.dist[0] * 0.92, ok - 0.06); break; }
         ok = d;
       }
-      return want;
+      for (let d = lim; d > LIM.dist[0]; d -= 0.05) { _q.copy(T).addScaledVector(dir, d * R0); if (!blocked(_q, margin, true)) return d; }
+      return Math.max(LIM.dist[0] * 0.92, Math.min(lim, LIM.dist[0]));
     }
     const dirOf = (yaw, pitch) => { const a = heading + Math.PI + yaw; return new V3(Math.sin(a) * Math.cos(pitch), Math.sin(pitch), Math.cos(a) * Math.cos(pitch)); };
 
