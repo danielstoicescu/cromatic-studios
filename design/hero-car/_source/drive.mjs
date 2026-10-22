@@ -28,6 +28,11 @@ if (job === "studio") {
   const r = await p.evaluate((o) => window.HERO.studio(o), { w: 1400, h: 800, views, fov: +process.env.FOV || 28 });
   r.out.forEach((u, i) => save(u, `${OUT}/studio-${i}.png`));
   console.log("tris", r.tris);
+} else if (job === "plinth") {
+  p.setDefaultTimeout(0);
+  const o = { pt: !!process.env.PT, samples: +process.env.SAMPLES || 256, model: process.env.MODEL || null, ...(process.env.CAM ? JSON.parse(process.env.CAM) : {}) };
+  const r = await p.evaluate((o) => window.HERO.plinth(o), o);
+  save(r.url, `${OUT}/${process.env.TAG || "plinth"}.png`); console.log("samples", r.samples);
 } else if (job === "shot") {
   const o = { shot: process.env.SHOT, mode: process.env.MODE || "raster", samples: +process.env.SAMPLES || 256, scale: +process.env.SCALE || 1, crop: process.env.CROP ? JSON.parse(process.env.CROP) : null, debug: !!process.env.DEBUG, envK: process.env.ENVK ? +process.env.ENVK : undefined, tint: process.env.TINT ? +process.env.TINT : undefined, bounces: +process.env.BOUNCES || undefined, tiles: +process.env.TILES || 3, noShadow: !!process.env.NOSHADOW, probe: !!process.env.PROBE };
   p.setDefaultTimeout(0);
