@@ -211,7 +211,7 @@ export function buildHeroDacia(T, ext = {}) {
   const ZD0 = 0.585, ZD1 = -0.392, ZD2 = -1.03;
   for (const z of [ZD0, ZD1]) bothSides(vline(z, 0.232, sideTop(z) - 0.004), GAP, LIFT, mats.gap, "door gap");
   { const dz = ZD2 - zR, yArch = AY + Math.sqrt(Math.max(0, AR * AR - dz * dz)) + 0.004; bothSides(vline(ZD2, yArch, sideTop(ZD2) - 0.004), GAP, LIFT, mats.gap, "door gap"); }
-  { const out = []; for (let i = 0; i <= 80; i++) { const z = lerp(ZD2 + 0.0, ZD0, i / 80); if (Math.abs(z - zR) < AR + 0.004 || Math.abs(z - zF) < AR + 0.004) continue; out.push(lowerSide(z, 0.236)); } bothSides(out, GAP, LIFT, mats.gap, "door sill gap"); }
+  { const out = []; for (let i = 0; i <= 80; i++) { const z = lerp(zR + AR + 0.006, ZD0, i / 80); if (Math.abs(z - zR) < AR + 0.004 || Math.abs(z - zF) < AR + 0.004) continue; out.push(lowerSide(z, 0.236)); } bothSides(out, GAP, LIFT, mats.gap, "door sill gap"); }
   // the bonnet: its sides along the wings, its back edge at the scuttle
   const ZB0 = 0.668, XB = 0.715;
   { const out = []; for (let i = 0; i <= 90; i++) { const z = lerp(ZB0, zN - 0.012, i / 90); out.push(lowerTop(z, Math.min(XB, hw(z) - 0.075))); } bothSides(out, GAP, LIFT, mats.gap, "bonnet gap"); }
@@ -281,76 +281,103 @@ export function buildHeroDacia(T, ext = {}) {
     return out;
   }
   const C_SIDE = 18, C_ARC0 = 18, C_TOP0 = 25;
-  const ZSC = []; { for (let z = ZC1; z <= ZC0 + 1e-9; z += 0.012) ZSC.push(+z.toFixed(5)); for (const k of [0.585, 0.07, -0.375, -0.425, -1.03, -1.62, 0.03, ZC0]) ZSC.push(k); }
-  const ZC = [...new Set(ZSC)].filter((z) => z >= ZC1 && z <= ZC0).sort((a, b) => a - b);
-  const CAB = ZC.map((z) => fullSec(cabHalf(z))), CC = CAB[0].length;
-  const ch = (j) => Math.min(j, CC - 1 - j);
-  // which quads are glass: the windscreen, the rear window, the four door windows (frames left round them)
-  const W_FRONT = [-0.372, 0.582], W_REAR = [-1.24, -0.428], WS = [0.072, 0.582], RW = [-1.62, -1.03]; // r3: the roof over the whole rear door
-  // the rear door glass ends on a slant, parallel to the raked C-pillar (its front edge: z at the belt -> under the roof)
-  const cEdge = (y) => lerp(-1.23, -1.08, clamp((y - 0.93) / 0.42, 0, 1));
-  function cabKind(i, j) {
-    const zm = (ZC[i] + ZC[i + 1]) / 2, h = Math.min(ch(j), ch(j + 1)), hM = Math.max(ch(j), ch(j + 1));
-    const side = hM <= C_SIDE, top = h >= C_TOP0 + 1;
-    const ym = (CAB[i][j][1] + CAB[i][j + 1][1] + CAB[i + 1][j][1] + CAB[i + 1][j + 1][1]) / 4;
-    if (side && h >= 2 && hM <= C_SIDE - 2) { if ((zm > W_FRONT[0] && zm < W_FRONT[1]) || (zm > Math.max(W_REAR[0], cEdge(ym)) && zm < W_REAR[1])) return "glass"; }
-    if (top && ((zm > WS[0] && zm < WS[1]) || (zm > RW[0] && zm < RW[1]))) return "glass";
-    return "paint";
-  }
-  const cabP = (i, j) => [CAB[i][j][0], CAB[i][j][1], ZC[i]];
-  const cabGeoAll = gridSurface(ZC.length, CC, cabP, null);
-  const nrm = cabGeoAll.attributes.normal;
-  const subGrid = (kind, inset, flip, mat, name) => {
-    const pos = [], idx = []; let n = 0;
-    for (let i = 0; i < ZC.length - 1; i++) for (let j = 0; j < CC - 1; j++) {
-      if (cabKind(i, j) !== kind) continue;
-      const q = [[i, j], [i + 1, j], [i, j + 1], [i + 1, j + 1]].map(([a, b]) => { const p = cabP(a, b), k = a * CC + b; return [p[0] - nrm.getX(k) * inset, p[1] - nrm.getY(k) * inset, p[2] - nrm.getZ(k) * inset]; });
-      for (const p of q) pos.push(...p);
-      if (!flip) idx.push(n, n + 1, n + 2, n + 2, n + 1, n + 3); else idx.push(n, n + 2, n + 1, n + 2, n + 3, n + 1);
-      n += 4;
-    }
-    const g = new T.BufferGeometry(); g.setAttribute("position", new T.Float32BufferAttribute(pos, 3)); g.setIndex(idx);
-    const g2 = T.BufferGeometryUtils ? g : g; g.computeVertexNormals();
-    // (smooth normals: copy the grid's)
-    const nn = g.attributes.normal; let m = 0;
-    for (let i = 0; i < ZC.length - 1; i++) for (let j = 0; j < CC - 1; j++) { if (cabKind(i, j) !== kind) continue; for (const [a, b] of [[i, j], [i + 1, j], [i, j + 1], [i + 1, j + 1]]) { const k = a * CC + b, s = flip ? -1 : 1; nn.setXYZ(m++, nrm.getX(k) * s, nrm.getY(k) * s, nrm.getZ(k) * s); } }
-    return add(g, mat, name);
+  // r4 (Daniel, on r3: the windows too long and stretched, the windscreen too big and sharp-cornered): the glasshouse
+  // is no longer cut along its grid. Each opening is drawn as an outline with rounded corners in the surface's own
+  // coordinates (the flank: z and height; the roof: z and a coordinate across from the pillar's corner to the middle),
+  // the painted skin is triangulated round those outlines (holes), the glass inside them, and both are laid on the
+  // skin, so the edges are the outlines themselves, exactly, with the chrome frames on them.
+  const sideBot = (z) => beltY(z) - 0.006, sideTopY = (z) => cabHalf(z)[C_SIDE][1];
+  // the roof part of the section (the pillar's rounded corner, then the crown to the middle): s in [-1, 1], 0 the middle
+  const topPt = (z, s) => {
+    const H = cabHalf(z).slice(C_ARC0), f = (1 - Math.min(1, Math.abs(s))) * (H.length - 1), k = Math.min(H.length - 2, Math.floor(f)), t = f - k;
+    const x = lerp(H[k][0], H[k + 1][0], t), y = lerp(H[k][1], H[k + 1][1], t);
+    return V3(s < 0 ? -x : x, y, z);
   };
-  subGrid("paint", 0, false, mats.paint, "roof and pillars");
-  subGrid("paint", 0.012, true, mats.liner, "headliner");
-  subGrid("glass", 0.005, false, mats.glass, "glass");
-  // the chrome frames: every edge between glass and paint, chained into lines, as round rods
-  {
-    const isG = (i, j) => i >= 0 && j >= 0 && i < ZC.length - 1 && j < CC - 1 && cabKind(i, j) === "glass";
-    const edges = [];
-    for (let i = 0; i < ZC.length - 1; i++) for (let j = 0; j < CC - 1; j++) {
-      if (!isG(i, j)) continue;
-      if (!isG(i - 1, j)) edges.push([[i, j], [i, j + 1]]);
-      if (!isG(i + 1, j)) edges.push([[i + 1, j], [i + 1, j + 1]]);
-      if (!isG(i, j - 1)) edges.push([[i, j], [i + 1, j]]);
-      if (!isG(i, j + 1)) edges.push([[i, j + 1], [i + 1, j + 1]]);
+  const topNrm = (z, s) => { const e = 0.003, a = topPt(z + e, s).sub(topPt(z - e, s)), b = topPt(z, s + e).sub(topPt(z, s - e)), n = new T.Vector3().crossVectors(b, a).normalize(); if (n.y < -0.2 || (Math.abs(n.y) < 0.2 && n.x * s < 0)) n.negate(); return n; };
+  const sOfX = (z, x) => { const H = cabHalf(z).slice(C_ARC0), ax = Math.abs(x); for (let k = 0; k < H.length - 1; k++) if (H[k][0] >= ax && H[k + 1][0] <= ax) { const t = (H[k][0] - ax) / Math.max(1e-6, H[k][0] - H[k + 1][0]); return Math.sign(x || 1) * (1 - (k + t) / (H.length - 1)); } return 0; };
+  const xkOf = (z) => cabHalf(z)[C_ARC0 + 6][0]; // where the corner meets the crown
+  // a rounded quadrilateral through four corners (in order) with a radius per corner, as a dense outline
+  function roundQuad(P, rad, n = 10) {
+    const out = [];
+    for (let i = 0; i < 4; i++) {
+      const A = P[(i + 3) % 4], B = P[i], C = P[(i + 1) % 4], r = rad[i];
+      const u = [A[0] - B[0], A[1] - B[1]], v = [C[0] - B[0], C[1] - B[1]], lu = Math.hypot(...u), lv = Math.hypot(...v);
+      const p0 = [B[0] + (u[0] / lu) * r, B[1] + (u[1] / lu) * r], p1 = [B[0] + (v[0] / lv) * r, B[1] + (v[1] / lv) * r];
+      for (let k = 0; k <= n; k++) { const t = k / n, a = (1 - t) * (1 - t), b = 2 * t * (1 - t), c = t * t; out.push([a * p0[0] + b * B[0] + c * p1[0], a * p0[1] + b * B[1] + c * p1[1]]); }
     }
-    const key = ([a, b]) => a * CC + b, adj = new Map();
-    for (const e of edges) for (const [u, v] of [[e[0], e[1]], [e[1], e[0]]]) { const k = key(u); if (!adj.has(k)) adj.set(k, []); adj.get(k).push(key(v)); }
-    const used = new Set(), loops = [];
-    for (const [k0] of adj) {
-      if ([...adj.get(k0)].every((k1) => used.has(k0 < k1 ? k0 + "-" + k1 : k1 + "-" + k0))) continue;
-      const loop = [k0]; let prev = -1, cur = k0;
-      for (;;) { const nx = adj.get(cur).find((k) => k !== prev && !used.has(cur < k ? cur + "-" + k : k + "-" + cur)); if (nx == null) break; used.add(cur < nx ? cur + "-" + nx : nx + "-" + cur); prev = cur; cur = nx; loop.push(cur); if (cur === k0) break; }
-      if (loop.length > 3) loops.push(loop);
-    }
-    for (const loop of loops) {
-      const pts = loop.map((k) => { const i = Math.floor(k / CC), j = k % CC, p = cabP(i, j); return { p: V3(p[0], p[1], p[2]).addScaledVector(V3(nrm.getX(k), nrm.getY(k), nrm.getZ(k)), 0.001), n: V3(nrm.getX(k), nrm.getY(k), nrm.getZ(k)) }; });
-      // (smoothed a little: the grid's corners rounded, the rod follows the skin)
-      const sm = pts.map((q, i) => { if (i === 0 || i === pts.length - 1) return q; const a = pts[i - 1].p, b = pts[i + 1].p; return { p: q.p.clone().multiplyScalar(0.5).addScaledVector(a, 0.25).addScaledVector(b, 0.25), n: q.n }; });
-      sweep(sm, roundProf(0.0072, 10, 0.75), mats.chrome, "window frame", { closed: true, caps: false });
-    }
+    return out;
   }
-  // the drip rails along the roof's edges
-  for (const s of [-1, 1]) {
-    const pts = []; for (let i = 0; i < ZC.length; i++) { const z = ZC[i]; if (z < -1.09 || z > 0.04) continue; const j = s > 0 ? CC - 1 - (C_ARC0 + 3) : C_ARC0 + 3, k = i * CC + j, p = cabP(i, j); pts.push({ p: V3(p[0], p[1], p[2]).addScaledVector(V3(nrm.getX(k), nrm.getY(k), nrm.getZ(k)), 0.004), n: V3(nrm.getX(k), nrm.getY(k), nrm.getZ(k)) }); }
-    sweep(pts, roundProf(0.0058, 10), mats.chrome, "drip rail", { closed: true });
+  // triangulate an outline (with holes) in parameter space, split every edge longer than L (shared edges split once:
+  // no cracks), then lay the vertices on the skin with map(a, b) -> { p, n }
+  function paramMesh(outer, holes, map, L, { inset = 0, flip = false } = {}) {
+    const shape = new T.Shape(outer.map(([a, b]) => new T.Vector2(a, b)));
+    for (const h of holes) shape.holes.push(new T.Path(h.map(([a, b]) => new T.Vector2(a, b))));
+    const g0 = new T.ShapeGeometry(shape, 1), P0 = g0.attributes.position;
+    let V = []; for (let i = 0; i < P0.count; i++) V.push([P0.getX(i), P0.getY(i)]);
+    let F = []; const I0 = g0.index.array; for (let i = 0; i < I0.length; i += 3) F.push([I0[i], I0[i + 1], I0[i + 2]]);
+    for (let pass = 0; pass < 12; pass++) {
+      const mid = new Map(), long = (a, b) => Math.hypot(V[a][0] - V[b][0], V[a][1] - V[b][1]) > L;
+      const M = (a, b) => { const k = a < b ? a + "," + b : b + "," + a; if (!mid.has(k)) { V.push([(V[a][0] + V[b][0]) / 2, (V[a][1] + V[b][1]) / 2]); mid.set(k, V.length - 1); } return mid.get(k); };
+      let any = false; const NF = [];
+      for (const [a, b, c] of F) {
+        const ab = long(a, b), bc = long(b, c), ca = long(c, a);
+        if (!ab && !bc && !ca) { NF.push([a, b, c]); continue; }
+        any = true;
+        if (ab && bc && ca) { const x = M(a, b), y = M(b, c), z2 = M(c, a); NF.push([a, x, z2], [x, b, y], [z2, y, c], [x, y, z2]); continue; }
+        // one or two long edges (rotated so the pattern is p-q-r): split them, no long edge left behind
+        const rot = [[a, b, c, ab, bc, ca], [b, c, a, bc, ca, ab], [c, a, b, ca, ab, bc]];
+        const n = (ab ? 1 : 0) + (bc ? 1 : 0) + (ca ? 1 : 0);
+        if (n === 1) { const [p, q, r] = rot.find((t) => t[3]); const m = M(p, q); NF.push([p, m, r], [m, q, r]); }
+        else { const [p, q, r] = rot.find((t) => !t[3]); const m1 = M(q, r), m2 = M(r, p); NF.push([p, q, m1], [p, m1, m2], [m1, r, m2]); }
+      }
+      F = NF; if (!any) break;
+    }
+    const pos = [], nrm = [];
+    for (const [a, b] of V) { const { p, n } = map(a, b); const q = p.clone().addScaledVector(n, -inset); pos.push(q.x, q.y, q.z); const s = flip ? -1 : 1; nrm.push(n.x * s, n.y * s, n.z * s); }
+    const idx = []; for (const [a, b, c] of F) { if (flip) idx.push(a, c, b); else idx.push(a, b, c); }
+    const g = new T.BufferGeometry(); g.setAttribute("position", new T.Float32BufferAttribute(pos, 3)); g.setAttribute("normal", new T.Float32BufferAttribute(nrm, 3)); g.setIndex(idx);
+    // (faces the way the normals say)
+    const p = g.attributes.position, nn = g.attributes.normal, ia = g.index.array; let dot = 0;
+    for (let i = 0; i < Math.min(ia.length, 300); i += 3) { const A = V3(p.getX(ia[i]), p.getY(ia[i]), p.getZ(ia[i])), B = V3(p.getX(ia[i + 1]), p.getY(ia[i + 1]), p.getZ(ia[i + 1])), C = V3(p.getX(ia[i + 2]), p.getY(ia[i + 2]), p.getZ(ia[i + 2])); const fn = new T.Vector3().crossVectors(B.clone().sub(A), C.clone().sub(A)); dot += fn.x * nn.getX(ia[i]) + fn.y * nn.getY(ia[i]) + fn.z * nn.getZ(ia[i]); }
+    if (dot < 0) for (let i = 0; i < ia.length; i += 3) { const t0 = ia[i]; ia[i] = ia[i + 1]; ia[i + 1] = t0; }
+    return g;
   }
+  // ---- the openings, off the 1:24 model's photo (metres; the flank: z, y; the roof: z, x)
+  const T_WIN = (z) => sideTopY(z) - 0.042; // the windows' top: a painted rail under the roof's corner
+  const BOT = (z) => sideBot(z) + 0.022; // their bottom: just over the door's top edge
+  // front door window: the front edge parallel to the A-pillar, set in from it (a wide painted pillar at its foot)
+  const zFTop = (() => { let z = 0.2; for (let i = 0; i < 60; i++) { const d = sideTopY(z) - 0.085 - T_WIN(-0.3); z += d > 0 ? 0.004 : -0.004; } return z; })();
+  const frontWin = roundQuad([[0.385, BOT(0.385)], [-0.352, BOT(-0.352)], [-0.352, T_WIN(-0.352)], [zFTop, T_WIN(zFTop)]], [0.02, 0.018, 0.026, 0.05]);
+  // rear door window: from the B-pillar back, its rear edge a little slanted
+  const RW_B = -1.165, RW_T = -1.09;
+  const rearWin = roundQuad([[-0.44, BOT(-0.44)], [RW_B, BOT(RW_B)], [RW_T, T_WIN(RW_T)], [-0.44, T_WIN(-0.44)]], [0.018, 0.02, 0.05, 0.026]);
+  // windscreen and rear window: rounded corners, a painted band all round (header, pillars, scuttle)
+  const wsTop = 0.13, wsBot = 0.548, rwTop = -1.115, rwBot = -1.585;
+  const glassOn = (zA, zB, inA, inB, rA, rB) => roundQuad([[zA, -(xkOf(zA) - inA)], [zA, xkOf(zA) - inA], [zB, xkOf(zB) - inB], [zB, -(xkOf(zB) - inB)]], [rA, rA, rB, rB], 12).map(([z, x]) => [z, sOfX(z, x)]);
+  const wscreen = glassOn(wsBot, wsTop, 0.05, 0.06, 0.065, 0.1);
+  const rwindow = glassOn(rwTop, rwBot, 0.062, 0.05, 0.09, 0.06);
+  // ---- the flanks (both sides)
+  const sideMap = (sx, inset0 = 0) => (z, y) => { const yy = clamp(y, sideBot(z), sideTopY(z)); const q = cabSide(z, yy); return { p: V3(sx * q.p.x, q.p.y, q.p.z), n: V3(sx * q.n.x, q.n.y, q.n.z) }; };
+  const zs = []; for (let z = ZC1; z <= ZC0 + 1e-9; z += 0.01) zs.push(z);
+  const sideOuter = [...zs.map((z) => [z, sideBot(z)]), ...zs.slice().reverse().map((z) => [z, sideTopY(z)])];
+  for (const sx of [1, -1]) {
+    const m = sideMap(sx);
+    add(paramMesh(sideOuter, [frontWin, rearWin], m, 0.03), mats.paint, "flank of the glasshouse");
+    add(paramMesh(sideOuter, [frontWin, rearWin], m, 0.04, { inset: 0.012, flip: true }), mats.liner, "pillar trim");
+    for (const w of [frontWin, rearWin]) add(paramMesh(w, [], m, 0.03, { inset: 0.005 }), mats.glass, "side glass");
+  }
+  // ---- the roof, its pillars' corners, windscreen and rear window
+  const topOuter = []; for (const z of zs) topOuter.push([z, -1]); for (let k = 1; k < 20; k++) topOuter.push([ZC0, -1 + k / 10]); for (const z of zs.slice().reverse()) topOuter.push([z, 1]); for (let k = 1; k < 20; k++) topOuter.push([ZC1, 1 - k / 10]);
+  const topMap = (z, s) => ({ p: topPt(z, s), n: topNrm(z, s) });
+  add(paramMesh(topOuter, [wscreen, rwindow], topMap, 0.03), mats.paint, "roof and pillars");
+  add(paramMesh(topOuter, [wscreen, rwindow], topMap, 0.05, { inset: 0.012, flip: true }), mats.liner, "headliner");
+  for (const w of [wscreen, rwindow]) add(paramMesh(w, [], topMap, 0.03, { inset: 0.005 }), mats.glass, "glass");
+  // ---- chrome frames on every outline (a round rod laid on the skin)
+  const frame = (outline, map) => { const pts = outline.map(([a, b]) => { const { p, n } = map(a, b); return { p: p.clone().addScaledVector(n, 0.001), n }; }); pts.push(pts[0]); sweep(pts, roundProf(0.0068, 10, 0.75), mats.chrome, "window frame", { closed: true, caps: false }); };
+  for (const sx of [1, -1]) for (const w of [frontWin, rearWin]) frame(w, sideMap(sx));
+  for (const w of [wscreen, rwindow]) frame(w, topMap);
+  // ---- the drip rails along the roof's edges
+  for (const s of [-1, 1]) { const pts = []; for (let z = -1.06; z <= 0.06; z += 0.01) pts.push({ p: topPt(z, s * 0.88).addScaledVector(topNrm(z, s * 0.88), 0.004), n: topNrm(z, s * 0.88) }); sweep(pts, roundProf(0.0058, 10), mats.chrome, "drip rail", { closed: true }); }
   // cabin surface query (the flank of the glasshouse at z, height y)
   function cabSide(z, y) {
     const h = cabHalf(z); let k; for (k = 0; k < C_SIDE - 1; k++) if (h[k + 1][1] >= y) break;
@@ -359,12 +386,15 @@ export function buildHeroDacia(T, ext = {}) {
     const dxdy = (b[0] - a[0]) / Math.max(1e-6, b[1] - a[1]), dxdz = (x2 - x) / e;
     return { p: V3(x, y, z), n: V3(1, -dxdy, -dxdz).normalize() };
   }
-  // the C-pillar's three slanted slots
-  for (let k = 0; k < 3; k++) {
-    const pts = []; for (let i = 0; i <= 12; i++) { const t = i / 12, z = -1.27 - k * 0.045 - t * 0.09, y = 0.975 + 0.006 * k + t * 0.24; if (y > HrT(z) - 0.09) continue; pts.push(cabSide(z, y)); }
-    if (pts.length > 2) bothSides(pts, 0.017, 0.0012, mats.gap, "c-pillar slot");
+  // r4 (Daniel): the vents are three narrow black slots one above the other, in a line, ON the C-pillar behind the
+  // rear door window, parallel to its rear edge, in a thin chrome surround
+  {
+    const yT = T_WIN(RW_T) - 0.01, yB = yT - 0.25, zAt = (y) => lerp(RW_B, RW_T, (y - BOT(RW_B)) / (T_WIN(RW_T) - BOT(RW_B))) - 0.068;
+    const col = (y0, y1, off = 0) => { const pts = []; for (let i = 0; i <= 10; i++) { const y = lerp(y0, y1, i / 10); pts.push(cabSide(zAt(y) + off, y)); } return pts; };
+    for (let k = 0; k < 3; k++) { const a = yT - 0.012 - k * 0.079, b = a - 0.066; bothSides(col(b, a), 0.02, 0.0012, mats.gap, "c-pillar vent"); }
+    for (const off of [-0.0165, 0.0165]) bothSides(col(yB + 0.0, yT, off), 0.0035, 0.0016, mats.chrome, "vent surround");
+    for (const y of [yT, yB]) { const pts = []; for (let i = 0; i <= 6; i++) pts.push(cabSide(zAt(y) - 0.0165 + (i / 6) * 0.033, y)); bothSides(pts, 0.003, 0.0016, mats.chrome, "vent surround"); }
   }
-
   // ================= the front =================
   const FZ = zN; // the face
   const rrShape = (w, h, r) => { const s = new T.Shape(), x = -w / 2, y = -h / 2; s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s; };
