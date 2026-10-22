@@ -131,9 +131,10 @@ export function cameraPath(o) {
 // (positive: to the right) over `dur` seconds, accelerating out (or decelerating in). Rendered with sub-frames it
 // blurs as a whip does. whip(path, { at: "end" | "start", deg, dur }) -> a new path (its time runs on past the end)
 export function whip(path, { at = "end", deg = 70, dur = 0.22 } = {}) {
-  const D = path.duration, t0 = path.t0;
+  const t0 = at === "end" ? path.t0 : path.t0 - dur, t1 = at === "end" ? path.t1 + dur : path.t1;
+  const win = at === "end" ? [path.t1, t1] : [t0, path.t0];
   return {
-    duration: D + dur, t0: at === "end" ? t0 : t0 - dur, t1: at === "end" ? path.t1 + dur : path.t1, whip: { at, dur, deg },
+    duration: t1 - t0, t0, t1, whips: [...(path.whips || []), win],
     at(t) {
       const inWhip = at === "end" ? t > path.t1 : t < path.t0;
       if (!inWhip) return path.at(t);
@@ -157,7 +158,7 @@ export function validate(path, { fps = 30, maxTurn = 3.5, maxTurnJump = 0.9, max
   let prev = path.at(path.t0), prevTurn = null;
   for (let t = path.t0 + dt; t <= path.t1 + 1e-9; t += dt) {
     const c = path.at(t);
-    const inWhip = path.whip && (path.whip.at === "end" ? t > path.t1 - path.whip.dur - 1e-6 : t < path.t0 + path.whip.dur + 1e-6);
+    const inWhip = (path.whips || []).some(([a, b]) => t > a - 1e-6 - dt && t < b + 1e-6 + dt);
     const tf = turn(prev, c) * N; // deg per frame
     const upFlip = (Math.acos(clamp(dot(prev.up, c.up), -1, 1)) * 180) / Math.PI * N;
     const mv = len(sub(c.pos, prev.pos)) * N;
