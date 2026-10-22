@@ -1,0 +1,254 @@
+{
+ "id": "d19-map",
+ "story": "D",
+ "beat": "Every brand / from our portfolio / is on this + [map.] (D6: on its own, once the pins and the two cards are gone)",
+ "shots": [
+  "bird",
+  "zoom"
+ ],
+ "scene": "the city from high: the yellow aplat carries it",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "d19",
+    "place": "tl",
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "d19-l1",
+      "style": "line",
+      "size": 88,
+      "tracking": -0.035,
+      "lead": 1.06,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "Every brand",
+      "x": 132,
+      "baseline": 409,
+      "width": 466.1,
+      "box": {
+       "x": 132,
+       "y": 342.1,
+       "w": 466.1,
+       "h": 88
+      }
+     },
+     {
+      "kind": "line",
+      "id": "d19-l2",
+      "style": "line",
+      "size": 88,
+      "tracking": -0.035,
+      "lead": 1.06,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "from our portfolio",
+      "x": 132,
+      "baseline": 502.3,
+      "width": 692.3,
+      "box": {
+       "x": 132,
+       "y": 435.4,
+       "w": 692.3,
+       "h": 88
+      }
+     },
+     {
+      "kind": "line",
+      "id": "d19-l3",
+      "style": "line",
+      "size": 88,
+      "tracking": -0.035,
+      "lead": 1.06,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "is on this",
+      "x": 132,
+      "baseline": 595.6,
+      "width": 336,
+      "box": {
+       "x": 132,
+       "y": 528.7,
+       "w": 336,
+       "h": 69.5
+      }
+     }
+    ],
+    "aplat": {
+     "fill": "#FED012",
+     "radius": 30,
+     "keyline": 5,
+     "shadow": [
+      0,
+      12
+     ],
+     "tilt": -2,
+     "states": [
+      {
+       "x": 80,
+       "y": 300,
+       "w": 796.3,
+       "h": 350.9
+      }
+     ]
+    },
+    "behindRide": false
+   },
+   {
+    "kind": "block",
+    "id": "d19-word",
+    "place": {
+     "x": 116,
+     "align": "left",
+     "top": 636.1719999999999
+    },
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "d19-word-l1",
+      "style": "line",
+      "size": 88,
+      "tracking": -0.035,
+      "lead": 1.06,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "",
+      "x": 116,
+      "baseline": 699.2,
+      "width": 0,
+      "box": {
+       "x": 116,
+       "y": 632.3,
+       "w": 255.6,
+       "h": 88
+      },
+      "pill": {
+       "id": "d19-word-l1-pill",
+       "fill": "#FFFFFF",
+       "ink": "#0D0C09",
+       "left": 116,
+       "cy": 667.9,
+       "h": 102.1,
+       "keyline": 4,
+       "shadow": [
+        2.6,
+        5.7
+       ],
+       "tilt": -3,
+       "wordX": 145.9,
+       "states": [
+        {
+         "word": "map.",
+         "wordW": 195.8,
+         "w": 255.6,
+         "cx": 243.8
+        }
+       ]
+      }
+     }
+    ],
+    "behindRide": false,
+    "attach": {
+     "to": "d19",
+     "dx": 36,
+     "gap": -34
+    }
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "map"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "bird+62",
+   "lineStagger": 5,
+   "pillIn": "bird+80",
+   "out": "zoom+16"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "D6": {
+    "clock": "D6",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "d19-aplat",
+      "in": 182,
+      "out": 253,
+      "frames": {
+       "in": 14,
+       "out": 7
+      },
+      "hold": 50
+     },
+     {
+      "id": "d19-l1",
+      "text": "Every brand",
+      "in": 186,
+      "out": 242,
+      "motion": "lineIn / lineOut",
+      "hold": 44
+     },
+     {
+      "id": "d19-l2",
+      "text": "from our portfolio",
+      "in": 191,
+      "out": 243,
+      "motion": "lineIn / lineOut",
+      "hold": 40
+     },
+     {
+      "id": "d19-l3",
+      "text": "is on this",
+      "in": 196,
+      "out": 244,
+      "motion": "lineIn / lineOut",
+      "hold": 36
+     },
+     {
+      "id": "d19-word-l1-pill-0",
+      "word": "map.",
+      "in": 200,
+      "out": 244,
+      "motion": "pillIn",
+      "hold": 44
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "bird+100"
+  }
+ ],
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/d19-map.svg"
+  ],
+  "live": [
+   "svg/live/d19-map.svg"
+  ]
+ }
+}

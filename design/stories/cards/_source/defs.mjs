@@ -17,6 +17,7 @@ export const CLOCKS = {
   B5: { monument: [0, 61], nightlife: [59, 122], underwater: [107, 165], circuit: [167, 249], sketch: [209, 283], orchid: [280, 293], gta2: [292, 305], riso: [304, 317], ghibli: [316, 338], end: [337, 480] },
   // story D5 (Iris, TASK-115: build-d5.mjs T5, /2)
   D5: { site: [0, 120], bird: [120, 228], zoom: [228, 330], steam: [330, 425], page: [395, 602], r1: [602, 644], r2: [644, 689], r3: [689, 755], r4: [755, 800], r5: [800, 848], sip: [848, 908], r9: [908, 953], r8: [953, 1013], fount: [1013, 1103], end: [1103, 1173] },
+  get D6() { return this.D5; },
   D2: { site: [0, 105], drift: [105, 243], skyline: [243, 303], steam: [303, 400], page: [367, 452], r1: [452, 470], r2: [470, 497], r3: [497, 515], r4: [515, 542], r5: [542, 562], sip: [562, 604], r8: [604, 631], r9: [631, 653], fount: [653, 750], end: [750, 820] }
 };
 
@@ -218,6 +219,21 @@ export const CARDS = [
     timing: { in: "fount+8", lineStagger: 6, out: "fount.end-10" }, mocks: [{ state: 0, at: "fount+60" }]
   },
   { id: "d18-pass-go", story: "D", beat: "Pass Go. (D5: top left, in the night sky over the pop-up; the racer fills the bottom)", shots: ["r4"], scene: "night, the Court's pop-up", ink: "paper", blocks: [{ id: "d18", place: "tl", lines: [{ text: "Pass Go.", style: "headline" }] }], timing: { in: "r4+2", out: "r4.end-8" } },
+  /* ============================== story D6 (Iris, TASK-115b: Daniel's notes on D5) ============================== */
+  {
+    id: "d19-map", story: "D", beat: "Every brand / from our portfolio / is on this + [map.] (D6: on its own, once the pins and the two cards are gone)", shots: ["bird", "zoom"], scene: "the city from high: the yellow aplat carries it", ink: "ink",
+    blocks: [
+      { id: "d19", place: "tl", aplat: { fill: Y }, lines: [{ text: "Every brand", style: "line" }, { text: "from our portfolio", style: "line" }, { text: "is on this", style: "line" }] },
+      { id: "d19-word", attach: { to: "d19", dx: 36, gap: -34 }, lines: [{ text: "", style: "line", pill: { words: ["map."], fill: WH } }] }
+    ],
+    timing: { in: "bird+62", lineStagger: 5, pillIn: "bird+80", out: "zoom+16" }, mocks: [{ state: 0, at: "bird+100" }]
+  },
+  { id: "d20-pulled-over", story: "D", beat: "Avoid being / pulled over. (D6: smaller, line size)", shots: ["r8"], scene: "night, the patrol's lamps", ink: "paper", blocks: [{ id: "d20", place: "tl", lines: [{ text: "Avoid being", style: "line" }, { text: "pulled over.", style: "line" }] }], timing: { in: "r8+2", lineStagger: 4, out: "r8.end-9" } },
+  {
+    id: "d21-around", story: "D", beat: "See you / around. (D6: well inside the plaza's orange, bottom right)", shots: ["fount"], scene: "night: the plaza's orange road", ink: "paper",
+    blocks: [{ id: "d21", place: { x: 940, align: "right", base: 1490 }, lines: [{ text: "See you", style: "title" }, { text: "around.", style: "title" }] }],
+    timing: { in: "fount+8", lineStagger: 6, out: "fount.end-10" }, mocks: [{ state: 0, at: "fount+60" }]
+  },
   /* ============================== story B5 (Lia, from Iris's system) ============================== */
   {
     id: "b1-street", story: "B", beat: "Same street. / New [lights.] -> [tide.] -> [lap.] -> [paper.] -> [bloom.] -> [rules.] -> [ink.] -> [magic.] (one card over the nine worlds, on the plaza)", shots: ["monument", "nightlife", "underwater", "circuit", "sketch", "orchid", "gta2", "riso", "ghibli"], scene: "any world (Sketchbook is white): the yellow aplat carries it", ink: "ink",

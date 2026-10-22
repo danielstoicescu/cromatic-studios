@@ -159,7 +159,7 @@ for (const def of CARDS) {
     mocks: def.mocks, notes: def.notes || ""
   };
   if (def.url && !def.url.continues) { const nx = CARDS.find((d) => d.url && d.url.continues === def.id); if (nx) card.continuedBy = { black: nx.timing.black, settle: nx.timing.settle, out: nx.timing.out }; }
-  const clocks = def.story === "A" ? ["A_v4"] : def.story === "D" ? (/^d1[5-9]/.test(def.id) ? ["D5"] : ["D2"]) : def.story === "B" ? ["B5"] : ["C_v4", "C_long"];
+  const clocks = def.story === "A" ? ["A_v4"] : def.story === "D" ? (/^d(1[5-8])/.test(def.id) ? ["D5"] : /^d(19|2\d)/.test(def.id) ? ["D6"] : ["D2"]) : def.story === "B" ? ["B5"] : ["C_v4", "C_long"];
   card.timing.frames = Object.fromEntries(clocks.map((k) => [k, frames(card, k)]));
   card.files = { outlined: states.map((s) => `svg/outlined/${def.id}${states.length > 1 ? "-" + s.label : ""}.svg`), live: states.map((s) => `svg/live/${def.id}${states.length > 1 ? "-" + s.label : ""}.svg`) };
   states.forEach((s, k) => {

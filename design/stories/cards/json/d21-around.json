@@ -1,0 +1,131 @@
+{
+ "id": "d21-around",
+ "story": "D",
+ "beat": "See you / around. (D6: well inside the plaza's orange, bottom right)",
+ "shots": [
+  "fount"
+ ],
+ "scene": "night: the plaza's orange road",
+ "textColour": "#FBFAF5",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "d21",
+    "place": {
+     "x": 940,
+     "align": "right",
+     "base": 1490
+    },
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "d21-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#FBFAF5",
+      "align": "right",
+      "text": "See you",
+      "x": 539.1,
+      "baseline": 1374,
+      "width": 400.9,
+      "box": {
+       "x": 539.1,
+       "y": 1285.8,
+       "w": 400.9,
+       "h": 116
+      }
+     },
+     {
+      "kind": "line",
+      "id": "d21-l2",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#FBFAF5",
+      "align": "right",
+      "text": "around.",
+      "x": 548.4,
+      "baseline": 1490,
+      "width": 391.6,
+      "box": {
+       "x": 548.4,
+       "y": 1401.8,
+       "w": 391.6,
+       "h": 91.6
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "fount+8",
+   "lineStagger": 6,
+   "out": "fount.end-10"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "D6": {
+    "clock": "D6",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "d21-l1",
+      "text": "See you",
+      "in": 1021,
+      "out": 1092,
+      "motion": "lineIn / lineOut",
+      "hold": 59
+     },
+     {
+      "id": "d21-l2",
+      "text": "around.",
+      "in": 1027,
+      "out": 1093,
+      "motion": "lineIn / lineOut",
+      "hold": 54
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "fount+60"
+  }
+ ],
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/d21-around.svg"
+  ],
+  "live": [
+   "svg/live/d21-around.svg"
+  ]
+ }
+}

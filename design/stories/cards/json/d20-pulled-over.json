@@ -1,0 +1,121 @@
+{
+ "id": "d20-pulled-over",
+ "story": "D",
+ "beat": "Avoid being / pulled over. (D6: smaller, line size)",
+ "shots": [
+  "r8"
+ ],
+ "scene": "night, the patrol's lamps",
+ "textColour": "#FBFAF5",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "d20",
+    "place": "tl",
+    "ink": "#FBFAF5",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "d20-l1",
+      "style": "line",
+      "size": 88,
+      "tracking": -0.035,
+      "lead": 1.06,
+      "ink": "#FBFAF5",
+      "align": "left",
+      "text": "Avoid being",
+      "x": 80,
+      "baseline": 363,
+      "width": 458,
+      "box": {
+       "x": 80,
+       "y": 296.1,
+       "w": 458,
+       "h": 88
+      }
+     },
+     {
+      "kind": "line",
+      "id": "d20-l2",
+      "style": "line",
+      "size": 88,
+      "tracking": -0.035,
+      "lead": 1.06,
+      "ink": "#FBFAF5",
+      "align": "left",
+      "text": "pulled over.",
+      "x": 80,
+      "baseline": 456.3,
+      "width": 443.8,
+      "box": {
+       "x": 80,
+       "y": 389.4,
+       "w": 443.8,
+       "h": 88
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "in": "r8+2",
+   "lineStagger": 4,
+   "out": "r8.end-9"
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "D6": {
+    "clock": "D6",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "d20-l1",
+      "text": "Avoid being",
+      "in": 955,
+      "out": 1003,
+      "motion": "lineIn / lineOut",
+      "hold": 36
+     },
+     {
+      "id": "d20-l2",
+      "text": "pulled over.",
+      "in": 959,
+      "out": 1004,
+      "motion": "lineIn / lineOut",
+      "hold": 33
+     }
+    ]
+   }
+  }
+ },
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/d20-pulled-over.svg"
+  ],
+  "live": [
+   "svg/live/d20-pulled-over.svg"
+  ]
+ }
+}
