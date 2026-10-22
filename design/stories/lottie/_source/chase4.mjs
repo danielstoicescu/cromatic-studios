@@ -21,10 +21,10 @@ export const SHOTS = {
     dur: 1.35,
     yellow: (t) => ({ x: 826, y: YV, z: 5360 + 240 * (t - 0.15), yaw: 0, lights: 1 })
   },
-  // C6 (TASK-065i, Casa Berero from berero-116 fe4660f): higher and a touch up the street, so the far pavement's lamp
-  // post stands left of the new sign and the fir right of it (Daniel: the pole must not cover the sign)
+  // C6 (TASK-065i, Casa Berero from berero-116 fe4660f + berero-clear 6e496bb: no trees or street light before it):
+  // square on to the house, the whole sign and the delivery at the door; the ride tears past at kerb height
   berero6: {
-    cam: { pos: [935, 15, 5420], tgt: [706, 13, 5482], fov: 40, shift: [0, 0.05], level: true },
+    cam: { pos: [935, 5, 5480], tgt: [706, 13, 5482], fov: 38, shift: [0, 0.1], level: true },
     dur: 1.35,
     yellow: (t) => ({ x: 826, y: YV, z: 5360 + 240 * (t - 0.15), yaw: 0, lights: 1 })
   },
