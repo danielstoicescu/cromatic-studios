@@ -79,7 +79,7 @@ export function buildHeroDacia(T, ext = {}) {
   const RE = 0.034; // the radius of the face's top and bottom edges
   const endE = (z) => { const dn = zN - z, dt = z - zT, d = Math.min(dn, dt); if (d >= RE) return 0; const q = RE - d; return RE - Math.sqrt(Math.max(0, RE * RE - q * q)); };
   // the centre line of the top (bonnet, the belt under the glass, the boot deck)
-  const HcT = pchip([[zT, 0.885], [-2.33, 0.912], [-2.1, 0.935], [-1.82, 0.944], [-1.76, 0.936], [-1.0, 0.913], [0.0, 0.893], [0.6, 0.878], [0.665, 0.873], [1.0, 0.853], [1.5, 0.81], [1.85, 0.766], [zN, 0.746]]);
+  const HcT = pchip([[zT, 0.872], [-2.34, 0.893], [-2.15, 0.903], [-1.9, 0.906], [-1.64, 0.903], [-1.0, 0.893], [0.0, 0.882], [0.6, 0.874], [0.665, 0.873], [1.0, 0.853], [1.5, 0.81], [1.85, 0.766], [zN, 0.746]]);
   const crown = (z) => 0.03 * sstep(0.63, 0.7, z) + 0.022 * (1 - sstep(-1.84, -1.78, z));
   const rS = (z) => 0.03 + 0.012 * (sstep(0.6, 0.7, z) + 1 - sstep(-1.84, -1.76, z));
   const ybase = pchip([[zT, 0.335], [-2.25, 0.27], [-2.0, 0.222], [-1.8, 0.215], [1.55, 0.215], [1.75, 0.245], [zN, 0.30]]);
@@ -111,14 +111,14 @@ export function buildHeroDacia(T, ext = {}) {
     return out; // last point: x = 0
   }
   // the cabin zone (the windscreen's foot to the rear window's foot): the lower body has no lid there
-  const ZC0 = 0.6, ZC1 = -1.77;
+  const ZC0 = 0.6, ZC1 = -1.635; // r2 (TASK-112 notes): the cabin ends earlier, the boot is long and flat
   // z rows: fine at the ends and round the arches' edges
   function rowsZ() {
     const zs = new Set();
     for (let z = zT; z <= zN + 1e-9; z += 0.018) zs.add(+z.toFixed(5));
     for (let d = 0; d <= 0.14; d += 0.006) { zs.add(+(zN - d).toFixed(5)); zs.add(+(zT + d).toFixed(5)); }
     for (const za of [zF, zR]) for (const s of [-1, 1]) for (let d = -0.03; d <= 0.03; d += 0.004) zs.add(+(za + s * AR + d).toFixed(5));
-    for (const zc of [ZC0, ZC1, 0.63, 0.665, -1.80]) zs.add(zc);
+    for (const zc of [ZC0, ZC1, 0.63, 0.665, -1.665]) zs.add(zc);
     zs.add(zN); zs.add(zT);
     return [...zs].filter((z) => z >= zT && z <= zN).sort((a, b) => a - b);
   }
@@ -216,7 +216,7 @@ export function buildHeroDacia(T, ext = {}) {
   { const out = []; for (let i = 0; i <= 90; i++) { const z = lerp(ZB0, zN - 0.012, i / 90); out.push(lowerTop(z, Math.min(XB, hw(z) - 0.075))); } bothSides(out, GAP, LIFT, mats.gap, "bonnet gap"); }
   { const out = []; for (let i = 0; i <= 60; i++) { const x = lerp(-XB, XB, i / 60); out.push(lowerTop(ZB0, x)); } ribbon(out, GAP, LIFT, mats.gap, "bonnet gap"); }
   // the boot lid: its front edge behind the rear window, its sides
-  const ZK0 = -1.815, XK = 0.70;
+  const ZK0 = -1.668, XK = 0.70;
   { const out = []; for (let i = 0; i <= 60; i++) { const x = lerp(-XK, XK, i / 60); out.push(lowerTop(ZK0, x)); } ribbon(out, GAP, LIFT, mats.gap, "boot gap"); }
   { const out = []; for (let i = 0; i <= 50; i++) { const z = lerp(ZK0, zT + 0.012, i / 50); out.push(lowerTop(z, Math.min(XK, hw(z) - 0.08))); } bothSides(out, GAP, LIFT, mats.gap, "boot gap"); }
   // the scuttle vent under the windscreen
@@ -249,6 +249,11 @@ export function buildHeroDacia(T, ext = {}) {
     sweep(out, halfRound(0.0065, 0.0055), mats.chrome, "side strip", { closed: true });
     sweep(out.map(({ p, n }) => ({ p: V3(-p.x, p.y, p.z), n: V3(-n.x, n.y, n.z) })), halfRound(0.0065, 0.0055), mats.chrome, "side strip", { closed: true });
   }
+  // r2: the fine chrome strip along the crease, from behind the headlamp to the tail
+  {
+    const out = []; for (let i = 0; i <= 160; i++) { const z = lerp(zT + 0.07, zN - 0.07, i / 160); const q = lowerSide(z, yc(z) + 0.001); out.push({ p: q.p.clone().addScaledVector(q.n, 0.0004), n: q.n }); }
+    for (const sx of [1, -1]) sweep(out.map(({ p, n }) => ({ p: V3(sx * p.x, p.y, p.z), n: V3(sx * n.x, n.y, n.z) })), halfRound(0.0042, 0.0035), mats.chrome, "crease strip", { closed: true });
+  }
   // the wheel arches' lips (a dark rubbery seam) and the wells
   for (const za of [zF, zR]) for (const s of [-1, 1]) {
     const pts = []; for (let i = 0; i <= 60; i++) { const a = Math.PI * (i / 60); const z = za + Math.cos(a) * (AR - 0.002), y = AY + Math.sin(a) * (AR - 0.002); if (y < ybase(z) - 0.002) continue; const q = lowerSide(z, y); pts.push({ p: V3(s * (q.p.x - 0.012), y, z), n: V3(0, Math.sin(a), Math.cos(a)) }); }
@@ -266,7 +271,7 @@ export function buildHeroDacia(T, ext = {}) {
 
   // ================= the glasshouse: a second loft, from the windscreen's foot to the rear window's foot =================
   const beltY = (z) => sideTop(z) + rS(z) - 0.004;
-  const HrT = pchip([[ZC1, 0.945], [-1.62, 1.06], [-1.42, 1.205], [-1.2, 1.35], [-1.09, 1.405], [-0.95, 1.425], [-0.5, 1.435], [-0.05, 1.426], [0.03, 1.405], [0.12, 1.33], [0.36, 1.13], [ZC0, 0.892]]);
+  const HrT = pchip([[ZC1, 0.912], [-1.5, 1.0], [-1.3, 1.15], [-1.1, 1.305], [-0.98, 1.39], [-0.88, 1.424], [-0.5, 1.435], [-0.05, 1.426], [0.03, 1.405], [0.12, 1.33], [0.36, 1.13], [ZC0, 0.892]]);
   const RR = 0.034, xRoof = 0.61;
   const crownR = (z) => 0.024 + 0.012 * (sstep(0.06, 0.3, z) + 1 - sstep(-1.4, -1.15, z));
   const xBelt = (z) => hw(z) - 0.05;
@@ -280,16 +285,19 @@ export function buildHeroDacia(T, ext = {}) {
     return out;
   }
   const C_SIDE = 18, C_ARC0 = 18, C_TOP0 = 25;
-  const ZSC = []; { for (let z = ZC1; z <= ZC0 + 1e-9; z += 0.012) ZSC.push(+z.toFixed(5)); for (const k of [0.585, 0.07, -0.375, -0.425, -1.10, -1.17, -1.755, 0.03, ZC0]) ZSC.push(k); }
+  const ZSC = []; { for (let z = ZC1; z <= ZC0 + 1e-9; z += 0.012) ZSC.push(+z.toFixed(5)); for (const k of [0.585, 0.07, -0.375, -0.425, -0.94, -1.62, 0.03, ZC0]) ZSC.push(k); }
   const ZC = [...new Set(ZSC)].filter((z) => z >= ZC1 && z <= ZC0).sort((a, b) => a - b);
   const CAB = ZC.map((z) => fullSec(cabHalf(z))), CC = CAB[0].length;
   const ch = (j) => Math.min(j, CC - 1 - j);
   // which quads are glass: the windscreen, the rear window, the four door windows (frames left round them)
-  const W_FRONT = [-0.372, 0.582], W_REAR = [-1.168, -0.428], WS = [0.072, 0.582], RW = [-1.752, -1.1];
+  const W_FRONT = [-0.372, 0.582], W_REAR = [-1.2, -0.428], WS = [0.072, 0.582], RW = [-1.62, -0.94];
+  // the rear door glass ends on a slant, parallel to the raked C-pillar (its front edge: z at the belt -> under the roof)
+  const cEdge = (y) => lerp(-1.19, -0.97, clamp((y - 0.93) / 0.42, 0, 1));
   function cabKind(i, j) {
     const zm = (ZC[i] + ZC[i + 1]) / 2, h = Math.min(ch(j), ch(j + 1)), hM = Math.max(ch(j), ch(j + 1));
     const side = hM <= C_SIDE, top = h >= C_TOP0 + 1;
-    if (side && h >= 2 && hM <= C_SIDE - 2) { if ((zm > W_FRONT[0] && zm < W_FRONT[1]) || (zm > W_REAR[0] && zm < W_REAR[1])) return "glass"; }
+    const ym = (CAB[i][j][1] + CAB[i][j + 1][1] + CAB[i + 1][j][1] + CAB[i + 1][j + 1][1]) / 4;
+    if (side && h >= 2 && hM <= C_SIDE - 2) { if ((zm > W_FRONT[0] && zm < W_FRONT[1]) || (zm > Math.max(W_REAR[0], cEdge(ym)) && zm < W_REAR[1])) return "glass"; }
     if (top && ((zm > WS[0] && zm < WS[1]) || (zm > RW[0] && zm < RW[1]))) return "glass";
     return "paint";
   }
@@ -357,7 +365,7 @@ export function buildHeroDacia(T, ext = {}) {
   }
   // the C-pillar's three slanted slots
   for (let k = 0; k < 3; k++) {
-    const pts = []; for (let i = 0; i <= 12; i++) { const t = i / 12, z = -1.36 - k * 0.05 - t * 0.075, y = 1.0 + 0.02 * k + t * 0.16; if (y > HrT(z) - 0.09) continue; pts.push(cabSide(z, y)); }
+    const pts = []; for (let i = 0; i <= 12; i++) { const t = i / 12, z = -1.22 - k * 0.045 - t * 0.085, y = 0.99 + 0.012 * k + t * 0.15; if (y > HrT(z) - 0.09) continue; pts.push(cabSide(z, y)); }
     if (pts.length > 2) bothSides(pts, 0.011, 0.0012, mats.gap, "c-pillar slot");
   }
 
@@ -415,12 +423,14 @@ export function buildHeroDacia(T, ext = {}) {
   { const g = new T.PlaneGeometry(0.52, 0.112); g.rotateY(Math.PI); g.translate(0, 0.69, zT - 0.009); add(g, mats.plate, "rear plate"); const b = new T.BoxGeometry(0.535, 0.125, 0.006); b.translate(0, 0.69, zT - 0.004); add(b, mats.black, "plate holder"); const l = new T.BoxGeometry(0.12, 0.018, 0.03); l.translate(0, 0.762, zT - 0.012); add(l, mats.chrome, "plate lamp"); }
 
   // ================= the rear: tail lamps, the boot's lock, the exhaust =================
+  // r2 (TASK-112 notes): the 1969-75 car's tall tail lamps at the corners, in deep chrome frames: amber over red over
+  // the clear reversing lamp
   for (const s of [-1, 1]) {
-    const cx = s * 0.555, cy = 0.705, w = 0.27, h = 0.112;
-    { const g = ringGeo(w, h, 0.016, 0.01, 0.012, 0.003); g.rotateY(Math.PI); g.translate(cx, cy, zT + 0.002); add(g, mats.chrome, "tail lamp rim"); }
-    const seg = (x0, x1, mat) => { const g = new T.PlaneGeometry(Math.abs(x1 - x0), h, 1, 1); g.rotateY(Math.PI); g.translate(cx + s * ((x0 + x1) / 2), cy, zT - 0.008); add(g, mat, "tail lamp"); };
-    seg(w / 2 - 0.075, w / 2, mats.amber); seg(-w / 2 + 0.06, w / 2 - 0.075, mats.red); seg(-w / 2, -w / 2 + 0.06, mats.clear);
-    for (const xs of [w / 2 - 0.075, -w / 2 + 0.06]) { const g = new T.BoxGeometry(0.004, h, 0.006); g.translate(cx + s * xs, cy, zT - 0.009); add(g, mats.satin, "lamp divider"); }
+    const cx = s * 0.6, cy = 0.705, w = 0.122, h = 0.218;
+    { const g = ringGeo(w, h, 0.012, 0.013, 0.016, 0.004); g.rotateY(Math.PI); g.translate(cx, cy, zT + 0.002); add(g, mats.chrome, "tail lamp rim"); }
+    const seg = (y0, y1, mat) => { const g = new T.PlaneGeometry(w, Math.abs(y1 - y0), 1, 1); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 2, uv.getY(i) * Math.abs(y1 - y0) * 12); g.rotateY(Math.PI); g.translate(cx, cy + (y0 + y1) / 2, zT - 0.012); add(g, mat, "tail lamp"); };
+    seg(h / 2 - 0.062, h / 2, mats.amber); seg(-h / 2 + 0.05, h / 2 - 0.062, mats.red); seg(-h / 2, -h / 2 + 0.05, mats.clear);
+    for (const ys of [h / 2 - 0.062, -h / 2 + 0.05]) { const g = new T.BoxGeometry(w, 0.005, 0.008); g.translate(cx, cy + ys, zT - 0.013); add(g, mats.satin, "lamp divider"); }
   }
   { const g = new T.CylinderGeometry(0.014, 0.014, 0.012, 20); g.rotateX(Math.PI / 2); g.translate(0, 0.79, zT - 0.006); add(g, mats.chrome, "boot lock"); }
   { const g = new T.CylinderGeometry(0.024, 0.024, 0.28, 20, 1, true); g.rotateX(Math.PI / 2); g.translate(-0.42, 0.235, zT + 0.11); add(g, mats.satin, "exhaust"); const c = new T.CircleGeometry(0.02, 20); c.rotateY(Math.PI); c.translate(-0.42, 0.235, zT - 0.028); add(c, mats.under, "exhaust hole"); }
@@ -462,9 +472,9 @@ export function buildHeroDacia(T, ext = {}) {
     rbox(0.48, 0.56, 0.11, 0.05, mats.vinyl, "front seat back", [s * 0.34, 0.78, -0.47], [-0.2, 0, 0]);
     rbox(0.26, 0.12, 0.07, 0.03, mats.vinyl, "headrest", [s * 0.34, 1.11, -0.55], [-0.2, 0, 0]);
   }
-  rbox(0.88, 0.14, 0.5, 0.05, mats.vinyl, "rear seat", [0, 0.45, -1.05]);
-  rbox(1.34, 0.5, 0.12, 0.05, mats.vinyl, "rear seat back", [0, 0.72, -1.34], [-0.28, 0, 0]);
-  rbox(1.4, 0.03, 0.42, 0.01, mats.dash, "parcel shelf", [0, beltY(-1.55) - 0.03, -1.56]);
+  rbox(0.88, 0.14, 0.5, 0.05, mats.vinyl, "rear seat", [0, 0.45, -0.98]);
+  rbox(1.34, 0.48, 0.12, 0.05, mats.vinyl, "rear seat back", [0, 0.71, -1.25], [-0.3, 0, 0]);
+  rbox(1.4, 0.03, 0.3, 0.01, mats.dash, "parcel shelf", [0, beltY(-1.48) - 0.03, -1.47]);
   rbox(1.42, 0.16, 0.3, 0.04, mats.dash, "dashboard", [0, 0.8, 0.46]);
   { const g = new T.TorusGeometry(0.19, 0.012, 12, 48); const m = add(g, mats.dash, "steering wheel"); m.position.set(0.34, 0.86, 0.2); m.rotation.set(-0.45, 0, 0); const c = new T.CylinderGeometry(0.02, 0.02, 0.34, 12); const cm = add(c, mats.dash, "column"); cm.position.set(0.34, 0.8, 0.32); cm.rotation.set(1.1, 0, 0); }
   return { group, mats, tex };
