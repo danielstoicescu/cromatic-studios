@@ -95,17 +95,42 @@ function makeDash(K) {
   box(16, 3, 0.4, faces(M("#ffffff", { map: heatT, roughness: 0.7 }), M("#151311")), 0, -3.2, 9.15);
   [-5.4, -0.15, 5.1].forEach((sx, i) => box(0.9, 0.75, 0.55, M("#6f6b66", { roughness: 0.4, metalness: 0.4 }), sx + [-1.2, 1.6, 0.4][i], -2.8, 9.5));
   box(10, 2.6, 0.5, M("#2c2925", { roughness: 0.5, metalness: 0.3 }), 0, -7.6, 9.1); box(8.6, 0.5, 0.6, M("#8a8680", { metalness: 0.5, roughness: 0.5 }), 0, -6.6, 9.3); // (the ashtray, its chrome pull)
-  // ---- the two auxiliary gauges over the stereo (rev counter, oil pressure): needles at rest till the engine catches
-  // (C7, Daniel: the two gauges are Berero's two beers, COMM and UNITY: each dial in its can's colour, the word in the
-  // labels' condensed black capitals; sampled from the case's labels: COMM lager yellow, UNITY IPA green)
-  const gaugeT = (label, marks, face = "#0d0d0f", ink = "#e9e3d3") => tex(512, 512, (c) => { c.scale(2, 2); c.translate(128, 128); c.rotate(-Math.PI / 2); c.translate(-128, -128); /* (the cap's uv runs a quarter turn round) */ c.fillStyle = face; c.beginPath(); c.arc(128, 128, 126, 0, 7); c.fill(); c.strokeStyle = ink; c.lineWidth = 5; for (let i = 0; i <= marks; i++) { const a = Math.PI * (0.75 + 1.5 * i / marks); c.beginPath(); c.moveTo(128 + Math.cos(a) * 104, 128 + Math.sin(a) * 104); c.lineTo(128 + Math.cos(a) * (i % 2 ? 90 : 80), 128 + Math.sin(a) * (i % 2 ? 90 : 80)); c.stroke(); } c.fillStyle = ink; c.textAlign = "center"; c.save(); c.translate(128, 196); c.scale(0.62, 1); c.font = "900 50px CromaticSans, 'Arial Narrow', sans-serif"; c.fillText(label, 0, 0); c.restore(); c.beginPath(); c.arc(128, 128, 9, 0, 7); c.fill(); });
-  const gFace = [], gNeedle = [];
-  [["COMM", 8, -4.2, "#F5EC0A", "#0D0C09"], ["UNITY", 6, 4.2, "#4CAF4C", "#0D0C09"]].forEach(([lab, mk, gx, faceC, inkC]) => {
+  // ---- the two auxiliary gauges over the stereo, Berero's beers COMM (lager yellow) and UNITY (IPA green), C8: real
+  // depth (a black cup, a chrome bezel, the dial set back under a domed glass with its highlight, a needle on a hub with
+  // its shadow on the dial, printed figures and graduations), the dial backlit from its middle, and each gauge's own
+  // coloured glow spilling on the dashboard round it
+  const gaugeT = (label, max, face, ink) => tex(1024, 1024, (c) => { c.scale(4, 4); c.translate(128, 128); c.rotate(-Math.PI / 2); c.translate(-128, -128); /* (the cap's uv runs a quarter turn round) */
+    const rg = c.createRadialGradient(128, 128, 8, 128, 128, 128); rg.addColorStop(0, face); rg.addColorStop(0.55, face); rg.addColorStop(1, "#1a1a12"); c.fillStyle = rg; c.beginPath(); c.arc(128, 128, 127, 0, 7); c.fill();
+    const hi = c.createRadialGradient(128, 118, 0, 128, 128, 90); hi.addColorStop(0, "rgba(255,255,240,0.38)"); hi.addColorStop(1, "rgba(255,255,240,0)"); c.fillStyle = hi; c.fillRect(0, 0, 256, 256); // (the backlight: brightest in the middle)
+    c.strokeStyle = ink; c.fillStyle = ink; c.lineCap = "butt";
+    const n = max * 5; for (let i = 0; i <= n; i++) { const a = Math.PI * (0.75 + 1.5 * i / n), maj = i % 5 === 0, r0 = maj ? 92 : 100; c.lineWidth = maj ? 4.2 : 1.6; c.beginPath(); c.moveTo(128 + Math.cos(a) * 110, 128 + Math.sin(a) * 110); c.lineTo(128 + Math.cos(a) * r0, 128 + Math.sin(a) * r0); c.stroke(); }
+    c.lineWidth = 1.4; c.beginPath(); c.arc(128, 128, 110.5, Math.PI * 0.75, Math.PI * 2.25); c.stroke();
+    c.font = "700 19px CromaticSans, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; for (let v = 0; v <= max; v++) { const a = Math.PI * (0.75 + 1.5 * v / max); c.fillText(String(v), 128 + Math.cos(a) * 76, 128 + Math.sin(a) * 76); }
+    c.save(); c.translate(128, 178); c.scale(0.7, 1); c.font = "900 21px CromaticSans, 'Arial Narrow', sans-serif"; c.fillText(label, 0, 0); c.restore(); // (the word: small, where it was)
+    c.font = "600 8px CromaticSans, sans-serif"; c.fillText("x1000", 128, 196); });
+  const chromeT = tex(64, 256, (c, w, h) => { const g2 = c.createLinearGradient(0, 0, 0, h); [[0, "#5d6166"], [0.18, "#f4f6f8"], [0.3, "#9da2a8"], [0.5, "#2c2f33"], [0.62, "#c9ced3"], [0.8, "#ffffff"], [1, "#5d6166"]].forEach(([o, col]) => g2.addColorStop(o, col)); c.fillStyle = g2; c.fillRect(0, 0, w, h); });
+  const glowT = (col) => tex(256, 256, (c) => { const rg = c.createRadialGradient(128, 128, 0, 128, 128, 128); rg.addColorStop(0, col); rg.addColorStop(0.35, col + "99"); rg.addColorStop(1, col + "00"); c.fillStyle = rg; c.fillRect(0, 0, 256, 256); });
+  const shineT = tex(256, 256, (c) => { c.translate(128, 128); c.rotate(-0.7); const lg = c.createLinearGradient(0, -60, 0, 60); lg.addColorStop(0, "rgba(255,255,255,0)"); lg.addColorStop(0.5, "rgba(255,255,255,0.75)"); lg.addColorStop(1, "rgba(255,255,255,0)"); c.fillStyle = lg; c.beginPath(); c.ellipse(-30, -40, 70, 16, 0, 0, 7); c.fill(); });
+  const gFace = [], gNeedle = [], gSpill = [];
+  [["COMM", 8, -4.2, "#F5EC0A", "#0D0C09"], ["UNITY", 6, 4.2, "#4CAF4C", "#0D0C09"]].forEach(([lab, mx, gx, faceC, inkC]) => {
     const pod = new K.Group(); pod.position.set(gx, 14.6, 7.6); g.add(pod);
-    const rim = new K.Mesh(new K.CylinderGeometry(3.3, 3.3, 1.6, 40), M("#cfd2d6", { metalness: 0.6, roughness: 0.3 })); rim.rotation.x = Math.PI / 2; pod.add(rim);
-    const gt = gaugeT(lab, mk, faceC, inkC), fm = new K.MeshStandardMaterial({ map: gt, emissiveMap: gt, emissive: new K.Color("#ffffff"), emissiveIntensity: 0, roughness: 0.4 });
-    const face = new K.Mesh(new K.CylinderGeometry(2.9, 2.9, 0.2, 40), fm); face.rotation.x = Math.PI / 2; face.position.z = 0.75; pod.add(face); gFace.push(fm);
-    const nd = new K.Group(); nd.position.z = 0.95; pod.add(nd); const bar = new K.Mesh(new K.BoxGeometry(0.16, 2.3, 0.1), new K.MeshStandardMaterial({ color: "#ff5a1f", emissive: new K.Color("#ff5a1f"), emissiveIntensity: 0.6 })); bar.position.y = 1.1; nd.add(bar); gNeedle.push(nd);
+    const cup = new K.Mesh(new K.CylinderGeometry(3.45, 3.6, 2.4, 48), M("#0b0b0c", { roughness: 0.5 })); cup.rotation.x = Math.PI / 2; cup.position.z = -0.85; pod.add(cup);
+    const bez = new K.Mesh(new K.TorusGeometry(3.12, 0.34, 20, 72), new K.MeshStandardMaterial({ color: "#ffffff", map: chromeT, metalness: 0.55, roughness: 0.18, emissive: new K.Color("#ffffff"), emissiveMap: chromeT, emissiveIntensity: 0.12 })); bez.position.z = 1.0; pod.add(bez);
+    const gt = gaugeT(lab, mx, faceC, inkC), fm = new K.MeshStandardMaterial({ map: gt, emissiveMap: gt, emissive: new K.Color("#ffffff"), emissiveIntensity: 0, roughness: 0.55 });
+    const face = new K.Mesh(new K.CylinderGeometry(2.95, 2.95, 0.1, 64), fm); face.rotation.x = Math.PI / 2; face.position.z = 0.45; pod.add(face); gFace.push(fm);
+    // the needle (a tapered bar and its counterweight) on its hub; its shadow on the dial, a little down and right
+    const mkNeedle = (m, z) => { const nd = new K.Group(); nd.position.z = z; pod.add(nd); const bar = new K.Mesh(new K.BoxGeometry(0.14, 2.45, 0.06), m); bar.position.y = 1.1; nd.add(bar); const tip = new K.Mesh(new K.BoxGeometry(0.07, 0.5, 0.06), m); tip.position.y = 2.5; nd.add(tip); const cw = new K.Mesh(new K.BoxGeometry(0.26, 0.7, 0.06), m); cw.position.y = -0.3; nd.add(cw); return nd; };
+    const ndM = new K.MeshStandardMaterial({ color: "#ff4a1a", emissive: new K.Color("#ff4a1a"), emissiveIntensity: 0.7, roughness: 0.4 });
+    const shM = new K.MeshBasicMaterial({ color: "#000000", transparent: true, opacity: 0.35, depthWrite: false });
+    const sh = mkNeedle(shM, 0.52); sh.position.x = 0.1; sh.position.y = -0.14; const nd = mkNeedle(ndM, 0.72); gNeedle.push([nd, sh]);
+    const hub = new K.Mesh(new K.CylinderGeometry(0.38, 0.42, 0.36, 32), M("#141414", { roughness: 0.3 })); hub.rotation.x = Math.PI / 2; hub.position.z = 0.8; pod.add(hub);
+    const cap = new K.Mesh(new K.CylinderGeometry(0.22, 0.22, 0.08, 24), new K.MeshStandardMaterial({ color: "#ffffff", map: chromeT, metalness: 0.6, roughness: 0.2 })); cap.rotation.x = Math.PI / 2; cap.position.z = 1.0; pod.add(cap);
+    // the domed glass: a shallow cap of a sphere, nearly clear, its highlight a soft streak up and left
+    const th = 0.52, Rg = 3.15 / Math.sin(th), dome = new K.Mesh(new K.SphereGeometry(Rg, 64, 16, 0, Math.PI * 2, 0, th), new K.MeshPhysicalMaterial({ color: "#dfe8ff", transparent: true, opacity: 0.1, roughness: 0.04, metalness: 0, clearcoat: 1, depthWrite: false }));
+    dome.rotation.x = Math.PI / 2; dome.position.z = 1.15 - Rg * Math.cos(th); pod.add(dome);
+    const shine = new K.Mesh(new K.PlaneGeometry(5.2, 5.2), new K.MeshBasicMaterial({ map: shineT, transparent: true, opacity: 0.55, depthWrite: false })); shine.position.z = 1.32; pod.add(shine);
+    // the gauge's own colour on the dashboard round it (additive, soft)
+    const sp = new K.Mesh(new K.PlaneGeometry(15, 15), new K.MeshBasicMaterial({ map: glowT(faceC), transparent: true, opacity: 0, blending: 2, depthWrite: false })); sp.position.set(gx, 14.6, 7.68); g.add(sp); gSpill.push(sp);
   });
   // ---- the windscreen behind: the night street's lights out of focus, the yellow bonnet's line
   const bokehM = (c) => new K.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.55, depthWrite: false });
@@ -122,13 +147,13 @@ function makeDash(K) {
   // the engine catches 0.45; the display lights 0.85 (backlight, all segments for a blink), the text steps in from
   // the right 0.92 - 1.10 and settles as the station locks (ST); the blue lights come up with the display and from
   // 1.10 breathe on his kicks (1.47, 2.16 in this shot, strength 0.6; 2.86, 3.55 ... fall after the cut)
-  const CUE = { engine: 0.45, displayOn: 0.85, textIn: 0.92, settled: 1.10, station: 1.10, pulse: 1.10, cut: 2.2, kicks: [[1.4688, 0.6], [2.1625, 0.6], [2.8563, 0.6], [3.55, 1]] };
+  const CUE = { engine: 0.45, displayOn: 0.85, textIn: 0.92, settled: 1.10, station: 1.10, pulse: 1.10, cut: 2.2, kicks: [[1.4568, 0.6], [2.1545, 0.6], [2.8523, 0.6], [3.55, 1]] /* (C8: Sorin's C7 grid, 85.99 bpm) */ };
   const TEXT = "CROMATIC FM 101.4";
   return { group: g, cues: CUE, pose(t) {
     const k = t - CUE.engine, rest = Math.PI * 0.75; // (the needle's rest: the dial's start, lower left; it turns clockwise)
     const jump = (target) => k <= 0 ? 0 : target * (1 - Math.exp(-k * 7) * Math.cos(k * 22));
-    gNeedle[0].rotation.z = rest - jump(1.15); gNeedle[1].rotation.z = rest - jump(1.7);
-    const flick = k < 0 ? 0 : k < 0.04 ? 1 : k < 0.08 ? 0.15 : 1; gFace.forEach((m) => { m.emissiveIntensity = 0.28 * flick; });
+    [[0, 1.15], [1, 1.7]].forEach(([i, v]) => { const r = rest - jump(v); gNeedle[i][0].rotation.z = r; gNeedle[i][1].rotation.z = r; });
+    const flick = k < 0 ? 0 : k < 0.04 ? 1 : k < 0.08 ? 0.15 : 1; gFace.forEach((m) => { m.emissiveIntensity = 0.32 * flick; }); gSpill.forEach((m) => { m.material.opacity = 0.36 * flick; });
     // the radio: the backlight up in 0.1 s; the segment test; the text stepping in a cell at a time
     const on = sm(cl((t - CUE.displayOn) / 0.1));
     let txt = "", test = false;

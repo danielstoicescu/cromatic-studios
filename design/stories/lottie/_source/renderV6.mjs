@@ -8,6 +8,7 @@ import fs from "fs";
 import { D3 } from "./shotsD3.mjs";
 import { A6 } from "./shotsA6.mjs";
 import { SEG as B7SEG, car as b7car } from "./shotsB7.mjs";
+import { C8A } from "./shotsC8.mjs";
 import { omaArches } from "./shots5.mjs";
 const job = process.env.JOB, RAW = (process.env.RAW || "/private/tmp/claude-501/-Users-daniel-stoic/8f3b4503-769c-4f86-ba4b-8e36528128b3/scratchpad/stl4/raw") + "/v6";
 fs.mkdirSync(RAW, { recursive: true });
@@ -136,9 +137,9 @@ return out;
   // alone too (its matte) and the camera's numbers (for the composite of a better car); OMA's room behind its glass
   const ROOM = fs.readFileSync(new URL("./omaRoom.js", import.meta.url), "utf8");
   const shots = {};
-  for (const [k, S] of Object.entries(A6)) { const n = Math.round(S.dur * 30), fr = []; for (let i = 0; i <= n; i++) { const t = i / 30; fr.push({ t, cam: S.cam(t), car: S.car ? [S.car(t - 1 / 120), S.car(t + 1 / 120)] : null }); } shots[k] = { frames: fr, park: S.park || null, room: !!S.room }; }
+  for (const [k, S] of Object.entries(process.env.SET === "c8" ? C8A : A6)) { /* (SET=c8: the OMA pass of C8) */ const n = Math.round(S.dur * 30), fr = []; for (let i = 0; i <= n; i++) { const t = i / 30; fr.push({ t, cam: S.cam(t), car: S.car ? [S.car(t - 1 / 120), S.car(t + 1 / 120)] : null }); } shots[k] = { frames: fr, park: S.park || null, room: !!S.room }; }
   JOBS.a6 = `
-await scheme("monument"); await vehicle("dacia1300");
+await scheme(${JSON.stringify(process.env.SCHEME || "monument")}); await vehicle("dacia1300");
 const shots = ${JSON.stringify(shots)}, only = ${JSON.stringify((process.env.SHOT || Object.keys(A6).join(",")).split(","))}, arches = ${JSON.stringify(omaArches())};
 fs.mkdirSync(RAW + "/a6", { recursive: true });
 const out = fs.existsSync(RAW + "/a6.json") ? JSON.parse(fs.readFileSync(RAW + "/a6.json", "utf8")) : {};

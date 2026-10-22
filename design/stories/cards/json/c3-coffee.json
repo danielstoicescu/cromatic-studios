@@ -24,70 +24,125 @@
    {
     "kind": "block",
     "id": "c3",
-    "place": "br",
+    "place": {
+     "x": 540,
+     "align": "center",
+     "base": 1540
+    },
     "ink": "#FBFAF5",
     "lines": [
      {
       "kind": "line",
       "id": "c3-l1",
-      "style": "headline",
-      "size": 168,
-      "tracking": -0.045,
-      "lead": 0.94,
+      "style": "lead",
+      "size": 60,
+      "tracking": -0.025,
+      "lead": 1.1,
       "ink": "#FBFAF5",
-      "align": "right",
-      "text": "Night",
-      "x": 598.6,
-      "baseline": 1214.2,
-      "width": 401.4,
+      "align": "left",
+      "text": "",
+      "x": 60.8,
+      "baseline": 1540,
+      "width": 0,
       "box": {
-       "x": 598.6,
-       "y": 1086.5,
-       "w": 401.4,
-       "h": 168
+       "x": 60.8,
+       "y": 1494.4,
+       "w": 254.2,
+       "h": 60
+      },
+      "pill": {
+       "id": "c3-l1-pill",
+       "fill": "#FED012",
+       "ink": "#0D0C09",
+       "left": 60.8,
+       "cy": 1518.7,
+       "h": 69.6,
+       "keyline": 2.7,
+       "shadow": [
+        1.8,
+        3.9
+       ],
+       "tilt": -3,
+       "wordX": 81.2,
+       "states": [
+        {
+         "word": "time for",
+         "wordW": 213.4,
+         "w": 254.2,
+         "cx": 187.9
+        }
+       ]
       }
      },
      {
       "kind": "line",
       "id": "c3-l2",
-      "style": "headline",
-      "size": 168,
-      "tracking": -0.045,
-      "lead": 0.94,
+      "style": "line",
+      "size": 88,
+      "tracking": -0.035,
+      "lead": 1.06,
       "ink": "#FBFAF5",
-      "align": "right",
-      "text": "coffee",
-      "x": 525.9,
-      "baseline": 1372.1,
-      "width": 474.1,
+      "align": "left",
+      "text": "",
+      "x": 325.1,
+      "baseline": 1540,
+      "width": 0,
       "box": {
-       "x": 525.9,
-       "y": 1244.4,
-       "w": 474.1,
-       "h": 132.7
+       "x": 325.1,
+       "y": 1473.1,
+       "w": 273.6,
+       "h": 88
+      },
+      "pill": {
+       "id": "c3-l2-pill",
+       "fill": "#0D0C09",
+       "ink": "#FFFFFF",
+       "line": "#FFFFFF",
+       "left": 325.1,
+       "cy": 1508.8,
+       "h": 102.1,
+       "keyline": 4,
+       "shadow": [
+        2.6,
+        5.7
+       ],
+       "tilt": -3,
+       "wordX": 355,
+       "states": [
+        {
+         "word": "Night",
+         "wordW": 213.8,
+         "w": 273.6,
+         "cx": 461.9
+        }
+       ]
       }
      },
      {
       "kind": "line",
       "id": "c3-l3",
-      "style": "headline",
-      "size": 168,
-      "tracking": -0.045,
-      "lead": 0.94,
+      "style": "lead",
+      "size": 60,
+      "tracking": -0.025,
+      "lead": 1.1,
       "ink": "#FBFAF5",
-      "align": "right",
-      "text": "hopping.",
-      "x": 354.2,
-      "baseline": 1530,
-      "width": 645.8,
+      "align": "left",
+      "text": "coffee hopping",
+      "x": 608.6,
+      "baseline": 1540,
+      "width": 410.5,
       "box": {
-       "x": 354.2,
-       "y": 1402.3,
-       "w": 645.8,
-       "h": 168
+       "x": 608.6,
+       "y": 1494.4,
+       "w": 410.5,
+       "h": 60
       }
      }
     ],
+    "row": {
+     "x0": 60.8,
+     "w": 958.3
+    },
     "behindRide": false
    }
   ]
@@ -95,7 +150,7 @@
  "states": [
   {
    "index": 0,
-   "label": "card"
+   "label": "time for"
   }
  ],
  "timing": {
@@ -111,24 +166,24 @@
     "fps": 30,
     "elements": [
      {
-      "id": "c3-l1",
-      "text": "Night",
-      "in": 130,
+      "id": "c3-l1-pill-0",
+      "word": "time for",
+      "in": 134,
       "out": 202,
-      "motion": "lineIn / lineOut",
-      "hold": 60
+      "motion": "pillIn",
+      "hold": 68
      },
      {
-      "id": "c3-l2",
-      "text": "coffee",
-      "in": 134,
+      "id": "c3-l2-pill-0",
+      "word": "Night",
+      "in": 138,
       "out": 203,
-      "motion": "lineIn / lineOut",
-      "hold": 57
+      "motion": "pillIn",
+      "hold": 65
      },
      {
       "id": "c3-l3",
-      "text": "hopping.",
+      "text": "coffee hopping",
       "in": 138,
       "out": 204,
       "motion": "lineIn / lineOut",
@@ -141,24 +196,24 @@
     "fps": 30,
     "elements": [
      {
-      "id": "c3-l1",
-      "text": "Night",
-      "in": 145,
+      "id": "c3-l1-pill-0",
+      "word": "time for",
+      "in": 149,
       "out": 217,
-      "motion": "lineIn / lineOut",
-      "hold": 60
+      "motion": "pillIn",
+      "hold": 68
      },
      {
-      "id": "c3-l2",
-      "text": "coffee",
-      "in": 149,
+      "id": "c3-l2-pill-0",
+      "word": "Night",
+      "in": 153,
       "out": 218,
-      "motion": "lineIn / lineOut",
-      "hold": 57
+      "motion": "pillIn",
+      "hold": 65
      },
      {
       "id": "c3-l3",
-      "text": "hopping.",
+      "text": "coffee hopping",
       "in": 153,
       "out": 219,
       "motion": "lineIn / lineOut",

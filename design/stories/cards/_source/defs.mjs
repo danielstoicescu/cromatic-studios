@@ -89,7 +89,11 @@ export const CARDS = [
   },
   {
     id: "c3-coffee", story: "C", beat: "Night coffee hopping. (Steam, held through Casa Berero)", shots: ["steam", "berero"], scene: "night", ink: "paper",
-    blocks: [{ id: "c3", place: "br", lines: [{ text: "Night", style: "headline" }, { text: "coffee", style: "headline" }, { text: "hopping.", style: "headline" }] }],
+    // (C8, Daniel: one line: a small yellow pill "time for", "Night" in a black pill, then "coffee hopping" smaller)
+    blocks: [{ id: "c3", place: { x: 540, align: "center", base: 1540 }, row: true, gap: 10, lines: [
+      { text: "", style: "lead", pill: { words: ["time for"], fill: "#FED012" } },
+      { text: "", style: "line", pill: { words: ["Night"], fill: "#0D0C09", ink: "#FFFFFF", line: "#FFFFFF" } },
+      { text: "coffee hopping", style: "lead" }] }],
     timing: { in: "steam+4", lineStagger: 4, out: "berero.end-6" },
     mocks: [{ state: 0, at: "steam+26" }, { state: 0, at: "berero+22" }],
     notes: "In once on Steam, stays put across the cut to Casa Berero (no re-entry), out before the fountain."

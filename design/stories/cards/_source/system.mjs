@@ -125,7 +125,7 @@ export function layLine(def, x, baseline, align, ink) {
   return {
     ...out, text: def.text || "", x: r1(lx), baseline: r1(baseline), width: r1(preW), box: box(lx, baseline, preW + gap + widest, s.size),
     pill: {
-      id: def.id + "-pill", fill: def.pill.fill, ink: P.ink, left: r1(px), cy: r1(cy), h: r1(h), keyline: r1(P.keyline * S), shadow: [r1(P.shadow[0] * S), r1(P.shadow[1] * S)], tilt: def.pill.tilt ?? P.tilt,
+      id: def.id + "-pill", fill: def.pill.fill, ink: def.pill.ink || P.ink, line: def.pill.line, left: r1(px), cy: r1(cy), h: r1(h), keyline: r1(P.keyline * S), shadow: [r1(P.shadow[0] * S), r1(P.shadow[1] * S)], tilt: def.pill.tilt ?? P.tilt,
       wordX: r1(px + P.padX * S), states: states.map((q) => ({ ...q, cx: r1(px + q.w / 2) }))
     }
   };
@@ -169,6 +169,16 @@ export function layBlock(def, ink) {
     }
   }
   const a = anchorFor(place, lines);
+  // (C8: { row: true }: the lines side by side on one baseline (the last line's), each its own style, any of them a pill;
+  // the row aligned as the block is)
+  if (def.row) {
+    const P = TOKENS.pill, gap = def.gap ?? 22, base = a.baselines[lines.length - 1];
+    const wOf = (l) => l.pill ? Math.max(...l.pill.words.map((w) => setText(w, l.style).width + 2 * P.padX * sty(l.style).size)) + (l.text ? setText(l.text, l.style).width + P.gap * sty(l.style).size : 0) : setText(l.text, l.style).width;
+    const ws = lines.map(wOf), total = ws.reduce((s0, w) => s0 + w, 0) + gap * (lines.length - 1);
+    let x = leftOf(a.x, total, a.align);
+    const laid = lines.map((l, i) => { const r = layLine(l, x, base, "left", ink); x += ws[i] + gap; return r; });
+    return { kind: "block", id: def.id, place: def.place, ink, lines: laid, row: { x0: r1(leftOf(a.x, total, a.align)), w: r1(total) } };
+  }
   const laid = lines.map((l, i) => layLine(l, a.x, a.baselines[i], a.align, ink));
   const out = { kind: "block", id: def.id, place: def.place, ink, lines: laid };
   if (def.aplat) out.aplat = aplatAround(laid, def.aplat);
