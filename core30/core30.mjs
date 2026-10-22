@@ -17,13 +17,14 @@ import { mkdir, readFile, rename, writeFile, readdir, appendFile } from "node:fs
 import { existsSync, createReadStream, statSync } from "node:fs";
 import { join, extname, normalize } from "node:path";
 
-const MAX = 4 * 1024 * 1024; // reference images are downscaled in the browser; 6 of them fit easily
+const MAX = 25 * 1024 * 1024; // 6 reference images plus every answer stay far below this
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".json": "application/json", ".ico": "image/x-icon" };
 
 const readBody = (req) => new Promise((ok, bad) => {
-  let n = 0; const chunks = [];
-  req.on("data", (c) => { n += c.length; if (n > MAX) { bad(Object.assign(new Error("too large"), { code: 413 })); req.destroy(); } else chunks.push(c); });
-  req.on("end", () => ok(Buffer.concat(chunks).toString("utf8")));
+  // past the limit, keep draining (so the client gets a clean 413, not a cut connection and a proxy 502)
+  let n = 0, over = false; const chunks = [];
+  req.on("data", (c) => { n += c.length; if (n > MAX) over = true; else chunks.push(c); });
+  req.on("end", () => (over ? bad(Object.assign(new Error("too large"), { code: 413 })) : ok(Buffer.concat(chunks).toString("utf8"))));
   req.on("error", bad);
 });
 const send = (res, code, obj) => { res.writeHead(code, { "Content-Type": "application/json", "Cache-Control": "no-store" }); res.end(JSON.stringify(obj)); };
@@ -95,6 +96,9 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const record = JSON.stringify({ receivedAt: now, kind, ...p }, null, 1);
 
     await atomicWrite(join(dir, "latest.json"), record);
+    // one copy per browser too: a second device never overwrites what the first one sent
+    const dev = String(p.device ?? p.session?.device ?? "").replace(/[^a-z0-9-]/gi, "").slice(0, 64);
+    if (dev) { await mkdir(join(dir, "devices"), { recursive: true }); await atomicWrite(join(dir, "devices", `${dev}.json`), record); }
     // counters for /status: no answer content, ever
     const meta = await readMeta(dir);
     meta.firstDraftAt ??= now;
@@ -175,9 +179,16 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     let added = 0;
     for (const e of (Array.isArray(p.events) ? p.events : []).slice(0, 50)) {
       const eid = String(e.id ?? "").slice(0, 64);
-      if (!eid || seen.has(eid) || !["step", "skip", "export"].includes(e.type)) continue;
+      if (!eid || seen.has(eid) || !["step", "skip", "export", "save-error"].includes(e.type)) continue;
       const entry = { at: now, clientAt: typeof e.at === "string" ? e.at.slice(0, 40) : null, id: eid, type: e.type };
       if (e.type === "export") entry.format = e.format === "pdf" ? "pdf" : "json";
+      else if (e.type === "save-error") {
+        // why a draft failed in the browser: a status code or "network", the payload size, the browser. Never answers.
+        entry.code = String(e.code ?? "").slice(0, 16);
+        entry.bytes = Number.isFinite(e.bytes) ? Math.round(e.bytes) : null;
+        entry.ua = String(e.ua ?? "").slice(0, 160);
+        console.error(`[core30] ${safe(p.clientId)}: a draft failed in the browser (${entry.code}, ${entry.bytes} bytes, ${entry.ua})`);
+      }
       else {
         const i = mods.findIndex((m) => m.id === e.moduleId);
         if (i < 0) continue;
@@ -220,6 +231,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       at: e.at, type: e.type,
       ...(e.module ? { module: e.module.id, title: e.module.title, n: e.module.n, total: e.module.total } : {}),
       ...(e.format ? { format: e.format } : {}),
+      ...(e.type === "save-error" ? { code: e.code, bytes: e.bytes, ua: e.ua } : {}),
       ...(e.type === "start" && e.email ? { email: e.email } : {}),
     }));
     const doneIds = new Set(log.filter((e) => e.type === "step").map((e) => e.module));
