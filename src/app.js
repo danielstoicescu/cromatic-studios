@@ -28369,6 +28369,51 @@ void main() {
     g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
     parent.add(g);
   }
+  // TASK-116: Berero's logo, traced from the file Daniel sent (refs/berero-116/logo: trace.py, clean.py), in its own px
+  var BERERO_LOGO = { box: [451.64, 71.07], d: "M38.23 70.94 L1.48 70.94 L0.06 70.57 L0.06 1.78 L0.48 0.22 L38.73 0.22 L42.23 1.33 L48.05 4.41 L51.44 7.41 L54.46 12.03 L55.47 16.66 L55.47 22.49 L52.48 27.03 L47.34 30.66 L48.98 31.81 L55.35 34.29 L59.23 37.37 L61.35 40.08 L63.52 45.53 L63.52 53.94 L60.53 60.78 L55.37 65.91 L52.23 67.92 L46.48 69.87 Z M134.98 70.94 L79.91 70.94 L79.91 0.22 L134.85 0.22 L135.84 0.41 L135.84 13.28 L135.23 14.86 L96.6 14.86 L95.8 14.66 L95.51 15.91 L95.51 27.28 L95.85 28.04 L126.1 28.04 L127.23 28.28 L127.53 28.91 L127.53 41.41 L126.85 42.51 L95.98 42.51 L95.51 43.91 L95.51 56.03 L96.48 56.48 L135.17 56.48 L135.84 57.78 L135.84 70.16 Z M196.98 70.94 L185.63 50.41 L183.98 49.57 L167.98 49.57 L167.56 50.91 L167.56 70.66 L165.98 70.94 L152.04 70.94 L152.04 0.22 L192.1 0.22 L196.85 1.28 L201.6 3.32 L207.35 7.48 L209.64 10.28 L212.48 15.33 L213.72 21.28 L213.72 29.78 L212.37 34.66 L209.45 39.66 L205.35 43.82 L200.76 46.78 L213.4 70.16 L213.23 70.94 Z M284.23 70.94 L230.48 70.94 L229.16 70.66 L229.16 1.78 L229.47 0.22 L283.98 0.22 L285.45 0.41 L285.45 13.28 L284.85 14.86 L246.35 14.86 L245.1 14.76 L244.87 15.91 L244.87 28.04 L275.73 28.04 L276.83 28.91 L276.83 41.41 L276.35 42.51 L245.85 42.51 L244.87 43.78 L244.87 55.91 L246.35 56.48 L284.73 56.48 L285.45 57.66 L285.45 70.16 L285.23 70.8 Z M362.23 70.94 L346.54 70.94 L335.48 50.98 L334.35 49.77 L332.98 49.57 L318.48 49.57 L316.86 49.94 L316.86 70.94 L301.58 70.94 L301.58 1.16 L301.85 0.22 L342.1 0.22 L346.48 1.32 L351.23 3.37 L357.6 8.29 L360.59 12.41 L363.38 19.78 L363.38 29.66 L360.36 37.78 L357.29 41.66 L350.32 46.66 L362.48 69.29 L362.98 70.66 Z M450.35 70.94 L379.48 70.94 L378.31 70.66 L378.31 0.41 L379.48 0.22 L451.51 0.22 L451.51 70.03 L451.35 70.86 Z M34.07 26.08 L37.36 24.78 L39.46 21.28 L39.46 18.91 L38.35 16.78 L36.95 15.41 L33.6 14.86 L17.35 14.86 L15.98 14.78 L15.98 26.08 Z M190.6 35.09 L194.35 32.99 L197.38 29.53 L198.4 24.41 L197.59 20.66 L196.3 18.41 L192.41 15.41 L188.35 14.86 L167.98 14.86 L167.56 15.91 L167.56 35.09 Z M435.4 54.91 L435.86 54.28 L435.86 16.91 L435.43 14.86 L395.48 14.86 L394.31 15.78 L394.01 16.91 L394.01 54.91 Z M340.23 35.09 L344.23 32.79 L347.27 28.53 L347.78 25.41 L347.78 22.53 L345.35 18.82 L338.35 14.86 L318.35 14.86 L317.1 16.73 L316.86 17.78 L316.86 35.09 Z M39.51 56.48 L42.3 55.91 L45.4 53.91 L47.28 50.28 L47.28 46.41 L45.59 43.28 L44.23 42.24 L38.85 40.55 L17.35 40.55 L15.98 41.09 L15.98 55.28 L16.23 56.48 Z" };
+  // TASK-116: the trays' atlas (1024 x 512): 6 x 5 cells of a tray's long side (170 x 100), one beer each: the printed
+  // tray below, the cans above it through the shrink wrap, a sheen across; cell 29 is the cans' tops seen from above.
+  // The beers are made up (a style, a colour): no real brands
+  var BERERO_ATLAS = null;
+  function bereroCrateAtlas() {
+    if (BERERO_ATLAS) return BERERO_ATLAS;
+    const BEERS = [["LAGER", "#f2c230", "#1d3b8f"], ["PILS", "#2f8f4e", "#f4f1e6"], ["IPA", "#e8663a", "#1b1b1b"], ["STOUT", "#1c1714", "#d9b26f"], ["WEISS", "#f6e7b0", "#2b5fa8"], ["AMBER", "#b8562a", "#fff1d6"],
+      ["SOUR", "#e64f8c", "#fff5fa"], ["PALE ALE", "#7fb6d9", "#0e2a44"], ["RADLER", "#ffd23f", "#e2421f"], ["DUNKEL", "#4a2c1d", "#f0c27a"], ["HELLES", "#f9f3dc", "#b3261e"], ["PORTER", "#2b2b3a", "#e6e1d3"],
+      ["SAISON", "#9dc06b", "#26331a"], ["BOCK", "#7a1f2b", "#f6d58e"], ["RED ALE", "#c8322b", "#fbeee0"], ["NEIPA", "#f4a93b", "#3a2a7a"], ["GOSE", "#5fc7b8", "#0f3b36"], ["BLONDE", "#f7dc6f", "#6b3f12"]];
+    const c = document.createElement("canvas"); c.width = 1024; c.height = 512;
+    const ctx = c.getContext("2d");
+    const CW = 1024 / 6, CH = 100;
+    BEERS.forEach(([name, col, ink], i) => {
+      const x = (i % 6) * CW, y = Math.floor(i / 6) * CH;
+      ctx.save(); ctx.beginPath(); ctx.rect(x, y, CW, CH); ctx.clip();
+      // the cans through the wrap: six bodies in the beer's colour, a band of its ink, silver at the shoulders
+      ctx.fillStyle = "#3c3f44"; ctx.fillRect(x, y, CW, CH);
+      for (let k = 0; k < 6; k++) {
+        const cx = x + 4 + k * (CW - 8) / 6, cw = (CW - 8) / 6 - 2;
+        ctx.fillStyle = col; ctx.fillRect(cx, y + 6, cw, 58);
+        ctx.fillStyle = ink; ctx.fillRect(cx, y + 24, cw, 10);
+        ctx.fillStyle = "#c9ccd1"; ctx.fillRect(cx, y + 2, cw, 5);
+        ctx.fillStyle = "rgba(255,255,255,.28)"; ctx.fillRect(cx + 2, y + 8, 3, 54);
+      }
+      // the printed tray: the beer's colour, its style in its ink, a rule
+      ctx.fillStyle = col; ctx.fillRect(x, y + 60, CW, 40);
+      ctx.fillStyle = ink; ctx.fillRect(x + 8, y + 64, CW - 16, 2);
+      ctx.font = "800 22px CromaticSans, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      let fs = 22; while (ctx.measureText(name).width > CW - 20 && fs > 12) { fs -= 2; ctx.font = `800 ${fs}px CromaticSans, sans-serif`; }
+      ctx.fillText(name, x + CW / 2, y + 82);
+      ctx.font = "700 9px CromaticSans, sans-serif"; ctx.fillText("24 × 500 ML", x + CW / 2, y + 96);
+      // the shrink wrap's sheen and its seam
+      const sh = ctx.createLinearGradient(x, y, x + CW, y + CH); sh.addColorStop(0, "rgba(255,255,255,0)"); sh.addColorStop(0.42, "rgba(255,255,255,.22)"); sh.addColorStop(0.5, "rgba(255,255,255,0)"); sh.addColorStop(1, "rgba(255,255,255,.08)");
+      ctx.fillStyle = sh; ctx.fillRect(x, y, CW, CH);
+      ctx.restore();
+    });
+    // cell 29: the tops, a 6 x 4 grid of can ends under the wrap
+    { const x = (29 % 6) * CW, y = Math.floor(29 / 6) * CH; ctx.fillStyle = "#2a2c30"; ctx.fillRect(x, y, CW, CH);
+      for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) { const cx = x + 14 + k * (CW - 28) / 5, cy = y + 13 + r * 24.5; ctx.fillStyle = "#b9bdc3"; ctx.beginPath(); ctx.arc(cx, cy, 11, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#8d9197"; ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillStyle = "rgba(255,255,255,.12)"; ctx.fillRect(x, y, CW, CH); }
+    const t = new CanvasTexture(c); t.colorSpace = SRGBColorSpace; t.anisotropy = 4;
+    return (BERERO_ATLAS = t);
+  }
   // Casa Berero: an old Bucharest house, one storey on a stone plinth, cream plaster gone a
   // little grey, tall shuttered windows, an arched door up three steps and a terracotta hip roof
   function buildCasaBerero(parent, x, z) {
@@ -28417,16 +28462,80 @@ void main() {
     const chim = new Mesh(new BoxGeometry(5, 12, 5), new MeshStandardMaterial({ color: "#d9c9ab", roughness: 1 }));
     chim.position.set(-W / 4, H + 18, -D / 6);
     g.add(roof, chim);
-    // a black enamel plaque with the name, over the door
-    const plaqueTex = canvasTexture(512, 128, (ctx) => {
-      ctx.fillStyle = "#111111"; ctx.fillRect(0, 0, 512, 128);
-      ctx.strokeStyle = "#f2f2ee"; ctx.lineWidth = 6; ctx.strokeRect(10, 10, 492, 108);
-      ctx.fillStyle = "#f2f2ee"; ctx.font = "800 58px CromaticSans, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("BERERO", 256, 66); // r138e (Daniel): just "Berero"
-    });
-    const plaque = new Mesh(new BoxGeometry(26, 6.5, 1), new MeshStandardMaterial({ map: plaqueTex, roughness: 0.4 }));
-    plaque.position.set(0, H + 0.5, D / 2 + 0.9);
-    g.add(plaque);
+    // TASK-116 (Daniel): the house's sign is Berero's own logo now (was "BERERO" set in our sans on an enamel plaque):
+    // the file Daniel sent (white on black, the last O a square) traced to a vector (BERERO_LOGO, in the logo's own
+    // pixels; the straight runs snapped, the bowls of B and R as drawn), on a black plate standing off the wall on two
+    // brackets, its letters lit after dark (STREET_GLOW)
+    {
+      const [LW, LH] = BERERO_LOGO.box, PW = 30, PH = 6.4, T = 1.1;
+      const tex = canvasTexture(1024, Math.round(1024 * PH / PW), (ctx, w, h) => {
+        ctx.fillStyle = "#0b0b0b"; ctx.fillRect(0, 0, w, h);
+        const s = (w * 0.86) / LW; ctx.save(); ctx.translate((w - LW * s) / 2, (h - LH * s) / 2); ctx.scale(s, s);
+        ctx.fillStyle = "#ffffff"; ctx.fill(new Path2D(BERERO_LOGO.d), "evenodd"); ctx.restore();
+      });
+      const glowTex = canvasTexture(512, Math.round(512 * PH / PW), (ctx, w, h) => {
+        ctx.fillStyle = "#000000"; ctx.fillRect(0, 0, w, h);
+        const s = (w * 0.86) / LW; ctx.save(); ctx.translate((w - LW * s) / 2, (h - LH * s) / 2); ctx.scale(s, s);
+        ctx.fillStyle = "#fff6e6"; ctx.fill(new Path2D(BERERO_LOGO.d), "evenodd"); ctx.restore();
+      });
+      const faceM = new MeshStandardMaterial({ map: tex, emissiveMap: glowTex, emissive: new Color("#ffffff"), emissiveIntensity: 0, roughness: 0.45, metalness: 0.1 });
+      const edgeM = new MeshStandardMaterial({ color: "#141414", roughness: 0.5, metalness: 0.3 });
+      STREET_GLOW.push([faceM, 1.15]);
+      const plate = new Mesh(new BoxGeometry(PW, PH, T), [edgeM, edgeM, edgeM, edgeM, faceM, edgeM]);
+      plate.position.set(0, H + 0.4, D / 2 + 1.4 + T / 2);
+      g.add(plate);
+      for (const bx of [-PW / 2 + 3, PW / 2 - 3]) { const br = new Mesh(new BoxGeometry(1, 1, 1.6), edgeM); br.position.set(bx, H + 0.4, D / 2 + 0.8); g.add(br); }
+    }
+    // TASK-116: a delivery left at the door: four stacks of shrink-wrapped trays of 500 ml cans (6, 4, 3 and 5, two of
+    // them on a pallet), a different beer in every tray (made-up styles, no real brands: bereroCrateAtlas), stacked
+    // a little out of true, and a hand pallet truck left by the pallet. All the trays are one mesh (each tray's faces
+    // mapped to its cell of one small atlas), the pallet and the truck two more; they stand on the house's own
+    // forecourt, between its front and the pavement
+    {
+      const A = bereroCrateAtlas(), rnd = rng(116), CW = 3.4, CH = 2.05, CD = 2.3;
+      const cell = (i) => [(i % 6) * 170.67 / 1024, Math.floor(i / 6) * 100 / 512, 170.67 / 1024, 100 / 512];
+      const trays = [];
+      const tray = (lab, x, y, z, ry) => {
+        const b = new BoxGeometry(CW, CH, CD), uv = b.attributes.uv, [cx, cy, cw, ch] = cell(lab), [tx, ty, tw, th] = cell(29);
+        // the faces: +x, -x (the short ends: half the label), +y, -y (the cans' tops through the wrap), +z, -z (the label)
+        for (let f = 0; f < 6; f++) for (let k = 0; k < 4; k++) {
+          const i = f * 4 + k, u = uv.getX(i), v = uv.getY(i);
+          if (f === 2 || f === 3) uv.setXY(i, tx + u * tw, 1 - (ty + (1 - v) * th));
+          else if (f < 2) uv.setXY(i, cx + (0.25 + u * 0.5) * cw, 1 - (cy + (1 - v) * ch));
+          else uv.setXY(i, cx + u * cw, 1 - (cy + (1 - v) * ch));
+        }
+        b.rotateY(ry); b.translate(x, y + CH / 2, z); trays.push(b);
+      };
+      let lab = 0;
+      // [count, x, z, base]: two stacks on the pallet left of the steps, two on the ground right of them
+      const PAL = 1.5;
+      for (const [n, sx, sz, base] of [[6, -24.2, D / 2 + 5.2, PAL], [4, -20.6, D / 2 + 5.4, PAL], [3, 15.4, D / 2 + 4.4, 0], [5, 19.2, D / 2 + 4.8, 0]]) {
+        for (let k = 0; k < n; k++) tray(lab++ % 18, sx + (rnd() - 0.5) * 0.35, base + k * CH, sz + (rnd() - 0.5) * 0.3, (rnd() - 0.5) * 0.1 + (k === n - 1 ? (rnd() - 0.5) * 0.16 : 0));
+      }
+      const trayM = new MeshStandardMaterial({ map: A, roughness: 0.32, metalness: 0.05 });
+      g.add(new Mesh(mergeGeometries(trays), trayM));
+      // the pallet (three bearers, a deck of boards) and the truck: two forks, the pump, a long handle, its wheels
+      const wood = [], steel = [];
+      for (const dz of [-1.7, 0, 1.7]) wood.push(new BoxGeometry(8, 0.7, 0.9).translate(-22.4, 0.35, D / 2 + 5.3 + dz));
+      for (let k = 0; k < 6; k++) wood.push(new BoxGeometry(1.1, 0.8, 4.4).translate(-26 + k * 1.45, 1.1, D / 2 + 5.3));
+      const jx = -11.6, jz = D / 2 + 9.6; // the truck, left at an angle in front of the pallet
+      const jack = [];
+      for (const dz of [-1.05, 1.05]) jack.push(new BoxGeometry(6.4, 0.45, 0.85).translate(jx - 3.6, 0.42, jz + dz));
+      jack.push(new BoxGeometry(1.6, 1.3, 3.2).translate(jx, 0.95, jz));
+      jack.push(new CylinderGeometry(0.42, 0.42, 2.6, 8).translate(jx + 0.2, 2.6, jz));
+      { const h = new CylinderGeometry(0.16, 0.16, 6.4, 6); h.rotateZ(-0.42); h.translate(jx + 1.55, 5.6, jz); jack.push(h); const loop = new TorusGeometry(0.75, 0.15, 5, 12); loop.rotateY(Math.PI / 2); loop.translate(jx + 2.95, 8.6, jz); jack.push(loop); }
+      for (const dz of [-0.9, 0.9]) steel.push(new CylinderGeometry(0.55, 0.55, 0.45, 10).rotateX(Math.PI / 2).translate(jx + 0.3, 0.55, jz + dz));
+      for (const dz of [-1.05, 1.05]) steel.push(new CylinderGeometry(0.22, 0.22, 0.6, 8).rotateX(Math.PI / 2).translate(jx - 6.4, 0.22, jz + dz));
+      const jackG = mergeGeometries(jack.map((q) => (q.index ? q.toNonIndexed() : q)));
+      jackG.rotateY(0.38);
+      const steelG = mergeGeometries(steel.map((q) => (q.index ? q.toNonIndexed() : q))); steelG.rotateY(0.38);
+      // (turned about the house's centre: put back in front of the pallet)
+      const back = new Vector3(jx, 0, jz).applyAxisAngle(new Vector3(0, 1, 0), 0.38).sub(new Vector3(jx, 0, jz));
+      jackG.translate(-back.x, 0, -back.z); steelG.translate(-back.x, 0, -back.z);
+      g.add(new Mesh(mergeGeometries(wood), new MeshStandardMaterial({ color: "#c9a06a", roughness: 0.9 })),
+        new Mesh(jackG, new MeshStandardMaterial({ color: "#d8261f", roughness: 0.5, metalness: 0.3 })),
+        new Mesh(steelG, new MeshStandardMaterial({ color: "#202124", roughness: 0.6 })));
+    }
     g.rotation.y = x < 820 ? Math.PI / 2 : -Math.PI / 2;
     g.position.set(x, 0, z);
     g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
