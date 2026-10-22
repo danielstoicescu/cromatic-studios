@@ -18,7 +18,10 @@ export const LITORSAL = {
   info: ["Electrolytes and minerals, in pharmacies", "Romania · 2026", "Billboards, posters, product visuals"],
   cover: { img: m("litorsal/heat-billboard") },
   og: m("litorsal/heat-6x3"),
-  hero: { img: m("litorsal/heat-6x3"), fixed: false, alt: "Billboard: Căldură mare, Litorsal îți dă hidratare! Four Litorsal tubes in front of the sun and splashing water, four icons and a QR code" },
+  // TASK-121 (Daniel: "să fie primul mockup cel cu metroul, așa să înceapă pagina"): the page opens on the moving train
+  // (the Lottie piece over its still, mounted by the same script as the chapters' mockups); the 6 x 3 m billboard moves
+  // down to the heat chapter. The og picture stays the billboard.
+  hero: { czl: "metro-train", at: 300, img: m("metro/train-still"), fixed: false, alt: "Animated mockup: a metro train pulls into the station with the wide poster on the side of a car, opens and closes its doors, and pulls out" },
   problem: {
     h: "Three lines, one product",
     p: [
@@ -41,12 +44,12 @@ export const LITORSAL = {
     {
       pillar: "marketing",
       pills: ["Super", "vibe"],
-      text: "The city line: “Hidratare corectă pentru un super vibe.” A hand holds the tube up on flat yellow, the way you hold it on your way out. The layout comes in landscape and portrait for the metro, and in a 2 x 0.8 m banner. Below, the posters where they ran, as animated mockups: on the train, on the platform, by the doors.",
+      text: "The city line: “Hidratare corectă pentru un super vibe.” A hand holds the tube up on flat yellow, the way you hold it on your way out. The layout comes in landscape and portrait for the metro, and in a 2 x 0.8 m banner. The train at the top of this page carries the wide one as a wrap; below, the other places it ran, as animated mockups: on the platform, by the doors.",
       deliverables: ["Metro posters", "Banner", "Landscape and portrait", "Animated mockups"],
       // TASK-062: three animated mockups (design/metro-mockup: our own 3D station, carriage and train, the real artwork,
       // played by the site's Lottie layer). TASK-093 (Daniel): the moving train first; the posters-as-printed rail is gone.
+      // TASK-121: the train is the page's hero now, so it is not repeated here.
       media: [
-        { czl: "metro-train", at: 300, img: m("metro/train-still"), alt: "Animated mockup: a metro train pulls into the station with the wide poster on the side of a car, opens and closes its doors, and pulls out", cap: "On the train, as a wrap" },
         { czl: "metro-platform", img: m("metro/platform-still"), alt: "Animated mockup: the landscape and portrait posters in lit frames on a metro station's track wall, the light of a passing train sliding across their glass", cap: "Animated mockup: on the platform" },
         { row: [
           { full: true, czl: "metro-inside", img: m("metro/inside-still"), alt: "Animated mockup: inside a metro car, the portrait poster on the panel beside the doors; the doors open on the platform's warm light, then the train leaves, runs through the tunnel and pulls in again" },
@@ -78,16 +81,18 @@ export const LITORSAL = {
     {
       pillar: "marketing",
       pills: ["Căldură", "mare"],
-      text: "The summer line, the billboard at the top of this page: “Căldură mare, Litorsal îți dă hidratare!” The tubes stand in a row in front of the sun and a splash of water. Four icons explain the product at a glance: efficient hydration, electrolytes restored, energy, support for the body. One layout, redrawn for six billboard sizes, from 6 x 3 m to 1 x 1.5 m. Below, a mockup of how it reads in the street: on a block's gable, as a tram goes by.",
+      text: "The summer line: “Căldură mare, Litorsal îți dă hidratare!” The tubes stand in a row in front of the sun and a splash of water. Four icons explain the product at a glance: efficient hydration, electrolytes restored, energy, support for the body. One layout, redrawn for six billboard sizes, from 6 x 3 m to 1 x 1.5 m. Below, the 6 x 3 m billboard, then a mockup of how it reads in the street: on a block's gable, as a tram goes by.",
       deliverables: ["Key visual", "Billboards", "Six formats", "Icons", "Street mockup"],
       // TASK-069 (Daniel: "mockups with Litorsal's other campaign, on OOH, street banners in Bucharest, as cinematic as
       // possible"): a street scene of our own (design/ooh-mockup: built and rendered in 3D, the campaign's real layout on
       // the banner, nothing else's), then the layouts as made. A mockup, not a record of where it ran. (TASK-093: the
       // boulevard billboard and the tram stop citylight are off the page; their scenes stay in design/ooh-mockup.)
-      // (the 3.2 x 2.4 m billboard, heat-billboard, is left out: it is the hero's picture again; it stays the page's cover)
+      // (the 3.2 x 2.4 m billboard, heat-billboard, is left out: it is the 6 x 3 m one again; it stays the page's cover)
       // TASK-093 (Daniel): the gable on its own full-width line, the summer line's highlight: wide (3:2) from 641 px up,
       // its 4:5 cut on phones (one or the other is display:none: it never loads or mounts)
       media: [
+        // TASK-121: the 6 x 3 m billboard, the page's hero until the metro train took its place
+        { img: m("litorsal/heat-6x3"), alt: "Billboard: Căldură mare, Litorsal îți dă hidratare! Four Litorsal tubes in front of the sun and splashing water, four icons and a QR code", cap: "The key visual on the 6 x 3 m billboard" },
         { czl: "ooh-gable-wide", at: 320, hideSm: true, img: m("ooh/gable-wide-still"), alt: "Animated mockup: the portrait layout as a mesh banner on the blind gable of a block of flats, a tram passing below", cap: "Animated mockup: the portrait layout as a mesh banner on a block's gable, as a tram goes by" },
         { czl: "ooh-gable", at: 283, onlySm: true, img: m("ooh/gable-still"), alt: "Animated mockup: the portrait layout as a mesh banner on the blind gable of a block of flats, a tram passing below", cap: "Animated mockup: the portrait layout as a mesh banner on a block's gable, as a tram goes by" },
         { row: [

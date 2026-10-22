@@ -236,6 +236,7 @@ html.embed .cs-back{display:none}
 html:not(.embed) .page{padding-top:64px}
 .rail-cap{margin-top:var(--caption-gap);padding-inline:var(--media-pad)}
 .hero-media figure:only-child .frame{max-height:min(78svh,820px)}
+.hero-media figure:only-child .frame[data-czl]{max-height:none} /* TASK-121: a Lottie hero (Litorsal's metro train) keeps its own ratio, so the canvas fits the frame exactly */
 .hero-row{display:flex;gap:var(--gutter)}
 .hero-row>figure{flex:var(--r) 1 0;min-width:0}
 /* a full-page capture, scrolled slowly inside the device frame */
@@ -298,6 +299,7 @@ figure.only-sm{display:none}
 .hero-media .frame>img,.hero-media .frame>video{scale:1.04;translate:0 var(--py,0px);will-change:scale,translate,filter;animation:hero-settle 1.6s cubic-bezier(.16,1,.3,1) .12s both}
 @keyframes hero-wipe{from{clip-path:inset(100% 0 0 0 round 24px)}to{clip-path:inset(0 0 0 0 round 24px)}}
 @keyframes hero-settle{from{scale:1.12;filter:blur(10px) brightness(1.25)}to{scale:1.04;filter:none}}
+.hero-media .frame[data-czl]>img{scale:1;translate:none;animation:none;will-change:auto} /* (and its still sits still: the canvas fades in over it without a jump) */
 @media (prefers-reduced-motion:reduce){
   .screen--scroll img{animation:none}
   .hero-media .frame,.film-frame,.hero-media .frame>img,.hero-media .frame>video{animation:none;clip-path:none;scale:1;translate:none}
