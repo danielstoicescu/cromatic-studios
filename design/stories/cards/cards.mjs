@@ -65,15 +65,18 @@ function pill(Cm, T, L, { tIn, swaps = [], tOut, parent, nm }) {
   const maskK = sK.map(([t, sz, e]) => [t, roundRect(pAt(t)[0], pAt(t)[1], sz[0], sz[1], sz[1] / 2), e]);
   const rot = { a: [left, cy], p: [left, cy], r: [[tIn, P.tilt - 6, BOUNCE], [tIn + 20, P.tilt]] };
   // the words: each in at its state, out at the next (or at the end), inside the pill
+  // (a swap to the same word is a change of colour only: the word stays where it is; E3's pilot. turning red)
   const words = st.map((q, k) => {
-    const t0 = at[k], t1 = k < swaps.length ? swaps[k] - 2 : tOut, lt = setLine(T, q.word, S, L.tracking);
+    if (k && st[k - 1].word === q.word) return null;
+    let kn = k; while (kn < swaps.length && st[kn + 1].word === q.word) kn++;
+    const t0 = at[k], t1 = kn < swaps.length ? swaps[kn] - 2 : tOut, lt = setLine(T, q.word, S, L.tracking);
     return group(q.word, lt.letters.map((l, j) => letterGroup(T, { ...l, x: P.wordX + l.x }, S, rgb(P.ink), { extra: (b, s) => {
       const p0 = [b[0], b[1] + L.baseline], ti = t0 + (k ? 2 : 6) + j, to = t1 + Math.round(j * 0.5);
       return { p: [[ti, [p0[0], p0[1] + 0.7 * S], EXPO], [ti + 16, p0, E.hold], [to, p0, SNAP], [to + 10, [p0[0], p0[1] - 0.7 * S]]], s: [s, s], o: [[0, 0, E.hold], [ti, 100, E.hold], [to + 10, 0]] };
     } })));
   });
   const op = tOut + 14;
-  Cm.shape(`${nm} · words`, words, { parent, ip: tIn, op, ks: rot, masks: [{ inv: false, mode: "a", pt: pathProp(clean(maskK)), o: prop(100), x: prop(0), nm: "pill" }] });
+  Cm.shape(`${nm} · words`, words.filter(Boolean), { parent, ip: tIn, op, ks: rot, masks: [{ inv: false, mode: "a", pt: pathProp(clean(maskK)), o: prop(100), x: prop(0), nm: "pill" }] });
   Cm.shape(`${nm} · pill`, [
     // (fills: a colour per word, when a story asks for it: E2's red [pilot.]; it changes with the word, at the swap)
     group("pill", [rect(keys(sK), keys(pK), 9999), stroke(rgb("#0D0C09"), P.keyline), fill(P.fills ? keys([[tIn, rgb(P.fills[0]), E.hold], ...swaps.map((t, k) => [t + 2, rgb(P.fills[k + 1]), E.hold])]) : rgb(P.fill))]),

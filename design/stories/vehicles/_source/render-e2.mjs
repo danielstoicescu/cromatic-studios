@@ -6,7 +6,8 @@
 import fs from "fs";
 import sharp from "/Users/daniel.stoic/cromatic-drive/node_modules/sharp/lib/index.js";
 import { open, aim, setVeh } from "./iso.mjs";
-import { SHOTS, TURN, PASS } from "./shotsE2.mjs";
+// (SHOTS=./shotsE3.mjs: E3's shots, the same machinery)
+const { SHOTS, TURN, PASS } = await import(process.env.SHOTS || "./shotsE2.mjs");
 const OUT = process.argv[2], ONLY = process.argv[3] ? process.argv[3].split(",") : null; fs.mkdirSync(OUT, { recursive: true });
 const PAPER = [251, 250, 245];
 const { br, p } = await open({ dsf: 4 });
@@ -30,7 +31,7 @@ async function passFrames(ride, dzOf, n, tag) {
     if (dzOf(f) == null) { out.push(null); continue; }
     let acc = null, info = null;
     for (let j = 0; j < PASS.sub; j++) {
-      const ff = f + (j + 0.5) / PASS.sub - 0.5, dz = dzOf(Math.max(0, ff)) ?? dzOf(f), sh = PASS.shake(f);
+      const ff = f + ((j + 0.5) / PASS.sub - 0.5) * (PASS.shutter ?? 1), dz = dzOf(Math.max(0, ff)) ?? dzOf(f), sh = PASS.shake(f);
       await p.evaluate(({ dz, sh, j }) => { window.__turn.dz = dz; window.__turn.dx = sh * Math.sin(j * 2.1 + dz); window.__turn.ty = 12 + sh * 0.6 * Math.cos(j * 1.7 + dz); }, { dz, sh, j }); await frame();
       const g = await grab(); info = g.info; if (!acc) acc = new Float32Array(g.data.length); for (let q = 0; q < acc.length; q++) acc[q] += g.data[q];
     }
@@ -64,11 +65,13 @@ for (const s of SHOTS) {
     continue;
   }
   await setVeh(p, s.ride);
-  await aim(p, { ...TURN, a: s.a[0], ty: s.ty ?? TURN.ty, dz: 0, dx: 0, pr: 4 }); await p.waitForTimeout(900);
+  await aim(p, { ...TURN, a: s.a[0], ty: Array.isArray(s.ty) ? s.ty[0] : s.ty ?? TURN.ty, dz: 0, dx: 0, pr: 4 }); await p.waitForTimeout(900);
   let box = null;
   for (let i = 0; i < n; i++) {
     const u = n > 1 ? i / (n - 1) : 0, a = s.a[0] + (s.a[1] - s.a[0]) * (s.kind === "follow" ? u * u * (3 - 2 * u) : u);
-    await p.evaluate(({ a, i, follow, ty }) => { window.__turn.a = a; if (follow) { window.__turn.dx = 0.5 * Math.sin(i * 0.21); window.__turn.ty = ty + 0.35 * Math.sin(i * 0.37); } }, { a, i, follow: s.kind === "follow", ty: s.ty ?? TURN.ty }); await frame();
+    // (ty: a number or [from, to]; bob: a climb and a dive in frame, for the plane)
+    const ty0 = Array.isArray(s.ty) ? s.ty[0] + (s.ty[1] - s.ty[0]) * (u * u * (3 - 2 * u)) : s.ty ?? TURN.ty, ty = s.bob ? ty0 + s.bob * Math.sin(u * Math.PI * 2) : ty0;
+    await p.evaluate(({ a, i, follow, ty }) => { window.__turn.a = a; window.__turn.ty = ty; if (follow) { window.__turn.dx = 0.5 * Math.sin(i * 0.21); window.__turn.ty = ty + 0.35 * Math.sin(i * 0.37); } }, { a, i, follow: s.kind === "follow", ty }); await frame();
     if (i === Math.floor(n / 2)) box = await boxNow();
     await p.screenshot({ path: name(s.t[0] + i) });
   }

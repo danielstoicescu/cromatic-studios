@@ -9,19 +9,20 @@ import { fileURLToPath } from "url";
 import { Comp, group, fill, gfill, rgb, E, prop, path as shp, ellipse } from "../../../lottie-ui/_source/lib/ui.mjs";
 import { loadCards, drawCard } from "../../cards/cards.mjs";
 import { CLOCKS } from "../../cards/_source/defs.mjs";
-import { F } from "./shotsE2.mjs";
+// (ST=e3: E3's clock, cards (v3-) and rides; the same petals)
+const ST = process.env.ST || "e2", { F } = await import(ST === "e3" ? "./shotsE3.mjs" : "./shotsE2.mjs"), CK = ST === "e3" ? "E3" : "E2", PRE = ST === "e3" ? "v3-" : "v2-";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const K = await loadCards();
-const T60 = Object.fromEntries(Object.entries(CLOCKS.E2).map(([k, [a, b]]) => [k, [a * 2, b * 2]]));
-const Cm = new Comp({ w: 1080, h: 1920, dur: (F * 2) / 60, nm: "Cromatic · story E2 · the rides · en" });
-const cards = K.cards.filter((c) => c.id.startsWith("v2-")).sort((a, b) => (b.layout.url ? 1 : 0) - (a.layout.url ? 1 : 0) || a.id.localeCompare(b.id, "en", { numeric: true }));
+const T60 = Object.fromEntries(Object.entries(CLOCKS[CK]).map(([k, [a, b]]) => [k, [a * 2, b * 2]]));
+const Cm = new Comp({ w: 1080, h: 1920, dur: (F * 2) / 60, nm: `Cromatic · story ${CK} · the rides · en` });
+const cards = K.cards.filter((c) => c.id.startsWith(PRE)).sort((a, b) => (b.layout.url ? 1 : 0) - (a.layout.url ? 1 : 0) || a.id.localeCompare(b.id, "en", { numeric: true }));
 for (const c of cards) { c.__T = K.T; drawCard(Cm, c, T60); }
 
 /* ---------- the petals ---------- */
 {
   let box = { x: 419, y: 891, w: 239, h: 301 };
-  try { box = JSON.parse(fs.readFileSync(path.join(here, "rides-e2.json"), "utf8")).find((x) => x.id === "scooter").box; } catch {}
+  try { box = JSON.parse(fs.readFileSync(path.join(here, `rides-${ST}.json`), "utf8")).find((x) => x.id === "scooter").box; } catch {}
   const [a, b] = T60.scooter, floorY = box.y + box.h - 6, cx = box.x + box.w / 2;
   let seed = 811; const R = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
   // the leaf (16 x 11 at the CSS size, its two round corners 80 %), centred, at 3.6x
@@ -50,6 +51,6 @@ for (const c of cards) { c.__T = K.T; drawCard(Cm, c, T60); }
   for (const L of layersS) Cm.layers.splice(Cm.layers.indexOf(L), 1);
   Cm.layers.push(...layersS);
 }
-const j = Cm.json(); j.cromatic = { story: "E2 (the rides, Daniel's notes)", lang: "en", clock: CLOCKS.E2, fps: 60 };
-fs.writeFileSync(path.join(here, "..", "story-e2-cards.json"), JSON.stringify(j));
-console.log("story-e2-cards", (JSON.stringify(j).length / 1024).toFixed(1), "KB", j.layers.length, "layers", j.op, "frames");
+const j = Cm.json(); j.cromatic = { story: `${CK} (the rides, Daniel's notes)`, lang: "en", clock: CLOCKS[CK], fps: 60 };
+fs.writeFileSync(path.join(here, "..", `story-${ST}-cards.json`), JSON.stringify(j));
+console.log(`story-${ST}-cards`, (JSON.stringify(j).length / 1024).toFixed(1), "KB", j.layers.length, "layers", j.op, "frames");

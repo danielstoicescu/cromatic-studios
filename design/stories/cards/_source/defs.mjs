@@ -6,6 +6,7 @@
 const Y = "#FED012", WH = "#FFFFFF";
 import fs from "fs";
 import { CLOCK as E2_CLOCK, SEQ as E2_SEQ, RED as E2_RED } from "../../vehicles/_source/shotsE2.mjs";
+import { CLOCK as E3_CLOCK, SEQ as E3_SEQ } from "../../vehicles/_source/shotsE3.mjs";
 
 export const CLOCKS = {
   // story A v4 (buildA5.mjs SP, /2)
@@ -103,6 +104,30 @@ function STORY_E2() {
   }
   out.push({ id: "v2-9-leadin", story: "E", beat: `${c.lead} + the pill, then black under it`, shots: ["leadin", "end"], scene: "paper, then black", ink: "ink", blocks: [{ id: "e2l", place: { x: 540, align: "center", base: 880 }, lines: [{ text: c.lead, style: "line" }] }], url: {}, timing: { in: "leadin+2", urlIn: "leadin+8", out: "end-6" }, mocks: [{ state: 0, at: "leadin+40" }] });
   out.push({ id: "v2-9z-end", story: "E", beat: "end: black under the same pill", shots: ["end"], scene: "black", ink: "ink", url: { continues: "v2-9-leadin" }, timing: { black: "end+0", settle: "end+29", out: "end.end-0" }, mocks: [{ state: 0, at: "end.end-4" }] });
+  return out;
+}
+
+CLOCKS.E3 = E3_CLOCK;
+function STORY_E3() {
+  const c = E2_COPY, split = (t) => t.split(" / ");
+  let boxes = {}; try { boxes = Object.fromEntries(JSON.parse(fs.readFileSync(new URL("../../vehicles/_source/rides-e3.json", import.meta.url), "utf8")).map((x) => [x.id, x.box])); } catch {}
+  const out = [{
+    id: "v3-0-opening", story: "E", beat: "Today you\u2019re / a [driver.] (the 1300) -> [pilot.] (the Cropduster, yellow) -> [pilot.] red (the F1: the colour only, on the cut)", shots: ["t1", "t2", "t3"], scene: "paper", ink: "ink",
+    blocks: [{ id: "e3o", place: "tl", lines: [{ text: c.open[0], style: "title" }, { text: c.open[1], style: "title", pill: { words: ["driver.", "pilot.", "pilot."], fill: c.fills[0], fills: [c.fills[0], c.fills[0], c.fills[1]] } }] }],
+    timing: { in: "t1+2", lineStagger: 4, pillIn: "t1+10", swaps: ["t2+3", "t3+0"], out: "t3.end-8" }, mocks: [{ state: 0, at: "t1+26" }, { state: 1, at: "t2+30" }, { state: 2, at: "t3+24" }]
+  }];
+  for (const sq of E3_SEQ) {
+    if (sq.kind === "open" || sq.on === false) continue;
+    const [tag, line, pillWord, style = "title"] = c.rides[sq.id], id = sq.id, box = boxes[id], tip = box ? Math.max(330, Math.round(box.y - 26)) : 760, lines = split(line);
+    const card = { id: `v3-${id}`, story: "E", beat: `${tag || "(no tag)"}: ${line.replace(/ \/ /g, " ")}${pillWord ? " [" + pillWord + "]" : ""}`, shots: [id], scene: "paper", ink: "ink" };
+    if (tag) card.tags = [{ id: `v3-${id}-tag`, text: tag, x: 540, pin: "centre", tip }];
+    card.blocks = [{ id: `e3${id}`, place: "bl", lines: lines.map((t, k) => ({ text: t, style, ...(pillWord && k === lines.length - 1 ? { pill: { words: [pillWord], fill: "#FED012" } } : {}) })) }];
+    card.timing = sq.kind === "pass" ? { in: `${id}+30`, lineStagger: 4, pillIn: `${id}+40`, out: `${id}.end-6` } : { tagIn: `${id}+1`, in: `${id}+3`, lineStagger: 3, out: `${id}.end-0`, cutOut: true };
+    card.mocks = [{ state: 0, at: `${id}.end-10` }];
+    out.push(card);
+  }
+  out.push({ id: "v3-9-leadin", story: "E", beat: "Pick your ride. + the pill, then black under it", shots: ["leadin", "end"], scene: "paper, then black", ink: "ink", blocks: [{ id: "e3l", place: { x: 540, align: "center", base: 880 }, lines: [{ text: "Pick your ride.", style: "line" }] }], url: {}, timing: { in: "leadin+2", urlIn: "leadin+8", out: "end-6" }, mocks: [{ state: 0, at: "leadin+40" }] });
+  out.push({ id: "v3-9z-end", story: "E", beat: "end: black under the same pill", shots: ["end"], scene: "black", ink: "ink", url: { continues: "v3-9-leadin" }, timing: { black: "end+0", settle: "end+29", out: "end.end-0" }, mocks: [{ state: 0, at: "end.end-4" }] });
   return out;
 }
 
@@ -299,7 +324,8 @@ export const CARDS = [
   { id: "b4-end", story: "B", beat: "end: the pill centred, black under it (as in A, C, D)", shots: ["end"], scene: "black", ink: "ink", url: {}, timing: { urlIn: "end+64", black: "end+82", settle: "end+111", out: "end.end-0" } }
 ,
   ...STORY_E(),
-  ...STORY_E2()
+  ...STORY_E2(),
+  ...STORY_E3()
 ];
 
 

@@ -142,7 +142,7 @@ export function layout(def) {
   });
   // the states: the pill's words (one state if none)
   const pl = (L.blocks || []).flatMap((b) => b.lines).find((l) => l.pill);
-  const states = pl ? pl.pill.states.map((q, k) => ({ index: k, label: q.word.replace(/\.$/, "") })) : [{ index: 0, label: "card" }];
+  const states = pl ? pl.pill.states.map((q, k, a) => ({ index: k, label: q.word.replace(/\.$/, "") + (a.slice(0, k).some((x) => x.word === q.word) ? "-" + (k + 1) : "") })) : [{ index: 0, label: "card" }];
   return { L, states };
 }
 
@@ -157,7 +157,7 @@ for (const def of CARDS) {
     mocks: def.mocks, notes: def.notes || ""
   };
   if (def.url && !def.url.continues) { const nx = CARDS.find((d) => d.url && d.url.continues === def.id); if (nx) card.continuedBy = { black: nx.timing.black, settle: nx.timing.settle, out: nx.timing.out }; }
-  const clocks = def.story === "A" ? ["A_v4"] : def.story === "D" ? ["D2"] : def.story === "B" ? ["B5"] : def.story === "E" ? (def.id.startsWith("v2-") ? ["E2"] : ["E1"]) : ["C_v4", "C_long"];
+  const clocks = def.story === "A" ? ["A_v4"] : def.story === "D" ? ["D2"] : def.story === "B" ? ["B5"] : def.story === "E" ? (def.id.startsWith("v2-") ? ["E2"] : def.id.startsWith("v3-") ? ["E3"] : ["E1"]) : ["C_v4", "C_long"];
   card.timing.frames = Object.fromEntries(clocks.map((k) => [k, frames(card, k)]));
   card.files = { outlined: states.map((s) => `svg/outlined/${def.id}${states.length > 1 ? "-" + s.label : ""}.svg`), live: states.map((s) => `svg/live/${def.id}${states.length > 1 ? "-" + s.label : ""}.svg`) };
   states.forEach((s, k) => {

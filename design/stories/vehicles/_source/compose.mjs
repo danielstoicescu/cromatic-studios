@@ -7,7 +7,7 @@ import { execFileSync } from "child_process";
 import pw from "/Users/daniel.stoic/node_modules/playwright/index.mjs";
 import sharp from "/Users/daniel.stoic/cromatic-drive/node_modules/sharp/lib/index.js";
 // (STORY=e2: E2's shots, cards and names)
-const ST = process.env.STORY || "e1", { SHOTS, F } = await import(ST === "e2" ? "./shotsE2.mjs" : "./shots.mjs");
+const ST = process.env.STORY || "e1", { SHOTS, F } = await import(ST === "e3" ? "./shotsE3.mjs" : ST === "e2" ? "./shotsE2.mjs" : "./shots.mjs");
 const FF = "/Users/daniel.stoic/Library/Python/3.9/lib/python/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1";
 const [RIDES, OUT, posterAt = "520"] = process.argv.slice(2);
 const TMP = path.join(OUT, "_frames"); fs.rmSync(TMP, { recursive: true, force: true }); fs.mkdirSync(TMP, { recursive: true });
@@ -30,7 +30,7 @@ const mp4 = path.join(OUT, `story-${ST}-en.mp4`);
 execFileSync(FF, ["-y", "-loglevel", "error", "-framerate", "30", "-i", `${TMP}/f%05d.png`, "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-maxrate", "8M", "-bufsize", "16M", "-pix_fmt", "yuv420p", "-profile:v", "high", "-level", "4.2", "-movflags", "+faststart", mp4]);
 execFileSync(FF, ["-y", "-loglevel", "error", "-i", `${TMP}/f${String(+posterAt).padStart(5, "0")}.png`, "-q:v", "2", path.join(OUT, `story-${ST}-en-poster.jpg`)]);
 // the contact sheet: a frame from every shot
-const picks = SHOTS.flatMap((s) => (s.id === "leadin" || s.id === "end" ? [Math.min(F - 1, s.t[1] - 4)] : [s.t[0] + Math.round((s.t[1] - s.t[0]) * 0.75)]));
+const picks = SHOTS.flatMap((s) => (s.id === "leadin" || s.id === "end" ? [Math.min(F - 1, s.t[1] - 4)] : [s.t[0] + Math.round((s.t[1] - s.t[0]) * (s.kind === "pass" ? 0.33 : 0.75))]));
 const w = 270, h = 480, cols = picks.length > 10 ? Math.ceil(picks.length / 2) : picks.length;
 const tiles = await Promise.all(picks.map((f) => sharp(path.join(TMP, `f${String(f).padStart(5, "0")}.png`)).resize(w, h).toBuffer()));
 await sharp({ create: { width: cols * (w + 12) + 12, height: Math.ceil(picks.length / cols) * (h + 12) + 12, channels: 3, background: "#111114" } })
