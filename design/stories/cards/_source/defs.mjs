@@ -5,6 +5,7 @@
 // story build passes it, at 60 fps.
 const Y = "#FED012", WH = "#FFFFFF";
 import fs from "fs";
+import { CLOCK as E2_CLOCK, SEQ as E2_SEQ, RED as E2_RED } from "../../vehicles/_source/shotsE2.mjs";
 
 export const CLOCKS = {
   // story A v4 (buildA5.mjs SP, /2)
@@ -62,6 +63,46 @@ function STORY_E() {
     mocks: [{ state: 0, at: "leadin+40" }]
   });
   out.push({ id: "e11-end", story: "E", beat: "end: black comes under the same pill", shots: ["end"], scene: "black", ink: "ink", url: { continues: "e10-leadin" }, timing: { black: "end+0", settle: "end+29", out: "end.end-0" }, mocks: [{ state: 0, at: "end.end-4" }] });
+  return out;
+}
+
+/* ============================== story E2: the rides, Daniel's notes on E1 (TASK-111b) ============================== */
+// the opening: driver. on the 1300, pilot. on the F1 (the pill red like the car: Daniel's exception to the one-colour
+// pill); then the van, the racer, the scooter under the petals, the 1300 in a rush with the Polite Patrol behind, the
+// Patrol held. The rides not in Daniel's sequence keep their lines here (on: false in shotsE2.mjs brings one back).
+CLOCKS.E2 = E2_CLOCK;
+export const E2_COPY = {
+  open: ["Today you\u2019re", "a"], pills: ["driver.", "pilot."], fills: ["#FED012", E2_RED],
+  rides: {
+    van: ["Mystery van", "Solves cases. / Use cases."],
+    chrome: ["Chrome racer", "Pass Go. / And keep going."],
+    scooter: ["E-scooter", "Ride in the middle / of the streets."],
+    rush: [null, "Don\u2019t rush. / They\u2019re", "polite."],
+    patrol: ["Polite Patrol", "Keepin\u2019 it safe. / Or, you do / the chasing."],
+    f1: ["Classic Formula", "Fastest route / to coffee."], foodvan: ["Kompus truck", "Comes with / a sandwich."], plane: ["Cropduster", "Traffic? / Fly over it."], sub: ["Yellow submarine", "Bucharest finally / got a sea."]
+  },
+  lead: "Go on, pick one."
+};
+function STORY_E2() {
+  const c = E2_COPY, split = (t) => t.split(" / ");
+  let boxes = {}; try { boxes = Object.fromEntries(JSON.parse(fs.readFileSync(new URL("../../vehicles/_source/rides-e2.json", import.meta.url), "utf8")).map((x) => [x.id, x.box])); } catch {}
+  const out = [{
+    id: "v2-0-opening", story: "E", beat: "Today you\u2019re / a [driver.] (the 1300) -> [pilot.] (the F1, the pill red)", shots: ["t1", "t2"], scene: "paper", ink: "ink",
+    blocks: [{ id: "e2o", place: "tl", lines: [{ text: c.open[0], style: "title" }, { text: c.open[1], style: "title", pill: { words: c.pills, fill: c.fills[0], fills: c.fills } }] }],
+    timing: { in: "t1+2", lineStagger: 4, pillIn: "t1+10", swaps: ["t2+3"], out: "t2.end-8" }, mocks: [{ state: 0, at: "t1+26" }, { state: 1, at: "t2+24" }]
+  }];
+  for (const sq of E2_SEQ) {
+    if (sq.kind === "open" || sq.on === false) continue;
+    const [tag, line, pillWord] = c.rides[sq.id], id = sq.id, box = boxes[id], tip = box ? Math.max(330, Math.round(box.y - 26)) : 760, lines = split(line);
+    const card = { id: `v2-${id}`, story: "E", beat: `${tag || "(no tag)"}: ${line.replace(/ \/ /g, " ")}${pillWord ? " [" + pillWord + "]" : ""}`, shots: [id], scene: "paper", ink: "ink" };
+    if (tag) card.tags = [{ id: `v2-${id}-tag`, text: tag, x: 540, pin: "centre", tip }];
+    card.blocks = [{ id: `e2${id}`, place: "bl", lines: lines.map((t, k) => ({ text: t, style: "title", ...(pillWord && k === lines.length - 1 ? { pill: { words: [pillWord], fill: "#FED012" } } : {}) })) }];
+    card.timing = sq.kind === "pass" ? { in: `${id}+14`, lineStagger: 4, pillIn: `${id}+24`, out: `${id}.end-6` } : { tagIn: `${id}+1`, in: `${id}+3`, lineStagger: 3, out: `${id}.end-0`, cutOut: true };
+    card.mocks = [{ state: 0, at: `${id}.end-10` }];
+    out.push(card);
+  }
+  out.push({ id: "v2-9-leadin", story: "E", beat: `${c.lead} + the pill, then black under it`, shots: ["leadin", "end"], scene: "paper, then black", ink: "ink", blocks: [{ id: "e2l", place: { x: 540, align: "center", base: 880 }, lines: [{ text: c.lead, style: "line" }] }], url: {}, timing: { in: "leadin+2", urlIn: "leadin+8", out: "end-6" }, mocks: [{ state: 0, at: "leadin+40" }] });
+  out.push({ id: "v2-9z-end", story: "E", beat: "end: black under the same pill", shots: ["end"], scene: "black", ink: "ink", url: { continues: "v2-9-leadin" }, timing: { black: "end+0", settle: "end+29", out: "end.end-0" }, mocks: [{ state: 0, at: "end.end-4" }] });
   return out;
 }
 
@@ -257,7 +298,8 @@ export const CARDS = [
   { id: "b3-end", story: "B", beat: "Nine worlds. / One street. (back on Cromatic, its light plaza)", shots: ["end"], scene: "light (Cromatic by day)", ink: "ink", blocks: [{ id: "b3", place: "bl", lines: [{ text: "Nine worlds.", style: "headline" }, { text: "One street.", style: "headline" }] }], timing: { in: "end+5", lineStagger: 6, out: "end+70" } },
   { id: "b4-end", story: "B", beat: "end: the pill centred, black under it (as in A, C, D)", shots: ["end"], scene: "black", ink: "ink", url: {}, timing: { urlIn: "end+64", black: "end+82", settle: "end+111", out: "end.end-0" } }
 ,
-  ...STORY_E()
+  ...STORY_E(),
+  ...STORY_E2()
 ];
 
 

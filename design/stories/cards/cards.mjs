@@ -75,7 +75,8 @@ function pill(Cm, T, L, { tIn, swaps = [], tOut, parent, nm }) {
   const op = tOut + 14;
   Cm.shape(`${nm} · words`, words, { parent, ip: tIn, op, ks: rot, masks: [{ inv: false, mode: "a", pt: pathProp(clean(maskK)), o: prop(100), x: prop(0), nm: "pill" }] });
   Cm.shape(`${nm} · pill`, [
-    group("pill", [rect(keys(sK), keys(pK), 9999), stroke(rgb("#0D0C09"), P.keyline), fill(rgb(P.fill))]),
+    // (fills: a colour per word, when a story asks for it: E2's red [pilot.]; it changes with the word, at the swap)
+    group("pill", [rect(keys(sK), keys(pK), 9999), stroke(rgb("#0D0C09"), P.keyline), fill(P.fills ? keys([[tIn, rgb(P.fills[0]), E.hold], ...swaps.map((t, k) => [t + 2, rgb(P.fills[k + 1]), E.hold])]) : rgb(P.fill))]),
     group("shadow", [rect(keys(sK), keys(pK), 9999), fill(rgb("#0D0C09"))], { p: P.shadow })
   ], { parent, ip: tIn, op, ks: rot });
 }

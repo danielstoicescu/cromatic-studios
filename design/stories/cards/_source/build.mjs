@@ -62,7 +62,7 @@ function pillSvg(mode, L, k) {
   const P = L.pill, q = P.states[k], x = P.left, y = P.cy - P.h / 2;
   return `<g id="${P.id}" transform="rotate(${P.tilt} ${f1(x)} ${f1(P.cy)})">` +
     `<rect id="${P.id}-shadow" x="${f1(x + P.shadow[0])}" y="${f1(y + P.shadow[1])}" width="${q.w}" height="${P.h}" rx="${P.h / 2}" fill="${INK}"/>` +
-    `<rect id="${P.id}-body" x="${f1(x)}" y="${f1(y)}" width="${q.w}" height="${P.h}" rx="${P.h / 2}" fill="${P.fill}" stroke="${INK}" stroke-width="${P.keyline}"/>` +
+    `<rect id="${P.id}-body" x="${f1(x)}" y="${f1(y)}" width="${q.w}" height="${P.h}" rx="${P.h / 2}" fill="${P.fills ? P.fills[k] : P.fill}" stroke="${INK}" stroke-width="${P.keyline}"/>` +
     words(mode, q.word, L.size, L.tracking, P.wordX, L.baseline, P.ink, `${P.id}-word`) + `</g>`;
 }
 function blockSvg(mode, B, k, offset = [0, 0]) {
@@ -157,7 +157,7 @@ for (const def of CARDS) {
     mocks: def.mocks, notes: def.notes || ""
   };
   if (def.url && !def.url.continues) { const nx = CARDS.find((d) => d.url && d.url.continues === def.id); if (nx) card.continuedBy = { black: nx.timing.black, settle: nx.timing.settle, out: nx.timing.out }; }
-  const clocks = def.story === "A" ? ["A_v4"] : def.story === "D" ? ["D2"] : def.story === "B" ? ["B5"] : def.story === "E" ? ["E1"] : ["C_v4", "C_long"];
+  const clocks = def.story === "A" ? ["A_v4"] : def.story === "D" ? ["D2"] : def.story === "B" ? ["B5"] : def.story === "E" ? (def.id.startsWith("v2-") ? ["E2"] : ["E1"]) : ["C_v4", "C_long"];
   card.timing.frames = Object.fromEntries(clocks.map((k) => [k, frames(card, k)]));
   card.files = { outlined: states.map((s) => `svg/outlined/${def.id}${states.length > 1 ? "-" + s.label : ""}.svg`), live: states.map((s) => `svg/live/${def.id}${states.length > 1 ? "-" + s.label : ""}.svg`) };
   states.forEach((s, k) => {

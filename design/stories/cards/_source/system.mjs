@@ -123,7 +123,7 @@ export function layLine(def, x, baseline, align, ink) {
   return {
     ...out, text: def.text || "", x: r1(lx), baseline: r1(baseline), width: r1(preW), box: box(lx, baseline, preW + gap + widest, s.size),
     pill: {
-      id: def.id + "-pill", fill: def.pill.fill, ink: P.ink, left: r1(px), cy: r1(cy), h: r1(h), keyline: r1(P.keyline * S), shadow: [r1(P.shadow[0] * S), r1(P.shadow[1] * S)], tilt: def.pill.tilt ?? P.tilt,
+      id: def.id + "-pill", fill: def.pill.fill, ...(def.pill.fills ? { fills: def.pill.fills } : {}), ink: P.ink, left: r1(px), cy: r1(cy), h: r1(h), keyline: r1(P.keyline * S), shadow: [r1(P.shadow[0] * S), r1(P.shadow[1] * S)], tilt: def.pill.tilt ?? P.tilt,
       wordX: r1(px + P.padX * S), states: states.map((q) => ({ ...q, cx: r1(px + q.w / 2) }))
     }
   };

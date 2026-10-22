@@ -1,0 +1,185 @@
+{
+ "id": "v2-scooter",
+ "story": "E",
+ "beat": "E-scooter: Ride in the middle of the streets.",
+ "shots": [
+  "scooter"
+ ],
+ "scene": "paper",
+ "textColour": "#0D0C09",
+ "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "safe": {
+   "top": 250,
+   "bottom": 340,
+   "side": 80,
+   "note": "Stories: progress bar + handle on top, reply bar at the bottom. Reels: also keep right-aligned words out of x > 900 between y 1100 and 1580 (the like / comment column)."
+  }
+ },
+ "layout": {
+  "blocks": [
+   {
+    "kind": "block",
+    "id": "e2scooter",
+    "place": "bl",
+    "ink": "#0D0C09",
+    "lines": [
+     {
+      "kind": "line",
+      "id": "e2scooter-l1",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "Ride in the middle",
+      "x": 80,
+      "baseline": 1414,
+      "width": 893.3,
+      "box": {
+       "x": 80,
+       "y": 1325.8,
+       "w": 893.3,
+       "h": 91.6
+      }
+     },
+     {
+      "kind": "line",
+      "id": "e2scooter-l2",
+      "style": "title",
+      "size": 116,
+      "tracking": -0.04,
+      "lead": 1,
+      "ink": "#0D0C09",
+      "align": "left",
+      "text": "of the streets.",
+      "x": 80,
+      "baseline": 1530,
+      "width": 698.4,
+      "box": {
+       "x": 80,
+       "y": 1441.8,
+       "w": 698.4,
+       "h": 91.6
+      }
+     }
+    ],
+    "behindRide": false
+   }
+  ],
+  "tags": [
+   {
+    "kind": "tag",
+    "id": "v2-scooter-tag",
+    "text": "E-scooter",
+    "size": 44,
+    "tracking": -0.01,
+    "ink": "#0D0C09",
+    "plate": {
+     "x": 391.8,
+     "y": 658,
+     "w": 296.5,
+     "h": 84,
+     "r": 42,
+     "fill": "#FFFFFF",
+     "keyline": 4,
+     "shadow": [
+      0,
+      7
+     ]
+    },
+    "dot": {
+     "cx": 428.8,
+     "cy": 700,
+     "d": 22,
+     "fill": "#FED012",
+     "keyline": 3.5
+    },
+    "textX": 455.8,
+    "baseline": 715.6,
+    "pointer": {
+     "x": 540,
+     "y": 742,
+     "w": 30,
+     "h": 18,
+     "tip": [
+      540,
+      760
+     ]
+    },
+    "box": {
+     "x": 391.8,
+     "y": 658,
+     "w": 296.5,
+     "h": 102
+    }
+   }
+  ]
+ },
+ "states": [
+  {
+   "index": 0,
+   "label": "card"
+  }
+ ],
+ "timing": {
+  "cues": {
+   "tagIn": "scooter+1",
+   "in": "scooter+3",
+   "lineStagger": 3,
+   "out": "scooter.end-0",
+   "cutOut": true
+  },
+  "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
+  "frames": {
+   "E2": {
+    "clock": "E2",
+    "fps": 30,
+    "elements": [
+     {
+      "id": "e2scooter-l1",
+      "text": "Ride in the middle",
+      "in": 165,
+      "out": 227,
+      "motion": "lineIn / lineOut",
+      "hold": 50
+     },
+     {
+      "id": "e2scooter-l2",
+      "text": "of the streets.",
+      "in": 168,
+      "out": 228,
+      "motion": "lineIn / lineOut",
+      "hold": 48
+     },
+     {
+      "id": "v2-scooter-tag",
+      "text": "E-scooter",
+      "in": 165,
+      "out": 228,
+      "motion": "tagIn / tagOut",
+      "hold": 54
+     }
+    ]
+   }
+  }
+ },
+ "mocks": [
+  {
+   "state": 0,
+   "at": "scooter.end-10"
+  }
+ ],
+ "notes": "",
+ "files": {
+  "outlined": [
+   "svg/outlined/v2-scooter.svg"
+  ],
+  "live": [
+   "svg/live/v2-scooter.svg"
+  ]
+ }
+}
