@@ -157,7 +157,7 @@ export function ytFacade(html, poster) {
     const title = /\btitle="([^"]*)"/.exec(a + b)?.[1] || "";
     const p = poster(id);
     n++;
-    const img = p ? `<img src="${p.src}" alt=""${p.w ? ` width="${p.w}" height="${p.h}"` : ""} decoding="async"${n === 1 ? ' fetchpriority="high"' : ' loading="lazy"'}>` : "";
+    const img = p ? `<img src="${p.src}" alt=""${p.w ? ` width="${p.w}" height="${p.h}"` : ""} decoding="async"${ff && n === 1 ? ' fetchpriority="high"' : ' loading="lazy"'}>` : "";
     const btn = `<button type="button" class="yt-play" aria-label="Play the film">${img}<span class="yt-cta">${PLAY_SVG}<span>Play the film<span class="yt-src">from YouTube</span></span></span></button>`;
     const data = `data-yt="${id}" data-q="${q || ""}" data-title="${title}"`;
     // inside the case pages' film frame the frame stays (its own closing tag follows); anywhere else the facade is its own 16:9 box

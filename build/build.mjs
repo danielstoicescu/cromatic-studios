@@ -620,7 +620,10 @@ const hubLinks = (slug, hasRelated) => {
   return `${STREET_CSS}${board ? BOARD_CSS : ""}<section class="cz-street" aria-label="More from the studio" style="--czs:${street ? street[1] : "#FED012"}">${cards ? `<p class="czs-eb">${escH(street ? street[0] : "")}</p><h2 id="czs-h"><span>On the same street</span></h2>${cards}` : ""}${links ? `<div class="czs-links">${links}</div>` : ""}${board}</section>${cards ? STREET_JS : ""}${board ? BOARD_JS : ""}`;
 };
 // r136 (N25): YouTube films become a click-to-play facade on a local poster (a still of the film when we have one)
-const YT_POSTERS = { "vGNSZ_aUd8w": "m:cs/Clinica-Sante", "8KtUdarL1oI": "m:pain-plaisir/anemone" };
+const YT_POSTERS = { "vGNSZ_aUd8w": "m:cs/Clinica-Sante", "8KtUdarL1oI": "m:pain-plaisir/anemone",
+  // TASK-092: the Litorsal TV spots (stills of the films, 1280x720 webp)
+  "o5FE30n77WU": "m:litorsal/tv-2026-garden", "NOn4fCOub88": "m:litorsal/tv-2026-gym", "WUxLxtCo5Wc": "m:litorsal/tv-2026-10s",
+  "sdIUOZ-T0pk": "m:litorsal/tv-2025-20s", "kxX_o_yme08": "m:litorsal/tv-2023-10s", "zsz1e9QMCds": "m:litorsal/tv-2019" };
 const ytPoster = (id) => mediaMap.get(YT_POSTERS[id]) || null;
 // r138d (Daniel: "remove other calls to action"): a case page's own ending goes, whichever generator made it: the
 // Steam-style related rail and "What is your winning soundtrack?" card (site/cases, Steam), the "Your brand next? /

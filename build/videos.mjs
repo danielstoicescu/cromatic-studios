@@ -10,7 +10,14 @@ import { join } from "node:path";
 const YT = {
   "vGNSZ_aUd8w": { name: "Clinica Sante - Recomandată de medici, parafată de pacienți!", uploadDate: "2025-02-12T04:54:04-08:00", duration: "PT50S", description: "TV spot for Clinica Sante, a network of medical laboratories: who tests the people who run the tests? Made by Cromatic Studios." },
   "8KtUdarL1oI": { name: "Buchet de Anemone | Pain Plaisir", uploadDate: "2025-12-12T09:19:01-08:00", duration: "PT36S", description: "Anemone, a short film for Pain Plaisir, a French-style bakery in Bucharest, made by Cromatic Studios." },
-  "m4-5T3i3wN0": { name: "A Journey Around The World by Two Minutes", uploadDate: "2017-04-21T01:27:46-07:00", duration: "PT2M", description: "A film for Two Minutes, the specialty coffee brand, made by Cromatic Studios." }
+  "m4-5T3i3wN0": { name: "A Journey Around The World by Two Minutes", uploadDate: "2017-04-21T01:27:46-07:00", duration: "PT2M", description: "A film for Two Minutes, the specialty coffee brand, made by Cromatic Studios." },
+  // TASK-092: the Litorsal TV spots, from the brand's own channel (Litorsal Romania), dates read 23 Oct 2026
+  "o5FE30n77WU": { name: "Litorsal iulie 2026", uploadDate: "2026-07-30T11:52:02-07:00", duration: "PT20S", description: "Litorsal TV spot, 2026, garden version: the tail with three 3D boxes and the TV, online, pre-roll and metro versions by Cromatic Studios." },
+  "NOn4fCOub88": { name: "Litorsal iulie 2026", uploadDate: "2026-07-30T11:53:42-07:00", duration: "PT20S", description: "Litorsal TV spot, 2026, gym version: the tail with three 3D boxes and the TV, online, pre-roll and metro versions by Cromatic Studios." },
+  "WUxLxtCo5Wc": { name: "Litorsal Mai 2026", uploadDate: "2026-05-13T23:17:01-07:00", duration: "PT10S", description: "Litorsal 10-second TV spot, 2026, with a tail of three 3D boxes by Cromatic Studios." },
+  "sdIUOZ-T0pk": { name: "Litorsal", uploadDate: "2025-04-15T04:26:12-07:00", duration: "PT20S", description: "Litorsal 20-second TV spot, 2025, edited by Cromatic Studios." },
+  "kxX_o_yme08": { name: "Litorsal", uploadDate: "2023-05-30T09:50:48-07:00", duration: "PT10S", description: "Litorsal 10-second TV spot, 2023: the Romanian edit with a 3D carton by Cromatic Studios." },
+  "zsz1e9QMCds": { name: "Litorsal", uploadDate: "2019-07-07T23:16:46-07:00", duration: "PT20S", description: "Litorsal 20-second TV spot, 2019, by Cromatic Studios." }
 };
 // our own films, by file name (the page's aria-label names them otherwise)
 const OWN = {

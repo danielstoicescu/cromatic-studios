@@ -48,7 +48,7 @@ export const WORK_TITLES = {
   "vizik": "Vizik: product site for three eye drops, three colours",
   "vizimel": "Vizimel: product site for an eye supplement",
   "ochisan": "OchiSan: product site for an eyelid ointment",
-  "litorsal": "Litorsal: billboards & posters for an electrolyte brand",
+  "litorsal": "Litorsal: billboards, posters & TV for an electrolyte brand", // TASK-092: + the TV spots
   "lacalut": "Lacalut White & Repair: Smart TV ads & motion",
   "maximag": "Maximag Bisglicinat: Smart TV ads & motion",
   "aspasia": "Aspasia Collagen Beauty: one-page product website",
