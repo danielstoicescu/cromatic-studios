@@ -32,6 +32,8 @@ const USERS_FILE = new URL("./users.json", import.meta.url);
 const CODE_TTL = 10 * 60e3, CODE_TRIES = 5, SESSION_TTL = 12 * 3600e3;
 const COOKIE = "ops_sid";
 const KINDS = new Set(["command", "bug", "feedback"]);
+const TASK_FIELDS = new Set(["status", "priority", "agent", "epicId"]); // what a "task-edit" may change
+const REJECT_SHOW = 6 * 3600e3; // a rejected edit stays visible on its card (for the toast + animation) this long
 const ADMIN_PAYLOAD_TYPES = new Set(["core-request"]); // members cannot send these
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const ASSETS = { "logo.css": "text/css; charset=utf-8", "adapter.js": "text/javascript; charset=utf-8", "login.js": "text/javascript; charset=utf-8", "ops.css": "text/css; charset=utf-8", "favicon.svg": "image/svg+xml" };
@@ -185,12 +187,23 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
   function withOutbox(view) {
     const snapAt = Date.parse(view.generatedAt || 0) || 0;
     const inbox = { ...(view.collections.inbox || {}) };
-    for (const x of readLines("outbox.jsonl")) {
-      if (inbox[x.id]) continue;
-      if (x.status !== "new" && !(Date.parse(x.ackedAt || 0) > snapAt)) continue;
-      inbox[x.id] = { createdAt: x.createdAt, from: "ops:" + x.from, kind: x.kind, text: x.text, payload: x.payload || null, status: "new", reply: x.reply || "", by: { email: x.from, name: x.name, role: x.role }, pending: true };
+    const out = readLines("outbox.jsonl"), tasks = { ...(view.collections.tasks || {}) }, now = Date.now();
+    // optimistic task edits: pending ones are applied (with a _opsPending marker) so every user sees the moved card;
+    // a pending edit the snapshot already reflects is done; a rejected one is shown for a while, not applied
+    for (const x of out) {
+      const pl = x.payload; if (!pl || pl.type !== "task-edit" || !tasks[pl.taskId]) continue;
+      const cur = tasks[pl.taskId], mark = { id: x.id, field: pl.field, from: pl.from, to: pl.to, createdAt: x.createdAt, by: x.name, byEmail: x.from };
+      if (x.status === "rejected") { if (now - (Date.parse(x.resolvedAt || x.ackedAt || x.createdAt) || 0) < REJECT_SHOW) tasks[pl.taskId] = { ...cur, _opsRejected: [...(cur._opsRejected || []), { ...mark, reply: x.reply || "" }] }; continue; }
+      if (x.status === "done") continue;
+      if (String(cur[pl.field] ?? "") === pl.to && snapAt > (Date.parse(x.createdAt) || 0)) continue;
+      tasks[pl.taskId] = { ...cur, [pl.field]: pl.to, _opsPending: [...(cur._opsPending || []), mark] };
     }
-    return { ...view, collections: { ...view.collections, inbox } };
+    for (const x of out) {
+      if (inbox[x.id]) continue;
+      if (x.status !== "new" && !(Date.parse(x.resolvedAt || x.ackedAt || 0) > snapAt)) continue;
+      inbox[x.id] = { createdAt: x.createdAt, from: "ops:" + x.from, kind: x.kind, text: x.text, payload: x.payload || null, status: x.status === "rejected" ? "declined" : x.status === "done" ? "done" : "new", reply: x.reply || "", by: { email: x.from, name: x.name, role: x.role }, pending: true };
+    }
+    return { ...view, collections: { ...view.collections, inbox, ...(view.collections.tasks ? { tasks } : {}) } };
   }
 
   // ---------- app files ----------
@@ -234,9 +247,20 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
         }
         if (r === "bridge/ack" && m === "POST") {
           const b = await body(req, 256e3);
+          // {ids, status?: "done"|"rejected", reply?, replies?: {id: text}, results?: {id: {status, reply}}}
+          // without a status an item only becomes "acked" (picked up); done / rejected close it (task edits: tick / roll back)
           const ids = new Set(Array.isArray(b.ids) ? b.ids.map(String) : []), replies = b.replies && typeof b.replies === "object" ? b.replies : {};
-          const at = new Date().toISOString(); let n = 0;
-          const list = readLines("outbox.jsonl").map((x) => { if (ids.has(x.id) && x.status === "new") { n++; return { ...x, status: "acked", ackedAt: at, ...(replies[x.id] ? { reply: str(replies[x.id], 4000) } : {}) }; } return x; });
+          const results = b.results && typeof b.results === "object" ? b.results : {};
+          for (const id of Object.keys(results)) ids.add(id);
+          const FINAL = new Set(["done", "rejected"]), at = new Date().toISOString(); let n = 0;
+          const list = readLines("outbox.jsonl").map((x) => {
+            if (!ids.has(x.id)) return x;
+            const r = results[x.id] || {}, st = FINAL.has(r.status) ? r.status : FINAL.has(b.status) ? b.status : null;
+            const reply = str(r.reply || replies[x.id] || b.reply || "", 4000);
+            if (st && x.status !== st) { n++; return { ...x, status: st, resolvedAt: at, ackedAt: x.ackedAt || at, ...(reply ? { reply } : {}) }; }
+            if (!st && x.status === "new") { n++; return { ...x, status: "acked", ackedAt: at, ...(reply ? { reply } : {}) }; }
+            return x;
+          });
           const tmp = P("outbox.jsonl.tmp-" + process.pid); writeFileSync(tmp, list.map((x) => JSON.stringify(x) + "\n").join(""), { mode: 0o600 }); renameSync(tmp, P("outbox.jsonl"));
           json(res, 200, { ok: true, acked: n }); return true;
         }
@@ -300,6 +324,11 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
         let payload = b.payload && typeof b.payload === "object" && !Array.isArray(b.payload) ? b.payload : null;
         if (payload && JSON.stringify(payload).length > 16e3) { json(res, 413, { ok: false }); return true; }
         if (payload && ADMIN_PAYLOAD_TYPES.has(String(payload.type || "")) && s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
+        if (payload && payload.type === "task-edit") {
+          const f = String(payload.field || "");
+          if (!TASK_FIELDS.has(f) || typeof payload.taskId !== "string" || !/^[\w.-]{1,60}$/.test(payload.taskId)) { json(res, 422, { ok: false, error: "task-edit" }); return true; }
+          payload = { type: "task-edit", taskId: payload.taskId, field: f, from: str(String(payload.from ?? ""), 120), to: str(String(payload.to ?? ""), 120) };
+        }
         const page = str(b.page, 500), device = str(b.device, 200);
         if (page || device) payload = { ...(payload || {}), ...(page ? { page } : {}), ...(device ? { device } : {}) };
         // Daniel's rule: a colleague's bug starts work right away; "Important / blochează lucrul" makes it P0

@@ -1196,6 +1196,50 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
 .ct-ck { gap: 4px; }
 .ck { min-width: 30px; height: 28px; padding: 0 6px; border-radius: 9px; }
 .ck .ic { width: 14px; height: 14px; }
+/* r6: checklist rows with a guide, the SEO panel */
+.ct-rows { display: grid; gap: 2px; }
+.ct-row { border-radius: 12px; padding: 4px 6px; transition: background .15s; } .ct-row:hover { background: var(--soft-bg); }
+.ct-rh { display: grid; grid-template-columns: auto auto 84px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 13.5px; min-height: 28px; }
+.ct-rh .ic { width: 14px; height: 14px; color: var(--muted); } .ct-rl { color: var(--muted); } .ct-rv { overflow-wrap: anywhere; }
+.ct-ask { border: 1px solid var(--g2); background: var(--card); border-radius: 999px; width: 28px; height: 24px; display: grid; place-items: center; padding: 0; transition: border-color .15s, transform .2s var(--ease); }
+.ct-ask:hover { border-color: var(--ink); transform: translateX(2px); } .ct-ask .ic { width: 13px; height: 13px; color: var(--ink); }
+.ct-guide { margin: 2px 0 4px 30px; }
+.ct-guide summary { list-style: none; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font: 500 11px var(--f-m); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); border-radius: 6px; padding: 1px 4px; }
+.ct-guide summary::-webkit-details-marker { display: none; }
+.ct-guide summary:hover { color: var(--ink); } .ct-guide summary .ic { width: 12px; height: 12px; transition: transform .3s var(--ease); } .ct-guide[open] summary .ic { transform: rotate(180deg); }
+.ct-guide p { margin: 6px 0 0; font-size: 13px; line-height: 1.45; } .ct-guide p b { font-weight: 600; }
+.ct-guide[open] { background: var(--soft-bg); border: 1px solid var(--g1); border-radius: 12px; padding: 6px 10px 10px; animation: rise .25s ease-out; }
+.ct-seo { display: grid; gap: 10px; border: 1px solid var(--g1); border-radius: 18px; padding: 12px 14px; background: var(--card); }
+.seo-h { display: flex; align-items: center; gap: 8px; } .seo-h b { font: 800 17px var(--f-d); } .seo-h .ic { width: 18px; height: 18px; }
+.ct-ring.sm { margin-left: auto; width: 40px; height: 40px; } .ct-ring.sm b { font-size: 12.5px; }
+.seo-tabs { display: inline-flex; gap: 3px; padding: 3px; border: var(--line); border-radius: 999px; justify-self: start; }
+.seo-tabs button { border: 0; background: none; border-radius: 999px; padding: 3px 12px; font: 600 12.5px var(--f-b); }
+.seo-tabs button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); } .seo-tabs button:disabled { opacity: .35; cursor: not-allowed; }
+.seo-snip { display: grid; gap: 4px; background: var(--soft-bg); border: 1px solid var(--g1); border-radius: 14px; padding: 12px 14px; }
+.sn-u { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.sn-t { font: 400 19px/1.25 Arial, var(--f-b); color: #1a0dab; overflow-wrap: anywhere; }
+:root[data-theme="dark"] .sn-t { color: #8ab4f8; } @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sn-t { color: #8ab4f8; } }
+.sn-d { font: 400 13.5px/1.45 Arial, var(--f-b); color: var(--muted); overflow-wrap: anywhere; }
+.seo-m { display: grid; grid-template-columns: 80px auto minmax(60px, 1fr); gap: 8px; align-items: center; font-size: 12px; margin-top: 4px; }
+.seo-m span { color: var(--muted); } .seo-m b { font: 500 11px var(--f-m); font-variant-numeric: tabular-nums; }
+.seo-m .bar { height: 5px; border-radius: 999px; background: var(--g1); overflow: hidden; } .seo-m .bar i { display: block; height: 100%; border-radius: inherit; transition: width .8s var(--ease-out); }
+.seo-m.ok .bar i { background: var(--c-done); } .seo-m.warn .bar i { background: var(--amber); } .seo-m.bad .bar i { background: var(--c-dropped); }
+.seo-warn { font-size: 12.5px; color: var(--danger-ink); }
+.seo-iss { display: grid; gap: 8px; }
+.si { display: grid; gap: 5px; border-radius: 14px; padding: 10px 12px; border: 1px solid var(--g1); border-left: 3px solid var(--g3); }
+.si.bad { border-left-color: var(--c-dropped); } .si.warn { border-left-color: var(--amber); } .si.low { border-left-color: var(--g3); }
+.si-t { display: flex; gap: 8px; align-items: baseline; } .si-t b { font-weight: 600; }
+.si-sev { font: 500 10px var(--f-m); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--g2); border-radius: 999px; padding: 0 6px; }
+.si.bad .si-sev { color: var(--danger-ink); border-color: var(--c-dropped); }
+.si-why { font-size: 13px; color: var(--muted); }
+.si-fix { display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
+.si-fix code { flex: 1 1 220px; min-width: 0; font: 500 12.5px/1.45 var(--f-m); background: var(--soft-bg); border: 1px solid var(--g1); border-radius: 10px; padding: 6px 9px; overflow-wrap: anywhere; white-space: pre-wrap; -webkit-user-select: all; user-select: all; }
+.si .btn.k { justify-self: start; }
+.seo-ok { font-size: 13px; color: var(--c-done); font-weight: 600; }
+.seo-facts { display: flex; flex-wrap: wrap; gap: 6px; }
+.sf { display: inline-flex; gap: 6px; align-items: baseline; border: 1px solid var(--g1); border-radius: 999px; padding: 2px 10px; font-size: 12px; background: var(--soft-bg); }
+.sf span { color: var(--muted); } .sf b { font-weight: 600; } .sf.ok { border-color: color-mix(in srgb, var(--c-done) 55%, transparent); } .sf.bad { border-color: var(--c-dropped); }
+@media (max-width: 560px) { .ct-rh { grid-template-columns: auto auto minmax(0, 1fr) auto; } .ct-rh .ct-rv { grid-column: 3 / 4; grid-row: 2; } .seo-m { grid-template-columns: 70px auto minmax(40px, 1fr); } }
 
 /* ===== logo/logo.css (inlined) ===== */
 /* cromaticstudios.com ops · logo lockup + splash (TASK-123). Self-contained: Ana's /ops mirror (TASK-124) reuses this file.
@@ -1655,20 +1699,35 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
   const addTask = (t) => { const id = "T-" + Date.now().toString(36); const ep = S.epics.find((e) => e.id === t.epicId); const doc = { id, title: t.title, epicId: t.epicId || "", area: t.area || (ep && ep.area) || "development", priority: t.priority || "P1", status: "open", notes: t.notes || "", createdAt: now(), updatedAt: now(), source: "dashboard" }; return guard(async () => { await db.doc("tasks/" + id).set(doc); await inboxAdd("task", "Task nou: " + doc.title + (ep ? " (în " + ep.title + ")" : ""), { id, epicId: doc.epicId, priority: doc.priority }); }, "Task adăugat"); };
   // a task that arrives in "done" gets its live time (liveAt), so "Sărbătorit" counts 24 h from the real moment
   const liveStamp = (id, patch) => { const cur = S.tasks.find((x) => x.id === id); return patch.status === "done" && (!cur || norm(cur.status) !== "done") ? { liveAt: now() } : {}; };
-  function opsAsk(id, patch) {
-    const t = S.tasks.find((x) => x.id === id), p = patch || {}, parts = [];
+  function opsText(id, p) {
+    const t = S.tasks.find((x) => x.id === id), parts = [];
     if (p.deleted) parts.push("șterge task-ul");
     if (p.status) parts.push("mută în „" + (SLAB[p.status] || p.status) + "”");
     if (p.priority) parts.push("prioritate " + p.priority);
     if ("agent" in p) { const m = S.team.find((x) => x.id === p.agent); parts.push(m ? "dă-l lui " + m.name : "fără agent"); }
     if ("epicId" in p) { const e = S.epics.find((x) => x.id === p.epicId); parts.push(e ? "mută în epicul „" + e.title + "”" : "scoate-l din epic"); }
-    const text = id + ": " + parts.join(", ") + (parts.length && t ? " · " + t.title : "");
+    return id + ": " + parts.join(", ") + (parts.length && t ? " · " + t.title : "");
+  }
+  function opsAsk(id, patch) {
+    const text = opsText(id, patch || {});
     if (!$("drawer").hidden) closeDrawer();
     setPop("claude"); const q = $("q-text"); q.value = text;
     setTimeout(() => { q.focus({ preventScroll: true }); q.setSelectionRange(q.value.length, q.value.length); }, 60);
     return Promise.resolve(false);
   }
-  const setTask = (id, patch, why, okText) => window.__ops ? opsAsk(id, patch) : guard(async () => { await db.doc("tasks/" + id).update({ ...patch, ...liveStamp(id, patch), updatedAt: now() }); await inboxAdd("task-change", why || "Task " + id + " schimbat", { id, ...patch }); }, okText || "Salvat");
+  const OPS_FIELDS = ["status", "priority", "agent", "epicId"];
+  function opsEdit(id, field, to) {
+    const t = S.tasks.find((x) => x.id === id); if (!t) return Promise.resolve(false);
+    const from = field === "status" ? norm(t.status) : (t[field] ?? "");
+    if (String(from) === String(to ?? "")) return Promise.resolve(false);
+    return guard(() => inboxAdd("command", opsText(id, { [field]: to }), { type: "task-edit", taskId: id, field, from, to: to ?? "" }));
+  }
+  function opsPatch(id, patch) { const k = Object.keys(patch || {}).filter((x) => OPS_FIELDS.includes(x)); return k.length === 1 && Object.keys(patch).length === 1 ? opsEdit(id, k[0], patch[k[0]]) : opsAsk(id, patch); }
+  // a card dropped on its own column (or outside the board) just settles back
+  function opsSnap(id) { const c = document.querySelector('.card[data-task="' + id + '"]'); if (!c) return; c.classList.remove("ops-snap"); void c.offsetWidth; c.classList.add("ops-snap"); setTimeout(() => c.classList.remove("ops-snap"), 700); }
+  window.__opsMove = (id, k) => { const t = S.tasks.find((x) => x.id === id); if (t && k && norm(t.status) !== k) confirmMove(t, k); else opsSnap(id); };
+  window.__opsToast = (m, k) => toast(m, k);
+  const setTask = (id, patch, why, okText) => window.__ops ? opsPatch(id, patch) : guard(async () => { await db.doc("tasks/" + id).update({ ...patch, ...liveStamp(id, patch), updatedAt: now() }); await inboxAdd("task-change", why || "Task " + id + " schimbat", { id, ...patch }); }, okText || "Salvat");
   const addEpic = (e) => { const n = Math.max(0, ...S.epics.map((x) => x.n || 0)) + 1; const id = "E-" + Date.now().toString(36); const doc = { id, n, title: e.title, goal: e.goal || "", area: e.area || "development", status: "active", createdAt: now() }; return guard(async () => { await db.doc("epics/" + id).set(doc); await inboxAdd("epic", "Epic nou: " + doc.title, { id }); }, "Epic creat").then((ok) => ok && id); };
   const addIdea = (title) => guard(async () => { const ref = await db.collection("ideas").add({ title, body: "", status: "new", brief: "", createdAt: now(), updatedAt: now() }); await inboxAdd("idea", "Idee nouă: " + title, { id: ref.id }); }, "Idee adăugată");
   const setIdea = (id, patch, why) => guard(async () => { await db.doc("ideas/" + id).update({ ...patch, updatedAt: now() }); if (why) await inboxAdd("idea-change", why, { id, ...patch }); });
@@ -1744,7 +1803,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
   let mvEl = null;
   function closeMove() { if (mvEl) { mvEl.forEach((x) => x.remove()); mvEl = null; } }
   function confirmMove(t, to) {
-    if (window.__ops) { closeMenu(); return opsAsk(t.id, { status: to }); }
+    if (window.__ops) { closeMenu(); return opsEdit(t.id, "status", to); }
     closeMove(); closeMenu();
     const from = norm(t.status); if (from === to) return;
     const live = to === "done" && from === "on-beta" && isSite(t);
@@ -1949,7 +2008,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
   function zoneEl(area) { const z = ZONE[area]; if (!z) return null; const s = el("span", "zone"); s.append(icon(z[1]), el("span", "", z[0])); return s; }
   function cardFor(t, i) {
     const c = el("div", "card"); c.tabIndex = 0; c.setAttribute("role", "button"); c.setAttribute("aria-label", t.title); c.dataset.task = t.id; c.dataset.agent = t.agent || ""; c.style.animationDelay = Math.min(i * 30, 300) + "ms";
-    if (canWrite && matchMedia("(pointer: fine)").matches) { c.draggable = true; c.ondragstart = (e) => { e.dataTransfer.setData("text/plain", t.id); e.dataTransfer.effectAllowed = "move"; c.classList.add("dragging"); }; c.ondragend = () => c.classList.remove("dragging"); }
+    if ((canWrite || window.__ops) && matchMedia("(pointer: fine)").matches) { c.draggable = true; c.ondragstart = (e) => { e.dataTransfer.setData("text/plain", t.id); e.dataTransfer.effectAllowed = "move"; c.classList.add("dragging"); }; c.ondragend = () => c.classList.remove("dragging"); }
     const e = epicOf(t); if (e) c.append(el("span", "ep", String(e.n || "").padStart(2, "0") + " · " + e.title));
     const atts = Array.isArray(t.attachments) ? t.attachments : []; const img = atts.find(isImg); if (img) { const th = el("div", "thumb"); const i = el("img"); i.src = blobUrl(img); i.alt = ""; i.loading = "lazy"; th.append(i); c.append(th); }
     if (norm(t.status) === "beta" && !(t.feedback || []).length) { const af = el("span", "askfb"); af.append(el("span", "", "Claude a terminat · dă feedback")); c.append(af); }
@@ -1966,13 +2025,14 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
       const mo = el("button", "more", "⋯"); mo.type = "button"; mo.setAttribute("aria-label", "Mută task-ul"); mo.setAttribute("aria-haspopup", "menu"); mo.onclick = (e) => { e.stopPropagation(); openMenu(t, mo); }; a.append(mo);
       c.append(a);
     }
+    if (window.__opsPill) window.__opsPill(c, t);
     return c;
   }
   function renderBoard(box) {
     const tasks = visible(), b = el("div", "board");
     for (const [k, label] of STATUS.filter(([k]) => UI.status ? k === UI.status : (UI.showDone || k !== "dropped"))) {
       const list = tasks.filter((t) => norm(t.status) === k).sort(byPri), lane = el("div", "lane" + (k === "in-progress" ? " claude" : k === "beta" ? " claude-done" : k === "on-beta" ? " on-beta" : ""));
-      if (canWrite) { lane.ondragover = (e) => { e.preventDefault(); lane.classList.add("drop-ok"); }; lane.ondragleave = (e) => { if (!lane.contains(e.relatedTarget)) lane.classList.remove("drop-ok"); }; lane.ondrop = (e) => { e.preventDefault(); lane.classList.remove("drop-ok"); const t = S.tasks.find((x) => x.id === e.dataTransfer.getData("text/plain")); if (t && norm(t.status) !== k) confirmMove(t, k); }; }
+      lane.dataset.st = k; if (canWrite || window.__ops) { lane.ondragover = (e) => { e.preventDefault(); lane.classList.add("drop-ok"); }; lane.ondragleave = (e) => { if (!lane.contains(e.relatedTarget)) lane.classList.remove("drop-ok"); }; lane.ondrop = (e) => { e.preventDefault(); lane.classList.remove("drop-ok"); const t = S.tasks.find((x) => x.id === e.dataTransfer.getData("text/plain")); if (t && norm(t.status) !== k) confirmMove(t, k); }; }
       const h = el("div", "lane-h"); const sp = el("span", "cl");
       if (k === "in-progress" || k === "beta") { const cb = el("span", "claude-badge sm" + (k === "in-progress" ? " spinning" : " done")); cb.setAttribute("aria-hidden", "true"); cb.innerHTML = '<svg><use href="#i-claude"/></svg>'; sp.append(cb); } else sp.append(el("i", "c-" + k));
       sp.append(el("span", "", label)); h.append(sp, el("span", "mono muted", String(list.length))); lane.append(h, el("div", "lane-sub", LANE_SUB[k] || ""));
@@ -3119,9 +3179,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
     if (pend.length) { const p = el("div", "ct-pend"); pend.slice(0, 3).forEach((x) => { const r = el("span", "ct-pr"); r.append(stPill(x.status), el("span", "", "Cerere: " + (CK_LAB[x.payload.field] || x.payload.field || "modificare"))); r.title = x.text || ""; p.append(r); }); c.append(p); }
     // the full checklist, notes, the swatch: opens in place
     const more = el("div", "ct-more"), inn = el("div", "ct-in");
-    const dl = el("dl", "ct-dl");
-    for (const [k, l, ic] of CK) { const [s, val] = ckState(d, k), dt = el("dt"), dd = el("dd"); dt.append(el("i", "ckd " + s), icon(ic), el("span", "", l)); dd.textContent = val; dl.append(dt, dd); }
-    inn.append(dl);
+    inn.append(ctChecklist(d)); const sp = ctSeo(d); if (sp) inn.append(sp);
     if (hx) { const sw = el("button", "ct-sw"); sw.type = "button"; sw.title = "Copiază culoarea"; sw.append(el("i"), el("code", "", hx.toUpperCase())); sw.querySelector("i").style.background = hx; sw.onclick = async () => { try { await navigator.clipboard.writeText(hx); toast("Culoarea " + hx + " e copiată."); } catch { toast("Selectează codul și copiază-l.", "err"); } }; inn.append(sw); }
     const meta = [d.kind, d.industry, ...(Array.isArray(d.categories) ? d.categories : [])].filter(Boolean);
     if (meta.length) { const t = el("div", "cp-ch"); meta.forEach((x) => t.append(el("span", "", x))); inn.append(t); }
@@ -3138,7 +3196,78 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
     return c;
   }
   // "Cere o modificare": field, new value, attachments (assets), then one inbox command; the card shows it as pending
-  function ctRequest(d, from, preset) {
+  // ---------- r6: the checklist with a "Ghid" per item (meta/content.guides) and the SEO panel (doc.seo); every field optional ----------
+  function ctChecklist(d) {
+    const G = (S.contentMeta && S.contentMeta.guides && typeof S.contentMeta.guides === "object") ? S.contentMeta.guides : {}, w = el("div", "ct-rows");
+    for (const [k, l, ic] of CK) {
+      const [st, val] = ckState(d, k), row = el("div", "ct-row " + st), h = el("div", "ct-rh");
+      h.append(el("i", "ckd " + st), icon(ic), el("span", "ct-rl", l), el("span", "ct-rv", val));
+      if (st !== "ok" && (canWrite || window.__ops)) { const b = el("button", "ct-ask"); b.type = "button"; b.title = "Cere modificarea pentru " + l; b.append(icon("i-send")); b.onclick = () => ctRequest(d, b, k); h.append(b); }
+      row.append(h);
+      const g = G[k] && typeof G[k] === "object" ? G[k] : null;
+      if (g && (g.done || g.why || g.send)) {
+        const det = el("details", "ct-guide"), sm = el("summary"); sm.append(icon("i-down2"), el("span", "", "Ghid"));
+        det.append(sm);
+        for (const [lab, txt] of [["Complet înseamnă", g.done], ["De ce contează", g.why], ["Ce trimiți", g.send]]) if (txt) { const p = el("p"); p.append(el("b", "", lab + ": "), String(txt)); det.append(p); }
+        row.append(det);
+      }
+      w.append(row);
+    }
+    return w;
+  }
+  const SEV = { high: [0, "Mare", "bad"], med: [1, "Medie", "warn"], low: [2, "Mică", "low"] };
+  const meterState = (n, lo, hi) => (!n ? "bad" : n >= lo && n <= hi ? "ok" : (n >= lo - 20 && n <= hi + 15) ? "warn" : "bad");
+  function ctSeo(d) {
+    const o = d.seo && typeof d.seo === "object" ? d.seo : null; if (!o) return null;
+    const box = el("section", "ct-seo"), head = el("div", "seo-h"), sc = Number(o.score);
+    head.append(icon("i-search"), el("b", "", "SEO"));
+    if (Number.isFinite(sc)) { const r = el("span", "ct-ring sm " + (sc >= 80 ? "ok" : sc >= 50 ? "warn" : "bad")); r.title = "Scor SEO " + sc + "/100"; r.innerHTML = '<svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15.5" class="tr"/><circle cx="18" cy="18" r="15.5" class="fg" pathLength="100" style="stroke-dasharray:0 100"/></svg><b>' + Math.round(sc) + '</b>'; requestAnimationFrame(() => requestAnimationFrame(() => { const f = r.querySelector(".fg"); if (f) f.style.strokeDasharray = Math.max(0, Math.min(100, sc)) + " 100"; })); head.append(r); }
+    box.append(head);
+    // the Google-style snippet, EN / RO
+    const hasRo = !!(o.roTitle || o.roDesc), tabs = el("div", "seo-tabs"), snip = el("div", "seo-snip"); let lang = "en";
+    const paint = () => {
+      const t = String((lang === "ro" ? o.roTitle : o.title) || ""), ds = String((lang === "ro" ? o.roDesc : o.desc) || ""), u = siteUrl(lang === "ro" ? d.urls && d.urls.ro : d.urls && d.urls.en) || o.canonical || SITE;
+      const crumbs = String(u).replace(/^https?:\/\//, "").replace(/\/$/, "").split("/").join(" › ");
+      snip.replaceChildren(el("div", "sn-u", crumbs), el("div", "sn-t", t || "Fără titlu"), el("div", "sn-d", ds || "Fără descriere."));
+      const tl = t.length || Number(lang === "en" ? o.titleLen : 0) || 0, dl = ds.length || Number(lang === "en" ? o.descLen : 0) || 0;
+      const m = (lab, n, lo, hi, max) => { const w = el("div", "seo-m " + meterState(n, lo, hi)), bar = el("span", "bar"), f = el("i"); f.style.width = Math.min(100, n / max * 100) + "%"; bar.append(f); w.append(el("span", "", lab), el("b", "", n + " / " + (lo === 1 ? "≤" + hi : lo + "–" + hi)), bar); return w; };
+      snip.append(m("Titlu", tl, 1, 60, 80), m("Descriere", dl, 140, 160, 190));
+      if (lang === "ro" && o.sameAsEn) snip.append(el("div", "seo-warn", "RO e identic cu EN: are nevoie de traducere."));
+    };
+    for (const L of ["en", "ro"]) { const b = el("button", "", L.toUpperCase()); b.type = "button"; b.setAttribute("aria-pressed", String(L === lang)); b.disabled = L === "ro" && !hasRo; b.onclick = () => { lang = L; for (const x of tabs.children) x.setAttribute("aria-pressed", String(x === b)); paint(); }; tabs.append(b); }
+    box.append(tabs, snip); paint();
+    // the issues, most severe first
+    const iss = (Array.isArray(o.issues) ? o.issues.filter((x) => x && typeof x === "object") : []).slice().sort((a, b) => ((SEV[a.severity] || [3])[0]) - ((SEV[b.severity] || [3])[0]));
+    if (iss.length) {
+      const ul = el("div", "seo-iss");
+      for (const x of iss) {
+        const sv = SEV[x.severity] || [3, "—", "low"], it = el("div", "si " + sv[2]), top = el("div", "si-t");
+        top.append(el("span", "si-sev", sv[1]), el("b", "", String(x.label || x.key || "Problemă")));
+        it.append(top);
+        if (x.why) it.append(el("div", "si-why", String(x.why)));
+        if (x.fix) {
+          const fx = el("div", "si-fix"), code = el("code", "", String(x.fix)), cp = el("button", "btn sm ghost"); cp.type = "button"; cp.append(icon("i-copy"), el("span", "", "Copiază"));
+          cp.onclick = async () => { try { await navigator.clipboard.writeText(String(x.fix)); toast("Textul propus e copiat."); } catch { toast("Selectează textul și copiază-l.", "err"); } };
+          fx.append(code, cp); it.append(fx);
+        }
+        if (canWrite || window.__ops) { const rq = el("button", "btn sm k"); rq.type = "button"; rq.append(icon("i-send"), el("span", "", "Cere această corectare")); rq.onclick = () => ctRequest(d, rq, "seo", (x.label ? x.label + ": " : "") + String(x.fix || x.why || "")); it.append(rq); }
+        ul.append(it);
+      }
+      box.append(ul);
+    } else if (Number.isFinite(sc)) box.append(el("div", "seo-ok", "Nicio problemă SEO găsită."));
+    // the facts
+    const facts = el("div", "seo-facts"), F = (lab, v, ok, tip) => { const c = el("span", "sf " + (ok === true ? "ok" : ok === false ? "bad" : "")); c.append(el("span", "", lab), el("b", "", v)); if (tip) c.title = tip; facts.append(c); };
+    if (o.h1Count != null || o.h1) F("H1", String(o.h1Count ?? (o.h1 ? 1 : 0)), Number(o.h1Count ?? (o.h1 ? 1 : 0)) === 1, o.h1 ? String(o.h1) : "");
+    if (o.hreflang != null) F("hreflang", o.hreflang ? "da" : "nu", !!o.hreflang, Array.isArray(o.hreflang) ? o.hreflang.join(", ") : typeof o.hreflang === "string" ? o.hreflang : "");
+    if (o.ogImage != null) F("OG image", o.ogImage ? "da" : "nu", !!o.ogImage, typeof o.ogImage === "string" ? o.ogImage : "");
+    if (o.jsonLd != null) { const j = Array.isArray(o.jsonLd) ? o.jsonLd : []; F("JSON-LD", j.length ? String(j.length) : "0", j.length > 0, j.join(", ")); }
+    if (o.imagesNoAlt != null) F("fără alt", String(o.imagesNoAlt) + (o.imagesTotal != null ? " / " + o.imagesTotal : ""), Number(o.imagesNoAlt) === 0, "imagini fără text alternativ");
+    if (o.wordCount != null) F("cuvinte", String(o.wordCount), Number(o.wordCount) >= 300 ? true : null);
+    if (o.internalLinks != null) F("linkuri interne", String(o.internalLinks), Number(o.internalLinks) >= 2 ? true : null);
+    if (facts.children.length) box.append(facts);
+    return box;
+  }
+  function ctRequest(d, from, preset, presetValue) {
     closeAgentModal(true);
     const slug = d.slug || d.id, sc = el("div", "am-scrim"), m = el("div", "am ctm"); m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true"); m.setAttribute("aria-labelledby", "ctm-h");
     if (okHex(d.brandColor)) m.style.setProperty("--acc", d.brandColor);
@@ -3147,7 +3276,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
     const body = el("form", "am-b ctf"); body.noValidate = true;
     const sel = el("select", "inp"); sel.id = "ctf-field"; CK_FIELD.forEach(([v, l]) => { const o = el("option", "", l); o.value = v; sel.append(o); });
     const firstGap = preset || CK.map(([k]) => k).find((k) => ckState(d, k)[0] !== "ok"); if (firstGap) sel.value = firstGap;
-    const val = el("textarea", "inp"); val.id = "ctf-val"; val.rows = 4; val.placeholder = "Valoarea nouă sau ce trebuie schimbat. Ex.: #1A6BFF ca și culoare de brand; titlul RO corect e …";
+    const val = el("textarea", "inp"); val.id = "ctf-val"; val.rows = 4; if (presetValue) val.value = presetValue; val.placeholder = "Valoarea nouă sau ce trebuie schimbat. Ex.: #1A6BFF ca și culoare de brand; titlul RO corect e …";
     const f1 = el("div", "field"), l1 = el("label", "", "Ce schimbăm"); l1.htmlFor = "ctf-field"; f1.append(l1, sel);
     const f2 = el("div", "field"), l2 = el("label", "", "Valoarea nouă / descriere"); l2.htmlFor = "ctf-val"; f2.append(l2, val);
     body.append(f1, f2);

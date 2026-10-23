@@ -35,3 +35,28 @@ body.ops-member #core, body.ops-member #sec, body.ops-member .box:has(#approvals
 .ops-imp:has(input:checked) { border-color: var(--c-p0, #f27261); box-shadow: 0 0 0 2px var(--c-p0, #f27261); }
 #bug .lvl { display: none !important; }
 #bug-hint { display: none !important; }
+
+/* board drag in the mirror: the card snaps back with a nudge (the move goes to Claude as a request) */
+@keyframes opsSnap { 0% { transform: translateX(0); } 25% { transform: translateX(10px) rotate(1.5deg); } 50% { transform: translateX(-6px) rotate(-1deg); } 75% { transform: translateX(3px); } 100% { transform: none; } }
+.card.ops-snap { animation: opsSnap .55s cubic-bezier(.34, 1.56, .64, 1); border-color: var(--ink); box-shadow: 0 0 0 2px var(--yellow, #f8d13b); }
+.board .card { -webkit-touch-callout: none; }
+.card.ops-lift { opacity: .35; }
+.ops-ghost { position: fixed; z-index: 60; pointer-events: none; margin: 0; transform: rotate(-2deg) scale(1.03); box-shadow: 0 18px 40px rgba(0,0,0,.25); border: 1px solid var(--ink); opacity: .96; }
+body.ops-dragging, body.ops-dragging * { user-select: none; -webkit-user-select: none; }
+@media (prefers-reduced-motion: reduce) { .card.ops-snap { animation: none; } }
+
+/* optimistic task edits: "în procesare" until a snapshot confirms; a tick; amber when late; roll back when rejected */
+.ops-pill { display: inline-flex; align-items: center; gap: 6px; font: 600 10.5px/1 var(--f-m, ui-monospace, monospace); letter-spacing: .04em; text-transform: uppercase; color: var(--muted, #5e6168); background: var(--soft-bg, #fafafa); border: 1px solid var(--g2, #dcdcdc); border-radius: 999px; padding: 3px 8px 3px 6px; cursor: help; white-space: nowrap; }
+.ops-dots { display: inline-flex; gap: 2px; }
+.ops-dots b { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: opsDot 1.2s ease-in-out infinite; }
+.ops-dots b:nth-child(2) { animation-delay: .15s; } .ops-dots b:nth-child(3) { animation-delay: .3s; }
+@keyframes opsDot { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-2px); } }
+.ops-pill.late { color: #7a4a00; background: #fdf0d5; border-color: #e9a23b; }
+.ops-pill.done { color: #0d5a1f; background: var(--t-green, #dff5e3); border-color: var(--c-done, #4cc462); animation: opsDone 2.6s ease forwards; cursor: default; }
+@keyframes opsDone { 0% { opacity: 0; transform: scale(.7); } 12% { opacity: 1; transform: scale(1.08); } 20% { transform: none; } 75% { opacity: 1; } 100% { opacity: 0; } }
+.card.ops-pending { border-style: dashed; border-color: var(--g3, #8a8d93); }
+.card.ops-back { animation: opsBack .6s cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes opsBack { 0% { transform: translateX(28px) rotate(1.5deg); opacity: .4; } 60% { transform: translateX(-6px); opacity: 1; } 100% { transform: none; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ops-pill.late { color: #f5c46b; background: #3a2a10; } :root:not([data-theme="light"]) .ops-pill.done { color: #9be3aa; } }
+:root[data-theme="dark"] .ops-pill.late { color: #f5c46b; background: #3a2a10; } :root[data-theme="dark"] .ops-pill.done { color: #9be3aa; }
+@media (prefers-reduced-motion: reduce) { .ops-dots b, .card.ops-back { animation: none; } }
