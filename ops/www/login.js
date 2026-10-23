@@ -5,7 +5,17 @@
   const $ = (id) => document.getElementById(id);
   const lg = $("lg"), pill = $("pill"), email = $("email"), code = $("code"), dots = [...$("dots").children], msgEl = $("msg");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  try { const t = localStorage.getItem("ops-theme"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch {}
+  // the theme: same key as the dashboard ("ops-theme"), so the choice carries over after login
+  const THEME_K = "ops-theme", darkMQ = matchMedia("(prefers-color-scheme: dark)");
+  let themePick = null; try { const v = localStorage.getItem(THEME_K); themePick = v === "light" || v === "dark" ? v : null; } catch {}
+  const isDark = () => (themePick ? themePick === "dark" : darkMQ.matches);
+  function applyTheme() {
+    if (themePick) document.documentElement.dataset.theme = themePick; else delete document.documentElement.dataset.theme;
+    const b = $("thsw"), d = isDark(); b.classList.toggle("on", d); b.setAttribute("aria-checked", String(d));
+    b.setAttribute("aria-label", d ? "Temă întunecată, pornită. Comută pe luminos" : "Temă luminoasă. Comută pe întunecat");
+  }
+  applyTheme(); darkMQ.addEventListener && darkMQ.addEventListener("change", applyTheme);
+  $("thsw").onclick = () => { themePick = isDark() ? "light" : "dark"; try { localStorage.setItem(THEME_K, themePick); } catch {} applyTheme(); };
   const RESEND = 60; // seconds between two codes from this page (the server also limits per email and per IP)
   let state = "", sentTo = "", busy = false, cool = 0, coolT = 0;
 
@@ -56,7 +66,7 @@
   function toCode() { code.value = ""; draw(); setState("code"); setTimeout(() => code.focus({ preventScroll: true }), reduced ? 0 : 420); }
   function draw() {
     const n = code.value.length;
-    dots.forEach((d, i) => { d.classList.toggle("on", i < n); d.classList.toggle("cur", i === n && document.activeElement === code); });
+    dots.forEach((d, i) => { d.textContent = code.value[i] || ""; d.classList.toggle("on", i < n); d.classList.toggle("cur", i === n && document.activeElement === code); });
   }
   code.addEventListener("input", () => {
     const v = code.value.replace(/\D/g, "").slice(0, 6);
