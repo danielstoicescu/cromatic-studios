@@ -27,8 +27,8 @@ cut("  // ---------- 7 · the fountain at night", "  // ---------- 2-3 (D5)");
 s = s.replace(/  Cm\.shape\("ground"[^\n]*\n/, "");
 // D8 (Daniel): the map's two modes named as the cuts land: "Bird's eye" on the city from high, "Drive mode" on the
 // street at Steam: small yellow pills (the house's url pill, at the tag size), top-left, in before the shot's card
-const D8 = ["d8", "d9", "d10"].includes(process.env.STORY), D10 = process.env.STORY === "d10";
-if (D8) rep("  clip(drawCard(Cm, card(\"d19-map\"), T2), \"zoom\");", `  for (const [text, shot, out] of [["Bird's eye", "bird", "bird+56"], ["Drive mode", "steam", process.env.STORY === "d10" ? "steam+22" : "steam+42"]]) { const c = card("d14-end"), U = c.layout.url, size = 48, tr = -0.02, w = setLine(KC.T, text, size, tr).width, padX = 44, h = 76.8; c.id = "d8-mode-" + shot; c.layout = { url: { ...U, text, size, tracking: tr, w: w + 2 * padX, h, centre: [80 + (w + 2 * padX) / 2, 300 + h / 2], textX: 80 + padX, baseline: 300 + h / 2 + size * 0.36, keyline: 5, shadow: [8, 11], tilt: -4 } }; c.timing.cues = { urlIn: shot + "+2", out }; drawCard(Cm, c, T2); }
+const D8 = ["d8", "d9", "d10", "d11"].includes(process.env.STORY), D10 = ["d10", "d11"].includes(process.env.STORY), D11 = process.env.STORY === "d11";
+if (D8) rep("  clip(drawCard(Cm, card(\"d19-map\"), T2), \"zoom\");", `  for (const [text, shot, out] of [["Bird's eye", "bird", "bird+56"], ["Drive mode", "steam", ["d10", "d11"].includes(process.env.STORY) ? "steam+22" : "steam+42"]]) { const c = card("d14-end"), U = c.layout.url, size = 48, tr = -0.02, w = setLine(KC.T, text, size, tr).width, padX = 44, h = 76.8; c.id = "d8-mode-" + shot; c.layout = { url: { ...U, text, size, tracking: tr, w: w + 2 * padX, h, centre: [80 + (w + 2 * padX) / 2, 300 + h / 2], textX: 80 + padX, baseline: 300 + h / 2 + size * 0.36, keyline: 5, shadow: [8, 11], tilt: -4 } }; c.timing.cues = { urlIn: shot + "+2", out }; drawCard(Cm, c, T2); }
   clip(drawCard(Cm, card("d19-map"), T2), "zoom");`);
 // D10 (Daniel on D9): the descent 0.4 s shorter and the street at Steam 0.6 s shorter (the car arrives and parks as the
 // camera settles, then the place card, the knocks and the page as before, sooner): 1.0 s off the film from Steam on
@@ -47,6 +47,18 @@ rep("const clip = (r, shot) =>", `// D7 (Daniel): "and avoid being / pulled over
 const cardD7 = (id, t) => { const c = card(id, t); if (id === "d20-pulled-over") { const ls = c.layout.blocks[0].lines, size = 60, lead = 1.1, tr = -0.025, b1 = 300 + size * 0.71; [["and avoid being", b1], ["pulled over.", b1 + size * lead]].forEach(([text, bl], i) => { const L = ls[i], w = setLine(KC.T, text, size, tr).width; Object.assign(L, { text, size, tracking: tr, lead, style: "lead", baseline: +bl.toFixed(1), width: +w.toFixed(1), box: { x: 80, y: +(bl - size * 0.76).toFixed(1), w: +w.toFixed(1), h: size } }); }); } return c; };
 const clip = (r, shot) =>`);
 rep("clip(drawCard(Cm, card(id), T2", "clip(drawCard(Cm, cardD7(id), T2");
+// D11 (Daniel on D10: "at the share button on the Steam page a problem appears"): the frame buttons over the live page were
+// a rectangle cut out of the static page screenshot (its white ground and the tail of "Shop" showed as a white box over
+// the photos), and they faded at the close's start so the capture's own RO button popped in under them. Now the layer
+// is masked to the two buttons' own shapes (Share's pill, the close circle) and the buttons ride the close inside the
+// page's pill (a matte of their own), so they go with the page.
+if (D11) {
+  rep("    btnLayer.hasMask = true; btnLayer.masksProperties = [{ inv: false, mode: \"a\", pt: { a: 0, k: poly([[bx0, 0], [W, 0], [W, by1], [bx0, by1]]) }, o: prop(100), x: prop(0), nm: \"buttons\" }];\n    btnLayer.ks.o = prop([[REAL, 100, E.hold], [CLOSE[0] - 4, 100, E.linear], [CLOSE[0], 0]]);",
+    "    btnLayer.hasMask = true; btnLayer.masksProperties = BTN_MASKS(); BTN_FIT(btnLayer);");
+  rep("    Cm.shape(\"close · matte\", [group(\"pill\", [shp(pk), fill(rgb(\"#ffffff\"))])], { ip: c0, op: c1 + 1, td: true });",
+    "    Cm.shape(\"close · buttons matte\", [group(\"pill\", [shp(pk), fill(rgb(\"#ffffff\"))])], { ip: c0, op: c1 + 1, td: true });\n    { const bl = img(\"d2-ui-opened-en\", null, { ip: c0, op: c1 + 1, nm: \"close · frame buttons\" }); bl.tt = 1; bl.hasMask = true; bl.masksProperties = BTN_MASKS(); BTN_FIT(bl); }\n    Cm.shape(\"close · matte\", [group(\"pill\", [shp(pk), fill(rgb(\"#ffffff\"))])], { ip: c0, op: c1 + 1, td: true });");
+  rep("const S = P.shots;", "const S = P.shots;\nconst BTN_MASKS = () => S[\"ui2-en\"].frameButtons.map(([x, y, w, h], i) => { const d = 1080 / 390; return { inv: false, mode: \"a\", pt: { a: 0, k: roundRect((x + w / 2) * d, (y + h / 2) * d, w * d + 2, h * d + 2, (h * d + 2) / 2) }, o: prop(100), x: prop(0), nm: \"button \" + i }; });\n// (the live capture has its own RO button where the close circle sits, a little wider: the buttons 5% larger about the circle, 8 px left, cover it)\nconst BTN_FIT = (L) => { const d = 1080 / 390, [x, y, w, h] = S[\"ui2-en\"].frameButtons[1], cx = (x + w / 2) * d, cy = (y + h / 2) * d; L.ks.a = prop([cx, cy, 0]); L.ks.p = prop([cx - 8, cy, 0]); L.ks.s = prop([105, 105, 100]); };");
+}
 rep('fs.writeFileSync(path.join(OUT, "story-d6-en.json"), s);', 'fs.mkdirSync(OUT, { recursive: true }); fs.writeFileSync(path.join(OUT, `story-${process.env.STORY || "d7"}-en.json`), s);');
 rep('story: "D6 (Daniel\'s notes on D5)"', 'story: "D7 in diorama (Daniel\'s notes on D6)"');
 fs.writeFileSync(path.join(HERE, `build-${process.env.STORY || "d7"}.gen.mjs`), "// GENERATED by make-build-d7.mjs from Iris's build-d6.mjs: do not edit\n" + s);
