@@ -7,8 +7,8 @@ const D = D5.steam.dur;
 let CAR = null, UNRIDE = null, UNDRESS = null;
 export default {
   name: "steam", size: [2160, 3840], fps: 30, duration: D, shutter: 0.5,
-  camera: cameraPath({ keys: keysOf(D5.steam.cam, D) }), cameraLimits: { maxTurn: 12, maxTurnJump: 6, maxFlip: 12 },
-  lens: { fstop: 16, scale: 1.45 },
+  camera: cameraPath({ keys: keysOf(D5.steam.cam, D).map((k) => ({ ...k, focus: [918, 16, 5640] })) }), cameraLimits: { maxTurn: 12, maxTurnJump: 6, maxFlip: 12 },
+  lens: { fstop: 32, scale: 1.45 }, // (D8: the figurines at Steam's tables sharp, only the far background soft)
   ...GOLDEN,
   shadow: { ext: 380, domeExt: 380 },
   async prepare(ctx) { await world(ctx.S, "monument"); UNRIDE = hideMapRide(ctx.S); CAR = await heroCar(ctx, { lights: false }); CAR.place(PARK[0], 1.2, PARK[2], PARK[3]); UNDRESS = dressSteam(ctx); },

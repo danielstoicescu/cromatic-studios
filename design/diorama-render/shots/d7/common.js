@@ -25,13 +25,15 @@ export async function world(S, id) {
 // the map's own ride, swapped in (its spawn played out), then posed per sub-frame: place(x, y, z, yaw, pitch?, roll?)
 export async function mapRide(S, id) {
   if (S.state.vehicleId !== id) { window.__api.setVehicle(id); await wait(2600); }
-  const v = S.veh(), g = v.group, keep = { p: g.position.clone(), q: g.quaternion.clone(), vis: g.visible };
+  const v = S.veh(), g = v.group, keep = { p: g.position.clone(), q: g.quaternion.clone(), vis: g.visible, s: g.scale.clone() }, base = g.scale.x;
   g.visible = true;
   return {
     v, g,
     lights(on) { v.lampGlow?.(!!on); if (v.beams) v.beams.visible = !!on; },
-    place(x, y, z, yaw, pitch = 0, roll = 0) { g.position.set(x, y, z); g.rotation.set(0, yaw, 0); if (pitch) g.rotateX(pitch); if (roll) g.rotateZ(roll); g.updateMatrixWorld(true); },
-    restore() { g.position.copy(keep.p); g.quaternion.copy(keep.q); g.visible = keep.vis; }
+    // (D8: the city's bend scales the ground plan by s where the ride stands, never its height: the ride is drawn
+    // 1/s wider and deeper, so its proportions on screen are its own)
+    place(x, y, z, yaw, pitch = 0, roll = 0) { const k = 1 / warpScale(S, x, z); g.position.set(x, y, z); g.rotation.set(0, yaw, 0); if (pitch) g.rotateX(pitch); if (roll) g.rotateZ(roll); g.scale.set(base * k, base, base * k); g.updateMatrixWorld(true); },
+    restore() { g.position.copy(keep.p); g.quaternion.copy(keep.q); g.scale.copy(keep.s); g.visible = keep.vis; }
   };
 }
 // a soft key over the lens's shoulder, kept on a ride (night: the ride reads in its own colours)
@@ -58,3 +60,12 @@ export function dressSteam(ctx) {
 }
 // a D5 camera function sampled into keys, one a frame (the same picture at every frame: the pins stay on their places)
 export function keysOf(fn, dur, fps = 30) { const out = []; for (let i = 0, n = Math.round(dur * fps); i <= n; i++) { const t = i / fps, c = fn(t); out.push({ t, pos: c.pos, look: c.tgt, fov: c.fov }); } return out; }
+
+// the bend's local scale of the ground plan at (x, z): sqrt |det J| of the warp (conformal: the same in every direction)
+export function warpScale(S, x, z) { const V = S.K.Vector3, p = S.warpV(new V(x, 0, z)), a = S.warpV(new V(x + 1, 0, z)).sub(p), b = S.warpV(new V(x, 0, z + 1)).sub(p); return Math.sqrt(Math.abs(a.x * b.z - a.z * b.x)); }
+// the city from high in Daniel's D8 light: golden, more sun, warmer, livelier (not the grey of D7's)
+export const BRIGHT = {
+  look: { sky: { top: "#6f96ec", mid: "#e4bfd2", hor: "#ffd1a4" }, fog: { color: "#f2d6c4", near: 1800, far: 11000 }, bounce: "#e0a882", bounceK: 0.42, domeK: 0.32, domeSunGlow: 0.9, tone: 0.06, minRough: 0.7, bump: 0.03 },
+  sun: { az: 78, el: 34, color: "#ffcf96", intensity: 4.6, radius: 1.4 },
+  post: { tonemap: "neutral", exposure: 1.22, bloomK: 0.06, bloomThr: 1.0, vig: 0.18, grain: 0.02, lut: "cromatic-diorama", sat: 1.2, power: 1.08 }
+};

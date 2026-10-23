@@ -11,7 +11,7 @@ const HERE = path.resolve(new URL("..", import.meta.url).pathname), SRC = path.j
 const IRIS = "/Users/daniel.stoic/cromatic-d5/design", FR6 = path.join(IRIS, "stories/lottie/frames/d6");
 const OUT = process.argv[2] || "/Users/daniel.stoic/cromatic-ops/refs/diorama-render/d7", SHEET = process.argv.includes("--sheet");
 const FF = "/Users/daniel.stoic/node_modules/@ffmpeg-installer/darwin-arm64/ffmpeg";
-const J = JSON.parse(fs.readFileSync(path.join(SRC, "story-d7-en.json"), "utf8")), C = J.cromatic.cuts, F = J.op;
+const SD = process.env.STORY || "d7", J = JSON.parse(fs.readFileSync(path.join(SRC, `story-${SD}-en.json`), "utf8")), C = J.cromatic.cuts, F = J.op;
 const list6 = (k) => fs.readdirSync(FR6).filter((f) => f.startsWith(k + "-")).sort();
 const mine = (k) => fs.existsSync(SRC) ? fs.readdirSync(SRC).filter((f) => new RegExp(`^${k}-\\d{4}\\.png$`).test(f)).sort() : [];
 const S6 = { site: list6("site"), page: list6("page") }, M = Object.fromEntries(["bird", "zoom", "steam", "r1", "r2", "r3", "r4", "r5", "r9", "r8", "fount"].map((k) => [k, mine(k)]));
@@ -36,7 +36,7 @@ await p.route("http://d7.local/**", (r) => {
   const u = decodeURIComponent(new URL(r.request().url()).pathname);
   if (u === "/") return r.fulfill({ status: 200, contentType: "text/html", body: `<!doctype html><html><head><style>html,body{margin:0;background:transparent;overflow:hidden}#l{position:fixed;inset:0}canvas{display:block;width:100%!important;height:100%!important}</style></head><body><div id="l"></div><script src="/lottie.js"></script><script>const a=lottie.loadAnimation({container:document.getElementById("l"),renderer:"canvas",loop:false,autoplay:false,path:"/story-d/story-d7-en.json",rendererSettings:{clearCanvas:true,preserveAspectRatio:"xMidYMid meet"}});window.anim=a;const sm=()=>{try{const c=a.renderer.canvasContext;c.imageSmoothingEnabled=true;c.imageSmoothingQuality="high"}catch(e){}};a.addEventListener("DOMLoaded",sm);a.addEventListener("loaded_images",()=>{window.ready=1});window.go=(f)=>{sm();a.goToAndStop(f,true)};</script></body></html>` });
   if (u === "/lottie.js") return r.fulfill({ status: 200, contentType: "text/javascript", body: fs.readFileSync(path.join(IRIS, "intro-lottie/_lib/lottie_light_canvas.min.js")) });
-  if (u === "/story-d/story-d7-en.json") return r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(J) });
+  if (u === "/story-d/story-d7-en.json" || u === `/story-d/story-${SD}-en.json`) return r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(J) });
   if (u.startsWith("/story-d/images/")) { const f = path.join(IRIS, "stories/lottie/story-d/images", u.slice(16)); if (fs.existsSync(f)) return r.fulfill({ status: 200, body: fs.readFileSync(f), contentType: f.endsWith(".png") ? "image/png" : "image/webp" }); }
   r.fulfill({ status: 404, body: "" });
 });
@@ -54,11 +54,11 @@ for (let i = 0; i < n; i++) {
 }
 await br.close();
 fs.mkdirSync(OUT, { recursive: true });
-if (!SHEET) { const r = spawnSync(FF, ["-y", "-v", "error", "-framerate", "30", "-i", path.join(TMP, "f%05d.png"), "-c:v", "libx264", "-preset", "slow", "-crf", "16", "-pix_fmt", "yuv420p", "-profile:v", "high", "-movflags", "+faststart", path.join(OUT, "story-d7-en.mp4")], { stdio: "inherit" }); if (r.status) process.exit(r.status); }
+if (!SHEET) { const r = spawnSync(FF, ["-y", "-v", "error", "-framerate", "30", "-i", path.join(TMP, "f%05d.png"), "-c:v", "libx264", "-preset", "slow", "-crf", "16", "-pix_fmt", "yuv420p", "-profile:v", "high", "-movflags", "+faststart", path.join(OUT, `story-${SD}-en.mp4`)], { stdio: "inherit" }); if (r.status) process.exit(r.status); }
 const w = 216, h = 384, cols = 10, rows = Math.ceil(PICKS.length / cols), lab = 50;
 const tiles = await Promise.all(PICKS.map(([, i]) => sharp(path.join(TMP, `f${String(i).padStart(5, "0")}.png`)).resize(w, h).toBuffer()));
 const esc = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-const svg = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${cols * (w + 14) + 14}" height="${rows * (h + lab + 14) + 84}"><text x="14" y="50" font-family="Helvetica" font-weight="700" font-size="34" fill="#FBFAF5">Story D7 in diorama · ${(F / 60).toFixed(1)} s${SHEET ? " · draft" : ""}</text>${PICKS.map(([l], k) => `<text x="${14 + (k % cols) * (w + 14)}" y="${84 + Math.floor(k / cols) * (h + lab + 14) + h + 30}" font-family="Helvetica" font-size="20" fill="#cfcfd6">${esc(l)}</text>`).join("")}</svg>`);
-await sharp({ create: { width: cols * (w + 14) + 14, height: rows * (h + lab + 14) + 84, channels: 3, background: "#111114" } }).composite([...tiles.map((b, k) => ({ input: b, left: 14 + (k % cols) * (w + 14), top: 64 + Math.floor(k / cols) * (h + lab + 14) })), { input: svg, left: 0, top: 0 }]).jpeg({ quality: 88 }).toFile(path.join(OUT, SHEET ? "contact-sheet-d7-draft.jpg" : "contact-sheet-d7.jpg"));
+const svg = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${cols * (w + 14) + 14}" height="${rows * (h + lab + 14) + 84}"><text x="14" y="50" font-family="Helvetica" font-weight="700" font-size="34" fill="#FBFAF5">Story ${SD.toUpperCase()} in diorama · ${(F / 60).toFixed(1)} s${SHEET ? " · draft" : ""}</text>${PICKS.map(([l], k) => `<text x="${14 + (k % cols) * (w + 14)}" y="${84 + Math.floor(k / cols) * (h + lab + 14) + h + 30}" font-family="Helvetica" font-size="20" fill="#cfcfd6">${esc(l)}</text>`).join("")}</svg>`);
+await sharp({ create: { width: cols * (w + 14) + 14, height: rows * (h + lab + 14) + 84, channels: 3, background: "#111114" } }).composite([...tiles.map((b, k) => ({ input: b, left: 14 + (k % cols) * (w + 14), top: 64 + Math.floor(k / cols) * (h + lab + 14) })), { input: svg, left: 0, top: 0 }]).jpeg({ quality: 88 }).toFile(path.join(OUT, SHEET ? `contact-sheet-${SD}-draft.jpg` : `contact-sheet-${SD}.jpg`));
 fs.rmSync(TMP, { recursive: true, force: true });
 console.log(SHEET ? "sheet" : "mp4 + sheet", "->", OUT);

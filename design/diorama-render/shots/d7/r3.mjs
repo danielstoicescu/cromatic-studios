@@ -8,9 +8,10 @@ const k = 1.8 / D, dacia = (t) => ({ x: 2079, z: 4440 + 150 * t * k });
 const f1 = (t) => { const tt = t * k, X = (u) => lerp(2079, 2053, sm(clamp((u - 0.25) / 0.35)) * (1 - sm(clamp((u - 1.3) / 0.4)))), h = 0.01, dx = (X(tt + h) - X(tt - h)) / (2 * h); return { x: X(tt), z: 4300 + 265 * tt, yaw: Math.atan2(dx, 265) }; };
 let CAR, RIDE, KEY, UNSKY, LABEL;
 export default {
-  name: "r3", size: [2160, 3840], fps: 30, duration: D, shutter: 0.5, shift: [0, 0.06],
-  camera: whip(cameraPath({ keys: [0.15, D / 2, D].map((t) => ({ t, pos: [2062, 8, 4890 - 6 * (t / D)], look: [2068, 8, 4450], fov: 22 - 0.6 * (t / D), focus: [2075, 8, dacia(t).z + 20] })) }), { at: "start", deg: 50, dur: 0.15 }),
-  lens: { fstop: 11, scale: 1.45 }, ...NIGHT, shadow: { centre: [2070, 0, 4600], ext: 420 },
+  name: "r3", size: [2160, 3840], fps: 30, duration: D, shutter: 0.15, shift: [0, 0.06], // (D8: less blur on the cars themselves)
+  camera: whip(cameraPath({ keys: [0.15, D / 2, D].map((t) => ({ t, pos: [2062, 8, 4890 - 6 * (t / D)], look: [2068, 8, 4450], fov: 22 - 0.6 * (t / D), focus: [2070, 8, (dacia(t).z + f1(t).z) / 2 + 10] })) }), { at: "start", deg: 50, dur: 0.15 }),
+  lens: { fstop: 32, scale: 1.45 }, ...NIGHT, // (D8: f/32: both cars sharp on the long lens, the far boulevard still soft)
+  shadow: { centre: [2070, 0, 4600], ext: 420 },
   async prepare(ctx) {
     const { S } = ctx; await world(S, "nightlife"); RIDE = await mapRide(S, "f1"); RIDE.lights(true);
     CAR = await heroCar(ctx, { lights: true, scale: 13 }); CAR.setBeam(5000); KEY = followKey(ctx, 700, 320); UNSKY = nightSky(ctx);
