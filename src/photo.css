@@ -125,3 +125,14 @@ body.photo-on canvas.gl { touch-action: none; }
 /* on a phone the switch sits between the bar and the speaker: Postcard is its icon alone there (its name in its label) */
 body.n2-phone .nav2-ui .n2-views .n2-postcard b { display: none; }
 body.n2-phone .nav2-ui .n2-views .n2-postcard { padding: 0 12px; }
+/* v3 (Daniel: Postcard has to stand out): a light grey pill of its own in the switch, the coloured card icon, a soft
+   light passing over it now and then and a gentle ring; still for reduced motion */
+.nav2-ui .n2-views .n2-postcard { position: relative; overflow: hidden; background: #E9E7E1; margin-left: 2px; }
+.nav2-ui .n2-views .n2-postcard:not(:disabled):hover { background: #FED012; }
+.nav2-ui .n2-views .n2-postcard::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, .85) 48%, transparent 66%); transform: translateX(-120%); animation: n2pcShine 6.5s ease-in-out 2.5s infinite; }
+.nav2-ui .n2-views .n2-postcard svg { position: relative; z-index: 1; animation: n2pcNudge 6.5s ease-in-out 2.5s infinite; transform-origin: 50% 60%; }
+.nav2-ui .n2-views .n2-postcard b { position: relative; z-index: 1; }
+@keyframes n2pcShine { 0%, 62% { transform: translateX(-120%); } 82%, 100% { transform: translateX(120%); } }
+@keyframes n2pcNudge { 0%, 64%, 84%, 100% { transform: none; } 70% { transform: rotate(-9deg) scale(1.08); } 77% { transform: rotate(5deg) scale(1.04); } }
+@media (prefers-reduced-motion: reduce) { .nav2-ui .n2-views .n2-postcard::after, .nav2-ui .n2-views .n2-postcard svg { animation: none; } }

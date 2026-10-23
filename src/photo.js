@@ -12,7 +12,7 @@
   addEventListener("keydown", (e) => keyHook && keyHook.down(e), true);
   addEventListener("keyup", (e) => keyHook && keyHook.up(e), true);
   // the interface speaks the page's language (Romanian where the page is lang="ro")
-  const RO = /^ro/i.test(document.documentElement.lang || ""), W = (en, ro) => (RO ? ro : en), W2 = W;
+  const RO = false && /^ro/i.test(document.documentElement.lang || ""), W = (en, ro) => (RO ? ro : en), W2 = W; // (Daniel: English only for now; the Romanian waits here, dormant)
   const FORMATS = [
     { id: "9:16", w: 1080, h: 1920, label: "9:16", hint: W("Story", "Story") },
     { id: "4:5", w: 1080, h: 1350, label: "4:5", hint: W("Post", "Postare") },
@@ -185,7 +185,7 @@
     const worlds = app.worlds();
     root.innerHTML = `
       <div class="pm-guide" aria-hidden="true"><i class="pm-m t"></i><i class="pm-m b"></i><i class="pm-m l"></i><i class="pm-m r"></i>
-        <div class="pm-frame"><i class="pm-third v1"></i><i class="pm-third v2"></i><i class="pm-third h1"></i><i class="pm-third h2"></i><span class="pm-wm"><small>${W("Greetings from Bucharest", "Salutări din București")}</small>cromaticstudios.com</span></div></div>
+        <div class="pm-frame"><i class="pm-third v1"></i><i class="pm-third v2"></i><i class="pm-third h1"></i><i class="pm-third h2"></i><span class="pm-wm"><small>${W("Greetings from Cromatic City", "Salutări din orașul Cromatic")}</small>cromaticstudios.com</span></div></div>
       <div class="pm-flash" aria-hidden="true"></div>
       <div class="pm-top">
         <button class="pm-btn pm-exit" type="button" aria-label="${W("Close Postcard (Esc)", "Închide Vedere (Esc)")}"><span aria-hidden="true">×</span><b>${W("Exit", "Ieși")}</b></button>
@@ -423,8 +423,8 @@
       c.fillStyle = "rgba(255,255,255,.88)"; c.fillText(txt, W - pad, H - pad);
       const tw = c.measureText(txt).width; c.shadowColor = "transparent"; c.fillStyle = "#FED012";
       c.beginPath(); c.arc(W - pad - tw - fs * 0.55, H - pad - fs * 0.34, fs * 0.22, 0, Math.PI * 2); c.fill();
-      // the postcard's line over it (Daniel: a discreet "Greetings from Bucharest"): small letter-spaced capitals
-      const gs = Math.round(fs * 0.56), gt = W2("GREETINGS FROM BUCHAREST", "SALUTĂRI DIN BUCUREȘTI");
+      // the postcard's line over it (Daniel: a discreet "Greetings from Cromatic City"): small letter-spaced capitals
+      const gs = Math.round(fs * 0.56), gt = W2("GREETINGS FROM CROMATIC CITY", "SALUTĂRI DIN ORAȘUL CROMATIC");
       c.font = `700 ${gs}px CromaticSans, "Helvetica Neue", Arial, sans-serif`; try { c.letterSpacing = `${(gs * 0.18).toFixed(1)}px`; } catch (e) {}
       c.shadowColor = "rgba(0,0,0,.38)"; c.shadowBlur = fs * 0.45; c.fillStyle = "rgba(255,255,255,.82)";
       c.fillText(gt, W - pad + gs * 0.18, H - pad - fs * 1.32);
@@ -446,7 +446,7 @@
       $(".pm-meta").textContent = `${size[0]} × ${size[1]} ${isJ ? "JPG" : "PNG"} · ${(blob.size / 1e6).toFixed(1)} MB · ${fmt.hint} ${fmt.label}`;
       live(W("Postcard ready", "Vederea e gata")); (can ? share : dl).focus();
     }
-    $(".pm-share").addEventListener("click", async () => { if (!lastShot) return; try { await navigator.share({ files: [lastShot.file], title: W("A postcard from Bucharest", "O vedere din București"), text: "cromaticstudios.com" }); live(W("Shared", "Trimisă")); } catch (e) { if (e && e.name !== "AbortError") live(W("Sharing did not work; download it instead", "Trimiterea n-a mers; descarc-o")); } });
+    $(".pm-share").addEventListener("click", async () => { if (!lastShot) return; try { await navigator.share({ files: [lastShot.file], title: W("A postcard from Cromatic City", "O vedere din orașul Cromatic"), text: "cromaticstudios.com" }); live(W("Shared", "Trimisă")); } catch (e) { if (e && e.name !== "AbortError") live(W("Sharing did not work; download it instead", "Trimiterea n-a mers; descarc-o")); } });
     function closeSheet() { $(".pm-sheet").hidden = true; root.classList.remove("pm-sheet-on"); $(".pm-shutter").focus(); }
 
     // ---------- in and out ----------
