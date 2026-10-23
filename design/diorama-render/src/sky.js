@@ -11,10 +11,13 @@ export function paintSky({ S, K }, o = {}) {
       top: { value: new K.Color(o.top || "#0f1a4a") }, mid: { value: new K.Color(o.mid || "#3a3f8c") }, hor: { value: new K.Color(o.hor || "#f28a62") },
       lit: { value: new K.Color(o.lit || "#ffb07a") }, shade: { value: new K.Color(o.shade || "#3b3f7e") }, star: { value: new K.Color("#fff6e0") },
       glowDir: { value: new K.Vector3(Math.sin(((o.glow ?? 0) * Math.PI) / 180), 0, Math.cos(((o.glow ?? 0) * Math.PI) / 180)) },
-      cover: { value: o.clouds ?? 0.55 }, stars: { value: o.stars ?? 0.6 }, k: { value: o.k ?? 1.0 }
+      cover: { value: o.clouds ?? 0.55 }, stars: { value: o.stars ?? 0.6 }, k: { value: o.k ?? 1.0 },
+      // P1: the sun itself in the backdrop (a painted disc, a soft halo, a wide warm glow), when o.sun = { az, el, size, color }
+      sunDir: { value: o.sun ? new K.Vector3(Math.sin((o.sun.az * Math.PI) / 180) * Math.cos((o.sun.el * Math.PI) / 180), Math.sin((o.sun.el * Math.PI) / 180), Math.cos((o.sun.az * Math.PI) / 180) * Math.cos((o.sun.el * Math.PI) / 180)) : new K.Vector3(0, -1, 0) },
+      sunCol: { value: new K.Color((o.sun && o.sun.color) || "#fff1c8") }, sunSize: { value: o.sun ? o.sun.size ?? 1.6 : 0 }
     },
     vertexShader: "varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
-    fragmentShader: `uniform vec3 top, mid, hor, lit, shade, star, glowDir; uniform float cover, stars, k; varying vec3 vP;
+    fragmentShader: `uniform vec3 top, mid, hor, lit, shade, star, glowDir, sunDir, sunCol; uniform float cover, stars, k, sunSize; varying vec3 vP;
 float h(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y); }
 float fbm(vec2 p){ float a = 0.5, s = 0.0; for (int i = 0; i < 5; i++) { s += a * n(p); p = p * 2.03 + 17.1; a *= 0.5; } return s; }
@@ -39,6 +42,8 @@ void main(){
     vec2 f = fract(sp) - 0.5; st *= smoothstep(0.32, 0.0, length(f));
     c += star * st * 3.0;
   }
+  if (sunSize > 0.0) { float a = degrees(acos(clamp(dot(d, normalize(sunDir)), -1.0, 1.0)));
+    c += sunCol * (smoothstep(sunSize, sunSize * 0.82, a) * 9.0 + exp(-a / (sunSize * 2.2)) * 1.4 + exp(-a / 18.0) * 0.35); }
   gl_FragColor = vec4(c * k, 1.0); }`,
     side: K.BackSide, depthWrite: false, fog: false
   });
