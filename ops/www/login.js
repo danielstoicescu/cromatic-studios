@@ -37,12 +37,15 @@
   setState("intro");
   let opened = false;
   function open() {
-    if (opened) return; opened = true; clearTimeout(introT);
+    if (opened) return; opened = true; clearTimeout(introT); removeEventListener("load", startIntro);
     ["pointerdown", "keydown", "focusin"].forEach((t) => removeEventListener(t, open, true));
     setState("email");
     setTimeout(() => email.focus({ preventScroll: true }), reduced ? 0 : 380);
   }
-  const introT = setTimeout(open, reduced ? 0 : 1500);
+  // the beat starts once the page (and its fonts) has loaded, so the filled pill is really seen
+  let introT = 0;
+  const startIntro = () => { introT = setTimeout(open, reduced ? 0 : 1500); };
+  if (reduced || document.readyState === "complete") startIntro(); else addEventListener("load", startIntro, { once: true });
   ["pointerdown", "keydown", "focusin"].forEach((t) => addEventListener(t, open, true));
 
   // 2. the email
