@@ -57,3 +57,6 @@ export async function mirror(ctx, { centre, size = 1600, y = 0.6, opacity = 0.42
   S.scene.add(m);
   return { dispose() { m.parent?.remove(m); m.dispose?.(); } };
 }
+
+// focus that rides with the car: a plane square to the lens through the car's middle at each instant (camera: a path)
+export const focusOnCar = (cam, car) => (t) => { const c = cam.at(Math.max(cam.t0, Math.min(cam.t1, t))), p = car(t); return [p, [p[0] + c.right[0] * 10, p[1] + c.right[1] * 10, p[2] + c.right[2] * 10], [p[0] + c.up[0] * 10, p[1] + c.up[1] * 10, p[2] + c.up[2] * 10]]; };
