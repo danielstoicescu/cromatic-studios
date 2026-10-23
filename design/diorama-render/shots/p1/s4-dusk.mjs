@@ -6,7 +6,7 @@ let CAR, UN = [], KEY;
 export default {
   name: "s4", size: [2160, 3840], fps: 30, duration: 1, shutter: 0.5,
   camera: still([842, 10, 5470], [842, 9, 5780], 48, { focus: [842, 8, 5600] }),
-  lens: { fstop: 8, scale: 1.45 },
+  lens: { fstop: 22, scale: 1.45 },
   look: { sky: { top: "#2a2f7c", mid: "#c86a9e", hor: "#ff9a58" }, fog: { color: "#7a5a8a", near: 900, far: 6000 }, bounce: "#7a5070", bounceK: 0.2, domeK: 0.9, domeSunGlow: 1.2, tone: 0.06, minRough: 0.68, bump: 0.03 },
   sun: { az: 8, el: 3, color: "#ff8a58", intensity: 0.9, radius: 3 },
   shadow: { centre: [842, 0, 5650], ext: 400 },
