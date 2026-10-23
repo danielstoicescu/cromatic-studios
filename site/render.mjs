@@ -705,14 +705,35 @@ ${footer}`;
   }
 
   // TASK-122: a landing page for an ads campaign (/lp/<slug>/), from site/landings/<slug>.json through build/landings.mjs.
-  // One goal (The Core Lite), no menu, no way out but the case cards; noindex, never in the sitemap. `L` holds the page's
-  // English words (the Romanian copy is made from it by the dictionary, with the landing's own "ro" fields added to it).
-  // The same blocks as the website: the logo cards, the bento case cards, the hub cards, the chapters, the boarding pass.
+  // One goal, The Core Lite: every section ends one step closer to it, the hero, the header and the sticky bar open it,
+  // the finale sells it; the boarding pass is the quiet alternative. No menu, no way out but the case cards and the
+  // drive; noindex, never in the sitemap. `L` holds the page's English words (the Romanian copy is made from it by the
+  // dictionary, with the landing's own "ro" fields added); `L.assets` its own CSS and JS (site/landings/lp.css, lp.js),
+  // inlined. The website's blocks: the logo cards, the bento case cards, the hub cards, the chapters, the boarding pass.
+  const LP_ICONS = [
+    '<path d="M3 18h18l-2-10-4 4-3-7-3 7-4-4z"/>', // crown
+    '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>', // heart
+    '<path d="M12 3l2 7 7 2-7 2-2 7-2-7-7-2 7-2z"/>', // spark
+    '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>', // shield
+    '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>', // compass
+    '<path d="M12 21c-4 0-6-3-6-6 0-4 4-6 4-10 3 2 4 4 4 6 1-1 1.5-2 1.5-3 2 2 2.5 4 2.5 7 0 3-2 6-6 6z"/>', // flame
+    '<path d="M5 19c0-9 6-14 15-14 0 9-5 15-14 15M5 19l8-8"/>', // leaf
+    '<path d="M4 5h7v14H4zM13 5h7v14h-7z"/>', // book
+    '<circle cx="12" cy="12" r="9"/><path d="M8 14c2 2.2 6 2.2 8 0M9 9.5h.01M15 9.5h.01"/>', // smile
+    '<path d="M4 20c2 0 4-1 4-3l9-9-2-2-9 9c-2 0-3 2-3 4zM15 6l3 3"/>', // brush
+    '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>', // sun
+    '<path d="M4 11l8-7 8 7v9H4zM10 20v-5h4v5"/>' // house
+  ];
+  const lpIcon = (i) => `<svg viewBox="0 0 24 24" fill="none" stroke="#0d0c09" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${LP_ICONS[i % LP_ICONS.length]}</svg>`;
+  const lpCar = (big) => `<svg viewBox="0 0 150 62" aria-hidden="true"><path d="M10 42 14 30q2-4 8-4h22l12-14q2-2 6-2h34q4 0 7 3l13 13 18 2q8 1 9 8l1 8q0 4-4 4H12q-4 0-2-6z" fill="#FED012" stroke="#0d0c09" stroke-width="2.5" stroke-linejoin="round"/><path d="M60 14 50 26h28V14zM82 14v12h28L99 14z" fill="#bfe3f5" stroke="#0d0c09" stroke-width="2" stroke-linejoin="round"/><path d="M12 40h130" stroke="#0d0c09" stroke-width="1.5" opacity=".35"/><rect x="88" y="30" width="8" height="2.5" rx="1" fill="#0d0c09"/><circle cx="139" cy="35" r="3.2" fill="#fff" stroke="#0d0c09" stroke-width="1.5"/><rect x="10" y="32" width="4" height="5" rx="1" fill="#F65342" stroke="#0d0c09" stroke-width="1.2"/>${[38, 116].map((x) => `<g${big ? ' class="wh"' : ""}><circle cx="${x}" cy="48" r="10" fill="#0d0c09"/><circle cx="${x}" cy="48" r="4.2" fill="#cfcdc8"/><path d="M${x} 41v14M${x - 7} 48h14" stroke="#6b6860" stroke-width="1.6"/></g>`).join("")}</svg>`;
+  const lpCheck = '<svg viewBox="0 0 24 24" fill="none" stroke="#0d0c09" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   function landingPage(L, covers = {}) {
     const col = L.color || "#FED012";
-    const cta = (pos, cls = "btn btn-y") => `<a class="${cls}" href="#freebie" data-lp-cta="${pos}">${STAR}<span>${esc(L.cta)}</span></a>`;
-    const title2 = (t) => `<h2 class="ptitle">${pill(esc(t[0]), col, -1.5)}${t[1] ? ` ${pill(esc(t[1]), "#FED012", 1)}` : ""}</h2>`;
+    const freeHref = `${esc(L.freebieHref)}?src=${esc(L.slug)}`;
+    const toTool = (pos, cls = "btn btn-y", label = L.cta) => `<a class="${cls}" href="${freeHref}" data-lp-free="${pos}">${STAR}<span>${esc(label)}</span></a>`;
+    const title2 = (t, rv = true) => `<h2 class="ptitle"${rv ? " data-rv" : ""}>${pill(esc(t[0]), col, -1.5)}${t[1] ? ` ${pill(esc(t[1]), "#FED012", 1)}` : ""}</h2>`;
     const words = (t) => esc(t).split(" ").map((w, k) => `<span class="w" style="--k:${k}">${w}</span>`).join(" ");
+    const nudge = (k) => { const n = L.nudges?.[k]; return n ? `<div class="lp-nudge" data-rv><span class="lp-orb" aria-hidden="true"></span><p>${esc(n.t)}</p><a href="#freebie" data-lp-cta="nudge-${k}"><span>${esc(n.go)}</span> <i aria-hidden="true">→</i></a></div>` : ""; };
     const logoCard = (name, i) => {
       const p = PROJECTS.find((x) => x.name === name);
       const inner = p?.badge && A(p.badge) ? img(p.badge, name) : `<b class="lp-wm">${esc(name)}</b>`;
@@ -722,89 +743,110 @@ ${footer}`;
     const svcs = L.services.map((k) => SERVICE_PAGES.find((x) => x.slug === k)).filter(Boolean);
     const hidden = ["lp", "lp_v", "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"].map((n) => `<input type="hidden" name="${n}" data-lead${n === "lp" ? ` value="${esc(L.slug)}"` : ""}>`).join("");
     const form = contactForm().replace('<input class="hp"', `${hidden}\n    <input class="hp"`);
-    const proof = L.proof.length ? `<section class="sec sec-alt lp-proof" id="proof"><div class="wrap">
-      <p class="eyebrow mono">${esc(L.proofEyebrow)}</p>${title2(L.proofTitle)}
+    const fig = (x, i) => { const num = /^\d+$/.test(x.n) ? ` data-count="${x.n}"${x.from ? ` data-from="${esc(x.from)}"` : ""}` : ""; return `<p class="lp-fig" data-rv style="--i:${i}"><b${num}>${esc(x.n)}</b><span>${esc(x.t)}</span></p>`; };
+    const proof = (L.proof || []).length ? `<section class="sec sec-alt lp-proof" id="proof"><div class="wrap">
+      <p class="eyebrow mono" data-rv>${esc(L.proofEyebrow)}</p>${title2(L.proofTitle)}
       <div class="lp-proof-grid">${L.proof.map((x, i) => x.q
-        ? `<figure class="lp-q" style="--i:${i}"><blockquote><p>${esc(x.q)}</p></blockquote><figcaption class="mono">${esc(x.by)}</figcaption></figure>`
-        : `<p class="lp-fig" style="--i:${i}"><b>${esc(x.n)}</b><span>${esc(x.t)}</span></p>`).join("")}</div>
+        ? `<figure class="lp-q" data-rv style="--i:${i}"><blockquote><p>${esc(x.q)}</p></blockquote><figcaption class="mono">${esc(x.by)}</figcaption></figure>`
+        : fig(x, i)).join("")}</div>
+      ${nudge("proof")}
     </div></section>` : "";
+    const D = L.drive || {};
+    const stills = (D.stills || []).map((n) => `<img src="/onboarding/media/${esc(n)}.webp" width="1280" height="800" alt="" loading="lazy" decoding="async">`).join("");
+    const pins = L.logos.slice(0, 3).map((n, k) => `<span class="lpd-pin" style="--k:${k};left:${[14, 46, 70][k]}%;top:${[18, 34, 12][k]}%" aria-hidden="true">${esc(n)}</span>`).join("");
+    const drive = D.title ? `<section class="lp-drive" aria-labelledby="lpd-h"><div class="wrap">
+    <a class="lpd-card" href="${esc(D.href || "/?map")}" target="_blank" rel="noopener" data-lp-drive="banner" data-rv>
+      <div class="lpd-txt">
+        <p class="eyebrow mono"><span class="lpd-live" aria-hidden="true"></span><span>${esc(D.eyebrow)}</span></p>
+        <h2 class="ptitle" id="lpd-h">${pill(esc(D.title[0]), "#FED012", -1.5)} ${pill(esc(D.title[1]), col, 1)}</h2>
+        <p>${esc(D.p)}</p>
+        <span class="lpd-btn"><span>${esc(D.cta)}</span><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h8v8M13 3 3 13"/></svg></span>
+        <span class="lpd-keys" aria-hidden="true">${["W", "A", "S", "D"].map((k, i) => `<kbd style="--k:${i}">${k}</kbd>`).join("")}</span>
+        <p class="lpd-note">${esc(D.note)}</p>
+      </div>
+      <div class="lpd-scene" aria-hidden="true">
+        <div class="lpd-strip">${stills}${stills.replace(/ loading="lazy"/g, ' loading="lazy" aria-hidden="true"')}</div>
+        ${pins}
+        <div class="lpd-road"></div>
+        <div class="lpd-car"><i class="lpd-puff"></i><i class="lpd-puff"></i><i class="lpd-puff"></i>${lpCar(true)}</div>
+      </div>
+    </a></div></section>` : "";
+    const F = L.finale || {};
     const robots = '<meta name="robots" content="noindex, follow">';
-    const lpCss = `<style id="lp-css">
-.lp-hdr .hdr-in{justify-content:space-between}.lp-hdr .btn{margin-left:auto;padding:10px 18px;font-size:15px;white-space:nowrap}
-.lp-va,.lp-vb{display:block}html.lp-b .lp-va,html:not(.lp-b) .lp-vb{display:none}
-.lp-logos{display:flex;flex-wrap:wrap;gap:16px 18px;margin-top:34px}.lp-logo{display:flex;align-items:center;justify-content:center;width:170px;height:96px;padding:12px 16px}
-.lp-logo img{width:100%;height:100%;min-height:0;max-width:none;max-height:none;object-fit:contain}.lp-wm{font:900 19px/1.05 CromaticSans,system-ui,sans-serif;text-align:center;letter-spacing:-.01em}
-.lp-hero .btns{margin-top:30px}.lp-hero .hub-lead{max-width:40em}
-.lp-svc{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-top:34px}
-.lp-svc article{border:var(--line);border-radius:var(--rad);background:#fff;padding:24px 22px;box-shadow:0 4px 0 var(--ink)}
-.lp-svc h3{font-size:24px;font-weight:900;margin-bottom:10px}.lp-svc ul{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;padding:0;list-style:none}
-.lp-svc li{font:600 13px/1 'JetBrains Mono',ui-monospace,monospace;border:1.5px solid var(--ink);border-radius:999px;padding:6px 10px;background:color-mix(in srgb,var(--bc) 18%,#fff)}
-.lp-free{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;border:var(--line);border-radius:calc(var(--rad) * 1.4);background:var(--y);padding:clamp(26px,4vw,48px);box-shadow:0 6px 0 var(--ink)}
-.lp-free h2{font-size:clamp(34px,4.4vw,56px);font-weight:900;line-height:1;margin:8px 0 16px}.lp-free p{font-size:18px;max-width:32em}
-.lp-free ul{list-style:none;padding:0;margin:0;display:grid;gap:10px}.lp-free li{background:#fff;border:var(--line);border-radius:16px;padding:14px 16px;font-weight:700;font-size:17px}
-.lp-free li i{font-style:normal;font:600 12px/1 'JetBrains Mono',ui-monospace,monospace;display:block;opacity:.6;margin-bottom:6px}
-.lp-free .btn{margin-top:24px;background:#fff}.lp-note{font-size:14px!important;opacity:.7;margin-top:12px}
-.lp-proof-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:34px}
-.lp-q,.lp-fig{margin:0;border:var(--line);border-radius:var(--rad);background:#fff;padding:26px 24px;box-shadow:0 4px 0 var(--ink)}
-.lp-q blockquote{margin:0}.lp-q p{font-size:19px;line-height:1.35;font-weight:600}.lp-q figcaption{margin-top:14px;font-size:12px;opacity:.7}
-.lp-fig b{display:block;font:900 clamp(44px,5vw,64px)/1 CromaticSans,system-ui,sans-serif;color:var(--ink)}.lp-fig b::after{content:"";display:block;width:48px;height:6px;border-radius:3px;background:var(--bc);margin:12px 0}
-.lp-fig span{font-size:17px}
-@media (max-width:900px){.lp-free{grid-template-columns:1fr}}
-@media (max-width:600px){.lp-hdr .btn{padding:8px 12px;font-size:13px}.lp-hdr .btn .cupspin{display:none}.lp-logo{width:calc(50% - 9px);height:84px}.lp-wm{font-size:16px}}
-</style>`;
-    // ?v=b swaps the headline before the first paint
-    const vScript = `<script>try{if(/[?&]v=b\\b/.test(location.search))document.documentElement.classList.add("lp-b")}catch(e){}</script>`;
-    const freeHref = L.freebieHref;
-    const lpJs = `<script>(function(){var d=document,q=new URLSearchParams(location.search),v=q.get("v")==="b"?"b":"a",lp=${JSON.stringify(L.slug)},lang=d.documentElement.lang==="ro"?"ro":"en";
-var u={};q.forEach(function(val,k){if(/^utm_[a-z]+$/.test(k))u[k]=val.slice(0,120)});
-var ev=function(n,p){try{if(window.czEvent)window.czEvent(n,Object.assign({lp:lp,lp_variant:v,lp_lang:lang},p||{}))}catch(e){}};
-var fh=${JSON.stringify(freeHref)}+(${JSON.stringify(freeHref)}.indexOf("?")<0?"?":"&")+"src="+encodeURIComponent(lp);for(var k in u)fh+="&"+k+"="+encodeURIComponent(u[k]);
-d.querySelectorAll("[data-lp-free]").forEach(function(a){a.href=fh});
-d.querySelectorAll("input[data-lead]").forEach(function(i){if(i.name==="lp_v")i.value=v;else if(u[i.name])i.value=u[i.name]});
-d.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("[data-lp-cta],[data-lp-free]");if(!a)return;if(a.hasAttribute("data-lp-free"))ev("lp_freebie_start",{position:a.getAttribute("data-lp-free")});else ev("lp_cta_click",{position:a.getAttribute("data-lp-cta")})},true);
-var f=d.getElementById("bform");if(f)f.addEventListener("submit",function(){var n=(f.elements.name||{}).value,m=(f.elements.email||{}).value;if(n&&/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test((m||"").trim()))ev("lp_form_submit",{form:"boarding_pass"})})})();</script>`;
-    const h = head({ title: L.title, desc: L.desc, path: L.path, preload: `${vScript}\n${lpCss}` }).replace(/<meta name="robots"[^>]*>/, robots);
+    // ?v=b swaps the headline before the first paint; lp-js arms the reveal (no script: everything shows)
+    const vScript = `<script>(function(){var c=document.documentElement.classList;c.add("lp-js");setTimeout(function(){if(!window.__lpOk)c.remove("lp-js")},3000);try{if(/[?&]v=b\\b/.test(location.search))c.add("lp-b")}catch(e){}})();</script>`;
+    const h = head({ title: L.title, desc: L.desc, path: L.path, preload: `${vScript}\n<style id="lp-css">${L.assets?.css || ""}</style>` }).replace(/<meta name="robots"[^>]*>/, robots);
     return `${h}
 <a class="skip" href="#main">Skip to content</a>
-<header class="hdr lp-hdr"><div class="wrap hdr-in"><span class="brand">${logo ? `<img src="${logo.src}" alt="Cromatic Studios" width="${logo.w}" height="${logo.h}">` : "Cromatic Studios"}</span>${cta("header")}</div></header>
-<main id="main" class="case hub lp" style="--bc:${col};--bt:#111">
+<header class="hdr lp-hdr"><div class="wrap hdr-in"><span class="brand">${logo ? `<img src="${logo.src}" alt="Cromatic Studios" width="${logo.w}" height="${logo.h}">` : "Cromatic Studios"}</span>${toTool("header")}</div>
+  <div class="lp-road" aria-hidden="true"><span class="lp-mini">${lpCar(false)}</span><i class="lp-goal"></i></div></header>
+<main id="main" class="case hub lp" style="--bc:${col};--bt:#111" data-lp="${esc(L.slug)}" data-free="${esc(L.freebieHref)}">
   <section class="c-hero c2-hero hub-hero lp-hero">
     <div class="wrap">
-      <p class="eyebrow mono">${esc(L.eyebrow)}</p>
-      <h1 class="c2-title"><span class="lp-va">${words(L.headA)}</span><span class="lp-vb">${words(L.headB)}</span></h1>
-      <p class="lead hub-lead">${esc(L.lead)}</p>
-      <div class="btns">${cta("hero")}</div>
+      <div class="lp-hero-txt">
+        <p class="eyebrow mono">${esc(L.eyebrow)}</p>
+        <h1 class="c2-title"><span class="lp-va">${words(L.headA)}</span><span class="lp-vb">${words(L.headB)}</span></h1>
+        <p class="lead hub-lead">${esc(L.lead)}</p>
+        <div class="btns">${toTool("hero")}<span class="lp-meta">${esc(L.ctaMeta)}</span></div>
+      </div>
+      <a class="lp-ticket" href="#freebie" data-lp-cta="ticket">
+        <span class="lpt-head"><span>${esc(L.ticket.label)}</span><i aria-hidden="true">✈</i></span>
+        <span class="lpt-rows">${L.ticket.rows.map((r) => `<span class="lpt-row"><small>${esc(r.k)}</small><b>${esc(r.v)}</b></span>`).join("")}</span>
+        <span class="lpt-cut" aria-hidden="true"></span>
+        <span class="lpt-foot"><i class="lpt-bars" aria-hidden="true"></i><span class="lpt-go">${esc(L.ticket.go)}</span></span>
+      </a>
       <div class="lp-logos" aria-label="${esc(L.logosLabel)}">${L.logos.map(logoCard).join("")}</div>
     </div></section>
-  <section class="sec"><div class="wrap"><p class="eyebrow mono">${esc(L.benefitsEyebrow)}</p>${title2(L.benefitsTitle)}
-    <div class="hub-cards">${L.benefits.map((x, i) => `<article class="hub-card" style="--sc:${col}"><span class="mono">${String(i + 1).padStart(2, "0")}</span><h3>${esc(x.t)}</h3><p>${esc(x.p)}</p></article>`).join("")}</div></div></section>
-  <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono">${esc(L.casesEyebrow)}</p>${title2(L.casesTitle)}
-    <div class="bento" style="--dc:${col}">${projects.map((p, i) => bentoCard(p, i, covers)).join("")}</div></div></section>
-  <section class="sec"><div class="wrap"><p class="eyebrow mono">${esc(L.servicesEyebrow)}</p>${title2(L.servicesTitle)}
-    <div class="lp-svc">${svcs.map((s) => `<article><h3>${esc(s.name)}</h3><ul>${s.includes.slice(0, 4).map((x) => `<li>${esc(x.t)}</li>`).join("")}</ul></article>`).join("")}</div></div></section>
-  <section class="sec sec-alt"><div class="wrap"><p class="eyebrow mono">${esc(L.stepsEyebrow)}</p>${title2(L.stepsTitle)}
-    <div class="chapters">${L.steps.map((x, i) => `<article class="chap" style="--cc:${["#28C840", "#B098C8", "#119BFE", "#F65342"][i % 4]}"><span class="chap-k mono">${String(i + 1).padStart(2, "0")}</span><h3>${esc(x.t)}</h3><p>${esc(x.p)}</p></article>`).join("")}</div></div></section>
-  <section class="sec" id="freebie"><div class="wrap"><div class="lp-free">
-    <div><p class="eyebrow mono">${esc(L.freebie.eyebrow)}</p><h2>${esc(L.freebie.title)}</h2><p>${esc(L.freebie.p)}</p>
-      <a class="btn" href="${esc(freeHref)}?src=${esc(L.slug)}" data-lp-free="freebie">${STAR}<span>${esc(L.cta)}</span></a>
-      <p class="lp-note">${esc(L.freebie.note)}</p></div>
-    <ul>${L.freebie.items.map((x) => `<li><i>${esc(x.k)}</i><span>${esc(x.t)}</span></li>`).join("")}</ul>
-  </div></div></section>
+  <section class="sec"><div class="wrap"><p class="eyebrow mono" data-rv>${esc(L.benefitsEyebrow)}</p>${title2(L.benefitsTitle)}
+    <div class="hub-cards">${L.benefits.map((x, i) => `<article class="hub-card" data-rv style="--sc:${col};--i:${i}"><span class="mono">${String(i + 1).padStart(2, "0")}</span><h3>${esc(x.t)}</h3><p>${esc(x.p)}</p></article>`).join("")}</div>
+    ${nudge("benefits")}</div></section>
+  <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono" data-rv>${esc(L.casesEyebrow)}</p>${title2(L.casesTitle)}
+    <div class="bento" style="--dc:${col}">${projects.map((p, i) => bentoCard(p, i, covers)).join("")}</div>
+    ${nudge("cases")}</div></section>
+  ${drive}
+  <section class="sec"><div class="wrap"><p class="eyebrow mono" data-rv>${esc(L.servicesEyebrow)}</p>${title2(L.servicesTitle)}
+    <div class="lp-svc">${svcs.map((s, i) => `<article data-rv style="--i:${i}"><h3>${esc(s.name)}</h3><ul>${s.includes.slice(0, 4).map((x) => `<li>${esc(x.t)}</li>`).join("")}</ul></article>`).join("")}</div>
+    ${nudge("services")}</div></section>
+  <section class="sec sec-alt"><div class="wrap"><p class="eyebrow mono" data-rv>${esc(L.stepsEyebrow)}</p>${title2(L.stepsTitle)}
+    <div class="chapters">${L.steps.map((x, i) => `<article class="chap" style="--cc:${["#28C840", "#B098C8", "#119BFE", "#F65342"][i % 4]}"><span class="chap-k mono">${String(i + 1).padStart(2, "0")}</span><h3>${esc(x.t)}</h3><p>${esc(x.p)}</p>${x.free ? `<a class="lp-free-chip" href="#freebie" data-lp-cta="step">${esc(L.stepsFree)}</a>` : ""}</article>`).join("")}</div>
+    ${nudge("steps")}</div></section>
   ${proof}
-  <section id="contact" class="sec sec-ink">
-    <span class="cupspin cup-contact" aria-hidden="true"></span>
+  <section class="lp-final" id="freebie" aria-labelledby="lpf-h"><div class="wrap">
+    <div class="lpf-box" data-rv>
+      <span class="lpf-sticker" aria-hidden="true">${esc(F.sticker)}</span>
+      <div class="lp-teller" role="img" aria-label="${esc(F.teller)}">
+        <div class="lpb-orbit">${LP_ICONS.map((_, k) => `<span style="--k:${k}">${lpIcon(k)}</span>`).join("")}</div>
+        <div class="lpb-stand"></div>
+        <div class="lpb-ball"><span class="lpb-glyph"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg></span></div>
+        <p class="lpb-cap"><b>${esc(F.teller)}</b><small>${esc(F.tellerCap)}</small></p>
+      </div>
+      <div>
+        <p class="eyebrow mono lpf-eyebrow">${esc(F.eyebrow)}</p>
+        <h2 class="lpf-h" id="lpf-h">${esc(F.title)}</h2>
+        <p class="lpf-sub">${esc(F.sub)}</p>
+        <p class="eyebrow mono">${esc(F.itemsTitle)}</p>
+        <ul class="lpf-items" data-rv>${(F.items || []).map((x, i) => `<li style="--i:${i}"><i>${lpCheck}</i><b>${esc(x.t)}</b><span>${esc(x.p)}</span></li>`).join("")}</ul>
+        <div class="lpf-cta">${toTool("final")}<span class="lp-meta">${esc(L.ctaMeta)}</span></div>
+        <p class="lpf-note">${esc(F.note)}</p>
+      </div>
+    </div>
+  </div></section>
+  <section id="contact" class="sec lp-talk">
     <div class="wrap contact">
       <div class="c-txt">
-        <p class="eyebrow mono">${esc(L.contact.eyebrow)}</p>
-        <h2 class="ptitle">${pill(esc(L.contact.title[0]), "#119BFE", -2)} ${pill(esc(L.contact.title[1]), "#F65342", 1.5)}</h2>
-        <p class="sec-lead">${esc(L.contact.lead)}</p>
+        <p class="eyebrow mono">${esc(L.talk.eyebrow)}</p>
+        <h2 class="ptitle">${pill(esc(L.talk.title[0]), "#119BFE", -2)} ${pill(esc(L.talk.title[1]), "#F65342", 1.5)}</h2>
+        <p class="sec-lead">${esc(L.talk.lead)}</p>
       </div>
+      <details><summary class="btn">${esc(L.talk.open)}</summary>
       ${form}
+      </details>
     </div>
   </section>
 </main>
+<div class="lp-sticky" aria-hidden="true"><span class="lp-orb" aria-hidden="true"></span><span class="lps-t"><b>${esc(F.title)}</b><small>${esc(L.ctaMeta)}</small></span>${toTool("sticky").replace("<a ", '<a tabindex="-1" ')}</div>
 <footer class="ftr lp-ftr"><div class="cz-foot" data-czf></div></footer>
-${lpJs}
+<script>${L.assets?.js || ""}</script>
 </body></html>`;
   }
   return { home, casePage, canvasPage, industryPage, servicePage, teamPage, privacyPage, landingPage, industrySlugs: INDUSTRIES.map((x) => x.slug), serviceSlugs: SERVICE_PAGES.map((x) => x.slug), slugs: Object.keys(CASES), canvasSlugs: Object.keys(CANVASES).filter((k) => canvases[k]) };

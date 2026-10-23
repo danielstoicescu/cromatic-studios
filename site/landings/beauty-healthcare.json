@@ -2,37 +2,170 @@
   "slug": "beauty-healthcare",
   "vertical": "Beauty & healthcare",
   "lang": "both",
-  "campaign": { "name": "TASK-122 pilot · beauty & healthcare", "channels": ["meta", "google"], "notes": "No Zdrovit or Zdrovit brands on this page (Daniel). ?v=b shows headline B." },
-  "color": "#F28BA8",
-  "title": { "en": "Branding for beauty, skincare and healthcare brands · Cromatic Studios", "ro": "Branding pentru beauty, skincare și sănătate · Cromatic Studios" },
-  "desc": { "en": "Brand strategy, identity, packaging, websites and film for skincare brands, aesthetic medicine and clinics, from an independent studio in Bucharest.", "ro": "Strategie de brand, identitate, ambalaje, site-uri și film pentru branduri de skincare, medicină estetică și clinici, de la un studio independent din București." },
-  "eyebrow": { "en": "For beauty, skincare & healthcare brands · Bucharest", "ro": "Pentru branduri de beauty, skincare și sănătate · București" },
-  "headline": {
-    "a": { "en": "A care brand people trust on sight.", "ro": "Un brand de îngrijire în care ai încredere din prima privire." },
-    "b": { "en": "From formula to shelf.", "ro": "De la formulă la raft." }
+  "campaign": {
+    "name": "TASK-122 pilot · beauty & healthcare",
+    "channels": [
+      "meta",
+      "google"
+    ],
+    "notes": "No Zdrovit or Zdrovit brands on this page (Daniel). ?v=b shows headline B."
   },
-  "lead": { "en": "Skincare from Paris and Barcelona, a women's health clinic, a clinic doctors recommend. We find the core of the brand first, then give it a face, a pack and a voice.", "ro": "Skincare din Paris și Barcelona, o clinică pentru sănătatea femeii, o clinică pe care o recomandă medicii. Găsim mai întâi miezul brandului, apoi îi dăm un chip, un ambalaj și o voce." },
-  "logos": ["Routine Paris", "Darya Hope", "Tracy J", "Toskani MED", "Elithia", "Clinica Sante"],
-  "benefitsTitle": [{ "en": "Care you", "ro": "Grija care" }, { "en": "can see", "ro": "se vede" }],
-  "benefits": [
-    { "t": { "en": "The Core of your brand", "ro": "The Core, miezul brandului tău" },
-      "p": { "en": "Your archetype, your customer and your value proposition, in one sentence you can build on. Darya Hope, Tracy J and Toskani MED started here.", "ro": "Arhetipul, clientul și propunerea de valoare, într-o singură frază pe care poți construi. Darya Hope, Tracy J și Toskani MED au pornit de aici." } },
-    { "t": { "en": "Packaging that reads at arm's length", "ro": "Ambalaje care se citesc de la un braț distanță" },
-      "p": { "en": "Ranges, colourways and dielines that keep a line coherent on the shelf and honest on the label.", "ro": "Game, variante de culoare și machete care țin o linie unitară pe raft și sinceră pe etichetă." } },
-    { "t": { "en": "Calm for clinics", "ro": "Liniște pentru clinici" },
-      "p": { "en": "Websites, films and content that explain the medicine plainly and make the visit feel safe, for patients and for doctors.", "ro": "Site-uri, filme și conținut care explică medicina pe înțeles și fac vizita să pară sigură, pentru pacienți și pentru medici." } }
+  "color": "#F28BA8",
+  "title": {
+    "en": "Branding for beauty, skincare and healthcare brands · Cromatic Studios",
+    "ro": "Branding pentru beauty, skincare și sănătate · Cromatic Studios"
+  },
+  "desc": {
+    "en": "Brand strategy, identity, packaging, websites and film for skincare brands, aesthetic medicine and clinics, from an independent studio in Bucharest.",
+    "ro": "Strategie de brand, identitate, ambalaje, site-uri și film pentru branduri de skincare, medicină estetică și clinici, de la un studio independent din București."
+  },
+  "eyebrow": {
+    "en": "For beauty, skincare & healthcare brands · Bucharest",
+    "ro": "Pentru branduri de beauty, skincare și sănătate · București"
+  },
+  "headline": {
+    "a": {
+      "en": "A care brand people trust on sight.",
+      "ro": "Un brand de îngrijire în care ai încredere din prima privire."
+    },
+    "b": {
+      "en": "From formula to shelf.",
+      "ro": "De la formulă la raft."
+    }
+  },
+  "lead": {
+    "en": "Skincare from Paris and Barcelona, a women's health clinic, a clinic doctors recommend. We find the core of the brand first, then give it a face, a pack and a voice.",
+    "ro": "Skincare din Paris și Barcelona, o clinică pentru sănătatea femeii, o clinică pe care o recomandă medicii. Găsim mai întâi miezul brandului, apoi îi dăm un chip, un ambalaj și o voce."
+  },
+  "logos": [
+    "Routine Paris",
+    "Darya Hope",
+    "Tracy J",
+    "Toskani MED",
+    "Elithia",
+    "Clinica Sante"
   ],
-  "casesEyebrow": { "en": "Medical Avenue · six cases", "ro": "Medical Avenue · șase studii de caz" },
-  "casesTitle": [{ "en": "Skin, health", "ro": "Piele, sănătate" }, { "en": "and care", "ro": "și grijă" }],
-  "cases": ["routine-paris", "darya-hope", "tracy-j", "toskani-med", "elithia", "clinica-sante"],
-  "services": ["brand-strategy", "brand-identity", "websites-apps", "video-production"],
-  "proofTitle": [{ "en": "One sentence,", "ro": "O frază," }, { "en": "a whole brand", "ro": "un brand întreg" }],
+  "benefitsTitle": [
+    {
+      "en": "Care you",
+      "ro": "Grija care"
+    },
+    {
+      "en": "can see",
+      "ro": "se vede"
+    }
+  ],
+  "benefits": [
+    {
+      "t": {
+        "en": "The Core of your brand",
+        "ro": "The Core, miezul brandului tău"
+      },
+      "p": {
+        "en": "Your archetype, your customer and your value proposition, in one sentence you can build on. Darya Hope, Tracy J and Toskani MED started here.",
+        "ro": "Arhetipul, clientul și propunerea de valoare, într-o singură frază pe care poți construi. Darya Hope, Tracy J și Toskani MED au pornit de aici."
+      }
+    },
+    {
+      "t": {
+        "en": "Packaging that reads at arm's length",
+        "ro": "Ambalaje care se citesc de la un braț distanță"
+      },
+      "p": {
+        "en": "Ranges, colourways and dielines that keep a line coherent on the shelf and honest on the label.",
+        "ro": "Game, variante de culoare și machete care țin o linie unitară pe raft și sinceră pe etichetă."
+      }
+    },
+    {
+      "t": {
+        "en": "Calm for clinics",
+        "ro": "Liniște pentru clinici"
+      },
+      "p": {
+        "en": "Websites, films and content that explain the medicine plainly and make the visit feel safe, for patients and for doctors.",
+        "ro": "Site-uri, filme și conținut care explică medicina pe înțeles și fac vizita să pară sigură, pentru pacienți și pentru medici."
+      }
+    }
+  ],
+  "casesEyebrow": {
+    "en": "Medical Avenue · six cases",
+    "ro": "Medical Avenue · șase studii de caz"
+  },
+  "casesTitle": [
+    {
+      "en": "Skin, health",
+      "ro": "Piele, sănătate"
+    },
+    {
+      "en": "and care",
+      "ro": "și grijă"
+    }
+  ],
+  "cases": [
+    "routine-paris",
+    "darya-hope",
+    "tracy-j",
+    "toskani-med",
+    "elithia",
+    "clinica-sante"
+  ],
+  "services": [
+    "brand-strategy",
+    "brand-identity",
+    "websites-apps",
+    "video-production"
+  ],
+  "proofTitle": [
+    {
+      "en": "One sentence,",
+      "ro": "O frază,"
+    },
+    {
+      "en": "a whole brand",
+      "ro": "un brand întreg"
+    }
+  ],
   "proof": [
-    { "case": "tracy-j", "q": { "en": "“Tracy J. Skincare provides skincare products to positive customers in a loving environment with a joyous voice. Helping them gain a healthy glow and feel inspired.”", "ro": "„Tracy J. Skincare oferă produse de skincare clienților pozitivi, într-un mediu plin de iubire, cu o voce veselă. Îi ajută să capete o strălucire sănătoasă și să se simtă inspirați.”" },
-      "by": { "en": "Tracy J · The Core, the value proposition", "ro": "Tracy J · The Core, propunerea de valoare" } },
-    { "case": "toskani-med", "q": { "en": "“Toskani MED offers aesthetic non-invasive solutions to caring doctors in a family environment with an expert voice. Giving them efficacy and making them feel close to us.”", "ro": "„Toskani MED oferă soluții estetice non-invazive medicilor care pun suflet în ce fac, într-un mediu de familie, cu o voce de expert. Le dă eficacitate și îi face să se simtă aproape de noi.”" },
-      "by": { "en": "Toskani MED · The Core, the unique value proposition", "ro": "Toskani MED · The Core, propunerea unică de valoare" } },
-    { "case": "darya-hope", "q": { "en": "“Darya Hope provides skincare products to conscious customers in a science based environment with a knowledgeable & transparent voice. Helping them transform their skin and feel confident.”", "ro": "„Darya Hope oferă produse de skincare clienților conștienți, într-un mediu bazat pe știință, cu o voce informată și transparentă. Îi ajută să își transforme pielea și să se simtă încrezători.”" },
-      "by": { "en": "Darya Hope · The Core, the value proposition", "ro": "Darya Hope · The Core, propunerea de valoare" } }
-  ]
+    {
+      "case": "tracy-j",
+      "q": {
+        "en": "“Tracy J. Skincare provides skincare products to positive customers in a loving environment with a joyous voice. Helping them gain a healthy glow and feel inspired.”",
+        "ro": "„Tracy J. Skincare oferă produse de skincare clienților pozitivi, într-un mediu plin de iubire, cu o voce veselă. Îi ajută să capete o strălucire sănătoasă și să se simtă inspirați.”"
+      },
+      "by": {
+        "en": "Tracy J · The Core, the value proposition",
+        "ro": "Tracy J · The Core, propunerea de valoare"
+      }
+    },
+    {
+      "case": "toskani-med",
+      "q": {
+        "en": "“Toskani MED offers aesthetic non-invasive solutions to caring doctors in a family environment with an expert voice. Giving them efficacy and making them feel close to us.”",
+        "ro": "„Toskani MED oferă soluții estetice non-invazive medicilor care pun suflet în ce fac, într-un mediu de familie, cu o voce de expert. Le dă eficacitate și îi face să se simtă aproape de noi.”"
+      },
+      "by": {
+        "en": "Toskani MED · The Core, the unique value proposition",
+        "ro": "Toskani MED · The Core, propunerea unică de valoare"
+      }
+    },
+    {
+      "case": "darya-hope",
+      "q": {
+        "en": "“Darya Hope provides skincare products to conscious customers in a science based environment with a knowledgeable & transparent voice. Helping them transform their skin and feel confident.”",
+        "ro": "„Darya Hope oferă produse de skincare clienților conștienți, într-un mediu bazat pe știință, cu o voce informată și transparentă. Îi ajută să își transforme pielea și să se simtă încrezători.”"
+      },
+      "by": {
+        "en": "Darya Hope · The Core, the value proposition",
+        "ro": "Darya Hope · The Core, propunerea de valoare"
+      }
+    }
+  ],
+  "drive": {
+    "stills": [
+      "map-tac",
+      "map-welcome",
+      "drive-crossroads",
+      "map-olari"
+    ]
+  }
 }

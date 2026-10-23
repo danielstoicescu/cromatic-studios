@@ -780,8 +780,17 @@ const roPaths = [];
   {
     const { loadLandings } = await import("./landings.mjs");
     const LPS = loadLandings(root, { PROJECTS: DATA.PROJECTS, INDUSTRIES: HUBS_DATA.INDUSTRIES, SERVICE_PAGES: HUBS_DATA.SERVICE_PAGES, ZD_PAGES, workPaths });
+    // their own layer (site/landings/lp.css, lp.js), minified once, inlined in each page (a few KB: no extra request)
+    let LP_ASSETS = { css: "", js: "" };
+    try {
+      const css = readFileSync(join(root, "site", "landings", "lp.css"), "utf8"), js = readFileSync(join(root, "site", "landings", "lp.js"), "utf8");
+      LP_ASSETS = { css, js };
+      const { transformSync } = await import("esbuild");
+      LP_ASSETS = { css: transformSync(css, { loader: "css", minify: true }).code.trim(), js: transformSync(js, { minify: true, target: "es2017", legalComments: "none" }).code.trim() };
+    } catch (e) { console.warn("[lp] lp.css / lp.js:", e.message.split("\n")[0]); }
     for (const lp of LPS) {
-      let en = R.landingPage(lp.L, COVERS);
+      for (const n of lp.L.drive?.stills || []) if (!existsSync(join(root, "site", "onboarding", "media", `${n}.webp`))) console.warn(`[lp] ${lp.slug}: drive still "${n}" not in site/onboarding/media`);
+      let en = R.landingPage({ ...lp.L, assets: LP_ASSETS }, COVERS);
       if (GF_CSS) en = en.replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\n?/, "").replace(/<link rel="preload" as="style" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"[^>]*>\n?<noscript><link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"><\/noscript>/, `<style>${GF_CSS}</style>`);
       en = wpMirror(en);
       if (lp.langs.includes("en")) { mkdirSync(join(pub, "lp", lp.slug), { recursive: true }); writeFileSync(join(pub, "lp", lp.slug, "index.html"), en); }

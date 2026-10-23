@@ -1,5 +1,6 @@
 // TASK-122: landing pages for ads campaigns, made from config. One file per landing, site/landings/<slug>.json, on top
-// of the shared words in site/landings/_shared.json (any key of a landing replaces the shared one). The build writes
+// of the shared words in site/landings/_shared.json (any key of a landing replaces the shared one;
+// objects merge key by key). The build writes
 // /lp/<slug>/ (lang "en" or "both") and /ro/lp/<slug>/ (lang "ro" or "both") with the website's own blocks
 // (site/render.mjs, landingPage) and stylesheet. Not in the sitemap, not in llms.txt, meta robots noindex.
 // Every text is { "en": "...", "ro": "..." }; the Romanian page is the English one through the site's dictionary
@@ -11,6 +12,9 @@ import { join } from "node:path";
 
 const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const isText = (v) => v && typeof v === "object" && !Array.isArray(v) && "en" in v;
+// a landing's keys over the shared ones; objects (nudges, drive, finale...) merge key by key, texts and lists replace
+const isObj = (v) => v && typeof v === "object" && !Array.isArray(v) && !isText(v);
+const merge = (a, b) => { const o = { ...a }; for (const [k, v] of Object.entries(b)) o[k] = isObj(v) && isObj(a[k]) ? merge(a[k], v) : v; return o; };
 
 export function loadLandings(root, { PROJECTS, INDUSTRIES = [], SERVICE_PAGES = [], ZD_PAGES = new Set(), workPaths = [] }) {
   const dir = join(root, "site", "landings");
@@ -22,7 +26,7 @@ export function loadLandings(root, { PROJECTS, INDUSTRIES = [], SERVICE_PAGES = 
   const out = [];
   for (const f of files) {
     let c;
-    try { c = { ...shared, ...JSON.parse(readFileSync(join(dir, f), "utf8")) }; } catch (e) { console.warn(`[lp] ${f}: not valid JSON, skipped (${e.message})`); continue; }
+    try { c = merge(shared, JSON.parse(readFileSync(join(dir, f), "utf8"))); } catch (e) { console.warn(`[lp] ${f}: not valid JSON, skipped (${e.message})`); continue; }
     const slug = c.slug || f.slice(0, -5);
     if (!/^[a-z0-9-]+$/.test(slug)) { console.warn(`[lp] ${f}: slug "${slug}" must be lower-case letters, digits and dashes`); continue; }
     const langs = c.lang === "ro" ? ["ro"] : c.lang === "en" ? ["en"] : ["en", "ro"];
@@ -48,43 +52,36 @@ export function loadLandings(root, { PROJECTS, INDUSTRIES = [], SERVICE_PAGES = 
     for (const n of c.logos || []) if (!PROJECTS.some((p) => p.name === n)) warn(`logo "${n}" is not a client name in site/data.mjs (shown as a word)`);
     for (const x of c.proof || []) if (x.case && !work.has(x.case)) warn(`proof from "${x.case}", which has no /work/ page`);
 
-    // the English words for the renderer, and the Romanian ones for the dictionary
+    // the English words for the renderer, and the Romanian ones for the dictionary: every { en, ro } in the config,
+    // wherever it sits; a two-pill title (a key ending in "title"/"Title" holding two texts) also as "A | B"
     const ro = {}, missingRo = [];
     const T = (v, where) => {
-      if (!isText(v)) { if (v != null) warn(`${where}: expected { "en", "ro" }`); return String(v ?? ""); }
       if (langs.includes("ro")) {
         if (!v.ro) missingRo.push(where);
         else { ro[esc(v.en)] = esc(v.ro); ro[v.en] = esc(v.ro); }
       }
       return v.en;
     };
-    const P = (pair, where) => {
-      const a = T(pair[0], where + "[0]"), b = pair[1] ? T(pair[1], where + "[1]") : "";
-      if (b && isText(pair[0]) && isText(pair[1]) && pair[0].ro && pair[1].ro) ro[`${esc(a)} | ${esc(b)}`] = `${esc(pair[0].ro)} | ${esc(pair[1].ro)}`;
-      return b ? [a, b] : [a];
+    const R = (v, where) => {
+      if (isText(v)) return T(v, where);
+      if (Array.isArray(v)) {
+        if (/title$/i.test(where) && v.length && v.every(isText)) {
+          const en = v.map((x, i) => T(x, `${where}[${i}]`));
+          if (v.length > 1 && v.every((x) => x.ro)) ro[en.map(esc).join(" | ")] = v.map((x) => esc(x.ro)).join(" | ");
+          return en;
+        }
+        return v.map((x, i) => R(x, `${where}[${i}]`));
+      }
+      if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).filter(([k]) => !k.startsWith("_")).map(([k, x]) => [k, R(x, where ? `${where}.${k}` : k)]));
+      return v;
     };
-    const L = {
-      slug, path: `/lp/${slug}/`, color: c.color,
-      title: T(c.title, "title"), desc: T(c.desc, "desc"),
-      eyebrow: T(c.eyebrow, "eyebrow"), headA: T(c.headline?.a, "headline.a"), headB: T(c.headline?.b || c.headline?.a, "headline.b"),
-      lead: T(c.lead, "lead"), cta: T(c.cta, "cta"), logosLabel: T(c.logosLabel, "logosLabel"), logos: c.logos || [],
-      benefitsEyebrow: T(c.benefitsEyebrow, "benefitsEyebrow"), benefitsTitle: P(c.benefitsTitle || [], "benefitsTitle"),
-      benefits: (c.benefits || []).map((x, i) => ({ t: T(x.t, `benefits[${i}].t`), p: T(x.p, `benefits[${i}].p`) })),
-      casesEyebrow: T(c.casesEyebrow, "casesEyebrow"), casesTitle: P(c.casesTitle || [], "casesTitle"), cases,
-      servicesEyebrow: T(c.servicesEyebrow, "servicesEyebrow"), servicesTitle: P(c.servicesTitle || [], "servicesTitle"), services,
-      stepsEyebrow: T(c.stepsEyebrow, "stepsEyebrow"), stepsTitle: P(c.stepsTitle || [], "stepsTitle"),
-      steps: (c.steps || []).map((x, i) => ({ t: T(x.t, `steps[${i}].t`), p: T(x.p, `steps[${i}].p`) })),
-      freebieHref: c.freebie?.href || "/thecore30/lite",
-      freebie: { eyebrow: T(c.freebie?.eyebrow, "freebie.eyebrow"), title: T(c.freebie?.title, "freebie.title"), p: T(c.freebie?.p, "freebie.p"), note: T(c.freebie?.note, "freebie.note"),
-        items: (c.freebie?.items || []).map((x, i) => ({ k: T(x.k, `freebie.items[${i}].k`), t: T(x.t, `freebie.items[${i}].t`) })) },
-      proofEyebrow: T(c.proofEyebrow, "proofEyebrow"), proofTitle: P(c.proofTitle || [], "proofTitle"),
-      proof: (c.proof || []).map((x, i) => (x.q ? { q: T(x.q, `proof[${i}].q`), by: T(x.by, `proof[${i}].by`) } : { n: typeof x.n === "string" ? x.n : T(x.n, `proof[${i}].n`), t: T(x.t, `proof[${i}].t`) })),
-      contact: { eyebrow: T(c.contact?.eyebrow, "contact.eyebrow"), title: P(c.contact?.title || [], "contact.title"), lead: T(c.contact?.lead, "contact.lead") }
-    };
-    if (L.steps.length !== 4) warn(`${L.steps.length} steps (4 expected)`);
-    if (L.benefits.length !== 3) warn(`${L.benefits.length} benefits (3 expected)`);
+    const { campaign, cases: _c, caseFilter: _f, services: _s, ...words } = c;
+    const L = { ...R(words, ""), slug, path: `/lp/${slug}/`, cases, services, freebieHref: c.freebie?.href || "/thecore30/lite" };
+    L.headA = L.headline?.a || ""; L.headB = L.headline?.b || L.headA;
+    if ((L.steps || []).length !== 4) warn(`${L.steps.length} steps (4 expected)`);
+    if ((L.benefits || []).length !== 3) warn(`${L.benefits.length} benefits (3 expected)`);
     if (missingRo.length) warn(`no Romanian for: ${missingRo.join(", ")}`);
-    out.push({ slug, langs, L, ro, campaign: c.campaign || null, vertical: c.vertical || "" });
+    out.push({ slug, langs, L, ro, campaign: campaign || null, vertical: c.vertical || "" });
   }
   return out;
 }
