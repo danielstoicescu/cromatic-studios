@@ -152,7 +152,7 @@ function story() {
   drawCard(Cm, card("d14-end"), T2);
   // ---------- the words: Iris's system (d1-d13), each card gone by its last shot's cut ----------
   clip(drawCard(Cm, card("d15-portfolio"), T2), "site");
-  for (const [text, shot, out] of [["Bird's eye", "bird", "bird+56"], ["Drive mode", "steam", "steam+42"]]) { const c = card("d14-end"), U = c.layout.url, size = 48, tr = -0.02, w = setLine(KC.T, text, size, tr).width, padX = 44, h = 76.8; c.id = "d8-mode-" + shot; c.layout = { url: { ...U, text, size, tracking: tr, w: w + 2 * padX, h, centre: [80 + (w + 2 * padX) / 2, 300 + h / 2], textX: 80 + padX, baseline: 300 + h / 2 + size * 0.36, keyline: 5, shadow: [8, 11], tilt: -4 } }; c.timing.cues = { urlIn: shot + "+2", out }; drawCard(Cm, c, T2); }
+  for (const [text, shot, out] of [["Bird's eye", "bird", "bird+56"], ["Drive mode", "steam", process.env.STORY === "d10" ? "steam+22" : "steam+42"]]) { const c = card("d14-end"), U = c.layout.url, size = 48, tr = -0.02, w = setLine(KC.T, text, size, tr).width, padX = 44, h = 76.8; c.id = "d8-mode-" + shot; c.layout = { url: { ...U, text, size, tracking: tr, w: w + 2 * padX, h, centre: [80 + (w + 2 * padX) / 2, 300 + h / 2], textX: 80 + padX, baseline: 300 + h / 2 + size * 0.36, keyline: 5, shadow: [8, 11], tilt: -4 } }; c.timing.cues = { urlIn: shot + "+2", out }; drawCard(Cm, c, T2); }
   clip(drawCard(Cm, card("d19-map"), T2), "zoom");
   clip(drawCard(Cm, card("d3-knock", { in: "steam+28" }), T2), "steam");
   clip(drawCard(Cm, card("d4-come-in"), T2), "page");
