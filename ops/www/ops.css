@@ -1,0 +1,39 @@
+/* TASK-124 · the /ops mirror: what it adds on top of the Cromatic Ops page, and the login page. */
+
+/* header: who is logged in + logout; the small "mirror" note under it */
+.ops-me { gap: 8px; padding-left: 4px; }
+.ops-av { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--yellow, #f8d13b); color: #000; box-shadow: inset 0 0 0 1.5px #000; font: 900 12px/1 var(--f-d, system-ui); }
+.ops-note { justify-self: start; font: 500 10.5px/1.3 var(--f-m, ui-monospace, monospace); letter-spacing: .06em; text-transform: uppercase; color: var(--muted, #5e6168); border: 1px dashed var(--g3, #8a8d93); border-radius: 999px; padding: 3px 10px; margin-top: -10px; }
+.ops-ro { padding: 6px 0; }
+
+/* in the mirror nothing is created or moved from the page: those controls go */
+#new-task, #new-epic, #i-title, label[for="i-title"], #idea-add { display: none !important; }
+
+/* members: no The Core, no Securitate, no approvals */
+body.ops-member .nav-i[data-cat="core"], body.ops-member .nav-i[data-cat="sec"],
+body.ops-member #core, body.ops-member #sec, body.ops-member .box:has(#approvals) { display: none !important; }
+
+/* ---------- login ---------- */
+.ops-login { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
+.ops-login .card { width: min(420px, 100%); display: grid; gap: 18px; background: var(--card); border: 1px solid var(--line-c); border-radius: 28px; box-shadow: var(--soft); padding: 28px 24px 24px; animation: rise .4s var(--ease) both; }
+.ops-login .csops { font-size: 15px; justify-self: start; }
+.ops-login h1 { font: 800 clamp(26px, 6vw, 32px)/1.1 var(--f-d); margin: 0; letter-spacing: -.01em; }
+.ops-login p { margin: 0; color: var(--muted); font-size: 15px; }
+.ops-login form { display: grid; gap: 12px; }
+.ops-login label { font: 700 10.5px var(--f-m); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.ops-login input { width: 100%; border: 1px solid var(--g2); border-radius: 14px; padding: 12px 14px; font: 600 17px var(--f-b); background: var(--card); color: var(--ink); }
+.ops-login input:focus { border-color: var(--ink); outline: 0; }
+.ops-login input.code { font: 800 28px/1 var(--f-m); letter-spacing: .3em; text-align: center; }
+.ops-login .btn { justify-content: center; }
+.ops-login .msg { min-height: 1.4em; font-size: 14px; font-weight: 600; }
+.ops-login .msg.err { color: var(--danger-ink); }
+.ops-login .link { all: unset; cursor: pointer; font-size: 13px; color: var(--muted); text-decoration: underline; justify-self: start; }
+.ops-login .link:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.ops-login .foot { font: 500 10px var(--f-m); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); text-align: center; }
+
+/* bug report in the mirror: one checkbox instead of Normal / Panică */
+.ops-imp { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.35; cursor: pointer; border: 1px solid var(--g2); border-radius: 14px; padding: 10px 12px; }
+.ops-imp input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--c-p0, #f27261); flex: none; }
+.ops-imp:has(input:checked) { border-color: var(--c-p0, #f27261); box-shadow: 0 0 0 2px var(--c-p0, #f27261); }
+#bug .lvl { display: none !important; }
+#bug-hint { display: none !important; }

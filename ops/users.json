@@ -1,0 +1,10 @@
+{
+  "_comment": "TASK-124: who can log in to /ops. One entry per person; every address in `emails` logs in as that person. role: admin (sees everything) or member. To override on the server without a deploy, put a file with the same shape at <ops-data>/users.json.",
+  "users": [
+    { "id": "daniel", "name": "Daniel", "role": "admin", "emails": ["daniel.stoicescu@cromaticstudios.com", "daniel@cromaticstudios.com", "daniel.stoicescu@gmail.com"] },
+    { "id": "cristian", "name": "Cristian", "role": "admin", "emails": ["cristian@cromaticstudios.com"] },
+    { "id": "coz", "name": "Coz", "role": "member", "emails": ["coz@cromaticstudios.com"] },
+    { "id": "adina", "name": "Adina", "role": "member", "emails": ["adina.popescu@cromaticstudios.com"] },
+    { "id": "alexandra", "name": "Alexandra", "role": "member", "emails": ["alexandra.popescu@cromaticstudios.com"] }
+  ]
+}

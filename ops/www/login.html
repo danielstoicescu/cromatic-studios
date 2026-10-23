@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ro"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive"><meta name="referrer" content="no-referrer">
+<title>cromaticstudios.com ops</title>
+<link rel="icon" type="image/svg+xml" href="/ops/favicon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root { color-scheme: light; --bg: #f2f2f2; --card: #fff; --ink: #000; --g2: #dcdcdc; --g3: #8a8d93; --muted: #5e6168; --line-c: #dadada; --yellow: #f8d13b; --danger-ink: #b3261e;
+  --f-d: "CromaticSans", "DM Sans", system-ui, sans-serif; --f-b: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif; --f-m: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --soft: 0 1px 2px rgba(0,0,0,.04), 0 10px 28px rgba(0,0,0,.05); --ease: cubic-bezier(.34, 1.56, .64, 1); --st: 1px solid var(--ink); --sh: 0 2px 0 var(--ink); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; --bg: #111113; --card: #1b1b1e; --ink: #f2f2f3; --g2: #3a3a40; --g3: #7d8088; --muted: #a3a6ad; --line-c: #2f2f34; --danger-ink: #ff8a80; --soft: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35); } }
+:root[data-theme="dark"] { color-scheme: dark; --bg: #111113; --card: #1b1b1e; --ink: #f2f2f3; --g2: #3a3a40; --g3: #7d8088; --muted: #a3a6ad; --line-c: #2f2f34; --danger-ink: #ff8a80; }
+* { box-sizing: border-box; } html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-b); }
+button, input { font: inherit; color: inherit; }
+.btn { display: inline-flex; align-items: center; gap: 8px; border: var(--st); border-radius: 999px; padding: 11px 18px; background: var(--ink); color: var(--card); font-family: var(--f-d); font-weight: 800; font-size: 16px; box-shadow: var(--sh); cursor: pointer; transition: transform .18s var(--ease), box-shadow .18s; }
+.btn:hover { transform: translateY(-2px); box-shadow: 0 5px 0 var(--ink); } .btn[disabled] { opacity: .5; pointer-events: none; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+</style>
+<link rel="stylesheet" href="/ops/logo.css">
+<link rel="stylesheet" href="/ops/ops.css">
+</head><body>
+<main class="ops-login">
+  <div class="card">
+    <span class="csops" role="img" aria-label="cromaticstudios.com ops"><span class="cs-y" aria-hidden="true">cromaticstudios.com</span><span class="cs-ops" aria-hidden="true"><span>ops</span></span></span>
+    <section id="step-email">
+      <h1>Intră în ops</h1>
+      <p style="margin:8px 0 18px">Scrie emailul de la Cromatic. Îți trimitem un cod de 6 cifre.</p>
+      <form id="f-email" novalidate>
+        <label for="email">Email</label>
+        <input id="email" type="email" inputmode="email" autocomplete="email" required placeholder="nume@cromaticstudios.com">
+        <button class="btn" type="submit" id="b-email">Trimite-mi codul</button>
+        <div class="msg" id="m-email" role="status" aria-live="polite"></div>
+      </form>
+    </section>
+    <section id="step-code" hidden>
+      <h1>Verifică mailul</h1>
+      <p style="margin:8px 0 18px">Dacă <b id="to"></b> e pe lista echipei, codul e deja acolo. Merge 10 minute.</p>
+      <form id="f-code" novalidate>
+        <label for="code">Codul</label>
+        <input id="code" class="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]*" maxlength="7" required placeholder="000000">
+        <button class="btn" type="submit" id="b-code">Intră</button>
+        <div class="msg" id="m-code" role="status" aria-live="polite"></div>
+        <button class="link" type="button" id="back">Alt email sau un cod nou</button>
+      </form>
+    </section>
+    <div class="foot">Doar pentru echipa Cromatic Studios</div>
+  </div>
+</main>
+<script src="/ops/login.js"></script>
+</body></html>

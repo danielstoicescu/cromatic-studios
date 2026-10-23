@@ -12,6 +12,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import nodemailer from "nodemailer";
 import { passHtml, passText } from "./mail-template.js";
 import { createCore30 } from "./core30/core30.mjs";
+import { createOps, isOps } from "./ops/ops.mjs";
 
 const APP_DIR = dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.PUBLIC_DIR || join(APP_DIR, "public");
@@ -76,6 +77,17 @@ const core30 = createCore30({
 const isCore30 = (u) => u === "/thecore30" || u.startsWith("/thecore30/") || u.startsWith("/thecore30?") || u.startsWith("/api/core30/");
 console.log(`[core30] answers in ${CORE30_DATA}`);
 console.log(`[core30] admin key from ${process.env.CORE30_ADMIN_KEY ? "CORE30_ADMIN_KEY" : process.env.LEADS_KEY ? "LEADS_KEY" : "nowhere"}`); // names the source, never the value
+
+// TASK-124: "cromaticstudios.com ops", the password-protected mirror of the Cromatic Ops artifact (header of ops/ops.mjs).
+// Beta hosts only for now; the data (snapshot, outbox, sessions, logins) lives outside the release, like the leads.
+const OPS_DATA = process.env.OPS_DATA || [join(APP_DIR, "..", "..", "shared", "ops-data"), join(process.env.HOME || APP_DIR, "ops-data"), join(APP_DIR, "ops-data")]
+  .find((d) => { try { mkdirSync(d, { recursive: true }); return true; } catch { return false; } });
+let opsKeyOk = () => false; // set below, once keyOk exists (the same constant-time compare as the CSP stats key)
+const ops = createOps({
+  dataDir: OPS_DATA, wwwDir: join(APP_DIR, "ops", "www"), transport, mailFrom: MAIL_FROM, smtpConfigured: !!process.env.SMTP_HOST,
+  bridgeKeyOk: (k) => opsKeyOk(k),
+});
+console.log(`[ops] data in ${OPS_DATA}`);
 
 // a gentle rate limit: 5 passes per address per 15 minutes
 const hits = new Map();
@@ -502,6 +514,7 @@ const CSP_IGNORE = /^https?:\/\/([a-z0-9-]+\.)*example\.(com|net|org)(:\d+)?$/i;
 const CSP_NOISE = /^https:\/\/(translate\.googleapis\.com|translate\.google\.com|translate-pa\.googleapis\.com)$/i;
 const sha = (x) => createHash("sha256").update(String(x)).digest();
 const keyOk = (got, want) => !!want && want.length >= 16 && timingSafeEqual(sha(got), sha(want));
+opsKeyOk = (k) => keyOk(k, String(process.env.CORE30_ADMIN_KEY || process.env.LEADS_KEY || "").trim()); // TASK-124: the ops bridge uses the core30 admin key
 function cspStats(req, res) {
   const auth = /^Bearer\s+(\S+)$/i.exec(String(req.headers.authorization || ""));
   if (!keyOk(auth ? auth[1] : "", String(process.env.CSP_STATS_KEY || "").trim())) { res.writeHead(404); return res.end(); }
@@ -565,6 +578,7 @@ http.createServer((req, res) => {
   // r169: beta 2.0 answers on its own host only, before any rule of the live site
   if (BETA_HOSTS.has(host)) {
     if (/"scheme":"http"/.test(String(req.headers["cf-visitor"] || ""))) { res.writeHead(301, { Location: `https://${host}${req.url}` }); return res.end(); }
+    if (isOps(req.url)) return void ops(req, res).then((done) => { if (!done) { res.writeHead(404); res.end(); } }).catch(() => send(res, 500, { ok: false }));
     if (isCore30(req.url)) return void core30(req, res).catch(() => send(res, 500, { ok: false }));
     if (req.url === "/api/boarding" && req.method === "POST") return void boarding(req, res, "[beta 2.0]").catch(() => send(res, 500, { ok: false }));
     if (req.url === "/api/ctx") return send(res, 200, { internal: false });
@@ -581,6 +595,7 @@ http.createServer((req, res) => {
     res.writeHead(301, { Location: `https://${otherHost ? PRIMARY_HOST : req.headers.host}${to}` });
     return res.end();
   }
+  if (isOps(req.url)) { res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex" }); return res.end("Not found"); } // TASK-124: beta only for now
   if (isCore30(req.url)) return void core30(req, res).catch(() => send(res, 500, { ok: false }));
   if ((req.method === "GET" || req.method === "HEAD") && legacy(req, res)) return;
   // the saved messages, for the studio only: GET /api/leads?key=<LEADS_KEY> (off unless LEADS_KEY is set)

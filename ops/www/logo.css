@@ -1,0 +1,27 @@
+/* cromaticstudios.com ops · logo lockup + splash (TASK-123). Self-contained: Ana's /ops mirror (TASK-124) reuses this file.
+   Left pill = the stories' URL pill (Iris, cards/system.md §7: Google Sans, ink #0D0C09 on #FED012, keyline .094em, hard shadow .156/.22em).
+   Right pill = The Core 3.0 mark (.cm-pill): a conic ring that turns, white inside, tilted -2deg, ink drop. */
+@property --opsA { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.csops { --cs-ink: #0D0C09; --cs-y: #FED012; --cs-fill: var(--card, #ffffff); --cs-text: var(--ink, #0D0C09);
+  display: inline-flex; align-items: center; gap: .5em; font-family: "CromaticSans", "Google Sans", "DM Sans", system-ui, sans-serif; font-size: 12px; line-height: 1; white-space: nowrap; color: var(--cs-ink); text-decoration: none; }
+.cs-y { display: inline-flex; align-items: center; height: 1.6em; padding: 0 .55em .04em; border-radius: 999px; background: var(--cs-y); color: var(--cs-ink); border: max(1px, .094em) solid var(--cs-ink); box-shadow: .156em .22em 0 var(--cs-ink); font-weight: 700; letter-spacing: -.02em; transform: rotate(-3deg); }
+.cs-ops { position: relative; isolation: isolate; display: inline-flex; align-items: center; padding: .08em .5em .16em; border-radius: 999px; font-size: 1.5em; font-weight: 900; letter-spacing: -.035em; line-height: 1.04; color: var(--cs-text); transform: rotate(-2deg); box-shadow: 0 .14em 0 var(--cs-ink); }
+.cs-ops::before { content: ""; position: absolute; inset: -1px; border-radius: inherit; z-index: -2; background: conic-gradient(from var(--opsA), #FED012, #28C840, #119BFE, #B098C8, #F65342, #FED012); animation: csOpsSpin 3.2s linear infinite; }
+.cs-ops::after { content: ""; position: absolute; inset: max(2.5px, .12em); border-radius: inherit; z-index: -1; background: var(--cs-fill); }
+@keyframes csOpsSpin { to { --opsA: 360deg; } }
+.csops.cs-hide { visibility: hidden; }
+
+/* splash: the two pills centred, OPS large, then they fly into the header lockup */
+.cs-splash { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; background: var(--bg, #FBFAF5); cursor: pointer; transition: background-color .45s ease .25s, opacity .3s; }
+.cs-splash .cs-stack { display: grid; justify-items: center; gap: clamp(18px, 3.4vw, 34px); font-family: "CromaticSans", "Google Sans", "DM Sans", system-ui, sans-serif; line-height: 1; --cs-ink: #0D0C09; --cs-y: #FED012; --cs-fill: var(--card, #ffffff); --cs-text: var(--ink, #0D0C09); }
+.cs-splash .cs-fly { transition: transform .78s cubic-bezier(.6, 0, .2, 1), opacity .3s; will-change: transform; }
+.cs-splash .cs-y { font-size: clamp(20px, 3.8vw, 38px); transform: rotate(-6deg); animation: csPop .62s cubic-bezier(.34, 1.56, .44, 1) both; }
+.cs-splash .cs-ops { font-size: clamp(96px, 24vw, 250px); letter-spacing: -.045em; padding: .03em .3em .09em; box-shadow: 0 .045em 0 var(--cs-ink); animation: csPop .72s cubic-bezier(.34, 1.56, .44, 1) .2s both; }
+.cs-splash .cs-ops::before { inset: -2px; animation-duration: 2.4s; }
+.cs-splash .cs-ops::after { inset: max(5px, .04em); }
+@keyframes csPop { 0% { opacity: 0; transform: rotate(0deg) translateY(.25em) scale(.62); } }
+.cs-skip { position: absolute; left: 0; right: 0; bottom: max(26px, env(safe-area-inset-bottom, 0px)); margin: 0; text-align: center; font: 500 10px "JetBrains Mono", ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted, #8a8d93); transition: opacity .2s; }
+.cs-splash.fly { background-color: transparent; pointer-events: none; }
+.cs-splash.fly .cs-skip { opacity: 0; }
+.cs-splash.out { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .cs-ops::before { animation: none; } .cs-splash { display: none; } }
