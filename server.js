@@ -95,7 +95,10 @@ function clean(b) {
     date: str(b.date, 20), time: str(b.time, 8), flight: str(b.flight, 12), klass: str(b.klass, 30), boarding: str(b.boarding, 40),
     biz: str(b.biz, 40), when: str(b.when, 40), seat: "1A", gate: "9", terminal: "Coffee", lang: b.lang === "ro" ? "ro" : "en", // beta 3.48 r217: the passenger's e-mail in Romanian from the Romanian website
     dreams: Array.isArray(b.dreams) ? b.dreams.slice(0, 6).map((d) => str(d, 40)).filter(Boolean) : [],
-    stops: Array.isArray(b.stops) ? b.stops.slice(0, 6).map((s) => [str(s?.[0], 4), str(s?.[1], 30)]) : []
+    stops: Array.isArray(b.stops) ? b.stops.slice(0, 6).map((s) => [str(s?.[0], 4), str(s?.[1], 30)]) : [],
+    // r285 (TASK-122): the ads landing page and the campaign the lead came from, kept with the lead and shown to the studio
+    lp: str(b.lp, 60), lp_v: str(b.lp_v, 2),
+    utm: Object.fromEntries(["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"].map((k) => [k, str(b[k], 120)]).filter(([, v]) => v))
   };
 }
 

@@ -29,6 +29,8 @@ const L = {
 };
 const langOf = (t, who) => (who === "passenger" && t.lang === "ro" ? L.ro : L.en);
 
+// r285 (TASK-122): where the lead came from (an ads landing page and its UTMs), for the studio's copy only
+const sourceOf = (t) => [t.lp ? "lp/" + t.lp + (t.lp_v ? " (" + t.lp_v + ")" : "") : "", Object.values(t.utm || {}).join(" / ")].filter(Boolean).join(" · ");
 export function passHtml(t, who) {
   const T = langOf(t, who);
   const legs = [["DRM", "The Dream"], ...t.stops.map(([c, n]) => [c, T.v(n)]), ["OLR", "Olari 9"]];
@@ -40,7 +42,7 @@ export function passHtml(t, who) {
   }).join(`<td valign="middle" style="padding:0 8px 18px;color:#b5b5b5;font-size:14px;white-space:nowrap;">&middot; &middot; &middot; &#9992; &middot; &middot; &middot;</td>`);
   const chips = t.dreams.map((d) => `<span style="display:inline-block;margin:0 4px 4px 0;padding:4px 9px;border:1.5px solid ${INK};border-radius:99px;background:#fff1a6;font-size:11px;font-weight:700;">${esc(T.v(d))}</span>`).join("");
   const intro = who === "studio"
-    ? `<b>${esc(t.name)}</b> just completed the route and booked a coffee. Reply to this email to answer them directly.`
+    ? `<b>${esc(t.name)}</b> just completed the route and booked a coffee. Reply to this email to answer them directly.${sourceOf(t) ? `<br>Source: ${esc(sourceOf(t))}` : ""}`
     : T === L.ro ? `Bine ai venit la bord, <b>${esc(t.first || t.name)}</b>. Boarding pass-ul tău e confirmat: îți răspundem într-o zi lucrătoare, iar cafeaua de la Olari 9 e din partea noastră.`
     : `Welcome aboard, <b>${esc(t.first || t.name)}</b>. Your pass is confirmed: we answer within one working day, and the coffee at Olari 9 is on us.`;
   return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f2f2f2;">
@@ -99,7 +101,7 @@ export function passHtml(t, who) {
 export function passText(t, who) {
   const T = langOf(t, who), ro = T === L.ro, c = (s) => s.charAt(0) + s.slice(1).toLowerCase();
   return [
-    who === "studio" ? `${t.name} just completed the route${t.lang === "ro" ? " (from the Romanian website)" : ""}. Reply to answer them directly.` : ro ? `Bine ai venit la bord, ${t.first || t.name}. Îți răspundem într-o zi lucrătoare.` : `Welcome aboard, ${t.first || t.name}. We answer within one working day.`,
+    who === "studio" ? `${t.name} just completed the route${t.lang === "ro" ? " (from the Romanian website)" : ""}. Reply to answer them directly.${sourceOf(t) ? ` Source: ${sourceOf(t)}` : ""}` : ro ? `Bine ai venit la bord, ${t.first || t.name}. Îți răspundem într-o zi lucrătoare.` : `Welcome aboard, ${t.first || t.name}. We answer within one working day.`,
     "",
     `CROMATIC AIR - ${T.pass} ${t.ref}`,
     `${T.route}: ${["DRM", ...t.stops.map((s) => s[0]), "OLR"].join(" > ")}`,
