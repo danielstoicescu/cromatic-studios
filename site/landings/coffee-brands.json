@@ -1,0 +1,35 @@
+{
+  "slug": "coffee-brands",
+  "vertical": "Coffee brands",
+  "lang": "both",
+  "campaign": { "name": "TASK-122 pilot · coffee brands", "channels": ["meta", "google"], "notes": "Ads link here with utm_source, utm_medium, utm_campaign; ?v=b shows headline B." },
+  "color": "#28C840",
+  "title": { "en": "Branding for specialty coffee brands · Cromatic Studios", "ro": "Branding pentru branduri de cafea de specialitate · Cromatic Studios" },
+  "desc": { "en": "Brand strategy, identity, packaging and content for specialty coffee brands, from the studio behind Two Minutes, Steam and Slow Coffee Festival.", "ro": "Strategie, identitate, ambalaje și conținut pentru branduri de cafea de specialitate, de la studioul din spatele Two Minutes, Steam și Slow Coffee Festival." },
+  "eyebrow": { "en": "For specialty coffee brands · Bucharest", "ro": "Pentru branduri de cafea de specialitate · București" },
+  "headline": {
+    "a": { "en": "Coffee is where we grew up.", "ro": "Am crescut printre cafenele." },
+    "b": { "en": "A brand as good as your coffee.", "ro": "Un brand la fel de bun ca espresso-ul tău." }
+  },
+  "lead": { "en": "Two Minutes, Steam, Slow Coffee Festival, Craft Coffee. Cups, boxes, shops and festivals, designed a few streets away from where the coffee is poured.", "ro": "Two Minutes, Steam, Slow Coffee Festival, Craft Coffee. Pahare, cutii, cafenele și festivaluri, desenate la câteva străzi de locul unde se toarnă cafeaua." },
+  "logos": ["Two Minutes", "Steam Coffee Shop", "Slow Coffee Festival", "Kómpus"],
+  "benefitsTitle": [{ "en": "Made for", "ro": "Gândit pentru" }, { "en": "the counter", "ro": "tejghea" }],
+  "benefits": [
+    { "t": { "en": "A brand that works on a cup", "ro": "Un brand care stă bine pe pahar" },
+      "p": { "en": "A mark, a palette and a voice that hold up on a paper cup, a bag of beans, a shop front and a phone screen.", "ro": "Un semn, o paletă și o voce care rezistă pe paharul de carton, pe punga de boabe, pe vitrină și pe ecranul telefonului." } },
+    { "t": { "en": "Packaging people pick up", "ro": "Ambalaje pe care le iei în mână" },
+      "p": { "en": "Boxes, bags and labels designed to be picked up like a favourite book, with the story of the coffee inside.", "ro": "Cutii, pungi și etichete făcute să fie luate de pe raft ca o carte preferată, cu povestea cafelei înăuntru." } },
+    { "t": { "en": "Content for your regulars", "ro": "Conținut pentru clienții fideli" },
+      "p": { "en": "Content, events and merch for the people who were there from the start, and a clear invitation for the ones just walking in.", "ro": "Conținut, evenimente și merch pentru cei care au fost acolo de la început și o invitație limpede pentru cei care abia intră pe ușă." } }
+  ],
+  "casesEyebrow": { "en": "Coffee Street · six cases", "ro": "Coffee Street · șase studii de caz" },
+  "casesTitle": [{ "en": "From bean", "ro": "De la boabe" }, { "en": "to shelf", "ro": "la raft" }],
+  "cases": ["two-minutes", "steam", "slow-coffee-festival", "craft-coffee", "artisan-coffee-gear", "kompus"],
+  "services": ["brand-strategy", "brand-identity", "websites-apps", "social-media-content"],
+  "proofTitle": [{ "en": "Years,", "ro": "Ani," }, { "en": "not weeks", "ro": "nu săptămâni" }],
+  "proof": [
+    { "n": "10", "case": "two-minutes", "t": { "en": "years with Two Minutes, our client and our neighbour on Aricescu", "ro": "ani alături de Two Minutes, clientul și vecinul nostru de pe Aricescu" } },
+    { "n": "2021", "case": "slow-coffee-festival", "t": { "en": "the year we started on Slow Coffee Festival. We have upgraded its brand every edition since.", "ro": "anul în care am început cu Slow Coffee Festival. De atunci, îi reîmprospătăm brandul la fiecare ediție." } },
+    { "n": "15", "t": { "en": "case studies on Coffee Street: coffee shops, roasters, a festival, bakeries and more", "ro": "studii de caz pe Coffee Street: cafenele, prăjitorii, un festival, brutării și altele" } }
+  ]
+}

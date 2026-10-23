@@ -704,5 +704,108 @@ ${header(false)}
 ${footer}`;
   }
 
-  return { home, casePage, canvasPage, industryPage, servicePage, teamPage, privacyPage, industrySlugs: INDUSTRIES.map((x) => x.slug), serviceSlugs: SERVICE_PAGES.map((x) => x.slug), slugs: Object.keys(CASES), canvasSlugs: Object.keys(CANVASES).filter((k) => canvases[k]) };
+  // TASK-122: a landing page for an ads campaign (/lp/<slug>/), from site/landings/<slug>.json through build/landings.mjs.
+  // One goal (The Core Lite), no menu, no way out but the case cards; noindex, never in the sitemap. `L` holds the page's
+  // English words (the Romanian copy is made from it by the dictionary, with the landing's own "ro" fields added to it).
+  // The same blocks as the website: the logo cards, the bento case cards, the hub cards, the chapters, the boarding pass.
+  function landingPage(L, covers = {}) {
+    const col = L.color || "#FED012";
+    const cta = (pos, cls = "btn btn-y") => `<a class="${cls}" href="#freebie" data-lp-cta="${pos}">${STAR}<span>${esc(L.cta)}</span></a>`;
+    const title2 = (t) => `<h2 class="ptitle">${pill(esc(t[0]), col, -1.5)}${t[1] ? ` ${pill(esc(t[1]), "#FED012", 1)}` : ""}</h2>`;
+    const words = (t) => esc(t).split(" ").map((w, k) => `<span class="w" style="--k:${k}">${w}</span>`).join(" ");
+    const logoCard = (name, i) => {
+      const p = PROJECTS.find((x) => x.name === name);
+      const inner = p?.badge && A(p.badge) ? img(p.badge, name) : `<b class="lp-wm">${esc(name)}</b>`;
+      return `<span class="logo-card lp-logo" style="--d:${((i * 0.53) % 3).toFixed(2)}s;--r:${[-2.5, 1.8, -1.2, 2.4, -1.8, 1.2][i % 6]}deg">${inner}</span>`;
+    };
+    const projects = L.cases.map((sl) => byPage(sl)).filter(Boolean);
+    const svcs = L.services.map((k) => SERVICE_PAGES.find((x) => x.slug === k)).filter(Boolean);
+    const hidden = ["lp", "lp_v", "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"].map((n) => `<input type="hidden" name="${n}" data-lead${n === "lp" ? ` value="${esc(L.slug)}"` : ""}>`).join("");
+    const form = contactForm().replace('<input class="hp"', `${hidden}\n    <input class="hp"`);
+    const proof = L.proof.length ? `<section class="sec sec-alt lp-proof" id="proof"><div class="wrap">
+      <p class="eyebrow mono">${esc(L.proofEyebrow)}</p>${title2(L.proofTitle)}
+      <div class="lp-proof-grid">${L.proof.map((x, i) => x.q
+        ? `<figure class="lp-q" style="--i:${i}"><blockquote><p>${esc(x.q)}</p></blockquote><figcaption class="mono">${esc(x.by)}</figcaption></figure>`
+        : `<p class="lp-fig" style="--i:${i}"><b>${esc(x.n)}</b><span>${esc(x.t)}</span></p>`).join("")}</div>
+    </div></section>` : "";
+    const robots = '<meta name="robots" content="noindex, follow">';
+    const lpCss = `<style id="lp-css">
+.lp-hdr .hdr-in{justify-content:space-between}.lp-hdr .btn{margin-left:auto;padding:10px 18px;font-size:15px;white-space:nowrap}
+.lp-va,.lp-vb{display:block}html.lp-b .lp-va,html:not(.lp-b) .lp-vb{display:none}
+.lp-logos{display:flex;flex-wrap:wrap;gap:16px 18px;margin-top:34px}.lp-logo{display:flex;align-items:center;justify-content:center;width:170px;height:96px;padding:12px 16px}
+.lp-logo img{width:100%;height:100%;min-height:0;max-width:none;max-height:none;object-fit:contain}.lp-wm{font:900 19px/1.05 CromaticSans,system-ui,sans-serif;text-align:center;letter-spacing:-.01em}
+.lp-hero .btns{margin-top:30px}.lp-hero .hub-lead{max-width:40em}
+.lp-svc{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-top:34px}
+.lp-svc article{border:var(--line);border-radius:var(--rad);background:#fff;padding:24px 22px;box-shadow:0 4px 0 var(--ink)}
+.lp-svc h3{font-size:24px;font-weight:900;margin-bottom:10px}.lp-svc ul{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;padding:0;list-style:none}
+.lp-svc li{font:600 13px/1 'JetBrains Mono',ui-monospace,monospace;border:1.5px solid var(--ink);border-radius:999px;padding:6px 10px;background:color-mix(in srgb,var(--bc) 18%,#fff)}
+.lp-free{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;border:var(--line);border-radius:calc(var(--rad) * 1.4);background:var(--y);padding:clamp(26px,4vw,48px);box-shadow:0 6px 0 var(--ink)}
+.lp-free h2{font-size:clamp(34px,4.4vw,56px);font-weight:900;line-height:1;margin:8px 0 16px}.lp-free p{font-size:18px;max-width:32em}
+.lp-free ul{list-style:none;padding:0;margin:0;display:grid;gap:10px}.lp-free li{background:#fff;border:var(--line);border-radius:16px;padding:14px 16px;font-weight:700;font-size:17px}
+.lp-free li i{font-style:normal;font:600 12px/1 'JetBrains Mono',ui-monospace,monospace;display:block;opacity:.6;margin-bottom:6px}
+.lp-free .btn{margin-top:24px;background:#fff}.lp-note{font-size:14px!important;opacity:.7;margin-top:12px}
+.lp-proof-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:34px}
+.lp-q,.lp-fig{margin:0;border:var(--line);border-radius:var(--rad);background:#fff;padding:26px 24px;box-shadow:0 4px 0 var(--ink)}
+.lp-q blockquote{margin:0}.lp-q p{font-size:19px;line-height:1.35;font-weight:600}.lp-q figcaption{margin-top:14px;font-size:12px;opacity:.7}
+.lp-fig b{display:block;font:900 clamp(44px,5vw,64px)/1 CromaticSans,system-ui,sans-serif;color:var(--ink)}.lp-fig b::after{content:"";display:block;width:48px;height:6px;border-radius:3px;background:var(--bc);margin:12px 0}
+.lp-fig span{font-size:17px}
+@media (max-width:900px){.lp-free{grid-template-columns:1fr}}
+@media (max-width:600px){.lp-hdr .btn{padding:8px 12px;font-size:13px}.lp-hdr .btn .cupspin{display:none}.lp-logo{width:calc(50% - 9px);height:84px}.lp-wm{font-size:16px}}
+</style>`;
+    // ?v=b swaps the headline before the first paint
+    const vScript = `<script>try{if(/[?&]v=b\\b/.test(location.search))document.documentElement.classList.add("lp-b")}catch(e){}</script>`;
+    const freeHref = L.freebieHref;
+    const lpJs = `<script>(function(){var d=document,q=new URLSearchParams(location.search),v=q.get("v")==="b"?"b":"a",lp=${JSON.stringify(L.slug)},lang=d.documentElement.lang==="ro"?"ro":"en";
+var u={};q.forEach(function(val,k){if(/^utm_[a-z]+$/.test(k))u[k]=val.slice(0,120)});
+var ev=function(n,p){try{if(window.czEvent)window.czEvent(n,Object.assign({lp:lp,lp_variant:v,lp_lang:lang},p||{}))}catch(e){}};
+var fh=${JSON.stringify(freeHref)}+(${JSON.stringify(freeHref)}.indexOf("?")<0?"?":"&")+"src="+encodeURIComponent(lp);for(var k in u)fh+="&"+k+"="+encodeURIComponent(u[k]);
+d.querySelectorAll("[data-lp-free]").forEach(function(a){a.href=fh});
+d.querySelectorAll("input[data-lead]").forEach(function(i){if(i.name==="lp_v")i.value=v;else if(u[i.name])i.value=u[i.name]});
+d.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("[data-lp-cta],[data-lp-free]");if(!a)return;if(a.hasAttribute("data-lp-free"))ev("lp_freebie_start",{position:a.getAttribute("data-lp-free")});else ev("lp_cta_click",{position:a.getAttribute("data-lp-cta")})},true);
+var f=d.getElementById("bform");if(f)f.addEventListener("submit",function(){var n=(f.elements.name||{}).value,m=(f.elements.email||{}).value;if(n&&/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test((m||"").trim()))ev("lp_form_submit",{form:"boarding_pass"})})})();</script>`;
+    const h = head({ title: L.title, desc: L.desc, path: L.path, preload: `${vScript}\n${lpCss}` }).replace(/<meta name="robots"[^>]*>/, robots);
+    return `${h}
+<a class="skip" href="#main">Skip to content</a>
+<header class="hdr lp-hdr"><div class="wrap hdr-in"><span class="brand">${logo ? `<img src="${logo.src}" alt="Cromatic Studios" width="${logo.w}" height="${logo.h}">` : "Cromatic Studios"}</span>${cta("header")}</div></header>
+<main id="main" class="case hub lp" style="--bc:${col};--bt:#111">
+  <section class="c-hero c2-hero hub-hero lp-hero">
+    <div class="wrap">
+      <p class="eyebrow mono">${esc(L.eyebrow)}</p>
+      <h1 class="c2-title"><span class="lp-va">${words(L.headA)}</span><span class="lp-vb">${words(L.headB)}</span></h1>
+      <p class="lead hub-lead">${esc(L.lead)}</p>
+      <div class="btns">${cta("hero")}</div>
+      <div class="lp-logos" aria-label="${esc(L.logosLabel)}">${L.logos.map(logoCard).join("")}</div>
+    </div></section>
+  <section class="sec"><div class="wrap"><p class="eyebrow mono">${esc(L.benefitsEyebrow)}</p>${title2(L.benefitsTitle)}
+    <div class="hub-cards">${L.benefits.map((x, i) => `<article class="hub-card" style="--sc:${col}"><span class="mono">${String(i + 1).padStart(2, "0")}</span><h3>${esc(x.t)}</h3><p>${esc(x.p)}</p></article>`).join("")}</div></div></section>
+  <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono">${esc(L.casesEyebrow)}</p>${title2(L.casesTitle)}
+    <div class="bento" style="--dc:${col}">${projects.map((p, i) => bentoCard(p, i, covers)).join("")}</div></div></section>
+  <section class="sec"><div class="wrap"><p class="eyebrow mono">${esc(L.servicesEyebrow)}</p>${title2(L.servicesTitle)}
+    <div class="lp-svc">${svcs.map((s) => `<article><h3>${esc(s.name)}</h3><ul>${s.includes.slice(0, 4).map((x) => `<li>${esc(x.t)}</li>`).join("")}</ul></article>`).join("")}</div></div></section>
+  <section class="sec sec-alt"><div class="wrap"><p class="eyebrow mono">${esc(L.stepsEyebrow)}</p>${title2(L.stepsTitle)}
+    <div class="chapters">${L.steps.map((x, i) => `<article class="chap" style="--cc:${["#28C840", "#B098C8", "#119BFE", "#F65342"][i % 4]}"><span class="chap-k mono">${String(i + 1).padStart(2, "0")}</span><h3>${esc(x.t)}</h3><p>${esc(x.p)}</p></article>`).join("")}</div></div></section>
+  <section class="sec" id="freebie"><div class="wrap"><div class="lp-free">
+    <div><p class="eyebrow mono">${esc(L.freebie.eyebrow)}</p><h2>${esc(L.freebie.title)}</h2><p>${esc(L.freebie.p)}</p>
+      <a class="btn" href="${esc(freeHref)}?src=${esc(L.slug)}" data-lp-free="freebie">${STAR}<span>${esc(L.cta)}</span></a>
+      <p class="lp-note">${esc(L.freebie.note)}</p></div>
+    <ul>${L.freebie.items.map((x) => `<li><i>${esc(x.k)}</i><span>${esc(x.t)}</span></li>`).join("")}</ul>
+  </div></div></section>
+  ${proof}
+  <section id="contact" class="sec sec-ink">
+    <span class="cupspin cup-contact" aria-hidden="true"></span>
+    <div class="wrap contact">
+      <div class="c-txt">
+        <p class="eyebrow mono">${esc(L.contact.eyebrow)}</p>
+        <h2 class="ptitle">${pill(esc(L.contact.title[0]), "#119BFE", -2)} ${pill(esc(L.contact.title[1]), "#F65342", 1.5)}</h2>
+        <p class="sec-lead">${esc(L.contact.lead)}</p>
+      </div>
+      ${form}
+    </div>
+  </section>
+</main>
+<footer class="ftr lp-ftr"><div class="cz-foot" data-czf></div></footer>
+${lpJs}
+</body></html>`;
+  }
+  return { home, casePage, canvasPage, industryPage, servicePage, teamPage, privacyPage, landingPage, industrySlugs: INDUSTRIES.map((x) => x.slug), serviceSlugs: SERVICE_PAGES.map((x) => x.slug), slugs: Object.keys(CASES), canvasSlugs: Object.keys(CANVASES).filter((k) => canvases[k]) };
 }

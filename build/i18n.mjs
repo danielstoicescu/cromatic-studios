@@ -200,5 +200,8 @@ export function makeI18n(root) {
     try { writeFileSync(file, JSON.stringify(obj, null, 1) + "\n"); } catch {}
     return missing.size;
   }
-  return { translate, alternates, saveMissing, sameAsEnglish, keptEnglish: KEEP.size, size: D.size };
+  // TASK-122: entries made by the build itself (an ads landing's own "ro" fields, build/landings.mjs), added to the
+  // dictionary for this run only; a block they do not cover is still listed in ro.missing.json like any other
+  function add(entries) { for (const [k, v] of Object.entries(entries)) if (v != null && v !== "") D.set(norm(k), v); }
+  return { translate, alternates, saveMissing, sameAsEnglish, add, keptEnglish: KEEP.size, size: D.size };
 }

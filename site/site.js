@@ -363,6 +363,9 @@
       klass: CLASS[pick.biz] || "Open Class", boarding: BOARD[pick.when] || "When you are ready",
       company_site: v("company_site"), lang: RO ? "ro" : "en"
     };
+    // TASK-122: an ads landing adds its name, headline variant and UTM parameters (hidden inputs marked data-lead).
+    // The server keeps only the fields it knows (server.js clean()): these reach the lead once it keeps them too
+    f.querySelectorAll("input[data-lead]").forEach((i) => { if (i.value) t[i.name] = i.value.slice(0, 120); });
     const btn = f.querySelector("button[type=submit]");
     btn.disabled = true; status.textContent = T.printing;
     let sent = false;

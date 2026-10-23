@@ -774,6 +774,26 @@ const roPaths = [];
     PAGES[rp] = { path: rp, title: t, desc: d, fullDesc: d, images: PAGES[p].images, lastmod: PAGES[p].lastmod, text: pageText(ro) };
     roPaths.push(rp);
   }
+  // TASK-122: the ads landings (site/landings/*.json -> /lp/<slug>/ and /ro/lp/<slug>/), after the website so the case
+  // cards have their covers; through the same dictionary (their own "ro" fields added), so the count of English blocks
+  // below covers them too. Never in PAGES: no sitemap, no llms.txt. GA4 and the footer come in the pass over public/
+  {
+    const { loadLandings } = await import("./landings.mjs");
+    const LPS = loadLandings(root, { PROJECTS: DATA.PROJECTS, INDUSTRIES: HUBS_DATA.INDUSTRIES, SERVICE_PAGES: HUBS_DATA.SERVICE_PAGES, ZD_PAGES, workPaths });
+    for (const lp of LPS) {
+      let en = R.landingPage(lp.L, COVERS);
+      if (GF_CSS) en = en.replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\n?/, "").replace(/<link rel="preload" as="style" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"[^>]*>\n?<noscript><link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"><\/noscript>/, `<style>${GF_CSS}</style>`);
+      en = wpMirror(en);
+      if (lp.langs.includes("en")) { mkdirSync(join(pub, "lp", lp.slug), { recursive: true }); writeFileSync(join(pub, "lp", lp.slug, "index.html"), en); }
+      if (lp.langs.includes("ro")) {
+        I18N.add(lp.ro);
+        const rp = `/ro/lp/${lp.slug}/`;
+        const ro = I18N.translate(en, lp.L.path, SITE_URL, enPaths).replaceAll(`${SITE_URL}null`, SITE_URL + rp);
+        mkdirSync(join(pub, rp), { recursive: true }); writeFileSync(join(pub, rp, "index.html"), ro);
+      }
+      console.log(`[lp] ${lp.slug}: ${lp.langs.map((l) => (l === "ro" ? `/ro/lp/${lp.slug}/` : `/lp/${lp.slug}/`)).join(" + ")} (${lp.L.cases.length} cases, ${lp.L.proof.length} proof items)`);
+    }
+  }
   // r139c (N34): /onboarding/ in Romanian (/ro/onboarding/), through the same dictionary. Its files stay in
   // /onboarding/ (relative addresses made absolute); both copies point at each other (hreflang) and get a language
   // switch in their own header, next to the drive button (not the corner pill the case pages have)

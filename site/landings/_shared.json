@@ -1,0 +1,41 @@
+{
+  "_about": "Shared words for every ads landing (TASK-122). A landing's own JSON replaces any of these keys. See README.md.",
+  "lang": "both",
+  "color": "#FED012",
+  "cta": { "en": "Get The Core Lite, free", "ro": "Ia The Core Lite, gratuit" },
+  "logosLabel": { "en": "Brands we grew with", "ro": "Branduri cu care am crescut" },
+  "benefitsEyebrow": { "en": "What you get", "ro": "Ce primești" },
+  "servicesEyebrow": { "en": "Full tank of services", "ro": "Plinul de servicii" },
+  "servicesTitle": [{ "en": "What we", "ro": "Ce avem" }, { "en": "carry", "ro": "la bord" }],
+  "stepsEyebrow": { "en": "How we work", "ro": "Cum lucrăm" },
+  "stepsTitle": [{ "en": "Four steps,", "ro": "Patru pași," }, { "en": "one coffee", "ro": "o cafea" }],
+  "steps": [
+    { "t": { "en": "Coffee and hard questions", "ro": "O cafea și întrebări grele" },
+      "p": { "en": "We sit at a table with you and ask what nobody asked yet. Who buys, why they stay, what you would never do.", "ro": "Stăm la masă cu tine și te întrebăm ce nu te-a mai întrebat nimeni. Cine cumpără, de ce rămâne, ce n-ai face niciodată." } },
+    { "t": { "en": "The Core", "ro": "The Core" },
+      "p": { "en": "We define your archetype, your positioning and your voice. One page the whole team can argue with.", "ro": "Îți definim arhetipul, poziționarea și vocea. O singură pagină, pe care toată echipa o poate întoarce pe toate fețele." } },
+    { "t": { "en": "Design, made in house", "ro": "Design, făcut în casă" },
+      "p": { "en": "We craft the identity, the pack, the website or the film. Under one roof, with the people you met at step one.", "ro": "Construim identitatea, ambalajul, site-ul sau filmul. Sub același acoperiș, cu oamenii pe care i-ai cunoscut la primul pas." } },
+    { "t": { "en": "Out in the world", "ro": "Afară, în lume" },
+      "p": { "en": "We launch it with you and stay close after. On the shelf, on the counter, on the feed.", "ro": "Îl lansăm împreună și rămânem aproape și după. Pe raft, pe tejghea, în feed." } }
+  ],
+  "freebie": {
+    "href": "/thecore30/lite",
+    "eyebrow": { "en": "Free · 5 to 10 minutes", "ro": "Gratuit · 5–10 minute" },
+    "title": { "en": "The Core Lite", "ro": "The Core Lite" },
+    "p": { "en": "The short version of the method every Cromatic brand starts with. A guided wizard finds your archetype, you get a basic positioning, and the result lands in your inbox.", "ro": "Varianta scurtă a metodei cu care începe orice brand Cromatic. Un ghid pas cu pas îți găsește arhetipul, primești o poziționare de bază, iar rezultatul îți ajunge pe mail." },
+    "note": { "en": "No call, no sales pitch. If you want to talk after, the coffee is on us.", "ro": "Fără telefoane, fără ofertă la pachet. Dacă vrei să vorbim după, cafeaua e din partea noastră." },
+    "items": [
+      { "k": { "en": "The wizard", "ro": "Ghidul" }, "t": { "en": "Your brand's archetype, found in a few questions", "ro": "Arhetipul brandului tău, găsit din câteva întrebări" } },
+      { "k": { "en": "The positioning", "ro": "Poziționarea" }, "t": { "en": "A basic positioning: who you serve, how, and why you", "ro": "O poziționare de bază: pe cine servești, cum și de ce tu" } },
+      { "k": { "en": "The time", "ro": "Timpul" }, "t": { "en": "About 5 to 10 minutes, at your own pace", "ro": "Cam 5–10 minute, în ritmul tău" } },
+      { "k": { "en": "The result", "ro": "Rezultatul" }, "t": { "en": "Emailed to you, to keep and to share with your team", "ro": "Pe mail, să-l păstrezi și să-l arăți echipei" } }
+    ]
+  },
+  "proofEyebrow": { "en": "Proof, from the work", "ro": "Dovezi, din proiecte" },
+  "contact": {
+    "eyebrow": { "en": "Rather talk first? · Strada Olari 9", "ro": "Preferi să vorbim întâi? · Strada Olari 9" },
+    "title": [{ "en": "One coffee", "ro": "La o cafea" }, { "en": "away", "ro": "distanță" }],
+    "lead": { "en": "Fill in the boarding pass and we answer within one working day. Same form as on our website, same people reading it.", "ro": "Completează boarding pass-ul și îți răspundem într-o zi lucrătoare. Același formular ca pe site, aceiași oameni care îl citesc." }
+  }
+}
