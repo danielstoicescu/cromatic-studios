@@ -27,9 +27,19 @@ cut("  // ---------- 7 · the fountain at night", "  // ---------- 2-3 (D5)");
 s = s.replace(/  Cm\.shape\("ground"[^\n]*\n/, "");
 // D8 (Daniel): the map's two modes named as the cuts land: "Bird's eye" on the city from high, "Drive mode" on the
 // street at Steam: small yellow pills (the house's url pill, at the tag size), top-left, in before the shot's card
-const D8 = ["d8", "d9"].includes(process.env.STORY);
+const D8 = ["d8", "d9", "d10"].includes(process.env.STORY), D10 = process.env.STORY === "d10";
 if (D8) rep("  clip(drawCard(Cm, card(\"d19-map\"), T2), \"zoom\");", `  for (const [text, shot, out] of [["Bird's eye", "bird", "bird+56"], ["Drive mode", "steam", "steam+42"]]) { const c = card("d14-end"), U = c.layout.url, size = 48, tr = -0.02, w = setLine(KC.T, text, size, tr).width, padX = 44, h = 76.8; c.id = "d8-mode-" + shot; c.layout = { url: { ...U, text, size, tracking: tr, w: w + 2 * padX, h, centre: [80 + (w + 2 * padX) / 2, 300 + h / 2], textX: 80 + padX, baseline: 300 + h / 2 + size * 0.36, keyline: 5, shadow: [8, 11], tilt: -4 } }; c.timing.cues = { urlIn: shot + "+2", out }; drawCard(Cm, c, T2); }
   clip(drawCard(Cm, card("d19-map"), T2), "zoom");`);
+// D10 (Daniel on D9): the descent 0.4 s shorter and the street at Steam 0.6 s shorter (the car arrives and parks as the
+// camera settles, then the place card, the knocks and the page as before, sooner): 1.0 s off the film from Steam on
+if (D10) {
+  rep("zoom: [456, 660], steam: [660, 850], page: [790, 1204], r1: [1204, 1288], r2: [1288, 1378], r3: [1378, 1510], r4: [1510, 1600], r5: [1600, 1696], r9: [1696, 1786], r8: [1786, 1906], fount: [1906, 2086], end: [2086, 2226] };",
+      "zoom: [456, 636], steam: [636, 790], page: [730, 1144], r1: [1144, 1228], r2: [1228, 1318], r3: [1318, 1450], r4: [1450, 1540], r5: [1540, 1636], r9: [1636, 1726], r8: [1726, 1846], fount: [1846, 2026], end: [2026, 2166] };");
+  rep("const F = 2226,", "const F = 2166,");
+  rep("const CARD = 736, KNOCK = [752, 768], OPEN = 790,", "const CARD = 676, KNOCK = [692, 708], OPEN = 730,");
+  rep("REAL = 850, CLOSE = [1140, 1176];", "REAL = 790, CLOSE = [1080, 1116];");
+  rep('clip(drawCard(Cm, card("d3-knock"), T2), "steam");', 'clip(drawCard(Cm, card("d3-knock", { in: "steam+28" }), T2), "steam");');
+}
 // the cards: no sip; d20 smaller, its new words
 rep('["d9-fly-high", "r5"], ["d10-sip", "sip"], ', '["d9-fly-high", "r5"], ');
 rep("const clip = (r, shot) =>", `// D7 (Daniel): "and avoid being / pulled over.", smaller (the lead style: 60, line height 1.10, tracking -0.025),

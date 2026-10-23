@@ -7,15 +7,15 @@ import path from "path";
 import { spawnSync } from "child_process";
 import pw from "/Users/daniel.stoic/node_modules/playwright/index.mjs";
 import sharp from "/Users/daniel.stoic/cromatic-drive/node_modules/sharp/lib/index.js";
-const HERE = path.resolve(new URL("..", import.meta.url).pathname), SRC = path.join(HERE, "out/d7");
+const HERE = path.resolve(new URL("..", import.meta.url).pathname), SRC = path.join(HERE, process.env.STORY === "d10" ? "out/d10" : "out/d7"), JS = path.join(HERE, "out/d7");
 const IRIS = "/Users/daniel.stoic/cromatic-d5/design", FR6 = path.join(IRIS, "stories/lottie/frames/d6");
 const OUT = process.argv[2] || "/Users/daniel.stoic/cromatic-ops/refs/diorama-render/d7", SHEET = process.argv.includes("--sheet");
 const FF = "/Users/daniel.stoic/node_modules/@ffmpeg-installer/darwin-arm64/ffmpeg";
-const SD = process.env.STORY || "d7", J = JSON.parse(fs.readFileSync(path.join(SRC, `story-${SD}-en.json`), "utf8")), C = J.cromatic.cuts, F = J.op;
+const SD = process.env.STORY || "d7", J = JSON.parse(fs.readFileSync(path.join(JS, `story-${SD}-en.json`), "utf8")), C = J.cromatic.cuts, F = J.op;
 const list6 = (k) => fs.readdirSync(FR6).filter((f) => f.startsWith(k + "-")).sort();
 const mine = (k) => fs.existsSync(SRC) ? fs.readdirSync(SRC).filter((f) => new RegExp(`^${k}-\\d{4}\\.png$`).test(f)).sort() : [];
 const S6 = { site: list6("site"), page: list6("page") }, M = Object.fromEntries(["bird", "zoom", "steam", "r1", "r2", "r3", "r4", "r5", "r9", "r8", "fount"].map((k) => [k, mine(k)]));
-const REAL = 850, CLOSE0 = 1140;
+const BGJ = Object.fromEntries((J.cromatic.bg || []).map(([k, a, b]) => [k, [a, b]])), REAL = BGJ.page ? BGJ.page[0] : 850, CLOSE0 = BGJ.page ? BGJ.page[1] : 1140;
 const BG = [["site", 0, 240, "6"], ["bird", 240, 456], ["zoom", 456, 660], ["steam", 660, REAL], ["page", REAL, CLOSE0, "6"], ["street", CLOSE0, C.r1[0]], ...["r1", "r2", "r3", "r4", "r5", "r9", "r8"].map((k) => [k, C[k][0], C[k][1]]), ["fount", C.fount[0], C.end[0] + 30]];
 const bgOf = (f) => {
   for (const [k, a, b, six] of BG) if (f >= a && f < b) {
@@ -43,13 +43,17 @@ await p.route("http://d7.local/**", (r) => {
 await p.goto("http://d7.local/"); await p.waitForFunction(() => window.ready, null, { timeout: 180000 }); await p.waitForTimeout(500);
 // the sheet: a frame from inside every shot (and the cards' moments)
 const mid = (k, u) => Math.round((C[k][0] + (C[k][1] - C[k][0]) * u) / 2);
-const PICKS = [["Our portfolio", Math.round(170 / 2)], ["The pins", mid("bird", 0.2)], ["The cards", mid("bird", 0.45)], ["The map line", mid("bird", 0.85)], ["Down to Steam", mid("zoom", 0.55)], ["At Steam", Math.round(650 / 2)], ["Knock knock.", Math.round(770 / 2)], ["Come in.", Math.round(830 / 2)], ["The page", Math.round(1000 / 2)], ["The street", Math.round(1180 / 2)], ["Drive.", mid("r1", 0.6)], ["Snoop.", mid("r2", 0.6)], ["Overtake.", mid("r3", 0.6)], ["Pass Go.", mid("r4", 0.6)], ["Fly high.", mid("r5", 0.6)], ["Dive.", mid("r9", 0.6)], ["…pulled over.", mid("r8", 0.6)], ["See you around.", mid("fount", 0.6)], ["The end", mid("end", 0.7)]];
+const PICKS0 = [["Our portfolio", Math.round(170 / 2)], ["The pins", mid("bird", 0.2)], ["The cards", mid("bird", 0.45)], ["The map line", mid("bird", 0.85)], ["Down to Steam", mid("zoom", 0.55)], ["At Steam", Math.round(650 / 2)], ["Knock knock.", Math.round((C.steam[0] + 110) / 2)], ["Come in.", Math.round((C.steam[0] + 170) / 2)], ["The page", Math.round((REAL + 150) / 2)], ["The street", Math.round((C.r1[0] - 24) / 2)], ["Drive.", mid("r1", 0.6)], ["Snoop.", mid("r2", 0.6)], ["Overtake.", mid("r3", 0.6)], ["Pass Go.", mid("r4", 0.6)], ["Fly high.", mid("r5", 0.6)], ["Dive.", mid("r9", 0.6)], ["…pulled over.", mid("r8", 0.6)], ["See you around.", mid("fount", 0.6)], ["The end", mid("end", 0.7)]];
+const PICKS = SD === "d10" ? [...PICKS0.slice(0, 5), ["Pulling up", mid("zoom", 0.85)], ["Parked", Math.round((C.steam[0] + 20) / 2)], ...PICKS0.slice(6, 10), ["Into the night", Math.round(C.r1[0] / 2) - 2], ...PICKS0.slice(10)] : PICKS0;
 const want = SHEET ? new Set(PICKS.map((x) => x[1])) : null, n = Math.ceil(F / 2);
 for (let i = 0; i < n; i++) {
   if (want && !want.has(i)) continue;
   const f = i * 2; await p.evaluate((f) => window.go(f), f);
   const top = await p.screenshot({ omitBackground: true }), bg = bgOf(f), o = path.join(TMP, `f${String(i).padStart(5, "0")}.png`);
-  const base = bg ? sharp(bg).resize(1080, 1920, { kernel: "lanczos3" }).removeAlpha() : sharp({ create: { width: 1080, height: 1920, channels: 3, background: "#000000" } });
+  let base = bg ? sharp(bg).resize(1080, 1920, { kernel: "lanczos3" }).removeAlpha() : sharp({ create: { width: 1080, height: 1920, channels: 3, background: "#000000" } });
+  // D10 (Daniel: no hard jump in light or colour after the map part): the day street dissolves into the night's first
+  // ride over 0.8 s, centred on the cut (the ride's first frame held under the first half)
+  if (SD === "d10") { const c = C.r1[0], half = 12 * 2; if (f >= c - half && f < c + half) { const k = (f - (c - half)) / (2 * half), e = k * k * (3 - 2 * k), A = await sharp(bgOf(Math.min(f, c - 2))).resize(1080, 1920).removeAlpha().raw().toBuffer(), B = await sharp(bgOf(Math.max(f, c))).resize(1080, 1920).removeAlpha().raw().toBuffer(), O = Buffer.alloc(A.length); for (let q = 0; q < A.length; q++) O[q] = Math.round(A[q] * (1 - e) + B[q] * e); base = sharp(O, { raw: { width: 1080, height: 1920, channels: 3 } }); } }
   await sharp(await base.png().toBuffer()).composite([{ input: top }]).png({ compressionLevel: 1 }).toFile(o);
 }
 await br.close();

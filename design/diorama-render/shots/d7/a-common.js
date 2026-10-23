@@ -60,8 +60,9 @@ export async function heroCar(ctx, { lights = false, scale = 15 } = {}) {
   return {
     group: g, setLights, wheels, setBeam(i) { beamI = i; setLights(lit); },
     // x, y, z logical; roll: the distance the car has rolled (map units), to turn the wheels (radius 0.292 m)
-    place(x, y, z, yaw, roll = null) {
-      g.position.set(x, y, z); g.rotation.set(0, yaw, 0); if (roll != null) for (const w of wheels) w.rotation.x = roll / scale / 0.292; g.updateMatrixWorld(true);
+    // pitch: radians, + = the nose down (D10: the brake's dip as it parks)
+    place(x, y, z, yaw, roll = null, pitch = 0) {
+      g.position.set(x, y, z); g.rotation.set(0, yaw, 0); if (pitch) g.rotateX(pitch); if (roll != null) for (const w of wheels) w.rotation.x = roll / scale / 0.292; g.updateMatrixWorld(true);
       [-0.55, 0.55].forEach((sx, k) => { const b = beams[k]; b.position.copy(S.warpV(loc(sx, 0.62, 2.0))); b.target.position.copy(S.warpV(loc(sx * 1.6, 0, 14))); b.updateMatrixWorld(true); b.target.updateMatrixWorld(true); });
     },
     dispose() { g.parent && g.parent?.remove(g); for (const b of beams) { b.parent && b.parent?.remove(b); b.target.parent && b.target.parent?.remove(b.target); } }
