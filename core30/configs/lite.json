@@ -1,6 +1,7 @@
 {
  "id": "lite",
  "version": "lite@0.72",
+ "lang": "ro",
  "edition": {
   "kind": "lite",
   "basedOn": "blank@0.72",
@@ -23,13 +24,14 @@
  },
  "intro": {
   "hello": "Ce arhetip are brandul tău?",
-  "lead": "Șapte minute, doi pași: alegi din instinct, răspunzi la câteva dileme, apoi scrii o frază de poziționare. La final primești pe email combinația ta de arhetipuri și ce înseamnă pentru brand.",
+  "lead": "Șapte minute, doi pași. Întâi întrebi globul de cristal ce arhetip are brandul tău, apoi alegi câte un cuvânt pe șase categorii și primești UVP-ul brandului, într-o frază. Rezultatul vine și pe email.",
   "promise": [
    "Gratuit, fără cont. Doar emailul, ca să-ți trimitem rezultatul.",
    "Același wizard pe care îl folosim în strategia de brand pentru clienții Cromatic."
   ],
   "minutes": "~7 minute",
-  "chapters": false
+  "chapters": false,
+  "askBrand": true
  },
  "lite": {
   "cta": "https://cromaticstudios.com/site/?src=core-lite#contact",
@@ -51,7 +53,7 @@
     {
      "id": "l1.arch",
      "kind": "archetype",
-     "label": "Wizard-ul de arhetip",
+     "label": "The Archetype Teller",
      "help": "Trei pași: alegi din instinct, ordonezi, apoi răspunzi la zece dileme. La final vezi combinația ta.",
      "archetypes": [
       {
@@ -661,59 +663,102 @@
    ],
    "short": "Poziționare",
    "minutes": 3,
-   "why": "O frază care spune pentru cine e brandul și de ce ar alege cineva tocmai brandul tău.",
+   "icon": "spark",
+   "why": "Un UVP: o singură frază care spune ce oferi, cui, în ce cultură, cu ce voce, ce simt oamenii, ce primesc și ce te face diferit.",
    "items": [
     {
-     "id": "l2.name",
-     "kind": "text",
-     "label": "Cum se numește brandul?",
-     "placeholder": "Numele brandului"
-    },
-    {
-     "id": "l2.builder",
-     "kind": "builder",
-     "label": "Construiește fraza de poziționare.",
-     "help": "Completează golurile sau atinge o sugestie.",
-     "template": "Pentru {cine}, {brand} este {categorie} care {beneficiu}, spre deosebire de {alternativa}.",
-     "slots": [
+     "id": "l2.uvp",
+     "kind": "uvp",
+     "label": "Alege câte un cuvânt pe fiecare categorie.",
+     "help": "Atinge o opțiune sau scrie-o pe a ta. Fraza de sus se scrie singură; o poți edita direct, atingând un gol.",
+     "template": "{brand} oferă {offer} pentru {clients}, într-o cultură bazată pe {culture}, cu un ton {voice}. Clientul pleacă {emotions} și primește {impact}. Ce ne face diferiți: {xfactor}.",
+     "offer": {
+      "id": "offer",
+      "label": "Ce oferi",
+      "placeholder": "categoria, spusă simplu",
+      "suggestions": [
+       "cafea de specialitate",
+       "îngrijire pentru piele",
+       "servicii medicale",
+       "tratamente de beauty",
+       "suplimente naturale"
+      ]
+     },
+     "categories": [
       {
-       "id": "cine",
-       "label": "Pentru cine",
-       "placeholder": "oamenii pe care îi vrei",
-       "suggestions": [
-        "iubitorii de cafea de specialitate",
+       "id": "clients",
+       "label": "Clienți",
+       "hint": "pentru cine",
+       "options": [
+        "iubitorii de cafea bună",
+        "oamenii care lucrează mult",
         "femeile care vor rutine simple",
-        "familiile atente la sănătate"
+        "familiile atente la sănătate",
+        "sportivii",
+        "cei care vor să arate bine fără efort"
        ]
       },
       {
-       "id": "brand",
-       "label": "Brandul",
-       "placeholder": "numele brandului"
-      },
-      {
-       "id": "categorie",
-       "label": "Ce este",
-       "placeholder": "categoria, spusă simplu",
-       "suggestions": [
-        "o prăjitorie de cartier",
-        "un brand de skincare",
-        "o clinică"
+       "id": "culture",
+       "label": "Cultură",
+       "hint": "pe ce e construit locul",
+       "options": [
+        "grijă",
+        "meșteșug",
+        "știință",
+        "comunitate",
+        "transparență",
+        "răbdare"
        ]
       },
       {
-       "id": "beneficiu",
-       "label": "Beneficiul principal",
-       "placeholder": "ce primesc concret"
+       "id": "voice",
+       "label": "Voce",
+       "hint": "cum suni",
+       "options": [
+        "cald",
+        "direct",
+        "jucăuș",
+        "expert",
+        "calm",
+        "rafinat"
+       ]
       },
       {
-       "id": "alternativa",
-       "label": "Spre deosebire de",
-       "placeholder": "ce folosesc acum",
-       "suggestions": [
-        "lanțurile mari",
-        "produsele de supermarket",
-        "soluțiile generice"
+       "id": "emotions",
+       "label": "Emoții",
+       "hint": "cu ce rămâne omul",
+       "options": [
+        "liniștit",
+        "răsfățat",
+        "în siguranță",
+        "plin de energie",
+        "văzut",
+        "încrezător"
+       ]
+      },
+      {
+       "id": "impact",
+       "label": "Impact",
+       "hint": "ce primește concret, măsurabil",
+       "options": [
+        "cafea proaspătă în fiecare săptămână",
+        "o rutină în 3 pași care chiar funcționează",
+        "rezultate vizibile în 4 săptămâni",
+        "un diagnostic clar de la prima vizită",
+        "programare în 24 de ore"
+       ]
+      },
+      {
+       "id": "xfactor",
+       "label": "X-factor",
+       "hint": "ce te face diferit",
+       "options": [
+        "prăjim în fiecare dimineață, în cartier",
+        "formule testate, făcute în România",
+        "medicul te sună a doua zi",
+        "îți cunoaștem numele și comanda",
+        "totul e transparent, de la ingrediente la preț"
        ]
       }
      ]

@@ -566,7 +566,7 @@
     {
      "id": "m06.arch",
      "kind": "archetype",
-     "label": "Wizard-ul de arhetip",
+     "label": "The Archetype Teller",
      "help": "Trei pași: alegi din instinct, ordonezi, apoi răspunzi la zece dileme. La final vezi combinația ta.",
      "archetypes": [
       {
@@ -2022,5 +2022,6 @@
  "done": {
   "title": "Gata. Ne vedem la o cafea.",
   "body": "Am primit tot. Citim cu atenție, pregătim întrebările și te așteptăm în studio la workshop, în Olari 9. Cafeaua e din partea noastră."
- }
+ },
+ "lang": "ro"
 }

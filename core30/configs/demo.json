@@ -75,7 +75,7 @@
     {
      "id": "a2.arch",
      "kind": "archetype",
-     "label": "Wizard-ul de arhetip",
+     "label": "The Archetype Teller",
      "archetypes": [
       {
        "id": "innocent",
@@ -503,5 +503,6 @@
  "done": {
   "title": "Mulțumim, Radu.",
   "body": "Ne auzim curând."
- }
+ },
+ "lang": "ro"
 }

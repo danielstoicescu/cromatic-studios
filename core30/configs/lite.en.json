@@ -1,0 +1,778 @@
+{
+ "id": "lite",
+ "version": "lite@0.72",
+ "lang": "en",
+ "edition": {
+  "kind": "lite",
+  "basedOn": "blank@0.72",
+  "note": "archetype wizard + short positioning, public lead magnet"
+ },
+ "title": "The Core Lite",
+ "flow": "lite",
+ "client": {
+  "name": "your brand",
+  "contact": ""
+ },
+ "access": {
+  "token": "",
+  "email": "required",
+  "public": true
+ },
+ "submit": {
+  "endpoint": "/api/core30",
+  "email": "hi@cromaticstudios.com"
+ },
+ "intro": {
+  "hello": "What archetype is your brand?",
+  "lead": "Seven minutes, two steps. First you ask the crystal ball which archetype your brand is, then you pick one word in each of six categories and get your brand's UVP in a single sentence. The result also lands in your inbox.",
+  "promise": [
+   "Free, no account. Just your email, so we can send you the result.",
+   "The same wizard we use in brand strategy for Cromatic clients."
+  ],
+  "minutes": "~7 minutes",
+  "chapters": false,
+  "askBrand": true
+ },
+ "lite": {
+  "cta": "https://cromaticstudios.com/site/?src=core-lite#contact",
+  "ctaLabel": "Let's grab a coffee",
+  "pitch": "The full Core goes through people, values, voice and visual direction, then we write it together in a 90-minute workshop at the studio, over a coffee.",
+  "consent": "I'm happy for Cromatic Studios to contact me about my result."
+ },
+ "modules": [
+  {
+   "id": "l1",
+   "title": [
+    "Your",
+    "archetype"
+   ],
+   "short": "Archetype",
+   "minutes": 9,
+   "why": "The archetype is the referee for design decisions. Two archetypes and a percentage, so we know who leads and who adds color.",
+   "items": [
+    {
+     "id": "l1.arch",
+     "kind": "archetype",
+     "label": "The Archetype Teller",
+     "help": "Three steps: pick on instinct, put them in order, then answer ten dilemmas. At the end you see your mix.",
+     "archetypes": [
+      {
+       "id": "innocent",
+       "name": "Innocent",
+       "quadrant": "independenta",
+       "color": "#FED012",
+       "motto": "Life can be simple and good.",
+       "line": "Optimistic, honest, nothing to hide. Sees the good before the problem and helps people breathe easier.",
+       "desire": "to live simply and calmly, with good things around",
+       "fear": "getting it wrong, making things complicated, being punished for a choice",
+       "gift": "trust and freshness",
+       "traits": [
+        "honest",
+        "bright",
+        "simple",
+        "optimistic"
+       ],
+       "asBrand": "promises the decision is easy and that it will all be fine. No small print.",
+       "example": "Dove, Innocent Drinks, Coca-Cola",
+       "lead": "The brand promises simplicity and calm. People come to you because you never make things complicated.",
+       "accent": "a gentle light and a promise of honesty, which make the rest easier to believe",
+       "voice": "short sentences, plain words, zero jargon",
+       "visual": "lots of air, light, clean colours, soft shapes",
+       "experience": "few clear steps, no surprises at the end",
+       "risk": "it can feel naive or too sweet without hard proof behind it"
+      },
+      {
+       "id": "explorer",
+       "name": "Explorer",
+       "quadrant": "independenta",
+       "color": "#28C840",
+       "motto": "Don't fence me in.",
+       "line": "Curious, restless in the good way, always with a road in mind. Looks for the place where it feels most alive.",
+       "desire": "the freedom to find out who it is through the places it passes",
+       "fear": "being stuck, being bored, living a life that isn't its own",
+       "gift": "authenticity and the nerve to leave",
+       "traits": [
+        "curious",
+        "free",
+        "authentic",
+        "adventurous"
+       ],
+       "asBrand": "pulls you out of the routine and shows you a place you hadn't thought of.",
+       "example": "Patagonia, The North Face, Jeep",
+       "lead": "The brand is an invitation to set off. People come for the freedom to choose differently.",
+       "accent": "curiosity and an appetite for new places, which keep the brand moving",
+       "voice": "verbs of movement, open questions, the tone of a friend who has already been there",
+       "visual": "horizons, nature, real textures, maps",
+       "experience": "guided discovery, routes, recommendations that surprise",
+       "risk": "it can feel restless, hard to tie to a home and to roots"
+      },
+      {
+       "id": "sage",
+       "name": "Sage",
+       "quadrant": "independenta",
+       "color": "#119BFE",
+       "motto": "The truth will set you free.",
+       "line": "Calm, well read, with the patience of a good teacher. Helps people see clearly before they decide.",
+       "desire": "to understand the world and help others understand it too",
+       "fear": "being fooled, being wrong, talking without knowing",
+       "gift": "clarity and wisdom",
+       "traits": [
+        "clear-headed",
+        "expert",
+        "calm",
+        "rigorous"
+       ],
+       "asBrand": "is the guide who did the homework. It explains, it doesn't sell.",
+       "example": "TED, Google, The Economist",
+       "lead": "The brand is the guide who knows. People come for clarity in a big decision.",
+       "accent": "arguments, data and the quiet confidence of someone who did the homework",
+       "voice": "explanatory, precise, with concrete examples",
+       "visual": "order, careful typography, maps and data laid out well",
+       "experience": "advice, guides, honest comparisons",
+       "risk": "it can turn cold or preachy, too much head and too little heart"
+      },
+      {
+       "id": "hero",
+       "name": "Hero",
+       "quadrant": "maiestrie",
+       "color": "#F65342",
+       "motto": "Where there's a will, there's a way.",
+       "line": "Brave, disciplined, built for high stakes. Makes hard things look possible and pushes others further.",
+       "desire": "to prove its worth through an act of courage",
+       "fear": "weakness, giving up, being beaten",
+       "gift": "competence and determination",
+       "traits": [
+        "brave",
+        "strong",
+        "direct",
+        "ambitious"
+       ],
+       "asBrand": "helps you win a fight that matters to you.",
+       "example": "Nike, FedEx, Duracell",
+       "lead": "The brand is about making it. People come because you help them win something big.",
+       "accent": "energy and drive, with a little extra adrenaline",
+       "voice": "imperative, direct, about results",
+       "visual": "strong contrast, diagonals, movement",
+       "experience": "clear goals, visible progress, moments of victory",
+       "risk": "it can feel aggressive or competitive where people are looking for warmth"
+      },
+      {
+       "id": "rebel",
+       "name": "Rebel",
+       "quadrant": "maiestrie",
+       "color": "#F65342",
+       "motto": "Rules are made to be broken.",
+       "line": "A nonconformist, honest to the point of discomfort. Says what others only think and builds the alternative.",
+       "desire": "to change what no longer works, even if it bothers people",
+       "fear": "being powerless, ordinary, swallowed by the system",
+       "gift": "radical freedom and the nerve to say no",
+       "traits": [
+        "provocative",
+        "free",
+        "honest",
+        "radical"
+       ],
+       "asBrand": "stands against the way the industry does things today.",
+       "example": "Harley-Davidson, Liquid Death, Virgin",
+       "lead": "The brand stands against the way things are done today. People come because they've had enough.",
+       "accent": "a sharp edge and the nerve to name what's wrong with the industry",
+       "voice": "provocative, ironic, no needless politeness",
+       "visual": "big type, contrast, unexpected gestures",
+       "experience": "a clear alternative to the system, with rules of its own",
+       "risk": "it can scare off exactly the people who want trust and safety"
+      },
+      {
+       "id": "magician",
+       "name": "Magician",
+       "quadrant": "maiestrie",
+       "color": "#B098C8",
+       "motto": "I make things happen.",
+       "line": "Visionary, charismatic, tuned to the moment when everything clicks. Turns a vague wish into something real.",
+       "desire": "to understand how the world works and change it",
+       "fear": "unintended consequences, magic that turns against it",
+       "gift": "transformation and moments of wonder",
+       "traits": [
+        "visionary",
+        "charismatic",
+        "intuitive",
+        "transformative"
+       ],
+       "asBrand": "promises the moment when everything falls into place, as if by magic.",
+       "example": "Disney, Dyson, Polaroid",
+       "lead": "The brand promises a change. People come for the moment when everything clicks.",
+       "accent": "a touch of wonder, the feeling that something special is happening",
+       "voice": "evocative, about what becomes possible",
+       "visual": "light, reveal moments, details that surprise",
+       "experience": "matches that feel like magic, well staged wow moments",
+       "risk": "it can overpromise, and magic without proof looks like a trick"
+      },
+      {
+       "id": "everyman",
+       "name": "Everyman",
+       "quadrant": "apartenenta",
+       "color": "#28C840",
+       "motto": "All people are equal.",
+       "line": "Friendly, down to earth, no airs. The neighbour you can count on, who talks like you and keeps the door open.",
+       "desire": "to belong, to be accepted as it is",
+       "fear": "being left out, looking like it thinks it's better than it is",
+       "gift": "empathy, realism and no pretence",
+       "traits": [
+        "approachable",
+        "warm",
+        "trustworthy",
+        "practical"
+       ],
+       "asBrand": "is one of us. It makes you feel among your own.",
+       "example": "IKEA, Dacia, Lidl",
+       "lead": "The brand belongs to everyone. People come because they feel among their own.",
+       "accent": "a neighbour's warmth and a door that's always open",
+       "voice": "conversational, warm, on first-name terms",
+       "visual": "real people, friendly colours, nothing pretentious",
+       "experience": "easy to reach, no barriers, an open community",
+       "risk": "it can feel ordinary, hard to tell apart or to charge more for"
+      },
+      {
+       "id": "lover",
+       "name": "Lover",
+       "quadrant": "apartenenta",
+       "color": "#F65342",
+       "motto": "You're the only one.",
+       "line": "Sensory, warm, attentive to detail. Creates closeness and makes people feel wanted and seen.",
+       "desire": "intimacy, closeness, relationships that matter",
+       "fear": "being alone, unwanted, unloved",
+       "gift": "passion, gratitude, an eye for beauty",
+       "traits": [
+        "intimate",
+        "sensory",
+        "passionate",
+        "attentive"
+       ],
+       "asBrand": "is about how you feel: close, chosen, at home.",
+       "example": "Chanel, Godiva, Aperol",
+       "lead": "The brand is about closeness and pleasure. People come for the way it makes them feel.",
+       "accent": "warmth, the senses and an eye for the details that make a place feel like yours",
+       "voice": "sensory, intimate, in the second person",
+       "visual": "textures, warm light, closeness, details",
+       "experience": "personal attention, rituals, moments you remember",
+       "risk": "it can slide into too sweet or too exclusive, and next to dating it can read as ambiguous"
+      },
+      {
+       "id": "jester",
+       "name": "Jester",
+       "quadrant": "apartenenta",
+       "color": "#FED012",
+       "motto": "You only live once.",
+       "line": "Playful, spontaneous, with a good sense of humour. Lightens hard moments and gathers people around a joke.",
+       "desire": "to live in the moment, with joy and play",
+       "fear": "boredom, boring other people",
+       "gift": "joy, lightness, perspective",
+       "traits": [
+        "funny",
+        "spontaneous",
+        "irreverent",
+        "playful"
+       ],
+       "asBrand": "makes getting there more fun than arriving.",
+       "example": "M&M's, Old Spice, Ben & Jerry's",
+       "lead": "The brand is joy. People come because things are more fun with you.",
+       "accent": "humour and play, which make the brand easier to love",
+       "voice": "playful, full of jokes, surprising",
+       "visual": "colour, characters, illustration",
+       "experience": "games, gamification, memorable events",
+       "risk": "it can undercut trust in a big decision, like buying a home"
+      },
+      {
+       "id": "caregiver",
+       "name": "Caregiver",
+       "quadrant": "stabilitate",
+       "color": "#119BFE",
+       "motto": "You're not alone in this.",
+       "line": "Generous, protective, endlessly patient. Looks after people like family and never leaves them on their own.",
+       "desire": "to protect and help others",
+       "fear": "selfishness, ingratitude, not being able to help",
+       "gift": "compassion and generosity",
+       "traits": [
+        "caring",
+        "generous",
+        "patient",
+        "protective"
+       ],
+       "asBrand": "is the steady hand that holds yours from the first question to the keys.",
+       "example": "Volvo, UNICEF, Johnson & Johnson",
+       "lead": "The brand is the steady hand. People come because they know someone is looking after them.",
+       "accent": "care and safety, the feeling that you're not alone in the decision",
+       "voice": "warm, reassuring, empathetic",
+       "visual": "rounded shapes, warm and calm colours, people together",
+       "experience": "support from start to finish, always reachable, patient",
+       "risk": "it can feel too soft or protective, with no personality of its own"
+      },
+      {
+       "id": "creator",
+       "name": "Creator",
+       "quadrant": "stabilitate",
+       "color": "#B098C8",
+       "motto": "If you can imagine it, you can build it.",
+       "line": "Imaginative, a perfectionist, proud of the craft. Sees what doesn't exist yet and builds it with care.",
+       "desire": "to make something of lasting value",
+       "fear": "mediocrity, a vision badly executed",
+       "gift": "imagination and craft",
+       "traits": [
+        "inventive",
+        "visionary",
+        "detail-minded",
+        "expressive"
+       ],
+       "asBrand": "builds something that never existed and invites you to make it together.",
+       "example": "LEGO, Apple, Adobe",
+       "lead": "The brand builds something new. People come for the vision and for the way it's made.",
+       "accent": "care for the craft and a vision you can see in the details",
+       "voice": "visionary, precise about details, proud of work done well",
+       "visual": "systems, careful design, sketches, the process in plain sight",
+       "experience": "co-creation, curation, things made to measure",
+       "risk": "it can become perfectionist or too wrapped up in itself"
+      },
+      {
+       "id": "ruler",
+       "name": "Ruler",
+       "quadrant": "stabilitate",
+       "color": "#0d0c09",
+       "motto": "The standard is the promise.",
+       "line": "Self-assured, organised, with high standards. Creates order, makes decisions and sets the rules of the game.",
+       "desire": "control, stability, a thriving and well run community",
+       "fear": "chaos, being overthrown, losing control",
+       "gift": "responsibility and leadership",
+       "traits": [
+        "assured",
+        "demanding",
+        "elegant",
+        "responsible"
+       ],
+       "asBrand": "is the standard. The strict selection is the promise itself.",
+       "example": "Rolex, Mercedes-Benz, American Express",
+       "lead": "The brand is the standard. People come for quality, order and status.",
+       "accent": "rigour and a high standard, which build trust",
+       "voice": "assured, sober, few words and well chosen",
+       "visual": "symmetry, noble materials, little colour",
+       "experience": "strict selection, premium access, a flawless process",
+       "risk": "it can feel cold, distant or exclusive"
+      }
+     ],
+     "examples": {
+      "labels": [
+       {
+        "id": "headline",
+        "label": "Would say"
+       },
+       {
+        "id": "listing",
+        "label": "An offer"
+       },
+       {
+        "id": "experience",
+        "label": "An experience"
+       },
+       {
+        "id": "site",
+        "label": "First screen of the website"
+       },
+       {
+        "id": "never",
+        "label": "Would never"
+       }
+      ],
+      "by": {
+       "innocent": {
+        "headline": "Good, simple, no surprises.",
+        "listing": "One package, the price in plain sight, nothing extra.",
+        "experience": "An open day with simple answers to any question.",
+        "site": "One clear question and three good options under it.",
+        "never": "hide a cost or complicate a simple choice."
+       },
+       "explorer": {
+        "headline": "There's more out there.",
+        "listing": "A package that gets you out of the routine: something you haven't tried yet.",
+        "experience": "A day somewhere new, with someone who knows it well.",
+        "site": "A map to explore before the product list.",
+        "never": "sell everyone the same thing, the same way."
+       },
+       "sage": {
+        "headline": "Before you choose, understand.",
+        "listing": "The offer comes with an honest comparison and the data in plain sight.",
+        "experience": "A 90-minute workshop on how to choose well.",
+        "site": "A guide with answers that have been checked.",
+        "never": "promise something it can't prove."
+       },
+       "hero": {
+        "headline": "You'll get there. We'll help.",
+        "listing": "A plan with a deadline and a clear result, guaranteed.",
+        "experience": "A 21-day challenge, with your progress in plain sight.",
+        "site": "The steps to the result, with your progress in plain sight.",
+        "never": "leave a client stuck, with no answer."
+       },
+       "rebel": {
+        "headline": "The industry has done it this way for 20 years. We don't.",
+        "listing": "No small print and no “limited offer”. Just the price.",
+        "experience": "An evening about what's broken in the industry and how we do it differently.",
+        "site": "A manifesto instead of a catalogue.",
+        "never": "speak the language it criticises."
+       },
+       "magician": {
+        "headline": "Tell us what you want. The rest falls into place.",
+        "listing": "An offer that shapes itself around what you said you want.",
+        "experience": "The moment the client first sees the result, carefully staged.",
+        "site": "A quiz that turns into your recommendation at the end.",
+        "never": "promise a change it can't deliver."
+       },
+       "everyman": {
+        "headline": "For people like you.",
+        "listing": "A fair price, explained the way a friend would.",
+        "experience": "A get-together open to anyone, no dress code.",
+        "site": "Stories from real clients, with their own photos.",
+        "never": "show off or make anyone feel small."
+       },
+       "lover": {
+        "headline": "Made for you.",
+        "listing": "An offer built on the details that matter to you.",
+        "experience": "A dinner for 12 clients, with care in every detail.",
+        "site": "Warm images, textures, people up close.",
+        "never": "treat a client like a number."
+       },
+       "jester": {
+        "headline": "Nothing is that serious. Not even this.",
+        "listing": "The “No Hassle” package, explained with a good joke.",
+        "experience": "A quiz night with clients, with ridiculous prizes.",
+        "site": "Microcopy with a sense of humour and a little game.",
+        "never": "joke about money or hard decisions."
+       },
+       "caregiver": {
+        "headline": "You're not alone in this.",
+        "listing": "We stay with you from the first question to well after delivery.",
+        "experience": "A month of support after delivery, with a real person on the phone.",
+        "site": "“How can we help?” and an answer the same day.",
+        "never": "disappear once the contract is signed."
+       },
+       "creator": {
+        "headline": "Let's build something that's never existed.",
+        "listing": "An offer made to measure, with the process in plain sight.",
+        "experience": "A co-creation workshop with the first clients.",
+        "site": "Sketches, process, choices: how it gets made.",
+        "never": "deliver something generic, off the production line."
+       },
+       "ruler": {
+        "headline": "The standard, not an option.",
+        "listing": "A strict selection, by appointment only.",
+        "experience": "A private evening, by invitation.",
+        "site": "A small portfolio, with the standards published.",
+        "never": "take on anything just for the volume."
+       }
+      }
+     },
+     "questions": [
+      {
+       "id": "q1",
+       "q": "What do you want people to feel after the first meeting?",
+       "a": {
+        "label": "That they're in good hands.",
+        "archetypes": [
+         "caregiver",
+         "ruler"
+        ]
+       },
+       "b": {
+        "label": "That a new door just opened.",
+        "archetypes": [
+         "explorer",
+         "magician"
+        ]
+       }
+      },
+      {
+       "id": "q2",
+       "q": "When the market gets noisy, the brand…",
+       "a": {
+        "label": "calmly explains what matters.",
+        "archetypes": [
+         "sage",
+         "innocent"
+        ]
+       },
+       "b": {
+        "label": "calls out what's broken in the industry.",
+        "archetypes": [
+         "rebel",
+         "hero"
+        ]
+       }
+      },
+      {
+       "id": "q3",
+       "q": "The ideal community around the brand is…",
+       "a": {
+        "label": "warm, full of people who feel at home.",
+        "archetypes": [
+         "everyman",
+         "caregiver"
+        ]
+       },
+       "b": {
+        "label": "select, full of people who inspire you.",
+        "archetypes": [
+         "ruler",
+         "creator"
+        ]
+       }
+      },
+      {
+       "id": "q4",
+       "q": "A client hesitates. You…",
+       "a": {
+        "label": "give them time and information.",
+        "archetypes": [
+         "sage",
+         "caregiver"
+        ]
+       },
+       "b": {
+        "label": "show them what their life would look like after.",
+        "archetypes": [
+         "magician",
+         "lover"
+        ]
+       }
+      },
+      {
+       "id": "q5",
+       "q": "What bothers you most in your industry?",
+       "a": {
+        "label": "Not caring about people.",
+        "archetypes": [
+         "caregiver",
+         "everyman"
+        ]
+       },
+       "b": {
+        "label": "No imagination.",
+        "archetypes": [
+         "creator",
+         "rebel"
+        ]
+       }
+      },
+      {
+       "id": "q6",
+       "q": "Humor in the brand?",
+       "a": {
+        "label": "Yes. We take the work seriously, not ourselves.",
+        "archetypes": [
+         "jester",
+         "everyman"
+        ]
+       },
+       "b": {
+        "label": "A little. We prefer quiet elegance.",
+        "archetypes": [
+         "ruler",
+         "sage"
+        ]
+       }
+      },
+      {
+       "id": "q7",
+       "q": "Growth: which do you pick?",
+       "a": {
+        "label": "A few clients who are a great fit.",
+        "archetypes": [
+         "lover",
+         "creator"
+        ]
+       },
+       "b": {
+        "label": "A brand open to anyone.",
+        "archetypes": [
+         "everyman",
+         "innocent"
+        ]
+       }
+      },
+      {
+       "id": "q8",
+       "q": "Working with you feels like…",
+       "a": {
+        "label": "an adventure.",
+        "archetypes": [
+         "explorer",
+         "hero"
+        ]
+       },
+       "b": {
+        "label": "a calm, well-guided process.",
+        "archetypes": [
+         "caregiver",
+         "sage"
+        ]
+       }
+      },
+      {
+       "id": "q9",
+       "q": "The brand builds…",
+       "a": {
+        "label": "something that didn't exist before.",
+        "archetypes": [
+         "creator",
+         "magician"
+        ]
+       },
+       "b": {
+        "label": "something people instantly recognize as theirs.",
+        "archetypes": [
+         "everyman",
+         "innocent"
+        ]
+       }
+      },
+      {
+       "id": "q10",
+       "q": "The promise underneath it all:",
+       "a": {
+        "label": "Life can be simpler.",
+        "archetypes": [
+         "innocent",
+         "explorer"
+        ]
+       },
+       "b": {
+        "label": "Life can be fuller.",
+        "archetypes": [
+         "lover",
+         "jester"
+        ]
+       }
+      }
+     ]
+    }
+   ],
+   "facilitator": [
+    "If the declared choice differs from the dilemmas: which one is the brand today, and which is the brand they want?"
+   ]
+  },
+  {
+   "id": "l2",
+   "title": [
+    "Positioning,",
+    "in short"
+   ],
+   "short": "Positioning",
+   "minutes": 3,
+   "icon": "spark",
+   "why": "A UVP: one sentence that says what you offer, to whom, in what culture, with what voice, how people feel, what they get and what sets you apart.",
+   "items": [
+    {
+     "id": "l2.uvp",
+     "kind": "uvp",
+     "label": "Pick one word in each category.",
+     "help": "Tap an option or write your own. The sentence on top writes itself; tap a gap to edit it right there.",
+     "template": "{brand} offers {offer} to {clients}, in a culture built on {culture}, with a {voice} tone. Clients leave feeling {emotions} and get {impact}. What sets it apart: {xfactor}.",
+     "offer": {
+      "id": "offer",
+      "label": "What you offer",
+      "placeholder": "the category, said simply",
+      "suggestions": [
+       "specialty coffee",
+       "skincare",
+       "medical care",
+       "beauty treatments",
+       "natural supplements"
+      ]
+     },
+     "categories": [
+      {
+       "id": "clients",
+       "label": "Clients",
+       "hint": "who it is for",
+       "options": [
+        "people who love good coffee",
+        "people who work long hours",
+        "women who want simple routines",
+        "health-conscious families",
+        "athletes",
+        "people who want to look good without the effort"
+       ]
+      },
+      {
+       "id": "culture",
+       "label": "Culture",
+       "hint": "what the place is built on",
+       "options": [
+        "care",
+        "craft",
+        "science",
+        "community",
+        "transparency",
+        "patience"
+       ]
+      },
+      {
+       "id": "voice",
+       "label": "Voice",
+       "hint": "how you sound",
+       "options": [
+        "warm",
+        "direct",
+        "playful",
+        "expert",
+        "calm",
+        "refined"
+       ]
+      },
+      {
+       "id": "emotions",
+       "label": "Emotions",
+       "hint": "what people leave with",
+       "options": [
+        "at ease",
+        "pampered",
+        "safe",
+        "full of energy",
+        "seen",
+        "confident"
+       ]
+      },
+      {
+       "id": "impact",
+       "label": "Impact",
+       "hint": "what they get, concrete and measurable",
+       "options": [
+        "fresh coffee every week",
+        "a 3-step routine that actually works",
+        "visible results in 4 weeks",
+        "a clear diagnosis on the first visit",
+        "an appointment within 24 hours"
+       ]
+      },
+      {
+       "id": "xfactor",
+       "label": "X-factor",
+       "hint": "what sets you apart",
+       "options": [
+        "we roast every morning, in the neighbourhood",
+        "tested formulas, made locally",
+        "the doctor calls you the next day",
+        "we know your name and your order",
+        "everything is out in the open, from ingredients to price"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "workshop": {
+  "minutes": 0,
+  "agenda": [],
+  "core": []
+ },
+ "done": {
+  "title": "Your result.",
+  "body": ""
+ }
+}

@@ -98,11 +98,14 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
   // who may write where: every config on disk, plus the optional registry's overrides
   const clients = async () => {
     const out = {};
-    const files = existsSync(configDir) ? (await readdir(configDir)).filter((f) => f.endsWith(".json")) : [];
+    const all = existsSync(configDir) ? (await readdir(configDir)).filter((f) => f.endsWith(".json")) : [];
+    // <id>.json is the edition (Romanian); <id>.en.json its English version, served on ?lang=en
+    const files = all.filter((f) => !/\.[a-z]{2}\.json$/.test(f));
     for (const f of files) {
       try {
         const c = JSON.parse(await readFile(join(configDir, f), "utf8"));
-        out[c.id] = { token: c.access?.token ?? "", emailMode: c.access?.email === "optional" ? "optional" : "required", public: !!c.access?.public, cta: c.lite?.cta ?? "", title: c.title ?? "The Core 3.0", name: c.client?.name, contact: c.client?.contact, email: c.client?.email ?? "", file: join(configDir, f) };
+        const langs = ["ro", ...all.filter((g) => g.startsWith(`${c.id}.`) && /\.[a-z]{2}\.json$/.test(g)).map((g) => g.slice(c.id.length + 1, -5))];
+        out[c.id] = { langs, token: c.access?.token ?? "", emailMode: c.access?.email === "optional" ? "optional" : "required", public: !!c.access?.public, cta: c.lite?.cta ?? "", title: c.title ?? "The Core 3.0", name: c.client?.name, contact: c.client?.contact, email: c.client?.email ?? "", file: join(configDir, f) };
       } catch (e) { console.error("[core30] bad config", f, e.message); }
     }
     if (registry) { try { const r = JSON.parse(await readFile(registry, "utf8")); for (const [id, x] of Object.entries(r)) out[id] = { ...(out[id] ?? {}), ...x }; } catch { /* no registry */ } }
@@ -175,7 +178,12 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
         [{ filename: `the-core-3_${id}_${now.slice(0, 10)}.json`, content: JSON.stringify(p.export ?? p, null, 2) }]);
       const to = c.email || p.export?.respondent?.email || "";
       if (EMAIL.test(to)) {
-        try { await transport?.sendMail({ from: mailFrom, to, subject: "Am primit The Core 3.0", html: `<p>Salut${c.contact ? `, ${esc(c.contact)}` : ""}. Am primit tot ce ai completat. Citim cu atenție și ne vedem în studio, la o cafea, pentru workshop.</p><p>Cromatic Studios · Str. Olari 9, București</p>` }); } catch (e) { console.error("[core30] confirm failed", e.message); }
+        const en = p.export?.lang === "en";
+        const subject = en ? "We've got your The Core 3.0" : "Am primit The Core 3.0";
+        const html = en
+          ? `<p>Hi${c.contact ? ` ${esc(c.contact)}` : ""}. We've got everything you filled in. We'll read it carefully and see you at the studio, over a coffee, for the workshop.</p><p>Cromatic Studios · Str. Olari 9, Bucharest</p>`
+          : `<p>Salut${c.contact ? `, ${esc(c.contact)}` : ""}. Am primit tot ce ai completat. Citim cu atenție și ne vedem în studio, la o cafea, pentru workshop.</p><p>Cromatic Studios · Str. Olari 9, București</p>`;
+        try { await transport?.sendMail({ from: mailFrom, to, replyTo: mailTo, subject, html }); } catch (e) { console.error("[core30] confirm failed", e.message); }
       }
     }
     return [200, { ok: true, at: now }];
@@ -188,13 +196,15 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const arch = x.derived?.archetype ?? {};
     const title = arch.title ?? "";
     const summary = arch.summary ?? "";
-    const positioning = x.derived?.positioning ?? "";
+    const positioning = x.derived?.uvp?.sentence || x.derived?.positioning || "";
+    const en = x.lang === "en";
+    const brand = String(x.respondent?.brand || x.derived?.uvp?.parts?.brand || "").trim().slice(0, 80);
     const att = x.attribution ?? {};
     const src = att.src || att.utm_source || "";
-    await leadLog(id, { at: now, type: "submit", visitor: visitorOf(p), email, contactOk: !!x.respondent?.contactOk, archetype: title, positioning, ...att });
+    await leadLog(id, { at: now, type: "submit", visitor: visitorOf(p), email, lang: x.lang ?? "ro", contactOk: !!x.respondent?.contactOk, brand, archetype: title, positioning, ...att });
     const attRows = Object.entries(att).map(([k, v]) => `${esc(k)}=${esc(v)}`).join(" · ");
-    await mail(`[${c.title}] lead nou · ${email || "fără email"} · ${title}${src ? ` · ${src}` : ""}`,
-      `<p><b>${esc(email)}</b> a terminat ${esc(c.title)}.${x.respondent?.contactOk ? " <b>Vrea să fie contactat.</b>" : " Nu a bifat contactul."}</p>
+    await mail(`[${c.title}] lead nou · ${brand ? `${brand} · ` : ""}${email || "fără email"} · ${title}${src ? ` · ${src}` : ""}`,
+      `<p><b>${esc(email)}</b> a terminat ${esc(c.title)}${brand ? ` pentru <b>${esc(brand)}</b>` : ""}.${x.respondent?.contactOk ? " <b>Vrea să fie contactat.</b>" : " Nu a bifat contactul."}</p>
        <p><b>Arhetip:</b> ${esc(title)}<br>${esc(summary)}</p><p><b>Poziționare:</b> ${esc(positioning)}</p>
        <p style="color:#5d5a52;font:12px monospace">${attRows || "fără sursă"}</p>`,
       [{ filename: `the-core-lite_${now.slice(0, 10)}_${visitorOf(p).slice(0, 8)}.json`, content: JSON.stringify(x, null, 2) }]);
@@ -202,29 +212,32 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const cta = c.cta || "https://cromaticstudios.com/site/#contact";
     const html = `<div style="font:16px/1.55 Arial,sans-serif;color:#0d0c09;max-width:560px">
       <p style="font:700 11px monospace;letter-spacing:.12em;text-transform:uppercase;color:#5d5a52">Cromatic Studios · ${esc(c.title)}</p>
-      <h1 style="font:900 26px/1.2 Arial,sans-serif;margin:8px 0 14px">${esc(title || "Rezultatul tău")}</h1>
+      <h1 style="font:900 26px/1.2 Arial,sans-serif;margin:8px 0 14px">${esc(title || (en ? "Your result" : "Rezultatul tău"))}</h1>
       <p>${esc(summary)}</p>
-      ${positioning ? `<p style="padding:14px 16px;border:1px solid #0d0c09;border-radius:14px;background:#fff6c7"><b>Poziționarea ta, pe scurt</b><br>${esc(positioning)}</p>` : ""}
-      <p><b>Vrei mai mult?</b> The Core complet trece prin oameni, valori, voce și direcție vizuală, apoi îl scriem împreună la un workshop în studio, la o cafea.</p>
-      <p><a href="${esc(cta)}" style="display:inline-block;padding:12px 20px;border:1px solid #0d0c09;border-radius:999px;background:#FED012;color:#0d0c09;font-weight:700;text-decoration:none">Hai la o cafea</a></p>
-      <p style="color:#5d5a52;font-size:13px">Ai primit acest email pentru că ai cerut rezultatul ${esc(c.title)} pe cromaticstudios.com. Cromatic Studios · Str. Olari 9, București · hi@cromaticstudios.com</p></div>`;
-    try { await transport.sendMail({ from: mailFrom, to: email, replyTo: mailTo, subject: `${c.title}: ${title || "rezultatul tău"}`, html }); }
+      ${positioning ? `<p style="padding:14px 16px;border:1px solid #0d0c09;border-radius:14px;background:#fff6c7"><b>${en ? "Your UVP" : "UVP-ul tău"}</b><br>${esc(positioning)}</p>` : ""}
+      <p><b>${en ? "Want more?" : "Vrei mai mult?"}</b> ${en ? "The full Core goes through people, values, voice and visual direction, then we write it together in a workshop at the studio, over a coffee." : "The Core complet trece prin oameni, valori, voce și direcție vizuală, apoi îl scriem împreună la un workshop în studio, la o cafea."}</p>
+      <p><a href="${esc(cta)}" style="display:inline-block;padding:12px 20px;border:1px solid #0d0c09;border-radius:999px;background:#FED012;color:#0d0c09;font-weight:700;text-decoration:none">${en ? "Let's grab a coffee" : "Hai la o cafea"}</a></p>
+      <p style="color:#5d5a52;font-size:13px">${en ? `You're getting this email because you asked for your ${esc(c.title)} result on cromaticstudios.com. Cromatic Studios · Str. Olari 9, Bucharest · hi@cromaticstudios.com` : `Ai primit acest email pentru că ai cerut rezultatul ${esc(c.title)} pe cromaticstudios.com. Cromatic Studios · Str. Olari 9, București · hi@cromaticstudios.com`}</p></div>`;
+    try { await transport.sendMail({ from: mailFrom, to: email, replyTo: mailTo, subject: `${c.title}: ${title || (en ? "your result" : "rezultatul tău")}`, html }); }
     catch (e) { console.error("[core30] lite summary mail failed", e.message); }
   }
 
-  async function config(id, t) {
+  async function config(id, t, want) {
     const c = (await clients())[safe(id)];
     if (!c?.file) return [404, { ok: false }];
     if (c.token && t !== c.token) return [403, { ok: false }];
-    const cfg = JSON.parse(await readFile(c.file, "utf8"));
+    // the language: ?lang= if this edition has it, else an admin session's preset, else Romanian
+    const lang = [want, c.dynamic?.lang, "ro"].find((l) => l && c.langs.includes(l));
+    const file = lang === "ro" ? c.file : c.file.replace(/\.json$/, `.${lang}.json`);
+    const cfg = { ...JSON.parse(await readFile(file, "utf8")), lang, langs: c.langs };
     if (!c.dynamic) return [200, cfg];
     const x = c.dynamic;
     return [200, {
       ...cfg, id: x.id, version: `${cfg.version}+${x.createdAt.slice(0, 10)}`,
       edition: { kind: "custom", basedOn: cfg.version, note: "created from the Cromatic Ops dashboard" },
-      client: { ...cfg.client, name: x.name || cfg.client?.name || "Brandul tău", contact: x.contact || "", email: x.email },
+      client: { ...cfg.client, name: x.name || cfg.client?.name || (lang === "en" ? "your brand" : "brandul tău"), contact: x.contact || "", email: x.email },
       access: { token: x.token, email: "required" },
-      intro: { ...cfg.intro, hello: x.contact ? `Salut, ${x.contact}.` : cfg.intro?.hello },
+      intro: { ...cfg.intro, hello: x.contact ? (lang === "en" ? `Hi ${x.contact}.` : `Salut, ${x.contact}.`) : cfg.intro?.hello },
     }];
   }
 
@@ -263,7 +276,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const hi = x.contact ? (x.lang === "en" ? `Hi ${esc(x.contact)},` : `Salut, ${esc(x.contact)},`) : x.lang === "en" ? "Hi," : "Salut,";
     const T = x.lang === "en" ? {
       subject: "The Core: let's start your brand strategy",
-      body: `<p>${hi}</p><p>This is the first step of The Core, the way Cromatic Studios writes a brand strategy. You answer on your own, at your pace: about 45 to 60 minutes, in two or three sittings if you like. Then we meet at the studio, over a coffee, for a 90-minute workshop and turn your answers into the strategy.</p><p>Everything saves as you go, on your device and with us. Close it whenever you want and open the same link to pick up where you left off. The questions are in Romanian; answer in whichever language feels natural.</p>`,
+      body: `<p>${hi}</p><p>This is the first step of The Core, the way Cromatic Studios writes a brand strategy. You answer on your own, at your pace: about 45 to 60 minutes, in two or three sittings if you like. Then we meet at the studio, over a coffee, for a 90-minute workshop and turn your answers into the strategy.</p><p>Everything saves as you go, on your device and with us. Close it whenever you want and open the same link to pick up where you left off. The questions are in English; you can switch to Romanian at the start.</p>`,
       cta: "Start The Core", foot: "Keep this link to yourself: it opens your answers. Questions? Just reply to this email.",
     } : {
       subject: "The Core: hai să începem strategia brandului tău",
@@ -463,7 +476,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
         if (req.method === "GET") { const [code, out] = await listSessions(); send(res, code, out); return true; }
       }
       const c = p.match(/^\/api\/core30\/([a-z0-9_-]+)\/config$/i);
-      if (req.method === "GET" && c) { const [code, out] = await config(c[1], url.searchParams.get("t") ?? ""); send(res, code, out); return true; }
+      if (req.method === "GET" && c) { const [code, out] = await config(c[1], url.searchParams.get("t") ?? "", url.searchParams.get("lang") ?? ""); send(res, code, out); return true; }
       const st = p.match(/^\/api\/core30\/([a-z0-9_-]+)\/status$/i);
       if (req.method === "GET" && st) { const [code, out] = await status(st[1], url.searchParams.get("t") ?? ""); send(res, code, out); return true; }
       const m = p.match(/^\/api\/core30\/([a-z0-9_-]+)\/latest$/i);
