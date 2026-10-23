@@ -1,4 +1,4 @@
-// TASK-124: "cromaticstudios.com ops", the password-protected MIRROR of the Cromatic Ops artifact, at /ops (beta hosts only).
+// TASK-124: "cromaticstudios.com ops", the password-protected MIRROR of the Cromatic Ops artifact, at /ops (beta and live hosts).
 //
 // The server never runs AI and never executes anything. It keeps:
 //   - snapshot.json   the last snapshot pushed by the coordinator's bridge (tools/ops-bridge.mjs on Daniel's Mac)

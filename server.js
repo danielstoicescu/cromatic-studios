@@ -595,7 +595,7 @@ http.createServer((req, res) => {
     res.writeHead(301, { Location: `https://${otherHost ? PRIMARY_HOST : req.headers.host}${to}` });
     return res.end();
   }
-  if (isOps(req.url)) { res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex" }); return res.end("Not found"); } // TASK-124: beta only for now
+  if (isOps(req.url)) return void ops(req, res).then((done) => { if (!done) { res.writeHead(404); res.end(); } }).catch(() => send(res, 500, { ok: false })); // TASK-124: on live too (Daniel, 23 Oct: "deploy /ops si pe live")
   if (isCore30(req.url)) return void core30(req, res).catch(() => send(res, 500, { ok: false }));
   if ((req.method === "GET" || req.method === "HEAD") && legacy(req, res)) return;
   // the saved messages, for the studio only: GET /api/leads?key=<LEADS_KEY> (off unless LEADS_KEY is set)
