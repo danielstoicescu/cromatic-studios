@@ -39,8 +39,8 @@ const patches = [
   ["bug-imp-ui", '<div class="strip" id="bug-strip" hidden></div>', () =>
     '<div class="strip" id="bug-strip" hidden></div>\n  <label class="ops-imp"><input type="checkbox" id="bug-imp"> <span><b>Important / blochează lucrul</b> · intră ca P0, primul pe listă</span></label>'],
   ["bug-imp-js", 'const ok = await submitBug(text, bugLvl === "panic", bugAtt.slice(), { page, device });', () =>
-    'const imp = !!($("bug-imp") && $("bug-imp").checked); const ok = await submitBug(text, bugLvl === "panic" || imp, bugAtt.slice(), { page, device, ...(window.__ops ? { important: imp || bugLvl === "panic" } : {}) });'],
-  ["bug-imp-reset", 'setLvl("normal"); setPop(""); }', () => 'setLvl("normal"); if ($("bug-imp")) $("bug-imp").checked = false; setPop(""); }'],
+    'if (window.__opsUp && window.__opsUp.busy("bug")) { toast("Așteaptă să se încarce fișierele.", "err"); btn.disabled = false; btn.innerHTML = old; return; }\n    const imp = !!($("bug-imp") && $("bug-imp").checked); const ok = await submitBug(text + (window.__opsUp ? window.__opsUp.textSuffix("bug") : ""), bugLvl === "panic" || imp, bugAtt.slice(), { page, device, ...(window.__ops ? { important: imp || bugLvl === "panic" } : {}), ...(window.__opsUp ? window.__opsUp.payload("bug") : {}) });'],
+  ["bug-imp-reset", 'setLvl("normal"); setPop(""); }', () => 'setLvl("normal"); if ($("bug-imp")) $("bug-imp").checked = false; if (window.__opsUp) window.__opsUp.reset("bug"); setPop(""); }'],
   // 7. in the mirror an edit (status, priority, agent, epic; a drag on the board) applies at once and goes to Claude
   //    by itself as a "task-edit" command; the card wears an "în procesare" pill until a snapshot confirms it.
   //    Delete and "Cere modificarea" still open "Spune-i lui Claude" prefilled, for the user to send.
@@ -87,6 +87,26 @@ const patches = [
   ["ask-close", "if (canWrite) { const opts2 = closeOpts(t);", () => "if (canWrite || window.__ops) { const opts2 = closeOpts(t);"],
   ["ask-foot", "r.append(dl, sv); f.append(startBox(t), r);\n    }", () =>
     'r.append(dl, sv); f.append(startBox(t), r);\n    }\n    else if (window.__ops) { const rq = el("button", "btn sm k"); rq.type = "button"; rq.append(icon("i-send"), el("span", "", "Cere modificarea")); rq.onclick = () => opsAsk(t.id, {}); f.append(rq); }'],
+  // 8. uploads + video links (TASK-124): a drop zone in the composer, the quick composer, the bug report and Conținut;
+  //    the command carries {uploads, videoLinks} and the links in its text
+  ["up-cmd-slot", '<div class="strip" id="cmd-strip" hidden></div>', () => '<div class="strip" id="cmd-strip" hidden></div>\n        <div data-up-slot="cmd"></div>'],
+  ["up-q-slot", /<textarea id="q-text"[^>]*><\/textarea>/, (m) => m + '\n  <div data-up-slot="q"></div>'],
+  ["up-bug-slot", '<span><b>Important / blochează lucrul</b> · intră ca P0, primul pe listă</span></label>', () => '<span><b>Important / blochează lucrul</b> · intră ca P0, primul pe listă</span></label>\n  <div data-up-slot="bug"></div>'],
+  ["up-cmd-text", 'const text = $("cmd-text").value.trim() || (cmdAtt.length ? "(vezi atașamentele)" : ""); if (!text) { $("cmd-text").focus(); return; }', () =>
+    'if (window.__opsUp && window.__opsUp.busy("cmd")) { toast("Așteaptă să se încarce fișierele.", "err"); return; }\n    const text = ($("cmd-text").value.trim() || (cmdAtt.length || (window.__opsUp && window.__opsUp.count("cmd")) ? "(vezi fișierele)" : "")); if (!text) { $("cmd-text").focus(); return; }'],
+  ["up-cmd-send", 'const att = cmdAtt.slice(); const ok = await guard(() => inboxAdd("command", text, att.length ? { attachments: att } : null), ', () =>
+    'const att = cmdAtt.slice(), up = window.__opsUp ? window.__opsUp.payload("cmd") : {}; const ok = await guard(() => inboxAdd("command", text + (window.__opsUp ? window.__opsUp.textSuffix("cmd") : ""), att.length || Object.keys(up).length ? { ...(att.length ? { attachments: att } : {}), ...up } : null), '],
+  ["up-cmd-reset", 'if (ok) { $("cmd-text").value = ""; $("cmd-preview").hidden = true; cmdAtt = []; renderStrip(); }', () =>
+    'if (ok) { $("cmd-text").value = ""; $("cmd-preview").hidden = true; cmdAtt = []; renderStrip(); if (window.__opsUp) window.__opsUp.reset("cmd"); }'],
+  ["up-q", 'const tx = $("q-text"), text = tx.value.trim(); if (!text) { tx.focus(); return; }', () =>
+    'if (window.__opsUp && window.__opsUp.busy("q")) { toast("Așteaptă să se încarce fișierele.", "err"); return; }\n    const tx = $("q-text"), text = tx.value.trim() || (window.__opsUp && window.__opsUp.count("q") ? "(vezi fișierele)" : ""); if (!text) { tx.focus(); return; }'],
+  ["up-q-send", 'const ok = await guard(() => inboxAdd("command", text, null), "Trimis. Urmărește progresul în Conversație.");', () =>
+    'const qup = window.__opsUp ? window.__opsUp.payload("q") : {}; const ok = await guard(() => inboxAdd("command", text + (window.__opsUp ? window.__opsUp.textSuffix("q") : ""), Object.keys(qup).length ? qup : null), "Trimis. Urmărește progresul în Conversație."); if (ok && window.__opsUp) window.__opsUp.reset("q");'],
+  ["up-ct-slot", '    body.append(el("div", "mono muted", "Ajunge la Claude ca mesaj în Conversație. Pe card apare ca cerere în așteptare până o rezolvă."));', () =>
+    '    if (window.__opsUp) { const upw = window.__opsUp.mount("ct", { fresh: true, open: /^(logo|cover|gallery|video)$/.test(sel.value), kind: sel.value === "logo" ? "logo" : "visual" }); const f4 = el("div", "field"); f4.append(el("label", "", sel.value === "video" ? "Fișier sau link video" : "Fișiere și linkuri (opțional)"), upw); body.append(f4); }\n    body.append(el("div", "mono muted", "Ajunge la Claude ca mesaj în Conversație. Pe card apare ca cerere în așteptare până o rezolvă."));'],
+  ["up-ct-check", 'if (!v && !att.length) { val.focus();', () => 'if (window.__opsUp && window.__opsUp.busy("ct")) { toast("Așteaptă să se încarce fișierele.", "err"); return; }\n      if (!v && !att.length && !(window.__opsUp && window.__opsUp.count("ct"))) { val.focus();'],
+  ["up-ct-send", 'inboxAdd("command", text, { type: "content-change", slug, field, value: v, assets: att.map((a) => a.id) })', () =>
+    'inboxAdd("command", text + (window.__opsUp ? window.__opsUp.textSuffix("ct") : ""), { type: "content-change", slug, field, value: v, assets: att.map((a) => a.id), ...(window.__opsUp ? window.__opsUp.payload("ct") : {}) })'],
 ];
 
 for (const [name, find, rep] of patches) {
