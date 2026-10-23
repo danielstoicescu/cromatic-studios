@@ -456,6 +456,22 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     createReadStream(file).pipe(res);
   }
 
+  // the build the site serves now (its index-<hash>.js); draft and event replies carry it, so a tab left open across
+  // a deploy notices it runs old code and asks for a reload (tabs from before r290 ignore the field)
+  // re-read only when index.html changes, so a deploy is seen at once, with or without a restart
+  let built = { mtime: -1, id: "" };
+  async function build() {
+    const file = join(distDir, "index.html");
+    let mtime = 0;
+    try { mtime = statSync(file).mtimeMs; } catch { return ""; }
+    if (mtime === built.mtime) return built.id;
+    let id = "";
+    try { id = (await readFile(file, "utf8")).match(/assets\/(index-[\w-]+\.js)/)?.[1] ?? ""; } catch { /* no build here */ }
+    built = { mtime, id };
+    return id;
+  }
+  const withBuild = async (code, out) => (code < 300 && out && typeof out === "object" ? { ...out, build: await build() } : out);
+
   /** returns true when it handled the request */
   return async function handle(req, res) {
     const url = new URL(req.url, "http://x");
@@ -464,12 +480,12 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     if (!p.startsWith("/api/core30/")) return false;
     try {
       if (req.method === "POST" && limited(req)) { send(res, 429, { ok: false, error: "slow down" }); return true; }
-      if (req.method === "POST" && p === "/api/core30/event") { const body = await readBody(req); const [code, out] = await withLock(lockKey(body), () => events(body)); send(res, code, out); return true; }
+      if (req.method === "POST" && p === "/api/core30/event") { const body = await readBody(req); const [code, out] = await withLock(lockKey(body), () => events(body)); send(res, code, await withBuild(code, out)); return true; }
       if (req.method === "POST" && p === "/api/core30/start") { const body = await readBody(req); const [code, out] = await withLock(lockKey(body), () => start(body)); send(res, code, out); return true; }
       if (req.method === "POST" && (p === "/api/core30/draft" || p === "/api/core30/submit")) {
         const body = await readBody(req);
         const [code, out] = await withLock(lockKey(body), () => store(p.endsWith("submit") ? "submit" : "draft", body));
-        send(res, code, out); return true;
+        send(res, code, await withBuild(code, out)); return true;
       }
       if (p === "/api/core30/admin/sessions") {
         if (!isAdmin(req, url)) { send(res, 403, { ok: false }); return true; }
