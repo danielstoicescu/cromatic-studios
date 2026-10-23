@@ -40919,8 +40919,8 @@ void main(){
         nav2Cull(); // beta 2.5: the street view skips the small things far off in its haze
         mergeWatch(); // r198
         if (mapMode) state.targetL = mapNav.targetL;
-        if (photo?.on) { state.targetL = state.L; MO.Lv = 0; } // TASK-119: the ride holds still for its portrait
         else if (ONB_MODE && onbL != null) state.targetL = onbL; // r140: the page's scroll is the road
+        if (photo?.on) { state.targetL = state.L; MO.Lv = 0; } // TASK-119: the ride holds still for its portrait (after the chain above, so its else binds to mapMode again)
         const nearDacia = state.L > route.stopL.merge - 1500 && state.L < route.stopL.merge - 250;
         const crawl = (coffee.near && !coffee.done && (!mapMode || mapNav.place?.tm)) || (nearDacia && !mapMode);
         if (siteMode) { state.targetL = state.L; state.speed = 0; }
