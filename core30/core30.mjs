@@ -419,7 +419,17 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     }
     const dir = join(dataDir, safe(id));
     const m = existsSync(dir) ? await readMeta(dir) : {};
-    const total = (c.file ? JSON.parse(await readFile(c.file, "utf8")).modules?.length : 0) ?? 0;
+    const mods = c.file ? JSON.parse(await readFile(c.file, "utf8")).modules ?? [] : [];
+    const total = mods.length;
+    // which modules have answers in the latest copy (titles only): a module skipped and then answered is partial,
+    // a module with answers but not every required item is partial too; the step log alone only knows "complete"
+    let answeredIds = new Set(), skippedIds = [];
+    try {
+      const latest = JSON.parse(await readFile(join(dir, "latest.json"), "utf8"));
+      const ans = latest.session?.answers ?? latest.export?.answers ?? {};
+      for (const md of mods) if (md.items?.some((it) => ans[it.id] != null)) answeredIds.add(md.id);
+      skippedIds = latest.session?.skipped ?? [];
+    } catch { /* no copy yet */ }
     // the card's back: hours and titles only, never answers
     const log = (await readLog(dir)).map((e) => ({
       at: e.at, type: e.type,
@@ -429,6 +439,9 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       ...(e.type === "start" && e.email ? { email: e.email } : {}),
     }));
     const doneIds = new Set(log.filter((e) => e.type === "step").map((e) => e.module));
+    const titleOf = (mid) => mods.find((x) => x.id === mid)?.short ?? mid;
+    const partial = mods.filter((x) => answeredIds.has(x.id) && !doneIds.has(x.id)).map((x) => x.short);
+    const skippedOnly = mods.filter((x) => skippedIds.includes(x.id) && !answeredIds.has(x.id)).map((x) => titleOf(x.id));
     const lastStep = [...log].reverse().find((e) => e.type === "step" || e.type === "skip") ?? null;
     return [200, {
       ok: true, id: safe(id),
@@ -436,7 +449,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       startedAt: m.startedAt ?? null, startedBy: m.startedBy ?? null,
       firstDraftAt: m.firstDraftAt ?? null, lastSaveAt: m.lastSaveAt ?? null, saves: m.saves ?? 0,
       submits: m.submits ?? 0, lastSubmitAt: m.lastSubmitAt ?? null,
-      progress: { done: doneIds.size, total }, lastStep, log,
+      progress: { done: doneIds.size, answered: new Set([...doneIds, ...answeredIds]).size, total, partial, skipped: skippedOnly }, lastStep, log,
     }];
   }
 
