@@ -41,23 +41,44 @@ const patches = [
   ["bug-imp-js", 'const ok = await submitBug(text, bugLvl === "panic", bugAtt.slice(), { page, device });', () =>
     'const imp = !!($("bug-imp") && $("bug-imp").checked); const ok = await submitBug(text, bugLvl === "panic" || imp, bugAtt.slice(), { page, device, ...(window.__ops ? { important: imp || bugLvl === "panic" } : {}) });'],
   ["bug-imp-reset", 'setLvl("normal"); setPop(""); }', () => 'setLvl("normal"); if ($("bug-imp")) $("bug-imp").checked = false; setPop(""); }'],
-  // 7. in the mirror an edit control is a request: it opens "Spune-i lui Claude" prefilled with a precise command
+  // 7. in the mirror an edit (status, priority, agent, epic; a drag on the board) applies at once and goes to Claude
+  //    by itself as a "task-edit" command; the card wears an "în procesare" pill until a snapshot confirms it.
+  //    Delete and "Cere modificarea" still open "Spune-i lui Claude" prefilled, for the user to send.
   ["ask-fn", "const setTask = (id, patch, why, okText) => guard(", () =>
-    `function opsAsk(id, patch) {
-    const t = S.tasks.find((x) => x.id === id), p = patch || {}, parts = [];
+    `function opsText(id, p) {
+    const t = S.tasks.find((x) => x.id === id), parts = [];
     if (p.deleted) parts.push("șterge task-ul");
     if (p.status) parts.push("mută în „" + (SLAB[p.status] || p.status) + "”");
     if (p.priority) parts.push("prioritate " + p.priority);
     if ("agent" in p) { const m = S.team.find((x) => x.id === p.agent); parts.push(m ? "dă-l lui " + m.name : "fără agent"); }
     if ("epicId" in p) { const e = S.epics.find((x) => x.id === p.epicId); parts.push(e ? "mută în epicul „" + e.title + "”" : "scoate-l din epic"); }
-    const text = id + ": " + parts.join(", ") + (parts.length && t ? " · " + t.title : "");
+    return id + ": " + parts.join(", ") + (parts.length && t ? " · " + t.title : "");
+  }
+  function opsAsk(id, patch) {
+    const text = opsText(id, patch || {});
     if (!$("drawer").hidden) closeDrawer();
     setPop("claude"); const q = $("q-text"); q.value = text;
     setTimeout(() => { q.focus({ preventScroll: true }); q.setSelectionRange(q.value.length, q.value.length); }, 60);
     return Promise.resolve(false);
   }
-  const setTask = (id, patch, why, okText) => window.__ops ? opsAsk(id, patch) : guard(`],
-  ["ask-move", "function confirmMove(t, to) {", () => "function confirmMove(t, to) {\n    if (window.__ops) { closeMenu(); return opsAsk(t.id, { status: to }); }"],
+  const OPS_FIELDS = ["status", "priority", "agent", "epicId"];
+  function opsEdit(id, field, to) {
+    const t = S.tasks.find((x) => x.id === id); if (!t) return Promise.resolve(false);
+    const from = field === "status" ? norm(t.status) : (t[field] ?? "");
+    if (String(from) === String(to ?? "")) return Promise.resolve(false);
+    return guard(() => inboxAdd("command", opsText(id, { [field]: to }), { type: "task-edit", taskId: id, field, from, to: to ?? "" }));
+  }
+  function opsPatch(id, patch) { const k = Object.keys(patch || {}).filter((x) => OPS_FIELDS.includes(x)); return k.length === 1 && Object.keys(patch).length === 1 ? opsEdit(id, k[0], patch[k[0]]) : opsAsk(id, patch); }
+  // a card dropped on its own column (or outside the board) just settles back
+  function opsSnap(id) { const c = document.querySelector('.card[data-task="' + id + '"]'); if (!c) return; c.classList.remove("ops-snap"); void c.offsetWidth; c.classList.add("ops-snap"); setTimeout(() => c.classList.remove("ops-snap"), 700); }
+  window.__opsMove = (id, k) => { const t = S.tasks.find((x) => x.id === id); if (t && k && norm(t.status) !== k) confirmMove(t, k); else opsSnap(id); };
+  window.__opsToast = (m, k) => toast(m, k);
+  const setTask = (id, patch, why, okText) => window.__ops ? opsPatch(id, patch) : guard(`],
+  ["ask-move", "function confirmMove(t, to) {", () => "function confirmMove(t, to) {\n    if (window.__ops) { closeMenu(); return opsEdit(t.id, \"status\", to); }"],
+  ["pill", "      c.append(a);\n    }\n    return c;\n  }\n  function renderBoard(box) {", () =>
+    "      c.append(a);\n    }\n    if (window.__opsPill) window.__opsPill(c, t);\n    return c;\n  }\n  function renderBoard(box) {"],
+  ["drag-card", 'if (canWrite && matchMedia("(pointer: fine)").matches) { c.draggable = true;', () => 'if ((canWrite || window.__ops) && matchMedia("(pointer: fine)").matches) { c.draggable = true;'],
+  ["drag-lane", "if (canWrite) { lane.ondragover", () => "lane.dataset.st = k; if (canWrite || window.__ops) { lane.ondragover"],
   ["ask-del", "function confirmDelete(t) {", () => "function confirmDelete(t) {\n    if (window.__ops) { closeMenu(); return opsAsk(t.id, { deleted: true }); }"],
   ["ask-opts", "if (!canWrite) o.disabled = true;", () => "if (!canWrite && !window.__ops) o.disabled = true;"],
   ["ask-epic", "if (!canWrite) ep.disabled = true;", () => "if (!canWrite && !window.__ops) ep.disabled = true;"],
