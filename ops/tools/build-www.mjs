@@ -24,10 +24,10 @@ const patches = [
   // 1b. attachments live in the artifact's asset store, not on this server: a placeholder instead of a broken image
   ["blob", 'const blobUrl = (a) => "/_blob/" + a.id;', () =>
     'const OPS_BLOB = "data:image/svg+xml," + encodeURIComponent(\'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120"><rect width="160" height="120" fill="#e7e7e7"/><text x="80" y="58" font-family="sans-serif" font-size="12" text-anchor="middle" fill="#5e6168">fișier în</text><text x="80" y="74" font-family="sans-serif" font-size="12" text-anchor="middle" fill="#5e6168">artifact</text></svg>\');\n  const blobUrl = (a) => (window.__ops ? OPS_BLOB : "/_blob/" + a.id);'],
-  // 2. no "read only" banner: the header carries a small note instead (adapter.js)
+  // 2. no "read only" banner: in the mirror the edit controls become requests to Claude (patch 7)
   ["banner", 'banner("Vizualizare doar pentru citire.")', () => 'banner(window.__ops ? "" : "Vizualizare doar pentru citire.")'],
   // 3. a blocked write explains itself
-  ["guard", 'else if (c === "quota_exceeded")', () => 'else if (c === "read_only") toast("În oglindă nu se modifică direct: se modifică din sesiunea lui Daniel / prin comandă.", "err");\n      else if (c === "quota_exceeded")'],
+  ["guard", 'else if (c === "quota_exceeded")', () => 'else if (c === "read_only") toast("Asta se cere lui Claude: scrie-i din „Spune-i lui Claude”.", "err");\n      else if (c === "quota_exceeded")'],
   // 4. feedback stays possible in the mirror (it goes to the inbox only; the coordinator writes it on the task)
   ["fb-gate", "if (!canWrite) return box;", () => "if (!canWrite && !window.__ops) return box;"],
   ["fb-send", 'await db.doc("tasks/" + t.id).update({ feedback: [...(t.feedback || []), entry], updatedAt: now() }); await inboxAdd("feedback", text, { id: t.id, verdict, points: pts });', () =>
@@ -41,9 +41,31 @@ const patches = [
   ["bug-imp-js", 'const ok = await submitBug(text, bugLvl === "panic", bugAtt.slice(), { page, device });', () =>
     'const imp = !!($("bug-imp") && $("bug-imp").checked); const ok = await submitBug(text, bugLvl === "panic" || imp, bugAtt.slice(), { page, device, ...(window.__ops ? { important: imp || bugLvl === "panic" } : {}) });'],
   ["bug-imp-reset", 'setLvl("normal"); setPop(""); }', () => 'setLvl("normal"); if ($("bug-imp")) $("bug-imp").checked = false; setPop(""); }'],
-  // 7. the task window says why its controls are read-only
-  ["drawer-ro", "r.append(dl, sv); f.append(startBox(t), r);\n    }", () =>
-    'r.append(dl, sv); f.append(startBox(t), r);\n    }\n    else if (window.__ops) f.append(el("div", "mono muted ops-ro", "Se modifică din sesiunea lui Daniel / prin comandă"));'],
+  // 7. in the mirror an edit control is a request: it opens "Spune-i lui Claude" prefilled with a precise command
+  ["ask-fn", "const setTask = (id, patch, why, okText) => guard(", () =>
+    `function opsAsk(id, patch) {
+    const t = S.tasks.find((x) => x.id === id), p = patch || {}, parts = [];
+    if (p.deleted) parts.push("șterge task-ul");
+    if (p.status) parts.push("mută în „" + (SLAB[p.status] || p.status) + "”");
+    if (p.priority) parts.push("prioritate " + p.priority);
+    if ("agent" in p) { const m = S.team.find((x) => x.id === p.agent); parts.push(m ? "dă-l lui " + m.name : "fără agent"); }
+    if ("epicId" in p) { const e = S.epics.find((x) => x.id === p.epicId); parts.push(e ? "mută în epicul „" + e.title + "”" : "scoate-l din epic"); }
+    const text = id + ": " + parts.join(", ") + (parts.length && t ? " · " + t.title : "");
+    if (!$("drawer").hidden) closeDrawer();
+    setPop("claude"); const q = $("q-text"); q.value = text;
+    setTimeout(() => { q.focus({ preventScroll: true }); q.setSelectionRange(q.value.length, q.value.length); }, 60);
+    return Promise.resolve(false);
+  }
+  const setTask = (id, patch, why, okText) => window.__ops ? opsAsk(id, patch) : guard(`],
+  ["ask-move", "function confirmMove(t, to) {", () => "function confirmMove(t, to) {\n    if (window.__ops) { closeMenu(); return opsAsk(t.id, { status: to }); }"],
+  ["ask-del", "function confirmDelete(t) {", () => "function confirmDelete(t) {\n    if (window.__ops) { closeMenu(); return opsAsk(t.id, { deleted: true }); }"],
+  ["ask-opts", "if (!canWrite) o.disabled = true;", () => "if (!canWrite && !window.__ops) o.disabled = true;"],
+  ["ask-epic", "if (!canWrite) ep.disabled = true;", () => "if (!canWrite && !window.__ops) ep.disabled = true;"],
+  ["ask-agent", "if (!canWrite) ag.disabled = true;", () => "if (!canWrite && !window.__ops) ag.disabled = true;"],
+  ["ask-card", "    if (canWrite) {\n      // Daniel's own tasks close by his hand", () => "    if (canWrite || window.__ops) {\n      // Daniel's own tasks close by his hand"],
+  ["ask-close", "if (canWrite) { const opts2 = closeOpts(t);", () => "if (canWrite || window.__ops) { const opts2 = closeOpts(t);"],
+  ["ask-foot", "r.append(dl, sv); f.append(startBox(t), r);\n    }", () =>
+    'r.append(dl, sv); f.append(startBox(t), r);\n    }\n    else if (window.__ops) { const rq = el("button", "btn sm k"); rq.type = "button"; rq.append(icon("i-send"), el("span", "", "Cere modificarea")); rq.onclick = () => opsAsk(t.id, {}); f.append(rq); }'],
 ];
 
 for (const [name, find, rep] of patches) {
