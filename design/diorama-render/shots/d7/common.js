@@ -24,12 +24,20 @@ export async function world(S, id) {
 }
 // the map's own ride, swapped in (its spawn played out), then posed per sub-frame: place(x, y, z, yaw, pitch?, roll?)
 export async function mapRide(S, id) {
-  if (S.state.vehicleId !== id) { window.__api.setVehicle(id); await wait(2600); }
-  const v = S.veh(), g = v.group, keep = { p: g.position.clone(), q: g.quaternion.clone(), vis: g.visible, s: g.scale.clone() }, base = g.scale.x;
+  // D9: the map plays a spawn when a ride is swapped in (a drop, then a squash: x and z up to +18 %, y down): it runs
+  // on the page's clock, which a render has frozen; left half-played, the ride kept a squashed scale into the shot
+  // (Daniel's "stretched" Snoop, Pass Go and sub). The clock is ticked until the spawn is over, then the ride's own
+  // scale is read, uniform
+  if (S.state.vehicleId !== id) { window.__api.setVehicle(id); await wait(600); }
+  for (let i = 0; i < 150 && window.__vclock && window.__vclock.frozen; i++) window.__vclock.tick(1 / 30);
+  await wait(window.__vclock && window.__vclock.frozen ? 0 : 2600);
+  const v = S.veh(), g = v.group, keep = { p: g.position.clone(), q: g.quaternion.clone(), vis: g.visible, s: g.scale.clone() }, base = g.scale.y;
+  if (Math.abs(g.scale.x - g.scale.y) > 1e-4) console.warn("mapRide: still squashed", id, g.scale.toArray());
   g.visible = true;
   return {
     v, g,
-    lights(on) { v.lampGlow?.(!!on); if (v.beams) v.beams.visible = !!on; },
+    // (D9: beams: false keeps the lamps lit without their light cones, which read as odd flares from below)
+    lights(on, { beams = true } = {}) { v.lampGlow?.(!!on); if (v.beams) v.beams.visible = !!on && beams; },
     // (D8: the city's bend scales the ground plan by s where the ride stands, never its height: the ride is drawn
     // 1/s wider and deeper, so its proportions on screen are its own)
     place(x, y, z, yaw, pitch = 0, roll = 0) { const k = 1 / warpScale(S, x, z); g.position.set(x, y, z); g.rotation.set(0, yaw, 0); if (pitch) g.rotateX(pitch); if (roll) g.rotateZ(roll); g.scale.set(base * k, base, base * k); g.updateMatrixWorld(true); },

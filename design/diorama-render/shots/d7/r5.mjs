@@ -10,7 +10,7 @@ export default {
   camera: whip(cameraPath({ keys: [0.15, D / 2, D].map((t) => { const p = plane(t); return { t, pos: [2130, 1.5, 4530 - 10 * (t / D)], look: [p.x, p.y + 8, p.z], fov: 70 - 6 * (t / D), roll: 6 * (t / D), yaw: 0, focus: [p.x, p.y, p.z] }; }) }), { at: "start", deg: 50, dur: 0.15 }),
   cameraLimits: { maxTurn: 8, maxTurnJump: 3 },
   lens: { fstop: 8, scale: 1.45 }, ...NIGHT, shadow: { centre: [2130, 0, 4560], ext: 360 },
-  async prepare(ctx) { await world(ctx.S, "nightlife"); RIDE = await mapRide(ctx.S, "plane"); RIDE.lights(true); this._s0 = RIDE.g.scale.x; RIDE.g.scale.multiplyScalar(1.8); KEY = followKey(ctx, 2600, 260); UNSKY = nightSky(ctx); },
+  async prepare(ctx) { await world(ctx.S, "nightlife"); RIDE = await mapRide(ctx.S, "plane"); RIDE.lights(true, { beams: false }); this._s0 = RIDE.g.scale.x; RIDE.g.scale.multiplyScalar(1.8); KEY = followKey(ctx, 2600, 260); UNSKY = nightSky(ctx); },
   pose(t) { const p = plane(t); RIDE.place(p.x, p.y, p.z, 0, p.pitch); KEY.at(p.x - 30, p.y - 20, p.z - 60); },
   dispose() { if (RIDE && this._s0) RIDE.g.scale.setScalar(this._s0); RIDE?.restore(); KEY?.dispose(); UNSKY?.(); }
 };

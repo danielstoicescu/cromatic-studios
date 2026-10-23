@@ -27,7 +27,7 @@ cut("  // ---------- 7 · the fountain at night", "  // ---------- 2-3 (D5)");
 s = s.replace(/  Cm\.shape\("ground"[^\n]*\n/, "");
 // D8 (Daniel): the map's two modes named as the cuts land: "Bird's eye" on the city from high, "Drive mode" on the
 // street at Steam: small yellow pills (the house's url pill, at the tag size), top-left, in before the shot's card
-const D8 = process.env.STORY === "d8";
+const D8 = ["d8", "d9"].includes(process.env.STORY);
 if (D8) rep("  clip(drawCard(Cm, card(\"d19-map\"), T2), \"zoom\");", `  for (const [text, shot, out] of [["Bird's eye", "bird", "bird+56"], ["Drive mode", "steam", "steam+42"]]) { const c = card("d14-end"), U = c.layout.url, size = 48, tr = -0.02, w = setLine(KC.T, text, size, tr).width, padX = 44, h = 76.8; c.id = "d8-mode-" + shot; c.layout = { url: { ...U, text, size, tracking: tr, w: w + 2 * padX, h, centre: [80 + (w + 2 * padX) / 2, 300 + h / 2], textX: 80 + padX, baseline: 300 + h / 2 + size * 0.36, keyline: 5, shadow: [8, 11], tilt: -4 } }; c.timing.cues = { urlIn: shot + "+2", out }; drawCard(Cm, c, T2); }
   clip(drawCard(Cm, card("d19-map"), T2), "zoom");`);
 // the cards: no sip; d20 smaller, its new words

@@ -6,9 +6,9 @@ const D = secs("r2");
 let RIDE, KEY, UNSKY;
 export default {
   name: "r2", size: [2160, 3840], fps: 30, duration: D, shutter: 0.5,
-  camera: cameraPath({ keys: [0, D / 2, D].map((t) => { const u = t / D; return { t, pos: [1548 + 14 * (0.5 - u), 5, 4432 - 10 * (0.5 - u)], look: [1500, 12, 4330], fov: 46, roll: -5 + 3 * u, focus: [1500, 10, 4340] }; }) }),
+  camera: cameraPath({ keys: [0, D / 2, D].map((t) => { const u = t / D; return { t, pos: [1512 + 16 * (0.5 - u), 10, 4522 - 6 * (0.5 - u)], look: [1500, 13, 4332], fov: 34, roll: -4 + 3 * u, focus: [1500, 12, 4332] }; }) }),
   lens: { fstop: 11, scale: 1.45 }, ...NIGHT, shadow: { centre: [1500, 0, 4330], ext: 260 },
   async prepare(ctx) { await world(ctx.S, "nightlife"); RIDE = await mapRide(ctx.S, "groovy"); RIDE.lights(true); KEY = followKey(ctx, 700, 200); UNSKY = nightSky(ctx); },
-  pose(t) { RIDE.place(1500, 1.73, 4330, 1.5708); KEY.at(1540, 34, 4400); },
+  pose(t) { RIDE.place(1500, 1.73, 4330, 1.5708); KEY.at(1515, 50, 4430); },
   dispose() { RIDE?.restore(); KEY?.dispose(); UNSKY?.(); }
 };

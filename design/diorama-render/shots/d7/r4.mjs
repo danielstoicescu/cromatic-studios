@@ -6,9 +6,9 @@ const D = secs("r4");
 let RIDE, KEY, UNSKY;
 export default {
   name: "r4", size: [2160, 3840], fps: 30, duration: D, shutter: 0.5,
-  camera: whip(cameraPath({ keys: [0, D / 2, D - 0.15].map((t) => { const u = t / D; return { t, pos: L3([1596, 3, 4486], [1606, 3.4, 4496], u), look: [1652, 14, 4542], fov: 50, focus: [1650, 8, 4540] }; }) }), { at: "end", deg: -60, dur: 0.15 }),
+  camera: whip(cameraPath({ keys: [0, D / 2, D - 0.15].map((t) => { const u = t / D; return { t, pos: L3([1563, 7, 4452], [1570, 7.3, 4459], u), look: [1652, 12, 4542], fov: 36, focus: [1650, 9, 4540] }; }) }), { at: "end", deg: -60, dur: 0.15 }),
   lens: { fstop: 11, scale: 1.45 }, ...NIGHT, shadow: { centre: [1680, 0, 4560], ext: 260 },
-  async prepare(ctx) { await world(ctx.S, "nightlife"); RIDE = await mapRide(ctx.S, "monopoly"); RIDE.lights(true); KEY = followKey(ctx, 700, 200); UNSKY = nightSky(ctx); },
-  pose() { RIDE.place(1650, 1.73, 4540, -0.6); KEY.at(1610, 30, 4505); },
+  async prepare(ctx) { await world(ctx.S, "nightlife"); RIDE = await mapRide(ctx.S, "monopoly"); RIDE.lights(true); KEY = followKey(ctx, 1600, 320); UNSKY = nightSky(ctx); },
+  pose() { RIDE.place(1650, 1.73, 4540, -0.6); KEY.at(1590, 50, 4470); },
   dispose() { RIDE?.restore(); KEY?.dispose(); UNSKY?.(); }
 };
