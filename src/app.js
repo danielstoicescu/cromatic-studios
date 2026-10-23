@@ -25468,7 +25468,7 @@ void main() {
       B.v += 4;
     };
     // a box: x in [x0, x1], y in [y0, y1], z in [z0, z1] (local frame); wall uvs if asked
-    const box = (B, x0, x1, y0, y1, z0, z1, col, colMV, wallUV, ao, top = true) => {
+    const box = (B, x0, x1, y0, y1, z0, z1, col, colMV, wallUV, ao, top = true, bottom = false) => {
       const w = x1 - x0, d = z1 - z0;
       const uvF = (len) => (wallUV ? [0, 0, Math.max(1, Math.round(len / 13)) / 4, 0, Math.max(1, Math.round(len / 13)) / 4, wallUV, 0, wallUV] : null);
       quad(B, [[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]], [0, 0, 1], col, colMV, uvF(w), ao);
@@ -25476,7 +25476,12 @@ void main() {
       quad(B, [[x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1]], [1, 0, 0], col, colMV, uvF(d), ao);
       quad(B, [[x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0]], [-1, 0, 0], col, colMV, uvF(d), ao);
       if (top) quad(B, [[x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0]], [0, 1, 0], col, colMV, null, ao);
+      if (bottom) quad(B, [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]], [0, -1, 0], col, colMV, null, ao);
     };
+    // TASK-118 (Daniel on story A6: "acoperișurile nefinisate, plutitoare"): a roof's eaves stood out past the walls with
+    // nothing under them (no soffit, no edge), so from a street camera the roof read as a lid floating over the box,
+    // the sky showing through under it. Every overhang now has a fascia (a thin band at the eave) and a soffit under it
+    const eave = (B, ex, ez, y, col, colMV, t = 0.9) => box(B, -ex, ex, y - t, y, -ez, ez, tmpE.copy(col).multiplyScalar(0.82), tmpEM.copy(colMV).multiplyScalar(0.86), 0, null, false, true);
     // a hip roof (or a mansard, with a wide top): base half-sizes hx, hz at y0, top half-sizes tx, tz
     const hip = (B, hx, hz, tx, tz, y0, h, col, colMV) => {
       const y1 = y0 + h;
@@ -25504,7 +25509,7 @@ void main() {
     const zinc = new Color("#737c84"), zincMV = new Color("#9b93b8"), flat = new Color("#d6d0c2"), flatMV = new Color("#e9d6cf");
     const chimC = new Color("#9a5a40"), chimMV = new Color("#c98a7a"), dormC = new Color("#ece6d9"), dormMV = new Color("#fff3ea");
     const propCol = [new Color("#d88c6a"), new Color("#8fb3c9"), new Color("#c9a0c4"), new Color("#9cc18f"), new Color("#e0b85e")];
-    const tmpC = new Color(), tmpM = new Color();
+    const tmpC = new Color(), tmpM = new Color(), tmpE = new Color(), tmpEM = new Color();
     // is the footprint free? (an oriented rectangle, sampled on the raster)
     const fits = (cx, cz, ux, uz, w, d) => {
       for (let a = -w / 2; a <= w / 2 + 0.01; a += 5) for (let b = -d / 2; b <= d / 2 + 0.01; b += 5) {
@@ -25559,7 +25564,7 @@ void main() {
           h = Math.round(h);
           // local frame: x along the street, +z away from it (the front faces the street, at -z)
           frame(cx, cz, Math.atan2(nx, nz));
-          FOOTPRINTS.push({ x: cx, z: cz, w: bw, d, ang: Math.atan2(nx, nz), h });
+          const fpRec = { x: cx, z: cz, w: bw, d, ang: Math.atan2(nx, nz), h }; FOOTPRINTS.push(fpRec);
           const hw = bw / 2, hd = d / 2;
           const floors = Math.max(2, Math.round(h / 13));
           const tint = tmpC.copy(tints[Math.floor(rnd() * tints.length)]).offsetHSL(0, 0, (rnd() - 0.5) * 0.04);
@@ -25567,26 +25572,33 @@ void main() {
           box(WB, -hw, hw, 0, h, -hd, hd, tint, tMV, floors / 4, [0, h], false);
           // a plinth band over the shop floor
           const by = Math.min(13, h * 0.32);
-          box(RB, -hw - 0.8, hw + 0.8, by - 1.2, by + 1.2, -hd - 0.8, hd + 0.8, tmpM.copy(tint).multiplyScalar(0.8), tMV.clone().multiplyScalar(0.86), 0, null, false);
+          box(RB, -hw - 0.8, hw + 0.8, by - 1.2, by + 1.2, -hd - 0.8, hd + 0.8, tmpM.copy(tint).multiplyScalar(0.8), tMV.clone().multiplyScalar(0.86), 0, null, true, true);
           const rr = rnd();
+          fpRec.roof = h < 52 && rr < 0.86 ? "hip" : h < 120 && rr < 0.5 ? "mansard" : "flat"; // TASK-118: for the roof audit
           if (h < 52 && rr < 0.86) {
             // a hip roof in clay tiles, with a ridge
             const rh = Math.min(15, 6 + Math.min(bw, d) * 0.22), ex = hw + 2, ez = hd + 2;
             const ti = Math.floor(rnd() * tiles.length);
             hip(RB, ex, ez, Math.max(ex - ez * 0.92, ex * 0.1), ez * 0.08, h, rh, tiles[ti], tilesMV[ti % tilesMV.length]);
+            eave(RB, ex, ez, h, tiles[ti], tilesMV[ti % tilesMV.length]);
             if (rnd() < 0.45) { const qx = (rnd() - 0.5) * bw * 0.5, qz = (rnd() - 0.5) * d * 0.4; box(RB, qx - 1.8, qx + 1.8, h + rh * 0.3, h + rh * 0.3 + 7, qz - 1.8, qz + 1.8, chimC, chimMV, 0, null); }
           } else if (h < 120 && rr < 0.5) {
             // a zinc mansard with dormers, Calea Victoriei style
             const mh = 12 + rnd() * 8, ex = hw + 1.5, ez = hd + 1.5;
             hip(RB, ex, ez, ex * 0.66, ez * 0.66, h, mh, zinc, zincMV);
+            eave(RB, ex, ez, h, zinc, zincMV);
             const nd = Math.max(1, Math.round(bw / 16));
+            // TASK-118: the dormers stood at the wall's line, a box's depth deep: on a deep block the slope had already
+            // gone back past them and they floated in front of the roof. Now each one's face stands on the slope at its
+            // sill and its body runs back into the roof (the slope's line: |z| = ez - (y - h) / mh * 0.34 ez)
+            const yb = h + mh * 0.42 - 2.75, yt = h + mh * 0.42 + 2.75, zAt = (y) => ez - ((y - h) / mh) * 0.34 * ez;
             for (let q = 0; q < nd; q++) {
               const qx = -hw + (q + 0.5) * bw / nd;
-              box(RB, qx - 2.2, qx + 2.2, h + mh * 0.42 - 2.75, h + mh * 0.42 + 2.75, -hd + 0.2 - 1.6, -hd + 0.2 + 1.6, dormC, dormMV, 0, null);
+              box(RB, qx - 2.2, qx + 2.2, yb, yt, -zAt(yb) - 0.15, -zAt(yt) + 0.6, dormC, dormMV, 0, null, true, true);
             }
           } else {
             // a flat roof with a parapet, now and then a stair house or a corner dome
-            box(RB, -hw - 1.2, hw + 1.2, h, h + 3, -hd - 1.2, hd + 1.2, flat, flatMV, 0, null);
+            box(RB, -hw - 1.2, hw + 1.2, h, h + 3, -hd - 1.2, hd + 1.2, flat, flatMV, 0, null, true, true);
             if (rnd() < 0.5) { const qx = (rnd() - 0.5) * (bw - 14), qz = (rnd() - 0.5) * (d - 14); box(RB, qx - 5, qx + 5, h + 3, h + 11, qz - 4.5, qz + 4.5, tmpM.copy(tint).multiplyScalar(0.9), tMV.clone().multiplyScalar(0.92), 0, null); }
             if (h > 70 && rnd() < 0.16) {
               const cr = 7.5, dr = new CylinderGeometry(cr, cr, 12, 10, 1, true); dr.translate(-hw + 4, h + 8, -hd + 4);
@@ -25597,8 +25609,11 @@ void main() {
             // Monument only: water tanks on the flat roofs
             const pr = rnd(), pc = propCol[Math.floor(rnd() * propCol.length)];
             if (pr < 0.32) {
+              fpRec.tank = true;
               const qx = (rnd() - 0.5) * (bw - 16), qz = (rnd() - 0.5) * (d - 16);
-              box(MB, qx - 4.5, qx + 4.5, h + 7, h + 17, qz - 4.5, qz + 4.5, pc, pc, 0, null);
+              box(MB, qx - 4.5, qx + 4.5, h + 7, h + 17, qz - 4.5, qz + 4.5, pc, pc, 0, null, true, true);
+              // TASK-118: the tank stood 4 over the roof's top (h + 3) on nothing: four legs and a cross bar under it
+              for (const [lx, lz] of [[-3.6, -3.6], [3.6, -3.6], [-3.6, 3.6], [3.6, 3.6]]) box(MB, qx + lx - 0.5, qx + lx + 0.5, h + 3, h + 7, qz + lz - 0.5, qz + lz + 0.5, tmpE.copy(pc).multiplyScalar(0.6), tmpEM.copy(pc).multiplyScalar(0.6), 0, null, false);
             }
           }
           count++;
@@ -44578,6 +44593,9 @@ void main(){
       window.__mapSet = (d, x, z) => { mapView.dist = d; mapView.distGoal = null; mapView.follow = false; mapView.tgt.set(x, 0, z); };
       window.__api = api;
       window.__tl = () => mats.trafficLights?.state(); // TASK-110: tests (each signal's lamp: medical, lane, olari)
+      // TASK-057 (branch stories-lottie only, never shipped): the Lottie stories' renders reach the engine's own passes,
+      // behind ?story: the scene, the renderer and camera, the sun, Sketchbook's notebook pass and its brush, the ride
+      if (/[?&]story\b/.test(location.search + ((performance.getEntriesByType("navigation")[0] || {}).name || ""))) window.__story = { scene, renderer, camera, sun, hemi, sky, farClouds, sketchRender, sketchPaint, sketchRevealFlush, veh: () => veh, carPos, mapView, warpV, merged: () => MERGED, schemes: SCHEMES, state, cop: () => copCar, host: () => nav2Host(), mats, risoRender, places: () => MAP_PLACES, fountain: () => FOUNTAIN, fill: fillLight, footprints: () => FOOTPRINTS, K: { ShaderMaterial, WebGLRenderTarget, DataTexture, Data3DTexture, Scene, OrthographicCamera, PerspectiveCamera, PlaneGeometry, Mesh, Group, DirectionalLight, PointLight, MeshStandardMaterial, MeshBasicMaterial, Color, Vector2, Vector3, Vector4, Matrix4, Quaternion, Euler, BoxGeometry, SphereGeometry, CylinderGeometry, CapsuleGeometry, LatheGeometry, ConeGeometry, TorusGeometry, ShapeGeometry, ExtrudeGeometry, IcosahedronGeometry, CircleGeometry, Shape, Path, CanvasTexture, BufferGeometry, BufferAttribute, Float32BufferAttribute, Box3, Sphere, MathUtils, ShaderChunk, UniformsUtils, HalfFloatType, FloatType, UnsignedByteType, RGBAFormat, LinearFilter, NearestFilter, NoToneMapping, LinearSRGBColorSpace, SRGBColorSpace, DoubleSide, BackSide, FrontSide, NoBlending, AdditiveBlending, PCFShadowMap, PCFSoftShadowMap, VSMShadowMap, RepeatWrapping, ClampToEdgeWrapping } /* TASK-118: the diorama renders (design/diorama-render) build their passes, lights and figurines with the map's own three */ } /* TASK-065c: the stories drive the fountain's jets frame by frame */; // (TASK-065: the Risograph world's own pass, the places) // (TASK-058: the chaser, the road's smoke and marks, the night's lamps)
       window.__xp = () => ({ pts: state.points, log: xpLog.map((e) => e.title + " +" + e.pts), pending: xpPending && xpPending.title, collected: [...xpCollected], chosen: state.branchChosen, branch: state.branch, card: currentCardStop, veh: state.vehicleId });
       window.__scheme = (id) => api.setScheme(SCHEMES.findIndex((x) => x.id === id));
       // ---- r140: /onboarding/ drives the city ----
