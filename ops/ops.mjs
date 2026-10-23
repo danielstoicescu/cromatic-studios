@@ -281,15 +281,7 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
 
   // ---------- mail ----------
   function mailCode(email, name, code) {
-    const pretty = code.slice(0, 3) + " " + code.slice(3);
-    const subject = `${pretty} e codul tău pentru cromaticstudios.com ops`;
-    const text = `Salut, ${name}.\n\nCodul tău e ${pretty}.\nMerge 10 minute, o singură dată.\n\nDacă nu l-ai cerut tu, ignoră mailul. Nu intră nimeni fără el.\n\nCromatic Studios · Str. Olari 9`;
-    const html = `<div style="font:16px/1.5 -apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#000;max-width:440px;margin:0 auto;padding:24px">
-<p style="margin:0 0 16px">Salut, ${esc(name)}.</p>
-<p style="margin:0 0 8px">Codul tău pentru <b>cromaticstudios.com ops</b>:</p>
-<p style="margin:0 0 16px"><span style="display:inline-block;font:800 30px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;background:#f8d13b;border:1px solid #000;border-radius:999px;padding:10px 22px">${pretty}</span></p>
-<p style="margin:0 0 16px;color:#5e6168">Merge 10 minute, o singură dată. Dacă nu l-ai cerut tu, ignoră mailul. Nu intră nimeni fără el.</p>
-<p style="margin:0;font-size:13px;color:#8a8d93">Cromatic Studios · Str. Olari 9</p></div>`;
+    const { subject, text, html } = codeMail(name, code);
     if (!smtpConfigured) {
       if (!prod) log.log(`[ops] dev: no SMTP, the code for ${email} is ${code}`);
       else log.warn("[ops] SMTP is not configured: the login code could not be sent");
@@ -503,5 +495,47 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
   };
 }
 
+/** the login code mail: the ops lockup (yellow pill + rainbow-ring OPS pill), the six digits in circles, Romanian, neutral.
+ *  Email-safe: tables + inline styles, a solid fallback under the gradient ring, a plain-text part, dark-mode friendly. */
+export function codeMail(name, code) {
+  const pretty = code.slice(0, 3) + " " + code.slice(3), n = esc(name || "");
+  const subject = `${pretty} e codul tău pentru cromaticstudios.com ops`;
+  const text = `Salut${name ? ", " + name : ""}.\n\nCodul tău pentru cromaticstudios.com ops: ${pretty}\nValabil 10 minute, o singură dată.\n\nDacă nu l-ai cerut tu, ignoră mailul. Fără cod nu intră nimeni.\n\nCromatic Studios · Str. Olari 9, București`;
+  const C = ["#FED012", "#28C840", "#119BFE", "#B098C8", "#F65342", "#FED012"];
+  const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+  const digit = (d, i) => `<td align="center" valign="middle" style="padding:0 4px"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td class="dg" align="center" valign="middle" width="52" height="52" style="width:52px;height:52px;border-radius:26px;background:${C[i]};border:2px solid #0D0C09;font:800 30px/52px ${FONT};color:#0D0C09;text-align:center;mso-line-height-rule:exactly">${d}</td></tr></table></td>`;
+  const html = `<!doctype html>
+<html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">
+<title>${pretty} · cromaticstudios.com ops</title>
+<style>
+  :root { color-scheme: light dark; supported-color-schemes: light dark; }
+  @media (prefers-color-scheme: dark) {
+    .bg { background: #111113 !important; } .card { background: #1b1b1e !important; border-color: #2f2f34 !important; }
+    .ink { color: #f2f2f3 !important; } .mut { color: #a3a6ad !important; } .ring-in { background: #1b1b1e !important; } .ops { color: #f2f2f3 !important; }
+  }
+  [data-ogsc] .bg { background: #111113 !important; } [data-ogsc] .card { background: #1b1b1e !important; } [data-ogsc] .ink, [data-ogsc] .ops { color: #f2f2f3 !important; } [data-ogsc] .ring-in { background: #1b1b1e !important; }
+</style></head>
+<body class="bg" style="margin:0;padding:0;background:#F2F2F2">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0">Codul tău: ${pretty}. Valabil 10 minute.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="bg" style="background:#F2F2F2"><tr><td align="center" style="padding:32px 12px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="card" style="max-width:480px;background:#ffffff;border:1px solid #e3e3e3;border-radius:28px">
+<tr><td align="center" style="padding:32px 24px 8px">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+    <td valign="middle" style="padding-right:8px"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="background:#FED012;border:2px solid #0D0C09;border-radius:999px;padding:5px 12px 6px;font:700 14px/1 ${FONT};color:#0D0C09;letter-spacing:-.2px;white-space:nowrap">cromaticstudios.com</td></tr></table></td>
+    <td valign="middle"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="background:#119BFE;background-image:linear-gradient(90deg,#FED012,#28C840,#119BFE,#B098C8,#F65342);border-radius:999px;padding:4px"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td class="ring-in ops" style="background:#ffffff;border-radius:999px;padding:4px 16px 7px;font:900 24px/1 ${FONT};color:#0D0C09;letter-spacing:-1px">OPS</td></tr></table></td></tr></table></td>
+  </tr></table>
+</td></tr>
+<tr><td align="center" class="ink" style="padding:24px 28px 4px;font:800 24px/1.25 ${FONT};color:#0D0C09">Salut${n ? ", " + n : ""}.</td></tr>
+<tr><td align="center" class="mut" style="padding:0 28px 20px;font:400 16px/1.5 ${FONT};color:#5e6168">Codul tău pentru <b class="ink" style="color:#0D0C09">cromaticstudios.com ops</b>:</td></tr>
+<tr><td align="center" style="padding:0 16px"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${[...code].map(digit).join("")}</tr></table></td></tr>
+<tr><td align="center" class="mut" style="padding:20px 28px 0;font:600 15px/1.5 ${FONT};color:#5e6168">Valabil 10 minute, o singură dată.</td></tr>
+<tr><td align="center" class="mut" style="padding:8px 28px 32px;font:400 14px/1.5 ${FONT};color:#5e6168">Dacă nu l-ai cerut tu, ignoră mailul. Fără cod nu intră nimeni.</td></tr>
+</table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px"><tr><td align="center" class="mut" style="padding:16px 12px 0;font:500 12px/1.5 ${FONT};color:#8a8d93">Cromatic Studios · Str. Olari 9, București</td></tr></table>
+</td></tr></table>
+</body></html>`;
+  return { subject, text, html };
+}
 export const isOps = (url) => url === "/ops" || url.startsWith("/ops/") || url.startsWith("/ops?") || url.startsWith("/api/ops/");
 function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
