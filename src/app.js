@@ -41878,7 +41878,7 @@ void main(){
         });
         return photo;
       }
-      document.addEventListener("click", (e) => { if (e.target.closest?.(".map-photo")) { e.preventDefault(); photoMode()?.enter(); } });
+      window.czPhotoOpen = () => photoMode()?.enter(); // (the Postcard option of the view switch, src/nav2.js)
       addEventListener("keydown", (e) => { if ((e.key === "p" || e.key === "P") && !e.metaKey && !e.ctrlKey && !e.altKey && typeof window.czPhoto === "function" && !/INPUT|TEXTAREA|SELECT/.test(e.target?.tagName || "") && mapMode && !photo?.on) { if (photoMode()?.enter()) e.preventDefault(); } });
       var NAV2 = typeof window.czNav2 === "function" ? window.czNav2 : null, nav2 = null; // r164: always (the ?nav=v2 flag of the prototype is no longer needed)
       var nav2RM = null, nav2Cop = false; // beta 2.7: nav2 drives the police car itself (its drift cooldown)
@@ -43117,7 +43117,7 @@ void main(){
         const faces = CREW.slice(0, 4).map((n, i) => `<i style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}">${CREW_FACES[n] ? `<img src="${CREW_FACES[n]}" alt="">` : n.slice(0, 1)}</i>`).join("");
         const top = el("div", "map-top", `<span class="map-title"><i class="mono">CROMATIC WORLD</i><b>Pick a place</b></span>
           <button class="map-ride" title="Choose your ride"><span class="mr-ic mr-th" aria-hidden="true"></span><b>Ride</b></button>
-          <button class="map-world" title="Choose your world"><span class="mb-orb">${MB_ORB}</span><b>Multiverse</b></button>${typeof window.czPhoto === "function" ? `<button class="map-photo" title="Photo mode (P)" aria-label="Photo mode"><span class="mp-ic" aria-hidden="true"></span><b>Photo</b></button>` : ""}
+          <button class="map-world" title="Choose your world"><span class="mb-orb">${MB_ORB}</span><b>Multiverse</b></button>
           <button class="map-crew" title="The crew you travel with"><span class="mcw-faces">${faces}</span><b>Crew</b></button>
           <button class="map-home" title="Cromatic Studios House, Str. Olari 9"><span class="mh-ic">\u{1F3E0}</span><b>Our house</b></button>
           <a class="map-site" href="/site/" title="The same story as a normal, fast website"><span class="ms-ic" aria-hidden="true"><i></i><i></i><i></i></span><b>Normal website</b></a>`);

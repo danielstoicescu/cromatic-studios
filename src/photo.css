@@ -115,3 +115,13 @@ body.photo-on canvas.gl { touch-action: none; }
 .pm-touchui .pm-sheet .pm-btn b { display: inline; }
 .pm-touchui .pm-sheet .pm-btn { height: 44px; padding: 0 18px; }
 .pm-touchui .pm-sheet img { max-height: calc(100vh - 210px); }
+/* Postcard (v2): the postcard's line over the signature in the live frame; hidden buttons stay hidden */
+.pm-wm small { display: block; text-align: right; font-size: .56em; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; opacity: .92; margin-bottom: .45em; }
+.pm-wm::before { position: absolute; right: calc(100% + .1em); bottom: .22em; margin: 0; }
+.pm-root .pm-btn[hidden] { display: none; }
+.pm-png { padding: 0 14px; }
+/* the view switch's third option (src/nav2.js), the same segmented style */
+.nav2-ui .n2-views .n2-postcard svg { width: 21px; height: 21px; }
+/* on a phone the switch sits between the bar and the speaker: Postcard is its icon alone there (its name in its label) */
+body.n2-phone .nav2-ui .n2-views .n2-postcard b { display: none; }
+body.n2-phone .nav2-ui .n2-views .n2-postcard { padding: 0 12px; }

@@ -1,4 +1,4 @@
-// Cromatic · photo mode (TASK-119, phase 1, behind ?photo). A camera that orbits the ride: distance, height, rotation,
+// Cromatic · Postcard, the photo mode (TASK-119; Daniel: "Postcard", RO "Vedere"; the third option of the view switch). A camera that orbits the ride: distance, height, rotation,
 // zoom and roll, with inertia and soft limits; it never goes under the street or into a building (the city's footprints).
 // The worlds are the filters, the formats 9:16 / 4:5 / 1:1 / 16:9 are drawn over the view, the photo is a PNG at 2x
 // (the city drawn again at that size, the world's own post and overlays, the cromaticstudios.com signature), shared
@@ -6,20 +6,18 @@
 // or slider, keyboard included. app.js hands over what it needs (window.czPhoto(app)) and calls frame() before it draws.
 (() => {
   "use strict";
-  try { if (/[?&]photo\b/.test(location.search)) sessionStorage.setItem("cz-photo", "1"); } catch (e) {}
   // the keys: taken in the capture phase from the very start (before the map's and the street drive's own listeners
-  // exist), handed to the photo mode while it is on, so an arrow framing a photo never drives the car
+  // exist), handed to Postcard while it is on, so an arrow framing a photo never drives the car
   let keyHook = null;
-  if (/[?&]photo\b/.test(location.search) || (() => { try { return sessionStorage.getItem("cz-photo") === "1"; } catch (e) { return false; } })()) {
-    addEventListener("keydown", (e) => keyHook && keyHook.down(e), true);
-    addEventListener("keyup", (e) => keyHook && keyHook.up(e), true);
-  }
-  const FLAG = (() => { try { return /[?&]photo\b/.test(location.search) || sessionStorage.getItem("cz-photo") === "1"; } catch (e) { return /[?&]photo\b/.test(location.search); } })();
+  addEventListener("keydown", (e) => keyHook && keyHook.down(e), true);
+  addEventListener("keyup", (e) => keyHook && keyHook.up(e), true);
+  // the interface speaks the page's language (Romanian where the page is lang="ro")
+  const RO = /^ro/i.test(document.documentElement.lang || ""), W = (en, ro) => (RO ? ro : en), W2 = W;
   const FORMATS = [
-    { id: "9:16", w: 1080, h: 1920, label: "9:16", hint: "Story" },
-    { id: "4:5", w: 1080, h: 1350, label: "4:5", hint: "Post" },
-    { id: "1:1", w: 1080, h: 1080, label: "1:1", hint: "Square" },
-    { id: "16:9", w: 1920, h: 1080, label: "16:9", hint: "Wide" }
+    { id: "9:16", w: 1080, h: 1920, label: "9:16", hint: W("Story", "Story") },
+    { id: "4:5", w: 1080, h: 1350, label: "4:5", hint: W("Post", "Postare") },
+    { id: "1:1", w: 1080, h: 1080, label: "1:1", hint: W("Square", "Pătrat") },
+    { id: "16:9", w: 1920, h: 1080, label: "16:9", hint: W("Wide", "Lat") }
   ];
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -183,37 +181,38 @@
     // ---------- the UI ----------
     const root = document.createElement("div");
     root.className = "pm-root"; root.hidden = true;
-    root.setAttribute("role", "dialog"); root.setAttribute("aria-label", "Photo mode");
+    root.setAttribute("role", "dialog"); root.setAttribute("aria-label", W("Postcard", "Vedere"));
     const worlds = app.worlds();
     root.innerHTML = `
       <div class="pm-guide" aria-hidden="true"><i class="pm-m t"></i><i class="pm-m b"></i><i class="pm-m l"></i><i class="pm-m r"></i>
-        <div class="pm-frame"><i class="pm-third v1"></i><i class="pm-third v2"></i><i class="pm-third h1"></i><i class="pm-third h2"></i><span class="pm-wm">cromaticstudios.com</span></div></div>
+        <div class="pm-frame"><i class="pm-third v1"></i><i class="pm-third v2"></i><i class="pm-third h1"></i><i class="pm-third h2"></i><span class="pm-wm"><small>${W("Greetings from Bucharest", "Salutări din București")}</small>cromaticstudios.com</span></div></div>
       <div class="pm-flash" aria-hidden="true"></div>
       <div class="pm-top">
-        <button class="pm-btn pm-exit" type="button" aria-label="Exit photo mode (Esc)"><span aria-hidden="true">×</span><b>Exit</b></button>
+        <button class="pm-btn pm-exit" type="button" aria-label="${W("Close Postcard (Esc)", "Închide Vedere (Esc)")}"><span aria-hidden="true">×</span><b>${W("Exit", "Ieși")}</b></button>
         <div class="pm-formats" role="radiogroup" aria-label="Format">${FORMATS.map((f, i) => `<button type="button" role="radio" aria-checked="${i === 0}" data-f="${f.id}" class="pm-chip"><b>${f.label}</b><small>${f.hint}</small></button>`).join("")}</div>
-        <button class="pm-btn pm-hide" type="button" aria-pressed="false" aria-label="Hide the controls (H)"><span aria-hidden="true">◐</span><b>Clean view</b></button>
+        <button class="pm-btn pm-hide" type="button" aria-pressed="false" aria-label="${W("Hide the controls (H)", "Ascunde comenzile (H)")}"><span aria-hidden="true">◐</span><b>${W("Clean view", "Fără comenzi")}</b></button>
       </div>
-      <div class="pm-panel" aria-label="Camera">
-        <div class="pm-tabs" role="tablist"><button type="button" role="tab" aria-selected="true" data-tab="cam" class="pm-tab">Camera</button><button type="button" role="tab" aria-selected="false" data-tab="world" class="pm-tab">World</button></div>
+      <div class="pm-panel" aria-label="${W("Camera", "Cameră")}">
+        <div class="pm-tabs" role="tablist"><button type="button" role="tab" aria-selected="true" data-tab="cam" class="pm-tab">${W("Camera", "Cameră")}</button><button type="button" role="tab" aria-selected="false" data-tab="world" class="pm-tab">${W("World", "Lume")}</button></div>
         <div class="pm-pane pm-cam" role="tabpanel" data-pane="cam">
-          ${[["dist", "Distance", 0], ["pitch", "Height", 1], ["yaw", "Rotation", 2], ["fov", "Zoom", 3], ["roll", "Tilt", 4]].map(([k, l]) => `<label class="pm-sl"><span>${l}</span><input type="range" data-k="${k}" min="0" max="1000" step="1" aria-label="${l}"><output></output></label>`).join("")}
-          <div class="pm-row"><label class="pm-tog"><input type="checkbox" class="pm-tilt" checked><span>Miniature blur</span></label><button type="button" class="pm-btn pm-reset">Reset</button></div>
-          <p class="pm-help pm-desk">Drag to orbit · wheel: distance · Shift+wheel: zoom · Q / E: tilt · arrows: rotate and height · Space: photo · H: clean view · Esc: exit</p>
-          <p class="pm-help pm-touch">One finger: orbit · pinch: distance · twist: tilt · two fingers up / down: height</p>
+          ${[["dist", W("Distance", "Distanță"), 0], ["pitch", W("Height", "Înălțime"), 1], ["yaw", W("Rotation", "Rotație"), 2], ["fov", W("Zoom", "Zoom"), 3], ["roll", W("Tilt", "Înclinare"), 4]].map(([k, l]) => `<label class="pm-sl"><span>${l}</span><input type="range" data-k="${k}" min="0" max="1000" step="1" aria-label="${l}"><output></output></label>`).join("")}
+          <div class="pm-row"><label class="pm-tog"><input type="checkbox" class="pm-tilt" checked><span>${W("Miniature blur", "Efect de machetă")}</span></label><button type="button" class="pm-btn pm-reset">${W("Reset", "Resetează")}</button></div>
+          <p class="pm-help pm-desk">${W("Drag to orbit · wheel: distance · Shift+wheel: zoom · Q / E: tilt · arrows: rotate and height · Space: photo · H: clean view · Esc: exit", "Trage ca să te rotești · rotița: distanța · Shift+rotița: zoom · Q / E: înclinare · săgeți: rotație și înălțime · Space: fotografia · H: fără comenzi · Esc: ieși")}</p>
+          <p class="pm-help pm-touch">${W("One finger: orbit · pinch: distance · twist: tilt · two fingers up / down: height", "Un deget: rotire · ciupit: distanța · răsucit: înclinare · două degete sus / jos: înălțime")}</p>
         </div>
         <div class="pm-pane pm-worlds" role="tabpanel" data-pane="world" hidden>
-          <div class="pm-wlist" role="radiogroup" aria-label="World">${worlds.map((w, i) => `<button type="button" role="radio" class="pm-world" data-i="${w.i}" style="--wb:${w.bg};--wa:${w.ac}"><i aria-hidden="true"></i><b>${w.n}</b></button>`).join("")}</div>
+          <div class="pm-wlist" role="radiogroup" aria-label="${W("World", "Lume")}">${worlds.map((w, i) => `<button type="button" role="radio" class="pm-world" data-i="${w.i}" style="--wb:${w.bg};--wa:${w.ac}"><i aria-hidden="true"></i><b>${w.n}</b></button>`).join("")}</div>
         </div>
       </div>
       <div class="pm-bottom">
-        <button class="pm-shutter" type="button" aria-label="Take the photo (Space)"><i aria-hidden="true"></i></button>
+        <button class="pm-shutter" type="button" aria-label="${W("Take the photo (Space)", "Fă fotografia (Space)")}"><i aria-hidden="true"></i></button>
       </div>
-      <div class="pm-sheet" hidden role="dialog" aria-label="Your photo">
-        <div class="pm-sheet-in"><img alt="Your photo of the Cromatic city"><div class="pm-sheet-b">
-          <button type="button" class="pm-btn pm-share" hidden><b>Share</b></button>
-          <a class="pm-btn pm-dl" download><b>Download PNG</b></a>
-          <button type="button" class="pm-btn pm-again"><b>Take another</b></button></div>
+      <div class="pm-sheet" hidden role="dialog" aria-label="${W("Your postcard", "Vederea ta")}">
+        <div class="pm-sheet-in"><img alt="${W("Your postcard from the Cromatic city", "Vederea ta din orașul Cromatic")}"><div class="pm-sheet-b">
+          <button type="button" class="pm-btn pm-share" hidden><b>${W("Share", "Trimite")}</b></button>
+          <a class="pm-btn pm-dl" download><b>${W("Download", "Descarcă")}</b></a>
+          <a class="pm-btn pm-png pm-secondary" download><b>PNG</b></a>
+          <button type="button" class="pm-btn pm-again"><b>${W("Take another", "Încă una")}</b></button></div>
           <p class="pm-meta mono"></p></div></div>
       <p class="pm-live" aria-live="polite"></p>`;
     document.body.appendChild(root);
@@ -261,7 +260,7 @@
       s.addEventListener("pointerup", () => { dragSl = false; });
       s.addEventListener("focus", () => (slFocus = s)); s.addEventListener("blur", () => { if (slFocus === s) slFocus = null; dragSl = false; });
     }
-    $(".pm-reset").addEventListener("click", () => { Object.assign(G, DEF()); VEL.yaw = VEL.pitch = 0; live("Camera reset"); });
+    $(".pm-reset").addEventListener("click", () => { Object.assign(G, DEF()); VEL.yaw = VEL.pitch = 0; live(W("Camera reset", "Camera, resetată")); });
     $(".pm-tilt").addEventListener("change", (e) => { tilt = e.target.checked; app.setTilt(tilt ? 1 : 0); });
     for (const t of $$(".pm-tab")) t.addEventListener("click", () => {
       const touch = root.classList.contains("pm-touchui"), was = t.getAttribute("aria-selected") === "true" && !root.classList.contains("pm-fold");
@@ -272,13 +271,13 @@
     // (on a phone the sheet starts folded to its tabs: the frame gets the screen; a tab unfolds it)
     function setFold(v) { root.classList.toggle("pm-fold", v); for (const t of $$(".pm-tab")) t.setAttribute("aria-expanded", String(!v && t.getAttribute("aria-selected") === "true")); requestAnimationFrame(layoutGuide); }
     for (const b of $$(".pm-chip")) b.addEventListener("click", () => setFormat(b.dataset.f));
-    function setFormat(id) { fmt = FORMATS.find((f) => f.id === id) || FORMATS[0]; for (const b of $$(".pm-chip")) b.setAttribute("aria-checked", String(b.dataset.f === fmt.id)); layoutGuide(); live(`Format ${fmt.label}, ${fmt.hint}`); }
+    function setFormat(id) { fmt = FORMATS.find((f) => f.id === id) || FORMATS[0]; for (const b of $$(".pm-chip")) b.setAttribute("aria-checked", String(b.dataset.f === fmt.id)); layoutGuide(); live(`${W("Format", "Format")} ${fmt.label}, ${fmt.hint}`); }
     for (const b of $$(".pm-world")) b.addEventListener("click", () => setWorld(+b.dataset.i));
     function markWorld() { const i = app.worldIdx(); for (const b of $$(".pm-world")) b.setAttribute("aria-checked", String(+b.dataset.i === i)); }
     async function setWorld(i) {
       if (worldBusy || i === app.worldIdx()) return;
       worldBusy = true; root.classList.add("pm-busy");
-      try { await app.setWorld(i); } catch (e) {} finally { worldBusy = false; root.classList.remove("pm-busy"); markWorld(); live(`World: ${worlds.find((w) => w.i === i)?.n || ""}`); }
+      try { await app.setWorld(i); } catch (e) {} finally { worldBusy = false; root.classList.remove("pm-busy"); markWorld(); live(`${W("World", "Lume")}: ${worlds.find((w) => w.i === i)?.n || ""}`); }
     }
     $(".pm-exit").addEventListener("click", () => exit());
     $(".pm-hide").addEventListener("click", () => setClean(!panelHidden));
@@ -364,13 +363,13 @@
       root.classList.add("pm-shooting");
       if (!reduced()) { const f = $(".pm-flash"); f.classList.remove("go"); void f.offsetWidth; f.classList.add("go"); }
       await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
-      let blob = null, size = null;
+      let blob = null, size = null, png = null;
       for (const scale of [2, 1.5, 1]) {
-        try { ({ blob, size } = await render(scale)); if (blob) break; } catch (e) { console.warn("[photo] a render failed at", scale, e); }
+        try { ({ blob, png, size } = await render(scale)); if (blob) break; } catch (e) { console.warn("[photo] a render failed at", scale, e); }
       }
       root.classList.remove("pm-shooting");
-      if (!blob) { live("The photo could not be made. Try a smaller format."); return; }
-      openSheet(blob, size);
+      if (!blob) { live(W("The photo could not be made. Try a smaller format.", "Fotografia nu s-a putut face. Încearcă un format mai mic.")); return; }
+      openSheet(blob, png, size);
     }
     // the city drawn again at the photo's size, from the same camera, through the same look, then the overlays
     function render(scale) {
@@ -394,7 +393,8 @@
         camera.setViewOffset(innerWidth, innerHeight, shift.x, shift.y, innerWidth, innerHeight); camera.updateProjectionMatrix();
         app.draw(performance.now()); // (the screen again, at once: no blank frame)
       }
-      return new Promise((res) => out.toBlob((b) => res({ blob: b, size: [W, H] }), "image/png"));
+      const jpg = new Promise((res) => out.toBlob((b) => res(b), "image/jpeg", 0.9)), png = new Promise((res) => out.toBlob((b) => res(b), "image/png"));
+      return Promise.all([jpg, png]).then(([j, p]) => ({ blob: j || p, png: p, size: [W, H] }));
     }
     // the world's screen layers (they are CSS over the canvas, so the PNG draws its own)
     function overlays(c, W, H) {
@@ -423,24 +423,30 @@
       c.fillStyle = "rgba(255,255,255,.88)"; c.fillText(txt, W - pad, H - pad);
       const tw = c.measureText(txt).width; c.shadowColor = "transparent"; c.fillStyle = "#FED012";
       c.beginPath(); c.arc(W - pad - tw - fs * 0.55, H - pad - fs * 0.34, fs * 0.22, 0, Math.PI * 2); c.fill();
+      // the postcard's line over it (Daniel: a discreet "Greetings from Bucharest"): small letter-spaced capitals
+      const gs = Math.round(fs * 0.56), gt = W2("GREETINGS FROM BUCHAREST", "SALUTĂRI DIN BUCUREȘTI");
+      c.font = `700 ${gs}px CromaticSans, "Helvetica Neue", Arial, sans-serif`; try { c.letterSpacing = `${(gs * 0.18).toFixed(1)}px`; } catch (e) {}
+      c.shadowColor = "rgba(0,0,0,.38)"; c.shadowBlur = fs * 0.45; c.fillStyle = "rgba(255,255,255,.82)";
+      c.fillText(gt, W - pad + gs * 0.18, H - pad - fs * 1.32);
       c.restore();
     }
-    let sheetURL = null;
-    function openSheet(blob, size) {
-      if (sheetURL) URL.revokeObjectURL(sheetURL);
-      sheetURL = URL.createObjectURL(blob);
-      const name = `cromatic-${app.worldId()}-${fmt.id.replace(":", "x")}-${new Date().toISOString().slice(0, 10)}.png`;
-      const file = new File([blob], name, { type: "image/png" });
+    let sheetURL = null, pngURL = null;
+    function openSheet(blob, png, size) {
+      if (sheetURL) URL.revokeObjectURL(sheetURL); if (pngURL) URL.revokeObjectURL(pngURL);
+      sheetURL = URL.createObjectURL(blob); pngURL = png ? URL.createObjectURL(png) : null;
+      const base = `cromatic-postcard-${app.worldId()}-${fmt.id.replace(":", "x")}-${new Date().toISOString().slice(0, 10)}`, isJ = blob.type === "image/jpeg", name = base + (isJ ? ".jpg" : ".png");
+      const file = new File([blob], name, { type: blob.type });
+      const pl = $(".pm-png"); pl.hidden = !pngURL || !isJ; if (pngURL) { pl.href = pngURL; pl.download = base + ".png"; pl.setAttribute("aria-label", W("Download as PNG (larger)", "Descarcă PNG (mai mare)")); }
       lastShot = { blob, file, name };
       const sheet = $(".pm-sheet"); sheet.hidden = false; root.classList.add("pm-sheet-on");
       $(".pm-sheet img").src = sheetURL; $(".pm-sheet img").style.aspectRatio = `${size[0]} / ${size[1]}`;
       const dl = $(".pm-dl"); dl.href = sheetURL; dl.download = name;
       const share = $(".pm-share"); let can = false; try { can = !!(navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) {}
       share.hidden = !can; dl.classList.toggle("pm-secondary", can);
-      $(".pm-meta").textContent = `${size[0]} × ${size[1]} PNG · ${fmt.hint} ${fmt.label}`;
-      live("Photo ready"); (can ? share : dl).focus();
+      $(".pm-meta").textContent = `${size[0]} × ${size[1]} ${isJ ? "JPG" : "PNG"} · ${(blob.size / 1e6).toFixed(1)} MB · ${fmt.hint} ${fmt.label}`;
+      live(W("Postcard ready", "Vederea e gata")); (can ? share : dl).focus();
     }
-    $(".pm-share").addEventListener("click", async () => { if (!lastShot) return; try { await navigator.share({ files: [lastShot.file], title: "Cromatic Studios", text: "cromaticstudios.com" }); live("Shared"); } catch (e) { if (e && e.name !== "AbortError") live("Sharing did not work; download it instead"); } });
+    $(".pm-share").addEventListener("click", async () => { if (!lastShot) return; try { await navigator.share({ files: [lastShot.file], title: W("A postcard from Bucharest", "O vedere din București"), text: "cromaticstudios.com" }); live(W("Shared", "Trimisă")); } catch (e) { if (e && e.name !== "AbortError") live(W("Sharing did not work; download it instead", "Trimiterea n-a mers; descarc-o")); } });
     function closeSheet() { $(".pm-sheet").hidden = true; root.classList.remove("pm-sheet-on"); $(".pm-shutter").focus(); }
 
     // ---------- in and out ----------
@@ -460,7 +466,7 @@
       setFormat(coarse() ? "9:16" : fmt.id); markWorld(); layoutGuide(); setClean(false);
       keyHook = { down: onKey, up: onKeyUp }; addEventListener("resize", layoutGuide);
       setTimeout(() => $(".pm-shutter").focus({ preventScroll: true }), 50);
-      live("Photo mode. Drag to move round the ride; Space takes the photo.");
+      live(W("Postcard. Drag to move round the ride; Space takes the photo.", "Vedere. Trage ca să te rotești în jurul mașinii; Space face fotografia."));
       return true;
     }
     async function exit() {
@@ -476,5 +482,5 @@
     }
     return { get on() { return on; }, enter, exit, frame: frameWithKeys, toggle: () => (on ? exit() : enter()) };
   }
-  window.czPhoto = FLAG ? create : null;
+  window.czPhoto = create;
 })();
