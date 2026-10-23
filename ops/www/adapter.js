@@ -1,7 +1,7 @@
 // TASK-124 · the /ops mirror's stand-in for the artifact runtime: just the subset of claude.use("db") / claude.use("user")
 // the Cromatic Ops page uses. Reads come from GET /api/ops/snapshot (polled every 20 s); the only writes are new
 // inbox items (command / bug / feedback), sent to POST /api/ops/inbox. Everything else is read-only here: it changes
-// in Daniel's session, or by a command.
+// by a request to Claude (the controls prefill "Spune-i lui Claude").
 (() => {
   "use strict";
   const POLL = 20000;
@@ -113,9 +113,7 @@
     me.append(av, nm, rl);
     const out = document.createElement("button"); out.type = "button"; out.className = "btn sm ghost"; out.id = "ops-out"; out.textContent = "Ieși";
     out.onclick = async () => { out.disabled = true; try { await fetch("/api/ops/logout", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: "{}" }); } catch {} location.replace("/ops"); };
-    const note = document.createElement("span"); note.className = "ops-note"; note.textContent = "Oglindă · se modifică din sesiunea lui Daniel / prin comandă";
     pills.append(me, out);
-    const top = document.querySelector(".top"); if (top) top.after(note);
   }
   document.addEventListener("DOMContentLoaded", header);
 })();

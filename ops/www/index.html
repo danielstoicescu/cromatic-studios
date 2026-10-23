@@ -1646,7 +1646,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
       const c = e && e.code;
       if (c === "invalid_argument") { canWrite = false; toast("Nu ai drept de scriere în pagina asta.", "err"); }
       else if (c === "not_granted" || c === "revoked" || c === "capability_disabled") toast(NO_DB, "err");
-      else if (c === "read_only") toast("În oglindă nu se modifică direct: se modifică din sesiunea lui Daniel / prin comandă.", "err");
+      else if (c === "read_only") toast("Asta se cere lui Claude: scrie-i din „Spune-i lui Claude”.", "err");
       else if (c === "quota_exceeded") toast("Baza de date e plină.", "err");
       else toast("Nu s-a salvat (" + (c || "eroare") + "). Încearcă din nou.", "err");
       return false;
@@ -1655,7 +1655,20 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
   const addTask = (t) => { const id = "T-" + Date.now().toString(36); const ep = S.epics.find((e) => e.id === t.epicId); const doc = { id, title: t.title, epicId: t.epicId || "", area: t.area || (ep && ep.area) || "development", priority: t.priority || "P1", status: "open", notes: t.notes || "", createdAt: now(), updatedAt: now(), source: "dashboard" }; return guard(async () => { await db.doc("tasks/" + id).set(doc); await inboxAdd("task", "Task nou: " + doc.title + (ep ? " (în " + ep.title + ")" : ""), { id, epicId: doc.epicId, priority: doc.priority }); }, "Task adăugat"); };
   // a task that arrives in "done" gets its live time (liveAt), so "Sărbătorit" counts 24 h from the real moment
   const liveStamp = (id, patch) => { const cur = S.tasks.find((x) => x.id === id); return patch.status === "done" && (!cur || norm(cur.status) !== "done") ? { liveAt: now() } : {}; };
-  const setTask = (id, patch, why, okText) => guard(async () => { await db.doc("tasks/" + id).update({ ...patch, ...liveStamp(id, patch), updatedAt: now() }); await inboxAdd("task-change", why || "Task " + id + " schimbat", { id, ...patch }); }, okText || "Salvat");
+  function opsAsk(id, patch) {
+    const t = S.tasks.find((x) => x.id === id), p = patch || {}, parts = [];
+    if (p.deleted) parts.push("șterge task-ul");
+    if (p.status) parts.push("mută în „" + (SLAB[p.status] || p.status) + "”");
+    if (p.priority) parts.push("prioritate " + p.priority);
+    if ("agent" in p) { const m = S.team.find((x) => x.id === p.agent); parts.push(m ? "dă-l lui " + m.name : "fără agent"); }
+    if ("epicId" in p) { const e = S.epics.find((x) => x.id === p.epicId); parts.push(e ? "mută în epicul „" + e.title + "”" : "scoate-l din epic"); }
+    const text = id + ": " + parts.join(", ") + (parts.length && t ? " · " + t.title : "");
+    if (!$("drawer").hidden) closeDrawer();
+    setPop("claude"); const q = $("q-text"); q.value = text;
+    setTimeout(() => { q.focus({ preventScroll: true }); q.setSelectionRange(q.value.length, q.value.length); }, 60);
+    return Promise.resolve(false);
+  }
+  const setTask = (id, patch, why, okText) => window.__ops ? opsAsk(id, patch) : guard(async () => { await db.doc("tasks/" + id).update({ ...patch, ...liveStamp(id, patch), updatedAt: now() }); await inboxAdd("task-change", why || "Task " + id + " schimbat", { id, ...patch }); }, okText || "Salvat");
   const addEpic = (e) => { const n = Math.max(0, ...S.epics.map((x) => x.n || 0)) + 1; const id = "E-" + Date.now().toString(36); const doc = { id, n, title: e.title, goal: e.goal || "", area: e.area || "development", status: "active", createdAt: now() }; return guard(async () => { await db.doc("epics/" + id).set(doc); await inboxAdd("epic", "Epic nou: " + doc.title, { id }); }, "Epic creat").then((ok) => ok && id); };
   const addIdea = (title) => guard(async () => { const ref = await db.collection("ideas").add({ title, body: "", status: "new", brief: "", createdAt: now(), updatedAt: now() }); await inboxAdd("idea", "Idee nouă: " + title, { id: ref.id }); }, "Idee adăugată");
   const setIdea = (id, patch, why) => guard(async () => { await db.doc("ideas/" + id).update({ ...patch, updatedAt: now() }); if (why) await inboxAdd("idea-change", why, { id, ...patch }); });
@@ -1716,6 +1729,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
     }, to === "done" && from === "on-beta" && isSite(t) ? "Aprobat pentru live. Claude îl urcă." : to === "done" ? "Încheiat." : "Mutat în „" + label + "”.");
   }
   function confirmDelete(t) {
+    if (window.__ops) { closeMenu(); return opsAsk(t.id, { deleted: true }); }
     closeMove(); closeMenu();
     const sc = el("div", "mv-scrim"), m = el("div", "mv"); m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true"); m.setAttribute("aria-labelledby", "mv-h");
     const h = el("h2", "", "Ștergi task-ul?"); h.id = "mv-h";
@@ -1730,6 +1744,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
   let mvEl = null;
   function closeMove() { if (mvEl) { mvEl.forEach((x) => x.remove()); mvEl = null; } }
   function confirmMove(t, to) {
+    if (window.__ops) { closeMenu(); return opsAsk(t.id, { status: to }); }
     closeMove(); closeMenu();
     const from = norm(t.status); if (from === to) return;
     const live = to === "done" && from === "on-beta" && isSite(t);
@@ -1944,7 +1959,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
     c.append(el("div", "t", t.title)); const m = el("div", "m"); m.append(el("span", "pr " + (t.priority || "P3"), t.priority || "–")); const z = ZONE[t.area]; if (z) m.append(icon(z[1])); if (atts.length) { const cl = el("span"); cl.style.cssText = "display:inline-flex;gap:3px;align-items:center"; cl.append(icon("i-clip"), el("span", "", String(atts.length))); m.append(cl); } if (t.kind === "bug") m.append(icon("i-bug")); if (mt) m.append(whoEl(mt)); m.append(el("span", "", t.id)); c.append(m);
     // fresh on live: how long until it is celebrated (a static bar, it moves with the minute re-render)
     if (norm(t.status) === "done" && !isWin(t) && Date.parse(liveAt(t))) { const age = liveAge(t), left = Math.max(1, Math.ceil((DAY - age) / 36e5)), r = el("div", "ripen"), bar = el("div", "bar"), f = el("span"); f.style.width = Math.max(4, Math.min(100, age / DAY * 100)) + "%"; bar.append(f); r.title = "Pe live " + (ago(liveAt(t)) || "acum") + ". După 24 h pe live primește „yay!”."; r.append(el("span", "", "yay! peste " + left + " h"), bar); c.append(r); }
-    if (canWrite) {
+    if (canWrite || window.__ops) {
       // Daniel's own tasks close by his hand, they are not sent to Claude
       const a = el("div", "acts"), co = openOrder(orderFor(t.id)) ? [] : closeOpts(t).slice(0, 2);
       co.forEach((x, k) => { const b = el("button", "nx" + (k ? " sec" : " pri")); b.type = "button"; b.title = x.hint + (k ? "" : " · " + SITE_RULE); b.append(icon(x.ic), el("span", "", x.label)); b.onclick = (e) => { e.stopPropagation(); confirmMove(t, x.to); }; a.append(b); });
@@ -2367,7 +2382,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
   const epicOpts = () => [["", "fără epic"], ...S.epics.slice().sort((a, b) => (a.n || 99) - (b.n || 99)).map((x) => [x.id, String(x.n || "").padStart(2, "0") + " · " + x.title])];
   function opts(options, val, onPick) {
     const w = el("div", "opts");
-    for (const [v, label, dot] of options) { const o = el("button", "opt"); o.type = "button"; o.setAttribute("aria-pressed", String(v === val)); if (dot) o.append(el("i", dot)); o.append(el("span", "", label)); if (!canWrite) o.disabled = true; o.onclick = () => { if (v === val) return; for (const x of w.children) x.setAttribute("aria-pressed", String(x === o)); onPick(v); }; w.append(o); }
+    for (const [v, label, dot] of options) { const o = el("button", "opt"); o.type = "button"; o.setAttribute("aria-pressed", String(v === val)); if (dot) o.append(el("i", dot)); o.append(el("span", "", label)); if (!canWrite && !window.__ops) o.disabled = true; o.onclick = () => { if (v === val) return; for (const x of w.children) x.setAttribute("aria-pressed", String(x === o)); onPick(v); }; w.append(o); }
     return w;
   }
   function eyebrow(parts) { const e = $("dr-eyebrow"); e.replaceChildren(...parts.filter(Boolean)); }
@@ -2465,12 +2480,12 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
     const b = $("dr-body"); b.replaceChildren();
     const stF = el("div", "field"); stF.append(el("label", "", "Status"), opts(STATUS.map(([k, l]) => [k, l, "c-" + k]), norm(t.status), (v) => setTask(t.id, { status: v }, "Status → " + SLAB[v] + ": " + t.title, "Status: " + SLAB[v])));
     const prF = el("div", "field"); prF.append(el("label", "", "Prioritate"), opts([["P0", "P0 · acum"], ["P1", "P1 · săptămâna asta"], ["P2", "P2 · când e loc"], ["P3", "P3 · când e timp"]], t.priority, (v) => setTask(t.id, { priority: v }, "Prioritate → " + v + ": " + t.title, "Prioritate: " + v)));
-    const ep = selectOf("dr-epic", epicOpts(), t.epicId || ""); if (!canWrite) ep.disabled = true; ep.onchange = () => setTask(t.id, { epicId: ep.value }, "Mutat în alt epic: " + t.title, "Mutat");
+    const ep = selectOf("dr-epic", epicOpts(), t.epicId || ""); if (!canWrite && !window.__ops) ep.disabled = true; ep.onchange = () => setTask(t.id, { epicId: ep.value }, "Mutat în alt epic: " + t.title, "Mutat");
     const g = el("div"); g.style.cssText = "display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:end"; const z = zoneEl(t.area); g.append(field("Epic", ep)); if (z) { const zf = el("div", "field"); zf.append(el("label", "", "Zonă"), z); g.append(zf); }
     const notes = el("textarea", "inp"); notes.id = "dr-notes"; notes.rows = 6; notes.value = t.notes || ""; if (!canWrite) notes.readOnly = true;
-    if (canWrite) { const opts2 = closeOpts(t); if (opts2.length) { const cb2 = el("div", "closebox"); const hh = el("div", "cb-h"); hh.append(el("b", "", "Ce urmează"), el("span", "cb-kind", isSite(t) ? "lucru de site" : "livrabil")); hh.title = SITE_RULE; cb2.append(hh); opts2.forEach((x, k) => { const r2 = el("div", "cb-r"), bt = el("button", "btn sm" + (k ? " ghost" : " k")); bt.type = "button"; bt.append(icon(x.ic), el("span", "", x.label)); bt.onclick = () => confirmMove(t, x.to); r2.append(bt, el("span", "cb-hint", x.hint)); cb2.append(r2); }); b.append(cb2); } }
+    if (canWrite || window.__ops) { const opts2 = closeOpts(t); if (opts2.length) { const cb2 = el("div", "closebox"); const hh = el("div", "cb-h"); hh.append(el("b", "", "Ce urmează"), el("span", "cb-kind", isSite(t) ? "lucru de site" : "livrabil")); hh.title = SITE_RULE; cb2.append(hh); opts2.forEach((x, k) => { const r2 = el("div", "cb-r"), bt = el("button", "btn sm" + (k ? " ghost" : " k")); bt.type = "button"; bt.append(icon(x.ic), el("span", "", x.label)); bt.onclick = () => confirmMove(t, x.to); r2.append(bt, el("span", "cb-hint", x.hint)); cb2.append(r2); }); b.append(cb2); } }
     if (["beta", "on-beta", "done"].includes(norm(t.status))) b.append(feedbackPanel(t, e));
-    const ag = selectOf("dr-agent", [["", "neasignat · Claude alege"], ...S.team.slice().sort((a, b) => (a.order || 99) - (b.order || 99)).map((m) => [m.id, m.name + " · " + m.role])], t.agent || ""); if (!canWrite) ag.disabled = true;
+    const ag = selectOf("dr-agent", [["", "neasignat · Claude alege"], ...S.team.slice().sort((a, b) => (a.order || 99) - (b.order || 99)).map((m) => [m.id, m.name + " · " + m.role])], t.agent || ""); if (!canWrite && !window.__ops) ag.disabled = true;
     ag.onchange = () => { const m = S.team.find((x) => x.id === ag.value); setTask(t.id, { agent: ag.value }, (m ? "Task dat lui " + m.name + ": " : "Task fără agent: ") + t.title, m ? "Dat lui " + m.name : "Fără agent"); };
     b.append(stF, prF, g, field("Agent", ag), field("Detalii", notes));
     const atts = Array.isArray(t.attachments) ? t.attachments : [];
@@ -2504,7 +2519,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
       const dl = el("button", "btn sm ghost"); dl.type = "button"; dl.append(icon("i-x"), el("span", "", "Șterge")); dl.onclick = () => confirmDelete(t);
       r.append(dl, sv); f.append(startBox(t), r);
     }
-    else if (window.__ops) f.append(el("div", "mono muted ops-ro", "Se modifică din sesiunea lui Daniel / prin comandă"));
+    else if (window.__ops) { const rq = el("button", "btn sm k"); rq.type = "button"; rq.append(icon("i-send"), el("span", "", "Cere modificarea")); rq.onclick = () => opsAsk(t.id, {}); f.append(rq); }
   }
   document.addEventListener("keydown", (ev) => { if ((ev.key === "Enter" || ev.key === " ") && ev.target.classList && ev.target.classList.contains("card")) { ev.preventDefault(); ev.target.click(); } });
   document.addEventListener("click", (ev) => { const t = ev.target.closest("[data-task]"); if (!t) return; openTaskId = t.dataset.task; fillDrawer(openTaskId); openDrawer(); });
