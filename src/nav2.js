@@ -1119,8 +1119,12 @@
     const BOUNDS = (() => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const n of N) { x0 = Math.min(x0, n.x); x1 = Math.max(x1, n.x); z0 = Math.min(z0, n.z); z1 = Math.max(z1, n.z); } return { x0: x0 - 150, x1: x1 + 150, z0: z0 - 150, z1: z1 + 150 }; })();
     // beta 2.7 (Daniel): drift too long at speed (4 s of drifting within 8 s) and the police come: the patrol car arrives behind
     // you, blue lamps flashing, and follows for a 5 s cooldown: top speed ~55%, no drift, no boost; then it drops back and
-    // goes. Not with the auto-pilot, the tour or a card open; reduced motion: no flashing
-    const COP = { log: [], on: null, trail: [] };
+    // goes. Not with the auto-pilot, the tour or a card open; reduced motion: no flashing.
+    // BUG-POLITE (Daniel: "I can no longer get pulled over"): speeding brings the Polite Patrol too, as on the old drive
+    // (pulled over at top speed): near the dial's top (SPEED_K of top speed) for SPEED_T s within the same 8 s; not in
+    // the Patrol itself or the plane, not on a boost, and not again within SPEED_CALM ms of the last chase
+    const SPEED_K = 0.85, SPEED_T = 1.5, SPEED_CALM = 45000;
+    const COP = { log: [], slog: [], on: null, trail: [], calm: 0 };
     function copTick(dt) {
       const now = performance.now(), fx = Math.sin(P.h), fz = Math.cos(P.h);
       COP.trail.push([P.x, P.z]); if (COP.trail.length > 400) COP.trail.shift();
@@ -1130,8 +1134,12 @@
         if (D.drift && Math.hypot(P.u, P.w) > VMAX_F * 0.42 && ok) COP.log.push([now, dt]);
         while (COP.log.length && now - COP.log[0][0] > 8000) COP.log.shift();
         D.copSum = COP.log.reduce((a, q) => a + q[1], 0);
-        if (ok && D.copSum > 4) {
-          COP.log.length = 0;
+        const vid = H.vehicle?.();
+        if (ok && !D.drift && !D.boost && P.u > VMAX_F * SPEED_K && vid !== "cop" && vid !== "plane" && now > COP.calm) COP.slog.push([now, dt]);
+        while (COP.slog.length && now - COP.slog[0][0] > 8000) COP.slog.shift();
+        D.copSpeed = COP.slog.reduce((a, q) => a + q[1], 0);
+        if (ok && (D.copSum > 4 || D.copSpeed > SPEED_T)) {
+          COP.log.length = 0; COP.slog.length = 0;
           const b = behind(260), q = MASK.resolve(b[0], b[1], CR);
           COP.on = { t: 0, x: q.lost ? P.x - fx * 120 : q.x, z: q.lost ? P.z - fz * 120 : q.z, h: P.h };
           D.cop = true; D.drift = null; D.boost = null;
@@ -1147,7 +1155,7 @@
       c.x = nx; c.z = nz;
       // r230: the countdown's digit and ring written only when they change (a lookup, a new text node and a restyle every frame before)
       if (c.t <= 5) { const left = Math.max(0, 5 - c.t), n = String(Math.ceil(left)), k = (left / 5).toFixed(2); const em = copEl._em || (copEl._em = copEl.querySelector("em")); if (em.textContent !== n) em.textContent = n; if (copEl._k !== k) { copEl._k = k; copEl.style.setProperty("--k", k); } }
-      if (c.t > 6.4) { COP.on = null; H.cop?.(null); return; }
+      if (c.t > 6.4) { COP.on = null; COP.calm = performance.now() + SPEED_CALM; H.cop?.(null); return; }
       H.cop?.({ x: c.x, z: c.z, h: c.h, flash: !reduced() });
     }
     const FX = { hop: 0, bump: 0, squash: 0, boostKick: 0, smokeT: 0, skidL: 0, skidR: 0, lastX: 0, lastZ: 0, side: 0, sparkT: 0, dustT: 0 };
