@@ -1471,11 +1471,11 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
 @keyframes spdraw { to { stroke-dashoffset: 0; } }
 .an-guide { stroke: var(--g3); stroke-dasharray: 3 3; } .an-dot { fill: var(--ink); stroke: var(--card); stroke-width: 2; } .an-dot2 { fill: #119BFE; stroke: var(--card); stroke-width: 2; }
 .an-tip { position: absolute; top: 28px; transform: translateX(12px); display: grid; gap: 1px; background: var(--ink); color: var(--on-ink); border-radius: 12px; padding: 8px 10px; font-size: 12.5px; pointer-events: none; white-space: nowrap; box-shadow: 0 8px 20px rgba(0,0,0,.18); z-index: 2; }
-.an-tip.left { transform: translateX(calc(-100% - 12px)); } .an-tip b { font-weight: 700; text-transform: capitalize; } .an-tip span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; } .an-tip .u::before { background: var(--yellow); } .an-tip .s::before { background: #119BFE; } .an-tip .l::before { background: #28C840; }
+.an-tip.left { transform: translateX(calc(-100% - 12px)); } .an-tip b { font-weight: 700; } .an-tip span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; } .an-tip .u::before { background: var(--yellow); } .an-tip .s::before { background: #119BFE; } .an-tip .l::before { background: #28C840; }
 .an-lg { display: flex; gap: 14px; font-size: 12.5px; color: var(--muted); } .an-lg span { display: inline-flex; align-items: center; gap: 6px; } .an-lg i { width: 14px; height: 8px; border-radius: 3px; } .an-lg .u i { background: var(--yellow); box-shadow: inset 0 -2px 0 var(--ink); } .an-lg .s i { background: #119BFE; } .an-lg .l i { background: #28C840; }
 .an-2 { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px; align-items: start; }
 .an-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
-.an-tw { overflow-x: auto; } .an-tbl { min-width: 460px; } .an-tbl td { padding: 7px 8px; } .an-tbl th { padding: 6px 8px; } .an-tbl .num, .an-tbl th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.an-tw { overflow-x: auto; } .an-tbl { min-width: 460px; } .an-tbl td { padding: 7px 8px; } .an-tbl th { padding: 6px 8px; } .an-tbl .an-num, .an-tbl th.an-num { text-align: right; font-variant-numeric: tabular-nums; }
 .an-sn { display: grid; gap: 0; } .an-sn b { font-weight: 700; }
 .an-sb { position: relative; min-width: 120px; } .an-sb i { position: absolute; left: 8px; top: 50%; height: 20px; transform: translateY(-50%); width: calc((100% - 16px) * var(--w) / 100); background: color-mix(in srgb, #119BFE 22%, transparent); border-radius: 6px; transform-origin: left; animation: bargrow .6s var(--ease-out) both; } .an-sb span { position: relative; font-variant-numeric: tabular-nums; padding-left: 6px; }
 @keyframes bargrow { from { transform: translateY(-50%) scaleX(0); } }
@@ -1506,6 +1506,106 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
 .cp-ana { justify-self: start; }
 @media (max-width: 980px) { .an-2, .an-3 { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 640px) { .an-ab { grid-template-columns: minmax(0, 1fr); } .an-k { grid-template-columns: repeat(2, minmax(0, 1fr)); } .an-kpi b { font-size: 24px; } }
+
+/* r10: phone bottom bar · ~6.5 items visible (the cut 7th says "there is more"), snap per item, edge fades */
+@media (max-width: 760px) {
+  .side { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; justify-content: flex-start; gap: 0; padding-left: max(4px, env(safe-area-inset-left, 0px)); padding-right: max(4px, env(safe-area-inset-right, 0px)); scroll-snap-type: x mandatory; scroll-padding-inline: 4px; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+  .side::-webkit-scrollbar { display: none; }
+  .nav-i { flex: 0 0 calc((100vw - 8px) / 6.5); min-width: 52px; height: 56px; min-height: 44px; gap: 4px; padding: 0 2px; scroll-snap-align: start; font-size: 10.5px; }
+  .nav-i .sl { overflow: visible; text-overflow: clip; white-space: nowrap; letter-spacing: -.01em; }
+  .nav-i[aria-current="page"]::before { top: 0; }
+  .side { --fl: 0px; --fr: 0px; -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fl), #000 calc(100% - var(--fr)), transparent 100%); mask-image: linear-gradient(to right, transparent 0, #000 var(--fl), #000 calc(100% - var(--fr)), transparent 100%); }
+  .side.fl { --fl: 34px; } .side.fr { --fr: 42px; }
+  /* a plain strip behind the bar, so the faded edges fade into the bar colour, not into the page */
+  body::after { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: calc(68px + env(safe-area-inset-bottom, 0px)); background: var(--card); border-top: var(--line); box-shadow: 0 -10px 30px rgba(0,0,0,.07); z-index: 14; pointer-events: none; }
+}
+
+/* r11: request flows · one question per card (after The Core 3.0) */
+.wz { display: grid; gap: 12px; }
+.wz-top { display: grid; gap: 8px; }
+.wz-prog { height: 6px; border-radius: 999px; background: var(--g1); overflow: hidden; }
+.wz-prog i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--c-party); transition: width .5s var(--ease-out); }
+.wz-dots { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; } .wz-dots::-webkit-scrollbar { display: none; }
+.wz-dots button { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 999px; border: 1px solid var(--g2); background: var(--card); font-size: 12.5px; font-weight: 600; white-space: nowrap; color: var(--muted); transition: border-color .15s, background .2s, color .2s; }
+.wz-dots button i { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font: 800 10.5px var(--f-d); font-style: normal; background: var(--g1); color: var(--ink); }
+.wz-dots button.done { color: var(--ink); } .wz-dots button.done i { background: var(--c-done); color: #000; }
+.wz-dots button.on { border-color: var(--ink); color: var(--ink); background: var(--yellow); } .wz-dots button.on i { background: var(--ink); color: var(--on-ink); }
+.wz-dots button:hover { border-color: var(--ink); } .wz-dots button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.wz-save { display: inline-flex; align-items: center; gap: 8px; font: 500 10.5px var(--f-m); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); min-height: 16px; }
+.wz-save i { width: 7px; height: 7px; border-radius: 50%; background: var(--c-done); } .wz-save button { border: 0; background: none; padding: 0; font: inherit; text-decoration: underline; text-underline-offset: 3px; color: var(--ink); }
+.wz-card { position: relative; display: grid; gap: 16px; background: var(--card); border: var(--line); border-radius: 28px; padding: 22px 24px 24px; box-shadow: var(--soft); }
+.wz-card.fwd { animation: wzin .42s var(--ease) both; } .wz-card.bwd { animation: wzback .42s var(--ease) both; }
+@keyframes wzin { from { opacity: 0; transform: translateX(28px) scale(.985); } } @keyframes wzback { from { opacity: 0; transform: translateX(-28px) scale(.985); } }
+.wz-card.shake { animation: wzshake .4s ease; } @keyframes wzshake { 25% { transform: translateX(-6px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-3px); } }
+.wz-h { display: grid; gap: 6px; padding-right: 0; }
+.wz-eye { font-size: 10.5px; color: var(--muted); }
+.wz-q { font: 800 clamp(22px, 3vw, 30px)/1.15 var(--f-d); letter-spacing: -.015em; margin: 0; }
+.wz-hint { margin: 0; color: var(--muted); font-size: 14.5px; max-width: 62ch; }
+.wz-sample { justify-self: start; display: inline-flex; align-items: center; gap: 7px; border: 1px dashed var(--ink); background: var(--card); border-radius: 999px; padding: 5px 12px; font: 700 13px var(--f-b); margin-top: 4px; transition: background .2s, transform .25s var(--ease); }
+.wz-sample:hover { background: var(--t-yellow); transform: translateY(-1px) rotate(-1deg); } .wz-sample .ic { width: 15px; height: 15px; }
+.wz-b { display: grid; gap: 14px; }
+.wz-from { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border-top: 1px dashed var(--g2); padding-top: 12px; } .wz-from .mono { margin-right: 4px; }
+.wz-pill { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; border: 1px solid var(--g2); background: var(--soft-bg); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; transition: border-color .15s, background .2s, transform .25s var(--ease); }
+.wz-pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .wz-pill .ic { width: 14px; height: 14px; flex: none; } .wz-pill:hover { border-color: var(--ink); background: var(--card); transform: translateY(-1px); }
+.wz-nav { position: sticky; bottom: 12px; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: color-mix(in srgb, var(--card) 88%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: var(--line); border-radius: 999px; padding: 8px; box-shadow: var(--soft); }
+.wz-next.send { background: var(--yellow); color: #000; } .wz-back[disabled] { opacity: .35; }
+.sb-ex button.pop { animation: pillpop .5s var(--ease); } @keyframes pillpop { 40% { transform: scale(1.08) translateY(-2px); background: var(--yellow); } }
+.inp.filled { animation: filled .7s var(--ease); } @keyframes filled { 0% { transform: scale(.99); } 30% { background: var(--t-yellow); border-color: var(--amber); transform: scale(1.01); } }
+.wz-sent { margin: 0; font: 800 clamp(19px, 2.5vw, 26px)/1.55 var(--f-d); letter-spacing: -.01em; background: var(--soft-bg); border-radius: 20px; padding: 18px 20px; }
+.wz-sent.small { font-size: clamp(16px, 2vw, 19px); text-align: left; }
+.b-slot { cursor: pointer; padding: 0 .28em; border-radius: .3em; border: 1px dashed var(--g3); color: var(--muted); font-weight: 600; box-decoration-break: clone; -webkit-box-decoration-break: clone; transition: background .2s; }
+.b-slot.on { background: var(--yellow); border-color: transparent; color: #000; font-weight: 800; font-style: italic; }
+.b-slot:hover { background: color-mix(in srgb, var(--yellow) 60%, var(--card)); color: #000; } .b-slot:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.b-slot.just { animation: slotpop .7s var(--ease); } @keyframes slotpop { 30% { transform: scale(1.06); } }
+.gap-in { font: inherit; font-style: italic; color: var(--ink); background: var(--card); border: 0; border-bottom: 3px solid #119BFE; border-radius: .2em .2em 0 0; padding: 0 .2em; outline: none; max-width: 100%; }
+.gap-sug { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: -8px; padding: 10px 14px; border-radius: 0 0 16px 16px; background: var(--soft-bg); animation: rise .3s var(--ease); }
+.gap-sug .mono { font-size: 9.5px; color: var(--muted); margin-right: 4px; } .gap-sug button { border: 1px solid var(--g2); background: var(--card); border-radius: 999px; padding: 4px 10px; font-size: 13px; } .gap-sug button:hover { border-color: var(--ink); background: var(--t-yellow); }
+.wz-rspec { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; } .wz-rspec i { font: 500 10px var(--f-m); font-style: normal; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-right: 6px; }
+.ad-sum.big { font-size: 17px; background: var(--t-yellow); border: 1px solid var(--amber); border-radius: 16px; padding: 12px 16px; } .ad-sum.big b { font-size: 24px; }
+.wz-done { display: grid; gap: 12px; justify-items: center; text-align: center; background: var(--card); border: var(--line); border-radius: 28px; padding: 30px 24px; box-shadow: var(--soft); animation: wzin .45s var(--ease) both; }
+.wz-done .row { justify-content: center; } .wz-done .wz-hint { text-align: center; }
+.wz-ok svg { width: 84px; height: 84px; } .wz-ok circle { fill: var(--yellow); stroke: var(--ink); stroke-width: 2; } .wz-ok path { fill: none; stroke: #000; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+@media (prefers-reduced-motion: no-preference) { .wz-ok circle { transform-origin: center; animation: okpop .5s var(--ease) both; } .wz-ok path { stroke-dasharray: 40; stroke-dashoffset: 40; animation: okdraw .45s .3s var(--ease-out) forwards; } }
+@keyframes okpop { from { transform: scale(.3); opacity: 0; } } @keyframes okdraw { to { stroke-dashoffset: 0; } }
+@media (max-width: 760px) { .wz-card { padding: 18px 16px 20px; border-radius: 22px; } .wz-nav { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); } .wz-cnt { display: none; } .wz-sent { padding: 14px; } }
+
+/* r12: The Core Lite mark + card; Core delivery links */
+.lite-mk { white-space: nowrap; } .lite-pill { display: inline-block; margin-left: .1em; padding: .02em .48em .1em; border-radius: 999px; background: #e6e6e9; color: #6a6d74; font-weight: 800; text-transform: lowercase; letter-spacing: 0; line-height: 1.1; font-size: .86em; vertical-align: .06em; }
+:root[data-theme="dark"] .lite-pill { background: #303035; color: #a4a7ae; } @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .lite-pill { background: #303035; color: #a4a7ae; } }
+.lite-mk.lg { font: 800 22px var(--f-d); }
+.camp-lite { display: grid; gap: 12px; background: var(--card); border: var(--line); border-radius: 24px; padding: 16px 18px; box-shadow: var(--soft); position: relative; }
+.camp-lite::before { content: ""; position: absolute; left: 0; top: 18px; bottom: 18px; width: 4px; border-radius: 0 4px 4px 0; background: #b9bbc1; }
+.lt-h { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; } .lt-t { margin: 0; } .lt-chk { margin-left: auto; }
+.lt-g { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .7fr) minmax(0, 1.2fr); gap: 12px; align-items: start; }
+.lt-g > div { background: var(--soft-bg); border: 1px solid var(--g1); border-radius: 18px; padding: 12px 14px; display: grid; gap: 8px; min-width: 0; }
+.lt-k { font: 500 10px var(--f-m); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.lt-fr { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 10px; row-gap: 3px; font-size: 13.5px; align-items: center; } .lt-fr b { font: 900 18px var(--f-d); font-variant-numeric: tabular-nums; }
+.lt-fr i { grid-column: 1 / -1; height: 10px; width: var(--w); border-radius: 999px; background: var(--ink); transform-origin: left; animation: bargrow2 .6s var(--ease-out) both; } .lt-fr + .lt-fr i { background: #28C840; }
+.lt-cv { display: flex; align-items: baseline; gap: 8px; border-top: 1px dashed var(--g2); padding-top: 8px; } .lt-cv b { font: 900 24px var(--f-d); } .lt-cv span { font-size: 12.5px; color: var(--muted); }
+.lt-last { font-size: 10px; }
+.lt-n { display: flex; align-items: baseline; gap: 8px; } .lt-n b { font: 900 28px/1 var(--f-d); font-variant-numeric: tabular-nums; } .lt-n span { font-size: 12.5px; color: var(--muted); }
+.lt-links { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.lt-src-in { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; } .lt-src-in .inp { width: 170px; padding: 6px 10px; }
+.lt-act { display: flex; flex-wrap: wrap; gap: 8px; } .lt-act .btn[aria-expanded="true"] { border-color: var(--ink); background: var(--t-yellow); }
+.lt-ask { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; animation: rise .3s var(--ease); }
+.cc-rep { display: flex; flex-wrap: wrap; gap: 6px; } .cc-rb { display: inline-flex; align-items: center; } .cc-rb .btn { border-radius: 999px 0 0 999px; }
+.cc-cp { border: var(--st); border-left: 0; border-radius: 0 999px 999px 0; background: var(--card); height: 30px; width: 32px; display: grid; place-items: center; padding: 0; box-shadow: 0 2px 0 var(--ink); } .cc-cp .ic { width: 14px; height: 14px; } .cc-cp:hover { background: var(--yellow); }
+@media (max-width: 980px) { .lt-g { grid-template-columns: minmax(0, 1fr); } }
+.rep { display: grid; gap: 8px; border: 1px solid var(--g2); border-radius: 16px; padding: 10px 12px; background: var(--soft-bg); }
+.rep-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } .rep-h b { font: 800 15px var(--f-d); }
+.rep-st { display: inline-flex; align-items: center; gap: 6px; font: 600 12px var(--f-b); border: 1px solid var(--g2); border-radius: 999px; padding: 1px 9px 1px 6px; background: var(--card); } .rep-st i { width: 9px; height: 9px; border-radius: 50%; background: var(--g3); }
+.rep-st.pend i { background: var(--c-wip); animation: blink 1.4s ease-in-out infinite; } .rep-st.sent i { background: var(--c-done); } .rep-st.appr i { background: var(--c-onbeta); }
+.rep-r, .rep-a { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; } .rep-a .btn.k { white-space: normal; text-align: left; }
+.rep-fb { display: grid; gap: 8px; animation: rise .3s var(--ease); } .rep-fb .row { justify-content: flex-end; }
+.rep-sheet { gap: 14px; } .rep-ck { display: flex; align-items: center; gap: 12px; border: 2px dashed var(--g3); border-radius: 18px; padding: 14px 16px; font: 800 17px var(--f-d); cursor: pointer; transition: border-color .2s, background .2s; position: relative; }
+.rep-ck input { position: absolute; opacity: 0; width: 1px; height: 1px; } .rep-box { width: 34px; height: 34px; border-radius: 10px; border: 2px solid var(--ink); background: var(--card); display: grid; place-items: center; flex: none; transition: background .2s, transform .25s var(--ease); }
+.rep-ck.on { border-style: solid; border-color: var(--ink); background: var(--t-green); } .rep-ck.on .rep-box { background: var(--c-done); transform: scale(1.06); } .rep-ck.on .rep-box::after { content: ""; width: 9px; height: 16px; border: solid #000; border-width: 0 3px 3px 0; transform: translateY(-2px) rotate(45deg); }
+.rep-ck:focus-within { outline: 3px solid var(--ink); outline-offset: 2px; }
+.rep-yay { position: absolute; top: 16px; right: 18px; }
+.lt-links a.btn, .rep a.btn { text-decoration: none; }
+/* the step nav stays clear of the floating bubbles in the corner */
+.wz-nav { margin-right: 96px; }
+@media (max-width: 760px) { .wz-nav { margin-right: 70px; } }
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -1572,12 +1672,12 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
   <button class="nav-i" type="button" data-cat="talk" title="Conversația cu Claude"><svg class="ic"><use href="#i-chat"/></svg><span class="lbl">Conversația</span><span class="sl">Chat</span><span class="nb" id="nb-talk" hidden></span></button>
   <button class="nav-i" type="button" data-cat="work" title="Progres · board și listă"><svg class="ic"><use href="#i-board"/></svg><span class="lbl">Progres · Task-uri</span><span class="sl">Task-uri</span><span class="nb" id="nb-work" hidden></span></button>
   <button class="nav-i" type="button" data-cat="team" title="Echipa"><svg class="ic"><use href="#i-team"/></svg><span class="lbl">Echipa <span class="kps"><span class="kp ai" title="agenți AI">AI</span><span class="kp hu" title="oameni"><svg class="ic"><use href="#i-person"/></svg></span></span></span><span class="sl">Echipa</span><span class="nb" id="nb-team" hidden></span></button>
-  <button class="nav-i" type="button" data-cat="core" title="The Core"><svg class="ic"><use href="#i-lock"/></svg><span class="lbl">The Core <span class="cs-ops cv" aria-label="versiunea 3.0">3.0</span></span><span class="sl">Core</span><span class="nb" id="nb-core" hidden></span></button>
-  <button class="nav-i" type="button" data-cat="camp" title="Campanii · landing pages"><svg class="ic"><use href="#i-mega"/></svg><span class="lbl">Campanii</span><span class="sl">Camp.</span><span class="nb" id="nb-camp" hidden></span></button>
-  <button class="nav-i" type="button" data-cat="cont" title="Conținut · proiectele de pe site"><svg class="ic"><use href="#i-ck-layers"/></svg><span class="lbl">Conținut</span><span class="sl">Conț.</span><span class="nb" id="nb-cont" hidden></span></button>
+  <button class="nav-i" type="button" data-cat="cont" title="Conținut · proiectele de pe site"><svg class="ic"><use href="#i-ck-layers"/></svg><span class="lbl">Conținut</span><span class="sl">Conținut</span><span class="nb" id="nb-cont" hidden></span></button>
   <button class="nav-i" type="button" data-cat="soc" title="Social &amp; Ads · reel-uri, story-uri, reclame"><svg class="ic"><use href="#i-clap"/></svg><span class="lbl">Social &amp; Ads</span><span class="sl">Social</span><span class="nb" id="nb-soc" hidden></span></button>
+  <button class="nav-i" type="button" data-cat="camp" title="Campanii · landing pages"><svg class="ic"><use href="#i-mega"/></svg><span class="lbl">Campanii</span><span class="sl">Campanii</span><span class="nb" id="nb-camp" hidden></span></button>
+  <button class="nav-i" type="button" data-cat="core" title="The Core"><svg class="ic"><use href="#i-lock"/></svg><span class="lbl">The Core <span class="cs-ops cv" aria-label="versiunea 3.0">3.0</span></span><span class="sl">Core</span><span class="nb" id="nb-core" hidden></span></button>
+  <button class="nav-i" type="button" data-cat="sec" title="Securitate"><svg class="ic"><use href="#i-shield"/></svg><span class="lbl">Securitate</span><span class="sl">Securitate</span><span class="nb" id="nb-sec" hidden></span></button>
   <button class="nav-i" type="button" data-cat="ana" title="Analytics · trafic, surse, campanii"><svg class="ic"><use href="#i-chart"/></svg><span class="lbl">Analytics</span><span class="sl">Analytics</span></button>
-  <button class="nav-i" type="button" data-cat="sec" title="Securitate"><svg class="ic"><use href="#i-shield"/></svg><span class="lbl">Securitate</span><span class="sl">Secur.</span><span class="nb" id="nb-sec" hidden></span></button>
   <button class="nav-i" type="button" data-cat="reports" title="Rapoarte · versiuni, decizii, cereri, agenți"><svg class="ic"><use href="#i-reports"/></svg><span class="lbl">Rapoarte</span><span class="sl">Rapoarte</span><span class="nb" id="nb-rep" hidden></span></button>
   <div class="side-th"><button type="button" class="thsw" role="switch" aria-checked="false" aria-label="Temă întunecată" title="Comută între luminos și întunecat"><span class="th-k" aria-hidden="true"></span><svg class="ic th-sun" aria-hidden="true"><use href="#i-sun"/></svg><svg class="ic th-moon" aria-hidden="true"><use href="#i-moon"/></svg></button></div>
 </nav>
@@ -1714,42 +1814,6 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
     <div class="team-g" id="team"></div>
   </section>
 
-    <section class="sum blk" data-cat="core" id="core" aria-labelledby="core-t">
-      <div class="sum-h"><span class="live idle" id="core-live"><i></i><span>…</span></span><h2 id="core-t"><svg class="ic lg"><use href="#i-lock"/></svg>The Core <span class="cs-ops cv" aria-label="versiunea 3.0">3.0</span><span id="core-ep"></span></h2><span class="mono muted" id="core-n"></span></div>
-      <div class="sum-k" id="core-k"></div>
-      <div class="sum-line" id="core-line"></div>
-      <div class="sum-f"><button class="btn sm ghost sum-x" type="button" aria-expanded="false" aria-controls="core-body"><svg class="ic"><use href="#i-down2"/></svg><span>Deschide edițiile</span></button><button class="btn sm k" type="button" id="cs-open"><svg class="ic"><use href="#i-plus"/></svg>Inițializare sesiune nouă</button></div>
-      <div class="cs" id="cs" hidden>
-        <div class="cs-h"><span>Sesiune nouă în The Core</span><button class="btn sm ghost" type="button" id="cs-close"><svg class="ic"><use href="#i-x"/></svg>Închide</button></div>
-        <form id="cs-form" novalidate>
-          <div class="field"><label for="cs-email">Emailul clientului</label><input class="inp" id="cs-email" type="email" required autocomplete="off" placeholder="nume@brand.ro"></div>
-          <div class="field"><label for="cs-name">Client / brand (opțional)</label><input class="inp" id="cs-name" type="text" maxlength="120" autocomplete="off" placeholder="Ex.: Litorsal"></div>
-          <div class="field"><label for="cs-edition">Ediția</label><select class="inp" id="cs-edition"><option value="blank">blank</option></select></div>
-          <div class="field"><label id="cs-lang-l">Limba</label><div class="seg" role="group" aria-labelledby="cs-lang-l"><button type="button" data-lang="ro" aria-pressed="true">RO</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div></div>
-        </form>
-        <div class="row sp" style="justify-content:space-between"><span class="mono muted" id="cs-hint">Claude o pornește la următoarea verificare și îți dă linkul aici.</span><button class="btn k" type="submit" form="cs-form" id="cs-send"><svg class="ic"><use href="#i-send"/></svg><span>Cere sesiunea</span></button></div>
-      </div>
-      <div class="cs-list" id="cs-list"></div>
-      <div class="sum-b" id="core-body"><div class="sum-in">
-        <div class="muted sub">Blank-ul și edițiile pentru clienți. Linkul cu token apare doar când apeși „Arată linkul” și se ascunde singur după un minut.</div>
-        <div class="core-g" id="core-g"></div>
-      </div></div>
-    </section>
-
-    <section class="blk camp" data-cat="camp" id="camp" aria-labelledby="camp-t">
-      <div class="core-h"><div><h2 id="camp-t"><svg class="ic lg"><use href="#i-mega"/></svg>Campanii</h2><div class="muted sub">Landing pages pe verticale, cu variantele A și B. Mai târziu, aici vin și setările campaniilor.</div></div><div class="row"><span class="mono muted" id="camp-n"></span><button class="btn sm k" type="button" id="camp-new" aria-expanded="false" aria-controls="camp-form-w"><svg class="ic"><use href="#i-plus"/></svg>Cere un landing nou</button></div></div>
-      <div class="cs" id="camp-form-w" hidden>
-        <div class="cs-h"><span>Landing nou</span><button class="btn sm ghost" type="button" id="cf-close"><svg class="ic"><use href="#i-x"/></svg>Închide</button></div>
-        <form id="camp-form" novalidate>
-          <div class="field"><label for="cf-vert">Verticala</label><input class="inp" id="cf-vert" type="text" maxlength="80" autocomplete="off" placeholder="Ex.: clinici dentare"></div>
-          <div class="field"><label id="cf-lang-l">Limba</label><div class="seg" role="group" aria-labelledby="cf-lang-l"><button type="button" data-cf-lang="ro" aria-pressed="true">RO</button><button type="button" data-cf-lang="en" aria-pressed="false">EN</button><button type="button" data-cf-lang="both" aria-pressed="false">RO + EN</button></div></div>
-          <div class="field" style="grid-column:1/-1"><label for="cf-notes">Note (opțional)</label><textarea class="inp" id="cf-notes" rows="2" placeholder="Public, ofertă, ce freebie, ce canale"></textarea></div>
-        </form>
-        <div class="row" style="justify-content:space-between"><span class="mono muted">Ajunge la Claude ca mesaj în Conversație.</span><button class="btn k" type="submit" form="camp-form" id="cf-send"><svg class="ic"><use href="#i-send"/></svg><span>Trimite lui Claude</span></button></div>
-      </div>
-      <div class="camp-mini" id="camp-mini"></div>
-      <div class="camp-g" id="camp-g"></div>
-    </section>
 
     <section class="blk cont" data-cat="cont" id="cont" aria-labelledby="cont-t">
       <div class="core-h"><div><h2 id="cont-t"><svg class="ic lg"><use href="#i-ck-layers"/></svg>Conținut</h2><div class="muted sub">Proiectele de pe cromaticstudios.com: ce e complet și ce lipsește. Apasă pe o lipsă ca să ceri modificarea.</div></div><span class="mono muted" id="cont-n"></span></div>
@@ -1773,61 +1837,51 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
       <div class="core-h"><div><h2 id="soc-t"><svg class="ic lg"><use href="#i-clap"/></svg>Social &amp; Ads</h2><div class="muted sub">Reel-uri, story-uri, carusele și reclame: ce am livrat și ce ceri nou. Site-ul rămâne în Conținut.</div></div><span class="mono muted" id="soc-n"></span></div>
       <div class="soc-home" id="soc-home"></div>
       <div class="soc-full">
-        <div class="seg" role="tablist" aria-label="Social &amp; Ads"><button type="button" role="tab" data-soc-tab="made" aria-selected="true" aria-pressed="true"><svg class="ic"><use href="#i-play"/></svg>Livrate</button><button type="button" role="tab" data-soc-tab="social" aria-selected="false" aria-pressed="false"><svg class="ic"><use href="#i-ck-spark"/></svg>Cere conținut social</button><button type="button" role="tab" data-soc-tab="ads" aria-selected="false" aria-pressed="false"><svg class="ic"><use href="#i-mega"/></svg>Ads</button></div>
+        <div class="seg" role="tablist" aria-label="Social &amp; Ads"><button type="button" role="tab" data-soc-tab="social" aria-selected="true" aria-pressed="true"><svg class="ic"><use href="#i-ck-spark"/></svg>Cere conținut social media</button><button type="button" role="tab" data-soc-tab="ads" aria-selected="false" aria-pressed="false"><svg class="ic"><use href="#i-mega"/></svg>Ads</button><button type="button" role="tab" data-soc-tab="made" aria-selected="false" aria-pressed="false"><svg class="ic"><use href="#i-play"/></svg>Livrate</button></div>
         <div class="soc-pend" id="soc-pend" hidden></div>
-        <div class="soc-p" data-soc-p="made"><div class="soc-made" id="soc-made"></div></div>
-        <div class="soc-p" data-soc-p="social" hidden>
-          <form class="sb" id="sb-form" novalidate>
-            <div class="sb-step"><div class="sb-sh"><span class="n">1</span><b>Ce fel de conținut?</b></div><div class="sb-types" id="sb-types"></div><div class="sb-spec" id="sb-spec" aria-live="polite"></div></div>
-            <div class="sb-step"><div class="sb-sh"><span class="n">2</span><b>Pe scurt</b></div>
-              <div class="sb-grid"><div class="field sbf"><label for="sb-title">Titlu scurt</label><input class="inp" id="sb-title" type="text" maxlength="90" placeholder="Ex.: Reel Litorsal · vara" autocomplete="off"></div><div class="field sbf"><label for="sb-client">Client</label><select class="inp" id="sb-client"></select></div></div></div>
-            <div class="sb-step" id="sb-video"><div class="sb-sh"><span class="n">3</span><b>Scenariul</b></div>
-              <ol class="sb-intro" id="sb-intro"></ol>
-              <div id="sb-video-f"></div>
-              <div class="field"><label id="sb-scenes-l">Scene</label><span class="sb-hint" id="sb-scenes-h" hidden></span><div class="rl" id="sb-scenes"></div><button type="button" class="btn sm ghost rl-add" id="sb-add-scene"><svg class="ic"><use href="#i-plus"/></svg><span>Adaugă o scenă</span></button></div>
-              <div class="sb-grid"><div class="field sbf"><label id="sb-dur-l">Durată totală</label><div class="sb-chips" id="sb-dur" role="group" aria-labelledby="sb-dur-l"></div><span class="sb-hint" id="sb-dur-h" hidden></span><div class="sb-durm" id="sb-durm" hidden><b>0 s</b><span><i></i></span></div></div><div class="field sbf"><label for="sb-format" id="sb-format-l">Format</label><select class="inp" id="sb-format"></select><span class="sb-hint" id="sb-format-h" hidden></span></div></div>
-              <div class="sb-grid" id="sb-video-f2"></div></div>
-            <div class="sb-step" id="sb-car" hidden><div class="sb-sh"><span class="n">3</span><b>Slide-urile</b></div><div class="rl" id="sb-slides"></div><button type="button" class="btn sm ghost rl-add" id="sb-add-slide"><svg class="ic"><use href="#i-plus"/></svg><span>Adaugă un slide</span></button></div>
-            <div class="sb-step" id="sb-static" hidden><div class="sb-sh"><span class="n">3</span><b>Mesajul</b></div>
-              <div class="field sbf"><label for="sb-headline">Titlul pe imagine</label><input class="inp" id="sb-headline" type="text" maxlength="80" placeholder="Scurt, citibil din scroll"></div>
-              <div class="field sbf"><label for="sb-text">Text</label><textarea class="inp" id="sb-text" rows="2" placeholder="Ce mai scrie (opțional)"></textarea></div>
-              <div class="field sbf"><label for="sb-visual">Ideea vizuală</label><textarea class="inp" id="sb-visual" rows="2" placeholder="Ce se vede: produs, oameni, macheta, culori"></textarea></div></div>
-            <div class="sb-step"><div class="sb-sh"><span class="n">4</span><b>Extra</b></div><div class="sb-opts" id="sb-opts"></div>
-              <div id="sb-refs-w"></div>
-              <div class="row"><button type="button" class="btn sm ghost" id="sb-attach" hidden><svg class="ic"><use href="#i-clip"/></svg><span>Atașează referințe</span></button><input type="file" id="sb-file" multiple hidden><div class="strip" id="sb-strip" hidden></div></div></div>
-            <div class="sb-foot"><span class="soc-note" id="soc-specnote"></span><button type="submit" class="btn k" id="sb-send"><svg class="ic"><use href="#i-send"/></svg><span>Trimite cererea</span></button></div>
-          </form>
-        </div>
-        <div class="soc-p" data-soc-p="ads" hidden>
-          <form class="sb" id="ad-form" novalidate>
-            <div class="sb-step"><div class="sb-sh"><span class="n">1</span><b>Brief-ul</b></div><ol class="sb-intro" id="ad-intro"></ol><div class="sb-grid" id="ad-brief"></div><div class="field sbf"><label for="ad-client">Client</label><select class="inp" id="ad-client"></select></div></div>
-            <div class="sb-step"><div class="sb-sh"><span class="n">2</span><b>Pachetele</b></div><div class="muted sub">Alegi unul sau mai multe. Dimensiunile și textele sunt deja stabilite, nu trebuie să le știi.</div><div id="ad-pk"></div></div>
-            <div class="sb-foot"><div class="ad-sum" id="ad-sum" aria-live="polite"></div><button type="submit" class="btn k" id="ad-send"><svg class="ic"><use href="#i-send"/></svg><span>Trimite cererea de ads</span></button></div>
-          </form>
-        </div>
+        <div class="soc-p" data-soc-p="social"><div id="wz-soc"></div></div>
+        <div class="soc-p" data-soc-p="ads" hidden><div id="wz-ads"></div></div>
+        <div class="soc-p" data-soc-p="made" hidden><div class="soc-made" id="soc-made"></div></div>
+        <div class="soc-note" id="soc-specnote"></div>
       </div>
     </section>
 
-    <section class="blk ana" data-cat="ana" id="ana" aria-labelledby="ana-t">
-      <div class="core-h"><div><h2 id="ana-t"><svg class="ic lg"><use href="#i-chart"/></svg>Analytics</h2><div class="muted sub">Cine vine pe cromaticstudios.com, de unde, și ce fac campaniile.</div></div><span class="mono muted" id="ana-n"></span></div>
-      <div class="an-mock" id="ana-mock-h" hidden><svg class="ic"><use href="#i-info"/></svg><span>Date de test · legătura cu GA4 vine din TASK-128</span></div>
-      <div class="ana-home" id="ana-home"></div>
-      <div class="ana-full">
-        <div class="an-bar"><div class="seg" role="group" aria-label="Perioada"><button type="button" data-ana-r="7" aria-pressed="false">7 zile</button><button type="button" data-ana-r="30" aria-pressed="true">30 de zile</button></div><span class="an-tag" id="ana-mock" hidden>date de test</span></div>
-        <div class="an-k" id="ana-k"></div>
-        <div class="an-card"><div class="an-ct"><span id="ana-chart-t">Pe zile</span><span class="mono muted">treci peste grafic</span></div><div class="an-chart" id="ana-chart"></div></div>
-        <div class="an-2">
-          <div class="an-card"><div class="an-ct">Surse de trafic</div><div class="an-tw"><table class="an-tbl"><thead><tr><th>Sursă / mediu</th><th>Sesiuni</th><th class="num">Utilizatori</th><th class="num">Lead-uri</th><th class="num">Conversie</th></tr></thead><tbody id="ana-src"></tbody></table></div></div>
-          <div class="an-card"><div class="an-ct">Pe hartă</div><div class="an-map" id="ana-map"></div></div>
-        </div>
-        <div class="an-ct" style="margin-top:4px">Campanii · A vs B</div>
-        <div class="an-camp" id="ana-camp"></div>
-        <div class="an-3">
-          <div class="an-card"><div class="an-ct">Pagini de top</div><ol class="an-bl" id="ana-pages"></ol></div>
-          <div class="an-card"><div class="an-ct">Țări</div><ol class="an-bl" id="ana-ctry"></ol></div>
-          <div class="an-card"><div class="an-ct">Dispozitive</div><ol class="an-bl" id="ana-dev"></ol></div>
-        </div>
+    <section class="blk camp" data-cat="camp" id="camp" aria-labelledby="camp-t">
+      <div class="core-h"><div><h2 id="camp-t"><svg class="ic lg"><use href="#i-mega"/></svg>Campanii</h2><div class="muted sub">Landing pages pe verticale, cu variantele A și B. Mai târziu, aici vin și setările campaniilor.</div></div><div class="row"><span class="mono muted" id="camp-n"></span><button class="btn sm k" type="button" id="camp-new" aria-expanded="false" aria-controls="camp-form-w"><svg class="ic"><use href="#i-plus"/></svg>Cere un landing nou</button></div></div>
+      <div class="cs" id="camp-form-w" hidden>
+        <div class="cs-h"><span>Landing nou</span><button class="btn sm ghost" type="button" id="cf-close"><svg class="ic"><use href="#i-x"/></svg>Închide</button></div>
+        <form id="camp-form" novalidate>
+          <div class="field"><label for="cf-vert">Verticala</label><input class="inp" id="cf-vert" type="text" maxlength="80" autocomplete="off" placeholder="Ex.: clinici dentare"></div>
+          <div class="field"><label id="cf-lang-l">Limba</label><div class="seg" role="group" aria-labelledby="cf-lang-l"><button type="button" data-cf-lang="ro" aria-pressed="true">RO</button><button type="button" data-cf-lang="en" aria-pressed="false">EN</button><button type="button" data-cf-lang="both" aria-pressed="false">RO + EN</button></div></div>
+          <div class="field" style="grid-column:1/-1"><label for="cf-notes">Note (opțional)</label><textarea class="inp" id="cf-notes" rows="2" placeholder="Public, ofertă, ce freebie, ce canale"></textarea></div>
+        </form>
+        <div class="row" style="justify-content:space-between"><span class="mono muted">Ajunge la Claude ca mesaj în Conversație.</span><button class="btn k" type="submit" form="camp-form" id="cf-send"><svg class="ic"><use href="#i-send"/></svg><span>Trimite lui Claude</span></button></div>
       </div>
+      <div class="camp-lite" id="camp-lite" aria-label="The Core Lite"></div>
+      <div class="camp-mini" id="camp-mini"></div>
+      <div class="camp-g" id="camp-g"></div>
+    </section>
+
+    <section class="sum blk" data-cat="core" id="core" aria-labelledby="core-t">
+      <div class="sum-h"><span class="live idle" id="core-live"><i></i><span>…</span></span><h2 id="core-t"><svg class="ic lg"><use href="#i-lock"/></svg>The Core <span class="cs-ops cv" aria-label="versiunea 3.0">3.0</span><span id="core-ep"></span></h2><span class="mono muted" id="core-n"></span></div>
+      <div class="sum-k" id="core-k"></div>
+      <div class="sum-line" id="core-line"></div>
+      <div class="sum-f"><button class="btn sm ghost sum-x" type="button" aria-expanded="false" aria-controls="core-body"><svg class="ic"><use href="#i-down2"/></svg><span>Deschide edițiile</span></button><button class="btn sm k" type="button" id="cs-open"><svg class="ic"><use href="#i-plus"/></svg>Inițializare sesiune nouă</button></div>
+      <div class="cs" id="cs" hidden>
+        <div class="cs-h"><span>Sesiune nouă în The Core</span><button class="btn sm ghost" type="button" id="cs-close"><svg class="ic"><use href="#i-x"/></svg>Închide</button></div>
+        <form id="cs-form" novalidate>
+          <div class="field"><label for="cs-email">Emailul clientului</label><input class="inp" id="cs-email" type="email" required autocomplete="off" placeholder="nume@brand.ro"></div>
+          <div class="field"><label for="cs-name">Client / brand (opțional)</label><input class="inp" id="cs-name" type="text" maxlength="120" autocomplete="off" placeholder="Ex.: Litorsal"></div>
+          <div class="field"><label for="cs-edition">Ediția</label><select class="inp" id="cs-edition"><option value="blank">blank</option></select></div>
+          <div class="field"><label id="cs-lang-l">Limba</label><div class="seg" role="group" aria-labelledby="cs-lang-l"><button type="button" data-lang="ro" aria-pressed="true">RO</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div></div>
+        </form>
+        <div class="row sp" style="justify-content:space-between"><span class="mono muted" id="cs-hint">Claude o pornește la următoarea verificare și îți dă linkul aici.</span><button class="btn k" type="submit" form="cs-form" id="cs-send"><svg class="ic"><use href="#i-send"/></svg><span>Cere sesiunea</span></button></div>
+      </div>
+      <div class="cs-list" id="cs-list"></div>
+      <div class="sum-b" id="core-body"><div class="sum-in">
+        <div class="muted sub">Blank-ul și edițiile pentru clienți. Linkul cu token apare doar când apeși „Arată linkul” și se ascunde singur după un minut.</div>
+        <div class="core-g" id="core-g"></div>
+      </div></div>
     </section>
 
     <section class="sum blk" data-cat="sec" id="sec" aria-labelledby="sec-t">
@@ -1841,6 +1895,29 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
         <div class="sec-g" id="sec-g"></div>
       </div></div>
     </section>
+
+    <section class="blk ana" data-cat="ana" id="ana" aria-labelledby="ana-t">
+      <div class="core-h"><div><h2 id="ana-t"><svg class="ic lg"><use href="#i-chart"/></svg>Analytics</h2><div class="muted sub">Cine vine pe cromaticstudios.com, de unde, și ce fac campaniile.</div></div><span class="mono muted" id="ana-n"></span></div>
+      <div class="an-mock" id="ana-mock-h" hidden><svg class="ic"><use href="#i-info"/></svg><span>Date de test · legătura cu GA4 vine din TASK-128</span></div>
+      <div class="ana-home" id="ana-home"></div>
+      <div class="ana-full">
+        <div class="an-bar"><div class="seg" role="group" aria-label="Perioada"><button type="button" data-ana-r="7" aria-pressed="false">7 zile</button><button type="button" data-ana-r="30" aria-pressed="true">30 de zile</button></div><span class="an-tag" id="ana-mock" hidden>date de test</span></div>
+        <div class="an-k" id="ana-k"></div>
+        <div class="an-card"><div class="an-ct"><span id="ana-chart-t">Pe zile</span><span class="mono muted">treci peste grafic</span></div><div class="an-chart" id="ana-chart"></div></div>
+        <div class="an-2">
+          <div class="an-card"><div class="an-ct">Surse de trafic</div><div class="an-tw"><table class="an-tbl"><thead><tr><th>Sursă / mediu</th><th>Sesiuni</th><th class="an-num">Utilizatori</th><th class="an-num">Lead-uri</th><th class="an-num">Conversie</th></tr></thead><tbody id="ana-src"></tbody></table></div></div>
+          <div class="an-card"><div class="an-ct">Pe hartă</div><div class="an-map" id="ana-map"></div></div>
+        </div>
+        <div class="an-ct" style="margin-top:4px">Campanii · A vs B</div>
+        <div class="an-camp" id="ana-camp"></div>
+        <div class="an-3">
+          <div class="an-card"><div class="an-ct">Pagini de top</div><ol class="an-bl" id="ana-pages"></ol></div>
+          <div class="an-card"><div class="an-ct">Țări</div><ol class="an-bl" id="ana-ctry"></ol></div>
+          <div class="an-card"><div class="an-ct">Dispozitive</div><ol class="an-bl" id="ana-dev"></ol></div>
+        </div>
+      </div>
+    </section>
+
 
   <section class="rep blk" data-cat="reports" id="reports" aria-labelledby="rep-t">
     <div class="core-h"><div><h2 id="rep-t"><svg class="ic lg"><use href="#i-reports"/></svg>Rapoarte</h2><div class="muted sub">Versiunile (întoarce cardul să vezi ce s-a schimbat), deciziile permanente, cererile nerezolvate și agenții.</div></div></div>
@@ -2673,7 +2750,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
     const list = S.core.slice().sort((a, b) => (a.order ?? 99) - (b.order ?? 99) || String(a.name || a.id).localeCompare(String(b.name || b.id)));
     const ep = coreEpic();
     // rebuild only when the data changed (or the day turned, for "azi"/"ieri"); an open card stays open across rebuilds
-    const sig = JSON.stringify(list) + "|" + (ep ? ep.id + ep.n + ep.title : "") + "|" + dayKey(new Date().toISOString()) + "|" + loading("core");
+    const sig = JSON.stringify(list) + "|" + (ep ? ep.id + ep.n + ep.title : "") + "|" + dayKey(new Date().toISOString()) + "|" + loading("core") + "|" + REP.fb + REP.att.length + "|" + S.inbox.filter((x) => x.payload && x.payload.type === "core-report-approve" && x.status !== "done").map((x) => x.payload.coreId + x.status).join();
     if (sig === CORE.sig) return; CORE.sig = sig;
     for (const id of [...CORE.open.keys()]) if (!list.some((c) => c.id === id)) { clearTimeout(CORE.open.get(id)); CORE.open.delete(id); }
     const eb = $("core-ep"); eb.replaceChildren();
@@ -2695,6 +2772,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
       const pg = coreProg(c); if (pg) { const p = el("div", "cprog" + (pg.done >= pg.total ? " full" : "")), pl = el("div", "pl"), bar = el("div", "bar"), fill = el("span"); pl.append(el("b", "", pg.done + "/" + pg.total + " module"), el("span", "", Math.round(pg.done / pg.total * 100) + "%")); fill.style.width = (pg.done / pg.total * 100) + "%"; bar.append(fill); bar.setAttribute("role", "progressbar"); bar.setAttribute("aria-valuemin", "0"); bar.setAttribute("aria-valuemax", String(pg.total)); bar.setAttribute("aria-valuenow", String(pg.done)); bar.setAttribute("aria-label", "Module completate"); p.append(pl, bar); f.append(p); }
       const ls = coreLast(c); if (ls && ls[0]) { const d = el("div", "clast"); d.append(el("span", "", "Ultimul pas: "), el("b", "", ls[0]), el("span", "", ls[1] ? " · " + ls[1] : "")); f.append(d); }
       if (c.note) f.append(el("div", "note", c.note));
+      const rl = coreReport(c); if (rl) f.append(rl);
       const show = el("button", "btn sm k"); show.type = "button"; show.append(icon("i-lock"), el("span", "", "Arată linkul")); show.onclick = () => showCore(c.id); f.append(show);
       b.setAttribute("aria-label", "Linkul pentru " + (c.name || c.id));
       inner.append(f, b); card.append(inner); g.append(card);
@@ -2769,7 +2847,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
     $("beat").classList.toggle("on", !!fresh); $("st-claude").textContent = last ? "Claude a verificat " + ago(last) : "Claude: încă nu a verificat";
   }
   let raf = 0;
-  function renderAll() { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { renderHeader(); renderPM(); renderInbox(); renderTeam(); renderView(); renderRail(); renderWins(); renderCore(); renderCoreReq(); renderSec(); renderArchive(); renderCamp(); renderContent(); renderSocial(); renderAna(); if (openTaskId) fillDrawer(openTaskId); }); }
+  function renderAll() { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { renderHeader(); renderPM(); renderInbox(); renderTeam(); renderView(); renderRail(); renderWins(); renderCore(); renderCoreReq(); renderSec(); renderArchive(); renderCamp(); renderLite(); renderContent(); renderSocial(); renderAna(); if (openTaskId) fillDrawer(openTaskId); }); }
   // once a minute: the header clock, and a re-render when a task crosses its 24 h on live
   setInterval(() => { renderHeader(); if (S.tasks.filter(isWin).sort((a, b) => liveAge(a) - liveAge(b)).map((t) => t.id).join() !== winSig) renderAll(); }, 60000);
 
@@ -2982,6 +3060,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
   function setCat(cat, noScroll) {
     if (!TITLES[cat] || (cat === "soc" && socHidden()) || (cat === "ana" && anaHidden())) cat = "home";
     const prev = UI.cat; UI.cat = cat; document.body.dataset.cat = cat;
+    navIntoView(cat, prev === undefined || prev === cat);
     for (const b of document.querySelectorAll(".nav-i")) { if (b.dataset.cat === cat) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }
     let n = 0;
     for (const s of document.querySelectorAll(".blk")) {
@@ -3299,7 +3378,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
   const CST2 = { live: ["Live", "c-done"], beta: ["Beta", "c-on-beta"], draft: ["Ciornă", "c-paused"] }, CORD = { live: 0, beta: 1, draft: 2 };
   const hline = (h, lang) => (h && typeof h === "object" ? String(h[lang] || "") : lang === "en" && typeof h === "string" ? h : "");
   function renderCamp() {
-    const list = S.campaigns.slice().sort((a, b) => (CORD[a.status] ?? 3) - (CORD[b.status] ?? 3) || String(a.title || a.slug || "").localeCompare(String(b.title || b.slug || "")));
+    const list = S.campaigns.filter((c) => c.kind !== "tool").sort((a, b) => (CORD[a.status] ?? 3) - (CORD[b.status] ?? 3) || String(a.title || a.slug || "").localeCompare(String(b.title || b.slug || "")));
     const live = list.filter((c) => c.status === "live").length, beta = list.filter((c) => c.status === "beta").length;
     $("camp-n").textContent = list.length ? [list.length === 1 ? "1 landing" : list.length + " landing-uri", live ? live + " live" : "", beta ? beta + " pe beta" : ""].filter(Boolean).join(" · ") : "";
     setNb("nb-camp", list.length ? String(list.length) : "", "");
@@ -3693,7 +3772,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
   // which caveats belong to which package or type (Mira's caveats are free text)
   const CAV_RE = { pmax: /performance max|pmax/i, display: /\bRDA\b|responsive display/i, demandgen: /demand gen/i, youtube: /youtube|bumper|in-stream|shorts/i, "meta-core": /meta ads guide|IG feed ads/i, "meta-carousel": /meta.*carousel|instagram.*carousel|carousel.*(instagram|meta)/i, "meta-video": /\breels?\b/i, reel: /\breels?\b|tiktok|hashtag/i, carousel: /instagram.*carousel|carousel.*instagram/i, staticPost: /hashtag/i, staticStory: /stories/i };
   const SOC_RE = /\b(reels?|stor(y|ies)|carousel|carusel|post(are)?|video|ads?|reclam[aăe])\b/i;
-  const SOC = { tab: "made", type: "reel", dur: "", pk: new Set(), att: [], built: "" };
+  const SOC = { tab: "social", type: "reel", dur: "", pk: new Set(), att: [], built: "" };
   const arr = (x) => (Array.isArray(x) ? x : []);
   function adSpec() {
     const A = S.adspecs && typeof S.adspecs === "object" ? S.adspecs : {}, D = AD_DEF, st = A.scriptTemplate || {}, ads = A.ads || {}, bt = ads.briefTemplate || {};
@@ -3755,7 +3834,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
       if (atts.length) { const s = el("div", "strip"); atts.forEach((a) => { const m = el("div", "mini"); if (isImg(a)) { const im = el("img"); im.src = blobUrl(a); im.alt = ""; im.loading = "lazy"; m.append(im); m.onclick = () => lightbox(blobUrl(a)); } else m.append(el("span", "", (isVid(a) ? "▶ " : "") + (a.name || "").split(".").pop().toUpperCase())); s.append(m); }); c.append(s); }
       const mt = mateOf(t); const f = el("div", "socc-f"); if (mt) f.append(whoEl(mt));
       const again = el("button", "btn sm ghost"); again.type = "button"; again.append(icon("i-flip"), el("span", "", "Cere din nou / o variantă"));
-      again.onclick = () => { const s2 = t.title + " " + (t.topic || ""), vid = /video|reel/i.test(s2), ty = /carousel|carusel/i.test(s2) ? "carousel" : !vid && /stor(y|ies)/i.test(s2) ? "staticStory" : !vid && /post/i.test(s2) ? "staticPost" : "reel"; setSocTab("social"); pickType(ty); $("sb-title").value = "Variantă: " + t.title; const rf = $("sb-references"); if (rf) rf.value = (rf.value ? rf.value + "\n" : "") + "Pornim de la " + t.id + " (" + t.title + ")"; $("sb-title").focus(); flashEl($("sb-title")); };
+      again.onclick = () => startFrom(t);
       f.append(again); c.append(f); g.append(c);
     });
     const sig = (S.adspecs && S.adspecs.generatedAt || "") + "|" + JSON.stringify(S.adspecs || {}).length;
@@ -3799,46 +3878,230 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
     };
     return { add, read: () => [...box.children].map((r) => Object.fromEntries([...r.querySelectorAll("[data-k]")].map((x) => [x.dataset.k, x.value.trim()]))) };
   }
+  // ---- r11: the request flows (social + ads) as guided steps, in the spirit of The Core 3.0:
+  // one big question per card, hints, example pills that pop into the field (aware of the client's vertical),
+  // "Arată-mi un exemplu" fills a full sample, a review sentence whose gaps edit in place, a draft kept in localStorage.
   let scenes = null, slides = null;
+  const VERT = {
+    coffee: { re: /caf|coffee|espresso|pr[ăa]j|roast/i, label: "cafea",
+      goal: ["să strângem 200 de precomenzi pentru noul blend în 4 săptămâni", "să vină lumea la degustarea de sâmbătă"], hook: ["Cafeaua cade în ceașcă, text pe ecran: „Ai băut-o greșit 10 ani.”", "Boabe care sar din prăjitor, în slow motion"],
+      cta: ["Comandă din link, livrăm mâine", "Rezervă-ți locul la degustare"], tone: ["cald, sigur pe el", "jucăuș, cu aromă"], music: ["lo-fi, ritm lent, fără voce"], headline: ["Prăjită săptămâna asta, nu luna trecută"],
+      audience: ["30–45 de ani, București și Cluj, beau cafea de specialitate acasă"], offer: ["-15% la prima comandă, livrare gratuită până pe 30 noiembrie"], message: ["Cafea proaspătă, nu de luna trecută"],
+      scenes: [["Mâini care macină boabele", "Proaspăt. Nu de săptămâna trecută.", "", "3"], ["Turnarea în slow motion", "Prăjită acum 3 zile", "", "4"], ["Cana pe birou, dimineața", "Livrăm mâine", "voce: „Comandă din link.”", "3"]],
+      slides: [["Ai băut-o greșit 10 ani", "", "ceașcă pe fundal galben"], ["Prăjim în fiecare marți", "De la boabe la tine în 3 zile", "prăjitorul, aproape"], ["3 blenduri, 3 dimineți", "Blând, echilibrat, puternic", "trei pungi aliniate"], ["-15% la prima comandă", "Link în bio", "punga cu eticheta mare"]] },
+    health: { re: /clinic|dental|stomat|s[ăa]n[ăa]t|health|medic|farma|pharma|beauty|estetic|derma/i, label: "sănătate",
+      goal: ["să umplem 30 de programări pentru consultația gratuită", "să afle cartierul că ne-am mutat"], hook: ["„Ți-e frică de dentist? Uite cum arată o vizită la noi.”", "Un zâmbet, apoi text: „Fără durere. Promitem.”"],
+      cta: ["Programează-te online", "Sună-ne azi"], tone: ["liniștitor, profesionist", "cald, fără jargon"], music: ["pian calm", "fără muzică, doar voce"], headline: ["Zâmbetul tău, fără grabă"],
+      audience: ["25–55 de ani, în raza de 10 km, amână de mult o vizită"], offer: ["prima consultație gratuită în noiembrie"], message: ["Fără durere, fără grabă, cu explicații"],
+      scenes: [["Recepția luminoasă, cineva zâmbește", "Fără durere. Promitem.", "", "3"], ["Medicul explică pe ecran", "Îți arătăm tot, înainte", "voce: „Întâi vorbim.”", "5"], ["Pacientul pleacă zâmbind", "Prima consultație e gratuită", "", "3"]],
+      slides: [["Ți-e frică de dentist?", "Nu ești singur", "scaun gol, lumină caldă"], ["Întâi vorbim", "Îți explicăm tot pe ecran", "medicul arată o radiografie"], ["Fără durere", "Anestezie modernă", "detaliu instrument"], ["Prima consultație gratuită", "Programează-te online", "logo pe alb"]] },
+    hotel: { re: /hotel|pensiun|resort|turism|travel|cazare|litoral|munte/i, label: "turism",
+      goal: ["să umplem weekendurile din noiembrie", "rezervări directe, nu prin platforme"], hook: ["Ușa se deschide spre mare, text: „Camera 12 te așteaptă.”", "Cafeaua pe balcon, ceața peste munte"],
+      cta: ["Rezervă direct, cu 10% mai puțin", "Vezi camerele libere"], tone: ["relaxat, primitor"], music: ["acustic, cald"], headline: ["Weekendul de care ai nevoie"],
+      audience: ["cupluri 28–45, București, pleacă din oraș vinerea"], offer: ["a treia noapte gratuită în noiembrie"], message: ["Liniște la 2 ore de oraș"],
+      scenes: [["Ușa camerei se deschide", "Camera 12 te așteaptă", "", "3"], ["Micul dejun pe terasă", "Totul local", "", "4"], ["Apusul de pe balcon", "Rezervă direct", "voce: „Ne vedem vineri.”", "3"]],
+      slides: [["Weekendul de care ai nevoie", "", "terasa la apus"], ["Camere cu vedere", "12 camere, toate diferite", "camera luminoasă"], ["Mic dejun local", "De la fermele din jur", "masa întinsă"], ["A treia noapte gratuită", "Rezervă direct", "logo"]] },
+    law: { re: /avoca|law|juridic|notar|legal/i, label: "juridic",
+      goal: ["20 de cereri de consultanță de la firme mici", "să fim primii la care se gândesc antreprenorii"], hook: ["„Ai semnat vreodată un contract fără să-l citești?”"], cta: ["Cere o primă discuție gratuită"], tone: ["clar, sigur, fără jargon"], music: ["fără muzică"],
+      headline: ["Contractul tău, explicat pe înțelesul tău"], audience: ["antreprenori 30–50, firme sub 20 de oameni"], offer: ["prima discuție de 30 de minute, gratuită"], message: ["Te ajutăm înainte să fie o problemă"],
+      scenes: [["Un contract pe birou, un pix", "Ai citit tot?", "", "3"], ["Avocatul explică, calm", "Pe înțelesul tău", "voce: „Întâi întrebările.”", "5"], ["Strângere de mână", "Prima discuție e gratuită", "", "3"]],
+      slides: [["Ai semnat fără să citești?", "", "pix pe contract"], ["3 clauze de verificat", "Înainte de orice semnătură", "listă scurtă"], ["Te ajutăm înainte", "Nu după", "biroul"], ["30 de minute gratuite", "Scrie-ne", "logo"]] },
+    food: { re: /restaurant|food|bistro|pizza|brut[ăa]r|patiser|buc[ăa]t[ăa]r|catering/i, label: "food",
+      goal: ["mai multe rezervări în serile de marți și miercuri"], hook: ["Brânza se întinde în slow motion"], cta: ["Rezervă o masă"], tone: ["poftos, prietenos"], music: ["funk ușor"], headline: ["Marțea e noua vineri"],
+      audience: ["25–40, la 3 km de restaurant, ies în oraș în timpul săptămânii"], offer: ["desert din partea casei marțea"], message: ["Seara bună începe aici"],
+      scenes: [["Aluatul întins de mână", "Făcut acum", "", "3"], ["Pizza scoasă din cuptor", "", "sunetul cuptorului", "3"], ["Masa plină, prieteni", "Rezervă o masă", "", "3"]],
+      slides: [["Marțea e noua vineri", "", "masa plină"], ["Desert din partea casei", "În fiecare marți", "tiramisu"], ["Rezervă o masă", "Link în bio", "logo"]] },
+    brand: { re: /./, label: "",
+      goal: ["să ne cunoască mai mulți oameni din oraș", "lead-uri pentru proiectele de branding"], hook: ["Ai 3 secunde? Uite un oraș în miniatură.", "Asta nu e o hartă. E un portofoliu."], cta: ["Vezi proiectul pe cromaticstudios.com", "Scrie-ne pentru o discuție"], tone: ["cald, jucăuș"], music: ["trending, fără voce"],
+      headline: ["Fiecare brand are fațada lui"], audience: ["fondatori și marketeri din România, firme 10–200 de oameni"], offer: ["un The Core Lite gratuit pentru brandul tău"], message: ["Un brand bun se vede de pe stradă"],
+      scenes: [["Mașina intră în cadru pe strada brandurilor", "Fiecare brand are fațada lui", "", "4"], ["Prim-plan pe o clădire care se aprinde", "", "sunet de pași", "3"], ["Harta de sus, logo", "Vezi harta pe cromaticstudios.com", "", "3"]],
+      slides: [["Asta nu e o hartă", "E un portofoliu", "harta de sus"], ["Fiecare clădire, un brand", "", "prim-plan clădire"], ["Intră și plimbă-te", "cromaticstudios.com", "mașina pe stradă"]] },
+  };
+  const clientDoc = (slug) => (slug ? S.content.find((d) => (d.slug || d.id) === slug) : null);
+  function vertOf(slug) { const d = clientDoc(slug); if (!d) return null; const s = [d.industry, d.street, d.streetLabel, d.name, ...(Array.isArray(d.categories) ? d.categories : [])].join(" "); for (const [k, v] of Object.entries(VERT)) if (k !== "brand" && v.re.test(s)) return k; return null; }
+  const vEx = (scope, key) => { const v = VERT[vertOf($(scope === "ads" ? "ad-client" : "sb-client")?.value) || "brand"]; return (v && v[key]) || []; };
+  // localStorage drafts (per viewer, best effort)
+  const DRAFT = { soc: "ops-soc-draft-v1", ads: "ops-ads-draft-v1" };
+  const lsGet = (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } };
+  const lsSet = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
+  // a step card field: label, hint, example pills (vertical first, then Mira's)
+  function wzField(scope, id, F, kind, ph, exKey) {
+    const w = tplField(id, F, kind, ph), inp = w.querySelector(".inp"), old = w.querySelector(".sb-ex"); if (old) old.remove();
+    const ex = el("div", "sb-ex"); ex.dataset.exFor = id; w.append(ex);
+    const fill = () => { const own = [].concat(F.examples || [], F.example ? [F.example] : []).filter(Boolean), list = [...vEx(scope, exKey || F.key), ...own].filter((x, i, a) => a.indexOf(x) === i).slice(0, 3); ex.replaceChildren(...list.map((x) => { const b = el("button"); b.type = "button"; b.title = "Folosește exemplul"; b.append(el("i", "", "ex."), String(x)); b.onclick = () => { fillWith(inp, x); popPill(b); }; return b; })); ex.hidden = !list.length; };
+    fill(); w._refill = fill; return w;
+  }
+  const popPill = (b) => { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); };
+  // ---- the engine: steps, progress, back/next, review gaps
+  function makeWizard(scope, root, def) {
+    const W = { scope, i: 0, steps: [], root, def };
+    root.replaceChildren(); root.classList.add("wz");
+    const top = el("div", "wz-top"), prog = el("div", "wz-prog"), bar = el("i"); prog.append(bar); prog.setAttribute("role", "progressbar"); prog.setAttribute("aria-valuemin", "0");
+    const dots = el("ol", "wz-dots"), save = el("span", "wz-save");
+    top.append(prog, dots, save);
+    const stage = el("div", "wz-stage"), nav = el("div", "wz-nav");
+    const back = el("button", "btn ghost wz-back"); back.type = "button"; back.append(el("span", "", "← Înapoi"));
+    const cnt = el("span", "wz-cnt mono muted"), next = el("button", "btn k wz-next"); next.type = "button"; next.append(el("span", "", "Mai departe →"));
+    nav.append(back, cnt, next);
+    const done = el("div", "wz-done"); done.hidden = true;
+    root.append(top, stage, nav, done);
+    W.cards = new Map();
+    for (const s of def.all) { const c = el("section", "wz-card"); c.dataset.step = s.id; c.hidden = true; const h = el("div", "wz-h"); h.append(el("span", "wz-eye mono", ""), el("h3", "wz-q", s.q)); if (s.hint) h.append(el("p", "wz-hint", s.hint)); c.append(h); const body = el("div", "wz-b"); c.append(body); stage.append(c); s.build(body, c); if (s.sample !== false && def.sample) { const sb = el("button", "wz-sample"); sb.type = "button"; sb.append(icon("i-ck-spark"), el("span", "", "Arată-mi un exemplu")); sb.onclick = () => { def.sample(); toast("Am pus un exemplu complet. Schimbă orice."); go(W.i, 0, true); }; h.append(sb); } W.cards.set(s.id, c); }
+    function list() { return def.all.filter((s) => !s.when || s.when()); }
+    function go(i, dir, quiet) {
+      W.steps = list(); i = Math.max(0, Math.min(W.steps.length - 1, i)); W.i = i;
+      const cur = W.steps[i];
+      for (const [id, c] of W.cards) { const on = id === cur.id; if (on && c.hidden) { c.classList.remove("fwd", "bwd"); void c.offsetWidth; c.classList.add(dir < 0 ? "bwd" : "fwd"); } c.hidden = !on; }
+      const card = W.cards.get(cur.id); card.querySelector(".wz-eye").textContent = "Pasul " + (i + 1) + " din " + W.steps.length + " · " + cur.label;
+      bar.style.width = (W.steps.length > 1 ? i / (W.steps.length - 1) * 100 : 100) + "%"; prog.setAttribute("aria-valuenow", String(i + 1)); prog.setAttribute("aria-valuemax", String(W.steps.length)); prog.setAttribute("aria-label", "Pasul " + (i + 1) + " din " + W.steps.length);
+      dots.replaceChildren(...W.steps.map((s, k) => { const li = el("li"), b = el("button", k < i ? "done" : k === i ? "on" : ""); b.type = "button"; b.append(el("i", "", k < i ? "✓" : String(k + 1)), el("span", "", s.label)); if (k === i) b.setAttribute("aria-current", "step"); b.onclick = () => go(k, k < i ? -1 : 1); li.append(b); return li; }));
+      back.disabled = i === 0; cnt.textContent = (i + 1) + " / " + W.steps.length;
+      const last = i === W.steps.length - 1; next.lastChild.textContent = last ? def.submitLabel : "Mai departe →"; next.classList.toggle("send", last);
+      if (cur.enter) cur.enter(card);
+      if (!quiet) { const f = card.querySelector(".wz-b input:not([type=checkbox]), .wz-b textarea, .wz-b .sb-tile[aria-pressed=true], .wz-b button"); if (f && dir) setTimeout(() => f.focus({ preventScroll: true }), 60); const r = root.getBoundingClientRect(); if (dir && (r.top < 0 || r.top > innerHeight * .5)) root.scrollIntoView({ block: "start", behavior: reduced() ? "auto" : "smooth" }); }
+      persist();
+    }
+    back.onclick = () => go(W.i - 1, -1);
+    next.onclick = async () => { const cur = W.steps[W.i]; if (cur.check) { const bad = cur.check(); if (bad) { bad.focus && bad.focus(); W.cards.get(cur.id).classList.remove("shake"); void root.offsetWidth; W.cards.get(cur.id).classList.add("shake"); return; } } if (W.i < W.steps.length - 1) go(W.i + 1, 1); else await def.submit(W); };
+    stage.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.matches("input[type=text], input:not([type])") && !e.target.closest(".rl, .gap-in")) { e.preventDefault(); next.click(); } });
+    let tm = 0; const persist = () => { clearTimeout(tm); tm = setTimeout(() => { const ok = lsSet(DRAFT[scope], { ...def.read(), step: W.steps[W.i] && W.steps[W.i].id, at: Date.now() }); save.replaceChildren(); if (ok && def.dirty()) { save.append(el("i"), "Schiță salvată"); const x = el("button", "", "Golește"); x.type = "button"; x.onclick = () => { if (!confirm("Golești schița? Câmpurile se șterg.")) return; lsSet(DRAFT[scope], null); def.reset(); go(0, -1); }; save.append(x); } }, 350); };
+    root.addEventListener("input", persist); root.addEventListener("change", persist);
+    W.go = go; W.persist = persist; W.goId = (id, dir) => { W.steps = list(); const k = W.steps.findIndex((s) => s.id === id); if (k >= 0) go(k, dir ?? (k < W.i ? -1 : 1)); };
+    W.showDone = (sentence, again) => { stage.hidden = nav.hidden = top.hidden = true; done.hidden = false; done.replaceChildren(); const ring = el("div", "wz-ok"); ring.innerHTML = '<svg viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="23"/><path d="M15 27l7 7 15-16"/></svg>'; const sp = el("p", "wz-sent small"); sp.append(...sentence); const row = el("div", "row"); const a = el("button", "btn k"); a.type = "button"; a.append(el("span", "", "Încă o cerere")); a.onclick = () => { done.hidden = true; stage.hidden = nav.hidden = top.hidden = false; again(); go(0, -1); }; const b2 = el("button", "btn ghost"); b2.type = "button"; b2.append(el("span", "", "Vezi cererile în curs")); b2.onclick = () => { const p = $("soc-pend"); if (p) { p.scrollIntoView({ block: "center", behavior: reduced() ? "auto" : "smooth" }); flashEl(p); } }; row.append(a, b2); done.append(ring, el("h3", "wz-q", "Gata, cererea e la Claude."), el("p", "wz-hint", "O vezi sus, în „Cereri în curs”. Îți răspundem acolo, cu pașii și cu termenul."), sp, row); confetti(ring); a.focus(); };
+    return W;
+  }
+  // review sentences: text gaps edit in place (Enter/Tab/Esc), others jump to their step
+  function gap(W, label, val, opt) {
+    if (/goal/.test(opt.field || "")) val = String(val || "").replace(/^s[ăa]\s+/i, "");
+    const s = el("span", "b-slot" + (val ? " on" : "")); s.setAttribute("role", "button"); s.tabIndex = 0; s.textContent = val || label; s.setAttribute("aria-label", label + ": " + (val || "gol"));
+    const open = () => {
+      if (opt.step) { W.goId(opt.step, -1); const f = opt.field && $(opt.field); if (f) setTimeout(() => { f.focus(); flashEl(f); }, 120); return; }
+      const src = $(opt.field); if (!src) return; const inp = el("input", "gap-in"); inp.value = src.value; inp.size = Math.max(8, Math.min(40, (src.value || label).length + 1)); inp.setAttribute("aria-label", label);
+      s.replaceWith(inp); inp.focus(); inp.select(); requestAnimationFrame(() => { if (document.activeElement === inp) inp.select(); });
+      const ex = el("div", "gap-sug"); const list = [...vEx(W.scope, opt.ex || ""), ...(opt.more || [])].filter((x, i, a) => x && a.indexOf(x) === i).slice(0, 4);
+      if (list.length) { ex.append(el("span", "mono", label)); list.forEach((x) => { const b = el("button", "", String(x)); b.type = "button"; b.onmousedown = (e) => e.preventDefault(); b.onclick = () => { inp.value = String(x); commit(); }; ex.append(b); }); inp.closest(".wz-sent").after(ex); }
+      let shut = false; const commit = () => { if (shut) return; shut = true; src.value = inp.value.trim(); src.dispatchEvent(new Event("input", { bubbles: true })); ex.remove(); opt.redraw(true); };
+      inp.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); commit(); } if (e.key === "Escape") { shut = true; ex.remove(); opt.redraw(); } });
+      inp.addEventListener("blur", commit);
+    };
+    s.onclick = open; s.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+    return s;
+  }
+  // ---- social
+  let SW = null;
+  function socRead() { const v = (id) => ($(id) ? $(id).value : ""); return { type: SOC.type, dur: SOC.dur, title: v("sb-title"), client: v("sb-client"), goal: v("sb-goal"), hook: v("sb-hook"), cta: v("sb-cta"), tone: v("sb-tone"), music: v("sb-music"), format: v("sb-format"), headline: v("sb-headline"), text: v("sb-text"), visual: v("sb-visual"), references: v("sb-references"), scenes: scenes ? scenes.read() : [], slides: slides ? slides.read() : [], opts: [...document.querySelectorAll("#sb-opts input:checked")].map((c) => c.value) }; }
+  function socDirty() { const d = socRead(); return !!(d.title || d.goal || d.hook || d.headline || d.cta || d.scenes.some((r) => Object.values(r).some(Boolean)) || d.slides.some((r) => Object.values(r).some(Boolean))); }
+  function socApply(d) {
+    if (!d) return; const set = (id, x) => { if ($(id) && x != null) $(id).value = x; };
+    if (d.type) SOC.type = d.type; SOC.dur = d.dur || ""; set("sb-client", d.client); if ($("sb-client")) $("sb-client").dataset.want = d.client || ""; for (const k of ["title", "goal", "hook", "cta", "tone", "music", "headline", "text", "visual", "references"]) set("sb-" + k, d[k]); if (d.format) set("sb-format", d.format);
+    if (Array.isArray(d.scenes) && d.scenes.length) { $("sb-scenes").replaceChildren(); d.scenes.forEach((r) => scenes.add(r)); }
+    if (Array.isArray(d.slides) && d.slides.length) { $("sb-slides").replaceChildren(); d.slides.forEach((r) => slides.add(r)); }
+    for (const c of document.querySelectorAll("#sb-opts input")) c.checked = Array.isArray(d.opts) && d.opts.includes(c.value);
+    for (const x of document.querySelectorAll("#sb-dur button")) x.setAttribute("aria-pressed", String(x.textContent === SOC.dur));
+    pickType(SOC.type, true); refillEx();
+  }
+  function socReset() { socApply({ type: "reel", dur: "", title: "", client: "", goal: "", hook: "", cta: "", tone: "", music: "", headline: "", text: "", visual: "", references: "", scenes: [{}, {}], slides: [{}, {}, {}], opts: [] }); SOC.att = []; drawSocAtt(); }
+  function socSample() {
+    const v = VERT[vertOf($("sb-client").value) || "brand"], cl = clientDoc($("sb-client").value), nm = cl ? cl.name : "Cromatic";
+    const sc = (rows) => rows.map(([visual, onScreenText, voice, duration]) => ({ visual, onScreenText, voice, duration }));
+    const base = { type: SOC.type, client: $("sb-client").value, goal: v.goal[0], references: "", opts: ["caption", "subtitles", "cover", "safezone"].filter((k) => [...document.querySelectorAll("#sb-opts input")].some((c) => c.value === k)) };
+    if (SOC.type === "reel") socApply({ ...base, title: "Reel " + nm + " · " + (v.label || "harta"), dur: "30 s", hook: v.hook[0], cta: v.cta[0], tone: v.tone[0], music: (v.music || [""])[0], format: [...$("sb-format").options].map((o) => o.value).find((x) => /reel/i.test(x)) || $("sb-format").value, scenes: sc(v.scenes) });
+    else if (SOC.type === "carousel") socApply({ ...base, title: "Carusel " + nm, slides: v.slides.map(([title, text, visual]) => ({ title, text, visual })) });
+    else socApply({ ...base, title: (SOC.type === "staticStory" ? "Story " : "Postare ") + nm, headline: v.headline[0], text: v.message ? v.message[0] : "", visual: v.slides[0][2] });
+  }
+  function refillEx() { for (const w of document.querySelectorAll("#wz-soc .sbf, #wz-ads .sbf")) if (w._refill) w._refill(); }
   function buildSocial() {
-    const A = adSpec(), F = A.fields;
-    // type tiles
-    const tl = $("sb-types"); tl.replaceChildren();
-    for (const [id, ic] of SOC_TILES) { const t = A.social[id] || AD_DEF.social[id]; if (!t) continue; const b = el("button", "sb-tile"); b.type = "button"; b.dataset.type = id; b.setAttribute("aria-pressed", "false"); const ratio = t.ratio || t.recommendedRatio || arr(t.ratios)[0] || ""; b.append(icon(ic), el("b", "", t.label || id), el("span", "", [ratio, typeof t.px === "string" ? t.px.replace("x", "×") : ""].filter(Boolean).join(" · "))); b.onclick = () => pickType(id); tl.append(b); }
-    // onboarding: the three intro lines
-    $("sb-intro").replaceChildren(...A.intro.slice(0, 3).map((x, i) => { const li = el("li"); li.style.animationDelay = i * 80 + "ms"; li.append(el("b", "", String(i + 1)), el("span", "", String(x))); return li; }));
-    $("sb-video-f").replaceChildren(tplField("sb-hook", F.hook || { key: "hook", label: "Hook" }, "area", "Ce vede omul imediat"));
-    const sc = F.scenes || {}; $("sb-scenes-l").textContent = sc.label || "Scene"; $("sb-scenes-h").textContent = sc.hint || ""; $("sb-scenes-h").hidden = !sc.hint;
-    $("sb-scenes").replaceChildren(); scenes = rowList("sb-scenes", arr(sc.subfields).length ? sc.subfields : AD_DEF.scriptTemplate.fields[1].subfields, () => "Scena", updDur);
-    $("sb-add-scene").onclick = () => { const f = scenes.add(); if (f) f.focus(); };
-    scenes.add(); scenes.add();
-    // duration chips + format select
-    const du = F.duration || {}, dc = $("sb-dur"); $("sb-dur-l").textContent = du.label || "Durată totală"; dc.replaceChildren();
-    arr(du.options).forEach((o) => { const b = el("button", "", String(o)); b.type = "button"; b.setAttribute("aria-pressed", String(SOC.dur === o)); b.onclick = () => { SOC.dur = o; for (const x of dc.children) x.setAttribute("aria-pressed", String(x === b)); updDur(); }; dc.append(b); });
-    $("sb-dur-h").textContent = du.hint || ""; $("sb-dur-h").hidden = !du.hint;
-    const fo = F.format || {}, fs = $("sb-format"); $("sb-format-l").textContent = fo.label || "Format"; fs.replaceChildren(...arr(fo.options).map((o) => { const x = el("option", "", String(o)); x.value = String(o); return x; })); $("sb-format-h").textContent = fo.hint || ""; $("sb-format-h").hidden = !fo.hint;
-    $("sb-video-f2").replaceChildren(...["cta", "tone", "music"].map((k) => tplField("sb-" + k, F[k] || { key: k, label: k }, "text")));
-    $("sb-refs-w").replaceChildren(tplField("sb-references", F.references || { key: "references", label: "Referințe" }, "area", "Câte un link pe rând"));
-    $("sb-slides").replaceChildren(); slides = rowList("sb-slides", [{ key: "title", label: "Titlu", hint: "Pe slide" }, { key: "text", label: "Text", hint: "Ce scrie" }, { key: "visual", label: "Vizual", hint: "Ce se vede" }], (i) => (i === 0 ? "Slide-ul de copertă" : "Slide"), null);
-    $("sb-add-slide").onclick = () => { const f = slides.add(); if (f) f.focus(); };
-    slides.add(); slides.add(); slides.add();
-    // options as checkboxes, hint on hover
-    $("sb-opts").replaceChildren(...A.options.map((o) => { const lb = el("label", "sb-opt"), c = el("input"); c.type = "checkbox"; c.value = o.key; if (o.hint) lb.title = o.hint; lb.append(c, el("span", "", String(o.label || o.key))); return lb; }));
+    const A = adSpec(), F = A.fields, isV = () => SOC.type === "reel";
+    const def = {
+      submitLabel: "Trimite cererea", sample: socSample, read: socRead, dirty: socDirty, reset: socReset,
+      all: [
+        { id: "type", label: "Formatul", q: "Ce facem de data asta?", hint: "Alege formatul. Specificațiile tehnice le știm noi; le vezi dedesubt.", sample: false, build(b) {
+          const tl = el("div", "sb-types"); tl.id = "sb-types";
+          for (const [id, ic] of SOC_TILES) { const t = A.social[id] || AD_DEF.social[id]; if (!t) continue; const x = el("button", "sb-tile"); x.type = "button"; x.dataset.type = id; x.setAttribute("aria-pressed", "false"); const ratio = t.ratio || t.recommendedRatio || arr(t.ratios)[0] || ""; x.append(icon(ic), el("b", "", t.label || id), el("span", "", [ratio, typeof t.px === "string" ? t.px.replace("x", "×") : ""].filter(Boolean).join(" · "))); x.onclick = () => { pickType(id); }; x.ondblclick = () => SW.go(1, 1); tl.append(x); }
+          const sp = el("div", "sb-spec"); sp.id = "sb-spec"; sp.setAttribute("aria-live", "polite");
+          const from = el("div", "wz-from"); from.id = "sb-from";
+          b.append(tl, sp, from);
+        }, enter() { const fr = $("sb-from"); fr.replaceChildren(); const made = S.tasks.filter((t) => SOC_RE.test(String(t.title || "") + " " + String(t.topic || ""))).slice(0, 3); const lab = el("span", "mono muted", "Pornește de la"); fr.append(lab); const ex = el("button", "wz-pill"); ex.type = "button"; ex.append(icon("i-ck-spark"), el("span", "", "un exemplu complet")); ex.onclick = () => { socSample(); toast("Am pus un exemplu complet. Schimbă orice."); SW.go(1, 1); }; fr.append(ex); made.forEach((t) => { const p = el("button", "wz-pill"); p.type = "button"; p.append(icon("i-flip"), el("span", "", "o variantă: " + t.title)); p.onclick = () => startFrom(t); fr.append(p); }); const bl = el("button", "wz-pill"); bl.type = "button"; bl.append(el("span", "", "o foaie goală")); bl.onclick = () => { socReset(); SW.go(1, 1); }; fr.append(bl); } },
+        { id: "idea", label: "Ideea", q: "Ce vrei să se întâmple după ce îl vede cineva?", hint: "Un singur lucru. Restul îl construim în jurul lui.", build(b) {
+          const g = el("div", "sb-grid"), tf = el("div", "field sbf"), tl = el("label", "", "Titlu scurt"), ti = el("input", "inp"); tl.htmlFor = "sb-title"; ti.id = "sb-title"; ti.type = "text"; ti.maxLength = 90; ti.placeholder = "Ex.: Reel Litorsal · vara"; ti.autocomplete = "off"; tf.append(tl, ti, el("span", "sb-hint", "Apare în cererea către Claude."));
+          const cf = el("div", "field sbf"), cl = el("label", "", "Pentru cine"), cs = el("select", "inp"); cl.htmlFor = "sb-client"; cs.id = "sb-client"; cs.onchange = refillEx; cf.append(cl, cs, el("span", "sb-hint", "Din Conținut. Exemplele se potrivesc domeniului."));
+          g.append(tf, cf); b.append(g, wzField("soc", "sb-goal", { key: "goal", label: "Obiectivul", hint: "Ex.: precomenzi, programări, vizite pe hartă, oameni la un eveniment." }, "area", "Ce vrei să obții", "goal"));
+        }, check() { const t = $("sb-title"); if (!t.value.trim()) { const g = $("sb-goal").value.trim(); if (g) { t.value = (SOC_TILES.find((x) => x[0] === SOC.type) ? (adSpec().social[SOC.type] || {}).label || "" : "") + " · " + g.slice(0, 50); return null; } toast("Dă-i un titlu scurt sau scrie obiectivul.", "err"); return t; } return null; } },
+        { id: "script", label: "Scenariul", q: "Cum începe și ce se vede?", when: isV, build(b) {
+          const ol = el("ol", "sb-intro"); ol.id = "sb-intro"; ol.append(...A.intro.slice(0, 3).map((x, i) => { const li = el("li"); li.style.animationDelay = i * 80 + "ms"; li.append(el("b", "", String(i + 1)), el("span", "", String(x))); return li; }));
+          const sc = F.scenes || {}, fw = el("div", "field"), lab = el("label", "", sc.label || "Scene"), box = el("div", "rl"); box.id = "sb-scenes"; const add = el("button", "btn sm ghost rl-add"); add.type = "button"; add.append(icon("i-plus"), el("span", "", "Adaugă o scenă"));
+          const dm = el("div", "sb-durm"); dm.id = "sb-durm"; dm.hidden = true; dm.innerHTML = "<b>0 s</b><span><i></i></span>";
+          fw.append(lab); if (sc.hint) fw.append(el("span", "sb-hint", sc.hint)); fw.append(box, add, dm);
+          b.append(ol, wzField("soc", "sb-hook", F.hook || { key: "hook", label: "Hook" }, "area", "Ce vede omul imediat", "hook"), fw);
+          scenes = rowList("sb-scenes", arr(sc.subfields).length ? sc.subfields : AD_DEF.scriptTemplate.fields[1].subfields, () => "Scena", updDur); add.onclick = () => { const f = scenes.add(); if (f) f.focus(); }; scenes.add(); scenes.add();
+        } },
+        { id: "feel", label: "Finalul", q: "Cum se termină și cum sună?", when: isV, build(b) {
+          const du = F.duration || {}, df = el("div", "field sbf"), dl = el("label", "", du.label || "Durată totală"), dc = el("div", "sb-chips"); dl.id = "sb-dur-l"; dc.id = "sb-dur"; dc.setAttribute("role", "group"); dc.setAttribute("aria-labelledby", "sb-dur-l");
+          arr(du.options).forEach((o) => { const x = el("button", "", String(o)); x.type = "button"; x.setAttribute("aria-pressed", "false"); x.onclick = () => { SOC.dur = o; for (const y of dc.children) y.setAttribute("aria-pressed", String(y === x)); updDur(); SW.persist(); }; dc.append(x); });
+          df.append(dl, dc); if (du.hint) df.append(el("span", "sb-hint", du.hint));
+          const fo = F.format || {}, ff = el("div", "field sbf"), fl = el("label", "", fo.label || "Format"), fs = el("select", "inp"); fl.htmlFor = "sb-format"; fs.id = "sb-format"; fs.append(...arr(fo.options).map((o) => { const x = el("option", "", String(o)); x.value = String(o); return x; })); ff.append(fl, fs); if (fo.hint) ff.append(el("span", "sb-hint", fo.hint));
+          const g1 = el("div", "sb-grid"); g1.append(df, ff); const g2 = el("div", "sb-grid"); g2.append(...["cta", "tone", "music"].map((k) => wzField("soc", "sb-" + k, F[k] || { key: k, label: k }, "text", "", k)));
+          b.append(g2, g1);
+        } },
+        { id: "slides", label: "Slide-urile", q: "Ce spune fiecare slide?", hint: "Primul slide e cârligul; ultimul, îndemnul. Trage ca să schimbi ordinea.", when: () => SOC.type === "carousel", build(b) {
+          const box = el("div", "rl"); box.id = "sb-slides"; const add = el("button", "btn sm ghost rl-add"); add.type = "button"; add.append(icon("i-plus"), el("span", "", "Adaugă un slide")); b.append(box, add);
+          slides = rowList("sb-slides", [{ key: "title", label: "Titlu", hint: "Pe slide" }, { key: "text", label: "Text", hint: "Ce scrie" }, { key: "visual", label: "Vizual", hint: "Ce se vede" }], (i) => (i === 0 ? "Slide-ul de copertă" : "Slide"), null); add.onclick = () => { const f = slides.add(); if (f) f.focus(); }; slides.add(); slides.add(); slides.add();
+        } },
+        { id: "message", label: "Mesajul", q: "Ce scrie pe imagine și ce se vede?", hint: "Un singur mesaj, citibil din scroll.", when: () => SOC.type === "staticStory" || SOC.type === "staticPost", build(b) {
+          b.append(wzField("soc", "sb-headline", { key: "headline", label: "Titlul pe imagine" }, "text", "Scurt", "headline"), wzField("soc", "sb-text", { key: "text", label: "Text (opțional)" }, "area", "Ce mai scrie", "message"), wzField("soc", "sb-visual", { key: "visual", label: "Ideea vizuală", hint: "Ce se vede: produs, oameni, macheta, culori." }, "area", ""));
+        } },
+        { id: "extras", label: "Extra", q: "Ce mai pregătim odată cu el?", hint: "Bifează ce vrei să primești. Treci cu mouse-ul peste o opțiune ca să vezi ce înseamnă.", build(b) {
+          const o = el("div", "sb-opts"); o.id = "sb-opts"; o.append(...A.options.map((x) => { const lb = el("label", "sb-opt"), c = el("input"); c.type = "checkbox"; c.value = x.key; if (x.hint) lb.title = x.hint; lb.append(c, el("span", "", String(x.label || x.key))); return lb; }));
+          const rw = el("div", "row"), ab = el("button", "btn sm ghost"); ab.type = "button"; ab.id = "sb-attach"; ab.hidden = true; ab.append(icon("i-clip"), el("span", "", "Atașează referințe")); const fi = el("input"); fi.type = "file"; fi.id = "sb-file"; fi.multiple = true; fi.hidden = true; const st = el("div", "strip"); st.id = "sb-strip"; st.hidden = true; rw.append(ab, fi, st);
+          b.append(o, wzField("soc", "sb-references", F.references || { key: "references", label: "Referințe" }, "area", "Câte un link pe rând", "references"), rw);
+        } },
+        { id: "review", label: "Recapitulare", q: "Așa sună cererea ta.", hint: "Atinge orice parte colorată ca s-o schimbi pe loc.", sample: false, build(b) { const p = el("p", "wz-sent"); p.id = "sb-sent"; const sp = el("div", "wz-rspec"); sp.id = "sb-rspec"; b.append(p, sp); }, enter: () => socSentence() },
+      ],
+      async submit(W) {
+        const A2 = adSpec(), t = A2.social[SOC.type] || {}, title = $("sb-title").value.trim(); if (!title) { W.goId("idea", -1); setTimeout(() => $("sb-title").focus(), 100); toast("Lipsește titlul scurt.", "err"); return; }
+        const v = (id) => ($(id) ? $(id).value.trim() : ""), refs = v("sb-references"), goal = v("sb-goal"); let script;
+        if (SOC.type === "reel") script = { goal, hook: v("sb-hook"), scenes: scenes.read().filter((r) => Object.values(r).some(Boolean)), cta: v("sb-cta"), duration: SOC.dur || null, format: $("sb-format").value, tone: v("sb-tone"), music: v("sb-music"), references: refs };
+        else if (SOC.type === "carousel") script = { goal, slides: slides.read().filter((r) => r.title || r.text || r.visual), references: refs };
+        else script = { goal, headline: v("sb-headline"), text: v("sb-text"), visual: v("sb-visual"), references: refs };
+        const options = [...document.querySelectorAll("#sb-opts input:checked")].map((c) => c.value), client = $("sb-client").value || null;
+        const btn = W.root.querySelector(".wz-next"); btn.disabled = true; btn.lastChild.textContent = "Se trimite…";
+        const sent = [...$("sb-sent").childNodes].map((n) => n.cloneNode(true));
+        const ok = await guard(() => inboxAdd("command", "Social · " + (t.label || SOC.type) + ": " + title, { type: "content-production", kind: SOC.type, title, script, options, client, attachments: SOC.att.map((a) => a.id) }), "Cererea e trimisă.");
+        btn.disabled = false; btn.lastChild.textContent = "Trimite cererea";
+        if (ok) { lsSet(DRAFT.soc, null); W.showDone(sent, socReset); }
+      },
+    };
+    SW = makeWizard("soc", $("wz-soc"), def);
     fillClients();
     if (assets) { const ab = $("sb-attach"); ab.hidden = false; const inp = $("sb-file"); inp.accept = "image/*,video/mp4,video/webm,application/pdf,.heic,.heif"; ab.onclick = () => inp.click(); inp.onchange = async () => { const fl = Array.from(inp.files || []); inp.value = ""; if (!fl.length) return; ab.disabled = true; const added = await uploadFiles(fl); ab.disabled = false; SOC.att = SOC.att.concat(added); drawSocAtt(); }; }
-    $("sb-form").onsubmit = sendSocial;
-    pickType(SOC.type);
+    const d = lsGet(DRAFT.soc); pickType(SOC.type, true); if (d) socApply(d);
+    const st = d && d.step ? Math.max(0, def.all.filter((s) => !s.when || s.when()).findIndex((s) => s.id === d.step)) : 0; SW.go(st, 0, true);
     buildAds();
   }
-  function drawSocAtt() { const s = $("sb-strip"); s.hidden = !SOC.att.length; s.replaceChildren(...SOC.att.map((a, k) => { const m = el("div", "mini"); if (isImg(a)) { const im = el("img"); im.src = blobUrl(a); im.alt = ""; m.append(im); } else m.append(el("span", "", (a.name || "").split(".").pop().toUpperCase())); const x = el("button"); x.type = "button"; x.setAttribute("aria-label", "Scoate " + (a.name || "")); x.append(icon("i-x")); x.onclick = () => { SOC.att.splice(k, 1); drawSocAtt(); }; m.append(x); return m; })); }
-  function fillClients() { for (const id of ["sb-client", "ad-client"]) { const s = $(id); if (!s) continue; const v = s.value; s.replaceChildren(...[["", "Fără client anume"], ...S.content.slice().sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "ro")).map((d) => [d.slug || d.id, d.name || d.slug])].map(([val, l]) => { const o = el("option", "", l); o.value = val; return o; })); s.value = v; } }
+  function startFrom(t) { const s2 = t.title + " " + (t.topic || ""), vid = /video|reel/i.test(s2), ty = /carousel|carusel/i.test(s2) ? "carousel" : !vid && /stor(y|ies)/i.test(s2) ? "staticStory" : !vid && /post/i.test(s2) ? "staticPost" : "reel"; setSocTab("social"); pickType(ty); $("sb-title").value = "Variantă: " + t.title; const rf = $("sb-references"); if (rf && !rf.value.includes(t.id)) rf.value = (rf.value ? rf.value + "\n" : "") + "Pornim de la " + t.id + " (" + t.title + ")"; SW.goId("idea", 1); SW.persist(); setTimeout(() => flashEl($("sb-title")), 150); }
+  function socSentence() {
+    const A = adSpec(), t = A.social[SOC.type] || {}, p = $("sb-sent"); if (!p) return; const W = SW, v = (id) => ($(id) ? $(id).value.trim() : ""), redraw = (fresh) => { socSentence(); if (fresh) { const j = p.querySelectorAll(".b-slot.on"); j.forEach((x) => x.classList.add("just")); } };
+    const cl = clientDoc(v("sb-client")), G = (label, val, opt) => gap(W, label, val, { redraw, ...opt });
+    const tn = { reel: "un reel", carousel: "un carusel", staticStory: "un story static", staticPost: "o postare statică" }[SOC.type] || "ceva";
+    const parts = ["Vrem ", G("formatul", tn, { step: "type" })];
+    if (SOC.type === "reel") parts.push(" de ", G("durata", SOC.dur && SOC.dur !== "decideți voi" ? SOC.dur : SOC.dur ? "durata pe care o alegeți voi" : "", { step: "feel" }));
+    if (SOC.type === "carousel") { const n = slides.read().filter((r) => r.title || r.text || r.visual).length; parts.push(" cu ", G("slide-uri", n ? n + (n === 1 ? " slide" : " slide-uri") : "", { step: "slides" })); }
+    parts.push(" pentru ", G("client", cl ? cl.name : "", { step: "idea", field: "sb-client" }), ", ca să ", G("obiectivul", v("sb-goal"), { field: "sb-goal", ex: "goal" }), ". ");
+    if (SOC.type === "reel") { const n = scenes.read().filter((r) => Object.values(r).some(Boolean)).length; parts.push("Începe cu ", G("hook-ul", v("sb-hook"), { field: "sb-hook", ex: "hook" }), ", are ", G("scenele", n ? n + (n === 1 ? " scenă" : " scene") : "", { step: "script" }), " și se termină cu ", G("îndemnul", v("sb-cta"), { field: "sb-cta", ex: "cta" }), ". Tonul e ", G("tonul", v("sb-tone"), { field: "sb-tone", ex: "tone" }), ", muzica ", G("muzica", v("sb-music"), { field: "sb-music", ex: "music" }), ", formatul ", G("formatul", v("sb-format"), { step: "feel", field: "sb-format" }), "."); }
+    else if (SOC.type === "carousel") { const f = slides.read()[0] || {}; parts.push("Prima slide spune ", G("titlul copertei", f.title || "", { step: "slides" }), "."); }
+    else parts.push("Pe imagine scrie ", G("titlul", v("sb-headline"), { field: "sb-headline", ex: "headline" }), ", iar în imagine se vede ", G("vizualul", v("sb-visual"), { field: "sb-visual" }), ".");
+    const op = [...document.querySelectorAll("#sb-opts input:checked")].map((c) => c.closest("label").textContent.trim());
+    parts.push(" Primim și ", G("extra", op.length ? op.join(", ").toLowerCase() : "", { step: "extras" }), ".");
+    p.replaceChildren(...parts);
+    const rs = $("sb-rspec"); rs.replaceChildren(); const px = typeof t.px === "string" ? t.px : t.px ? Object.values(t.px)[0] : ""; [["Titlu", v("sb-title")], ["Format", (t.ratio || t.recommendedRatio || "") + (px ? " · " + String(px).replace(/x/g, "×") : "")], ["Atașate", SOC.att.length ? SOC.att.length + " fișiere" : ""]].forEach(([k, x]) => { if (!x) return; const d = el("span"); d.append(el("i", "", k), x); rs.append(d); });
+  }
+  function drawSocAtt() { const s = $("sb-strip"); if (!s) return; s.hidden = !SOC.att.length; s.replaceChildren(...SOC.att.map((a, k) => { const m = el("div", "mini"); if (isImg(a)) { const im = el("img"); im.src = blobUrl(a); im.alt = ""; m.append(im); } else m.append(el("span", "", (a.name || "").split(".").pop().toUpperCase())); const x = el("button"); x.type = "button"; x.setAttribute("aria-label", "Scoate " + (a.name || "")); x.append(icon("i-x")); x.onclick = () => { SOC.att.splice(k, 1); drawSocAtt(); }; m.append(x); return m; })); }
+  function fillClients() { for (const id of ["sb-client", "ad-client"]) { const s = $(id); if (!s) continue; const v = s.value || s.dataset.want || ""; s.replaceChildren(...[["", "Fără client anume"], ...S.content.slice().sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "ro")).map((d) => [d.slug || d.id, d.name || d.slug])].map(([val, l]) => { const o = el("option", "", l); o.value = val; return o; })); s.value = v; } }
   // the spec card: what the chosen type must be, technically
-  function pickType(id) {
+  function pickType(id, quiet) {
     const A = adSpec(), t = A.social[id] || AD_DEF.social[id]; if (!t) return; SOC.type = id;
     for (const b of document.querySelectorAll(".sb-tile")) b.setAttribute("aria-pressed", String(b.dataset.type === id));
-    const video = id === "reel";
-    $("sb-video").hidden = !video; $("sb-car").hidden = id !== "carousel"; $("sb-static").hidden = video || id === "carousel";
-    const sp = $("sb-spec"); sp.replaceChildren(); const hd = el("div", "sb-spec-h"); hd.append(icon("i-ck-img"), el("b", "", "Specificații · " + (t.label || id))); sp.append(hd);
+    const sp = $("sb-spec"); if (!sp) return; sp.replaceChildren(); const hd = el("div", "sb-spec-h"); hd.append(icon("i-ck-img"), el("b", "", "Specificații · " + (t.label || id))); sp.append(hd);
     const row = el("div", "sb-spec-r"), kv = (k, v) => { if (v == null || v === "") return; const d = el("span"); d.append(el("i", "", k), String(v)); row.append(d); };
     const px = typeof t.px === "string" ? t.px : t.px && typeof t.px === "object" ? Object.entries(t.px).map(([r, v]) => r + " " + v).join(" · ") : "";
     kv("Format", t.ratio || (t.ratioOptions || t.ratios || []).join(" / ") || t.recommendedRatio); kv("Pixeli", px.replace(/x/g, "×"));
@@ -3849,38 +4112,57 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
     kv("Fișier", t.codec || t.format); sp.append(row);
     if (t.notes) sp.append(el("p", "", String(t.notes)));
     const sn = srcNotes(t, id); if (sn) sp.append(sn);
+    if (SW && !quiet) SW.go(SW.i, 0, true);
     updDur();
   }
-  function updDur() { if (!scenes) return; const tot = scenes.read().reduce((s, r) => s + (Number(r.duration) || 0), 0), m = $("sb-durm"), lim = parseInt(SOC.dur, 10); m.hidden = !tot && !lim; m.querySelector("b").textContent = lim ? tot + " s din " + lim + " s" : tot + " s în scene"; const f = m.querySelector("i"); f.style.width = (lim ? Math.min(100, tot / lim * 100) : Math.min(100, tot / 60 * 100)) + "%"; m.className = "sb-durm " + (lim ? (tot > lim ? "bad" : tot >= lim * .6 ? "ok" : "") : ""); }
-  async function sendSocial(e) {
-    e.preventDefault();
-    const A = adSpec(), t = A.social[SOC.type] || {}, title = $("sb-title").value.trim(); if (!title) { $("sb-title").focus(); toast("Dă-i un titlu scurt, ex.: Reel Litorsal · vara.", "err"); flashEl($("sb-title")); return; }
-    const v = (id) => ($(id) ? $(id).value.trim() : ""), refs = v("sb-references"); let script;
-    if (SOC.type === "reel") script = { hook: v("sb-hook"), scenes: scenes.read().filter((r) => Object.values(r).some(Boolean)), cta: v("sb-cta"), duration: SOC.dur || null, format: $("sb-format").value, tone: v("sb-tone"), music: v("sb-music"), references: refs };
-    else if (SOC.type === "carousel") script = { slides: slides.read().filter((r) => r.title || r.text || r.visual), references: refs };
-    else script = { headline: v("sb-headline"), text: v("sb-text"), visual: v("sb-visual"), references: refs };
-    const options = [...document.querySelectorAll("#sb-opts input:checked")].map((c) => c.value), client = $("sb-client").value || null;
-    const btn = $("sb-send"), lbl = btn.lastChild, old = lbl.textContent; btn.disabled = true; lbl.textContent = "Se trimite…";
-    const ok = await guard(() => inboxAdd("command", "Social · " + (t.label || SOC.type) + ": " + title, { type: "content-production", kind: SOC.type, title, script, options, client, attachments: SOC.att.map((a) => a.id) }), "Cererea e trimisă. O vezi sus, în „Cereri în curs”.");
-    btn.disabled = false;
-    if (ok) { btn.classList.add("sent-ok"); lbl.textContent = "Trimis"; confetti(btn); setTimeout(() => { btn.classList.remove("sent-ok"); lbl.textContent = old; }, 1600); $("sb-title").value = ""; SOC.att = []; drawSocAtt(); } else lbl.textContent = old;
-  }
-  // ---- Ads: brief + packages
+  function updDur() { if (!scenes || !$("sb-durm")) return; const tot = scenes.read().reduce((s, r) => s + (Number(r.duration) || 0), 0), m = $("sb-durm"), lim = parseInt(SOC.dur, 10); m.hidden = !tot && !lim; m.querySelector("b").textContent = lim ? tot + " s din " + lim + " s" : tot + " s în scene"; const f = m.querySelector("i"); f.style.width = (lim ? Math.min(100, tot / lim * 100) : Math.min(100, tot / 60 * 100)) + "%"; m.className = "sb-durm " + (lim ? (tot > lim ? "bad" : tot >= lim * .6 ? "ok" : "") : ""); }
+  // ---- ads: the same flow
+  let AW = null;
+  function adsRead() { const o = {}; for (const i of document.querySelectorAll("[data-brief]")) o[i.dataset.brief] = i.value; return { brief: o, client: $("ad-client") ? $("ad-client").value : "", pk: [...SOC.pk] }; }
+  function adsApply(d) { if (!d) return; if (d.brief) for (const [k, v] of Object.entries(d.brief)) { const i = document.querySelector('[data-brief="' + k + '"]'); if (i) i.value = v; } if ($("ad-client") && d.client != null) { $("ad-client").value = d.client; $("ad-client").dataset.want = d.client; } if (Array.isArray(d.pk)) { SOC.pk = new Set(d.pk); for (const c of document.querySelectorAll(".ad-tile")) { const on = SOC.pk.has(c.dataset.pk); c.classList.toggle("on", on); c.querySelector(".ad-tg").setAttribute("aria-pressed", String(on)); } adSum(); } refillEx(); }
+  function adsSample() { const v = VERT[vertOf($("ad-client").value) || "brand"], cl = clientDoc($("ad-client").value); const ids = pkAll().map((p) => p.id); adsApply({ brief: { goal: v.goal[0], audience: v.audience[0], offer: v.offer[0], message: v.message[0], cta: v.cta[0], landing: cl && cl.urls && cl.urls.ro ? cl.urls.ro : "cromaticstudios.com/lp/coffee-brands/", budget_period: "3.000 lei, 1–30 noiembrie", brand_assets: "" }, pk: ["meta-core", "pmax"].filter((x) => ids.includes(x)) }); }
   function buildAds() {
-    const A = adSpec();
-    $("ad-intro").replaceChildren(...A.briefIntro.slice(0, 3).map((x, i) => { const li = el("li"); li.style.animationDelay = i * 80 + "ms"; li.append(el("b", "", String(i + 1)), el("span", "", String(x))); return li; }));
-    const bf = $("ad-brief"); bf.replaceChildren();
-    for (const f of A.brief) { const area = /audience|message|brand|assets/.test(f.key), w = tplField("ad-" + f.key, { ...f, label: (f.label || f.key) + (f.optional || /brand|assets/.test(f.key) ? " · opțional" : "") }, area ? "area" : "text"); const inp = w.querySelector(".inp"); inp.dataset.brief = f.key; if (!f.optional && !/brand|assets/.test(f.key)) inp.dataset.req = "1"; if (f.key === "landing") inp.inputMode = "url"; bf.append(w); }
-    const pk = $("ad-pk"); pk.replaceChildren();
+    const A = adSpec(), bf = {}; A.brief.forEach((f) => (bf[f.key] = f));
+    const STEPS = [["goal", "Obiectivul", "Ce vrei să obții cu reclamele astea?", "Unul singur, dacă se poate: vânzări, lead-uri, vizite, notorietate.", ["goal"]], ["audience", "Publicul", "Cine trebuie să le vadă?", "Vârstă, oraș, ce îi preocupă. Cu cât mai concret, cu atât mai ieftin click-ul.", ["audience"]], ["offer", "Oferta", "Ce primesc și ce trebuie să rețină?", "Oferta concretă și ideea pe care o duc acasă.", ["offer", "message"]], ["cta", "Îndemnul", "Ce apasă și unde ajung?", "Butonul și pagina. Bugetul și materialele sunt opționale.", ["cta", "landing", "budget_period", "brand_assets"]]];
+    const known = new Set(STEPS.flatMap((s) => s[4])); const extra = A.brief.filter((f) => !known.has(f.key)).map((f) => f.key); STEPS[3][4].push(...extra);
+    const field = (b, k) => { const f = bf[k]; if (!f) return; const opt = f.optional || /brand|assets|budget/.test(k), area = /audience|message|brand|assets/.test(k); const w = wzField("ads", "ad-" + k, { ...f, label: (f.label || k) + (opt ? " · opțional" : "") }, area ? "area" : "text", "", k); const inp = w.querySelector(".inp"); inp.dataset.brief = k; if (!opt) inp.dataset.req = "1"; if (k === "landing") inp.inputMode = "url"; b.append(w); };
+    const req = (keys) => () => { for (const k of keys) { const i = $("ad-" + k); if (i && i.dataset.req && !i.value.trim()) { toast("Completează „" + ((bf[k] && bf[k].label) || k) + "”, sau apasă „Arată-mi un exemplu”.", "err"); return i; } } return null; };
+    const def = {
+      submitLabel: "Trimite cererea de ads", sample: adsSample, read: adsRead, dirty: () => Object.values(adsRead().brief).some((x) => String(x).trim()) || SOC.pk.size > 0, reset: () => { adsApply({ brief: Object.fromEntries(A.brief.map((f) => [f.key, ""])), client: "", pk: [] }); },
+      all: [
+        ...STEPS.map(([id, label, q, hint, keys], si) => ({ id, label, q, hint, build(b) {
+          if (si === 0) { const ol = el("ol", "sb-intro"); ol.append(...A.briefIntro.slice(0, 3).map((x, i) => { const li = el("li"); li.style.animationDelay = i * 80 + "ms"; li.append(el("b", "", String(i + 1)), el("span", "", String(x))); return li; })); b.append(ol); const cf = el("div", "field sbf"), cl = el("label", "", "Pentru cine"), cs = el("select", "inp"); cl.htmlFor = "ad-client"; cs.id = "ad-client"; cs.onchange = refillEx; cf.append(cl, cs, el("span", "sb-hint", "Din Conținut. Exemplele se potrivesc domeniului.")); b.append(cf); }
+          const g = el("div", keys.length > 1 ? "sb-grid" : ""); keys.forEach((k) => field(g, k)); b.append(g);
+        }, check: req(keys) })),
+        { id: "packages", label: "Pachetele", q: "Unde rulează?", hint: "Alege unul sau mai multe pachete. Dimensiunile și textele sunt deja stabilite, nu trebuie să le știi.", build(b) { const pk = el("div"); pk.id = "ad-pk"; const sm = el("div", "ad-sum"); sm.id = "ad-sum"; sm.setAttribute("aria-live", "polite"); b.append(pk, sm); buildPk(); }, check: () => { if (!SOC.pk.size) { toast("Alege cel puțin un pachet.", "err"); return $("ad-pk").querySelector(".ad-tg"); } return null; } },
+        { id: "review", label: "Recapitulare", q: "Brief-ul tău, într-o frază.", hint: "Atinge orice parte colorată ca s-o schimbi pe loc.", sample: false, build(b) { const p = el("p", "wz-sent"); p.id = "ad-sent"; const s = el("div", "ad-sum big"); s.id = "ad-sum2"; b.append(p, s); }, enter: () => adsSentence() },
+      ],
+      async submit(W) {
+        const sel = pkAll().filter((p) => SOC.pk.has(p.id)); if (!sel.length) { W.goId("packages", -1); toast("Alege cel puțin un pachet.", "err"); return; }
+        const brief = {}; let miss = null; for (const i of document.querySelectorAll("[data-brief]")) { brief[i.dataset.brief] = i.value.trim(); if (i.dataset.req && !brief[i.dataset.brief] && !miss) miss = i; }
+        if (miss) { const st = STEPS.find((s) => s[4].includes(miss.dataset.brief)); if (st) W.goId(st[0], -1); setTimeout(() => { miss.focus(); flashEl(miss); }, 120); toast("Mai lipsește ceva din brief.", "err"); return; }
+        const client = $("ad-client").value || null, btn = W.root.querySelector(".wz-next"); btn.disabled = true; btn.lastChild.textContent = "Se trimite…";
+        const sent = [...$("ad-sent").childNodes].map((n) => n.cloneNode(true));
+        const ok = await guard(() => inboxAdd("command", "Ads · " + sel.map((p) => p.label).join(", ") + ": " + (brief.goal || "").slice(0, 80), { type: "ads-production", kind: "ads", brief, packages: sel.map((p) => p.id), options: [], client, attachments: [] }), "Cererea de ads e trimisă.");
+        btn.disabled = false; btn.lastChild.textContent = "Trimite cererea de ads";
+        if (ok) { lsSet(DRAFT.ads, null); W.showDone(sent, def.reset); }
+      },
+    };
+    AW = makeWizard("ads", $("wz-ads"), def);
+    fillClients();
+    const d = lsGet(DRAFT.ads); if (d) adsApply(d);
+    const st = d && d.step ? Math.max(0, def.all.findIndex((s) => s.id === d.step)) : 0; AW.go(st, 0, true);
+  }
+  function buildPk() {
+    const A = adSpec(), pk = $("ad-pk"); pk.replaceChildren();
     const groups = [["Google", A.google], ["Meta", A.meta]].filter(([, l]) => l.length);
     if (!groups.length) pk.append(el("div", "empty", "Pachetele apar aici când Mira termină specificațiile (meta/adspecs)."));
     for (const [net, list] of groups) {
-      const grp = el("div", "ad-grp"); grp.append(el("div", "soc-pl", net));
-      const wrap = el("div", "ad-tiles");
+      const grp = el("div", "ad-grp"); grp.append(el("div", "soc-pl", net)); const wrap = el("div", "ad-tiles");
       for (const p of list) {
         const card = el("div", "ad-tile"), on = () => SOC.pk.has(p.id); card.dataset.pk = p.id;
         const tg = el("button", "ad-tg"); tg.type = "button"; tg.setAttribute("aria-pressed", String(on())); tg.append(el("span", "ad-ck"), el("b", "", p.label || p.id));
-        const toggle = () => { if (on()) SOC.pk.delete(p.id); else SOC.pk.add(p.id); tg.setAttribute("aria-pressed", String(on())); card.classList.toggle("on", on()); adSum(); };
+        const toggle = () => { if (on()) SOC.pk.delete(p.id); else SOC.pk.add(p.id); tg.setAttribute("aria-pressed", String(on())); card.classList.toggle("on", on()); adSum(); AW && AW.persist(); };
         tg.onclick = (e) => { e.stopPropagation(); toggle(); }; card.onclick = (e) => { if (!e.target.closest("details, a")) toggle(); }; card.classList.toggle("on", on());
         const files = pkDel(p), texts = pkTxt(p), ul = el("ul", "ad-d");
         files.forEach((x) => { const n = cnt(x.count), li = el("li", n ? "" : "ad-o"); li.append(el("span", "q", n ? n + "×" : "opț."), el("span", "", String(x.label || "")), el("span", "px", pxs(x.px).join(" / ").replace(/x/g, "×") || "")); if (x.notes) li.title = x.notes; ul.append(li); });
@@ -3891,26 +4173,19 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
       }
       grp.append(wrap); pk.append(grp);
     }
-    $("ad-form").onsubmit = sendAds; adSum();
+    adSum();
   }
+  function adTotals() { const sel = pkAll().filter((p) => SOC.pk.has(p.id)); let files = 0, texts = 0; const dims = new Set(); for (const p of sel) { pkDel(p).forEach((x) => { const n = cnt(x.count); if (!n) return; files += n; pxs(x.px).forEach((d) => dims.add(d.replace(/\s/g, ""))); }); pkTxt(p).forEach((x) => { texts += cnt(x.count); }); } return { sel, files, dims: dims.size, texts }; }
   function adSum() {
-    const sel = pkAll().filter((p) => SOC.pk.has(p.id)); let files = 0, texts = 0; const dims = new Set();
-    for (const p of sel) { pkDel(p).forEach((x) => { const n = cnt(x.count); if (!n) return; files += n; pxs(x.px).forEach((d) => dims.add(d.replace(/\s/g, ""))); }); pkTxt(p).forEach((x) => { texts += cnt(x.count); }); }
-    const s = $("ad-sum"); s.replaceChildren();
-    if (!sel.length) { s.append(el("span", "muted", "Alege unul sau mai multe pachete.")); return; }
-    const n = (v, key) => { const b = el("b"); countTo(b, v, key); return b; };
-    s.append("Vei primi: ", n(files, "adf"), " fișiere în ", n(dims.size, "add"), " dimensiuni + ", n(texts, "adt"), " texte", el("span", "muted ad-sel", sel.map((p) => p.label).join(" · ")));
+    const { sel, files, dims, texts } = adTotals();
+    for (const id of ["ad-sum", "ad-sum2"]) { const s = $(id); if (!s) continue; s.replaceChildren(); if (!sel.length) { s.append(el("span", "muted", "Alege unul sau mai multe pachete.")); continue; } const n = (v, key) => { const b = el("b"); countTo(b, v, key + id); return b; }; s.append("Vei primi: ", n(files, "adf"), " fișiere în ", n(dims, "add"), " dimensiuni + ", n(texts, "adt"), " texte", el("span", "muted ad-sel", sel.map((p) => p.label).join(" · "))); }
   }
-  async function sendAds(e) {
-    e.preventDefault();
-    const sel = pkAll().filter((p) => SOC.pk.has(p.id)); if (!sel.length) { toast("Alege cel puțin un pachet.", "err"); $("ad-pk").scrollIntoView({ block: "center", behavior: reduced() ? "auto" : "smooth" }); return; }
-    const brief = {}; let miss = null;
-    for (const i of document.querySelectorAll("[data-brief]")) { brief[i.dataset.brief] = i.value.trim(); if (i.dataset.req && !brief[i.dataset.brief] && !miss) miss = i; }
-    if (miss) { miss.focus(); toast("Completează câmpurile de bază ale brief-ului.", "err"); flashEl(miss); return; }
-    const client = $("ad-client").value || null, btn = $("ad-send"), lbl = btn.lastChild, old = lbl.textContent; btn.disabled = true; lbl.textContent = "Se trimite…";
-    const ok = await guard(() => inboxAdd("command", "Ads · " + sel.map((p) => p.label).join(", ") + ": " + (brief.goal || "").slice(0, 80), { type: "ads-production", kind: "ads", brief, packages: sel.map((p) => p.id), options: [], client, attachments: [] }), "Cererea de ads e trimisă.");
-    btn.disabled = false;
-    if (ok) { btn.classList.add("sent-ok"); lbl.textContent = "Trimis"; confetti(btn); setTimeout(() => { btn.classList.remove("sent-ok"); lbl.textContent = old; }, 1600); } else lbl.textContent = old;
+  function adsSentence() {
+    const p = $("ad-sent"); if (!p) return; const W = AW, v = (k) => ($("ad-" + k) ? $("ad-" + k).value.trim() : ""), redraw = (fresh) => { adsSentence(); if (fresh) p.querySelectorAll(".b-slot.on").forEach((x) => x.classList.add("just")); };
+    const G = (label, val, opt) => gap(W, label, val, { redraw, ...opt }), cl = clientDoc($("ad-client").value), sel = pkAll().filter((x) => SOC.pk.has(x.id));
+    const parts = ["Vrem reclame ", G("pachetele", sel.length ? sel.map((x) => x.label.split(":")[0]).join(" + ") : "", { step: "packages" }), " pentru ", G("client", cl ? cl.name : "", { step: "goal", field: "ad-client" }), ", ca să ", G("obiectivul", v("goal"), { field: "ad-goal", ex: "goal" }), ". Le vede ", G("publicul", v("audience"), { field: "ad-audience", ex: "audience" }), ". Oferim ", G("oferta", v("offer"), { field: "ad-offer", ex: "offer" }), ", iar mesajul e ", G("mesajul", v("message"), { field: "ad-message", ex: "message" }), ". Îndemnul ", G("CTA", v("cta"), { field: "ad-cta", ex: "cta" }), " duce la ", G("landing", v("landing"), { field: "ad-landing" }), "."];
+    if (v("budget_period")) parts.push(" Buget: ", G("buget", v("budget_period"), { field: "ad-budget_period" }), ".");
+    p.replaceChildren(...parts); adSum();
   }
   for (const b of document.querySelectorAll("[data-soc-tab]")) b.onclick = () => setSocTab(b.dataset.socTab);
 
@@ -3925,7 +4200,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
   // deterministic mock in the agreed schema (source: "mock")
   let anaMockCache = null;
   function anaMock() {
-    const camps = (S.campaigns.length ? S.campaigns.map((c) => c.slug || c.id) : ["coffee-brands", "beauty-healthcare"]).slice(0, 4), sig = camps.join();
+    const lands = S.campaigns.filter((c) => c.kind !== "tool"), camps = (lands.length ? lands.map((c) => c.slug || c.id) : ["coffee-brands", "beauty-healthcare"]).slice(0, 4), sig = camps.join();
     if (anaMockCache && anaMockCache.sig === sig) return anaMockCache.d;
     let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     const end = new Date(); end.setHours(12, 0, 0, 0); end.setDate(end.getDate() - 1);
@@ -3995,12 +4270,12 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
     // KPIs
     const K = [["users", "Utilizatori", "i-team", nf], ["sessions", "Sesiuni", "i-ck-globe", nf], ["leads", "Lead-uri", "i-ck-spark", nf], ["engagedRate", "Rată de implicare", "i-flame", (v) => pctS(rate(v))], ["avgEngagementSec", "Timp mediu implicat", "i-cal", mmss], ["coreLiteStarts", "The Core Lite pornite", "i-play", nf], ["coreLiteSubmits", "The Core Lite terminate", "i-check", nf]];
     const kb = $("ana-k"); kb.replaceChildren();
-    K.forEach(([k, l, ic, f], i) => { const x = kpiOf(A, k); if (!x) return; const c = el("div", "an-kpi" + (k === "leads" ? " hero" : "")); c.style.animationDelay = i * 40 + "ms"; const h = el("div", "an-kh"); h.append(icon(ic), el("span", "", l)); if (x.r !== ANA.range) h.append(el("em", "", x.r + " z")); const n = el("b"); const isRate = k === "engagedRate"; countF(n, isRate ? rate(x.value) : x.value, "ana-" + k + ANA.range, isRate ? (v) => pctS(v) : k === "avgEngagementSec" ? mmss : (v) => nf(Math.round(v))); c.append(h, n, delta(x.deltaPct)); c.title = "Anterior: " + (isRate ? pctS(rate(x.prev)) : f(x.prev)); kb.append(c); });
+    K.forEach(([k, l, ic, f], i) => { const x = kpiOf(A, k); if (!x) return; const c = el("div", "an-kpi" + (k === "leads" ? " hero" : "")); c.style.animationDelay = i * 40 + "ms"; const h = el("div", "an-kh"), hl = el("span"); hl.append(...liteText(l)); h.append(icon(ic), hl); if (x.r !== ANA.range) h.append(el("em", "", x.r + " z")); const n = el("b"); const isRate = k === "engagedRate"; countF(n, isRate ? rate(x.value) : x.value, "ana-" + k + ANA.range, isRate ? (v) => pctS(v) : k === "avgEngagementSec" ? mmss : (v) => nf(Math.round(v))); c.append(h, n, delta(x.deltaPct)); c.title = "Anterior: " + (isRate ? pctS(rate(x.prev)) : f(x.prev)); kb.append(c); });
     anaChart($("ana-chart"), ANA.range === 7 ? D.slice(-7) : D.slice(-30));
     $("ana-chart-t").textContent = "Pe zile · ultimele " + (ANA.range === 7 ? 7 : Math.min(30, D.length)) + " zile";
     // sources
     const src = arrA(A.sources).slice().sort((a, b) => (Number(b.sessions) || 0) - (Number(a.sessions) || 0)), sb = $("ana-src"); sb.replaceChildren(); const smx = Math.max(1, ...src.map((s) => Number(s.sessions) || 0));
-    src.forEach((s, i) => { const tr = el("tr"), bar = el("i"); bar.style.setProperty("--w", (Number(s.sessions) || 0) / smx * 100 + "%"); bar.style.animationDelay = i * 40 + "ms"; const t1 = el("td", "an-sn"); t1.append(el("b", "", s.source || "—"), el("span", "mono muted", s.medium || "")); const t2 = el("td", "an-sb"); t2.append(bar, el("span", "", nf(s.sessions))); const cv = s.sessions ? (Number(s.leads) || 0) / s.sessions * 100 : 0; tr.append(t1, t2, el("td", "num", nf(s.users)), el("td", "num", nf(s.leads)), el("td", "num", s.sessions ? pctS(cv) : "—")); sb.append(tr); });
+    src.forEach((s, i) => { const tr = el("tr"), bar = el("i"); bar.style.setProperty("--w", (Number(s.sessions) || 0) / smx * 100 + "%"); bar.style.animationDelay = i * 40 + "ms"; const t1 = el("td", "an-sn"); t1.append(el("b", "", s.source || "—"), el("span", "mono muted", s.medium || "")); const t2 = el("td", "an-sb"); t2.append(bar, el("span", "", nf(s.sessions))); const cv = s.sessions ? (Number(s.leads) || 0) / s.sessions * 100 : 0; tr.append(t1, t2, el("td", "an-num", nf(s.users)), el("td", "an-num", nf(s.leads)), el("td", "an-num", s.sessions ? pctS(cv) : "—")); sb.append(tr); });
     if (!src.length) { const tr = el("tr"), td = el("td", "empty", "Fără surse încă."); td.colSpan = 5; tr.append(td); sb.append(tr); }
     // campaigns A vs B with the funnel
     const cb = $("ana-camp"); cb.replaceChildren(); const by = new Map(); arrA(A.campaigns).forEach((c) => { if (!c || !c.slug) return; if (!by.has(c.slug)) by.set(c.slug, {}); by.get(c.slug)[String(c.variant || "a").toLowerCase()] = c; });
@@ -4014,10 +4289,10 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
       const cA = v.a ? Number(v.a.conversionPct ?? (v.a.leads / v.a.sessions * 100)) : null, cB = v.b ? Number(v.b.conversionPct ?? (v.b.leads / v.b.sessions * 100)) : null, win = cA != null && cB != null && Math.abs(cA - cB) >= .05 ? (cA > cB ? "a" : "b") : "";
       const ab = el("div", "an-ab");
       for (const k of ["a", "b"]) {
-        const c = v[k], col = el("div", "an-v" + (win === k ? " win" : "")); const vh = el("div", "an-vh"); vh.append(el("span", "an-vk", k.toUpperCase())); const hl = meta["headline" + k.toUpperCase()]; if (hl) vh.append(el("span", "an-vt", String(hl))); if (win === k) vh.append(el("span", "an-win", "câștigă +" + pctS(Math.abs(cA - cB), 1).replace("%", " pp"))); col.append(vh);
+        const c = v[k], col = el("div", "an-v" + (win === k ? " win" : "")); const vh = el("div", "an-vh"); vh.append(el("span", "an-vk", k.toUpperCase())); let hl = meta["headline" + k.toUpperCase()]; if (hl && typeof hl === "object") hl = hl.ro || hl.en || Object.values(hl).find((x) => typeof x === "string"); if (typeof hl === "string" && hl) { const t = el("span", "an-vt", hl); t.title = hl; vh.append(t); } if (win === k) vh.append(el("span", "an-win", "câștigă +" + pctS(Math.abs(cA - cB), 1).replace("%", " pp"))); col.append(vh);
         if (!c) { col.append(el("div", "empty", "Fără date pentru varianta " + k.toUpperCase() + ".")); ab.append(col); continue; }
         const top = Number(c.sessions) || 1, fl = el("ol", "an-fn");
-        STEPS.forEach(([sk, sl], i) => { const val = Number(c[sk]) || 0, prev = i ? Number(c[STEPS[i - 1][0]]) || 0 : 0, li = el("li"), bar = el("i"); bar.style.setProperty("--w", Math.max(1.5, val / top * 100) + "%"); bar.style.animationDelay = 150 + i * 70 + "ms"; li.append(el("span", "an-fl", sl), bar, el("b", "", nf(val))); if (i) li.append(el("span", "an-fr", prev ? pctS(val / prev * 100) : "—")); fl.append(li); });
+        STEPS.forEach(([sk, sl], i) => { const val = Number(c[sk]) || 0, prev = i ? Number(c[STEPS[i - 1][0]]) || 0 : 0, li = el("li"), bar = el("i"); bar.style.setProperty("--w", Math.max(1.5, val / top * 100) + "%"); bar.style.animationDelay = 150 + i * 70 + "ms"; const fl2 = el("span", "an-fl"); fl2.append(...liteText(sl)); li.append(fl2, bar, el("b", "", nf(val))); if (i) li.append(el("span", "an-fr", prev ? pctS(val / prev * 100) : "—")); fl.append(li); });
         const cv = el("div", "an-cv"); cv.append(el("b", "", pctS(k === "a" ? cA : cB)), el("span", "", "conversie sesiune → lead")); if (c.utm_campaign) cv.append(el("span", "mono muted", "utm_campaign=" + c.utm_campaign));
         col.append(fl, cv); ab.append(col);
       }
@@ -4025,7 +4300,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
     }
     // map engagement
     const M = A.map || {}, mb = $("ana-map"); mb.replaceChildren();
-    [["driveSessions", "plimbări cu mașina pe hartă", "i-ck-pin", "#119BFE"], ["cardOpens", "carduri de proiect deschise", "i-ck-img", "#FED012"], ["gameStarts", "jocuri pornite", "i-play", "#28C840"], ["postcards", "vederi trimise", "i-send", "#F65342"]].forEach(([k, l, ic, acc], i) => { if (M[k] == null) return; const t = el("div", "an-mt"); t.style.setProperty("--acc", acc); t.style.animationDelay = i * 50 + "ms"; const ii = el("span", "bt-ic"); ii.append(icon(ic)); const n = el("b"); countTo(n, Number(M[k]) || 0, "ana-m-" + k); t.append(ii, n, el("span", "", l)); mb.append(t); });
+    [["driveSessions", "plimbări cu mașina pe hartă", "i-ck-pin", "#119BFE"], ["cardOpens", "carduri de proiect deschise", "i-ck-img", "#FED012"], ["gameStarts", "jocuri pornite", "i-play", "#28C840"], ["postcards", "vederi trimise", "i-send", "#F65342"]].forEach(([k, l, ic, acc], i) => { if (M[k] == null) return; const t = el("div", "an-mt"); t.style.setProperty("--acc", acc); t.style.animationDelay = i * 50 + "ms"; const ii = el("span", "bt-ic"); ii.append(icon(ic)); const n = el("b"); countF(n, Number(M[k]) || 0, "ana-m-" + k, (v) => nf(Math.round(v))); t.append(ii, n, el("span", "", l)); mb.append(t); });
     if (!mb.children.length) mb.append(el("div", "empty", "Fără date de pe hartă."));
     // lists
     barList($("ana-pages"), arrA(A.topPages).slice(0, 8).map((p) => ({ ...p, lbl: p.title || p.path })), "lbl", "views", (r) => nf(r.views) + (r.avgSec ? " · " + mmss(r.avgSec) : ""), "path");
@@ -4033,7 +4308,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
     barList($("ana-dev"), arrA(A.devices).map((d) => ({ ...d, lbl: DEV[d.device] || d.device })), "lbl", "users", (r, t) => pctS(r.users / t * 100, 0));
     // Home card
     const h = $("ana-home"); h.replaceChildren(); const hk = el("div", "an-hk");
-    [["users", "utilizatori"], ["sessions", "sesiuni"], ["leads", "lead-uri"]].forEach(([k, l]) => { const x = kpiOf(A, k); if (!x) return; const d = el("div"), b = el("b"); countTo(b, Math.round(x.value), "ana-h-" + k + ANA.range); d.append(b, el("span", "", l), delta(x.deltaPct)); hk.append(d); });
+    [["users", "utilizatori"], ["sessions", "sesiuni"], ["leads", "lead-uri"]].forEach(([k, l]) => { const x = kpiOf(A, k); if (!x) return; const d = el("div"), b = el("b"); countF(b, x.value, "ana-h-" + k + ANA.range, (v) => nf(Math.round(v))); d.append(b, el("span", "", l), delta(x.deltaPct)); hk.append(d); });
     h.append(hk);
     if (D.length > 1) { const NS = "http://www.w3.org/2000/svg", s = document.createElementNS(NS, "svg"), dd = D.slice(-30), mx = Math.max(1, ...dd.map((x) => Number(x.sessions) || 0)); s.setAttribute("viewBox", "0 0 300 40"); s.setAttribute("preserveAspectRatio", "none"); s.setAttribute("class", "an-hsp"); s.setAttribute("aria-hidden", "true"); const p = document.createElementNS(NS, "path"); p.setAttribute("d", dd.map((x, i) => (i ? "L" : "M") + (i / (dd.length - 1) * 300).toFixed(1) + " " + (38 - (Number(x.sessions) || 0) / mx * 34).toFixed(1)).join(" ")); p.setAttribute("class", "an-ls"); p.setAttribute("pathLength", "1"); s.append(p); h.append(s); }
     const hr = el("div", "row"); if (mock) hr.append(el("span", "an-tag", "date de test")); const ob = el("button", "btn sm k"); ob.type = "button"; ob.append(icon("i-chart"), el("span", "", "Deschide Analytics")); ob.onclick = () => setCat("ana"); hr.append(ob); h.append(hr);
@@ -4041,8 +4316,122 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
   function goAna(slug) { setCat("ana"); requestAnimationFrame(() => { const x = $("ana-c-" + slug); if (x) { x.scrollIntoView({ block: "start", behavior: reduced() ? "auto" : "smooth" }); flashEl(x); } else toast("Campania nu are încă date în Analytics."); }); }
   for (const b of document.querySelectorAll("[data-ana-r]")) b.onclick = () => { ANA.range = Number(b.dataset.anaR); renderAna(); };
 
+
+  // phone bottom bar: keep the active item in view, and fade the edge that has more items behind it
+  const NAVBAR = $("side"), NAVPH = matchMedia("(max-width: 760px)");
+  function sideFades() { const max = NAVBAR.scrollWidth - NAVBAR.clientWidth; NAVBAR.classList.toggle("fl", NAVPH.matches && NAVBAR.scrollLeft > 4); NAVBAR.classList.toggle("fr", NAVPH.matches && NAVBAR.scrollLeft < max - 4); }
+  function navIntoView(cat, instant) {
+    if (!NAVPH.matches) return; const b = NAVBAR.querySelector('.nav-i[data-cat="' + cat + '"]'); if (!b || b.hidden) return;
+    requestAnimationFrame(() => { const l = b.offsetLeft - (NAVBAR.clientWidth - b.offsetWidth) / 2; NAVBAR.scrollTo({ left: Math.max(0, l), behavior: instant || reduced() ? "auto" : "smooth" }); setTimeout(sideFades, instant ? 0 : 400); });
+  }
+  NAVBAR.addEventListener("scroll", sideFades, { passive: true }); addEventListener("resize", sideFades); NAVPH.addEventListener("change", () => { sideFades(); navIntoView(UI.cat, true); });
+  // ---------- r12: The Core Lite (campaigns/core-lite, kind "tool"): counts only, never emails or leads ----------
+  // "The Core" + a light grey "lite" pill, distinct from the rainbow-ring 3.0 pill of the full Core
+  function liteMark(cls) { const w = el("span", "lite-mk" + (cls ? " " + cls : "")); w.append("The Core ", el("span", "lite-pill", "lite")); return w; }
+  function liteText(s) { const out = []; String(s).split(/(The Core Lite)/).forEach((x) => { if (x === "The Core Lite") out.push(liteMark()); else if (x) out.push(x); }); return out; }
+  async function copyPlain(text, btn, okMsg) { const l = btn && btn.lastChild, old = l && l.textContent; try { await navigator.clipboard.writeText(text); if (l) { l.textContent = "Copiat"; setTimeout(() => { if (btn.isConnected) l.textContent = old; }, 1800); } toast(okMsg || "Linkul e copiat."); } catch { window.prompt("Copiază linkul:", text); } }
+  const LITE = { src: "", act: "" };
+  const liteDoc = () => S.campaigns.find((c) => c.kind === "tool" && /core-?lite/i.test(String(c.id || c.slug || ""))) || S.campaigns.find((c) => c.kind === "tool");
+  function renderLite() {
+    const box = $("camp-lite"); if (!box) return; const d = liteDoc(); box.replaceChildren();
+    const hd = el("div", "lt-h"), t = el("h3", "lt-t"); t.append(liteMark("lg")); hd.append(t);
+    if (!d) { box.append(hd, el("div", "empty", loading("campaigns") ? "Se încarcă…" : "Încă fără date. Cron-ul lui Daniel scrie campaigns/core-lite.")); return; }
+    const st = CST2[d.status] || CST2.draft, sp = el("span", "cp-st"); sp.append(el("i", st[1]), el("span", "", st[0])); hd.append(sp);
+    if (d.statusCheckedAt) hd.append(el("span", "mono muted lt-chk", "verificat " + when(d.statusCheckedAt)));
+    box.append(hd);
+    const s = d.stats && typeof d.stats === "object" ? d.stats : {}, starts = Number(s.starts) || 0, subs = Number(s.submits) || 0, conv = starts ? subs / starts * 100 : 0;
+    const g = el("div", "lt-g");
+    // funnel
+    const fn = el("div", "lt-fn"), mk = (lbl, v, w, k) => { const r = el("div", "lt-fr"), bar = el("i"); bar.style.setProperty("--w", Math.max(2, w) + "%"); const b = el("b"); countTo(b, v, "lite-" + k); r.append(el("span", "", lbl), b, bar); return r; };
+    fn.append(el("div", "lt-k", "Pâlnia"), mk("Pornite", starts, 100, "s"), mk("Terminate", subs, starts ? subs / starts * 100 : 0, "t"));
+    const cv = el("div", "lt-cv"); cv.append(el("b", "", pctS(conv)), el("span", "", "termină ce încep")); fn.append(cv);
+    if (s.lastStartAt || s.lastSubmitAt) fn.append(el("div", "lt-last mono muted", [s.lastStartAt ? "ultimul start " + when(s.lastStartAt) : "", s.lastSubmitAt ? "ultima trimitere " + when(s.lastSubmitAt) : ""].filter(Boolean).join(" · ")));
+    // last 24 h
+    const l24 = s.last24h || {}, dd = el("div", "lt-24"); dd.append(el("div", "lt-k", "Ultimele 24 h"));
+    [["starts", "pornite"], ["submits", "terminate"]].forEach(([k, l]) => { const x = el("div", "lt-n"), b = el("b"); countTo(b, Number(l24[k]) || 0, "lite24-" + k); x.append(b, el("span", "", l)); dd.append(x); });
+    // sources
+    const so = el("div", "lt-src"); so.append(el("div", "lt-k", "De unde vin"));
+    const rows = Object.entries(s.sources && typeof s.sources === "object" ? s.sources : {}).map(([k, v]) => ({ k: k || "direct", v: Number(v) || 0 })).sort((a, b) => b.v - a.v);
+    if (!rows.length) so.append(el("div", "empty", "Încă fără surse.")); else { const ol = el("ol", "an-bl"); const mx = Math.max(1, ...rows.map((r) => r.v)), tot = rows.reduce((a, r) => a + r.v, 0) || 1; rows.slice(0, 8).forEach((r, i) => { const li = el("li"), b = el("i"); b.style.setProperty("--w", r.v / mx * 100 + "%"); b.style.animationDelay = i * 50 + "ms"; li.append(b, el("span", "an-bl-t", r.k), el("span", "an-bl-v", nf(r.v) + " · " + pctS(r.v / tot * 100, 0))); ol.append(li); }); so.append(ol); }
+    g.append(fn, dd, so); box.append(g);
+    // links: RO / EN, a landing link with ?src=
+    const ln = el("div", "lt-links"), open = (u, l) => { if (!/^https:\/\//.test(u || "")) return; const a = el("a", "btn sm ghost"); a.href = u; a.target = "_blank"; a.rel = "noopener"; a.append(icon("i-ck-globe"), el("span", "", l)); ln.append(a); };
+    open(d.url, "Deschide RO"); open(d.urlEn, "Deschide EN");
+    if (/^https:\/\//.test(d.url || "")) {
+      const w = el("div", "lt-src-in"), lab = el("label", "mono muted", "?src="), inp = el("input", "inp"); inp.id = "lite-src"; inp.placeholder = "coffee-brands"; inp.value = LITE.src; inp.autocomplete = "off"; inp.setAttribute("list", "lite-src-l"); lab.htmlFor = "lite-src";
+      const dl = el("datalist"); dl.id = "lite-src-l"; S.campaigns.filter((c) => c.kind !== "tool").forEach((c) => { const o = el("option"); o.value = c.slug || c.id; dl.append(o); });
+      inp.oninput = () => { LITE.src = inp.value.trim(); };
+      const cb = el("button", "btn sm k"); cb.type = "button"; cb.append(icon("i-clip"), el("span", "", "Copiază link pentru landing")); cb.onclick = () => { const src = inp.value.trim().replace(/[^\w.-]+/g, "-"); const u = d.url + (d.url.includes("?") ? "&" : "?") + "src=" + encodeURIComponent(src || "landing"); copyPlain(u, cb, "Linkul cu src=" + (src || "landing") + " e copiat."); };
+      w.append(lab, inp, dl, cb); ln.append(w);
+    }
+    box.append(ln);
+    if (d.notes) { const n = el("div", "cp-notes"); n.append(linkify(String(d.notes))); box.append(n); }
+    // optional asks to Claude
+    const ac = el("div", "lt-act"); [["invite-text", "Schimbă textul de invitație", "Ce vrei să scrie invitația?"], ["new-source", "Adaugă o sursă nouă", "Ce sursă? Ex.: newsletter-noiembrie, linkedin-post"]].forEach(([k, l, ph]) => { const b = el("button", "btn sm ghost"); b.type = "button"; b.setAttribute("aria-expanded", String(LITE.act === k)); b.append(icon("i-send"), el("span", "", l)); b.onclick = () => { LITE.act = LITE.act === k ? "" : k; renderLite(); if (LITE.act) setTimeout(() => $("lite-ask") && $("lite-ask").focus(), 30); }; ac.append(b); });
+    box.append(ac);
+    if (LITE.act) {
+      const meta = { "invite-text": ["Schimbă textul de invitație", "Ce vrei să scrie invitația?"], "new-source": ["Adaugă o sursă nouă", "Ce sursă? Ex.: newsletter-noiembrie, linkedin-post"] }[LITE.act];
+      const f = el("form", "lt-ask"), ta = el("textarea", "inp"); ta.id = "lite-ask"; ta.rows = 2; ta.placeholder = meta[1]; const sb = el("button", "btn k"); sb.type = "submit"; sb.append(icon("i-send"), el("span", "", "Trimite lui Claude"));
+      f.append(ta, sb); f.onsubmit = async (e) => { e.preventDefault(); const v = ta.value.trim(); if (!v) { ta.focus(); return; } sb.disabled = true; const ok = await guard(() => inboxAdd("command", "The Core Lite · " + meta[0] + ": " + v.slice(0, 80), { type: "core-lite-change", action: LITE.act, value: v }), "Trimis. Claude se ocupă."); sb.disabled = false; if (ok) { LITE.act = ""; renderLite(); } };
+      box.append(f);
+    }
+  }
+  // The Core client cards: delivery links (report page, PDF, and the claude.ai review for admins); URLs stay out of the DOM
+  function coreLinks(c) {
+    const ok = (u) => /^https:\/\//.test(u || ""); if (!ok(c.reportUrl) && !ok(c.reportPdf) && !ok(c.reportReview)) return null;
+    const w = el("div", "cc-rep"), add = (u, l, ic) => { if (!ok(u)) return; const g2 = el("span", "cc-rb"), b = el("button", "btn sm"); b.type = "button"; b.append(icon(ic), el("span", "", l)); b.onclick = (e) => { e.stopPropagation(); window.open(u, "_blank", "noopener"); }; const cp = el("button", "cc-cp"); cp.type = "button"; cp.title = "Copiază linkul " + l; cp.setAttribute("aria-label", "Copiază linkul " + l); cp.append(icon("i-clip"), el("span", "", "")); cp.onclick = (e) => { e.stopPropagation(); copyPlain(u, null, "Linkul „" + l + "” e copiat."); }; g2.append(b, cp); w.append(g2); };
+    add(c.reportUrl, "Raport", "i-ck-txt"); add(c.reportPdf, "PDF", "i-ck-img"); if (!window.__ops || (window.__ops.user && window.__ops.user.role === "admin")) add(c.reportReview, "Review", "i-check");
+    return w;
+  }
+  // The Core report: review, validate and send (confirm sheet with a must-tick check), or ask for changes
+  const REP = { fb: "", att: [] };
+  const maskMail = (m) => { m = String(m || ""); const [u, d] = m.split("@"); if (!d) return m ? m.slice(0, 2) + "***" : ""; return u.slice(0, 1) + "***@" + d; };
+  const isAdminView = () => !window.__ops || (window.__ops.user && window.__ops.user.role === "admin");
+  function coreReport(c) {
+    const r = c.report && typeof c.report === "object" ? c.report : null, ok = (u) => /^https:\/\//.test(u || "");
+    if (!r && !ok(c.reportReview) && !ok(c.reportUrl) && !ok(c.reportPdf)) return null;
+    const v = r && r.version != null ? String(r.version).replace(/^v/i, "") : "", nm = c.name || c.id;
+    const pend = S.inbox.find((x) => x.payload && x.payload.type === "core-report-approve" && x.payload.coreId === c.id && x.status !== "done" && x.status !== "declined");
+    const w = el("div", "rep"); w.addEventListener("click", (e) => e.stopPropagation());
+    const hd = el("div", "rep-h"); hd.append(el("b", "", "Raport" + (v ? " v" + v : "")));
+    const st = r && r.status === "sent" ? ["sent", "trimis" + (r.sentAt ? " " + fmt(r.sentAt).replace(/\.$/, "") : "") + (r.to ? " la " + maskMail(r.to) : "")] : pend ? ["pend", "în așteptare"] : r && r.status === "approved" ? ["appr", "validat"] : ["draft", "draft"];
+    const pill = el("span", "rep-st " + st[0]); pill.append(el("i"), el("span", "", st[1])); hd.append(pill); w.append(hd);
+    const row = el("div", "rep-r"), lk = (u, l, ic, admin) => { if (!ok(u) || (admin && !isAdminView())) return; const g2 = el("span", "cc-rb"), b = el("button", "btn sm"); b.type = "button"; b.append(icon(ic), el("span", "", l)); b.onclick = () => window.open(u, "_blank", "noopener"); const cp = el("button", "cc-cp"); cp.type = "button"; cp.title = "Copiază linkul"; cp.setAttribute("aria-label", "Copiază linkul " + l); cp.append(icon("i-clip"), el("span", "", "")); cp.onclick = () => copyPlain(u, null, "Linkul „" + l + "” e copiat."); g2.append(b, cp); row.append(g2); };
+    lk(c.reportReview, "Vezi raportul", "i-ck-txt", true); lk(c.reportPdf, "PDF", "i-ck-img"); lk(c.reportUrl, "Pagina clientului", "i-ck-globe");
+    if (row.children.length) w.append(row);
+    if (isAdminView() && (r || ok(c.reportReview))) {
+      const acts = el("div", "rep-a"), go = el("button", "btn k"); go.type = "button"; go.disabled = !!pend; go.append(icon("i-send"), el("span", "", pend ? "Trimiterea e în lucru" : r && r.status === "sent" ? "Retrimite" : "Validează și trimite clientului")); go.onclick = () => repSheet(c, v);
+      const fb = el("button", "btn sm ghost"); fb.type = "button"; fb.setAttribute("aria-expanded", String(REP.fb === c.id)); fb.append(icon("i-flip"), el("span", "", "Cere modificări")); fb.onclick = () => { REP.fb = REP.fb === c.id ? "" : c.id; REP.att = []; renderCore(); if (REP.fb) setTimeout(() => $("rep-fb-" + c.id) && $("rep-fb-" + c.id).focus(), 30); };
+      acts.append(go, fb); w.append(acts);
+      if (REP.fb === c.id) {
+        const f = el("form", "rep-fb"), ta = el("textarea", "inp"); ta.id = "rep-fb-" + c.id; ta.rows = 3; ta.placeholder = "Ce trebuie schimbat? Pagina, secțiunea, ce scrie acum și ce ar trebui să scrie.";
+        const st2 = el("div", "strip"), drawA = () => { st2.replaceChildren(...REP.att.map((a, k) => { const m = el("div", "mini"); if (isImg(a)) { const im = el("img"); im.src = blobUrl(a); im.alt = ""; m.append(im); } else m.append(el("span", "", (a.name || "").split(".").pop().toUpperCase())); const x = el("button"); x.type = "button"; x.setAttribute("aria-label", "Scoate " + (a.name || "")); x.append(icon("i-x")); x.onclick = () => { REP.att.splice(k, 1); drawA(); }; m.append(x); return m; })); };
+        const rr = el("div", "row"); if (assets) { const ab = el("button", "btn sm ghost"), fi = el("input"); ab.type = "button"; ab.append(icon("i-clip"), el("span", "", "Atașează")); fi.type = "file"; fi.multiple = true; fi.hidden = true; fi.accept = "image/*,application/pdf"; ab.onclick = () => fi.click(); fi.onchange = async () => { const fl = Array.from(fi.files || []); fi.value = ""; if (!fl.length) return; ab.disabled = true; REP.att = REP.att.concat(await uploadFiles(fl)); ab.disabled = false; drawA(); }; rr.append(ab, fi); }
+        const sb = el("button", "btn k"); sb.type = "submit"; sb.append(icon("i-send"), el("span", "", "Trimite feedback")); rr.append(st2, sb);
+        f.append(ta, rr); f.onsubmit = async (e) => { e.preventDefault(); const t = ta.value.trim(); if (!t) { ta.focus(); toast("Scrie ce trebuie schimbat.", "err"); return; } sb.disabled = true; const okk = await guard(() => inboxAdd("feedback", "Raport The Core · " + nm + ": " + t, { type: "core-report-feedback", coreId: c.id, version: v || null, assets: REP.att.map((a) => a.id) }), "Feedback trimis. Claude revine cu o versiune nouă."); sb.disabled = false; if (okk) { REP.fb = ""; REP.att = []; renderCore(); } };
+        w.append(f);
+      }
+    }
+    return w;
+  }
+  function repSheet(c, v) {
+    const from = document.activeElement, nm = c.name || c.id, to = c.report && c.report.to;
+    const sc = el("div", "mv-scrim"), m = el("div", "mv rep-sheet"); m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true"); m.setAttribute("aria-labelledby", "rep-sh-t");
+    const close = () => { sc.remove(); m.remove(); document.removeEventListener("keydown", key, true); if (from && from.isConnected) from.focus(); };
+    const key = (e) => { if (e.key === "Escape") { e.preventDefault(); close(); } if (e.key === "Tab") { const f = [...m.querySelectorAll("button:not([disabled]), textarea, input")]; if (!f.length) return; const a = f[0], z = f[f.length - 1]; if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); } else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); } } };
+    m.append(el("h2", "", "Trimiți raportul" + (v ? " v" + v : "") + " clientului?"), el("div", "tt", nm));
+    const wt = el("div", "what"); wt.append(el("b", "", "Ajunge la"), el("span", "", to ? maskMail(to) : "adresa clientului din The Core"), el("b", "", "Ce se întâmplă"), el("span", "", "Claude trimite raportul pe e-mail, cu nota ta dacă scrii una, și marchează raportul ca trimis.")); m.append(wt);
+    const nf2 = el("div", "field"), nl = el("label", "", "Notă personală (opțional)"), ta = el("textarea", "inp"); ta.id = "rep-note"; nl.htmlFor = "rep-note"; ta.rows = 2; ta.placeholder = "Ex.: Mulțumim pentru răbdare, ne vedem joi la workshop."; nf2.append(nl, ta); m.append(nf2);
+    const ck = el("label", "rep-ck"), cb = el("input"); cb.type = "checkbox"; cb.id = "rep-ok"; ck.append(cb, el("span", "rep-box", ""), el("span", "", "Am verificat raportul")); m.append(ck);
+    const row = el("div", "row"), no = el("button", "btn ghost"); no.type = "button"; no.append(el("span", "", "Renunță")); no.onclick = close;
+    const yes = el("button", "btn k"); yes.type = "button"; yes.disabled = true; yes.append(icon("i-send"), el("span", "", "Trimite clientului"));
+    cb.onchange = () => { yes.disabled = !cb.checked; ck.classList.toggle("on", cb.checked); };
+    yes.onclick = async () => { yes.disabled = true; yes.lastChild.textContent = "Se trimite…"; const okk = await guard(() => inboxAdd("command", "The Core · " + nm + ": validez raportul v" + (v || "?") + " și îl trimit clientului", { type: "core-report-approve", coreId: c.id, version: v || null, note: ta.value.trim() }), "yay! Raportul pleacă spre client."); if (okk) { const yay = el("span", "stamp pop rep-yay"); yay.append(el("i"), el("span", "", "yay!")); m.append(yay); confetti(yes); setTimeout(() => { close(); renderCore(); }, reduced() ? 300 : 1100); } else { yes.disabled = false; yes.lastChild.textContent = "Trimite clientului"; } };
+    row.append(no, yes); m.append(row);
+    document.body.append(sc, m); sc.onclick = close; document.addEventListener("keydown", key, true); cb.focus();
+  }
   $("wins-ap").onclick = (e) => { const b = e.currentTarget; toast(b.title || "Numere aproximative."); };
-  setCat(TITLES[location.hash.slice(1)] ? location.hash.slice(1) : "home", true);
+  setCat(TITLES[location.hash.slice(1)] ? location.hash.slice(1) : "home", true); sideFades();
   renderAll();
 
   // ---------- data ----------
