@@ -8,6 +8,11 @@
 //   GET  /api/core30/<client>/config?t=…     that respondent's questionnaire, only with the right token
 //   GET  /api/core30/<client>/status?t=…     timestamps and counts only (for the Cromatic Ops dashboard), same token
 //   GET  /api/core30/<client>/latest?key=…   the workshop loads the newest copy (CORE30_ADMIN_KEY)
+//   POST /api/core30/admin/sessions          (admin key) a new client session from an email: id, token, onboarding mail
+//   GET  /api/core30/admin/sessions          (admin key) the sessions created that way
+//
+// Sessions created by the admin route live in <data>/_sessions/<id>.json, not in the repo: no deploy per client.
+// Each one points at a repo edition (default "blank") and is served as a custom edition of it, with its own token.
 //
 // Public editions (config access.public, e.g. The Core Lite at /thecore30/lite): no token, many visitors on one link.
 // Each visitor gets its own folder <data>/<id>/r/<visitor>/, leads are appended to <data>/<id>/leads.jsonl,
@@ -21,6 +26,7 @@
 import { mkdir, readFile, rename, writeFile, readdir, appendFile } from "node:fs/promises";
 import { existsSync, createReadStream, statSync } from "node:fs";
 import { join, extname, normalize } from "node:path";
+import { randomBytes, timingSafeEqual } from "node:crypto";
 
 const MAX = 25 * 1024 * 1024; // 6 reference images plus every answer stay far below this
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".json": "application/json", ".ico": "image/x-icon" };
@@ -78,9 +84,17 @@ function withLock(key, fn) {
  * @param {object} [o.transport] a nodemailer transport; without it, emails are logged
  * @param {string} o.mailTo      the studio inbox
  * @param {string} o.mailFrom
- * @param {string} [o.adminKey]  unlocks GET …/latest for the workshop
+ * @param {string} [o.adminKey]  unlocks GET …/latest for the workshop and the /admin routes
+ * @param {string} [o.publicBase] the site's origin for the links in onboarding mails
  */
-export function createCore30({ dataDir, distDir, configDir, registry, transport, mailTo, mailFrom, adminKey }) {
+export function createCore30({ dataDir, distDir, configDir, registry, transport, mailTo, mailFrom, adminKey, publicBase = "https://cromaticstudios.com" }) {
+  const sessionsDir = join(dataDir, "_sessions");
+  const isAdmin = (req, url) => {
+    const given = String(req.headers.authorization ?? "").replace(/^Bearer\s+/i, "") || url.searchParams.get("key") || "";
+    if (!adminKey || !given) return false;
+    const a = Buffer.from(given), b = Buffer.from(adminKey);
+    return a.length === b.length && timingSafeEqual(a, b);
+  };
   // who may write where: every config on disk, plus the optional registry's overrides
   const clients = async () => {
     const out = {};
@@ -92,6 +106,16 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       } catch (e) { console.error("[core30] bad config", f, e.message); }
     }
     if (registry) { try { const r = JSON.parse(await readFile(registry, "utf8")); for (const [id, x] of Object.entries(r)) out[id] = { ...(out[id] ?? {}), ...x }; } catch { /* no registry */ } }
+    // sessions created from the dashboard: a repo edition underneath, their own id, token and contact
+    const dyn = existsSync(sessionsDir) ? (await readdir(sessionsDir)).filter((f) => f.endsWith(".json")) : [];
+    for (const f of dyn) {
+      try {
+        const x = JSON.parse(await readFile(join(sessionsDir, f), "utf8"));
+        const base = out[x.edition];
+        if (!base?.file || out[x.id]) continue; // a repo edition always wins its own id
+        out[x.id] = { ...base, token: x.token, emailMode: "required", public: false, name: x.name || x.email, contact: x.contact || x.name || "", email: x.email, dynamic: x };
+      } catch (e) { console.error("[core30] bad session", f, e.message); }
+    }
     return out;
   };
 
@@ -192,7 +216,77 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const c = (await clients())[safe(id)];
     if (!c?.file) return [404, { ok: false }];
     if (c.token && t !== c.token) return [403, { ok: false }];
-    return [200, JSON.parse(await readFile(c.file, "utf8"))];
+    const cfg = JSON.parse(await readFile(c.file, "utf8"));
+    if (!c.dynamic) return [200, cfg];
+    const x = c.dynamic;
+    return [200, {
+      ...cfg, id: x.id, version: `${cfg.version}+${x.createdAt.slice(0, 10)}`,
+      edition: { kind: "custom", basedOn: cfg.version, note: "created from the Cromatic Ops dashboard" },
+      client: { ...cfg.client, name: x.name || cfg.client?.name || "Brandul tău", contact: x.contact || "", email: x.email },
+      access: { token: x.token, email: "required" },
+      intro: { ...cfg.intro, hello: x.contact ? `Salut, ${x.contact}.` : cfg.intro?.hello },
+    }];
+  }
+
+  // ---- sessions created from the dashboard ----
+  const slugify = (s) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  const FREE_MAIL = /^(gmail|yahoo|ymail|outlook|hotmail|live|icloud|me|proton|protonmail|gmx|aol|mail|yandex)\./i;
+  async function createSession(body) {
+    let p;
+    try { p = JSON.parse(body); } catch { return [400, { ok: false, error: "json" }]; }
+    const email = String(p.email ?? "").trim().toLowerCase();
+    if (!EMAIL.test(email) || email.length > 200) return [422, { ok: false, error: "email" }];
+    const name = String(p.name ?? "").trim().slice(0, 80);
+    const contact = String(p.contact ?? "").trim().slice(0, 60);
+    const lang = p.lang === "en" ? "en" : "ro";
+    const reg = await clients();
+    const edition = safe(p.edition || "blank");
+    const base = reg[edition];
+    if (!base?.file || base.dynamic || base.public) return [422, { ok: false, error: "edition" }];
+    // the id: from the name, else the email's domain (or its local part for free mail), unique against everything
+    const [local, domain] = email.split("@");
+    const root = slugify(name) || slugify(FREE_MAIL.test(domain) ? local : domain.split(".").slice(0, -1).join("-")) || "client";
+    let id = root, n = 1;
+    while (reg[id] || existsSync(join(dataDir, id)) || existsSync(join(sessionsDir, `${id}.json`)) || id.startsWith("_")) id = `${root}-${++n}`;
+    const token = randomBytes(12).toString("base64url");
+    const now = new Date().toISOString();
+    const rec = { id, token, email, name, contact, edition, lang, createdAt: now };
+    await mkdir(sessionsDir, { recursive: true });
+    await writeFile(join(sessionsDir, `${id}.json`), JSON.stringify(rec, null, 1), { flag: "wx" });
+    const url = `${publicBase.replace(/\/$/, "")}/thecore30/${id}?t=${token}`;
+    const mailSent = await onboardingMail(rec, url);
+    return [200, { ok: true, id, url, token, edition, lang, mailSent }];
+  }
+
+  async function onboardingMail(x, url) {
+    if (!transport) { console.log(`[core30] onboarding mail (not sent, no SMTP) to ${x.email}: ${url}`); return false; }
+    const hi = x.contact ? (x.lang === "en" ? `Hi ${esc(x.contact)},` : `Salut, ${esc(x.contact)},`) : x.lang === "en" ? "Hi," : "Salut,";
+    const T = x.lang === "en" ? {
+      subject: "The Core: let's start your brand strategy",
+      body: `<p>${hi}</p><p>This is the first step of The Core, the way Cromatic Studios writes a brand strategy. You answer on your own, at your pace: about 45 to 60 minutes, in two or three sittings if you like. Then we meet at the studio, over a coffee, for a 90-minute workshop and turn your answers into the strategy.</p><p>Everything saves as you go, on your device and with us. Close it whenever you want and open the same link to pick up where you left off. The questions are in Romanian; answer in whichever language feels natural.</p>`,
+      cta: "Start The Core", foot: "Keep this link to yourself: it opens your answers. Questions? Just reply to this email.",
+    } : {
+      subject: "The Core: hai să începem strategia brandului tău",
+      body: `<p>${hi}</p><p>Ăsta e primul pas din The Core, felul în care Cromatic Studios scrie strategia unui brand. Răspunzi singur, în ritmul tău: cam 45–60 de minute, în două sau trei reprize dacă vrei. Apoi ne vedem în studio, la o cafea, pentru un workshop de 90 de minute și transformăm răspunsurile în strategie.</p><p>Totul se salvează pe parcurs, pe dispozitivul tău și la noi. Poți închide oricând și reiei de unde ai rămas, de pe același link.</p>`,
+      cta: "Începe The Core", foot: "Păstrează linkul pentru tine: el îți deschide răspunsurile. Întrebări? Răspunde direct la emailul ăsta.",
+    };
+    const html = `<div style="font:16px/1.55 Arial,sans-serif;color:#0d0c09;max-width:560px">
+      <p style="font:700 11px monospace;letter-spacing:.12em;text-transform:uppercase;color:#5d5a52">Cromatic Studios · The Core 3.0${x.name ? ` · ${esc(x.name)}` : ""}</p>
+      ${T.body}
+      <p><a href="${esc(url)}" style="display:inline-block;padding:12px 20px;border:1px solid #0d0c09;border-radius:999px;background:#FED012;color:#0d0c09;font-weight:700;text-decoration:none">${T.cta}</a></p>
+      <p style="font-size:13px;color:#5d5a52;word-break:break-all">${esc(url)}</p>
+      <p style="color:#5d5a52;font-size:13px">${T.foot}<br>Cromatic Studios · Str. Olari 9, București · hi@cromaticstudios.com</p></div>`;
+    try {
+      await transport.sendMail({ from: mailFrom, to: x.email, bcc: mailTo, replyTo: mailTo, subject: T.subject, html });
+      return true;
+    } catch (e) { console.error("[core30] onboarding mail failed", e.message); return false; }
+  }
+
+  async function listSessions() {
+    const files = existsSync(sessionsDir) ? (await readdir(sessionsDir)).filter((f) => f.endsWith(".json")) : [];
+    const out = [];
+    for (const f of files) { try { const x = JSON.parse(await readFile(join(sessionsDir, f), "utf8")); out.push({ id: x.id, email: x.email, name: x.name, edition: x.edition, lang: x.lang, createdAt: x.createdAt, url: `${publicBase.replace(/\/$/, "")}/thecore30/${x.id}?t=${x.token}` }); } catch { /* skip */ } }
+    return [200, { ok: true, sessions: out.sort((a, b) => a.createdAt.localeCompare(b.createdAt)) }];
   }
 
   /** the intro's email step: records who started and when, and tells the studio */
@@ -363,6 +457,11 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
         const [code, out] = await withLock(lockKey(body), () => store(p.endsWith("submit") ? "submit" : "draft", body));
         send(res, code, out); return true;
       }
+      if (p === "/api/core30/admin/sessions") {
+        if (!isAdmin(req, url)) { send(res, 403, { ok: false }); return true; }
+        if (req.method === "POST") { const body = await readBody(req); const [code, out] = await withLock("_sessions", () => createSession(body)); send(res, code, out); return true; }
+        if (req.method === "GET") { const [code, out] = await listSessions(); send(res, code, out); return true; }
+      }
       const c = p.match(/^\/api\/core30\/([a-z0-9_-]+)\/config$/i);
       if (req.method === "GET" && c) { const [code, out] = await config(c[1], url.searchParams.get("t") ?? ""); send(res, code, out); return true; }
       const st = p.match(/^\/api\/core30\/([a-z0-9_-]+)\/status$/i);
@@ -371,7 +470,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       if (req.method === "GET" && m) { const [code, out] = await latest(m[1], url.searchParams.get("key")); send(res, code, out); return true; }
       if (req.method === "GET" && p === "/api/core30/_list") {
         if (!adminKey || url.searchParams.get("key") !== adminKey) { send(res, 403, { ok: false }); return true; }
-        const ids = existsSync(dataDir) ? await readdir(dataDir) : [];
+        const ids = existsSync(dataDir) ? (await readdir(dataDir)).filter((d) => !d.startsWith("_")) : [];
         send(res, 200, { ok: true, clients: ids }); return true;
       }
       send(res, 404, { ok: false });
