@@ -31,3 +31,29 @@ export function wet(ctx, { centre, r = 500, rough = 0.12, refl = 1.1 } = {}) {
   });
   return { n: done.length, dispose() { for (const [o, m] of done) o.material = m; } };
 }
+
+// a row of sakura trees (story set dressing): trunks and clouds of blossom along a line, both kerbs
+export function sakuraRow(ctx, { x = [800, 884], z0, z1, step = 46, seed = 3 } = {}) {
+  const { S, K } = ctx, G = new K.Group(); S.scene.add(G);
+  let r = seed; const R = () => ((r = (r * 16807) % 2147483647) / 2147483647);
+  const bark = new K.MeshStandardMaterial({ color: "#5a3a34", roughness: 0.85 });
+  const pinks = ["#f6b9cf", "#f4a6c4", "#fbd0df", "#f29ab9"].map((c) => new K.MeshStandardMaterial({ color: c, roughness: 0.7, emissive: new K.Color(c), emissiveIntensity: 0.06 }));
+  for (const xs of x) for (let z = z0; z <= z1; z += step) {
+    const t = new K.Group(); t.position.set(xs + (R() - 0.5) * 6, 0, z + (R() - 0.5) * 10); G.add(t);
+    const h = 16 + R() * 6, tr = new K.Mesh(new K.CylinderGeometry(1.1, 1.7, h, 8), bark); tr.position.y = h / 2; t.add(tr);
+    for (let i = 0; i < 9; i++) { const pu = new K.Mesh(new K.IcosahedronGeometry(6 + R() * 4, 1), pinks[i % 4]); pu.position.set((R() - 0.5) * 16, h + (R() - 0.2) * 9, (R() - 0.5) * 16); pu.scale.y = 0.75; t.add(pu); }
+    t.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+  }
+  return { dispose() { G.parent?.remove(G); } };
+}
+// the wet street's mirror: a real reflection (three's Reflector: the scene drawn again from under the street) laid over
+// the asphalt, darkened and part transparent, so the windows, the neon and the lamps are doubled in it
+export async function mirror(ctx, { centre, size = 1600, y = 0.6, opacity = 0.42, tint = "#8a8fa8" } = {}) {
+  const { S, K } = ctx, T = await import("/__three/build/three.module.js"), { Reflector } = await import("/__three/examples/jsm/objects/Reflector.js");
+  const m = new Reflector(new T.PlaneGeometry(size, size), { textureWidth: 2048, textureHeight: 2048, color: tint, multisample: 4 });
+  m.material.transparent = true; m.material.depthWrite = false; m.material.uniforms.color.value.set(tint);
+  m.material.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace("gl_FragColor = vec4( blendOverlay( base.rgb, color ), 1.0 );", "gl_FragColor = vec4( base.rgb * color, " + opacity.toFixed(3) + " );"); };
+  m.rotation.x = -Math.PI / 2; const c = S.warpV(new K.Vector3(centre[0], y, centre[2])); m.position.copy(c); m.renderOrder = 1; m.userData.dioNoCast = true; m.castShadow = false;
+  S.scene.add(m);
+  return { dispose() { m.parent?.remove(m); m.dispose?.(); } };
+}

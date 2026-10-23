@@ -14,5 +14,9 @@ const btn = await p.evaluate(() => { const b = [...document.querySelectorAll("bu
 await p.waitForTimeout(2500);
 const low = await p.evaluate(() => { const b = [...document.querySelectorAll("button,[role=button]")].find((e) => /low drama/i.test(e.textContent || "") || /low drama/i.test(e.getAttribute("aria-label") || "") || /low drama/i.test(e.title || "")); if (b) { b.click(); return true; } return false; }); await p.waitForTimeout(2200);
 await p.screenshot({ path: path.join(HERE, "out/p1/ui-capture.png") });
+// the interface alone (the map's canvas hidden, the page transparent): laid over the diorama frames by p1-stills.mjs
+await p.evaluate(() => { for (const c of document.querySelectorAll("canvas")) c.style.visibility = "hidden"; document.documentElement.style.background = "transparent"; document.body.style.background = "transparent"; });
+await p.waitForTimeout(300);
+await p.screenshot({ path: path.join(HERE, "out/p1/ui-alpha.png"), omitBackground: true });
 console.log("ui", !!btn, !!low);
 await br.close();

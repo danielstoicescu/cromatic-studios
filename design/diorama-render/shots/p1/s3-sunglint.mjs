@@ -5,8 +5,8 @@ const still = (pos, look, fov, extra = {}) => cameraPath({ keys: [{ t: 0, pos, l
 let CAR, UN = [];
 export default {
   name: "s3", size: [2160, 3840], fps: 30, duration: 1, shutter: 0.5,
-  camera: still([853, 4, 5740], [842, 21, 5560], 28, { focus: [842, 10, 5628] }),
-  lens: { fstop: 16, scale: 1.45 },
+  camera: still([853, 4, 5740], [842, 21, 5560], 28, { focus: [842, 10, 5604] }),
+  lens: { fstop: 32, scale: 1.45 },
   look: { sky: { top: "#4c62b8", mid: "#f29a7a", hor: "#ffc06a" }, fog: { color: "#f7b98a", near: 800, far: 6000 }, bounce: "#d98c66", bounceK: 0.3, domeK: 0.35, domeSunGlow: 1.6, tone: 0.06, minRough: 0.7, bump: 0.03 },
   sun: { az: 180, el: 10, color: "#ffad62", intensity: 3.6, radius: 1.2 },
   shadow: { centre: [842, 0, 5590], ext: 260 },

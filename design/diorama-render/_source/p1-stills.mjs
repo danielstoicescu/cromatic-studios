@@ -22,16 +22,18 @@ const CSS = `@font-face{font-family:GS;src:url(${font("google-sans-latin.woff2")
 .card .gr{position:absolute;right:22px;bottom:52px;color:rgba(255,255,255,.95);font-weight:800;letter-spacing:-.02em;text-shadow:0 2px 8px rgba(0,0,0,.42)}
 .card .sg{position:absolute;right:22px;bottom:20px;color:rgba(255,255,255,.88);font-weight:600;text-shadow:0 1px 6px rgba(0,0,0,.38)}
 .card .sg::before{content:"";display:inline-block;width:.44em;height:.44em;border-radius:50%;background:#FED012;margin-right:.35em;vertical-align:.12em}
+.lead{position:absolute;left:80px;top:300px;color:#FBFAF5;font-weight:600;font-size:60px;line-height:1.1;letter-spacing:-.025em}
 .card .hand{position:absolute;left:30px;bottom:30px;color:#5a4f45;font-weight:500;font-size:34px;letter-spacing:-.01em}`;
 const postcard = (src, { x, y, w, h, r = 0, scale = 1 }) => `<div class="card" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px;transform:rotate(${r}deg) scale(${scale})"><div class="ph" style="background-image:url(${src})"><div class="gr" style="font-size:${Math.round(w * 0.05)}px">Greetings from Cromatic City</div><div class="sg" style="font-size:${Math.round(w * 0.03)}px">cromaticstudios.com</div></div><div class="hand">Cromatic City · 2026</div></div>`;
 const pages = [];
-if (S["s1-sunrise"]) pages.push(["01-sunrise", `<div class="bg" style="background-image:url(${S["s1-sunrise"]})"></div><div class="head">Every corner<br>is a postcard.</div>`]);
+if (S["s1-sunrise"]) pages.push(["01-sunrise", `<div class="bg" style="background-image:url(${S["s1-sunrise"]})"></div><div class="head" style="font-size:116px;line-height:1;letter-spacing:-.04em">Find the angles<br>we missed.</div>`]);
 for (const [k, n] of [["s2-sakura", "02-sakura"], ["s3-sunglint", "03-sun-glint"], ["s4-dusk", "04-dusk"], ["s5-neon", "05-neon-night"], ["s6-fountain", "06-fountain-after-rain"]]) if (S[k]) pages.push([n, `<div class="bg" style="background-image:url(${S[k]})"></div>`]);
-const ui = path.join(HERE, "out/p1/ui-capture.png");
-if (fs.existsSync(ui)) pages.push(["07-postcard-ui", `<div class="bg" style="background-image:url(${await img(ui)})"></div>`]);
-if (S["s3-sunglint"]) pages.push(["08-the-postcard", `<div class="bg" style="background-image:url(${S["s3-sunglint"]});filter:blur(26px) brightness(.55);transform:scale(1.1)"></div>${postcard(S["s3-sunglint"], { x: 120, y: 330, w: 840, h: 1330, r: -3 })}`]);
+// the real Postcard interface (captured alone, transparent) over a diorama frame (the car, low drama)
+const uiA = path.join(HERE, "out/p1/ui-alpha.png");
+if (fs.existsSync(uiA) && S["s3-sunglint"]) pages.push(["07-postcard-ui", `<div class="bg" style="background-image:url(${S["s3-sunglint"]})"></div><div class="bg" style="background-image:url(data:image/png;base64,${(await sharp(uiA).resize(1080, 1920).png().toBuffer()).toString("base64")})"></div>`]);
+if (S["s3-sunglint"]) pages.push(["08-the-postcard", `<div class="bg" style="background-image:url(${S["s3-sunglint"]});filter:blur(26px) brightness(.55);transform:scale(1.1)"></div>${postcard(S["s3-sunglint"], { x: 120, y: 420, w: 840, h: 1240, r: -3 })}<div class="lead">Every corner is a postcard.</div>`]);
 const mont = ["s1-sunrise", "s2-sakura", "s4-dusk", "s5-neon"].filter((k) => S[k]);
-if (mont.length) pages.push(["09-montage", `<div class="bg" style="background:radial-gradient(circle at 50% 40%,#3a2b4f,#0c0a14)"></div>${mont.map((k, i) => postcard(S[k], { x: 150 + (i - 1.5) * 70, y: 380 + Math.abs(i - 1.5) * 30, w: 780, h: 1230, r: (i - 1.5) * 7 })).join("")}`]);
+if (mont.length) pages.push(["09-montage", `<div class="bg" style="background:radial-gradient(circle at 50% 40%,#3a2b4f,#0c0a14)"></div>${mont.map((k, i) => postcard(S[k], { x: 150 + (i - 1.5) * 70, y: 560 + Math.abs(i - 1.5) * 30, w: 780, h: 1100, r: (i - 1.5) * 7 })).join("")}<div class="head" style="font-size:116px;line-height:1;letter-spacing:-.04em">Or the ones<br>we already love.</div>`]);
 pages.push(["10-end", `<div class="bg" style="background:#000"></div><div class="head" style="top:300px">Take yours.</div><div class="pill">cromaticstudios.com</div>`]);
 const br = await pw.chromium.launch(); const p = await br.newPage({ viewport: { width: 1080, height: 1920 } });
 const files = [];
