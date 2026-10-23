@@ -212,7 +212,8 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     if (!EMAIL.test(email) || !transport) return;
     const cta = c.cta || "https://cromaticstudios.com/site/#contact";
     const html = `<div style="font:16px/1.55 Arial,sans-serif;color:#0d0c09;max-width:560px">
-      <p style="font:700 11px monospace;letter-spacing:.12em;text-transform:uppercase;color:#5d5a52">Cromatic Studios · ${esc(c.title)}</p>
+      <p style="margin:0 0 6px"><span style="display:inline-block;background:#E8E6E0;border-radius:999px;padding:7px 16px 9px;font:900 20px/1 Arial,sans-serif;letter-spacing:-.02em;color:#0d0c09">The Core<sup style="font:800 11px/1 Arial,sans-serif;color:#6b665c;margin-left:3px;letter-spacing:0">lite</sup></span></p>
+      <p style="font:700 11px monospace;letter-spacing:.12em;text-transform:uppercase;color:#5d5a52">Cromatic Studios</p>
       <h1 style="font:900 26px/1.2 Arial,sans-serif;margin:8px 0 14px">${esc(title || (en ? "Your result" : "Rezultatul tău"))}</h1>
       <p>${esc(summary)}</p>
       ${positioning ? `<p style="padding:14px 16px;border:1px solid #0d0c09;border-radius:14px;background:#fff6c7"><b>${en ? "Your UVP" : "UVP-ul tău"}</b><br>${esc(positioning)}${xfactor ? `<br><br><b>X-factor:</b> ${esc(xfactor)}` : ""}</p>` : ""}
