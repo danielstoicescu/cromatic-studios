@@ -297,6 +297,124 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     } catch (e) { console.error("[core30] onboarding mail failed", e.message); return false; }
   }
 
+  // ---------- client reports (Ops: Iris generates, Daniel validates, the cron uploads and sends) ----------
+  // <data>/<id>/report/{index.html, raport.pdf, meta.json}; every upload moves the previous files to report/history/<stamp>/
+  const reportDir = (id) => join(dataDir, safe(id), "report");
+  async function readReportMeta(id) { try { return JSON.parse(await readFile(join(reportDir(id), "meta.json"), "utf8")); } catch { return null; } }
+
+  async function uploadReport(body) {
+    let p;
+    try { p = JSON.parse(body); } catch { return [400, { ok: false, error: "json" }]; }
+    const id = safe(p.id);
+    const c = (await clients())[id];
+    if (!c || c.public) return [404, { ok: false, error: "client" }];
+    const html = String(p.html ?? "");
+    if (html.length < 200 || !/<html[\s>]/i.test(html)) return [422, { ok: false, error: "html" }];
+    let pdf = null;
+    if (p.pdf) {
+      pdf = Buffer.from(String(p.pdf).replace(/^data:application\/pdf;base64,/, ""), "base64");
+      if (pdf.subarray(0, 5).toString() !== "%PDF-") return [422, { ok: false, error: "pdf" }];
+    }
+    const dir = reportDir(id);
+    await mkdir(dir, { recursive: true });
+    const prev = await readReportMeta(id);
+    if (prev) {
+      // keep what was there: history/<stamp>-v<version>/
+      const h = join(dir, "history", `${stamp()}-v${safe(String(prev.version ?? "x"))}`);
+      await mkdir(h, { recursive: true });
+      for (const f of ["index.html", "raport.pdf", "meta.json"]) if (existsSync(join(dir, f))) await rename(join(dir, f), join(h, f));
+    }
+    const version = String(p.version ?? (Number(prev?.version) ? Number(prev.version) + 1 : 1)).slice(0, 40);
+    await atomicWrite(join(dir, "index.html"), html);
+    if (pdf) await atomicWrite(join(dir, "raport.pdf"), pdf);
+    const meta = { version, uploadedAt: new Date().toISOString(), bytes: { html: Buffer.byteLength(html), pdf: pdf?.length ?? 0 }, sentAt: null };
+    await atomicWrite(join(dir, "meta.json"), JSON.stringify(meta, null, 1));
+    await appendLog(join(dataDir, id), { at: meta.uploadedAt, type: "report-uploaded", version });
+    const base = `${publicBase.replace(/\/$/, "")}/thecore30/${id}`;
+    return [200, { ok: true, id, version, uploadedAt: meta.uploadedAt, url: `${base}/raport?t=${c.token}`, pdf: pdf ? `${base}/raport.pdf?t=${c.token}` : null }];
+  }
+
+  /** GET /thecore30/<id>/raport[.pdf]?t=: the client's token, the same rule as the config */
+  async function serveReport(req, res, id, isPdf, t) {
+    const c = (await clients())[safe(id)];
+    const deny = (code) => { res.writeHead(code, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow, noarchive" }); res.end(code === 403 ? "Linkul nu e complet." : "Nu e aici."); };
+    if (!c || c.public) return deny(404);
+    if (!c.token || t !== c.token) return deny(403);
+    const dir = reportDir(id);
+    const file = join(dir, isPdf ? "raport.pdf" : "index.html");
+    if (!existsSync(file)) return deny(404);
+    const common = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow, noarchive", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY" };
+    if (isPdf) {
+      const name = `${c.name || id} – The Core – raport.pdf`;
+      const ascii = name.replace(/[^\x20-\x7e]/g, "-").replace(/"/g, "");
+      res.writeHead(200, { ...common, "Content-Type": "application/pdf", "Content-Disposition": `inline; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}` });
+      if (req.method === "HEAD") return res.end();
+      return createReadStream(file).pipe(res);
+    }
+    // the page links its PDF relatively ("raport.pdf" or {{PDF_URL}}); the token goes with it
+    let html = await readFile(file, "utf8");
+    const pdfUrl = `raport.pdf?t=${encodeURIComponent(t)}`;
+    html = html.replace(/\{\{PDF_URL\}\}/g, pdfUrl).replace(/(href|src)=(["'])(?:\.\/)?raport\.pdf\2/gi, `$1=$2${pdfUrl}$2`);
+    res.writeHead(200, { ...common, "Content-Type": "text/html; charset=utf-8",
+      "Content-Security-Policy": "default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; script-src 'unsafe-inline'; media-src 'self' data: blob:; object-src 'self'; frame-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" });
+    if (req.method === "HEAD") return res.end();
+    res.end(html);
+  }
+
+  const maskEmail = (e) => { const [l, d] = String(e).split("@"); return d ? `${l.slice(0, 1)}***@${d}` : ""; };
+
+  /** who gets the report: the session's email (dashboard sessions), else who started it, else the latest copy's respondent */
+  async function recipientOf(id, c) {
+    if (c.dynamic?.email) return { email: c.dynamic.email, lang: c.dynamic.lang === "en" ? "en" : "ro", contact: c.dynamic.contact || "" };
+    const dir = join(dataDir, id);
+    const m = existsSync(dir) ? await readMeta(dir) : {};
+    let latest = null;
+    try { latest = JSON.parse(await readFile(join(dir, "latest.json"), "utf8")); } catch { /* none */ }
+    let cfgLang = "ro";
+    try { cfgLang = JSON.parse(await readFile(c.file, "utf8")).lang === "en" ? "en" : "ro"; } catch { /* default */ }
+    const email = m.startedBy || latest?.session?.respondent?.email || c.email || "";
+    return { email, lang: latest?.lang === "en" || cfgLang === "en" ? "en" : "ro", contact: c.contact || "" };
+  }
+
+  async function reportMail(body) {
+    let p;
+    try { p = JSON.parse(body); } catch { return [400, { ok: false, error: "json" }]; }
+    const id = safe(p.id);
+    const c = (await clients())[id];
+    if (!c || c.public) return [404, { ok: false, error: "client" }];
+    const meta = await readReportMeta(id);
+    if (!meta) return [409, { ok: false, error: "no report uploaded" }];
+    const to = await recipientOf(id, c);
+    if (!EMAIL.test(to.email)) return [422, { ok: false, error: "no recipient email" }];
+    if (!transport) { console.log(`[core30] report mail (not sent, no SMTP) to ${to.email}`); return [503, { ok: false, error: "no smtp" }]; }
+    const base = `${publicBase.replace(/\/$/, "")}/thecore30/${id}`;
+    const url = `${base}/raport?t=${c.token}`;
+    const pdfFile = join(reportDir(id), "raport.pdf");
+    const hasPdf = existsSync(pdfFile);
+    const pdfUrl = `${base}/raport.pdf?t=${c.token}`;
+    const small = hasPdf && statSync(pdfFile).size <= 4 * 1024 * 1024;
+    const en = to.lang === "en";
+    const hi = to.contact ? (en ? `Hi ${esc(to.contact)},` : `Salut, ${esc(to.contact)},`) : en ? "Hi," : "Salut,";
+    const note = String(p.note ?? "").trim().slice(0, 2000);
+    const html = `<div style="font:16px/1.55 Arial,sans-serif;color:#0d0c09;max-width:560px">
+      <p style="font:700 11px monospace;letter-spacing:.12em;text-transform:uppercase;color:#5d5a52">Cromatic Studios · The Core 3.0${c.name ? ` · ${esc(c.name)}` : ""}</p>
+      <h1 style="font:900 26px/1.2 Arial,sans-serif;margin:8px 0 14px">${en ? "Your The Core report is ready" : "Raportul tău The Core e gata"}</h1>
+      <p>${hi}</p>
+      <p>${en ? "Everything you told us, read and put in order: the archetype mix, your attributes and UVP, your people, voice and visual direction, plus what we'll decide together at the workshop." : "Tot ce ne-ai spus, citit și pus în ordine: mixul de arhetipuri, atributele și UVP-ul, oamenii, vocea și direcția vizuală, plus ce decidem împreună la workshop."}</p>
+      ${note ? `<p style="padding:14px 16px;border-left:4px solid #FED012;background:#fff6c7;border-radius:6px">${esc(note).replace(/\n/g, "<br>")}<br><span style="color:#5d5a52;font-size:13px">Daniel</span></p>` : ""}
+      <p><a href="${esc(url)}" style="display:inline-block;padding:12px 20px;border:1px solid #0d0c09;border-radius:999px;background:#FED012;color:#0d0c09;font-weight:700;text-decoration:none">${en ? "Open the report" : "Deschide raportul"}</a></p>
+      ${hasPdf ? `<p><a href="${esc(pdfUrl)}" style="color:#0d0c09">${en ? "Download the PDF" : "Descarcă PDF-ul"}</a>${small ? (en ? " (also attached)" : " (îl ai și atașat)") : ""}</p>` : ""}
+      <p style="color:#5d5a52;font-size:13px">${en ? "Keep these links to yourself: they open your report. Questions? Just reply to this email." : "Păstrează linkurile pentru tine: ele îți deschid raportul. Întrebări? Răspunde direct la emailul ăsta."}<br>Cromatic Studios · Str. Olari 9, București · hi@cromaticstudios.com</p></div>`;
+    const attachments = small ? [{ filename: `${c.name || id} – The Core – raport.pdf`, path: pdfFile, contentType: "application/pdf" }] : undefined;
+    try {
+      await transport.sendMail({ from: mailFrom, to: to.email, bcc: mailTo, replyTo: mailTo, subject: en ? "Your The Core report is ready" : "Raportul tău The Core e gata", html, attachments });
+    } catch (e) { console.error("[core30] report mail failed", e.message); return [502, { ok: false, error: "mail failed" }]; }
+    const sentAt = new Date().toISOString();
+    await atomicWrite(join(reportDir(id), "meta.json"), JSON.stringify({ ...meta, sentAt, sentTo: maskEmail(to.email) }, null, 1));
+    await appendLog(join(dataDir, id), { at: sentAt, type: "report-sent", version: meta.version });
+    return [200, { ok: true, to: maskEmail(to.email), sentAt, version: meta.version }];
+  }
+
   async function listSessions() {
     const files = existsSync(sessionsDir) ? (await readdir(sessionsDir)).filter((f) => f.endsWith(".json")) : [];
     const out = [];
@@ -436,6 +554,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       at: e.at, type: e.type,
       ...(e.module ? { module: e.module.id, title: e.module.title, n: e.module.n, total: e.module.total } : {}),
       ...(e.format ? { format: e.format } : {}),
+      ...(e.version ? { version: e.version } : {}),
       ...(e.type === "save-error" ? { code: e.code, bytes: e.bytes, ua: e.ua } : {}),
       ...(e.type === "start" && e.email ? { email: e.email } : {}),
     }));
@@ -450,6 +569,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       startedAt: m.startedAt ?? null, startedBy: m.startedBy ?? null,
       firstDraftAt: m.firstDraftAt ?? null, lastSaveAt: m.lastSaveAt ?? null, saves: m.saves ?? 0,
       submits: m.submits ?? 0, lastSubmitAt: m.lastSubmitAt ?? null,
+      report: await (async () => { const r = await readReportMeta(id); return r ? { available: true, version: r.version, uploadedAt: r.uploadedAt, sentAt: r.sentAt ?? null } : { available: false }; })(),
       progress: { done: doneIds.size, answered: new Set([...doneIds, ...answeredIds]).size, total, partial, skipped: skippedOnly }, lastStep, log,
     }];
   }
@@ -490,6 +610,8 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
   return async function handle(req, res) {
     const url = new URL(req.url, "http://x");
     const p = url.pathname;
+    const rp = p.match(/^\/thecore30\/([a-z0-9_-]+)\/raport(\.pdf)?$/i);
+    if (rp && (req.method === "GET" || req.method === "HEAD")) { await serveReport(req, res, rp[1], !!rp[2], url.searchParams.get("t") ?? ""); return true; }
     if (p === "/thecore30" || p.startsWith("/thecore30/")) { serveTool(req, res, p); return true; }
     if (!p.startsWith("/api/core30/")) return false;
     try {
@@ -500,6 +622,14 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
         const body = await readBody(req);
         const [code, out] = await withLock(lockKey(body), () => store(p.endsWith("submit") ? "submit" : "draft", body));
         send(res, code, await withBuild(code, out)); return true;
+      }
+      if (p === "/api/core30/admin/report" || p === "/api/core30/admin/report-mail") {
+        if (!isAdmin(req, url)) { send(res, 403, { ok: false }); return true; }
+        if (req.method !== "POST") { send(res, 405, { ok: false }); return true; }
+        const body = await readBody(req);
+        let id = ""; try { id = safe(JSON.parse(body).id); } catch { /* reported below */ }
+        const [code, out] = await withLock(id || "_report", () => (p.endsWith("mail") ? reportMail(body) : uploadReport(body)));
+        send(res, code, out); return true;
       }
       if (p === "/api/core30/admin/sessions") {
         if (!isAdmin(req, url)) { send(res, 403, { ok: false }); return true; }
