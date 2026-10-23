@@ -1271,6 +1271,241 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
 .cs-splash.fly .cs-skip { opacity: 0; }
 .cs-splash.out { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .cs-ops::before { animation: none; } .cs-splash { display: none; } }
+
+/* r7: Social & Ads */
+.soc { display: grid; gap: 14px; }
+.soc.mirror-hide { display: none !important; }
+.soc-full { display: none; gap: 14px; }
+body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home { display: none; }
+.soc-home { display: grid; gap: 12px; background: var(--card); border: var(--line); border-radius: 24px; padding: 16px 18px; box-shadow: var(--soft); }
+.soc-pend { display: grid; gap: 6px; background: var(--card); border: var(--line); border-radius: 20px; padding: 12px 14px; }
+.soc-pl { font: 500 10.5px var(--f-m); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.soc-pr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 13.5px; } .soc-pr .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.soc-p { display: grid; gap: 14px; animation: rise .3s var(--ease) both; }
+.soc-made { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; align-items: start; }
+.socc { display: grid; gap: 8px; background: var(--card); border: var(--line); border-radius: 20px; padding: 14px; box-shadow: var(--soft); animation: rise .35s var(--ease) both; transition: transform .25s var(--ease); }
+.socc:hover { transform: translateY(-3px); }
+.socc-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.socc-k { font: 500 10.5px var(--f-m); letter-spacing: .07em; text-transform: uppercase; border: 1px solid var(--g2); border-radius: 999px; padding: 1px 8px; }
+.socc-t { all: unset; cursor: pointer; display: grid; gap: 2px; } .socc-t span:first-child { font: 800 16px/1.2 var(--f-d); } .socc-t:hover span:first-child { text-decoration: underline; }
+.socc-d { font-size: 13.5px; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.socc .mini { cursor: zoom-in; }
+.socc-f { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sb { display: grid; gap: 16px; background: var(--card); border: var(--line); border-radius: 24px; padding: 18px; box-shadow: var(--soft); }
+.sb-step { display: grid; gap: 10px; }
+.sb-sh { display: flex; align-items: baseline; gap: 10px; } .sb-sh b { font: 800 17px var(--f-d); } .sb-sh .n { font: 500 11px var(--f-m); color: var(--on-ink); background: var(--ink); border-radius: 999px; padding: 1px 8px; }
+.sb-types { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 10px; }
+.sb-tile { display: grid; gap: 4px; justify-items: start; text-align: left; background: var(--soft-bg); border: 1px solid var(--g1); border-radius: 18px; padding: 14px; transition: transform .2s var(--ease), border-color .15s, background .2s, box-shadow .2s; }
+.sb-tile .ic { width: 26px; height: 26px; margin-bottom: 4px; } .sb-tile b { font: 800 16px var(--f-d); } .sb-tile span { font: 500 11px var(--f-m); color: var(--muted); }
+.sb-tile:hover { transform: translateY(-3px); border-color: var(--ink); }
+.sb-tile[aria-pressed="true"] { background: var(--yellow); border-color: var(--ink); color: var(--code-ink); box-shadow: 0 2px 0 var(--ink); } .sb-tile[aria-pressed="true"] span { color: var(--code-ink); }
+.sb-spec { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; background: var(--t-blue); border: 1px solid color-mix(in srgb, var(--c-onbeta) 50%, transparent); border-radius: 14px; padding: 10px 14px; font-size: 13.5px; }
+.sb-spec b { font-weight: 700; } .sb-spec span i { font: 500 10px var(--f-m); font-style: normal; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-right: 6px; } .sb-spec p { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 13px; }
+.sb-intro { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sb-intro li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: baseline; font-size: 14px; animation: rise .4s var(--ease) both; } .sb-intro li:nth-child(2) { animation-delay: .08s; } .sb-intro li:nth-child(3) { animation-delay: .16s; }
+.sb-intro b { width: 22px; height: 22px; border-radius: 50%; background: var(--claude); color: #fff; display: grid; place-items: center; font: 800 12px var(--f-d); }
+.sbf .inp { font-size: 15px; } .sb-hint { font-size: 12.5px; color: var(--muted); }
+.sb-ex { display: flex; flex-wrap: wrap; gap: 5px; }
+.sb-ex button { border: 1px dashed var(--g3); background: var(--card); border-radius: 999px; padding: 3px 10px; font-size: 12.5px; transition: border-color .15s, background .15s, transform .2s var(--ease); }
+.sb-ex button:hover { border-style: solid; border-color: var(--ink); background: var(--t-yellow); transform: translateY(-1px); }
+.inp.filled { animation: filled .6s ease-out; } @keyframes filled { 30% { background: var(--t-yellow); border-color: var(--amber); } }
+.sb-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; align-items: start; }
+.rl { display: grid; gap: 8px; }
+.rl-row { background: var(--soft-bg); border: 1px solid var(--g1); border-radius: 16px; padding: 8px 10px 10px; display: grid; gap: 6px; animation: rise .3s var(--ease) both; transition: opacity .2s, transform .2s; }
+.rl-row.drag { opacity: .5; transform: scale(.98); } .rl-row.out { opacity: 0; transform: translateX(12px); }
+.rl-hd { display: flex; align-items: center; gap: 8px; }
+.rl-grip { cursor: grab; color: var(--g3); letter-spacing: -2px; font-weight: 700; user-select: none; }
+.rl-n { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--on-ink); display: grid; place-items: center; font: 800 11.5px var(--f-d); }
+.rl-lab { font: 500 10.5px var(--f-m); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-right: auto; }
+.rl-b { border: 1px solid var(--g2); background: var(--card); border-radius: 8px; width: 26px; height: 24px; display: grid; place-items: center; padding: 0; font-weight: 700; } .rl-b:hover { border-color: var(--ink); } .rl-b .ic { width: 13px; height: 13px; } .rl-b.x:hover { border-color: var(--c-dropped); color: var(--danger-ink); }
+.rl-body { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) 90px; gap: 8px; }
+#sb-slides .rl-body { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rl-f { display: grid; gap: 3px; } .rl-f span { font: 500 10px var(--f-m); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); } .rl-f .inp { padding: 7px 9px; font-size: 14px; resize: vertical; min-height: 36px; }
+.rl-add { justify-self: start; }
+.sb-durm { display: grid; grid-template-columns: auto minmax(80px, 1fr); gap: 10px; align-items: center; font-size: 13px; } .sb-durm span { display: block; height: 6px; border-radius: 999px; background: var(--g1); overflow: hidden; } .sb-durm i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--g3); transition: width .5s var(--ease-out), background .3s; }
+.sb-durm.ok i { background: var(--c-done); } .sb-durm.bad i { background: var(--c-dropped); } .sb-durm b { font-variant-numeric: tabular-nums; font-weight: 600; }
+.sb-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.sb-opt { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--g2); border-radius: 999px; padding: 5px 12px 5px 9px; font-size: 13.5px; cursor: pointer; transition: border-color .15s, background .15s; }
+.sb-opt:hover { border-color: var(--ink); } .sb-opt:has(input:checked) { background: var(--ink); color: var(--on-ink); border-color: var(--ink); } .sb-opt input { accent-color: var(--yellow); margin: 0; }
+.sb-foot { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; border-top: 1px solid var(--g1); padding-top: 14px; }
+.ad-grp { display: grid; gap: 8px; }
+.ad-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 10px; }
+.ad-tile { position: relative; display: grid; gap: 6px; align-content: start; text-align: left; background: var(--soft-bg); border: 1px solid var(--g1); border-radius: 18px; padding: 14px 14px 12px 40px; transition: transform .2s var(--ease), border-color .15s, background .2s; }
+.ad-tile:hover { transform: translateY(-3px); border-color: var(--ink); }
+.ad-tile b { font: 800 15.5px var(--f-d); } .ad-d, .ad-t { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; font-size: 12.5px; color: var(--muted); } .ad-tile li.tx { font-style: italic; }
+.ad-ck { position: absolute; left: 14px; top: 16px; width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--g3); transition: background .2s, border-color .2s; }
+.ad-tile[aria-pressed="true"] { background: var(--t-yellow); border-color: var(--ink); } .ad-tile[aria-pressed="true"] .ad-ck { background: var(--ink); border-color: var(--ink); }
+.ad-tile[aria-pressed="true"] .ad-ck::after { content: ""; position: absolute; left: 4.5px; top: 1.5px; width: 4px; height: 8px; border: solid var(--on-ink); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.ad-sum { font-size: 15px; } .ad-sum b { font: 800 20px var(--f-d); font-variant-numeric: tabular-nums; }
+.soc-note { font-size: 12.5px; color: var(--muted); }
+@media (max-width: 640px) { .rl-body, #sb-slides .rl-body { grid-template-columns: minmax(0, 1fr); } }
+/* phone: ten sections fit as a scrolling bottom bar */
+@media (max-width: 760px) { .side { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; justify-content: flex-start; scroll-behavior: smooth; } .side::-webkit-scrollbar { display: none; } .nav-i { flex: 0 0 60px; } .nav-i[aria-current="page"]::before { top: 0; } }
+.sb-spec { display: grid; gap: 8px; } .sb-spec-h { display: flex; align-items: center; gap: 8px; } .sb-spec-h .ic { width: 16px; height: 16px; }
+.sb-spec-r { display: flex; flex-wrap: wrap; gap: 4px 16px; } .sb-spec p { flex-basis: auto; }
+.sb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sb-chips button { border: 1px solid var(--g2); background: var(--card); border-radius: 999px; padding: 5px 12px; font-size: 13.5px; font-weight: 600; transition: border-color .15s, background .15s, transform .2s var(--ease); }
+.sb-chips button:hover { border-color: var(--ink); transform: translateY(-1px); } .sb-chips button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
+.sb-ex button { display: inline-flex; gap: 6px; align-items: baseline; text-align: left; max-width: 100%; } .sb-ex button i { font: 500 9.5px var(--f-m); font-style: normal; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.rl-f.dur { max-width: 90px; }
+.srcn { font-size: 12.5px; border-top: 1px dashed var(--g2); padding-top: 6px; cursor: auto; }
+.srcn > summary { cursor: pointer; display: flex; gap: 8px; align-items: baseline; list-style: none; font-weight: 600; } .srcn > summary::-webkit-details-marker { display: none; }
+.srcn > summary::before { content: "›"; display: inline-block; transition: transform .2s var(--ease); font-weight: 800; } .srcn[open] > summary::before { transform: rotate(90deg); }
+.srcn ul { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; } .srcn-s li { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; } .srcn a { color: var(--ink); overflow-wrap: anywhere; }
+.srcn-k { font: 500 9.5px var(--f-m); text-transform: uppercase; letter-spacing: .06em; border-radius: 999px; padding: 0 6px; border: 1px solid var(--ink); } .srcn-k.ok { background: var(--t-green); } .srcn-k.sec { background: var(--t-yellow); border-style: dashed; }
+.srcn-h { margin-top: 8px; font: 500 10px var(--f-m); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); } .srcn-c li { padding-left: 10px; border-left: 2px solid var(--amber); color: var(--muted); }
+.ad-tile { cursor: pointer; padding: 12px 14px; gap: 6px; } .ad-tile.on { background: var(--t-yellow); border-color: var(--ink); }
+.ad-tg { all: unset; cursor: pointer; display: flex; align-items: center; gap: 10px; } .ad-tg:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
+.ad-ck { position: relative; left: auto; top: auto; flex: none; } .ad-tile.on .ad-ck { background: var(--ink); border-color: var(--ink); }
+.ad-tile.on .ad-ck::after { content: ""; position: absolute; left: 4px; top: 1px; width: 4px; height: 8px; border: solid var(--on-ink); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.ad-sub { font: 500 9.5px var(--f-m); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-top: 2px; }
+.ad-d li, .ad-t li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 6px; align-items: baseline; font-style: normal; color: var(--ink); } .ad-tile li .q { font: 700 11px var(--f-m); color: var(--muted); } .ad-tile li .px { font: 500 10.5px var(--f-m); color: var(--muted); text-align: right; } .ad-tile li.ad-o { color: var(--muted); }
+.ad-tiles { grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); align-items: start; }
+.ad-sel { display: block; font-size: 12.5px; }
+.rl-f .inp { font: 400 14px/1.35 var(--f-b); letter-spacing: normal; text-transform: none; color: var(--ink); }
+
+/* r7b: wins history sparkline */
+.kpi-rec { font: 500 10.5px var(--f-m); color: var(--muted); letter-spacing: .04em; }
+.wins-sp { display: grid; gap: 4px; margin-top: -4px; }
+.sp-box { position: relative; height: 34px; }
+.sp-box svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.sp-a { fill: var(--yellow); opacity: .35; } .sp-l { fill: none; stroke: var(--ink); stroke-width: 1.6; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; animation: spdraw 1.1s var(--ease-out) .2s forwards; } .sp-d { fill: var(--ink); }
+@keyframes spdraw { to { stroke-dashoffset: 0; } }
+.sp-hit { position: absolute; inset: 0; display: flex; } .sp-hit span { flex: 1; } .sp-hit span:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); border-radius: 4px; }
+.sp-cap { display: flex; justify-content: space-between; font: 500 10px var(--f-m); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); } .sp-cap span:last-child { cursor: help; }
+@media (prefers-reduced-motion: reduce) { .sp-l { animation: none; stroke-dashoffset: 0; } }
+
+/* r9: the wins noticeboard (avizier) + one-line deploys */
+.wins { gap: 12px; padding: 16px 18px 16px; }
+.wins-ap { font: 500 10px var(--f-m); letter-spacing: .07em; text-transform: uppercase; border: 1px dashed var(--g3); border-radius: 999px; padding: 2px 9px; background: var(--card); color: var(--muted); cursor: help; }
+.wins-ap:hover, .wins-ap:focus-visible { border-style: solid; border-color: var(--ink); color: var(--ink); }
+.bento { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-rows: 66px; grid-auto-flow: row dense; gap: 10px; }
+.bt { position: relative; display: grid; align-content: center; gap: 1px; min-width: 0; background: var(--card); border: 1px solid var(--line-c); border-radius: 20px; padding: 10px 14px; overflow: hidden; animation: btpop .45s var(--ease) both; transition: transform .25s var(--ease), box-shadow .25s, border-color .2s; }
+.bt:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.08); border-color: var(--g3); }
+@keyframes btpop { from { opacity: 0; transform: scale(.92) translateY(8px); } }
+.bt-ic { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--acc) 22%, transparent); box-shadow: inset 0 0 0 1.5px var(--acc); }
+.bt-ic .ic { width: 15px; height: 15px; }
+.bt-n { font: 900 30px/1 var(--f-d); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.bt-l { font-size: 13px; font-weight: 600; } .bt-s, .bt-k { font: 500 10px var(--f-m); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.bt.big { grid-column: span 2; grid-row: span 2; align-content: end; background: var(--yellow); border: var(--st); box-shadow: var(--sh); color: var(--code-ink); padding: 14px 18px; }
+.bt.big .bt-n { font-size: clamp(46px, 5vw, 64px); } .bt.big .bt-l { font: 800 18px var(--f-d); } .bt.big .bt-s { color: var(--code-ink); }
+.bt.big .bt-ic { background: #fff; box-shadow: inset 0 0 0 1.5px #000; }
+.bt.big::after { content: ""; position: absolute; right: -46px; bottom: -46px; width: 150px; height: 150px; border-radius: 50%; padding: 12px; background: var(--c-party); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; opacity: .55; pointer-events: none; }
+.bt.streak { grid-row: span 2; place-items: center; padding: 6px; background: transparent; border: 0; overflow: visible; }
+.bt.streak:hover { box-shadow: none; }
+.bt-c { width: min(100%, 136px); aspect-ratio: 1; border-radius: 50%; display: grid; place-content: center; justify-items: center; text-align: center; gap: 0; background: var(--card); position: relative; }
+.bt-c::before { content: ""; position: absolute; inset: 0; border-radius: 50%; padding: 3px; background: var(--c-party); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.bt.streak .bt-ic { top: 4px; right: 6px; z-index: 1; background: var(--card); }
+.bt.streak .bt-n { font-size: 34px; } .bt.streak .bt-l { font-size: 12px; }
+.bt.pill { border-radius: 999px; grid-template-columns: auto 1fr; align-items: center; column-gap: 10px; padding: 8px 46px 8px 18px; }
+.bt.wk { background: var(--t-green); border-color: color-mix(in srgb, #28C840 50%, transparent); grid-column: span 2; }
+.bt.sm { grid-template-columns: auto 1fr; align-items: center; column-gap: 8px; padding-right: 44px; } .bt.sm .bt-n { font-size: 24px; } .bt.sm .bt-l { font-size: 12px; line-height: 1.2; }
+.bt.best { grid-column: span 2; background: var(--soft-bg); padding-right: 46px; } .bt-w { display: grid; gap: 0; } .bt-d { font: 900 20px/1.1 var(--f-d); }
+.bt.bars { grid-column: span 4; grid-row: span 2; align-content: stretch; grid-template-rows: auto 1fr; gap: 6px; padding: 10px 14px 8px; }
+.bt-bh { display: flex; gap: 10px; align-items: center; } .bt-bh > :last-child { margin-left: auto; }
+.bt-gap { display: inline-flex; align-items: center; gap: 5px; font: 500 10px var(--f-m); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); } .bt-gap i { width: 14px; height: 9px; border-radius: 3px; background: repeating-linear-gradient(135deg, var(--g2) 0 2px, transparent 2px 5px); border: 1px solid var(--g2); }
+.bt-bars { display: flex; align-items: stretch; gap: 4px; min-height: 0; }
+.bb { flex: 1; display: grid; grid-template-rows: 1fr auto; gap: 3px; min-width: 0; position: relative; cursor: default; }
+.bb i { align-self: end; height: var(--h); min-height: 0; border-radius: 5px 5px 2px 2px; background: color-mix(in srgb, var(--ink) 18%, transparent); transform-origin: bottom; animation: bbgrow .6s var(--ease-out) both; transition: background .2s; }
+.bb:hover i { background: color-mix(in srgb, var(--ink) 35%, transparent); }
+.bb.cur i { background: var(--yellow); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.bb.gap i { background: repeating-linear-gradient(135deg, var(--g1) 0 3px, transparent 3px 7px); border: 1px dashed var(--g2); height: 100%; }
+.bb span { font: 500 9px var(--f-m); text-transform: uppercase; color: var(--muted); text-align: center; white-space: nowrap; height: 11px; }
+.bb em { position: absolute; left: 50%; bottom: calc(var(--h, 0%) + 16px); transform: translateX(-50%); font: 700 10px var(--f-m); font-style: normal; background: var(--ink); color: var(--on-ink); border-radius: 999px; padding: 0 5px; white-space: nowrap; }
+.bb.cur em { bottom: auto; top: 0; }
+@keyframes bbgrow { from { transform: scaleY(0); } }
+.bt.notes { grid-column: span 2; grid-row: span 2; background: transparent; border: 0; padding: 2px; display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 6px; overflow: visible; }
+.bt.notes:hover { transform: none; box-shadow: none; }
+.note { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; min-width: 0; background: var(--nc); border-radius: 4px 14px 14px 14px; padding: 6px 10px; box-shadow: 0 2px 0 rgba(0,0,0,.06), 0 6px 14px rgba(0,0,0,.06); transform: rotate(var(--r)); animation: notein .5s var(--ease) both; transition: transform .25s var(--ease), box-shadow .25s; }
+.note:hover, .note:focus-visible { transform: rotate(0) translateY(-3px) scale(1.02); box-shadow: 0 10px 22px rgba(0,0,0,.12); }
+.note:focus-visible { outline: 3px solid var(--ink); }
+@keyframes notein { from { opacity: 0; transform: rotate(calc(var(--r) * 3)) translateY(-10px); } }
+.note-h { display: flex; align-items: center; gap: 6px; } .note-h .av { width: 18px; height: 18px; font-size: 9px; } .note-h .av svg { width: 11px; height: 11px; }
+.note .av { width: 20px; height: 20px; font-size: 9.5px; } .note .av svg { width: 11px; height: 11px; } .note .yay { font: 800 10.5px var(--f-d); border: 1px solid currentColor; border-radius: 999px; padding: 0 6px; transform: rotate(-6deg); } .note.new .yay { background: var(--yellow); color: #000; border-color: #000; }
+.note-t { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wins-dep { display: grid; gap: 4px; }
+.dep-h { display: flex; justify-content: space-between; align-items: baseline; padding: 2px 4px; }
+.dep-l { list-style: none; margin: 0; padding: 0; display: grid; }
+.dep { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; display: grid; grid-template-columns: 52px auto auto minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 6px 6px; border-bottom: 1px solid var(--g1); border-radius: 8px; animation: rise .3s var(--ease) both; transition: background .15s; }
+.dep:hover, .dep:focus-visible { background: var(--soft-bg); } .dep:focus-visible { outline: 3px solid var(--ink); }
+.dep-l li:last-child .dep { border-bottom: 0; }
+.dep-d { color: var(--muted); font-size: 10.5px; }
+.dep-c { font: 700 9.5px var(--f-m); letter-spacing: .06em; border-radius: 999px; padding: 0 6px; border: 1px solid var(--ink); } .dep-c.lv { background: var(--c-done); color: #000; } .dep-c.bt { background: var(--t-purple); }
+.dep-v { font: 800 14px var(--f-d); } .dep-s { font-size: 13.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dep-more { justify-self: start; border: 0; background: none; font: 700 13px var(--f-b); text-decoration: underline; text-underline-offset: 3px; padding: 4px 6px; }
+@media (max-width: 1100px) { .bento { grid-template-columns: repeat(4, minmax(0, 1fr)); } .bt.bars { grid-column: span 4; } }
+@media (max-width: 640px) { .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 60px; } .bt.bars, .bt.notes { grid-column: span 2; } .bt.wk, .bt.best { grid-column: span 2; } .bt.streak { grid-column: span 1; } .bt.big { grid-column: span 1; } .bt.big .bt-n { font-size: 42px; } .dep { grid-template-columns: 44px auto minmax(0, 1fr); } .dep-s { grid-column: 1 / -1; padding-left: 54px; margin-top: -4px; } .dep-c { display: none; } }
+@media (prefers-reduced-motion: reduce) { .note { transform: rotate(var(--r)); } }
+
+/* r8: Analytics */
+.ana { display: grid; gap: 14px; }
+.ana.mirror-hide { display: none !important; }
+.ana-full { display: none; gap: 14px; } body[data-cat="ana"] .ana-full { display: grid; } body[data-cat="ana"] .ana-home { display: none; }
+.ana-home { display: grid; gap: 10px; background: var(--card); border: var(--line); border-radius: 24px; padding: 16px 18px; box-shadow: var(--soft); }
+.an-hk { display: flex; flex-wrap: wrap; gap: 8px 26px; } .an-hk div { display: grid; gap: 0; } .an-hk b { font: 900 30px/1 var(--f-d); font-variant-numeric: tabular-nums; } .an-hk span:not(.an-dl) { font: 500 10.5px var(--f-m); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.an-hsp { width: 100%; height: 40px; overflow: visible; }
+.an-tag { font: 700 10px var(--f-m); text-transform: uppercase; letter-spacing: .07em; border: 1px dashed var(--amber); background: var(--t-yellow); border-radius: 999px; padding: 2px 9px; }
+.an-mock { display: flex; gap: 10px; align-items: center; border: 1.5px dashed var(--amber); background: var(--t-yellow); border-radius: 16px; padding: 10px 14px; font-weight: 600; font-size: 14px; }
+.an-mock .ic { color: var(--amber); }
+.an-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.an-k { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: 10px; }
+.an-kpi { display: grid; gap: 4px; align-content: start; background: var(--card); border: var(--line); border-radius: 20px; padding: 12px 14px; box-shadow: var(--soft); animation: btpop .45s var(--ease) both; transition: transform .25s var(--ease); }
+.an-kpi:hover { transform: translateY(-3px); }
+.an-kpi.hero { background: var(--yellow); border: var(--st); box-shadow: var(--sh); color: var(--code-ink); }
+.an-kh { display: flex; align-items: center; gap: 6px; font: 500 10.5px var(--f-m); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); } .an-kpi.hero .an-kh { color: var(--code-ink); }
+.an-kh .ic { width: 14px; height: 14px; } .an-kh em { margin-left: auto; font-style: normal; border: 1px solid var(--g2); border-radius: 999px; padding: 0 5px; }
+.an-kpi b { font: 900 30px/1.05 var(--f-d); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.an-dl { display: inline-flex; align-items: center; gap: 4px; font: 700 11.5px var(--f-m); justify-self: start; border-radius: 999px; padding: 1px 7px; background: var(--g1); color: var(--muted); }
+.an-dl i { font-style: normal; font-size: 9px; } .an-dl.up { background: var(--t-green); color: #1d7a34; } .an-dl.dn { background: var(--t-red); color: var(--danger-ink); }
+:root[data-theme="dark"] .an-dl.up { color: #7fe39a; } @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .an-dl.up { color: #7fe39a; } }
+.an-kpi.hero .an-dl { background: rgba(255,255,255,.6); color: #000; }
+.an-card { background: var(--card); border: var(--line); border-radius: 24px; padding: 14px 16px; box-shadow: var(--soft); display: grid; gap: 10px; min-width: 0; }
+.an-ct { font: 800 16px var(--f-d); display: flex; align-items: center; gap: 8px; } .an-ct .mono { margin-left: auto; }
+.an-chart { position: relative; }
+.an-svg { width: 100%; height: auto; display: block; overflow: visible; touch-action: pan-y; } .an-svg:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; border-radius: 8px; }
+.an-grid { stroke: var(--g1); stroke-width: 1; } .an-ax { font: 500 10px var(--f-m); fill: var(--muted); }
+.an-area { fill: var(--yellow); opacity: .35; animation: fade .8s ease both; }
+.an-lu { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; } .an-ls { fill: none; stroke: #119BFE; stroke-width: 2; stroke-linejoin: round; stroke-dasharray: none; }
+.an-lead { fill: #28C840; transform-box: fill-box; transform-origin: bottom; animation: bbgrow .5s var(--ease-out) both; }
+@media (prefers-reduced-motion: no-preference) { .an-lu, .an-ls { stroke-dasharray: 1; stroke-dashoffset: 1; animation: spdraw 1.2s var(--ease-out) .1s forwards; } }
+@keyframes spdraw { to { stroke-dashoffset: 0; } }
+.an-guide { stroke: var(--g3); stroke-dasharray: 3 3; } .an-dot { fill: var(--ink); stroke: var(--card); stroke-width: 2; } .an-dot2 { fill: #119BFE; stroke: var(--card); stroke-width: 2; }
+.an-tip { position: absolute; top: 28px; transform: translateX(12px); display: grid; gap: 1px; background: var(--ink); color: var(--on-ink); border-radius: 12px; padding: 8px 10px; font-size: 12.5px; pointer-events: none; white-space: nowrap; box-shadow: 0 8px 20px rgba(0,0,0,.18); z-index: 2; }
+.an-tip.left { transform: translateX(calc(-100% - 12px)); } .an-tip b { font-weight: 700; text-transform: capitalize; } .an-tip span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; } .an-tip .u::before { background: var(--yellow); } .an-tip .s::before { background: #119BFE; } .an-tip .l::before { background: #28C840; }
+.an-lg { display: flex; gap: 14px; font-size: 12.5px; color: var(--muted); } .an-lg span { display: inline-flex; align-items: center; gap: 6px; } .an-lg i { width: 14px; height: 8px; border-radius: 3px; } .an-lg .u i { background: var(--yellow); box-shadow: inset 0 -2px 0 var(--ink); } .an-lg .s i { background: #119BFE; } .an-lg .l i { background: #28C840; }
+.an-2 { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.an-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.an-tw { overflow-x: auto; } .an-tbl { min-width: 460px; } .an-tbl td { padding: 7px 8px; } .an-tbl th { padding: 6px 8px; } .an-tbl .num, .an-tbl th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.an-sn { display: grid; gap: 0; } .an-sn b { font-weight: 700; }
+.an-sb { position: relative; min-width: 120px; } .an-sb i { position: absolute; left: 8px; top: 50%; height: 20px; transform: translateY(-50%); width: calc((100% - 16px) * var(--w) / 100); background: color-mix(in srgb, #119BFE 22%, transparent); border-radius: 6px; transform-origin: left; animation: bargrow .6s var(--ease-out) both; } .an-sb span { position: relative; font-variant-numeric: tabular-nums; padding-left: 6px; }
+@keyframes bargrow { from { transform: translateY(-50%) scaleX(0); } }
+.an-camp { display: grid; gap: 12px; }
+.an-cb { display: grid; gap: 10px; background: var(--card); border: var(--line); border-left: 4px solid var(--acc, var(--ink)); border-radius: 22px; padding: 14px 16px; box-shadow: var(--soft); scroll-margin-top: 90px; }
+.an-cbh { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; } .an-cbh b { font: 800 18px var(--f-d); } .an-cbh .btn { margin-left: auto; }
+.an-ab { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.an-v { display: grid; gap: 8px; align-content: start; border: 1px solid var(--g1); border-radius: 16px; padding: 10px 12px; background: var(--soft-bg); transition: border-color .2s, box-shadow .2s; }
+.an-v.win { border-color: var(--ink); box-shadow: 0 2px 0 var(--ink); background: var(--card); }
+.an-vh { display: flex; align-items: center; gap: 8px; min-width: 0; } .an-vk { font: 900 14px var(--f-d); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--on-ink); flex: none; }
+.an-vt { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.an-win { margin-left: auto; font: 700 10px var(--f-m); text-transform: uppercase; letter-spacing: .05em; background: var(--yellow); color: #000; border: 1px solid #000; border-radius: 999px; padding: 1px 8px; white-space: nowrap; animation: soft 2.4s ease-in-out infinite; }
+.an-fn { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.an-fn li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-rows: auto 8px; column-gap: 8px; row-gap: 2px; align-items: center; font-size: 12.5px; }
+.an-fn .an-fl { grid-column: 1; } .an-fn b { grid-column: 2; font-variant-numeric: tabular-nums; } .an-fn .an-fr { grid-column: 3; font: 500 10.5px var(--f-m); color: var(--muted); min-width: 42px; text-align: right; }
+.an-fn li:first-child b { grid-column: 2 / 4; text-align: right; }
+.an-fn i { grid-column: 1 / -1; grid-row: 2; height: 8px; width: var(--w); border-radius: 999px; background: var(--acc, var(--ink)); opacity: .85; transform-origin: left; animation: bargrow2 .6s var(--ease-out) both; }
+@keyframes bargrow2 { from { transform: scaleX(0); } }
+.an-cv { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; border-top: 1px dashed var(--g2); padding-top: 8px; } .an-cv b { font: 900 22px var(--f-d); } .an-cv span { font-size: 12.5px; color: var(--muted); } .an-cv .mono { flex-basis: 100%; font-size: 10px; }
+.an-map { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: 10px; }
+.an-mt { position: relative; display: grid; gap: 2px; background: var(--card); border: var(--line); border-radius: 999px; padding: 10px 50px 10px 18px; animation: btpop .45s var(--ease) both; transition: transform .25s var(--ease); } .an-mt:hover { transform: translateY(-3px); }
+.an-mt b { font: 900 24px/1 var(--f-d); font-variant-numeric: tabular-nums; } .an-mt > span:last-child { font-size: 12px; color: var(--muted); } .an-mt .bt-ic { top: 50%; transform: translateY(-50%); right: 12px; }
+.an-bl { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.an-bl li { position: relative; display: flex; justify-content: space-between; gap: 10px; padding: 5px 8px; font-size: 13.5px; border-radius: 8px; overflow: hidden; }
+.an-bl li i { position: absolute; left: 0; top: 0; bottom: 0; width: var(--w); background: color-mix(in srgb, var(--ink) 8%, transparent); border-radius: 8px; transform-origin: left; animation: bargrow2 .6s var(--ease-out) both; }
+.an-bl li:hover i { background: color-mix(in srgb, var(--yellow) 45%, transparent); }
+.an-bl-t { position: relative; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; font-weight: 600; } .an-bl-v { position: relative; font: 500 11px var(--f-m); color: var(--muted); white-space: nowrap; }
+.cp-ana { justify-self: start; }
+@media (max-width: 980px) { .an-2, .an-3 { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) { .an-ab { grid-template-columns: minmax(0, 1fr); } .an-k { grid-template-columns: repeat(2, minmax(0, 1fr)); } .an-kpi b { font-size: 24px; } }
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -1316,6 +1551,13 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
   <symbol id="i-ck-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 3.6 5.4 3.6 8.5s-1.1 5.9-3.6 8.5c-2.5-2.6-3.6-5.4-3.6-8.5S9.5 6.1 12 3.5z"/></symbol>
   <symbol id="i-ck-pin" viewBox="0 0 24 24"><path d="M12 21s6.5-6 6.5-11a6.5 6.5 0 0 0-13 0c0 5 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol>
   <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20.5c.6-3.9 3.4-6.2 7-6.2s6.4 2.3 7 6.2"/></symbol>
+  <symbol id="i-clap" viewBox="0 0 24 24"><rect x="3.5" y="9.5" width="17" height="10.5" rx="2"/><path d="M3.5 9.5l15.6-4.4.9 3.2"/><path d="M7.6 8.3l2.2 3.1M12.2 7l2.2 3.1M3.5 13.5h17"/></symbol>
+  <symbol id="i-ck-spark" viewBox="0 0 24 24"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 21c-3.9 0-6.5-2.6-6.5-6.2 0-3.2 2.2-5.3 3.6-7.4.3 1.6 1 2.7 2 3.3.2-3 1.6-5.6 3.9-7.2-.3 2.6.6 4.5 2 6.3 1.1 1.4 1.5 2.9 1.5 4.8 0 3.8-2.6 6.4-6.5 6.4z"/><path d="M12 21c-1.7 0-2.8-1.1-2.8-2.7 0-1.7 1.4-2.6 2.2-4 .9 1.3 3.4 2.2 3.4 4 0 1.6-1.1 2.7-2.8 2.7z"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 6H4.5a3 3 0 0 0 3 4M16.5 6h3a3 3 0 0 1-3 4M12 13.5V17M8.5 20.5h7M9.5 17h5v3.5h-5z"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="M7 15l3.5-4 3 2.5L19 7"/><circle cx="19" cy="7" r="1.2"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.6v.1"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
   <symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17z" fill="currentColor"/></symbol>
@@ -1333,6 +1575,8 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
   <button class="nav-i" type="button" data-cat="core" title="The Core"><svg class="ic"><use href="#i-lock"/></svg><span class="lbl">The Core <span class="cs-ops cv" aria-label="versiunea 3.0">3.0</span></span><span class="sl">Core</span><span class="nb" id="nb-core" hidden></span></button>
   <button class="nav-i" type="button" data-cat="camp" title="Campanii · landing pages"><svg class="ic"><use href="#i-mega"/></svg><span class="lbl">Campanii</span><span class="sl">Camp.</span><span class="nb" id="nb-camp" hidden></span></button>
   <button class="nav-i" type="button" data-cat="cont" title="Conținut · proiectele de pe site"><svg class="ic"><use href="#i-ck-layers"/></svg><span class="lbl">Conținut</span><span class="sl">Conț.</span><span class="nb" id="nb-cont" hidden></span></button>
+  <button class="nav-i" type="button" data-cat="soc" title="Social &amp; Ads · reel-uri, story-uri, reclame"><svg class="ic"><use href="#i-clap"/></svg><span class="lbl">Social &amp; Ads</span><span class="sl">Social</span><span class="nb" id="nb-soc" hidden></span></button>
+  <button class="nav-i" type="button" data-cat="ana" title="Analytics · trafic, surse, campanii"><svg class="ic"><use href="#i-chart"/></svg><span class="lbl">Analytics</span><span class="sl">Analytics</span></button>
   <button class="nav-i" type="button" data-cat="sec" title="Securitate"><svg class="ic"><use href="#i-shield"/></svg><span class="lbl">Securitate</span><span class="sl">Secur.</span><span class="nb" id="nb-sec" hidden></span></button>
   <button class="nav-i" type="button" data-cat="reports" title="Rapoarte · versiuni, decizii, cereri, agenți"><svg class="ic"><use href="#i-reports"/></svg><span class="lbl">Rapoarte</span><span class="sl">Rapoarte</span><span class="nb" id="nb-rep" hidden></span></button>
   <div class="side-th"><button type="button" class="thsw" role="switch" aria-checked="false" aria-label="Temă întunecată" title="Comută între luminos și întunecat"><span class="th-k" aria-hidden="true"></span><svg class="ic th-sun" aria-hidden="true"><use href="#i-sun"/></svg><svg class="ic th-moon" aria-hidden="true"><use href="#i-moon"/></svg></button></div>
@@ -1404,6 +1648,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
         <label class="mono muted" for="cmd-text" style="margin-top:-6px">o comandă, o întrebare, un task, o idee</label>
         <textarea id="cmd-text" placeholder="Ex.: Urcă 3.80 pe beta. · Task P1 în epicul Lottie: cardul de bun venit. · Ce mai e de făcut la Sketchbook?"></textarea>
         <div class="strip" id="cmd-strip" hidden></div>
+        <div data-up-slot="cmd"></div>
         <div class="preview" id="cmd-preview" hidden></div>
         <div class="ask-f">
           <div class="row"><button class="btn sm ghost" type="button" id="cmd-attach" hidden><svg class="ic"><use href="#i-clip"/></svg>Atașează</button><input type="file" id="cmd-file" multiple hidden><span class="hint">⌘/Ctrl + Enter trimite</span></div>
@@ -1459,10 +1704,9 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
   </section>
 
   <section class="wins blk" data-cat="work" id="wins" aria-labelledby="wins-t">
-    <div class="wins-h"><div><h2 id="wins-t"><i class="c-celebrated" aria-hidden="true"></i>Ce am livrat</h2><div class="muted sub">Tot ce e pe live de mai mult de o zi, sărbătorit. Pe zile, cu versiunea care l-a dus acolo și cine l-a făcut.</div></div><span class="mono muted" id="wins-n"></span></div>
-    <div class="wins-k" id="wins-k"></div>
-    <div class="wins-ag" id="wins-ag" role="group" aria-label="Pe agenți"></div>
-    <div class="wins-tl" id="wins-tl"></div>
+    <div class="wins-h"><div><h2 id="wins-t"><i class="c-celebrated" aria-hidden="true"></i>Ce am livrat</h2><div class="muted sub">Avizierul: câte am livrat, de când, cât de des. Dedesubt, deploy-urile, cel mai nou primul.</div></div><div class="row"><span class="mono muted" id="wins-n"></span><button type="button" class="wins-ap" id="wins-ap" hidden>aproximativ</button></div></div>
+    <div class="bento" id="wins-k" aria-label="Avizierul livrărilor"></div>
+    <div class="wins-dep" id="wins-dep"></div>
   </section>
 
   <section class="team blk" data-cat="team" id="team-s" aria-labelledby="team-t">
@@ -1525,6 +1769,67 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
       </div>
     </section>
 
+    <section class="blk soc" data-cat="soc" id="soc" aria-labelledby="soc-t">
+      <div class="core-h"><div><h2 id="soc-t"><svg class="ic lg"><use href="#i-clap"/></svg>Social &amp; Ads</h2><div class="muted sub">Reel-uri, story-uri, carusele și reclame: ce am livrat și ce ceri nou. Site-ul rămâne în Conținut.</div></div><span class="mono muted" id="soc-n"></span></div>
+      <div class="soc-home" id="soc-home"></div>
+      <div class="soc-full">
+        <div class="seg" role="tablist" aria-label="Social &amp; Ads"><button type="button" role="tab" data-soc-tab="made" aria-selected="true" aria-pressed="true"><svg class="ic"><use href="#i-play"/></svg>Livrate</button><button type="button" role="tab" data-soc-tab="social" aria-selected="false" aria-pressed="false"><svg class="ic"><use href="#i-ck-spark"/></svg>Cere conținut social</button><button type="button" role="tab" data-soc-tab="ads" aria-selected="false" aria-pressed="false"><svg class="ic"><use href="#i-mega"/></svg>Ads</button></div>
+        <div class="soc-pend" id="soc-pend" hidden></div>
+        <div class="soc-p" data-soc-p="made"><div class="soc-made" id="soc-made"></div></div>
+        <div class="soc-p" data-soc-p="social" hidden>
+          <form class="sb" id="sb-form" novalidate>
+            <div class="sb-step"><div class="sb-sh"><span class="n">1</span><b>Ce fel de conținut?</b></div><div class="sb-types" id="sb-types"></div><div class="sb-spec" id="sb-spec" aria-live="polite"></div></div>
+            <div class="sb-step"><div class="sb-sh"><span class="n">2</span><b>Pe scurt</b></div>
+              <div class="sb-grid"><div class="field sbf"><label for="sb-title">Titlu scurt</label><input class="inp" id="sb-title" type="text" maxlength="90" placeholder="Ex.: Reel Litorsal · vara" autocomplete="off"></div><div class="field sbf"><label for="sb-client">Client</label><select class="inp" id="sb-client"></select></div></div></div>
+            <div class="sb-step" id="sb-video"><div class="sb-sh"><span class="n">3</span><b>Scenariul</b></div>
+              <ol class="sb-intro" id="sb-intro"></ol>
+              <div id="sb-video-f"></div>
+              <div class="field"><label id="sb-scenes-l">Scene</label><span class="sb-hint" id="sb-scenes-h" hidden></span><div class="rl" id="sb-scenes"></div><button type="button" class="btn sm ghost rl-add" id="sb-add-scene"><svg class="ic"><use href="#i-plus"/></svg><span>Adaugă o scenă</span></button></div>
+              <div class="sb-grid"><div class="field sbf"><label id="sb-dur-l">Durată totală</label><div class="sb-chips" id="sb-dur" role="group" aria-labelledby="sb-dur-l"></div><span class="sb-hint" id="sb-dur-h" hidden></span><div class="sb-durm" id="sb-durm" hidden><b>0 s</b><span><i></i></span></div></div><div class="field sbf"><label for="sb-format" id="sb-format-l">Format</label><select class="inp" id="sb-format"></select><span class="sb-hint" id="sb-format-h" hidden></span></div></div>
+              <div class="sb-grid" id="sb-video-f2"></div></div>
+            <div class="sb-step" id="sb-car" hidden><div class="sb-sh"><span class="n">3</span><b>Slide-urile</b></div><div class="rl" id="sb-slides"></div><button type="button" class="btn sm ghost rl-add" id="sb-add-slide"><svg class="ic"><use href="#i-plus"/></svg><span>Adaugă un slide</span></button></div>
+            <div class="sb-step" id="sb-static" hidden><div class="sb-sh"><span class="n">3</span><b>Mesajul</b></div>
+              <div class="field sbf"><label for="sb-headline">Titlul pe imagine</label><input class="inp" id="sb-headline" type="text" maxlength="80" placeholder="Scurt, citibil din scroll"></div>
+              <div class="field sbf"><label for="sb-text">Text</label><textarea class="inp" id="sb-text" rows="2" placeholder="Ce mai scrie (opțional)"></textarea></div>
+              <div class="field sbf"><label for="sb-visual">Ideea vizuală</label><textarea class="inp" id="sb-visual" rows="2" placeholder="Ce se vede: produs, oameni, macheta, culori"></textarea></div></div>
+            <div class="sb-step"><div class="sb-sh"><span class="n">4</span><b>Extra</b></div><div class="sb-opts" id="sb-opts"></div>
+              <div id="sb-refs-w"></div>
+              <div class="row"><button type="button" class="btn sm ghost" id="sb-attach" hidden><svg class="ic"><use href="#i-clip"/></svg><span>Atașează referințe</span></button><input type="file" id="sb-file" multiple hidden><div class="strip" id="sb-strip" hidden></div></div></div>
+            <div class="sb-foot"><span class="soc-note" id="soc-specnote"></span><button type="submit" class="btn k" id="sb-send"><svg class="ic"><use href="#i-send"/></svg><span>Trimite cererea</span></button></div>
+          </form>
+        </div>
+        <div class="soc-p" data-soc-p="ads" hidden>
+          <form class="sb" id="ad-form" novalidate>
+            <div class="sb-step"><div class="sb-sh"><span class="n">1</span><b>Brief-ul</b></div><ol class="sb-intro" id="ad-intro"></ol><div class="sb-grid" id="ad-brief"></div><div class="field sbf"><label for="ad-client">Client</label><select class="inp" id="ad-client"></select></div></div>
+            <div class="sb-step"><div class="sb-sh"><span class="n">2</span><b>Pachetele</b></div><div class="muted sub">Alegi unul sau mai multe. Dimensiunile și textele sunt deja stabilite, nu trebuie să le știi.</div><div id="ad-pk"></div></div>
+            <div class="sb-foot"><div class="ad-sum" id="ad-sum" aria-live="polite"></div><button type="submit" class="btn k" id="ad-send"><svg class="ic"><use href="#i-send"/></svg><span>Trimite cererea de ads</span></button></div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="blk ana" data-cat="ana" id="ana" aria-labelledby="ana-t">
+      <div class="core-h"><div><h2 id="ana-t"><svg class="ic lg"><use href="#i-chart"/></svg>Analytics</h2><div class="muted sub">Cine vine pe cromaticstudios.com, de unde, și ce fac campaniile.</div></div><span class="mono muted" id="ana-n"></span></div>
+      <div class="an-mock" id="ana-mock-h" hidden><svg class="ic"><use href="#i-info"/></svg><span>Date de test · legătura cu GA4 vine din TASK-128</span></div>
+      <div class="ana-home" id="ana-home"></div>
+      <div class="ana-full">
+        <div class="an-bar"><div class="seg" role="group" aria-label="Perioada"><button type="button" data-ana-r="7" aria-pressed="false">7 zile</button><button type="button" data-ana-r="30" aria-pressed="true">30 de zile</button></div><span class="an-tag" id="ana-mock" hidden>date de test</span></div>
+        <div class="an-k" id="ana-k"></div>
+        <div class="an-card"><div class="an-ct"><span id="ana-chart-t">Pe zile</span><span class="mono muted">treci peste grafic</span></div><div class="an-chart" id="ana-chart"></div></div>
+        <div class="an-2">
+          <div class="an-card"><div class="an-ct">Surse de trafic</div><div class="an-tw"><table class="an-tbl"><thead><tr><th>Sursă / mediu</th><th>Sesiuni</th><th class="num">Utilizatori</th><th class="num">Lead-uri</th><th class="num">Conversie</th></tr></thead><tbody id="ana-src"></tbody></table></div></div>
+          <div class="an-card"><div class="an-ct">Pe hartă</div><div class="an-map" id="ana-map"></div></div>
+        </div>
+        <div class="an-ct" style="margin-top:4px">Campanii · A vs B</div>
+        <div class="an-camp" id="ana-camp"></div>
+        <div class="an-3">
+          <div class="an-card"><div class="an-ct">Pagini de top</div><ol class="an-bl" id="ana-pages"></ol></div>
+          <div class="an-card"><div class="an-ct">Țări</div><ol class="an-bl" id="ana-ctry"></ol></div>
+          <div class="an-card"><div class="an-ct">Dispozitive</div><ol class="an-bl" id="ana-dev"></ol></div>
+        </div>
+      </div>
+    </section>
+
     <section class="sum blk" data-cat="sec" id="sec" aria-labelledby="sec-t">
       <div class="sum-h"><span class="live idle" id="sec-live" tabindex="0"><i></i><span>…</span></span><h2 id="sec-t"><svg class="ic lg"><use href="#i-shield"/></svg>Securitate<span id="sec-new"></span></h2><span class="mono muted" id="sec-n"></span></div>
       <div class="issues" id="sec-issues" hidden></div>
@@ -1561,6 +1866,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
   <div class="pop-h"><span class="claude-badge sm" aria-hidden="true"><svg><use href="#i-claude"/></svg></span><h2 id="pq-h">Spune-i lui Claude</h2><button class="x" type="button" data-close-pop aria-label="Închide"><svg class="ic"><use href="#i-x"/></svg></button></div>
   <label class="mono muted" for="q-text">o comandă, o întrebare, un task, o idee</label>
   <textarea id="q-text" rows="4" placeholder="Ex.: Urcă 3.80 pe beta. · Ce mai e de făcut la Sketchbook?"></textarea>
+  <div data-up-slot="q"></div>
   <div class="row sp"><button class="btn sm ghost" type="button" id="q-open"><svg class="ic"><use href="#i-chat"/></svg>Vezi conversația</button><button class="btn sm k" type="button" id="q-send"><svg class="ic"><use href="#i-send"/></svg>Trimite</button></div>
   <div class="pop-last" id="q-last" hidden></div>
 </div>
@@ -1572,6 +1878,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
   <div class="row sp"><div class="lvl" role="group" aria-label="Cât de grav"><button type="button" data-lvl="normal" aria-pressed="true"><i></i>Normal</button><button type="button" class="panic" data-lvl="panic" aria-pressed="false"><i></i>Panică</button></div><button class="btn sm ghost" type="button" id="bug-attach" hidden><svg class="ic"><use href="#i-clip"/></svg>Poză sau video</button><input type="file" id="bug-file" multiple hidden></div>
   <div class="strip" id="bug-strip" hidden></div>
   <label class="ops-imp"><input type="checkbox" id="bug-imp"> <span><b>Important / blochează lucrul</b> · intră ca P0, primul pe listă</span></label>
+  <div data-up-slot="bug"></div>
   <span class="mono muted" id="bug-hint"></span>
   <button class="btn k" type="button" id="bug-send" style="justify-self:start"><svg class="ic"><use href="#i-bug"/></svg><span>Trimite bug-ul</span></button>
 </div>
@@ -1587,7 +1894,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
-  const S = { meta: null, claude: null, epics: [], tasks: [], ideas: [], releases: [], agents: [], decisions: [], requests: [], inbox: [], approvals: [], team: [], core: [], alexa: null, security: null, coreRequests: [], campaigns: [], content: [], contentMeta: null };
+  const S = { meta: null, claude: null, epics: [], tasks: [], ideas: [], releases: [], agents: [], decisions: [], requests: [], inbox: [], approvals: [], team: [], core: [], alexa: null, security: null, coreRequests: [], campaigns: [], content: [], contentMeta: null, adspecs: null, history: null, analytics: null };
   const UI = { view: "board", zone: "", showDone: false, status: "", agent: "", cat: "home", hi: "" };
   let db = null, sample = null, canWrite = true, dbState = "loading", assets = null, me = null;
   const got = new Set(); // collections whose first snapshot has arrived
@@ -1967,11 +2274,12 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
   $("cmd-text").addEventListener("paste", (e) => { const fl = Array.from(e.clipboardData ? e.clipboardData.files : []); if (fl.length && assets) { e.preventDefault(); attachToCmd(fl); } });
   const ask = document.querySelector(".ask"); ask.addEventListener("dragover", (e) => { if (assets) e.preventDefault(); }); ask.addEventListener("drop", (e) => { if (!assets) return; e.preventDefault(); attachToCmd(e.dataTransfer.files); });
   async function sendToClaude() {
-    const text = $("cmd-text").value.trim() || (cmdAtt.length ? "(vezi atașamentele)" : ""); if (!text) { $("cmd-text").focus(); return; }
+    if (window.__opsUp && window.__opsUp.busy("cmd")) { toast("Așteaptă să se încarce fișierele.", "err"); return; }
+    const text = ($("cmd-text").value.trim() || (cmdAtt.length || (window.__opsUp && window.__opsUp.count("cmd")) ? "(vezi fișierele)" : "")); if (!text) { $("cmd-text").focus(); return; }
     const btn = $("cmd-send"); const old = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Se trimite…';
-    const att = cmdAtt.slice(); const ok = await guard(() => inboxAdd("command", text, att.length ? { attachments: att } : null), "Trimis. Urmărește progresul în Conversație.");
+    const att = cmdAtt.slice(), up = window.__opsUp ? window.__opsUp.payload("cmd") : {}; const ok = await guard(() => inboxAdd("command", text + (window.__opsUp ? window.__opsUp.textSuffix("cmd") : ""), att.length || Object.keys(up).length ? { ...(att.length ? { attachments: att } : {}), ...up } : null), "Trimis. Urmărește progresul în Conversație.");
     btn.disabled = false; btn.innerHTML = old;
-    if (ok) { $("cmd-text").value = ""; $("cmd-preview").hidden = true; cmdAtt = []; renderStrip(); }
+    if (ok) { $("cmd-text").value = ""; $("cmd-preview").hidden = true; cmdAtt = []; renderStrip(); if (window.__opsUp) window.__opsUp.reset("cmd"); }
   }
   $("cmd-send").onclick = sendToClaude;
   $("cmd-text").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendToClaude(); } });
@@ -1992,9 +2300,10 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
     const page = $("bug-page").value.trim(), device = $("bug-device").value.trim();
     const text = what + (page ? "\nPagina: " + page : "") + (device ? "\nDispozitiv: " + device : "");
     const btn = $("bug-send"), old = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Se trimite…';
-    const imp = !!($("bug-imp") && $("bug-imp").checked); const ok = await submitBug(text, bugLvl === "panic" || imp, bugAtt.slice(), { page, device, ...(window.__ops ? { important: imp || bugLvl === "panic" } : {}) });
+    if (window.__opsUp && window.__opsUp.busy("bug")) { toast("Așteaptă să se încarce fișierele.", "err"); btn.disabled = false; btn.innerHTML = old; return; }
+    const imp = !!($("bug-imp") && $("bug-imp").checked); const ok = await submitBug(text + (window.__opsUp ? window.__opsUp.textSuffix("bug") : ""), bugLvl === "panic" || imp, bugAtt.slice(), { page, device, ...(window.__ops ? { important: imp || bugLvl === "panic" } : {}), ...(window.__opsUp ? window.__opsUp.payload("bug") : {}) });
     btn.disabled = false; btn.innerHTML = old;
-    if (ok) { $("bug-text").value = ""; $("bug-device").value = ""; bugAtt = []; renderBugStrip(); setLvl("normal"); if ($("bug-imp")) $("bug-imp").checked = false; setPop(""); }
+    if (ok) { $("bug-text").value = ""; $("bug-device").value = ""; bugAtt = []; renderBugStrip(); setLvl("normal"); if ($("bug-imp")) $("bug-imp").checked = false; if (window.__opsUp) window.__opsUp.reset("bug"); setPop(""); }
   }
   async function submitBug(text, panic, att, extra) {
     const id = "BUG-" + Date.now().toString(36), first = text.split("\n")[0];
@@ -2197,32 +2506,65 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
     winSig = all.map((t) => t.id).join();
     const fresh = S.tasks.filter((t) => norm(t.status) === "done" && !isWin(t)).length;
     $("wins-n").textContent = fresh ? fresh + (fresh === 1 ? " e pe live acum, se sărbătorește mâine" : " sunt pe live acum, se sărbătoresc mâine") : "";
-    // counters: this week (from Monday), total, and the streak of days in a row with something celebrated
+    // live fallbacks: this week (from Monday) and the streak of days in a row with something celebrated
     const mon = new Date(); mon.setHours(0, 0, 0, 0); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
     const week = all.filter((t) => Date.parse(liveAt(t)) >= mon.getTime()).length;
     const days = new Set(all.map((t) => dayKey(liveAt(t)))); let streak = 0; { const d = new Date(Date.now() - DAY); if (!days.has(dayKey(d.toISOString()))) d.setTime(d.getTime() - DAY); while (days.has(dayKey(d.toISOString()))) { streak++; d.setTime(d.getTime() - DAY); } }
-    const kpi = (n, l, hero, key) => { const k = el("div", "kpi" + (hero ? " hero" : "")), b = el("b"); countTo(b, n, "kpi-" + key); k.append(b, el("span", "", l)); return k; };
-    $("wins-k").replaceChildren(kpi(week, "săptămâna asta", true, "w"), kpi(all.length, "în total", false, "t"), kpi(streak, streak === 1 ? "zi cu livrări" : "zile la rând cu livrări", false, "s"));
-    // per agent, most first; a chip filters the wall
-    const per = new Map(); for (const t of all) { const m = winner(t); const x = per.get(m.id) || [m, 0]; x[1]++; per.set(m.id, x); }
-    if (W.agent && !per.has(W.agent)) W.agent = "";
-    const ag = $("wins-ag"); ag.replaceChildren(...[...per.values()].sort((a, b) => b[1] - a[1] || String(a[0].name).localeCompare(String(b[0].name))).map(([m, n]) => { const c = el("button"); c.type = "button"; c.setAttribute("aria-pressed", String(W.agent === m.id)); c.title = W.agent === m.id ? "Arată toți" : "Doar ce a livrat " + m.name; c.append(avatar(m), el("span", "", m.name), el("em", "", String(n))); c.onclick = () => { W.agent = W.agent === m.id ? "" : m.id; renderWins(); }; return c; }));
-    ag.hidden = per.size < 2;
-    const list = W.agent ? all.filter((t) => winner(t).id === W.agent) : all;
-    const groups = []; for (const t of list) { const k = dayKey(liveAt(t)); const g = groups[groups.length - 1]; if (g && g[0] === k) g[1].push(t); else groups.push([k, [t]]); }
-    const tl = $("wins-tl"); tl.replaceChildren();
-    if (!groups.length) tl.append(loading("tasks") ? skel(2) : el("div", "empty", fresh ? "Primele victorii apar aici mâine, la o zi după ce au ajuns pe live." : "Ce ajunge pe live apare aici după o zi, sărbătorit."));
-    const MAXD = 6, shown = W.all ? groups : groups.slice(0, MAXD);
-    for (const [k, ts] of shown) {
-      const d = new Date(ts[0] && liveAt(ts[0])), day = el("section", "day"), dd = el("div", "day-d"), body = el("div", "day-b"), meta = el("div", "day-m");
-      dd.append(el("b", "", String(d.getDate())), el("span", "wd", d.toLocaleDateString("ro-RO", { weekday: "long" })), el("span", "", d.toLocaleDateString("ro-RO", { month: "short" }).replace(".", "") + (d.getFullYear() !== new Date().getFullYear() ? " " + d.getFullYear() : "")));
-      meta.append(el("span", "", ts.length === 1 ? "1 livrat" : ts.length + " livrate"));
-      const rels = [...new Map(ts.map(releaseFor).filter(Boolean).map((r) => [r.id, r])).values()].sort((a, b) => String(a.date).localeCompare(String(b.date)));
-      if (rels.length) { meta.append(el("span", "", "·")); rels.forEach((r) => { const x = el("span", "rel", relLabel(r)); x.title = r.summary || ""; meta.append(x); }); }
-      const g = el("div", "wins-g"); ts.forEach((t) => g.append(winCard(t)));
-      body.append(meta, g); day.append(dd, body); tl.append(day);
+    // meta/history (Mira, since 2026-08-29) when it exists
+    const H = S.history && typeof S.history === "object" ? S.history : null, T = (H && H.totals) || {};
+    const MO = ["ian", "feb", "mar", "apr", "mai", "iun", "iul", "aug", "sept", "oct", "nov", "dec"], MOL = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
+    const dt = (s) => { const d = new Date(String(s).slice(0, 10) + "T12:00:00"); return isNaN(d) ? null : d; };
+    const relsLive = S.releases.filter((r) => (r.channel || "live") === "live");
+    const total = Math.max(Number(T.delivered) || 0, all.length), since = H && dt(H.since);
+    const wk = Math.max(Number(H && H.thisWeek) || 0, week);
+    const stk = H && H.currentStreak && isFinite(Number(H.currentStreak.days)) ? Number(H.currentStreak.days) : streak, rec = Number(H && H.longestStreak && H.longestStreak.days) || 0;
+    const ap = $("wins-ap"); ap.hidden = !(H && H.method); ap.title = (H && H.method) || ""; ap.setAttribute("aria-label", "Aproximativ: " + ((H && H.method) || ""));
+    // the noticeboard
+    const bx = $("wins-k"); bx.replaceChildren(); let n = 0;
+    const tile = (cls, ic, acc) => { const t = el("div", "bt " + cls); t.style.setProperty("--acc", acc || "var(--yellow)"); t.style.animationDelay = Math.min(n++ * 45, 400) + "ms"; if (ic) { const i = el("span", "bt-ic"); i.append(icon(ic)); t.append(i); } bx.append(t); return t; };
+    const num = (v, key) => { const b = el("b", "bt-n"); countTo(b, v, "bt-" + key); return b; };
+    { const t = tile("big", "i-ck-spark", "#FED012"); t.append(num(total, "tot"), el("span", "bt-l", total === 1 ? "livrare" : "livrări"), el("span", "bt-s", since ? "din " + since.getDate() + " " + MOL[since.getMonth()] : "în total")); }
+    { const t = tile("streak", "i-flame", "#F65342"), c = el("div", "bt-c"); c.append(num(stk, "stk"), el("span", "bt-l", stk === 1 ? "zi la rând" : "zile la rând")); if (rec) c.append(el("small", "bt-s", "record: " + rec)); t.append(c); if (H && H.currentStreak && H.currentStreak.from) t.title = "de pe " + H.currentStreak.from; }
+    { const t = tile("pill wk", "i-board", "#28C840"); t.append(num(wk, "wk"), el("span", "bt-l", "săptămâna asta")); }
+    if (H && T.liveDays != null) { const t = tile("sm", "i-cal", "#119BFE"); t.append(num(Number(T.liveDays) || 0, "ld"), el("span", "bt-l", "zile cu live")); }
+    { const v = Math.max(Number(T.releases) || 0, relsLive.length); if (v) { const t = tile("sm", "i-up", "#B098C8"); t.append(num(v, "dep"), el("span", "bt-l", "deploy\u2011uri live")); } }
+    const pd = (H && Array.isArray(H.perDay) ? H.perDay : []).filter((x) => x && x.date);
+    if (pd.length) { const b = pd.reduce((m, x) => ((Number(x.delivered) || 0) > (Number(m.delivered) || 0) ? x : m), pd[0]), d = dt(b.date); if (d && b.delivered) { const t = tile("best", "i-trophy", "#FED012"), w = el("div", "bt-w"); w.append(el("span", "bt-k", "cea mai plină zi"), el("b", "bt-d", d.getDate() + " " + MO[d.getMonth()]), el("span", "bt-l", b.delivered + " livrări" + (b.releases ? " · " + b.releases + " deploy\u2011uri" : ""))); t.append(w); } }
+    // weekly bars: the current week stands out; a zero week inside the history reads as "fără date"
+    const pw = (H && Array.isArray(H.perWeek) ? H.perWeek : []).filter((x) => x && x.weekStart).slice(-16);
+    if (pw.length >= 2) {
+      const t = tile("bars", "", "#119BFE"), hd = el("div", "bt-bh"); hd.append(el("span", "bt-k", "livrări pe săptămână"), el("span", "bt-k", pw.length + " săpt.")); t.append(hd);
+      const max = Math.max(1, ...pw.map((x) => Number(x.delivered) || 0)), monK = dayKey(mon.toISOString()), row = el("div", "bt-bars");
+      const first = pw.findIndex((x) => Number(x.delivered) > 0);
+      pw.forEach((x, i) => {
+        const v = Number(x.delivered) || 0, gap = !v && i > first && pw.slice(i + 1).some((y) => Number(y.delivered) > 0), cur = x.weekStart === monK || (i === pw.length - 1 && x.weekStart <= monK);
+        const c = el("div", "bb" + (cur ? " cur" : "") + (gap ? " gap" : "")), bar = el("i"), d = dt(x.weekStart);
+        bar.style.setProperty("--h", gap ? "100%" : Math.max(v ? 4 : 0, v / max * 100) + "%"); bar.style.animationDelay = 200 + i * 30 + "ms";
+        c.title = (d ? "săpt. din " + d.getDate() + " " + MO[d.getMonth()] : x.weekStart) + ": " + (gap ? "fără date" : v + " livrări") + (cur ? " · săptămâna asta" : "");
+        c.append(bar, el("span", "", d && (i === 0 || d.getDate() <= 7 || cur) ? (cur ? "azi" : MO[d.getMonth()]) : ""));
+        if (cur && v) c.append(el("em", "", String(v)));
+        row.append(c);
+      });
+      t.append(row); if (pw.some((x, i) => !Number(x.delivered) && i > first)) { const lg = el("span", "bt-gap"); lg.append(el("i"), "fără date"); hd.insertBefore(lg, hd.lastChild); }
     }
-    if (groups.length > MAXD) { const mb = el("button", "btn sm ghost wins-more", W.all ? "Doar ultimele zile" : "Tot istoricul · încă " + zile(groups.length - MAXD)); mb.type = "button"; mb.onclick = () => { W.all = !W.all; renderWins(); }; tl.append(mb); }
+    // the freshest yay!s as sticky notes
+    const yay = (all.length ? all : S.tasks.filter((t) => norm(t.status) === "done").sort((a, b) => String(liveAt(b)).localeCompare(String(liveAt(a))))).slice(0, 3);
+    if (yay.length) { const t = tile("notes", "", "#28C840"); yay.forEach((w, i) => { const m = winner(w), nt = el("button", "note"); nt.type = "button"; nt.style.setProperty("--r", [-2.5, 1.8, -1][i] + "deg"); nt.style.setProperty("--nc", ["var(--t-yellow)", "var(--t-green)", "var(--t-purple)"][i]); nt.style.animationDelay = 300 + i * 90 + "ms"; nt.title = w.title; nt.onclick = () => openTask(w.id); nt.append(avatar(m), el("span", "note-t", w.title), el("span", "yay", "yay!")); if (freshNow.has(w.id) || !isSeen(w.id)) nt.classList.add("new"); t.append(nt); }); }
+    // deploys: newest first, one line each
+    const dl = $("wins-dep"), rel = S.releases.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    dl.replaceChildren();
+    if (!rel.length) dl.append(loading("releases") ? skel(1) : el("div", "empty", "Deploy-urile apar aici după primul release."));
+    else {
+      const hd = el("div", "dep-h"); hd.append(el("span", "bt-k", "Deploy-uri"), el("span", "mono muted", rel.length + " în total")); dl.append(hd);
+      const MAX = 5, list = el("ol", "dep-l"); (W.all ? rel : rel.slice(0, MAX)).forEach((r, i) => {
+        const li = el("li"), b = el("button", "dep"); b.type = "button"; b.style.animationDelay = Math.min(i * 30, 300) + "ms"; b.onclick = () => jump("rel", r.id);
+        const d = r.date ? new Date(r.date) : null, ch = (r.channel || "live").toLowerCase();
+        b.append(el("span", "dep-d mono", d && !isNaN(d) ? d.getDate() + " " + MO[d.getMonth()] : ""), el("span", "dep-c " + (ch === "live" ? "lv" : "bt"), ch === "live" ? "LIVE" : ch.toUpperCase()), el("b", "dep-v", relLabel(r)), el("span", "dep-s", String(r.summary || r.title || "").split("\n")[0]));
+        li.append(b); list.append(li);
+      });
+      dl.append(list);
+      if (rel.length > MAX) { const mb = el("button", "dep-more", W.all ? "Arată doar ultimele 5" : "Vezi toate · încă " + (rel.length - MAX)); mb.type = "button"; mb.setAttribute("aria-expanded", String(W.all)); mb.onclick = () => { W.all = !W.all; renderWins(); }; dl.append(mb); }
+    }
     const unseen = all.filter((t) => !isSeen(t.id)).map((t) => t.id); armCelebration(unseen);
   }
   // ---------- The Core: blank + client editions; the token stays out of the page until the card is turned ----------
@@ -2427,7 +2769,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
     $("beat").classList.toggle("on", !!fresh); $("st-claude").textContent = last ? "Claude a verificat " + ago(last) : "Claude: încă nu a verificat";
   }
   let raf = 0;
-  function renderAll() { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { renderHeader(); renderPM(); renderInbox(); renderTeam(); renderView(); renderRail(); renderWins(); renderCore(); renderCoreReq(); renderSec(); renderArchive(); renderCamp(); renderContent(); if (openTaskId) fillDrawer(openTaskId); }); }
+  function renderAll() { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { renderHeader(); renderPM(); renderInbox(); renderTeam(); renderView(); renderRail(); renderWins(); renderCore(); renderCoreReq(); renderSec(); renderArchive(); renderCamp(); renderContent(); renderSocial(); renderAna(); if (openTaskId) fillDrawer(openTaskId); }); }
   // once a minute: the header clock, and a re-render when a task crosses its 24 h on live
   setInterval(() => { renderHeader(); if (S.tasks.filter(isWin).sort((a, b) => liveAge(a) - liveAge(b)).map((t) => t.id).join() !== winSig) renderAll(); }, 60000);
 
@@ -2634,11 +2976,11 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
   $("lg-btn").onclick = () => { const l = $("legend"); l.hidden = !l.hidden; $("lg-btn").setAttribute("aria-expanded", String(!l.hidden)); };
   try { const v = localStorage.getItem("ops-view"); if (v && v !== "city") { const b = document.querySelector('[data-view="' + v + '"]'); if (b) b.click(); } } catch {}
   // ---------- v24 (TASK-123): sections, rail, intelinks, count-ups, skeletons, summary cards, bubbles ----------
-  const TITLES = { home: ["Ce ", "facem", " azi?"], talk: ["Conversația cu ", "Claude", ""], work: ["Progres · ", "task-uri", ""], camp: ["", "Campanii", ""], cont: ["", "Conținut", ""], team: ["", "Echipa", ""], core: ["The ", "Core", ""], sec: ["", "Securitate", ""], reports: ["", "Rapoarte", ""] };
-  const NAMES = { home: "Acasă", talk: "Conversația", work: "Progres · Task-uri", camp: "Campanii", cont: "Conținut", team: "Echipa", core: "The Core", sec: "Securitate", reports: "Rapoarte" };
-  const CAT_IC = { home: "i-home", talk: "i-chat", work: "i-board", camp: "i-mega", cont: "i-ck-layers", team: "i-team", core: "i-lock", sec: "i-shield", reports: "i-reports" };
+  const TITLES = { home: ["Ce ", "facem", " azi?"], talk: ["Conversația cu ", "Claude", ""], work: ["Progres · ", "task-uri", ""], camp: ["", "Campanii", ""], cont: ["", "Conținut", ""], soc: ["Social & ", "Ads", ""], ana: ["", "Analytics", ""], team: ["", "Echipa", ""], core: ["The ", "Core", ""], sec: ["", "Securitate", ""], reports: ["", "Rapoarte", ""] };
+  const NAMES = { home: "Acasă", talk: "Conversația", work: "Progres · Task-uri", camp: "Campanii", cont: "Conținut", soc: "Social & Ads", ana: "Analytics", team: "Echipa", core: "The Core", sec: "Securitate", reports: "Rapoarte" };
+  const CAT_IC = { home: "i-home", talk: "i-chat", work: "i-board", camp: "i-mega", cont: "i-ck-layers", soc: "i-clap", ana: "i-chart", team: "i-team", core: "i-lock", sec: "i-shield", reports: "i-reports" };
   function setCat(cat, noScroll) {
-    if (!TITLES[cat]) cat = "home";
+    if (!TITLES[cat] || (cat === "soc" && socHidden()) || (cat === "ana" && anaHidden())) cat = "home";
     const prev = UI.cat; UI.cat = cat; document.body.dataset.cat = cat;
     for (const b of document.querySelectorAll(".nav-i")) { if (b.dataset.cat === cat) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }
     let n = 0;
@@ -2818,9 +3160,10 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && popOpen && !mvEl && $("drawer").hidden) setPop(""); });
   document.addEventListener("pointerdown", (e) => { if (popOpen && e.target.closest && !e.target.closest(".pop, .fab, .toasts, .lightbox")) setPop(""); });
   async function sendQuick() {
-    const tx = $("q-text"), text = tx.value.trim(); if (!text) { tx.focus(); return; }
+    if (window.__opsUp && window.__opsUp.busy("q")) { toast("Așteaptă să se încarce fișierele.", "err"); return; }
+    const tx = $("q-text"), text = tx.value.trim() || (window.__opsUp && window.__opsUp.count("q") ? "(vezi fișierele)" : ""); if (!text) { tx.focus(); return; }
     const b = $("q-send"), old = b.innerHTML; b.disabled = true; b.innerHTML = '<span class="spin"></span>Se trimite…';
-    const ok = await guard(() => inboxAdd("command", text, null), "Trimis. Urmărește progresul în Conversație.");
+    const qup = window.__opsUp ? window.__opsUp.payload("q") : {}; const ok = await guard(() => inboxAdd("command", text + (window.__opsUp ? window.__opsUp.textSuffix("q") : ""), Object.keys(qup).length ? qup : null), "Trimis. Urmărește progresul în Conversație."); if (ok && window.__opsUp) window.__opsUp.reset("q");
     b.disabled = false; b.innerHTML = old; if (ok) { tx.value = ""; b.classList.add("sent-ok"); setTimeout(() => b.classList.remove("sent-ok"), 900); }
   }
   $("q-send").onclick = sendQuick;
@@ -2992,6 +3335,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
       res.append(el("span", "cp-rl", s ? "Rezultate" : "Rezultate: în curând"));
       for (const [k, l] of [["leads", "lead-uri"], ["freebieStarts", "freebie pornite"], ["submits", "trimiteri"]]) { const d = el("div"), n = el("b"); if (s && Number.isFinite(Number(s[k]))) countTo(n, Number(s[k]), "camp-" + key + k); else n.textContent = "—"; d.append(n, el("span", "", l)); res.append(d); }
       card.append(res);
+      if (!anaHidden()) { const ga = el("button", "btn sm ghost cp-ana"); ga.type = "button"; ga.append(icon("i-chart"), el("span", "", "Vezi în Analytics")); ga.onclick = () => goAna(key); card.append(ga); }
       if (c.notes) { const n = el("div", "cp-notes"); n.append(linkify(String(c.notes))); card.append(n); }
       if (c.updatedAt) card.append(el("div", "cp-up", "actualizat " + when(c.updatedAt)));
       g.append(card);
@@ -3289,6 +3633,7 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
       inp.onchange = async () => { const fl = Array.from(inp.files || []); inp.value = ""; if (!fl.length) return; ab.disabled = true; ab.lastChild.textContent = "Se încarcă…"; const added = await uploadFiles(fl); att = att.concat(added); ab.disabled = false; ab.lastChild.textContent = "Atașează imagini sau PDF"; draw(); };
       const f3 = el("div", "field"); f3.append(el("label", "", "Fișiere (opțional)"), ab, inp, strip); body.append(f3);
     }
+    if (window.__opsUp) { const upw = window.__opsUp.mount("ct", { fresh: true, open: /^(logo|cover|gallery|video)$/.test(sel.value), kind: sel.value === "logo" ? "logo" : "visual" }); const f4 = el("div", "field"); f4.append(el("label", "", sel.value === "video" ? "Fișier sau link video" : "Fișiere și linkuri (opțional)"), upw); body.append(f4); }
     body.append(el("div", "mono muted", "Ajunge la Claude ca mesaj în Conversație. Pe card apare ca cerere în așteptare până o rezolvă."));
     m.append(body);
     const foot = el("div", "am-f"), send = el("button", "btn k"); send.type = "submit"; send.setAttribute("form", "ctf-form"); body.id = "ctf-form"; send.append(icon("i-send"), el("span", "", "Trimite cererea")); foot.append(send); m.append(foot);
@@ -3296,11 +3641,12 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
     x.onclick = () => close(); sc.onclick = () => close();
     body.onsubmit = async (e) => {
       e.preventDefault();
-      const v = val.value.trim(); if (!v && !att.length) { val.focus(); toast("Scrie ce trebuie schimbat sau atașează un fișier.", "err"); return; }
+      const v = val.value.trim(); if (window.__opsUp && window.__opsUp.busy("ct")) { toast("Așteaptă să se încarce fișierele.", "err"); return; }
+      if (!v && !att.length && !(window.__opsUp && window.__opsUp.count("ct"))) { val.focus(); toast("Scrie ce trebuie schimbat sau atașează un fișier.", "err"); return; }
       const field = sel.value, short = (v || "vezi fișierele").replace(/\s+/g, " ").slice(0, 80) + ((v || "").length > 80 ? "…" : "");
       const text = "Conținut · " + (d.name || slug) + ": " + (CK_LAB[field] || field) + " – " + short;
       send.disabled = true; send.lastChild.textContent = "Se trimite…";
-      const ok = await guard(() => inboxAdd("command", text, { type: "content-change", slug, field, value: v, assets: att.map((a) => a.id) }), "Cererea e trimisă. O vezi pe card, în așteptare.");
+      const ok = await guard(() => inboxAdd("command", text + (window.__opsUp ? window.__opsUp.textSuffix("ct") : ""), { type: "content-change", slug, field, value: v, assets: att.map((a) => a.id), ...(window.__opsUp ? window.__opsUp.payload("ct") : {}) }), "Cererea e trimisă. O vezi pe card, în așteptare.");
       send.disabled = false; send.lastChild.textContent = "Trimite cererea";
       if (ok) { send.classList.add("sent-ok"); setTimeout(() => close(), 450); }
     };
@@ -3320,6 +3666,382 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
   $("ct-miss").onclick = () => { CT.miss = !CT.miss; renderContent(); };
   $("ct-sort").onclick = () => { CT.sort = CT.sort === "miss" ? "name" : "miss"; renderContent(); };
 
+  // ---------- r7: Social & Ads (admin only) · deliverables from tasks, a request builder, ad packages; specs from meta/adspecs ----------
+  // meta/adspecs is Mira's research (TASK-126). Every field is optional: the small defaults below keep the builder usable without it.
+  const AD_DEF = {
+    social: {
+      reel: { label: "Reel / video story", ratio: "9:16", px: "1080x1920", duration: { recommended: "15–30 s", min: 3, max: 180, unit: "s" } },
+      carousel: { label: "Carusel", recommendedRatio: "4:5", px: { "4:5": "1080x1350", "1:1": "1080x1080" }, slidesMin: 2, slidesMax: 20 },
+      staticStory: { label: "Story static", ratio: "9:16", px: "1080x1920" },
+      staticPost: { label: "Postare statică", ratios: ["4:5", "1:1"], px: { "4:5": "1080x1350", "1:1": "1080x1080" } },
+    },
+    scriptTemplate: { intro: "Începe cu ce vede omul în primele secunde.\nApoi scenele, pe rând.\nÎnchide cu un singur îndemn.", fields: [
+      { key: "hook", label: "Hook (primele 1–3 secunde)", hint: "Ce oprește degetul din scroll." },
+      { key: "scenes", label: "Scene", repeatable: true, subfields: [{ key: "visual", label: "Vizual" }, { key: "onScreenText", label: "Text pe ecran" }, { key: "voice", label: "Voce / dialog" }, { key: "duration", label: "Durată (s)" }] },
+      { key: "cta", label: "Call to action", hint: "Un singur lucru pe care vrei să-l facă omul." },
+      { key: "duration", label: "Durată totală", options: ["6 s", "15 s", "30 s", "60 s", "decideți voi"] },
+      { key: "format", label: "Format", options: ["Reel 9:16", "Story video 9:16", "Feed 4:5", "Feed 1:1", "toate"] },
+      { key: "tone", label: "Ton" }, { key: "music", label: "Muzică" }, { key: "references", label: "Referințe", hint: "Linkuri la exemple care îți plac și ce îți place la ele." }] },
+    options: [{ key: "caption", label: "Caption (RO/EN)" }, { key: "hashtags", label: "Hashtag-uri" }, { key: "subtitles", label: "Subtitrări" }, { key: "cover", label: "Copertă" }, { key: "music", label: "Muzică" }, { key: "voiceover", label: "Voiceover" }, { key: "ro_en", label: "Versiuni RO + EN" }, { key: "variants", label: "2 variante de hook" }, { key: "safezone", label: "Verificare safe zone" }],
+    ads: { google: [], meta: [], briefTemplate: { intro: "Spune-ne ce vrei să obții, nu cum să arate.", fields: [
+      { key: "goal", label: "Obiectiv" }, { key: "audience", label: "Public" }, { key: "offer", label: "Ofertă" }, { key: "message", label: "Mesaj principal" }, { key: "cta", label: "Call to action" }, { key: "landing", label: "Pagina de destinație" },
+      { key: "budget_period", label: "Buget și perioadă", optional: true }, { key: "brand_assets", label: "Materiale de brand", optional: true }] } },
+    caveats: [], sources: [],
+  };
+  // the four request tiles, in Mira's keys (payload.kind uses them)
+  const SOC_TILES = [["reel", "i-play", true], ["carousel", "i-ck-gal", false], ["staticStory", "i-ck-img", false], ["staticPost", "i-ck-txt", false]];
+  // which caveats belong to which package or type (Mira's caveats are free text)
+  const CAV_RE = { pmax: /performance max|pmax/i, display: /\bRDA\b|responsive display/i, demandgen: /demand gen/i, youtube: /youtube|bumper|in-stream|shorts/i, "meta-core": /meta ads guide|IG feed ads/i, "meta-carousel": /meta.*carousel|instagram.*carousel|carousel.*(instagram|meta)/i, "meta-video": /\breels?\b/i, reel: /\breels?\b|tiktok|hashtag/i, carousel: /instagram.*carousel|carousel.*instagram/i, staticPost: /hashtag/i, staticStory: /stories/i };
+  const SOC_RE = /\b(reels?|stor(y|ies)|carousel|carusel|post(are)?|video|ads?|reclam[aăe])\b/i;
+  const SOC = { tab: "made", type: "reel", dur: "", pk: new Set(), att: [], built: "" };
+  const arr = (x) => (Array.isArray(x) ? x : []);
+  function adSpec() {
+    const A = S.adspecs && typeof S.adspecs === "object" ? S.adspecs : {}, D = AD_DEF, st = A.scriptTemplate || {}, ads = A.ads || {}, bt = ads.briefTemplate || {};
+    const fields = {}; for (const f of arr(st.fields).length ? st.fields : D.scriptTemplate.fields) if (f && f.key) fields[f.key] = f;
+    const lines = (v, d) => (Array.isArray(v) ? v : String(v || d).split(/\n+/)).map((x) => String(x).trim()).filter(Boolean);
+    return {
+      social: Object.assign({}, D.social, A.social || {}), fields, intro: lines(st.intro, D.scriptTemplate.intro),
+      options: (arr(A.options).length ? A.options : D.options).map((o) => (typeof o === "string" ? { key: o, label: o } : Array.isArray(o) ? { key: o[0], label: o[1] } : o)).filter((o) => o && o.key),
+      google: arr(ads.google), meta: arr(ads.meta),
+      brief: (arr(bt.fields).length ? bt.fields : arr(bt).length ? bt : D.ads.briefTemplate.fields).map((f) => (Array.isArray(f) ? { key: f[0], label: f[1], hint: f[2], optional: !f[3] } : f)).filter((f) => f && f.key),
+      briefIntro: lines(bt.intro, D.ads.briefTemplate.intro),
+      caveats: arr(A.caveats).map(String), sources: arr(A.sources).filter((s) => s && s.id),
+      custom: !!S.adspecs, at: A.generatedAt || "",
+    };
+  }
+  function socHidden() { return !!(window.__ops && !(window.__ops.user && window.__ops.user.role === "admin")); }
+  const socType = (t) => { const s = String(t.title || "") + " " + String(t.topic || ""); return /reel|video/i.test(s) ? "Reel / video" : /carousel|carusel/i.test(s) ? "Carusel" : /stor(y|ies)/i.test(s) ? "Story" : /\bads?\b|reclam/i.test(s) ? "Ads" : "Postare"; };
+  // "4 (min 1, max 20)" → 4 · "min 3, max 15 (recomandat 11+)" → 11 · "1–5" → 5 · "opțional" → 0 · "1 per card" → 1
+  function cnt(v) { if (typeof v === "number") return v; const s = String(v == null ? "1" : v); if (/^\s*op[tț]ional/i.test(s)) return 0; let m = s.match(/recomandat\s*(\d+)/i); if (m) return +m[1]; m = s.match(/^\s*(?:min\s*)?(\d+)\s*[–-]\s*(\d+)/i); if (m) return +m[2]; m = s.match(/(\d+)/); return m ? +m[1] : 1; }
+  const pxs = (v) => String(v || "").match(/\d{2,5}\s*[x×]\s*\d{2,5}/g) || [];
+  const pkAll = () => { const A = adSpec(); return [...A.google.map((p) => ({ ...p, net: "Google" })), ...A.meta.map((p) => ({ ...p, net: "Meta" }))]; };
+  const pkDel = (p) => arr(p.deliverables).map((x) => (Array.isArray(x) ? { label: x[0], px: x[0], count: x[1] } : x));
+  const pkTxt = (p) => arr(p.textAssets || p.texts).map((x) => (Array.isArray(x) ? { label: x[0], maxChars: x[1], count: x[2] } : x));
+  // sources an object cites (its `source` field plus any known id inside it) and the caveats that concern it
+  function srcNotes(obj, key) {
+    const A = adSpec(), txt = JSON.stringify(obj || {}), ids = new Set(String((obj && obj.source) || "").split(/[,\s]+/).filter(Boolean));
+    for (const s of A.sources) if (txt.includes(s.id)) ids.add(s.id);
+    const src = A.sources.filter((s) => ids.has(s.id)), re = CAV_RE[key];
+    const cav = A.caveats.filter((c) => (re && re.test(c)) || [...ids].some((i) => c.includes(i)));
+    if (!src.length && !cav.length) return null;
+    const d = el("details", "srcn"), sm = el("summary"); sm.append(el("span", "", "Surse și note"), el("span", "mono muted", src.length + (src.length === 1 ? " sursă" : " surse") + (cav.length ? " · " + cav.length + (cav.length === 1 ? " notă" : " note") : ""))); d.append(sm);
+    if (src.length) { const ul = el("ul", "srcn-s"); for (const s of src) { const li = el("li"), sec = /^SECONDARY/i.test(s.label || ""); li.append(el("span", "srcn-k " + (sec ? "sec" : "ok"), sec ? "presă" : "oficial")); const a = el("a", "", String(s.label || s.id).replace(/^SECONDARY:\s*/i, "")); if (/^https:\/\//.test(s.url || "")) { a.href = s.url; a.target = "_blank"; a.rel = "noopener"; } li.append(a); if (s.accessed) li.append(el("span", "mono muted", s.accessed)); ul.append(li); } d.append(ul); }
+    if (cav.length) { d.append(el("div", "srcn-h", "Ce e ales de noi sau neclar în surse")); const ul = el("ul", "srcn-c"); cav.forEach((c) => ul.append(el("li", "", c))); d.append(ul); }
+    d.addEventListener("click", (e) => e.stopPropagation()); return d;
+  }
+  function renderSocial() {
+    const hide = socHidden(); const nb = document.querySelector('.nav-i[data-cat="soc"]'); if (nb) nb.hidden = hide; $("soc").classList.toggle("mirror-hide", hide); if (hide) return;
+    const made = S.tasks.filter((t) => SOC_RE.test(String(t.title || "") + " " + String(t.topic || ""))).sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
+    const pend = S.inbox.filter((x) => x.payload && (x.payload.type === "content-production" || x.payload.type === "ads-production") && x.status !== "done" && x.status !== "declined").sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    setNb("nb-soc", pend.length ? String(pend.length) : "", pend.length ? "hot" : "");
+    $("soc-n").textContent = made.length + " livrate · " + pend.length + " cereri în curs";
+    // Home: the compact card
+    const h = $("soc-home"); h.replaceChildren(); const k = el("div", "sum-k"); sumNums(k, [[made.length, "livrate", true], [pend.length, "cereri în curs"]], "soc"); h.append(k);
+    const r = el("div", "row"); [["social", "Cere conținut social", "i-ck-spark"], ["ads", "Cere ads", "i-mega"]].forEach(([tab, l, ic]) => { const b = el("button", "btn sm" + (tab === "social" ? " k" : " ghost")); b.type = "button"; b.append(icon(ic), el("span", "", l)); b.onclick = () => { setSocTab(tab); setCat("soc"); }; r.append(b); }); h.append(r);
+    // pending requests
+    const pb = $("soc-pend"); pb.replaceChildren(); pb.hidden = !pend.length;
+    if (pend.length) { pb.append(el("div", "soc-pl", "Cereri în curs")); pend.slice(0, 6).forEach((x) => { const row = el("div", "soc-pr"); row.append(stPill(x.status), el("span", "t", x.text || ""), el("span", "mono muted", ago(x.createdAt))); pb.append(row); }); }
+    // delivered
+    const g = $("soc-made"); g.replaceChildren();
+    if (!made.length) g.append(loading("tasks") ? skel(2) : el("div", "empty", "Încă nimic de social în task-uri. Cererile noi apar aici după ce sunt livrate."));
+    made.slice(0, 24).forEach((t, i) => {
+      const c = el("article", "socc"); c.style.animationDelay = Math.min(i * 30, 300) + "ms";
+      const top = el("div", "socc-h"), sp = el("span", "cp-st"); sp.append(el("i", "c-" + stOf(t)), el("span", "", SLAB[stOf(t)]));
+      top.append(el("span", "socc-k", socType(t)), sp); c.append(top);
+      const tt = el("button", "socc-t"); tt.type = "button"; tt.dataset.task = t.id; tt.append(el("span", "", t.title), el("span", "mono muted", t.id)); c.append(tt);
+      const did = t.delivered || String(t.notes || "").split(/\n\s*\n/).filter((x) => x.trim()).slice(-1)[0] || "";
+      if (did) { const d = el("div", "socc-d"); d.append(linkify(did)); c.append(d); }
+      const atts = arr(t.attachments).slice(0, 4);
+      if (atts.length) { const s = el("div", "strip"); atts.forEach((a) => { const m = el("div", "mini"); if (isImg(a)) { const im = el("img"); im.src = blobUrl(a); im.alt = ""; im.loading = "lazy"; m.append(im); m.onclick = () => lightbox(blobUrl(a)); } else m.append(el("span", "", (isVid(a) ? "▶ " : "") + (a.name || "").split(".").pop().toUpperCase())); s.append(m); }); c.append(s); }
+      const mt = mateOf(t); const f = el("div", "socc-f"); if (mt) f.append(whoEl(mt));
+      const again = el("button", "btn sm ghost"); again.type = "button"; again.append(icon("i-flip"), el("span", "", "Cere din nou / o variantă"));
+      again.onclick = () => { const s2 = t.title + " " + (t.topic || ""), vid = /video|reel/i.test(s2), ty = /carousel|carusel/i.test(s2) ? "carousel" : !vid && /stor(y|ies)/i.test(s2) ? "staticStory" : !vid && /post/i.test(s2) ? "staticPost" : "reel"; setSocTab("social"); pickType(ty); $("sb-title").value = "Variantă: " + t.title; const rf = $("sb-references"); if (rf) rf.value = (rf.value ? rf.value + "\n" : "") + "Pornim de la " + t.id + " (" + t.title + ")"; $("sb-title").focus(); flashEl($("sb-title")); };
+      f.append(again); c.append(f); g.append(c);
+    });
+    const sig = (S.adspecs && S.adspecs.generatedAt || "") + "|" + JSON.stringify(S.adspecs || {}).length;
+    if (SOC.built !== sig) { SOC.built = sig; buildSocial(); } else fillClients();
+    const note = $("soc-specnote"); note.textContent = adSpec().custom ? "Specificații: cercetarea Mirei" + (adSpec().at ? " din " + adSpec().at : "") + ". Detalii în „Surse și note”." : "Specificațiile sunt cele implicite până le completează Mira.";
+  }
+  function setSocTab(k) { SOC.tab = k; for (const b of document.querySelectorAll("[data-soc-tab]")) { const on = b.dataset.socTab === k; b.setAttribute("aria-selected", String(on)); b.setAttribute("aria-pressed", String(on)); } for (const p of document.querySelectorAll("[data-soc-p]")) p.hidden = p.dataset.socP !== k; }
+  // fill a field from an example pill, with a small flash
+  function fillWith(inp, v) { inp.value = String(v); inp.dispatchEvent(new Event("input")); inp.classList.remove("filled"); void inp.offsetWidth; inp.classList.add("filled"); }
+  // one labelled field from a template entry {key, label, hint, example(s)}; the example pill fills it
+  function tplField(id, F, kind, ph) {
+    const w = el("div", "field sbf"), l = el("label", "", F.label || F.key); l.htmlFor = id;
+    const inp = kind === "area" ? el("textarea", "inp") : el("input", "inp"); inp.id = id; if (kind === "area") inp.rows = 2; else inp.type = "text"; if (ph) inp.placeholder = ph;
+    w.append(l, inp);
+    if (F.hint) w.append(el("span", "sb-hint", String(F.hint)));
+    const exs = [].concat(F.examples || [], F.example ? [F.example] : []).filter(Boolean);
+    if (exs.length) { const ex = el("div", "sb-ex"); exs.slice(0, 3).forEach((x) => { const b = el("button"); b.type = "button"; b.title = "Folosește exemplul"; b.append(el("i", "", "ex."), String(x)); b.onclick = () => fillWith(inp, x); ex.append(b); }); w.append(ex); }
+    return w;
+  }
+  // repeatable rows (scenes, slides): add, remove, reorder by drag or arrows
+  function rowList(boxId, cols, makeLabel, onChange) {
+    const box = $(boxId); let dragEl = null;
+    const renum = () => { [...box.children].forEach((r, i) => { r.querySelector(".rl-n").textContent = String(i + 1); r.querySelector(".rl-lab").textContent = makeLabel(i); }); onChange && onChange(); };
+    const add = (vals) => {
+      const r = el("div", "rl-row"); r.draggable = true;
+      const hd = el("div", "rl-hd"), grip = el("span", "rl-grip"); grip.title = "Trage ca să muți"; grip.textContent = "⋮⋮";
+      const up = el("button", "rl-b"); up.type = "button"; up.title = "Mută sus"; up.setAttribute("aria-label", "Mută sus"); up.textContent = "↑"; up.onclick = () => { if (r.previousElementSibling) box.insertBefore(r, r.previousElementSibling); renum(); up.focus(); };
+      const dn = el("button", "rl-b"); dn.type = "button"; dn.title = "Mută jos"; dn.setAttribute("aria-label", "Mută jos"); dn.textContent = "↓"; dn.onclick = () => { if (r.nextElementSibling) box.insertBefore(r.nextElementSibling, r); renum(); dn.focus(); };
+      const rm = el("button", "rl-b x"); rm.type = "button"; rm.title = "Șterge"; rm.setAttribute("aria-label", "Șterge rândul"); rm.append(icon("i-x")); rm.onclick = () => { if (box.children.length <= 1) { r.querySelectorAll("[data-k]").forEach((x) => (x.value = "")); onChange && onChange(); return; } r.classList.add("out"); setTimeout(() => { r.remove(); renum(); }, reduced() ? 0 : 200); };
+      hd.append(grip, el("span", "rl-n", ""), el("span", "rl-lab", ""), up, dn, rm); r.append(hd);
+      const body = el("div", "rl-body");
+      cols.forEach(({ key, label, hint }) => { const num = key === "duration", f = el("label", "rl-f" + (num ? " dur" : "")), i2 = num ? el("input", "inp") : el("textarea", "inp"); if (num) { i2.type = "number"; i2.min = "1"; i2.max = "60"; i2.step = "1"; i2.placeholder = "3"; } else { i2.rows = 1; const sh = String(hint || "").split(/[.;]/)[0].trim(); i2.placeholder = sh.length <= 34 ? sh : ""; } i2.dataset.k = key; if (vals && vals[key]) i2.value = vals[key]; i2.addEventListener("input", () => onChange && onChange()); f.append(el("span", "", label || key), i2); if (hint && !num) f.title = hint; body.append(f); });
+      r.append(body);
+      // drag only from the grip area, so text inside the fields stays selectable
+      r.addEventListener("mousedown", (e) => { r.draggable = !!e.target.closest(".rl-hd") && !e.target.closest("button"); });
+      r.addEventListener("dragstart", (e) => { dragEl = r; r.classList.add("drag"); e.dataTransfer.effectAllowed = "move"; try { e.dataTransfer.setData("text/plain", "row"); } catch {} });
+      r.addEventListener("dragend", () => { r.classList.remove("drag"); dragEl = null; r.draggable = true; renum(); });
+      r.addEventListener("dragover", (e) => { if (!dragEl || dragEl === r) return; e.preventDefault(); const b = r.getBoundingClientRect(); box.insertBefore(dragEl, e.clientY < b.top + b.height / 2 ? r : r.nextSibling); });
+      box.append(r); renum();
+      return r.querySelector("textarea, input");
+    };
+    return { add, read: () => [...box.children].map((r) => Object.fromEntries([...r.querySelectorAll("[data-k]")].map((x) => [x.dataset.k, x.value.trim()]))) };
+  }
+  let scenes = null, slides = null;
+  function buildSocial() {
+    const A = adSpec(), F = A.fields;
+    // type tiles
+    const tl = $("sb-types"); tl.replaceChildren();
+    for (const [id, ic] of SOC_TILES) { const t = A.social[id] || AD_DEF.social[id]; if (!t) continue; const b = el("button", "sb-tile"); b.type = "button"; b.dataset.type = id; b.setAttribute("aria-pressed", "false"); const ratio = t.ratio || t.recommendedRatio || arr(t.ratios)[0] || ""; b.append(icon(ic), el("b", "", t.label || id), el("span", "", [ratio, typeof t.px === "string" ? t.px.replace("x", "×") : ""].filter(Boolean).join(" · "))); b.onclick = () => pickType(id); tl.append(b); }
+    // onboarding: the three intro lines
+    $("sb-intro").replaceChildren(...A.intro.slice(0, 3).map((x, i) => { const li = el("li"); li.style.animationDelay = i * 80 + "ms"; li.append(el("b", "", String(i + 1)), el("span", "", String(x))); return li; }));
+    $("sb-video-f").replaceChildren(tplField("sb-hook", F.hook || { key: "hook", label: "Hook" }, "area", "Ce vede omul imediat"));
+    const sc = F.scenes || {}; $("sb-scenes-l").textContent = sc.label || "Scene"; $("sb-scenes-h").textContent = sc.hint || ""; $("sb-scenes-h").hidden = !sc.hint;
+    $("sb-scenes").replaceChildren(); scenes = rowList("sb-scenes", arr(sc.subfields).length ? sc.subfields : AD_DEF.scriptTemplate.fields[1].subfields, () => "Scena", updDur);
+    $("sb-add-scene").onclick = () => { const f = scenes.add(); if (f) f.focus(); };
+    scenes.add(); scenes.add();
+    // duration chips + format select
+    const du = F.duration || {}, dc = $("sb-dur"); $("sb-dur-l").textContent = du.label || "Durată totală"; dc.replaceChildren();
+    arr(du.options).forEach((o) => { const b = el("button", "", String(o)); b.type = "button"; b.setAttribute("aria-pressed", String(SOC.dur === o)); b.onclick = () => { SOC.dur = o; for (const x of dc.children) x.setAttribute("aria-pressed", String(x === b)); updDur(); }; dc.append(b); });
+    $("sb-dur-h").textContent = du.hint || ""; $("sb-dur-h").hidden = !du.hint;
+    const fo = F.format || {}, fs = $("sb-format"); $("sb-format-l").textContent = fo.label || "Format"; fs.replaceChildren(...arr(fo.options).map((o) => { const x = el("option", "", String(o)); x.value = String(o); return x; })); $("sb-format-h").textContent = fo.hint || ""; $("sb-format-h").hidden = !fo.hint;
+    $("sb-video-f2").replaceChildren(...["cta", "tone", "music"].map((k) => tplField("sb-" + k, F[k] || { key: k, label: k }, "text")));
+    $("sb-refs-w").replaceChildren(tplField("sb-references", F.references || { key: "references", label: "Referințe" }, "area", "Câte un link pe rând"));
+    $("sb-slides").replaceChildren(); slides = rowList("sb-slides", [{ key: "title", label: "Titlu", hint: "Pe slide" }, { key: "text", label: "Text", hint: "Ce scrie" }, { key: "visual", label: "Vizual", hint: "Ce se vede" }], (i) => (i === 0 ? "Slide-ul de copertă" : "Slide"), null);
+    $("sb-add-slide").onclick = () => { const f = slides.add(); if (f) f.focus(); };
+    slides.add(); slides.add(); slides.add();
+    // options as checkboxes, hint on hover
+    $("sb-opts").replaceChildren(...A.options.map((o) => { const lb = el("label", "sb-opt"), c = el("input"); c.type = "checkbox"; c.value = o.key; if (o.hint) lb.title = o.hint; lb.append(c, el("span", "", String(o.label || o.key))); return lb; }));
+    fillClients();
+    if (assets) { const ab = $("sb-attach"); ab.hidden = false; const inp = $("sb-file"); inp.accept = "image/*,video/mp4,video/webm,application/pdf,.heic,.heif"; ab.onclick = () => inp.click(); inp.onchange = async () => { const fl = Array.from(inp.files || []); inp.value = ""; if (!fl.length) return; ab.disabled = true; const added = await uploadFiles(fl); ab.disabled = false; SOC.att = SOC.att.concat(added); drawSocAtt(); }; }
+    $("sb-form").onsubmit = sendSocial;
+    pickType(SOC.type);
+    buildAds();
+  }
+  function drawSocAtt() { const s = $("sb-strip"); s.hidden = !SOC.att.length; s.replaceChildren(...SOC.att.map((a, k) => { const m = el("div", "mini"); if (isImg(a)) { const im = el("img"); im.src = blobUrl(a); im.alt = ""; m.append(im); } else m.append(el("span", "", (a.name || "").split(".").pop().toUpperCase())); const x = el("button"); x.type = "button"; x.setAttribute("aria-label", "Scoate " + (a.name || "")); x.append(icon("i-x")); x.onclick = () => { SOC.att.splice(k, 1); drawSocAtt(); }; m.append(x); return m; })); }
+  function fillClients() { for (const id of ["sb-client", "ad-client"]) { const s = $(id); if (!s) continue; const v = s.value; s.replaceChildren(...[["", "Fără client anume"], ...S.content.slice().sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "ro")).map((d) => [d.slug || d.id, d.name || d.slug])].map(([val, l]) => { const o = el("option", "", l); o.value = val; return o; })); s.value = v; } }
+  // the spec card: what the chosen type must be, technically
+  function pickType(id) {
+    const A = adSpec(), t = A.social[id] || AD_DEF.social[id]; if (!t) return; SOC.type = id;
+    for (const b of document.querySelectorAll(".sb-tile")) b.setAttribute("aria-pressed", String(b.dataset.type === id));
+    const video = id === "reel";
+    $("sb-video").hidden = !video; $("sb-car").hidden = id !== "carousel"; $("sb-static").hidden = video || id === "carousel";
+    const sp = $("sb-spec"); sp.replaceChildren(); const hd = el("div", "sb-spec-h"); hd.append(icon("i-ck-img"), el("b", "", "Specificații · " + (t.label || id))); sp.append(hd);
+    const row = el("div", "sb-spec-r"), kv = (k, v) => { if (v == null || v === "") return; const d = el("span"); d.append(el("i", "", k), String(v)); row.append(d); };
+    const px = typeof t.px === "string" ? t.px : t.px && typeof t.px === "object" ? Object.entries(t.px).map(([r, v]) => r + " " + v).join(" · ") : "";
+    kv("Format", t.ratio || (t.ratioOptions || t.ratios || []).join(" / ") || t.recommendedRatio); kv("Pixeli", px.replace(/x/g, "×"));
+    const d = t.duration; if (d && typeof d === "object") kv("Durată", (d.recommended ? d.recommended : "") + (d.min != null && d.max != null ? " (" + d.min + "–" + d.max + " " + (d.unit || "s") + ")" : "")); else kv("Durată", d || t.displayDuration);
+    if (t.slidesMin || t.slidesMax) kv("Slide-uri", (t.slidesMin || 1) + "–" + (t.slidesMax || "?") + (t.slidesMaxAds ? " (în reclame max " + t.slidesMaxAds + ")" : ""));
+    if (t.safeZones) kv("Safe zone", ["sus " + (t.safeZones.top || "?"), "jos " + (t.safeZones.bottom || "?"), "lateral " + (t.safeZones.sides || "?")].join(" · "));
+    if (t.captionMax && t.captionMax.instagram) kv("Caption", t.captionMax.instagram + " caractere" + (t.captionMax.hashtagsInstagram ? ", max " + t.captionMax.hashtagsInstagram + " hashtag-uri" : ""));
+    kv("Fișier", t.codec || t.format); sp.append(row);
+    if (t.notes) sp.append(el("p", "", String(t.notes)));
+    const sn = srcNotes(t, id); if (sn) sp.append(sn);
+    updDur();
+  }
+  function updDur() { if (!scenes) return; const tot = scenes.read().reduce((s, r) => s + (Number(r.duration) || 0), 0), m = $("sb-durm"), lim = parseInt(SOC.dur, 10); m.hidden = !tot && !lim; m.querySelector("b").textContent = lim ? tot + " s din " + lim + " s" : tot + " s în scene"; const f = m.querySelector("i"); f.style.width = (lim ? Math.min(100, tot / lim * 100) : Math.min(100, tot / 60 * 100)) + "%"; m.className = "sb-durm " + (lim ? (tot > lim ? "bad" : tot >= lim * .6 ? "ok" : "") : ""); }
+  async function sendSocial(e) {
+    e.preventDefault();
+    const A = adSpec(), t = A.social[SOC.type] || {}, title = $("sb-title").value.trim(); if (!title) { $("sb-title").focus(); toast("Dă-i un titlu scurt, ex.: Reel Litorsal · vara.", "err"); flashEl($("sb-title")); return; }
+    const v = (id) => ($(id) ? $(id).value.trim() : ""), refs = v("sb-references"); let script;
+    if (SOC.type === "reel") script = { hook: v("sb-hook"), scenes: scenes.read().filter((r) => Object.values(r).some(Boolean)), cta: v("sb-cta"), duration: SOC.dur || null, format: $("sb-format").value, tone: v("sb-tone"), music: v("sb-music"), references: refs };
+    else if (SOC.type === "carousel") script = { slides: slides.read().filter((r) => r.title || r.text || r.visual), references: refs };
+    else script = { headline: v("sb-headline"), text: v("sb-text"), visual: v("sb-visual"), references: refs };
+    const options = [...document.querySelectorAll("#sb-opts input:checked")].map((c) => c.value), client = $("sb-client").value || null;
+    const btn = $("sb-send"), lbl = btn.lastChild, old = lbl.textContent; btn.disabled = true; lbl.textContent = "Se trimite…";
+    const ok = await guard(() => inboxAdd("command", "Social · " + (t.label || SOC.type) + ": " + title, { type: "content-production", kind: SOC.type, title, script, options, client, attachments: SOC.att.map((a) => a.id) }), "Cererea e trimisă. O vezi sus, în „Cereri în curs”.");
+    btn.disabled = false;
+    if (ok) { btn.classList.add("sent-ok"); lbl.textContent = "Trimis"; confetti(btn); setTimeout(() => { btn.classList.remove("sent-ok"); lbl.textContent = old; }, 1600); $("sb-title").value = ""; SOC.att = []; drawSocAtt(); } else lbl.textContent = old;
+  }
+  // ---- Ads: brief + packages
+  function buildAds() {
+    const A = adSpec();
+    $("ad-intro").replaceChildren(...A.briefIntro.slice(0, 3).map((x, i) => { const li = el("li"); li.style.animationDelay = i * 80 + "ms"; li.append(el("b", "", String(i + 1)), el("span", "", String(x))); return li; }));
+    const bf = $("ad-brief"); bf.replaceChildren();
+    for (const f of A.brief) { const area = /audience|message|brand|assets/.test(f.key), w = tplField("ad-" + f.key, { ...f, label: (f.label || f.key) + (f.optional || /brand|assets/.test(f.key) ? " · opțional" : "") }, area ? "area" : "text"); const inp = w.querySelector(".inp"); inp.dataset.brief = f.key; if (!f.optional && !/brand|assets/.test(f.key)) inp.dataset.req = "1"; if (f.key === "landing") inp.inputMode = "url"; bf.append(w); }
+    const pk = $("ad-pk"); pk.replaceChildren();
+    const groups = [["Google", A.google], ["Meta", A.meta]].filter(([, l]) => l.length);
+    if (!groups.length) pk.append(el("div", "empty", "Pachetele apar aici când Mira termină specificațiile (meta/adspecs)."));
+    for (const [net, list] of groups) {
+      const grp = el("div", "ad-grp"); grp.append(el("div", "soc-pl", net));
+      const wrap = el("div", "ad-tiles");
+      for (const p of list) {
+        const card = el("div", "ad-tile"), on = () => SOC.pk.has(p.id); card.dataset.pk = p.id;
+        const tg = el("button", "ad-tg"); tg.type = "button"; tg.setAttribute("aria-pressed", String(on())); tg.append(el("span", "ad-ck"), el("b", "", p.label || p.id));
+        const toggle = () => { if (on()) SOC.pk.delete(p.id); else SOC.pk.add(p.id); tg.setAttribute("aria-pressed", String(on())); card.classList.toggle("on", on()); adSum(); };
+        tg.onclick = (e) => { e.stopPropagation(); toggle(); }; card.onclick = (e) => { if (!e.target.closest("details, a")) toggle(); }; card.classList.toggle("on", on());
+        const files = pkDel(p), texts = pkTxt(p), ul = el("ul", "ad-d");
+        files.forEach((x) => { const n = cnt(x.count), li = el("li", n ? "" : "ad-o"); li.append(el("span", "q", n ? n + "×" : "opț."), el("span", "", String(x.label || "")), el("span", "px", pxs(x.px).join(" / ").replace(/x/g, "×") || "")); if (x.notes) li.title = x.notes; ul.append(li); });
+        const ut = el("ul", "ad-t"); texts.forEach((x) => { const li = el("li"); li.append(el("span", "q", cnt(x.count) + "×"), el("span", "", String(x.label || "")), el("span", "px", x.maxChars ? (typeof x.maxChars === "number" ? x.maxChars + " car." : String(x.maxChars).split(/[;(]/)[0].trim()) : "")); li.title = [x.count, x.maxChars, x.notes].filter(Boolean).join(" · "); ut.append(li); });
+        card.append(tg, el("div", "ad-sub", "Fișiere"), ul); if (texts.length) card.append(el("div", "ad-sub", "Texte"), ut);
+        const sn = srcNotes(p, p.id); if (sn) card.append(sn);
+        wrap.append(card);
+      }
+      grp.append(wrap); pk.append(grp);
+    }
+    $("ad-form").onsubmit = sendAds; adSum();
+  }
+  function adSum() {
+    const sel = pkAll().filter((p) => SOC.pk.has(p.id)); let files = 0, texts = 0; const dims = new Set();
+    for (const p of sel) { pkDel(p).forEach((x) => { const n = cnt(x.count); if (!n) return; files += n; pxs(x.px).forEach((d) => dims.add(d.replace(/\s/g, ""))); }); pkTxt(p).forEach((x) => { texts += cnt(x.count); }); }
+    const s = $("ad-sum"); s.replaceChildren();
+    if (!sel.length) { s.append(el("span", "muted", "Alege unul sau mai multe pachete.")); return; }
+    const n = (v, key) => { const b = el("b"); countTo(b, v, key); return b; };
+    s.append("Vei primi: ", n(files, "adf"), " fișiere în ", n(dims.size, "add"), " dimensiuni + ", n(texts, "adt"), " texte", el("span", "muted ad-sel", sel.map((p) => p.label).join(" · ")));
+  }
+  async function sendAds(e) {
+    e.preventDefault();
+    const sel = pkAll().filter((p) => SOC.pk.has(p.id)); if (!sel.length) { toast("Alege cel puțin un pachet.", "err"); $("ad-pk").scrollIntoView({ block: "center", behavior: reduced() ? "auto" : "smooth" }); return; }
+    const brief = {}; let miss = null;
+    for (const i of document.querySelectorAll("[data-brief]")) { brief[i.dataset.brief] = i.value.trim(); if (i.dataset.req && !brief[i.dataset.brief] && !miss) miss = i; }
+    if (miss) { miss.focus(); toast("Completează câmpurile de bază ale brief-ului.", "err"); flashEl(miss); return; }
+    const client = $("ad-client").value || null, btn = $("ad-send"), lbl = btn.lastChild, old = lbl.textContent; btn.disabled = true; lbl.textContent = "Se trimite…";
+    const ok = await guard(() => inboxAdd("command", "Ads · " + sel.map((p) => p.label).join(", ") + ": " + (brief.goal || "").slice(0, 80), { type: "ads-production", kind: "ads", brief, packages: sel.map((p) => p.id), options: [], client, attachments: [] }), "Cererea de ads e trimisă.");
+    btn.disabled = false;
+    if (ok) { btn.classList.add("sent-ok"); lbl.textContent = "Trimis"; confetti(btn); setTimeout(() => { btn.classList.remove("sent-ok"); lbl.textContent = old; }, 1600); } else lbl.textContent = old;
+  }
+  for (const b of document.querySelectorAll("[data-soc-tab]")) b.onclick = () => setSocTab(b.dataset.socTab);
+
+  // ---------- r8: Analytics (analytics/summary; GA4 comes with TASK-128). Until then: mock data, clearly labelled ----------
+  const ANA = { range: 30 };
+  function anaHidden() { return socHidden(); } // default admin-only in the mirror, same rule as Social & Ads
+  const nf = (v) => (Number(v) || 0).toLocaleString("ro-RO");
+  const pctS = (v, d = 1) => (Number(v) || 0).toLocaleString("ro-RO", { maximumFractionDigits: d, minimumFractionDigits: 0 }) + "%";
+  const mmss = (s) => { s = Math.round(Number(s) || 0); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+  const rate = (v) => { v = Number(v) || 0; return v <= 1 ? v * 100 : v; }; // engagedRate may come as 0.62 or 62
+  function countF(node, n, key, f) { n = Number(n) || 0; const from = CNT.has(key) ? CNT.get(key) : 0; CNT.set(key, n); node.dataset.n = String(n); if (reduced() || from === n) { node.textContent = f(n); return; } const t0 = performance.now(), dur = 800; const step = (ts) => { if (node.dataset.n !== String(n)) return; const k = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - k, 3); node.textContent = f(from + (n - from) * e); if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
+  // deterministic mock in the agreed schema (source: "mock")
+  let anaMockCache = null;
+  function anaMock() {
+    const camps = (S.campaigns.length ? S.campaigns.map((c) => c.slug || c.id) : ["coffee-brands", "beauty-healthcare"]).slice(0, 4), sig = camps.join();
+    if (anaMockCache && anaMockCache.sig === sig) return anaMockCache.d;
+    let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const end = new Date(); end.setHours(12, 0, 0, 0); end.setDate(end.getDate() - 1);
+    const daily = []; for (let i = 29; i >= 0; i--) { const d = new Date(end); d.setDate(d.getDate() - i); const wd = d.getDay(), base = 140 + (29 - i) * 4 + (wd === 0 || wd === 6 ? -40 : 0); const users = Math.round(base + rnd() * 50), sessions = Math.round(users * (1.25 + rnd() * .2)); daily.push({ date: dayKey(d.toISOString()), users, sessions, leads: Math.round(sessions * (.012 + rnd() * .012)) }); }
+    const sum = (k, a, b) => daily.slice(a, b).reduce((s, x) => s + x[k], 0), kp = (v, p) => ({ value: v, prev: p, deltaPct: p ? Math.round((v - p) / p * 1000) / 10 : null });
+    const U = sum("users", 0, 30), Ss = sum("sessions", 0, 30), L = sum("leads", 0, 30);
+    const d = {
+      generatedAt: new Date().toISOString(), source: "mock", range: { from: daily[0].date, to: daily[29].date },
+      kpis: { users: kp(U, Math.round(U * .82)), sessions: kp(Ss, Math.round(Ss * .85)), engagedRate: kp(.618, .574), avgEngagementSec: kp(94, 101), leads: kp(L, Math.round(L * .7)), coreLiteStarts: kp(212, 160), coreLiteSubmits: kp(88, 71) },
+      daily,
+      sources: [["google", "organic", .34], ["instagram.com", "social", .21], ["(direct)", "(none)", .18], ["google", "cpc", .12], ["facebook.com", "paid", .09], ["linkedin.com", "social", .06]].map(([source, medium, f]) => ({ source, medium, sessions: Math.round(Ss * f), users: Math.round(U * f * .9), leads: Math.round(L * f * (medium === "cpc" || medium === "paid" ? 1.6 : .8)) })),
+      campaigns: camps.flatMap((slug, k) => ["a", "b"].map((variant) => { const s = Math.round(900 - k * 220 + rnd() * 200), cta = Math.round(s * (variant === "a" ? .21 : .26) * (0.9 + rnd() * .2)), fs = Math.round(cta * .55), fsub = Math.round(fs * .48), leads = Math.round(fsub * .8); return { slug, variant, utm_campaign: slug + "-" + variant, sessions: s, ctaClicks: cta, freebieStarts: fs, freebieSubmits: fsub, leads, conversionPct: Math.round(leads / s * 1000) / 10 }; })),
+      map: { driveSessions: 1840, cardOpens: 5230, gameStarts: 412, postcards: 96 },
+      topPages: [["/", "Acasă · harta"], ["/lp/coffee-brands/", "Coffee brands"], ["/the-core/", "The Core Lite"], ["/proiecte/litorsal/", "Litorsal"], ["/lp/beauty-healthcare/", "Beauty & healthcare"], ["/despre/", "Despre noi"]].map(([path, title], i) => ({ path, title, views: Math.round(Ss * [.55, .14, .11, .07, .06, .04][i]), avgSec: [71, 128, 214, 96, 110, 48][i] })),
+      countries: [["România", .78], ["Republica Moldova", .07], ["Germania", .05], ["Regatul Unit", .04], ["Italia", .03]].map(([country, f]) => ({ country, users: Math.round(U * f) })),
+      devices: [["mobile", .64], ["desktop", .32], ["tablet", .04]].map(([device, f]) => ({ device, users: Math.round(U * f) })),
+    };
+    anaMockCache = { sig, d }; return d;
+  }
+  const anaData = () => { const A = S.analytics; return A && typeof A === "object" && (A.kpis || A.daily) ? A : anaMock(); };
+  const arrA = (x) => (Array.isArray(x) ? x : []);
+  function kpiOf(A, k) {
+    const D = arrA(A.daily), x = (A.kpis || {})[k] || null, r = ANA.range;
+    if (r === 7 && D.length >= 14 && ["users", "sessions", "leads"].includes(k)) { const s = (a, b) => D.slice(a, b).reduce((t, d) => t + (Number(d[k]) || 0), 0), v = s(-7), p = s(-14, -7); return { value: v, prev: p, deltaPct: p ? (v - p) / p * 100 : null, r: 7 }; }
+    if (!x) return null; const v = Number(x.value), p = Number(x.prev); return { value: v, prev: p, deltaPct: x.deltaPct != null ? Number(x.deltaPct) : p ? (v - p) / p * 100 : null, r: 30 };
+  }
+  function delta(dp, inverse) { const s = el("span", "an-dl"); if (dp == null || !isFinite(dp)) { s.textContent = "—"; return s; } const up = dp >= 0, good = inverse ? !up : up; s.classList.add(Math.abs(dp) < .5 ? "eq" : good ? "up" : "dn"); s.append(el("i", "", Math.abs(dp) < .5 ? "＝" : up ? "▲" : "▼"), (up ? "+" : "−") + pctS(Math.abs(dp))); s.title = "față de perioada anterioară"; return s; }
+  // the 30-day chart: users (area), sessions (line), leads (bars), with a hover readout
+  function anaChart(box, D) {
+    box.replaceChildren(); if (D.length < 2) { box.append(el("div", "empty", "Prea puține zile pentru grafic.")); return; }
+    const W = 800, H = 220, pl = 36, pr = 10, pt = 12, pb = 26, iw = W - pl - pr, ih = H - pt - pb, NS = "http://www.w3.org/2000/svg";
+    const mx = Math.max(1, ...D.map((d) => Math.max(Number(d.users) || 0, Number(d.sessions) || 0))), ml = Math.max(1, ...D.map((d) => Number(d.leads) || 0));
+    const nice = (v) => { const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }, top = nice(mx);
+    const X = (i) => pl + i / (D.length - 1) * iw, Y = (v) => pt + ih - (Number(v) || 0) / top * ih;
+    const svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", "0 0 " + W + " " + H); svg.setAttribute("class", "an-svg"); svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", "Utilizatori, sesiuni și lead-uri pe zi, " + D.length + " zile. Ultima zi: " + nf(D[D.length - 1].users) + " utilizatori, " + nf(D[D.length - 1].sessions) + " sesiuni, " + nf(D[D.length - 1].leads) + " lead-uri.");
+    const mk = (tag, at) => { const n = document.createElementNS(NS, tag); for (const k in at) n.setAttribute(k, at[k]); svg.append(n); return n; };
+    for (let g = 0; g <= 4; g++) { const v = top / 4 * g, y = Y(v); mk("line", { x1: pl, x2: W - pr, y1: y, y2: y, class: "an-grid" }); const t = mk("text", { x: pl - 6, y: y + 3, class: "an-ax", "text-anchor": "end" }); t.textContent = v >= 1000 ? Math.round(v / 100) / 10 + "k" : String(Math.round(v)); }
+    const bw = Math.max(2, iw / D.length * .45); D.forEach((d, i) => { const h = (Number(d.leads) || 0) / ml * ih * .28; mk("rect", { x: X(i) - bw / 2, y: pt + ih - h, width: bw, height: h, rx: 1.5, class: "an-lead", style: "animation-delay:" + (300 + i * 12) + "ms" }); });
+    const line = (k) => D.map((d, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(d[k]).toFixed(1)).join(" ");
+    mk("path", { d: line("users") + " L" + X(D.length - 1) + " " + (pt + ih) + " L" + pl + " " + (pt + ih) + " Z", class: "an-area" });
+    mk("path", { d: line("users"), class: "an-lu", pathLength: 1 }); mk("path", { d: line("sessions"), class: "an-ls", pathLength: 1 });
+    const step = Math.ceil(D.length / 6); D.forEach((d, i) => { if (i % step && i !== D.length - 1) return; const dd = new Date(d.date + "T12:00:00"), t = mk("text", { x: X(i), y: H - 8, class: "an-ax", "text-anchor": i === 0 ? "start" : i === D.length - 1 ? "end" : "middle" }); t.textContent = isNaN(dd) ? d.date : dd.getDate() + " " + dd.toLocaleDateString("ro-RO", { month: "short" }).replace(".", ""); });
+    const guide = mk("line", { x1: 0, x2: 0, y1: pt, y2: pt + ih, class: "an-guide", visibility: "hidden" }), dot = mk("circle", { r: 4, class: "an-dot", visibility: "hidden" }), dot2 = mk("circle", { r: 4, class: "an-dot2", visibility: "hidden" });
+    const tip = el("div", "an-tip"); tip.hidden = true;
+    const show = (i) => { const d = D[i], x = X(i); guide.setAttribute("x1", x); guide.setAttribute("x2", x); dot.setAttribute("cx", x); dot.setAttribute("cy", Y(d.users)); dot2.setAttribute("cx", x); dot2.setAttribute("cy", Y(d.sessions)); for (const n of [guide, dot, dot2]) n.setAttribute("visibility", "visible"); const dd = new Date(d.date + "T12:00:00"); tip.replaceChildren(el("b", "", isNaN(dd) ? d.date : dd.toLocaleDateString("ro-RO", { weekday: "short", day: "numeric", month: "short" })), el("span", "u", nf(d.users) + " utilizatori"), el("span", "s", nf(d.sessions) + " sesiuni"), el("span", "l", nf(d.leads) + " lead-uri")); tip.hidden = false; tip.style.left = (x / W * 100) + "%"; tip.classList.toggle("left", x > W * .66); };
+    const hide = () => { for (const n of [guide, dot, dot2]) n.setAttribute("visibility", "hidden"); tip.hidden = true; };
+    const at = (cx) => { const r = svg.getBoundingClientRect(), x = (cx - r.left) / r.width * W; return Math.max(0, Math.min(D.length - 1, Math.round((x - pl) / iw * (D.length - 1)))); };
+    svg.addEventListener("pointermove", (e) => show(at(e.clientX))); svg.addEventListener("pointerleave", hide);
+    svg.tabIndex = 0; let ki = D.length - 1; svg.addEventListener("keydown", (e) => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); ki = Math.max(0, Math.min(D.length - 1, ki + (e.key === "ArrowRight" ? 1 : -1))); show(ki); } else if (e.key === "Escape") hide(); }); svg.addEventListener("blur", hide);
+    const lg = el("div", "an-lg"); [["u", "Utilizatori"], ["s", "Sesiuni"], ["l", "Lead-uri"]].forEach(([c, l]) => { const s = el("span", c); s.append(el("i"), l); lg.append(s); });
+    box.append(lg, svg, tip);
+  }
+  function barList(box, rows, label, val, fmtV, sub) {
+    box.replaceChildren(); const mx = Math.max(1, ...rows.map((r) => Number(r[val]) || 0)), tot = rows.reduce((s, r) => s + (Number(r[val]) || 0), 0) || 1;
+    if (!rows.length) { box.append(el("div", "empty", "Fără date.")); return; }
+    rows.forEach((r, i) => { const li = el("li"), b = el("i"); b.style.setProperty("--w", (Number(r[val]) || 0) / mx * 100 + "%"); b.style.animationDelay = i * 50 + "ms"; const t = el("span", "an-bl-t", String(r[label] ?? "")); if (sub && r[sub]) t.title = r[sub]; li.append(b, t, el("span", "an-bl-v", fmtV ? fmtV(r, tot) : nf(r[val]))); box.append(li); });
+  }
+  const DEV = { mobile: "Telefon", desktop: "Desktop", tablet: "Tabletă" };
+  function renderAna() {
+    const hide = anaHidden(), nb = document.querySelector('.nav-i[data-cat="ana"]'); if (nb) nb.hidden = hide; $("ana").classList.toggle("mirror-hide", hide); if (hide) return;
+    const A = anaData(), mock = A.source !== "ga4", D = arrA(A.daily), can7 = D.length >= 14;
+    if (!can7 && ANA.range === 7) ANA.range = 30;
+    for (const b of document.querySelectorAll("[data-ana-r]")) { b.setAttribute("aria-pressed", String(Number(b.dataset.anaR) === ANA.range)); if (b.dataset.anaR === "7") { b.disabled = !can7; b.title = can7 ? "" : "Trebuie cel puțin 14 zile de date"; } }
+    $("ana-mock").hidden = !mock; $("ana-mock-h").hidden = !mock;
+    const rg = A.range || {}; $("ana-n").textContent = (rg.from && rg.to ? rg.from + " → " + rg.to : "") + (A.generatedAt ? " · generat " + when(A.generatedAt) : "");
+    // KPIs
+    const K = [["users", "Utilizatori", "i-team", nf], ["sessions", "Sesiuni", "i-ck-globe", nf], ["leads", "Lead-uri", "i-ck-spark", nf], ["engagedRate", "Rată de implicare", "i-flame", (v) => pctS(rate(v))], ["avgEngagementSec", "Timp mediu implicat", "i-cal", mmss], ["coreLiteStarts", "The Core Lite pornite", "i-play", nf], ["coreLiteSubmits", "The Core Lite terminate", "i-check", nf]];
+    const kb = $("ana-k"); kb.replaceChildren();
+    K.forEach(([k, l, ic, f], i) => { const x = kpiOf(A, k); if (!x) return; const c = el("div", "an-kpi" + (k === "leads" ? " hero" : "")); c.style.animationDelay = i * 40 + "ms"; const h = el("div", "an-kh"); h.append(icon(ic), el("span", "", l)); if (x.r !== ANA.range) h.append(el("em", "", x.r + " z")); const n = el("b"); const isRate = k === "engagedRate"; countF(n, isRate ? rate(x.value) : x.value, "ana-" + k + ANA.range, isRate ? (v) => pctS(v) : k === "avgEngagementSec" ? mmss : (v) => nf(Math.round(v))); c.append(h, n, delta(x.deltaPct)); c.title = "Anterior: " + (isRate ? pctS(rate(x.prev)) : f(x.prev)); kb.append(c); });
+    anaChart($("ana-chart"), ANA.range === 7 ? D.slice(-7) : D.slice(-30));
+    $("ana-chart-t").textContent = "Pe zile · ultimele " + (ANA.range === 7 ? 7 : Math.min(30, D.length)) + " zile";
+    // sources
+    const src = arrA(A.sources).slice().sort((a, b) => (Number(b.sessions) || 0) - (Number(a.sessions) || 0)), sb = $("ana-src"); sb.replaceChildren(); const smx = Math.max(1, ...src.map((s) => Number(s.sessions) || 0));
+    src.forEach((s, i) => { const tr = el("tr"), bar = el("i"); bar.style.setProperty("--w", (Number(s.sessions) || 0) / smx * 100 + "%"); bar.style.animationDelay = i * 40 + "ms"; const t1 = el("td", "an-sn"); t1.append(el("b", "", s.source || "—"), el("span", "mono muted", s.medium || "")); const t2 = el("td", "an-sb"); t2.append(bar, el("span", "", nf(s.sessions))); const cv = s.sessions ? (Number(s.leads) || 0) / s.sessions * 100 : 0; tr.append(t1, t2, el("td", "num", nf(s.users)), el("td", "num", nf(s.leads)), el("td", "num", s.sessions ? pctS(cv) : "—")); sb.append(tr); });
+    if (!src.length) { const tr = el("tr"), td = el("td", "empty", "Fără surse încă."); td.colSpan = 5; tr.append(td); sb.append(tr); }
+    // campaigns A vs B with the funnel
+    const cb = $("ana-camp"); cb.replaceChildren(); const by = new Map(); arrA(A.campaigns).forEach((c) => { if (!c || !c.slug) return; if (!by.has(c.slug)) by.set(c.slug, {}); by.get(c.slug)[String(c.variant || "a").toLowerCase()] = c; });
+    if (!by.size) cb.append(el("div", "empty", "Campaniile apar aici când au trafic cu utm_campaign."));
+    const STEPS = [["sessions", "Sesiuni"], ["ctaClicks", "Click pe CTA"], ["freebieStarts", "The Core Lite pornit"], ["freebieSubmits", "The Core Lite terminat"], ["leads", "Lead"]];
+    for (const [slug, v] of by) {
+      const meta = S.campaigns.find((c) => (c.slug || c.id) === slug) || {}, blk = el("article", "an-cb"); blk.id = "ana-c-" + slug; blk.style.setProperty("--acc", safeCol(meta.color));
+      const hd = el("div", "an-cbh"); hd.append(el("b", "", meta.title || meta.name || slug), el("span", "mono muted", slug));
+      if (meta.slug || meta.id) { const go = el("button", "btn sm ghost"); go.type = "button"; go.append(icon("i-mega"), el("span", "", "Cardul campaniei")); go.onclick = () => { setCat("camp"); requestAnimationFrame(() => { const x = document.querySelector('.campc[data-slug="' + CSS.escape(slug) + '"]'); if (x) { x.scrollIntoView({ block: "center", behavior: reduced() ? "auto" : "smooth" }); flashEl(x); } }); }; hd.append(go); }
+      blk.append(hd);
+      const cA = v.a ? Number(v.a.conversionPct ?? (v.a.leads / v.a.sessions * 100)) : null, cB = v.b ? Number(v.b.conversionPct ?? (v.b.leads / v.b.sessions * 100)) : null, win = cA != null && cB != null && Math.abs(cA - cB) >= .05 ? (cA > cB ? "a" : "b") : "";
+      const ab = el("div", "an-ab");
+      for (const k of ["a", "b"]) {
+        const c = v[k], col = el("div", "an-v" + (win === k ? " win" : "")); const vh = el("div", "an-vh"); vh.append(el("span", "an-vk", k.toUpperCase())); const hl = meta["headline" + k.toUpperCase()]; if (hl) vh.append(el("span", "an-vt", String(hl))); if (win === k) vh.append(el("span", "an-win", "câștigă +" + pctS(Math.abs(cA - cB), 1).replace("%", " pp"))); col.append(vh);
+        if (!c) { col.append(el("div", "empty", "Fără date pentru varianta " + k.toUpperCase() + ".")); ab.append(col); continue; }
+        const top = Number(c.sessions) || 1, fl = el("ol", "an-fn");
+        STEPS.forEach(([sk, sl], i) => { const val = Number(c[sk]) || 0, prev = i ? Number(c[STEPS[i - 1][0]]) || 0 : 0, li = el("li"), bar = el("i"); bar.style.setProperty("--w", Math.max(1.5, val / top * 100) + "%"); bar.style.animationDelay = 150 + i * 70 + "ms"; li.append(el("span", "an-fl", sl), bar, el("b", "", nf(val))); if (i) li.append(el("span", "an-fr", prev ? pctS(val / prev * 100) : "—")); fl.append(li); });
+        const cv = el("div", "an-cv"); cv.append(el("b", "", pctS(k === "a" ? cA : cB)), el("span", "", "conversie sesiune → lead")); if (c.utm_campaign) cv.append(el("span", "mono muted", "utm_campaign=" + c.utm_campaign));
+        col.append(fl, cv); ab.append(col);
+      }
+      blk.append(ab); cb.append(blk);
+    }
+    // map engagement
+    const M = A.map || {}, mb = $("ana-map"); mb.replaceChildren();
+    [["driveSessions", "plimbări cu mașina pe hartă", "i-ck-pin", "#119BFE"], ["cardOpens", "carduri de proiect deschise", "i-ck-img", "#FED012"], ["gameStarts", "jocuri pornite", "i-play", "#28C840"], ["postcards", "vederi trimise", "i-send", "#F65342"]].forEach(([k, l, ic, acc], i) => { if (M[k] == null) return; const t = el("div", "an-mt"); t.style.setProperty("--acc", acc); t.style.animationDelay = i * 50 + "ms"; const ii = el("span", "bt-ic"); ii.append(icon(ic)); const n = el("b"); countTo(n, Number(M[k]) || 0, "ana-m-" + k); t.append(ii, n, el("span", "", l)); mb.append(t); });
+    if (!mb.children.length) mb.append(el("div", "empty", "Fără date de pe hartă."));
+    // lists
+    barList($("ana-pages"), arrA(A.topPages).slice(0, 8).map((p) => ({ ...p, lbl: p.title || p.path })), "lbl", "views", (r) => nf(r.views) + (r.avgSec ? " · " + mmss(r.avgSec) : ""), "path");
+    barList($("ana-ctry"), arrA(A.countries).slice(0, 8), "country", "users", (r, t) => nf(r.users) + " · " + pctS(r.users / t * 100, 0));
+    barList($("ana-dev"), arrA(A.devices).map((d) => ({ ...d, lbl: DEV[d.device] || d.device })), "lbl", "users", (r, t) => pctS(r.users / t * 100, 0));
+    // Home card
+    const h = $("ana-home"); h.replaceChildren(); const hk = el("div", "an-hk");
+    [["users", "utilizatori"], ["sessions", "sesiuni"], ["leads", "lead-uri"]].forEach(([k, l]) => { const x = kpiOf(A, k); if (!x) return; const d = el("div"), b = el("b"); countTo(b, Math.round(x.value), "ana-h-" + k + ANA.range); d.append(b, el("span", "", l), delta(x.deltaPct)); hk.append(d); });
+    h.append(hk);
+    if (D.length > 1) { const NS = "http://www.w3.org/2000/svg", s = document.createElementNS(NS, "svg"), dd = D.slice(-30), mx = Math.max(1, ...dd.map((x) => Number(x.sessions) || 0)); s.setAttribute("viewBox", "0 0 300 40"); s.setAttribute("preserveAspectRatio", "none"); s.setAttribute("class", "an-hsp"); s.setAttribute("aria-hidden", "true"); const p = document.createElementNS(NS, "path"); p.setAttribute("d", dd.map((x, i) => (i ? "L" : "M") + (i / (dd.length - 1) * 300).toFixed(1) + " " + (38 - (Number(x.sessions) || 0) / mx * 34).toFixed(1)).join(" ")); p.setAttribute("class", "an-ls"); p.setAttribute("pathLength", "1"); s.append(p); h.append(s); }
+    const hr = el("div", "row"); if (mock) hr.append(el("span", "an-tag", "date de test")); const ob = el("button", "btn sm k"); ob.type = "button"; ob.append(icon("i-chart"), el("span", "", "Deschide Analytics")); ob.onclick = () => setCat("ana"); hr.append(ob); h.append(hr);
+  }
+  function goAna(slug) { setCat("ana"); requestAnimationFrame(() => { const x = $("ana-c-" + slug); if (x) { x.scrollIntoView({ block: "start", behavior: reduced() ? "auto" : "smooth" }); flashEl(x); } else toast("Campania nu are încă date în Analytics."); }); }
+  for (const b of document.querySelectorAll("[data-ana-r]")) b.onclick = () => { ANA.range = Number(b.dataset.anaR); renderAna(); };
+
+  $("wins-ap").onclick = (e) => { const b = e.currentTarget; toast(b.title || "Numere aproximative."); };
   setCat(TITLES[location.hash.slice(1)] ? location.hash.slice(1) : "home", true);
   renderAll();
 
@@ -3341,9 +4063,12 @@ h2 .kps .kp { height: 18px; font-size: 10.5px; } h2 .kps .kp.hu .ic { width: 12p
     db.doc("security/csp").onSnapshot((x) => { S.security = x.exists ? x.data() : null; got.add("security"); renderAll(); }, onErr);
     const sub = (k) => db.collection(k).onSnapshot((q) => { S[k] = q.docs.map((x) => ({ id: x.id, ...x.data() })); got.add(k); renderAll(); }, onErr);
     ["epics", "tasks", "ideas", "releases", "agents", "decisions", "requests", "approvals", "team", "core", "coreRequests", "campaigns", "content"].forEach(sub);
+    db.doc("analytics/summary").onSnapshot((x) => { S.analytics = x.exists ? x.data() : null; got.add("analytics"); renderAll(); }, onErr);
+    db.doc("meta/history").onSnapshot((x) => { S.history = x.exists ? x.data() : null; renderAll(); }, onErr);
+    db.doc("meta/adspecs").onSnapshot((x) => { S.adspecs = x.exists ? x.data() : null; got.add("adspecs"); renderAll(); }, onErr);
     db.doc("meta/content").onSnapshot((x) => { S.contentMeta = x.exists ? x.data() : null; got.add("contentMeta"); renderAll(); }, onErr);
     // a collection that never answers (an error) stops showing a skeleton after 12 s
-    setTimeout(() => { ["epics", "tasks", "ideas", "releases", "agents", "decisions", "requests", "approvals", "team", "core", "coreRequests", "campaigns", "content", "contentMeta", "inbox", "security"].forEach((k) => got.add(k)); renderAll(); }, 12000);
+    setTimeout(() => { ["epics", "tasks", "ideas", "releases", "agents", "decisions", "requests", "approvals", "team", "core", "coreRequests", "campaigns", "content", "contentMeta", "adspecs", "analytics", "inbox", "security"].forEach((k) => got.add(k)); renderAll(); }, 12000);
     db.collection("inbox").orderBy("createdAt", "desc").limit(40).onSnapshot((q) => { S.inbox = q.docs.map((x) => ({ id: x.id, ...x.data() })); got.add("inbox"); renderAll(); }, onErr);
   })();
 })();

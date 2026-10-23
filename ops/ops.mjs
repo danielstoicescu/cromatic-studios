@@ -22,7 +22,7 @@
 //   GET  /api/ops/bridge/outbox?since=<iso>     (Bearer key)
 //   POST /api/ops/bridge/snapshot               (Bearer key) {collections:{name:{id:doc}}, generatedAt}
 //   POST /api/ops/bridge/ack                    (Bearer key) {ids:[...], replies?:{id:text}}
-import { readFileSync, writeFileSync, appendFileSync, renameSync, mkdirSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync, appendFileSync, renameSync, mkdirSync, statSync, readdirSync, createReadStream } from "node:fs";
 import { join, extname } from "node:path";
 import { randomBytes, randomInt, createHash, timingSafeEqual } from "node:crypto";
 
@@ -53,6 +53,71 @@ function limiter(max, win) {
     list.push(now); m.set(key, list);
     return list.length > max;
   };
+}
+
+// ---------- uploads (logos, page visuals, PDFs, videos) ----------
+const UP_MAX = 25 * 1048576;
+const UP_RE = /^up-(\d{6})-[a-f0-9]{12}$/;
+const UP_FILE_RE = /^(original\.(png|jpg|webp|avif|svg|pdf|mp4|webm)|optimized\.(webp|jpg|png)|clean\.svg|preview\.webp|meta\.json)$/;
+const UP_TYPES = { png: "image/png", jpg: "image/jpeg", webp: "image/webp", avif: "image/avif", svg: "image/svg+xml", pdf: "application/pdf", mp4: "video/mp4", webm: "video/webm", json: "application/json" };
+const UP_KINDS = new Set(["logo", "visual", "other"]);
+const VIDEO_TYPES = new Set(["youtube", "vimeo", "drive", "wetransfer", "dropbox", "other"]);
+let sharpP = null; // loaded on the first upload; null when sharp is not installed at runtime (it is a devDependency of the site)
+const getSharp = () => (sharpP ??= process.env.OPS_NO_SHARP ? Promise.resolve(null) : import("sharp").then((m) => { const s = m.default; s.cache(false); return s; }).catch(() => null));
+/** the real type, from the first bytes (never from the name or the Content-Type header) */
+export function sniff(buf) {
+  const h = buf.subarray(0, 64), asc = (a, b) => h.subarray(a, b).toString("latin1");
+  if (h[0] === 0x89 && asc(1, 4) === "PNG") return "png";
+  if (h[0] === 0xff && h[1] === 0xd8 && h[2] === 0xff) return "jpg";
+  if (asc(0, 4) === "RIFF" && asc(8, 12) === "WEBP") return "webp";
+  if (asc(4, 8) === "ftyp") { const brand = asc(8, 12); if (/^avi[fs]$/.test(brand)) return "avif"; if (/^(isom|iso\d|mp4\d|mp41|mp42|avc1|M4V |M4A |dash|MSNV|qt  )$/.test(brand)) return "mp4"; }
+  if (h[0] === 0x1a && h[1] === 0x45 && h[2] === 0xdf && h[3] === 0xa3) return "webm";
+  if (asc(0, 5) === "%PDF-") return "pdf";
+  const t = buf.subarray(0, 2048).toString("utf8").replace(/^﻿/, "").replace(/<\?xml[\s\S]*?\?>/i, "").replace(/<!--[\s\S]*?-->/g, "").replace(/<!DOCTYPE[^[>]*(\[[\s\S]*?\])?\s*>/i, "").trimStart();
+  if (/^<svg[\s>]/i.test(t)) return "svg";
+  return null;
+}
+/** an SVG made safe to keep: no scripts, handlers, foreignObject, external references, entities */
+export function sanitizeSvg(src) {
+  let s = String(src).replace(/^﻿/, "");
+  s = s.replace(/<!DOCTYPE[^[>]*(\[[\s\S]*?\])?\s*>/gi, "").replace(/<!ENTITY[\s\S]*?>/gi, "").replace(/<\?(?!xml\s)[\s\S]*?\?>/gi, "");
+  const BAD = "script|foreignObject|iframe|embed|object|audio|video|canvas|handler|listener|base|meta|link";
+  s = s.replace(new RegExp("<(" + BAD + ")\\b[\\s\\S]*?<\\/\\1\\s*>", "gi"), "").replace(new RegExp("<\\/?(" + BAD + ")\\b[^>]*>", "gi"), "");
+  s = s.replace(/<(set|animate|animateTransform|animateMotion)\b[^>]*\battributeName\s*=\s*["']?(xlink:)?href[^>]*>/gi, "");
+  s = s.replace(/\s(on[a-z]+)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+  s = s.replace(/\s((?:xlink:)?href|src)\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/gi, (m, a, _q, d1, d2, d3) => {
+    const v = String(d1 ?? d2 ?? d3 ?? "").trim();
+    return /^#[\w.-]+$/.test(v) || /^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=\s]+$/i.test(v) ? m : "";
+  });
+  s = s.replace(/@import[^;]*;?/gi, "").replace(/url\(\s*(['"]?)(?!#|data:image\/(png|jpe?g|gif|webp);)[^)]*\)/gi, "none");
+  s = s.replace(/javascript\s*:/gi, "").replace(/expression\s*\(/gi, "").replace(/-moz-binding/gi, "");
+  s = s.replace(/&(?!(amp|lt|gt|quot|apos|#\d+|#x[0-9a-f]+);)[\w.:-]+;/gi, ""); // entity references left without their DTD
+  return s;
+}
+const svgSafe = (s) => !/<script|<foreignObject|javascript:|\son[a-z]+\s*=|<!ENTITY|xlink:href\s*=\s*["']?(?![#"'])|\shref\s*=\s*["']?(?![#"']|data:image)/i.test(s);
+/** width / height from the header, for when sharp is not there */
+function dims(buf, ext) {
+  try {
+    if (ext === "png") return [buf.readUInt32BE(16), buf.readUInt32BE(20)];
+    if (ext === "jpg") { let i = 2; while (i < buf.length) { if (buf[i] !== 0xff) return null; const m = buf[i + 1], len = buf.readUInt16BE(i + 2); if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) return [buf.readUInt16BE(i + 7), buf.readUInt16BE(i + 5)]; i += 2 + len; } }
+    if (ext === "webp") { const c = buf.subarray(12, 16).toString("latin1"); if (c === "VP8X") return [1 + buf.readUIntLE(24, 3), 1 + buf.readUIntLE(27, 3)]; if (c === "VP8 ") return [buf.readUInt16LE(26) & 0x3fff, buf.readUInt16LE(28) & 0x3fff]; if (c === "VP8L") { const b = buf.readUInt32LE(21); return [1 + (b & 0x3fff), 1 + ((b >> 14) & 0x3fff)]; } }
+    if (ext === "svg") { const t = buf.subarray(0, 4096).toString("utf8"), w = /<svg[^>]*\swidth\s*=\s*["']?([\d.]+)/i.exec(t), h = /<svg[^>]*\sheight\s*=\s*["']?([\d.]+)/i.exec(t), vb = /viewBox\s*=\s*["']\s*[\d.-]+[\s,]+[\d.-]+[\s,]+([\d.]+)[\s,]+([\d.]+)/i.exec(t); if (w && h) return [Math.round(+w[1]), Math.round(+h[1])]; if (vb) return [Math.round(+vb[1]), Math.round(+vb[2])]; }
+  } catch {}
+  return null;
+}
+/** a video link (never fetched by the server): https only, type detected */
+export function videoLink(u) {
+  let x; try { x = new URL(String(u || "").trim()); } catch { return null; }
+  if (x.protocol !== "https:" || String(u).length > 500) return null;
+  const h = x.hostname.replace(/^www\.|^m\./, "");
+  let m;
+  if (h === "youtu.be" && (m = /^\/([\w-]{11})/.exec(x.pathname))) return { url: x.href, type: "youtube", id: m[1] };
+  if (/(^|\.)youtube(-nocookie)?\.com$/.test(h)) { const id = x.searchParams.get("v") || (/^\/(?:shorts|embed|live)\/([\w-]{11})/.exec(x.pathname) || [])[1]; return { url: x.href, type: "youtube", ...(id && /^[\w-]{11}$/.test(id) ? { id } : {}) }; }
+  if (/(^|\.)vimeo\.com$/.test(h)) { m = /\/(\d{6,})/.exec(x.pathname); return { url: x.href, type: "vimeo", ...(m ? { id: m[1] } : {}) }; }
+  if (/^(drive|docs)\.google\.com$/.test(h)) return { url: x.href, type: "drive" };
+  if (/(^|\.)wetransfer\.com$|^we\.tl$/.test(h)) return { url: x.href, type: "wetransfer" };
+  if (/(^|\.)dropbox\.com$|^db\.tt$/.test(h)) return { url: x.href, type: "dropbox" };
+  return { url: x.href, type: "other" };
 }
 
 /**
@@ -97,6 +162,86 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
   // ---------- helpers ----------
   const codes = new Map(); // email -> {hash, exp, tries}
   const ipLogin = limiter(10, 15 * 60e3), emailLogin = limiter(3, 15 * 60e3), ipVerify = limiter(20, 15 * 60e3), userInbox = limiter(30, 10 * 60e3);
+  const userUpload = limiter(40, 10 * 60e3);
+  const UP_DIR = join(dataDir, "uploads"), UP_CAP = Number(process.env.OPS_UPLOAD_CAP_MB || 2048) * 1048576;
+  let upUsed = null;
+  const du = (d) => { let n = 0; let list = []; try { list = readdirSync(d, { withFileTypes: true }); } catch { return 0; } for (const e of list) { const p = join(d, e.name); n += e.isDirectory() ? du(p) : (statOr(p)?.size || 0); } return n; };
+  const statOr = (p) => { try { return statSync(p); } catch { return null; } };
+
+  async function upload(req, res, s, u) {
+    if (userUpload(s.email)) return json(res, 429, { ok: false, error: "rate", message: "Prea multe fișiere deodată. Mai încearcă în câteva minute." });
+    const len = Number(req.headers["content-length"] || 0);
+    if (len > UP_MAX) { res.setHeader("Connection", "close"); return json(res, 413, { ok: false, error: "too_large", message: "Fișierul e peste 25 MB." }); }
+    if (upUsed === null) upUsed = du(UP_DIR);
+    if (upUsed + (len || 0) > UP_CAP) return json(res, 507, { ok: false, error: "quota", message: "Spațiul pentru fișiere din ops e plin (" + Math.round(UP_CAP / 1048576 / 1024 * 10) / 10 + " GB). Spune-i lui Daniel." });
+    const chunks = []; let n = 0;
+    for await (const c of req) { n += c.length; if (n > UP_MAX) { res.setHeader("Connection", "close"); json(res, 413, { ok: false, error: "too_large", message: "Fișierul e peste 25 MB." }); req.destroy(); return; } chunks.push(c); }
+    const buf = Buffer.concat(chunks);
+    if (!buf.length) return json(res, 422, { ok: false, error: "empty", message: "Fișierul e gol." });
+    const ext = sniff(buf);
+    if (!ext) return json(res, 415, { ok: false, error: "type", message: "Tip neacceptat. Merg PNG, JPG, WebP, AVIF, SVG, PDF, MP4 și WebM." });
+    if (upUsed + buf.length > UP_CAP) return json(res, 507, { ok: false, error: "quota", message: "Spațiul pentru fișiere din ops e plin. Spune-i lui Daniel." });
+    const kind = UP_KINDS.has(u.searchParams.get("kind")) ? u.searchParams.get("kind") : "other";
+    const name = (str(u.searchParams.get("name") || "", 140).replace(/[\u0000-\u001f\\/<>:"|?*]+/g, "_") || "fisier." + ext);
+    const now = new Date(), ym = now.toISOString().slice(0, 7).replace("-", ""), id = `up-${ym}-${randomBytes(6).toString("hex")}`;
+    const dir = join(UP_DIR, ym, id); mkdirSync(dir, { recursive: true });
+    const files = [];
+    const put = (f, b) => { writeFileSync(join(dir, f), b, { mode: 0o600 }); files.push(f); return b.length; };
+    put("original." + ext, buf);
+    let w = null, h = null, bytesAfter = buf.length, optimize = false, note = "";
+    if (ext === "svg") {
+      const clean = sanitizeSvg(buf.toString("utf8"));
+      if (!svgSafe(clean) || !/<svg[\s>]/i.test(clean)) { note = "svg-unsafe"; }
+      else { bytesAfter = put("clean.svg", Buffer.from(clean)); [w, h] = dims(Buffer.from(clean), "svg") || [null, null]; }
+    }
+    const sharp = /^(png|jpg|webp|avif|svg)$/.test(ext) && !(ext === "svg" && note) ? await getSharp() : null;
+    if (sharp) {
+      try {
+        const input = ext === "svg" ? readFileSync(join(dir, "clean.svg")) : buf;
+        const base = () => {
+          let p = sharp(input, { density: ext === "svg" ? 200 : 72, failOn: "none", limitInputPixels: 80e6 }).rotate();
+          if (kind === "logo") p = p.trim({ threshold: 12 });
+          return p.resize({ width: 2400, height: 2400, fit: "inside", withoutEnlargement: ext !== "svg" });
+        };
+        if (ext === "svg") { const b = await base().webp({ quality: 86 }).toBuffer({ resolveWithObject: true }); put("preview.webp", b.data); w = w || b.info.width; h = h || b.info.height; }
+        else {
+          const webp = await base().webp({ quality: 82, alphaQuality: 90 }).toBuffer({ resolveWithObject: true });
+          bytesAfter = put("optimized.webp", webp.data); w = webp.info.width; h = webp.info.height;
+          if (kind === "logo") put("optimized.png", (await base().png({ compressionLevel: 9, palette: false }).toBuffer()));
+          else put("optimized.jpg", await base().flatten({ background: "#ffffff" }).jpeg({ quality: 82, mozjpeg: true }).toBuffer());
+        }
+        optimize = true;
+      } catch (e) { note = "optimize-failed"; log.error("[ops] upload optimize", e.message); }
+    } else if (!w) { const d = dims(buf, ext); if (d) [w, h] = d; }
+    const url = (f) => "/api/ops/uploads/" + id + "/" + f;
+    const urls = { original: url("original." + ext) };
+    if (files.includes("optimized.webp")) urls.webp = url("optimized.webp");
+    if (files.includes("optimized.jpg")) urls.jpg = url("optimized.jpg");
+    if (files.includes("optimized.png")) urls.png = url("optimized.png");
+    if (files.includes("clean.svg")) urls.svg = url("clean.svg");
+    if (files.includes("preview.webp")) urls.preview = url("preview.webp");
+    const meta = { id, by: s.email, byName: s.user.name, name, size: buf.length, type: UP_TYPES[ext], ext, w, h, kind, createdAt: now.toISOString(), optimize, ...(note ? { note } : {}), bytesBefore: buf.length, bytesAfter, files: [...files, "meta.json"], urls };
+    put("meta.json", Buffer.from(JSON.stringify(meta, null, 2)));
+    upUsed += files.reduce((a, f) => a + (statOr(join(dir, f))?.size || 0), 0);
+    appendLine("uploads.jsonl", { at: meta.createdAt, id, by: s.email, name, ext, size: buf.length, kind, optimize });
+    return json(res, 200, { ok: true, id, name, kind, type: meta.type, urls, w, h, bytesBefore: buf.length, bytesAfter, optimize, ...(note ? { note } : {}) });
+  }
+  function serveUpload(req, res, id, f) {
+    const p = join(UP_DIR, id.slice(3, 9), id, f), st = statOr(p);
+    if (!st || !st.isFile()) return json(res, 404, { ok: false });
+    const ext = f.split(".").pop(), type = UP_TYPES[ext] || "application/octet-stream";
+    const headers = { ...HDR, "Cache-Control": "private, max-age=86400", "Content-Type": type, "Accept-Ranges": "bytes",
+      "Content-Security-Policy": "sandbox; default-src 'none'; img-src data:; style-src 'unsafe-inline'; media-src 'self'", "Cross-Origin-Resource-Policy": "same-origin" };
+    // an SVG or a PDF is never rendered as a page from here: download only (an <img> still shows it)
+    if (ext === "svg" || ext === "pdf" || f.startsWith("original.")) headers["Content-Disposition"] = `attachment; filename="${id}-${f}"`;
+    let start = 0, end = st.size - 1, code = 200;
+    const rg = req.headers.range && /^bytes=(\d*)-(\d*)$/.exec(req.headers.range);
+    if (rg) { start = rg[1] ? Number(rg[1]) : st.size - Number(rg[2]); end = rg[1] && rg[2] ? Math.min(Number(rg[2]), st.size - 1) : st.size - 1; if (start >= st.size || start < 0 || start > end) { res.writeHead(416, { "Content-Range": `bytes */${st.size}` }); return res.end(); } code = 206; headers["Content-Range"] = `bytes ${start}-${end}/${st.size}`; }
+    headers["Content-Length"] = end - start + 1;
+    res.writeHead(code, headers);
+    if (req.method === "HEAD") return res.end();
+    createReadStream(p, { start, end }).on("error", () => res.destroy()).pipe(res);
+  }
   const ipOf = (req) => String(req.headers["cf-connecting-ip"] || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
   const logLogin = (event, email, req, extra) => appendLine("logins.jsonl", { at: new Date().toISOString(), event, email: email || "", ip: ipOf(req), ua: str(req.headers["user-agent"], 160), ...(extra || {}) });
 
@@ -229,6 +374,14 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
       if (!p.startsWith("/api/ops/")) return false;
       const r = p.slice(9);
 
+      // ----- uploaded files: a session, or the bridge key (the coordinator's "fetch") -----
+      const um = /^uploads\/([^/]+)\/([^/]+)$/.exec(r);
+      if (um && (m === "GET" || m === "HEAD")) {
+        const a0 = /^Bearer\s+(\S+)$/i.exec(String(req.headers.authorization || ""));
+        if (!(a0 && bridgeKeyOk(a0[1])) && !sessionOf(req)) { json(res, 401, { ok: false }); return true; }
+        if (!UP_RE.test(um[1]) || !UP_FILE_RE.test(um[2])) { json(res, 404, { ok: false }); return true; }
+        serveUpload(req, res, um[1], um[2]); return true;
+      }
       // ----- bridge (machine) -----
       if (r.startsWith("bridge/")) {
         const a = /^Bearer\s+(\S+)$/i.exec(String(req.headers.authorization || ""));
@@ -316,6 +469,7 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
       if (r === "me" && m === "GET") { if (!s) json(res, 401, { ok: false }); else json(res, 200, { ok: true, user: pub(s) }); return true; }
       if (!s) { json(res, 401, { ok: false }); return true; }
       if (r === "snapshot" && m === "GET") { json(res, 200, { ok: true, user: pub(s), ...withOutbox(forRole(snapshot(), s.user.role)) }); return true; }
+      if (r === "upload" && m === "POST") { await upload(req, res, s, u); return true; }
       if (r === "inbox" && m === "POST") {
         if (userInbox(s.email)) { json(res, 429, { ok: false, error: "rate" }); return true; }
         const b = await body(req, 32e3);
@@ -324,6 +478,8 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
         let payload = b.payload && typeof b.payload === "object" && !Array.isArray(b.payload) ? b.payload : null;
         if (payload && JSON.stringify(payload).length > 16e3) { json(res, 413, { ok: false }); return true; }
         if (payload && ADMIN_PAYLOAD_TYPES.has(String(payload.type || "")) && s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
+        if (payload && payload.videoLinks !== undefined) payload = { ...payload, videoLinks: (Array.isArray(payload.videoLinks) ? payload.videoLinks : []).slice(0, 10).map((v) => videoLink(v && v.url)).filter(Boolean) };
+        if (payload && payload.uploads !== undefined) payload = { ...payload, uploads: (Array.isArray(payload.uploads) ? payload.uploads : []).slice(0, 20).filter((x) => x && UP_RE.test(String(x.id))).map((x) => ({ id: x.id, name: str(String(x.name || ""), 140), kind: UP_KINDS.has(x.kind) ? x.kind : "other", type: str(String(x.type || ""), 40), urls: Object.fromEntries(Object.entries(x.urls || {}).filter(([k, v]) => /^[a-z]+$/.test(k) && typeof v === "string" && v.startsWith("/api/ops/uploads/" + x.id + "/"))), w: Number(x.w) || null, h: Number(x.h) || null, bytesBefore: Number(x.bytesBefore) || null, bytesAfter: Number(x.bytesAfter) || null })) };
         if (payload && payload.type === "task-edit") {
           const f = String(payload.field || "");
           if (!TASK_FIELDS.has(f) || typeof payload.taskId !== "string" || !/^[\w.-]{1,60}$/.test(payload.taskId)) { json(res, 422, { ok: false, error: "task-edit" }); return true; }

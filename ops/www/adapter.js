@@ -230,3 +230,128 @@
   document.addEventListener("touchcancel", () => { if (td) endTouchDrag(false); }, true);
   document.addEventListener("contextmenu", (e) => { if (td && td.active) e.preventDefault(); }, true);
 })();
+
+// ---------- uploads + video links (composer, quick composer, bug report, Conținut request) ----------
+// Files go straight to this server (POST /api/ops/upload), optimized there; the command carries the ids, links and urls.
+(() => {
+  "use strict";
+  const ACCEPT = ".png,.jpg,.jpeg,.webp,.avif,.svg,.pdf,.mp4,.webm,image/png,image/jpeg,image/webp,image/avif,image/svg+xml,application/pdf,video/mp4,video/webm";
+  const MAX = 25 * 1048576;
+  const KINDS = [["logo", "Logo"], ["visual", "Vizual"], ["other", "Altceva"]];
+  const boxes = new Map(); // key -> {files: [], links: [], kind, el}
+  const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const size = (b) => b >= 1048576 ? (b / 1048576).toFixed(1).replace(".0", "") + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
+  function linkInfo(u) {
+    let x; try { x = new URL(String(u || "").trim()); } catch { return null; }
+    if (x.protocol !== "https:") return null;
+    const host = x.hostname.replace(/^www\.|^m\./, ""); let m;
+    if (host === "youtu.be" && (m = /^\/([\w-]{11})/.exec(x.pathname))) return { url: x.href, type: "youtube", id: m[1] };
+    if (/(^|\.)youtube(-nocookie)?\.com$/.test(host)) { const id = x.searchParams.get("v") || (/^\/(?:shorts|embed|live)\/([\w-]{11})/.exec(x.pathname) || [])[1]; return { url: x.href, type: "youtube", ...(id && /^[\w-]{11}$/.test(id) ? { id } : {}) }; }
+    if (/(^|\.)vimeo\.com$/.test(host)) { m = /\/(\d{6,})/.exec(x.pathname); return { url: x.href, type: "vimeo", ...(m ? { id: m[1] } : {}) }; }
+    if (/^(drive|docs)\.google\.com$/.test(host)) return { url: x.href, type: "drive" };
+    if (/(^|\.)wetransfer\.com$|^we\.tl$/.test(host)) return { url: x.href, type: "wetransfer" };
+    if (/(^|\.)dropbox\.com$|^db\.tt$/.test(host)) return { url: x.href, type: "dropbox" };
+    return { url: x.href, type: "other" };
+  }
+  const TYPE_LAB = { youtube: "YouTube", vimeo: "Vimeo", drive: "Google Drive", wetransfer: "WeTransfer", dropbox: "Dropbox", other: "link" };
+
+  function mount(key, opt) {
+    const o = opt || {}, st = boxes.get(key) && !o.fresh ? boxes.get(key) : { files: [], links: [], kind: o.kind || "visual" };
+    boxes.set(key, st);
+    const w = h("div", "ops-up" + (o.open ? " open" : "")); w.dataset.up = key; st.el = w;
+    const tg = h("button", "ops-up-tg"); tg.type = "button"; tg.setAttribute("aria-expanded", String(!!o.open));
+    tg.append(h("span", "pl", "+"), h("span", "", "Fișiere sau link video")); const cnt = h("span", "ops-up-n"); tg.append(cnt);
+    tg.onclick = () => { const on = !w.classList.contains("open"); w.classList.toggle("open", on); tg.setAttribute("aria-expanded", String(on)); };
+    const body = h("div", "ops-up-b");
+    // kind
+    const kr = h("div", "ops-kind"); kr.setAttribute("role", "radiogroup"); kr.setAttribute("aria-label", "Ce fel de fișier");
+    const drawKind = () => { for (const b of kr.children) b.setAttribute("aria-checked", String(b.dataset.k === st.kind)); };
+    for (const [k, l] of KINDS) { const b = h("button", "", l); b.type = "button"; b.dataset.k = k; b.setAttribute("role", "radio"); b.onclick = () => { st.kind = k; drawKind(); }; kr.append(b); }
+    drawKind();
+    // drop zone
+    const inp = h("input"); inp.type = "file"; inp.multiple = true; inp.accept = ACCEPT; inp.hidden = true; inp.id = "ops-up-in-" + key;
+    const dz = h("label", "ops-drop"); dz.htmlFor = inp.id; dz.tabIndex = 0;
+    dz.append(h("b", "", "Trage fișierele aici"), h("span", "", " sau apasă să alegi"), h("small", "", "PNG, JPG, WebP, AVIF, SVG, PDF, MP4, WebM · max 25 MB · le optimizăm noi"));
+    dz.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inp.click(); } };
+    dz.ondragover = (e) => { e.preventDefault(); dz.classList.add("over"); }; dz.ondragleave = () => dz.classList.remove("over");
+    dz.ondrop = (e) => { e.preventDefault(); dz.classList.remove("over"); add([...(e.dataTransfer.files || [])]); };
+    inp.onchange = () => { add([...(inp.files || [])]); inp.value = ""; };
+    const list = h("div", "ops-files");
+    // video link
+    const lr = h("div", "ops-link"), li = h("input", "inp"); li.type = "url"; li.inputMode = "url"; li.placeholder = "Link video: YouTube, Vimeo, Drive, WeTransfer, Dropbox…"; li.setAttribute("aria-label", "Link video (https)");
+    const lb = h("button", "btn sm", "Adaugă"); lb.type = "button";
+    const addLink = () => { const v = linkInfo(li.value); if (!v) { li.setCustomValidity("Un link https, ex.: https://youtu.be/…"); li.reportValidity(); return; } li.setCustomValidity(""); if (!st.links.some((x) => x.url === v.url)) st.links.push(v); li.value = ""; draw(); };
+    lb.onclick = addLink; li.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); addLink(); } }; li.oninput = () => li.setCustomValidity("");
+    lr.append(li, lb);
+    const links = h("div", "ops-links");
+    body.append(kr, dz, inp, list, lr, links); w.append(tg, body);
+
+    function add(fs) {
+      if (!w.classList.contains("open")) tg.click();
+      for (const f of fs) {
+        const it = { name: f.name, size: f.size, state: "up", pct: 0, kind: st.kind, local: /^image\//.test(f.type) ? URL.createObjectURL(f) : "" };
+        st.files.push(it);
+        if (f.size > MAX) { it.state = "err"; it.err = "peste 25 MB"; continue; }
+        const x = new XMLHttpRequest(); it.xhr = x;
+        x.open("POST", "/api/ops/upload?kind=" + encodeURIComponent(it.kind) + "&name=" + encodeURIComponent(f.name));
+        x.setRequestHeader("Content-Type", f.type || "application/octet-stream");
+        x.upload.onprogress = (e) => { if (e.lengthComputable) { it.pct = e.loaded / e.total; draw(); } };
+        x.onload = () => {
+          let j = {}; try { j = JSON.parse(x.responseText); } catch {}
+          if (x.status === 401) { location.replace("/ops"); return; }
+          if (x.status === 200 && j.ok) { Object.assign(it, { state: "ok", id: j.id, urls: j.urls, w: j.w, h: j.h, type: j.type, bytesBefore: j.bytesBefore, bytesAfter: j.bytesAfter, optimize: j.optimize }); }
+          else { it.state = "err"; it.err = j.message || "nu s-a încărcat (" + x.status + ")"; }
+          draw();
+        };
+        x.onerror = () => { it.state = "err"; it.err = "fără conexiune"; draw(); };
+        x.send(f);
+      }
+      draw();
+    }
+    function draw() {
+      const n = st.files.filter((f) => f.state === "ok").length + st.links.length;
+      cnt.textContent = n ? String(n) : ""; cnt.hidden = !n;
+      list.replaceChildren(...st.files.map((f, i) => {
+        const r = h("div", "ops-file " + f.state), th = h("div", "th");
+        const src = f.urls ? (f.urls.preview || f.urls.webp || f.urls.png || f.urls.jpg) : f.local;
+        if (src) { const im = h("img"); im.src = src; im.alt = ""; th.append(im); } else th.append(h("span", "", (f.name.split(".").pop() || "").toUpperCase()));
+        const tx = h("div", "tx"); tx.append(h("b", "", f.name));
+        if (f.state === "up") { const bar = h("div", "bar"), sp = h("span"); sp.style.width = Math.round(f.pct * 100) + "%"; bar.append(sp); tx.append(bar); }
+        else if (f.state === "ok") tx.append(h("span", "sz", f.optimize && f.bytesAfter < f.bytesBefore ? size(f.bytesBefore) + " → " + size(f.bytesAfter) : size(f.bytesBefore) + (f.optimize ? "" : " · păstrat ca atare")));
+        else tx.append(h("span", "er", f.err || "eroare"));
+        const k = h("span", "kd", { logo: "logo", visual: "vizual", other: "altceva" }[f.kind] || "");
+        const x = h("button", "rm"); x.type = "button"; x.setAttribute("aria-label", "Scoate " + f.name); x.textContent = "×";
+        x.onclick = () => { if (f.xhr && f.state === "up") f.xhr.abort(); st.files.splice(i, 1); draw(); };
+        r.append(th, tx, k, x); return r;
+      }));
+      links.replaceChildren(...st.links.map((v, i) => {
+        const r = h("div", "ops-file ok"), th = h("div", "th");
+        if (v.type === "youtube" && v.id) { const im = h("img"); im.src = "https://i.ytimg.com/vi/" + v.id + "/hqdefault.jpg"; im.alt = ""; im.referrerPolicy = "no-referrer"; th.append(im); } else th.append(h("span", "", "▶"));
+        const tx = h("div", "tx"); tx.append(h("b", "", TYPE_LAB[v.type] || "link"), h("span", "sz", v.url));
+        const x = h("button", "rm"); x.type = "button"; x.setAttribute("aria-label", "Scoate linkul"); x.textContent = "×"; x.onclick = () => { st.links.splice(i, 1); draw(); };
+        r.append(th, tx, h("span", "kd", "video"), x); return r;
+      }));
+    }
+    st.draw = draw; draw();
+    return w;
+  }
+  const ready = (key) => { const st = boxes.get(key); return st ? st.files.filter((f) => f.state === "ok") : []; };
+  window.__opsUp = {
+    mount,
+    busy: (key) => { const st = boxes.get(key); return !!st && st.files.some((f) => f.state === "up"); },
+    count: (key) => { const st = boxes.get(key); return st ? ready(key).length + st.links.length : 0; },
+    payload: (key) => {
+      const st = boxes.get(key); if (!st) return {};
+      const up = ready(key).map((f) => ({ id: f.id, name: f.name, kind: f.kind, type: f.type, urls: f.urls, w: f.w, h: f.h, bytesBefore: f.bytesBefore, bytesAfter: f.bytesAfter }));
+      return { ...(up.length ? { uploads: up } : {}), ...(st.links.length ? { videoLinks: st.links.map((v) => ({ ...v })) } : {}) };
+    },
+    textSuffix: (key) => {
+      const st = boxes.get(key); if (!st) return "";
+      const abs = (p) => location.origin + p, up = ready(key);
+      return (up.length ? "\nFișiere: " + up.map((f) => f.name + " (" + abs(f.urls.webp || f.urls.svg || f.urls.png || f.urls.original) + ")").join(", ") : "")
+        + (st.links.length ? "\nLinkuri video: " + st.links.map((v) => v.url + " (" + v.type + ")").join(", ") : "");
+    },
+    reset: (key) => { const st = boxes.get(key); if (!st) return; st.files = []; st.links = []; if (st.draw) st.draw(); },
+  };
+  document.addEventListener("DOMContentLoaded", () => { document.querySelectorAll("[data-up-slot]").forEach((s) => s.replaceWith(mount(s.dataset.upSlot))); });
+})();

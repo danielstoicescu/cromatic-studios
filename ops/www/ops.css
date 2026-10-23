@@ -42,3 +42,38 @@ body.ops-dragging, body.ops-dragging * { user-select: none; -webkit-user-select:
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ops-pill.late { color: #f5c46b; background: #3a2a10; } :root:not([data-theme="light"]) .ops-pill.done { color: #9be3aa; } }
 :root[data-theme="dark"] .ops-pill.late { color: #f5c46b; background: #3a2a10; } :root[data-theme="dark"] .ops-pill.done { color: #9be3aa; }
 @media (prefers-reduced-motion: reduce) { .ops-dots b, .card.ops-back { animation: none; } }
+
+/* uploads + video links */
+.ops-up { display: grid; gap: 8px; }
+.ops-up-tg { justify-self: start; display: inline-flex; align-items: center; gap: 8px; border: 1px dashed var(--g3, #8a8d93); background: none; border-radius: 999px; padding: 5px 12px 5px 8px; font: 600 13px var(--f-b, system-ui); color: var(--muted, #5e6168); cursor: pointer; }
+.ops-up-tg:hover, .ops-up.open .ops-up-tg { border-color: var(--ink); color: var(--ink); }
+.ops-up-tg .pl { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--on-ink, #fff); font: 800 14px/1 var(--f-d, system-ui); transition: transform .2s; }
+.ops-up.open .ops-up-tg .pl { transform: rotate(45deg); }
+.ops-up-n { font: 700 11px var(--f-m, monospace); background: var(--yellow, #f8d13b); color: #000; border: 1px solid #000; border-radius: 999px; padding: 0 7px; }
+.ops-up-b { display: none; gap: 10px; }
+.ops-up.open .ops-up-b { display: grid; }
+.ops-kind { display: inline-flex; justify-self: start; gap: 4px; padding: 3px; border: 1px solid var(--g2, #dcdcdc); border-radius: 999px; background: var(--card); }
+.ops-kind button { border: 0; background: none; border-radius: 999px; padding: 4px 12px; font: 700 13px var(--f-d, system-ui); cursor: pointer; color: inherit; }
+.ops-kind button[aria-checked="true"] { background: var(--ink); color: var(--on-ink, #fff); }
+.ops-drop { display: grid; gap: 2px; justify-items: center; text-align: center; padding: 14px 12px; border: 2px dashed var(--g2, #dcdcdc); border-radius: 16px; cursor: pointer; font-size: 14px; color: var(--muted); transition: border-color .15s, background .15s; }
+.ops-drop b { color: var(--ink); }
+.ops-drop small { font: 500 10.5px var(--f-m, monospace); letter-spacing: .03em; }
+.ops-drop:hover, .ops-drop.over, .ops-drop:focus-visible { border-color: var(--ink); background: var(--soft-bg, #fafafa); outline: none; color: var(--ink); }
+.ops-files, .ops-links { display: grid; gap: 6px; }
+.ops-file { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 6px 8px; border: 1px solid var(--g1, #e7e7e7); border-radius: 12px; background: var(--card); }
+.ops-file .th { width: 44px; height: 44px; border-radius: 8px; overflow: hidden; background: var(--g1, #e7e7e7); display: grid; place-items: center; font: 700 10px var(--f-m, monospace); }
+.ops-file .th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ops-file .tx { min-width: 0; display: grid; gap: 3px; }
+.ops-file .tx b { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ops-file .sz { font: 500 11px var(--f-m, monospace); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ops-file .er { font-size: 12px; color: var(--danger-ink, #b3261e); font-weight: 600; }
+.ops-file .bar { height: 5px; border-radius: 999px; background: var(--g1, #e7e7e7); overflow: hidden; }
+.ops-file .bar span { display: block; height: 100%; background: var(--ink); border-radius: inherit; transition: width .2s; }
+.ops-file .kd { font: 500 10px var(--f-m, monospace); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.ops-file .rm { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--g2, #dcdcdc); background: none; cursor: pointer; font: 700 16px/1 system-ui; color: inherit; }
+.ops-file .rm:hover { border-color: var(--ink); }
+.ops-file.err { border-color: var(--c-p0, #f27261); }
+.ops-link { display: flex; gap: 8px; }
+.ops-link .inp { flex: 1; min-width: 0; }
+.ops-up .ops-drop, .field .ops-up .ops-drop { font: 400 14px/1.4 var(--f-b, system-ui); text-transform: none; letter-spacing: normal; color: var(--muted); }
+.ops-up .ops-drop small { font: 500 10.5px var(--f-m, monospace); letter-spacing: .03em; text-transform: none; }
