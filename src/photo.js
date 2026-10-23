@@ -13,6 +13,15 @@
   addEventListener("keyup", (e) => keyHook && keyHook.up(e), true);
   // the interface speaks the page's language (Romanian where the page is lang="ro")
   const RO = false && /^ro/i.test(document.documentElement.lang || ""), W = (en, ro) => (RO ? ro : en), W2 = W; // (Daniel: English only for now; the Romanian waits here, dormant)
+  // ready-made shots (each a camera; the visitor goes on from there)
+  const ICO = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  const PRESETS = [
+    { id: "front", n: "Front ¾", ic: ICO('<rect x="5" y="9" width="14" height="7" rx="2"/><path d="M7 9l1.5-3h7L17 9M7 19v-3M17 19v-3"/>'), v: { yaw: 2.45, pitch: 0.16, dist: 3.2, fov: 32, roll: 0 } },
+    { id: "rear", n: "Rear ¾", ic: ICO('<rect x="5" y="9" width="14" height="7" rx="2"/><path d="M8 12.5h1.5M14.5 12.5H16M7 19v-3M17 19v-3"/>'), v: { yaw: 0.72, pitch: 0.2, dist: 3.1, fov: 34, roll: 0 } },
+    { id: "side", n: "Side", ic: ICO('<path d="M3 15h18M5 15l2-4h9l3 4"/><circle cx="7.5" cy="16.5" r="1.7"/><circle cx="16.5" cy="16.5" r="1.7"/>'), v: { yaw: 1.57, pitch: 0.06, dist: 3.7, fov: 28, roll: 0 } },
+    { id: "low", n: "Low drama", ic: ICO('<path d="M4 18l8-12 8 12"/><path d="M8 18h8"/>'), v: { yaw: 2.2, pitch: -0.03, dist: 2.1, fov: 55, roll: -0.07 } },
+    { id: "top", n: "Top down", ic: ICO('<rect x="8" y="4" width="8" height="16" rx="3"/><path d="M9.5 8h5M9.5 16h5"/>'), v: { yaw: 0.72, pitch: 1.38, dist: 4.5, fov: 34, roll: 0 } }
+  ];
   const FORMATS = [
     { id: "9:16", w: 1080, h: 1920, label: "9:16", hint: W("Story", "Story") },
     { id: "4:5", w: 1080, h: 1350, label: "4:5", hint: W("Post", "Postare") },
@@ -91,7 +100,8 @@
       _cl.copy(camera.position); app.unwarp(_cl); _ct.copy(T); app.unwarp(_ct);
       const touched = new Set();
       const fold = new Set();
-      for (const it of inst) if (_cl.distanceTo(it.c) < it.r * 0.95 + 2 || segDist(it.c) < it.r * 0.72) fold.add(it);
+      const camCar = _cl.distanceTo(_ct);
+      for (const it of inst) { const dc = _cl.distanceTo(it.c); if (dc < it.r * 0.95 + 2 || segDist(it.c) < it.r * (dc < camCar * 0.6 ? 1.15 : 0.72)) fold.add(it); } // (nearer the lens, a wider berth)
       // (a tree goes whole: its trunk with its crown, whatever instanced mesh each is drawn by)
       if (fold.size) for (const it of inst) if (!fold.has(it)) for (const f of fold) if (Math.hypot(it.c.x - f.c.x, it.c.z - f.c.z) < 4) { fold.add(it); break; }
       for (const it of inst) {
@@ -195,7 +205,8 @@
       <div class="pm-panel" aria-label="${W("Camera", "Cameră")}">
         <div class="pm-tabs" role="tablist"><button type="button" role="tab" aria-selected="true" data-tab="cam" class="pm-tab">${W("Camera", "Cameră")}</button><button type="button" role="tab" aria-selected="false" data-tab="world" class="pm-tab">${W("World", "Lume")}</button></div>
         <div class="pm-pane pm-cam" role="tabpanel" data-pane="cam">
-          ${[["dist", W("Distance", "Distanță"), 0], ["pitch", W("Height", "Înălțime"), 1], ["yaw", W("Rotation", "Rotație"), 2], ["fov", W("Zoom", "Zoom"), 3], ["roll", W("Tilt", "Înclinare"), 4]].map(([k, l]) => `<label class="pm-sl"><span>${l}</span><input type="range" data-k="${k}" min="0" max="1000" step="1" aria-label="${l}"><output></output></label>`).join("")}
+          <div class="pm-presets" role="group" aria-label="${W("Shots", "Cadre")}">${PRESETS.map((q) => `<button type="button" class="pm-preset" data-p="${q.id}"><i aria-hidden="true">${q.ic}</i><b>${q.n}</b></button>`).join("")}</div>
+          ${[[W("Position", "Poziție"), [["dist", W("Distance", "Distanță")], ["pitch", W("Height", "Înălțime")], ["yaw", W("Rotation", "Rotație")]]], [W("Lens", "Obiectiv"), [["fov", W("Zoom", "Zoom")], ["roll", W("Tilt", "Înclinare")]]]].map(([g, rows]) => `<div class="pm-group" role="group" aria-label="${g}"><span class="pm-gh" aria-hidden="true">${g}</span>${rows.map(([k, l]) => `<div class="pm-sl"><label for="pm-${k}">${l}</label><output for="pm-${k}"></output><button type="button" class="pm-step" data-k="${k}" data-d="-1" aria-label="${l} −">−</button><input id="pm-${k}" type="range" data-k="${k}" min="0" max="1000" step="1"><button type="button" class="pm-step" data-k="${k}" data-d="1" aria-label="${l} +">+</button></div>`).join("")}</div>`).join("")}
           <div class="pm-row"><label class="pm-tog"><input type="checkbox" class="pm-tilt" checked><span>${W("Miniature blur", "Efect de machetă")}</span></label><button type="button" class="pm-btn pm-reset">${W("Reset", "Resetează")}</button></div>
           <p class="pm-help pm-desk">${W("Drag to orbit · wheel: distance · Shift+wheel: zoom · Q / E: tilt · arrows: rotate and height · Space: photo · H: clean view · Esc: exit", "Trage ca să te rotești · rotița: distanța · Shift+rotița: zoom · Q / E: înclinare · săgeți: rotație și înălțime · Space: fotografia · H: fără comenzi · Esc: ieși")}</p>
           <p class="pm-help pm-touch">${W("One finger: orbit · pinch: distance · twist: tilt · two fingers up / down: height", "Un deget: rotire · ciupit: distanța · răsucit: înclinare · două degete sus / jos: înălțime")}</p>
@@ -209,10 +220,10 @@
       </div>
       <div class="pm-sheet" hidden role="dialog" aria-label="${W("Your postcard", "Vederea ta")}">
         <div class="pm-sheet-in"><img alt="${W("Your postcard from the Cromatic city", "Vederea ta din orașul Cromatic")}"><div class="pm-sheet-b">
-          <button type="button" class="pm-btn pm-share" hidden><b>${W("Share", "Trimite")}</b></button>
-          <a class="pm-btn pm-dl" download><b>${W("Download", "Descarcă")}</b></a>
-          <a class="pm-btn pm-png pm-secondary" download><b>PNG</b></a>
-          <button type="button" class="pm-btn pm-again"><b>${W("Take another", "Încă una")}</b></button></div>
+          <button type="button" class="pm-act pm-share pm-primary" hidden>${ICO('<path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M5 12.5v6A2 2 0 0 0 7 20.5h10a2 2 0 0 0 2-2v-6"/>')}<b>${W("Share", "Trimite")}</b></button>
+          <a class="pm-act pm-dl" download>${ICO('<path d="M12 3.5V15M7.5 10.5 12 15l4.5-4.5"/><path d="M4.5 19.5h15"/>')}<b>${W("Download JPEG", "Descarcă JPEG")}</b></a>
+          <a class="pm-act pm-png" download>${ICO('<rect x="4" y="3.5" width="16" height="17" rx="2.5"/><circle cx="9.5" cy="9" r="1.6"/><path d="m4.5 17 4.5-4.5 3.5 3.5 2.5-2.5 4.5 4.5"/>')}<b>PNG</b></a>
+          <button type="button" class="pm-act pm-again">${ICO('<path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5M20 4v4.5h-4.5"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.5M4 20v-4.5h4.5"/>')}<b>${W("Take another", "Încă una")}</b></button></div>
           <p class="pm-meta mono"></p></div></div>
       <p class="pm-live" aria-live="polite"></p>`;
     document.body.appendChild(root);
@@ -247,15 +258,17 @@
     const text = { dist: (v) => `${(v * R0 * 0.083).toFixed(1)} m`, pitch: (v) => `${Math.round((v * 180) / Math.PI)}°`, yaw: (v) => `${Math.round(((((v * 180) / Math.PI) % 360) + 540) % 360 - 180)}°`, fov: (v) => `${Math.round(18 / Math.tan((v * Math.PI) / 360))} mm`, roll: (v) => `${Math.round((v * 180) / Math.PI)}°` };
     let slFocus = null;
     function syncSliders() {
-      for (const s of $$(".pm-sl input")) {
+      for (const b of $$(".pm-step")) b.addEventListener("click", () => { const k = b.dataset.k, inp = $(`.pm-sl input[data-k="${k}"]`), v = clamp(+inp.value + +b.dataset.d * 40, 0, 1000); inp.value = String(v); inp.dispatchEvent(new Event("input")); });
+    for (const b of $$(".pm-preset")) b.addEventListener("click", () => { const q = PRESETS.find((x) => x.id === b.dataset.p); if (!q) return; const v = { ...q.v }; if (coarse() && v.dist) v.dist *= 1.3; const d = Math.atan2(Math.sin(v.yaw - G.yaw), Math.cos(v.yaw - G.yaw)); v.yaw = G.yaw + d; Object.assign(G, v); VEL.yaw = VEL.pitch = 0; for (const x of $$(".pm-preset")) x.classList.toggle("on", x === b); live(q.n); });
+    for (const s of $$(".pm-sl input")) {
         const k = s.dataset.k; if (s === slFocus && dragSl) continue;
         const nv = String(toS(k, G[k])); if (s.value !== nv) s.value = nv;
-        const t = text[k](k === "dist" ? Math.min(G.dist, effDist) : G[k]); s.nextElementSibling.textContent = t; s.setAttribute("aria-valuetext", t);
+        const t = text[k](k === "dist" ? Math.min(G.dist, effDist) : G[k]), out = s.parentElement.querySelector("output"); if (out.textContent !== t) out.textContent = t; s.setAttribute("aria-valuetext", t);
       }
     }
     let dragSl = false;
     for (const s of $$(".pm-sl input")) {
-      s.addEventListener("input", () => { const k = s.dataset.k; let v = fromS(k, +s.value); if (k === "yaw") { const cur = G.yaw, d = Math.atan2(Math.sin(v - cur), Math.cos(v - cur)); v = cur + d; VEL.yaw = 0; } if (k === "pitch") VEL.pitch = 0; G[k] = v; });
+      s.addEventListener("input", () => { for (const x of $$(".pm-preset")) x.classList.remove("on"); const k = s.dataset.k; let v = fromS(k, +s.value); if (k === "yaw") { const cur = G.yaw, d = Math.atan2(Math.sin(v - cur), Math.cos(v - cur)); v = cur + d; VEL.yaw = 0; } if (k === "pitch") VEL.pitch = 0; G[k] = v; });
       s.addEventListener("pointerdown", () => { dragSl = true; slFocus = s; });
       s.addEventListener("pointerup", () => { dragSl = false; });
       s.addEventListener("focus", () => (slFocus = s)); s.addEventListener("blur", () => { if (slFocus === s) slFocus = null; dragSl = false; });
@@ -360,6 +373,7 @@
     // ---------- the photo ----------
     async function shoot() {
       if (!on || root.classList.contains("pm-shooting")) return;
+      try { await Promise.race([document.fonts.load("800 64px CromaticSans"), new Promise((r) => setTimeout(r, 1200))]); } catch (e) {}
       root.classList.add("pm-shooting");
       if (!reduced()) { const f = $(".pm-flash"); f.classList.remove("go"); void f.offsetWidth; f.classList.add("go"); }
       await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
@@ -417,17 +431,18 @@
     }
     // the signature: always there, small, in the corner (Daniel)
     function signature(c, W, H) {
-      const fs = Math.round(Math.max(18, W * 0.021)), pad = Math.round(fs * 1.25), txt = "cromaticstudios.com";
+      const S = Math.min(W, H), fs = Math.round(Math.max(18, S * 0.02)), pad = Math.round(S * 0.034), txt = "cromaticstudios.com";
       c.save(); c.font = `600 ${fs}px CromaticSans, "Helvetica Neue", Arial, sans-serif`; c.textAlign = "right"; c.textBaseline = "alphabetic";
       c.shadowColor = "rgba(0,0,0,.38)"; c.shadowBlur = fs * 0.5; c.shadowOffsetY = fs * 0.06;
       c.fillStyle = "rgba(255,255,255,.88)"; c.fillText(txt, W - pad, H - pad);
       const tw = c.measureText(txt).width; c.shadowColor = "transparent"; c.fillStyle = "#FED012";
       c.beginPath(); c.arc(W - pad - tw - fs * 0.55, H - pad - fs * 0.34, fs * 0.22, 0, Math.PI * 2); c.fill();
       // the postcard's line over it (Daniel: a discreet "Greetings from Cromatic City"): small letter-spaced capitals
-      const gs = Math.round(fs * 0.56), gt = W2("GREETINGS FROM CROMATIC CITY", "SALUTĂRI DIN ORAȘUL CROMATIC");
-      c.font = `700 ${gs}px CromaticSans, "Helvetica Neue", Arial, sans-serif`; try { c.letterSpacing = `${(gs * 0.18).toFixed(1)}px`; } catch (e) {}
-      c.shadowColor = "rgba(0,0,0,.38)"; c.shadowBlur = fs * 0.45; c.fillStyle = "rgba(255,255,255,.82)";
-      c.fillText(gt, W - pad + gs * 0.18, H - pad - fs * 1.32);
+      // (round 3, Daniel: at least twice as big, in the studio's title face: CromaticSans' heavy cut, the site's headings)
+      const gs = Math.round(S * 0.036), gt = W2("Greetings from Cromatic City", "Salutări din orașul Cromatic");
+      c.font = `800 ${gs}px CromaticSans, "Helvetica Neue", Arial, sans-serif`; try { c.letterSpacing = `${(-gs * 0.02).toFixed(1)}px`; } catch (e) {}
+      c.shadowColor = "rgba(0,0,0,.42)"; c.shadowBlur = gs * 0.35; c.shadowOffsetY = gs * 0.04; c.fillStyle = "rgba(255,255,255,.95)";
+      c.fillText(gt, W - pad, H - pad - fs * 1.45);
       c.restore();
     }
     let sheetURL = null, pngURL = null;
@@ -436,13 +451,13 @@
       sheetURL = URL.createObjectURL(blob); pngURL = png ? URL.createObjectURL(png) : null;
       const base = `cromatic-postcard-${app.worldId()}-${fmt.id.replace(":", "x")}-${new Date().toISOString().slice(0, 10)}`, isJ = blob.type === "image/jpeg", name = base + (isJ ? ".jpg" : ".png");
       const file = new File([blob], name, { type: blob.type });
-      const pl = $(".pm-png"); pl.hidden = !pngURL || !isJ; if (pngURL) { pl.href = pngURL; pl.download = base + ".png"; pl.setAttribute("aria-label", W("Download as PNG (larger)", "Descarcă PNG (mai mare)")); }
+      const pl = $(".pm-png"); pl.hidden = !pngURL || !isJ; $(".pm-dl b").textContent = isJ ? W("Download JPEG", "Descarcă JPEG") : W("Download PNG", "Descarcă PNG"); if (pngURL) { pl.href = pngURL; pl.download = base + ".png"; pl.setAttribute("aria-label", W("Download as PNG (larger)", "Descarcă PNG (mai mare)")); }
       lastShot = { blob, file, name };
       const sheet = $(".pm-sheet"); sheet.hidden = false; root.classList.add("pm-sheet-on");
       $(".pm-sheet img").src = sheetURL; $(".pm-sheet img").style.aspectRatio = `${size[0]} / ${size[1]}`;
       const dl = $(".pm-dl"); dl.href = sheetURL; dl.download = name;
       const share = $(".pm-share"); let can = false; try { can = !!(navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) {}
-      share.hidden = !can; dl.classList.toggle("pm-secondary", can);
+      share.hidden = !can; dl.classList.toggle("pm-primary", !can); // (no share sheet here: the download is the main action)
       $(".pm-meta").textContent = `${size[0]} × ${size[1]} ${isJ ? "JPG" : "PNG"} · ${(blob.size / 1e6).toFixed(1)} MB · ${fmt.hint} ${fmt.label}`;
       live(W("Postcard ready", "Vederea e gata")); (can ? share : dl).focus();
     }
