@@ -1,0 +1,501 @@
+// Cromatic · Postcard, the photo mode (TASK-119; Daniel: "Postcard", RO "Vedere"; the third option of the view switch). A camera that orbits the ride: distance, height, rotation,
+// zoom and roll, with inertia and soft limits; it never goes under the street or into a building (the city's footprints).
+// The worlds are the filters, the formats 9:16 / 4:5 / 1:1 / 16:9 are drawn over the view, the photo is a PNG at 2x
+// (the city drawn again at that size, the world's own post and overlays, the cromaticstudios.com signature), shared
+// through the phone's share sheet or downloaded. Desktop and phone have their own controls; everything is a real button
+// or slider, keyboard included. app.js hands over what it needs (window.czPhoto(app)) and calls frame() before it draws.
+(() => {
+  "use strict";
+  // the keys: taken in the capture phase from the very start (before the map's and the street drive's own listeners
+  // exist), handed to Postcard while it is on, so an arrow framing a photo never drives the car
+  let keyHook = null;
+  addEventListener("keydown", (e) => keyHook && keyHook.down(e), true);
+  addEventListener("keyup", (e) => keyHook && keyHook.up(e), true);
+  // the interface speaks the page's language (Romanian where the page is lang="ro")
+  const RO = false && /^ro/i.test(document.documentElement.lang || ""), W = (en, ro) => (RO ? ro : en), W2 = W; // (Daniel: English only for now; the Romanian waits here, dormant)
+  // ready-made shots (each a camera; the visitor goes on from there)
+  const ICO = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  const PRESETS = [
+    { id: "front", n: "Front ¾", ic: ICO('<rect x="5" y="9" width="14" height="7" rx="2"/><path d="M7 9l1.5-3h7L17 9M7 19v-3M17 19v-3"/>'), v: { yaw: 2.45, pitch: 0.16, dist: 3.2, fov: 32, roll: 0 } },
+    { id: "rear", n: "Rear ¾", ic: ICO('<rect x="5" y="9" width="14" height="7" rx="2"/><path d="M8 12.5h1.5M14.5 12.5H16M7 19v-3M17 19v-3"/>'), v: { yaw: 0.72, pitch: 0.2, dist: 3.1, fov: 34, roll: 0 } },
+    { id: "side", n: "Side", ic: ICO('<path d="M3 15h18M5 15l2-4h9l3 4"/><circle cx="7.5" cy="16.5" r="1.7"/><circle cx="16.5" cy="16.5" r="1.7"/>'), v: { yaw: 1.57, pitch: 0.06, dist: 3.7, fov: 28, roll: 0 } },
+    { id: "low", n: "Low drama", ic: ICO('<path d="M4 18l8-12 8 12"/><path d="M8 18h8"/>'), v: { yaw: 2.2, pitch: -0.03, dist: 2.1, fov: 55, roll: -0.07 } },
+    { id: "top", n: "Top down", ic: ICO('<rect x="8" y="4" width="8" height="16" rx="3"/><path d="M9.5 8h5M9.5 16h5"/>'), v: { yaw: 0.72, pitch: 1.38, dist: 4.5, fov: 34, roll: 0 } }
+  ];
+  const FORMATS = [
+    { id: "9:16", w: 1080, h: 1920, label: "9:16", hint: W("Story", "Story") },
+    { id: "4:5", w: 1080, h: 1350, label: "4:5", hint: W("Post", "Postare") },
+    { id: "1:1", w: 1080, h: 1080, label: "1:1", hint: W("Square", "Pătrat") },
+    { id: "16:9", w: 1920, h: 1080, label: "16:9", hint: W("Wide", "Lat") }
+  ];
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const coarse = () => matchMedia("(pointer: coarse)").matches || innerWidth < 760;
+
+  function create(app) {
+    const { camera, renderer } = app;
+    const V3 = camera.position.constructor;
+    // ---------- the camera's state: each parameter a goal and a value that follows it ----------
+    // yaw: round the car (0 = behind it, radians), pitch: the camera's height as an angle over the car's middle,
+    // dist: in car radii, fov: degrees (zoom), roll: radians
+    const LIM = { pitch: [-0.06, 1.42], dist: [1.15, 12], fov: [14, 75], roll: [-0.35, 0.35] };
+    const P = { yaw: 0, pitch: 0, dist: 0, fov: 0, roll: 0 }, G = { ...P }, VEL = { yaw: 0, pitch: 0 };
+    let on = false, R0 = 30, T = new V3(), carY = 0, heading = 0, near = [], saved = null, fmt = FORMATS[0], tilt = true;
+    const shift = { x: 0, y: 0 };
+    let effDist = 3, lastT = 0, dragging = false, worldBusy = false, world0 = 0, lastShot = null, panelHidden = false, needSnap = true;
+    const DEF = () => ({ yaw: 0.72, pitch: 0.2, dist: coarse() ? 4.4 : 3.1, fov: 34, roll: 0 });
+
+    // ---------- the car: where it stands, its size, which way it faces ----------
+    function measureCar() {
+      const g = app.car(); if (!g) return false;
+      g.updateMatrixWorld(true);
+      let min = new V3(Infinity, Infinity, Infinity), max = new V3(-Infinity, -Infinity, -Infinity), any = false;
+      const p = new V3();
+      g.traverse((m) => {
+        if (!m.isMesh || !m.visible || !m.geometry || (m.material && (m.material.transparent || m.material.blending === 2))) return;
+        const gg = m.geometry; if (!gg.boundingBox) gg.computeBoundingBox();
+        const b = gg.boundingBox;
+        for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) { p.set(x, y, z).applyMatrix4(m.matrixWorld); min.min(p); max.max(p); any = true; }
+      });
+      if (!any) return false;
+      const c = min.clone().add(max).multiplyScalar(0.5), size = max.clone().sub(min);
+      R0 = clamp(Math.hypot(size.x, size.z) / 2, 8, 120);
+      carY = min.y;
+      // the target: the car's middle, a little under its roof (logical, then bent like the city)
+      T.copy(app.warp(new V3(c.x, min.y + size.y * 0.42, c.z)));
+      const f = new V3(0, 0, 1).applyQuaternion(g.getWorldQuaternion(new g.quaternion.constructor()));
+      heading = Math.atan2(f.x, f.z);
+      // the buildings that could stand between the camera and the car (logical footprints near it)
+      const reach = R0 * LIM.dist[1] * 1.3 + 60;
+      near = app.footprints().filter((b) => Math.hypot(b.x - c.x, b.z - c.z) < reach + Math.max(b.w, b.d));
+      collectNear(c, reach);
+      return true;
+    }
+    // ---- nothing stands round the lens: the instanced things near the car (trees, lamps, benches, bushes) whose
+    // bounds the camera enters are folded away while it is there, and put back when it leaves (or on exit)
+    let inst = [];
+    function collectNear(c, reach) {
+      restoreAll(); inst = [];
+      const m4 = new camera.matrixWorld.constructor(), p = new V3();
+      app.scene.traverse((o) => {
+        if (!o.isInstancedMesh || !o.visible || !o.geometry || o.count < 2) return;
+        if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+        const bs = o.geometry.boundingSphere, arr = o.instanceMatrix.array;
+        for (let i = 0; i < o.count; i++) {
+          m4.fromArray(arr, i * 16).premultiply(o.matrixWorld);
+          const sc = Math.cbrt(Math.abs(m4.determinant())); if (!(sc > 0)) continue;
+          p.copy(bs.center).applyMatrix4(m4);
+          if (Math.hypot(p.x - c.x, p.z - c.z) > reach) continue;
+          if (p.y < 3 || bs.radius * sc > 70) continue; // (only standing things: no road tiles, no big blocks)
+          inst.push({ o, i, c: p.clone(), r: bs.radius * sc, saved: null });
+        }
+      });
+    }
+    const _cl = new V3(), _ct = new V3(), _sg = new V3(), _w = new V3();
+    // (and whatever stands between the lens and the car: a tree's crown in front of the ride is folded away, the way a
+    // game fades what hides its hero; the buildings never get there: the camera comes in front of them instead)
+    function segDist(pt) { _sg.subVectors(_ct, _cl); const L2 = _sg.lengthSq() || 1; const u = Math.max(0, Math.min(1, _w.subVectors(pt, _cl).dot(_sg) / L2)); return _w.copy(_cl).addScaledVector(_sg, u).distanceTo(pt); }
+    function clearLens() {
+      _cl.copy(camera.position); app.unwarp(_cl); _ct.copy(T); app.unwarp(_ct);
+      const touched = new Set();
+      const fold = new Set();
+      const camCar = _cl.distanceTo(_ct);
+      for (const it of inst) { const dc = _cl.distanceTo(it.c); if (dc < it.r * 0.95 + 2 || segDist(it.c) < it.r * (dc < camCar * 0.6 ? 1.15 : 0.72)) fold.add(it); } // (nearer the lens, a wider berth)
+      // (a tree goes whole: its trunk with its crown, whatever instanced mesh each is drawn by)
+      if (fold.size) for (const it of inst) if (!fold.has(it)) for (const f of fold) if (Math.hypot(it.c.x - f.c.x, it.c.z - f.c.z) < 4) { fold.add(it); break; }
+      for (const it of inst) {
+        const inside = fold.has(it);
+        if (inside && !it.saved) { const a = it.o.instanceMatrix.array; it.saved = a.slice(it.i * 16, it.i * 16 + 16); for (let k = 0; k < 16; k++) a[it.i * 16 + k] = 0; touched.add(it.o); }
+        else if (!inside && it.saved) { it.o.instanceMatrix.array.set(it.saved, it.i * 16); it.saved = null; touched.add(it.o); }
+      }
+      for (const o of touched) o.instanceMatrix.needsUpdate = true;
+    }
+    function restoreAll() { const touched = new Set(); for (const it of inst) if (it.saved) { it.o.instanceMatrix.array.set(it.saved, it.i * 16); it.saved = null; touched.add(it.o); } for (const o of touched) o.instanceMatrix.needsUpdate = true; }
+    // is a point (bent coordinates) inside a building, or under the street?
+    const _u = new V3();
+    function blocked(q, margin, trees) {
+      if (q.y < carY + 0.9) return true;
+      _u.copy(q); app.unwarp(_u);
+      for (const b of near) {
+        if (b.tree && !trees) continue;
+        // (a tree's footprint is its shadow's: the crown above it is wider and taller)
+        const k = b.tree ? 1.55 : 1, hk = b.tree ? 1.7 : 1;
+        if (_u.y > b.h * hk + margin) continue;
+        const dx = _u.x - b.x, dz = _u.z - b.z, c = Math.cos(b.ang || 0), s = Math.sin(b.ang || 0);
+        const lx = dx * c - dz * s, lz = dx * s + dz * c;
+        if (Math.abs(lx) < (b.w * k) / 2 + margin && Math.abs(lz) < (b.d * k) / 2 + margin) return true;
+      }
+      return false;
+    }
+    // how far the camera may go along a direction before it meets a wall or the street (in car radii)
+    const _q = new V3();
+    function freeDist(dir, want) {
+      const steps = 40, margin = R0 * 0.08;
+      // a building between the camera and the car: the camera comes in front of it. A tree only matters where the
+      // camera itself is (a trunk in front is the visitor's composition to change; the lens inside a crown is not)
+      let ok = 0, lim = want;
+      for (let i = 1; i <= steps; i++) {
+        const d = (want * i) / steps;
+        _q.copy(T).addScaledVector(dir, d * R0);
+        if (blocked(_q, margin, false)) { lim = Math.max(LIM.dist[0] * 0.92, ok - 0.06); break; }
+        ok = d;
+      }
+      return lim; // (trees round the lens are folded away instead: clearLens)
+    }
+    const dirOf = (yaw, pitch) => { const a = heading + Math.PI + yaw; return new V3(Math.sin(a) * Math.cos(pitch), Math.sin(pitch), Math.cos(a) * Math.cos(pitch)); };
+
+    // ---------- each frame, before the city draws ----------
+    function frame(now) {
+      if (!on) return;
+      const dt = Math.min(0.05, Math.max(0.001, (now - (lastT || now)) / 1000)); lastT = now;
+      // inertia: a flick keeps turning, slowing down
+      if (!dragging && !reduced()) {
+        const fr = Math.exp(-dt * 4.2);
+        if (Math.abs(VEL.yaw) > 1e-4) { G.yaw += VEL.yaw * dt; VEL.yaw *= fr; } else VEL.yaw = 0;
+        if (Math.abs(VEL.pitch) > 1e-4) { G.pitch += VEL.pitch * dt; VEL.pitch *= fr; } else VEL.pitch = 0;
+      }
+      // soft limits: a goal past a limit is pulled back (rubber band) once the hand lets go
+      if (!dragging) {
+        for (const k of ["pitch", "dist", "fov", "roll"]) {
+          const [a, b] = LIM[k];
+          if (G[k] < a) { G[k] = lerp(G[k], a, 1 - Math.exp(-dt * 10)); if (k === "pitch") VEL.pitch = 0; }
+          else if (G[k] > b) { G[k] = lerp(G[k], b, 1 - Math.exp(-dt * 10)); if (k === "pitch") VEL.pitch = 0; }
+        }
+      }
+      const k = needSnap ? 1 : 1 - Math.exp(-dt * (reduced() ? 30 : 11));
+      for (const key of Object.keys(P)) P[key] = lerp(P[key], G[key], k);
+      // the walls: the camera comes in quickly when something is in the way, goes back out gently
+      const dir = dirOf(P.yaw, P.pitch), free = freeDist(dir, P.dist);
+      effDist = needSnap ? free : free < effDist ? lerp(effDist, free, 1 - Math.exp(-dt * 26)) : lerp(effDist, free, 1 - Math.exp(-dt * 5));
+      effDist = Math.min(effDist, free + 0.02);
+      needSnap = false;
+      // the car sits in the middle of the format's frame, wherever the bars put the frame (a lens shift, eased)
+      const gx = innerWidth / 2 - (guide.x + guide.w / 2), gy = innerHeight / 2 - (guide.y + guide.h / 2), ke = 1 - Math.exp(-dt * 9);
+      shift.x = lerp(shift.x, gx, ke); shift.y = lerp(shift.y, gy, ke);
+      place(camera, dir, effDist, P.fov, P.roll);
+      clearLens();
+      syncSliders();
+    }
+    function place(cam, dir, d, fov, roll) {
+      cam.position.copy(T).addScaledVector(dir, d * R0);
+      cam.up.set(0, 1, 0);
+      cam.lookAt(T);
+      if (roll) cam.rotateZ(roll);
+      cam.fov = fov; cam.near = Math.max(0.3, d * R0 * 0.02); cam.far = Math.max(cam.far, 30000);
+      cam.aspect = innerWidth / innerHeight;
+      cam.setViewOffset(innerWidth, innerHeight, shift.x, shift.y, innerWidth, innerHeight);
+      cam.updateProjectionMatrix(); cam.updateMatrixWorld(true);
+    }
+
+    // ---------- the UI ----------
+    const root = document.createElement("div");
+    root.className = "pm-root"; root.hidden = true;
+    root.setAttribute("role", "dialog"); root.setAttribute("aria-label", W("Postcard", "Vedere"));
+    const worlds = app.worlds();
+    root.innerHTML = `
+      <div class="pm-guide" aria-hidden="true"><i class="pm-m t"></i><i class="pm-m b"></i><i class="pm-m l"></i><i class="pm-m r"></i>
+        <div class="pm-frame"><i class="pm-third v1"></i><i class="pm-third v2"></i><i class="pm-third h1"></i><i class="pm-third h2"></i><span class="pm-wm"><small>${W("Greetings from Cromatic City", "Salutări din orașul Cromatic")}</small>cromaticstudios.com</span></div></div>
+      <div class="pm-flash" aria-hidden="true"></div>
+      <div class="pm-top">
+        <button class="pm-btn pm-exit" type="button" aria-label="${W("Close Postcard (Esc)", "Închide Vedere (Esc)")}"><span aria-hidden="true">×</span><b>${W("Exit", "Ieși")}</b></button>
+        <div class="pm-formats" role="radiogroup" aria-label="Format">${FORMATS.map((f, i) => `<button type="button" role="radio" aria-checked="${i === 0}" data-f="${f.id}" class="pm-chip"><b>${f.label}</b><small>${f.hint}</small></button>`).join("")}</div>
+        <button class="pm-btn pm-hide" type="button" aria-pressed="false" aria-label="${W("Hide the controls (H)", "Ascunde comenzile (H)")}"><span aria-hidden="true">◐</span><b>${W("Clean view", "Fără comenzi")}</b></button>
+      </div>
+      <div class="pm-panel" aria-label="${W("Camera", "Cameră")}">
+        <div class="pm-tabs" role="tablist"><button type="button" role="tab" aria-selected="true" data-tab="cam" class="pm-tab">${W("Camera", "Cameră")}</button><button type="button" role="tab" aria-selected="false" data-tab="world" class="pm-tab">${W("World", "Lume")}</button></div>
+        <div class="pm-pane pm-cam" role="tabpanel" data-pane="cam">
+          <div class="pm-presets" role="group" aria-label="${W("Shots", "Cadre")}">${PRESETS.map((q) => `<button type="button" class="pm-preset" data-p="${q.id}"><i aria-hidden="true">${q.ic}</i><b>${q.n}</b></button>`).join("")}</div>
+          ${[[W("Position", "Poziție"), [["dist", W("Distance", "Distanță")], ["pitch", W("Height", "Înălțime")], ["yaw", W("Rotation", "Rotație")]]], [W("Lens", "Obiectiv"), [["fov", W("Zoom", "Zoom")], ["roll", W("Tilt", "Înclinare")]]]].map(([g, rows]) => `<div class="pm-group" role="group" aria-label="${g}"><span class="pm-gh" aria-hidden="true">${g}</span>${rows.map(([k, l]) => `<div class="pm-sl"><label for="pm-${k}">${l}</label><output for="pm-${k}"></output><button type="button" class="pm-step" data-k="${k}" data-d="-1" aria-label="${l} −">−</button><input id="pm-${k}" type="range" data-k="${k}" min="0" max="1000" step="1"><button type="button" class="pm-step" data-k="${k}" data-d="1" aria-label="${l} +">+</button></div>`).join("")}</div>`).join("")}
+          <div class="pm-row"><label class="pm-tog"><input type="checkbox" class="pm-tilt" checked><span>${W("Miniature blur", "Efect de machetă")}</span></label><button type="button" class="pm-btn pm-reset">${W("Reset", "Resetează")}</button></div>
+          <p class="pm-help pm-desk">${W("Drag to orbit · wheel: distance · Shift+wheel: zoom · Q / E: tilt · arrows: rotate and height · Space: photo · H: clean view · Esc: exit", "Trage ca să te rotești · rotița: distanța · Shift+rotița: zoom · Q / E: înclinare · săgeți: rotație și înălțime · Space: fotografia · H: fără comenzi · Esc: ieși")}</p>
+          <p class="pm-help pm-touch">${W("One finger: orbit · pinch: distance · twist: tilt · two fingers up / down: height", "Un deget: rotire · ciupit: distanța · răsucit: înclinare · două degete sus / jos: înălțime")}</p>
+        </div>
+        <div class="pm-pane pm-worlds" role="tabpanel" data-pane="world" hidden>
+          <div class="pm-wlist" role="radiogroup" aria-label="${W("World", "Lume")}">${worlds.map((w, i) => `<button type="button" role="radio" class="pm-world" data-i="${w.i}" style="--wb:${w.bg};--wa:${w.ac}"><i aria-hidden="true"></i><b>${w.n}</b></button>`).join("")}</div>
+        </div>
+      </div>
+      <div class="pm-bottom">
+        <button class="pm-shutter" type="button" aria-label="${W("Take the photo (Space)", "Fă fotografia (Space)")}"><i aria-hidden="true"></i></button>
+      </div>
+      <div class="pm-sheet" hidden role="dialog" aria-label="${W("Your postcard", "Vederea ta")}">
+        <div class="pm-sheet-in"><img alt="${W("Your postcard from the Cromatic city", "Vederea ta din orașul Cromatic")}"><div class="pm-sheet-b">
+          <button type="button" class="pm-act pm-share pm-primary" hidden>${ICO('<path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M5 12.5v6A2 2 0 0 0 7 20.5h10a2 2 0 0 0 2-2v-6"/>')}<b>${W("Share", "Trimite")}</b></button>
+          <a class="pm-act pm-dl" download>${ICO('<path d="M12 3.5V15M7.5 10.5 12 15l4.5-4.5"/><path d="M4.5 19.5h15"/>')}<b>${W("Download JPEG", "Descarcă JPEG")}</b></a>
+          <a class="pm-act pm-png" download>${ICO('<rect x="4" y="3.5" width="16" height="17" rx="2.5"/><circle cx="9.5" cy="9" r="1.6"/><path d="m4.5 17 4.5-4.5 3.5 3.5 2.5-2.5 4.5 4.5"/>')}<b>PNG</b></a>
+          <button type="button" class="pm-act pm-again">${ICO('<path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5M20 4v4.5h-4.5"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.5M4 20v-4.5h4.5"/>')}<b>${W("Take another", "Încă una")}</b></button></div>
+          <p class="pm-meta mono"></p></div></div>
+      <p class="pm-live" aria-live="polite"></p>`;
+    document.body.appendChild(root);
+    const $ = (s) => root.querySelector(s), $$ = (s) => [...root.querySelectorAll(s)];
+    const live = (t) => { const l = $(".pm-live"); l.textContent = ""; setTimeout(() => (l.textContent = t), 30); };
+
+    // the format guide: the frame the photo will have, as large as fits between the bars
+    function layoutGuide() {
+      const W = innerWidth, H = innerHeight, mob = root.classList.contains("pm-touchui");
+      // the room the bars leave: on a phone, above the shutter (over the sheet); on a computer, between the panel and
+      // its mirror on the left, over the shutter. A clean view takes nearly all of it
+      let top = mob ? 60 : 70, bot = 118, side = 330;
+      if (panelHidden) { top = mob ? 56 : 66; bot = mob ? 112 : 112; side = 16; }
+      else if (mob) { const sh = $(".pm-shutter").getBoundingClientRect(); bot = sh.top > 0 ? H - sh.top + 10 : H * 0.5; side = 10; }
+      // (on a computer the panel is on the right: the frame takes the room to its left)
+      const left = mob || panelHidden ? side : 16, right = mob || panelHidden ? side : 330;
+      const aw = W - left - right, ah = Math.max(80, H - top - bot), A = fmt.w / fmt.h;
+      let gw = aw, gh = gw / A; if (gh > ah) { gh = ah; gw = gh * A; }
+      const x = left + (aw - gw) / 2, y = top + (ah - gh) / 2;
+      const set = (el, l, t, w, h) => Object.assign(el.style, { left: l + "px", top: t + "px", width: Math.max(0, w) + "px", height: Math.max(0, h) + "px" });
+      set($(".pm-m.t"), 0, 0, W, y); set($(".pm-m.b"), 0, y + gh, W, H - y - gh); set($(".pm-m.l"), 0, y, x, gh); set($(".pm-m.r"), x + gw, y, W - x - gw, gh);
+      set($(".pm-frame"), x, y, gw, gh);
+      root.style.setProperty("--wm", Math.max(9, gw * 0.022) + "px");
+      guide = { x, y, w: gw, h: gh };
+    }
+    let guide = { x: 0, y: 0, w: innerWidth, h: innerHeight };
+
+    // sliders <-> parameters (each slider 0..1000 over its range; yaw wraps)
+    const RANGE = { dist: LIM.dist, pitch: LIM.pitch, fov: LIM.fov, roll: LIM.roll, yaw: [-Math.PI, Math.PI] };
+    const toS = (k, v) => { const [a, b] = RANGE[k]; if (k === "yaw") v = Math.atan2(Math.sin(v), Math.cos(v)); if (k === "fov") v = b + a - v; return Math.round(((clamp(v, a, b) - a) / (b - a)) * 1000); };
+    const fromS = (k, s) => { const [a, b] = RANGE[k]; const v = a + (s / 1000) * (b - a); return k === "fov" ? b + a - v : v; };
+    const text = { dist: (v) => `${(v * R0 * 0.083).toFixed(1)} m`, pitch: (v) => `${Math.round((v * 180) / Math.PI)}°`, yaw: (v) => `${Math.round(((((v * 180) / Math.PI) % 360) + 540) % 360 - 180)}°`, fov: (v) => `${Math.round(18 / Math.tan((v * Math.PI) / 360))} mm`, roll: (v) => `${Math.round((v * 180) / Math.PI)}°` };
+    let slFocus = null;
+    function syncSliders() {
+      for (const b of $$(".pm-step")) b.addEventListener("click", () => { const k = b.dataset.k, inp = $(`.pm-sl input[data-k="${k}"]`), v = clamp(+inp.value + +b.dataset.d * 40, 0, 1000); inp.value = String(v); inp.dispatchEvent(new Event("input")); });
+    for (const b of $$(".pm-preset")) b.addEventListener("click", () => { const q = PRESETS.find((x) => x.id === b.dataset.p); if (!q) return; const v = { ...q.v }; if (coarse() && v.dist) v.dist *= 1.3; const d = Math.atan2(Math.sin(v.yaw - G.yaw), Math.cos(v.yaw - G.yaw)); v.yaw = G.yaw + d; Object.assign(G, v); VEL.yaw = VEL.pitch = 0; for (const x of $$(".pm-preset")) x.classList.toggle("on", x === b); live(q.n); });
+    for (const s of $$(".pm-sl input")) {
+        const k = s.dataset.k; if (s === slFocus && dragSl) continue;
+        const nv = String(toS(k, G[k])); if (s.value !== nv) s.value = nv;
+        const t = text[k](k === "dist" ? Math.min(G.dist, effDist) : G[k]), out = s.parentElement.querySelector("output"); if (out.textContent !== t) out.textContent = t; s.setAttribute("aria-valuetext", t);
+      }
+    }
+    let dragSl = false;
+    for (const s of $$(".pm-sl input")) {
+      s.addEventListener("input", () => { for (const x of $$(".pm-preset")) x.classList.remove("on"); const k = s.dataset.k; let v = fromS(k, +s.value); if (k === "yaw") { const cur = G.yaw, d = Math.atan2(Math.sin(v - cur), Math.cos(v - cur)); v = cur + d; VEL.yaw = 0; } if (k === "pitch") VEL.pitch = 0; G[k] = v; });
+      s.addEventListener("pointerdown", () => { dragSl = true; slFocus = s; });
+      s.addEventListener("pointerup", () => { dragSl = false; });
+      s.addEventListener("focus", () => (slFocus = s)); s.addEventListener("blur", () => { if (slFocus === s) slFocus = null; dragSl = false; });
+    }
+    $(".pm-reset").addEventListener("click", () => { Object.assign(G, DEF()); VEL.yaw = VEL.pitch = 0; live(W("Camera reset", "Camera, resetată")); });
+    $(".pm-tilt").addEventListener("change", (e) => { tilt = e.target.checked; app.setTilt(tilt ? 1 : 0); });
+    for (const t of $$(".pm-tab")) t.addEventListener("click", () => {
+      const touch = root.classList.contains("pm-touchui"), was = t.getAttribute("aria-selected") === "true" && !root.classList.contains("pm-fold");
+      if (touch && was) { setFold(true); return; }
+      for (const u of $$(".pm-tab")) u.setAttribute("aria-selected", String(u === t)); for (const p of $$(".pm-pane")) p.hidden = p.dataset.pane !== t.dataset.tab;
+      if (touch) setFold(false);
+    });
+    // (on a phone the sheet starts folded to its tabs: the frame gets the screen; a tab unfolds it)
+    function setFold(v) { root.classList.toggle("pm-fold", v); for (const t of $$(".pm-tab")) t.setAttribute("aria-expanded", String(!v && t.getAttribute("aria-selected") === "true")); requestAnimationFrame(layoutGuide); }
+    for (const b of $$(".pm-chip")) b.addEventListener("click", () => setFormat(b.dataset.f));
+    function setFormat(id) { fmt = FORMATS.find((f) => f.id === id) || FORMATS[0]; for (const b of $$(".pm-chip")) b.setAttribute("aria-checked", String(b.dataset.f === fmt.id)); layoutGuide(); live(`${W("Format", "Format")} ${fmt.label}, ${fmt.hint}`); }
+    for (const b of $$(".pm-world")) b.addEventListener("click", () => setWorld(+b.dataset.i));
+    function markWorld() { const i = app.worldIdx(); for (const b of $$(".pm-world")) b.setAttribute("aria-checked", String(+b.dataset.i === i)); }
+    async function setWorld(i) {
+      if (worldBusy || i === app.worldIdx()) return;
+      worldBusy = true; root.classList.add("pm-busy");
+      try { await app.setWorld(i); } catch (e) {} finally { worldBusy = false; root.classList.remove("pm-busy"); markWorld(); live(`${W("World", "Lume")}: ${worlds.find((w) => w.i === i)?.n || ""}`); }
+    }
+    $(".pm-exit").addEventListener("click", () => exit());
+    $(".pm-hide").addEventListener("click", () => setClean(!panelHidden));
+    function setClean(v) { panelHidden = v; root.classList.toggle("pm-clean", v); $(".pm-hide").setAttribute("aria-pressed", String(v)); requestAnimationFrame(layoutGuide); }
+    $(".pm-shutter").addEventListener("click", () => shoot());
+    $(".pm-again").addEventListener("click", () => closeSheet());
+
+    // ---------- gestures: the canvas under the UI takes them (pointer events, with inertia) ----------
+    const pts = new Map(); let g0 = null, lastMove = 0;
+    const gestureLayer = $(".pm-guide");
+    gestureLayer.style.pointerEvents = "auto"; gestureLayer.style.touchAction = "none";
+    gestureLayer.addEventListener("pointerdown", (e) => {
+      if (!on) return; gestureLayer.setPointerCapture(e.pointerId);
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); dragging = true; VEL.yaw = VEL.pitch = 0; g0 = snapshot(); lastMove = performance.now();
+    });
+    const snapshot = () => { const a = [...pts.values()]; if (a.length < 2) return { n: a.length, x: a[0]?.x, y: a[0]?.y }; const [p, q] = a; return { n: 2, d: Math.hypot(q.x - p.x, q.y - p.y), ang: Math.atan2(q.y - p.y, q.x - p.x), my: (p.y + q.y) / 2, dist: G.dist, roll: G.roll, pitch: G.pitch }; };
+    gestureLayer.addEventListener("pointermove", (e) => {
+      if (!pts.has(e.pointerId)) return;
+      const prev = pts.get(e.pointerId), now = performance.now(), dt = Math.max(0.008, (now - lastMove) / 1000); lastMove = now;
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pts.size === 1) {
+        const dx = e.clientX - prev.x, dy = e.clientY - prev.y, sc = (Math.PI * 1.1) / Math.max(320, innerWidth);
+        const dyaw = -dx * sc, dpitch = dy * sc * 0.8;
+        G.yaw += dyaw; G.pitch = rubber("pitch", G.pitch + dpitch);
+        VEL.yaw = lerp(VEL.yaw, dyaw / dt, 0.5); VEL.pitch = lerp(VEL.pitch, dpitch / dt, 0.5);
+      } else if (pts.size === 2 && g0 && g0.n === 2) {
+        const s = snapshot();
+        G.dist = rubber("dist", g0.dist * (g0.d / Math.max(10, s.d)));
+        let da = s.ang - g0.ang; da = Math.atan2(Math.sin(da), Math.cos(da));
+        G.roll = rubber("roll", g0.roll + da);
+        G.pitch = rubber("pitch", g0.pitch + ((s.my - g0.my) / innerHeight) * 1.6);
+      }
+    });
+    const up = (e) => { pts.delete(e.pointerId); g0 = pts.size ? snapshot() : null; if (!pts.size) { dragging = false; if (performance.now() - lastMove > 90) VEL.yaw = VEL.pitch = 0; } };
+    gestureLayer.addEventListener("pointerup", up); gestureLayer.addEventListener("pointercancel", up);
+    // past a limit, a drag meets more and more resistance (it springs back on release, in frame())
+    function rubber(k, v) { const [a, b] = LIM[k], span = (b - a) * 0.12; if (v < a) return a - span * (1 - Math.exp(-(a - v) / span)); if (v > b) return b + span * (1 - Math.exp(-(v - b) / span)); return v; }
+    gestureLayer.addEventListener("wheel", (e) => {
+      if (!on) return; e.preventDefault();
+      const d = clamp(e.deltaY, -120, 120);
+      if (e.shiftKey || e.altKey) G.fov = clamp(G.fov * Math.exp(d * 0.0016), LIM.fov[0], LIM.fov[1]);
+      else G.dist = clamp(G.dist * Math.exp(d * 0.0016), LIM.dist[0], LIM.dist[1]);
+    }, { passive: false });
+    gestureLayer.addEventListener("dblclick", () => { Object.assign(G, DEF()); });
+
+    // ---------- the keyboard ----------
+    const held = new Set();
+    function onKey(e) {
+      if (!on) return;
+      const tag = (e.target && e.target.tagName) || "", typing = /INPUT|TEXTAREA|SELECT/.test(tag) && e.target.type !== "range" && e.target.type !== "checkbox";
+      if (typing) return;
+      const k = e.key;
+      if (k === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); if (!$(".pm-sheet").hidden) closeSheet(); else exit(); return; }
+      if (!$(".pm-sheet").hidden) return;
+      const onRange = e.target && e.target.type === "range";
+      if ((k === " " || k === "Enter") && !/BUTTON|A/.test(tag) && !onRange) { e.preventDefault(); e.stopImmediatePropagation(); shoot(); return; }
+      if (k === " " && /BUTTON/.test(tag)) return;
+      if (onRange && /^Arrow|Home|End|Page/.test(k)) { e.stopImmediatePropagation(); return; } // (the slider's own keys)
+      const map = { ArrowLeft: 1, ArrowRight: 1, ArrowUp: 1, ArrowDown: 1, q: 1, e: 1, Q: 1, E: 1, "+": 1, "=": 1, "-": 1, _: 1 };
+      if (map[k]) { e.preventDefault(); e.stopImmediatePropagation(); held.add(k.toLowerCase()); return; }
+      if (k === "h" || k === "H") { e.preventDefault(); e.stopImmediatePropagation(); setClean(!panelHidden); return; }
+      if (k === "r" || k === "R") { e.preventDefault(); e.stopImmediatePropagation(); Object.assign(G, DEF()); return; }
+      if (/^[1-4]$/.test(k) && !e.metaKey && !e.ctrlKey) { e.preventDefault(); e.stopImmediatePropagation(); setFormat(FORMATS[+k - 1].id); return; }
+      if (/^Arrow|^[a-z]$/i.test(k)) e.stopImmediatePropagation(); // the map's own keys rest while the camera is ours
+    }
+    function onKeyUp(e) { held.delete(String(e.key).toLowerCase()); }
+    // held keys move the goals smoothly (and give the same inertia as a flick when let go)
+    function keysTick(dt) {
+      if (!held.size) return;
+      const s = dt;
+      if (held.has("arrowleft")) { G.yaw += 1.4 * s; VEL.yaw = 1.4; } if (held.has("arrowright")) { G.yaw -= 1.4 * s; VEL.yaw = -1.4; }
+      if (held.has("arrowup")) G.pitch = clamp(G.pitch + 0.9 * s, LIM.pitch[0], LIM.pitch[1]); if (held.has("arrowdown")) G.pitch = clamp(G.pitch - 0.9 * s, LIM.pitch[0], LIM.pitch[1]);
+      if (held.has("q")) G.roll = clamp(G.roll + 0.5 * s, LIM.roll[0], LIM.roll[1]); if (held.has("e")) G.roll = clamp(G.roll - 0.5 * s, LIM.roll[0], LIM.roll[1]);
+      if (held.has("+") || held.has("=")) G.dist = clamp(G.dist * Math.exp(-1.2 * s), LIM.dist[0], LIM.dist[1]); if (held.has("-") || held.has("_")) G.dist = clamp(G.dist * Math.exp(1.2 * s), LIM.dist[0], LIM.dist[1]);
+    }
+    const _frame = frame;
+    let lastK = 0;
+    function frameWithKeys(now) { const dt = Math.min(0.05, (now - (lastK || now)) / 1000); lastK = now; if (on) keysTick(dt); _frame(now); }
+
+    // ---------- the photo ----------
+    async function shoot() {
+      if (!on || root.classList.contains("pm-shooting")) return;
+      try { await Promise.race([document.fonts.load("800 64px CromaticSans"), new Promise((r) => setTimeout(r, 1200))]); } catch (e) {}
+      root.classList.add("pm-shooting");
+      if (!reduced()) { const f = $(".pm-flash"); f.classList.remove("go"); void f.offsetWidth; f.classList.add("go"); }
+      await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+      let blob = null, size = null, png = null;
+      for (const scale of [2, 1.5, 1]) {
+        try { ({ blob, png, size } = await render(scale)); if (blob) break; } catch (e) { console.warn("[photo] a render failed at", scale, e); }
+      }
+      root.classList.remove("pm-shooting");
+      if (!blob) { live(W("The photo could not be made. Try a smaller format.", "Fotografia nu s-a putut face. Încearcă un format mai mic.")); return; }
+      openSheet(blob, png, size);
+    }
+    // the city drawn again at the photo's size, from the same camera, through the same look, then the overlays
+    function render(scale) {
+      const W = Math.round(fmt.w * scale), H = Math.round(fmt.h * scale);
+      const pr = renderer.getPixelRatio(), cv = renderer.domElement, sw = cv.width / pr, sh = cv.height / pr;
+      // the frame on screen, exactly: the same camera, its picture cut to the guide's window (with the live lens shift)
+      const sub = [innerWidth, innerHeight, shift.x + guide.x, shift.y + guide.y, guide.w, guide.h];
+      let out = null;
+      try {
+        renderer.setPixelRatio(1); renderer.setSize(W, H, false);
+        camera.aspect = innerWidth / innerHeight; camera.setViewOffset(...sub); camera.updateProjectionMatrix();
+        app.setCapK(W / Math.max(1, guide.w * pr));
+        app.draw(performance.now());
+        out = document.createElement("canvas"); out.width = W; out.height = H;
+        const c = out.getContext("2d"); c.drawImage(cv, 0, 0, W, H);
+        overlays(c, W, H);
+        signature(c, W, H);
+      } finally {
+        app.setCapK(1);
+        renderer.setPixelRatio(pr); renderer.setSize(sw, sh, false);
+        camera.setViewOffset(innerWidth, innerHeight, shift.x, shift.y, innerWidth, innerHeight); camera.updateProjectionMatrix();
+        app.draw(performance.now()); // (the screen again, at once: no blank frame)
+      }
+      const jpg = new Promise((res) => out.toBlob((b) => res(b), "image/jpeg", 0.9)), png = new Promise((res) => out.toBlob((b) => res(b), "image/png"));
+      return Promise.all([jpg, png]).then(([j, p]) => ({ blob: j || p, png: p, size: [W, H] }));
+    }
+    // the world's screen layers (they are CSS over the canvas, so the PNG draws its own)
+    function overlays(c, W, H) {
+      const id = app.worldId(), map = app.isMap();
+      if (id === "nightlife") { c.save(); c.globalCompositeOperation = "overlay"; const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "rgba(64,118,255,.34)"); g.addColorStop(0.4, "rgba(42,78,210,.14)"); g.addColorStop(0.74, "rgba(255,148,58,.16)"); g.addColorStop(1, "rgba(255,120,40,.30)"); c.fillStyle = g; c.fillRect(0, 0, W, H); c.restore(); }
+      if (id === "underwater") { c.save(); c.globalAlpha = map ? 0.45 : 1; let g = c.createRadialGradient(W / 2, 0, 0, W / 2, 0, Math.max(W, H) * 0.7); g.addColorStop(0, "rgba(120,240,255,.10)"); g.addColorStop(1, "rgba(120,240,255,0)"); c.fillStyle = g; c.fillRect(0, 0, W, H); g = c.createRadialGradient(W / 2, H * 1.1, 0, W / 2, H * 1.1, Math.max(W, H) * 0.9); g.addColorStop(0, "rgba(2,20,40,.55)"); g.addColorStop(1, "rgba(2,20,40,0)"); c.fillStyle = g; c.fillRect(0, 0, W, H); c.restore(); }
+      if (id === "ghibli") { c.save(); c.globalAlpha = 0.42; c.globalCompositeOperation = "multiply"; const g = c.createRadialGradient(W / 2, H * 0.4, Math.min(W, H) * 0.35, W / 2, H * 0.4, Math.max(W, H) * 0.75); g.addColorStop(0, "rgba(120,90,40,0)"); g.addColorStop(1, "rgba(120,90,40,.32)"); c.fillStyle = g; c.fillRect(0, 0, W, H); paperGrain(c, W, H); c.restore(); }
+      if (id === "orchid") petals(c, W, H);
+    }
+    function paperGrain(c, W, H) { const t = document.createElement("canvas"); t.width = t.height = 220; const x = t.getContext("2d"), im = x.createImageData(220, 220); for (let i = 0; i < im.data.length; i += 4) { const v = 140 + Math.random() * 60; im.data[i] = v * 0.45 * 2; im.data[i + 1] = v * 0.38 * 2; im.data[i + 2] = v * 0.25 * 2; im.data[i + 3] = 40 + Math.random() * 60; } x.putImageData(im, 0, 0); c.fillStyle = c.createPattern(t, "repeat"); c.fillRect(0, 0, W, H); }
+    function petals(c, W, H) {
+      const s = W / 1080;
+      for (let i = 0; i < 22; i++) {
+        const x = (((i * 47) % 100) / 100) * W, y = ((i * 37 + 11) % 100) / 100 * H, sc = 0.6 + ((i * 29) % 10) / 12, r = (((i * 77) % 360) * Math.PI) / 180;
+        c.save(); c.translate(x, y); c.rotate(r); c.scale(sc * s * 1.4, sc * s * 1.4);
+        const g = c.createLinearGradient(-8, -6, 8, 6); g.addColorStop(0, "#ffd9e6"); g.addColorStop(1, "#f7a1c1");
+        c.fillStyle = g; c.shadowColor = "rgba(200,90,130,.25)"; c.shadowBlur = 6 * s; c.shadowOffsetY = 2 * s; c.globalAlpha = 0.9;
+        c.beginPath(); c.moveTo(-8, 0); c.quadraticCurveTo(-8, -6, 0, -6); c.quadraticCurveTo(8, -6, 8, 0); c.quadraticCurveTo(8, 6, 0, 6); c.quadraticCurveTo(-8, 6, -8, 0); c.fill(); c.restore();
+      }
+    }
+    // the signature: always there, small, in the corner (Daniel)
+    function signature(c, W, H) {
+      const S = Math.min(W, H), fs = Math.round(Math.max(18, S * 0.02)), pad = Math.round(S * 0.034), txt = "cromaticstudios.com";
+      c.save(); c.font = `600 ${fs}px CromaticSans, "Helvetica Neue", Arial, sans-serif`; c.textAlign = "right"; c.textBaseline = "alphabetic";
+      c.shadowColor = "rgba(0,0,0,.38)"; c.shadowBlur = fs * 0.5; c.shadowOffsetY = fs * 0.06;
+      c.fillStyle = "rgba(255,255,255,.88)"; c.fillText(txt, W - pad, H - pad);
+      const tw = c.measureText(txt).width; c.shadowColor = "transparent"; c.fillStyle = "#FED012";
+      c.beginPath(); c.arc(W - pad - tw - fs * 0.55, H - pad - fs * 0.34, fs * 0.22, 0, Math.PI * 2); c.fill();
+      // the postcard's line over it (Daniel: a discreet "Greetings from Cromatic City"): small letter-spaced capitals
+      // (round 3, Daniel: at least twice as big, in the studio's title face: CromaticSans' heavy cut, the site's headings)
+      const gs = Math.round(S * 0.036), gt = W2("Greetings from Cromatic City", "Salutări din orașul Cromatic");
+      c.font = `800 ${gs}px CromaticSans, "Helvetica Neue", Arial, sans-serif`; try { c.letterSpacing = `${(-gs * 0.02).toFixed(1)}px`; } catch (e) {}
+      c.shadowColor = "rgba(0,0,0,.42)"; c.shadowBlur = gs * 0.35; c.shadowOffsetY = gs * 0.04; c.fillStyle = "rgba(255,255,255,.95)";
+      c.fillText(gt, W - pad, H - pad - fs * 1.45);
+      c.restore();
+    }
+    let sheetURL = null, pngURL = null;
+    function openSheet(blob, png, size) {
+      if (sheetURL) URL.revokeObjectURL(sheetURL); if (pngURL) URL.revokeObjectURL(pngURL);
+      sheetURL = URL.createObjectURL(blob); pngURL = png ? URL.createObjectURL(png) : null;
+      const base = `cromatic-postcard-${app.worldId()}-${fmt.id.replace(":", "x")}-${new Date().toISOString().slice(0, 10)}`, isJ = blob.type === "image/jpeg", name = base + (isJ ? ".jpg" : ".png");
+      const file = new File([blob], name, { type: blob.type });
+      const pl = $(".pm-png"); pl.hidden = !pngURL || !isJ; $(".pm-dl b").textContent = isJ ? W("Download JPEG", "Descarcă JPEG") : W("Download PNG", "Descarcă PNG"); if (pngURL) { pl.href = pngURL; pl.download = base + ".png"; pl.setAttribute("aria-label", W("Download as PNG (larger)", "Descarcă PNG (mai mare)")); }
+      lastShot = { blob, file, name };
+      const sheet = $(".pm-sheet"); sheet.hidden = false; root.classList.add("pm-sheet-on");
+      $(".pm-sheet img").src = sheetURL; $(".pm-sheet img").style.aspectRatio = `${size[0]} / ${size[1]}`;
+      const dl = $(".pm-dl"); dl.href = sheetURL; dl.download = name;
+      const share = $(".pm-share"); let can = false; try { can = !!(navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) {}
+      share.hidden = !can; dl.classList.toggle("pm-primary", !can); // (no share sheet here: the download is the main action)
+      $(".pm-meta").textContent = `${size[0]} × ${size[1]} ${isJ ? "JPG" : "PNG"} · ${(blob.size / 1e6).toFixed(1)} MB · ${fmt.hint} ${fmt.label}`;
+      live(W("Postcard ready", "Vederea e gata")); (can ? share : dl).focus();
+    }
+    $(".pm-share").addEventListener("click", async () => { if (!lastShot) return; try { await navigator.share({ files: [lastShot.file], title: W("A postcard from Cromatic City", "O vedere din orașul Cromatic"), text: "cromaticstudios.com" }); live(W("Shared", "Trimisă")); } catch (e) { if (e && e.name !== "AbortError") live(W("Sharing did not work; download it instead", "Trimiterea n-a mers; descarc-o")); } });
+    function closeSheet() { $(".pm-sheet").hidden = true; root.classList.remove("pm-sheet-on"); $(".pm-shutter").focus(); }
+
+    // ---------- in and out ----------
+    function enter() {
+      if (on || !app.canEnter()) return false;
+      if (!measureCar()) return false;
+      on = true; needSnap = true; lastT = lastK = 0; world0 = app.worldIdx();
+      saved = { near: camera.near, far: camera.far, fov: camera.fov, focus: document.activeElement };
+      Object.assign(G, DEF());
+      // start from where the eye already is (the map's angle round the car), then glide to the portrait
+      const off = camera.position.clone().sub(T), dist0 = off.length() / R0, yaw0 = Math.atan2(off.x, off.z) - heading - Math.PI, pitch0 = Math.asin(clamp(off.y / Math.max(1e-6, off.length()), -1, 1));
+      Object.assign(P, { yaw: Math.atan2(Math.sin(yaw0), Math.cos(yaw0)), pitch: clamp(pitch0, LIM.pitch[0], LIM.pitch[1]), dist: clamp(dist0, LIM.dist[0], LIM.dist[1] * 3), fov: camera.fov, roll: 0 });
+      { let d = G.yaw - P.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); G.yaw = P.yaw + d; }
+      effDist = P.dist; needSnap = false; shift.x = shift.y = 0;
+      app.onEnter(); app.setTilt(tilt ? 1 : 0);
+      document.body.classList.add("photo-on"); root.hidden = false; root.classList.toggle("pm-touchui", coarse()); root.classList.toggle("pm-fold", coarse());
+      setFormat(coarse() ? "9:16" : fmt.id); markWorld(); layoutGuide(); setClean(false);
+      keyHook = { down: onKey, up: onKeyUp }; addEventListener("resize", layoutGuide);
+      setTimeout(() => $(".pm-shutter").focus({ preventScroll: true }), 50);
+      live(W("Postcard. Drag to move round the ride; Space takes the photo.", "Vedere. Trage ca să te rotești în jurul mașinii; Space face fotografia."));
+      return true;
+    }
+    async function exit() {
+      if (!on) return;
+      on = false; closeSheet(); held.clear(); pts.clear(); dragging = false; restoreAll();
+      keyHook = null; removeEventListener("resize", layoutGuide);
+      root.hidden = true; document.body.classList.remove("photo-on");
+      camera.clearViewOffset(); camera.aspect = innerWidth / innerHeight;
+      camera.near = saved.near; camera.far = saved.far; camera.fov = saved.fov; camera.updateProjectionMatrix();
+      app.setTilt(1); app.onExit();
+      if (app.worldIdx() !== world0) { try { await app.setWorld(world0); } catch (e) {} } // (a filter: the map goes back to the visitor's own world, and its ride)
+      try { saved.focus && saved.focus.focus && saved.focus.focus({ preventScroll: true }); } catch (e) {}
+    }
+    return { get on() { return on; }, enter, exit, frame: frameWithKeys, toggle: () => (on ? exit() : enter()) };
+  }
+  window.czPhoto = create;
+})();

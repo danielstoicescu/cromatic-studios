@@ -1999,7 +1999,7 @@
       const a = viewNow(), busy = H.camBusy(), sig = a + busy;
       if (sig !== viewSig) {
         viewSig = sig;
-        views.querySelectorAll("button").forEach((b) => { b.setAttribute("aria-pressed", String(b.dataset.v === a)); b.disabled = busy; });
+        views.querySelectorAll("button").forEach((b) => { if (b.dataset.v === "photo") { b.disabled = busy; return; } b.setAttribute("aria-pressed", String(b.dataset.v === a)); b.disabled = busy; });
         document.body.classList.toggle("nav2-street", a === "street");
       }
       return a;
@@ -2030,13 +2030,14 @@
       r: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 12 13 5.5v4H4.5v5H13v4z"/></svg>'
     };
     const GLY = { l: "←", s: "↑", r: "→" };
-    const root = document.createElement("div");
+    const root = document.createElement("div"), RO2 = false && /^ro/i.test(document.documentElement.lang || ""); // (TASK-119: English only for now)
     root.className = "nav2-ui";
     root.innerHTML = `
       <section class="n2-panel" aria-label="What's nearby" aria-live="polite"></section>
       <div class="n2-views" role="group" aria-label="View">
         <button data-v="street" aria-pressed="false" title="Street view (V)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20 9 4h6l6 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 6.5v2.5M12 12v2.5M12 17.5V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>Street</b></button>
         <button data-v="sat" aria-pressed="true" title="Bird's eye view (V)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 12H3.5M20.5 12H15M12 9V3.5M12 20.5V15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m4 4 3 3M20 20l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>Bird's eye</b></button>
+        <button data-v="photo" class="n2-postcard" aria-pressed="false" aria-label="${RO2 ? "Vedere" : "Postcard"}" title="${RO2 ? "Vedere: fotografiază-ți mașina (P)" : "Postcard: take a photo of your ride (P)"}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2" fill="#fff" stroke="currentColor" stroke-width="2"/><path d="M3.6 6.2h16.8" stroke="#D7362C" stroke-width="1.6" stroke-dasharray="2.2 2.2"/><path d="M4.7 6.2h16.8" stroke="#2f6bff" stroke-width="1.6" stroke-dasharray="2.2 2.2" stroke-dashoffset="-1.1" opacity=".9"/><path d="M12 9.5v6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="14.6" y="9" width="4.2" height="4.6" rx=".5" fill="#FED012" stroke="currentColor" stroke-width="1.4"/><path d="M5.4 11h4.4M5.4 14h3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><b>${RO2 ? "Vedere" : "Postcard"}</b></button>
       </div>
       <div class="n2-pad" aria-label="Drive">
         <span class="n2-hint mono">HOLD ↑ TO DRIVE</span>
@@ -2078,7 +2079,7 @@
     SND.bind(root.querySelector(".n2-snd"));
     root.querySelector(".n2-snd").addEventListener("pointerdown", (e) => e.stopPropagation());
     const keyEls = {}; pad.querySelectorAll(".n2-k").forEach((b) => { keyEls[b.dataset.k] = b; });
-    views.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.v === "street"); });
+    views.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.v === "photo") { window.czPhotoOpen?.(); return; } setView(b.dataset.v === "street"); }); // TASK-119: Postcard opens the photo mode
     let toastT = 0;
     function toast(t) { toastEl.textContent = t; toastEl.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove("on"), 2600); }
     function nope(k) { const b = keyEls[k]; if (!b) return; b.classList.remove("nope"); void b.offsetWidth; b.classList.add("nope"); }

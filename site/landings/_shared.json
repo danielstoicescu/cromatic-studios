@@ -1,0 +1,332 @@
+{
+  "_about": "Shared words for every ads landing (TASK-122). A landing's own JSON replaces any of these keys. See README.md.",
+  "lang": "both",
+  "color": "#FED012",
+  "cta": {
+    "en": "Get The Core Lite, free",
+    "ro": "Ia The Core Lite, gratuit"
+  },
+  "ctaMeta": {
+    "en": "~7 minutes · free · by email",
+    "ro": "~7 minute · gratuit · pe mail"
+  },
+  "logosLabel": {
+    "en": "Brands we grew with",
+    "ro": "Branduri cu care am crescut"
+  },
+  "ticket": {
+    "label": {
+      "en": "Boarding pass · The Core Lite",
+      "ro": "Carte de îmbarcare · The Core Lite"
+    },
+    "rows": [
+      {
+        "k": {
+          "en": "From",
+          "ro": "De la"
+        },
+        "v": {
+          "en": "your idea",
+          "ro": "ideea ta"
+        }
+      },
+      {
+        "k": {
+          "en": "To",
+          "ro": "Spre"
+        },
+        "v": {
+          "en": "your archetype",
+          "ro": "arhetipul tău"
+        }
+      },
+      {
+        "k": {
+          "en": "Time",
+          "ro": "Durată"
+        },
+        "v": {
+          "en": "about 7 minutes",
+          "ro": "cam 7 minute"
+        }
+      },
+      {
+        "k": {
+          "en": "Fare",
+          "ro": "Tarif"
+        },
+        "v": {
+          "en": "free",
+          "ro": "gratuit"
+        }
+      }
+    ],
+    "go": {
+      "en": "What's on board ↓",
+      "ro": "Ce e la bord ↓"
+    }
+  },
+  "benefitsEyebrow": {
+    "en": "What you get",
+    "ro": "Ce primești"
+  },
+  "servicesEyebrow": {
+    "en": "Full tank of services",
+    "ro": "Plinul de servicii"
+  },
+  "servicesTitle": [
+    {
+      "en": "What we",
+      "ro": "Ce avem"
+    },
+    {
+      "en": "carry",
+      "ro": "la bord"
+    }
+  ],
+  "stepsEyebrow": {
+    "en": "How we work",
+    "ro": "Cum lucrăm"
+  },
+  "stepsTitle": [
+    {
+      "en": "Four steps,",
+      "ro": "Patru pași,"
+    },
+    {
+      "en": "one coffee",
+      "ro": "o cafea"
+    }
+  ],
+  "steps": [
+    {
+      "t": {
+        "en": "Coffee and hard questions",
+        "ro": "O cafea și întrebări grele"
+      },
+      "p": {
+        "en": "We sit at a table with you and ask what nobody asked yet. Who buys, why they stay, what you would never do.",
+        "ro": "Stăm la masă cu tine și te întrebăm ce nu te-a mai întrebat nimeni. Cine cumpără, de ce rămâne, ce n-ai face niciodată."
+      }
+    },
+    {
+      "t": {
+        "en": "The Core",
+        "ro": "The Core"
+      },
+      "p": {
+        "en": "We define your archetype, your positioning and your voice. One page the whole team can argue with.",
+        "ro": "Îți definim arhetipul, poziționarea și vocea. O singură pagină, pe care toată echipa o poate întoarce pe toate fețele."
+      },
+      "free": true
+    },
+    {
+      "t": {
+        "en": "Design, made in house",
+        "ro": "Design, făcut în casă"
+      },
+      "p": {
+        "en": "We craft the identity, the pack, the website or the film. Under one roof, with the people you met at step one.",
+        "ro": "Construim identitatea, ambalajul, site-ul sau filmul. Sub același acoperiș, cu oamenii pe care i-ai cunoscut la primul pas."
+      }
+    },
+    {
+      "t": {
+        "en": "Out in the world",
+        "ro": "Afară, în lume"
+      },
+      "p": {
+        "en": "We launch it with you and stay close after. On the shelf, on the counter, on the feed.",
+        "ro": "Îl lansăm împreună și rămânem aproape și după. Pe raft, pe tejghea, în feed."
+      }
+    }
+  ],
+  "stepsFree": {
+    "en": "Lite version, free →",
+    "ro": "Varianta lite, gratuit →"
+  },
+  "nudges": {
+    "benefits": {
+      "t": {
+        "en": "All three start with the same question. Who is your brand, really?",
+        "ro": "Toate trei pornesc de la aceeași întrebare. Cine e, de fapt, brandul tău?"
+      },
+      "go": {
+        "en": "Find out in about 7 minutes",
+        "ro": "Află în vreo 7 minute"
+      }
+    },
+    "cases": {
+      "t": {
+        "en": "Before the logo, the pack or the film, we ask who the brand is.",
+        "ro": "Înainte de logo, de ambalaj sau de film, întrebăm cine e brandul."
+      },
+      "go": {
+        "en": "Answer it yourself, free",
+        "ro": "Răspunde chiar tu, gratuit"
+      }
+    },
+    "services": {
+      "t": {
+        "en": "Not sure which of these you need yet? Good. Start with who you are.",
+        "ro": "Nu știi încă de care ai nevoie? E în regulă. Începe cu cine ești."
+      },
+      "go": {
+        "en": "Get The Core Lite",
+        "ro": "Ia The Core Lite"
+      }
+    },
+    "steps": {
+      "t": {
+        "en": "Step two has a lite version. Seven minutes, from wherever you are.",
+        "ro": "Pasul doi are și o variantă lite. Șapte minute, de oriunde ai fi."
+      },
+      "go": {
+        "en": "Try it now",
+        "ro": "Încearc-o acum"
+      }
+    },
+    "proof": {
+      "t": {
+        "en": "One sentence can hold a whole brand.",
+        "ro": "O singură frază poate ține un brand întreg."
+      },
+      "go": {
+        "en": "Get yours, free",
+        "ro": "Ia-o pe a ta, gratuit"
+      }
+    }
+  },
+  "drive": {
+    "eyebrow": {
+      "en": "Drive mode · Cromatic City",
+      "ro": "Modul Drive · Cromatic City"
+    },
+    "title": [
+      {
+        "en": "Drive through",
+        "ro": "Condu prin"
+      },
+      {
+        "en": "our portfolio",
+        "ro": "portofoliul nostru"
+      }
+    ],
+    "p": {
+      "en": "Our work is a city you can drive. Every building on Coffee Street, Fintech Boulevard and Medical Avenue is a brand we made. Take the yellow ride and look around.",
+      "ro": "Proiectele noastre sunt un oraș prin care poți conduce. Fiecare clădire de pe Coffee Street, Fintech Boulevard și Medical Avenue e un brand făcut de noi. Urcă în mașina galbenă și uită-te în jur."
+    },
+    "cta": {
+      "en": "Take the 3D drive",
+      "ro": "Urcă la volan, în 3D"
+    },
+    "note": {
+      "en": "Opens in a new tab. Arrows or W A S D on a laptop, a stick on your phone.",
+      "ro": "Se deschide într-un tab nou. Săgeți sau W A S D pe laptop, joystick pe telefon."
+    },
+    "href": "/?map",
+    "stills": [
+      "map-olari",
+      "map-welcome",
+      "drive-crossroads",
+      "map-labels"
+    ]
+  },
+  "proofEyebrow": {
+    "en": "Proof, from the work",
+    "ro": "Dovezi, din proiecte"
+  },
+  "freebie": {
+    "href": "/thecore30/lite"
+  },
+  "finale": {
+    "eyebrow": {
+      "en": "Free · about 7 minutes · by email",
+      "ro": "Gratuit · cam 7 minute · pe mail"
+    },
+    "title": {
+      "en": "The Core Lite",
+      "ro": "The Core Lite"
+    },
+    "sub": {
+      "en": "The first step of every Cromatic brand, now in your pocket. Answer a few honest questions and walk away knowing who your brand is.",
+      "ro": "Primul pas al oricărui brand Cromatic, acum la tine în buzunar. Răspunzi la câteva întrebări sincere și pleci știind cine e brandul tău."
+    },
+    "teller": {
+      "en": "The Archetype Teller",
+      "ro": "The Archetype Teller"
+    },
+    "tellerCap": {
+      "en": "It reads your answers, not your palm.",
+      "ro": "Îți citește răspunsurile, nu palma."
+    },
+    "sticker": {
+      "en": "Free",
+      "ro": "Gratuit"
+    },
+    "itemsTitle": {
+      "en": "What you get",
+      "ro": "Ce primești"
+    },
+    "items": [
+      {
+        "t": {
+          "en": "Your archetype",
+          "ro": "Arhetipul tău"
+        },
+        "p": {
+          "en": "The Archetype Teller reads your answers and names the character your brand already has.",
+          "ro": "The Archetype Teller îți citește răspunsurile și numește personajul pe care brandul tău îl are deja."
+        }
+      },
+      {
+        "t": {
+          "en": "Your one-sentence UVP",
+          "ro": "Propunerea de valoare, într-o frază"
+        },
+        "p": {
+          "en": "Who you serve, how, and why you, in one line you can pin above your desk.",
+          "ro": "Pe cine servești, cum și de ce tu, într-un singur rând pe care îl poți prinde deasupra biroului."
+        }
+      },
+      {
+        "t": {
+          "en": "All of it, by email",
+          "ro": "Totul, pe mail"
+        },
+        "p": {
+          "en": "Yours to keep and to share with your team. No call, no sales pitch.",
+          "ro": "Al tău, să-l păstrezi și să-l arăți echipei. Fără telefoane, fără ofertă la pachet."
+        }
+      }
+    ],
+    "note": {
+      "en": "Then, if you want, the next coffee is on us.",
+      "ro": "Apoi, dacă vrei, următoarea cafea e din partea noastră."
+    }
+  },
+  "talk": {
+    "eyebrow": {
+      "en": "Strada Olari 9 · Bucharest",
+      "ro": "Strada Olari 9 · București"
+    },
+    "title": [
+      {
+        "en": "Prefer to talk?",
+        "ro": "Preferi să vorbim?"
+      },
+      {
+        "en": "One coffee away",
+        "ro": "La o cafea distanță"
+      }
+    ],
+    "lead": {
+      "en": "Fill in the boarding pass and we answer within one working day. Same form as on our website, same people reading it.",
+      "ro": "Completează boarding pass-ul și îți răspundem într-o zi lucrătoare. Același formular ca pe site, aceiași oameni care îl citesc."
+    },
+    "open": {
+      "en": "Open the boarding pass",
+      "ro": "Deschide boarding pass-ul"
+    }
+  }
+}
