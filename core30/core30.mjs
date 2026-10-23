@@ -197,15 +197,16 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const title = arch.title ?? "";
     const summary = arch.summary ?? "";
     const positioning = x.derived?.uvp?.sentence || x.derived?.positioning || "";
+    const xfactor = String(x.derived?.uvp?.xfactor || x.derived?.uvp?.parts?.xfactor || "").trim().slice(0, 200);
     const en = x.lang === "en";
     const brand = String(x.respondent?.brand || x.derived?.uvp?.parts?.brand || "").trim().slice(0, 80);
     const att = x.attribution ?? {};
     const src = att.src || att.utm_source || "";
-    await leadLog(id, { at: now, type: "submit", visitor: visitorOf(p), email, lang: x.lang ?? "ro", contactOk: !!x.respondent?.contactOk, brand, archetype: title, positioning, ...att });
+    await leadLog(id, { at: now, type: "submit", visitor: visitorOf(p), email, lang: x.lang ?? "ro", contactOk: !!x.respondent?.contactOk, brand, archetype: title, positioning, xfactor, ...att });
     const attRows = Object.entries(att).map(([k, v]) => `${esc(k)}=${esc(v)}`).join(" · ");
     await mail(`[${c.title}] lead nou · ${brand ? `${brand} · ` : ""}${email || "fără email"} · ${title}${src ? ` · ${src}` : ""}`,
       `<p><b>${esc(email)}</b> a terminat ${esc(c.title)}${brand ? ` pentru <b>${esc(brand)}</b>` : ""}.${x.respondent?.contactOk ? " <b>Vrea să fie contactat.</b>" : " Nu a bifat contactul."}</p>
-       <p><b>Arhetip:</b> ${esc(title)}<br>${esc(summary)}</p><p><b>Poziționare:</b> ${esc(positioning)}</p>
+       <p><b>Arhetip:</b> ${esc(title)}<br>${esc(summary)}</p><p><b>UVP:</b> ${esc(positioning)}${xfactor ? `<br><b>X-factor:</b> ${esc(xfactor)}` : ""}</p>
        <p style="color:#5d5a52;font:12px monospace">${attRows || "fără sursă"}</p>`,
       [{ filename: `the-core-lite_${now.slice(0, 10)}_${visitorOf(p).slice(0, 8)}.json`, content: JSON.stringify(x, null, 2) }]);
     if (!EMAIL.test(email) || !transport) return;
@@ -214,7 +215,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       <p style="font:700 11px monospace;letter-spacing:.12em;text-transform:uppercase;color:#5d5a52">Cromatic Studios · ${esc(c.title)}</p>
       <h1 style="font:900 26px/1.2 Arial,sans-serif;margin:8px 0 14px">${esc(title || (en ? "Your result" : "Rezultatul tău"))}</h1>
       <p>${esc(summary)}</p>
-      ${positioning ? `<p style="padding:14px 16px;border:1px solid #0d0c09;border-radius:14px;background:#fff6c7"><b>${en ? "Your UVP" : "UVP-ul tău"}</b><br>${esc(positioning)}</p>` : ""}
+      ${positioning ? `<p style="padding:14px 16px;border:1px solid #0d0c09;border-radius:14px;background:#fff6c7"><b>${en ? "Your UVP" : "UVP-ul tău"}</b><br>${esc(positioning)}${xfactor ? `<br><br><b>X-factor:</b> ${esc(xfactor)}` : ""}</p>` : ""}
       <p><b>${en ? "Want more?" : "Vrei mai mult?"}</b> ${en ? "The full Core goes through people, values, voice and visual direction, then we write it together in a workshop at the studio, over a coffee." : "The Core complet trece prin oameni, valori, voce și direcție vizuală, apoi îl scriem împreună la un workshop în studio, la o cafea."}</p>
       <p><a href="${esc(cta)}" style="display:inline-block;padding:12px 20px;border:1px solid #0d0c09;border-radius:999px;background:#FED012;color:#0d0c09;font-weight:700;text-decoration:none">${en ? "Let's grab a coffee" : "Hai la o cafea"}</a></p>
       <p style="color:#5d5a52;font-size:13px">${en ? `You're getting this email because you asked for your ${esc(c.title)} result on cromaticstudios.com. Cromatic Studios · Str. Olari 9, Bucharest · hi@cromaticstudios.com` : `Ai primit acest email pentru că ai cerut rezultatul ${esc(c.title)} pe cromaticstudios.com. Cromatic Studios · Str. Olari 9, București · hi@cromaticstudios.com`}</p></div>`;

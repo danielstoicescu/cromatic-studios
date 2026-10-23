@@ -664,57 +664,128 @@
    "short": "Positioning",
    "minutes": 3,
    "icon": "spark",
-   "why": "A UVP: one sentence that says what you offer, to whom, in what culture, with what voice, how people feel, what they get and what sets you apart.",
+   "why": "A UVP, the way we write it in The Core: what you offer, to whom, in what environment, with what voice, what people get and how they feel. The X-factor sits on its own line.",
    "items": [
     {
      "id": "l2.uvp",
      "kind": "uvp",
      "label": "Pick one word in each category.",
-     "help": "Tap an option or write your own. The sentence on top writes itself; tap a gap to edit it right there.",
-     "template": "{brand} offers {offer} to {clients}, in a culture built on {culture}, with a {voice} tone. Clients leave feeling {emotions} and get {impact}. What sets it apart: {xfactor}.",
+     "help": "Tap a pill and it goes straight into the sentence, or write your own word. Tap any gap to edit the sentence. Not sure where to start? Ask for an example.",
+     "template": "{brand} offers {offer} to {clients} customers in a {culture} environment with a {voice} voice, giving them {impact} and making them feel {emotions}.",
      "offer": {
       "id": "offer",
       "label": "What you offer",
-      "placeholder": "the category, said simply",
+      "placeholder": "service / product / category",
       "suggestions": [
-       "specialty coffee",
-       "skincare",
-       "medical care",
-       "beauty treatments",
-       "natural supplements"
+       "consulting",
+       "handmade products",
+       "courses",
+       "an online shop",
+       "events"
       ]
      },
+     "verticals": [
+      {
+       "id": "coffee",
+       "label": "☕ Coffee & hospitality",
+       "offers": [
+        "specialty coffee",
+        "a neighbourhood coffee shop",
+        "a coffee subscription",
+        "brunch and coffee"
+       ]
+      },
+      {
+       "id": "beauty",
+       "label": "✨ Beauty",
+       "offers": [
+        "skincare",
+        "beauty treatments",
+        "natural cosmetics",
+        "a beauty salon"
+       ]
+      },
+      {
+       "id": "health",
+       "label": "🩺 Health",
+       "offers": [
+        "medical care",
+        "natural supplements",
+        "physiotherapy",
+        "personalised nutrition"
+       ]
+      },
+      {
+       "id": "general",
+       "label": "🧭 Something else",
+       "offers": []
+      }
+     ],
      "categories": [
       {
        "id": "clients",
        "label": "Clients",
-       "hint": "who it is for",
+       "hint": "How would you describe your customers?",
        "options": [
-        "people who love good coffee",
-        "people who work long hours",
-        "women who want simple routines",
-        "health-conscious families",
-        "athletes",
-        "people who want to look good without the effort"
-       ]
+        "selective",
+        "busy",
+        "curious",
+        "young-family",
+        "ambitious",
+        "quality-first"
+       ],
+       "more": {
+        "coffee": [
+         "coffee-loving",
+         "early-rising",
+         "work-from-the-café"
+        ],
+        "beauty": [
+         "low-maintenance",
+         "skincare-obsessed",
+         "effortless-look"
+        ],
+        "health": [
+         "health-conscious",
+         "active",
+         "informed"
+        ]
+       }
       },
       {
        "id": "culture",
        "label": "Culture",
-       "hint": "what the place is built on",
+       "hint": "How would your community describe you?",
        "options": [
-        "care",
-        "craft",
-        "science",
-        "community",
-        "transparency",
-        "patience"
-       ]
+        "warm",
+        "family",
+        "creative",
+        "crafted premium",
+        "experimental",
+        "open and honest"
+       ],
+       "more": {
+        "coffee": [
+         "neighbourhood",
+         "craft",
+         "laid-back"
+        ],
+        "beauty": [
+         "calm, ritual-like",
+         "science-led",
+         "bright"
+        ],
+        "health": [
+         "safe and attentive",
+         "evidence-based",
+         "caring"
+        ]
+       }
       },
       {
        "id": "voice",
        "label": "Voice",
-       "hint": "how you sound",
+       "hint": "How do you sound to others?",
        "options": [
         "warm",
         "direct",
@@ -722,44 +793,156 @@
         "expert",
         "calm",
         "refined"
-       ]
-      },
-      {
-       "id": "emotions",
-       "label": "Emotions",
-       "hint": "what people leave with",
-       "options": [
-        "at ease",
-        "pampered",
-        "safe",
-        "full of energy",
-        "seen",
-        "confident"
-       ]
+       ],
+       "more": {
+        "coffee": [
+         "friendly, no-fuss",
+         "witty"
+        ],
+        "beauty": [
+         "gentle and assured",
+         "elegant"
+        ],
+        "health": [
+         "empathetic and clear",
+         "reassuring"
+        ]
+       }
       },
       {
        "id": "impact",
        "label": "Impact",
-       "hint": "what they get, concrete and measurable",
+       "hint": "What tangible impact do you have on others?",
        "options": [
-        "fresh coffee every week",
-        "a 3-step routine that actually works",
-        "visible results in 4 weeks",
-        "a clear diagnosis on the first visit",
-        "an appointment within 24 hours"
-       ]
+        "higher standards",
+        "time back",
+        "results they can see",
+        "access to the best",
+        "an experience they talk about"
+       ],
+       "more": {
+        "coffee": [
+         "a better start to the day",
+         "fresh coffee every week",
+         "a place of their own in the city"
+        ],
+        "beauty": [
+         "a 3-step routine that actually works",
+         "visible results in 4 weeks",
+         "confidence in their own skin"
+        ],
+        "health": [
+         "a clear diagnosis on the first visit",
+         "an appointment within 24 hours",
+         "a plan they can follow"
+        ]
+       }
+      },
+      {
+       "id": "emotions",
+       "label": "Feelings",
+       "hint": "How do others feel after interacting with you?",
+       "options": [
+        "safe",
+        "understood",
+        "confident",
+        "at ease",
+        "free",
+        "respected"
+       ],
+       "more": {
+        "coffee": [
+         "at home",
+         "energised"
+        ],
+        "beauty": [
+         "pampered",
+         "good in their own skin"
+        ],
+        "health": [
+         "listened to",
+         "in good hands"
+        ]
+       }
       },
       {
        "id": "xfactor",
        "label": "X-factor",
-       "hint": "what sets you apart",
+       "hint": "What makes you different?",
        "options": [
-        "we roast every morning, in the neighbourhood",
-        "tested formulas, made locally",
-        "the doctor calls you the next day",
-        "we know your name and your order",
-        "everything is out in the open, from ingredients to price"
-       ]
+        "everything out in the open, from ingredients to price",
+        "we always pick up the phone",
+        "we know your name",
+        "we never do anything halfway"
+       ],
+       "more": {
+        "coffee": [
+         "we roast every morning, in the neighbourhood",
+         "the barista knows your order"
+        ],
+        "beauty": [
+         "tested formulas, made locally",
+         "no 12 steps, just 3"
+        ],
+        "health": [
+         "the doctor calls you the next day",
+         "a team, not a single doctor"
+        ]
+       }
+      }
+     ],
+     "examples": [
+      {
+       "vertical": "general",
+       "label": "Red Bull, the example from The Core workbook",
+       "offer": "energy drinks",
+       "picks": {
+        "clients": "adrenaline-junkie",
+        "culture": "extreme sports",
+        "voice": "ambitious",
+        "impact": "the courage to go over their limits",
+        "emotions": "free",
+        "xfactor": "Spread the wings"
+       }
+      },
+      {
+       "vertical": "coffee",
+       "label": "a neighbourhood coffee shop",
+       "offer": "specialty coffee",
+       "picks": {
+        "clients": "early-rising",
+        "culture": "neighbourhood",
+        "voice": "friendly, no-fuss",
+        "impact": "a better start to the day",
+        "emotions": "at home",
+        "xfactor": "we roast every morning, two streets away"
+       }
+      },
+      {
+       "vertical": "beauty",
+       "label": "a skincare brand",
+       "offer": "skincare",
+       "picks": {
+        "clients": "low-maintenance",
+        "culture": "science-led",
+        "voice": "gentle and assured",
+        "impact": "a 3-step routine that actually works",
+        "emotions": "good in their own skin",
+        "xfactor": "tested formulas, made locally"
+       }
+      },
+      {
+       "vertical": "health",
+       "label": "a family clinic",
+       "offer": "medical care",
+       "picks": {
+        "clients": "health-conscious",
+        "culture": "safe and attentive",
+        "voice": "empathetic and clear",
+        "impact": "a clear diagnosis on the first visit",
+        "emotions": "in good hands",
+        "xfactor": "the doctor calls you the next day"
+       }
       }
      ]
     }

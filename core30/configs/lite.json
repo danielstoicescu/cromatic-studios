@@ -664,102 +664,285 @@
    "short": "Poziționare",
    "minutes": 3,
    "icon": "spark",
-   "why": "Un UVP: o singură frază care spune ce oferi, cui, în ce cultură, cu ce voce, ce simt oamenii, ce primesc și ce te face diferit.",
+   "why": "Un UVP, așa cum îl scriem în The Core: ce oferi, cui, în ce mediu, cu ce voce, ce primesc oamenii și cum se simt. X-factorul stă pe un rând separat.",
    "items": [
     {
      "id": "l2.uvp",
      "kind": "uvp",
      "label": "Alege câte un cuvânt pe fiecare categorie.",
-     "help": "Atinge o opțiune sau scrie-o pe a ta. Fraza de sus se scrie singură; o poți edita direct, atingând un gol.",
-     "template": "{brand} oferă {offer} pentru {clients}, într-o cultură bazată pe {culture}, cu un ton {voice}. Clientul pleacă {emotions} și primește {impact}. Ce ne face diferiți: {xfactor}.",
+     "help": "Atinge o pastilă și intră direct în frază, sau scrie-ți cuvântul tău. Poți edita fraza atingând orice gol. Nu știi de unde să începi? Cere un exemplu.",
+     "template": "{brand} oferă {offer} pentru {clients}, într-un mediu {culture}, cu o voce {voice}, oferindu-le {impact} și făcându-i să se simtă {emotions}.",
      "offer": {
       "id": "offer",
       "label": "Ce oferi",
-      "placeholder": "categoria, spusă simplu",
+      "placeholder": "serviciu / produs / categorie",
       "suggestions": [
-       "cafea de specialitate",
-       "îngrijire pentru piele",
-       "servicii medicale",
-       "tratamente de beauty",
-       "suplimente naturale"
+       "servicii de consultanță",
+       "produse făcute manual",
+       "cursuri",
+       "un magazin online",
+       "evenimente"
       ]
      },
+     "verticals": [
+      {
+       "id": "coffee",
+       "label": "☕ Cafea și HoReCa",
+       "offers": [
+        "cafea de specialitate",
+        "o cafenea de cartier",
+        "cafea la abonament",
+        "brunch și cafea"
+       ]
+      },
+      {
+       "id": "beauty",
+       "label": "✨ Beauty",
+       "offers": [
+        "îngrijire pentru piele",
+        "tratamente de beauty",
+        "cosmetice naturale",
+        "un salon de înfrumusețare"
+       ]
+      },
+      {
+       "id": "health",
+       "label": "🩺 Sănătate",
+       "offers": [
+        "servicii medicale",
+        "suplimente naturale",
+        "kinetoterapie",
+        "nutriție personalizată"
+       ]
+      },
+      {
+       "id": "general",
+       "label": "🧭 Altceva",
+       "offers": []
+      }
+     ],
      "categories": [
       {
        "id": "clients",
        "label": "Clienți",
-       "hint": "pentru cine",
+       "hint": "Cum îți descrii clienții?",
        "options": [
-        "iubitorii de cafea bună",
-        "oamenii care lucrează mult",
-        "femeile care vor rutine simple",
-        "familiile atente la sănătate",
-        "sportivii",
-        "cei care vor să arate bine fără efort"
-       ]
+        "clienți selectivi",
+        "oameni grăbiți",
+        "oameni curioși",
+        "familii tinere",
+        "antreprenori",
+        "oameni care vor lucruri făcute bine"
+       ],
+       "more": {
+        "coffee": [
+         "iubitorii de cafea bună",
+         "vecinii care vin în fiecare dimineață",
+         "oamenii care lucrează de la cafenea"
+        ],
+        "beauty": [
+         "femei care vor rutine simple",
+         "oameni care vor să arate bine fără efort",
+         "pasionații de skincare"
+        ],
+        "health": [
+         "familii atente la sănătate",
+         "sportivi",
+         "oameni care vor să înțeleagă ce li se întâmplă"
+        ]
+       }
       },
       {
        "id": "culture",
        "label": "Cultură",
-       "hint": "pe ce e construit locul",
+       "hint": "Cum te-ar descrie comunitatea ta?",
        "options": [
-        "grijă",
-        "meșteșug",
-        "știință",
-        "comunitate",
-        "transparență",
-        "răbdare"
-       ]
+        "cald",
+        "de familie",
+        "creativ",
+        "premium, făcut cu grijă",
+        "al experimentării",
+        "deschis și onest"
+       ],
+       "more": {
+        "coffee": [
+         "de cartier",
+         "al meșteșugului",
+         "relaxat"
+        ],
+        "beauty": [
+         "calm, ca un ritual",
+         "bazat pe știință",
+         "luminos"
+        ],
+        "health": [
+         "sigur și atent",
+         "bazat pe dovezi",
+         "empatic"
+        ]
+       }
       },
       {
        "id": "voice",
        "label": "Voce",
-       "hint": "cum suni",
+       "hint": "Cum suni pentru ceilalți?",
        "options": [
-        "cald",
-        "direct",
-        "jucăuș",
-        "expert",
-        "calm",
-        "rafinat"
-       ]
-      },
-      {
-       "id": "emotions",
-       "label": "Emoții",
-       "hint": "cu ce rămâne omul",
-       "options": [
-        "liniștit",
-        "răsfățat",
-        "în siguranță",
-        "plin de energie",
-        "văzut",
-        "încrezător"
-       ]
+        "caldă",
+        "directă",
+        "jucăușă",
+        "expertă",
+        "calmă",
+        "rafinată"
+       ],
+       "more": {
+        "coffee": [
+         "prietenoasă și fără fițe",
+         "mucalită"
+        ],
+        "beauty": [
+         "blândă și sigură",
+         "elegantă"
+        ],
+        "health": [
+         "empatică și clară",
+         "liniștitoare"
+        ]
+       }
       },
       {
        "id": "impact",
        "label": "Impact",
-       "hint": "ce primește concret, măsurabil",
+       "hint": "Ce impact concret ai asupra celorlalți?",
        "options": [
-        "cafea proaspătă în fiecare săptămână",
-        "o rutină în 3 pași care chiar funcționează",
-        "rezultate vizibile în 4 săptămâni",
-        "un diagnostic clar de la prima vizită",
-        "programare în 24 de ore"
-       ]
+        "standarde mai înalte",
+        "timp câștigat",
+        "rezultate pe care le văd",
+        "acces la ce e mai bun",
+        "o experiență pe care o povestesc"
+       ],
+       "more": {
+        "coffee": [
+         "un început de zi mai bun",
+         "cafea proaspătă în fiecare săptămână",
+         "un loc al lor în oraș"
+        ],
+        "beauty": [
+         "o rutină în 3 pași care chiar funcționează",
+         "rezultate vizibile în 4 săptămâni",
+         "încredere în pielea lor"
+        ],
+        "health": [
+         "un diagnostic clar de la prima vizită",
+         "programare în 24 de ore",
+         "un plan pe care îl pot urma"
+        ]
+       }
+      },
+      {
+       "id": "emotions",
+       "label": "Emoții",
+       "hint": "Cum se simt oamenii după ce interacționează cu tine?",
+       "options": [
+        "în siguranță",
+        "înțeleși",
+        "încrezători",
+        "liniștiți",
+        "liberi",
+        "respectați"
+       ],
+       "more": {
+        "coffee": [
+         "ca acasă",
+         "plini de energie"
+        ],
+        "beauty": [
+         "răsfățați",
+         "frumoși în pielea lor"
+        ],
+        "health": [
+         "ascultați",
+         "pe mâini bune"
+        ]
+       }
       },
       {
        "id": "xfactor",
        "label": "X-factor",
-       "hint": "ce te face diferit",
+       "hint": "Ce te face diferit?",
        "options": [
-        "prăjim în fiecare dimineață, în cartier",
-        "formule testate, făcute în România",
-        "medicul te sună a doua zi",
-        "îți cunoaștem numele și comanda",
-        "totul e transparent, de la ingrediente la preț"
-       ]
+        "totul e transparent, de la ingrediente la preț",
+        "răspundem la telefon, mereu",
+        "îți cunoaștem numele",
+        "nu facem nimic pe jumătate"
+       ],
+       "more": {
+        "coffee": [
+         "prăjim în fiecare dimineață, în cartier",
+         "barista îți știe comanda"
+        ],
+        "beauty": [
+         "formule testate, făcute în România",
+         "fără 12 pași, doar 3"
+        ],
+        "health": [
+         "medicul te sună a doua zi",
+         "o echipă, nu un singur medic"
+        ]
+       }
+      }
+     ],
+     "examples": [
+      {
+       "vertical": "general",
+       "label": "Red Bull, exemplul din workbook-ul The Core",
+       "offer": "băuturi energizante",
+       "picks": {
+        "clients": "iubitorii de adrenalină",
+        "culture": "al sporturilor extreme",
+        "voice": "ambițioasă",
+        "impact": "curajul de a-și depăși limitele",
+        "emotions": "liberi",
+        "xfactor": "Îți dă aripi"
+       }
+      },
+      {
+       "vertical": "coffee",
+       "label": "o cafenea de cartier",
+       "offer": "cafea de specialitate",
+       "picks": {
+        "clients": "vecinii care vin în fiecare dimineață",
+        "culture": "de cartier",
+        "voice": "prietenoasă și fără fițe",
+        "impact": "un început de zi mai bun",
+        "emotions": "ca acasă",
+        "xfactor": "prăjim în fiecare dimineață, la două străzi"
+       }
+      },
+      {
+       "vertical": "beauty",
+       "label": "un brand de skincare",
+       "offer": "îngrijire pentru piele",
+       "picks": {
+        "clients": "femei care vor rutine simple",
+        "culture": "bazat pe știință",
+        "voice": "blândă și sigură",
+        "impact": "o rutină în 3 pași care chiar funcționează",
+        "emotions": "frumoși în pielea lor",
+        "xfactor": "formule testate, făcute în România"
+       }
+      },
+      {
+       "vertical": "health",
+       "label": "o clinică de familie",
+       "offer": "servicii medicale",
+       "picks": {
+        "clients": "familii atente la sănătate",
+        "culture": "sigur și atent",
+        "voice": "empatică și clară",
+        "impact": "un diagnostic clar de la prima vizită",
+        "emotions": "pe mâini bune",
+        "xfactor": "medicul te sună a doua zi"
+       }
       }
      ]
     }

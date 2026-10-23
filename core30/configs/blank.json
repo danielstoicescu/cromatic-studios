@@ -122,7 +122,13 @@
      "multiline": true,
      "label": "De ce acum?",
      "help": "Ce s-a schimbat ca să pornești brandul ăsta?",
-     "placeholder": "Scrie cum ai spune-o la o cafea."
+     "placeholder": "Scrie cum ai spune-o la o cafea.",
+     "suggestions": [
+      "Am văzut o problemă pe care n-o rezolvă nimeni",
+      "Clienții ne-au cerut-o",
+      "A venit momentul să facem lucrurile ca lumea",
+      "Ne-am mărit și vechiul brand nu ne mai încape"
+     ]
     },
     {
      "id": "m02.story",
@@ -130,7 +136,13 @@
      "multiline": true,
      "label": "O poveste reală în care brandul tău a contat pentru cineva.",
      "help": "Poate deveni povestea de brand, așa că păstrează detaliile mici.",
-     "placeholder": "Era o zi în care…"
+     "placeholder": "Era o zi în care…",
+     "suggestions": [
+      "Era o zi obișnuită până când",
+      "Un client ne-a scris după",
+      "Cel mai frumos compliment pe care l-am primit",
+      "Prima dată când am simțit că am făcut diferența"
+     ]
     },
     {
      "id": "m02.visible",
@@ -149,7 +161,13 @@
      "kind": "text",
      "optional": true,
      "label": "Ce fac oamenii mai bine după ce te-au cunoscut?",
-     "placeholder": "Un lucru, cât mai concret."
+     "placeholder": "Un lucru, cât mai concret.",
+     "suggestions": [
+      "Aleg mai ușor",
+      "Au mai mult timp",
+      "Se simt mai siguri pe ei",
+      "Înțeleg ce cumpără"
+     ]
     }
    ]
   },
@@ -375,7 +393,13 @@
      "kind": "text",
      "label": "X factor: ce poți promite tu și nimeni altcineva?",
      "help": "Un singur lucru. Dacă îl poate spune și concurența, nu e el.",
-     "placeholder": "Noi…"
+     "placeholder": "Noi…",
+     "suggestions": [
+      "Noi suntem singurii care",
+      "Răspundem la telefon, mereu",
+      "Facem totul de mână",
+      "Garantăm rezultatul sau dăm banii înapoi"
+     ]
     },
     {
      "id": "m04.sliders",
@@ -463,7 +487,13 @@
      "kind": "text",
      "multiline": true,
      "label": "Dacă brandul ar intra într-o cameră plină de oameni, cum s-ar purta?",
-     "placeholder": "Ar fi cel care…"
+     "placeholder": "Ar fi cel care…",
+     "suggestions": [
+      "Ar fi cel care face cunoștință cu toată lumea",
+      "Ar asculta mai mult decât vorbește",
+      "Ar spune gluma care sparge gheața",
+      "Ar ști răspunsul la orice întrebare"
+     ]
     }
    ]
   },
@@ -1238,7 +1268,63 @@
      "id": "m08.after",
      "kind": "text",
      "label": "Ce vrei să spună cineva despre brand după prima întâlnire?",
-     "placeholder": "„N-am mai întâlnit pe cineva care…”"
+     "placeholder": "„N-am mai întâlnit pe cineva care…”",
+     "suggestions": [
+      "N-am mai întâlnit pe cineva care",
+      "Chiar le pasă",
+      "Simplu și fără bătăi de cap",
+      "Știu exact ce fac"
+     ]
+    },
+    {
+     "id": "m08.core6",
+     "kind": "core6",
+     "label": "Cele 6 atribute ale brandului.",
+     "help": "Așa lucrăm în The Core: pe fiecare categorie, întâi brainstorm, apoi top 3, apoi unul singur. Pastilele vin din ce ai răspuns până aici și din câteva idei de pornire; adaugă oricând cuvintele tale. Cele 6 cuvinte alese scriu UVP-ul.",
+     "seeds": {
+      "culture": [
+       "cald",
+       "de familie",
+       "creativ",
+       "premium",
+       "onest",
+       "al experimentării"
+      ],
+      "clients": [
+       "selectivi",
+       "grăbiți",
+       "curioși",
+       "familii tinere",
+       "antreprenori"
+      ],
+      "voice": [
+       "caldă",
+       "directă",
+       "jucăușă",
+       "expertă",
+       "calmă",
+       "rafinată"
+      ],
+      "impact": [
+       "standarde mai înalte",
+       "timp câștigat",
+       "rezultate vizibile",
+       "acces la ce e mai bun"
+      ],
+      "emotions": [
+       "în siguranță",
+       "înțeleși",
+       "încrezători",
+       "liniștiți",
+       "liberi"
+      ],
+      "xfactor": [
+       "totul e transparent",
+       "răspundem mereu",
+       "facem totul de mână",
+       "nimic pe jumătate"
+      ]
+     }
     }
    ]
   },
@@ -1719,7 +1805,13 @@
      "id": "m12.deadline",
      "kind": "text",
      "label": "Termene: când trebuie să fie gata?",
-     "placeholder": "Lansare în…"
+     "placeholder": "Lansare în…",
+     "suggestions": [
+      "Lansare în 3 luni",
+      "Până la sezonul de toamnă",
+      "Nu e grabă, vrem să iasă bine",
+      "Avem un eveniment pe"
+     ]
     },
     {
      "id": "m12.kpi",
@@ -1733,7 +1825,13 @@
      "kind": "text",
      "multiline": true,
      "label": "Ce te-ar face să spui „ăsta e brandul meu”?",
-     "placeholder": "Când o să văd…"
+     "placeholder": "Când o să văd…",
+     "suggestions": [
+      "Când o să văd logo-ul pe ușă",
+      "Când un client o să spună",
+      "Când o să-l arăt fără să explic nimic",
+      "Când echipa o să-l poarte cu mândrie"
+     ]
     }
    ]
   }

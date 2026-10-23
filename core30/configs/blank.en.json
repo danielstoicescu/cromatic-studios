@@ -123,7 +123,13 @@
      "multiline": true,
      "label": "Why now?",
      "help": "What changed that made you start this brand?",
-     "placeholder": "Write it the way you'd say it over coffee."
+     "placeholder": "Write it the way you'd say it over coffee.",
+     "suggestions": [
+      "We saw a problem nobody was solving",
+      "Our clients asked for it",
+      "It was time to do things properly",
+      "We grew and the old brand no longer fits"
+     ]
     },
     {
      "id": "m02.story",
@@ -131,7 +137,13 @@
      "multiline": true,
      "label": "A real story where your brand mattered to someone.",
      "help": "It could become the brand story, so keep the small details.",
-     "placeholder": "There was this one day when…"
+     "placeholder": "There was this one day when…",
+     "suggestions": [
+      "It was an ordinary day until",
+      "A client wrote to us after",
+      "The nicest compliment we ever got",
+      "The first time we felt we'd made a difference"
+     ]
     },
     {
      "id": "m02.visible",
@@ -150,7 +162,13 @@
      "kind": "text",
      "optional": true,
      "label": "What do people do better after they've met you?",
-     "placeholder": "One thing, as concrete as you can."
+     "placeholder": "One thing, as concrete as you can.",
+     "suggestions": [
+      "They choose more easily",
+      "They have more time",
+      "They feel more confident",
+      "They understand what they're buying"
+     ]
     }
    ]
   },
@@ -376,7 +394,13 @@
      "kind": "text",
      "label": "X factor: what can you promise that nobody else can?",
      "help": "Just one thing. If a competitor can say it too, it's not the one.",
-     "placeholder": "We…"
+     "placeholder": "We…",
+     "suggestions": [
+      "We're the only ones who",
+      "We always pick up the phone",
+      "We make everything by hand",
+      "Results guaranteed or your money back"
+     ]
     },
     {
      "id": "m04.sliders",
@@ -464,7 +488,13 @@
      "kind": "text",
      "multiline": true,
      "label": "If the brand walked into a room full of people, how would it act?",
-     "placeholder": "It would be the one who…"
+     "placeholder": "It would be the one who…",
+     "suggestions": [
+      "It would introduce itself to everyone",
+      "It would listen more than it talks",
+      "It would crack the joke that breaks the ice",
+      "It would know the answer to any question"
+     ]
     }
    ]
   },
@@ -1239,7 +1269,63 @@
      "id": "m08.after",
      "kind": "text",
      "label": "What do you want someone to say about the brand after the first meeting?",
-     "placeholder": "“I've never met anyone who…”"
+     "placeholder": "“I've never met anyone who…”",
+     "suggestions": [
+      "I've never met anyone who",
+      "They really care",
+      "Simple, no hassle",
+      "They know exactly what they're doing"
+     ]
+    },
+    {
+     "id": "m08.core6",
+     "kind": "core6",
+     "label": "The brand's 6 attributes.",
+     "help": "This is how we work in The Core: for each category, a brainstorm first, then a top 3, then just one. The pills come from your answers so far plus a few starters; add your own words any time. The 6 words you pick write the UVP.",
+     "seeds": {
+      "culture": [
+       "warm",
+       "family",
+       "creative",
+       "premium",
+       "honest",
+       "experimental"
+      ],
+      "clients": [
+       "selective",
+       "busy",
+       "curious",
+       "family-first",
+       "ambitious"
+      ],
+      "voice": [
+       "warm",
+       "direct",
+       "playful",
+       "expert",
+       "calm",
+       "refined"
+      ],
+      "impact": [
+       "higher standards",
+       "time back",
+       "visible results",
+       "access to the best"
+      ],
+      "emotions": [
+       "safe",
+       "understood",
+       "confident",
+       "at ease",
+       "free"
+      ],
+      "xfactor": [
+       "everything out in the open",
+       "we always answer",
+       "everything made by hand",
+       "nothing halfway"
+      ]
+     }
     }
    ]
   },
@@ -1720,7 +1806,13 @@
      "id": "m12.deadline",
      "kind": "text",
      "label": "Deadlines: when does it need to be ready?",
-     "placeholder": "Launch in…"
+     "placeholder": "Launch in…",
+     "suggestions": [
+      "Launch in 3 months",
+      "Before the autumn season",
+      "No rush, we want it right",
+      "We have an event on"
+     ]
     },
     {
      "id": "m12.kpi",
@@ -1734,7 +1826,13 @@
      "kind": "text",
      "multiline": true,
      "label": "What would make you say “this is my brand”?",
-     "placeholder": "When I see…"
+     "placeholder": "When I see…",
+     "suggestions": [
+      "When I see the logo on the door",
+      "When a client says",
+      "When I can show it without explaining",
+      "When the team wears it with pride"
+     ]
     }
    ]
   }
