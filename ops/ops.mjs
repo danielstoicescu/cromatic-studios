@@ -36,7 +36,7 @@ const TASK_FIELDS = new Set(["status", "priority", "agent", "epicId"]); // what 
 const REJECT_SHOW = 6 * 3600e3; // a rejected edit stays visible on its card (for the toast + animation) this long
 const ADMIN_PAYLOAD_TYPES = new Set(["core-request"]); // members cannot send these
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const ASSETS = { "logo.css": "text/css; charset=utf-8", "adapter.js": "text/javascript; charset=utf-8", "login.js": "text/javascript; charset=utf-8", "ops.css": "text/css; charset=utf-8", "favicon.svg": "image/svg+xml" };
+const ASSETS = { "login.css": "text/css; charset=utf-8", "logo.css": "text/css; charset=utf-8", "adapter.js": "text/javascript; charset=utf-8", "login.js": "text/javascript; charset=utf-8", "ops.css": "text/css; charset=utf-8", "favicon.svg": "image/svg+xml" };
 
 const sha = (x) => createHash("sha256").update(String(x)).digest();
 const shaHex = (x) => createHash("sha256").update(String(x)).digest("hex");
