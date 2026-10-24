@@ -381,22 +381,30 @@ export function buildHeroDacia(T, ext = {}) {
   const sideOuter = [...zs.map((z) => [z, sideBot(z)]), ...zs.slice().reverse().map((z) => [z, sideTopY(z)])];
   for (const sx of [1, -1]) {
     const m = sideMap(sx);
-    add(paramMesh(sideOuter, [frontWin, rearWin], m, 0.03), mats.paint, "flank of the glasshouse");
-    add(paramMesh(sideOuter, [frontWin, rearWin], m, 0.04, { inset: 0.012, flip: true }), mats.liner, "pillar trim");
-    for (const w of [frontWin, rearWin]) add(paramMesh(w, [], m, 0.03, { inset: 0.005 }), mats.glass, "side glass");
+    // v3: the skin split coarser (the outlines stay dense, so the openings keep their exact shapes): the Patrol's sizes
+    add(paramMesh(sideOuter, [frontWin, rearWin], m, 0.07), mats.paint, "flank of the glasshouse");
+    add(paramMesh(sideOuter, [frontWin, rearWin], m, 0.1, { inset: 0.012, flip: true }), mats.liner, "pillar trim");
+    for (const w of [frontWin, rearWin]) add(paramMesh(w, [], m, 0.05, { inset: 0.005 }), mats.glass, "side glass");
   }
   // ---- the roof, its pillars' corners, windscreen and rear window
   const topOuter = []; for (const z of zs) topOuter.push([z, -1]); for (let k = 1; k < 20; k++) topOuter.push([ZC0, -1 + k / 10]); for (const z of zs.slice().reverse()) topOuter.push([z, 1]); for (let k = 1; k < 20; k++) topOuter.push([ZC1, 1 - k / 10]);
   const topMap = (z, s) => ({ p: topPt(z, s), n: topNrm(z, s) });
-  add(paramMesh(topOuter, [wscreen, rwindow], topMap, 0.03), mats.paint, "roof and pillars");
-  add(paramMesh(topOuter, [wscreen, rwindow], topMap, 0.05, { inset: 0.012, flip: true }), mats.liner, "headliner");
-  for (const w of [wscreen, rwindow]) add(paramMesh(w, [], topMap, 0.03, { inset: 0.005 }), mats.glass, "glass");
+  add(paramMesh(topOuter, [wscreen, rwindow], topMap, 0.11), mats.paint, "roof and pillars");
+  add(paramMesh(topOuter, [wscreen, rwindow], topMap, 0.14, { inset: 0.012, flip: true }), mats.liner, "headliner");
+  for (const w of [wscreen, rwindow]) add(paramMesh(w, [], topMap, 0.06, { inset: 0.005 }), mats.glass, "glass");
   // ---- chrome frames on every outline (a round rod laid on the skin)
   const frame = (outline, map) => { const pts = outline.map(([a, b]) => { const { p, n } = map(a, b); return { p: p.clone().addScaledVector(n, 0.001), n }; }); pts.push(pts[0]); sweep(pts, roundProf(0.0068, 10, 0.75), mats.chrome, "window frame", { closed: true, caps: false }); };
   for (const sx of [1, -1]) for (const w of [frontWin, rearWin]) frame(w, sideMap(sx));
   for (const w of [wscreen, rwindow]) frame(w, topMap);
-  // ---- the drip rails along the roof's edges
-  for (const s of [-1, 1]) { const pts = []; for (let z = -1.06; z <= 0.06; z += 0.01) pts.push({ p: topPt(z, s * 0.88).addScaledVector(topNrm(z, s * 0.88), 0.004), n: topNrm(z, s * 0.88) }); sweep(pts, roundProf(0.0058, 10), mats.chrome, "drip rail", { closed: true }); }
+  // v3: the black rubber seals between the chrome frames and the glass (each outline offset 8 mm inward)
+  const seal = (outline, map, sa, sb) => { const pts = dOffset(outline, 0.0085, sa, sb).map(([a, b]) => { const { p, n } = map(a, b); return { p: p.clone().addScaledVector(n, -0.001), n }; }); pts.push(pts[0]); sweep(pts, roundProf(0.0045, 8, 0.55), mats.rubber, "window seal", { closed: true, caps: false }); };
+  for (const sx of [1, -1]) for (const w of [frontWin, rearWin]) seal(w, sideMap(sx), 1, 1);
+  for (const w of [wscreen, rwindow]) seal(w, topMap, 1, 0.62);
+  // ---- the rain gutters along the roof's edges (v3: a chrome-capped U channel, open outward, not a round rod)
+  const GUT = [[-0.002, -0.006], [0.007, -0.006], [0.0075, -0.0045], [0.0025, -0.004], [0.0025, 0.004], [0.0075, 0.0045], [0.007, 0.006], [-0.002, 0.006]];
+  for (const s of [-1, 1]) { const pts = []; for (let z = -1.06; z <= 0.06; z += 0.01) { const n = topNrm(z, s * 0.88); pts.push({ p: topPt(z, s * 0.88).addScaledVector(n, 0.002), n: V3(s, 0.35, 0).normalize() }); } sweep(pts, GUT, mats.chrome, "rain gutter", { closed: true }); }
+  // v3: the chrome belt moulding along the side windows' foot (the doors' tops), both sides
+  for (const sx of [1, -1]) { const pts = []; for (let z = -1.2; z <= 0.42; z += 0.02) { const q = cabSide(z, sideBot(z) + 0.012); pts.push({ p: V3(sx * q.p.x, q.p.y, q.p.z).addScaledVector(V3(sx * q.n.x, q.n.y, q.n.z), 0.001), n: V3(sx * q.n.x, q.n.y, q.n.z) }); } sweep(pts, halfRound(0.006, 0.004), mats.chrome, "belt moulding", { closed: true }); }
   // cabin surface query (the flank of the glasshouse at z, height y)
   function cabSide(z, y) {
     const h = cabHalf(z); let k; for (k = 0; k < C_SIDE - 1; k++) if (h[k + 1][1] >= y) break;
@@ -467,8 +475,9 @@ export function buildHeroDacia(T, ext = {}) {
   }
   bumper(true); bumper(false);
   // number plates
-  { const g = new T.PlaneGeometry(0.34, 0.105); g.translate(0, 0.395, zN + 0.11); add(g, mats.plate1300, "front plate"); const b = new T.BoxGeometry(0.35, 0.115, 0.008); b.translate(0, 0.395, zN + 0.105); add(b, mats.black, "plate holder"); }
-  { const g = new T.PlaneGeometry(0.52, 0.112); g.rotateY(Math.PI); g.translate(0, 0.67, zT - 0.009); add(g, mats.plate, "rear plate"); const b = new T.BoxGeometry(0.535, 0.125, 0.006); b.translate(0, 0.67, zT - 0.004); add(b, mats.black, "plate holder"); const l = new T.BoxGeometry(0.12, 0.018, 0.03); l.translate(0, 0.762, zT - 0.012); add(l, mats.chrome, "plate lamp"); }
+  // v3: embossed plates, the same (fictional) number front and back
+  { const m = dPlate(T, "B 14 CRM", 0.34, 0.105, { kind: "eu" }); m.name = "front plate"; m.position.set(0, 0.395, zN + 0.11); group.add(m); const b = new T.BoxGeometry(0.35, 0.115, 0.008); b.translate(0, 0.395, zN + 0.105); add(b, mats.black, "plate holder"); }
+  { const m = dPlate(T, "B 14 CRM", 0.52, 0.112, { kind: "eu", back: true }); m.name = "rear plate"; m.position.set(0, 0.67, zT - 0.009); group.add(m); const b = new T.BoxGeometry(0.535, 0.125, 0.006); b.translate(0, 0.67, zT - 0.004); add(b, mats.black, "plate holder"); const l = new T.BoxGeometry(0.12, 0.018, 0.03); l.translate(0, 0.762, zT - 0.012); add(l, mats.chrome, "plate lamp"); }
 
   // ================= the rear: tail lamps, the boot's lock, the exhaust =================
   // r3 (the photos): wide tail lamps at the corners in chrome frames: amber outboard, red, the clear reversing lamp
@@ -482,16 +491,21 @@ export function buildHeroDacia(T, ext = {}) {
   // mud flaps behind the rear wheels
   for (const s of [-1, 1]) { const g = new T.BoxGeometry(0.16, 0.25, 0.008); g.translate(s * 0.655, 0.255, zR - AR - 0.03); add(g, mats.rubber, "mud flap"); }
   { const g = new T.CylinderGeometry(0.014, 0.014, 0.012, 20); g.rotateX(Math.PI / 2); g.translate(0, 0.79, zT - 0.006); add(g, mats.chrome, "boot lock"); }
+  // v3: the emblems: the model's numerals on the tail panel (the right), a tricolour inlay in the grille's shield
+  { const m = dScript(T, "1300", 0.034); m.rotation.y = Math.PI; m.position.set(-0.48, 0.79, zT - 0.004); group.add(m); }
+  for (const [k, col] of [[-1, "#1a3f98"], [0, "#f3d21c"], [1, "#c8221a"]]) { const g = new T.PlaneGeometry(0.009, 0.024); g.translate(k * 0.0095, BAND.y - 0.004, FZ + 0.0325); add(g, new T.MeshPhysicalMaterial({ name: "badge enamel", color: new T.Color(col), roughness: 0.15, clearcoat: 1 }), "badge inlay"); }
   { const g = new T.CylinderGeometry(0.024, 0.024, 0.28, 20, 1, true); g.rotateX(Math.PI / 2); g.translate(-0.42, 0.235, zT + 0.11); add(g, mats.satin, "exhaust"); const c = new T.CircleGeometry(0.02, 20); c.rotateY(Math.PI); c.translate(-0.42, 0.235, zT - 0.028); add(c, mats.under, "exhaust hole"); }
 
   // ================= the flank's fittings: handles, the mirror, the fuel cap, wipers =================
+  // v3: the door handles: a chrome escutcheon in a dark recess, the pull lever proud of it, the key lock on the front doors
   for (const s of [-1, 1]) for (const zh of [-0.33, -0.975]) {
     const q = lowerSide(zh, 0.818), p = V3(s * q.p.x, q.p.y, q.p.z), n = V3(s * q.n.x, q.n.y, q.n.z);
-    const g = new T.CapsuleGeometry ? new T.CapsuleGeometry(0.0095, 0.1, 6, 12) : new T.CylinderGeometry(0.01, 0.01, 0.12, 12);
-    g.rotateX(Math.PI / 2); g.scale(1, 0.85, 1);
-    const m = add(g, mats.chrome, "door handle"); m.position.copy(p).addScaledVector(n, 0.014); m.lookAt(m.position.clone().add(V3(0, 0, 1)));
-    const rec = new T.PlaneGeometry(0.11, 0.032); const rm = add(rec, mats.gap, "handle recess"); rm.position.copy(p).addScaledVector(n, 0.0015); rm.lookAt(rm.position.clone().add(n));
-    if (zh > -0.5) { const lk = new T.CylinderGeometry(0.007, 0.007, 0.008, 14); lk.rotateZ(Math.PI / 2); const lm = add(lk, mats.chrome, "lock"); lm.position.copy(p).addScaledVector(n, 0.005).add(V3(0, 0, -0.07)); }
+    const H = new T.Group(); H.name = "door handle"; H.position.copy(p); H.quaternion.setFromUnitVectors(V3(1, 0, 0), n); group.add(H);
+    const hb = (w, h, d, r, mat, name, x) => { const g = ext.RoundedBoxGeometry ? new ext.RoundedBoxGeometry(d, h, w, 3, r) : new T.BoxGeometry(d, h, w); const m = new T.Mesh(g, mat); m.name = name; m.position.x = x; m.castShadow = m.receiveShadow = true; H.add(m); return m; };
+    hb(0.122, 0.036, 0.004, 0.0015, mats.gap, "handle recess", 0.0005);
+    hb(0.13, 0.03, 0.006, 0.0025, mats.chrome, "handle escutcheon", 0.003);
+    hb(0.104, 0.017, 0.012, 0.005, mats.chrome, "door handle", 0.009).position.y = -0.002;
+    if (zh > -0.5) { const lk = new T.CylinderGeometry(0.0075, 0.0075, 0.008, 18); lk.rotateZ(Math.PI / 2); const lm = new T.Mesh(lk, mats.chrome); lm.name = "lock"; lm.position.set(0.006, 0, 0.082); H.add(lm); const sl = new T.BoxGeometry(0.002, 0.007, 0.0016); sl.translate(0.0105, 0, 0.082); const sm = new T.Mesh(sl, mats.gap); sm.name = "lock slot"; H.add(sm); }
   }
   { // the driver's mirror (left, +x): a chrome head on a short stalk at the front door's lower front corner (r3)
     const q = lowerSide(0.44, sideTop(0.44) + 0.01), p = q.p.clone();
@@ -501,36 +515,32 @@ export function buildHeroDacia(T, ext = {}) {
     const gl = new T.PlaneGeometry(0.06, 0.05); gl.rotateY(Math.PI); const gm = add(gl, mats.mirror, "mirror glass"); gm.position.set(p.x + 0.075, p.y + 0.07, p.z - 0.051); gm.rotation.y = Math.PI - 0.25 - Math.PI;
   }
   { const q = lowerSide(-1.86, 0.80); const g = new T.CylinderGeometry(0.042, 0.042, 0.008, 28); g.rotateZ(Math.PI / 2); const m = add(g, mats.chrome, "fuel cap"); m.position.set(-q.p.x - 0.002, q.p.y, q.p.z); }
-  { // wipers parked at the foot of the windscreen
+  { // wipers parked at the foot of the windscreen (v3: the arm on its pivot, the blade's frame and rubber on the glass)
     for (const [x0, x1] of [[-0.42, 0.02], [0.08, 0.5]]) {
-      const pts = []; for (let i = 0; i <= 20; i++) { const x = lerp(x0, x1, i / 20), z = 0.53 - 0.03 * (i / 20); const h = cabHalf(z); let y = 0; for (let k = C_TOP0; k < h.length - 1; k++) if (h[k][0] >= Math.abs(x) && h[k + 1][0] <= Math.abs(x)) { y = lerp(h[k][1], h[k + 1][1], (h[k][0] - Math.abs(x)) / Math.max(1e-6, h[k][0] - h[k + 1][0])); break; } if (!y) y = h[h.length - 1][1]; pts.push({ p: V3(x, y + 0.012, z), n: V3(0, 0.8, 0.6).normalize() }); }
-      sweep(pts, [[0.005, -0.003], [0.005, 0.003], [-0.003, 0.004], [-0.003, -0.004]], mats.satin, "wiper", { closed: true }); // r3: bright arms, as on the model
+      const onGlass = (x, z) => { const h = cabHalf(z); let y = 0; for (let k = C_TOP0; k < h.length - 1; k++) if (h[k][0] >= Math.abs(x) && h[k + 1][0] <= Math.abs(x)) { y = lerp(h[k][1], h[k + 1][1], (h[k][0] - Math.abs(x)) / Math.max(1e-6, h[k][0] - h[k + 1][0])); break; } if (!y) y = h[h.length - 1][1]; return y; };
+      const path = (lift, a, b) => { const pts = []; for (let i = 0; i <= 20; i++) { const t = lerp(a, b, i / 20), x = lerp(x0, x1, t), z = 0.53 - 0.03 * t; pts.push({ p: V3(x, onGlass(x, z) + lift, z), n: V3(0, 0.8, 0.6).normalize() }); } return pts; };
+      sweep(path(0.016, 0, 0.92), [[0.004, -0.0035], [0.004, 0.0035], [-0.003, 0.004], [-0.003, -0.004]], mats.satin, "wiper arm", { closed: true });
+      sweep(path(0.008, 0.08, 1), [[0.004, -0.004], [0.004, 0.004], [-0.002, 0.004], [-0.002, -0.004]], mats.satin, "wiper blade frame", { closed: true });
+      sweep(path(0.002, 0.08, 1), [[0.003, -0.0016], [0.003, 0.0016], [-0.003, 0.0008], [-0.003, -0.0008]], mats.rubber, "wiper rubber", { closed: true });
+      { const x = x0 + 0.01, z = 0.535, g = new T.CylinderGeometry(0.012, 0.014, 0.022, 16); g.translate(x, onGlass(x, z) + 0.008, z); add(g, mats.black, "wiper pivot"); }
     }
   }
 
   // ================= the wheels =================
-  for (const [x, z] of [[1, zF], [-1, zF], [1, zR], [-1, zR]]) group.add(wheel(T, mats, x));
+  for (const [x, z] of [[1, zF], [-1, zF], [1, zR], [-1, zR]]) group.add(wheel(T, mats, x, z > 0));
   const ws = group.children.filter((c) => c.name === "wheel");
   ws.forEach((w, k) => { const [sx, z] = [[1, zF], [-1, zF], [1, zR], [-1, zR]][k]; w.position.set(sx * DIM.track / 2, DIM.wheelY, z); });
 
-  // ================= the cabin: seats, the dash, the wheel =================
-  const RB = ext.RoundedBoxGeometry;
-  const rbox = (w, h, d, r, mat, name, at, rot) => { const g = RB ? new RB(w, h, d, 4, r) : new T.BoxGeometry(w, h, d); const m = add(g, mat, name); m.position.set(...at); if (rot) m.rotation.set(...rot); return m; };
-  for (const s of [-1, 1]) {
-    rbox(0.5, 0.13, 0.52, 0.05, mats.vinyl, "front seat", [s * 0.34, 0.47, -0.18]);
-    rbox(0.48, 0.56, 0.11, 0.05, mats.vinyl, "front seat back", [s * 0.34, 0.78, -0.47], [-0.2, 0, 0]);
-    rbox(0.26, 0.12, 0.07, 0.03, mats.vinyl, "headrest", [s * 0.34, 1.11, -0.55], [-0.2, 0, 0]);
-  }
-  rbox(0.88, 0.14, 0.5, 0.05, mats.vinyl, "rear seat", [0, 0.45, -0.98]);
-  rbox(1.34, 0.48, 0.12, 0.05, mats.vinyl, "rear seat back", [0, 0.71, -1.25], [-0.3, 0, 0]);
-  rbox(1.4, 0.03, 0.3, 0.01, mats.dash, "parcel shelf", [0, beltY(-1.48) - 0.03, -1.47]);
-  rbox(1.42, 0.16, 0.3, 0.04, mats.dash, "dashboard", [0, 0.8, 0.46]);
-  { const g = new T.TorusGeometry(0.19, 0.012, 12, 48); const m = add(g, mats.dash, "steering wheel"); m.position.set(0.34, 0.86, 0.2); m.rotation.set(-0.45, 0, 0); const c = new T.CylinderGeometry(0.02, 0.02, 0.34, 12); const cm = add(c, mats.dash, "column"); cm.position.set(0.34, 0.8, 0.32); cm.rotation.set(1.1, 0, 0); }
+  // ================= the cabin (v3: stitched seats, the dash with its dials, the wheel, the mirror: the kit's cabin) =================
+  dDaciaCabin(T, group, ext.RoundedBoxGeometry, mats, { style: "1300" });
+  { const g = ext.RoundedBoxGeometry ? new ext.RoundedBoxGeometry(1.4, 0.03, 0.3, 3, 0.01) : new T.BoxGeometry(1.4, 0.03, 0.3); g.translate(0, beltY(-1.48) - 0.03, -1.47); add(g, mats.dash, "parcel shelf"); }
+  // v3: road dust on the lower body: the sills, a spray behind each wheel, the flaps and overriders greyed
+  { const wh = [{ z: zF, r: DIM.tyreR }, { z: zR, r: DIM.tyreR }]; dDust(T, group, { mats: [mats.paint], top: 0.52, amount: 0.55, color: "#8e8273", wheels: wh, seed: 21 }); dDust(T, group, { mats: [mats.rubber], top: 0.5, amount: 0.22, color: "#6d6457", wheels: wh, seed: 22 }); }
   return { group, mats, tex };
 }
 
 // ---- a wheel: tyre (sidewalls and a treaded crown), steel rim, chrome hub cap; axis along x, its face towards side
-function wheel(T, mats, side) {
+function wheel(T, mats, side, front = false) {
   const g = new T.Group(); g.name = "wheel";
   const R = DIM.tyreR, Wt = 0.155, rr = DIM.rimR;
   // profile in (radius, axial) of the outer half, mirrored: bead -> sidewall bulge -> shoulder
@@ -540,11 +550,13 @@ function wheel(T, mats, side) {
   const lathe = (prof, mat, name) => { const geo = new T.LatheGeometry(prof.map(([r, a]) => new T.Vector2(r, a)), 96); geo.rotateZ(-Math.PI / 2); const m = new T.Mesh(geo, mat); m.name = name; m.castShadow = m.receiveShadow = true; g.add(m); return m; };
   // (LatheGeometry turns round y, the profile's second number along y; rotated so y -> x)
   const outer = sideProf.map(([r, a]) => [r, a]), inner = sideProf.map(([r, a]) => [r, -a]).reverse();
-  lathe(outer.slice().reverse(), mats.tyre, "tyre wall"); lathe(inner.slice().reverse(), mats.tyre, "tyre wall");
+  // v3: lettered walls (155 SR 13), a worn, dusty tread; discs in front, drums behind (the kit's detail block)
+  if (!mats.tyreV3) { const t = dTyreWall(T, { spec: "155 SR 13" }), d = dTread(T); mats.tyreV3 = mats.tyre.clone(); Object.assign(mats.tyreV3, { map: t.map, bumpMap: t.bumpMap, bumpScale: 2.2, roughnessMap: t.roughnessMap, roughness: 1 }); mats.tyreV3.color = new T.Color("#ffffff"); mats.treadV3 = mats.tread.clone(); Object.assign(mats.treadV3, { map: d.map, normalMap: d.normalMap, normalScale: new T.Vector2(1.2, 1.2), roughnessMap: d.roughnessMap, roughness: 1 }); mats.treadV3.color = new T.Color("#ffffff"); }
+  lathe(outer.slice().reverse(), mats.tyreV3, "tyre wall"); lathe(inner.slice().reverse(), mats.tyreV3, "tyre wall");
   // the crown: three grooves
   const crown = []; const a0 = Wt / 2 - 0.018; const gro = [-0.036, 0, 0.036];
   for (let k = 0; k <= 60; k++) { const a = lerp(a0, -a0, k / 60); let r = R - 0.0035 * (a / a0) ** 4; for (const g0 of gro) if (Math.abs(a - g0) < 0.004) r -= 0.007 * Math.cos(((a - g0) / 0.004) * (Math.PI / 2)); crown.push([r, a]); }
-  const cm = lathe(crown, mats.tread, "tread");
+  const cm = lathe(crown, mats.treadV3, "tread");
   { const uv = cm.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 24, uv.getY(i)); }
   // the steel rim: flange, a dished face with its ring of vents, the hub cap
   const rim = [[rr + 0.006, -0.06], [rr + 0.012, -0.066], [rr, -0.07], [rr - 0.012, -0.05], [rr - 0.016, 0.02], [rr - 0.006, 0.05], [rr + 0.012, 0.064], [rr + 0.004, 0.07], [rr - 0.012, 0.066], [rr - 0.03, 0.05], [0.12, 0.035], [0.105, 0.04], [0.09, 0.03], [0.0, 0.03]];
@@ -554,6 +566,7 @@ function wheel(T, mats, side) {
   cap.unshift([0.07, 0.033]);
   for (let k = 0; k < 8; k++) { const ang = (k / 8) * Math.PI * 2, gv = new T.BoxGeometry(0.004, 0.026, 0.012); const vm = new T.Mesh(gv, mats.under); vm.position.set(0.0365, Math.cos(ang) * 0.104, Math.sin(ang) * 0.104); vm.rotation.x = -ang; vm.name = "rim vent"; g.add(vm); }
   lathe(cap.slice().reverse().map(([r, a]) => [r, a]).reverse(), mats.chrome, "hub cap");
+  dBrake(T, g, front ? { type: "disc", r: 0.118, w: 0.02, x: -0.03, mats } : { type: "drum", r: 0.115, w: 0.05, x: -0.025, mats });
   if (side < 0) g.rotation.y = Math.PI;
   return g;
 }
@@ -588,3 +601,307 @@ function makeTextures(T) {
   const plate1300 = new T.CanvasTexture(p13); plate1300.colorSpace = T.SRGBColorSpace; plate1300.anisotropy = 8;
   return { tread, flutes, prisms, plate, plate1300 };
 }
+
+// <<detail ================================================================ v3 detail (TASK-111 v3, Radu)
+// Realism for the macro shots: tyre sidewall lettering and tread maps, scuffing, brakes, road dust on the lower body,
+// embossed number plates, stitched seats, gauges, steering wheels, interior mirrors, outline offsets for window seals.
+// Self-contained (THREE passed in, no imports): _source/sync-detail.mjs copies this block verbatim into the hero Dacia
+// 1300 (design/hero-car/src/dacia1300-hero.js, and its diorama-render vendor copy), which loads alone.
+const dClamp = (v, a, b) => Math.max(a, Math.min(b, v)), dMix = (a, b, t) => a + (b - a) * t;
+function dCv(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; const x = c.getContext("2d"); draw(x, w, h); return c; }
+function dTex(T, c, srgb, rep = true) { const t = new T.CanvasTexture(c); t.colorSpace = srgb ? T.SRGBColorSpace : T.NoColorSpace; if (rep) t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = 8; t.needsUpdate = true; return t; }
+// a tileable value noise on a period P (integer lattice), and a 3D one for vertices
+function dHash(x, y, z, s) { let n = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(z, 1274126177) + Math.imul(s, 1442695041)) | 0; n = Math.imul(n ^ (n >>> 13), 1274126177); return ((n ^ (n >>> 16)) >>> 0) / 4294967295; }
+function dNoise2(seed = 1, P = 1 << 20) {
+  const f = (t) => t * t * (3 - 2 * t), m = (a) => ((a % P) + P) % P;
+  return (x, y) => { const X = Math.floor(x), Y = Math.floor(y), u = f(x - X), v = f(y - Y); const h = (a, b) => dHash(m(a), m(b), 0, seed); return dMix(dMix(h(X, Y), h(X + 1, Y), u), dMix(h(X, Y + 1), h(X + 1, Y + 1), u), v); };
+}
+function dNoise3(seed = 1) {
+  const f = (t) => t * t * (3 - 2 * t);
+  return (x, y, z) => { const X = Math.floor(x), Y = Math.floor(y), Z = Math.floor(z), u = f(x - X), v = f(y - Y), w = f(z - Z), h = (a, b, c) => dHash(a, b, c, seed);
+    return dMix(dMix(dMix(h(X, Y, Z), h(X + 1, Y, Z), u), dMix(h(X, Y + 1, Z), h(X + 1, Y + 1, Z), u), v), dMix(dMix(h(X, Y, Z + 1), h(X + 1, Y, Z + 1), u), dMix(h(X, Y + 1, Z + 1), h(X + 1, Y + 1, Z + 1), u), v), w); };
+}
+// a grey height canvas -> a normal map (k: strength)
+function dNormalFromCanvas(T, c, k = 2) {
+  const w = c.width, h = c.height, src = c.getContext("2d").getImageData(0, 0, w, h).data, out = dCv(w, h, () => {}), ctx = out.getContext("2d"), im = ctx.createImageData(w, h);
+  const H = (x, y) => src[(((y + h) % h) * w + ((x + w) % w)) * 4] / 255;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const dx = (H(x + 1, y) - H(x - 1, y)) * k, dy = (H(x, y + 1) - H(x, y - 1)) * k, l = Math.hypot(dx, dy, 1), o = (y * w + x) * 4; im.data[o] = (-dx / l * 0.5 + 0.5) * 255; im.data[o + 1] = (dy / l * 0.5 + 0.5) * 255; im.data[o + 2] = (1 / l * 0.5 + 0.5) * 255; im.data[o + 3] = 255; }
+  ctx.putImageData(im, 0, 0); return dTex(T, out, false);
+}
+// ---- tyres. The wall lathe's uv: u round the tyre, v from the shoulder (0) to the bead (1); the sidewall proper is
+// v 0.36-1 (the kit's profile: 8 shoulder points then 15 down the wall). The crown: u round (repeated), v across.
+const D_TYRE = new Map();
+function dTyreWall(T, { brand = "CROMATIC", spec = "155 SR 13", sub = "RADIAL  TUBELESS", letters = null, base = "#161616", key = "" } = {}) {
+  const id = [brand, spec, sub, letters, base, key].join("|"); if (D_TYRE.has(id)) return D_TYRE.get(id);
+  const W = 4096, Hh = 256, n2 = dNoise2(11, 64), yMid = Hh * 0.66;
+  // the text run, twice round: brand, spec, sub, a DOT code (small)
+  const run = (ctx, fill, stroke) => {
+    for (let k = 0; k < 2; k++) {
+      const x0 = k * W / 2; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+      ctx.font = "900 46px 'Arial Black', 'Helvetica Neue', Arial, sans-serif"; if (stroke) { ctx.lineWidth = stroke; ctx.strokeText(brand, x0 + 120, yMid); } ctx.fillText(brand, x0 + 120, yMid);
+      ctx.font = "700 30px 'Helvetica Neue', Arial, sans-serif"; ctx.fillText(spec, x0 + 820, yMid);
+      ctx.font = "700 20px 'Helvetica Neue', Arial, sans-serif"; ctx.fillText(sub, x0 + 1180, yMid - 2);
+      ctx.font = "600 14px 'Helvetica Neue', Arial, sans-serif"; ctx.fillText("DOT  CR4X  1979", x0 + 1600, yMid + 30); ctx.fillText("MADE IN ROMANIA", x0 + 1600, yMid - 26);
+      // the wear indicator triangles on the shoulder
+      for (const xi of [x0 + 380, x0 + 1380]) { ctx.beginPath(); ctx.moveTo(xi, Hh * 0.3); ctx.lineTo(xi + 10, Hh * 0.38); ctx.lineTo(xi - 10, Hh * 0.38); ctx.closePath(); ctx.fill(); }
+    }
+  };
+  // height: the base wall, a rim-protector rib near the bead, fine concentric lines by the shoulder, raised letters
+  const hC = dCv(W, Hh, (ctx) => { ctx.fillStyle = "#6e6e6e"; ctx.fillRect(0, 0, W, Hh); ctx.fillStyle = "#9a9a9a"; ctx.fillRect(0, Hh * 0.885, W, 5); ctx.fillStyle = "#808080"; for (let i = 0; i < 5; i++) ctx.fillRect(0, Hh * (0.385 + i * 0.022), W, 1.5); ctx.fillStyle = "#d8d8d8"; ctx.strokeStyle = "#a0a0a0"; run(ctx, true, 3); });
+  const hB = dCv(W, Hh, (ctx) => { ctx.filter = "blur(0.8px)"; ctx.drawImage(hC, 0, 0); });
+  // colour: the rubber, the letters a touch lighter (or painted), scuffs and kerb rash on the shoulder, dust low
+  const cC = dCv(W, Hh, (ctx) => {
+    ctx.fillStyle = base; ctx.fillRect(0, 0, W, Hh);
+    const im = ctx.getImageData(0, 0, W, Hh), d = im.data;
+    for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) { const o = (y * W + x) * 4, nn = n2(x / 64, y / 32), dust = (0.25 + 0.75 * (1 - y / Hh)) * Math.max(0, nn - 0.45) * 26; d[o] += dust * 1.1; d[o + 1] += dust; d[o + 2] += dust * 0.8; }
+    ctx.putImageData(im, 0, 0);
+    ctx.fillStyle = letters || "#2c2c2c"; run(ctx, true, 0);
+    ctx.strokeStyle = "rgba(120,116,110,0.35)"; ctx.lineWidth = 1.2; for (let i = 0; i < 26; i++) { const x = (i * 1571) % W, y = Hh * (0.05 + ((i * 37) % 30) / 100); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 60 + (i % 5) * 30, y + ((i % 3) - 1) * 4); ctx.stroke(); }
+  });
+  const rC = dCv(W, Hh, (ctx) => { ctx.fillStyle = "#d4d4d4"; ctx.fillRect(0, 0, W, Hh); ctx.fillStyle = "#a6a6a6"; run(ctx, true, 0); });
+  // (the lathe's u runs the other way round and its v from the shoulder: turned half a turn, the letters stand on the
+  // bead and read left to right from outside)
+  const turn = (t) => { t.flipY = false; t.repeat.set(-1, 1); t.offset.set(1, 0); return t; };
+  const out = { map: turn(dTex(T, cC, true)), bumpMap: turn(dTex(T, hB, false)), roughnessMap: turn(dTex(T, rC, false)) };
+  D_TYRE.set(id, out); return out;
+}
+function dTread(T, { slick = false } = {}) {
+  const id = "tread|" + slick; if (D_TYRE.has(id)) return D_TYRE.get(id);
+  const S = 256, n2 = dNoise2(5, 16), frac = (v) => v - Math.floor(v);
+  const Hf = (u, v) => {
+    if (slick) return 0.6;
+    const sh = v < 0.2 || v > 0.8;
+    if (sh) return Math.abs(frac(u * 3 + (v > 0.5 ? 0.17 : 0)) - 0.5) < 0.07 ? 0.05 : 1; // the shoulder blocks
+    let h = 1; const lat = frac(u * 3 + (v - 0.5) * 0.9); if (lat < 0.07) h = 0.1; // angled lateral slots
+    if (Math.abs(frac(u * 9 + Math.abs(v - 0.5) * 2) - 0.5) < 0.025) h = Math.min(h, 0.55); // fine sipes
+    for (const g of [0.35, 0.65]) { const zz = g + 0.02 * Math.sin(u * Math.PI * 2 * 6); if (Math.abs(v - zz) < 0.018) h = 0.1; } // zig-zag circumferential grooves
+    return h;
+  };
+  const hC = dCv(S, S, (ctx) => { const im = ctx.createImageData(S, S); for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) { const o = (y * S + x) * 4, h = Hf(x / S, y / S) * 255; im.data[o] = im.data[o + 1] = im.data[o + 2] = h; im.data[o + 3] = 255; } ctx.putImageData(im, 0, 0); });
+  const hB = dCv(S, S, (ctx) => { ctx.filter = "blur(0.7px)"; ctx.drawImage(hC, 0, 0); });
+  const cC = dCv(S, S, (ctx) => { const im = ctx.createImageData(S, S); for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) { const o = (y * S + x) * 4, h = Hf(x / S, y / S), nn = n2((x / S) * 16, (y / S) * 16), dust = Math.max(0, nn - 0.4) * (h < 0.5 ? 46 : 22), g = (h < 0.5 ? 13 : 30) + (slick ? (Math.sin(y * 0.9 + nn * 9) > 0.7 ? 8 : 0) : 0); im.data[o] = g + dust * 1.15; im.data[o + 1] = g + dust; im.data[o + 2] = g + dust * 0.8; im.data[o + 3] = 255; } ctx.putImageData(im, 0, 0); });
+  const rC = dCv(S, S, (ctx) => { const im = ctx.createImageData(S, S); for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) { const o = (y * S + x) * 4, v = y / S, nn = n2((x / S) * 16 + 3, (y / S) * 16), r = slick ? 0.62 + 0.25 * nn : 0.95 - 0.18 * (1 - Math.abs(v - 0.5) * 2) * nn; im.data[o] = im.data[o + 1] = im.data[o + 2] = dClamp(r, 0, 1) * 255; im.data[o + 3] = 255; } ctx.putImageData(im, 0, 0); });
+  const out = { map: dTex(T, cC, true), normalMap: slick ? null : dNormalFromCanvas(T, hB, 4), roughnessMap: dTex(T, rC, false) };
+  D_TYRE.set(id, out); return out;
+}
+// ---- brakes behind a wheel (inside its group: they turn with it, as discs and drums do). x: the axial centre (the wheel's
+// outer face is +x), r: the outer radius
+function dBrake(T, g, { type = "drum", r = 0.12, w = 0.05, x = -0.02, mats = {} } = {}) {
+  const lathe = (prof, mat, name) => { const geo = new T.LatheGeometry(prof.map(([rr, a]) => new T.Vector2(Math.max(0, rr), a)), 48); geo.rotateZ(-Math.PI / 2); const m = new T.Mesh(geo, mat); m.name = name; m.castShadow = m.receiveShadow = true; g.add(m); return m; };
+  const iron = mats.drum || (mats.drum = new T.MeshPhysicalMaterial({ name: "brake drum", color: new T.Color("#4a4440"), roughness: 0.72, metalness: 0.6, side: T.DoubleSide }));
+  const disc = mats.disc || (mats.disc = new T.MeshPhysicalMaterial({ name: "brake disc", color: new T.Color("#9a9893"), roughness: 0.38, metalness: 0.85, side: T.DoubleSide }));
+  const plate = mats.brakePlate || (mats.brakePlate = new T.MeshPhysicalMaterial({ name: "brake backing plate", color: new T.Color("#1b1a19"), roughness: 0.6, metalness: 0.4, side: T.DoubleSide }));
+  if (type === "disc") {
+    const a0 = x - w / 2, a1 = x + w / 2;
+    lathe([[r * 0.52, a0], [r, a0], [r, a0 + w * 0.35], [r * 0.97, a0 + w * 0.5], [r, a1 - w * 0.35], [r, a1], [r * 0.52, a1]], disc, "brake disc");
+    lathe([[r * 0.52, a1], [r * 0.5, a1 + 0.012], [r * 0.42, a1 + 0.03], [0.0, a1 + 0.03]], iron, "brake disc hat");
+    lathe([[r * 1.06, a0 - 0.008], [r * 1.06, a0 - 0.014], [0.02, a0 - 0.014]], plate, "brake dust shield");
+  } else {
+    // a finned drum: the shoe face out, cooling fins round the barrel, the backing plate inboard
+    const a0 = x - w / 2, a1 = x + w / 2, prof = [[r * 0.35, a1], [r * 0.92, a1], [r, a1 - 0.006]];
+    for (let k = 0; k < 6; k++) { const a = dMix(a1 - 0.01, a0 + 0.008, k / 5); prof.push([r, a + 0.002], [r + 0.007, a], [r, a - 0.002]); }
+    prof.push([r, a0], [r * 0.9, a0]);
+    lathe(prof, iron, "brake drum");
+    lathe([[r * 1.04, a0 - 0.002], [r * 1.04, a0 - 0.012], [0.02, a0 - 0.012]], plate, "brake backing plate");
+  }
+}
+// ---- road dust on the lower body (the paint's own material, patched): a per-vertex mask baked in the vehicle's space
+// (heavy at the sills, a spray behind each wheel, lighter high up, a breakup noise), a finer noise in the shader. The
+// dust lightens the colour towards a road tan, dulls the clearcoat, roughens. o: { mats: [...], top, amount, color,
+// wheels: [{ z, r }], seed }
+function dDust(T, root, o = {}) {
+  const set = new Set(o.mats || []), top = o.top ?? 0.5, amt = o.amount ?? 0.6, col = o.color || "#9c8b74", wh = o.wheels || [], nz = dNoise3(o.seed ?? 3);
+  root.updateMatrixWorld(true);
+  const inv = root.matrixWorld.clone().invert(), M = new T.Matrix4(), v = new T.Vector3();
+  root.traverse((m) => {
+    if (!m.isMesh || !set.has(m.material) || m.isInstancedMesh) return;
+    let p = m; while (p && p !== root) { if (p.name === "wheel") return; p = p.parent; }
+    const g = m.geometry, P = g.attributes.position, d = new Float32Array(P.count), dp = new Float32Array(P.count * 3);
+    M.multiplyMatrices(inv, m.matrixWorld);
+    for (let i = 0; i < P.count; i++) {
+      v.fromBufferAttribute(P, i).applyMatrix4(M); dp[i * 3] = v.x; dp[i * 3 + 1] = v.y; dp[i * 3 + 2] = v.z;
+      let k = Math.pow(dClamp((top - v.y) / top, 0, 1), 1.4);
+      for (const w of wh) { const dz = w.z - v.z; if (dz > -w.r * 0.2 && dz < w.r * 2.2 && v.y < w.r * 2.4) k += 0.45 * Math.exp(-((dz - w.r * 0.9) ** 2) / (w.r * w.r * 0.9)) * dClamp((w.r * 2.4 - v.y) / (w.r * 1.6), 0, 1); }
+      k += 0.06; // a film everywhere
+      k *= 0.45 + 1.1 * nz(v.x * 4, v.y * 7, v.z * 4);
+      d[i] = dClamp(k, 0, 1);
+    }
+    g.setAttribute("aDust", new T.BufferAttribute(d, 1)); g.setAttribute("aDP", new T.BufferAttribute(dp, 3));
+  });
+  for (const mat of set) dDustPatch(T, mat, col, amt);
+}
+function dDustPatch(T, mat, col, amt) {
+  if (mat.userData.dustV3) return; mat.userData.dustV3 = true;
+  const prev = mat.onBeforeCompile;
+  mat.onBeforeCompile = (sh, r) => {
+    if (prev) prev.call(mat, sh, r);
+    sh.uniforms.uDustCol = { value: new T.Color(col) }; sh.uniforms.uDustAmt = { value: amt };
+    sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nattribute float aDust;\nattribute vec3 aDP;\nvarying float vDust;\nvarying vec3 vDP;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvDust = aDust; vDP = aDP;");
+    sh.fragmentShader = sh.fragmentShader.replace("#include <common>", `#include <common>
+uniform vec3 uDustCol; uniform float uDustAmt; varying float vDust; varying vec3 vDP;
+float dH3(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float dN3(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(dH3(i), dH3(i + vec3(1, 0, 0)), f.x), mix(dH3(i + vec3(0, 1, 0)), dH3(i + vec3(1, 1, 0)), f.x), f.y), mix(mix(dH3(i + vec3(0, 0, 1)), dH3(i + vec3(1, 0, 1)), f.x), mix(dH3(i + vec3(0, 1, 1)), dH3(i + vec3(1, 1, 1)), f.x), f.y), f.z); }`)
+      .replace("#include <color_fragment>", "#include <color_fragment>\nfloat dd = vDust * uDustAmt; float dn = dN3(vDP * 31.0) * 0.5 + dN3(vDP * 140.0) * 0.32 + dN3(vDP * 420.0) * 0.18; dd = clamp(dd * (0.3 + 1.45 * dn) - 0.05, 0.0, 0.85); diffuseColor.rgb = mix(diffuseColor.rgb, uDustCol, dd);")
+      .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.82, dd);")
+      .replace("#include <lights_physical_fragment>", "#include <lights_physical_fragment>\n#ifdef USE_CLEARCOAT\nmaterial.clearcoat *= 1.0 - 0.85 * dd; material.clearcoatRoughness = mix(material.clearcoatRoughness, 0.45, dd);\n#endif");
+  };
+  const k0 = mat.customProgramCacheKey ? mat.customProgramCacheKey.bind(mat) : () => "";
+  mat.customProgramCacheKey = () => k0() + "|dust-v3"; mat.needsUpdate = true;
+}
+// ---- number plates (fictional numbers): the Romanian EU plate (the blue band, the stars, RO) or a plain one; raised
+// letters and rim (a bump map), a little road grime. Returns a plane mesh named "number plate" (w x h metres)
+function dPlate(T, text, w = 0.52, h = 0.112, { kind = "eu", back = false } = {}) {
+  const W = 1040, H = Math.round(W * h / w), n2 = dNoise2(9, 32), band = kind === "eu" ? Math.round(H * 0.42) : 0;
+  const glyphs = (ctx) => { ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; let fs = H * 1.02; ctx.font = `700 ${fs}px 'DIN Condensed', 'DIN Alternate', 'Arial Narrow', Arial, sans-serif`; const room = W - band - 70; let tw = ctx.measureText(text).width; if (tw > room) { fs *= room / tw; ctx.font = `700 ${fs}px 'DIN Condensed', 'DIN Alternate', 'Arial Narrow', Arial, sans-serif`; } ctx.fillText(text, band + (W - band) / 2, H * 0.84); };
+  const cC = dCv(W, H, (ctx) => {
+    ctx.fillStyle = "#f3f2ec"; ctx.fillRect(0, 0, W, H);
+    if (band) { ctx.fillStyle = "#1a3f98"; ctx.fillRect(0, 0, band, H); ctx.fillStyle = "#f3d21c"; for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2, cx = band / 2 + Math.cos(a) * band * 0.24, cy = H * 0.34 + Math.sin(a) * band * 0.24; ctx.beginPath(); for (let k = 0; k < 10; k++) { const rr = k % 2 ? band * 0.022 : band * 0.055, b = -Math.PI / 2 + (k / 10) * Math.PI * 2; ctx.lineTo(cx + Math.cos(b) * rr, cy + Math.sin(b) * rr); } ctx.fill(); } ctx.fillStyle = "#f3f2ec"; ctx.font = `700 ${H * 0.32}px 'Helvetica Neue', Arial, sans-serif`; ctx.textAlign = "center"; ctx.fillText("RO", band / 2, H * 0.9); }
+    ctx.strokeStyle = "#141414"; ctx.lineWidth = 7; ctx.strokeRect(5, 5, W - 10, H - 10);
+    ctx.fillStyle = "#141414"; glyphs(ctx);
+    const im = ctx.getImageData(0, 0, W, H), d = im.data;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const o = (y * W + x) * 4, e = Math.min(x, W - x, y, H - y) / 40, g = Math.max(0, n2(x / 40, y / 20) - 0.35) * 0.5 + Math.max(0, 1 - e) * 0.18 + (y / H) * 0.06; for (let c = 0; c < 3; c++) d[o + c] = d[o + c] * (1 - g * 0.55) + [92, 80, 64][c] * g * 0.55; }
+    ctx.putImageData(im, 0, 0);
+  });
+  const hC = dCv(W, H, (ctx) => { ctx.fillStyle = "#606060"; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = "#d0d0d0"; ctx.lineWidth = 12; ctx.strokeRect(9, 9, W - 18, H - 18); ctx.fillStyle = "#e0e0e0"; glyphs(ctx); ctx.filter = "blur(1.5px)"; ctx.drawImage(ctx.canvas, 0, 0); });
+  const mat = new T.MeshPhysicalMaterial({ name: "number plate", map: dTex(T, cC, true, false), bumpMap: dTex(T, hC, false, false), bumpScale: 1.5, roughness: 0.42, metalness: 0, clearcoat: 0.35, clearcoatRoughness: 0.3 });
+  const g = new T.PlaneGeometry(w, h); if (back) g.rotateY(Math.PI);
+  const m = new T.Mesh(g, mat); m.name = "number plate"; m.castShadow = m.receiveShadow = true; return m;
+}
+// ---- seats: pleated vinyl with stitching (a grey map multiplying the material's colour, a normal map), on rounded
+// boxes (their faces' uv run 0-1: the pleats run along v on the cushion's top and the back's front)
+const D_STITCH = new Map();
+function dStitch(T, n = 6) {
+  if (D_STITCH.has(n)) return D_STITCH.get(n);
+  const S = 512, frac = (v) => v - Math.floor(v);
+  const hC = dCv(S, S, (ctx) => { const im = ctx.createImageData(S, S); for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) { const u = x / S, v = y / S, o = (y * S + x) * 4; const q = frac(u * n), ch = Math.min(q, 1 - q); let h = Math.min(1, ch / 0.09) ** 0.6; const edge = Math.min(u, 1 - u, v, 1 - v); if (edge < 0.035) h = Math.min(h, 0.55 + edge * 8); h *= 0.85 + 0.15 * Math.sin(v * 140 + u * 9) * 0.2; im.data[o] = im.data[o + 1] = im.data[o + 2] = dClamp(h, 0, 1) * 255; im.data[o + 3] = 255; } ctx.putImageData(im, 0, 0); });
+  const cC = dCv(S, S, (ctx) => {
+    ctx.drawImage(hC, 0, 0); ctx.globalCompositeOperation = "source-over";
+    const im = ctx.getImageData(0, 0, S, S), d = im.data; for (let i = 0; i < d.length; i += 4) { const h = d[i] / 255; const g = 160 + 95 * h; d[i] = d[i + 1] = d[i + 2] = g; } ctx.putImageData(im, 0, 0);
+    // the stitches: short dashes either side of each channel, and round the piping
+    ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = 2; ctx.setLineDash([7, 5]);
+    for (let k = 1; k < n; k++) for (const off of [-0.022, 0.022]) { const x = (k / n + off) * S; ctx.beginPath(); ctx.moveTo(x, 10); ctx.lineTo(x, S - 10); ctx.stroke(); }
+    ctx.strokeRect(0.05 * S, 0.05 * S, 0.9 * S, 0.9 * S);
+  });
+  const out = { map: dTex(T, cC, true), normalMap: dNormalFromCanvas(T, hC, 3) };
+  D_STITCH.set(n, out); return out;
+}
+// a seat: cushion and back (pleated centres, plain bolsters), a headrest; facing +z. add(geo, mat, name) adds a mesh
+function dSeat(T, parent, RB, mat, { x = 0, y = 0.47, z = 0, w = 0.5, d = 0.5, h = 0.13, backH = 0.56, backT = 0.11, rake = 0.2, head = true, bolster = true, plain = null } = {}) {
+  const add = (g, m, name) => { const me = new T.Mesh(g, m); me.name = name; me.castShadow = me.receiveShadow = true; parent.add(me); return me; };
+  const box = (bw, bh, bd, r, m, name, at, rot) => { const g = RB ? new RB(bw, bh, bd, 3, Math.min(r, bw / 2 - 1e-4, bh / 2 - 1e-4, bd / 2 - 1e-4)) : new T.BoxGeometry(bw, bh, bd); const me = add(g, m, name); me.position.set(...at); if (rot) me.rotation.set(...rot); return me; };
+  const pm = plain || mat, bw = bolster ? w * 0.16 : 0;
+  box(w - 2 * bw, h, d * 0.94, 0.035, mat, "seat cushion", [x, y, z + d * 0.02]);
+  if (bolster) for (const s of [-1, 1]) box(bw, h * 1.25, d, 0.035, pm, "seat bolster", [x + s * (w - bw) / 2, y + h * 0.1, z]);
+  const by = y + h / 2 + backH / 2 - 0.02, bz = z - d / 2 + backT / 2 - Math.sin(rake) * backH * 0.3;
+  const bk = new T.Group(); bk.position.set(x, by, bz); bk.rotation.x = -rake; parent.add(bk);
+  const addB = (g, m, name) => { const me = new T.Mesh(g, m); me.name = name; me.castShadow = me.receiveShadow = true; bk.add(me); return me; }, boxB = (bw2, bh, bd, r, m, name, at) => { const g = RB ? new RB(bw2, bh, bd, 3, Math.min(r, bw2 / 2 - 1e-4, bh / 2 - 1e-4, bd / 2 - 1e-4)) : new T.BoxGeometry(bw2, bh, bd); const me = addB(g, m, name); me.position.set(...at); return me; };
+  boxB(w - 2 * bw, backH, backT, 0.035, mat, "seat back", [0, 0, 0]);
+  if (bolster) for (const s of [-1, 1]) boxB(bw, backH, backT * 1.3, 0.035, pm, "seat bolster", [s * (w - bw) / 2, 0, backT * 0.1]);
+  if (head) { boxB(w * 0.52, 0.13, 0.08, 0.035, mat, "headrest", [0, backH / 2 + 0.09, -0.01]); for (const s of [-1, 1]) { const g = new T.CylinderGeometry(0.006, 0.006, 0.07, 8); g.translate(s * w * 0.15, backH / 2 + 0.01, -0.01); addB(g, plain || mat, "headrest post"); } }
+  return bk;
+}
+// ---- gauges: a canvas dial (kind "speed" 0-160 km/h, "rev", "fuel"), black face, white marks, an orange needle
+function dGauge(T, kind = "speed", { face = "#101012", ink = "#f2efe6", needle = "#ff6a1a", label = "" } = {}) {
+  const S = 512, c = dCv(S, S, (ctx) => {
+    ctx.fillStyle = face; ctx.fillRect(0, 0, S, S); const cx = S / 2, cy = S / 2;
+    const [a0, a1, n, maj, lab] = kind === "fuel" ? [Math.PI * 0.8, Math.PI * 1.2, 4, 2, ["E", "", "½", "", "F"]] : kind === "rev" ? [Math.PI * 0.75, Math.PI * 2.25, 35, 5, ["0", "1", "2", "3", "4", "5", "6", "7"]] : [Math.PI * 0.75, Math.PI * 2.25, 32, 4, ["0", "20", "40", "60", "80", "100", "120", "140", "160"]];
+    ctx.strokeStyle = ink; ctx.fillStyle = ink; ctx.lineCap = "butt";
+    for (let i = 0; i <= n; i++) { const a = dMix(a0, a1, i / n), big = i % maj === 0, r0 = big ? 0.36 : 0.4; ctx.lineWidth = big ? 9 : 4; ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * S * r0, cy + Math.sin(a) * S * r0); ctx.lineTo(cx + Math.cos(a) * S * 0.46, cy + Math.sin(a) * S * 0.46); ctx.stroke();
+      if (big && lab[i / maj]) { ctx.font = `700 ${S * 0.085}px 'Helvetica Neue', Arial, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(lab[i / maj], cx + Math.cos(a) * S * 0.28, cy + Math.sin(a) * S * 0.28); } }
+    if (kind === "rev") { ctx.strokeStyle = "#d63a26"; ctx.lineWidth = 12; ctx.beginPath(); ctx.arc(cx, cy, S * 0.43, dMix(a0, a1, 6 / 7), a1); ctx.stroke(); }
+    ctx.font = `600 ${S * 0.05}px 'Helvetica Neue', Arial, sans-serif`; ctx.textAlign = "center"; ctx.fillStyle = ink; ctx.fillText(label || (kind === "speed" ? "km/h" : kind === "rev" ? "x1000 rpm" : ""), cx, cy + S * 0.2);
+    if (kind === "speed") { ctx.fillStyle = "#e8e4d8"; ctx.fillRect(cx - S * 0.11, cy + S * 0.27, S * 0.22, S * 0.07); ctx.fillStyle = "#111"; ctx.font = `700 ${S * 0.055}px 'Courier New', monospace`; ctx.fillText("041382", cx, cy + S * 0.325); }
+    const na = dMix(a0, a1, kind === "fuel" ? 0.62 : 0.06); ctx.strokeStyle = needle; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(cx - Math.cos(na) * S * 0.06, cy - Math.sin(na) * S * 0.06); ctx.lineTo(cx + Math.cos(na) * S * 0.42, cy + Math.sin(na) * S * 0.42); ctx.stroke();
+    ctx.fillStyle = "#2a2a2c"; ctx.beginPath(); ctx.arc(cx, cy, S * 0.05, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#3a3a3c"; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(cx, cy, S * 0.49, 0, Math.PI * 2); ctx.stroke();
+  });
+  return new T.MeshPhysicalMaterial({ name: "gauge", map: dTex(T, c, true, false), roughness: 0.35, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.02 });
+}
+// a round gauge facing dir (-z by default): the dial, a chrome or black bezel; returns the group
+function dGaugeMesh(T, parent, mat, bezel, { r = 0.045, at = [0, 0, 0], face = -1 } = {}) {
+  const G = new T.Group(); G.position.set(...at); if (face < 0) G.rotation.y = Math.PI; parent.add(G);
+  const c = new T.Mesh(new T.CircleGeometry(r, 40), mat); c.name = "gauge"; G.add(c);
+  const b = new T.Mesh(new T.TorusGeometry(r + 0.003, 0.004, 8, 40), bezel); b.name = "gauge bezel"; b.position.z = 0.002; G.add(b);
+  const cup = new T.Mesh(new T.CylinderGeometry(r + 0.006, r + 0.006, 0.02, 32, 1, true), bezel); cup.name = "gauge cup"; cup.rotation.x = Math.PI / 2; cup.position.z = -0.008; G.add(cup);
+  return G;
+}
+// ---- a steering wheel in the x-y plane facing +z (the driver behind it at -z): rim, spokes (2, 3 or 4), hub, horn
+function dSteering(T, parent, { r = 0.19, tube = 0.013, spokes = 2, rimMat, spokeMat, hubMat, at = [0, 0, 0], tilt = 0.45 } = {}) {
+  const G = new T.Group(); G.name = "steering wheel"; G.position.set(...at); G.rotation.x = -tilt; parent.add(G);
+  const m = (geo, mat, name) => { const me = new T.Mesh(geo, mat); me.name = name; me.castShadow = me.receiveShadow = true; G.add(me); return me; };
+  m(new T.TorusGeometry(r, tube, 12, 72), rimMat, "steering rim");
+  // finger grips on the rim's back
+  const ang = spokes === 2 ? [-0.18, Math.PI + 0.18] : spokes === 3 ? [-Math.PI / 2, -0.12, Math.PI + 0.12] : [Math.PI / 4, 3 * Math.PI / 4, 5 * Math.PI / 4, 7 * Math.PI / 4];
+  for (const a of ang) { const L = r - 0.03, g = new T.BoxGeometry(L, 0.018, 0.008); g.translate(0.03 + L / 2, 0, -0.012); const s = m(g, spokeMat, "steering spoke"); s.rotation.z = a; }
+  { const g = new T.CylinderGeometry(0.045, 0.05, 0.04, 28); g.rotateX(Math.PI / 2); g.translate(0, 0, -0.016); m(g, hubMat || spokeMat, "steering hub"); }
+  { const g = new T.CircleGeometry(0.034, 28); g.translate(0, 0, 0.0045); m(g, spokeMat, "horn button"); }
+  return G;
+}
+// ---- an interior mirror hanging from the windscreen's header (facing -z, back at the driver)
+function dInnerMirror(T, parent, { at = [0, 1.3, 0.1], w = 0.2, h = 0.06, housing, glass, stem = 0.06, RB } = {}) {
+  const G = new T.Group(); G.name = "interior mirror"; G.position.set(...at); parent.add(G);
+  const m = (geo, mat, name) => { const me = new T.Mesh(geo, mat); me.name = name; me.castShadow = true; G.add(me); return me; };
+  { const g = new T.CylinderGeometry(0.006, 0.008, stem, 10); g.translate(0, stem / 2, 0.01); m(g, housing, "mirror stem"); }
+  m(RB ? new RB(w, h, 0.028, 3, 0.012) : new T.BoxGeometry(w, h, 0.028), housing, "mirror housing");
+  { const g = new T.PlaneGeometry(w - 0.014, h - 0.014); g.rotateY(Math.PI); g.translate(0, 0, -0.0145); m(g, glass, "mirror glass"); }
+  G.rotation.y = 0.08; return G;
+}
+// ---- offset a closed outline [[a, b]] inward by d (sa, sb: the metres per unit of a and b), for the rubber seals
+function dOffset(pts, d, sa = 1, sb = 1) {
+  const n = pts.length; let area = 0; for (let i = 0; i < n; i++) { const [a0, b0] = pts[i], [a1, b1] = pts[(i + 1) % n]; area += (a0 * sa) * (b1 * sb) - (a1 * sa) * (b0 * sb); }
+  const s = area > 0 ? 1 : -1;
+  return pts.map((p, i) => { const A = pts[(i - 1 + n) % n], B = pts[(i + 1) % n], ta = (B[0] - A[0]) * sa, tb = (B[1] - A[1]) * sb, l = Math.hypot(ta, tb) || 1; return [p[0] + (-tb / l) * s * d / sa, p[1] + (ta / l) * s * d / sb]; });
+}
+// ---- the Dacia 1300 / 1310 cabin (the hero 1300's and the Patrol's shared interior, seen through the glass in the
+// macro shots): stitched seats with bolsters and headrests, the rear bench, the dash with its instrument binnacle
+// (round dials on the 1300, a squared hood with three on the 1310), the radio, vents and glovebox, the two-spoke wheel
+// on its column, stalks, the gear lever in its boot, the handbrake, an interior mirror, sun visors, armrests.
+function dDaciaCabin(T, parent, RB, mats, { style = "1300", seatColor = null } = {}) {
+  const st = dStitch(T, 6);
+  const seat = mats.vinyl.clone(); seat.name = "seat vinyl"; seat.map = st.map; seat.normalMap = st.normalMap; seat.normalScale = new T.Vector2(0.9, 0.9); if (seatColor) seat.color = new T.Color(seatColor);
+  const plain = mats.vinyl;
+  const add = (g, m, name) => { const me = new T.Mesh(g, m); me.name = name; me.castShadow = me.receiveShadow = true; parent.add(me); return me; };
+  const box = (w, h, d, r, m, name, at, rot) => { const g = RB ? new RB(w, h, d, 3, Math.min(r, w / 2 - 1e-4, h / 2 - 1e-4, d / 2 - 1e-4)) : new T.BoxGeometry(w, h, d); const me = add(g, m, name); me.position.set(...at); if (rot) me.rotation.set(...rot); return me; };
+  for (const s of [-1, 1]) dSeat(T, parent, RB, seat, { x: s * 0.34, y: 0.47, z: -0.18, w: 0.5, d: 0.52, h: 0.13, backH: 0.56, backT: 0.11, rake: 0.2, head: true, plain });
+  dSeat(T, parent, RB, seat, { x: 0, y: 0.45, z: -0.98, w: 1.3, d: 0.5, h: 0.14, backH: 0.48, backT: 0.12, rake: 0.3, head: false, bolster: true, plain });
+  // the dash: the main moulding, a padded top roll, the binnacle over the dials, the dials, the radio, vents, glovebox
+  const dash = mats.dash;
+  box(1.42, 0.16, 0.3, 0.04, dash, "dashboard", [0, 0.8, 0.46]);
+  box(1.44, 0.05, 0.12, 0.024, dash, "dash top roll", [0, 0.885, 0.37]);
+  const bezel = style === "1310" ? mats.black : mats.chrome;
+  box(style === "1310" ? 0.36 : 0.3, 0.026, 0.1, 0.012, style === "1310" ? mats.black : dash, "binnacle hood", [0.34, 0.902, 0.29]);
+  if (style === "1310") {
+    const sp = dGauge(T, "speed"), rv = dGauge(T, "rev"), fu = dGauge(T, "fuel");
+    dGaugeMesh(T, parent, rv, bezel, { r: 0.04, at: [0.445, 0.84, 0.305] }); dGaugeMesh(T, parent, sp, bezel, { r: 0.046, at: [0.34, 0.84, 0.305] }); dGaugeMesh(T, parent, fu, bezel, { r: 0.03, at: [0.24, 0.84, 0.305] });
+  } else {
+    const sp = dGauge(T, "speed"), fu = dGauge(T, "fuel", { label: "°C   FUEL" });
+    dGaugeMesh(T, parent, sp, bezel, { r: 0.05, at: [0.395, 0.84, 0.305] }); dGaugeMesh(T, parent, fu, bezel, { r: 0.05, at: [0.285, 0.84, 0.305] });
+  }
+  box(0.2, 0.055, 0.03, 0.006, mats.black, "radio", [0, 0.76, 0.312]);
+  for (const x of [-0.07, 0.07]) { const g = new T.CylinderGeometry(0.009, 0.009, 0.012, 16); g.rotateX(Math.PI / 2); g.translate(x, 0.76, 0.293); add(g, mats.satin, "radio knob"); }
+  { const g = new T.PlaneGeometry(0.09, 0.018); g.rotateY(Math.PI); g.translate(0, 0.768, 0.2965); add(g, mats.satin, "radio dial"); }
+  for (const x of [-0.6, 0.6, -0.1, 0.1]) { box(0.085, 0.04, 0.02, 0.006, mats.black, "vent", [x, 0.84, 0.312]); for (let k = 0; k < 3; k++) box(0.08, 0.004, 0.008, 0.001, mats.satin, "vent slat", [x, 0.828 + k * 0.012, 0.302]); }
+  { const g = new T.PlaneGeometry(0.34, 0.1); g.rotateY(Math.PI); g.translate(-0.34, 0.79, 0.3095); add(g, mats.gap, "glovebox gap"); box(0.33, 0.092, 0.006, 0.006, dash, "glovebox lid", [-0.34, 0.79, 0.307]); box(0.04, 0.012, 0.01, 0.003, mats.satin, "glovebox catch", [-0.34, 0.825, 0.302]); }
+  // the wheel, its column and shroud, the stalks
+  dSteering(T, parent, { at: [0.34, 0.86, 0.2], tilt: 0.45, r: 0.19, tube: 0.012, spokes: 2, rimMat: mats.black, spokeMat: style === "1310" ? mats.black : mats.satin, hubMat: mats.black });
+  { const a = new T.Vector3(0.34, 0.835, 0.235), b = new T.Vector3(0.34, 0.74, 0.42), d = b.clone().sub(a); const g = new T.CylinderGeometry(0.03, 0.036, d.length(), 16); const m = add(g, mats.black, "column shroud"); m.position.copy(a).addScaledVector(d, 0.5); m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d.normalize()); }
+  for (const s of [-1, 1]) { const g = new T.CylinderGeometry(0.005, 0.005, 0.12, 8); g.rotateZ(Math.PI / 2); g.translate(0.34 + s * 0.08, 0.8, 0.29); add(g, mats.black, "stalk"); }
+  // the gear lever in its rubber boot, the handbrake
+  { const g = new T.ConeGeometry(0.05, 0.08, 16); g.translate(0, 0.33, 0.12); add(g, mats.rubber, "gear boot"); const r = new T.CylinderGeometry(0.006, 0.008, 0.22, 10); r.translate(0, 0.44, 0.12); r.rotateX(0); add(r, mats.satin, "gear lever"); const k = new T.SphereGeometry(0.022, 16, 12); k.translate(0, 0.56, 0.12); add(k, mats.black, "gear knob"); }
+  { const g = new T.CylinderGeometry(0.01, 0.012, 0.2, 10); g.rotateX(1.25); g.translate(0, 0.36, -0.05); add(g, mats.black, "handbrake"); }
+  box(0.14, 0.26, 0.4, 0.02, mats.carpet, "tunnel", [0, 0.29, 0.0]);
+  // the interior mirror on the header, the sun visors, the armrests on the door cards
+  dInnerMirror(T, parent, { at: [0, 1.31, 0.06], w: 0.2, h: 0.058, housing: mats.black, glass: mats.mirror, stem: 0.055, RB });
+  for (const s of [-1, 1]) box(0.36, 0.012, 0.14, 0.005, mats.liner, "sun visor", [s * 0.34, 1.385, -0.02], [0.18, 0, 0]);
+  for (const s of [-1, 1]) for (const z of [0.0, -0.78]) box(0.045, 0.04, 0.28, 0.015, plain, "armrest", [s * 0.755, 0.64, z]);
+}
+// ---- a chrome script badge (the model's numerals on the tail): an alpha-cut canvas, raised (a bump map), facing +z
+function dScript(T, text, h = 0.035, { font = "italic 700 ", color = "#e9eaec" } = {}) {
+  const H = 128, c0 = dCv(8, 8, () => {}), m0 = c0.getContext("2d"); m0.font = `${font}${H * 0.8}px 'Helvetica Neue', Arial, sans-serif`; const W = Math.ceil(m0.measureText(text).width + 24);
+  const draw = (fill) => dCv(W, H, (x) => { x.font = `${font}${H * 0.8}px 'Helvetica Neue', Arial, sans-serif`; x.textBaseline = "middle"; x.fillStyle = fill; x.fillText(text, 12, H / 2 + 4); });
+  const a = draw("#ffffff"), b = dCv(W, H, (x) => { x.filter = "blur(2px)"; x.drawImage(a, 0, 0); });
+  const mat = new T.MeshPhysicalMaterial({ name: "badge chrome", color: new T.Color(color), metalness: 1, roughness: 0.12, alphaMap: dTex(T, a, false, false), alphaTest: 0.5, bumpMap: dTex(T, b, false, false), bumpScale: 3, side: T.DoubleSide });
+  const m = new T.Mesh(new T.PlaneGeometry(h * W / H, h), mat); m.name = "model script"; return m;
+}
+// detail>>
