@@ -20,7 +20,7 @@ const ff = spawn(FF, ["-y", "-loglevel", "error", "-f", "image2pipe", "-framerat
 const write = (buf) => new Promise((res) => (ff.stdin.write(buf) ? res() : ff.stdin.once("drain", res)));
 const br = await pw.chromium.launch();
 const p = await br.newPage({ viewport: { width: 1080, height: 1920 } });
-await p.goto(`${STAGE}/design/stories/vehicles/_source/stage-alpha.html?s=story-${ST}-cards.json`);
+await p.goto(`${STAGE}/design/stories/vehicles/_source/stage-alpha.html?s=story-${process.env.CARDS || ST}-cards.json`);
 await p.waitForFunction(() => window.ready === 1, null, { timeout: 60000 });
 const t0 = Date.now(); let last = null;
 for (let i = 0; i < F; i++) {
