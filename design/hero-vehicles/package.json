@@ -1,0 +1,9 @@
+{
+  "name": "cromatic-hero-vehicles",
+  "private": true,
+  "type": "module",
+  "description": "The garage's hero vehicles (Patrol 1310, Mystery van, Chrome racer, Classic Formula, Cropduster, E-scooter) for the stories, rendered apart from the map",
+  "dependencies": {
+    "three": "^0.186.1"
+  }
+}
