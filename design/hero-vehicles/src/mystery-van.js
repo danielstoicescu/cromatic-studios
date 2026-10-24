@@ -6,10 +6,10 @@
 // Metres; origin on the ground under the middle of the wheelbase, +z forward, +y up, +x the van's left.
 //   buildMysteryVan(THREE, { RoundedBoxGeometry }) -> { group, body, wheels, mats, tex, parts, DIM }
 // Proportions off the type's published numbers (the 1960s split-window bus): length 4.28 over the bumpers, width 1.75,
-// height 1.94 (2.07 over the rack), wheelbase 2.40, track 1.37, tyres 5.60-15 (0.66 m across).
+// height 1.90 (2.03 over the rack; v2: 4 cm under the type's 1.94, the roof read heavy), wheelbase 2.40, track 1.37, tyres 5.60-15 (0.66 m across).
 import { pchip, clamp, lerp, sstep, makeTex, baseMats, paintMat, makeKit, buildWheel } from "./kit.js";
 
-export const DIM = { L: 4.28, W: 1.75, H: 1.94, Hrack: 2.07, WB: 2.40, track: 1.37, zF: 1.2, zR: -1.2, zN: 1.835, zT: -2.31, tyreR: 0.33, rimR: 0.19 };
+export const DIM = { L: 4.28, W: 1.75, H: 1.9, Hrack: 2.03, WB: 2.40, track: 1.37, zF: 1.2, zR: -1.2, zN: 1.835, zT: -2.31, tyreR: 0.33, rimR: 0.19 };
 
 export function buildMysteryVan(T, ext = {}) {
   const { zF, zR, zN, zT } = DIM;
@@ -22,6 +22,7 @@ export function buildMysteryVan(T, ext = {}) {
   Object.assign(mats, {
     paint: paintMat(T, TEAL, { name: "paint" }),
     lime: paintMat(T, LIME, { name: "paint lime" }),
+    limeNose: paintMat(T, "#62b532", { name: "paint lime" }), // (the nose faces the light: a touch deeper so it reads as the stripe's lime)
     cream: new T.MeshPhysicalMaterial({ name: "cream wheel", color: new T.Color("#f4f2ea"), roughness: 0.3, metalness: 0.1, clearcoat: 0.8, clearcoatRoughness: 0.1, side: T.DoubleSide }),
     reflector: new T.MeshPhysicalMaterial({ name: "reflector", color: new T.Color("#e9e9ea"), roughness: 0.16, metalness: 1, side: T.DoubleSide }),
     seat: new T.MeshPhysicalMaterial({ name: "seat vinyl", color: new T.Color("#e9e1cf"), roughness: 0.55, metalness: 0, clearcoat: 0.3, clearcoatRoughness: 0.35 }),
@@ -32,7 +33,7 @@ export function buildMysteryVan(T, ext = {}) {
   });
 
   // ================= the shell: sections along z =================
-  const HW0 = 0.86, rF = 0.30, rR = 0.32, RT = 0.17, CROWN = 0.05; // half width, plan corner radii, the roof's corner, its crown
+  const HW0 = 0.86, rF = 0.30, rR = 0.32, RT = 0.13, CROWN = 0.035; /* v2: a lighter roof (smaller corner, flatter crown) */ // half width, plan corner radii, the roof's corner, its crown
   const AR = 0.40, AY = 0.33; // wheel arches
   const BELT = 1.26, LIME0 = 1.06, LIME1 = 1.20; // the windows' sill line; the lime stripe under it
   function hw(z) {
@@ -42,7 +43,8 @@ export function buildMysteryVan(T, ext = {}) {
     return w;
   }
   // the centre line of the roof: the windscreen (steep) at the front, the rear window and the engine lid at the back
-  const Ht = pchip([[zT, 1.12], [zT + 0.05, 1.32], [zT + 0.13, 1.62], [zT + 0.26, 1.82], [zT + 0.5, 1.93], [zT + 0.8, 1.94], [zN - 0.62, 1.94], [zN - 0.38, 1.885], [zN - 0.25, 1.77], [zN - 0.13, 1.47], [zN - 0.045, 1.2], [zN, 1.12]]);
+  // v2 (Daniel: less toy-like): the roof 4 cm lower, a lower windscreen over a taller nose, the roof's front a short peak
+  const Ht = pchip([[zT, 1.12], [zT + 0.05, 1.32], [zT + 0.13, 1.62], [zT + 0.26, 1.8], [zT + 0.5, 1.89], [zT + 0.8, 1.9], [zN - 0.75, 1.9], [zN - 0.5, 1.878], [zN - 0.32, 1.8], [zN - 0.2, 1.66], [zN - 0.1, 1.42], [zN - 0.04, 1.27], [zN, 1.2]]);
   const ys = (z) => Ht(z) - RT - CROWN; // where the roof's corner starts
   const ybase = pchip([[zT, 0.47], [zT + 0.2, 0.42], [zN - 0.25, 0.42], [zN, 0.47]]);
   const ybot = (z) => { let y = ybase(z); for (const za of [zF, zR]) { const dz = z - za; if (Math.abs(dz) < AR) y = Math.max(y, AY + Math.sqrt(AR * AR - dz * dz)); } return y; };
@@ -53,7 +55,7 @@ export function buildMysteryVan(T, ext = {}) {
     return x;
   }
   // the nose and the tail bulge in plan (the face is curved across): z is pushed out at the middle
-  const warpZ = (x, z) => z + 0.11 * (1 - (x / HW0) ** 2) * sstep(zN - 0.75, zN, z) - 0.07 * (1 - (x / HW0) ** 2) * sstep(zT + 0.6, zT, z);
+  const warpZ = (x, z) => z + 0.13 * (1 - (x / HW0) ** 2) * sstep(zN - 0.75, zN, z) - 0.07 * (1 - (x / HW0) ** 2) * sstep(zT + 0.6, zT, z);
   const W3 = (x, y, z) => V3(x, y, warpZ(x, z));
   const faceZ = (x) => warpZ(x, zN), tailZ = (x) => warpZ(x, zT);
   // the roof's half section from the corner's start (s = 1) to the middle (s = 0): [x, y]
@@ -96,10 +98,10 @@ export function buildMysteryVan(T, ext = {}) {
   // ---- the window band (the flanks between the windows' sill and the roof's corner) with the windows cut in it
   const zBand = (() => { let a = zT, b = zN; while (ys(a) < BELT + 0.004) a += 0.002; while (ys(b) < BELT + 0.004) b -= 0.002; return [a, b]; })();
   const bandOuter = []; for (let z = zBand[0]; z <= zBand[1]; z += 0.04) bandOuter.push([z, BELT]); bandOuter.push([zBand[1], BELT]); for (let z = zBand[1]; z >= zBand[0]; z -= 0.04) bandOuter.push([z, Math.max(BELT + 0.002, ys(z))]);
-  const WB = 1.33, WT = 1.66; // the windows' bottom and top
+  const WB = 1.32, WT = 1.69; // v2: taller glass, less paint over it // the windows' bottom and top
   const win = (z0, z1, r = 0.05, f0 = 0) => roundQuad([[z1, WB], [z0, WB], [z0, WT], [z1 - f0, WT]], [r, r, r, r]);
   // the cab door's window (its front edge leaning with the windscreen's pillar), three big windows with even 0.14 pillars, the small rear quarter
-  const WINS = [win(0.96, 1.5, 0.05, 0.1), win(0.18, 0.80, 0.05), win(-0.60, 0.04, 0.05), win(-1.38, -0.74, 0.05), win(-1.87, -1.53, 0.07)];
+  const WINS = [win(0.96, 1.48, 0.05, 0.16), win(0.18, 0.80, 0.05), win(-0.60, 0.04, 0.05), win(-1.38, -0.74, 0.05), win(-1.8, -1.52, 0.07)];
   for (const sx of [1, -1]) {
     const m = sideMap(sx);
     add(paramMesh(bandOuter, WINS, m, 0.04, { Lb: 0.015 }), mats.paint, "window band");
@@ -109,7 +111,7 @@ export function buildMysteryVan(T, ext = {}) {
   }
   // ---- the roof, with the split windscreen and the rear window
   const topOuter = []; const zl = []; for (let z = zT; z < zN - 0.03; z += z < zT + 0.4 || z > zN - 0.45 ? 0.02 : 0.05) zl.push(z); zl.push(zN); for (const z of zl) topOuter.push([z, -1]); for (let k = 1; k < 20; k++) topOuter.push([zN, -1 + k / 10]); for (const z of zl.slice().reverse()) topOuter.push([z, 1]); for (let k = 1; k < 20; k++) topOuter.push([zT, 1 - k / 10]);
-  const WS0 = zN - 0.235, WS1 = zN - 0.062; // the windscreen's top and foot (z)
+  const WS0 = zN - 0.19, WS1 = zN - 0.055; // the windscreen's top and foot (z)
   const wsPane = (sg) => roundQuad([[WS1, sg * 0.05], [WS1, sg * 0.62], [WS0, sg * 0.6], [WS0, sg * 0.05]].map(([a, b]) => [a, b]), [0.03, 0.06, 0.06, 0.03]).map(([z, s]) => [z, s]);
   const RW0 = zT + 0.16, RW1 = zT + 0.06;
   const rwPane = roundQuad([[RW0, -0.5], [RW0, 0.5], [RW1, 0.47], [RW1, -0.47]], [0.06, 0.06, 0.05, 0.05]);
@@ -127,7 +129,8 @@ export function buildMysteryVan(T, ext = {}) {
   add(paramMesh(endOutline(zN), noseHoles, faceMap(zN, 1), 0.035, { Lb: 0.012 }), mats.paint, "nose");
   add(paramMesh(endOutline(zT), [], faceMap(zT, -1), 0.035, { Lb: 0.012 }), mats.paint, "tail");
   // the lime chevron on the nose (a plain V under the windscreen: no badge)
-  { const V = [[-0.68, 1.1], [0, 0.95], [0.68, 1.1], [0.68, 1.02], [0, 0.86], [-0.68, 1.02]]; const fm = faceMap(zN + 0.0, 1); const m = (x, y) => { const q = fm(x, y); return { p: q.p.clone().addScaledVector(q.n, 0.0015), n: q.n }; }; add(paramMesh(V, [], m, 0.04), mats.lime, "nose chevron"); }
+  // v2: the chevron continues the flanks' lime stripe (1.06-1.20) across the nose into a V
+  { const V = [[-0.552, 1.2], [0, 0.93], [0.552, 1.2], [0.552, 1.06], [0, 0.79], [-0.552, 1.06]]; const fm = faceMap(zN + 0.0, 1); const m = (x, y) => { const q = fm(x, y); return { p: q.p.clone().addScaledVector(q.n, 0.0015), n: q.n }; }; add(paramMesh(V, [], m, 0.04), mats.limeNose, "nose chevron"); }
   // ---- seams: the cab doors, the cargo doors (the right side), the engine lid and the rear hatch
   const GAP = 0.0045, LIFT = 0.0012;
   const onSide = (sx, z, y) => { const q = sideMap(sx)(z, y); return { p: q.p, n: q.n }; };
@@ -164,10 +167,10 @@ export function buildMysteryVan(T, ext = {}) {
   // the spare wheel on the nose, with its flower cover and a chrome ring, on a bracket
   {
     const sp = buildWheel(T, mats, 1, { R: 0.3, W: 0.15, rr: 0.19, style: "steel", rimMat: mats.cream, capMat: mats.chrome });
-    sp.name = "spare wheel"; sp.rotation.set(0, -Math.PI / 2, 0); sp.position.set(0, 0.6, faceZ(0) + 0.13); group.add(sp);
-    const c = new T.CircleGeometry(0.27, 64); c.translate(0, 0.6, faceZ(0) + 0.212); add(c, mats.flower, "spare cover");
-    { const g = new T.TorusGeometry(0.27, 0.012, 12, 64); g.translate(0, 0.6, faceZ(0) + 0.212); add(g, mats.chrome, "spare ring"); }
-    rbox(0.12, 0.05, 0.12, 0.01, mats.darkMetal, "spare bracket", [0, 0.6, faceZ(0) + 0.04]);
+    sp.name = "spare wheel"; sp.rotation.set(0, -Math.PI / 2, 0); sp.position.set(0, 0.5, faceZ(0) + 0.13); group.add(sp);
+    const c = new T.CircleGeometry(0.27, 64); c.translate(0, 0.5, faceZ(0) + 0.212); add(c, mats.flower, "spare cover");
+    { const g = new T.TorusGeometry(0.27, 0.012, 12, 64); g.translate(0, 0.5, faceZ(0) + 0.212); add(g, mats.chrome, "spare ring"); }
+    rbox(0.12, 0.05, 0.12, 0.01, mats.darkMetal, "spare bracket", [0, 0.5, faceZ(0) + 0.04]);
   }
   // bumpers: a chrome blade on two arms, round overriders; the rear one the same
   function bumper(front) {
@@ -207,7 +210,7 @@ export function buildMysteryVan(T, ext = {}) {
   // the rain gutters along the roof's edges, the chrome roof rack on six feet
   for (const s of [-1, 1]) { const pts = []; for (let z = zT + 0.42; z <= zN - 0.44; z += 0.02) { const q = topMap(z, s * 0.97); pts.push({ p: q.p.clone().addScaledVector(q.n, 0.006), n: q.n }); } sweep(pts, roundProf(0.008, 10), mats.paint, "rain gutter", { closed: true }); }
   {
-    const yR = 2.0, xs = 0.62, z0 = -1.55, z1 = 0.95;
+    const yR = 1.96, xs = 0.62, z0 = -1.55, z1 = 0.95;
     for (const s of [-1, 1]) {
       tube([[s * xs, yR, z0], [s * xs, yR, z1]], 0.016, mats.chrome, "rack rail", { seg: 8 });
       for (const zz of [z0, (z0 + z1) / 2, z1]) { const q = topMap(zz, s * 0.93); rod(q.p, V3(s * xs, yR, zz), 0.012, mats.chrome, "rack foot"); }

@@ -50,14 +50,27 @@ export function buildClassicFormula(T, ext = {}) {
   { const pts = []; const th = 0.97; for (let k = 0; k <= 16; k++) { const z = lerp(0.36, -0.38, k / 16), [x, y] = tub(z, th); pts.push(V3(x, y + 0.004, z)); } for (let k = 1; k < 10; k++) { const t = k / 10, [x, y] = tub(-0.38, th); pts.push(V3(lerp(x, -x, t), y + 0.01, -0.39 - 0.03 * Math.sin(t * Math.PI))); } for (let k = 0; k <= 16; k++) { const z = lerp(-0.38, 0.36, k / 16), [x, y] = tub(z, th); pts.push(V3(-x, y + 0.004, z)); } for (let k = 1; k < 10; k++) { const t = k / 10, [x, y] = tub(0.36, th); pts.push(V3(lerp(-x, x, t), y + 0.03 * Math.sin(t * Math.PI), 0.37)); } tube(pts, 0.018, mats.black, "cockpit rim", { seg: 140, closed: true }); }
   { const g = new T.PlaneGeometry(0.62, 0.8); g.rotateX(-Math.PI / 2); g.translate(0, 0.1, 0.0); add(g, mats.black, "cockpit floor"); }
   { const sh = new T.Shape(); sh.moveTo(-0.25, 0); sh.quadraticCurveTo(0, 0.14, 0.25, 0); sh.lineTo(0.22, -0.02); sh.lineTo(-0.22, -0.02); const g = new T.ShapeGeometry(sh, 16); const p = g.attributes.position; for (let i = 0; i < p.count; i++) p.setZ(i, -0.06 * (p.getX(i) / 0.25) ** 2); g.computeVertexNormals(); const m = add(g, mats.screen, "screen"); m.position.set(0, 0.6, 0.39); m.rotation.x = -0.5; }
-  // the driver: a yellow helmet with a smoked visor and a red stripe, white shoulders, gloves on a small wheel
+  // the driver (v2): a full-face yellow helmet (an egg with a chin bar), a smoked visor, a red stripe, the collar, white
+  // overalls with harness straps, arms bent at the elbows to gloves on a small suede-rimmed wheel, a red headrest
   { const H = new T.Group(); H.name = "driver"; group.add(H);
-    const hm = K.add(new T.SphereGeometry(0.135, 32, 22), mats.helmet, "helmet", H); hm.scale.set(1, 1, 1.12); hm.position.set(0, 0.8, -0.12);
-    const vs = K.add(new T.SphereGeometry(0.139, 32, 12, Math.PI * 0.2 + Math.PI / 2 * 0, Math.PI * 0.6, Math.PI * 0.34, Math.PI * 0.22), mats.visor, "visor", H); vs.scale.copy(hm.scale); vs.position.copy(hm.position); // (phi 0.5 pi is +z: the visor looks ahead)
-    for (const [ph, tl] of [[0.5, 0.33], [1.5, 0.62]]) { const st = K.add(new T.SphereGeometry(0.1375, 4, 16, Math.PI * ph - 0.05, 0.1, 0, Math.PI * tl), mats.red, "helmet stripe", H); st.scale.copy(hm.scale); st.position.copy(hm.position); }
-    rbox(0.42, 0.2, 0.22, 0.08, mats.suit, "shoulders", [0, 0.6, -0.2], null, H);
-    const sw = new T.Group(); sw.position.set(0, 0.6, 0.2); sw.rotation.x = -0.35; H.add(sw); K.add(new T.TorusGeometry(0.13, 0.012, 10, 40), mats.black, "steering wheel", sw);
-    for (const s of [-1, 1]) { const gl = new T.SphereGeometry(0.035, 12, 10); gl.translate(s * 0.12, 0, 0); K.add(gl, mats.black, "glove", sw); rod([s * 0.2, 0.62, -0.18], [s * 0.12, 0.6, 0.18], 0.04, mats.suit, "arm", { parent: H }); } }
+    const hp = V3(0, 0.79, -0.13), hs = [1, 1.04, 1.16];
+    const hm = K.add(new T.SphereGeometry(0.13, 40, 28), mats.helmet, "helmet", H); hm.scale.set(...hs); hm.position.copy(hp);
+    const chin = K.add(new T.SphereGeometry(0.1, 28, 16, Math.PI * 0.15, Math.PI * 0.7, Math.PI * 0.55, Math.PI * 0.3), mats.helmet, "helmet chin", H); chin.scale.set(1.25, 1.1, 1.45); chin.position.copy(hp).add(V3(0, -0.012, 0.01));
+    const vs = K.add(new T.SphereGeometry(0.1335, 40, 12, Math.PI * 0.22, Math.PI * 0.56, Math.PI * 0.36, Math.PI * 0.16), mats.visor, "visor", H); vs.scale.set(...hs); vs.position.copy(hp); // (phi 0.5 pi is +z: ahead)
+    for (const [ph, t0, tl] of [[0.5, 0, 0.35], [1.5, 0, 0.66]]) { const st = K.add(new T.SphereGeometry(0.1315, 4, 16, Math.PI * ph - 0.06, 0.12, t0, Math.PI * tl), mats.red, "helmet stripe", H); st.scale.set(...hs); st.position.copy(hp); }
+    { const g = new T.CylinderGeometry(0.075, 0.09, 0.07, 24); g.translate(0, 0.67, -0.15); K.add(g, mats.black, "collar", H); }
+    rbox(0.4, 0.16, 0.22, 0.07, mats.suit, "shoulders", [0, 0.6, -0.2], null, H);
+    for (const s of [-1, 1]) { rbox(0.04, 0.17, 0.012, 0.004, mats.black, "harness", [s * 0.09, 0.62, -0.085], [0.25, 0, 0], H); }
+    const sw = new T.Group(); sw.position.set(0, 0.6, 0.22); sw.rotation.x = -0.35; H.add(sw);
+    K.add(new T.TorusGeometry(0.13, 0.014, 12, 48), mats.black, "steering wheel", sw);
+    for (let k = 0; k < 3; k++) { const b = new T.BoxGeometry(0.012, 0.12, 0.006); b.translate(0, -0.06, 0); const m = K.add(b, mats.satin, "steering spoke", sw); m.rotation.z = (k / 3) * Math.PI * 2; }
+    for (const s of [-1, 1]) {
+      const sh = V3(s * 0.18, 0.62, -0.2), el = V3(s * 0.2, 0.52, -0.02), hd = new T.Vector3(s * 0.12, 0, 0).applyEuler(sw.rotation).add(sw.position);
+      rod(sh, el, 0.04, mats.suit, "upper arm", { parent: H, r2: 0.045 }); rod(el, hd, 0.035, mats.suit, "forearm", { parent: H, r2: 0.04 });
+      { const g = new T.SphereGeometry(0.042, 14, 10); g.translate(el.x, el.y, el.z); K.add(g, mats.suit, "elbow", H); }
+      { const g = new T.SphereGeometry(0.036, 14, 10); g.scale(1, 0.85, 1.2); g.translate(hd.x, hd.y, hd.z); K.add(g, mats.black, "glove", H); }
+    }
+    rbox(0.2, 0.12, 0.08, 0.035, mats.red, "headrest", [0, 0.68, -0.36], [0.1, 0, 0]); }
   // the number on the nose (white on red), laid on its top
   { const g = new T.PlaneGeometry(0.22, 0.165, 6, 4); g.rotateX(-Math.PI / 2); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const z = 1.55 + p.getZ(i), x = p.getX(i); const h = tYT(z), w = tW(z); p.setXYZ(i, x, h - (h - (tYT(z) + tYB(z)) / 2) * (1 - Math.pow(Math.max(0, 1 - Math.pow(Math.abs(x) / w, 3)), 1 / 3)) * 0 + 0.002, z); } g.computeVertexNormals(); add(g, mats.num, "number nose"); }
 
@@ -70,18 +83,35 @@ export function buildClassicFormula(T, ext = {}) {
   }
   // ================= the pods: flat-sided, radiator mouths in front, the top sloping back =================
   for (const s of [-1, 1]) {
-    sideExtrude([[0.42, 0.1], [-1.05, 0.1], [-1.05, 0.26], [-0.6, 0.36], [0.3, 0.43], [0.42, 0.42]], 0.4, mats.red, "pod", { x: s * 0.57, bevel: 0.03 });
-    { const g = new T.PlaneGeometry(0.32, 0.27); g.translate(s * 0.57, 0.26, 0.452); add(g, mats.mesh, "radiator mouth"); }
-    { const sh = rrShape(0.36, 0.31, 0.04); sh.holes.push(rrShape(0.32, 0.27, 0.03)); const g = new T.ExtrudeGeometry(sh, { depth: 0.01, bevelEnabled: false }); g.translate(s * 0.57, 0.26, 0.445); add(g, mats.black, "mouth surround"); }
+    // v2: a shaped pod, lofted: rounded sections, the top crowned and falling to the back, the outer flank waisted in
+    // (coke bottle) behind the mouth; the radiator inlet a recessed duct with a black lip and the core inside
+    const PZ0 = -1.08, PZ1 = 0.46, NCP = 44;
+    const pW = pchip([[PZ0, 0.09], [-0.8, 0.15], [-0.4, 0.19], [0.2, 0.205], [PZ1, 0.2]]), pX = pchip([[PZ0, 0.4], [-0.6, 0.5], [0.0, 0.56], [PZ1, 0.565]]);
+    const pT = pchip([[PZ0, 0.22], [-0.7, 0.3], [-0.2, 0.39], [0.25, 0.43], [PZ1, 0.415]]), pB = () => 0.1, pN = (z) => lerp(3.0, 4.2, sstep(PZ0, 0.0, z));
+    const ring = (z, k = 1) => Array.from({ length: NCP + 1 }, (_, j) => { const th = (j / NCP) * Math.PI * 2, n = pN(z), cc = Math.cos(th), ss = Math.sin(th), yc = (pT(z) + pB(z)) / 2, h = ((pT(z) - pB(z)) / 2) * k; return [s * (pX(z) + pW(z) * k * Math.sign(cc) * Math.pow(Math.abs(cc), 2 / n)), yc + h * Math.sign(ss) * Math.pow(Math.abs(ss), 2 / n)]; });
+    const PZS = []; for (let z = PZ0; z <= PZ1 + 1e-9; z += 0.03) PZS.push(Math.min(z, PZ1)); if (PZS[PZS.length - 1] < PZ1) PZS.push(PZ1);
+    const R2 = PZS.map((z) => ring(z));
+    add(gridGeo(PZS.length, NCP + 1, (i, j) => [R2[i][j][0], R2[i][j][1], PZS[i]], null, s < 0), mats.red, "pod");
+    // the inlet: the skin turns in to a duct 0.82 of the mouth, 0.1 deep, the core at its bottom
+    { const zs = [PZ1, PZ1 - 0.02, PZ1 - 0.1], ks = [1, 0.84, 0.82], RR = zs.map((z, i) => ring(PZ1, ks[i]));
+      add(gridGeo(3, NCP + 1, (i, j) => [RR[i][j][0], RR[i][j][1], zs[i]], null, s > 0), mats.black, "inlet duct");
+      const sh = new T.Shape(RR[2].map(([x, y]) => new T.Vector2(x, y))); const g = new T.ShapeGeometry(sh); g.translate(0, 0, PZ1 - 0.1); add(g, mats.mesh, "radiator core");
+      tube(ring(PZ1, 0.99).map(([x, y]) => V3(x, y, PZ1 + 0.004)), 0.01, mats.black, "inlet lip", { seg: 90, closed: true, rs: 8 }); }
+    { const r0 = ring(PZ0), n = r0.length, pos = [s * pX(PZ0), (pT(PZ0) + 0.1) / 2, PZ0 - 0.01], idx = []; for (let j = 0; j < n; j++) { pos.push(r0[j][0], r0[j][1], PZ0); if (j) idx.push(0, j, j + 1); } const g = new T.BufferGeometry(); g.setAttribute("position", new T.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); add(g, mats.red, "pod tail"); }
     // the mirrors on stalks by the cockpit
     rod([s * 0.3, 0.55, 0.2], [s * 0.44, 0.66, 0.22], 0.008, mats.black, "mirror stalk");
     { const g = new T.SphereGeometry(0.05, 16, 12); g.scale(1.4, 0.8, 0.6); g.translate(s * 0.47, 0.68, 0.22); add(g, mats.red, "mirror"); const gl = new T.CircleGeometry(0.04, 20); gl.scale(1.4, 0.8, 1); gl.rotateY(Math.PI); gl.translate(s * 0.47, 0.68, 0.19); add(gl, mats.mirror, "mirror glass"); }
   }
   // ================= the airbox and the engine cover (white), the engine bare behind =================
-  const aW = pchip([[-1.25, 0.12], [-0.9, 0.2], [-0.55, 0.2], [-0.42, 0.16]]), aYT = pchip([[-1.25, 0.56], [-0.9, 0.78], [-0.55, 0.98], [-0.42, 0.99]]), aYB = () => 0.42;
-  loft(-1.25, -0.42, aW, aYT, aYB, () => 3.2, mats.white, "airbox", { step: 0.02, nc: 20 });
-  { const g = new T.ShapeGeometry(rrShape(0.3, 0.2, 0.06), 6); g.translate(0, 0.86, -0.415); add(g, mats.black, "airbox mouth"); }
-    // the roll hoop under the airbox's front
+  // v2: a sculpted airbox: round-shouldered, waisted behind the mouth, swelling over the engine and running down into a
+  // low engine cover; the intake a raised oval mouth with a lip, black inside, a thin spine along the top
+  const aW = pchip([[-1.55, 0.12], [-1.3, 0.17], [-1.0, 0.225], [-0.72, 0.2], [-0.52, 0.15], [-0.42, 0.145]]), aYT = pchip([[-1.55, 0.47], [-1.3, 0.54], [-1.0, 0.75], [-0.72, 0.92], [-0.52, 0.99], [-0.42, 0.995]]), aYB = () => 0.42;
+  loft(-1.55, -0.42, aW, aYT, aYB, (z) => lerp(2.3, 2.9, sstep(-1.4, -0.6, z)), mats.white, "airbox", { step: 0.02, nc: 24 });
+  { const mo = rrShape(0.25, 0.15, 0.07); const pts = mo.getSpacedPoints(80).map((v) => V3(v.x, 0.875 + v.y, -0.412)); tube(pts, 0.014, mats.white, "airbox lip", { seg: 120, closed: true, rs: 10 });
+    const g = new T.ShapeGeometry(rrShape(0.24, 0.14, 0.065), 8); g.translate(0, 0.875, -0.45); add(g, mats.black, "airbox mouth");
+    const d = new T.ExtrudeGeometry(rrShape(0.25, 0.15, 0.07), { depth: 0.04, bevelEnabled: false }); d.translate(0, 0.875, -0.452); const dm = add(d, mats.black, "airbox duct"); dm.material = mats.black; }
+  { const pts = []; for (let k = 0; k <= 30; k++) { const z = lerp(-1.45, -0.46, k / 30); pts.push(V3(0, aYT(z) + 0.004, z)); } tube(pts, 0.007, mats.white, "airbox spine", { seg: 40, rs: 8 }); }
+  // the roll hoop under the airbox's front
   tube([[-0.16, 0.55, -0.44], [-0.14, 0.9, -0.44], [0.14, 0.9, -0.44], [0.16, 0.55, -0.44]], 0.02, mats.satin, "roll hoop", { seg: 30 });
   // the numbers on the airbox's flanks
   for (const s of [-1, 1]) { const g = new T.PlaneGeometry(0.2, 0.15); g.rotateY(s * Math.PI / 2); const z = -0.78; g.translate(s * (aW(z) + 0.004), 0.68, z); add(g, mats.numDark, "number airbox"); }
@@ -108,8 +138,15 @@ export function buildClassicFormula(T, ext = {}) {
     const up = (x, y, z) => V3(s * x, y, z);
     // front: upper and lower wishbones from the tub's flank to the upright, the push rod's damper inboard
     rbox(0.04, 0.2, 0.08, 0.01, mats.darkMetal, "upright", [s * (wF - 0.17), DIM.tyreRF, zF]);
-    for (const [y0, y1] of [[0.14, 0.2], [0.34, 0.38]]) { rod(up(0.18, y0, zF + 0.16), up(wF - 0.18, y1, zF), 0.011, mats.darkMetal, "wishbone"); rod(up(0.18, y0, zF - 0.16), up(wF - 0.18, y1, zF), 0.011, mats.darkMetal, "wishbone"); }
-    rod(up(0.12, 0.36, zF - 0.1), up(0.08, 0.42, zF - 0.4), 0.03, mats.satin, "damper");
+    for (const [y0, y1] of [[0.14, 0.19], [0.34, 0.39]]) { rod(up(0.17, y0, zF + 0.17), up(wF - 0.18, y1, zF), 0.014, mats.darkMetal, "wishbone"); rod(up(0.17, y0, zF - 0.17), up(wF - 0.18, y1, zF), 0.014, mats.darkMetal, "wishbone"); }
+    // v2: the coil-over in the open, from the lower wishbone near the upright up to a bracket on the tub's shoulder
+    { const a = up(wF - 0.3, 0.18, zF - 0.05), b = up(0.2, 0.47, zF - 0.12), d = b.clone().sub(a);
+      rod(a, b, 0.013, mats.satin, "damper"); rod(a, a.clone().addScaledVector(d, 0.45), 0.022, mats.darkMetal, "damper body");
+      const g = new T.CylinderGeometry(0.034, 0.034, d.length() * 0.42, 18, 1, true); const m = add(g, mats.helmet, "spring"); m.position.copy(a).addScaledVector(d, 0.6); m.quaternion.setFromUnitVectors(V3(0, 1, 0), d.clone().normalize());
+      for (let k = 0; k < 7; k++) { const t = new T.TorusGeometry(0.034, 0.0055, 6, 20); const tm = add(t, mats.helmet, "spring coil"); tm.position.copy(a).addScaledVector(d, 0.42 + k * 0.06); tm.quaternion.setFromUnitVectors(V3(0, 0, 1), d.clone().normalize()); }
+      rbox(0.05, 0.05, 0.06, 0.01, mats.darkMetal, "damper bracket", [b.x, b.y, b.z]); }
+    rod(up(0.16, 0.3, zF + 0.12), up(wF - 0.17, 0.3, zF + 0.1), 0.01, mats.darkMetal, "track rod");
+    { const g = new T.BoxGeometry(0.05, 0.09, 0.12); g.translate(s * (wF - 0.2), DIM.tyreRF + 0.06, zF - 0.06); add(g, mats.red, "brake caliper"); }
     // rear: wide wishbones from the gearbox, the radius rods forward to the tub, the coil-overs
     rbox(0.05, 0.24, 0.12, 0.01, mats.darkMetal, "upright", [s * (wR - 0.24), DIM.tyreRR, zR]);
     for (const [y0, y1] of [[0.15, 0.2], [0.4, 0.44]]) { rod(up(0.14, y0, zR - 0.4), up(wR - 0.24, y1, zR), 0.012, mats.darkMetal, "wishbone"); rod(up(0.14, y0, zR + 0.1), up(wR - 0.24, y1, zR), 0.012, mats.darkMetal, "wishbone"); }
