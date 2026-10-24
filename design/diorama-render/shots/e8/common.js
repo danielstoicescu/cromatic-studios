@@ -66,3 +66,13 @@ export function asphalt(ctx, { color = "#6e6862", rough = 0.88 } = {}) {
   });
   return () => { for (const [o, m] of done) o.material = m; };
 }
+
+// a tilted lens (Scheimpflug, the tilt-shift look): the plane of focus goes through the ride (sub(t): a point) square to
+// the frame's sideways direction, its top leaned towards the lens by deg: the ride stays sharp, the city above it (and
+// the street under the lens) fall further out of focus than a plain lens at the same f-stop would put them.
+//   lens: { fstop: 22, plane: tilt(camera, (t) => [x, y, z], 24) }
+export const tilt = (cam, sub, deg = 24) => (t) => {
+  const c = cam.at(Math.max(cam.t0, Math.min(cam.t1, t))), p = sub(t), a = (deg * Math.PI) / 180;
+  const u = c.up.map((v, i) => v * Math.cos(a) - c.fwd[i] * Math.sin(a));
+  return [p, [p[0] + c.right[0] * 10, p[1] + c.right[1] * 10, p[2] + c.right[2] * 10], [p[0] + u[0] * 10, p[1] + u[1] * 10, p[2] + u[2] * 10]];
+};

@@ -1,7 +1,7 @@
 import { heroCar, mapRide, world, paintSky, NIGHT, wet, mirror, followKey, lamp, dur, smooth } from "./common.js";
 import { cameraPath } from "../../src/camera.js";
 // E8 · rush + patrol (one shot over both cards, 4.5 s) · Fintech Boulevard at night after the rain: the 1300 hurries
-// past a low lens at the kerb (the lens pans with it), the Polite Patrol behind it brakes and stops in the middle of the
+// past a low lens at the kerb and out of the frame, the Polite Patrol behind it brakes and stops in the middle of the
 // frame, its beacons washing the wet street red and blue on the map's 190 ms beat; then a slow push in on the Patrol.
 const D = dur("rush") + dur("patrol"), X1 = 2084, XP = 2081;
 const car = (t) => ({ x: X1, z: 4470 + 150 * t });
@@ -10,11 +10,14 @@ const cop = (t) => { if (t < TB) return { z: Z0 + 140 * t, v: 140 }; if (t < TS)
 // the brake: the nose dips while it decelerates, rocks back once at the stop
 const dip = (t) => (t < TB ? 0 : t < TS ? 0.028 * smooth((t - TB) / 0.25) : 0.028 * Math.exp(-(t - TS) * 7) * Math.cos((t - TS) * 15));
 const C0 = [2052, 4.6, 4706];
+// the focus: on the 1300 while it is in the frame (it leaves the frame's right edge at ~0.9 s, still well away from the
+// lens), then a rack to the Patrol's stop (0.9 to 1.3 s)
+const fz = (t) => { const zc = 4470 + 150 * t; if (t < 0.9) return Math.min(zc, 4600); const z0 = Math.min(4470 + 150 * 0.9, 4600), u = smooth((t - 0.9) / 0.4); return z0 + (ZS + 12 - z0) * u; };
 const camAt = (t) => {
-  const c = car(t), w = smooth((t - 1.1) / 1.3); // a gentle pan after the 1300, then back to settle on the Patrol's stop
-  const u = smooth(t / 1.6), look1 = [2080 + 10 * u, 11, 4540 + 80 * u], look2 = [XP + 2.6, 10, ZS + 5];
+  const c = car(t), w = smooth((t - 1.1) / 1.3); // the lens holds while the 1300 hurries out of the frame (no pan after it: it never passes close to the lens), then turns to settle on the Patrol's stop
+  const look1 = [2080, 11, 4540], look2 = [XP + 2.6, 10, ZS + 5];
   const push = smooth((t - 2.3) / (D - 2.3)) * 8;
-  return { pos: [C0[0] + push * 0.18, C0[1], C0[2] - push], look: look1.map((v, i) => v + (look2[i] - v) * w), fov: 30 - 3 * smooth((t - 2.3) / (D - 2.3)), focus: [XP - 6, 9, (t < 1.3 ? Math.min(c.z, 4630) : ZS + 12)] };
+  return { pos: [C0[0] + push * 0.18, C0[1], C0[2] - push], look: look1.map((v, i) => v + (look2[i] - v) * w), fov: 30 - 3 * smooth((t - 2.3) / (D - 2.3)), focus: [XP - 6, 9, fz(t)] };
 };
 const keys = []; for (let t = 0; t <= D + 1e-6; t += 1 / 30) keys.push({ t: +t.toFixed(4), ...camAt(t) });
 let CAR, RIDE, UN = [], KEY, WET, MIR, WASH, L1, L2;
