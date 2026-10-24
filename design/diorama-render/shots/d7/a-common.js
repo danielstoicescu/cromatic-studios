@@ -29,12 +29,17 @@ export function hideMapRide(S) {
   return () => { for (const [g, vis] of keep) g.visible = vis; };
 }
 // the hero car, built with three's own modules, drawn by the map's renderer; 1 m = 15 map units.
-// Its glass made plain (no transmission pass per sub-frame); its lamps: off = clear lenses over dull reflectors and an
-// unlit bulb (parked: Daniel, "they shouldn't look switched on"); on = the lenses and bulbs glowing warm white
-export async function heroCar(ctx, { lights = false, scale = 15 } = {}) {
+// Its glass made plain (no transmission pass per sub-frame); its lamps: off = clear lenses over chrome reflectors and an
+// unlit bulb (parked: Daniel, "they shouldn't look switched on"); on = the lenses and bulbs glowing warm white.
+// E8b (Daniel: the lamps read as two black holes; the model now shows its bowls, see dacia1300-hero.js): the reflection
+// level is set per MATERIAL, never per mesh name. It used to test the mesh's name on shared materials, so "chrome"
+// (bumpers, frames, hub caps AND the headlamp bowls) took whichever mesh came last (the hub caps: 0.5). The bowls now
+// have their own material ("reflector", bright chrome in the model) at 1.4; everything else keeps its old level.
+// build: options for buildHeroDacia (e.g. { xRoof: 0.6 }, the narrower roof of the real car)
+export async function heroCar(ctx, { lights = false, scale = 15, build = {} } = {}) {
   const { S, K } = ctx;
   const T = await import("/__three/build/three.module.js"), { RoundedBoxGeometry } = await import("/__three/examples/jsm/geometries/RoundedBoxGeometry.js");
-  const car = buildHeroDacia(T, { RoundedBoxGeometry });
+  const car = buildHeroDacia(T, { RoundedBoxGeometry, ...build });
   const env = S.mats.omaGlow.envMap, lamps = [];
   car.group.traverse((m) => {
     if (!m.isMesh) return;
@@ -42,7 +47,7 @@ export async function heroCar(ctx, { lights = false, scale = 15 } = {}) {
     if (nm === "headlamp lens") { m.material = new T.MeshPhysicalMaterial({ name: nm, color: "#f4f2ea", roughness: 0.05, metalness: 0, transparent: true, opacity: 0.14, envMap: env, envMapIntensity: 0.25, side: T.DoubleSide, depthWrite: false, emissive: new T.Color("#fff1d0"), emissiveIntensity: 0 }); lamps.push(m.material); m.castShadow = false; m.userData.dioNoCast = true; }
     else if (nm === "bulb") { m.material = new T.MeshPhysicalMaterial({ name: nm, color: "#cfcac0", roughness: 0.35, metalness: 0, emissive: new T.Color("#fff1d0"), emissiveIntensity: 0 }); lamps.push(m.material); }
     else if (mt.transmission > 0) { m.material = new T.MeshPhysicalMaterial({ name: nm, color: mt.color, roughness: 0.02, metalness: 0, transparent: true, opacity: 0.28, envMap: env, envMapIntensity: 0.3, side: T.DoubleSide, depthWrite: false }); m.castShadow = false; m.userData.dioNoCast = true; }
-    else { mt.envMap = env; mt.envMapIntensity = mt.metalness > 0.5 ? (/reflector|headlamp/.test(m.name) ? 0.18 : 0.5) : 0.4; }
+    else { mt.envMap = env; mt.envMapIntensity = nm === "reflector" ? 1.4 : mt.metalness > 0.5 ? 0.5 : 0.4; }
     m.material.userData.dioKeep = true;
   });
   const g = new K.Group(); g.add(car.group); car.group.scale.setScalar(scale); S.scene.add(g);

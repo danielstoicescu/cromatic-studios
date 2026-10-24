@@ -41,6 +41,10 @@ export function buildHeroDacia(T, ext = {}) {
     paint: new T.MeshPhysicalMaterial({ name: "paint", color: new T.Color("#F6B400"), roughness: 0.3, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.035, side: T.FrontSide }),
     chrome: new T.MeshPhysicalMaterial({ name: "chrome", color: new T.Color("#f4f5f7"), roughness: 0.055, metalness: 1 }),
     satin: new T.MeshPhysicalMaterial({ name: "satin chrome", color: new T.Color("#d9dce0"), roughness: 0.22, metalness: 1 }),
+    // the headlamp bowls: their own chrome (not the trim's), brighter and a touch softer, so behind the fluted glass
+    // they read as lit metal, as on every photo, and never as two black holes (E8b, Vera's look; a loader can now set
+    // the bowls without touching the bumpers and frames, which share "chrome")
+    reflector: new T.MeshPhysicalMaterial({ name: "reflector", color: new T.Color("#e9e9ea"), roughness: 0.16, metalness: 1 }),
     black: new T.MeshPhysicalMaterial({ name: "black trim", color: new T.Color("#0d0d0e"), roughness: 0.45, metalness: 0, clearcoat: 0.3, clearcoatRoughness: 0.3 }),
     rubber: new T.MeshPhysicalMaterial({ name: "rubber", color: new T.Color("#121212"), roughness: 0.82, metalness: 0 }),
     tyre: new T.MeshPhysicalMaterial({ name: "tyre", color: new T.Color("#151515"), roughness: 0.88, metalness: 0 }),
@@ -64,7 +68,7 @@ export function buildHeroDacia(T, ext = {}) {
     badge: new T.MeshPhysicalMaterial({ name: "badge enamel", color: new T.Color("#1a2a6c"), roughness: 0.15, metalness: 0, clearcoat: 1 })
   };
   // (two-sided where an open shell could show its inside: the body is a skin, the wheels are lathes)
-  for (const k of ["paint", "chrome", "satin", "black", "rubber", "tyre", "tread", "steel"]) mats[k].side = T.DoubleSide;
+  for (const k of ["paint", "chrome", "satin", "reflector", "black", "rubber", "tyre", "tread", "steel"]) mats[k].side = T.DoubleSide;
   const add = (geo, mat, name) => { const m = new T.Mesh(geo, mat); m.name = name || mat.name; m.castShadow = true; m.receiveShadow = true; group.add(m); return m; };
 
   // ================= the lower body: a loft of cross-sections along z =================
@@ -143,10 +147,24 @@ export function buildHeroDacia(T, ext = {}) {
   const LOW = ZS.map((z) => fullSec(lowerHalf(z)));
   const COLS = LOW[0].length; // 2 * HALF - 1 ... (HALF + 1 points per half incl. flange -> see lowerHalf)
   const halfIdx = (j) => Math.min(j, COLS - 1 - j); // 0 at the flange, HALF at the centre
+  // the face's openings (E8b): the headlamps sit IN the front panel and the grille's black back, both at the face (FZ),
+  // while the reflector bowls go in behind it; uncut, the panel and the black back covered the bowls and the clear
+  // lenses showed two black holes. holesAt(): the lamp outlines as holes for a ShapeGeometry at the face; inLamp(): a point
+  // (x, y) inside a lamp's outline, for the body's rounded front corners, which wrap in front of the lamps' outer ends
+  const rrShape = (w, h, r) => { const s = new T.Shape(), x = -w / 2, y = -h / 2; s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s; };
+  const BAND = { w: 1.44, h: 0.19, y: 0.628 };
+  const HL = { w: 0.236, h: 0.152, r: 0.06, x: 0.566 };
+  // (xMax(y): the face panel's outline is narrower than the lamps' outer ends, which wrap into the skin, and rounder at
+  // its top corners: each hole point stays inside it)
+  const holesAt = (xMax = () => 1) => [-1, 1].map((s) => new T.Path(rrShape(HL.w * 0.98, HL.h * 0.98, HL.r * 0.98).getPoints(24).map((v) => { const x = v.x + s * HL.x, y = v.y + BAND.y; return new T.Vector2(Math.sign(x) * Math.min(xMax(y), Math.abs(x)), y); })));
+  // the half-width of a closed outline (x, y pairs) along the line y: the outermost crossing
+  const halfWidthAt = (poly, y) => { let w = 0; for (let k = 0; k < poly.length; k++) { const [x0, y0] = poly[k], [x1, y1] = poly[(k + 1) % poly.length]; if ((y0 - y) * (y1 - y) <= 0 && y0 !== y1) w = Math.max(w, Math.abs(x0 + ((y - y0) / (y1 - y0)) * (x1 - x0))); } return w; };
+  const inLamp = (x, y, pad = 0) => { const qx = Math.abs(Math.abs(x) - HL.x) - (HL.w / 2 - HL.r), qy = Math.abs(y - BAND.y) - (HL.h / 2 - HL.r); return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - HL.r < pad; };
   const inCabin = (z) => z < ZC0 - 0.004 && z > ZC1 + 0.004;
   const lowerGeo = gridSurface(ZS.length, COLS, (i, j) => [LOW[i][j][0], LOW[i][j][1], ZS[i]], (i, j) => {
     const zm = (ZS[i] + ZS[i + 1]) / 2, h = Math.min(halfIdx(j), halfIdx(j + 1));
     if (inCabin(zm) && h >= J_TOP0 + 2) return false; // the lid under the glasshouse: open (the cabin's in there)
+    if (ZS[i] > zN - 0.06) { const q = [LOW[i][j], LOW[i][j + 1], LOW[i + 1][j], LOW[i + 1][j + 1]]; if (inLamp((q[0][0] + q[1][0] + q[2][0] + q[3][0]) / 4, (q[0][1] + q[1][1] + q[2][1] + q[3][1]) / 4, 0.012)) return false; } // E8b: open in front of the lamps (pad: under the chrome rim)
     return true;
   });
   add(lowerGeo, mats.paint, "body");
@@ -161,6 +179,7 @@ export function buildHeroDacia(T, ext = {}) {
   for (const [z, sgn] of [[zN, 1], [zT, -1]]) {
     const sec = fullSec(lowerHalf(z));
     const shape = new T.Shape(sec.map(([x, y]) => new T.Vector2(x, y)));
+    if (sgn > 0) shape.holes.push(...holesAt((y) => halfWidthAt(sec, y) - 0.002));
     const g = new T.ShapeGeometry(shape, 1);
     if (sgn < 0) { g.scale(-1, 1, 1); } // facing -z
     g.translate(0, 0, z);
@@ -268,7 +287,7 @@ export function buildHeroDacia(T, ext = {}) {
   // ================= the glasshouse: a second loft, from the windscreen's foot to the rear window's foot =================
   const beltY = (z) => sideTop(z) + rS(z) - 0.004;
   const HrT = pchip([[ZC1, 0.912], [-1.52, 1.02], [-1.36, 1.19], [-1.18, 1.36], [-1.08, 1.41], [-0.96, 1.428], [-0.5, 1.435], [-0.05, 1.426], [0.03, 1.405], [0.12, 1.33], [0.36, 1.13], [ZC0, 0.892]]);
-  const RR = 0.034, xRoof = 0.665; // r3: the side glass nearly upright, the roof wide (the 1:24 model)
+  const RR = 0.034, xRoof = ext.xRoof ?? 0.665; // r3: the side glass nearly upright, the roof wide (the 1:24 model). E8 (Vera): ext.xRoof narrows the roof (tumblehome, as the real car: the roof ~1.27 m over a 1.64 m body)
   const crownR = (z) => 0.024 + 0.012 * (sstep(0.06, 0.3, z) + 1 - sstep(-1.4, -1.15, z));
   const xBelt = (z) => hw(z) - 0.05;
   function cabHalf(z) {
@@ -397,25 +416,27 @@ export function buildHeroDacia(T, ext = {}) {
   }
   // ================= the front =================
   const FZ = zN; // the face
-  const rrShape = (w, h, r) => { const s = new T.Shape(), x = -w / 2, y = -h / 2; s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s; };
   const ringGeo = (w, h, r, t, depth, bevel = 0.004) => { const s = rrShape(w + 2 * t, h + 2 * t, r + t); s.holes.push(rrShape(w, h, r)); return new T.ExtrudeGeometry(s, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * 0.8, bevelSegments: 4, curveSegments: 10 }); };
   const facing = (g, z, back) => { if (back) g.rotateY(Math.PI); g.translate(0, 0, z); return g; };
   // the band: chrome frame round lamps and grille, black inside
-  const BAND = { w: 1.44, h: 0.19, y: 0.628 };
   { const g = ringGeo(BAND.w, BAND.h, 0.03, 0.011, 0.012, 0.004); g.translate(0, BAND.y, 0); add(facing(g, FZ - 0.006, false), mats.chrome, "grille surround"); }
-  { const g = new T.ShapeGeometry(rrShape(BAND.w, BAND.h, 0.03), 8); g.translate(0, BAND.y, FZ + 0.001); add(g, mats.black, "grille back"); }
+  { const sh = rrShape(BAND.w, BAND.h, 0.03); sh.holes.push(...holesAt().map((h) => new T.Path(h.getPoints().map((v) => new T.Vector2(v.x, v.y - BAND.y))))); const g = new T.ShapeGeometry(sh, 8); g.translate(0, BAND.y, FZ + 0.001); add(g, mats.black, "grille back"); }
   // the grille's bars between the lamps, the chrome V and the shield
   for (let k = 0; k < 9; k++) { const g = new T.BoxGeometry(0.82, 0.006, 0.012); g.translate(0, BAND.y - 0.072 + k * 0.018, FZ + 0.008); add(g, mats.black, "grille bar"); }
   for (let k = 0; k < 24; k++) { const g = new T.BoxGeometry(0.004, 0.15, 0.008); g.translate(-0.405 + k * 0.0352, BAND.y, FZ + 0.006); add(g, mats.black, "grille bar"); }
   for (const s of [-1, 1]) { const g = new T.CylinderGeometry(0.0065, 0.0065, 0.15, 12); g.scale(1, 0.78, 1); g.rotateZ(-s * 0.36); g.translate(s * 0.024, BAND.y + 0.01, FZ + 0.022); add(g, mats.chrome, "grille V"); }
   { const sh = new T.Shape(); sh.moveTo(-0.018, 0.02); sh.lineTo(0.018, 0.02); sh.lineTo(0.018, -0.004); sh.absarc(0, -0.004, 0.018, 0, Math.PI, true); sh.closePath(); const g = new T.ExtrudeGeometry(sh, { depth: 0.004, bevelEnabled: true, bevelThickness: 0.002, bevelSize: 0.002, bevelSegments: 3 }); g.translate(0, BAND.y - 0.008, FZ + 0.026); add(g, mats.badge, "badge"); const r = ringGeo(0.036, 0.024, 0.004, 0.003, 0.004, 0.0015); r.translate(0, BAND.y, FZ + 0.026); add(r, mats.chrome, "badge rim"); }
   // headlamps: wide rounded rectangles, chrome rims, fluted lenses over chrome reflectors
-  const HL = { w: 0.236, h: 0.152, r: 0.06, x: 0.566 };
   for (const s of [-1, 1]) {
     const cx = s * HL.x, cy = BAND.y;
     { const g = ringGeo(HL.w, HL.h, HL.r, 0.015, 0.024, 0.006); g.translate(cx, cy, FZ + 0.004); add(g, mats.chrome, "headlamp rim"); }
     // the reflector: a deep bowl behind the lens
-    { const g = new T.SphereGeometry(0.5, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2); g.rotateX(-Math.PI / 2); g.scale(HL.w * 0.98, HL.h * 0.98, 0.11); g.translate(cx, cy, FZ + 0.0); const m = add(g, mats.chrome, "reflector"); m.material = mats.chrome; const b = new T.Mesh(g, mats.chrome); }
+    // E8b: a dish with the lens's own rounded-rectangle rim (an ellipsoid left the corners open onto the body's inside),
+    // its rim just in front of the face so nothing on the face covers it, tucked under the chrome rim
+    { const ring = rrShape(HL.w, HL.h, HL.r).getSpacedPoints(96), N = 16, pos = [], idx = [], M = ring.length;
+      for (let k = 0; k <= N; k++) { const th = (k / N) * Math.PI / 2, sc = Math.cos(th), z = FZ + 0.002 - 0.055 * Math.sin(th); for (let i = 0; i < M; i++) pos.push(cx + ring[i].x * sc, cy + ring[i].y * sc, z); }
+      for (let k = 0; k < N; k++) for (let i = 0; i < M; i++) { const a = k * M + i, b = k * M + ((i + 1) % M), c = a + M, d = b + M; idx.push(a, c, b, b, c, d); }
+      const g = new T.BufferGeometry(); g.setAttribute("position", new T.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); add(g, mats.reflector, "reflector"); }
     { const g = new T.SphereGeometry(0.012, 16, 12); g.translate(cx, cy, FZ - 0.025); add(g, mats.bulb, "bulb"); const c = new T.CylinderGeometry(0.016, 0.016, 0.02, 16); c.rotateX(Math.PI / 2); c.translate(cx, cy, FZ - 0.045); add(c, mats.satin, "bulb cap"); }
     // the lens, domed
     { const g = new T.ShapeGeometry(rrShape(HL.w, HL.h, HL.r), 12); const p = g.attributes.position, uv = g.attributes.uv; for (let i = 0; i < p.count; i++) { const x = p.getX(i) / (HL.w / 2), y = p.getY(i) / (HL.h / 2); p.setZ(i, 0.012 * Math.max(0, 1 - 0.55 * x * x - 0.75 * y * y)); uv.setXY(i, p.getX(i) / HL.w + 0.5, p.getY(i) / HL.h + 0.5); } g.computeVertexNormals(); g.translate(cx, cy, FZ + 0.012); add(g, mats.lens, "headlamp lens"); }
