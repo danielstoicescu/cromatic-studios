@@ -33292,6 +33292,9 @@ void main(){
     // r138j: re-fitted to photo 18 (wheelbase 51.5 = 2.44 m): the nose face 0.72 m ahead of the front axle, the
     // tail 0.92 m behind the rear one
     const W = 34, ZF = 39.7, ZB = -46.4;
+    // beta 4.13: the cabin well in the body's side profile (profile units: the skin is 1.4 further out, so the opening runs
+    // from z 12 to -19.5 with its floor at 9); beltY is the waist line the profile draws from the scuttle to the C-pillar
+    const beltY = (z) => 19.0 + (15.0 - z) * 0.5 / 42, CAB = { zF: 13.4, zK: -15.0, zR: -20.9, floor: 7.6, kick: 15.0 };
     const paint = M(pol ? "#f3f3ef" : "#F6BC0C", { roughness: 0.34, clearcoat: 0.85, clearcoatRoughness: 0.16, envMapIntensity: 0.5 });
     if (pol) {
       // the two-tone is painted per pixel from the body's own coordinates (crisp edges whatever the triangles):
@@ -33419,10 +33422,25 @@ void main(){
       // right over the lamps; the belt about 3 lower so the glass is taller; the boot lower, falling to a slim tail
       s.lineTo(33.4, 6.9); s.quadraticCurveTo(38.3, 7.3, 38.3, 10.2); s.lineTo(38.3, 14.6);
       s.quadraticCurveTo(38.3, 15.0, 37.8, 15.05); s.quadraticCurveTo(26, 17.9, 15.0, 19.0); // the bonnet, falling to the nose
+      // beta 4.13 (Daniel: "the seats sit up at the windows"): the body was solid up to the waist, so the seats stood on it.
+      // Now the cabin is a well: the waist drops at the firewall to a floor 9 off the ground (skin), rises over the rear axle
+      // to a heel kick under the bench (16.4), and climbs back to the waist behind it; the doors close the well (doorWall)
+      s.lineTo(CAB.zF, beltY(CAB.zF)); s.lineTo(CAB.zF, CAB.floor); s.lineTo(CAB.zK, CAB.floor); s.lineTo(CAB.zK, CAB.kick);
+      s.lineTo(CAB.zR, CAB.kick); s.lineTo(CAB.zR, beltY(CAB.zR));
       s.lineTo(-27.0, 19.5); s.quadraticCurveTo(-38.5, 19.2, -43.7, 16.9); // waist, then the boot deck falling to the tail
       s.quadraticCurveTo(-45.0, 16.4, -45.0, 15.2); s.lineTo(-45.0, 10.6); s.quadraticCurveTo(-44.8, 7.2, -41.2, 6.9);
     }, W, paint, 1.4, 20).geometry, 4.5));
     add(at(new BoxGeometry(24, 0.2, 0.7), 0, 20.38, 16.9), black); // scuttle vent (r144: lower, ahead of the screen)
+    // beta 4.13: the two doors, the waist and the flank between the screens' feet, as thin slabs of the body's own profile
+    // and bevel (so the skin is the same surface), a hair inside it where they overlap the solid nose and tail
+    for (const sx of [-1, 1]) {
+      const sh = new Shape(), t = 0.04;
+      sh.moveTo(CAB.zF + 1.2, 7.4); sh.lineTo(CAB.zF + 1.2, beltY(CAB.zF + 1.2) - t); sh.lineTo(CAB.zR - 1.2, beltY(CAB.zR - 1.2) - t);
+      sh.lineTo(CAB.zR - 1.2, 16.6); sh.lineTo(CAB.zK - 0.6, 16.6); sh.lineTo(CAB.zK - 0.6, 7.4); sh.closePath(); // clear of the rear arch
+      const dep = 0.6, dw = new ExtrudeGeometry(sh, { depth: dep, bevelEnabled: true, bevelThickness: 1.4, bevelSize: 1.4, bevelSegments: 5, curveSegments: 4 });
+      dw.rotateY(-Math.PI / 2); dw.translate(dep / 2 + sx * (W / 2 - t - dep / 2 - 1.4), 0, 0);
+      put(paint, subdivYZ(dw, 1.6));
+    }
 
     // ---- the glasshouse: two side frames (pillars + window openings) leaning in, a roof, front and rear screens
     const gh = new Shape();
@@ -33460,23 +33478,39 @@ void main(){
 
     yield;
     // ---- inside: black dash and steering wheel, red seats (Daniel: red cushions)
-    // r144: everything 2.5 lower with the belt, the dash forward with the screen's foot
-    add(at(new BoxGeometry(29.2, 0.12, 40), 0, 21.0, -6.3), black); // floor, level with the waist
+    // r144: the dash forward with the screen's foot
+    // beta 4.13 (Daniel: "the seats sit way up at the windows"): the cabin is a well now (CAB, doorWall), so the floor is
+    // 9 off the ground instead of level with the waist (21): the cushions' tops at ~12.9 (about half the height from the
+    // sill to the waist), the backs ending just under the side glass, only the front headrests showing through it
+    add(at(new BoxGeometry(27.0, 0.12, 28.6), 0, 9.06, -2.2), black); // floor
+    add(at(new BoxGeometry(27.0, 11.6, 0.3), 0, 15.0, 11.85), black); // firewall under the dash
+    add(at(new BoxGeometry(27.0, 2.4, 2.2), 0, 19.8, 10.9), black); // the dash's lower face
+    add(at(new BoxGeometry(27.0, 7.4, 0.2), 0, 12.7, -16.3), black); // heel kick under the bench
+    add(at(new BoxGeometry(27.0, 0.12, 3.1), 0, 16.46, -17.95), black); // behind the bench
+    add(at(new BoxGeometry(27.0, 4.0, 0.2), 0, 18.4, -19.4), black); // the bulkhead under the rear shelf
+    add(at(new BoxGeometry(27.6, 0.12, 7.6), 0, 20.98, -23.3), black); // the rear shelf under the back screen (was the floor's)
+    for (const sx of [-1, 1]) add(at(new BoxGeometry(0.16, 10.8, 31.4), sx * 13.4, 14.6, -3.75), black); // door cards
     const dash = sideBody(poly([[15.1, 20.9], [13.1, 23.3], [11.5, 23.6], [11.3, 20.9]]), 28.4, black, 0.3, 2); add(dash, black); // under the screen
     const hood = sideBody(rrShape(2.0, 1.2, 0.5), 7, black, 0.3, 4); hood.position.set(6.8, 23.6, 10.0); add(hood, black);
-    add(at(new TorusGeometry(2.0, 0.3, 6, 20), 6.8, 24.1, 8.6, 0.55), black);
-    add(at(new BoxGeometry(3.8, 0.35, 0.25), 6.8, 24.1, 8.6, 0.55), black);
-    edge([6.8, 22.9, 10.6], [6.8, 24.0, 8.8], 0.35, black);
-    edge([0, 21.1, 4.0], [0, 23.1, 3.4], 0.18, black); add(at(new SphereGeometry(0.55, 8, 6), 0, 23.2, 3.35), black); // gear lever
+    add(at(new TorusGeometry(2.0, 0.3, 6, 20), 6.8, 19.6, 8.4, 0.55), black); // steering wheel (beta 4.13: down with the seats)
+    add(at(new BoxGeometry(3.8, 0.35, 0.25), 6.8, 19.6, 8.4, 0.55), black);
+    edge([6.8, 20.6, 11.0], [6.8, 19.7, 8.6], 0.35, black);
+    edge([0, 9.1, 4.6], [0, 14.6, 3.6], 0.18, black); add(at(new SphereGeometry(0.55, 8, 6), 0, 14.7, 3.55), black); // gear lever
     add(at(new BoxGeometry(3.2, 1.0, 0.35), 0, 28.4, 6.9), black); // rear-view mirror (r162: under the lower roof)
-    const seat = (x, width, z, backZ, tilt, pleats, bh) => {
-      const c = sideBody(rrShape(7.2, 1.5, 0.6), width, seatM, 0.55, 4); c.position.set(x, 21.75, z); add(c, seatM);
-      const by = 22.7 + bh / 2;
+    const seat = (x, width, z, backZ, tilt, pleats, bh, head) => {
+      add(at(new BoxGeometry(width - 1.6, 1.4, 5.4), x, 9.8, z), black); // the frame under the cushion
+      const c = sideBody(rrShape(7.2, 1.5, 0.6), width, seatM, 0.55, 4); c.position.set(x, 11.6, z); add(c, seatM);
+      const by = 12.6 + bh / 2;
       const b = sideBody(rrShape(1.8, bh, 0.8), width, seatM, 0.6, 4); b.position.set(x, by, backZ); b.rotation.x = tilt; add(b, seatM);
       for (const dx of pleats) add(at(new BoxGeometry(0.42, bh - 1, 0.3), x + dx, by + 1.5 * Math.sin(-tilt), backZ + 1.5 * Math.cos(tilt), tilt), seatM);
+      if (head) { // a headrest on two posts, over the top of the back
+        const zt = backZ + (bh / 2) * Math.sin(tilt), yt = by + (bh / 2) * Math.cos(tilt);
+        const h = sideBody(rrShape(1.3, 2.6, 0.6), 5.4, seatM, 0.4, 4); h.position.set(x, yt + 2.4, zt - 0.2); h.rotation.x = tilt; add(h, seatM);
+        for (const dx of [-1.4, 1.4]) edge([x + dx, yt - 0.4, zt], [x + dx, yt + 1.4, zt - 0.15], 0.16, black);
+      }
     };
-    for (const sx of [-1, 1]) seat(sx * 6.9, 9.2, -0.2, -4.4, -0.18, [-2.6, 0, 2.6], 4.6); // r144: taller backs
-    seat(0, 27, -13.0, -17.6, -0.22, [-10, -6.5, -3, 3, 6.5, 10], 4.2);
+    for (const sx of [-1, 1]) seat(sx * 6.9, 9.2, -0.2, -4.4, -0.18, [-2.6, 0, 2.6], 7.0, true);
+    seat(0, 25.4, -12.6, -15.6, -0.22, [-9.5, -6.2, -3, 3, 6.2, 9.5], 6.8);
 
     yield;
     // ---- the nose: black grille between square headlamps, chrome surround, the chrome V with the shield
@@ -33583,16 +33617,18 @@ void main(){
       const rack = new MeshStandardMaterial({ color: "#d4d7db", roughness: 0.4, metalness: 0.3 });
       add(at(new BoxGeometry(23, 0.7, 1.8), 0, 32.6, 0.5), rack);
       for (const sx of [-1, 1]) add(at(new BoxGeometry(1.4, 1.8, 2.4), sx * 9, 31.6, 0.5), rack);
-      const lampM = () => M("#2f6bff", { emissive: "#2a6bff", emissiveIntensity: 0.2, roughness: 0.15 });
-      const bl = lampM(), br = lampM();
-      for (const [sx, m] of [[-1, bl], [1, br]]) { add(at(new BoxGeometry(6.4, 2.3, 2.8), sx * 8.2, 34.1, 0.5), m); add(at(new BoxGeometry(6.8, 0.5, 3.2), sx * 8.2, 33.15, 0.5), rack); }
+      // beta 4.12 (Daniel): one red and one blue beacon, flashing alternately, as on the stories' hero Patrol (red on the
+      // car's left, +x; it was two blue lamps)
+      const lampM = (c, e) => M(c, { emissive: e, emissiveIntensity: 0.2, roughness: 0.15 });
+      const bl = lampM("#e8261c", "#ff2a18"), br = lampM("#2f6bff", "#2a6bff");
+      for (const [sx, m] of [[1, bl], [-1, br]]) { add(at(new BoxGeometry(6.4, 2.3, 2.8), sx * 8.2, 34.1, 0.5), m); add(at(new BoxGeometry(6.8, 0.5, 3.2), sx * 8.2, 33.15, 0.5), rack); }
       add(at(new CylinderGeometry(0.4, 0.5, 2.2, 8), 0, 34.0, 0.5), rack);
       const horn = new CylinderGeometry(1.5, 0.55, 3.0, 14, 1, true); horn.rotateX(Math.PI / 2); add(at(horn, 0, 35.4, 1.6), rack);
       add(at(new CylinderGeometry(0.7, 0.7, 1.4, 10), 0, 35.4, -0.5, Math.PI / 2), rack);
-      const lr = new PointLight("#2a6bff", 0, 220, 1.6); lr.position.set(-9, 40, 0);
-      const lb = new PointLight("#2a6bff", 0, 220, 1.6); lb.position.set(9, 40, 0);
+      const lr = new PointLight("#ff2a18", 0, 220, 1.6); lr.position.set(9, 40, 0);
+      const lb = new PointLight("#2a6bff", 0, 220, 1.6); lb.position.set(-9, 40, 0);
       g.add(lr, lb);
-      // the drive loop flashes these two alternately (it calls them red and blue: here both are blue)
+      // the drive loop flashes these two alternately: red, then blue
       beacon = { redM: bl, blueM: br, lr, lb };
     }
 
