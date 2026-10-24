@@ -7,7 +7,7 @@
 //   buildMysteryVan(THREE, { RoundedBoxGeometry }) -> { group, body, wheels, mats, tex, parts, DIM }
 // Proportions off the type's published numbers (the 1960s split-window bus): length 4.28 over the bumpers, width 1.75,
 // height 1.90 (2.03 over the rack; v2: 4 cm under the type's 1.94, the roof read heavy), wheelbase 2.40, track 1.37, tyres 5.60-15 (0.66 m across).
-import { pchip, clamp, lerp, sstep, makeTex, baseMats, paintMat, makeKit, buildWheel } from "./kit.js";
+import { pchip, clamp, lerp, sstep, makeTex, baseMats, paintMat, makeKit, buildWheel, dDust, dPlate, dSeat, dStitch, dGauge, dGaugeMesh, dSteering, dInnerMirror } from "./kit.js";
 
 export const DIM = { L: 4.28, W: 1.75, H: 1.9, Hrack: 2.03, WB: 2.40, track: 1.37, zF: 1.2, zR: -1.2, zN: 1.835, zT: -2.31, tyreR: 0.33, rimR: 0.19 };
 
@@ -33,7 +33,7 @@ export function buildMysteryVan(T, ext = {}) {
   });
 
   // ================= the shell: sections along z =================
-  const HW0 = 0.86, rF = 0.30, rR = 0.32, RT = 0.13, CROWN = 0.035; /* v2: a lighter roof (smaller corner, flatter crown) */ // half width, plan corner radii, the roof's corner, its crown
+  const HW0 = 0.86, rF = 0.30, rR = 0.32, RT = 0.1, CROWN = 0.028; /* v3: a tighter roof corner, a flatter crown (less loaf, less toy) */ /* v2: a lighter roof (smaller corner, flatter crown) */ // half width, plan corner radii, the roof's corner, its crown
   const AR = 0.40, AY = 0.33; // wheel arches
   const BELT = 1.26, LIME0 = 1.06, LIME1 = 1.20; // the windows' sill line; the lime stripe under it
   function hw(z) {
@@ -99,15 +99,15 @@ export function buildMysteryVan(T, ext = {}) {
   const zBand = (() => { let a = zT, b = zN; while (ys(a) < BELT + 0.004) a += 0.002; while (ys(b) < BELT + 0.004) b -= 0.002; return [a, b]; })();
   const bandOuter = []; for (let z = zBand[0]; z <= zBand[1]; z += 0.04) bandOuter.push([z, BELT]); bandOuter.push([zBand[1], BELT]); for (let z = zBand[1]; z >= zBand[0]; z -= 0.04) bandOuter.push([z, Math.max(BELT + 0.002, ys(z))]);
   const WB = 1.32, WT = 1.69; // v2: taller glass, less paint over it // the windows' bottom and top
-  const win = (z0, z1, r = 0.05, f0 = 0) => roundQuad([[z1, WB], [z0, WB], [z0, WT], [z1 - f0, WT]], [r, r, r, r]);
+  const win = (z0, z1, r = 0.038, f0 = 0) => roundQuad([[z1, WB], [z0, WB], [z0, WT], [z1 - f0, WT]], [r, r, r, r]);
   // the cab door's window (its front edge leaning with the windscreen's pillar), three big windows with even 0.14 pillars, the small rear quarter
-  const WINS = [win(0.96, 1.48, 0.05, 0.16), win(0.18, 0.80, 0.05), win(-0.60, 0.04, 0.05), win(-1.38, -0.74, 0.05), win(-1.8, -1.52, 0.07)];
+  const WINS = [win(0.96, 1.48, 0.04, 0.16), win(0.16, 0.82, 0.038), win(-0.62, 0.06, 0.038), win(-1.40, -0.72, 0.038), win(-1.8, -1.52, 0.05)]; // v3: squarer corners, slimmer pillars
   for (const sx of [1, -1]) {
     const m = sideMap(sx);
     add(paramMesh(bandOuter, WINS, m, 0.04, { Lb: 0.015 }), mats.paint, "window band");
     add(paramMesh(bandOuter, WINS, m, 0.12, { inset: 0.025, flip: true }), mats.liner, "inner panels");
     for (const w of WINS) add(paramMesh(w, [], m, 0.06, { inset: 0.006 }), mats.glass, "side glass");
-    for (const w of WINS) { const pts = w.map(([a, b]) => { const q = m(a, b); return { p: q.p.clone().addScaledVector(q.n, 0.002), n: q.n }; }); pts.push(pts[0]); sweep(pts, roundProf(0.009, 10, 0.7), mats.rubber, "window rubber", { closed: true, caps: false }); }
+    for (const w of WINS) { const pts = w.map(([a, b]) => { const q = m(a, b); return { p: q.p.clone().addScaledVector(q.n, 0.002), n: q.n }; }); pts.push(pts[0]); sweep(pts, roundProf(0.0075, 10, 0.6), mats.rubber, "window rubber", { closed: true, caps: false }); }
   }
   // ---- the roof, with the split windscreen and the rear window
   const topOuter = []; const zl = []; for (let z = zT; z < zN - 0.03; z += z < zT + 0.4 || z > zN - 0.45 ? 0.02 : 0.05) zl.push(z); zl.push(zN); for (const z of zl) topOuter.push([z, -1]); for (let k = 1; k < 20; k++) topOuter.push([zN, -1 + k / 10]); for (const z of zl.slice().reverse()) topOuter.push([z, 1]); for (let k = 1; k < 20; k++) topOuter.push([zT, 1 - k / 10]);
@@ -121,7 +121,7 @@ export function buildMysteryVan(T, ext = {}) {
   for (const w of TOPHOLES) add(paramMesh(w, [], topMap, 0.04, { inset: 0.006 }), mats.glass, "glass");
   for (const w of TOPHOLES) { const pts = w.map(([a, b]) => { const q = topMap(a, b); return { p: q.p.clone().addScaledVector(q.n, 0.002), n: q.n }; }); pts.push(pts[0]); sweep(pts, roundProf(0.01, 10, 0.7), mats.rubber, "window rubber", { closed: true, caps: false }); }
   // ---- the nose and the tail: flat faces bulged by warpZ, the headlamps cut in the nose
-  const LAMP = { x: 0.62, y: 0.86, r: 0.088 };
+  const LAMP = { x: 0.53, y: 0.86, r: 0.088 }; // v3: in from 0.62 (the near lamp sat under the nose's corner skin)
   const endOutline = (z) => { const L = lowerHalf(z), H = topHalf(z); const half = [...L, ...H]; return [...half.map(([x, y]) => [x, y]), ...half.slice(0, -1).reverse().map(([x, y]) => [-x, y])]; };
   const circ = (cx, cy, r, n = 40) => Array.from({ length: n }, (_, k) => { const a = (k / n) * Math.PI * 2; return [cx + Math.cos(a) * r, cy + Math.sin(a) * r]; });
   const faceMap = (zf, sg) => (x, y) => ({ p: W3(x, y, zf), n: (() => { const e = 0.003, a = W3(x + e, y, zf).sub(W3(x - e, y, zf)), b = W3(x, y + e, zf).sub(W3(x, y - e, zf)); const n = new T.Vector3().crossVectors(a, b).normalize(); if (n.z * sg < 0) n.negate(); return n; })() });
@@ -162,7 +162,7 @@ export function buildMysteryVan(T, ext = {}) {
     { const g = new T.SphereGeometry(0.011, 16, 12); g.translate(cx, cy, zf - 0.025); add(g, mats.bulb, "bulb"); }
     { const g = new T.CircleGeometry(r, 40); const p = g.attributes.position, uv = g.attributes.uv; for (let i = 0; i < p.count; i++) { const x = p.getX(i) / r, y = p.getY(i) / r; p.setZ(i, 0.018 * Math.max(0, 1 - x * x - y * y)); uv.setXY(i, x * 0.5 + 0.5, y * 0.5 + 0.5); } g.computeVertexNormals(); g.translate(cx, cy, zf + 0.01); add(g, mats.lens, "headlamp lens"); }
     // the bullet indicators over the lamps: chrome bodies, amber lenses
-    { const x = s * 0.62, y = 1.04, z = faceZ(x); const b = new T.SphereGeometry(0.034, 20, 12); b.scale(1, 1, 1.3); b.translate(x, y, z + 0.02); add(b, mats.chrome, "indicator body"); const l = new T.SphereGeometry(0.03, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2); l.rotateX(Math.PI / 2); l.scale(1, 1, 0.8); l.translate(x, y, z + 0.055); add(l, mats.amber, "indicator"); }
+    { const x = s * 0.53, y = 1.04, z = faceZ(x); const b = new T.SphereGeometry(0.034, 20, 12); b.scale(1, 1, 1.3); b.translate(x, y, z + 0.02); add(b, mats.chrome, "indicator body"); const l = new T.SphereGeometry(0.03, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2); l.rotateX(Math.PI / 2); l.scale(1, 1, 0.8); l.translate(x, y, z + 0.055); add(l, mats.amber, "indicator"); }
   }
   // the spare wheel on the nose, with its flower cover and a chrome ring, on a bracket
   {
@@ -172,21 +172,24 @@ export function buildMysteryVan(T, ext = {}) {
     { const g = new T.TorusGeometry(0.27, 0.012, 12, 64); g.translate(0, 0.5, faceZ(0) + 0.212); add(g, mats.chrome, "spare ring"); }
     rbox(0.12, 0.05, 0.12, 0.01, mats.darkMetal, "spare bracket", [0, 0.5, faceZ(0) + 0.04]);
   }
-  // bumpers: a chrome blade on two arms, round overriders; the rear one the same
+  // bumpers (v3: the type's flat pressed blade, a rolled top edge and a step, slim overriders with rubber faces on
+  // tubular arms, not a round toy bar)
   function bumper(front) {
-    const sg = front ? 1 : -1, y = 0.42, zc = front ? zN + 0.08 : zT - 0.07, pts = [];
-    for (let i = 0; i <= 80; i++) { const x = lerp(-0.86, 0.86, i / 80), ax = Math.abs(x); const back = ax > 0.66 ? (ax - 0.66) ** 2 * 2.6 : 0; pts.push({ p: V3(x, y, (front ? warpZ(x * 0.9, zN) + 0.08 : warpZ(x * 0.9, zT) - 0.07) - sg * back), n: V3(0, 1, 0) }); }
-    const prof = []; for (let k = 0; k <= 16; k++) { const a = -Math.PI / 2 + (k / 16) * Math.PI; prof.push([Math.sin(a) * 0.05, sg * (0.012 + Math.cos(a) * 0.03)]); } prof.push([0.045, -sg * 0.012], [-0.045, -sg * 0.012]);
+    const sg = front ? 1 : -1, y = 0.42, pts = [];
+    for (let i = 0; i <= 80; i++) { const x = lerp(-0.86, 0.86, i / 80), ax = Math.abs(x); const back = ax > 0.7 ? (ax - 0.7) ** 2 * 2.2 : 0; pts.push({ p: V3(x, y, (front ? warpZ(x * 0.9, zN) + 0.075 : warpZ(x * 0.9, zT) - 0.07) - sg * back), n: V3(0, 1, 0) }); }
+    // the section (u up, v out): a flat face 0.1 tall, a rolled lip on top, a small step low, turned in behind
+    const prof = [[-0.05, sg * 0.004], [-0.048, sg * 0.016], [-0.02, sg * 0.018], [-0.016, sg * 0.022], [0.035, sg * 0.022], [0.044, sg * 0.018], [0.05, sg * 0.008], [0.048, -sg * 0.004], [0.04, -sg * 0.008], [-0.046, -sg * 0.006]];
     sweep(pts, prof, mats.chrome, front ? "front bumper" : "rear bumper", { closed: true });
     for (const s of [-1, 1]) {
-      const x = s * 0.42, z = (front ? warpZ(x * 0.9, zN) + 0.08 : warpZ(x * 0.9, zT) - 0.07) + sg * 0.035;
-      const g = new T.CapsuleGeometry(0.025, 0.13, 6, 14); g.translate(x, y + 0.03, z); add(g, mats.chrome, "overrider");
-      rod([s * 0.6, y, (front ? zN : zT) - sg * 0.1], [s * 0.6, y, z - sg * 0.04], 0.018, mats.darkMetal, "bumper arm");
+      const x = s * 0.4, z = (front ? warpZ(x * 0.9, zN) + 0.075 : warpZ(x * 0.9, zT) - 0.07) + sg * 0.02;
+      rbox(0.04, 0.16, 0.03, 0.012, mats.chrome, "overrider", [x, y + 0.04, z]);
+      rbox(0.022, 0.12, 0.012, 0.005, mats.rubber, "overrider rubber", [x, y + 0.04, z + sg * 0.018]);
+      rod([s * 0.6, y, (front ? zN : zT) - sg * 0.1], [s * 0.6, y, z - sg * 0.03], 0.014, mats.darkMetal, "bumper arm");
     }
   }
   bumper(true); bumper(false);
   // plates: the rear on the engine lid, under its lamp
-  { const g = new T.PlaneGeometry(0.42, 0.105); g.rotateY(Math.PI); g.translate(0, 0.62, tailZ(0) - 0.006); add(g, mats.plate, "rear plate"); const l = new T.BoxGeometry(0.14, 0.03, 0.04); l.translate(0, 0.705, tailZ(0) - 0.016); add(l, mats.chrome, "plate lamp"); }
+  { const m = dPlate(T, "B 69 MYS", 0.42, 0.105, { kind: "eu", back: true }); m.name = "rear plate"; m.position.set(0, 0.62, tailZ(0) - 0.006); group.add(m); const l = new T.BoxGeometry(0.14, 0.03, 0.04); l.translate(0, 0.705, tailZ(0) - 0.016); add(l, mats.chrome, "plate lamp"); }
   // the tail lamps: tall rounded lamps in chrome rims at the tail's corners
   for (const s of [-1, 1]) {
     const x = s * 0.74, z = tailZ(x), w = 0.1, h = 0.2, cy = 0.95;
@@ -207,6 +210,12 @@ export function buildMysteryVan(T, ext = {}) {
     const pts = line((t) => { const sv = s * lerp(0.1, 0.55, t), q = topMap(WS1 + 0.012, sv); return { p: q.p.clone().addScaledVector(q.n, 0.012), n: q.n }; }, 16);
     sweep(pts, [[0.005, -0.003], [0.005, 0.003], [-0.003, 0.004], [-0.003, -0.004]], mats.satin, "wiper", { closed: true });
   }
+  // v3: the cab's fresh-air lip over the windscreen (a shallow painted visor with a dark slot under it)
+  { const pts = line((t) => { const q = topMap(zN - 0.205, lerp(-0.66, 0.66, t)); return { p: q.p.clone().addScaledVector(q.n, 0.003), n: q.n }; }, 30); sweep(pts, [[0, -0.03], [0.014, -0.026], [0.018, 0.0], [0.012, 0.022], [0, 0.026]], mats.paint, "vent lip", { closed: true }); ribbon(line((t) => { const q = topMap(zN - 0.185, lerp(-0.6, 0.6, t)); return { p: q.p, n: q.n }; }, 30), 0.008, 0.0015, mats.gap, "vent slot"); }
+  // v3: the pressed swage ribs round the body at the stripe's edges (the type's beltline), a fuel flap, the cargo doors' hinges
+  for (const sx of [1, -1]) for (const y of [LIME0, LIME1]) { const pts = []; for (let z = zT + 0.32; z <= zN - 0.3; z += 0.03) { const q = onSide(sx, z, y); pts.push({ p: q.p.clone().addScaledVector(q.n, -0.001), n: q.n }); } sweep(pts, [[0, -0.007], [0.004, -0.004], [0.005, 0], [0.004, 0.004], [0, 0.007]], y === LIME0 ? mats.lime : mats.lime, "swage rib", { closed: true }); }
+  { const c = []; for (let k = 0; k <= 40; k++) { const a = (k / 40) * Math.PI * 2; c.push(onSide(-1, -1.62 + Math.cos(a) * 0.06, 0.88 + Math.sin(a) * 0.06)); } ribbon(c, 0.004, 0.0013, mats.gap, "fuel flap"); }
+  for (const z of [CARGO[1] - 0.02, CARGO[0] + 0.02]) for (const y of [0.62, 1.12]) { const q = onSide(-1, z, y); const g = new T.CylinderGeometry(0.009, 0.009, 0.05, 12); const m = add(g, mats.chrome, "door hinge"); m.position.copy(q.p).addScaledVector(q.n, 0.006); }
   // the rain gutters along the roof's edges, the chrome roof rack on six feet
   for (const s of [-1, 1]) { const pts = []; for (let z = zT + 0.42; z <= zN - 0.44; z += 0.02) { const q = topMap(z, s * 0.97); pts.push({ p: q.p.clone().addScaledVector(q.n, 0.006), n: q.n }); } sweep(pts, roundProf(0.008, 10), mats.paint, "rain gutter", { closed: true }); }
   {
@@ -237,22 +246,34 @@ export function buildMysteryVan(T, ext = {}) {
   { const pan = gridGeo(ZS.length, 9, (i, j) => { const z = ZS[i], x0 = sideX(z, ybot(z)) - 0.03, x = lerp(-x0, x0, j / 8); const p = W3(x, Math.abs(x) > 0.52 ? ybot(z) + 0.004 : ybase(z) + 0.004, z); return [p.x, p.y, p.z]; }, null, true); add(pan, mats.under, "floor pan"); }
   rbox(1.0, 0.1, 3.2, 0.02, mats.under, "chassis", [0, 0.3, -0.15]);
   { const g = new T.PlaneGeometry(1.5, 3.6); g.rotateX(-Math.PI / 2); g.translate(0, 0.5, -0.2); add(g, mats.carpet, "floor"); }
-  // ================= the cabin: the cab's bench and dash, the near-flat wheel, two rear benches =================
-  rbox(1.42, 0.14, 0.42, 0.04, mats.seat, "cab seat", [0, 0.86, 0.95]);
-  rbox(1.42, 0.5, 0.1, 0.04, mats.seat, "cab seat back", [0, 1.15, 0.74], [-0.12, 0, 0]);
-  rbox(1.5, 0.14, 0.26, 0.04, mats.paint, "dashboard", [0, 1.2, 1.62]);
-  { const g = new T.TorusGeometry(0.22, 0.014, 12, 48); const m = add(g, mats.black, "steering wheel"); m.position.set(0.38, 1.24, 1.38); m.rotation.set(-1.15, 0, 0); rod([0.38, 1.24, 1.38], [0.38, 0.8, 1.62], 0.02, mats.black, "column"); }
-  for (const z of [0.1, -0.85]) { rbox(1.4, 0.14, 0.46, 0.04, mats.seat, "rear seat", [0, 0.86, z]); rbox(1.4, 0.48, 0.1, 0.04, mats.seat, "rear seat back", [0, 1.14, z - 0.24], [-0.12, 0, 0]); }
+  // ================= the cabin (v3): stitched cream benches, the painted dash with one big dial, the thin bus wheel,
+  // the interior mirror, the engine deck under its carpet
+  { const st = dStitch(T, 7), seat = mats.seat.clone(); seat.map = st.map; seat.normalMap = st.normalMap; seat.normalScale = new T.Vector2(0.9, 0.9); const RB = ext.RoundedBoxGeometry;
+    dSeat(T, group, RB, seat, { x: 0, y: 0.86, z: 0.95, w: 1.42, d: 0.42, h: 0.14, backH: 0.5, backT: 0.1, rake: 0.12, head: false, bolster: false });
+    for (const z of [0.1, -0.85]) dSeat(T, group, RB, seat, { x: 0, y: 0.86, z, w: 1.4, d: 0.46, h: 0.14, backH: 0.48, backT: 0.1, rake: 0.12, head: false, bolster: false });
+    rbox(1.5, 0.14, 0.26, 0.04, mats.paint, "dashboard", [0, 1.2, 1.62]);
+    rbox(1.3, 0.02, 0.06, 0.008, mats.black, "dash rail", [0, 1.275, 1.52]);
+    dGaugeMesh(T, group, dGauge(T, "speed", { face: "#141414" }), mats.chrome, { r: 0.068, at: [0.38, 1.205, 1.487] });
+    rbox(0.2, 0.05, 0.02, 0.006, mats.chrome, "radio", [0, 1.19, 1.488]);
+    for (const x of [-0.5, -0.2, 0.15]) { const g = new T.CylinderGeometry(0.008, 0.008, 0.016, 12); g.rotateX(Math.PI / 2); g.translate(x, 1.16, 1.484); add(g, mats.chrome, "dash knob"); }
+    dSteering(T, group, { at: [0.38, 1.24, 1.38], tilt: 1.15, r: 0.22, tube: 0.011, spokes: 2, rimMat: mats.cream, spokeMat: mats.cream, hubMat: mats.black });
+    rod([0.38, 1.22, 1.39], [0.38, 0.8, 1.62], 0.02, mats.black, "column");
+    dInnerMirror(T, group, { at: [0, 1.68, 1.6], w: 0.18, h: 0.07, housing: mats.black, glass: mats.mirror, stem: 0.06, RB });
+    { const g = new T.ConeGeometry(0.04, 0.06, 14); g.translate(0.0, 0.53, 1.3); add(g, mats.rubber, "gear boot"); rod([0, 0.53, 1.3], [0.02, 0.98, 1.18], 0.006, mats.satin, "gear lever"); const k = new T.SphereGeometry(0.022, 14, 10); k.translate(0.02, 0.99, 1.18); add(k, mats.black, "gear knob"); }
+  }
   rbox(1.5, 0.3, 0.6, 0.03, mats.carpet, "engine deck", [0, 0.95, -1.95]);
 
   // ================= the wheels =================
   const wheels = [];
   for (const [sx, z] of [[1, zF], [-1, zF], [1, zR], [-1, zR]]) {
-    const w = buildWheel(T, mats, sx, { R: DIM.tyreR, W: 0.16, rr: DIM.rimR, style: "steel", rimMat: mats.cream, capMat: mats.chrome, capR: 0.085, capDome: 0.03, vents: 0 });
-    // the lime ring on the cream rim (the map's), five chrome nuts round the cap
-    const ring = new T.Mesh(new T.TorusGeometry(DIM.rimR * 0.62, 0.008, 10, 48), mats.lime); ring.rotation.y = Math.PI / 2; ring.position.x = 0.16 * 0.25; ring.name = "rim ring"; w.add(ring);
+    // v3: a smaller, taller domed cap (the type's), five lug nuts showing round it, a fine lime pinstripe, drum brakes
+    const w = buildWheel(T, mats, sx, { R: DIM.tyreR, W: 0.16, rr: DIM.rimR, style: "steel", rimMat: mats.cream, capMat: mats.chrome, capR: 0.066, capDome: 0.038, vents: 0, spec: "185 R 15 C", brake: { type: "drum", r: 0.15, w: 0.06, x: -0.03 } });
+    const ring = new T.Mesh(new T.TorusGeometry(DIM.rimR * 0.66, 0.0045, 8, 64), mats.lime); ring.rotation.y = Math.PI / 2; ring.position.x = 0.16 * 0.22; ring.name = "rim ring"; w.add(ring);
+    for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2, g = new T.CylinderGeometry(0.009, 0.011, 0.016, 6); g.rotateZ(Math.PI / 2); const m = new T.Mesh(g, mats.chrome); m.name = "lug nut"; m.position.set(0.16 * 0.21, Math.cos(a) * 0.085, Math.sin(a) * 0.085); w.add(m); }
     w.position.set(sx * DIM.track / 2, DIM.tyreR, z); group.add(w); wheels.push(w);
   }
+  // v3: road dust: the sills, the spray behind the wheels, the nose's lower half
+  { const wh = [{ z: zF, r: DIM.tyreR }, { z: zR, r: DIM.tyreR }]; dDust(T, group, { mats: [mats.paint, mats.lime, mats.limeNose, mats.livery], top: 0.72, amount: 0.5, color: "#8e8273", wheels: wh, seed: 31 }); }
   const body = new T.Group(); body.name = "body";
   for (const c of group.children.slice()) if (c.name !== "wheel") body.add(c);
   group.add(body);

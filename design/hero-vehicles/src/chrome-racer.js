@@ -8,7 +8,7 @@
 //   allChrome: the tyres and the seat in chrome too, as on the map's ride (default: black tyres, red leather)
 // Proportions of the type (a 1930s sports two-seater): length 3.95, width 1.62 over the wings, height 1.30 over the
 // screen (0.99 at the scuttle), wheelbase 2.60, track 1.36, 5.25-18 tyres on wire wheels (0.71 m across).
-import { pchip, clamp, lerp, sstep, makeTex, baseMats, makeKit, buildWheel } from "./kit.js";
+import { pchip, clamp, lerp, sstep, makeTex, baseMats, makeKit, buildWheel, dSeat, dStitch, dGauge } from "./kit.js";
 
 export const DIM = { L: 3.95, W: 1.62, H: 1.3, WB: 2.6, track: 1.36, zF: 1.3, zR: -1.3, tyreR: 0.355, rimR: 0.229 };
 
@@ -23,7 +23,8 @@ export function buildChromeRacer(T, ext = {}) {
     reflector: new T.MeshPhysicalMaterial({ name: "reflector", color: new T.Color("#e9e9ea"), roughness: 0.16, metalness: 1, side: T.DoubleSide }),
     leather: new T.MeshPhysicalMaterial({ name: "red leather", color: new T.Color("#6e1a14"), roughness: 0.48, metalness: 0, clearcoat: 0.35, clearcoatRoughness: 0.4, side: T.DoubleSide }),
     white: new T.MeshPhysicalMaterial({ name: "whitewall", color: new T.Color("#f1efe8"), roughness: 0.7, metalness: 0 }),
-    dial: new T.MeshPhysicalMaterial({ name: "dial", color: new T.Color("#f2ead8"), roughness: 0.3, metalness: 0, clearcoat: 1 })
+    dial: new T.MeshPhysicalMaterial({ name: "dial", color: new T.Color("#f2ead8"), roughness: 0.3, metalness: 0, clearcoat: 1 }),
+    boardMat: new T.MeshPhysicalMaterial({ name: "running board rubber", color: new T.Color("#141414"), roughness: 0.85, metalness: 0, normalMap: tex.normalFrom(64, 16, (x) => (Math.abs((x % 16) - 8) < 4 ? 1 : 0), 1.6), normalScale: new T.Vector2(1, 1) })
   });
   mats.chrome = mats.body;
   if (ext.allChrome) { mats.tyre = mats.tread = mats.leather = mats.white = mats.body; }
@@ -97,11 +98,20 @@ export function buildChromeRacer(T, ext = {}) {
   const lamps = [];
   for (const s of [-1, 1]) {
     const L = new T.Group(); L.name = "headlamp"; group.add(L); L.position.set(s * 0.5, 0.92, 1.56);
+    // v3: a bezel ring clamping the glass, a bulb shield in front of the bulb, the glass a touch more domed and fluted
+    K.add(new T.TorusGeometry(0.152, 0.009, 10, 64), mats.body, "headlamp bezel", L).position.z = 0.034;
+    { const g = new T.SphereGeometry(0.03, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2); g.rotateX(Math.PI / 2); g.translate(0, 0, -0.045); K.add(g, mats.body, "bulb shield", L); }
     latheZ([[0.0, -0.17], [0.06, -0.165], [0.11, -0.14], [0.14, -0.09], [0.152, -0.03], [0.155, 0.0], [0.165, 0.008], [0.165, 0.03], [0.148, 0.035]], mats.body, "headlamp shell", { parent: L });
     latheZ(Array.from({ length: 17 }, (_, k) => { const t = k / 16; return [0.14 * Math.sqrt(t) + 0.0005, -0.12 + 0.12 * t]; }), mats.reflector, "reflector", { parent: L });
     { const g = new T.SphereGeometry(0.012, 16, 12); g.translate(0, 0, -0.07); K.add(g, mats.bulb, "bulb", L); }
     { const g = new T.CircleGeometry(0.146, 48); const p = g.attributes.position, uv = g.attributes.uv; for (let i = 0; i < p.count; i++) { const x = p.getX(i) / 0.146, y = p.getY(i) / 0.146; p.setZ(i, 0.022 * Math.max(0, 1 - x * x - y * y)); uv.setXY(i, x * 0.5 + 0.5, y * 0.5 + 0.5); } g.computeVertexNormals(); g.translate(0, 0, 0.012); K.add(g, mats.lens, "headlamp lens", L); }
     rod([s * 0.5, 0.76, 1.5], [s * 0.5, 0.86, 1.5], 0.02, mats.body, "lamp stem");
+    // v3: a sidelamp on the front wing's crown: a chrome bullet, a clear lens, a reflector inside
+    { const S = new T.Group(); S.name = "sidelamp"; group.add(S); S.position.set(s * 0.68, 0.815, 1.36);
+      latheZ([[0, -0.07], [0.02, -0.06], [0.032, -0.02], [0.034, 0.01], [0.03, 0.016]], mats.body, "sidelamp body", { parent: S, seg: 24 });
+      latheZ([[0.003, -0.01], [0.026, 0.012]], mats.reflector, "reflector", { parent: S, seg: 24 });
+      { const g = new T.SphereGeometry(0.028, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2); g.rotateX(Math.PI / 2); g.scale(1, 1, 0.5); g.translate(0, 0, 0.014); K.add(g, mats.lens, "headlamp lens", S); }
+      rod([s * 0.68, 0.74, 1.34], [s * 0.68, 0.79, 1.35], 0.008, mats.body, "sidelamp stem"); }
     lamps.push(L);
   }
 
@@ -120,9 +130,17 @@ export function buildChromeRacer(T, ext = {}) {
     const hw = (i) => { const z = pts[i].z; return z > 0.65 || z < -0.78 ? 0.1 : 0.12; };
     // the wing's section: a crowned shell 0.2 wide with a rolled edge (u along n, v across)
     const prof = []; for (let k = 0; k <= 16; k++) { const v = lerp(-1, 1, k / 16); prof.push([0.035 * (1 - v * v) + 0.004, v * 0.105]); } for (let k = 16; k >= 0; k--) { const v = lerp(-1, 1, k / 16); prof.push([0.035 * (1 - v * v) - 0.004, v * 0.1]); }
-    void hw; sweep(P, prof, mats.body, "wing", { closed: true });
-    // the running board's black ribbed rubber
-    { const bp = P.filter(({ p }) => p.z < 0.6 && p.z > -0.73); ribbon(bp.map(({ p, n }) => ({ p: p.clone().add(V3(0, 0.04, 0)), n })), 0.17, 0, mats.rubber, "running board mat"); }
+    // v3: the wings stop at the running board; the board is its own part (a steel board with a chrome edge and a ribbed
+    // rubber mat), the valance its own curved panel from the body's flank down to the board's inner edge
+    void hw; sweep(P.filter(({ p }) => p.z > 0.6), prof, mats.body, "front wing", { closed: true }); sweep(P.filter(({ p }) => p.z < -0.73), prof, mats.body, "rear wing", { closed: true });
+    { const zb0 = 0.68, zb1 = -0.8, zc = (zb0 + zb1) / 2, L = zb0 - zb1;
+      rbox(0.215, 0.022, L, 0.008, mats.darkMetal, "running board", [x, 0.398, zc]);
+      const g = new T.PlaneGeometry(0.18, L - 0.03); g.rotateX(-Math.PI / 2); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 14, uv.getY(i)); g.translate(x, 0.41, zc); add(g, mats.boardMat, "running board mat");
+      for (const e of [-1, 1]) tube([[x + e * 0.104, 0.405, zb0 - 0.01], [x + e * 0.104, 0.405, zb1 + 0.01]], 0.006, mats.body, "running board trim", { seg: 4, rs: 8 });
+      // the valance: a quarter-round sweep from the body's underside to the board's inner edge
+      const vp = []; for (let k = 0; k <= 24; k++) vp.push({ p: V3(s * 0.455, 0.5, lerp(zb0 - 0.02, zb1 + 0.02, k / 24)), n: V3(0, 1, 0) });
+      const vprof = []; for (let k = 0; k <= 10; k++) { const a = (k / 10) * (Math.PI / 2); vprof.push([-0.09 * (1 - Math.cos(a)), s * 0.115 * Math.sin(a)]); }
+      sweep(vp, vprof, mats.body, "valance", { closed: false, caps: false }); }
     for (const z of [0.5, -0.6]) rod([s * 0.4, 0.42, z], [x, 0.41, z], 0.015, mats.darkMetal, "wing stay");
     rod([s * 0.36, 0.45, zF + 0.05], [x * 0.98, 0.62, zF + 0.32], 0.012, mats.body, "wing stay");
   }
@@ -135,10 +153,18 @@ export function buildChromeRacer(T, ext = {}) {
     const pts = rrShape(w + 0.02, h + 0.02, 0.035).getSpacedPoints(80).map((v) => V3(v.x, v.y + h / 2, 0)); tube(pts, 0.009, mats.body, "screen frame", { seg: 120, closed: true, parent: fr });
     for (const s of [-1, 1]) rod([s * (w / 2 + 0.01), 0.96, zs + 0.02], [s * (w / 2 + 0.01), 1.12, zs - 0.03], 0.013, mats.body, "screen post");
   }
-  rbox(0.84, 0.12, 0.42, 0.05, mats.leather, "seat", [0, 0.62, -0.42]);
-  rbox(0.84, 0.36, 0.12, 0.05, mats.leather, "seat back", [0, 0.82, -0.64], [-0.18, 0, 0]);
+  // v3: the bench in pleated, stitched red leather; the wooden dash with real dials (a canvas face each: the rev counter,
+  // the speedometer, oil and fuel, all with numerals and needles), chrome bezels, toggle switches, the ignition
+  { const st = dStitch(T, 8), seat = mats.leather.clone(); seat.map = st.map; seat.normalMap = st.normalMap; seat.normalScale = new T.Vector2(0.9, 0.9); if (ext.allChrome) seat.copy(mats.body);
+    dSeat(T, group, ext.RoundedBoxGeometry, seat, { x: 0, y: 0.62, z: -0.42, w: 0.84, d: 0.42, h: 0.12, backH: 0.36, backT: 0.12, rake: 0.18, head: false, bolster: false }); }
   rbox(0.86, 0.14, 0.06, 0.02, mats.wood, "dashboard", [0, 0.9, 0.38]);
-  for (const [x, r] of [[-0.12, 0.035], [0.0, 0.045], [0.12, 0.035], [-0.26, 0.025]]) { const g = new T.CircleGeometry(r, 32); g.translate(x, 0.9, 0.346); add(g, mats.dial, "dial"); const rg = new T.TorusGeometry(r, 0.005, 8, 32); rg.translate(x, 0.9, 0.346); add(rg, mats.body, "dial rim"); }
+  { const face = "#f1e8d2", ink = "#1b1712", needle = "#b0201a";
+    for (const [x, r, kind] of [[0.13, 0.042, "rev"], [-0.0, 0.048, "speed"], [-0.13, 0.034, "fuel"], [-0.26, 0.026, "fuel"]]) {
+      const G = new T.Group(); G.position.set(x, 0.9, 0.348); G.rotation.y = Math.PI; group.add(G);
+      K.add(new T.CircleGeometry(r, 40), dGauge(T, kind, { face, ink, needle, label: kind === "fuel" ? (x < -0.2 ? "OIL" : "FUEL") : "" }), "gauge", G);
+      K.add(new T.TorusGeometry(r + 0.002, 0.005, 8, 40), mats.body, "dial rim", G).position.z = 0.002; }
+    for (let k = 0; k < 4; k++) { rod([0.24 + k * 0.035, 0.87, 0.35], [0.24 + k * 0.035, 0.89, 0.33], 0.003, mats.body, "toggle switch", { seg: 6 }); }
+    latheZ([[0.014, 0], [0.014, 0.01], [0.008, 0.014], [0, 0.014]], mats.body, "ignition").position.set(0.3, 0.935, 0.35); group.children[group.children.length - 1].rotation.y = Math.PI; }
   { const sw = new T.Group(); sw.name = "steering wheel"; group.add(sw); sw.position.set(0.22, 0.98, 0.18); sw.rotation.x = -0.75;
     K.add(new T.TorusGeometry(0.19, 0.011, 12, 64), mats.black, "steering rim", sw);
     for (let k = 0; k < 4; k++) { const a = (k / 4) * Math.PI * 2 + Math.PI / 4; const b = new T.BoxGeometry(0.008, 0.18, 0.004); b.translate(0, 0.09, 0); const m = K.add(b, mats.satin, "steering spoke", sw); m.rotation.z = a; }
@@ -158,7 +184,7 @@ export function buildChromeRacer(T, ext = {}) {
   // ================= the wheels =================
   const wheels = [];
   for (const [sx, z] of [[1, zF], [-1, zF], [1, zR], [-1, zR]]) {
-    const w = buildWheel(T, mats, sx, { R: DIM.tyreR, W: 0.135, rr: DIM.rimR, style: "wire", rimMat: mats.body, capMat: mats.body, whitewall: true, whitewallMat: mats.white, spokes: 48 });
+    const w = buildWheel(T, mats, sx, { R: DIM.tyreR, W: 0.135, rr: DIM.rimR, style: "wire", rimMat: mats.body, capMat: mats.body, whitewall: true, whitewallMat: mats.white, spokes: 48, spec: "5.25-18", brake: { type: "drum", r: 0.17, w: 0.07, x: -0.095 } });
     w.position.set(sx * DIM.track / 2, DIM.tyreR, z); group.add(w); wheels.push(w);
   }
   const body = new T.Group(); body.name = "body";

@@ -9,6 +9,8 @@
 //   buildPatrol1310(THREE, { RoundedBoxGeometry, xRoof }) -> { group, body, wheels, mats, tex, parts, DIM, setBeacons }
 // Factory numbers (1310 berlina): length 4.37 (the deeper plastic bumpers), width 1.636, height 1.435 (1.60 over the
 // roof bar), wheelbase 2.441, track 1.31, tyres 155 SR 13.
+import { buildWheel, dDust, dPlate, dDaciaCabin, dScript } from "./kit.js";
+
 export const DIM = { Lbody: 4.348, L: 4.37, Hbar: 1.60, W: 1.636, H: 1.435, WB: 2.441, zF: 1.161, zR: -1.28, zN: 1.951, zT: -2.397, track: 1.31, tyreR: 0.292, rimR: 0.165, wheelY: 0.29 };
 
 // ---- a monotone cubic through (x, y) pairs (Fritsch-Carlson): smooth, never overshoots
@@ -414,7 +416,10 @@ export function buildPatrol1310(T, ext = {}) {
   for (const sx of [1, -1]) for (const w of [frontWin, rearWin]) frame(w, sideMap(sx));
   for (const w of [wscreen, rwindow]) frame(w, topMap);
   // ---- the drip rails along the roof's edges
-  for (const s of [-1, 1]) { const pts = []; for (let z = -1.06; z <= 0.06; z += 0.01) pts.push({ p: topPt(z, s * 0.88).addScaledVector(topNrm(z, s * 0.88), 0.004), n: topNrm(z, s * 0.88) }); sweep(pts, roundProf(0.0058, 10), mats.black, "drip rail", { closed: true }); }
+  // v3: the rain gutters (a U channel open outward, black on the 1310), the belt moulding under the side windows (satin)
+  const GUT = [[-0.002, -0.006], [0.007, -0.006], [0.0075, -0.0045], [0.0025, -0.004], [0.0025, 0.004], [0.0075, 0.0045], [0.007, 0.006], [-0.002, 0.006]];
+  for (const s of [-1, 1]) { const pts = []; for (let z = -1.06; z <= 0.06; z += 0.01) { const n = topNrm(z, s * 0.88); pts.push({ p: topPt(z, s * 0.88).addScaledVector(n, 0.002), n: V3(s, 0.35, 0).normalize() }); } sweep(pts, GUT, mats.black, "rain gutter", { closed: true }); }
+  for (const sx of [1, -1]) { const pts = []; for (let z = -1.2; z <= 0.42; z += 0.02) { const q = cabSide(z, sideBot(z) + 0.012); pts.push({ p: V3(sx * q.p.x, q.p.y, q.p.z).addScaledVector(V3(sx * q.n.x, q.n.y, q.n.z), 0.001), n: V3(sx * q.n.x, q.n.y, q.n.z) }); } sweep(pts, halfRound(0.006, 0.004), mats.satin, "belt moulding", { closed: true }); }
   // cabin surface query (the flank of the glasshouse at z, height y)
   function cabSide(z, y) {
     const h = cabHalf(z); let k; for (k = 0; k < C_SIDE - 1; k++) if (h[k + 1][1] >= y) break;
@@ -478,8 +483,8 @@ export function buildPatrol1310(T, ext = {}) {
   }
   bumper(true); bumper(false);
   // number plates
-  { const g = new T.PlaneGeometry(0.34, 0.105); g.translate(0, 0.40, zN + 0.072); add(g, mats.plate, "front plate"); const b = new T.BoxGeometry(0.35, 0.115, 0.008); b.translate(0, 0.40, zN + 0.067); add(b, mats.black, "plate holder"); }
-  { const g = new T.PlaneGeometry(0.52, 0.112); g.rotateY(Math.PI); g.translate(0, 0.67, zT - 0.009); add(g, mats.plate, "rear plate"); const b = new T.BoxGeometry(0.535, 0.125, 0.006); b.translate(0, 0.67, zT - 0.004); add(b, mats.black, "plate holder"); const l = new T.BoxGeometry(0.12, 0.018, 0.03); l.translate(0, 0.762, zT - 0.012); add(l, mats.chrome, "plate lamp"); }
+  { const m = dPlate(T, "B 131 PLT", 0.34, 0.105, { kind: "eu" }); m.name = "front plate"; m.position.set(0, 0.40, zN + 0.072); group.add(m); const b = new T.BoxGeometry(0.35, 0.115, 0.008); b.translate(0, 0.40, zN + 0.067); add(b, mats.black, "plate holder"); }
+  { const m = dPlate(T, "B 131 PLT", 0.52, 0.112, { kind: "eu", back: true }); m.name = "rear plate"; m.position.set(0, 0.67, zT - 0.009); group.add(m); const b = new T.BoxGeometry(0.535, 0.125, 0.006); b.translate(0, 0.67, zT - 0.004); add(b, mats.black, "plate holder"); const l = new T.BoxGeometry(0.12, 0.018, 0.03); l.translate(0, 0.762, zT - 0.012); add(l, mats.chrome, "plate lamp"); }
 
   // ================= the rear: tail lamps, the boot's lock, the exhaust =================
   // 1310: wider horizontal tail lamps in black frames: amber outboard, red, the clear reversing lamp, red inboard
@@ -494,16 +499,21 @@ export function buildPatrol1310(T, ext = {}) {
   // mud flaps behind the rear wheels
   for (const s of [-1, 1]) { const g = new T.BoxGeometry(0.16, 0.25, 0.008); g.translate(s * 0.655, 0.255, zR - AR - 0.03); add(g, mats.rubber, "mud flap"); }
   { const g = new T.CylinderGeometry(0.014, 0.014, 0.012, 20); g.rotateX(Math.PI / 2); g.translate(0, 0.79, zT - 0.006); add(g, mats.chrome, "boot lock"); }
+  // v3: the emblems: the model's numerals on the tail panel (the right), a chrome rim round the grille's shield
+  { const m = dScript(T, "1310", 0.034); m.rotation.y = Math.PI; m.position.set(-0.48, 0.79, zT - 0.004); group.add(m); }
+  { const r = new T.TorusGeometry(0.026, 0.0028, 8, 40); r.scale(1, 1.05, 1); r.translate(0, BAND.y + 0.002, FZ + 0.03); add(r, mats.chrome, "badge rim"); }
   { const g = new T.CylinderGeometry(0.024, 0.024, 0.28, 20, 1, true); g.rotateX(Math.PI / 2); g.translate(-0.42, 0.235, zT + 0.11); add(g, mats.satin, "exhaust"); const c = new T.CircleGeometry(0.02, 20); c.rotateY(Math.PI); c.translate(-0.42, 0.235, zT - 0.028); add(c, mats.under, "exhaust hole"); }
 
   // ================= the flank's fittings: handles, the mirror, the fuel cap, wipers =================
+  // v3: the door handles: (1310: black plastic) an escutcheon in a dark recess, the pull lever proud of it, the key lock on the front doors
   for (const s of [-1, 1]) for (const zh of [-0.33, -0.975]) {
     const q = lowerSide(zh, 0.818), p = V3(s * q.p.x, q.p.y, q.p.z), n = V3(s * q.n.x, q.n.y, q.n.z);
-    const g = new T.CapsuleGeometry ? new T.CapsuleGeometry(0.0095, 0.1, 6, 12) : new T.CylinderGeometry(0.01, 0.01, 0.12, 12);
-    g.rotateX(Math.PI / 2); g.scale(1, 0.85, 1);
-    const m = add(g, mats.plastic, "door handle"); m.position.copy(p).addScaledVector(n, 0.014); m.lookAt(m.position.clone().add(V3(0, 0, 1)));
-    const rec = new T.PlaneGeometry(0.11, 0.032); const rm = add(rec, mats.gap, "handle recess"); rm.position.copy(p).addScaledVector(n, 0.0015); rm.lookAt(rm.position.clone().add(n));
-    if (zh > -0.5) { const lk = new T.CylinderGeometry(0.007, 0.007, 0.008, 14); lk.rotateZ(Math.PI / 2); const lm = add(lk, mats.chrome, "lock"); lm.position.copy(p).addScaledVector(n, 0.005).add(V3(0, 0, -0.07)); }
+    const H = new T.Group(); H.name = "door handle"; H.position.copy(p); H.quaternion.setFromUnitVectors(V3(1, 0, 0), n); group.add(H);
+    const hb = (w, h, d, r, mat, name, x) => { const g = ext.RoundedBoxGeometry ? new ext.RoundedBoxGeometry(d, h, w, 3, r) : new T.BoxGeometry(d, h, w); const m = new T.Mesh(g, mat); m.name = name; m.position.x = x; m.castShadow = m.receiveShadow = true; H.add(m); return m; };
+    hb(0.122, 0.036, 0.004, 0.0015, mats.gap, "handle recess", 0.0005);
+    hb(0.13, 0.03, 0.006, 0.0025, mats.plastic, "handle escutcheon", 0.003);
+    hb(0.104, 0.017, 0.012, 0.005, mats.plastic, "door handle", 0.009).position.y = -0.002;
+    if (zh > -0.5) { const lk = new T.CylinderGeometry(0.0075, 0.0075, 0.008, 18); lk.rotateZ(Math.PI / 2); const lm = new T.Mesh(lk, mats.chrome); lm.name = "lock"; lm.position.set(0.006, 0, 0.082); H.add(lm); const sl = new T.BoxGeometry(0.002, 0.007, 0.0016); sl.translate(0.0105, 0, 0.082); const sm = new T.Mesh(sl, mats.gap); sm.name = "lock slot"; H.add(sm); }
   }
   { // the driver's mirror (left, +x): a chrome head on a short stalk at the front door's lower front corner (r3)
     const q = lowerSide(0.44, sideTop(0.44) + 0.01), p = q.p.clone();
@@ -513,10 +523,14 @@ export function buildPatrol1310(T, ext = {}) {
     const gl = new T.PlaneGeometry(0.06, 0.05); gl.rotateY(Math.PI); const gm = add(gl, mats.mirror, "mirror glass"); gm.position.set(p.x + 0.075, p.y + 0.07, p.z - 0.051); gm.rotation.y = Math.PI - 0.25 - Math.PI;
   }
   { const q = lowerSide(-1.86, 0.80); const g = new T.CylinderGeometry(0.042, 0.042, 0.008, 28); g.rotateZ(Math.PI / 2); const m = add(g, mats.chrome, "fuel cap"); m.position.set(-q.p.x - 0.002, q.p.y, q.p.z); }
-  { // wipers parked at the foot of the windscreen
+  { // wipers parked at the foot of the windscreen (v3: the arm on its pivot, the blade's frame and rubber on the glass)
     for (const [x0, x1] of [[-0.42, 0.02], [0.08, 0.5]]) {
-      const pts = []; for (let i = 0; i <= 20; i++) { const x = lerp(x0, x1, i / 20), z = 0.53 - 0.03 * (i / 20); const h = cabHalf(z); let y = 0; for (let k = C_TOP0; k < h.length - 1; k++) if (h[k][0] >= Math.abs(x) && h[k + 1][0] <= Math.abs(x)) { y = lerp(h[k][1], h[k + 1][1], (h[k][0] - Math.abs(x)) / Math.max(1e-6, h[k][0] - h[k + 1][0])); break; } if (!y) y = h[h.length - 1][1]; pts.push({ p: V3(x, y + 0.012, z), n: V3(0, 0.8, 0.6).normalize() }); }
-      sweep(pts, [[0.005, -0.003], [0.005, 0.003], [-0.003, 0.004], [-0.003, -0.004]], mats.satin, "wiper", { closed: true }); // r3: bright arms, as on the model
+      const onGlass = (x, z) => { const h = cabHalf(z); let y = 0; for (let k = C_TOP0; k < h.length - 1; k++) if (h[k][0] >= Math.abs(x) && h[k + 1][0] <= Math.abs(x)) { y = lerp(h[k][1], h[k + 1][1], (h[k][0] - Math.abs(x)) / Math.max(1e-6, h[k][0] - h[k + 1][0])); break; } if (!y) y = h[h.length - 1][1]; return y; };
+      const path = (lift, a, b) => { const pts = []; for (let i = 0; i <= 20; i++) { const t = lerp(a, b, i / 20), x = lerp(x0, x1, t), z = 0.53 - 0.03 * t; pts.push({ p: V3(x, onGlass(x, z) + lift, z), n: V3(0, 0.8, 0.6).normalize() }); } return pts; };
+      sweep(path(0.016, 0, 0.92), [[0.004, -0.0035], [0.004, 0.0035], [-0.003, 0.004], [-0.003, -0.004]], mats.black, "wiper arm", { closed: true });
+      sweep(path(0.008, 0.08, 1), [[0.004, -0.004], [0.004, 0.004], [-0.002, 0.004], [-0.002, -0.004]], mats.black, "wiper blade frame", { closed: true });
+      sweep(path(0.002, 0.08, 1), [[0.003, -0.0016], [0.003, 0.0016], [-0.003, 0.0008], [-0.003, -0.0008]], mats.rubber, "wiper rubber", { closed: true });
+      { const x = x0 + 0.01, z = 0.535, g = new T.CylinderGeometry(0.012, 0.014, 0.022, 16); g.translate(x, onGlass(x, z) + 0.008, z); add(g, mats.black, "wiper pivot"); }
     }
   }
 
@@ -559,23 +573,16 @@ export function buildPatrol1310(T, ext = {}) {
   }
 
   // ================= the wheels =================
-  for (const [x, z] of [[1, zF], [-1, zF], [1, zR], [-1, zR]]) group.add(wheel(T, mats, x));
+  // v3: the kit's wheel (the same steel rim and cap as r3), lettered 155 SR 13 walls, a worn tread, discs in front, drums behind
+  for (const [x, z] of [[1, zF], [-1, zF], [1, zR], [-1, zR]]) group.add(buildWheel(T, mats, x, { R: DIM.tyreR, W: 0.155, rr: DIM.rimR, style: "steel", spec: "155 SR 13", brake: z > 0 ? { type: "disc", r: 0.118, w: 0.02, x: -0.03 } : { type: "drum", r: 0.115, w: 0.05, x: -0.025 } }));
   const ws = group.children.filter((c) => c.name === "wheel");
   ws.forEach((w, k) => { const [sx, z] = [[1, zF], [-1, zF], [1, zR], [-1, zR]][k]; w.position.set(sx * DIM.track / 2, DIM.wheelY, z); });
 
-  // ================= the cabin: seats, the dash, the wheel =================
-  const RB = ext.RoundedBoxGeometry;
-  const rbox = (w, h, d, r, mat, name, at, rot) => { const g = RB ? new RB(w, h, d, 4, r) : new T.BoxGeometry(w, h, d); const m = add(g, mat, name); m.position.set(...at); if (rot) m.rotation.set(...rot); return m; };
-  for (const s of [-1, 1]) {
-    rbox(0.5, 0.13, 0.52, 0.05, mats.vinyl, "front seat", [s * 0.34, 0.47, -0.18]);
-    rbox(0.48, 0.56, 0.11, 0.05, mats.vinyl, "front seat back", [s * 0.34, 0.78, -0.47], [-0.2, 0, 0]);
-    rbox(0.26, 0.12, 0.07, 0.03, mats.vinyl, "headrest", [s * 0.34, 1.11, -0.55], [-0.2, 0, 0]);
-  }
-  rbox(0.88, 0.14, 0.5, 0.05, mats.vinyl, "rear seat", [0, 0.45, -0.98]);
-  rbox(1.34, 0.48, 0.12, 0.05, mats.vinyl, "rear seat back", [0, 0.71, -1.25], [-0.3, 0, 0]);
-  rbox(1.4, 0.03, 0.3, 0.01, mats.dash, "parcel shelf", [0, beltY(-1.48) - 0.03, -1.47]);
-  rbox(1.42, 0.16, 0.3, 0.04, mats.dash, "dashboard", [0, 0.8, 0.46]);
-  { const g = new T.TorusGeometry(0.19, 0.012, 12, 48); const m = add(g, mats.dash, "steering wheel"); m.position.set(0.34, 0.86, 0.2); m.rotation.set(-0.45, 0, 0); const c = new T.CylinderGeometry(0.02, 0.02, 0.34, 12); const cm = add(c, mats.dash, "column"); cm.position.set(0.34, 0.8, 0.32); cm.rotation.set(1.1, 0, 0); }
+  // ================= the cabin (v3: the kit's Dacia cabin, the 1310's dash) =================
+  dDaciaCabin(T, group, ext.RoundedBoxGeometry, mats, { style: "1310" });
+  { const g = ext.RoundedBoxGeometry ? new ext.RoundedBoxGeometry(1.4, 0.03, 0.3, 3, 0.01) : new T.BoxGeometry(1.4, 0.03, 0.3); g.translate(0, beltY(-1.48) - 0.03, -1.47); add(g, mats.dash, "parcel shelf"); }
+  // v3: road dust on the lower body (the sills, a spray behind each wheel), the bumpers and flaps greyed too
+  { const wh = [{ z: zF, r: DIM.tyreR }, { z: zR, r: DIM.tyreR }]; dDust(T, group, { mats: [mats.paint, mats.navy, mats.livery], top: 0.52, amount: 0.5, wheels: wh, seed: 13 }); dDust(T, group, { mats: [mats.plastic, mats.rubber], top: 0.5, amount: 0.22, color: "#6d6457", wheels: wh, seed: 14 }); }
   // the sprung body: everything but the wheels, in its own group (pitch / roll it on the springs)
   const body = new T.Group(); body.name = "body";
   for (const c of group.children.slice()) if (c.name !== "wheel") body.add(c);

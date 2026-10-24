@@ -21,7 +21,11 @@ export function buildClassicFormula(T, ext = {}) {
   const P = (name, color, o = {}) => new T.MeshPhysicalMaterial({ name, color: new T.Color(color), roughness: 0.28, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.04, side: T.DoubleSide, ...o });
   Object.assign(mats, {
     red: P("paint", RED), white: P("paint white", WHITE), helmet: P("helmet", YEL, { roughness: 0.2 }),
-    visor: new T.MeshPhysicalMaterial({ name: "visor", color: new T.Color("#17191d"), roughness: 0.05, metalness: 0.4, clearcoat: 1 }),
+    // v3: a smoked polycarbonate visor, not a mirror: no metalness, a soft gloss (the near-mirror sparkled in the
+    // accumulation renderer, every sub-frame catching another highlight)
+    visor: new T.MeshPhysicalMaterial({ name: "visor", color: new T.Color("#1d2026"), roughness: 0.3, metalness: 0, clearcoat: 0.35, clearcoatRoughness: 0.25 }),
+    heat: new T.MeshPhysicalMaterial({ name: "exhaust steel", color: new T.Color("#b9a68c"), roughness: 0.34, metalness: 1, side: T.DoubleSide }),
+    soot: new T.MeshPhysicalMaterial({ name: "soot", color: new T.Color("#0b0a09"), roughness: 0.95, metalness: 0, side: T.DoubleSide }),
     suit: new T.MeshPhysicalMaterial({ name: "race suit", color: new T.Color("#f2f0ea"), roughness: 0.8, metalness: 0 }),
     rim: new T.MeshPhysicalMaterial({ name: "magnesium wheel", color: new T.Color("#1c1c1c"), roughness: 0.4, metalness: 0.5, side: T.DoubleSide }),
     nut: P("wheel nut", YEL, { metalness: 0.3 }),
@@ -98,9 +102,12 @@ export function buildClassicFormula(T, ext = {}) {
       const sh = new T.Shape(RR[2].map(([x, y]) => new T.Vector2(x, y))); const g = new T.ShapeGeometry(sh); g.translate(0, 0, PZ1 - 0.1); add(g, mats.mesh, "radiator core");
       tube(ring(PZ1, 0.99).map(([x, y]) => V3(x, y, PZ1 + 0.004)), 0.01, mats.black, "inlet lip", { seg: 90, closed: true, rs: 8 }); }
     { const r0 = ring(PZ0), n = r0.length, pos = [s * pX(PZ0), (pT(PZ0) + 0.1) / 2, PZ0 - 0.01], idx = []; for (let j = 0; j < n; j++) { pos.push(r0[j][0], r0[j][1], PZ0); if (j) idx.push(0, j, j + 1); } const g = new T.BufferGeometry(); g.setAttribute("position", new T.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); add(g, mats.red, "pod tail"); }
-    // the mirrors on stalks by the cockpit
-    rod([s * 0.3, 0.55, 0.2], [s * 0.44, 0.66, 0.22], 0.008, mats.black, "mirror stalk");
-    { const g = new T.SphereGeometry(0.05, 16, 12); g.scale(1.4, 0.8, 0.6); g.translate(s * 0.47, 0.68, 0.22); add(g, mats.red, "mirror"); const gl = new T.CircleGeometry(0.04, 20); gl.scale(1.4, 0.8, 1); gl.rotateY(Math.PI); gl.translate(s * 0.47, 0.68, 0.19); add(gl, mats.mirror, "mirror glass"); }
+    // v3: the mirrors: a red housing (a rounded box, the glass set in its back) on a forked black stalk from the tub's
+    // shoulder by the screen, angled out to see past the rear wheels
+    { const M = new T.Group(); M.name = "mirror"; M.position.set(s * 0.43, 0.665, 0.3); M.rotation.y = s * 0.12; group.add(M);
+      rbox(0.12, 0.055, 0.045, 0.02, mats.red, "mirror housing", [0, 0, 0], null, M);
+      { const g = new T.PlaneGeometry(0.104, 0.04); g.rotateY(Math.PI); g.translate(0, 0, -0.0232); K.add(g, mats.mirror, "mirror glass", M); }
+      for (const dz of [-0.012, 0.012]) rod([s * 0.27, 0.565, 0.3 + dz], [s * 0.4, 0.645, 0.3 + dz], 0.0055, mats.black, "mirror stalk"); }
   }
   // ================= the airbox and the engine cover (white), the engine bare behind =================
   // v2: a sculpted airbox: round-shouldered, waisted behind the mouth, swelling over the engine and running down into a
@@ -113,6 +120,15 @@ export function buildClassicFormula(T, ext = {}) {
   { const pts = []; for (let k = 0; k <= 30; k++) { const z = lerp(-1.45, -0.46, k / 30); pts.push(V3(0, aYT(z) + 0.004, z)); } tube(pts, 0.007, mats.white, "airbox spine", { seg: 40, rs: 8 }); }
   // the roll hoop under the airbox's front
   tube([[-0.16, 0.55, -0.44], [-0.14, 0.9, -0.44], [0.14, 0.9, -0.44], [0.16, 0.55, -0.44]], 0.02, mats.satin, "roll hoop", { seg: 30 });
+  // v3: the hoop's detail: welded base plates, two rear stays back to the engine's top, a gusset in each corner, a
+  // padded headrest band across it
+  for (const s of [-1, 1]) {
+    rbox(0.07, 0.008, 0.06, 0.002, mats.satin, "hoop base plate", [s * 0.16, 0.552, -0.44]);
+    rod([s * 0.13, 0.885, -0.45], [s * 0.15, 0.56, -0.95], 0.011, mats.satin, "hoop stay");
+    rbox(0.004, 0.06, 0.06, 0.001, mats.satin, "hoop gusset", [s * 0.13, 0.86, -0.47], [0.6, 0, 0]);
+    for (const zz of [-0.95]) rbox(0.04, 0.03, 0.05, 0.006, mats.darkMetal, "stay bracket", [s * 0.15, 0.555, zz]);
+  }
+  rbox(0.26, 0.05, 0.03, 0.012, mats.black, "hoop pad", [0, 0.86, -0.425]);
   // the numbers on the airbox's flanks
   for (const s of [-1, 1]) { const g = new T.PlaneGeometry(0.2, 0.15); g.rotateY(s * Math.PI / 2); const z = -0.78; g.translate(s * (aW(z) + 0.004), 0.68, z); add(g, mats.numDark, "number airbox"); }
   // the engine: a block, two cam covers in a V, the trumpets under the airbox, the gearbox, the oil tank
@@ -123,8 +139,11 @@ export function buildClassicFormula(T, ext = {}) {
   { const g = new T.CylinderGeometry(0.09, 0.09, 0.22, 24); g.rotateZ(Math.PI / 2); g.translate(0, 0.42, -2.06); add(g, mats.darkMetal, "oil cooler"); }
   // four-into-one exhausts each side, sweeping out and back to a tail pipe under the wing
   for (const s of [-1, 1]) {
-    for (let k = 0; k < 4; k++) { const z = -0.98 - k * 0.14; tube([[s * 0.23, 0.36, z], [s * 0.34, 0.33, z - 0.04], [s * 0.36, 0.3, z - 0.3], [s * 0.3, 0.3, -1.75], [s * 0.26, 0.31, -1.95]], 0.019, mats.satin, "exhaust", { seg: 40, rs: 10 }); }
-    tube([[s * 0.26, 0.31, -1.92], [s * 0.24, 0.32, -2.12]], 0.04, mats.satin, "tail pipe", { seg: 4, rs: 16 });
+    // v3: heat-tinted steel primaries into a collector, a flared megaphone with a sooty mouth and a rolled lip
+    for (let k = 0; k < 4; k++) { const z = -0.98 - k * 0.14; tube([[s * 0.23, 0.36, z], [s * 0.34, 0.33, z - 0.04], [s * 0.36, 0.3, z - 0.3], [s * 0.3, 0.3, -1.75], [s * 0.26, 0.31, -1.95]], 0.019, mats.heat, "exhaust", { seg: 40, rs: 10 }); }
+    { const E = new T.Group(); E.name = "megaphone"; group.add(E); E.position.set(s * 0.25, 0.315, -1.95); E.lookAt(s * 0.235, 0.325, -2.3); // (lookAt aims +z along the pipe)
+      latheZ([[0.034, -0.02], [0.036, 0.04], [0.042, 0.1], [0.055, 0.17], [0.062, 0.2], [0.066, 0.205], [0.062, 0.212], [0.056, 0.2], [0.05, 0.17], [0.038, 0.1]], mats.heat, "megaphone", { parent: E, seg: 32 });
+      { const g = new T.CircleGeometry(0.036, 24); g.translate(0, 0, 0.12); K.add(g, mats.soot, "exhaust mouth", E); } }
   }
   // ================= the rear wing: a high main plane (white), the flap (red), endplates (red), on a central pylon =================
   { const yW = 0.92, zW = -2.08;
@@ -157,7 +176,7 @@ export function buildClassicFormula(T, ext = {}) {
   // ================= the wheels: slicks on cast magnesium wheels, yellow centre-lock nuts =================
   const wheels = [];
   for (const [sx, z, R, Wd, tr] of [[1, zF, DIM.tyreRF, 0.26, wF], [-1, zF, DIM.tyreRF, 0.26, wF], [1, zR, DIM.tyreRR, 0.45, wR], [-1, zR, DIM.tyreRR, 0.45, wR]]) {
-    const w = buildWheel(T, mats, sx, { R, W: Wd, rr: 0.2, style: "racing", rimMat: mats.rim, capMat: mats.nut, shoulder: 0.035, bulge: 0.012, spokes: 10 });
+    const w = buildWheel(T, mats, sx, { R, W: Wd, rr: 0.2, style: "racing", rimMat: mats.rim, capMat: mats.nut, shoulder: 0.035, bulge: 0.012, spokes: 10, letters: "#ecebe6", spec: z > 0 ? "9.2/20.0-13" : "16.2/26.0-13", sub: "RACING  SLICK", brake: { type: "disc", r: 0.135, w: 0.026, x: -Wd * 0.18 } });
     w.position.set(sx * tr, R, z); group.add(w); wheels.push(w);
   }
   const body = new T.Group(); body.name = "body";

@@ -10,7 +10,7 @@
 //   buildCropduster(THREE, { RoundedBoxGeometry }) -> { group, body, wheels, mats, tex, parts, DIM }
 // Proportions of the type (a 1930s-40s biplane trainer turned sprayer): length 7.6 (spinner to rudder), span 9.8 (both wings), chord 1.37,
 // gap 1.45, stagger 0.4, height 2.85 (fuselage level), propeller 2.44 across, main wheels 0.84 across on a 1.9 track.
-import { pchip, clamp, lerp, sstep, makeTex, baseMats, makeKit, buildWheel } from "./kit.js";
+import { pchip, clamp, lerp, sstep, makeTex, baseMats, makeKit, buildWheel, dNormalFromCanvas } from "./kit.js";
 
 export const DIM = { L: 7.6, span: 9.8, chord: 1.37, gap: 1.45, H: 2.85, prop: 2.44, track: 1.9, tyreR: 0.42, thrustY: 1.62 };
 
@@ -20,7 +20,10 @@ export function buildCropduster(T, ext = {}) {
   const { V3, add, sweep, roundProf, rod, tube, latheZ, rrShape, rbox, gridGeo, ribbon, sideExtrude, airfoil, wingPanel } = K;
   const tex = makeTex(T), mats = baseMats(T, tex);
   const YEL = "#FED012", RED = "#F65342";
-  const fab = (name, color) => new T.MeshPhysicalMaterial({ name, color: new T.Color(color), roughness: 0.42, metalness: 0, clearcoat: 0.6, clearcoatRoughness: 0.18, normalMap: tex.fabric, normalScale: new T.Vector2(0.6, 0.6), side: T.DoubleSide });
+  // v3: the doped linen reads in close-up: a normal map of the ribs under the fabric (the cloth taut between them, a soft
+  // ridge over each, the pinked rib tape's edges and its stitching), and the tapes a touch duller (a roughness map)
+  const ribs = ribTex(T);
+  const fab = (name, color) => new T.MeshPhysicalMaterial({ name, color: new T.Color(color), roughness: 1, roughnessMap: ribs.rough, metalness: 0, clearcoat: 0.45, clearcoatRoughness: 0.22, normalMap: ribs.normal, normalScale: new T.Vector2(1.1, 1.1), side: T.DoubleSide });
   Object.assign(mats, {
     paint: new T.MeshPhysicalMaterial({ name: "paint", color: new T.Color(YEL), roughness: 0.3, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.05, side: T.DoubleSide }),
     red: new T.MeshPhysicalMaterial({ name: "paint red", color: new T.Color(RED), roughness: 0.3, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.05, side: T.DoubleSide }),
@@ -88,16 +91,24 @@ export function buildCropduster(T, ext = {}) {
   latheZ([[0, 0.34], [0.07, 0.3], [0.13, 0.2], [0.16, 0.08], [0.17, 0.0], [0.15, -0.02], [0, -0.02]], mats.red, "spinner", { parent: prop });
   for (const s of [1, -1]) {
     // a blade lofted from airfoil sections along its radius: chord and thickness tapering, twist falling outward
-    const NR = 22, sec = airfoil(1, 0.12, 0.03, 10), cols = sec.length + 1, pos = [], idx = [];
+    // v3: wider blades (0.26 m at 70% of the radius, the wooden type's), the pitch falling from ~62 deg at the root to
+    // ~16 at the tip along a true helix (tan(pitch) = P / (2 pi r), P = 1.9 m), the round root boss, a rounded tip; the
+    // second blade is the first turned half a turn round the shaft (v2 mirrored it: both leading edges on one side)
+    const NR = 30, sec = airfoil(1, 0.12, 0.04, 12), cols = sec.length + 1, pos = [], idx = [];
     for (let i = 0; i <= NR; i++) {
-      const r = lerp(0.12, 1.22, i / NR), u = (r - 0.12) / 1.1, c = 0.2 * (0.55 + 0.75 * Math.sin(Math.min(1, u * 1.3) * Math.PI * 0.75)) * (u > 0.9 ? Math.sqrt(Math.max(0.05, (1 - u) / 0.1)) : 1), tw = lerp(0.95, 0.22, u), thk = lerp(2.2, 0.8, u);
-      for (let j = 0; j < cols; j++) { const [cz, cy] = sec[j % sec.length]; const lx = cz * c, ly = cy * c * thk; // (lx along the chord, ly across)
-        const X = lx * Math.cos(tw) - ly * Math.sin(tw), Z = lx * Math.sin(tw) + ly * Math.cos(tw); pos.push(X, s * r, Z * 0.9); }
+      const r = lerp(0.1, 1.22, i / NR), u = (r - 0.1) / 1.12;
+      const c = (u < 0.12 ? lerp(0.1, 0.17, u / 0.12) : 0.17 + 0.095 * Math.sin(Math.min(1, (u - 0.12) / 0.6) * Math.PI / 2) - 0.07 * Math.max(0, (u - 0.72) / 0.28) ** 2) * (u > 0.93 ? Math.sqrt(Math.max(0.04, (1 - u) / 0.07)) : 1);
+      const tw = Math.atan(1.9 / (2 * Math.PI * Math.max(r, 0.18))), thk = u < 0.12 ? lerp(4.2, 2.0, u / 0.12) : lerp(2.0, 0.75, (u - 0.12) / 0.88), boss = u < 0.08;
+      for (let j = 0; j < cols; j++) { const [cz, cy] = sec[j % sec.length]; let lx = cz * c, ly = cy * c * thk; if (boss) { const a = (j / (cols - 1)) * Math.PI * 2; lx = Math.cos(a) * 0.055; ly = Math.sin(a) * 0.05; } // (lx along the chord, ly across)
+        const X = lx * Math.cos(tw) - ly * Math.sin(tw), Z = lx * Math.sin(tw) + ly * Math.cos(tw); pos.push(s * X, s * r, Z); }
     }
     for (let i = 0; i < NR; i++) for (let j = 0; j < cols - 1; j++) { const a = i * cols + j, b = a + 1, c = a + cols, d = c + 1; idx.push(a, c, b, b, c, d); }
     const g = new T.BufferGeometry(); g.setAttribute("position", new T.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); K.add(g, mats.prop, "blade", prop);
   }
   prop.rotation.z = 0.35;
+  // the hub plate behind the spinner, its six bolts
+  latheZ([[0.13, -0.05], [0.13, -0.02], [0.0, -0.02]], mats.darkMetal, "prop hub", { parent: prop });
+  for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2 + 0.26, g = new T.CylinderGeometry(0.011, 0.011, 0.02, 6); g.rotateX(Math.PI / 2); g.translate(Math.cos(a) * 0.1, Math.sin(a) * 0.1, -0.012); K.add(g, mats.satin, "prop bolt", prop); }
 
   // ================= the wings =================
   const UY = 2.6, LY = 1.17, CH = DIM.chord, HS = DIM.span / 2, ULE = 0.78, LLE = 0.38, DIH = Math.tan((3 * Math.PI) / 180);
@@ -140,6 +151,27 @@ export function buildCropduster(T, ext = {}) {
     sideExtrude([[zs + 0.5, ys], [zs - 0.25, ys], [zs - 0.3, ys + 0.8], [zs - 0.1, ys + 0.83], [zs + 0.2, ys + 0.5]], 0.07, mats.wing, "fin", { bevel: 0.02 });
     sideExtrude([[zs - 0.25, 1.78], [zs - 0.75, 1.82], [zs - 0.82, ys + 0.5], [zs - 0.6, ys + 0.88], [zs - 0.3, ys + 0.85], [zs - 0.25, ys + 0.76]], 0.05, mats.red, "rudder", { bevel: 0.015 });
   }
+  // ================= v3: the control horns and their cables =================
+  // elevators: a horn above and below each elevator near the root, cables forward along the fuselage into fairleads;
+  // rudder: a horn each side at its foot, cables to the fuselage's flanks; ailerons (lower wing): a horn under each,
+  // its cable into the wing at the rear spar
+  { const zs = -4.75, ys = 1.97, horn = (x, y, z, up, side = false) => { const sh = new T.Shape(); sh.moveTo(-0.05, 0); sh.lineTo(0.05, 0); sh.lineTo(0.008, up * 0.11); sh.lineTo(-0.008, up * 0.11); sh.closePath(); const g = new T.ExtrudeGeometry(sh, { depth: 0.006, bevelEnabled: false }); g.translate(0, 0, -0.003); if (side) g.rotateX(Math.PI / 2); g.rotateY(Math.PI / 2); g.translate(x, y, z); return add(g, mats.strut, "control horn"); };
+    const fair = (x, y, z) => { const g = new T.SphereGeometry(0.012, 10, 8); g.scale(1, 1, 1.6); g.translate(x, y, z); add(g, mats.darkMetal, "fairlead"); };
+    for (const s of [-1, 1]) {
+      const xh = s * 0.22, zh = zs - 0.2;
+      horn(xh, ys + 0.02, zh, 1); horn(xh, ys - 0.02, zh, -1);
+      const top = V3(xh, ys + 0.12, zh - 0.0), bot = V3(xh, ys - 0.12, zh);
+      const [fx, fy] = fpt(-3.7, 0.55), [gx, gy] = fpt(-3.7, -0.35);
+      rod(top, V3(s * fx, fy, -3.7), 0.0025, mats.wire, "elevator cable", { seg: 5 }); rod(bot, V3(s * gx, gy, -3.7), 0.0025, mats.wire, "elevator cable", { seg: 5 });
+      fair(s * fx, fy, -3.7); fair(s * gx, gy, -3.7);
+      // the rudder's horns, both sides at its foot
+      const rh = V3(s * 0.02, 1.86, zs - 0.42); { const g = new T.BoxGeometry(0.11, 0.05, 0.006); g.rotateY(Math.PI / 2); g.rotateZ(0); const m = add(g, mats.strut, "rudder horn"); m.position.set(s * 0.06, 1.86, zs - 0.42); m.rotation.y = 0; m.scale.set(1, 1, 1); }
+      const [hx, hy] = fpt(-3.9, 0.0); rod(V3(s * 0.11, 1.86, zs - 0.42), V3(s * hx, hy, -3.9), 0.0025, mats.wire, "rudder cable", { seg: 5 }); fair(s * hx, hy, -3.9); void rh;
+      // the lower ailerons' horns and cables
+      const xa = s * 3.2, ya = LY + (3.2 - 0.44) * DIH, za = LLE - CH * 0.8;
+      horn(xa, ya - 0.06, za, -1); rod(V3(xa, ya - 0.16, za), V3(xa - s * 0.35, ya - 0.04, LLE - CH * 0.62), 0.0025, mats.wire, "aileron cable", { seg: 5 }); fair(xa - s * 0.35, ya - 0.035, LLE - CH * 0.62);
+    }
+  }
   // ================= the undercarriage: oleo legs and radius rods to the axles, the tail skid =================
   const R = DIM.tyreR, TX = DIM.track / 2;
   for (const s of [-1, 1]) {
@@ -150,11 +182,32 @@ export function buildCropduster(T, ext = {}) {
   rod([0, 1.78, -5.05], [0, 1.45, -5.3], 0.025, mats.strut, "tail skid"); { const g = new T.SphereGeometry(0.04, 12, 8); g.translate(0, 1.44, -5.31); add(g, mats.darkMetal, "skid shoe"); }
   const wheels = [];
   for (const s of [1, -1]) {
-    const w = buildWheel(T, mats, s, { R, W: 0.2, rr: 0.16, style: "plane", rimMat: mats.rimRed, capMat: mats.chrome, bulge: 0.025, shoulder: 0.06, grooves: [] });
+    const w = buildWheel(T, mats, s, { R, W: 0.2, rr: 0.16, style: "plane", rimMat: mats.rimRed, capMat: mats.chrome, bulge: 0.025, shoulder: 0.06, grooves: [], spec: "8.00-4", sub: "AERO  6 PLY", brake: { type: "drum", r: 0.12, w: 0.06, x: -0.07 } });
     w.position.set(s * TX, R, 0); group.add(w); wheels.push(w);
   }
   const body = new T.Group(); body.name = "body";
   for (const c of group.children.slice()) if (c.name !== "wheel") body.add(c);
   group.add(body);
   return { group, body, wheels, mats, tex, parts: { propeller: prop }, DIM };
+}
+
+// v3: the wings' fabric: ribs every 1/8 of u (0.33 m on the wings' uv), the linen sagging a hair between them, the rib
+// tape (pinked edges) over each rib with its stitching, a faint weave; a normal map and a roughness map
+function ribTex(T) {
+  const W = 1024, H = 256, frac = (v) => v - Math.floor(v);
+  const hC = document.createElement("canvas"); hC.width = W; hC.height = H; const ctx = hC.getContext("2d"), im = ctx.createImageData(W, H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const u = frac((x / W) * 8), d = Math.abs(u - 0.5); // 0.5 = over the rib
+    let h = 0.55 - 0.18 * Math.cos(d * Math.PI * 2) * 0.5 - 0.12 * (1 - Math.cos(d * Math.PI * 2)) * 0; // the sag between ribs
+    h = 0.5 + 0.22 * Math.exp(-(d * d) / 0.0012); // the rib's ridge
+    const tape = d < 0.035 + 0.006 * Math.sin(y * 0.9), pink = tape && Math.abs(d - 0.035) < 0.01;
+    if (tape) h += 0.06; if (pink) h -= 0.04;
+    if (Math.abs(d - 0.012) < 0.004 && (y % 10) < 5) h += 0.05; // the stitches through the fabric and round the rib
+    h += 0.025 * Math.sin(x * 2.1) * Math.sin(y * 2.3) - 0.08 * Math.sin(Math.min(1, d / 0.5) * Math.PI) * 0.0 - 0.06 * Math.sin(d * Math.PI * 2) ** 2;
+    const o = (y * W + x) * 4, g = Math.max(0, Math.min(1, h)) * 255; im.data[o] = im.data[o + 1] = im.data[o + 2] = g; im.data[o + 3] = 255;
+  }
+  ctx.putImageData(im, 0, 0);
+  const rC = document.createElement("canvas"); rC.width = W; rC.height = 16; const r2 = rC.getContext("2d"); r2.fillStyle = "#6b6b6b"; r2.fillRect(0, 0, W, 16); r2.fillStyle = "#8a8a8a"; for (let k = 0; k < 8; k++) r2.fillRect((k + 0.5) * W / 8 - (W * 0.07) / 16, 0, (W * 0.07) / 8, 16);
+  const rough = new T.CanvasTexture(rC); rough.wrapS = rough.wrapT = T.RepeatWrapping; rough.colorSpace = T.NoColorSpace;
+  return { normal: dNormalFromCanvas(T, hC, 5), rough };
 }

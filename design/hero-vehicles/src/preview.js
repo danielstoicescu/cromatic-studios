@@ -8,6 +8,7 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import { triCount } from "./kit.js";
 
 const REG = {
+  d1300: () => import("/ext/dacia1300-hero.js?v=" + Date.now()).then((m) => m.buildHeroDacia(THREE, { RoundedBoxGeometry })),
   patrol: () => import("./dacia1310-patrol.js").then((m) => m.buildPatrol1310(THREE, { RoundedBoxGeometry })),
   van: () => import("./mystery-van.js").then((m) => m.buildMysteryVan(THREE, { RoundedBoxGeometry })),
   chrome: () => import("./chrome-racer.js").then((m) => m.buildChromeRacer(THREE, { RoundedBoxGeometry })),
@@ -59,6 +60,8 @@ async function still(id, o = {}) {
     dist *= Math.max((x1 - x0) / 2, (y1 - y0) / 2) / (o.frame ?? 0.9);
   }
   place();
+  // a close-up: o.look = { t: [x, y, z] the target, d: [x, y, z] the direction to the camera, dist, fov }
+  if (o.look) { const L = o.look; cam.fov = L.fov ?? 22; cam.near = 0.01; cam.updateProjectionMatrix(); const t = new THREE.Vector3(...L.t), dd = new THREE.Vector3(...L.d).normalize(); cam.position.copy(t).addScaledVector(dd, L.dist); cam.lookAt(t); cam.updateMatrixWorld(); scene.fog.near = L.dist * 4; scene.fog.far = L.dist * 12; }
   R.render(scene, cam);
   const url = R.domElement.toDataURL("image/png");
   const tris = triCount(v.group);
@@ -79,4 +82,10 @@ async function sheet(urls, labels, o = {}) {
   }
   return c.toDataURL("image/jpeg", 0.9);
 }
-window.HV = { still, sheet, ready: true };
+// the triangle budget by mesh name (the heaviest first)
+async function tris(id) {
+  const v = await REG[id](), by = {};
+  v.group.traverse((m) => { if (m.isMesh) { const c = (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3 * (m.isInstancedMesh ? m.count : 1); by[m.name] = (by[m.name] || 0) + c; } });
+  return Object.entries(by).sort((a, b) => b[1] - a[1]).slice(0, 25).map(([k, n]) => k + " " + Math.round(n));
+}
+window.HV = { still, sheet, tris, ready: true };
