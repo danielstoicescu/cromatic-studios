@@ -83,8 +83,10 @@ import { heroCar as heroCar0 } from "../d7/a-common.js";
 // xRoof 0.60, roof ~1.27 m over the 1.64 m body; r3 had it 1.40 m wide, the 1:24 die-cast's upright glass), and its
 // headlamps as on every photo: bright chrome bowls behind clear fluted glass (the shared chrome material had been left
 // at the reflectors' env 0.18, so the lamps read as two black holes and the face as a toy's). Size: the garage 1300's.
-export async function hero1300(ctx, { lights = false, scale = 12.5 } = {}) {
-  const car = await heroCar0(ctx, { lights, scale, build: { xRoof: 0.6 } });
+// r7 (Radu's research rebuild, 25 Oct): the roof's width is the model's own now (xRoof 0.575 off the R12 drawing); E8b's
+// 0.60 override is gone (pass build to force one)
+export async function hero1300(ctx, { lights = false, scale = 12.5, build = {} } = {}) {
+  const car = await heroCar0(ctx, { lights, scale, build });
   const T = await import("/__three/build/three.module.js"), env = ctx.S.mats.omaGlow.envMap;
   const bowl = new T.MeshStandardMaterial({ name: "reflector bright", color: "#e9e9ea", metalness: 1, roughness: 0.16, envMap: env, envMapIntensity: 1.4 }); bowl.userData.dioKeep = true;
   const seen = new Set();

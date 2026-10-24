@@ -8,10 +8,15 @@
 // Metres; origin on the ground under the middle of the wheelbase, +z forward, +y up, +x the car's left.
 //   buildPatrol1310(THREE, { RoundedBoxGeometry, xRoof }) -> { group, body, wheels, mats, tex, parts, DIM, setBeacons }
 // Factory numbers (1310 berlina): length 4.37 (the deeper plastic bumpers), width 1.636, height 1.435 (1.60 over the
-// roof bar), wheelbase 2.441, track 1.31, tyres 155 SR 13.
+// roof bar), wheelbase 2.441, track 1.312, tyres 155 SR 13.
+// r7 (TASK-112, with the hero 1300's rebuild after Mira's research pack, ~/cromatic-ops/refs/dacia1300-research/): the same
+// body fixes as dacia1300-hero.js r7: the cabin, the doors and the tail re-stationed (overhangs 0.870 / 1.037 on the body,
+// windscreen foot FWC +0.34, roof 1.38), the bonnet up, the boot falling ~17 deg to a 0.77 tail, the narrower roof and
+// belt over the shoulder's roll-in, the lower flatter rear arch, the sills 4 cm lower; the 1310's own face, bumpers and
+// tail lamps re-fitted to it (bumpers inside the body, the tail lamps and the plate lower).
 import { buildWheel, dDust, dPlate, dDaciaCabin, dScript } from "./kit.js";
 
-export const DIM = { Lbody: 4.348, L: 4.37, Hbar: 1.60, W: 1.636, H: 1.435, WB: 2.441, zF: 1.161, zR: -1.28, zN: 1.951, zT: -2.397, track: 1.31, tyreR: 0.292, rimR: 0.165, wheelY: 0.29 };
+export const DIM = { Lbody: 4.348, L: 4.37, Hbar: 1.60, W: 1.636, H: 1.435, WB: 2.441, zF: 1.161, zR: -1.28, zN: 1.951, zT: -2.272, track: 1.312, tyreR: 0.292, rimR: 0.165, wheelY: 0.29 };
 
 // ---- a monotone cubic through (x, y) pairs (Fritsch-Carlson): smooth, never overshoots
 function pchip(pts) {
@@ -37,7 +42,7 @@ const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t 
 export function buildPatrol1310(T, ext = {}) {
   const { zF, zR, zN, zT } = DIM;
   const group = new T.Group(); group.name = "hero-patrol1310";
-  const PZ = { d0: 0.585, d2: -1.03, b0: 0.668 }; // the front door's leading edge, the rear door's trailing edge, the bonnet's back edge (the livery's panels)
+  const PZ = { d0: 0.731, d2: -1.109, b0: 0.895 }; // the front door's leading edge, the rear door's trailing edge (its upper part; r7: lower down it follows the arch), the bonnet's back edge (the livery's panels)
   const V3 = (x, y, z) => new T.Vector3(x, y, z);
 
   // ================= materials =================
@@ -84,33 +89,53 @@ export function buildPatrol1310(T, ext = {}) {
   const add = (geo, mat, name) => { const m = new T.Mesh(geo, mat); m.name = name || mat.name; m.castShadow = true; m.receiveShadow = true; group.add(m); return m; };
 
   // ================= the lower body: a loft of cross-sections along z =================
-  const AR = 0.358, AY = 0.30; // wheel arch radius and centre height
+  // r7: the arches differ (Mira, proportions.md 4.6): the front one round, its lip at 0.64 (5-6 cm over the tyre); the
+  // rear one lower and flatter, a half ellipse whose lip comes down to 0.595, 1-2 cm over the tyre (part-skirted)
+  const ARCH = { f: { z: zF, a: 0.345, b: 0.345, y: 0.295 }, r: { z: zR, a: 0.362, b: 0.33, y: 0.265 } };
+  const archY = (A, z) => { const dz = z - A.z; return Math.abs(dz) < A.a ? A.y + A.b * Math.sqrt(1 - (dz / A.a) ** 2) : -1; };
+  const AR = ARCH.r.a; // (the rear arch's half length: the mud flaps)
   const hw0 = (z) => 0.809 - 0.014 * ((z + 0.2) / 2.2) ** 2;
-  const rFc = 0.1, rRc = 0.115;
+  const rFc = 0.15, rRc = 0.085; // (r7: the front corners rounder in plan (Mira E40: 0.15-0.25), the tail's tighter, its lamps reach the corner)
   function hw(z) { // half width at the crease, rounded in plan at both ends
     let w = hw0(z);
     if (z > zN - rFc) { const d = z - (zN - rFc); w = w - rFc + Math.sqrt(Math.max(0, rFc * rFc - d * d)); }
     if (z < zT + rRc) { const d = zT + rRc - z; w = w - rRc + Math.sqrt(Math.max(0, rRc * rRc - d * d)); }
     return w;
   }
-  const RE = 0.034; // the radius of the face's top and bottom edges
-  const endE = (z) => { const dn = zN - z, dt = z - zT, d = Math.min(dn, dt); if (d >= RE) return 0; const q = RE - d; return RE - Math.sqrt(Math.max(0, RE * RE - q * q)); };
-  // the centre line of the top (bonnet, the belt under the glass, the boot deck)
-  const HcT = pchip([[zT, 0.872], [-2.34, 0.893], [-2.15, 0.903], [-1.9, 0.906], [-1.64, 0.903], [-1.0, 0.893], [0.0, 0.882], [0.6, 0.874], [0.665, 0.873], [1.0, 0.853], [1.5, 0.81], [1.85, 0.766], [zN, 0.746]]);
-  const crown = (z) => 0.03 * sstep(0.63, 0.7, z) + 0.022 * (1 - sstep(-1.84, -1.78, z));
-  const rS = (z) => 0.03 + 0.012 * (sstep(0.6, 0.7, z) + 1 - sstep(-1.84, -1.76, z));
-  const ybase = pchip([[zT, 0.335], [-2.25, 0.27], [-2.0, 0.222], [-1.8, 0.215], [1.55, 0.215], [1.75, 0.245], [zN, 0.30]]);
+  // the radius of the face's top and bottom edges (r7: crisper, 22 mm: the bonnet's lip, the boot lid's sharp trailing edge)
+  const REf = 0.022, REr = 0.022;
+  const endE = (z) => { const dn = zN - z, dt = z - zT, RE = dn < dt ? REf : REr, d = Math.min(dn, dt); if (d >= RE) return 0; const q = RE - d; return RE - Math.sqrt(Math.max(0, RE * RE - q * q)); };
+  // the cabin zone (the windscreen's foot to the rear window's foot): the lower body has no lid there
+  // r7: the cowl moved 0.235 forward (FWC +0.33); the rear screen's foot stays at FWC +2.80 (Mira: it was right)
+  const ZC0 = 0.835, ZC1 = -1.639, ZB0 = ZC0 + 0.06, ZK0 = ZC1 - 0.03; // (the bonnet's back edge, the boot lid's front edge)
+  // r7: the top as two lines: S, the shoulder (the wings' top edge and the belt under the glass), and the crown across
+  // the bonnet and the boot lid; the centre line HcT = S + crown. The belt runs straight (0.894) from the A- to the
+  // C-pillar; the bonnet falls almost straight from 0.945 at the cowl to 0.787 at the nose (8.1 deg, 0.91 over the front wheel, as
+  // the drawing); the
+  // boot lid from 0.95 at the rear screen to 0.768 at the tail (17 deg), its shoulder from the C-pillar's elbow down to
+  // the tail lamps. No horizontal deck anywhere (the R12's wedge that falls at both ends)
+  const S = pchip([[zT, 0.742], [-2.1, 0.786], [-1.9, 0.836], [-1.72, 0.881], [ZC1, 0.9], [-1.58, 0.896], [-1.5, 0.894], [0.6, 0.894], [ZC0 - 0.05, 0.896], [ZC0, 0.9], [0.961, 0.887], [1.161, 0.869], [1.361, 0.8515], [1.561, 0.8277], [1.761, 0.7989], [1.861, 0.778], [zN, 0.755]]);
+  const crownF = (z) => lerp(0.045, 0.027, clamp((z - ZC0) / (zN - ZC0), 0, 1)), crownB = (z) => lerp(0.05, 0.026, clamp((ZC1 - z) / (ZC1 - zT), 0, 1));
+  const crown = (z) => crownF(z) * sstep(ZC0 - 0.07, ZC0 - 0.01, z) + crownB(z) * (1 - sstep(ZC1 + 0.01, ZC1 + 0.07, z));
+  const HcT = (z) => S(z) + crown(z);
+  const rS = (z) => 0.03 + 0.012 * sstep(ZC0 - 0.07, ZC0 - 0.01, z) + 0.004 * (1 - sstep(ZC1 + 0.01, ZC1 + 0.07, z));
+  // r7: the sills 4 cm lower (Mira #12: 0.215 -> 0.178 at mid-wheelbase; the car no longer looks lifted)
+  const ybase = pchip([[zT, 0.3], [zT + 0.13, 0.245], [-1.98, 0.195], [-1.78, 0.178], [1.5, 0.178], [1.72, 0.212], [zN, 0.27]]);
   function ybot(z) {
     let y = ybase(z);
-    for (const za of [zF, zR]) { const dz = z - za; if (Math.abs(dz) < AR) y = Math.max(y, AY + Math.sqrt(AR * AR - dz * dz)); }
+    for (const A of [ARCH.f, ARCH.r]) y = Math.max(y, archY(A, z));
     return y + endE(z);
   }
   const sideTop = (z) => HcT(z) - endE(z) - rS(z) - crown(z);
-  const yc = (z) => Math.min(0.69 - 0.007 * z, sideTop(z) - 0.06);
+  // the crease (r7: 0.675-0.68 nose to tail, it becomes the shoulder over the tail lamps)
+  const yc = (z) => Math.min(0.679 - 0.002 * z, sideTop(z) - 0.03);
+  // r7: the shoulder rolls in 0.072 from the crease to the belt along the cabin (the belt ~1.43 over a 1.616 body,
+  // Mira #5: it was 0.026), a little less at the ends (the wings' and the tail's narrower shoulders)
+  const Kroll = (z) => lerp(0.05, 0.072, sstep(zT + 0.1, ZC1 + 0.05, z) * (1 - sstep(ZC0 - 0.05, zN - 0.3, z)));
   function sideX(z, y) {
     const w = hw(z) - endE(z) * 0.6, c = yc(z), st = sideTop(z);
-    if (y <= c) { const t = (c - y) / Math.max(0.05, c - 0.2); return w - 0.052 * t * t - 0.006 * t; }
-    const t = (y - c) / Math.max(0.02, st - c); return w - 0.004 - 0.026 * Math.pow(t, 1.25);
+    if (y <= c) { const t = (c - y) / Math.max(0.05, c - 0.18); return w - 0.052 * t * t - 0.006 * t; }
+    const t = (y - c) / Math.max(0.02, st - c); return w - 0.004 - Kroll(z) * Math.pow(t, 1.15);
   }
   // half section from the bottom flange to the centre line: [x, y] pairs; counts fixed so the rows line up
   const N1 = 16, N2 = 12, NA = 9, NT = 16;
@@ -119,7 +144,7 @@ export function buildPatrol1310(T, ext = {}) {
     const out = [], yb = ybot(z), c = Math.max(yb + 0.01, yc(z)), st = sideTop(z), r = rS(z);
     const x0 = sideX(z, yb);
     out.push([x0 - 0.028, yb + 0.004]); // the flange turned in under the edge
-    for (let i = 0; i < N1; i++) { const t = i / N1, y = lerp(yb, c, 1 - Math.cos((t * Math.PI) / 2) * 0 - 0) ; const yy = lerp(yb, c, t < 0.5 ? t : t); out.push([sideX(z, yy), yy]); }
+    for (let i = 0; i < N1; i++) { const t = i / N1, yy = lerp(yb, c, t); out.push([sideX(z, yy), yy]); }
     for (let i = 0; i < N2; i++) { const t = i / N2, y = lerp(c, st, t); out.push([sideX(z, y), y]); }
     const xs = sideX(z, st), cx = xs - r;
     for (let i = 0; i < NA; i++) { const a = (i / (NA - 1)) * (Math.PI / 2); out.push([cx + r * Math.cos(a), st + r * Math.sin(a)]); }
@@ -127,17 +152,19 @@ export function buildPatrol1310(T, ext = {}) {
     for (let i = 1; i <= NT; i++) { const t = i / NT, u = 1 - Math.cos((t * Math.PI) / 2); const x = cx * (1 - u); out.push([x, topY + cr * (1 - (x / Math.max(0.01, cx)) ** 2)]); }
     return out; // last point: x = 0
   }
-  // the cabin zone (the windscreen's foot to the rear window's foot): the lower body has no lid there
-  const ZC0 = 0.6, ZC1 = -1.635; // r2 (TASK-112 notes): the cabin ends earlier, the boot is long and flat
   // z rows: fine at the ends and round the arches' edges
   function rowsZ() {
     const zs = new Set();
     for (let z = zT; z <= zN + 1e-9; z += 0.018) zs.add(+z.toFixed(5));
     for (let d = 0; d <= 0.14; d += 0.006) { zs.add(+(zN - d).toFixed(5)); zs.add(+(zT + d).toFixed(5)); }
-    for (const za of [zF, zR]) for (const s of [-1, 1]) for (let d = -0.03; d <= 0.03; d += 0.004) zs.add(+(za + s * AR + d).toFixed(5));
-    for (const zc of [ZC0, ZC1, 0.63, 0.665, -1.665, PZ.d0, PZ.d2, PZ.b0]) zs.add(zc);
+    for (const A of [ARCH.f, ARCH.r]) for (const s of [-1, 1]) for (let d = -0.03; d <= 0.03; d += 0.004) zs.add(+(A.z + s * A.a + d).toFixed(5));
+    for (const zc of [ZC0, ZC1, ZC0 - 0.07, ZC0 - 0.01, ZC1 + 0.01, ZC1 + 0.07, ZB0, ZK0, PZ.d0, PZ.d2]) zs.add(+zc.toFixed(5));
     zs.add(zN); zs.add(zT);
-    return [...zs].filter((z) => z >= zT && z <= zN).sort((a, b) => a - b);
+    // (r7: the regular grid's rows that fall within 3.5 mm of the fine ends' rows dropped: rows 1-3 mm apart with
+    // slightly different sections striped the rounder front corners' shading)
+    const must = new Set([ZC0, ZC1, ZB0, ZK0, zN, zT, ...(typeof PZ === "object" ? [PZ.d0, PZ.d2] : [])].map((z) => +z.toFixed(5))), out = [];
+    for (const z of [...zs].filter((z) => z >= zT && z <= zN).sort((a, b) => a - b)) { const l = out[out.length - 1]; if (l === undefined || z - l >= 0.0035) out.push(z); else if (must.has(z) && !must.has(l)) out[out.length - 1] = z; }
+    return out;
   }
   const ZS = rowsZ();
   // a grid surface: rows (z) x columns (full section, x from - to +); keep(i, j) says which quads exist
@@ -153,7 +180,6 @@ export function buildPatrol1310(T, ext = {}) {
     const g = new T.BufferGeometry(); g.setAttribute("position", new T.BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
     return g;
   }
-  const full = (half) => { const L = half.slice(0, -1).map(([x, y]) => [-x, y]); return [...L, ...half.slice().reverse().map(([x, y]) => [x, y])].map((p, k, arr) => p); };
   // full section, left bottom (x<0) to right bottom, through the centre once
   const fullSec = (half) => { const left = half.map(([x, y]) => [-x, y]); const right = half.slice(0, -1).reverse(); return [...left, ...right]; };
   const LOW = ZS.map((z) => fullSec(lowerHalf(z)));
@@ -164,10 +190,11 @@ export function buildPatrol1310(T, ext = {}) {
   // lenses showed two black holes. holesAt(): the lamp outlines as holes for a ShapeGeometry at the face; inLamp(): a point
   // (x, y) inside a lamp's outline, for the body's rounded front corners, which wrap in front of the lamps' outer ends
   const rrShape = (w, h, r) => { const s = new T.Shape(), x = -w / 2, y = -h / 2; s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s; };
-  const BAND = { w: 1.44, h: 0.19, y: 0.628 };
+  const BAND = { w: 1.44, h: 0.175, y: 0.662 }; // (r7: with the 1300's face, the band 0.56-0.76 under the bonnet's lip)
  // 1310: four round headlamps across the black grille (r 0.072, the outer pair at 0.585, the inner at 0.405)
   const LAMPS = [-0.585, -0.405, 0.405, 0.585].map((x) => ({ x, y: BAND.y, r: 0.072 }));
   const holesAt = (xMax = () => 1) => LAMPS.map((L) => { const pts = []; for (let k = 0; k < 40; k++) { const a = (k / 40) * Math.PI * 2, x = L.x + Math.cos(a) * L.r * 0.98, y = L.y + Math.sin(a) * L.r * 0.98; pts.push(new T.Vector2(Math.sign(x) * Math.min(xMax(y), Math.abs(x)), y)); } return new T.Path(pts); });
+  // the half-width of a closed outline (x, y pairs) along the line y: the outermost crossing
   const halfWidthAt = (poly, y) => { let w = 0; for (let k = 0; k < poly.length; k++) { const [x0, y0] = poly[k], [x1, y1] = poly[(k + 1) % poly.length]; if ((y0 - y) * (y1 - y) <= 0 && y0 !== y1) w = Math.max(w, Math.abs(x0 + ((y - y0) / (y1 - y0)) * (x1 - x0))); } return w; };
   const inLamp = (x, y, pad = 0) => LAMPS.some((L) => Math.hypot(x - L.x, y - L.y) - L.r < pad);
   const inCabin = (z) => z < ZC0 - 0.004 && z > ZC1 + 0.004;
@@ -179,10 +206,12 @@ export function buildPatrol1310(T, ext = {}) {
   };
   // the livery's navy panels, per quad: the doors (the flank and shoulder between the front door's leading edge and the
   // rear door's trailing edge) and the bonnet (the top ahead of the scuttle, inside the bonnet's side gaps)
-  const bonX = (z) => Math.min(0.715, hw(z) - 0.075);
+  // (r7: the rear door's trailing edge follows the rear arch below y 0.6, as the gap line does)
+  const bonX = (z) => sideX(z, sideTop(z)) - rS(z) - 0.02;
+  const rearDoorZ = (y) => { const A = ARCH.r, ea = A.a + 0.04, eb = A.b + 0.04, dy = (Math.min(y, 0.6) - A.y) / eb; return A.z + ea * Math.sqrt(Math.max(0, 1 - dy * dy)); };
   const navyQ = (i, j) => {
-    const zm = (ZS[i] + ZS[i + 1]) / 2, h = Math.min(halfIdx(j), halfIdx(j + 1));
-    if (zm > PZ.d2 && zm < PZ.d0 && h >= 1 && h < J_TOP0 + 2) return true;
+    const zm = (ZS[i] + ZS[i + 1]) / 2, h = Math.min(halfIdx(j), halfIdx(j + 1)), ym = (LOW[i][j][1] + LOW[i][j + 1][1] + LOW[i + 1][j][1] + LOW[i + 1][j + 1][1]) / 4;
+    if (zm > rearDoorZ(ym) && zm < PZ.d0 && h >= 1 && h < J_TOP0 + 2) return true;
     if (zm > PZ.b0 && h >= J_ARC0) { const xm = (Math.abs(LOW[i][j][0]) + Math.abs(LOW[i][j + 1][0]) + Math.abs(LOW[i + 1][j][0]) + Math.abs(LOW[i + 1][j + 1][0])) / 4; return xm < bonX(zm); }
     return false;
   };
@@ -193,7 +222,7 @@ export function buildPatrol1310(T, ext = {}) {
   {
     const iz = ZS.map((z, i) => i).filter((i) => ZS[i] <= ZC0 && ZS[i] >= ZC1);
     const rows = iz.length, cols = COLS;
-    const g = gridSurface(rows, cols, (i, j) => { const k = iz[i], [x, y] = LOW[k][j], s = Math.sign(x) || 1; const h = halfIdx(j); const inset = h < J_TOP0 ? 0.014 : 0.014; return [x - s * inset, Math.min(y, sideTop(ZS[k]) + rS(ZS[k]) - 0.01), ZS[k]]; }, (i, j) => { const h = Math.max(halfIdx(j), halfIdx(j + 1)); return h < J_TOP0 + 1 && Math.min(halfIdx(j), halfIdx(j + 1)) >= 2; }, true);
+    const g = gridSurface(rows, cols, (i, j) => { const k = iz[i], [x, y] = LOW[k][j], s = Math.sign(x) || 1; const inset = 0.014; return [x - s * inset, Math.min(y, sideTop(ZS[k]) + rS(ZS[k]) - 0.01), ZS[k]]; }, (i, j) => { const h = Math.max(halfIdx(j), halfIdx(j + 1)); return h < J_TOP0 + 1 && Math.min(halfIdx(j), halfIdx(j + 1)) >= 2; }, true);
     add(g, mats.vinyl, "door cards");
   }
   // the end faces (the front panel behind the grille, the tail panel)
@@ -245,23 +274,35 @@ export function buildPatrol1310(T, ext = {}) {
   const mirrorPts = (pts) => pts.map(({ p, n }) => ({ p: V3(-p.x, p.y, p.z), n: V3(-n.x, n.y, n.z) }));
   const bothSides = (pts, w, lift, mat, name) => { ribbon(pts, w, lift, mat, name); ribbon(mirrorPts(pts), w, lift, mat, name); };
   const GAP = 0.0042, LIFT = 0.0012;
-  // the doors: front edge behind the front wing, the shut line at the B-pillar, the rear door's edge over the arch
+  // the doors: front edge behind the front wing, the shut line at the B-pillar, the rear door's edge round the arch
   const vline = (z, y0, y1, n = 40) => { const out = []; for (let i = 0; i <= n; i++) { const y = lerp(y0, y1, i / n); out.push(lowerSide(z, y)); } return out; };
-  const doorTop = (z) => sideTop(z) + rS(z) * 0.55;
-  const ZD0 = 0.585, ZD1 = -0.392, ZD2 = -1.03;
-  for (const z of [ZD0, ZD1]) bothSides(vline(z, 0.232, sideTop(z) - 0.004), GAP, LIFT, mats.gap, "door gap");
-  { const dz = ZD2 - zR, yArch = AY + Math.sqrt(Math.max(0, AR * AR - dz * dz)) + 0.004; bothSides(vline(ZD2, yArch, sideTop(ZD2) - 0.004), GAP, LIFT, mats.gap, "door gap"); }
-  { const out = []; for (let i = 0; i <= 80; i++) { const z = lerp(zR + AR + 0.006, ZD0, i / 80); if (Math.abs(z - zR) < AR + 0.004 || Math.abs(z - zF) < AR + 0.004) continue; out.push(lowerSide(z, 0.236)); } bothSides(out, GAP, LIFT, mats.gap, "door sill gap"); }
+  // r7: the front door's leading edge at FWC +0.43, the B-pillar's shut line at FWC +1.39 (Mira #3: both were 0.15 back)
+  const ZD0 = 0.731, ZD1 = -0.229;
+  for (const z of [ZD0, ZD1]) bothSides(vline(z, ybase(z) + 0.022, sideTop(z) - 0.004), GAP, LIFT, mats.gap, "door gap");
+  // r7: the rear door's trailing edge: from the sill (FWC +2.05) round the rear arch, 4 cm off its lip, to y 0.6, then
+  // straight up to the shoulder (FWC +2.27, under the rear door window's rear corner)
+  let zDoorRB = -0.9;
+  { const A = ARCH.r, ea = A.a + 0.04, eb = A.b + 0.04, yTurn = 0.6, out = [];
+    const y0 = ybase(A.z + ea) + 0.022;
+    for (let i = 0; i <= 30; i++) { const y = lerp(y0, yTurn, i / 30), dy = (y - A.y) / eb; out.push(lowerSide(A.z + ea * Math.sqrt(Math.max(0, 1 - dy * dy)), y)); }
+    zDoorRB = out[0].p.z; const zTop = out[out.length - 1].p.z;
+    for (let i = 1; i <= 20; i++) out.push(lowerSide(zTop, lerp(yTurn, sideTop(zTop) - 0.004, i / 20)));
+    bothSides(out, GAP, LIFT, mats.gap, "door gap"); }
+  { const out = []; for (let i = 0; i <= 80; i++) { const z = lerp(zDoorRB, ZD0, i / 80); out.push(lowerSide(z, ybase(z) + 0.024)); } bothSides(out, GAP, LIFT, mats.gap, "door sill gap"); }
   // the bonnet: its sides along the wings, its back edge at the scuttle
-  const ZB0 = 0.668, XB = 0.715;
+  const ZB_X = bonX(ZB0);
   { const out = []; ZS.forEach((z, i) => { if (z < ZB0 || z > zN - 0.012 || i >= ZS.length - 1) return; let j = 0; while (j < (COLS - 1) / 2 && !navyQ(i, j)) j++; out.push(lowerTop(z, Math.abs(LOW[i][j][0]))); }); bothSides(out, GAP, LIFT, mats.gap, "bonnet gap"); } // 1310: on the navy panel's edge
-  { const out = []; for (let i = 0; i <= 60; i++) { const x = lerp(-XB, XB, i / 60); out.push(lowerTop(ZB0, x)); } ribbon(out, GAP, LIFT, mats.gap, "bonnet gap"); }
-  // the boot lid: its front edge behind the rear window, its sides
-  const ZK0 = -1.668, XK = 0.70;
-  { const out = []; for (let i = 0; i <= 60; i++) { const x = lerp(-XK, XK, i / 60); out.push(lowerTop(ZK0, x)); } ribbon(out, GAP, LIFT, mats.gap, "boot gap"); }
-  { const out = []; for (let i = 0; i <= 50; i++) { const z = lerp(ZK0, zT + 0.012, i / 50); out.push(lowerTop(z, Math.min(XK, hw(z) - 0.08))); } bothSides(out, GAP, LIFT, mats.gap, "boot gap"); }
+  { const out = []; for (let i = 0; i <= 60; i++) { const x = lerp(-ZB_X, ZB_X, i / 60); out.push(lowerTop(ZB0, x)); } ribbon(out, GAP, LIFT, mats.gap, "bonnet gap"); }
+  // the boot lid: its front edge behind the rear window, its sides, (r7) down over its trailing edge to its lower edge
+  // across the tail (LID_Y): the lid's short rear face carries the script and the lock
+  const bootX = (z) => sideX(z, sideTop(z)) - rS(z) - 0.02, LID_Y = 0.705;
+  { const out = []; for (let i = 0; i <= 60; i++) { const x = lerp(-bootX(ZK0), bootX(ZK0), i / 60); out.push(lowerTop(ZK0, x)); } ribbon(out, GAP, LIFT, mats.gap, "boot gap"); }
+  { const out = []; for (let i = 0; i <= 50; i++) { const z = lerp(ZK0, zT + 0.003, i / 50); out.push(lowerTop(z, bootX(z))); }
+    const xe = bootX(zT), ye = lowerTop(zT, xe).p.y; for (let i = 1; i <= 8; i++) out.push({ p: V3(xe, lerp(ye, LID_Y, i / 8), zT), n: V3(0, 0, -1) });
+    bothSides(out, GAP, LIFT, mats.gap, "boot gap");
+    const across = []; for (let i = 0; i <= 40; i++) across.push({ p: V3(lerp(-xe, xe, i / 40), LID_Y, zT), n: V3(0, 0, -1) }); ribbon(across, GAP, LIFT, mats.gap, "boot gap"); }
   // the scuttle vent under the windscreen
-  { const out = []; for (let i = 0; i <= 50; i++) { const x = lerp(-0.62, 0.62, i / 50); out.push(lowerTop(0.636, x)); } ribbon(out, 0.034, 0.002, mats.black, "scuttle"); }
+  { const out = []; for (let i = 0; i <= 50; i++) { const x = lerp(-0.6, 0.6, i / 50); out.push(lowerTop(ZC0 + 0.036, x)); } ribbon(out, 0.034, 0.002, mats.black, "scuttle"); }
 
   // ---- trims on the flank: the slim chrome strip low on the doors
   const sweep = (path, prof, mat, name, { closed = false, caps = true } = {}) => {
@@ -286,33 +327,39 @@ export function buildPatrol1310(T, ext = {}) {
   const roundProf = (r, n = 12, sq = 1) => Array.from({ length: n }, (_, k) => { const a = (k / n) * Math.PI * 2; return [Math.cos(a) * r, Math.sin(a) * r * sq]; });
   const halfRound = (h, d, n = 10) => { const out = []; for (let k = 0; k <= n; k++) { const a = -Math.PI / 2 + (k / n) * Math.PI; out.push([Math.cos(a) * d, Math.sin(a) * h]); } out.push([-0.001, h * 0.95], [-0.001, -h * 0.95]); return out; };
   {
-    const out = []; for (let i = 0; i <= 70; i++) { const z = lerp(zR + AR + 0.025, zF - AR - 0.025, i / 70); const s = lowerSide(z, 0.292); /* r3: low, along the doors' bottom edge */ out.push({ p: s.p.clone().addScaledVector(s.n, 0.0005), n: s.n }); }
+    const out = []; for (let i = 0; i <= 70; i++) { const z = lerp(ARCH.r.z + ARCH.r.a + 0.025, ARCH.f.z - ARCH.f.a - 0.025, i / 70); const s = lowerSide(z, 0.285); /* r3: low, along the doors' bottom edge */ out.push({ p: s.p.clone().addScaledVector(s.n, 0.0005), n: s.n }); }
     void out; // 1310: no chrome strips on the flanks
   }
-  // the wheel arches' lips (a dark rubbery seam) and the wells
-  for (const za of [zF, zR]) for (const s of [-1, 1]) {
-    const pts = []; for (let i = 0; i <= 60; i++) { const a = Math.PI * (i / 60); const z = za + Math.cos(a) * (AR - 0.002), y = AY + Math.sin(a) * (AR - 0.002); if (y < ybase(z) - 0.002) continue; const q = lowerSide(z, y); pts.push({ p: V3(s * (q.p.x - 0.012), y, z), n: V3(0, Math.sin(a), Math.cos(a)) }); }
-    // the well: half a drum, from the flank in to x = 0.47
-    const well = new T.CylinderGeometry(AR - 0.012, AR - 0.012, 0.36, 40, 1, true, 0, Math.PI);
-    well.rotateZ(Math.PI / 2); // axis along x, the half drum over the top
-    const wm = new T.Mesh(well, mats.under); wm.position.set(s * 0.63, AY, za); wm.rotation.set(0, 0, 0); wm.name = "wheel well"; group.add(wm);
-    const disc = new T.CircleGeometry(AR - 0.012, 40, 0, Math.PI); disc.rotateY(s > 0 ? -Math.PI / 2 : Math.PI / 2); disc.rotateX(0); const dm = new T.Mesh(disc, mats.under); dm.position.set(s * 0.455, AY, za); dm.rotation.set(0, 0, 0); dm.name = "wheel well"; group.add(dm);
+  // the wheel wells: half drums (r7: the rear one elliptical, after its arch), from the flank in to x = 0.45
+  for (const A of [ARCH.f, ARCH.r]) for (const s of [-1, 1]) {
+    const ra = A.a - 0.012, k = (A.b - 0.004) / ra;
+    const well = new T.CylinderGeometry(ra, ra, 0.36, 40, 1, true, 0, Math.PI);
+    well.rotateZ(Math.PI / 2); well.scale(1, k, 1); // axis along x, the half drum over the top
+    const wm = new T.Mesh(well, mats.under); wm.position.set(s * 0.63, A.y, A.z); wm.name = "wheel well"; group.add(wm);
+    const disc = new T.CircleGeometry(ra, 40, 0, Math.PI); disc.rotateY(s > 0 ? -Math.PI / 2 : Math.PI / 2); disc.scale(1, k, 1); const dm = new T.Mesh(disc, mats.under); dm.position.set(s * 0.455, A.y, A.z); dm.name = "wheel well"; group.add(dm);
   }
   // the floor pan: closes the skin from below, flange to flange (up in the arches)
-  { const pan = gridSurface(ZS.length, 9, (i, j) => { const z = ZS[i], x0 = sideX(z, ybot(z)) - 0.028, x = lerp(-x0, x0, j / 8), yy = Math.max(ybase(z) + endE(z), 0.2) + 0.004; return [x, Math.abs(x) > 0.5 ? ybot(z) + 0.004 : yy, z]; }, null, true); add(pan, mats.under, "floor pan"); }
-  // underbody, floor
-  { const g = new T.BoxGeometry(1.0, 0.03, 2.9); g.translate(0, 0.205, -0.1); add(g, mats.under, "underbody"); }
-  { const g = new T.PlaneGeometry(1.5, ZC0 - ZC1 + 0.05); g.rotateX(-Math.PI / 2); g.translate(0, 0.275, (ZC0 + ZC1) / 2); add(g, mats.carpet, "floor"); }
+  { const pan = gridSurface(ZS.length, 9, (i, j) => { const z = ZS[i], x0 = sideX(z, ybot(z)) - 0.028, x = lerp(-x0, x0, j / 8), yy = Math.max(ybase(z) + endE(z), 0.16) + 0.004; return [x, Math.abs(x) > 0.5 ? ybot(z) + 0.004 : yy, z]; }, null, true); add(pan, mats.under, "floor pan"); }
+  // underbody, floor (r7: 12-14 cm off the ground, the drawing's 0.120)
+  { const g = new T.BoxGeometry(1.0, 0.03, 2.9); g.translate(0, 0.152, -0.1); add(g, mats.under, "underbody"); }
+  { const g = new T.PlaneGeometry(1.5, ZC0 - ZC1 + 0.05); g.rotateX(-Math.PI / 2); g.translate(0, 0.24, (ZC0 + ZC1) / 2); add(g, mats.carpet, "floor"); }
 
   // ================= the glasshouse: a second loft, from the windscreen's foot to the rear window's foot =================
   const beltY = (z) => sideTop(z) + rS(z) - 0.004;
-  const HrT = pchip([[ZC1, 0.912], [-1.52, 1.02], [-1.36, 1.19], [-1.18, 1.36], [-1.08, 1.41], [-0.96, 1.428], [-0.5, 1.435], [-0.05, 1.426], [0.03, 1.405], [0.12, 1.33], [0.36, 1.13], [ZC0, 0.892]]);
-  const RR = 0.034, xRoof = ext.xRoof ?? 0.6; /* Patrol: Vera's E8b roof (0.60) by default */ // r3: the side glass nearly upright, the roof wide (the 1:24 model). E8 (Vera): ext.xRoof narrows the roof (tumblehome, as the real car: the roof ~1.27 m over a 1.64 m body)
-  const crownR = (z) => 0.024 + 0.012 * (sstep(0.06, 0.3, z) + 1 - sstep(-1.4, -1.15, z));
-  const xBelt = (z) => hw(z) - 0.05;
+  // r7: the roof's centre line re-stationed (Mira #3): the rear screen at 42-43 deg from its foot (FWC +2.80, 0.96) to
+  // the roof's rear edge (FWC +2.34), the roof 1.38-1.40 long, its front edge at FWC +0.96, the windscreen at 36 deg
+  // down to the cowl (FWC +0.33..0.37, 0.93-0.95)
+  const HrT = pchip([[ZC1, 0.952], [-1.589, 0.978], [-1.489, 1.068], [-1.389, 1.164], [-1.289, 1.265], [-1.239, 1.318], [-1.199, 1.364], [-1.169, 1.39], [-1.139, 1.403], [-1.04, 1.416], [-0.85, 1.43], [-0.6, 1.435], [-0.3, 1.432], [-0.04, 1.42], [0.111, 1.404], [0.211, 1.387], [0.261, 1.369], [0.311, 1.339], [0.361, 1.307], [0.461, 1.233], [0.561, 1.153], [0.661, 1.068], [0.741, 1.005], [0.781, 0.975], [ZC0, 0.945]]);
+  // r3: the side glass nearly upright, the roof wide (the 1:24 model). E8 (Vera): ext.xRoof narrows the roof. r7: 0.60 by
+  // default (the roof 1.27 at the gutters over the 1.616 body, the side glass leaning ~10 deg; Mira #5)
+  const RR0 = 0.05, RR = RR0, xRoof = ext.xRoof ?? 0.575; // (r7: the roof's edges rounder, as the drawing's front and rear views)
+  const crownR = (z) => 0.034 + 0.012 * (sstep(0.135, 0.375, z) + 1 - sstep(-1.46, -1.21, z));
+  const xBelt = (z) => sideX(z, sideTop(z)) - 0.02; // r7: on the shoulder's roll, wherever it is (it was hw - 0.05)
   function cabHalf(z) {
-    const out = [], yb = beltY(z) - 0.006, Hc = HrT(z), cr = crownR(z), yk = Math.max(yb + 0.002, Hc - RR - cr);
-    const xb = xBelt(z), roofEdgeY = 1.435 - RR - 0.024, f = clamp((yk - yb) / (roofEdgeY - yb), 0, 1), xk = lerp(xb, xRoof + RR, Math.pow(f, 0.9)) - RR;
+    // (r7: near the screens' feet the corner and the crown shrink with the room left over the belt, so the section's
+    // centre meets the roof line there exactly: the cowl and the rear screen's foot level with the bonnet and the lid)
+    const out = [], yb = beltY(z) - 0.006, Hc = HrT(z), room = Hc - yb - 0.002, RR = Math.min(RR0, Math.max(0.004, room * 0.45)), cr = Math.min(crownR(z), Math.max(0.002, room * 0.45)), yk = Math.max(yb + 0.002, Hc - RR - cr);
+    const xb = xBelt(z), roofEdgeY = 1.435 - RR0 - 0.034, f = clamp((yk - yb) / (roofEdgeY - yb), 0, 1), xk = lerp(xb, xRoof + RR, Math.pow(f, 0.9)) - RR;
     const NS = 18, NA2 = 7, NT2 = 18;
     for (let i = 0; i < NS; i++) { const t = i / NS, y = lerp(yb, yk, t); out.push([lerp(xb, xk + RR, Math.pow(t, 0.92)), y]); }
     for (let i = 0; i < NA2; i++) { const a = (i / (NA2 - 1)) * (Math.PI / 2); out.push([xk + RR * Math.cos(a), yk + RR * Math.sin(a)]); }
@@ -382,19 +429,23 @@ export function buildPatrol1310(T, ext = {}) {
     return g;
   }
   // ---- the openings, off the 1:24 model's photo (metres; the flank: z, y; the roof: z, x)
-  const T_WIN = (z) => sideTopY(z) - 0.042; // the windows' top: a painted rail under the roof's corner
+  // r7: the windows' top at 1.315-1.32 (Mira: the DLO top under the drip rail; it was 1.335): a wider painted rail
+  const T_WIN = (z) => sideTopY(z) - 0.036; // the windows' top: a painted rail under the roof's corner
   const BOT = (z) => sideBot(z) + 0.022; // their bottom: just over the door's top edge
-  // front door window: the front edge parallel to the A-pillar, set in from it (a wide painted pillar at its foot)
-  const zFTop = (() => { let z = 0.2; for (let i = 0; i < 60; i++) { const d = sideTopY(z) - 0.085 - T_WIN(-0.3); z += d > 0 ? 0.004 : -0.004; } return z; })();
-  const frontWin = roundQuad([[0.385, BOT(0.385)], [-0.352, BOT(-0.352)], [-0.352, T_WIN(-0.352)], [zFTop, T_WIN(zFTop)]], [0.02, 0.018, 0.026, 0.05]);
-  // rear door window: from the B-pillar back, its rear edge a little slanted
-  const RW_B = -1.165, RW_T = -1.09;
-  const rearWin = roundQuad([[-0.44, BOT(-0.44)], [RW_B, BOT(RW_B)], [RW_T, T_WIN(RW_T)], [-0.44, T_WIN(-0.44)]], [0.018, 0.02, 0.05, 0.026]);
+  // front door window (r7: re-stationed with the doors): its front edge raked parallel to the A-pillar (36-38 deg), its
+  // lower front corner in the door's front top corner (the mirror's place), its rear edge at the B-pillar (FWC +1.35)
+  const zFTop = 0.08, ZWF = 0.6;
+  const frontWin = roundQuad([[ZWF, BOT(ZWF)], [-0.19, BOT(-0.19)], [-0.19, T_WIN(-0.19)], [zFTop, T_WIN(zFTop)]], [0.02, 0.018, 0.026, 0.05]);
+  // rear door window: from the B-pillar back (FWC +1.43), its rear edge slanted forward with the C-pillar's front edge
+  const RW_B = -1.1, RW_T = -1.0;
+  const rearWin = roundQuad([[-0.27, BOT(-0.27)], [RW_B, BOT(RW_B)], [RW_T, T_WIN(RW_T)], [-0.27, T_WIN(-0.27)]], [0.018, 0.02, 0.05, 0.026]);
   // windscreen and rear window: rounded corners, a painted band all round (header, pillars, scuttle)
-  const wsTop = 0.13, wsBot = 0.548, rwTop = -1.115, rwBot = -1.585;
+  // r7: the windscreen's foot at FWC +0.366, its top (the roof's front edge) at FWC +0.956; the rear screen's top (the
+  // roof's rear edge) at FWC +2.336, its foot at FWC +2.776; the rear screen a trapezoid, ~1.17 at its foot, ~0.84 at its top
+  const wsTop = 0.205, wsBot = 0.795, rwTop = -1.175, rwBot = -1.615;
   const glassOn = (zA, zB, inA, inB, rA, rB) => roundQuad([[zA, -(xkOf(zA) - inA)], [zA, xkOf(zA) - inA], [zB, xkOf(zB) - inB], [zB, -(xkOf(zB) - inB)]], [rA, rA, rB, rB], 12).map(([z, x]) => [z, sOfX(z, x)]);
   const wscreen = glassOn(wsBot, wsTop, 0.05, 0.06, 0.065, 0.1);
-  const rwindow = glassOn(rwTop, rwBot, 0.062, 0.05, 0.09, 0.06);
+  const rwindow = glassOn(rwTop, rwBot, 0.175, 0.075, 0.09, 0.06);
   // ---- the flanks (both sides)
   const sideMap = (sx, inset0 = 0) => (z, y) => { const yy = clamp(y, sideBot(z), sideTopY(z)); const q = cabSide(z, yy); return { p: V3(sx * q.p.x, q.p.y, q.p.z), n: V3(sx * q.n.x, q.n.y, q.n.z) }; };
   const zs = []; for (let z = ZC1; z <= ZC0 + 1e-9; z += 0.01) zs.push(z);
@@ -418,8 +469,8 @@ export function buildPatrol1310(T, ext = {}) {
   // ---- the drip rails along the roof's edges
   // v3: the rain gutters (a U channel open outward, black on the 1310), the belt moulding under the side windows (satin)
   const GUT = [[-0.002, -0.006], [0.007, -0.006], [0.0075, -0.0045], [0.0025, -0.004], [0.0025, 0.004], [0.0075, 0.0045], [0.007, 0.006], [-0.002, 0.006]];
-  for (const s of [-1, 1]) { const pts = []; for (let z = -1.06; z <= 0.06; z += 0.01) { const n = topNrm(z, s * 0.88); pts.push({ p: topPt(z, s * 0.88).addScaledVector(n, 0.002), n: V3(s, 0.35, 0).normalize() }); } sweep(pts, GUT, mats.black, "rain gutter", { closed: true }); }
-  for (const sx of [1, -1]) { const pts = []; for (let z = -1.2; z <= 0.42; z += 0.02) { const q = cabSide(z, sideBot(z) + 0.012); pts.push({ p: V3(sx * q.p.x, q.p.y, q.p.z).addScaledVector(V3(sx * q.n.x, q.n.y, q.n.z), 0.001), n: V3(sx * q.n.x, q.n.y, q.n.z) }); } sweep(pts, halfRound(0.006, 0.004), mats.satin, "belt moulding", { closed: true }); }
+  for (const s of [-1, 1]) { const pts = []; for (let z = rwTop + 0.055; z <= wsTop - 0.07; z += 0.01) { const n = topNrm(z, s * 0.97); pts.push({ p: topPt(z, s * 0.97).addScaledVector(n, 0.002), n: V3(s, 0.35, 0).normalize() }); } sweep(pts, GUT, mats.black, "rain gutter", { closed: true }); }
+  for (const sx of [1, -1]) { const pts = []; for (let z = RW_B - 0.035; z <= ZWF + 0.035; z += 0.02) { const q = cabSide(z, sideBot(z) + 0.012); pts.push({ p: V3(sx * q.p.x, q.p.y, q.p.z).addScaledVector(V3(sx * q.n.x, q.n.y, q.n.z), 0.001), n: V3(sx * q.n.x, q.n.y, q.n.z) }); } sweep(pts, halfRound(0.006, 0.004), mats.satin, "belt moulding", { closed: true }); }
   // cabin surface query (the flank of the glasshouse at z, height y)
   function cabSide(z, y) {
     const h = cabHalf(z); let k; for (k = 0; k < C_SIDE - 1; k++) if (h[k + 1][1] >= y) break;
@@ -443,14 +494,29 @@ export function buildPatrol1310(T, ext = {}) {
   const facing = (g, z, back) => { if (back) g.rotateY(Math.PI); g.translate(0, 0, z); return g; };
   // 1310: the face is one black plastic grille across the full width, a satin frame round it, horizontal slats between the
   // lamps, four round headlamps in black rings: bright bowls (their own "reflector" material) behind fluted lenses
-  { const g = ringGeo(BAND.w, BAND.h, 0.03, 0.009, 0.014, 0.003); g.translate(0, BAND.y, 0); add(facing(g, FZ - 0.006, false), mats.plastic, "grille surround"); }
-  { const sh = rrShape(BAND.w, BAND.h, 0.03); sh.holes.push(...holesAt().map((h) => new T.Path(h.getPoints().map((v) => new T.Vector2(v.x, v.y - BAND.y))))); const g = new T.ShapeGeometry(sh, 8); g.translate(0, BAND.y, FZ + 0.001); add(g, mats.black, "grille back"); }
+  // r7: the band's and the rings' outer ends bent back round the face's rounded corners (as the 1300's)
+  // (r7: a geometry's triangles split until no edge is longer than L, as separate triangles (flat normals kept), so a
+  // bend applied per vertex follows the curve instead of cutting chords behind the skin)
+  const subdiv = (g0, L) => {
+    const g = g0.index ? g0.toNonIndexed() : g0, P = g.attributes.position; let T3 = [];
+    for (let i = 0; i < P.count; i += 3) T3.push([0, 1, 2].map((k) => [P.getX(i + k), P.getY(i + k), P.getZ(i + k)]));
+    const len = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]), mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
+    for (let pass = 0; pass < 10; pass++) { const out = []; let any = false;
+      for (const [a, b, c] of T3) { const la = len(a, b), lb = len(b, c), lc = len(c, a), m = Math.max(la, lb, lc); if (m <= L || Math.max(Math.abs(a[0]), Math.abs(b[0]), Math.abs(c[0])) < xr0 - L) { out.push([a, b, c]); continue; } any = true;
+        if (m === la) { const d = mid(a, b); out.push([a, d, c], [d, b, c]); } else if (m === lb) { const d = mid(b, c); out.push([a, b, d], [a, d, c]); } else { const d = mid(c, a); out.push([a, b, d], [d, b, c]); } }
+      T3 = out; if (!any) break; }
+    const pos = new Float32Array(T3.length * 9); T3.forEach((t, i) => t.forEach((p, k) => pos.set(p, i * 9 + k * 3)));
+    const r = new T.BufferGeometry(); r.setAttribute("position", new T.BufferAttribute(pos, 3)); return r;
+  };
+  const xr0 = hw0(zN) - rFc, bendFace = (g0) => { const g = subdiv(g0, 0.012); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const d = Math.abs(p.getX(i)) - xr0; if (d > 0) p.setZ(i, p.getZ(i) - (rFc - Math.sqrt(Math.max(0, rFc * rFc - Math.min(d, rFc) ** 2)))); } g.computeVertexNormals(); return g; };
+  { const g = ringGeo(BAND.w, BAND.h, 0.03, 0.009, 0.014, 0.003); g.translate(0, BAND.y, 0); add(bendFace(facing(g, FZ - 0.006, false)), mats.plastic, "grille surround"); }
+  { const sh = rrShape(BAND.w, BAND.h, 0.03); sh.holes.push(...holesAt().map((h) => new T.Path(h.getPoints().map((v) => new T.Vector2(v.x, v.y - BAND.y))))); const g = new T.ShapeGeometry(sh, 8); g.translate(0, BAND.y, FZ + 0.001); add(bendFace(g), mats.black, "grille back"); }
   for (let k = 0; k < 7; k++) { const g = new T.BoxGeometry(0.62, 0.011, 0.02); g.translate(0, BAND.y - 0.066 + k * 0.022, FZ + 0.01); add(g, mats.plastic, "grille slat"); }
   for (const x of [-0.31, 0.31]) { const g = new T.BoxGeometry(0.012, BAND.h - 0.01, 0.024); g.translate(x, BAND.y, FZ + 0.01); add(g, mats.plastic, "grille post"); }
   { const sh = new T.Shape(); sh.moveTo(-0.022, 0.024); sh.lineTo(0.022, 0.024); sh.lineTo(0.022, -0.004); sh.absarc(0, -0.004, 0.022, 0, Math.PI, true); sh.closePath(); const g = new T.ExtrudeGeometry(sh, { depth: 0.004, bevelEnabled: true, bevelThickness: 0.002, bevelSize: 0.002, bevelSegments: 3 }); g.translate(0, BAND.y - 0.006, FZ + 0.024); add(g, mats.badge, "badge"); }
   for (const L of LAMPS) {
     const cx = L.x, cy = L.y, r = L.r;
-    { const g = new T.TorusGeometry(r + 0.008, 0.009, 12, 48); g.translate(cx, cy, FZ + 0.016); add(g, mats.plastic, "headlamp ring"); }
+    { const g = new T.TorusGeometry(r + 0.008, 0.009, 12, 48); g.translate(cx, cy, FZ + 0.016); add(bendFace(g), mats.plastic, "headlamp ring"); }
     { const g = new T.TorusGeometry(r + 0.001, 0.003, 8, 48); g.translate(cx, cy, FZ + 0.019); add(g, mats.satin, "headlamp rim"); }
     // the bowl: a paraboloid dish, its rim just in front of the face (nothing on the face covers it)
     { const prof = []; for (let k = 0; k <= 16; k++) { const t = k / 16, rr = r * Math.sqrt(1 - t) ; prof.push(new T.Vector2(Math.max(0.0005, rr), -0.058 * t)); } const g = new T.LatheGeometry(prof.reverse(), 48); g.rotateX(Math.PI / 2); g.translate(cx, cy, FZ + 0.004); add(g, mats.reflector, "reflector"); }
@@ -458,17 +524,15 @@ export function buildPatrol1310(T, ext = {}) {
     { const g = new T.CircleGeometry(r, 40); const p = g.attributes.position, uv = g.attributes.uv; for (let i = 0; i < p.count; i++) { const x = p.getX(i) / r, y = p.getY(i) / r; p.setZ(i, 0.014 * Math.max(0, 1 - x * x - y * y)); uv.setXY(i, x * 0.5 + 0.5, y * 0.5 + 0.5); } g.computeVertexNormals(); g.translate(cx, cy, FZ + 0.012); add(g, mats.lens, "headlamp lens"); }
   }
   // the intake under the grille: a black slot
-  { const g = new T.PlaneGeometry(0.5, 0.05); g.translate(0, 0.49, FZ + 0.0015); add(g, mats.black, "intake"); }
+  { const g = new T.PlaneGeometry(0.5, 0.05); g.translate(0, 0.515, FZ + 0.0015); add(g, mats.black, "intake"); }
   // 1310 bumpers: deep black plastic mouldings wrapping round the corners, a ribbed rubber insert along their middle, the
   // amber indicators set in the front one's corners
   function bumper(front) {
-    const sgn = front ? 1 : -1, z0 = (front ? zN : zT) + sgn * 0.016, y = front ? 0.40 : 0.44;
+    // (r7: the ends wrap round inside the body, <= 1.60 over them; 4.37 overall, the front plate to the rear insert)
+    const sgn = front ? 1 : -1, z0 = front ? zN + 0.017 : zT - 0.026, y = front ? 0.40 : 0.42, xe = 0.765, xw = 0.6;
+    const bz = (x) => 0.01 * (x / xe) ** 2 + (Math.abs(x) > xw ? (Math.abs(x) - xw) ** 2 * 2.6 : 0);
     const pts = [];
-    for (let i = 0; i <= 90; i++) {
-      const t = i / 90, x = lerp(-0.84, 0.84, t), ax = Math.abs(x);
-      const back = ax > 0.62 ? (ax - 0.62) ** 2 * 2.4 : 0;
-      pts.push({ p: V3(x, y, z0 - sgn * (0.014 * (x / 0.86) ** 2 + back)), n: V3(0, 1, 0) });
-    }
+    for (let i = 0; i <= 90; i++) { const x = lerp(-xe, xe, i / 90); pts.push({ p: V3(x, y, z0 - sgn * bz(x)), n: V3(0, 1, 0) }); }
     // profile: a squared C, 0.13 tall, 0.07 deep, rounded edges
     const prof = []; const H = 0.065, D = 0.042, rr = 0.016;
     const corner = (cx, cy, a0) => { for (let k = 0; k <= 4; k++) { const a = a0 + (k / 4) * (Math.PI / 2); prof.push([cy + Math.sin(a) * rr, sgn * (cx + Math.cos(a) * rr)]); } };
@@ -478,18 +542,18 @@ export function buildPatrol1310(T, ext = {}) {
     sweep(ins, [[0.014, -0.004], [0.014, 0.004], [-0.014, 0.004], [-0.014, -0.004]], mats.rubber, "bumper insert", { closed: true });
     for (const s of [-1, 1]) {
       const st = new T.BoxGeometry(0.02, 0.03, 0.09); st.translate(s * 0.62, y, z0 - sgn * 0.06); add(st, mats.under, "bumper bracket");
-      if (front) { const g = new T.PlaneGeometry(0.12, 0.05); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 2, uv.getY(i)); g.translate(s * 0.6, y - 0.005, z0 + 0.044 - 0.014 * (0.6 / 0.86) ** 2 + 0.001); add(g, mats.amber, "indicator"); }
+      if (front) { const g = new T.PlaneGeometry(0.12, 0.05); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 2, uv.getY(i)); g.translate(s * 0.6, y - 0.005, z0 + 0.044 - bz(0.6) + 0.001); add(g, mats.amber, "indicator"); }
     }
   }
   bumper(true); bumper(false);
   // number plates
   { const m = dPlate(T, "B 131 PLT", 0.34, 0.105, { kind: "eu" }); m.name = "front plate"; m.position.set(0, 0.40, zN + 0.072); group.add(m); const b = new T.BoxGeometry(0.35, 0.115, 0.008); b.translate(0, 0.40, zN + 0.067); add(b, mats.black, "plate holder"); }
-  { const m = dPlate(T, "B 131 PLT", 0.52, 0.112, { kind: "eu", back: true }); m.name = "rear plate"; m.position.set(0, 0.67, zT - 0.009); group.add(m); const b = new T.BoxGeometry(0.535, 0.125, 0.006); b.translate(0, 0.67, zT - 0.004); add(b, mats.black, "plate holder"); const l = new T.BoxGeometry(0.12, 0.018, 0.03); l.translate(0, 0.762, zT - 0.012); add(l, mats.chrome, "plate lamp"); }
+  { const m = dPlate(T, "B 131 PLT", 0.52, 0.112, { kind: "eu", back: true }); m.name = "rear plate"; m.position.set(0, 0.565, zT - 0.009); group.add(m); const b = new T.BoxGeometry(0.535, 0.125, 0.006); b.translate(0, 0.565, zT - 0.004); add(b, mats.black, "plate holder"); const l = new T.BoxGeometry(0.12, 0.018, 0.03); l.translate(0, 0.64, zT - 0.012); add(l, mats.chrome, "plate lamp"); }
 
   // ================= the rear: tail lamps, the boot's lock, the exhaust =================
   // 1310: wider horizontal tail lamps in black frames: amber outboard, red, the clear reversing lamp, red inboard
   for (const s of [-1, 1]) {
-    const cx = s * 0.54, cy = 0.672, w = 0.31, h = 0.12;
+    const cx = s * 0.525, cy = 0.565, w = 0.31, h = 0.12; // (r7: lower with the lower tail, inside its corners)
     { const g = ringGeo(w, h, 0.014, 0.012, 0.018, 0.004); g.rotateY(Math.PI); g.translate(cx, cy, zT + 0.002); add(g, mats.plastic, "tail lamp rim"); }
     const seg = (x0, x1, mat) => { const g = new T.PlaneGeometry(Math.abs(x1 - x0), h, 1, 1); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * Math.abs(x1 - x0) * 16, uv.getY(i)); g.rotateY(Math.PI); g.translate(cx + s * ((x0 + x1) / 2), cy, zT - 0.012); add(g, mat, "tail lamp"); };
     const e = [w / 2, w / 2 - 0.075, w / 2 - 0.19, -w / 2 + 0.06, -w / 2];
@@ -497,16 +561,16 @@ export function buildPatrol1310(T, ext = {}) {
     for (const xs of [e[1], e[2], e[3]]) { const g = new T.BoxGeometry(0.006, h, 0.008); g.translate(cx + s * xs, cy, zT - 0.013); add(g, mats.plastic, "lamp divider"); }
   }
   // mud flaps behind the rear wheels
-  for (const s of [-1, 1]) { const g = new T.BoxGeometry(0.16, 0.25, 0.008); g.translate(s * 0.655, 0.255, zR - AR - 0.03); add(g, mats.rubber, "mud flap"); }
-  { const g = new T.CylinderGeometry(0.014, 0.014, 0.012, 20); g.rotateX(Math.PI / 2); g.translate(0, 0.79, zT - 0.006); add(g, mats.chrome, "boot lock"); }
+  for (const s of [-1, 1]) { const g = new T.BoxGeometry(0.16, 0.25, 0.008); g.translate(s * 0.655, 0.235, zR - AR - 0.03); add(g, mats.rubber, "mud flap"); }
+  { const g = new T.CylinderGeometry(0.014, 0.014, 0.012, 20); g.rotateX(Math.PI / 2); g.translate(0, 0.726, zT - 0.006); add(g, mats.chrome, "boot lock"); }
   // v3: the emblems: the model's numerals on the tail panel (the right), a chrome rim round the grille's shield
-  { const m = dScript(T, "1310", 0.034); m.rotation.y = Math.PI; m.position.set(-0.48, 0.79, zT - 0.004); group.add(m); }
+  { const m = dScript(T, "1310", 0.034); m.rotation.y = Math.PI; m.position.set(-0.48, 0.7255, zT - 0.004); group.add(m); } // (r7: on the boot lid's trailing face)
   { const r = new T.TorusGeometry(0.026, 0.0028, 8, 40); r.scale(1, 1.05, 1); r.translate(0, BAND.y + 0.002, FZ + 0.03); add(r, mats.chrome, "badge rim"); }
-  { const g = new T.CylinderGeometry(0.024, 0.024, 0.28, 20, 1, true); g.rotateX(Math.PI / 2); g.translate(-0.42, 0.235, zT + 0.11); add(g, mats.satin, "exhaust"); const c = new T.CircleGeometry(0.02, 20); c.rotateY(Math.PI); c.translate(-0.42, 0.235, zT - 0.028); add(c, mats.under, "exhaust hole"); }
+  { const g = new T.CylinderGeometry(0.024, 0.024, 0.14, 20, 1, true); g.rotateX(Math.PI / 2); g.translate(-0.42, 0.2, zT + 0.04); add(g, mats.satin, "exhaust"); const c = new T.CircleGeometry(0.02, 20); c.rotateY(Math.PI); c.translate(-0.42, 0.2, zT - 0.028); add(c, mats.under, "exhaust hole"); }
 
   // ================= the flank's fittings: handles, the mirror, the fuel cap, wipers =================
   // v3: the door handles: (1310: black plastic) an escutcheon in a dark recess, the pull lever proud of it, the key lock on the front doors
-  for (const s of [-1, 1]) for (const zh of [-0.33, -0.975]) {
+  for (const s of [-1, 1]) for (const zh of [ZD1 + 0.06, -1.05]) { // (r7: re-stationed with the doors)
     const q = lowerSide(zh, 0.818), p = V3(s * q.p.x, q.p.y, q.p.z), n = V3(s * q.n.x, q.n.y, q.n.z);
     const H = new T.Group(); H.name = "door handle"; H.position.copy(p); H.quaternion.setFromUnitVectors(V3(1, 0, 0), n); group.add(H);
     const hb = (w, h, d, r, mat, name, x) => { const g = ext.RoundedBoxGeometry ? new ext.RoundedBoxGeometry(d, h, w, 3, r) : new T.BoxGeometry(d, h, w); const m = new T.Mesh(g, mat); m.name = name; m.position.x = x; m.castShadow = m.receiveShadow = true; H.add(m); return m; };
@@ -516,21 +580,22 @@ export function buildPatrol1310(T, ext = {}) {
     if (zh > -0.5) { const lk = new T.CylinderGeometry(0.0075, 0.0075, 0.008, 18); lk.rotateZ(Math.PI / 2); const lm = new T.Mesh(lk, mats.chrome); lm.name = "lock"; lm.position.set(0.006, 0, 0.082); H.add(lm); const sl = new T.BoxGeometry(0.002, 0.007, 0.0016); sl.translate(0.0105, 0, 0.082); const sm = new T.Mesh(sl, mats.gap); sm.name = "lock slot"; H.add(sm); }
   }
   { // the driver's mirror (left, +x): a chrome head on a short stalk at the front door's lower front corner (r3)
-    const q = lowerSide(0.44, sideTop(0.44) + 0.01), p = q.p.clone();
+    const q = lowerSide(ZWF + 0.04, sideTop(ZWF + 0.04) + 0.01), p = q.p.clone(); // (r7: at the front door window's re-stationed lower front corner)
     const st = new T.CylinderGeometry(0.007, 0.01, 0.075, 12); st.rotateZ(-Math.PI / 2 + 0.6); const sm = add(st, mats.plastic, "mirror stalk"); sm.position.set(p.x + 0.03, p.y + 0.03, p.z);
     const hg = ext.RoundedBoxGeometry ? new ext.RoundedBoxGeometry(0.03, 0.068, 0.088, 3, 0.012) : new T.BoxGeometry(0.03, 0.068, 0.088);
     const hm = add(hg, mats.plastic, "mirror"); hm.position.set(p.x + 0.075, p.y + 0.07, p.z - 0.005); hm.rotation.y = -0.25;
     const gl = new T.PlaneGeometry(0.06, 0.05); gl.rotateY(Math.PI); const gm = add(gl, mats.mirror, "mirror glass"); gm.position.set(p.x + 0.075, p.y + 0.07, p.z - 0.051); gm.rotation.y = Math.PI - 0.25 - Math.PI;
   }
-  { const q = lowerSide(-1.86, 0.80); const g = new T.CylinderGeometry(0.042, 0.042, 0.008, 28); g.rotateZ(Math.PI / 2); const m = add(g, mats.chrome, "fuel cap"); m.position.set(-q.p.x - 0.002, q.p.y, q.p.z); }
+  // (r7: the filler under the lower shoulder)
+  { const q = lowerSide(-1.86, 0.76); const g = new T.CylinderGeometry(0.042, 0.042, 0.008, 28); g.rotateZ(Math.PI / 2); const m = add(g, mats.chrome, "fuel cap"); m.position.set(-q.p.x - 0.002, q.p.y, q.p.z); }
   { // wipers parked at the foot of the windscreen (v3: the arm on its pivot, the blade's frame and rubber on the glass)
     for (const [x0, x1] of [[-0.42, 0.02], [0.08, 0.5]]) {
       const onGlass = (x, z) => { const h = cabHalf(z); let y = 0; for (let k = C_TOP0; k < h.length - 1; k++) if (h[k][0] >= Math.abs(x) && h[k + 1][0] <= Math.abs(x)) { y = lerp(h[k][1], h[k + 1][1], (h[k][0] - Math.abs(x)) / Math.max(1e-6, h[k][0] - h[k + 1][0])); break; } if (!y) y = h[h.length - 1][1]; return y; };
-      const path = (lift, a, b) => { const pts = []; for (let i = 0; i <= 20; i++) { const t = lerp(a, b, i / 20), x = lerp(x0, x1, t), z = 0.53 - 0.03 * t; pts.push({ p: V3(x, onGlass(x, z) + lift, z), n: V3(0, 0.8, 0.6).normalize() }); } return pts; };
+      const path = (lift, a, b) => { const pts = []; for (let i = 0; i <= 20; i++) { const t = lerp(a, b, i / 20), x = lerp(x0, x1, t), z = wsBot - 0.018 - 0.03 * t; pts.push({ p: V3(x, onGlass(x, z) + lift, z), n: V3(0, 0.8, 0.6).normalize() }); } return pts; };
       sweep(path(0.016, 0, 0.92), [[0.004, -0.0035], [0.004, 0.0035], [-0.003, 0.004], [-0.003, -0.004]], mats.black, "wiper arm", { closed: true });
       sweep(path(0.008, 0.08, 1), [[0.004, -0.004], [0.004, 0.004], [-0.002, 0.004], [-0.002, -0.004]], mats.black, "wiper blade frame", { closed: true });
       sweep(path(0.002, 0.08, 1), [[0.003, -0.0016], [0.003, 0.0016], [-0.003, 0.0008], [-0.003, -0.0008]], mats.rubber, "wiper rubber", { closed: true });
-      { const x = x0 + 0.01, z = 0.535, g = new T.CylinderGeometry(0.012, 0.014, 0.022, 16); g.translate(x, onGlass(x, z) + 0.008, z); add(g, mats.black, "wiper pivot"); }
+      { const x = x0 + 0.01, z = wsBot - 0.013, g = new T.CylinderGeometry(0.012, 0.014, 0.022, 16); g.translate(x, onGlass(x, z) + 0.008, z); add(g, mats.black, "wiper pivot"); }
     }
   }
 
@@ -538,14 +603,14 @@ export function buildPatrol1310(T, ext = {}) {
   // decals laid on the skin (a grid of points on the flank / the bonnet, 1.6 mm out), alpha-tested white lettering
   const parts = {};
   {
-    const z0 = -0.36, z1 = 0.5, y0 = 0.52, y1 = 0.66, nz = 24, ny = 6;
+    const z0 = -0.17, z1 = 0.67, y0 = 0.52, y1 = 0.66, nz = 24, ny = 6; // (r7: on the re-stationed front doors)
     for (const s of [-1, 1]) {
       const g = gridGeo(ny + 1, nz + 1, (i, j) => { const z = lerp(z1, z0, j / nz), y = lerp(y0, y1, i / ny), q = lowerSide(z, y); return q.p.clone().addScaledVector(q.n, 0.0016).multiply(V3(s, 1, 1)); }, (i, j) => [s > 0 ? j / nz : 1 - j / nz, i / ny]);
       add(g, mats.livery, "livery POLITE");
     }
     const gb = gridGeo(7, 25, (i, j) => { const x = lerp(-0.42, 0.42, j / 24), z = lerp(1.62, 1.36, i / 6) ; const q = lowerTop(z, x); return q.p.clone().addScaledVector(q.n, 0.0016); }, (i, j) => [j / 24, i / 6]); // (the letters' tops towards the windscreen, read from the front)
     add(gb, mats.livery, "livery POLITE bonnet");
-    const gc = gridGeo(7, 7, (i, j) => { const x = lerp(-0.075, 0.075, j / 6), z = lerp(0.98, 0.82, i / 6); const q = lowerTop(z, x); return q.p.clone().addScaledVector(q.n, 0.0016); }, (i, j) => [j / 6, i / 6]);
+    const gc = gridGeo(7, 7, (i, j) => { const x = lerp(-0.075, 0.075, j / 6), z = lerp(1.16, 1.0, i / 6); const q = lowerTop(z, x); return q.p.clone().addScaledVector(q.n, 0.0016); }, (i, j) => [j / 6, i / 6]);
     add(gc, mats.crest, "livery crest");
   }
   function gridGeo(rows, cols, P, UV) {
@@ -561,7 +626,7 @@ export function buildPatrol1310(T, ext = {}) {
   // until setBeacons() (or a renderer) lights them; a clear dome over each, a reflector inside
   {
     const RB2 = ext.RoundedBoxGeometry, rbx = (w, h, d, r, mat, name, at) => { const g = RB2 ? new RB2(w, h, d, 3, r) : new T.BoxGeometry(w, h, d); g.translate(...at); return add(g, mat, name); };
-    const yR = 1.435, zB = -0.42; // the roof's crown, the bar over the B-pillar
+    const yR = 1.435, zB = -0.26; // the roof's crown, the bar over the B-pillar (r7: re-stationed)
     for (const s of [-1, 1]) { rbx(0.06, 0.05, 0.16, 0.012, mats.rack, "roof bar foot", [s * 0.36, yR + 0.02, zB]); const g = new T.BoxGeometry(0.07, 0.006, 0.2); g.translate(s * 0.36, yR - 0.002, zB); add(g, mats.rubber, "roof bar pad"); }
     rbx(0.98, 0.03, 0.17, 0.01, mats.rack, "roof bar", [0, yR + 0.058, zB]);
     const red = rbx(0.32, 0.085, 0.15, 0.03, mats.beaconRed, "beacon red", [0.29, yR + 0.115, zB]);
@@ -579,8 +644,12 @@ export function buildPatrol1310(T, ext = {}) {
   ws.forEach((w, k) => { const [sx, z] = [[1, zF], [-1, zF], [1, zR], [-1, zR]][k]; w.position.set(sx * DIM.track / 2, DIM.wheelY, z); });
 
   // ================= the cabin (v3: the kit's Dacia cabin, the 1310's dash) =================
-  dDaciaCabin(T, group, ext.RoundedBoxGeometry, mats, { style: "1310" });
-  { const g = ext.RoundedBoxGeometry ? new ext.RoundedBoxGeometry(1.4, 0.03, 0.3, 3, 0.01) : new T.BoxGeometry(1.4, 0.03, 0.3); g.translate(0, beltY(-1.48) - 0.03, -1.47); add(g, mats.dash, "parcel shelf"); }
+  // r7: moved 0.15 forward with the glasshouse, the dash narrowed to the narrower belt, the visors under the lower header
+  { const n0 = group.children.length; dDaciaCabin(T, group, ext.RoundedBoxGeometry, mats, { style: "1310" });
+    const kids = group.children.slice(n0), drop = []; for (const c of kids) c.position.z += 0.15;
+    for (const c of kids) c.traverse((m) => { if (m.name === "dashboard" || m.name === "dash top roll") m.scale.x = 0.95; if (m.name === "sun visor") { m.position.z -= 0.06; m.position.y -= 0.014; } if (ext.headrests === false && (m.name === "headrest" || m.name === "headrest post")) drop.push(m); });
+    for (const m of drop) m.parent.remove(m); }
+  { const g = ext.RoundedBoxGeometry ? new ext.RoundedBoxGeometry(1.32, 0.03, 0.3, 3, 0.01) : new T.BoxGeometry(1.32, 0.03, 0.3); g.translate(0, beltY(-1.48) - 0.03, -1.47); add(g, mats.dash, "parcel shelf"); }
   // v3: road dust on the lower body (the sills, a spray behind each wheel), the bumpers and flaps greyed too
   { const wh = [{ z: zF, r: DIM.tyreR }, { z: zR, r: DIM.tyreR }]; dDust(T, group, { mats: [mats.paint, mats.navy, mats.livery], top: 0.52, amount: 0.5, wheels: wh, seed: 13 }); dDust(T, group, { mats: [mats.plastic, mats.rubber], top: 0.5, amount: 0.22, color: "#6d6457", wheels: wh, seed: 14 }); }
   // the sprung body: everything but the wheels, in its own group (pitch / roll it on the springs)

@@ -157,13 +157,14 @@ const HOUSE = { sun: { az: 75, el: 15, color: "#ffbc7c", intensity: 3.6, radius:
 // camera back from the ride by DOLLY (the same angle on the ride, the same lens; a hair more street round it), never by
 // shrinking the rides. The open (the street) and the house (the plaza) keep their cameras. B8's level cameras (looking
 // along the horizontal, the picture shifted) stay level.
-const DOLLY = { side: 1.1, top: 1.25, high: 2.0 }, LEVEL = { open: 1, track: 1, pass: 1, front: 1, "three-quarter": 1, house: 1 };
+const DOLLY = { side: 1.0, top: 1.25, high: 2.0 }, LEVEL = { open: 1, track: 1, pass: 1, front: 1, "three-quarter": 1, house: 1 };
 function dolly(kind, q, c, k = DOLLY[kind] || 1.5) {
   let pos = q.pos.slice();
   if (kind === "pass") pos[0] = X + (pos[0] - X) * k;
   else if (kind === "top") pos[1] = pos[1] * k;
-  else if (kind !== "open" && kind !== "house") { pos[0] = c.x + (pos[0] - c.x) * k; pos[2] = c.z + (pos[2] - c.z) * k; if (pos[1] > 10) pos[1] *= k; }
+  else if (kind !== "open" && kind !== "house") { pos[0] = c.x + (pos[0] - c.x) * k; pos[2] = c.z + (pos[2] - c.z) * k; if (pos[1] > 10 && kind !== "side") pos[1] *= k; } // (side: the crane keeps its height, a roof over the street stays out of the top)
   const tgt = q.tgt.slice(); if (LEVEL[kind]) tgt[1] = pos[1];
+  if (kind === "side") { tgt[2] -= 8; q = { ...q, fov: q.fov * 1.2 }; } // (Sketchbook: B8's camera exactly (further out, the street's near roofs and a sign come into the lens), the lens a little wider for the hero 1300, centred: B8 looked 8 ahead of its smaller ride)
   return { ...q, pos, tgt };
 }
 
@@ -177,7 +178,7 @@ export function make(k, over = {}) {
   for (let i = 0; i <= n; i++) {
     const t = i / 30, ts = a + t, c = car(ts), q = dolly(kind, camFn(ts, c), c, over.dolly);
     shift = q.shift || null;
-    const focus = kind === "open" || kind === "house" ? [c.x, 7, c.z] : [c.x, 6, c.z];
+    const focus = kind === "open" ? [c.x, 8, c.z - 24] : kind === "house" ? [c.x, 7, c.z] : [c.x, 6, c.z]; // (the open: on the 1300's tail, the near end of the car the lens follows)
     keys.push({ t, pos: q.pos, look: q.tgt, fov: q.fov, focus, ...(q.yaw != null ? { yaw: q.yaw + YAW_BEND } : {}) });
   }
   const camera = cameraPath({ keys });
@@ -186,7 +187,7 @@ export function make(k, over = {}) {
   return {
     name: "b9-s" + String(k).padStart(2, "0"), size: [2160, 3840], fps: 30, duration: D, shutter: 0,
     camera, shift, cameraLimits: { maxTurn: 6, maxTurnJump: 2, maxFlip: 8 },
-    lens: { fstop: L.fstop || 16, scale: 1.45 },
+    lens: { fstop: kind === "open" ? 28 : L.fstop || 16, scale: 1.45 },
     look: L.look, sun: L.sun, post: L.post,
     shadow: { centre: [car(a + D / 2).x, 0, car(a + D / 2).z], ext: kind === "open" ? 700 : kind === "house" ? 420 : 340 },
     world: W0, kind, ride: rideId, storyT0: a,
