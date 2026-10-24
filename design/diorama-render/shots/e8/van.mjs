@@ -1,4 +1,4 @@
-import { mapRide, world, paintSky, track, dur, hideNear , asphalt, tilt } from "./common.js";
+import { mapRide, world, paintSky, track, dur, hideNear , asphalt, tilt, shake } from "./common.js";
 // E8 · van · the Mystery van on the street by Kompus and OMA, late afternoon: the lens trucking alongside at its speed,
 // a front three-quarter that opens slowly to its side, the warm sun raking its flank.
 const D = dur("van"), V = 12, van = (t) => ({ x: 821, z: 4560 - V * t });
@@ -13,7 +13,7 @@ export default {
   shadow: { centre: [840, 0, 4490], ext: 260 },
   post: { tonemap: "agx", exposure: 1.22, bloomK: 0.08, bloomThr: 0.95, vig: 0.3, grain: 0.024, lut: "cromatic-diorama", lutMix: 0.8, sat: 1.12, power: 1.08 },
   async prepare(ctx) { await world(ctx.S, "monument"); UN.push(asphalt(ctx)); RIDE = await mapRide(ctx.S, "groovy"); RIDE.lights(false); UN.push(hideNear(ctx, [[851, 4406, 30], [880, 4440, 30], [900, 4420, 30]])); UN.push(paintSky(ctx, { top: "#5a7ed6", mid: "#d6b4c8", hor: "#ffd2a6", lit: "#ffdcb4", shade: "#a693b8", glow: 70, clouds: 0.42, stars: 0 })); },
-  pose(t) { const p = van(t); RIDE.place(p.x, 1.73, p.z, Math.PI); },
+  pose(t) { const p = van(t), s = shake(t, 0.035, 3); RIDE.place(p.x, 1.73 + s.dy, p.z, Math.PI, s.pitch, s.roll); }, // (E8b: the engine's shake)
   subject: () => RIDE.g,
   dispose() { RIDE?.restore(); UN.forEach((f) => f()); UN = []; }
 };

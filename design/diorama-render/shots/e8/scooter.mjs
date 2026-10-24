@@ -1,4 +1,4 @@
-import { mapRide, world, paintSky, track, dur, sakuraRow, petals , asphalt, tilt } from "./common.js";
+import { mapRide, world, paintSky, track, dur, sakuraRow, petals , asphalt, tilt, shake } from "./common.js";
 // E8 · scooter · the E-scooter down the sakura alley on a soft spring morning, petals in the air: the lens low on the
 // street, backing away in front of it at its speed.
 const D = dur("scooter"), V = 9, sc = (t) => ({ x: 838, z: 5560 - V * t });
@@ -17,7 +17,7 @@ export default {
     ROW = sakuraRow(ctx, { x: [806, 880], z0: 5300, z1: 5760, step: 44 }); PET = petals(ctx, { centre: [838, 0, 5470], half: [55, 120], height: 60, n: 320 });
     UN.push(paintSky(ctx, { top: "#8db2f0", mid: "#f6cfe0", hor: "#ffe2d2", lit: "#fff0f4", shade: "#d9b4cf", glow: 65, clouds: 0.38, stars: 0 }));
   },
-  pose(t) { const p = sc(t); RIDE.place(p.x, 1.73, p.z, Math.PI); PET.pose(2.2 + t); },
+  pose(t) { const p = sc(t), s = shake(t, 0.008, 6); RIDE.place(p.x, 1.73 + s.dy, p.z, Math.PI, s.pitch, s.roll); PET.pose(2.2 + t); }, // (E8b: electric: only the road's buzz)
   subject: () => RIDE.g,
   dispose() { RIDE?.restore(); ROW?.dispose(); PET?.dispose(); UN.forEach((f) => f()); UN = []; }
 };

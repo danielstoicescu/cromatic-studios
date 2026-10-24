@@ -31,10 +31,10 @@ export function hideMapRide(S) {
 // the hero car, built with three's own modules, drawn by the map's renderer; 1 m = 15 map units.
 // Its glass made plain (no transmission pass per sub-frame); its lamps: off = clear lenses over dull reflectors and an
 // unlit bulb (parked: Daniel, "they shouldn't look switched on"); on = the lenses and bulbs glowing warm white
-export async function heroCar(ctx, { lights = false, scale = 15 } = {}) {
+export async function heroCar(ctx, { lights = false, scale = 15, build = {} } = {}) {
   const { S, K } = ctx;
   const T = await import("/__three/build/three.module.js"), { RoundedBoxGeometry } = await import("/__three/examples/jsm/geometries/RoundedBoxGeometry.js");
-  const car = buildHeroDacia(T, { RoundedBoxGeometry });
+  const car = buildHeroDacia(T, { RoundedBoxGeometry, ...build });
   const env = S.mats.omaGlow.envMap, lamps = [];
   car.group.traverse((m) => {
     if (!m.isMesh) return;

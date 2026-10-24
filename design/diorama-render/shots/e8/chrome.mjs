@@ -1,4 +1,4 @@
-import { mapRide, world, paintSky, track, dur, L3, asphalt, tilt } from "./common.js";
+import { mapRide, world, paintSky, track, dur, L3, asphalt, tilt, shake } from "./common.js";
 // E8 · chrome · the Chrome racer on the roundabout at sunset, the fountain behind it: a slow low arc round its nose,
 // the low sun glinting off the polished body.
 const D = dur("chrome"), C = [1500, 9, 4330], R = 150;
@@ -13,7 +13,7 @@ export default {
   shadow: { centre: [1490, 0, 4320], ext: 260 },
   post: { tonemap: "agx", exposure: 1.22, bloomK: 0.12, bloomThr: 0.85, vig: 0.3, grain: 0.024, lut: "cromatic-diorama", lutMix: 0.8, sat: 1.12, power: 1.08 },
   async prepare(ctx) { await world(ctx.S, "monument"); UN.push(asphalt(ctx)); RIDE = await mapRide(ctx.S, "monopoly"); RIDE.lights(false); UN.push(paintSky(ctx, { top: "#4c62b8", mid: "#e09aa8", hor: "#ffb878", lit: "#ffc690", shade: "#8b6a9a", glow: 300, clouds: 0.45, stars: 0, sun: { az: 300, el: 8, size: 2, color: "#fff0c0" } })); },
-  pose() { RIDE.place(C[0], 1.73, C[2], Math.PI / 2); },
+  pose(t) { const s = shake(t, 0.025, 5); RIDE.place(C[0], 1.73 + s.dy, C[2], Math.PI / 2, s.pitch, s.roll); }, // (E8b: idling, the engine's shake)
   subject: () => RIDE.g,
   dispose() { RIDE?.restore(); UN.forEach((f) => f()); UN = []; }
 };

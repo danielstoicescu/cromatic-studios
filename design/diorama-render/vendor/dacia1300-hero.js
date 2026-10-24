@@ -268,7 +268,7 @@ export function buildHeroDacia(T, ext = {}) {
   // ================= the glasshouse: a second loft, from the windscreen's foot to the rear window's foot =================
   const beltY = (z) => sideTop(z) + rS(z) - 0.004;
   const HrT = pchip([[ZC1, 0.912], [-1.52, 1.02], [-1.36, 1.19], [-1.18, 1.36], [-1.08, 1.41], [-0.96, 1.428], [-0.5, 1.435], [-0.05, 1.426], [0.03, 1.405], [0.12, 1.33], [0.36, 1.13], [ZC0, 0.892]]);
-  const RR = 0.034, xRoof = 0.665; // r3: the side glass nearly upright, the roof wide (the 1:24 model)
+  const RR = 0.034, xRoof = ext.xRoof ?? 0.665; // r3: the side glass nearly upright, the roof wide (the 1:24 model). E8 (Vera): ext.xRoof narrows the roof (tumblehome, as the real car: the roof ~1.27 m over a 1.64 m body)
   const crownR = (z) => 0.024 + 0.012 * (sstep(0.06, 0.3, z) + 1 - sstep(-1.4, -1.15, z));
   const xBelt = (z) => hw(z) - 0.05;
   function cabHalf(z) {

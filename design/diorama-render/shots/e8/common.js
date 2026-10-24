@@ -76,3 +76,44 @@ export const tilt = (cam, sub, deg = 24) => (t) => {
   const u = c.up.map((v, i) => v * Math.cos(a) - c.fwd[i] * Math.sin(a));
   return [p, [p[0] + c.right[0] * 10, p[1] + c.right[1] * 10, p[2] + c.right[2] * 10], [p[0] + u[0] * 10, p[1] + u[1] * 10, p[2] + u[2] * 10]];
 };
+
+// ---------------------------------------------------------------- E8b (Daniel on E8)
+import { heroCar as heroCar0 } from "../d7/a-common.js";
+// the 1300, read as the real car (Daniel: "s-au deformat tare"): Radu's hero Dacia with a narrower roof (tumblehome:
+// xRoof 0.60, roof ~1.27 m over the 1.64 m body; r3 had it 1.40 m wide, the 1:24 die-cast's upright glass), and its
+// headlamps as on every photo: bright chrome bowls behind clear fluted glass (the shared chrome material had been left
+// at the reflectors' env 0.18, so the lamps read as two black holes and the face as a toy's). Size: the garage 1300's.
+export async function hero1300(ctx, { lights = false, scale = 12.5 } = {}) {
+  const car = await heroCar0(ctx, { lights, scale, build: { xRoof: 0.6 } });
+  const T = await import("/__three/build/three.module.js"), env = ctx.S.mats.omaGlow.envMap;
+  const bowl = new T.MeshStandardMaterial({ name: "reflector bright", color: "#e9e9ea", metalness: 1, roughness: 0.16, envMap: env, envMapIntensity: 1.4 }); bowl.userData.dioKeep = true;
+  const seen = new Set();
+  car.group.traverse((m) => {
+    if (!m.isMesh) return;
+    if (m.name === "reflector") { m.material = bowl; return; }
+    const mt = m.material; if (seen.has(mt)) return; seen.add(mt);
+    if (mt.name === "chrome") mt.envMapIntensity = 0.85;
+    if (mt.name === "satin chrome") mt.envMapIntensity = 0.6;
+  });
+  return car;
+}
+
+// vehicle life, per pose (Daniel on E8): a subtle engine shake (a few hundredths of a unit: 1-2 px at 1080, high
+// frequency, never periodic at 30 fps), and the body's pitch on its springs from the longitudinal acceleration a (units/s^2):
+// accelerating squats the tail and lifts the nose, braking dips it; a critically damped spring follows a, so the body
+// settles after a change. pitch > 0 = nose down (the rides' and the hero's convention).
+export function shake(t, amp = 0.035, seed = 1) {
+  const s = (f, p) => Math.sin(2 * Math.PI * f * t + p + seed);
+  return { dy: amp * (0.55 * s(23.7, 0.3) + 0.3 * s(31.3, 1.9) + 0.15 * s(47.1, 4.2)), roll: amp * 0.004 * (s(19.1, 2.2) + 0.6 * s(29.7, 0.7)), pitch: amp * 0.003 * s(17.3, 5.1) };
+}
+// body pitch for an acceleration history: acc(t) -> a (units/s^2); the springs' target pitch -max * tanh(a / a0) (a few
+// degrees at most), followed by a damped spring (w0 rad/s, damping z) integrated from t0
+export function bodyPitch(acc, { max = 0.045, a0 = 60, w0 = 9, z = 0.45, t0 = -1 } = {}) {
+  const cache = new Map();
+  return (t) => {
+    const key = Math.round(t * 2400); if (cache.has(key)) return cache.get(key);
+    let x = 0, v = 0; const dt = 1 / 2400;
+    for (let s = t0; s < t; s += dt) { const target = -max * Math.tanh(acc(s) / a0); const a = w0 * w0 * (target - x) - 2 * z * w0 * v; v += a * dt; x += v * dt; }
+    cache.set(key, x); return x;
+  };
+}
