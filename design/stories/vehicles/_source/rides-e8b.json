@@ -1,0 +1,90 @@
+[
+ {
+  "id": "t1",
+  "ride": "1300 (hero Dacia, narrower roof, bright headlamp bowls), Fintech at golden hour, fov 20",
+  "t": [
+   0,
+   36
+  ]
+ },
+ {
+  "id": "t2",
+  "ride": "plane",
+  "t": [
+   36,
+   78
+  ]
+ },
+ {
+  "id": "t3",
+  "ride": "f1",
+  "t": [
+   78,
+   114
+  ]
+ },
+ {
+  "id": "van",
+  "ride": "groovy",
+  "t": [
+   114,
+   159
+  ],
+  "box": {
+   "x": 164,
+   "y": 656,
+   "w": 807,
+   "h": 458
+  }
+ },
+ {
+  "id": "chrome",
+  "ride": "monopoly",
+  "t": [
+   159,
+   204
+  ],
+  "box": {
+   "x": 112,
+   "y": 789,
+   "w": 797,
+   "h": 304
+  }
+ },
+ {
+  "id": "scooter",
+  "ride": "scooter",
+  "t": [
+   204,
+   270
+  ],
+  "box": {
+   "x": 405,
+   "y": 550,
+   "w": 272,
+   "h": 692
+  }
+ },
+ {
+  "id": "rush",
+  "ride": "1300 + cop (diorama chase, one shot with patrol)",
+  "t": [
+   270,
+   333
+  ]
+ },
+ {
+  "id": "patrol",
+  "ride": "cop (one continuous render; stopped from 325)",
+  "t": [
+   333,
+   405
+  ],
+  "box": {
+   "x": 146,
+   "y": 622,
+   "w": 751,
+   "h": 526
+  }
+ }
+]

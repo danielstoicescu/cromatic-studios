@@ -3,21 +3,29 @@
 //   node cuesE8.mjs <out.json>
 import fs from "fs";
 import { CLOCK, F } from "./shotsE8.mjs";
-const out = process.argv[2] || "e8-cues.json";
-const card = (id) => JSON.parse(fs.readFileSync(new URL(`../../cards/json/${id}.json`, import.meta.url), "utf8"));
+const out = process.argv[2] || "e8-cues.json", ST = process.env.ST || "e8", PRE = "v" + ST.slice(1) + "-"; // (ST=e8b: E8b)
+const card = (id) => JSON.parse(fs.readFileSync(new URL(`../../cards/json/${id.replace(/^v8-/, PRE)}.json`, import.meta.url), "utf8"));
 const at = (s) => { const m = /^([a-z0-9_]+)(\.end)?([+-]\d+)$/i.exec(s), sp = CLOCK[m[1]]; return (m[2] ? sp[1] : sp[0]) + +m[3]; };
 const cues = [];
 const add = (frame, type, what) => cues.push({ t: +(frame / 30).toFixed(3), frame, type, what });
 // the picture
-const SHOT = { t1: "the 1300 on Coffee Street, golden hour", t2: "the Cropduster over the field under the Brașov hill", t3: "the Classic Formula on Fintech Boulevard, race day", van: "the Mystery van, late afternoon", chrome: "the Chrome racer on the roundabout at sunset", scooter: "the E-scooter in the sakura alley", rush: "Fintech Boulevard at night after the rain: the 1300 hurrying, the Polite Patrol behind it (one shot with the Patrol's)", leadin: "Coffee Street at night, the lens tilting up to the sky" };
+const SHOT = { t1: ST === "e8" ? "the 1300 on Coffee Street, golden hour" : "the 1300 pulling away down Fintech Boulevard at golden hour (accelerating: the nose lifts, then settles)", t2: "the Cropduster over the field under the Brașov hill", t3: "the Classic Formula on Fintech Boulevard, race day", van: "the Mystery van, late afternoon", chrome: "the Chrome racer on the roundabout at sunset", scooter: "the E-scooter in the sakura alley", rush: "Fintech Boulevard at night after the rain: the 1300 hurrying, the Polite Patrol behind it (one shot with the Patrol's)", leadin: "Coffee Street at night, the lens tilting up to the sky" };
 for (const [k, [a]] of Object.entries(CLOCK)) if (SHOT[k]) add(a, "cut", SHOT[k]);
 add(CLOCK.patrol[0], "card", "the Patrol's card (no picture cut: the same shot goes on, the Patrol standing in the middle, beacons on, a slow push in)");
 // the chase's own events (shots/e8/chase.mjs: the 1300 at 150 u/s from z 4470, out of the frame at ~0.92 s, the lens at z 4706; the Patrol at 140 u/s
 // from z 4360, braking from z 4488 to a stop at z 4552)
 const r0 = CLOCK.rush[0], TB = (4488 - 4360) / 140, A = (140 * 140) / (2 * (4552 - 4488)), TS = TB + 140 / A;
 add(r0, "sfx", "the Patrol's beacons start flashing red / blue, 190 ms each (a 380 ms cycle), until the lead-in cut");
-add(Math.round(r0 + 30 * TB), "sfx", "the Patrol starts braking (nose dips)");
-add(Math.round(r0 + 30 * 0.92), "sfx", "the 1300 leaves the frame on the right, passing just right of the lens (whoosh; it is level with the lens at " + ((r0 + 30 * (4706 - 4470) / 150) / 30).toFixed(2) + " s)");
+add(Math.round(r0 + 30 * TB), "sfx", "the Patrol starts braking (nose dips)"); if (ST !== "e8") add(Math.round(r0 + 30 * 1.306), "sfx", "the Patrol's nose at its lowest (about 3.4 deg)");
+if (ST === "e8") add(Math.round(r0 + 30 * 0.92), "sfx", "the 1300 leaves the frame on the right, passing just right of the lens (whoosh; it is level with the lens at " + ((r0 + 30 * (4706 - 4470) / 150) / 30).toFixed(2) + " s)");
+else {
+  // E8b: the 1300 accelerates from 80 u/s at 120 u/s^2 for 0.7 s (tail squats, nose up ~2.7 deg), then cruises at 164; out
+  // of the frame on the right at ~1.08 s; the Patrol's brake on the springs (nose down ~3.4 deg), a rock back at the stop
+  add(r0, "sfx", "the 1300 accelerates hard (engine up, 0.7 s; the nose lifts)");
+  add(Math.round(r0 + 30 * 0.7), "sfx", "the 1300 shifts / settles at speed");
+  add(Math.round(r0 + 30 * 1.08), "sfx", "the 1300 leaves the frame on the right (whoosh past the lens)");
+  add(Math.round(r0 + 30 * 2.22), "sfx", "the Patrol rocks back on its springs after the stop (its nose up, the most at this frame)");
+}
 add(Math.round(r0 + 30 * TS), "sfx", "the Patrol stops in the middle of the frame (rocks back once)");
 // the type
 const op = card("v8-0-opening").timing.cues;
@@ -31,7 +39,7 @@ for (const [id, k, tag, l1, l2] of [["v8-van", "van", "Mystery van", "Solves cas
 { const c = card("v8-9-leadin").timing.cues, e = card("v8-9z-end").timing.cues; add(at(c.in), "type", "Pick your ride. (line in)"); add(at(c.urlIn), "type", "cromaticstudios.com pill arrives (house bounce)"); add(at(c.out), "type", "Pick your ride. out"); add(at(e.black), "cut", "black comes under the pill (11 frames)"); add(at(e.settle), "type", "the pill's soft settle (tilt -6 to -4, 100 to 104 %, 1 s)"); }
 add(F, "end", "end of film");
 cues.sort((a, b) => a.frame - b.frame);
-const J = { film: "story-e8-en.mp4", fps: 30, frames: F, duration_s: F / 30, timing_note: "frame = the first frame the event shows on (0-based, 30 fps); t = frame / 30. Same clock as E7, so the E7 mix lines up; the picture's own SFX moments (the chase) moved.", clock_frames: CLOCK, cues };
+const J = { film: `story-${ST}-en.mp4`, fps: 30, frames: F, duration_s: F / 30, timing_note: "frame = the first frame the event shows on (0-based, 30 fps); t = frame / 30. Same clock as E7, so the E7 mix lines up; the picture's own SFX moments (the chase) moved.", clock_frames: CLOCK, cues };
 fs.writeFileSync(out, JSON.stringify(J, null, 1));
 console.log(cues.length, "cues ->", out);
 for (const c of cues) console.log(`| ${c.t.toFixed(2)} | ${c.frame} | ${c.type} | ${c.what} |`);

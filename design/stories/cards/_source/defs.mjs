@@ -159,6 +159,7 @@ function STORY_E4() {
 
 CLOCKS.E5 = E5_CLOCK;
 CLOCKS.E6 = E5_CLOCK;
+CLOCKS.E8B = E5_CLOCK; // (E8b: Daniel on E8; the same clock, cards and colours, the Patrol's tag on its new framing: rides-e8b.json)
 CLOCKS.E8 = E5_CLOCK; // (E8, Vera: the rides in the city, rendered in the diorama renderer; the same clock and copy, one text colour per card chosen by its scene: E8_INK)
 CLOCKS.E7 = E5_CLOCK; // (E7: the same, over Radu's chase v3: the Patrol facing straight from ~56) // (E6: E5's clock and cards over Radu's re-rendered chase: v6-, rides-e6.json)
 // E8: the scene under each card decides its text colour (system.md 3), measured on the renders under the text: ink on the
@@ -387,6 +388,7 @@ export const CARDS = [
   ...STORY_E5(),
   ...STORY_E5(6),
   ...STORY_E5(7),
+  ...STORY_E5("8b", E8_INK, { passIn: 4, passPill: 13 }),
   ...STORY_E5(8, E8_INK, { passIn: 4, passPill: 13 }) // (E8: "Don’t rush. They’re [polite.]" settles sooner and holds longer: the coordinator saw it mid-rise on the draft sheet)
 ];
 
