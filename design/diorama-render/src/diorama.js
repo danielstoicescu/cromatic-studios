@@ -211,7 +211,7 @@ void main(){ vec3 c = texture2D(src, vUv).rgb * 0.2270270; c += (texture2D(src, 
   c += (texture2D(src, vUv + dir * 3.2307692).rgb + texture2D(src, vUv - dir * 3.2307692).rgb) * 0.0702703; gl_FragColor = vec4(c, 1.0); }`, { src: { value: null }, dir: { value: new K.Vector2() } });
 // the picture: exposure, bloom, white balance, AgX (Troy Sobotka's, as three's), our LUT, vignette, grain
 const finalM = mat(`precision highp float; precision highp sampler3D;
-uniform sampler2D src, bloom; uniform sampler3D lut; uniform float inv, exposure, bloomK, vig, grain, seed, lutMix, sat, power, tmo; uniform vec3 wb; uniform vec2 res; varying vec2 vUv;
+uniform sampler2D src, bloom; uniform sampler3D lut; uniform float inv, exposure, bloomK, vig, grain, seed, lutMix, sat, power, tmo, raw; uniform vec3 wb; uniform vec2 res; varying vec2 vUv;
 const mat3 LIN_REC2020 = mat3(vec3(0.6274, 0.0691, 0.0164), vec3(0.3293, 0.9195, 0.0880), vec3(0.0433, 0.0113, 0.8956));
 const mat3 REC2020_LIN = mat3(vec3(1.6605, -0.1246, -0.0182), vec3(-0.5876, 1.1329, -0.1006), vec3(-0.0728, -0.0083, 1.1187));
 const mat3 AgXIn = mat3(vec3(0.856627153315983, 0.137318972929847, 0.11189821299995), vec3(0.0951212405381588, 0.761241990602591, 0.0767994186031903), vec3(0.0482516061458583, 0.101439036467562, 0.811302368396859));
@@ -226,7 +226,7 @@ void main(){
   vec3 c = texture2D(src, vUv).rgb * inv;
   c += texture2D(bloom, vUv).rgb * bloomK;
   c *= exposure * wb;
-  vec3 d = tmo > 0.5 ? toSRGB(clamp(neutral(c), 0.0, 1.0)) : toSRGB(agx(c));
+  vec3 d = raw > 0.5 ? clamp(c, 0.0, 1.0) : tmo > 0.5 ? toSRGB(clamp(neutral(c), 0.0, 1.0)) : toSRGB(agx(c)); // (raw: the sub-frames are display values already)
   d = pow(d, vec3(power));
   float y = dot(d, vec3(0.2126, 0.7152, 0.0722)); d = mix(vec3(y), d, sat);
   vec3 g = texture(lut, clamp(d, 0.0, 1.0) * (32.0 / 33.0) + 0.5 / 33.0).rgb; d = mix(d, g, lutMix);
@@ -234,7 +234,7 @@ void main(){
   // grain: two octaves of white noise, a hair of correlation, strongest in the mids
   float n = (h12(gl_FragCoord.xy + seed * 61.7) + h12(gl_FragCoord.xy * 0.5 + seed * 13.1) * 0.6 - 0.8) / 0.8;
   float yy = dot(d, vec3(0.2126, 0.7152, 0.0722)); d += n * grain * (0.35 + 1.6 * yy * (1.0 - yy));
-  gl_FragColor = vec4(clamp(d, 0.0, 1.0), 1.0); }`, { src: { value: null }, bloom: { value: null }, lut: { value: null }, inv: { value: 1 }, exposure: { value: 1 }, bloomK: { value: 0.05 }, vig: { value: 0.22 }, grain: { value: 0.02 }, seed: { value: 0 }, lutMix: { value: 1 }, sat: { value: 1 }, power: { value: 1 }, tmo: { value: 0 }, wb: { value: new K.Vector3(1, 1, 1) }, res: { value: new K.Vector2() } });
+  gl_FragColor = vec4(clamp(d, 0.0, 1.0), 1.0); }`, { src: { value: null }, bloom: { value: null }, lut: { value: null }, inv: { value: 1 }, exposure: { value: 1 }, bloomK: { value: 0.05 }, vig: { value: 0.22 }, grain: { value: 0.02 }, seed: { value: 0 }, lutMix: { value: 1 }, sat: { value: 1 }, power: { value: 1 }, tmo: { value: 0 }, raw: { value: 0 }, wb: { value: new K.Vector3(1, 1, 1) }, res: { value: new K.Vector2() } });
 const LUTS = {};
 function lutTex(name) {
   if (LUTS[name]) return LUTS[name];
@@ -305,7 +305,7 @@ function renderFrame(spec, hooks = {}) {
     }
     R.toneMapping = K.NoToneMapping; R.shadowMap.needsUpdate = true; // (the renderer's own flag: with autoUpdate off, no light's map is drawn without it)
     R.setRenderTarget(TT.sample); R.setClearColor(0x000000, 1); R.autoClear = true;
-    R.render(scene, camera);
+    if (hooks.draw) hooks.draw(TT.sample, camera, i); else R.render(scene, camera); // (B9: a shot may draw its sub-frame itself, e.g. the map's own Sketchbook pass)
     accM.uniforms.src.value = TT.sample.texture; R.autoClear = false; pass(accM, TT.acc); R.autoClear = true;
     if ((i & 7) === 7) R.getContext().flush();
   }
@@ -317,7 +317,7 @@ function renderFrame(spec, hooks = {}) {
   for (const rad of [1, 2.5, 5]) { blurM.uniforms.src.value = a.texture; blurM.uniforms.dir.value.set(rad / TT.bw, 0); pass(blurM, bb); blurM.uniforms.src.value = bb.texture; blurM.uniforms.dir.value.set(0, rad / TT.bh); pass(blurM, a); }
   const F = finalM.uniforms;
   F.src.value = TT.acc.texture; F.bloom.value = a.texture; F.lut.value = lutTex(P.lut || "cromatic-diorama"); F.inv.value = 1 / N;
-  F.exposure.value = P.exposure ?? 1; F.bloomK.value = P.bloomK ?? 0.06; F.vig.value = P.vig ?? 0.22; F.grain.value = P.grain ?? 0.022; F.seed.value = spec.seed ?? 0; F.lutMix.value = P.lutMix ?? 1; F.sat.value = P.sat ?? 1; F.power.value = P.power ?? 1; F.tmo.value = P.tonemap === "neutral" ? 1 : 0;
+  F.exposure.value = P.exposure ?? 1; F.bloomK.value = P.bloomK ?? 0.06; F.vig.value = P.vig ?? 0.22; F.grain.value = P.grain ?? 0.022; F.seed.value = spec.seed ?? 0; F.lutMix.value = P.lutMix ?? 1; F.sat.value = P.sat ?? 1; F.power.value = P.power ?? 1; F.tmo.value = P.tonemap === "neutral" ? 1 : 0; F.raw.value = P.tonemap === "raw" ? 1 : 0;
   F.wb.value.set(...(P.wb || [1, 1, 1])); F.res.value.set(w, h);
   pass(finalM, TT.out);
   const px = new Uint8Array(w * h * 4); R.readRenderTargetPixels(TT.out, 0, 0, w, h, px);

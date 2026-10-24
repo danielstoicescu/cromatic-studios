@@ -126,7 +126,8 @@ export function bodyPitch(acc, { max = 0.045, a0 = 60, w0 = 9, z = 0.45, t0 = -1
 // scale undone, never the height); spin(d) turns the wheels for a distance d rolled (map units); prop(a) the propeller.
 const HERO = {
   patrol: ["dacia1310-patrol.js", "buildPatrol1310"], van: ["mystery-van.js", "buildMysteryVan"], chrome: ["chrome-racer.js", "buildChromeRacer"],
-  formula: ["classic-formula.js", "buildClassicFormula"], plane: ["cropduster.js", "buildCropduster"], scooter: ["e-scooter.js", "buildEScooter"]
+  formula: ["classic-formula.js", "buildClassicFormula"], plane: ["cropduster.js", "buildCropduster"], scooter: ["e-scooter.js", "buildEScooter"],
+  sub: ["submarine.js", "buildSubmarine"] // (B9: Radu's Yellow submarine, 1 m = 17 map units)
 };
 export async function heroRide(ctx, id, { scale = 12.5, lights = false, build = {}, rev = "" } = {}) {
   const { S, K } = ctx;

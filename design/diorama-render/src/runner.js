@@ -46,7 +46,7 @@ function frame(f, o = {}) {
   if (window.__cam) { window.__cam(c0.pos, c0.look); window.__camSnap && window.__camSnap(); }
   if (window.__vclock && window.__vclock.frozen) window.__vclock.tick(1 / fps);
   const cams = subCams(f, N);
-  const r = D.renderFrame({ w, h, cams, sun: SHOT.sun, shadowCentre: SHOT.shadow && SHOT.shadow.centre, shadowExt: SHOT.shadow && SHOT.shadow.ext, domeExt: SHOT.shadow && SHOT.shadow.domeExt, domeK: SHOT.domeK, post: SHOT.post, seed: f + 1, near: SHOT.near, far: SHOT.far }, { pose: (i) => SHOT.pose && SHOT.pose(cams[i].ts, CTX, i) });
+  const r = D.renderFrame({ w, h, cams, sun: SHOT.sun, shadowCentre: SHOT.shadow && SHOT.shadow.centre, shadowExt: SHOT.shadow && SHOT.shadow.ext, domeExt: SHOT.shadow && SHOT.shadow.domeExt, domeK: SHOT.domeK, post: SHOT.post, seed: f + 1, near: SHOT.near, far: SHOT.far }, { pose: (i) => SHOT.pose && SHOT.pose(cams[i].ts, CTX, i), draw: SHOT.draw ? (target, cam, i) => SHOT.draw(target, cam, CTX, i) : null });
   return { url: D.toPNG(r.px, w, h), ms: r.ms, w, h };
 }
 function before(f, o = {}) {
