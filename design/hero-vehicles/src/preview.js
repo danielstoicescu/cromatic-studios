@@ -14,7 +14,8 @@ const REG = {
   chrome: () => import("./chrome-racer.js").then((m) => m.buildChromeRacer(THREE, { RoundedBoxGeometry })),
   formula: () => import("./classic-formula.js").then((m) => m.buildClassicFormula(THREE, { RoundedBoxGeometry })),
   plane: () => import("./cropduster.js").then((m) => m.buildCropduster(THREE, { RoundedBoxGeometry })),
-  scooter: () => import("./e-scooter.js").then((m) => m.buildEScooter(THREE, { RoundedBoxGeometry }))
+  scooter: () => import("./e-scooter.js").then((m) => m.buildEScooter(THREE, { RoundedBoxGeometry })),
+  submarine: () => import("./submarine.js").then((m) => m.buildSubmarine(THREE, { RoundedBoxGeometry }))
 };
 
 const R = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -25,7 +26,7 @@ const pm = new THREE.PMREMGenerator(R), envTex = pm.fromScene(new RoomEnvironmen
 
 async function still(id, o = {}) {
   // per vehicle: the plane's span wants a higher, closer camera; the scooter a lower one
-  const PER = { plane: { az: 32, el: 13, fill: 0.8 }, scooter: { az: 42, el: 8, fill: 0.86 } }[id] || {};
+  const PER = { plane: { az: 32, el: 13, fill: 0.8 }, scooter: { az: 42, el: 8, fill: 0.86 }, submarine: { az: 40, el: 10 } }[id] || {};
   o = { ...PER, ...Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== null)) };
   const { w = 1080, h = 1350, az = 38, el = 9, fov = 26, man = false } = o;
   R.setSize(w, h, false);

@@ -9,8 +9,8 @@ import os from "os";
 const HERE = path.resolve(new URL("..", import.meta.url).pathname);
 const OUT = process.env.OUT || path.join(os.homedir(), "cromatic-ops/refs/stories-lottie/vehicles/hero-models");
 fs.mkdirSync(OUT, { recursive: true });
-const ALL = ["d1300", "patrol", "van", "chrome", "formula", "plane", "scooter"];
-const NAMES = { d1300: "Dacia 1300 (hero)", patrol: "Polite Patrol · Dacia 1310", van: "Mystery van", chrome: "Chrome racer", formula: "Classic Formula", plane: "Cropduster", scooter: "E-scooter" };
+const ALL = ["d1300", "patrol", "van", "chrome", "formula", "plane", "scooter", "submarine"];
+const NAMES = { d1300: "Dacia 1300 (hero)", patrol: "Polite Patrol · Dacia 1310", van: "Mystery van", chrome: "Chrome racer", formula: "Classic Formula", plane: "Cropduster", scooter: "E-scooter", submarine: "Yellow submarine" };
 const ids = process.argv.slice(2).length ? process.argv.slice(2) : ALL;
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".json": "application/json" };
 const br = await pw.chromium.launch({ args: ["--use-angle=metal", "--ignore-gpu-blocklist", "--enable-unsafe-swiftshader"] });
@@ -39,7 +39,8 @@ const DETAIL = {
   chrome: { t: [0.5, 0.75, 1.45], d: [1, 0.3, 0.9], dist: 1.4, fov: 30 },
   formula: { t: [0.0, 0.72, 0.0], d: [0.8, 0.5, 1.0], dist: 1.3, fov: 30 },
   plane: { t: [0.0, 1.62, 1.75], d: [0.9, 0.25, 1.0], dist: 2.4, fov: 30 },
-  scooter: { t: [0.0, 1.06, 0.3], d: [0.6, 0.55, 1.0], dist: 0.6, fov: 30 }
+  scooter: { t: [0.0, 1.06, 0.3], d: [0.6, 0.55, 1.0], dist: 0.6, fov: 30 },
+  submarine: { t: [0.62, 1.55, 0.55], d: [1, 0.3, 0.75], dist: 2.6, fov: 30 }
 };
 const urls = [], labels = [];
 for (const id of ids) {
