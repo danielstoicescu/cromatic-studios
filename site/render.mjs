@@ -397,12 +397,13 @@ ${footer}`;
   }
 
   // a screenshot inside a browser window, and one inside a phone
-  const browser = (m) => `<figure class="bw"><span class="bw-bar" aria-hidden="true"><i></i><i></i><i></i></span>${img(m, "")}</figure>`;
+  const browser = (m, eager = false) => `<figure class="bw"><span class="bw-bar" aria-hidden="true"><i></i><i></i><i></i></span>${img(m, "", "", eager)}</figure>`;
   const phone = (m) => `<figure class="ph">${img(m, "")}</figure>`;
   // case pages, v2 (after the Steam case study): chapters with big type, then the images at
   // their natural shape (never cropped): one full width, two side by side, three or more in a
   // horizontal rail you can drag or step through. Every image opens in a lightbox.
-  const lbImg = (m, alt = "") => { const a = A(m); if (!a) return ""; return `<img src="${a.src}"${a.w ? ` width="${a.w}" height="${a.h}"` : ""} alt="${esc(alt)}" loading="lazy" decoding="async" data-lb="${a.src}">`; };
+  // TASK-015: eager = the page's hero (its mobile LCP): fetched at high priority and preloaded (images.mjs gatePage), never lazy
+  const lbImg = (m, alt = "", eager = false) => { const a = A(m); if (!a) return ""; return `<img src="${a.src}"${a.w ? ` width="${a.w}" height="${a.h}"` : ""} alt="${esc(alt)}"${eager ? ' fetchpriority="high"' : ' loading="lazy"'} decoding="async" data-lb="${a.src}">`; };
   // r136: the long-form story blocks (Slow Coffee Festival, the whole story from the old site). Any block may add:
   // say (a big statement, with an optional giant word, big), art (stickers: small transparent graphics at their
   // own size, tilted, never in the lightbox), pillars (cards {k, h, p, c}), palette (swatches {n, c, p} + note)
@@ -466,7 +467,7 @@ ${header(false)}
       </div>
     </div>
     ${d.heroArt ? art(d.heroArt, "strip", d.heroArtLabel) : ""}
-    ${d.hero ? (d.heroFrame ? `<div class="wrap-wide c-heroimg wide">${browser(d.hero)}</div>` : `<div class="wrap-wide c2-heromedia">${lbImg(d.hero, d.name)}</div>`) : ""}
+    ${d.hero ? (d.heroFrame ? `<div class="wrap-wide c-heroimg wide">${browser(d.hero, true)}</div>` : `<div class="wrap-wide c2-heromedia">${lbImg(d.hero, d.name, true)}</div>`) : ""}
     ${d.youtube ? `<div class="wrap-wide"><div class="yt" data-id="${d.youtube}"><button class="yt-play" aria-label="Play the Two Minutes film">${img("tmPoster", "Two Minutes film", "", true)}<span class="yt-btn">▶ Play the film</span></button></div></div>` : ""}
   </section>
   <section class="wrap c2-lead c2-reveal"><p>${d.lead}</p></section>

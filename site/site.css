@@ -141,8 +141,8 @@ a.pcard:hover { transform: translateY(-5px) rotate(-.4deg); box-shadow: 0 5px 0 
 .pcard.big { grid-column: span 1; }
 @media (min-width: 1001px) { .pgrid { grid-template-columns: repeat(6, 1fr); } .pcard { grid-column: span 2; } .pcard.big { grid-column: span 3; } .pcard.big .pc-media { aspect-ratio: 16 / 9; } }
 .pc-media { position: relative; aspect-ratio: 4 / 3; background: var(--bc); color: var(--bt); border-bottom: var(--line); overflow: hidden; display: grid; place-items: center; }
-.pc-media > img, .pc-media > video { width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--eoq); }
-a.pcard:hover .pc-media > img, a.pcard:hover .pc-media > video { transform: scale(1.05); }
+.pc-media > img, .pc-media > picture > img, .pc-media > video { width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--eoq); }
+a.pcard:hover .pc-media > img, a.pcard:hover .pc-media > picture > img, a.pcard:hover .pc-media > video { transform: scale(1.05); }
 .pc-poster { font-weight: 900; font-size: clamp(24px, 2.6vw, 34px); line-height: 1; text-align: center; padding: 0 12%; letter-spacing: -.03em; }
 .pc-badge { position: absolute; left: 12px; bottom: 12px; width: 52px !important; height: 52px !important; object-fit: contain; background: #fff; border: 1px solid var(--ink); border-radius: 50%; padding: 6px; }
 .pc-body { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px 22px; flex: 1; }
