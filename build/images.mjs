@@ -50,6 +50,9 @@ export async function optimizeImages(pub, root, log = console.log) {
   }
   const out = new Map();
   let made = 0, saved = 0, avifMade = 0, avifN = 0, avifIn = 0, avifOut = 0;
+  // TASK-015: pictures whose AVIF set is not >=20% lighter (by content hash), so a build never encodes them again
+  const skipFile = join(cacheDir, "avif-skip.txt");
+  const avifSkip = new Set(existsSync(skipFile) ? readFileSync(skipFile, "utf8").split("\n").filter(Boolean) : []), newSkip = new Set();
   const t0 = Date.now();
   const jobs = [...srcs];
   const work = async (src) => {
@@ -124,22 +127,22 @@ export async function optimizeImages(pub, root, log = console.log) {
     // is not worth its weight in the repo; only the kept files are committed in site/.img-cache); a copy
     // missing from the cache on a machine without sharp (the server) drops the AVIF set, never the picture
     let avif = null;
-    if (caseSrcs.has(src)) {
+    if (caseSrcs.has(src) && !avifSkip.has(h)) {
       const list = [];
       for (const x of set) {
         const name = `${h}-${x.w}.avif`, cached = join(cacheDir, name);
+        let fresh = null; // encoded here, written to the cache only if the set is kept
         if (!existsSync(cached)) {
           if (!sharp) { list.length = 0; break; }
-          await sharp(buf).resize({ width: x.w, withoutEnlargement: true }).avif({ quality: x.w <= 960 ? 55 : 60, effort: 4, chromaSubsampling: "4:2:0" }).toFile(cached);
-          avifMade++;
+          fresh = await sharp(buf).resize({ width: x.w, withoutEnlargement: true }).avif({ quality: x.w <= 960 ? 55 : 60, effort: 4, chromaSubsampling: "4:2:0" }).toBuffer();
         }
-        list.push({ w: x.w, name, cached, bytes: statSync(cached).size, webp: x.bytes });
+        list.push({ w: x.w, name, cached, fresh, bytes: fresh ? fresh.length : statSync(cached).size, webp: x.bytes });
       }
       const a = list.reduce((s, x) => s + x.bytes, 0), b = list.reduce((s, x) => s + x.webp, 0);
       if (list.length === set.length && a < b * 0.8) {
-        avif = list.map((x) => { copyFileSync(x.cached, join(pub, "assets", "w", x.name)); return { w: x.w, src: `/assets/w/${x.name}` }; });
+        avif = list.map((x) => { if (x.fresh) { writeFileSync(x.cached, x.fresh); avifMade++; } copyFileSync(x.cached, join(pub, "assets", "w", x.name)); return { w: x.w, src: `/assets/w/${x.name}` }; });
         avifIn += b; avifOut += a; avifN++;
-      }
+      } else if (list.length === set.length) newSkip.add(h); // not worth it: remembered in avif-skip.txt, never encoded again
     }
     out.set(src, { set, src: best.src, h: Math.round((meta.height || 0) * (best.w / W)), lqip, avif, orig: src, webpOrig: webp });
   };
@@ -176,6 +179,7 @@ export async function optimizeImages(pub, root, log = console.log) {
     if (next !== html) writeFileSync(f, next);
   }
   log(`[images] ${out.size} pictures, ${made} new WebP files, ~${(saved / 1048576).toFixed(1)} MB lighter at full size, ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+  if (newSkip.size) writeFileSync(skipFile, [...new Set([...avifSkip, ...newSkip])].sort().join("\n") + "\n");
   log(`[images] AVIF: ${avifN} case-page pictures, ${avifMade} new AVIF files, their sets ${(avifIn / 1048576).toFixed(1)} MB WebP -> ${(avifOut / 1048576).toFixed(1)} MB AVIF`);
 }
 
