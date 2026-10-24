@@ -162,7 +162,7 @@
   }));
   const heroImg = d.querySelector(".c2-heromedia img");
   if (heroImg && !reduced) {
-    const par = () => { const r = heroImg.parentElement.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return; heroImg.style.transform = `translateY(${(-r.top * 0.08).toFixed(1)}px) scale(${(1 + Math.max(0, -r.top) * 0.00012).toFixed(4)})`; };
+    const par = () => { const r = heroImg.closest(".c2-heromedia").getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return; heroImg.style.transform = `translateY(${(-r.top * 0.08).toFixed(1)}px) scale(${(1 + Math.max(0, -r.top) * 0.00012).toFixed(4)})`; };
     addEventListener("scroll", () => requestAnimationFrame(par), { passive: true }); par();
   }
 

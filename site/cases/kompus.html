@@ -670,10 +670,10 @@ applyPad();
 // hero parallax: the first image drifts a little slower than the page
 (function(){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
-  const media=[...document.querySelectorAll('.hero-media .frame>img,.hero-media .frame>video')];
+  const media=[...document.querySelectorAll('.hero-media .frame>img,.hero-media .frame>picture>img,.hero-media .frame>video')];
   if(!media.length)return;
   let raf=0;
-  const run=()=>{raf=0;media.forEach(m=>{const f=m.parentElement.getBoundingClientRect();if(f.bottom<0||f.top>innerHeight)return;const k=(f.top+f.height/2-innerHeight/2)/innerHeight;m.style.setProperty('--py',(Math.max(-1,Math.min(1,k))*-f.height*.035).toFixed(1)+'px')})};
+  const run=()=>{raf=0;media.forEach(m=>{const f=m.closest('.frame').getBoundingClientRect();if(f.bottom<0||f.top>innerHeight)return;const k=(f.top+f.height/2-innerHeight/2)/innerHeight;m.style.setProperty('--py',(Math.max(-1,Math.min(1,k))*-f.height*.035).toFixed(1)+'px')})};
   addEventListener('scroll',()=>{if(!raf)raf=requestAnimationFrame(run)},{passive:true});
   addEventListener('resize',run);run();
 })();

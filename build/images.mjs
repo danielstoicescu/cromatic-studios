@@ -21,7 +21,7 @@ const POSTER_JS = `<script>/* r139a-poster */(function(){function up(){[].forEac
 // after load. Then pictures get their files: img[data-lz="paint"] (a hero shown after the title) and img[data-lz="near"]
 // (every lazy picture) as they come within 1.25 screens, through an IntersectionObserver (scrollMargin: a rail's next
 // cards too). Until then they hold an empty SVG of their own proportions (or their tiny preview), so nothing moves.
-const GATE_JS = `<script>/* r139d-gate */(function(){var w=window,d=document,P=[],L=[],paint=0,done=0,seen=0,loaded=0;function run(a){var f;while(f=a.shift())try{f()}catch(e){}}function raf2(f){requestAnimationFrame(function(){requestAnimationFrame(function(){setTimeout(f,0)})})}function ready(f){if(d.readyState==="loading")d.addEventListener("DOMContentLoaded",f);else f()}function onPaint(){if(paint)return;paint=1;ready(function(){raf2(function(){paint=2;run(P)})})}function openL(){done=2;run(L)}function settle(){if(done||!loaded||!seen)return;done=1;var im=d.querySelector('img[fetchpriority="high"]'),go=function(){raf2(openL)};if(im&&im.decode&&im.currentSrc)im.decode().then(go,go);else go()}w.czAfterPaint=function(f){if(paint===2)f();else P.push(f)};w.czAfterLcp=function(f){if(done===2)f();else L.push(f)};var ok=0;try{ok=PerformanceObserver.supportedEntryTypes.indexOf("largest-contentful-paint")>-1}catch(e){}if(ok){try{new PerformanceObserver(function(l){if(l.getEntries().length){seen=1;onPaint();settle()}}).observe({type:"largest-contentful-paint",buffered:true})}catch(e){ok=0}}if(!ok){seen=1;ready(onPaint)}function ld(){loaded=1;onPaint();if(!seen)setTimeout(function(){seen=1;settle()},1500);settle()}if(d.readyState==="complete")ld();else w.addEventListener("load",ld);setTimeout(function(){loaded=seen=1;onPaint();settle()},15000);function swap(i){var s=i.getAttribute("data-lz-srcset"),u=i.getAttribute("data-lz-src"),z=i.getAttribute("sizes")||"",wd;i.removeAttribute("data-lz");if(/^auto\\b/.test(z)&&(wd=i.getBoundingClientRect().width))i.sizes=Math.ceil(wd)+"px";i.loading="eager";if(s){i.srcset=s;i.removeAttribute("data-lz-srcset")}if(u){i.src=u;i.removeAttribute("data-lz-src")}}function watch(k){var ims=[].slice.call(d.querySelectorAll('img[data-lz="'+k+'"]'));if(!ims.length)return;if(!("IntersectionObserver" in w))return ims.forEach(swap);var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){io.unobserve(e.target);swap(e.target)}})},{rootMargin:"125% 0px",scrollMargin:"0px 1200px"});ims.forEach(function(i){io.observe(i)})}w.czAfterPaint(function(){watch("paint")});w.czAfterLcp(function(){watch("near")})})();</script>`;
+const GATE_JS = `<script>/* r139d-gate */(function(){var w=window,d=document,P=[],L=[],paint=0,done=0,seen=0,loaded=0;function run(a){var f;while(f=a.shift())try{f()}catch(e){}}function raf2(f){requestAnimationFrame(function(){requestAnimationFrame(function(){setTimeout(f,0)})})}function ready(f){if(d.readyState==="loading")d.addEventListener("DOMContentLoaded",f);else f()}function onPaint(){if(paint)return;paint=1;ready(function(){raf2(function(){paint=2;run(P)})})}function openL(){done=2;run(L)}function settle(){if(done||!loaded||!seen)return;done=1;var im=d.querySelector('img[fetchpriority="high"]'),go=function(){raf2(openL)};if(im&&im.decode&&im.currentSrc)im.decode().then(go,go);else go()}w.czAfterPaint=function(f){if(paint===2)f();else P.push(f)};w.czAfterLcp=function(f){if(done===2)f();else L.push(f)};var ok=0;try{ok=PerformanceObserver.supportedEntryTypes.indexOf("largest-contentful-paint")>-1}catch(e){}if(ok){try{new PerformanceObserver(function(l){if(l.getEntries().length){seen=1;onPaint();settle()}}).observe({type:"largest-contentful-paint",buffered:true})}catch(e){ok=0}}if(!ok){seen=1;ready(onPaint)}function ld(){loaded=1;onPaint();if(!seen)setTimeout(function(){seen=1;settle()},1500);settle()}if(d.readyState==="complete")ld();else w.addEventListener("load",ld);setTimeout(function(){loaded=seen=1;onPaint();settle()},15000);function swap(i){var s=i.getAttribute("data-lz-srcset"),u=i.getAttribute("data-lz-src"),z=i.getAttribute("sizes")||"",wd;i.removeAttribute("data-lz");if(/^auto\\b/.test(z)&&(wd=i.getBoundingClientRect().width))i.sizes=Math.ceil(wd)+"px";i.loading="eager";var pp=i.parentNode;if(pp&&pp.nodeName==="PICTURE")[].forEach.call(pp.getElementsByTagName("source"),function(o){var q=o.getAttribute("data-lz-srcset");if(!q)return;o.sizes=i.getAttribute("sizes")||"";o.srcset=q;o.removeAttribute("data-lz-srcset")});if(s){i.srcset=s;i.removeAttribute("data-lz-srcset")}if(u){i.src=u;i.removeAttribute("data-lz-src")}}function watch(k){var ims=[].slice.call(d.querySelectorAll('img[data-lz="'+k+'"]'));if(!ims.length)return;if(!("IntersectionObserver" in w))return ims.forEach(swap);var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){io.unobserve(e.target);swap(e.target)}})},{rootMargin:"125% 0px",scrollMargin:"0px 1200px"});ims.forEach(function(i){io.observe(i)})}w.czAfterPaint(function(){watch("paint")});w.czAfterLcp(function(){watch("near")})})();</script>`;
 // r139d: an empty picture of the same proportions, the placeholder of a picture that waits for its file
 const EMPTY = (w, h) => `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'%3E%3C/svg%3E`;
 const MIN_BYTES = 24 * 1024; // small pictures are not worth it
@@ -39,16 +39,17 @@ export async function optimizeImages(pub, root, log = console.log) {
   // resize would keep its first frame); an <img data-full> keeps its one file (Steam's founders, drawn by a script at
   // a size no sizes attribute can say). Video posters get the copies and a tiny inline preview (LQIP below)
   const posters = new Set();
+  const caseSrcs = new Set(); // TASK-015: pictures a case page shows get AVIF copies too
   for (const f of htmls) {
     const t = readFileSync(f, "utf8");
-    for (const m of t.matchAll(/<img\b[^>]*?\bsrc="(\/assets\/[^"]+\.(?:jpe?g|png)|\/assets\/m\/[^"]+\.webp)"[^>]*>/gi)) if (!/\bdata-full\b/.test(m[0])) srcs.add(m[1]);
+    for (const m of t.matchAll(/<img\b[^>]*?\bsrc="(\/assets\/[^"]+\.(?:jpe?g|png)|\/assets\/m\/[^"]+\.webp)"[^>]*>/gi)) if (!/\bdata-full\b/.test(m[0])) { srcs.add(m[1]); if (isCase(f)) caseSrcs.add(m[1]); }
     for (const m of t.matchAll(/<video\b[^>]*?\bposter="(\/assets\/[^"]+\.(?:jpe?g|png))"/gi)) { srcs.add(m[1]); posters.add(m[1]); }
     // r139d: a case page's hero pictures (shown after the title, see heroAfterTitle) get the tiny preview too
     const hr = heroRange(t, f);
     if (hr) for (const m of t.slice(hr[0], hr[1]).matchAll(/<img\b[^>]*?\bsrc="(\/assets\/[^"]+\.(?:jpe?g|png|webp))"[^>]*\bfetchpriority="high"[^>]*>/gi)) posters.add(m[1]);
   }
   const out = new Map();
-  let made = 0, saved = 0;
+  let made = 0, saved = 0, avifMade = 0, avifN = 0, avifIn = 0, avifOut = 0;
   const t0 = Date.now();
   const jobs = [...srcs];
   const work = async (src) => {
@@ -118,13 +119,38 @@ export async function optimizeImages(pub, root, log = console.log) {
     const best = set.find((x) => x.w >= Math.min(W, 1600)) || set[set.length - 1];
     if (best.bytes >= buf.length && set.length === 1) return; // nothing gained
     saved += Math.max(0, buf.length - best.bytes);
-    out.set(src, { set, src: best.src, h: Math.round((meta.height || 0) * (best.w / W)), lqip });
+    // TASK-015: a case page's picture also gets AVIF copies at the same widths (q55, q60 for the widest: the same
+    // SSIM as the WebP copies; 4:2:0 like WebP). Kept only when the set comes out at least 20% lighter (the rest
+    // is not worth its weight in the repo; only the kept files are committed in site/.img-cache); a copy
+    // missing from the cache on a machine without sharp (the server) drops the AVIF set, never the picture
+    let avif = null;
+    if (caseSrcs.has(src)) {
+      const list = [];
+      for (const x of set) {
+        const name = `${h}-${x.w}.avif`, cached = join(cacheDir, name);
+        if (!existsSync(cached)) {
+          if (!sharp) { list.length = 0; break; }
+          await sharp(buf).resize({ width: x.w, withoutEnlargement: true }).avif({ quality: x.w <= 960 ? 55 : 60, effort: 4, chromaSubsampling: "4:2:0" }).toFile(cached);
+          avifMade++;
+        }
+        list.push({ w: x.w, name, cached, bytes: statSync(cached).size, webp: x.bytes });
+      }
+      const a = list.reduce((s, x) => s + x.bytes, 0), b = list.reduce((s, x) => s + x.webp, 0);
+      if (list.length === set.length && a < b * 0.8) {
+        avif = list.map((x) => { copyFileSync(x.cached, join(pub, "assets", "w", x.name)); return { w: x.w, src: `/assets/w/${x.name}` }; });
+        avifIn += b; avifOut += a; avifN++;
+      }
+    }
+    out.set(src, { set, src: best.src, h: Math.round((meta.height || 0) * (best.w / W)), lqip, avif, orig: src, webpOrig: webp });
   };
   const queue = jobs.slice();
   await Promise.all(Array.from({ length: 6 }, async () => { while (queue.length) await work(queue.shift()); }));
   // r139d: the tiny previews, by the address the page ends up with
   const lqipOf = new Map();
   for (const v of out.values()) if (v.lqip) lqipOf.set(v.src, v.lqip);
+  // TASK-015: the AVIF sets, by the address the page ends up with
+  const avifOf = new Map();
+  for (const v of out.values()) if (v.avif) avifOf.set(v.src, v);
   // rewrite the pages
   for (const f of htmls) {
     const html = readFileSync(f, "utf8");
@@ -144,12 +170,13 @@ export async function optimizeImages(pub, root, log = console.log) {
       return v.lqip ? `<video${a}poster="${v.lqip}" data-poster="${sm}"${lg !== sm ? ` data-poster-lg="${lg}"` : ""}${b}>` : `<video${a}poster="${sm}"${b}>`;
     });
     // r139d: a case page loads in order: the title and its one LCP picture first, the rest after (gatePage)
-    if (isCase(f)) next = gatePage(next, f, lqipOf);
+    if (isCase(f)) next = pictures(gatePage(next, f, lqipOf), avifOf);
     if (next.includes(" data-poster=") && !next.includes("r139a-poster")) next = next.replace(/<\/body>(?![\s\S]*<\/body>)/, `${POSTER_JS}\n</body>`);
     if (next.includes(" data-anim-srcset=") && !next.includes("r139a-anim")) next = next.replace(/<\/body>(?![\s\S]*<\/body>)/, `${ANIM_JS}\n</body>`);
     if (next !== html) writeFileSync(f, next);
   }
   log(`[images] ${out.size} pictures, ${made} new WebP files, ~${(saved / 1048576).toFixed(1)} MB lighter at full size, ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+  log(`[images] AVIF: ${avifN} case-page pictures, ${avifMade} new AVIF files, their sets ${(avifIn / 1048576).toFixed(1)} MB WebP -> ${(avifOut / 1048576).toFixed(1)} MB AVIF`);
 }
 
 // r139d: a brand canvas's files are drawn at 2× the board (site/canvas/split-*.py), right for a phone or a retina
@@ -204,6 +231,7 @@ const attr = (tag, k) => (new RegExp(`\\s${k}="([^"]*)"`).exec(tag) || [])[1];
 function gatePage(html, f, lqipOf) {
   let t = html;
   const hr = heroRange(t, f);
+  let first = null; // TASK-015: the first hero picture (a phone's LCP: the row stacks, it takes the whole width)
   if (hr) {
     const part = t.slice(hr[0], hr[1]);
     // the row's proportions (--r of each figure): a picture takes its share of the row's width (the whole width on a phone)
@@ -220,6 +248,7 @@ function gatePage(html, f, lqipOf) {
       let tag = m.replace(/\sfetchpriority="high"/, "").replace(/\ssrc="[^"]*"/, ` src="${lq}" data-lz-src="${src}"`);
       if (set) tag = tag.replace(/\ssrcset="[^"]*"/, ` data-lz-srcset="${set}"`);
       if (rs.length > 1 && k >= 0 && sum) tag = tag.replace(/\ssizes="[^"]*"/, ` sizes="(max-width: 640px) 100vw, ${Math.ceil((rs[k] / sum) * 100)}vw"`);
+      if (!first) first = { src, set, sz: attr(tag, "sizes") };
       return tag.replace(/^<img\b/, '<img data-lz="paint"');
     });
     t = t.slice(0, hr[0]) + done + t.slice(hr[1]);
@@ -241,9 +270,67 @@ function gatePage(html, f, lqipOf) {
     // and painted in the frame it arrives in (decoding="async" let it wait a frame, past the load event); not a canvas
     // board's background (5-7 thousand pixels wide: decoded on the main thread it blocked the page, TBT 200 ms)
     if (/\sdecoding="async"/.test(lcp[0]) && !/\sclass="cv-bg"/.test(lcp[0])) t = t.replace(lcp[0], lcp[0].replace(/\sdecoding="async"/, ' decoding="sync"'));
+  } else if (!lcp && first && !t.includes('rel="preload" as="image"')) {
+    // TASK-015: no picture left at high priority (a standalone page whose heroes wait for the title): the first hero
+    // is still fetched from the start, so it is in the cache when the gate shows it after the title (mobile LCP)
+    t = t.replace(/<\/title>/, `</title>\n<link rel="preload" as="image" href="${first.src}"${first.set ? ` imagesrcset="${first.set}"` : ""}${first.set && first.sz ? ` imagesizes="${first.sz}"` : ""} fetchpriority="high">`);
   }
   if (!t.includes("r139d-gate")) t = t.replace(/<head>|<head [^>]*>/, (h) => `${h}\n${GATE_JS}`);
   return t;
+}
+
+// TASK-015: AVIF first, then WebP, then the original. On a case page each picture with an AVIF set becomes
+//   <picture class="av"><source type="image/avif" …><source type="image/webp" …><img src="original.jpg" …></picture>
+// (a WebP original keeps its WebP srcset on the <img>: no second source). A picture still waiting for the gate keeps
+// its sets in data-lz-srcset on the sources too (GATE_JS swap fills them). picture.av is display:contents, and every
+// `X>img` selector in the page's styles gets an `X>picture>img` twin, so the layout stays as it was. The LCP preload
+// asks for the AVIF set (type="image/avif": a browser without AVIF skips it and takes the WebP from the <picture>).
+const SPLIT = /(<script\b[\s\S]*?<\/script>|<template\b[\s\S]*?<\/template>|<noscript\b[\s\S]*?<\/noscript>|<style\b[\s\S]*?<\/style>)/i;
+const CHILD_IMG = />\s*img(?![\w-])/;
+function splitSelectors(s) { const out = []; let d = 0, cur = ""; for (const ch of s) { if (ch === "(" || ch === "[") d++; else if (ch === ")" || ch === "]") d--; if (ch === "," && !d) { out.push(cur); cur = ""; } else cur += ch; } out.push(cur); return out; }
+export function twinChildImg(css) {
+  if (!CHILD_IMG.test(css)) return css;
+  return css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/([^{}]+)\{/g, (m, pre) => {
+    if (!CHILD_IMG.test(pre) || /^\s*@/.test(pre)) return m;
+    const add = splitSelectors(pre).filter((s) => CHILD_IMG.test(s)).map((s) => s.trim().replace(new RegExp(CHILD_IMG.source, "g"), ">picture>img"));
+    return `${pre.trimEnd()},${add.join(",")}{`;
+  });
+}
+const setOf = (list) => list.map((x) => `${x.src} ${x.w}w`).join(", ");
+function pictures(html, avifOf) {
+  if (!avifOf.size) return html;
+  let n = 0;
+  const parts = html.split(SPLIT);
+  for (let i = 0; i < parts.length; i += 2) {
+    const s = parts[i];
+    parts[i] = s.replace(/<img\b[^>]*>/g, (m, off) => {
+      if (/\sdata-(?:full|anim-srcset|srcset)\b/.test(m) || /\sclass="cv-/.test(m)) return m;
+      const lz = /\sdata-lz-src="/.test(m), k = lz ? "data-lz-srcset" : "srcset";
+      const v = avifOf.get(attr(m, lz ? "data-lz-src" : "src"));
+      if (!v) return m;
+      const before = s.slice(0, off);
+      if (before.lastIndexOf("<picture") > before.lastIndexOf("</picture>")) return m;
+      const sizes = attr(m, "sizes") || "100vw", webpSet = attr(m, k) || setOf(v.set);
+      let tag = m, webpSource = "";
+      if (!v.webpOrig) {
+        webpSource = `<source type="image/webp" ${k}="${webpSet}" sizes="${sizes}">`;
+        tag = tag.replace(new RegExp(`\\s${k}="[^"]*"`), "").replace(lz ? /\sdata-lz-src="[^"]*"/ : /\ssrc="[^"]*"/, lz ? ` data-lz-src="${v.orig}"` : ` src="${v.orig}"`);
+      }
+      n++;
+      return `<picture class="av"><source type="image/avif" ${k}="${setOf(v.avif)}" sizes="${sizes}">${webpSource}${tag}</picture>`;
+    });
+  }
+  if (!n) return html;
+  for (let i = 1; i < parts.length; i += 2) if (/^<style\b/i.test(parts[i])) parts[i] = twinChildImg(parts[i]);
+  let t = parts.join("");
+  t = t.replace(/<link rel="preload" as="image" href="([^"]+)"([^>]*)>/, (m, href, rest) => {
+    const v = avifOf.get(href);
+    if (!v) return m;
+    const j = v.set.findIndex((x) => x.src === href);
+    if (j < 0) return m;
+    return `<link rel="preload" as="image" href="${v.avif[j].src}" type="image/avif"${/imagesrcset=/.test(rest) ? rest.replace(/\simagesrcset="[^"]*"/, ` imagesrcset="${setOf(v.avif)}"`) : rest}>`;
+  });
+  return t.replace(/<\/title>/, "</title>\n<style>picture.av{display:contents}</style>");
 }
 
 // r136 (N40): one social picture per page, 1200×630 JPEG (what LinkedIn, Facebook and WhatsApp crop to), cut at build
