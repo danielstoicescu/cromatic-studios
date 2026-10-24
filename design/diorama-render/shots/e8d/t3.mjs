@@ -15,7 +15,9 @@ export default {
   sun: { az: 238, el: 46, color: "#fff4e2", intensity: 4.4, radius: 1.2 },
   shadow: { centre: [2079, 0, 4700], ext: 300 },
   post: { tonemap: "agx", exposure: 1.18, bloomK: 0.07, bloomThr: 0.95, vig: 0.2, grain: 0.022, lut: "cromatic-diorama", lutMix: 0.75, sat: 1.14, power: 1.08 },
-  async prepare(ctx) { await world(ctx.S, "circuit"); UN.push(hideMapRide(ctx.S)); RIDE = await heroRide(ctx, "formula", { scale: 16, rev: REV }); UN.push(paintSky(ctx, { top: "#2f6fd6", mid: "#7fb0ee", hor: "#d6e4f2", lit: "#ffffff", shade: "#b4c4dc", glow: 238, clouds: 0.35, stars: 0 })); },
+  async prepare(ctx) { await world(ctx.S, "circuit"); UN.push(hideMapRide(ctx.S)); RIDE = await heroRide(ctx, "formula", { scale: 16, rev: REV });
+    // E8e: the smoked visor a touch less mirror-like (at roughness 0.05 it caught the sun disc as sparkling specks; the helmet's glossy coat a hair softer too)
+    RIDE.g.traverse((m) => { if (!m.isMesh) return; const n = m.material.name; if (n === "visor") Object.assign(m.material, { roughness: 0.32, metalness: 0.1, clearcoat: 0.5, clearcoatRoughness: 0.3 }); else if (n === "helmet") Object.assign(m.material, { roughness: Math.max(0.3, m.material.roughness || 0), clearcoatRoughness: 0.25 }); }); UN.push(paintSky(ctx, { top: "#2f6fd6", mid: "#7fb0ee", hor: "#d6e4f2", lit: "#ffffff", shade: "#b4c4dc", glow: 238, clouds: 0.35, stars: 0 })); },
   pose(t) { const p = car(t), s = shake(t, 0.02, 2); RIDE.place(p.x, 1.2 + s.dy, p.z, 0, s.pitch, s.roll); RIDE.spin(p.z - 4640); }, // (E8b: the engine's shake, a hair)
   subject: () => RIDE.g,
   dispose() { RIDE?.dispose(); UN.forEach((f) => f()); UN = []; }
