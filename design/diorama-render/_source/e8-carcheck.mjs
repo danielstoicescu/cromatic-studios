@@ -4,14 +4,14 @@
 // each, from the object the shot names in subject()/subjects()) are carried through its world matrix and the city's
 // bend (what the shader draws); their drawn lengths must keep 1 : 1 : 1. Prints the worst deviation per ride.
 //   node _source/e8-carcheck.mjs [t1 t2 ...]
-const HARNESS = process.env.HARNESS || "http://localhost:8942";
+const HARNESS = process.env.HARNESS || "http://localhost:8942", SET = process.env.SET || "e8";
 const run = async (body) => { const r = await fetch(HARNESS, { method: "POST", body }); const t = await r.text(); if (r.status !== 200) throw new Error(t); return JSON.parse(t); };
 const shots = process.argv.slice(2).length ? process.argv.slice(2) : ["t1", "t2", "t3", "van", "chrome", "scooter", "chase"];
 const all = {};
 for (const k of shots) {
   all[k] = await run(`return await p.evaluate(async (k) => {
     const S = window.__story, K = S.K, ctx = { S, K, D: window.__D };
-    const SH = (await import("/__dr/shots/e8/" + k + ".mjs?check=" + Date.now())).default;
+    const SH = (await import("/__dr/shots/${SET}/" + k + ".mjs?check=" + Date.now())).default;
     await SH.prepare(ctx);
     const subs = SH.subjects ? SH.subjects(ctx) : [["ride", SH.subject(ctx)]];
     const fps = SH.fps || 30, n = Math.round(SH.duration * fps), sh = SH.shutter ?? 0.5, ends = sh > 0 ? [-0.5, 0, 0.5] : [0];

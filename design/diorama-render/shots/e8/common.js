@@ -117,3 +117,52 @@ export function bodyPitch(acc, { max = 0.045, a0 = 60, w0 = 9, z = 0.45, t0 = -1
     cache.set(key, x); return x;
   };
 }
+
+// ---------------------------------------------------------------- E8d (Radu's detailed hero vehicles, vendor/hero/)
+// Radu's hero models ({ group, body, wheels, mats, tex, parts, DIM }, metres, origin on the ground under the middle,
+// nose to +z) dressed for the diorama renderer as heroCar() dresses the 1300: the city's env map on every material,
+// glass as a thin clear sheet (no transmission pass in the accumulation renderer), the lamp bowls bright chrome, the
+// decals (POLITE, the 14, the van's livery) keep their alpha-cut maps. place() is mapRide's (the bend's ground-plan
+// scale undone, never the height); spin(d) turns the wheels for a distance d rolled (map units); prop(a) the propeller.
+const HERO = {
+  patrol: ["dacia1310-patrol.js", "buildPatrol1310"], van: ["mystery-van.js", "buildMysteryVan"], chrome: ["chrome-racer.js", "buildChromeRacer"],
+  formula: ["classic-formula.js", "buildClassicFormula"], plane: ["cropduster.js", "buildCropduster"], scooter: ["e-scooter.js", "buildEScooter"]
+};
+export async function heroRide(ctx, id, { scale = 12.5, lights = false, build = {}, rev = "" } = {}) {
+  const { S, K } = ctx;
+  const T = await import("/__three/build/three.module.js"), { RoundedBoxGeometry } = await import("/__three/examples/jsm/geometries/RoundedBoxGeometry.js");
+  const [file, fn] = HERO[id], mod = await import("/__dr/vendor/hero/" + file + (rev ? "?v=" + rev : ""));
+  const v = mod[fn](T, { RoundedBoxGeometry, ...build });
+  const env = S.mats.omaGlow.envMap, lamps = [], tails = [], seen = new Map();
+  const bowl = new T.MeshStandardMaterial({ name: "reflector bright", color: "#e9e9ea", metalness: 1, roughness: 0.16, envMap: env, envMapIntensity: 1.4 });
+  v.group.traverse((m) => {
+    if (!m.isMesh) return;
+    const mt = m.material, nm = mt.name || "";
+    if (seen.has(mt)) { m.material = seen.get(mt); if (m.material.transparent) { m.castShadow = false; m.userData.dioNoCast = true; } return; }
+    let out = mt;
+    if (nm === "reflector") out = bowl;
+    else if (nm === "headlamp lens") { out = new T.MeshPhysicalMaterial({ name: nm, color: "#f4f2ea", roughness: 0.05, metalness: 0, transparent: true, opacity: 0.14, envMap: env, envMapIntensity: 0.25, side: T.DoubleSide, depthWrite: false, emissive: new T.Color("#fff1d0"), emissiveIntensity: 0, map: mt.map || null }); lamps.push(out); }
+    else if (nm === "bulb") { out = new T.MeshPhysicalMaterial({ name: nm, color: "#cfcac0", roughness: 0.35, metalness: 0, emissive: new T.Color("#fff1d0"), emissiveIntensity: 0 }); lamps.push(out); }
+    else if (mt.transmission > 0) out = new T.MeshPhysicalMaterial({ name: nm, color: mt.color, roughness: 0.02, metalness: 0, transparent: true, opacity: 0.28, envMap: env, envMapIntensity: 0.3, side: T.DoubleSide, depthWrite: false });
+    else { mt.envMap = env; mt.envMapIntensity = nm === "chrome" ? 0.85 : nm === "satin chrome" ? 0.6 : mt.metalness > 0.5 ? 0.5 : 0.4; }
+    if (nm === "tail red") { out.emissive = new T.Color("#ff2a18"); tails.push(out); }
+    out.userData.dioKeep = true; seen.set(mt, out); m.material = out;
+    if (out.transparent) { m.castShadow = false; m.userData.dioNoCast = true; }
+  });
+  const g = new K.Group(); g.add(v.group); S.scene.add(g);
+  const wheels = v.wheels || [], R = v.DIM.tyreR || v.DIM.tyreRR || 0.3;
+  for (const w of wheels) { const b = new T.Box3().setFromObject(w); w.userData.r = (b.max.y - b.min.y) / 2 || R; }
+  const setLights = (on) => { for (const l of lamps) { l.emissiveIntensity = on ? (l.name === "bulb" ? 6 : 1.6) : 0; if (l.name === "headlamp lens") l.opacity = on ? 0.55 : 0.14; } for (const t of tails) t.emissiveIntensity = on ? 5 : 0; };
+  setLights(lights);
+  return {
+    v, g, group: g, body: v.body, parts: v.parts || {}, DIM: v.DIM, setLights,
+    setBeacons: (r, b) => v.setBeacons && v.setBeacons(r, b),
+    place(x, y, z, yaw, pitch = 0, roll = 0) { const k = 1 / warpScale0(S, x, z); g.position.set(x, y, z); g.rotation.set(0, yaw, 0); if (pitch) g.rotateX(pitch); if (roll) g.rotateZ(roll); g.scale.set(scale * k, scale, scale * k); g.updateMatrixWorld(true); },
+    spin(d) { for (const w of wheels) w.rotation.x = d / scale / (w.userData?.r || R); },
+    prop(a) { const p = v.parts && v.parts.propeller; if (p) { p.rotation.z = a; p.updateMatrixWorld(true); } },
+    dispose() { g.parent?.remove(g); }
+  };
+}
+import { warpScale as warpScale0 } from "../d7/common.js";
+// a sub-frame's place inside a shutter of its own (the propeller's blur only: the rest of the shot keeps shutter 0)
+export const subU = (i) => (i * 0.6180339887) % 1;

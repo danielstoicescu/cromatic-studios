@@ -1,0 +1,25 @@
+import { hideMapRide, heroRide, world, paintSky, track, dur, sakuraRow, petals , asphalt, tilt, shake } from "../e8/common.js";
+// E8d: Radu's E-scooter (vendor/hero/e-scooter.js), 17.5 units a metre (the map scooter's box), its wheels turning.
+// E8 · scooter · the E-scooter down the sakura alley on a soft spring morning, petals in the air: the lens low on the
+// street, backing away in front of it at its speed.
+const D = dur("scooter"), V = 9, sc = (t) => ({ x: 838, z: 5560 - V * t });
+const SS = 17.5;
+let RIDE, UN = [], ROW, PET;
+const CAM = track(D, (t) => { const p = sc(t); return { pos: [p.x + 27.6, 3.2, p.z - 106], look: [p.x - 1.35, 9.5, p.z], fov: 30, focus: [p.x + 1, 4, p.z - 1] }; });
+export default {
+  name: "scooter", size: [2160, 3840], fps: 30, duration: D, shutter: 0,
+  camera: CAM,
+  lens: { fstop: 22, scale: 1.45, plane: tilt(CAM, (t) => { const p = sc(t); return [p.x + 1, 4, p.z - 1]; }, 24) },
+  look: { sky: { top: "#a9b8dc", mid: "#f2d4de", hor: "#ffe6d8" }, fog: { color: "#f7dbe6", near: 200, far: 2100 }, bounce: "#f1c4cf", bounceK: 0.62, domeK: 0.42, domeSunGlow: 0.8, tone: 0.05, minRough: 0.62, bump: 0.03 },
+  sun: { az: 65, el: 24, color: "#ffe6cc", intensity: 3.2, radius: 2.2 },
+  shadow: { centre: [838, 0, 5500], ext: 300 },
+  post: { tonemap: "agx", exposure: 1.2, bloomK: 0.1, bloomThr: 0.9, vig: 0.2, grain: 0.022, lut: "cromatic-diorama", lutMix: 0.8, sat: 1.1, power: 1.07 },
+  async prepare(ctx) {
+    await world(ctx.S, "orchid"); UN.push(asphalt(ctx)); UN.push(hideMapRide(ctx.S)); RIDE = await heroRide(ctx, "scooter", { scale: SS });
+    ROW = sakuraRow(ctx, { x: [806, 880], z0: 5300, z1: 5760, step: 44 }); PET = petals(ctx, { centre: [838, 0, 5470], half: [55, 120], height: 60, n: 320 });
+    UN.push(paintSky(ctx, { top: "#8db2f0", mid: "#f6cfe0", hor: "#ffe2d2", lit: "#fff0f4", shade: "#d9b4cf", glow: 65, clouds: 0.38, stars: 0 }));
+  },
+  pose(t) { const p = sc(t), s = shake(t, 0.008, 6); RIDE.place(p.x, 1.2 + s.dy, p.z, Math.PI, s.pitch, s.roll); RIDE.spin(V * t); PET.pose(2.2 + t); }, // (E8b: electric: only the road's buzz)
+  subject: () => RIDE.g,
+  dispose() { RIDE?.dispose(); ROW?.dispose(); PET?.dispose(); UN.forEach((f) => f()); UN = []; }
+};

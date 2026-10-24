@@ -1,0 +1,21 @@
+import { hideMapRide, heroRide, world, paintSky, track, dur, hideNear , asphalt, tilt, shake } from "../e8/common.js";
+// E8d: Radu's Mystery van (vendor/hero/mystery-van.js, its livery an alpha-cut decal), 16 units a metre (the map van's box in the frame).
+// E8 · van · the Mystery van on the street by Kompus and OMA, late afternoon: the lens trucking alongside at its speed,
+// a front three-quarter that opens slowly to its side, the warm sun raking its flank.
+const D = dur("van"), V = 12, van = (t) => ({ x: 821, z: 4560 - V * t });
+const REV = new URL(import.meta.url).searchParams.get("rev") || "", VS = 16;
+let RIDE, UN = [];
+const CAM = track(D, (t) => { const p = van(t), u = t / D; return { pos: [p.x + 125 + 28 * u, 6, p.z - 210 + 39 * u], look: [p.x + 2, 12, p.z - 4], fov: 32, focus: [p.x + 10, 11, p.z - 14] }; });
+export default {
+  name: "van", size: [2160, 3840], fps: 30, duration: D, shutter: 0,
+  camera: CAM,
+  lens: { fstop: 22, scale: 1.45, plane: tilt(CAM, (t) => { const p = van(t); return [p.x + 10, 11, p.z - 14]; }, 24) },
+  look: { sky: { top: "#97a5c8", mid: "#dcc0c4", hor: "#ffd6ac" }, fog: { color: "#ecccb8", near: 280, far: 2600 }, bounce: "#d2a080", bounceK: 0.62, domeK: 0.34, domeSunGlow: 0.9, tone: 0.05, minRough: 0.62, bump: 0.03 },
+  sun: { az: 70, el: 17, color: "#ffc994", intensity: 3.8, radius: 1.4 },
+  shadow: { centre: [840, 0, 4490], ext: 260 },
+  post: { tonemap: "agx", exposure: 1.22, bloomK: 0.08, bloomThr: 0.95, vig: 0.3, grain: 0.024, lut: "cromatic-diorama", lutMix: 0.8, sat: 1.12, power: 1.08 },
+  async prepare(ctx) { await world(ctx.S, "monument"); UN.push(asphalt(ctx)); UN.push(hideMapRide(ctx.S)); RIDE = await heroRide(ctx, "van", { scale: VS, rev: REV }); UN.push(hideNear(ctx, [[851, 4406, 30], [880, 4440, 30], [900, 4420, 30]])); UN.push(paintSky(ctx, { top: "#5a7ed6", mid: "#d6b4c8", hor: "#ffd2a6", lit: "#ffdcb4", shade: "#a693b8", glow: 70, clouds: 0.42, stars: 0 })); },
+  pose(t) { const p = van(t), s = shake(t, 0.035, 3); RIDE.place(p.x, 1.2 + s.dy, p.z, Math.PI, s.pitch, s.roll); RIDE.spin(V * t); }, // (E8b: the engine's shake)
+  subject: () => RIDE.g,
+  dispose() { RIDE?.dispose(); UN.forEach((f) => f()); UN = []; }
+};
