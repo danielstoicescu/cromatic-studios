@@ -1,13 +1,22 @@
 // Cromatic · hero car (TASK-112): a detailed Dacia 1300 (1969-1979, the Renault 12 body) for the stories, built
 // procedurally, in metres. Origin on the ground under the middle of the wheelbase, +z forward, +y up, +x the car's
 // left (the driver's side). Built for offline renders (path traced or rasterised), not for the map: ~250k triangles.
-//   buildHeroDacia(THREE, { RoundedBoxGeometry }) -> { group, mats }
-// Proportions off the factory numbers: length 4.348, width 1.636, height 1.435, wheelbase 2.441, track 1.31, tyres
-// 155 SR 13; and off the reference photos (~/Downloads/dacia*.jpg): the wide rounded-rectangle headlamps in a chrome
-// band with the black grille and the chrome V, the slim chrome bumpers with black overriders, the crease along the
-// flank, the chrome window frames and drip rails, the three slots in the C-pillar, the steel wheels with hub caps.
+//   buildHeroDacia(THREE, { RoundedBoxGeometry, xRoof, plate, headrests }) -> { group, mats, tex }
+//     plate: "period" (default: white with black characters, "14-B-1300", the 1966-92 format), "brand" (the old
+//            "B 14 CRM" EU plate) or any text for a period-style plate; headrests: false (default: early standard
+//            cars had none) or true (the kit's front headrests)
+// r7 (TASK-112, Daniel: "respect the macheta", Mira's research pack ~/cromatic-ops/refs/dacia1300-research/): re-stationed
+// and re-profiled off the CC0 dimensioned R12 drawing (L 4.348 bumper to bumper incl. overriders, WB 2.441, overhangs
+// 0.870 / 1.037, H 1.435, W 1.616, track 1.312): the cabin forward (windscreen foot at FWC +0.34..0.37, roof 1.38-1.40),
+// the bonnet higher (0.945 at the cowl, 0.91 over the wheel, 0.785 at the nose), the boot falling ~17 deg from 0.96 at
+// the rear screen to 0.77 at the tail (the R12 signature), the glasshouse narrower (roof 1.27 at the gutters, belt
+// ~1.43) over a shoulder that rolls in ~0.07-0.08 from the crease, a lower and flatter rear arch, the sills 4 cm lower,
+// bumpers inside the body with the overriders under the lamps' inner ends, the face and tail after the 2015 Polish car
+// and the 1:24 WhiteBox model (lamps 0.25 x 0.135, the flat-bottomed U, the UAP shield, amber + clear indicators,
+// trapezoid tail lamps amber outboard, the filler cap in the tail panel right of the plate, DACIA 1300 on the lid),
+// egg-yolk single-stage paint. The three C-pillar slots stay (the macheta).
 
-export const DIM = { L: 4.348, W: 1.636, H: 1.435, WB: 2.441, zF: 1.161, zR: -1.28, zN: 1.951, zT: -2.397, track: 1.31, tyreR: 0.292, rimR: 0.165, wheelY: 0.29 };
+export const DIM = { L: 4.348, W: 1.636, H: 1.435, WB: 2.441, zF: 1.161, zR: -1.28, zN: 1.951, zT: -2.272, track: 1.312, tyreR: 0.292, rimR: 0.165, wheelY: 0.29 };
 
 // ---- a monotone cubic through (x, y) pairs (Fritsch-Carlson): smooth, never overshoots
 function pchip(pts) {
@@ -35,10 +44,14 @@ export function buildHeroDacia(T, ext = {}) {
   const group = new T.Group(); group.name = "hero-dacia1300";
   const V3 = (x, y, z) => new T.Vector3(x, y, z);
 
+  // r7: the plate (Daniel's call, default the period format) and the front headrests (default none, early standard cars)
+  const PLATE = ext.plate === "brand" ? { text: "B 14 CRM", kind: "eu" } : { text: typeof ext.plate === "string" && ext.plate !== "period" ? ext.plate : "14-B-1300", kind: "plain" };
   // ================= materials =================
-  const tex = makeTextures(T);
+  const tex = makeTextures(T, PLATE);
   const mats = {
-    paint: new T.MeshPhysicalMaterial({ name: "paint", color: new T.Color("#F6B400"), roughness: 0.3, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.035, side: T.FrontSide }),
+    // r7: Yellow 48 as the macheta shows it (#FBC201 lit; the albedo a touch deeper so the studio light does not lift it
+    // to lemon or cream), single-stage enamel: a softer gloss, a thin, slightly rough clearcoat instead of a mirror one
+    paint: new T.MeshPhysicalMaterial({ name: "paint", color: new T.Color("#EFAD00"), roughness: 0.27, metalness: 0, clearcoat: 0.25, clearcoatRoughness: 0.2, side: T.FrontSide }),
     chrome: new T.MeshPhysicalMaterial({ name: "chrome", color: new T.Color("#f4f5f7"), roughness: 0.055, metalness: 1 }),
     satin: new T.MeshPhysicalMaterial({ name: "satin chrome", color: new T.Color("#d9dce0"), roughness: 0.22, metalness: 1 }),
     // the headlamp bowls: their own chrome (not the trim's), brighter and a touch softer, so behind the fluted glass
@@ -65,40 +78,60 @@ export function buildHeroDacia(T, ext = {}) {
     plate1300: new T.MeshPhysicalMaterial({ name: "1300 plate", map: tex.plate1300, roughness: 0.35, metalness: 0, clearcoat: 0.5 }),
     mirror: new T.MeshPhysicalMaterial({ name: "mirror glass", color: new T.Color("#ffffff"), roughness: 0.0, metalness: 1 }),
     bulb: new T.MeshPhysicalMaterial({ name: "bulb", color: new T.Color("#fffbe8"), roughness: 0.05, metalness: 0, transmission: 0.9, transparent: true }),
-    badge: new T.MeshPhysicalMaterial({ name: "badge enamel", color: new T.Color("#1a2a6c"), roughness: 0.15, metalness: 0, clearcoat: 1 })
+    badge: new T.MeshPhysicalMaterial({ name: "badge enamel", color: new T.Color("#141416"), roughness: 0.15, metalness: 0, clearcoat: 1 }) // r7: the UAP shield's black field
   };
   // (two-sided where an open shell could show its inside: the body is a skin, the wheels are lathes)
   for (const k of ["paint", "chrome", "satin", "reflector", "black", "rubber", "tyre", "tread", "steel"]) mats[k].side = T.DoubleSide;
   const add = (geo, mat, name) => { const m = new T.Mesh(geo, mat); m.name = name || mat.name; m.castShadow = true; m.receiveShadow = true; group.add(m); return m; };
 
   // ================= the lower body: a loft of cross-sections along z =================
-  const AR = 0.358, AY = 0.30; // wheel arch radius and centre height
+  // r7: the arches differ (Mira, proportions.md 4.6): the front one round, its lip at 0.64 (5-6 cm over the tyre); the
+  // rear one lower and flatter, a half ellipse whose lip comes down to 0.595, 1-2 cm over the tyre (part-skirted)
+  const ARCH = { f: { z: zF, a: 0.345, b: 0.345, y: 0.295 }, r: { z: zR, a: 0.362, b: 0.33, y: 0.265 } };
+  const archY = (A, z) => { const dz = z - A.z; return Math.abs(dz) < A.a ? A.y + A.b * Math.sqrt(1 - (dz / A.a) ** 2) : -1; };
+  const AR = ARCH.r.a; // (the rear arch's half length: the mud flaps)
   const hw0 = (z) => 0.809 - 0.014 * ((z + 0.2) / 2.2) ** 2;
-  const rFc = 0.1, rRc = 0.115;
+  const rFc = 0.15, rRc = 0.085; // (r7: the front corners rounder in plan (Mira E40: 0.15-0.25), the tail's tighter, its lamps reach the corner)
   function hw(z) { // half width at the crease, rounded in plan at both ends
     let w = hw0(z);
     if (z > zN - rFc) { const d = z - (zN - rFc); w = w - rFc + Math.sqrt(Math.max(0, rFc * rFc - d * d)); }
     if (z < zT + rRc) { const d = zT + rRc - z; w = w - rRc + Math.sqrt(Math.max(0, rRc * rRc - d * d)); }
     return w;
   }
-  const RE = 0.034; // the radius of the face's top and bottom edges
-  const endE = (z) => { const dn = zN - z, dt = z - zT, d = Math.min(dn, dt); if (d >= RE) return 0; const q = RE - d; return RE - Math.sqrt(Math.max(0, RE * RE - q * q)); };
-  // the centre line of the top (bonnet, the belt under the glass, the boot deck)
-  const HcT = pchip([[zT, 0.872], [-2.34, 0.893], [-2.15, 0.903], [-1.9, 0.906], [-1.64, 0.903], [-1.0, 0.893], [0.0, 0.882], [0.6, 0.874], [0.665, 0.873], [1.0, 0.853], [1.5, 0.81], [1.85, 0.766], [zN, 0.746]]);
-  const crown = (z) => 0.03 * sstep(0.63, 0.7, z) + 0.022 * (1 - sstep(-1.84, -1.78, z));
-  const rS = (z) => 0.03 + 0.012 * (sstep(0.6, 0.7, z) + 1 - sstep(-1.84, -1.76, z));
-  const ybase = pchip([[zT, 0.335], [-2.25, 0.27], [-2.0, 0.222], [-1.8, 0.215], [1.55, 0.215], [1.75, 0.245], [zN, 0.30]]);
+  // the radius of the face's top and bottom edges (r7: crisper, 22 mm: the bonnet's lip, the boot lid's sharp trailing edge)
+  const REf = 0.022, REr = 0.022;
+  const endE = (z) => { const dn = zN - z, dt = z - zT, RE = dn < dt ? REf : REr, d = Math.min(dn, dt); if (d >= RE) return 0; const q = RE - d; return RE - Math.sqrt(Math.max(0, RE * RE - q * q)); };
+  // the cabin zone (the windscreen's foot to the rear window's foot): the lower body has no lid there
+  // r7: the cowl moved 0.235 forward (FWC +0.33); the rear screen's foot stays at FWC +2.80 (Mira: it was right)
+  const ZC0 = 0.835, ZC1 = -1.639, ZB0 = ZC0 + 0.06, ZK0 = ZC1 - 0.03; // (the bonnet's back edge, the boot lid's front edge)
+  // r7: the top as two lines: S, the shoulder (the wings' top edge and the belt under the glass), and the crown across
+  // the bonnet and the boot lid; the centre line HcT = S + crown. The belt runs straight (0.894) from the A- to the
+  // C-pillar; the bonnet falls almost straight from 0.945 at the cowl to 0.787 at the nose (8.1 deg, 0.91 over the front wheel, as
+  // the drawing); the
+  // boot lid from 0.95 at the rear screen to 0.768 at the tail (17 deg), its shoulder from the C-pillar's elbow down to
+  // the tail lamps. No horizontal deck anywhere (the R12's wedge that falls at both ends)
+  const S = pchip([[zT, 0.742], [-2.1, 0.786], [-1.9, 0.836], [-1.72, 0.881], [ZC1, 0.9], [-1.58, 0.896], [-1.5, 0.894], [0.6, 0.894], [ZC0 - 0.05, 0.896], [ZC0, 0.9], [0.961, 0.887], [1.161, 0.869], [1.361, 0.8515], [1.561, 0.8277], [1.761, 0.7989], [1.861, 0.778], [zN, 0.755]]);
+  const crownF = (z) => lerp(0.045, 0.027, clamp((z - ZC0) / (zN - ZC0), 0, 1)), crownB = (z) => lerp(0.05, 0.026, clamp((ZC1 - z) / (ZC1 - zT), 0, 1));
+  const crown = (z) => crownF(z) * sstep(ZC0 - 0.07, ZC0 - 0.01, z) + crownB(z) * (1 - sstep(ZC1 + 0.01, ZC1 + 0.07, z));
+  const HcT = (z) => S(z) + crown(z);
+  const rS = (z) => 0.03 + 0.012 * sstep(ZC0 - 0.07, ZC0 - 0.01, z) + 0.004 * (1 - sstep(ZC1 + 0.01, ZC1 + 0.07, z));
+  // r7: the sills 4 cm lower (Mira #12: 0.215 -> 0.178 at mid-wheelbase; the car no longer looks lifted)
+  const ybase = pchip([[zT, 0.3], [zT + 0.13, 0.245], [-1.98, 0.195], [-1.78, 0.178], [1.5, 0.178], [1.72, 0.212], [zN, 0.27]]);
   function ybot(z) {
     let y = ybase(z);
-    for (const za of [zF, zR]) { const dz = z - za; if (Math.abs(dz) < AR) y = Math.max(y, AY + Math.sqrt(AR * AR - dz * dz)); }
+    for (const A of [ARCH.f, ARCH.r]) y = Math.max(y, archY(A, z));
     return y + endE(z);
   }
   const sideTop = (z) => HcT(z) - endE(z) - rS(z) - crown(z);
-  const yc = (z) => Math.min(0.69 - 0.007 * z, sideTop(z) - 0.06);
+  // the crease (r7: 0.675-0.68 nose to tail, it becomes the shoulder over the tail lamps)
+  const yc = (z) => Math.min(0.679 - 0.002 * z, sideTop(z) - 0.03);
+  // r7: the shoulder rolls in 0.072 from the crease to the belt along the cabin (the belt ~1.43 over a 1.616 body,
+  // Mira #5: it was 0.026), a little less at the ends (the wings' and the tail's narrower shoulders)
+  const Kroll = (z) => lerp(0.05, 0.072, sstep(zT + 0.1, ZC1 + 0.05, z) * (1 - sstep(ZC0 - 0.05, zN - 0.3, z)));
   function sideX(z, y) {
     const w = hw(z) - endE(z) * 0.6, c = yc(z), st = sideTop(z);
-    if (y <= c) { const t = (c - y) / Math.max(0.05, c - 0.2); return w - 0.052 * t * t - 0.006 * t; }
-    const t = (y - c) / Math.max(0.02, st - c); return w - 0.004 - 0.026 * Math.pow(t, 1.25);
+    if (y <= c) { const t = (c - y) / Math.max(0.05, c - 0.18); return w - 0.052 * t * t - 0.006 * t; }
+    const t = (y - c) / Math.max(0.02, st - c); return w - 0.004 - Kroll(z) * Math.pow(t, 1.15);
   }
   // half section from the bottom flange to the centre line: [x, y] pairs; counts fixed so the rows line up
   const N1 = 16, N2 = 12, NA = 9, NT = 16;
@@ -107,7 +140,7 @@ export function buildHeroDacia(T, ext = {}) {
     const out = [], yb = ybot(z), c = Math.max(yb + 0.01, yc(z)), st = sideTop(z), r = rS(z);
     const x0 = sideX(z, yb);
     out.push([x0 - 0.028, yb + 0.004]); // the flange turned in under the edge
-    for (let i = 0; i < N1; i++) { const t = i / N1, y = lerp(yb, c, 1 - Math.cos((t * Math.PI) / 2) * 0 - 0) ; const yy = lerp(yb, c, t < 0.5 ? t : t); out.push([sideX(z, yy), yy]); }
+    for (let i = 0; i < N1; i++) { const t = i / N1, yy = lerp(yb, c, t); out.push([sideX(z, yy), yy]); }
     for (let i = 0; i < N2; i++) { const t = i / N2, y = lerp(c, st, t); out.push([sideX(z, y), y]); }
     const xs = sideX(z, st), cx = xs - r;
     for (let i = 0; i < NA; i++) { const a = (i / (NA - 1)) * (Math.PI / 2); out.push([cx + r * Math.cos(a), st + r * Math.sin(a)]); }
@@ -115,17 +148,19 @@ export function buildHeroDacia(T, ext = {}) {
     for (let i = 1; i <= NT; i++) { const t = i / NT, u = 1 - Math.cos((t * Math.PI) / 2); const x = cx * (1 - u); out.push([x, topY + cr * (1 - (x / Math.max(0.01, cx)) ** 2)]); }
     return out; // last point: x = 0
   }
-  // the cabin zone (the windscreen's foot to the rear window's foot): the lower body has no lid there
-  const ZC0 = 0.6, ZC1 = -1.635; // r2 (TASK-112 notes): the cabin ends earlier, the boot is long and flat
   // z rows: fine at the ends and round the arches' edges
   function rowsZ() {
     const zs = new Set();
     for (let z = zT; z <= zN + 1e-9; z += 0.018) zs.add(+z.toFixed(5));
     for (let d = 0; d <= 0.14; d += 0.006) { zs.add(+(zN - d).toFixed(5)); zs.add(+(zT + d).toFixed(5)); }
-    for (const za of [zF, zR]) for (const s of [-1, 1]) for (let d = -0.03; d <= 0.03; d += 0.004) zs.add(+(za + s * AR + d).toFixed(5));
-    for (const zc of [ZC0, ZC1, 0.63, 0.665, -1.665]) zs.add(zc);
+    for (const A of [ARCH.f, ARCH.r]) for (const s of [-1, 1]) for (let d = -0.03; d <= 0.03; d += 0.004) zs.add(+(A.z + s * A.a + d).toFixed(5));
+    for (const zc of [ZC0, ZC1, ZC0 - 0.07, ZC0 - 0.01, ZC1 + 0.01, ZC1 + 0.07, ZB0, ZK0]) zs.add(+zc.toFixed(5));
     zs.add(zN); zs.add(zT);
-    return [...zs].filter((z) => z >= zT && z <= zN).sort((a, b) => a - b);
+    // (r7: the regular grid's rows that fall within 3.5 mm of the fine ends' rows dropped: rows 1-3 mm apart with
+    // slightly different sections striped the rounder front corners' shading)
+    const must = new Set([ZC0, ZC1, ZB0, ZK0, zN, zT, ...(typeof PZ === "object" ? [PZ.d0, PZ.d2] : [])].map((z) => +z.toFixed(5))), out = [];
+    for (const z of [...zs].filter((z) => z >= zT && z <= zN).sort((a, b) => a - b)) { const l = out[out.length - 1]; if (l === undefined || z - l >= 0.0035) out.push(z); else if (must.has(z) && !must.has(l)) out[out.length - 1] = z; }
+    return out;
   }
   const ZS = rowsZ();
   // a grid surface: rows (z) x columns (full section, x from - to +); keep(i, j) says which quads exist
@@ -141,7 +176,6 @@ export function buildHeroDacia(T, ext = {}) {
     const g = new T.BufferGeometry(); g.setAttribute("position", new T.BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
     return g;
   }
-  const full = (half) => { const L = half.slice(0, -1).map(([x, y]) => [-x, y]); return [...L, ...half.slice().reverse().map(([x, y]) => [x, y])].map((p, k, arr) => p); };
   // full section, left bottom (x<0) to right bottom, through the centre once
   const fullSec = (half) => { const left = half.map(([x, y]) => [-x, y]); const right = half.slice(0, -1).reverse(); return [...left, ...right]; };
   const LOW = ZS.map((z) => fullSec(lowerHalf(z)));
@@ -152,8 +186,10 @@ export function buildHeroDacia(T, ext = {}) {
   // lenses showed two black holes. holesAt(): the lamp outlines as holes for a ShapeGeometry at the face; inLamp(): a point
   // (x, y) inside a lamp's outline, for the body's rounded front corners, which wrap in front of the lamps' outer ends
   const rrShape = (w, h, r) => { const s = new T.Shape(), x = -w / 2, y = -h / 2; s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s; };
-  const BAND = { w: 1.44, h: 0.19, y: 0.628 };
-  const HL = { w: 0.236, h: 0.152, r: 0.06, x: 0.566 };
+  // r7 (the 2015 Polish car, dead on; Mira 5): the chrome band from 0.56 to the bonnet's lip (0.76); the lamps
+  // 0.25 x 0.135 (aspect 1.85; they were 1.55) at +-0.54, centred 0.662
+  const BAND = { w: 1.44, h: 0.175, y: 0.662 };
+  const HL = { w: 0.25, h: 0.135, r: 0.04, x: 0.54 };
   // (xMax(y): the face panel's outline is narrower than the lamps' outer ends, which wrap into the skin, and rounder at
   // its top corners: each hole point stays inside it)
   const holesAt = (xMax = () => 1) => [-1, 1].map((s) => new T.Path(rrShape(HL.w * 0.98, HL.h * 0.98, HL.r * 0.98).getPoints(24).map((v) => { const x = v.x + s * HL.x, y = v.y + BAND.y; return new T.Vector2(Math.sign(x) * Math.min(xMax(y), Math.abs(x)), y); })));
@@ -172,7 +208,7 @@ export function buildHeroDacia(T, ext = {}) {
   {
     const iz = ZS.map((z, i) => i).filter((i) => ZS[i] <= ZC0 && ZS[i] >= ZC1);
     const rows = iz.length, cols = COLS;
-    const g = gridSurface(rows, cols, (i, j) => { const k = iz[i], [x, y] = LOW[k][j], s = Math.sign(x) || 1; const h = halfIdx(j); const inset = h < J_TOP0 ? 0.014 : 0.014; return [x - s * inset, Math.min(y, sideTop(ZS[k]) + rS(ZS[k]) - 0.01), ZS[k]]; }, (i, j) => { const h = Math.max(halfIdx(j), halfIdx(j + 1)); return h < J_TOP0 + 1 && Math.min(halfIdx(j), halfIdx(j + 1)) >= 2; }, true);
+    const g = gridSurface(rows, cols, (i, j) => { const k = iz[i], [x, y] = LOW[k][j], s = Math.sign(x) || 1; const inset = 0.014; return [x - s * inset, Math.min(y, sideTop(ZS[k]) + rS(ZS[k]) - 0.01), ZS[k]]; }, (i, j) => { const h = Math.max(halfIdx(j), halfIdx(j + 1)); return h < J_TOP0 + 1 && Math.min(halfIdx(j), halfIdx(j + 1)) >= 2; }, true);
     add(g, mats.vinyl, "door cards");
   }
   // the end faces (the front panel behind the grille, the tail panel)
@@ -224,23 +260,35 @@ export function buildHeroDacia(T, ext = {}) {
   const mirrorPts = (pts) => pts.map(({ p, n }) => ({ p: V3(-p.x, p.y, p.z), n: V3(-n.x, n.y, n.z) }));
   const bothSides = (pts, w, lift, mat, name) => { ribbon(pts, w, lift, mat, name); ribbon(mirrorPts(pts), w, lift, mat, name); };
   const GAP = 0.0042, LIFT = 0.0012;
-  // the doors: front edge behind the front wing, the shut line at the B-pillar, the rear door's edge over the arch
+  // the doors: front edge behind the front wing, the shut line at the B-pillar, the rear door's edge round the arch
   const vline = (z, y0, y1, n = 40) => { const out = []; for (let i = 0; i <= n; i++) { const y = lerp(y0, y1, i / n); out.push(lowerSide(z, y)); } return out; };
-  const doorTop = (z) => sideTop(z) + rS(z) * 0.55;
-  const ZD0 = 0.585, ZD1 = -0.392, ZD2 = -1.03;
-  for (const z of [ZD0, ZD1]) bothSides(vline(z, 0.232, sideTop(z) - 0.004), GAP, LIFT, mats.gap, "door gap");
-  { const dz = ZD2 - zR, yArch = AY + Math.sqrt(Math.max(0, AR * AR - dz * dz)) + 0.004; bothSides(vline(ZD2, yArch, sideTop(ZD2) - 0.004), GAP, LIFT, mats.gap, "door gap"); }
-  { const out = []; for (let i = 0; i <= 80; i++) { const z = lerp(zR + AR + 0.006, ZD0, i / 80); if (Math.abs(z - zR) < AR + 0.004 || Math.abs(z - zF) < AR + 0.004) continue; out.push(lowerSide(z, 0.236)); } bothSides(out, GAP, LIFT, mats.gap, "door sill gap"); }
-  // the bonnet: its sides along the wings, its back edge at the scuttle
-  const ZB0 = 0.668, XB = 0.715;
-  { const out = []; for (let i = 0; i <= 90; i++) { const z = lerp(ZB0, zN - 0.012, i / 90); out.push(lowerTop(z, Math.min(XB, hw(z) - 0.075))); } bothSides(out, GAP, LIFT, mats.gap, "bonnet gap"); }
-  { const out = []; for (let i = 0; i <= 60; i++) { const x = lerp(-XB, XB, i / 60); out.push(lowerTop(ZB0, x)); } ribbon(out, GAP, LIFT, mats.gap, "bonnet gap"); }
-  // the boot lid: its front edge behind the rear window, its sides
-  const ZK0 = -1.668, XK = 0.70;
-  { const out = []; for (let i = 0; i <= 60; i++) { const x = lerp(-XK, XK, i / 60); out.push(lowerTop(ZK0, x)); } ribbon(out, GAP, LIFT, mats.gap, "boot gap"); }
-  { const out = []; for (let i = 0; i <= 50; i++) { const z = lerp(ZK0, zT + 0.012, i / 50); out.push(lowerTop(z, Math.min(XK, hw(z) - 0.08))); } bothSides(out, GAP, LIFT, mats.gap, "boot gap"); }
+  // r7: the front door's leading edge at FWC +0.43, the B-pillar's shut line at FWC +1.39 (Mira #3: both were 0.15 back)
+  const ZD0 = 0.731, ZD1 = -0.229;
+  for (const z of [ZD0, ZD1]) bothSides(vline(z, ybase(z) + 0.022, sideTop(z) - 0.004), GAP, LIFT, mats.gap, "door gap");
+  // r7: the rear door's trailing edge: from the sill (FWC +2.05) round the rear arch, 4 cm off its lip, to y 0.6, then
+  // straight up to the shoulder (FWC +2.27, under the rear door window's rear corner)
+  let zDoorRB = -0.9;
+  { const A = ARCH.r, ea = A.a + 0.04, eb = A.b + 0.04, yTurn = 0.6, out = [];
+    const y0 = ybase(A.z + ea) + 0.022;
+    for (let i = 0; i <= 30; i++) { const y = lerp(y0, yTurn, i / 30), dy = (y - A.y) / eb; out.push(lowerSide(A.z + ea * Math.sqrt(Math.max(0, 1 - dy * dy)), y)); }
+    zDoorRB = out[0].p.z; const zTop = out[out.length - 1].p.z;
+    for (let i = 1; i <= 20; i++) out.push(lowerSide(zTop, lerp(yTurn, sideTop(zTop) - 0.004, i / 20)));
+    bothSides(out, GAP, LIFT, mats.gap, "door gap"); }
+  { const out = []; for (let i = 0; i <= 80; i++) { const z = lerp(zDoorRB, ZD0, i / 80); out.push(lowerSide(z, ybase(z) + 0.024)); } bothSides(out, GAP, LIFT, mats.gap, "door sill gap"); }
+  // the bonnet: its sides along the wings (r7: on the top, just inside the shoulder's roll), its back edge at the scuttle
+  const bonX = (z) => sideX(z, sideTop(z)) - rS(z) - 0.02;
+  { const out = []; for (let i = 0; i <= 90; i++) { const z = lerp(ZB0, zN - 0.012, i / 90); out.push(lowerTop(z, bonX(z))); } bothSides(out, GAP, LIFT, mats.gap, "bonnet gap"); }
+  { const out = []; for (let i = 0; i <= 60; i++) { const x = lerp(-bonX(ZB0), bonX(ZB0), i / 60); out.push(lowerTop(ZB0, x)); } ribbon(out, GAP, LIFT, mats.gap, "bonnet gap"); }
+  // the boot lid: its front edge behind the rear window, its sides, (r7) down over its trailing edge to its lower edge
+  // across the tail (LID_Y): the lid's short rear face carries the script and the lock
+  const bootX = (z) => sideX(z, sideTop(z)) - rS(z) - 0.02, LID_Y = 0.705;
+  { const out = []; for (let i = 0; i <= 60; i++) { const x = lerp(-bootX(ZK0), bootX(ZK0), i / 60); out.push(lowerTop(ZK0, x)); } ribbon(out, GAP, LIFT, mats.gap, "boot gap"); }
+  { const out = []; for (let i = 0; i <= 50; i++) { const z = lerp(ZK0, zT + 0.003, i / 50); out.push(lowerTop(z, bootX(z))); }
+    const xe = bootX(zT), ye = lowerTop(zT, xe).p.y; for (let i = 1; i <= 8; i++) out.push({ p: V3(xe, lerp(ye, LID_Y, i / 8), zT), n: V3(0, 0, -1) });
+    bothSides(out, GAP, LIFT, mats.gap, "boot gap");
+    const across = []; for (let i = 0; i <= 40; i++) across.push({ p: V3(lerp(-xe, xe, i / 40), LID_Y, zT), n: V3(0, 0, -1) }); ribbon(across, GAP, LIFT, mats.gap, "boot gap"); }
   // the scuttle vent under the windscreen
-  { const out = []; for (let i = 0; i <= 50; i++) { const x = lerp(-0.62, 0.62, i / 50); out.push(lowerTop(0.636, x)); } ribbon(out, 0.034, 0.002, mats.black, "scuttle"); }
+  { const out = []; for (let i = 0; i <= 50; i++) { const x = lerp(-0.6, 0.6, i / 50); out.push(lowerTop(ZC0 + 0.036, x)); } ribbon(out, 0.034, 0.002, mats.black, "scuttle"); }
 
   // ---- trims on the flank: the slim chrome strip low on the doors
   const sweep = (path, prof, mat, name, { closed = false, caps = true } = {}) => {
@@ -265,34 +313,40 @@ export function buildHeroDacia(T, ext = {}) {
   const roundProf = (r, n = 12, sq = 1) => Array.from({ length: n }, (_, k) => { const a = (k / n) * Math.PI * 2; return [Math.cos(a) * r, Math.sin(a) * r * sq]; });
   const halfRound = (h, d, n = 10) => { const out = []; for (let k = 0; k <= n; k++) { const a = -Math.PI / 2 + (k / n) * Math.PI; out.push([Math.cos(a) * d, Math.sin(a) * h]); } out.push([-0.001, h * 0.95], [-0.001, -h * 0.95]); return out; };
   {
-    const out = []; for (let i = 0; i <= 70; i++) { const z = lerp(zR + AR + 0.025, zF - AR - 0.025, i / 70); const s = lowerSide(z, 0.292); /* r3: low, along the doors' bottom edge */ out.push({ p: s.p.clone().addScaledVector(s.n, 0.0005), n: s.n }); }
+    const out = []; for (let i = 0; i <= 70; i++) { const z = lerp(ARCH.r.z + ARCH.r.a + 0.025, ARCH.f.z - ARCH.f.a - 0.025, i / 70); const s = lowerSide(z, 0.285); /* r3: low, along the doors' bottom edge */ out.push({ p: s.p.clone().addScaledVector(s.n, 0.0005), n: s.n }); }
     sweep(out, halfRound(0.0065, 0.0055), mats.chrome, "side strip", { closed: true });
     sweep(out.map(({ p, n }) => ({ p: V3(-p.x, p.y, p.z), n: V3(-n.x, n.y, n.z) })), halfRound(0.0065, 0.0055), mats.chrome, "side strip", { closed: true });
   }
-  // the wheel arches' lips (a dark rubbery seam) and the wells
-  for (const za of [zF, zR]) for (const s of [-1, 1]) {
-    const pts = []; for (let i = 0; i <= 60; i++) { const a = Math.PI * (i / 60); const z = za + Math.cos(a) * (AR - 0.002), y = AY + Math.sin(a) * (AR - 0.002); if (y < ybase(z) - 0.002) continue; const q = lowerSide(z, y); pts.push({ p: V3(s * (q.p.x - 0.012), y, z), n: V3(0, Math.sin(a), Math.cos(a)) }); }
-    // the well: half a drum, from the flank in to x = 0.47
-    const well = new T.CylinderGeometry(AR - 0.012, AR - 0.012, 0.36, 40, 1, true, 0, Math.PI);
-    well.rotateZ(Math.PI / 2); // axis along x, the half drum over the top
-    const wm = new T.Mesh(well, mats.under); wm.position.set(s * 0.63, AY, za); wm.rotation.set(0, 0, 0); wm.name = "wheel well"; group.add(wm);
-    const disc = new T.CircleGeometry(AR - 0.012, 40, 0, Math.PI); disc.rotateY(s > 0 ? -Math.PI / 2 : Math.PI / 2); disc.rotateX(0); const dm = new T.Mesh(disc, mats.under); dm.position.set(s * 0.455, AY, za); dm.rotation.set(0, 0, 0); dm.name = "wheel well"; group.add(dm);
+  // the wheel wells: half drums (r7: the rear one elliptical, after its arch), from the flank in to x = 0.45
+  for (const A of [ARCH.f, ARCH.r]) for (const s of [-1, 1]) {
+    const ra = A.a - 0.012, k = (A.b - 0.004) / ra;
+    const well = new T.CylinderGeometry(ra, ra, 0.36, 40, 1, true, 0, Math.PI);
+    well.rotateZ(Math.PI / 2); well.scale(1, k, 1); // axis along x, the half drum over the top
+    const wm = new T.Mesh(well, mats.under); wm.position.set(s * 0.63, A.y, A.z); wm.name = "wheel well"; group.add(wm);
+    const disc = new T.CircleGeometry(ra, 40, 0, Math.PI); disc.rotateY(s > 0 ? -Math.PI / 2 : Math.PI / 2); disc.scale(1, k, 1); const dm = new T.Mesh(disc, mats.under); dm.position.set(s * 0.455, A.y, A.z); dm.name = "wheel well"; group.add(dm);
   }
   // the floor pan: closes the skin from below, flange to flange (up in the arches)
-  { const pan = gridSurface(ZS.length, 9, (i, j) => { const z = ZS[i], x0 = sideX(z, ybot(z)) - 0.028, x = lerp(-x0, x0, j / 8), yy = Math.max(ybase(z) + endE(z), 0.2) + 0.004; return [x, Math.abs(x) > 0.5 ? ybot(z) + 0.004 : yy, z]; }, null, true); add(pan, mats.under, "floor pan"); }
-  // underbody, floor
-  { const g = new T.BoxGeometry(1.0, 0.03, 2.9); g.translate(0, 0.205, -0.1); add(g, mats.under, "underbody"); }
-  { const g = new T.PlaneGeometry(1.5, ZC0 - ZC1 + 0.05); g.rotateX(-Math.PI / 2); g.translate(0, 0.275, (ZC0 + ZC1) / 2); add(g, mats.carpet, "floor"); }
+  { const pan = gridSurface(ZS.length, 9, (i, j) => { const z = ZS[i], x0 = sideX(z, ybot(z)) - 0.028, x = lerp(-x0, x0, j / 8), yy = Math.max(ybase(z) + endE(z), 0.16) + 0.004; return [x, Math.abs(x) > 0.5 ? ybot(z) + 0.004 : yy, z]; }, null, true); add(pan, mats.under, "floor pan"); }
+  // underbody, floor (r7: 12-14 cm off the ground, the drawing's 0.120)
+  { const g = new T.BoxGeometry(1.0, 0.03, 2.9); g.translate(0, 0.152, -0.1); add(g, mats.under, "underbody"); }
+  { const g = new T.PlaneGeometry(1.5, ZC0 - ZC1 + 0.05); g.rotateX(-Math.PI / 2); g.translate(0, 0.24, (ZC0 + ZC1) / 2); add(g, mats.carpet, "floor"); }
 
   // ================= the glasshouse: a second loft, from the windscreen's foot to the rear window's foot =================
   const beltY = (z) => sideTop(z) + rS(z) - 0.004;
-  const HrT = pchip([[ZC1, 0.912], [-1.52, 1.02], [-1.36, 1.19], [-1.18, 1.36], [-1.08, 1.41], [-0.96, 1.428], [-0.5, 1.435], [-0.05, 1.426], [0.03, 1.405], [0.12, 1.33], [0.36, 1.13], [ZC0, 0.892]]);
-  const RR = 0.034, xRoof = ext.xRoof ?? 0.665; // r3: the side glass nearly upright, the roof wide (the 1:24 model). E8 (Vera): ext.xRoof narrows the roof (tumblehome, as the real car: the roof ~1.27 m over a 1.64 m body)
-  const crownR = (z) => 0.024 + 0.012 * (sstep(0.06, 0.3, z) + 1 - sstep(-1.4, -1.15, z));
-  const xBelt = (z) => hw(z) - 0.05;
+  // r7: the roof's centre line re-stationed (Mira #3): the rear screen at 42-43 deg from its foot (FWC +2.80, 0.96) to
+  // the roof's rear edge (FWC +2.34), the roof 1.38-1.40 long, its front edge at FWC +0.96, the windscreen at 36 deg
+  // down to the cowl (FWC +0.33..0.37, 0.93-0.95)
+  const HrT = pchip([[ZC1, 0.952], [-1.589, 0.978], [-1.489, 1.068], [-1.389, 1.164], [-1.289, 1.265], [-1.239, 1.318], [-1.199, 1.364], [-1.169, 1.39], [-1.139, 1.403], [-1.04, 1.416], [-0.85, 1.43], [-0.6, 1.435], [-0.3, 1.432], [-0.04, 1.42], [0.111, 1.404], [0.211, 1.387], [0.261, 1.369], [0.311, 1.339], [0.361, 1.307], [0.461, 1.233], [0.561, 1.153], [0.661, 1.068], [0.741, 1.005], [0.781, 0.975], [ZC0, 0.945]]);
+  // r3: the side glass nearly upright, the roof wide (the 1:24 model). E8 (Vera): ext.xRoof narrows the roof. r7: 0.60 by
+  // default (the roof 1.27 at the gutters over the 1.616 body, the side glass leaning ~10 deg; Mira #5)
+  const RR0 = 0.05, RR = RR0, xRoof = ext.xRoof ?? 0.575; // (r7: the roof's edges rounder, as the drawing's front and rear views)
+  const crownR = (z) => 0.034 + 0.012 * (sstep(0.135, 0.375, z) + 1 - sstep(-1.46, -1.21, z));
+  const xBelt = (z) => sideX(z, sideTop(z)) - 0.02; // r7: on the shoulder's roll, wherever it is (it was hw - 0.05)
   function cabHalf(z) {
-    const out = [], yb = beltY(z) - 0.006, Hc = HrT(z), cr = crownR(z), yk = Math.max(yb + 0.002, Hc - RR - cr);
-    const xb = xBelt(z), roofEdgeY = 1.435 - RR - 0.024, f = clamp((yk - yb) / (roofEdgeY - yb), 0, 1), xk = lerp(xb, xRoof + RR, Math.pow(f, 0.9)) - RR;
+    // (r7: near the screens' feet the corner and the crown shrink with the room left over the belt, so the section's
+    // centre meets the roof line there exactly: the cowl and the rear screen's foot level with the bonnet and the lid)
+    const out = [], yb = beltY(z) - 0.006, Hc = HrT(z), room = Hc - yb - 0.002, RR = Math.min(RR0, Math.max(0.004, room * 0.45)), cr = Math.min(crownR(z), Math.max(0.002, room * 0.45)), yk = Math.max(yb + 0.002, Hc - RR - cr);
+    const xb = xBelt(z), roofEdgeY = 1.435 - RR0 - 0.034, f = clamp((yk - yb) / (roofEdgeY - yb), 0, 1), xk = lerp(xb, xRoof + RR, Math.pow(f, 0.9)) - RR;
     const NS = 18, NA2 = 7, NT2 = 18;
     for (let i = 0; i < NS; i++) { const t = i / NS, y = lerp(yb, yk, t); out.push([lerp(xb, xk + RR, Math.pow(t, 0.92)), y]); }
     for (let i = 0; i < NA2; i++) { const a = (i / (NA2 - 1)) * (Math.PI / 2); out.push([xk + RR * Math.cos(a), yk + RR * Math.sin(a)]); }
@@ -362,19 +416,23 @@ export function buildHeroDacia(T, ext = {}) {
     return g;
   }
   // ---- the openings, off the 1:24 model's photo (metres; the flank: z, y; the roof: z, x)
-  const T_WIN = (z) => sideTopY(z) - 0.042; // the windows' top: a painted rail under the roof's corner
+  // r7: the windows' top at 1.315-1.32 (Mira: the DLO top under the drip rail; it was 1.335): a wider painted rail
+  const T_WIN = (z) => sideTopY(z) - 0.036; // the windows' top: a painted rail under the roof's corner
   const BOT = (z) => sideBot(z) + 0.022; // their bottom: just over the door's top edge
-  // front door window: the front edge parallel to the A-pillar, set in from it (a wide painted pillar at its foot)
-  const zFTop = (() => { let z = 0.2; for (let i = 0; i < 60; i++) { const d = sideTopY(z) - 0.085 - T_WIN(-0.3); z += d > 0 ? 0.004 : -0.004; } return z; })();
-  const frontWin = roundQuad([[0.385, BOT(0.385)], [-0.352, BOT(-0.352)], [-0.352, T_WIN(-0.352)], [zFTop, T_WIN(zFTop)]], [0.02, 0.018, 0.026, 0.05]);
-  // rear door window: from the B-pillar back, its rear edge a little slanted
-  const RW_B = -1.165, RW_T = -1.09;
-  const rearWin = roundQuad([[-0.44, BOT(-0.44)], [RW_B, BOT(RW_B)], [RW_T, T_WIN(RW_T)], [-0.44, T_WIN(-0.44)]], [0.018, 0.02, 0.05, 0.026]);
+  // front door window (r7: re-stationed with the doors): its front edge raked parallel to the A-pillar (36-38 deg), its
+  // lower front corner in the door's front top corner (the mirror's place), its rear edge at the B-pillar (FWC +1.35)
+  const zFTop = 0.08, ZWF = 0.6;
+  const frontWin = roundQuad([[ZWF, BOT(ZWF)], [-0.19, BOT(-0.19)], [-0.19, T_WIN(-0.19)], [zFTop, T_WIN(zFTop)]], [0.02, 0.018, 0.026, 0.05]);
+  // rear door window: from the B-pillar back (FWC +1.43), its rear edge slanted forward with the C-pillar's front edge
+  const RW_B = -1.1, RW_T = -1.0;
+  const rearWin = roundQuad([[-0.27, BOT(-0.27)], [RW_B, BOT(RW_B)], [RW_T, T_WIN(RW_T)], [-0.27, T_WIN(-0.27)]], [0.018, 0.02, 0.05, 0.026]);
   // windscreen and rear window: rounded corners, a painted band all round (header, pillars, scuttle)
-  const wsTop = 0.13, wsBot = 0.548, rwTop = -1.115, rwBot = -1.585;
+  // r7: the windscreen's foot at FWC +0.366, its top (the roof's front edge) at FWC +0.956; the rear screen's top (the
+  // roof's rear edge) at FWC +2.336, its foot at FWC +2.776; the rear screen a trapezoid, ~1.17 at its foot, ~0.84 at its top
+  const wsTop = 0.205, wsBot = 0.795, rwTop = -1.175, rwBot = -1.615;
   const glassOn = (zA, zB, inA, inB, rA, rB) => roundQuad([[zA, -(xkOf(zA) - inA)], [zA, xkOf(zA) - inA], [zB, xkOf(zB) - inB], [zB, -(xkOf(zB) - inB)]], [rA, rA, rB, rB], 12).map(([z, x]) => [z, sOfX(z, x)]);
   const wscreen = glassOn(wsBot, wsTop, 0.05, 0.06, 0.065, 0.1);
-  const rwindow = glassOn(rwTop, rwBot, 0.062, 0.05, 0.09, 0.06);
+  const rwindow = glassOn(rwTop, rwBot, 0.175, 0.075, 0.09, 0.06);
   // ---- the flanks (both sides)
   const sideMap = (sx, inset0 = 0) => (z, y) => { const yy = clamp(y, sideBot(z), sideTopY(z)); const q = cabSide(z, yy); return { p: V3(sx * q.p.x, q.p.y, q.p.z), n: V3(sx * q.n.x, q.n.y, q.n.z) }; };
   const zs = []; for (let z = ZC1; z <= ZC0 + 1e-9; z += 0.01) zs.push(z);
@@ -402,9 +460,9 @@ export function buildHeroDacia(T, ext = {}) {
   for (const w of [wscreen, rwindow]) seal(w, topMap, 1, 0.62);
   // ---- the rain gutters along the roof's edges (v3: a chrome-capped U channel, open outward, not a round rod)
   const GUT = [[-0.002, -0.006], [0.007, -0.006], [0.0075, -0.0045], [0.0025, -0.004], [0.0025, 0.004], [0.0075, 0.0045], [0.007, 0.006], [-0.002, 0.006]];
-  for (const s of [-1, 1]) { const pts = []; for (let z = -1.06; z <= 0.06; z += 0.01) { const n = topNrm(z, s * 0.88); pts.push({ p: topPt(z, s * 0.88).addScaledVector(n, 0.002), n: V3(s, 0.35, 0).normalize() }); } sweep(pts, GUT, mats.chrome, "rain gutter", { closed: true }); }
+  for (const s of [-1, 1]) { const pts = []; for (let z = rwTop + 0.055; z <= wsTop - 0.07; z += 0.01) { const n = topNrm(z, s * 0.97); pts.push({ p: topPt(z, s * 0.97).addScaledVector(n, 0.002), n: V3(s, 0.35, 0).normalize() }); } sweep(pts, GUT, mats.chrome, "rain gutter", { closed: true }); }
   // v3: the chrome belt moulding along the side windows' foot (the doors' tops), both sides
-  for (const sx of [1, -1]) { const pts = []; for (let z = -1.2; z <= 0.42; z += 0.02) { const q = cabSide(z, sideBot(z) + 0.012); pts.push({ p: V3(sx * q.p.x, q.p.y, q.p.z).addScaledVector(V3(sx * q.n.x, q.n.y, q.n.z), 0.001), n: V3(sx * q.n.x, q.n.y, q.n.z) }); } sweep(pts, halfRound(0.006, 0.004), mats.chrome, "belt moulding", { closed: true }); }
+  for (const sx of [1, -1]) { const pts = []; for (let z = RW_B - 0.035; z <= ZWF + 0.035; z += 0.02) { const q = cabSide(z, sideBot(z) + 0.012); pts.push({ p: V3(sx * q.p.x, q.p.y, q.p.z).addScaledVector(V3(sx * q.n.x, q.n.y, q.n.z), 0.001), n: V3(sx * q.n.x, q.n.y, q.n.z) }); } sweep(pts, halfRound(0.006, 0.004), mats.chrome, "belt moulding", { closed: true }); }
   // cabin surface query (the flank of the glasshouse at z, height y)
   function cabSide(z, y) {
     const h = cabHalf(z); let k; for (k = 0; k < C_SIDE - 1; k++) if (h[k + 1][1] >= y) break;
@@ -427,17 +485,42 @@ export function buildHeroDacia(T, ext = {}) {
   const ringGeo = (w, h, r, t, depth, bevel = 0.004) => { const s = rrShape(w + 2 * t, h + 2 * t, r + t); s.holes.push(rrShape(w, h, r)); return new T.ExtrudeGeometry(s, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * 0.8, bevelSegments: 4, curveSegments: 10 }); };
   const facing = (g, z, back) => { if (back) g.rotateY(Math.PI); g.translate(0, 0, z); return g; };
   // the band: chrome frame round lamps and grille, black inside
-  { const g = ringGeo(BAND.w, BAND.h, 0.03, 0.011, 0.012, 0.004); g.translate(0, BAND.y, 0); add(facing(g, FZ - 0.006, false), mats.chrome, "grille surround"); }
-  { const sh = rrShape(BAND.w, BAND.h, 0.03); sh.holes.push(...holesAt().map((h) => new T.Path(h.getPoints().map((v) => new T.Vector2(v.x, v.y - BAND.y))))); const g = new T.ShapeGeometry(sh, 8); g.translate(0, BAND.y, FZ + 0.001); add(g, mats.black, "grille back"); }
-  // the grille's bars between the lamps, the chrome V and the shield
-  for (let k = 0; k < 9; k++) { const g = new T.BoxGeometry(0.82, 0.006, 0.012); g.translate(0, BAND.y - 0.072 + k * 0.018, FZ + 0.008); add(g, mats.black, "grille bar"); }
-  for (let k = 0; k < 24; k++) { const g = new T.BoxGeometry(0.004, 0.15, 0.008); g.translate(-0.405 + k * 0.0352, BAND.y, FZ + 0.006); add(g, mats.black, "grille bar"); }
-  for (const s of [-1, 1]) { const g = new T.CylinderGeometry(0.0065, 0.0065, 0.15, 12); g.scale(1, 0.78, 1); g.rotateZ(-s * 0.36); g.translate(s * 0.024, BAND.y + 0.01, FZ + 0.022); add(g, mats.chrome, "grille V"); }
-  { const sh = new T.Shape(); sh.moveTo(-0.018, 0.02); sh.lineTo(0.018, 0.02); sh.lineTo(0.018, -0.004); sh.absarc(0, -0.004, 0.018, 0, Math.PI, true); sh.closePath(); const g = new T.ExtrudeGeometry(sh, { depth: 0.004, bevelEnabled: true, bevelThickness: 0.002, bevelSize: 0.002, bevelSegments: 3 }); g.translate(0, BAND.y - 0.008, FZ + 0.026); add(g, mats.badge, "badge"); const r = ringGeo(0.036, 0.024, 0.004, 0.003, 0.004, 0.0015); r.translate(0, BAND.y, FZ + 0.026); add(r, mats.chrome, "badge rim"); }
+  // r7: the band's and the rims' outer ends bent back round the face's rounded corners ("following the body's rounded
+  // front corners", details.md 1)
+  // (r7: a geometry's triangles split until no edge is longer than L, as separate triangles (flat normals kept), so a
+  // bend applied per vertex follows the curve instead of cutting chords behind the skin)
+  const subdiv = (g0, L) => {
+    const g = g0.index ? g0.toNonIndexed() : g0, P = g.attributes.position; let T3 = [];
+    for (let i = 0; i < P.count; i += 3) T3.push([0, 1, 2].map((k) => [P.getX(i + k), P.getY(i + k), P.getZ(i + k)]));
+    const len = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]), mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
+    for (let pass = 0; pass < 10; pass++) { const out = []; let any = false;
+      for (const [a, b, c] of T3) { const la = len(a, b), lb = len(b, c), lc = len(c, a), m = Math.max(la, lb, lc); if (m <= L || Math.max(Math.abs(a[0]), Math.abs(b[0]), Math.abs(c[0])) < xr0 - L) { out.push([a, b, c]); continue; } any = true;
+        if (m === la) { const d = mid(a, b); out.push([a, d, c], [d, b, c]); } else if (m === lb) { const d = mid(b, c); out.push([a, b, d], [a, d, c]); } else { const d = mid(c, a); out.push([a, b, d], [d, b, c]); } }
+      T3 = out; if (!any) break; }
+    const pos = new Float32Array(T3.length * 9); T3.forEach((t, i) => t.forEach((p, k) => pos.set(p, i * 9 + k * 3)));
+    const r = new T.BufferGeometry(); r.setAttribute("position", new T.BufferAttribute(pos, 3)); return r;
+  };
+  const xr0 = hw0(zN) - rFc, bendFace = (g0) => { const g = subdiv(g0, 0.012); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const d = Math.abs(p.getX(i)) - xr0; if (d > 0) p.setZ(i, p.getZ(i) - (rFc - Math.sqrt(Math.max(0, rFc * rFc - Math.min(d, rFc) ** 2)))); } g.computeVertexNormals(); return g; };
+  { const g = ringGeo(BAND.w, BAND.h, 0.03, 0.011, 0.012, 0.004); g.translate(0, BAND.y, 0); add(bendFace(facing(g, FZ - 0.006, false)), mats.chrome, "grille surround"); }
+  { const sh = rrShape(BAND.w, BAND.h, 0.03); sh.holes.push(...holesAt().map((h) => new T.Path(h.getPoints().map((v) => new T.Vector2(v.x, v.y - BAND.y))))); const g = new T.ShapeGeometry(sh, 8); g.translate(0, BAND.y, FZ + 0.001); add(bendFace(g), mats.black, "grille back"); }
+  // the grille's bars between the lamps (r7: seven, with short dividers, as on the photos), the chrome U and the shield
+  for (let k = 0; k < 7; k++) { const g = new T.BoxGeometry(0.79, 0.007, 0.012); g.translate(0, BAND.y - 0.066 + k * 0.022, FZ + 0.008); add(g, mats.black, "grille bar"); }
+  for (let k = 0; k < 13; k++) { const g = new T.BoxGeometry(0.005, 0.15, 0.008); g.translate(-0.384 + k * 0.064, BAND.y, FZ + 0.006); add(g, mats.black, "grille bar"); }
+  // r7 (Mira #8): the "V" is a flat-bottomed U: two raked chrome sides and a short horizontal bottom, framing the shield
+  { const yT = BAND.y + 0.074, yB = BAND.y - 0.062, xT = 0.085, xB = 0.036, zV = FZ + 0.022, r = 0.0065;
+    const rod = (x0, y0, x1, y1) => { const d = Math.hypot(x1 - x0, y1 - y0), g = new T.CylinderGeometry(r, r, d, 12); g.scale(1, 1, 0.78); g.rotateZ(-Math.atan2(x1 - x0, y1 - y0)); g.translate((x0 + x1) / 2, (y0 + y1) / 2, zV); add(g, mats.chrome, "grille V"); };
+    for (const s of [-1, 1]) { rod(s * xT, yT, s * xB, yB); const k = new T.SphereGeometry(r, 12, 8); k.scale(1, 1, 0.78); k.translate(s * xB, yB, zV); add(k, mats.chrome, "grille V"); }
+    rod(-xB, yB, xB, yB); }
+  // r7 (Mira #17): the early cars' UAP shield (Uzina de Autoturisme Pitesti): black, a silver eagle and the letters, a
+  // chrome edge (the tricolour inlay was invented)
+  { const W = 0.042, H = 0.05, yb = BAND.y + 0.026, shield = (k) => { const s = new T.Shape(), w = W * k, h = H * k; s.moveTo(-w / 2, h / 2); s.lineTo(w / 2, h / 2); s.lineTo(w / 2, -h * 0.05); s.quadraticCurveTo(w / 2, -h * 0.38, 0, -h / 2); s.quadraticCurveTo(-w / 2, -h * 0.38, -w / 2, -h * 0.05); s.closePath(); return s; };
+    const g = new T.ExtrudeGeometry(shield(1), { depth: 0.004, bevelEnabled: true, bevelThickness: 0.0015, bevelSize: 0.0015, bevelSegments: 3 }); g.translate(0, yb, FZ + 0.026); add(g, mats.badge, "badge");
+    const r = new T.ExtrudeGeometry(shield(1.16), { depth: 0.003, bevelEnabled: true, bevelThickness: 0.001, bevelSize: 0.001, bevelSegments: 2 }); r.translate(0, yb - 0.0005, FZ + 0.0245); add(r, mats.chrome, "badge rim");
+    const e = new T.PlaneGeometry(W * 0.92, H * 0.92); e.translate(0, yb, FZ + 0.0322); const em = add(e, new T.MeshPhysicalMaterial({ name: "badge chrome", color: new T.Color("#e6e7ea"), map: tex.uap, alphaTest: 0.5, metalness: 1, roughness: 0.2 }), "badge emblem"); em.castShadow = false; }
   // headlamps: wide rounded rectangles, chrome rims, fluted lenses over chrome reflectors
   for (const s of [-1, 1]) {
     const cx = s * HL.x, cy = BAND.y;
-    { const g = ringGeo(HL.w, HL.h, HL.r, 0.015, 0.024, 0.006); g.translate(cx, cy, FZ + 0.004); add(g, mats.chrome, "headlamp rim"); }
+    { const g = ringGeo(HL.w, HL.h, HL.r, 0.015, 0.024, 0.006); g.translate(cx, cy, FZ + 0.004); add(bendFace(g), mats.chrome, "headlamp rim"); }
     // the reflector: a deep bowl behind the lens
     // E8b: a dish with the lens's own rounded-rectangle rim (an ellipsoid left the corners open onto the body's inside),
     // its rim just in front of the face so nothing on the face covers it, tucked under the chrome rim
@@ -448,57 +531,73 @@ export function buildHeroDacia(T, ext = {}) {
     { const g = new T.SphereGeometry(0.012, 16, 12); g.translate(cx, cy, FZ - 0.025); add(g, mats.bulb, "bulb"); const c = new T.CylinderGeometry(0.016, 0.016, 0.02, 16); c.rotateX(Math.PI / 2); c.translate(cx, cy, FZ - 0.045); add(c, mats.satin, "bulb cap"); }
     // the lens, domed
     { const g = new T.ShapeGeometry(rrShape(HL.w, HL.h, HL.r), 12); const p = g.attributes.position, uv = g.attributes.uv; for (let i = 0; i < p.count; i++) { const x = p.getX(i) / (HL.w / 2), y = p.getY(i) / (HL.h / 2); p.setZ(i, 0.012 * Math.max(0, 1 - 0.55 * x * x - 0.75 * y * y)); uv.setXY(i, p.getX(i) / HL.w + 0.5, p.getY(i) / HL.h + 0.5); } g.computeVertexNormals(); g.translate(cx, cy, FZ + 0.012); add(g, mats.lens, "headlamp lens"); }
-    // the indicator under the lamp, in a chrome cup
-    { const g = new T.ShapeGeometry(rrShape(0.13, 0.042, 0.01), 6); const p = g.attributes.position, uv = g.attributes.uv; for (let i = 0; i < p.count; i++) uv.setXY(i, p.getX(i) / 0.13 + 0.5, p.getY(i) / 0.042 + 0.5); g.translate(s * 0.545, 0.505, FZ + 0.011); add(g, mats.amber, "indicator"); const r = ringGeo(0.13, 0.042, 0.01, 0.006, 0.01, 0.002); r.translate(s * 0.545, 0.505, FZ + 0.002); add(r, mats.chrome, "indicator rim"); }
+    // r7: the indicator under the lamp's inner two-thirds, 0.155 x 0.052, amber outboard and clear inboard, in a chrome cup
+    { const IW = 0.155, IH = 0.052, ix = s * 0.5, iy = 0.526;
+      for (const [x0, x1, mat] of [[0, 0.075, mats.amber], [-0.08, 0, mats.clear]]) { const w = x1 - x0, g = new T.PlaneGeometry(w, IH); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * w) / IW, uv.getY(i)); g.translate(ix + (s * (x0 + x1)) / 2, iy, FZ + 0.011); add(g, mat, "indicator"); }
+      const r = ringGeo(IW, IH, 0.008, 0.006, 0.01, 0.002); r.translate(ix, iy, FZ + 0.002); add(r, mats.chrome, "indicator rim"); }
   }
-  // the slatted intake under the grille
-  for (let k = 0; k < 5; k++) { const g = new T.BoxGeometry(0.44, 0.007, 0.016); g.translate(-0.1, 0.468 + k * 0.012, FZ + 0.006); add(g, mats.paint, "intake slat"); }
-  { const g = new T.PlaneGeometry(0.44, 0.062); g.translate(-0.1, 0.492, FZ + 0.0015); add(g, mats.black, "intake"); }
-  // bumpers: slim chrome blades wrapping round the corners, black rubber overriders
+  // r7 (Mira #8): the slatted intake centred under the grille, 0.50 wide, four body-colour slats over a black slot
+  for (let k = 0; k < 4; k++) { const g = new T.BoxGeometry(0.5, 0.0065, 0.014); g.translate(0, 0.506 + k * 0.0125, FZ + 0.005); add(g, mats.paint, "intake slat"); }
+  { const g = new T.PlaneGeometry(0.5, 0.05); g.translate(0, 0.525, FZ + 0.0015); add(g, mats.black, "intake"); }
+  // bumpers: slim chrome blades with a rib, wrapping round the corners INSIDE the body (r7, Mira #7: <= 1.60 over the
+  // ends; the front blade 0.41-0.50, 6 cm proud of the nose; the rear 0.355-0.445, 4 cm proud of the tail), black
+  // rubber overriders under the lamps' inner ends (+-0.37 in front), 0.07 x 0.24 x 0.085, 1-2 cm proud of the blade:
+  // their faces set the overall length, 4.349 (DIM.L 4.348, bumper to bumper incl. the overriders)
+  const BUMP = { f: { y: 0.455, z0: zN + 0.02, ov: 0.37, oy: 0.445, oh: 0.24, face: 2.031 }, r: { y: 0.4, z0: zT + 0.001, ov: 0.34, oy: 0.39, oh: 0.2, face: -2.318 } };
   function bumper(front) {
-    const sgn = front ? 1 : -1, z0 = (front ? zN : zT) + sgn * 0.052, y = front ? 0.392 : 0.44;
+    const sgn = front ? 1 : -1, B = front ? BUMP.f : BUMP.r, z0 = B.z0, y = B.y, xe = 0.765, xw = 0.6;
     const pts = [];
     for (let i = 0; i <= 80; i++) {
-      const t = i / 80, x = lerp(-0.84, 0.84, t), ax = Math.abs(x);
-      const back = ax > 0.68 ? (ax - 0.68) ** 2 * 2.2 : 0; // the ends wrap back round the corners
-      pts.push({ p: V3(x, y, z0 - sgn * (0.012 * (x / 0.86) ** 2 + back)), n: V3(0, 1, 0) });
+      const t = i / 80, x = lerp(-xe, xe, t), ax = Math.abs(x);
+      const back = ax > xw ? (ax - xw) ** 2 * 2.6 : 0; // the ends wrap back round the corners
+      pts.push({ p: V3(x, y, z0 - sgn * (0.01 * (x / xe) ** 2 + back)), n: V3(0, 1, 0) });
     }
-    // profile: a shallow C, 0.084 tall, 0.05 deep (u: up, v: outward along the path's binormal)
-    const prof = []; for (let k = 0; k <= 16; k++) { const a = -Math.PI / 2 + (k / 16) * Math.PI; prof.push([Math.sin(a) * 0.042, sgn * (0.012 + Math.cos(a) * 0.03)]); } prof.push([0.038, -sgn * 0.012], [-0.038, -sgn * 0.012]);
+    // profile: a shallow C, 0.09 tall, 0.042 deep, a rib along its middle (u: up, v: outward along the path's binormal)
+    const prof = []; for (let k = 0; k <= 24; k++) { const a = -Math.PI / 2 + (k / 24) * Math.PI, u = Math.sin(a) * 0.045; prof.push([u, sgn * (0.012 + Math.cos(a) * 0.03 + 0.0045 * Math.exp(-((u / 0.006) ** 2)))]); } prof.push([0.04, -sgn * 0.012], [-0.04, -sgn * 0.012]);
     sweep(pts, prof, mats.chrome, front ? "front bumper" : "rear bumper", { closed: true });
     for (const s of [-1, 1]) {
-      // r3: tall rubber overriders, reaching well under the blade (the 1:24 model)
-      const g = ext.RoundedBoxGeometry ? new ext.RoundedBoxGeometry(0.05, front ? 0.27 : 0.22, 0.055, 3, 0.016) : new T.BoxGeometry(0.05, 0.27, 0.055);
-      g.translate(s * (front ? 0.29 : 0.33), y - (front ? 0.02 : 0.01), z0 + sgn * 0.045); add(g, mats.rubber, "overrider");
-      const st = new T.BoxGeometry(0.02, 0.03, 0.09); st.translate(s * 0.62, y, z0 - sgn * 0.06); add(st, mats.under, "bumper bracket");
+      const D = 0.085, g = ext.RoundedBoxGeometry ? new ext.RoundedBoxGeometry(0.07, B.oh, D, 3, 0.014) : new T.BoxGeometry(0.07, B.oh, D);
+      g.translate(s * B.ov, B.oy, B.face - (sgn * D) / 2); add(g, mats.rubber, "overrider");
+      const st = new T.BoxGeometry(0.02, 0.03, 0.09); st.translate(s * 0.6, y, z0 - sgn * 0.06); add(st, mats.under, "bumper bracket");
     }
   }
   bumper(true); bumper(false);
-  // number plates
-  // v3: embossed plates, the same (fictional) number front and back
-  { const m = dPlate(T, "B 14 CRM", 0.34, 0.105, { kind: "eu" }); m.name = "front plate"; m.position.set(0, 0.395, zN + 0.11); group.add(m); const b = new T.BoxGeometry(0.35, 0.115, 0.008); b.translate(0, 0.395, zN + 0.105); add(b, mats.black, "plate holder"); }
-  { const m = dPlate(T, "B 14 CRM", 0.52, 0.112, { kind: "eu", back: true }); m.name = "rear plate"; m.position.set(0, 0.67, zT - 0.009); group.add(m); const b = new T.BoxGeometry(0.535, 0.125, 0.006); b.translate(0, 0.67, zT - 0.004); add(b, mats.black, "plate holder"); const l = new T.BoxGeometry(0.12, 0.018, 0.03); l.translate(0, 0.762, zT - 0.012); add(l, mats.chrome, "plate lamp"); }
+  { const g = new T.SphereGeometry(0.016, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(1, 0.7, 1); g.translate(0, 0.444, zT - 0.03); add(g, mats.chrome, "tow eye"); }
+  // number plates (r7: the period format by default, ext.plate: Daniel's call): the front one under the blade between the
+  // overriders, the rear one in the tail panel left of centre as seen from behind (+x), the filler cap right of it
+  { const w = PLATE.kind === "eu" ? 0.34 : 0.48, m = dPlate(T, PLATE.text, w, 0.105, { kind: PLATE.kind }); m.name = "front plate"; m.position.set(0, 0.35, 2.009); group.add(m); const b = new T.BoxGeometry(w + 0.01, 0.115, 0.008); b.translate(0, 0.35, 2.004); add(b, mats.black, "plate holder"); }
+  const RPX = 0.08, RPY = 0.548;
+  { const m = dPlate(T, PLATE.text, 0.52, 0.112, { kind: PLATE.kind, back: true }); m.name = "rear plate"; m.position.set(RPX, RPY, zT - 0.009); group.add(m); const b = new T.BoxGeometry(0.535, 0.125, 0.006); b.translate(RPX, RPY, zT - 0.004); add(b, mats.black, "plate holder"); const l = new T.BoxGeometry(0.12, 0.018, 0.03); l.translate(RPX, RPY + 0.075, zT - 0.012); add(l, mats.chrome, "plate lamp"); }
 
   // ================= the rear: tail lamps, the boot's lock, the exhaust =================
-  // r3 (the photos): wide tail lamps at the corners in chrome frames: amber outboard, red, the clear reversing lamp
+  // r7 (Mira #9): the tail lamps lower (centre 0.55, they were 0.675), 0.30 x 0.14, slightly trapezoidal (the outboard
+  // end follows the corner's taper), amber outboard and red inboard (no reversing lamp on the early cars), chrome frames
   for (const s of [-1, 1]) {
-    const cx = s * 0.56, cy = 0.675, w = 0.25, h = 0.108;
-    { const g = ringGeo(w, h, 0.016, 0.012, 0.016, 0.004); g.rotateY(Math.PI); g.translate(cx, cy, zT + 0.002); add(g, mats.chrome, "tail lamp rim"); }
-    const seg = (x0, x1, mat) => { const g = new T.PlaneGeometry(Math.abs(x1 - x0), h, 1, 1); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * Math.abs(x1 - x0) * 16, uv.getY(i)); g.rotateY(Math.PI); g.translate(cx + s * ((x0 + x1) / 2), cy, zT - 0.012); add(g, mat, "tail lamp"); };
-    seg(w / 2 - 0.07, w / 2, mats.amber); seg(-w / 2 + 0.055, w / 2 - 0.07, mats.red); seg(-w / 2, -w / 2 + 0.055, mats.clear);
-    for (const xs of [w / 2 - 0.07, -w / 2 + 0.055]) { const g = new T.BoxGeometry(0.005, h, 0.008); g.translate(cx + s * xs, cy, zT - 0.013); add(g, mats.satin, "lamp divider"); }
+    const cx = s * 0.533, cy = 0.55, w = 0.3, h = 0.14, tp = 0.028, t = 0.012, ua = w / 2 - 0.1;
+    const W2 = (u, v) => new T.Vector2(-(cx + s * u), cy + v); // (u outboard, v up; x negated: the shapes are turned to face -z)
+    const shapeOf = (pts) => new T.Shape(pts.map(([u, v]) => W2(u, v)));
+    const Q = [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2 - tp, h / 2], [-w / 2, h / 2]], Qo = [[-w / 2 - t, -h / 2 - t], [w / 2 + t, -h / 2 - t], [w / 2 - tp + t, h / 2 + t], [-w / 2 - t, h / 2 + t]];
+    { const sh = shapeOf(roundQuad(Qo, [0.02, 0.024, 0.024, 0.02], 6)); sh.holes.push(new T.Path(roundQuad(Q, [0.012, 0.016, 0.016, 0.012], 6).map(([u, v]) => W2(u, v))));
+      const g = new T.ExtrudeGeometry(sh, { depth: 0.016, bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.0032, bevelSegments: 4, curveSegments: 6 }); g.rotateY(Math.PI); g.translate(0, 0, zT + 0.002); add(g, mats.chrome, "tail lamp rim"); }
+    const lens = (pts, rad, mat) => { const g = new T.ShapeGeometry(shapeOf(roundQuad(pts, rad, 6)), 4); const p = g.attributes.position, uv = g.attributes.uv; for (let i = 0; i < p.count; i++) uv.setXY(i, p.getX(i) * 6.25, p.getY(i) * 16.7); g.rotateY(Math.PI); g.translate(0, 0, zT - 0.012); add(g, mat, "tail lamp"); };
+    lens([[ua, -h / 2], [w / 2, -h / 2], [w / 2 - tp, h / 2], [ua, h / 2]], [0.0005, 0.016, 0.016, 0.0005], mats.amber);
+    lens([[-w / 2, -h / 2], [ua, -h / 2], [ua, h / 2], [-w / 2, h / 2]], [0.012, 0.0005, 0.0005, 0.012], mats.red);
+    { const g = new T.BoxGeometry(0.005, h, 0.008); g.translate(cx + s * ua, cy, zT - 0.013); add(g, mats.satin, "lamp divider"); }
   }
+  // r7: the chrome strip across the tail panel under the boot lid's edge, lamp to lamp
+  { const pts = []; for (let i = 0; i <= 40; i++) pts.push({ p: V3(lerp(-0.66, 0.66, i / 40), 0.688, zT - 0.001), n: V3(0, 0, -1) }); sweep(pts, halfRound(0.0055, 0.0035), mats.chrome, "tail strip", { closed: true }); }
   // mud flaps behind the rear wheels
-  for (const s of [-1, 1]) { const g = new T.BoxGeometry(0.16, 0.25, 0.008); g.translate(s * 0.655, 0.255, zR - AR - 0.03); add(g, mats.rubber, "mud flap"); }
-  { const g = new T.CylinderGeometry(0.014, 0.014, 0.012, 20); g.rotateX(Math.PI / 2); g.translate(0, 0.79, zT - 0.006); add(g, mats.chrome, "boot lock"); }
-  // v3: the emblems: the model's numerals on the tail panel (the right), a tricolour inlay in the grille's shield
-  { const m = dScript(T, "1300", 0.034); m.rotation.y = Math.PI; m.position.set(-0.48, 0.79, zT - 0.004); group.add(m); }
-  for (const [k, col] of [[-1, "#1a3f98"], [0, "#f3d21c"], [1, "#c8221a"]]) { const g = new T.PlaneGeometry(0.009, 0.024); g.translate(k * 0.0095, BAND.y - 0.004, FZ + 0.0325); add(g, new T.MeshPhysicalMaterial({ name: "badge enamel", color: new T.Color(col), roughness: 0.15, clearcoat: 1 }), "badge inlay"); }
-  { const g = new T.CylinderGeometry(0.024, 0.024, 0.28, 20, 1, true); g.rotateX(Math.PI / 2); g.translate(-0.42, 0.235, zT + 0.11); add(g, mats.satin, "exhaust"); const c = new T.CircleGeometry(0.02, 20); c.rotateY(Math.PI); c.translate(-0.42, 0.235, zT - 0.028); add(c, mats.under, "exhaust hole"); }
+  for (const s of [-1, 1]) { const g = new T.BoxGeometry(0.16, 0.25, 0.008); g.translate(s * 0.655, 0.235, zR - AR - 0.03); add(g, mats.rubber, "mud flap"); }
+  // the lock button in the middle of the boot lid's trailing face; r7: "DACIA 1300" in chrome on that face, on the
+  // viewer's left as seen from behind (+x), over the lamp (the tricolour inlay is gone, see the shield)
+  { const g = new T.CylinderGeometry(0.014, 0.014, 0.012, 20); g.rotateX(Math.PI / 2); g.translate(0, 0.726, zT - 0.006); add(g, mats.chrome, "boot lock"); }
+  { const m = dScript(T, "DACIA 1300", 0.036); m.rotation.y = Math.PI; m.position.set(0.4, 0.7255, zT - 0.003); group.add(m); }
+  { const g = new T.CylinderGeometry(0.024, 0.024, 0.14, 20, 1, true); g.rotateX(Math.PI / 2); g.translate(-0.42, 0.2, zT + 0.04); add(g, mats.satin, "exhaust"); const c = new T.CircleGeometry(0.02, 20); c.rotateY(Math.PI); c.translate(-0.42, 0.2, zT - 0.028); add(c, mats.under, "exhaust hole"); }
 
   // ================= the flank's fittings: handles, the mirror, the fuel cap, wipers =================
   // v3: the door handles: a chrome escutcheon in a dark recess, the pull lever proud of it, the key lock on the front doors
-  for (const s of [-1, 1]) for (const zh of [-0.33, -0.975]) {
+  // (r7: re-stationed with the doors, 6 cm ahead of each door's rear edge)
+  for (const s of [-1, 1]) for (const zh of [ZD1 + 0.06, -1.05]) {
     const q = lowerSide(zh, 0.818), p = V3(s * q.p.x, q.p.y, q.p.z), n = V3(s * q.n.x, q.n.y, q.n.z);
     const H = new T.Group(); H.name = "door handle"; H.position.copy(p); H.quaternion.setFromUnitVectors(V3(1, 0, 0), n); group.add(H);
     const hb = (w, h, d, r, mat, name, x) => { const g = ext.RoundedBoxGeometry ? new ext.RoundedBoxGeometry(d, h, w, 3, r) : new T.BoxGeometry(d, h, w); const m = new T.Mesh(g, mat); m.name = name; m.position.x = x; m.castShadow = m.receiveShadow = true; H.add(m); return m; };
@@ -507,22 +606,24 @@ export function buildHeroDacia(T, ext = {}) {
     hb(0.104, 0.017, 0.012, 0.005, mats.chrome, "door handle", 0.009).position.y = -0.002;
     if (zh > -0.5) { const lk = new T.CylinderGeometry(0.0075, 0.0075, 0.008, 18); lk.rotateZ(Math.PI / 2); const lm = new T.Mesh(lk, mats.chrome); lm.name = "lock"; lm.position.set(0.006, 0, 0.082); H.add(lm); const sl = new T.BoxGeometry(0.002, 0.007, 0.0016); sl.translate(0.0105, 0, 0.082); const sm = new T.Mesh(sl, mats.gap); sm.name = "lock slot"; H.add(sm); }
   }
-  { // the driver's mirror (left, +x): a chrome head on a short stalk at the front door's lower front corner (r3)
-    const q = lowerSide(0.44, sideTop(0.44) + 0.01), p = q.p.clone();
+  { // the driver's mirror (left, +x): a chrome head on a short stalk at the front door window's lower front corner (r3; r7: re-stationed)
+    const q = lowerSide(ZWF + 0.04, sideTop(ZWF + 0.04) + 0.01), p = q.p.clone();
     const st = new T.CylinderGeometry(0.007, 0.01, 0.075, 12); st.rotateZ(-Math.PI / 2 + 0.6); const sm = add(st, mats.chrome, "mirror stalk"); sm.position.set(p.x + 0.03, p.y + 0.03, p.z);
     const hg = ext.RoundedBoxGeometry ? new ext.RoundedBoxGeometry(0.03, 0.068, 0.088, 3, 0.012) : new T.BoxGeometry(0.03, 0.068, 0.088);
     const hm = add(hg, mats.chrome, "mirror"); hm.position.set(p.x + 0.075, p.y + 0.07, p.z - 0.005); hm.rotation.y = -0.25;
     const gl = new T.PlaneGeometry(0.06, 0.05); gl.rotateY(Math.PI); const gm = add(gl, mats.mirror, "mirror glass"); gm.position.set(p.x + 0.075, p.y + 0.07, p.z - 0.051); gm.rotation.y = Math.PI - 0.25 - Math.PI;
   }
-  { const q = lowerSide(-1.86, 0.80); const g = new T.CylinderGeometry(0.042, 0.042, 0.008, 28); g.rotateZ(Math.PI / 2); const m = add(g, mats.chrome, "fuel cap"); m.position.set(-q.p.x - 0.002, q.p.y, q.p.z); }
+  // r7 (Mira #9): the round chrome filler cap in the tail panel, right of the plate as seen from behind (-x), in a dark
+  // recess; none on the flank
+  { const g = new T.CylinderGeometry(0.042, 0.042, 0.008, 28); g.rotateX(Math.PI / 2); const m = add(g, mats.chrome, "fuel cap"); m.position.set(-0.25, RPY, zT - 0.005); const r = new T.RingGeometry(0.041, 0.051, 28); r.rotateY(Math.PI); r.translate(-0.25, RPY, zT - 0.0012); add(r, mats.gap, "fuel cap recess"); }
   { // wipers parked at the foot of the windscreen (v3: the arm on its pivot, the blade's frame and rubber on the glass)
     for (const [x0, x1] of [[-0.42, 0.02], [0.08, 0.5]]) {
       const onGlass = (x, z) => { const h = cabHalf(z); let y = 0; for (let k = C_TOP0; k < h.length - 1; k++) if (h[k][0] >= Math.abs(x) && h[k + 1][0] <= Math.abs(x)) { y = lerp(h[k][1], h[k + 1][1], (h[k][0] - Math.abs(x)) / Math.max(1e-6, h[k][0] - h[k + 1][0])); break; } if (!y) y = h[h.length - 1][1]; return y; };
-      const path = (lift, a, b) => { const pts = []; for (let i = 0; i <= 20; i++) { const t = lerp(a, b, i / 20), x = lerp(x0, x1, t), z = 0.53 - 0.03 * t; pts.push({ p: V3(x, onGlass(x, z) + lift, z), n: V3(0, 0.8, 0.6).normalize() }); } return pts; };
+      const zw = wsBot - 0.018, path = (lift, a, b) => { const pts = []; for (let i = 0; i <= 20; i++) { const t = lerp(a, b, i / 20), x = lerp(x0, x1, t), z = zw - 0.03 * t; pts.push({ p: V3(x, onGlass(x, z) + lift, z), n: V3(0, 0.8, 0.6).normalize() }); } return pts; };
       sweep(path(0.016, 0, 0.92), [[0.004, -0.0035], [0.004, 0.0035], [-0.003, 0.004], [-0.003, -0.004]], mats.satin, "wiper arm", { closed: true });
       sweep(path(0.008, 0.08, 1), [[0.004, -0.004], [0.004, 0.004], [-0.002, 0.004], [-0.002, -0.004]], mats.satin, "wiper blade frame", { closed: true });
       sweep(path(0.002, 0.08, 1), [[0.003, -0.0016], [0.003, 0.0016], [-0.003, 0.0008], [-0.003, -0.0008]], mats.rubber, "wiper rubber", { closed: true });
-      { const x = x0 + 0.01, z = 0.535, g = new T.CylinderGeometry(0.012, 0.014, 0.022, 16); g.translate(x, onGlass(x, z) + 0.008, z); add(g, mats.black, "wiper pivot"); }
+      { const x = x0 + 0.01, z = zw + 0.005, g = new T.CylinderGeometry(0.012, 0.014, 0.022, 16); g.translate(x, onGlass(x, z) + 0.008, z); add(g, mats.black, "wiper pivot"); }
     }
   }
 
@@ -532,8 +633,13 @@ export function buildHeroDacia(T, ext = {}) {
   ws.forEach((w, k) => { const [sx, z] = [[1, zF], [-1, zF], [1, zR], [-1, zR]][k]; w.position.set(sx * DIM.track / 2, DIM.wheelY, z); });
 
   // ================= the cabin (v3: stitched seats, the dash with its dials, the wheel, the mirror: the kit's cabin) =================
-  dDaciaCabin(T, group, ext.RoundedBoxGeometry, mats, { style: "1300" });
-  { const g = ext.RoundedBoxGeometry ? new ext.RoundedBoxGeometry(1.4, 0.03, 0.3, 3, 0.01) : new T.BoxGeometry(1.4, 0.03, 0.3); g.translate(0, beltY(-1.48) - 0.03, -1.47); add(g, mats.dash, "parcel shelf"); }
+  // r7: moved 0.15 forward with the glasshouse (the dash behind the new windscreen), the dash narrowed to the narrower
+  // belt, the visors under the lower header; no front headrests unless ext.headrests (early standard cars had none)
+  { const n0 = group.children.length; dDaciaCabin(T, group, ext.RoundedBoxGeometry, mats, { style: "1300" });
+    const kids = group.children.slice(n0), drop = []; for (const c of kids) c.position.z += 0.15;
+    for (const c of kids) c.traverse((m) => { if (m.name === "dashboard" || m.name === "dash top roll") m.scale.x = 0.95; if (m.name === "sun visor") { m.position.z -= 0.06; m.position.y -= 0.014; } if (!ext.headrests && (m.name === "headrest" || m.name === "headrest post")) drop.push(m); });
+    for (const m of drop) m.parent.remove(m); }
+  { const g = ext.RoundedBoxGeometry ? new ext.RoundedBoxGeometry(1.32, 0.03, 0.3, 3, 0.01) : new T.BoxGeometry(1.32, 0.03, 0.3); g.translate(0, beltY(-1.48) - 0.03, -1.47); add(g, mats.dash, "parcel shelf"); }
   // v3: road dust on the lower body: the sills, a spray behind each wheel, the flaps and overriders greyed
   { const wh = [{ z: zF, r: DIM.tyreR }, { z: zR, r: DIM.tyreR }]; dDust(T, group, { mats: [mats.paint], top: 0.52, amount: 0.55, color: "#8e8273", wheels: wh, seed: 21 }); dDust(T, group, { mats: [mats.rubber], top: 0.5, amount: 0.22, color: "#6d6457", wheels: wh, seed: 22 }); }
   return { group, mats, tex };
@@ -572,7 +678,7 @@ function wheel(T, mats, side, front = false) {
 }
 
 // ---- textures made on canvas: tread blocks, headlamp flutes, lamp prisms, the number plate
-function makeTextures(T) {
+function makeTextures(T, PLATE = { text: "14-B-1300", kind: "plain" }) {
   const cv = (w, h, draw) => { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); return c; };
   // a height field -> a normal map
   const normalFrom = (w, h, H, k = 2) => {
@@ -589,17 +695,29 @@ function makeTextures(T) {
   const flutes = normalFrom(256, 256, (x, y) => { const a = Math.sin((x / 256) * Math.PI * 2 * 22); const b = y > 150 ? Math.sin((y / 256) * Math.PI * 2 * 18) * 0.6 : 0; return Math.abs(a) * 0.6 + Math.abs(b); }, 1.2);
   // prisms: a fine grid of little pyramids for the tail lamps and indicators
   const prisms = normalFrom(128, 128, (x, y) => { const u = (x / 128) * 16 % 1, v = (y / 128) * 6 % 1; return 1 - Math.max(Math.abs(u - 0.5), Math.abs(v - 0.5)) * 2; }, 0.8);
+  // (r7: the plate as configured: the period format by default, white with black characters; the EU band only for "brand")
   const plateC = cv(1040, 224, (ctx, w, h) => {
+    const eu = PLATE.kind === "eu";
     ctx.fillStyle = "#f4f4f0"; ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = "#0f3d99"; ctx.fillRect(0, 0, 90, h);
-    ctx.fillStyle = "#f4f4f0"; ctx.font = "700 48px Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("RO", 45, 190);
+    if (eu) { ctx.fillStyle = "#0f3d99"; ctx.fillRect(0, 0, 90, h); ctx.fillStyle = "#f4f4f0"; ctx.font = "700 48px Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("RO", 45, 190); }
     ctx.strokeStyle = "#111"; ctx.lineWidth = 8; ctx.strokeRect(4, 4, w - 8, h - 8);
-    ctx.fillStyle = "#121212"; ctx.font = "700 170px 'DIN Alternate', 'Arial Narrow', Arial, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("B 14 CRM", 565, 120);
+    ctx.fillStyle = "#121212"; ctx.font = "700 170px 'DIN Alternate', 'Arial Narrow', Arial, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(PLATE.text, eu ? 565 : w / 2, 120);
   });
+  // r7: the UAP shield's emblem (alpha-cut, silver on the badge's black): the letters over a spread eagle
+  const uapC = cv(256, 304, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(14, 16); ctx.lineTo(242, 16); ctx.lineTo(242, 140); ctx.quadraticCurveTo(242, 236, 128, 292); ctx.quadraticCurveTo(14, 236, 14, 140); ctx.closePath(); ctx.stroke();
+    ctx.font = "700 62px 'Helvetica Neue', Arial, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("UAP", 128, 62);
+    ctx.beginPath(); // the eagle: spread wings, the body, the head turned
+    ctx.moveTo(128, 118); ctx.quadraticCurveTo(84, 104, 44, 120); ctx.lineTo(66, 134); ctx.lineTo(46, 146); ctx.lineTo(72, 156); ctx.lineTo(56, 170); ctx.quadraticCurveTo(96, 176, 112, 170);
+    ctx.lineTo(106, 214); ctx.lineTo(128, 234); ctx.lineTo(150, 214); ctx.lineTo(144, 170); ctx.quadraticCurveTo(160, 176, 200, 170); ctx.lineTo(184, 156); ctx.lineTo(210, 146); ctx.lineTo(190, 134); ctx.lineTo(212, 120); ctx.quadraticCurveTo(172, 104, 128, 118); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(128, 112, 15, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.moveTo(138, 106); ctx.lineTo(156, 112); ctx.lineTo(140, 118); ctx.closePath(); ctx.fill();
+  });
+  const uap = new T.CanvasTexture(uapC); uap.colorSpace = T.SRGBColorSpace; uap.anisotropy = 8;
   const plate = new T.CanvasTexture(plateC); plate.colorSpace = T.SRGBColorSpace; plate.anisotropy = 8;
   const p13 = cv(720, 224, (ctx, w, h) => { ctx.fillStyle = "#f6f6f2"; ctx.fillRect(0, 0, w, h); ctx.strokeStyle = "#111"; ctx.lineWidth = 8; ctx.strokeRect(4, 4, w - 8, h - 8); ctx.fillStyle = "#121212"; ctx.font = "500 168px 'Helvetica Neue', Arial, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("1300", w / 2, h / 2 + 8); });
   const plate1300 = new T.CanvasTexture(p13); plate1300.colorSpace = T.SRGBColorSpace; plate1300.anisotropy = 8;
-  return { tread, flutes, prisms, plate, plate1300 };
+  return { tread, flutes, prisms, plate, plate1300, uap };
 }
 
 // <<detail ================================================================ v3 detail (TASK-111 v3, Radu)
