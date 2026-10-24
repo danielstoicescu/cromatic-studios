@@ -6,5 +6,5 @@
  { "id": "chrome", "ride": "monopoly", "t": [159, 204], "box": { "x": 112, "y": 789, "w": 797, "h": 304 } },
  { "id": "scooter", "ride": "scooter", "t": [204, 270], "box": { "x": 405, "y": 550, "w": 272, "h": 692 } },
  { "id": "rush", "ride": "1300 + cop (diorama chase, one shot with patrol)", "t": [270, 333] },
- { "id": "patrol", "ride": "cop (diorama chase, stopped from 352)", "t": [333, 405], "box": { "x": 85, "y": 625, "w": 764, "h": 534 } }
+ { "id": "patrol", "ride": "cop (diorama chase, stopped from 325)", "t": [333, 405], "box": { "x": 157, "y": 619, "w": 763, "h": 533 } }
 ]

@@ -161,10 +161,11 @@ CLOCKS.E5 = E5_CLOCK;
 CLOCKS.E6 = E5_CLOCK;
 CLOCKS.E8 = E5_CLOCK; // (E8, Vera: the rides in the city, rendered in the diorama renderer; the same clock and copy, one text colour per card chosen by its scene: E8_INK)
 CLOCKS.E7 = E5_CLOCK; // (E7: the same, over Radu's chase v3: the Patrol facing straight from ~56) // (E6: E5's clock and cards over Radu's re-rendered chase: v6-, rides-e6.json)
-// E8: the scene under each card decides its text colour (system.md 3): the day shots carry ink, the night shots and the
-// dark road under the chrome racer paper
-export const E8_INK = { open: "ink", van: "ink", chrome: "paper", scooter: "ink", rush: "paper", patrol: "paper", leadin: "paper" };
-function STORY_E5(n = 5, INK = {}) {
+// E8: the scene under each card decides its text colour (system.md 3), measured on the renders under the text: ink on the
+// light frames (the opening's skies, the van's sunlit pavement), paper on the mid-grey and dark road (chrome, scooter)
+// and the night shots
+export const E8_INK = { open: "ink", van: "ink", chrome: "paper", scooter: "paper", rush: "paper", patrol: "paper", leadin: "paper" };
+function STORY_E5(n = 5, INK = {}, OPT = {}) {
   const c = E2_COPY, split = (t) => t.split(" / ");
   let boxes = {}; try { boxes = Object.fromEntries(JSON.parse(fs.readFileSync(new URL(`../../vehicles/_source/rides-e${n}.json`, import.meta.url), "utf8")).map((x) => [x.id, x.box])); } catch {}
   const out = [{
@@ -178,7 +179,7 @@ function STORY_E5(n = 5, INK = {}) {
     const card = { id: `v${n}-${id}`, story: "E", beat: `${tag || "(no tag)"}: ${line.replace(/ \/ /g, " ")}${pillWord ? " [" + pillWord + "]" : ""}`, shots: [id], scene: "paper", ink: INK[id] || "ink" };
     if (tag) card.tags = [{ id: `v${n}-${id}-tag`, text: tag, x: 540, pin: "centre", tip }];
     card.blocks = [{ id: `e${n}${id}`, place: "bl", lines: lines.map((t, k) => ({ text: t, style, ...(pillWord && k === lines.length - 1 ? { pill: { words: [pillWord], fill: "#FED012" } } : {}) })) }];
-    card.timing = sq.kind === "pass" ? { in: `${id}+12`, lineStagger: 4, pillIn: `${id}+22`, out: `${id}.end-6` } : { tagIn: `${id}+1`, in: `${id}+3`, lineStagger: 3, out: `${id}.end-0`, cutOut: true };
+    card.timing = sq.kind === "pass" ? { in: `${id}+${OPT.passIn ?? 12}`, lineStagger: 4, pillIn: `${id}+${OPT.passPill ?? 22}`, out: `${id}.end-6` } : { tagIn: `${id}+1`, in: `${id}+3`, lineStagger: 3, out: `${id}.end-0`, cutOut: true };
     card.mocks = [{ state: 0, at: `${id}.end-10` }];
     out.push(card);
   }
@@ -386,7 +387,7 @@ export const CARDS = [
   ...STORY_E5(),
   ...STORY_E5(6),
   ...STORY_E5(7),
-  ...STORY_E5(8, E8_INK)
+  ...STORY_E5(8, E8_INK, { passIn: 4, passPill: 13 }) // (E8: "Don’t rush. They’re [polite.]" settles sooner and holds longer: the coordinator saw it mid-rise on the draft sheet)
 ];
 
 

@@ -6,7 +6,7 @@
   "scooter"
  ],
  "scene": "paper",
- "textColour": "#0D0C09",
+ "textColour": "#FBFAF5",
  "rule": "One text colour per card: paper on night/dark scenes, ink on light scenes and on the aplat. No letter or word in another colour. The pill and the aplat are objects, not type: the word in a pill is always ink.",
  "canvas": {
   "w": 1080,
@@ -24,7 +24,7 @@
     "kind": "block",
     "id": "e8scooter",
     "place": "bl",
-    "ink": "#0D0C09",
+    "ink": "#FBFAF5",
     "lines": [
      {
       "kind": "line",
@@ -33,7 +33,7 @@
       "size": 116,
       "tracking": -0.04,
       "lead": 1,
-      "ink": "#0D0C09",
+      "ink": "#FBFAF5",
       "align": "left",
       "text": "Ride in the middle",
       "x": 80,
@@ -53,7 +53,7 @@
       "size": 116,
       "tracking": -0.04,
       "lead": 1,
-      "ink": "#0D0C09",
+      "ink": "#FBFAF5",
       "align": "left",
       "text": "of the streets.",
       "x": 80,

@@ -13,7 +13,7 @@ const [RIDES, OUT, posterAt = "380", sheetName = "contact-sheet-e8.jpg"] = proce
 const STAGE = process.env.STAGE || "http://127.0.0.1:8943";
 fs.mkdirSync(OUT, { recursive: true });
 const mp4 = path.join(OUT, "story-e8-en.mp4");
-const picks = SHOTS.flatMap((s) => (s.id === "leadin" || s.id === "end" ? [Math.min(F - 1, s.t[1] - 4)] : s.id === "rush" ? [s.t[0] + 22] : [s.t[0] + Math.round((s.t[1] - s.t[0]) * 0.75)]));
+const picks = SHOTS.flatMap((s) => (s.id === "leadin" || s.id === "end" ? [Math.min(F - 1, s.t[1] - 4)] : s.id === "rush" ? [s.t[0] + 30] : [s.t[0] + Math.round((s.t[1] - s.t[0]) * 0.75)]));
 const keep = new Map();
 const ff = spawn(FF, ["-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", "30", "-c:v", "png", "-i", "-", "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-maxrate", "10M", "-bufsize", "20M", "-pix_fmt", "yuv420p", "-profile:v", "high", "-level", "4.2", "-movflags", "+faststart", "-an", mp4], { stdio: ["pipe", "inherit", "inherit"] });
 const write = (buf) => new Promise((res) => (ff.stdin.write(buf) ? res() : ff.stdin.once("drain", res)));

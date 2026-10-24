@@ -102,9 +102,9 @@
  ],
  "timing": {
   "cues": {
-   "in": "rush+12",
+   "in": "rush+4",
    "lineStagger": 4,
-   "pillIn": "rush+22",
+   "pillIn": "rush+13",
    "out": "rush.end-6"
   },
   "note": "Cues in 30 fps frames on the story's shots: 'steam+4' = 4 frames after the steam shot starts, 'scf.end-8' = 8 before it ends. Lottie (60 fps): x2, which cards.mjs does.",
