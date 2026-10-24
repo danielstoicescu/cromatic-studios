@@ -159,26 +159,30 @@ function STORY_E4() {
 
 CLOCKS.E5 = E5_CLOCK;
 CLOCKS.E6 = E5_CLOCK;
+CLOCKS.E8 = E5_CLOCK; // (E8, Vera: the rides in the city, rendered in the diorama renderer; the same clock and copy, one text colour per card chosen by its scene: E8_INK)
 CLOCKS.E7 = E5_CLOCK; // (E7: the same, over Radu's chase v3: the Patrol facing straight from ~56) // (E6: E5's clock and cards over Radu's re-rendered chase: v6-, rides-e6.json)
-function STORY_E5(n = 5) {
+// E8: the scene under each card decides its text colour (system.md 3): the day shots carry ink, the night shots and the
+// dark road under the chrome racer paper
+export const E8_INK = { open: "ink", van: "ink", chrome: "paper", scooter: "ink", rush: "paper", patrol: "paper", leadin: "paper" };
+function STORY_E5(n = 5, INK = {}) {
   const c = E2_COPY, split = (t) => t.split(" / ");
   let boxes = {}; try { boxes = Object.fromEntries(JSON.parse(fs.readFileSync(new URL(`../../vehicles/_source/rides-e${n}.json`, import.meta.url), "utf8")).map((x) => [x.id, x.box])); } catch {}
   const out = [{
-    id: `v${n}-0-opening`, story: "E", beat: "Today you\u2019re / a [driver.] (the 1300) -> [pilot.] (the Cropduster, yellow) -> [pilot.] red (the F1: the colour only, on the cut)", shots: ["t1", "t2", "t3"], scene: "paper", ink: "ink",
+    id: `v${n}-0-opening`, story: "E", beat: "Today you\u2019re / a [driver.] (the 1300) -> [pilot.] (the Cropduster, yellow) -> [pilot.] red (the F1: the colour only, on the cut)", shots: ["t1", "t2", "t3"], scene: "paper", ink: INK.open || "ink",
     blocks: [{ id: `e${n}o`, place: "tl", lines: [{ text: c.open[0], style: "title" }, { text: c.open[1], style: "title", pill: { words: ["driver.", "pilot.", "pilot."], fill: c.fills[0], fills: [c.fills[0], c.fills[0], c.fills[1]] } }] }],
     timing: { in: "t1+2", lineStagger: 4, pillIn: "t1+10", swaps: ["t2+3", "t3+0"], out: "t3.end-8" }, mocks: [{ state: 0, at: "t1+26" }, { state: 1, at: "t2+30" }, { state: 2, at: "t3+24" }]
   }];
   for (const sq of E5_SEQ) {
     if (sq.kind === "open" || sq.on === false) continue;
     const [tag, line, pillWord, style = "title"] = c.rides[sq.id], id = sq.id, box = boxes[id], tip = box ? Math.max(330, Math.round(box.y - 26)) : 760, lines = split(line);
-    const card = { id: `v${n}-${id}`, story: "E", beat: `${tag || "(no tag)"}: ${line.replace(/ \/ /g, " ")}${pillWord ? " [" + pillWord + "]" : ""}`, shots: [id], scene: "paper", ink: "ink" };
+    const card = { id: `v${n}-${id}`, story: "E", beat: `${tag || "(no tag)"}: ${line.replace(/ \/ /g, " ")}${pillWord ? " [" + pillWord + "]" : ""}`, shots: [id], scene: "paper", ink: INK[id] || "ink" };
     if (tag) card.tags = [{ id: `v${n}-${id}-tag`, text: tag, x: 540, pin: "centre", tip }];
     card.blocks = [{ id: `e${n}${id}`, place: "bl", lines: lines.map((t, k) => ({ text: t, style, ...(pillWord && k === lines.length - 1 ? { pill: { words: [pillWord], fill: "#FED012" } } : {}) })) }];
     card.timing = sq.kind === "pass" ? { in: `${id}+12`, lineStagger: 4, pillIn: `${id}+22`, out: `${id}.end-6` } : { tagIn: `${id}+1`, in: `${id}+3`, lineStagger: 3, out: `${id}.end-0`, cutOut: true };
     card.mocks = [{ state: 0, at: `${id}.end-10` }];
     out.push(card);
   }
-  out.push({ id: `v${n}-9-leadin`, story: "E", beat: "Pick your ride. + the pill, then black under it", shots: ["leadin", "end"], scene: "paper, then black", ink: "ink", blocks: [{ id: `e${n}l`, place: { x: 540, align: "center", base: 880 }, lines: [{ text: "Pick your ride.", style: "line" }] }], url: {}, timing: { in: "leadin+2", urlIn: "leadin+8", out: "end-6" }, mocks: [{ state: 0, at: "leadin+40" }] });
+  out.push({ id: `v${n}-9-leadin`, story: "E", beat: "Pick your ride. + the pill, then black under it", shots: ["leadin", "end"], scene: "paper, then black", ink: INK.leadin || "ink", blocks: [{ id: `e${n}l`, place: { x: 540, align: "center", base: 880 }, lines: [{ text: "Pick your ride.", style: "line" }] }], url: {}, timing: { in: "leadin+2", urlIn: "leadin+8", out: "end-6" }, mocks: [{ state: 0, at: "leadin+40" }] });
   out.push({ id: `v${n}-9z-end`, story: "E", beat: "end: black under the same pill", shots: ["end"], scene: "black", ink: "ink", url: { continues: `v${n}-9-leadin` }, timing: { black: "end+0", settle: "end+29", out: "end.end-0" }, mocks: [{ state: 0, at: "end.end-4" }] });
   return out;
 }
@@ -381,7 +385,8 @@ export const CARDS = [
   ...STORY_E4(),
   ...STORY_E5(),
   ...STORY_E5(6),
-  ...STORY_E5(7)
+  ...STORY_E5(7),
+  ...STORY_E5(8, E8_INK)
 ];
 
 

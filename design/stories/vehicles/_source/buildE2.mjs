@@ -20,7 +20,8 @@ const cards = K.cards.filter((c) => c.id.startsWith(PRE)).sort((a, b) => (b.layo
 for (const c of cards) { c.__T = K.T; drawCard(Cm, c, T60); }
 
 /* ---------- the petals ---------- */
-{
+// (E8: NOPETALS=1, the petals are in the render itself, falling in the sakura alley)
+if (!process.env.NOPETALS) {
   let box = { x: 419, y: 891, w: 239, h: 301 };
   try { box = JSON.parse(fs.readFileSync(path.join(here, `rides-${ST}.json`), "utf8")).find((x) => x.id === "scooter").box; } catch {}
   const [a, b] = T60.scooter, floorY = box.y + box.h - 6, cx = box.x + box.w / 2;
