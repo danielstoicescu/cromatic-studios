@@ -511,7 +511,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
 const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
 const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
 // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
-const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 4.19 β"; // beta 4.19 (r304, beta only) = beta 4.18 + Polite City phase B (src/polite-b: atmosphere, traffic, pedestrians by Iris + Radu, through czPolite's systems hook; the bus kept off the ring, the front probe, no warning for sfx Sorin has not made yet); beta 4.18 (r303) = live 4.17 + TASK-015 AVIF/LCP case pictures (r298) + the Longevity report (private); the live history is in main's label comment
+const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 4.20 β"; // beta 4.20 (r305, beta only) = beta 4.19 + direction steering in Top-down and Bird's eye (the stick and the arrows point where you go, through the camera's axes; Street keeps the car's own controls); beta 4.19 (r304, beta only) = beta 4.18 + Polite City phase B (src/polite-b: atmosphere, traffic, pedestrians by Iris + Radu, through czPolite's systems hook; the bus kept off the ring, the front probe, no warning for sfx Sorin has not made yet); beta 4.18 (r303) = live 4.17 + TASK-015 AVIF/LCP case pictures (r298) + the Longevity report (private); the live history is in main's label comment
 const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
 const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
 const GS = {};

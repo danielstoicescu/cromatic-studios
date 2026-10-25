@@ -1441,6 +1441,32 @@
       D.auto = { pl, target, legs: [], Lt, turn: turn, vmax };
       return true;
     }
+    // r305 (Daniel: "pushing up doesn't send the car up the screen"): in Top-down and Bird's eye the keys and the stick are
+    // directions on the screen, not the car's own left and right. The input vector (stick, or ↑ ↓ ← → / WASD, diagonals
+    // combined) is turned into a heading on the ground through the camera's own axes this frame (Top-down's fixed north,
+    // Bird's eye's turning camera alike), and the car steers towards it with its normal wheel (no snapping): throttle is
+    // how far the stick is pushed (the stick's dead zone stays), a sharp turn eases the throttle, a heading behind
+    // (> 135°) brakes and turns the car round on the spot, the same way until it faces it. Nothing held: coast with the
+    // road assist, as before. Nearly lined up (< 7°), the wheel is left to the assist (lane keeping, kerbs). Space still
+    // drifts (into the turn the heading asks for). Street view keeps the car's own controls. null: not in these views
+    function screenSteer() {
+      const on = D.streetT < 0.5 && (D.view === "top" || D.view === "sat");
+      D.scr = on;
+      if (!on) { D.scrTurn = 0; return null; }
+      let sx, sy;
+      if (D.stick) { sx = D.stick.x; sy = D.stick.y; } else { sx = (D.keys.r ? 1 : 0) - (D.keys.l ? 1 : 0); sy = (D.keys.u ? 1 : 0) - (D.keys.d ? 1 : 0); }
+      const mag = Math.min(1, Math.hypot(sx, sy));
+      if (mag < 1e-3) { D.scrTurn = 0; D.scrHd = null; return { thr: 0, steer: 0 }; }
+      const m = H.camera.matrixWorld.elements; // (its columns: the camera's right and up, in the world)
+      let rx = m[0], rz = m[2], ux = m[4], uz = m[6]; const lr = Math.hypot(rx, rz) || 1, lu = Math.hypot(ux, uz) || 1; rx /= lr; rz /= lr; ux /= lu; uz /= lu;
+      const dx = sx * rx + sy * ux, dz = sx * rz + sy * uz, hd = Math.atan2(dx, dz);
+      D.scrHd = hd;
+      let err = Math.atan2(Math.sin(hd - P.h), Math.cos(hd - P.h)); const a = Math.abs(err);
+      if (D.scrTurn && a < 0.6) D.scrTurn = 0;
+      if (!D.scrTurn && a > 2.36) D.scrTurn = Math.sign(err) || 1;
+      if (D.scrTurn) return P.u > 45 ? { thr: -1, steer: D.scrTurn } : { thr: Math.max(0.55, mag), steer: D.scrTurn }; // behind: brake, then round on the spot
+      return { thr: mag * (a > 1.2 ? 0.5 : 1), steer: a < 0.12 ? 0 : clamp(err * 2.2, -1, 1) };
+    }
     function freeTick(dt, now) {
       if (!P.init) freeInit();
       { const v = H.vehicle(); if (lastVeh === "plane" && v !== "plane" && toRoad()) syncGraph(true); lastVeh = v; } // beta 3.48 r217: down from the plane, onto a road
@@ -1450,14 +1476,19 @@
         const c = pursuit(dt); thr = c.thr; steer = c.steer;
         if (c.rem < 10 && Math.abs(P.u) < 25) { P.u *= 0.5; if (Math.abs(P.u) < 6) { P.u = 0; P.w = 0; const pl = D.auto.pl; D.auto = null; if (pl && !pl.tap) arrive(pl); else { if (pl) H.arrive(pl); H.mapNav.place = null; H.mark(); } render(true); } }
       } else {
-        thr = (D.keys.u ? 1 : 0) - (D.keys.d ? 1 : 0); steer = (D.keys.l ? 1 : 0) - (D.keys.r ? 1 : 0);
-        if (D.stick) { thr = D.stick.y; steer = -D.stick.x; } // beta 2.7: the phone's stick, proportional
+        const sc = screenSteer();
+        if (sc) { thr = sc.thr; steer = sc.steer; } // r305: Top-down and Bird's eye: you point where you want to go
+        else {
+          thr = (D.keys.u ? 1 : 0) - (D.keys.d ? 1 : 0); steer = (D.keys.l ? 1 : 0) - (D.keys.r ? 1 : 0);
+          if (D.stick) { thr = D.stick.y; steer = -D.stick.x; } // beta 2.7: the phone's stick, proportional
+        }
       }
+      D.thrNow = thr;
       let assisted = false;
       if (!D.auto && steer !== 0 && D.ringExit && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) > 110) D.ringExit = null; // steering yourself, off the ring: your own way
       // beta 2.91 (Daniel: "exiting the roundabout should be easier"; r182's smooth links): on the ring, a tap outwards
       // means "the next exit": the assist takes the next arm ahead out (a tap inwards: stay on the ring)
-      if (!D.auto && steer !== 0) {
+      if (!D.auto && steer !== 0 && !D.scr) { // (r305: the screen views point the way themselves, no exit taps)
         const rn = ringNext();
         if (rn) {
           if (Math.sign(steer) === rn.outSign) {
@@ -1475,7 +1506,7 @@
       copTick(dt);
       SND.update(dt);
       { const au = !!D.auto; if (au !== D.autoCls) { D.autoCls = au; document.body.classList.toggle("n2-driving-auto", au); } } // beta 2.6: the phone's tap hint steps aside while it drives
-      lamps(P.u < -0.5 || (D.keys.d && P.u <= 0.5 && !D.auto));
+      lamps(P.u < -0.5 || ((D.scr ? D.thrNow < 0 : D.keys.d) && P.u <= 0.5 && !D.auto)); // (r305: in the screen views ↓ is a direction, not the brake)
       if (!D.auto) {
         syncT -= dt;
         if (syncT <= 0) { syncT = 0.2; syncGraph(false); }
@@ -1494,11 +1525,11 @@
     }
     let freeSig = "";
     function freeUI() {
-      let hint = phoneUI() ? "DRAG THE STICK TO DRIVE" : touchUI ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BACK · SPACE + ← → DRIFT";
+      let hint = D.scr ? (phoneUI() ? "DRAG WHERE YOU WANT TO GO" : touchUI ? "ARROWS · POINT WHERE YOU WANT TO GO" : "ARROWS · POINT WHERE YOU WANT TO GO · SPACE DRIFTS") : phoneUI() ? "DRAG THE STICK TO DRIVE" : touchUI ? "↑ GO · ← → STEER · ↓ BACK" : "↑ GO · ← → STEER · ↓ BACK · SPACE + ← → DRIFT"; // (r305: the screen views)
       if (D.assist && Math.hypot(P.x - H.fork.x, P.z - H.fork.y) < 110) hint = phoneUI() ? "ROUNDABOUT · STRAIGHT ON · NUDGE → FOR THE NEXT EXIT" : "ROUNDABOUT · ↑ STRAIGHT ON · TAP → FOR THE NEXT EXIT";
-      if (D.moved && Math.abs(P.u) < 5 && !D.auto && P.contact <= 0) hint = phoneUI() ? "STOPPED · ↑ + ← → TURNS YOU ROUND" : "STOPPED · ↑ OR ↓ WITH ← → TURNS YOU ROUND"; // round 5
+      if (D.moved && Math.abs(P.u) < 5 && !D.auto && P.contact <= 0) hint = D.scr ? "STOPPED · POINT WHERE YOU WANT TO GO" : phoneUI() ? "STOPPED · ↑ + ← → TURNS YOU ROUND" : "STOPPED · ↑ OR ↓ WITH ← → TURNS YOU ROUND"; // round 5
       if (D.auto) hint = D.auto.rev ? "BACKING UP TO IT · ANY KEY TAKES OVER" : "DRIVING YOU THERE · ANY KEY TAKES OVER";
-      else if (D.drift) hint = D.drift.t > 1.4 ? "DRIFT · LET GO OF SPACE: SUPER BOOST" : D.drift.t > 0.6 ? "DRIFT · LET GO OF SPACE: BOOST" : "DRIFT · HOLD SPACE, STEER WITH ← →";
+      else if (D.drift) hint = D.drift.t > 1.4 ? "DRIFT · LET GO OF SPACE: SUPER BOOST" : D.drift.t > 0.6 ? "DRIFT · LET GO OF SPACE: BOOST" : D.scr ? "DRIFT · HOLD SPACE, POINT THE TURN" : "DRIFT · HOLD SPACE, STEER WITH ← →";
       else if (D.boost) hint = D.boost.lvl > 1 ? "SUPER BOOST!" : "BOOST!";
       else if (P.u < -5) hint = "REVERSING";
       else if (P.contact > 0 && (Math.abs(P.u) > 3 || D.keys.u || D.keys.d)) hint = phoneUI() ? "THE KERB · STEER OR BACK UP" : "THE KERB · STEER AWAY OR BACK UP";
@@ -1816,7 +1847,7 @@
         ramp(carBus.gain, 0.3 + 0.7 * k, 0.25); ramp(cityBus.gain, soloEng ? 0 : 0.7 - 0.3 * k, 0.25); // Bird's eye: the car further back
         // the engine (beta 2.9: the combustion model)
         const sp = Math.abs(P.u), x = Math.min(1, sp / VMAX_F);
-        const thr = D.auto ? 0.7 : Math.max(0, (D.keys.u ? 1 : 0) + (D.stick ? Math.max(0, D.stick.y) : 0));
+        const thr = D.auto ? 0.7 : D.scr ? Math.max(0, D.thrNow || 0) : Math.max(0, (D.keys.u ? 1 : 0) + (D.stick ? Math.max(0, D.stick.y) : 0)); // (r305: the screen views' throttle)
         engineTick(Math.min(1, thr), sp, red);
         // the tyres
         const slip = D.drift ? 1 : Math.min(1, Math.max(0, (Math.abs(P.w) - 25) / 90)) * (sp > 40 ? 1 : 0);
@@ -2064,6 +2095,8 @@
       if (v !== "sat") H.cineStop();
       if (v === "top") D.topUser = 1;
       H.follow();
+      // r305: once, the first time Top-down opens: the controls point (a quiet switch, the Polite City arrival: a moment later)
+      if (v === "top") { let seen = false; try { seen = localStorage.getItem("cz-steer-hint") === "1"; if (!seen) localStorage.setItem("cz-steer-hint", "1"); } catch {} if (!seen) { if (quiet) setTimeout(() => toast("Top-down · point where you want to go"), 3200); else { toast("Top-down · point where you want to go"); return; } } }
       if (!quiet) toast(street ? "Street view · the camera rides behind you" : v === "top" ? (phoneUI() ? "Top-down · the faster you go, the higher it climbs" : "Top-down · the faster you go, the higher it climbs · T") : phoneUI() ? "Bird's eye · pinch to zoom" : "Bird's eye · zoom with + − or the wheel");
     }
     function firstDrive() {
