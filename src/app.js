@@ -24020,11 +24020,12 @@ void main() {
         { id: "circuit", n: "Race Day", bg: "#e9edf1", fg: "#111418", ac: "#e10600" },
         { id: "orchid", n: "Sakura", bg: "#fbeef3", fg: "#3a1e2c", ac: "#f08bb4" },
         { id: "underwater", n: "Underwater", bg: "#0b3b5c", fg: "#e8fbff", ac: "#3de0d0" },
-        // Polite City (polite-city branch, phase 1): the after-dark twin of Cromatic City, in GTA 2's old slot (the slot keeps
-        // the other worlds' indexes). A URL-only prototype for now: ?world=polite (proto: no Multiverse tile, no preview).
-        // "gta2" stays an alias (?world=gta2, __scheme("gta2")) so the stories pipeline (TASK-065) keeps working. Its dressing,
-        // HUD and loading card live in src/polite.js (window.czPolite)
-        { id: "polite", n: "Polite City", proto: true, bg: "#14171b", fg: "#F2F2F2", ac: "#FED012" },
+        // Polite City: the after-dark twin of Cromatic City, in the old bonus world's slot (the slot keeps the other worlds'
+        // indexes). r303 (Daniel: live, "marked differently in the Multiverse"): bonus: its own tile in the Multiverse, the
+        // night tile with the beacon pill, last and full width, in drive and map mode; ?world=polite opens it too. "gta2"
+        // stays an alias (?world=gta2, __scheme("gta2")) for the stories pipeline (TASK-065). Its dressing, HUD, arrival and
+        // loading card live in src/polite.js (window.czPolite)
+        { id: "polite", n: "Polite City", bonus: true, bg: "#14171b", fg: "#F2F2F2", ac: "#FED012" },
         // r130: Risograph: the city printed in two inks, fluorescent pink and medium blue, halftone, a little off-register
         { id: "riso", n: "Risograph", bg: "#f3eee3", fg: "#1d3f8f", ac: "#ff48b0" }
       ];
@@ -35334,11 +35335,15 @@ void main(){
     const themeRows = {};
     SCHEMES.forEach((s, i) => {
       if (s.proto) return; // worlds prototype: opened by URL only, no tile yet
-      const b = el("button", "wt", `
+      // r303: the bonus world (Polite City) is marked apart: a night tile, last and full width, the beacon pill (coral | blue)
+      // pulsing, its own label ("Bonus · after dark") and the name set in the world's loud type (styles.css .wt-bonus)
+      const bonus = !!s.bonus;
+      const b = el("button", bonus ? "wt wt-bonus" : "wt", `
       <span class="wt-img" style="--wbg:${s.bg};--wac:${s.ac};--wfg:${s.fg}"><img alt="" hidden></span>
       <span class="wt-veh" data-veh="${WORLD_VEH[s.id] || ""}"></span>
       <span class="wt-check" aria-hidden="true">\u2713</span>
-      <span class="wt-meta"><b>${s.n}</b><small>${WORLD_SUB[s.id] || ""}</small></span>
+      ${bonus ? `<span class="wt-beacon" aria-hidden="true"><i></i><em class="mono">BONUS \u00B7 AFTER DARK</em></span>` : ""}
+      <span class="wt-meta"><b>${s.n}</b><small>${bonus ? "Wanted for good taste. A night drive with its own radio and a very polite Patrol." : WORLD_SUB[s.id] || ""}</small></span>
       <span class="wt-sw" aria-hidden="true"><i style="background:${s.bg}"></i><i style="background:${s.ac}"></i><i style="background:${s.fg}"></i></span>`); // r137a: the world's three colours, as swatches
       b.dataset.idx = i;
       b.dataset.scheme = s.id;
@@ -35347,6 +35352,7 @@ void main(){
       b.onclick = () => {
         api.setScheme(i);
         closeMenus();
+        if (bonus && !document.body.classList.contains("map-mode")) api.toggleMap?.(); // r303: Polite City lives on the map (its HUD, its arrival)
       };
       themeRows[i] = b;
       wtGrid.appendChild(b);

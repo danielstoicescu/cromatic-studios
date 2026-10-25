@@ -1,0 +1,415 @@
+{
+ "name": "Polite City radio",
+ "version": 1,
+ "generated": "2026-10-24",
+ "sampleRate": 48000,
+ "loudness": {
+  "target_LUFS_integrated": -16,
+  "true_peak_max_dBTP": -1,
+  "note": "every file is mastered to -16 LUFS integrated; mixDb is the suggested playback gain in the world"
+ },
+ "formats": {
+  "primary": {
+   "ext": "webm",
+   "mime": "audio/webm; codecs=\"opus\""
+  },
+  "fallback": {
+   "ext": "m4a",
+   "mime": "audio/mp4; codecs=\"mp4a.40.2\""
+  }
+ },
+ "loopMethod": "Each loop file = last 0.5 s of the cycle + the cycle + first 0.5 s of the cycle. Loop with AudioBufferSourceNode.loopStart/loopEnd from this manifest; any constant decoder offset under 0.5 s (Opus pre-skip, AAC priming) stays seamless.",
+ "stations": [
+  {
+   "id": "olari-fm",
+   "name": "Olari FM",
+   "dial": "88.9",
+   "style": "late-night lo-fi house, Bucharest after rain",
+   "loop": "olari-fm",
+   "ident": "ident-olari-fm"
+  },
+  {
+   "id": "radio-kerning",
+   "name": "Radio Kerning",
+   "dial": "92.4",
+   "style": "boom-bap instrumental",
+   "loop": "radio-kerning",
+   "ident": "ident-radio-kerning"
+  },
+  {
+   "id": "brief-talk",
+   "name": "Brief Talk",
+   "dial": "104.1",
+   "style": "talk-show bed (voices to be recorded, see brief-talk-script.md)",
+   "loop": "brief-talk",
+   "ident": "ident-brief-talk"
+  }
+ ],
+ "transition": "tune-sweep",
+ "files": {
+  "olari-fm": {
+   "title": "Olari FM",
+   "kind": "station",
+   "station": "Olari FM",
+   "channels": 2,
+   "duration_s": 73,
+   "loop": {
+    "start": 0.5,
+    "end": 72.5
+   },
+   "webm": {
+    "file": "audio/olari-fm.webm",
+    "bytes": 715587,
+    "kbps": 78
+   },
+   "m4a": {
+    "file": "audio/olari-fm.m4a",
+    "bytes": 892810,
+    "kbps": 98
+   },
+   "loudness": {
+    "LUFS_source": -16,
+    "LUFS_opus": -16.45,
+    "LUFS_aac": -16.08,
+    "dBTP_opus": -4.4,
+    "dBTP_aac": -5.06
+   },
+   "mixDb": -4,
+   "bpm": 120,
+   "bars": 36,
+   "key": "Eb major / C minor"
+  },
+  "radio-kerning": {
+   "title": "Radio Kerning",
+   "kind": "station",
+   "station": "Radio Kerning",
+   "channels": 2,
+   "duration_s": 75.6667,
+   "loop": {
+    "start": 0.5,
+    "end": 75.166667
+   },
+   "webm": {
+    "file": "audio/radio-kerning.webm",
+    "bytes": 805358,
+    "kbps": 85
+   },
+   "m4a": {
+    "file": "audio/radio-kerning.m4a",
+    "bytes": 929980,
+    "kbps": 98
+   },
+   "loudness": {
+    "LUFS_source": -16,
+    "LUFS_opus": -16.31,
+    "LUFS_aac": -16.08,
+    "dBTP_opus": -4.53,
+    "dBTP_aac": -3.11
+   },
+   "mixDb": -4,
+   "bpm": 90,
+   "bars": 28,
+   "key": "D minor"
+  },
+  "brief-talk": {
+   "title": "Brief Talk",
+   "kind": "station",
+   "station": "Brief Talk",
+   "channels": 2,
+   "duration_s": 68.2,
+   "loop": {
+    "start": 0.5,
+    "end": 67.7
+   },
+   "webm": {
+    "file": "audio/brief-talk.webm",
+    "bytes": 405467,
+    "kbps": 48
+   },
+   "m4a": {
+    "file": "audio/brief-talk.m4a",
+    "bytes": 835388,
+    "kbps": 98
+   },
+   "loudness": {
+    "LUFS_source": -16,
+    "LUFS_opus": -16.3,
+    "LUFS_aac": -16.04,
+    "dBTP_opus": -2.34,
+    "dBTP_aac": -2.85
+   },
+   "mixDb": -4,
+   "bpm": 100,
+   "bars": 28,
+   "key": "F major"
+  },
+  "ident-olari-fm": {
+   "title": "Olari FM ident",
+   "kind": "ident",
+   "station": "olari-fm",
+   "channels": 2,
+   "duration_s": 2.8,
+   "loop": null,
+   "webm": {
+    "file": "audio/ident-olari-fm.webm",
+    "bytes": 27761,
+    "kbps": 79
+   },
+   "m4a": {
+    "file": "audio/ident-olari-fm.m4a",
+    "bytes": 50329,
+    "kbps": 144
+   },
+   "loudness": {
+    "LUFS_source": -16,
+    "LUFS_opus": -16.75,
+    "LUFS_aac": -16.03,
+    "dBTP_opus": -6.93,
+    "dBTP_aac": -6.17
+   },
+   "mixDb": -4
+  },
+  "ident-radio-kerning": {
+   "title": "Radio Kerning ident",
+   "kind": "ident",
+   "station": "radio-kerning",
+   "channels": 2,
+   "duration_s": 2.4,
+   "loop": null,
+   "webm": {
+    "file": "audio/ident-radio-kerning.webm",
+    "bytes": 22077,
+    "kbps": 74
+   },
+   "m4a": {
+    "file": "audio/ident-radio-kerning.m4a",
+    "bytes": 43242,
+    "kbps": 144
+   },
+   "loudness": {
+    "LUFS_source": -16.02,
+    "LUFS_opus": -16.96,
+    "LUFS_aac": -16.14,
+    "dBTP_opus": -1.66,
+    "dBTP_aac": -3.14
+   },
+   "mixDb": -4
+  },
+  "ident-brief-talk": {
+   "title": "Brief Talk ident",
+   "kind": "ident",
+   "station": "brief-talk",
+   "channels": 2,
+   "duration_s": 2.6,
+   "loop": null,
+   "webm": {
+    "file": "audio/ident-brief-talk.webm",
+    "bytes": 30817,
+    "kbps": 95
+   },
+   "m4a": {
+    "file": "audio/ident-brief-talk.m4a",
+    "bytes": 46335,
+    "kbps": 143
+   },
+   "loudness": {
+    "LUFS_source": -16,
+    "LUFS_opus": -16.13,
+    "LUFS_aac": -16.03,
+    "dBTP_opus": -3.11,
+    "dBTP_aac": -1.94
+   },
+   "mixDb": -4
+  },
+  "tune-sweep": {
+   "title": "Tuning static sweep",
+   "kind": "transition",
+   "station": null,
+   "channels": 2,
+   "duration_s": 1.4,
+   "loop": null,
+   "webm": {
+    "file": "audio/tune-sweep.webm",
+    "bytes": 13542,
+    "kbps": 77
+   },
+   "m4a": {
+    "file": "audio/tune-sweep.m4a",
+    "bytes": 21449,
+    "kbps": 123
+   },
+   "loudness": {
+    "LUFS_source": -16,
+    "LUFS_opus": -15.98,
+    "LUFS_aac": -16.06,
+    "dBTP_opus": -7.5,
+    "dBTP_aac": -7.82
+   },
+   "mixDb": -10
+  },
+  "sfx-city-ambient": {
+   "title": "City after rain (ambience)",
+   "kind": "ambience",
+   "station": null,
+   "channels": 2,
+   "duration_s": 41,
+   "loop": {
+    "start": 0.5,
+    "end": 40.5
+   },
+   "webm": {
+    "file": "audio/sfx-city-ambient.webm",
+    "bytes": 260429,
+    "kbps": 51
+   },
+   "m4a": {
+    "file": "audio/sfx-city-ambient.m4a",
+    "bytes": 423603,
+    "kbps": 83
+   },
+   "loudness": {
+    "LUFS_source": -16.02,
+    "LUFS_opus": -16.82,
+    "LUFS_aac": -16.1,
+    "dBTP_opus": -2.21,
+    "dBTP_aac": -1.31
+   },
+   "mixDb": -14
+  },
+  "sfx-steam-hiss": {
+   "title": "Manhole steam",
+   "kind": "sfx",
+   "station": null,
+   "channels": 1,
+   "duration_s": 2.8,
+   "loop": null,
+   "webm": {
+    "file": "audio/sfx-steam-hiss.webm",
+    "bytes": 15998,
+    "kbps": 46
+   },
+   "m4a": {
+    "file": "audio/sfx-steam-hiss.m4a",
+    "bytes": 26987,
+    "kbps": 77
+   },
+   "loudness": {
+    "LUFS_source": -16,
+    "LUFS_opus": -16.31,
+    "LUFS_aac": -16.34,
+    "dBTP_opus": -5.06,
+    "dBTP_aac": -6.44
+   },
+   "mixDb": -10
+  },
+  "sfx-scanner-chirp": {
+   "title": "Polite Patrol scanner chirp",
+   "kind": "sfx",
+   "station": null,
+   "channels": 1,
+   "duration_s": 1,
+   "loop": null,
+   "webm": {
+    "file": "audio/sfx-scanner-chirp.webm",
+    "bytes": 5884,
+    "kbps": 47
+   },
+   "m4a": {
+    "file": "audio/sfx-scanner-chirp.m4a",
+    "bytes": 12398,
+    "kbps": 99
+   },
+   "loudness": {
+    "LUFS_source": -16,
+    "LUFS_opus": -16.03,
+    "LUFS_aac": -16.05,
+    "dBTP_opus": -8.36,
+    "dBTP_aac": -9.51
+   },
+   "mixDb": -8
+  },
+  "sfx-pager-buzz": {
+   "title": "Pager buzz",
+   "kind": "sfx",
+   "station": null,
+   "channels": 1,
+   "duration_s": 1.5,
+   "loop": null,
+   "webm": {
+    "file": "audio/sfx-pager-buzz.webm",
+    "bytes": 9769,
+    "kbps": 52
+   },
+   "m4a": {
+    "file": "audio/sfx-pager-buzz.m4a",
+    "bytes": 16494,
+    "kbps": 88
+   },
+   "loudness": {
+    "LUFS_source": -16,
+    "LUFS_opus": -15.97,
+    "LUFS_aac": -16.01,
+    "dBTP_opus": -10.92,
+    "dBTP_aac": -10.72
+   },
+   "mixDb": -8
+  },
+  "sfx-espresso": {
+   "title": "Espresso save",
+   "kind": "sfx",
+   "station": null,
+   "channels": 2,
+   "duration_s": 5,
+   "loop": null,
+   "webm": {
+    "file": "audio/sfx-espresso.webm",
+    "bytes": 41319,
+    "kbps": 66
+   },
+   "m4a": {
+    "file": "audio/sfx-espresso.m4a",
+    "bytes": 64662,
+    "kbps": 103
+   },
+   "loudness": {
+    "LUFS_source": -16,
+    "LUFS_opus": -16.11,
+    "LUFS_aac": -16.46,
+    "dBTP_opus": -3.56,
+    "dBTP_aac": -5.05
+   },
+   "mixDb": -6,
+   "cue_s": 3.75,
+   "cue": "the 'saved' chime"
+  },
+  "sfx-phone-ring": {
+   "title": "Phone box ring",
+   "kind": "sfx",
+   "station": null,
+   "channels": 1,
+   "duration_s": 4,
+   "loop": {
+    "start": 0.5,
+    "end": 3.5
+   },
+   "webm": {
+    "file": "audio/sfx-phone-ring.webm",
+    "bytes": 15268,
+    "kbps": 31
+   },
+   "m4a": {
+    "file": "audio/sfx-phone-ring.m4a",
+    "bytes": 36716,
+    "kbps": 73
+   },
+   "loudness": {
+    "LUFS_source": -16,
+    "LUFS_opus": -15.99,
+    "LUFS_aac": -16.01,
+    "dBTP_opus": -7.92,
+    "dBTP_aac": -8.17
+   },
+   "mixDb": -10
+  }
+ }
+}

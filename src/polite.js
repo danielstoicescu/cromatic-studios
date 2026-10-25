@@ -13,10 +13,16 @@
 //  2. the HUD (only here): the radar (our rounded-square frame, our blips), the real Bucharest clock, ₡ credits (the
 //     XP you already have), Heat (Cromatic's four-point star, 0-3, from nav2's Polite Patrol), the pager (2M2F's own
 //     5x7 pixel letters), the big-moment cards ("Pulled over · Fined: one compliment.")
-//  3. the loading card: panels of the world rendered live from it (painted by a small ink + posterize pass), the
-//     name in the Cromatic display type, set italic and tight, with the beacon pill; skippable, 1.5 s
+//  3. the arrival (r303): the loading card (panels of the world rendered live from it, painted by a small ink + posterize
+//     pass, the name in the Cromatic display type, set italic and tight, with the beacon pill), then the camera drops
+//     from high over the car through the rain onto the street, then the HUD fades in and the pager buzzes "Welcome to
+//     Polite City". Under 3 s, skippable (a tap, a click or a key), still with reduced motion (the card, then the HUD)
 //  4. the codes (typed on a keyboard): KERNING, BIGGERLOGO, POLITE
 //  5. the radio slot: window.__politeRadio (Sorin's stations plug in here; nothing plays by default)
+//  6. the systems hook (r303, for phase B: traffic and vehicles, pedestrians and atmosphere): api.registerSystem(name,
+//     { init(ctx), update(dt, now, ctx), dispose() }), or window.czPoliteSystems.push({ name, init, update, dispose })
+//     before the world exists. ctx.lite is the phone / small-machine path; each system gets its own group under the
+//     dressing (hidden with it). See refs/gta-world/build/build-notes.md
 (() => {
   "use strict";
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -669,23 +675,30 @@
     }
     function buildCard() {
       const c = el("div", "pc-card");
+      // (r303: the card is the first beat of the arrival; a tap skips the whole arrival)
       c.setAttribute("role", "dialog"); c.setAttribute("aria-label", "Polite City");
       c.innerHTML = `<div class="pc-grid">${["street", "patrol", "top", "board", "city"].map((k) => `<figure class="pc-p pc-p-${k}"><img alt=""></figure>`).join("")}</div>
         <div class="pc-title"><i class="pc-pill" aria-hidden="true"></i><h1>Polite City</h1><p>Bonus world · after dark · wanted for good taste</p></div>
         <button class="pc-skip" type="button">Skip</button>`;
       document.body.appendChild(c);
-      const close = () => hideCard();
-      c.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); close(); });
+      c.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); arrivalSkip(); });
       return c;
     }
     let cardState = null;
     function showCard() {
       if (!card) card = buildCard();
-      cardState = { t: 0, queue: shots ? [] : panelCams(), dur: shots ? 1.5 : 2.6 };
+      cardState = { t: 0, queue: shots ? [] : panelCams(), dur: shots ? 0.85 : 1.2 }; // r303: shorter, the dive follows (2.6 / 1.5 s before)
       if (shots) for (const [k, u] of Object.entries(shots)) { const im = card.querySelector(`.pc-p-${k} img`); if (im) { im.src = u; im.parentElement.classList.add("ready"); } }
-      card.classList.add("on"); document.body.classList.add("pc-carding");
+      card.classList.remove("out"); card.classList.add("on"); document.body.classList.add("pc-carding");
+      arrival = { phase: "card", t: 0 }; document.body.classList.add("pc-arriving");
     }
-    function hideCard() { if (!cardState) return; cardState = null; card?.classList.remove("on"); document.body.classList.remove("pc-carding"); A.cop(null); }
+    let cardOutT = 0;
+    function hideCard(soft) {
+      if (!cardState) return; cardState = null; document.body.classList.remove("pc-carding"); A.cop(null);
+      clearTimeout(cardOutT);
+      if (soft && card) { card.classList.add("out"); cardOutT = setTimeout(() => card.classList.remove("on", "out"), 380); } // (it lifts off over the dive)
+      else card?.classList.remove("on", "out");
+    }
     function cardTick(dt) {
       if (!cardState) return;
       // one panel per frame (each is a render of the city), the Patrol posed for its own
@@ -702,12 +715,61 @@
         return;
       }
       cardState.t += dt;
-      if (!q.length && cardState.t > cardState.dur) hideCard();
+      if (!q.length && cardState.t > cardState.dur) { hideCard(true); arrivalDive(); }
+    }
+
+    // ===================== 3b. the arrival (r303) =====================
+    // card -> the dive -> the HUD. The dive: from ~3,000 units over the car, looking straight down and turning a little,
+    // down onto the view the visitor drives in (Top-down on a laptop, the phone's own view), a smooth drop over 1.15 s, rain
+    // streaks over the frame thinning as it lands. Our own timing and framing (legal.md amber: a generic camera drop, not a
+    // restaging of anyone's shot). The camera is lent for the frame only: set before the draw, put back after it
+    // (a microtask), so the app's own camera never learns about it
+    let arrival = null, rainFx = null;
+    const _qN = new T.Quaternion(), _qH = new T.Quaternion(), _pN = new T.Vector3(), _hi = new T.Vector3(), _tg = new T.Vector3(), _upv = new T.Vector3(), _m4 = new T.Matrix4(), _Y = new T.Vector3(0, 1, 0);
+    function arrivalDive() {
+      if (!arrival) return;
+      if (A.reduced()) return arrivalEnd(true);
+      arrival = { phase: "dive", t0: performance.now(), dur: 1.15, spin: (Math.random() < 0.5 ? -1 : 1) * 0.55 };
+      if (!rainFx) { rainFx = el("div", "pc-rainfx"); rainFx.setAttribute("aria-hidden", "true"); document.body.appendChild(rainFx); }
+      document.body.classList.add("pc-diving");
+    }
+    function arrivalEnd(welcome) {
+      if (!arrival) return;
+      arrival = null;
+      document.body.classList.remove("pc-arriving", "pc-diving");
+      if (welcome) welcomePages();
+    }
+    function arrivalSkip() { if (!arrival) return; hideCard(false); arrivalEnd(true); }
+    addEventListener("pointerdown", () => { if (arrival && arrival.phase === "dive") arrivalSkip(); }, true);
+    addEventListener("keydown", (e) => { if (arrival && !e.metaKey && !e.ctrlKey && !e.altKey && !/^(Shift|Control|Alt|Meta)$/.test(e.key)) arrivalSkip(); }, true);
+    function diveTick(dt) {
+      if (!arrival || arrival.phase !== "dive") return;
+      const u = (performance.now() - arrival.t0) / 1000 / arrival.dur; // (the wall clock: a slow phone lands on time too)
+      if (u >= 1) return arrivalEnd(true);
+      const e = u * u * u * (u * (u * 6 - 15) + 10), r = Math.min(1, e * 1.15), cam = A.camera, car = A.car(); // (it hangs a beat up high as the card lifts, drops, settles)
+      _pN.copy(cam.position); _qN.copy(cam.quaternion);
+      _tg.copy(A.warp(new T.Vector3(car.x, 0, car.z)));
+      _hi.set(_tg.x, Math.max(_pN.y, 0) + 3000, _tg.z);
+      _upv.set(0, 1, 0).applyQuaternion(_qN); _upv.y = 0; if (_upv.lengthSq() < 1e-6) _upv.set(0, 0, -1); _upv.normalize().applyAxisAngle(_Y, arrival.spin * (1 - e));
+      _m4.lookAt(_hi, _tg, _upv); _qH.setFromRotationMatrix(_m4);
+      cam.position.lerpVectors(_hi, _pN, e);
+      cam.quaternion.copy(_qH).slerp(_qN, r);
+      cam.updateMatrixWorld(true);
+      const P = _pN.clone(), Q = _qN.clone();
+      queueMicrotask(() => { cam.position.copy(P); cam.quaternion.copy(Q); cam.updateMatrixWorld(true); });
+    }
+    function welcomePages() {
+      let seen = false; try { seen = sessionStorage.getItem("cz-polite-pager") === "1"; sessionStorage.setItem("cz-polite-pager", "1"); } catch {}
+      if (!seen) { page("Welcome to Polite City. Please drive nicely."); page(A.isPhone() ? "Tap the square for Top-down." : "Press T for Top-down. Some say there are codes.", "TIP"); }
+      else page("Welcome back to Polite City.");
     }
 
     // ===================== 4. the codes, 5. the easter eggs =====================
     let typed = "", bigT = 0, bowT = 0, pTimer = 0;
-    window.__czKeyGate = (e) => api.on && shown && (e.key === "t" || e.key === "T") && typed.endsWith("POLI"); // (nav2's keys ask first: its listener may run before ours)
+    window.__czKeyGate = (e) => {
+      if (arrival && !e.metaKey && !e.ctrlKey && !e.altKey) arrivalSkip(); // r303: a drive key skips the arrival too (nav2 stops those before our own listener; the key still drives)
+      return api.on && shown && (e.key === "t" || e.key === "T") && typed.endsWith("POLI"); // (nav2's keys ask first: its listener may run before ours)
+    };
     // POLITE starts with P (the Postcard's key) and holds a T (the Top-down's): in this world a P waits 0.4 s for an O
     // before it opens the Postcard, and the T of "POLIT" is the code's, not the view's
     addEventListener("keydown", (e) => {
@@ -748,13 +810,13 @@
     }
 
     // ===================== the frame =====================
-    let shown = false, firstPage = false, newsT = 0;
+    let shown = false, newsT = 0;
     const camW = new T.Vector3();
     let cardDue = false;
     api.setActive = (on) => {
       if (on && !api.on) cardDue = true; // the loading card once per entry into the world
       api.on = !!on;
-      if (!on) { show(false); hideCard(); }
+      if (!on) { show(false); hideCard(false); arrivalEnd(false); sysActive(false); }
     };
     function show(v) {
       if (shown === v) return; shown = v;
@@ -766,18 +828,15 @@
         // desktop: the world opens in the Top-down view (the genre's own angle); a phone keeps its view (the stick and the
         // tap both work in every view)
         const n = A.nav2(); if (n && !A.isPhone() && n.D?.view === "sat") n.view("top", true);
-        if (!firstPage) {
-          firstPage = true;
-          let seen = false; try { seen = sessionStorage.getItem("cz-polite-pager") === "1"; sessionStorage.setItem("cz-polite-pager", "1"); } catch {}
-          if (!seen) { page("Welcome to Polite City. Please drive nicely."); page(A.isPhone() ? "Tap the square for Top-down." : "Press T for Top-down. Some say there are codes.", "TIP"); }
-        }
+        // (the welcome lines come with the arrival's end: welcomePages)
         radioLoad(); // laid in, silent (see RADIO_BASE)
         radioPaint();
-      } else radioStop();
+      } else { radioStop(); if (arrival) { hideCard(false); arrivalEnd(false); } }
     }
     api.frame = (dt, now) => {
       if (!api.on) return;
       if (!api.built) { if (!A.isMap() || !build()) return; }
+      sysInit();
       if (A.worldPrev()) return; // a Multiverse preview step (the world and back inside one frame): nothing changes
       const bc = document.body.classList, vis = A.isMap() && !bc.contains("kz-boot") && !bc.contains("kz-intro"); // (not under the opening)
       show(vis);
@@ -793,10 +852,49 @@
       session.lastCar = [car.x, car.z];
       newsT -= dt; if (newsT <= 0) { newsT = 6; const nt = tickers.find((x) => x.kind === "news"); if (nt) paintTicker(nt, newsText()); }
       cardTick(dt);
+      diveTick(dt);
       hudTick(dt, now);
       eggsTick(dt, now);
+      sysTick(dt, now);
     };
     api.dress = (v) => { if (group) group.visible = !!v && shown; }; // applyScheme, every call (a Multiverse preview of another world draws without the dressing)
+    // ===================== 6. the systems hook (r303, phase B) =====================
+    // Radu's traffic and vehicles, Iris's pedestrians and atmosphere (refs/gta-world/phaseB/) plug in here, not into the
+    // dressing's code: registerSystem(name, { init(ctx), update(dt, now, ctx), dispose() }). init runs once the dressing
+    // exists (the map and nav2's road graph are there), update every frame the world is on screen (not under the card or
+    // the opening; the arrival's dive included), dispose when unregistered (or registered again under the same name).
+    // ctx: T (three's classes), scene, camera, group (the system's own, under the dressing: hidden with it), graph (nav2's
+    // road graph: E[] edges with pts/cum/len/w/kind), car(), places(), footprints(), warp(v), fog(), isPhone(), reduced(),
+    // lite (phones and small machines: build less), page(msg, from), moment(title, sub), session, active (false while the
+    // visitor is in another world; update is not called then)
+    const systems = new Map();
+    const sysCtx = () => ({ T, scene: A.scene, camera: A.camera, graph: A.nav2()?.graph, car: A.car, places: A.places, footprints: A.footprints, warp: A.warp, fog: A.fog, isPhone: A.isPhone, reduced: A.reduced, lite: low, page, moment, session, active: api.on });
+    function sysInit() {
+      if (!api.built) return;
+      for (const [name, S] of systems) if (!S.ready) {
+        S.ready = true; S.ctx = sysCtx(); S.ctx.group = new T.Group(); S.ctx.group.name = "polite-sys-" + name; group.add(S.ctx.group);
+        try { S.sys.init?.(S.ctx); } catch (e) { S.dead = true; console.warn("[polite] system " + name + ":", e); }
+      }
+    }
+    function sysTick(dt, now) { for (const [name, S] of systems) if (S.ready && !S.dead) { S.ctx.active = true; try { S.sys.update?.(dt, now, S.ctx); } catch (e) { S.dead = true; console.warn("[polite] system " + name + ":", e); } } }
+    function sysActive(on) { for (const S of systems.values()) if (S.ctx) S.ctx.active = on; }
+    api.registerSystem = (name, sys) => {
+      if (!name || !sys) return false;
+      api.unregisterSystem(name);
+      systems.set(name, { sys, ready: false, dead: false, ctx: null });
+      if (api.built) sysInit();
+      return true;
+    };
+    api.unregisterSystem = (name) => {
+      const S = systems.get(name); if (!S) return false;
+      systems.delete(name);
+      try { if (S.ready) S.sys.dispose?.(S.ctx); } catch (e) {}
+      if (S.ctx?.group) S.ctx.group.removeFromParent();
+      return true;
+    };
+    api.systems = () => [...systems.keys()];
+    { const Q = (window.czPoliteSystems ||= []); for (const x of Q.splice(0)) api.registerSystem(x.name, x); Q.push = (x) => (api.registerSystem(x.name, x), 0); } // (registered before the world existed)
+    api.arrival = () => arrival && arrival.phase; // tests
     api.page = page; api.moment = moment; api.flashStation = flashStation; api.showCard = showCard; api.session = session;
     return api;
   };

@@ -374,23 +374,25 @@ export function buildPlaces(T, { theme = "light" } = {}) {
 // the top bar's Multiverse button (the world's picture in a pill, the turning rainbow ring); a tap and it deals the nine
 // worlds as pills with their own pictures (the intro's atlas: the Multiverse menu's previews), one is picked, the others
 // fall away, the chosen one flies back into the button and the city takes it on
-import { WORLD_IDS, ATLAS } from "../../../intro-lottie/_source/directions/A2.mjs";
-const WORLD_NAMES = ["Cromatic", "Night Mode", "Ghib.ly", "Sketchbook", "Race Day", "Sakura", "Underwater", "GTA 2", "Risograph"];
+import { WORLD_IDS } from "../../../intro-lottie/_source/directions/A2.mjs";
+const WORLD_NAMES = ["Cromatic", "Night Mode", "Ghib.ly", "Sketchbook", "Race Day", "Sakura", "Underwater", "Polite City", "Risograph"];
 const RAINBOW = ["#FED012", "#28C840", "#119BFE", "#B098C8", "#F65342", "#FED012"];
 const rainbowAt = (u) => { const n = RAINBOW.length - 1, x = u * n, i = Math.min(n - 1, Math.floor(x)), f = x - i; const a = parseInt(RAINBOW[i].slice(1), 16), b = parseInt(RAINBOW[i + 1].slice(1), 16); return "#" + [16, 8, 0].map((s) => Math.round((((a >> s) & 255) * (1 - f)) + (((b >> s) & 255) * f)).toString(16).padStart(2, "0")).join(""); };
 export function buildWorlds(T, { theme = "light", pick = 5 } = {}) {
   const th = THEMES[theme], W = 420, H = 150, LOOP = 300;
   const Cm = new Comp({ w: W, h: H, dur: LOOP / L, nm: `Cromatic · onboarding · the Multiverse · ${theme}` });
   Cm.marker("loop", 0, LOOP);
-  const ATL = Cm.asset("worlds", ATLAS.cw, ATLAS.ch * WORLD_IDS.length, "worlds.webp");
+  // r303: the site hands this piece the opening's atlas (build.mjs lcfg.atlas), the square one since 3.69 (Nine cups: 3 x 3
+  // cells of 150 px, build4.mjs squareAtlas), no longer the strip of A2: each pill crops its world's cell
+  const SQ = 150, ATL = Cm.asset("worlds", SQ * 3, SQ * 3, "worlds.webp");
   const DEAL = [0.22, 1.12, 0.32, 1], FALL = [0.5, 0, 0.92, 0.55], GLIDE = [0.62, 0, 0.22, 1.08];
   const tTap = 16, tDeal = 24, tPick = 118, tBack = 168, tLand = 194, tSwap = 276;
   const mv = [74, 74], mvW = 128, mvH = 44;
   // a picture pill: the world's crop of the atlas, scaled to the pill, masked to its stadium
   const pic = (nm, wi, w, h, { parent, ip, op }) => {
-    const ay = ATLAS.ch * wi + ATLAS.ch / 2, k = Math.max(w / ATLAS.cw, h / ATLAS.ch) * 100;
-    return Cm.image(nm, ATL, { parent, ip, op, ks: { a: [ATLAS.cw / 2, ay], p: [0, 0], s: [k, k] },
-      masks: [{ inv: false, mode: "a", pt: { a: 0, k: roundRect(ATLAS.cw / 2, ay, (w * 100) / k, (h * 100) / k, (h * 50) / k) }, o: prop(100), x: prop(0), nm: "pill" }] });
+    const ax = (wi % 3) * SQ + SQ / 2, ay = Math.floor(wi / 3) * SQ + SQ / 2, k = Math.max(w / SQ, h / SQ) * 100;
+    return Cm.image(nm, ATL, { parent, ip, op, ks: { a: [ax, ay], p: [0, 0], s: [k, k] },
+      masks: [{ inv: false, mode: "a", pt: { a: 0, k: roundRect(ax, ay, (w * 100) / k, (h * 100) / k, (h * 50) / k) }, o: prop(100), x: prop(0), nm: "pill" }] });
   };
   // the nine, dealt from the button into three rows on the right, the chosen one in the middle
   const slots = []; for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) slots.push([196 + c * 88 + (r === 1 ? -12 : 4), 30 + r * 45]);

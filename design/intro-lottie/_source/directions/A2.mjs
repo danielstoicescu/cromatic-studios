@@ -26,8 +26,8 @@ const LOGO = JSON.parse(fs.readFileSync(fileURLToPath(new URL("../assets/logo.js
 export const TL = { B1: 0.12, B2: 1.62, B3: 3.8, B4: 6.85, HOLD: 9.25, HAND: 10.85, END: 12.15, SHORT: 12.25, SHORT_END: 12.7, COMP: 12.75 };
 const DISSOLVE = 24; // frames (0.4 s)
 export const ARTBOARDS2 = { desktop: { name: "desktop", w: 1280, h: 900 }, phone: { name: "phone", w: 390, h: 844 } };
-export const WORLD_IDS = ["monument", "nightlife", "ghibli", "sketch", "circuit", "orchid", "underwater", "gta2", "riso"];
-const WORLD_NAMES = ["Cromatic", "Night Mode", "Ghib.ly", "Sketchbook", "Race Day", "Sakura", "Underwater", "GTA 2", "Risograph"];
+export const WORLD_IDS = ["monument", "nightlife", "ghibli", "sketch", "circuit", "orchid", "underwater", "polite", "riso"];
+const WORLD_NAMES = ["Cromatic", "Night Mode", "Ghib.ly", "Sketchbook", "Race Day", "Sakura", "Underwater", "Polite City", "Risograph"];
 export const ATLAS = { cw: 324, ch: 128 }; // one crop per world in the atlas, stacked top to bottom, in WORLD_IDS order
 // the Multiverse button's ring: conic-gradient(#FED012, #28C840, #119BFE, #B098C8, #F65342, #FED012), turning
 const RAINBOW = ["#FED012", "#28C840", "#119BFE", "#B098C8", "#F65342", "#FED012"];
