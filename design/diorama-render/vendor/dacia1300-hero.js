@@ -64,7 +64,7 @@ export function buildHeroDacia(T, ext = {}) {
     tread: new T.MeshPhysicalMaterial({ name: "tread", color: new T.Color("#141414"), roughness: 0.92, metalness: 0, normalMap: tex.tread, normalScale: new T.Vector2(1.4, 1.4) }),
     steel: new T.MeshPhysicalMaterial({ name: "steel wheel", color: new T.Color("#c3c6ca"), roughness: 0.32, metalness: 0.75, clearcoat: 0.6, clearcoatRoughness: 0.12 }),
     glass: new T.MeshPhysicalMaterial({ name: "glass", color: new T.Color("#eef6f2"), roughness: 0, metalness: 0, transmission: 1, ior: 1.52, thickness: 0.004, transparent: true, side: T.DoubleSide, envMapIntensity: 1 }),
-    lens: new T.MeshPhysicalMaterial({ name: "headlamp lens", color: new T.Color("#fbfaf2"), roughness: 0.02, metalness: 0, transmission: 1, ior: 1.5, thickness: 0.006, normalMap: tex.flutes, normalScale: new T.Vector2(0.55, 0.55), transparent: true, side: T.DoubleSide }),
+    lens: new T.MeshPhysicalMaterial({ name: "headlamp lens", color: new T.Color("#fbfaf2"), roughness: 0.02, metalness: 0, transmission: 1, ior: 1.5, thickness: 0, normalMap: tex.flutes, normalScale: new T.Vector2(0.55, 0.55), transparent: true, side: T.DoubleSide }),
     red: new T.MeshPhysicalMaterial({ name: "tail red", color: new T.Color("#a8120c"), roughness: 0.12, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.02, normalMap: tex.prisms, normalScale: new T.Vector2(0.35, 0.35) }),
     amber: new T.MeshPhysicalMaterial({ name: "amber", color: new T.Color("#e3780f"), roughness: 0.12, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.02, normalMap: tex.prisms, normalScale: new T.Vector2(0.35, 0.35) }),
     clear: new T.MeshPhysicalMaterial({ name: "reverse lens", color: new T.Color("#e9e6dc"), roughness: 0.1, metalness: 0, clearcoat: 1, normalMap: tex.prisms, normalScale: new T.Vector2(0.35, 0.35) }),
@@ -83,12 +83,27 @@ export function buildHeroDacia(T, ext = {}) {
   // (two-sided where an open shell could show its inside: the body is a skin, the wheels are lathes)
   for (const k of ["paint", "chrome", "satin", "reflector", "black", "rubber", "tyre", "tread", "steel"]) mats[k].side = T.DoubleSide;
   const add = (geo, mat, name) => { const m = new T.Mesh(geo, mat); m.name = name || mat.name; m.castShadow = true; m.receiveShadow = true; group.add(m); return m; };
+  // (r7: a geometry's triangles split until no edge is longer than L, as separate triangles (flat normals kept), so a
+  // bend applied per vertex follows the curve instead of cutting chords behind the skin)
+  const subdiv = (g0, L, minX = -1) => {
+    const g = g0.index ? g0.toNonIndexed() : g0, P = g.attributes.position; let T3 = [];
+    for (let i = 0; i < P.count; i += 3) T3.push([0, 1, 2].map((k) => [P.getX(i + k), P.getY(i + k), P.getZ(i + k)]));
+    const len = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]), mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
+    for (let pass = 0; pass < 10; pass++) { const out = []; let any = false;
+      for (const [a, b, c] of T3) { const la = len(a, b), lb = len(b, c), lc = len(c, a), m = Math.max(la, lb, lc); if (m <= L || Math.max(Math.abs(a[0]), Math.abs(b[0]), Math.abs(c[0])) < minX) { out.push([a, b, c]); continue; } any = true;
+        if (m === la) { const d = mid(a, b); out.push([a, d, c], [d, b, c]); } else if (m === lb) { const d = mid(b, c); out.push([a, b, d], [a, d, c]); } else { const d = mid(c, a); out.push([a, b, d], [d, b, c]); } }
+      T3 = out; if (!any) break; }
+    const pos = new Float32Array(T3.length * 9); T3.forEach((t, i) => t.forEach((p, k) => pos.set(p, i * 9 + k * 3)));
+    const r = new T.BufferGeometry(); r.setAttribute("position", new T.BufferAttribute(pos, 3)); return r;
+  };
 
   // ================= the lower body: a loft of cross-sections along z =================
   // r7: the arches differ (Mira, proportions.md 4.6): the front one round, its lip at 0.64 (5-6 cm over the tyre); the
   // rear one lower and flatter, a half ellipse whose lip comes down to 0.595, 1-2 cm over the tyre (part-skirted)
   const ARCH = { f: { z: zF, a: 0.345, b: 0.345, y: 0.295 }, r: { z: zR, a: 0.362, b: 0.33, y: 0.265 } };
-  const archY = (A, z) => { const dz = z - A.z; return Math.abs(dz) < A.a ? A.y + A.b * Math.sqrt(1 - (dz / A.a) ** 2) : -1; };
+  // (r7b: past its half length each arch's edge falls to the sill in a smooth 4 cm corner: the vertical step under the
+  // lowered sills read as a yellow flap at each arch's end)
+  const ARC = 0.04, archY = (A, z) => { const dz = Math.abs(z - A.z); if (dz < A.a) return A.y + A.b * Math.sqrt(1 - (dz / A.a) ** 2); if (dz < A.a + ARC) return A.y - (A.y - ybase(z)) * sstep(0, 1, (dz - A.a) / ARC); return -1; };
   const AR = ARCH.r.a; // (the rear arch's half length: the mud flaps)
   const hw0 = (z) => 0.809 - 0.014 * ((z + 0.2) / 2.2) ** 2;
   const rFc = 0.15, rRc = 0.085; // (r7: the front corners rounder in plan (Mira E40: 0.15-0.25), the tail's tighter, its lamps reach the corner)
@@ -153,7 +168,7 @@ export function buildHeroDacia(T, ext = {}) {
     const zs = new Set();
     for (let z = zT; z <= zN + 1e-9; z += 0.018) zs.add(+z.toFixed(5));
     for (let d = 0; d <= 0.14; d += 0.006) { zs.add(+(zN - d).toFixed(5)); zs.add(+(zT + d).toFixed(5)); }
-    for (const A of [ARCH.f, ARCH.r]) for (const s of [-1, 1]) for (let d = -0.03; d <= 0.03; d += 0.004) zs.add(+(A.z + s * A.a + d).toFixed(5));
+    for (const A of [ARCH.f, ARCH.r]) for (const s of [-1, 1]) for (let d = -0.03; d <= 0.03 + ARC; d += 0.004) zs.add(+(A.z + s * (A.a + d)).toFixed(5));
     for (const zc of [ZC0, ZC1, ZC0 - 0.07, ZC0 - 0.01, ZC1 + 0.01, ZC1 + 0.07, ZB0, ZK0]) zs.add(+zc.toFixed(5));
     zs.add(zN); zs.add(zT);
     // (r7: the regular grid's rows that fall within 3.5 mm of the fine ends' rows dropped: rows 1-3 mm apart with
@@ -215,8 +230,10 @@ export function buildHeroDacia(T, ext = {}) {
   for (const [z, sgn] of [[zN, 1], [zT, -1]]) {
     const sec = fullSec(lowerHalf(z));
     const shape = new T.Shape(sec.map(([x, y]) => new T.Vector2(x, y)));
-    if (sgn > 0) shape.holes.push(...holesAt((y) => halfWidthAt(sec, y) - 0.002));
-    const g = new T.ShapeGeometry(shape, 1);
+    let g = new T.ShapeGeometry(shape, 1);
+    // (r7b: no holes: where the lamps' outer ends pass the face's outline earcut left a wedge of the panel inside them;
+    // split near the lamps instead and the triangles inside dropped, the 6 mm steps under the rims)
+    if (sgn > 0) { const f = subdiv(g, 0.006, 0.3), P = f.attributes.position, keep = []; for (let i = 0; i < P.count; i += 3) { const cx = (P.getX(i) + P.getX(i + 1) + P.getX(i + 2)) / 3, cy = (P.getY(i) + P.getY(i + 1) + P.getY(i + 2)) / 3; if (!inLamp(cx, cy, 0.004)) for (let k = 0; k < 3; k++) keep.push(P.getX(i + k), P.getY(i + k), P.getZ(i + k)); } g = new T.BufferGeometry(); g.setAttribute("position", new T.Float32BufferAttribute(keep, 3)); g.computeVertexNormals(); }
     if (sgn < 0) { g.scale(-1, 1, 1); } // facing -z
     g.translate(0, 0, z);
     if (sgn < 0) { const p = g.attributes.position; for (let i = 0; i < p.count; i++) p.setX(i, -p.getX(i)); g.computeVertexNormals(); const idx = g.index.array; for (let i = 0; i < idx.length; i += 3) { const t = idx[i]; idx[i] = idx[i + 1]; idx[i + 1] = t; } g.computeVertexNormals(); }
@@ -329,7 +346,7 @@ export function buildHeroDacia(T, ext = {}) {
   { const pan = gridSurface(ZS.length, 9, (i, j) => { const z = ZS[i], x0 = sideX(z, ybot(z)) - 0.028, x = lerp(-x0, x0, j / 8), yy = Math.max(ybase(z) + endE(z), 0.16) + 0.004; return [x, Math.abs(x) > 0.5 ? ybot(z) + 0.004 : yy, z]; }, null, true); add(pan, mats.under, "floor pan"); }
   // underbody, floor (r7: 12-14 cm off the ground, the drawing's 0.120)
   { const g = new T.BoxGeometry(1.0, 0.03, 2.9); g.translate(0, 0.152, -0.1); add(g, mats.under, "underbody"); }
-  { const g = new T.PlaneGeometry(1.5, ZC0 - ZC1 + 0.05); g.rotateX(-Math.PI / 2); g.translate(0, 0.24, (ZC0 + ZC1) / 2); add(g, mats.carpet, "floor"); }
+  { const g = new T.PlaneGeometry(1.06, ZC0 - ZC1 + 0.05); g.rotateX(-Math.PI / 2); g.translate(0, 0.24, (ZC0 + ZC1) / 2); add(g, mats.carpet, "floor"); } // (r7b: inside the wheels' inner faces, it showed through the arches)
 
   // ================= the glasshouse: a second loft, from the windscreen's foot to the rear window's foot =================
   const beltY = (z) => sideTop(z) + rS(z) - 0.004;
@@ -487,20 +504,7 @@ export function buildHeroDacia(T, ext = {}) {
   // the band: chrome frame round lamps and grille, black inside
   // r7: the band's and the rims' outer ends bent back round the face's rounded corners ("following the body's rounded
   // front corners", details.md 1)
-  // (r7: a geometry's triangles split until no edge is longer than L, as separate triangles (flat normals kept), so a
-  // bend applied per vertex follows the curve instead of cutting chords behind the skin)
-  const subdiv = (g0, L) => {
-    const g = g0.index ? g0.toNonIndexed() : g0, P = g.attributes.position; let T3 = [];
-    for (let i = 0; i < P.count; i += 3) T3.push([0, 1, 2].map((k) => [P.getX(i + k), P.getY(i + k), P.getZ(i + k)]));
-    const len = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]), mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
-    for (let pass = 0; pass < 10; pass++) { const out = []; let any = false;
-      for (const [a, b, c] of T3) { const la = len(a, b), lb = len(b, c), lc = len(c, a), m = Math.max(la, lb, lc); if (m <= L || Math.max(Math.abs(a[0]), Math.abs(b[0]), Math.abs(c[0])) < xr0 - L) { out.push([a, b, c]); continue; } any = true;
-        if (m === la) { const d = mid(a, b); out.push([a, d, c], [d, b, c]); } else if (m === lb) { const d = mid(b, c); out.push([a, b, d], [a, d, c]); } else { const d = mid(c, a); out.push([a, b, d], [d, b, c]); } }
-      T3 = out; if (!any) break; }
-    const pos = new Float32Array(T3.length * 9); T3.forEach((t, i) => t.forEach((p, k) => pos.set(p, i * 9 + k * 3)));
-    const r = new T.BufferGeometry(); r.setAttribute("position", new T.BufferAttribute(pos, 3)); return r;
-  };
-  const xr0 = hw0(zN) - rFc, bendFace = (g0) => { const g = subdiv(g0, 0.012); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const d = Math.abs(p.getX(i)) - xr0; if (d > 0) p.setZ(i, p.getZ(i) - (rFc - Math.sqrt(Math.max(0, rFc * rFc - Math.min(d, rFc) ** 2)))); } g.computeVertexNormals(); return g; };
+  const xr0 = hw0(zN) - rFc, bendFace = (g0) => { const g = subdiv(g0, 0.012, xr0 - 0.012); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const d = Math.abs(p.getX(i)) - xr0; if (d > 0) p.setZ(i, p.getZ(i) - (rFc - Math.sqrt(Math.max(0, rFc * rFc - Math.min(d, rFc) ** 2)))); } g.computeVertexNormals(); return g; };
   { const g = ringGeo(BAND.w, BAND.h, 0.03, 0.011, 0.012, 0.004); g.translate(0, BAND.y, 0); add(bendFace(facing(g, FZ - 0.006, false)), mats.chrome, "grille surround"); }
   { const sh = rrShape(BAND.w, BAND.h, 0.03); sh.holes.push(...holesAt().map((h) => new T.Path(h.getPoints().map((v) => new T.Vector2(v.x, v.y - BAND.y))))); const g = new T.ShapeGeometry(sh, 8); g.translate(0, BAND.y, FZ + 0.001); add(bendFace(g), mats.black, "grille back"); }
   // the grille's bars between the lamps (r7: seven, with short dividers, as on the photos), the chrome U and the shield
@@ -587,12 +591,12 @@ export function buildHeroDacia(T, ext = {}) {
   // r7: the chrome strip across the tail panel under the boot lid's edge, lamp to lamp
   { const pts = []; for (let i = 0; i <= 40; i++) pts.push({ p: V3(lerp(-0.66, 0.66, i / 40), 0.688, zT - 0.001), n: V3(0, 0, -1) }); sweep(pts, halfRound(0.0055, 0.0035), mats.chrome, "tail strip", { closed: true }); }
   // mud flaps behind the rear wheels
-  for (const s of [-1, 1]) { const g = new T.BoxGeometry(0.16, 0.25, 0.008); g.translate(s * 0.655, 0.235, zR - AR - 0.03); add(g, mats.rubber, "mud flap"); }
+  for (const s of [-1, 1]) { const g = new T.BoxGeometry(0.16, 0.25, 0.008); g.translate(s * 0.65, 0.235, zR - AR - ARC - 0.012); add(g, mats.rubber, "mud flap"); } // (r7b: behind the arch's corner, x 0.57-0.73)
   // the lock button in the middle of the boot lid's trailing face; r7: "DACIA 1300" in chrome on that face, on the
   // viewer's left as seen from behind (+x), over the lamp (the tricolour inlay is gone, see the shield)
   { const g = new T.CylinderGeometry(0.014, 0.014, 0.012, 20); g.rotateX(Math.PI / 2); g.translate(0, 0.726, zT - 0.006); add(g, mats.chrome, "boot lock"); }
   { const m = dScript(T, "DACIA 1300", 0.036); m.rotation.y = Math.PI; m.position.set(0.4, 0.7255, zT - 0.003); group.add(m); }
-  { const g = new T.CylinderGeometry(0.024, 0.024, 0.14, 20, 1, true); g.rotateX(Math.PI / 2); g.translate(-0.42, 0.2, zT + 0.04); add(g, mats.satin, "exhaust"); const c = new T.CircleGeometry(0.02, 20); c.rotateY(Math.PI); c.translate(-0.42, 0.2, zT - 0.028); add(c, mats.under, "exhaust hole"); }
+  { const ex = new T.MeshPhysicalMaterial({ name: "exhaust steel", color: new T.Color("#3b3936"), roughness: 0.62, metalness: 0.55, side: T.DoubleSide }); const g = new T.CylinderGeometry(0.022, 0.022, 0.1, 20, 1, true); g.rotateX(Math.PI / 2); g.translate(-0.42, 0.25, zT + 0.05); add(g, ex, "exhaust"); const c = new T.CircleGeometry(0.019, 20); c.rotateY(Math.PI); c.translate(-0.42, 0.25, zT + 0.002); add(c, mats.under, "exhaust hole"); } // (r7b: short, dull dark steel, its end under the bumper)
 
   // ================= the flank's fittings: handles, the mirror, the fuel cap, wipers =================
   // v3: the door handles: a chrome escutcheon in a dark recess, the pull lever proud of it, the key lock on the front doors
@@ -641,7 +645,7 @@ export function buildHeroDacia(T, ext = {}) {
     for (const m of drop) m.parent.remove(m); }
   { const g = ext.RoundedBoxGeometry ? new ext.RoundedBoxGeometry(1.32, 0.03, 0.3, 3, 0.01) : new T.BoxGeometry(1.32, 0.03, 0.3); g.translate(0, beltY(-1.48) - 0.03, -1.47); add(g, mats.dash, "parcel shelf"); }
   // v3: road dust on the lower body: the sills, a spray behind each wheel, the flaps and overriders greyed
-  { const wh = [{ z: zF, r: DIM.tyreR }, { z: zR, r: DIM.tyreR }]; dDust(T, group, { mats: [mats.paint], top: 0.52, amount: 0.55, color: "#8e8273", wheels: wh, seed: 21 }); dDust(T, group, { mats: [mats.rubber], top: 0.5, amount: 0.22, color: "#6d6457", wheels: wh, seed: 22 }); }
+  { const wh = [{ z: zF, r: DIM.tyreR }, { z: zR, r: DIM.tyreR }]; dDust(T, group, { mats: [mats.paint], top: 0.52, amount: 0.55, color: "#8e8273", wheels: wh, seed: 21 }); dDust(T, group, { mats: [mats.rubber], top: 0.5, amount: 0.1, color: "#6d6457", wheels: wh, seed: 22 }); }
   return { group, mats, tex };
 }
 
