@@ -289,16 +289,20 @@
       const list = [];
       spots.forEach((s, i) => {
         const b = BRANDS[i % BRANDS.length];
-        const yaw = Math.atan2(-s.nx, -s.nz) + (s.tw || 0); // facing the road
-        const ctr = new T.Vector3(s.x, LEG + BH / 2 * Math.cos(TILT), s.z);
-        e.set(TILT, yaw, 0); q.setFromEuler(e); m.compose(ctr, q, S);
-        const slot = BRANDS.indexOf(b), u0 = (slot % 4) / 4, v0 = 1 - (Math.floor(slot / 4) + 1) / 4;
-        const f = prep(plane, new T.Matrix4().makeTranslation(0, 0, 1.8).premultiply(m), null, ctr);
-        if (b.id === "final" && !finalSign) finalSign = { x: s.x, z: s.z, geo: f, passes: 0, near: false, state: "v7" }; // its own texture (plain uvs)
-        else { const uv = f.attributes.uv; for (let k = 0; k < uv.count; k++) uv.setXY(k, u0 + uv.getX(k) / 4, v0 + uv.getY(k) / 4); faces.push(f); }
-        frames.push(prep(back, m, "#16181c"));
-        for (const sx of [-BW * 0.32, BW * 0.32]) frames.push(prep(leg, new T.Matrix4().compose(new T.Vector3(s.x + Math.cos(yaw) * sx, (LEG + 8) / 2, s.z - Math.sin(yaw) * sx), new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), yaw), S), "#1e2127"));
-        for (const [g, y, x] of [[rimH, BH / 2 + 3.5, 0], [rimH, -BH / 2 - 3.5, 0], [rimV, 0, BW / 2 + 3.5], [rimV, 0, -BW / 2 - 3.5]]) neon.push(prep(g, new T.Matrix4().makeTranslation(x, y, 2.4).premultiply(m), b.neon));
+        // an A-frame: two faces back to back, each leaning back, their tops meeting: one reads from the road's each way,
+        // and from above (the map, the Top-down) whichever way the camera turns
+        const yaw = Math.atan2(-s.nx, -s.nz), off = (BH / 2) * Math.sin(-TILT), cy = LEG + (BH / 2) * Math.cos(TILT);
+        const slot = BRANDS.indexOf(b), u0 = (slot % 4) / 4, v0 = 1 - (Math.floor(slot / 4) + 1) / 4, isFinal = b.id === "final" && !finalSign, ff = [];
+        for (const side of [0, Math.PI]) {
+          const ys = yaw + side, ctr = new T.Vector3(s.x + Math.sin(ys) * off, cy, s.z + Math.cos(ys) * off);
+          e.set(TILT, ys, 0); q.setFromEuler(e); m.compose(ctr, q, S);
+          const f = prep(plane, new T.Matrix4().makeTranslation(0, 0, 1.8).premultiply(m), null, ctr);
+          if (isFinal) ff.push(f); else { const uv = f.attributes.uv; for (let k = 0; k < uv.count; k++) uv.setXY(k, u0 + uv.getX(k) / 4, v0 + uv.getY(k) / 4); faces.push(f); }
+          frames.push(prep(back, m, "#16181c"));
+          for (const [g, y, x] of [[rimH, BH / 2 + 3.5, 0], [rimH, -BH / 2 - 3.5, 0], [rimV, 0, BW / 2 + 3.5], [rimV, 0, -BW / 2 - 3.5]]) neon.push(prep(g, new T.Matrix4().makeTranslation(x, y, 2.4).premultiply(m), b.neon));
+        }
+        if (isFinal) finalSign = { x: s.x, z: s.z, geo: merge(ff), passes: 0, near: false, state: "v7" }; // its own texture (plain uvs)
+        for (const sx of [-BW * 0.36, BW * 0.36]) frames.push(prep(leg, new T.Matrix4().compose(new T.Vector3(s.x + Math.cos(yaw) * sx, (LEG + 8) / 2, s.z - Math.sin(yaw) * sx), new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), yaw), S), "#1e2127"));
         list.push({ x: s.x, z: s.z, rx: s.rx, rz: s.rz, b, i });
       });
       const faceMat = new T.ShaderMaterial({ uniforms: { map: { value: atlas.tex }, big: { value: 1 }, gain: { value: 1.12 } }, vertexShader: BOARD_VS, fragmentShader: BOARD_FS, side: T.DoubleSide, toneMapped: false });
@@ -324,7 +328,7 @@
     function buildTicker(s, kind) {
       const cv = document.createElement("canvas"); cv.width = 2048; cv.height = 64;
       const tex = new T.CanvasTexture(cv); tex.colorSpace = T.SRGBColorSpace; tex.wrapS = T.RepeatWrapping; tex.repeat.set(0.5, 1);
-      const W = 150, H = 13, yaw = Math.atan2(-s.nx, -s.nz), y = 30;
+      const W = 150, H = 13, yaw = Math.atan2(-s.nx, -s.nz) * 0.6, y = 30; // (towards the map's camera, like the boards)
       const g = new T.Group();
       const strip = new T.Mesh(new T.PlaneGeometry(W, H), new T.MeshBasicMaterial({ map: tex, toneMapped: false, side: T.DoubleSide }));
       strip.material.color.setScalar(1.35);
@@ -383,13 +387,12 @@
       for (const p of roadside(430, 30, 600, (e) => e.kind !== "minor" && e.w >= 30)) {
         if (bspots.length >= (low ? 12 : 20)) break;
         if (inBuilding(p.x, p.z, 12) || placesNear(p.x, p.z, 130) || !farFrom(bspots, p.x, p.z, 480) || !farFrom(lamps, p.x, p.z, 30)) continue;
-        p.tw = (bspots.length % 2 ? 1 : -1) * 0.35;
         bspots.push(p);
       }
       boards = buildBoards(bspots);
       group.add(boards.group);
       // the tickers: the news (near the start: the first road you drive) and the Brand Index (further on)
-      const tspots = roadside(520, 24, 400, (e) => e.kind !== "minor" && e.w >= 30).filter((p) => !inBuilding(p.x, p.z, 10) && !placesNear(p.x, p.z, 120) && farFrom(bspots, p.x, p.z, 220));
+      const tspots = roadside(520, 24, 400, (e) => e.kind !== "minor" && e.w >= 30).filter((p) => -p.nz > 0.15 && !inBuilding(p.x, p.z, 10) && !placesNear(p.x, p.z, 120) && farFrom(bspots, p.x, p.z, 220));
       const car = A.car(); tspots.sort((a, b) => Math.hypot(a.x - car.x, a.z - car.z) - Math.hypot(b.x - car.x, b.z - car.z));
       if (tspots[0]) { const tk = buildTicker(tspots[0], "news"); paintTicker(tk, newsText()); tickers.push(tk); group.add(tk.g); }
       const far = tspots.find((p) => tspots[0] && Math.hypot(p.x - tspots[0].x, p.z - tspots[0].z) > 1500);
@@ -553,6 +556,7 @@
     }
     // a big moment: a rounded card slammed in (10% overshoot; reduced motion: a fade), ≤ 2.5 s
     function moment(title, sub, kind = "") {
+      if (!hud) return;
       const m = hud.moment; m.querySelector("b").textContent = title; m.querySelector("span").textContent = sub || "";
       m.dataset.k = kind; m.classList.remove("on"); void m.offsetWidth; m.classList.add("on");
       clearTimeout(m._t); m._t = setTimeout(() => m.classList.remove("on"), 2400);
@@ -702,17 +706,23 @@
     }
 
     // ===================== 4. the codes, 5. the easter eggs =====================
-    let typed = "", bigT = 0, bowT = 0;
+    let typed = "", bigT = 0, bowT = 0, pTimer = 0;
+    // POLITE starts with P (the Postcard's key) and holds a T (the Top-down's): in this world a P waits 0.4 s for an O
+    // before it opens the Postcard, and the T of "POLIT" is the code's, not the view's
     addEventListener("keydown", (e) => {
-      if (!api.on || e.metaKey || e.ctrlKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test(e.target?.tagName || "") || e.key.length !== 1) return;
-      typed = (typed + e.key.toUpperCase()).slice(-12);
+      if (!api.on || !shown || e.metaKey || e.ctrlKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test(e.target?.tagName || "") || e.key.length !== 1) return;
+      const k = e.key.toUpperCase();
+      if (k === "P" && !document.body.classList.contains("photo-on")) { e.preventDefault(); e.stopImmediatePropagation(); clearTimeout(pTimer); pTimer = setTimeout(() => { pTimer = 0; window.czPhotoOpen?.(); }, 400); }
+      else if (pTimer && k === "O") { clearTimeout(pTimer); pTimer = 0; }
+      if (k === "T" && typed.endsWith("POLI")) { e.preventDefault(); e.stopImmediatePropagation(); }
+      typed = (typed + k).slice(-12);
       const hit = ["KERNING", "BIGGERLOGO", "POLITE"].find((c) => typed.endsWith(c));
       if (!hit) return;
-      typed = ""; session.codes++;
+      typed = ""; session.codes++; e.preventDefault(); e.stopImmediatePropagation();
       if (hit === "KERNING") { document.body.classList.add("pc-kern"); setTimeout(() => document.body.classList.remove("pc-kern"), 5000); moment("K E R N I N G", "Code accepted. Everything breathes for five seconds.", "code"); }
       if (hit === "BIGGERLOGO") { bigT = 8; document.body.classList.add("pc-biglogo"); setTimeout(() => document.body.classList.remove("pc-biglogo"), 8000); moment("Bigger logo", "Code accepted. The client is thrilled.", "code"); }
       if (hit === "POLITE") { if (!A.copBusy()) bowT = 4.2; moment("After you", "Code accepted. The Patrol insists.", "code"); }
-    });
+    }, true);
     function eggsTick(dt, now) {
       // BIGGERLOGO: every board twice its size, back over a second
       if (boards) { bigT = Math.max(0, bigT - dt); const k = bigT > 1 ? 2 : 1 + bigT; if (boards.faceMat.uniforms.big.value !== k) boards.faceMat.uniforms.big.value = k; }
