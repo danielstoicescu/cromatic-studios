@@ -270,6 +270,9 @@ body.n2-phone:is(.nav2-street, .nav2-top) .n2-stick { display: block; position: 
 .n2-ring { position: absolute; left: -64px; top: -64px; width: 128px; height: 128px; box-sizing: border-box; border-radius: 50%; background: rgba(255, 248, 234, .78); border: 2.5px solid #141414; box-shadow: 2px 3px 0 rgba(20, 20, 20, .85), inset 0 0 0 10px rgba(254, 208, 18, .14); opacity: .5; transition: opacity .2s; }
 .n2-knob { position: absolute; left: 0; top: 0; width: 56px; height: 56px; box-sizing: border-box; border-radius: 50%; background: #FED012; border: 2.5px solid #141414; box-shadow: 2px 4px 0 #141414, 0 8px 18px rgba(0, 0, 0, .18); transform: translate(-50%, -50%); opacity: .65; }
 .n2-stick.on .n2-ring, .n2-stick.on .n2-knob { opacity: 1; }
+/* r306: Bird's eye on a phone: the floating stick shows only while a drag drives (.live), and fades where it was */
+body.n2-phone:not(.nav2-street):not(.nav2-top) .n2-stick.live { display: block; position: fixed; left: 0; top: 0; width: 0; height: 0; z-index: 23; pointer-events: none; }
+body.n2-phone:not(.nav2-street):not(.nav2-top) .n2-stick.live:not(.on) :is(.n2-ring, .n2-knob) { opacity: 0; transition: opacity .25s ease; }
 body.n2-phone:is(.nav2-street, .nav2-top):not(.n2-card) .n2-driftb { display: block; position: fixed; z-index: 24; right: 16px; bottom: calc(44px + env(safe-area-inset-bottom, 0px)); width: 66px; height: 66px; border-radius: 50%; background: #fff; color: #141414; border: 2.5px solid #141414; box-shadow: 2px 3px 0 #141414; font-size: 11px; font-weight: 700; letter-spacing: .1em; touch-action: none; -webkit-tap-highlight-color: transparent; }
 .n2-driftb.on { background: #FED012; translate: 0 2px; box-shadow: 1px 1px 0 #141414; }
 body.n2-phone .n2-toast { top: calc(var(--n2top, 112px) + 110px); }

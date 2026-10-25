@@ -1097,7 +1097,8 @@
         get mod() { return m; }
       };
     }
-    if (window.__politePhaseB) for (const n of ["atmosphere", "traffic", "pedestrians"]) if (window.__politePhaseB[n]) api.registerSystem("pb-" + n, phaseB(n));
+    if (window.__politePhaseB) for (const n of ["atmosphere", "pedestrians"]) // (r306, Daniel: "the traffic isn't good: cars pass through each other": the ambient traffic is gone, its Patrol cruiser with it; nav2's own Polite Patrol stays)
+       if (window.__politePhaseB[n]) api.registerSystem("pb-" + n, phaseB(n));
     api._pbSfx = pbSfx; api._mats = A.mats; api.pb = () => ({ player: A.car(), shared: pbShared, mods: Object.fromEntries([...systems].filter(([k]) => k.startsWith("pb-")).map(([k, S]) => [k, S.sys.mod])) }); // tests
     api.arrival = () => arrival && arrival.phase; // tests
     api._look = (on, roofs = on) => { PCU.pcOn.value = on ? 1 : 0; for (const o of roofMeshes) o.visible = !!roofs; }; // tests (polite-look: the A/B)

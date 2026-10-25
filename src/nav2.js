@@ -2137,7 +2137,7 @@
         </div>
       </div>
       <div class="n2-toast" role="status"></div>
-      <div class="n2-taphint mono" aria-hidden="true">TAP THE ROAD TO DRIVE THERE</div>
+      <div class="n2-taphint mono" aria-hidden="true">TAP A ROAD TO GO THERE · DRAG TO DRIVE</div>
       <button class="n2-snd" aria-pressed="true" title="Sound off" aria-label="Sound off"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z" fill="currentColor"/><path class="w1" d="M15.2 9.2a4 4 0 0 1 0 5.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="w2" d="M17.8 6.8a7.4 7.4 0 0 1 0 10.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M15.5 9.5l5 5m0-5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
       <div class="n2-cop" role="status" aria-live="polite"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15" class="n2-cop-bg"/><circle cx="18" cy="18" r="15" class="n2-cop-ring"/></svg><b>POLITE · SLOW DOWN</b><em class="mono">5</em></div>
       <div class="n2-stick" aria-hidden="true"><span class="n2-ring"></span><span class="n2-knob"></span></div>
@@ -2228,8 +2228,33 @@
       };
       const drvT = () => Math.max(D.streetT, D.topT); // polite-city: the top-down view drives like the street view (the stick on a phone)
       const phoneStreet = () => phoneUI() && drvT() >= 0.5;
+      // r306 (Daniel): Bird's eye and Top-down on a phone: a floating stick that leaves the map its taps. A touch in the lower
+      // 60 % is pending: dragged past 12 px or held past 180 ms it becomes the stick, at the touch point (screen steering,
+      // see screenSteer); let go sooner and it was a tap, which the map already has (a road drives there, a place opens).
+      // While pending its moves are held back from the map (no pan); when it becomes the stick, the map's press is called
+      // off (a pointercancel far off screen, so it is no tap). A second finger while pending is a pinch: the map's.
+      // Street keeps its stick at once (lower half), as before
+      let pend = null, synth = false;
+      const screenPhone = () => phoneUI() && D.streetT < 0.5 && (D.view === "top" || D.view === "sat");
+      const stickGo = () => {
+        if (!pend) return; const p = pend; pend = null; clearTimeout(p.timer);
+        synth = true; try { cv.dispatchEvent(new PointerEvent("pointercancel", { pointerId: p.id, clientX: -9999, clientY: -9999, bubbles: true })); } catch (er) {} synth = false;
+        st = { id: p.id, x: p.x, y: p.y };
+        stickEl.classList.add("on", "live"); stickEl.style.transform = `translate(${p.x}px, ${p.y}px)`; stickSet(p.last || { clientX: p.x, clientY: p.y });
+        if (D.auto) { D.auto = null; render(true); }
+        if (D.firstDrive) firstDrive();
+      };
       cv.addEventListener("pointerdown", (e) => {
-        if (!api.on || drvT() < 0.5) return;
+        if (!api.on) return;
+        if (screenPhone() && st) { e.stopImmediatePropagation(); return; } // (a second finger while steering: nobody's)
+        if (screenPhone()) {
+          if (pend) { clearTimeout(pend.timer); pend = null; return; } // a second finger: the map's pinch
+          if (e.clientY < VP.h * 0.4) return;
+          { const cs = getComputedStyle(root); if (cs.visibility === "hidden" || +cs.opacity < 0.05) return; } // (a full card: no unseen stick)
+          pend = { id: e.pointerId, x: e.clientX, y: e.clientY, timer: setTimeout(stickGo, 180) };
+          return; // (the map has the press too: a tap stays a tap)
+        }
+        if (drvT() < 0.5) return;
         if (phoneStreet()) {
           if (e.clientY < VP.h * 0.45) return; // the upper half stays the map's (taps, the toggle); beta 2.9: a card (compact, right) leaves it free
           { const cs = getComputedStyle(root); if (cs.visibility === "hidden" || +cs.opacity < 0.05) return; } // beta 3.59 r222 (P0): the controls step aside for a full card (Olari 9, a chapter, the XP log; nav2.css): no unseen stick behind it
@@ -2243,6 +2268,7 @@
         sw = { id: e.pointerId, x: e.clientX, y: e.clientY, k: null };
       }, true);
       cv.addEventListener("pointermove", (e) => {
+        if (pend && e.pointerId === pend.id) { e.stopImmediatePropagation(); pend.last = { clientX: e.clientX, clientY: e.clientY }; if (Math.hypot(e.clientX - pend.x, e.clientY - pend.y) > 12) stickGo(); return; }
         if (st && e.pointerId === st.id) { e.stopImmediatePropagation(); stickSet(e); return; }
         if (!sw || e.pointerId !== sw.id) return;
         e.stopImmediatePropagation();
@@ -2253,8 +2279,10 @@
         keyDown(sw.k);
         if (sw.k === "l" || sw.k === "r") keyUp(sw.k);
       }, true);
-      const stickEnd = (e) => { if (!st || e.pointerId !== st.id) return false; st = null; D.stick = null; stickEl.classList.remove("on"); stickHome(); return true; };
-      const end = (e) => { if (stickEnd(e)) { e.stopImmediatePropagation(); return; } if (!sw || e.pointerId !== sw.id) return; e.stopImmediatePropagation(); if (sw.k === "u" || sw.k === "d") keyUp(sw.k); sw = null; };
+      let liveT = 0;
+      const stickEnd = (e) => { if (!st || e.pointerId !== st.id) return false; st = null; D.stick = null; stickEl.classList.remove("on"); clearTimeout(liveT);
+        if (stickEl.classList.contains("live") && !phoneStreet()) liveT = setTimeout(() => { stickEl.classList.remove("live"); if (!st) stickHome(); }, 260); else { stickEl.classList.remove("live"); stickHome(); } return true; }; // (r306: in Bird's eye it fades where it was)
+      const end = (e) => { if (synth) return; if (pend && e.pointerId === pend.id) { clearTimeout(pend.timer); pend = null; return; } if (stickEnd(e)) { e.stopImmediatePropagation(); return; } if (!sw || e.pointerId !== sw.id) return; e.stopImmediatePropagation(); if (sw.k === "u" || sw.k === "d") keyUp(sw.k); sw = null; };
       cv.addEventListener("pointerup", end, true); cv.addEventListener("pointercancel", end, true);
       driftB.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); driftB.setPointerCapture?.(e.pointerId); D.keys.h = true; driftB.classList.add("on"); });
       for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) driftB.addEventListener(ev, () => { D.keys.h = false; driftB.classList.remove("on"); });
