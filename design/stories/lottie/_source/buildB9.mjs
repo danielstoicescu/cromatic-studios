@@ -23,6 +23,7 @@ import { grain, grainPlates } from "./kit2.mjs";
 import { SEG, BARS, DUR } from "./shotsB8.mjs";
 import { loadCards, drawCard } from "../../cards/cards.mjs";
 const KC = await loadCards();
+const PC = !!process.env.PC; // (B9-pc: the GTA 2 world's tag reads "Polite City" (legal), nothing else changes -> story-b9-en-pc.json)
 const here = path.dirname(fileURLToPath(import.meta.url)), OUT = path.resolve(here, "..");
 const IDX = JSON.parse(fs.readFileSync(path.join(OUT, "frames/b9/index.json"), "utf8"));
 const PL = {}; await grainPlates(PL);
@@ -37,7 +38,7 @@ function story() {
   drawCard(Cm, card("b4-end"), SPAN);
   grain(Cm, asset, { o: 26, F });
   const OPEN = Math.round((BARS.hold + BARS.open) * 30); // (the cards wait for the bars; cues are in 30 fps frames)
-  for (const w of ["monument", "nightlife", "underwater", "circuit", "sketch", "orchid", "gta2", "riso", "ghibli"]) { const r = drawCard(Cm, card(`b2-${w}`, { in: w === "monument" ? `monument+${OPEN}` : `${w}+3`, out: `${w}.end-7` }), SPAN); for (const L of r.layers) L.op = Math.min(L.op, SPAN[w][1]); }
+  for (const w of ["monument", "nightlife", "underwater", "circuit", "sketch", "orchid", "gta2", "riso", "ghibli"]) { const r = drawCard(Cm, card(PC && w === "gta2" ? "b2-politecity" : `b2-${w}`, { in: w === "monument" ? `monument+${OPEN}` : `${w}+3`, out: `${w}.end-7` }), SPAN); for (const L of r.layers) L.op = Math.min(L.op, SPAN[w][1]); }
   drawCard(Cm, card("b1-street", { in: `monument+${OPEN + 3}`, lineStagger: 40, pillIn: "nightlife+7", swaps: ["underwater+5", "circuit+5", "sketch+5", "orchid+5", "gta2+5", "riso+5", "ghibli+5"], out: "ghibli.end-6" }), SPAN);
   drawCard(Cm, card("b3-end", { out: "end+56" }), SPAN);
   Cm.shape("vignette", [group("v", [rect([W * 1.2, H * 1.2], [W / 2, H / 2]), gfill({ type: 2, s: [W / 2, H * 0.5], e: [W * 1.08, H * 0.5], stops: [[0, "#000000"], [1, "#000000"]], alphas: [[0, 0], [0.6, 0], [1, 0.2]] })])], { ip: 0, op: F }); // (very faint: 0.2)
@@ -60,5 +61,5 @@ function story() {
   return j;
 }
 const j = story(), s = JSON.stringify(j);
-fs.writeFileSync(path.join(OUT, "story-b9-en.json"), s);
+fs.writeFileSync(path.join(OUT, PC ? "story-b9-en-pc.json" : "story-b9-en.json"), s);
 console.log("story-b9-en", (s.length / 1024).toFixed(1), "KB", j.layers.length, "layers", j.op, "frames");
