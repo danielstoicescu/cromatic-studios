@@ -25,7 +25,8 @@ const MAIL_FROM = process.env.MAIL_FROM || "Cromatic Air <hi@cromaticstudios.com
 const TYPES = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
   ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp",
-  ".gif": "image/gif", ".svg": "image/svg+xml", ".mp4": "video/mp4", ".webm": "video/webm", ".txt": "text/plain; charset=utf-8",
+  ".gif": "image/gif", ".svg": "image/svg+xml", ".mp4": "video/mp4", ".webm": "video/webm", ".m4a": "audio/mp4", // polite-city: the radio's AAC fallback
+  ".txt": "text/plain; charset=utf-8",
   ".xml": "application/xml; charset=utf-8", ".ico": "image/x-icon", ".webmanifest": "application/manifest+json", ".woff2": "font/woff2"
 };
 const COMPRESS = new Set([".html", ".js", ".css", ".svg", ".json", ".txt", ".xml", ".webmanifest", ".ico"]);
