@@ -21,7 +21,7 @@ const sharp = createRequire(import.meta.url)(path.resolve(here, "../../../node_m
 // the square atlas: each world's street (its Multiverse preview, a square from under its top), 3 x 3 cells of 150 px,
 // each darkened toward its edge as the espresso round a picture in a cup (the radial edge the coffee had as a layer)
 async function squareAtlas() {
-  const ids = ["monument", "nightlife", "ghibli", "sketch", "circuit", "orchid", "underwater", "gta2", "riso"];
+  const ids = ["monument", "nightlife", "ghibli", "sketch", "circuit", "orchid", "underwater", "polite", "riso"];
   const r = 75 / 1.04;
   const vig = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150"><defs><radialGradient id="v" cx="75" cy="75" r="${r}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#1c0e07" stop-opacity="0"/><stop offset="0.62" stop-color="#1c0e07" stop-opacity="0.05"/><stop offset="0.88" stop-color="#1c0e07" stop-opacity="0.35"/><stop offset="1" stop-color="#1c0e07" stop-opacity="0.7"/></radialGradient></defs><rect width="150" height="150" fill="url(#v)"/></svg>`);
   const tiles = await Promise.all(ids.map(async (id) => sharp(await sharp(path.join(here, "assets/worlds", id + ".jpg")).extract({ left: 0, top: 40, width: 324, height: 324 }).resize(150, 150).toBuffer()).composite([{ input: vig }]).toBuffer()));

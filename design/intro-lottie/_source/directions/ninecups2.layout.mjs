@@ -11,12 +11,12 @@ export const TILT_TOP = Math.PI / 2; // looking straight down at the cup (its ax
 export const DIAMOND_Y = -7;
 // the designs (tools/bake2.html DESIGNS): 0 yellow, 1 blue inside, 2 zigzag, 3 stripes, 4 pink (the original five),
 // 5 dots, 6 lilac, 7 bands, 8 dipped (new, in their grammar). The worlds (WORLD_IDS order): 0 Cromatic, 1 Night Mode,
-// 2 Ghib.ly, 3 Sketchbook, 4 Race Day, 5 Sakura, 6 Underwater, 7 GTA 2, 8 Risograph
+// 2 Ghib.ly, 3 Sketchbook, 4 Race Day, 5 Sakura, 6 Underwater, 7 Polite City, 8 Risograph
 const PLACES = [
   // [i, j] on the lattice's diagonals (row = i + j), design, world, the handle's angle (deg) when the cups stand up
   // (handle angles on the turn's own 15-degree keys, so a cup's tilt hands over to its turn exactly)
   [[0, 0], 6, 8, 15], //  top: lilac, Risograph
-  [[1, 0], 5, 7, -30], //  dots, GTA 2
+  [[1, 0], 5, 7, -30], //  dots, Polite City
   [[0, 1], 2, 3, 45], //  zigzag, Sketchbook
   [[2, 0], 7, 4, 30], //  bands, Race Day
   [[1, 1], 0, 0, 15], //  the middle: yellow, Cromatic (the cup that stays)

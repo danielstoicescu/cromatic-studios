@@ -20,7 +20,7 @@ const require = createRequire(import.meta.url);
 const sharp = require(path.resolve(here, "../../../node_modules/sharp"));
 // the square atlas: each world's street (the Multiverse preview, a square from under its top), 3 x 3 cells of 150 px
 async function squareAtlas() {
-  const ids = ["monument", "nightlife", "ghibli", "sketch", "circuit", "orchid", "underwater", "gta2", "riso"];
+  const ids = ["monument", "nightlife", "ghibli", "sketch", "circuit", "orchid", "underwater", "polite", "riso"];
   const tiles = await Promise.all(ids.map((id) => sharp(path.join(here, "assets/worlds", id + ".jpg")).extract({ left: 0, top: 40, width: 324, height: 324 }).resize(150, 150).toBuffer()));
   return sharp({ create: { width: 450, height: 450, channels: 3, background: "#ffffff" } }).composite(tiles.map((b, i) => ({ input: b, left: (i % 3) * 150, top: Math.floor(i / 3) * 150 }))).webp({ quality: 62, effort: 6 }).toBuffer();
 }

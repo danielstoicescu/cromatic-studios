@@ -3328,8 +3328,6 @@ body:not(.map-mode) .road-svc { display: none; }
 /* r132: on a phone, three pictures in one row: Get shit done, the coffee, and the head of morale */
 /* mugs: the intro's patterned ones */
 .olari-cup { aspect-ratio: 120 / 110; }
-/* GTA2 has no place on the map */
-body.map-mode .wt[data-scheme="gta2"] { display: none; }
 /* after the flight */
 body.flight-done .map-top, body.flight-done .map-dock, body.flight-done .map-zoom, body.flight-done .map-pins { display: none !important; }
 .flight-end { position: fixed; z-index: 61; left: 50%; top: 50%; bottom: auto; translate: -50% -50%; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; width: min(560px, calc(100vw - 32px)); animation: fadeUp .6s .2s both; }
@@ -3655,8 +3653,7 @@ body.kz-intro .kz-veil { -webkit-backdrop-filter: none; backdrop-filter: none; }
 /* r129: the drive-mode project pills (Artisan, Slow Coffee, Steam, Craft…) have no business on the map:
    on phones the strip (z 22) sat over the boarding pass and a tap on the form opened Artisan */
 body.map-mode .poi-rail { display: none !important; }
-/* r129: GTA 2 is a drive-mode bonus world */
-body.map-mode .wt[data-scheme="gta2"] { display: none; }
+/* r303: the bonus world (Polite City) has its tile on the map too: see .wt-bonus below (the r129 rule that hid it there is gone) */
 /* r129: "+50 other clients" floats over its glowing quarter: grey, no stem, no dot, a slow bob */
 .map-pin.float .mp-stem, .map-pin.float .mp-dot { display: none !important; }
 .map-pin.float .mp-label { background: #ecebe7 !important; color: #1a1a1a !important; animation: pinFloat 3.2s ease-in-out infinite; }
@@ -4305,6 +4302,45 @@ body.menu-open .drive-pins { opacity: 0 !important; pointer-events: none !import
 .theme-menu .wt-check, .map-rides .wt-check { width: 20px; height: 20px; font-size: 11px; border: 1px solid var(--st-ink, #141414); background: var(--accent); color: #0a0a0a; }
 .theme-menu .wt-check { left: 48px; right: auto; top: 3px; }
 .theme-menu .wt-foot { padding: 10px 0 2px; font-size: 8.5px; }
+/* r303 (Daniel: "marked differently in the Multiverse window"): the bonus world, Polite City. Not one more row: a night
+   tile, last and across both columns, ink outline and the print offset, the beacon pill (coral | blue, the world's mark)
+   with a slow red/blue glow, a "Bonus · after dark" label, the name in the world's loud type (italic, tight). In map
+   and drive mode alike; reduced motion keeps it still */
+.theme-menu .wt.wt-bonus { order: 99; grid-column: 1 / -1; grid-template-columns: 84px minmax(0, 1fr) auto; grid-template-areas: "img meta beacon"; column-gap: 14px;
+  position: relative; overflow: hidden; isolation: isolate; margin: 8px 2px 4px; padding: 10px 14px 10px 10px; border-radius: 18px; color: #F2F2F2;
+  background: radial-gradient(130% 160% at 0% 0%, #2a3340 0%, #14171b 62%) !important; border: 2.5px solid #141414 !important; box-shadow: 4px 5px 0 #141414; transition: transform .25s var(--eoq), box-shadow .25s; }
+.theme-menu .wt.wt-bonus::before, .theme-menu .wt.wt-bonus::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0; animation: wtBeacon 2.4s ease-in-out infinite; }
+.theme-menu .wt.wt-bonus::before { background: radial-gradient(55% 130% at 78% 50%, rgba(246, 83, 66, .34), transparent 72%); }
+.theme-menu .wt.wt-bonus::after { background: radial-gradient(55% 130% at 92% 50%, rgba(17, 155, 254, .34), transparent 72%); animation-delay: -1.2s; }
+@keyframes wtBeacon { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+.theme-menu .wt.wt-bonus:hover { transform: translateY(-2px); box-shadow: 5px 7px 0 #141414; }
+.theme-menu .wt.wt-bonus.on, .theme-menu .wt.wt-bonus.on:hover { border-color: #141414 !important; box-shadow: 0 0 0 3px #FED012, 4px 5px 0 3px #141414; }
+.theme-menu .wt.wt-bonus:focus-visible { outline: 3px solid #FED012; outline-offset: 2px; }
+.theme-menu .wt-bonus .wt-img { width: 84px; height: 62px; border-radius: 13px; border: 2px solid #F2F2F2; box-shadow: 0 0 0 2px #141414; }
+.theme-menu .wt-bonus .wt-meta b { display: inline-block; font: italic 900 23px/1 CromaticSans, sans-serif; letter-spacing: -.04em; color: #F2F2F2; transform: skewX(-8deg) scaleX(.9); transform-origin: 0 100%;
+  -webkit-text-stroke: 1.5px #141414; paint-order: stroke fill; text-shadow: 3px 3px 0 #000; }
+.theme-menu .wt-bonus .wt-meta small { color: #F2F2F2; opacity: .74; -webkit-line-clamp: 2; }
+.theme-menu .wt-bonus .wt-sw { display: none; }
+.theme-menu .wt-bonus .wt-check { left: 82px; top: 2px; }
+.wt-beacon { display: none; }
+.theme-menu .wt-bonus .wt-beacon { grid-area: beacon; display: flex; flex-direction: column; align-items: flex-end; gap: 7px; }
+.wt-beacon i { display: block; width: 46px; height: 18px; border-radius: 999px; box-sizing: border-box; border: 2.5px solid #141414; background: linear-gradient(90deg, #F65342 50%, #119BFE 50%);
+  box-shadow: 0 0 0 2px #F2F2F2; animation: wtPill 1.2s ease-in-out infinite alternate; }
+@keyframes wtPill { from { box-shadow: 0 0 0 2px #F2F2F2, -9px 0 16px rgba(246, 83, 66, .8); } to { box-shadow: 0 0 0 2px #F2F2F2, 9px 0 16px rgba(17, 155, 254, .8); } }
+.wt-beacon em { font-style: normal; font-size: 9.5px; font-weight: 700; letter-spacing: .16em; line-height: 1; color: #FED012; background: #141414; border: 1.5px solid #F2F2F2; padding: 5px 9px 4px; border-radius: 999px; white-space: nowrap; }
+@media (max-width: 719px) {
+  .theme-menu .wt.wt-bonus { grid-template-columns: 62px minmax(0, 1fr) auto; grid-template-areas: "img meta beacon"; grid-template-rows: auto; padding: 8px 10px 8px 8px; column-gap: 10px; margin-top: 6px; }
+  .theme-menu .wt-bonus .wt-img { width: 62px; height: 48px; border-radius: 11px; }
+  .theme-menu .wt-bonus .wt-meta { align-self: center; }
+  .theme-menu .wt-bonus .wt-meta b { font-size: 20px; }
+  .theme-menu .wt-bonus .wt-check { left: 58px; }
+  .wt-beacon i { width: 38px; height: 15px; border-width: 2px; }
+  .wt-beacon em { font-size: 8.5px; padding: 4px 7px 3px; letter-spacing: .12em; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-menu .wt.wt-bonus::before, .theme-menu .wt.wt-bonus::after, .wt-beacon i { animation: none; }
+  .theme-menu .wt.wt-bonus::before { opacity: .7; }
+}
 /* rides: the same tiles, three across; each vehicle sits on a soft light disc so dark cars read on dark worlds */
 .map-rides .mrs-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; overflow-y: auto; min-height: 0; margin: 0 -4px; padding: 2px 4px; scrollbar-width: thin; }
 .map-rides .mrs-v { position: relative; gap: 6px; padding: 10px 6px 11px; border-radius: 14px; background: color-mix(in srgb, var(--fg) 4%, transparent);
@@ -4956,8 +4992,8 @@ body.scheme-sketch .map-card.mcd-game { background: #170f19 !important; border: 
 @media (max-width: 720px) { .map-card.mcd-game .mcd-img img { object-position: 50% 0; } .map-card.mcd-game .mg-tm { bottom: auto; top: 8px; right: 8px; } }
 .mcd-fight .mf-txt { min-width: 0; max-width: 100%; height: auto; flex: 0 1 auto; }
 /* the phone's compact Street card (r179): the words take the whole button, no glove */
-body.n2-phone.nav2-street .map-card .mcd-fight { min-height: 44px; padding: 7px 10px 9px !important; }
-body.n2-phone.nav2-street .map-card .mcd-fight .mf-glove { display: none; }
+body.n2-phone:is(.nav2-street, .nav2-top) .map-card .mcd-fight { min-height: 44px; padding: 7px 10px 9px !important; }
+body.n2-phone:is(.nav2-street, .nav2-top) .map-card .mcd-fight .mf-glove { display: none; }
 /* beta 3.76: Sketchbook is the notebook (after the hand-drawn chess game on notebook paper Daniel picked): the interface
    is drawn on the same sheet as the city. Round 2 (Daniel): the sheet almost white, the ink a dark indigo, and the site's
    own type (no handwriting fonts), coloured like the pencils (indigo, terracotta). Thin ink outlines of one weight, a

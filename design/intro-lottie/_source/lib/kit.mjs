@@ -14,7 +14,7 @@ export const C = {
 // the nine worlds (src/app.js SCHEMES), each by the colour it is remembered by
 export const WORLDS = [
   ["Cromatic", "#FED012"], ["Night Mode", "#121D3A"], ["Ghib.ly", "#6FBF73"], ["Sketchbook", "#FFFFFF"], ["Race Day", "#E10600"],
-  ["Sakura", "#F08BB4"], ["Underwater", "#3DE0D0"], ["GTA 2", "#3A3F45"], ["Risograph", "#1D3F8F"]
+  ["Sakura", "#F08BB4"], ["Underwater", "#3DE0D0"], ["Polite City", "#14171B"], ["Risograph", "#1D3F8F"]
 ];
 // the worlds' grounds for the city direction: [ground, road, ink]; the last is the Cromatic world the map opens on
 export const WORLD_GROUNDS = [

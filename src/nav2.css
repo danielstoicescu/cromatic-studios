@@ -3,7 +3,7 @@
 body.nav2.map-mode:not(.kz-intro) .nav2-ui { display: block; }
 body.nav2 .map-dock { display: none !important; }
 body.nav2.nav2-street :is(.map-pins, .svc-house) { opacity: 0; pointer-events: none; transition: opacity .3s; }
-body.nav2.nav2-street .map-zoom { display: none; }
+body.nav2:is(.nav2-street, .nav2-top) .map-zoom { display: none; } /* polite-city: the top-down view zooms with the wheel */
 body.nav2 .map-zoom { bottom: 206px; }
 @media (min-width: 721px) { body.nav2 .map-card.cr { bottom: 206px !important; right: 92px !important; } body.nav2 .map-card.cl { bottom: 96px !important; } }
 
@@ -228,12 +228,12 @@ body.olari-open .nav2-ui .n2-panel { opacity: 0; translate: 0 14px; pointer-even
 .n2-taphint { display: none; }
 /* beta 2.9: phone rules key on body.n2-phone (set by nav2: a narrow screen, or a phone held sideways) */
 body.n2-phone .n2-panel { display: none !important; }
-body.n2-phone:not(.nav2-street) .n2-pad { display: none; }
+body.n2-phone:not(.nav2-street):not(.nav2-top) .n2-pad { display: none; }
 /* beta 3.52 r219: nor during the phone's espresso moment at Two Minutes (one thing on screen at a time) */
 body.n2-phone.tm-moment .n2-taphint { display: none !important; }
 /* beta 3.46 r215 (Daniel, QA pass): the tap hint is not shown over the Olari 9 card (it covered its e-mail button on a phone) */
-body.n2-phone:not(.nav2-street):not(.n2-tour):not(.n2-driving-auto):not(.n2-card):not(.olari-open) .n2-taphint { display: block; position: fixed; z-index: 24; right: 12px; bottom: calc(30px + env(safe-area-inset-bottom, 0px)); max-width: 190px; text-align: center; font-size: 10px; letter-spacing: .14em; font-weight: 700; line-height: 1.35; padding: 9px 14px; border-radius: 999px; background: #fff; color: #141414; border: 2px solid #141414; box-shadow: 2px 3px 0 #141414; pointer-events: none; }
-body.n2-phone:not(.nav2-street) .map-zoom { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+body.n2-phone:not(.nav2-street):not(.nav2-top):not(.n2-tour):not(.n2-driving-auto):not(.n2-card):not(.olari-open) .n2-taphint { display: block; position: fixed; z-index: 24; right: 12px; bottom: calc(30px + env(safe-area-inset-bottom, 0px)); max-width: 190px; text-align: center; font-size: 10px; letter-spacing: .14em; font-weight: 700; line-height: 1.35; padding: 9px 14px; border-radius: 999px; background: #fff; color: #141414; border: 2px solid #141414; box-shadow: 2px 3px 0 #141414; pointer-events: none; }
+body.n2-phone:not(.nav2-street):not(.nav2-top) .map-zoom { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 
 /* beta 2.6 (Daniel): the Ride button's ride fills its thumbnail; the Multiverse button is the world you are in (its
    picture across the whole button, the rainbow outline kept), with just "Multiverse" on it */
@@ -266,22 +266,22 @@ body.n2-phone .nav2-ui .n2-views { top: var(--n2top, 112px); bottom: auto; left:
 body.n2-phone .nav2-ui .n2-views button { height: 44px; padding: 0 14px 0 11px; font-size: 13px; border-radius: 999px; }
 body.n2-phone .nav2-ui .n2-pad { top: calc(var(--n2top, 112px) + 64px); bottom: auto; right: auto; left: 50%; translate: -50% 0; }
 body.n2-phone.n2-card .nav2-ui .n2-views { opacity: 1; pointer-events: auto; }
-body.n2-phone.nav2-street .n2-stick { display: block; position: fixed; left: 0; top: 0; width: 0; height: 0; z-index: 23; pointer-events: none; }
+body.n2-phone:is(.nav2-street, .nav2-top) .n2-stick { display: block; position: fixed; left: 0; top: 0; width: 0; height: 0; z-index: 23; pointer-events: none; }
 .n2-ring { position: absolute; left: -64px; top: -64px; width: 128px; height: 128px; box-sizing: border-box; border-radius: 50%; background: rgba(255, 248, 234, .78); border: 2.5px solid #141414; box-shadow: 2px 3px 0 rgba(20, 20, 20, .85), inset 0 0 0 10px rgba(254, 208, 18, .14); opacity: .5; transition: opacity .2s; }
 .n2-knob { position: absolute; left: 0; top: 0; width: 56px; height: 56px; box-sizing: border-box; border-radius: 50%; background: #FED012; border: 2.5px solid #141414; box-shadow: 2px 4px 0 #141414, 0 8px 18px rgba(0, 0, 0, .18); transform: translate(-50%, -50%); opacity: .65; }
 .n2-stick.on .n2-ring, .n2-stick.on .n2-knob { opacity: 1; }
-body.n2-phone.nav2-street:not(.n2-card) .n2-driftb { display: block; position: fixed; z-index: 24; right: 16px; bottom: calc(44px + env(safe-area-inset-bottom, 0px)); width: 66px; height: 66px; border-radius: 50%; background: #fff; color: #141414; border: 2.5px solid #141414; box-shadow: 2px 3px 0 #141414; font-size: 11px; font-weight: 700; letter-spacing: .1em; touch-action: none; -webkit-tap-highlight-color: transparent; }
+body.n2-phone:is(.nav2-street, .nav2-top):not(.n2-card) .n2-driftb { display: block; position: fixed; z-index: 24; right: 16px; bottom: calc(44px + env(safe-area-inset-bottom, 0px)); width: 66px; height: 66px; border-radius: 50%; background: #fff; color: #141414; border: 2.5px solid #141414; box-shadow: 2px 3px 0 #141414; font-size: 11px; font-weight: 700; letter-spacing: .1em; touch-action: none; -webkit-tap-highlight-color: transparent; }
 .n2-driftb.on { background: #FED012; translate: 0 2px; box-shadow: 1px 1px 0 #141414; }
 body.n2-phone .n2-toast { top: calc(var(--n2top, 112px) + 110px); }
 /* the card, in the phone's Street view: compact and squarer, bottom right, no photo; Go deeper and × stay 44 px */
-body.n2-phone.nav2-street .map-card, body.n2-phone.nav2-street .map-card.cr { left: auto !important; right: 10px !important; bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important; top: auto !important; width: min(214px, 54vw) !important; max-width: none !important; translate: none !important; }
-body.n2-phone.nav2-street .map-card .mcd-img { display: none !important; }
-body.n2-phone.nav2-street .map-card .mcd-body { padding: 12px 12px 12px !important; }
-body.n2-phone.nav2-street .map-card .mcd-body p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12.5px !important; margin: 6px 0 10px !important; }
-body.n2-phone.nav2-street .map-card .mcd-title { font-size: 17px !important; }
-body.n2-phone.nav2-street .map-card .mcd-actions { gap: 8px !important; }
-body.n2-phone.nav2-street .map-card .mcd-open { min-height: 44px; flex: 1 1 auto; min-width: 0; padding: 0 12px !important; font-size: 12px !important; }
-body.n2-phone.nav2-street .map-card .mcd-close { width: 44px !important; height: 44px !important; flex: 0 0 44px; }
+body.n2-phone:is(.nav2-street, .nav2-top) .map-card, body.n2-phone:is(.nav2-street, .nav2-top) .map-card.cr { left: auto !important; right: 10px !important; bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important; top: auto !important; width: min(214px, 54vw) !important; max-width: none !important; translate: none !important; }
+body.n2-phone:is(.nav2-street, .nav2-top) .map-card .mcd-img { display: none !important; }
+body.n2-phone:is(.nav2-street, .nav2-top) .map-card .mcd-body { padding: 12px 12px 12px !important; }
+body.n2-phone:is(.nav2-street, .nav2-top) .map-card .mcd-body p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12.5px !important; margin: 6px 0 10px !important; }
+body.n2-phone:is(.nav2-street, .nav2-top) .map-card .mcd-title { font-size: 17px !important; }
+body.n2-phone:is(.nav2-street, .nav2-top) .map-card .mcd-actions { gap: 8px !important; }
+body.n2-phone:is(.nav2-street, .nav2-top) .map-card .mcd-open { min-height: 44px; flex: 1 1 auto; min-width: 0; padding: 0 12px !important; font-size: 12px !important; }
+body.n2-phone:is(.nav2-street, .nav2-top) .map-card .mcd-close { width: 44px !important; height: 44px !important; flex: 0 0 44px; }
 
 /* beta 2.7: the police cooldown pill, with its 5 s ring */
 .n2-cop { position: fixed; z-index: 31; left: 50%; top: calc(150px + env(safe-area-inset-top, 0px)); translate: -50% -8px; display: flex; align-items: center; gap: 9px; padding: 6px 14px 6px 6px; border-radius: 999px; background: #fff; color: #141414; border: 2.5px solid #141414; box-shadow: 2px 3px 0 #141414; opacity: 0; pointer-events: none; transition: opacity .25s, translate .25s; --k: 1; }
@@ -410,17 +410,21 @@ body:has(.crew-panel:not(.hidden), .human-panel:not(.hidden), .map-rides:not(.hi
 body.n2-phone .map-dial { right: auto; left: 50%; translate: -50% 10px; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); width: 72px; height: 72px; }
 body.n2-phone .map-dial.on { translate: -50% 0; }
 body.n2-phone.n2-card .map-dial, body.n2-phone:has(.map-card:not(.hidden)) .map-dial { opacity: 0 !important; } /* a card has the bottom */
-body.n2-phone:not(.nav2-street) .map-dial { left: calc(16px + env(safe-area-inset-left, 0px)); translate: 0 10px; } /* Bird's eye on a phone: no stick, the "tap the road" pill sits bottom right */
-body.n2-phone:not(.nav2-street) .map-dial.on { translate: 0 0; }
+body.n2-phone:not(.nav2-street):not(.nav2-top) .map-dial { left: calc(16px + env(safe-area-inset-left, 0px)); translate: 0 10px; } /* Bird's eye on a phone: no stick, the "tap the road" pill sits bottom right */
+body.n2-phone:not(.nav2-street):not(.nav2-top) .map-dial.on { translate: 0 0; }
 body.n2-phone .map-dial .dash-dial { border-width: 2px; box-shadow: 2px 3px 0 #141414; }
 body.n2-phone .map-dial .dd-ticks { display: none; }
 body.n2-phone .map-dial .dd-num { top: 21px; font-size: 22px; }
 body.n2-phone .map-dial .dd-num.d3 { top: 23px; font-size: 19px; }
 body.n2-phone .map-dial .dd-unit { top: 46px; font-size: 7px; }
 @media (orientation: landscape) and (pointer: coarse) and (max-height: 520px) { .map-dial { display: none !important; } } /* a phone held sideways: the "turn it upright" card */
-@media (prefers-reduced-motion: reduce) { .map-dial { transition: opacity .2s ease; translate: none !important; } body.n2-phone .map-dial { translate: -50% 0 !important; } body.n2-phone:not(.nav2-street) .map-dial { translate: none !important; } }
+@media (prefers-reduced-motion: reduce) { .map-dial { transition: opacity .2s ease; translate: none !important; } body.n2-phone .map-dial { translate: -50% 0 !important; } body.n2-phone:not(.nav2-street):not(.nav2-top) .map-dial { translate: none !important; } }
 /* Sketchbook: the notebook's bones (a piece of the sheet, an ink line round it, the pencil's ochre on the arc) */
 body.scheme-sketch .map-dial .dash-dial { background: var(--nb-paper2) !important; border: 1.8px solid var(--nb-ink) !important; box-shadow: 1px 2px 0 rgba(46,50,102,.18) !important; border-radius: 52% 48% 50% 50% / 48% 53% 47% 52% !important; }
 body.scheme-sketch .map-dial .dd-arc { stroke: var(--nb-ochre); }
 body.scheme-sketch .map-dial :is(.dd-num, .dd-unit) { color: var(--nb-ink) !important; }
 body.scheme-sketch .map-dial :is(.dd-ticks, .dd-needle) line { stroke: var(--nb-ink); }
+
+/* polite-city: the Top-down view's button (the 4th view). On a phone it is an icon, like the Postcard */
+body.n2-phone .nav2-ui .n2-views button[data-v="top"] span { display: none; }
+body.n2-phone .nav2-ui .n2-views button[data-v="top"] { padding: 0 12px; }

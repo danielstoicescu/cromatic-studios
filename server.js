@@ -25,9 +25,13 @@ const MAIL_FROM = process.env.MAIL_FROM || "Cromatic Air <hi@cromaticstudios.com
 const TYPES = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
   ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp",
-  ".gif": "image/gif", ".svg": "image/svg+xml", ".mp4": "video/mp4", ".webm": "video/webm", ".txt": "text/plain; charset=utf-8",
+  ".gif": "image/gif", ".svg": "image/svg+xml", ".mp4": "video/mp4", ".webm": "video/webm", ".m4a": "audio/mp4", // polite-city: the radio's AAC fallback
+  ".mp3": "audio/mpeg", ".ogg": "audio/ogg", ".opus": "audio/ogg", ".avif": "image/avif", // r303: audio types; .avif (beta's TASK-015 pictures; live has none, so a type only)
+  ".txt": "text/plain; charset=utf-8",
   ".xml": "application/xml; charset=utf-8", ".ico": "image/x-icon", ".webmanifest": "application/manifest+json", ".woff2": "font/woff2"
 };
+// r303: Polite City's radio (/assets/polite-radio/audio/*.webm) is Opus audio in WebM: audio/webm, not the films' video/webm
+const typeFor = (url, ext) => (ext === ".webm" && url.includes("/polite-radio/") ? "audio/webm" : TYPES[ext]);
 const COMPRESS = new Set([".html", ".js", ".css", ".svg", ".json", ".txt", ".xml", ".webmanifest", ".ico"]);
 
 // everything is small enough to hold in memory, compressed once at start
@@ -40,9 +44,9 @@ const files = new Map();
     const ext = extname(p).toLowerCase(), url = "/" + p.slice(ROOT.length + 1).split("\\").join("/");
     // r134h: big files (the old site's case-study PDF, long films) stay on disk and stream; the rest lives in memory
     const st = statSync(p);
-    if (st.size > 8e6 && !COMPRESS.has(ext)) { files.set(url, { disk: p, size: st.size, type: TYPES[ext] || "application/octet-stream", immutable: url.startsWith("/assets/"), etag: `"${st.size.toString(36)}-${Math.round(st.mtimeMs).toString(36)}"` }); continue; }
+    if (st.size > 8e6 && !COMPRESS.has(ext)) { files.set(url, { disk: p, size: st.size, type: typeFor(url, ext) || "application/octet-stream", immutable: url.startsWith("/assets/"), etag: `"${st.size.toString(36)}-${Math.round(st.mtimeMs).toString(36)}"` }); continue; }
     const buf = readFileSync(p);
-    const f = { buf, type: TYPES[ext] || "application/octet-stream", immutable: url.startsWith("/assets/"), etag: `"${createHash("sha1").update(buf).digest("base64url").slice(0, 16)}"` };
+    const f = { buf, type: typeFor(url, ext) || "application/octet-stream", immutable: url.startsWith("/assets/"), etag: `"${createHash("sha1").update(buf).digest("base64url").slice(0, 16)}"` };
     if (COMPRESS.has(ext)) {
       // precompressed by the build; fall back to compressing here if a variant is missing
       try { f.br = readFileSync(p + ".br"); } catch { f.br = zlib.brotliCompressSync(buf); }
@@ -320,7 +324,7 @@ function serveBeta(req, res) {
   if (!st) { full = join(BETA_ROOT, "404.html"); st = statOr(full); status = 404; }
   if (!st) { res.writeHead(503, { "Content-Type": "text/plain; charset=utf-8", "Retry-After": "120" }); return res.end("beta 2.0 is not built yet"); }
   const ext = extname(full).toLowerCase(), immutable = status === 200 && path.startsWith("/assets/");
-  const headers = { "Content-Type": TYPES[ext] || "application/octet-stream", "Cache-Control": immutable ? "public, max-age=31536000, immutable" : "no-cache", "X-Robots-Tag": "noindex, nofollow", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "SAMEORIGIN", "Vary": "Accept-Encoding" };
+  const headers = { "Content-Type": typeFor(path, ext) || "application/octet-stream", "Cache-Control": immutable ? "public, max-age=31536000, immutable" : "no-cache", "X-Robots-Tag": "noindex, nofollow", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "SAMEORIGIN", "Vary": "Accept-Encoding" };
   let file = full, size = st.size;
   if (COMPRESS.has(ext)) {
     const ae = String(req.headers["accept-encoding"] || "");

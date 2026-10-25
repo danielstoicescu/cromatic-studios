@@ -24020,7 +24020,12 @@ void main() {
         { id: "circuit", n: "Race Day", bg: "#e9edf1", fg: "#111418", ac: "#e10600" },
         { id: "orchid", n: "Sakura", bg: "#fbeef3", fg: "#3a1e2c", ac: "#f08bb4" },
         { id: "underwater", n: "Underwater", bg: "#0b3b5c", fg: "#e8fbff", ac: "#3de0d0" },
-        { id: "gta2", n: "GTA 2", bonus: true, bg: "#1a1e22", fg: "#e8e6df", ac: "#e8c020" },
+        // Polite City: the after-dark twin of Cromatic City, in the old bonus world's slot (the slot keeps the other worlds'
+        // indexes). r303 (Daniel: live, "marked differently in the Multiverse"): bonus: its own tile in the Multiverse, the
+        // night tile with the beacon pill, last and full width, in drive and map mode; ?world=polite opens it too. "gta2"
+        // stays an alias (?world=gta2, __scheme("gta2")) for the stories pipeline (TASK-065). Its dressing, HUD, arrival and
+        // loading card live in src/polite.js (window.czPolite)
+        { id: "polite", n: "Polite City", bonus: true, bg: "#14171b", fg: "#F2F2F2", ac: "#FED012" },
         // r130: Risograph: the city printed in two inks, fluorescent pink and medium blue, halftone, a little off-register
         { id: "riso", n: "Risograph", bg: "#f3eee3", fg: "#1d3f8f", ac: "#ff48b0" }
       ];
@@ -24043,6 +24048,7 @@ void main() {
         { id: "blueprint", n: "Blueprint", proto: true, bg: "#123d6e", fg: "#e8f4ff", ac: "#9fdcff" }
       ];
       try { const w = new URLSearchParams(location.search).get("world"), a = PROTO_SCHEMES.find((x) => x.id === w); if (a && !SCHEMES.some((x) => x.id === w)) { SCHEMES.push(a); PROTO_WORLD = w; } } catch {}
+      try { const w = new URLSearchParams(location.search).get("world"); if (w === "polite" || w === "gta2") PROTO_WORLD = "polite"; } catch {} // Polite City: in SCHEMES already (gta2's slot), opened by URL
       VEHICLES = [
         // r138j (Daniel): the 1300 is the default ride, first in every list (r138f: it replaced the lava buggy)
         { id: "dacia1300", label: "1300" },
@@ -35164,7 +35170,7 @@ void main(){
         orchid: { f: [164.81, 207.65, 246.94, 311.13, 369.99], lp: 980, v: .85 },
         magma: { f: [73.42, 110, 146.83, 174.61, 220], lp: 440, v: 1.1 },
         underwater: { f: [77.78, 116.54, 155.56, 196, 233.08], lp: 360, v: 1.2, air: 2 },
-        gta2: { f: [110, 146.83, 164.81, 220, 246.94], lp: 700, v: .9 },
+        polite: { f: [110, 146.83, 164.81, 220, 246.94], lp: 700, v: .9 }, // (Polite City: Sorin's radio replaces this pad later, see window.__politeRadio)
         riso: { f: [196, 246.94, 293.66, 369.99, 440], lp: 900, v: .8 },
         sincity: { f: [98, 116.54, 146.83, 174.61, 233.08], lp: 480, v: 1 }
       };
@@ -35322,18 +35328,22 @@ void main(){
         <button class="wt-close" aria-label="Close">\u00D7</button>
       </div>`);
     themeMenu.querySelector(".wt-close").onclick = () => closeMenus();
-    const WORLD_VEH = { underwater: "sub", default: "dacia1300", monument: "dacia1300", ghibli: "dacia1300", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "dacia1300", orchid: "scooter", sincity: "cop", sketch: "dacia1300", riso: "scooter" }; // r138f, r138j: the 1300 where the van was the default
+    const WORLD_VEH = { underwater: "sub", default: "dacia1300", monument: "dacia1300", ghibli: "dacia1300", nightlife: "monopoly", polite: "dacia1300", circuit: "f1", magma: "dacia1300", orchid: "scooter", sincity: "cop", sketch: "dacia1300", riso: "scooter" }; // r138f, r138j: the 1300 where the van was the default
     const wtGrid = el("div", "wt-grid");
     themeMenu.appendChild(wtGrid);
-    const WORLD_SUB = { underwater: "Submarine, fish, floating things", default: "The city, as it is", monument: "Our city, as a pastel diorama", ghibli: "Hand-painted countryside", nightlife: "Orange & blue, a light drizzle", gta2: "Bonus \u00B7 drive mode \u00B7 top-down, retro", circuit: "Race day on the circuit", magma: "Lava tones", orchid: "Petals everywhere", sincity: "Black, white and one red", sketch: "Ink and crayon, drawn where you look", riso: "Two inks, slightly off-register" };
+    const WORLD_SUB = { underwater: "Submarine, fish, floating things", default: "The city, as it is", monument: "Our city, as a pastel diorama", ghibli: "Hand-painted countryside", nightlife: "Orange & blue, a light drizzle", polite: "Bonus world \u00B7 after dark \u00B7 wanted for good taste", circuit: "Race day on the circuit", magma: "Lava tones", orchid: "Petals everywhere", sincity: "Black, white and one red", sketch: "Ink and crayon, drawn where you look", riso: "Two inks, slightly off-register" };
     const themeRows = {};
     SCHEMES.forEach((s, i) => {
       if (s.proto) return; // worlds prototype: opened by URL only, no tile yet
-      const b = el("button", "wt", `
+      // r303: the bonus world (Polite City) is marked apart: a night tile, last and full width, the beacon pill (coral | blue)
+      // pulsing, its own label ("Bonus · after dark") and the name set in the world's loud type (styles.css .wt-bonus)
+      const bonus = !!s.bonus;
+      const b = el("button", bonus ? "wt wt-bonus" : "wt", `
       <span class="wt-img" style="--wbg:${s.bg};--wac:${s.ac};--wfg:${s.fg}"><img alt="" hidden></span>
       <span class="wt-veh" data-veh="${WORLD_VEH[s.id] || ""}"></span>
       <span class="wt-check" aria-hidden="true">\u2713</span>
-      <span class="wt-meta"><b>${s.n}</b><small>${WORLD_SUB[s.id] || ""}</small></span>
+      ${bonus ? `<span class="wt-beacon" aria-hidden="true"><i></i><em class="mono">BONUS \u00B7 AFTER DARK</em></span>` : ""}
+      <span class="wt-meta"><b>${s.n}</b><small>${bonus ? "Wanted for good taste. A night drive with its own radio and a very polite Patrol." : WORLD_SUB[s.id] || ""}</small></span>
       <span class="wt-sw" aria-hidden="true"><i style="background:${s.bg}"></i><i style="background:${s.ac}"></i><i style="background:${s.fg}"></i></span>`); // r137a: the world's three colours, as swatches
       b.dataset.idx = i;
       b.dataset.scheme = s.id;
@@ -35342,6 +35352,7 @@ void main(){
       b.onclick = () => {
         api.setScheme(i);
         closeMenus();
+        if (bonus && !document.body.classList.contains("map-mode")) api.toggleMap?.(); // r303: Polite City lives on the map (its HUD, its arrival)
       };
       themeRows[i] = b;
       wtGrid.appendChild(b);
@@ -37423,7 +37434,7 @@ void main(){
             dir.copy(camDir);
             tgt.set(carPos.x + dir.x * 260, 20, carPos.z + dir.z * 260);
             pcam.fov = 40;
-            if (sch.id === "gta2") {
+            if (sch.id === "polite") {
               pcam.position.set(tgt.x, 1500, tgt.z + 0.5);
             } else {
               pcam.position.set(tgt.x - dir.x * 820, 700, tgt.z - dir.z * 820);
@@ -38254,6 +38265,28 @@ void main(){
           mats.roadMinor?.color.set("#6f9aa8"); mats.roadMajor?.color.set("#5d8a9a"); mats.roadCasing?.color.set("#23485a");
           renderer.toneMappingExposure = 1.2;
         }
+        if (s.id === "polite") {
+          // polite-city phase 2, "Bucharest after rain" (legal.md §5 palette): asphalt and wet-road greys, a cold moonlit fill,
+          // warm sodium lamps and lit windows, the lane dashes in Cromatic yellow. The wet reflections, the sodium pools, the
+          // steam, the neon billboards and the grade are src/polite.js (and tiltShiftRender, pc)
+          scene.background = new Color("#0d1014");
+          scene.fog.color.set("#151a21");
+          hemi.color.set("#4f6188"); hemi.groundColor.set("#2a1d12"); hemi.intensity = 1.05;
+          sun.color.set("#a9bcff"); fillLight.color.set("#2f5bd6"); fillLight.intensity = 0.55;
+          mats.ground?.color.set("#171b21");
+          mats.roadMinor?.color.set("#232a33"); mats.roadMajor?.color.set("#262e38"); mats.roadCasing?.color.set("#3b4350");
+          mats.route?.color.set("#29313c"); mats.routeCasing?.color.set("#4a5262"); mats.routeDash?.color.set("#FED012"); mats.routeAlt?.color.set("#262e38"); mats.chevron?.color.set("#FED012");
+          mats.buildings?.color.set("#7a8394");
+          if (mats.buildings) { mats.buildings.emissive.set("#ffb265"); mats.buildings.emissiveIntensity = 1.9; }
+          mats.roofs?.color.set("#6a7280");
+          if (mats.lampHead) { mats.lampHead.emissive.set("#ff9e3d"); mats.lampHead.emissiveIntensity = 3.4; }
+          mats.canopy?.color.set("#2c4a36"); mats.bush?.color.set("#2c5a3a"); mats.parkMat?.color.set("#1f3a2a"); mats.island?.color.set("#244a30");
+          mats.zonePatch?.color.set("#1c2129"); mats.pillar?.color.set("#3a404a");
+          if (mats.beam) { mats.beam.color.set("#ff9e3d"); mats.beam.opacity = 0.07; } // the roundabout's beacon: a faint warm glow, not a yellow column
+          renderer.toneMappingExposure = 1.45;
+        } else if (mats.lampHead && mats.lampHead.emissive.getHexString() !== "ffca6a") mats.lampHead.emissive.set("#ffca6a");
+        polite?.dress(s.id === "polite");
+        if (page && !onbWarm) { if (s.id === "polite") politeMode()?.setActive(true); else polite?.setActive(false); } // polite-city: the dressing, the HUD, the loading card
       }
       function sketchHullSync() {
         const id = SCHEMES[state.schemeIdx]?.id, want = (id === "sketch" || id === "blueprint") && nbHull ? 21e-4 : void 0; // (worlds prototype: Blueprint draws with the notebook's pass)
@@ -38791,7 +38824,6 @@ void main(){
       var endConfettiT = 0;
       var boltTimer = 5;
       var boltActive = 0;
-      var topK = 0;
       var police = { active: false, until: 0, next: 0 };
       var redHold = 0;
       // the plane's take-off: air eases towards airT (0 on the road, 1 high over the city)
@@ -38801,7 +38833,7 @@ void main(){
       const _tA = new Vector3(), _tB = new Vector3(); // r139e: _tB for the curvature
       var beaconOn = false, beaconBlinkUntil = 0, copMode = "";
       // r138j: the 1300 where the van used to be the default; worlds with their own ride keep it
-      var ENV_VEH = { default: "dacia1300", monument: "dacia1300", ghibli: "dacia1300", nightlife: "monopoly", gta2: "cop", circuit: "f1", magma: "dacia1300", orchid: "scooter", underwater: "sub", sincity: "cop", sketch: "dacia1300", riso: "scooter", interbelic: "monopoly", blueprint: "dacia1300" }; // worlds prototype: the 1930s roadster (the Monopoly token) repainted, see monoPeriod
+      var ENV_VEH = { default: "dacia1300", monument: "dacia1300", ghibli: "dacia1300", nightlife: "monopoly", polite: "dacia1300", circuit: "f1", magma: "dacia1300", orchid: "scooter", underwater: "sub", sincity: "cop", sketch: "dacia1300", riso: "scooter", interbelic: "monopoly", blueprint: "dacia1300" }; // worlds prototype: the 1930s roadster (the Monopoly token) repainted, see monoPeriod
       var camYaw = null, camDir = new Vector3(0, 0, 1), chA = new Vector3(), chB = new Vector3(), planeRev = 0;
       var VEH_SPEED = {
         groovy: { max: 130, unit: "KM/H" }, f1: { max: 340, unit: "KM/H" }, monopoly: { max: 260, unit: "KM/H" },
@@ -39781,10 +39813,10 @@ void main(){
         if (!tilt) {
           const rt = new WebGLRenderTarget(w, h, { samples: 2, type: HalfFloatType });
           const mat = new ShaderMaterial({
-            uniforms: { gk: { value: 1 }, ib: { value: 0 }, tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, amt: { value: 7 }, focus: { value: 0.46 }, band: { value: 0.1 }, t: { value: 0 }, zb: { value: 0 }, ep: { value: new Vector2(0, 0) } },
+            uniforms: { gk: { value: 1 }, ib: { value: 0 }, pc: { value: 0 }, tD: { value: rt.texture }, res: { value: new Vector2(w, h) }, amt: { value: 7 }, focus: { value: 0.46 }, band: { value: 0.1 }, t: { value: 0 }, zb: { value: 0 }, ep: { value: new Vector2(0, 0) } },
             vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
             fragmentShader: `
-              uniform sampler2D tD; uniform vec2 res; uniform float amt, focus, band, t, zb, gk, ib; uniform vec2 ep; varying vec2 vUv;
+              uniform sampler2D tD; uniform vec2 res; uniform float amt, focus, band, t, zb, gk, ib, pc; uniform vec2 ep; varying vec2 vUv;
               ${isMobile() ? "#define TAPS 6\n#define LITE 1" : "#define TAPS 12"}
               // WORLDS PROTOTYPE, Interbelic: the frame printed as a 1930s archive photograph, on screen colours (after the
               // tone mapping). A silver-gelatin sepia (a gentle S, lifted blacks, rolled highlights: deep warm brown to cream),
@@ -39853,6 +39885,16 @@ void main(){
                 gl_FragColor = vec4(c, 1.0);
                 #include <tonemapping_fragment>
                 #include <colorspace_fragment>
+                if (pc > 0.5) { // polite-city: "Bucharest after rain" (legal.md §5): cold shadows, warm sodium highlights, a gentle S,
+                  // the brightest lights lift into a warm halo (no extra taps), a heavier vignette. A few multiplies per pixel
+                  vec3 o = gl_FragColor.rgb;
+                  float lp = dot(o, vec3(0.299, 0.587, 0.114));
+                  o += vec3(-0.018, 0.004, 0.04) * (1.0 - smoothstep(0.0, 0.42, lp)) + vec3(0.05, 0.022, -0.03) * smoothstep(0.42, 1.0, lp);
+                  o = clamp(o, 0.0, 1.0); o = mix(o, o * o * (3.0 - 2.0 * o), 0.22);
+                  o += max(o - 0.7, 0.0) * vec3(0.55, 0.42, 0.28);
+                  o *= 1.0 - 0.32 * smoothstep(0.12, 0.85, dot(q, q) * 2.2);
+                  gl_FragColor.rgb = o;
+                }
                 if (ib > 0.5) { // worlds prototype: Interbelic (ibGrade)
                   vec3 o = ibGrade(gl_FragColor.rgb, q);
                   float tf2 = floor(t * 18.0), lo = dot(o, vec3(0.333));
@@ -39871,9 +39913,10 @@ void main(){
           tilt = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
         }
         if (tilt.rt.width !== w || tilt.rt.height !== h) { tilt.rt.setSize(w, h); tilt.mat.uniforms.res.value.set(w, h); }
-        tilt.mat.uniforms.amt.value = photoTiltK * photoCapK * 4.2 * renderer.getPixelRatio() * (mapMode && nav2?.on ? Math.max(0, 1 - 1.1 * nav2.camK) : 1); // nav2: no miniature blur in the street view (beta 2.5: one tap per pixel there, ~+5 fps)
+        tilt.mat.uniforms.amt.value = photoTiltK * photoCapK * 4.2 * renderer.getPixelRatio() * (mapMode && nav2?.on ? Math.max(0, 1 - 1.1 * nav2.camK) * (1 - 0.7 * (nav2.topK || 0)) : 1); // nav2: no miniature blur in the street view (beta 2.5: one tap per pixel there, ~+5 fps)
         tilt.mat.uniforms.band.value = 0.16;
-        tilt.mat.uniforms.gk.value = SCHEMES[state.schemeIdx].id === "nightlife" ? 0.35 : 1; // beta 2.9 (Daniel): the night's grain, much lighter
+        tilt.mat.uniforms.gk.value = SCHEMES[state.schemeIdx].id === "nightlife" ? 0.35 : SCHEMES[state.schemeIdx].id === "polite" ? 0.5 : 1;
+        tilt.mat.uniforms.pc.value = SCHEMES[state.schemeIdx].id === "polite" ? 1 : 0; // polite-city: its grade // beta 2.9 (Daniel): the night's grain, much lighter
         { const ib = SCHEMES[state.schemeIdx].id === "interbelic"; tilt.mat.uniforms.ib.value = ib ? 1 : 0; if (ib) { tilt.mat.uniforms.gk.value = 0; tilt.mat.uniforms.amt.value *= mapMode ? 0.7 : 0.25; } } // worlds prototype: its own grain (after the grade), a softer miniature
         tilt.mat.uniforms.t.value = (now * 0.001) % 100;
         tilt.mat.uniforms.zb.value = mapMode ? mapView.zoomBlur || 0 : 0;
@@ -41311,11 +41354,9 @@ void main(){
           if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.far = 13e3 + 32e3 * mvK; camera.updateProjectionMatrix(); }
           
         }
-        topK = smooth(topK, SCHEMES[state.schemeIdx].id === "gta2" ? 1 : 0, dt, 3);
-        if (topK > 2e-3) {
-          camPos.lerp(new Vector3(carPos.x, carPos.y + 1880, carPos.z + 0.05), topK);
-          camTarget.lerp(new Vector3(carPos.x, carPos.y, carPos.z), topK);
-        }
+        // polite-city: the old GTA 2 drive camera (topK: 1880 straight above the car, camera.up turned to +z) is retired. It
+        // was written for the scroll drive and fought nav2's chase camera (a crooked Street view). The top-down view is now
+        // nav2's own 4th view ("Top-down", every world: src/nav2.js camera())
         if (siteMode) {
           const cur = siteEl?.dataset.cur;
           const drift = Math.sin(siteT * 0.4) * 12;
@@ -41333,12 +41374,12 @@ void main(){
           }
           document.body.classList.toggle("site-clear", cur === "coffee" || cur === "dacia");
           camera.up.set(0, 1, 0);
-        } else camera.up.set(0, 1 - topK, topK).normalize();
+        } else camera.up.set(0, 1, 0);
         // ---- Coffee Street POV ----
         {
           const cLp = state.L - route.stopL.fork;
           const Lc = routeLAt("tmexit", 820, 4330) - route.stopL.fork;
-          let pk = state.branch === "A" && !siteMode && !mapMode && !(carPos.y > 30) && !window.__camO && SCHEMES[state.schemeIdx].id !== "gta2" && !(coffee.near && !coffee.done && coffee.phase !== "idle") ? clamp2(Math.min((cLp - (Lc - 90)) / 150, (2640 - cLp) / 160), 0, 1) : 0;
+          let pk = state.branch === "A" && !siteMode && !mapMode && !(carPos.y > 30) && !window.__camO && !(coffee.near && !coffee.done && coffee.phase !== "idle") ? clamp2(Math.min((cLp - (Lc - 90)) / 150, (2640 - cLp) / 160), 0, 1) : 0;
           pk = pk * pk * (3 - 2 * pk);
           povK = smooth(povK, pk, dt, 3);
           if (povKeys.l) povYawT += dt * 1.6;
@@ -41403,7 +41444,7 @@ void main(){
         // in the street POV the camera rides with you: damping tightens as the POV takes over
         const camSnap = camSnapNext; camSnapNext = false; // r157
         const handOn = mapMode && now - (mapView.direct || 0) < 150; // r166: a hand on the map: the camera is where the hand puts it
-        const n2k = mapMode && nav2?.on ? nav2.camK : 0; // nav2: the chase camera rides tight, like the drive's street view
+        const n2k = mapMode && nav2?.on ? Math.max(nav2.camK, 0.7 * (nav2.topK || 0)) : 0; // (polite-city: the top-down view rides tight too) // nav2: the chase camera rides tight, like the drive's street view
         const kp = camSnap || handOn ? 1 : 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 + 21 * n2k : 2.8 + 26 * povK * povK));
         const kt = camSnap || handOn ? 1 : 1 - Math.exp(-dt * (window.__camO ? 12 : mapMode ? 9 + 9 * n2k : 6 + 12 * povK * povK));
         camera.position.lerp(camPos, kp);
@@ -41423,7 +41464,7 @@ void main(){
         const prog = state.L / route.total;
         let wx = state.weatherOn && !(mapMode && nav2?.on) ? weatherState(prog) : "sun"; // beta 2.9: on nav2's map the drive's progress means nothing (it made any world rain and flash)
         const schemeId = SCHEMES[state.schemeIdx].id;
-        if ((schemeId === "nightlife" || schemeId === "sincity") && state.weatherOn) wx = "rain";
+        if ((schemeId === "nightlife" || schemeId === "sincity" || schemeId === "polite") && state.weatherOn) wx = "rain"; // (polite-city: a drizzle, after rain)
         if (schemeId === "sketch") {
           const onMed = Math.abs(carPos.x - 1500) < 70 && carPos.z > 4450 && carPos.z < 5700;
           if (onMed && sketchRain.state === 0 && state.weatherOn && !flying) { sketchRain.state = 1; sketchRain.t = now; }
@@ -41452,6 +41493,7 @@ void main(){
         if (SCHEMES[state.schemeIdx].id === "monument") { sun.color.set("#ffe0c2"); sun.intensity = (mapMode ? 1.85 : 2.4) * curSun.int; }
         if (SCHEMES[state.schemeIdx].id === "monument") hemi.intensity = mapMode ? 0.86 : 0.62;
         if (SCHEMES[state.schemeIdx].id === "underwater") { sun.color.set("#b5f3ff"); sun.intensity = 1.5; }
+        if (schemeId === "polite") { sun.color.set("#a9bcff"); sun.intensity = 0.6; } // polite-city: moonlight
         // Sin City: one hard white key light even in the rain; the print does the rest
         if (schemeId === "sincity") { sun.color.set("#ffffff"); sun.intensity = 3.4; hemi.intensity = 0.2; }
         const sr = 1500;
@@ -41488,7 +41530,7 @@ void main(){
         );
         if (!window.__staticShadow) sun.target.position.set(sunC.x, 0, sunC.z);
         const wantRain = wx === "rain" && state.weatherOn && !flying;
-        if (wantRain) {
+        if (wantRain && schemeId !== "polite") { // polite-city: wet, never stormy (no lightning)
           boltTimer -= dt;
           if (boltTimer <= 0) {
             boltTimer = 4 + Math.random() * 7;
@@ -41511,7 +41553,7 @@ void main(){
         (window.__wxNow ||= {}).wx = wx; window.__wxNow.rain = rain.visible; window.__wxNow.bolt = boltActive > 0; // tests: the weather per world
         if (rain.visible) {
           // r129: Night Mode keeps a light drizzle, not a downpour
-          const rainN = SCHEMES[state.schemeIdx].id === "nightlife" ? 150 : RAIN_N;
+          const rainN = SCHEMES[state.schemeIdx].id === "nightlife" ? 150 : SCHEMES[state.schemeIdx].id === "polite" ? 110 : RAIN_N;
           rain.count = rainN;
           rainMat.opacity = (rainN < RAIN_N ? 0.32 : SCHEMES[state.schemeIdx].id === "sincity" ? 0.75 : 0.5) * rainAlpha;
           for (let i = 0; i < rainN; i++) {
@@ -41540,6 +41582,7 @@ void main(){
         if (schemeId === "sketch" || schemeId === "blueprint" || schemeId === "riso") { fogNear = 6000; fogFar = 30000; }
         if (schemeId === "interbelic") { fogNear = 900; fogFar = 5200; } // worlds prototype: a soft haze (the street view brings it closer, as everywhere)
         if (schemeId === "ghibli" || schemeId === "orchid") { fogNear = 1400; fogFar = 9000; }
+        if (schemeId === "polite") { fogNear = 900; fogFar = 4800; } // polite-city: a night haze, not a rain wall
         // the map looks from far above: fog starts past the ground, in every world (underwater keeps a little haze)
         if (mapMode) { const k = schemeId === "underwater" ? 0.75 : 1.15; fogNear = Math.max(fogNear, mapView.dist * k); fogFar = Math.max(fogFar, mapView.dist * (schemeId === "underwater" ? 2.2 : 3.2)); }
         if (mapMode && nav2?.on && nav2.camK > 0.01) { const sk = nav2.camK; fogNear = fogNear * (1 - sk) + 520 * sk; fogFar = fogFar * (1 - sk) + 2250 * sk; } // beta 2.5: the street view's haze
@@ -41788,6 +41831,7 @@ void main(){
         if (!routeRing) routeRingInit(); else routeRing.update(now);
         if (ONB_MODE) onbFrame(now); // r140
         if (photo?.on) photo.frame(now); // TASK-119: the photo mode's camera, round the ride
+        if (polite?.on) polite.frame(dt, now); // polite-city
         drawWorld(now);
         if (onbSnapReq) { onbSnapReq = false; onbSnap(); } // r141c, r142
         // r226 (Daniel: the final pill opens onto the live map): the loader opens its window only once the map has drawn
@@ -41915,6 +41959,31 @@ void main(){
         return photo;
       }
       window.czPhotoOpen = () => photoMode()?.enter(); // (the Postcard option of the view switch, src/nav2.js)
+      // polite-city: Polite City's own layer (src/polite.js, window.czPolite): the wet-asphalt reflections, sodium lamps,
+      // steam, neon billboards and tickers, the HUD (radar, clock, credits, heat, pager), the loading card, the codes. Made
+      // when the world is first applied; it builds its scene pieces once the map and nav2's road graph exist
+      var polite = null;
+      function politeMode() {
+        if (polite || typeof window.czPolite !== "function") return polite;
+        polite = window.czPolite({
+          T: { Group, Mesh, InstancedMesh, PlaneGeometry, BoxGeometry, CylinderGeometry, CircleGeometry, RingGeometry, BufferGeometry, BufferAttribute, Float32BufferAttribute, InstancedBufferAttribute, ShaderMaterial, MeshBasicMaterial, MeshStandardMaterial, CanvasTexture, Color, Vector3, Matrix4, Quaternion, Euler, Object3D, PerspectiveCamera, WebGLRenderTarget, AdditiveBlending, NormalBlending, DoubleSide, HalfFloatType, SRGBColorSpace, RepeatWrapping, ClampToEdgeWrapping, LinearFilter },
+          scene, camera, renderer,
+          nav2: () => nav2, mapView, isMap: () => mapMode && !!nav2?.on && !siteMode,
+          car: () => ({ x: carPos.x, z: carPos.z, h: heading }), places: () => MAP_PLACES, roads: () => [roundedPolyline(ROUTE_MAIN, 150).map((p) => [p[0], p[1]])], footprints: () => FOOTPRINTS, plaza: OLARI_PLAZA,
+          isPhone: () => innerWidth < 720, reduced: () => matchMedia("(prefers-reduced-motion: reduce)").matches,
+          lowEnd: () => isMobile() || (navigator.deviceMemory || 8) <= 4 || (navigator.hardwareConcurrency || 8) <= 4,
+          warp: (v) => warpV(v), fog: () => scene.fog,
+          cop: (o) => { // the Patrol car, posed by Polite City (the POLITE code's bow, the loading card's shot); null puts it away (unless nav2's chase owns it)
+            if (!o) { if (!nav2?.copT?.()) { nav2Cop = false; copCar.group.visible = false; } return; }
+            nav2Cop = true; copCar.group.visible = true; copCar.group.position.set(o.x, 1.7 + (o.lift || 0), o.z); copCar.group.rotation.set(o.pitch || 0, o.h, 0, "YXZ");
+            const t = Math.floor(performance.now() / 190) % 2; copCar.beacons[0].material.emissiveIntensity = o.flash ? (t ? 2.8 : 0.15) : 1.3; copCar.beacons[1].material.emissiveIntensity = o.flash ? (t ? 0.15 : 2.8) : 1.3;
+          }, copBusy: () => !!nav2?.copT?.(),
+          worldPrev: () => !!worldPrevNow, overlay: () => document.body.classList.contains("n2-card") || document.body.classList.contains("map-boarding"),
+          draw: (now) => drawWorld(now)
+        });
+        window.__polite = polite; // tests
+        return polite;
+      }
       addEventListener("keydown", (e) => { if ((e.key === "p" || e.key === "P") && !e.metaKey && !e.ctrlKey && !e.altKey && typeof window.czPhoto === "function" && !/INPUT|TEXTAREA|SELECT/.test(e.target?.tagName || "") && mapMode && !photo?.on) { if (photoMode()?.enter()) e.preventDefault(); } });
       var NAV2 = typeof window.czNav2 === "function" ? window.czNav2 : null, nav2 = null; // r164: always (the ?nav=v2 flag of the prototype is no longer needed)
       var nav2RM = null, nav2Cop = false; // beta 2.7: nav2 drives the police car itself (its drift cooldown)
@@ -42182,7 +42251,7 @@ void main(){
           cop(o) {
             if (!o) { if (nav2Cop) { nav2Cop = false; copCar.group.visible = false; } return; }
             nav2Cop = true; copCar.group.visible = true;
-            copCar.group.position.set(o.x, 1.7, o.z); copCar.group.rotation.set(0, o.h, 0);
+            copCar.group.position.set(o.x, 1.7 + (o.lift || 0), o.z); copCar.group.rotation.set(o.pitch || 0, o.h, 0, "YXZ"); // (polite-city: o.pitch, the POLITE code's bow)
             const t = Math.floor(performance.now() / 190) % 2;
             copCar.beacons[0].material.emissiveIntensity = o.flash ? (t ? 2.8 : 0.15) : 1.3;
             copCar.beacons[1].material.emissiveIntensity = o.flash ? (t ? 0.15 : 2.8) : 1.3;
@@ -44615,7 +44684,7 @@ void main(){
       window.__api = api;
       window.__tl = () => mats.trafficLights?.state(); // TASK-110: tests (each signal's lamp: medical, lane, olari)
       window.__xp = () => ({ pts: state.points, log: xpLog.map((e) => e.title + " +" + e.pts), pending: xpPending && xpPending.title, collected: [...xpCollected], chosen: state.branchChosen, branch: state.branch, card: currentCardStop, veh: state.vehicleId });
-      window.__scheme = (id) => api.setScheme(SCHEMES.findIndex((x) => x.id === id));
+      window.__scheme = (id) => api.setScheme(SCHEMES.findIndex((x) => x.id === (id === "gta2" ? "polite" : id))); // polite-city: "gta2" is an alias (the stories pipeline)
       // ---- r140: /onboarding/ drives the city ----
       // The page loads /?drive&nointro&onb in a same-origin frame behind its "zones" and sends {cz:"onb", op, ...}
       // (postMessage, or window.__onb(o) directly): the place on the road (drive), the map camera (cam), the world

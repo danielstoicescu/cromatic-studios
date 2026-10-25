@@ -12,8 +12,8 @@ import { fileURLToPath } from "url";
 
 export const LOGO = JSON.parse(fs.readFileSync(fileURLToPath(new URL("../assets/logo.json", import.meta.url)), "utf8"));
 export const RAINBOW = ["#FED012", "#28C840", "#119BFE", "#B098C8", "#F65342", "#FED012"];
-export const WORLD_IDS = ["monument", "nightlife", "ghibli", "sketch", "circuit", "orchid", "underwater", "gta2", "riso"];
-export const WORLD_NAMES = ["Cromatic", "Night Mode", "Ghib.ly", "Sketchbook", "Race Day", "Sakura", "Underwater", "GTA 2", "Risograph"];
+export const WORLD_IDS = ["monument", "nightlife", "ghibli", "sketch", "circuit", "orchid", "underwater", "polite", "riso"];
+export const WORLD_NAMES = ["Cromatic", "Night Mode", "Ghib.ly", "Sketchbook", "Race Day", "Sakura", "Underwater", "Polite City", "Risograph"];
 export const ATLAS = { cw: 324, ch: 128 };
 export const RISE = [0.18, 1.16, 0.32, 1], EXIT = [0.55, 0, 0.85, 0.35], GLIDE = [0.62, 0, 0.22, 1.08], DEAL = [0.22, 1.12, 0.32, 1], FALL = [0.5, 0, 0.92, 0.55];
 
