@@ -1447,7 +1447,7 @@
     // Bird's eye's turning camera alike), and the car steers towards it with its normal wheel (no snapping): throttle is
     // how far the stick is pushed (the stick's dead zone stays), a sharp turn eases the throttle, a heading behind
     // (> 135°) brakes and turns the car round on the spot, the same way until it faces it. Nothing held: coast with the
-    // road assist, as before. Nearly lined up (< 7°), the wheel is left to the assist (lane keeping, kerbs). Space still
+    // road assist, as before. Nearly lined up (< 7°, < 26° once rolling), the wheel is left to the assist (lane keeping, kerbs). Space still
     // drifts (into the turn the heading asks for). Street view keeps the car's own controls. null: not in these views
     function screenSteer() {
       const on = D.streetT < 0.5 && (D.view === "top" || D.view === "sat");
@@ -1465,7 +1465,9 @@
       if (D.scrTurn && a < 0.6) D.scrTurn = 0;
       if (!D.scrTurn && a > 2.36) D.scrTurn = Math.sign(err) || 1;
       if (D.scrTurn) return P.u > 45 ? { thr: -1, steer: D.scrTurn } : { thr: Math.max(0.55, mag), steer: D.scrTurn }; // behind: brake, then round on the spot
-      return { thr: mag * (a > 1.2 ? 0.5 : 1), steer: a < 0.12 ? 0 : clamp(err * 2.2, -1, 1) };
+      // (lined up within 7°, or within 26° once rolling: the road assist takes the wheel, so "up" on a road a little off the
+      // screen's axis follows the road instead of easing into its kerb; point further off and you steer again)
+      return { thr: mag * (a > 1.2 ? 0.5 : 1), steer: a < (P.u > 40 ? 0.45 : 0.12) ? 0 : clamp(err * 2.2, -1, 1) };
     }
     function freeTick(dt, now) {
       if (!P.init) freeInit();
