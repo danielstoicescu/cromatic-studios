@@ -3329,7 +3329,7 @@ body:not(.map-mode) .road-svc { display: none; }
 /* mugs: the intro's patterned ones */
 .olari-cup { aspect-ratio: 120 / 110; }
 /* GTA2 has no place on the map */
-body.map-mode .wt[data-scheme="gta2"] { display: none; }
+body.map-mode .wt[data-scheme="polite"] { display: none; } /* polite-city: no tile is built (proto); kept as a guard */
 /* after the flight */
 body.flight-done .map-top, body.flight-done .map-dock, body.flight-done .map-zoom, body.flight-done .map-pins { display: none !important; }
 .flight-end { position: fixed; z-index: 61; left: 50%; top: 50%; bottom: auto; translate: -50% -50%; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; width: min(560px, calc(100vw - 32px)); animation: fadeUp .6s .2s both; }
@@ -3656,7 +3656,7 @@ body.kz-intro .kz-veil { -webkit-backdrop-filter: none; backdrop-filter: none; }
    on phones the strip (z 22) sat over the boarding pass and a tap on the form opened Artisan */
 body.map-mode .poi-rail { display: none !important; }
 /* r129: GTA 2 is a drive-mode bonus world */
-body.map-mode .wt[data-scheme="gta2"] { display: none; }
+body.map-mode .wt[data-scheme="polite"] { display: none; } /* polite-city: no tile is built (proto); kept as a guard */
 /* r129: "+50 other clients" floats over its glowing quarter: grey, no stem, no dot, a slow bob */
 .map-pin.float .mp-stem, .map-pin.float .mp-dot { display: none !important; }
 .map-pin.float .mp-label { background: #ecebe7 !important; color: #1a1a1a !important; animation: pinFloat 3.2s ease-in-out infinite; }
@@ -4956,8 +4956,8 @@ body.scheme-sketch .map-card.mcd-game { background: #170f19 !important; border: 
 @media (max-width: 720px) { .map-card.mcd-game .mcd-img img { object-position: 50% 0; } .map-card.mcd-game .mg-tm { bottom: auto; top: 8px; right: 8px; } }
 .mcd-fight .mf-txt { min-width: 0; max-width: 100%; height: auto; flex: 0 1 auto; }
 /* the phone's compact Street card (r179): the words take the whole button, no glove */
-body.n2-phone.nav2-street .map-card .mcd-fight { min-height: 44px; padding: 7px 10px 9px !important; }
-body.n2-phone.nav2-street .map-card .mcd-fight .mf-glove { display: none; }
+body.n2-phone:is(.nav2-street, .nav2-top) .map-card .mcd-fight { min-height: 44px; padding: 7px 10px 9px !important; }
+body.n2-phone:is(.nav2-street, .nav2-top) .map-card .mcd-fight .mf-glove { display: none; }
 /* beta 3.76: Sketchbook is the notebook (after the hand-drawn chess game on notebook paper Daniel picked): the interface
    is drawn on the same sheet as the city. Round 2 (Daniel): the sheet almost white, the ink a dark indigo, and the site's
    own type (no handwriting fonts), coloured like the pencils (indigo, terracotta). Thin ink outlines of one weight, a
