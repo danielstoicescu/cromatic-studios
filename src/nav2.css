@@ -431,3 +431,10 @@ body.scheme-sketch .map-dial :is(.dd-ticks, .dd-needle) line { stroke: var(--nb-
 /* polite-city: the Top-down view's button (the 4th view). On a phone it is an icon, like the Postcard */
 body.n2-phone .nav2-ui .n2-views button[data-v="top"] span { display: none; }
 body.n2-phone .nav2-ui .n2-views button[data-v="top"] { padding: 0 12px; }
+
+/* r306 (Daniel: "not needed any more", "too much, redundant"): no driving hint strip (under the views on a phone, bottom
+   right on a laptop) and no tap hint; no on-screen arrow keys where there is a keyboard and a mouse (the keys still drive,
+   see nav2.js); phones drive with the floating stick; a touch tablet keeps the pad, its only way to drive */
+.nav2-ui .n2-hint, .n2-taphint { display: none !important; }
+@media (hover: hover) and (pointer: fine) { .nav2-ui .n2-pad { display: none !important; } }
+body.n2-phone .nav2-ui .n2-pad { display: none !important; }

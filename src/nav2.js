@@ -2676,11 +2676,11 @@
       { id: "tapplace", keys: [], t: "Tap a place to visit it", s: "Its pin or its name: the car drives you there", at: "mid" },
       { id: "look", keys: [], t: "Look around", s: "Drag the map, pinch to zoom · ◎ brings you back", at: "mid" },
       { id: "view", keys: [], t: "Take the wheel", s: "Switch to Street up here", at: "views" },
-      { id: "drive", keys: [], t: "Drive it yourself", s: "Drag the stick: up to go, sideways to steer", at: "car" }
+      { id: "drive", keys: [], t: "Drive it yourself", s: "Drag anywhere low on the screen: the car goes where you point", at: "car" }
     ];
     let STEPS;
     const DESK_STEPS = [
-      { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: touchUI ? "↑ to go: it keeps to the road · ← → to turn" : "↑ to go: it keeps to the road · ← → to turn (or W A S D)", at: "car" },
+      { id: "drive", keys: ["←", "↑", "→"], t: "Drive it yourself", s: "The arrows (or W A S D) point where you want to go", at: "car" },
       { id: "round", keys: ["↑"], t: "Take the roundabout", s: touchUI ? "Hold ↑: round it and straight on · tap → for the next exit" : "Hold ↑: round the fountain and straight on · tap → for the next exit", at: "car" },
       { id: "back", keys: ["↓"], t: "Back up or turn round", s: touchUI ? "Hold ↓ to back up · stopped, ↑ with ← or → turns you round" : "Hold ↓ (or S) to back up · stopped, ↑ with ← or → turns you round", at: "car" },
       { id: "tap", keys: [], t: "Or let us drive", s: "Tap a place on the map, or a card in Nearby", at: "panel" },
@@ -2689,6 +2689,7 @@
     ];
     STEPS = DESK_STEPS;
     function tutorial(done, force) {
+      if (!force) return false; // r306 (Daniel: "fewer instructions at the start, leave it freer"): the driving tour runs only when asked for
       STEPS = phoneUI() ? PHONE_STEPS : DESK_STEPS;
       try { if (!force && localStorage.getItem("cz-drive-guide") === "2") return false; localStorage.setItem("cz-drive-guide", "2"); } catch {}
       if (!D.ready && !place()) return false;
@@ -2806,7 +2807,7 @@
         api.on = on;
         document.body.classList.toggle("nav2", on);
         if (!on) { H.exitMark?.(null); nextEl.classList.add("off"); nxSig = ""; for (const k of "udlr") keyUp(k); D.ready = false; D.auto = null; D.uturn = null; D.streetT = 0; D.camK = 0; D.topT = 0; D.topK = 0; viewSig = ""; document.body.classList.remove("nav2-top"); document.body.classList.remove("nav2-street"); }
-        else { viewSig = ""; let seen = false; try { seen = localStorage.getItem("cz-drive-guide") === "2"; } catch {} if (seen) setTimeout(() => toast(H.isPhone() ? "Drive it yourself with the pad · or tap a place" : "Drive it yourself: arrows or WASD · V switches the view"), 1600); } // a first visit gets the tutorial instead
+        else { viewSig = ""; let seen = false; try { seen = localStorage.getItem("cz-drive-guide") === "2"; } catch {} } // (r306: no "drive it yourself" toast on arrival any more: fewer instructions) // a first visit gets the tutorial instead
       },
       view: setView,
       press: (k, down = true) => (down ? keyDown(k) : keyUp(k)),
