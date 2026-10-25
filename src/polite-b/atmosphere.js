@@ -94,7 +94,7 @@
     const st = { phase: "", hours: 0, sunElev: 0, night: 1, lit: 0, puddles: 0, signs: 0, fogBanks: 0, steam: 0, thunders: 0, applied: false };
     const U = { t: { value: 0 }, rain: { value: 0.7 }, neon: { value: 1 }, night: { value: 1 } };
     const WU = { pbOn: { value: 0.5 }, pbTime: { value: 0 } };
-    let signList = [], fogList = [], plumes = [], m, q, p, s, C, tmpQ;
+    let signList = [], fogList = [], plumes = [], m, q, p, s, C, tmpQ, flatQ;
 
     const cumOf = (pp) => { const c = [0]; for (let i = 1; i < pp.length; i++) c.push(c[i - 1] + Math.hypot(pp[i][0] - pp[i - 1][0], pp[i][1] - pp[i - 1][1])); return c; };
     function at(e, sd) { if (!e.cum) { e.cum = cumOf(e.pts); e.len = e.cum[e.cum.length - 1]; } const P = e.pts, Cm = e.cum; let i = 1; while (i < P.length - 1 && Cm[i] < sd) i++; const a = P[i - 1], b = P[i], L = Cm[i] - Cm[i - 1] || 1, f = Math.max(0, Math.min(1, (sd - Cm[i - 1]) / L)); return { x: a[0] + (b[0] - a[0]) * f, z: a[1] + (b[1] - a[1]) * f, tx: (b[0] - a[0]) / L, tz: (b[1] - a[1]) / L }; }
@@ -105,7 +105,7 @@
 
     function init(ctx) {
       ctx0 = ctx; T = ctx.T; G = ctx.graph; rng = ctx.rng || Math.random; lite = !!ctx.lite; gy = ctx.groundY ?? 1.6;
-      m = new T.Matrix4(); q = new T.Quaternion(); p = new T.Vector3(); s = new T.Vector3(); C = new T.Color(); tmpQ = new T.Quaternion();
+      m = new T.Matrix4(); q = new T.Quaternion(); p = new T.Vector3(); s = new T.Vector3(); C = new T.Color(); tmpQ = new T.Quaternion(); flatQ = new T.Quaternion().setFromAxisAngle(new T.Vector3(1, 0, 0), -Math.PI / 2);
       group = new T.Group(); group.name = "pb-atmosphere";
       for (const e of G.E) if (!e.cum) { e.cum = cumOf(e.pts); e.len = e.cum[e.cum.length - 1]; }
       const R = roads(), totalLen = R.reduce((a, e) => a + e.len, 0), pick = () => { let r = rng() * totalLen; for (const e of R) { r -= e.len; if (r <= 0) return e; } return R[R.length - 1]; };
@@ -138,7 +138,7 @@
         if (!lite) {
           const pg = new T.PlaneGeometry(1, 1); pg.rotateX(-Math.PI / 2);
           signPools = new T.InstancedMesh(pg, new T.MeshBasicMaterial({ map: glowTex(T), transparent: true, depthWrite: false, blending: T.AdditiveBlending, toneMapped: false }), signList.length);
-          signList.forEach((g, i) => { q.setFromAxisAngle(p.set(0, 1, 0), g.h); m.compose(p.set(g.x + g.nx * g.pd, gy + 0.7, g.z + g.nz * g.pd), q, s.set(80, 1, 70)); signPools.setMatrixAt(i, m); signPools.setColorAt(i, C.set(g.sig.c)); });
+          signList.forEach((g, i) => { q.setFromAxisAngle(p.set(0, 1, 0), g.h); m.compose(p.set(g.x + g.nx * g.pd, gy + 0.7, g.z + g.nz * g.pd), q, s.set(50, 1, 40)); signPools.setMatrixAt(i, m); signPools.setColorAt(i, C.set(g.sig.c)); });
           signPools.frustumCulled = false; signPools.renderOrder = 2; signPools.material.userData.outlineParameters = { visible: false }; group.add(signPools);
         }
       }
@@ -177,7 +177,7 @@
                 rip += ring * step(h1(cyc + vSeed + fk * 9.0), pbRain);
               }
               #endif
-              diffuseColor.rgb = (vColor * sheen * pbNeon * (0.35 + 0.65 * pbNight) + vec3(0.75, 0.82, 1.0) * rip * (0.12 + 0.22 * pbNight)) * shape;`);
+              diffuseColor.rgb = (vColor * sheen * 0.6 * min(pbNeon, 1.0) * (0.35 + 0.65 * pbNight) + vec3(0.75, 0.82, 1.0) * rip * (0.12 + 0.22 * pbNight)) * shape;`);
           if (lite) sh.fragmentShader = "#define PB_LITE\n" + sh.fragmentShader;
         };
         pm.customProgramCacheKey = () => "pb-puddle-" + (lite ? 1 : 0);
@@ -264,7 +264,7 @@
       // signs: hum and the failing ones' bursts (steady under reduced motion); dimmer by day
       if (signs) {
         const dayDim = 0.45 + 0.55 * night;
-        signList.forEach((g, i) => { const f = reduced ? 1 : flicker(g.seed, time, g.failing), k = f * dayDim * 1.6; signs.setColorAt(i, C.setRGB(k, k, k)); if (signPools) signPools.setColorAt(i, C.set(g.sig.c).multiplyScalar(f * neon * 0.55)); });
+        signList.forEach((g, i) => { const f = reduced ? 1 : flicker(g.seed, time, g.failing), k = f * dayDim * 1.1; signs.setColorAt(i, C.setRGB(k, k, k)); if (signPools) signPools.setColorAt(i, C.set(g.sig.c).multiplyScalar(f * Math.min(1, neon) * 0.28)); });
         signs.instanceColor.needsUpdate = true; if (signPools) signPools.instanceColor.needsUpdate = true;
       }
       // fog banks: drift with the wind, live ~40-70 s, fade in and out, re-placed around the player
@@ -274,8 +274,8 @@
         fogList.forEach((f, i) => {
           if (f.life < 0 || f.life > f.max) { const a = rng() * Math.PI * 2, r = 250 + rng() * 1300; f.x = P.x + Math.cos(a) * r; f.z = P.z + Math.sin(a) * r; f.life = f.life < 0 ? rng() * 40 : 0; f.max = 40 + rng() * 30; }
           f.life += dt; f.x += wind * dt; f.z -= wind * 0.4 * dt;
-          const fade = Math.min(1, f.life / 8, (f.max - f.life) / 8), k = Math.max(0, fade) * f.k * (0.06 + 0.06 * night) * (0.6 + 0.6 * rain);
-          m.compose(p.set(f.x, f.y, f.z), tmpQ, s.set(f.w, f.hgt, 1)); fog.setMatrixAt(i, m);
+          const fade = Math.min(1, f.life / 8, (f.max - f.life) / 8), k = Math.max(0, fade) * f.k * (0.025 + 0.025 * night) * (0.6 + 0.6 * rain);
+          m.compose(p.set(f.x, 9 + f.k * 4, f.z), flatQ, s.set(f.w, f.w * 0.45, 1)); fog.setMatrixAt(i, m); // (polite-look: a flat mist lying in the street, anchored in the world; it used to face the camera and swim)
           const tc = ctx.shared.tone ? C.set(ctx.shared.tone.fog).lerp(C.clone().setRGB(0.55, 0.6, 0.7), 0.6) : C.setRGB(0.5, 0.55, 0.65); fog.setColorAt(i, tc.multiplyScalar(k * 4));
         });
         fog.instanceMatrix.needsUpdate = true; fog.instanceColor.needsUpdate = true;
@@ -284,7 +284,7 @@
         let i = 0;
         for (const pl of plumes) for (const pf of pl.puffs) {
           pf.a += dt * pl.rate * (reduced ? 0.5 : 1); if (pf.a >= 1) pf.a -= 1;
-          const a = pf.a, sc = 10 + a * 46, k = Math.sin(a * Math.PI) * (0.22 + 0.12 * night);
+          const a = pf.a, sc = 7 + a * 26, k = Math.sin(a * Math.PI) * (0.1 + 0.06 * night);
           m.compose(p.set(pl.x + a * 22, pl.y + 6 + a * 80, pl.z - a * 9), tmpQ, s.set(sc, sc, 1)); steam.setMatrixAt(i, m); steam.setColorAt(i, C.setRGB(k * 0.9, k * 0.92, k)); i++;
         }
         steam.instanceMatrix.needsUpdate = true; steam.instanceColor.needsUpdate = true;

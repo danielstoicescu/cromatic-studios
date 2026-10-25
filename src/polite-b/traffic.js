@@ -159,7 +159,7 @@
         // vLamp: x brake (0..1), y night (0..1: heads + tails on), z red beacon / amber blink, w blue beacon
         .replace("#include <emissivemap_fragment>", `#include <emissivemap_fragment>
           if (abs(vMask - 2.0) < 0.5) totalEmissiveRadiance += vec3(1.0, 0.08, 0.06) * (0.55 * vLamp.y + 2.2 * vLamp.x);
-          else if (abs(vMask - 3.0) < 0.5) totalEmissiveRadiance += vec3(1.0, 0.92, 0.75) * (0.12 + 2.1 * vLamp.y);
+          else if (abs(vMask - 3.0) < 0.5) totalEmissiveRadiance += vec3(1.0, 0.92, 0.75) * (0.12 + 1.4 * vLamp.y);
           else if (abs(vMask - 4.0) < 0.5) totalEmissiveRadiance += vec3(1.0, 0.25, 0.2) * (0.1 + 3.0 * vLamp.z);
           else if (abs(vMask - 5.0) < 0.5) totalEmissiveRadiance += vec3(0.15, 0.55, 1.0) * (0.1 + 3.0 * vLamp.w);
           else if (abs(vMask - 6.0) < 0.5) totalEmissiveRadiance += diffuseColor.rgb * (0.15 + 1.1 * vLamp.y);
@@ -310,7 +310,7 @@
       shadow = new T.InstancedMesh(flat(), new T.MeshBasicMaterial({ map: shTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }), nAll);
       shadow.frustumCulled = false; shadow.renderOrder = 1; shadow.material.userData.outlineParameters = { visible: false }; group.add(shadow);
       if (!lite) {
-        const plTex = radial(T, 128, [[0, "rgba(255,214,150,0.55)"], [0.4, "rgba(255,196,120,0.22)"], [1, "rgba(255,190,110,0)"]]);
+        const plTex = radial(T, 128, [[0, "rgba(255,206,140,0.42)"], [0.4, "rgba(255,190,115,0.16)"], [1, "rgba(255,185,105,0)"]]);
         pools = new T.InstancedMesh(flat(), new T.MeshBasicMaterial({ map: plTex, transparent: true, depthWrite: false, blending: T.AdditiveBlending, toneMapped: false }), nAll);
         pools.frustumCulled = false; pools.renderOrder = 2; pools.material.userData.outlineParameters = { visible: false }; group.add(pools);
       }
@@ -520,14 +520,14 @@
         t.lamp.setXYZW(a.slot, brake, nightK, z, w);
         // shadow + pool
         p.set(a.x, gy + 0.35, a.z); s.set(a.W * 1.35, 1, a.L * 1.12); m.compose(p, q.q, s); shadow.setMatrixAt(k, m);
-        if (pools) { if (nightK > 0.15) { p.set(a.x + a.fx * (a.L / 2 + 52), gy + 0.6, a.z + a.fz * (a.L / 2 + 52)); s.set(a.W * 1.45, 1, 120); pools.setMatrixAt(k, m.compose(p, q.q, s)); } else pools.setMatrixAt(k, zero); }
+        if (pools) { if (nightK > 0.15) { p.set(a.x + a.fx * (a.L / 2 + 38), gy + 0.6, a.z + a.fz * (a.L / 2 + 38)); s.set(a.W * 1.2, 1, 80); /* (polite-look: a shorter, dimmer throw) */ pools.setMatrixAt(k, m.compose(p, q.q, s)); } else pools.setMatrixAt(k, zero); }
         s.set(1, 1, 1);
         cars.push({ x: a.x, z: a.z, vx: a.fx * a.v, vz: a.fz * a.v, L: a.L, W: a.W, kind: a.kind });
         k++;
       }
       for (let i = k; i < shadow.count; i++) { shadow.setMatrixAt(i, zero); if (pools) pools.setMatrixAt(i, zero); }
       for (const kind in types) { const t = types[kind]; t.mesh.instanceMatrix.needsUpdate = true; t.lamp.needsUpdate = true; }
-      shadow.instanceMatrix.needsUpdate = true; if (pools) { pools.instanceMatrix.needsUpdate = true; pools.visible = nightK > 0.15; pools.material.opacity = Math.min(1, nightK * 1.1); }
+      shadow.instanceMatrix.needsUpdate = true; if (pools) { pools.instanceMatrix.needsUpdate = true; pools.visible = nightK > 0.15; pools.material.opacity = Math.min(1, nightK) * 0.55; }
       st.cars = k; st.patrol = patrolOn; st.ms = performance.now() - t0;
     }
 

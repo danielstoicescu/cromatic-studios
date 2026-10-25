@@ -25580,11 +25580,13 @@ void main() {
             const rh = Math.min(15, 6 + Math.min(bw, d) * 0.22), ex = hw + 2, ez = hd + 2;
             const ti = Math.floor(rnd() * tiles.length);
             hip(RB, ex, ez, Math.max(ex - ez * 0.92, ex * 0.1), ez * 0.08, h, rh, tiles[ti], tilesMV[ti % tilesMV.length]);
+            FOOTPRINTS[fpI].roof = "hip"; FOOTPRINTS[fpI].rh = rh; // polite-look: what each roof is (Polite City dresses roofs by kind; data only)
             if (rnd() < 0.45) { const qx = (rnd() - 0.5) * bw * 0.5, qz = (rnd() - 0.5) * d * 0.4; box(RB, qx - 1.8, qx + 1.8, h + rh * 0.3, h + rh * 0.3 + 7, qz - 1.8, qz + 1.8, chimC, chimMV, 0, null); }
           } else if (h < 120 && rr < 0.5) {
             // a zinc mansard with dormers, Calea Victoriei style
             const mh = 12 + rnd() * 8, ex = hw + 1.5, ez = hd + 1.5;
             hip(RB, ex, ez, ex * 0.66, ez * 0.66, h, mh, zinc, zincMV);
+            FOOTPRINTS[fpI].roof = "mansard"; FOOTPRINTS[fpI].rh = mh;
             const nd = Math.max(1, Math.round(bw / 16));
             for (let q = 0; q < nd; q++) {
               const qx = -hw + (q + 0.5) * bw / nd;
@@ -25593,12 +25595,14 @@ void main() {
           } else {
             // a flat roof with a parapet, now and then a stair house or a corner dome
             box(RB, -hw - 1.2, hw + 1.2, h, h + 3, -hd - 1.2, hd + 1.2, flat, flatMV, 0, null);
-            if (rnd() < 0.5) { const qx = (rnd() - 0.5) * (bw - 14), qz = (rnd() - 0.5) * (d - 14); box(RB, qx - 5, qx + 5, h + 3, h + 11, qz - 4.5, qz + 4.5, tmpM.copy(tint).multiplyScalar(0.9), tMV.clone().multiplyScalar(0.92), 0, null); }
+            FOOTPRINTS[fpI].roof = "flat";
+            if (rnd() < 0.5) { const qx = (rnd() - 0.5) * (bw - 14), qz = (rnd() - 0.5) * (d - 14); box(RB, qx - 5, qx + 5, h + 3, h + 11, qz - 4.5, qz + 4.5, tmpM.copy(tint).multiplyScalar(0.9), tMV.clone().multiplyScalar(0.92), 0, null); FOOTPRINTS[fpI].stair = [qx, qz]; }
             if (h > 70 && rnd() < 0.16) {
               const cr = 7.5, dr = new CylinderGeometry(cr, cr, 12, 10, 1, true); dr.translate(-hw + 4, h + 8, -hd + 4);
               geo(RB, dr, tint, tMV);
               const dome = new SphereGeometry(cr + 1.2, 10, 4, 0, Math.PI * 2, 0, Math.PI / 2); dome.scale(1, 1.5, 1); dome.translate(-hw + 4, h + 14, -hd + 4);
               geo(RB, dome, zinc, zincMV);
+              FOOTPRINTS[fpI].dome = true;
             }
             // Monument only: water tanks on the flat roofs
             const pr = rnd(), pc = propCol[Math.floor(rnd() * propCol.length)];
@@ -31267,10 +31271,10 @@ vec3 hwRoom(vec2 pane, vec3 rd, out float curt) {
     const atP = new InstancedBufferAttribute(aP, 3), atC = new InstancedBufferAttribute(aC, 3), atK = new InstancedBufferAttribute(aK, 4), atD = new InstancedBufferAttribute(aD, 2);
     fxGeo.setAttribute("iP", atP); fxGeo.setAttribute("iC", atC); fxGeo.setAttribute("iK", atK); fxGeo.setAttribute("iD", atD);
     const fxM = new ShaderMaterial({
-      uniforms: { camW: { value: new Vector3() }, rain: { value: 0 }, t: { value: 0 } },
+      uniforms: { camW: { value: new Vector3() }, rain: { value: 0 }, t: { value: 0 }, centre: { value: 0.18 }, nearFade: { value: 0 } },
       transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide,
       vertexShader: `#include <common>
-uniform vec3 camW; uniform float rain;
+uniform vec3 camW; uniform float rain; uniform float centre; uniform float nearFade;
 attribute vec3 iP; attribute vec3 iC; attribute vec4 iK; attribute vec2 iD;
 varying vec2 vUv; varying vec3 vC; varying float vA; varying float vM;
 void main(){
@@ -31293,7 +31297,8 @@ void main(){
     } else {          // the streak: where the lamp's mirror image meets the road, drawn out towards the viewer
       vec2 d = toC.xz; float dl = max(length(d), 1.0); dir = d / dl;
       float hl = iP.y, hc = max(toC.y + w.y, 2.0);
-      g0 += d * (hl / (hl + hc)); len = iK.w; g0 += dir * len * 0.18;
+      g0 += d * (hl / (hl + hc)); len = iK.w; g0 += dir * len * centre;
+      vA *= 1.0 - nearFade * (1.0 - smoothstep(40.0, 160.0, length(g0 - camW.xz))); // (polite-look: not under the viewer's feet)
       vA *= smoothstep(-0.1, 0.6, dot(dir, f)); // a mirror image of the lens: only where the lamp looks towards the viewer
     }
     side = vec2(-dir.y, dir.x);
@@ -31337,8 +31342,9 @@ void main(){
     const st = TL_SPOTS.map(() => ({ on: -1, prev: -1, at: -1e9 })), tmpC = new Color();
     let dark = false, clock = 0, lastNow = 0;
     const phase = (tt) => { const u = ((tt % TL_T) + TL_T) % TL_T; return u < TL_RED ? 0 : u < TL_RED + TL_GREEN ? 2 : 1; }; // lamp index: 0 red, 1 amber, 2 green
+    const TL_LOOK1 = { halo: 1, haloK: 1, pool: 1, poolK: 1, streak: 1, streakK: 1, centre: 0.18 };
     const api = {
-      group: g, spots: TL_SPOTS,
+      group: g, spots: TL_SPOTS, look: null,
       setDark(on) { dark = on; fx.visible = false; },
       state: () => st.map((s) => ["red", "amber", "green"][s.on]),
       update(now, cam, rainK = 0) {
@@ -31368,6 +31374,7 @@ void main(){
         if (!glow) return;
         const r = Math.max(0, Math.min(1, rainK));
         fxM.uniforms.camW.value.copy(cam.position); fxM.uniforms.rain.value = r; fxM.uniforms.t.value = (now * 0.001) % 1000;
+        fxM.uniforms.centre.value = (api.look || TL_LOOK1).centre; fxM.uniforms.nearFade.value = api.look ? 1 : 0;
         TL_SPOTS.forEach((s, i) => {
           const S = st[i], k = Math.min(1, (clock - S.at) / TL_FADE), c = LAMP[S.on];
           const lampY = TL_HEAD_Y + (1 - S.on) * TL_LAMP_DY;
@@ -31375,9 +31382,10 @@ void main(){
             const j = i * 3 + m;
             aP[j * 3 + 1] = lampY;
             aC[j * 3] = c.r; aC[j * 3 + 1] = c.g; aC[j * 3 + 2] = c.b;
-            if (m === 0) { aK[j * 4 + 1] = 24 + 10 * r; aK[j * 4 + 2] = (0.85 + 0.1 * r) * k; } // round 2: 24 units across dry (2 m), 34 in the rain (was 46 / 62)
-            else if (m === 1) { aK[j * 4 + 1] = 38 + 6 * r; aK[j * 4 + 3] = 46 + 8 * r; aK[j * 4 + 2] = (0.32 + 0.16 * r) * k; }
-            else { aK[j * 4 + 1] = 8 + 3 * (1 - r); aK[j * 4 + 3] = 30 + 120 * r; aK[j * 4 + 2] = 0.75 * r * k; }
+            const L = api.look || TL_LOOK1; // polite-look: a world may pull the glows back (Polite City); unset = as before
+            if (m === 0) { aK[j * 4 + 1] = (24 + 10 * r) * L.halo; aK[j * 4 + 2] = (0.85 + 0.1 * r) * k * L.haloK; } // round 2: 24 units across dry (2 m), 34 in the rain (was 46 / 62)
+            else if (m === 1) { aK[j * 4 + 1] = (38 + 6 * r) * L.pool; aK[j * 4 + 3] = (46 + 8 * r) * L.pool; aK[j * 4 + 2] = (0.32 + 0.16 * r) * k * L.poolK; }
+            else { aK[j * 4 + 1] = 8 + 3 * (1 - r); aK[j * 4 + 3] = (30 + 120 * r) * L.streak; aK[j * 4 + 2] = 0.75 * r * k * L.streakK; }
           }
         });
         atP.needsUpdate = atC.needsUpdate = atK.needsUpdate = true;
@@ -37113,9 +37121,10 @@ void main(){
           scene.add(p); pool.push(p);
         }
         const tip = new Vector3(), last = new Vector3(), back = new Vector3();
-        let acc = 0, hasLast = false;
+        let acc = 0, hasLast = false, smokeDim = false;
         return {
           tick(dt, on) {
+            smokeDim = SCHEMES[state.schemeIdx]?.id === "polite";
             let rate = 0;
             if (on && veh?.exhaust && veh.group.visible) {
               veh.group.updateMatrixWorld();
@@ -37142,7 +37151,7 @@ void main(){
               u.vel.y += 2.4 * dt; u.vel.multiplyScalar(1 - 0.8 * dt);
               p.position.addScaledVector(u.vel, dt);
               p.scale.setScalar(2.4 + 6 * Math.pow(t, 0.6));
-              p.material.opacity = 0.6 * Math.min(1, u.age / 0.25) * (1 - t);
+              p.material.opacity = (smokeDim ? 0.3 : 0.6) * Math.min(1, u.age / 0.25) * (1 - t); p.material.color.setHex(smokeDim ? 0x4c5055 : 0xcfd0d2); // (polite-look: unlit smoke glows at night: in Polite City a dark, thin breath)
               p.quaternion.copy(camera.quaternion);
             }
           }
