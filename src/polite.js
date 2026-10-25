@@ -546,7 +546,11 @@
       });
     }
     function radioStop() { const r = radioApi(); if (r && radio.on) { r.stop(); r.ambience(false); } radio.on = false; radio.idx = -1; radioPaint(); }
-    const sfx = (id) => { const r = radioApi(); if (r && radio.on && !muted()) try { r.sfx(id); } catch (e) {} }; // only once the visitor has opted into the world's sound
+    const sfx = (id, o) => { const r = radioApi(); if (r && radio.on && !muted()) try { r.sfx(id, o); } catch (e) {} }; // only once the visitor has opted into the world's sound
+    // r304: the ids Sorin's manifest has. Phase B asks for sfx-bass-pass and sfx-thunder-far, which are not in it yet: an id it
+    // lacks is skipped silently (radio.js would console.warn on each call)
+    let sfxIds = null;
+    const sfxHas = (id) => { if (!sfxIds) { sfxIds = new Set(); fetch(RADIO_BASE + "manifest.json").then((r) => r.json()).then((m) => { for (const k of Object.keys(m.files || {})) sfxIds.add(k); }).catch(() => {}); } return sfxIds.has(id); };
     let duckOn = false;
     function radioTick() {
       if (!radio.on) return;
@@ -843,7 +847,7 @@
       if (!vis) return;
       const cam = A.camera; camW.copy(cam.position);
       const t = (now * 0.001) % 1000, fog = A.fog();
-      if (streak) { const u = streak.material.uniforms; u.camW.value.copy(camW); u.t.value = t; if (fog) { u.fogNear.value = fog.near; u.fogFar.value = fog.far; } }
+      if (streak) { const u = streak.material.uniforms; u.camW.value.copy(camW); u.amp.value = pbShared.neonGain ?? 1; /* r304: the wet streaks follow phase B's night */ u.t.value = t; if (fog) { u.fogNear.value = fog.near; u.fogFar.value = fog.far; } }
       if (steam) steam.material.uniforms.t.value = t;
       for (const tk of tickers) tk.tex.offset.x = (t * (tk.kind === "news" ? 0.035 : 0.028)) % 1;
       // the session, for the news ticker
@@ -877,7 +881,7 @@
       }
     }
     function sysTick(dt, now) { for (const [name, S] of systems) if (S.ready && !S.dead) { S.ctx.active = true; try { S.sys.update?.(dt, now, S.ctx); } catch (e) { S.dead = true; console.warn("[polite] system " + name + ":", e); } } }
-    function sysActive(on) { for (const S of systems.values()) if (S.ctx) S.ctx.active = on; }
+    function sysActive(on) { for (const [name, S] of systems) if (S.ctx) { S.ctx.active = on; try { S.sys.active?.(on, S.ctx); } catch (e) { console.warn("[polite] system " + name + ":", e); } } } // (r304: an optional active(on) per system)
     api.registerSystem = (name, sys) => {
       if (!name || !sys) return false;
       api.unregisterSystem(name);
@@ -894,6 +898,38 @@
     };
     api.systems = () => [...systems.keys()];
     { const Q = (window.czPoliteSystems ||= []); for (const x of Q.splice(0)) api.registerSystem(x.name, x); Q.push = (x) => (api.registerSystem(x.name, x), 0); } // (registered before the world existed)
+    // ===================== 6b. phase B (r304, beta): atmosphere, traffic, pedestrians (src/polite-b, Radu + Iris) =====================
+    // Their modules register factories on window.__politePhaseB; each is wrapped as one of our systems. Their context is
+    // their own (README in refs/gta-world/phaseB): `scene` is the system's group under the dressing (so it hides with the
+    // world), atmosphere goes first (it publishes night / rain / neonGain to `shared`). They live only while the visitor is
+    // in Polite City: leaving disposes them (the lit-window hook on the shared buildings material comes off with it, so
+    // the other worlds keep their windows), coming back builds them again under the loading card (~35-100 ms).
+    // The clock: Polite City is always night for now, so by day the modules get a night hour (22:30) and at night the real
+    // Bucharest one (the real time-of-day grade of the whole world is a later decision)
+    const bucH = () => { try { const p = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Bucharest", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date()); const g = (t) => +p.find((x) => x.type === t).value; return (g("hour") % 24) + g("minute") / 60; } catch { return 22.5; } };
+    const pbHours = () => { const h = bucH(); return h >= 18.5 || h < 6.5 ? h : 22.5; };
+    let pbShared = {};
+    const pbCtx = (group) => ({
+      T, scene: group, camera: A.camera, graph: A.nav2()?.graph,
+      player: () => { const c = A.car(); return { x: c.x, z: c.z, h: c.h, v: A.nav2()?.speed?.() ?? 0 }; },
+      lite: low, reduced: A.reduced, rng: Math.random, groundY: 1.6, footprints: A.footprints() || [], crossings: [],
+      windowsMaterial: A.mats?.buildings || null, lights: null, rain: () => 0.7, copBusy: A.copBusy, clockHours: pbHours,
+      sfx: pbSfx, shared: pbShared
+    });
+    function pbSfx(id, o) { if (sfxHas(id)) sfx(id, o); } // (an id Sorin's manifest lacks: nothing, no warning)
+    function phaseB(name) {
+      let m = null, c = null, grp = null;
+      const make = () => { const f = window.__politePhaseB?.[name]; if (!f || !grp) return; m = f({}); c = pbCtx(grp); m.init(c); };
+      return {
+        init(ctx) { grp = ctx.group; make(); },
+        update(dt) { if (!m) make(); if (m) m.update(Math.min(dt, 0.05), c); },
+        active(on) { if (!on && m) { m.dispose(); m = null; } },
+        dispose() { if (m) m.dispose(); m = null; },
+        get mod() { return m; }
+      };
+    }
+    if (window.__politePhaseB) for (const n of ["atmosphere", "traffic", "pedestrians"]) if (window.__politePhaseB[n]) api.registerSystem("pb-" + n, phaseB(n));
+    api._pbSfx = pbSfx; api._mats = A.mats; api.pb = () => ({ player: A.car(), shared: pbShared, mods: Object.fromEntries([...systems].filter(([k]) => k.startsWith("pb-")).map(([k, S]) => [k, S.sys.mod])) }); // tests
     api.arrival = () => arrival && arrival.phase; // tests
     api.page = page; api.moment = moment; api.flashStation = flashStation; api.showCard = showCard; api.session = session;
     return api;

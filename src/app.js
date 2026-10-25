@@ -41966,8 +41966,8 @@ void main(){
       function politeMode() {
         if (polite || typeof window.czPolite !== "function") return polite;
         polite = window.czPolite({
-          T: { Group, Mesh, InstancedMesh, PlaneGeometry, BoxGeometry, CylinderGeometry, CircleGeometry, RingGeometry, BufferGeometry, BufferAttribute, Float32BufferAttribute, InstancedBufferAttribute, ShaderMaterial, MeshBasicMaterial, MeshStandardMaterial, CanvasTexture, Color, Vector3, Matrix4, Quaternion, Euler, Object3D, PerspectiveCamera, WebGLRenderTarget, AdditiveBlending, NormalBlending, DoubleSide, HalfFloatType, SRGBColorSpace, RepeatWrapping, ClampToEdgeWrapping, LinearFilter },
-          scene, camera, renderer,
+          T: { Group, Mesh, InstancedMesh, PlaneGeometry, BoxGeometry, CylinderGeometry, CircleGeometry, RingGeometry, BufferGeometry, BufferAttribute, Float32BufferAttribute, InstancedBufferAttribute, ShaderMaterial, MeshBasicMaterial, MeshStandardMaterial, CanvasTexture, Color, Vector3, Matrix4, Quaternion, Euler, Object3D, PerspectiveCamera, WebGLRenderTarget, AdditiveBlending, NormalBlending, DoubleSide, HalfFloatType, SRGBColorSpace, RepeatWrapping, ClampToEdgeWrapping, LinearFilter, MeshLambertMaterial, Sprite, SpriteMaterial, ConeGeometry, IcosahedronGeometry }, // (r304: the last five for phase B)
+          scene, camera, renderer, mats, // (r304: mats.buildings for phase B's lit windows)
           nav2: () => nav2, mapView, isMap: () => mapMode && !!nav2?.on && !siteMode,
           car: () => ({ x: carPos.x, z: carPos.z, h: heading }), places: () => MAP_PLACES, roads: () => [roundedPolyline(ROUTE_MAIN, 150).map((p) => [p[0], p[1]])], footprints: () => FOOTPRINTS, plaza: OLARI_PLAZA,
           isPhone: () => innerWidth < 720, reduced: () => matchMedia("(prefers-reduced-motion: reduce)").matches,

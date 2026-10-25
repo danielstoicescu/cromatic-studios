@@ -36,7 +36,10 @@ const NAV2_CSS = (() => { try { return readFileSync(src("nav2.css"), "utf8"); } 
 const PHOTO_JS = (() => { try { return readFileSync(src("photo.js"), "utf8"); } catch { return ""; } })();
 const PHOTO_CSS = (() => { try { return readFileSync(src("photo.css"), "utf8"); } catch { return ""; } })();
 // polite-city: Polite City's layer (?world=polite), its own module and styles, laid before the app like nav2 and photo
-const POLITE_JS = (() => { try { return readFileSync(src("polite.js"), "utf8"); } catch { return ""; } })();
+// r304 (beta): Polite City's phase B (src/polite-b: atmosphere, traffic, pedestrians; Radu + Iris), classic scripts laid in
+// before polite.js; each only registers a factory on window.__politePhaseB, which polite.js plugs into its systems hook
+const POLITE_B = ["atmosphere", "traffic", "pedestrians"].map((n) => { try { return readFileSync(src(`polite-b/${n}.js`), "utf8"); } catch { return ""; } }).join("\n");
+const POLITE_JS = POLITE_B + "\n" + (() => { try { return readFileSync(src("polite.js"), "utf8"); } catch { return ""; } })();
 const POLITE_CSS = (() => { try { return readFileSync(src("polite.css"), "utf8"); } catch { return ""; } })();
 // r231 (Daniel, Lottie across the site): the site's Lottie layer (src/lottie-ui): the shared player's host (czl.js), the
 // pieces' host code, their styles; the pieces' JSON (design/lottie-ui/_source) are hashed into /assets below
@@ -508,7 +511,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
 const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
 const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
 // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
-const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 4.18 β"; // beta 4.18 (r303, beta only) = live 4.17 + TASK-015 AVIF/LCP case pictures (r298) + the Longevity report (private); the live history is in main's label comment
+const BUILD_LABEL = process.env.BUILD_LABEL ?? "beta 4.19 β"; // beta 4.19 (r304, beta only) = beta 4.18 + Polite City phase B (src/polite-b: atmosphere, traffic, pedestrians by Iris + Radu, through czPolite's systems hook; the bus kept off the ring, the front probe, no warning for sfx Sorin has not made yet); beta 4.18 (r303) = live 4.17 + TASK-015 AVIF/LCP case pictures (r298) + the Longevity report (private); the live history is in main's label comment
 const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
 const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
 const GS = {};
