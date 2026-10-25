@@ -2158,6 +2158,7 @@
     const typing = (e) => e.target?.closest?.("input, textarea, select, [contenteditable]");
     window.addEventListener("keydown", (e) => {
       if (!api.on || typing(e) || H.overlay() || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (window.__czKeyGate?.(e)) return; // polite-city: a key that belongs to a code being typed (the T of POLITE)
       if (e.key === "v" || e.key === "V") { e.preventDefault(); setView(D.view !== "street"); return; }
       if ((e.key === "t" || e.key === "T") && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); setView(D.view === "top" ? "sat" : "top"); return; } // polite-city: the top-down view
       const k = KEYS[e.key];

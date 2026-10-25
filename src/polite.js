@@ -707,6 +707,7 @@
 
     // ===================== 4. the codes, 5. the easter eggs =====================
     let typed = "", bigT = 0, bowT = 0, pTimer = 0;
+    window.__czKeyGate = (e) => api.on && shown && (e.key === "t" || e.key === "T") && typed.endsWith("POLI"); // (nav2's keys ask first: its listener may run before ours)
     // POLITE starts with P (the Postcard's key) and holds a T (the Top-down's): in this world a P waits 0.4 s for an O
     // before it opens the Postcard, and the T of "POLIT" is the code's, not the view's
     addEventListener("keydown", (e) => {
