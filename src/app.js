@@ -31872,7 +31872,7 @@ void main(){
     poles.castShadow = arms.castShadow = true;
     parent.add(poles, arms, heads);
     // beta 3.76 round 2: Sketchbook draws the street lights as thin pen lines (Daniel: "very thick"); applyScheme swaps these in
-    mats.poleGeo = { poles, arms, heads, poleGeo, armGeo, headGeo, thinPole: new CylinderGeometry(0.22, 0.3, 64, 6).translate(0, 32, 0), thinArm: new BoxGeometry(0.4, 0.4, 24).translate(0, 63, -10), smallHead: new SphereGeometry(1.4, 8, 6).translate(0, 61.6, -20) };
+    mats.poleGeo = { poles, arms, heads, poleGeo, armGeo, headGeo, thinPole: new CylinderGeometry(0.22, 0.3, 64, 6).translate(0, 32, 0), thinArm: new BoxGeometry(0.4, 0.4, 24).translate(0, 63, -10), smallHead: new SphereGeometry(1.4, 8, 6).translate(0, 61.6, -20), politeHead: new BoxGeometry(5.6, 1.8, 9).translate(0, 61.6, -19.5) }; // (r306: Polite City: a small flat sodium head under the arm, not the big glowing globe)
   }
   function makeCloudBlob(rnd) {
     const g = new Group();
@@ -38101,7 +38101,7 @@ void main(){
         fillLight.color.set(nightlife ? "#2f66ff" : "#dfe8ff");
         mats.roofs?.color.copy(dark ? mixC(s.bg, "#ffffff", 0.2) : new Color("#ffffff"));
         mats.pole?.color.set("#3c3a34"); // beta 3.76 round 2: Sketchbook draws the poles white and thin; every other world, as built
-        if (mats.poleGeo) { const P = mats.poleGeo, sk = nb; P.poles.geometry = sk ? P.thinPole : P.poleGeo; P.arms.geometry = sk ? P.thinArm : P.armGeo; P.heads.geometry = sk ? P.smallHead : P.headGeo; }
+        if (mats.poleGeo) { const P = mats.poleGeo, sk = nb; P.poles.geometry = sk ? P.thinPole : P.poleGeo; P.arms.geometry = sk ? P.thinArm : P.armGeo; P.heads.geometry = sk ? P.smallHead : s.id === "polite" ? P.politeHead : P.headGeo; }
         for (const im of mats.tampaForest || []) im.visible = !nb; // round 2: in the notebook Tâmpa is one shape, a light wash with a few swirls (its firs were a dense scribble)
         if (sun.shadow.intensity !== 1) { sun.shadow.intensity = 1; sun.shadow.needsUpdate = true; } // and its shadow comes back (Sketchbook turns it off)
         const orchid = s.id === "orchid";
@@ -38288,7 +38288,7 @@ void main(){
           mats.buildings?.color.set("#7a8394");
           if (mats.buildings) { mats.buildings.emissive.set("#ffb265"); mats.buildings.emissiveIntensity = 1.9; }
           mats.roofs?.color.set("#6a7280");
-          if (mats.lampHead) { mats.lampHead.emissive.set("#ff9e3d"); mats.lampHead.emissiveIntensity = 3.4; }
+          if (mats.lampHead) { mats.lampHead.emissive.set("#ff9e3d"); mats.lampHead.emissiveIntensity = 2.2; } // (r306: with the small head, less glow: no beige halo in Street)
           mats.canopy?.color.set("#2c4a36"); mats.bush?.color.set("#2c5a3a"); mats.parkMat?.color.set("#1f3a2a"); mats.island?.color.set("#244a30");
           mats.zonePatch?.color.set("#1c2129"); mats.pillar?.color.set("#3a404a");
           if (mats.beam) { mats.beam.color.set("#ff9e3d"); mats.beam.opacity = 0.07; } // the roundabout's beacon: a faint warm glow, not a yellow column
