@@ -159,55 +159,69 @@
       return g;
     }
 
-    // the wet road: every light leaves a reflection on the asphalt. Seen from above it is a soft pool under the light; as
-    // the camera comes down it stretches into a long broken streak towards the eye (the film trick: no reflection
-    // pass, one instanced quad per light, additive). Rain ripples break it up; the city's fog fades it with the rest
+    // the wet road (polite-look, Daniel: "not under the lamps, far too big"): every light leaves two things on the asphalt,
+    // both small and soft. (1) a diffuse pool right under it: round, a few metres, what lights a wet road from above.
+    // (2) its mirror image: where the light's reflection meets the road for this eye, the point on the line from the lamp's
+    // foot towards the camera at h / (h + H) of the way (h the light's height, H the camera's): under the lamp from high
+    // up, further out as the camera comes down. It stretches along that axis as the view grazes (the wet road's
+    // roughness), never longer than a lane, and fades near the viewer's feet so nothing chases the camera. One
+    // instanced quad per pool and per mirror image, additive; the city's fog fades them with the rest
     const STREAK_VS = `
       #include <common>
-      attribute vec4 iP; attribute vec3 iC;
-      uniform vec3 camW; uniform float stretch;
-      varying vec2 vUv; varying vec3 vC; varying float vSeed; varying float vFog; varying float vLen;
+      attribute vec4 iP; attribute vec3 iC; attribute vec2 iH;
+      uniform vec3 camW;
+      varying vec2 vUv; varying vec3 vC; varying float vSeed; varying float vFog; varying float vLen; varying float vKind;
       uniform float fogNear, fogFar;
-      varying float vNear;
       void main() {
         vec2 b = cityWarp(iP.xy);
         vec3 w = vec3(b.x, 3.2, b.y); // over the road decals and their markings
         vec3 toC = camW - w;
-        vec2 d2 = normalize(toC.xz + vec2(1e-3, 0.0));
-        float graze = clamp(length(toC.xz) / max(toC.y, 1.0), 0.0, 5.0);
-        float len = iP.z * (1.0 + stretch * min(graze, 3.0));
-        vNear = smoothstep(50.0, 220.0, length(toC)); // a light right under the lens would be a wash: it fades in from ~50 units
-        float wid = iP.z * (0.62 - 0.22 * clamp(graze / 3.0, 0.0, 1.0));
+        float H = max(toC.y, 4.0), hl = iH.x, D = length(toC.xz);
+        vec2 d2 = toC.xz / max(D, 1e-3);
+        float len, wid, fade = 1.0;
+        if (iH.y < 0.5) { // the pool under the light
+          len = wid = iP.z * 2.0; d2 = vec2(0.0, 1.0);
+        } else {          // the mirror image
+          w.xz += d2 * D * hl / (hl + H);
+          float graze = clamp(D / H, 0.0, 6.0);
+          wid = iP.z * 0.5;
+          len = min(wid * (1.4 + 1.6 * graze), 150.0);
+          fade = smoothstep(60.0, 180.0, length(camW.xz - w.xz)) * smoothstep(0.15, 0.9, graze + 0.25);
+        }
         vec2 side = vec2(d2.y, -d2.x);
-        w.xz += side * position.x * wid + d2 * (position.y * len + len * 0.32 * clamp(graze, 0.0, 1.0));
-        vUv = position.xy + 0.5; vC = iC; vSeed = iP.w; vLen = len;
+        w.xz += side * position.x * wid + d2 * position.y * len;
+        vUv = position.xy + 0.5; vC = iC * fade; vSeed = iP.w; vLen = len; vKind = iH.y;
         vec4 mv = viewMatrix * vec4(w, 1.0);
         vFog = smoothstep(fogNear, fogFar, -mv.z);
         gl_Position = projectionMatrix * mv;
       }`;
     const STREAK_FS = `
       uniform float t, amp, rip;
-      varying vec2 vUv; varying vec3 vC; varying float vSeed; varying float vFog; varying float vLen; varying float vNear;
+      varying vec2 vUv; varying vec3 vC; varying float vSeed; varying float vFog; varying float vLen; varying float vKind;
       void main() {
-        float x = vUv.x - 0.5, y = vUv.y;
-        float across = exp(-x * x * 15.0);
-        float along = smoothstep(0.0, 0.18, y) * (1.0 - smoothstep(0.42, 1.0, y));
-        float core = exp(-x * x * 70.0) * smoothstep(0.05, 0.25, y) * (1.0 - smoothstep(0.25, 0.8, y));
-        // rain on the puddle: bands along the streak that drift and break it (cheap, two sines)
-        float r = 0.72 + 0.28 * sin(y * vLen * 0.22 + t * 3.1 + vSeed * 17.0) * sin(y * vLen * 0.071 - t * 1.7 + vSeed * 5.0 + x * 9.0);
-        float a = (across * along * mix(1.0, r, rip) + core * 0.6) * amp * (1.0 - vFog) * vNear;
-        gl_FragColor = vec4(vC * a, 1.0);
+        vec2 q = vUv - 0.5; float a;
+        if (vKind < 0.5) {
+          float r2 = dot(q, q) * 4.0; a = exp(-r2 * 3.0) * (1.0 - smoothstep(0.7, 1.0, r2)) * 0.32;
+        } else {
+          float across = exp(-q.x * q.x * 22.0), along = exp(-q.y * q.y * 9.0) * (1.0 - smoothstep(0.42, 0.5, abs(q.y)));
+          // rain on it: soft bands that drift along the image and break it up a little
+          float r = 0.8 + 0.2 * sin(q.y * vLen * 0.3 + t * 3.1 + vSeed * 17.0) * sin(q.y * vLen * 0.09 - t * 1.7 + vSeed * 5.0);
+          a = across * along * mix(1.0, r, rip) * 0.55;
+        }
+        gl_FragColor = vec4(vC * a * amp * (1.0 - vFog), 1.0);
       }`;
+    // sources: { x, z, r (pool radius), h (the light's height), c, k, spec (a mirror image too) }
     function buildStreaks(sources) {
-      const n = sources.length, geo = new T.PlaneGeometry(1, 1);
-      geo.rotateX(0); // position.x across, position.y along (made flat in the shader)
+      const list = []; for (const s of sources) { list.push([s, 0]); if (s.spec !== false) list.push([s, 1]); }
+      const n = list.length, geo = new T.PlaneGeometry(1, 1);
       const g = new T.InstancedMesh(geo, null, n);
-      const P = new Float32Array(n * 4), C = new Float32Array(n * 3);
-      sources.forEach((s, i) => { P.set([s.x, s.z, s.r, Math.random()], i * 4); const c = new T.Color(s.c).multiplyScalar(s.k || 1); C.set([c.r, c.g, c.b], i * 3); });
+      const P = new Float32Array(n * 4), C = new Float32Array(n * 3), Hh = new Float32Array(n * 2);
+      list.forEach(([s, kind], i) => { P.set([s.x, s.z, s.r, Math.random()], i * 4); const c = new T.Color(s.c).multiplyScalar((s.k || 1) * (kind ? 1 : 0.8)); C.set([c.r, c.g, c.b], i * 3); Hh.set([s.h || 40, kind], i * 2); });
       g.geometry.setAttribute("iP", new T.InstancedBufferAttribute(P, 4));
       g.geometry.setAttribute("iC", new T.InstancedBufferAttribute(C, 3));
+      g.geometry.setAttribute("iH", new T.InstancedBufferAttribute(Hh, 2));
       g.material = new T.ShaderMaterial({
-        uniforms: { camW: { value: new T.Vector3() }, stretch: { value: 1.7 }, t: { value: 0 }, amp: { value: 1 }, rip: { value: low ? 0 : 1 }, fogNear: { value: 900 }, fogFar: { value: 4800 } },
+        uniforms: { camW: { value: new T.Vector3() }, t: { value: 0 }, amp: { value: 1 }, rip: { value: low ? 0 : 1 }, fogNear: { value: 900 }, fogFar: { value: 4800 } },
         vertexShader: STREAK_VS, fragmentShader: STREAK_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending, toneMapped: false, side: T.DoubleSide
       });
       g.material.userData.outlineParameters = { visible: false };
@@ -233,13 +247,13 @@
     const STEAM_FS = `
       uniform vec3 col; uniform float amp;
       varying vec2 vUv; varying float vA;
-      void main() { vec2 q = vUv - 0.5; float d = dot(q, q) * 4.0; float a = exp(-d * 3.2) * vA * 0.42 * amp; gl_FragColor = vec4(col, a); }`;
+      void main() { vec2 q = vUv - 0.5; float d = dot(q, q) * 4.0; float a = exp(-d * 3.6) * vA * 0.17 * amp; gl_FragColor = vec4(col, a); }`; // (polite-look: a breath of steam, not a white blob)
     function buildSteam(vents) {
       const per = low ? 3 : 6, n = vents.length * per, geo = new T.PlaneGeometry(1, 1);
       const g = new T.InstancedMesh(geo, null, n), P = new Float32Array(n * 4);
-      vents.forEach((v, i) => { for (let j = 0; j < per; j++) P.set([v.x, v.z, 30 + Math.random() * 14, (j + Math.random() * 0.5) / per], (i * per + j) * 4); });
+      vents.forEach((v, i) => { for (let j = 0; j < per; j++) P.set([v.x, v.z, 18 + Math.random() * 9, (j + Math.random() * 0.5) / per], (i * per + j) * 4); });
       g.geometry.setAttribute("iP", new T.InstancedBufferAttribute(P, 4));
-      g.material = new T.ShaderMaterial({ uniforms: { t: { value: 0 }, col: { value: new T.Color("#b9b4ad") }, amp: { value: 1 } }, vertexShader: STEAM_VS, fragmentShader: STEAM_FS, transparent: true, depthWrite: false, toneMapped: false, side: T.DoubleSide });
+      g.material = new T.ShaderMaterial({ uniforms: { t: { value: 0 }, col: { value: new T.Color("#8f9399") }, amp: { value: 1 } }, vertexShader: STEAM_VS, fragmentShader: STEAM_FS, transparent: true, depthWrite: false, toneMapped: false, side: T.DoubleSide });
       g.material.userData.outlineParameters = { visible: false };
       g.frustumCulled = false; g.renderOrder = 6;
       return g;
@@ -368,6 +382,156 @@
     }
     const INDEX_TEXT = "BRAND INDEX:  DEADLN +12.4  *  LOGO.BIG -1.1  *  REVISN +400  *  KERN +0.02  *  SYNRGY FLAT  *  BRIEF.1PG +8.8  *  FONT.NEW -3.0  *  FINAL.V7 +0.7  *  ";
 
+
+    // ===================== 1b. the look (polite-look, Daniel: "the buildings look unfinished, the roofs don't make sense") =====================
+    // Polite City reuses the shared city, so its buildings are dressed here and only here:
+    //  - a shader layer on the city's own two materials (mats.buildings, mats.roofs), switched by one uniform (pcOn): off in
+    //    every other world, where the shaders take exactly their old path. With it on, the facades get a window rhythm
+    //    that sits on the floors (each window cell of app.js's tile is one floor): a recessed pane with a light stucco frame
+    //    and sill, a thin ledge at every floor, a shop floor of wide glazing; each pane lit or dark by itself over the
+    //    evening (the hour from phase B's clock). The roofs get their materials back (clay tiles in courses, zinc with
+    //    standing seams, flat roofs in tar and gravel) and a little modelling from the moonlight, so their shapes read
+    //  - geometry on the roofs, from what each footprint's roof is (app.js tags FOOTPRINTS[i].roof): on flat roofs a
+    //    stone coping on the parapet, a cornice under it, water tanks on stands, AC units, vent pipes and antennae; under
+    //    the zinc mansards a cornice and brick chimney stacks on the top; on a few tiled roofs an antenna on the ridge.
+    //    Instanced: one draw for the boxes, one for the cylinders. Nothing floats: every piece stands on the surface below it
+    const PCU = { pcOn: { value: 0 }, pcLit: { value: 0.5 }, pcT: { value: 0 } };
+    let lookHooked = false; const roofMeshes = [];
+    function lookHook() {
+      const M = A.mats; if (lookHooked || !M?.buildings || !M?.roofs) return; lookHooked = true;
+      const common = `#include <common>
+        uniform float pcOn, pcLit, pcT; varying vec3 vPcW; varying vec3 vPcN;
+        float pcH(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }`;
+      const vert = (sh) => {
+        Object.assign(sh.uniforms, PCU);
+        sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vPcW; varying vec3 vPcN;")
+          .replace("#include <begin_vertex>", "#include <begin_vertex>\nvPcW = (modelMatrix * vec4(transformed, 1.0)).xyz;")
+          .replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\nvPcN = normalize(mat3(modelMatrix) * objectNormal);");
+      };
+      const B = M.buildings, prevB = B.onBeforeCompile, keyB = B.customProgramCacheKey;
+      B.onBeforeCompile = (sh, r) => {
+        prevB?.call(B, sh, r); vert(sh);
+        sh.fragmentShader = sh.fragmentShader.replace("#include <common>", common)
+          .replace("#include <map_fragment>", "vec4 pcBase = diffuseColor;\n#include <map_fragment>")
+          .replace("#include <color_fragment>", `#include <color_fragment>
+            float pcPane = 0.0, pcShop = 0.0, pcWall = 0.0; vec2 pcId = vec2(0.0), pcC = vec2(0.0);
+            #if defined(USE_MAP) && defined(USE_COLOR)
+            if (pcOn > 0.5) {
+              pcWall = 1.0 - step(0.9, abs(vPcN.y));
+              vec2 g = vMapUv * 4.0, id = floor(g), c = fract(g); pcC = c;
+              pcId = id + floor(vPcW.xz / 230.0) * vec2(17.0, 31.0) + floor(vPcW.y / 600.0);
+              vec3 wall = pcBase.rgb * vColor * (0.9 + 0.1 * pcH(floor(vPcW.xz / 40.0)));
+              vec3 col = wall * (1.0 - 0.3 * (1.0 - step(0.06, c.y)));       // the floor ledge
+              vec3 glass = mix(vec3(0.04, 0.045, 0.06), vec3(0.1, 0.11, 0.14), smoothstep(0.2, 0.8, c.y));
+              if (vPcW.y < 13.0) { // the shop floor: wide glazing between piers, under the plinth band
+                pcShop = 1.0; pcPane = step(0.1, c.x) * step(c.x, 0.9) * step(0.06, c.y) * step(c.y, 0.8);
+                col = mix(col, glass, pcPane);
+              } else {
+                pcPane = step(0.31, c.x) * step(c.x, 0.69) * step(0.27, c.y) * step(c.y, 0.79);
+                float fr = step(0.275, c.x) * step(c.x, 0.725) * step(0.235, c.y) * step(c.y, 0.825) - pcPane;
+                float sill = step(0.25, c.x) * step(c.x, 0.75) * step(0.19, c.y) * step(c.y, 0.235);
+                col = mix(col, wall * 1.3, clamp(fr + sill, 0.0, 1.0));
+                col = mix(col, glass, pcPane);
+              }
+              pcPane *= pcWall;
+              diffuseColor.rgb = mix(diffuseColor.rgb, col, pcWall);
+            }
+            #endif`)
+          .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.28, pcPane);")
+          .replace("#include <emissivemap_fragment>", `#include <emissivemap_fragment>
+            if (pcOn > 0.5) {
+              float h = pcH(pcId), h2 = fract(h * 91.7 + 0.13);
+              float ph = floor(pcT / (25.0 + h2 * 90.0) + h2 * 7.0);
+              float flip = step(0.92, fract(sin(dot(pcId + ph, vec2(4.1, 7.7))) * 1234.5));
+              float lit = abs(step(h, pcLit * (pcShop > 0.5 ? 0.7 : 1.0)) - flip);
+              vec3 warm = mix(vec3(1.0, 0.62, 0.3), vec3(1.0, 0.82, 0.56), h2);
+              warm = mix(warm, vec3(0.5, 0.66, 1.0), step(0.94, fract(h * 13.7)));      // now and then a television
+              float room = 0.62 + 0.38 * smoothstep(0.8, 0.3, pcC.y);                  // a room, brighter low, the ceiling darker
+              float curtain = 1.0 - 0.55 * step(0.6, h2) * smoothstep(0.42, 0.4, abs(pcC.x - 0.5)); // drawn curtains on some
+              totalEmissiveRadiance = warm * lit * room * curtain * pcPane * 0.85;
+            }`);
+      };
+      B.customProgramCacheKey = () => (keyB ? keyB.call(B) : "") + "|pc-look-1";
+      const R = M.roofs, prevR = R.onBeforeCompile, keyR = R.customProgramCacheKey;
+      R.onBeforeCompile = (sh, r) => {
+        prevR?.call(R, sh, r); vert(sh);
+        sh.fragmentShader = sh.fragmentShader.replace("#include <common>", common)
+          .replace("#include <color_fragment>", `#include <color_fragment>
+            #ifdef USE_COLOR
+            if (pcOn > 0.5) {
+              vec3 v = vColor, n = normalize(vPcN), col;
+              float mx = max(v.r, max(v.g, v.b)), mn = min(v.r, min(v.g, v.b)), sat = (mx - mn) / max(mx, 1e-3);
+              if (sat > 0.38 && v.r > v.b * 1.4) {                       // clay tiles, laid in courses down the slope
+                col = v * vec3(0.62, 0.5, 0.44) * (0.78 + 0.22 * smoothstep(0.0, 0.2, fract(vPcW.y / 1.6))) / vec3(0.72, 0.74, 0.82);
+              } else if (sat < 0.25 && mx < 0.35) {                         // zinc (linear colours): standing seams
+                float sm = fract((vPcW.x * 0.71 + vPcW.z * 0.71) / 3.4);
+                col = vec3(0.4, 0.44, 0.48) * (0.95 - 0.3 * (1.0 - smoothstep(0.0, 0.07, sm)));
+              } else if (n.y > 0.85 && mx > 0.45 && sat < 0.3) {            // flat roofs: tar and gravel
+                col = vec3(0.21, 0.22, 0.24) * (0.85 + 0.3 * pcH(floor(vPcW.xz * 0.7)));
+              } else col = v * 0.8;                                         // parapets, the plinth band, chimneys, dormers
+              col *= 0.78 + 0.32 * clamp(dot(n, normalize(vec3(-0.45, 0.75, 0.5))), 0.0, 1.0); // the moon models the slopes
+              diffuseColor.rgb = col * vec3(0.72, 0.74, 0.82);
+            }
+            #endif`);
+      };
+      R.customProgramCacheKey = () => (keyR ? keyR.call(R) : "") + "|pc-look-1";
+      B.needsUpdate = R.needsUpdate = true;
+    }
+    function lookSet(on) {
+      PCU.pcOn.value = on ? 1 : 0;
+      const tl = A.mats?.trafficLights; // the signals' glows, pulled back in this world only (app.js keeps its own look elsewhere)
+      if (tl) tl.look = on ? { halo: 0.62, haloK: 0.7, pool: 0.6, poolK: 0.55, streak: 0.32, streakK: 0.6, centre: 0 } : null;
+    }
+    // the roof dressing (only roofs app.js tagged; the landmarks have their own)
+    function buildRoofs() {
+      const FP = A.footprints() || [], boxes = [], cyls = [];
+      const stone = new T.Color("#9d968a"), stucco = new T.Color("#6f6a62"), metal = new T.Color("#5a6168"), ac = new T.Color("#858c93"), dark = new T.Color("#26292e"), brick = new T.Color("#5e3d31");
+      let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+      for (const f of FP) {
+        if (!f.roof || !f.h) continue;
+        const c = Math.cos(f.ang || 0), sn = Math.sin(f.ang || 0), hw = f.w / 2, hd = f.d / 2, h = f.h;
+        // local (x along the street, z away from it) -> world, as app.js's frame()
+        const put = (arr, lx, lz, y0, sx, sy, sz, col, rot = 0) => arr.push([f.x + lx * c + lz * sn, y0, f.z - lx * sn + lz * c, sx, sy, sz, (f.ang || 0) + rot, col]);
+        const ring = (y0, sy, out, t, col) => { put(boxes, 0, -(hd + out - t / 2), y0, 2 * (hw + out), sy, t, col); put(boxes, 0, hd + out - t / 2, y0, 2 * (hw + out), sy, t, col); put(boxes, -(hw + out - t / 2), 0, y0, t, sy, 2 * (hd + out) - 2 * t, col); put(boxes, hw + out - t / 2, 0, y0, t, sy, 2 * (hd + out) - 2 * t, col); };
+        if (f.roof === "flat") {
+          ring(h + 3, 0.8, 1.5, 1.8, stone);           // the coping on the parapet
+          ring(h - 2.4, 2.4, 2.2, 2.4, stucco);        // the cornice under it
+          if (low) continue;
+          const free = (x, z, r) => !(f.stair && Math.abs(x - f.stair[0]) < 6 + r && Math.abs(z - f.stair[1]) < 5.5 + r) && !(f.dome && Math.hypot(x + hw - 4, z + hd - 4) < 10 + r) && Math.abs(x) < hw - 2.5 - r && Math.abs(z) < hd - 2.5 - r;
+          const y = h + 3;
+          if (f.w > 24 && f.d > 22 && rnd() < 0.45) { const x = (rnd() - 0.5) * (f.w - 18), z = (rnd() - 0.5) * (f.d - 18); if (free(x, z, 5)) {
+            put(boxes, x, z, y, 9, 1.4, 9, dark); for (const [a, b] of [[-3, -3], [3, -3], [-3, 3], [3, 3]]) put(boxes, x + a, z + b, y + 1.4, 0.7, 2.2, 0.7, dark);
+            put(cyls, x, z, y + 3.6, 3.7, 7, 3.7, metal); put(cyls, x, z, y + 10.6, 3.9, 0.6, 3.9, dark); } }
+          const nAc = f.w > 20 ? 1 + Math.floor(rnd() * 3) : 0;
+          for (let k = 0; k < nAc; k++) { const x = (rnd() - 0.5) * (f.w - 10), z = (rnd() - 0.5) * (f.d - 10); if (!free(x, z, 3)) continue; const r = rnd() < 0.5 ? 0 : Math.PI / 2; put(boxes, x, z, y, 5, 3.2, 4, ac, r); put(cyls, x, z, y + 3.2, 1.5, 0.3, 1.5, dark); }
+          for (let k = 0; k < 2; k++) { const x = (rnd() - 0.5) * (f.w - 8), z = (rnd() - 0.5) * (f.d - 8); if (free(x, z, 1)) put(cyls, x, z, y, 0.6, 2.6 + rnd() * 2, 0.6, dark); }
+          if (rnd() < 0.35) { const x = (rnd() - 0.5) * (f.w - 10), z = (rnd() - 0.5) * (f.d - 10); if (free(x, z, 2)) { const ht = 12 + rnd() * 8; put(cyls, x, z, y, 0.28, ht, 0.28, dark); put(boxes, x, z, y + ht * 0.82, 7, 0.3, 0.3, dark); put(boxes, x, z, y + ht * 0.66, 5, 0.3, 0.3, dark); } }
+        } else if (f.roof === "mansard") {
+          ring(h - 2, 2, 2, 2.2, stucco);              // the cornice the mansard sits on
+          if (low) continue;
+          const tx = (hw + 1.5) * 0.66, tz = (hd + 1.5) * 0.66, top = h + (f.rh || 14);
+          const nC = 1 + Math.floor(rnd() * 2);
+          for (let k = 0; k < nC; k++) { const x = (rnd() - 0.5) * (tx * 2 - 5), z = (rnd() - 0.5) * (tz * 2 - 5); put(boxes, x, z, top - 0.5, 2.6, 5.5, 2.6, brick); put(boxes, x, z, top + 5, 3.2, 0.6, 3.2, stone); }
+          if (rnd() < 0.3) { const ht = 10 + rnd() * 6; put(cyls, 0, 0, top - 0.3, 0.25, ht, 0.25, dark); put(boxes, 0, 0, top + ht * 0.8, 6, 0.3, 0.3, dark); }
+        } else if (f.roof === "hip" && !low && rnd() < 0.18) {
+          const ht = 9 + rnd() * 5, top = h + (f.rh || 10); // an antenna on the ridge
+          put(cyls, 0, 0, top - 1.5, 0.22, ht, 0.22, dark); put(boxes, 0, 0, top - 1.5 + ht * 0.8, 5, 0.25, 0.25, dark);
+        }
+      }
+      const mk = (geo, list) => {
+        if (!list.length) return null;
+        geo.translate(0, 0.5, 0);
+        const mesh = new T.InstancedMesh(geo, new T.MeshStandardMaterial({ color: "#ffffff", roughness: 0.85, metalness: 0.05 }), list.length);
+        const m = new T.Matrix4(), q = new T.Quaternion(), up = new T.Vector3(0, 1, 0), v = new T.Vector3(), sc = new T.Vector3();
+        list.forEach(([x, y, z, sx, sy, sz, a, col], i) => { q.setFromAxisAngle(up, a); m.compose(v.set(x, y, z), q, sc.set(sx, sy, sz)); mesh.setMatrixAt(i, m); mesh.setColorAt(i, col); });
+        mesh.frustumCulled = false; mesh.castShadow = false; mesh.receiveShadow = false; mesh.material.userData.outlineParameters = { visible: false };
+        return mesh;
+      };
+      const gb = mk(new T.BoxGeometry(1, 1, 1), boxes), gc = mk(new T.CylinderGeometry(1, 1, 1, 10), cyls);
+      for (const o of [gb, gc]) if (o) { o.name = "pc-roofs"; group.add(o); roofMeshes.push(o); }
+      return { boxes: boxes.length, cyls: cyls.length };
+    }
+
     function build() {
       const G = A.nav2()?.graph; if (!G || !G.E) return false;
       const t0 = performance.now();
@@ -382,7 +546,7 @@
         const pole = new T.CylinderGeometry(1.3, 1.8, 56, 6); pole.translate(0, 28, 0);
         const arm = new T.BoxGeometry(2.2, 2, 20); arm.translate(0, 55, 9);
         const head = new T.BoxGeometry(6, 2.6, 9); head.translate(0, 53.5, 17);
-        const pm = new T.MeshStandardMaterial({ color: "#2a2e35", roughness: 0.85 }), hm = new T.MeshBasicMaterial({ color: new T.Color("#ffb46a").multiplyScalar(2.2), toneMapped: false });
+        const pm = new T.MeshStandardMaterial({ color: "#2a2e35", roughness: 0.85 }), hm = new T.MeshBasicMaterial({ color: new T.Color("#ffb46a").multiplyScalar(1.6), toneMapped: false });
         const P = new T.InstancedMesh(pole, pm, lamps.length), R = new T.InstancedMesh(arm, pm, lamps.length), H = new T.InstancedMesh(head, hm, lamps.length);
         const m = new T.Matrix4(), q = new T.Quaternion(), up = new T.Vector3(0, 1, 0), S = new T.Vector3(1, 1, 1);
         lamps.forEach((l, i) => { q.setFromAxisAngle(up, Math.atan2(-l.nx, -l.nz)); m.compose(new T.Vector3(l.x, 0, l.z), q, S); P.setMatrixAt(i, m); R.setMatrixAt(i, m); H.setMatrixAt(i, m); });
@@ -418,22 +582,23 @@
       // the reflections: a sodium pool under every lamp head (on the road), a neon one in front of every board and
       // ticker; the lite path keeps them (they are the look) but without the ripples
       const src = [];
-      for (const l of lamps) src.push({ x: l.x - l.nx * 17, z: l.z - l.nz * 17, r: 64, c: "#ff9e3d", k: 1.05 });
+      for (const l of lamps) src.push({ x: l.x - l.nx * 17, z: l.z - l.nz * 17, r: 30, h: 53, c: "#ff9e3d", k: 0.9 }); // (polite-look: right under the head, ~2 m)
       // the lit windows spill onto the wet road too: a soft warm pool at the kerb in front of the buildings that face it
       { const spill = [], lim = low ? 60 : 160;
         for (const p of roadside(150, -4, 3000, (e) => e.w >= 28)) {
           if (spill.length >= lim) break;
           if (!inBuilding(p.x + p.nx * 40, p.z + p.nz * 40, 12) || !farFrom(spill, p.x, p.z, 150) || !farFrom(lamps, p.x, p.z, 80)) continue;
-          spill.push(p); src.push({ x: p.x, z: p.z, r: 52, c: "#ffb265", k: 0.3 });
+          spill.push(p); src.push({ x: p.x, z: p.z, r: 34, h: 18, c: "#ffb265", k: 0.22, spec: false });
         } }
-      for (const b of boards.list) src.push({ x: b.rx + (b.x - b.rx) * 0.45, z: b.rz + (b.z - b.rz) * 0.45, r: 52, c: b.b.neon, k: 0.75 });
-      for (const tk of tickers) src.push({ x: tk.rx + (tk.x - tk.rx) * 0.5, z: tk.rz + (tk.z - tk.rz) * 0.5, r: 40, c: tk.c, k: 0.6 });
+      for (const b of boards.list) src.push({ x: b.rx + (b.x - b.rx) * 0.45, z: b.rz + (b.z - b.rz) * 0.45, r: 30, h: 30, c: b.b.neon, k: 0.5 });
+      for (const tk of tickers) src.push({ x: tk.rx + (tk.x - tk.rx) * 0.5, z: tk.rz + (tk.z - tk.rz) * 0.5, r: 26, h: 40, c: tk.c, k: 0.4 });
       streak = buildStreaks(src); group.add(streak);
+      lookHook(); const roofs = buildRoofs();
       group.visible = false;
       A.scene.add(group);
       api.built = true;
       api._dbg = { lamps, bspots, vents, src }; // tests
-      api.stats = { lamps: lamps.length, boards: boards.list.length, tickers: tickers.length, vents: vents.length, reflections: src.length, ms: Math.round(performance.now() - t0), low };
+      api.stats = { lamps: lamps.length, boards: boards.list.length, tickers: tickers.length, vents: vents.length, reflections: src.length, roofs, ms: Math.round(performance.now() - t0), low };
       return true;
     }
 
@@ -546,7 +711,11 @@
       });
     }
     function radioStop() { const r = radioApi(); if (r && radio.on) { r.stop(); r.ambience(false); } radio.on = false; radio.idx = -1; radioPaint(); }
-    const sfx = (id) => { const r = radioApi(); if (r && radio.on && !muted()) try { r.sfx(id); } catch (e) {} }; // only once the visitor has opted into the world's sound
+    const sfx = (id, o) => { const r = radioApi(); if (r && radio.on && !muted()) try { r.sfx(id, o); } catch (e) {} }; // only once the visitor has opted into the world's sound
+    // r304: the ids Sorin's manifest has. Phase B asks for sfx-bass-pass and sfx-thunder-far, which are not in it yet: an id it
+    // lacks is skipped silently (radio.js would console.warn on each call)
+    let sfxIds = null;
+    const sfxHas = (id) => { if (!sfxIds) { sfxIds = new Set(); fetch(RADIO_BASE + "manifest.json").then((r) => r.json()).then((m) => { for (const k of Object.keys(m.files || {})) sfxIds.add(k); }).catch(() => {}); } return sfxIds.has(id); };
     let duckOn = false;
     function radioTick() {
       if (!radio.on) return;
@@ -821,6 +990,7 @@
     function show(v) {
       if (shown === v) return; shown = v;
       if (group) group.visible = v;
+      lookSet(v);
       document.body.classList.toggle("pc-on", v);
       if (v) {
         if (!hud) hud = buildHud();
@@ -843,8 +1013,9 @@
       if (!vis) return;
       const cam = A.camera; camW.copy(cam.position);
       const t = (now * 0.001) % 1000, fog = A.fog();
-      if (streak) { const u = streak.material.uniforms; u.camW.value.copy(camW); u.t.value = t; if (fog) { u.fogNear.value = fog.near; u.fogFar.value = fog.far; } }
+      if (streak) { const u = streak.material.uniforms; u.camW.value.copy(camW); u.amp.value = 0.75 * Math.min(1, pbShared.neonGain ?? 1); /* r304: the wet streaks follow phase B's night (polite-look: and stay under it) */ u.t.value = t; if (fog) { u.fogNear.value = fog.near; u.fogFar.value = fog.far; } }
       if (steam) steam.material.uniforms.t.value = t;
+      PCU.pcT.value = t; PCU.pcLit.value = litFrac(pbHours());
       for (const tk of tickers) tk.tex.offset.x = (t * (tk.kind === "news" ? 0.035 : 0.028)) % 1;
       // the session, for the news ticker
       const car = A.car();
@@ -877,7 +1048,7 @@
       }
     }
     function sysTick(dt, now) { for (const [name, S] of systems) if (S.ready && !S.dead) { S.ctx.active = true; try { S.sys.update?.(dt, now, S.ctx); } catch (e) { S.dead = true; console.warn("[polite] system " + name + ":", e); } } }
-    function sysActive(on) { for (const S of systems.values()) if (S.ctx) S.ctx.active = on; }
+    function sysActive(on) { for (const [name, S] of systems) if (S.ctx) { S.ctx.active = on; try { S.sys.active?.(on, S.ctx); } catch (e) { console.warn("[polite] system " + name + ":", e); } } } // (r304: an optional active(on) per system)
     api.registerSystem = (name, sys) => {
       if (!name || !sys) return false;
       api.unregisterSystem(name);
@@ -894,7 +1065,43 @@
     };
     api.systems = () => [...systems.keys()];
     { const Q = (window.czPoliteSystems ||= []); for (const x of Q.splice(0)) api.registerSystem(x.name, x); Q.push = (x) => (api.registerSystem(x.name, x), 0); } // (registered before the world existed)
+    // ===================== 6b. phase B (r304, beta): atmosphere, traffic, pedestrians (src/polite-b, Radu + Iris) =====================
+    // Their modules register factories on window.__politePhaseB; each is wrapped as one of our systems. Their context is
+    // their own (README in refs/gta-world/phaseB): `scene` is the system's group under the dressing (so it hides with the
+    // world), atmosphere goes first (it publishes night / rain / neonGain to `shared`). They live only while the visitor is
+    // in Polite City: leaving disposes them (the lit-window hook on the shared buildings material comes off with it, so
+    // the other worlds keep their windows), coming back builds them again under the loading card (~35-100 ms).
+    // The clock: Polite City is always night for now, so by day the modules get a night hour (22:30) and at night the real
+    // Bucharest one (the real time-of-day grade of the whole world is a later decision)
+    const bucH = () => { try { const p = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Bucharest", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date()); const g = (t) => +p.find((x) => x.type === t).value; return (g("hour") % 24) + g("minute") / 60; } catch { return 22.5; } };
+    // how many windows are lit at Bucharest hour h (polite-look): most through the evening, few after 2, some early risers
+    function litFrac(h) { const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }; const hh = h < 12 ? h + 24 : h; return Math.max(0.12, 0.12 + 0.4 * sm(17, 19.5, hh) * (1 - sm(23, 27, hh)) + 0.18 * sm(29, 30.5, hh) * (1 - sm(31, 32.5, hh))); }
+    const pbHours = () => { const h = bucH(); return h >= 18.5 || h < 6.5 ? h : 22.5; };
+    let pbShared = {};
+    const pbCtx = (group) => ({
+      T, scene: group, camera: A.camera, graph: A.nav2()?.graph,
+      player: () => { const c = A.car(); return { x: c.x, z: c.z, h: c.h, v: A.nav2()?.speed?.() ?? 0 }; },
+      lite: low, reduced: A.reduced, rng: Math.random, groundY: 1.6, footprints: A.footprints() || [], crossings: [],
+      windowsMaterial: null, /* (polite-look: the lit windows are the look layer's, 1b) */ lights: null, rain: () => 0.7, copBusy: A.copBusy, clockHours: pbHours,
+      sfx: pbSfx, shared: pbShared
+    });
+    function pbSfx(id, o) { if (sfxHas(id)) sfx(id, o); } // (an id Sorin's manifest lacks: nothing, no warning)
+    function phaseB(name) {
+      let m = null, c = null, grp = null;
+      const make = () => { const f = window.__politePhaseB?.[name]; if (!f || !grp) return; m = f(name === "atmosphere" ? { fogBanks: 0 } : {}); c = pbCtx(grp); m.init(c); }; // (polite-look: no fog banks; the city's haze is enough)
+      return {
+        init(ctx) { grp = ctx.group; make(); },
+        update(dt) { if (!m) make(); if (m) m.update(Math.min(dt, 0.05), c); },
+        active(on) { if (!on && m) { m.dispose(); m = null; } },
+        dispose() { if (m) m.dispose(); m = null; },
+        get mod() { return m; }
+      };
+    }
+    if (window.__politePhaseB) for (const n of ["atmosphere", "pedestrians"]) // (r306, Daniel: "the traffic isn't good: cars pass through each other": the ambient traffic is gone, its Patrol cruiser with it; nav2's own Polite Patrol stays)
+       if (window.__politePhaseB[n]) api.registerSystem("pb-" + n, phaseB(n));
+    api._pbSfx = pbSfx; api._mats = A.mats; api.pb = () => ({ player: A.car(), shared: pbShared, mods: Object.fromEntries([...systems].filter(([k]) => k.startsWith("pb-")).map(([k, S]) => [k, S.sys.mod])) }); // tests
     api.arrival = () => arrival && arrival.phase; // tests
+    api._look = (on, roofs = on) => { PCU.pcOn.value = on ? 1 : 0; for (const o of roofMeshes) o.visible = !!roofs; }; // tests (polite-look: the A/B)
     api.page = page; api.moment = moment; api.flashStation = flashStation; api.showCard = showCard; api.session = session;
     return api;
   };
