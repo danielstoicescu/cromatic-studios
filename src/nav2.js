@@ -502,7 +502,7 @@
     const D = {
       seq: [], px: [], pz: [], cum: [], kap: [], total: 0, C: 0, v: 0, uid: 1,
       cleared: new Set(), goUntil: -1, cruise: false, cruiseOff: false, keyT: {}, auto: null, uturn: null, kturn: null, revSteer: null, wasRev: false, backHold: false, downT: 0,
-      keys: { u: false, d: false, l: false, r: false }, ready: false, view: "sat", streetT: 0, camPull: 1, camUp: 0, camOver: 0, camLag: 0, camK: 0, camH: null,
+      keys: { u: false, d: false, l: false, r: false }, ready: false, view: "sat", streetT: 0, topT: 0, topK: 0, topZ: 0, topUser: 1, topYaw: null, camPull: 1, camUp: 0, camOver: 0, camLag: 0, camK: 0, camH: null,
       lastArr: null, cardFor: null, firstDrive: true
     };
     // the corner at a node: as wide as the narrower road allows (a lane change is a light blend), a tighter one on the
@@ -824,7 +824,7 @@
       D.cardFor = pl;
       D.cardAuto = how === "crawl"; D.fastT = 0;
       H.arrive(pl);
-      if (D.streetT > 0.5 || !H.wantsCine()) H.cineStop();
+      if (D.streetT > 0.5 || D.topT > 0.5 || !H.wantsCine()) H.cineStop();
       render(true);
     }
 
@@ -1915,7 +1915,48 @@
         return h;
       };
     };
-    function camera(dt, camPos, camTarget) {
+    // polite-city: the camera of a frame is the street / satellite blend, then the top-down view over it (topCam)
+    function camera(dt, camPos, camTarget) { cameraSS(dt, camPos, camTarget); topCam(dt, camPos, camTarget); }
+    // polite-city phase 1, "Top-down" (the 4th view, every world): straight down over the car on a long-ish lens, the world
+    // turning under it with a fixed north (the way the 1997-99 top-down games did it), a little perspective so the
+    // buildings lean out from the centre, and the speed zoom: the faster you go the higher it climbs (and it comes back
+    // down, slower, when you slow). It replaces app.js's old topK camera (which fought the chase camera: a crooked Street
+    // view in the old GTA 2 world). Blended on the same orbit as the street view, so the car stays in frame throughout.
+    // The wheel / pinch scale it (D.topUser, 0.6-2.2)
+    function topCam(dt, camPos, camTarget) {
+      const want = viewNow() === "top" ? 1 : 0;
+      if (reduced()) D.topT = want;
+      else D.topT = want > D.topT ? Math.min(1, D.topT + dt / 0.95) : Math.max(0, D.topT - dt / 0.95);
+      if (H.jetCine?.()) D.topT = 0;
+      const k = sss(D.topT);
+      D.topK = k;
+      if (k < 1e-4) { D.topYaw = null; return; }
+      const mv = H.mapView;
+      if (D.topYaw == null) D.topYaw = Math.round(mv.yaw / (Math.PI / 2)) * (Math.PI / 2); // a fixed north, the nearest quarter of where the map looked
+      const spd = reduced() ? 0 : clamp(Math.abs(P.u) / VMAX_F, 0, 1.45);
+      D.topZ += (spd - D.topZ) * (1 - Math.exp(-dt * (spd > D.topZ ? 1.5 : 0.7)));
+      const phone = VP.w < VP.h, alt = H.vehAlt?.() || 0;
+      const span = (phone ? 470 : 620) * (1 + 1.35 * D.topZ) * D.topUser; // world units over the short side of the screen
+      const fov1 = 40, d1 = (span * 0.5) / Math.tan((fov1 * Math.PI) / 360) + alt;
+      // a look ahead where the car is going, gently (its velocity, capped), so the road in front gets the room
+      const lax = reduced() ? 0 : clamp(P.vx * 0.32, -span * 0.28, span * 0.28), laz = reduced() ? 0 : clamp(P.vz * 0.32, -span * 0.28, span * 0.28);
+      D.tlx = (D.tlx || 0) + (lax - (D.tlx || 0)) * (1 - Math.exp(-dt * 1.4)); D.tlz = (D.tlz || 0) + (laz - (D.tlz || 0)) * (1 - Math.exp(-dt * 1.4));
+      const look = V3(H.carPos.x + D.tlx, 0, H.carPos.z + D.tlz);
+      const yaw1 = D.topYaw, pitch1 = 1.5533; // 89 degrees: straight down, still a defined up for lookAt
+      const fov0 = H.camera.fov, d0 = Math.hypot(camPos.x - camTarget.x, camPos.y - camTarget.y, camPos.z - camTarget.z);
+      const yaw0 = Math.atan2(camPos.x - camTarget.x, camPos.z - camTarget.z), pitch0 = Math.asin(clamp((camPos.y - camTarget.y) / Math.max(d0, 1e-3), -1, 1));
+      const tanH = (f) => Math.tan((f * Math.PI) / 360);
+      const h0 = 2 * d0 * tanH(fov0), h1 = 2 * d1 * tanH(fov1);
+      const fov = fov0 + (fov1 - fov0) * k, h = Math.exp(Math.log(h0) + (Math.log(h1) - Math.log(h0)) * k), d = h / (2 * tanH(fov));
+      const yaw = yaw0 + wrapA(yaw1 - yaw0) * k, pitch = pitch0 + (pitch1 - pitch0) * k;
+      const tx = camTarget.x + (look.x - camTarget.x) * k, ty = camTarget.y + (look.y - camTarget.y) * k, tz = camTarget.z + (look.z - camTarget.z) * k;
+      camTarget.set(tx, ty, tz);
+      camPos.set(tx + Math.sin(yaw) * Math.cos(pitch) * d, ty + Math.sin(pitch) * d, tz + Math.cos(yaw) * Math.cos(pitch) * d);
+      if (k > 0.5) H.camera.up.set(0, 1, 0); // no street roll up here
+      const cam = H.camera, near = Math.max(4, d * 0.25), far = Math.max(6000, d * 2.5);
+      if (Math.abs(cam.fov - fov) > 0.01 || Math.abs(cam.near - near) > 0.5 || Math.abs(cam.far - far) > 10) { cam.fov = fov; cam.near = near; cam.far = far; cam.updateProjectionMatrix(); }
+    }
+    function cameraSS(dt, camPos, camTarget) {
       const want = syncView() === "street" ? 1 : 0;
       if (reduced()) D.streetT = want;
       else D.streetT = want > D.streetT ? Math.min(1, D.streetT + dt / 1.15) : Math.max(0, D.streetT - dt / 1.15);
@@ -2002,25 +2043,28 @@
     // owns the camera (the jet's take-off, the opening), when it is the satellite. The buttons, the body class, the
     // swipe and the wheel all follow the view on screen, checked every frame
     let viewSig = "";
-    const viewNow = () => (D.view === "street" && !H.camBusy() ? "street" : "sat");
+    const viewNow = () => (D.view !== "sat" && !H.camBusy() ? D.view : "sat"); // polite-city: "top" too
     function syncView() {
       const a = viewNow(), busy = H.camBusy(), sig = a + busy;
       if (sig !== viewSig) {
         viewSig = sig;
         views.querySelectorAll("button").forEach((b) => { if (b.dataset.v === "photo") { b.disabled = busy; return; } b.setAttribute("aria-pressed", String(b.dataset.v === a)); b.disabled = busy; });
         document.body.classList.toggle("nav2-street", a === "street");
+        document.body.classList.toggle("nav2-top", a === "top"); // polite-city
       }
       return a;
     }
-    function setView(street) {
-      const v = street ? "street" : "sat";
+    // polite-city: setView(true|false) as before (street / satellite), or a view by name: "street" | "sat" | "top"
+    function setView(arg, quiet) {
+      const v = arg === true ? "street" : arg === false ? "sat" : arg === "street" || arg === "top" ? arg : "sat", street = v === "street";
       if (D.view === v) return;
       D.view = v;
       syncView();
-      if (!street && H.mapView.pitch < 0.75) H.mapView.pitchGoal = 0.98;
-      if (street) H.cineStop();
+      if (v === "sat" && H.mapView.pitch < 0.75) H.mapView.pitchGoal = 0.98;
+      if (v !== "sat") H.cineStop();
+      if (v === "top") D.topUser = 1;
       H.follow();
-      toast(street ? "Street view · the camera rides behind you" : phoneUI() ? "Bird's eye · pinch to zoom" : "Bird's eye · zoom with + − or the wheel");
+      if (!quiet) toast(street ? "Street view · the camera rides behind you" : v === "top" ? (phoneUI() ? "Top-down · the faster you go, the higher it climbs" : "Top-down · the faster you go, the higher it climbs · T") : phoneUI() ? "Bird's eye · pinch to zoom" : "Bird's eye · zoom with + − or the wheel");
     }
     function firstDrive() {
       D.firstDrive = false;
@@ -2045,6 +2089,7 @@
       <div class="n2-views" role="group" aria-label="View">
         <button data-v="street" aria-pressed="false" title="Street view (V)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20 9 4h6l6 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 6.5v2.5M12 12v2.5M12 17.5V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>Street</b></button>
         <button data-v="sat" aria-pressed="true" title="Bird's eye view (V)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 12H3.5M20.5 12H15M12 9V3.5M12 20.5V15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m4 4 3 3M20 20l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>Bird's eye</b></button>
+        <button data-v="top" aria-pressed="false" title="Top-down view (T)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><rect x="9.5" y="7" width="5" height="10" rx="1.6" fill="currentColor"/></svg><span>Top-down</span></button>
         <button data-v="photo" class="n2-postcard" aria-pressed="false" aria-label="${RO2 ? "Vedere" : "Postcard"}" title="${RO2 ? "Vedere: fotografiază-ți mașina (P)" : "Postcard: take a photo of your ride (P)"}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2" fill="#fff" stroke="currentColor" stroke-width="2"/><path d="M3.6 6.2h16.8" stroke="#D7362C" stroke-width="1.6" stroke-dasharray="2.2 2.2"/><path d="M4.7 6.2h16.8" stroke="#2f6bff" stroke-width="1.6" stroke-dasharray="2.2 2.2" stroke-dashoffset="-1.1" opacity=".9"/><path d="M12 9.5v6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="14.6" y="9" width="4.2" height="4.6" rx=".5" fill="#FED012" stroke="currentColor" stroke-width="1.4"/><path d="M5.4 11h4.4M5.4 14h3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><b>${RO2 ? "Vedere" : "Postcard"}</b></button>
       </div>
       <div class="n2-pad" aria-label="Drive">
@@ -2087,7 +2132,7 @@
     SND.bind(root.querySelector(".n2-snd"));
     root.querySelector(".n2-snd").addEventListener("pointerdown", (e) => e.stopPropagation());
     const keyEls = {}; pad.querySelectorAll(".n2-k").forEach((b) => { keyEls[b.dataset.k] = b; });
-    views.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.v === "photo") { window.czPhotoOpen?.(); return; } setView(b.dataset.v === "street"); }); // TASK-119: Postcard opens the photo mode
+    views.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.v === "photo") { window.czPhotoOpen?.(); return; } setView(b.dataset.v); }); // TASK-119: Postcard opens the photo mode
     let toastT = 0;
     function toast(t) { toastEl.textContent = t; toastEl.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove("on"), 2600); }
     function nope(k) { const b = keyEls[k]; if (!b) return; b.classList.remove("nope"); void b.offsetWidth; b.classList.add("nope"); }
@@ -2114,6 +2159,7 @@
     window.addEventListener("keydown", (e) => {
       if (!api.on || typing(e) || H.overlay() || e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === "v" || e.key === "V") { e.preventDefault(); setView(D.view !== "street"); return; }
+      if ((e.key === "t" || e.key === "T") && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); setView(D.view === "top" ? "sat" : "top"); return; } // polite-city: the top-down view
       const k = KEYS[e.key];
       if (!k) return;
       e.preventDefault(); e.stopImmediatePropagation();
@@ -2144,9 +2190,10 @@
         const dz = (v) => (Math.abs(v) < 0.14 ? 0 : Math.sign(v) * (Math.abs(v) - 0.14) / 0.86);
         D.stick = { x: dz(dx / R), y: dz(-dy / R) };
       };
-      const phoneStreet = () => phoneUI() && D.streetT >= 0.5;
+      const drvT = () => Math.max(D.streetT, D.topT); // polite-city: the top-down view drives like the street view (the stick on a phone)
+      const phoneStreet = () => phoneUI() && drvT() >= 0.5;
       cv.addEventListener("pointerdown", (e) => {
-        if (!api.on || D.streetT < 0.5) return;
+        if (!api.on || drvT() < 0.5) return;
         if (phoneStreet()) {
           if (e.clientY < VP.h * 0.45) return; // the upper half stays the map's (taps, the toggle); beta 2.9: a card (compact, right) leaves it free
           { const cs = getComputedStyle(root); if (cs.visibility === "hidden" || +cs.opacity < 0.05) return; } // beta 3.59 r222 (P0): the controls step aside for a full card (Olari 9, a chapter, the XP log; nav2.css): no unseen stick behind it
@@ -2175,7 +2222,7 @@
       cv.addEventListener("pointerup", end, true); cv.addEventListener("pointercancel", end, true);
       driftB.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); driftB.setPointerCapture?.(e.pointerId); D.keys.h = true; driftB.classList.add("on"); });
       for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) driftB.addEventListener(ev, () => { D.keys.h = false; driftB.classList.remove("on"); });
-      window.addEventListener("wheel", (e) => { if (api.on && D.streetT > 0.5 && !e.target.closest?.(".map-card, .case-frame, .nav2-ui, .map-rides, .crew-panel")) { e.preventDefault(); e.stopImmediatePropagation(); } }, { passive: false, capture: true });
+      window.addEventListener("wheel", (e) => { if (api.on && D.topT > 0.5 && !e.target.closest?.(".map-card, .case-frame, .nav2-ui, .map-rides, .crew-panel")) { e.preventDefault(); e.stopImmediatePropagation(); D.topUser = clamp(D.topUser * Math.exp(e.deltaY * 0.0015), 0.6, 2.2); return; } if (api.on && D.streetT > 0.5 && !e.target.closest?.(".map-card, .case-frame, .nav2-ui, .map-rides, .crew-panel")) { e.preventDefault(); e.stopImmediatePropagation(); } }, { passive: false, capture: true });
     }
     // beta 3.20 (r197, Daniel: the next exit should be obvious without reading the hint): driving round the ring yourself,
     // the next exit ahead is painted on the road, an arrow in the lane just before it turning out, and named in a pill
@@ -2652,7 +2699,7 @@
       if (at === "car") { const p = H.project(H.carPos.x, 40, H.carPos.z); if (p.z < 1) { x = (p.x * 0.5 + 0.5) * W; y = (-p.y * 0.5 + 0.5) * Hh - 80; } }
       else if (at === "panel") { const r = panel.getBoundingClientRect(); if (ph) { x = W / 2; y = r.bottom + 70; } else { x = r.left + r.width / 2; y = r.top - 70; } }
       else if (at === "views") { const r = views.getBoundingClientRect(); x = r.left + r.width / 2; y = ph ? r.bottom + 70 : r.top - 80; } // beta 2.7: on a phone the toggle is at the top
-      if (ph && D.streetT > 0.5) y = Math.min(y, Hh * 0.4); // the lower half is the stick's
+      if (ph && Math.max(D.streetT, D.topT) > 0.5) y = Math.min(y, Hh * 0.4); // the lower half is the stick's
       // on a phone the Nearby panel takes the top: the pill stays below it
       const top = ph ? Math.max(250, (getComputedStyle(panel).opacity !== "0" && getComputedStyle(root).display !== "none" ? panel.getBoundingClientRect().bottom : 0) + 95) : 150;
       e.style.left = clamp(x, 150, W - 150).toFixed(0) + "px";
@@ -2663,6 +2710,7 @@
       on: false, graph: G, D,
       tutorial, tutorialEnd: () => tutEnd(null), tourStep: () => (TUT.i >= 0 && TUT.i < STEPS.length ? STEPS[TUT.i].id : TUT.i >= STEPS.length ? "end" : null),
       get camK() { return D.camK; },
+      get topK() { return D.topK; }, // polite-city: the top-down view's blend
       mv: () => { const m = H.mapView; return { x: Math.round(m.tgt.x), z: Math.round(m.tgt.z), dist: Math.round(m.dist), yaw: +m.yaw.toFixed(3), pitch: +m.pitch.toFixed(3), follow: m.follow }; },
       onRoadMask: (x, z) => !MASK.resolve(x, z, 0).hit, closed: () => CLOSED, snd: SND, explore: (e, dir) => { const o = []; explore({ e, dir }, 700, 0, o, new Set(), 0); return uniq(o).map((x) => [x.p.pl.name, x.p.q, Math.round(x.d)]); }, copT: () => (COP.on ? +COP.on.t.toFixed(2) : null), speed: () => P.u, dims: () => ({ len: H.carLen(), span: H.vehSpan() }), cam: () => H.camera, look: (x, z, d) => { const m = H.mapView; m.follow = false; m.tgt.set(x, 0, z); m.dist = d; m.distGoal = null; m.vx = m.vz = 0; }, put: (x, z, h) => { P.x = x; P.z = z; P.h = h; P.u = P.w = P.yr = 0; }, tick, pose, camera, body, free: FREE, stepDist: () => (FREE ? P.ds : 0), kap: () => (Math.abs(P.u) < 5 ? 0 : P.yr / P.u), phys: () => ({ x: P.x, z: P.z, h: P.h, u: P.u, w: P.w, contact: P.contact }),
       // a place from the map (a pin, a chip, the welcome card): driven to along the graph
@@ -2693,7 +2741,7 @@
       setActive(on) {
         api.on = on;
         document.body.classList.toggle("nav2", on);
-        if (!on) { H.exitMark?.(null); nextEl.classList.add("off"); nxSig = ""; for (const k of "udlr") keyUp(k); D.ready = false; D.auto = null; D.uturn = null; D.streetT = 0; D.camK = 0; viewSig = ""; document.body.classList.remove("nav2-street"); }
+        if (!on) { H.exitMark?.(null); nextEl.classList.add("off"); nxSig = ""; for (const k of "udlr") keyUp(k); D.ready = false; D.auto = null; D.uturn = null; D.streetT = 0; D.camK = 0; D.topT = 0; D.topK = 0; viewSig = ""; document.body.classList.remove("nav2-top"); document.body.classList.remove("nav2-street"); }
         else { viewSig = ""; let seen = false; try { seen = localStorage.getItem("cz-drive-guide") === "2"; } catch {} if (seen) setTimeout(() => toast(H.isPhone() ? "Drive it yourself with the pad · or tap a place" : "Drive it yourself: arrows or WASD · V switches the view"), 1600); } // a first visit gets the tutorial instead
       },
       view: setView,

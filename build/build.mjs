@@ -35,6 +35,9 @@ const NAV2_CSS = (() => { try { return readFileSync(src("nav2.css"), "utf8"); } 
 // TASK-119: the photo mode (behind ?photo), its own module and styles, laid before the app like nav2
 const PHOTO_JS = (() => { try { return readFileSync(src("photo.js"), "utf8"); } catch { return ""; } })();
 const PHOTO_CSS = (() => { try { return readFileSync(src("photo.css"), "utf8"); } catch { return ""; } })();
+// polite-city: Polite City's layer (?world=polite), its own module and styles, laid before the app like nav2 and photo
+const POLITE_JS = (() => { try { return readFileSync(src("polite.js"), "utf8"); } catch { return ""; } })();
+const POLITE_CSS = (() => { try { return readFileSync(src("polite.css"), "utf8"); } catch { return ""; } })();
 // r231 (Daniel, Lottie across the site): the site's Lottie layer (src/lottie-ui): the shared player's host (czl.js), the
 // pieces' host code, their styles; the pieces' JSON (design/lottie-ui/_source) are hashed into /assets below
 const LUI_HOST = ["czl.js", "finale.js", "pill.js", "micro.js", "welcome.js", "game.js"]; // (TASK-007: welcome.js, the map's welcome card; TASK-009: game.js, into the arcade game and back out)
@@ -81,7 +84,7 @@ if (single >= 0) {
   mkdirSync(dirname(out), { recursive: true });
   // a local file has no domain: drop the absolute social/canonical tags
   const h = head.split("\n").filter((l) => !l.includes("%%SITE_URL%%")).join("\n");
-  const html = `${h}<style>${css}\n${NAV2_CSS}\n${PHOTO_CSS}\n${LUI_CSS}</style>\n</head><body>\n${content}\n<script>${NAV2_JS}\n${PHOTO_JS}\n${LUI_JS}\n${js}<\/script>\n</body></html>`; // nav2 (r223: no loader in the single file: the app shows the map when ready)
+  const html = `${h}<style>${css}\n${NAV2_CSS}\n${PHOTO_CSS}\n${POLITE_CSS}\n${LUI_CSS}</style>\n</head><body>\n${content}\n<script>${NAV2_JS}\n${PHOTO_JS}\n${POLITE_JS}\n${LUI_JS}\n${js}<\/script>\n</body></html>`; // nav2 (r223: no loader in the single file: the app shows the map when ready)
   writeFileSync(out, html);
   console.log(`single file -> ${out} (${(html.length / 1048576).toFixed(2)} MB)`);
   process.exit(0);
@@ -134,7 +137,7 @@ const lazy = (text) => text.replace(/<img src=/g, "<img loading=lazy decoding=as
 // name -> data URI, for every embedded file assigned to a named variable in app.js
 const named = new Map();
 for (const m of js.matchAll(/([A-Za-z_$][\w$]*)\s*=\s*"data:((?:image|video)\/[a-z0-9+.-]+);base64,([A-Za-z0-9+/=]+)"/g)) named.set(m[1], m[3]);
-let jsOut = NAV2_JS + "\n" + PHOTO_JS + "\n" + LUI_JS + "\n" + lazy(extract(js)); // nav2, r231 the Lottie layer
+let jsOut = NAV2_JS + "\n" + PHOTO_JS + "\n" + POLITE_JS + "\n" + LUI_JS + "\n" + lazy(extract(js)); // nav2, r231 the Lottie layer
 // TASK-074: the brands of the Zdrovit park come from site/data.mjs (one list for the map, the drive and the website)
 {
   const before = jsOut.length;
@@ -151,7 +154,7 @@ let jsOut = NAV2_JS + "\n" + PHOTO_JS + "\n" + LUI_JS + "\n" + lazy(extract(js))
 }
 // r223: the r142 opening engine (site/onboarding/intro-lab/engine.js) is no longer laid before the app: the opening is
 // the Lottie loader now (src/intro); the intro lab keeps its own copy of the engine
-let cssOut = extract(css) + "\n" + NAV2_CSS + "\n" + PHOTO_CSS + "\n" + LUI_CSS; // nav2, r231 the Lottie layer
+let cssOut = extract(css) + "\n" + NAV2_CSS + "\n" + PHOTO_CSS + "\n" + POLITE_CSS + "\n" + LUI_CSS; // nav2, r231 the Lottie layer
 // minify for production (the single-file build stays readable); skipped if esbuild is missing
 try {
   const { transformSync } = await import("esbuild");
@@ -166,6 +169,13 @@ const WP_MIRROR = new Set();
 {
   const base = join(root, "site", "wp-uploads");
   (function walk(d, rel) { let fs = []; try { fs = readdirSync(d); } catch { return; } for (const f of fs) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p, rel + f + "/"); else { mkdirSync(join(pub, "wp-content", "uploads", rel), { recursive: true }); copyFileSync(p, join(pub, "wp-content", "uploads", rel, f)); WP_MIRROR.add(rel + f); } } })(base, "");
+}
+// polite-city: Polite City's radio (Sorin: radio.js, manifest.json, audio/*.webm + .m4a; refs/gta-world/radio), copied as is to
+// /assets/polite-radio/. radio.js fetches by the manifest's relative paths; nothing loads or plays until the visitor turns
+// the radio on inside Polite City (src/polite.js)
+{
+  const base = join(root, "site", "polite-radio");
+  (function walk(d, rel) { let fs = []; try { fs = readdirSync(d); } catch { return; } for (const f of fs) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p, rel + f + "/"); else { mkdirSync(join(pub, "assets", "polite-radio", rel), { recursive: true }); copyFileSync(p, join(pub, "assets", "polite-radio", rel, f)); } } })(base, "");
 }
 // r134: /onboarding, the launch page of the product (site/onboarding/**, static, copied as is)
 {
