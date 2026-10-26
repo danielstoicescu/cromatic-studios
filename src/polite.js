@@ -929,7 +929,7 @@
     }
     function welcomePages() {
       let seen = false; try { seen = sessionStorage.getItem("cz-polite-pager") === "1"; sessionStorage.setItem("cz-polite-pager", "1"); } catch {}
-      if (!seen) { page("Welcome to Polite City. Please drive nicely."); page(A.isPhone() ? "Tap the square for Top-down." : "Press T for Top-down. Some say there are codes.", "TIP"); }
+      if (!seen) { page("Welcome to Polite City. Please drive nicely."); page(A.isPhone() ? "Top-down here. Drag to drive." : "Top-down here. T for Street. Some say there are codes.", "TIP"); } // (r309: Top-down is this world's map view)
       else page("Welcome back to Polite City.");
     }
 
@@ -995,9 +995,9 @@
       if (v) {
         if (!hud) hud = buildHud();
         if (cardDue) { cardDue = false; showCard(); }
-        // desktop: the world opens in the Top-down view (the genre's own angle); a phone keeps its view (the stick and the
+        // r309 (Daniel, 26 Oct): Top-down replaces Bird's eye here, on phones too (nav2.js syncView); was: desktop only, a phone kept its view (the stick and the
         // tap both work in every view)
-        const n = A.nav2(); if (n && !A.isPhone() && n.D?.view === "sat") n.view("top", true);
+        const n = A.nav2(); if (n && n.D?.view === "sat") n.view("top", true);
         // (the welcome lines come with the arrival's end: welcomePages)
         radioLoad(); // laid in, silent (see RADIO_BASE)
         radioPaint();

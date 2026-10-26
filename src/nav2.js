@@ -502,7 +502,7 @@
     const D = {
       seq: [], px: [], pz: [], cum: [], kap: [], total: 0, C: 0, v: 0, uid: 1,
       cleared: new Set(), goUntil: -1, cruise: false, cruiseOff: false, keyT: {}, auto: null, uturn: null, kturn: null, revSteer: null, wasRev: false, backHold: false, downT: 0,
-      keys: { u: false, d: false, l: false, r: false }, ready: false, view: "sat", streetT: 0, topT: 0, topK: 0, topZ: 0, topUser: 1, topYaw: null, camPull: 1, camUp: 0, camOver: 0, camLag: 0, camK: 0, camH: null,
+      keys: { u: false, d: false, l: false, r: false }, padK: {}, ready: false, view: "sat", streetT: 0, topT: 0, topK: 0, topZ: 0, topUser: 1, topYaw: null, camPull: 1, camUp: 0, camOver: 0, camLag: 0, camK: 0, camH: null,
       lastArr: null, cardFor: null, firstDrive: true
     };
     // the corner at a node: as wide as the narrower road allows (a lane change is a light blend), a tighter one on the
@@ -1449,12 +1449,15 @@
     // (> 135°) brakes and turns the car round on the spot, the same way until it faces it. Nothing held: coast with the
     // road assist, as before. Nearly lined up (< 7°, < 26° once rolling), the wheel is left to the assist (lane keeping, kerbs). Space still
     // drifts (into the turn the heading asks for). Street view keeps the car's own controls. null: not in these views
+    // r309 (Daniel, 26 Oct): touch only (the phone's stick, a tablet's on-screen pad); the keyboard's arrows / WASD are the
+    // car's own left and right again in every view (null: the car's controls)
     function screenSteer() {
-      const on = D.streetT < 0.5 && (D.view === "top" || D.view === "sat");
-      D.scr = on;
+      const view = D.streetT < 0.5 && (D.view === "top" || D.view === "sat"), padK = view && !D.stick && "udlr".split("").some((k) => D.keys[k] && D.padK[k]);
+      const on = view && (!!D.stick || padK || (touchUI && !"udlr".split("").some((k) => D.keys[k])));
+      D.scrView = view; D.scr = on;
       if (!on) { D.scrTurn = 0; return null; }
       let sx, sy;
-      if (D.stick) { sx = D.stick.x; sy = D.stick.y; } else { sx = (D.keys.r ? 1 : 0) - (D.keys.l ? 1 : 0); sy = (D.keys.u ? 1 : 0) - (D.keys.d ? 1 : 0); }
+      if (D.stick) { sx = D.stick.x; sy = D.stick.y; } else { const k = (c) => (D.keys[c] && D.padK[c] ? 1 : 0); sx = k("r") - k("l"); sy = k("u") - k("d"); }
       const mag = Math.min(1, Math.hypot(sx, sy));
       if (mag < 1e-3) { D.scrTurn = 0; D.scrHd = null; return { thr: 0, steer: 0 }; }
       const m = H.camera.matrixWorld.elements; // (its columns: the camera's right and up, in the world)
@@ -2077,11 +2080,16 @@
     // swipe and the wheel all follow the view on screen, checked every frame
     let viewSig = "";
     const viewNow = () => (D.view !== "sat" && !H.camBusy() ? D.view : "sat"); // polite-city: "top" too
+    // r309 (Daniel, 26 Oct): Top-down only in Polite City, where it takes Bird's eye's place (its button, V, the default);
+    // every other world keeps Bird's eye and has no Top-down. The world from the body's class (app.js schemePage)
+    const topWorld = () => document.body.classList.contains("scheme-polite");
     function syncView() {
-      const a = viewNow(), busy = H.camBusy(), sig = a + busy;
+      const tw = topWorld();
+      if (tw ? D.view === "sat" : D.view === "top") setView(tw ? "top" : "sat", true); // (a world switch: the view follows)
+      const a = viewNow(), busy = H.camBusy(), sig = a + busy + tw;
       if (sig !== viewSig) {
         viewSig = sig;
-        views.querySelectorAll("button").forEach((b) => { if (b.dataset.v === "photo") { b.disabled = busy; return; } b.setAttribute("aria-pressed", String(b.dataset.v === a)); b.disabled = busy; });
+        views.querySelectorAll("button").forEach((b) => { if (b.dataset.v === "sat" || b.dataset.v === "top") b.hidden = (b.dataset.v === "top") !== tw; if (b.dataset.v === "photo") { b.disabled = busy; return; } b.setAttribute("aria-pressed", String(b.dataset.v === a || (tw && a === "sat" && b.dataset.v === "top"))); b.disabled = busy; });
         document.body.classList.toggle("nav2-street", a === "street");
         document.body.classList.toggle("nav2-top", a === "top"); // polite-city
       }
@@ -2089,7 +2097,9 @@
     }
     // polite-city: setView(true|false) as before (street / satellite), or a view by name: "street" | "sat" | "top"
     function setView(arg, quiet) {
-      const v = arg === true ? "street" : arg === false ? "sat" : arg === "street" || arg === "top" ? arg : "sat", street = v === "street";
+      let v = arg === true ? "street" : arg === false ? "sat" : arg === "street" || arg === "top" ? arg : "sat";
+      if (v !== "street") v = topWorld() ? "top" : "sat"; // r309: Polite City's map view is Top-down, everywhere else Bird's eye
+      const street = v === "street";
       if (D.view === v) return;
       D.view = v;
       syncView();
@@ -2098,7 +2108,8 @@
       if (v === "top") D.topUser = 1;
       H.follow();
       // r305: once, the first time Top-down opens: the controls point (a quiet switch, the Polite City arrival: a moment later)
-      if (v === "top") { let seen = false; try { seen = localStorage.getItem("cz-steer-hint") === "1"; if (!seen) localStorage.setItem("cz-steer-hint", "1"); } catch {} if (!seen) { if (quiet) setTimeout(() => toast("Top-down · point where you want to go"), 3200); else { toast("Top-down · point where you want to go"); return; } } }
+      // (r309: on touch only; the keys steer the car again)
+      if (v === "top" && matchMedia("(hover: none) and (pointer: coarse)").matches) { let seen = false; try { seen = localStorage.getItem("cz-steer-hint") === "1"; if (!seen) localStorage.setItem("cz-steer-hint", "1"); } catch {} if (!seen) { if (quiet) setTimeout(() => toast("Top-down · point where you want to go"), 3200); else { toast("Top-down · point where you want to go"); return; } } }
       if (!quiet) toast(street ? "Street view · the camera rides behind you" : v === "top" ? (phoneUI() ? "Top-down · the faster you go, the higher it climbs" : "Top-down · the faster you go, the higher it climbs · T") : phoneUI() ? "Bird's eye · pinch to zoom" : "Bird's eye · zoom with + − or the wheel");
     }
     function firstDrive() {
@@ -2178,12 +2189,12 @@
     const keyDown = (k) => { if (D.keys[k]) return; D.keys[k] = true; D.keyT[k] = performance.now(); keyEls[k]?.classList.add("on"); if (k === "d") D.cruise = false; press(k); };
     const keyUp = (k) => {
       if (!D.keys[k]) return;
-      D.keys[k] = false; keyEls[k]?.classList.remove("on"); if (k === "d") D.backHold = false;
+      D.keys[k] = false; D.padK[k] = false; keyEls[k]?.classList.remove("on"); if (k === "d") D.backHold = false;
       if (k === "u") { D.cruise = performance.now() - (D.keyT.u || 0) < 280 && !D.auto; } // a tap cruises; a hold let go stops
     };
     pad.querySelectorAll(".n2-k").forEach((b) => {
       const k = b.dataset.k;
-      b.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); b.setPointerCapture?.(e.pointerId); keyDown(k); });
+      b.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); b.setPointerCapture?.(e.pointerId); D.padK[k] = true; keyDown(k); }); // (r309: the pad, a touch control: screenSteer)
       const up = () => keyUp(k);
       b.addEventListener("pointerup", up); b.addEventListener("pointercancel", up); b.addEventListener("lostpointercapture", up);
       b.addEventListener("contextmenu", (e) => e.preventDefault());
@@ -2195,7 +2206,7 @@
       if (!api.on || typing(e) || H.overlay() || e.metaKey || e.ctrlKey || e.altKey) return;
       if (window.__czKeyGate?.(e)) return; // polite-city: a key that belongs to a code being typed (the T of POLITE)
       if (e.key === "v" || e.key === "V") { e.preventDefault(); setView(D.view !== "street"); return; }
-      if ((e.key === "t" || e.key === "T") && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); setView(D.view === "top" ? "sat" : "top"); return; } // polite-city: the top-down view
+      if ((e.key === "t" || e.key === "T") && !e.metaKey && !e.ctrlKey && !e.altKey && topWorld()) { e.preventDefault(); setView(D.view === "top" ? "street" : "top"); return; } // polite-city: the top-down view (r309: Polite City only, T toggles it with Street)
       const k = KEYS[e.key];
       if (!k) return;
       e.preventDefault(); e.stopImmediatePropagation();
@@ -2276,7 +2287,7 @@
         const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
         if (Math.hypot(dx, dy) < 28) return;
         sw.k = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "r" : "l") : dy < 0 ? "u" : "d";
-        keyDown(sw.k);
+        D.padK[sw.k] = true; keyDown(sw.k); // (r309: a swipe is touch too)
         if (sw.k === "l" || sw.k === "r") keyUp(sw.k);
       }, true);
       let liveT = 0;
