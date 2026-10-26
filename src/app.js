@@ -44724,6 +44724,22 @@ void main(){
           renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
         }
       };
+      // TASK-013 (Daniel, 26 Oct: "să măsurăm cât câștigăm cu adevărat"): /?map&bench=sketch on a real phone opens the
+      // Sketchbook, waits for it to finish drawing, then times the frame with the half-size pass off and on (interleaved,
+      // 4 rounds of __perfLab.bench) and shows the numbers in a card that can be copied. Nothing runs without the param
+      if (/[?&]bench=sketch\b/.test(location.search)) setTimeout(async () => {
+        const wait = (ms) => new Promise((r) => setTimeout(r, ms)), lab = window.__perfLab;
+        window.__map(true); await wait(1500); window.__scheme("sketch"); await wait(9000);
+        const off = [], on = [];
+        for (let k = 0; k < 4; k++) { lab.nbHalf(false); await wait(400); off.push(lab.bench(12, 3).med); lab.nbHalf(true); await wait(400); on.push(lab.bench(12, 3).med); }
+        const med = (a) => a.slice().sort((x, y) => x - y)[a.length >> 1], a = med(off), b = med(on);
+        let gpu = ""; try { const gl = renderer.getContext(), x = gl.getExtension("WEBGL_debug_renderer_info"); gpu = x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : ""; } catch {}
+        const txt = `Sketchbook bench (TASK-013)\nfără jumătate de rezoluție: ${a} ms/cadru\ncu jumătate de rezoluție: ${b} ms/cadru\ncâștig: ${Math.round((1 - b / a) * 100)}%${isMobile() ? "" : " (ecran lat: jumătatea nu se aplică)"}\nrunde: ${off.join(", ")} | ${on.join(", ")}\n${innerWidth}x${innerHeight} @${renderer.getPixelRatio()} · ${gpu}\n${navigator.userAgent}`;
+        const card = document.createElement("div"); card.style.cssText = "position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;background:#fff;color:#000;border:2px solid #000;border-radius:16px;padding:12px;font:13px/1.4 system-ui;white-space:pre-wrap;box-shadow:0 3px 0 #000";
+        const btn = document.createElement("button"); btn.textContent = "Copiază"; btn.style.cssText = "display:block;margin-top:8px;padding:6px 14px;border:2px solid #000;border-radius:999px;background:#FED012;font:700 13px system-ui";
+        btn.onclick = () => navigator.clipboard?.writeText(txt).then(() => (btn.textContent = "Copiat"));
+        card.textContent = txt; card.append(btn); document.body.append(card);
+      }, 2500);
       window.__proj = (x, z, y = 0) => { const v = warpV(new Vector3(x, y, z)).project(camera); return [(v.x * 0.5 + 0.5) * innerWidth, (-v.y * 0.5 + 0.5) * innerHeight]; };
       window.__mapView = () => ({ dist: mapView.dist, yaw: mapView.yaw, pitch: mapView.pitch, tgt: [mapView.tgt.x, mapView.tgt.z], fork: [FORK_POS.x, FORK_POS.z] });
       window.__camSnap = () => { camSnapNext = true; };
