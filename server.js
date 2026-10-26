@@ -311,6 +311,7 @@ const BETA_HOST = process.env.BETA_HOST ?? "beta.cromaticstudios.com";
 // r169c: and, until beta. points here, on the app's own Bunnyshell address (http only: it has no certificate)
 const BETA_HOSTS = new Set([BETA_HOST, process.env.BETA_HOST2 ?? "cromaticdrive6abd2eab8b05b.cloud.bunnyroute.com"].filter(Boolean));
 const BETA_ROOT = process.env.BETA_DIR || join(APP_DIR, "public-beta");
+const BETA_PAGES = join(APP_DIR, "beta-pages"); // r310: client demos served on the beta hosts only
 const statOr = (p) => { try { return statSync(p); } catch { return null; } };
 function serveBeta(req, res) {
   const u = new URL(req.url, "http://x");
@@ -320,6 +321,8 @@ function serveBeta(req, res) {
   if (/\/index\.html$/.test(path)) { res.writeHead(301, { Location: path.slice(0, -10) + u.search }); return res.end(); }
   if (path.endsWith("/")) path += "index.html";
   let full = join(BETA_ROOT, path), st = full.startsWith(BETA_ROOT + "/") ? statOr(full) : null, status = 200;
+  // r310: client demos that live on beta only (beta-pages/, never in the live build, noindex like all of beta)
+  if (!st) { const bp = join(BETA_PAGES, path), bs = bp.startsWith(BETA_PAGES + "/") ? statOr(bp) : null; if (bs?.isFile()) { full = bp; st = bs; } else if (bs?.isDirectory()) { res.writeHead(301, { Location: path + "/" + u.search }); return res.end(); } }
   if (st?.isDirectory() || (!st && !extname(path) && statOr(full + "/index.html"))) { res.writeHead(301, { Location: path + "/" + u.search }); return res.end(); }
   if (!st) { full = join(BETA_ROOT, "404.html"); st = statOr(full); status = 404; }
   if (!st) { res.writeHead(503, { "Content-Type": "text/plain; charset=utf-8", "Retry-After": "120" }); return res.end("beta 2.0 is not built yet"); }
@@ -419,7 +422,7 @@ const CSP_ENFORCE_ONLY = ["frame-ancestors 'self'", "upgrade-insecure-requests"]
 const CSP = CSP_POLICY.filter((d) => !CSP_ENFORCE_ONLY.includes(d)).join("; ");
 // the old WordPress media pages (/wp-content/uploads/*.html) are not ours to vouch for: no policy there
 const withCsp = (req, res) => {
-  if (req.url.startsWith("/wp-content/uploads/")) return;
+  if (req.url.startsWith("/wp-content/uploads/") || req.url.startsWith("/testing/")) return; // r310: nor the clients' demos on beta (their own CDNs)
   const wh = res.writeHead;
   res.writeHead = function (code, a, b) {
     const h = a && typeof a === "object" ? a : b && typeof b === "object" ? b : null;
