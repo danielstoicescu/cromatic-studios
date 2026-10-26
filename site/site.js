@@ -333,9 +333,9 @@
   const status = f.querySelector(".bf-status");
   // beta 3.46 r215 (Daniel, QA pass): the form's messages in Romanian on the Romanian pages; beta 3.48 r217: and the pass
   const T = RO
-    ? { name: "Ne-ar plăcea să știm cum te cheamă.", mail: "Adresa de email nu pare corectă.", printing: "Îți tipărim boarding pass-ul…", busy: "Prea multe boarding pass-uri de aici, deocamdată. Scrie-ne la hi@cromaticstudios.com și îți răspundem.", hello: "Bine ai venit la bord,", sent: "Boarding pass-ul e deja în inboxul tău și îți răspundem într-o zi lucrătoare.", mailto: "Aplicația ta de email ar trebui să se deschidă cu detaliile; trimite-le și îți răspundem într-o zi lucrătoare.",
+    ? { name: "Ne-ar plăcea să știm cum te cheamă.", mail: "Adresa de email nu pare corectă.", phone: "Lasă-ne și un număr de telefon.", printing: "Îți tipărim boarding pass-ul…", busy: "Prea multe boarding pass-uri de aici, deocamdată. Scrie-ne la hi@cromaticstudios.com și îți răspundem.", hello: "Bine ai venit la bord,", sent: "Boarding pass-ul e deja în inboxul tău și îți răspundem într-o zi lucrătoare.", mailto: "Aplicația ta de email ar trebui să se deschidă cu detaliile; trimite-le și îți răspundem într-o zi lucrătoare.",
         pass: "Carte de îmbarcare", booking: "Rezervare", passenger: "PASAGER", flight: "ZBOR", klass: "CLASĂ", boarding: "ÎMBARCARE", to: "Spre · Str. Olari 9", gate: "Poarta", seat: "Loc" }
-    : { name: "We'd love to know your name.", mail: "That email doesn't look right.", printing: "Printing your boarding pass…", busy: "Too many passes from here for now. Write to hi@cromaticstudios.com and we'll answer.", hello: "Welcome aboard,", sent: "Your pass is in your inbox, and we'll answer within one working day.", mailto: "Your email app should open with the details; send it and we'll answer within one working day.",
+    : { name: "We'd love to know your name.", mail: "That email doesn't look right.", phone: "Leave us a phone number too.", printing: "Printing your boarding pass…", busy: "Too many passes from here for now. Write to hi@cromaticstudios.com and we'll answer.", hello: "Welcome aboard,", sent: "Your pass is in your inbox, and we'll answer within one working day.", mailto: "Your email app should open with the details; send it and we'll answer within one working day.",
         pass: "Boarding pass", booking: "Booking", passenger: "PASSENGER", flight: "FLIGHT", klass: "CLASS", boarding: "BOARDING", to: "To · Str. Olari 9", gate: "Gate", seat: "Seat" };
   // the values sent are the English ones (the studio reads them, the codes map from them); the Romanian pass shows them in Romanian
   const RO_VAL = { "Website / App": "Site / Aplicație", "Growth & Social": "Creștere și social media", "Open route": "Rută deschisă", "Indie Class": "Clasa Indie", "Startup Class": "Clasa Startup", "Growth Class": "Clasa Growth", "First Class": "Clasa întâi", "Open Class": "Clasă deschisă", "Now boarding": "Îmbarcare acum", "In 1–3 months": "În 1–3 luni", "Open ticket": "Bilet deschis", "When you are ready": "Când ești gata" };
@@ -350,6 +350,9 @@
     const okMail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
     f.elements.email.setAttribute("aria-invalid", String(!okMail));
     if (!name || !okMail) { status.textContent = !name ? T.name : T.mail; (!name ? f.elements.name : f.elements.email).focus(); return; }
+    const okPhone = v("phone").replace(/\D/g, "").length >= 6; // r309 (Daniel, 26 Oct): the phone is required
+    f.elements.phone.setAttribute("aria-invalid", String(!okPhone));
+    if (!okPhone) { status.textContent = T.phone; f.elements.phone.focus(); return; }
     const now = new Date();
     let h = 2166136261;
     for (const ch of `${name}|${email}|${now.getTime()}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;

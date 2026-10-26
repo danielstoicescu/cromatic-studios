@@ -124,7 +124,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     <div class="bf-row">
       <label><span>Your name</span><input name="name" autocomplete="name" required></label>
       <label><span>Email</span><input name="email" type="email" autocomplete="email" required></label>
-      <label><span>Phone <i>(optional)</i></span><input name="phone" type="tel" autocomplete="tel"></label>
+      <label><span>Phone</span><input name="phone" type="tel" autocomplete="tel" required minlength="6"></label>
     </div>
     <label class="bf-msg"><span>Tell us a bit about it</span><textarea name="msg" rows="4"></textarea></label>
     <input class="hp" name="company_site" tabindex="-1" autocomplete="off" aria-hidden="true">

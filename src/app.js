@@ -34479,7 +34479,7 @@ void main(){
     fMail.appendChild(iMail);
     row.append(fName, fMail);
     const rowPh = el("div", "cf-row ph");
-    const fPhone = el("label", "cf-field", `<span class="cf-label chip-drop">Phone <em>optional</em></span>`);
+    const fPhone = el("label", "cf-field", `<span class="cf-label chip-drop">Phone</span>`);
     const iPhone = el("input");
     iPhone.type = "tel";
     iPhone.placeholder = "+40 ...";
@@ -34644,21 +34644,22 @@ void main(){
       gDream._sync();
       gBiz._sync();
       gWhen._sync();
-      const valid = name.trim() && email.includes("@") && dreams.length > 0;
+      const phoneOk = phone.replace(/\D/g, "").length >= 6; // r309 (Daniel, 26 Oct): the phone is required now
+      const valid = name.trim() && email.includes("@") && phoneOk && dreams.length > 0;
       submit.disabled = !valid;
       submit.classList.toggle("off", !valid);
-      const filled = [dreams.length > 0, !!biz, !!when, !!name.trim(), email.includes("@"), !!msg.trim()].filter(Boolean).length / 6;
+      const filled = [dreams.length > 0, !!biz, !!when, !!name.trim(), email.includes("@"), phoneOk, !!msg.trim()].filter(Boolean).length / 7;
       f.style.setProperty("--brew", filled.toFixed(3));
       // r138k: the button fills with what is needed to board (a dream, a name, an email), the extras add a little;
       // it is full, and lights up, the moment the pass can be sent
-      const req = [dreams.length > 0, !!name.trim(), email.includes("@")], opt = [!!biz, !!when, !!phone.trim(), !!msg.trim()];
+      const req = [dreams.length > 0, !!name.trim(), email.includes("@"), phoneOk], opt = [!!biz, !!when, !!msg.trim()];
       const nReq = req.filter(Boolean).length, nOpt = opt.filter(Boolean).length;
-      const fill = valid ? 1 : Math.min(0.92, (nReq / 3) * 0.8 + (nOpt / 4) * 0.12);
+      const fill = valid ? 1 : Math.min(0.92, (nReq / 4) * 0.8 + (nOpt / 3) * 0.12);
       f.style.setProperty("--fill", fill.toFixed(3));
       submit.classList.toggle("ready", !!valid);
-      const miss = ["a dream", "your name", "an email"].filter((_, i) => !req[i]);
+      const miss = ["a dream", "your name", "an email", "a phone"].filter((_, i) => !req[i]);
       need.classList.toggle("ok", !!valid);
-      need.innerHTML = valid ? `<b>✓</b> All set. Ready for boarding` : `<b>${nReq}/3</b> Still needed: ${miss.join(" \xB7 ")}`;
+      need.innerHTML = valid ? `<b>✓</b> All set. Ready for boarding` : `<b>${nReq}/4</b> Still needed: ${miss.join(" \xB7 ")}`;
     };
     const colL = el("div", "cf-col l"), colR = el("div", "cf-col r");
     colL.append(gDream, gBiz, gWhen);

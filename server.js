@@ -175,7 +175,7 @@ async function boarding(req, res, tag = SUBJECT_TAG) {
   const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
   if (limited(ip)) return send(res, 429, { ok: false });
   const t = clean(b);
-  if (!t.name || !EMAIL_RE.test(t.email)) return send(res, 422, { ok: false });
+  if (!t.name || !EMAIL_RE.test(t.email) || t.phone.replace(/\D/g, "").length < 6) return send(res, 422, { ok: false }); // r309: the phone is required (Daniel, 26 Oct)
   const kept = keepLead(t, ip);
   try {
     await transport.sendMail({
