@@ -40411,6 +40411,7 @@ void main(){
               const float SKY_AMT_C = 0.2, SKY_AMT_S = 0.42; // how much pencil: a cloud like a tree's pale crown, the sun like the ochre car
               const vec3 PEN_BLUE = vec3(0.50, 0.66, 0.74), PEN_OCHRE = vec3(0.85, 0.71, 0.40); // two of the notebook's pencils (pencilFor)
               uniform mat4 oI0, oI1; uniform vec3 oA0, oB0, oA1, oB1; // the ride and the police car: world to their own frame, and their boxes in it
+              uniform float hf; // TASK-013: 1 = the pass drawn at half size over the full-size scene (a phone): see lum
               float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
               float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
                 return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
@@ -40418,7 +40419,10 @@ void main(){
               // kW undoes it (a white face looking up comes out white). Crayon decals carry a marker alpha: paper here
               vec3 alb(vec4 t){ return pow(clamp(t.rgb * kW, 0.0, 1.0), vec3(0.4545)); }
               float lumT(vec4 t){ if (abs(t.a - 0.25) < 0.03) return 1.0; return dot(alb(t), vec3(0.299, 0.587, 0.114)); }
-              float lum(vec2 uv){ return lumT(texture2D(tD, uv)); }
+              // TASK-013: at half size a pixel covers 2 x 2 of the scene's; the ink test takes the darkest of them (with one bilinear tap
+              // a 1-pixel line is averaged with the paper round it and drops out, or dashes)
+              float lum(vec2 uv){ if (hf < 0.5) return lumT(texture2D(tD, uv)); vec2 q = 0.25 / res;
+                return min(min(lumT(texture2D(tD, uv + vec2(-q.x, -q.y))), lumT(texture2D(tD, uv + vec2(q.x, -q.y)))), min(lumT(texture2D(tD, uv + vec2(-q.x, q.y))), lumT(texture2D(tD, uv + q)))); }
               float lumL(vec2 uv){ return lumT(textureLod(tD, uv, 0.0)); }
               float depZ(float z){ float ndc = z * 2.0 - 1.0; return (2.0 * near * far) / (far + near - ndc * (far - near)); }
               // 1/depZ(z) is (far + near - ndc (far - near)) / (2 near far): no division per sample (beta 3.7x: 13 depth taps
@@ -40485,21 +40489,21 @@ void main(){
                   float lf = max(max(lumL(uv + e3), lumL(uv - e3)), max(lumL(uv + vec2(e3.x, -e3.y)), lumL(uv - vec2(e3.x, -e3.y))));
                   ink *= smoothstep(0.34, 0.55, lf);
                 }
-                // creases: steps and folds in depth. Eight directions at the pen's radius and two at half of it, each saturated
-                // on its own and then counted: the further a pixel is from an edge, the fewer directions straddle it, so the
-                // line fades out softly on both sides and turns round at its ends and corners (no stair steps)
-                vec2 e = px * LR, h = e * 0.5;
+                // creases: steps and folds in depth. Eight directions at the pen's radius, each saturated on its own and then
+                // counted: the further a pixel is from an edge, the fewer directions straddle it, so the line fades out softly
+                // on both sides and turns round at its ends and corners
+                // TASK-013 (Daniel, 26 Oct): a 9-tap kernel (the 3 x 3 at the pen's radius); the four taps at half of it are
+                // gone (13 -> 9 depth reads a pixel): the lines a little thinner and rougher at their ends and corners
+                vec2 e = px * LR;
                 float w11 = iz(uv); g_rw = 1.0 / w11;
                 float w00 = iz(uv + vec2(-e.x, -e.y)), w10 = iz(uv + vec2(0.0, -e.y)), w20 = iz(uv + vec2(e.x, -e.y));
                 float w01 = iz(uv + vec2(-e.x, 0.0)), w21 = iz(uv + vec2(e.x, 0.0));
                 float w02 = iz(uv + vec2(-e.x, e.y)), w12 = iz(uv + vec2(0.0, e.y)), w22 = iz(uv + vec2(e.x, e.y));
-                float hL = iz(uv - vec2(h.x, 0.0)), hR = iz(uv + vec2(h.x, 0.0)), hD = iz(uv - vec2(0.0, h.y)), hU = iz(uv + vec2(0.0, h.y));
                 float zr = texture2D(tZ, vUv).x, dd = depZ(zr);
                 // a step's share of the depth shrinks with distance (a tree 40 high seen from 3000 away is a 1-2 % step): the
                 // threshold follows, so from the map's height every house and tree still gets its outline
                 float clo = mix(0.025, 0.006, smoothstep(250.0, 2400.0, dd)) * sqrt(LR);
-                float cs = d2(w01, w21, w11, clo) + d2(w10, w12, w11, clo) + 0.75 * (d2(w00, w22, w11, clo) + d2(w20, w02, w11, clo))
-                         + 0.8 * (d2(hL, hR, w11, clo * 0.7) + d2(hD, hU, w11, clo * 0.7));
+                float cs = d2(w01, w21, w11, clo) + d2(w10, w12, w11, clo) + 0.75 * (d2(w00, w22, w11, clo) + d2(w20, w02, w11, clo));
                 float crease = smoothstep(0.35, 2.3, cs);
                 // one weight, a little pressure along the stroke; only a touch lighter far away
                 float prs = 0.86 + 0.14 * vn(vUv * res * 0.02 / LR), line = max(ink, crease) * prs;
@@ -40533,26 +40537,32 @@ void main(){
                 // colour: coloured pencil, light, airy and uneven; the paper dominates. How much pencil a colour needs:
                 // its saturation, and a little for darkness (a dark thing is pencilled denser, never filled black)
                 vec4 tc = texture2D(tD, vUv);
-                vec3 A = alb(tc);
-                vec3 hv = hsv(A);
-                float amt = clamp(hv.y * 0.62 + (1.0 - hv.z) * 0.3 - 0.05, 0.0, 0.62);
-                if (abs(tc.a - 0.25) < 0.03 || sky) amt = 0.0;
-                amt *= 1.0 - ground * (1.0 - smoothstep(0.3, 0.45, lmin)); // the inside of a dark band on the ground: paper
-                float fol;
-                vec3 pen = pencilFor(A, hv.y, hv.x, fol);
-                pen = mix(vec3(0.40, 0.41, 0.53), pen, smoothstep(0.04, 0.22, hv.y)); // a grey is graphite, a little indigo
-                pen = max(pen, vec3(0.2)); // never black
-                // the strokes, in world space on the face (its axis from the depth's own normal), sized for the screen. On the
-                // ride and the police car they are laid in the car's own frame, so they stay on its body as it drives. Greenery
-                // takes the swirls (the tile's third channel: curling strokes along a flow, after Van Gogh), the rest the hatch
+                // TASK-013 (Daniel, 26 Oct): the colour block is skipped where nothing is drawn yet (shown = 0: the pixel is the
+                // bare sheet, o = paper whatever the fill). The strokes' frame is taken out of the branch first: derivatives
+                // are only defined outside it (the audit: with dFdx inside, Metal moved them and its edge pixels changed)
                 vec3 sp = inCar0 ? q0 : inCar1 ? q1 : wp;
-                vec3 dx = dFdx(sp), dy = dFdy(sp), an = abs(normalize(cross(dx, dy)));
-                vec2 suv = an.y > max(an.x, an.z) ? sp.xz : an.x > an.z ? sp.zy : sp.xy;
-                vec3 st = strokesAt(suv, max(length(dx), length(dy)));
-                amt = mix(amt, min(amt, 0.32), fol); // greenery: never denser than a tree's crown, however dark its green
-                vec3 fill = pencilFill(st, pen, amt, fol);
-                vec3 wash = mix(vec3(1.0), pen, amt * 0.5 * (0.85 + 0.3 * vn(wp.xz * 0.03))); // world-anchored, low: it never crawls
-                fill = mix(fill, wash, ground);
+                vec3 dx = dFdx(sp), dy = dFdy(sp);
+                vec3 fill = vec3(1.0), st = vec3(0.0); float fol = 0.0;
+                if (shown > 0.0) {
+                  vec3 A = alb(tc);
+                  vec3 hv = hsv(A);
+                  float amt = clamp(hv.y * 0.62 + (1.0 - hv.z) * 0.3 - 0.05, 0.0, 0.62);
+                  if (abs(tc.a - 0.25) < 0.03 || sky) amt = 0.0;
+                  amt *= 1.0 - ground * (1.0 - smoothstep(0.3, 0.45, lmin)); // the inside of a dark band on the ground: paper
+                  vec3 pen = pencilFor(A, hv.y, hv.x, fol);
+                  pen = mix(vec3(0.40, 0.41, 0.53), pen, smoothstep(0.04, 0.22, hv.y)); // a grey is graphite, a little indigo
+                  pen = max(pen, vec3(0.2)); // never black
+                  // the strokes, in world space on the face (its axis from the depth's own normal), sized for the screen. On the
+                  // ride and the police car they are laid in the car's own frame, so they stay on its body as it drives. Greenery
+                  // takes the swirls (the tile's third channel: curling strokes along a flow, after Van Gogh), the rest the hatch
+                  vec3 an = abs(normalize(cross(dx, dy)));
+                  vec2 suv = an.y > max(an.x, an.z) ? sp.xz : an.x > an.z ? sp.zy : sp.xy;
+                  st = strokesAt(suv, max(length(dx), length(dy)));
+                  amt = mix(amt, min(amt, 0.32), fol); // greenery: never denser than a tree's crown, however dark its green
+                  fill = pencilFill(st, pen, amt, fol);
+                  vec3 wash = mix(vec3(1.0), pen, amt * 0.5 * (0.85 + 0.3 * vn(wp.xz * 0.03))); // world-anchored, low: it never crawls
+                  fill = mix(fill, wash, ground);
+                }
                 vec3 o = paper * mix(vec3(1.0), fill, shown);
                 // the drawing front: a loose pencil grid on the ground and the lines laid in lightly, before they settle (the
                 // grid fades where its cells get small on screen, so it never shimmers in the distance)
@@ -40648,7 +40658,7 @@ void main(){
           const sc = new Scene(); sc.add(quad);
           sketchFx = { rt, mat, sc, cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
           window.__sketchFx = sketchFx;
-          { const nb = notebookTextures(); mat.uniforms.tP = { value: nb.paper }; mat.uniforms.tK = { value: null }; mat.uniforms.skyR = { value: new Vector2() }; mat.uniforms.skyM = { value: new Matrix3() }; mat.uniforms.tS = { value: nb.pencil }; mat.uniforms.kW = { value: 1 }; for (const k of ["oI0", "oI1"]) mat.uniforms[k] = { value: new Matrix4() }; for (const k of ["oA0", "oB0", "oA1", "oB1"]) mat.uniforms[k] = { value: new Vector3() }; } // beta 3.76: the notebook's sheet, doodles and pencil; the cars' frames
+          { const nb = notebookTextures(); mat.uniforms.tP = { value: nb.paper }; mat.uniforms.tK = { value: null }; mat.uniforms.skyR = { value: new Vector2() }; mat.uniforms.skyM = { value: new Matrix3() }; mat.uniforms.tS = { value: nb.pencil }; mat.uniforms.kW = { value: 1 }; mat.uniforms.hf = { value: 0 }; for (const k of ["oI0", "oI1"]) mat.uniforms[k] = { value: new Matrix4() }; for (const k of ["oA0", "oB0", "oA1", "oB1"]) mat.uniforms[k] = { value: new Vector3() }; } // beta 3.76: the notebook's sheet, doodles and pencil; the cars' frames
           sketchFx.page = true;
         }
       }
@@ -40657,9 +40667,29 @@ void main(){
       // screen-sized target, with res the screen's: the pass, run over the small corner, read its lines (one or two of the
       // screen's pixels wide) every 6-13 pixels, and the ink came out broken, in dashes, the crayon in specks
       var _skVp = new Vector4();
+      // TASK-013 (Daniel, 26 Oct): on a phone (isMobile, as the pixel ratio's cap) the notebook is drawn at half the canvas's
+      // size each way, then stretched onto it (sketchUp): a quarter of its pixels, softer lines. The colour pass stays full
+      // size: at half, the thin ink (kerbs, windows) fell between its pixels and came out in dashes (as TASK-096). Never for
+      // a corner (full) nor a photo (TASK-119 draws at its own size). __perfLab.nbHalf(false) for an A/B
+      var nbHalf = true;
+      const SKETCH_UP_FS = "uniform sampler2D tC, tZ; varying vec2 vUv; void main(){ gl_FragColor = vec4(texture2D(tC, vUv).rgb, 1.0); gl_FragDepth = texture2D(tZ, vUv).x; }"; // (the scene's depth goes on screen too: see sketchPlainDraw)
+      function sketchUp(w, h) {
+        let U = sketchFx.up;
+        if (!U) {
+          const rt = new WebGLRenderTarget(w, h, { samples: 0 }); // (linear: the stretch is a bilinear one)
+          const mat = new ShaderMaterial({ uniforms: { tC: { value: rt.texture }, tZ: { value: null } }, vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
+            fragmentShader: SKETCH_UP_FS, depthTest: true, depthFunc: AlwaysDepth, depthWrite: true });
+          const quad = new Mesh(new PlaneGeometry(2, 2), mat); quad.frustumCulled = false;
+          const sc = new Scene(); sc.add(quad);
+          U = sketchFx.up = { rt, mat, sc };
+        }
+        if (U.rt.width !== w || U.rt.height !== h) U.rt.setSize(w, h);
+        return U;
+      }
       function sketchRender(now, cam, full) {
         let w = renderer.domElement.width, h = renderer.domElement.height;
         if (!sketchFx) sketchFxInit();
+        const half = !full && nbHalf && isMobile() && !photo?.on; // TASK-013
         if (sketchFx.page) {
           sketchFx.page = false;
           // the first page: a little of the city is already drawn where you are
@@ -40676,6 +40706,7 @@ void main(){
         sketchRevealFlush(); // beta 3.7x: the strokes queued since the last frame
         const u = sketchFx.mat.uniforms;
         u.tD.value = rt.texture; u.tZ.value = rt.depthTexture; u.res.value.set(w, h); // TASK-096
+        u.hf.value = half ? 1 : 0; if (half) u.res.value.set(Math.max(1, w >> 1), Math.max(1, h >> 1)); // TASK-013: res is the pass's own size
         u.t.value = (now * 0.001) % 100; u.full.value = full ? 1 : 0;
         u.bp.value = SCHEMES[state.schemeIdx].id === "blueprint" ? 1 : 0; // worlds prototype: the notebook printed as a blueprint
         cam.updateMatrixWorld();
@@ -40701,8 +40732,15 @@ void main(){
         if (!nbHull) renderer.render(scene, cam); // beta 3.76: the ink can come from the depth folds alone (see nbHull)
         else { outline.skipHull = sketchSkipHull; // beta 3.75: no pencil hull round the plain things, nor round sketchNoHull ones
         try { outline.render(scene, cam); } finally { outline.skipHull = null; } }
-        renderer.setRenderTarget(null);
-        renderer.render(sketchFx.sc, sketchFx.cam);
+        if (half) { // TASK-013: the notebook into its half-size sheet, then stretched onto the screen with the scene's depth
+          const U = sketchUp(u.res.value.x, u.res.value.y);
+          renderer.setRenderTarget(U.rt); renderer.render(sketchFx.sc, sketchFx.cam);
+          U.mat.uniforms.tZ.value = rt.depthTexture;
+          renderer.setRenderTarget(null); renderer.render(U.sc, sketchFx.cam);
+        } else {
+          renderer.setRenderTarget(null);
+          renderer.render(sketchFx.sc, sketchFx.cam);
+        }
         if (plain) sketchPlainDraw(cam); // beta 3.75
       }
       // ---- beta 3.75 (Sketchbook audit; Daniel: "take the filter off the objects that move and have to redraw") ----
@@ -44675,6 +44713,7 @@ void main(){
           return { min: +out[0].toFixed(2), med: +out[trials >> 1].toFixed(2) };
         },
         nbHull(on) { nbHull = !!on; sketchHullSync(); return nbHull; }, // beta 3.76: the notebook with or without OutlineEffect's hull pass (A/B) (TASK-060: its thickness follows)
+        nbHalf(on) { nbHalf = !!on; return nbHalf && isMobile(); }, // TASK-013: Sketchbook's half-size pass on phones off / on (A/B)
         sketchPlain(on) { sketchPlainOn = !!on; return sketchPlainRoots.length; }, // beta 3.75: Sketchbook's plain pass off / on (A/B)
         staticShadows(size = 4096) {
           window.__staticShadow = true;
