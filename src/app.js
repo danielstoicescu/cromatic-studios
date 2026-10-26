@@ -40689,7 +40689,7 @@ void main(){
       function sketchRender(now, cam, full) {
         let w = renderer.domElement.width, h = renderer.domElement.height;
         if (!sketchFx) sketchFxInit();
-        const half = !full && nbHalf && isMobile() && !photo?.on; // TASK-013
+        const half = !full && nbHalf && isMobile() && !photo?.on && renderer.getPixelRatio() >= 1.5; // TASK-013 (only where the screen is dense: at 1x the extra upscale costs more than it saves, measured in emulation)
         if (sketchFx.page) {
           sketchFx.page = false;
           // the first page: a little of the city is already drawn where you are
