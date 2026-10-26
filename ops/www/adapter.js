@@ -102,6 +102,7 @@
     };
   }
   async function addInbox(doc) {
+    if (doc && (doc.kind === "task" || doc.kind === "epic")) return { id: null }; // the page's own note after "+ Task": set() above already told Claude
     const kind = KIND[doc && doc.kind];
     if (!kind) throw err("read_only");
     const payload = Object.assign({}, doc.payload || {});
@@ -121,7 +122,16 @@
       const [c, id] = String(path).split("/");
       return {
         onSnapshot(cb) { const run = () => cb(docSnap(id, coll(c)[id])); listeners.add(run); if (snap) run(); return () => listeners.delete(run); },
-        update: async () => { throw err("read_only"); }, set: async () => { throw err("read_only"); }, delete: async () => { throw err("read_only"); },
+        update: async () => { throw err("read_only"); }, delete: async () => { throw err("read_only"); },
+        // 26 Oct: "+ Task" and "+ Epic" work here too. A new task or epic goes to Claude as a command (payload.type
+        // task-new / epic-new, the whole doc inside); Claude creates it in the artifact and the next snapshot shows it.
+        async set(d) {
+          if ((c === "tasks" || c === "epics") && !coll(c)[id]) {
+            const kind = c === "tasks" ? "task" : "epic", ep = c === "tasks" && d.epicId ? coll("epics")[d.epicId] : null;
+            return addInbox({ kind: "command", text: (kind === "task" ? "Task nou: " : "Epic nou: ") + (d.title || "") + (ep ? " (în " + (ep.title || d.epicId) + ")" : ""), payload: { type: kind + "-new", [kind]: { ...d, id } } });
+          }
+          throw err("read_only");
+        },
       };
     },
   };
