@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>De ce mașini chinezești | Baxx Auto Tech</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Fiabilitate, piese, service, garanție, valoare reziduală: ce știm despre mașinile chinezești de la Baxx, cu sursa, și ce nu știm încă.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="baxx.css">
+<style>
+/* De ce mașini chinezești: pagina obiecției. Forma care poartă ideea: scutul tăiat în cinci felii, una pe întrebare.
+   Auriul e ce știm, cu sursă. Hașura e ce lipsește. Proporția se numără din listele de pe pagină. */
+:root{--hatch:rgba(187,145,64,.36)}
+html.light{--hatch:rgba(138,106,44,.32)}
+.hatch{background:repeating-linear-gradient(135deg,var(--line) 0 1px,transparent 1px 9px)}
+
+/* ---------- deschiderea: obiecția, spusă direct ---------- */
+.ob-hero{padding-block:72px 72px}
+.ob-hero h1{margin-top:16px;max-width:15ch}
+.ob-hero h1 .q{color:var(--gold-deep)}
+html:not(.light) .ob-hero h1 .q{color:var(--gold)}
+.ob-split{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;margin-top:44px;align-items:start}
+.ob-split .lede{margin-top:0!important}
+.rule{border-left:3px solid var(--gold);padding:2px 0 4px 24px}
+.rule .big{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:clamp(30px,3.3vw,44px);line-height:1.02;letter-spacing:.005em}
+.rule .big span{display:block;color:var(--fg-2)}
+.tally{margin-top:20px;font-size:16px;color:var(--fg-2);max-width:40ch}
+.tally b{font-family:var(--display);font-weight:800;font-size:27px;line-height:1;color:var(--fg);font-variant-numeric:tabular-nums}
+.tally b.k{color:var(--gold-deep)}
+html:not(.light) .tally b.k{color:var(--gold)}
+.tbar{position:relative;height:10px;margin-top:14px;max-width:420px;background:repeating-linear-gradient(135deg,var(--hatch) 0 1.5px,transparent 1.5px 7px) var(--char-2);clip-path:polygon(0 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+.tbar i{position:absolute;inset:0 auto 0 0;width:calc(var(--p,.4) * 100%);background:var(--gold)}
+
+/* ---------- semnătura: scutul din cinci felii ---------- */
+.kicker.rib,html:not(.light) .kicker.rib{color:var(--black)}
+.textlink:hover,html:not(.light) .textlink:hover{color:var(--fg)}
+.qa{display:grid;grid-template-columns:400px minmax(0,1fr);gap:56px;margin-top:56px;align-items:start}
+.cnav-col{position:sticky;top:130px}
+.cnav{display:grid;gap:6px}
+.qt{--c:18px;display:grid;grid-template-columns:150px 1fr;gap:22px;align-items:stretch;height:78px;padding:0;margin:0;background:none;border:0;border-radius:2px;text-align:left;color:var(--fg-2);transition:color .18s}
+.band{position:relative;display:block;overflow:hidden;background:repeating-linear-gradient(135deg,var(--hatch) 0 1.5px,transparent 1.5px 8px) var(--char-2);opacity:.5;transition:opacity .18s,transform .32s var(--spring)}
+.band i{position:absolute;top:0;bottom:0;left:var(--l,0%);width:calc((100% - 2 * var(--l,0%)) * var(--p,0));background:var(--gold);transform-origin:left center;transition:transform .9s var(--ease) calc(var(--i,0) * 90ms)}
+.qt:nth-child(1) .band{clip-path:polygon(var(--c) 0,calc(100% - var(--c)) 0,100% var(--c),100% 100%,0 100%,0 var(--c))}
+.qt:nth-child(4) .band{--l:12.5%;clip-path:polygon(0 0,100% 0,75% 100%,25% 100%)}
+.qt:nth-child(5) .band{--l:37.5%;clip-path:polygon(25% 0,75% 0,50% 100%)}
+.qa.arm .band i{transform:scaleX(0)}
+.ql{align-self:center;display:grid;gap:3px;padding-left:14px;border-left:2px solid transparent;transition:border-color .18s,transform .32s var(--spring)}
+.ql .qn{font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.14em;color:var(--fg-2)}
+.ql b{font-family:var(--display);font-weight:800;font-size:26px;line-height:1;text-transform:uppercase;letter-spacing:.01em;color:var(--fg)}
+.ql small{font-size:13.5px;color:var(--fg-2);font-variant-numeric:tabular-nums}
+.qt:hover .band{opacity:.82;transform:translateX(6px)}
+.qt:hover .ql{transform:translateX(3px)}
+.qt:active .band{transform:translateX(3px) scale(.97)}
+.qt[aria-selected="true"] .band{opacity:1}
+.qt[aria-selected="true"] .ql{border-color:var(--gold)}
+.qt[aria-selected="true"] .ql b{color:var(--gold-deep)}
+html:not(.light) .qt[aria-selected="true"] .ql b{color:var(--gold)}
+.qt:focus-visible{outline-offset:5px}
+.cnav-cap{margin-top:14px;font-size:13.5px;color:var(--fg-2);max-width:36ch}
+.cnav-cap i{display:inline-block;width:14px;height:10px;vertical-align:-1px;margin-right:6px;background:var(--gold)}
+.cnav-cap i.h{background:repeating-linear-gradient(135deg,var(--hatch) 0 1.5px,transparent 1.5px 5px) var(--char-2);margin-left:10px}
+
+.qpanels{display:grid;gap:20px;min-width:0}
+.qp{background:var(--char);border:1px solid var(--line);padding:36px 36px 30px;clip-path:polygon(22px 0,100% 0,100% 100%,0 100%,0 22px);min-width:0}
+.qp:focus-visible{outline-offset:-5px}
+.qp h3{font-size:clamp(34px,3.7vw,52px);margin-top:20px;max-width:17ch}
+.qp .ans{font-size:19px;line-height:1.5;margin-top:16px;max-width:54ch}
+.kg{display:grid;grid-template-columns:1fr 1fr;margin-top:30px;border:1px solid var(--line)}
+.kg>div{padding:22px 22px 24px;min-width:0}
+.kg h4{margin:0;font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:.06em;text-transform:uppercase}
+.kn h4{color:var(--gold-deep)}
+html:not(.light) .kn h4{color:var(--gold)}
+.gp{border-left:1px solid var(--line)}
+.gp h4{color:var(--fg-2)}
+.kg ul{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:14px}
+.kg li{font-size:16px;line-height:1.45;padding-left:14px;border-left:2px solid var(--gold)}
+.gp li{border-left:2px dashed var(--fg-2)}
+.kg li .src{display:block;margin-top:4px}
+.qfoot{display:flex;justify-content:space-between;align-items:flex-end;gap:12px 24px;flex-wrap:wrap;margin-top:22px}
+.qfoot p{font-size:14.5px;color:var(--fg-2);max-width:52ch}
+.nextq{display:none;background:none;border:0;border-bottom:2px solid currentColor;padding:0 0 2px;margin:0;cursor:pointer}
+.qa.js .nextq{display:inline-flex}
+.nextq svg{width:16px;height:16px;transition:transform .25s var(--spring)}
+.nextq:hover svg{transform:translateX(4px)}
+.nextq:active{transform:translateY(1px)}
+.qp.in{animation:qin .42s var(--ease) both}
+.qp.in li{animation:qin .42s var(--ease) both;animation-delay:calc(120ms + var(--d,0) * 55ms)}
+.qp li:nth-child(2){--d:1}.qp li:nth-child(3){--d:2}.qp li:nth-child(4){--d:3}.qp li:nth-child(5){--d:4}
+@keyframes qin{from{opacity:0;transform:translateY(10px)}}
+
+/* fotografii planificate: hașură, nu imagini false */
+.shot{margin:0;position:relative;display:flex;align-items:flex-end;aspect-ratio:16/9;padding:14px;border:1px dashed var(--fg-2);background:repeating-linear-gradient(135deg,var(--line) 0 1px,transparent 1px 10px)}
+.shot figcaption{font-size:13.5px;line-height:1.4;color:var(--fg-2);background:var(--page);padding:5px 9px;max-width:40ch}
+.qp .shot{margin-top:24px;aspect-ratio:21/8}
+
+/* ---------- comparația ---------- */
+.cmp-h{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:end}
+.cmp-h h2{max-width:16ch}
+.cmp-h p{font-size:19px;color:var(--fg-2);max-width:44ch}
+.cmp-wrap{margin-top:44px;overflow-x:auto;border:1px solid var(--line);-webkit-overflow-scrolling:touch}
+.cmp{width:100%;min-width:760px;border-collapse:collapse;font-size:15.5px}
+.cmp caption{caption-side:bottom;text-align:left;padding:12px 18px;font-size:13.5px;color:var(--fg-2);border-top:1px solid var(--line)}
+.cmp th,.cmp td{padding:15px 18px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+.cmp thead th{font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:.04em;text-transform:uppercase;background:var(--char);border-bottom:0;white-space:nowrap}
+.cmp thead th.us{background:var(--gold);color:var(--black)}
+.cmp thead th.us .ex{opacity:.75}
+.cmp tbody th{font-weight:600;color:var(--fg-2);width:24%;transition:color .18s}
+.cmp td.us{background:var(--gold-soft);font-weight:600;width:22%;transition:background .18s}
+.cmp td.us .tbc{display:block;font-size:13.5px;margin-top:2px}
+.cmp tbody tr:hover th{color:var(--fg)}
+.cmp tbody tr:hover td.us{background:rgba(187,145,64,.26)}
+.cmp td.empty{vertical-align:middle;text-align:center;border-left:1px solid var(--line)}
+.cmp td.empty div{max-width:36ch;margin:0 auto;font-size:16px;color:var(--fg-2)}
+.cmp td.empty b{display:block;font-family:var(--display);font-weight:800;font-size:30px;line-height:1;text-transform:uppercase;color:var(--fg);margin-bottom:10px}
+.cmp-wrap:focus-visible{outline-offset:3px}
+
+/* ---------- mărcile și minusurile lor ---------- */
+.brands{display:grid;grid-template-columns:1.15fr .85fr;gap:56px;align-items:start}
+.brands h2{max-width:13ch}
+.brands .intro{font-size:19px;color:var(--fg-2);max-width:46ch;margin-top:18px}
+.bl{list-style:none;margin:40px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:22px 34px;align-items:flex-start}
+.bl li{display:flex;flex-direction:column;min-width:0}
+.bl b{font-family:var(--display);font-weight:800;font-size:clamp(40px,4.8vw,64px);line-height:.92;text-transform:uppercase;letter-spacing:.01em}
+.bl small{font-size:13.5px;color:var(--fg-2);margin-top:6px}
+.bl li.unk b{color:transparent;-webkit-text-stroke:1.5px var(--fg-2)}
+.bl a{color:var(--gold-deep);text-decoration:none;border-bottom:1.5px solid currentColor;transition:color .18s}
+html:not(.light) .bl a{color:var(--gold)}
+.bl a:hover{color:var(--fg)}
+.minus{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);font-size:17px;max-width:48ch}
+.brands .shot{aspect-ratio:4/5;margin-top:8px}
+
+/* ---------- final: cheia în mână, mereu pe negru ---------- */
+.end{position:relative;overflow:hidden;padding-block:104px 96px;background:var(--char);border-top:1px solid var(--line)}
+html.light .end{--fg:#ECE6D8;--fg-2:#A39D8D;--line:rgba(236,230,216,.14);--gold-deep:#BB9140;--page:#11120E;background:#11120E;color:var(--fg)}
+html.light .end :focus-visible{outline-color:var(--gold-hi)}
+.end::before{content:"";position:absolute;left:0;right:0;top:0;height:12px;background:repeating-linear-gradient(90deg,var(--gold) 0 40px,#070806 40px 48px)}
+.end-in{display:grid;grid-template-columns:1.1fr .9fr;gap:56px;align-items:center}
+.end h2{margin-top:16px;max-width:14ch}
+.end p.big{font-size:20px;line-height:1.5;margin-top:22px;max-width:44ch}
+.end .small{font-size:15px;color:var(--fg-2);margin-top:14px;max-width:46ch}
+.r48{display:grid;grid-template-columns:repeat(48,1fr);gap:3px;align-items:end;margin-top:38px;max-width:560px}
+.r48 i{height:12px;background:rgba(236,230,216,.12);transition:background .2s calc(var(--i,0) * 14ms)}
+.r48 i:nth-child(6n+1){height:20px}
+.r48.go i{background:var(--gold)}
+.r48-l{margin-top:10px;font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-2)}
+.r48-l b{color:var(--gold);font-size:26px;font-variant-numeric:tabular-nums}
+.end .shot{aspect-ratio:4/3}
+
+@media (max-width:940px){
+  .qa{grid-template-columns:1fr;gap:32px}
+  .cnav-col{position:static;max-width:520px}
+  .ob-split,.cmp-h,.brands,.end-in{grid-template-columns:1fr}
+  .brands .shot{aspect-ratio:16/9}
+}
+@media (max-width:620px){
+  .ob-hero{padding-block:36px 52px}
+  .ob-split{gap:32px;margin-top:30px}
+  .qt{--c:12px;grid-template-columns:92px 1fr;gap:14px;height:62px}
+  .ql b{font-size:22px}
+  .ql .qn{font-size:12px}
+  .qp{padding:24px 18px 22px;clip-path:polygon(16px 0,100% 0,100% 100%,0 100%,0 16px)}
+  .qp .ans{font-size:17px}
+  .kg{grid-template-columns:1fr}
+  .gp{border-left:0;border-top:1px solid var(--line)}
+  .kg>div{padding:18px 16px 20px}
+  .qp .shot{aspect-ratio:16/9}
+  .cmp-h p,.brands .intro{font-size:17px}
+  .bl{gap:18px 24px}
+  .end{padding-block:80px 72px}
+  .end p.big{font-size:18px}
+  .r48{gap:2px}
+  .r48 i{height:9px}
+  .r48 i:nth-child(6n+1){height:15px}
+}
+@media (max-width:940px) and (min-width:621px){.kg{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion:reduce){.qa.arm .band i{transform:none}.r48 i{background:var(--gold)}}
+</style>
+</head>
+<body>
+<div class="frame"><div class="frame-in">
+  <span>&#9654;</span><span class="t">Cromatic Studios // Baxx Auto Tech <span>· De ce mașini chinezești · prototip</span></span>
+  <button class="sw" id="themeBtn" aria-pressed="false" aria-label="Varianta luminoasă">Luminos <i></i></button>
+  <button class="sw" id="notesBtn" aria-pressed="false">Note <span class="lg">de proiect</span> <i></i></button>
+</div></div>
+<aside class="notes-panel" aria-label="Note de proiect"><div class="np-in">
+  <div><h4>Ce e pagina</h4><ul>
+    <li>Răspunsul la obiecția unică de pe tot site-ul: „care e treaba cu mașinile chinezești” (Brief §5, §10).</li>
+    <li>Cinci întrebări, fiecare cu „Ce știm” și „Ce nu știm încă”. Golurile spuse deschis sunt argumentul de credibilitate (Brief §4).</li>
+    <li>Se încheie cu test drive-ul de 48 de ore, spre rezervarea de pe pagina Test drive.</li></ul></div>
+  <div><h4>Surse</h4><ul>
+    <li>Brief-ul site, septembrie 2026: poziționare, ton, public, cuvinte de evitat (§1, §2, §4, §5).</li>
+    <li>Fișa tehnică BAW 212 T01, iunie 2026: garanție, service, revizie, asistență rutieră. Mai veche decât brief-ul, deci tot ce vine din ea e marcat „de confirmat”.</li>
+    <li>Nicio cifră de fiabilitate, piese sau valoare reziduală nu e scrisă din memorie.</li></ul></div>
+  <div><h4>Fapte deschise</h4><ul>
+    <li>Rețeaua de service: lista, orașele, adresa service-ului Baxx (Q12).</li>
+    <li>Mărcile și modelele: brief-ul spune șapte, avem fișe pentru cinci (Q6).</li>
+    <li>Garanția pe fiecare model, fiabilitate, piese, valori reziduale: de la importatori.</li>
+    <li>Fonturile licențiate ale identității (Q7). Până atunci, Barlow și Barlow Condensed.</li></ul></div>
+  <div><h4>Mișcare</h4><ul>
+    <li>Semnătura: scutul tăiat în cinci felii, una pe întrebare. Auriul e ce știm, hașura e ce lipsește. Proporția se numără din listele de pe pagină. Nu e un scor.</li>
+    <li>Scutul se umple la intrarea în ecran (0,9 s, felie cu felie). Răspuns la apăsare 180 ms, intrări 420 ms.</li>
+    <li>Săgețile, Home și End mută între întrebări. Linkurile cu #q-garantie și celelalte deschid direct întrebarea.</li>
+    <li>Doar transform și opacitate. Cu mișcare redusă, totul stă pe loc.</li></ul></div>
+</div></aside>
+<header class="site"><div class="site-in">
+  <a class="brand" href="./" aria-label="Baxx Auto Tech"><img src="baxx-logo.png" alt=""><b>BAXX AUTO TECH</b></a>
+  <nav class="menu" aria-label="Meniu principal"><a href="model-baw-212-t01.html">Mașini</a><a href="./">Test drive 48h</a><a href="flote.html">Flote</a><a href="./#after">Service</a><a href="de-ce-masini-chinezesti.html" aria-current="page">De ce mașini chinezești</a><a href="#footer">Contact</a></nav>
+  <a class="btn sm" href="./#rezerva">Rezervă 48 de ore</a>
+</div></header>
+<main id="top">
+
+  <section class="hero ob-hero" aria-labelledby="h-top"><div class="wrap">
+    <div class="kicker">Întrebarea pe care o auzim cel mai des</div>
+    <h1 id="h-top"><span class="q">„</span>Care-i treaba cu mașinile chinezești?<span class="q">”</span></h1>
+    <div class="ob-split">
+      <div>
+        <p class="lede">E o întrebare corectă și merită un răspuns direct. Îl dăm în cinci părți: fiabilitate, piese, service, garanție și cât mai valorează mașina peste patru ani.</p>
+        <div class="ctas">
+          <a class="btn" href="#raspunsuri">Vezi cele cinci răspunsuri <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v13M5 11l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></a>
+          <a class="btn ghost" href="./#rezerva">Rezervă 48 de ore</a>
+        </div>
+      </div>
+      <div class="rule rv">
+        <p class="big">Când știm, îți arătăm sursa. <span>Când nu știm, scriem că nu știm.</span></p>
+        <p class="tally">Pe pagina asta, azi: <b class="k" data-n="k">11</b><span data-de="k"></span> răspunsuri cu sursă și <b data-n="g">16</b><span data-de="g"></span> întrebări la care încă așteptăm date.</p>
+        <div class="tbar" id="tbar" style="--p:.407" aria-hidden="true"><i></i></div>
+        <span class="nt"><b>De ce</b>Brief §4: când nu știm ceva, spunem că nu știm. Pagina face din asta argumentul. Cifrele se numără din listele de mai jos.</span>
+      </div>
+    </div>
+  </div></section>
+
+  <section class="blk" id="raspunsuri" aria-labelledby="h-qa" style="padding-top:24px"><div class="wrap">
+    <div class="sec-h">
+      <h2 id="h-qa">Cinci întrebări. Răspunsuri directe.</h2>
+      <p>Fiecare felie a scutului e o întrebare. Auriul e partea la care avem un răspuns cu sursă, hașura e partea care lipsește. Scutul nu e plin și nu ne prefacem că ar fi.</p>
+    </div>
+    <span class="nt"><b>De ce</b>Proporția din fiecare felie se calculează din listele „Ce știm” și „Ce nu știm încă”. Nu e un scor de fiabilitate. Când vin datele importatorilor, scutul se umple singur.</span>
+
+    <div class="qa" id="qa">
+      <div class="cnav-col">
+        <div class="cnav" role="tablist" aria-orientation="vertical" aria-label="Cele cinci întrebări">
+          <button class="qt" role="tab" id="t-fiabilitate" aria-controls="q-fiabilitate" aria-selected="true" style="--p:.4"><span class="band" aria-hidden="true"><i></i></span><span class="ql"><span class="qn">01</span><b>Fiabilitate</b><small>știm <span class="ck">2</span> · nu știm <span class="cg">3</span></small></span></button>
+          <button class="qt" role="tab" id="t-piese" aria-controls="q-piese" aria-selected="false" tabindex="-1" style="--p:.2"><span class="band" aria-hidden="true"><i></i></span><span class="ql"><span class="qn">02</span><b>Piese</b><small>știm <span class="ck">1</span> · nu știm <span class="cg">4</span></small></span></button>
+          <button class="qt" role="tab" id="t-service" aria-controls="q-service" aria-selected="false" tabindex="-1" style="--p:.571"><span class="band" aria-hidden="true"><i></i></span><span class="ql"><span class="qn">03</span><b>Service</b><small>știm <span class="ck">4</span> · nu știm <span class="cg">3</span></small></span></button>
+          <button class="qt" role="tab" id="t-garantie" aria-controls="q-garantie" aria-selected="false" tabindex="-1" style="--p:.5"><span class="band" aria-hidden="true"><i></i></span><span class="ql"><span class="qn">04</span><b>Garanție</b><small>știm <span class="ck">3</span> · nu știm <span class="cg">3</span></small></span></button>
+          <button class="qt" role="tab" id="t-valoare" aria-controls="q-valoare" aria-selected="false" tabindex="-1" style="--p:.25"><span class="band" aria-hidden="true"><i></i></span><span class="ql"><span class="qn">05</span><b>Valoare reziduală</b><small>știm <span class="ck">1</span> · nu știm <span class="cg">3</span></small></span></button>
+        </div>
+        <p class="cnav-cap"><i aria-hidden="true"></i>răspuns cu sursă <i class="h" aria-hidden="true"></i>încă lipsește</p>
+      </div>
+
+      <div class="qpanels">
+        <article class="qp" role="tabpanel" id="q-fiabilitate" aria-labelledby="t-fiabilitate" tabindex="0">
+          <div class="crest-n" aria-hidden="true">1</div>
+          <h3>Se strică mai des decât una europeană?</h3>
+          <p class="ans">Azi nu putem răspunde cu cifre. Mărcile pe care le aducem sunt puțin cunoscute în România, așa că nu ai încă un vecin sau un coleg care să-ți spună cum se ține una după câțiva ani. Nici noi nu avem date de fiabilitate pe care să ți le arătăm. Când le avem de la importatori, le punem aici, inclusiv pe cele care nu ne avantajează.</p>
+          <div class="kg">
+            <div class="kn"><h4>Ce știm</h4><ul>
+              <li>Sunt mărci puțin cunoscute în România. Nu există încă un istoric local la care să te raportezi.</li>
+              <li>Poți verifica singur înainte să decizi: 48 de ore cu mașina, în orașul în care e parcată.</li>
+            </ul></div>
+            <div class="gp hatch"><h4>Ce nu știm încă</h4><ul>
+              <li>Câte defecte apar, pe model, în primii ani.</li>
+              <li>Ce probleme cunoscute are fiecare marcă și cum se rezolvă.</li>
+              <li>Cum se țin mașinile pe iernile și pe drumurile de la noi.</li>
+            </ul></div>
+          </div>
+          <div class="qfoot">
+            <p>Răspunsurile lipsă vin din datele importatorilor. Nu sunt încă pe pagină.</p>
+            <button class="textlink nextq" type="button" data-next="t-piese">Următoarea: piese <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h13M11 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></button>
+          </div>
+          <span class="nt open"><b>Deschis</b>Date de fiabilitate și dezavantaje cunoscute, pe marcă și model: de la importatori (Q6). Brief §4: dezavantajul cunoscut se numește și se explică.</span>
+        </article>
+
+        <article class="qp" role="tabpanel" id="q-piese" aria-labelledby="t-piese" tabindex="0">
+          <div class="crest-n" aria-hidden="true">2</div>
+          <h3>Găsesc piese sau stă mașina după ele?</h3>
+          <p class="ans">Pentru BAW 212 T01, fișa tehnică spune că locațiile de service partenere lucrează cu piese de schimb originale. În cât timp ajunge o piesă care nu e pe stoc, nu știm încă. Nu scriem un termen până nu-l avem în scris.</p>
+          <div class="kg">
+            <div class="kn"><h4>Ce știm</h4><ul>
+              <li>BAW 212 T01: piese de schimb originale, la locațiile de service partenere.<span class="src">Fișa tehnică BAW 212 T01 · <em class="tbc">de confirmat</em></span></li>
+            </ul></div>
+            <div class="gp hatch"><h4>Ce nu știm încă</h4><ul>
+              <li>În cât timp ajunge o piesă care nu e pe stoc.</li>
+              <li>Ce piese se țin pe stoc în România.</li>
+              <li>Cât costă piesele uzuale: plăcuțe, filtre, un far.</li>
+              <li>Cum stau piesele la celelalte mărci și modele.</li>
+            </ul></div>
+          </div>
+          <div class="qfoot">
+            <p>Răspunsurile lipsă vin din datele importatorilor. Nu sunt încă pe pagină.</p>
+            <button class="textlink nextq" type="button" data-next="t-service">Următoarea: service <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h13M11 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></button>
+          </div>
+          <span class="nt open"><b>Deschis</b>Din fișa BAW 212 T01, iunie 2026, mai veche decât brief-ul: de confirmat cu clientul. Termene, stoc și prețuri de piese: din datele importatorilor.</span>
+        </article>
+
+        <article class="qp" role="tabpanel" id="q-service" aria-labelledby="t-service" tabindex="0">
+          <div class="crest-n" aria-hidden="true">3</div>
+          <h3>Unde o duc la service?</h3>
+          <p class="ans">Service-ul se face printr-o rețea națională de ateliere partenere, deci dacă te muți sau pleci prin țară ai unde să mergi. Baxx are și service propriu, dar nu are showroom. Cât costă o revizie, încă nu știm.</p>
+          <div class="kg">
+            <div class="kn"><h4>Ce știm</h4><ul>
+              <li>Service printr-o rețea națională de ateliere partenere.</li>
+              <li>Baxx are service propriu. Nu are showroom: mașinile stau parcate în orașe.</li>
+              <li>BAW 212 T01: 20 de locații de service partenere, cu specialiști certificați.<span class="src">Fișa tehnică BAW 212 T01 · <em class="tbc">de confirmat</em></span></li>
+              <li>BAW 212 T01: prima revizie intermediară la 5.000 km sau 6 luni.<span class="src">Fișa tehnică BAW 212 T01 · <em class="tbc">de confirmat</em></span></li>
+            </ul></div>
+            <div class="gp hatch"><h4>Ce nu știm încă</h4><ul>
+              <li>Lista service-urilor partenere și orașele lor.</li>
+              <li>Cât costă o revizie, pe model.</li>
+              <li>Dacă cele 20 de locații din fișa BAW 212 T01 sunt aceleași pentru toate mărcile.</li>
+            </ul></div>
+          </div>
+          <figure class="shot"><figcaption>Fotografie de făcut: service-ul Baxx și oamenii care lucrează acolo.</figcaption></figure>
+          <div class="qfoot">
+            <p>Lista partenerilor vine de la Baxx. Nu desenăm o hartă până nu o avem.</p>
+            <button class="textlink nextq" type="button" data-next="t-garantie">Următoarea: garanție <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h13M11 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></button>
+          </div>
+          <span class="nt open"><b>Deschis</b>Lista partenerilor, orașele, adresa service-ului Baxx: Q12. Cele 20 de locații și revizia la 5.000 km vin din fișa BAW 212 T01, iunie 2026: de confirmat.</span>
+          <span class="nt"><b>De ce</b>Service-ul e argumentul de încredere, deci fotografia arată oameni reali (Brief §11).</span>
+        </article>
+
+        <article class="qp" role="tabpanel" id="q-garantie" aria-labelledby="t-garantie" tabindex="0">
+          <div class="crest-n" aria-hidden="true">4</div>
+          <h3>Ce garanție am și cine o onorează?</h3>
+          <p class="ans">Pentru BAW 212 T01 avem un răspuns: 3 ani, fără limită de kilometri, cu problemele de garanție rezolvate la locațiile de service partenere. Pentru celelalte modele nu avem încă termenii, așa că nu îi scriem.</p>
+          <div class="kg">
+            <div class="kn"><h4>Ce știm</h4><ul>
+              <li>BAW 212 T01: garanție 3 ani, fără limită de km.<span class="src">Fișa tehnică BAW 212 T01 · <em class="tbc">de confirmat</em></span></li>
+              <li>BAW 212 T01: problemele de garanție se rezolvă la cele 20 de locații de service partenere.<span class="src">Fișa tehnică BAW 212 T01 · <em class="tbc">de confirmat</em></span></li>
+              <li>BAW 212 T01: asistență rutieră inclusă 12 luni de la data livrării.<span class="src">Fișa tehnică BAW 212 T01 · <em class="tbc">de confirmat</em></span></li>
+            </ul></div>
+            <div class="gp hatch"><h4>Ce nu știm încă</h4><ul>
+              <li>Garanția la celelalte mărci și modele.</li>
+              <li>Ce acoperă garanția și ce nu: piesele de uzură, bateria la modelele electrificate.</li>
+              <li>Cine onorează garanția dacă o marcă se retrage din România.</li>
+            </ul></div>
+          </div>
+          <div class="qfoot">
+            <p>Răspunsurile lipsă vin din datele importatorilor. Nu sunt încă pe pagină.</p>
+            <button class="textlink nextq" type="button" data-next="t-valoare">Următoarea: valoare reziduală <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h13M11 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></button>
+          </div>
+          <span class="nt open"><b>Deschis</b>Fișa BAW 212 T01, iunie 2026, e anterioară brief-ului: de confirmat că termenii sunt încă valabili. Garanția pe celelalte modele: Q6. Întrebarea despre o marcă ce se retrage se validează cu clientul înainte de publicare.</span>
+        </article>
+
+        <article class="qp" role="tabpanel" id="q-valoare" aria-labelledby="t-valoare" tabindex="0">
+          <div class="crest-n" aria-hidden="true">5</div>
+          <h3>Cât mai valorează peste patru ani?</h3>
+          <p class="ans">Nu știm. Vânzările Baxx n-au început încă, deci nu există mașini de-ale noastre revândute din care să calculăm. Orice cifră am pune aici ar fi ghicită, așa că nu punem niciuna. Știm doar că e întrebarea corectă: nu „e frumoasă?”, ci „ce fac cu ea peste patru ani?”.</p>
+          <div class="kg">
+            <div class="kn"><h4>Ce știm</h4><ul>
+              <li>Vânzările n-au început încă. Nu există un istoric de revânzare pentru mașinile Baxx.</li>
+            </ul></div>
+            <div class="gp hatch"><h4>Ce nu știm încă</h4><ul>
+              <li>Cât pierde mașina din valoare în primii patru ani.</li>
+              <li>Cum se compară cu o Dacia sau o Skoda de aceeași vârstă.</li>
+              <li>Ce date de revânzare există pentru aceste mărci în alte țări.</li>
+            </ul></div>
+          </div>
+          <div class="qfoot">
+            <p>Răspunsurile lipsă vin din datele importatorilor. Nu sunt încă pe pagină.</p>
+            <a class="textlink" href="#comparatie">Mergi la comparație <svg viewBox="0 0 20 20" aria-hidden="true" width="16" height="16"><path d="M10 3v13M5 11l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></a>
+          </div>
+          <span class="nt open"><b>Deschis</b>Valori reziduale: nu le avem și nu le estimăm. Brief §5: valoarea reziduală se discută deschis.</span>
+        </article>
+      </div>
+    </div>
+  </div></section>
+
+  <section class="blk" id="comparatie" aria-labelledby="h-cmp" style="padding-top:24px"><div class="wrap">
+    <div class="cmp-h rv">
+      <h2 id="h-cmp">Pusă lângă o Dacia, o Skoda sau un german second-hand.</h2>
+      <p>E comparația pe care o faci oricum, la aceiași bani. Tabelul e pregătit. Îl completăm doar cu cifre pe care le putem arăta, pentru aceeași clasă și același an, cu sursa lângă fiecare.</p>
+    </div>
+    <div class="cmp-wrap rv" tabindex="0" role="region" aria-label="Tabel de comparație, se poate derula orizontal">
+      <table class="cmp">
+        <caption>Coloana Baxx folosește BAW 212 T01 ca exemplu, pentru că e singurul model pentru care avem fișa de garanție și service.</caption>
+        <thead><tr>
+          <th scope="col">Ce comparăm</th>
+          <th scope="col" class="us">BAW 212 T01 <span class="ex">exemplu</span></th>
+          <th scope="col">Dacia</th>
+          <th scope="col">Skoda</th>
+          <th scope="col">German, second-hand</th>
+        </tr></thead>
+        <tbody>
+          <tr><th scope="row">Prețul final, cu TVA</th><td class="us"><em class="tbc">de confirmat</em></td>
+            <td class="empty hatch" colspan="3" rowspan="7"><div><b>Gol, cu bună știință.</b>Aici intră cifre publice, pentru modele din aceeași clasă și din același an, cu sursa lângă fiecare. Nu le completăm din memorie și nu le estimăm. <em class="tbc">de confirmat</em></div></td></tr>
+          <tr><th scope="row">Garanția</th><td class="us">3 ani, fără limită de km <em class="tbc">de confirmat</em></td></tr>
+          <tr><th scope="row">Asistența rutieră</th><td class="us">12 luni de la livrare <em class="tbc">de confirmat</em></td></tr>
+          <tr><th scope="row">Prima revizie</th><td class="us">la 5.000 km sau 6 luni <em class="tbc">de confirmat</em></td></tr>
+          <tr><th scope="row">Costul unei revizii</th><td class="us"><em class="tbc">de confirmat</em></td></tr>
+          <tr><th scope="row">Piesele: în cât timp ajung</th><td class="us"><em class="tbc">de confirmat</em></td></tr>
+          <tr><th scope="row">Valoarea după patru ani</th><td class="us"><em class="tbc">de confirmat</em></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <span class="nt"><b>De ce</b>Brief §5: familia compară cu Dacia, Skoda și second-hand german și are nevoie de o comparație corectă. Tabelul rămâne gol până avem cifre cu sursă.</span>
+    <span class="nt open"><b>Deschis</b>Ce modele comparăm și de unde iau cifrele (prețuri publice, importatori): de stabilit cu clientul. Prețul afișat cu TVA inclus (Brief §14). Valorile BAW 212 T01: fișa din iunie 2026, de confirmat.</span>
+  </div></section>
+
+  <section class="blk" id="marci" aria-labelledby="h-br" style="padding-top:24px"><div class="wrap">
+    <div class="brands">
+      <div>
+        <h2 id="h-br">Minusurile, pe nume.</h2>
+        <p class="intro">Când o marcă are un dezavantaj cunoscut, îl scriem aici și îți explicăm ce înseamnă pentru tine. Nu le avem încă de la importatori, așa că lista e goală. Nu o umplem cu presupuneri.</p>
+        <ul class="bl rv" aria-label="Mărcile Baxx">
+          <li><b>BAIC</b><small>BJ40 PRO · X75</small></li>
+          <li><b>BAW</b><small><a href="model-baw-212-t01.html">212 T01</a></small></li>
+          <li><b>DFSK</b><small>Fengon 600</small></li>
+          <li><b>Forthing</b><small>4 PHEV U-Tour · 5 REEV</small></li>
+          <li><b>SWM</b><small>modelul: <em class="tbc">de confirmat</em></small></li>
+          <li class="unk"><b>Marca 6</b><small><em class="tbc">de confirmat</em></small></li>
+          <li class="unk"><b>Marca 7</b><small><em class="tbc">de confirmat</em></small></li>
+        </ul>
+        <p class="minus">Minusul cunoscut al fiecărei mărci și ce înseamnă pentru tine: <em class="tbc">de confirmat</em></p>
+        <span class="nt open"><b>Deschis</b>Brief-ul spune șapte mărci; avem fișe pentru cinci: BAIC, BAW, DFSK, Forthing, SWM. Lista completă și modelele: Q6.</span>
+        <span class="nt"><b>De ce</b>Numele mărcilor în text, fără logo-uri: restricțiile producătorilor nu sunt încă verificate (Brief §11).</span>
+      </div>
+      <figure class="shot rv"><figcaption>Fotografie de făcut: mașinile parcate pe străzi reale, în orașele din România în care stau. Nu pe fundal alb de studio.</figcaption></figure>
+    </div>
+  </div></section>
+
+  <section class="end" id="cheia" aria-labelledby="h-end"><div class="wrap end-in">
+    <div>
+      <div class="kicker rib">Test drive 48h</div>
+      <h2 id="h-end">Cel mai cinstit răspuns e cheia în mână.</h2>
+      <p class="big">Pagina asta îți spune ce știm și ce nu. Restul îl afli singur, în 48 de ore cu mașina: o iei din orașul în care e parcată, o duci la serviciu, o lași peste noapte în fața blocului, ieși cu familia. Apoi hotărăști.</p>
+      <div class="r48" id="r48" aria-hidden="true"></div>
+      <p class="r48-l" aria-hidden="true"><b id="hcount">48</b> de ore</p>
+      <div class="ctas">
+        <a class="btn" href="./#rezerva">Rezervă 48 de ore <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h13M11 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></a>
+        <a class="btn ghost" href="./#conditii">Costul și condițiile</a>
+      </div>
+      <p class="small">Test drive-ul are un cost. Îl găsești, cu condițiile, pe pagina Test drive 48h, înainte de formular.</p>
+      <span class="nt"><b>De ce</b>Brief §2: obiecția nu se argumentează cu text, ci cu cheia în mână. Test drive-ul are un cost (decizia lui Daniel), deci pagina trimite la cost și condiții.</span>
+    </div>
+    <figure class="shot rv"><figcaption>Fotografie de făcut: predarea cheii la test drive.</figcaption></figure>
+  </div></section>
+</main>
+<footer class="site-f" id="footer"><div class="wrap f-in">
+  <img src="baxx-logo.png" alt="Baxx Auto Tech">
+  <span>Baxx Auto Tech · <a href="tel:+40788777777">0788 777 777</a> · <a href="mailto:office@baxx.ro">office@baxx.ro</a> · <a href="https://www.baxx.ro">www.baxx.ro</a></span>
+  <nav aria-label="Legal"><a href="#footer">Regulament test drive</a><a href="#footer">Confidențialitate</a><a href="#footer">Cookie-uri</a><a href="#footer">Termeni</a></nav>
+</div></footer>
+<div class="mbar" id="mbar" data-hide="#cheia"><a class="btn" href="./#rezerva">Rezervă 48 de ore</a></div>
+<script src="baxx.js"></script>
+<script>
+/* De ce mașini chinezești: scutul din cinci felii (tab-uri), numărătoarea și cele 48 de liniuțe. Fără erori dacă lipsește un element. */
+(() => {
+  'use strict';
+  const d = document;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const hasIO = 'IntersectionObserver' in window;
+  const de = n => (n >= 20 && (n % 100 === 0 || n % 100 >= 20)) ? ' de' : '';
+  const onView = (el, fn, th) => {
+    if (!el) return;
+    if (reduce || !hasIO) { fn(); return; }
+    const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); fn(); } }, { threshold: th || .25 });
+    io.observe(el);
+  };
+
+  /* scutul: numără ce știm și ce lipsește, direct din liste */
+  const qa = d.getElementById('qa');
+  const tabs = qa ? [...qa.querySelectorAll('[role="tab"]')] : [];
+  const panelOf = t => d.getElementById(t.getAttribute('aria-controls') || '');
+  let K = 0, G = 0;
+  tabs.forEach((t, i) => {
+    const p = panelOf(t);
+    t.style.setProperty('--i', i);
+    if (!p) return;
+    const k = p.querySelectorAll('.kn li').length, g = p.querySelectorAll('.gp li').length;
+    K += k; G += g;
+    t.style.setProperty('--p', (k + g) ? (k / (k + g)).toFixed(3) : 0);
+    const ck = t.querySelector('.ck'), cg = t.querySelector('.cg');
+    if (ck) ck.textContent = k;
+    if (cg) cg.textContent = g;
+  });
+  if (K + G) {
+    d.querySelectorAll('[data-n="k"]').forEach(el => { el.textContent = K; });
+    d.querySelectorAll('[data-n="g"]').forEach(el => { el.textContent = G; });
+    d.querySelectorAll('[data-de="k"]').forEach(el => { el.textContent = de(K); });
+    d.querySelectorAll('[data-de="g"]').forEach(el => { el.textContent = de(G); });
+    const tb = d.getElementById('tbar');
+    if (tb) tb.style.setProperty('--p', (K / (K + G)).toFixed(3));
+  }
+
+  if (tabs.length) {
+    qa.classList.add('js');
+    const select = (t, opts) => {
+      opts = opts || {};
+      tabs.forEach(x => {
+        const on = x === t, p = panelOf(x);
+        x.setAttribute('aria-selected', on ? 'true' : 'false');
+        x.tabIndex = on ? 0 : -1;
+        if (!p) return;
+        p.hidden = !on;
+        p.classList.remove('in');
+        if (on && opts.animate !== false) { void p.offsetWidth; p.classList.add('in'); }
+      });
+      if (opts.focus) t.focus();
+      const p = panelOf(t);
+      if (p && opts.reveal) {
+        const r = p.getBoundingClientRect();
+        if (r.top < 100 || r.top > innerHeight * .7) p.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      }
+    };
+    const start = tabs.find(t => t.getAttribute('aria-selected') === 'true') || tabs[0];
+    select(start, { animate: false });
+
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(t, { reveal: innerWidth < 940 }));
+      t.addEventListener('keydown', e => {
+        const n = tabs.length;
+        let j = null;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') j = (i + 1) % n;
+        else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') j = (i - 1 + n) % n;
+        else if (e.key === 'Home') j = 0;
+        else if (e.key === 'End') j = n - 1;
+        if (j !== null) { e.preventDefault(); select(tabs[j], { focus: true }); }
+      });
+    });
+
+    qa.querySelectorAll('.nextq').forEach(b => b.addEventListener('click', () => {
+      const t = d.getElementById(b.dataset.next || '');
+      if (!t) return;
+      select(t, { reveal: true });
+      const p = panelOf(t);
+      if (p) p.focus({ preventScroll: true });
+    }));
+
+    const fromHash = () => {
+      const h = decodeURIComponent(location.hash.slice(1));
+      const t = tabs.find(x => x.getAttribute('aria-controls') === h || x.id === h);
+      if (t) select(t, { reveal: true });
+    };
+    addEventListener('hashchange', fromHash);
+    fromHash();
+
+    /* felie cu felie, la intrarea în ecran */
+    if (!reduce && hasIO) {
+      qa.classList.add('arm');
+      onView(qa.querySelector('.cnav') || qa, () => requestAnimationFrame(() => qa.classList.remove('arm')), .3);
+    }
+  }
+
+  /* cele 48 de ore, liniuță cu liniuță */
+  const r = d.getElementById('r48'), hc = d.getElementById('hcount');
+  if (r) {
+    for (let i = 0; i < 48; i++) { const s = d.createElement('i'); s.style.setProperty('--i', i); r.appendChild(s); }
+    onView(r, () => {
+      r.classList.add('go');
+      if (!hc || reduce || !window.requestAnimationFrame) return;
+      const t0 = performance.now(), dur = 48 * 14 + 200;
+      const step = now => {
+        const k = Math.min(1, (now - t0) / dur);
+        hc.textContent = String(Math.round(48 * k)).padStart(2, '0');
+        if (k < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }, .5);
+  }
+})();
+</script>
+</body></html>

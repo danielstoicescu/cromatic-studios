@@ -512,12 +512,32 @@ html.light .quads::before,html.light .quads::after{background:var(--gold-deep)}
 .mcard .pr{font-family:var(--display);font-weight:800;font-size:22px;color:var(--gold);line-height:1}
 .mcard .pr small{display:block;font-family:var(--body);font-weight:500;font-size:12px;color:var(--fg-2);margin-top:3px}
 html.light .mcard .pr{color:var(--gold-deep)}
+.mcard .mlink{align-self:flex-start;font-size:14.5px;font-weight:600;color:var(--gold);text-decoration:none;border-bottom:1.5px solid currentColor;padding-bottom:1px;transition:color .2s}
+.mcard .mlink:hover{color:var(--gold-hi)}
+html.light .mcard .mlink{color:var(--gold-deep)}
 .choice .car-ph{width:84px;height:56px;object-fit:cover;background:#e8e8e6;display:block}
 .sum-ph{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#e8e8e6;margin:0 0 14px}
 .site-f a{text-decoration:none;border-bottom:1px solid var(--line)}
 .site-f a:hover{color:var(--fg);border-color:var(--gold)}
 @media (max-width:940px){.mgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:620px){.mgrid{grid-template-columns:1fr}.choice .car-ph{width:64px;height:44px}}
+/* meniul pe telefon și tabletă: buton „Meniu” care deschide aceleași legături */
+.navbtn{display:none;margin-left:auto;align-items:center;gap:9px;background:none;border:1.5px solid var(--line);color:var(--fg);font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.08em;text-transform:uppercase;padding:7px 12px 6px;cursor:pointer;transition:border-color .2s}
+.navbtn:hover{border-color:var(--gold)}
+.navbtn i{position:relative;width:16px;height:10px;border-top:2px solid currentColor;border-bottom:2px solid currentColor;transition:transform .25s}
+.navbtn i::after{content:"";position:absolute;left:0;right:0;top:2px;height:2px;background:currentColor}
+.navbtn[aria-expanded="true"] i{transform:rotate(90deg)}
+@keyframes menuin{from{opacity:0;transform:translateY(-6px)}}
+@media (max-width:940px){
+  .site-in{position:relative}
+  .navbtn{display:inline-flex}
+  .site .navbtn+.btn{margin-left:0}
+  .site .menu.open{display:flex;flex-direction:column;gap:0;position:absolute;left:0;right:0;top:100%;margin:0;padding:4px 20px 12px;background:var(--black);border-bottom:1px solid var(--line);font-size:18px;animation:menuin .3s var(--ease)}
+  html.light .site .menu.open{background:#fff}
+  .site .menu.open a{padding:13px 0;border-bottom:1px solid var(--line)}
+  .site .menu.open a:last-child{border-bottom:0}
+}
+
 
 </style>
 
@@ -559,7 +579,7 @@ html.light .mcard .pr{color:var(--gold-deep)}
 
 <header class="site"><div class="site-in">
   <a class="brand" href="#top" aria-label="Baxx Auto Tech"><img data-crest src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><b>BAXX AUTO TECH</b></a>
-  <nav class="menu" aria-label="Meniu principal"><a href="#modele">Mașini</a><a href="#top" aria-current="page">Test drive 48h</a><a href="#top">Flote</a><a href="#after">Service</a><a href="#why-china">De ce mașini chinezești</a><a href="#footer">Contact</a></nav>
+  <nav class="menu" aria-label="Meniu principal"><a href="#modele">Mașini</a><a href="#top" aria-current="page">Test drive 48h</a><a href="flote.html">Flote</a><a href="#after">Service</a><a href="de-ce-masini-chinezesti.html">De ce mașini chinezești</a><a href="#footer">Contact</a></nav>
   <a class="btn sm" href="#rezerva">Rezervă 48 de ore</a>
 </div></header>
 
@@ -707,8 +727,8 @@ html.light .mcard .pr{color:var(--gold-deep)}
     <div class="objection" id="why-china">
       <div><div class="kicker">Întrebarea pe care o auzim cel mai des</div><h2 style="margin-top:12px">„Care-i treaba cu mașinile chinezești?”</h2></div>
       <div><p>Îi răspundem pe larg: fiabilitate, piese, service, garanție, valoare la revânzare. Inclusiv acolo unde răspunsul nu e cel mai comod. Iar cel mai bun răspuns rămâne cheia în mână.</p>
-        <a class="textlink" href="#why-china">Citește răspunsul &rarr;</a>
-        <span class="nt"><b>De ce</b>Pagina dedicată vine în Etapa 2 (Brief §15). Linkul rămâne, marcat, până atunci.</span></div>
+        <a class="textlink" href="de-ce-masini-chinezesti.html">Citește răspunsul &rarr;</a>
+        <span class="nt"><b>De ce</b>Pagina dedicată e acum un prototip separat. În planul din brief vine în Etapa 2 (Brief §15).</span></div>
     </div>
   </div></section>
 </main>
@@ -929,7 +949,7 @@ if (can3D) {
    Tot exemplu: prețul celor 48 de ore, orașele, orele, și care modele sunt de fapt disponibile pentru test drive (Q3, Q6, Q14, Q15). */
 const CARS = [
   { id:'bj40', name:'BAIC BJ40 PRO', spec:'AWD · garanție 3+3 ani, fără limită de km', img:'ux-img/baic-bj40-pro.jpg', price:520, cities:['buc','tm'] },
-  { id:'baw212', name:'BAW 212', spec:'diesel · 4x4 · 5 locuri · garanție 3 ani, fără limită de km', img:'ux-img/baw-212.jpg', price:550, cities:['buc','cj','bv'] },
+  { id:'baw212', name:'BAW 212', spec:'diesel · 4x4 · 5 locuri · garanție 3 ani, fără limită de km', img:'ux-img/baw-212.jpg', page:'model-baw-212-t01.html', price:550, cities:['buc','cj','bv'] },
   { id:'fengon', name:'DFSK Fengon 600', spec:'SUV · garanție 7 ani sau 150.000 km', img:'ux-img/dfsk-fengon-600.jpg', price:390, cities:['buc','bv'] },
   { id:'f4phev', name:'Forthing 4 PHEV U-Tour', spec:'hibrid plug-in · garanție 3+3 ani, fără limită de km', img:'ux-img/forthing-4-phev.jpg', price:480, cities:['buc','is','tm'] },
 ];
@@ -1213,8 +1233,20 @@ function closePSP(outcome) {
 psp.addEventListener('click', e => { const b = e.target.closest('[data-out]'); if (b) closePSP(b.dataset.out); else if (e.target === psp) closePSP('cancel'); });
 addEventListener('keydown', e => { if (e.key === 'Escape' && psp.classList.contains('on') && !psp.classList.contains('busy')) closePSP('cancel'); });
 
+  /* meniul pe telefon și tabletă */
+  (() => {
+    const menu = document.querySelector('.site .menu'); if (!menu) return;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'navbtn'; b.setAttribute('aria-expanded', 'false'); b.setAttribute('aria-controls', 'mainmenu'); b.innerHTML = 'Meniu <i aria-hidden="true"></i>';
+    menu.id = 'mainmenu'; menu.after(b);
+    const set = on => { menu.classList.toggle('open', on); b.setAttribute('aria-expanded', on); };
+    b.addEventListener('click', e => { e.stopPropagation(); set(!menu.classList.contains('open')); });
+    menu.addEventListener('click', e => { if (e.target.closest('a')) set(false); });
+    document.addEventListener('click', e => { if (!e.target.closest('.site')) set(false); });
+    addEventListener('keydown', e => { if (e.key === 'Escape' && menu.classList.contains('open')) { set(false); b.focus(); } });
+  })();
+
 /* ---------- modelele: fiecare card duce direct la rezervare, cu mașina aleasă ---------- */
-$('#mgrid').innerHTML = CARS.map(x => `<article class="mcard"><div class="ph"><img src="${x.img}" alt="${esc(x.name)}" loading="lazy"></div><div class="bd"><h3>${esc(x.name)}</h3><p>${esc(x.spec)}</p><div class="row-b"><span class="pr">${lei(x.price)} ${ex}<small>48 de ore</small></span><button class="btn sm" data-pick="${x.id}">Rezervă ${icon.arrow}</button></div></div></article>`).join('');
+$('#mgrid').innerHTML = CARS.map(x => `<article class="mcard"><div class="ph"><img src="${x.img}" alt="${esc(x.name)}" loading="lazy"></div><div class="bd"><h3>${esc(x.name)}</h3><p>${esc(x.spec)}</p>${x.page ? `<a class="mlink" href="${x.page}">Fișa modelului &rarr;</a>` : ''}<div class="row-b"><span class="pr">${lei(x.price)} ${ex}<small>48 de ore</small></span><button class="btn sm" data-pick="${x.id}">Rezervă ${icon.arrow}</button></div></div></article>`).join('');
 $('#mgrid').addEventListener('click', e => {
   const b = e.target.closest('[data-pick]'); if (!b || S.paid) return;
   if (S.car !== b.dataset.pick) { S.car = b.dataset.pick; S.city = null; S.day = null; S.holdUntil = null; }

@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flote și companii | Baxx Auto Tech</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Prețul, costul de utilizare, livrarea, service-ul și disponibilitatea pentru flote, cu sursa lângă fiecare cifră. Alegi modelele, vezi ce se poate calcula azi și ceri oferta.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="baxx.css">
+<style>
+/* Flote și companii. Două semne care se repetă pe pagină: auriul înseamnă „scrie pe hârtie”, hașura înseamnă „încă nu avem cifra”.
+   Cifrele întâi, emoția la final. Foaia de ofertă e hârtie, ca formularul de rezervare de pe pagina Test drive. */
+[hidden]{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+html:not(.light) .kicker.rib,.kicker.rib{color:var(--black)}
+html:not(.light) .textlink:hover,html.light .textlink:hover{color:var(--fg)}
+.tbc.s{display:block;font-size:12.5px;letter-spacing:.02em;margin-top:2px}
+.hatch,.open-col{background-image:repeating-linear-gradient(135deg,var(--line) 0 1.5px,transparent 1.5px 9px)}
+
+/* ---------- hero ---------- */
+.hero-in{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:56px;align-items:center}
+.hero h1{margin-top:14px}
+.hero h1 .gold{display:block;color:var(--gold-deep)}
+.hero .honest{margin-top:20px;display:flex;gap:12px;align-items:flex-start;font-size:15.5px;color:var(--fg-2);max-width:46ch}
+.hero .honest::before{content:"";width:22px;height:2px;background:var(--gold);flex:none;margin-top:.72em}
+.pricecard{position:relative;background:var(--char);border:1px solid var(--line);padding:28px 28px 22px;clip-path:polygon(22px 0,100% 0,100% calc(100% - 22px),calc(100% - 22px) 100%,0 100%,0 22px);transition:transform .42s var(--ease)}
+.pricecard:hover{transform:translateY(-4px)}
+.pricecard .lab{font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-2)}
+.pricecard .big{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-top:10px;font-family:var(--display);font-weight:800;line-height:.95;color:var(--gold-deep)}
+.pricecard .big span{font-size:clamp(50px,6.2vw,82px);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.pricecard .big small{font-size:20px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-2)}
+.pricecard .meta{margin-top:10px;font-size:15.5px;color:var(--fg-2)}
+.pricecard .rows{margin-top:14px}
+.pricecard .rows div{font-size:15.5px;align-items:start}
+.pricecard .src{margin-top:12px;max-width:44ch}
+.strip{list-style:none;margin:56px 0 0;padding:18px 0 0;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:10px 0;font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:.04em;text-transform:uppercase}
+.strip li{display:flex;align-items:center}
+.strip li+li::before{content:"";width:28px;height:2px;background:var(--gold);margin:0 16px}
+
+/* ---------- cele cinci cifre: un registru, nu carduri ---------- */
+.ledger{margin-top:56px;border-top:1px solid var(--line)}
+.lrow{display:grid;grid-template-columns:56px minmax(0,.8fr) minmax(0,1.35fr) minmax(0,1fr);gap:28px;padding:30px 14px;border-bottom:1px solid var(--line);transition:background-color .25s var(--ease)}
+.lrow:hover{background:linear-gradient(90deg,var(--gold-soft),transparent 70%)}
+.lrow:hover .crest-n{transform:translateY(-3px) rotate(-4deg)}
+.lhead{padding-block:12px;font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-2)}
+.lhead:hover{background:none}
+.lrow h3{font-size:clamp(26px,2.5vw,34px)}
+.lhd{display:none;font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-2);margin-bottom:8px}
+.lrow ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.have li{font-size:16.5px;line-height:1.45}
+.have li b{font-weight:700}
+.open-col{padding:14px 16px;border:1px dashed var(--line);align-self:start}
+.open-col li{font-size:15.5px;line-height:1.45}
+.open-col li+li{border-top:1px solid var(--line);padding-top:10px}
+.open-col .plain{color:var(--fg-2)}
+
+/* ---------- calculatorul de flotă ---------- */
+.est-h{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:40px;align-items:end}
+.est-h p{font-size:19px;color:var(--fg-2);max-width:42ch}
+.est{margin-top:44px;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);align-items:start;background:var(--char);border:1px solid var(--line);clip-path:polygon(24px 0,100% 0,100% 100%,0 100%,0 24px)}
+.est-l{padding:26px 26px 22px}
+.est-l .hd{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 12px 12px;border-bottom:1px solid var(--line);font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-2)}
+.mrow{display:grid;grid-template-columns:92px minmax(0,1fr) auto auto;gap:18px;align-items:center;padding:14px 12px;border-bottom:1px solid var(--line);transition:background-color .2s,box-shadow .3s var(--ease)}
+.mrow:hover{background:var(--char-2)}
+.th{display:block;width:92px;height:58px;overflow:hidden;background:var(--char-2);clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+.th img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .42s var(--ease)}
+.mrow:hover .th img,.mrow.on .th img{transform:scale(1.08)}
+.th.none{border:1px dashed var(--line);background:repeating-linear-gradient(135deg,var(--line) 0 1.5px,transparent 1.5px 7px)}
+.mrow.on{box-shadow:inset 4px 0 0 var(--gold)}
+.mrow .nm b{display:block;font-family:var(--display);font-weight:800;font-size:23px;letter-spacing:.01em;text-transform:uppercase;line-height:1.05}
+.mrow .nm small{display:block;font-size:13.5px;line-height:1.4;color:var(--fg-2);margin-top:3px}
+.mrow .unit{text-align:right;font-family:var(--display);font-weight:700;font-size:21px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mrow .unit small{display:block;font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:0;color:var(--fg-2)}
+.hchip{display:inline-block;font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px 3px;border:1px solid var(--line);color:var(--fg-2);background-image:repeating-linear-gradient(135deg,var(--line) 0 1.5px,transparent 1.5px 7px)}
+.qty{display:inline-flex;align-items:stretch;border:1.5px solid var(--line);border-radius:3px;transition:border-color .2s}
+.qty:hover{border-color:var(--fg-2)}
+.qty:focus-within{border-color:var(--gold)}
+.qty button{width:40px;height:42px;display:grid;place-items:center;background:none;border:0;color:var(--fg);transition:background-color .15s,transform .2s var(--spring)}
+.qty button:hover{background:var(--gold-soft)}
+.qty button:active{transform:scale(.86)}
+.qty button[disabled]{opacity:.32;cursor:not-allowed;background:none;transform:none}
+.qty svg{width:14px;height:14px}
+.qty input{width:54px;border:0;border-inline:1px solid var(--line);background:transparent;color:var(--fg);font-family:var(--display);font-weight:800;font-size:22px;text-align:center;font-variant-numeric:tabular-nums;padding:0;border-radius:0}
+.qty input:focus{outline:0;background:var(--gold-soft)}
+.est-r{padding:18px 18px 22px 0;filter:drop-shadow(0 22px 40px rgba(0,0,0,.45))}
+html.light .est-r{filter:drop-shadow(0 18px 30px rgba(21,20,15,.16))}
+.paper{position:relative;background:var(--bone);color:var(--ink);padding:24px 24px 40px;-webkit-mask:radial-gradient(circle 7px at 50% 100%,transparent 96%,#000 100%) 0 0/18px 100% repeat-x;mask:radial-gradient(circle 7px at 50% 100%,transparent 96%,#000 100%) 0 0/18px 100% repeat-x}
+.paper :focus-visible{outline-color:var(--ink)}
+.paper .tbc{color:#8a6a2c}
+.p-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.p-top h3{font-size:26px;color:var(--ink)}
+.seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:3px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--ink);font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase;padding:6px 11px 5px;transition:background-color .2s,color .2s}
+.seg button:hover{background:var(--bone-2)}
+.seg button[aria-checked="true"]{background:var(--ink);color:var(--gold-hi)}
+.count{display:flex;align-items:baseline;gap:10px;margin-top:18px}
+.count b{display:inline-block;font-family:var(--display);font-weight:800;font-size:66px;line-height:.9;font-variant-numeric:tabular-nums}
+.count span{font-weight:600;color:var(--ink-2)}
+.cks{display:flex;flex-wrap:wrap;gap:4px;margin-top:12px;min-height:16px}
+.ck{display:inline-block;width:14px;height:16px;clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%);background:var(--gold);flex:none}
+.ck.q{background:var(--bone-2) repeating-linear-gradient(135deg,var(--ink-2) 0 1.5px,transparent 1.5px 4px)}
+.ck.new{animation:ckin .42s var(--spring) both;animation-delay:calc(var(--d,0) * 22ms)}
+@keyframes ckin{from{transform:translateY(-9px) scale(.3);opacity:0}}
+.cks .more{font-size:13px;font-weight:700;color:var(--ink-2);align-self:center;margin-left:4px}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:10px;font-size:13px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .ck{width:10px;height:12px}
+.lines{margin-top:16px;border-top:1.5px solid var(--ink)}
+.lines>div{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(96px,auto);gap:12px;padding:9px 0;border-bottom:1px solid var(--line-ink);font-size:15px;align-items:baseline;animation:slin .32s var(--ease)}
+@keyframes slin{from{opacity:0;transform:translateX(-6px)}}
+.lines .n{color:var(--ink-2);font-variant-numeric:tabular-nums}
+.lines .v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hq{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;color:var(--ink-2);border:1px solid var(--line-ink);background-image:repeating-linear-gradient(135deg,var(--line-ink) 0 1.5px,transparent 1.5px 6px)}
+.lines .empty{padding:14px 0;font-size:15px;color:var(--ink-2)}
+.known{margin-top:18px;background:var(--ink);color:var(--bone);padding:14px 16px 15px;clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%)}
+.known small{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#a79f8b;font-weight:700}
+.known b{display:block;font-family:var(--display);font-weight:800;font-size:clamp(32px,3.3vw,44px);color:var(--gold-hi);font-variant-numeric:tabular-nums;line-height:1.05;margin-top:4px}
+.known b.na{color:#7b7464}
+.known p{font-size:13.5px;color:#cfc7b3;margin-top:6px}
+.known .tbc{color:var(--gold-hi)}
+.toq{margin-top:18px}
+.toq h4{margin:0;font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:.08em;text-transform:uppercase}
+.toq ul{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:6px}
+.toq li{padding:4px 0 4px 12px;border-left:2px dashed var(--ink-2);font-size:15px;line-height:1.4}
+.toq li.muted{color:var(--ink-2)}
+.paper .btn{margin-top:22px;width:100%;justify-content:center}
+.bump{animation:bump .42s var(--spring)}
+@keyframes bump{40%{transform:scale(1.05)}}
+
+/* ---------- cererea de ofertă, pe hârtie ---------- */
+.book{background:var(--bone);color:var(--ink);padding-block:88px;position:relative}
+.book::before{content:"";position:absolute;left:0;right:0;top:0;height:14px;background:repeating-linear-gradient(90deg,var(--gold) 0 40px,var(--black) 40px 48px)}
+.book h2{color:var(--ink);margin-top:12px}
+.book .sub{font-size:19px;color:var(--ink-2);margin-top:14px;max-width:50ch}
+.book .tbc{color:#8a6a2c}
+.book :focus-visible{outline-color:var(--ink)}
+.bk{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:28px;margin-top:40px;align-items:start}
+.bk>*{min-width:0}
+.panel{background:#FFFFFF;border:1px solid var(--line-ink);padding:28px}
+.panel h3{color:var(--ink);font-size:30px}
+.panel .hint{color:var(--ink-2);font-size:15.5px;margin-top:6px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:18px 16px;margin-top:22px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field.w{grid-column:1/-1}
+.field label,.field .lab{font-weight:700;font-size:15px}
+.field .opt{font-weight:500;color:var(--ink-2)}
+.field input,.field textarea{font:inherit;font-size:17px;padding:12px 14px;border:1.5px solid var(--line-ink);background:#fff;color:var(--ink);border-radius:0;min-width:0;transition:border-color .2s,box-shadow .2s}
+.field textarea{min-height:112px;resize:vertical;line-height:1.45}
+.field input:hover,.field textarea:hover{border-color:var(--ink-2)}
+.field input:focus,.field textarea:focus{outline:0;border-color:var(--ink);box-shadow:0 0 0 3px var(--gold-soft)}
+.field .help{font-size:13.5px;color:var(--ink-2)}
+.field .help a{color:var(--ink);font-weight:600;text-underline-offset:3px}
+.field .row2{display:flex;justify-content:space-between;gap:12px}
+.field .err{font-size:13.5px;color:var(--bad);font-weight:600;display:none}
+.field.bad input,.field.bad textarea,.field.bad .fleetbox{border-color:var(--bad)}
+.field.bad .err{display:block;animation:slin .3s var(--ease)}
+.err button{margin-left:6px;background:none;border:0;padding:0;color:var(--ink);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.fleetbox{border:1.5px solid var(--line-ink);background:#fff;padding:12px 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-height:52px;transition:border-color .2s}
+.fleetbox .chip{display:inline-flex;gap:6px;align-items:baseline;background:var(--bone-2);padding:5px 10px 4px;font-weight:600;font-size:15px;animation:slin .3s var(--ease)}
+.fleetbox .chip b{font-family:var(--display);font-weight:800;font-size:19px;font-variant-numeric:tabular-nums}
+.fleetbox .none{color:var(--ink-2);font-size:15px}
+.privacy{font-size:14px;color:var(--ink-2);margin-top:18px}
+.privacy a{color:var(--ink);text-underline-offset:3px}
+.send{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:22px}
+.btn.busy{pointer-events:none;background:var(--gold-hi)}
+.spin{width:16px;height:16px;border-radius:50%;border:2.5px solid rgba(7,8,6,.25);border-top-color:var(--black);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.summary{position:sticky;top:130px;background:var(--ink);color:var(--bone);padding:24px;clip-path:polygon(0 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%)}
+.summary h4{margin:0;display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+.summary h4 span{font-size:13px;letter-spacing:.1em;color:#a79f8b}
+.summary.sent h4 span{color:var(--gold-hi)}
+.summary dl{margin:14px 0 0}
+.summary dl div{padding:10px 0;border-bottom:1px solid rgba(238,231,215,.14)}
+.summary dt{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#a79f8b;font-weight:700}
+.summary dd{margin:3px 0 0;font-weight:600;overflow-wrap:anywhere}
+.summary dd small{display:block;font-size:12.5px;font-weight:500;color:#b8b09c;margin-top:2px}
+.summary dd.empty{color:#8a8372;font-weight:500}
+.summary dd.flash{animation:flash .9s var(--ease)}
+@keyframes flash{0%{color:var(--gold-hi);transform:translateX(6px)}100%{transform:none}}
+.summary .tbc,.done-card .tbc{color:var(--gold-hi)}
+.summary p{font-size:13.5px;color:#b8b09c;margin-top:14px}
+.summary :focus-visible,.done-card :focus-visible{outline-color:var(--gold-hi)}
+.done-card{background:var(--ink);color:var(--bone);padding:36px 32px;position:relative;outline:0}
+.done-card .badge{width:64px;height:72px;background:var(--gold);color:var(--ink);display:grid;place-items:center;clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%);padding-bottom:12px;animation:stamp .55s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes stamp{0%{transform:scale(1.9) rotate(-10deg);opacity:0}60%{transform:scale(.92) rotate(2deg);opacity:1}100%{transform:none}}
+.done-card .badge svg{width:30px;height:30px}
+.done-card h3{font-size:clamp(34px,5vw,52px);margin-top:20px;color:var(--bone)}
+.done-card .lead{margin-top:12px;font-size:18px;color:#cfc7b3}
+.done-card .rows div{border-color:rgba(238,231,215,.14)}
+.done-card .k{color:#a79f8b}
+.done-card .v{overflow-wrap:anywhere}
+.done-card .next{margin-top:22px;display:grid;gap:10px;counter-reset:n}
+.done-card .next p{counter-increment:n;display:grid;grid-template-columns:30px 1fr;gap:10px;font-size:16px}
+.done-card .next p::before{content:counter(n);font-family:var(--display);font-weight:800;font-size:22px;color:var(--gold);line-height:1.1}
+.done-card .next a{color:var(--gold-hi);text-underline-offset:3px}
+.done-card .next a:hover{color:var(--bone)}
+.done-card .contact{margin-top:18px;font-size:15px;color:#cfc7b3}
+.done-card .contact a,.summary p a{color:var(--gold-hi);text-underline-offset:3px;transition:color .2s}
+.done-card .contact a:hover,.summary p a:hover{color:var(--bone)}
+.f-in span a{text-decoration:underline;text-underline-offset:3px;transition:color .2s}
+.again{margin-top:24px;background:none;border:0;color:var(--gold-hi);text-decoration:underline;text-underline-offset:3px;padding:0;font-weight:600;transition:color .2s}
+.again:hover{color:var(--bone)}
+
+/* ---------- la final: o mașină înaintea flotei ---------- */
+.closing{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);gap:56px;align-items:center}
+.closing h2{font-size:clamp(36px,5vw,64px)}
+.closing p.big{font-size:20px;line-height:1.5;margin-top:22px;max-width:40ch}
+.closing p.cost{font-size:16px;color:var(--fg-2);margin-top:14px;max-width:44ch}
+.photo{position:relative;margin:0;aspect-ratio:4/3;border:1px solid var(--line);background-image:repeating-linear-gradient(135deg,var(--line) 0 1.5px,transparent 1.5px 12px);clip-path:polygon(28px 0,100% 0,100% calc(100% - 28px),calc(100% - 28px) 100%,0 100%,0 28px)}
+.photo figcaption{position:absolute;left:18px;right:18px;bottom:22px;font-size:14px;color:var(--fg-2)}
+.photo figcaption span{background:var(--page);padding:6px 10px;box-decoration-break:clone;-webkit-box-decoration-break:clone;line-height:1.9}
+
+@media (max-width:940px){
+  .hero-in,.est-h,.closing{grid-template-columns:1fr}
+  .hero-in{gap:36px}
+  .lrow{grid-template-columns:48px minmax(0,1fr);gap:14px 18px}
+  .lrow .have,.lrow .open-col{grid-column:2}
+  .lhead{display:none}
+  .lhd{display:block}
+  .est{grid-template-columns:1fr}
+  .est-r{padding:0 16px 20px}
+  .bk{grid-template-columns:1fr}
+  .summary{position:static}
+}
+@media (max-width:620px){
+  .strip{font-size:16px}
+  .strip li{width:100%}
+  .strip li+li::before{width:16px;margin:0 10px 0 0}
+  .lrow{grid-template-columns:1fr;padding-inline:0}
+  .lrow .have,.lrow .open-col{grid-column:1}
+  .est-l{padding:18px 12px 12px}
+  .mrow{grid-template-columns:64px minmax(0,1fr) auto;column-gap:12px;row-gap:8px;padding-inline:8px}
+  .th{width:64px;height:44px;grid-column:1;grid-row:1/3;align-self:start}
+  .mrow .nm{grid-column:2;grid-row:1}
+  .mrow .unit{grid-column:2;grid-row:2;text-align:left}
+  .mrow .qty{grid-column:3;grid-row:1/3;align-self:center}
+  .mrow .nm b{font-size:20px}
+  .est-r{padding:0 8px 16px}
+  .paper{padding:20px 16px 36px}
+  .count b{font-size:56px}
+  .fields{grid-template-columns:1fr}
+  .panel{padding:20px 16px}
+  .done-card{padding:28px 20px}
+}
+@media (prefers-reduced-motion:reduce){.pricecard:hover{transform:none}}
+</style>
+</head>
+<body>
+<div class="frame"><div class="frame-in">
+  <span>&#9654;</span><span class="t">Cromatic Studios // Baxx Auto Tech <span>· Flote și companii · prototip</span></span>
+  <button class="sw" id="themeBtn" aria-pressed="false" aria-label="Varianta luminoasă">Luminos <i></i></button>
+  <button class="sw" id="notesBtn" aria-pressed="false">Note <span class="lg">de proiect</span> <i></i></button>
+</div></div>
+<aside class="notes-panel" aria-label="Note de proiect"><div class="np-in">
+  <div><h4>Ce e pagina</h4><ul>
+    <li>Pagina B2B a site-ului, în română. Cifrele întâi, emoția la final (Brief §5).</li>
+    <li>Calculatorul și formularul se pot parcurge cap-coadă. Nu se trimite nimic.</li>
+    <li>Câmpurile formularului sunt o propunere: brieful cere „oferta flote”, fără să numească câmpurile (Brief §9).</li>
+    <li>Adresarea cu „tu”, ca pe restul site-ului. De confirmat dacă firmele primesc „dumneavoastră”.</li></ul></div>
+  <div><h4>Surse</h4><ul>
+    <li>Brieful, septembrie 2026: §1, §2 (flotele sunt singurele discuții comerciale, șapte mărci, fără showroom), §4 (tonul), §5 (cele cinci criterii), §9 (formularele).</li>
+    <li>Fișa Baxx pentru BAW 212 T01, iunie 2026. E mai veche decât brieful și scrisă ca și cum vânzările și stocul ar exista: tot ce vine din ea e marcat „de confirmat”.</li>
+    <li>Numele celor șase modele: fișele tehnice din arhiva clientului.</li>
+    <li>Test drive-ul se plătește (Daniel, 7 oct).</li></ul></div>
+  <div><h4>Fapte deschise</h4><ul>
+    <li>Cine răspunde la cereri și în cât timp (Q2). Contactul e decis: cel din ofertele Baxx (Daniel, 26 oct).</li>
+    <li>Fotografia BAIC X75 din fișă arată o plăcuță „ALL NEW X7”: de verificat că e modelul potrivit (Q6).</li>
+    <li>Prețurile, TVA, condițiile pentru flote, leasingul (Q10).</li>
+    <li>Stocul real (Q11). Rețeaua de service și lista atelierelor (Q12).</li>
+    <li>Modelele disponibile pentru flote (Q6).</li>
+    <li>TCO, reducerile de flotă și contractele de service: necunoscute. Pagina le arată ca rubrici goale, nu le calculează.</li></ul></div>
+  <div><h4>Mișcare</h4><ul>
+    <li>180 ms pentru răspuns la apăsare, 420 ms pentru intrări. Doar transform și opacitate.</li>
+    <li>Câte un scut mic pentru fiecare mașină din cerere: auriu dacă are preț pe hârtie, hașurat dacă se cotează.</li>
+    <li>Sumele se numără până la valoarea nouă. Butoanele de cantitate repetă dacă le ții apăsat.</li>
+    <li>Ștampila la trimitere, ca pe pagina Test drive. Cu mișcare redusă, totul stă pe loc.</li></ul></div>
+</div></aside>
+<header class="site"><div class="site-in">
+  <a class="brand" href="./" aria-label="Baxx Auto Tech"><img src="baxx-logo.png" alt=""><b>BAXX AUTO TECH</b></a>
+  <nav class="menu" aria-label="Meniu principal"><a href="model-baw-212-t01.html">Mașini</a><a href="./">Test drive 48h</a><a href="flote.html" aria-current="page">Flote</a><a href="./#after">Service</a><a href="de-ce-masini-chinezesti.html">De ce mașini chinezești</a><a href="#footer">Contact</a></nav>
+  <a class="btn sm" href="#oferta">Cere oferta</a>
+</div></header>
+<main id="top">
+
+  <!-- ===== hero: o cifră reală, cu sursa ei ===== -->
+  <section class="hero"><div class="wrap">
+    <div class="hero-in">
+      <div>
+        <div class="kicker">Flote și companii</div>
+        <h1>O flotă se alege <span class="gold">pe cifre.</span></h1>
+        <p class="lede">Aici sunt cifrele pe care le avem, fiecare cu sursa ei. Unde o cifră lipsește, scrie „de confirmat”. Pe acelea le primești în oferta scrisă.</p>
+        <p class="honest">Vânzările nu au început încă. Primele discuții pe care le purtăm sunt cu firme, pentru flote.</p>
+        <span class="nt open"><b>Deschis</b>De confirmat cu clientul că spunem public că vânzările nu au început. Faptele: Brief §1, §2. Tonul cerut, onest: §4.</span>
+        <div class="ctas">
+          <a class="btn" href="#calculator">Pune flota pe hârtie <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h13M11 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></a>
+          <a class="btn ghost" href="#oferta">Cere oferta</a>
+        </div>
+      </div>
+      <div class="pricecard">
+        <div class="lab">BAW 212, echipare T01 · preț de listă</div>
+        <div class="big"><span id="heroPrice">42.107,44&nbsp;€</span><small>fără TVA</small></div>
+        <p class="meta">50.950&nbsp;€ cu TVA · <em class="tbc">de confirmat</em></p>
+        <div class="rows">
+          <div><span class="k">Livrare, mașini din stoc</span><span class="v">2 până la 6 săptămâni<em class="tbc s">de confirmat</em></span></div>
+          <div><span class="k">Livrare, la comandă</span><span class="v">4 până la 6 luni<em class="tbc s">de confirmat</em></span></div>
+          <div><span class="k">Garanție</span><span class="v">3 ani, fără limită de km<em class="tbc s">de confirmat</em></span></div>
+        </div>
+        <p class="src">Din fișa Baxx pentru BAW 212 T01, iunie 2026. E singurul model pentru care avem prețuri pe hârtie.</p>
+        <span class="nt open"><b>Deschis</b>Fișa din iunie 2026 e mai veche decât brieful și e scrisă ca și cum vânzările și stocul ar exista. Prețuri și TVA: Q10. Stoc: Q11.</span>
+      </div>
+    </div>
+    <ul class="strip">
+      <li>Șapte mărci chinezești</li>
+      <li>Service prin ateliere partenere din toată țara</li>
+      <li>Fără showroom: mașinile stau parcate în orașe</li>
+    </ul>
+    <span class="nt open"><b>Deschis</b>Lista atelierelor partenere: Q12. Brief §1, §2, §4.</span>
+  </div></section>
+
+  <!-- ===== cele cinci criterii din Brief §5 ===== -->
+  <section class="blk" id="cifre"><div class="wrap">
+    <div class="sec-h">
+      <h2>Cele cinci cifre ale unei flote.</h2>
+      <p>Prețul, costul de utilizare, livrarea, service-ul și disponibilitatea. Pentru fiecare: ce avem pe hârtie azi și ce rămâne deschis. Hașurat înseamnă că nu avem încă cifra.</p>
+    </div>
+    <span class="nt"><b>De ce</b>Cumpărătorul de flotă decide pe preț de achiziție, TCO, termen de livrare, contract de service și disponibilitate. Nu are nevoie de emoție (Brief §5). Le punem în ordinea asta.</span>
+
+    <div class="ledger">
+      <div class="lrow lhead" aria-hidden="true"><span></span><span>Criteriul</span><span>Pe hârtie azi</span><span>Încă deschis</span></div>
+
+      <div class="lrow rv">
+        <div class="crest-n">1</div>
+        <h3>Prețul de achiziție</h3>
+        <div class="have"><div class="lhd">Pe hârtie azi</div><ul>
+          <li>BAW 212 T01, preț de listă: <b>42.107,44&nbsp;€ fără TVA</b>, adică 50.950&nbsp;€ cu TVA. <em class="tbc">de confirmat</em></li>
+          <li>Preț promoțional în aceeași fișă: <b>37.066,12&nbsp;€ fără TVA</b> (44.850&nbsp;€ cu TVA), în limita stocurilor disponibile. <em class="tbc">de confirmat</em></li>
+          <li>În lei, prețul se calculează la cursul BNR plus 1,5%. <em class="tbc">de confirmat</em></li>
+        </ul></div>
+        <div class="open-col"><div class="lhd">Încă deschis</div><ul>
+          <li>Prețurile pentru BAIC BJ40 PRO, BAIC X75, DFSK Fengon 600, Forthing 4 PHEV U-Tour și Forthing 5 REEV.</li>
+          <li>Condițiile de preț pentru flote.</li>
+          <li>Leasing și finanțare pentru firme.</li>
+        </ul><span class="nt open"><b>Deschis</b>Prețuri, TVA, condiții pentru flote: Q10. Sursa prețurilor BAW: fișa din iunie 2026.</span></div>
+      </div>
+
+      <div class="lrow rv">
+        <div class="crest-n">2</div>
+        <h3>Costul total de utilizare</h3>
+        <div class="have"><div class="lhd">Pe hârtie azi</div><ul>
+          <li>BAW 212 T01: consum mixt <b>8,5 l/100 km</b>, emisii CO<sub>2</sub> <b>244 g/km</b>. <em class="tbc">de confirmat</em></li>
+          <li>Garanție <b>3 ani, fără limită de kilometri</b>. <em class="tbc">de confirmat</em></li>
+          <li>Prima revizie la <b>5.000 km sau 6 luni</b>. <em class="tbc">de confirmat</em></li>
+        </ul></div>
+        <div class="open-col"><div class="lhd">Încă deschis</div><ul>
+          <li>Costul reviziilor și al pieselor.</li>
+          <li>Asigurarea.</li>
+          <li>Valoarea la revânzare.</li>
+          <li class="plain">Nu afișăm un cost total calculat până nu avem aceste cifre.</li>
+        </ul><span class="nt"><b>De ce</b>Brieful cere să spunem când nu știm (§4). Un TCO calculat pe cifre lipsă ar fi o promisiune falsă.</span></div>
+      </div>
+
+      <div class="lrow rv">
+        <div class="crest-n">3</div>
+        <h3>Termenul de livrare</h3>
+        <div class="have"><div class="lhd">Pe hârtie azi</div><ul>
+          <li><b>2 până la 6 săptămâni</b> pentru mașinile din stoc. <em class="tbc">de confirmat</em></li>
+          <li><b>4 până la 6 luni</b> de la plasarea unei comenzi. <em class="tbc">de confirmat</em></li>
+          <li>Garanția de rezervare: <b>15% din prețul de listă</b>, pentru o mașină din producție sau comandă. Diferența, cu trei săptămâni înainte de livrare. <em class="tbc">de confirmat</em></li>
+        </ul></div>
+        <div class="open-col"><div class="lhd">Încă deschis</div><ul>
+          <li>Ce mașini sunt în stoc acum, și câte.</li>
+          <li>Termenul pentru o comandă de flotă.</li>
+        </ul><span class="nt open"><b>Deschis</b>Stocul: Q11. Fișa din iunie 2026 vorbește de stoc, brieful spune că vânzările nu au început (§1).</span></div>
+      </div>
+
+      <div class="lrow rv">
+        <div class="crest-n">4</div>
+        <h3>Contractul de service</h3>
+        <div class="have"><div class="lhd">Pe hârtie azi</div><ul>
+          <li>Service printr-o rețea națională de ateliere partenere.</li>
+          <li>Fișa BAW 212 vorbește de <b>20 de locații de service partenere</b>. <em class="tbc">de confirmat</em></li>
+          <li>Asistență rutieră <b>12 luni</b> de la livrare. <em class="tbc">de confirmat</em></li>
+        </ul></div>
+        <div class="open-col"><div class="lhd">Încă deschis</div><ul>
+          <li>Un contract de service pentru flote: ce include, cât costă.</li>
+          <li>Lista atelierelor partenere și orașele lor.</li>
+        </ul><span class="nt open"><b>Deschis</b>Rețeaua de service: Q12. Rețeaua națională vine din Brief §1, §4; numărul de 20, din fișă.</span></div>
+      </div>
+
+      <div class="lrow rv">
+        <div class="crest-n">5</div>
+        <h3>Disponibilitatea</h3>
+        <div class="have"><div class="lhd">Pe hârtie azi</div><ul>
+          <li><b>Șapte mărci</b> chinezești.</li>
+          <li>Fișe tehnice pentru șase modele: BAIC BJ40 PRO, BAIC X75, BAW 212 T01, DFSK Fengon 600, Forthing 4 PHEV U-Tour, Forthing 5 REEV.</li>
+          <li>Fără showroom. Mașinile stau parcate în orașe.</li>
+        </ul></div>
+        <div class="open-col"><div class="lhd">Încă deschis</div><ul>
+          <li>Ce modele se pot comanda pentru flote, și în ce cantități.</li>
+          <li>Restul modelelor din cele șapte mărci.</li>
+        </ul><span class="nt open"><b>Deschis</b>Modelele: Q6. Stocul: Q11. Fișele acoperă patru mărci din șapte.</span></div>
+      </div>
+    </div>
+  </div></section>
+
+  <!-- ===== elementul-semnătură: calculatorul de flotă ===== -->
+  <section class="blk" id="calculator" style="padding-top:0"><div class="wrap">
+    <div class="est-h">
+      <h2>Pune flota pe hârtie.</h2>
+      <p>Alege modelele și câte mașini din fiecare. Vezi pe loc ce se poate calcula azi și ce îți cotăm. Cu foaia asta ceri oferta.</p>
+    </div>
+    <span class="nt"><b>De ce</b>Calculatorul face doar înmulțirea pe care o putem face cinstit: prețul de listă BAW 212 T01 ori numărul de mașini. Fără TCO, reduceri sau leasing: nu le avem (Brief §4, §5).</span>
+
+    <div class="est rv">
+      <div class="est-l">
+        <div class="hd"><span>Modele cu fișă tehnică</span><span>Câte mașini</span></div>
+        <div id="fleetList">
+          <div class="mrow" data-id="baw212">
+            <span class="th"><img src="foto/baw-212-t01.jpg" alt="" loading="lazy" width="92" height="58"></span>
+            <div class="nm"><b>BAW 212 T01</b><small>diesel 2,0 L, 166 CP, automată 8 trepte, 4x4, 5 locuri <em class="tbc">de confirmat</em></small><small>Promoțional în fișă: <span data-price="promo">37.066,12&nbsp;€</span> <span data-vatlab>fără TVA</span>, în limita stocurilor</small></div>
+            <div class="unit"><span data-price="list">42.107,44&nbsp;€</span><small>listă, <span data-vatlab>fără TVA</span>, fișa iunie 2026</small></div>
+            <div class="qty" role="group" aria-label="BAW 212 T01"><button type="button" data-d="-1" aria-label="Scade o mașină BAW 212 T01"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10" stroke="currentColor" stroke-width="2.2"/></svg></button><input type="text" inputmode="numeric" maxlength="3" value="0" aria-label="Număr de mașini BAW 212 T01"><button type="button" data-d="1" aria-label="Adaugă o mașină BAW 212 T01"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10M7 2v10" stroke="currentColor" stroke-width="2.2"/></svg></button></div>
+          </div>
+          <div class="mrow" data-id="bj40">
+            <span class="th"><img src="foto/baic-bj40-pro.jpg" alt="" loading="lazy" width="92" height="58"></span>
+            <div class="nm"><b>BAIC BJ40 PRO</b><small>AWD <em class="tbc">de confirmat</em></small><small>preț, livrare, restul datelor: <em class="tbc">de confirmat</em></small></div>
+            <div class="unit"><span class="hchip">de cotat</span></div>
+            <div class="qty" role="group" aria-label="BAIC BJ40 PRO"><button type="button" data-d="-1" aria-label="Scade o mașină BAIC BJ40 PRO"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10" stroke="currentColor" stroke-width="2.2"/></svg></button><input type="text" inputmode="numeric" maxlength="3" value="0" aria-label="Număr de mașini BAIC BJ40 PRO"><button type="button" data-d="1" aria-label="Adaugă o mașină BAIC BJ40 PRO"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10M7 2v10" stroke="currentColor" stroke-width="2.2"/></svg></button></div>
+          </div>
+          <div class="mrow" data-id="x75">
+            <span class="th"><img src="foto/baic-x75.jpg" alt="" loading="lazy" width="92" height="58"></span>
+            <div class="nm"><b>BAIC X75</b><small>benzină 1,5, 177 CP, automată 7 DCT, FWD <em class="tbc">de confirmat</em></small><small>preț, livrare: <em class="tbc">de confirmat</em></small></div>
+            <div class="unit"><span class="hchip">de cotat</span></div>
+            <div class="qty" role="group" aria-label="BAIC X75"><button type="button" data-d="-1" aria-label="Scade o mașină BAIC X75"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10" stroke="currentColor" stroke-width="2.2"/></svg></button><input type="text" inputmode="numeric" maxlength="3" value="0" aria-label="Număr de mașini BAIC X75"><button type="button" data-d="1" aria-label="Adaugă o mașină BAIC X75"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10M7 2v10" stroke="currentColor" stroke-width="2.2"/></svg></button></div>
+          </div>
+          <div class="mrow" data-id="fengon">
+            <span class="th"><img src="foto/dfsk-fengon-600.jpg" alt="" loading="lazy" width="92" height="58"></span>
+            <div class="nm"><b>DFSK Fengon 600</b><small>preț, livrare, date: <em class="tbc">de confirmat</em></small></div>
+            <div class="unit"><span class="hchip">de cotat</span></div>
+            <div class="qty" role="group" aria-label="DFSK Fengon 600"><button type="button" data-d="-1" aria-label="Scade o mașină DFSK Fengon 600"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10" stroke="currentColor" stroke-width="2.2"/></svg></button><input type="text" inputmode="numeric" maxlength="3" value="0" aria-label="Număr de mașini DFSK Fengon 600"><button type="button" data-d="1" aria-label="Adaugă o mașină DFSK Fengon 600"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10M7 2v10" stroke="currentColor" stroke-width="2.2"/></svg></button></div>
+          </div>
+          <div class="mrow" data-id="f4">
+            <span class="th"><img src="foto/forthing-4-phev.jpg" alt="" loading="lazy" width="92" height="58"></span>
+            <div class="nm"><b>Forthing 4 PHEV U-Tour</b><small>preț, livrare, date: <em class="tbc">de confirmat</em></small></div>
+            <div class="unit"><span class="hchip">de cotat</span></div>
+            <div class="qty" role="group" aria-label="Forthing 4 PHEV U-Tour"><button type="button" data-d="-1" aria-label="Scade o mașină Forthing 4 PHEV U-Tour"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10" stroke="currentColor" stroke-width="2.2"/></svg></button><input type="text" inputmode="numeric" maxlength="3" value="0" aria-label="Număr de mașini Forthing 4 PHEV U-Tour"><button type="button" data-d="1" aria-label="Adaugă o mașină Forthing 4 PHEV U-Tour"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10M7 2v10" stroke="currentColor" stroke-width="2.2"/></svg></button></div>
+          </div>
+          <div class="mrow" data-id="f5">
+            <span class="th"><img src="foto/forthing-5-reev.jpg" alt="" loading="lazy" width="92" height="58"></span>
+            <div class="nm"><b>Forthing 5 REEV</b><small>preț, livrare, date: <em class="tbc">de confirmat</em></small></div>
+            <div class="unit"><span class="hchip">de cotat</span></div>
+            <div class="qty" role="group" aria-label="Forthing 5 REEV"><button type="button" data-d="-1" aria-label="Scade o mașină Forthing 5 REEV"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10" stroke="currentColor" stroke-width="2.2"/></svg></button><input type="text" inputmode="numeric" maxlength="3" value="0" aria-label="Număr de mașini Forthing 5 REEV"><button type="button" data-d="1" aria-label="Adaugă o mașină Forthing 5 REEV"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10M7 2v10" stroke="currentColor" stroke-width="2.2"/></svg></button></div>
+          </div>
+          <div class="mrow" data-id="nk">
+            <span class="th none" aria-hidden="true"></span>
+            <div class="nm"><b>Încă nu știu modelul</b><small>Știi câte mașini îți trebuie, nu și care. Îți propunem noi.</small></div>
+            <div class="unit"><span class="hchip">de cotat</span></div>
+            <div class="qty" role="group" aria-label="Model nehotărât"><button type="button" data-d="-1" aria-label="Scade o mașină cu model nehotărât"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10" stroke="currentColor" stroke-width="2.2"/></svg></button><input type="text" inputmode="numeric" maxlength="3" value="0" aria-label="Număr de mașini cu model nehotărât"><button type="button" data-d="1" aria-label="Adaugă o mașină cu model nehotărât"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10M7 2v10" stroke="currentColor" stroke-width="2.2"/></svg></button></div>
+          </div>
+        </div>
+        <span class="nt dec"><b>Decizie</b>Fotografiile vin de pe prima pagină a fiecărei fișe Baxx (Daniel). Atenție: cea pentru BAIC X75 arată o plăcuță „ALL NEW X7”, de verificat (Q6).</span>
+        <span class="nt open"><b>Deschis</b>Modelele: Q6. Numele și datele de motor vin din fișele tehnice. Prețul, livrarea și datele sunt de confirmat, inclusiv pentru BAW 212 T01 (fișa din iunie 2026).</span>
+        <span class="nt"><b>De ce</b>Rândul „Încă nu știu modelul” e o propunere Cromatic, pentru firmele care știu câte mașini vor, dar nu care.</span>
+      </div>
+
+      <div class="est-r">
+        <div class="paper" aria-labelledby="paperH">
+          <div class="p-top">
+            <h3 id="paperH">Foaia de ofertă</h3>
+            <div class="seg" role="radiogroup" aria-label="Prețurile afișate"><button type="button" role="radio" aria-checked="true" data-vat="0">fără TVA</button><button type="button" role="radio" aria-checked="false" data-vat="1" tabindex="-1">cu TVA</button></div>
+          </div>
+          <div class="count"><b id="cnt" data-v="0">0</b><span id="cntL">mașini în cerere</span></div>
+          <div class="cks" id="cks" aria-hidden="true"></div>
+          <p class="legend"><span><i class="ck"></i>preț pe hârtie</span><span><i class="ck q"></i>de cotat de Baxx</span></p>
+          <div class="lines" id="lines"><p class="empty">Foaia e goală. Adaugă mașini din listă și se completează pe loc.</p></div>
+          <div class="known"><small>Se poate calcula azi</small><b id="known" class="na" data-v="0">de cotat</b><p id="knownP">Când adaugi BAW 212 T01, apare aici prețul de listă înmulțit cu numărul de mașini.</p></div>
+          <div class="toq"><h4>Îți cotează Baxx</h4><ul id="toq"><li class="muted">Se completează când alegi mașinile.</li></ul></div>
+          <a class="btn" href="#oferta" id="toForm">Cere oferta pentru flota asta <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h13M11 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></a>
+          <span class="nt open"><b>Deschis</b>Ce cotează Baxx în răspuns e o propunere, de confirmat cu clientul: Q2, Q10.</span>
+          <p class="sr" id="estStatus" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+  </div></section>
+
+  <!-- ===== cererea de ofertă ===== -->
+  <section class="book" id="oferta"><div class="wrap">
+    <div class="kicker rib">Ofertă pentru flotă</div>
+    <h2>Cere oferta pentru flotă.</h2>
+    <p class="sub">Patru date despre tine și flota din calculator. Răspundem cu o ofertă scrisă. Termenul în care răspundem: <em class="tbc">de confirmat</em>.</p>
+    <span class="nt open"><b>Deschis</b>Brieful cere un formular dedicat și o promisiune de răspuns în timp definit (§5), dar nu numește câmpurile (§9). Câmpurile sunt o propunere. Cine răspunde și în cât timp: Q2.</span>
+    <div class="bk">
+      <div>
+        <form class="panel" id="form" novalidate>
+          <h3>Patru date și flota ta.</h3>
+          <p class="hint">Ca să știm cui răspundem și ce să cotăm.</p>
+          <div class="fields">
+            <div class="field"><label for="f-co">Compania</label><input id="f-co" name="co" type="text" autocomplete="organization" aria-describedby="h-co e-co"><span class="help" id="h-co">Numele firmei, cum apare pe factură.</span><span class="err" id="e-co"></span></div>
+            <div class="field"><label for="f-name">Persoana de contact</label><input id="f-name" name="name" type="text" autocomplete="name" aria-describedby="h-name e-name"><span class="help" id="h-name">Nume și prenume.</span><span class="err" id="e-name"></span></div>
+            <div class="field"><label for="f-phone">Telefon</label><input id="f-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" aria-describedby="h-phone e-phone"><span class="help" id="h-phone">Mobil sau fix, din România.</span><span class="err" id="e-phone"></span></div>
+            <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" aria-describedby="h-email e-email"><span class="help" id="h-email">Aici trimitem oferta scrisă.</span><span class="err" id="e-email"></span></div>
+            <div class="field w" id="fFleet"><span class="lab" id="fleetLab">Flota</span><div class="fleetbox" id="fleetbox" role="group" aria-labelledby="fleetLab" aria-describedby="h-fleet"><span class="none">Nicio mașină aleasă încă.</span></div><span class="help" id="h-fleet">Din calculatorul de mai sus. <a href="#calculator">Modifică flota</a></span><span class="err" id="fleetErr">Alege cel puțin o mașină în calculator.<button type="button" id="fleetGo">Deschide calculatorul</button></span></div>
+            <div class="field w"><label for="f-msg">Mesaj <span class="opt">(opțional)</span></label><textarea id="f-msg" name="msg" maxlength="1000" rows="4" aria-describedby="h-msg"></textarea><div class="row2"><span class="help" id="h-msg">De exemplu: orașele în care lucrează mașinile, când ai nevoie de ele, ce vrei să afli despre service.</span><span class="help" id="msgC" aria-hidden="true">0 / 1000</span></div></div>
+          </div>
+          <p class="privacy">Folosim datele doar ca să răspundem la cererea asta. <a href="#footer">Politica de confidențialitate</a></p>
+          <span class="nt open"><b>Deschis</b>Textul de confidențialitate și dacă formularul cere o bifă de acord: de stabilit cu clientul.</span>
+          <div class="send"><button class="btn" type="submit" id="sendBtn">Trimite cererea <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h13M11 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></button></div>
+          <span class="nt"><b>De ce</b>Validare la ieșirea din câmp și la trimitere, ca pe pagina Test drive. Prototip: trimiterea e simulată, nu pleacă nimic.</span>
+        </form>
+        <div class="done-card" id="done" tabindex="-1" hidden>
+          <div class="badge"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 16.5l6 6L25 10" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div id="doneBody"></div>
+          <span class="nt open"><b>Deschis</b>Prototip: nu se trimite nimic. Cine răspunde, pe ce canal și în cât timp: Q2.</span>
+          <span class="nt dec"><b>Decizie</b>Contactul din ofertele Baxx: telefon, email, site (Daniel, 26 oct).</span><br>
+          <button class="again" type="button" id="again">Trimite o altă cerere</button>
+        </div>
+      </div>
+      <aside class="summary" id="summary" aria-label="Rezumatul cererii">
+        <h4>Cererea ta <span id="sState">ciornă</span></h4>
+        <dl>
+          <div><dt>Compania</dt><dd id="sCo" class="empty">necompletată</dd></div>
+          <div><dt>Mașini</dt><dd id="sN" class="empty">niciuna încă</dd></div>
+          <div><dt>Modele</dt><dd id="sM" class="empty">nealese</dd></div>
+          <div><dt>Se poate calcula azi</dt><dd id="sK" class="empty">după ce alegi mașinile</dd></div>
+          <div><dt>Termen de răspuns</dt><dd><em class="tbc">de confirmat</em></dd></div>
+        </dl>
+        <p>Preferi să suni? Telefon <a href="tel:+40788777777">0788 777 777</a></p>
+        <span class="nt open"><b>Deschis</b>Timpul de răspuns: Q2.</span>
+      </aside>
+    </div>
+  </div></section>
+
+  <!-- ===== la final: emoția, puțină ===== -->
+  <section class="blk" id="test-drive"><div class="wrap closing">
+    <div class="rv">
+      <h2>Cine o conduce zi de zi poate s-o încerce întâi.</h2>
+      <p class="big">Firmele pot rezerva și ele test drive-ul de 48 de ore. Un coleg ia mașina, o duce pe drumurile lui două zile, apoi îți spune ce crede. Decizia rămâne pe cifre.</p>
+      <p class="cost">Test drive-ul se plătește. Costul îl vezi pe pagina lui, înainte să rezervi.</p>
+      <a class="textlink" href="./#rezerva">Rezervă test drive-ul de 48 de ore &rarr;</a>
+      <span class="nt"><b>De ce</b>Emoția vine la final, după cifre (Brief §5). Test drive-ul nu e oferit fără cost (Daniel, 7 oct).</span>
+    </div>
+    <figure class="photo rv" aria-label="Loc pentru fotografie"><figcaption><span>Fotografie de făcut: un coleg dintr-o firmă ridică un BAW 212 T01 dintr-o parcare din oraș, dimineața.</span></figcaption></figure>
+  </div></section>
+</main>
+<footer class="site-f" id="footer"><div class="wrap f-in">
+  <img src="baxx-logo.png" alt="Baxx Auto Tech">
+  <span>Baxx Auto Tech · Telefon <a href="tel:+40788777777">0788 777 777</a> · <a href="mailto:office@baxx.ro">office@baxx.ro</a> · <a href="https://www.baxx.ro">www.baxx.ro</a></span>
+  <nav aria-label="Legal"><a href="#footer">Regulament test drive</a><a href="#footer">Confidențialitate</a><a href="#footer">Cookie-uri</a><a href="#footer">Termeni</a></nav>
+</div></footer>
+<div class="mbar" id="mbar" data-hide="#oferta"><a class="btn" href="#oferta">Cere oferta pentru flotă</a></div>
+<script src="baxx.js"></script>
+<script>
+/* Flote: calculatorul, foaia de ofertă și formularul. Nimic nu se trimite. Fără erori dacă lipsește un element. */
+(() => {
+  'use strict';
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const store = (window.BAXX && window.BAXX.store) || { get() { return null; }, set() {} };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  /* Fișa BAW 212 T01, iunie 2026: singurele prețuri pe hârtie. Toate de confirmat. */
+  const BAW = { list: 42107.44, listVat: 50950, promo: 37066.12, promoVat: 44850 };
+  const MODELS = [
+    { id: 'baw212', name: 'BAW 212 T01', priced: true },
+    { id: 'bj40', name: 'BAIC BJ40 PRO' },
+    { id: 'x75', name: 'BAIC X75' },
+    { id: 'fengon', name: 'DFSK Fengon 600' },
+    { id: 'f4', name: 'Forthing 4 PHEV U-Tour' },
+    { id: 'f5', name: 'Forthing 5 REEV' },
+    { id: 'nk', name: 'model nehotărât', open: true }
+  ];
+  const MAXQ = 999, KEY = 'baxx-fleet-v1';
+  const S = { q: {}, vat: false };
+  const saved = store.get(KEY);
+  if (saved && typeof saved === 'object' && saved.q) {
+    MODELS.forEach(m => { const n = parseInt(saved.q[m.id], 10); if (n > 0) S.q[m.id] = Math.min(MAXQ, n); });
+    S.vat = !!saved.vat;
+  }
+
+  /* formatare românească: 42.107,44 € */
+  const grp = s => s.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const eur = v => { const dec = Math.round(Math.abs(v) * 100) % 100 ? 2 : 0; const p = Math.abs(v).toFixed(dec).split('.'); return grp(p[0]) + (dec ? ',' + p[1] : '') + ' €'; };
+  const de = n => (n % 100 === 0 && n !== 0) || n % 100 >= 20;
+  const cars = n => n === 1 ? 'o mașină' : `${n}${de(n) ? ' de' : ''} mașini`;
+  const nameOf = m => m.open ? 'model nehotărât' : m.name;
+
+  /* numere care se numără până la valoarea nouă */
+  const anim = new WeakMap();
+  function tween(el, to, fmt, dur = 520, bump = true) {
+    if (!el) return;
+    const from = parseFloat(el.dataset.v) || 0;
+    el.dataset.v = to;
+    cancelAnimationFrame(anim.get(el));
+    if (reduce || from === to) { el.textContent = fmt(to); return; }
+    if (bump) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+    const t0 = performance.now();
+    const step = t => {
+      const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = fmt(k < 1 ? from + (to - from) * e : to);
+      if (k < 1) anim.set(el, requestAnimationFrame(step));
+    };
+    anim.set(el, requestAnimationFrame(step));
+  }
+
+  function totals() {
+    let total = 0, baw = 0, nk = 0; const others = [];
+    MODELS.forEach(m => { const n = S.q[m.id] || 0; total += n; if (m.priced) baw += n; else if (m.open) nk += n; else if (n) others.push(m); });
+    return { total, baw, nk, others };
+  }
+
+  function sum(id, html, empty, flash = true) {
+    const el = $('#' + id); if (!el) return;
+    const was = el.dataset.val || '';
+    el.dataset.val = html;
+    el.classList.toggle('empty', !html);
+    el.innerHTML = html || empty;
+    if (flash && html && html !== was && !reduce) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+  }
+
+  let prevK = 0, prevQ = 0, statusT = null;
+  function update() {
+    const T = totals(), unit = S.vat ? BAW.listVat : BAW.list, vatTxt = S.vat ? 'cu TVA' : 'fără TVA';
+
+    /* rândurile din listă */
+    $$('.mrow').forEach(r => {
+      const n = S.q[r.dataset.id] || 0, inp = r.querySelector('input'), minus = r.querySelector('[data-d="-1"]');
+      r.classList.toggle('on', n > 0);
+      if (inp && document.activeElement !== inp) inp.value = n;
+      if (minus) { const had = document.activeElement === minus; minus.disabled = n === 0; if (had && n === 0 && inp) inp.focus(); }
+    });
+    $$('[data-price]').forEach(el => { const k = el.dataset.price; if (k in BAW) el.textContent = eur(S.vat ? BAW[k + 'Vat'] : BAW[k]); });
+    $$('[data-vatlab]').forEach(el => { el.textContent = vatTxt; });
+    $$('.seg [data-vat]').forEach(b => { const on = (b.dataset.vat === '1') === S.vat; b.setAttribute('aria-checked', on); b.tabIndex = on ? 0 : -1; });
+
+    /* foaia de ofertă */
+    tween($('#cnt'), T.total, v => String(Math.round(v)));
+    const cntL = $('#cntL'); if (cntL) cntL.textContent = T.total === 1 ? 'mașină în cerere' : de(T.total) ? 'de mașini în cerere' : 'mașini în cerere';
+
+    const cks = $('#cks');
+    if (cks) {
+      const CAP = 80, k = Math.min(T.baw, CAP), q = Math.min(T.total - T.baw, CAP - k);
+      let h = '';
+      for (let i = 0; i < k; i++) h += `<i class="ck${i >= prevK ? ' new' : ''}" style="--d:${Math.min(20, Math.max(0, i - prevK))}"></i>`;
+      for (let j = 0; j < q; j++) h += `<i class="ck q${j >= prevQ ? ' new' : ''}" style="--d:${Math.min(20, Math.max(0, j - prevQ))}"></i>`;
+      if (T.total > k + q) h += `<span class="more">+${T.total - k - q}</span>`;
+      cks.innerHTML = h; prevK = k; prevQ = q;
+    }
+
+    const chosen = MODELS.filter(m => S.q[m.id]);
+    const lines = $('#lines');
+    if (lines) lines.innerHTML = T.total
+      ? chosen.map(m => `<div><span>${esc(m.open ? 'Încă nu știu modelul' : m.name)}</span><span class="n">× ${S.q[m.id]}</span><span class="v">${m.priced ? eur(unit * S.q[m.id]) : '<span class="hq">de cotat</span>'}</span></div>`).join('')
+      : '<p class="empty">Foaia e goală. Adaugă mașini din listă și se completează pe loc.</p>';
+
+    const kn = $('#known'), knP = $('#knownP');
+    if (kn) {
+      if (T.baw) {
+        kn.classList.remove('na');
+        if (!(parseFloat(kn.dataset.v) > 0)) { kn.dataset.v = 0; }
+        tween(kn, unit * T.baw, eur, 620);
+        if (knP) knP.innerHTML = `BAW 212 T01 × ${T.baw}, ${vatTxt}. Preț de listă din fișa din iunie 2026, <em class="tbc">de confirmat</em>.${T.total > T.baw ? ` De cotat: ${T.total - T.baw}.` : ''}`;
+      } else {
+        cancelAnimationFrame(anim.get(kn)); kn.dataset.v = 0; kn.textContent = 'de cotat'; kn.classList.add('na');
+        if (knP) knP.textContent = T.total
+          ? 'Doar BAW 212 T01 are un preț de listă pe hârtie, din fișa din iunie 2026. Tot ce ai ales se cotează.'
+          : 'Când adaugi BAW 212 T01, apare aici prețul de listă înmulțit cu numărul de mașini.';
+      }
+    }
+
+    const toq = $('#toq');
+    if (toq) {
+      const li = [];
+      if (T.baw) li.push(`Confirmarea prețului BAW 212 T01 din fișă, pentru ${cars(T.baw)}.`);
+      if (T.others.length) li.push(`Prețul pentru ${T.others.map(m => esc(m.name)).join(', ')}.`);
+      if (T.nk) li.push(`Ce model se potrivește, pentru ${cars(T.nk)}.`);
+      if (T.total) li.push(`Condițiile pentru flotă, termenul de livrare și service-ul, pentru ${cars(T.total)}.`);
+      toq.innerHTML = li.length ? li.map(t => `<li>${t}</li>`).join('') : '<li class="muted">Se completează când alegi mașinile.</li>';
+    }
+
+    /* formularul și rezumatul */
+    const fb = $('#fleetbox');
+    if (fb) fb.innerHTML = T.total
+      ? chosen.map(m => `<span class="chip"><b>${S.q[m.id]}</b> × ${esc(m.open ? 'model nehotărât' : m.name)}</span>`).join('')
+      : '<span class="none">Nicio mașină aleasă încă.</span>';
+    if (T.total) setFleetErr(false);
+    sum('sN', T.total ? cars(T.total) : '', 'niciuna încă');
+    sum('sM', chosen.map(nameOf).map(esc).join(', '), 'nealese');
+    sum('sK', T.baw ? `${eur(unit * T.baw)}<small>${vatTxt}, BAW 212 T01 × ${T.baw}, preț de listă, <em class="tbc">de confirmat</em></small>` : (T.total ? 'nimic încă: totul se cotează' : ''), 'după ce alegi mașinile');
+
+    store.set(KEY, { q: S.q, vat: S.vat });
+    clearTimeout(statusT);
+    statusT = setTimeout(() => {
+      const st = $('#estStatus'); if (!st) return;
+      st.textContent = T.total
+        ? `${T.total} în cerere. ${T.baw ? `Se poate calcula azi: ${eur(unit * T.baw)} ${vatTxt}, pentru BAW 212 T01.` : 'Nimic nu se poate calcula azi.'} De cotat de Baxx: ${T.total - T.baw}.`
+        : 'Foaia de ofertă e goală.';
+    }, 600);
+  }
+
+  function setQ(id, n) {
+    n = Math.max(0, Math.min(MAXQ, Math.floor(Number(n) || 0)));
+    if ((S.q[id] || 0) === n) return false;
+    if (n) S.q[id] = n; else delete S.q[id];
+    update();
+    return true;
+  }
+
+  /* lista de modele: apăsare, ținut apăsat, tastatură, scris direct */
+  const list = $('#fleetList');
+  if (list) {
+    list.addEventListener('click', e => {
+      const b = e.target.closest('button[data-d]'); if (!b) return;
+      const r = b.closest('.mrow'); if (r) setQ(r.dataset.id, (S.q[r.dataset.id] || 0) + Number(b.dataset.d));
+    });
+    list.addEventListener('input', e => {
+      const t = e.target; if (!t.matches('.qty input')) return;
+      const clean = t.value.replace(/\D/g, '').slice(0, 3);
+      if (clean !== t.value) t.value = clean;
+      setQ(t.closest('.mrow').dataset.id, parseInt(clean || '0', 10));
+    });
+    list.addEventListener('keydown', e => {
+      const t = e.target; if (!t.matches || !t.matches('.qty input')) return;
+      const d = { ArrowUp: 1, ArrowDown: -1, PageUp: 10, PageDown: -10 }[e.key]; if (!d) return;
+      e.preventDefault();
+      const id = t.closest('.mrow').dataset.id;
+      setQ(id, (S.q[id] || 0) + d); t.value = S.q[id] || 0;
+    });
+    list.addEventListener('focusin', e => { const t = e.target; if (t.matches && t.matches('.qty input')) t.select(); });
+    list.addEventListener('focusout', e => { const t = e.target; if (t.matches && t.matches('.qty input')) t.value = S.q[t.closest('.mrow').dataset.id] || 0; });
+    let hold = null;
+    const stop = () => { clearTimeout(hold); hold = null; };
+    list.addEventListener('pointerdown', e => {
+      const b = e.target.closest('button[data-d]'); if (!b || e.button) return;
+      const id = b.closest('.mrow').dataset.id, d = Number(b.dataset.d); let i = 0;
+      stop();
+      hold = setTimeout(function go() { if (!setQ(id, (S.q[id] || 0) + d)) return stop(); hold = setTimeout(go, Math.max(45, 160 - i++ * 12)); }, 450);
+    });
+    ['pointerup', 'pointercancel'].forEach(ev => addEventListener(ev, stop));
+    list.addEventListener('pointerleave', stop);
+  }
+
+  /* fără TVA / cu TVA */
+  $$('.seg [data-vat]').forEach(b => {
+    b.addEventListener('click', () => { S.vat = b.dataset.vat === '1'; update(); });
+    b.addEventListener('keydown', e => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+      e.preventDefault(); S.vat = !S.vat; update();
+      const n = $(`.seg [data-vat="${S.vat ? 1 : 0}"]`); if (n) n.focus();
+    });
+  });
+
+  /* din foaie spre formular */
+  const toForm = $('#toForm');
+  if (toForm) toForm.addEventListener('click', () => setTimeout(() => { const c = $('#f-co'); if (c && !c.value) c.focus({ preventScroll: true }); }, reduce ? 0 : 650));
+
+  /* ---------- formularul ---------- */
+  const F = $('#form'), done = $('#done');
+  function setFleetErr(on) { const f = $('#fFleet'); if (f) f.classList.toggle('bad', !!on); }
+  const fleetGo = $('#fleetGo');
+  if (fleetGo) fleetGo.addEventListener('click', () => {
+    const c = $('#calculator'); if (c) c.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    setTimeout(() => { const i = $('.mrow input'); if (i) i.focus({ preventScroll: true }); }, reduce ? 0 : 650);
+  });
+
+  const rules = {
+    co: v => v.trim().length >= 2 ? '' : 'Scrie numele firmei.',
+    name: v => v.trim().length >= 3 && /\s/.test(v.trim()) ? '' : 'Scrie numele și prenumele.',
+    phone: v => /^(\+40|0)[237]\d{8}$/.test(v.replace(/[\s.()-]/g, '')) ? '' : 'Un număr din România, de exemplu 0722 123 456.',
+    email: v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()) ? '' : 'O adresă de email, de exemplu nume@firma.ro.'
+  };
+  function setErr(name, msg) {
+    if (!F) return;
+    const inp = F.elements[name], fld = inp && inp.closest('.field'); if (!fld) return;
+    fld.classList.toggle('bad', !!msg);
+    inp.setAttribute('aria-invalid', msg ? 'true' : 'false');
+    const er = fld.querySelector('.err'); if (er) er.textContent = msg;
+  }
+
+  if (F) {
+    F.addEventListener('input', e => {
+      const t = e.target;
+      if (t.name in rules && t.closest('.field').classList.contains('bad') && !rules[t.name](t.value)) setErr(t.name, '');
+      if (t.name === 'co') sum('sCo', esc(t.value.trim()), 'necompletată', false);
+      if (t.name === 'msg') { const c = $('#msgC'); if (c) c.textContent = `${t.value.length} / 1000`; }
+    });
+    F.addEventListener('focusout', e => {
+      const t = e.target; if (!(t.name in rules) || !t.value) return;
+      setErr(t.name, rules[t.name](t.value));
+      if (t.name === 'co') sum('sCo', esc(t.value.trim()), 'necompletată');
+    });
+    F.addEventListener('submit', e => {
+      e.preventDefault();
+      let first = null;
+      Object.keys(rules).forEach(k => { const el = F.elements[k]; if (!el) return; const m = rules[k](el.value); setErr(k, m); if (m && !first) first = el; });
+      const noFleet = totals().total === 0;
+      setFleetErr(noFleet);
+      if (!first && noFleet) first = fleetGo;
+      if (first) { first.focus(); return; }
+      send();
+    });
+  }
+
+  function send() {
+    const btn = $('#sendBtn'); if (!btn || !F || !done) return;
+    const label = btn.innerHTML;
+    btn.disabled = true; btn.classList.add('busy'); btn.innerHTML = '<i class="spin" aria-hidden="true"></i>Se trimite';
+    setTimeout(() => {
+      const T = totals(), unit = S.vat ? BAW.listVat : BAW.list, v = k => F.elements[k] ? F.elements[k].value.trim() : '';
+      const chosen = MODELS.filter(m => S.q[m.id]).map(m => `${S.q[m.id]} × ${esc(nameOf(m))}`).join(', ');
+      const body = $('#doneBody');
+      if (body) body.innerHTML = `<h3>Cererea e trimisă.</h3>
+        <p class="lead">Pentru ${cars(T.total)}, de la ${esc(v('co'))}.</p>
+        <div class="rows" style="margin-top:18px">
+          <div><span class="k">Persoana de contact</span><span class="v">${esc(v('name'))}</span></div>
+          <div><span class="k">Telefon</span><span class="v">${esc(v('phone'))}</span></div>
+          <div><span class="k">Email</span><span class="v">${esc(v('email'))}</span></div>
+          <div><span class="k">Flota</span><span class="v">${chosen}</span></div>
+          ${T.baw ? `<div><span class="k">Se poate calcula azi</span><span class="v">${eur(unit * T.baw)} ${S.vat ? 'cu TVA' : 'fără TVA'}<em class="tbc s">de confirmat</em></span></div>` : ''}
+        </div>
+        <div class="next">
+          <p><span>Îți răspunde un coleg Baxx, la ${esc(v('email'))} sau la ${esc(v('phone'))}. În cât timp: <em class="tbc">de confirmat</em>.</span></p>
+          <p><span>Oferta scrisă răspunde la ce e încă deschis: prețurile care lipsesc, condițiile pentru flotă, livrarea și service-ul.</span></p>
+          <p><span>Vrei să încerci o mașină până atunci? <a href="./#rezerva">Rezervă test drive-ul de 48 de ore</a>.</span></p>
+        </div>
+        <p class="contact">Ne găsești și direct: Telefon <a href="tel:+40788777777">0788 777 777</a> · <a href="mailto:office@baxx.ro">office@baxx.ro</a> · <a href="https://www.baxx.ro">www.baxx.ro</a></p>`;
+      F.hidden = true; done.hidden = false;
+      btn.disabled = false; btn.classList.remove('busy'); btn.innerHTML = label;
+      const sm = $('#summary'), ss = $('#sState'); if (sm) sm.classList.add('sent'); if (ss) ss.textContent = 'trimisă';
+      done.focus({ preventScroll: true });
+      const top = done.getBoundingClientRect().top;
+      if (top < 110 || top > innerHeight * .6) done.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    }, reduce ? 250 : 1100);
+  }
+
+  const again = $('#again');
+  if (again) again.addEventListener('click', () => {
+    if (!F || !done) return;
+    done.hidden = true; F.hidden = false;
+    if (F.elements.msg) F.elements.msg.value = '';
+    const c = $('#msgC'); if (c) c.textContent = '0 / 1000';
+    const sm = $('#summary'), ss = $('#sState'); if (sm) sm.classList.remove('sent'); if (ss) ss.textContent = 'ciornă';
+    const co = $('#f-co'); if (co) co.focus();
+  });
+
+  /* pornire */
+  update();
+  const hp = $('#heroPrice');
+  if (hp && !reduce) { hp.dataset.v = 0; tween(hp, BAW.list, eur, 1300, false); }
+})();
+</script>
+</body></html>
