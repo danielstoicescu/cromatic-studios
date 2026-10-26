@@ -90,7 +90,6 @@ export const ZDROVIT_BRANDS = [
   { name: "Bonilash", page: "bonilash", line: "Lash and brow serum", ro: "Ser pentru gene și sprâncene" },
   { name: "Glucopil", page: "glucopil", line: "Blood sugar, with plant extracts", ro: "Glicemie, cu extracte din plante" },
   { name: "Gripovit", page: "gripovit", line: "Cold and flu sachets", ro: "Plicuri pentru răceală și gripă" },
-  { name: "Intimohelp", line: "Intimate hygiene", ro: "Igienă intimă" },
   { name: "Lacium", page: "lacium", line: "Probiotics", ro: "Probiotice" },
   { name: "OchiSan", page: "ochisan", line: "Eyelid ointment", ro: "Unguent pentru pleoape" },
   { name: "Optisomn", page: "optisomn", line: "Sleep, with melatonin", ro: "Somn, cu melatonină" },
