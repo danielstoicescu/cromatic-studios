@@ -428,9 +428,9 @@ body.scheme-sketch .map-dial .dd-arc { stroke: var(--nb-ochre); }
 body.scheme-sketch .map-dial :is(.dd-num, .dd-unit) { color: var(--nb-ink) !important; }
 body.scheme-sketch .map-dial :is(.dd-ticks, .dd-needle) line { stroke: var(--nb-ink); }
 
-/* polite-city: the Top-down view's button (the 4th view). On a phone it is an icon, like the Postcard */
-body.n2-phone .nav2-ui .n2-views button[data-v="top"] span { display: none; }
-body.n2-phone .nav2-ui .n2-views button[data-v="top"] { padding: 0 12px; }
+/* r309 (Daniel, 26 Oct): Top-down only in Polite City, in Bird's eye's place (nav2.js syncView hides the other one); with
+   three buttons again it keeps its label on a phone too */
+.nav2-ui .n2-views button[hidden] { display: none !important; }
 
 /* r306 (Daniel: "not needed any more", "too much, redundant"): no driving hint strip (under the views on a phone, bottom
    right on a laptop) and no tap hint; no on-screen arrow keys where there is a keyboard and a mouse (the keys still drive,
