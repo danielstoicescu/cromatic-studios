@@ -83,7 +83,7 @@ console.log(`[core30] answers in ${CORE30_DATA}`);
 console.log(`[core30] admin key from ${process.env.CORE30_ADMIN_KEY ? "CORE30_ADMIN_KEY" : process.env.LEADS_KEY ? "LEADS_KEY" : "nowhere"}`); // names the source, never the value
 
 // TASK-124: "cromaticstudios.com ops", the password-protected mirror of the Cromatic Ops artifact (header of ops/ops.mjs).
-// Beta hosts only for now; the data (snapshot, outbox, sessions, logins) lives outside the release, like the leads.
+// Served on cromaticstudios.com only (beta hosts redirect there); the data (snapshot, outbox, sessions, logins) lives outside the release, like the leads.
 const OPS_DATA = process.env.OPS_DATA || [join(APP_DIR, "..", "..", "shared", "ops-data"), join(process.env.HOME || APP_DIR, "ops-data"), join(APP_DIR, "ops-data")]
   .find((d) => { try { mkdirSync(d, { recursive: true }); return true; } catch { return false; } });
 let opsKeyOk = () => false; // set below, once keyOk exists (the same constant-time compare as the CSP stats key)
@@ -582,7 +582,8 @@ http.createServer((req, res) => {
   // r169: beta 2.0 answers on its own host only, before any rule of the live site
   if (BETA_HOSTS.has(host)) {
     if (/"scheme":"http"/.test(String(req.headers["cf-visitor"] || ""))) { res.writeHead(301, { Location: `https://${host}${req.url}` }); return res.end(); }
-    if (isOps(req.url)) return void ops(req, res).then((done) => { if (!done) { res.writeHead(404); res.end(); } }).catch(() => send(res, 500, { ok: false }));
+    // TASK-124: /ops lives on cromaticstudios.com only (Daniel, 26 Oct: no beta copy); 308 keeps the method for the API
+    if (isOps(req.url)) { res.writeHead(308, { Location: `https://${PRIMARY_HOST || "cromaticstudios.com"}${req.url}` }); return res.end(); }
     if (isCore30(req.url)) return void core30(req, res).catch(() => send(res, 500, { ok: false }));
     if (req.url === "/api/boarding" && req.method === "POST") return void boarding(req, res, "[beta 2.0]").catch(() => send(res, 500, { ok: false }));
     if (req.url === "/api/ctx") return send(res, 200, { internal: false });
