@@ -10,7 +10,7 @@
     "skipWeekDays": 5
   },
   "nextSteps": [
-    { "key": "marketing-plan", "ro": "Plan de marketing pe 1 an", "en": "1-year marketing plan", "descRo": "Pe toate canalele potrivite domeniului tău, cu ritm, teme și buget pe luni.", "descEn": "Across every channel that suits your field, with rhythm, themes and budget by month." }
+    { "key": "marketing-plan", "picked": true, "ro": "Plan de marketing pe 1 an", "en": "1-year marketing plan", "descRo": "Pe toate canalele potrivite domeniului tău, cu ritm, teme și buget pe luni.", "descEn": "Across every channel that suits your field, with rhythm, themes and budget by month." }
   ],
   "items": [
     { "key": "audit", "base": 1200, "defaultOn": "rebrand", "ro": "Audit de brand", "en": "Brand audit" },

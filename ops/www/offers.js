@@ -21,7 +21,7 @@
   ];
   let CANVAS_QTY = 2;
   let HOL = { ranges: [["12-24", "01-02"]], dates: ["01-01", "01-02", "01-24", "05-01", "06-01", "08-15", "11-30", "12-01", "12-25", "12-26"], orthodox: ["goodFriday", "easterMonday", "whitMonday"], skipWeekDays: 5 };
-  let NEXT_DEFAULT = [{ title: "Plan de marketing pe 1 an", desc: "Pe toate canalele potrivite domeniului tău, cu ritm, teme și buget pe luni.", price: "" }];
+  let NEXT_DEFAULT = [{ id: "marketing-plan", title: "Plan de marketing pe 1 an", desc: "Pe toate canalele potrivite domeniului tău, cu ritm, teme și buget pe luni.", price: "", picked: true }];
   async function loadPrices() {
     try {
       const r = await fetch("/ops/offer-prices.json", { credentials: "same-origin", cache: "no-store" }); if (!r.ok) return;
@@ -29,7 +29,7 @@
       for (const it of j.items || []) { if (!(it.key in BASE)) continue; if (Number(it.base) >= 0) BASE[it.key] = Number(it.base); const row = ITEMS.find((x) => x[0] === it.key); if (row && it.ro) row[1] = it.ro; if (it.key === "canvas" && it.defaultQty) CANVAS_QTY = Number(it.defaultQty) || 2; }
       if (j.perPiece && j.perPiece.ro) PER_PIECE = j.perPiece.ro;
       if (j.holidays) HOL = { ...HOL, ...j.holidays };
-      if (Array.isArray(j.nextSteps) && j.nextSteps.length) NEXT_DEFAULT = j.nextSteps.map((x) => ({ title: x.ro || "", desc: x.descRo || "", price: "" }));
+      if (Array.isArray(j.nextSteps) && j.nextSteps.length) NEXT_DEFAULT = j.nextSteps.map((x) => ({ id: x.key || undefined, title: x.ro || "", desc: x.descRo || "", price: "", picked: x.picked !== false }));
     } catch {}
   }
   const PH_COLORS = ["#48A8EF", "#F8D13B", "#4CC462", "#F27261", "#AE76E6"];
@@ -56,7 +56,7 @@
     const c = { id: rid(), offerType: "branding", client: { name: "", contact: "", email: "", website: "" }, situation: "fresh", brief: "",
       items: ITEMS.map(([k]) => ({ key: k, on: k !== "audit", base: BASE[k], price: BASE[k], ...(k === "canvas" ? { qty: CANVAS_QTY } : {}) })),
       specials: [], discount: { type: "pct", value: 0 }, vatNote: "Prețurile nu includ TVA.", validityDays: 30, startDate: nextMonday(), phases: [], phasesAuto: true, currentLogo: null,
-      compact: { on: false, canvasQty: 1, off: [] }, nextOn: true, nextSteps: NEXT_DEFAULT.map((x) => ({ ...x })) };
+      packages: [], nextSteps: NEXT_DEFAULT.map((x) => ({ ...x })) };
     c.phases = autoPhases(c);
     return c;
   }
@@ -83,13 +83,12 @@
     const discount = dv > 0 ? Math.round(c.discount.type === "amount" ? Math.min(subtotal, dv) : subtotal * Math.min(100, dv) / 100) : 0;
     return { items, specials, subtotal, base, discount, total: subtotal - discount };
   }
-  /** the compact option (same rules as build.mjs compactOf): fewer canvases, some items or specials left out */
-  function compactTotals(c) {
-    if (!c.compact || !c.compact.on) return null;
-    const off = new Set(c.compact.off || []);
-    const cc = { ...c, items: c.items.map((i) => ({ ...i, on: i.on && !off.has(i.key), ...(i.key === "canvas" ? { qty: Math.max(1, Math.min(i.qty || 1, c.compact.canvasQty || 1)) } : {}) })), specials: c.specials.filter((s) => s.compact !== false) };
-    return totals(cc);
+  /** packages (same rules as build.mjs packagesOf): 2–3 ways to buy the same process; [] = a single package */
+  function pkOffer(c, p) {
+    const off = new Set(p.off || []), soff = new Set((p.specialsOff || []).map(Number));
+    return { ...c, items: c.items.map((i) => ({ ...i, on: i.on && !off.has(i.key), ...(i.key === "canvas" && p.canvasQty ? { qty: Math.max(1, p.canvasQty) } : {}) })), specials: c.specials.filter((x, j) => !soff.has(j)) };
   }
+  const pkTotals = (c) => ((c.packages || []).length >= 2 ? c.packages.map((p) => totals(pkOffer(c, p))) : null);
   const weeksOf = (c) => Math.max(0, ...c.phases.map((p) => num(p.start) + num(p.weeks)));
   // holidays, the same rule as build.mjs: a calendar week with skipWeekDays weekdays off is skipped
   function easter(y) { const a = y % 4, b = y % 7, c = y % 19, d = (19 * c + 15) % 30, e = (2 * a + 4 * b - d + 34) % 7, m = Math.floor((d + e + 114) / 31), day = ((d + e + 114) % 31) + 1; const t = new Date(Date.UTC(y, m - 1, day, 12)); t.setUTCDate(t.getUTCDate() + 13); return t; }
@@ -123,7 +122,12 @@
     const out = { ...f, ...c, client: { ...f.client, ...(c.client || {}) }, discount: { ...f.discount, ...(c.discount || {}) } };
     out.items = ITEMS.map(([k]) => ({ ...item(f, k), ...((c.items || []).find((i) => i.key === k) || {}) }));
     out.specials = Array.isArray(c.specials) ? c.specials : [];
-    out.compact = { ...f.compact, ...(c.compact || {}) }; out.nextSteps = Array.isArray(c.nextSteps) ? c.nextSteps : f.nextSteps; out.nextOn = "nextOn" in c ? !!c.nextOn : !!(c.nextSteps && c.nextSteps.length); out.phases = Array.isArray(c.phases) && c.phases.length ? c.phases : autoPhases(out);
+    // packages; an older form's compact {on, canvasQty, off} (+ specials[].compact) becomes [full, compact]
+    out.packages = Array.isArray(c.packages) ? c.packages : c.compact && c.compact.on ? [{ id: "full", label: "Varianta completă", off: [], specialsOff: [] }, { id: "compact", label: "Varianta compactă", canvasQty: c.compact.canvasQty || 1, off: c.compact.off || [], specialsOff: out.specials.map((x, k) => (x.compact === false ? k : -1)).filter((k) => k >= 0) }] : [];
+    delete out.compact;
+    // next steps: a list of opportunities with "picked"; an older form's nextOn: false = none picked
+    out.nextSteps = (Array.isArray(c.nextSteps) ? c.nextSteps : f.nextSteps).map((x) => ({ ...x, picked: c.nextOn === false ? false : x.picked !== false }));
+    delete out.nextOn; out.phases = Array.isArray(c.phases) && c.phases.length ? c.phases : autoPhases(out);
     return out;
   }
 
@@ -168,7 +172,9 @@
   }
   function copy(t) { (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Link copiat."), () => prompt("Copiază linkul:", t)); }
 
-  function openEditor(c, doc, tab) { cfg = c; view = { name: "edit", doc: doc || null }; pvTab = tab || "live"; mounted = false; render(); const s = $("ofr"); if (s) s.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  function openEditor(c, doc, tab) {
+    if (doc && Array.isArray(doc.nextSteps) && doc.nextSteps.length) c.nextSteps = doc.nextSteps.map((x) => ({ id: x.id, title: x.title || "", desc: x.desc || "", price: x.price ?? "", picked: x.picked !== false }));
+    cfg = c; view = { name: "edit", doc: doc || null }; pvTab = tab || "live"; mounted = false; render(); const s = $("ofr"); if (s) s.scrollIntoView({ behavior: "smooth", block: "start" }); }
   function closeEditor() { view = { name: "home" }; cfg = null; mounted = false; render(); }
   const curDoc = () => (view.doc ? offerList().find((o) => o.id === view.doc.id) || view.doc : null);
 
@@ -216,13 +222,13 @@
     function drawItems() {
       itemsBox.replaceChildren(...ITEMS.map(([k, t, d]) => {
         const it = item(cfg, k), r = h("div", "ofr-it" + (it.on ? "" : " off"));
-        const cb = h("input"); cb.type = "checkbox"; cb.checked = it.on; cb.id = "ofr-on-" + k; cb.onchange = () => { it.on = cb.checked; if (cfg.phasesAuto) { cfg.phases = autoPhases(cfg); drawPhases(); } drawItems(); live(); };
+        const cb = h("input"); cb.type = "checkbox"; cb.checked = it.on; cb.id = "ofr-on-" + k; cb.onchange = () => { it.on = cb.checked; if (cfg.phasesAuto) { cfg.phases = autoPhases(cfg); drawPhases(); } drawItems(); drawCp(); live(); };
         const lab = h("label", "ofr-it-l"); lab.htmlFor = cb.id; lab.append(h("b", "", t), h("small", "muted", d + (k === "audit" ? " · implicit la rebranding" : "")));
         const right = h("div", "ofr-it-r");
         if (k === "canvas") {
           const st = h("div", "ofr-step"), mi = h("button", "", "−"), pl = h("button", "", "+"), n = h("span", "", String(it.qty)); mi.type = pl.type = "button";
           mi.setAttribute("aria-label", "Un canvas mai puțin"); pl.setAttribute("aria-label", "Un canvas în plus");
-          const set = (q) => { it.qty = Math.max(1, Math.min(6, q)); n.textContent = String(it.qty); if (cfg.phasesAuto) { cfg.phases = autoPhases(cfg); drawPhases(); } upd(); live(); };
+          const set = (q) => { it.qty = Math.max(1, Math.min(6, q)); n.textContent = String(it.qty); if (cfg.phasesAuto) { cfg.phases = autoPhases(cfg); drawPhases(); } upd(); drawCp(); live(); };
           mi.onclick = () => set(it.qty - 1); pl.onclick = () => set(it.qty + 1); st.append(mi, n, pl); right.append(st);
         }
         const pin = h("input", "inp ofr-price"); pin.type = "number"; pin.min = "0"; pin.step = "50"; pin.inputMode = "numeric"; pin.value = it.price; pin.setAttribute("aria-label", t + ": preț în oferta asta (EUR)" + (k === "canvas" ? ", pe canvas" : ""));
@@ -244,10 +250,10 @@
     function drawSp() {
       spList.replaceChildren(...cfg.specials.map((s, i) => {
         const r = h("div", "ofr-sp-r");
-        const t = inp("text", s.title, (v) => { s.title = v; if (cfg.phasesAuto) { cfg.phases = autoPhases(cfg); drawPhases(); } live(); }, "Ex.: Sistem de etichete", 120); t.setAttribute("aria-label", "Livrabil special " + (i + 1));
+        const t = inp("text", s.title, (v) => { s.title = v; if (cfg.phasesAuto) { cfg.phases = autoPhases(cfg); drawPhases(); } live(); }, "Ex.: Sistem de etichete", 120); t.addEventListener("change", () => drawCp()); t.setAttribute("aria-label", "Livrabil special " + (i + 1));
         const p = h("input", "inp ofr-price"); p.type = "number"; p.min = "0"; p.step = "50"; p.value = s.price; p.setAttribute("aria-label", "Prețul livrabilului special (EUR)"); p.oninput = () => { s.price = Math.max(0, num(p.value)); live(); };
         const d = inp("text", s.desc, (v) => (s.desc = v), "Ce conține (opțional, Claude îl scrie frumos)", 300); d.classList.add("ofr-sp-d");
-        const x = h("button", "ofr-x", "×"); x.type = "button"; x.setAttribute("aria-label", "Scoate livrabilul"); x.onclick = () => { cfg.specials.splice(i, 1); if (cfg.phasesAuto) { cfg.phases = autoPhases(cfg); drawPhases(); } drawSp(); live(); };
+        const x = h("button", "ofr-x", "×"); x.type = "button"; x.setAttribute("aria-label", "Scoate livrabilul"); x.onclick = () => { cfg.specials.splice(i, 1); cfg.packages.forEach((p) => { p.specialsOff = (p.specialsOff || []).map(Number).filter((j) => j !== i).map((j) => (j > i ? j - 1 : j)); }); if (cfg.phasesAuto) { cfg.phases = autoPhases(cfg); drawPhases(); } drawSp(); drawCp(); live(); };
         r.append(t, p, x, d); return r;
       }));
     }
@@ -262,33 +268,46 @@
     g3.append(field("Reducere (opțional)", drow), field("Notă TVA", inp("text", cfg.vatNote, (v) => (cfg.vatNote = v), "Prețurile nu includ TVA.", 160)), field("Valabilă (zile)", valid));
     s2.b.append(g3);
     const totBox = h("div", "ofr-total"); totBox.id = "ofr-total"; s2.b.append(totBox);
-    // the compact option: a smaller package shown NEXT TO the full one in the offer (never as a process card)
+    // packages: 1–3 ways to buy the same process, shown side by side in the offer (never as process cards)
     const cpBox = h("div", "ofr-cp");
-    const cpOn = h("input"); cpOn.type = "checkbox"; cpOn.id = "ofr-cp-on"; cpOn.checked = !!cfg.compact.on;
-    const cpL = h("label", "ofr-cp-h"); cpL.htmlFor = cpOn.id; cpL.append(cpOn, h("b", "", "Varianta compactă (opțional)"), h("small", "muted", "Un pachet mai mic, prezentat separat lângă varianta completă, cu ce rămâne și ce lăsăm deoparte."));
-    const cpBody = h("div", "ofr-cp-b");
-    function drawCp() {
-      cpBox.classList.toggle("on", !!cfg.compact.on); cpBody.replaceChildren(); if (!cfg.compact.on) return;
+    const cpH = h("div", "ofr-cp-h0"); cpH.append(h("b", "", "Pachete"), h("small", "muted", "Opțional: 2 sau 3 pachete pentru același proces (ex. complet + compact). Fiecare păstrează ce bifezi; în ofertă apar unul lângă altul, cu totalul lor."));
+    const cpBody = h("div", "ofr-pk-l");
+    const cpAdd = h("button", "btn sm", "+ Pachet"); cpAdd.type = "button";
+    cpAdd.onclick = () => {
       const cv = item(cfg, "canvas");
-      if (cv.on) {
-        const r = h("div", "ofr-cp-r"), st = h("div", "ofr-step"), mi = h("button", "", "−"), pl = h("button", "", "+"), n = h("span", "", String(Math.min(cfg.compact.canvasQty, cv.qty))); mi.type = pl.type = "button";
-        mi.setAttribute("aria-label", "Un canvas mai puțin în varianta compactă"); pl.setAttribute("aria-label", "Un canvas în plus în varianta compactă");
-        const set = (q) => { cfg.compact.canvasQty = Math.max(1, Math.min(cv.qty, q)); drawCp(); live(); };
-        mi.onclick = () => set(cfg.compact.canvasQty - 1); pl.onclick = () => set(cfg.compact.canvasQty + 1); st.append(mi, n, pl);
-        r.append(h("span", "", "Brand canvas în compactă"), st, h("small", "muted", "din " + cv.qty + " în completă")); cpBody.append(r);
-      }
-      const keep = h("div", "ofr-cp-k"); keep.append(h("span", "mono", "Ce păstrăm în compactă"));
-      for (const [k, t] of ITEMS) {
-        const it = item(cfg, k); if (!it.on || k === "canvas") continue;
-        const lb = h("label", "ofr-chip"), cb = h("input"); cb.type = "checkbox"; cb.checked = !(cfg.compact.off || []).includes(k);
-        cb.onchange = () => { const off = new Set(cfg.compact.off || []); if (cb.checked) off.delete(k); else off.add(k); cfg.compact.off = [...off]; live(); };
-        lb.append(cb, h("span", "", t)); keep.append(lb);
-      }
-      cfg.specials.filter((x) => x.title).forEach((x) => { const lb = h("label", "ofr-chip"), cb = h("input"); cb.type = "checkbox"; cb.checked = x.compact !== false; cb.onchange = () => { x.compact = cb.checked; live(); }; lb.append(cb, h("span", "", "★ " + x.title)); keep.append(lb); });
-      cpBody.append(keep);
+      if (!cfg.packages.length) cfg.packages.push({ id: "p1", label: "Varianta completă", off: [], specialsOff: [] });
+      if (cfg.packages.length < 3) cfg.packages.push({ id: "p" + (cfg.packages.length + 1) + Date.now().toString(36).slice(-3), label: cfg.packages.length === 1 ? "Varianta compactă" : "Pachetul " + (cfg.packages.length + 1), canvasQty: Math.max(1, (cv.qty || 2) - 1), off: [], specialsOff: [] });
+      drawCp(); live();
+    };
+    function drawCp() {
+      cpBox.classList.toggle("on", cfg.packages.length >= 2); cpAdd.hidden = cfg.packages.length >= 3; cpAdd.textContent = cfg.packages.length ? "+ Pachet" : "+ Împarte în pachete";
+      const TP = pkTotals(cfg) || [], cv = item(cfg, "canvas");
+      cpBody.replaceChildren(...cfg.packages.map((p, k) => {
+        const card = h("div", "ofr-pk" + (p.recommended ? " rec" : "")), top = h("div", "ofr-pk-top");
+        const name = inp("text", p.label, (v) => { p.label = v; live(); }, "Pachetul " + (k + 1), 40); name.setAttribute("aria-label", "Numele pachetului " + (k + 1));
+        const rec = h("label", "ofr-chip ofr-rec"), rb = h("input"); rb.type = "checkbox"; rb.checked = !!p.recommended; rb.onchange = () => { cfg.packages.forEach((x) => delete x.recommended); if (rb.checked) p.recommended = true; drawCp(); live(); }; rec.append(rb, h("span", "", "Recomandat"));
+        const x = h("button", "ofr-x", "×"); x.type = "button"; x.setAttribute("aria-label", "Scoate pachetul"); x.onclick = () => { cfg.packages.splice(k, 1); if (cfg.packages.length < 2) cfg.packages = []; drawCp(); live(); };
+        top.append(name, x);
+        const keep = h("div", "ofr-cp-k");
+        if (cv.on) {
+          const st = h("div", "ofr-step"), mi = h("button", "", "−"), pl = h("button", "", "+"), q = p.canvasQty || cv.qty, n = h("span", "", String(q)); mi.type = pl.type = "button";
+          mi.setAttribute("aria-label", "Un canvas mai puțin"); pl.setAttribute("aria-label", "Un canvas în plus");
+          const set = (v) => { p.canvasQty = Math.max(1, Math.min(6, v)); drawCp(); live(); }; mi.onclick = () => set(q - 1); pl.onclick = () => set(q + 1); st.append(mi, n, pl);
+          const r = h("div", "ofr-cp-r"); r.append(h("span", "", "Brand canvas"), st); keep.append(r);
+        }
+        for (const [key, t] of ITEMS) {
+          const it = item(cfg, key); if (!it.on || key === "canvas") continue;
+          const lb = h("label", "ofr-chip"), cb = h("input"); cb.type = "checkbox"; cb.checked = !(p.off || []).includes(key);
+          cb.onchange = () => { const off = new Set(p.off || []); if (cb.checked) off.delete(key); else off.add(key); p.off = [...off]; live(); drawTot(); };
+          lb.append(cb, h("span", "", t)); keep.append(lb);
+        }
+        cfg.specials.forEach((sx, j) => { if (!sx.title) return; const lb = h("label", "ofr-chip"), cb = h("input"); cb.type = "checkbox"; cb.checked = !(p.specialsOff || []).map(Number).includes(j); cb.onchange = () => { const so = new Set((p.specialsOff || []).map(Number)); if (cb.checked) so.delete(j); else so.add(j); p.specialsOff = [...so]; live(); drawTot(); }; lb.append(cb, h("span", "", "★ " + sx.title)); keep.append(lb); });
+        const tot = h("b", "ofr-pk-t", TP[k] ? money(TP[k].total) : ""); tot.dataset.k = k;
+        card.append(top, rec, keep, tot); return card;
+      }));
     }
-    cpOn.onchange = () => { cfg.compact.on = cpOn.checked; if (cpOn.checked) { const cv = item(cfg, "canvas"); cfg.compact.canvasQty = Math.max(1, Math.min(cfg.compact.canvasQty || cv.qty - 1, cv.qty)); } drawCp(); live(); };
-    cpBox.append(cpL, cpBody); drawCp(); s2.b.append(cpBox);
+    const drawTot = () => {};
+    cpBox.append(cpH, cpBody, cpAdd); drawCp(); s2.b.append(cpBox);
 
     // 03 timeline
     const s3 = sec("03", "Calendarul");
@@ -314,23 +333,21 @@
     drawPhases(); s3.b.append(g4, phBox);
 
     // 04 next step: delivered separately after the project, never in the total
-    const s5 = sec("04", "Pasul următor · separat");
-    const nxOn = h("input"); nxOn.type = "checkbox"; nxOn.id = "ofr-nx-on"; nxOn.checked = !!cfg.nextOn;
-    const nxL = h("label", "ofr-cp-h"); nxL.htmlFor = nxOn.id; nxL.append(nxOn, h("b", "", "Arată „Pasul următor” în ofertă"), h("small", "muted", "Se livrează separat, după proiect. Nu intră în total. Fără preț, apare „Separat, după proiect”. Claude alege canalele potrivite domeniului clientului."));
-    const nxList = h("div", "ofr-sp-l");
-    const nxAdd = h("button", "btn sm", "+ Pas următor"); nxAdd.type = "button"; nxAdd.onclick = () => { cfg.nextSteps.push({ title: "", desc: "", price: "" }); drawNx(); };
+    const s5 = sec("04", "Ce poate urma · oportunități");
+    const nxL = h("p", "ofr-hint muted", "Oportunități după proiect: Claude propune 4–6 pentru client (plan de marketing pe 1 an, site, producție de conținut, strategie de comunicare, roadmap de touchpoint-uri…). Bifează ce apare în ofertă; prețul e opțional. Nu intră niciodată în total.");
+    const nxList = h("div", "ofr-nx-l");
+    const nxAdd = h("button", "btn sm", "+ Oportunitate"); nxAdd.type = "button"; nxAdd.onclick = () => { cfg.nextSteps.push({ title: "", desc: "", price: "", picked: true }); drawNx(); const ins = nxList.querySelectorAll("input[type=text]"); if (ins.length) ins[ins.length - 2].focus(); };
     function drawNx() {
-      nxList.hidden = nxAdd.hidden = !cfg.nextOn;
       nxList.replaceChildren(...cfg.nextSteps.map((x, i) => {
-        const r = h("div", "ofr-sp-r");
-        const t = inp("text", x.title, (v) => { x.title = v; live(); }, "Ex.: Plan de marketing pe 1 an", 120); t.setAttribute("aria-label", "Pasul următor " + (i + 1));
+        const r = h("div", "ofr-nx-r" + (x.picked !== false ? " on" : ""));
+        const cb = h("input"); cb.type = "checkbox"; cb.checked = x.picked !== false; cb.setAttribute("aria-label", "Apare în ofertă"); cb.onchange = () => { x.picked = cb.checked; r.classList.toggle("on", cb.checked); live(); };
+        const t = inp("text", x.title, (v) => { x.title = v; live(); }, "Ex.: Site de prezentare", 120); t.setAttribute("aria-label", "Oportunitatea " + (i + 1));
         const p = h("input", "inp ofr-price"); p.type = "number"; p.min = "0"; p.step = "50"; p.placeholder = "fără preț"; p.value = x.price ?? ""; p.setAttribute("aria-label", "Preț (opțional, EUR)"); p.oninput = () => { x.price = p.value; live(); };
         const d = inp("text", x.desc, (v) => (x.desc = v), "Ce conține (Claude îl scrie pentru client)", 300); d.classList.add("ofr-sp-d");
-        const xb = h("button", "ofr-x", "×"); xb.type = "button"; xb.setAttribute("aria-label", "Scoate pasul"); xb.onclick = () => { cfg.nextSteps.splice(i, 1); drawNx(); live(); };
-        r.append(t, p, xb, d); return r;
+        const xb = h("button", "ofr-x", "×"); xb.type = "button"; xb.setAttribute("aria-label", "Scoate oportunitatea"); xb.onclick = () => { cfg.nextSteps.splice(i, 1); drawNx(); live(); };
+        r.append(cb, t, p, xb, d); return r;
       }));
     }
-    nxOn.onchange = () => { cfg.nextOn = nxOn.checked; if (cfg.nextOn && !cfg.nextSteps.length) cfg.nextSteps = NEXT_DEFAULT.map((x) => ({ ...x })); drawNx(); live(); };
     drawNx(); s5.b.append(nxL, nxList, nxAdd);
 
     // 05 experiences (after Claude's preview) + actions
@@ -349,7 +366,7 @@
     drawTotal(); if (sig === docSig) return; docSig = sig; drawExp(); drawActions(); drawPane();
   }
   let liveT = 0;
-  function live() { drawTotal(); clearTimeout(liveT); liveT = setTimeout(() => { if (pvTab === "live") drawPane(); }, 120); }
+  function live() { drawTotal(); { const TP = pkTotals(cfg) || []; document.querySelectorAll(".ofr-pk-t").forEach((b) => { const t = TP[+b.dataset.k]; b.textContent = t ? money(t.total) : ""; }); } clearTimeout(liveT); liveT = setTimeout(() => { if (pvTab === "live") drawPane(); }, 120); }
   function drawTotal() {
     const box = $("ofr-total"); if (!box) return; const T = totals(cfg), df = T.total - T.base;
     box.replaceChildren();
@@ -360,7 +377,7 @@
     row("Subtotal", money(T.subtotal)); if (T.discount) row("Reducere", "−" + money(T.discount));
     row("Față de listă", df === 0 ? "la fel" : (df > 0 ? "+" : "−") + money(Math.abs(df)), df < 0 ? "dn" : df > 0 ? "up" : "");
     row("Durată", weeksOf(cfg) ? Math.ceil(weeksOf(cfg)) + " săpt. de lucru" : "–");
-    const TC = compactTotals(cfg); if (TC) row("Varianta compactă", money(TC.total), "cv");
+    const TP = pkTotals(cfg); if (TP) TP.forEach((t, k) => row((cfg.packages[k].label || "Pachetul " + (k + 1)) + (cfg.packages[k].recommended ? " ★" : ""), money(t.total), "cv"));
     box.append(l, r);
   }
   function drawExp() {
@@ -437,9 +454,21 @@
     T.specials.forEach((s) => { const r = h("div", "ofr-lv-i sp"); r.append(h("span", "", "★ " + s.title), h("b", "", money(s.price))); items.append(r); });
     const tot = h("div", "ofr-lv-tot"); tot.append(h("span", "mono", T.discount ? "Total · după reducere " + money(T.discount) : "Total proces"), h("b", "", money(T.total)));
     box.append(hero, items, tot);
-    const TC = compactTotals(cfg);
-    if (TC) { const cp = h("div", "ofr-lv-cp"); const off = T.items.filter((i) => !TC.items.some((x) => x.key === i.key)).map((i) => ITEMS.find((x) => x[0] === i.key)[1]); const cvF = T.items.find((i) => i.key === "canvas"), cvC = TC.items.find((i) => i.key === "canvas"); if (cvF && cvC && cvC.q < cvF.q) off.push((cvF.q - cvC.q) + " canvas"); T.specials.filter((x) => x.compact === false).forEach((x) => off.push(x.title)); cp.append(h("span", "mono", "Varianta compactă · alternativă separată"), h("b", "", money(TC.total)), h("small", "", off.length ? "Fără: " + off.join(", ") : "Aceleași livrabile")); box.append(cp); }
-    if (cfg.nextOn && cfg.nextSteps.some((x) => x.title)) { const nx = h("div", "ofr-lv-nx"); nx.append(h("span", "mono", "Pasul următor · separat, nu intră în total")); cfg.nextSteps.filter((x) => x.title).forEach((x) => { const r = h("div", ""); r.append(h("span", "", "→ " + x.title), h("b", "", x.price !== "" && x.price != null ? money(x.price) : "separat")); nx.append(r); }); box.append(nx); }
+    const TP = pkTotals(cfg);
+    if (TP) {
+      const row = h("div", "ofr-lv-pks n" + TP.length);
+      TP.forEach((t, k) => {
+        const pk = cfg.packages[k], c = h("div", "ofr-lv-pk" + (pk.recommended || (!cfg.packages.some((x) => x.recommended) && k === 0) ? " ref" : ""));
+        const out = T.items.filter((i) => !t.items.some((x) => x.key === i.key)).map((i) => ITEMS.find((x) => x[0] === i.key)[1]);
+        const cvA = t.items.find((i) => i.key === "canvas");
+        T.specials.forEach((sx) => { if (!t.specials.includes(sx) && !t.specials.some((y) => y.title === sx.title)) out.push(sx.title); });
+        c.append(h("span", "mono", (pk.label || "Pachetul " + (k + 1)) + (pk.recommended ? " · recomandat" : "")), h("b", "", money(t.total)), h("small", "", (cvA ? cvA.q + " canvas · " : "") + (out.length ? "fără " + out.join(", ") : "tot procesul")));
+        row.append(c);
+      });
+      box.append(row);
+    }
+    const NX = cfg.nextSteps.filter((x) => x.title && x.picked !== false);
+    if (NX.length) { const nx = h("div", "ofr-lv-nx"); nx.append(h("span", "mono", "Ce poate urma · separat, nu intră în total")); NX.forEach((x) => { const r = h("div", ""); r.append(h("span", "", "→ " + x.title), h("b", "", x.price !== "" && x.price != null ? money(x.price) : "separat")); nx.append(r); }); box.append(nx); }
     box.append(gantt(cfg));
     pane.replaceChildren(head, box);
   }
@@ -468,14 +497,15 @@
     const c = JSON.parse(JSON.stringify(cfg)); delete c.picks;
     c.specials = c.specials.filter((s) => s.title); c.phases = c.phases.filter((p) => p.title);
     const T = totals(c); c.totals = { subtotal: T.subtotal, discount: T.discount, total: T.total, base: T.base, weeks: Math.ceil(weeksOf(c)) };
-    const TC = compactTotals(c); if (TC) c.totals.compact = TC.total;
-    c.nextSteps = c.nextOn ? (c.nextSteps || []).filter((x) => x.title) : [];
+    const TP = pkTotals(c); if (TP) c.totals.packages = TP.map((t, k) => ({ id: c.packages[k].id, label: c.packages[k].label, total: t.total }));
+    if (!TP) c.packages = [];
+    c.nextSteps = (c.nextSteps || []).filter((x) => x.title).map((x) => ({ ...x, picked: x.picked !== false }));
     return c;
   }
   function summary(c) {
     const T = c.totals;
     return [SIT[c.situation], ...totals(c).items.map((i) => (ITEMS.find((x) => x[0] === i.key)[1]) + (i.key === "canvas" ? " ×" + i.q : "") + " " + money(i.line) + (i.line !== i.baseLine ? " (listă " + money(i.baseLine) + ")" : "")),
-      ...c.specials.map((s) => "Special: " + s.title + " " + money(s.price)), T.discount ? "Reducere −" + money(T.discount) : "", "Total " + money(T.total) + " · " + T.weeks + " săpt.", T.compact ? "Compactă " + money(T.compact) + (c.compact.canvasQty ? " (" + c.compact.canvasQty + " canvas" + ((c.compact.off || []).length ? ", fără " + c.compact.off.join(", ") : "") + ")" : "") : "", c.nextSteps.length ? "Pasul următor: " + c.nextSteps.map((x) => x.title).join(", ") : ""].filter(Boolean).join(" · ");
+      ...c.specials.map((s) => "Special: " + s.title + " " + money(s.price)), T.discount ? "Reducere −" + money(T.discount) : "", "Total " + money(T.total) + " · " + T.weeks + " săpt.", T.packages ? "Pachete: " + T.packages.map((p, k) => p.label + " " + money(p.total) + ((c.packages[k].off || []).length || (c.packages[k].specialsOff || []).length || c.packages[k].canvasQty ? " (" + [c.packages[k].canvasQty ? c.packages[k].canvasQty + " canvas" : "", (c.packages[k].off || []).length ? "fără " + c.packages[k].off.map((key) => (ITEMS.find((x) => x[0] === key) || [key, key])[1]).join(", ") : ""].filter(Boolean).join(", ") + ")" : "") + (c.packages[k].recommended ? " ★" : "")).join(" / ") : "", c.nextSteps.some((x) => x.picked) ? "Ce poate urma (bifat): " + c.nextSteps.filter((x) => x.picked).map((x) => x.title).join(", ") : ""].filter(Boolean).join(" · ");
   }
   async function send(btn, text, payload, ok) {
     if (!db) return; btn.disabled = true; const was = btn.textContent; btn.textContent = "Se trimite…";
