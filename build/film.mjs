@@ -96,18 +96,19 @@ function ytClient() {
     cmd(P, "playVideo");
   }
   function pause(P) { P.want = false; cmd(P, "pauseVideo"); P.f.classList.add("yt-paused"); }
-  function play(f) {
+  function play(f, auto) {
     if (!f) return;
     var P = find(f);
-    if (P) { if (!f.classList.contains("yt-native")) resume(P); return; }
+    if (P) { P.user = !auto; if (!f.classList.contains("yt-native")) resume(P); return; }
     var id = f.getAttribute("data-yt"), q = (f.getAttribute("data-q") || "").replace(/&amp;/g, "&");
     var keep = q.split("&").filter(function (kv) { return kv && !/^(rel|modestbranding|playsinline|controls|autoplay|enablejsapi)=/.test(kv); }).join("&");
     var org = location.origin && location.origin !== "null" ? "&origin=" + encodeURIComponent(location.origin) : "";
-    P = { f: f, id: ++uid, state: -1, want: true, muted: false, btn: f.querySelector(".yt-play") };
+    P = { f: f, id: ++uid, state: -1, want: true, muted: !!auto, auto: !!auto, user: !auto, btn: f.querySelector(".yt-play") };
     PL.push(P);
     var stage = document.createElement("div"); stage.className = "yt-stage";
     var i = document.createElement("iframe");
-    i.src = "https://www.youtube-nocookie.com/embed/" + id + "?" + PARAMS + (keep ? "&" + keep : "") + "&autoplay=1&enablejsapi=1" + org;
+    // a film that starts by itself is muted (browsers only autoplay silent video) and loops (loop needs playlist=<id>)
+    i.src = "https://www.youtube-nocookie.com/embed/" + id + "?" + PARAMS + (keep ? "&" + keep : "") + "&autoplay=1&enablejsapi=1" + (auto ? "&mute=1&loop=1&playlist=" + id : "") + org;
     i.title = f.getAttribute("data-title") || T.play;
     i.setAttribute("allow", "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share");
     i.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
@@ -117,6 +118,7 @@ function ytClient() {
     var ctl = document.createElement("div"); ctl.className = "yt-ctl"; ctl.setAttribute("role", "group"); ctl.setAttribute("aria-label", T.ctl);
     ctl.innerHTML = '<button type="button" class="yt-pp" aria-pressed="false" aria-label="' + T.play + '"><span class="yt-i0">' + SVG(I_PLAY) + '</span><span class="yt-i1">' + SVG(I_PAUSE) + '</span></button><button type="button" class="yt-snd" aria-pressed="true" aria-label="' + T.snd + '"><span class="yt-i0">' + SVG(I_OFF) + '</span><span class="yt-i1">' + SVG(I_ON) + "</span></button>";
     P.pp = ctl.firstChild; P.snd = ctl.lastChild;
+    if (auto) setMuted(P, true);
     var bz = document.createElement("span"); bz.className = "yt-bz"; bz.setAttribute("aria-hidden", "true"); bz.innerHTML = SVG(I_PAUSE);
     f.insertBefore(stage, f.firstChild); f.appendChild(hit); f.appendChild(bz); f.appendChild(ctl);
     f.classList.add("yt-live", "yt-wait");
@@ -125,9 +127,10 @@ function ytClient() {
     hit.addEventListener("click", function () {
       // a tap first shows our two buttons, a second tap pauses; a click pauses
       if (lastPtr !== "mouse" && !P.tapped) { P.tapped = true; setTimeout(function () { P.tapped = false; }, 3000); return; }
+      P.user = true;
       if (P.state === 1 || P.state === 3) pause(P); else resume(P);
     });
-    P.pp.addEventListener("click", function () { if (P.state === 1 || P.state === 3) pause(P); else resume(P); });
+    P.pp.addEventListener("click", function () { P.user = true; if (P.state === 1 || P.state === 3) pause(P); else resume(P); });
     P.snd.addEventListener("click", function () { if (P.muted) { cmd(P, "unMute"); cmd(P, "setVolume", [100]); setMuted(P, false); } else { cmd(P, "mute"); setMuted(P, true); } });
     // the player answers only once it is told someone listens; it may not be ready at "load", so knock until it does
     i.addEventListener("load", function () {
@@ -141,6 +144,28 @@ function ytClient() {
     });
   }
   window.__ytPlay = play;
+  // r339 (Daniel: the Two Minutes opening film "does not start by itself"): a facade marked data-auto opens its player
+  // by itself, muted and looping, once half of it is in view (the poster stays until the film really plays); it pauses
+  // out of view and plays again on the way back, until the visitor uses its buttons. It stays click-to-play for a
+  // visitor who said "No, thanks" on the cookie card (cz-consent=no) and for one who asked for reduced motion.
+  var said = ""; try { said = localStorage.getItem("cz-consent") || ""; } catch (e) {} if (!said) { var mk = /(?:^|; )cz-consent=(\w+)/.exec(document.cookie); said = mk ? mk[1] : ""; }
+  var calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // this script runs in <head>: the facades exist once the document is parsed
+  function autoStart() {
+  var AF = [].slice.call(document.querySelectorAll(".yt-facade[data-auto]"));
+  // opened from the map (?embed=1) FILM_AUTO already starts it, with sound when the browser allows it
+  if (AF.length && said !== "no" && !calm && !/[?&]embed=1/.test(location.search) && "IntersectionObserver" in window) {
+    var aio = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        var f = e.target, P = find(f);
+        if (e.isIntersecting && e.intersectionRatio >= 0.5) { if (!P) play(f, true); else if (P.auto && !P.user && P.state !== 1 && P.state !== 3) { P.want = true; cmd(P, "playVideo"); } }
+        else if (P && P.auto && !P.user && e.intersectionRatio < 0.15 && (P.state === 1 || P.state === 3)) cmd(P, "pauseVideo");
+      });
+    }, { threshold: [0, 0.15, 0.5] });
+    AF.forEach(function (f) { aio.observe(f); });
+  }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", autoStart); else autoStart();
   document.addEventListener("click", function (e) { var b = e.target.closest && e.target.closest(".yt-play"); if (!b) return; e.preventDefault(); play(b.parentElement); });
 }
 const YT_CSS = `<style>.yt-facade{background:#111}.yt-play{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;background:#111;cursor:pointer;display:block;overflow:hidden;font:inherit;color:inherit}.yt-play img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;display:block;transition:transform .6s cubic-bezier(.2,.8,.2,1)}.yt-play::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,0) 50%,rgba(0,0,0,.32))}.yt-cta{position:absolute;left:50%;top:50%;z-index:1;transform:translate(-50%,-50%);display:inline-flex;align-items:center;gap:12px;padding:12px 26px 14px 14px;border:var(--line,1.5px solid #121212);border-radius:999px;background:var(--yellow,#FED012);color:var(--ink,#121212);font-family:var(--font,system-ui),sans-serif;font-weight:800;font-size:var(--fs-ui,18px);line-height:1.05;text-align:left;box-shadow:0 3px 0 var(--ink,#121212);transition:transform .2s cubic-bezier(.2,.8,.2,1)}.yt-cta svg{flex:none;width:44px;height:44px}.yt-src{display:block;font-weight:600;font-size:.74em;opacity:.72;margin-top:3px}.yt-play:hover .yt-cta,.yt-play:focus-visible .yt-cta{transform:translate(-50%,-50%) scale(1.05)}.yt-play:hover img{transform:scale(1.02)}.yt-play:focus-visible{outline:3px solid var(--blue,#519EF5);outline-offset:-3px}@media (max-width:560px){.yt-cta{gap:9px;padding:8px 18px 9px 8px;font-size:15px}.yt-cta svg{width:34px;height:34px}}@media (prefers-reduced-motion:reduce){.yt-play img,.yt-cta{transition:none}}${YT_CSS2}</style>
@@ -165,9 +190,10 @@ export function ytFacade(html, poster) {
   });
   // r138d: the Two Minutes film (site/render.mjs, a .yt poster that site/site.js used to swap for a plain player) gets
   // the same chromeless player: the poster stays, the click goes to window.__ytPlay
-  html = html.replace(/<div class="yt" data-id="([\w-]+)"><button class="yt-play" aria-label="([^"]*)"/g, (m, id, label) => {
+  // r339: data-auto (the Two Minutes opening film) starts it by itself, muted and looping, see ytClient
+  html = html.replace(/<div class="yt" data-id="([\w-]+)"( data-auto)?><button class="yt-play" aria-label="([^"]*)"/g, (m, id, auto, label) => {
     n++;
-    return `<div class="yt yt-facade" style="position:relative" data-id="${id}" data-yt="${id}" data-q="" data-title="${label.replace(/^Play the /, "")}"><button class="yt-play" aria-label="${label}"`;
+    return `<div class="yt yt-facade" style="position:relative" data-id="${id}" data-yt="${id}" data-q="" data-title="${label.replace(/^Play the /, "")}"${auto || ""}><button class="yt-play" aria-label="${label}"`;
   });
   return n ? html.replace("</head>", `${YT_CSS}\n</head>`) : html;
 }

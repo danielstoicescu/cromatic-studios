@@ -203,6 +203,8 @@ export const CASES = {
     lead: "Identity, packaging, editorial and film for a specialty coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 50A. Two Minutes has been our client and our neighbour for a decade.",
     meta: ["Brand · Packaging · Editorial · Film", "Two Min Lab drinks · Boxes · Merch"],
     youtube: "m4-5T3i3wN0",
+    // r339 (Daniel: "the YouTube video at the start does not start by itself"): the opening film starts by itself, muted, looping (build/film.mjs)
+    youtubeAuto: true,
     swatches: ["#111111", "#F2A9C4", "#28C840", "#119BFE"],
     blocks: [
       { h: "The brand", p: "A stacked TWO MIN mark that works on a cup, a tote and a shop front, with a decade of taste and moments behind it.", imgs: ["tmCover", "tmPoster", "tmTote"] },
@@ -210,7 +212,8 @@ export const CASES = {
       { h: "Two Minutes × Ghica Popa", p: "A T-shirt drop with Ghica Popa, shot in the studio with friends, a guitar and a pile of tees.", layout: "tall", imgs: ["m:tm/tee-033", "m:tm/tee-081", "m:tm/tee-014", "m:tm/tee-045", "m:tm/tee-022", "m:tm/tee-041", "m:tm/tee-071"], pos: [null, "47% 50%", null, null, null, "38% 50%"] },
       { imgs: ["m:tm/tee-048"], caps: ["Friends, a guitar and the tees, in the studio."] },
       { h: "The boxes", p: "Green, pink, blue: coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 50A.", vids: ["boxesvideo_default"], layout: "side" },
-      { h: "Two Min Lab", p: "Two Minutes's flavour laboratory, micro-roastery and kitchen: the space where signature flavours like the <i>Tonic Ionic</i> are perfected before they reach your cup. Bottled by hand, in small batches, in Bucharest.", imgs: ["labTonic", "labSpread", "labChinotto", "labAmaro"], caps: ["Tonic Ionic · 6 plante", "Tonic Ionic · specimen index", "Chinotto · Citrus myrtifolia", "Amaro · bitter formula"] },
+      // r339 (Daniel: "scoatem sticlele de tonic ionic"): the two Tonic Ionic bottles are out; Chinotto and Amaro stay, side by side
+      { h: "Two Min Lab", p: "Two Minutes's flavour laboratory, micro-roastery and kitchen: the space where signature flavours like the <i>Chinotto</i> and the <i>Amaro</i> are perfected before they reach your cup. Bottled by hand, in small batches, in Bucharest.", imgs: ["labChinotto", "labAmaro"], caps: ["Chinotto · Citrus myrtifolia", "Amaro · bitter formula"] },
       { h: "In-house work", p: "From the first sketches on grid paper to the acrylic signs, fresh from the maker.", imgs: ["labSketch", "labSigns", "labEditorial"], vids: ["labBox", "labMaking"] },
       { h: "Inside the boxes", p: "Every box carries a card with the coffee's story: The Blueprint, Silent Punch, Mosto, set in a typewriter voice, with the recipe on the back. And cubes for the Roastery and the Lab.", imgs: ["m:tm/card-blueprint", "m:tm/card-silent", "m:tm/card-mosto", "m:tm/card-silent-photo", "m:tm/cube-roastery", "m:tm/cubes-lab"] },
       { h: "Ten years", p: "Two Minutes turned ten: 10 YRS, 10 ANI, in the brand's red and green.", imgs: ["m:tm/ten-years", "m:tm/ten-ani", "m:tm/ten-green"] }
