@@ -159,7 +159,8 @@
     for (const o of list) {
       const st = o.working ? "working" : (STATUS[o.status] ? o.status : "draft");
       const r = h("div", "ofr-row"); r.tabIndex = 0;
-      const pill = h("span", "ofr-st " + STATUS[st][1], STATUS[st][0]);
+      const pill = h("span", "ofr-st " + STATUS[st][1], STATUS[st][0] + (o.original && st === "published" ? " · originală" : ""));
+      if (o.original) pill.title = "Pagina originală, făcută înainte de generator. Versiunea din generator e doar preview până apeși Publică.";
       if (o.working) pill.title = o.working === "publish" ? "Claude o publică" : "Claude aplică modificările";
       const who = h("div", "ofr-who"); who.append(h("b", "", (o.client && o.client.name) || "Fără nume"), h("small", "muted", [SIT[o.situation] || "", fmtDate(o.updatedAt || o.createdAt)].filter(Boolean).join(" · ")));
       const links = h("div", "ofr-links");
@@ -187,10 +188,16 @@
     const bar = h("div", "ofr-bar");
     const back = h("button", "btn sm ghost", "← Toate ofertele"); back.type = "button"; back.onclick = closeEditor;
     bar.append(back, h("span", "ofr-bar-t", doc ? ((doc.client && doc.client.name) || "Ofertă") : "Ofertă nouă · Proces de branding"));
-    if (doc) { const st = doc.working ? "working" : doc.status; bar.append(h("span", "ofr-st " + (STATUS[st] || STATUS.draft)[1], (STATUS[st] || STATUS.draft)[0])); }
+    if (doc) { const st = doc.working ? "working" : doc.status; bar.append(h("span", "ofr-st " + (STATUS[st] || STATUS.draft)[1], (STATUS[st] || STATUS.draft)[0] + (doc.original && st === "published" ? " · originală" : ""))); }
     const form = h("form", "ofr-form"); form.noValidate = true; form.onsubmit = (e) => e.preventDefault();
     const pane = h("aside", "ofr-pane"); pane.id = "ofr-pane";
 
+    // "Atașează prezentarea de proces": the offer opens with the whole Cromatic process deck, then the financial offer
+    const pr = h("label", "ofr-proc"), prc = h("input"); prc.type = "checkbox"; prc.checked = !!cfg.includeProcess;
+    prc.onchange = () => { cfg.includeProcess = prc.checked; pr.classList.toggle("on", prc.checked); live(); };
+    pr.classList.toggle("on", !!cfg.includeProcess);
+    pr.append(prc, h("b", "", "Atașează prezentarea de proces"), h("small", "muted", "Oferta începe cu prezentarea procesului Cromatic (aceeași pentru toți), apoi oferta financiară. Clientul are buton „Vezi oferta financiară” sus și jos."));
+    form.append(pr);
     // 01 client
     const s1 = sec("01", "Clientul");
     const g1 = h("div", "ofr-g2");
@@ -323,8 +330,8 @@
         const r = h("div", "ofr-ph-r"); r.style.setProperty("--b", PH_COLORS[i % PH_COLORS.length]);
         const touch = () => { cfg.phasesAuto = false; live(); };
         const t = inp("text", p.title, (v) => { p.title = v; touch(); }, "Etapă", 80); t.setAttribute("aria-label", "Numele etapei " + (i + 1));
-        const st = h("input", "inp"); st.type = "number"; st.min = "0"; st.step = "0.5"; st.value = p.start; st.setAttribute("aria-label", "Săptămâna de start (0 = prima)"); st.oninput = () => { p.start = Math.max(0, num(st.value)); touch(); };
-        const wk = h("input", "inp"); wk.type = "number"; wk.min = "0.5"; wk.step = "0.5"; wk.value = p.weeks; wk.setAttribute("aria-label", "Durata în săptămâni"); wk.oninput = () => { p.weeks = Math.max(0.5, num(wk.value, 1)); touch(); };
+        const st = h("input", "inp"); st.type = "number"; st.min = "0"; st.step = "0.5"; st.value = Math.round(num(p.start) * 100) / 100; st.setAttribute("aria-label", "Săptămâna de start (0 = prima)"); st.oninput = () => { p.start = Math.max(0, num(st.value)); touch(); };
+        const wk = h("input", "inp"); wk.type = "number"; wk.min = "0.5"; wk.step = "0.5"; wk.value = Math.round(num(p.weeks) * 100) / 100; wk.setAttribute("aria-label", "Durata în săptămâni"); wk.oninput = () => { p.weeks = Math.max(0.5, num(wk.value, 1)); touch(); };
         const ms = inp("text", p.milestone, (v) => { p.milestone = v; touch(); }, "Ex.: Prezentare", 60); ms.setAttribute("aria-label", "Reper la finalul etapei");
         const x = h("button", "ofr-x", "×"); x.type = "button"; x.setAttribute("aria-label", "Scoate etapa"); x.onclick = () => { cfg.phases.splice(i, 1); cfg.phasesAuto = false; drawPhases(); live(); };
         r.append(t, st, wk, ms, x); return r;
@@ -464,6 +471,7 @@
     T.items.forEach((i, k) => { const r = h("div", "ofr-lv-i"); r.style.setProperty("--b", PH_COLORS[k % PH_COLORS.length]); const name = ITEMS.find((x) => x[0] === i.key)[1] + (i.key === "canvas" ? " ×" + i.q + " · " + money(i.price) + " " + PER_PIECE : ""); r.append(h("span", "", name)); const p = h("b", ""); if (i.line < i.baseLine) p.append(h("s", "", money(i.baseLine)), " "); p.append(money(i.line)); r.append(p); items.append(r); });
     T.specials.forEach((s) => { const r = h("div", "ofr-lv-i sp"); r.append(h("span", "", "★ " + s.title), h("b", "", money(s.price))); items.append(r); });
     const tot = h("div", "ofr-lv-tot"); tot.append(h("span", "mono", T.discount ? "Total · după reducere " + money(T.discount) : "Total proces"), h("b", "", money(T.total)));
+    if (cfg.includeProcess) box.append(h("div", "ofr-lv-proc", "▶ Prezentarea procesului Cromatic · apoi oferta financiară"));
     box.append(hero, items, tot);
     const TP = pkTotals(cfg);
     if (TP) {
@@ -539,7 +547,7 @@
   async function sendPublish(btn) {
     const doc = curDoc(), picks = picksPayload(), exps = (doc && doc.experiences) || [];
     if (exps.length && (picks.length < 1 || picks.length > 3)) { toast("Alegeți 1–3 brand experiences înainte de publicare.", "err"); const s = $("ofr-exp"); if (s) s.scrollIntoView({ behavior: "smooth" }); return; }
-    if (!confirm("Publici oferta pentru " + ((doc.client && doc.client.name) || "client") + "?\nLinkul devine accesibil oricui îl are (nu e listat nicăieri).")) return;
+    if (!confirm((doc.original ? "Atenție: pagina originală rămâne cea vizibilă la acest link până o scoatem din repo (un commit + deploy). Versiunea din generator se pregătește sub același link.\n\n" : "") + "Publici oferta pentru " + ((doc.client && doc.client.name) || "client") + "?\nLinkul devine accesibil oricui îl are (nu e listat nicăieri).")) return;
     const c = cleanCfg();
     await send(btn, "Ofertă · publică · " + c.client.name + " · " + money(c.totals.total) + (picks.length ? " · experiențe: " + picks.map((p) => p.id + (p.price != null ? " " + money(p.price) : "")).join(", ") : ""), { type: "offer-publish", offerId: doc.id, slug: doc.slug || null, offer: c, picks }, "Trimis la publicare. Linkul apare aici.");
   }

@@ -327,7 +327,7 @@ function proposals(req, res) {
   let full = join(PROPOSALS, rel), st = full.startsWith(PROPOSALS + "/") ? statOr(full) : null;
   if (!st || !st.isFile()) {
     const m = /^\/([^/]+)\/([^/]+)$/.exec(rel);
-    if (m && PROPOSAL_SLUG_RE.test(m[1]) && PROPOSAL_FILE_RE.test(m[2])) { full = join(PROPOSALS_DATA, m[1], m[2]); st = statOr(full); }
+    if (m && PROPOSAL_SLUG_RE.test(m[1]) && PROPOSAL_FILE_RE.test(m[2])) { full = join(PROPOSALS_DATA, m[1], m[2].toLowerCase()); /* the bridge writes lowercase names: an old "-offer-EN.html" link still works */ st = statOr(full); }
   }
   if (!st || !st.isFile()) { res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8", "X-Robots-Tag": "noindex, nofollow" }); return res.end("Not found"); }
   const ext = extname(full).toLowerCase();
