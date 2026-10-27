@@ -29,7 +29,7 @@ export const SERVICES = [
 export const STREETS = { A: ["Coffee Street", "#28C840"], B: ["Fintech Boulevard", "#119BFE"], C: ["Medical Avenue", "#F28BA8"], D: ["The Shortest Shortcut", "#FED012"] };
 export const PROJECTS = [
   { name: "Two Minutes", cat: "Brand · Boxes · Film", c: "#111111", t: "#fff", poster: "Two minutes, forever", img: "tmCover", badge: "bTm", page: "two-minutes", desc: "A specialty coffee shop brand made to be loved fast and remembered long. Two minutes to fall for it, a lifetime as a regular.", street: "A" },
-  { name: "Two Min Lab", cat: "Drinks · Tonic Ionic", c: "#C6402E", t: "#ffffff", poster: "Bottled in the yard", street: "A", page: "two-minutes", desc: "The Two Minutes lab: Tonic Ionic and the drinks bottled by hand, in small batches, in Bucharest." },
+  { name: "Two Min Lab", cat: "Flavour lab · Identity", c: "#C6402E", t: "#ffffff", poster: "Made in the yard", street: "A", page: "two-minutes", desc: "The Two Minutes flavour laboratory, micro-roastery and kitchen, with a mark and signs of its own." }, // r340 (Daniel): the lab's drinks are off the site for now
   { name: "OMA Coffee", cat: "Brand · Coffee · Brașov", c: "#437743", t: "#fcfad4", poster: "We're brewing something", img: "m:places/oma", page: "oma-coffee", desc: "A specialty coffee shop at the foot of the mountains. Passionate baristas who love the craft of coffee as much as the peaks around them, and a brand as warm as the cup.", street: "A" },
   { name: "Sip Coffee & Wine", cat: "Branding · Communication", c: "#C9A227", t: "#14120c", poster: "Design in a cup", img: "m:cs/Sip_portfolio-Cromaticstudios", desc: "Complementing one of the best designed coffee shops in town with a branding that fits.", street: "A", page: "sip-coffee-wine" },
   { name: "Pain Plaisir", cat: "Video · Photo · Product design", c: "#ffffff", t: "#111111", poster: "Le bon pain", street: "A", page: "pain-plaisir", desc: "A French-style bakery with a real oven at its heart. We made their video production, the photo shootings and the product design." },
@@ -201,7 +201,7 @@ export const CASES = {
     eyebrow: "Two Minutes · Brand development & media · By Cromatic Studios",
     title: "Two minutes to fall for it. A lifetime as a regular.",
     lead: "Identity, packaging, editorial and film for a specialty coffee brand made to be loved fast and remembered long. Poured daily at Aricescu 50A. Two Minutes has been our client and our neighbour for a decade.",
-    meta: ["Brand · Packaging · Editorial · Film", "Two Min Lab drinks · Boxes · Merch"],
+    meta: ["Brand · Packaging · Editorial · Film", "Two Min Lab · Boxes · Merch"],
     youtube: "m4-5T3i3wN0",
     // r339 (Daniel: "the YouTube video at the start does not start by itself"): the opening film starts by itself, muted, looping (build/film.mjs)
     youtubeAuto: true,
@@ -212,9 +212,10 @@ export const CASES = {
       { h: "Two Minutes × Ghica Popa", p: "A T-shirt drop with Ghica Popa, shot in the studio with friends, a guitar and a pile of tees.", layout: "tall", imgs: ["m:tm/tee-033", "m:tm/tee-081", "m:tm/tee-014", "m:tm/tee-045", "m:tm/tee-022", "m:tm/tee-041", "m:tm/tee-071"], pos: [null, "47% 50%", null, null, null, "38% 50%"] },
       { imgs: ["m:tm/tee-048"], caps: ["Friends, a guitar and the tees, in the studio."] },
       { h: "The boxes", p: "Green, pink, blue: coffee boxes designed to be picked up like favourite books. Straight from the shelf at Aricescu 50A.", vids: ["boxesvideo_default"], layout: "side" },
-      // r339 (Daniel: "scoatem sticlele de tonic ionic"): the two Tonic Ionic bottles are out; Chinotto and Amaro stay, side by side
-      { h: "Two Min Lab", p: "Two Minutes's flavour laboratory, micro-roastery and kitchen: the space where signature flavours like the <i>Chinotto</i> and the <i>Amaro</i> are perfected before they reach your cup. Bottled by hand, in small batches, in Bucharest.", imgs: ["labChinotto", "labAmaro"], caps: ["Chinotto · Citrus myrtifolia", "Amaro · bitter formula"] },
-      { h: "In-house work", p: "From the first sketches on grid paper to the acrylic signs, fresh from the maker.", imgs: ["labSketch", "labSigns", "labEditorial"], vids: ["labBox", "labMaking"] },
+      // r340 (Daniel: the Two Min Lab drinks are off the site for now): no bottles; the lab keeps its own identity work
+      // (the logo sketches, the acrylic signs, the box film), under its own name; the label making-of film and the editorial
+      // page (both on the Tonic Ionic) went with the bottles
+      { h: "Two Min Lab", p: "Two Minutes's flavour laboratory, micro-roastery and kitchen got an identity of its own: from the first sketches on grid paper to the acrylic signs, fresh from the maker.", imgs: ["labSketch", "labSigns"], vids: ["labBox"] },
       { h: "Inside the boxes", p: "Every box carries a card with the coffee's story: The Blueprint, Silent Punch, Mosto, set in a typewriter voice, with the recipe on the back. And cubes for the Roastery and the Lab.", imgs: ["m:tm/card-blueprint", "m:tm/card-silent", "m:tm/card-mosto", "m:tm/card-silent-photo", "m:tm/cube-roastery", "m:tm/cubes-lab"] },
       { h: "Ten years", p: "Two Minutes turned ten: 10 YRS, 10 ANI, in the brand's red and green.", imgs: ["m:tm/ten-years", "m:tm/ten-ani", "m:tm/ten-green"] }
     ]

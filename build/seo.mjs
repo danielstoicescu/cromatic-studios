@@ -34,7 +34,7 @@ export const SERVICES = [
 
 export const WORK = [
   ["Slow Coffee Festival", "Brand, product", "The biggest coffee lovers community in the country; a brand universe upgraded year after year since 2021."],
-  ["Two Minutes", "Brand, coffee, retail", "A specialty coffee shop brand made to be loved fast and remembered long, with Two Min Lab bottled drinks and coffee packaging."],
+  ["Two Minutes", "Brand, coffee, retail", "A specialty coffee shop brand made to be loved fast and remembered long, with the Two Min Lab and its coffee packaging."],
   ["Steam Coffee Shop", "Branding, growth, product", "A pioneer coffee brand refreshed for its community."],
   ["Craft Coffee", "Branding, website", "The Romanian distributor of La Marzocco, Mazzer, PuQPress and Fellow: a brand and a shop built to equip the passion for coffee."],
   ["Artisan Coffee Gear", "Brand universe, web", "Coffee gear in a tailor made brand world, from the letterform pattern to the webshop."],
