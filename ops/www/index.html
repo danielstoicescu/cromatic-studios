@@ -1872,7 +1872,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
         <form id="cs-form" novalidate>
           <div class="field"><label for="cs-email">Emailul clientului</label><input class="inp" id="cs-email" type="email" required autocomplete="off" placeholder="nume@brand.ro"></div>
           <div class="field"><label for="cs-name">Client / brand (opțional)</label><input class="inp" id="cs-name" type="text" maxlength="120" autocomplete="off" placeholder="Ex.: Litorsal"></div>
-          <div class="field"><label for="cs-edition">Ediția</label><select class="inp" id="cs-edition"><option value="blank">blank</option></select></div>
+          <div class="field"><label for="cs-edition">Ediția</label><select class="inp" id="cs-edition"><option value="blank">The Core complet (blank)</option><option value="pre">Pregătire acasă · ~40 min, apoi The Core complet</option></select></div>
           <div class="field"><label id="cs-lang-l">Limba</label><div class="seg" role="group" aria-labelledby="cs-lang-l"><button type="button" data-lang="ro" aria-pressed="true">RO</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div></div>
         </form>
         <div class="row sp" style="justify-content:space-between"><span class="mono muted" id="cs-hint">Claude o pornește la următoarea verificare și îți dă linkul aici.</span><button class="btn k" type="submit" form="cs-form" id="cs-send"><svg class="ic"><use href="#i-send"/></svg><span>Cere sesiunea</span></button></div>
@@ -2774,6 +2774,8 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
       if (c.note) f.append(el("div", "note", c.note));
       const rl = coreReport(c); if (rl) f.append(rl);
       const show = el("button", "btn sm k"); show.type = "button"; show.append(icon("i-lock"), el("span", "", "Arată linkul")); show.onclick = () => showCore(c.id); f.append(show);
+      // TASK-136: a prep session (stage "pre") moves to the full Core on the same link: a request the cron runs (upgrade API, no mail)
+      if (c.stage === "pre") { chips.append(el("span", "ver", "Pregătire" + (c.pre && c.pre.submitted ? " · trimisă" : ""))); const up = el("button", "btn sm y"); up.type = "button"; up.append(el("span", "", "Trece la The Core complet")); up.onclick = async () => { up.disabled = true; const ok = await guard(() => db.collection("coreRequests").add({ type: "upgrade", coreId: c.id, email: c.email || "", name: c.name || c.id, status: "new", createdAt: now(), requestedBy: me || null }), "Cerere trimisă. Trece pe The Core complet în câteva minute, pe același link."); if (!ok) up.disabled = false; }; f.append(up); }
       b.setAttribute("aria-label", "Linkul pentru " + (c.name || c.id));
       inner.append(f, b); card.append(inner); g.append(card);
       if (CORE.open.has(c.id)) { card.classList.add("still"); coreBack(c, card); setFace(card, true); requestAnimationFrame(() => requestAnimationFrame(() => card.classList.remove("still"))); }

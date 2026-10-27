@@ -95,7 +95,7 @@
         if (name === "inbox") return addInbox(doc);
         if (name === "coreRequests" && user && user.role === "admin") {
           const d = doc || {};
-          return addInbox({ kind: "command", text: "Sesiune nouă în The Core: " + [d.name, d.email, d.edition, String(d.lang || "").toUpperCase()].filter(Boolean).join(" · "), payload: { type: "core-request", request: d } });
+          return addInbox({ kind: "command", text: d.type === "upgrade" ? "The Core: trece la The Core complet · " + (d.name || d.coreId) : "Sesiune nouă în The Core: " + [d.name, d.email, d.edition === "pre" ? "pregătire acasă" : d.edition, String(d.lang || "").toUpperCase()].filter(Boolean).join(" · "), payload: { type: "core-request", request: d } }); // TASK-136: prep sessions and the upgrade
         }
         throw err("read_only");
       },
