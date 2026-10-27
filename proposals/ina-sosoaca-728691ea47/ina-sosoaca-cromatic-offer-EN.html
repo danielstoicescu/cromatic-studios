@@ -369,6 +369,40 @@ h1 .h-verbs{display:block;margin-top:.22em;font-size:.82em}
 .uvp-x em{display:block;font-style:normal;font-size:10px;opacity:.6;margin-bottom:4px}
 td.c .cnt{display:block;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;opacity:.55;margin-bottom:2px}
 @media(max-width:560px){.uvp-x{grid-template-columns:1fr}}
+
+/* ---------- Gantt (calendar) ---------- */
+.gantt{border:var(--st);border-radius:30px;background:var(--cx-white);overflow:hidden;margin-bottom:22px}
+.g-cap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 24px;background:var(--cx-bar);border-bottom:var(--st)}
+.g-key{display:inline-flex;align-items:center;gap:8px}
+.g-key i{width:11px;height:11px;background:var(--cx-ink);transform:rotate(45deg);display:inline-block}
+.g-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.g-in{min-width:760px;padding:6px 24px 14px}
+.gr{display:grid;grid-template-columns:190px 1fr;align-items:center;border-bottom:2px solid var(--cx-line)}
+.gr:last-child{border-bottom:0}
+.gl{padding:12px 14px 12px 0;position:sticky;left:0;z-index:2;background:var(--cx-white);align-self:stretch;display:flex;flex-direction:column;justify-content:center}
+.gl b{display:block;font-weight:800;font-size:15px;letter-spacing:-.015em;line-height:1.15}
+.gl small{font-size:12px;font-weight:500;opacity:.6}
+.gt{position:relative;height:52px}
+.gx{position:absolute;top:0;bottom:0;left:var(--s);width:2px;background:var(--cx-line)}
+.gr-h .gt{height:40px;background:none}
+.gw{position:absolute;top:8px;left:var(--s);width:var(--w);font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;padding-left:6px;border-left:2px solid var(--cx-ink);line-height:1.3;white-space:nowrap;overflow:hidden}
+.gw b{display:block;font-weight:700}
+.gb{position:absolute;top:9px;bottom:9px;left:var(--s);width:var(--w);border:var(--st2);border-radius:999px;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:0 10px;overflow:hidden;white-space:nowrap;
+  transform-origin:left center;transform:scaleX(0);transition:transform .7s cubic-bezier(.2,.8,.3,1);transition-delay:calc(var(--d)*110ms + 150ms)}
+.gantt.in .gb{transform:none}
+.gb i{font-style:normal;font-weight:800;font-size:12.5px}
+.gb em{font-style:normal;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.08em;opacity:.7}
+.gb-y{background:var(--cx-yellow)}.gb-b{background:var(--cx-blue)}.gb-g{background:var(--cx-green)}.gb-p{background:var(--cx-purple)}.gb-r{background:var(--cx-coral)}
+.gr-m .gt{height:72px;background:none}
+.gm{position:absolute;top:14px;left:var(--s);transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;width:120px;text-align:center}
+.gm i{width:14px;height:14px;background:var(--cx-ink);transform:rotate(45deg);display:block}
+.gm small{font-size:11px;font-weight:700;line-height:1.2}
+.gm:last-child{transform:translateX(-85%)}
+.gg{position:absolute;top:0;height:8px;left:var(--s);width:var(--w);border-radius:0 0 6px 6px;background:repeating-linear-gradient(45deg,var(--cx-line) 0 3px,transparent 3px 7px)}
+.g-keys{display:inline-flex;gap:18px}
+.g-key-f i{transform:none;width:16px;height:10px;border-radius:3px;background:repeating-linear-gradient(45deg,#bdbdbd 0 3px,transparent 3px 7px)}
+.gw-end{left:auto;right:0;width:auto;border-left:0;border-right:2px solid var(--cx-ink);padding:0 6px 0 0;text-align:right}
+@media(prefers-reduced-motion:reduce){.gb{transform:none}}
 .bi-go{text-decoration:none;background:var(--cx-ink);color:var(--cx-white)}
 </style>
 </head>
@@ -655,6 +689,14 @@ td.c .cnt{display:block;font-family:var(--mono);font-size:10px;font-weight:600;l
 <!-- 05 TIMELINE -->
 <section class="wrap" id="calendar" style="padding-top:0">
   <div class="sec-head rv"><span class="sec-n">05 · Timeline</span><h2>Done by <span class="tpill" style="--p:var(--cx-green)">15 December</span>.</h2></div>
+  <div class="gantt rv" role="img" aria-label="Gantt · 2 November – 15 December 2026">
+    <div class="g-cap mono"><span>Gantt · 2 November – 15 December 2026</span><span class="g-keys"><span class="g-key g-key-f"><i></i>Feedback</span><span class="g-key"><i></i>Milestone</span></span></div>
+    <div class="g-scroll"><div class="g-in">
+      <div class="gr gr-h"><div class="gl"></div><div class="gt"><span class="gw" style="--s:0.000%;--w:15.909%"><b>W1</b>2 Nov</span><span class="gw" style="--s:15.909%;--w:15.909%"><b>W2</b>9 Nov</span><span class="gw" style="--s:31.818%;--w:15.909%"><b>W3</b>16 Nov</span><span class="gw" style="--s:47.727%;--w:15.909%"><b>W4</b>23 Nov</span><span class="gw" style="--s:63.636%;--w:15.909%"><b>W5</b>30 Nov</span><span class="gw" style="--s:79.545%;--w:15.909%"><b>W6</b>7 Dec</span><span class="gw gw-end" style="--s:95.455%;--w:4.545%"><b>W7</b>14 Dec</span></div></div>
+      <div class="gr"><div class="gl"><b>The Core 3.0</b><small>At home + studio workshop</small></div><div class="gt"><span class="gx" style="--s:15.909%"></span><span class="gx" style="--s:31.818%"></span><span class="gx" style="--s:47.727%"></span><span class="gx" style="--s:63.636%"></span><span class="gx" style="--s:79.545%"></span><span class="gx" style="--s:95.455%"></span><span class="gb gb-y" style="--s:0.000%;--w:15.909%;--d:0"><i>2–8 Nov</i><em>7 days</em></span></div></div><div class="gr"><div class="gl"><b>Visual directions ×3</b><small>Three visual routes</small></div><div class="gt"><span class="gx" style="--s:15.909%"></span><span class="gx" style="--s:31.818%"></span><span class="gx" style="--s:47.727%"></span><span class="gx" style="--s:63.636%"></span><span class="gx" style="--s:79.545%"></span><span class="gx" style="--s:95.455%"></span><span class="gb gb-b" style="--s:25.000%;--w:18.182%;--d:1"><i>13–20 Nov</i><em>8 days</em></span></div></div><div class="gr"><div class="gl"><b>Brand canvases</b><small>3 or 2 canvases</small></div><div class="gt"><span class="gx" style="--s:15.909%"></span><span class="gx" style="--s:31.818%"></span><span class="gx" style="--s:47.727%"></span><span class="gx" style="--s:63.636%"></span><span class="gx" style="--s:79.545%"></span><span class="gx" style="--s:95.455%"></span><span class="gb gb-g" style="--s:43.182%;--w:31.818%;--d:2"><i>21 Nov – 4 Dec</i><em>14 days</em></span></div></div><div class="gr"><div class="gl"><b>Brand book</b><small>In parallel with the deliverables</small></div><div class="gt"><span class="gx" style="--s:15.909%"></span><span class="gx" style="--s:31.818%"></span><span class="gx" style="--s:47.727%"></span><span class="gx" style="--s:63.636%"></span><span class="gx" style="--s:79.545%"></span><span class="gx" style="--s:95.455%"></span><span class="gb gb-p" style="--s:79.545%;--w:11.364%;--d:3"><i>7–11 Dec</i></span></div></div><div class="gr"><div class="gl"><b>Deliverables</b><small>In parallel with the brand book</small></div><div class="gt"><span class="gx" style="--s:15.909%"></span><span class="gx" style="--s:31.818%"></span><span class="gx" style="--s:47.727%"></span><span class="gx" style="--s:63.636%"></span><span class="gx" style="--s:79.545%"></span><span class="gx" style="--s:95.455%"></span><span class="gb gb-r" style="--s:79.545%;--w:11.364%;--d:4"><i>7–11 Dec</i></span></div></div>
+      <div class="gr gr-m"><div class="gl"></div><div class="gt"><span class="gg" style="--s:15.909%;--w:9.091%"></span><span class="gg" style="--s:75.000%;--w:4.545%"></span><span class="gg" style="--s:90.909%;--w:6.818%"></span><span class="gm" style="--s:42.045%" title="Directions presented"><i></i><small>Directions presented</small></span><span class="gm" style="--s:73.864%" title="Canvases presented · you pick"><i></i><small>Canvases presented · you pick</small></span><span class="gm" style="--s:98.864%" title="Final delivery"><i></i><small>Final delivery</small></span></div></div>
+    </div></div>
+  </div>
   <div class="bs rv">
     <div class="bs-head"><span class="gk a">Start</span><b>The Core 3.0 in the week of 2 – 8 November</b><span class="gd">Same dates for both options</span></div>
     <div class="bs-rows">
