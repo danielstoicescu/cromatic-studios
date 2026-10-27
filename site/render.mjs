@@ -4,6 +4,7 @@
 import { NAV, CHAPTERS, SERVICES, PROJECTS, ZDROVIT_BRANDS, STREETS, CLIENT_BADGES, FRIENDS, CREW, CREW_INFO, CREW_COLORS, CREW_PHOTOS, CREW_FACE_VARS, FORM, CASES, CANVASES, OFFICES } from "./data.mjs";
 import { STUDIO, FAQ, studioNode } from "../build/seo.mjs";
 import { SAME_AS, clip } from "../build/seo-pages.mjs";
+import { existsSync } from "node:fs";
 const HUBS = await import("./hubs.mjs").catch(() => ({}));
 const INDUSTRIES = HUBS.INDUSTRIES || [], SERVICE_PAGES = HUBS.SERVICE_PAGES || [];
 
@@ -175,7 +176,9 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       <span class="bc-cat mono">${esc(p.cat)}</span>
       <span class="bc-body"><span class="bc-name">${esc(p.name)}</span><span class="bc-note"><span class="bc-desc">${esc(p.desc)}</span>
       ${p.page ? `<span class="bc-cta">Read the case <i>→</i></span>` : p.wip ? `<span class="bc-cta mono">Work in progress</span>` : ""}</span></span>`;
-    const cls = `bcard b-${size}${media ? " has-media" : ""}`;
+    // TASK-139 (Daniel, 29 Oct): the arrow's circle takes the brand's own colour (p.c); a dark one gets a light arrow
+    const dk = (() => { const h = String(p.c || "").replace("#", ""); if (h.length !== 6) return false; const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); return 0.2126 * r + 0.7152 * g + 0.0722 * b < 140; })();
+    const cls = `bcard b-${size}${media ? " has-media" : ""}${dk ? " bc-dk" : ""}`;
     const st = `--bc:${p.c};--bt:${p.t};--i:${i}`;
     return p.page ? `<a class="${cls}" href="/work/${p.page}/" style="${st}">${inner}</a>` : `<article class="${cls}" style="${st}">${inner}</article>`;
   };
@@ -283,76 +286,51 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     // a landscape cut for screens and the stories' own 9:16 for phones. The still above stays the poster and the LCP:
     // site.js gives the video its sources only after load, only while the hero is on screen, never with reduced motion,
     // Save-Data or a 2g connection. The whole card goes to the map (.hc-hit); the buttons keep their own links.
+    // TASK-139 (Daniel, 29 Oct): the first fold is the drive. Vera's 9 s loop (site/media/drive-loop/, 2:1 and a 4:5
+    // phone cut) fills the hero card, its first frame is the poster and the LCP; the "Drive it yourself" band it was
+    // made for is gone. site.js gives the video its sources only after load, only while the hero is on screen, never
+    // with reduced motion, Save-Data or a 2g connection. The whole card goes to the map (.hc-hit)
+    const dl = (n) => A(`m:drive-loop/${n}`);
+    const hp = { d: dl("poster.jpg"), m: dl("poster-m.jpg") };
     const heroVideo = () => {
-      const v = (n) => A(`m:hero/${n}`);
-      const dm = v("drive-d"), dw = v("drive-d-av1"), mm = v("drive-m"), mw = v("drive-m-av1");
-      if (!dm || !mm) return "";
-      return `<video class="hc-vid" muted loop playsinline preload="none" disablepictureinpicture aria-hidden="true" tabindex="-1" data-d="${dm.src}"${dw ? ` data-dw="${dw.src}"` : ""} data-m="${mm.src}"${mw ? ` data-mw="${mw.src}"` : ""}></video>
+      const dm = dl("drive-loop.mp4"), dw = dl("drive-loop.webm"), mm = dl("drive-loop-m.mp4"), mw = dl("drive-loop-m.webm");
+      if (!dm && !dw) return "";
+      return `<video class="hc-vid" muted loop playsinline preload="none" disablepictureinpicture aria-hidden="true" tabindex="-1"${dm ? ` data-d="${dm.src}"` : ""}${dw ? ` data-dw="${dw.src}"` : ""}${mm ? ` data-m="${mm.src}"` : ""}${mw ? ` data-mw="${mw.src}"` : ""}></video>
     <button class="hc-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>`;
     };
-    // TASK-139 (Daniel, 28 Oct): the way into the map is a band half a screen high: a 9-second seamless loop of the
-    // diorama renders, slowed down, with one thing on it, the CTA. The poster is its still; site.js gives the video its
-    // sources only near the screen and never with reduced motion, Save-Data or 2g. Replaces the coffee stop's Lottie
-    // and its two buttons
-    // The loop is Vera's (TASK-139): site/media/drive-loop/drive-loop.{mp4,webm} and poster.jpg (optional phone cuts:
-    // drive-loop-m.{mp4,webm}, poster-m.jpg). Until they are in, a still of the diorama renders (drive-loop-still/) is
-    // the band's picture and there is no video
-    const drive9 = () => {
-      const v = (n) => A(`m:drive-loop/${n}`);
-      const pd = v("poster.jpg") || A("m:drive-loop-still/poster"), pm = v("poster-m.jpg") || (v("poster.jpg") ? null : A("m:drive-loop-still/poster-m"));
-      const dm = v("drive-loop.mp4"), dw = v("drive-loop.webm"), mm = v("drive-loop-m.mp4"), mw = v("drive-loop-m.webm");
-      if (!pd && !dm && !dw) return "";
-      const pic = pd ? `<picture class="d9-pic">${pm ? `<source media="(max-width: 700px)" srcset="${pm.src}" width="${pm.w}" height="${pm.h}">` : ""}<img src="${pd.src}"${pd.w ? ` width="${pd.w}" height="${pd.h}"` : ""} alt="" loading="lazy" decoding="async"></picture>` : "";
-      const video = dm || dw ? `<video class="d9-vid" muted loop playsinline preload="none" disablepictureinpicture aria-hidden="true" tabindex="-1"${dm ? ` data-d="${dm.src}"` : ""}${dw ? ` data-dw="${dw.src}"` : ""}${mm ? ` data-m="${mm.src}"` : ""}${mw ? ` data-mw="${mw.src}"` : ""}></video>
-      <button class="d9-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>` : "";
-      return `<section class="d9" aria-label="Drive it yourself: the 3D map of Bucharest">
-    <div class="d9-card">
-      ${pic}
-      ${video}
-      <a class="d9-hit" href="/" tabindex="-1" aria-hidden="true"></a>
-      <a class="d9-cta" href="/">${STAR}<span>Drive it yourself</span><i aria-hidden="true">→</i></a>
-    </div>
+    // TASK-139 (Daniel, 29 Oct): right under the hero, /onboarding/'s wall of work (three rows that slide in opposite
+    // directions with the scroll, site.js), the covers /onboarding/ uses, every case page of PROJECTS once. The picture
+    // alone at rest; the name comes up on hover or focus (a first tap shows it on a touch screen, the second opens it)
+    const WALL_DIR = new URL("./onboarding/media/covers/", import.meta.url).pathname;
+    const wall = () => {
+      const seen = new Set(), list = PROJECTS.filter((x) => x.page && !seen.has(x.page) && seen.add(x.page) && existsSync(WALL_DIR + x.page + ".webp"));
+      if (list.length < 6) return "";
+      const per = Math.ceil(list.length / 3);
+      const card = (x, hid) => `<a class="pw-case" href="/work/${x.page}/" style="--bc:${x.c};--bt:${x.t}"${hid ? ' aria-hidden="true" tabindex="-1"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="${hid ? "" : esc(x.name)}" loading="lazy" decoding="async" width="560" height="380"><span class="pw-name" aria-hidden="true">${esc(x.name)}</span></a>`;
+      return `<section class="pwall" aria-label="Selected work">
+    <div class="pw-rows">${[0, 1, 2].map((r) => { const l = list.slice(r * per, r * per + per); return `<div class="pw-row">${l.map((x) => card(x, false)).join("")}${l.map((x) => card(x, true)).join("")}</div>`; }).join("")}</div>
   </section>`;
     };
-    const preload = hc ? `<link rel="preload" as="image" href="${hc.m.src}" media="(max-width: 700px)" fetchpriority="high">
-<link rel="preload" as="image" href="${hc.d.src}" media="(min-width: 701px)" fetchpriority="high">` : "";
+    const preload = hp.d ? `${hp.m ? `<link rel="preload" as="image" href="${hp.m.src}" media="(max-width: 700px)" fetchpriority="high">\n` : ""}<link rel="preload" as="image" href="${hp.d.src}"${hp.m ? ' media="(min-width: 701px)"' : ""} fetchpriority="high">` : "";
     return `${head({ title: SITE_TITLE, desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, film and content for indie brands, startups and established firms.", path: "/site/", ld, preload })}
 ${header(true)}
 <main id="main">
   <section class="hero hero-city" aria-labelledby="hc-h">
    <div class="hc-card">
-    ${hc ? `<picture class="hc-pic"><source media="(max-width: 700px)" srcset="${hc.m.src}" width="${hc.m.w}" height="${hc.m.h}"><img src="${hc.d.src}" width="${hc.d.w}" height="${hc.d.h}" alt="Coffee Street in the 3D city of Bucharest, the vintage yellow ride outside Two Min Lab" fetchpriority="high" decoding="async"></picture>` : ""}
+    ${hp.d ? `<picture class="hc-pic">${hp.m ? `<source media="(max-width: 700px)" srcset="${hp.m.src}" width="${hp.m.w}" height="${hp.m.h}">` : ""}<img src="${hp.d.src}" width="${hp.d.w}" height="${hp.d.h}" alt="The 3D city of Bucharest at sunset, a vintage Dacia 1300 on the road" fetchpriority="high" decoding="async"></picture>` : ""}
     ${heroVideo()}
     <i class="hc-shade" aria-hidden="true"></i>
     <a class="hc-hit" href="/" tabindex="-1" aria-hidden="true"></a>
     <div class="wrap hc-in">
       <p class="eyebrow mono">Cromatic Studios · Bucharest · Since 2014</p>
-      <h1 class="hc-h" id="hc-h"><span class="hc-k">Nobody remembers a thumbnail.</span> <span class="hc-big">But someone could remember a <span class="pill hc-morph"><span>place.</span><span aria-hidden="true">facade.</span><span aria-hidden="true">brand.</span></span></span></h1>
-      <p class="hc-sub">Nine worlds over the same streets. One will feel like <span class="pill hc-pill-y">yours.</span> That’s how the right brand feels.</p>
+      <h1 class="hc-h" id="hc-h">A portfolio you can drive.</h1>
       <p class="hc-what">An independent studio for brand strategy, identity, websites, film and content.</p>
       <div class="btns hc-btns"><a class="btn btn-y" href="/">${STAR}<span>Take the 3D drive</span></a><a class="btn hc-ghost" href="#work">See the work <span aria-hidden="true">↓</span></a></div>
     </div>
-    <p class="hc-note"><span class="cupspin" aria-hidden="true"></span><span>There’s always a <span class="pill hc-mv">good</span> <span class="pill hc-pill-y">coffee</span> around.</span></p>
    </div>
   </section>
 
-  <section class="clients" aria-label="Clients">
-    <div class="wrap cl-head"><span class="cupspin" aria-hidden="true"></span><p class="eyebrow mono">Brands we grew with</p></div>
-    <div class="marquee" tabindex="-1">
-      <div class="mq-track">${[0, 1].map((r) => `<div class="mq-set"${r ? ' aria-hidden="true"' : ""}>${CLIENT_BADGES.map((b, i) => `<span class="logo-card" style="--d:${((i * 0.53) % 3).toFixed(2)}s;--r:${[-2.5, 1.8, -1.2, 2.4, -1.8, 1.2, -2.2, 2.6, -1.4][i % 9]}deg">${img(b, r ? "" : (PROJECTS.find((p) => p.badge === b)?.name || "Client"))}</span>`).join("")}</div>`).join("")}</div>
-    </div>
-  </section>
-
-  <section class="stats" aria-label="The studio in numbers">
-    <div class="wrap stats-in">
-      ${/* TASK-139: four numbers, centred; each counts up as it comes into view (site.js, data-n), the infinity draws itself */ ""}<p class="st" style="--sc:var(--y)"><b data-n="${new Set(PROJECTS.filter((x) => x.page).map((x) => x.page)).size + 2}">${new Set(PROJECTS.filter((x) => x.page).map((x) => x.page)).size + 2}</b><span>Case studies, every one on the map</span></p>
-      <p class="st" style="--sc:var(--g)"><b data-n="${Object.keys(STREETS).length}">${Object.keys(STREETS).length}</b><span>Streets, one for every industry</span></p>
-      <p class="st" style="--sc:#6cc4ff"><b data-n="4">4</b><span>Steps, from strategy to growth</span></p>
-      <p class="st st-inf" style="--sc:#ff8a78"><b>&infin;</b><span>Coffees. There is always a coffee.</span></p>
-    </div>
-  </section>
-
-  ${drive9()}
+  ${wall()}
 
   <section id="what" class="sec">
     <div class="wrap">
@@ -373,9 +351,17 @@ ${header(true)}
 
   <section id="work" class="sec sec-alt">
     <div class="wrap">
-      <p class="eyebrow mono">Selected work</p>
-      <h2 class="ptitle">${pill("Every place", "#FED012", -1.5)} ${pill("on the map", "#B098C8", 1)}</h2>
-      <p class="sec-lead">The same work as the 3D map, street by street: every street is an industry we know from the inside.</p>
+      ${/* TASK-139 (Daniel, 29 Oct): the city's still and the drive's opening words open the portfolio (they were the first
+         fold): one moment, "Every place on the map". The word turns place → facade → brand once, then rests */ ""}<div class="city-band">
+        ${hc ? `<picture class="cb-pic"><source media="(max-width: 700px)" srcset="${hc.m.src}" width="${hc.m.w}" height="${hc.m.h}"><img src="${hc.d.src}" width="${hc.d.w}" height="${hc.d.h}" alt="Coffee Street in the 3D city of Bucharest, the vintage yellow ride outside Two Min Lab" loading="lazy" decoding="async"></picture>` : ""}
+        <i class="cb-shade" aria-hidden="true"></i>
+        <div class="cb-in">
+          <p class="eyebrow mono">Every place on the map</p>
+          <h2 class="cb-h"><span class="cb-k">Nobody remembers a thumbnail.</span> <span class="cb-big">But someone could remember a <span class="cb-morph"><span>place.</span><span aria-hidden="true">facade.</span><span aria-hidden="true">brand.</span></span></span></h2>
+          <p class="cb-sub">Nine worlds over the same streets. One will feel like yours. That’s how the right brand feels.</p>
+          <p class="cb-lead">The same work as the 3D map, street by street: every street is an industry we know from the inside.</p>
+        </div>
+      </div>
       <nav class="streets-nav" aria-label="Industries">${Object.entries(STREETS).map(([k, [street, col]]) => PROJECTS.some((p) => p.street === k && !p.small) ? `<a href="#street-${k.toLowerCase()}" style="--dc:${col}"><span class="dom-sw"></span>${esc(street)}</a>` : "").join("")}</nav>
       ${workByStreet(covers)}
       <p class="friends"><span class="mono">Friends we made along the way</span> ${FRIENDS.map((f) => `<span class="fpill">${esc(f)}</span>`).join("")}</p>

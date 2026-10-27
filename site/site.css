@@ -1162,33 +1162,6 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
 @media (max-width: 420px) { .stats p.st span { font-size: 14px; } }
 @media (prefers-reduced-motion: reduce) { .js .stats p.st { opacity: 1; translate: none; } }
 
-/* 4 · the band into the map: half a screen, the loop under it, the CTA on it */
-.d9 { padding: clamp(40px, 6vw, 80px) 0 0; }
-.d9-card { position: relative; width: min(1480px, 100% - 28px); margin: 0 auto; height: clamp(300px, 50vh, 600px); height: clamp(300px, 50svh, 600px); border: var(--line); border-radius: 30px;
-  overflow: hidden; background: #2a2440; box-shadow: 0 5px 0 var(--ink); isolation: isolate; contain: layout paint; }
-.d9-pic, .d9-pic img, .d9-vid { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
-.d9-vid { opacity: 0; transition: opacity .8s var(--eoq); }
-.d9-vid.on { opacity: 1; }
-.d9-card::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(60% 70% at 50% 55%, rgba(13,12,9,.28), rgba(13,12,9,0) 70%); }
-.d9-hit { position: absolute; inset: 0; z-index: 1; }
-.d9-cta { position: absolute; left: 50%; top: 50%; z-index: 2; translate: -50% -50%; display: inline-flex; align-items: center; gap: 14px; padding: 20px 34px 21px 24px;
-  border: var(--line); border-radius: 999px; background: var(--y); color: var(--ink); text-decoration: none; white-space: nowrap;
-  font: 900 clamp(24px, 2.8vw, 40px)/1 var(--f); letter-spacing: -.025em; box-shadow: 0 5px 0 var(--ink);
-  transition: translate .5s var(--bounce), box-shadow .5s var(--bounce), scale .5s var(--bounce); }
-.d9-cta .cup-btn { --cs: clamp(40px, 3.6vw, 56px); }
-.d9-cta i { font-style: normal; display: inline-block; transition: translate .45s var(--bounce); }
-.d9-card:hover .d9-cta, .d9-cta:focus-visible { translate: -50% calc(-50% - 4px); box-shadow: 0 9px 0 var(--ink); scale: 1.04; }
-.d9-card:hover .d9-cta i, .d9-cta:focus-visible i { translate: 6px 0; }
-.d9-cta:active { translate: -50% calc(-50% + 2px); box-shadow: 0 2px 0 var(--ink); transition-duration: .12s; }
-.d9-cta:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
-.d9-pp { position: absolute; right: 16px; bottom: 16px; z-index: 3; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border: var(--line); border-radius: 50%;
-  background: var(--paper); color: var(--ink); cursor: pointer; box-shadow: 0 2px 0 var(--ink); transition: translate .45s var(--bounce), box-shadow .45s var(--bounce); }
-.d9-pp[hidden] { display: none; }
-.d9-pp:hover { translate: 0 -2px; box-shadow: 0 4px 0 var(--ink); }
-.d9-pp i { width: 12px; height: 14px; background: linear-gradient(90deg, var(--ink) 0 4px, transparent 4px 8px, var(--ink) 8px 12px); }
-.d9-pp[aria-pressed="true"] i { width: 0; height: 0; margin-left: 4px; background: none; border-left: 12px solid var(--ink); border-top: 7.5px solid transparent; border-bottom: 7.5px solid transparent; }
-@media (max-width: 700px) { .d9-card { border-radius: 24px; width: calc(100% - 24px); } .d9-cta { padding: 15px 24px 16px 16px; gap: 10px; } .d9-pp { right: 12px; bottom: 12px; width: 36px; height: 36px; } }
-@media (prefers-reduced-motion: reduce) { .d9-vid, .d9-pp { display: none !important; } }
 
 /* 5 · the four chapters: one road from a dream to a crowd. The road fills with the scroll (--rp); each card has its
    number on the road, its title (the old subtitle), its words and its tags. Pointing at (or focusing into) a card
@@ -1220,6 +1193,7 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
 
 /* 6 · a street's opening: see 8 (the street bands) */
 #work { overflow-x: clip; }
+
 /* 7 · the crew: the words, then the ten of us bigger, in a wave; under them the studio as a collage */
 .studio { grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 34px 56px; align-items: center; }
 .studio .crew { display: flex; flex-wrap: wrap; justify-content: center; gap: 26px 18px; padding: 10px 0 30px; }
@@ -1263,7 +1237,8 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
 @media (hover: none) { .studio .photos figcaption { opacity: 1; translate: 0 0; } }
 @media (prefers-reduced-motion: reduce) { .js .studio .crew li { opacity: 1; } }
 
-/* ==== TASK-139 · r346 (Daniel, 29 Oct): the streets on their own diorama clips. No outlined letters, no decorative pills ==== */
+/* ==== TASK-139 · r346 (Daniel, 29 Oct): the drive in the first fold, the wall of work under it, the city opening the
+   portfolio, the streets on their own diorama clips. No outlined letters, no decorative pills ==== */
 
 /* 8 · a street's opening band: its diorama clip full-bleed, parallax with the scroll (--bp 0 → 1 while it crosses the
    screen, site.js): the picture slower than the page and settling from a slight zoom, the name faster than it */
@@ -1309,6 +1284,76 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
   .sb-vid, .sb-pp { display: none !important; } .street-intro, .dom-street { --sp: 1 !important; }
 }
 
+/* 9 · the city opens the portfolio: its still, the drive's opening words, "Every place on the map" */
+.city-band { position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: flex-end; min-height: clamp(480px, 74vh, 760px); margin: 0 0 40px;
+  border: var(--line); border-radius: 30px; box-shadow: 0 5px 0 var(--ink); color: var(--paper); background: #2a2622; }
+.cb-pic, .cb-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+.cb-shade { position: absolute; inset: 0; z-index: -1; background: radial-gradient(110% 95% at 18% 92%, rgba(13,12,9,.78), rgba(13,12,9,.12) 66%), linear-gradient(0deg, rgba(13,12,9,.5), transparent 55%); }
+.cb-in { padding: clamp(28px, 4.4vw, 64px); max-width: 1000px; }
+.city-band .eyebrow { color: rgba(251,250,245,.78); }
+.cb-h { font-size: clamp(40px, 5.8vw, 92px); font-weight: 900; line-height: .98; letter-spacing: -.045em; margin: 0 0 22px; max-width: 12.6em; text-shadow: 0 4px 40px rgba(0,0,0,.28); }
+.cb-k { display: block; font-size: .36em; font-weight: 800; line-height: 1.15; letter-spacing: -.02em; color: rgba(251,250,245,.86); margin-bottom: .45em; }
+.cb-big { display: block; }
+.cb-morph { display: inline-grid; color: var(--y); }
+.cb-morph > span { grid-area: 1 / 1; }
+.cb-morph > span + span { opacity: 0; }
+.city-band.in .cb-morph > span:nth-child(1) { animation: hcOut .45s var(--eoq) .9s forwards; }
+.city-band.in .cb-morph > span:nth-child(2) { animation: hcIn .55s var(--eoq) 1.1s both, hcOut .45s var(--eoq) 2.7s forwards; }
+.city-band.in .cb-morph > span:nth-child(3) { animation: hcIn .55s var(--eoq) 2.9s both; }
+.cb-sub { font-size: clamp(18px, 1.6vw, 22px); font-weight: 500; line-height: 1.42; max-width: 32em; margin: 0 0 10px; color: rgba(251,250,245,.95); }
+.cb-lead { font-size: 17px; line-height: 1.45; max-width: 36em; margin: 0; color: rgba(251,250,245,.74); }
+@media (max-width: 700px) {
+  .city-band { min-height: min(132vw, 86svh); border-radius: 24px; margin-bottom: 28px; }
+  .cb-h { font-size: min(10.6vw, 5.6svh); line-height: 1; }
+  .cb-k { font-size: .46em; }
+  .cb-sub { font-size: 17px; } .cb-lead { font-size: 15px; }
+  .cb-shade { background: linear-gradient(0deg, rgba(13,12,9,.84) 0%, rgba(13,12,9,.58) 52%, rgba(13,12,9,.06) 82%); }
+}
+@media (prefers-reduced-motion: reduce) { .cb-morph > span { animation: none !important; } .cb-morph > span:nth-child(1), .cb-morph > span:nth-child(2) { opacity: 0; } .cb-morph > span:nth-child(3) { opacity: 1; } }
+
+/* 10 · the first fold: the drive. The hero's words only (the city's opening words moved to the portfolio) */
+.hero-city .hc-h { max-width: 9.6em; }
+.hc-pic img { object-position: 50% 55%; }
+.hero-city .hc-what { font-size: clamp(18px, 1.6vw, 22px); color: rgba(251,250,245,.92); max-width: 30em; }
+
+/* 11 · the wall of work under the hero (/onboarding/'s wall): three rows sliding in opposite directions with the
+   scroll (site.js); the picture alone at rest, the name on hover or focus (a first tap on a touch screen) */
+.pwall { padding: clamp(26px, 3.6vw, 52px) 0 clamp(48px, 6vw, 90px); overflow: hidden; }
+.pw-rows { display: grid; gap: 16px; }
+.pw-row { display: flex; gap: 16px; width: max-content; will-change: transform; }
+.pw-case { position: relative; flex: 0 0 auto; width: clamp(220px, 24vw, 340px); border-radius: 20px; overflow: hidden; isolation: isolate; text-decoration: none; color: #fff;
+  border: 1px solid var(--ink); box-shadow: 0 3px 0 var(--ink); background: var(--bc); transition: translate .45s var(--bounce), box-shadow .45s var(--bounce); }
+.pw-case img { display: block; width: 100%; height: auto; aspect-ratio: 56 / 38; object-fit: cover; transition: scale .7s var(--eoq); }
+.pw-case::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13,12,9,0) 42%, rgba(13,12,9,.72)); opacity: 0; transition: opacity .35s var(--eoq); }
+.pw-name { position: absolute; left: 16px; right: 16px; bottom: 14px; z-index: 1; font: 800 clamp(16px, 1.3vw, 20px)/1.1 var(--f); letter-spacing: -.015em; opacity: 0; translate: 0 10px;
+  transition: opacity .3s var(--eoq), translate .5s var(--bounce); }
+.pw-case:is(:hover, :focus-visible, .show) { translate: 0 -4px; box-shadow: 0 7px 0 var(--ink); }
+.pw-case:is(:hover, :focus-visible, .show) img { scale: 1.05; }
+.pw-case:is(:hover, :focus-visible, .show)::after, .pw-case:is(:hover, :focus-visible, .show) .pw-name { opacity: 1; translate: 0 0; }
+.pw-case:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+:is(html:not(.js)) .pw-row, .rm .pw-row { width: auto; overflow-x: auto; padding: 4px 16px 10px; }
+@media (max-width: 700px) { .pw-rows, .pw-row { gap: 12px; } .pw-case { width: 62vw; border-radius: 16px; } }
+@media (prefers-reduced-motion: reduce) { .pw-row { width: auto; overflow-x: auto; padding: 4px 16px 10px; transform: none !important; } }
+
+/* 12 · portfolio cards, on hover: more air between the name, the category, the brief and the arrow; the arrow's circle
+   in the brand's own colour (--bc, the card's colour in site/data.mjs), a light arrow on a dark one */
+a.bcard .bc-name::after { background-color: var(--bc); }
+a.bcard.bc-dk .bc-name::after { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 8h10.5M9 3.6 13.4 8 9 12.4' fill='none' stroke='%23ffffff' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+@media (hover: hover) {
+  .bc-body { padding: 24px; }
+  .bcard .bc-cat { left: 24px; top: 24px; padding: 7px 12px 6px; }
+  .bc-name { padding: 13px 56px 13px 19px; }
+  article.bcard .bc-name { padding-right: 19px; }
+  a.bcard .bc-name::after { right: 7px; width: 34px; height: 34px; margin-top: -17px; background-size: 15px 15px, auto; }
+  .bc-note { gap: 12px; }
+  .bcard:is(:hover, :focus-visible) .bc-note { max-height: 11em; margin-top: 14px; padding: 17px 19px 18px; }
+  .bcard:is(.b-s, .b-m, .b-w) .bc-note { gap: 8px; }
+  .bcard:is(.b-s, .b-m, .b-w):is(:hover, :focus-visible) .bc-note { margin-top: 10px; padding: 13px 16px 14px; }
+}
+
+/* 13 · the crew: more room between the rows of faces (the wave's offset no longer touches the row under it) */
+.studio .crew { gap: 74px 18px; padding-bottom: 54px; }
+@media (max-width: 600px) { .studio .crew { gap: 56px 12px; padding-bottom: 40px; } }
 /* (the street's name is the band's now: the road sign on its card stays for screen readers only, no name twice) */
 .street-band + .street-head { padding-top: clamp(28px, 3vw, 40px); }
 .street-band + .street-head .street-sign { position: absolute; width: 1px; height: 1px; padding: 0; margin: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; box-shadow: none; }

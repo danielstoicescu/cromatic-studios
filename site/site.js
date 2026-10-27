@@ -286,7 +286,7 @@
       let seen = false, loaded = false, paused = false;
       const set = () => {
         const s = hv.dataset, m = mq.matches;
-        hv.innerHTML = [[m ? s.mw : s.dw, 'video/webm; codecs="av01.0.08M.08"'], [m ? s.m : s.d, "video/mp4"]].filter((x) => x[0]).map(([u, t]) => `<source src="${u}" type='${t}'>`).join("");
+        hv.innerHTML = [[m ? s.mw : s.dw, 'video/webm; codecs="vp9"'], [(m && s.m) || s.d, "video/mp4"]].filter((x) => x[0]).map(([u, t]) => `<source src="${u}" type='${t}'>`).join("");
         hv.load();
       };
       const sync = () => { if (!loaded) return; if (seen && !paused && !d.hidden) hv.play().catch(() => {}); else hv.pause(); };
@@ -295,30 +295,6 @@
       if (d.readyState === "complete") go(); else addEventListener("load", go, { once: true });
       d.addEventListener("visibilitychange", sync);
       mq.addEventListener?.("change", () => { if (loaded) { set(); sync(); } });
-      pp.addEventListener("click", () => { paused = !paused; pp.setAttribute("aria-pressed", String(paused)); pp.setAttribute("aria-label", paused ? (RO ? "Pornește animația" : "Play the animation") : (RO ? "Oprește animația" : "Pause the animation")); sync(); });
-    }
-  }
-  // ---- TASK-139 ----
-  // the band into the map: its loop gets its sources once the page has loaded and the band is near; never with reduced
-  // motion, Save-Data or 2g. A phone takes the phone cut when there is one. Paused off screen, in a background tab or
-  // by its button; it fades in over the still once it plays. With no video (or none allowed) the still is the band
-  const dv = d.querySelector(".d9-vid");
-  if (dv) {
-    const cn = navigator.connection || {}, slow = cn.saveData || /(^|-)2g$/.test(cn.effectiveType || "");
-    const pp = d.querySelector(".d9-pp"), card = dv.closest(".d9-card"), mq = matchMedia("(max-width: 700px)");
-    if (!reduced && !slow && pp && card && "IntersectionObserver" in window) {
-      let seen = false, loaded = false, paused = false;
-      const set = () => {
-        const s = dv.dataset, m = mq.matches;
-        dv.innerHTML = [[(m && s.mw) || s.dw, "video/webm"], [(m && s.m) || s.d, "video/mp4"]].filter((x) => x[0]).map(([u, t]) => `<source src="${u}" type="${t}">`).join("");
-        dv.load();
-      };
-      const sync = () => { if (!loaded) return; if (seen && !paused && !d.hidden) dv.play().catch(() => {}); else dv.pause(); };
-      const start = () => { if (loaded) return; loaded = true; dv.addEventListener("playing", () => { dv.classList.add("on"); pp.hidden = false; }, { once: true }); set(); };
-      const go = () => new IntersectionObserver((es) => { seen = es.some((e) => e.isIntersecting); if (seen) start(); sync(); }, { rootMargin: "25% 0px" }).observe(card);
-      if (d.readyState === "complete") go(); else addEventListener("load", go, { once: true });
-      d.addEventListener("visibilitychange", sync);
-      mq.addEventListener?.("change", () => { if (loaded && (dv.dataset.m || dv.dataset.mw)) { set(); sync(); } });
       pp.addEventListener("click", () => { paused = !paused; pp.setAttribute("aria-pressed", String(paused)); pp.setAttribute("aria-label", paused ? (RO ? "Pornește animația" : "Play the animation") : (RO ? "Oprește animația" : "Pause the animation")); sync(); });
     }
   }
@@ -346,6 +322,23 @@
       st.forEach((o, v) => o.pp && o.pp.addEventListener("click", () => { o.paused = !o.paused; o.pp.setAttribute("aria-pressed", String(o.paused)); o.pp.setAttribute("aria-label", o.paused ? (RO ? "Pornește animația" : "Play the animation") : (RO ? "Oprește animația" : "Pause the animation")); sync(v); }));
     }
   }
+  // the city that opens the portfolio: its word turns place → facade → brand once, when it is first seen
+  const cityB = d.querySelector(".city-band");
+  if (cityB) {
+    if (reduced || !("IntersectionObserver" in window)) cityB.classList.add("in");
+    else new IntersectionObserver((es, o) => { if (es.some((e) => e.isIntersecting)) { o.disconnect(); cityB.classList.add("in"); } }, { threshold: 0.45 }).observe(cityB);
+  }
+  // the wall of work under the hero (/onboarding/'s wall, site/onboarding/onb.js): the rows slide in opposite
+  // directions with the scroll, each a little faster than the one above; with reduced motion they are plain
+  // scrollable rows (site.css). On a touch screen the first tap on a card shows its name, the second opens it
+  const pwall = d.querySelector(".pwall"), pwRows = pwall ? [...pwall.querySelectorAll(".pw-row")] : [];
+  if (pwall) {
+    pwall.addEventListener("click", (e) => {
+      const a = e.target.closest(".pw-case");
+      if (!a || !matchMedia("(hover: none)").matches || a.classList.contains("show")) return;
+      e.preventDefault(); pwall.querySelectorAll(".pw-case.show").forEach((x) => x.classList.remove("show")); a.classList.add("show");
+    });
+  }
   // the four numbers count up as they come into view (the real number is in the page from the start)
   const stats = d.querySelector(".stats");
   if (stats) {
@@ -369,7 +362,7 @@
   }
   // scroll-linked: the chapters' road fills (--rp) and each street's opening band opens and slides (--sp, 0 → 1)
   const road4 = d.querySelector("#what .chapters"), streets = [...d.querySelectorAll(".dom-street")], bands = [...d.querySelectorAll(".street-band")];
-  if (!reduced && (road4 || streets.length)) {
+  if (!reduced && (road4 || streets.length || pwRows.length)) {
     let raf2 = 0;
     const clamp = (x) => Math.min(1, Math.max(0, x));
     const tick2 = () => {
@@ -387,10 +380,21 @@
         if (r.top > vh || r.bottom < 0) continue;
         el.style.setProperty("--bp", clamp((vh - r.top) / (vh + r.height)).toFixed(4));
       }
+      if (pwRows.length) {
+        const r = pwall.getBoundingClientRect();
+        if (r.top < vh && r.bottom > 0) {
+          const base = (vh - r.top) * 0.35 + 40;
+          pwRows.forEach((row, i) => {
+            if (!row._half) row._half = row.scrollWidth / 2;
+            const half = row._half, x = (base * (1 + i * 0.25)) % half;
+            row.style.transform = `translate3d(${(i % 2 ? x - half : -x).toFixed(1)}px,0,0)`;
+          });
+        }
+      }
     };
     const q2 = () => { if (!raf2) raf2 = requestAnimationFrame(tick2); };
     streets.forEach((el) => { if (el.getBoundingClientRect().top > innerHeight) el.style.setProperty("--sp", "0"); });
-    addEventListener("scroll", q2, { passive: true }); addEventListener("resize", q2); tick2();
+    addEventListener("scroll", q2, { passive: true }); addEventListener("resize", () => { pwRows.forEach((r) => { r._half = 0; }); q2(); }); tick2();
   }
   // cards tilt a little towards the pointer (TASK-139: the chapters have their own hover now)
   if (matchMedia("(hover: hover)").matches && !reduced) d.querySelectorAll(".svc").forEach((c) => {
