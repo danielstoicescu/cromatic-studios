@@ -10,7 +10,7 @@
 //   GET  /api/core30/<client>/latest?key=…   the workshop loads the newest copy (CORE30_ADMIN_KEY)
 //   POST /api/core30/admin/sessions          (admin key) a new client session from an email: id, token, onboarding mail
 //   GET  /api/core30/admin/sessions          (admin key) the sessions created that way
-//   POST /api/core30/admin/sessions/upgrade  (admin key) a pre session moves to the full Core: same id, token and answers
+//   POST /api/core30/admin/sessions/upgrade  (admin key) a pre session moves to the full Core: same id, token and answers (no mail)
 //   GET  /api/core30/<client>/prefill?t=…    the answers given in the pre stage, for a device that has none of them yet
 //
 // Two stages: a dashboard session can start as the short pre edition ("pregătire", at home, <1 h) and later be upgraded
@@ -292,8 +292,8 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       intro: { ...cfg.intro, hello: x.contact ? (lang === "en" ? `Hi ${x.contact}.` : `Salut, ${x.contact}.`) : cfg.intro?.hello,
         // after the prep, the full Core is no longer "the first step"
         ...(pre ? { lead: lang === "en"
-          ? "This is the full Core. What you wrote in the prep is already here, right where it belongs. What's left are the exercises we do best together: the archetype, the 6 attributes that write your UVP and the sentence that holds the strategy. Then we meet at the studio, over a coffee, and turn it all into strategy."
-          : "Ăsta e The Core complet. Ce ai scris în pregătire e deja aici, la locul lui. Au rămas exercițiile pe care le facem cel mai bine împreună: arhetipul, cele 6 atribute care scriu UVP-ul și fraza care ține strategia. Apoi ne vedem în studio, la o cafea, și transformăm totul în strategie." } : {}) },
+          ? "This is the full Core. What you wrote in the prep is already here, right where it belongs, and the archetypes you picked at home are where the wizard starts. What's left: values, the attributes that write your UVP, voice, visual direction and the final archetype mix. Then we meet at the studio, over a coffee, and turn it all into strategy."
+          : "Ăsta e The Core complet. Ce ai scris în pregătire e deja aici, la locul lui, iar arhetipurile alese acasă sunt punctul de plecare al wizard-ului. Au rămas valorile, atributele care scriu UVP-ul, vocea, direcția vizuală și combinația finală de arhetipuri. Apoi ne vedem în studio, la o cafea, și transformăm totul în strategie." } : {}) },
     }];
   }
 
@@ -359,30 +359,8 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     await atomicWrite(file, JSON.stringify(next, null, 1));
     await appendLog(dir, { at: now, type: "upgrade", from: "pre", to: edition, items: pre?.items?.length ?? 0 });
     const url = `${publicBase.replace(/\/$/, "")}/thecore30/${id}?t=${rec.token}`;
-    const mailSent = p.mail ? await upgradeMail(next, url) : false;
-    return [200, { ok: true, id, url, edition, stage: "full", upgradedAt: now, preItems: pre?.items?.length ?? 0, preSubmittedAt: pre?.submittedAt ?? null, mailSent }];
-  }
-
-  async function upgradeMail(x, url) {
-    if (!transport) { console.log(`[core30] upgrade mail (not sent, no SMTP) to ${x.email}: ${url}`); return false; }
-    const en = x.lang === "en";
-    const hi = x.contact ? (en ? `Hi ${esc(x.contact)},` : `Salut, ${esc(x.contact)},`) : en ? "Hi," : "Salut,";
-    const T = en ? {
-      subject: "The Core: your answers are already in",
-      body: `<p>${hi}</p><p>The full Core is open, on the same link as your prep. Everything you filled in at home is already there, marked, and you can change any of it. What's left are the parts we do best together: the archetype, the 6 attributes that write your UVP and the sentence that holds the strategy.</p>`,
-      cta: "Open The Core",
-    } : {
-      subject: "The Core: răspunsurile tale sunt deja înăuntru",
-      body: `<p>${hi}</p><p>The Core complet e deschis, pe același link ca pregătirea. Tot ce ai completat acasă e deja acolo, marcat, și poți schimba orice. Au rămas părțile pe care le facem cel mai bine împreună: arhetipul, cele 6 atribute care scriu UVP-ul și fraza care ține strategia.</p>`,
-      cta: "Deschide The Core",
-    };
-    const html = `<div style="font:16px/1.55 Arial,sans-serif;color:#0d0c09;max-width:560px">
-      <p style="font:700 11px monospace;letter-spacing:.12em;text-transform:uppercase;color:#5d5a52">Cromatic Studios · The Core 3.0${x.name ? ` · ${esc(x.name)}` : ""}</p>
-      ${T.body}
-      <p><a href="${esc(url)}" style="display:inline-block;padding:12px 20px;border:1px solid #0d0c09;border-radius:999px;background:#FED012;color:#0d0c09;font-weight:700;text-decoration:none">${T.cta}</a></p>
-      <p style="color:#5d5a52;font-size:13px">${en ? "Keep this link to yourself: it opens your answers. Questions? Just reply to this email." : "Păstrează linkul pentru tine: el îți deschide răspunsurile. Întrebări? Răspunde direct la emailul ăsta."}<br>Cromatic Studios · Str. Olari 9, București · hi@cromaticstudios.com</p></div>`;
-    try { await transport.sendMail({ from: mailFrom, to: x.email, bcc: mailTo, replyTo: mailTo, subject: T.subject, html }); return true; }
-    catch (e) { console.error("[core30] upgrade mail failed", e.message); return false; }
+    // no mail to the client (Daniel, 27 Oct): the studio says it in person, the link stays the same
+    return [200, { ok: true, id, url, edition, stage: "full", upgradedAt: now, preItems: pre?.items?.length ?? 0, preSubmittedAt: pre?.submittedAt ?? null }];
   }
 
   /** GET /api/core30/<id>/prefill?t=: the pre answers, for a browser that opens the full Core without them (new device,
@@ -400,12 +378,12 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     if (!transport) { console.log(`[core30] onboarding mail (not sent, no SMTP) to ${x.email}: ${url}`); return false; }
     const hi = x.contact ? (x.lang === "en" ? `Hi ${esc(x.contact)},` : `Salut, ${esc(x.contact)},`) : x.lang === "en" ? "Hi," : "Salut,";
     const T = x.stage === "pre" ? (x.lang === "en" ? {
-      subject: "The Core: your prep, about an hour, from home",
-      body: `<p>${hi}</p><p>This is the first step of The Core, the way Cromatic Studios writes a brand strategy: the prep. You fill it in on your own, at home, at your pace: about 45 to 60 minutes, in one go or in two sittings. Your answers go straight into The Core, so in the studio we skip the basics and spend the time on the decisions that matter.</p><p>Everything saves as you go, on your device and with us. Close it whenever you want and open the same link to pick up where you left off. The questions are in English; you can switch to Romanian at the start.</p>`,
+      subject: "The Core: your prep, about 40 minutes, from home",
+      body: `<p>${hi}</p><p>This is the first step of The Core, the way Cromatic Studios writes a brand strategy: the prep. You fill it in on your own, at home, at your pace: about 40 minutes, an hour at most, in one go or in two sittings. You also get to know the 12 brand archetypes and pick the ones that fit you. Your answers go straight into The Core, so in the studio we skip the basics and spend the time on the decisions that matter.</p><p>Everything saves as you go, on your device and with us. Close it whenever you want and open the same link to pick up where you left off. The questions are in English; you can switch to Romanian at the start.</p>`,
       cta: "Start the prep", foot: "Keep this link to yourself: it opens your answers. Questions? Just reply to this email.",
     } : {
-      subject: "The Core: pregătirea, cam o oră, de acasă",
-      body: `<p>${hi}</p><p>Ăsta e primul pas din The Core, felul în care Cromatic Studios scrie strategia unui brand: pregătirea. O completezi singur, acasă, în ritmul tău: cam 45–60 de minute, dintr-o bucată sau în două reprize. Răspunsurile ajung direct în The Core, așa că în studio nu mai pierdem timp cu întrebările de bază și ne ocupăm de deciziile care contează.</p><p>Totul se salvează pe parcurs, pe dispozitivul tău și la noi. Poți închide oricând și reiei de unde ai rămas, de pe același link.</p>`,
+      subject: "The Core: pregătirea, cam 40 de minute, de acasă",
+      body: `<p>${hi}</p><p>Ăsta e primul pas din The Core, felul în care Cromatic Studios scrie strategia unui brand: pregătirea. O completezi singur, acasă, în ritmul tău: cam 40 de minute, maximum o oră, dintr-o bucată sau în două reprize. Faci cunoștință și cu cele 12 arhetipuri de brand și le alegi pe cele care ți se potrivesc. Răspunsurile ajung direct în The Core, așa că în studio nu mai pierdem timp cu întrebările de bază și ne ocupăm de deciziile care contează.</p><p>Totul se salvează pe parcurs, pe dispozitivul tău și la noi. Poți închide oricând și reiei de unde ai rămas, de pe același link.</p>`,
       cta: "Începe pregătirea", foot: "Păstrează linkul pentru tine: el îți deschide răspunsurile. Întrebări? Răspunde direct la emailul ăsta.",
     }) : x.lang === "en" ? {
       subject: "The Core: let's start your brand strategy",
@@ -583,7 +561,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     await atomicWrite(join(dir, "meta.json"), JSON.stringify(meta));
     const st = c.stage === "pre" ? { stage: "pre" } : {};
     await appendLog(dir, email ? { at: now, type: "start", email, ...st } : { at: now, type: "start", ...st });
-    if (firstStart && email && c.stage === "pre") await mail(`[The Core · pregătire] ${c.contact || email} a început pregătirea · ${c.name ?? id}`, `<p><b>${esc(email)}</b> a început pregătirea The Core (acasă, ~45–60 min) pentru <b>${esc(c.name ?? id)}</b>, la ${esc(now)}. Fiecare modificare se salvează în ${esc(dir)}.</p>`);
+    if (firstStart && email && c.stage === "pre") await mail(`[The Core · pregătire] ${c.contact || email} a început pregătirea · ${c.name ?? id}`, `<p><b>${esc(email)}</b> a început pregătirea The Core (acasă, ~40 min) pentru <b>${esc(c.name ?? id)}</b>, la ${esc(now)}. Fiecare modificare se salvează în ${esc(dir)}.</p>`);
     else if (firstStart && email) await mail(`[The Core 3.0] ${c.contact || email} a început · ${c.name ?? id}`, `<p><b>${esc(email)}</b> a început The Core 3.0 pentru <b>${esc(c.name ?? id)}</b>, la ${esc(now)}. Fiecare modificare se salvează în ${esc(dir)}.</p>`);
     return [200, { ok: true, at: now }];
   }

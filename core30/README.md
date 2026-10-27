@@ -22,10 +22,11 @@ Client reports (r294; generated in Ops, uploaded by the dashboard cron with the 
 - `POST /api/core30/admin/report-mail` `{id, note?}` → the branded mail to the session email (or whoever started a repo edition), RO/EN, bcc and reply-to hi@; returns `{ok, to (masked), sentAt}`.
 - `status.report = {available, version, uploadedAt, sentAt}`; the step log gets `report-uploaded` and `report-sent`.
 
-Two stages, the prep at home then the full Core (r313; details in `~/cromatic-core/schema.md` §7):
+Two stages, the prep at home then the full Core (r313, rescoped in r315; details in `~/cromatic-core/schema.md` §7):
 
-- `POST /api/core30/admin/sessions` `{email, name, contact, edition: "pre", lang?}` (or `{edition: "blank", stage: "pre"}`) → a session in the pre stage: `configs/pre.json` (The Core · pregătire, 9 modules, ~51 min), the prep onboarding mail ("cam 45–60 de minute, acasă").
+- `POST /api/core30/admin/sessions` `{email, name, contact, edition: "pre", lang?}` (or `{edition: "blank", stage: "pre"}`) → a session in the pre stage: `configs/pre.json` (The Core · pregătire, 7 modules, ~40 min: the basics, founder, profiles, positioning without the sentence, personality sliders, all 12 archetype cards to pick from, website & logistics), the prep onboarding mail ("cam 40 de minute, maximum o oră, acasă").
 - The client's **Trimite pregătirea** → `submits/pre-submit-<iso>.json`, `<data>/<id>/pre.json`, log `pre-submit`, mail to hi@, confirmation to the client.
-- `POST /api/core30/admin/sessions/upgrade` `{id, edition?, mail?}` → the same link opens the full Core, the answers from home prefilled and marked "completat de tine acasă"; `409` if already full.
-- `GET /api/core30/<id>/prefill?t=` (client token) feeds a device that has none of the pre answers.
+- `POST /api/core30/admin/sessions/upgrade` `{id, edition?}` → the same link opens the full Core (no mail), the answers from home prefilled and marked "completat de tine acasă", the archetype picks as the wizard's starting point ("ales de tine acasă"); `404` unknown, `409` already full, `422` bad edition.
+- `GET /api/core30/<id>/prefill?t=` (client token) feeds a device that has none of the pre answers; the workshop uses it to mark answers from home.
 - `status.stage = "pre" | "full"`, `status.pre = {done, total, minutes, submitted, submittedAt, submits, items, upgradedAt}`; sessions list has `stage`, `upgradedAt`.
+- blank now starts with m00 "Pe scurt" (business basics), so it has 13 modules.

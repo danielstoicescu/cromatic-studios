@@ -29,6 +29,154 @@
  },
  "modules": [
   {
+   "id": "m00",
+   "title": [
+    "The",
+    "basics"
+   ],
+   "short": "The basics",
+   "minutes": 4,
+   "why": "The basic facts about the business, so we don't spend studio time on them: what you sell, since when, how many you are, where your price sits and how you reach clients.",
+   "items": [
+    {
+     "id": "m00.offer",
+     "kind": "text",
+     "multiline": true,
+     "label": "What do you sell, in short?",
+     "help": "Your main products or services, the way you'd tell a friend.",
+     "placeholder": "We make…",
+     "suggestions": [
+      "We make custom furniture",
+      "We advise companies on",
+      "We sell online",
+      "We run a workshop where"
+     ]
+    },
+    {
+     "id": "m00.since",
+     "kind": "choice",
+     "label": "How long have you been around?",
+     "options": [
+      {
+       "id": "idea",
+       "label": "We haven't launched yet"
+      },
+      {
+       "id": "y1",
+       "label": "Less than a year"
+      },
+      {
+       "id": "y3",
+       "label": "1–3 years"
+      },
+      {
+       "id": "y10",
+       "label": "3–10 years"
+      },
+      {
+       "id": "y10p",
+       "label": "Over 10 years"
+      }
+     ]
+    },
+    {
+     "id": "m00.team",
+     "kind": "choice",
+     "label": "How many of you are there?",
+     "options": [
+      {
+       "id": "solo",
+       "label": "Just me"
+      },
+      {
+       "id": "s",
+       "label": "2–5"
+      },
+      {
+       "id": "m",
+       "label": "6–20"
+      },
+      {
+       "id": "l",
+       "label": "21–50"
+      },
+      {
+       "id": "xl",
+       "label": "Over 50"
+      }
+     ]
+    },
+    {
+     "id": "m00.price",
+     "kind": "choice",
+     "label": "Where does your price sit in the market?",
+     "options": [
+      {
+       "id": "low",
+       "label": "More affordable than most"
+      },
+      {
+       "id": "mid",
+       "label": "About the market average"
+      },
+      {
+       "id": "high",
+       "label": "Above average"
+      },
+      {
+       "id": "premium",
+       "label": "Premium, niche"
+      }
+     ]
+    },
+    {
+     "id": "m00.channels",
+     "kind": "choice",
+     "multi": true,
+     "other": true,
+     "label": "How do you reach your clients?",
+     "help": "Pick everything that applies.",
+     "options": [
+      {
+       "id": "store",
+       "label": "A physical space: shop, studio, practice"
+      },
+      {
+       "id": "web",
+       "label": "Your own website"
+      },
+      {
+       "id": "market",
+       "label": "Marketplaces"
+      },
+      {
+       "id": "social",
+       "label": "Social media and messages"
+      },
+      {
+       "id": "b2b",
+       "label": "Directly to companies (proposals, tenders)"
+      },
+      {
+       "id": "partners",
+       "label": "Distributors or partners"
+      },
+      {
+       "id": "events",
+       "label": "Events and fairs"
+      }
+     ]
+    },
+    {
+     "id": "m00.where",
+     "kind": "text",
+     "optional": true,
+     "label": "Where are your clients?",
+     "placeholder": "Bucharest, the whole country, online, abroad…"
+    }
+   ]
+  },
+  {
    "id": "m01",
    "title": [
     "What you've",
@@ -1852,6 +2000,7 @@
     "title": "The foundation",
     "minutes": 15,
     "modules": [
+     "m00",
      "m01",
      "m02"
     ],
@@ -1921,6 +2070,7 @@
     "label": "What you offer",
     "hint": "the category, said simply",
     "from": [
+     "m00.offer",
      "m04.category",
      "m04.builder"
     ]
