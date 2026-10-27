@@ -25,7 +25,8 @@
 //   POST /api/ops/bridge/proposal               (Bearer key) {slug, files:{name: html}, preview?: true}   TASK-135: offers
 //        published -> <dataDir>/proposals/<slug>/ (served at /proposals/<slug>/<file> by server.js, after the repo's own proposals/)
 //        preview   -> <dataDir>/offer-previews/<slug>/ (served at /ops/preview/<slug>/<file>, admins only, never public)
-//   DELETE /api/ops/bridge/proposal             (Bearer key) {slug, preview?: true}   withdraws a published offer (data dir only,
+//   DELETE /api/ops/bridge/proposal             (Bearer key) {slug, preview?: true, all?: true}   withdraws a published offer (data dir only,
+//        all: true removes the published files AND the preview ("Șterge" in the tab);
 //        never the repo's proposals/ folder) or drops a preview; logged in proposals.jsonl
 //   GET  /ops/preview/<slug>/<file>             (admin session) an offer preview, framed by the Ofertă tab
 import { readFileSync, writeFileSync, appendFileSync, renameSync, mkdirSync, statSync, readdirSync, createReadStream, rmSync } from "node:fs";
@@ -40,14 +41,14 @@ const COOKIE = "ops_sid";
 const KINDS = new Set(["command", "bug", "feedback"]);
 const TASK_FIELDS = new Set(["status", "priority", "agent", "epicId"]); // what a "task-edit" may change
 const REJECT_SHOW = 6 * 3600e3; // a rejected edit stays visible on its card (for the toast + animation) this long
-const ADMIN_PAYLOAD_TYPES = new Set(["core-request", "offer-new", "offer-edit", "offer-publish", "offer-unpublish"]); // members cannot send these
-const OFFER_TYPES = new Set(["offer-new", "offer-edit", "offer-publish", "offer-unpublish"]); // TASK-135: a whole offer config rides in the payload (bigger limit)
+const ADMIN_PAYLOAD_TYPES = new Set(["core-request", "offer-new", "offer-edit", "offer-publish", "offer-unpublish", "offer-delete"]); // members cannot send these
+const OFFER_TYPES = new Set(["offer-new", "offer-edit", "offer-publish", "offer-unpublish", "offer-delete"]); // TASK-135: a whole offer config rides in the payload (bigger limit)
 // TASK-135: offers published without a deploy. A slug is <client>-<10 hex>, the code being the key; files are flat .html names
 export const PROPOSAL_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{10}$/;
 export const PROPOSAL_FILE_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*\.html$/i;
 const PROPOSAL_FILE_MAX = 4 * 1048576, PROPOSAL_FILES_MAX = 6, PROPOSAL_BODY_MAX = 12 * 1048576;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const ASSETS = { "offers.js": "text/javascript; charset=utf-8", "offers.css": "text/css; charset=utf-8", "login.css": "text/css; charset=utf-8", "logo.css": "text/css; charset=utf-8", "adapter.js": "text/javascript; charset=utf-8", "login.js": "text/javascript; charset=utf-8", "ops.css": "text/css; charset=utf-8", "favicon.svg": "image/svg+xml" };
+const ASSETS = { "nav.js": "text/javascript; charset=utf-8", "offers.js": "text/javascript; charset=utf-8", "offers.css": "text/css; charset=utf-8", "login.css": "text/css; charset=utf-8", "logo.css": "text/css; charset=utf-8", "adapter.js": "text/javascript; charset=utf-8", "login.js": "text/javascript; charset=utf-8", "ops.css": "text/css; charset=utf-8", "favicon.svg": "image/svg+xml" };
 
 const sha = (x) => createHash("sha256").update(String(x)).digest();
 const shaHex = (x) => createHash("sha256").update(String(x)).digest("hex");
@@ -456,6 +457,12 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
         if (r === "bridge/proposal" && m === "DELETE") { // TASK-135: "Retrage oferta" (the repo's proposals/ is never touched from here)
           const b = await body(req, 4096), slug = String(b.slug || ""), preview = b.preview === true;
           if (!PROPOSAL_SLUG_RE.test(slug)) { json(res, 422, { ok: false, error: "slug" }); return true; }
+          if (b.all === true) { // TASK-135 "Șterge": both folders, whichever exist (the repo's proposals/ is never touched)
+            const removed = [];
+            for (const sub of ["proposals", "offer-previews"]) { const root = join(dataDir, sub), d = join(root, slug), st0 = statOr(d); if (d.startsWith(root + "/") && st0 && st0.isDirectory()) { removed.push(...readdirSync(d).map((f) => sub + "/" + f)); rmSync(d, { recursive: true, force: true }); } }
+            appendLine("proposals.jsonl", { at: new Date().toISOString(), slug, deleted: true, removed });
+            json(res, 200, { ok: true, slug, all: true, removed: removed.length }); return true;
+          }
           const root = join(dataDir, preview ? "offer-previews" : "proposals"), dir = join(root, slug), st = statOr(dir);
           if (!dir.startsWith(root + "/") || !st || !st.isDirectory()) { json(res, 404, { ok: false, error: "not-found" }); return true; }
           const files = readdirSync(dir);

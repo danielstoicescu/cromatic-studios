@@ -97,7 +97,7 @@
         // themselves (status, preview, link) come back in the snapshot's "offers" collection, written by Claude
         if (name === "offers" && user && user.role === "admin") {
           const d = doc || {};
-          if (!d.payload || !/^offer-(new|edit|publish|unpublish)$/.test(d.payload.type || "")) throw err("invalid_argument");
+          if (!d.payload || !/^offer-(new|edit|publish|unpublish|delete)$/.test(d.payload.type || "")) throw err("invalid_argument");
           return addInbox({ kind: "command", text: String(d.text || "Ofertă"), payload: d.payload });
         }
         if (name === "coreRequests" && user && user.role === "admin") {

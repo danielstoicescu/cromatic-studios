@@ -79,3 +79,34 @@ body.ops-dragging, body.ops-dragging * { user-select: none; -webkit-user-select:
 .ops-link .inp { flex: 1; min-width: 0; }
 .ops-up .ops-drop, .field .ops-up .ops-drop { font: 400 14px/1.4 var(--f-b, system-ui); text-transform: none; letter-spacing: normal; color: var(--muted); }
 .ops-up .ops-drop small { font: 500 10.5px var(--f-m, monospace); letter-spacing: .03em; text-transform: none; }
+
+/* TASK-135 · the rail in groups: Claude AI · Ops Tools · Website · Marketing (ops/www/nav.js) */
+.nav-grp { flex: none; padding: 16px 14px 5px; font: 700 10px/1 var(--f-m); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); white-space: nowrap; overflow: hidden; }
+.nav-grp[hidden] { display: none; }
+body.nav-min .nav-grp { height: 1px; padding: 0; margin: 9px 12px; background: var(--g1); }
+body.nav-min .nav-grp span { display: none; }
+.nav-i .soon-k { font: 700 8.5px/1 var(--f-m); letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--g2); border-radius: 999px; padding: 2px 5px; margin-left: 4px; color: var(--muted); vertical-align: 2px; }
+.nav-more { display: none !important; }
+body[data-cat="home"] #res { display: none !important; }
+@media (max-width: 760px) {
+  .nav-grp { display: none !important; }
+  .side .nav-i:not([data-cat="home"]):not([data-cat="talk"]):not([data-cat="work"]):not([data-cat="team"]):not(.nav-more) { display: none !important; }
+  .nav-more { display: flex !important; }
+}
+.nav-sheet { position: fixed; inset: 0; z-index: 80; }
+.nav-sheet-s { position: absolute; inset: 0; background: rgba(0,0,0,.35); animation: navFade .2s both; }
+.nav-sheet-b { position: absolute; left: 0; right: 0; bottom: 0; max-height: 82vh; overflow: auto; background: var(--card); color: var(--ink); border-top: var(--st); border-radius: 24px 24px 0 0; padding: 14px 16px calc(18px + env(safe-area-inset-bottom, 0px)); animation: navUp .28s var(--ease-out) both; }
+.nav-sheet-h { display: flex; align-items: center; justify-content: space-between; font: 800 17px var(--f-d); margin-bottom: 4px; }
+.nav-sheet-x { all: unset; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; }
+.nav-sheet-x:hover { background: var(--g1); }
+.nav-sheet-g { font: 700 10px/1 var(--f-m); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 14px 2px 7px; }
+.nav-sheet-l { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.nav-sheet-i { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 9px; border: 1px solid var(--g2); border-radius: 14px; padding: 11px 12px; font: 700 14px var(--f-d); min-width: 0; }
+.nav-sheet-i span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-sheet-i .ic { width: 19px; height: 19px; flex: none; }
+.nav-sheet-i i { margin-left: auto; font: 700 10px/1 var(--f-m); font-style: normal; background: var(--yellow); color: #000; border-radius: 999px; padding: 3px 6px; }
+.nav-sheet-i[aria-current="page"] { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
+.nav-sheet-i:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+@keyframes navFade { from { opacity: 0; } } @keyframes navUp { from { transform: translateY(40px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .nav-sheet-s, .nav-sheet-b { animation: none; } }
+.nav-sheet-soon { font: 700 8.5px/1 var(--f-m); letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--g2); border-radius: 999px; padding: 3px 6px; color: var(--muted); }

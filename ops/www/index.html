@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ro"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex, nofollow, noarchive"><meta name="referrer" content="no-referrer"><title>cromaticstudios.com ops</title><link rel="stylesheet" href="/ops/ops.css"><link rel="stylesheet" href="/ops/offers.css"><script src="/ops/adapter.js"></script><script src="/ops/offers.js" defer></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex, nofollow, noarchive"><meta name="referrer" content="no-referrer"><title>cromaticstudios.com ops</title><link rel="stylesheet" href="/ops/ops.css"><link rel="stylesheet" href="/ops/offers.css"><script src="/ops/adapter.js"></script><script src="/ops/offers.js" defer></script><script src="/ops/nav.js" defer></script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cdefs%3E%3ClinearGradient id=%22r%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23FED012%22/%3E%3Cstop offset=%22.25%22 stop-color=%22%2328C840%22/%3E%3Cstop offset=%22.5%22 stop-color=%22%23119BFE%22/%3E%3Cstop offset=%22.75%22 stop-color=%22%23B098C8%22/%3E%3Cstop offset=%221%22 stop-color=%22%23F65342%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg transform=%22rotate%28-8 32 32%29%22%3E%3Crect x=%225%22 y=%2215%22 width=%2254%22 height=%2234%22 rx=%2217%22 fill=%22%230D0C09%22 transform=%22translate%280 3%29%22/%3E%3Crect x=%225%22 y=%2215%22 width=%2254%22 height=%2234%22 rx=%2217%22 fill=%22url%28%23r%29%22/%3E%3Crect x=%229%22 y=%2219%22 width=%2246%22 height=%2226%22 rx=%2213%22 fill=%22%23fff%22/%3E%3Ctext x=%2232%22 y=%2238.5%22 text-anchor=%22middle%22 font-family=%22Google Sans,DM Sans,Arial,sans-serif%22 font-weight=%22900%22 font-size=%2219%22 letter-spacing=%22-1%22 fill=%22%230D0C09%22%3Eops%3C/text%3E%3C/g%3E%3C/svg%3E">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -1669,18 +1669,23 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
 <nav class="side" id="side" aria-label="Secțiuni">
   <div class="side-h"><span class="csops" data-target role="img" aria-label="cromaticstudios.com ops"><span class="cs-y" aria-hidden="true">cromaticstudios.com</span><span class="cs-ops" aria-hidden="true"><span>ops</span></span></span><button type="button" id="side-tg" aria-label="Restrânge meniul" aria-expanded="true"><svg class="ic"><use href="#i-chev"/></svg></button></div>
   <button class="nav-i" type="button" data-cat="home" title="Acasă · toate cardurile" aria-current="page"><svg class="ic"><use href="#i-home"/></svg><span class="lbl">Acasă</span><span class="sl">Acasă</span></button>
-  <div class="nav-sep" aria-hidden="true"></div>
+  <div class="nav-grp" data-g="ai" role="presentation"><span>Claude AI</span></div>
   <button class="nav-i" type="button" data-cat="talk" title="Conversația cu Claude"><svg class="ic"><use href="#i-chat"/></svg><span class="lbl">Conversația</span><span class="sl">Chat</span><span class="nb" id="nb-talk" hidden></span></button>
   <button class="nav-i" type="button" data-cat="work" title="Progres · board și listă"><svg class="ic"><use href="#i-board"/></svg><span class="lbl">Progres · Task-uri</span><span class="sl">Task-uri</span><span class="nb" id="nb-work" hidden></span></button>
   <button class="nav-i" type="button" data-cat="team" title="Echipa"><svg class="ic"><use href="#i-team"/></svg><span class="lbl">Echipa <span class="kps"><span class="kp ai" title="agenți AI">AI</span><span class="kp hu" title="oameni"><svg class="ic"><use href="#i-person"/></svg></span></span></span><span class="sl">Echipa</span><span class="nb" id="nb-team" hidden></span></button>
-  <button class="nav-i" type="button" data-cat="cont" title="Conținut · proiectele de pe site"><svg class="ic"><use href="#i-ck-layers"/></svg><span class="lbl">Conținut</span><span class="sl">Conținut</span><span class="nb" id="nb-cont" hidden></span></button>
-  <button class="nav-i" type="button" data-cat="soc" title="Social &amp; Ads · reel-uri, story-uri, reclame"><svg class="ic"><use href="#i-clap"/></svg><span class="lbl">Social &amp; Ads</span><span class="sl">Social</span><span class="nb" id="nb-soc" hidden></span></button>
-  <button class="nav-i" type="button" data-cat="camp" title="Campanii · landing pages"><svg class="ic"><use href="#i-mega"/></svg><span class="lbl">Campanii</span><span class="sl">Campanii</span><span class="nb" id="nb-camp" hidden></span></button>
-  <button class="nav-i" type="button" data-cat="offer" title="Ofertă · oferte pentru clienți"><svg class="ic"><use href="#i-offer"/></svg><span class="lbl">Ofertă</span><span class="sl">Ofertă</span><span class="nb" id="nb-offer" hidden></span></button>
+  <div class="nav-grp" data-g="ops" role="presentation"><span>Ops Tools</span></div>
   <button class="nav-i" type="button" data-cat="core" title="The Core"><svg class="ic"><use href="#i-lock"/></svg><span class="lbl">The Core <span class="cs-ops cv" aria-label="versiunea 3.0">3.0</span></span><span class="sl">Core</span><span class="nb" id="nb-core" hidden></span></button>
+  <button class="nav-i" type="button" data-cat="offer" title="Ofertă · oferte pentru clienți"><svg class="ic"><use href="#i-offer"/></svg><span class="lbl">Ofertă</span><span class="sl">Ofertă</span><span class="nb" id="nb-offer" hidden></span></button>
+  <button class="nav-i" type="button" data-cat="res" title="Resurse · curând"><svg class="ic"><use href="#i-file"/></svg><span class="lbl">Resurse <span class="soon-k">curând</span></span><span class="sl">Resurse</span></button>
+  <div class="nav-grp" data-g="web" role="presentation"><span>Website</span></div>
+  <button class="nav-i" type="button" data-cat="cont" title="Conținut · proiectele de pe site"><svg class="ic"><use href="#i-ck-layers"/></svg><span class="lbl">Conținut</span><span class="sl">Conținut</span><span class="nb" id="nb-cont" hidden></span></button>
   <button class="nav-i" type="button" data-cat="sec" title="Securitate"><svg class="ic"><use href="#i-shield"/></svg><span class="lbl">Securitate</span><span class="sl">Securitate</span><span class="nb" id="nb-sec" hidden></span></button>
   <button class="nav-i" type="button" data-cat="ana" title="Analytics · trafic, surse, campanii"><svg class="ic"><use href="#i-chart"/></svg><span class="lbl">Analytics</span><span class="sl">Analytics</span></button>
   <button class="nav-i" type="button" data-cat="reports" title="Rapoarte · versiuni, decizii, cereri, agenți"><svg class="ic"><use href="#i-reports"/></svg><span class="lbl">Rapoarte</span><span class="sl">Rapoarte</span><span class="nb" id="nb-rep" hidden></span></button>
+  <div class="nav-grp" data-g="mkt" role="presentation"><span>Marketing</span></div>
+  <button class="nav-i" type="button" data-cat="soc" title="Social &amp; Ads · reel-uri, story-uri, reclame"><svg class="ic"><use href="#i-clap"/></svg><span class="lbl">Social &amp; Ads</span><span class="sl">Social</span><span class="nb" id="nb-soc" hidden></span></button>
+  <button class="nav-i" type="button" data-cat="camp" title="Campanii · landing pages"><svg class="ic"><use href="#i-mega"/></svg><span class="lbl">Campanii</span><span class="sl">Campanii</span><span class="nb" id="nb-camp" hidden></span></button>
+  <button class="nav-i nav-more" type="button" id="nav-more" aria-haspopup="dialog" aria-expanded="false" title="Toate secțiunile"><svg class="ic"><use href="#i-list"/></svg><span class="sl">Mai mult</span></button>
   <div class="side-th"><button type="button" class="thsw" role="switch" aria-checked="false" aria-label="Temă întunecată" title="Comută între luminos și întunecat"><span class="th-k" aria-hidden="true"></span><svg class="ic th-sun" aria-hidden="true"><use href="#i-sun"/></svg><svg class="ic th-moon" aria-hidden="true"><use href="#i-moon"/></svg></button></div>
 </nav>
 
@@ -1862,6 +1867,10 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
       <div class="camp-lite" id="camp-lite" aria-label="The Core Lite"></div>
       <div class="camp-mini" id="camp-mini"></div>
       <div class="camp-g" id="camp-g"></div>
+    </section>
+
+    <section class="blk res" data-cat="res" id="res" aria-labelledby="res-t">
+      <div class="core-h"><div><h2 id="res-t"><svg class="ic lg"><use href="#i-file"/></svg>Resurse</h2><div class="muted sub">Curând: ghiduri, template-uri și fișierele pe care le folosim des, într-un singur loc.</div></div><span class="mono muted">curând</span></div>
     </section>
 
     <section class="blk ofr" data-cat="offer" id="ofr" aria-labelledby="ofr-t">
@@ -3063,9 +3072,9 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
   $("lg-btn").onclick = () => { const l = $("legend"); l.hidden = !l.hidden; $("lg-btn").setAttribute("aria-expanded", String(!l.hidden)); };
   try { const v = localStorage.getItem("ops-view"); if (v && v !== "city") { const b = document.querySelector('[data-view="' + v + '"]'); if (b) b.click(); } } catch {}
   // ---------- v24 (TASK-123): sections, rail, intelinks, count-ups, skeletons, summary cards, bubbles ----------
-  const TITLES = { home: ["Ce ", "facem", " azi?"], talk: ["Conversația cu ", "Claude", ""], work: ["Progres · ", "task-uri", ""], camp: ["", "Campanii", ""], cont: ["", "Conținut", ""], soc: ["Social & ", "Ads", ""], ana: ["", "Analytics", ""], team: ["", "Echipa", ""], core: ["The ", "Core", ""], offer: ["", "Ofertă", ""], sec: ["", "Securitate", ""], reports: ["", "Rapoarte", ""] };
-  const NAMES = { home: "Acasă", talk: "Conversația", work: "Progres · Task-uri", camp: "Campanii", cont: "Conținut", soc: "Social & Ads", ana: "Analytics", team: "Echipa", core: "The Core", offer: "Ofertă", sec: "Securitate", reports: "Rapoarte" };
-  const CAT_IC = { home: "i-home", talk: "i-chat", work: "i-board", camp: "i-mega", cont: "i-ck-layers", soc: "i-clap", ana: "i-chart", team: "i-team", core: "i-lock", offer: "i-offer", sec: "i-shield", reports: "i-reports" };
+  const TITLES = { home: ["Ce ", "facem", " azi?"], talk: ["Conversația cu ", "Claude", ""], work: ["Progres · ", "task-uri", ""], camp: ["", "Campanii", ""], cont: ["", "Conținut", ""], soc: ["Social & ", "Ads", ""], ana: ["", "Analytics", ""], team: ["", "Echipa", ""], core: ["The ", "Core", ""], offer: ["", "Ofertă", ""], res: ["", "Resurse", ""], sec: ["", "Securitate", ""], reports: ["", "Rapoarte", ""] };
+  const NAMES = { home: "Acasă", talk: "Conversația", work: "Progres · Task-uri", camp: "Campanii", cont: "Conținut", soc: "Social & Ads", ana: "Analytics", team: "Echipa", core: "The Core", offer: "Ofertă", res: "Resurse", sec: "Securitate", reports: "Rapoarte" };
+  const CAT_IC = { home: "i-home", talk: "i-chat", work: "i-board", camp: "i-mega", cont: "i-ck-layers", soc: "i-clap", ana: "i-chart", team: "i-team", core: "i-lock", offer: "i-offer", res: "i-file", sec: "i-shield", reports: "i-reports" };
   function setCat(cat, noScroll) {
     if (!TITLES[cat] || (cat === "soc" && socHidden()) || (cat === "ana" && anaHidden()) || (cat === "offer" && document.body.classList.contains("ops-member"))) cat = "home";
     const prev = UI.cat; UI.cat = cat; document.body.dataset.cat = cat;

@@ -110,11 +110,13 @@
   function offerList() {
     const docs = new Map(offers.map((o) => [o.id, { ...o }]));
     const open = inbox.filter((x) => x.payload && /^offer-/.test(x.payload.type || "") && x.status !== "done" && x.status !== "declined");
+    const deleting = new Set(open.filter((x) => x.payload.type === "offer-delete").map((x) => x.payload.offerId));
     for (const x of open) {
       const pl = x.payload;
       if (pl.type === "offer-new" && pl.offer && !docs.has(pl.offer.id)) docs.set(pl.offer.id, { id: pl.offer.id, status: "sent", client: { name: pl.offer.client.name }, situation: pl.offer.situation, total: totals(normCfg(pl.offer)).total, config: pl.offer, createdAt: x.createdAt, pendingId: x.id });
       else if (pl.offerId && docs.has(pl.offerId)) { const d = docs.get(pl.offerId); d.working = pl.type === "offer-publish" ? "publish" : pl.type === "offer-unpublish" ? "unpublish" : "edit"; }
     }
+    for (const id of deleting) docs.delete(id); // "Șterge": gone from the list right away; Claude removes the files
     return [...docs.values()].sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
   }
   function normCfg(c0) {
@@ -419,7 +421,16 @@
     if (doc.status !== "preview" && doc.status !== "published" && doc.status !== "withdrawn") pub.disabled = true;
     if (doc.status === "withdrawn") pub.textContent = "Publică din nou";
     const row = h("div", "ofr-act-r"); row.append(edit, pub);
+    // "Șterge": the whole offer (published page, preview, Claude's files); never the site's own proposals/ folder
+    const del = h("button", "btn sm ghost ofr-del", "Șterge"); del.type = "button"; del.disabled = !!doc.working;
+    del.onclick = async () => {
+      const nm = (doc.client && doc.client.name) || "client";
+      if (!confirm("Ștergi definitiv oferta pentru " + nm + "?\nDispar pagina publicată (dacă există), preview-ul și fișierele ei. Nu se poate anula.")) return;
+      const ok = await send(del, "Ofertă · șterge · " + nm + " · " + (doc.slug || doc.id), { type: "offer-delete", offerId: doc.id, slug: doc.slug || null }, "Trimis. Claude șterge oferta.");
+      if (ok) closeEditor();
+    };
     a.append(field("Pentru Claude", note), row);
+    const dz = h("div", "ofr-danger"); dz.append(h("span", "mono muted", "Zona periculoasă"), del); a.append(dz);
     if (doc.status === "published" && doc.url) {
       const wd = h("button", "btn sm ghost ofr-wd", "Retrage oferta"); wd.type = "button"; wd.disabled = !!doc.working;
       wd.onclick = async () => { if (!confirm("Retragi oferta pentru " + ((doc.client && doc.client.name) || "client") + "?\nLinkul nu mai merge pentru nimeni. O poți publica din nou mai târziu.")) return; await send(wd, "Ofertă · retrage · " + ((doc.client && doc.client.name) || "") + " · " + (doc.slug || ""), { type: "offer-unpublish", offerId: doc.id, slug: doc.slug || null }, "Trimis. Claude retrage oferta."); };
@@ -542,6 +553,7 @@
   async function start() {
     if (!window.claude || !window.claude.use) return;
     db = await window.claude.use("db"); if (!db) return;
+    if (!admin()) return; // members: no offers, no prices (the server answers 403 anyway)
     await loadPrices();
     db.collection("offers").onSnapshot((q) => { offers = q.docs.map((x) => ({ id: x.id, ...x.data() })); render(); });
     db.collection("inbox").orderBy("createdAt", "desc").limit(60).onSnapshot((q) => { inbox = q.docs.map((x) => ({ id: x.id, ...x.data() })); render(); });

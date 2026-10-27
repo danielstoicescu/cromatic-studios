@@ -269,3 +269,7 @@
 .ofr-lv-pk b { font: 900 18px var(--f-d); }
 .ofr-lv-pk small { font-size: 11px; color: #444; line-height: 1.3; }
 @media (max-width: 760px) { .ofr-lv-pks.n3 { --n: 1; } .ofr-nx-r { grid-template-columns: auto minmax(0, 1fr) auto; } .ofr-nx-r .ofr-price { grid-column: 2; justify-self: start; } }
+.ofr-danger { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px dashed var(--g2); padding-top: 10px; }
+.ofr-danger .mono { font-size: 10px; }
+.ofr-del { color: var(--danger-ink); border-color: var(--danger-ink); }
+.ofr-del:hover { background: var(--danger-ink); color: #fff; }
