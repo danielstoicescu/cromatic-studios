@@ -484,7 +484,7 @@ ${header(false)}
     </div>
     ${d.heroArt ? art(d.heroArt, "strip", d.heroArtLabel) : ""}
     ${d.hero ? (d.heroFrame ? `<div class="wrap-wide c-heroimg wide">${browser(d.hero, true)}</div>` : `<div class="wrap-wide c2-heromedia">${lbImg(d.hero, d.name, true)}</div>`) : ""}
-    ${d.youtube ? `<div class="wrap-wide"><div class="yt" data-id="${d.youtube}"><button class="yt-play" aria-label="Play the Two Minutes film">${img("tmPoster", "Two Minutes film", "", true)}<span class="yt-btn">▶ Play the film</span></button></div></div>` : ""}
+    ${d.youtube ? `<div class="wrap-wide"><div class="yt" data-id="${d.youtube}"${d.youtubeAuto ? " data-auto" : ""}><button class="yt-play" aria-label="Play the Two Minutes film">${img("tmPoster", "Two Minutes film", "", true)}<span class="yt-btn">▶ Play the film</span></button></div></div>` : ""}
   </section>
   <section class="wrap c2-lead c2-reveal"><p>${d.lead}</p></section>
   ${(() => { let n = 0; return d.blocks.map((b, i) => caseBlock(b, i, b.h ? ++n : n)).join(""); })()}
