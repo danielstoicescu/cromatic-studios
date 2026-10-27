@@ -313,6 +313,20 @@ const BETA_HOSTS = new Set([BETA_HOST, process.env.BETA_HOST2 ?? "cromaticdrive6
 const BETA_ROOT = process.env.BETA_DIR || join(APP_DIR, "public-beta");
 const BETA_PAGES = join(APP_DIR, "beta-pages"); // r310: client demos served on the beta hosts only
 const statOr = (p) => { try { return statSync(p); } catch { return null; } };
+// r312: /proposals/<client>-<code>/<file>.html, client proposals and offers (Daniel, 27 Oct: "un folder proposals", on live).
+// Served as is from proposals/ in the release (never in the build, the sitemap or the menus), private like /rapoarte/:
+// noindex, no-store, no referrer. Only files: a folder without its file name is a 404, so the code in the name stays the key.
+const PROPOSALS = join(APP_DIR, "proposals");
+function proposals(req, res) {
+  if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405); return res.end(); }
+  let path; try { path = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname)).replace(/\\/g, "/"); } catch { res.writeHead(400); return res.end(); }
+  const full = join(PROPOSALS, path.slice("/proposals".length)), st = full.startsWith(PROPOSALS + "/") ? statOr(full) : null;
+  if (!st || !st.isFile()) { res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8", "X-Robots-Tag": "noindex, nofollow" }); return res.end("Not found"); }
+  const ext = extname(full).toLowerCase();
+  res.writeHead(200, { "Content-Type": typeFor(path, ext) || "application/octet-stream", "Content-Length": st.size, "X-Robots-Tag": "noindex, nofollow, noarchive", "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff" });
+  if (req.method === "HEAD") return res.end();
+  createReadStream(full).on("error", () => res.destroy()).pipe(res);
+}
 function serveBeta(req, res) {
   const u = new URL(req.url, "http://x");
   let path;
@@ -587,6 +601,7 @@ http.createServer((req, res) => {
     if (/"scheme":"http"/.test(String(req.headers["cf-visitor"] || ""))) { res.writeHead(301, { Location: `https://${host}${req.url}` }); return res.end(); }
     // TASK-124: /ops lives on cromaticstudios.com only (Daniel, 26 Oct: no beta copy); 308 keeps the method for the API
     if (isOps(req.url)) { res.writeHead(308, { Location: `https://${PRIMARY_HOST || "cromaticstudios.com"}${req.url}` }); return res.end(); }
+    if (req.url.startsWith("/proposals/") || req.url.startsWith("/testing/ina-sosoaca/")) { const to = req.url.startsWith("/testing/ina-sosoaca/") ? "/proposals/ina-sosoaca-728691ea47/" + req.url.slice(21) : req.url; res.writeHead(301, { Location: `https://${PRIMARY_HOST || "cromaticstudios.com"}${to}` }); return res.end(); } // r312: proposals live on cromaticstudios.com
     if (isCore30(req.url)) return void core30(req, res).catch(() => send(res, 500, { ok: false }));
     if (req.url === "/api/boarding" && req.method === "POST") return void boarding(req, res, "[beta 2.0]").catch(() => send(res, 500, { ok: false }));
     if (req.url === "/api/ctx") return send(res, 200, { internal: false });
@@ -603,6 +618,7 @@ http.createServer((req, res) => {
     res.writeHead(301, { Location: `https://${otherHost ? PRIMARY_HOST : req.headers.host}${to}` });
     return res.end();
   }
+  if (req.url.startsWith("/proposals/")) return proposals(req, res); // r312: client proposals (Daniel, 27 Oct)
   if (isOps(req.url)) return void ops(req, res).then((done) => { if (!done) { res.writeHead(404); res.end(); } }).catch(() => send(res, 500, { ok: false })); // TASK-124: on live too (Daniel, 23 Oct: "deploy /ops si pe live")
   if (isCore30(req.url)) return void core30(req, res).catch(() => send(res, 500, { ok: false }));
   if ((req.method === "GET" || req.method === "HEAD") && legacy(req, res)) return;
