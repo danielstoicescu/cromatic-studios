@@ -1,0 +1,1120 @@
+{
+ "id": "pre",
+ "version": "pre@0.72",
+ "edition": {
+  "kind": "pre",
+  "basedOn": "blank@0.72",
+  "full": "blank",
+  "note": "the at-home first stage of the full Core, same item ids"
+ },
+ "flow": "pre",
+ "title": "The Core · pregătire",
+ "client": {
+  "name": "brandul tău",
+  "contact": ""
+ },
+ "access": {
+  "token": "X649ZJ70fOtS",
+  "email": "optional"
+ },
+ "submit": {
+  "endpoint": "/api/core30",
+  "email": "hi@cromaticstudios.com"
+ },
+ "intro": {
+  "hello": "Salut.",
+  "lead": "Ăsta e primul pas din The Core: pregătirea. O completezi acasă, singur, în ritmul tău. Tot ce scrii aici ajunge direct în The Core, așa că în studio nu mai pierdem timp cu întrebările de bază și trecem direct la deciziile care contează.",
+  "promise": [
+   "Cam 51 de minute, maximum o oră. Fiecare modul îți spune cât durează.",
+   "Salvăm automat, pe dispozitivul ăsta și la noi. Poți închide oricând și reiei de unde ai rămas, de pe același link.",
+   "Nu există răspunsuri greșite. Dacă te blochezi la ceva, sari peste: lucrăm împreună în studio."
+  ],
+  "minutes": "~51 de minute, maximum o oră"
+ },
+ "modules": [
+  {
+   "id": "m02",
+   "title": [
+    "Tu, în",
+    "poveste"
+   ],
+   "short": "Fondatorul",
+   "minutes": 6,
+   "why": "Brandurile mici încep cu cineva. Vrem povestea, nu CV-ul.",
+   "items": [
+    {
+     "id": "m02.why",
+     "kind": "text",
+     "multiline": true,
+     "label": "De ce acum?",
+     "help": "Ce s-a schimbat ca să pornești brandul ăsta?",
+     "placeholder": "Scrie cum ai spune-o la o cafea.",
+     "suggestions": [
+      "Am văzut o problemă pe care n-o rezolvă nimeni",
+      "Clienții ne-au cerut-o",
+      "A venit momentul să facem lucrurile ca lumea",
+      "Ne-am mărit și vechiul brand nu ne mai încape"
+     ]
+    },
+    {
+     "id": "m02.story",
+     "kind": "text",
+     "multiline": true,
+     "label": "O poveste reală în care brandul tău a contat pentru cineva.",
+     "help": "Poate deveni povestea de brand, așa că păstrează detaliile mici.",
+     "placeholder": "Era o zi în care…",
+     "suggestions": [
+      "Era o zi obișnuită până când",
+      "Un client ne-a scris după",
+      "Cel mai frumos compliment pe care l-am primit",
+      "Prima dată când am simțit că am făcut diferența"
+     ]
+    },
+    {
+     "id": "m02.visible",
+     "kind": "scale",
+     "label": "Cât de vizibil vrei să fii în brand?",
+     "pairs": [
+      {
+       "id": "v",
+       "left": "Brand de fondator, fața mea",
+       "right": "Brand instituțional, eu în spate"
+      }
+     ]
+    },
+    {
+     "id": "m02.super",
+     "kind": "text",
+     "optional": true,
+     "label": "Ce fac oamenii mai bine după ce te-au cunoscut?",
+     "placeholder": "Un lucru, cât mai concret.",
+     "suggestions": [
+      "Aleg mai ușor",
+      "Au mai mult timp",
+      "Se simt mai siguri pe ei",
+      "Înțeleg ce cumpără"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m03",
+   "title": [
+    "Oamenii",
+    "tăi"
+   ],
+   "short": "Oamenii",
+   "minutes": 8,
+   "why": "Primii clienți decid cum arată brandul pentru toți ceilalți. Hai să-i vedem la față.",
+   "items": [
+    {
+     "id": "m03.profiles",
+     "kind": "profiles",
+     "noun": "profil",
+     "min": 2,
+     "max": 3,
+     "label": "Cine sunt primii tăi clienți? Desenează 2 sau 3 profiluri.",
+     "help": "Gândește-te la oameni reali. Schimbă-le doar numele.",
+     "fields": [
+      {
+       "id": "nume",
+       "label": "Cine e",
+       "placeholder": "Ioana, 34, arhitectă"
+      },
+      {
+       "id": "etapa",
+       "label": "Etapa de viață",
+       "placeholder": "Tocmai s-a mutat în oraș"
+      },
+      {
+       "id": "cauta",
+       "label": "Ce caută",
+       "multiline": true,
+       "placeholder": "Ce problemă vrea rezolvată"
+      },
+      {
+       "id": "frustreaza",
+       "label": "Ce o frustrează azi",
+       "multiline": true,
+       "placeholder": "Ce nu merge la alternativele de acum"
+      }
+     ]
+    },
+    {
+     "id": "m03.refuse",
+     "kind": "choice",
+     "multi": true,
+     "max": 3,
+     "other": true,
+     "why": true,
+     "label": "Pe cine refuzi?",
+     "help": "Până la 3. Un brand clar știe și pentru cine nu e.",
+     "options": [
+      {
+       "id": "pret",
+       "label": "Cine caută cel mai mic preț, orice ar fi"
+      },
+      {
+       "id": "graba",
+       "label": "Cine vrea totul în 48 de ore"
+      },
+      {
+       "id": "generic",
+       "label": "Cine vrea varianta standard, ca la toată lumea"
+      },
+      {
+       "id": "control",
+       "label": "Cine vrea să controleze fiecare detaliu"
+      }
+     ]
+    },
+    {
+     "id": "m03.journey",
+     "kind": "rank",
+     "label": "Trage pașii în ordinea în care contează pentru clientul tău tipic.",
+     "help": "Sus e ce contează cel mai mult.",
+     "options": [
+      {
+       "id": "afla",
+       "label": "Află de tine",
+       "desc": "Recomandare, social, căutare"
+      },
+      {
+       "id": "intelege",
+       "label": "Înțelege ce oferi",
+       "desc": "Site, conversație, mostră"
+      },
+      {
+       "id": "aleg",
+       "label": "Alege",
+       "desc": "Preț, încredere, potrivire"
+      },
+      {
+       "id": "foloseste",
+       "label": "Folosește",
+       "desc": "Experiența propriu-zisă"
+      },
+      {
+       "id": "revine",
+       "label": "Revine",
+       "desc": "Relația după"
+      },
+      {
+       "id": "recomanda",
+       "label": "Recomandă",
+       "desc": "Le spune altora"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m04",
+   "title": [
+    "Locul tău",
+    "pe hartă"
+   ],
+   "short": "Poziționare",
+   "minutes": 7,
+   "why": "Poziționarea e locul pe care îl ocupi în mintea cuiva. Dacă nu-l alegi tu, ți-l alege piața.",
+   "items": [
+    {
+     "id": "m04.category",
+     "kind": "choice",
+     "other": true,
+     "label": "Cum îți explici brandul cuiva la o cafea, în 10 secunde?",
+     "options": [
+      {
+       "id": "a",
+       "label": "Varianta care spune ce face."
+      },
+      {
+       "id": "b",
+       "label": "Varianta care spune pentru cine e."
+      },
+      {
+       "id": "c",
+       "label": "Varianta care spune de ce e altfel."
+      }
+     ]
+    },
+    {
+     "id": "m04.alts",
+     "kind": "matrix",
+     "label": "Ce folosesc oamenii azi în locul tău?",
+     "help": "Pentru fiecare: ce face bine și unde pierde.",
+     "rows": [
+      {
+       "id": "mare",
+       "label": "Jucătorul mare din categorie"
+      },
+      {
+       "id": "mic",
+       "label": "Un concurent mic, ca tine"
+      },
+      {
+       "id": "diy",
+       "label": "Se descurcă singuri"
+      },
+      {
+       "id": "nimic",
+       "label": "Nimic",
+       "desc": "Amână"
+      }
+     ],
+     "cols": [
+      {
+       "id": "bine",
+       "label": "Ce fac bine",
+       "placeholder": "Preț, viteză…"
+      },
+      {
+       "id": "pierd",
+       "label": "Unde pierd",
+       "placeholder": "Nu știu nimic despre tine…"
+      }
+     ]
+    },
+    {
+     "id": "m04.xfactor",
+     "kind": "text",
+     "label": "X factor: ce poți promite tu și nimeni altcineva?",
+     "help": "Un singur lucru. Dacă îl poate spune și concurența, nu e el.",
+     "placeholder": "Noi…",
+     "suggestions": [
+      "Noi suntem singurii care",
+      "Răspundem la telefon, mereu",
+      "Facem totul de mână",
+      "Garantăm rezultatul sau dăm banii înapoi"
+     ]
+    },
+    {
+     "id": "m04.sliders",
+     "kind": "scale",
+     "label": "Trage fiecare cursor unde stai azi.",
+     "pairs": [
+      {
+       "id": "pret",
+       "left": "Accesibil",
+       "right": "Premium"
+      },
+      {
+       "id": "oferta",
+       "left": "Curatoriat, puțin și ales",
+       "right": "Ofertă largă"
+      },
+      {
+       "id": "geo",
+       "left": "Local",
+       "right": "Național sau mai departe"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m05",
+   "title": [
+    "Dacă ar fi",
+    "un om"
+   ],
+   "short": "Personalitate",
+   "minutes": 5,
+   "why": "Dacă brandul ar fi un om, cum l-ai recunoaște din colțul camerei? Nu există răspuns corect, doar unul sincer.",
+   "items": [
+    {
+     "id": "m05.sliders",
+     "kind": "scale",
+     "label": "Trage fiecare cursor spre cuvântul care îl descrie mai bine.",
+     "pairs": [
+      {
+       "id": "calm",
+       "left": "Calm",
+       "right": "Energic"
+      },
+      {
+       "id": "cald",
+       "left": "Cald",
+       "right": "Rafinat"
+      },
+      {
+       "id": "jucaus",
+       "left": "Jucăuș",
+       "right": "Serios"
+      },
+      {
+       "id": "discret",
+       "left": "Discret",
+       "right": "Expresiv"
+      },
+      {
+       "id": "comunitar",
+       "left": "Comunitar",
+       "right": "Exclusivist"
+      },
+      {
+       "id": "traditional",
+       "left": "Tradițional",
+       "right": "Contemporan"
+      },
+      {
+       "id": "intuitiv",
+       "left": "Intuitiv",
+       "right": "Riguros"
+      },
+      {
+       "id": "local",
+       "left": "Local",
+       "right": "Cosmopolit"
+      }
+     ]
+    },
+    {
+     "id": "m05.table",
+     "kind": "text",
+     "multiline": true,
+     "label": "Dacă brandul ar intra într-o cameră plină de oameni, cum s-ar purta?",
+     "placeholder": "Ar fi cel care…",
+     "suggestions": [
+      "Ar fi cel care face cunoștință cu toată lumea",
+      "Ar asculta mai mult decât vorbește",
+      "Ar spune gluma care sparge gheața",
+      "Ar ști răspunsul la orice întrebare"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m07",
+   "title": [
+    "Valorile"
+   ],
+   "short": "Valori",
+   "minutes": 6,
+   "why": "Valorile sunt promisiuni pe care le ții și când te costă. Le alegem prin eliminare, ca să rămână doar cele adevărate.",
+   "items": [
+    {
+     "id": "m07.values",
+     "kind": "values",
+     "label": "Opt, apoi cinci, apoi trei.",
+     "help": "Trage valorile în coș. Poți adăuga și una a ta.",
+     "pool": [
+      "apropiere",
+      "încredere",
+      "generozitate",
+      "autenticitate",
+      "curiozitate",
+      "apartenență",
+      "discreție",
+      "simplitate",
+      "grijă",
+      "libertate",
+      "curaj",
+      "calitate",
+      "transparență",
+      "respect",
+      "bucurie",
+      "echilibru",
+      "răbdare",
+      "deschidere",
+      "comunitate",
+      "empatie",
+      "responsabilitate",
+      "onestitate",
+      "rădăcini",
+      "frumusețe",
+      "ospitalitate",
+      "intimitate",
+      "inițiativă",
+      "claritate",
+      "consecvență",
+      "sustenabilitate",
+      "joacă",
+      "recunoștință"
+     ],
+     "steps": [
+      8,
+      5,
+      3
+     ],
+     "always": "În practică, noi întotdeauna…",
+     "never": "…și niciodată…"
+    }
+   ]
+  },
+  {
+   "id": "m08",
+   "title": [
+    "Ce oferi,",
+    "ce simt"
+   ],
+   "short": "Atribute",
+   "minutes": 4,
+   "why": "Atributele raționale spun ce primește omul. Cele emoționale spun cu ce rămâne. Ne trebuie amândouă.",
+   "items": [
+    {
+     "id": "m08.rational",
+     "kind": "sort",
+     "custom": true,
+     "label": "Trei atribute raționale. Ce oferă brandul?",
+     "buckets": [
+      {
+       "id": "top",
+       "label": "Top 3 raționale",
+       "max": 3,
+       "color": "#119BFE"
+      }
+     ],
+     "pool": [
+      "calitate",
+      "preț corect",
+      "rapiditate",
+      "expertiză",
+      "personalizare",
+      "durabilitate",
+      "simplitate",
+      "suport",
+      "inovație",
+      "transparență",
+      "acces",
+      "comunitate"
+     ],
+     "icons": {
+      "calitate": "🏅",
+      "preț corect": "🏷️",
+      "rapiditate": "⚡",
+      "expertiză": "🎓",
+      "personalizare": "🧩",
+      "durabilitate": "🌱",
+      "simplitate": "✨",
+      "suport": "🤝",
+      "inovație": "💡",
+      "transparență": "🔍",
+      "acces": "🔑",
+      "comunitate": "👥"
+     }
+    },
+    {
+     "id": "m08.emotional",
+     "kind": "sort",
+     "custom": true,
+     "label": "Trei atribute emoționale. Ce simte omul?",
+     "buckets": [
+      {
+       "id": "top",
+       "label": "Top 3 emoționale",
+       "max": 3,
+       "color": "#F65342"
+      }
+     ],
+     "pool": [
+      "liniștit",
+      "văzut",
+      "acasă",
+      "conectat",
+      "în siguranță",
+      "inspirat",
+      "curios",
+      "ales",
+      "liber",
+      "ușurat",
+      "entuziasmat",
+      "parte din ceva"
+     ],
+     "icons": {
+      "liniștit": "😌",
+      "văzut": "👀",
+      "acasă": "🏠",
+      "conectat": "🔗",
+      "în siguranță": "🛡️",
+      "inspirat": "✨",
+      "curios": "🤔",
+      "ales": "💛",
+      "liber": "🕊️",
+      "ușurat": "😮‍💨",
+      "entuziasmat": "🤩",
+      "parte din ceva": "🫶"
+     }
+    },
+    {
+     "id": "m08.after",
+     "kind": "text",
+     "label": "Ce vrei să spună cineva despre brand după prima întâlnire?",
+     "placeholder": "„N-am mai întâlnit pe cineva care…”",
+     "suggestions": [
+      "N-am mai întâlnit pe cineva care",
+      "Chiar le pasă",
+      "Simplu și fără bătăi de cap",
+      "Știu exact ce fac"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m09",
+   "title": [
+    "Vocea"
+   ],
+   "short": "Voce",
+   "minutes": 5,
+   "why": "Vocea e cum suni când nu ești în cameră. Alege din instinct, fără să cântărești prea mult.",
+   "items": [
+    {
+     "id": "m09.offer",
+     "kind": "ab",
+     "label": "O ofertă. Care sună a brandul tău?",
+     "a": {
+      "id": "a",
+      "label": "Pachet complet, livrare în 5 zile, garanție 2 ani. Comandă acum."
+     },
+     "b": {
+      "id": "b",
+      "label": "Îl primești vineri, gata de folosit. Dacă ceva nu e cum trebuie, venim noi să-l reparăm."
+     }
+    },
+    {
+     "id": "m09.welcome",
+     "kind": "ab",
+     "label": "Un mesaj de bun venit.",
+     "a": {
+      "id": "a",
+      "label": "Bine ai venit! Îți mulțumim pentru înscriere. Vei primi în curând noutăți."
+     },
+     "b": {
+      "id": "b",
+      "label": "Salut, Ana. Ne bucurăm că ești aici. Joi avem o seară pentru clienți noi, 12 locuri. Ți-l păstrăm pe unul?"
+     }
+    },
+    {
+     "id": "m09.price",
+     "kind": "ab",
+     "label": "Cineva întreabă „cât costă?”.",
+     "a": {
+      "id": "a",
+      "label": "Tarifele pornesc de la 200 de lei, conform grilei de prețuri."
+     },
+     "b": {
+      "id": "b",
+      "label": "Direct: 200 de lei. Și prima cafea e din partea noastră."
+     }
+    },
+    {
+     "id": "m09.words",
+     "kind": "sort",
+     "custom": true,
+     "label": "Așa da, așa nu. Trage cuvintele în coșul lor.",
+     "help": "Trei cuvinte pe care brandul le folosește și trei pe care nu le-ar folosi niciodată.",
+     "buckets": [
+      {
+       "id": "da",
+       "label": "Așa da",
+       "max": 3,
+       "color": "#28C840"
+      },
+      {
+       "id": "nu",
+       "label": "Așa nu",
+       "max": 3,
+       "color": "#F65342"
+      }
+     ],
+     "pool": [
+      "acasă",
+      "aproape",
+      "oameni",
+      "simplu",
+      "făcut cu grijă",
+      "împreună",
+      "lux",
+      "exclusivist",
+      "oportunitate",
+      "soluție",
+      "premium",
+      "inovator",
+      "revoluționar",
+      "deal",
+      "ofertă unică"
+     ]
+    },
+    {
+     "id": "m09.tu",
+     "kind": "choice",
+     "label": "Tu sau dumneavoastră?",
+     "options": [
+      {
+       "id": "tu",
+       "label": "Tu, mereu",
+       "desc": "Și în contracte, și pe Instagram."
+      },
+      {
+       "id": "tu-exceptii",
+       "label": "Tu, cu excepții",
+       "desc": "Dumneavoastră în acte și cu oamenii care o preferă."
+      },
+      {
+       "id": "dvs",
+       "label": "Dumneavoastră",
+       "desc": "Distanță respectuoasă, peste tot."
+      },
+      {
+       "id": "canal",
+       "label": "Depinde de canal",
+       "desc": "Social la tu, site și email la dumneavoastră."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m10",
+   "title": [
+    "Cum se",
+    "vede"
+   ],
+   "short": "Direcție vizuală",
+   "minutes": 6,
+   "why": "Fără poze de stoc. Doar culori, litere, texturi și ritm, ca să alegi senzația, nu clișeul.",
+   "items": [
+    {
+     "id": "m10.pairs",
+     "kind": "visual",
+     "label": "Din fiecare pereche, ce simți mai aproape?",
+     "pairs": [
+      {
+       "id": "pal1",
+       "label": "Paletă",
+       "a": {
+        "id": "a",
+        "label": "Pământ cald",
+        "swatch": {
+         "type": "palette",
+         "colors": [
+          "#C4693F",
+          "#E2B868",
+          "#F3E9D6",
+          "#6E7B4E"
+         ]
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Calm răcoros",
+        "swatch": {
+         "type": "palette",
+         "colors": [
+          "#9DB2A6",
+          "#5D7186",
+          "#E7ECEB",
+          "#22303B"
+         ]
+        }
+       }
+      },
+      {
+       "id": "pal2",
+       "label": "Intensitate",
+       "a": {
+        "id": "a",
+        "label": "Luminos, saturat",
+        "swatch": {
+         "type": "palette",
+         "colors": [
+          "#FF6A3D",
+          "#FFC43D",
+          "#1FB5A6",
+          "#2747A5"
+         ]
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Liniștit, stins",
+        "swatch": {
+         "type": "palette",
+         "colors": [
+          "#B9A99A",
+          "#D8CFC4",
+          "#8A9690",
+          "#4A4744"
+         ]
+        }
+       }
+      },
+      {
+       "id": "type1",
+       "label": "Litera",
+       "a": {
+        "id": "a",
+        "label": "Serif editorial",
+        "swatch": {
+         "type": "type",
+         "font": "serif",
+         "sample": "Brandul tău."
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Sans geometric",
+        "swatch": {
+         "type": "type",
+         "font": "geo",
+         "sample": "Brandul tău.",
+         "weight": 800
+        }
+       }
+      },
+      {
+       "id": "type2",
+       "label": "Caracter",
+       "a": {
+        "id": "a",
+        "label": "Clasic, gravat",
+        "swatch": {
+         "type": "type",
+         "font": "classic",
+         "sample": "Brand",
+         "weight": 600
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Contemporan, ușor",
+        "swatch": {
+         "type": "type",
+         "font": "grotesk",
+         "sample": "brand",
+         "weight": 500
+        }
+       }
+      },
+      {
+       "id": "tex",
+       "label": "Textură",
+       "a": {
+        "id": "a",
+        "label": "Hârtie, in, granulat",
+        "swatch": {
+         "type": "texture",
+         "texture": "linen"
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Neted, plat, digital",
+        "swatch": {
+         "type": "texture",
+         "texture": "flat"
+        }
+       }
+      },
+      {
+       "id": "dens",
+       "label": "Densitate",
+       "a": {
+        "id": "a",
+        "label": "Aerisit",
+        "swatch": {
+         "type": "density",
+         "level": "airy"
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Bogat",
+        "swatch": {
+         "type": "density",
+         "level": "rich"
+        }
+       }
+      },
+      {
+       "id": "shape",
+       "label": "Forme",
+       "a": {
+        "id": "a",
+        "label": "Organic",
+        "swatch": {
+         "type": "shape",
+         "shape": "organic"
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Geometric",
+        "swatch": {
+         "type": "shape",
+         "shape": "geometric"
+        }
+       }
+      },
+      {
+       "id": "ritm",
+       "label": "Ritm",
+       "a": {
+        "id": "a",
+        "label": "Liniștit, aliniat",
+        "swatch": {
+         "type": "rhythm",
+         "level": "calm"
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Jucăuș, decalat",
+        "swatch": {
+         "type": "rhythm",
+         "level": "playful"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": "m10.refs",
+     "kind": "refs",
+     "max": 6,
+     "optional": true,
+     "label": "Ai referințe ale tale? Până la șase.",
+     "help": "Imagini sau link-uri, orice domeniu. Spune-ne ce îți place la fiecare."
+    },
+    {
+     "id": "m10.not",
+     "kind": "choice",
+     "multi": true,
+     "other": true,
+     "label": "Cu ce NU vrei să semene?",
+     "options": [
+      {
+       "id": "stock",
+       "label": "Poze de stoc cu oameni zâmbitori"
+      },
+      {
+       "id": "corporate",
+       "label": "Albastrul corporate"
+      },
+      {
+       "id": "lux",
+       "label": "Auriu pe negru, lux de catalog"
+      },
+      {
+       "id": "trend",
+       "label": "Ce e la modă anul ăsta"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m12",
+   "title": [
+    "Site-ul",
+    "și restul"
+   ],
+   "short": "Website & practic",
+   "minutes": 4,
+   "why": "Primul site nu trebuie să facă tot. Trebuie să facă bine trei lucruri în primele trei luni.",
+   "items": [
+    {
+     "id": "m12.site",
+     "kind": "rank",
+     "label": "Ce trebuie să facă site-ul în primele 3 luni? Ordonează.",
+     "options": [
+      {
+       "id": "vinde",
+       "label": "Vinde sau prezintă oferta"
+      },
+      {
+       "id": "leads",
+       "label": "Captează lead-uri"
+      },
+      {
+       "id": "viziune",
+       "label": "Explică viziunea"
+      },
+      {
+       "id": "poveste",
+       "label": "Spune povestea fondatorului"
+      },
+      {
+       "id": "comunitate",
+       "label": "Adună o comunitate"
+      }
+     ]
+    },
+    {
+     "id": "m12.handles",
+     "kind": "text",
+     "label": "Domeniu și conturi sociale deja deținute",
+     "placeholder": "brand.ro, @brand…"
+    },
+    {
+     "id": "m12.deadline",
+     "kind": "text",
+     "label": "Termene: când trebuie să fie gata?",
+     "placeholder": "Lansare în…",
+     "suggestions": [
+      "Lansare în 3 luni",
+      "Până la sezonul de toamnă",
+      "Nu e grabă, vrem să iasă bine",
+      "Avem un eveniment pe"
+     ]
+    },
+    {
+     "id": "m12.kpi",
+     "kind": "list",
+     "count": 3,
+     "label": "Cum arată succesul în 6 luni? Trei indicatori.",
+     "placeholder": "Ex.: 50 de clienți noi"
+    }
+   ]
+  }
+ ],
+ "workshop": {
+  "minutes": 90,
+  "agenda": [
+   {
+    "id": "w0",
+    "title": "Cafeaua și regulile",
+    "minutes": 5,
+    "modules": [],
+    "goal": "Ce facem azi, ce iese la final: The Core, arhetipul mix și profilurile."
+   },
+   {
+    "id": "w1",
+    "title": "Fundația",
+    "minutes": 15,
+    "modules": [
+     "m01",
+     "m02"
+    ],
+    "goal": "Ce păstrăm din ce ai spus deja. Cât de mult ești tu brandul."
+   },
+   {
+    "id": "w2",
+    "title": "Oameni și poziționare",
+    "minutes": 15,
+    "modules": [
+     "m03",
+     "m04"
+    ],
+    "goal": "Primii clienți, pe cine refuzăm, fraza de poziționare și X factor-ul."
+   },
+   {
+    "id": "w3",
+    "title": "Personalitate și arhetip",
+    "minutes": 15,
+    "modules": [
+     "m05",
+     "m06"
+    ],
+    "goal": "Două arhetipuri și un procent. Arbitrul deciziilor de design."
+   },
+   {
+    "id": "w4",
+    "title": "Valori și atribute",
+    "minutes": 12,
+    "modules": [
+     "m07",
+     "m08"
+    ],
+    "goal": "Votăm. Trei valori cu „întotdeauna / niciodată”, atribute 3 + 3."
+   },
+   {
+    "id": "w5",
+    "title": "Voce și vizual",
+    "minutes": 10,
+    "modules": [
+     "m09",
+     "m10"
+    ],
+    "goal": "Cum sună și cum se simte. Ce evităm cu orice preț."
+   },
+   {
+    "id": "w6",
+    "title": "Arhitectură și site",
+    "minutes": 10,
+    "modules": [
+     "m11",
+     "m12"
+    ],
+    "goal": "Ordinea priorităților, deciziile de sub-brand, ce face site-ul în 3 luni."
+   },
+   {
+    "id": "w7",
+    "title": "Scriem The Core",
+    "minutes": 8,
+    "modules": [],
+    "goal": "O frază. Ce oferi, cui, în ce cultură, cu ce voce, ce le dă, cum se simt."
+   }
+  ],
+  "core": [
+   {
+    "id": "ofera",
+    "label": "Ce oferi",
+    "hint": "categoria, spusă simplu",
+    "from": [
+     "m04.category",
+     "m04.builder"
+    ]
+   },
+   {
+    "id": "cui",
+    "label": "Cui",
+    "hint": "primii clienți, nu toată lumea",
+    "from": [
+     "m03.profiles",
+     "m04.builder"
+    ]
+   },
+   {
+    "id": "cultura",
+    "label": "În ce cultură",
+    "hint": "locul, ritmul, valorile",
+    "from": [
+     "m07.values",
+     "m01.lang"
+    ]
+   },
+   {
+    "id": "voce",
+    "label": "Cu ce voce",
+    "hint": "trei cuvinte despre cum suni",
+    "from": [
+     "m09.words",
+     "m05.sliders"
+    ]
+   },
+   {
+    "id": "impact",
+    "label": "Ce le dă",
+    "hint": "beneficiul concret",
+    "from": [
+     "m04.builder",
+     "m08.rational"
+    ]
+   },
+   {
+    "id": "simt",
+    "label": "Cum se simt",
+    "hint": "emoția cu care rămân",
+    "from": [
+     "m08.emotional",
+     "m08.after"
+    ]
+   },
+   {
+    "id": "x",
+    "label": "X factor",
+    "hint": "ce promiți și alții nu pot",
+    "from": [
+     "m04.xfactor"
+    ]
+   }
+  ]
+ },
+ "done": {
+  "title": "Gata pregătirea. Ne vedem în studio.",
+  "body": "Am primit tot. Citim înainte să ne vedem, iar când ne apucăm de lucru găsești răspunsurile deja în The Core, la locul lor. Restul îl facem împreună, la o cafea, în Olari 9."
+ },
+ "lang": "ro"
+}

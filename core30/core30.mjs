@@ -10,6 +10,12 @@
 //   GET  /api/core30/<client>/latest?key=…   the workshop loads the newest copy (CORE30_ADMIN_KEY)
 //   POST /api/core30/admin/sessions          (admin key) a new client session from an email: id, token, onboarding mail
 //   GET  /api/core30/admin/sessions          (admin key) the sessions created that way
+//   POST /api/core30/admin/sessions/upgrade  (admin key) a pre session moves to the full Core: same id, token and answers
+//   GET  /api/core30/<client>/prefill?t=…    the answers given in the pre stage, for a device that has none of them yet
+//
+// Two stages: a dashboard session can start as the short pre edition ("pregătire", at home, <1 h) and later be upgraded
+// to the full Core. Both stages write to the same <data>/<id>/ (same item ids), the pre answers are frozen in pre.json
+// on the pre submit and on the upgrade, and the full Core marks them "completat de tine acasă".
 //
 // Sessions created by the admin route live in <data>/_sessions/<id>.json, not in the repo: no deploy per client.
 // Each one points at a repo edition (default "blank") and is served as a custom edition of it, with its own token.
@@ -105,7 +111,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       try {
         const c = JSON.parse(await readFile(join(configDir, f), "utf8"));
         const langs = ["ro", ...all.filter((g) => g.startsWith(`${c.id}.`) && /\.[a-z]{2}\.json$/.test(g)).map((g) => g.slice(c.id.length + 1, -5))];
-        out[c.id] = { langs, token: c.access?.token ?? "", emailMode: c.access?.email === "optional" ? "optional" : "required", public: !!c.access?.public, cta: c.lite?.cta ?? "", title: c.title ?? "The Core 3.0", name: c.client?.name, contact: c.client?.contact, email: c.client?.email ?? "", file: join(configDir, f) };
+        out[c.id] = { kind: c.edition?.kind ?? "", full: c.edition?.full ?? "", stage: c.edition?.kind === "pre" ? "pre" : "full", langs, token: c.access?.token ?? "", emailMode: c.access?.email === "optional" ? "optional" : "required", public: !!c.access?.public, cta: c.lite?.cta ?? "", title: c.title ?? "The Core 3.0", name: c.client?.name, contact: c.client?.contact, email: c.client?.email ?? "", file: join(configDir, f) };
       } catch (e) { console.error("[core30] bad config", f, e.message); }
     }
     if (registry) { try { const r = JSON.parse(await readFile(registry, "utf8")); for (const [id, x] of Object.entries(r)) out[id] = { ...(out[id] ?? {}), ...x }; } catch { /* no registry */ } }
@@ -114,13 +120,32 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     for (const f of dyn) {
       try {
         const x = JSON.parse(await readFile(join(sessionsDir, f), "utf8"));
-        const base = out[x.edition];
+        // a session in the pre stage is served from the pre edition of its full edition; x.edition stays the full one
+        const stage = x.stage === "pre" ? "pre" : "full";
+        const base = stage === "pre" ? preOf(out, x.edition) : out[x.edition];
         if (!base?.file || out[x.id]) continue; // a repo edition always wins its own id
-        out[x.id] = { ...base, token: x.token, emailMode: "required", public: false, name: x.name || x.email, contact: x.contact || x.name || "", email: x.email, dynamic: x };
+        out[x.id] = { ...base, stage, fullFile: out[x.edition]?.file, token: x.token, emailMode: "required", public: false, name: x.name || x.email, contact: x.contact || x.name || "", email: x.email, dynamic: x };
       } catch (e) { console.error("[core30] bad session", f, e.message); }
     }
     return out;
   };
+
+  /** the repo's pre edition for a full edition (edition.kind "pre", edition.full = that id) */
+  const preOf = (reg, full) => Object.values(reg).find((e) => e.kind === "pre" && e.full === full && !e.dynamic);
+  const preFile = (id) => join(dataDir, safe(id), "pre.json");
+  async function readPre(id) { try { return JSON.parse(await readFile(preFile(id), "utf8")); } catch { return null; } }
+  /** freezes what was answered in the pre stage: the answers to the pre edition's items, who answered, when */
+  async function writePre(id, c, session, extra) {
+    let items = [];
+    try { items = JSON.parse(await readFile(c.file, "utf8")).modules.flatMap((m) => m.items.map((i) => i.id)); } catch { /* no config */ }
+    const ans = session?.answers ?? {};
+    const answers = Object.fromEntries(items.filter((k) => ans[k] != null).map((k) => [k, ans[k]]));
+    const prev = await readPre(id);
+    const rec = { at: new Date().toISOString(), submittedAt: prev?.submittedAt ?? null, configVersion: session?.configVersion ?? null,
+      items: Object.keys(answers), answers, respondent: session?.respondent?.email ? { email: session.respondent.email } : prev?.respondent ?? null, ...extra };
+    await atomicWrite(preFile(id), JSON.stringify(rec, null, 1));
+    return rec;
+  }
 
   async function mail(subject, html, attachments) {
     if (!transport) { console.log(`[core30] mail (not sent, no SMTP): ${subject}`); return; }
@@ -161,13 +186,35 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     meta.firstDraftAt ??= now;
     meta.lastSaveAt = now;
     meta.saves = (meta.saves ?? 0) + 1;
-    if (kind === "submit") { meta.submits = (meta.submits ?? 0) + 1; meta.lastSubmitAt = now; }
+    const preSubmit = kind === "submit" && c.stage === "pre" && !c.public;
+    if (preSubmit) { meta.preSubmits = (meta.preSubmits ?? 0) + 1; meta.lastPreSubmitAt = now; }
+    else if (kind === "submit") { meta.submits = (meta.submits ?? 0) + 1; meta.lastSubmitAt = now; }
     await atomicWrite(join(dir, "meta.json"), JSON.stringify(meta));
     await atomicWrite(join(dir, "history", `${now.slice(0, 13)}.json`), record); // one per hour
     if (kind === "submit" && c.public) {
       await appendLog(dir, { at: now, type: "submit" });
       await writeFile(join(dir, "submits", `submit-${stamp()}.json`), record, { flag: "wx" });
       await liteMails(c, id, p, now);
+    } else if (preSubmit) {
+      await appendLog(dir, { at: now, type: "pre-submit", stage: "pre" });
+      await writeFile(join(dir, "submits", `pre-submit-${stamp()}.json`), record, { flag: "wx" }); // never overwrite
+      // the answers as the client sent them: the full Core reads them back, marked "completat de tine acasă"
+      const x = p.export ?? {};
+      await writePre(id, c, { answers: x.answers, respondent: x.respondent, configVersion: p.configVersion ?? x.config?.version }, { submittedAt: now });
+      const r = x.readable ?? {};
+      const rows = Object.values(r).filter((y) => y.answer).map((y) => `<tr><td style="padding:6px 10px;color:#5d5a52;font:12px monospace;vertical-align:top">${esc(y.module)}</td><td style="padding:6px 10px"><b>${esc(y.question)}</b><br>${esc(y.answer)}</td></tr>`).join("");
+      await mail(`[The Core · pregătire] ${c.name ?? id} a trimis pregătirea`, `<p><b>${esc(c.contact || x.respondent?.email || "")}</b> a trimis pregătirea The Core pentru <b>${esc(c.name ?? id)}</b>. Răspunsurile sunt deja în sesiune: când treci sesiunea pe The Core complet (upgrade din Ops), le găsește precompletate. JSON-ul e atașat.</p><table style="border-collapse:collapse;font:14px sans-serif">${rows}</table>`,
+        [{ filename: `the-core-pre_${id}_${now.slice(0, 10)}.json`, content: JSON.stringify(x, null, 2) }]);
+      const to = c.email || x.respondent?.email || "";
+      if (EMAIL.test(to)) {
+        const en = x.lang === "en";
+        const subject = en ? "We've got your The Core prep" : "Am primit pregătirea pentru The Core";
+        const html = en
+          ? `<p>Hi${c.contact ? ` ${esc(c.contact)}` : ""}. We've got your prep, thank you for the time. We'll read it before we meet, and when we start working you'll find your answers already in The Core, ready to pick up from there. See you at the studio, over a coffee.</p><p>Cromatic Studios · Str. Olari 9, Bucharest</p>`
+          : `<p>Salut${c.contact ? `, ${esc(c.contact)}` : ""}. Am primit pregătirea, mersi pentru timp. O citim înainte să ne vedem, iar când ne apucăm de lucru găsești răspunsurile deja în The Core, gata de continuat. Ne vedem în studio, la o cafea.</p><p>Cromatic Studios · Str. Olari 9, București</p>`;
+        try { await transport?.sendMail({ from: mailFrom, to, replyTo: mailTo, subject, html }); } catch (e) { console.error("[core30] pre confirm failed", e.message); }
+        if (!transport) console.log(`[core30] pre confirmation (not sent, no SMTP) to ${to}`);
+      }
     } else if (kind === "submit") {
       await appendLog(dir, { at: now, type: "submit" });
       const file = `submit-${stamp()}.json`;
@@ -234,12 +281,19 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const cfg = { ...JSON.parse(await readFile(file, "utf8")), lang, langs: c.langs };
     if (!c.dynamic) return [200, cfg];
     const x = c.dynamic;
+    // two stages: the browser learns which one it is in, and in the full stage which items came from home
+    const pre = c.stage === "full" ? await readPre(x.id) : null;
+    const stage = c.stage === "pre" ? { current: "pre" } : pre ? { current: "full", pre: { at: pre.at, submittedAt: pre.submittedAt ?? null, items: pre.items ?? [] } } : undefined;
     return [200, {
-      ...cfg, id: x.id, version: `${cfg.version}+${x.createdAt.slice(0, 10)}`,
-      edition: { kind: "custom", basedOn: cfg.version, note: "created from the Cromatic Ops dashboard" },
+      ...cfg, id: x.id, version: `${cfg.version}+${x.createdAt.slice(0, 10)}`, ...(stage ? { stage } : {}),
+      edition: { kind: "custom", basedOn: cfg.version, note: c.stage === "pre" ? "pre stage, created from the Cromatic Ops dashboard" : "created from the Cromatic Ops dashboard" },
       client: { ...cfg.client, name: x.name || cfg.client?.name || (lang === "en" ? "your brand" : "brandul tău"), contact: x.contact || "", email: x.email },
       access: { token: x.token, email: "required" },
-      intro: { ...cfg.intro, hello: x.contact ? (lang === "en" ? `Hi ${x.contact}.` : `Salut, ${x.contact}.`) : cfg.intro?.hello },
+      intro: { ...cfg.intro, hello: x.contact ? (lang === "en" ? `Hi ${x.contact}.` : `Salut, ${x.contact}.`) : cfg.intro?.hello,
+        // after the prep, the full Core is no longer "the first step"
+        ...(pre ? { lead: lang === "en"
+          ? "This is the full Core. What you wrote in the prep is already here, right where it belongs. What's left are the exercises we do best together: the archetype, the 6 attributes that write your UVP and the sentence that holds the strategy. Then we meet at the studio, over a coffee, and turn it all into strategy."
+          : "Ăsta e The Core complet. Ce ai scris în pregătire e deja aici, la locul lui. Au rămas exercițiile pe care le facem cel mai bine împreună: arhetipul, cele 6 atribute care scriu UVP-ul și fraza care ține strategia. Apoi ne vedem în studio, la o cafea, și transformăm totul în strategie." } : {}) },
     }];
   }
 
@@ -255,9 +309,13 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const contact = String(p.contact ?? "").trim().slice(0, 60);
     const lang = p.lang === "en" ? "en" : "ro";
     const reg = await clients();
-    const edition = safe(p.edition || "blank");
+    let edition = safe(p.edition || "blank");
+    // { edition: "pre" } (a pre edition) = the pre stage of its full edition; { edition: "blank", stage: "pre" } is the same
+    let stage = p.stage === "pre" ? "pre" : "full";
+    if (reg[edition]?.kind === "pre" && !reg[edition].dynamic) { stage = "pre"; edition = reg[edition].full; }
     const base = reg[edition];
-    if (!base?.file || base.dynamic || base.public) return [422, { ok: false, error: "edition" }];
+    if (!base?.file || base.dynamic || base.public || base.kind === "pre") return [422, { ok: false, error: "edition" }];
+    if (stage === "pre" && !preOf(reg, edition)) return [422, { ok: false, error: "stage" }];
     // the id: from the name, else the email's domain (or its local part for free mail), unique against everything
     const [local, domain] = email.split("@");
     const root = slugify(name) || slugify(FREE_MAIL.test(domain) ? local : domain.split(".").slice(0, -1).join("-")) || "client";
@@ -265,18 +323,91 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     while (reg[id] || existsSync(join(dataDir, id)) || existsSync(join(sessionsDir, `${id}.json`)) || id.startsWith("_")) id = `${root}-${++n}`;
     const token = randomBytes(12).toString("base64url");
     const now = new Date().toISOString();
-    const rec = { id, token, email, name, contact, edition, lang, createdAt: now };
+    const rec = { id, token, email, name, contact, edition, lang, stage, createdAt: now };
     await mkdir(sessionsDir, { recursive: true });
     await writeFile(join(sessionsDir, `${id}.json`), JSON.stringify(rec, null, 1), { flag: "wx" });
     const url = `${publicBase.replace(/\/$/, "")}/thecore30/${id}?t=${token}`;
     const mailSent = await onboardingMail(rec, url);
-    return [200, { ok: true, id, url, token, edition, lang, mailSent }];
+    return [200, { ok: true, id, url, token, edition, stage, lang, mailSent }];
+  }
+
+  /** the pre stage is over: the same link now opens the full Core, with the pre answers frozen in pre.json and prefilled */
+  async function upgradeSession(body) {
+    let p;
+    try { p = JSON.parse(body); } catch { return [400, { ok: false, error: "json" }]; }
+    const id = safe(p.id);
+    const file = join(sessionsDir, `${id}.json`);
+    let rec;
+    try { rec = JSON.parse(await readFile(file, "utf8")); } catch { return [404, { ok: false, error: "session" }]; }
+    const reg = await clients();
+    const c = reg[id];
+    if (!c?.dynamic) return [404, { ok: false, error: "session" }];
+    // the full edition can change on the way (e.g. blank → a tailored edition with the same ids); default: the one it had
+    const edition = p.edition ? safe(p.edition) : rec.edition;
+    const full = reg[edition];
+    if (!full?.file || full.dynamic || full.public || full.kind === "pre") return [422, { ok: false, error: "edition" }];
+    if ((rec.stage ?? "full") !== "pre") return [409, { ok: false, error: "already full", id, stage: "full", upgradedAt: rec.upgradedAt ?? null }];
+    const dir = join(dataDir, id);
+    await mkdir(dir, { recursive: true });
+    // freeze the pre answers as they stand now (the newest copy: a client may have kept editing after the pre submit)
+    let latestCopy = null;
+    try { latestCopy = JSON.parse(await readFile(join(dir, "latest.json"), "utf8")); } catch { /* never opened */ }
+    const session = latestCopy?.session ?? (latestCopy?.export ? { answers: latestCopy.export.answers, respondent: latestCopy.export.respondent, configVersion: latestCopy.configVersion } : null);
+    const pre = session ? await writePre(id, c, session, {}) : await readPre(id);
+    const now = new Date().toISOString();
+    const next = { ...rec, edition, stage: "full", upgradedAt: now };
+    await atomicWrite(file, JSON.stringify(next, null, 1));
+    await appendLog(dir, { at: now, type: "upgrade", from: "pre", to: edition, items: pre?.items?.length ?? 0 });
+    const url = `${publicBase.replace(/\/$/, "")}/thecore30/${id}?t=${rec.token}`;
+    const mailSent = p.mail ? await upgradeMail(next, url) : false;
+    return [200, { ok: true, id, url, edition, stage: "full", upgradedAt: now, preItems: pre?.items?.length ?? 0, preSubmittedAt: pre?.submittedAt ?? null, mailSent }];
+  }
+
+  async function upgradeMail(x, url) {
+    if (!transport) { console.log(`[core30] upgrade mail (not sent, no SMTP) to ${x.email}: ${url}`); return false; }
+    const en = x.lang === "en";
+    const hi = x.contact ? (en ? `Hi ${esc(x.contact)},` : `Salut, ${esc(x.contact)},`) : en ? "Hi," : "Salut,";
+    const T = en ? {
+      subject: "The Core: your answers are already in",
+      body: `<p>${hi}</p><p>The full Core is open, on the same link as your prep. Everything you filled in at home is already there, marked, and you can change any of it. What's left are the parts we do best together: the archetype, the 6 attributes that write your UVP and the sentence that holds the strategy.</p>`,
+      cta: "Open The Core",
+    } : {
+      subject: "The Core: răspunsurile tale sunt deja înăuntru",
+      body: `<p>${hi}</p><p>The Core complet e deschis, pe același link ca pregătirea. Tot ce ai completat acasă e deja acolo, marcat, și poți schimba orice. Au rămas părțile pe care le facem cel mai bine împreună: arhetipul, cele 6 atribute care scriu UVP-ul și fraza care ține strategia.</p>`,
+      cta: "Deschide The Core",
+    };
+    const html = `<div style="font:16px/1.55 Arial,sans-serif;color:#0d0c09;max-width:560px">
+      <p style="font:700 11px monospace;letter-spacing:.12em;text-transform:uppercase;color:#5d5a52">Cromatic Studios · The Core 3.0${x.name ? ` · ${esc(x.name)}` : ""}</p>
+      ${T.body}
+      <p><a href="${esc(url)}" style="display:inline-block;padding:12px 20px;border:1px solid #0d0c09;border-radius:999px;background:#FED012;color:#0d0c09;font-weight:700;text-decoration:none">${T.cta}</a></p>
+      <p style="color:#5d5a52;font-size:13px">${en ? "Keep this link to yourself: it opens your answers. Questions? Just reply to this email." : "Păstrează linkul pentru tine: el îți deschide răspunsurile. Întrebări? Răspunde direct la emailul ăsta."}<br>Cromatic Studios · Str. Olari 9, București · hi@cromaticstudios.com</p></div>`;
+    try { await transport.sendMail({ from: mailFrom, to: x.email, bcc: mailTo, replyTo: mailTo, subject: T.subject, html }); return true; }
+    catch (e) { console.error("[core30] upgrade mail failed", e.message); return false; }
+  }
+
+  /** GET /api/core30/<id>/prefill?t=: the pre answers, for a browser that opens the full Core without them (new device,
+   *  the studio's laptop). Same token as the link, which already opens these answers; never on a public edition. */
+  async function prefill(id, t) {
+    const c = (await clients())[safe(id)];
+    if (!c || c.public) return [404, { ok: false }];
+    if (c.token && t !== c.token) return [403, { ok: false }];
+    const pre = await readPre(id);
+    if (!pre) return [404, { ok: false }];
+    return [200, { ok: true, at: pre.at, submittedAt: pre.submittedAt ?? null, items: pre.items ?? [], answers: pre.answers ?? {}, respondent: pre.respondent ?? null }];
   }
 
   async function onboardingMail(x, url) {
     if (!transport) { console.log(`[core30] onboarding mail (not sent, no SMTP) to ${x.email}: ${url}`); return false; }
     const hi = x.contact ? (x.lang === "en" ? `Hi ${esc(x.contact)},` : `Salut, ${esc(x.contact)},`) : x.lang === "en" ? "Hi," : "Salut,";
-    const T = x.lang === "en" ? {
+    const T = x.stage === "pre" ? (x.lang === "en" ? {
+      subject: "The Core: your prep, about an hour, from home",
+      body: `<p>${hi}</p><p>This is the first step of The Core, the way Cromatic Studios writes a brand strategy: the prep. You fill it in on your own, at home, at your pace: about 45 to 60 minutes, in one go or in two sittings. Your answers go straight into The Core, so in the studio we skip the basics and spend the time on the decisions that matter.</p><p>Everything saves as you go, on your device and with us. Close it whenever you want and open the same link to pick up where you left off. The questions are in English; you can switch to Romanian at the start.</p>`,
+      cta: "Start the prep", foot: "Keep this link to yourself: it opens your answers. Questions? Just reply to this email.",
+    } : {
+      subject: "The Core: pregătirea, cam o oră, de acasă",
+      body: `<p>${hi}</p><p>Ăsta e primul pas din The Core, felul în care Cromatic Studios scrie strategia unui brand: pregătirea. O completezi singur, acasă, în ritmul tău: cam 45–60 de minute, dintr-o bucată sau în două reprize. Răspunsurile ajung direct în The Core, așa că în studio nu mai pierdem timp cu întrebările de bază și ne ocupăm de deciziile care contează.</p><p>Totul se salvează pe parcurs, pe dispozitivul tău și la noi. Poți închide oricând și reiei de unde ai rămas, de pe același link.</p>`,
+      cta: "Începe pregătirea", foot: "Păstrează linkul pentru tine: el îți deschide răspunsurile. Întrebări? Răspunde direct la emailul ăsta.",
+    }) : x.lang === "en" ? {
       subject: "The Core: let's start your brand strategy",
       body: `<p>${hi}</p><p>This is the first step of The Core, the way Cromatic Studios writes a brand strategy. You answer on your own, at your pace: about 45 to 60 minutes, in two or three sittings if you like. Then we meet at the studio, over a coffee, for a 90-minute workshop and turn your answers into the strategy.</p><p>Everything saves as you go, on your device and with us. Close it whenever you want and open the same link to pick up where you left off. The questions are in English; you can switch to Romanian at the start.</p>`,
       cta: "Start The Core", foot: "Keep this link to yourself: it opens your answers. Questions? Just reply to this email.",
@@ -418,7 +549,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
   async function listSessions() {
     const files = existsSync(sessionsDir) ? (await readdir(sessionsDir)).filter((f) => f.endsWith(".json")) : [];
     const out = [];
-    for (const f of files) { try { const x = JSON.parse(await readFile(join(sessionsDir, f), "utf8")); out.push({ id: x.id, email: x.email, name: x.name, edition: x.edition, lang: x.lang, createdAt: x.createdAt, url: `${publicBase.replace(/\/$/, "")}/thecore30/${x.id}?t=${x.token}` }); } catch { /* skip */ } }
+    for (const f of files) { try { const x = JSON.parse(await readFile(join(sessionsDir, f), "utf8")); out.push({ id: x.id, email: x.email, name: x.name, edition: x.edition, stage: x.stage === "pre" ? "pre" : "full", upgradedAt: x.upgradedAt ?? null, lang: x.lang, createdAt: x.createdAt, url: `${publicBase.replace(/\/$/, "")}/thecore30/${x.id}?t=${x.token}` }); } catch { /* skip */ } }
     return [200, { ok: true, sessions: out.sort((a, b) => a.createdAt.localeCompare(b.createdAt)) }];
   }
 
@@ -450,8 +581,10 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     if (email) meta.startedBy ??= email;
     meta.starts = [...(meta.starts ?? []), email ? { at: now, email } : { at: now }].slice(-20); // every device or restart, newest last
     await atomicWrite(join(dir, "meta.json"), JSON.stringify(meta));
-    await appendLog(dir, email ? { at: now, type: "start", email } : { at: now, type: "start" });
-    if (firstStart && email) await mail(`[The Core 3.0] ${c.contact || email} a început · ${c.name ?? id}`, `<p><b>${esc(email)}</b> a început The Core 3.0 pentru <b>${esc(c.name ?? id)}</b>, la ${esc(now)}. Fiecare modificare se salvează în ${esc(dir)}.</p>`);
+    const st = c.stage === "pre" ? { stage: "pre" } : {};
+    await appendLog(dir, email ? { at: now, type: "start", email, ...st } : { at: now, type: "start", ...st });
+    if (firstStart && email && c.stage === "pre") await mail(`[The Core · pregătire] ${c.contact || email} a început pregătirea · ${c.name ?? id}`, `<p><b>${esc(email)}</b> a început pregătirea The Core (acasă, ~45–60 min) pentru <b>${esc(c.name ?? id)}</b>, la ${esc(now)}. Fiecare modificare se salvează în ${esc(dir)}.</p>`);
+    else if (firstStart && email) await mail(`[The Core 3.0] ${c.contact || email} a început · ${c.name ?? id}`, `<p><b>${esc(email)}</b> a început The Core 3.0 pentru <b>${esc(c.name ?? id)}</b>, la ${esc(now)}. Fiecare modificare se salvează în ${esc(dir)}.</p>`);
     return [200, { ok: true, at: now }];
   }
 
@@ -481,7 +614,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     for (const e of (Array.isArray(p.events) ? p.events : []).slice(0, 50)) {
       const eid = String(e.id ?? "").slice(0, 64);
       if (!eid || seen.has(eid) || !["step", "skip", "export", "save-error"].includes(e.type)) continue;
-      const entry = { at: now, clientAt: typeof e.at === "string" ? e.at.slice(0, 40) : null, id: eid, type: e.type };
+      const entry = { at: now, clientAt: typeof e.at === "string" ? e.at.slice(0, 40) : null, id: eid, type: e.type, ...(c.stage === "pre" ? { stage: "pre" } : {}) };
       if (e.type === "export") entry.format = e.format === "pdf" ? "pdf" : "json";
       else if (e.type === "save-error") {
         // why a draft failed in the browser: a status code or "network", the payload size, the browser. Never answers.
@@ -557,14 +690,29 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       ...(e.version ? { version: e.version } : {}),
       ...(e.type === "save-error" ? { code: e.code, bytes: e.bytes, ua: e.ua } : {}),
       ...(e.type === "start" && e.email ? { email: e.email } : {}),
+      ...(e.stage ? { stage: e.stage } : {}),
+      ...(e.type === "upgrade" ? { to: e.to, items: e.items } : {}),
     }));
-    const doneIds = new Set(log.filter((e) => e.type === "step").map((e) => e.module));
+    // two stages share one log: progress counts the steps of the stage the session is in now (untagged = full)
+    const stageNow = c.stage === "pre" ? "pre" : "full";
+    const doneIds = new Set(log.filter((e) => e.type === "step" && (e.stage ?? "full") === stageNow).map((e) => e.module));
     const titleOf = (mid) => mods.find((x) => x.id === mid)?.short ?? mid;
     const partial = mods.filter((x) => answeredIds.has(x.id) && !doneIds.has(x.id)).map((x) => x.short);
     const skippedOnly = mods.filter((x) => skippedIds.includes(x.id) && !answeredIds.has(x.id)).map((x) => titleOf(x.id));
     const lastStep = [...log].reverse().find((e) => e.type === "step" || e.type === "skip") ?? null;
+    // the pre stage at a glance (sessions that started as "pregătire", and the internal pre edition)
+    let pre = null;
+    if (c.stage === "pre" || c.dynamic?.upgradedAt || existsSync(preFile(id))) {
+      const frozen = await readPre(id);
+      let preMods = mods;
+      if (c.stage !== "pre") { const pe = preOf(await clients(), c.dynamic?.edition ?? ""); try { preMods = pe?.file ? JSON.parse(await readFile(pe.file, "utf8")).modules ?? [] : []; } catch { preMods = []; } }
+      const preDone = new Set(log.filter((e) => e.type === "step" && e.stage === "pre").map((e) => e.module));
+      pre = { done: preDone.size, total: preMods.length, minutes: preMods.reduce((n, x) => n + (x.minutes ?? 0), 0),
+        submitted: !!m.lastPreSubmitAt, submittedAt: m.lastPreSubmitAt ?? null, submits: m.preSubmits ?? 0,
+        items: frozen?.items?.length ?? null, upgradedAt: c.dynamic?.upgradedAt ?? null };
+    }
     return [200, {
-      ok: true, id: safe(id),
+      ok: true, id: safe(id), stage: stageNow, pre,
       started: !!(m.startedAt || m.firstDraftAt),
       startedAt: m.startedAt ?? null, startedBy: m.startedBy ?? null,
       firstDraftAt: m.firstDraftAt ?? null, lastSaveAt: m.lastSaveAt ?? null, saves: m.saves ?? 0,
@@ -631,6 +779,15 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
         const [code, out] = await withLock(id || "_report", () => (p.endsWith("mail") ? reportMail(body) : uploadReport(body)));
         send(res, code, out); return true;
       }
+      if (p === "/api/core30/admin/sessions/upgrade") {
+        if (!isAdmin(req, url)) { send(res, 403, { ok: false }); return true; }
+        if (req.method !== "POST") { send(res, 405, { ok: false }); return true; }
+        const body = await readBody(req);
+        let id = ""; try { id = safe(JSON.parse(body).id); } catch { /* reported below */ }
+        // the sessions queue (no new id races an upgrade) and the client's own (no draft lands mid-freeze)
+        const [code, out] = await withLock("_sessions", () => withLock(id || "_upgrade", () => upgradeSession(body)));
+        send(res, code, out); return true;
+      }
       if (p === "/api/core30/admin/sessions") {
         if (!isAdmin(req, url)) { send(res, 403, { ok: false }); return true; }
         if (req.method === "POST") { const body = await readBody(req); const [code, out] = await withLock("_sessions", () => createSession(body)); send(res, code, out); return true; }
@@ -638,6 +795,8 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       }
       const c = p.match(/^\/api\/core30\/([a-z0-9_-]+)\/config$/i);
       if (req.method === "GET" && c) { const [code, out] = await config(c[1], url.searchParams.get("t") ?? "", url.searchParams.get("lang") ?? ""); send(res, code, out); return true; }
+      const pf = p.match(/^\/api\/core30\/([a-z0-9_-]+)\/prefill$/i);
+      if (req.method === "GET" && pf) { const [code, out] = await prefill(pf[1], url.searchParams.get("t") ?? ""); send(res, code, out); return true; }
       const st = p.match(/^\/api\/core30\/([a-z0-9_-]+)\/status$/i);
       if (req.method === "GET" && st) { const [code, out] = await status(st[1], url.searchParams.get("t") ?? ""); send(res, code, out); return true; }
       const m = p.match(/^\/api\/core30\/([a-z0-9_-]+)\/latest$/i);
