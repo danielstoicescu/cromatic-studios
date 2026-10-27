@@ -14,6 +14,10 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { COPY } from "./prezentare-copy.mjs";
 import { ARCHETYPES, QUADRANTS, ORDER, ZONE, archArt, archArtG } from "./prezentare-archetypes.mjs";
+import { roPath } from "./i18n.mjs";
+// r336: the portfolio's street ids, for ?streets=coffee,fintech,medical (any subset, in the site's order; default all):
+// A Coffee Street, B Fintech Boulevard, C Medical Avenue (D The Shortest Shortcut is left out of the deck)
+export const STREET_IDS = { A: "coffee", B: "fintech", C: "medical", D: "shortcut" };
 
 export const PREZ_PATH = "/prezentare/proces-5000932d55/";
 
@@ -32,6 +36,10 @@ export async function buildPrezentare({ root, pub, mediaMap, COVERS, canvases, R
   const warn = (m) => console.warn(`[prezentare] ${m}`);
   // r332 (Daniel): the deck leaves out The Shortest Shortcut and the Zdrovit park; a street's case count is its own cards'
   const SKIP_STREETS = new Set(["D"]);
+  // r336: the Romanian deck takes the projects' names, categories and descriptions from the site's own dictionary
+  let RO = new Map();
+  try { RO = new Map(Object.entries(JSON.parse(readFileSync(join(root, "site", "i18n", "ro.json"), "utf8"))).map(([k, v]) => [String(k).replace(/\s+/g, " ").trim(), v])); } catch (e) { warn("no site/i18n/ro.json: " + e.message); }
+  const roOf = (t) => { const k = String(t ?? "").replace(/\s+/g, " ").trim(); const v = RO.get(k) ?? RO.get(k.replace(/&/g, "&amp;")); return v != null && v !== "" ? v : null; };
   const streets = R.workStreets(COVERS).filter((s) => !SKIP_STREETS.has(s.k)).map((s) => ({ ...s, zd: [], cases: new Set(s.list.filter((p) => p.page).map((p) => p.page)).size }));
   const src = (k) => {
     if (!k) return "";
@@ -50,13 +58,17 @@ export async function buildPrezentare({ root, pub, mediaMap, COVERS, canvases, R
 
   function page(lang, c, base) {
     const slides = [];
+    // a site string in the deck's language (RO through the site's dictionary, already HTML-safe), and a case's page
+    const T = (t) => (lang === "ro" ? roOf(t) ?? esc(t) : esc(t));
+    const caseUrl = (slug) => (lang === "ro" ? roPath(`/work/${slug}/`) || `/work/${slug}/` : `/work/${slug}/`);
     // theme: paper | grid | ink | yellow | green | purple | blue | coral; kind: build (sub-steps) | row | pan
-    const S = (theme, part, title, body, cls = "", kind = "build") => slides.push({ theme, part, title, html: body, cls, kind });
+    const S = (theme, part, title, body, cls = "", kind = "build", street = "") => slides.push({ theme, part, title, html: body, cls, kind, street });
     const eb = (t, r) => `<p class="eyebrow mono a"${r ? ` data-r="${r}"` : ""}>${md(t)}</p>`;
     const h2 = (t, cls = "h2") => `<h2 class="${cls} a">${md(t)}</h2>`;
     const lead = (t) => `<p class="lead a">${md(t)}</p>`;
     const deliver = (t, r) => `<p class="deliver a"${r ? ` data-r="${r}"` : ""}><span class="mono">${c.ui.deliverable}</span><b>${t}</b></p>`;
-    const step = (k) => `<p class="stepk mono a"><span class="pill pill-b sm">${c.ui.step} ${k}</span> ${c.ui.of} 4 · ${c.ui.phase2}</p>`;
+    // r336: the Phase II slides carry "What comes after branding?" as a small corner label, and their place among the three
+    const step = (k) => `<p class="stepk mono a"><span class="pill pill-b sm">${k}</span> ${c.after.label}</p>`;
     const divider = (t, theme) => S(theme, t.part, t.title, `
   <div class="divider">
     <p class="big-n mono a" aria-hidden="true">${t.n}</p>
@@ -141,17 +153,17 @@ export async function buildPrezentare({ root, pub, mediaMap, COVERS, canvases, R
     </div>
   </div>`, "s-core3");
 
-    // ---------- the result: a whole document, two halves ----------
+    // ---------- the result: one document, everything it holds as one list ----------
     const dc = c.doc;
     S("paper", dc.part, dc.title, `
-  <div class="split">
+  <div class="split doc-split">
     <div class="col">${eb(dc.eyebrow)}${h2(dc.h)}${lead(dc.lead)}
-      <div class="halves">${dc.halves.map((h, i) => `<div class="half hf-${h.c} a" data-r="${i + 1}"><p class="k mono"><span class="pill pill-${h.c} sm">${h.t}</span></p><ul>${h.items.map((x, j) => `<li style="--j:${j}">${x}</li>`).join("")}</ul></div>`).join("")}</div>
+      <ol class="dlist">${dc.items.map((x, j) => `<li style="--j:${j}"><span class="mono">${pad(j + 1)}</span>${x}</li>`).join("")}</ol>
     </div>
     <div class="col docc">
       <div class="docm a">
         <div class="dp dp3"></div><div class="dp dp2"></div>
-        <div class="dp dp1"><p class="mono dk">${dc.client}</p>${CORE}<p class="dt">${dc.cover}</p><div class="dtoc">${dc.halves.map((h) => `<p class="mono">${h.t}</p>${h.items.map(() => "<i></i>").join("")}`).join("")}</div></div>
+        <div class="dp dp1"><p class="mono dk">${dc.client}</p>${CORE}<p class="dt">${dc.cover}</p><p class="mono dct">${dc.contents}</p><ol class="dtoc">${dc.items.map((x, j) => `<li style="--j:${j}"><span class="mono">${pad(j + 1)}</span><i></i></li>`).join("")}</ol></div>
       </div>
     </div>
   </div>`, "s-doc");
@@ -169,19 +181,18 @@ export async function buildPrezentare({ root, pub, mediaMap, COVERS, canvases, R
     S("grid", c.covers.part, c.covers.title, `
   <div class="stack">
     ${eb(c.covers.eyebrow)}${h2(c.covers.h)}
-    <div class="g2">${[0, 1].map((g) => `<div class="grp a"><p class="gk mono"><span class="pill pill-${g ? "y" : "g"} sm">${c.covers.groups[g]}</span></p><ul class="grid4c">${c.covers.items.slice(g * 4, g * 4 + 4).map(([t, d], i) => `<li style="--j:${i}"><span class="n mono">${pad(g * 4 + i + 1)}</span><h3>${t}</h3><p>${d}</p></li>`).join("")}</ul></div>`).join("")}</div>
+    <ul class="grid8c a">${c.covers.items.map(([t, d], i) => `<li style="--j:${i}"><span class="n mono">${pad(i + 1)}</span><h3>${t}</h3><p>${d}</p></li>`).join("")}</ul>
   </div>`, "s-covers");
 
     // ---------- 11–14 · the workshop ----------
     const steps4 = (on) => `<ol class="steps4 a" aria-label="${fill(c.ws.stepsLabel, { n: on })}">${c.ws.steps.map((t, i) => `<li class="${i + 1 === on ? "on" : ""}"><span class="mono">${i + 1}</span>${t}</li>`).join("")}</ol>`;
-    // attributes: a cloud of chips; three fly into the value slots
+    // attributes: six pillars (The Core's core6: culture, clients, voice, emotions, impact, X factor); the words fall in
     const at = c.attr;
     S("paper", c.ws.part, at.title, `
-  <div class="split">
-    <div class="col">${steps4(1)}${eb(at.eyebrow)}${h2(at.h)}${lead(at.lead)}<p class="note a" data-r="2">${at.note}</p></div>
-    <div class="col attr">
-      <div class="cloud a">${at.chips.map((t, i) => { const k = at.pick.indexOf(i); return `<span class="chip${k >= 0 ? ` pick pk${k + 1}` : ""}" style="--j:${i}">${t}</span>`; }).join("")}</div>
-      <div class="slots a" data-r="1"><p class="k mono">${at.slots}</p><div class="sl3">${at.pick.map((ci, k) => `<span class="vslot" style="--j:${k}"><i class="mono">${k + 1}</i><b>${at.chips[ci]}</b></span>`).join("")}</div></div>
+  <div class="split attr-split">
+    <div class="col">${steps4(1)}${eb(at.eyebrow)}${h2(at.h)}${lead(at.lead)}<p class="note a">${at.note}</p></div>
+    <div class="col">
+      <ol class="pillars6">${at.pillars.map(([id, t, hint, words], i) => `<li class="p6 p6-${id}" style="--pi:${i}"><div class="p6-words">${words.map((x, j) => `<span class="w6" style="--wj:${j};--dx:${((i * 37 + j * 53) % 7) - 3};--rot:${((i * 29 + j * 17) % 13) - 6}deg">${x}</span>`).join("")}</div><div class="p6-base"><b>${t}</b><span>${hint}</span></div></li>`).join("")}</ol>
     </div>
   </div>`, "s-attr");
     // archetypes: The Core's own wheel (ArchWheel.tsx): four zones by what drives them, the twelve drawings, turning
@@ -211,17 +222,16 @@ export async function buildPrezentare({ root, pub, mediaMap, COVERS, canvases, R
     <ul class="agrid">${byQ.flatMap(({ q, xs }) => xs.map((x) => `<li class="ac a" style="--ac:${x.color};--zc:${ZONE[q]}"><span class="ai">${archArt(x.id, darkC(x.color), 120)}</span><div><b>${x.name}</b><p class="am">${esc(x.motto[lang2])}</p><p class="ax mono">${ae.eg} ${esc(x.example)}</p></div></li>`)).join("")}</ul>
   </div>`, "s-archex");
 
-    // user profiles: a profile card that fills in, layer by layer
+    // user profiles: the first card fills by itself, then a second (green) and a third (red) stack on top: a deck of personas
     const us = c.users;
+    const pcard = (k) => `<div class="profile pf-${k}" style="--k:${k}">
+        <div class="pf-top"><span class="av" aria-hidden="true"><i></i></span><div><p class="k mono">${us.who[k]}</p><p class="bars"><i></i><i></i></p></div></div>
+        ${us.steps.map(([t, d], i) => `<div class="pf-row" style="--r:${i}"><span class="n mono">${pad(i + 1)}</span><div><h3>${t}</h3><p>${d}</p></div><p class="bars"><i></i><i></i><i></i></p></div>`).join("")}
+      </div>`;
     S("paper", c.ws.part, us.title, `
   <div class="split">
     <div class="col">${steps4(3)}${eb(us.eyebrow)}${h2(us.h)}${lead(us.lead)}</div>
-    <div class="col">
-      <div class="profile a">
-        <div class="pf-top"><span class="av" aria-hidden="true"><i></i></span><div><p class="k mono">${us.who}</p><p class="bars"><i></i><i></i></p></div></div>
-        ${us.steps.map(([t, d], i) => `<div class="pf-row" data-r="${i + 1}"><span class="n mono">${pad(i + 1)}</span><div><h3>${t}</h3><p>${d}</p></div><p class="bars"><i></i><i></i><i></i></p></div>`).join("")}
-      </div>
-    </div>
+    <div class="col"><div class="pstack a">${[0, 1, 2].map(pcard).join("")}</div></div>
   </div>`, "s-profile");
     // goals: the tree grows
     const go = c.goals;
@@ -269,29 +279,46 @@ export async function buildPrezentare({ root, pub, mediaMap, COVERS, canvases, R
   <div class="cv-foot a"><p class="caption mono">${c.canvas.caption}</p><div class="pbar" aria-hidden="true"><i></i></div></div>
   ${hint(c.ui.panHint)}`, "s-canvas", "pan");
 
-    // ---------- 18 · guidelines: the pages turn ----------
+    // ---------- 18 · guidelines: an open booklet of real Venevo spreads; each press turns the page to the next chapter ----------
     const gu = c.guide;
     S("paper", gu.part, gu.title, `
-  <div class="split">
+  <div class="split guide-split">
     <div class="col">
       ${eb(gu.eyebrow)}${h2(gu.h)}${lead(gu.lead)}
-      <ol class="toc a">${gu.pages.map(([, t], i) => `<li data-r="${i}" class="tc"><span class="mono">${pad(i + 1)}</span>${t}</li>`).join("")}</ol>
+      <ol class="chap a">${gu.chapters.map(([t, d], i) => `<li data-r="${i}"><span class="mono">${pad(i + 1)}</span><div><b>${t}</b><p>${d}</p></div></li>`).join("")}</ol>
     </div>
     <div class="col bookc">
-      <div class="book2 a">${gu.pages.map(([k, t], i) => `<figure class="pg" data-r="${i}" style="--z:${gu.pages.length - i}">${img(k, "", t)}</figure>`).join("")}</div>
+      <div class="booklet a">${gu.chapters.map(([t, , l, r], i) => `<div class="spread" data-r="${i}" style="--z:${gu.chapters.length - i}"><figure class="pl">${img(l, "", t)}</figure><figure class="pr">${img(r, "", t)}</figure></div>`).join("")}<i class="spine" aria-hidden="true"></i></div>
       <p class="caption mono a">${gu.caption}</p>
     </div>
   </div>`, "s-guide");
 
-    // ---------- 19 · divider: to market ----------
-    divider(c.dMkt, "blue");
+    // ---------- 19 · Phase II: what comes after branding? ----------
+    const af = c.after;
+    S("blue", af.part, af.title, `
+  <div class="divider after">
+    <p class="big-n mono a" aria-hidden="true">${af.n}</p>
+    ${eb(af.eyebrow)}${h2(af.h, "d1")}${lead(af.lead)}
+    <ol class="after3">${af.steps.map(([n, t, d]) => `<li class="a"><span class="mono">${n}</span><b>${t}</b><p>${d}</p></li>`).join("")}</ol>
+  </div>`, "s-div s-after");
 
-    // ---------- 20 · touchpoints: a marker walks the stage track ----------
-    const tc = c.touch;
+    // ---------- 20 · touchpoints: the journey as one roadmap (the deck's slide 19): six stages, the mood curve over them,
+    // what people feel, need and ask, where to meet them, and the team's behaviours; all at once, drawn in on arrival
+    const tc = c.touch, NS = tc.stages.length;
+    const mpts = tc.mood.map((m, i) => [((i + 0.5) / NS) * 1000, 100 - m * 86]);
+    const mpath = mpts.map(([x, y], i) => (i ? `S${(x - 1000 / NS / 2).toFixed(1)} ${y.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}` : `M${x.toFixed(1)} ${y.toFixed(1)}`)).join(" ");
     S("paper", tc.part, tc.title, `
-  <div class="stack">
-    ${step(1)}${h2(tc.h)}${lead(tc.lead)}
-    <ol class="track6" style="--n:${tc.stages.length}">${tc.stages.map(([s, q], i) => `<li class="a keep" data-r="${i + 1}"><span class="pin mono">${pad(i + 1)}</span><b>${s}</b><p>${q}</p></li>`).join("")}<i class="walker" aria-hidden="true"></i></ol>
+  <div class="stack journey">
+    ${step(tc.step)}${h2(tc.h)}<p class="lead a jl">${md(tc.lead)}</p>
+    <div class="jmap a" style="--n:${NS}">
+      <p class="jmood mono">${tc.moodLabel}</p>
+      <div class="jcv" aria-hidden="true"><svg class="jcurve" viewBox="0 0 1000 100" preserveAspectRatio="none"><path d="${mpath}" pathLength="100"/></svg>
+      ${mpts.map(([x, y], i) => `<i class="jdot" style="left:${(x / 10).toFixed(2)}%;top:${y.toFixed(1)}%;--i:${i}"></i>`).join("")}</div>
+      <ol class="jst">${tc.stages.map(([s, f, nd, q, where], i) => `<li style="--i:${i}"><span class="pin mono">${pad(i + 1)}</span><b>${s}</b>
+        <dl><dt class="mono">${tc.rows[0]}</dt><dd>${f}</dd><dt class="mono">${tc.rows[1]}</dt><dd>${nd}</dd><dt class="mono">${tc.rows[2]}</dt><dd class="q">${q}</dd></dl>
+        <p class="jw">${where.map((x) => `<span>${x}</span>`).join("")}</p></li>`).join("")}</ol>
+    </div>
+    <div class="jin a"><b class="mono">${tc.inside}</b><p class="jdo"><span class="pill pill-g sm">${tc.doLabel}</span>${tc.dos.join(" · ")}</p><p class="jdont"><span class="pill pill-r sm">${tc.dontLabel}</span>${tc.donts.join(" · ")}</p></div>
     ${deliver(tc.deliver)}
   </div>`, "s-touch");
 
@@ -299,7 +326,7 @@ export async function buildPrezentare({ root, pub, mediaMap, COVERS, canvases, R
     const wb = c.web;
     S("paper", wb.part, wb.title, `
   <div class="split w-split">
-    <div class="col">${step(2)}${h2(wb.h)}${lead(wb.lead)}
+    <div class="col">${step(wb.step)}${h2(wb.h)}${lead(wb.lead)}
       <ul class="ticks">${wb.ticks.map((t) => `<li class="a">${md(t)}</li>`).join("")}</ul>
       <ol class="sitepick a">${wb.sites.map(([nm], i) => `<li data-r="${i}" class="tc"><span class="mono">${pad(i + 1)}</span>${nm}</li>`).join("")}</ol>
     </div>
@@ -311,20 +338,11 @@ export async function buildPrezentare({ root, pub, mediaMap, COVERS, canvases, R
     </div>
   </div>`, "s-web");
 
-    // ---------- 22 · communication: the four pillars, one by one ----------
-    const cm = c.comms;
-    S("paper", cm.part, cm.title, `
-  <div class="stack">
-    ${step(3)}${h2(cm.h)}${lead(cm.lead)}
-    <ul class="pillars">${cm.items.map(([t, d], i) => `<li class="a"><span class="n mono">${pad(i + 1)}</span><h3>${t}</h3><p>${d}</p></li>`).join("")}</ul>
-    ${deliver(cm.deliver)}
-  </div>`, "s-comms");
-
     // ---------- 23 · content: the site's own films and reels, playing ----------
     const ct = c.content;
     S("ink", ct.part, ct.title, `
   <div class="split c-split">
-    <div class="col">${step(4)}${h2(ct.h)}${lead(ct.lead)}${deliver(ct.deliver)}</div>
+    <div class="col">${step(ct.step)}${h2(ct.h)}${lead(ct.lead)}${deliver(ct.deliver)}</div>
     <div class="col films">${ct.films.map(([k, cap, f], i) => `<figure class="film ${f} a" style="--j:${i}">${vid(k)}<figcaption class="mono">${cap}</figcaption></figure>`).join("")}</div>
   </div>`, "s-content");
 
@@ -337,35 +355,36 @@ export async function buildPrezentare({ root, pub, mediaMap, COVERS, canvases, R
     <div>${eb(ex.eyebrow)}${h2(ex.h)}</div>
     <div>${lead(ex.lead)}${deliver(ex.deliver)}</div>
   </div>
-  ${row(ex.items.map(([k, nm, what, slug]) => `<a class="card ph" href="/work/${slug}/" data-case="${slug}" target="_blank" rel="noopener"><span class="cm">${img(k, "", `${nm}, ${what}`)}</span><span class="cb"><b>${esc(nm)}</b><span class="mono">${esc(what)}</span></span></a>`).join(""))}
+  ${row(ex.items.map(([k, nm, what, slug]) => `<a class="card ph" href="${caseUrl(slug)}" data-case="${slug}" target="_blank" rel="noopener"><span class="cm">${img(k, "", `${nm}, ${what}`)}</span><span class="cb"><b>${esc(nm)}</b><span class="mono">${esc(what)}</span></span></a>`).join(""))}
   ${hint(c.ui.rowHint)}`, "s-row s-exp", "row");
 
     // ---------- 25 · the work: the four streets drawn as roads, one per press ----------
     const w = c.work;
     const totP = streets.reduce((a, s) => a + s.list.length, 0), totC = streets.reduce((a, s) => a + s.cases, 0);
-    const sign = (s) => `<span class="sign" style="--sc:${s.col};--st:${s.ink}">${esc(s.street)}</span>`;
+    const sign = (s) => `<span class="sign" style="--sc:${s.col};--st:${s.ink}">${T(s.street)}</span>`;
+    const cnt = (p, k) => `${p} ${w.projects} · ${k} ${k === 1 ? w.caseOne : w.cases}`;
     S("ink", w.part, w.title, `
   <div class="stack">
     ${eb(w.eyebrow)}
-    <div class="row-h">${h2(w.h)}<div>${lead(w.lead)}<p class="tot mono a">${fill(w.total, { projects: totP, cases: totC })}</p></div></div>
-    <ol class="roads">${streets.map((s, i) => `<li class="a" style="--sc:${s.col}">${sign(s)}<span class="road"><i class="asph"></i>${s.list.map((p, j) => `<i class="pt${p.page ? " cs" : ""}" style="--j:${j}"></i>`).join("")}</span><span class="st-n mono">${s.list.length} ${w.projects} · ${s.cases} ${s.cases === 1 ? w.caseOne : w.cases}</span><span class="st-t">${esc(s.t)}</span></li>`).join("")}</ol>
+    <div class="row-h">${h2(w.h)}<div>${lead(w.lead)}<p class="tot mono a" data-tpl="${esc(w.total)}">${fill(w.total, { projects: totP, cases: totC })}</p></div></div>
+    <ol class="roads">${streets.map((s, i) => `<li class="a" data-street="${STREET_IDS[s.k]}" data-p="${s.list.length}" data-c="${s.cases}" style="--sc:${s.col}">${sign(s)}<span class="road"><i class="asph"></i>${s.list.map((p, j) => `<i class="pt${p.page ? " cs" : ""}" style="--j:${j}"></i>`).join("")}</span><span class="st-n mono">${cnt(s.list.length, s.cases)}</span><span class="st-t">${T(s.t)}</span></li>`).join("")}</ol>
   </div>`, "s-roads");
 
     // ---------- 26… · one slide per street: its row of cards ----------
     const card = (p) => {
       const media = p.cover ? `<img data-src="${p.cover}" alt="" decoding="async" draggable="false">` : `<span class="poster" style="background:${p.c};color:${p.t}">${esc(p.poster || p.name)}</span>`;
       const tag = p.page ? `<span class="tag mono">${w.readCase} ↗</span>` : p.wip ? `<span class="tag mono wip">${w.wip}</span>` : "";
-      const inner = `<span class="cm" style="--bc:${p.c}">${media}${tag}</span><span class="cb"><b>${esc(p.name)}</b><span class="mono">${esc(p.cat)}</span><span class="cd">${esc(p.desc || "")}</span></span>`;
-      return p.page ? `<a class="card" href="/work/${p.page}/" data-case="${p.page}" target="_blank" rel="noopener">${inner}</a>` : `<div class="card" tabindex="-1">${inner}</div>`;
+      const inner = `<span class="cm" style="--bc:${p.c}">${media}${tag}</span><span class="cb"><b>${T(p.name)}</b><span class="mono">${T(p.cat)}</span><span class="cd">${p.desc ? T(p.desc) : ""}</span></span>`;
+      return p.page ? `<a class="card" href="${caseUrl(p.page)}" data-case="${p.page}" target="_blank" rel="noopener">${inner}</a>` : `<div class="card" tabindex="-1">${inner}</div>`;
     };
     for (const s of streets) {
       S("paper", fill(w.streetPart, { street: s.street }), s.street, `
   <div class="rhead wk-h" style="--sc:${s.col}">
-    <div class="a">${sign(s)}<h2 class="h3">${esc(s.t)}</h2></div>
-    <p class="wk-n mono a">${s.list.length} ${w.projects} · ${s.cases} ${s.cases === 1 ? w.caseOne : w.cases}</p>
+    <div class="a">${sign(s)}<h2 class="h3">${T(s.t)}</h2></div>
+    <p class="wk-n mono a">${cnt(s.list.length, s.cases)}</p>
   </div>
   ${row(s.list.map(card).join(""))}
-  ${hint(c.ui.rowHint)}`, "s-row s-street", "row");
+  ${hint(c.ui.rowHint)}`, "s-row s-street", "row", STREET_IDS[s.k]);
       if (s.zd.length) {
         S("paper", fill(w.streetPart, { street: s.street }), `${s.street}: Zdrovit`, `
   <div class="rhead wk-h" style="--sc:${s.col}">
@@ -386,7 +405,7 @@ export async function buildPrezentare({ root, pub, mediaMap, COVERS, canvases, R
   </div>`, "s-thanks");
 
     const N = slides.length;
-    const body = slides.map((s, i) => `<section class="slide t-${s.theme} ${s.cls}" id="s${i + 1}" data-kind="${s.kind}" data-theme="${s.theme}" data-part="${esc(s.part)}" aria-roledescription="slide" aria-label="${i + 1} ${c.ui.of} ${N}: ${esc(s.title)}"><div class="in">${s.html}</div></section>`).join("\n");
+    const body = slides.map((s, i) => `<section class="slide t-${s.theme} ${s.cls}" id="s${i + 1}" data-kind="${s.kind}"${s.street ? ` data-street="${s.street}"` : ""} data-theme="${s.theme}" data-part="${esc(s.part)}" aria-roledescription="slide" aria-label="${i + 1} ${c.ui.of} ${N}: ${esc(s.title)}"><div class="in">${s.html}</div></section>`).join("\n");
     const html = `<!doctype html>
 <html lang="${c.htmlLang}">
 <head>
@@ -401,6 +420,7 @@ export async function buildPrezentare({ root, pub, mediaMap, COVERS, canvases, R
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/fonts.css">
 <link rel="stylesheet" href="${PREZ_PATH}prez.css">
+<script>(function(){var q=location.search,m=/[?&]lang=(ro|en)(?:&|$)/.exec(q);if(m&&m[1]!=="${lang}"){location.replace((m[1]==="ro"?"${PREZ_PATH}ro/":"${PREZ_PATH}")+q.replace(/([?&])lang=(ro|en)(&|$)/,"$1").replace(/[?&]$/,"")+location.hash)}})();</script>
 <script>document.documentElement.classList.add("js");try{if(matchMedia("(prefers-reduced-motion: reduce)").matches)document.documentElement.classList.add("rm")}catch(e){}</script>
 </head>
 <body data-theme="ink">
@@ -409,9 +429,10 @@ export async function buildPrezentare({ root, pub, mediaMap, COVERS, canvases, R
 ${body}
 </div>
 </div>
-<header class="chrome top" aria-hidden="true">
+<header class="chrome top">
   <p class="frame"><span class="tri">▶</span><b>Cromatic Studios</b> <span class="sl">//</span> ${c.frame}</p>
   <p class="part mono" id="part"></p>
+  <nav class="langs mono" aria-label="${c.ui.lang}"><a href="${PREZ_PATH}" hreflang="en" lang="en"${lang === "en" ? ' aria-current="true"' : ""}>EN</a><a href="${PREZ_PATH}ro/" hreflang="ro" lang="ro"${lang === "ro" ? ' aria-current="true"' : ""}>RO</a></nav>
 </header>
 <nav class="chrome bot" aria-label="${c.ui.slides}">
   <div class="prog" aria-hidden="true"><i id="bar"></i></div>

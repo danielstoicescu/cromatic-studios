@@ -13,6 +13,21 @@
 (() => {
   "use strict";
   const deck = document.getElementById("deck"), track = document.getElementById("track");
+  // r336: ?streets=coffee,fintech,medical keeps only those streets of the portfolio (any subset; default all); the
+  // street slides of the others are taken out before the pager counts its slides, and "The work" counts what is left
+  {
+    const m = /[?&]streets=([a-z,]+)/.exec(location.search);
+    if (m) {
+      const want = new Set(m[1].split(",").filter(Boolean));
+      const all = [...track.querySelectorAll(".slide[data-street]")];
+      if (all.some((x) => want.has(x.dataset.street))) {
+        all.forEach((x) => { if (!want.has(x.dataset.street)) x.remove(); });
+        let P = 0, C = 0;
+        track.querySelectorAll(".roads li[data-street]").forEach((li) => { if (want.has(li.dataset.street)) { P += +li.dataset.p; C += +li.dataset.c; } else li.remove(); });
+        const tot = track.querySelector(".tot[data-tpl]"); if (tot) tot.textContent = tot.dataset.tpl.replace("{projects}", P).replace("{cases}", C);
+      }
+    }
+  }
   const slides = [...track.querySelectorAll(".slide")], N = slides.length;
   const $ = (id) => document.getElementById(id);
   const bar = $("bar"), count = $("count"), part = $("part"), dots = $("dots"), prevB = $("prev"), nextB = $("next"), fsB = $("fs"), hint = $("hint");
@@ -39,7 +54,7 @@
 
   // the stagger of each slide's entries, in reading order
   for (const s of S) [...s.el.querySelectorAll(".a")].forEach((el, i) => el.style.setProperty("--i", Math.min(i, 14)));
-  for (const s of S) s.cards.forEach((c, j) => c.style.setProperty("--ci", Math.min(j, 8)));
+  for (const s of S) s.cards.forEach((c, j) => c.style.setProperty("--ci", Math.min(j, 12)));
 
   // pictures and films: the slide on screen and its neighbours first, the rest once the deck has settled
   const load = (s) => { if (!s) return; for (const m of s.el.querySelectorAll("[data-src]")) { m.src = m.dataset.src; m.removeAttribute("data-src"); } };
@@ -128,6 +143,7 @@
     films(); turnWord();
     if (s.kind === "pan" && s.step === 0) startAuto(s);
     document.body.dataset.theme = s.el.dataset.theme;
+    try { document.documentElement.style.backgroundColor = getComputedStyle(s.el).backgroundColor; } catch (e) {}
     document.body.dataset.kind = s.kind;
     part.textContent = s.el.dataset.part || "";
     count.textContent = `${String(i + 1).padStart(2, "0")} / ${String(N).padStart(2, "0")}`;
@@ -174,8 +190,11 @@
   }
 
   // ---------- size ----------
-  const measure = () => { h = deck.clientHeight || window.innerHeight; place(true); const s = S[cur]; if (s && s.kind !== "build") apply(s, true); };
+  // r336: every slide is exactly the deck's own height (also inside an offer's iframe, whatever size it takes), and the
+  // page behind takes the slide's colour, so nothing ever shows around a slide as a band
+  const measure = () => { h = deck.clientHeight || window.innerHeight; document.documentElement.style.setProperty("--vh", h + "px"); place(true); const s = S[cur]; if (s && s.kind !== "build") apply(s, true); };
   window.addEventListener("resize", measure);
+  if (window.ResizeObserver) new ResizeObserver(() => { if (Math.abs((deck.clientHeight || 0) - h) > 0.5) measure(); }).observe(deck);
   deck.addEventListener("scroll", () => { deck.scrollTop = 0; deck.scrollLeft = 0; });
 
   // ---------- wheel / trackpad ----------
@@ -275,8 +294,9 @@
     const slug = card.dataset.case; if (!slug) return;
     lastFocus = card;
     ovT.textContent = card.querySelector("b")?.textContent || slug;
-    ovNew.href = `/work/${slug}/`;
-    ovF.src = `/work/${slug}/?embed=1`;
+    const href = card.getAttribute("href") || `/work/${slug}/`;
+    ovNew.href = href;
+    ovF.src = href + (href.includes("?") ? "&" : "?") + "embed=1";
     ov.hidden = false; document.body.classList.add("ov-on");
     requestAnimationFrame(() => ov.classList.add("open"));
     ovX.focus();
@@ -339,6 +359,13 @@
   setTimeout(() => hint.classList.add("gone"), 6000);
 
   if (EMBED) window.addEventListener("message", (e) => { if (e.origin !== location.origin || !e.data || e.data.type !== "cz-prez-go") return; const i = (e.data.index | 0) - 1; if (i !== cur) go(i, e.data.step | 0); else { S[cur].step = Math.min(maxOf(S[cur]), e.data.step | 0); apply(S[cur]); setHash(); } });
+
+  // ---------- the language switch: the same slide (and step) in the other language, the same query ----------
+  document.querySelectorAll(".langs a").forEach((a) => a.addEventListener("click", (e) => {
+    if (a.getAttribute("aria-current")) { e.preventDefault(); return; }
+    e.preventDefault();
+    location.href = a.getAttribute("href") + location.search.replace(/([?&])lang=(ro|en)(&|$)/, "$1").replace(/[?&]$/, "") + location.hash;
+  }));
 
   // ---------- start ----------
   measure();

@@ -1,6 +1,7 @@
 {
   "_note": "TASK-135 · the base prices for offers (EUR, without VAT). Edit only here: /ops (Ofertă tab) and ~/cromatic-ops/tools/offer/build.mjs both read this file. Daniel, 27 Oct 2026.",
   "currency": "EUR",
+  "processDeck": { "_note": "r336: the process deck attached at the top of an offer, by the offer's language (the offer adds ?embed=1). Add ?streets=coffee,fintech,medical (any subset) to show only some portfolio streets.", "ro": "/prezentare/proces-5000932d55/ro/", "en": "/prezentare/proces-5000932d55/" },
   "perPiece": { "ro": "preț pe bucată", "en": "price per piece" },
   "holidays": {
     "_note": "Days off for the offer calendars (MM-DD). A calendar week with skipWeekDays weekdays off (5 = a full week) is skipped: the phases move past it and the Gantt shows it hatched. orthodox: goodFriday, easterMonday, whitMonday (Rusalii) are computed per year.",
