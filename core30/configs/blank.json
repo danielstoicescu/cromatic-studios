@@ -28,6 +28,154 @@
  },
  "modules": [
   {
+   "id": "m00",
+   "title": [
+    "Pe",
+    "scurt"
+   ],
+   "short": "Pe scurt",
+   "minutes": 4,
+   "why": "Datele de bază ale afacerii, ca să nu le mai întrebăm în studio: ce vinzi, de când, câți sunteți, unde stă prețul și pe unde ajungi la clienți.",
+   "items": [
+    {
+     "id": "m00.offer",
+     "kind": "text",
+     "multiline": true,
+     "label": "Ce vinzi, pe scurt?",
+     "help": "Produsele sau serviciile principale, cum le-ai spune unui prieten.",
+     "placeholder": "Facem…",
+     "suggestions": [
+      "Facem mobilă la comandă",
+      "Oferim consultanță pentru",
+      "Vindem online",
+      "Avem un atelier unde"
+     ]
+    },
+    {
+     "id": "m00.since",
+     "kind": "choice",
+     "label": "De când existați?",
+     "options": [
+      {
+       "id": "idea",
+       "label": "Încă nu am lansat"
+      },
+      {
+       "id": "y1",
+       "label": "Sub un an"
+      },
+      {
+       "id": "y3",
+       "label": "1–3 ani"
+      },
+      {
+       "id": "y10",
+       "label": "3–10 ani"
+      },
+      {
+       "id": "y10p",
+       "label": "Peste 10 ani"
+      }
+     ]
+    },
+    {
+     "id": "m00.team",
+     "kind": "choice",
+     "label": "Câți sunteți în echipă?",
+     "options": [
+      {
+       "id": "solo",
+       "label": "Doar eu"
+      },
+      {
+       "id": "s",
+       "label": "2–5"
+      },
+      {
+       "id": "m",
+       "label": "6–20"
+      },
+      {
+       "id": "l",
+       "label": "21–50"
+      },
+      {
+       "id": "xl",
+       "label": "Peste 50"
+      }
+     ]
+    },
+    {
+     "id": "m00.price",
+     "kind": "choice",
+     "label": "Unde stă prețul tău față de piață?",
+     "options": [
+      {
+       "id": "low",
+       "label": "Mai accesibil decât media"
+      },
+      {
+       "id": "mid",
+       "label": "Cam la media pieței"
+      },
+      {
+       "id": "high",
+       "label": "Peste medie"
+      },
+      {
+       "id": "premium",
+       "label": "Premium, de nișă"
+      }
+     ]
+    },
+    {
+     "id": "m00.channels",
+     "kind": "choice",
+     "multi": true,
+     "other": true,
+     "label": "Pe unde ajungi la clienți?",
+     "help": "Alege tot ce se aplică.",
+     "options": [
+      {
+       "id": "store",
+       "label": "Spațiu fizic: magazin, atelier, cabinet"
+      },
+      {
+       "id": "web",
+       "label": "Site-ul propriu"
+      },
+      {
+       "id": "market",
+       "label": "Marketplace-uri"
+      },
+      {
+       "id": "social",
+       "label": "Social media și mesaje"
+      },
+      {
+       "id": "b2b",
+       "label": "Direct, la firme (oferte, licitații)"
+      },
+      {
+       "id": "partners",
+       "label": "Distribuitori sau parteneri"
+      },
+      {
+       "id": "events",
+       "label": "Evenimente și târguri"
+      }
+     ]
+    },
+    {
+     "id": "m00.where",
+     "kind": "text",
+     "optional": true,
+     "label": "Unde sunt clienții tăi?",
+     "placeholder": "București, toată țara, online, în afară…"
+    }
+   ]
+  },
+  {
    "id": "m01",
    "title": [
     "Ce ai spus",
@@ -1851,6 +1999,7 @@
     "title": "Fundația",
     "minutes": 15,
     "modules": [
+     "m00",
      "m01",
      "m02"
     ],
@@ -1920,6 +2069,7 @@
     "label": "Ce oferi",
     "hint": "categoria, spusă simplu",
     "from": [
+     "m00.offer",
      "m04.category",
      "m04.builder"
     ]
