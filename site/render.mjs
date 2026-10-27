@@ -157,7 +157,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   // all of them, under Medical Avenue; a brand with a case page is red and links to it (the map's card does the same)
   const zdPages = () => ZDROVIT_BRANDS.filter((b) => b.page).map((b) => b.page);
   const zdRow = () => {
-    const list = ZDROVIT_BRANDS.slice().sort((a, b) => (a.page ? 0 : 1) - (b.page ? 0 : 1) || a.name.localeCompare(b.name));
+    const list = zdSorted();
     if (!list.length) return "";
     const st = "--bc:#cfcdc8;--bt:#3d3c39", stp = "--bc:#e30613;--bt:#ffffff;text-decoration:none";
     return `<div class="psmall"><span class="mono ps-h">In Zdrovit · Beauty &amp; Supplement Park</span>${list.map((b) => b.page ? `<a class="ps" href="/work/${b.page}/" style="${stp}"><b>${esc(b.name)}</b><i class="mono">${esc(b.line)}</i><i class="mono">Case study →</i></a>` : `<span class="ps" style="${st}"><b>${esc(b.name)}</b><i class="mono">${esc(b.line)}</i></span>`).join("")}</div>`;
@@ -202,10 +202,26 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     D: { t: "Print on demand & stickers", lead: "Two print shops with a voice: one sings, one sticks." }
   };
   const industryOf = (k) => INDUSTRIES.find((x) => x.street === k);
+  // r325: a street's projects in the website's order (cases first, then those with a picture), shared by the portfolio
+  // below and by the internal process deck (workStreets, build/prezentare.mjs), so the deck always lists what the site does
+  const streetList = (k, covers) => PROJECTS.filter((p) => p.street === k && !p.small)
+    .map((p) => ({ p, w: (p.page ? 2 : 0) + (p.img || p.vid || coverFor(p, covers) ? 1 : 0) }))
+    .sort((a, b) => b.w - a.w).map((x) => x.p);
+  const zdSorted = () => ZDROVIT_BRANDS.slice().sort((a, b) => (a.page ? 0 : 1) - (b.page ? 0 : 1) || a.name.localeCompare(b.name));
+  // the portfolio as data: every street, its projects (with the picture its card shows) and, on Medical Avenue, the Zdrovit park
+  const workStreets = (covers = {}) => Object.entries(STREETS).map(([k, [street, col]]) => {
+    const list = streetList(k, covers);
+    const small = k === "C", info = STREET_INFO[k] || { t: "", lead: "" }, ind = industryOf(k);
+    const own = (p) => MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]];
+    return {
+      k, street, col, ink: STREET_INK[k] || "#fff", t: info.t, lead: info.lead, slug: ind?.slug || null,
+      cases: new Set([...list.filter((p) => p.page).map((p) => p.page), ...(small ? zdPages() : [])]).size,
+      list: list.map((p) => ({ name: p.name, cat: p.cat, desc: p.desc, c: p.c, t: p.t, poster: p.poster, page: p.page || null, wip: !!p.wip, cover: own(p) || (p.img && A(p.img)?.src) || coverFor(p, covers) || null })),
+      zd: small ? zdSorted().map((b) => ({ name: b.name, line: b.line, page: b.page || null, cover: (b.page && covers[b.page]) || null })) : []
+    };
+  }).filter((x) => x.list.length);
   const workByStreet = (covers) => Object.entries(STREETS).map(([k, [street, col]]) => {
-    const list = PROJECTS.filter((p) => p.street === k && !p.small)
-      .map((p) => ({ p, w: (p.page ? 2 : 0) + (p.img || p.vid || coverFor(p, covers) ? 1 : 0) }))
-      .sort((a, b) => b.w - a.w).map((x) => x.p);
+    const list = streetList(k, covers);
     if (!list.length) return "";
     const small = k === "C"; // TASK-074: the Zdrovit park is on Medical Avenue
     const ind = industryOf(k), info = STREET_INFO[k] || { t: "", lead: "" };
@@ -850,5 +866,5 @@ ${footer}`;
 <script>${L.assets?.js || ""}</script>
 </body></html>`;
   }
-  return { home, casePage, canvasPage, industryPage, servicePage, teamPage, privacyPage, landingPage, industrySlugs: INDUSTRIES.map((x) => x.slug), serviceSlugs: SERVICE_PAGES.map((x) => x.slug), slugs: Object.keys(CASES), canvasSlugs: Object.keys(CANVASES).filter((k) => canvases[k]) };
+  return { workStreets, home, casePage, canvasPage, industryPage, servicePage, teamPage, privacyPage, landingPage, industrySlugs: INDUSTRIES.map((x) => x.slug), serviceSlugs: SERVICE_PAGES.map((x) => x.slug), slugs: Object.keys(CASES), canvasSlugs: Object.keys(CANVASES).filter((k) => canvases[k]) };
 }
