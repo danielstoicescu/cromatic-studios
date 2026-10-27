@@ -1199,7 +1199,7 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
 #what .chap { overflow: hidden; isolation: isolate; background: #fff; padding: 30px 24px 26px; border-radius: 26px; box-shadow: 0 5px 0 var(--ink); display: flex; flex-direction: column; }
 #what .chap::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--cc); transform-origin: 50% 100%; transform: scaleY(.0); transition: transform .65s var(--eoq); }
 #what .chap-k { position: absolute; right: 18px; top: 16px; padding: 0; border: 0; background: none; width: auto; height: auto; margin: 0;
-  font: 900 clamp(46px, 4.2vw, 68px)/1 var(--f); letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 1.5px var(--ink); opacity: .22;
+  font: 900 clamp(46px, 4.2vw, 68px)/1 var(--f); letter-spacing: -.05em; color: var(--ink); opacity: .12; /* TASK-139: solid, never outlined (Daniel) */
   transition: opacity .4s var(--eoq), translate .6s var(--bounce), color .4s var(--eoq); }
 #what .chap h3 { font-size: clamp(25px, 2.2vw, 32px); line-height: 1.04; letter-spacing: -.03em; max-width: 9em; margin: 22px 0 14px; padding-right: 2.2em; text-wrap: balance; }
 #what .chap h3::before { content: ""; display: block; width: 46px; height: 12px; margin-bottom: 18px; border-radius: 999px; background: var(--cc); border: var(--line); transition: width .55s var(--bounce); }
@@ -1218,21 +1218,8 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
 .js #what .chap.rv.in { transform: none; }
 @media (max-width: 1000px) { .chap-road { display: none; } #what .chapters { padding-top: 0; } }
 
-/* 6 · a street's opening: the band in its colour, its name huge across it; scroll-linked (--sp, site.js) */
+/* 6 · a street's opening: see 8 (the street bands) */
 #work { overflow-x: clip; }
-.street-intro { position: relative; margin: 0 calc(50% - 50vw) -64px; height: clamp(190px, 30vh, 330px); display: grid; place-items: center; pointer-events: none; }
-.si-band { position: absolute; inset: 0; background: var(--dc); border-block: 1px solid var(--ink);
-  clip-path: inset(calc((1 - var(--sp, 1)) * 30%) calc((1 - var(--sp, 1)) * 38%) round calc((1 - var(--sp, 1)) * 220px)); overflow: hidden; }
-.si-big { position: absolute; left: 0; top: 50%; display: flex; gap: .5em; white-space: nowrap; translate: calc(-12% - var(--sp, 1) * 22%) -58%;
-  font: 900 clamp(84px, 13vw, 220px)/1 var(--f); letter-spacing: -.05em; color: var(--dt); opacity: .92; }
-.si-big span:nth-child(even) { color: transparent; -webkit-text-stroke: 2px var(--dt); }
-.dom-street .street-head { z-index: 1; scale: calc(.94 + var(--sp, 1) * .06); transform-origin: 50% 0; }
-.dom-street:first-of-type { margin-top: 64px; }
-.dom-street { margin-top: 120px; }
-.dom-street .street-head .street-sign { scale: calc(.7 + var(--sp, 1) * .3); }
-@media (max-width: 700px) { .street-intro { height: 170px; margin-bottom: -44px; } .si-big { font-size: 76px; } .dom-street { margin-top: 84px; } }
-@media (prefers-reduced-motion: reduce) { .street-intro, .dom-street { --sp: 1 !important; } }
-
 /* 7 · the crew: the words, then the ten of us bigger, in a wave; under them the studio as a collage */
 .studio { grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 34px 56px; align-items: center; }
 .studio .crew { display: flex; flex-wrap: wrap; justify-content: center; gap: 26px 18px; padding: 10px 0 30px; }
@@ -1275,3 +1262,57 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
 }
 @media (hover: none) { .studio .photos figcaption { opacity: 1; translate: 0 0; } }
 @media (prefers-reduced-motion: reduce) { .js .studio .crew li { opacity: 1; } }
+
+/* ==== TASK-139 · r346 (Daniel, 29 Oct): the streets on their own diorama clips. No outlined letters, no decorative pills ==== */
+
+/* 8 · a street's opening band: its diorama clip full-bleed, parallax with the scroll (--bp 0 → 1 while it crosses the
+   screen, site.js): the picture slower than the page and settling from a slight zoom, the name faster than it */
+.dom-street { margin-top: 120px; }
+.dom-street:first-of-type { margin-top: 56px; }
+.street-band { --bp: .5; position: relative; margin: 0 calc(50% - 50vw); height: clamp(380px, 68vh, 700px); color: #fff; isolation: isolate; contain: layout paint; }
+.sb-stage { position: absolute; inset: 0; overflow: hidden; background: color-mix(in srgb, var(--dc) 55%, var(--ink)); }
+.sb-media { position: absolute; inset: -9% 0; transform: translate3d(0, calc((var(--bp) - .5) * 15%), 0) scale(calc(1.08 - var(--bp) * .08)); transform-origin: 50% 40%; will-change: transform; }
+.sb-pic, .sb-pic img, .sb-vid { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.sb-vid { opacity: 0; transition: opacity 1s var(--eoq); }
+.sb-vid.on { opacity: 1; }
+.sb-veil { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(13,12,9,.34) 0%, rgba(13,12,9,0) 26%),
+    radial-gradient(72% 64% at 16% 64%, rgba(13,12,9,.58), rgba(13,12,9,0) 74%),
+    linear-gradient(180deg, transparent 76%, color-mix(in srgb, var(--alt) 70%, transparent) 90%, var(--alt) 100%); }
+.street-band:not(.has-media) .sb-veil { background: linear-gradient(180deg, transparent 60%, var(--alt) 100%); }
+.sb-copy { position: absolute; left: 0; right: 0; bottom: calc(112px + 9%); width: min(1180px, 100% - 48px); margin: 0 auto; pointer-events: none;
+  transform: translate3d(0, calc((.5 - var(--bp)) * 90px), 0); opacity: clamp(0, calc(var(--bp) * 5 - .4), 1); }
+.sb-cap { display: flex; align-items: center; margin: 0 0 14px; font-size: 12.5px; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.88); }
+.sb-cap span:first-child { font-weight: 800; color: #fff; }
+.sb-cap span + span::before { content: ""; display: inline-block; width: 34px; height: 1px; margin: 0 14px; vertical-align: middle; background: currentColor; opacity: .7; }
+.sb-name { margin: 0; font: 900 clamp(58px, 9.6vw, 172px)/.9 var(--f); letter-spacing: -.05em; color: #fff; text-wrap: balance; text-shadow: 0 6px 60px rgba(13,12,9,.35); }
+.sb-pp { position: absolute; right: 18px; top: 18px; z-index: 2; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%;
+  background: rgba(13,12,9,.42); color: #fff; cursor: pointer; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); transition: background .3s; }
+.sb-pp[hidden] { display: none; }
+.sb-pp:hover { background: rgba(13,12,9,.66); }
+.sb-pp:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.sb-pp i { width: 12px; height: 14px; border-left: 4px solid #fff; border-right: 4px solid #fff; box-sizing: border-box; }
+.sb-pp[aria-pressed="true"] i { width: 0; height: 0; margin-left: 4px; border-right: 0; border-left: 12px solid #fff; border-top: 7.5px solid transparent; border-bottom: 7.5px solid transparent; }
+.street-band + .street-head { margin-top: -96px; z-index: 2; }
+.dom-street .street-head { scale: calc(.96 + var(--sp, 1) * .04); transform-origin: 50% 0; }
+@media (max-width: 700px) {
+  .street-band { height: min(118vw, 80svh); }
+  .sb-copy { bottom: calc(76px + 13%); width: calc(100% - 36px); }
+  .sb-name { font-size: clamp(44px, 13.4vw, 72px); }
+  .sb-cap { font-size: 11px; margin-bottom: 10px; }
+  .street-band + .street-head { margin-top: -60px; }
+  .dom-street { margin-top: 84px; }
+  .sb-pp { right: 12px; top: 12px; width: 36px; height: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .street-band { --bp: .5 !important; } .sb-media { transform: scale(1.04); } .sb-copy { transform: none; opacity: 1; }
+  .sb-vid, .sb-pp { display: none !important; } .street-intro, .dom-street { --sp: 1 !important; }
+}
+
+/* (the street's name is the band's now: the road sign on its card stays for screen readers only, no name twice) */
+.street-band + .street-head { padding-top: clamp(28px, 3vw, 40px); }
+.street-band + .street-head .street-sign { position: absolute; width: 1px; height: 1px; padding: 0; margin: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; box-shadow: none; }
+@media (max-width: 700px) {
+  .street-band + .street-head .sh-count { position: static; grid-auto-flow: column; justify-content: start; align-items: center; gap: 10px; margin-top: 18px; }
+  .street-band + .street-head .sh-count b { width: 52px; height: 52px; font-size: 22px; }
+}

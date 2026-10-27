@@ -220,17 +220,37 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       zd: small ? zdSorted().map((b) => ({ name: b.name, line: b.line, page: b.page || null, cover: (b.page && covers[b.page]) || null })) : []
     };
   }).filter((x) => x.list.length);
-  const workByStreet = (covers) => Object.entries(STREETS).map(([k, [street, col]]) => {
+  // TASK-139 (Daniel, 29 Oct on r341: "never make letters like that again", no outline copies, no pill): each street
+  // opens on a full-bleed band of its own diorama clip (Vera: site/media/streets/<slug>/<slug>.{mp4,webm}, -m.mp4 for
+  // phones, poster.jpg / poster-m.jpg; a slow 8 s seamless loop of the street's real buildings, no text). The poster is
+  // in the page from the start (no layout shift: the band has its own height); site.js gives the video its sources
+  // only near the screen, never with reduced motion, Save-Data or 2g. Scroll parallax (site.js, --bp 0 → 1 while the
+  // band crosses the screen): the picture moves slower than the page and settles from a slight zoom, the street's name
+  // in solid CromaticSans moves faster than it; the band fades into the paper the street's cards stand on
+  const streetBand = (k, street, i, count) => {
+    const slug = street.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), m = (n) => A(`m:streets/${slug}/${n}`);
+    const pd = m("poster.jpg"), pm = m("poster-m.jpg"), dm = m(`${slug}.mp4`), dw = m(`${slug}.webm`), mm = m(`${slug}-m.mp4`);
+    const media = pd ? `<picture class="sb-pic">${pm ? `<source media="(max-width: 700px)" srcset="${pm.src}" width="${pm.w}" height="${pm.h}">` : ""}<img src="${pd.src}" width="${pd.w}" height="${pd.h}" alt="" loading="lazy" decoding="async"></picture>` : "";
+    const video = pd && (dm || dw) ? `<video class="sb-vid" muted loop playsinline preload="none" disablepictureinpicture aria-hidden="true" tabindex="-1"${dm ? ` data-d="${dm.src}"` : ""}${dw ? ` data-dw="${dw.src}"` : ""}${mm ? ` data-m="${mm.src}"` : ""}></video>` : "";
+    return `<div class="street-band${pd ? " has-media" : ""}">
+        <div class="sb-stage"><span class="sb-media">${media}${video}</span><i class="sb-veil" aria-hidden="true"></i></div>
+        <div class="sb-copy" aria-hidden="true">
+          <p class="sb-cap mono"><span>${String(i + 1).padStart(2, "0")}</span><span>${count} ${count === 1 ? "project" : "projects"}</span></p>
+          <p class="sb-name">${esc(street)}</p>
+        </div>
+        ${video ? `<button class="sb-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>` : ""}
+      </div>`;
+  };
+  const workByStreet = (covers) => Object.entries(STREETS).map(([k, [street, col]], si) => {
     const list = streetList(k, covers);
     if (!list.length) return "";
     const small = k === "C"; // TASK-074: the Zdrovit park is on Medical Avenue
     const ind = industryOf(k), info = STREET_INFO[k] || { t: "", lead: "" };
     const n = new Set([...list.filter((p) => p.page).map((p) => p.page), ...(small ? zdPages() : [])]).size; // TASK-074: + the Zdrovit brands' case pages (reached from the Zdrovit row)
-    // TASK-139 (Daniel, 28 Oct: "next level, să simți că treci dintr-o categorie în alta"): each street opens on a band
-    // in its colour, full width, its name set huge across it; as the street scrolls in the band opens from a pill to the
-    // whole width and the name slides along (site.js sets --sp, 0 → 1), then the street's card and sign land on it
+    // TASK-139 (Daniel, 28 Oct: "next level, să simți că treci dintr-o categorie în alta"): each street opens on its band
+    // (streetBand above), then the street's card and sign land on it (site.js sets --sp, 0 → 1)
     return `<div class="dom dom-street" id="street-${k.toLowerCase()}" style="--dc:${col};--dt:${STREET_INK[k] || "#fff"}">
-      <div class="street-intro" aria-hidden="true"><span class="si-band"><span class="si-big"><span>${esc(street)}</span><span>${esc(street)}</span><span>${esc(street)}</span></span></span></div>
+      ${streetBand(k, street, si, list.length)}
       <div class="street-head">
         <div class="sh-main">
           <h3 class="sh-title"><span class="street-sign"><span class="ss-name">${esc(street)}</span></span> <span class="sh-sub">${esc(info.t)}</span></h3>

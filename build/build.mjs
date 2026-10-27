@@ -371,10 +371,12 @@ const mediaMap = new Map();
   for (const d of dirs) {
     if (!statSync(join(mroot, d)).isDirectory()) continue;
     mkdirSync(join(pub, "assets", "m"), { recursive: true });
-    for (const f of readdirSync(join(mroot, d))) {
+    // TASK-139: one level of sub-folders too (site/media/streets/<street>/<file> -> "m:streets/<street>/<file>")
+    const files = readdirSync(join(mroot, d)).flatMap((f) => (statSync(join(mroot, d, f)).isDirectory() ? readdirSync(join(mroot, d, f)).map((g) => `${f}/${g}`) : [f]));
+    for (const f of files) {
       if (!/\.(jpe?g|png|webp|mp4|webm)$/i.test(f)) continue;
       const buf = readFileSync(join(mroot, d, f));
-      const rel = `assets/m/${d}-${f.replace(/\.[^.]+$/, "")}-${hash(buf).slice(0, 8)}${f.slice(f.lastIndexOf("."))}`;
+      const rel = `assets/m/${d}-${f.replace(/\.[^.]+$/, "").replace(/\//g, "-")}-${hash(buf).slice(0, 8)}${f.slice(f.lastIndexOf("."))}`;
       writeFileSync(join(pub, rel), buf);
       const [w, h] = dims(buf);
       mediaMap.set(`m:${d}/${f.replace(/\.[^.]+$/, "")}`, { src: "/" + rel, w, h });

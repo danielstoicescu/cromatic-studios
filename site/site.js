@@ -322,6 +322,30 @@
       pp.addEventListener("click", () => { paused = !paused; pp.setAttribute("aria-pressed", String(paused)); pp.setAttribute("aria-label", paused ? (RO ? "Pornește animația" : "Play the animation") : (RO ? "Oprește animația" : "Pause the animation")); sync(); });
     }
   }
+  // ---- TASK-139 ----
+  // the streets' bands (r346): each clip gets its sources once the page has loaded and the band is near the screen,
+  // never with reduced motion, Save-Data or 2g (the poster stays the band). A phone takes the phone cut. Each one plays
+  // only while on screen and in a visible tab, or until its button pauses it; it fades in over its poster once it plays
+  const sbs = [...d.querySelectorAll(".street-band .sb-vid")];
+  if (sbs.length) {
+    const cn = navigator.connection || {}, slow = cn.saveData || /(^|-)2g$/.test(cn.effectiveType || "");
+    const mq = matchMedia("(max-width: 700px)");
+    if (!reduced && !slow && "IntersectionObserver" in window) {
+      const st = new Map(sbs.map((v) => [v, { near: false, seen: false, loaded: false, paused: false, pp: v.closest(".street-band").querySelector(".sb-pp") }]));
+      const set = (v) => { const s = v.dataset, m = mq.matches; v.innerHTML = [[m ? "" : s.dw, 'video/webm; codecs="vp9"'], [(m && s.m) || s.d, "video/mp4"]].filter((x) => x[0]).map(([u, t]) => `<source src="${u}" type='${t}'>`).join(""); v.load(); };
+      const sync = (v) => { const o = st.get(v); if (!o.loaded) return; if (o.seen && !o.paused && !d.hidden) v.play().catch(() => {}); else v.pause(); };
+      const start = (v) => { const o = st.get(v); if (o.loaded) return; o.loaded = true; v.addEventListener("playing", () => { v.classList.add("on"); if (o.pp) o.pp.hidden = false; }, { once: true }); set(v); };
+      const go = () => {
+        const near = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) start(e.target.querySelector(".sb-vid") || e.target); }), { rootMargin: "60% 0px" });
+        const seen = new IntersectionObserver((es) => es.forEach((e) => { const v = e.target.querySelector(".sb-vid"); st.get(v).seen = e.isIntersecting; sync(v); }), { threshold: 0.05 });
+        sbs.forEach((v) => { const b = v.closest(".street-band"); near.observe(b); seen.observe(b); });
+      };
+      if (d.readyState === "complete") go(); else addEventListener("load", go, { once: true });
+      d.addEventListener("visibilitychange", () => sbs.forEach(sync));
+      mq.addEventListener?.("change", () => sbs.forEach((v) => { if (st.get(v).loaded) { set(v); sync(v); } }));
+      st.forEach((o, v) => o.pp && o.pp.addEventListener("click", () => { o.paused = !o.paused; o.pp.setAttribute("aria-pressed", String(o.paused)); o.pp.setAttribute("aria-label", o.paused ? (RO ? "Pornește animația" : "Play the animation") : (RO ? "Oprește animația" : "Pause the animation")); sync(v); }));
+    }
+  }
   // the four numbers count up as they come into view (the real number is in the page from the start)
   const stats = d.querySelector(".stats");
   if (stats) {
@@ -344,7 +368,7 @@
     else new IntersectionObserver((es, o) => { if (es.some((e) => e.isIntersecting)) { o.disconnect(); crew.classList.add("in"); } }, { rootMargin: "0px 0px -10% 0px" }).observe(crew);
   }
   // scroll-linked: the chapters' road fills (--rp) and each street's opening band opens and slides (--sp, 0 → 1)
-  const road4 = d.querySelector("#what .chapters"), streets = [...d.querySelectorAll(".dom-street")];
+  const road4 = d.querySelector("#what .chapters"), streets = [...d.querySelectorAll(".dom-street")], bands = [...d.querySelectorAll(".street-band")];
   if (!reduced && (road4 || streets.length)) {
     let raf2 = 0;
     const clamp = (x) => Math.min(1, Math.max(0, x));
@@ -356,6 +380,12 @@
         const r = el.getBoundingClientRect();
         if (r.top > vh * 1.2 || r.top < -vh) continue;
         el.style.setProperty("--sp", clamp((vh * 1.02 - r.top) / (vh * 0.62)).toFixed(3));
+      }
+      // TASK-139: a street's band, 0 as its top meets the bottom of the screen, 1 as its bottom leaves the top
+      for (const el of bands) {
+        const r = el.getBoundingClientRect();
+        if (r.top > vh || r.bottom < 0) continue;
+        el.style.setProperty("--bp", clamp((vh - r.top) / (vh + r.height)).toFixed(4));
       }
     };
     const q2 = () => { if (!raf2) raf2 = requestAnimationFrame(tick2); };
