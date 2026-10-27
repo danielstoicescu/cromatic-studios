@@ -75,7 +75,10 @@
   var cv = document.createElement("canvas"); cv.className = "czi-cv";
   // (the drawing is an image of the words; the first line is also text, before it)
   // the text painted first (3.69): the opening's first line, or the brand line over the pill
-  var FT = mode === "full" ? C.first && C.first[ab] : C.brand && C.brand[ab];
+  // TASK-139 (Daniel, 28 Oct): the brand line ("That's how the right brand feels.") no longer stands alone over a returning
+  // visitor's or a reduced-motion pill: out of the opening's words it reads out of context. Only the full opening paints
+  // text first (its own first line); the others get the pill alone
+  var FT = mode === "full" ? C.first && C.first[ab] : null;
   cv.setAttribute("role", "img"); cv.setAttribute("aria-label", mode === "full" ? (FT ? LINES.replace(/^Nobody remembers a thumbnail\.\s*/, "") : LINES) : TX.load);
   var ft = null;
   if (FT) {
