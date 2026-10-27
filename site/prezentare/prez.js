@@ -18,6 +18,11 @@
   const bar = $("bar"), count = $("count"), part = $("part"), dots = $("dots"), prevB = $("prev"), nextB = $("next"), fsB = $("fs"), hint = $("hint");
   const ov = $("ov"), ovF = $("ov-f"), ovT = $("ov-t"), ovNew = $("ov-new"), ovX = $("ov-x");
   const RM = document.documentElement.classList.contains("rm");
+  // r332: ?embed=1, the deck inside another page (an offer opens with it): no frame on top, no full screen, no idle
+  // cursor; the page around it can scroll past the first and the last slide; it tells its parent (same origin only)
+  // where it is ({ type: "cz-prez", index, step, max, count }) and takes { type: "cz-prez-go", index, step } back
+  const EMBED = /[?&]embed=1(?:&|$)/.test(location.search);
+  if (EMBED) document.documentElement.classList.add("embed");
   const DUR = RM ? 0 : 720;
   let cur = -1, h = 0, lastNav = -1e9, offTimer = 0;
 
@@ -114,7 +119,7 @@
     place(instant || old < 0);
     near(i);
     const s = S[i];
-    s.step = enter === "end" && s.kind === "build" ? s.maxBuild : typeof enter === "number" ? Math.max(0, Math.min(maxOf(s), enter)) : 0;
+    s.step = enter === "end" ? maxOf(s) : typeof enter === "number" ? Math.max(0, Math.min(maxOf(s), enter)) : 0;
     S.forEach((x, k) => { if (k === i) { x.el.removeAttribute("inert"); x.el.removeAttribute("aria-hidden"); } else { x.el.setAttribute("inert", ""); x.el.setAttribute("aria-hidden", "true"); stopAuto(x); } });
     apply(s, true);
     if (old < 0) requestAnimationFrame(() => requestAnimationFrame(() => s.el.classList.add("on"))); else s.el.classList.add("on");
@@ -132,19 +137,25 @@
     if (i > 0) hint.classList.add("gone");
     return true;
   }
-  const setHash = () => { const s = S[cur], want = s.step ? `#${cur + 1}.${s.step}` : `#${cur + 1}`; if (location.hash !== want) history.replaceState(null, "", want); };
+  const setHash = () => {
+    const s = S[cur], want = s.step ? `#${cur + 1}.${s.step}` : `#${cur + 1}`;
+    if (location.hash !== want) history.replaceState(null, "", want);
+    archRun();
+    if (EMBED && window.parent !== window) { try { window.parent.postMessage({ type: "cz-prez", index: cur + 1, step: s.step, max: maxOf(s), count: N }, location.origin); } catch (e) {} }
+  };
   // forward / back: a step inside the slide first (unless asked to change slides), then the next slide
-  function fwd(slideOnly = false) {
+  // r332 (Daniel): on a row or the canvas, a plain scroll down (↓, PageDown, the wheel) moves it sideways to its end first
+  function fwd() {
     const s = S[cur], m = maxOf(s);
-    if (!(slideOnly && s.kind !== "build") && s.step < m) {
+    if (s.step < m) {
       if (s.kind === "pan" && s.auto) { stopAuto(s); s.step = Math.floor(s.scroller.scrollLeft / panPage(s)); }
       s.step = Math.min(m, s.step + 1); apply(s); setHash(); lastNav = performance.now(); return true;
     }
     return go(cur + 1, "start");
   }
-  function back(slideOnly = false) {
+  function back() {
     const s = S[cur];
-    if (!(slideOnly && s.kind !== "build") && s.step > 0) {
+    if (s.step > 0) {
       if (s.kind === "pan") { stopAuto(s); s.step = Math.ceil(s.scroller.scrollLeft / panPage(s) - 0.02); }
       s.step = Math.max(0, s.step - 1); apply(s); setHash(); lastNav = performance.now(); return true;
     }
@@ -170,18 +181,40 @@
   // ---------- wheel / trackpad ----------
   const QUIET = 190, MIN_GAP = 420, THRESH = 22;
   let lastWheel = -1e9, used = false, acc = 0, recent = [], axis = "";
+  let hmode = false;
+  // after a free sideways move: where the row's cursor (or the canvas page) now stands, so keys go on from there
+  const syncFromScroll = (s) => {
+    const sc = s.scroller, max = sc.scrollWidth - sc.clientWidth;
+    if (s.kind === "pan") s.step = sc.scrollLeft >= max - 4 ? maxOf(s) : Math.floor(sc.scrollLeft / panPage(s));
+    else { s.cards.forEach((c) => c.classList.remove("cur")); s.step = sc.scrollLeft >= max - 4 ? s.cards.length : sc.scrollLeft < 4 ? 0 : Math.max(0, s.cards.findIndex((c) => c.offsetLeft + c.offsetWidth / 2 > sc.scrollLeft + sc.clientWidth / 2)); }
+    s.el.dataset.step = s.step; paintDots();
+  };
+  const atEdge = (s, dir) => { const sc = s.scroller, max = sc.scrollWidth - sc.clientWidth; return dir > 0 ? sc.scrollLeft >= max - 4 : sc.scrollLeft <= 4; };
+  // would a move this way do anything? (embedded, the page around takes the scroll past the deck's ends)
+  const canMove = (dir) => { const s = S[cur]; return dir > 0 ? !(cur === N - 1 && s.step >= maxOf(s)) : !(cur === 0 && s.step === 0); };
   deck.addEventListener("wheel", (e) => {
     if (!ov.hidden) return;
-    e.preventDefault();
-    if (e.ctrlKey) return;
+    if (e.ctrlKey) { e.preventDefault(); return; }
     const now = performance.now(), s = S[cur];
     let dx = e.deltaX, dy = e.deltaY;
     const mul = e.deltaMode === 1 ? 32 : e.deltaMode === 2 ? (h || 800) : 1; dx *= mul; dy *= mul;
-    if (now - lastWheel > QUIET) { used = false; acc = 0; recent = []; axis = Math.abs(dx) > Math.abs(dy) * 1.2 ? "x" : "y"; }
+    const fresh = now - lastWheel > QUIET;
+    if (fresh) { used = false; acc = 0; recent = []; axis = Math.abs(dx) > Math.abs(dy) * 1.2 ? "x" : "y"; hmode = false; }
     lastWheel = now;
-    // sideways on a row or the canvas: the row itself moves, freely
-    if (axis === "x" && s.scroller) { stopAuto(s); cancelAnimationFrame(s.scroller._raf); s.scroller.scrollLeft += dx; edges(s.scroller); if (s.kind === "pan") s.step = Math.round(s.scroller.scrollLeft / panPage(s)); paintDots(); return; }
     const d = axis === "x" ? dx : dy, a = Math.abs(d);
+    // a row or the canvas: sideways input always moves it; a scroll down moves it to its end, then the next scroll moves on
+    if (s.scroller && now - lastNav > 300) {
+      if (fresh) hmode = axis === "x" || !atEdge(s, Math.sign(d));
+      if (hmode) {
+        e.preventDefault(); stopAuto(s); cancelAnimationFrame(s.scroller._raf);
+        if (fresh && a >= 80 && e.deltaMode !== 0 || fresh && a >= 100 && Number.isInteger(e.deltaY) && !e.deltaX) smoothTo(s.scroller, s.scroller.scrollLeft + Math.sign(d) * s.scroller.clientWidth * 0.55, 450); // a mouse wheel's notch
+        else { s.scroller.scrollLeft += d * 1.4; edges(s.scroller); }
+        setTimeout(() => { syncFromScroll(s); setHash(); }, 470);
+        return;
+      }
+    }
+    if (EMBED && fresh && !canMove(Math.sign(d))) return;
+    e.preventDefault();
     if (used && recent.length >= 4 && now - lastNav > MIN_GAP + 180) {
       const avg = recent.reduce((x, y) => x + y, 0) / recent.length;
       if (a > Math.max(24, avg * 2.6)) { used = false; acc = 0; }
@@ -191,9 +224,7 @@
     acc += d;
     if (Math.abs(acc) < THRESH || now - lastNav < MIN_GAP) return;
     used = true;
-    // a vertical scroll changes slides on a row or the canvas, and builds a build slide
-    const slideOnly = axis === "y";
-    acc > 0 ? fwd(slideOnly) : back(slideOnly);
+    acc > 0 ? fwd() : back();
     acc = 0;
   }, { passive: false });
 
@@ -208,13 +239,13 @@
     const s = S[cur];
     if (/^[0-9]$/.test(k)) { digits += k; clearTimeout(digitTimer); digitTimer = setTimeout(jumpDigits, 650); e.preventDefault(); return; }
     if (k === "Enter" && digits) { clearTimeout(digitTimer); jumpDigits(); e.preventDefault(); return; }
-    if (k === "f" || k === "F") { toggleFs(); e.preventDefault(); return; }
+    if ((k === "f" || k === "F") && !EMBED) { toggleFs(); e.preventDefault(); return; }
     // Enter on a row opens the card under the cursor; on an archetype it picks it
     if (k === "Enter" && s.kind === "row" && s.step > 0) { const c = s.cards[s.step - 1]; if (c && c.dataset.case) { openCase(c); e.preventDefault(); return; } }
-    if ((k === "Enter" || k === " ") && e.target.closest && e.target.closest(".sg")) { pickArch(e.target.closest(".sg")); e.preventDefault(); return; }
+    if ((k === "Enter" || k === " ") && e.target.closest && e.target.closest(".wh-z")) { holdZone(e.target.closest(".wh-z").dataset.q); e.preventDefault(); return; }
     let act = null;
-    if (k === "ArrowDown") act = () => fwd(true);
-    else if (k === "ArrowUp") act = () => back(true);
+    if (k === "ArrowDown") act = () => fwd();
+    else if (k === "ArrowUp") act = () => back();
     else if (["ArrowRight", "PageDown"].includes(k) || (k === " " && !e.shiftKey)) act = () => fwd(false);
     else if (["ArrowLeft", "PageUp", "Backspace"].includes(k) || (k === " " && e.shiftKey)) act = () => back(false);
     else if (k === "Home") act = () => go(0);
@@ -234,7 +265,7 @@
     if (!tOn) return; tOn = false;
     const t = e.changedTouches[0], dx = t.clientX - tx, dy = t.clientY - ty;
     const inRow = e.target.closest && e.target.closest("[data-h]");
-    if (Math.abs(dy) > 40 && Math.abs(dy) >= Math.abs(dx)) dy < 0 ? fwd(true) : back(true);
+    if (Math.abs(dy) > 40 && Math.abs(dy) >= Math.abs(dx)) dy < 0 ? fwd() : back();
     else if (!inRow && Math.abs(dx) > 60) dx < 0 ? fwd() : back();
   });
 
@@ -267,8 +298,21 @@
   });
 
   // ---------- the archetype wheel: any segment can be picked ----------
-  function pickArch(g) { const w = g.closest("svg"); w.querySelectorAll(".sg").forEach((x) => x.classList.toggle("sel", x === g && !g.classList.contains("sel"))); w.classList.toggle("picking", !!w.querySelector(".sg.sel")); }
-  document.querySelectorAll(".wheel .sg").forEach((g) => g.addEventListener("click", () => pickArch(g)));
+  // ---------- The Core's archetype wheel: the zones take turns until a press (or a tap) picks one ----------
+  const archS = S.find((x) => x.el.classList.contains("s-arch"));
+  const ZQ = archS ? [...archS.el.querySelectorAll(".wh-z")].map((b) => b.dataset.q) : [];
+  let archT = 0, archHeld = "";
+  const archSet = (q) => { if (!archS) return; archS.el.querySelectorAll("[data-q]").forEach((x) => x.classList.toggle("on", x.dataset.q === q)); archS.el.querySelector(".cwheel")?.classList.toggle("lit", !!q); };
+  function archRun() {
+    clearInterval(archT);
+    if (!archS || S[cur] !== archS) return;
+    if (archS.step > 0) { archSet(ZQ[archS.step - 1]); return; }
+    if (archHeld) { archSet(archHeld); return; }
+    let k = 0; archSet(ZQ[0]); if (RM) return;
+    archT = setInterval(() => { k = (k + 1) % ZQ.length; archSet(ZQ[k]); }, 3200);
+  }
+  function holdZone(q) { archHeld = q; clearInterval(archT); archSet(q); }
+  if (archS) archS.el.querySelectorAll("[data-q]").forEach((x) => x.addEventListener("click", () => holdZone(x.dataset.q)));
 
   // ---------- the studio photos: the statement on screen brings its photo forward ----------
   // (pure CSS, keyed on data-step)
@@ -289,10 +333,12 @@
 
   // ---------- on a TV: the pointer and the buttons fade when nobody touches anything ----------
   let idleT = 0;
-  const wake = () => { document.body.classList.remove("idle"); clearTimeout(idleT); idleT = setTimeout(() => document.body.classList.add("idle"), 2600); };
+  const wake = () => { if (EMBED) return; document.body.classList.remove("idle"); clearTimeout(idleT); idleT = setTimeout(() => document.body.classList.add("idle"), 2600); };
   ["mousemove", "mousedown", "touchstart"].forEach((ev) => window.addEventListener(ev, wake, { passive: true }));
   wake();
   setTimeout(() => hint.classList.add("gone"), 6000);
+
+  if (EMBED) window.addEventListener("message", (e) => { if (e.origin !== location.origin || !e.data || e.data.type !== "cz-prez-go") return; const i = (e.data.index | 0) - 1; if (i !== cur) go(i, e.data.step | 0); else { S[cur].step = Math.min(maxOf(S[cur]), e.data.step | 0); apply(S[cur]); setHash(); } });
 
   // ---------- start ----------
   measure();
