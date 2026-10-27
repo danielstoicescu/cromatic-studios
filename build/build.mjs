@@ -378,6 +378,8 @@ const mediaMap = new Map();
       writeFileSync(join(pub, rel), buf);
       const [w, h] = dims(buf);
       mediaMap.set(`m:${d}/${f.replace(/\.[^.]+$/, "")}`, { src: "/" + rel, w, h });
+      // TASK-139: also by its full name (m:drive-loop/drive-loop.mp4 and .webm share a base name)
+      mediaMap.set(`m:${d}/${f}`, { src: "/" + rel, w, h });
     }
   }
 }
