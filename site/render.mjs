@@ -226,7 +226,11 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     const small = k === "C"; // TASK-074: the Zdrovit park is on Medical Avenue
     const ind = industryOf(k), info = STREET_INFO[k] || { t: "", lead: "" };
     const n = new Set([...list.filter((p) => p.page).map((p) => p.page), ...(small ? zdPages() : [])]).size; // TASK-074: + the Zdrovit brands' case pages (reached from the Zdrovit row)
+    // TASK-139 (Daniel, 28 Oct: "next level, să simți că treci dintr-o categorie în alta"): each street opens on a band
+    // in its colour, full width, its name set huge across it; as the street scrolls in the band opens from a pill to the
+    // whole width and the name slides along (site.js sets --sp, 0 → 1), then the street's card and sign land on it
     return `<div class="dom dom-street" id="street-${k.toLowerCase()}" style="--dc:${col};--dt:${STREET_INK[k] || "#fff"}">
+      <div class="street-intro" aria-hidden="true"><span class="si-band"><span class="si-big"><span>${esc(street)}</span><span>${esc(street)}</span><span>${esc(street)}</span></span></span></div>
       <div class="street-head">
         <div class="sh-main">
           <h3 class="sh-title"><span class="street-sign"><span class="ss-name">${esc(street)}</span></span> <span class="sh-sub">${esc(info.t)}</span></h3>
@@ -266,6 +270,30 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       return `<video class="hc-vid" muted loop playsinline preload="none" disablepictureinpicture aria-hidden="true" tabindex="-1" data-d="${dm.src}"${dw ? ` data-dw="${dw.src}"` : ""} data-m="${mm.src}"${mw ? ` data-mw="${mw.src}"` : ""}></video>
     <button class="hc-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>`;
     };
+    // TASK-139 (Daniel, 28 Oct): the way into the map is a band half a screen high: a 9-second seamless loop of the
+    // diorama renders, slowed down, with one thing on it, the CTA. The poster is its still; site.js gives the video its
+    // sources only near the screen and never with reduced motion, Save-Data or 2g. Replaces the coffee stop's Lottie
+    // and its two buttons
+    // The loop is Vera's (TASK-139): site/media/drive-loop/drive-loop.{mp4,webm} and poster.jpg (optional phone cuts:
+    // drive-loop-m.{mp4,webm}, poster-m.jpg). Until they are in, a still of the diorama renders (drive-loop-still/) is
+    // the band's picture and there is no video
+    const drive9 = () => {
+      const v = (n) => A(`m:drive-loop/${n}`);
+      const pd = v("poster.jpg") || A("m:drive-loop-still/poster"), pm = v("poster-m.jpg") || (v("poster.jpg") ? null : A("m:drive-loop-still/poster-m"));
+      const dm = v("drive-loop.mp4"), dw = v("drive-loop.webm"), mm = v("drive-loop-m.mp4"), mw = v("drive-loop-m.webm");
+      if (!pd && !dm && !dw) return "";
+      const pic = pd ? `<picture class="d9-pic">${pm ? `<source media="(max-width: 700px)" srcset="${pm.src}" width="${pm.w}" height="${pm.h}">` : ""}<img src="${pd.src}"${pd.w ? ` width="${pd.w}" height="${pd.h}"` : ""} alt="" loading="lazy" decoding="async"></picture>` : "";
+      const video = dm || dw ? `<video class="d9-vid" muted loop playsinline preload="none" disablepictureinpicture aria-hidden="true" tabindex="-1"${dm ? ` data-d="${dm.src}"` : ""}${dw ? ` data-dw="${dw.src}"` : ""}${mm ? ` data-m="${mm.src}"` : ""}${mw ? ` data-mw="${mw.src}"` : ""}></video>
+      <button class="d9-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>` : "";
+      return `<section class="d9" aria-label="Drive it yourself: the 3D map of Bucharest">
+    <div class="d9-card">
+      ${pic}
+      ${video}
+      <a class="d9-hit" href="/" tabindex="-1" aria-hidden="true"></a>
+      <a class="d9-cta" href="/">${STAR}<span>Drive it yourself</span><i aria-hidden="true">→</i></a>
+    </div>
+  </section>`;
+    };
     const preload = hc ? `<link rel="preload" as="image" href="${hc.m.src}" media="(max-width: 700px)" fetchpriority="high">
 <link rel="preload" as="image" href="${hc.d.src}" media="(min-width: 701px)" fetchpriority="high">` : "";
     return `${head({ title: SITE_TITLE, desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, film and content for indie brands, startups and established firms.", path: "/site/", ld, preload })}
@@ -297,43 +325,27 @@ ${header(true)}
 
   <section class="stats" aria-label="The studio in numbers">
     <div class="wrap stats-in">
-      <p><b>${new Set(PROJECTS.filter((x) => x.page).map((x) => x.page)).size + 2}</b><span>Case studies, every one on the map</span></p>
-      <p><b>${Object.keys(STREETS).length}</b><span>Streets, one for every industry</span></p>
-      <p><b>4</b><span>Chapters: The Dream, The Voice, The World, The Crowd</span></p>
-      <p><b>&infin;</b><span>Coffees. There is always a coffee.</span></p>
+      ${/* TASK-139: four numbers, centred; each counts up as it comes into view (site.js, data-n), the infinity draws itself */ ""}<p class="st" style="--sc:var(--y)"><b data-n="${new Set(PROJECTS.filter((x) => x.page).map((x) => x.page)).size + 2}">${new Set(PROJECTS.filter((x) => x.page).map((x) => x.page)).size + 2}</b><span>Case studies, every one on the map</span></p>
+      <p class="st" style="--sc:var(--g)"><b data-n="${Object.keys(STREETS).length}">${Object.keys(STREETS).length}</b><span>Streets, one for every industry</span></p>
+      <p class="st" style="--sc:#6cc4ff"><b data-n="4">4</b><span>Chapters: The Dream, The Voice, The World, The Crowd</span></p>
+      <p class="st st-inf" style="--sc:#ff8a78"><b>&infin;</b><span>Coffees. There is always a coffee.</span></p>
     </div>
   </section>
 
-  <section class="road" aria-label="The coffee stop on the drive">
-    <div class="wrap road-head">
-      <p class="eyebrow mono">A piece of the drive · Strada Constantin Aricescu 50A</p>
-      <h2 class="ptitle">${pill("The coffee", "#FED012", -1.5)} ${pill("stop", "#F2A9C4", 1)}</h2>
-      <p class="sec-lead">Two Minutes has been our client and our neighbour for a decade. On the drive we always stop here: four double espressos, and the coffee boxes fly down from the Cromatic mansard to the shelf.</p>
-    </div>
-    ${coffee ? `<div class="road-scene road-lottie" data-czl-js="${coffee.js}" data-czl-player="${coffee.player}" data-czl-wide="${coffee.wide}" data-czl-tall="${coffee.tall}">
-      <div class="rl-art" role="img" aria-label="The coffee stop, drawn: four double espressos on the Two Minutes sill, the coffee boxes flying from the Cromatic mansard to the shelf and onto the yellow Dacia, the arcade cabinet by the door and a caravan parked on the right"><picture class="rl-still"><source media="(max-width: 700px)" srcset="${coffee.still.tall.src}" width="${coffee.still.tall.w}" height="${coffee.still.tall.h}"><img src="${coffee.still.wide.src}" width="${coffee.still.wide.w}" height="${coffee.still.wide.h}" alt="" fetchpriority="low" decoding="async"></picture></div>
-      <a class="rl-game" href="/play/gloves/" aria-label="Play the arcade: 2 Minutes 2 Fight w/ I O N, in front of Two Minutes"><span class="rlg-tag"><i class="rlg-coin" aria-hidden="true"></i><span>Play the arcade</span></span></a>
-      <button class="rl-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>
-    </div>
-    <div class="road-foot"><a class="rs-cta" href="/work/two-minutes/">Two Minutes, the case →</a><a class="rs-drive" href="/">Drive it yourself →</a></div>` : `<div class="road-scene road-video">
-      ${vid("m:tm/coffee-stop", "m:tm/coffee-stop-poster")}
-      <span class="rv-tag mono">Filmed in the 3D drive · Strada Constantin Aricescu 50A</span>
-      <a class="rs-cta" href="/work/two-minutes/">Two Minutes, the case →</a>
-      <a class="rs-drive" href="/">Drive it yourself →</a>
-    </div>`}
-  </section>
+  ${drive9()}
 
   <section id="what" class="sec">
     <div class="wrap">
       <p class="eyebrow mono">What we bring to the table</p>
       <h2 class="ptitle">${pill("From a dream", "#28C840", -1.5)} ${pill("to a crowd", "#F65342", 1)}</h2><span class="cupspin cup-title" aria-hidden="true"></span>
       <div class="chapters">
-        ${CHAPTERS.map((c) => `<article class="chap" style="--cc:${c.c}">
-          <span class="chap-k mono">${c.k}</span>
-          <h3>${esc(c.t)}</h3>
-          <p class="chap-sub mono">${esc(c.sub)}</p>
+        ${/* TASK-139 (Daniel): the card's title is what was its subtitle; "The Dream", "The Crowd"... are gone. The four
+           sit on one road (site.js fills it with the scroll, --rp) and each lights up as it is pointed at or focused */ ""}<span class="chap-road" aria-hidden="true"><i></i></span>
+        ${CHAPTERS.map((c, i) => `<article class="chap" style="--cc:${c.c};--i:${i}">
+          <span class="chap-k mono" aria-hidden="true">${c.k}</span>
+          <h3>${esc(c.sub)}</h3>
           <p>${esc(c.p)}</p>
-          <ul class="tags">${c.items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+          <ul class="tags">${c.items.map((x, j) => `<li style="--j:${j}">${esc(x)}</li>`).join("")}</ul>
         </article>`).join("")}
       </div>
     </div>
@@ -369,12 +381,12 @@ ${header(true)}
 
   <section id="studio" class="sec sec-alt">
     <div class="wrap studio">
-      <div>
+      <div class="studio-txt">
         <p class="eyebrow mono">The crew</p>
         <h2 class="ptitle">${pill("Brilliant", "#28C840", -2)} ${pill("humans", "#B098C8", 1.5)}</h2>
         <p class="sec-lead">We discover AI every day, but we are strong believers in the collective power of brilliant humans. <a class="dom-more" href="/team/">Meet the team →</a></p>
-        <ul class="crew">${CREW.map((n, i) => { const f = A(CREW_FACE_VARS[n]); return `<li style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}"><span class="cr-face">${f ? `<img src="${f.src}" width="${f.w}" height="${f.h}" alt="" loading="lazy" decoding="async">` : ""}</span><span class="cr-name">${esc(n)}</span>${(() => { const ci = CREW_INFO[n] || {}; const links = [["Instagram", ci.instagram], ["Behance", ci.behance]].filter(([, u]) => u).map(([k, u]) => `<a class="cr-link" href="${u}" target="_blank" rel="noopener">${k} \u2197</a>`).join(""); return `${ci.role ? `<span class="cr-role mono">${esc(ci.role)}</span>` : ""}${ci.bio ? `<span class="cr-bio">${esc(ci.bio)}</span>` : ""}${links}`; })()}</li>`; }).join("")}</ul>
       </div>
+        <ul class="crew">${CREW.map((n, i) => { const f = A(CREW_FACE_VARS[n]); return `<li style="--cc:${CREW_COLORS[i % CREW_COLORS.length]};--i:${i}"><span class="cr-face">${f ? `<img src="${f.src}" width="${f.w}" height="${f.h}" alt="" loading="lazy" decoding="async">` : ""}</span><span class="cr-name">${esc(n)}</span>${(() => { const ci = CREW_INFO[n] || {}; const links = [["Instagram", ci.instagram], ["Behance", ci.behance]].filter(([, u]) => u).map(([k, u]) => `<a class="cr-link" href="${u}" target="_blank" rel="noopener">${k} \u2197</a>`).join(""); return `${ci.role ? `<span class="cr-role mono">${esc(ci.role)}</span>` : ""}${ci.bio ? `<span class="cr-bio">${esc(ci.bio)}</span>` : ""}${links}`; })()}</li>`; }).join("")}</ul>
       <div class="photos">${CREW_PHOTOS.map((p) => `<figure${p.big ? ' class="ph-big"' : ""}>${img(p.src, p.cap)}<figcaption class="mono">${esc(p.cap)}</figcaption></figure>`).join("")}</div>
     </div>
   </section>

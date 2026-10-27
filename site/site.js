@@ -298,8 +298,72 @@
       pp.addEventListener("click", () => { paused = !paused; pp.setAttribute("aria-pressed", String(paused)); pp.setAttribute("aria-label", paused ? (RO ? "Pornește animația" : "Play the animation") : (RO ? "Oprește animația" : "Pause the animation")); sync(); });
     }
   }
-  // cards tilt a little towards the pointer
-  if (matchMedia("(hover: hover)").matches && !reduced) d.querySelectorAll(".chap, .svc").forEach((c) => {
+  // ---- TASK-139 ----
+  // the band into the map: its loop gets its sources once the page has loaded and the band is near; never with reduced
+  // motion, Save-Data or 2g. A phone takes the phone cut when there is one. Paused off screen, in a background tab or
+  // by its button; it fades in over the still once it plays. With no video (or none allowed) the still is the band
+  const dv = d.querySelector(".d9-vid");
+  if (dv) {
+    const cn = navigator.connection || {}, slow = cn.saveData || /(^|-)2g$/.test(cn.effectiveType || "");
+    const pp = d.querySelector(".d9-pp"), card = dv.closest(".d9-card"), mq = matchMedia("(max-width: 700px)");
+    if (!reduced && !slow && pp && card && "IntersectionObserver" in window) {
+      let seen = false, loaded = false, paused = false;
+      const set = () => {
+        const s = dv.dataset, m = mq.matches;
+        dv.innerHTML = [[(m && s.mw) || s.dw, "video/webm"], [(m && s.m) || s.d, "video/mp4"]].filter((x) => x[0]).map(([u, t]) => `<source src="${u}" type="${t}">`).join("");
+        dv.load();
+      };
+      const sync = () => { if (!loaded) return; if (seen && !paused && !d.hidden) dv.play().catch(() => {}); else dv.pause(); };
+      const start = () => { if (loaded) return; loaded = true; dv.addEventListener("playing", () => { dv.classList.add("on"); pp.hidden = false; }, { once: true }); set(); };
+      const go = () => new IntersectionObserver((es) => { seen = es.some((e) => e.isIntersecting); if (seen) start(); sync(); }, { rootMargin: "25% 0px" }).observe(card);
+      if (d.readyState === "complete") go(); else addEventListener("load", go, { once: true });
+      d.addEventListener("visibilitychange", sync);
+      mq.addEventListener?.("change", () => { if (loaded && (dv.dataset.m || dv.dataset.mw)) { set(); sync(); } });
+      pp.addEventListener("click", () => { paused = !paused; pp.setAttribute("aria-pressed", String(paused)); pp.setAttribute("aria-label", paused ? (RO ? "Pornește animația" : "Play the animation") : (RO ? "Oprește animația" : "Pause the animation")); sync(); });
+    }
+  }
+  // the four numbers count up as they come into view (the real number is in the page from the start)
+  const stats = d.querySelector(".stats");
+  if (stats) {
+    if (reduced || !("IntersectionObserver" in window)) stats.classList.add("in");
+    else new IntersectionObserver((es, o) => {
+      if (!es.some((e) => e.isIntersecting)) return;
+      o.disconnect(); stats.classList.add("in");
+      stats.querySelectorAll("b[data-n]").forEach((b, k) => {
+        const n = +b.dataset.n, t0 = performance.now() + k * 110, T = 1300 + k * 120;
+        b.textContent = "0";
+        const step = (t) => { const p = Math.min(1, Math.max(0, (t - t0) / T)); b.textContent = String(Math.round(n * (1 - Math.pow(1 - p, 4)))); if (p < 1) requestAnimationFrame(step); };
+        requestAnimationFrame(step);
+      });
+    }, { threshold: 0.35 }).observe(stats);
+  }
+  // the crew comes in, one after another
+  const crew = d.querySelector(".studio .crew");
+  if (crew) {
+    if (reduced || !("IntersectionObserver" in window)) crew.classList.add("in");
+    else new IntersectionObserver((es, o) => { if (es.some((e) => e.isIntersecting)) { o.disconnect(); crew.classList.add("in"); } }, { rootMargin: "0px 0px -10% 0px" }).observe(crew);
+  }
+  // scroll-linked: the chapters' road fills (--rp) and each street's opening band opens and slides (--sp, 0 → 1)
+  const road4 = d.querySelector("#what .chapters"), streets = [...d.querySelectorAll(".dom-street")];
+  if (!reduced && (road4 || streets.length)) {
+    let raf2 = 0;
+    const clamp = (x) => Math.min(1, Math.max(0, x));
+    const tick2 = () => {
+      raf2 = 0;
+      const vh = innerHeight;
+      if (road4) { const r = road4.getBoundingClientRect(); if (r.top < vh && r.bottom > 0) road4.style.setProperty("--rp", clamp((vh * 0.9 - r.top) / (r.height + vh * 0.35)).toFixed(3)); }
+      for (const el of streets) {
+        const r = el.getBoundingClientRect();
+        if (r.top > vh * 1.2 || r.top < -vh) continue;
+        el.style.setProperty("--sp", clamp((vh * 1.02 - r.top) / (vh * 0.62)).toFixed(3));
+      }
+    };
+    const q2 = () => { if (!raf2) raf2 = requestAnimationFrame(tick2); };
+    streets.forEach((el) => { if (el.getBoundingClientRect().top > innerHeight) el.style.setProperty("--sp", "0"); });
+    addEventListener("scroll", q2, { passive: true }); addEventListener("resize", q2); tick2();
+  }
+  // cards tilt a little towards the pointer (TASK-139: the chapters have their own hover now)
+  if (matchMedia("(hover: hover)").matches && !reduced) d.querySelectorAll(".svc").forEach((c) => {
     c.addEventListener("pointermove", (e) => { const r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; c.style.transform = `perspective(700px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translateY(-4px)`; });
     c.addEventListener("pointerleave", () => { c.style.transform = ""; });
   });
