@@ -20,17 +20,21 @@
     ["deliverables", "Livrabile ulterioare", "Ce construim pe sistemul nou: social, papetărie, semnătură email, prezentare"],
   ];
   let CANVAS_QTY = 2;
+  let HOL = { ranges: [["12-24", "01-02"]], dates: ["01-01", "01-02", "01-24", "05-01", "06-01", "08-15", "11-30", "12-01", "12-25", "12-26"], orthodox: ["goodFriday", "easterMonday", "whitMonday"], skipWeekDays: 5 };
+  let NEXT_DEFAULT = [{ title: "Plan de marketing pe 1 an", desc: "Pe toate canalele potrivite domeniului tău, cu ritm, teme și buget pe luni.", price: "" }];
   async function loadPrices() {
     try {
       const r = await fetch("/ops/offer-prices.json", { credentials: "same-origin", cache: "no-store" }); if (!r.ok) return;
       const j = await r.json();
       for (const it of j.items || []) { if (!(it.key in BASE)) continue; if (Number(it.base) >= 0) BASE[it.key] = Number(it.base); const row = ITEMS.find((x) => x[0] === it.key); if (row && it.ro) row[1] = it.ro; if (it.key === "canvas" && it.defaultQty) CANVAS_QTY = Number(it.defaultQty) || 2; }
       if (j.perPiece && j.perPiece.ro) PER_PIECE = j.perPiece.ro;
+      if (j.holidays) HOL = { ...HOL, ...j.holidays };
+      if (Array.isArray(j.nextSteps) && j.nextSteps.length) NEXT_DEFAULT = j.nextSteps.map((x) => ({ title: x.ro || "", desc: x.descRo || "", price: "" }));
     } catch {}
   }
   const PH_COLORS = ["#48A8EF", "#F8D13B", "#4CC462", "#F27261", "#AE76E6"];
   const SIT = { fresh: "Fresh start-up · brand nou", rebrand: "Rebranding · upscale" };
-  const STATUS = { sent: ["la Claude", "draft"], draft: ["draft", "draft"], preview: ["preview gata", "pv"], published: ["publicată", "pub"], working: ["Claude lucrează", "wk"] };
+  const STATUS = { sent: ["la Claude", "draft"], draft: ["draft", "draft"], preview: ["preview gata", "pv"], published: ["publicată", "pub"], withdrawn: ["retrasă", "wd"], working: ["Claude lucrează", "wk"] };
   const TYPES = [
     { k: "branding", t: "Proces de branding", c: "#28C840", on: true, pills: ["The Core", "Direcții vizuale", "Brand canvas", "Ghid de identitate", "Livrabile ulterioare"], art: `<svg viewBox="0 0 96 64" fill="none"><path class="sa-draw" d="M10 46 C 26 12, 54 10, 62 26 C 70 42, 46 52, 40 40 C 34 28, 62 18, 86 30" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path class="sa-nib" d="M82 22 l8 8 -5 9 -9 -5 z" fill="currentColor"/><circle class="sa-dot" cx="12" cy="46" r="4" fill="currentColor"/></svg>` },
     { k: "webapp", t: "Proces de aplicație web", c: "#B098C8", on: false, pills: ["Discovery", "UX", "UI", "Build", "Lansare"], art: `<svg viewBox="0 0 96 64" fill="none"><rect x="12" y="8" width="72" height="48" rx="7" stroke="currentColor" stroke-width="4"/><line x1="12" y1="20" x2="84" y2="20" stroke="currentColor" stroke-width="3"/><rect class="sa-btn" x="24" y="30" width="26" height="14" rx="7" fill="currentColor"/><path class="sa-cursor" d="M58 34 l12 5 -5 2 -1 6 -6 -13z" fill="currentColor"/></svg>` },
@@ -51,7 +55,8 @@
   function freshCfg() {
     const c = { id: rid(), offerType: "branding", client: { name: "", contact: "", email: "", website: "" }, situation: "fresh", brief: "",
       items: ITEMS.map(([k]) => ({ key: k, on: k !== "audit", base: BASE[k], price: BASE[k], ...(k === "canvas" ? { qty: CANVAS_QTY } : {}) })),
-      specials: [], discount: { type: "pct", value: 0 }, vatNote: "Prețurile nu includ TVA.", validityDays: 30, startDate: nextMonday(), phases: [], phasesAuto: true, currentLogo: null };
+      specials: [], discount: { type: "pct", value: 0 }, vatNote: "Prețurile nu includ TVA.", validityDays: 30, startDate: nextMonday(), phases: [], phasesAuto: true, currentLogo: null,
+      compact: { on: false, canvasQty: 1, off: [] }, nextOn: true, nextSteps: NEXT_DEFAULT.map((x) => ({ ...x })) };
     c.phases = autoPhases(c);
     return c;
   }
@@ -78,7 +83,29 @@
     const discount = dv > 0 ? Math.round(c.discount.type === "amount" ? Math.min(subtotal, dv) : subtotal * Math.min(100, dv) / 100) : 0;
     return { items, specials, subtotal, base, discount, total: subtotal - discount };
   }
+  /** the compact option (same rules as build.mjs compactOf): fewer canvases, some items or specials left out */
+  function compactTotals(c) {
+    if (!c.compact || !c.compact.on) return null;
+    const off = new Set(c.compact.off || []);
+    const cc = { ...c, items: c.items.map((i) => ({ ...i, on: i.on && !off.has(i.key), ...(i.key === "canvas" ? { qty: Math.max(1, Math.min(i.qty || 1, c.compact.canvasQty || 1)) } : {}) })), specials: c.specials.filter((s) => s.compact !== false) };
+    return totals(cc);
+  }
   const weeksOf = (c) => Math.max(0, ...c.phases.map((p) => num(p.start) + num(p.weeks)));
+  // holidays, the same rule as build.mjs: a calendar week with skipWeekDays weekdays off is skipped
+  function easter(y) { const a = y % 4, b = y % 7, c = y % 19, d = (19 * c + 15) % 30, e = (2 * a + 4 * b - d + 34) % 7, m = Math.floor((d + e + 114) / 31), day = ((d + e + 114) % 31) + 1; const t = new Date(Date.UTC(y, m - 1, day, 12)); t.setUTCDate(t.getUTCDate() + 13); return t; }
+  function dayOff(t) {
+    const md = String(t.getUTCMonth() + 1).padStart(2, "0") + "-" + String(t.getUTCDate()).padStart(2, "0");
+    if ((HOL.dates || []).includes(md)) return true;
+    for (const [a, b] of HOL.ranges || []) if (a <= b ? md >= a && md <= b : md >= a || md <= b) return true;
+    const df = Math.round((t - easter(t.getUTCFullYear())) / 864e5), o = HOL.orthodox || [];
+    return (o.includes("goodFriday") && df === -2) || (o.includes("easterMonday") && df === 1) || (o.includes("whitMonday") && df === 50);
+  }
+  function calendar(c, work) {
+    const ww = [], hol = [];
+    if (c.startDate) for (let k = 0; ww.length < Math.ceil(work) + 1 && k < 400; k++) { let off = 0; for (let d = 0; d < 5; d++) { const t = new Date(c.startDate + "T12:00:00Z"); t.setUTCDate(t.getUTCDate() + k * 7 + d); if (dayOff(t)) off++; } (off >= (Number(HOL.skipWeekDays) || 5) ? hol : ww).push(k); }
+    const at = (k) => (k < ww.length ? ww[k] : ww.length ? ww[ww.length - 1] + 1 + k - ww.length : k);
+    return { hol, cs: (x) => { const k = Math.floor(x); return at(k) + (x - k); }, ce: (x) => { const k = Math.floor(x), f = x - k; return f > 0 ? at(k) + f : x <= 0 ? 0 : at(k - 1) + 1; } };
+  }
 
   // ---------- data ----------
   function offerList() {
@@ -87,7 +114,7 @@
     for (const x of open) {
       const pl = x.payload;
       if (pl.type === "offer-new" && pl.offer && !docs.has(pl.offer.id)) docs.set(pl.offer.id, { id: pl.offer.id, status: "sent", client: { name: pl.offer.client.name }, situation: pl.offer.situation, total: totals(normCfg(pl.offer)).total, config: pl.offer, createdAt: x.createdAt, pendingId: x.id });
-      else if (pl.offerId && docs.has(pl.offerId)) { const d = docs.get(pl.offerId); d.working = pl.type === "offer-publish" ? "publish" : "edit"; }
+      else if (pl.offerId && docs.has(pl.offerId)) { const d = docs.get(pl.offerId); d.working = pl.type === "offer-publish" ? "publish" : pl.type === "offer-unpublish" ? "unpublish" : "edit"; }
     }
     return [...docs.values()].sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
   }
@@ -95,7 +122,8 @@
     const c = JSON.parse(JSON.stringify(c0 || {})), f = freshCfg();
     const out = { ...f, ...c, client: { ...f.client, ...(c.client || {}) }, discount: { ...f.discount, ...(c.discount || {}) } };
     out.items = ITEMS.map(([k]) => ({ ...item(f, k), ...((c.items || []).find((i) => i.key === k) || {}) }));
-    out.specials = Array.isArray(c.specials) ? c.specials : []; out.phases = Array.isArray(c.phases) && c.phases.length ? c.phases : autoPhases(out);
+    out.specials = Array.isArray(c.specials) ? c.specials : [];
+    out.compact = { ...f.compact, ...(c.compact || {}) }; out.nextSteps = Array.isArray(c.nextSteps) ? c.nextSteps : f.nextSteps; out.nextOn = "nextOn" in c ? !!c.nextOn : !!(c.nextSteps && c.nextSteps.length); out.phases = Array.isArray(c.phases) && c.phases.length ? c.phases : autoPhases(out);
     return out;
   }
 
@@ -129,7 +157,7 @@
       if (o.working) pill.title = o.working === "publish" ? "Claude o publică" : "Claude aplică modificările";
       const who = h("div", "ofr-who"); who.append(h("b", "", (o.client && o.client.name) || "Fără nume"), h("small", "muted", [SIT[o.situation] || "", fmtDate(o.updatedAt || o.createdAt)].filter(Boolean).join(" · ")));
       const links = h("div", "ofr-links");
-      if (o.url) { const a = h("a", "btn sm k", "Deschide"); a.href = o.url; a.target = "_blank"; a.rel = "noopener"; const cp = h("button", "btn sm ghost", "Copiază linkul"); cp.type = "button"; cp.onclick = (e) => { e.stopPropagation(); copy(location.origin + o.url); }; links.append(a, cp); }
+      if (o.url && o.status === "published") { const a = h("a", "btn sm k", "Deschide"); a.href = o.url; a.target = "_blank"; a.rel = "noopener"; const cp = h("button", "btn sm ghost", "Copiază linkul"); cp.type = "button"; cp.onclick = (e) => { e.stopPropagation(); copy(location.origin + o.url); }; links.append(a, cp); }
       else if (o.previewUrl) { const a = h("button", "btn sm y", "Vezi preview-ul"); a.type = "button"; a.onclick = (e) => { e.stopPropagation(); openEditor(normCfg(o.config), o, "claude"); }; links.append(a); }
       r.append(pill, who, h("b", "ofr-tot", money(o.total)), links);
       const open = () => openEditor(normCfg(o.config), o, o.previewUrl ? "claude" : "live");
@@ -234,6 +262,33 @@
     g3.append(field("Reducere (opțional)", drow), field("Notă TVA", inp("text", cfg.vatNote, (v) => (cfg.vatNote = v), "Prețurile nu includ TVA.", 160)), field("Valabilă (zile)", valid));
     s2.b.append(g3);
     const totBox = h("div", "ofr-total"); totBox.id = "ofr-total"; s2.b.append(totBox);
+    // the compact option: a smaller package shown NEXT TO the full one in the offer (never as a process card)
+    const cpBox = h("div", "ofr-cp");
+    const cpOn = h("input"); cpOn.type = "checkbox"; cpOn.id = "ofr-cp-on"; cpOn.checked = !!cfg.compact.on;
+    const cpL = h("label", "ofr-cp-h"); cpL.htmlFor = cpOn.id; cpL.append(cpOn, h("b", "", "Varianta compactă (opțional)"), h("small", "muted", "Un pachet mai mic, prezentat separat lângă varianta completă, cu ce rămâne și ce lăsăm deoparte."));
+    const cpBody = h("div", "ofr-cp-b");
+    function drawCp() {
+      cpBox.classList.toggle("on", !!cfg.compact.on); cpBody.replaceChildren(); if (!cfg.compact.on) return;
+      const cv = item(cfg, "canvas");
+      if (cv.on) {
+        const r = h("div", "ofr-cp-r"), st = h("div", "ofr-step"), mi = h("button", "", "−"), pl = h("button", "", "+"), n = h("span", "", String(Math.min(cfg.compact.canvasQty, cv.qty))); mi.type = pl.type = "button";
+        mi.setAttribute("aria-label", "Un canvas mai puțin în varianta compactă"); pl.setAttribute("aria-label", "Un canvas în plus în varianta compactă");
+        const set = (q) => { cfg.compact.canvasQty = Math.max(1, Math.min(cv.qty, q)); drawCp(); live(); };
+        mi.onclick = () => set(cfg.compact.canvasQty - 1); pl.onclick = () => set(cfg.compact.canvasQty + 1); st.append(mi, n, pl);
+        r.append(h("span", "", "Brand canvas în compactă"), st, h("small", "muted", "din " + cv.qty + " în completă")); cpBody.append(r);
+      }
+      const keep = h("div", "ofr-cp-k"); keep.append(h("span", "mono", "Ce păstrăm în compactă"));
+      for (const [k, t] of ITEMS) {
+        const it = item(cfg, k); if (!it.on || k === "canvas") continue;
+        const lb = h("label", "ofr-chip"), cb = h("input"); cb.type = "checkbox"; cb.checked = !(cfg.compact.off || []).includes(k);
+        cb.onchange = () => { const off = new Set(cfg.compact.off || []); if (cb.checked) off.delete(k); else off.add(k); cfg.compact.off = [...off]; live(); };
+        lb.append(cb, h("span", "", t)); keep.append(lb);
+      }
+      cfg.specials.filter((x) => x.title).forEach((x) => { const lb = h("label", "ofr-chip"), cb = h("input"); cb.type = "checkbox"; cb.checked = x.compact !== false; cb.onchange = () => { x.compact = cb.checked; live(); }; lb.append(cb, h("span", "", "★ " + x.title)); keep.append(lb); });
+      cpBody.append(keep);
+    }
+    cpOn.onchange = () => { cfg.compact.on = cpOn.checked; if (cpOn.checked) { const cv = item(cfg, "canvas"); cfg.compact.canvasQty = Math.max(1, Math.min(cfg.compact.canvasQty || cv.qty - 1, cv.qty)); } drawCp(); live(); };
+    cpBox.append(cpL, cpBody); drawCp(); s2.b.append(cpBox);
 
     // 03 timeline
     const s3 = sec("03", "Calendarul");
@@ -258,10 +313,30 @@
     }
     drawPhases(); s3.b.append(g4, phBox);
 
-    // 04 experiences (after Claude's preview) + actions
-    const s4 = sec("04", "Brand experiences · propuneri"); s4.id = "ofr-exp";
+    // 04 next step: delivered separately after the project, never in the total
+    const s5 = sec("04", "Pasul următor · separat");
+    const nxOn = h("input"); nxOn.type = "checkbox"; nxOn.id = "ofr-nx-on"; nxOn.checked = !!cfg.nextOn;
+    const nxL = h("label", "ofr-cp-h"); nxL.htmlFor = nxOn.id; nxL.append(nxOn, h("b", "", "Arată „Pasul următor” în ofertă"), h("small", "muted", "Se livrează separat, după proiect. Nu intră în total. Fără preț, apare „Separat, după proiect”. Claude alege canalele potrivite domeniului clientului."));
+    const nxList = h("div", "ofr-sp-l");
+    const nxAdd = h("button", "btn sm", "+ Pas următor"); nxAdd.type = "button"; nxAdd.onclick = () => { cfg.nextSteps.push({ title: "", desc: "", price: "" }); drawNx(); };
+    function drawNx() {
+      nxList.hidden = nxAdd.hidden = !cfg.nextOn;
+      nxList.replaceChildren(...cfg.nextSteps.map((x, i) => {
+        const r = h("div", "ofr-sp-r");
+        const t = inp("text", x.title, (v) => { x.title = v; live(); }, "Ex.: Plan de marketing pe 1 an", 120); t.setAttribute("aria-label", "Pasul următor " + (i + 1));
+        const p = h("input", "inp ofr-price"); p.type = "number"; p.min = "0"; p.step = "50"; p.placeholder = "fără preț"; p.value = x.price ?? ""; p.setAttribute("aria-label", "Preț (opțional, EUR)"); p.oninput = () => { x.price = p.value; live(); };
+        const d = inp("text", x.desc, (v) => (x.desc = v), "Ce conține (Claude îl scrie pentru client)", 300); d.classList.add("ofr-sp-d");
+        const xb = h("button", "ofr-x", "×"); xb.type = "button"; xb.setAttribute("aria-label", "Scoate pasul"); xb.onclick = () => { cfg.nextSteps.splice(i, 1); drawNx(); live(); };
+        r.append(t, p, xb, d); return r;
+      }));
+    }
+    nxOn.onchange = () => { cfg.nextOn = nxOn.checked; if (cfg.nextOn && !cfg.nextSteps.length) cfg.nextSteps = NEXT_DEFAULT.map((x) => ({ ...x })); drawNx(); live(); };
+    drawNx(); s5.b.append(nxL, nxList, nxAdd);
+
+    // 05 experiences (after Claude's preview) + actions
+    const s4 = sec("05", "Brand experiences · propuneri"); s4.id = "ofr-exp";
     const act = h("div", "ofr-act"); act.id = "ofr-act";
-    form.append(s1, s2, s3, s4, act);
+    form.append(s1, s2, s3, s5, s4, act);
     wrap.append(bar, h("div", "ofr-cols")); wrap.lastChild.append(form, pane);
     root.replaceChildren(wrap);
     drawSit(); refreshEditor();
@@ -284,7 +359,8 @@
     const row = (a, b, cls) => { const x = h("div", "ofr-tr" + (cls ? " " + cls : "")); x.append(h("span", "", a), h("b", "", b)); r.append(x); };
     row("Subtotal", money(T.subtotal)); if (T.discount) row("Reducere", "−" + money(T.discount));
     row("Față de listă", df === 0 ? "la fel" : (df > 0 ? "+" : "−") + money(Math.abs(df)), df < 0 ? "dn" : df > 0 ? "up" : "");
-    row("Durată", weeksOf(cfg) ? Math.ceil(weeksOf(cfg)) + " săpt." : "–");
+    row("Durată", weeksOf(cfg) ? Math.ceil(weeksOf(cfg)) + " săpt. de lucru" : "–");
+    const TC = compactTotals(cfg); if (TC) row("Varianta compactă", money(TC.total), "cv");
     box.append(l, r);
   }
   function drawExp() {
@@ -322,11 +398,17 @@
     const note = h("textarea", "inp"); note.rows = 2; note.maxLength = 1500; note.placeholder = "Ce să schimbe Claude (opțional): ton, un paragraf, o experiență…"; note.id = "ofr-note";
     const edit = h("button", "btn", "Cere modificări"); edit.type = "button"; edit.onclick = () => sendEdit(edit, note.value);
     const pub = h("button", "btn y", doc.status === "published" ? "Republică" : "Publică"); pub.type = "button"; pub.onclick = () => sendPublish(pub);
-    if (doc.working) { edit.disabled = pub.disabled = true; pub.textContent = doc.working === "publish" ? "Se publică…" : "Claude lucrează…"; }
-    if (doc.status !== "preview" && doc.status !== "published") pub.disabled = true;
+    if (doc.working) { edit.disabled = pub.disabled = true; pub.textContent = doc.working === "publish" ? "Se publică…" : doc.working === "unpublish" ? "Se retrage…" : "Claude lucrează…"; }
+    if (doc.status !== "preview" && doc.status !== "published" && doc.status !== "withdrawn") pub.disabled = true;
+    if (doc.status === "withdrawn") pub.textContent = "Publică din nou";
     const row = h("div", "ofr-act-r"); row.append(edit, pub);
     a.append(field("Pentru Claude", note), row);
-    if (doc.url) { const l = h("div", "ofr-pub"); const x = h("a", "", location.host + doc.url); x.href = doc.url; x.target = "_blank"; x.rel = "noopener"; const c = h("button", "btn sm ghost", "Copiază"); c.type = "button"; c.onclick = () => copy(location.origin + doc.url); l.append(h("span", "mono", "Publicată"), x, c); a.append(l); }
+    if (doc.status === "published" && doc.url) {
+      const wd = h("button", "btn sm ghost ofr-wd", "Retrage oferta"); wd.type = "button"; wd.disabled = !!doc.working;
+      wd.onclick = async () => { if (!confirm("Retragi oferta pentru " + ((doc.client && doc.client.name) || "client") + "?\nLinkul nu mai merge pentru nimeni. O poți publica din nou mai târziu.")) return; await send(wd, "Ofertă · retrage · " + ((doc.client && doc.client.name) || "") + " · " + (doc.slug || ""), { type: "offer-unpublish", offerId: doc.id, slug: doc.slug || null }, "Trimis. Claude retrage oferta."); };
+      row.prepend(wd);
+    }
+    if (doc.url && doc.status === "published") { const l = h("div", "ofr-pub"); const x = h("a", "", location.host + doc.url); x.href = doc.url; x.target = "_blank"; x.rel = "noopener"; const c = h("button", "btn sm ghost", "Copiază"); c.type = "button"; c.onclick = () => copy(location.origin + doc.url); l.append(h("span", "mono", "Publicată"), x, c); a.append(l); }
   }
   function drawPane() {
     const pane = $("ofr-pane"); if (!pane) return; const doc = curDoc();
@@ -336,7 +418,7 @@
     if (pvTab === "claude" && doc && (doc.previewUrl || doc.url)) {
       const lg = h("div", "seg"); for (const k of ["ro", "en"]) { const b = h("button", "", k.toUpperCase()); b.type = "button"; b.setAttribute("aria-pressed", String(pvLang === k)); b.onclick = () => { pvLang = k; drawPane(); }; lg.append(b); }
       // once published, the published page (the preview files may be older than the last publish)
-      const src = doc.url ? (pvLang === "en" && doc.urlEn ? doc.urlEn : doc.url) : (pvLang === "en" && doc.previewUrlEn ? doc.previewUrlEn : doc.previewUrl);
+      const src = doc.url && doc.status === "published" ? (pvLang === "en" && doc.urlEn ? doc.urlEn : doc.url) : (pvLang === "en" && doc.previewUrlEn ? doc.previewUrlEn : doc.previewUrl);
       const op = h("a", "btn sm ghost", "Deschide ↗"); op.href = src; op.target = "_blank"; op.rel = "noopener";
       head.append(lg, op);
       const old = pane.querySelector("iframe");
@@ -354,21 +436,27 @@
     T.items.forEach((i, k) => { const r = h("div", "ofr-lv-i"); r.style.setProperty("--b", PH_COLORS[k % PH_COLORS.length]); const name = ITEMS.find((x) => x[0] === i.key)[1] + (i.key === "canvas" ? " ×" + i.q + " · " + money(i.price) + " " + PER_PIECE : ""); r.append(h("span", "", name)); const p = h("b", ""); if (i.line < i.baseLine) p.append(h("s", "", money(i.baseLine)), " "); p.append(money(i.line)); r.append(p); items.append(r); });
     T.specials.forEach((s) => { const r = h("div", "ofr-lv-i sp"); r.append(h("span", "", "★ " + s.title), h("b", "", money(s.price))); items.append(r); });
     const tot = h("div", "ofr-lv-tot"); tot.append(h("span", "mono", T.discount ? "Total · după reducere " + money(T.discount) : "Total proces"), h("b", "", money(T.total)));
-    box.append(hero, items, tot, gantt(cfg));
+    box.append(hero, items, tot);
+    const TC = compactTotals(cfg);
+    if (TC) { const cp = h("div", "ofr-lv-cp"); const off = T.items.filter((i) => !TC.items.some((x) => x.key === i.key)).map((i) => ITEMS.find((x) => x[0] === i.key)[1]); const cvF = T.items.find((i) => i.key === "canvas"), cvC = TC.items.find((i) => i.key === "canvas"); if (cvF && cvC && cvC.q < cvF.q) off.push((cvF.q - cvC.q) + " canvas"); T.specials.filter((x) => x.compact === false).forEach((x) => off.push(x.title)); cp.append(h("span", "mono", "Varianta compactă · alternativă separată"), h("b", "", money(TC.total)), h("small", "", off.length ? "Fără: " + off.join(", ") : "Aceleași livrabile")); box.append(cp); }
+    if (cfg.nextOn && cfg.nextSteps.some((x) => x.title)) { const nx = h("div", "ofr-lv-nx"); nx.append(h("span", "mono", "Pasul următor · separat, nu intră în total")); cfg.nextSteps.filter((x) => x.title).forEach((x) => { const r = h("div", ""); r.append(h("span", "", "→ " + x.title), h("b", "", x.price !== "" && x.price != null ? money(x.price) : "separat")); nx.append(r); }); box.append(nx); }
+    box.append(gantt(cfg));
     pane.replaceChildren(head, box);
   }
   /** the same Gantt as the published offer, smaller: weeks across, a bar per phase, overlaps visible, milestones as diamonds */
   function gantt(c) {
-    const P = c.phases.filter((p) => p.title && num(p.weeks) > 0), end = Math.max(0, ...P.map((p) => num(p.start) + num(p.weeks))), N = Math.max(1, Math.ceil(end));
+    const P0 = c.phases.filter((p) => p.title && num(p.weeks) > 0), work = Math.max(0, ...P0.map((p) => num(p.start) + num(p.weeks))), K = calendar(c, work);
+    const P = P0.map((p) => ({ ...p, s0: K.cs(num(p.start)), e0: K.ce(num(p.start) + num(p.weeks)) })), end = Math.max(0, ...P.map((p) => p.e0)), N = Math.max(1, Math.ceil(end)), HS = new Set(K.hol.filter((w) => w < N));
     const g = h("div", "ofr-gantt"); g.style.setProperty("--n", N);
     if (!P.length) { g.append(h("p", "muted", "Adaugă etape ca să vezi calendarul.")); return g; }
-    const head = h("div", "ofr-gh"); for (let w = 0; w < N; w++) { const s = h("span", "", "S" + (w + 1)); if (c.startDate) { const d = new Date(c.startDate + "T12:00:00"); d.setDate(d.getDate() + w * 7); s.title = d.toLocaleDateString("ro-RO", { day: "numeric", month: "short" }); } head.append(s); }
+    const head = h("div", "ofr-gh"); for (let w = 0; w < N; w++) { const s = h("span", HS.has(w) ? "hol" : "", "S" + (w + 1)); if (HS.has(w)) s.title = "Săptămână liberă (sărbători)"; if (c.startDate) { const d = new Date(c.startDate + "T12:00:00"); d.setDate(d.getDate() + w * 7); s.title = d.toLocaleDateString("ro-RO", { day: "numeric", month: "short" }); } head.append(s); }
     g.append(head);
     P.forEach((p, i) => {
       const r = h("div", "ofr-gr"), lab = h("span", "ofr-gl", p.title), tr = h("div", "ofr-gt"), bar = h("i", "ofr-gb");
-      bar.style.left = (num(p.start) / N * 100) + "%"; bar.style.width = (num(p.weeks) / N * 100) + "%"; bar.style.setProperty("--b", PH_COLORS[i % PH_COLORS.length]); bar.style.setProperty("--i", i);
+      bar.style.left = (p.s0 / N * 100) + "%"; bar.style.width = ((p.e0 - p.s0) / N * 100) + "%";
+      HS.forEach((w) => { const x = h("i", "ofr-ghol"); x.style.left = (w / N * 100) + "%"; x.style.width = (100 / N) + "%"; tr.append(x); }); bar.style.setProperty("--b", PH_COLORS[i % PH_COLORS.length]); bar.style.setProperty("--i", i);
       tr.append(bar);
-      if (p.milestone) { const m = h("em", "ofr-gm"); m.style.left = ((num(p.start) + num(p.weeks)) / N * 100) + "%"; m.title = p.milestone; tr.append(m); }
+      if (p.milestone) { const m = h("em", "ofr-gm"); m.style.left = (p.e0 / N * 100) + "%"; m.title = p.milestone; tr.append(m); }
       r.append(lab, tr); g.append(r);
     });
     if (c.startDate) { const d = new Date(c.startDate + "T12:00:00"); d.setDate(d.getDate() + Math.ceil(end) * 7 - 3); const f = h("div", "ofr-gf"); f.append(h("span", "mono", "Predare finală"), h("b", "", d.toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" }))); g.append(f); }
@@ -380,12 +468,14 @@
     const c = JSON.parse(JSON.stringify(cfg)); delete c.picks;
     c.specials = c.specials.filter((s) => s.title); c.phases = c.phases.filter((p) => p.title);
     const T = totals(c); c.totals = { subtotal: T.subtotal, discount: T.discount, total: T.total, base: T.base, weeks: Math.ceil(weeksOf(c)) };
+    const TC = compactTotals(c); if (TC) c.totals.compact = TC.total;
+    c.nextSteps = c.nextOn ? (c.nextSteps || []).filter((x) => x.title) : [];
     return c;
   }
   function summary(c) {
     const T = c.totals;
     return [SIT[c.situation], ...totals(c).items.map((i) => (ITEMS.find((x) => x[0] === i.key)[1]) + (i.key === "canvas" ? " ×" + i.q : "") + " " + money(i.line) + (i.line !== i.baseLine ? " (listă " + money(i.baseLine) + ")" : "")),
-      ...c.specials.map((s) => "Special: " + s.title + " " + money(s.price)), T.discount ? "Reducere −" + money(T.discount) : "", "Total " + money(T.total) + " · " + T.weeks + " săpt."].filter(Boolean).join(" · ");
+      ...c.specials.map((s) => "Special: " + s.title + " " + money(s.price)), T.discount ? "Reducere −" + money(T.discount) : "", "Total " + money(T.total) + " · " + T.weeks + " săpt.", T.compact ? "Compactă " + money(T.compact) + (c.compact.canvasQty ? " (" + c.compact.canvasQty + " canvas" + ((c.compact.off || []).length ? ", fără " + c.compact.off.join(", ") : "") + ")" : "") : "", c.nextSteps.length ? "Pasul următor: " + c.nextSteps.map((x) => x.title).join(", ") : ""].filter(Boolean).join(" · ");
   }
   async function send(btn, text, payload, ok) {
     if (!db) return; btn.disabled = true; const was = btn.textContent; btn.textContent = "Se trimite…";

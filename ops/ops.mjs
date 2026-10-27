@@ -25,8 +25,10 @@
 //   POST /api/ops/bridge/proposal               (Bearer key) {slug, files:{name: html}, preview?: true}   TASK-135: offers
 //        published -> <dataDir>/proposals/<slug>/ (served at /proposals/<slug>/<file> by server.js, after the repo's own proposals/)
 //        preview   -> <dataDir>/offer-previews/<slug>/ (served at /ops/preview/<slug>/<file>, admins only, never public)
+//   DELETE /api/ops/bridge/proposal             (Bearer key) {slug, preview?: true}   withdraws a published offer (data dir only,
+//        never the repo's proposals/ folder) or drops a preview; logged in proposals.jsonl
 //   GET  /ops/preview/<slug>/<file>             (admin session) an offer preview, framed by the Ofertă tab
-import { readFileSync, writeFileSync, appendFileSync, renameSync, mkdirSync, statSync, readdirSync, createReadStream } from "node:fs";
+import { readFileSync, writeFileSync, appendFileSync, renameSync, mkdirSync, statSync, readdirSync, createReadStream, rmSync } from "node:fs";
 import { join, extname } from "node:path";
 import { randomBytes, randomInt, createHash, timingSafeEqual } from "node:crypto";
 
@@ -38,8 +40,8 @@ const COOKIE = "ops_sid";
 const KINDS = new Set(["command", "bug", "feedback"]);
 const TASK_FIELDS = new Set(["status", "priority", "agent", "epicId"]); // what a "task-edit" may change
 const REJECT_SHOW = 6 * 3600e3; // a rejected edit stays visible on its card (for the toast + animation) this long
-const ADMIN_PAYLOAD_TYPES = new Set(["core-request", "offer-new", "offer-edit", "offer-publish"]); // members cannot send these
-const OFFER_TYPES = new Set(["offer-new", "offer-edit", "offer-publish"]); // TASK-135: a whole offer config rides in the payload (bigger limit)
+const ADMIN_PAYLOAD_TYPES = new Set(["core-request", "offer-new", "offer-edit", "offer-publish", "offer-unpublish"]); // members cannot send these
+const OFFER_TYPES = new Set(["offer-new", "offer-edit", "offer-publish", "offer-unpublish"]); // TASK-135: a whole offer config rides in the payload (bigger limit)
 // TASK-135: offers published without a deploy. A slug is <client>-<10 hex>, the code being the key; files are flat .html names
 export const PROPOSAL_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{10}$/;
 export const PROPOSAL_FILE_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*\.html$/i;
@@ -450,6 +452,16 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
           const base = preview ? "/ops/preview/" : "/proposals/";
           appendLine("proposals.jsonl", { at: new Date().toISOString(), slug, preview, files: names, bytes: names.reduce((a, n) => a + Buffer.byteLength(files[n]), 0) });
           json(res, 200, { ok: true, slug, preview, urls: Object.fromEntries(names.map((n) => [n.toLowerCase(), base + slug + "/" + n.toLowerCase()])) }); return true;
+        }
+        if (r === "bridge/proposal" && m === "DELETE") { // TASK-135: "Retrage oferta" (the repo's proposals/ is never touched from here)
+          const b = await body(req, 4096), slug = String(b.slug || ""), preview = b.preview === true;
+          if (!PROPOSAL_SLUG_RE.test(slug)) { json(res, 422, { ok: false, error: "slug" }); return true; }
+          const root = join(dataDir, preview ? "offer-previews" : "proposals"), dir = join(root, slug), st = statOr(dir);
+          if (!dir.startsWith(root + "/") || !st || !st.isDirectory()) { json(res, 404, { ok: false, error: "not-found" }); return true; }
+          const files = readdirSync(dir);
+          rmSync(dir, { recursive: true, force: true });
+          appendLine("proposals.jsonl", { at: new Date().toISOString(), slug, preview, removed: files });
+          json(res, 200, { ok: true, slug, preview, removed: files.length }); return true;
         }
         json(res, 404, { ok: false }); return true;
       }

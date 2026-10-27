@@ -2,6 +2,16 @@
   "_note": "TASK-135 · the base prices for offers (EUR, without VAT). Edit only here: /ops (Ofertă tab) and ~/cromatic-ops/tools/offer/build.mjs both read this file. Daniel, 27 Oct 2026.",
   "currency": "EUR",
   "perPiece": { "ro": "preț pe bucată", "en": "price per piece" },
+  "holidays": {
+    "_note": "Days off for the offer calendars (MM-DD). A calendar week with skipWeekDays weekdays off (5 = a full week) is skipped: the phases move past it and the Gantt shows it hatched. orthodox: goodFriday, easterMonday, whitMonday (Rusalii) are computed per year.",
+    "ranges": [["12-24", "01-02"]],
+    "dates": ["01-01", "01-02", "01-24", "05-01", "06-01", "08-15", "11-30", "12-01", "12-25", "12-26"],
+    "orthodox": ["goodFriday", "easterMonday", "whitMonday"],
+    "skipWeekDays": 5
+  },
+  "nextSteps": [
+    { "key": "marketing-plan", "ro": "Plan de marketing pe 1 an", "en": "1-year marketing plan", "descRo": "Pe toate canalele potrivite domeniului tău, cu ritm, teme și buget pe luni.", "descEn": "Across every channel that suits your field, with rhythm, themes and budget by month." }
+  ],
   "items": [
     { "key": "audit", "base": 1200, "defaultOn": "rebrand", "ro": "Audit de brand", "en": "Brand audit" },
     { "key": "core", "base": 2500, "ro": "The Core · workshop de poziționare", "en": "The Core · positioning workshop" },
