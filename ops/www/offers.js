@@ -20,6 +20,10 @@
     ["deliverables", "Livrabile ulterioare", "Ce construim pe sistemul nou: social, papetărie, semnătură email, prezentare"],
   ];
   let CANVAS_QTY = 2;
+  // default package names (Daniel, 28 Oct); an upsell above the main one is "Procesul extins"
+  const PK_NAMES = [["Procesul de Branding Cromatic", "The Cromatic Branding Process"], ["Procesul de Branding Eficient", "The Efficient Branding Process"], ["Procesul Go to Market", "The Go-to-Market Process"]];
+  const PK_EXT = ["Procesul extins", "The Extended Process"];
+  const nm = (c, key) => (c.labels && c.labels[key] && c.labels[key].ro) || (ITEMS.find((x) => x[0] === key) || [key, key])[1];
   let HOL = { ranges: [["12-24", "01-02"]], dates: ["01-01", "01-02", "01-24", "05-01", "06-01", "08-15", "11-30", "12-01", "12-25", "12-26"], orthodox: ["goodFriday", "easterMonday", "whitMonday"], skipWeekDays: 5 };
   let NEXT_DEFAULT = [{ id: "marketing-plan", title: "Plan de marketing pe 1 an", desc: "Pe toate canalele potrivite domeniului tău, cu ritm, teme și buget pe luni.", price: "", picked: true }];
   async function loadPrices() {
@@ -54,7 +58,7 @@
   // ---------- the config ----------
   function freshCfg() {
     const c = { id: rid(), offerType: "branding", client: { name: "", contact: "", email: "", website: "" }, situation: "fresh", brief: "",
-      items: ITEMS.map(([k]) => ({ key: k, on: k !== "audit", base: BASE[k], price: BASE[k], ...(k === "canvas" ? { qty: CANVAS_QTY } : {}) })),
+      items: ITEMS.map(([k]) => ({ key: k, on: k !== "audit", base: BASE[k], price: BASE[k], ...(k === "canvas" ? { qty: CANVAS_QTY } : k === "directions" ? { qty: 3 } : {}) })), labels: {},
       specials: [], discount: { type: "pct", value: 0 }, vatNote: "Prețurile nu includ TVA.", validityDays: 30, startDate: nextMonday(), phases: [], phasesAuto: true, currentLogo: null,
       packages: [], nextSteps: NEXT_DEFAULT.map((x) => ({ ...x })) };
     c.phases = autoPhases(c);
@@ -62,7 +66,8 @@
   }
   function nextMonday() { const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7) + 7); return d.toISOString().slice(0, 10); }
   const item = (c, k) => c.items.find((i) => i.key === k);
-  function autoPhases(c) {
+  function autoPhases(c0) {
+    const gp = ganttPk(c0), c = gp ? pkOffer(c0, gp) : c0; // the calendar follows one package (default: the recommended / first)
     const on = (k) => { const i = item(c, k); return i && i.on; }, P = []; let w = 0;
     if (on("audit")) { P.push({ id: "audit", title: "Audit de brand", start: 0, weeks: 1, milestone: "Raport de audit" }); w = 1; }
     if (on("core")) { P.push({ id: "core", title: "The Core · workshop", start: w, weeks: 2, milestone: "" }); w += 2; }
@@ -72,6 +77,7 @@
     if (on("guidelines")) P.push({ id: "guidelines", title: "Ghid de identitate", start: w0, weeks: 2, milestone: "" });
     if (on("deliverables")) P.push({ id: "deliverables", title: "Livrabile ulterioare", start: w0, weeks: 3, milestone: "" });
     c.specials.filter((s) => s.title).forEach((s, i) => P.push({ id: "s" + (i + 1), title: s.title, start: w0 + 1, weeks: 2, milestone: "" }));
+    P.forEach((ph) => { if (c0.labels && c0.labels[ph.id] && c0.labels[ph.id].ro) ph.title = c0.labels[ph.id].ro + (ph.id === "canvas" ? " ×" + Math.max(1, item(c, "canvas").qty || 1) : ""); });
     return P;
   }
   function totals(c) {
@@ -85,9 +91,11 @@
   }
   /** packages (same rules as build.mjs packagesOf): 2–3 ways to buy the same process; [] = a single package */
   function pkOffer(c, p) {
-    const off = new Set(p.off || []), soff = new Set((p.specialsOff || []).map(Number));
-    return { ...c, items: c.items.map((i) => ({ ...i, on: i.on && !off.has(i.key), ...(i.key === "canvas" && p.canvasQty ? { qty: Math.max(1, p.canvasQty) } : {}) })), specials: c.specials.filter((x, j) => !soff.has(j)) };
+    const off = new Set(p.off || []), soff = new Set((p.specialsOff || []).map(Number)), pr = p.prices || {};
+    return { ...c, items: c.items.map((i) => ({ ...i, on: i.on && !off.has(i.key), ...(pr[i.key] !== undefined && pr[i.key] !== "" ? { price: num(pr[i.key]) } : {}),
+      ...(i.key === "canvas" && p.canvasQty ? { qty: Math.max(1, p.canvasQty) } : {}), ...(i.key === "directions" && p.directionsQty ? { qty: Math.max(1, p.directionsQty) } : {}) })), specials: c.specials.filter((x, j) => !soff.has(j)) };
   }
+  const ganttPk = (c) => (c.packages || []).length >= 2 ? (c.packages.find((p) => p.id === c.ganttPackage) || c.packages.find((p) => p.recommended) || c.packages[0]) : null;
   const pkTotals = (c) => ((c.packages || []).length >= 2 ? c.packages.map((p) => totals(pkOffer(c, p))) : null);
   const weeksOf = (c) => Math.max(0, ...c.phases.map((p) => num(p.start) + num(p.weeks)));
   // holidays, the same rule as build.mjs: a calendar week with skipWeekDays weekdays off is skipped
@@ -123,6 +131,7 @@
     const c = JSON.parse(JSON.stringify(c0 || {})), f = freshCfg();
     const out = { ...f, ...c, client: { ...f.client, ...(c.client || {}) }, discount: { ...f.discount, ...(c.discount || {}) } };
     out.items = ITEMS.map(([k]) => ({ ...item(f, k), ...((c.items || []).find((i) => i.key === k) || {}) }));
+    out.labels = c.labels && typeof c.labels === "object" ? c.labels : {};
     out.specials = Array.isArray(c.specials) ? c.specials : [];
     // packages; an older form's compact {on, canvasQty, off} (+ specials[].compact) becomes [full, compact]
     out.packages = Array.isArray(c.packages) ? c.packages : c.compact && c.compact.on ? [{ id: "full", label: "Varianta completă", off: [], specialsOff: [] }, { id: "compact", label: "Varianta compactă", canvasQty: c.compact.canvasQty || 1, off: c.compact.off || [], specialsOff: out.specials.map((x, k) => (x.compact === false ? k : -1)).filter((k) => k >= 0) }] : [];
@@ -183,7 +192,7 @@
 
   // editor: form on the left, preview on the right (stacked on phones)
   function renderEditor(root) {
-    mounted = true; docSig = null;
+    mounted = true; docSig = null; let gselEl = null;
     const doc = curDoc(), wrap = h("div", "ofr-ed");
     const bar = h("div", "ofr-bar");
     const back = h("button", "btn sm ghost", "← Toate ofertele"); back.type = "button"; back.onclick = closeEditor;
@@ -232,7 +241,14 @@
       itemsBox.replaceChildren(...ITEMS.map(([k, t, d]) => {
         const it = item(cfg, k), r = h("div", "ofr-it" + (it.on ? "" : " off"));
         const cb = h("input"); cb.type = "checkbox"; cb.checked = it.on; cb.id = "ofr-on-" + k; cb.onchange = () => { it.on = cb.checked; if (cfg.phasesAuto) { cfg.phases = autoPhases(cfg); drawPhases(); } drawItems(); drawCp(); live(); };
-        const lab = h("label", "ofr-it-l"); lab.htmlFor = cb.id; lab.append(h("b", "", t), h("small", "muted", d + (k === "audit" ? " · implicit la rebranding" : "")));
+        const lab = h("label", "ofr-it-l"); lab.htmlFor = cb.id; lab.append(h("b", "", nm(cfg, k)), h("small", "muted", d + (k === "audit" ? " · implicit la rebranding" : "")));
+        // rename this component for this offer (RO / EN); empty = the standard name
+        const ren = h("details", "ofr-ren"), sm = h("summary", "", "✎ Nume în ofertă"); ren.append(sm);
+        const L = (cfg.labels[k] = cfg.labels[k] || {});
+        const ro = inp("text", L.ro || "", (v) => { L.ro = v.trim(); lab.firstChild.textContent = nm(cfg, k); if (cfg.phasesAuto) { cfg.phases = autoPhases(cfg); drawPhases(); } live(); }, t, 80); ro.setAttribute("aria-label", "Numele în română");
+        const en = inp("text", L.en || "", (v) => { L.en = v.trim(); }, "English name", 80); en.setAttribute("aria-label", "Numele în engleză");
+        if (L.ro || L.en) ren.open = true;
+        const rr = h("div", "ofr-ren-r"); rr.append(h("span", "mono", "RO"), ro, h("span", "mono", "EN"), en); ren.append(rr);
         const right = h("div", "ofr-it-r");
         if (k === "canvas") {
           const st = h("div", "ofr-step"), mi = h("button", "", "−"), pl = h("button", "", "+"), n = h("span", "", String(it.qty)); mi.type = pl.type = "button";
@@ -247,7 +263,13 @@
         pin.oninput = () => { it.price = Math.max(0, num(pin.value)); upd(); live(); };
         const reset = h("button", "ofr-reset", "↺"); reset.type = "button"; reset.title = "Înapoi la prețul de listă"; reset.setAttribute("aria-label", "Prețul de listă pentru " + t); reset.onclick = () => { it.price = it.base; pin.value = it.base; upd(); live(); };
         const pr = h("div", "ofr-pr"); pr.append(pin, reset); right.append(pr, delta, baseL, line); upd();
-        r.append(cb, lab, right); return r;
+        if (k === "directions") {
+          const st = h("div", "ofr-step"), mi = h("button", "", "−"), pl = h("button", "", "+"), n = h("span", "", String(it.qty || 3)); mi.type = pl.type = "button";
+          mi.setAttribute("aria-label", "O direcție mai puțin"); pl.setAttribute("aria-label", "O direcție în plus");
+          const set = (q) => { it.qty = Math.max(1, Math.min(6, q)); n.textContent = String(it.qty); drawCp(); live(); };
+          mi.onclick = () => set((it.qty || 3) - 1); pl.onclick = () => set((it.qty || 3) + 1); st.append(mi, n, pl); right.prepend(st);
+        }
+        r.append(cb, lab, right, ren); return r;
       }));
     }
     drawItems(); s2.b.append(itemsBox);
@@ -282,47 +304,70 @@
     const cpH = h("div", "ofr-cp-h0"); cpH.append(h("b", "", "Pachete"), h("small", "muted", "Opțional: 2 sau 3 pachete pentru același proces (ex. complet + compact). Fiecare păstrează ce bifezi; în ofertă apar unul lângă altul, cu totalul lor."));
     const cpBody = h("div", "ofr-pk-l");
     const cpAdd = h("button", "btn sm", "+ Pachet"); cpAdd.type = "button";
+    const cpExt = h("button", "btn sm ghost", "+ Pachet extins (upsell)"); cpExt.type = "button"; cpExt.title = "Un pachet peste cel principal, cu mai mult";
+    const newPk = (k, extra) => ({ id: "p" + (k + 1) + Date.now().toString(36).slice(-3), label: PK_NAMES[Math.min(k, 2)][0], labelEn: PK_NAMES[Math.min(k, 2)][1], off: [], specialsOff: [], prices: {}, ...extra });
     cpAdd.onclick = () => {
       const cv = item(cfg, "canvas");
-      if (!cfg.packages.length) cfg.packages.push({ id: "p1", label: "Varianta completă", off: [], specialsOff: [] });
-      if (cfg.packages.length < 3) cfg.packages.push({ id: "p" + (cfg.packages.length + 1) + Date.now().toString(36).slice(-3), label: cfg.packages.length === 1 ? "Varianta compactă" : "Pachetul " + (cfg.packages.length + 1), canvasQty: Math.max(1, (cv.qty || 2) - 1), off: [], specialsOff: [] });
-      drawCp(); live();
+      if (!cfg.packages.length) cfg.packages.push({ ...newPk(0), id: "p1" });
+      if (cfg.packages.length < 3) { const k = cfg.packages.length; cfg.packages.push(newPk(k, { canvasQty: Math.max(1, (cv.qty || 2) - k) })); }
+      drawCp(); drawGsel(); live();
     };
+    cpExt.onclick = () => {
+      if (cfg.packages.length >= 3) return;
+      const cv = item(cfg, "canvas");
+      if (!cfg.packages.length) cfg.packages.push({ ...newPk(0), id: "p1" });
+      cfg.packages.unshift({ id: "px" + Date.now().toString(36).slice(-3), label: PK_EXT[0], labelEn: PK_EXT[1], off: [], specialsOff: [], prices: {}, canvasQty: (cv.qty || 2) + 1 });
+      drawCp(); drawGsel(); live();
+    };
+    function drawGsel() {
+      const sel = gselEl; if (!sel) return;
+      const pk = cfg.packages || [], g = ganttPk(cfg); sel.closest(".field").hidden = pk.length < 2;
+      sel.replaceChildren(...pk.map((p, k) => { const o = h("option", "", (p.label || PK_NAMES[Math.min(k, 2)][0]) + (p.recommended ? " · recomandat" : "")); o.value = p.id; o.selected = g === p; return o; }));
+    }
     function drawCp() {
-      cpBox.classList.toggle("on", cfg.packages.length >= 2); cpAdd.hidden = cfg.packages.length >= 3; cpAdd.textContent = cfg.packages.length ? "+ Pachet" : "+ Împarte în pachete";
-      const TP = pkTotals(cfg) || [], cv = item(cfg, "canvas");
+      cpBox.classList.toggle("on", cfg.packages.length >= 2); cpAdd.hidden = cpExt.hidden = cfg.packages.length >= 3; cpAdd.textContent = cfg.packages.length ? "+ Pachet" : "+ Împarte în pachete";
+      const TP = pkTotals(cfg) || [], cv = item(cfg, "canvas"), dv = item(cfg, "directions");
       cpBody.replaceChildren(...cfg.packages.map((p, k) => {
+        p.prices = p.prices || {};
         const card = h("div", "ofr-pk" + (p.recommended ? " rec" : "")), top = h("div", "ofr-pk-top");
-        const name = inp("text", p.label, (v) => { p.label = v; live(); }, "Pachetul " + (k + 1), 40); name.setAttribute("aria-label", "Numele pachetului " + (k + 1));
-        const rec = h("label", "ofr-chip ofr-rec"), rb = h("input"); rb.type = "checkbox"; rb.checked = !!p.recommended; rb.onchange = () => { cfg.packages.forEach((x) => delete x.recommended); if (rb.checked) p.recommended = true; drawCp(); live(); }; rec.append(rb, h("span", "", "Recomandat"));
-        const x = h("button", "ofr-x", "×"); x.type = "button"; x.setAttribute("aria-label", "Scoate pachetul"); x.onclick = () => { cfg.packages.splice(k, 1); if (cfg.packages.length < 2) cfg.packages = []; drawCp(); live(); };
+        const name = inp("text", p.label, (v) => { p.label = v; live(); }, PK_NAMES[Math.min(k, 2)][0], 60); name.setAttribute("aria-label", "Numele pachetului " + (k + 1) + " (RO)");
+        const x = h("button", "ofr-x", "×"); x.type = "button"; x.setAttribute("aria-label", "Scoate pachetul"); x.onclick = () => { cfg.packages.splice(k, 1); if (cfg.packages.length < 2) cfg.packages = []; drawCp(); drawGsel(); live(); };
         top.append(name, x);
-        const keep = h("div", "ofr-cp-k");
-        if (cv.on) {
-          const st = h("div", "ofr-step"), mi = h("button", "", "−"), pl = h("button", "", "+"), q = p.canvasQty || cv.qty, n = h("span", "", String(q)); mi.type = pl.type = "button";
-          mi.setAttribute("aria-label", "Un canvas mai puțin"); pl.setAttribute("aria-label", "Un canvas în plus");
-          const set = (v) => { p.canvasQty = Math.max(1, Math.min(6, v)); drawCp(); live(); }; mi.onclick = () => set(q - 1); pl.onclick = () => set(q + 1); st.append(mi, n, pl);
-          const r = h("div", "ofr-cp-r"); r.append(h("span", "", "Brand canvas"), st); keep.append(r);
+        const nameEn = inp("text", p.labelEn || "", (v) => { p.labelEn = v; }, PK_NAMES[Math.min(k, 2)][1], 60); nameEn.classList.add("ofr-pk-en"); nameEn.setAttribute("aria-label", "Numele pachetului " + (k + 1) + " (EN)");
+        const rec = h("label", "ofr-chip ofr-rec"), rb = h("input"); rb.type = "checkbox"; rb.checked = !!p.recommended; rb.onchange = () => { cfg.packages.forEach((q) => delete q.recommended); if (rb.checked) p.recommended = true; if (cfg.phasesAuto && !cfg.ganttPackage) { cfg.phases = autoPhases(cfg); drawPhases(); } drawCp(); drawGsel(); live(); }; rec.append(rb, h("span", "", "Recomandat"));
+        const rows = h("div", "ofr-pk-rows");
+        const step = (val, set, lab) => { const st = h("div", "ofr-step sm"), mi = h("button", "", "−"), pl = h("button", "", "+"), n = h("span", "", String(val)); mi.type = pl.type = "button"; mi.setAttribute("aria-label", lab + " −"); pl.setAttribute("aria-label", lab + " +"); mi.onclick = () => set(val - 1); pl.onclick = () => set(val + 1); st.append(mi, n, pl); return st; };
+        for (const [key] of ITEMS) {
+          const it = item(cfg, key); if (!it.on) continue;
+          const r = h("div", "ofr-pk-r" + ((p.off || []).includes(key) ? " off" : "")), lb = h("label", "ofr-pk-c"), cb = h("input"); cb.type = "checkbox"; cb.checked = !(p.off || []).includes(key);
+          cb.onchange = () => { const off = new Set(p.off || []); if (cb.checked) off.delete(key); else off.add(key); p.off = [...off]; r.classList.toggle("off", !cb.checked); if (cfg.phasesAuto && ganttPk(cfg) === p) { cfg.phases = autoPhases(cfg); drawPhases(); } live(); };
+          lb.append(cb, h("span", "", nm(cfg, key)));
+          const pin = h("input", "inp ofr-price"); pin.type = "number"; pin.min = "0"; pin.step = "50"; pin.placeholder = String(it.price); pin.value = p.prices[key] ?? ""; pin.setAttribute("aria-label", nm(cfg, key) + ": preț în " + (p.label || "pachet") + (key === "canvas" ? " (pe bucată)" : ""));
+          pin.oninput = () => { if (pin.value === "") delete p.prices[key]; else p.prices[key] = Math.max(0, num(pin.value)); live(); };
+          r.append(lb);
+          if (key === "canvas") r.append(step(p.canvasQty || cv.qty, (v) => { p.canvasQty = Math.max(1, Math.min(6, v)); if (cfg.phasesAuto && ganttPk(cfg) === p) { cfg.phases = autoPhases(cfg); drawPhases(); } drawCp(); live(); }, "Canvas"));
+          if (key === "directions") r.append(step(p.directionsQty || dv.qty || 3, (v) => { p.directionsQty = Math.max(1, Math.min(6, v)); drawCp(); live(); }, "Direcții"));
+          r.append(pin); rows.append(r);
         }
-        for (const [key, t] of ITEMS) {
-          const it = item(cfg, key); if (!it.on || key === "canvas") continue;
-          const lb = h("label", "ofr-chip"), cb = h("input"); cb.type = "checkbox"; cb.checked = !(p.off || []).includes(key);
-          cb.onchange = () => { const off = new Set(p.off || []); if (cb.checked) off.delete(key); else off.add(key); p.off = [...off]; live(); drawTot(); };
-          lb.append(cb, h("span", "", t)); keep.append(lb);
-        }
-        cfg.specials.forEach((sx, j) => { if (!sx.title) return; const lb = h("label", "ofr-chip"), cb = h("input"); cb.type = "checkbox"; cb.checked = !(p.specialsOff || []).map(Number).includes(j); cb.onchange = () => { const so = new Set((p.specialsOff || []).map(Number)); if (cb.checked) so.delete(j); else so.add(j); p.specialsOff = [...so]; live(); drawTot(); }; lb.append(cb, h("span", "", "★ " + sx.title)); keep.append(lb); });
+        cfg.specials.forEach((sx, j) => { if (!sx.title) return; const r = h("div", "ofr-pk-r"), lb = h("label", "ofr-pk-c"), cb = h("input"); cb.type = "checkbox"; cb.checked = !(p.specialsOff || []).map(Number).includes(j); cb.onchange = () => { const so = new Set((p.specialsOff || []).map(Number)); if (cb.checked) so.delete(j); else so.add(j); p.specialsOff = [...so]; r.classList.toggle("off", !cb.checked); live(); }; lb.append(cb, h("span", "", "★ " + sx.title)); r.classList.toggle("off", !cb.checked); r.append(lb, h("span", "mono muted", money(sx.price))); rows.append(r); });
         const tot = h("b", "ofr-pk-t", TP[k] ? money(TP[k].total) : ""); tot.dataset.k = k;
-        card.append(top, rec, keep, tot); return card;
+        card.append(top, nameEn, rec, rows, h("small", "muted ofr-pk-hint", "Preț gol = prețul din ofertă. Canvas: preț pe bucată."), tot); return card;
       }));
     }
     const drawTot = () => {};
-    cpBox.append(cpH, cpBody, cpAdd); drawCp(); s2.b.append(cpBox);
+    const cpBtns = h("div", "ofr-cp-btns"); cpBtns.append(cpAdd, cpExt);
+    cpBox.append(cpH, cpBody, cpBtns); drawCp(); s2.b.append(cpBox);
 
     // 03 timeline
     const s3 = sec("03", "Calendarul");
     const g4 = h("div", "ofr-g2"), sd = inp("date", cfg.startDate, (v) => { cfg.startDate = v; live(); });
     const auto = h("button", "btn sm ghost", "↺ Refă din pașii aleși"); auto.type = "button"; auto.onclick = () => { cfg.phases = autoPhases(cfg); cfg.phasesAuto = true; drawPhases(); live(); };
-    g4.append(field("Start (luni)", sd), field("Etape", auto));
+    // the Gantt follows one package (packages may differ in duration); default: the recommended / first one
+    const gsel = h("select", "inp"); gsel.id = "ofr-gpk"; gselEl = gsel;
+    gsel.onchange = () => { cfg.ganttPackage = gsel.value; if (cfg.phasesAuto) { cfg.phases = autoPhases(cfg); drawPhases(); } live(); };
+    const gField = field("Calendarul urmează pachetul", gsel);
+    g4.append(field("Start (luni)", sd), field("Etape", auto), gField);
+    drawGsel();
     const phBox = h("div", "ofr-ph");
     function drawPhases() {
       const head = h("div", "ofr-ph-r hd"); ["Etapă", "Start (săpt.)", "Durată", "Reper la final (opțional)", ""].forEach((t) => head.append(h("span", "mono", t)));
@@ -386,7 +431,7 @@
     row("Subtotal", money(T.subtotal)); if (T.discount) row("Reducere", "−" + money(T.discount));
     row("Față de listă", df === 0 ? "la fel" : (df > 0 ? "+" : "−") + money(Math.abs(df)), df < 0 ? "dn" : df > 0 ? "up" : "");
     row("Durată", weeksOf(cfg) ? Math.ceil(weeksOf(cfg)) + " săpt. de lucru" : "–");
-    const TP = pkTotals(cfg); if (TP) TP.forEach((t, k) => row((cfg.packages[k].label || "Pachetul " + (k + 1)) + (cfg.packages[k].recommended ? " ★" : ""), money(t.total), "cv"));
+    const TP = pkTotals(cfg); if (TP) TP.forEach((t, k) => row((cfg.packages[k].label || PK_NAMES[Math.min(k, 2)][0]) + (cfg.packages[k].recommended ? " ★" : ""), money(t.total), "cv"));
     box.append(l, r);
   }
   function drawExp() {
@@ -468,7 +513,7 @@
     hero.append(h("span", "ofr-lv-sit " + cfg.situation, SIT[cfg.situation]), h("b", "ofr-lv-cl", cfg.client.name || "Numele clientului"));
     if (cfg.currentLogo && cfg.currentLogo.urls) { const f = h("figure", "ofr-lv-from"); const im = h("img"); im.alt = ""; im.src = cfg.currentLogo.urls.preview || cfg.currentLogo.urls.png || cfg.currentLogo.urls.webp || cfg.currentLogo.urls.svg || ""; f.append(h("figcaption", "mono", "De unde pornim"), im); hero.append(f); }
     const items = h("div", "ofr-lv-items");
-    T.items.forEach((i, k) => { const r = h("div", "ofr-lv-i"); r.style.setProperty("--b", PH_COLORS[k % PH_COLORS.length]); const name = ITEMS.find((x) => x[0] === i.key)[1] + (i.key === "canvas" ? " ×" + i.q + " · " + money(i.price) + " " + PER_PIECE : ""); r.append(h("span", "", name)); const p = h("b", ""); if (i.line < i.baseLine) p.append(h("s", "", money(i.baseLine)), " "); p.append(money(i.line)); r.append(p); items.append(r); });
+    T.items.forEach((i, k) => { const r = h("div", "ofr-lv-i"); r.style.setProperty("--b", PH_COLORS[k % PH_COLORS.length]); const name = nm(cfg, i.key) + (i.key === "canvas" ? " ×" + i.q + " · " + money(i.price) + " " + PER_PIECE : ""); r.append(h("span", "", name)); const p = h("b", ""); if (i.line < i.baseLine) p.append(h("s", "", money(i.baseLine)), " "); p.append(money(i.line)); r.append(p); items.append(r); });
     T.specials.forEach((s) => { const r = h("div", "ofr-lv-i sp"); r.append(h("span", "", "★ " + s.title), h("b", "", money(s.price))); items.append(r); });
     const tot = h("div", "ofr-lv-tot"); tot.append(h("span", "mono", T.discount ? "Total · după reducere " + money(T.discount) : "Total proces"), h("b", "", money(T.total)));
     if (cfg.includeProcess) box.append(h("div", "ofr-lv-proc", "▶ Prezentarea procesului Cromatic · apoi oferta financiară"));
@@ -478,10 +523,10 @@
       const row = h("div", "ofr-lv-pks n" + TP.length);
       TP.forEach((t, k) => {
         const pk = cfg.packages[k], c = h("div", "ofr-lv-pk" + (pk.recommended || (!cfg.packages.some((x) => x.recommended) && k === 0) ? " ref" : ""));
-        const out = T.items.filter((i) => !t.items.some((x) => x.key === i.key)).map((i) => ITEMS.find((x) => x[0] === i.key)[1]);
+        const out = T.items.filter((i) => !t.items.some((x) => x.key === i.key)).map((i) => nm(cfg, i.key));
         const cvA = t.items.find((i) => i.key === "canvas");
         T.specials.forEach((sx) => { if (!t.specials.includes(sx) && !t.specials.some((y) => y.title === sx.title)) out.push(sx.title); });
-        c.append(h("span", "mono", (pk.label || "Pachetul " + (k + 1)) + (pk.recommended ? " · recomandat" : "")), h("b", "", money(t.total)), h("small", "", (cvA ? cvA.q + " canvas · " : "") + (out.length ? "fără " + out.join(", ") : "tot procesul")));
+        c.append(h("span", "mono", (pk.label || PK_NAMES[Math.min(k, 2)][0]) + (pk.recommended ? " · recomandat" : "")), h("b", "", money(t.total)), h("small", "", (cvA ? cvA.q + " canvas · " : "") + (out.length ? "fără " + out.join(", ") : "tot procesul")));
         row.append(c);
       });
       box.append(row);
@@ -523,7 +568,7 @@
   }
   function summary(c) {
     const T = c.totals;
-    return [SIT[c.situation], ...totals(c).items.map((i) => (ITEMS.find((x) => x[0] === i.key)[1]) + (i.key === "canvas" ? " ×" + i.q : "") + " " + money(i.line) + (i.line !== i.baseLine ? " (listă " + money(i.baseLine) + ")" : "")),
+    return [SIT[c.situation], ...totals(c).items.map((i) => (nm(cfg, i.key)) + (i.key === "canvas" ? " ×" + i.q : "") + " " + money(i.line) + (i.line !== i.baseLine ? " (listă " + money(i.baseLine) + ")" : "")),
       ...c.specials.map((s) => "Special: " + s.title + " " + money(s.price)), T.discount ? "Reducere −" + money(T.discount) : "", "Total " + money(T.total) + " · " + T.weeks + " săpt.", T.packages ? "Pachete: " + T.packages.map((p, k) => p.label + " " + money(p.total) + ((c.packages[k].off || []).length || (c.packages[k].specialsOff || []).length || c.packages[k].canvasQty ? " (" + [c.packages[k].canvasQty ? c.packages[k].canvasQty + " canvas" : "", (c.packages[k].off || []).length ? "fără " + c.packages[k].off.map((key) => (ITEMS.find((x) => x[0] === key) || [key, key])[1]).join(", ") : ""].filter(Boolean).join(", ") + ")" : "") + (c.packages[k].recommended ? " ★" : "")).join(" / ") : "", c.nextSteps.some((x) => x.picked) ? "Ce poate urma (bifat): " + c.nextSteps.filter((x) => x.picked).map((x) => x.title).join(", ") : ""].filter(Boolean).join(" · ");
   }
   async function send(btn, text, payload, ok) {

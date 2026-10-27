@@ -281,3 +281,29 @@
 .ofr-proc.on small { color: var(--on-ink); opacity: .8; }
 .ofr-proc.on input { accent-color: var(--yellow); }
 .ofr-lv-proc { background: #0d0c09; color: #f8d13b; border-radius: 14px; padding: 12px 14px; font: 700 11px/1.3 var(--f-m); letter-spacing: .08em; text-transform: uppercase; }
+
+/* v7: component names per offer, per-package prices and counts */
+.ofr-ren { grid-column: 2 / -1; font-size: 12.5px; }
+.ofr-ren summary { cursor: pointer; color: var(--muted); font-size: 12px; list-style: none; display: inline-block; }
+.ofr-ren summary::-webkit-details-marker { display: none; }
+.ofr-ren[open] summary { color: var(--ink); }
+.ofr-ren-r { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); gap: 6px; align-items: center; margin-top: 6px; }
+.ofr-ren-r .mono { font-size: 10px; color: var(--muted); }
+.ofr-ren-r .inp { padding: 6px 9px; }
+.ofr-pk-l { grid-template-columns: 1fr; }
+.ofr-pk-en { padding: 5px 9px !important; font-size: 12.5px; color: var(--muted); }
+.ofr-pk-rows { display: grid; gap: 4px; }
+.ofr-pk-r { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; align-items: center; padding: 4px 0; border-top: 1px dashed var(--g2); }
+.ofr-pk-r:first-child { border-top: 0; }
+.ofr-pk-r.off .ofr-pk-c span { text-decoration: line-through; color: var(--muted); }
+.ofr-pk-r.off .ofr-price, .ofr-pk-r.off .ofr-step { opacity: .35; pointer-events: none; }
+.ofr-pk-r > :last-child { grid-column: -2; }
+.ofr-pk-c { display: flex; gap: 8px; align-items: center; font-size: 13.5px; font-weight: 600; cursor: pointer; min-width: 0; }
+.ofr-pk-c input { width: 16px; height: 16px; accent-color: var(--ink); flex: none; }
+.ofr-pk-c span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ofr-step.sm button { width: 24px; height: 24px; }
+.ofr-step.sm span { min-width: 16px; font-size: 13px; }
+.ofr-pk-hint { font-size: 11.5px; }
+.ofr-cp-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.ofr-pk-r .ofr-price { width: 86px; }
+@media (max-width: 760px) { .ofr-ren-r { grid-template-columns: auto minmax(0, 1fr); } .ofr-pk-r { grid-template-columns: minmax(0, 1fr) auto; } .ofr-pk-r .ofr-step { grid-column: 1; justify-self: start; } }
