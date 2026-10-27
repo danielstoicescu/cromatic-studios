@@ -67,3 +67,45 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wire); else wire();
   window.addEventListener("load", wire);
 })();
+
+// Home: the tasks part (Progres · Task-uri) never takes more than one screen (Daniel, 27 Oct). Taller -> capped at the
+// viewport minus the header, a soft fade, "Vezi mai mult" expands it in place, "Vezi mai puțin" folds it back.
+// The choice is kept for the session. Only on Acasă: the full Progres section is untouched.
+(() => {
+  "use strict";
+  const KEY = "ops-home-tasks-open";
+  const sec = document.getElementById("work");
+  if (!sec) return;
+  const ss = { get: () => { try { return sessionStorage.getItem(KEY) === "1"; } catch { return false; } }, set: (v) => { try { sessionStorage.setItem(KEY, v ? "1" : "0"); } catch {} } };
+  const btn = document.createElement("button"); btn.type = "button"; btn.className = "btn sm home-more"; btn.hidden = true;
+  btn.setAttribute("aria-controls", "work");
+  sec.append(btn);
+  let open = ss.get(), raf = 0;
+  const home = () => (document.body.dataset.cat || "home") === "home";
+  function cap() {
+    const top = document.querySelector(".top"), hh = top ? top.getBoundingClientRect().height : 60;
+    return Math.max(360, Math.round(innerHeight - hh - 24));
+  }
+  function apply() {
+    raf = 0;
+    if (!home()) { sec.classList.remove("home-cap", "home-open"); sec.style.removeProperty("--home-cap"); btn.hidden = true; return; }
+    const c = cap(); sec.style.setProperty("--home-cap", c + "px");
+    // measure the natural height (without the cap and without the button)
+    const was = sec.className; sec.classList.remove("home-cap", "home-open"); btn.hidden = true;
+    const tall = sec.scrollHeight > c + 40;
+    sec.className = was;
+    if (!tall) { sec.classList.remove("home-cap", "home-open"); btn.hidden = true; return; }
+    sec.classList.toggle("home-cap", !open); sec.classList.toggle("home-open", open);
+    const t = open ? "Vezi mai puțin" : "Vezi mai mult"; btn.hidden = false; if (btn.textContent !== t) btn.textContent = t; btn.setAttribute("aria-expanded", String(open)); // no write if unchanged: the observer watches sec
+  }
+  const later = () => { if (!raf) raf = requestAnimationFrame(apply); };
+  btn.onclick = () => {
+    open = !open; ss.set(open); apply();
+    if (!open) { const r = sec.getBoundingClientRect(); if (r.top < 0) sec.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); }
+  };
+  new MutationObserver(later).observe(document.body, { attributes: true, attributeFilter: ["data-cat"] });
+  new MutationObserver(later).observe(sec, { childList: true, subtree: true });
+  addEventListener("resize", later);
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", later); else later();
+  addEventListener("load", later);
+})();

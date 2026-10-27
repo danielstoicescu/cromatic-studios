@@ -110,3 +110,12 @@ body[data-cat="home"] #res { display: none !important; }
 @keyframes navFade { from { opacity: 0; } } @keyframes navUp { from { transform: translateY(40px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .nav-sheet-s, .nav-sheet-b { animation: none; } }
 .nav-sheet-soon { font: 700 8.5px/1 var(--f-m); letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--g2); border-radius: 999px; padding: 3px 6px; color: var(--muted); }
+
+/* Home: the tasks part is capped at one screen (ops/www/nav.js); "Vezi mai mult" expands it in place */
+#work { position: relative; }
+#work.home-cap { max-height: var(--home-cap, 80vh); overflow: hidden; padding-bottom: 0; }
+#work.home-cap::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 140px; pointer-events: none; background: linear-gradient(to bottom, transparent, var(--bg) 78%); z-index: 2; }
+#work .home-more { justify-self: center; z-index: 3; box-shadow: var(--sh); }
+#work.home-cap .home-more { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); }
+#work.home-cap .home-more:hover { transform: translateX(-50%) translateY(-2px); }
+#work.home-open .home-more { position: static; margin-top: 4px; }
