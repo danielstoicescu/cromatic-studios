@@ -1717,7 +1717,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
 
   <section class="legend" id="legend" hidden aria-label="Legendă">
     <div class="lg"><b>Status</b>
-      <span><i class="c-decide"></i>De decis de tine</span><span><i class="c-open"></i>De făcut</span><span><i class="c-in-progress"></i>Claude lucrează la</span><span><i class="c-beta"></i>Claude a terminat · de verificat</span>
+      <span><i class="c-decide"></i>De decis de tine</span><span><i class="c-open"></i>De făcut</span><span><i class="c-in-progress"></i>Claude lucrează la</span><span><i class="c-beta"></i>Claude done · need feedback</span>
       <span><i class="c-on-beta"></i>Trimis pe beta</span><span><i class="c-done"></i>Trimis pe live · ultimele 24 h</span><span><i class="c-celebrated"></i>yay! · pe live de peste o zi</span><span><i class="c-paused"></i>Pe pauză</span><span><i class="c-dropped"></i>Renunțat</span></div>
     <div class="lg"><b>Prioritate</b><span><span class="pr P0">P0</span> acum</span><span><span class="pr P1">P1</span> săptămâna asta</span><span><span class="pr P2">P2</span> când e loc</span><span><span class="pr P3">P3</span> când e timp</span></div>
     <div class="lg"><b>Zone</b><span><svg class="ic"><use href="#i-bulb"/></svg>Creative &amp; Growth</span><span><svg class="ic"><use href="#i-code"/></svg>Development</span><span><svg class="ic"><use href="#i-flag"/></svg>Management</span></div>
@@ -1996,7 +1996,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
   const blobUrl = (a) => (window.__ops ? OPS_BLOB : "/_blob/" + a.id);
   const isImg = (a) => /^image\//.test(a.type || ""), isVid = (a) => /^video\//.test(a.type || "");
   const PRI = { P0: 0, P1: 1, P2: 2, P3: 3 };
-  const STATUS = [["decide", "De decis de tine"], ["open", "De făcut"], ["in-progress", "Claude lucrează la"], ["beta", "Claude a terminat · de verificat"], ["on-beta", "Trimis pe beta"], ["done", "Trimis pe live"], ["paused", "Pe pauză"], ["dropped", "Renunțat"]];
+  const STATUS = [["decide", "De decis de tine"], ["open", "De făcut"], ["in-progress", "Claude lucrează la"], ["beta", "Claude done · need feedback"], ["on-beta", "Trimis pe beta"], ["done", "Trimis pe live"], ["paused", "Pe pauză"], ["dropped", "Renunțat"]];
   const LANE_SUB = { decide: "așteaptă o decizie sau o confirmare de la tine", open: "pregătite, încă nepornite", "in-progress": "în lucru acum la Claude sau la un agent", beta: "gata de la Claude: verifici și dai feedback", "on-beta": "pe beta.cromaticstudios.com, așteaptă să-l trimiți pe live", done: "pe cromaticstudios.com, în ultimele 24 h", paused: "oprite deocamdată", dropped: "nu se mai fac" };
   const SLAB = Object.fromEntries(STATUS); SLAB.celebrated = "yay!";
   const norm = (s) => (s === "needs-confirmation" || s === "needs-decision" ? "decide" : s || "open");
@@ -2413,7 +2413,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
     if ((canWrite || window.__ops) && matchMedia("(pointer: fine)").matches) { c.draggable = true; c.ondragstart = (e) => { e.dataTransfer.setData("text/plain", t.id); e.dataTransfer.effectAllowed = "move"; c.classList.add("dragging"); }; c.ondragend = () => c.classList.remove("dragging"); }
     const e = epicOf(t); if (e) c.append(el("span", "ep", String(e.n || "").padStart(2, "0") + " · " + e.title));
     const atts = Array.isArray(t.attachments) ? t.attachments : []; const img = atts.find(isImg); if (img) { const th = el("div", "thumb"); const i = el("img"); i.src = blobUrl(img); i.alt = ""; i.loading = "lazy"; th.append(i); c.append(th); }
-    if (norm(t.status) === "beta" && !(t.feedback || []).length) { const af = el("span", "askfb"); af.append(el("span", "", "Claude a terminat · dă feedback")); c.append(af); }
+    if (norm(t.status) === "beta" && !(t.feedback || []).length) { const af = el("span", "askfb"); af.append(el("span", "", "Claude done · need feedback")); c.append(af); }
     const mt = mateOf(t);
     if (norm(t.status) === "in-progress" && !(openOrder(orderFor(t.id)) && orderFor(t.id).status === "new")) { const w = el("span", "working"); w.append(el("i"), el("span", "", mt && mt.kind !== "claude" ? mt.name + " lucrează la asta" : "Claude lucrează la asta")); c.append(w); }
     { const o = orderFor(t.id); if (openOrder(o)) { const w = el("span", "sent"); const kind = o.kind === "deploy" ? (o.payload && o.payload.target === "live" ? "Claude îl urcă pe live" : "Claude îl urcă pe beta") : "Trimis lui Claude"; w.append(icon("i-send"), el("span", "", o.status === "new" ? kind + " · pe la " + nextCheck() : "Claude a văzut comanda")); c.append(w); } }
@@ -2953,7 +2953,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
       w.append(el("div", "sub", ord.status === "new" ? "Trimisă la " + hhmm(ord.createdAt) + ". Claude o preia la următoarea verificare, pe la " + nextCheck() + ", " + (m && m.kind !== "claude" && m.kind !== "human" ? "o dă lui " + m.name : "alege agentul") + " și mută task-ul în „Claude lucrează la”." : ord.status === "seen" ? "Claude a văzut comanda și pregătește lucrul." : "Claude a pornit lucrul. Task-ul trece în „Claude lucrează la”."));
       if (ord.reply) { const ld = el("div", "last"); ld.append(linkify(ord.reply)); w.append(ld); }
     };
-    if (st === "in-progress") { w.className = "start wip"; w.append(head("spin", (m && m.kind !== "claude" ? m.name : "Claude") + " lucrează la asta acum"), el("div", "sub", "Când termină, task-ul trece în „Claude a terminat · de verificat” și primești cererea de feedback. Nu trebuie să mai apeși nimic.")); return w; }
+    if (st === "in-progress") { w.className = "start wip"; w.append(head("spin", (m && m.kind !== "claude" ? m.name : "Claude") + " lucrează la asta acum"), el("div", "sub", "Când termină, task-ul trece în „Claude done · need feedback” și primești cererea de feedback. Nu trebuie să mai apeși nimic.")); return w; }
     if (openOrder(o)) { receipt(o); return w; }
     const label = fin ? "Cere-i lui Claude o rundă nouă de modificări" : st === "decide" ? "Am decis: trimite-i lui Claude să înceapă" : "Trimite-i lui Claude: începe task-ul ăsta";
     const sub = fin ? "Doar dacă vrei schimbări noi. Pentru „e bine / nu e bine”, folosește feedback-ul de mai sus. Claude redeschide task-ul la următoarea verificare, pe la " + nextCheck() + "."
