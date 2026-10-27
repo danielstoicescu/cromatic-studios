@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ro"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex, nofollow, noarchive"><meta name="referrer" content="no-referrer"><title>cromaticstudios.com ops</title><link rel="stylesheet" href="/ops/ops.css"><script src="/ops/adapter.js"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex, nofollow, noarchive"><meta name="referrer" content="no-referrer"><title>cromaticstudios.com ops</title><link rel="stylesheet" href="/ops/ops.css"><link rel="stylesheet" href="/ops/offers.css"><script src="/ops/adapter.js"></script><script src="/ops/offers.js" defer></script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cdefs%3E%3ClinearGradient id=%22r%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23FED012%22/%3E%3Cstop offset=%22.25%22 stop-color=%22%2328C840%22/%3E%3Cstop offset=%22.5%22 stop-color=%22%23119BFE%22/%3E%3Cstop offset=%22.75%22 stop-color=%22%23B098C8%22/%3E%3Cstop offset=%221%22 stop-color=%22%23F65342%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg transform=%22rotate%28-8 32 32%29%22%3E%3Crect x=%225%22 y=%2215%22 width=%2254%22 height=%2234%22 rx=%2217%22 fill=%22%230D0C09%22 transform=%22translate%280 3%29%22/%3E%3Crect x=%225%22 y=%2215%22 width=%2254%22 height=%2234%22 rx=%2217%22 fill=%22url%28%23r%29%22/%3E%3Crect x=%229%22 y=%2219%22 width=%2246%22 height=%2226%22 rx=%2213%22 fill=%22%23fff%22/%3E%3Ctext x=%2232%22 y=%2238.5%22 text-anchor=%22middle%22 font-family=%22Google Sans,DM Sans,Arial,sans-serif%22 font-weight=%22900%22 font-size=%2219%22 letter-spacing=%22-1%22 fill=%22%230D0C09%22%3Eops%3C/text%3E%3C/g%3E%3C/svg%3E">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -1661,6 +1661,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
   <symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17z" fill="currentColor"/></symbol>
+  <symbol id="i-offer" viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M14.5 11.2a3 3 0 1 0 0 4.6M8.6 12.6h4.2M8.6 14.4h4.2"/></symbol>
   <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v4h16v-4"/></symbol>
 </svg>
 
@@ -1675,6 +1676,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
   <button class="nav-i" type="button" data-cat="cont" title="Conținut · proiectele de pe site"><svg class="ic"><use href="#i-ck-layers"/></svg><span class="lbl">Conținut</span><span class="sl">Conținut</span><span class="nb" id="nb-cont" hidden></span></button>
   <button class="nav-i" type="button" data-cat="soc" title="Social &amp; Ads · reel-uri, story-uri, reclame"><svg class="ic"><use href="#i-clap"/></svg><span class="lbl">Social &amp; Ads</span><span class="sl">Social</span><span class="nb" id="nb-soc" hidden></span></button>
   <button class="nav-i" type="button" data-cat="camp" title="Campanii · landing pages"><svg class="ic"><use href="#i-mega"/></svg><span class="lbl">Campanii</span><span class="sl">Campanii</span><span class="nb" id="nb-camp" hidden></span></button>
+  <button class="nav-i" type="button" data-cat="offer" title="Ofertă · oferte pentru clienți"><svg class="ic"><use href="#i-offer"/></svg><span class="lbl">Ofertă</span><span class="sl">Ofertă</span><span class="nb" id="nb-offer" hidden></span></button>
   <button class="nav-i" type="button" data-cat="core" title="The Core"><svg class="ic"><use href="#i-lock"/></svg><span class="lbl">The Core <span class="cs-ops cv" aria-label="versiunea 3.0">3.0</span></span><span class="sl">Core</span><span class="nb" id="nb-core" hidden></span></button>
   <button class="nav-i" type="button" data-cat="sec" title="Securitate"><svg class="ic"><use href="#i-shield"/></svg><span class="lbl">Securitate</span><span class="sl">Securitate</span><span class="nb" id="nb-sec" hidden></span></button>
   <button class="nav-i" type="button" data-cat="ana" title="Analytics · trafic, surse, campanii"><svg class="ic"><use href="#i-chart"/></svg><span class="lbl">Analytics</span><span class="sl">Analytics</span></button>
@@ -1860,6 +1862,11 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
       <div class="camp-lite" id="camp-lite" aria-label="The Core Lite"></div>
       <div class="camp-mini" id="camp-mini"></div>
       <div class="camp-g" id="camp-g"></div>
+    </section>
+
+    <section class="blk ofr" data-cat="offer" id="ofr" aria-labelledby="ofr-t">
+      <div class="core-h"><div><h2 id="ofr-t"><svg class="ic lg"><use href="#i-offer"/></svg>Ofertă</h2><div class="muted sub">Alegi procesul, completezi clientul și prețurile, Claude scrie oferta. O verificați aici, apoi o publicăm.</div></div><span class="mono muted" id="ofr-n"></span></div>
+      <div id="ofr-root"><div class="muted sub">Se încarcă…</div></div>
     </section>
 
     <section class="sum blk" data-cat="core" id="core" aria-labelledby="core-t">
@@ -3056,11 +3063,11 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
   $("lg-btn").onclick = () => { const l = $("legend"); l.hidden = !l.hidden; $("lg-btn").setAttribute("aria-expanded", String(!l.hidden)); };
   try { const v = localStorage.getItem("ops-view"); if (v && v !== "city") { const b = document.querySelector('[data-view="' + v + '"]'); if (b) b.click(); } } catch {}
   // ---------- v24 (TASK-123): sections, rail, intelinks, count-ups, skeletons, summary cards, bubbles ----------
-  const TITLES = { home: ["Ce ", "facem", " azi?"], talk: ["Conversația cu ", "Claude", ""], work: ["Progres · ", "task-uri", ""], camp: ["", "Campanii", ""], cont: ["", "Conținut", ""], soc: ["Social & ", "Ads", ""], ana: ["", "Analytics", ""], team: ["", "Echipa", ""], core: ["The ", "Core", ""], sec: ["", "Securitate", ""], reports: ["", "Rapoarte", ""] };
-  const NAMES = { home: "Acasă", talk: "Conversația", work: "Progres · Task-uri", camp: "Campanii", cont: "Conținut", soc: "Social & Ads", ana: "Analytics", team: "Echipa", core: "The Core", sec: "Securitate", reports: "Rapoarte" };
-  const CAT_IC = { home: "i-home", talk: "i-chat", work: "i-board", camp: "i-mega", cont: "i-ck-layers", soc: "i-clap", ana: "i-chart", team: "i-team", core: "i-lock", sec: "i-shield", reports: "i-reports" };
+  const TITLES = { home: ["Ce ", "facem", " azi?"], talk: ["Conversația cu ", "Claude", ""], work: ["Progres · ", "task-uri", ""], camp: ["", "Campanii", ""], cont: ["", "Conținut", ""], soc: ["Social & ", "Ads", ""], ana: ["", "Analytics", ""], team: ["", "Echipa", ""], core: ["The ", "Core", ""], offer: ["", "Ofertă", ""], sec: ["", "Securitate", ""], reports: ["", "Rapoarte", ""] };
+  const NAMES = { home: "Acasă", talk: "Conversația", work: "Progres · Task-uri", camp: "Campanii", cont: "Conținut", soc: "Social & Ads", ana: "Analytics", team: "Echipa", core: "The Core", offer: "Ofertă", sec: "Securitate", reports: "Rapoarte" };
+  const CAT_IC = { home: "i-home", talk: "i-chat", work: "i-board", camp: "i-mega", cont: "i-ck-layers", soc: "i-clap", ana: "i-chart", team: "i-team", core: "i-lock", offer: "i-offer", sec: "i-shield", reports: "i-reports" };
   function setCat(cat, noScroll) {
-    if (!TITLES[cat] || (cat === "soc" && socHidden()) || (cat === "ana" && anaHidden())) cat = "home";
+    if (!TITLES[cat] || (cat === "soc" && socHidden()) || (cat === "ana" && anaHidden()) || (cat === "offer" && document.body.classList.contains("ops-member"))) cat = "home";
     const prev = UI.cat; UI.cat = cat; document.body.dataset.cat = cat;
     navIntoView(cat, prev === undefined || prev === cat);
     for (const b of document.querySelectorAll(".nav-i")) { if (b.dataset.cat === cat) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }

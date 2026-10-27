@@ -1,0 +1,13 @@
+{
+  "_note": "TASK-135 · the base prices for offers (EUR, without VAT). Edit only here: /ops (Ofertă tab) and ~/cromatic-ops/tools/offer/build.mjs both read this file. Daniel, 27 Oct 2026.",
+  "currency": "EUR",
+  "perPiece": { "ro": "preț pe bucată", "en": "price per piece" },
+  "items": [
+    { "key": "audit", "base": 1200, "defaultOn": "rebrand", "ro": "Audit de brand", "en": "Brand audit" },
+    { "key": "core", "base": 2500, "ro": "The Core · workshop de poziționare", "en": "The Core · positioning workshop" },
+    { "key": "directions", "base": 2500, "ro": "Direcții vizuale", "en": "Visual directions" },
+    { "key": "canvas", "base": 2500, "perPiece": true, "defaultQty": 2, "ro": "Brand canvas", "en": "Brand canvas" },
+    { "key": "guidelines", "base": 2000, "ro": "Ghid de identitate", "en": "Brand guidelines" },
+    { "key": "deliverables", "base": 1500, "ro": "Livrabile ulterioare", "en": "Subsequent deliverables" }
+  ]
+}

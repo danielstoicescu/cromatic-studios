@@ -22,6 +22,10 @@
 //   GET  /api/ops/bridge/outbox?since=<iso>     (Bearer key)
 //   POST /api/ops/bridge/snapshot               (Bearer key) {collections:{name:{id:doc}}, generatedAt}
 //   POST /api/ops/bridge/ack                    (Bearer key) {ids:[...], replies?:{id:text}}
+//   POST /api/ops/bridge/proposal               (Bearer key) {slug, files:{name: html}, preview?: true}   TASK-135: offers
+//        published -> <dataDir>/proposals/<slug>/ (served at /proposals/<slug>/<file> by server.js, after the repo's own proposals/)
+//        preview   -> <dataDir>/offer-previews/<slug>/ (served at /ops/preview/<slug>/<file>, admins only, never public)
+//   GET  /ops/preview/<slug>/<file>             (admin session) an offer preview, framed by the Ofertă tab
 import { readFileSync, writeFileSync, appendFileSync, renameSync, mkdirSync, statSync, readdirSync, createReadStream } from "node:fs";
 import { join, extname } from "node:path";
 import { randomBytes, randomInt, createHash, timingSafeEqual } from "node:crypto";
@@ -34,9 +38,14 @@ const COOKIE = "ops_sid";
 const KINDS = new Set(["command", "bug", "feedback"]);
 const TASK_FIELDS = new Set(["status", "priority", "agent", "epicId"]); // what a "task-edit" may change
 const REJECT_SHOW = 6 * 3600e3; // a rejected edit stays visible on its card (for the toast + animation) this long
-const ADMIN_PAYLOAD_TYPES = new Set(["core-request"]); // members cannot send these
+const ADMIN_PAYLOAD_TYPES = new Set(["core-request", "offer-new", "offer-edit", "offer-publish"]); // members cannot send these
+const OFFER_TYPES = new Set(["offer-new", "offer-edit", "offer-publish"]); // TASK-135: a whole offer config rides in the payload (bigger limit)
+// TASK-135: offers published without a deploy. A slug is <client>-<10 hex>, the code being the key; files are flat .html names
+export const PROPOSAL_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{10}$/;
+export const PROPOSAL_FILE_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*\.html$/i;
+const PROPOSAL_FILE_MAX = 4 * 1048576, PROPOSAL_FILES_MAX = 6, PROPOSAL_BODY_MAX = 12 * 1048576;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const ASSETS = { "login.css": "text/css; charset=utf-8", "logo.css": "text/css; charset=utf-8", "adapter.js": "text/javascript; charset=utf-8", "login.js": "text/javascript; charset=utf-8", "ops.css": "text/css; charset=utf-8", "favicon.svg": "image/svg+xml" };
+const ASSETS = { "offers.js": "text/javascript; charset=utf-8", "offers.css": "text/css; charset=utf-8", "login.css": "text/css; charset=utf-8", "logo.css": "text/css; charset=utf-8", "adapter.js": "text/javascript; charset=utf-8", "login.js": "text/javascript; charset=utf-8", "ops.css": "text/css; charset=utf-8", "favicon.svg": "image/svg+xml" };
 
 const sha = (x) => createHash("sha256").update(String(x)).digest();
 const shaHex = (x) => createHash("sha256").update(String(x)).digest("hex");
@@ -314,7 +323,7 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
     if (role === "admin") return { collections: c, generatedAt: snap.generatedAt };
     const out = {};
     for (const [name, docs] of Object.entries(c)) {
-      if (name === "coreRequests" || name === "approvals" || name === "security") continue;
+      if (name === "coreRequests" || name === "approvals" || name === "security" || name === "offers") continue; // TASK-135: offers are admins only
       if (name === "core") { out.core = {}; for (const [id, d] of Object.entries(docs || {})) { const { token, link, url, links, log: _l, ...rest } = d || {}; out.core[id] = scrub(rest); } continue; }
       out[name] = scrub(docs);
     }
@@ -357,6 +366,22 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
       if (p === "/ops" || p === "/ops/") {
         if (m !== "GET" && m !== "HEAD") { res.writeHead(405, HDR); res.end(); return true; }
         file(res, sessionOf(req) ? "index.html" : "login.html", "text/html; charset=utf-8"); return true;
+      }
+      const pv = /^\/ops\/preview\/([^/]+)\/([^/]+)$/.exec(p);
+      if (pv) { // TASK-135: an offer preview, for admins only (the Ofertă tab frames it); same files as the published offer
+        const s0 = sessionOf(req);
+        if (!s0 || s0.user.role !== "admin") { res.writeHead(s0 ? 403 : 401, { ...HDR, "Content-Type": "text/plain; charset=utf-8" }); res.end(s0 ? "Doar pentru admini." : "Intră în /ops mai întâi."); return true; }
+        if ((m !== "GET" && m !== "HEAD") || !PROPOSAL_SLUG_RE.test(pv[1]) || !PROPOSAL_FILE_RE.test(pv[2])) { res.writeHead(404, HDR); res.end(); return true; }
+        const f = join(dataDir, "offer-previews", pv[1], pv[2]), st = statOr(f);
+        if (!st || !st.isFile()) { res.writeHead(404, { ...HDR, "Content-Type": "text/plain; charset=utf-8" }); res.end("Preview-ul nu e încă aici."); return true; }
+        res.writeHead(200, { ...HDR, "X-Frame-Options": "SAMEORIGIN", "Content-Security-Policy": "frame-ancestors 'self'", "Content-Type": "text/html; charset=utf-8", "Content-Length": st.size });
+        if (m === "HEAD") { res.end(); return true; }
+        createReadStream(f).on("error", () => res.destroy()).pipe(res); return true;
+      }
+      if (p === "/ops/offer-prices.json") { // TASK-135: the offer base prices, admins only (the one place to change them)
+        const s0 = sessionOf(req);
+        if (!s0 || s0.user.role !== "admin") { json(res, s0 ? 403 : 401, { ok: false }); return true; }
+        file(res, "offer-prices.json", "application/json; charset=utf-8"); return true;
       }
       if (p.startsWith("/ops/")) {
         const name = p.slice(5);
@@ -408,6 +433,23 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
           });
           const tmp = P("outbox.jsonl.tmp-" + process.pid); writeFileSync(tmp, list.map((x) => JSON.stringify(x) + "\n").join(""), { mode: 0o600 }); renameSync(tmp, P("outbox.jsonl"));
           json(res, 200, { ok: true, acked: n }); return true;
+        }
+        if (r === "bridge/proposal" && m === "POST") { // TASK-135: publish (or preview) an offer without a deploy
+          const b = await body(req, PROPOSAL_BODY_MAX);
+          const slug = String(b.slug || ""), files = b.files && typeof b.files === "object" && !Array.isArray(b.files) ? b.files : null;
+          if (!PROPOSAL_SLUG_RE.test(slug)) { json(res, 422, { ok: false, error: "slug" }); return true; }
+          const names = files ? Object.keys(files) : [];
+          if (!names.length || names.length > PROPOSAL_FILES_MAX) { json(res, 422, { ok: false, error: "files" }); return true; }
+          for (const n of names) {
+            if (!PROPOSAL_FILE_RE.test(n) || typeof files[n] !== "string") { json(res, 422, { ok: false, error: "file-name", file: n.slice(0, 80) }); return true; }
+            if (Buffer.byteLength(files[n]) > PROPOSAL_FILE_MAX || !/^\s*<!doctype html/i.test(files[n])) { json(res, 422, { ok: false, error: "file-content", file: n }); return true; }
+          }
+          const preview = b.preview === true, dir = join(dataDir, preview ? "offer-previews" : "proposals", slug);
+          mkdirSync(dir, { recursive: true });
+          for (const n of names) { const tmp = join(dir, "." + n + ".tmp-" + process.pid); writeFileSync(tmp, files[n], { mode: 0o644 }); renameSync(tmp, join(dir, n.toLowerCase())); }
+          const base = preview ? "/ops/preview/" : "/proposals/";
+          appendLine("proposals.jsonl", { at: new Date().toISOString(), slug, preview, files: names, bytes: names.reduce((a, n) => a + Buffer.byteLength(files[n]), 0) });
+          json(res, 200, { ok: true, slug, preview, urls: Object.fromEntries(names.map((n) => [n.toLowerCase(), base + slug + "/" + n.toLowerCase()])) }); return true;
         }
         json(res, 404, { ok: false }); return true;
       }
@@ -464,14 +506,19 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
       if (r === "upload" && m === "POST") { await upload(req, res, s, u); return true; }
       if (r === "inbox" && m === "POST") {
         if (userInbox(s.email)) { json(res, 429, { ok: false, error: "rate" }); return true; }
-        const b = await body(req, 32e3);
+        const b = await body(req, 64e3);
         const kind = str(b.kind, 20), text = str(b.text, 4000);
         if (!KINDS.has(kind) || !text) { json(res, 422, { ok: false, error: "kind/text" }); return true; }
         let payload = b.payload && typeof b.payload === "object" && !Array.isArray(b.payload) ? b.payload : null;
-        if (payload && JSON.stringify(payload).length > 16e3) { json(res, 413, { ok: false }); return true; }
+        if (payload && JSON.stringify(payload).length > (OFFER_TYPES.has(String(payload.type || "")) ? 48e3 : 16e3)) { json(res, 413, { ok: false }); return true; }
         if (payload && ADMIN_PAYLOAD_TYPES.has(String(payload.type || "")) && s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
         if (payload && payload.videoLinks !== undefined) payload = { ...payload, videoLinks: (Array.isArray(payload.videoLinks) ? payload.videoLinks : []).slice(0, 10).map((v) => videoLink(v && v.url)).filter(Boolean) };
         if (payload && payload.uploads !== undefined) payload = { ...payload, uploads: (Array.isArray(payload.uploads) ? payload.uploads : []).slice(0, 20).filter((x) => x && UP_RE.test(String(x.id))).map((x) => ({ id: x.id, name: str(String(x.name || ""), 140), kind: UP_KINDS.has(x.kind) ? x.kind : "other", type: str(String(x.type || ""), 40), urls: Object.fromEntries(Object.entries(x.urls || {}).filter(([k, v]) => /^[a-z]+$/.test(k) && typeof v === "string" && v.startsWith("/api/ops/uploads/" + x.id + "/"))), w: Number(x.w) || null, h: Number(x.h) || null, bytesBefore: Number(x.bytesBefore) || null, bytesAfter: Number(x.bytesAfter) || null })) };
+        if (payload && OFFER_TYPES.has(String(payload.type || ""))) { // TASK-135: the shape Claude expects (the rest is the config, data only)
+          const o = payload.offer;
+          if ((payload.type === "offer-new" && (!o || typeof o !== "object" || Array.isArray(o) || !str(o.client && o.client.name, 160)))
+            || (payload.type !== "offer-new" && !/^[\w.-]{1,80}$/.test(String(payload.offerId || "")))) { json(res, 422, { ok: false, error: "offer" }); return true; }
+        }
         if (payload && payload.type === "task-edit") {
           const f = String(payload.field || "");
           if (!TASK_FIELDS.has(f) || typeof payload.taskId !== "string" || !/^[\w.-]{1,60}$/.test(payload.taskId)) { json(res, 422, { ok: false, error: "task-edit" }); return true; }

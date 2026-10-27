@@ -93,6 +93,13 @@
       },
       async add(doc) {
         if (name === "inbox") return addInbox(doc);
+        // TASK-135: the Ofertă tab. A new offer, a change request or "Publică" goes to Claude as a command; the offers
+        // themselves (status, preview, link) come back in the snapshot's "offers" collection, written by Claude
+        if (name === "offers" && user && user.role === "admin") {
+          const d = doc || {};
+          if (!d.payload || !/^offer-(new|edit|publish)$/.test(d.payload.type || "")) throw err("invalid_argument");
+          return addInbox({ kind: "command", text: String(d.text || "Ofertă"), payload: d.payload });
+        }
         if (name === "coreRequests" && user && user.role === "admin") {
           const d = doc || {};
           return addInbox({ kind: "command", text: d.type === "upgrade" ? "The Core: trece la The Core complet · " + (d.name || d.coreId) : "Sesiune nouă în The Core: " + [d.name, d.email, d.edition === "pre" ? "pregătire acasă" : d.edition, String(d.lang || "").toUpperCase()].filter(Boolean).join(" · "), payload: { type: "core-request", request: d } }); // TASK-136: prep sessions and the upgrade

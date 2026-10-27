@@ -12,7 +12,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import nodemailer from "nodemailer";
 import { passHtml, passText } from "./mail-template.js";
 import { createCore30 } from "./core30/core30.mjs";
-import { createOps, isOps } from "./ops/ops.mjs";
+import { createOps, isOps, PROPOSAL_SLUG_RE, PROPOSAL_FILE_RE } from "./ops/ops.mjs";
 
 const APP_DIR = dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.PUBLIC_DIR || join(APP_DIR, "public");
@@ -316,11 +316,18 @@ const statOr = (p) => { try { return statSync(p); } catch { return null; } };
 // r312: /proposals/<client>-<code>/<file>.html, client proposals and offers (Daniel, 27 Oct: "un folder proposals", on live).
 // Served as is from proposals/ in the release (never in the build, the sitemap or the menus), private like /rapoarte/:
 // noindex, no-store, no referrer. Only files: a folder without its file name is a 404, so the code in the name stays the key.
-const PROPOSALS = join(APP_DIR, "proposals");
+// TASK-135: offers made in /ops are published by the bridge (POST /api/ops/bridge/proposal) into <OPS_DATA>/proposals, no deploy:
+// the repo's folder first, then the data dir, same headers. The data dir only ever holds <slug>/<file>.html (checked again here).
+const PROPOSALS = join(APP_DIR, "proposals"), PROPOSALS_DATA = join(OPS_DATA, "proposals");
 function proposals(req, res) {
   if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405); return res.end(); }
   let path; try { path = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname)).replace(/\\/g, "/"); } catch { res.writeHead(400); return res.end(); }
-  const full = join(PROPOSALS, path.slice("/proposals".length)), st = full.startsWith(PROPOSALS + "/") ? statOr(full) : null;
+  const rel = path.slice("/proposals".length);
+  let full = join(PROPOSALS, rel), st = full.startsWith(PROPOSALS + "/") ? statOr(full) : null;
+  if (!st || !st.isFile()) {
+    const m = /^\/([^/]+)\/([^/]+)$/.exec(rel);
+    if (m && PROPOSAL_SLUG_RE.test(m[1]) && PROPOSAL_FILE_RE.test(m[2])) { full = join(PROPOSALS_DATA, m[1], m[2]); st = statOr(full); }
+  }
   if (!st || !st.isFile()) { res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8", "X-Robots-Tag": "noindex, nofollow" }); return res.end("Not found"); }
   const ext = extname(full).toLowerCase();
   res.writeHead(200, { "Content-Type": typeFor(path, ext) || "application/octet-stream", "Content-Length": st.size, "X-Robots-Tag": "noindex, nofollow, noarchive", "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff" });

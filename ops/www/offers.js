@@ -1,0 +1,431 @@
+// TASK-135 · /ops "Ofertă": offers for clients, admins only.
+// The team picks a process (Branding is active; Aplicație web and Producție video come later), fills the client, the
+// situation (brand nou / rebranding), the line items against the base prices, special deliverables and the timeline,
+// and sends it: a command to Claude (payload.type "offer-new", the whole config inside). Claude writes the copy and
+// 5–6 brand experiences, renders a preview (tools/offer/build.mjs, uploaded with ops-bridge.mjs proposal --preview)
+// and writes the offer into the snapshot's "offers" collection. The team reviews it here, next to the form, picks
+// 1–3 experiences (price optional), asks for changes ("offer-edit") or publishes ("offer-publish"); the link shows up here.
+(() => {
+  "use strict";
+  // base prices and names: ops/www/offer-prices.json is the one place to change them (loaded at start, admins only);
+  // these are only the fallback if that file cannot be read
+  const BASE = { audit: 1200, core: 2500, directions: 2500, canvas: 2500, guidelines: 2000, deliverables: 1500 };
+  let PER_PIECE = "preț pe bucată";
+  const ITEMS = [
+    ["audit", "Audit de brand", "Ce funcționează, unde poate crește, unde sunt oportunitățile"],
+    ["core", "The Core · workshop de poziționare", "Strategia, poziționarea, vocea, într-o zi în studio"],
+    ["directions", "Direcții vizuale", "Drumuri vizuale distincte, pornite din strategie"],
+    ["canvas", "Brand canvas", "Identitate, tipografie, paletă, univers de brand, pentru fiecare direcție"],
+    ["guidelines", "Ghid de identitate", "Direcția aleasă, scrisă ca reguli"],
+    ["deliverables", "Livrabile ulterioare", "Ce construim pe sistemul nou: social, papetărie, semnătură email, prezentare"],
+  ];
+  let CANVAS_QTY = 2;
+  async function loadPrices() {
+    try {
+      const r = await fetch("/ops/offer-prices.json", { credentials: "same-origin", cache: "no-store" }); if (!r.ok) return;
+      const j = await r.json();
+      for (const it of j.items || []) { if (!(it.key in BASE)) continue; if (Number(it.base) >= 0) BASE[it.key] = Number(it.base); const row = ITEMS.find((x) => x[0] === it.key); if (row && it.ro) row[1] = it.ro; if (it.key === "canvas" && it.defaultQty) CANVAS_QTY = Number(it.defaultQty) || 2; }
+      if (j.perPiece && j.perPiece.ro) PER_PIECE = j.perPiece.ro;
+    } catch {}
+  }
+  const PH_COLORS = ["#48A8EF", "#F8D13B", "#4CC462", "#F27261", "#AE76E6"];
+  const SIT = { fresh: "Fresh start-up · brand nou", rebrand: "Rebranding · upscale" };
+  const STATUS = { sent: ["la Claude", "draft"], draft: ["draft", "draft"], preview: ["preview gata", "pv"], published: ["publicată", "pub"], working: ["Claude lucrează", "wk"] };
+  const TYPES = [
+    { k: "branding", t: "Proces de branding", c: "#28C840", on: true, pills: ["The Core", "Direcții vizuale", "Brand canvas", "Ghid de identitate", "Livrabile ulterioare"], art: `<svg viewBox="0 0 96 64" fill="none"><path class="sa-draw" d="M10 46 C 26 12, 54 10, 62 26 C 70 42, 46 52, 40 40 C 34 28, 62 18, 86 30" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path class="sa-nib" d="M82 22 l8 8 -5 9 -9 -5 z" fill="currentColor"/><circle class="sa-dot" cx="12" cy="46" r="4" fill="currentColor"/></svg>` },
+    { k: "webapp", t: "Proces de aplicație web", c: "#B098C8", on: false, pills: ["Discovery", "UX", "UI", "Build", "Lansare"], art: `<svg viewBox="0 0 96 64" fill="none"><rect x="12" y="8" width="72" height="48" rx="7" stroke="currentColor" stroke-width="4"/><line x1="12" y1="20" x2="84" y2="20" stroke="currentColor" stroke-width="3"/><rect class="sa-btn" x="24" y="30" width="26" height="14" rx="7" fill="currentColor"/><path class="sa-cursor" d="M58 34 l12 5 -5 2 -1 6 -6 -13z" fill="currentColor"/></svg>` },
+    { k: "video", t: "Producție video", c: "#FED012", on: false, pills: ["Concept", "Pre-producție", "Filmare", "Post-producție"], art: `<svg viewBox="0 0 96 64" fill="none"><rect x="18" y="26" width="52" height="26" rx="5" stroke="currentColor" stroke-width="4"/><g class="sa-clap"><path d="M18 24 l52 -8 -3 -10 -52 8 z" fill="currentColor"/></g><path class="sa-play" d="M40 33 l12 6 -12 6 z" fill="currentColor"/><circle class="sa-rec" cx="78" cy="14" r="5" fill="#F65342"/></svg>` },
+  ];
+
+  let db = null, offers = [], inbox = [], view = { name: "home" }, cfg = null, mounted = false, pvLang = "ro", pvTab = "live";
+  const $ = (id) => document.getElementById(id);
+  const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const money = (n) => Math.round(Number(n) || 0).toLocaleString("de-DE") + " €";
+  const num = (v, d = 0) => { const n = Number(String(v).replace(",", ".")); return Number.isFinite(n) ? n : d; };
+  const toast = (m, k) => (window.__opsToast ? window.__opsToast(m, k) : alert(m));
+  const admin = () => !!(window.__ops && window.__ops.user && window.__ops.user.role === "admin");
+  const rid = () => "of-" + Date.now().toString(36) + Math.random().toString(16).slice(2, 6);
+  const fmtDate = (iso) => { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("ro-RO", { day: "numeric", month: "short" }); };
+
+  // ---------- the config ----------
+  function freshCfg() {
+    const c = { id: rid(), offerType: "branding", client: { name: "", contact: "", email: "", website: "" }, situation: "fresh", brief: "",
+      items: ITEMS.map(([k]) => ({ key: k, on: k !== "audit", base: BASE[k], price: BASE[k], ...(k === "canvas" ? { qty: CANVAS_QTY } : {}) })),
+      specials: [], discount: { type: "pct", value: 0 }, vatNote: "Prețurile nu includ TVA.", validityDays: 30, startDate: nextMonday(), phases: [], phasesAuto: true, currentLogo: null };
+    c.phases = autoPhases(c);
+    return c;
+  }
+  function nextMonday() { const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7) + 7); return d.toISOString().slice(0, 10); }
+  const item = (c, k) => c.items.find((i) => i.key === k);
+  function autoPhases(c) {
+    const on = (k) => { const i = item(c, k); return i && i.on; }, P = []; let w = 0;
+    if (on("audit")) { P.push({ id: "audit", title: "Audit de brand", start: 0, weeks: 1, milestone: "Raport de audit" }); w = 1; }
+    if (on("core")) { P.push({ id: "core", title: "The Core · workshop", start: w, weeks: 2, milestone: "" }); w += 2; }
+    if (on("directions")) { P.push({ id: "directions", title: "Direcții vizuale", start: w, weeks: 2, milestone: "Prezentare direcții" }); w += 2; }
+    if (on("canvas")) { const q = Math.max(1, item(c, "canvas").qty || 1), wk = q <= 1 ? 2 : 3; P.push({ id: "canvas", title: "Brand canvas ×" + q, start: w, weeks: wk, milestone: "Alegi direcția" }); w += wk; }
+    const w0 = w;
+    if (on("guidelines")) P.push({ id: "guidelines", title: "Ghid de identitate", start: w0, weeks: 2, milestone: "" });
+    if (on("deliverables")) P.push({ id: "deliverables", title: "Livrabile ulterioare", start: w0, weeks: 3, milestone: "" });
+    c.specials.filter((s) => s.title).forEach((s, i) => P.push({ id: "s" + (i + 1), title: s.title, start: w0 + 1, weeks: 2, milestone: "" }));
+    return P;
+  }
+  function totals(c) {
+    const items = c.items.filter((i) => i.on).map((i) => { const q = i.key === "canvas" ? Math.max(1, Math.round(i.qty || 1)) : 1; return { ...i, q, line: num(i.price) * q, baseLine: num(i.base) * q }; });
+    const specials = c.specials.filter((s) => s.title);
+    const subtotal = items.reduce((a, i) => a + i.line, 0) + specials.reduce((a, s) => a + num(s.price), 0);
+    const base = items.reduce((a, i) => a + i.baseLine, 0) + specials.reduce((a, s) => a + num(s.price), 0);
+    const dv = num(c.discount && c.discount.value);
+    const discount = dv > 0 ? Math.round(c.discount.type === "amount" ? Math.min(subtotal, dv) : subtotal * Math.min(100, dv) / 100) : 0;
+    return { items, specials, subtotal, base, discount, total: subtotal - discount };
+  }
+  const weeksOf = (c) => Math.max(0, ...c.phases.map((p) => num(p.start) + num(p.weeks)));
+
+  // ---------- data ----------
+  function offerList() {
+    const docs = new Map(offers.map((o) => [o.id, { ...o }]));
+    const open = inbox.filter((x) => x.payload && /^offer-/.test(x.payload.type || "") && x.status !== "done" && x.status !== "declined");
+    for (const x of open) {
+      const pl = x.payload;
+      if (pl.type === "offer-new" && pl.offer && !docs.has(pl.offer.id)) docs.set(pl.offer.id, { id: pl.offer.id, status: "sent", client: { name: pl.offer.client.name }, situation: pl.offer.situation, total: totals(normCfg(pl.offer)).total, config: pl.offer, createdAt: x.createdAt, pendingId: x.id });
+      else if (pl.offerId && docs.has(pl.offerId)) { const d = docs.get(pl.offerId); d.working = pl.type === "offer-publish" ? "publish" : "edit"; }
+    }
+    return [...docs.values()].sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
+  }
+  function normCfg(c0) {
+    const c = JSON.parse(JSON.stringify(c0 || {})), f = freshCfg();
+    const out = { ...f, ...c, client: { ...f.client, ...(c.client || {}) }, discount: { ...f.discount, ...(c.discount || {}) } };
+    out.items = ITEMS.map(([k]) => ({ ...item(f, k), ...((c.items || []).find((i) => i.key === k) || {}) }));
+    out.specials = Array.isArray(c.specials) ? c.specials : []; out.phases = Array.isArray(c.phases) && c.phases.length ? c.phases : autoPhases(out);
+    return out;
+  }
+
+  // ---------- render ----------
+  function render() {
+    const root = $("ofr-root"); if (!root) return;
+    if (!admin()) { root.replaceChildren(); return; }
+    const list = offerList();
+    const nb = $("nb-offer"); if (nb) { const n = list.filter((o) => o.status === "preview" && !o.working).length; nb.hidden = !n; nb.textContent = n ? String(n) : ""; nb.className = "nb" + (n ? " hot" : ""); }
+    $("ofr-n").textContent = list.length ? list.length + (list.length === 1 ? " ofertă" : " oferte") : "";
+    if (view.name === "edit" && cfg) { if (!mounted) renderEditor(root); else refreshEditor(); return; }
+    mounted = false;
+    const types = h("div", "ofr-types");
+    TYPES.forEach((t, i) => {
+      const b = h("button", "ofr-type" + (t.on ? "" : " soon")); b.type = "button"; b.style.setProperty("--sc", t.c); b.style.setProperty("--i", i);
+      if (!t.on) { b.setAttribute("aria-disabled", "true"); b.title = "Curând"; }
+      const art = h("span", "svcx-art"); art.innerHTML = t.art; art.setAttribute("aria-hidden", "true");
+      const top = h("span", "ofr-tt"); top.append(art, h("span", "ofr-badge mono", t.on ? "Activ" : "Curând"));
+      const pills = h("span", "oc-pills"); t.pills.forEach((p) => pills.append(h("i", "", p)));
+      b.append(top, h("span", "oc-n mono", "PROCES " + (i + 1) + " / 3"), h("b", "", t.t), pills, h("span", "ofr-go mono", t.on ? "Ofertă nouă →" : "În curând"));
+      b.onclick = () => { if (!t.on) { toast(t.t + ": vine curând. Deocamdată, ofertele de branding."); return; } openEditor(freshCfg(), null); };
+      types.append(b);
+    });
+    const lh = h("div", "ofr-lh"); lh.append(h("h3", "", "Ofertele voastre"), h("span", "mono muted", "draft · preview gata · publicată"));
+    const tbl = h("div", "ofr-list");
+    if (!list.length) tbl.append(h("div", "ofr-empty muted", "Nicio ofertă încă. Alege procesul de branding de mai sus și pornește prima."));
+    for (const o of list) {
+      const st = o.working ? "working" : (STATUS[o.status] ? o.status : "draft");
+      const r = h("div", "ofr-row"); r.tabIndex = 0;
+      const pill = h("span", "ofr-st " + STATUS[st][1], STATUS[st][0]);
+      if (o.working) pill.title = o.working === "publish" ? "Claude o publică" : "Claude aplică modificările";
+      const who = h("div", "ofr-who"); who.append(h("b", "", (o.client && o.client.name) || "Fără nume"), h("small", "muted", [SIT[o.situation] || "", fmtDate(o.updatedAt || o.createdAt)].filter(Boolean).join(" · ")));
+      const links = h("div", "ofr-links");
+      if (o.url) { const a = h("a", "btn sm k", "Deschide"); a.href = o.url; a.target = "_blank"; a.rel = "noopener"; const cp = h("button", "btn sm ghost", "Copiază linkul"); cp.type = "button"; cp.onclick = (e) => { e.stopPropagation(); copy(location.origin + o.url); }; links.append(a, cp); }
+      else if (o.previewUrl) { const a = h("button", "btn sm y", "Vezi preview-ul"); a.type = "button"; a.onclick = (e) => { e.stopPropagation(); openEditor(normCfg(o.config), o, "claude"); }; links.append(a); }
+      r.append(pill, who, h("b", "ofr-tot", money(o.total)), links);
+      const open = () => openEditor(normCfg(o.config), o, o.previewUrl ? "claude" : "live");
+      r.onclick = (e) => { if (!e.target.closest("a,button")) open(); }; r.onkeydown = (e) => { if (e.key === "Enter" && e.target === r) open(); };
+      tbl.append(r);
+    }
+    root.replaceChildren(types, lh, tbl);
+  }
+  function copy(t) { (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Link copiat."), () => prompt("Copiază linkul:", t)); }
+
+  function openEditor(c, doc, tab) { cfg = c; view = { name: "edit", doc: doc || null }; pvTab = tab || "live"; mounted = false; render(); const s = $("ofr"); if (s) s.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  function closeEditor() { view = { name: "home" }; cfg = null; mounted = false; render(); }
+  const curDoc = () => (view.doc ? offerList().find((o) => o.id === view.doc.id) || view.doc : null);
+
+  // editor: form on the left, preview on the right (stacked on phones)
+  function renderEditor(root) {
+    mounted = true; docSig = null;
+    const doc = curDoc(), wrap = h("div", "ofr-ed");
+    const bar = h("div", "ofr-bar");
+    const back = h("button", "btn sm ghost", "← Toate ofertele"); back.type = "button"; back.onclick = closeEditor;
+    bar.append(back, h("span", "ofr-bar-t", doc ? ((doc.client && doc.client.name) || "Ofertă") : "Ofertă nouă · Proces de branding"));
+    if (doc) { const st = doc.working ? "working" : doc.status; bar.append(h("span", "ofr-st " + (STATUS[st] || STATUS.draft)[1], (STATUS[st] || STATUS.draft)[0])); }
+    const form = h("form", "ofr-form"); form.noValidate = true; form.onsubmit = (e) => e.preventDefault();
+    const pane = h("aside", "ofr-pane"); pane.id = "ofr-pane";
+
+    // 01 client
+    const s1 = sec("01", "Clientul");
+    const g1 = h("div", "ofr-g2");
+    g1.append(field("Client / brand", inp("text", cfg.client.name, (v) => { cfg.client.name = v; live(); }, "Ex.: Luma Ceramics", 120, "ofr-client")),
+      field("Persoana de contact", inp("text", cfg.client.contact, (v) => (cfg.client.contact = v), "Nume (opțional)", 120)),
+      field("Email (opțional)", inp("email", cfg.client.email, (v) => (cfg.client.email = v), "nume@brand.ro", 160)),
+      field("Site / Instagram (opțional)", inp("text", cfg.client.website, (v) => (cfg.client.website = v), "https://…", 200)));
+    const sit = h("div", "ofr-sit"); sit.setAttribute("role", "radiogroup"); sit.setAttribute("aria-label", "Situația brandului");
+    for (const [k, t, d] of [["fresh", "Fresh start-up", "Brand nou, de la zero"], ["rebrand", "Rebranding · upscale", "Pornim de la brandul de azi"]]) {
+      const b = h("button", "ofr-sit-b " + k); b.type = "button"; b.dataset.k = k; b.setAttribute("role", "radio"); b.append(h("b", "", t), h("small", "", d));
+      b.onclick = () => { if (cfg.situation === k) return; cfg.situation = k; item(cfg, "audit").on = k === "rebrand"; if (cfg.phasesAuto) cfg.phases = autoPhases(cfg); drawSit(); drawItems(); drawPhases(); live(); };
+      sit.append(b);
+    }
+    const drawSit = () => { for (const b of sit.children) b.setAttribute("aria-checked", String(b.dataset.k === cfg.situation)); logoBox.classList.toggle("rb", cfg.situation === "rebrand"); };
+    const brief = h("textarea", "inp"); brief.rows = 3; brief.maxLength = 2000; brief.value = cfg.brief || ""; brief.placeholder = "Ce știm despre client: domeniu, ce vrea, ce i-a plăcut, ce nu. Claude scrie copy-ul și brand experiences din asta."; brief.oninput = () => (cfg.brief = brief.value);
+    const logoBox = h("div", "ofr-logo");
+    const logoHead = h("div", "ofr-logo-h"); logoHead.append(h("b", "", "Logo-ul actual"), h("small", "muted", "Mai ales la rebranding: apare în ofertă la „De unde pornim”. Opțional pentru un brand nou."));
+    logoBox.append(logoHead);
+    if (cfg.currentLogo && cfg.currentLogo.urls) {
+      const cur = h("div", "ofr-logo-cur"), im = h("img"); im.alt = "Logo-ul actual"; im.src = cfg.currentLogo.urls.preview || cfg.currentLogo.urls.png || cfg.currentLogo.urls.webp || cfg.currentLogo.urls.svg || "";
+      const x = h("button", "btn sm ghost", "Scoate"); x.type = "button"; x.onclick = () => { cfg.currentLogo = null; cur.remove(); };
+      cur.append(im, h("span", "", cfg.currentLogo.name || "logo"), x); logoBox.append(cur);
+    }
+    if (window.__opsUp) logoBox.append(window.__opsUp.mount("offer-logo", { kind: "logo", open: cfg.situation === "rebrand", fresh: true }));
+    s1.b.append(g1, field("Situația brandului", sit), field("Brief pentru Claude", brief), logoBox);
+
+    // 02 items
+    const s2 = sec("02", "Procesul și prețurile");
+    s2.b.append(h("p", "ofr-hint muted", "Prețurile de bază sunt cele de listă. Schimbă prețul pentru oferta asta: diferența apare lângă."));
+    const itemsBox = h("div", "ofr-items");
+    function drawItems() {
+      itemsBox.replaceChildren(...ITEMS.map(([k, t, d]) => {
+        const it = item(cfg, k), r = h("div", "ofr-it" + (it.on ? "" : " off"));
+        const cb = h("input"); cb.type = "checkbox"; cb.checked = it.on; cb.id = "ofr-on-" + k; cb.onchange = () => { it.on = cb.checked; if (cfg.phasesAuto) { cfg.phases = autoPhases(cfg); drawPhases(); } drawItems(); live(); };
+        const lab = h("label", "ofr-it-l"); lab.htmlFor = cb.id; lab.append(h("b", "", t), h("small", "muted", d + (k === "audit" ? " · implicit la rebranding" : "")));
+        const right = h("div", "ofr-it-r");
+        if (k === "canvas") {
+          const st = h("div", "ofr-step"), mi = h("button", "", "−"), pl = h("button", "", "+"), n = h("span", "", String(it.qty)); mi.type = pl.type = "button";
+          mi.setAttribute("aria-label", "Un canvas mai puțin"); pl.setAttribute("aria-label", "Un canvas în plus");
+          const set = (q) => { it.qty = Math.max(1, Math.min(6, q)); n.textContent = String(it.qty); if (cfg.phasesAuto) { cfg.phases = autoPhases(cfg); drawPhases(); } upd(); live(); };
+          mi.onclick = () => set(it.qty - 1); pl.onclick = () => set(it.qty + 1); st.append(mi, n, pl); right.append(st);
+        }
+        const pin = h("input", "inp ofr-price"); pin.type = "number"; pin.min = "0"; pin.step = "50"; pin.inputMode = "numeric"; pin.value = it.price; pin.setAttribute("aria-label", t + ": preț în oferta asta (EUR)" + (k === "canvas" ? ", pe canvas" : ""));
+        const delta = h("span", "ofr-d"), baseL = h("span", "ofr-base mono", "listă " + money(it.base) + (k === "canvas" ? " · " + PER_PIECE : ""));
+        const line = h("b", "ofr-line");
+        const upd = () => { const df = num(it.price) - num(it.base), pc = it.base ? Math.round(df / it.base * 100) : 0; delta.className = "ofr-d " + (df < 0 ? "dn" : df > 0 ? "up" : "eq"); delta.textContent = df === 0 ? "= listă" : (df > 0 ? "+" : "−") + money(Math.abs(df)) + " · " + (df > 0 ? "+" : "−") + Math.abs(pc) + "%"; line.textContent = k === "canvas" ? it.qty + " × " + PER_PIECE + " = " + money(num(it.price) * it.qty) : ""; };
+        pin.oninput = () => { it.price = Math.max(0, num(pin.value)); upd(); live(); };
+        const reset = h("button", "ofr-reset", "↺"); reset.type = "button"; reset.title = "Înapoi la prețul de listă"; reset.setAttribute("aria-label", "Prețul de listă pentru " + t); reset.onclick = () => { it.price = it.base; pin.value = it.base; upd(); live(); };
+        const pr = h("div", "ofr-pr"); pr.append(pin, reset); right.append(pr, delta, baseL, line); upd();
+        r.append(cb, lab, right); return r;
+      }));
+    }
+    drawItems(); s2.b.append(itemsBox);
+    // specials
+    const spBox = h("div", "ofr-sp");
+    const spH = h("div", "ofr-sp-h"); spH.append(h("b", "", "Livrabile speciale"), h("small", "muted", "Orice în plus, cu prețul lui"));
+    const spList = h("div", "ofr-sp-l");
+    const addSp = h("button", "btn sm", "+ Livrabil special"); addSp.type = "button"; addSp.onclick = () => { cfg.specials.push({ title: "", price: 0, desc: "" }); drawSp(); spList.lastChild && spList.lastChild.querySelector("input").focus(); };
+    function drawSp() {
+      spList.replaceChildren(...cfg.specials.map((s, i) => {
+        const r = h("div", "ofr-sp-r");
+        const t = inp("text", s.title, (v) => { s.title = v; if (cfg.phasesAuto) { cfg.phases = autoPhases(cfg); drawPhases(); } live(); }, "Ex.: Sistem de etichete", 120); t.setAttribute("aria-label", "Livrabil special " + (i + 1));
+        const p = h("input", "inp ofr-price"); p.type = "number"; p.min = "0"; p.step = "50"; p.value = s.price; p.setAttribute("aria-label", "Prețul livrabilului special (EUR)"); p.oninput = () => { s.price = Math.max(0, num(p.value)); live(); };
+        const d = inp("text", s.desc, (v) => (s.desc = v), "Ce conține (opțional, Claude îl scrie frumos)", 300); d.classList.add("ofr-sp-d");
+        const x = h("button", "ofr-x", "×"); x.type = "button"; x.setAttribute("aria-label", "Scoate livrabilul"); x.onclick = () => { cfg.specials.splice(i, 1); if (cfg.phasesAuto) { cfg.phases = autoPhases(cfg); drawPhases(); } drawSp(); live(); };
+        r.append(t, p, x, d); return r;
+      }));
+    }
+    drawSp(); spBox.append(spH, spList, addSp); s2.b.append(spBox);
+    // discount / vat / validity
+    const g3 = h("div", "ofr-g3");
+    const dseg = h("div", "seg"); for (const [k, t] of [["pct", "%"], ["amount", "€"]]) { const b = h("button", "", t); b.type = "button"; b.dataset.k = k; b.onclick = () => { cfg.discount.type = k; drawD(); live(); }; dseg.append(b); }
+    const drawD = () => { for (const b of dseg.children) b.setAttribute("aria-pressed", String(b.dataset.k === cfg.discount.type)); };
+    const dval = h("input", "inp ofr-price"); dval.type = "number"; dval.min = "0"; dval.value = cfg.discount.value || ""; dval.placeholder = "0"; dval.setAttribute("aria-label", "Reducere"); dval.oninput = () => { cfg.discount.value = Math.max(0, num(dval.value)); live(); };
+    const drow = h("div", "ofr-drow"); drow.append(dseg, dval); drawD();
+    const valid = h("input", "inp"); valid.type = "number"; valid.min = "1"; valid.max = "180"; valid.value = cfg.validityDays; valid.oninput = () => (cfg.validityDays = Math.max(1, num(valid.value, 30)));
+    g3.append(field("Reducere (opțional)", drow), field("Notă TVA", inp("text", cfg.vatNote, (v) => (cfg.vatNote = v), "Prețurile nu includ TVA.", 160)), field("Valabilă (zile)", valid));
+    s2.b.append(g3);
+    const totBox = h("div", "ofr-total"); totBox.id = "ofr-total"; s2.b.append(totBox);
+
+    // 03 timeline
+    const s3 = sec("03", "Calendarul");
+    const g4 = h("div", "ofr-g2"), sd = inp("date", cfg.startDate, (v) => { cfg.startDate = v; live(); });
+    const auto = h("button", "btn sm ghost", "↺ Refă din pașii aleși"); auto.type = "button"; auto.onclick = () => { cfg.phases = autoPhases(cfg); cfg.phasesAuto = true; drawPhases(); live(); };
+    g4.append(field("Start (luni)", sd), field("Etape", auto));
+    const phBox = h("div", "ofr-ph");
+    function drawPhases() {
+      const head = h("div", "ofr-ph-r hd"); ["Etapă", "Start (săpt.)", "Durată", "Reper la final (opțional)", ""].forEach((t) => head.append(h("span", "mono", t)));
+      phBox.replaceChildren(head, ...cfg.phases.map((p, i) => {
+        const r = h("div", "ofr-ph-r"); r.style.setProperty("--b", PH_COLORS[i % PH_COLORS.length]);
+        const touch = () => { cfg.phasesAuto = false; live(); };
+        const t = inp("text", p.title, (v) => { p.title = v; touch(); }, "Etapă", 80); t.setAttribute("aria-label", "Numele etapei " + (i + 1));
+        const st = h("input", "inp"); st.type = "number"; st.min = "0"; st.step = "0.5"; st.value = p.start; st.setAttribute("aria-label", "Săptămâna de start (0 = prima)"); st.oninput = () => { p.start = Math.max(0, num(st.value)); touch(); };
+        const wk = h("input", "inp"); wk.type = "number"; wk.min = "0.5"; wk.step = "0.5"; wk.value = p.weeks; wk.setAttribute("aria-label", "Durata în săptămâni"); wk.oninput = () => { p.weeks = Math.max(0.5, num(wk.value, 1)); touch(); };
+        const ms = inp("text", p.milestone, (v) => { p.milestone = v; touch(); }, "Ex.: Prezentare", 60); ms.setAttribute("aria-label", "Reper la finalul etapei");
+        const x = h("button", "ofr-x", "×"); x.type = "button"; x.setAttribute("aria-label", "Scoate etapa"); x.onclick = () => { cfg.phases.splice(i, 1); cfg.phasesAuto = false; drawPhases(); live(); };
+        r.append(t, st, wk, ms, x); return r;
+      }));
+      const add = h("button", "btn sm", "+ Etapă"); add.type = "button"; add.onclick = () => { cfg.phases.push({ id: "p" + Date.now().toString(36), title: "", start: weeksOf(cfg), weeks: 1, milestone: "" }); cfg.phasesAuto = false; drawPhases(); live(); };
+      phBox.append(add);
+    }
+    drawPhases(); s3.b.append(g4, phBox);
+
+    // 04 experiences (after Claude's preview) + actions
+    const s4 = sec("04", "Brand experiences · propuneri"); s4.id = "ofr-exp";
+    const act = h("div", "ofr-act"); act.id = "ofr-act";
+    form.append(s1, s2, s3, s4, act);
+    wrap.append(bar, h("div", "ofr-cols")); wrap.lastChild.append(form, pane);
+    root.replaceChildren(wrap);
+    drawSit(); refreshEditor();
+  }
+
+  let docSig = null;
+  function refreshEditor() {
+    // the snapshot comes every 20 s: redraw the parts that depend on Claude's doc only when it changed (no lost typing)
+    const d = curDoc(), sig = JSON.stringify(d ? [d.status, d.working, d.pendingId, d.previewUrl, d.url, d.experiences, d.updatedAt] : null);
+    drawTotal(); if (sig === docSig) return; docSig = sig; drawExp(); drawActions(); drawPane();
+  }
+  let liveT = 0;
+  function live() { drawTotal(); clearTimeout(liveT); liveT = setTimeout(() => { if (pvTab === "live") drawPane(); }, 120); }
+  function drawTotal() {
+    const box = $("ofr-total"); if (!box) return; const T = totals(cfg), df = T.total - T.base;
+    box.replaceChildren();
+    const l = h("div", "ofr-total-l");
+    l.append(h("span", "mono", "Total proces"), h("b", "", money(T.total)));
+    const r = h("div", "ofr-total-r");
+    const row = (a, b, cls) => { const x = h("div", "ofr-tr" + (cls ? " " + cls : "")); x.append(h("span", "", a), h("b", "", b)); r.append(x); };
+    row("Subtotal", money(T.subtotal)); if (T.discount) row("Reducere", "−" + money(T.discount));
+    row("Față de listă", df === 0 ? "la fel" : (df > 0 ? "+" : "−") + money(Math.abs(df)), df < 0 ? "dn" : df > 0 ? "up" : "");
+    row("Durată", weeksOf(cfg) ? Math.ceil(weeksOf(cfg)) + " săpt." : "–");
+    box.append(l, r);
+  }
+  function drawExp() {
+    const s = $("ofr-exp"); if (!s) return; const doc = curDoc(), body = s.querySelector(".ofr-sec-b"); body.replaceChildren();
+    const exps = doc && Array.isArray(doc.experiences) ? doc.experiences : [];
+    if (!exps.length) { body.append(h("p", "ofr-hint muted", doc ? "Claude propune 5–6 experiențe pentru client odată cu preview-ul. Apar aici." : "După ce trimiți, Claude propune 5–6 brand experiences pentru client. Alegeți 1–3 aici, cu sau fără preț.")); return; }
+    if (!cfg.picks) cfg.picks = Object.fromEntries(exps.filter((e) => e.picked).map((e) => [e.id, e.price == null ? "" : String(e.price)]));
+    const n = () => Object.keys(cfg.picks).length;
+    const cnt = h("p", "ofr-hint muted");
+    const list = h("div", "ofr-xl");
+    const draw = () => {
+      cnt.textContent = "Alese: " + n() + " din max. 3 · prețul e opțional (gol = „preț la discuție”)";
+      list.replaceChildren(...exps.map((e) => {
+        const on = e.id in cfg.picks, r = h("div", "ofr-x-r" + (on ? " on" : "")), lb = h("label", "ofr-x-lb");
+        const cb = h("input"); cb.type = "checkbox"; cb.checked = on; cb.disabled = !on && n() >= 3;
+        cb.onchange = () => { if (cb.checked) { if (n() >= 3) { cb.checked = false; toast("Maximum 3 experiențe."); return; } cfg.picks[e.id] = e.price == null ? "" : String(e.price); } else delete cfg.picks[e.id]; draw(); drawActions(); };
+        const tx = h("div", "ofr-x-t"); tx.append(h("b", "", e.title || e.id), h("small", "muted", e.desc || ""));
+        const p = h("input", "inp ofr-price"); p.type = "number"; p.min = "0"; p.step = "50"; p.placeholder = "preț opț."; p.disabled = !on; p.value = on ? cfg.picks[e.id] : (e.price ?? ""); p.setAttribute("aria-label", "Prețul experienței (opțional, EUR)");
+        p.oninput = () => { if (e.id in cfg.picks) cfg.picks[e.id] = p.value; };
+        lb.append(cb, tx); r.append(lb, p); return r;
+      }));
+    };
+    draw(); body.append(cnt, list);
+  }
+  function picksPayload() { return Object.entries(cfg.picks || {}).map(([id, v]) => ({ id, price: v === "" || v == null ? null : Math.max(0, num(v)) })); }
+  function drawActions() {
+    const a = $("ofr-act"); if (!a) return; a.replaceChildren(); const doc = curDoc();
+    if (!doc || doc.status === "sent") {
+      const send = h("button", "btn k", doc ? "Retrimite la Claude" : "Trimite la Claude"); send.type = "button";
+      if (doc && doc.pendingId) { send.disabled = true; send.textContent = "Trimisă · Claude scrie preview-ul"; }
+      send.onclick = () => sendNew(send);
+      a.append(h("p", "ofr-hint muted", "Claude scrie copy-ul în RO și EN, propune brand experiences și face un preview. Nu se publică nimic până nu apăsați „Publică”."), send);
+      return;
+    }
+    const note = h("textarea", "inp"); note.rows = 2; note.maxLength = 1500; note.placeholder = "Ce să schimbe Claude (opțional): ton, un paragraf, o experiență…"; note.id = "ofr-note";
+    const edit = h("button", "btn", "Cere modificări"); edit.type = "button"; edit.onclick = () => sendEdit(edit, note.value);
+    const pub = h("button", "btn y", doc.status === "published" ? "Republică" : "Publică"); pub.type = "button"; pub.onclick = () => sendPublish(pub);
+    if (doc.working) { edit.disabled = pub.disabled = true; pub.textContent = doc.working === "publish" ? "Se publică…" : "Claude lucrează…"; }
+    if (doc.status !== "preview" && doc.status !== "published") pub.disabled = true;
+    const row = h("div", "ofr-act-r"); row.append(edit, pub);
+    a.append(field("Pentru Claude", note), row);
+    if (doc.url) { const l = h("div", "ofr-pub"); const x = h("a", "", location.host + doc.url); x.href = doc.url; x.target = "_blank"; x.rel = "noopener"; const c = h("button", "btn sm ghost", "Copiază"); c.type = "button"; c.onclick = () => copy(location.origin + doc.url); l.append(h("span", "mono", "Publicată"), x, c); a.append(l); }
+  }
+  function drawPane() {
+    const pane = $("ofr-pane"); if (!pane) return; const doc = curDoc();
+    const tabs = h("div", "seg ofr-tabs"); tabs.setAttribute("role", "tablist");
+    for (const [k, t] of [["live", "Schiță live"], ["claude", "Preview Claude"]]) { const b = h("button", "", t); b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-pressed", String(pvTab === k)); b.onclick = () => { pvTab = k; drawPane(); }; tabs.append(b); }
+    const head = h("div", "ofr-pane-h"); head.append(tabs);
+    if (pvTab === "claude" && doc && (doc.previewUrl || doc.url)) {
+      const lg = h("div", "seg"); for (const k of ["ro", "en"]) { const b = h("button", "", k.toUpperCase()); b.type = "button"; b.setAttribute("aria-pressed", String(pvLang === k)); b.onclick = () => { pvLang = k; drawPane(); }; lg.append(b); }
+      // once published, the published page (the preview files may be older than the last publish)
+      const src = doc.url ? (pvLang === "en" && doc.urlEn ? doc.urlEn : doc.url) : (pvLang === "en" && doc.previewUrlEn ? doc.previewUrlEn : doc.previewUrl);
+      const op = h("a", "btn sm ghost", "Deschide ↗"); op.href = src; op.target = "_blank"; op.rel = "noopener";
+      head.append(lg, op);
+      const old = pane.querySelector("iframe");
+      if (old && old.dataset.src === src && pane.querySelector(".ofr-pane-h")) { pane.querySelector(".ofr-pane-h").replaceWith(head); return; }
+      const fr = h("iframe", "ofr-frame"); fr.src = src; fr.dataset.src = src; fr.title = "Preview-ul ofertei"; fr.loading = "lazy"; fr.referrerPolicy = "no-referrer";
+      pane.replaceChildren(head, fr); return;
+    }
+    const box = h("div", "ofr-live");
+    if (pvTab === "claude") box.append(h("p", "ofr-wait", doc && doc.status === "sent" ? "Claude scrie oferta. Preview-ul apare aici când e gata (de obicei în câteva minute)." : "Încă nu există un preview de la Claude. Trimite oferta și apare aici."));
+    const T = totals(cfg);
+    const hero = h("div", "ofr-lv-hero");
+    hero.append(h("span", "ofr-lv-sit " + cfg.situation, SIT[cfg.situation]), h("b", "ofr-lv-cl", cfg.client.name || "Numele clientului"));
+    if (cfg.currentLogo && cfg.currentLogo.urls) { const f = h("figure", "ofr-lv-from"); const im = h("img"); im.alt = ""; im.src = cfg.currentLogo.urls.preview || cfg.currentLogo.urls.png || cfg.currentLogo.urls.webp || cfg.currentLogo.urls.svg || ""; f.append(h("figcaption", "mono", "De unde pornim"), im); hero.append(f); }
+    const items = h("div", "ofr-lv-items");
+    T.items.forEach((i, k) => { const r = h("div", "ofr-lv-i"); r.style.setProperty("--b", PH_COLORS[k % PH_COLORS.length]); const name = ITEMS.find((x) => x[0] === i.key)[1] + (i.key === "canvas" ? " ×" + i.q + " · " + money(i.price) + " " + PER_PIECE : ""); r.append(h("span", "", name)); const p = h("b", ""); if (i.line < i.baseLine) p.append(h("s", "", money(i.baseLine)), " "); p.append(money(i.line)); r.append(p); items.append(r); });
+    T.specials.forEach((s) => { const r = h("div", "ofr-lv-i sp"); r.append(h("span", "", "★ " + s.title), h("b", "", money(s.price))); items.append(r); });
+    const tot = h("div", "ofr-lv-tot"); tot.append(h("span", "mono", T.discount ? "Total · după reducere " + money(T.discount) : "Total proces"), h("b", "", money(T.total)));
+    box.append(hero, items, tot, gantt(cfg));
+    pane.replaceChildren(head, box);
+  }
+  /** the same Gantt as the published offer, smaller: weeks across, a bar per phase, overlaps visible, milestones as diamonds */
+  function gantt(c) {
+    const P = c.phases.filter((p) => p.title && num(p.weeks) > 0), end = Math.max(0, ...P.map((p) => num(p.start) + num(p.weeks))), N = Math.max(1, Math.ceil(end));
+    const g = h("div", "ofr-gantt"); g.style.setProperty("--n", N);
+    if (!P.length) { g.append(h("p", "muted", "Adaugă etape ca să vezi calendarul.")); return g; }
+    const head = h("div", "ofr-gh"); for (let w = 0; w < N; w++) { const s = h("span", "", "S" + (w + 1)); if (c.startDate) { const d = new Date(c.startDate + "T12:00:00"); d.setDate(d.getDate() + w * 7); s.title = d.toLocaleDateString("ro-RO", { day: "numeric", month: "short" }); } head.append(s); }
+    g.append(head);
+    P.forEach((p, i) => {
+      const r = h("div", "ofr-gr"), lab = h("span", "ofr-gl", p.title), tr = h("div", "ofr-gt"), bar = h("i", "ofr-gb");
+      bar.style.left = (num(p.start) / N * 100) + "%"; bar.style.width = (num(p.weeks) / N * 100) + "%"; bar.style.setProperty("--b", PH_COLORS[i % PH_COLORS.length]); bar.style.setProperty("--i", i);
+      tr.append(bar);
+      if (p.milestone) { const m = h("em", "ofr-gm"); m.style.left = ((num(p.start) + num(p.weeks)) / N * 100) + "%"; m.title = p.milestone; tr.append(m); }
+      r.append(lab, tr); g.append(r);
+    });
+    if (c.startDate) { const d = new Date(c.startDate + "T12:00:00"); d.setDate(d.getDate() + Math.ceil(end) * 7 - 3); const f = h("div", "ofr-gf"); f.append(h("span", "mono", "Predare finală"), h("b", "", d.toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" }))); g.append(f); }
+    return g;
+  }
+
+  // ---------- commands ----------
+  function cleanCfg() {
+    const c = JSON.parse(JSON.stringify(cfg)); delete c.picks;
+    c.specials = c.specials.filter((s) => s.title); c.phases = c.phases.filter((p) => p.title);
+    const T = totals(c); c.totals = { subtotal: T.subtotal, discount: T.discount, total: T.total, base: T.base, weeks: Math.ceil(weeksOf(c)) };
+    return c;
+  }
+  function summary(c) {
+    const T = c.totals;
+    return [SIT[c.situation], ...totals(c).items.map((i) => (ITEMS.find((x) => x[0] === i.key)[1]) + (i.key === "canvas" ? " ×" + i.q : "") + " " + money(i.line) + (i.line !== i.baseLine ? " (listă " + money(i.baseLine) + ")" : "")),
+      ...c.specials.map((s) => "Special: " + s.title + " " + money(s.price)), T.discount ? "Reducere −" + money(T.discount) : "", "Total " + money(T.total) + " · " + T.weeks + " săpt."].filter(Boolean).join(" · ");
+  }
+  async function send(btn, text, payload, ok) {
+    if (!db) return; btn.disabled = true; const was = btn.textContent; btn.textContent = "Se trimite…";
+    try { await db.collection("offers").add({ text: text.slice(0, 3900), payload }); toast(ok); btn.textContent = "Trimis"; setTimeout(render, 400); return true; }
+    catch (e) { btn.disabled = false; btn.textContent = was; toast(e && e.code === "rate_limited" ? "Prea multe cereri. Mai încearcă în câteva minute." : "Nu s-a trimis. Mai încearcă.", "err"); return false; }
+  }
+  async function sendNew(btn) {
+    if (!cfg.client.name.trim()) { toast("Scrie numele clientului.", "err"); const i = $("ofr-client"); if (i) i.focus(); return; }
+    if (window.__opsUp && window.__opsUp.busy("offer-logo")) { toast("Logo-ul încă se încarcă.", "err"); return; }
+    const up = window.__opsUp ? window.__opsUp.payload("offer-logo") : {};
+    if (up.uploads && up.uploads.length) { const lg = up.uploads.find((u) => u.kind === "logo") || up.uploads[0]; cfg.currentLogo = { id: lg.id, name: lg.name, type: lg.type, urls: lg.urls, w: lg.w, h: lg.h }; }
+    const c = cleanCfg();
+    const ok = await send(btn, "Ofertă nouă · Branding · " + c.client.name + "\n" + summary(c) + (c.brief ? "\nBrief: " + c.brief : ""), { type: "offer-new", offer: c, ...(up.uploads ? { uploads: up.uploads } : {}) }, "Trimisă. Claude scrie preview-ul și îl vezi aici.");
+    if (ok) { if (window.__opsUp) window.__opsUp.reset("offer-logo"); closeEditor(); }
+  }
+  async function sendEdit(btn, note) {
+    const doc = curDoc(), c = cleanCfg();
+    await send(btn, "Ofertă · modificări · " + c.client.name + (note ? "\n" + note : "") + "\n" + summary(c), { type: "offer-edit", offerId: doc.id, slug: doc.slug || null, offer: c, picks: picksPayload(), note: String(note || "").slice(0, 1500) }, "Trimis. Claude reface preview-ul.");
+  }
+  async function sendPublish(btn) {
+    const doc = curDoc(), picks = picksPayload(), exps = (doc && doc.experiences) || [];
+    if (exps.length && (picks.length < 1 || picks.length > 3)) { toast("Alegeți 1–3 brand experiences înainte de publicare.", "err"); const s = $("ofr-exp"); if (s) s.scrollIntoView({ behavior: "smooth" }); return; }
+    if (!confirm("Publici oferta pentru " + ((doc.client && doc.client.name) || "client") + "?\nLinkul devine accesibil oricui îl are (nu e listat nicăieri).")) return;
+    const c = cleanCfg();
+    await send(btn, "Ofertă · publică · " + c.client.name + " · " + money(c.totals.total) + (picks.length ? " · experiențe: " + picks.map((p) => p.id + (p.price != null ? " " + money(p.price) : "")).join(", ") : ""), { type: "offer-publish", offerId: doc.id, slug: doc.slug || null, offer: c, picks }, "Trimis la publicare. Linkul apare aici.");
+  }
+
+  // ---------- small form helpers ----------
+  function sec(n, t) { const s = h("section", "ofr-sec"), hd = h("div", "ofr-sec-h"), b = h("div", "ofr-sec-b"); hd.append(h("span", "mono", n), h("h3", "", t)); s.append(hd, b); s.b = b; return s; }
+  function field(label, ctl) { const f = h("div", "field"); const l = h("label", "", label); if (ctl.id) l.htmlFor = ctl.id; else if (ctl.tagName === "INPUT" || ctl.tagName === "TEXTAREA") { ctl.id = "ofr-f-" + Math.random().toString(36).slice(2, 8); l.htmlFor = ctl.id; } f.append(l, ctl); return f; }
+  function inp(type, val, on, ph, max, id) { const i = h("input", "inp"); i.type = type; i.value = val || ""; if (ph) i.placeholder = ph; if (max) i.maxLength = max; if (id) i.id = id; i.autocomplete = "off"; i.oninput = () => on(i.value); return i; }
+
+  // ---------- start ----------
+  async function start() {
+    if (!window.claude || !window.claude.use) return;
+    db = await window.claude.use("db"); if (!db) return;
+    await loadPrices();
+    db.collection("offers").onSnapshot((q) => { offers = q.docs.map((x) => ({ id: x.id, ...x.data() })); render(); });
+    db.collection("inbox").orderBy("createdAt", "desc").limit(60).onSnapshot((q) => { inbox = q.docs.map((x) => ({ id: x.id, ...x.data() })); render(); });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
+  window.__opsOffers = { totals, autoPhases, freshCfg }; // for tests
+})();
